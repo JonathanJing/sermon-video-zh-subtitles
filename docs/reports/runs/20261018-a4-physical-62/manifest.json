@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261018-a4-physical-62",
+  "runs": [
+    {
+      "label": "20261018-a4-physical-62",
+      "source": "~/.codex/worktrees/g1-a4-audio/sermon-video-zh-subtitles/artifacts/local-runs/20261018-a4-physical-62",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "20261018-a4-physical-62",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 169,
+      "truncated": false,
+      "sha256": "6246224469598f5007bd747507f33a7a973aa76fea35fae14bddc6ce743f8225",
+      "redactions": {}
+    },
+    {
+      "run": "20261018-a4-physical-62",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 167,
+      "truncated": false,
+      "sha256": "d3e5a6fd0b44fbbe9cb887cf0e5a968af42ca01a637cdf38225e0075f3457927",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

@@ -94,7 +94,8 @@ class TextReviewRegressions(unittest.TestCase):
                 self.assertEqual(rules.number_problems("You only have one life.", good, locale), [])
         for english in ("the one who believes", "No one is righteous.", "Love one another.",
                         "One day he came.", "the Holy One of Israel", "Pick this one.",
-                        "He is the only one."):
+                        "He is the only one.", "They changed their old logo to their new one.",
+                        "They meant one thing but heard another."):
             with self.subTest(english=english):
                 self.assertEqual(rules.english_numbers(english), [])
         self.assertEqual(rules.english_numbers("zero tolerance"), [0])
@@ -146,6 +147,10 @@ class TextReviewRegressions(unittest.TestCase):
                 self.assertEqual(rules.added_number_problems("There are people.", target, locale),
                                  ["added number 5"])
                 self.assertEqual(rules.added_number_problems("There are five people.", target, locale), [])
+        self.assertEqual(rules.added_number_problems(
+            "They love The Lord of the Rings trilogy.", "그들은 《반지의 제왕》 3부작을 좋아합니다.", "ko"), [])
+        self.assertEqual(rules.added_number_problems(
+            "A couple of years ago.", "2년쯤 전입니다.", "ko"), [])
         # Said values in other shapes are not additions.
         for english, target, locale in (
                 ("Fifty thousand people came.", "5万人来了。", "zh-Hans"),
@@ -196,6 +201,29 @@ class TextReviewRegressions(unittest.TestCase):
         for text in ("一起祷告", "一样的爱", "一切都好", "一直忠心"):
             self.assertEqual(rules.chinese_number_count(text, 1), 0, text)
         self.assertEqual(rules.chinese_number_count("神是一。", 1), 1)
+
+    def test_chinese_collective_two_conveys_the_english_number(self):
+        for target in ("《双塔奇兵》", "双方都同意。", "两者都保留。", "他们俩都来了。"):
+            with self.subTest(target=target):
+                self.assertEqual(rules.number_problems("The Two Towers", target, "zh-Hans"), [])
+
+    def test_chinese_measure_words_preserve_one_in_natural_forms(self):
+        self.assertEqual(rules.number_problems("Show one beautiful picture.", "呈现一幅美丽的图画。", "zh-Hans"), [])
+        self.assertEqual(rules.number_problems("Embrace one without the other.", "接受其中一样，舍弃另一样。", "zh-Hans"), [])
+
+    def test_spanish_title_contractions_and_initials_are_not_english_leaks(self):
+        policy = {"terminology": {"properNames": [{
+            "source": "If I Had More Time", "target": "el pódcast If I Had More Time",
+            "reviewStatus": "human_reviewed"}], "seriesNames": []}}
+        self.assertEqual(rules.name_problems(
+            policy, "If I Had More Time podcast",
+            "del pódcast If I Had More Time"), [])
+        self.assertEqual(rules.untranslated_problems("J.R.R.", "J. R. R.", "es"), [])
+        self.assertEqual(rules.untranslated_problems("Oh no.", "¡Oh, no!", "es"), [])
+
+    def test_spanish_million_and_a_half_is_the_scaled_decimal(self):
+        self.assertEqual(rules.number_problems(
+            "1.5 million dollars", "un millón y medio de dólares", "es"), [])
 
     def test_terminology_needs_the_complete_term(self):
         policy = {"terminology": {"properNames": [{"source": "Anna", "target": "Ana"},

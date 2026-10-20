@@ -1,0 +1,45 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-cuv-t5-dev-merge-focused",
+  "runs": [
+    {
+      "label": "cuv-t5-dev-merge-focused-20261017",
+      "source": "/private/tmp/cuv-t5-package-move-20261017/artifacts/cuv-t5-dev-merge-focused-20261017",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "cuv-t5-dev-merge-focused-20261017",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 260,
+      "truncated": false,
+      "sha256": "d532abec8bfb8042e91320bfee3a7a429f6d4a42e79160f621254ee3e8f05a8b",
+      "redactions": {}
+    },
+    {
+      "run": "cuv-t5-dev-merge-focused-20261017",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 559,
+      "truncated": false,
+      "sha256": "9c69ab1bd491180397b3dcafc03d90140f63600ff83482a6a955138777dc4ab9",
+      "redactions": {}
+    },
+    {
+      "run": "cuv-t5-dev-merge-focused-20261017",
+      "path": "timings.tsv",
+      "kind": "whole",
+      "bytes": 60,
+      "truncated": false,
+      "sha256": "c5ccdadf2381c9ba9d47de81ef4c24f2dc3ff3e5bdf082d9a02bab6c072499a7",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

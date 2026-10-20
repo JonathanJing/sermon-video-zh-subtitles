@@ -23,6 +23,7 @@ from zoneinfo import ZoneInfo
 from ... import path_aliases
 from ...source import backend as _source
 from . import host as _host
+from . import run_status as post_live_run_status
 
 
 def _repo_root():
@@ -30,12 +31,11 @@ def _repo_root():
     return _source.current().core.repo_root
 
 
-# Repository-relative paths, resolved against the checkout at use. The post-live command
-# still runs the scripts/ entries; identities hash the files the legacy paths name today.
+# Repository-relative paths, resolved against the checkout at use. The reading edition and
+# interpretation commands still run scripts/ entries; identities hash the files the legacy
+# paths name today.
 _CHECKOUT_PATHS = {
-    "SERMON_PIPELINE_SCRIPT": "scripts/sermon_pipeline.py",
     "LEGACY_OPENAI_SCRIPT": path_aliases.PRODUCTION + "compute/legacy_openai.py",
-    "MOBILE_PDF_SCRIPT": "scripts/render_mobile_pdf_from_srt.py",
     "READING_EDITION_SCRIPT": "scripts/build_sermon_reading_edition_with_openai.py",
     "SERMON_INTERPRETATION_SCRIPT": "scripts/generate_notes_with_openai.py",
     "REVIEW_PROMPTS_SCRIPT": path_aliases.resolve("scripts/review_prompts.py"),
@@ -48,6 +48,11 @@ _CHECKOUT_PATHS = {
 
 def _checkout_path(name):
     return _repo_root() / _CHECKOUT_PATHS[name]
+
+
+def _package_command(module):
+    """``[python, tools/ops/run.py, module]``: the checkout's entry binds the host first."""
+    return [sys.executable, str(_repo_root() / "tools/ops/run.py"), module]
 
 
 def __getattr__(name):
@@ -100,7 +105,6 @@ def _subprocess_environment():
 
 # scripts/ modules with no batch yet, looked up at every use.
 live_source_monitor = _host.HostModule(lambda: _host.current().unmoved.live_source_monitor())
-post_live_run_status = _host.HostModule(lambda: _host.current().unmoved.post_live_run_status())
 series_terminology = _host.HostModule(lambda: _host.current().unmoved.series_terminology())
 
 
@@ -821,8 +825,7 @@ def build_pipeline_command(
 ) -> list[str]:
     input_path = audio_path or download_dir / "source_audio.m4a"
     command = [
-        sys.executable,
-        str(_checkout_path("SERMON_PIPELINE_SCRIPT")),
+        *_package_command("workflows.dual_pdf.pipeline"),
         "--input",
         str(input_path),
         "--start-time",
@@ -894,8 +897,7 @@ def build_mobile_pdf_command(
 ) -> list[str]:
     sermon_title, speaker = reading_pdf_metadata(args, metadata=metadata, source=source)
     return [
-        sys.executable,
-        str(_checkout_path("MOBILE_PDF_SCRIPT")),
+        *_package_command("workflows.dual_pdf.mobile_pdf"),
         "--input",
         str(pipeline_outdir / "sermon_zh_relative.srt"),
         "--secondary-input",
@@ -961,8 +963,7 @@ def build_reading_pdf_command(
 ) -> list[str]:
     sermon_title, speaker = reading_pdf_metadata(args, metadata=metadata, source=source)
     return [
-        sys.executable,
-        str(_checkout_path("MOBILE_PDF_SCRIPT")),
+        *_package_command("workflows.dual_pdf.mobile_pdf"),
         "--layout",
         "reading",
         "--input",
@@ -1708,7 +1709,7 @@ def run_pdf_and_dubbing_branches(reading_command, interpretation_command, runner
         outputs[flag] = notes_command[index + 1]
         del notes_command[index:index + 2]
     insights = Path(notes_command[notes_command.index("--out-dir") + 1]) / "openai-notes.json"
-    render_command = [sys.executable, str(_repo_root() / "scripts" / "render_sermon_interpretation_pdf.py"),
+    render_command = [*_package_command("workflows.dual_pdf.interpretation_pdf"),
                       "--input", str(insights), "--out", outputs["--pdf-out"], "--qa-out", outputs["--pdf-qa-out"]]
     subprocess_environment = _subprocess_environment
 

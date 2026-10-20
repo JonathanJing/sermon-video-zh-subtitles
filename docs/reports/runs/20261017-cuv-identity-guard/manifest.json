@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-cuv-identity-guard",
+  "runs": [
+    {
+      "label": "cuv-identity-guard-20261017",
+      "source": "~/.codex/worktrees/cuv-preflight-move/sermon-video-zh-subtitles/artifacts/cuv-identity-guard-20261017",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "cuv-identity-guard-20261017",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 448,
+      "truncated": false,
+      "sha256": "84be6e960f0d7039a9db0c3adde3ac957c8aef5f9ce6074e2495493782312346",
+      "redactions": {}
+    },
+    {
+      "run": "cuv-identity-guard-20261017",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 345,
+      "truncated": false,
+      "sha256": "9dd98bb5ee90be63ceaf8cc31acf9b08a83cdf2dae99f975bd9191fa32946515",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

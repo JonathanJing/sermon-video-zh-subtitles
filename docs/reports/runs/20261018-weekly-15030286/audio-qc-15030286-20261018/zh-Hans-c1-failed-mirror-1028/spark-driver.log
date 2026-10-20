@@ -1,0 +1,11 @@
+discover	pass	0.4
+Run report not written ([Errno 30] Read-only file system: '/work/repo-d1314424/artifacts'); export it by hand with scripts/export_run_digest.py
+{
+  "zh-Hans": [
+    "speech job input englishSourcePackage is missing or changed",
+    "speech job input anchorManifest is missing or changed",
+    "speech job input targetLanguageCandidate is missing or changed",
+    "speech job input targetLanguagePolicy is missing or changed",
+    "speech job input textReleaseBasis is missing or changed"
+  ]
+}

@@ -1,0 +1,17 @@
+{
+  "status": "ci_success_review_blocked",
+  "deliveryType": "test",
+  "codePullRequest": 753,
+  "headCommit": "90bea9294ed0b4725a59b61b134192ccc0b9f600",
+  "githubActionsRun": 39063528098,
+  "checks": {
+    "changes": "success",
+    "unittest": "success",
+    "rootShardMatrix": "skipped_by_docs_route"
+  },
+  "reviewFinding": "P1 experiment migration prerequisite remained ambiguous",
+  "followupHead": "fd7cb039d0db7f194cae4db727ef080bc9f095d7",
+  "production": "not_run",
+  "publication": "not_run",
+  "device": "not_run"
+}

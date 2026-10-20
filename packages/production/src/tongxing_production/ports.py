@@ -169,6 +169,7 @@ class Code:
     module_sha256: Callable[[ModuleType], str]
     module_path: Callable[[ModuleType], Path]
     implementation_path: Callable[[str], Path]   # (legacy identity key) -> the file it names today, via path_aliases
+    physical_path: Callable[[str], Path]         # repository-relative path without alias resolution
 
 
 @dataclass(frozen=True)
@@ -389,6 +390,7 @@ class Scripture:
     coverage: Callable[[], ModuleType]         # english_scripture_coverage: CoverageEdition, CoverageError, coverage, ...
     candidate_queue: Callable[[], ModuleType]  # scripture_candidate_queue: BOOKS, SIGNALS
     library_path: Callable[[], Path]           # cuv_scripture.DEFAULT_LIBRARY_PATH
+    provenance_path: Callable[[], Path]        # cuv_scripture.DEFAULT_PROVENANCE_PATH
     coverage_data_path: Callable[[], Path]     # english_scripture_coverage.DATA_PATH
 
 
@@ -398,6 +400,8 @@ class QcRuntime:
     write_report: Callable[..., Any]           # export_run_digest.write_report(run_dirs, label)
     codex_text_transport: Callable[[], ModuleType]   # sermon_codex_transport: TEXT_MODEL; its file hash is adapter identity
     validate_target_candidate: Callable[..., dict]   # (source_package, anchor, candidate, *, require_human_approval=True, ...)
+    implementation_freeze: Callable[[], ModuleType]  # review/ freeze guard for QC drivers
+    audio_waiver_acceptance: Callable[[], ModuleType]  # review/ machine acceptance builder
 
 
 @dataclass(frozen=True)
@@ -407,7 +411,10 @@ class Cloud:
     Replaced by the storage/ adapters once that design moves them; never a credential value."""
     access_secret: Callable[[str], str]        # (resource_name) -> secret text, for the run's own use only
     read_gcs_bytes: Callable[[str], bytes]     # (gs:// uri)
+    read_gcs_text: Callable[[str], str]         # (gs:// uri)
+    download_file_from_gcs: Callable[..., Path]  # (gs:// uri, local destination)
     upload_file_to_gcs: Callable[..., None]    # (local_path, uri)
+    write_gcs_text: Callable[..., None]         # (uri, text)
 
 
 @dataclass(frozen=True)
@@ -416,15 +423,3 @@ class Observability:
     log_event: Callable[..., None]             # (event, **fields)
     stable_hash: Callable[[str], str]
     url_summary: Callable[[Any], Any]          # (url) -> redacted summary or None
-
-
-@dataclass(frozen=True)
-class JobFiles:
-    """Temporary: the job store's private file primitives, until W splits them into storage/."""
-    directory_fd: Callable[..., int]           # (path) -> an O_DIRECTORY descriptor that never follows links
-    sync_directory_ancestry: Callable[..., None]   # (path) persist every containing entry
-    reject_link: Callable[..., None]           # (path, *, directory) refuse a symlinked entry
-    persist: Callable[..., None]               # (path, value) durable atomic JSON write
-    sync_directory: Callable[..., None]        # (path) fsync one directory
-    read: Callable[..., object]                # (path) a regular JSON file, never through a symlink
-    open_lock_file: Callable[..., int]         # (path, directory_fd) the lock descriptor the job store uses

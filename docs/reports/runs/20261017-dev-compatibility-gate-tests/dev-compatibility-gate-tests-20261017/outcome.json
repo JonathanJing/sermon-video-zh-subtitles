@@ -1,0 +1,20 @@
+{
+  "status": "passed_after_environment_retry",
+  "scope": "compatibility gate move: 13 focused unit tests, three CLI entry points, import alias and output byte equality",
+  "initialFailure": "system Python lacked jsonschema while importing the unrelated Stage 0 test fixture; retried with configured repository venv",
+  "unitTests": {
+    "passed": 13,
+    "failed": 0
+  },
+  "cliExitCodes": {
+    "legacy_direct": 0,
+    "legacy_module": 0,
+    "new_direct": 0
+  },
+  "cliOutput": "byte_identical",
+  "production": "not_run",
+  "publication": "not_run",
+  "baseRevisionAtTest": "df945c851153cd699034e722e26d82f356f8b4d4",
+  "committedAs": "57b901a73820999352adbfe80ce5ba58ea8b93e8",
+  "testedTree": "final code bytes tested before commit; no file edits after tests"
+}

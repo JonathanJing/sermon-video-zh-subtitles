@@ -1,0 +1,27 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-pr607-superseded-timeline-ci",
+  "runs": [
+    {
+      "label": "pr607-superseded-ci-39066526994",
+      "source": "~/.codex/worktrees/dual-pdf-timeline/sermon-video-zh-subtitles/artifacts/pr607-superseded-ci-39066526994",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "pr607-superseded-ci-39066526994",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 475,
+      "truncated": false,
+      "sha256": "97c64e0d3afefb4af8aca995d08d25be7a2c8cfa2811b275ad063a5ce257ab0e",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

@@ -1,0 +1,4 @@
+{
+  "scope": "post-G1 es API-only preflight",
+  "note": "Code, dev configuration, new budget plan, fresh output and environment binding passed; Spark/page/drain skipped because this stage only uses API. No model call."
+}

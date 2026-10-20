@@ -1,0 +1,20 @@
+{
+  "schemaVersion": "local-exp-leaf-verification-v1",
+  "status": "passed",
+  "exitCode": 0,
+  "deliveryType": "test",
+  "scope": "mock-only field venue compatibility after current dev merge",
+  "headSha": "1e7a024620645a28946cc3eba01675a80b86b459",
+  "mergedDevSha": "909d1eabcc4ca5b5c70f48c7a0133b787574a215",
+  "nodeTests": {
+    "passed": 15,
+    "failed": 0
+  },
+  "pythonCompile": "passed",
+  "cliMissingOut": "matches pre-move baseline off-CWD",
+  "syntheticTruth": "facade report matches direct report off-CWD; mode 0600",
+  "diffCheck": "passed",
+  "realVenue": "not_run",
+  "spark": "not_run",
+  "paidProviderCalls": 0
+}

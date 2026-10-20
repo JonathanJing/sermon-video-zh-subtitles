@@ -1,0 +1,27 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-pr661-ci-39055682432",
+  "runs": [
+    {
+      "label": "pr661-full-ci-39055682432",
+      "source": "~/.codex/worktrees/l2-review-diagnostics/sermon-video-zh-subtitles/artifacts/pr661-full-ci-39055682432",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "pr661-full-ci-39055682432",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 406,
+      "truncated": false,
+      "sha256": "2ffccbe6e6d3890a8f50a77355d52380cf4c0937963f789aac3e4e22408a9346",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

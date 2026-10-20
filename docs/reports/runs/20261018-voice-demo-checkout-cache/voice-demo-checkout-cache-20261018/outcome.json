@@ -1,0 +1,8 @@
+{
+  "status": "passed",
+  "exitCode": 0,
+  "startedAt": "2026-10-18T03:39:00Z",
+  "endedAt": "2026-10-18T03:40:45Z",
+  "deliveryType": "test",
+  "scope": "cross-checkout loader regression with synthetic fixtures only"
+}

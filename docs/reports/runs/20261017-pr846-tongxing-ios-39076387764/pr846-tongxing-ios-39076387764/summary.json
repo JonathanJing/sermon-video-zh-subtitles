@@ -1,0 +1,34 @@
+{
+  "status": "passed",
+  "runId": 39076387764,
+  "workflow": "Tongxing iOS",
+  "headSha": "d65d369fa1365475516716d68903131e844b0a38",
+  "url": "https://github.com/JonathanJing/sermon-video-zh-subtitles/actions/runs/39076387764",
+  "scope": "Tongxing iOS CI routing on closure-fixed head",
+  "jobs": {
+    "changes": {
+      "conclusion": "success",
+      "startedAt": "2026-10-17T22:46:06Z",
+      "completedAt": "2026-10-17T22:46:15Z"
+    },
+    "native-client": {
+      "conclusion": "success",
+      "startedAt": "2026-10-17T22:46:17Z",
+      "completedAt": "2026-10-17T22:46:20Z"
+    },
+    "contract-validation": {
+      "conclusion": "skipped",
+      "startedAt": "2026-10-17T22:46:16Z",
+      "completedAt": "2026-10-17T22:46:16Z"
+    },
+    "ios-validation": {
+      "conclusion": "skipped",
+      "startedAt": "2026-10-17T22:46:16Z",
+      "completedAt": "2026-10-17T22:46:16Z"
+    }
+  },
+  "limitations": [
+    "ios-validation and contract-validation skipped",
+    "native-client job status does not prove device playback"
+  ]
+}

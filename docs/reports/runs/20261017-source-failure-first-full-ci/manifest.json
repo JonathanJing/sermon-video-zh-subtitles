@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-source-failure-first-full-ci",
+  "runs": [
+    {
+      "label": "source-failure-first-full-ci",
+      "source": "~/.codex/worktrees/source-failure-move/sermon-video-zh-subtitles/artifacts/source-failure-first-full-ci",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "source-failure-first-full-ci",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 113,
+      "truncated": false,
+      "sha256": "825b735a64fbd4e32b77801f0635a0b0416f81323148f0faba08e746e1d12160",
+      "redactions": {}
+    },
+    {
+      "run": "source-failure-first-full-ci",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 400,
+      "truncated": false,
+      "sha256": "794383e8c3d220244b9e2eadeb610df69937d3e3114dc372f5d609cfb9e6e9fb",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

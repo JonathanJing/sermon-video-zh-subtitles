@@ -44,7 +44,10 @@ SCHEMA = 'sermon-canonical-layer2-budget-authorization-v1'
 LOCALE_SCHEMA = 'sermon-canonical-layer2-budget-authorization-v2'
 RUNTIME_SCHEMA = 'sermon-canonical-layer2-budget-authorization-v3'
 RUNTIME_APPROVAL_SCHEMA = 'sermon-canonical-layer2-budget-approval-v2'
-LEDGER_SCOPES = {SCHEMA: 'run', LOCALE_SCHEMA: 'locale', RUNTIME_SCHEMA: None}
+REUSE_SCHEMA = 'sermon-canonical-layer2-budget-authorization-v4'
+REUSE_APPROVAL_SCHEMA = 'sermon-canonical-layer2-budget-approval-v3'
+LEDGER_SCOPES = {SCHEMA: 'run', LOCALE_SCHEMA: 'locale', RUNTIME_SCHEMA: None,
+                 REUSE_SCHEMA: None}
 # A locale shard holds a whole sermon plus repairs: about 4,900 reservations.
 LOCALE_LEDGER_MAX_BYTES = 8 * 1024 * 1024
 # Busy only ever delays admission, settlement or a replayed result; it never
@@ -107,6 +110,24 @@ def validate_runtime_identity(value):
     return value
 
 
+def validate_reuse_budget_roots(value, config, destination_root, scope):
+    require(type(value) is dict and set(value) == set(config.lanes),
+            'invalid_layer2_reuse_budget_roots')
+    result = {}
+    for locale, roots in value.items():
+        require(type(roots) is list and roots and all(type(root) is str for root in roots),
+                'invalid_layer2_reuse_budget_roots')
+        resolved = [Path(root).resolve() for root in roots]
+        require(len(set(resolved)) == len(resolved)
+                and all(Path(raw).is_absolute() and str(path) == raw
+                        for raw, path in zip(roots, resolved)),
+                'invalid_layer2_reuse_budget_roots')
+        destination = destination_root if scope == 'run' else destination_root / locale
+        require(destination.resolve() not in resolved, 'invalid_layer2_reuse_budget_roots')
+        result[locale] = resolved
+    return result
+
+
 def verify_runtime(authorization, key=None):
     frozen = authorization.get('runtimeIdentity')
     if frozen is not None:
@@ -121,12 +142,15 @@ def load_authorization(config, path, code_identity, expected_sha=None):
     value = jobs._read(path)
     base_keys = {'schemaVersion', 'productionRunId', 'configurationSha256', 'codeIdentitySha256',
                  'requestLimits', 'authority', 'approvalReceipt'}
-    extra = ({'ledgerScope', 'runtimeIdentity'} if isinstance(value, dict) and value.get('schemaVersion') == RUNTIME_SCHEMA
+    version = value.get('schemaVersion') if isinstance(value, dict) else None
+    runtime_version = version in (RUNTIME_SCHEMA, REUSE_SCHEMA)
+    extra = ({'ledgerScope', 'runtimeIdentity', 'reuseBudgetRoots'} if version == REUSE_SCHEMA
+             else {'ledgerScope', 'runtimeIdentity'} if version == RUNTIME_SCHEMA
              else set() if isinstance(value, dict) and value.get('schemaVersion') == SCHEMA else {'ledgerScope'})
     require(isinstance(value, dict) and value.get('schemaVersion') in LEDGER_SCOPES
             and set(value) == base_keys | extra,
             'invalid_budget_authorization')
-    runtime = (validate_runtime_identity(value['runtimeIdentity']) if value['schemaVersion'] == RUNTIME_SCHEMA else None)
+    runtime = (validate_runtime_identity(value['runtimeIdentity']) if runtime_version else None)
     scope = value['ledgerScope'] if runtime is not None else LEDGER_SCOPES[value['schemaVersion']]
     require(scope in ('run', 'locale') and (scope == 'run' or value['ledgerScope'] == 'locale'), 'invalid_budget_authorization')
     require(value['productionRunId'] == config.run_id
@@ -145,13 +169,21 @@ def load_authorization(config, path, code_identity, expected_sha=None):
         expected['ledgerScope'] = scope
     if runtime is not None:
         expected['runtimeIdentity'] = runtime
+    reuse_roots = None
+    if version == REUSE_SCHEMA:
+        reuse_roots = validate_reuse_budget_roots(value['reuseBudgetRoots'], config, root, scope)
+        expected['reuseBudgetRoots'] = {locale: [str(path) for path in roots]
+                                        for locale, roots in reuse_roots.items()}
     require(sha(receipt_path) == authority['approvalSha256']
-            and receipt.get('schemaVersion') == (RUNTIME_APPROVAL_SCHEMA if runtime is not None else 'sermon-canonical-layer2-budget-approval-v1')
+            and receipt.get('schemaVersion') == (REUSE_APPROVAL_SCHEMA if version == REUSE_SCHEMA
+                else RUNTIME_APPROVAL_SCHEMA if runtime is not None
+                else 'sermon-canonical-layer2-budget-approval-v1')
             and receipt.get('binding') == expected and receipt.get('humanApproval') is True
             and receipt.get('decision') == 'approved' and receipt.get('operatorEvidence')
             and receipt.get('reviewedBy') and receipt.get('reviewedAt'), 'budget_approval_not_bound')
     return {'path': path, 'sha256': actual_sha, 'value': value, 'root': root, 'limits': selected,
-            'scope': scope, **({'runtimeIdentity': runtime} if runtime is not None else {})}
+            'scope': scope, **({'runtimeIdentity': runtime} if runtime is not None else {}),
+            **({'reuseBudgetRoots': reuse_roots} if reuse_roots is not None else {})}
 
 
 def budget_root(config):
@@ -159,6 +191,9 @@ def budget_root(config):
     base = config.job_root.parent / f'.{config.job_root.name}.layer2-budget'
     if (getattr(config, 'auto_repair', None) or {}).get('backTranslationQc'):
         return base.with_name(base.name + '-qc-' + config.sha256)
+    if getattr(config, 'group_revision', None):
+        # A group revision has its own authorization, like a Gate 4 revision.
+        return base.with_name(base.name + '-revision-' + config.sha256)
     return base
 
 
@@ -196,9 +231,15 @@ class BudgetedCaller:
         require(authorization.get('scope', 'run') == 'run' or policy['targetLocale'] in config.lanes,
                 'budget_locale_not_registered')
         self.root = ledger_root(authorization, policy['targetLocale'])
+        approved_reuse = authorization.get('reuseBudgetRoots', {})
+        store_reuse_roots = (approved_reuse.get(policy['targetLocale'], ())
+            if authorization.get('scope') == 'locale'
+            else tuple(dict.fromkeys(path for locale in sorted(approved_reuse)
+                                     for path in approved_reuse[locale])))
         self.store = budget.BudgetStore(
             self.root, authorization['value']['authority'],
-            max_ledger_bytes=LOCALE_LEDGER_MAX_BYTES if authorization.get('scope') == 'locale' else None)
+            max_ledger_bytes=LOCALE_LEDGER_MAX_BYTES if authorization.get('scope') == 'locale' else None,
+            reuse_roots=store_reuse_roots)
         self.transport = transport
         # Subscription-login Claude CLI transports by role. A translator-only transport serves the
         # historical Opus-translator experiment; both roles exist only for a claude_cli_opus policy.
@@ -211,16 +252,19 @@ class BudgetedCaller:
                 'claude_reviewer_requires_claude_cli_opus_policy')
         self.claude_transport = self.claude_transports.get('translator')
 
+    def remaining_cost_microusd(self):
+        """The authorization's USD cap (micro-USD) not yet reserved or spent in this ledger.
+
+        Unknown outcomes keep their full reservation, as at every admission."""
+        with self.store._locked() as (_, ledger):
+            used = budget._sum(ledger['reservations'].values())
+        return max(0, self.store.authority['globalBounds']['costMicrousd'] - used['costMicrousd'])
+
     def verify_execution(self, key):
         load_authorization(self.config, self.auth['path'], self.auth['value']['codeIdentitySha256'], self.auth['sha256'])
         verify_runtime(self.auth, key)
 
-    def __call__(self, key, payload):
-        self.verify_execution(key)
-        project_headers = _text.current().provider.route.project_headers
-        selected_headers = project_headers(key)
-        load_authorization(self.config, self.auth['path'],
-                           self.auth['value']['codeIdentitySha256'], self.auth['sha256'])
+    def _call_binding(self, payload):
         require_bounded_api_payload = _text.current().compute.admit
         require_bounded_api_payload(payload, self.auth['limits'], surface='canonical_api')
         capped = limits.bounded_payload(payload, self.auth['limits'])
@@ -232,6 +276,209 @@ class BudgetedCaller:
                  and payload['reasoning_effort'] == self.policy[name]['reasoningEffort']]
         require(len(roles) == 1, 'budgeted_model_role_ambiguous')
         role = roles[0]
+        identity = budget.chain_identity({
+            'sourceIdentitySha256': self.source['downstreamInvalidationKey'],
+            'sourcePackageSha256': jobs._digest(self.source), 'anchorSha256': jobs._digest(self.anchor),
+            'policySha256': jobs._digest(self.policy), 'rubricSha256': jobs._digest({'role': role}),
+            'targetLocale': self.policy['targetLocale'],
+            'workUnitId': 'l2.' + self.policy['targetLocale'] + '.call-' + fingerprint})
+        bounds = limits.request_bounds(payload, self.auth['limits'])
+        request = budget._request(identity, 'model.' + fingerprint,
+            'initial_generation' if role == 'translator' else 'review', 'initial', 1,
+            fingerprint, bounds)
+        return fingerprint, role, identity, bounds, request
+
+    @staticmethod
+    def _store_snapshot(root, max_bytes):
+        _, folder, _ = jobs._paths(Path(root).resolve(), budget.STORE_ID)
+        ledger, _ = budget.read_snapshot(folder / 'state.json', max_bytes=max_bytes)
+        version = ledger.get('schemaVersion') if isinstance(ledger, dict) else None
+        expected = {'schemaVersion', 'authority', 'storeSha256', 'reservations'}
+        if version == budget.REUSE_SCHEMA:
+            expected.update(('reuseBudgetRoots', 'migration'))
+        require(isinstance(ledger, dict) and set(ledger) == expected
+                and version in (budget.SCHEMA, budget.REUSE_SCHEMA)
+                and isinstance(ledger.get('authority'), dict)
+                and isinstance(ledger.get('reservations'), dict),
+                'layer2_reuse_ledger_reconciliation_required')
+        store = budget.BudgetStore(root, ledger['authority'], max_ledger_bytes=max_bytes,
+            reuse_roots=ledger.get('reuseBudgetRoots', ()))
+        require(ledger['storeSha256'] == store.store_sha256,
+                'layer2_reuse_ledger_reconciliation_required')
+        if version == budget.REUSE_SCHEMA:
+            budget._migration(ledger['migration'])
+        for rid, row in ledger['reservations'].items():
+            store._validate_row(rid, row, version=version,
+                                reuse_roots=ledger.get('reuseBudgetRoots', ()))
+        return store, folder, ledger
+
+    @classmethod
+    def _direct_paid_provenance(cls, root, expected_request, fingerprint, response,
+                                *, max_bytes):
+        try:
+            store, folder, ledger = cls._store_snapshot(root, max_bytes)
+            rid = store._reservation_id(expected_request)
+            row = ledger['reservations'].get(rid)
+            require(row is not None and row.get('request') == expected_request,
+                    'layer2_reuse_operation_missing')
+            require(row.get('phase') == 'result'
+                    and (row.get('result') or {}).get('executionStatus') != 'outcome_unknown',
+                    'layer2_reuse_provider_outcome_unknown')
+            require('settlement' not in row, 'layer2_reuse_requires_direct_paid_root')
+            result = budget._result(row['result'])
+            require(result['executionStatus'] == 'succeeded'
+                    and result['usage']['requests'] == 1,
+                    'layer2_reuse_requires_direct_paid_root')
+            marker, _ = budget.read_snapshot(folder / (rid + '.result.json'))
+            require(marker == {'reservationId': rid, 'result': result},
+                    'layer2_reuse_response_reconciliation_required')
+            record = jobs._read(Path(root) / 'responses' / (fingerprint + '.json'))
+            require(isinstance(record, dict) and record.get('payloadSha256') == fingerprint
+                    and record.get('reservationId') == rid and record.get('response') == response
+                    and result['receiptSha256'] == jobs._digest(record),
+                    'layer2_reuse_response_reconciliation_required')
+            return {'schemaVersion': budget.REUSE_PROVENANCE_SCHEMA,
+                    'budgetRoot': str(Path(root).resolve()),
+                    'ledgerSchemaVersion': ledger['schemaVersion'],
+                    'storeSha256': ledger['storeSha256'],
+                    'authoritySha256': store.authority_sha256,
+                    'reservationId': rid, 'operationId': expected_request['operationId'],
+                    'inputSha256': fingerprint,
+                    'resultMarkerSha256': jobs._digest(marker),
+                    'responseSha256': jobs._digest(record)}
+        except ValueError:
+            raise
+        except (OSError, KeyError, TypeError, AttributeError) as error:
+            raise ValueError('layer2_reuse_response_reconciliation_required') from error
+
+    def paid_response_provenance(self, key, payload, response):
+        """Return immutable direct-paid evidence for a just-settled exact payload."""
+        self.verify_execution(key)
+        fingerprint, _, _, _, request = self._call_binding(payload)
+        max_bytes = LOCALE_LEDGER_MAX_BYTES if self.auth.get('scope') == 'locale' else None
+
+        def read_current_result():
+            # Other group workers settle into this same mutable locale ledger. Hold
+            # its writer lock while collecting the exact result, marker and response
+            # closure so a legitimate atomic state.json replacement cannot look like
+            # tampering. Prior reuse roots remain lock-free and immutable by contract.
+            with self.store._locked():
+                return self._direct_paid_provenance(
+                    self.root, request, fingerprint, response, max_bytes=max_bytes)
+
+        return self._ledger(read_current_result)
+
+    def validate_recovery_source(self, key, source_root):
+        """Require a terminal immutable direct-paid shard before any recovery call."""
+        self.verify_execution(key)
+        require(self.auth.get('reuseBudgetRoots') is not None,
+                'layer2_reuse_authorization_required')
+        root = Path(source_root).resolve()
+        approved = self.auth['reuseBudgetRoots'][self.policy['targetLocale']]
+        require(root in approved, 'layer2_recovery_budget_root_not_approved')
+        max_bytes = LOCALE_LEDGER_MAX_BYTES if self.auth.get('scope') == 'locale' else None
+        _, _, ledger = self._store_snapshot(root, max_bytes)
+        require(ledger['schemaVersion'] == budget.SCHEMA
+                and bool(ledger['reservations'])
+                and all(row.get('phase') == 'result'
+                        and (row.get('result') or {}).get('executionStatus') == 'succeeded'
+                        and 'settlement' not in row
+                        for row in ledger['reservations'].values()),
+                'layer2_recovery_source_not_terminal_direct_paid')
+
+    def recover_returned_response(self, key, payload, response, source_root):
+        """Bind one returned failed-round response to its direct-paid closure."""
+        self.verify_execution(key)
+        require(self.auth.get('reuseBudgetRoots') is not None,
+                'layer2_reuse_authorization_required')
+        root = Path(source_root).resolve()
+        require(root in self.auth['reuseBudgetRoots'][self.policy['targetLocale']],
+                'layer2_recovery_budget_root_not_approved')
+        fingerprint, _, _, _, request = self._call_binding(payload)
+        return self._direct_paid_provenance(
+            root, request, fingerprint, response,
+            max_bytes=LOCALE_LEDGER_MAX_BYTES if self.auth.get('scope') == 'locale' else None)
+
+    def record_reuse(self, key, payload, response, provenance):
+        """Validate an exact direct-paid hit, recording only cross-root reuse.
+
+        A later repair round can read a success sidecar produced by an earlier
+        round of this same durable job.  Its exact operation is already settled
+        as direct-paid in this store, so validate that immutable closure and
+        return the existing result without rewriting it as a reused row.
+        """
+        self.verify_execution(key)
+        require(isinstance(provenance, dict), 'layer2_reuse_provenance_changed')
+        fingerprint, _, identity, bounds, request = self._call_binding(payload)
+        if provenance.get('budgetRoot') == str(Path(self.root).resolve()):
+            # Unlike approved predecessor roots, this store remains active for
+            # the durable job.  Hold its ordinary budget lock so another group
+            # cannot change the ledger between the state and result reads.
+            def read_current_result():
+                with self.store._locked():
+                    return self._direct_paid_provenance(
+                        self.root, request, fingerprint, response,
+                        max_bytes=LOCALE_LEDGER_MAX_BYTES if self.auth.get('scope') == 'locale' else None)
+
+            selected = self._ledger(read_current_result)
+            require(selected == provenance, 'layer2_reuse_provenance_changed')
+            return {'reservationId': selected['reservationId'], 'created': False,
+                    'executionAllowed': False, 'status': 'succeeded', 'phase': 'result'}
+        require(self.auth.get('reuseBudgetRoots') is not None,
+                'layer2_reuse_authorization_required')
+        selected = None
+        for root in self.auth['reuseBudgetRoots'][self.policy['targetLocale']]:
+            try:
+                found = self._direct_paid_provenance(root, request, fingerprint, response,
+                    max_bytes=LOCALE_LEDGER_MAX_BYTES if self.auth.get('scope') == 'locale' else None)
+            except ValueError as error:
+                if str(error) == 'layer2_reuse_operation_missing':
+                    continue
+                raise
+            if str(root) == provenance.get('budgetRoot'):
+                selected = found
+        require(selected is not None, 'layer2_reuse_operation_missing')
+        require(selected == provenance, 'layer2_reuse_provenance_changed')
+        return self._ledger(lambda: self.store.record_reuse(identity,
+            operation_id=request['operationId'], kind=request['kind'], revision_id='initial',
+            revision_number=1, input_sha256=fingerprint, bounds=bounds,
+            reused_from=selected))
+
+    def _guard_no_paid_reuse_miss(self, request, fingerprint):
+        """A missing lane sidecar cannot turn a known/unknown prior call into a second payment."""
+        if self.auth.get('reuseBudgetRoots') is None:
+            return
+        max_bytes = LOCALE_LEDGER_MAX_BYTES if self.auth.get('scope') == 'locale' else None
+        for root in self.auth['reuseBudgetRoots'][self.policy['targetLocale']]:
+            try:
+                store, _, ledger = self._store_snapshot(root, max_bytes)
+                rid = store._reservation_id(request)
+                row = ledger['reservations'].get(rid)
+                if row is None:
+                    continue
+                require(row.get('request') == request,
+                        'layer2_reuse_response_reconciliation_required')
+                require(row.get('phase') == 'result'
+                        and (row.get('result') or {}).get('executionStatus') != 'outcome_unknown',
+                        'layer2_reuse_provider_outcome_unknown')
+                require('settlement' not in row, 'layer2_reuse_requires_direct_paid_root')
+                record = jobs._read(Path(root) / 'responses' / (fingerprint + '.json'))
+                self._direct_paid_provenance(root, request, fingerprint, record.get('response'),
+                                             max_bytes=max_bytes)
+            except ValueError:
+                raise
+            except (OSError, KeyError, TypeError, AttributeError) as error:
+                raise ValueError('layer2_reuse_response_reconciliation_required') from error
+            raise ValueError('layer2_reuse_success_receipt_required')
+
+    def __call__(self, key, payload):
+        self.verify_execution(key)
+        project_headers = _text.current().provider.route.project_headers
+        selected_headers = project_headers(key)
+        load_authorization(self.config, self.auth['path'],
+                           self.auth['value']['codeIdentitySha256'], self.auth['sha256'])
+        fingerprint, role, identity, bounds, request = self._call_binding(payload)
+        self._guard_no_paid_reuse_miss(request, fingerprint)
         # Configuration errors are not paid unknown outcomes. Validate the
         # selected transport before reserving or marking any budget request.
         if payload['model'] in limits.CLAUDE_MODELS:
@@ -241,13 +488,6 @@ class BudgetedCaller:
                     and payload['reasoning_effort'] == selected_transport.effort, 'claude_transport_required')
         # Separate immutable request chains prevent content revisions from
         # resetting one shared global ledger. Each exact payload is one operation.
-        identity = budget.chain_identity({
-            'sourceIdentitySha256': self.source['downstreamInvalidationKey'],
-            'sourcePackageSha256': jobs._digest(self.source), 'anchorSha256': jobs._digest(self.anchor),
-            'policySha256': jobs._digest(self.policy), 'rubricSha256': jobs._digest({'role': role}),
-            'targetLocale': self.policy['targetLocale'],
-            'workUnitId': 'l2.' + self.policy['targetLocale'] + '.call-' + fingerprint})
-        bounds = limits.request_bounds(payload, self.auth['limits'])
         reservation = self._ledger(lambda: self.store.reserve(identity, operation_id='model.' + fingerprint,
             kind='initial_generation' if role == 'translator' else 'review', revision_id='initial',
             revision_number=1, input_sha256=fingerprint, bounds=bounds))

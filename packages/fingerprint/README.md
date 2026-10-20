@@ -3,7 +3,7 @@
 The spectral-landmark audio fingerprint shared by three real consumers:
 
 - the listening web client (browser worker and offline worker),
-- the production Layer 1 precompute CLI (`bin/build_fingerprint_index.mjs`, run by `scripts/sermon_pipeline.py` and the POC weekly flow),
+- the production Layer 1 precompute CLI (`bin/build_fingerprint_index.mjs`, run by the dual_pdf pipeline (`tools/ops/run.py workflows.dual_pdf.pipeline`) and the POC weekly flow),
 - the iOS golden-fixture generator and the field/venue benchmarks.
 
 It is the `packages/fingerprint/` target of the [repository layout proposal](../../docs/design/repository-layout-proposal.zh.md) §3.1.
@@ -18,7 +18,7 @@ It is the `packages/fingerprint/` target of the [repository layout proposal](../
 
 ## Identity
 
-Python records both files by content hash (`scripts/sermon_pipeline.py` and `scripts/run_post_live_subtitle_generation.py`, keys `scriptSha256` / `algorithmSha256`). The move changed the recorded *paths*; the core's content hash is unchanged, the CLI's changed once because its import line now points at `../src/`. Historical receipts keep their old hashes and are not rewritten.
+Python records both files by content hash (`workflows/dual_pdf/pipeline.py` and `workflows/dual_pdf/post_live.py` in the production package, keys `scriptSha256` / `algorithmSha256`). The move changed the recorded *paths*; the core's content hash is unchanged, the CLI's changed once because its import line now points at `../src/`. Historical receipts keep their old hashes and are not rewritten.
 
 ## Browser copy
 

@@ -1,0 +1,14 @@
+{
+  "command": "/private/tmp/cuv-t5-venv-20261017/bin/python -m unittest tests.test_cuv_incremental_reuse tests.test_cuv_loaded_code_identity tests.test_sermon_cuv_translation tests.test_tongxing_production_package",
+  "modules": [
+    "tests.test_cuv_incremental_reuse",
+    "tests.test_cuv_loaded_code_identity",
+    "tests.test_sermon_cuv_translation",
+    "tests.test_tongxing_production_package"
+  ],
+  "tests": 62,
+  "failures": 0,
+  "errors": 0,
+  "elapsedSeconds": 28.834,
+  "packageResolvedTo": "worktree /private/tmp/cuv-t5-package-move-20261017"
+}

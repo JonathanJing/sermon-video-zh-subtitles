@@ -1,0 +1,29 @@
+{
+  "status": "success",
+  "runId": "39081756881",
+  "workflow": "Tongxing iOS",
+  "trigger": "draft marked ready",
+  "headSha": "56f981f4fb4f441fd875057dab3edbd5d06f1367",
+  "jobs": [
+    {
+      "name": "changes",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "native-client",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "ios-validation",
+      "status": "completed",
+      "conclusion": "skipped"
+    },
+    {
+      "name": "contract-validation",
+      "status": "completed",
+      "conclusion": "skipped"
+    }
+  ]
+}

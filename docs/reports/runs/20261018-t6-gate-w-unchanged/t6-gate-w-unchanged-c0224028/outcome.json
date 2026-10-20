@@ -1,0 +1,9 @@
+{
+  "deliveryType": "test",
+  "status": "passed",
+  "exitCode": 0,
+  "commit": "c0224028f1ae054b73fb86dd5984f5503578617e",
+  "workflow": "T6 gate identity isolation local verification",
+  "publication": "not_run",
+  "realProduction": "not_run"
+}

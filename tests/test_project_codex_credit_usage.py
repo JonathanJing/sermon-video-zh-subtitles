@@ -1,22 +1,33 @@
 import hashlib
 import json
+import subprocess
+import sys
 import tempfile
 from pathlib import Path
 import unittest
+from unittest.mock import patch
 
-from scripts import sermon_accounting as accounting
-from scripts import sermon_model_call_observation as observation
-from scripts import project_codex_credit_usage as projection
+
+from tongxing_production.observability import accounting
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.observability import profile
+from tongxing_production.observability import accounting as accounting_impl
+from tongxing_production.observability import model_call_observation as observation
+from tools.ops import project_codex_credit_usage as projection
 
 
 class CreditProjectionTests(unittest.TestCase):
     def setUp(self):
         temporary = tempfile.TemporaryDirectory(); self.addCleanup(temporary.cleanup)
         self.root = Path(temporary.name); self.source = self.root/'source';self.receipts = self.root/'receipts'
-        with accounting.accounting_session(self.source, 'credit_fixture'):
-            with observation.invocation('gpt-6.1-sol', backend='agent_session', provider='codex',
-                    role='production', usage_source='host_telemetry', timing_scope='agent_session_including_tools') as receipt:
-                receipt['usage'] = dict(input_tokens=100, cached_input_tokens=50, output_tokens=20)
+        identity = accounting.execution_identity()
+        self.modules = {f'scripts/synthetic_{i:04d}.py': f'{i:064x}' for i in range(800)}
+        identity['loadedProjectCodeSha256'] = self.modules
+        with patch.object(accounting_impl, 'execution_identity', return_value=identity):
+            with profile.session(self.source, 'credit_fixture', work_kind='control', evidence_mode='synthetic'):
+                with observation.invocation('gpt-6.1-sol', backend='agent_session', provider='codex',
+                        role='production', usage_source='host_telemetry', timing_scope='agent_session_including_tools') as receipt:
+                    receipt['usage'] = dict(input_tokens=100, cached_input_tokens=50, output_tokens=20)
         ledger = self.source/'events.jsonl'
         rows = [json.loads(line) for line in ledger.read_text().splitlines()]
         for row in rows:
@@ -46,6 +57,34 @@ class CreditProjectionTests(unittest.TestCase):
         self.assertNotIn(self.response['content'], (out/'events.jsonl').read_text())
         self.assertNotIn(self.response['content'], (out/'projection.json').read_text())
         self.assertEqual((out/'events.jsonl').stat().st_mode & 0o777, 0o600)
+        reference = next(row['executionIdentity']['loadedProjectCodeManifestSha256']
+                         for row in (json.loads(line) for line in self.original.splitlines())
+                         if row['event'] == 'workflow_started')
+        self.assertEqual(accounting_impl.load_execution_identity_sidecar(out, reference), self.modules)
+        self.assertEqual((out/'.execution-identities').stat().st_mode & 0o777, 0o700)
+        self.assertEqual((out/'.execution-identities'/(reference+'.json')).stat().st_mode & 0o777, 0o600)
+
+    def test_direct_and_module_cli_write_identical_bound_projection(self):
+        root = Path(__file__).resolve().parents[1]
+        results = []
+        for index, command in enumerate((
+            [sys.executable, '-m', 'tools.ops.project_codex_credit_usage'],
+            [sys.executable, 'tools/ops/project_codex_credit_usage.py'],
+        )):
+            output = self.root / f'derived-{index}'
+            completed = subprocess.run(command + [
+                '--accounting-dir', str(self.source),
+                '--cli-receipts-dir', str(self.receipts),
+                '--out-dir', str(output),
+            ], cwd=root, check=True, capture_output=True, text=True)
+            results.append((completed.stdout, (output/'events.jsonl').read_bytes(),
+                            (output/'projection.json').read_bytes()))
+            manifest = json.loads((output/'projection.json').read_text())
+            self.assertEqual(manifest['sourceLedgerSha256'], hashlib.sha256(self.original).hexdigest())
+            self.assertEqual(manifest['derivedLedgerSha256'], hashlib.sha256((output/'events.jsonl').read_bytes()).hexdigest())
+            self.assertTrue(manifest['originalLedgerUnchanged'])
+        self.assertEqual(results[0], results[1])
+        self.assertEqual((self.source/'events.jsonl').read_bytes(), self.original)
 
     def test_refuses_overwrite_and_identity_or_usage_mismatch(self):
         for field, value in (('requestedModel','gpt-6-sol'), ('usage',dict(input_tokens=999,cached_input_tokens=50,output_tokens=20))):
@@ -61,6 +100,13 @@ class CreditProjectionTests(unittest.TestCase):
         (self.path.parent/'resource-outcome.json').write_text('{"responseSha256":"wrong"}')
         with self.assertRaisesRegex(ValueError, 'outcome_mismatch'):
             projection.project(self.source,self.receipts,self.root/'bad')
+        self.assertFalse((self.root/'bad').exists())
+
+    def test_rejects_invalid_private_sidecar_before_creating_output(self):
+        sidecar = next((self.source/'.execution-identities').glob('*.json'))
+        sidecar.chmod(0o644)
+        with self.assertRaisesRegex(ValueError, 'damaged_source_ledger'):
+            projection.project(self.source, self.receipts, self.root/'bad')
         self.assertFalse((self.root/'bad').exists())
 
     def test_resource_call_identity_comes_from_binding_not_payload_folder(self):

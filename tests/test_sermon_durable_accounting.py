@@ -10,14 +10,15 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-from scripts import sermon_accounting as accounting
-from scripts import sermon_completion as completion
-from scripts import sermon_durable_accounting as durable
-from scripts import sermon_log_contract as contract
-from scripts import sermon_log_outbox as outbox
-from scripts import sermon_log_profile as profile
+from tongxing_production.observability import accounting
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.observability import completion
+from tongxing_production.observability import durable
+from tongxing_production.observability import log_contract as contract
+from tongxing_production.observability import outbox
+from tongxing_production.observability import profile
 from scripts import export_observability_trace as safe_export
-from scripts import export_sermon_trace as trace
+from tongxing_production.observability import trace_export as trace
 from scripts import weekly_pipeline_report as weekly
 from tests.test_accounting_log_contract import fixture
 
@@ -48,8 +49,8 @@ def build(stream, before=None, after='pending'):
 class DurableStreamTests(unittest.TestCase):
     def child(self, directory, source, expected=0):
         root = str(Path(__file__).resolve().parents[1])
-        setup = ('from scripts import sermon_durable_accounting as durable\n'
-            'from scripts import sermon_log_outbox as outbox\n'
+        setup = ('from tongxing_production.observability import durable\n'
+            'from tongxing_production.observability import outbox\n'
             'from tests.test_sermon_durable_accounting import BINDING, send\n'
             'import os, sys\n'
             's=durable.open_stream(sys.argv[1], **BINDING)\n')
@@ -71,6 +72,26 @@ class DurableStreamTests(unittest.TestCase):
             self.assertEqual({r['runId'] for r in rows}, {first['runId']})
             self.assertEqual({r['producerId'] for r in rows}, {first['producerId']})
             self.assertEqual(contract.replay_integrity(rows)['status'], 'consistent')
+
+    def test_v1_binding_reopens_for_replay_but_cannot_create_new_facts(self):
+        with tempfile.TemporaryDirectory() as directory:
+            with patch.object(contract, 'VERSION', contract.LEGACY_VERSION):
+                old = durable.open_stream(directory, **BINDING, create=True)
+                frozen = old.prepare('pending', {'state': 'pending'}, build(old))
+            binding_path = Path(directory, durable.BINDING_NAME)
+            original_binding = binding_path.read_bytes()
+            restored = durable.open_stream(directory, **BINDING)
+            self.assertEqual(restored.binding, old.binding)
+            self.assertEqual(restored.prepare('pending', {'state': 'pending'},
+                                              lambda *args: self.fail('rebuilt')), frozen)
+            self.assertEqual(outbox.replay_pending(directory)['replayedEvents'], 1)
+            self.assertEqual(restored.deliver(frozen), frozen)
+            with self.assertRaisesRegex(ValueError, 'legacy_version_new_write_rejected'):
+                restored.prepare('ready', {}, build(restored, 'pending', 'ready'))
+            self.assertEqual(accounting.read_events(directory)[0], [frozen])
+            self.assertEqual(binding_path.read_bytes(), original_binding)
+            with self.assertRaisesRegex(ValueError, 'scope_conflict'):
+                durable.open_stream(directory, **{**BINDING, 'purpose': 'other'})
 
     def test_preappend_process_exit_recovers_exact_pending_and_next_sequence(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -398,8 +419,8 @@ class ValidationCacheTests(unittest.TestCase):
             with self.assertRaises(contract.ContractError): contract.validate_event(row)
         finally:
             properties['sequence'] = previous
-        with patch.object(contract, 'VERSION', 'future'):
-            with self.assertRaises(contract.ContractError): contract.validate_event(row)
+        with self.assertRaises(contract.ContractError):
+            contract.validate_event({**row, 'contractVersion': 'future'})
         self.assertIs(contract.validate_event(row), row)
 
     def test_large_events_are_validated_without_retained_payload_keys(self):

@@ -1,0 +1,21 @@
+{
+  "schemaVersion": "deepseek-translation-review-ab-call-v1",
+  "stage": "sol-review",
+  "requestedModel": "gpt-6.1-sol",
+  "reasoningEffort": "medium",
+  "requestedServiceTier": "default",
+  "elapsedSeconds": 22.825828,
+  "usage": {
+    "input_tokens": 14048,
+    "cached_input_tokens": 0,
+    "cache_write_input_tokens": 14045,
+    "output_tokens": 1455,
+    "reasoning_output_tokens": 265
+  },
+  "outputTokensPerSecond": 63.7436,
+  "exitCode": 0,
+  "toolCalls": 0,
+  "resultSha256": "1eee81d78ba24fb2e666798e066ca1cb9e469b7b88085ee5c5913a835d05bb3a",
+  "schemaConformant": true,
+  "normalization": null
+}

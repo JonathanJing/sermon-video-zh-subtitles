@@ -11,10 +11,9 @@ import threading
 import uuid
 
 from . import log_contract as contract
-from .backend import JobFiles
+from ..storage import files as jobs  # the job store's file primitives (closure window G1)
 from ..storage.paths import safe_path as _safe_path
 
-jobs = JobFiles()
 
 _lock = threading.Lock()
 _producers = {}
@@ -111,24 +110,33 @@ def _run_profile(root,fd,event):
     jobs._reject_link(bindings,directory=True)
     bindings.mkdir(mode=0o700,exist_ok=True)
     marker=bindings/(hashlib.sha256(event['runId'].encode()).hexdigest()+'.json')
-    binding={'runId':event['runId'],'contractVersion':contract.VERSION}
+    version=event['contractVersion']
+    binding={'runId':event['runId'],'contractVersion':version}
     jobs._reject_link(marker,directory=False)
     if marker.exists():
         if jobs._read(marker)!=binding:raise ValueError('run_contract_version_mismatch')
         return
+    if contract._schema_version(event)!=version:
+        raise ValueError('transitional_version_new_write_rejected')
+    if version != contract.VERSION:
+        raise ValueError('legacy_version_new_write_rejected')
     os.lseek(fd,0,os.SEEK_SET)
     with os.fdopen(os.dup(fd),'rb') as stream:
         for line in stream:
             try: previous=json.loads(line)
             except (ValueError,UnicodeError):continue
-            if isinstance(previous,dict) and previous.get('runId')==event['runId'] and previous.get('contractVersion')!=contract.VERSION:
+            if isinstance(previous,dict) and previous.get('runId')==event['runId'] and previous.get('contractVersion')!=version:
                 raise ValueError('run_contract_version_mismatch')
     jobs._sync_directory(root)
     jobs._persist(marker,binding)
 
 
 def deliver(directory,event):
+    if not isinstance(event, dict) or not contract._readable_version(event.get('contractVersion')):
+        raise ValueError('unsupported_contract_version_for_write')
     contract.validate_event(event)
+    if contract._schema_version(event) != event['contractVersion']:
+        raise ValueError('transitional_version_new_write_rejected')
     event=json.loads(contract.canonical_bytes(event))
     # All durable intent and folder metadata precede the append and return.
     with _ledger(directory) as (root,pending,fd):

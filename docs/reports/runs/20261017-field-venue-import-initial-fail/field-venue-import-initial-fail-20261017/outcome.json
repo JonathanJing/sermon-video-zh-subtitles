@@ -1,0 +1,16 @@
+{
+  "schemaVersion": "local-exp-leaf-verification-v1",
+  "status": "failed",
+  "exitCode": 1,
+  "deliveryType": "test",
+  "scope": "mock-only old import API regression",
+  "nodeTests": {
+    "passed": 14,
+    "failed": 1
+  },
+  "cause": "test fixture passed an unresolved macOS temporary path to checked_file",
+  "resolution": "resolve the synthetic temporary root in the test fixture",
+  "realVenue": "not_run",
+  "spark": "not_run",
+  "paidCalls": 0
+}

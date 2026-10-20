@@ -19,9 +19,9 @@ and venue acceptance remain the responsibility of their existing owners.
 
 Integration contract:
 * The bundled schema's $defs/request and $defs/measurements validate inputs.
-  python scripts/sermon_delivery_intent.py freeze --request request.json
+  python tools/ops/run.py delivery.intent freeze --request request.json
       --weekly-plan existing-plan.json --out new-private-intent.json
-  python scripts/sermon_delivery_intent.py preflight --intent intent.json
+  python tools/ops/run.py delivery.intent preflight --intent intent.json
       --measurements measurements.json --weekly-plan existing-plan.json
       --out new-private-report.json
 * A measurement binds intentSha256 plus canonical_hash(request['source']), locale,

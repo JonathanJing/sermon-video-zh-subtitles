@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-pr846-docker-preflight-fix",
+  "runs": [
+    {
+      "label": "pr846-docker-preflight-fix",
+      "source": "/private/tmp/sermon-ops-unified-preflight-20261017/artifacts/pr846-docker-preflight-fix",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "pr846-docker-preflight-fix",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 142,
+      "truncated": false,
+      "sha256": "f955259a4ca763eee65354aacbd97a7f01afee48c8f32636df8518677e222719",
+      "redactions": {}
+    },
+    {
+      "run": "pr846-docker-preflight-fix",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 726,
+      "truncated": false,
+      "sha256": "9e4a9d6c00b86efd6ad4293aefdd7cfa60575f2cbc0115749b451cc5360f933d",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

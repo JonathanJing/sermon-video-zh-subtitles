@@ -1,0 +1,59 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-d6-dualpdf-ci",
+  "runs": [
+    {
+      "label": "d6-ci-20261017",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/d6-ci-20261017",
+      "skipped": {}
+    },
+    {
+      "label": "dualpdf-status-ci-20261017",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/dualpdf-status-ci-20261017",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "d6-ci-20261017",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 209,
+      "truncated": false,
+      "sha256": "78804518910b86ab3fbcba32c5e5b1ec1605adf332029f37e0a50db0414066ae",
+      "redactions": {}
+    },
+    {
+      "run": "d6-ci-20261017",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 313,
+      "truncated": false,
+      "sha256": "2e5678c2a4f78760e3a23604a68d806dbc3d2fb6c1168bbc4be2863f1fe42184",
+      "redactions": {}
+    },
+    {
+      "run": "dualpdf-status-ci-20261017",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 209,
+      "truncated": false,
+      "sha256": "783b6369dcabbf88291881f6dc6a8be0fdf945ac0c677c31a9ba51a093a0d301",
+      "redactions": {}
+    },
+    {
+      "run": "dualpdf-status-ci-20261017",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 310,
+      "truncated": false,
+      "sha256": "ea59ed4c7259c5fded61d34ddc341decdc6b9bbe1cde8abe75f0983faf147542",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

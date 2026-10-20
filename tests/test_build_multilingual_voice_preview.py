@@ -7,7 +7,7 @@ from pathlib import Path
 import tempfile
 import unittest
 
-from scripts import build_multilingual_voice_preview as preview
+from tools.ops import build_multilingual_voice_preview as preview
 
 
 REPO = Path(__file__).resolve().parents[1]

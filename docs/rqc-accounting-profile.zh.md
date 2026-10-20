@@ -4,7 +4,7 @@
 
 ## Writer 与 reader
 
-`sermon_log_profile.session(..., work_kind=..., evidence_mode=...)` 才启用 `sermon-accounting-log-contract-v1`。默认 `accounting_session` 继续旧 v3；v1/v2/旧 v3 fixtures 保持原有结果。新 profile 在 v3 envelope 上使用闭合 Draft2020-12 schema；未知 profile 不回退为 legacy，坏行保留原字节/hash。64 KiB UTF-8（含换行）、受限标签、显式 null reason，在存储前检查，不截断。
+`sermon_log_profile.session(..., work_kind=..., evidence_mode=...)` 的新写入使用 `sermon-accounting-log-contract-v2`，旧 v1 事件仍按 v1 schema 读取。默认 `accounting_session` 继续旧 v3；旧 v3 fixtures 保持原有结果。新 profile 在 v3 envelope 上使用闭合 Draft2020-12 schema；未知 profile 不回退为 legacy，坏行保留原字节/hash。64 KiB UTF-8（含换行）、受限标签、显式 null reason，在存储前检查，不截断。
 
 新字段包括 producerId/sequence、派生 traceId、workKind/evidenceMode、workUnit/attempt/revision/role、logicalCallId/modelCallId、providerScopeKey/providerResponseId/billingReceiptId、usageScope/semantics/coverage。traceId 是版本化本地 run 映射，不声称跨机器自动 tracing；OTLP 保持已有独立映射。API 请求实际 model 缺失时保留 null，不用 requestedModel 充当 provider 回报。logicalCallId 必须在发送前提供。billingReceiptId 无账单证据时为 null。未知 provider scope 不跨未知账户合并 response。SDK aggregate 与 direct receipt 分列，缺 coverage 不相加。
 

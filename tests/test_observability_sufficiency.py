@@ -7,9 +7,10 @@ import tempfile
 import unittest
 from unittest import mock
 from tongxing_production import path_aliases
-from scripts import sermon_accounting as accounting
-from scripts import sermon_cache_observation as cache
-from scripts import sermon_workflow_evidence as evidence
+from tongxing_production.observability import accounting
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.observability import cache_observation as cache
+from tongxing_production.observability import workflow_evidence as evidence
 from scripts import weekly_pipeline_report as weekly
 from tests import test_weekly_pipeline_report as weekly_tests
 from tests import test_accounting_receipt_conflicts as receipt_tests
@@ -153,7 +154,7 @@ class ObservabilitySufficiencyTests(unittest.TestCase):
 
     def test_cache_logging_failure_does_not_repeat_transport_or_rewrite_outputs(self):
         from tests import test_run_target_language_models as fixtures
-        from scripts import run_target_language_models as runner
+        from tongxing_production.text import models as runner
         t = self.fixture(fixtures.RunTargetLanguageModelsTests); f = t.fixture
         result = runner.run(f.source, f.anchor, f.policy, t.out, 'fixture-key', t.fake_call,
                             plugin_path=f.plugin_path)
@@ -216,7 +217,7 @@ class ObservabilitySufficiencyTests(unittest.TestCase):
             with self.assertRaises(ValueError): local.record('/private/path', 'a'*64, 'b'*64, status='started')
 
     def test_plugin_rejection_has_safe_reason_and_keeps_original_error(self):
-        from scripts import run_target_language_models as runner
+        from tongxing_production.text import models as runner
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             with accounting.accounting_session(root, 'binding-test'):

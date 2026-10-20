@@ -1,0 +1,9 @@
+Selected redacted failure lines from GitHub Actions run 39048452533, test-group (root-1).
+FAIL: test_ambiguous_http_and_transport_failures_stay_unknown_without_retry (test_sermon_strict_layer2.StrictAdapterTests.test_ambiguous_http_and_transport_failures_stay_unknown_without_retry) (error='HTTPError', index=0)
+AssertionError: Expected 'sleep' to not have been called. Called 440889 times.
+FAIL: test_ambiguous_http_and_transport_failures_stay_unknown_without_retry (test_sermon_strict_layer2.StrictAdapterTests.test_ambiguous_http_and_transport_failures_stay_unknown_without_retry) (error='HTTPError', index=1)
+AssertionError: Expected 'sleep' to not have been called. Called 504951 times.
+FAIL: test_ambiguous_http_and_transport_failures_stay_unknown_without_retry (test_sermon_strict_layer2.StrictAdapterTests.test_ambiguous_http_and_transport_failures_stay_unknown_without_retry) (error='HTTPError', index=2)
+AssertionError: Expected 'sleep' to not have been called. Called 44880 times.
+Ran 701 tests in 557.144s
+FAILED (failures=3, skipped=1)

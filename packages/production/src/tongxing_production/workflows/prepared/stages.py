@@ -13,7 +13,7 @@ from types import ModuleType
 STAGE_MODULES = {
     'accounting': 'tongxing_production.orchestration.unified.accounting',
     'app_delivery': 'tongxing_production.delivery.app_workflow',
-    'audio': 'scripts.sermon_unified_audio',
+    'audio': 'tongxing_production.audio.unified_stage',
     'canonical_binding': 'tongxing_production.workflows.prepared.canonical_binding',
     'capabilities': 'tongxing_production.workflows.prepared.capabilities',
     'continuation': 'tongxing_production.workflows.prepared.continuation',
@@ -22,7 +22,7 @@ STAGE_MODULES = {
     'layer2_budget': 'tongxing_production.text.budget',
     'layer2_controller': 'tongxing_production.text.controller',
     'parallel': 'tongxing_production.orchestration.unified.parallel',
-    'reviews': 'scripts.sermon_unified_reviews',
+    'reviews': 'tongxing_production.review.unified_reviews',
     'runtime_identity': 'tongxing_production.compute.runtime_identity',
     'source': 'tongxing_production.source.unified_stage',
     'study': 'tongxing_production.workflows.prepared.study',

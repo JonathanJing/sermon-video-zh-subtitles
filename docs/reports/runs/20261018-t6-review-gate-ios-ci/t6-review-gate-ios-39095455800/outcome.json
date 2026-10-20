@@ -1,0 +1,17 @@
+{
+  "deliveryType": "test",
+  "status": "passed",
+  "exitCode": 0,
+  "headSha": "51f5dfc004ab15426885568a6101e3a222c2e61a",
+  "workflow": "Tongxing iOS",
+  "runId": 39095455800,
+  "workflowConclusion": "success",
+  "jobs": {
+    "changes": "success",
+    "native-client": "success",
+    "ios-validation": "skipped",
+    "contract-validation": "skipped"
+  },
+  "publication": "not_run",
+  "device": "not_run"
+}

@@ -56,23 +56,27 @@ def git(*args) -> str:
 
 
 def check_code(expected_commit, expected_implementation):
-    from scripts import machine_quality_waiver as waiver
+    from scripts import tongxing_host  # noqa: F401  binds the production package ports
+    from tongxing_production.review import waiver
+    from tongxing_production.review import implementation_freeze
     head = git("rev-parse", "HEAD")
     dirty = [line for line in git("status", "--porcelain", "--untracked-files=no").splitlines() if line]
+    frozen = (implementation_freeze.mismatch(expected_implementation)
+              if expected_implementation and re.fullmatch(r"[a-f0-9]{64}", expected_implementation) else None)
     implementation = waiver.implementation_sha256()
     problems = []
     if dirty:
         problems.append(f"{len(dirty)} tracked file(s) modified")
     if not expected_commit or not re.fullmatch(r"[a-f0-9]{40}", expected_commit) or head != expected_commit:
         problems.append(f"HEAD {head[:12]} is not {expected_commit}")
-    if not expected_implementation or implementation != expected_implementation:
+    if not expected_implementation or not re.fullmatch(r"[a-f0-9]{64}", expected_implementation) or frozen is not None:
         problems.append("QC implementation hash differs: existing waivers would not apply")
     return result("code", "fail" if problems else "pass", head=head, qcImplementationSha256=implementation,
                   problems=problems)
 
 
 def check_openai(environment, env_file):
-    command = [sys.executable, str(ROOT / "scripts/run_with_openai_environment.py"), "--environment", environment,
+    command = [sys.executable, str(ROOT / "tools/ops/run_with_openai_environment.py"), "--environment", environment,
                *(["--env-file", str(env_file)] if env_file else []), "--check"]
     done = subprocess.run(command, capture_output=True, text=True, cwd=ROOT)
     # Report the launcher's verdict, never its output: it may name key aliases.
@@ -83,9 +87,10 @@ def check_openai(environment, env_file):
 
 def selected_launcher_identity(environment, env_file):
     """Resolve the real launcher file read-only; retain only non-secret identity."""
-    from scripts import run_with_openai_environment as launcher
-    from scripts.machine_qc_budget_authorization import credential_fingerprint
-    from scripts.sermon_openai_runtime import safe_route
+    from tools.ops import run_with_openai_environment as launcher
+    from scripts import tongxing_host  # noqa: F401  binds the production package ports
+    from tongxing_production.review.qc_budget_authorization import credential_fingerprint
+    from tongxing_production.compute.openai_runtime import safe_route
     selected = launcher.child_environment(Path(env_file) if env_file else ROOT / '.env.openai',
                                           environment, inherited={})
     route = safe_route({'schemaVersion': 'sermon-openai-runtime-route-v1',
@@ -99,7 +104,8 @@ def selected_launcher_identity(environment, env_file):
 
 
 def check_launcher_binding(plan_dir, environment, env_file):
-    from scripts import machine_qc_budget_authorization as auth
+    from scripts import tongxing_host  # noqa: F401  binds the production package ports
+    from tongxing_production.review import qc_budget_authorization as auth
     try:
         planned = json.loads((plan_dir / 'plan.json').read_text())
         stages = [stage for stage in planned['stages'] if stage['stage'].startswith('qc.') or stage['stage'] == 'layer2']
@@ -109,7 +115,9 @@ def check_launcher_binding(plan_dir, environment, env_file):
         qc_count = l2_count = 0
         for stage in stages:
             if stage['stage'] == 'layer2':
-                from scripts import canonical_layer2_budget as l2, canonical_layer2_controller as controller
+                from tongxing_production.text import budget as l2
+                from scripts import tongxing_host  # noqa: F401  binds the production package ports
+                from tongxing_production.text import controller
                 config = controller.load_configuration(Path(stage['execution']))
                 admitted = l2.load_authorization(config, Path(stage['authorization']), controller.code_identity(), stage['authorizationSha256'])
                 if admitted.get('runtimeIdentity') != selected or stage.get('runtimeIdentity') != selected:
@@ -131,7 +139,9 @@ def check_launcher_binding(plan_dir, environment, env_file):
 
 def inspect_source_root(root, *, expected=None, reuse_roots=None, required=False, as_reuse_source=False):
     """Read-only counterpart of durable source admission; never opens/migrates a ledger."""
-    from scripts import sermon_source_budget as source, sermon_workflow_jobs as jobs
+    from scripts import tongxing_host  # noqa: F401  binds the production package ports
+    from tongxing_production.source import budget as source
+    from tongxing_production.orchestration import jobs
     root = Path(root)
     path = root / 'source-budget.json'
     if not path.exists():
@@ -214,21 +224,52 @@ def inspect_source_root(root, *, expected=None, reuse_roots=None, required=False
     return value
 
 
-def inspect_layer2_root(root, authority, *, locale_scope):
-    from scripts import sermon_review_budget as ledger, sermon_workflow_jobs as jobs
-    store=ledger.BudgetStore(root,authority,max_ledger_bytes=8*1024*1024 if locale_scope else None)
-    _,folder,_=jobs._paths(store.root,ledger.STORE_ID)
+def inspect_layer2_root(root, authority, *, locale_scope, reuse_roots=(), as_reuse_source=False):
+    from scripts import tongxing_host  # noqa: F401  binds the production package ports
+    from tongxing_production.review import review_budget as ledger
+    from scripts import tongxing_host  # noqa: F401  binds the production package ports
+    from tongxing_production.orchestration import jobs
+    root = Path(root).resolve()
+    _,folder,_=jobs._paths(root,ledger.STORE_ID)
     path=folder/'state.json'
     if not folder.exists():return
-    value,_=ledger.read_snapshot(path,max_bytes=store.max_ledger_bytes)
-    if (set(value)!={'schemaVersion','authority','storeSha256','reservations'}
-            or value['schemaVersion']!=ledger.SCHEMA or value['authority']!=store.authority
+    max_bytes=8*1024*1024 if locale_scope else None
+    value,_=ledger.read_snapshot(path,max_bytes=max_bytes)
+    version=value.get('schemaVersion') if isinstance(value,dict) else None
+    expected={'schemaVersion','authority','storeSha256','reservations'} | ({'reuseBudgetRoots','migration'} if version==ledger.REUSE_SCHEMA else set())
+    roots=(value.get('reuseBudgetRoots',()) if as_reuse_source else reuse_roots)
+    store=ledger.BudgetStore(root,value.get('authority') if authority is None else authority,
+                             max_ledger_bytes=max_bytes,reuse_roots=roots)
+    if (set(value)!=expected
+            or version not in {ledger.SCHEMA,ledger.REUSE_SCHEMA} or value['authority']!=store.authority
             or value['storeSha256']!=store.store_sha256 or not isinstance(value['reservations'],dict)):
         raise ValueError('Layer 2 budget identity changed')
+    if version==ledger.REUSE_SCHEMA:
+        ledger._migration(value['migration'])
+    if reuse_roots and (version!=ledger.REUSE_SCHEMA or value['reuseBudgetRoots']!=[str(Path(item).resolve()) for item in reuse_roots]):
+        raise ValueError('Layer 2 reuse ledger requires explicit v2 migration')
     for key,row in value['reservations'].items():
-        store._validate_row(key,row)
+        store._validate_row(key,row,version=version,
+                            reuse_roots=value.get('reuseBudgetRoots',()))
         if row['phase']!='result' or row['result']['executionStatus']=='outcome_unknown':
             raise ValueError('Layer 2 budget has unresolved reservations; reconcile before dispatch')
+        marker,_=ledger.read_snapshot(folder/(key+'.result.json'))
+        expected_marker={'reservationId':key,'result':row['result'],
+                         **({'settlement':row['settlement']} if 'settlement' in row else {})}
+        if marker!=expected_marker:
+            raise ValueError('Layer 2 budget result marker changed')
+        if as_reuse_source and 'settlement' in row:
+            raise ValueError('Layer 2 reuse requires a direct paid source root')
+        if as_reuse_source:
+            if row['result']['executionStatus']!='succeeded' or row['result']['usage']['requests']!=1:
+                raise ValueError('Layer 2 reuse requires a successful direct paid source root')
+            fingerprint=row['request']['inputSha256']
+            response=jobs._read(root/'responses'/(fingerprint+'.json'))
+            if (not isinstance(response,dict) or response.get('payloadSha256')!=fingerprint
+                    or response.get('reservationId')!=key
+                    or not isinstance(response.get('response'),dict)
+                    or jobs._digest(response)!=row['result']['receiptSha256']):
+                raise ValueError('Layer 2 direct paid response changed')
 
 
 
@@ -266,9 +307,12 @@ def inspect_layer2_calls(config):
                 raise ValueError(f'Layer 2 {locale} call marker requires reconciliation before dispatch: {marker.name}') from error
 
 def check_budget(plan_dir: Path):
-    from scripts import machine_qc_budget_authorization as qc_auth
+    from scripts import tongxing_host  # noqa: F401  binds the production package ports
+    from tongxing_production.review import qc_budget_authorization as qc_auth
     from scripts import plan_run_budgets as planner
-    from scripts import canonical_layer2_budget as l2_budget, canonical_layer2_controller as controller
+    from tongxing_production.text import budget as l2_budget
+    from scripts import tongxing_host  # noqa: F401  binds the production package ports
+    from tongxing_production.text import controller
     problems = []
     resume_remaining = {}
     try:
@@ -349,12 +393,26 @@ def check_budget(plan_dir: Path):
                     raise ValueError('Layer 2 group sizing changed')
                 checked = l2_budget.load_authorization(config, authorization, controller.code_identity(), stage["authorizationSha256"])
                 if checked.get('runtimeIdentity') is None or stage.get('runtimeIdentity') != checked['runtimeIdentity']:
-                    raise ValueError('Layer 2 runtime binding requires explicit v3 re-plan')
+                    raise ValueError('Layer 2 runtime binding requires an explicit current-schema re-plan')
+                frozen_reuse = ({locale:[str(path) for path in roots]
+                                 for locale,roots in checked.get('reuseBudgetRoots',{}).items()}
+                                if checked.get('reuseBudgetRoots') is not None else None)
+                if stage.get('reuseBudgetRoots') != frozen_reuse:
+                    raise ValueError('Layer 2 reuse roots differ from the signed authorization')
                 inspect_layer2_calls(config)
                 roots=([l2_budget.ledger_root(checked,locale) for locale in config.lanes]
                        if checked['scope']=='locale' else [checked['root']])
                 for root in roots:
-                    inspect_layer2_root(root,checked['value']['authority'],locale_scope=checked['scope']=='locale')
+                    locale = root.name if checked['scope']=='locale' else next(iter(config.lanes))
+                    approved = (checked.get('reuseBudgetRoots', {}).get(locale, ())
+                        if checked['scope']=='locale' else tuple(dict.fromkeys(
+                            item for name in sorted(checked.get('reuseBudgetRoots', {}))
+                            for item in checked['reuseBudgetRoots'][name])))
+                    inspect_layer2_root(root,checked['value']['authority'],locale_scope=checked['scope']=='locale',
+                                        reuse_roots=approved)
+                    for source_root in approved:
+                        inspect_layer2_root(source_root, None, locale_scope=checked['scope']=='locale',
+                                            as_reuse_source=True)
                 cap = checked["value"]["authority"]["globalBounds"]["costMicrousd"]
                 if checked["scope"] == "locale":
                     cap *= len(config.lanes)
@@ -377,7 +435,8 @@ def ssh(command: str, host: str) -> subprocess.CompletedProcess:
 
 def check_spark(host, spark_stages, code_dir):
     if spark_stages:
-        from scripts.spark_exclusive_session import DEFAULT_HOST
+        from scripts import tongxing_host  # noqa: F401  binds the production package ports
+        from tongxing_production.compute.spark_exclusive_session import DEFAULT_HOST
         session_host = os.environ.get('SPARK_EXCLUSIVE_HOST', DEFAULT_HOST)
         if host != session_host:
             return result('spark', 'fail', host=host,
@@ -390,7 +449,8 @@ def check_spark(host, spark_stages, code_dir):
         if not (os.environ.get("SPARK_EXCLUSIVE_SESSION_ID") and os.environ.get("SPARK_EXCLUSIVE_SESSION_OWNER")):
             problems.append("Spark stages need SPARK_EXCLUSIVE_SESSION_ID/OWNER of a begun session")
         else:
-            from scripts.spark_exclusive_session import Client
+            from scripts import tongxing_host  # noqa: F401  binds the production package ports
+            from tongxing_production.compute.spark_exclusive_session import Client
             try:
                 Client.from_environment().require_ready()
                 evidence["session"] = "ready"
@@ -399,8 +459,8 @@ def check_spark(host, spark_stages, code_dir):
     else:
         evidence["session"] = "not_required_api_only"
     if code_dir:
-        from scripts import machine_quality_waiver as waiver
-        files = [str(waiver.implementation_path(path, Path())) for path in waiver.IMPLEMENTATION_FILES]
+        from tongxing_production.review import implementation_freeze
+        files = [str(path) for path in implementation_freeze.closure_files(Path())]
         remote = ssh("cd " + shlex.quote(code_dir) + " && sha256sum " + " ".join(shlex.quote(path) for path in files), host)
         local = {path: sha256(ROOT / path) for path in files}
         observed = dict(reversed(line.split(None, 1)) for line in remote.stdout.splitlines() if line.strip())

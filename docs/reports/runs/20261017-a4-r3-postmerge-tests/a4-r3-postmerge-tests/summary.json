@@ -1,0 +1,11 @@
+{
+  "status": "pass",
+  "testsRun": 71,
+  "failures": 0,
+  "errors": 0,
+  "interruptedOptionalRun": {
+    "status": "interrupted",
+    "exitCode": 130,
+    "reason": "broader waiver suite had no final result and was stopped after about nine minutes; not counted as passed"
+  }
+}

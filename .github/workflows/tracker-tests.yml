@@ -7,9 +7,9 @@ on:
       - 'apps/tracker-web/**'
       - 'tools/ops/tracker-publisher/**'
       - 'packages/tracker-contract/**'
+      - 'packages/production/src/tongxing_production/observability/projections/**'
       - 'infra/firebase/tracker/**'
-      - 'scripts/build_tracker_dag_projection.py'
-      - 'scripts/build_four_layer_tracker_snapshot.py'
+      - 'tools/ops/run.py'
       - '.github/workflows/tracker-tests.yml'
   push:
     branches: [dev]
@@ -17,9 +17,9 @@ on:
       - 'apps/tracker-web/**'
       - 'tools/ops/tracker-publisher/**'
       - 'packages/tracker-contract/**'
+      - 'packages/production/src/tongxing_production/observability/projections/**'
       - 'infra/firebase/tracker/**'
-      - 'scripts/build_tracker_dag_projection.py'
-      - 'scripts/build_four_layer_tracker_snapshot.py'
+      - 'tools/ops/run.py'
       - '.github/workflows/tracker-tests.yml'
 
 permissions:

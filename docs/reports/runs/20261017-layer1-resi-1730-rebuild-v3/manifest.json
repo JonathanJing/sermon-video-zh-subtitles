@@ -1,0 +1,71 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-layer1-resi-1730-rebuild-v3",
+  "runs": [
+    {
+      "label": "output-rebuild-v3",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/weekend-live/layer1-15030286-20261017/output-rebuild-v3",
+      "skipped": {
+        ".json": 133,
+        ".lock": 66
+      }
+    },
+    {
+      "label": ".output-rebuild-v3.judge-budget",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/weekend-live/layer1-15030286-20261017/.output-rebuild-v3.judge-budget",
+      "skipped": {
+        ".lock": 66,
+        ".json": 65
+      }
+    }
+  ],
+  "files": [
+    {
+      "run": "output-rebuild-v3",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 580,
+      "truncated": false,
+      "sha256": "8844119a2042c7f1bf84305b03f7131eb5ab9ff1d1848d8813b725fe52c6f3e9",
+      "redactions": {}
+    },
+    {
+      "run": "output-rebuild-v3",
+      "path": "rebuild-receipt.json",
+      "kind": "whole",
+      "bytes": 720,
+      "truncated": false,
+      "sha256": "5bacd1a73b85fe1bd8bf2b27da80a480304ad8b8c553a9981f0303bf37f677fa",
+      "redactions": {
+        "home_dir": 1
+      }
+    },
+    {
+      "run": "output-rebuild-v3",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 24793,
+      "truncated": false,
+      "sha256": "5da5a4c4a72b2ca675faf57b9226e8b8e576f8bc617fef9f39c0d80a254d1ba9",
+      "redactions": {
+        "private_ip": 1,
+        "home_dir": 10
+      }
+    },
+    {
+      "run": ".output-rebuild-v3.judge-budget",
+      "path": "source-budget.settlement.json",
+      "kind": "budget",
+      "bytes": 62858,
+      "truncated": false,
+      "source": "source-budget.json",
+      "sha256": "eadc441cd54fe2ac681236e4f077d5510d03dddc026b7a051fe41ec394cd5785",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

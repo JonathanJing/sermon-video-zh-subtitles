@@ -6,7 +6,7 @@ import unittest
 
 from jsonschema import Draft202012Validator
 
-from scripts import prepare_sentence_interpretation_shadow as subject
+from tongxing_production.source import sentence_interpretation_shadow as subject
 
 
 def write_segments(path: Path, *, long_without_boundary: bool = False) -> None:

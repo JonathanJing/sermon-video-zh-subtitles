@@ -1,0 +1,74 @@
+{
+  "run": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-x-es-aqc",
+  "stages": {
+    "inputs": {
+      "status": "done",
+      "at": "2026-10-14T23:36:35.341902+00:00",
+      "importedFrom": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-w-es-aqc",
+      "evidence": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-x-es-aqc/reuse-manifest.json"
+    },
+    "layer2-setup": {
+      "status": "done",
+      "at": "2026-10-14T23:36:35.342119+00:00",
+      "importedFrom": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-w-es-aqc",
+      "evidence": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-x-es-aqc/reuse-manifest.json"
+    },
+    "layer2": {
+      "status": "done",
+      "at": "2026-10-14T23:36:35.342126+00:00",
+      "importedFrom": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-w-es-aqc",
+      "evidence": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-x-es-aqc/reuse-manifest.json"
+    },
+    "qc.es": {
+      "status": "done",
+      "at": "2026-10-14T23:36:35.342132+00:00",
+      "history": [
+        {
+          "candidate": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-t/l2/text/es/candidate.json",
+          "out": "out",
+          "status": "requires_repair",
+          "failedGroups": [
+            "translation-0-u313"
+          ],
+          "receipt": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-t/textqc-es/state/qc-receipts/text/es/730076e55f3f64fa4edff03f09fdf0cdd9865a05498c8aaacc7c06a1177ac92a/entry-000001.json",
+          "waiverDir": null
+        },
+        {
+          "candidate": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-t/l2-es-r1/text/es/candidate.json",
+          "out": "out-r1",
+          "status": "requires_repair",
+          "failedGroups": [
+            "translation-0-u293"
+          ],
+          "receipt": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-t/textqc-es/state/qc-receipts/text/es/730076e55f3f64fa4edff03f09fdf0cdd9865a05498c8aaacc7c06a1177ac92a/entry-000002.json",
+          "waiverDir": null
+        },
+        {
+          "candidate": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-x-es-aqc/l2/text/es/candidate.json",
+          "out": "out-r2",
+          "status": "text_waiver_issued",
+          "failedGroups": [],
+          "receipt": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-t/textqc-es/state/qc-receipts/text/es/730076e55f3f64fa4edff03f09fdf0cdd9865a05498c8aaacc7c06a1177ac92a/entry-000003.json",
+          "waiverDir": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-x-es-aqc/textqc-es/out-r2/es"
+        }
+      ],
+      "candidate": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-x-es-aqc/l2/text/es/candidate.json",
+      "waiverDir": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-x-es-aqc/textqc-es/out-r2/es",
+      "importedFrom": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-w-es-aqc",
+      "evidence": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-x-es-aqc/reuse-manifest.json"
+    },
+    "audio.es": {
+      "status": "done",
+      "at": "2026-10-14T23:41:18+00:00",
+      "package": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-v-es-audio/l3/es/audio-package.json",
+      "audioQcOut": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-x-es-aqc/aqc/es/es",
+      "reusedFrom": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-v-es-audio",
+      "packageSha256": "ee396e91fc6d418166f84dde56ad94144454e08d17e8df1167ffd02baa3288d6"
+    }
+  },
+  "stopped": [
+    "layer4-publish exited 1; see ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-x-es-aqc/logs/layer4-publish.log"
+  ],
+  "settledUsd": 14.348171,
+  "claudeListPriceEquivalentUsd": 0.0
+}

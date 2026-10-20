@@ -13,8 +13,9 @@ from scripts import sermon_diagnostic_prefect_flow as flow
 from scripts import sermon_historical_native_seed as native
 from scripts import sermon_diagnostic_attempts as attempts
 from scripts import sermon_diagnostic_preview_worker as worker
-from scripts import sermon_public_snapshot as public
-from scripts import sermon_review_contracts as c
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.storage import snapshot as public
+from tongxing_production.review import contracts as c
 from tests import test_sermon_diagnostic_attempts as attempt_fixtures
 from tests import test_sermon_diagnostic_preview_worker as preview_fixtures
 
@@ -123,7 +124,8 @@ class NativeFreshFreezeTests(unittest.TestCase):
         self.assertNotEqual(flow._inventory({'locales':{}},scoped)[str(self.model_path.resolve())],inventory[str(self.model_path.resolve())])
 
     def test_real_preflight_stage_completes_before_locale_and_enters_dag_dependencies(self):
-        from scripts import sermon_accounting as accounting
+        from scripts import tongxing_host  # noqa: F401  binds the production package ports
+        from tongxing_production.observability import accounting
         session=self.session;session.evidence_mode='synthetic';session._historical_reuse={}
         captured={}
         def prepare(*args,**kwargs):

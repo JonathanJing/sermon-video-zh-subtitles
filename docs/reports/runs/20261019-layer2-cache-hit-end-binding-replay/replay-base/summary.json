@@ -1,0 +1,21 @@
+{
+  "purpose": "Cache-only replay of the canonical Layer 2 worker over source 15030286 zh-Hans: per-group local cost of cache-hit groups",
+  "inputs": {
+    "priorSuccessRoot": "layer2-15030286-20261017/text-zh-c2/zh-Hans/repair-rounds/round-001 (read-only)",
+    "inspection": "layer2-15030286-20261017/inspection-zh-c1.json (read-only)",
+    "executionSchema": "sermon-canonical-layer2-execution-v6",
+    "groupWorkers": 1,
+    "requestLimits": "from plan-zh-c2 budget authorization (read-only)",
+    "providerAccess": "none: no credential, no budget ledger"
+  },
+  "caller": "refuses every provider call; no-op verify_execution and record_reuse",
+  "hitGroups": 24,
+  "medianGroupSeconds": 3.439,
+  "meanGroupSeconds": 3.452,
+  "elapsedSeconds": 85.5,
+  "bindingReloads": 197,
+  "bindingReloadSeconds": 51.14,
+  "verifyCalls": 49,
+  "reuseCalls": 48,
+  "code": "dev e8b197be (before)"
+}

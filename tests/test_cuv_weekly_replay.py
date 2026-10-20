@@ -10,7 +10,7 @@ from pathlib import Path
 import tempfile
 import unittest
 from unittest import mock
-from scripts import sermon_cuv_translation as mod
+from tongxing_production.text import cuv_translation as mod
 
 
 class CompactReplayGates(unittest.TestCase):
@@ -33,6 +33,25 @@ class CompactReplayGates(unittest.TestCase):
                 mod.cached_call(Path(tmp), 'fixture', 'test instruction', {'synthetic': True},
                                 'fixture-identity', offline=True)
             api.assert_not_called()
+
+
+@unittest.skipUnless(os.environ.get('CUV_LEGACY_REPLAY_DIR'), 'external legacy evidence not supplied')
+class LegacyReplayGates(unittest.TestCase):
+    def test_translation_and_timing_revision_replay_without_model_or_writes(self):
+        root = Path(os.environ['CUV_LEGACY_REPLAY_DIR']).resolve()
+        samples = [root / name for name in ('translation-v4', 'translation-timing-v3')]
+        before = {str(path.relative_to(root)): hashlib.sha256(path.read_bytes()).hexdigest()
+                  for sample in samples for path in sample.rglob('*') if path.is_file()}
+        with mock.patch.object(mod, 'chat_json', side_effect=AssertionError('NETWORK FORBIDDEN')) as api, \
+             mock.patch.object(mod, 'save_frozen', side_effect=AssertionError('WRITE FORBIDDEN')) as writes:
+            for sample in samples:
+                with self.subTest(sample=sample.name):
+                    self.assertEqual('passed', mod.validate(sample)['status'])
+            api.assert_not_called()
+            writes.assert_not_called()
+        after = {str(path.relative_to(root)): hashlib.sha256(path.read_bytes()).hexdigest()
+                 for sample in samples for path in sample.rglob('*') if path.is_file()}
+        self.assertEqual(before, after)
 
 
 @unittest.skipUnless(os.environ.get('CUV_WEEKLY_REPLAY_DIR'), 'external weekly evidence not supplied')

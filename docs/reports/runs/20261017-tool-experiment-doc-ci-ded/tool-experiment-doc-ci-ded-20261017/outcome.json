@@ -1,0 +1,16 @@
+{
+  "status": "ci_success_review_pending",
+  "deliveryType": "test",
+  "codePullRequest": 753,
+  "headCommit": "ded73944b715e79b6d53d9e8f25ec10396a4fde5",
+  "githubActionsRun": 39063719861,
+  "checks": {
+    "changes": "success",
+    "unittest": "success",
+    "rootShardMatrix": "skipped_by_docs_route"
+  },
+  "reviewStatusAtReport": "running",
+  "production": "not_run",
+  "publication": "not_run",
+  "device": "not_run"
+}

@@ -1,0 +1,7 @@
+{
+  "schemaVersion": "local-test-summary-v1",
+  "command": ".venv/bin/python -m pytest -q tests/test_four_identity_facades.py tests/test_implementation_freeze.py tests/test_qc_runtime_implementation_closure.py tests/test_screen_transcript_folding.py tests/test_target_audio_rate_identity.py tests/test_tongxing_audio_ports.py tests/test_tongxing_review_ports.py tests/test_run_start_tools.py --tb=short",
+  "result": "83 passed, 202 subtests passed in 3.36s",
+  "note": "Four identities perturb actual facade, target and resolver bytes independently; W also perturbs guard, old W receipt refuses, explicit-root fixture and Spark remote file list use W physical closure.",
+  "scope": "targeted code tests; no model, paid request, calibration, waiver or release"
+}

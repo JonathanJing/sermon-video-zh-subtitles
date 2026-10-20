@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261018-pr588-python-exact-success",
+  "runs": [
+    {
+      "label": "pr588-python-exact-39089696712",
+      "source": "~/.codex/worktrees/g1-a4-audio/sermon-video-zh-subtitles/artifacts/ci-runs/pr588-python-exact-39089696712",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "pr588-python-exact-39089696712",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 278,
+      "truncated": false,
+      "sha256": "9a37148c76000bd0853756c7ab4499ef22450243d45826872b49e94b891e08b7",
+      "redactions": {}
+    },
+    {
+      "run": "pr588-python-exact-39089696712",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 1357,
+      "truncated": false,
+      "sha256": "9e5dc17708400df8dad6cdca9f850367bb3c797c5344df4097e60123e46124a3",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

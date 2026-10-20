@@ -4,8 +4,9 @@ import tempfile
 import unittest
 import wave
 
-from scripts import screen_target_language_audio_units as subject
-from scripts import sermon_sentence_interpretation as identity
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.audio import screening as subject
+from tongxing_production.source import sentence_interpretation as identity
 
 
 class FormalAudioScreenTests(unittest.TestCase):
@@ -135,7 +136,7 @@ class FormalAudioScreenTests(unittest.TestCase):
     def test_receipt_v2_records_the_asr_runtime_behind_every_score(self):
         import json
         from jsonschema import Draft202012Validator
-        from scripts.target_audio_auto_qc import screening_asr_settings
+        from tongxing_production.review.audio_qc import screening_asr_settings
         receipt, _ = self.run_screen([unit["text"] for unit in self.job["units"]])
         self.assertEqual(receipt["schemaVersion"], "sermon-target-language-audio-screening-v2")
         schema = json.loads((Path(__file__).resolve().parents[1] / "schemas"
@@ -158,7 +159,7 @@ class FormalAudioScreenTests(unittest.TestCase):
     def test_v5_settings_reject_changed_dependency_and_legacy_single_file_digest(self):
         import copy
         from unittest.mock import patch
-        from scripts.target_audio_auto_qc import screening_asr_settings
+        from tongxing_production.review.audio_qc import screening_asr_settings
         receipt, _ = self.run_screen([unit["text"] for unit in self.job["units"]])
         self.assertEqual(screening_asr_settings(receipt), receipt['asrSettings'])
         for digest in ('0' * 64, subject.file_sha(Path(subject.__file__))):

@@ -1,0 +1,8 @@
+test_all_banner_copy_and_link_change_without_writing_hardlinked_source (tests.test_patch_firebase_dev_app_banner.DevBannerPatchTests.test_all_banner_copy_and_link_change_without_writing_hardlinked_source) ... ok
+test_old_import_is_package_module (tests.test_patch_firebase_dev_app_banner.DevBannerPatchTests.test_old_import_is_package_module) ... ok
+test_unknown_dry_run_link_rejects_without_changes (tests.test_patch_firebase_dev_app_banner.DevBannerPatchTests.test_unknown_dry_run_link_rejects_without_changes) ... ok
+
+----------------------------------------------------------------------
+Ran 3 tests in 0.008s
+
+OK

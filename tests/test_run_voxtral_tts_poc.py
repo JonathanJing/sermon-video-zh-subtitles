@@ -5,7 +5,7 @@ import unittest
 from pathlib import Path
 
 
-SCRIPT = Path(__file__).resolve().parents[1] / "scripts" / "run_voxtral_tts_poc.py"
+SCRIPT = Path(__file__).resolve().parents[1] / "experiments" / "voxtral-tts-poc" / "run_voxtral_tts_poc.py"
 SPEC = importlib.util.spec_from_file_location("run_voxtral_tts_poc", SCRIPT)
 MOD = importlib.util.module_from_spec(SPEC)
 assert SPEC.loader is not None

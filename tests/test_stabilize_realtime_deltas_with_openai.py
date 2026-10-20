@@ -5,7 +5,7 @@ import unittest
 from pathlib import Path
 
 
-SCRIPT_PATH = Path(__file__).resolve().parents[1] / "scripts" / "stabilize_realtime_deltas_with_openai.py"
+SCRIPT_PATH = Path(__file__).resolve().parents[1] / "tools" / "ops" / "stabilize_realtime_deltas_with_openai.py"
 SPEC = importlib.util.spec_from_file_location("stabilize_realtime_deltas_with_openai", SCRIPT_PATH)
 mod = importlib.util.module_from_spec(SPEC)
 assert SPEC.loader is not None

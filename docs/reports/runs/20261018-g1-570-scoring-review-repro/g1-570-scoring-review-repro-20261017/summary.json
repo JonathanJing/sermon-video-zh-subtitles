@@ -1,0 +1,8 @@
+{
+  "schemaVersion": "test-run-summary-v1",
+  "result": "1 failed; facade __file__ pointed to package and the test used it as repository root",
+  "patchPresentInWorkingTree": false,
+  "repairCommit": null,
+  "paidDispatch": false,
+  "productionRun": false
+}

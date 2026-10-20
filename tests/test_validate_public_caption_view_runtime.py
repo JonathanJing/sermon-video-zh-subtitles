@@ -3,7 +3,7 @@ import unittest
 from pathlib import Path
 
 
-SCRIPT_PATH = Path(__file__).resolve().parents[1] / "scripts" / "validate_public_caption_view_runtime.py"
+SCRIPT_PATH = Path(__file__).resolve().parents[1] / "tools" / "ops" / "validate_public_caption_view_runtime.py"
 SPEC = importlib.util.spec_from_file_location("validate_public_caption_view_runtime", SCRIPT_PATH)
 mod = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(mod)

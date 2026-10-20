@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-dual-pdf-identity-guard-cascade",
+  "runs": [
+    {
+      "label": "dual-pdf-identity-guard-cascade-20261017",
+      "source": "~/.codex/worktrees/dual-pdf-timeline/sermon-video-zh-subtitles/artifacts/dual-pdf-identity-guard-cascade-20261017",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "dual-pdf-identity-guard-cascade-20261017",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 692,
+      "truncated": false,
+      "sha256": "51a38b8a85246a9a23c5dfa9b8043e5d94f0630e91be0b30b0d823278d63de97",
+      "redactions": {}
+    },
+    {
+      "run": "dual-pdf-identity-guard-cascade-20261017",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 430,
+      "truncated": false,
+      "sha256": "e72acfc992620859b6b7b1c266282c1a53b13bc6d4cdb7c52567aa73761932ae",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

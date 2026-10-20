@@ -5,8 +5,11 @@ import sys
 import tempfile
 import unittest
 
-from scripts.export_sermon_trace import export, nanos, span_id, trace_id
-from scripts.sermon_accounting import SCHEMA
+from tongxing_production.observability.trace_export import export, nanos, span_id, trace_id
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.observability.accounting import SCHEMA
+
+ROOT = Path(__file__).resolve().parents[1]
 
 
 class SermonTraceExportTests(unittest.TestCase):
@@ -182,7 +185,7 @@ class SermonTraceExportTests(unittest.TestCase):
         source = self.write()
         original = source.read_bytes()
         out, diagnostics = self.work / "otlp.json", self.work / "diagnostics.json"
-        command = [sys.executable, "-m", "scripts.export_sermon_trace", "--accounting-dir", str(self.work), "--out", str(out), "--diagnostics", str(diagnostics)]
+        command = [sys.executable, str(ROOT / "tools/ops/run.py"), "observability.trace_export", "--accounting-dir", str(self.work), "--out", str(out), "--diagnostics", str(diagnostics)]
         result = subprocess.run(command, capture_output=True, text=True)
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertEqual(source.read_bytes(), original)
@@ -204,8 +207,8 @@ class ReceiptExportTests(unittest.TestCase):
     result = SermonTraceExportTests.result
 
     def test_outbox_postappend_preack_replay_is_exported_once(self):
-        from scripts import sermon_accounting as accounting
-        from scripts import sermon_log_profile as profile
+        from tongxing_production.observability import accounting
+        from tongxing_production.observability import profile
         import copy
         logdir=self.work/'profile-log'
         with profile.session(logdir,'export-replay-test',work_kind='production',evidence_mode='synthetic'):
@@ -213,6 +216,12 @@ class ReceiptExportTests(unittest.TestCase):
                 with accounting.stage('render'):
                     pass
         self.events,_=accounting.read_events(logdir)
+        # This fixture replays the ledger in a second directory. A large loaded
+        # code map is stored beside events.jsonl, so carry its bound sidecar too.
+        sidecars = logdir / '.execution-identities'
+        if sidecars.exists():
+            import shutil
+            shutil.copytree(sidecars, self.work / sidecars.name)
         end=next(row for row in self.events if row['event']=='stage_finished' and row['stage']=='render')
         self.events.append(copy.deepcopy(end))
         _,diag,_=self.result()
@@ -225,7 +234,7 @@ class ReceiptExportTests(unittest.TestCase):
 
     def test_unfinished_attempts_keep_usage_partial_with_or_without_completed_receipts(self):
         import copy
-        from scripts.export_sermon_trace import TOKEN_KEYS
+        from tongxing_production.observability.trace_export import TOKEN_KEYS
         for with_completed in (False, True):
             with self.subTest(with_completed=with_completed):
                 self.events = []
@@ -285,9 +294,9 @@ class ReceiptExportTests(unittest.TestCase):
             return {'status': 'partial', 'diagnostics': [], 'profileEventCount': 2,
                     '_excluded': excluded, '_selected': selected}
 
-        with patch('scripts.export_sermon_trace.read_events', return_value=(self.events, [])), \
-             patch('scripts.export_sermon_trace.profile_integrity', side_effect=replay_with_quarantined_terminal), \
-             patch('scripts.sermon_accounting.profile_integrity', side_effect=replay_with_quarantined_terminal):
+        with patch('tongxing_production.observability.trace_export.read_events', return_value=(self.events, [])), \
+             patch('tongxing_production.observability.trace_export.profile_integrity', side_effect=replay_with_quarantined_terminal), \
+             patch('tongxing_production.observability.accounting.profile_integrity', side_effect=replay_with_quarantined_terminal):
             payload, diagnostics = export(self.work)
         spans = {s['spanId']: s for s in payload['resourceSpans'][0]['scopeSpans'][0]['spans']}
 

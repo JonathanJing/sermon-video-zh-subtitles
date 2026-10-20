@@ -1,0 +1,10 @@
+{
+  "schemaVersion": "test-run-outcome-v1",
+  "kind": "ci",
+  "status": "pass",
+  "exitCode": 0,
+  "startedAt": "2026-10-18T02:18:51Z",
+  "finishedAt": "2026-10-18T02:38:23Z",
+  "headBeforeCommit": "da2f6ffc6961839fda795f9fcaa02b7be2f672df",
+  "runUrl": "https://github.com/JonathanJing/sermon-video-zh-subtitles/actions/runs/39089637635"
+}

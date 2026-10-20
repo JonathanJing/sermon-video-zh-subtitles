@@ -1,0 +1,11 @@
+{
+  "schemaVersion": "sermon-local-test-outcome-v1",
+  "status": "passed",
+  "exitCode": 0,
+  "testsRun": 1,
+  "elapsedSeconds": 0.009,
+  "command": "PYTHONPATH=. .venv/bin/python -m unittest tests.test_run_start_tools.StartCheckTests.test_spark_code_dir_hashes_all_current_package_closure_paths -q",
+  "note": null,
+  "localHeadAtRun": "7fc8677d",
+  "uncommittedTestEditsAtRun": true
+}

@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261018-g1-579-old-ios-before-source-ports",
+  "runs": [
+    {
+      "label": "g1-579-old-ios-before-source-ports-20261018",
+      "source": "~/.codex/worktrees/g1-r3-review/sermon-video-zh-subtitles/artifacts/g1-579-old-ios-before-source-ports-20261018",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "g1-579-old-ios-before-source-ports-20261018",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 349,
+      "truncated": false,
+      "sha256": "344fab9a404cba07d7c643ea34ec40a37ef9e0cd6ebfd288a349e5373fd60568",
+      "redactions": {}
+    },
+    {
+      "run": "g1-579-old-ios-before-source-ports-20261018",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 994,
+      "truncated": false,
+      "sha256": "edfb4b944676310ff6f43385d5fa0100d6ac2b1bb87c481f40a4f969d41b28dd",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

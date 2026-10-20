@@ -6,7 +6,7 @@ import unittest
 from pathlib import Path
 
 
-SCRIPT_PATH = Path(__file__).resolve().parents[1] / "scripts" / "build_no_caption_asr_sample_chain.py"
+SCRIPT_PATH = Path(__file__).resolve().parents[1] / "tools" / "ops" / "build_no_caption_asr_sample_chain.py"
 SPEC = importlib.util.spec_from_file_location("build_no_caption_asr_sample_chain", SCRIPT_PATH)
 mod = importlib.util.module_from_spec(SPEC)
 assert SPEC.loader is not None

@@ -1,0 +1,9 @@
+{
+  "deliveryType": "test",
+  "status": "passed",
+  "exitCode": 0,
+  "commit": "de3684d5",
+  "workflow": "local experiment leaf move verification (decision-api-ab)",
+  "publication": "not_run",
+  "realProduction": "not_run"
+}

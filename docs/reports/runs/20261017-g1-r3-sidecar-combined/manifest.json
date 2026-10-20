@@ -1,0 +1,45 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-g1-r3-sidecar-combined",
+  "runs": [
+    {
+      "label": "g1-r3-sidecar-combined",
+      "source": "~/.codex/worktrees/g1-qc-sidecar-integration/sermon-video-zh-subtitles/artifacts/g1-r3-sidecar-combined",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "g1-r3-sidecar-combined",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 138,
+      "truncated": false,
+      "sha256": "4710c91e5332c6c5bef299c5ecc0afa0d65705a59acbd8b986112971484296c0",
+      "redactions": {}
+    },
+    {
+      "run": "g1-r3-sidecar-combined",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 287,
+      "truncated": false,
+      "sha256": "4f5822f3b25a63a5f2bee120166ef6e58d7ebb0688cbc509ab4efe13751d7ee7",
+      "redactions": {}
+    },
+    {
+      "run": "g1-r3-sidecar-combined",
+      "path": "timings.tsv",
+      "kind": "whole",
+      "bytes": 86,
+      "truncated": false,
+      "sha256": "e5ee1881e4ceac177fdd55093b73b7364b7cdb23f52a693f734b5f4ad5c46eab",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

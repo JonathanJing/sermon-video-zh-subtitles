@@ -1,0 +1,8 @@
+{
+  "schemaVersion": "local-test-outcome-v1",
+  "status": "passed",
+  "exitCode": 0,
+  "startedAt": "2026-10-19T18:17:35+00:00",
+  "endedAt": "2026-10-19T18:19:17+00:00",
+  "scope": "Package command entry tools/ops/run.py, runbook command repoint and C batch plan (PR #1134); new entry tests, package test and affected tests; --help of every changed command through the new entry; facade vs entry --help equality"
+}

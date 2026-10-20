@@ -1,0 +1,41 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-dual-pdf-superseded-ci",
+  "runs": [
+    {
+      "label": "pr594-superseded-ci-39065796332",
+      "source": "~/.codex/worktrees/dual-pdf-timeline/sermon-video-zh-subtitles/artifacts/pr594-superseded-ci-39065796332",
+      "skipped": {}
+    },
+    {
+      "label": "pr607-superseded-ci-39066217578",
+      "source": "~/.codex/worktrees/dual-pdf-timeline/sermon-video-zh-subtitles/artifacts/pr607-superseded-ci-39066217578",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "pr594-superseded-ci-39065796332",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 400,
+      "truncated": false,
+      "sha256": "d8578eecba1f375e3232efda185ce308e414014d0d8273319fc71f53f209a675",
+      "redactions": {}
+    },
+    {
+      "run": "pr607-superseded-ci-39066217578",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 395,
+      "truncated": false,
+      "sha256": "0f0834e898fad4ea713bbce5682b9a6eeac3df3dc2c8673dff56c5b87377e88f",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

@@ -21,8 +21,8 @@ Gateway 仍使用 `127.0.0.1:8766` REST 和 `127.0.0.1:8767` WebSocket。它将�
 模型服务按需启动并保持加载，不随录音结束退出。先停止并保存所有使用它的任务，再从仓库根目录执行：
 
 ```bash
-~/.local/share/uv/tools/mlx-lm/bin/python scripts/serve_milmmt_v41_local.py status
-~/.local/share/uv/tools/mlx-lm/bin/python scripts/serve_milmmt_v41_local.py stop
+~/.local/share/uv/tools/mlx-lm/bin/python experiments/milmmt-v41-local/serve_milmmt_v41_local.py status
+~/.local/share/uv/tools/mlx-lm/bin/python experiments/milmmt-v41-local/serve_milmmt_v41_local.py stop
 ```
 
 `stop` 校验 PID 与实例身份；不会按端口任意杀进程。模型日志和状态保存在 `~/Library/Caches/sermon-video-zh-subtitles/milmmt-v41-local/`；启动入口不设置登录自启。原 POC 停止入口不负责此独立服务。

@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261018-pr582-ios-exact-success",
+  "runs": [
+    {
+      "label": "pr582-ios-exact-39089700736",
+      "source": "~/.codex/worktrees/g1-r4-review/sermon-video-zh-subtitles/artifacts/ci-runs/pr582-ios-exact-39089700736",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "pr582-ios-exact-39089700736",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 278,
+      "truncated": false,
+      "sha256": "5265a9fe528f2d76a5d6e90d5dec596a682f099c41263abb2c585c20ba3da2af",
+      "redactions": {}
+    },
+    {
+      "run": "pr582-ios-exact-39089700736",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 844,
+      "truncated": false,
+      "sha256": "2163a03583dbf6eab668585c84b2b2c9a800f5b78d2fe45319876ba43192987d",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

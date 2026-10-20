@@ -1,0 +1,10 @@
+{
+  "deliveryType": "test",
+  "pullRequest": 625,
+  "headCommit": "7ba483ac3c5ffa8b867ef5a3d79e7f3168082758",
+  "ciRun": "https://github.com/JonathanJing/sermon-video-zh-subtitles/actions/runs/39045419983",
+  "result": "success",
+  "scope": "8 root Python shards and unittest aggregator; native-client skipped",
+  "dependencyState": "#571 old cd6a3e15 base has P1 and is being revised",
+  "productionRun": "not_run"
+}

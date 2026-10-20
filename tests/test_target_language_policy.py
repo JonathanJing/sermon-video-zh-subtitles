@@ -5,7 +5,7 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-from scripts import target_language_policy as subject
+from tongxing_production.text import policy as subject
 
 
 ROOT = Path(__file__).resolve().parents[1]

@@ -15,8 +15,10 @@ LAYER1 = {
     # workflows/compute W3a: the versioned review prompts, moved byte for byte.
     'scripts/review_prompts.py': _SOURCE + 'review_prompts.py',
     'scripts/sermon_sentence_interpretation.py': _SOURCE + 'sentence_interpretation.py',
+    'scripts/prepare_sentence_interpretation_shadow.py': _SOURCE + 'sentence_interpretation_shadow.py',
     'scripts/mfa_alignment.py': _SOURCE + 'mfa_alignment.py',
     'scripts/sermon_source_producer_compatibility.py': _SOURCE + 'producer_compatibility.py',
+    'scripts/sermon_source_failure.py': _SOURCE + 'failure.py',
     'scripts/sermon_mfa_identity.py': _SOURCE + 'mfa_identity.py',
     'scripts/build_english_source_package.py': _SOURCE + 'english_source_package.py',
     'scripts/judge_english_source_for_translation.py': _SOURCE + 'english_source_judge.py',
@@ -32,6 +34,9 @@ LAYER1 = {
 # Layer 2 Text (tongxing_production.text), batches T1-T4.
 _TEXT = PRODUCTION + 'text/'
 LAYER2 = {
+    'scripts/sermon_cuv_translation.py': _TEXT + 'cuv_translation.py',
+    'scripts/cuv_preflight.py': _TEXT + 'cuv_preflight.py',
+    'scripts/sermon_review_diagnostics.py': _TEXT + 'review_diagnostics.py',
     'scripts/target_language_policy.py': _TEXT + 'policy.py',
     'scripts/target_language_policy_preview.py': _TEXT + 'policy_preview.py',
     'scripts/produce_target_language_candidate.py': _TEXT + 'candidate.py',
@@ -58,6 +63,18 @@ LAYER3 = {
     'scripts/dev_audio_test_profile.py': _AUDIO + 'dev_profile.py',
     'scripts/dev_audio_test_receipts.py': _AUDIO + 'dev_receipts.py',
     'scripts/prepare_target_language_speech_job.py': _AUDIO + 'speech_job.py',
+    # L3 A3, the identity generation (closure window G1).
+    'scripts/validate_target_language_audio_unit.py': _AUDIO + 'unit_integrity.py',
+    'scripts/screen_target_language_audio_units.py': _AUDIO + 'screening.py',
+    'scripts/build_target_language_audio_package.py': _AUDIO + 'package.py',
+    'scripts/render_formal_target_language_speech.py': _AUDIO + 'renderer.py',
+    'scripts/compact_formal_target_audio.py': _AUDIO + 'compaction.py',
+    'scripts/target_audio_predicted_schedule.py': _AUDIO + 'predicted_schedule.py',
+    'scripts/target_audio_timing_plan.py': _AUDIO + 'timing_plan.py',
+    # L3 A4, stage entry and operator tools.
+    'scripts/sermon_unified_audio.py': _AUDIO + 'unified_stage.py',
+    'scripts/render_speculative_target_language_speech.py': _AUDIO + 'speculative.py',
+    'scripts/inspect_canonical_audio.py': _AUDIO + 'inspect.py',
 }
 
 # Shared compute (tongxing_production.compute): stage 1, infrastructure I0b and the audio batches.
@@ -68,6 +85,9 @@ COMPUTE = {
     'scripts/sermon_transcription_request.py': PRODUCTION + 'compute/transcription_request.py',
     # Layer 3 A1: the audio CPU limiter, moved byte for byte.
     'scripts/bounded_audio_cpu.py': PRODUCTION + 'compute/bounded_audio_cpu.py',
+    # L3 A3: the Spark TTS workers, moved byte for byte.
+    'scripts/spark_tts_replica_pool.py': PRODUCTION + 'compute/spark_tts_replica_pool.py',
+    'scripts/spark_tts_window_scheduler.py': PRODUCTION + 'compute/spark_tts_window_scheduler.py',
     # workflows/compute C1: byte-identical leaves.
     'scripts/sermon_provider_http.py': PRODUCTION + 'compute/provider_http.py',
     'scripts/sermon_provider_error.py': PRODUCTION + 'compute/sermon_provider_error.py',
@@ -85,6 +105,8 @@ COMPUTE = {
     'scripts/openai_layer2_transport.py': PRODUCTION + 'compute/transports/openai_layer2.py',
     'scripts/codex_layer2_resources.py': PRODUCTION + 'compute/transports/codex_resources.py',
     'scripts/sermon_codex_transport.py': PRODUCTION + 'compute/transports/codex_cli.py',
+    # Closure window G1: the audio QC transport (in W; computes T).
+    'scripts/machine_qc_audio_transports.py': PRODUCTION + 'compute/qc_audio_transports.py',
 }
 
 # Layer 4 Delivery (tongxing_production.delivery), batches D1-D9.
@@ -92,6 +114,8 @@ _DELIVERY = PRODUCTION + 'delivery/'
 _LEGACY = PRODUCTION + 'adapters/legacy/'
 LAYER4 = {
     'scripts/delivery_contract.py': _DELIVERY + 'contract.py',
+    'scripts/build_published_english_reference.py': _DELIVERY + 'published_english_reference.py',
+    'scripts/bind_published_alignment_catalog.py': _DELIVERY + 'published_alignment_catalog.py',
     'scripts/study_artifacts.py': _DELIVERY + 'study_artifacts.py',
     'scripts/release_asset_io.py': _DELIVERY + 'asset_io.py',
     'scripts/sermon_delivery_intent.py': _DELIVERY + 'intent.py',
@@ -132,6 +156,25 @@ REVIEW = {
     'scripts/text_qc_human_acceptance.py': _REVIEW + 'text_qc_acceptance.py',
     # I1 split the legacy review contract module across review and contracts.
     'scripts/sermon_review_contracts.py': _REVIEW + 'contracts.py',
+    # Review R2: the adjudicators outside the waiver closure and the review budget ledger.
+    'scripts/source_meaning_machine_adjudication.py': _REVIEW + 'source_meaning.py',
+    'scripts/scripture_adjudication.py': _REVIEW + 'scripture.py',
+    'scripts/scripture_machine_adjudication.py': _REVIEW + 'scripture_machine.py',
+    'scripts/sermon_review_budget.py': _REVIEW + 'review_budget.py',
+    # R3: waiver and machine QC implementation closure.
+    'scripts/machine_quality_waiver.py': _REVIEW + 'waiver.py',
+    'scripts/machine_quality_release_basis.py': _REVIEW + 'release_basis.py',
+    'scripts/target_text_auto_qc.py': _REVIEW + 'text_qc.py',
+    'scripts/target_audio_auto_qc.py': _REVIEW + 'audio_qc.py',
+    'scripts/auto_qc_seeded_errors.py': _REVIEW + 'seeded_errors.py',
+    'scripts/machine_qc_budget_authorization.py': _REVIEW + 'qc_budget_authorization.py',
+    'scripts/spoken_condensation.py': _REVIEW + 'condensation.py',
+    # R4: review intake and post-QC consumers outside the waiver closure.
+    'scripts/machine_audio_waiver_acceptance.py': _REVIEW + 'audio_waiver_acceptance.py',
+    'scripts/implementation_freeze.py': _REVIEW + 'implementation_freeze.py',
+    'scripts/sermon_unified_reviews.py': _REVIEW + 'unified_reviews.py',
+    'scripts/run_machine_qc_clip_test.py': _REVIEW + 'qc_text_run.py',
+    'scripts/run_machine_qc_audio_test.py': _REVIEW + 'qc_audio_run.py',
 }
 
 # Prepared-workflow composition (tongxing_production.workflows.prepared), batch W2.
@@ -145,9 +188,16 @@ WORKFLOWS = {
     # Orchestration-internal stages (tongxing_production.orchestration.unified), batch W1.
     'scripts/sermon_unified_parallel.py': PRODUCTION + 'orchestration/unified/parallel.py',
     'scripts/sermon_unified_accounting.py': PRODUCTION + 'orchestration/unified/accounting.py',
+    # Closure window G1: the durable job store (its file primitives went to storage/files.py).
+    'scripts/sermon_workflow_jobs.py': PRODUCTION + 'orchestration/jobs.py',
     # dual_pdf (tongxing_production.workflows.dual_pdf), batch W3a.
     'scripts/sermon_pipeline.py': PRODUCTION + 'workflows/dual_pdf/pipeline.py',
     'scripts/run_post_live_subtitle_generation.py': PRODUCTION + 'workflows/dual_pdf/post_live.py',  # W3c
+    'scripts/run_post_live_timeline_job.py': PRODUCTION + 'workflows/dual_pdf/timeline.py',
+    'scripts/post_live_run_status.py': PRODUCTION + 'workflows/dual_pdf/run_status.py',
+    'scripts/render_mobile_pdf_from_srt.py': PRODUCTION + 'workflows/dual_pdf/mobile_pdf.py',
+    'scripts/render_sermon_interpretation_pdf.py': PRODUCTION + 'workflows/dual_pdf/interpretation_pdf.py',
+    'scripts/run_local_post_live_download.py': PRODUCTION + 'workflows/dual_pdf/local_post_live_download.py',
     'scripts/run_codex_local_sermon_production.py': PRODUCTION + 'workflows/dual_pdf/codex_local.py',  # W3c
 }
 
@@ -159,6 +209,7 @@ STORAGE = {         # tongxing_production.storage, batch I2
     'scripts/sermon_public_snapshot.py': PRODUCTION + 'storage/snapshot.py',
 }
 OBSERVABILITY = {   # tongxing_production.observability, batches I3-I4
+    'scripts/weekly_pipeline_report.py': PRODUCTION + 'observability/weekly_projection.py',
     # I3: the accounting ring and its leaves.
     'scripts/sermon_accounting.py': PRODUCTION + 'observability/accounting.py',
     'scripts/sermon_log_contract.py': PRODUCTION + 'observability/log_contract.py',
@@ -187,6 +238,8 @@ SPLIT_MEMBERS = {
     # Infrastructure I2: the path constraint, atomic writes and work locks.
     'scripts/sermon_release_workflow.py': (PRODUCTION + 'storage/paths.py',),
     'scripts/sermon_execution_harness.py': (PRODUCTION + 'storage/files.py', PRODUCTION + 'storage/locks.py'),
+    # Closure window G1: the job store's file primitives.
+    'scripts/sermon_workflow_jobs.py': (PRODUCTION + 'storage/files.py',),
     # workflows/compute C4: the remote-call group extracted from the legacy monolith.
     # W3b: the Layer 1 English group and its file helpers.
     'scripts/sermon_pipeline.py': (PRODUCTION + 'compute/legacy_openai.py', PRODUCTION + 'source/post_live_english.py'),
@@ -200,6 +253,22 @@ PATH_ALIASES = {**COMPUTE, **CONTRACTS, **STORAGE, **OBSERVABILITY, **LAYER1, **
 def resolve(key):
     """Repository-relative path of the file a legacy identity key names today."""
     return PATH_ALIASES.get(key, key)
+
+
+def physical_closure_paths(keys):
+    """Files executed by an identity closure: each key's current file and the resolver.
+
+    Use actual repository paths as keys so a per-file hash always names the
+    bytes it describes. The resolver itself decides which target is reached.
+    A moved key names only its target: the D closure window removed the scripts/
+    facades the closures used to hash next to it.
+    """
+    paths = {PRODUCTION + 'path_aliases.py'}
+    for key in keys:
+        if not key.startswith(('scripts/', 'packages/')):
+            raise ValueError(f'Closure key is not a repository-relative file: {key}')
+        paths.add(resolve(key))
+    return tuple(sorted(paths))
 
 
 def recorded(identity, key):

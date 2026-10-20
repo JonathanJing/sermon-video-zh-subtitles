@@ -1,0 +1,9 @@
+{
+  "schemaVersion": "sermon-test-run-outcome-v1",
+  "status": "production_path_tests_passed_live_canary_pending",
+  "exitCode": 0,
+  "startedAt": "2026-10-17T22:59:04Z",
+  "endedAt": "2026-10-17T23:00:40Z",
+  "deliveryType": "test",
+  "testScope": "261 focused tests and 529 subtests passed on commit 2306728b; canonical execution v6, budget v4/v2 reuse, cacheRequired, direct-paid provenance, backfill, TOCTOU guards, repair-chain carry and migrated package paths covered; merged-dev live canary pending"
+}

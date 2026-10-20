@@ -1,0 +1,8 @@
+{
+  "status": "passed",
+  "exitCode": 0,
+  "deliveryType": "test",
+  "scope": "PR #607 exact-head full Python CI",
+  "codeCommit": "4baa3cf81ddc875e31fe78039af0eaec16284065",
+  "runId": 39069811515
+}

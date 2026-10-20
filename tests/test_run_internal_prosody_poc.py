@@ -3,8 +3,10 @@ from pathlib import Path
 import tempfile
 import unittest
 
-from scripts import run_internal_prosody_poc as subject
-from scripts.run_multilingual_prosody_poc import PLAN_SCHEMA, canonical_sha
+from tests import experiment_modules
+
+subject = experiment_modules.load("experiments/multilingual-prosody-poc/run_internal_prosody_poc.py")
+PLAN_SCHEMA, canonical_sha = subject.PLAN_SCHEMA, subject.canonical_sha
 
 
 class InternalProsodyPocTest(unittest.TestCase):

@@ -1,0 +1,11 @@
+{
+  "schemaVersion": "github-workflow-terminal-v1",
+  "status": "cancelled",
+  "exitCode": null,
+  "startedAt": "2026-10-18T03:30:02Z",
+  "endedAt": "2026-10-18T03:34:18Z",
+  "headRevision": "cb83a7aa138c9ab05171fc99b85e33014c90ec3a",
+  "workflowRunId": "39093830460",
+  "workflow": "Python tests",
+  "url": "https://github.com/JonathanJing/sermon-video-zh-subtitles/actions/runs/39093830460"
+}

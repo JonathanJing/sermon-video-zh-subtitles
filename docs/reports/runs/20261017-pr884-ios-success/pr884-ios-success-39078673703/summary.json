@@ -1,0 +1,33 @@
+{
+  "jobs": [
+    {
+      "name": "changes",
+      "status": "completed",
+      "conclusion": "success",
+      "startedAt": "2026-10-17T23:20:59Z",
+      "completedAt": "2026-10-17T23:21:10Z"
+    },
+    {
+      "name": "native-client",
+      "status": "completed",
+      "conclusion": "success",
+      "startedAt": "2026-10-17T23:26:53Z",
+      "completedAt": "2026-10-17T23:26:57Z"
+    },
+    {
+      "name": "ios-validation",
+      "status": "completed",
+      "conclusion": "skipped",
+      "startedAt": "2026-10-17T23:21:10Z",
+      "completedAt": "2026-10-17T23:21:10Z"
+    },
+    {
+      "name": "contract-validation",
+      "status": "completed",
+      "conclusion": "skipped",
+      "startedAt": "2026-10-17T23:21:10Z",
+      "completedAt": "2026-10-17T23:21:10Z"
+    }
+  ],
+  "scope": "changes and native-client aggregate succeeded; ios-validation and contract-validation skipped by changed-path gate."
+}

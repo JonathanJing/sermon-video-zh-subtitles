@@ -1,0 +1,33 @@
+{
+  "jobs": [
+    {
+      "name": "changes",
+      "status": "completed",
+      "conclusion": "success",
+      "startedAt": "2026-10-17T22:53:15Z",
+      "completedAt": "2026-10-17T22:53:26Z"
+    },
+    {
+      "name": "native-client",
+      "status": "completed",
+      "conclusion": "success",
+      "startedAt": "2026-10-17T22:54:02Z",
+      "completedAt": "2026-10-17T22:54:05Z"
+    },
+    {
+      "name": "contract-validation",
+      "status": "completed",
+      "conclusion": "skipped",
+      "startedAt": "2026-10-17T22:53:26Z",
+      "completedAt": "2026-10-17T22:53:26Z"
+    },
+    {
+      "name": "ios-validation",
+      "status": "completed",
+      "conclusion": "skipped",
+      "startedAt": "2026-10-17T22:53:26Z",
+      "completedAt": "2026-10-17T22:53:26Z"
+    }
+  ],
+  "note": "Superseded by same-head run 39076892055; cancelled workflow is not iOS validation."
+}

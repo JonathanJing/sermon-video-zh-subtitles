@@ -9,7 +9,7 @@ from pathlib import Path
 
 from scripts.cuv_scripture import CuvLibrary
 from scripts.language_review_plugins import zh_hans_weekly_cuv as plugin
-from scripts.produce_target_language_candidate import plugin_implementation_sources
+from tongxing_production.text.candidate import plugin_implementation_sources
 
 
 ROOT = Path(__file__).resolve().parents[1]

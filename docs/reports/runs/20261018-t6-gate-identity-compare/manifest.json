@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261018-t6-gate-identity-compare",
+  "runs": [
+    {
+      "label": "t6-gate-identity-compare-20261018",
+      "source": "/private/tmp/t6-review-gate-leaf-20261017/artifacts/t6-gate-identity-compare-20261018",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "t6-gate-identity-compare-20261018",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 304,
+      "truncated": false,
+      "sha256": "e2af9f005d272697f329681bf2f03b5850211f0f83d7e343d6a505e5a16cc15e",
+      "redactions": {}
+    },
+    {
+      "run": "t6-gate-identity-compare-20261018",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 993,
+      "truncated": false,
+      "sha256": "610a033029a2768cd55fffce68ec72a4ae33955e18563757a4e79614543f06a1",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

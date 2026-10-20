@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261018-g1-579-source-ports-old-python-fail",
+  "runs": [
+    {
+      "label": "g1-579-source-ports-old-python-fail-20261018",
+      "source": "~/.codex/worktrees/g1-r3-review/sermon-video-zh-subtitles/artifacts/g1-579-source-ports-old-python-fail-20261018",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "g1-579-source-ports-old-python-fail-20261018",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 349,
+      "truncated": false,
+      "sha256": "d7b7456bf95c51679c1c931c3a5461ab3ce9d0644277181bb15efcd097acc5e8",
+      "redactions": {}
+    },
+    {
+      "run": "g1-579-source-ports-old-python-fail-20261018",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 1675,
+      "truncated": false,
+      "sha256": "f293eeac19febd1b13d6b0668968e859958c156ef0113719894c9913a0dee353",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

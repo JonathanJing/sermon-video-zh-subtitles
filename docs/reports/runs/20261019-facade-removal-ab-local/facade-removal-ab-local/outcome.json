@@ -1,0 +1,11 @@
+{
+  "schemaVersion": "local-test-outcome-v1",
+  "status": "passed",
+  "exitCode": 0,
+  "startedAt": "2026-10-19T17:20:00+00:00",
+  "endedAt": "2026-10-19T19:55:00+00:00",
+  "scope": "Facade removal batches A+B (PR #1138): 75 scripts/ facades deleted (8 no caller, 67 test-only), tests repointed, docs updated. Full unittest suite in 10 parallel shards on the final tree, pytest-style files, changed tests, test-ID inventory and fixed Appendix A survey on dev@c5f46d44.",
+  "knownPreexistingFailures": [
+    "tests/test_codex_shared_pool_transport.py::test_busy_before_started_is_proven_no_dispatch (also fails on clean dev@c5f46d44)"
+  ]
+}

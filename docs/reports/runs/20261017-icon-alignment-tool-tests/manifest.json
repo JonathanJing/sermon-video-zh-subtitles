@@ -1,0 +1,45 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-icon-alignment-tool-tests",
+  "runs": [
+    {
+      "label": "icon-alignment-tool-tests-20261017",
+      "source": "~/.codex/worktrees/dev-icon-alignment-tool/sermon-video-zh-subtitles/artifacts/icon-alignment-tool-tests-20261017",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "icon-alignment-tool-tests-20261017",
+      "path": "cli-parity.log",
+      "kind": "log",
+      "bytes": 176,
+      "truncated": false,
+      "sha256": "bb661519b6e7b825e7d119f93c4b89854780a21b71fa6ba7d555c6c19103f5c3",
+      "redactions": {}
+    },
+    {
+      "run": "icon-alignment-tool-tests-20261017",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 596,
+      "truncated": false,
+      "sha256": "c6eb756402131adc2b57279d18bb87b6d025851e6ca3f3257c0564537b315215",
+      "redactions": {}
+    },
+    {
+      "run": "icon-alignment-tool-tests-20261017",
+      "path": "test.log",
+      "kind": "log",
+      "bytes": 103,
+      "truncated": false,
+      "sha256": "533131dad8973c589ae697ab1dd346cc55caa134cd1e536cedf26f1b057c0f1f",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

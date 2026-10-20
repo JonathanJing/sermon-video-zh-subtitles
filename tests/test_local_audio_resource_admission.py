@@ -3,7 +3,7 @@ from pathlib import Path
 import tempfile
 import unittest
 from unittest.mock import patch
-from scripts import local_audio_resource_admission as subject
+from tongxing_production.compute import local_audio_admission as subject
 from scripts.sermon_unified import resources, contracts
 
 

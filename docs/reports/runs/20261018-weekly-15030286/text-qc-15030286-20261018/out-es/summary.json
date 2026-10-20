@@ -1,0 +1,55 @@
+{
+  "implementationSha256": "51e2b9cae5804344684d11a52d7872ce84a4a434f4aea17adce9708c467c0d55",
+  "locales": {
+    "es": {
+      "calibrationCoverage": {
+        "applicableGroups": {
+          "added_content": 402,
+          "added_number": 327,
+          "added_reference": 394,
+          "dropped_half": 299,
+          "dropped_name": 11,
+          "english_leak": 325,
+          "placeholder": 402,
+          "semantic_negation": 28,
+          "swapped_name": 0,
+          "swapped_quantity": 8,
+          "wrong_book": 8,
+          "wrong_number": 50,
+          "wrong_ordinal": 398
+        },
+        "notApplicableKinds": [
+          "swapped_name"
+        ],
+        "untestableKinds": []
+      },
+      "candidateJsonSha256": "781e964644deee64fda57b0b08920d0c356c8544d8d1085bdf8272a7fdf5398e",
+      "failedGroups": [
+        "translation-chunk-0000-u024",
+        "translation-chunk-0000-u025",
+        "translation-chunk-0004-u012",
+        "translation-chunk-0007-u015",
+        "translation-chunk-0007-u017",
+        "translation-chunk-0007-u025",
+        "translation-chunk-0008-u007",
+        "translation-chunk-0008-u027",
+        "translation-chunk-0008-u033",
+        "translation-chunk-0009-u002"
+      ],
+      "locale": "es",
+      "paths": {
+        "anchor": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/weekend-live/text-qc-15030286-20261018/run-es/anchor.json",
+        "candidate": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/weekend-live/text-qc-15030286-20261018/run-es/es/candidate.json",
+        "policy": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/weekend-live/text-qc-15030286-20261018/run-es/policies/es-policy-frozen-15030286-v4.json",
+        "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/weekend-live/text-qc-15030286-20261018/run-es/source.json"
+      },
+      "problems": [],
+      "reason": "text QC failed; repair the failed groups in a new candidate revision",
+      "status": "requires_repair",
+      "textQc": "requires_repair",
+      "textQcReceipt": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/weekend-live/text-qc-15030286-20261018/state-es/qc-receipts/text/es/521a2ee3c089f6ff7515d1c0e8ececa18abccb939fcc029d47308ae930179563/entry-000001.json"
+    }
+  },
+  "runDir": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/weekend-live/text-qc-15030286-20261018/run-es",
+  "textBackend": "api"
+}

@@ -1,0 +1,4 @@
+timeline-map	pass	0
+route-probe	pass	0
+plan-layer2	pass	0
+check-layer2	fail(1)	1

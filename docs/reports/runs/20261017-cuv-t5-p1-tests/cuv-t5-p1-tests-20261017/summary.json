@@ -1,0 +1,19 @@
+{
+  "scope": "CUV POC code closure identity v3",
+  "commands": [
+    "PYTHONPATH=packages/production/src:. <repo-venv-python> -m unittest tests.test_cuv_incremental_reuse -v",
+    "PYTHONPATH=packages/production/src:. <repo-venv-python> -m unittest tests.test_sermon_cuv_translation tests.test_cuv_timing_review_repair tests.test_cuv_weekly_replay tests.test_cuv_incremental_reuse -q"
+  ],
+  "results": [
+    {
+      "tests": 6,
+      "passed": 6
+    },
+    {
+      "tests": 66,
+      "skipped": 4,
+      "exitCode": 0
+    }
+  ],
+  "limits": "Synthetic provider and temporary POC bytes; no paid requests or production artifact mutation"
+}

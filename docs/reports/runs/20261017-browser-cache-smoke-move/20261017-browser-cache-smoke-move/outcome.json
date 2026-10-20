@@ -1,0 +1,40 @@
+{
+  "status": "success",
+  "exitCode": 0,
+  "deliveryType": "test",
+  "source": "local synthetic Chrome cache smoke",
+  "headCommitSha": "949bdfe2d34b82d57900d2e65e328cddc8a7fffd",
+  "baseAtBaseline": "e006f1943c6a2ec5ce2fe50bdff2b4e7a1a3f212",
+  "runs": [
+    {
+      "label": "browser-cache-smoke-baseline",
+      "status": "pass"
+    },
+    {
+      "label": "browser-cache-smoke-new",
+      "status": "pass"
+    },
+    {
+      "label": "browser-cache-smoke-old",
+      "status": "pass"
+    }
+  ],
+  "reportCanonicalSha256": "fc1abc66b234eb4e032111afc1bb78aa6cd871d1f693943cdde3c37bc7c61686",
+  "result": {
+    "status": "pass",
+    "coldReady": true,
+    "warmNewWorkerReady": true,
+    "corruptOfflineRejected": true,
+    "cachedShaVerified": true,
+    "cacheEntriesAfterCorruption": 0,
+    "microphoneRequested": false,
+    "scope": "real_chrome_cache_storage_index_route_unavailable_not_whole_app_offline",
+    "indexRouteRequests": 2,
+    "browserVersion": "Google Chrome 155.0.8059.80",
+    "workerSha256": "fabe4dd5381771a10573c3eab6d2761febef80c9a489813710bde88e4f4c2c15"
+  },
+  "externalCwdForMovedPaths": true,
+  "moduleImportIdentity": "same object",
+  "postMergeRelevantAssetDiff": "none",
+  "recordedAt": "2026-10-17T19:11:27.470640+00:00"
+}

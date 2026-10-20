@@ -1,0 +1,7 @@
+{
+  "scope": "PR 1036 exact-head Python CI after removing unused path alias",
+  "sourceUrl": "https://github.com/JonathanJing/sermon-video-zh-subtitles/actions/runs/39096320227",
+  "result": "Eight root test shards and aggregate unittest successful; native/shared client contracts skipped by routing.",
+  "reviews": "Code and security reviews completed with no findings on c0224028.",
+  "limits": "Code/test evidence only; no real Layer 2 production, old experiment recovery, paid QC, Spark, publication, or device acceptance."
+}

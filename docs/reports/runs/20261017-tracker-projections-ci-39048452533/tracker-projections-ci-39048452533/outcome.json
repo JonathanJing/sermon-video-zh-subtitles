@@ -1,0 +1,12 @@
+{
+  "status": "failed",
+  "deliveryType": "test",
+  "result": "Manual full Python workflow failed: root-1 had 3 strict Layer 2 mock assertion failures; seven other root shards succeeded; unittest aggregate failed",
+  "exitCode": 1,
+  "startedAt": "2026-10-17T16:13:14Z",
+  "finishedAt": "2026-10-17T16:33:15Z",
+  "commit": "bed0d841e4bd53ba3ccc21bed8f1ca6303426363",
+  "runId": 39048452533,
+  "runUrl": "https://github.com/JonathanJing/sermon-video-zh-subtitles/actions/runs/39048452533",
+  "productionRun": false
+}

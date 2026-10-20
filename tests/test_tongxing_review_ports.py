@@ -7,33 +7,37 @@ binding them imports no waiver-closure file.
 """
 import builtins
 import dataclasses
+from pathlib import Path
 import subprocess
 import sys
 import unittest
 from unittest.mock import patch
 
 from scripts import tongxing_host as host
-from scripts import build_english_source_package as english_package
+from tongxing_production.source import english_source_package as english_package
 from scripts import cuv_scripture, english_scripture_coverage, scripture_candidate_queue, scripture_editions
-from scripts import english_source_judge_cache as judge_cache
-from scripts import export_run_digest, sermon_codex_transport, sermon_transcription_request
-from scripts import layer2_human_ruling as human_ruling
-from scripts import machine_qc_audio_transports as audio_transports
-from scripts import machine_quality_waiver as waiver
+from tongxing_production.source import english_source_judge_cache as judge_cache
+from tools.development import export_run_digest
+from tongxing_production.compute.transports import codex_cli as sermon_codex_transport
+from tongxing_production.compute import transcription_request as sermon_transcription_request
+from tongxing_production.text import human_ruling
+from tongxing_production.compute import qc_audio_transports as audio_transports
+from tongxing_production.review import waiver
 from scripts import prepare_target_language_speech_job as handoff
-from scripts import produce_target_language_candidate as candidate
-from scripts import production_spark_admission, spark_exclusive_session
-from scripts import render_formal_target_language_speech as renderer
-from scripts import run_sentence_interpretation_models as interpretation_models
-from scripts import screen_target_language_audio_units as screening
-from scripts import scripture_machine_adjudication as scripture_machine
+from tongxing_production.text import candidate
+from tongxing_production.compute import spark_admission as production_spark_admission
+from tongxing_production.compute import spark_exclusive_session
+from tongxing_production.audio import renderer
+from tongxing_production.source import sentence_interpretation_models as interpretation_models
+from tongxing_production.audio import screening
+from tongxing_production.review import scripture_machine
 from scripts import sermon_production_supervisor as supervisor
-from scripts import sermon_sentence_interpretation as interpretation
-from scripts import sermon_source_budget as source_budget
-from scripts import sermon_source_text_review as text_review
+from tongxing_production.source import sentence_interpretation as interpretation
+from tongxing_production.source import budget as source_budget
+from tongxing_production.source import text_review
 from scripts import study_artifacts
-from scripts import target_audio_predicted_schedule as predicted
-from scripts import target_language_policy as policy
+from tongxing_production.audio import predicted_schedule as predicted
+from tongxing_production.text import policy
 from tongxing_production import ports
 from tongxing_production.delivery import backend as delivery
 from tongxing_production.review import backend as review
@@ -76,6 +80,19 @@ class ReviewPortsTests(unittest.TestCase):
         for name in scripture_machine.GENERATOR_MODULES:
             with self.subTest(name=name):
                 self.assertTrue(code.implementation_path('scripts/' + name).is_file())
+
+    def test_review_proxy_and_backend_bytes_invalidate_waiver_identity(self):
+        keys = ('packages/production/src/tongxing_production/review/unmoved.py',
+                'packages/production/src/tongxing_production/review/backend.py')
+        baseline = waiver.implementation_sha256()
+        original = Path.read_bytes
+        for key in keys:
+            with self.subTest(key=key):
+                target = host.ROOT / key
+                with patch.object(Path, 'read_bytes',
+                                  lambda path: original(path) + b'\n# changed binding\n'
+                                  if path == target else original(path)):
+                    self.assertNotEqual(waiver.implementation_sha256(), baseline)
 
     def test_audio_rules_reach_layer_3(self):
         audio = review.current().audio
@@ -149,7 +166,8 @@ class ReviewPortsTests(unittest.TestCase):
                              (library.coverage, english_scripture_coverage),
                              (library.candidate_queue, scripture_candidate_queue)):
             self.assertIs(port(), module)
-        generator_data = scripture_machine._generator_paths()[-2:]
+        # (label, path) pairs since R2; the data files are the last two.
+        generator_data = [path for _, path in scripture_machine._generator_paths()[-2:]]
         self.assertEqual([library.coverage_data_path(), library.library_path()], generator_data)
 
     def test_qc_runtime_and_transports_reach_compute_and_observability(self):
@@ -188,14 +206,15 @@ class ReviewPortsTests(unittest.TestCase):
         # The host still loads what the moved producers imported at load time
         # (tongxing_host.EAGER_PRODUCER_IMPORTS), which reaches part of the waiver
         # closure as before; the review binding must not load anything more.
-        lazy = ('target_audio_predicted_schedule', 'render_formal_target_language_speech',
-                'machine_qc_audio_transports', 'layer2_human_ruling', 'english_source_judge_cache',
+        lazy = ('layer2_human_ruling', 'english_source_judge_cache',
                 'run_sentence_interpretation_models', 'sermon_production_supervisor', 'cuv_scripture',
                 'scripture_editions', 'english_scripture_coverage', 'scripture_candidate_queue', 'export_run_digest',
                 'sermon_codex_transport', 'spark_exclusive_session')
         code = ("import sys; from scripts import tongxing_host; "
                 f"print([m for m in {lazy!r} if 'scripts.' + m in sys.modules]"
-                " + [m for m in ('tongxing_production.compute.spark_exclusive_session',) if m in sys.modules])")
+                " + [m for m in ('tongxing_production.compute.spark_exclusive_session',"
+                " 'tongxing_production.audio.predicted_schedule', 'tongxing_production.audio.renderer',"
+                " 'tongxing_production.compute.qc_audio_transports') if m in sys.modules])")
         result = subprocess.run([sys.executable, '-c', code], cwd=host.ROOT, capture_output=True, text=True, timeout=60)
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertEqual(result.stdout.strip(), '[]')

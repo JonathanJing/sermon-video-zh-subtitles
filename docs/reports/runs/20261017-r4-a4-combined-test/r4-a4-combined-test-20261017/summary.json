@@ -1,0 +1,9 @@
+{
+  "scope": "Combined A4 and R4 migration after branch merge",
+  "results": {
+    "focusedUnittest": "74 tests passed in 41.955 seconds",
+    "gitDiffCheck": "pass"
+  },
+  "baseline": "A4 ef346c0f; R4 efb4a2a0",
+  "note": "Focused package and facade tests only. No paid production, waiver signing, release, or device test."
+}

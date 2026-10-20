@@ -1,0 +1,5 @@
+{
+  "status": "failed",
+  "exitCode": 1,
+  "scope": "local targeted pytest after merging PR 571"
+}

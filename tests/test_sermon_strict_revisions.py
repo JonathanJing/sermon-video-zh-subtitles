@@ -4,9 +4,10 @@ import json
 import unittest
 from unittest.mock import patch
 from scripts import sermon_strict_layer2 as s
-from scripts import sermon_review_contracts as c
-from scripts import sermon_repair_planning as planning
-from scripts import sermon_accounting as accounting
+from tongxing_production.review import contracts as c
+from tongxing_production.orchestration.supervisor import repair_planning as planning
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.observability import accounting
 from tests import test_sermon_strict_layer2 as fixtures
 
 

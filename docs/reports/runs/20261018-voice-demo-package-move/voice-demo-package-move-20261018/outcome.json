@@ -1,0 +1,8 @@
+{
+  "status": "passed",
+  "exitCode": 0,
+  "startedAt": "2026-10-18T03:34:20Z",
+  "endedAt": "2026-10-18T03:34:30Z",
+  "deliveryType": "test",
+  "scope": "synthetic voice-demo packager move; no real media, model, network or Spark"
+}

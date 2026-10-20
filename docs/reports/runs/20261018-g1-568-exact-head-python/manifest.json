@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261018-g1-568-exact-head-python",
+  "runs": [
+    {
+      "label": "pr568-exact-head-python-20261017",
+      "source": "~/.codex/worktrees/g1-qc-cascade/sermon-video-zh-subtitles/artifacts/pr568-exact-head-python-20261017",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "pr568-exact-head-python-20261017",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 343,
+      "truncated": false,
+      "sha256": "6b23c6b5e88f301fb4bc9711c2d5adbd4d0802b5302c101b18f550b83396239b",
+      "redactions": {}
+    },
+    {
+      "run": "pr568-exact-head-python-20261017",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 1456,
+      "truncated": false,
+      "sha256": "c4ec3c3618cb7afb44d1f71093e52991988d0d89da00382b57a515ae5d6d7f83",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

@@ -4,6 +4,10 @@
 
 状态：**盘点，只读，不授权迁移**。基线：`dev@3dd5583d`（提交日期 2026-10-15）。本文对 `scripts/` 下每一个**非门面** `.py` 文件给出：行数、被谁导入、最后一次有意义的改动，以及它在提案 §2/§4 里的目标位置。已有设计决定的目标原样沿用；没有设计覆盖的，给出建议归属并标明“未排批次”或“未设计”。不移动文件，不改代码、合同、CI 或 backlog；表中的归属是迁移前的规划输入，不是已批准的移动清单。
 
+**当前计数（2026-10-19，`dev@06d65999`）：**按 §1 口径（附录 A 脚本，门面 = 含 `sys.modules[__name__] = _implementation`）重算，`scripts/` 现有 **319** 个非门面 `.py`、93,448 行，另有 **186** 个门面。按本文 §4 的分类：L2 10/3,703、L3 1/110、CMP 4/619、WF 6/3,020、ORC 12/4,294、OBS 12/3,205、STO 2/631、LIVE 16/9,475、CLI 1/222、OPS 50/16,959、DEV 12/3,891、EXP 75/20,691、OEX 63/14,461、STAY 31/6,052、DEL 18/5,732（文件/行）；L1、L4、LEG、REV、CON 已无剩余。另有 6 个文件（383 行）在 2026-10-15 快照之后新增、§4 没有行：`language_review_plugins/` 下 `15030286` 周的 4 个插件（按决定 1 归 STAY）、`sermon_identity_sidecars.py`（ORC）、`tracker_projection_host.py`（Tracker 投影宿主绑定，STAY）。§1 的正则不认 `scripts/field_venue_independent_truth.py` 这类按路径加载的兼容入口（#1019），它和 `scripts/sermon_unified/__init__.py` 宿主门面一样仍计入非门面。计数时 tools 与实验叶子正由两个并行会话迁出，此后的合并会继续减少 OPS/DEV/EXP；以合并后的 `dev` 重跑附录 A 为准。§4 各表与附录 A 的 `--check` 仍对 2026-10-15 基线，不就地改写。
+
+**实施读法更新（2026-10-17，`dev@92f82a6b`）：**本文以下 468 个非门面文件及各分类/批次数字只属于上述 2026-10-15 快照，**不是当前剩余工作量**。此后 [S5 sentence shadow #805](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/805)、[T5 CUV #832](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/832)、[W3 dual PDF pipeline #554](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/554) 及 [G1 六批实现](../reports/20261017-g1-implementation-generation.zh.md) 已进入 `dev`，这些旧 `scripts/` 路径现在是兼容门面而非表中所列的原实现。严格 L2 尚有 11 个非门面实现；是否可动取决于活跃实验/生产的逐文件冻结闭包证明，不能由本快照的文件名或扇入数推断。排新批次先重取当前 `dev` 的文件、调用方、路径身份与运行状态；历史表格保留供对照，不就地重算成未经复核的当前总数。
+
 ## 0 结论
 
 - `scripts/` 现有 **468** 个非门面 `.py` 文件、**144,353** 行（另有 31 个 `sys.modules[__name__] = _implementation` 门面已排除）。行数含 `scripts/experiments/` 与全部工具、实验和 POC 脚本，不是“生产库”的行数。
@@ -761,7 +765,7 @@
 
 - 仓库内**没有** LaunchAgent plist。`git grep -il "launchagent\|launchctl\|launchd" -- . ":!docs/reports"` 只命中 Tracker 远程审核桥设计文档（`docs/tracker-remote-review-bridge.zh.md`，计划中的 LaunchAgent 领取器）、`tools/ops/tracker-publisher/README.md`、`apps/tracker-web/README.zh.md`、`docs/backlog.zh.md` 和 `config/agent-trials/risk-actions.json`；没有任何 `scripts/` 文件被 LaunchAgent 定义直接引用。
 - `Makefile` 只有 iOS 预览目标，不引用 `scripts/*.py`。
-- 唯一从非 `scripts/` 的工具子进程调用 `scripts/` 的已知入口：`tools/ops/tracker-publisher/publish.mjs` 执行 `scripts/build_four_layer_tracker_snapshot.py`（提案 §3.2 要求搬动该构建器时同批保留这个调用）。
+- 唯一从非 `scripts/` 的工具子进程调用 `scripts/` 的已知入口：`tools/ops/tracker-publisher/publish.mjs` 执行 `scripts/build_four_layer_tracker_snapshot.py`（提案 §3.2 要求搬动该构建器时同批保留这个调用）。门面退出 C2 批起改为执行 `tools/ops/run.py observability.projections.four_layer_tracker_snapshot`。
 
 ### 5.5 runbook / 文档引用与非 `.py` 文件
 
@@ -991,7 +995,7 @@ Spark 容器与 E2E 驱动按路径启动的命令（`clip_e2e_spark.py`、`run_
 | orchestration 本体（durable jobs、supervisor、子进程守卫等） | 13 / 4,337 | 需要一份 orchestration 设计；`sermon_workflow_jobs` 的状态机拆分已在 G1，其余没有设计 |
 | live/（实时会话与离线备援运行时） | 16 / 9,475 | 需要 live/ 设计；skill 引用的命令路径必须保持 |
 | 严格 L2 门禁链（`sermon_strict_*`、`sermon_review_gate` 等） | 12 / 4,207 | 复核设计 §6 第 9 项明确“另行设计”；它们依赖 contracts/review 的 I1 拆分 |
-| tools/ops、tools/development、experiments 的搬迁清单 | 161 / 45,246 | 需要一份“工具与实验搬迁”短设计：入口命名、门面策略、测试发现根、`frozen_code()`/CI 清单；无身份绑定，可并行于 G1 |
+| tools/ops、tools/development、experiments 的搬迁清单 | 161 / 45,246 | [工具与实验迁移执行清单](tools-and-experiments-migration.zh.md)列出入口、门面、身份和 CI 核对；无身份绑定的叶子可并行于 G1 |
 | `OEX`：Prefect/Temporal/诊断 DAG/Agents API | 63 / 14,420 | 等两条实验线结论（提案 §7） |
 | dual_pdf 读本/复核/PDF 链 | 12 / 6,402 | W3 只覆盖两个入口与 `sermon_pipeline`；其余 dual_pdf 文件需补进 W3 或另批 |
 | 其余零散（L1 shadow、CUV、`segment_target_language_utterances`、compute 零散、OBS 零散、CLI） | 17 / 4,583 | 逐个并入相邻批次；见 §4 各节“未排期” |

@@ -1,0 +1,29 @@
+============================= test session starts ==============================
+platform darwin -- Python 3.13.16, pytest-9.1.1, pluggy-1.6.0 -- ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.claude/worktrees/scripts-r3-3df8c4/.venv/bin/python
+rootdir: ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.claude/worktrees/scripts-r3-3df8c4
+plugins: anyio-4.14.2
+collecting ... collected 13 items
+
+tests/test_tongxing_review_ports.py::ReviewPortsTests::test_audio_rules_reach_layer_3
+tests/test_tongxing_review_ports.py::ReviewPortsTests::test_audio_rules_reach_layer_3 PASSED [  7%]
+tests/test_tongxing_review_ports.py::ReviewPortsTests::test_building_the_review_records_imports_nothing PASSED [ 15%]
+tests/test_tongxing_review_ports.py::ReviewPortsTests::test_compute_session_ports_reach_spark_admission
+tests/test_tongxing_review_ports.py::ReviewPortsTests::test_compute_session_ports_reach_spark_admission PASSED [ 23%]
+tests/test_tongxing_review_ports.py::ReviewPortsTests::test_host_binds_a_complete_backend_sharing_records_with_the_stages PASSED [ 30%]
+tests/test_tongxing_review_ports.py::ReviewPortsTests::test_host_load_does_not_import_the_closure_files_review_reaches_lazily PASSED [ 38%]
+tests/test_tongxing_review_ports.py::ReviewPortsTests::test_implementation_path_reads_every_closure_key_where_the_waiver_reads_it
+tests/test_tongxing_review_ports.py::ReviewPortsTests::test_implementation_path_reads_every_closure_key_where_the_waiver_reads_it PASSED [ 46%]
+tests/test_tongxing_review_ports.py::ReviewPortsTests::test_qc_runtime_and_transports_reach_compute_and_observability
+tests/test_tongxing_review_ports.py::ReviewPortsTests::test_qc_runtime_and_transports_reach_compute_and_observability PASSED [ 53%]
+tests/test_tongxing_review_ports.py::ReviewPortsTests::test_review_proxy_and_backend_bytes_invalidate_waiver_identity
+tests/test_tongxing_review_ports.py::ReviewPortsTests::test_review_proxy_and_backend_bytes_invalidate_waiver_identity PASSED [ 61%]
+tests/test_tongxing_review_ports.py::ReviewPortsTests::test_scripture_library_is_the_one_the_generator_hashes PASSED [ 69%]
+tests/test_tongxing_review_ports.py::ReviewPortsTests::test_source_evidence_reaches_layer_1
+tests/test_tongxing_review_ports.py::ReviewPortsTests::test_source_evidence_reaches_layer_1 PASSED [ 76%]
+tests/test_tongxing_review_ports.py::ReviewPortsTests::test_stage_gates_reach_the_stage_checks
+tests/test_tongxing_review_ports.py::ReviewPortsTests::test_stage_gates_reach_the_stage_checks PASSED [ 84%]
+tests/test_tongxing_review_ports.py::ReviewPortsTests::test_text_rules_reach_layer_2
+tests/test_tongxing_review_ports.py::ReviewPortsTests::test_text_rules_reach_layer_2 PASSED [ 92%]
+tests/test_tongxing_review_ports.py::ReviewPortsTests::test_unbound_layer_fails_clearly PASSED [100%]
+
+==================== 13 passed, 66 subtests passed in 5.83s ====================

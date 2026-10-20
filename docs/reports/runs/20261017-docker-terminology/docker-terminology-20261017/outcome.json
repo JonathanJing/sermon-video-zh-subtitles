@@ -1,0 +1,9 @@
+{
+  "schemaVersion": "sermon-test-run-outcome-v1",
+  "status": "passed_with_environment_limit",
+  "exitCode": 0,
+  "startedAt": "2026-10-17T14:55:32.179231Z",
+  "endedAt": "2026-10-17T14:55:32.179231Z",
+  "deliveryType": "test",
+  "testScope": "static Docker context rules, public source scan, no-credential host context and pinned catalog smoke; Docker unavailable"
+}

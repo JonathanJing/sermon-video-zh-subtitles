@@ -1,0 +1,14 @@
+{
+  "schemaVersion": "local-test-outcome-v1",
+  "status": "passed_with_one_load_flake",
+  "exitCode": 1,
+  "startedAt": "2026-10-19T17:05:00+00:00",
+  "endedAt": "2026-10-19T19:50:00+00:00",
+  "scope": "D closure window (PR #1140): 23 must-stay scripts/ facades deleted; closures hash implementation files; preview binding rebound; worker argv and Spark container commands moved to tools/ops/run.py; Layer 1 producer compatibility v11; runbooks repointed. Full unittest suite in 10 parallel shards on head bae4dc2144c5, pytest-style files, §5.5 test-ID inventory, Appendix A survey, --help comparison against dev@a5bd24df, git diff --check.",
+  "knownPreexistingFailures": [
+    "tests/test_codex_shared_pool_transport.py::test_busy_before_started_is_proven_no_dispatch (also fails on clean dev)"
+  ],
+  "flakes": [
+    "test_layer2_large_fan_in.test_129_group_actual_producer_can_assemble_and_resume_without_calls failed once in the final 10-shard run with utc_clock_discontinuity diagnostics under load; it passed twice alone on the same head and in two earlier full runs of the same tree (the A+B report records the same flake)"
+  ]
+}

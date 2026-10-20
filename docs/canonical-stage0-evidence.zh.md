@@ -3,7 +3,7 @@
 在 clean checkout 中运行（输出放到 checkout 外，目录必须尚不存在）：
 
 ```sh
-python scripts/evaluate_canonical_stage0.py \
+python tools/development/evaluate_canonical_stage0.py \
   --base <已核实的基线commit> \
   --out /tmp/tongxing-stage0-new-run
 ```

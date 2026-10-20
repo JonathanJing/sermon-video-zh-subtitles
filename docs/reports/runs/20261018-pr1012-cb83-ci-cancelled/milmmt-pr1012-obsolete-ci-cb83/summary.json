@@ -1,0 +1,8 @@
+{
+  "status": "cancelled",
+  "reason": "superseded_by_new_pr_head",
+  "currentHeadRevision": "9faa27c150a4c0f108985d79823a10db53db4ee9",
+  "testConclusion": "not_claimed",
+  "providerCalls": 0,
+  "modelCalls": 0
+}

@@ -1,0 +1,12 @@
+discover	pass	0.0
+ko.track-check	pass	0.4
+ko.secondary-asr	pass	1.0
+ko.audio-qc	pass	0.3
+{
+  "ko": {
+    "status": "requires_repair",
+    "reason": "audio QC failed; re-render the failed units as the repair ladder says",
+    "problems": [],
+    "calibration": null
+  }
+}

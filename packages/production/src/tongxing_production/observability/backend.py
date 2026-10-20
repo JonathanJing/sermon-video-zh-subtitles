@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Callable
+from typing import Any, Callable
 
 from .. import ports
 
@@ -18,6 +18,10 @@ from .. import ports
 class ObservabilityBackend:
     checkout_root: Path
     load_producer_imports: Callable[[], None]
+    local_model_code: Callable[[], str]
+    safe_local_model_observation: Callable[[Any], dict]
+    decision_code: Callable[[], str]
+    safe_decision_observation: Callable[[Any], dict]
 
 
 _current: ObservabilityBackend | None = None
@@ -38,12 +42,3 @@ def current() -> ObservabilityBackend:
 
 def checkout_root() -> Path:
     return current().checkout_root
-
-
-class JobFiles:
-    """The job store's private file primitives under their old names (``jobs._persist``),
-    lent by the host through ``ports.JobFiles`` until the closure window W moves them."""
-
-    def __getattr__(self, name):
-        from ..storage import backend as _storage
-        return getattr(_storage.current().job_files, name.lstrip('_'))

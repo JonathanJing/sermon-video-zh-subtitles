@@ -1,0 +1,242 @@
+Estimating 212 unprofiled modules from measured per-case cost
+Shard 1/10: 547 tests from 337 modules
+.....................................{"component": "api", "event": "realtime_caption_event", "eventType": "caption_final", "loggedAt": "2026-10-19T21:54:56.445824+00:00", "segmentId": "seg_1", "sessionId": "rt_U7oVFBsbsDLsv0on", "severity": "INFO"}
+..{"component": "api", "event": "post_live_subtitle_generation_triggered", "inlineWorker": false, "loggedAt": "2026-10-19T21:54:56.446032+00:00", "severity": "INFO", "sunday": "2026-07-26", "triggerSource": "internal-task"}
+.{"component": "api", "event": "sermon_production_supervisor_triggered", "inlineWorker": false, "loggedAt": "2026-10-19T21:54:56.446131+00:00", "mode": "shadow", "severity": "INFO", "sunday": "2026-08-02", "triggerSource": "cloud-scheduler"}
+{"component": "api", "errorClass": "ConnectionError", "event": "sermon_production_supervisor_source_check_failed", "loggedAt": "2026-10-19T21:54:56.446154+00:00", "mode": "shadow", "severity": "ERROR", "sunday": "2026-08-02", "triggerSource": "cloud-scheduler"}
+..................................................{
+  "schemaVersion": "sermon-english-source-package-v1",
+  "packageId": "english-source-b980091015e648261d8bceda",
+  "sourceLocale": "en",
+  "status": "blocked",
+  "candidateTranslationEligible": false,
+  "translationEligible": false,
+  "implementation": {
+    "builderSha256": "51a2e2a00a6a6720f47067807c6cb5922c9094ec57111b8b47f628bdfe8fd250",
+    "anchorGeneratorSha256": "5aa19b0580febb3652f9b694cf2ac9f1cbba1c241320c02396a99f0a63a439c1"
+  },
+  "source": {
+    "sourceId": "sermon-fixture",
+    "sourceUrlHash": "2222222222222222222222222222222222222222222222222222222222222222",
+    "serviceDate": "2026-09-20",
+    "media": {
+      "sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+      "sizeBytes": 1000,
+      "durationSeconds": 300.0
+    },
+    "approvedWindow": {
+      "startSeconds": 10.0,
+      "endSeconds": 20.0,
+      "status": "approved",
+      "humanApproval": true,
+      "evidence": {
+        "path": "/private/var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/tmpv89wuvmk/approval.json",
+        "sha256": "66795bae0f4298847ccf70c1de6551f5e0973b1cbc41ad5bc2920a1b04935558",
+        "jsonSha256": "52e96996de2f74af0c5013d0f2ed0674517e1aa96f99c320b3825345dad4db76"
+      }
+    }
+  },
+  "transcript": {
+    "artifact": {
+... 54 lines omitted; 0 error-like lines, 0 kept below ...
+... end of omitted section ...
+    {
+      "stage": "review",
+      "type": "transcriptCompleteness_review_pending"
+    },
+    {
+      "stage": "review",
+      "type": "wordAlignment_review_pending"
+    },
+    {
+      "stage": "review",
+      "type": "sentenceAndPauseBoundaries_review_pending"
+    }
+  ],
+  "downstreamInvalidationKey": "b980091015e648261d8bcedad6e210a06b104168c326306b8d1e123c1b44df1c",
+  "evidence": {
+    "pipelineSummary": {
+      "path": "/private/var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/tmpv89wuvmk/summary.json",
+      "sha256": "ef2501fa847d1ad00dfed6e7dbfc450daa166b25eeb19b3aa891adc019dd5044",
+      "jsonSha256": "4bea6fba8560d1cffe1bfff62b82cd42070c5836495d24d7abf041083b234b63"
+    },
+    "machineJudge": null
+  }
+}
+{"group": "group-0001", "solSeconds": 2.0, "opusSeconds": 1.0}
+{"group": "group-0002", "solSeconds": 2.0, "opusSeconds": 1.0}
+{"freshCalls": {"sol": 2, "opus": 2, "review": 0}, "groups": 2, "targetLocale": "ko"}
+...s....................................................................................................................................................Digest: /var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/tmp4i9va0mx/digests/20261007-e2e (4 files, 0 redactions)
+Digest: /var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/tmpkuzbswj_/digests/20261007-e2e (5 files, 9 redactions)
+test-page · dev · 检查点 0/18
+层 / 语言       完成       剩余串行工时
+L1 shared        0/4 (0%)  未知
+L2 ko            0/4 (0%)  未知
+L3 ko            0/6 (0%)  未知
+L4 ko            0/4 (0%)  未知
+ETA（连续串行、无审核等待）: 未知
+缺估时 18 项: L1-01, L1-02, L1-03, L1-04, L2-01@ko, L2-02@ko …
+独立验收 ko: 设备=not_run，现场=not_run
+注意：进度账本不授予 Layer 门禁、发布或验收状态。
+corrected 1/1
+corrected 1/1
+translated zh 1/1
+translated zh 1/1
+.....................................{"at": "2026-10-19T22:02:52+00:00", "stage": "layer1", "event": "started", "hostId": "host-2c1f9c4dd27b", "pid": 25198}
+{"at": "2026-10-19T22:02:52+00:00", "stage": "layer1", "event": "finished", "hostId": "host-2c1f9c4dd27b", "pid": 25198, "costMicrousd": 0, "refs": ["summary.json"]}
+{
+ "schemaVersion": "sermon-run-journal-summary-v1",
+ "events": 2,
+ "firstAt": "2026-10-19T22:02:52+00:00",
+ "lastAt": "2026-10-19T22:02:52+00:00",
+ "wallSeconds": 0.0,
+ "stages": {
+  "layer1": {
+   "starts": 1,
+   "computeSeconds": 0.0,
+   "waitingSeconds": 0.0,
+   "reworkSeconds": 0.0,
+   "costMicrousd": 0,
+   "waitingOn": [],
+   "status": "finished",
+   "rework": 0
+  }
+ },
+ "totals": {
+  "computeSeconds": 0.0,
+  "waitingSeconds": 0.0,
+  "reworkSeconds": 0.0,
+  "costMicrousd": 0,
+  "rework": 0
+ },
+ "openStages": []
+}
+discover	pass	0.0
+ko.text-qc.prefetch	pass	0.0
+ko.text-qc	pass	0.0
+ko.calibration.prefetch	pass	0.3
+ko.calibration	pass	0.2
+ko.text-waiver	pass	0.0
+{
+  "ko": {
+    "status": "text_waiver_issued",
+    "reason": null,
+    "problems": [],
+    "calibration": {
+      "overallDetectionRate": 1.0,
+      "cleanFalsePositiveRate": 0.0,
+      "trials": 90,
+      "detected": 90
+    }
+  }
+}
+discover	pass	0.0
+.{
+  "ko": [
+    "unit audio changed since the package: g001"
+  ]
+}
+discover	pass	0.0
+ko.text-qc.prefetch	pass	0.0
+ko.text-qc	pass	0.0
+ko.calibration.prefetch	pass	0.3
+ko.calibration	pass	0.1
+ko.text-waiver	pass	0.0
+{
+  "ko": {
+    "status": "text_waiver_issued",
+    "reason": null,
+    "problems": [],
+    "calibration": {
+      "overallDetectionRate": 1.0,
+      "cleanFalsePositiveRate": 0.0,
+      "trials": 90,
+      "detected": 90
+    }
+  }
+}
+discover	pass	0.0
+.usage: run_unittest_ci.py [-h] [--run-dir RUN_DIR] --out OUT
+                          [--state-dir STATE_DIR] [--locales LOCALES]
+                          [--candidate LOCALE=PATH]
+                          [--spoken-binding LOCALE=PATH]
+                          [--text-backend {codex,api,fake}]
+                          [--workers WORKERS] [--preflight-only]
+                          [--human-acceptance LOCALE=PATH]
+                          [--api-budget-authorization API_BUDGET_AUTHORIZATION]
+                          [--expected-implementation SHA256]
+run_unittest_ci.py: error: --candidate 'k0=/var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/tmpqxtd566q/run/diagnostic-previews/ko/native-1/candidate.json': use LOCALE=PATH once per requested locale (ko)
+usage: run_unittest_ci.py [-h] [--run-dir RUN_DIR] --out OUT
+                          [--state-dir STATE_DIR] [--locales LOCALES]
+                          [--candidate LOCALE=PATH]
+                          [--spoken-binding LOCALE=PATH]
+                          [--text-backend {codex,api,fake}]
+                          [--workers WORKERS] [--preflight-only]
+                          [--human-acceptance LOCALE=PATH]
+                          [--api-budget-authorization API_BUDGET_AUTHORIZATION]
+                          [--expected-implementation SHA256]
+run_unittest_ci.py: error: --candidate 'es=/var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/tmpqxtd566q/run/diagnostic-previews/ko/native-1/candidate.json': use LOCALE=PATH once per requested locale (ko)
+usage: run_unittest_ci.py [-h] [--run-dir RUN_DIR] --out OUT
+                          [--state-dir STATE_DIR] [--locales LOCALES]
+                          [--candidate LOCALE=PATH]
+                          [--spoken-binding LOCALE=PATH]
+                          [--text-backend {codex,api,fake}]
+                          [--workers WORKERS] [--preflight-only]
+                          [--human-acceptance LOCALE=PATH]
+                          [--api-budget-authorization API_BUDGET_AUTHORIZATION]
+                          [--expected-implementation SHA256]
+run_unittest_ci.py: error: --candidate '/var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/tmpqxtd566q/run/diagnostic-previews/ko/native-1/candidate.json': use LOCALE=PATH once per requested locale (ko)
+usage: run_unittest_ci.py [-h] [--run-dir RUN_DIR] --out OUT
+                          [--state-dir STATE_DIR] [--locales LOCALES]
+                          [--candidate LOCALE=PATH]
+                          [--spoken-binding LOCALE=PATH]
+                          [--text-backend {codex,api,fake}]
+                          [--workers WORKERS] [--preflight-only]
+                          [--human-acceptance LOCALE=PATH]
+                          [--api-budget-authorization API_BUDGET_AUTHORIZATION]
+                          [--expected-implementation SHA256]
+run_unittest_ci.py: error: --candidate 'ko=/var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/tmpqxtd566q/run/diagnostic-previews/ko/native-1/candidate.json': use LOCALE=PATH once per requested locale (ko)
+.{
+  "es": [
+    "no unique candidate; found 0: []"
+  ]
+}
+discover	pass	0.0
+....{
+  "ko": [
+    "candidate is a condensed spoken script; screen it with --spoken-binding"
+  ]
+}
+{"component": "post-live-subtitles", "event": "post_live_subtitle_generation_checked", "liveSource": {"host": "www.youtube.com", "path": "/watch", "urlHash": "160163dd612c1ecf"}, "loggedAt": "2026-10-19T22:03:48.070865+00:00", "pipelineOutdir": "/var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/tmp0_pe3fn3/2026-06-28/mariners_MEZHufeQBjc/pipeline", "severity": "INFO", "status": "completed", "sunday": "2026-06-28"}
+......s.................................................................................s..............SERMON_LOGGING_WRITE_FAILED errorType=ValueError
+SERMON_LOGGING_WRITE_FAILED errorType=ValueError
+SERMON_LOGGING_WRITE_FAILED errorType=ValueError
+SERMON_LOGGING_WRITE_FAILED errorType=ValueError
+..................................................................................{
+  "status": "blocked_unknown_outcome",
+  "reason": "condenser calls with an unknown outcome; reconcile them first",
+  "record": null,
+  "revisionBrief": null,
+  "condensedGroupIds": null,
+  "failedGroupIds": null
+}
+{"candidateCount": 4, "sourceUnitCount": 6}
+v4.1 package verified; model loaded and warmup finished.
+Generation failed: RuntimeError
+.v4.1 package verified; model loaded and warmup finished.
+...........................................................................
+----------------------------------------------------------------------
+Ran 547 tests in 840.894s
+
+OK (skipped=3)
+ 411.29s     7  test_machine_quality_waiver
+ 232.85s     2  test_sermon_fresh_full_dag
+  52.68s     2  test_run_machine_qc_audio_test
+  11.52s     3  test_sermon_app_delivery_workflow
+   7.34s     1  test_canonical_layer2_auto_repair
+   6.90s     4  test_render_speculative_target_language_speech
+   5.51s     2  test_layer2_payload_cache_reuse
+   5.45s     2  test_sermon_business_prefect_flow
+   4.73s     5  test_build_target_language_audio_package
+   4.60s     3  test_sermon_diagnostic_provider
+exit 0

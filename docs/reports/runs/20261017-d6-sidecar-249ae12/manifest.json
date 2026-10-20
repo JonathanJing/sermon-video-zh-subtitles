@@ -1,0 +1,27 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-d6-sidecar-249ae12",
+  "runs": [
+    {
+      "label": "20261017-d6-sidecar-249ae12",
+      "source": "~/.codex/worktrees/d6-published-alignment/sermon-video-zh-subtitles/artifacts/test-runs/20261017-d6-sidecar-249ae12",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "20261017-d6-sidecar-249ae12",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 740,
+      "truncated": false,
+      "sha256": "a68decdfc8dcb32eb603a7cc7ec05a3e72e63f586679e08d3c2c3fa4f78c272b",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

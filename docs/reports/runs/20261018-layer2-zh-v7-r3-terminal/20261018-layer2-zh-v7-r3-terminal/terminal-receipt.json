@@ -1,0 +1,15 @@
+{
+  "schemaVersion": "sermon-layer2-production-terminal-receipt-v1",
+  "jobId": "c79eff1719b2ccf53a01f44bb885562ac2a9937a8ac22891fdd5a2e78bad8fb3",
+  "status": "failed",
+  "requestFileSha256": "f36fe0cdbf7958822e1d39f492d3cfda2290e9681a8bfbac23e72882597ec82c",
+  "stateFileSha256": "e45e127f220d7bb26d18a41bcc3571e587aa867248d7c81c1633c156d0354956",
+  "budgetStateFileSha256": "d15633044a460812dacfe276ce331b0d56e999d9aa57a508bf78b058a2080f59",
+  "round1FailureReportSha256": "45d4745c0ed7c372bf3def87a51302f380484c1f0273b4a5a04714e19b0f7379",
+  "round2FailureReportSha256": "2fcbd05dfafdbe160a13ebb01280c46ff0ecdb3fe4b5d0e467ece038174bb0e5",
+  "round3RequestSha256": "01d7a4c78ac24b6e770404bb5d31d84e577dacfc7f6da8c9ff34c8b892cab28d",
+  "approvedDraftComparisonFileSha256": "dbb54f51ead380ebc8b6a8beb8b426c69f4c73ee961e69e594542e655e0c818b",
+  "budgetRowsSucceeded": 814,
+  "budgetOutcomeUnknown": 0,
+  "humanApproval": false
+}

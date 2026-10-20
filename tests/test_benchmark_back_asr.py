@@ -11,7 +11,7 @@ from types import SimpleNamespace
 import unittest
 from unittest.mock import Mock, patch
 
-from scripts.experiments import benchmark_back_asr as subject
+from tools.benchmarks import benchmark_back_asr as subject
 
 
 class BenchmarkBackAsrTests(unittest.TestCase):
@@ -177,7 +177,7 @@ class BenchmarkBackAsrTests(unittest.TestCase):
             "soundfile": SimpleNamespace(read=lambda path, **_: (
                 SimpleNamespace(ndim=1, text=Path(path).read_text()), 24000)),
             "qwen_asr": SimpleNamespace(Qwen3ASRModel=SimpleNamespace(from_pretrained=loader)),
-            "scripts.screen_target_language_audio_units": SimpleNamespace(tokens=lambda text, _: text.split()),
+            "tongxing_production.audio.screening": SimpleNamespace(tokens=lambda text, _: text.split()),
         }
         return modules, loader, batches
 

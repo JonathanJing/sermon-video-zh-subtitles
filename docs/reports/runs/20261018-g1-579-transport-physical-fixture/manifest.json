@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261018-g1-579-transport-physical-fixture",
+  "runs": [
+    {
+      "label": "g1-579-transport-physical-fixture",
+      "source": "~/.codex/worktrees/g1-r3-review/sermon-video-zh-subtitles/artifacts/g1-579-transport-physical-fixture",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "g1-579-transport-physical-fixture",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 176,
+      "truncated": false,
+      "sha256": "8a162caf301d851085740b5ee6d1d0ff4b2cf4bae8cd4878b5f9561f0fccb981",
+      "redactions": {}
+    },
+    {
+      "run": "g1-579-transport-physical-fixture",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 407,
+      "truncated": false,
+      "sha256": "63e933b982422c99faa60c00ee8e34ac6780d7ab4fe85f42586bcb14866ddb01",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

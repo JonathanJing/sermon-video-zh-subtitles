@@ -1,0 +1,6 @@
+{
+  "status": "success",
+  "exitCode": 0,
+  "deliveryType": "test",
+  "note": "Focused CI classifier tests after dev merge. Full CI pending."
+}

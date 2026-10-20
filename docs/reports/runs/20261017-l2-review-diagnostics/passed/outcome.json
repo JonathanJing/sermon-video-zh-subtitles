@@ -1,0 +1,9 @@
+{
+  "schemaVersion": "local-code-test-outcome-v1",
+  "status": "passed",
+  "exitCode": 0,
+  "endedAt": "2026-10-17T16:25:11.454730+00:00",
+  "scope": "focused review diagnostics, strict L2, fresh diagnostic, package and aliases",
+  "productionRun": "not_run",
+  "paidModelCalls": 0
+}

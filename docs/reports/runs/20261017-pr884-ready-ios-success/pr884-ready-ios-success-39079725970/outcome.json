@@ -1,0 +1,10 @@
+{
+  "schemaVersion": "github-actions-run-readback-v1",
+  "status": "success",
+  "workflow": "Tongxing iOS",
+  "runId": 39079725970,
+  "headSha": "6508b66e2740e4b059d095bb070d1feb40eb59ad",
+  "url": "https://github.com/JonathanJing/sermon-video-zh-subtitles/actions/runs/39079725970",
+  "startedAt": "2026-10-17T23:37:14Z",
+  "endedAt": "2026-10-17T23:39:17Z"
+}

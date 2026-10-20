@@ -5,11 +5,18 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-from scripts import outcome_marker
-from scripts.experiments import run_spark_diagnostic_audio as runner
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.orchestration import outcome_marker
+from tests import experiment_modules
+
+runner = experiment_modules.line_module("experiments/spark-diagnostic-audio/run_spark_diagnostic_audio.py")
+from tongxing_production.orchestration import outcome_marker as package_outcome_marker
 
 
 class OutcomeMarkerTests(unittest.TestCase):
+    def test_legacy_import_is_same_module_as_package(self):
+        self.assertIs(outcome_marker, package_outcome_marker)
+
     def setUp(self):
         temp = tempfile.TemporaryDirectory()
         self.addCleanup(temp.cleanup)

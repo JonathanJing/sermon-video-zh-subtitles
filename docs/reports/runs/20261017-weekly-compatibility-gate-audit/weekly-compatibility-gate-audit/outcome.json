@@ -1,0 +1,6 @@
+{
+  "status": "review_required",
+  "exitCode": 0,
+  "deliveryType": "test",
+  "result": "tests passed; compatibility review remains required"
+}

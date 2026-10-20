@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261019-exp-leaf-agents-api-trials",
+  "runs": [
+    {
+      "label": "exp-leaf-agents-api-trials-20261019",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.claude/worktrees/practical-boyd-f19465/artifacts/test-runs/exp-leaf-agents-api-trials-20261019",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "exp-leaf-agents-api-trials-20261019",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 228,
+      "truncated": false,
+      "sha256": "35249844bbc6dc9ad4eece449ba865c8b6096e2331f03ac06af13f6d98d04b2f",
+      "redactions": {}
+    },
+    {
+      "run": "exp-leaf-agents-api-trials-20261019",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 753,
+      "truncated": false,
+      "sha256": "895159a0812a6bab7aec4221cbd5b0f703e596b1cacfeeaba3a052eeabccb4d8",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

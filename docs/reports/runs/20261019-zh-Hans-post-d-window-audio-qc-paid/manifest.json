@@ -1,0 +1,156 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261019-zh-Hans-post-d-window-audio-qc-paid",
+  "runs": [
+    {
+      "label": "aqc",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/opus-e2e-dev216-20261014-g/post-d-window-qc-20261019/zh-Hans/aqc",
+      "skipped": {
+        ".lock": 1,
+        ".tsv": 1,
+        ".json": 7
+      }
+    },
+    {
+      "label": "l3",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/opus-e2e-dev216-20261014-g/post-d-window-qc-20261019/zh-Hans/l3",
+      "skipped": {
+        ".json": 275,
+        ".lock": 2,
+        ".jsonl": 1,
+        ".csv": 3,
+        ".sha256": 32,
+        ".wav": 59,
+        ".mp3": 2
+      }
+    },
+    {
+      "label": ".api-budget",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/opus-e2e-dev216-20261014-g/plans/post-d-window-qc-20261019-es-zh/qc-zh-Hans/.api-budget",
+      "skipped": {
+        ".lock": 237,
+        ".json": 236
+      }
+    }
+  ],
+  "files": [
+    {
+      "run": "aqc",
+      "path": "spark-driver.log",
+      "kind": "log",
+      "bytes": 3452,
+      "truncated": false,
+      "sha256": "fe8cc97f6ae32744681b80c8fed5337fda5aa870ead72978cc37676eb9e5feac",
+      "redactions": {}
+    },
+    {
+      "run": "aqc",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 4808,
+      "truncated": false,
+      "sha256": "4e22a33acd5e65459137750cbe35e13d768bdbfc55a27661e3cf6f3616d4fc51",
+      "redactions": {
+        "home_dir": 11
+      }
+    },
+    {
+      "run": "aqc",
+      "path": "timings.tsv",
+      "kind": "whole",
+      "bytes": 224,
+      "truncated": false,
+      "sha256": "ffabe33c89f3405aef2887cd672d41767937d4b94842ec37b6c5930978396995",
+      "redactions": {}
+    },
+    {
+      "run": "aqc",
+      "path": "zh-Hans/preflight.json",
+      "kind": "whole",
+      "bytes": 2385,
+      "truncated": false,
+      "sha256": "417b5dead3da278289faa99bb09d4a93a7275661e689d837f5338a3393480a06",
+      "redactions": {
+        "home_dir": 8
+      }
+    },
+    {
+      "run": "l3",
+      "path": "spark-output/render.log",
+      "kind": "log",
+      "bytes": 6124,
+      "truncated": false,
+      "sha256": "7161be5637d0fcedebabddaf3099151647fd4a57286be3ca451f0c51976902bd",
+      "redactions": {}
+    },
+    {
+      "run": "l3",
+      "path": "spark-output/speech-job/accounting/operations.log",
+      "kind": "log",
+      "bytes": 82179,
+      "truncated": true,
+      "sha256": "27f5bc53125bd69238a80a3ab55cd1d40f6b6063eb4689c95f70e79c2d8a7b09",
+      "redactions": {}
+    },
+    {
+      "run": "l3",
+      "path": "spark-output/speech-job/accounting/summary.json",
+      "kind": "whole",
+      "bytes": 216140,
+      "truncated": false,
+      "sha256": "5a6bbe180e6419e92a126e37f69b09117e089d6cfaed1d54c4d9ae7b8639b931",
+      "redactions": {}
+    },
+    {
+      "run": "l3",
+      "path": "spark-zh-Hans-c/compact.log",
+      "kind": "log",
+      "bytes": 199,
+      "truncated": false,
+      "sha256": "b1e62a60ac242c8f36ea24b3af3ebdcc1d3d28754b286e043020053b1fc02f05",
+      "redactions": {}
+    },
+    {
+      "run": "l3",
+      "path": "spark-zh-Hans-c/spark-output/compact.log",
+      "kind": "log",
+      "bytes": 199,
+      "truncated": false,
+      "sha256": "b1e62a60ac242c8f36ea24b3af3ebdcc1d3d28754b286e043020053b1fc02f05",
+      "redactions": {}
+    },
+    {
+      "run": "l3",
+      "path": "spark-zh-Hans-c/spark-output/screen-v1.log",
+      "kind": "log",
+      "bytes": 1944,
+      "truncated": false,
+      "sha256": "85a010dec57107d96afba07dd4aa3bd0b96483b7276fee59245b4b5a413545c2",
+      "redactions": {}
+    },
+    {
+      "run": "l3",
+      "path": "spark-zh-Hans-c/spark-output/speech-job/asr-screening-receipt-v1.json",
+      "kind": "whole",
+      "bytes": 11023,
+      "truncated": false,
+      "sha256": "70997a24a85025e595f94f94e590ee66e3fa6384a078aae1c12b797ae8781c23",
+      "redactions": {}
+    },
+    {
+      "run": ".api-budget",
+      "path": "source-budget.settlement.json",
+      "kind": "budget",
+      "bytes": 221724,
+      "truncated": false,
+      "source": "source-budget.json",
+      "sha256": "f19c25f31a2285745fc935a31ddac9ea28ec2355814cd57bc609398135f74b70",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

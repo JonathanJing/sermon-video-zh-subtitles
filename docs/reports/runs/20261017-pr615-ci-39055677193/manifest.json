@@ -1,0 +1,27 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-pr615-ci-39055677193",
+  "runs": [
+    {
+      "label": "pr615-full-ci-39055677193",
+      "source": "~/.codex/worktrees/weekly-report-projection/sermon-video-zh-subtitles/artifacts/pr615-full-ci-39055677193",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "pr615-full-ci-39055677193",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 367,
+      "truncated": false,
+      "sha256": "4ed31971d4824b75b84a3e65b56fb1153bdf2ba578b3c630e92789dd6e5cbec9",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

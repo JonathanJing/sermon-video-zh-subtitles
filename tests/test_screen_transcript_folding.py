@@ -11,7 +11,8 @@ import json
 import unittest
 from pathlib import Path
 
-from scripts import screen_target_language_audio_units as subject
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.audio import screening as subject
 
 FIXTURES = Path(__file__).resolve().parent / "fixtures" / "weekly-20261011" / "audio-qc"
 THRESHOLD = 0.88
@@ -212,7 +213,7 @@ class ReviewCounterexampleTests(unittest.TestCase):
             subject.score(expected, heard, "zh-Hans", 0.88, "token-sequence-ratio-v9")
 
     def test_release_basis_rescoring_follows_the_receipt(self):
-        from scripts import machine_quality_release_basis as basis
+        from tongxing_production.review import release_basis as basis
         text = "我们读了第八十一页的内容，谢谢大家的参与和支持。"
         heard = "我们读了第81页的内容，谢谢大家的参与和支持。"
         candidate = {"groups": [{"translationGroupId": "g1", "targetText": text}]}
@@ -283,26 +284,25 @@ if __name__ == "__main__":
 def test_current_scoring_hash_covers_every_new_local_dependency(tmp_path):
     from pathlib import Path
     import shutil
-    from scripts import machine_quality_waiver as waiver
-    root = Path(subject.__file__).resolve().parents[1]
-    for name in subject.SCORING_IMPLEMENTATION_FILES:
+    from tongxing_production.review import waiver
+    from tongxing_production.source import producer_compatibility as compatibility
+    root = Path(__file__).resolve().parents[1]
+    for name in subject.SCORING_PHYSICAL_FILES:
         target = tmp_path / name
         target.parent.mkdir(parents=True, exist_ok=True)
         shutil.copyfile(root / name, target)
     initial = subject.implementation_sha256(tmp_path)
-    for name in subject.SCORING_IMPLEMENTATION_FILES:
+    for name in subject.SCORING_PHYSICAL_FILES:
         path = tmp_path / name
         original = path.read_bytes()
         path.write_bytes(original + b"\n# changed dependency\n")
         assert subject.implementation_sha256(tmp_path) != initial
         path.write_bytes(original)
     assert "scripts/ko_spoken_numerals.py" in waiver.IMPLEMENTATION_FILES
-    from scripts import sermon_source_producer_compatibility as compatibility
-    for name in waiver.IMPLEMENTATION_FILES:
-        # A closure key names a file at its alias once it moved into the production package.
-        target = tmp_path / compatibility.resolve(name)
+    for name in waiver.IMPLEMENTATION_PHYSICAL_FILES:
+        target = tmp_path / name
         target.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copyfile(root / compatibility.resolve(name), target)
+        shutil.copyfile(root / name, target)
     original_waiver = waiver.implementation_sha256(tmp_path)
     helper = tmp_path / "scripts/ko_spoken_numerals.py"
     helper.write_bytes(helper.read_bytes() + b"\n# changed rule\n")
@@ -328,7 +328,7 @@ def test_current_scoring_hash_covers_every_new_local_dependency(tmp_path):
 
 def test_v5_rescore_rejects_stale_closure_before_scoring(monkeypatch):
     import hashlib
-    from scripts import machine_quality_release_basis as basis
+    from tongxing_production.review import release_basis as basis
     text = "요한복음 3장이 맞습니다."
     candidate = {"groups": [{"translationGroupId": "g1", "targetText": text}]}
     similarity, differences, passed = subject.score(text, "요한복음 삼장이 맞습니다.", "ko", 0.88)

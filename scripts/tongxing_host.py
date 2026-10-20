@@ -30,13 +30,15 @@ from tongxing_production.delivery import backend as delivery_backend  # noqa: E4
 from tongxing_production.audio import backend as audio_backend  # noqa: E402
 from tongxing_production.review import backend as review_backend  # noqa: E402
 from tongxing_production.compute import backend as compute_backend  # noqa: E402
-from tongxing_production.storage import backend as storage_backend  # noqa: E402
+from tongxing_production.orchestration import jobs_host as jobs_host_module  # noqa: E402
 from tongxing_production.observability import backend as observability_backend  # noqa: E402
 from tongxing_production.workflows.dual_pdf import host as dual_pdf_host  # noqa: E402
 
 
 def core() -> ports.Core:
-    from scripts import sermon_workflow_jobs as jobs
+    # The package module, not the scripts/ facade: core() runs while the host loads, and the
+    # facade imports the host first, so binding the facade here would bind a half-initialized module.
+    from tongxing_production.orchestration import jobs
     from scripts.sermon_execution_harness import atomic_json, utc_now
     from scripts.sermon_release_workflow import safe_path
     return ports.Core(repo_root=ROOT, artifact_root=ROOT / 'artifacts', jobs=jobs,
@@ -56,7 +58,7 @@ def _request_json(req, retries=3, *, response_observer=None, request_executor=No
 
 
 def _reject_secret_override(value):
-    from scripts import sermon_openai_runtime
+    from tongxing_production.compute import openai_runtime as sermon_openai_runtime
     return sermon_openai_runtime.reject_secret_override(value)
 
 
@@ -86,13 +88,13 @@ def _http_execute(req, timeout_seconds, *, deadline=None):
 
 
 def _transcription_request(wav_bytes, expected_audio_sha256):
-    from scripts import sermon_transcription_request
+    from tongxing_production.compute import transcription_request as sermon_transcription_request
     return sermon_transcription_request.build_request(wav_bytes, expected_audio_sha256)
 
 
 def _transcription_limits():
     from types import SimpleNamespace
-    from scripts import sermon_transcription_request as transcription
+    from tongxing_production.compute import transcription_request as transcription
     return SimpleNamespace(MAX_RESPONSE_BYTES=transcription.MAX_RESPONSE_BYTES, WALL_TIME_MS=transcription.WALL_TIME_MS,
                            MICROUSD_PER_MINUTE=transcription.MICROUSD_PER_MINUTE)
 
@@ -103,17 +105,17 @@ def _request_metadata(payload):
 
 
 def _selected_route():
-    from scripts import sermon_openai_runtime
+    from tongxing_production.compute import openai_runtime as sermon_openai_runtime
     return sermon_openai_runtime.selected_route()
 
 
 def _safe_route(value):
-    from scripts import sermon_openai_runtime
+    from tongxing_production.compute import openai_runtime as sermon_openai_runtime
     return sermon_openai_runtime.safe_route(value)
 
 
 def _project_headers(api_key):
-    from scripts import sermon_openai_runtime
+    from tongxing_production.compute import openai_runtime as sermon_openai_runtime
     return sermon_openai_runtime.project_headers(api_key)
 
 
@@ -146,7 +148,7 @@ def provider() -> ports.Provider:
 
 
 def _code_identity():
-    from scripts import canonical_layer2_controller
+    from tongxing_production.text import controller as canonical_layer2_controller
     return canonical_layer2_controller.code_identity()
 
 
@@ -160,7 +162,14 @@ def module_sha256(module) -> str:
 
 def code() -> ports.Code:
     return ports.Code(code_identity=_code_identity, module_sha256=module_sha256, module_path=module_path,
-                      implementation_path=implementation_path)
+                      implementation_path=implementation_path, physical_path=physical_path)
+
+
+def physical_path(name: str) -> Path:
+    path = Path(name)
+    if path.is_absolute() or ".." in path.parts:
+        raise ValueError("Physical code path must be repository-relative")
+    return ROOT / path
 
 
 def _mfa_options(args):
@@ -238,7 +247,7 @@ def _resources():
 
 @contextlib.contextmanager
 def _ledger_transaction(policy):
-    from scripts import sermon_workflow_jobs as jobs
+    from tongxing_production.orchestration import jobs
     ledger_module = _resources()
     with jobs._lock(ledger_module._safe_path(policy['brokerRoot']), ledger_module.BROKER_LOCK_ID) as (folder, _, held):
         if not held:
@@ -461,7 +470,7 @@ def _validate_codex_test_configuration(configuration):
 def transports() -> ports.Transports:
     return ports.Transports(caller=_transport_caller, claude_chat_envelope=_claude_chat_envelope,
                             validate_codex_test_configuration=_validate_codex_test_configuration,
-                            audio_qc=_module('scripts.machine_qc_audio_transports'))
+                            audio_qc=_module('tongxing_production.compute.qc_audio_transports'))
 
 
 def _validate_handoff_schema(value, filename, label):
@@ -499,10 +508,15 @@ def diagnostic() -> ports.Diagnostic:
                             require_policy_ready=_require_diagnostic_policy_ready)
 
 
+# The package command entry binds this host before it runs a module's main(). Durable
+# job requests record the worker argv and recovery matches it byte for byte; the D
+# closure window moved it here from the removed scripts/ facades, so a job root holds
+# only one generation of argv (jobs recorded with the old argv were terminal first).
+PACKAGE_ENTRY = ROOT / 'tools/ops/run.py'
+
+
 def layer2_worker_command(*arguments):
-    # Existing durable job requests record this argv; it keeps naming the
-    # scripts/ entry point so recovery matches them byte for byte.
-    return [sys.executable, str(ROOT / 'scripts/canonical_layer2_controller.py'), *arguments]
+    return [sys.executable, str(PACKAGE_ENTRY), 'text.controller', *arguments]
 
 
 def _module(name):
@@ -558,23 +572,23 @@ def hosting() -> ports.Hosting:
 
 
 def _is_text_waiver(receipt):
-    from scripts import machine_quality_release_basis
-    return machine_quality_release_basis.is_text_waiver(receipt)
+    from tongxing_production.review import release_basis
+    return release_basis.is_text_waiver(receipt)
 
 
 def _validate_text_waiver(receipt, **binding):
-    from scripts import machine_quality_release_basis
-    return machine_quality_release_basis.validate_text_waiver(receipt, **binding)
+    from tongxing_production.review import release_basis
+    return release_basis.validate_text_waiver(receipt, **binding)
 
 
 def _waiver_disclosure(locale):
-    from scripts import machine_quality_release_basis
-    return machine_quality_release_basis.disclosure(locale)
+    from tongxing_production.review import release_basis
+    return release_basis.disclosure(locale)
 
 
 def _is_basis_audio_waiver(receipt):
-    from scripts import machine_quality_release_basis
-    return machine_quality_release_basis.is_audio_waiver(receipt)
+    from tongxing_production.review import release_basis
+    return release_basis.is_audio_waiver(receipt)
 
 
 def _is_audio_waiver(receipt):
@@ -599,9 +613,7 @@ def waivers() -> ports.Waivers:
 
 
 def app_delivery_worker_command(*arguments):
-    # Existing durable job requests record this argv; it keeps naming the
-    # scripts/ entry point so recovery matches them byte for byte.
-    return [sys.executable, str(ROOT / 'scripts/sermon_app_delivery_workflow.py'), *arguments]
+    return [sys.executable, str(PACKAGE_ENTRY), 'delivery.app_workflow', *arguments]
 
 
 def _legacy_weekly_release():
@@ -629,12 +641,12 @@ def delivery_legacy() -> delivery_backend.Legacy:
 # when called, so the renderer, audio QC and spoken-rule modules stay unloaded
 # at host load.
 def _sync_directory_ancestry(path):
-    from scripts import sermon_workflow_jobs
+    from tongxing_production.orchestration import jobs as sermon_workflow_jobs
     return sermon_workflow_jobs._sync_directory_ancestry(path)
 
 
 def _read_json(path):
-    from scripts import sermon_workflow_jobs
+    from tongxing_production.orchestration import jobs as sermon_workflow_jobs
     return sermon_workflow_jobs._read(path)
 
 
@@ -660,7 +672,7 @@ def _accounting_orchestration(name, *, depends_on=None, work_unit_id=None):
 
 
 def _screening_asr_settings(screening):
-    from scripts import target_audio_auto_qc
+    from tongxing_production.review import audio_qc as target_audio_auto_qc
     return target_audio_auto_qc.screening_asr_settings(screening)
 
 
@@ -736,9 +748,9 @@ def audio_unmoved() -> audio_backend.Unmoved:
 # pinned file, so nothing here imports it at host load and no pinned file gains a
 # public name: functions are called through their scripts/ module at call time, so
 # patches still intercept, and constants and classes are read when used.
-_PREDICTED = 'scripts.target_audio_predicted_schedule'
-_SCREENING = 'scripts.screen_target_language_audio_units'
-_RENDERER = 'scripts.render_formal_target_language_speech'
+_PREDICTED = 'tongxing_production.audio.predicted_schedule'
+_SCREENING = 'tongxing_production.audio.screening'
+_RENDERER = 'tongxing_production.audio.renderer'
 
 
 def audio_rules() -> ports.AudioRules:
@@ -771,15 +783,15 @@ def text_rules() -> ports.TextRules:
 def source_evidence() -> ports.SourceEvidence:
     judge, judge_value = (partial(_rule_function, 'scripts.english_source_judge_cache'),
                           partial(_rule_constant, 'scripts.english_source_judge_cache'))
-    interpretation = partial(_rule_function, 'scripts.sermon_sentence_interpretation')
+    interpretation = partial(_rule_function, 'tongxing_production.source.sentence_interpretation')
     return ports.SourceEvidence(
         text_review=_module('scripts.sermon_source_text_review'),
         text_sha256=_rule_function('scripts.sermon_source_text_review', 'text_sha256'),
         judge_cached_call=judge('cached_call'), reconcile_returned_response=judge('reconcile_returned_response'),
         judge_run_schema=judge_value('RUN_SCHEMA'), atomic_json=judge('_atomic'),
         model_result=_rule_function('scripts.run_sentence_interpretation_models', '_model_result'),
-        source_budget=_rule_constant('scripts.sermon_source_budget', 'SourceBudget'),
-        budget_metrics=_rule_constant('scripts.sermon_source_budget', 'METRICS'),
+        source_budget=_rule_constant('tongxing_production.source.budget', 'SourceBudget'),
+        budget_metrics=_rule_constant('tongxing_production.source.budget', 'METRICS'),
         sha256=interpretation('sha256'), json_sha256=interpretation('json_sha256'))
 
 
@@ -800,14 +812,44 @@ def scripture() -> ports.Scripture:
                            coverage=_module('scripts.english_scripture_coverage'),
                            candidate_queue=_module('scripts.scripture_candidate_queue'),
                            library_path=_rule_constant('scripts.cuv_scripture', 'DEFAULT_LIBRARY_PATH'),
+                           provenance_path=_rule_constant('scripts.cuv_scripture', 'DEFAULT_PROVENANCE_PATH'),
                            coverage_data_path=_rule_constant('scripts.english_scripture_coverage', 'DATA_PATH'))
+
+
+def cuv_poc_module(name):
+    if name not in ('check_weekly_timing', 'run_weekly_dubbing', 'weekly_dubbing'):
+        raise ValueError('Unknown CUV timing helper')
+    directory = ROOT / 'experiments' / 'sermon-dubbing-poc'
+    if str(directory) not in sys.path:
+        sys.path.insert(0, str(directory))
+    return __import__(name)
+
+
+def cuv_poc_code_closure_sha256(root=None):
+    """Bind CUV timing to every Python helper in the delegated POC tree."""
+    root = ROOT if root is None else Path(root)
+    directory = root / 'experiments' / 'sermon-dubbing-poc'
+    files = sorted(directory.rglob('*.py'))
+    if not files:
+        raise ValueError('CUV timing helper code closure is empty')
+    digest = hashlib.sha256()
+    for path in files:
+        relative = path.relative_to(root).as_posix().encode('utf-8')
+        content = path.read_bytes()
+        digest.update(len(relative).to_bytes(8, 'big'))
+        digest.update(relative)
+        digest.update(len(content).to_bytes(8, 'big'))
+        digest.update(content)
+    return digest.hexdigest()
 
 
 def qc_runtime() -> ports.QcRuntime:
     return ports.QcRuntime(write_report=_rule_function('scripts.export_run_digest', 'write_report'),
                            codex_text_transport=_module('scripts.sermon_codex_transport'),
                            validate_target_candidate=_rule_function('tongxing_production.audio.speech_job',
-                                                                    'validate_target_candidate'))
+                                                                    'validate_target_candidate'),
+                           implementation_freeze=_module('tongxing_production.review.implementation_freeze'),
+                           audio_waiver_acceptance=_module('scripts.machine_audio_waiver_acceptance'))
 
 
 # The moved producers used to import these modules at load time. A plan freezes
@@ -820,13 +862,16 @@ def qc_runtime() -> ports.QcRuntime:
 # partially initialized modules.
 EAGER_PRODUCER_IMPORTS = (
     'api_cli_outcomes', 'canonical_durable_jobs', 'canonical_pipeline_definition', 'four_layer_measure',
-    'inspect_canonical_packages', 'layer2_api_concurrency', 'machine_quality_release_basis',
+    'inspect_canonical_packages', 'layer2_api_concurrency',
     'prepare_target_language_speech_job', 'production_spark_admission',
     'series_terminology', 'sermon_accounting', 'sermon_cache_observation',
     'sermon_execution_harness', 'sermon_job_liveness', 'sermon_pipeline', 'sermon_provider_http',
     'sermon_provider_limits', 'sermon_public_snapshot', 'sermon_release_workflow', 'sermon_review_budget',
-    'sermon_review_contracts', 'sermon_transcription_request', 'sermon_unified_reviews', 'sermon_workflow_jobs',
+    'sermon_review_contracts', 'sermon_unified_reviews',
     'source_meaning_machine_adjudication',
+    # Facades removed in the D closure window; a dotted name is imported as written.
+    'tongxing_production.compute.transcription_request', 'tongxing_production.orchestration.jobs',
+    'tongxing_production.review.release_basis',
 )
 
 
@@ -840,7 +885,8 @@ def _cloud_function(name):
 
 def cloud() -> ports.Cloud:
     return ports.Cloud(**{name: _cloud_function(name) for name in (
-        'access_secret', 'read_gcs_bytes', 'upload_file_to_gcs')})
+        'access_secret', 'read_gcs_bytes', 'read_gcs_text', 'download_file_from_gcs',
+        'upload_file_to_gcs', 'write_gcs_text')})
 
 
 def _observability_function(name):
@@ -881,14 +927,25 @@ def _upcoming_sunday(*arguments, **options):
     return upcoming_sunday(*arguments, **options)
 
 
+def compute_unmoved():
+    return compute_backend.Unmoved(
+        waiver=_module('tongxing_production.review.waiver'), audio_qc=_module('tongxing_production.review.audio_qc'),
+        budget_authorization=_module('tongxing_production.review.qc_budget_authorization'),
+        screener=_module('tongxing_production.audio.screening'),
+        predicted_schedule=_module('tongxing_production.audio.predicted_schedule'),
+        formal_renderer=_module('tongxing_production.audio.renderer'),
+        voice_demos=_scripts_module('render_multilingual_voice_demos'),
+        jobs=_module('tongxing_production.orchestration.jobs'))
+
+
 def dual_pdf_unmoved():
     return dual_pdf_host.Unmoved(
         live_source_monitor=_scripts_module('live_source_monitor'),
-        post_live_run_status=_scripts_module('post_live_run_status'),
+        youtube_data_api=_scripts_module('youtube_data_api'),
         series_terminology=_scripts_module('series_terminology'),
         export_saturday_live_context=_scripts_module('export_saturday_live_context'),
         reading_edition=_scripts_module('build_sermon_reading_edition_with_openai'),
-        sentence_shadow=_scripts_module('prepare_sentence_interpretation_shadow'),
+        sentence_shadow=_module('tongxing_production.source.sentence_interpretation_shadow'),
         supervisor=_scripts_module('sermon_production_supervisor'),
         supervisor_agent=_scripts_module('run_sermon_production_supervisor_agent'),
         accounting=_scripts_module('sermon_accounting'),
@@ -899,11 +956,31 @@ def dual_pdf_unmoved():
 # load on first use. Loaded at identity capture only when that entry is loaded, as
 # importing the entry did before W3c, so the identity still covers the code it runs.
 ENTRY_LOAD_TIME_IMPORTS = {
+    # T5: these were imported at the old CUV entry's load time; ports now defer them.
+    'tongxing_production.text.cuv_translation': (
+        'scripts.sermon_accounting', 'scripts.sermon_pipeline', 'scripts.cuv_scripture'),
+    'tongxing_production.workflows.dual_pdf.timeline': (
+        'backend.cloud', 'backend.config', 'backend.observability',
+        'scripts.sermon_accounting', 'scripts.live_source_monitor',
+        'scripts.youtube_data_api'),
+    'tongxing_production.workflows.dual_pdf.local_post_live_download': (
+        'backend.cloud', 'backend.config', 'scripts.live_source_monitor', 'scripts.youtube_data_api'),
+    'tongxing_production.observability.weekly_projection': (
+        'scripts.sermon_accounting', 'scripts.sermon_clock_evidence',
+        'scripts.sermon_cache_observation', 'scripts.sermon_local_model_observation',
+        'scripts.sermon_workflow_evidence', 'scripts.sermon_decision_accounting'),
     'tongxing_production.workflows.dual_pdf.post_live': (
         'backend.cloud', 'backend.observability', 'scripts.live_source_monitor',
-        'scripts.post_live_run_status', 'scripts.series_terminology', 'scripts.sermon_accounting'),
+        'tongxing_production.workflows.dual_pdf.run_status', 'scripts.series_terminology', 'scripts.sermon_accounting'),
+    # L3 A3: the renderer and the package builder imported these at load time.
+    'tongxing_production.audio.renderer': (
+        'scripts.render_multilingual_voice_demos', 'scripts.sermon_accounting', 'scripts.four_layer_measure',
+        'scripts.ko_spoken_numerals'),
+    'tongxing_production.audio.package': ('scripts.sermon_accounting',),
+    # G1: the audio QC transport imported the waiver and the audio QC checks at load time.
+    'tongxing_production.compute.qc_audio_transports': ('tongxing_production.review.waiver', 'tongxing_production.review.audio_qc'),
     # L4 D2: the app release builder imported the waiver release basis at load time.
-    'tongxing_production.delivery.app_release': ('scripts.machine_quality_release_basis',),
+    'tongxing_production.delivery.app_release': ('tongxing_production.review.release_basis',),
     'tongxing_production.workflows.dual_pdf.codex_local': (
         'backend.config', 'backend.cloud', 'scripts.live_source_monitor',
         'scripts.run_sermon_production_supervisor_agent', 'scripts.sermon_accounting',
@@ -911,35 +988,31 @@ ENTRY_LOAD_TIME_IMPORTS = {
 }
 
 
-def _job_directory_fd(path):
-    from scripts import sermon_workflow_jobs as jobs
-    return jobs._directory_fd(path)
+def _jobs_worker_command(root, job_id, lock_fd):
+    return [sys.executable, str(PACKAGE_ENTRY), 'orchestration.jobs', 'worker', '--root', str(root),
+            '--job-id', job_id, '--lock-fd', str(lock_fd)]
 
 
-def _job_sync_directory_ancestry(path):
-    from scripts import sermon_workflow_jobs as jobs
-    return jobs._sync_directory_ancestry(path)
+def _bounded_process(*arguments, **options):
+    from scripts import sermon_execution_harness
+    return sermon_execution_harness.bounded_process(*arguments, **options)
 
 
-def _job_file_function(name):
-    def call(*arguments, **options):
-        from scripts import sermon_workflow_jobs as jobs
-        return getattr(jobs, name)(*arguments, **options)
-    call.__name__ = name
-    return call
+def _execution_terminated():
+    from scripts.sermon_execution_harness import ExecutionTerminated
+    return ExecutionTerminated
 
 
-def job_files() -> ports.JobFiles:
-    # Temporary until the closure window W moves these primitives into storage/files.py.
-    return ports.JobFiles(directory_fd=_job_directory_fd, sync_directory_ancestry=_job_sync_directory_ancestry,
-                          **{name.lstrip('_'): _job_file_function(name) for name in (
-                              '_reject_link', '_persist', '_sync_directory', '_read', '_open_lock_file')})
+def jobs_host() -> jobs_host_module.JobsHost:
+    return jobs_host_module.JobsHost(repo_root=ROOT, worker_command=_jobs_worker_command,
+                                     bounded_process=_bounded_process, execution_terminated=_execution_terminated,
+                                     liveness=_scripts_module('sermon_job_liveness'))
 
 
 def load_producer_imports():
     import importlib
     for name in EAGER_PRODUCER_IMPORTS:
-        importlib.import_module('scripts.' + name)
+        importlib.import_module(name if '.' in name else 'scripts.' + name)
     # An entry's imports can load another entry (the codex-local supervisor imports post-live).
     pending = True
     while pending:
@@ -962,12 +1035,24 @@ _measure, _workspace, _accounting = measure(), workspace(), accounting()
 _schemas, _review, _diagnostic, _waivers = schemas(), review(), diagnostic(), waivers()
 _plugins, _transports = plugins(), transports()
 
+def _observation_code(module):
+    return _module(module)().CODE
+
+
+def _safe_observation(module, fields):
+    return _module(module)().safe_observation(fields)
+
+
 observability_backend.configure(observability_backend.ObservabilityBackend(
-    checkout_root=ROOT, load_producer_imports=load_producer_imports))
-storage_backend.configure(storage_backend.StorageBackend(job_files=job_files()))
+    checkout_root=ROOT, load_producer_imports=load_producer_imports,
+    local_model_code=lambda: _observation_code('scripts.sermon_local_model_observation'),
+    safe_local_model_observation=lambda fields: _safe_observation('scripts.sermon_local_model_observation', fields),
+    decision_code=lambda: _observation_code('scripts.sermon_decision_accounting'),
+    safe_decision_observation=lambda fields: _safe_observation('scripts.sermon_decision_accounting', fields)))
+jobs_host_module.configure(jobs_host())
 compute_backend.configure(compute_backend.ComputeBackend(accounting=_accounting, resources=_resources_port,
                                                          artifact_root=lambda: _core.artifact_root,
-                                                         job_files=lambda: storage_backend.current().job_files))
+                                                         checkout_root=lambda: ROOT, unmoved=compute_unmoved()))
 source_backend.configure(source_backend.SourceBackend(core=_core, provider=_provider, code=_code, mfa=mfa(),
                                                       snapshot=_snapshot, compute=_compute,
                                                       resources=_resources_port, adjudication=adjudication(),
@@ -976,6 +1061,8 @@ source_backend.configure(source_backend.SourceBackend(core=_core, provider=_prov
 text_backend.configure(text_backend.TextBackend(core=_core, provider=_provider, code=_code, snapshot=_snapshot,
                                                 compute=_compute, resources=_resources_port,
                                                 terminology=_terminology, measure=_measure, accounting=_accounting,
+                                                scripture=scripture(), cuv_poc_module=cuv_poc_module,
+                                                cuv_poc_code_closure_sha256=cuv_poc_code_closure_sha256,
                                                 workspace=_workspace, plugins=_plugins, transports=_transports,
                                                 schemas=_schemas, diagnostic=_diagnostic,
                                                 worker_command=layer2_worker_command, unmoved=text_unmoved()))

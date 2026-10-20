@@ -1,12 +1,34 @@
 import json
 import unittest
+from pathlib import Path
 from unittest.mock import patch
 
-from scripts import sermon_unified_preflight as subject
 from tests import test_canonical_layer2_controller as fixtures
+from tools.ops import sermon_unified_preflight as subject
+from tongxing_production.text import stat_memo
 
 
 class UnifiedPreflightTests(unittest.TestCase):
+    def test_moved_implementation_bytes_are_in_loaded_code_identity(self):
+        original_read_bytes = Path.read_bytes
+        target = Path(subject.__file__).resolve()
+        touched = []
+
+        def changed_bytes(path):
+            data = original_read_bytes(path)
+            if path.resolve() == target:
+                touched.append(True)
+                return data + b'\n# synthetic identity change\n'
+            return data
+
+        baseline = subject.layer2.code_identity()
+        # A patched read leaves the stat identity unchanged; a fresh binding memo forces the full hash.
+        with patch.object(Path, 'read_bytes', changed_bytes), \
+                patch.object(subject.layer2, '_BINDING_MEMO', stat_memo.StatMemo()):
+            changed = subject.layer2.code_identity()
+        self.assertTrue(touched)
+        self.assertNotEqual(baseline, changed)
+
     def setUp(self):
         self.fixture = fixtures.CanonicalLayer2ControllerTests()
         self.fixture.setUp()

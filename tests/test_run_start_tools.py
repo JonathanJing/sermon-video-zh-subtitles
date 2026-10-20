@@ -4,13 +4,15 @@ import hashlib
 import io
 import json
 from pathlib import Path
+import shlex
 import tempfile
 import unittest
 from unittest import mock
 from urllib.error import HTTPError
 
 from scripts import check_run_start as check, plan_run_budgets as plan
-from scripts import machine_qc_budget_authorization as auth
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.review import qc_budget_authorization as auth
 
 
 def write(path, value):
@@ -59,7 +61,7 @@ class PlanTests(unittest.TestCase):
         return json.loads((self.base/name/'plan.json').read_text())
 
     def test_planned_approval_is_consumed_only_under_its_approved_project(self):
-        from scripts import run_machine_qc_clip_test as driver
+        from tongxing_production.review import qc_text_run as driver
         from tests.test_run_machine_qc_audio_test import OPENAI_ENV
         run_plan(*self.args());stage=self.load()['stages'][0]
         paths={'source':str(self.base/'source.json'),'anchor':str(self.base/'anchor.json'),'policy':str(self.base/'ko.json')}
@@ -97,7 +99,7 @@ class PlanTests(unittest.TestCase):
         self.assertEqual(check.check_budget(self.base/'run')['status'],'pass')
 
     def test_reuse_requires_same_frozen_context_and_an_actual_prior_ledger(self):
-        from scripts import sermon_source_budget as source
+        from tongxing_production.source import budget as source
         run_plan(*self.args())
         first = self.load()['stages'][0]
         value = auth.validate(first['authorization'])
@@ -189,7 +191,8 @@ class PlanTests(unittest.TestCase):
 
     def test_week_authority_is_locale_sharded_and_bound_by_the_actual_validator(self):
         from tests.test_canonical_layer2_controller import CanonicalLayer2ControllerTests
-        from scripts import canonical_layer2_budget as budget,canonical_layer2_controller as controller
+        from tongxing_production.text import budget
+        from tongxing_production.text import controller
         fixture=CanonicalLayer2ControllerTests();fixture.setUp();self.addCleanup(fixture.doCleanups)
         profile=json.loads(plan.PROFILE.read_text());config=controller.load_configuration(fixture.path)
         selected=list(config.lanes)
@@ -205,7 +208,7 @@ class PlanTests(unittest.TestCase):
 
     def test_an_underfunded_actual_week_is_rejected_before_writing(self):
         from tests.test_canonical_layer2_controller import CanonicalLayer2ControllerTests
-        from scripts import canonical_layer2_controller as controller
+        from tongxing_production.text import controller
         fixture=CanonicalLayer2ControllerTests();fixture.setUp();self.addCleanup(fixture.doCleanups)
         profile=json.loads(plan.PROFILE.read_text())
         with mock.patch.object(controller.models,'group_plan',return_value=[{}]*461):
@@ -221,7 +224,7 @@ class PlanTests(unittest.TestCase):
         self.assertFalse((self.base/'run').exists())
 
     def test_current_unknown_and_corrupt_paid_ledgers_fail_without_writing(self):
-        from scripts import sermon_source_budget as source
+        from tongxing_production.source import budget as source
         run_plan(*self.args());stage=self.load()['stages'][0];value=auth.validate(stage['authorization'])
         def timeout(*args):raise TimeoutError('injected, no provider request')
         ledger=source.SourceBudget(value['budgetRoot'],{
@@ -240,7 +243,8 @@ class PlanTests(unittest.TestCase):
         self.assertEqual(path.read_text(),'{bad-json')
 
     def test_paid_metadata_migration_and_reuse_provenance_never_false_green(self):
-        from scripts import sermon_source_budget as source,sermon_workflow_jobs as jobs
+        from tongxing_production.source import budget as source
+        from tongxing_production.orchestration import jobs
         from tests.test_source_budget_settlement import IDENTITY,BOUNDS,OPERATION,USAGE
         run_plan(*self.args());first=self.load()['stages'][0];v=auth.validate(first['authorization'])
         authority={'approvalSha256':v['authority']['approvalSha256'],
@@ -277,8 +281,10 @@ class PlanTests(unittest.TestCase):
 
     def test_layer2_policy_bytes_and_locale_shard_pending_calls_are_checked(self):
         from tests.test_canonical_layer2_controller import CanonicalLayer2ControllerTests
-        from scripts import canonical_layer2_controller as controller,canonical_layer2_budget as l2
-        from scripts import sermon_review_budget as budget,sermon_workflow_jobs as jobs
+        from tongxing_production.text import budget as l2
+        from tongxing_production.text import controller
+        from tongxing_production.review import review_budget as budget
+        from tongxing_production.orchestration import jobs
         fixture=CanonicalLayer2ControllerTests();fixture.setUp();self.addCleanup(fixture.doCleanups)
         config=controller.load_configuration(fixture.path);locales=','.join(config.lanes)
         args=['--out',str(self.base/'l2'),'--scale','week','--locales',locales,'--total-usd','100',
@@ -312,7 +318,7 @@ class StartCheckTests(unittest.TestCase):
             self.assertEqual(check.check_page('new','https://example.invalid')['status'],'fail')
 
     def test_missing_expected_identities_cannot_return_green(self):
-        from scripts import machine_quality_waiver as waiver
+        from tongxing_production.review import waiver
         with mock.patch.object(check,'git',side_effect=['a'*40,'']),mock.patch.object(waiver,'implementation_sha256',return_value='b'*64):
             self.assertEqual(check.check_code(None,None)['status'],'fail')
         with mock.patch.object(check,'git',side_effect=['a'*40,'']),mock.patch.object(waiver,'implementation_sha256',return_value='b'*64):
@@ -324,6 +330,46 @@ class StartCheckTests(unittest.TestCase):
         with mock.patch.object(check,'ssh',return_value=mock.Mock(returncode=0,stdout='spark')),mock.patch.dict('os.environ',{},clear=True):
             self.assertEqual(check.check_spark('host',False,None)['session'],'not_required_api_only')
             self.assertEqual(check.check_spark('host',True,None)['status'],'fail')
+
+    def test_spark_code_dir_hashes_all_current_package_closure_paths(self):
+        from tongxing_production.review import implementation_freeze
+        from tongxing_production.review import waiver
+        files = [str(path) for path in implementation_freeze.closure_files(Path())]
+        self.assertEqual(files, list(waiver.IMPLEMENTATION_PHYSICAL_FILES))
+        self.assertEqual(len(set(files)), len(files))
+        # The D closure window removed these facades; the closure names their targets.
+        self.assertNotIn('scripts/machine_quality_waiver.py', files)
+        self.assertNotIn('scripts/implementation_freeze.py', files)
+        self.assertIn('packages/production/src/tongxing_production/review/waiver.py', files)
+        self.assertIn('packages/production/src/tongxing_production/review/implementation_freeze.py', files)
+        self.assertIn('packages/production/src/tongxing_production/audio/screening.py', files)
+        self.assertIn('packages/production/src/tongxing_production/path_aliases.py', files)
+        self.assertTrue(all((check.ROOT / path).is_file() for path in files))
+        observed_commands = []
+        corrupt_remote_hash = False
+
+        def fake_ssh(command, host):
+            self.assertEqual(host, 'spark-fixture')
+            observed_commands.append(command)
+            if command == 'hostname':
+                return mock.Mock(returncode=0, stdout='spark-fixture\n')
+            words = shlex.split(command)
+            self.assertEqual(words[:3], ['cd', '/remote/code dir', '&&'])
+            self.assertEqual(words[3], 'sha256sum')
+            self.assertEqual(words[4:], files)
+            rows = [f'{hashlib.sha256((check.ROOT / path).read_bytes()).hexdigest()}  {path}'
+                    for path in words[4:]]
+            if corrupt_remote_hash:
+                rows[0] = f'{"0" * 64}  {words[4]}'
+            return mock.Mock(returncode=0, stdout='\n'.join(rows) + '\n')
+
+        with mock.patch.object(check, 'ssh', side_effect=fake_ssh):
+            result = check.check_spark('spark-fixture', False, '/remote/code dir')
+        self.assertEqual(result['status'], 'pass')
+        self.assertEqual(len(observed_commands), 2)
+        corrupt_remote_hash = True
+        with mock.patch.object(check, 'ssh', side_effect=fake_ssh):
+            self.assertEqual(check.check_spark('spark-fixture', False, '/remote/code dir')['status'], 'fail')
 
     def test_fresh_paths_reject_an_occupied_directory(self):
         with tempfile.TemporaryDirectory() as root:

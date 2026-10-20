@@ -42,7 +42,7 @@ jobs:
           HEAD_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
           CHANGE_EVENT: ${{ github.event_name }}
         run: >-
-          python3 scripts/docs_change_gate.py
+          python3 tools/development/docs_change_gate.py
           --base "$BASE_SHA"
           --head "$HEAD_SHA"
           --event "$CHANGE_EVENT"
@@ -56,7 +56,7 @@ jobs:
           HEAD_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
           CHANGE_EVENT: ${{ github.event_name }}
         run: >-
-          python3 scripts/ci_change_scope.py
+          python3 tools/development/ci_change_scope.py
           --base "$BASE_SHA"
           --head "$HEAD_SHA"
           --event "$CHANGE_EVENT"
@@ -95,12 +95,13 @@ jobs:
           tests.test_shared_text_only_release_fixtures
           tests.test_shared_machine_checked_fixtures
           tests.test_shared_video_delivery_fixtures
+          tests.test_check_tongxing_icon_alignment
           tests.test_pipeline_compatibility_gate
 
       # A PR confined to apps/tongxing-ios/ never reaches the full suite, yet
       # the SF Symbols it uses must still resolve to the shared web sprite.
       - name: Check native symbols against the shared icon sprite
-        run: python scripts/check_tongxing_icon_alignment.py
+        run: python tools/development/check_tongxing_icon_alignment.py
 
       - name: Check Web consumers of shared native fixtures
         run: >-
@@ -169,18 +170,18 @@ jobs:
           python -m py_compile
           scripts/build_sermon_reading_edition_with_openai.py
           scripts/generate_notes_with_openai.py
-          scripts/post_live_run_status.py
-          scripts/render_sermon_interpretation_pdf.py
-          scripts/review_prompts.py
-          scripts/run_codex_local_sermon_production.py
-          scripts/run_post_live_subtitle_generation.py
+          packages/production/src/tongxing_production/workflows/dual_pdf/run_status.py
+          packages/production/src/tongxing_production/workflows/dual_pdf/interpretation_pdf.py
+          packages/production/src/tongxing_production/source/review_prompts.py
+          packages/production/src/tongxing_production/workflows/dual_pdf/codex_local.py
+          packages/production/src/tongxing_production/workflows/dual_pdf/post_live.py
           scripts/run_sermon_production_supervisor_agent.py
           scripts/sermon_production_supervisor.py
 
       - name: Evaluate simulated backend Layer 1-4 flow
         if: matrix.shard_index == 1
         run: >-
-          python scripts/evaluate_backend_four_layer_dry_run.py
+          python tools/development/evaluate_backend_four_layer_dry_run.py
           --out "${RUNNER_TEMP}/backend-dry-run-evaluation.json"
 
       - name: Preserve backend dry-run evaluation
@@ -193,7 +194,7 @@ jobs:
 
       - name: Run unit tests
         run: >-
-          python scripts/run_unittest_ci.py
+          python tools/development/run_unittest_ci.py
           --weights .github/unittest-module-timings.json
           --shard-count 8
           --shard-index ${{ matrix.shard_index }}
@@ -244,7 +245,7 @@ jobs:
 
       - name: Check native and web icon alignment
         if: matrix.shard_index == 1
-        run: python scripts/check_tongxing_icon_alignment.py
+        run: python tools/development/check_tongxing_icon_alignment.py
 
   # Keep this job name stable: branch protection requires the unittest check.
   unittest:

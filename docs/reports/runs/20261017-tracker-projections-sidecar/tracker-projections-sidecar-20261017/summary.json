@@ -1,0 +1,10 @@
+{
+  "suite": "Tracker projection sidecar regression",
+  "tests": 57,
+  "failures": 0,
+  "errors": 0,
+  "exitCode": 0,
+  "newCase": "snapshot_carries_referenced_loaded_code_sidecar",
+  "diffCheck": "pass",
+  "realWorkflow": "not_run"
+}

@@ -1,0 +1,59 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-l2-review-diagnostics",
+  "runs": [
+    {
+      "label": "failed-env",
+      "source": "~/.codex/worktrees/l2-review-diagnostics/sermon-video-zh-subtitles/artifacts/l2-review-diagnostics-20261017/failed-env",
+      "skipped": {}
+    },
+    {
+      "label": "passed",
+      "source": "~/.codex/worktrees/l2-review-diagnostics/sermon-video-zh-subtitles/artifacts/l2-review-diagnostics-20261017/passed",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "failed-env",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 206,
+      "truncated": false,
+      "sha256": "2a087fab7e5a8e30ab403d0a660bdcca36698892b1e448ac8dd7d88009211ebd",
+      "redactions": {}
+    },
+    {
+      "run": "failed-env",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 276,
+      "truncated": false,
+      "sha256": "5676cb497f0bd4e2585b63737fd7535aefa3d3374638e1eca46f41bfb9e4ecca",
+      "redactions": {}
+    },
+    {
+      "run": "passed",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 284,
+      "truncated": false,
+      "sha256": "48e9268502c772ab248bb936dcbda66b3ae2150d0f75894d0a6821fdfebc55ef",
+      "redactions": {}
+    },
+    {
+      "run": "passed",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 546,
+      "truncated": false,
+      "sha256": "338bbea93af6d67ca83a4c88a325723665e57aa7c48bb1caba7874bcc1235898",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

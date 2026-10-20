@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-ops-cloud-run-realtime-plan-move",
+  "runs": [
+    {
+      "label": "ops-cloud-run-realtime-plan-move",
+      "source": "/private/tmp/sermon-ops-cloud-run-realtime-plan/artifacts/ops-cloud-run-realtime-plan-move",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "ops-cloud-run-realtime-plan-move",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 95,
+      "truncated": false,
+      "sha256": "f83c4f7314a50061912ff1f9e656ba68a91e77f724984f6c1d270ffb542bd993",
+      "redactions": {}
+    },
+    {
+      "run": "ops-cloud-run-realtime-plan-move",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 675,
+      "truncated": false,
+      "sha256": "39d7244de10d07eafb14b18bcb147b96ca8a8b70f0c1645a296a2873ef875bf3",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

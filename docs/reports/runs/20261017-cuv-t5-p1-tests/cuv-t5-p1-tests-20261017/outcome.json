@@ -1,0 +1,7 @@
+{
+  "deliveryType": "test",
+  "status": "passed",
+  "result": "66 tests, 4 skipped; targeted incremental reuse 6 passed; initial invocation failed before tests because worktree had no local .venv",
+  "modelCalls": 0,
+  "publication": "not_run"
+}

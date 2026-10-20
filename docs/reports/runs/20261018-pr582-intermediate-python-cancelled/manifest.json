@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261018-pr582-intermediate-python-cancelled",
+  "runs": [
+    {
+      "label": "pr582-python-cancelled-39087129149",
+      "source": "~/.codex/worktrees/g1-a4-audio/sermon-video-zh-subtitles/artifacts/pr582-python-cancelled-39087129149",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "pr582-python-cancelled-39087129149",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 280,
+      "truncated": false,
+      "sha256": "96da5e93fa022735a6ed782f45aa59585cacdef03f3458b57407dfaee6150993",
+      "redactions": {}
+    },
+    {
+      "run": "pr582-python-cancelled-39087129149",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 1375,
+      "truncated": false,
+      "sha256": "bb3b2e05f54fb28c216ee3d3649f171439122806fd49c74d92121ac92ac3c8b1",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

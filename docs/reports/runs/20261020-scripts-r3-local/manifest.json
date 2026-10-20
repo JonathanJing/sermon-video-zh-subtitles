@@ -1,0 +1,183 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261020-scripts-r3-local",
+  "runs": [
+    {
+      "label": "20261020-scripts-r3-local",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.claude/worktrees/scripts-r3-3df8c4/artifacts/20261020-scripts-r3-local",
+      "skipped": {
+        "(none)": 1
+      }
+    }
+  ],
+  "files": [
+    {
+      "run": "20261020-scripts-r3-local",
+      "path": "journal.ndjson",
+      "kind": "whole",
+      "bytes": 964,
+      "truncated": false,
+      "sha256": "f93fe478f183b1939a3eb5e463c100804b512645fe1334ebf505343a8bf38c04",
+      "redactions": {}
+    },
+    {
+      "run": "20261020-scripts-r3-local",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 498,
+      "truncated": false,
+      "sha256": "9539df8a76e79c8a0439e90d9ed695b5d65d97875ea3e31d95ad2bf4df6f6f3f",
+      "redactions": {}
+    },
+    {
+      "run": "20261020-scripts-r3-local",
+      "path": "shards/a.log",
+      "kind": "log",
+      "bytes": 158,
+      "truncated": false,
+      "sha256": "c3d731d73e1002581868d32e4526d0e0c8f4078d456ed11d5ff831b107031ea5",
+      "redactions": {}
+    },
+    {
+      "run": "20261020-scripts-r3-local",
+      "path": "shards/b.log",
+      "kind": "log",
+      "bytes": 328,
+      "truncated": false,
+      "sha256": "bf7d62a3a33f4b978abd5959897471617e114848d705b97dc15b669f95df10d4",
+      "redactions": {}
+    },
+    {
+      "run": "20261020-scripts-r3-local",
+      "path": "shards/c-live_source_monitor.log",
+      "kind": "log",
+      "bytes": 3929,
+      "truncated": false,
+      "sha256": "039bdc6c350b6396fecd4d330a9bbc91abd6ca9aae04c9231b73246087c3b5b2",
+      "redactions": {
+        "home_dir": 2
+      }
+    },
+    {
+      "run": "20261020-scripts-r3-local",
+      "path": "shards/c-run_local_post_live_download.log",
+      "kind": "log",
+      "bytes": 1356,
+      "truncated": false,
+      "sha256": "1c9cb7fff36e532ac74d80d13c7fb0e194e694d31f4d966f0c97f6525b028bf7",
+      "redactions": {
+        "home_dir": 2
+      }
+    },
+    {
+      "run": "20261020-scripts-r3-local",
+      "path": "shards/c-run_post_live_timeline_job.log",
+      "kind": "log",
+      "bytes": 2232,
+      "truncated": false,
+      "sha256": "80f03bc4293adf0f064e0466bc66d317401142b6b9816bca29dd241928a5564a",
+      "redactions": {
+        "home_dir": 2
+      }
+    },
+    {
+      "run": "20261020-scripts-r3-local",
+      "path": "shards/c-timeline_recovery_and_handoff.log",
+      "kind": "log",
+      "bytes": 2966,
+      "truncated": false,
+      "sha256": "1dd0120a693bf0d74de287b8c0bed649fa688293d4a68a6ec6ce2650c6fdef64",
+      "redactions": {
+        "home_dir": 2
+      }
+    },
+    {
+      "run": "20261020-scripts-r3-local",
+      "path": "shards/c-tongxing_review_ports.log",
+      "kind": "log",
+      "bytes": 2929,
+      "truncated": false,
+      "sha256": "adc0305a77ec0fced862dab013cd433a9de8bde065f5d0307d69eaa75a9ad857",
+      "redactions": {
+        "home_dir": 2
+      }
+    },
+    {
+      "run": "20261020-scripts-r3-local",
+      "path": "shards/d.log",
+      "kind": "log",
+      "bytes": 210,
+      "truncated": false,
+      "sha256": "74951e9dd332b29fa72654d3db59e54ad23d522f2d1780e09a8fa36d190817d1",
+      "redactions": {}
+    },
+    {
+      "run": "20261020-scripts-r3-local",
+      "path": "shards/e.log",
+      "kind": "log",
+      "bytes": 224,
+      "truncated": false,
+      "sha256": "be379edf5279887e445ed4d64353e5eee9c3cd624b4b0bbfd0f64ad8755647e7",
+      "redactions": {}
+    },
+    {
+      "run": "20261020-scripts-r3-local",
+      "path": "shards/f.log",
+      "kind": "log",
+      "bytes": 171,
+      "truncated": false,
+      "sha256": "49ebcbae8b1ad1ba66ac360aa1159d7c6c1e1b9410e2f8d30dea4e6ada9e99a8",
+      "redactions": {}
+    },
+    {
+      "run": "20261020-scripts-r3-local",
+      "path": "shards/g.log",
+      "kind": "log",
+      "bytes": 162,
+      "truncated": false,
+      "sha256": "e3483738d2bb825216c2c5164418bb238caec628d6747de9cd50f7eae9f4729b",
+      "redactions": {}
+    },
+    {
+      "run": "20261020-scripts-r3-local",
+      "path": "shards/m1.log",
+      "kind": "log",
+      "bytes": 157,
+      "truncated": false,
+      "sha256": "cd59e408a4562fc40072e6da1feca2e3dafa49f28460697f10eb84ee85f60a88",
+      "redactions": {}
+    },
+    {
+      "run": "20261020-scripts-r3-local",
+      "path": "shards/m2.log",
+      "kind": "log",
+      "bytes": 334,
+      "truncated": false,
+      "sha256": "a367f8c4767bd84e4122f83b9505306ebe10f69666559659a4a9ff3726bb6880",
+      "redactions": {}
+    },
+    {
+      "run": "20261020-scripts-r3-local",
+      "path": "shards/m3.log",
+      "kind": "log",
+      "bytes": 218,
+      "truncated": false,
+      "sha256": "7dbf96bf4f72fe409c07ad08fffc4f913491bde3b58fdc9214d603117cd851a0",
+      "redactions": {}
+    },
+    {
+      "run": "20261020-scripts-r3-local",
+      "path": "shards/m4.log",
+      "kind": "log",
+      "bytes": 165,
+      "truncated": false,
+      "sha256": "b650e7f6cb57f63d87ebf857b6948449b181b430866dd08792f91c5976c2face",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

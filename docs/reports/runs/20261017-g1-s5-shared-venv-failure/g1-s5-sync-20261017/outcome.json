@@ -1,0 +1,23 @@
+{
+  "schemaVersion": "test-run-outcome-v1",
+  "kind": "test",
+  "status": "failed",
+  "exitCode": 1,
+  "startedAt": "2026-10-17T22:01:19.597101+00:00",
+  "endedAt": "2026-10-17T22:01:25.240204+00:00",
+  "durationSeconds": 5.64,
+  "head": "0c3db8330fc05a56a49625fa062f6d65ae220533",
+  "command": [
+    "python",
+    "-m",
+    "pytest",
+    "-q",
+    "tests/test_prepare_sentence_interpretation_shadow.py",
+    "tests/test_run_post_live_subtitle_generation.py::LoadedCodeIdentityTests",
+    "tests/test_tongxing_production_package.py",
+    "tests/test_target_audio_rate_identity.py",
+    "tests/test_implementation_freeze.py",
+    "tests/test_qc_runtime_implementation_closure.py",
+    "tests/test_tongxing_review_ports.py"
+  ]
+}

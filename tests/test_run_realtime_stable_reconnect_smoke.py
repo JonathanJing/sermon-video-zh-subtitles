@@ -7,7 +7,7 @@ from pathlib import Path
 from types import SimpleNamespace
 
 
-SCRIPT_PATH = Path(__file__).resolve().parents[1] / "scripts" / "run_realtime_stable_reconnect_smoke.py"
+SCRIPT_PATH = Path(__file__).resolve().parents[1] / "tools" / "ops" / "run_realtime_stable_reconnect_smoke.py"
 REPO_ROOT = Path(__file__).resolve().parents[1]
 SPEC = importlib.util.spec_from_file_location("run_realtime_stable_reconnect_smoke", SCRIPT_PATH)
 mod = importlib.util.module_from_spec(SPEC)

@@ -1,0 +1,7 @@
+{
+  "status": "success",
+  "testCount": 42,
+  "wallSeconds": 2.176,
+  "scope": "physical freeze, four-identity, run-start and review ports modules",
+  "modelCalls": 0
+}

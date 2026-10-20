@@ -6,7 +6,7 @@ import zipfile
 from pathlib import Path
 from unittest.mock import patch
 
-from scripts import export_run_digest as digest
+from tools.development import export_run_digest as digest
 
 
 class ExportRunDigestTests(unittest.TestCase):

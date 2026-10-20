@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import argparse
 from concurrent.futures import FIRST_COMPLETED, ThreadPoolExecutor, wait
-from contextvars import copy_context
+from contextvars import ContextVar, copy_context
 import copy
 import hashlib
 import json
@@ -70,7 +70,17 @@ TRANSLATOR_BACKENDS = policy_tools.TRANSLATOR_BACKENDS
 HISTORICAL_MODEL_ROLES = {"translator": "gpt-6-astra", "reviewer": "gpt-6-sol"}
 SEMANTIC_CHECKS = ("completeMeaning", "negationsNumbersNames", "quotationAttribution", "noAddedMeaning")
 REVISION_BRIEF_SCHEMA = "sermon-target-language-group-revision-brief-v1"
+PAYLOAD_CACHE_SUCCESS_SCHEMA = "sermon-target-language-payload-cache-success-v2"
+ROUND_RUNNER_IDENTITY_SCHEMA = "sermon-layer2-round-runner-identity-v1"
+# Prototype implementation identity.  This is intentionally independent of the
+# legacy runner compatibility constant: any change to the cross-top-level-round
+# admission, receipt, or copying rules must mint a new value before reuse.
+PAYLOAD_CACHE_IMPLEMENTATION_SHA256 = "19b26224cf9c006aa208b1658b3c642f11d0e278f3f6dec5af6a50c1a423eed9"
 MAX_STANDALONE_GROUP_WORKERS = 3
+# Set while a partial recovery processes the groups whose translator and reviewer
+# both returned in the failed round: those groups never need a paid call, and a
+# paid dispatch there fails before its started marker (see _run_partial_recovery_groups).
+_RECOVERY_PAID_DISPATCH_CLOSED = ContextVar("layer2_recovery_paid_dispatch_closed", default=False)
 
 
 def revision_boundary_instruction(target_locale: str, *, revising: bool) -> str:
@@ -205,17 +215,26 @@ def save_new(path: Path, value: object, *, private=False) -> None:
 
 
 def group_plan(request: dict[str, Any], anchor: dict[str, Any],
-               custom: list[dict[str, Any]] | None = None) -> list[dict[str, Any]]:
+               custom: list[dict[str, Any]] | None = None, *, allow_subset: bool = False) -> list[dict[str, Any]]:
+    """The translation groups in source order.
+
+    ``allow_subset`` is for the per-group worker (DEV-GRP-002): it accepts an ordered
+    subset of the Layer 1 groups, because one group is one task. It never accepts a
+    group boundary other than Layer 1's, a reordering or a duplicate; candidate
+    admission still requires every source unit exactly once.
+    """
     expected = [unit["sourceUnitId"] for unit in request["sourceUnits"]]
+    anchor_plan = anchor.get("translationRequests")
+    base = ([{"translationGroupId": row["translationGroupId"],
+              "sourceUnitIds": row["sourceUnitIds"]} for row in anchor_plan]
+            if isinstance(anchor_plan, list) and anchor_plan else
+            [{"translationGroupId": f"translation-{unit_id}",
+              "sourceUnitIds": [unit_id]} for unit_id in expected])
     if custom is None:
-        anchor_plan = anchor.get("translationRequests")
-        if isinstance(anchor_plan, list) and anchor_plan:
-            plan = [{"translationGroupId": row["translationGroupId"],
-                     "sourceUnitIds": row["sourceUnitIds"]} for row in anchor_plan]
-        else:
-            plan = [{"translationGroupId": f"translation-{unit_id}",
-                     "sourceUnitIds": [unit_id]} for unit_id in expected]
+        plan = base
     else:
+        if allow_subset:
+            require(all(row in base for row in custom), "Group subset must name Layer 1 groups")
         plan = custom
     require(isinstance(plan, list) and bool(plan), "Group plan must be a nonempty array")
     require(all(isinstance(row, dict)
@@ -225,8 +244,12 @@ def group_plan(request: dict[str, Any], anchor: dict[str, Any],
                 for row in plan), "Invalid group plan")
     ids = [row["translationGroupId"] for row in plan]
     assigned = [unit_id for row in plan for unit_id in row["sourceUnitIds"]]
-    require(len(set(ids)) == len(ids) and assigned == expected,
-            "Group plan must cover source units exactly once and in order")
+    if allow_subset:
+        require(len(set(ids)) == len(ids) and assigned == [unit for unit in expected if unit in set(assigned)],
+                "Group subset must keep Layer 1 groups in source order without duplicates")
+    else:
+        require(len(set(ids)) == len(ids) and assigned == expected,
+                "Group plan must cover source units exactly once and in order")
     return plan
 
 
@@ -288,6 +311,395 @@ def validate_api_marker(marker,caller,api_key,payload,fingerprint,role):
                     'Standalone API outcome marker request binding changed')
 
 
+def _model_fingerprint(payload: dict[str, Any], caller, api_key: str) -> str:
+    """Hash the exact bounded provider payload and its effective transport."""
+    transport_identity = getattr(caller, "execution_identity", None)
+    fingerprint_input = ({"payload": payload, "modelTransportIdentity": transport_identity}
+                         if transport_identity is not None else payload)
+    if isinstance(caller, _session_bound_caller()) and not caller.requires_spark and not caller.outcome_guarded:
+        outcomes = _text.current().provider.outcomes
+        fingerprint_input = {'request': fingerprint_input,
+                             'apiCliRequestSha256': outcomes.request_identity(
+                                 caller.caller, (api_key, payload), {}, caller.purpose)}
+    return policy_tools.canonical_sha256(fingerprint_input)
+
+
+def _payload_cache_key(role: str, payload_sha256: str) -> str:
+    return policy_tools.canonical_sha256({
+        "schemaVersion": PAYLOAD_CACHE_SUCCESS_SCHEMA,
+        "role": role,
+        "payloadSha256": payload_sha256,
+        "runnerImplementationSha256": RUNNER_PRODUCTION_IDENTITY_SHA256,
+        "payloadCacheImplementationSha256": PAYLOAD_CACHE_IMPLEMENTATION_SHA256,
+    })
+
+
+def _request_cache_binding(request: dict[str, Any]) -> dict[str, Any]:
+    return {key: request[key] for key in (
+        "targetLocale", "englishSourcePackageJsonSha256", "anchorManifestSha256",
+        "translationPolicySha256")}
+
+
+def _file_sha256(path: Path) -> str:
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def _require_payload_cache_response_not_refused(response: dict[str, Any], role: str) -> None:
+    choices = response.get("choices") if isinstance(response, dict) else None
+    message = choices[0].get("message") if isinstance(choices, list) and len(choices) == 1 \
+        and isinstance(choices[0], dict) else None
+    require(isinstance(message, dict) and not message.get("refusal"),
+            f"Payload cache success cannot bind a refused {role} response")
+
+
+def _successful_payload_cache(prior_root: Path | None, stem: str, role: str,
+                              payload_sha256: str, request: dict[str, Any],
+                              group: dict[str, Any], *,
+                              allow_policy_binding_miss: bool = False) -> dict[str, Any] | None:
+    """Return a new-format, group-success-bound exact-payload cache.
+
+    Merely having a parsed or raw response is not success evidence.  Older roots
+    without this receipt are deliberately a miss.  Once a v1 receipt exists,
+    every byte it binds is fail-closed before a provider can be called.
+    """
+    if prior_root is None:
+        return None
+    require(not prior_root.is_symlink(),
+            f"Payload cache source root must not be a symlink: {prior_root}")
+    receipt_path = prior_root / f"{stem}-payload-cache-success.json"
+    if not receipt_path.is_file():
+        return None
+    require(not receipt_path.is_symlink(),
+            f"Payload cache success receipt must not be a symlink: {receipt_path}")
+    try:
+        receipt = producer._load(receipt_path)
+    except (OSError, ValueError, TypeError, json.JSONDecodeError) as exc:
+        raise ValueError(f"Prior payload cache success receipt is corrupt: {receipt_path}") from exc
+    request_binding = receipt.get("requestBinding") if isinstance(receipt, dict) else None
+    current_binding = _request_cache_binding(request)
+    stable_binding_keys = ("targetLocale", "englishSourcePackageJsonSha256", "anchorManifestSha256")
+    policy_binding_matches = (isinstance(request_binding, dict)
+                              and request_binding.get("translationPolicySha256")
+                              == current_binding["translationPolicySha256"])
+    require(isinstance(receipt, dict)
+            and set(receipt) == {"schemaVersion", "runnerImplementationSha256",
+                                 "payloadCacheImplementationSha256", "requestBinding",
+                                 "translationGroupId", "sourceUnitIds", "semanticReview", "roles",
+                                 "humanApproval"}
+            and receipt.get("schemaVersion") == PAYLOAD_CACHE_SUCCESS_SCHEMA
+            and receipt.get("runnerImplementationSha256") == RUNNER_PRODUCTION_IDENTITY_SHA256
+            and receipt.get("payloadCacheImplementationSha256")
+                == PAYLOAD_CACHE_IMPLEMENTATION_SHA256
+            and isinstance(request_binding, dict)
+            and set(request_binding) == set(current_binding)
+            and all(request_binding.get(key) == current_binding[key] for key in stable_binding_keys)
+            and (policy_binding_matches or allow_policy_binding_miss)
+            and receipt.get("translationGroupId") == group["translationGroupId"]
+            and receipt.get("sourceUnitIds") == group["sourceUnitIds"]
+            and receipt.get("humanApproval") is False,
+            f"Prior payload cache success identity changed: {receipt_path}")
+    semantic = receipt.get("semanticReview")
+    require(isinstance(semantic, dict) and semantic.get("status") == "pass"
+            and isinstance(semantic.get("checks"), dict)
+            and set(semantic["checks"]) == set(SEMANTIC_CHECKS)
+            and all(value == "pass" for value in semantic["checks"].values())
+            and semantic.get("uncertainty") == [] and semantic.get("issues") == [],
+            f"Prior payload cache group did not pass semantic review: {receipt_path}")
+    roles = receipt.get("roles")
+    require(isinstance(roles, dict) and set(roles) == set(MODEL_ROLES),
+            f"Prior payload cache roles changed: {receipt_path}")
+    cached_results = {}
+    frozen_payloads = {}
+    for expected_role, suffix in (("translator", "astra"), ("reviewer", "sol")):
+        row = roles.get(expected_role)
+        cache = prior_root / f"{stem}-{suffix}.json"
+        raw = cache.with_suffix(".raw.json")
+        preview = cache.with_suffix(".policy-preview.json")
+        require(isinstance(row, dict) and set(row) == {
+                    "payloadSha256", "cacheKeySha256", "model", "requestId",
+                    "cacheSha256", "rawSha256", "previewSha256", "paidProvenance"}
+                and cache.is_file() and raw.is_file() and preview.is_file()
+                and not cache.is_symlink() and not raw.is_symlink() and not preview.is_symlink()
+                and row.get("cacheSha256") == _file_sha256(cache)
+                and row.get("rawSha256") == _file_sha256(raw)
+                and row.get("previewSha256") == _file_sha256(preview),
+                f"Prior payload cache files changed: {cache}")
+        cached = producer._load(cache)
+        raw_record = producer._load(raw)
+        frozen = producer._load(preview)
+        require(cached.get("payloadSha256") == row.get("payloadSha256")
+                and cached.get("model") == row.get("model")
+                and cached.get("requestId") == row.get("requestId")
+                and isinstance(cached.get("result"), dict)
+                and cached["result"].get("translationGroupId") == group["translationGroupId"]
+                and cached["result"].get("sourceUnitIds") == group["sourceUnitIds"]
+                and raw_record.get("payloadSha256") == row.get("payloadSha256")
+                and isinstance(raw_record.get("response"), dict)
+                and raw_record["response"].get("id") == row.get("requestId")
+                and frozen.get("role") == expected_role
+                and frozen.get("policySha256") == policy_tools.canonical_sha256(frozen.get("policy"))
+                and frozen.get("payload", {}).get("model") == row.get("model")
+                and frozen.get("payloadSha256") == policy_tools.canonical_sha256(frozen.get("payload"))
+                and row.get("cacheKeySha256") == _payload_cache_key(
+                    expected_role, row.get("payloadSha256"))
+                and (row.get("paidProvenance") is None
+                     or isinstance(row.get("paidProvenance"), dict)),
+                f"Prior payload cache evidence changed: {cache}")
+        try:
+            _require_payload_cache_response_not_refused(raw_record["response"], expected_role)
+            returned_result = json.loads(completed_response_content(
+                raw_record["response"], row["model"], expected_role))
+        except (ValueError, TypeError, json.JSONDecodeError) as exc:
+            raise ValueError(f"Prior payload cache raw response is invalid: {raw}") from exc
+        require(returned_result == cached["result"],
+                f"Prior payload cache parsed result differs from raw response: {cache}")
+        cached_results[expected_role] = cached["result"]
+        frozen_payloads[expected_role] = frozen["payload"]
+        if expected_role == "reviewer":
+            require(normalize_semantic_review(cached["result"].get("semanticReview")) == semantic,
+                    f"Prior payload cache semantic result changed: {cache}")
+    try:
+        reviewer_input = json.loads(frozen_payloads["reviewer"]["messages"][1]["content"])
+    except (KeyError, IndexError, TypeError, json.JSONDecodeError) as exc:
+        raise ValueError(f"Prior payload cache reviewer payload is invalid: {receipt_path}") from exc
+    require(reviewer_input.get("astraDraft") == cached_results["translator"],
+            f"Prior payload cache reviewer is not bound to its translator draft: {receipt_path}")
+    # This old-policy success receipt cannot authorize a new policy. A v7
+    # partial recovery may still use the independently proved direct-paid
+    # response path below after this receipt and every bound byte validated.
+    if not policy_binding_matches:
+        return None
+    selected = roles[role]
+    if selected["cacheKeySha256"] != _payload_cache_key(role, payload_sha256):
+        return None
+    suffix = 'astra' if role == 'translator' else 'sol'
+    raw_record = producer._load((prior_root / f"{stem}-{suffix}.json").with_suffix('.raw.json'))
+    return {"path": prior_root / f"{stem}-{suffix}.json",
+            "paidProvenance": copy.deepcopy(selected["paidProvenance"]),
+            "response": copy.deepcopy(raw_record["response"]),
+            "binding": copy.deepcopy(selected)}
+
+
+def _require_partial_recovery_source(root: Path, budget_root: Path, caller, api_key: str,
+                                     plan: list[dict[str, Any]]) -> list[int]:
+    """Fail closed before dispatch when the failed round has an incomplete call.
+
+    A started marker without the parsed response, raw provider response and
+    frozen bounded payload is still an unknown outcome.  A recovery run may
+    reuse complete returned calls and may pay only for groups that were never
+    dispatched by the failed predecessor.  Returns the indices of the groups
+    whose translator and reviewer both returned: they run first with paid
+    dispatch closed (_run_partial_recovery_groups).  Every other returned role
+    (a translator whose reviewer never ran) is checked here against its files
+    and direct-paid ledger row, so damaged evidence anywhere in the round stops
+    the run before any group pays.
+    """
+    require(root.is_dir() and not root.is_symlink(),
+            f"Partial recovery source root is invalid: {root}")
+    for marker in sorted(root.glob("group-*.started.json")):
+        require(not marker.is_symlink(),
+                f"Partial recovery marker must not be a symlink: {marker}")
+        stem = marker.name.removesuffix(".started.json")
+        files = (root / f"{stem}.json", root / f"{stem}.raw.json",
+                 root / f"{stem}.policy-preview.json")
+        require(all(path.is_file() and not path.is_symlink() for path in files),
+                f"partial recovery response is incomplete: {marker}")
+    validator = getattr(caller, "validate_recovery_source", None)
+    require(callable(validator), "Partial recovery requires a reuse-aware budget caller")
+    validator(api_key, budget_root)
+    present: dict[int, set[str]] = {}
+    for entry in root.iterdir():
+        named = re.fullmatch(r"group-([0-9]{4})-(astra|sol)(?:\.raw|\.policy-preview)?\.json", entry.name)
+        if named is not None:
+            index = int(named.group(1))
+            require(1 <= index <= len(plan), f"Partial recovery response is outside the group plan: {entry}")
+            present.setdefault(index, set()).add(named.group(2))
+    complete = []
+    for index, suffixes in sorted(present.items()):
+        stem = f"group-{index:04d}"
+        if all((root / f"{stem}-{suffix}{tail}").is_file() for suffix in ("astra", "sol")
+               for tail in (".json", ".raw.json", ".policy-preview.json")):
+            complete.append(index)
+            continue
+        for suffix in sorted(suffixes):
+            _returned_role_evidence(root, stem, "translator" if suffix == "astra" else "reviewer",
+                                    plan[index - 1], caller, api_key, budget_root)
+    return complete
+
+
+def _returned_role_evidence(prior_root: Path, stem: str, role: str, group: dict[str, Any],
+                            caller, api_key: str, budget_root: Path) -> dict[str, Any] | None:
+    """Check one returned role of a failed round independently of the current payload."""
+    suffix = "astra" if role == "translator" else "sol"
+    cache = prior_root / f"{stem}-{suffix}.json"
+    raw = cache.with_suffix(".raw.json")
+    preview = cache.with_suffix(".policy-preview.json")
+    marker = prior_root / f"{stem}-{suffix}.started.json"
+    present = [path.exists() for path in (cache, raw, preview)]
+    if not any(present):
+        return None
+    require(all(present) and all(path.is_file() and not path.is_symlink()
+                                 for path in (cache, raw, preview))
+            and (not marker.exists() or marker.is_file() and not marker.is_symlink()),
+            f"partial recovery response is incomplete: {marker}")
+    try:
+        cached = producer._load(cache)
+        raw_record = producer._load(raw)
+        preview_record = producer._load(preview)
+    except (OSError, ValueError, TypeError, json.JSONDecodeError) as exc:
+        raise ValueError(f"Partial recovery response is corrupt: {cache}") from exc
+    response = raw_record.get("response")
+    require(isinstance(cached.get("payloadSha256"), str)
+            and raw_record.get("payloadSha256") == cached.get("payloadSha256")
+            and cached.get("model") == preview_record.get("payload", {}).get("model")
+            and isinstance(cached.get("requestId"), str)
+            and isinstance(response, dict)
+            and response.get("id") == cached.get("requestId")
+            and preview_record.get("role") == role
+            and preview_record.get("policySha256")
+                == policy_tools.canonical_sha256(preview_record.get("policy"))
+            and preview_record.get("payloadSha256")
+                == policy_tools.canonical_sha256(preview_record.get("payload"))
+            and isinstance(cached.get("result"), dict)
+            and cached["result"].get("translationGroupId") == group["translationGroupId"]
+            and cached["result"].get("sourceUnitIds") == group["sourceUnitIds"],
+            f"Partial recovery payload identity changed: {cache}")
+    try:
+        _require_payload_cache_response_not_refused(response, role)
+        returned = json.loads(completed_response_content(response, cached["model"], role))
+    except (ValueError, TypeError, json.JSONDecodeError) as exc:
+        raise ValueError(f"Partial recovery raw response is invalid: {raw}") from exc
+    require(returned == cached["result"],
+            f"Partial recovery parsed result differs from raw response: {cache}")
+    provenance_reader = getattr(caller, "recover_returned_response", None)
+    require(callable(provenance_reader),
+            "Partial recovery requires direct-paid response provenance")
+    provenance = provenance_reader(api_key, preview_record["payload"], response, budget_root)
+    return {"cache": cache, "raw": raw, "preview": preview, "cached": cached,
+            "response": response, "paidProvenance": provenance}
+
+
+def _returned_payload_cache(prior_root: Path | None, stem: str, role: str,
+                            payload_sha256: str, request: dict[str, Any],
+                            group: dict[str, Any], caller, api_key: str,
+                            budget_root: Path) -> dict[str, Any] | None:
+    """Recover one complete returned role that lacks a group-success sidecar.
+
+    This is deliberately weaker than success-cache admission: it proves only
+    that the exact provider call returned and was paid once.  The normal group
+    loop still parses the response and reruns semantic and language-plugin
+    checks before it may emit a new success sidecar.
+    """
+    if prior_root is None:
+        return None
+    returned = _returned_role_evidence(prior_root, stem, role, group, caller, api_key, budget_root)
+    if returned is None:
+        return None
+    cached, cache = returned["cached"], returned["cache"]
+    require(cached["payloadSha256"] == payload_sha256,
+            f"Partial recovery payload identity changed: {cache}")
+    binding = {
+        "payloadSha256": payload_sha256,
+        "cacheKeySha256": _payload_cache_key(role, payload_sha256),
+        "model": cached["model"], "requestId": cached["requestId"],
+        "cacheSha256": _file_sha256(cache), "rawSha256": _file_sha256(returned["raw"]),
+        "previewSha256": _file_sha256(returned["preview"]),
+        "paidProvenance": returned["paidProvenance"],
+    }
+    return {"path": cache, "paidProvenance": returned["paidProvenance"],
+            "response": copy.deepcopy(returned["response"]), "binding": binding}
+
+
+def _require_replayed_payload_cache(output: Path, selected: dict[str, Any], role: str,
+                                    saved: dict[str, Any]) -> None:
+    """Recheck destination bytes after copying verified prior evidence.
+
+    The prior root is intentionally read-only but not locked by this runner. A
+    writer racing between admission and copy must therefore be detected before
+    the parsed result can enter draft/review/evidence assembly.
+    """
+    raw = output.with_suffix('.raw.json')
+    preview = output.with_suffix('.policy-preview.json')
+    origin_preview = selected['path'].with_suffix('.policy-preview.json')
+    binding = selected['binding']
+    # A v7 partial recovery may deliberately run a repaired deterministic
+    # plugin under a newly frozen policy. The provider payload and returned
+    # response remain byte-identical, while the destination preview correctly
+    # records the new plugin implementation hash. Accept that one preview-only
+    # difference only when the policy comparator proves a plugin-only migration.
+    preview_matches = _file_sha256(preview) == binding['previewSha256']
+    if not preview_matches:
+        require(origin_preview.is_file() and not origin_preview.is_symlink()
+                and _file_sha256(origin_preview) == binding['previewSha256'],
+                f"Replayed payload cache source preview changed: {origin_preview}")
+        change = policy_preview.compare_previews(
+            producer._load(origin_preview), producer._load(preview), prior_outcome='succeeded')
+        require(change['classification'] == 'plugin_only_migration'
+                and change['modelPayloadUnchanged'] is True
+                and change['blockedByPriorOutcome'] is False,
+                f"Replayed payload cache policy changed beyond the plugin: {preview}")
+    require(_file_sha256(output) == binding['cacheSha256']
+            and _file_sha256(raw) == binding['rawSha256'],
+            f"Replayed payload cache bytes changed: {output}")
+    cached = producer._load(output)
+    raw_record = producer._load(raw)
+    require(cached == saved and raw_record.get('response') == selected['response'],
+            f"Replayed payload cache evidence changed: {output}")
+    _require_payload_cache_response_not_refused(raw_record['response'], role)
+    try:
+        returned = json.loads(completed_response_content(
+            raw_record['response'], cached['model'], role))
+    except (ValueError, TypeError, json.JSONDecodeError) as exc:
+        raise ValueError(f"Replayed payload cache response is invalid: {raw}") from exc
+    require(returned == cached['result'],
+            f"Replayed payload cache parsed result differs from raw response: {output}")
+
+
+def _save_payload_cache_success(out: Path, stem: str, request: dict[str, Any],
+                                group: dict[str, Any], semantic: dict[str, Any], *,
+                                caller=None, api_key: str = "",
+                                reused_provenance: dict[str, dict | None] | None = None) -> None:
+    roles = {}
+    reused_provenance = reused_provenance or {}
+    for role, suffix in (("translator", "astra"), ("reviewer", "sol")):
+        cache = out / f"{stem}-{suffix}.json"
+        raw = cache.with_suffix(".raw.json")
+        preview = cache.with_suffix(".policy-preview.json")
+        require(cache.is_file() and raw.is_file() and preview.is_file(),
+                f"Successful group lacks complete {role} cache evidence: {cache}")
+        cached = producer._load(cache)
+        raw_record = producer._load(raw)
+        preview_record = producer._load(preview)
+        _require_payload_cache_response_not_refused(raw_record.get("response"), role)
+        provenance = copy.deepcopy(reused_provenance.get(role))
+        provenance_reader = getattr(caller, "paid_response_provenance", None)
+        if provenance is None and provenance_reader is not None:
+            provenance = provenance_reader(api_key, preview_record["payload"], raw_record["response"])
+        roles[role] = {
+            "payloadSha256": cached["payloadSha256"],
+            "cacheKeySha256": _payload_cache_key(role, cached["payloadSha256"]),
+            "model": cached["model"], "requestId": cached["requestId"],
+            "cacheSha256": _file_sha256(cache), "rawSha256": _file_sha256(raw),
+            "previewSha256": _file_sha256(preview),
+            "paidProvenance": provenance,
+        }
+    receipt = {
+        "schemaVersion": PAYLOAD_CACHE_SUCCESS_SCHEMA,
+        "runnerImplementationSha256": RUNNER_PRODUCTION_IDENTITY_SHA256,
+        "payloadCacheImplementationSha256": PAYLOAD_CACHE_IMPLEMENTATION_SHA256,
+        "requestBinding": _request_cache_binding(request),
+        "translationGroupId": group["translationGroupId"],
+        "sourceUnitIds": group["sourceUnitIds"],
+        "semanticReview": copy.deepcopy(semantic), "roles": roles,
+        "humanApproval": False,
+    }
+    path = out / f"{stem}-payload-cache-success.json"
+    if path.exists():
+        require(producer._load(path) == receipt, f"Payload cache success receipt changed: {path}")
+    else:
+        save_new(path, receipt, private=True)
+
+
 def _model_call(role: str, prompt: dict[str, Any], policy: dict[str, Any],
                 output: Path, api_key: str,
                 caller: Callable[[str, dict[str, Any]], dict[str, Any]],
@@ -303,14 +715,7 @@ def _model_call(role: str, prompt: dict[str, Any], policy: dict[str, Any],
     payload = model_payload(role, prompt, policy, request_limits)
     policy_preview.freeze_payload_preview(
         role, payload, policy, output.with_suffix(".policy-preview.json"))
-    transport_identity = getattr(caller, "execution_identity", None)
-    fingerprint_input = ({"payload": payload, "modelTransportIdentity": transport_identity}
-                         if transport_identity is not None else payload)
-    if isinstance(caller,_session_bound_caller()) and not caller.requires_spark and not caller.outcome_guarded:
-        outcomes = _text.current().provider.outcomes
-        fingerprint_input = {'request':fingerprint_input, 'apiCliRequestSha256':outcomes.request_identity(
-            caller.caller,(api_key,payload),{},caller.purpose)}
-    fingerprint = policy_tools.canonical_sha256(fingerprint_input)
+    fingerprint = _model_fingerprint(payload, caller, api_key)
     migrated_from = migration_cache(role, payload)
     if migrated_from is not None:
         require(cache_only and reuse_from is None, "Explicit migration must be cache-only and isolated")
@@ -360,6 +765,8 @@ def _model_call(role: str, prompt: dict[str, Any], policy: dict[str, Any],
     else:
         require(not cache_only, f"Cache-only recovery has no returned {role} response: {output}")
         require(not marker.exists(), f"Uncertain paid {role} call; inspect before retry: {marker}")
+        require(not _RECOVERY_PAID_DISPATCH_CLOSED.get(),
+                f"Partial recovery reached a paid {role} call before its returned groups were verified: {output}")
         # Capacity denial is a proven no-dispatch outcome. Reserve before the
         # unknown-call marker; once reserved, a crash remains held in the broker.
         resource_admission = getattr(caller, "admit_resource", None)
@@ -502,6 +909,78 @@ def validate_revision_brief(brief: dict[str, Any] | None,
                 f"Revision proposal lacks matching prior target text: {group_id}")
         result[group_id] = row
     return result
+
+
+OPERATOR_REVISION_SCHEMA = "sermon-target-language-operator-revision-brief-v1"
+OPERATOR_REVISION_KEYS = frozenset({"schemaVersion", "targetLocale", "englishSourcePackageJsonSha256",
+                                    "anchorManifestSha256", "translationPolicySha256",
+                                    "priorCandidateJsonSha256", "revise", "carry"})
+OPERATOR_REVISE_ROW_KEYS = frozenset({"translationGroupId", "sourceUnitIds", "priorTargetText",
+                                      "priorTargetTextSha256", "note"})
+CARRIED_ROW_KEYS = frozenset({"translationGroupId", "sourceUnitIds", "targetUtterances", "coverage",
+                              "semanticReview", "translatorRequestId", "reviewerRequestId"})
+OPERATOR_REVISION_INSTRUCTION = (
+    " An operator listed this group for revision. Translate it again from the English source; "
+    "operatorRevision.priorTargetText is the rejected prior translation, shown only so the new text "
+    "does not repeat its problem, and operatorRevision.note, when present, is the operator's reason. "
+    "Check every point of the note against the English source; the note is not source truth. ")
+
+
+def validate_operator_revision(brief: dict[str, Any] | None, request: dict[str, Any],
+                               plan: list[dict[str, Any]]) -> tuple[dict[str, dict], dict[str, dict]]:
+    """``(revise, carry)`` keyed by group: an operator's group list over a prior candidate.
+
+    Listed groups get a fresh translator and independent reviewer request. Every other
+    group is carried exactly as the prior candidate's reviewed row, with its original
+    request IDs, and makes no model call (text/group_revision.py binds those rows to the
+    prior candidate by hash; this checks only that they are complete reviewed rows).
+    """
+    if brief is None:
+        return {}, {}
+    require(isinstance(brief, dict) and set(brief) == OPERATOR_REVISION_KEYS
+            and brief["schemaVersion"] == OPERATOR_REVISION_SCHEMA
+            and isinstance(brief["priorCandidateJsonSha256"], str)
+            and re.fullmatch(r"[a-f0-9]{64}", brief["priorCandidateJsonSha256"]) is not None,
+            "Invalid operator revision brief")
+    for key in ("targetLocale", "englishSourcePackageJsonSha256",
+                "anchorManifestSha256", "translationPolicySha256"):
+        require(brief[key] == request[key], f"Operator revision source or policy changed: {key}")
+    revise_rows, carry_rows = brief["revise"], brief["carry"]
+    require(isinstance(revise_rows, list) and revise_rows and isinstance(carry_rows, list),
+            "Operator revision needs listed groups")
+    plan_by_id = {row["translationGroupId"]: row for row in plan}
+    revise: dict[str, dict] = {}
+    for row in revise_rows:
+        require(isinstance(row, dict) and set(row) == OPERATOR_REVISE_ROW_KEYS, "Invalid operator revision row")
+        group_id = row["translationGroupId"]
+        require(group_id in plan_by_id and group_id not in revise
+                and row["sourceUnitIds"] == plan_by_id[group_id]["sourceUnitIds"]
+                and isinstance(row["priorTargetText"], str) and row["priorTargetText"].strip()
+                and row["priorTargetTextSha256"] == hashlib.sha256(row["priorTargetText"].encode()).hexdigest()
+                and (row["note"] is None or (isinstance(row["note"], str) and row["note"].strip()
+                                             and len(row["note"]) <= 2000)),
+                f"Unknown, duplicate or changed operator revision group: {group_id}")
+        revise[group_id] = row
+    carry: dict[str, dict] = {}
+    for row in carry_rows:
+        require(isinstance(row, dict) and set(row) == CARRIED_ROW_KEYS, "Invalid carried group row")
+        group_id = row["translationGroupId"]
+        semantic = row["semanticReview"]
+        require(group_id in plan_by_id and group_id not in carry and group_id not in revise
+                and row["sourceUnitIds"] == plan_by_id[group_id]["sourceUnitIds"]
+                and isinstance(row["translatorRequestId"], str) and row["translatorRequestId"]
+                and isinstance(row["reviewerRequestId"], str) and row["reviewerRequestId"]
+                and row["translatorRequestId"] != row["reviewerRequestId"]
+                and isinstance(semantic, dict) and semantic.get("status") == "pass"
+                and set(semantic.get("checks") or {}) == set(SEMANTIC_CHECKS)
+                and all(value == "pass" for value in semantic["checks"].values())
+                and not semantic.get("uncertainty") and not semantic.get("issues"),
+                f"Carried group is not a complete passing reviewed row: {group_id}")
+        _utterances(row["targetUtterances"], row["sourceUnitIds"])
+        carry[group_id] = row
+    require(set(revise) | set(carry) == set(plan_by_id),
+            "Operator revision must list or carry every group exactly once")
+    return revise, carry
 
 
 def validate_partial_repair_brief(brief: dict[str, Any] | None,
@@ -690,6 +1169,17 @@ def reusable_cache(prior_run: Path | None, stem: str, role: str) -> Path | None:
     return None
 
 
+def _carry_source(reuse_from: Path | None) -> dict[str, Any] | None:
+    """The reuse source a round may carry groups from, and the runner that source recorded."""
+    if reuse_from is None:
+        return None
+    source = Path(reuse_from) / "runner-identity.json"
+    recorded = producer._load(source) if source.is_file() else {}
+    runner = (recorded.get("runnerImplementationSha256")
+              if recorded.get("schemaVersion") == ROUND_RUNNER_IDENTITY_SCHEMA else None)
+    return {"root": str(Path(reuse_from).resolve()), "runnerImplementationSha256": runner}
+
+
 def carry_forward_group(prior_run: Path, out: Path, index: int,
                         group: dict[str, Any], prior_row: dict[str, Any],
                         policy: dict[str, Any]) -> dict[str, Any]:
@@ -777,6 +1267,31 @@ def ordered_group_results(items: list, worker, workers: int, *, maximum_workers=
                     next_index, item = next_item
                     pending[pool.submit(copy_context().run, worker, item)] = next_index
     return [results[index] for index in range(len(items))]
+
+
+def _run_partial_recovery_groups(plan: list, recovered: list[int], run_groups) -> list:
+    """Run a partial recovery's returned groups first, then the rest, merged in source order.
+
+    Groups whose translator and reviewer both returned in the failed round make
+    no paid call; they run with paid dispatch closed, so every returned call's
+    payload is matched against the current one before any group may pay. The
+    remaining groups then run with the same group workers. Paid calls are the
+    never-dispatched roles in both orders, and evidence merges in source order,
+    so a run with any worker count ends with the same result as a serial run.
+    """
+    returned = set(recovered)
+    items = list(enumerate(plan, 1))
+    first = [item for item in items if item[0] in returned]
+    rest = [item for item in items if item[0] not in returned]
+    token = _RECOVERY_PAID_DISPATCH_CLOSED.set(True)
+    try:
+        head = run_groups(first)
+    finally:
+        _RECOVERY_PAID_DISPATCH_CLOSED.reset(token)
+    tail = run_groups(rest)
+    merged = dict(zip([index for index, _ in first], head))
+    merged.update(zip([index for index, _ in rest], tail))
+    return [merged[index] for index, _ in items]
 
 
 def validate_standalone_worker_budget(policy: dict) -> None:
@@ -872,6 +1387,12 @@ def run(source: dict[str, Any], anchor: dict[str, Any], policy: dict[str, Any],
         reuse_from: Path | None = None,
         partial_repair_brief: dict[str, Any] | None = None,
         resume_cache_from: Path | None = None,
+        payload_cache_from: Path | None = None,
+        partial_recovery_from: Path | None = None,
+        partial_recovery_budget_root: Path | None = None,
+        emit_payload_cache_success: bool = False,
+        payload_cache_required: bool = False,
+        backfill_payload_cache_success: bool = False,
         *, failure_collector=None) -> dict[str, Any]:
     require(plugin_path is not None,
             "Formal Layer 2 requires the frozen language plugin before dispatch")
@@ -882,6 +1403,9 @@ def run(source: dict[str, Any], anchor: dict[str, Any], policy: dict[str, Any],
     return _run_prepared_groups(
         request, anchor, policy, out, api_key, caller, custom_plan, plugin_path,
         revision_brief, reuse_from, partial_repair_brief, resume_cache_from,
+        payload_cache_from, partial_recovery_from, partial_recovery_budget_root,
+        emit_payload_cache_success, payload_cache_required,
+        backfill_payload_cache_success,
         source_admission_span=source_span, failure_collector=failure_collector)
 
 
@@ -894,12 +1418,22 @@ def _run_prepared_groups(request: dict[str, Any], anchor: dict[str, Any],
                          reuse_from: Path | None = None,
                          partial_repair_brief: dict[str, Any] | None = None,
                          resume_cache_from: Path | None = None,
+                         payload_cache_from: Path | None = None,
+                         partial_recovery_from: Path | None = None,
+                         partial_recovery_budget_root: Path | None = None,
+                         emit_payload_cache_success: bool = False,
+                         payload_cache_required: bool = False,
+                         backfill_payload_cache_success: bool = False,
                          *, simulation_only: bool = False, cache_only: bool = False,
                          progress_callback=None,
                          source_admission_span: str | None = None,
                          completion_spans: list[str] | None = None,
                          diagnostic_context=None,
-                         failure_collector=None) -> dict[str, Any]:
+                         failure_collector=None,
+                         operator_revision: dict[str, Any] | None = None,
+                         allow_subset: bool = False,
+                         context_plan: list[dict[str, Any]] | None = None,
+                         operator_notes: dict[str, dict[str, Any]] | None = None) -> dict[str, Any]:
     """Shared group loop; the formal entry above still enforces Layer 1 approval.
 
     Simulated requests carry an extra marker that prevents formal candidate
@@ -909,6 +1443,11 @@ def _run_prepared_groups(request: dict[str, Any], anchor: dict[str, Any],
     collector instead records each failed group, keeps dispatching until it
     reports a systemic stop, and ends the run with a failure report rather than
     evidence. It never writes a plugin group stop.
+
+    An operator revision (text/group_revision.py) lists the groups to translate
+    again; every other group is carried from the prior candidate with no model
+    call. It always runs under a failure collector, so listed groups run in
+    parallel and a failed one goes to the bounded repair loop.
     """
     require(request.get("candidateMode", "production") == "production",
             "Shadow execution is not implemented: complete shadow admission is required")
@@ -990,7 +1529,10 @@ def _run_prepared_groups(request: dict[str, Any], anchor: dict[str, Any],
                 "Per-group production runner requires batchSize=1 and workers=1..16")
         if plugin_path is not None:
             require_plugin_identity(plugin_path, policy["languageReview"]["pluginImplementationSha256"])
-        plan = group_plan(request, anchor, custom_plan)
+        plan = group_plan(request, anchor, custom_plan, allow_subset=allow_subset)
+        # A subset run still gives its group the surrounding English context of the full
+        # Layer 1 plan (DEV-GRP-002); otherwise a one-group plan would shift every context.
+        context_plan = group_plan(request, anchor) if context_plan is None else context_plan
         rule_receipt = (rule_preflight.preflight(request, policy, plugin_path, plan)
                         if plugin_path is not None else None)
         accounting.record_workload("layer2.rule_preflight", {
@@ -1007,6 +1549,34 @@ def _run_prepared_groups(request: dict[str, Any], anchor: dict[str, Any],
                         transport_identity=getattr(caller, "execution_identity", None))
         require(revision_brief is None or partial_repair_brief is None,
                 "Use one changed-group revision mechanism at a time")
+        require(payload_cache_from is None or (not simulation_only and not cache_only),
+                "Cross-round payload cache reuse is formal production only")
+        require((partial_recovery_from is None) == (partial_recovery_budget_root is None)
+                and (partial_recovery_from is None or
+                (not simulation_only and not cache_only and emit_payload_cache_success
+                 and payload_cache_from is not None
+                 and partial_recovery_from.resolve() == payload_cache_from.resolve()
+                 and reuse_from is None and resume_cache_from is None
+                 and revision_brief is None and partial_repair_brief is None)),
+                "Partial recovery requires one failed first-round payload root")
+        recovered_groups = None
+        if partial_recovery_from is not None:
+            recovered_groups = _require_partial_recovery_source(
+                partial_recovery_from, partial_recovery_budget_root, caller, api_key, plan)
+        require(type(emit_payload_cache_success) is bool,
+                "Payload cache success emission flag must be boolean")
+        require(type(payload_cache_required) is bool
+                and (not payload_cache_required or payload_cache_from is not None),
+                "Required payload cache needs an explicit prior root")
+        require(type(backfill_payload_cache_success) is bool
+                and (not backfill_payload_cache_success or
+                     (emit_payload_cache_success and reuse_from is not None
+                      and payload_cache_from is None and revision_brief is None
+                      and partial_repair_brief is None and resume_cache_from is None)),
+                "Payload cache backfill requires one complete prior run and explicit emission")
+        require(payload_cache_from is None or all(item is None for item in (
+                    reuse_from, resume_cache_from, revision_brief, partial_repair_brief)),
+                "Cross-round payload cache source cannot be combined with revision resume inputs")
         prior_evidence = (producer._load(reuse_from / "evidence.json")
                           if reuse_from and (reuse_from / "evidence.json").is_file() else None)
         if prior_evidence is not None:
@@ -1024,6 +1594,14 @@ def _run_prepared_groups(request: dict[str, Any], anchor: dict[str, Any],
         briefs = validate_revision_brief(revision_brief, request, plan, prior_evidence)
         repairs = validate_partial_repair_brief(partial_repair_brief, request, plan,
                                                  reuse_from, expected_models=expected_models)
+        operator_revise, operator_carry = validate_operator_revision(operator_revision, request, plan)
+        require(operator_revision is None or (
+                    failure_collector is not None and not simulation_only and not cache_only
+                    and diagnostic_context is None and revision_brief is None
+                    and resume_cache_from is None and payload_cache_from is None
+                    and partial_recovery_from is None and not emit_payload_cache_success
+                    and not backfill_payload_cache_success),
+                "Operator revision runs only as a formal collected round without other cache sources")
         carried = carried_repairs(reuse_from, request, plan, repairs)
         require_plugin_stop_repair(reuse_from, repairs, plugin_path)
         require_plugin_stop_repair(resume_cache_from, repairs, plugin_path)
@@ -1035,6 +1613,18 @@ def _run_prepared_groups(request: dict[str, Any], anchor: dict[str, Any],
                     and (resume_cache_from / "request.json").is_file()
                     and producer._load(resume_cache_from / "request.json") == request,
                     "Resume cache must be a separate attempt for this source and policy")
+        if payload_cache_from is not None:
+            payload_cache_from = Path(payload_cache_from)
+            require(payload_cache_from.is_dir()
+                    and not payload_cache_from.is_symlink()
+                    and payload_cache_from.resolve() != out.resolve(),
+                    "Payload cache source must be a separate existing prior root")
+        payload_cache_enabled = emit_payload_cache_success or payload_cache_from is not None
+        if payload_cache_enabled:
+            transport_identity = getattr(caller, "execution_identity", None)
+            require(isinstance(transport_identity, dict)
+                    and transport_identity.get("backend") == "openai_api",
+                    "Cross-round payload cache prototype requires openai_api transport identity")
         identity = {"request": request, "groupPlan": plan,
                     "runnerImplementationSha256": RUNNER_PRODUCTION_IDENTITY_SHA256}
         if diagnostic_context is not None:
@@ -1049,7 +1639,8 @@ def _run_prepared_groups(request: dict[str, Any], anchor: dict[str, Any],
             # prior-input check above rejects any cache made under another one.
             require(resume_cache_from is None
                     and (reuse_from is None or (partial_repair_brief is not None
-                                                and transport_identity.get("backend") == "openai_api")),
+                                                and transport_identity.get("backend") == "openai_api")
+                        or backfill_payload_cache_success),
                     "CLI transport supports same-run resume only; cross-run cache reuse is not enabled")
         if revision_brief is not None:
             identity["revisionBriefSha256"] = policy_tools.canonical_sha256(revision_brief)
@@ -1060,6 +1651,16 @@ def _run_prepared_groups(request: dict[str, Any], anchor: dict[str, Any],
             identity["resumeCacheFrom"] = str(resume_cache_from.resolve())
         if carried:
             identity["carriedRepairsSha256"] = policy_tools.canonical_sha256(carried)
+        if operator_revision is not None:
+            identity["operatorRevisionSha256"] = policy_tools.canonical_sha256(operator_revision)
+        if payload_cache_enabled:
+            identity["payloadCacheSuccess"] = {
+                "schemaVersion": PAYLOAD_CACHE_SUCCESS_SCHEMA,
+                "implementationSha256": PAYLOAD_CACHE_IMPLEMENTATION_SHA256,
+                "emit": True,
+                "priorRoot": str(payload_cache_from.resolve()) if payload_cache_from is not None else None,
+                "backfillFrom": str(reuse_from.resolve()) if backfill_payload_cache_success else None,
+            }
         if failure_collector is not None:
             require(not simulation_only and diagnostic_context is None and plugin_path is not None,
                     "Failure collection is for formal plugin-gated runs")
@@ -1067,19 +1668,41 @@ def _run_prepared_groups(request: dict[str, Any], anchor: dict[str, Any],
             identity["failureCollection"] = failure_collector.identity
         identity_hash = policy_tools.canonical_sha256(identity)
         manifest = out / "run-identity.json"
+        round_runner, round_identity = RUNNER_PRODUCTION_IDENTITY_SHA256, identity_hash
         if manifest.exists():
-            accepted_hashes = {policy_tools.canonical_sha256({
+            accepted_hashes = {implementation_hash: policy_tools.canonical_sha256({
                 **identity, "runnerImplementationSha256": implementation_hash})
                 for implementation_hash in
                 {RUNNER_PRODUCTION_IDENTITY_SHA256, *COMPATIBLE_RUNNER_IDENTITIES}}
-            require(producer._load(manifest) in
-                    [{"sha256": accepted_hash} for accepted_hash in accepted_hashes],
+            saved_identity = producer._load(manifest)
+            require(saved_identity in
+                    [{"sha256": accepted_hash} for accepted_hash in accepted_hashes.values()],
                     "Output directory belongs to another source, policy, or group plan")
+            # The runner version that opened this round, not necessarily this code's.
+            round_runner = next(implementation_hash for implementation_hash, accepted_hash
+                                in sorted(accepted_hashes.items()) if saved_identity == {"sha256": accepted_hash})
+            round_identity = saved_identity["sha256"]
         else:
             require(not out.exists() or all(entry.name == "accounting" and entry.is_dir()
                                             for entry in out.iterdir()),
                     "Output directory is not empty")
             save_new(manifest, {"sha256": identity_hash})
+        # run-identity.json keeps only a hash; this records which runner the round ran
+        # under, so per-group reuse can compare it later. The payload-cache implementation
+        # is part of the matched identity only when the round uses the payload cache.
+        runner_path = out / "runner-identity.json"
+        runner_record = {"schemaVersion": ROUND_RUNNER_IDENTITY_SCHEMA,
+                         "runnerImplementationSha256": round_runner,
+                         "payloadCacheImplementationSha256": (PAYLOAD_CACHE_IMPLEMENTATION_SHA256
+                                                              if payload_cache_enabled else None),
+                         "runIdentitySha256": round_identity,
+                         # Groups carried forward keep their source round's caches byte for
+                         # byte; that round's runner (None when it recorded none) produced them.
+                         "carrySource": _carry_source(reuse_from)}
+        if runner_path.exists():
+            require(producer._load(runner_path) == runner_record, "Round runner identity changed")
+        else:
+            save_new(runner_path, runner_record)
         request_path = out / "request.json"
         if not request_path.exists():
             save_new(request_path, request)
@@ -1091,8 +1714,10 @@ def _run_prepared_groups(request: dict[str, Any], anchor: dict[str, Any],
                 require(producer._load(receipt_path) == rule_receipt, "Frozen rule preflight changed")
             else:
                 save_new(receipt_path, rule_receipt, private=True)
-        require_reconciled_requests(out, reuse_from, resume_cache_from, caller=caller,
-                                    allowed_prior_roots=[reuse_from,resume_cache_from])
+        require_reconciled_requests(out, reuse_from, resume_cache_from, payload_cache_from,
+                                    caller=caller,
+                                    allowed_prior_roots=[reuse_from, resume_cache_from,
+                                                         payload_cache_from])
         if repairs or carried:
             effective_path = out / "effective-repairs.json"
             effective = {**carried, **repairs}
@@ -1101,6 +1726,10 @@ def _run_prepared_groups(request: dict[str, Any], anchor: dict[str, Any],
             else:
                 save_new(effective_path, effective)
         requested_workers = workers
+        if payload_cache_required:
+            # A required all-hit replay must stop at the first miss before any
+            # other group can race ahead and dispatch a paid request.
+            workers = 1
         if failure_collector is not None:
             # Collection never writes a plugin stop receipt: a plugin rejection is
             # recorded and the round goes on, so groups may run concurrently. A
@@ -1125,17 +1754,24 @@ def _run_prepared_groups(request: dict[str, Any], anchor: dict[str, Any],
                                         and group['translationGroupId'] not in repairs,
                               depends_on=[admission_span], executor_type="deterministic_program",
                               work_unit_id=f"l2.{request['targetLocale']}.group-{index:04d}.prepare") as prepare_span:
+            if group["translationGroupId"] in operator_carry:
+                # Not listed by the operator: the prior candidate's reviewed row, unchanged and unpaid.
+                return copy.deepcopy(operator_carry[group["translationGroupId"]]), prepare_span
+            operator_row = operator_revise.get(group["translationGroupId"])
             brief = briefs.get(group["translationGroupId"])
             repair = repairs.get(group["translationGroupId"])
             # A group repaired in an earlier revision keeps that revision's
             # instruction in its prompt, so its verified cache reuses exactly.
             prior_repair = carried.get(group["translationGroupId"]) if repair is None else None
-            if prior_evidence is not None and brief is None and repair is None:
+            if (prior_evidence is not None and brief is None and repair is None
+                    and not backfill_payload_cache_success and not payload_cache_enabled):
                 return carry_forward_group(reuse_from, out, index, group,
                                            prior_evidence["groups"][index - 1], policy), prepare_span
             source_rows = [{"sourceUnitId": unit_id, "english": units[unit_id]}
                            for unit_id in group["sourceUnitIds"]]
-            context = surrounding_context(request, plan, index - 1)
+            context_index = next((position for position, item in enumerate(context_plan)
+                                  if item["translationGroupId"] == group["translationGroupId"]), index - 1)
+            context = surrounding_context(request, context_plan, context_index)
             korean_boundary = revision_boundary_instruction(
                 request["targetLocale"], revising=brief is not None)
             common = {"translationGroupId": group["translationGroupId"],
@@ -1168,6 +1804,16 @@ def _run_prepared_groups(request: dict[str, Any], anchor: dict[str, Any],
                     "priorTargetTextSha256": brief["priorTargetTextSha256"],
                     "proposedTargetText": brief["proposedTargetText"],
                 }
+            operator_note = (operator_notes or {}).get(group["translationGroupId"])
+            if operator_row is not None or operator_note is not None:
+                row = operator_row if operator_row is not None else operator_note
+                common["operatorRevision"] = {
+                    "priorTargetText": row["priorTargetText"],
+                    "priorTargetTextSha256": row["priorTargetTextSha256"],
+                    **({"note": row["note"]} if row.get("note") is not None else {}),
+                }
+            operator_instruction = (OPERATOR_REVISION_INSTRUCTION
+                                    if operator_row is not None or operator_note is not None else "")
             prompt_repair = repair if repair is not None else prior_repair
             if prompt_repair is not None:
                 common["partialRepair"] = {
@@ -1200,6 +1846,7 @@ def _run_prepared_groups(request: dict[str, Any], anchor: dict[str, Any],
                                 (rule_preflight.INSTRUCTION if rule_receipt else "") +
                                 scripture_prompt_instruction(policy, frozen_rules=rule_receipt is not None) +
                                 register_prompt_instruction(policy) +
+                                operator_instruction +
                                 repair_instruction +
                                 "Resolve pronouns and elliptical repetitions using the surrounding "
                                 "source units; translate only the requested English units. "
@@ -1211,8 +1858,33 @@ def _run_prepared_groups(request: dict[str, Any], anchor: dict[str, Any],
             stem = f"group-{index:04d}"
             astra_path = out / f"{stem}-astra.json"
             prior_cache_root = resume_cache_from if resume_cache_from is not None else reuse_from if brief is None and repair is None else None
+            translator_payload = model_payload("translator", translate_prompt, policy)
+            payload_translator_cache = _successful_payload_cache(
+                payload_cache_from, stem, "translator",
+                _model_fingerprint(translator_payload, caller, api_key), request, group,
+                allow_policy_binding_miss=partial_recovery_from is not None)
+            if payload_translator_cache is None and partial_recovery_from is not None:
+                payload_translator_cache = _returned_payload_cache(
+                    partial_recovery_from, stem, "translator",
+                    _model_fingerprint(translator_payload, caller, api_key), request, group,
+                    caller, api_key, partial_recovery_budget_root)
+            if (payload_translator_cache is None and payload_cache_enabled
+                    and prior_cache_root is not None):
+                # A later auto-repair round carries the original direct-paid
+                # provenance from the preceding round's success receipt. The
+                # destination ledger's reused row is never promoted to a source.
+                payload_translator_cache = _successful_payload_cache(
+                    prior_cache_root, stem, "translator",
+                    _model_fingerprint(translator_payload, caller, api_key), request, group)
+            if payload_cache_required:
+                require(payload_translator_cache is not None,
+                        f"Required payload cache missed translator: {stem}")
+            if payload_translator_cache is not None and hasattr(caller, "record_reuse"):
+                caller.record_reuse(api_key, translator_payload,
+                    payload_translator_cache["response"], payload_translator_cache["paidProvenance"])
             translator_cached = (astra_path.exists() or astra_path.with_suffix(".raw.json").exists()
-                                 or (prior_cache_root is not None and (prior_cache_root / f"{stem}-astra.json").is_file()))
+                                 or (prior_cache_root is not None and (prior_cache_root / f"{stem}-astra.json").is_file())
+                                 or payload_translator_cache is not None)
             if failure_collector is not None and failure_collector.stopped() and not translator_cached:
                 failure_collector.record_not_dispatched(index, group)
                 return None, prepare_span
@@ -1228,8 +1900,14 @@ def _run_prepared_groups(request: dict[str, Any], anchor: dict[str, Any],
                                          reusable_cache(resume_cache_from, stem, "astra")
                                          if resume_cache_from is not None else
                                          reusable_cache(reuse_from, stem, "astra")
-                                         if brief is None and repair is None else None, cache_only=cache_only,
+                                         if reuse_from is not None and brief is None and repair is None else
+                                         payload_translator_cache["path"]
+                                         if payload_translator_cache is not None else None,
+                                         cache_only=cache_only or backfill_payload_cache_success,
                                          rule_receipt=rule_receipt)
+                if payload_translator_cache is not None:
+                    _require_replayed_payload_cache(
+                        astra_path, payload_translator_cache, "translator", translated)
                 if progress_callback is not None:
                     progress_callback('translator_response_saved')
         with accounting.stage(f"layer2.draft_validation.{request['targetLocale']}.{stem}",
@@ -1269,6 +1947,7 @@ def _run_prepared_groups(request: dict[str, Any], anchor: dict[str, Any],
                                 + (rule_preflight.INSTRUCTION if rule_receipt else "")
                                 + scripture_prompt_instruction(policy, frozen_rules=rule_receipt is not None) +
                                 register_prompt_instruction(policy) +
+                                operator_instruction +
                                 repair_instruction +
                                 "Check that pronouns and elliptical repetitions retain the intended "
                                 "referent and predicate from surrounding source units. "
@@ -1285,8 +1964,30 @@ def _run_prepared_groups(request: dict[str, Any], anchor: dict[str, Any],
                                 "Do not claim human approval. Prompt version: " + policy["reviewer"]["promptVersion"]),
                 "input": {**common, "astraDraft": draft}}
             sol_path = out / f"{stem}-sol.json"
+            reviewer_payload = model_payload("reviewer", review_prompt, policy)
+            payload_reviewer_cache = _successful_payload_cache(
+                payload_cache_from, stem, "reviewer",
+                _model_fingerprint(reviewer_payload, caller, api_key), request, group,
+                allow_policy_binding_miss=partial_recovery_from is not None)
+            if payload_reviewer_cache is None and partial_recovery_from is not None:
+                payload_reviewer_cache = _returned_payload_cache(
+                    partial_recovery_from, stem, "reviewer",
+                    _model_fingerprint(reviewer_payload, caller, api_key), request, group,
+                    caller, api_key, partial_recovery_budget_root)
+            if (payload_reviewer_cache is None and payload_cache_enabled
+                    and prior_cache_root is not None):
+                payload_reviewer_cache = _successful_payload_cache(
+                    prior_cache_root, stem, "reviewer",
+                    _model_fingerprint(reviewer_payload, caller, api_key), request, group)
+            if payload_cache_required:
+                require(payload_reviewer_cache is not None,
+                        f"Required payload cache missed reviewer: {stem}")
+            if payload_reviewer_cache is not None and hasattr(caller, "record_reuse"):
+                caller.record_reuse(api_key, reviewer_payload,
+                    payload_reviewer_cache["response"], payload_reviewer_cache["paidProvenance"])
             reviewer_cached = (sol_path.exists() or sol_path.with_suffix(".raw.json").exists()
-                               or (prior_cache_root is not None and (prior_cache_root / f"{stem}-sol.json").is_file()))
+                               or (prior_cache_root is not None and (prior_cache_root / f"{stem}-sol.json").is_file())
+                               or payload_reviewer_cache is not None)
             if failure_collector is not None and failure_collector.stopped() and not reviewer_cached:
                 failure_collector.record_not_dispatched(index, group)
                 return None, translator_span
@@ -1302,8 +2003,14 @@ def _run_prepared_groups(request: dict[str, Any], anchor: dict[str, Any],
                                                 reusable_cache(resume_cache_from, stem, "sol")
                                                 if resume_cache_from is not None else
                                                 reusable_cache(reuse_from, stem, "sol")
-                                                if brief is None and repair is None else None, cache_only=cache_only,
+                                                if reuse_from is not None and brief is None and repair is None else
+                                                payload_reviewer_cache["path"]
+                                                if payload_reviewer_cache is not None else None,
+                                                cache_only=cache_only or backfill_payload_cache_success,
                                                 rule_receipt=rule_receipt)
+                if payload_reviewer_cache is not None:
+                    _require_replayed_payload_cache(
+                        sol_path, payload_reviewer_cache, "reviewer", reviewed_response)
                 if progress_callback is not None:
                     progress_callback('reviewer_response_saved')
         with accounting.stage(f"layer2.review_validation.{request['targetLocale']}.{stem}",
@@ -1356,15 +2063,26 @@ def _run_prepared_groups(request: dict[str, Any], anchor: dict[str, Any],
                 else:
                     _stop_after_plugin_group_failure(policy, request, plugin_path, reviewed_row, plan, index, out,
                                                      diagnostic_context=diagnostic_context)
+                if payload_cache_enabled:
+                    _save_payload_cache_success(out, stem, request, group, semantic,
+                        caller=caller, api_key=api_key,
+                        reused_provenance={
+                            "translator": payload_translator_cache["paidProvenance"]
+                                if payload_translator_cache is not None else None,
+                            "reviewer": payload_reviewer_cache["paidProvenance"]
+                                if payload_reviewer_cache is not None else None})
             return reviewed_row, validation_span
     def process_group(item):
         index, _ = item
         with accounting.stage(f"layer2.group.{request['targetLocale']}.{index:04d}",
                               billing="orchestrator"):
             return _process_group(item)
-    results = (ordered_group_results(list(enumerate(plan, 1)), process_group, workers,
-                                    maximum_workers=maximum_workers) if maximum_workers != 16 else
-               ordered_group_results(list(enumerate(plan, 1)), process_group, workers))
+    def run_groups(items):
+        return (ordered_group_results(items, process_group, workers,
+                                      maximum_workers=maximum_workers) if maximum_workers != 16 else
+                ordered_group_results(items, process_group, workers))
+    results = (run_groups(list(enumerate(plan, 1))) if recovered_groups is None else
+               _run_partial_recovery_groups(plan, recovered_groups, run_groups))
     if failure_collector is not None and failure_collector.has_failures():
         failure_collector.finish(out, request, plan)
     dependencies = accounting.bounded_dependencies(
@@ -1404,10 +2122,21 @@ def run_accounted(source: dict, anchor: dict, policy: dict, out_dir: Path,
                   revision_brief: dict | None, reuse_from: Path | None,
                   *, partial_repair_brief: dict | None = None,
                   resume_cache_from: Path | None = None,
+                  payload_cache_from: Path | None = None,
+                  partial_recovery_from: Path | None = None,
+                  partial_recovery_budget_root: Path | None = None,
+                  emit_payload_cache_success: bool = False,
+                  payload_cache_required: bool = False,
+                  backfill_payload_cache_success: bool = False,
                   progress_ledger: Path | None = None,
                   cache_only: bool = False, progress_callback=None,
                   predecessor_spans=(), completion_spans: list[str] | None = None,
-                  failure_collector=None, candidate_mode: str = "production") -> dict:
+                  failure_collector=None, candidate_mode: str = "production",
+                  operator_revision: dict | None = None, allow_subset: bool = False,
+                  context_plan: list[dict[str, Any]] | None = None,
+                  operator_notes: dict[str, dict[str, Any]] | None = None) -> dict:
+    require(operator_revision is None or operator_notes is None,
+            "Use one operator revision mechanism at a time")
     require(candidate_mode == "production",
             "Shadow execution is not implemented: candidate schema, plugin admission and human receipt are required")
     require(plugin is not None,
@@ -1421,7 +2150,7 @@ def run_accounted(source: dict, anchor: dict, policy: dict, out_dir: Path,
                                   executor_type="deterministic_program",
                                   work_unit_id=f"l2.{locale}.source_admission") as source_span:
                 request = producer.prepare_request(source, anchor, policy, candidate_mode=candidate_mode)
-                plan = group_plan(request, anchor, group_plan_data)
+                plan = group_plan(request, anchor, group_plan_data, allow_subset=allow_subset)
                 window = source["source"]["approvedWindow"]
                 accounting.record_workload("layer2.source_identity", {
                     **{k: request[k] for k in ("englishSourcePackageJsonSha256", "anchorManifestSha256", "translationPolicySha256")},
@@ -1432,9 +2161,14 @@ def run_accounted(source: dict, anchor: dict, policy: dict, out_dir: Path,
             evidence = _run_prepared_groups(
                 request, anchor, policy, out_dir, api_key, call, plan, plugin,
                 revision_brief, reuse_from, partial_repair_brief, resume_cache_from,
+                payload_cache_from, partial_recovery_from, partial_recovery_budget_root,
+                emit_payload_cache_success, payload_cache_required,
+                backfill_payload_cache_success,
                 source_admission_span=source_span, cache_only=cache_only,
                 progress_callback=progress_callback, completion_spans=completion_spans,
-                failure_collector=failure_collector)
+                failure_collector=failure_collector, operator_revision=operator_revision,
+                allow_subset=allow_subset, context_plan=context_plan,
+                operator_notes=operator_notes)
         metrics["doneUnits"] = len(evidence["groups"])
     return evidence
 
@@ -1454,6 +2188,10 @@ def main() -> None:
                         help="Source-bound failed-group repair; accepts an incomplete prior run")
     parser.add_argument("--resume-cache-from", type=Path,
                         help="Reuse verified paid responses from an incomplete attempt of this revision")
+    parser.add_argument("--payload-cache-from", type=Path,
+                        help="Explicit prior root with v1 successful-group exact-payload receipts")
+    parser.add_argument("--emit-payload-cache-success", action="store_true",
+                        help="Emit OpenAI-API-only v1 successful-group payload cache receipts")
     parser.add_argument("--progress-ledger", type=Path,
                         help="Record checkpoint and per-group substage timing in the four-layer ledger")
     parser.add_argument("--model-backend", choices=("codex-cli", "openai-api"), default="openai-api",
@@ -1474,6 +2212,13 @@ def main() -> None:
             "Choose either --revision-brief or --partial-repair-brief")
     require(args.resume_cache_from is None or args.partial_repair_brief is not None,
             "--resume-cache-from requires --partial-repair-brief")
+    require(args.payload_cache_from is None or all(item is None for item in (
+                args.reuse_from, args.revision_brief, args.partial_repair_brief,
+                args.resume_cache_from)),
+            "--payload-cache-from cannot be combined with revision resume inputs")
+    require(not (args.payload_cache_from is not None or args.emit_payload_cache_success)
+            or args.model_backend == "openai-api",
+            "Cross-round payload cache prototype requires --model-backend openai-api")
     source, anchor, policy = (producer._load(path) for path in
                               (args.english_source_package, args.anchor, args.policy))
     # Validate all policy/source/plan conditions before requiring a secret or making a paid call.
@@ -1494,6 +2239,8 @@ def main() -> None:
         require(args.model_backend == "openai-api" and args.group_plan is None
                 and args.revision_brief is None and args.reuse_from is None
                 and args.partial_repair_brief is None and args.resume_cache_from is None
+                and args.payload_cache_from is None
+                and not args.emit_payload_cache_success
                 and args.progress_ledger is None,
                 "Bound canonical dispatch does not accept standalone execution overrides")
         from . import controller  # the controller imports this module
@@ -1526,6 +2273,10 @@ def main() -> None:
         partial_repair_brief=producer._load(args.partial_repair_brief)
         if args.partial_repair_brief else None,
         resume_cache_from=args.resume_cache_from,
+        payload_cache_from=args.payload_cache_from,
+        emit_payload_cache_success=args.emit_payload_cache_success,
+        payload_cache_required=False,
+        backfill_payload_cache_success=False,
         progress_ledger=args.progress_ledger)
     print(json.dumps({"status": "independent_model_review_pass",
                       "groups": len(evidence["groups"]),

@@ -1,0 +1,27 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-icon-alignment-ci-success",
+  "runs": [
+    {
+      "label": "icon-alignment-ci-success-20261017",
+      "source": "~/.codex/worktrees/dev-icon-alignment-tool/sermon-video-zh-subtitles/artifacts/icon-alignment-ci-success-20261017",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "icon-alignment-ci-success-20261017",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 540,
+      "truncated": false,
+      "sha256": "c4310d9d12835e0048bdf3f5626098afafaf220259d7cffe8438fe66ff7c44a4",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

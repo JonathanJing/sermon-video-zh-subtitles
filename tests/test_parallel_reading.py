@@ -9,9 +9,10 @@ from pathlib import Path
 from unittest.mock import patch
 
 from tests.legacy_pipeline_patches import patch_both  # W3b: Layer 1 names live in two modules
-from scripts import sermon_pipeline as pipeline
-from scripts import run_post_live_subtitle_generation as production
-from scripts import sermon_accounting as accounting
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.workflows.dual_pdf import pipeline as pipeline
+from tongxing_production.workflows.dual_pdf import post_live as production
+from tongxing_production.observability import accounting
 
 
 class ParallelReadingTest(unittest.TestCase):
@@ -174,6 +175,8 @@ class ParallelReadingTest(unittest.TestCase):
         self.assertEqual(candidate["status"], "waiting_voice_config")
         self.assertFalse(candidate["published"])
         self.assertEqual(len(calls), 2)
+        self.assertTrue(any(command[2:3] == ["workflows.dual_pdf.interpretation_pdf"]
+                            for command in calls))
 
     def test_dubbing_failure_blocks_join(self):
         def hook(config, week, run, executor):

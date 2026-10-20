@@ -5,9 +5,10 @@ import tempfile
 import unittest
 from unittest import mock
 
-from scripts import generate_multilingual_fragment_poc as subject
-from scripts import judge_english_source_for_translation as machine_judge
-from scripts import prepare_sentence_interpretation_shadow as shadow
+from tests import experiment_modules
+subject = experiment_modules.load("experiments/multilingual-fragment-poc/generate_multilingual_fragment_poc.py")
+from tongxing_production.source import english_source_judge as machine_judge
+from tongxing_production.source import sentence_interpretation_shadow as shadow
 from tests.test_prepare_sentence_interpretation_shadow import write_segments
 
 

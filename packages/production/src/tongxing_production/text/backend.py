@@ -40,12 +40,15 @@ class TextBackend:
     terminology: ports.Terminology
     measure: ports.Measure
     accounting: ports.Accounting
+    scripture: ports.Scripture
+    cuv_poc_module: Callable[[str], ModuleType]
+    cuv_poc_code_closure_sha256: Callable[[], str]
     workspace: ports.Workspace
     plugins: ports.Plugins
     transports: ports.Transports
     schemas: ports.Schemas
     diagnostic: ports.Diagnostic
-    worker_command: Callable[..., list]          # (*arguments) -> [python, scripts/canonical_layer2_controller.py, *arguments]
+    worker_command: Callable[..., list]          # (*arguments) -> [python, tools/ops/run.py, text.controller, *arguments]
     unmoved: Unmoved
 
 

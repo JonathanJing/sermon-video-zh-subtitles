@@ -1,0 +1,27 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-field-venue-old-head-ci-cancelled",
+  "runs": [
+    {
+      "label": "field-venue-old-head-ci-cancelled-20261017",
+      "source": "/private/tmp/field-venue-exp-leaf-20261017/artifacts/field-venue-old-head-ci-cancelled-20261017",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "field-venue-old-head-ci-cancelled-20261017",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 626,
+      "truncated": false,
+      "sha256": "9c70727997956cf160ccd685c4415a8f2d190947c56d05015b3966a45a1d2c55",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

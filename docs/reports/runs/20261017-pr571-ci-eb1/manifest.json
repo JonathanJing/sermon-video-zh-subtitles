@@ -1,0 +1,27 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-pr571-ci-eb1",
+  "runs": [
+    {
+      "label": "pr571-ci-eb1-20261017",
+      "source": "~/.codex/worktrees/event-identity-sidecar/sermon-video-zh-subtitles/artifacts/pr571-ci-eb1-20261017",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "pr571-ci-eb1-20261017",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 724,
+      "truncated": false,
+      "sha256": "0855a5f3162447fa6b0f85d19b50a40e0d815fddbd5009cfced9cf7f24234d57",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

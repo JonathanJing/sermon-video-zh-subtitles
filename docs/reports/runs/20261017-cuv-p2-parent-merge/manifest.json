@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-cuv-p2-parent-merge",
+  "runs": [
+    {
+      "label": "cuv-p2-parent-merge",
+      "source": "~/.codex/worktrees/cuv-preflight-move/sermon-video-zh-subtitles/artifacts/cuv-p2-parent-merge",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "cuv-p2-parent-merge",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 188,
+      "truncated": false,
+      "sha256": "1b6946c6b82ed8db493e5128faf7e214d64ae45109edf087748058aa7593158a",
+      "redactions": {}
+    },
+    {
+      "run": "cuv-p2-parent-merge",
+      "path": "python.log",
+      "kind": "log",
+      "bytes": 110,
+      "truncated": false,
+      "sha256": "75fb93b9d38f98dfc6950af676d5a872c92a721a3bba65c78dbf598d7571e39e",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}
