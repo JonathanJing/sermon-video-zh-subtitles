@@ -59,30 +59,40 @@ def fetch_json(url, limit=2_000_000):
     return json.loads(raw), raw
 
 
+CATALOGS = ("v5", "v4", "v3")  # newest first; an older one is read only when the newer one is absent (404)
+
+
 def load_catalog():
-    try:
-        catalog, _ = fetch_json(ORIGIN + "/multilingual-v4.json")
-        expected = "sermon-multilingual-catalog-v4"
-    except urllib.error.HTTPError as error:
-        if error.code != 404:
-            raise
-        catalog, _ = fetch_json(ORIGIN + "/multilingual-v3.json")
-        expected = "sermon-multilingual-catalog-v3"
-    if catalog.get("schemaVersion") != expected:
-        raise TestValidationError("Catalog endpoint schema does not match")
-    return catalog
+    for version in CATALOGS:
+        try:
+            catalog, _ = fetch_json(ORIGIN + f"/multilingual-{version}.json")
+        except urllib.error.HTTPError as error:
+            if error.code != 404 or version == CATALOGS[-1]:
+                raise
+            continue
+        if catalog.get("schemaVersion") != "sermon-multilingual-catalog-" + version:
+            raise TestValidationError("Catalog endpoint schema does not match")
+        return catalog
+
+
+def target_edition(catalog, page, target):
+    """The source edition holding the release: the page itself, or a v5 per-target edition."""
+    if catalog.get("schemaVersion") == "sermon-multilingual-catalog-v5" and page.get("sourceMode") == "per_target":
+        return target.get("editionId")
+    return page.get("id")
 
 
 def verified_notice(catalog, page_id, locale):
-    payload, target = notice_payload(catalog, page_id, locale)
+    payload, target, edition = notice_payload(catalog, page_id, locale)
     notice = payload["tongxing"]
     machine = "machine_checked" in (target.get("contentStatus"), target.get("audioStatus"))
-    if machine and catalog.get("schemaVersion") != "sermon-multilingual-catalog-v4":
-        raise TestValidationError("Machine-checked content requires catalog v4")
+    if machine and catalog.get("schemaVersion") not in ("sermon-multilingual-catalog-v4", "sermon-multilingual-catalog-v5"):
+        raise TestValidationError("Machine-checked content requires catalog v4 or v5")
     version = "v4" if machine else "v2"
-    if not re.fullmatch(r"[A-Za-z0-9_-]+", notice["pageID"]):
+    if not all(isinstance(value, str) and re.fullmatch(r"[A-Za-z0-9_-]+", value) for value in (notice["pageID"], edition)):
         raise TestValidationError("Invalid page identifier")
-    expected_path = f"/releases-{version}/{notice['pageID']}/{locale}.json"
+    # The notice keeps the family page ID for App routing; the release lives under its edition.
+    expected_path = f"/releases-{version}/{edition}/{locale}.json"
     if target.get("releasePackageUrl") != expected_path:
         raise TestValidationError("Only the bound same-origin published release is accepted")
     release, raw = fetch_json(ORIGIN + expected_path)
@@ -91,7 +101,7 @@ def verified_notice(catalog, page_id, locale):
     if (release.get("schemaVersion") != "sermon-target-language-release-package-" + version
             or release.get("status") != "published_http_verified"
             or release.get("httpVerification", {}).get("status") != "pass"
-            or release.get("pageId") != notice["pageID"] or release.get("targetLocale") != locale
+            or release.get("pageId") != edition or release.get("targetLocale") != locale
             or release.get("contentStatus") != target.get("contentStatus")
             or release.get("audioStatus") != target.get("audioStatus")):
         raise TestValidationError("Page release must match its HTTP-verified catalog binding")
@@ -99,7 +109,7 @@ def verified_notice(catalog, page_id, locale):
 
 
 def notice_payload(catalog, page_id, locale):
-    if catalog.get("schemaVersion") not in ("sermon-multilingual-catalog-v3", "sermon-multilingual-catalog-v4"):
+    if catalog.get("schemaVersion") not in ("sermon-multilingual-catalog-" + version for version in CATALOGS):
         raise TestValidationError("A published dual-script catalog is required")
     page_id = page_id or catalog.get("defaultPageId") or catalog.get("defaultPageID")
     pages = [p for p in catalog["pages"] if p.get("id") == page_id]
@@ -120,7 +130,7 @@ def notice_payload(catalog, page_id, locale):
               "es": "[Prueba Beta] Sermón de esta semana", "en": "[Beta remote test] This week’s sermon",
               "vi": "[Thử nghiệm Beta] Bài giảng tuần này"}
     return {"aps": {"alert": {"title": titles[locale], "body": page.get("date", "")}, "sound": "default"},
-            "tongxing": notice}, target
+            "tongxing": notice}, target, target_edition(catalog, page, target)
 
 
 def provider_token(key_path, key_id, team_id):
