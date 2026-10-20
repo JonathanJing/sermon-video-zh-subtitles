@@ -113,7 +113,7 @@ class FreshPreloadTests(unittest.TestCase):
                 assert 'scripts.sermon_trace_artifacts' not in sys.modules
                 frozen = entry.preload_execution_modules([
                     Path(sys.argv[1]) / 'scripts/language_review_plugins/diagnostic_structural.py'])
-                assert 'scripts/sermon_trace_artifacts.py' in frozen['loadedProjectCodeSha256']
+                assert 'packages/production/src/tongxing_production/observability/trace_artifacts.py' in frozen['loadedProjectCodeSha256']
                 with patch('urllib.request.OpenerDirector.open', side_effect=AssertionError('network forbidden')) as network:
                     with fixture.session():
                         fixture.generate()

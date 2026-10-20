@@ -1,28 +1,16 @@
-"""Private atomic derived artifacts; raw ledger writes belong to the collector."""
-import os
+"""Transition facade: the implementation lives in tongxing_production.observability.trace_artifacts.
+
+Both import paths name one module object, so attribute patches apply to both.
+Remove once nothing in scripts/ (the strict Layer 2 chain, the fresh diagnostic and the weekly report import it) uses the old path.
+"""
 from pathlib import Path
-import uuid
-from scripts import tongxing_host  # noqa: F401  binds the production package ports
-from tongxing_production.orchestration import jobs
-from scripts.sermon_release_workflow import _safe_path
+import sys
 
+try:
+    from scripts import tongxing_host  # noqa: F401  binds the production package ports
+except ModuleNotFoundError:  # run directly, or imported by bare name, from scripts/
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+    from scripts import tongxing_host  # noqa: F401
+from tongxing_production.observability import trace_artifacts as _implementation  # noqa: E402
 
-def new_directory(path):
-    path=_safe_path(path)
-    path.mkdir(parents=True,exist_ok=False,mode=0o700)
-    jobs._sync_directory_ancestry(path)
-    return path
-
-
-def write(path,content):
-    path=Path(path);root=jobs._directory_fd(path.parent);temp='.'+uuid.uuid4().hex
-    try:
-        jobs._reject_link(path,directory=False)
-        fd=os.open(temp,os.O_CREAT|os.O_EXCL|os.O_WRONLY|os.O_NOFOLLOW,0o600,dir_fd=root)
-        with os.fdopen(fd,'w',encoding='utf-8') as stream:
-            stream.write(content);stream.flush();os.fsync(stream.fileno())
-        os.replace(temp,path.name,src_dir_fd=root,dst_dir_fd=root);os.fsync(root)
-    finally:
-        try:os.unlink(temp,dir_fd=root)
-        except FileNotFoundError:pass
-        os.close(root)
+sys.modules[__name__] = _implementation

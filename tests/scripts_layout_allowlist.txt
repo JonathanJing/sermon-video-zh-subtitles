@@ -24,7 +24,6 @@ scripts/export_observability_trace.py
 scripts/export_playback_captions.py
 scripts/export_run_digest.py
 scripts/export_saturday_live_context.py
-scripts/export_sermon_trace.py
 scripts/four_layer_measure.py
 scripts/four_layer_timeline_template.html
 scripts/generate_notes_with_openai.py
@@ -57,7 +56,6 @@ scripts/language_review_plugins/zh_hans_weekly_cuv.py
 scripts/layer2_api_concurrency.py
 scripts/layer2_human_ruling.py
 scripts/live_source_monitor.py
-scripts/local_audio_resource_admission.py
 scripts/machine_audio_waiver_acceptance.py
 scripts/mfa_backend.py
 scripts/openai_layer2_diagnostic_transport.py
@@ -136,7 +134,6 @@ scripts/sermon_guarded_worker.py
 scripts/sermon_historical_identity.py
 scripts/sermon_historical_layer2.py
 scripts/sermon_historical_native_seed.py
-scripts/sermon_identity_sidecars.py
 scripts/sermon_job_liveness.py
 scripts/sermon_local_business_callbacks.py
 scripts/sermon_local_model_observation.py
@@ -148,7 +145,6 @@ scripts/sermon_mock_tts_dag.py
 scripts/sermon_mock_tts_worker.py
 scripts/sermon_model_resources.py
 scripts/sermon_native_preview_runtime.py
-scripts/sermon_observability.py
 scripts/sermon_pilot_evidence.py
 scripts/sermon_pipeline.py
 scripts/sermon_prefect_dag.py
@@ -193,7 +189,6 @@ scripts/sermon_temporal/worker_service.py
 scripts/sermon_temporal/workflows.py
 scripts/sermon_trace_artifacts.py
 scripts/sermon_unified/__init__.py
-scripts/sermon_unified_observability.py
 scripts/sermon_unified_reviews.py
 scripts/sermon_workflow_evidence.py
 scripts/source_meaning_machine_adjudication.py

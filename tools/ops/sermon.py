@@ -86,7 +86,7 @@ def run(args):
         return None,0
     state=r.load(args.state_root,args.run_id)
     if command=='run.events':
-        from scripts.sermon_unified_observability import events,project
+        from tongxing_production.observability.unified_projection import events,project
         result=envelope(command,state['manifest'],state['runKey']);result['outcome']='succeeded'
         result['events']=events(state,after=args.after_event,trace_id=args.trace_id,attempt_id=args.attempt_id)
         result['progress']=project(state);result['stateRevision']=state['stateRevision']

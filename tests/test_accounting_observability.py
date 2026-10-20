@@ -22,7 +22,7 @@ class ObservabilityTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary:
             (Path(temporary) / 'events.jsonl').write_text(json.dumps(row) + '\n')
             events, damaged = accounting.read_events(temporary)
-            from scripts import sermon_identity_sidecars as sidecars
+            from tongxing_production.observability import identity_sidecars as sidecars
             self.assertEqual(sidecars.collect(temporary, events), {})
             safe_export.export(Path(temporary), Path(temporary) / 'export')
         self.assertEqual(events, [row])

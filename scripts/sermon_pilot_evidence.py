@@ -240,7 +240,9 @@ def inspect(root, *, diagnose_offline=False):
         result = {'schemaVersion': SCHEMA, 'evidenceMode': 'synthetic', 'productionEligible': False,
             'executionAuthority': 'none', 'runId': plan['runId'], 'sourceIdentitySha256': plan['inputIdentitySha256'],
             'executionPlanSha256': plan['planSha256'], 'runtimeCodeSha256': pilot.code_identity(),
-            'readerCodeSha256': pilot.c.canonical_sha256({name: hashlib.sha256((pilot.REPO/'scripts'/name).read_bytes()).hexdigest()
+            # Keys keep the scripts/ names; the diagnostic contracts are read where they live (N4).
+            'readerCodeSha256': pilot.c.canonical_sha256({name: hashlib.sha256(
+                ({'sermon_agent_diagnostics_contracts.py': Path(dc.__file__)}.get(name) or pilot.REPO/'scripts'/name).read_bytes()).hexdigest()
                 for name in ('sermon_pilot_evidence.py', 'sermon_run_progress.py', 'sermon_agent_diagnostics.py',
                              'sermon_agent_diagnostics_contracts.py')}),
             'evidenceSnapshotSha256': pilot.c.canonical_sha256(files), 'sourceLedgerSha256': ledger_hash,

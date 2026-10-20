@@ -152,3 +152,27 @@ dual_pdf 附属（R10）单独做一次 dual_pdf 身份换代，不在这四批�
 - `run_spoken_condensation` 迁到 `tools/ops/run_spoken_condensation.py`，不留门面。它只是精简的命令行驱动，只有自己的测试导入它；W 里的是 `review/condensation.py`，驱动不在闭包里。
 - `sermon_local_model_observation` 迁到 `observability/local_model_observation.py`。宿主点名它，所以留门面。
 - 统一 CLI `sermon.py` 迁到 `tools/ops/sermon.py`，runbook 改用新路径。`scripts/sermon.py` 留作兼容门面，因为 `scripts/sermon_unified/__init__.py` 的 `worker_command()` 和现有操作员还在运行旧路径。
+
+**N4 结果（2026-10-20）。** 24 个候选迁了 15 个，分两步（0 层 13 个、1 层 2 个），每步一个纯 `git mv` 提交加一个接线提交。`sermon_release_workflow._safe_path` 本来就是包里 `storage.paths.safe_path` 的再导出，`sermon_execution_harness` 的 `atomic_json`、`utc_now`、`work_lock` 也已在 `storage/`，所以原先看着压在这两个键下面的 8 个文件可以直接改导入包。
+
+| 迁到 | 文件 |
+|---|---|
+| `observability/` | `trace_export`（原 `export_sermon_trace`）、`logs`、`unified_projection`（原 `sermon_unified_observability`）、`trace_artifacts`、`identity_sidecars` |
+| `orchestration/` | `guarded_worker` |
+| `compute/` | `local_audio_admission`（原 `local_audio_resource_admission`） |
+| `workflows/diagnostic/`（只用于诊断） | `agent_contracts`、`dag_evidence`、`execution_extensions`、`fresh_source_causality`、`historical_identity`、`openai_layer2_transport`、`preview_checkpoint_manifest` |
+| `tools/ops/` | `sermon_observability`：本机 Jaeger 运行时，按自身路径重启 watcher，包里不能用 `__file__` |
+
+`export_sermon_trace`、`sermon_observability`、`local_audio_resource_admission`、`sermon_identity_sidecars` 在 `scripts/` 里没有调用方，不留门面；`sermon_unified_observability` 的唯一调用方 `sermon.py` 已由 N3 迁进 `tools/ops/`，改指包后也不留门面。其余 10 个留门面，`sermon_guarded_worker` 的门面给留在 `scripts/` 的监督代理按路径启动。`historical_identity` 和 `preview_checkpoint_manifest` 只哈希自己的字节，加进 `READS_LOADED_MODULE_FILES`。
+
+剩下 9 个随 D-5 窗口走：
+
+| 文件 | 原因 |
+|---|---|
+| `sermon_dag_contract`、`sermon_model_resources`、`sermon_job_liveness` | 在 `sermon_prefect_dag.CLOSURE` 里（按 `scripts/` 名哈希，搬走要加 `path_aliases` 键）；`sermon_job_liveness` 也在模拟 TTS 的 `implementation_sha256` 里，宿主还点名它；`sermon_model_resources` 还导入 harness 自己定义的 `ExecutionTerminated` |
+| `sermon_guarded_command` | Temporal `integration_check` 的 `dependencySha256`、Prefect `CLOSURE`、模拟 TTS 闭包都列了它；harness 按同目录路径启动它 |
+| `codex_layer2_diagnostic` | 导入 L1 兼容钉住的 `sermon_diagnostic_context`，还导入留在 `scripts/` 的 `cuv_scripture` 和 policy 冻结的 `diagnostic_structural` 插件；要在窗口里加端口 |
+| `run_codex_layer2_test` | 导入 `codex_layer2_diagnostic`；也可以改进 `tools/development/`（那里能导入 `scripts.*`） |
+| `sermon_diagnostic_source_evidence` | 导入 `sermon_diagnostic_context` |
+| `export_observability_trace` | 导入 `weekly_pipeline_report`（`path_aliases` 键）；它导入的 `sermon_decision_accounting`（N2）和 `sermon_local_model_observation`（N3）已有包内实现 |
+| `sermon_run_progress` | 导入 `weekly_pipeline_report` 和 `build_four_layer_timeline`；`tracker_projection_host` 点名它，迁移时要留门面 |

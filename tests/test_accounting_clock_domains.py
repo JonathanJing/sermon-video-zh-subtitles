@@ -11,7 +11,7 @@ from tongxing_production.observability import accounting
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.observability import clock_evidence as clocks
 from scripts import export_observability_trace as safe_export
-from scripts import export_sermon_trace as otlp
+from tongxing_production.observability import trace_export as otlp
 from scripts import weekly_pipeline_report as weekly
 from tests import test_weekly_pipeline_report as fixtures
 

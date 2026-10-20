@@ -1,100 +1,19 @@
-#!/usr/bin/env python3
-"""Read local workflow logs without rewriting receipts or contacting services."""
-from __future__ import annotations
+"""Transition facade: the implementation lives in tongxing_production.observability.logs.
 
-import argparse
-import json
-import sys
+Both import paths name one module object, so attribute patches apply to both.
+``python scripts/sermon_logs.py`` still runs the command; prefer ``tools/ops/run.py observability.logs``.
+Remove once nothing in scripts/ (the fresh full DAG imports it) uses the old path.
+"""
 from pathlib import Path
+import sys
 
-ROOT = Path(__file__).resolve().parents[1]
-if str(ROOT) not in sys.path:
-    sys.path.insert(0, str(ROOT))
-
-from scripts import tongxing_host  # noqa: F401  binds the production package ports
-from tongxing_production.observability.accounting import diagnostic_event, format_diagnostic, read_events, receipt_integrity, profile_integrity, _with_report_snapshot
-
-LEVELS = {"DEBUG": 10, "INFO": 20, "WARNING": 30, "ERROR": 40, "CRITICAL": 50}
-
-
-def inspect_logs(directory, *, run_id="latest", level="INFO", tail=50):
-    return _with_report_snapshot(directory, lambda events, damaged, digest, replay:
-        _inspect_events(events, damaged, replay, run_id=run_id, level=level, tail=tail))
-
-
-def _inspect_events(events, damaged, replay, *, run_id="latest", level="INFO", tail=50):
-    """Pure internal projection of a call-owned, already checked snapshot."""
-    run_ids = list(dict.fromkeys(e["runId"] for e in events))
-    # Select by run start, not whichever old child wrote most recently.
-    starts = [e["runId"] for e in events if e["event"] == "run_started"]
-    selected = (starts or run_ids)[-1] if run_id == "latest" and run_ids else run_id
-    if selected != "all" and selected not in run_ids:
-        raise ValueError("run_not_found")
-    selected_events = [e for e in events if selected == "all" or e["runId"] == selected]
-    # Compare the whole ledger before filtering: a conflicting duplicate in
-    # another run also invalidates this run's attributed receipt.
-    integrity = receipt_integrity(events, event_integrity=replay)
-    affected = {key for (rid, _), keys in integrity['_affected'].items()
-                if selected == 'all' or rid == selected for key in keys}
-    conflicts = [c for c in integrity['conflicts'] if c['identitySha256'] in affected]
-    diagnostics = [diagnostic_event(e) for e in selected_events]
-    # Recorded severity can remain INFO for explicit non-success outcomes.
-    # This is a diagnostic projection, not a rewrite of the immutable ledger:
-    # keep every historical outcome visible even after a successful recovery.
-    for event, diagnostic in zip(selected_events, diagnostics):
-        if (event.get("status") in {"failed", "cancelled", "outcome_unknown", "blocked"}
-                or diagnostic.get("status") in {"failed", "cancelled", "outcome_unknown", "blocked"}):
-            if LEVELS[diagnostic["level"]] < LEVELS["ERROR"]:
-                diagnostic["level"] = "ERROR"
-    failed = [d for d in diagnostics if LEVELS[d["level"]] >= LEVELS["ERROR"]]
-    warnings = [d for d in diagnostics if d["level"] == "WARNING"]
-    unfinished = []
-    for start, end, field in (("run_started", "run_finished", "runId"),
-                              ("workflow_started", "workflow_finished", "workflowId"),
-                              ("stage_started", "stage_finished", "spanId"),
-                              ("api_attempt_started", "api_attempt", "attemptId"),
-                              ("sdk_call_started", "sdk_call_finished", "invocationId")):
-        ended = {(e["runId"], e.get(field)) for e in selected_events if e["event"] == end}
-        for event in selected_events:
-            if event["event"] == start and (event["runId"], event.get(field)) not in ended:
-                unfinished.append({"event": start, "runId": event["runId"], "id": event.get(field),
-                                   "status": "interrupted_or_running"})
-    filtered = [d for d in diagnostics if LEVELS[d["level"]] >= LEVELS[level]]
-    return {"schemaVersion": "sermon-log-inspection-v1", "runId": selected,
-            "status": "needs_attention" if damaged or failed or unfinished or conflicts or replay['status'] != 'consistent' else "no_detected_error",
-            "ledgerIntegrity": "incomplete_corrupt_events" if damaged else "conflicting_receipts" if conflicts else "readable",
-            "receiptConflicts": conflicts,
-            **({"eventIntegrity": {k:v for k,v in replay.items() if not k.startswith("_")}} if replay["profileEventCount"] else {}),
-            "damagedEvents": damaged, "errorEvents": len(failed), "warningEvents": len(warnings),
-            "unfinished": unfinished, "matchingEvents": len(filtered), "events": filtered[-tail:],
-            "scope": "Local recorded execution only; no production acceptance or current process health inferred."}
-
-
-def main(argv=None):
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("directory", type=Path, help="The accounting directory containing events.jsonl")
-    parser.add_argument("--run-id", default="latest", help="A run ID, latest (default), or all")
-    parser.add_argument("--level", choices=LEVELS, default="INFO", help="Minimum severity")
-    parser.add_argument("--tail", type=int, default=50, help="Maximum number of matching events (1..10000)")
-    parser.add_argument("--json", action="store_true", help="Print a structured diagnostic view")
-    parser.add_argument("--check", action="store_true", help="Exit 2 for errors, conflicting, damaged or unfinished records; 3 for unreadable logs")
-    args = parser.parse_args(argv)
-    if not 1 <= args.tail <= 10000:
-        parser.error("--tail must be between 1 and 10000")
-    try:
-        report = inspect_logs(args.directory, run_id=args.run_id, level=args.level, tail=args.tail)
-    except (OSError, ValueError):
-        # Never display filesystem/exception details that may contain credentials.
-        print(json.dumps({"status": "unavailable", "reasonCode": "ledger_or_run_unavailable"}), file=sys.stderr)
-        return 3
-    if args.json:
-        print(json.dumps(report, ensure_ascii=False, indent=2))
-    else:
-        print(f"run={report['runId']} status={report['status']} errors={report['errorEvents']} warnings={report['warningEvents']} unfinished={len(report['unfinished'])} damaged={len(report['damagedEvents'])} conflicts={len(report['receiptConflicts'])}")
-        for event in report["events"]:
-            print(format_diagnostic(event))
-    return 2 if args.check and report["status"] == "needs_attention" else 0
-
+try:
+    from scripts import tongxing_host  # noqa: F401  binds the production package ports
+except ModuleNotFoundError:  # run directly, or imported by bare name, from scripts/
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+    from scripts import tongxing_host  # noqa: F401
+from tongxing_production.observability import logs as _implementation  # noqa: E402
 
 if __name__ == "__main__":
-    raise SystemExit(main())
+    raise SystemExit(_implementation.main())
+sys.modules[__name__] = _implementation

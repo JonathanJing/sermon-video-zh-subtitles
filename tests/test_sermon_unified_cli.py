@@ -11,7 +11,7 @@ import wave
 from unittest.mock import patch
 from tools.ops import sermon
 from scripts.sermon_unified import contracts as c,runtime as r,adapters
-from scripts.sermon_unified_observability import project,events,compare
+from tongxing_production.observability.unified_projection import project,events,compare
 
 class UnifiedCliTests(unittest.TestCase):
     def setUp(self):

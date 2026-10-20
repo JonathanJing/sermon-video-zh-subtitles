@@ -76,7 +76,7 @@ class SourceBoundAudioTests(unittest.TestCase):
              patch('tongxing_production.compute.spark_tts_replica_pool.ReplicaPool', FakePool), patch('builtins.print'):
             # Simulate interruption after batch completion, before final outcome publication.
             with patch.object(worker, 'worker_identity', return_value=compatibility.PRE_TIMING_WORKER), \
-                 patch('scripts.local_audio_resource_admission.finish'):
+                 patch('tongxing_production.compute.local_audio_admission.finish'):
                 first = worker.render_tts(self.args)
             frozen_paths = [self.args.out / 'run.json', self.args.out / 'resource-claim.json',
                             self.args.out / 'gpu-cleanup.json', *self.args.out.glob('batch-*.json'),

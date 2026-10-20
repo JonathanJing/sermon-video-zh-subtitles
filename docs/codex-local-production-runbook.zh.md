@@ -152,7 +152,7 @@ shadow receipt 的 `ready_for_model_translation` 只表示自动锚点结构干�
 
 Layer 2 的每组耗时、恢复跑并行度和周投影诊断，按[周更运行配置的验收步骤](weekly-run-profile.zh.md#layer-2-本地开销与恢复并行真实运行怎么验收2026-10-20-改动)量，并与其中的 10-18 基线并列写进运行报告。
 
-排查最近一次执行：`.venv/bin/python scripts/sermon_logs.py artifacts/post-live-runs/YYYY-MM-DD/accounting --level WARNING`。需要完整事件去掉 `--level WARNING`；需要检查退出码加 `--check`。入口、阶段和子进程共享 `runId`，失败及业务等待状态保留在同一账本；详见[统一事件与错误追踪](workflow-accounting.zh.md#统一事件与错误追踪)。
+排查最近一次执行：`.venv/bin/python tools/ops/run.py observability.logs artifacts/post-live-runs/YYYY-MM-DD/accounting --level WARNING`。需要完整事件去掉 `--level WARNING`；需要检查退出码加 `--check`。入口、阶段和子进程共享 `runId`，失败及业务等待状态保留在同一账本；详见[统一事件与错误追踪](workflow-accounting.zh.md#统一事件与错误追踪)。
 
 ## 每周默认交付海报
 
