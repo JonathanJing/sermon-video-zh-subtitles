@@ -47,6 +47,24 @@ python3 -m unittest discover -s tests
 
 如果只是文档改动，也要确认链接指向真实文件，并确认没有 staged 的生成物。
 
+### 在 git worktree 里跑测试
+
+`.claude/worktrees/` 下的 worktree 共用主 checkout 的 `.venv`，其可编辑安装指向主 checkout 的 `packages/production/src`。不处理的话，worktree 里的测试会导入主 checkout 的代码，结果对应的是另一棵树。
+
+- **用共享 venv 跑 pytest。** `tests/conftest.py` 把本树的 `packages/production/src` 和 `services/api/src` 放到 `sys.path` 与 `PYTHONPATH` 最前面，测试本身和继承环境的 Python 子进程都导入本 worktree。测试若用全新的 `env=` 启动子进程，要经过 `tests.tree_paths.child_env()`。pytest 表头会写出包来源；`python -I` 子进程会导入别的树时给出警告。
+
+  ```bash
+  ../../../.venv/bin/python -m pytest -q tests/test_canonical_layer2_controller.py
+  ```
+
+- **`python -I` 启动的子进程、清空 `PYTHONPATH` 的测试，以及 `unittest`。** 它们绕过 `PYTHONPATH` 或 conftest。给 worktree 建自己的 venv：依赖仍用共享 venv 的，只列本 worktree 的包源码：
+
+  ```bash
+  python3 tools/development/worktree_venv.py
+  ```
+
+  之后用 `.venv/bin/python` 跑测试。依赖装在共享 venv；其 Python 版本变化后重跑该脚本。
+
 大范围公开发布前，请先跑 [开源准备检查](./docs/open-source-readiness.zh.md)。
 
 ## Pull Request Checklist

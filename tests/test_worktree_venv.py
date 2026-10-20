@@ -20,6 +20,9 @@ class WorktreeVenvTests(unittest.TestCase):
             _package(root / 'main' / subject.PACKAGE_SRC, 'main')
             worktree = root / 'worktree'
             _package(worktree / subject.PACKAGE_SRC, 'worktree')
+            api = worktree / subject.API_SRC / 'tongxing_api'
+            api.mkdir(parents=True)
+            (api / '__init__.py').write_text('', encoding='utf-8')
             shared = root / 'main' / '.venv'
             subprocess.run([sys.executable, '-m', 'venv', '--without-pip', str(shared)], check=True)
             shared_site = subject.site_packages(shared / 'bin' / 'python')
@@ -32,7 +35,7 @@ class WorktreeVenvTests(unittest.TestCase):
 
             self.assertEqual(python, again)
             out = subprocess.run(
-                [str(python), '-I', '-c', 'import tongxing_production, shared_dep; print(tongxing_production.LABEL)'],
+                [str(python), '-I', '-c', 'import tongxing_production, tongxing_api, shared_dep; print(tongxing_production.LABEL)'],
                 check=True, capture_output=True, text=True,
             ).stdout.strip()
             self.assertEqual(out, 'worktree')
