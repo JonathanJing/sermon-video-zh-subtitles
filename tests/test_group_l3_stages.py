@@ -58,6 +58,19 @@ class GroupL3StagesTests(unittest.TestCase):
         self.assertFalse(on_disk["releaseEligible"])
         self.assertFalse(on_disk["humanApproval"])
 
+    def test_merge_dir_gets_the_latest_stage_report(self):
+        merge = self.root / "merge"
+        merge.mkdir()
+        self.write_config([self.write_stage("formal_render", "rendered.json")],
+                          paths={"speechJob": "speechJob.json", "source": "source.json",
+                                 "anchor": "anchor.json", "candidate": "candidate.json",
+                                 "policy": "policy.json", "adapter": "adapter.json",
+                                 "registry": "registry.json", "mergeDir": "merge"})
+        self.execute()
+        latest = json.loads((merge / "l3-stages.json").read_text(encoding="utf-8"))
+        self.assertEqual(latest["status"], "completed")
+        self.assertEqual(latest["stages"][0]["status"], "done")
+
     def test_second_run_skips_existing_products(self):
         self.write_config([self.write_stage("formal_render", "rendered.json")])
         self.execute()

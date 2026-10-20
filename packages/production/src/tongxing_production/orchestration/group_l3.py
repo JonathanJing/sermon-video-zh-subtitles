@@ -145,6 +145,10 @@ def run_stages(config: dict, out: Path, *, dry_run: bool = False) -> dict:
         report["stages"].append(entry)
     report["status"] = "planned" if dry_run else "completed"
     _write_report(out, report)
+    merge_dir = config["paths"].get("mergeDir")
+    if merge_dir and Path(merge_dir).is_dir():
+        # A latest-status pointer beside the candidate; the full evidence stays in out.
+        _write_latest(Path(merge_dir) / "l3-stages.json", report)
     return report
 
 
@@ -180,6 +184,12 @@ def _tail(value: str, limit: int = 2000) -> str:
 def _now() -> str:
     from datetime import datetime, timezone
     return datetime.now(timezone.utc).isoformat(timespec="seconds").replace("+00:00", "Z")
+
+
+def _write_latest(path: Path, report: dict) -> None:
+    temporary = path.with_name(f".{path.name}.{os.getpid()}.tmp")
+    temporary.write_text(json.dumps(report, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
+    os.replace(temporary, path)
 
 
 def _write_report(out: Path, report: dict) -> None:
