@@ -1,0 +1,22 @@
+{
+  "schemaVersion": "local-test-outcome-v1",
+  "status": "passed_with_limits",
+  "exitCode": 0,
+  "startedAt": "2026-10-20T20:50:00+00:00",
+  "endedAt": "2026-10-20T23:10:00+00:00",
+  "scope": "PR #1082 (mixed-source v5 family page) after merging origin/dev@810349e2, moving its new CLI to tools/ops/ and fixing 11 Codex threads (2 iOS threads were already fixed by 263c0e75). Head f86c3a1c.",
+  "results": {
+    "listeningWeb": "node --test apps/listening-web/*.test.mjs: 610 tests, 609 pass, 0 fail, 1 skipped",
+    "iosCore": "swift test --package-path Core: 115 tests in 22 suites passed; 7 opt-in skipped",
+    "iosInfrastructure": "swift test (apps/tongxing-ios): 59 tests in 10 suites passed; live-network suites (LiveDevReleaseTests, LivePublishedTranscriptTests, etc.) skipped and not counted",
+    "python": "110 delivery/catalog/poster/announcement/APNs test files + test_tongxing_production_package + test_scripts_layout_guard in 4 chunks: 1,695 passed, 2 skipped. Chunk 2 first failed 1 subtest (test_ci_change_scope: the new v5 test read an iOS fixture by path); fixed in f86c3a1c and re-run with test_mixed_source_catalog_v5 + test_ci_change_scope: 26 passed"
+  },
+  "partial": [
+    "tests/test_machine_quality_waiver.py: 45 of 67 passed, then stopped after 45 min (CPU-bound regex tests at load average ~440; the PR changes none of its imports: review/, text/, audio/, language_review_plugins)"
+  ],
+  "notRun": [
+    "browser rendering",
+    "device playback or Duo acceptance",
+    "any deploy, Firebase or TestFlight action, page publication"
+  ]
+}

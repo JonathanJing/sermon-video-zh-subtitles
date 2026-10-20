@@ -12,6 +12,7 @@ public struct PublishedTranscriptCue: Sendable, Equatable, Identifiable {
 
 public struct VerifiedPublishedTranscript: Sendable, Equatable {
     public let pageID: String
+    public let editionID: String
     public let locale: String
     public let sourceIdentitySha256: String
     public let title: String?
@@ -50,7 +51,9 @@ public struct VerifiedPublishedTranscript: Sendable, Equatable {
         try package.validate(allowDevCandidate: allowDevCandidate)
         guard [TargetLanguageReleasePackage.dualScriptSchemaVersion, TargetLanguageReleasePackage.fourProductSchemaVersion,
                TargetLanguageReleasePackage.machineCheckedSchemaVersion].contains(package.schemaVersion),
-              package.pageId == page.id, let target = page.targets[package.targetLocale],
+              let target = page.targets[package.targetLocale],
+              let targetSource = try? target.sourceBinding(in: page),
+              package.pageId == targetSource.editionId,
               package.contentStatus == target.contentStatus, package.audioStatus == target.audioStatus else {
             throw CatalogError.invalid("文稿与发布语言不符")
         }
@@ -69,15 +72,17 @@ public struct VerifiedPublishedTranscript: Sendable, Equatable {
         let validContentStatus = source.status == package.contentStatus
             && (source.status == "human_reviewed" || source.schemaVersion == PublishedContentReview.machineCheckedSchemaVersion)
         guard validContentSchema,
-              source.pageId == page.id, source.sourceLocale == "en",
+              source.pageId == targetSource.editionId, source.sourceLocale == "en",
               (candidate ? source.locale : source.targetLocale) == package.targetLocale,
               (candidate ? source.contentStatus == package.contentStatus && source.audioStatus == package.audioStatus &&
                   source.targetLanguageAudioPackageJsonSha256 == package.targetLanguageAudioPackageJsonSha256 &&
                   source.date == page.date : validContentStatus),
-              source.englishSourcePackageJsonSha256 == page.sourceIdentitySha256,
+              source.englishSourcePackageJsonSha256 == targetSource.sourceIdentitySha256,
               source.targetLanguageCandidateJsonSha256 == package.targetLanguageCandidateJsonSha256,
               (candidate ? true : source.sourceMediaSha256.map(Validation.sha256) == true),
-              (candidate ? true : page.sourceMediaSha256.map({ $0 == source.sourceMediaSha256 }) ?? true),
+              (candidate ? true : targetSource.sourceMediaSha256.map({ $0 == source.sourceMediaSha256 }) ?? true),
+              source.sourceVideoUrl.map({ targetSource.videoDelivery == nil
+                  || $0 == targetSource.videoDelivery?.canonicalUrl }) ?? true,
               source.durationSeconds.isFinite, source.durationSeconds > 0,
               source.durationSeconds <= 24 * 60 * 60, !source.title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
             throw CatalogError.invalid("完整文稿来源绑定无效")
@@ -90,7 +95,7 @@ public struct VerifiedPublishedTranscript: Sendable, Equatable {
             // the same-locale disclosure. Simulation content stays on v2.
             let review = try PublishedContentReview.decode(content)
             // Machine-checked text repeats the release disclosure it was published under.
-            guard review.pageId == page.id, review.targetLocale == package.targetLocale,
+            guard review.pageId == targetSource.editionId, review.targetLocale == package.targetLocale,
                   review.status == package.contentStatus,
                   review.status != "machine_checked" || review.disclosure == package.disclosure,
                   page.simulationOnly != true, target.simulationOnly != true else {
@@ -117,7 +122,7 @@ public struct VerifiedPublishedTranscript: Sendable, Equatable {
             throw CatalogError.invalid("音轨时长无效")
         }
         if candidate {
-            guard spoken.schemaVersion == "sermon-target-language-captions-v1", spoken.pageId == page.id,
+            guard spoken.schemaVersion == "sermon-target-language-captions-v1", spoken.pageId == targetSource.editionId,
                   spoken.locale == package.targetLocale,
                   spoken.audioPackageJsonSha256 == package.targetLanguageAudioPackageJsonSha256,
                   spoken.timingBasis == "concatenated target audio; natural unit durations; no source-video synchronization" else {
@@ -156,8 +161,8 @@ public struct VerifiedPublishedTranscript: Sendable, Equatable {
             guard let title = nonempty(item.title) else { return nil }
             return OutlineSection(title: title, points: points)
         } : []
-        return .init(pageID: page.id, locale: package.targetLocale,
-                     sourceIdentitySha256: page.sourceIdentitySha256, title: source.title,
+        return .init(pageID: page.id, editionID: targetSource.editionId, locale: package.targetLocale,
+                     sourceIdentitySha256: targetSource.sourceIdentitySha256, title: source.title,
                      series: source.series, speaker: source.speaker,
                      scripture: source.scripture,
                      summary: reviewed ? nonempty(source.summary) : nil, outline: outline,
@@ -252,6 +257,7 @@ private struct FullContent: Decodable {
     let englishSourcePackageJsonSha256: String
     let targetLanguageCandidateJsonSha256: String
     let sourceMediaSha256: String?
+    let sourceVideoUrl: String?
     let durationSeconds: Double
     let audioDurationSeconds: Double?
     let reviewMode: String?
@@ -267,7 +273,7 @@ private struct FullContent: Decodable {
     private enum CodingKeys: String, CodingKey {
         case schemaVersion, pageId, sourceLocale, targetLocale, locale, status, contentStatus, audioStatus, date
         case targetLanguageAudioPackageJsonSha256, englishSourcePackageJsonSha256, targetLanguageCandidateJsonSha256
-        case sourceMediaSha256, durationSeconds, audioDurationSeconds, reviewMode, title, series, speaker, cues
+        case sourceMediaSha256, sourceVideoUrl, durationSeconds, audioDurationSeconds, reviewMode, title, series, speaker, cues
         case scripture, summary, outline, questions
     }
 
@@ -286,6 +292,7 @@ private struct FullContent: Decodable {
         englishSourcePackageJsonSha256 = try c.decode(String.self, forKey: .englishSourcePackageJsonSha256)
         targetLanguageCandidateJsonSha256 = try c.decode(String.self, forKey: .targetLanguageCandidateJsonSha256)
         sourceMediaSha256 = try c.decodeIfPresent(String.self, forKey: .sourceMediaSha256)
+        sourceVideoUrl = try c.decodeIfPresent(String.self, forKey: .sourceVideoUrl)
         durationSeconds = try c.decode(Double.self, forKey: .durationSeconds)
         // Only an absent legacy field may fall back. Explicit null or a wrong
         // type must not silently remove a declared audio clock.
@@ -377,8 +384,11 @@ private struct EnglishReference: Decodable {
     static func validated(_ data: Data, source: FullContent, package: TargetLanguageReleasePackage,
                           page: MultilingualPage) throws -> [String: String] {
         let reference = try JSONDecoder().decode(Self.self, from: data)
-        guard reference.schemaVersion == "sermon-published-english-reference-v1", reference.pageId == page.id,
-              reference.sourceIdentitySha256 == page.sourceIdentitySha256,
+        guard let catalogTarget = page.targets[package.targetLocale],
+              let targetSource = try? catalogTarget.sourceBinding(in: page),
+              reference.schemaVersion == "sermon-published-english-reference-v1",
+              reference.pageId == targetSource.editionId,
+              reference.sourceIdentitySha256 == targetSource.sourceIdentitySha256,
               reference.sourceMediaSha256 == source.sourceMediaSha256, reference.reviewState == "human_approved",
               let target = reference.targets[package.targetLocale],
               target.releasePackageJsonSha256 == page.targets[package.targetLocale]?.releasePackageJsonSha256,

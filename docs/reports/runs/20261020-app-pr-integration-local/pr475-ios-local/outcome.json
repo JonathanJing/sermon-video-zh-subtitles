@@ -1,0 +1,12 @@
+{
+  "schemaVersion": "local-test-outcome-v1",
+  "status": "passed",
+  "exitCode": 0,
+  "startedAt": "2026-10-20T20:20:00+00:00",
+  "endedAt": "2026-10-20T20:35:00+00:00",
+  "scope": "PR #475 (iOS Duo single-window, ListeningLayoutPolicy removal) after merging origin/dev@810349e2: DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer swift test --package-path Core (apps/tongxing-ios). 109 tests in 21 suites passed; 7 opt-in live/frozen-fixture tests skipped and not counted. git diff --check clean.",
+  "notRun": [
+    "simulator UI tests (no UI code changed)",
+    "device or Duo acceptance (separate status)"
+  ]
+}

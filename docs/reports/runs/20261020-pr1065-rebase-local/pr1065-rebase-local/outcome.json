@@ -1,0 +1,12 @@
+{
+  "schemaVersion": "local-test-outcome-v1",
+  "status": "passed",
+  "exitCode": 0,
+  "startedAt": "2026-10-20T20:50:00+00:00",
+  "endedAt": "2026-10-20T21:12:00+00:00",
+  "scope": "PR #1065 rebased onto dev@810349e2 (merge commit 72f4c538, tree identical to the tested rebase 7ee8370e): 54 affected test files in 6 parallel chunks in the worktree venv, load ~430.",
+  "knownPreexistingFailures": [
+    "tests/test_sermon_job_liveness.py::LivenessTests::test_real_monitor_cancels_stalls_and_never_restarts_unknown_work (2 subtests, liveness_start_timeout under load; fails side by side on dev@810349e2)",
+    "tests/test_production_concurrency_profile.py::ProfileTests::test_23_worker_executor_is_opt_in_and_preserves_source_order (14 not greater than 16 under load; fails on dev@810349e2 side by side, passes alone on the branch)"
+  ]
+}

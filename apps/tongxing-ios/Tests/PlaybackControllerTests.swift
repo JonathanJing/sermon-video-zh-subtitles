@@ -376,6 +376,23 @@ final class PlaybackControllerTests: XCTestCase {
         XCTAssertFalse(fixture.player.isPlaying)
     }
 
+    func testPublishedLanguageTransferNeverCrossesTargetEdition() async throws {
+        let fixture = try Fixture()
+        defer { fixture.dispose() }
+        let original = fixture.publishedAudio(locale: "zh-Hans", editionID: "broadcast-edition")
+        fixture.player.loadPublishedAudio(original)
+        try await eventually("published fixture ready") { fixture.player.isReady }
+        fixture.player.jump(to: 6)
+        fixture.player.preparePublishedLanguageSwitch(pageID: original.pageID,
+            editionID: "family-edition", sourceIdentity: original.sourceIdentitySha256)
+        fixture.player.loadPublishedAudio(fixture.publishedAudio(locale: "ko", editionID: "family-edition"))
+        try await eventually("different edition ready") { fixture.player.isReady }
+        try await settleCallbacks()
+        XCTAssertEqual(fixture.player.position, 0, accuracy: 0.1)
+        XCTAssertNil(fixture.player.resumePosition)
+        XCTAssertFalse(fixture.player.isPlaying)
+    }
+
     func testInterfaceLanguageChangesPreservePublishedPositionAndPendingSeek() async throws {
         let fixture = try Fixture()
         defer { fixture.dispose() }
@@ -877,8 +894,9 @@ final class PlaybackControllerTests: XCTestCase {
                         subtitleTiming: "synthetic_fixture", scope: "synthetic_fixture")
         }
 
-        func publishedAudio(locale: String, sourceIdentity: String = String(repeating: "a", count: 64)) -> VerifiedLanguageAudio {
-            VerifiedLanguageAudio(localURL: audioURL, pageID: "synthetic-published-page", locale: locale,
+        func publishedAudio(locale: String, editionID: String = "synthetic-published-page",
+                            sourceIdentity: String = String(repeating: "a", count: 64)) -> VerifiedLanguageAudio {
+            VerifiedLanguageAudio(localURL: audioURL, pageID: "synthetic-published-page", editionID: editionID, locale: locale,
                                   sourceIdentitySha256: sourceIdentity, sha256: sha256)
         }
 

@@ -172,7 +172,8 @@ final class AudioAlignmentController {
                     selected.track.id, selected.track.sha256, playback.alignmentRevision.uuidString].joined(separator: "|")
         case .published(let selected):
             let binding = selected.page.targets[selected.locale]?.audioFingerprint
-            return [selected.page.id, selected.page.sourceIdentitySha256, selected.locale,
+            let source = selected.page.targets[selected.locale].flatMap { try? $0.sourceBinding(in: selected.page) }
+            return [selected.page.id, source?.editionId ?? "", source?.sourceIdentitySha256 ?? "", selected.locale,
                     selected.trackSha256, binding?.indexSha256 ?? "", binding?.sourceSha256 ?? "",
                     playback.alignmentRevision.uuidString].joined(separator: "|")
         }

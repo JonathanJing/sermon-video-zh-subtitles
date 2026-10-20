@@ -23,7 +23,7 @@
 2. **两步，分开生成和公开。** `export_run_digest.py` 只在被忽略的 `artifacts/run-reports/` 下生成报告，不碰 Git；`publish_run_report.sh` 先复查脱敏，再公开。生成可以无条件自动执行，公开是一个单独、可检查的动作。
 3. **报告单独走 PR。** 公开脚本从 `origin/dev` 切出 `run-report/<name>` 分支，在临时 worktree 里把报告加成 `docs/reports/runs/<name>/`，推送并开草稿 PR。当前检出和分支都不动。报告 PR 只含文档，走 CI 的文档快速路径；修复另开 PR，引用报告路径。这样报告不会被代码评审卡住，修复也不会混进证据。
 4. **公开仓库的保护。**
-   - 脱敏：去掉 API key、GitHub/Google token、Bearer、带 key/token/secret/password/cookie 名字的字段值、私钥、邮箱、内网 IP、`.ts.net`/`.local` 主机名、home 路径，以及当前环境里名字带 KEY/TOKEN/SECRET 的变量值。
+   - 脱敏：去掉 API key、GitHub/Google token、Bearer、带 key/token/secret/password/cookie 名字的字段值、私钥、邮箱、内网 IP、`.ts.net`/`.local` 主机名、私有网盘分享链接（Google Drive/Docs、Dropbox 文件和文件夹分享、OneDrive 个人版与组织版 `<tenant>-my.sharepoint.com`、SharePoint `/:x:/` 分享链接、iCloud Drive，替换为 `<private-drive-link>`，链接后紧跟的中文标点和正文保留；2026-10-18 广播版 `summary.json` 的 `sourceUrl` 曾漏出 Drive 文件夹链接）、home 路径，以及当前环境里名字带 KEY/TOKEN/SECRET 的变量值。
    - 复查：公开前再扫一遍，有残留就拒绝推送。
    - 大小：整份报告超过 2 MB 就拒绝生成。
    - 内容：媒体和模型输出一律不复制。

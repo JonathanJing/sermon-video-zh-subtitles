@@ -1,0 +1,45 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261020-pr432-port-local",
+  "runs": [
+    {
+      "label": "pr432-port-local",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.claude/worktrees/jolly-galileo-pr432/artifacts/pr432-port-local",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "pr432-port-local",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 535,
+      "truncated": false,
+      "sha256": "585689176a226a66d04041810823d335fe779bcffe8427db8f7be84c9b4ab711",
+      "redactions": {}
+    },
+    {
+      "run": "pr432-port-local",
+      "path": "pytest.log",
+      "kind": "log",
+      "bytes": 5214,
+      "truncated": false,
+      "sha256": "1c60abdc0b2b1226e300dafc0f8f681b1d60c238ad81dd5a231d31bdd7dee83d",
+      "redactions": {}
+    },
+    {
+      "run": "pr432-port-local",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 1089,
+      "truncated": false,
+      "sha256": "319a8886eb65455e1e8f4241ee30892fd8a945129df92713be391688198e4a7c",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

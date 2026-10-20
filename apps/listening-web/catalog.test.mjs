@@ -44,6 +44,15 @@ test('same-week source links stay distinct and date-only links prefer the Sunday
   assert.equal(chooseWeek({ ...c, weeks: [...pages, legacy] }, legacy.id), legacy);
 });
 
+test('v5 edition deep links select the family while v4 fallback keeps the edition page', () => {
+  const family = { id: 'family', date: '2026-10-18', title: '同一讲道', speaker: 'Speaker', tracks: [],
+    contentVariants: { 'zh-Hans': { editionId: 'broadcast-edition' }, es: { editionId: 'family' } } };
+  assert.equal(chooseWeek({ defaultWeekId: family.id, weeks: [family] }, 'broadcast-edition'), family);
+  const broadcast = { id: 'broadcast-edition', date: '2026-10-18', title: '中文', speaker: 'Speaker', tracks: [] };
+  const resi = { id: 'family', date: '2026-10-18', title: '西语', speaker: 'Speaker', tracks: [] };
+  assert.equal(chooseWeek({ defaultWeekId: resi.id, weeks: [broadcast, resi] }, 'broadcast-edition'), broadcast);
+});
+
 test('page navigation does not change date-based feedback or mix saved listening positions', () => {
   const memory = new PlaybackMemory();
   const sources = ['live_archive', 'same_video'].map(sourceRoute => {

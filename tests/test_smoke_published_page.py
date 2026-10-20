@@ -7,8 +7,12 @@ ORIGIN = "https://x.web.app"
 PAGE = "resi-20261011-54475d42"
 CATALOG = {"schemaVersion": "sermon-multilingual-catalog-v4", "defaultPageId": PAGE,
            "pages": [{"id": PAGE, "date": "2026-10-11", "defaultTargetLocale": "zh-Hans",
-                      "targets": {"zh-Hans": {"releasePackageUrl": f"/releases-v4/{PAGE}/zh-Hans.json"},
-                                  "ko": {"releasePackageUrl": f"/releases-v4/{PAGE}/ko.json"}}}]}
+                      "targets": {"zh-Hans": {"releasePackageUrl": f"/releases-v4/{PAGE}/zh-Hans.json",
+                                                   "releasePackageJsonSha256": "f" * 64,
+                                                   "contentStatus": "machine_checked", "audioStatus": "machine_checked"},
+                                  "ko": {"releasePackageUrl": f"/releases-v4/{PAGE}/ko.json",
+                                         "releasePackageJsonSha256": "e" * 64,
+                                         "contentStatus": "machine_checked", "audioStatus": "machine_checked"}}}]}
 
 
 def release(locale):
@@ -18,8 +22,8 @@ def release(locale):
                        {"role": "audio", "path": f"/media/{PAGE}/{locale}.mp3", "sha256": "c" * 64}]}
 
 
-CONTENT = {"zh-Hans": {"title": "耶稣警告", "cues": [{"text": "弟兄姊妹，很高兴能和大家在一起。"}, {"text": "我是这里的牧师之一。"}]},
-           "ko": {"title": "예수님은 경고하십니다", "cues": [{"text": "교회 공동체 여러분, 함께하게 되어 기쁩니다."}]}}
+CONTENT = {"zh-Hans": {"pageId": PAGE, "targetLocale": "zh-Hans", "title": "耶稣警告", "cues": [{"text": "弟兄姊妹，很高兴能和大家在一起。"}, {"text": "我是这里的牧师之一。"}]},
+           "ko": {"pageId": PAGE, "targetLocale": "ko", "title": "예수님은 경고하십니다", "cues": [{"text": "교회 공동체 여러분, 함께하게 되어 기쁩니다."}]}}
 CAPTIONS = {"zh-Hans": {"cues": [{"text": "弟兄姊妹，很高兴能和大家在一起。"}]}, "ko": {"cues": [{"text": "교회 공동체 여러분."}]}}
 DOCUMENTS = {ORIGIN + "/multilingual-v4.json": CATALOG}
 for loc in ("zh-Hans", "ko"):
@@ -49,7 +53,10 @@ def observation(locale="zh-Hans", **changes):
 
 
 def expected(locale="zh-Hans"):
-    return smoke.expected_identity(ORIGIN, CATALOG["pages"][0], locale, release(locale), lambda url, timeout: DOCUMENTS[url], 5)
+    page = CATALOG["pages"][0]
+    return smoke.expected_identity(ORIGIN, page, page["targets"][locale], locale, release(locale),
+                                   lambda url, timeout: DOCUMENTS[url], 5,
+                                   "/multilingual-v4.json", CATALOG["schemaVersion"])
 
 
 REQUIRED = {f"/media/{PAGE}/zh-Hans.mp3", "/app.mjs", "/index.html"}
@@ -133,6 +140,9 @@ class SmokeFlowTests(unittest.TestCase):
         self.assertEqual(report["schemaVersion"], smoke.SCHEMA)
         self.assertEqual([row["status"] for row in report["locales"]], ["pass", "pass", "fail"])
         self.assertEqual(report["locales"][2]["problems"], ["locale is not published for this page"])
+        # Each judged locale names the release the live catalog served, so a later run can bind the pass to it.
+        self.assertEqual(report["locales"][1]["releasePackageUrl"], f"/releases-v4/{PAGE}/ko.json")
+        self.assertIn("releasePackageJsonSha256", report["locales"][1])
         self.assertEqual(calls, [f"{ORIGIN}/?week={PAGE}&contentLang=zh-Hans", f"{ORIGIN}/?week={PAGE}&contentLang=ko"])
 
     def test_a_stale_shell_showing_chinese_for_korean_fails_korean_only(self):
@@ -142,10 +152,61 @@ class SmokeFlowTests(unittest.TestCase):
         self.assertGreaterEqual(len(report["locales"][1]["problems"]), 4)
 
     def test_unknown_page_is_refused_before_any_browser_run(self):
-        with self.assertRaisesRegex(ValueError, "not in the live v4 catalog"):
+        with self.assertRaisesRegex(ValueError, "not in the live sermon-multilingual-catalog-v4 catalog"):
             smoke.smoke(ORIGIN, "missing", ("zh-Hans",), browser="/fake/chrome",
                         loader=lambda *a, **k: self.fail("browser must not run"),
                         fetch=lambda url, timeout: DOCUMENTS[url], shell=set)
+
+    def test_v5_family_loads_zh_release_assets_from_its_broadcast_edition(self):
+        family, edition, locale = "resi-family", "resi-broadcast", "zh-Hans"
+        target = {"editionId": edition, "sourceIdentitySha256": "1" * 64,
+                  "sourceMediaSha256": "2" * 64, "contentStatus": "human_reviewed",
+                  "audioStatus": "human_reviewed", "releasePackageUrl": f"/releases-v2/{edition}/{locale}.json",
+                  "releasePackageJsonSha256": "3" * 64}
+        page = {"id": family, "date": "2026-10-18", "sourceMode": "per_target",
+                "defaultTargetLocale": locale, "targets": {locale: target}}
+        catalog = {"schemaVersion": "sermon-multilingual-catalog-v5", "defaultPageId": family, "pages": [page]}
+        package = {"pageId": edition, "targetLocale": locale,
+                   "assets": [{"role": "content", "path": f"/content/{edition}/{locale}.json", "sha256": "4" * 64},
+                              {"role": "captions", "path": f"/captions/{edition}/{locale}.json", "sha256": "5" * 64},
+                              {"role": "audio", "path": f"/media/{edition}/{locale}.mp3", "sha256": "6" * 64}]}
+        content = {"pageId": edition, "targetLocale": locale, "title": "本地化标题",
+                   "cues": [{"text": "第一句"}]}
+        captions = {"cues": [{"text": "第一句"}]}
+        docs = {ORIGIN + "/multilingual-v5.json": catalog,
+                ORIGIN + target["releasePackageUrl"]: package,
+                ORIGIN + f"/content/{edition}/{locale}.json": content,
+                ORIGIN + f"/captions/{edition}/{locale}.json": captions}
+        expected_source = smoke.track_source(page, locale, "6" * 64)
+        observed = {"status": "ok", "elapsedMs": 10, "consoleErrors": [], "sessionRequests": [],
+                    "dom": {"title": "本地化标题 · 同行", "week": family, "contentLang": locale,
+                            "contentLanguage": locale, "audioSrc": f"/media/{edition}/{locale}.mp3",
+                            "captionText": "第一句", "fullReading": "第一句"}}
+        urls = []
+        def loader(browser, url, settle_ms, deadline_ms):
+            urls.append(url); return observed
+        report = smoke.smoke(ORIGIN, family, (locale,), browser="/fake/chrome", loader=loader,
+                             fetch=lambda url, timeout: docs[url], shell=set, check_session=False)
+        self.assertEqual(report["status"], "pass")
+        self.assertEqual(report["catalogVersion"], "sermon-multilingual-catalog-v5")
+        self.assertEqual(urls, [f"{ORIGIN}/?week={family}&contentLang={locale}"])
+        self.assertEqual(report["locales"][0]["usageAnchor"], expected_source)
+
+    def test_v5_cross_edition_release_path_is_rejected_before_browser(self):
+        family, edition, locale = "resi-family", "resi-broadcast", "zh-Hans"
+        target = {"editionId": edition, "sourceIdentitySha256": "1" * 64,
+                  "sourceMediaSha256": "2" * 64, "contentStatus": "human_reviewed",
+                  "audioStatus": "human_reviewed", "releasePackageUrl": f"/releases-v2/{family}/{locale}.json",
+                  "releasePackageJsonSha256": "3" * 64}
+        catalog = {"schemaVersion": "sermon-multilingual-catalog-v5", "defaultPageId": family,
+                   "pages": [{"id": family, "date": "2026-10-18", "sourceMode": "per_target",
+                              "defaultTargetLocale": locale, "targets": {locale: target}}]}
+        documents = {ORIGIN + "/multilingual-v5.json": catalog,
+                     ORIGIN + target["releasePackageUrl"]: {"pageId": family, "targetLocale": locale, "assets": []}}
+        with self.assertRaisesRegex(ValueError, "release path differs from target edition"):
+            smoke.smoke(ORIGIN, family, (locale,), browser="/fake/chrome",
+                        loader=lambda *args, **kwargs: self.fail("browser must not run"),
+                        fetch=lambda url, timeout: documents[url], shell=set)
 
     def test_observer_output_that_is_not_json_is_an_error(self):
         from unittest.mock import patch

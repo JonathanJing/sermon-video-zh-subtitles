@@ -704,6 +704,12 @@ final class ListeningFlowUITests: XCTestCase {
         XCTAssertEqual(app.staticTexts["published-current-english"].label, "This is the approved English source.")
         app.segmentedControls["listening-display"].buttons["字幕全文"].tap()
         XCTAssertTrue(app.staticTexts["published-caption-english-g1"].waitForExistence(timeout: 5))
+        let fullTranscript = element("published-full-transcript", in: app)
+        try reveal(fullTranscript, in: app, direction: .up)
+        fullTranscript.tap()
+        let fullEnglish = app.staticTexts["published-full-english-g1"]
+        XCTAssertTrue(fullEnglish.waitForExistence(timeout: 5))
+        XCTAssertEqual(fullEnglish.label, "This is the approved English source.")
         screenshot("dual-script-native-english-captions", app: app)
         app.buttons["choose-sermon"].tap()
         XCTAssertTrue(app.buttons["published-page-ui-test-full-video"].waitForExistence(timeout: 5))

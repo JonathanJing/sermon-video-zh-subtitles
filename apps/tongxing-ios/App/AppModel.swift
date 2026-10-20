@@ -328,30 +328,48 @@ final class AppModel: ObservableObject {
         selectedAudioLocale.flatMap { selectedMultilingualPage?.targets[$0] }?.audioStatus == "machine_checked"
     }
     var selectedContentTarget: PageTarget? { selectedMultilingualPage?.targets[selectedContentLocale] }
+    private func publishedSource(page: MultilingualPage, locale: String) -> PageTargetSourceBinding? {
+        page.targets[locale].flatMap { try? $0.sourceBinding(in: page) }
+    }
     var fullVideoURL: URL? {
         guard multilingualCatalog?.isDualScript == true,
-              let page = selectedMultilingualPage, page.mediaType != "podcast" else { return nil }
-        return mediaOrigin.appendingPathComponent("pages/\(page.id)/full-video-browser.mp4")
+              let page = selectedMultilingualPage, page.mediaType != "podcast",
+              let source = publishedSource(page: page, locale: selectedContentLocale) else { return nil }
+        let path: String
+        if page.sourceMode == "per_target" {
+            guard let delivery = source.videoDelivery else { return nil }
+            path = delivery.canonicalUrl
+        } else {
+            path = "/pages/\(source.editionId)/full-video-browser.mp4"
+        }
+        guard let url = URL(string: path, relativeTo: mediaOrigin)?.absoluteURL,
+              url.scheme == "https", url.host == mediaOrigin.host, url.port == mediaOrigin.port,
+              url.user == nil, url.password == nil else { return nil }
+        return url
     }
     var usesNativePublishedReader: Bool {
         selectedWeek == nil && multilingualCatalog?.isDualScript == true
     }
     var publishedTranscriptSelectionKey: String? {
         guard usesNativePublishedReader, let page = selectedMultilingualPage,
-              let target = selectedContentTarget else { return nil }
-        return "\(page.id):\(selectedContentLocale):\(target.releasePackageJsonSha256)"
+              let target = selectedContentTarget,
+              let source = publishedSource(page: page, locale: selectedContentLocale) else { return nil }
+        return "\(page.id):\(source.editionId):\(selectedContentLocale):\(source.sourceIdentitySha256):\(target.releasePackageJsonSha256)"
     }
 
     var currentPublishedTranscript: VerifiedPublishedTranscript? {
         guard let transcript = publishedTranscript, let page = selectedMultilingualPage,
               selectedWeek == nil, verifiedTranscriptSelectionKey == publishedTranscriptSelectionKey,
               transcript.pageID == page.id, transcript.locale == selectedContentLocale,
-              transcript.sourceIdentitySha256 == page.sourceIdentitySha256 else { return nil }
+              let source = publishedSource(page: page, locale: selectedContentLocale),
+              transcript.editionID == source.editionId,
+              transcript.sourceIdentitySha256 == source.sourceIdentitySha256 else { return nil }
         return transcript
     }
 
     func publishedHeadingKey(_ page: MultilingualPage) -> String {
-        "\(page.id):\(page.sourceIdentitySha256):\(page.targets[page.defaultTargetLocale]?.releasePackageJsonSha256 ?? "")"
+        let source = publishedSource(page: page, locale: page.defaultTargetLocale)
+        return "\(page.id):\(source?.editionId ?? ""):\(source?.sourceIdentitySha256 ?? ""):\(page.targets[page.defaultTargetLocale]?.releasePackageJsonSha256 ?? "")"
     }
 
     func heading(for week: SermonWeek) -> SermonHeading {
@@ -406,13 +424,15 @@ final class AppModel: ObservableObject {
                 subtitles: rows.map { PlaybackSystemSubtitle(id: "cue-\($0.index)", start: $0.cue.start,
                     end: $0.cue.end, chinese: $0.cue.text, english: $0.english) })
         } else if let page = selectedMultilingualPage, let locale = selectedAudioLocale,
-                  let hash = publishedAudioSha256 {
+                  let hash = publishedAudioSha256,
+                  let source = publishedSource(page: page, locale: locale) {
             let heading = heading(for: page)
             let transcript = currentPublishedTranscript.flatMap {
-                $0.pageID == page.id && $0.locale == locale && $0.sourceIdentitySha256 == page.sourceIdentitySha256 ? $0 : nil
+                $0.pageID == page.id && $0.editionID == source.editionId && $0.locale == locale
+                    && $0.sourceIdentitySha256 == source.sourceIdentitySha256 ? $0 : nil
             }
             playback.updateSystemMetadata(identity: TrackIdentity(weekID: page.id, trackID: "published_\(locale)", audioSHA256: hash),
-                sourceID: page.sourceIdentitySha256, title: heading.title, speaker: heading.speaker ?? "",
+                sourceID: source.sourceIdentitySha256, title: heading.title, speaker: heading.speaker ?? "",
                 subtitles: (transcript?.captions ?? []).map {
                     PlaybackSystemSubtitle(id: $0.id, start: $0.start, end: $0.end,
                         chinese: locale == "zh-Hans" ? $0.text : nil,
@@ -478,11 +498,13 @@ final class AppModel: ObservableObject {
 
     func selectPublishedContentLanguage(_ locale: String) {
         guard usesNativePublishedReader, let page = selectedMultilingualPage,
-              canSelectContent(locale, in: page) else { return }
+              canSelectContent(locale, in: page),
+              let source = publishedSource(page: page, locale: locale) else { return }
         guard locale != selectedContentLocale else { return }
         publishedSelectionRevision = UUID()
         cancelPublishedAudioPreparation()
-        playback.preparePublishedLanguageSwitch(pageID: page.id, sourceIdentity: page.sourceIdentitySha256)
+        playback.preparePublishedLanguageSwitch(pageID: page.id, editionID: source.editionId,
+                                                sourceIdentity: source.sourceIdentitySha256)
         alignmentController.cancel()
         selectedAudioLocale = nil
         publishedAudioSha256 = nil
@@ -525,8 +547,7 @@ final class AppModel: ObservableObject {
     func openWeeklyUpdate(_ page: MultilingualPage, catalog: MultilingualCatalog) {
         let previous = selectedMultilingualPage
         let bindingChanged = previous?.id == page.id &&
-            (previous?.sourceIdentitySha256 != page.sourceIdentitySha256
-             || previous?.targets[selectedContentLocale] != page.targets[selectedContentLocale]
+            (previous?.targets[selectedContentLocale] != page.targets[selectedContentLocale]
              || selectedAudioLocale.map { previous?.targets[$0] != page.targets[$0] } == true)
         multilingualCatalog = catalog
         selectPublishedPage(page, forceReload: bindingChanged)
@@ -577,12 +598,17 @@ final class AppModel: ObservableObject {
         guard let multilingualRepository else { return }
         do {
             let oldAudioTarget = selectedAudioLocale.flatMap { selectedMultilingualPage?.targets[$0] }
-            let oldSourceIdentity = selectedMultilingualPage?.sourceIdentitySha256
+            let oldSource = selectedMultilingualPage.flatMap { page in
+                publishedSource(page: page, locale: selectedContentLocale)
+            }
             let result = try await multilingualRepository.loadCatalog()
             multilingualCatalog = result.catalog
             multilingualNotice = result.warning
             if result.machineCheckedCatalogError != nil {
                 let notice = "暂时无法更新机器质检语言目录，部分语言不可用。请稍后刷新重试。"
+                multilingualNotice = [result.warning, notice].compactMap { $0 }.joined(separator: "\n")
+            } else if result.mixedSourceCatalogError != nil {
+                let notice = "暂时无法更新混合来源语言目录，正在使用兼容目录。请稍后刷新重试。"
                 multilingualNotice = [result.warning, notice].compactMap { $0 }.joined(separator: "\n")
             }
             let usePublishedDefault = preferPublishedDefault
@@ -598,7 +624,10 @@ final class AppModel: ObservableObject {
                 selectedPageID = result.catalog.defaultPageId
             }
             resolveContentLanguage(pageID: selectedPageID)
-            if selectedWeek == nil && (selectedMultilingualPage?.sourceIdentitySha256 != oldSourceIdentity
+            let newSource = selectedMultilingualPage.flatMap { page in
+                publishedSource(page: page, locale: selectedContentLocale)
+            }
+            if selectedWeek == nil && (newSource != oldSource
                 || (selectedAudioLocale != nil && selectedAudioLocale.flatMap { selectedMultilingualPage?.targets[$0] } != oldAudioTarget)) {
                 publishedSelectionRevision = UUID()
                 cancelPublishedAudioPreparation()
@@ -631,12 +660,14 @@ final class AppModel: ObservableObject {
             try Task.checkCancellation()
             guard languageSelectionRequest == request, publishedSelectionRevision == selectionRevision,
                   selectedMultilingualPage?.id == page.id,
-                  selectedMultilingualPage?.sourceIdentitySha256 == page.sourceIdentitySha256 else { return nil }
+                  selectedMultilingualPage?.targets[locale] == page.targets[locale] else { return nil }
             if locale != selectedContentLocale {
                 publishedSelectionRevision = UUID()
                 cancelPublishedAudioPreparation()
                 if selectedWeek == nil {
-                    playback.preparePublishedLanguageSwitch(pageID: page.id, sourceIdentity: page.sourceIdentitySha256)
+                    guard let source = publishedSource(page: page, locale: locale) else { return nil }
+                    playback.preparePublishedLanguageSwitch(pageID: page.id, editionID: source.editionId,
+                                                            sourceIdentity: source.sourceIdentitySha256)
                 }
                 selectedAudioLocale = nil
                 publishedAudioSha256 = nil
@@ -747,7 +778,6 @@ final class AppModel: ObservableObject {
             guard publishedAudioRequest == request, selectedWeek == nil,
                   let currentPage = selectedMultilingualPage,
                   currentPage.id == page.id,
-                  currentPage.sourceIdentitySha256 == page.sourceIdentitySha256,
                   currentPage.targets[locale] == requestedTarget,
                   selectedContentLocale == locale,
                   !playback.isPreview else { return }
@@ -772,7 +802,6 @@ final class AppModel: ObservableObject {
         guard publishedAudioRequest == request, selectedWeek == nil,
               let currentPage = selectedMultilingualPage,
               currentPage.id == page.id,
-              currentPage.sourceIdentitySha256 == page.sourceIdentitySha256,
               currentPage.targets[locale] == target,
               selectedContentLocale == locale else { return }
         audioReleaseDisclosure = disclosure
@@ -876,7 +905,11 @@ final class AppModel: ObservableObject {
         } else if selectedContentTarget?.hasPublishedAudio == true {
             cancelPublishedAudioPreparation()
             if let page = selectedMultilingualPage {
-                playback.preparePublishedLanguageSwitch(pageID: page.id, sourceIdentity: page.sourceIdentitySha256)
+                guard let source = publishedSource(page: page, locale: selectedContentLocale) else {
+                    playback.clear(); return
+                }
+                playback.preparePublishedLanguageSwitch(pageID: page.id, editionID: source.editionId,
+                                                        sourceIdentity: source.sourceIdentitySha256)
             } else { playback.clear() }
             selectedAudioLocale = nil
             publishedAudioSha256 = nil

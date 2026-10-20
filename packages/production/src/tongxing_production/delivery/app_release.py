@@ -19,6 +19,7 @@ the captions asset itself stays the audio package's spoken-script captions.
 from __future__ import annotations
 
 import argparse
+import copy
 import hashlib
 import html
 import json
@@ -338,6 +339,22 @@ def catalog_title(content: dict) -> str:
     return f"{series} · {title}" if series and not title.startswith(series) else title
 
 
+def validate_mixed_target_identity(release, content, item, locale):
+    """Admit reused v2/v4 bytes only when their edition and source joins are exact."""
+    four_product = release['schemaVersion'] in delivery_contract.FOUR_PRODUCT_RELEASES
+    source_matches = ((release.get('englishSourcePackageJsonSha256') == item.get('sourceIdentitySha256')
+                       and release.get('sourceIdentity', {}).get('mediaSha256') == item.get('sourceMediaSha256'))
+                      if four_product else
+                      (release['schemaVersion'] == 'sermon-target-language-release-package-v2'
+                       and content.get('englishSourcePackageJsonSha256') == item.get('sourceIdentitySha256')
+                       and content.get('sourceMediaSha256') == item.get('sourceMediaSha256')))
+    require(item.get('editionId') == release['pageId'] and release['targetLocale'] == locale
+            and content.get('pageId') == release['pageId'] and content.get('targetLocale') == locale
+            and source_matches and isinstance(item.get('videoDelivery'), dict),
+            f'{locale}: mixed-source target identity is incomplete')
+    return item
+
+
 def prepare(args: argparse.Namespace) -> dict:
     runtime_root = runtime_web_root()
     runtime_files = runtime_web_files(runtime_root)
@@ -639,7 +656,9 @@ def verified_assets(prepared: Path) -> tuple[dict, list[dict]]:
             study_root = prepared / "study" / locale
             require(digest(study_root / "join.json") == item["studyJoinSha256"], "Study join changed")
             study = {name: read(study_root / (name + ".json")) for name in ("outline", "outline_review", "meditation", "meditation_review")}
-            joined = study_artifacts.join_artifacts(source_sha=manifest["englishSourcePackageJsonSha256"],
+            source_sha = (item['sourceIdentitySha256'] if 'sourceIdentitySha256' in item
+                          else manifest["englishSourcePackageJsonSha256"])
+            joined = study_artifacts.join_artifacts(source_sha=source_sha,
                                                     text_sha=item["fullCandidateSha256"], audio_sha=item["audioPackageSha256"], **study)
             content_asset = next(row for row in assets if row["role"] == "content" and row["path"].endswith("/" + locale + ".json"))
             app_identity = delivery_contract.sha({"products": joined["candidateSha256"], "metadataApproval": manifest["metadataApprovalJsonSha256"], "contentSha256": content_asset["sha256"]})
@@ -658,7 +677,7 @@ def verified_assets(prepared: Path) -> tuple[dict, list[dict]]:
                     'Release status or path differs from its content')
             page_asset = next(row for row in release['assets'] if row['role'] == 'page')
             require((public / page_asset['path'].lstrip('/')).read_text()
-                    == static_page(content, locale, manifest['pageId'], public_studies,
+                    == static_page(content, locale, release['pageId'], public_studies,
                                    audio_status=release['audioStatus'], disclosure=release.get('disclosure'),
                                    condensed=bool(release.get('spokenCondensation'))),
                     'Public page does not display approved study')
@@ -721,6 +740,8 @@ def seal(args: argparse.Namespace) -> dict:
         receipt_sha = digest(args.http_verification)
         targets = {}
         source_media_hashes = set()
+        source_mode = manifest.get('sourceMode', 'single_source')
+        require(source_mode in {'single_source', 'per_target'}, 'Invalid catalog source mode')
         for locale in locales:
             url = manifest["releases"][locale]["releasePath"]
             path = public / url.lstrip("/")
@@ -736,27 +757,43 @@ def seal(args: argparse.Namespace) -> dict:
                                "contentStatus": release["contentStatus"],
                                "audioStatus": release["audioStatus"],
                                "capabilities": ["text", "captions", "audio"]}
-        # v4 carries every target; v3 stays the human-only projection for older clients.
-        catalog = {"schemaVersion": delivery_contract.CATALOG_V4,
+            if source_mode == 'per_target':
+                item = manifest['releases'][locale]
+                content_asset = next((asset for asset in release['assets'] if asset['role'] == 'content'), None)
+                content = read(public / content_asset['path'].lstrip('/')) if content_asset else {}
+                validate_mixed_target_identity(release, content, item, locale)
+                targets[locale].update(editionId=item['editionId'],
+                                       sourceIdentitySha256=item['sourceIdentitySha256'],
+                                       sourceMediaSha256=item['sourceMediaSha256'],
+                                       videoDelivery=copy.deepcopy(item['videoDelivery']))
+        # v5 represents a presentation family; v4/v3 remain honest edition projections.
+        catalog = {"schemaVersion": (delivery_contract.CATALOG_V5 if source_mode == 'per_target'
+                                      else delivery_contract.CATALOG_V4),
                    "generatedAt": datetime.now(timezone.utc).isoformat(),
                    "defaultPageId": manifest["pageId"],
                    "pages": [{"id": manifest["pageId"], "date": manifest["date"],
                               "title": manifest["title"],
                               "sourceLocale": "en",
-                              "sourceIdentitySha256": manifest["englishSourcePackageJsonSha256"],
+                              **({"sourceMode": "per_target"} if source_mode == 'per_target' else
+                                 {"sourceIdentitySha256": manifest["englishSourcePackageJsonSha256"]}),
                               "defaultTargetLocale": "zh-Hans" if "zh-Hans" in targets else next(locale for locale in LOCALES if locale in targets),
                               "targets": targets}]}
-        if source_media_hashes:
+        if source_media_hashes and source_mode == 'single_source':
             require(len(source_media_hashes) == 1, "Locale source media identities differ")
             catalog["pages"][0]["sourceMediaSha256"] = next(iter(source_media_hashes))
         if getattr(args, "baseline", None):
             require(getattr(args, "release_plan", None), "Incremental release requires a bound plan")
             baseline = delivery_contract.validate_catalog_snapshot(args.baseline)
             plan = read(args.release_plan)
-            catalog = delivery_contract.merge_catalog(delivery_contract.snapshot_catalog_v4(args.baseline), catalog, plan,
-                                                      anchor=baseline)
+            if source_mode == 'per_target':
+                catalog = delivery_contract.merge_catalog(delivery_contract.snapshot_catalog_v5(args.baseline), catalog, plan)
+            else:
+                catalog = delivery_contract.merge_catalog(delivery_contract.snapshot_catalog_v4(args.baseline), catalog, plan,
+                                                          anchor=baseline)
             protected_paths = set()
-            for old_page in delivery_contract.snapshot_catalog_v4(args.baseline)["pages"]:
+            old_catalog = (delivery_contract.snapshot_catalog_v5(args.baseline) if source_mode == 'per_target'
+                           else delivery_contract.snapshot_catalog_v4(args.baseline))
+            for old_page in old_catalog["pages"]:
                 for old_locale, old_target in old_page["targets"].items():
                     if old_page["id"] == plan["pageId"] and old_locale in plan["locales"]:
                         continue
@@ -772,6 +809,10 @@ def seal(args: argparse.Namespace) -> dict:
                     and (baseline_report.get("catalogV4Sha256") is None
                          or baseline_report["catalogV4Sha256"] == digest(args.baseline / "public/multilingual-v4.json")),
                     "Baseline catalog hash differs")
+            baseline_v5_path = args.baseline / 'public/multilingual-v5.json'
+            require(baseline_report.get('catalogV5Sha256') is None
+                    or (baseline_v5_path.is_file() and baseline_report['catalogV5Sha256'] == digest(baseline_v5_path)),
+                    'Baseline v5 catalog hash differs')
             for row in baseline_report["files"]:
                 relative = Path(row["path"].lstrip("/"))
                 require(not relative.is_absolute() and ".." not in relative.parts, "Unsafe baseline path")
@@ -787,8 +828,18 @@ def seal(args: argparse.Namespace) -> dict:
                             (relative.as_posix() in replacement_paths and relative.as_posix() not in protected_paths),
                             "Asset collision would damage sibling locale")
         delivery_contract.validate_catalog_schema(catalog)
-        human = delivery_contract.validate_catalog_schema(delivery_contract.project_human_catalog(catalog))
-        write(public / "multilingual-v4.json", catalog)
+        if (getattr(args, "baseline", None) and catalog['schemaVersion'] == delivery_contract.CATALOG_V4
+                and (args.baseline / 'public/multilingual-v5.json').exists()):
+            # Once v5 is live it is what v5 clients read first: carry an ordinary
+            # single-source release into it, so the copied baseline v5 never goes stale.
+            catalog = delivery_contract.carry_single_source_into_v5(
+                delivery_contract.snapshot_catalog_v5(args.baseline), catalog, plan['pageId'])
+        v5 = catalog if catalog['schemaVersion'] == delivery_contract.CATALOG_V5 else None
+        v4 = (delivery_contract.project_legacy_catalog_v4(v5) if v5 is not None else catalog)
+        human = delivery_contract.validate_catalog_schema(delivery_contract.project_human_catalog(v4))
+        if v5 is not None:
+            write(public / "multilingual-v5.json", v5)
+        write(public / "multilingual-v4.json", v4)
         write(public / "multilingual-v3.json", human)
         report = {"schemaVersion": "sermon-dual-script-app-seal-v1",
                   "status": "ready_for_catalog_deployment",
@@ -796,6 +847,7 @@ def seal(args: argparse.Namespace) -> dict:
                   "httpAssetReceiptSha256": receipt_sha,
                   "catalogSha256": digest(public / "multilingual-v3.json"),
                   "catalogV4Sha256": digest(public / "multilingual-v4.json"),
+                  **({"catalogV5Sha256": digest(public / "multilingual-v5.json")} if v5 is not None else {}),
                   "appCandidateSha256s": {locale: manifest["releases"][locale].get("appCandidateSha256") for locale in locales},
                   "releaseSha256s": {locale: targets[locale]["releasePackageJsonSha256"]
                                     for locale in locales},

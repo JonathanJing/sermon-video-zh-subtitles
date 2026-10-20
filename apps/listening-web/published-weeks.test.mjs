@@ -195,8 +195,8 @@ test('optional missing or unavailable catalog keeps the legacy app usable', asyn
   assert.deepEqual(await loadPublishedWeeks(async () => new Response('', { status: 404 })), { weeks: [], defaultWeekId: null, errors: [] });
   const failed = await loadPublishedWeeks(async () => { throw new Error('offline'); });
   assert.deepEqual(failed.weeks, []);
-  // The v4 probe failure is recorded before the v3 fallback is attempted.
-  assert.deepEqual(failed.errors, ['Catalog v4 unavailable, using v3: offline', 'offline']);
+  // Newer probe failures are recorded before the v3 fallback is attempted.
+  assert.deepEqual(failed.errors, ['Catalog v5 unavailable, using v4: offline', 'Catalog v4 unavailable, using v3: offline', 'offline']);
 });
 
 test('missing Chinese release falls back to an actually available default locale', async () => {
@@ -488,7 +488,7 @@ for (const [name, mutate] of [
     const result = await loadPublishedWeeks(f.fetchImpl);
     assert.deepEqual(result.weeks, []);
     assert.ok(result.errors.length);
-    assert.deepEqual(f.requests, ['/multilingual-v4.json', '/multilingual-v3.json']);
+    assert.deepEqual(f.requests, ['/multilingual-v5.json', '/multilingual-v4.json', '/multilingual-v3.json']);
   });
 }
 
@@ -704,7 +704,7 @@ test('v4 catalog loads human-reviewed and machine-checked locales; machine produ
   const f = machineFixture({ ko: ['machine_checked', 'machine_checked'], es: ['human_reviewed', 'machine_checked'] });
   const result = await loadPublishedWeeks(f.fetchImpl);
   assert.deepEqual(result.errors, []);
-  assert.equal(f.requests[0], '/multilingual-v4.json');
+  assert.deepEqual(f.requests.slice(0, 2), ['/multilingual-v5.json', '/multilingual-v4.json']);
   assert.ok(!f.requests.includes('/multilingual-v3.json'), 'a valid v4 catalog is not mixed with the v3 projection');
   const variants = result.weeks[0].contentVariants;
   assert.deepEqual(Object.keys(variants), ['zh-Hans', 'ko', 'es']);
@@ -765,7 +765,7 @@ test('missing v4 catalog silently falls back to v3, which never admits a machine
   const f = studyFixture();
   const result = await loadPublishedWeeks(f.fetchImpl);
   assert.deepEqual(result.errors, []);
-  assert.deepEqual(f.requests.slice(0, 2), ['/multilingual-v4.json', '/multilingual-v3.json']);
+  assert.deepEqual(f.requests.slice(0, 3), ['/multilingual-v5.json', '/multilingual-v4.json', '/multilingual-v3.json']);
   assert.deepEqual(Object.keys(result.weeks[0].contentVariants), ['zh-Hans', 'ko', 'es']);
   assert.ok(Object.values(result.weeks[0].contentVariants).every(view => view.machineChecked === false && view.releaseLabel === '正式播放版'));
   // A machine-checked target copied into v3 is rejected before its release is requested.
@@ -956,5 +956,144 @@ test('optional v3 source video does not relax validation for declared unsafe or 
     const result = await loadPublishedWeeks(f.fetchImpl);
     assert.equal(result.weeks[0].contentVariants.ko, undefined);
     assert.match(result.errors.join('\n'), /Unsafe published asset path/);
+  }
+});
+
+function mixedSourceFixture() {
+  const f = fixture();
+  const catalog = JSON.parse(f.files.get('/multilingual-v3.json'));
+  const page = catalog.pages[0];
+  Object.assign(catalog, {schemaVersion:'sermon-multilingual-catalog-v5'});
+  Object.assign(page, {sourceMode:'per_target', title:'Shared sermon title'});
+  delete page.sourceIdentitySha256; delete page.sourceMediaSha256;
+  const sources = {
+    'zh-Hans': {editionId:'broadcast-edition', identity:'1'.repeat(64), media:'2'.repeat(64)},
+    ko: {editionId:pageId, identity:'3'.repeat(64), media:'4'.repeat(64)},
+    es: {editionId:pageId, identity:'3'.repeat(64), media:'4'.repeat(64)},
+  };
+  const references = new Map(), alignments = new Map();
+  for (const locale of ['zh-Hans','ko','es']) {
+    const source = sources[locale], target = page.targets[locale];
+    const oldReleasePath = target.releasePackageUrl;
+    const release = JSON.parse(f.files.get(oldReleasePath));
+    const oldAssets = Object.fromEntries(release.assets.map(asset => [asset.role, asset]));
+    const content = JSON.parse(f.files.get(oldAssets.content.path));
+    const captions = JSON.parse(f.files.get(oldAssets.captions.path));
+    const delivery = {schemaVersion:'sermon-video-delivery-v1', canonicalUrl:`/pages/${source.editionId}/full-video-browser.mp4`,
+      storageUrl:`https://storage.googleapis.com/ai-for-god-sermon-media-prod/weekly/${source.editionId}/${source.media}.mp4`,
+      sha256:source.media, bytes:1234};
+    Object.assign(content, {pageId:source.editionId, englishSourcePackageJsonSha256:source.identity,
+      sourceMediaSha256:source.media, sourceVideoUrl:delivery.canonicalUrl});
+    if (locale !== 'zh-Hans') delete content.sourceVideoUrl;
+    const paths = {page:`/pages/${source.editionId}/${locale}/index.html`, content:`/content/${source.editionId}/${locale}.json`,
+      captions:`/captions/${source.editionId}/${locale}.json`, audio:`/media/${source.editionId}/${locale}.mp3`};
+    for (const asset of release.assets) asset.path = paths[asset.role];
+    const contentBody = JSON.stringify(content), captionsBody = JSON.stringify(captions);
+    f.files.set(paths.content, contentBody); f.files.set(paths.captions, captionsBody);
+    oldAssets.content.sha256 = hash(contentBody); oldAssets.captions.sha256 = hash(captionsBody);
+    release.pageId = source.editionId;
+    const releasePath = `/releases-v2/${source.editionId}/${locale}.json`, releaseBody = JSON.stringify(release);
+    f.files.set(releasePath, releaseBody);
+    const indexSha256 = hash(`index-${locale}`);
+    const fingerprint = {schemaVersion:'sermon-audio-fingerprint-binding-v1',algorithmVersion:'spectral-landmarks-v1',
+      pageId:source.editionId,sourceSha256:source.media,trackSha256:oldAssets.audio.sha256,indexSha256,
+      sourceStartSeconds:0,sourceEndSeconds:10,captureSeconds:10,indexUrl:`/fingerprints/${indexSha256.slice(0,16)}-landmarks.json`};
+    Object.assign(target, {editionId:source.editionId,sourceIdentitySha256:source.identity,sourceMediaSha256:source.media,
+      videoDelivery:delivery,releasePackageUrl:releasePath,releasePackageJsonSha256:hash(releaseBody),
+      capabilities:['text','captions','audio','alignment'],audioFingerprint:fingerprint});
+    if (!references.has(source.editionId)) references.set(source.editionId, {schemaVersion:'sermon-published-english-reference-v1',
+      pageId:source.editionId,sourceIdentitySha256:source.identity,sourceMediaSha256:source.media,reviewState:'human_approved',targets:{}});
+    references.get(source.editionId).targets[locale] = {releasePackageJsonSha256:target.releasePackageJsonSha256,
+      contentSha256:oldAssets.content.sha256,captionsSha256:oldAssets.captions.sha256,
+      blocks:[{textGroupId:'first',sourceUnitIds:['u1','u2'],english:`English ${locale}`}]};
+    if (!alignments.has(source.editionId)) alignments.set(source.editionId, {schemaVersion:'sermon-published-alignment-v1',
+      pageId:source.editionId,sourceIdentitySha256:source.identity,targets:{}});
+    alignments.get(source.editionId).targets[locale] = {releasePackageJsonSha256:target.releasePackageJsonSha256,audioFingerprint:fingerprint};
+  }
+  f.files.set('/multilingual-v5.json', JSON.stringify(catalog));
+  for (const [editionId, reference] of references) f.files.set(`/english-reference/${editionId}.json`, JSON.stringify(reference));
+  for (const [editionId, alignment] of alignments) f.files.set(`/alignment/${editionId}.json`, JSON.stringify(alignment));
+  return {f, catalog, sources};
+}
+
+test('v5 per-target page keeps one family route while each locale uses its bound source edition', async () => {
+  const {f, sources} = mixedSourceFixture();
+  const result = await loadPublishedWeeks(f.fetchImpl);
+  assert.deepEqual(result.errors, []);
+  assert.equal(f.requests[0], '/multilingual-v5.json');
+  assert.ok(!f.requests.includes('/multilingual-v4.json'));
+  assert.equal(result.weeks.length, 1);
+  const week = result.weeks[0], variants = week.contentVariants;
+  assert.equal(week.id, pageId); assert.equal(week.title, 'Title zh-Hans');
+  assert.deepEqual(Object.keys(variants), ['zh-Hans','ko','es']);
+  for (const [locale, variant] of Object.entries(variants)) {
+    assert.equal(variant.id, pageId); assert.equal(variant.title, `Title ${locale}`);
+    assert.equal(variant.editionId, sources[locale].editionId);
+    assert.equal(variant.sourceIdentitySha256, sources[locale].identity);
+    assert.equal(variant.sourceSha256, sources[locale].media);
+    assert.equal(variant.sourceUrl, `/pages/${sources[locale].editionId}/full-video-browser.mp4`);
+    assert.equal(variant.videoDelivery.sha256, sources[locale].media);
+    assert.equal(variant.audioFingerprint.pageId, sources[locale].editionId);
+    assert.equal(variant.audioFingerprint.sourceSha256, sources[locale].media);
+    assert.equal(variant.fullTranscript[0].english, `English ${locale}`);
+  }
+});
+
+test('invalid v5 falls back to the existing v4 catalog without mixing projections', async () => {
+  const f = machineFixture();
+  f.files.set('/multilingual-v5.json', '{');
+  const result = await loadPublishedWeeks(f.fetchImpl);
+  assert.equal(result.weeks.length, 1);
+  assert.deepEqual(f.requests.slice(0, 2), ['/multilingual-v5.json','/multilingual-v4.json']);
+  assert.match(result.errors[0], /^Catalog v5 unavailable, using v4: /);
+});
+
+test('v5 rejects cross-source content, fingerprint and English-reference hashes', async () => {
+  {
+    const {f, catalog, sources} = mixedSourceFixture();
+    const target = catalog.pages[0].targets.es, release = JSON.parse(f.files.get(target.releasePackageUrl));
+    const asset = release.assets.find(item => item.role === 'content'), content = JSON.parse(f.files.get(asset.path));
+    content.englishSourcePackageJsonSha256 = sources['zh-Hans'].identity;
+    const body = JSON.stringify(content); f.files.set(asset.path, body); asset.sha256 = hash(body);
+    const releaseBody = JSON.stringify(release); f.files.set(target.releasePackageUrl, releaseBody);
+    target.releasePackageJsonSha256 = hash(releaseBody); f.files.set('/multilingual-v5.json', JSON.stringify(catalog));
+    const result = await loadPublishedWeeks(f.fetchImpl);
+    assert.equal(result.weeks[0].contentVariants.es, undefined);
+    assert.match(result.errors.join('\n'), /Published content identity mismatch/);
+  }
+  {
+    const {f, catalog, sources} = mixedSourceFixture();
+    catalog.pages[0].targets.es.audioFingerprint.sourceSha256 = sources['zh-Hans'].media;
+    f.files.set('/multilingual-v5.json', JSON.stringify(catalog)); f.files.delete('/multilingual-v4.json'); f.files.delete('/multilingual-v3.json');
+    const result = await loadPublishedWeeks(f.fetchImpl);
+    assert.deepEqual(result.weeks, []);
+    assert.match(result.errors.join('\n'), /Invalid published catalog alignment binding/);
+  }
+  {
+    const {f, sources} = mixedSourceFixture();
+    const path = `/english-reference/${pageId}.json`, reference = JSON.parse(f.files.get(path));
+    reference.sourceMediaSha256 = sources['zh-Hans'].media; f.files.set(path, JSON.stringify(reference));
+    const result = await loadPublishedWeeks(f.fetchImpl);
+    assert.equal(result.weeks[0].contentVariants.es.fullTranscript[0].english, undefined);
+    assert.match(result.errors.join('\n'), /English reference is not bound to this release/);
+  }
+});
+
+test('v5 rejects a missing video delivery or a storage object from another bucket/edition/hash or with a query', async () => {
+  for (const mutate of [
+    target => { delete target.videoDelivery; },
+    target => { target.videoDelivery.storageUrl = `https://storage.googleapis.com/ai-for-god-sermon-media-prod/weekly/other-edition/${target.sourceMediaSha256}.mp4`; },
+    target => { target.videoDelivery.storageUrl = `https://storage.googleapis.com/ai-for-god-sermon-media-prod/weekly/${target.editionId}/${'f'.repeat(64)}.mp4`; },
+    target => { target.videoDelivery.storageUrl = `https://storage.googleapis.com/unrelated-bucket/weekly/${target.editionId}/${target.sourceMediaSha256}.mp4`; },
+    target => { target.videoDelivery.storageUrl += '?alt=media'; },
+    target => { target.videoDelivery.storageUrl += '#t=10'; },
+  ]) {
+    const {f, catalog} = mixedSourceFixture();
+    mutate(catalog.pages[0].targets['zh-Hans']);
+    f.files.set('/multilingual-v5.json', JSON.stringify(catalog));
+    f.files.delete('/multilingual-v4.json'); f.files.delete('/multilingual-v3.json');
+    const result = await loadPublishedWeeks(f.fetchImpl);
+    assert.deepEqual(result.weeks, []);
+    assert.match(result.errors.join('\n'), /Invalid target video delivery/);
   }
 });

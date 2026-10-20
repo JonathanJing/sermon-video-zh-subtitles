@@ -75,6 +75,7 @@ const LABELS = {
   },
 };
 const CATALOG_V3 = 'sermon-multilingual-catalog-v3', CATALOG_V4 = 'sermon-multilingual-catalog-v4';
+const CATALOG_V5 = 'sermon-multilingual-catalog-v5';
 const RELEASE_V2 = 'sermon-target-language-release-package-v2', RELEASE_V3 = 'sermon-target-language-release-package-v3';
 const RELEASE_V4 = 'sermon-target-language-release-package-v4';
 const STUDY_RELEASES = [RELEASE_V3, RELEASE_V4];
@@ -98,6 +99,30 @@ function assetPath(value) {
   required(typeof value === 'string' && /^\/[A-Za-z0-9_./-]+$/.test(value)
     && !value.includes('//') && !value.split('/').some(part => part === '.' || part === '..'), 'Unsafe published asset path');
   return value;
+}
+
+const perTargetSources = (page, catalogVersion) => catalogVersion === CATALOG_V5 && page.sourceMode === 'per_target';
+
+function validateVideoDelivery(delivery, editionId, sourceMediaSha256) {
+  required(delivery && typeof delivery === 'object' && !Array.isArray(delivery), 'Invalid target video delivery');
+  // Exactly the bound object in one of the two media buckets, as the schema and iOS require.
+  const storageUrls = ['dev', 'prod'].map(environment =>
+    `https://storage.googleapis.com/ai-for-god-sermon-media-${environment}/weekly/${editionId}/${sourceMediaSha256}.mp4`);
+  required(delivery.schemaVersion === 'sermon-video-delivery-v1'
+    && delivery.canonicalUrl === `/pages/${editionId}/full-video-browser.mp4`
+    && assetPath(delivery.canonicalUrl) === delivery.canonicalUrl
+    && HASH.test(delivery.sha256) && delivery.sha256 === sourceMediaSha256
+    && Number.isSafeInteger(delivery.bytes) && delivery.bytes > 0
+    && storageUrls.includes(delivery.storageUrl),
+  'Invalid target video delivery');
+  return delivery;
+}
+
+function targetSourcePage(page, target, locale, catalogVersion) {
+  if (!perTargetSources(page, catalogVersion)) return page;
+  return { ...page, id: target.editionId, sourceMode: 'single_source',
+    sourceIdentitySha256: target.sourceIdentitySha256, sourceMediaSha256: target.sourceMediaSha256,
+    videoDelivery: target.videoDelivery, defaultTargetLocale: locale, targets: {[locale]: target} };
 }
 
 async function readJson(fetchImpl, path, expectedHash, timeoutMs, optional = false, pageSignal) {
@@ -329,11 +354,19 @@ export function validateDevCandidateRelease(release, page, locale) {
 // text-only target stays valid, but must never trigger an audio-release request.
 // Only a v4 catalog may list machine_checked targets; each points at a v4 release.
 export function validatePublishedTarget(target, page, locale, allowDevCandidates = false, catalogVersion = CATALOG_V3) {
-  required([CATALOG_V3, CATALOG_V4].includes(catalogVersion), 'Unknown published catalog version');
+  required([CATALOG_V3, CATALOG_V4, CATALOG_V5].includes(catalogVersion), 'Unknown published catalog version');
   const capabilities = target?.capabilities;
-  const machine = catalogVersion === CATALOG_V4 && [target?.contentStatus, target?.audioStatus].includes('machine_checked');
+  const mixedSource = perTargetSources(page, catalogVersion);
+  const editionId = mixedSource ? target?.editionId : page.id;
+  const machine = [CATALOG_V4, CATALOG_V5].includes(catalogVersion) && [target?.contentStatus, target?.audioStatus].includes('machine_checked');
   const audible = PRODUCT_STATUSES.includes(target?.audioStatus);
-  required(target && target.releasePackageUrl === `/releases-v${machine ? 4 : 2}/${page.id}/${locale}.json`
+  if (mixedSource) {
+    required(target && HASH.test(target.sourceIdentitySha256) && HASH.test(target.sourceMediaSha256),
+      'Invalid published catalog target');
+    validateVideoDelivery(target.videoDelivery, editionId, target.sourceMediaSha256);
+  }
+  required(target && ID.test(editionId || '')
+    && target.releasePackageUrl === `/releases-v${machine ? 4 : 2}/${editionId}/${locale}.json`
     && HASH.test(target.releasePackageJsonSha256)
     && (machine
       ? PRODUCT_STATUSES.includes(target.contentStatus) && PRODUCT_STATUSES.includes(target.audioStatus)
@@ -353,8 +386,9 @@ export function validatePublishedTarget(target, page, locale, allowDevCandidates
     const duration = binding.sourceEndSeconds - binding.sourceStartSeconds;
     required(binding.schemaVersion === 'sermon-audio-fingerprint-binding-v1'
       && binding.algorithmVersion === 'spectral-landmarks-v1'
-      && binding.pageId === page.id && audible
+      && binding.pageId === editionId && audible
       && HASH.test(binding.sourceSha256) && HASH.test(binding.trackSha256) && HASH.test(binding.indexSha256)
+      && (!mixedSource || binding.sourceSha256 === target.sourceMediaSha256)
       && Number.isFinite(binding.sourceStartSeconds) && binding.sourceStartSeconds >= 0
       && Number.isFinite(binding.sourceEndSeconds) && duration > 0
       && binding.captureSeconds === 10
@@ -367,7 +401,7 @@ export function validatePublishedTarget(target, page, locale, allowDevCandidates
 // Header and page metadata are admitted before requesting any release asset.
 // Locale asset failures remain isolated by loadVariant, as before.
 export function validatePublishedCatalogHeader(catalog, catalogVersion = CATALOG_V3) {
-  required([CATALOG_V3, CATALOG_V4].includes(catalogVersion) && catalog && catalog.schemaVersion === catalogVersion
+  required([CATALOG_V3, CATALOG_V4, CATALOG_V5].includes(catalogVersion) && catalog && catalog.schemaVersion === catalogVersion
     && typeof catalog.generatedAt === 'string' && typeof catalog.defaultPageId === 'string'
     && Array.isArray(catalog.pages) && catalog.pages.length > 0 && catalog.pages.length <= 104
     && new Set(catalog.pages.map(page => page?.id)).size === catalog.pages.length
@@ -375,14 +409,18 @@ export function validatePublishedCatalogHeader(catalog, catalogVersion = CATALOG
   return catalog;
 }
 
-export function validatePublishedPage(page) {
+export function validatePublishedPage(page, catalogVersion = CATALOG_V3) {
   const date = typeof page?.date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(page.date)
     ? new Date(`${page.date}T00:00:00.000Z`) : null;
+  const mixedSource = perTargetSources(page, catalogVersion);
   required(page && typeof page.id === 'string' && ID.test(page.id)
     && date && Number.isFinite(date.getTime()) && date.toISOString().slice(0, 10) === page.date
     && text(page.title) && Array.from(page.title).length <= 180
-    && page.sourceLocale === 'en' && typeof page.sourceIdentitySha256 === 'string' && HASH.test(page.sourceIdentitySha256)
-    && (page.sourceMediaSha256 == null || (typeof page.sourceMediaSha256 === 'string' && HASH.test(page.sourceMediaSha256)))
+    && page.sourceLocale === 'en'
+    && (mixedSource
+      ? page.sourceIdentitySha256 === undefined && page.sourceMediaSha256 === undefined && page.videoDelivery === undefined
+      : HASH.test(page.sourceIdentitySha256) && (page.sourceMediaSha256 == null || HASH.test(page.sourceMediaSha256)))
+    && (page.sourceMode === undefined || (catalogVersion === CATALOG_V5 && ['single_source', 'per_target'].includes(page.sourceMode)))
     && typeof page.defaultTargetLocale === 'string' && LOCALE.test(page.defaultTargetLocale)
     && page.targets && typeof page.targets === 'object' && !Array.isArray(page.targets)
     && Object.keys(page.targets).length > 0 && Object.keys(page.targets).length <= 16
@@ -422,14 +460,16 @@ function reviewPresentation(labels, release) {
 
 async function loadVariant(fetchImpl, page, locale, timeoutMs, pageSignal, allowDevCandidates, catalogVersion) {
   const target = validatePublishedTarget(page.targets[locale], page, locale, allowDevCandidates, catalogVersion);
+  const sourcePage = targetSourcePage(page, target, locale, catalogVersion);
+  const mixedSource = perTargetSources(page, catalogVersion);
   required(PRODUCT_STATUSES.includes(target.audioStatus)
     && ['text', 'captions', 'audio'].every(capability => target.capabilities?.includes(capability)), 'Target is not ready for playback');
   const machineTarget = target.releasePackageUrl.startsWith('/releases-v4/');
   const release = await readJson(fetchImpl, target.releasePackageUrl, target.releasePackageJsonSha256, timeoutMs, false, pageSignal);
   const candidate = release.status === 'candidate';
   required(!candidate || allowDevCandidates, 'Dev candidate requires explicit development context');
-  const assets = machineTarget ? validatePublishedV4Release(release, page, locale)
-    : candidate ? validateDevCandidateRelease(release, page, locale) : validatePublishedRelease(release, page, locale);
+  const assets = machineTarget ? validatePublishedV4Release(release, sourcePage, locale)
+    : candidate ? validateDevCandidateRelease(release, sourcePage, locale) : validatePublishedRelease(release, sourcePage, locale);
   required(release.contentStatus === target.contentStatus && release.audioStatus === target.audioStatus,
     'Release status does not match catalog target');
   const [content, captions] = await Promise.all([
@@ -442,19 +482,19 @@ async function loadVariant(fetchImpl, page, locale, timeoutMs, pageSignal, allow
   const contentVersions = legacyCandidate ? ['sermon-formal-dev-content-v1', 'sermon-dev-podcast-candidate-content-v2']
     : machineTarget ? (release.contentStatus === 'machine_checked' ? [CONTENT_V3] : [CONTENT_V1, CONTENT_V2, CONTENT_V3]) : [CONTENT_V1, CONTENT_V2];
   required(contentVersions.includes(content.schemaVersion)
-    && content.pageId === page.id && (legacyCandidate ? content.locale === locale : content.targetLocale === locale) && content.sourceLocale === 'en'
+    && content.pageId === sourcePage.id && (legacyCandidate ? content.locale === locale : content.targetLocale === locale) && content.sourceLocale === 'en'
     && (legacyCandidate ? content.contentStatus === release.contentStatus && content.audioStatus === release.audioStatus
       && content.targetLanguageAudioPackageJsonSha256 === release.targetLanguageAudioPackageJsonSha256 && content.date === page.date
       : content.status === (machineTarget ? release.contentStatus : 'human_reviewed'))
-    && content.englishSourcePackageJsonSha256 === page.sourceIdentitySha256
+    && content.englishSourcePackageJsonSha256 === sourcePage.sourceIdentitySha256
     && content.targetLanguageCandidateJsonSha256 === release.targetLanguageCandidateJsonSha256
     // Frozen legacy candidate schemas bind the source package, but did not
     // include a content media hash. Declared hashes and published schemas
     // still require the explicit catalog/content media identity join.
     && ((legacyCandidate && !Object.hasOwn(content, 'sourceMediaSha256'))
-      || !Object.hasOwn(page, 'sourceMediaSha256') || page.sourceMediaSha256 === content.sourceMediaSha256)
+      || !Object.hasOwn(sourcePage, 'sourceMediaSha256') || sourcePage.sourceMediaSha256 === content.sourceMediaSha256)
     && HASH.test(release.targetLanguageCandidateJsonSha256), 'Published content identity mismatch');
-  if (content.schemaVersion === CONTENT_V3) validatePublishedContentV3(content, page, locale);
+  if (content.schemaVersion === CONTENT_V3) validatePublishedContentV3(content, sourcePage, locale);
   // Machine-checked text repeats the release disclosure it was published under.
   required(content.status !== 'machine_checked' || ['locale', 'text', 'english'].every(key => content.disclosure[key] === release.disclosure[key]),
     'Content disclosure differs from its release');
@@ -475,6 +515,14 @@ async function loadVariant(fetchImpl, page, locale, timeoutMs, pageSignal, allow
     required(['formal', 'simulation'].includes(content.reviewMode), 'Invalid published review mode');
     required(content.reviewMode !== 'simulation' || (page.simulationOnly === true && target.simulationOnly === true && page.diagnosticOnly === true && target.diagnosticOnly === true), 'Simulation content requires isolated catalog flags');
     required(content.reviewMode !== 'formal' || (page.simulationOnly !== true && target.simulationOnly !== true), 'Simulation catalog cannot declare formal content');
+  }
+  if (mixedSource) {
+    const delivery = sourcePage.videoDelivery;
+    required(delivery == null
+      ? !Object.hasOwn(content, 'sourceVideoUrl')
+      : (!Object.hasOwn(content, 'sourceVideoUrl') || content.sourceVideoUrl === delivery.canonicalUrl)
+        && content.sourceMediaSha256 === delivery.sha256,
+    'Published content video differs from target source');
   }
   const audioDuration = separateAudioClock ? content.audioDurationSeconds : content.durationSeconds;
   required(Number.isFinite(audioDuration) && audioDuration > 0 && audioDuration <= 86400, 'Invalid published audio duration');
@@ -502,7 +550,8 @@ async function loadVariant(fetchImpl, page, locale, timeoutMs, pageSignal, allow
       id: page.id, date: page.date, number: '', title: content.title, targetLocale: locale, defaultTargetLocale: locale,
       series: content.series, speaker: content.speaker, scripture: content.scripture,
       sourceUrl: page.sourceUrl, sourceLabel: '播客原片', sourceRoute: 'podcast',
-      sourceSha256: page.sourceMediaSha256, diagnosticOnly: true, devCandidate: true,
+      sourceSha256: sourcePage.sourceMediaSha256, sourceIdentitySha256: sourcePage.sourceIdentitySha256,
+      editionId: sourcePage.id, diagnosticOnly: true, devCandidate: true,
       contentStatus: release.contentStatus, releaseStatus: release.status,
       releaseLabel: 'DEV 候选', humanContentReview: reviewed ? 'approved' : 'pending', audioStatus: 'full_reviewed',
       audioNotice: 'Dev 候选音轨；字幕采用目标音轨时间，不代表视频同步或设备验收。',
@@ -536,16 +585,24 @@ async function loadVariant(fetchImpl, page, locale, timeoutMs, pageSignal, allow
     voiceLabel: podcast ? `${content.speaker} · AI` : labels.voice, targetLocale: locale,
     subtitleTiming: separateAudioClock ? 'target_audio_clock' : 'source_video_aligned',
   };
+  if (target.audioFingerprint != null) required(target.audioFingerprint.pageId === sourcePage.id
+    && target.audioFingerprint.sourceSha256 === content.sourceMediaSha256
+    && target.audioFingerprint.trackSha256 === track.sha256,
+  'Catalog fingerprint differs from target source/audio');
   return {
-    id: page.id, date: page.date, number: '', targetLocale: locale, defaultTargetLocale: locale, title: content.title,
+    id: page.id, editionId: sourcePage.id, date: page.date, number: '', targetLocale: locale, defaultTargetLocale: locale,
+    title: content.title,
     series: content.series, speaker: content.speaker, scripture: content.scripture,
     // Content v3 may publish text/audio without a hosted source video. A
     // declared video still goes through the same strict same-origin check.
-    sourceUrl: podcast ? page.sourceUrl : content.schemaVersion === CONTENT_V3 && !Object.hasOwn(content, 'sourceVideoUrl')
-      ? null : assetPath(content.sourceVideoUrl),
+    sourceUrl: podcast ? page.sourceUrl : mixedSource && sourcePage.videoDelivery
+      ? sourcePage.videoDelivery.canonicalUrl
+      : content.schemaVersion === CONTENT_V3 && !Object.hasOwn(content, 'sourceVideoUrl') ? null : assetPath(content.sourceVideoUrl),
     sourceLabel: podcast ? PODCAST_LABELS[locale].source : labels.source,
     sourceRoute: podcast ? 'podcast' : 'full_video', ...(page.mediaType ? {mediaType: page.mediaType} : {}),
     sourceSha256: content.sourceMediaSha256,
+    sourceIdentitySha256: sourcePage.sourceIdentitySha256,
+    ...(sourcePage.videoDelivery ? {videoDelivery: {...sourcePage.videoDelivery}} : {}),
     ...(!podcast && sourceWindow ? { sourceFingerprintWindow: { ...sourceWindow } } : {}),
     ...(!podcast ? {sourceStartSeconds: 0, sourceEndSeconds: content.durationSeconds, sourceDurationSeconds: content.durationSeconds} : {}),
     ...reviewPresentation(labels, release),
@@ -575,68 +632,83 @@ async function loadPage(fetchImpl, page, timeoutMs, pageSignal, allowDevCandidat
     catch (error) { errors.push(`${page.id}/${locale}: ${error.message}`); return null; }
   }));
   const contentVariants = Object.fromEntries(variants.filter(Boolean));
+  const mixedSource = perTargetSources(page, catalogVersion);
   // Optional delivery sidecar: never change a reviewed release or hide its audio
   // because listening alignment is unavailable. Each locale binds its own track.
-  try {
-    const alignment = await readJson(fetchImpl, `/alignment/${page.id}.json`, undefined, timeoutMs, true, pageSignal);
-    if (alignment !== null) {
-      required(alignment.schemaVersion === 'sermon-published-alignment-v1'
-        && alignment.pageId === page.id && alignment.sourceIdentitySha256 === page.sourceIdentitySha256,
-      'Invalid alignment catalog identity');
-      for (const [locale, variant] of Object.entries(contentVariants)) {
-        try {
-          const target = alignment.targets?.[locale], m = target?.audioFingerprint;
-          required(target?.releasePackageJsonSha256 === variant.releasePackageJsonSha256
-            && m?.schemaVersion === 'sermon-audio-fingerprint-binding-v1'
-            && m.algorithmVersion === 'spectral-landmarks-v1' && m.pageId === page.id
-            && HASH.test(m.sourceSha256) && m.sourceSha256 === variant.sourceSha256
-            && m.trackSha256 === variant.tracks[0].sha256 && HASH.test(m.indexSha256)
-            && m.sourceStartSeconds === (variant.sourceFingerprintWindow?.startSeconds ?? 0)
-              && m.sourceEndSeconds === (variant.sourceFingerprintWindow?.endSeconds ?? variant.sourceDurationSeconds)
-            && m.captureSeconds === 10
-            && m.indexUrl === `/fingerprints/${m.indexSha256.slice(0, 16)}-landmarks.json`,
-          'Invalid alignment track/source binding');
-          variant.audioFingerprint = { ...m };
-          variant.automaticAudioAlignment = { schemaVersion: 'sermon-automatic-audio-alignment-v1', status: 'ready', required: true };
-        } catch (error) { errors.push(`${page.id}/${locale}: ${error.message}`); }
-      }
+  const attachAlignment = (alignment, entries, editionId, sourceIdentitySha256) => {
+    required(alignment.schemaVersion === 'sermon-published-alignment-v1'
+      && alignment.pageId === editionId && alignment.sourceIdentitySha256 === sourceIdentitySha256,
+    'Invalid alignment catalog identity');
+    for (const [locale, variant] of entries) {
+      try {
+        const target = alignment.targets?.[locale], m = target?.audioFingerprint;
+        required(target?.releasePackageJsonSha256 === variant.releasePackageJsonSha256
+          && m?.schemaVersion === 'sermon-audio-fingerprint-binding-v1'
+          && m.algorithmVersion === 'spectral-landmarks-v1' && m.pageId === editionId
+          && HASH.test(m.sourceSha256) && m.sourceSha256 === variant.sourceSha256
+          && m.trackSha256 === variant.tracks[0].sha256 && HASH.test(m.indexSha256)
+          && m.sourceStartSeconds === (variant.sourceFingerprintWindow?.startSeconds ?? 0)
+            && m.sourceEndSeconds === (variant.sourceFingerprintWindow?.endSeconds ?? variant.sourceDurationSeconds)
+          && m.captureSeconds === 10
+          && m.indexUrl === `/fingerprints/${m.indexSha256.slice(0, 16)}-landmarks.json`,
+        'Invalid alignment track/source binding');
+        if (mixedSource) required(JSON.stringify(canonical(m)) === JSON.stringify(canonical(page.targets[locale].audioFingerprint)),
+          'Alignment sidecar differs from catalog fingerprint');
+        variant.audioFingerprint = { ...m };
+        variant.automaticAudioAlignment = { schemaVersion: 'sermon-automatic-audio-alignment-v1', status: 'ready', required: true };
+      } catch (error) { errors.push(`${page.id}/${locale}: ${error.message}`); }
     }
-  } catch (error) { errors.push(`${page.id}: ${error.message}`); }
-  try {
-    const reference = await readJson(fetchImpl, `/english-reference/${page.id}.json`, undefined, timeoutMs, true, pageSignal);
-    if (reference !== null) {
-      required(reference.schemaVersion === 'sermon-published-english-reference-v1'
-        && reference.pageId === page.id && reference.sourceIdentitySha256 === page.sourceIdentitySha256
-        && reference.reviewState === 'human_approved', 'Invalid English reference identity');
-      for (const [locale, variant] of Object.entries(contentVariants)) {
-        try {
-          const target = reference.targets?.[locale];
-          required(reference.sourceMediaSha256 === variant.sourceSha256
-            && target?.releasePackageJsonSha256 === variant.releasePackageJsonSha256
-            && target.contentSha256 === variant.contentSha256 && target.captionsSha256 === variant.captionsSha256
-            && Array.isArray(target.blocks) && target.blocks.length === variant.fullTranscript.length,
-          'English reference is not bound to this release');
-          const blocks = new Map();
-          for (const [i, block] of target.blocks.entries()) {
-            const cue = variant.fullTranscript[i];
-            required(block.textGroupId === cue.textGroupId && !blocks.has(block.textGroupId)
-              && text(block.english) && Array.isArray(block.sourceUnitIds) && block.sourceUnitIds.length > 0
-              && JSON.stringify(block.sourceUnitIds) === JSON.stringify(cue.sourceUnitIds),
-            'English reference group mismatch');
-            blocks.set(block.textGroupId, block);
-          }
-          // Associate by approved group IDs, never by translated wording or timing.
-          variant.transcript = { schemaVersion: 'sermon-bilingual-transcript-v1', blocks: target.blocks.map(block => ({
-            blockId: block.textGroupId, english: block.english, sourceTextOrigin: 'approved_english_source', reviewState: 'human_approved',
-          })) };
-          variant.tracks[0].cues = variant.tracks[0].cues.map(cue => ({...cue, blockId: cue.textGroupId}));
-          variant.fullTranscript = variant.fullTranscript.map(cue => ({...cue, english: blocks.get(cue.textGroupId).english}));
-        } catch (error) { errors.push(`${page.id}/${locale}: ${error.message}`); }
-      }
+  };
+  const attachReference = (reference, entries, editionId, sourceIdentitySha256) => {
+    required(reference.schemaVersion === 'sermon-published-english-reference-v1'
+      && reference.pageId === editionId && reference.sourceIdentitySha256 === sourceIdentitySha256
+      && reference.reviewState === 'human_approved', 'Invalid English reference identity');
+    for (const [locale, variant] of entries) {
+      try {
+        const target = reference.targets?.[locale];
+        required(reference.sourceMediaSha256 === variant.sourceSha256
+          && target?.releasePackageJsonSha256 === variant.releasePackageJsonSha256
+          && target.contentSha256 === variant.contentSha256 && target.captionsSha256 === variant.captionsSha256
+          && Array.isArray(target.blocks) && target.blocks.length === variant.fullTranscript.length,
+        'English reference is not bound to this release');
+        const blocks = new Map();
+        for (const [i, block] of target.blocks.entries()) {
+          const cue = variant.fullTranscript[i];
+          required(block.textGroupId === cue.textGroupId && !blocks.has(block.textGroupId)
+            && text(block.english) && Array.isArray(block.sourceUnitIds) && block.sourceUnitIds.length > 0
+            && JSON.stringify(block.sourceUnitIds) === JSON.stringify(cue.sourceUnitIds),
+          'English reference group mismatch');
+          blocks.set(block.textGroupId, block);
+        }
+        // Associate by approved group IDs, never by translated wording or timing.
+        variant.transcript = { schemaVersion: 'sermon-bilingual-transcript-v1', blocks: target.blocks.map(block => ({
+          blockId: block.textGroupId, english: block.english, sourceTextOrigin: 'approved_english_source', reviewState: 'human_approved',
+        })) };
+        variant.tracks[0].cues = variant.tracks[0].cues.map(cue => ({...cue, blockId: cue.textGroupId}));
+        variant.fullTranscript = variant.fullTranscript.map(cue => ({...cue, english: blocks.get(cue.textGroupId).english}));
+      } catch (error) { errors.push(`${page.id}/${locale}: ${error.message}`); }
     }
-  } catch (error) { errors.push(`${page.id}: ${error.message}`); }
+  };
+  const sourceGroups = mixedSource ? [...Object.entries(contentVariants).reduce((groups, entry) => {
+    const variant = entry[1], prior = groups.get(variant.editionId);
+    required(!prior || prior.sourceIdentitySha256 === variant.sourceIdentitySha256, 'Edition source identity differs by locale');
+    if (prior) prior.entries.push(entry);
+    else groups.set(variant.editionId, {editionId:variant.editionId,sourceIdentitySha256:variant.sourceIdentitySha256,entries:[entry]});
+    return groups;
+  }, new Map()).values()] : [{editionId: page.id, sourceIdentitySha256: page.sourceIdentitySha256, entries: Object.entries(contentVariants)}];
+  for (const group of sourceGroups) {
+    try {
+      const alignment = await readJson(fetchImpl, `/alignment/${group.editionId}.json`, undefined, timeoutMs, true, pageSignal);
+      if (alignment !== null) attachAlignment(alignment, group.entries, group.editionId, group.sourceIdentitySha256);
+    } catch (error) { errors.push(`${page.id}: ${error.message}`); }
+    try {
+      const reference = await readJson(fetchImpl, `/english-reference/${group.editionId}.json`, undefined, timeoutMs, true, pageSignal);
+      if (reference !== null) attachReference(reference, group.entries, group.editionId, group.sourceIdentitySha256);
+    } catch (error) { errors.push(`${page.id}: ${error.message}`); }
+  }
   const defaultLocale = contentVariants[page.defaultTargetLocale] ? page.defaultTargetLocale : Object.keys(contentVariants)[0];
-  return { week: defaultLocale ? { ...contentVariants[defaultLocale], defaultTargetLocale: defaultLocale, contentVariants } : null, errors };
+  return { week: defaultLocale ? { ...contentVariants[defaultLocale], id: page.id, date: page.date,
+    defaultTargetLocale: defaultLocale, contentVariants } : null, errors };
 }
 
 /**
@@ -649,38 +721,43 @@ export async function loadPublishedWeeks(fetchImpl = globalThis.fetch, { request
   const timeoutMs = Number.isFinite(requestTimeoutMs) && requestTimeoutMs > 0 ? Math.min(requestTimeoutMs, 30000) : 10000;
   const loadTimeoutMs = Number.isFinite(pageLoadTimeoutMs) && pageLoadTimeoutMs > 0 ? Math.min(pageLoadTimeoutMs, 30000) : 30000;
   const empty = { weeks: [], defaultWeekId: null, errors: [] };
-  // v4 adds machine-checked locales; v3 stays the human-only projection. A missing
-  // v4 is the normal pre-v4 state. An unreadable or invalid v4 never hides v3 weeks.
+  // v5 adds target-bound source editions; v4 adds machine-checked locales and v3
+  // stays the human-only projection. A newer missing/invalid catalog never hides
+  // a valid older projection.
   const errors = [];
-  let catalog = null, catalogVersion = CATALOG_V4;
-  try {
-    catalog = await readJson(fetchImpl, '/multilingual-v4.json', undefined, timeoutMs, true);
-    if (catalog !== null) {
-      validatePublishedCatalogHeader(catalog, CATALOG_V4);
-      // A malformed v4 page or target would otherwise only be dropped, hiding a week
-      // or locale v3 still lists. Dev-only targets are filtered below, not checked here.
-      for (const page of catalog.pages) {
-        validatePublishedPage(page);
-        for (const [locale, target] of Object.entries(page.targets)) {
-          if (allowDevCandidates || (target?.contentStatus !== 'machine_reviewed' && target?.diagnosticOnly !== true && target?.simulationOnly !== true)) {
-            validatePublishedTarget(target, page, locale, allowDevCandidates, CATALOG_V4);
+  let catalog = null, catalogVersion = null;
+  for (const [version, path, fallback] of [
+    [CATALOG_V5, '/multilingual-v5.json', 'v4'],
+    [CATALOG_V4, '/multilingual-v4.json', 'v3'],
+    [CATALOG_V3, '/multilingual-v3.json', null],
+  ]) {
+    try {
+      const candidate = await readJson(fetchImpl, path, undefined, timeoutMs, true);
+      if (candidate === null) continue;
+      validatePublishedCatalogHeader(candidate, version);
+      // A malformed newer page or target would otherwise only be dropped, hiding
+      // a week or locale an older projection still lists.
+      if (version !== CATALOG_V3) {
+        for (const page of candidate.pages) {
+          validatePublishedPage(page, version);
+          for (const [locale, target] of Object.entries(page.targets)) {
+            if (allowDevCandidates || (target?.contentStatus !== 'machine_reviewed' && target?.diagnosticOnly !== true && target?.simulationOnly !== true)) {
+              validatePublishedTarget(target, page, locale, allowDevCandidates, version);
+            }
           }
         }
       }
+      catalog = candidate; catalogVersion = version; break;
+    } catch (error) {
+      if (fallback) errors.push(`Catalog ${version.slice(-2)} unavailable, using ${fallback}: ${error.message}`);
+      else return { ...empty, errors: [...errors, error.message] };
     }
-  } catch (error) { catalog = null; errors.push(`Catalog v4 unavailable, using v3: ${error.message}`); }
-  if (catalog === null) {
-    catalogVersion = CATALOG_V3;
-    try {
-      catalog = await readJson(fetchImpl, '/multilingual-v3.json', undefined, timeoutMs, true);
-      if (catalog === null) return { ...empty, errors };
-      validatePublishedCatalogHeader(catalog);
-    } catch (error) { return { ...empty, errors: [...errors, error.message] }; }
   }
+  if (catalog === null) return { ...empty, errors };
   const pages = [];
   for (const page of catalog.pages) {
     try {
-      validatePublishedPage(page);
+      validatePublishedPage(page, catalogVersion);
       if (!allowDevCandidates && (page.diagnosticOnly === true || page.simulationOnly === true)) continue;
       // Remove only Dev-only machine_reviewed locales; independently reviewed and
       // machine_checked (published with a disclosure) locales remain usable.

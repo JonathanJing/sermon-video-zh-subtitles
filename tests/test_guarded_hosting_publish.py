@@ -248,6 +248,34 @@ def test_v4_catalog_is_compare_and_swapped_alongside_v3(tmp_path, monkeypatch):
                   baseline_catalog_sha=sha, lease_bucket='bucket', request=remote, reader=reader, run=stale)
 
 
+def test_v5_catalog_is_compare_and_swapped_alongside_legacy_catalogs(tmp_path, monkeypatch):
+    monkeypatch.setattr(p.contract, 'validate_catalog_snapshot', lambda snapshot: None)
+    intent, data, sha = setup(tmp_path); remote = Remote()
+    v5 = b'{"schemaVersion": "sermon-multilingual-catalog-v5"}'
+    report = json.loads((tmp_path / 'seal-report.json').read_text())
+    report['catalogV5Sha256'] = hashlib.sha256(v5).hexdigest()
+    (tmp_path / 'seal-report.json').write_text(json.dumps(report))
+    live = {'v5': None}
+    def reader(url):
+        if url.endswith('/multilingual-v5.json'):
+            return (404, b'') if live['v5'] is None else (200, live['v5'])
+        if url.endswith('/multilingual-v4.json'):
+            return 404, b''
+        return 200, data
+    live['v5'] = b'{"other": true}'
+    with pytest.raises(ValueError, match='Live v5 catalog changed'):
+        p.publish(tmp_path, intent=intent, routes={'dev': intent}, baseline_version='sites/site/versions/old',
+                  baseline_catalog_sha=sha, lease_bucket='bucket', request=remote, reader=reader,
+                  run=lambda *a, **k: pytest.fail('stale v5 must block deploy'))
+    (tmp_path / 'deployment-attempt-v2.json').unlink()
+    live['v5'] = None
+    def deploy(*args, **kwargs):
+        remote.version = 'new'; write_deploy_result(kwargs); live['v5'] = v5
+    receipt = p.publish(tmp_path, intent=intent, routes={'dev': intent}, baseline_version='sites/site/versions/old',
+                        baseline_catalog_sha=sha, lease_bucket='bucket', request=remote, reader=reader, run=deploy)
+    assert receipt['status'] == 'deployed'
+
+
 def test_published_v4_readback_must_match_the_sealed_catalog(tmp_path, monkeypatch):
     monkeypatch.setattr(p.contract, 'validate_catalog_snapshot', lambda snapshot: None)
     intent, data, sha = setup(tmp_path); remote = Remote()

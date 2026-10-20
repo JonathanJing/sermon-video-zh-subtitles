@@ -1,0 +1,220 @@
+warning: 'tongxing-ios': found 3 file(s) which are unhandled; explicitly declare them as resources or exclude from the target
+    /private/tmp/claude-501/-Users-jonathan-jing-SynologyDrive-GitHub-Active-sermon-video-zh-subtitles--claude-worktrees-scripts-r1-131a68/266830db-8a19-4348-949f-54599e83d292/scratchpad/wt/pr1082/apps/tongxing-ios/App/AppIcon.icon/Assets/Logo-light-source.png
+    /private/tmp/claude-501/-Users-jonathan-jing-SynologyDrive-GitHub-Active-sermon-video-zh-subtitles--claude-worktrees-scripts-r1-131a68/266830db-8a19-4348-949f-54599e83d292/scratchpad/wt/pr1082/apps/tongxing-ios/App/AppIcon.icon/Assets/Logo-source.png
+    /private/tmp/claude-501/-Users-jonathan-jing-SynologyDrive-GitHub-Active-sermon-video-zh-subtitles--claude-worktrees-scripts-r1-131a68/266830db-8a19-4348-949f-54599e83d292/scratchpad/wt/pr1082/apps/tongxing-ios/App/AppIcon.icon/icon.json
+Building for debugging...
+[Computing dependencies]
+[Pre-planning 1 / 183]
+[Planning deferred tasks]
+[52 / 98] TongxingIOS_TongxingPreview
+[57 / 98]
+[58 / 99] TongxingCore
+[67 / 145]
+[68 / 145]
+[70 / 145]
+[73 / 145]
+[75 / 145]
+[77 / 145]
+[80 / 145]
+[81 / 145]
+[82 / 145]
+[83 / 145]
+[84 / 145]
+[86 / 145]
+[89 / 145]
+[92 / 145]
+[93 / 145]
+[104 / 145] TongxingCore
+[111 / 146]
+[111 / 146] TongxingCore
+[111 / 146] TongxingInfrastructure
+[116 / 165]
+[117 / 165]
+[119 / 165]
+[119 / 165] TongxingCore
+[119 / 165]
+[120 / 165]
+[129 / 165] TongxingInfrastructure
+[130 / 165] TongxingCore
+[144 / 166] TongxingInfrastructure
+[144 / 166] TongxingPreview-product
+[153 / 227]
+[157 / 227]
+[159 / 227]
+[160 / 227]
+[163 / 227]
+[164 / 227]
+[165 / 227]
+[168 / 227]
+[169 / 227]
+[171 / 227]
+[172 / 227]
+[172 / 227] TongxingInfrastructure
+[172 / 227]
+[173 / 227]
+[176 / 227]
+[180 / 227]
+[186 / 228] TongxingInfrastructureTests-product
+[187 / 241]
+[190 / 241]
+[191 / 241]
+[194 / 241]
+[195 / 241]
+[204 / 241] TongxingInfrastructureTests-product
+[205 / 241] TongxingInfrastructureTests-product
+[207 / 241] TongxingInfrastructureTests-product
+[211 / 241] TongxingInfrastructureTests-product
+/private/tmp/claude-501/-Users-jonathan-jing-SynologyDrive-GitHub-Active-sermon-video-zh-subtitles--claude-worktrees-scripts-r1-131a68/266830db-8a19-4348-949f-54599e83d292/scratchpad/wt/pr1082/apps/tongxing-ios/InfrastructureTests/ReviewedStudyResourcesTests.swift:79:36: [1;33mwarning: [1;39minstance method 'makeIterator' is unavailable from asynchronous contexts; this is an error in the Swift 6 language mode[0;0m
+ [0;36m77 |[0;0m         var files: [String: Data] = [:]
+ [0;36m78 |[0;0m         let enumerator = try #require(FileManager.default.enumerator(at: root, includingPropertiesForKeys: nil))
+ [0;36m79 |[0;0m         for case let url as URL in enumerator where ["json", "html"].contains(url.pathExtension) {
+    [0;36m|[0;0m                                    `- [1;33mwarning: [1;39minstance method 'makeIterator' is unavailable from asynchronous contexts; this is an error in the Swift 6 language mode[0;0m
+ [0;36m80 |[0;0m             files[String(url.path.dropFirst(root.path.count))] = try Data(contentsOf: url)
+ [0;36m81 |[0;0m         }
+[211 / 241]
+[212 / 241]
+[216 / 241]
+[216 / 241] TongxingInfrastructureTests-product
+[218 / 241] TongxingInfrastructureTests-product
+[222 / 241]
+[224 / 241]
+[235 / 241] TongxingPreview-product
+[236 / 241] TongxingPreview-product
+[238 / 241] TongxingPreview-product
+Build complete! (195.32 sec)
+Test Suite 'All tests' started at 2026-10-20 14:10:37.010.
+Test Suite 'All tests' passed at 2026-10-20 14:10:37.012.
+	 Executed 0 tests, with 0 failures (0 unexpected) in 0.000 (0.002) seconds
+◇ Test run started.
+↳ Testing Library Version: 2084
+↳ Target Platform: arm64e-apple-macos14.0
+➜ Suite LiveDevReleaseTests skipped.
+◇ Suite ReviewedStudyResourcesTests started.
+◇ Suite LiveListeningStatisticsTests started.
+◇ Suite DevCandidateReaderTests started.
+◇ Suite StorageTests started.
+◇ Suite ListeningStatisticsTests started.
+◇ Suite FormalDevContentPageTests started.
+◇ Suite FingerprintIndexStoreTests started.
+➜ Test publishedDualScriptCatalogLoadsAllLocalesAndAudio() skipped.
+➜ Test publishedCatalogAndAudioSurviveOfflineReload() skipped.
+➜ Test secondClipCatalogPagesAndAudioAreReadable() skipped.
+➜ Test productionListeningRoutesAcceptNativeClientAndWithdraw() skipped.
+◇ Test validatedStudyRequiresCompleteDisplayedBodyAndEscapesHTML() started.
+◇ Test repositoryRequiresExplicitDevOriginAndOptInForNetworkAndCache() started.
+◇ Test optionalEnglishRejectsChangedSourceGroupAndReleaseWithoutHidingText() started.
+◇ Test testChecksumFailurePreservesPreviousCompleteAudio() started.
+◇ Test english404UsesOnlyExactBindingCache() started.
+◇ Test dualScriptCatalogTakesPriorityAndUsesStaticPageAndCanonicalAudio() started.
+◇ Test testCancellingFinalWaiterCleansTemporaryFile() started.
+➜ Suite LivePublishedTranscriptTests skipped.
+◇ Test testVerifiedDownloadTamperDetectionAndRepair() started.
+◇ Test multilingualCatalogAndReleaseAreHashBoundAndSurviveOfflineReload() started.
+◇ Test machineCheckedCatalogV4LoadsFirstAndFallsBackToHumanOnlyV3() started.
+◇ Test reviewedLocaleAudioIsDownloadedByHashAndCachedBytesAreRechecked() started.
+◇ Test testInvalidNetworkCatalogDoesNotOverwriteKnownGoodCache() started.
+◇ Test testCancellingOneWaiterPreservesSharedDownloadForAnother() started.
+◇ Test testCrossOriginRedirectIsNotFollowed() started.
+◇ Test mixedSourceV5UsesTargetEditionForReleaseTranscriptAndCache() started.
+◇ Test testResponseStatusAndSizeLimitsCannotBecomeDownloads() started.
+◇ Suite WeeklyAnnouncementStorageTests started.
+◇ Test invalidNetworkEnglishIsNotSavedOrResurrectedOffline() started.
+◇ Test testDeclaredLengthMismatchAndEmptyFileAreRejected() started.
+◇ Test testConcurrentSameHashUsesOneTransferAndSingleTrackRemovalPreservesOther() started.
+◇ Test testDeleteDuringDownloadDoesNotRecreateTrackReference() started.
+◇ Test damagedPreferredCatalogCacheFallsBackAndPreservesNetworkError() started.
+◇ Test testCatalogPreservesExactValidatedJSONAndReportsCacheFallback() started.
+◇ Test productionCatalogV3LoadsV2ReleaseAndVerifiedPage() started.
+◇ Test testInterruptedTransferIsNotAdmitted() started.
+◇ Test reviewedContentEscapesMarkupAndRejectsWrongLocale() started.
+◇ Test testCatalogRejectsNonHTTPSAndForeignResponse() started.
+◇ Test countsContinuousPlaybackButNotSeeksPausesOrStalls() started.
+◇ Test invalidCandidateReviewAndOriginFailBeforeAnyNetworkRequest() started.
+◇ Test publishedIndexPersistsAndReloadsOfflineAfterVerification() started.
+◇ Test cancellationCleansTemporaryIndexWithoutWaitingForDelayedBody() started.
+◇ Test badHashAndWrongSourceNeverBecomeCachedIndexes() started.
+◇ Test damagedEntryCanBeReplacedWithoutTouchingOtherIndexes() started.
+◇ Test oversizedInterruptedAndForeignResponsesRemainOutsideCache() started.
+◇ Test publishedCorruptedCacheAndBadDownloadNeverBecomeAvailable() started.
+◇ Test publishedTranscriptSeparatesSpokenTimesAndJoinsApprovedEnglish() started.
+◇ Test corruptEnglishCacheFallsBackWithoutHidingTargetText() started.
+✔ Suite LiveListeningStatisticsTests passed after 0.002 seconds.
+◇ Test spokenGroupMismatchCannotBecomeFullTextSubtitles() started.
+◇ Test publishedTranscriptRejectsTamperedNetworkAndOfflineBytes() started.
+◇ Test validatedIndexPersistsExactBytesAndLoadsOfflineWithNoSecondRequest() started.
+➜ Test currentMixedSourceChineseFullTextAndCaptionsIncludeEditionEnglish() skipped.
+◇ Test verifiedPosterAndSidecarSurviveOfflineButDamagedCacheDoesNot() started.
+✔ Test countsContinuousPlaybackButNotSeeksPausesOrStalls() passed after 0.028 seconds.
+✔ Test reviewedContentEscapesMarkupAndRejectsWrongLocale() passed after 0.029 seconds.
+✔ Test validatedStudyRequiresCompleteDisplayedBodyAndEscapesHTML() passed after 0.030 seconds.
+✔ Suite FormalDevContentPageTests passed after 0.036 seconds.
+◇ Test replayCountsTimeButMergesCoverage() started.
+◇ Test tamperedTextLocaleKindAndCandidateCannotBeAdmitted() started.
+✔ Test spokenGroupMismatchCannotBecomeFullTextSubtitles() passed after 0.034 seconds.
+✔ Test replayCountsTimeButMergesCoverage() passed after 0.001 seconds.
+◇ Test coverageBoundDoesNotFillUnheardGaps() started.
+✔ Test tamperedTextLocaleKindAndCandidateCannotBeAdmitted() passed after 0.008 seconds.
+✔ Test testCatalogRejectsNonHTTPSAndForeignResponse() passed after 0.050 seconds.
+➜ Test realPythonBuilderOutputLoadsAndOfflineTamperIsRejected() skipped.
+✔ Test invalidCandidateReviewAndOriginFailBeforeAnyNetworkRequest() passed after 0.050 seconds.
+✔ Suite ReviewedStudyResourcesTests passed after 0.051 seconds.
+✔ Test testCrossOriginRedirectIsNotFollowed() passed after 0.051 seconds.
+✔ Test publishedCorruptedCacheAndBadDownloadNeverBecomeAvailable() passed after 0.056 seconds.
+✔ Test testChecksumFailurePreservesPreviousCompleteAudio() passed after 0.068 seconds.
+✔ Test cancellationCleansTemporaryIndexWithoutWaitingForDelayedBody() passed after 0.069 seconds.
+✔ Test testCatalogPreservesExactValidatedJSONAndReportsCacheFallback() passed after 0.071 seconds.
+✔ Test testInterruptedTransferIsNotAdmitted() passed after 0.073 seconds.
+✔ Test testDeleteDuringDownloadDoesNotRecreateTrackReference() passed after 0.082 seconds.
+✔ Test testDeclaredLengthMismatchAndEmptyFileAreRejected() passed after 0.090 seconds.
+✔ Test testInvalidNetworkCatalogDoesNotOverwriteKnownGoodCache() passed after 0.093 seconds.
+✔ Test validatedIndexPersistsExactBytesAndLoadsOfflineWithNoSecondRequest() passed after 0.091 seconds.
+✔ Test publishedTranscriptSeparatesSpokenTimesAndJoinsApprovedEnglish() passed after 0.096 seconds.
+✔ Test damagedEntryCanBeReplacedWithoutTouchingOtherIndexes() passed after 0.098 seconds.
+✔ Test publishedIndexPersistsAndReloadsOfflineAfterVerification() passed after 0.099 seconds.
+✔ Test testCancellingFinalWaiterCleansTemporaryFile() passed after 0.101 seconds.
+✔ Test verifiedPosterAndSidecarSurviveOfflineButDamagedCacheDoesNot() passed after 0.080 seconds.
+◇ Test rejectsWrongHashWrongDimensionsAndForeignRedirect() started.
+✔ Test coverageBoundDoesNotFillUnheardGaps() passed after 0.068 seconds.
+◇ Test delayedBackgroundSampleCountsOnlyMediaProgress() started.
+✔ Test delayedBackgroundSampleCountsOnlyMediaProgress() passed after 0.001 seconds.
+◇ Test interfaceVisitWithoutPlaybackAndLanguageSwitchUseSeparateSessions() started.
+✔ Test corruptEnglishCacheFallsBackWithoutHidingTargetText() passed after 0.108 seconds.
+✔ Test badHashAndWrongSourceNeverBecomeCachedIndexes() passed after 0.113 seconds.
+✔ Test rejectsWrongHashWrongDimensionsAndForeignRedirect() passed after 0.013 seconds.
+✔ Suite WeeklyAnnouncementStorageTests passed after 0.116 seconds.
+✔ Test productionCatalogV3LoadsV2ReleaseAndVerifiedPage() passed after 0.120 seconds.
+✔ Test oversizedInterruptedAndForeignResponsesRemainOutsideCache() passed after 0.127 seconds.
+✔ Suite FingerprintIndexStoreTests passed after 0.127 seconds.
+✔ Test testResponseStatusAndSizeLimitsCannotBecomeDownloads() passed after 0.131 seconds.
+✔ Test testVerifiedDownloadTamperDetectionAndRepair() passed after 0.132 seconds.
+✔ Test publishedTranscriptRejectsTamperedNetworkAndOfflineBytes() passed after 0.146 seconds.
+✔ Test invalidNetworkEnglishIsNotSavedOrResurrectedOffline() passed after 0.153 seconds.
+✔ Test reviewedLocaleAudioIsDownloadedByHashAndCachedBytesAreRechecked() passed after 0.155 seconds.
+✔ Test interfaceVisitWithoutPlaybackAndLanguageSwitchUseSeparateSessions() passed after 0.050 seconds.
+◇ Test reportingDayAndPublishedIdentity() started.
+✔ Test reportingDayAndPublishedIdentity() passed after 0.001 seconds.
+◇ Test optInSamplesAfterTokenAndRetractsEveryLanguage() started.
+✔ Test damagedPreferredCatalogCacheFallsBackAndPreservesNetworkError() passed after 0.158 seconds.
+✔ Test dualScriptCatalogTakesPriorityAndUsesStaticPageAndCanonicalAudio() passed after 0.170 seconds.
+✔ Test multilingualCatalogAndReleaseAreHashBoundAndSurviveOfflineReload() passed after 0.171 seconds.
+✔ Test machineCheckedCatalogV4LoadsFirstAndFallsBackToHumanOnlyV3() passed after 0.180 seconds.
+✔ Test mixedSourceV5UsesTargetEditionForReleaseTranscriptAndCache() passed after 0.201 seconds.
+✔ Test english404UsesOnlyExactBindingCache() passed after 0.214 seconds.
+✔ Test optInSamplesAfterTokenAndRetractsEveryLanguage() passed after 0.147 seconds.
+◇ Test failedUploadRetriesCumulativeAndDayRotatesIdentity() started.
+✔ Test optionalEnglishRejectsChangedSourceGroupAndReleaseWithoutHidingText() passed after 0.311 seconds.
+✔ Test testConcurrentSameHashUsesOneTransferAndSingleTrackRemovalPreservesOther() passed after 0.376 seconds.
+✔ Test failedUploadRetriesCumulativeAndDayRotatesIdentity() passed after 0.119 seconds.
+◇ Test alignmentAttemptRecordKeepsOnlyWhitelistedConsistentFields() started.
+✔ Test alignmentAttemptRecordKeepsOnlyWhitelistedConsistentFields() passed after 0.001 seconds.
+◇ Test alignmentAttemptsAppendRetryRollOverAndRetract() started.
+✔ Test repositoryRequiresExplicitDevOriginAndOptInForNetworkAndCache() passed after 0.485 seconds.
+◇ Test coldDeadlineRetainsAlreadyVerifiedSiblingAndWarmCacheNeedsNoPackageGet() started.
+✔ Test coldDeadlineRetainsAlreadyVerifiedSiblingAndWarmCacheNeedsNoPackageGet() passed after 0.119 seconds.
+➜ Test frozenRealCandidateCatalogReleasePageAndTranscriptLoadOffline() skipped.
+✔ Suite DevCandidateReaderTests passed after 0.605 seconds.
+✔ Test alignmentAttemptsAppendRetryRollOverAndRetract() passed after 0.208 seconds.
+✔ Suite ListeningStatisticsTests passed after 0.634 seconds.
+✔ Test testCancellingOneWaiterPreservesSharedDownloadForAnother() passed after 0.655 seconds.
+✔ Suite StorageTests passed after 0.655 seconds.
+✔ Test run with 59 tests in 10 suites passed after 0.656 seconds.

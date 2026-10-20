@@ -695,6 +695,7 @@ test('published week switches language in the existing player and keeps full rea
   const id = '2026-09-27-full-video';
   const variants = Object.fromEntries(['zh-Hans', 'ko', 'es'].map((locale, index) => [locale, {
     ...week, id, date: '2026-09-27', targetLocale: locale, title: `Title ${locale}`,
+    sourceUrl: `/pages/${id}-${locale}/full-video-browser.mp4`,
     releaseLabel: '正式播放版', contentReview: 'Reviewed',
     fullTranscript: [{ start: 0, end: 100, text: `Full reading ${locale}`, english: 'Approved English reference.' }],
     transcript: {schemaVersion:'sermon-bilingual-transcript-v1',blocks:[{blockId:'approved-group',english:'Approved English reference.',sourceTextOrigin:'approved_english_source',reviewState:'human_approved'}]},
@@ -719,6 +720,7 @@ test('published week switches language in the existing player and keeps full rea
   assert.deepEqual(sermonLanguages().map(button => button.getAttribute('aria-pressed')), ['false', 'true', 'false']);
   assert.equal(h.audio.paused, true, 'old audio stops when the content language changes');
   assert.equal(h.audio.src, `https://example.test/media/${id}/ko.mp3`);
+  assert.equal(h.get('source-link').href, `/pages/${id}-ko/full-video-browser.mp4`);
   assert.equal(h.get('title').textContent, 'Title ko');
   assert.equal(h.get('current-text').textContent, 'Spoken ko');
   assert.equal(h.get('subtitle-toggle').hidden, true, 'listening toggle remains independent of transcript comparison');
@@ -733,6 +735,7 @@ test('published week switches language in the existing player and keeps full rea
   assert.equal(h.context.location.href, 'https://example.test/', 'selection stays in this App');
   h.get('content-language').value = 'es'; h.get('content-language').dispatch('change');
   assert.equal(h.audio.src, `https://example.test/media/${id}/es.mp3`);
+  assert.equal(h.get('source-link').href, `/pages/${id}-es/full-video-browser.mp4`);
   assert.equal(sermonLanguages().find(button => button.dataset.locale === 'es').getAttribute('aria-pressed'), 'true');
   h.app.selectWeek(week.id);
   assert.equal(h.audio.src, 'https://example.test/media/first.mp3');

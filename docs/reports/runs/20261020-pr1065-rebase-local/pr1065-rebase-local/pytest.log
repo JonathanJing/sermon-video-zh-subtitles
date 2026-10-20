@@ -1,0 +1,103 @@
+### chunk 0: tests/test_canonical_layer2_controller.py tests/test_group_assembly.py tests/test_layer2_concurrency_experiment.py tests/test_layer2_payload_cache_reuse.py tests/test_ops_run_entry.py tests/test_run_target_language_models.py tests/test_sermon_strict_gate_admission.py tests/test_spoken_condensation.py tests/test_translator_backend_switch.py
+........................................................ [ 28%]
+.............................................................. [ 59%]
+.................................................................................                               [100%]
+199 passed, 59 subtests passed in 321.58s (0:05:21)
+exit=0
+### chunk 1: tests/test_canonical_layer2_auto_repair.py tests/test_canonical_layer2_controller_payload_cache.py tests/test_group_pipeline.py tests/test_layer2_group_revision.py tests/test_machine_qc_runtime_budget.py tests/test_paid_model_cache_durability.py tests/test_scripts_layout_guard.py tests/test_sermon_strict_layer2.py tests/test_target_language_policy_preview.py
+............................................... [ 37%]
+.............................................................................                         [100%]
+124 passed, 68 subtests passed in 283.28s (0:04:43)
+exit=0
+### chunk 2: tests/test_canonical_layer2_budget.py tests/test_canonical_layer2_reconciliation.py tests/test_group_stage_records.py tests/test_layer2_large_fan_in.py tests/test_migrate_target_language_model_cache.py tests/test_production_concurrency_profile.py tests/test_sermon_delivery_intent_binding.py tests/test_sermon_unified_continuation.py tests/test_target_language_rule_preflight.py
+.............................................................. [ 31%]
+...................................F............................ [ 63%]
+................................................................. [ 96%]
+......                                                                   [100%]
+=================================== FAILURES ===================================
+__ ProfileTests.test_23_worker_executor_is_opt_in_and_preserves_source_order ___
+
+self = <test_production_concurrency_profile.ProfileTests testMethod=test_23_worker_executor_is_opt_in_and_preserves_source_order>
+
+    def test_23_worker_executor_is_opt_in_and_preserves_source_order(self):
+        with self.assertRaises(ValueError):
+            runner.ordered_group_results(list(range(46)), lambda x: x, 23)
+        lock = threading.Lock()
+        live = peak = 0
+        def worker(index):
+            nonlocal live, peak
+            with lock:
+                live += 1
+                peak = max(peak, live)
+            time.sleep(.01)
+            with lock:
+                live -= 1
+            return index
+        result = runner.ordered_group_results(list(range(46)), worker, 23, maximum_workers=23)
+        self.assertEqual(result, list(range(46)))
+>       self.assertGreater(peak, 16)
+E       AssertionError: 14 not greater than 16
+
+tests/test_production_concurrency_profile.py:45: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_production_concurrency_profile.py::ProfileTests::test_23_worker_executor_is_opt_in_and_preserves_source_order
+1 failed, 196 passed, 25 subtests passed in 679.99s (0:11:19)
+exit=1
+### chunk 3: tests/test_canonical_layer2_budget_reuse.py tests/test_canonical_layer2_runtime_authorization.py tests/test_group_worker.py tests/test_layer2_leaf_accounting.py tests/test_observability_diagnostic_driver.py tests/test_run_budget_input_feasibility.py tests/test_sermon_historical_layer2.py tests/test_sermon_unified_preflight.py tests/test_tongxing_production_package.py
+.................................................... [ 73%]
+...................             [100%]
+71 passed, 637 subtests passed in 303.73s (0:05:03)
+exit=0
+### chunk 4: tests/test_canonical_layer2_budget_shards.py tests/test_codex_layer2_diagnostic.py tests/test_layer2_auto_repair.py tests/test_layer2_malformed_model_output.py tests/test_observability_sufficiency.py tests/test_run_start_pending_call_and_spark.py tests/test_sermon_job_liveness.py tests/test_shadow_candidate_mode.py tests/test_tongxing_source_ports.py
+........................................................... [ 42%]
+...............................................................................                                [100%]
+=================================== FAILURES ===================================
+_ LivenessTests.test_real_monitor_cancels_stalls_and_never_restarts_unknown_work (mode='no_heartbeat') _
+
+self = <test_sermon_job_liveness.LivenessTests testMethod=test_real_monitor_cancels_stalls_and_never_restarts_unknown_work>
+
+    def test_real_monitor_cancels_stalls_and_never_restarts_unknown_work(self):
+        for mode, reason in (('no_start','liveness_start_timeout'),
+                             ('no_progress','liveness_no_progress_timeout'),
+                             ('no_heartbeat','liveness_heartbeat_timeout'),
+                             ('invalid','liveness_invalid_receipt')):
+            with self.subTest(mode=mode):
+                state, late = self.run_job(mode)
+                self.assertEqual(state['status'], 'uncertain')
+>               self.assertEqual(state['reason'], reason)
+E               AssertionError: 'liveness_start_timeout' != 'liveness_heartbeat_timeout'
+E               - liveness_start_timeout
+E               ?          ^^
+E               + liveness_heartbeat_timeout
+E               ?          ^^  ++++
+
+tests/test_sermon_job_liveness.py:229: AssertionError
+_ LivenessTests.test_real_monitor_cancels_stalls_and_never_restarts_unknown_work (mode='invalid') _
+
+self = <test_sermon_job_liveness.LivenessTests testMethod=test_real_monitor_cancels_stalls_and_never_restarts_unknown_work>
+
+    def test_real_monitor_cancels_stalls_and_never_restarts_unknown_work(self):
+        for mode, reason in (('no_start','liveness_start_timeout'),
+                             ('no_progress','liveness_no_progress_timeout'),
+                             ('no_heartbeat','liveness_heartbeat_timeout'),
+                             ('invalid','liveness_invalid_receipt')):
+            with self.subTest(mode=mode):
+                state, late = self.run_job(mode)
+                self.assertEqual(state['status'], 'uncertain')
+>               self.assertEqual(state['reason'], reason)
+E               AssertionError: 'liveness_start_timeout' != 'liveness_invalid_receipt'
+E               - liveness_start_timeout
+E               + liveness_invalid_receipt
+
+tests/test_sermon_job_liveness.py:229: AssertionError
+=========================== short test summary info ============================
+SUBFAILED(mode='no_heartbeat') tests/test_sermon_job_liveness.py::LivenessTests::test_real_monitor_cancels_stalls_and_never_restarts_unknown_work
+SUBFAILED(mode='invalid') tests/test_sermon_job_liveness.py::LivenessTests::test_real_monitor_cancels_stalls_and_never_restarts_unknown_work
+2 failed, 138 passed, 45 subtests passed in 121.50s (0:02:01)
+exit=1
+### chunk 5: tests/test_canonical_layer2_cache_recovery.py tests/test_codex_layer2_transport.py tests/test_layer2_binding_stat_memo.py tests/test_layer2_partial_recovery_parallel.py tests/test_openai_layer2_transport.py tests/test_run_start_tools.py tests/test_sermon_review_contracts.py tests/test_source_meaning_machine_adjudication.py tests/test_tongxing_text_ports.py
+......................................................... [ 35%]
+........................................................................... [ 82%]
+............................                       [100%]
+160 passed, 394 subtests passed in 139.32s (0:02:19)
+exit=0

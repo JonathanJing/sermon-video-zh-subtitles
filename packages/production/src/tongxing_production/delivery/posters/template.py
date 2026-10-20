@@ -61,7 +61,10 @@ def add_english_reference(bundles, metadata):
         brief['reviewLabel'] = 'Chinese reference content includes machine-checked text or audio; not fully human reviewed.'
     else:
         brief['reviewLabel'] = 'English reference artwork · Chinese content'
-    brief['qrURL'] = brief['origin'] + '/?' + urlencode(dict(week=source['pageId'],contentLang='zh-Hans',lang='en'))
+    # Same deep link as the Chinese poster: a mixed-source family links its Chinese
+    # edition, which v4 and older readers can resolve; v5 readers map it to the family.
+    week = source.get('editionId', source['pageId'])
+    brief['qrURL'] = brief['origin'] + '/?' + urlencode(dict(week=week,contentLang='zh-Hans',lang='en'))
     # targetLocale remains zh-Hans: never synthesize an English content release or announcement.
     bundle['source'].update(artworkLocale='en', contentLocale='zh-Hans', announcementEligible=False,
                             englishReference=metadata, brief=brief)

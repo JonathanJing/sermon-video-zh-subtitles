@@ -100,6 +100,9 @@ def load_spec(path: Path) -> dict:
     require(all(type(budget.get(k)) in (int, float) and budget[k] >= 0 for k in ("totalUsd", "settledUsdBefore"))
             and budget["settledUsdBefore"] < budget["totalUsd"], "budget needs totalUsd > settledUsdBefore >= 0")
     layer2, layer3 = spec.get("layer2") or {}, spec.get("layer3") or {}
+    layer2.setdefault("backend", "openai_api")
+    require(layer2["backend"] in ("openai_api", "claude_cli_opus"),
+            "layer2.backend must be openai_api or claude_cli_opus")
     for field, table in (("policyTemplates", layer2), ("plugins", layer2), ("attestationTemplates", layer3)):
         require(isinstance(table.get(field), dict) and set(locales) <= set(table[field]), f"{field} missing a locale")
         table[field] = {k: resolve(v) for k, v in table[field].items() if k in locales}
@@ -201,12 +204,12 @@ class Run:
 
     # -- budget
     def settled(self) -> float:
-        """Earlier spend plus this run's Layer 2 results and QC ledgers; unpriced rows count at their reservation."""
+        """Approved-dollar spend: earlier spend plus this run's Layer 2 results and QC ledgers; unpriced rows count
+        at their reservation. Claude subscription list-price equivalents are kept separate."""
         from tools.development.export_run_digest import budget_summary
         total = 0
-        for path in self.dir.rglob("*.result.json"):
-            if "layer2-budget" in str(path) and "responses" not in path.parts:
-                total += read(path)["result"]["usage"]["costMicrousd"]
+        if self.spec["layer2"]["backend"] == "openai_api":
+            total += self.layer2_result_microusd()
         for path in self.dir.rglob("source-budget.json"):
             ledger = read(path)
             total += budget_summary(ledger).get("estimatedMicrousd", 0)
@@ -215,15 +218,36 @@ class Run:
                          and (row.get("settlement") or {}).get("costStatus") not in ("estimated_upper_bound", "reused"))
         return round(self.spec["budget"]["settledUsdBefore"] + total / 1e6, 6)
 
+    def layer2_result_microusd(self) -> int:
+        return sum(read(path)["result"]["usage"]["costMicrousd"] for path in self.dir.rglob("*.result.json")
+                   if "layer2-budget" in str(path) and "responses" not in path.parts)
+
+    def claude_list_price_equivalent(self) -> float:
+        """Subscription Layer 2 usage at its reserved list-price basis, not cash spend."""
+        if self.spec["layer2"]["backend"] != "claude_cli_opus":
+            return 0.0
+        return round(self.layer2_result_microusd() / 1e6, 6)
+
     def open_qc_caps(self) -> float:
-        """Full caps of QC budgets planned in this run whose locale has not finished audio QC."""
+        """QC authority still spendable for locales that have not finished audio QC: the full caps of their QC
+        plans. A failed locale's earlier authorities (its QC plan and earlier repair plans) stay valid, so each
+        counts its cap less what its ledger has already reserved; settled() counts that reserved spend."""
+        from tools.development.export_run_digest import budget_summary
         caps = 0.0
         for locale in self.spec["locales"]:
-            plan = self.dir / "plans" / f"qc-{locale}" / "plan.json"
-            if plan.exists() and not self.done("audio." + locale) and (self.stages.get("audio." + locale) or {}).get(
-                    "status") != "failed":
-                caps += sum(stage["capUsd"] for stage in read(plan)["stages"])
-        return caps
+            if self.done("audio." + locale):
+                continue
+            failed = (self.stages.get("audio." + locale) or {}).get("status") == "failed"
+            plans = [self.dir / "plans" / f"qc-{locale}" / "plan.json"]
+            if failed:
+                plans += sorted((self.dir / "plans").glob(f"qc-{locale}-audio-seed-*/plan.json"))
+            for plan in (path for path in plans if path.exists()):
+                for stage in read(plan)["stages"]:
+                    ledger = Path(stage["budgetRoot"]) / "source-budget.json" if stage.get("budgetRoot") else None
+                    reserved = (budget_summary(read(ledger)).get("reservedMicrousd", 0)
+                                if failed and ledger is not None and ledger.exists() else 0)
+                    caps += max(0.0, stage["capUsd"] - reserved / 1e6)
+        return round(caps, 6)
 
     def plan(self, out: Path, stages: list[str], locales: list[str], *, extra: list = (), include_open_qc=True):
         if (out / "plan.json").exists():
@@ -274,7 +298,8 @@ def stage_inputs(run: Run):
     run.mark("inputs", "done", units=len(anchor["sourceUnits"]), inputs=str(inputs))
 
 
-def freeze_clip_policy(template: Path, source: dict, anchor: dict, *, reviewed_by: str, statement: str) -> dict:
+def freeze_clip_policy(template: Path, source: dict, anchor: dict, *, reviewed_by: str, statement: str,
+                       backend: str = "openai_api") -> dict:
     """The source week's frozen policy narrowed to this clip's source scope and terms, frozen again."""
     from tongxing_production.text import policy as tp
     rows = anchor["sourceUnits"]
@@ -284,6 +309,7 @@ def freeze_clip_policy(template: Path, source: dict, anchor: dict, *, reviewed_b
     used = sorted(observed - set(exclusions))
     draft = copy.deepcopy(frozen)
     draft.pop("componentSha256")
+    draft = tp.apply_layer2_backend(draft, backend)
     draft["terminology"]["properNames"] = [t for t in draft["terminology"]["properNames"] if t["source"] in used]
     scope = draft["sourceScope"]
     scope.update(englishSourcePackageJsonSha256=tp.canonical_sha256(source), anchorManifestSha256=tp.canonical_sha256(anchor),
@@ -314,7 +340,7 @@ def stage_layer2_setup(run: Run):
         if not path.exists():
             write(path, freeze_clip_policy(Path(spec["layer2"]["policyTemplates"][locale]), source, anchor,
                                            reviewed_by=auth["defaultPass"] + "; targets carried from the source week's receipt",
-                                           statement=auth["evidence"]))
+                                           statement=auth["evidence"], backend=spec["layer2"]["backend"]))
     if not (l2 / "execution.json").exists():
         write(l2 / "inspection.json", {"schemaVersion": "sermon-canonical-package-inspection-config-v1",
                                        "source": "src/source.json", "anchor": "src/anchor.json",
@@ -705,6 +731,10 @@ def repair_audio(run: Run, locale: str, seed: int, code: str, *, unit_instructio
 # ---------------------------------------------------------------- stages: Layer 4 and report
 
 
+PUBLISH_STAGES = ("prepare_assets", "publish_assets", "refresh_baseline", "verify_assets", "release_plan", "seal",
+                  "prepare_overlay", "publish_catalog", "live_readback")
+
+
 def stage_layer4(run: Run):
     from tools.development import clip_e2e_release
     spec, l4 = run.spec, run.dir / "l4"
@@ -735,10 +765,20 @@ def stage_layer4(run: Run):
         run.sh("layer4-publish", [PY, ROOT / "tools/development/run_dev_simulated_delivery.py", "--baseline", l4 / "baseline",
                                   "--prepared", l4 / "work/prepared", "--out", workflow, "--machine-checked", "--execute"])
     state = read(state_path)
+    stages = state.get("stages") or {}
     report_path = workflow / "run-report.json"
     report = read(report_path) if report_path.exists() else {}
     inputs = state.get("inputs") or {}
     sha = lambda path: hashlib.sha256(path.read_bytes()).hexdigest()
+
+    def intact(stage):
+        # Each journal stage's recorded outputs must still hash as recorded, as on a journal resume.
+        row = stages.get(stage) or {}
+        outputs = row.get("outputs")
+        return (row.get("status") == "succeeded" and isinstance(outputs, dict) and bool(outputs)
+                and all(isinstance(rel, str) and (workflow / rel).resolve().is_relative_to(workflow.resolve())
+                        and (workflow / rel).is_file() and sha(workflow / rel) == digest
+                        for rel, digest in outputs.items()))
     expected = (("preparedManifestSha256", l4 / "work/prepared/preparation-manifest.json"),
                 ("baselineReceiptSha256", l4 / "baseline/baseline-receipt.json"),
                 ("baselineSealSha256", l4 / "baseline/seal-report.json"))
@@ -748,17 +788,25 @@ def stage_layer4(run: Run):
             or (inputs.get("target") or {}).get("origin") != DEV_ORIGIN
             or inputs.get("contentMode") != "machine_checked"
             or any(not path.is_file() or inputs.get(key) != sha(path) for key, path in expected)
-            or any((state.get("stages") or {}).get(stage, {}).get("status") != "succeeded"
-                   for stage in ("publish_assets", "verify_assets", "publish_catalog", "live_readback"))):
+            or not all(intact(stage) for stage in PUBLISH_STAGES)):
         raise Stop("Layer 4 publish receipt needs reconciliation; refusing to deploy again")
+    # The catalog this run published, bound through the sealed overlay report the journal hashed.
+    catalog = workflow / "final-overlay/public/multilingual-v4.json"
+    seal = read(workflow / "final-overlay/seal-report.json")
+    published = (next((row for row in read(catalog).get("pages", []) if row.get("id") == page["pageId"]), None)
+                 if catalog.is_file() and sha(catalog) == seal.get("catalogV4Sha256") else None)
+    releases = {locale: ((published or {}).get("targets") or {}).get(locale) or {} for locale in spec["locales"]}
+    if not all(row.get("releasePackageUrl") and row.get("releasePackageJsonSha256") for row in releases.values()):
+        raise Stop("Layer 4 published catalog does not bind this page's releases; reconcile before retry")
 
     def passed_smoke(path):
         try:
             receipt = read(path)
+            passed = {row["locale"]: row for row in receipt.get("locales", []) if row.get("status") == "pass"}
             return (receipt.get("status") == "pass" and receipt.get("pageId") == page["pageId"]
-                    and receipt.get("origin") == DEV_ORIGIN
-                    and {row["locale"] for row in receipt.get("locales", []) if row.get("status") == "pass"}
-                    == set(spec["locales"])
+                    and receipt.get("origin") == DEV_ORIGIN and set(passed) == set(spec["locales"])
+                    and all(passed[locale].get(field) == releases[locale][field] for locale in spec["locales"]
+                            for field in ("releasePackageUrl", "releasePackageJsonSha256"))
                     and datetime.fromisoformat(receipt["checkedAt"]) >= datetime.fromisoformat(state["completedAt"]))
         except (OSError, ValueError, KeyError, TypeError):
             return False
@@ -775,9 +823,26 @@ def stage_layer4(run: Run):
 
 
 def stage_report(run: Run):
+    from tools.development import export_run_digest
     name = datetime.now(timezone.utc).strftime("%Y%m%d") + "-clip-e2e-" + run.spec["name"]
-    run.sh("report", [PY, ROOT / "tools/development/export_run_digest.py", run.dir, "--name", name])
-    run.mark("report", "done", name=name)
+    digest = ROOT / "artifacts/run-reports" / name
+    if digest.exists():
+        # The export was interrupted after writing, or the stage was not marked: accept only a complete
+        # digest of this run that still passes redaction; never overwrite or delete it here.
+        try:
+            manifest = read(digest / "manifest.json")
+        except (OSError, ValueError):
+            manifest = {}
+        require(manifest.get("name") == name
+                and [row.get("label") for row in manifest.get("runs", [])] == [run.dir.resolve().name],
+                "existing run digest does not match this run")
+        missing = export_run_digest.incomplete(digest)
+        if missing:
+            raise Stop(f"report: existing run digest {name} is incomplete; reconcile before retry: {missing[:5]}")
+        run.sh("report-verify", [PY, ROOT / "tools/development/export_run_digest.py", digest, "--verify"])
+    else:
+        run.sh("report", [PY, ROOT / "tools/development/export_run_digest.py", run.dir, "--name", name])
+    run.mark("report", "done", reportName=name)
 
 
 # ---------------------------------------------------------------- driver
@@ -832,7 +897,8 @@ def execute(run: Run, *, through: str | None = None) -> dict:
         stopped.append(str(stop))
     finally:
         finish_session(run)
-    summary = {"run": str(run.dir), "stages": run.stages, "stopped": stopped, "settledUsd": run.settled()}
+    summary = {"run": str(run.dir), "stages": run.stages, "stopped": stopped, "settledUsd": run.settled(),
+               "claudeListPriceEquivalentUsd": run.claude_list_price_equivalent()}
     write(run.dir / "summary.json", summary)
     return summary
 
@@ -891,7 +957,9 @@ def main(argv=None) -> int:
         return 0
     run = Run(args.spec, args.run_dir, publish=getattr(args, "publish", False))
     if args.command == "status":
-        print(json.dumps({"stages": run.stages, "settledUsd": run.settled(), "openQcCapsUsd": run.open_qc_caps()},
+        print(json.dumps({"stages": run.stages, "settledUsd": run.settled(),
+                          "claudeListPriceEquivalentUsd": run.claude_list_price_equivalent(),
+                          "openQcCapsUsd": run.open_qc_caps()},
                          ensure_ascii=False, indent=1))
         return 0
     if args.command == "repair-audio":
@@ -915,7 +983,8 @@ def main(argv=None) -> int:
             stopped.append(str(stop))
         finally:
             finish_session(run)
-        summary = {"run": str(run.dir), "stages": run.stages, "stopped": stopped, "settledUsd": run.settled()}
+        summary = {"run": str(run.dir), "stages": run.stages, "stopped": stopped, "settledUsd": run.settled(),
+                   "claudeListPriceEquivalentUsd": run.claude_list_price_equivalent()}
         write(run.dir / "summary.json", summary)
         print(json.dumps({"stopped": stopped, "settledUsd": summary["settledUsd"],
                           "audioStatus": run.stages["audio." + args.locale]["status"]}, ensure_ascii=False))

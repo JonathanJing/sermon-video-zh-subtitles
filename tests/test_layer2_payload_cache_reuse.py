@@ -82,7 +82,10 @@ class _BudgetAwareCaller(_Caller):
         self.assert_provenance(payload, response, provenance)
         self.reused.append(copy.deepcopy(provenance))
 
-    def recover_returned_response(self, _api_key, payload, response, _source_root):
+    def recover_returned_response(self, _api_key, payload, response, _source_root, *,
+                                  policy_migration=None):
+        if not isinstance(policy_migration, dict) or set(policy_migration) != {'before', 'after'}:
+            raise AssertionError("partial recovery policy migration proof missing")
         return self.paid_response_provenance(_api_key, payload, response)
 
     def validate_recovery_source(self, _api_key, _source_root):

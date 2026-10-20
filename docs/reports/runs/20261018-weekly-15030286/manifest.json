@@ -1551,7 +1551,8 @@
       "sha256": "efa45dd75d408f46b6f6bf7f08f63c7d8c641d4ec5460c956dcdf25a57d4eb97",
       "redactions": {
         "private_ip": 1,
-        "home_dir": 10
+        "home_dir": 10,
+        "private_drive_link": 1
       }
     },
     {

@@ -37,6 +37,7 @@
 | `authorization` | `approvedBy`、`evidence`（批准出处）、`defaultPass`（必须写明 "not a human review"） |
 | `budget` | `totalUsd` 是批准总额；`settledUsdBefore` 是此前已结算的花费，包括未标价转写的预留 |
 | `layer2.policyTemplates` / `plugins` | 每种语言：源周次冻结的政策，以及语言插件 |
+| `layer2.backend` | 可选，默认 `openai_api`；显式 `claude_cli_opus` 会把片段政策重新冻结为 Opus 5.5 high 初译及 medium 复核。Claude 订阅调用的列价等价金额单列，不计入 `budget.totalUsd`；文本和音频质检仍计入批准的美元总额。 |
 | `layer3.attestationTemplates` / `speakerRegistry` | 源周次的用户声音授权（会改绑到本片段的来源包）和说话人登记 |
 | `qc.maxRevisions` | 每种语言的文本质检最多打回 Layer 2 几次（0–3，默认 2） |
 | `page` | `pageId`（`mockup-…`）、三语展示文案（必须标明是测试）、可选的 Dev 基线缓存 |
@@ -79,6 +80,9 @@
 3. 质检账本里已标价的花费；
 4. 未标价的行（例如 `gpt-transcribe`），按它的预留金额计入；
 5. 本运行其他还没做完音频质检的语言，按其质检预算的完整上限计入。
+6. 音频质检失败的语言，其原质检授权和此前修复授权仍然有效：每份按上限减去其账本已预留的金额计入，所以 `repair-audio` 新开的授权不会与旧授权剩余额度叠加超出总额。
+
+Layer 2 选 `claude_cli_opus` 时，Layer 2 调用的列价等价金额单列为 `claudeListPriceEquivalentUsd`，不计入上面的“已结算”。
 
 所以同时开着的上限加上已结算，始终不超过批准总额。三语片段的质检上限是每语 5.525 美元（含二级 ASR），按语言依次开启，这是[周更运行配置](weekly-run-profile.zh.md)的规则。如果规划器判定放不下，就不写任何授权文件，这一阶段停下，等用户另行批准。
 
