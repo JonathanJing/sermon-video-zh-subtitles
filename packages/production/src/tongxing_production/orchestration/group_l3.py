@@ -48,8 +48,10 @@ def load_configuration(path: Path) -> dict:
     config = json.loads(path.read_text(encoding="utf-8"))
     _require(isinstance(config, dict) and config.get("schemaVersion") == CONFIG_SCHEMA,
              "invalid_group_l3_stages_config")
-    _require(set(config) <= {"schemaVersion", "paths", "variables", "stages"}
+    _require(set(config) <= {"schemaVersion", "paths", "variables", "stages", "note"}
              and {"schemaVersion", "paths", "stages"} <= set(config), "unknown_group_l3_stages_field")
+    _require("note" not in config or (isinstance(config["note"], str) and config["note"].strip()),
+             "invalid_group_l3_note")
     variables = config.get("variables") or {}
     _require(isinstance(variables, dict)
              and all(isinstance(value, str) and value for value in variables.values()),
@@ -65,7 +67,8 @@ def load_configuration(path: Path) -> dict:
     seen = set()
     for stage in stages:
         _require(isinstance(stage, dict)
-                 and {"name", "command", "produces"} <= set(stage) <= {"name", "command", "produces", "failures"}
+                 and {"name", "command", "produces"} <= set(stage)
+                 <= {"name", "command", "produces", "failures", "note"}
                  and isinstance(stage["name"], str) and STAGE_NAME.fullmatch(stage["name"])
                  and stage["name"] not in seen
                  and isinstance(stage["command"], list) and stage["command"]
@@ -101,7 +104,7 @@ def run_stages(config: dict, out: Path, *, dry_run: bool = False) -> dict:
               "startedAt": _now(), "stages": [], "releaseEligible": False, "humanApproval": False}
     for stage in config["stages"]:
         name = stage["name"]
-        produces = out / stage["produces"]
+        produces = out / _substitute(stage["produces"], paths)
         if produces.exists():
             report["stages"].append({"name": name, "status": "skipped_existing",
                                      "produces": str(produces)})
@@ -122,7 +125,7 @@ def run_stages(config: dict, out: Path, *, dry_run: bool = False) -> dict:
                      exitCode=completed.returncode,
                      stdoutTail=_tail(completed.stdout), stderrTail=_tail(completed.stderr))
         if completed.returncode != 0:
-            group_ids = _failed_groups(out, stage)
+            group_ids = _failed_groups(out, stage, paths)
             entry.update(status="failed", failedGroupIds=group_ids)
             report["stages"].append(entry)
             report["status"] = "failed"
@@ -145,12 +148,12 @@ def run_stages(config: dict, out: Path, *, dry_run: bool = False) -> dict:
     return report
 
 
-def _failed_groups(out: Path, stage: dict) -> list[str]:
+def _failed_groups(out: Path, stage: dict, paths: dict) -> list[str]:
     """Group IDs a failed producer named in its own summary, if the stage declares one."""
     name = stage.get("failures")
     if not name:
         return []
-    path = Path(out) / name
+    path = Path(out) / _substitute(name, paths)
     if not path.is_file():
         return []
     try:
