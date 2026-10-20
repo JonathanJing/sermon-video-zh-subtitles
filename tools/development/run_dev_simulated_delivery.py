@@ -192,7 +192,8 @@ def _run(args):
         baseline_catalog = contract.snapshot_catalog_v4(base)
     page_id = manifest['pageId']
     contract.require(page_id.startswith(('mockup-', 'dryrun-', 'dev-')), 'Diagnostic page ID required')
-    contract.require(set(manifest['releases']) == {'zh-Hans', 'ko', 'es'}, 'Three locales required')
+    locales = set(manifest['releases'])
+    contract.require(locales and locales <= {'zh-Hans', 'ko', 'es'}, 'At least one known locale required')
     contract.require(all(page['id'] != page_id for page in baseline_catalog['pages']),
                      'Test page already exists; build a new run-specific page ID')
     contents = [preparation.read(prepared / 'public' / preparation.safe_relative(row['path']))
@@ -200,13 +201,13 @@ def _run(args):
     if machine:
         # Real machine-checked content on an isolated test page: formal v3 content with its
         # disclosure, published without the source video (content v3 does not bind one).
-        contract.require(len(contents) == 3 and all(
+        contract.require(len(contents) == len(locales) and all(
             c.get('schemaVersion') == 'sermon-full-video-text-content-v3' and c.get('status') == contract.MACHINE_CHECKED
             and c.get('reviewMode') == 'formal' and c.get('disclosure') for c in contents),
             'Explicit machine-checked content required')
         contract.require(args.source_video is None, 'Machine-checked test pages publish no source video')
     else:
-        contract.require(len(contents) == 3 and all(c.get('reviewMode') == 'simulation' for c in contents),
+        contract.require(len(contents) == len(locales) and all(c.get('reviewMode') == 'simulation' for c in contents),
                          'Explicit simulated content required')
     for content in ([] if machine else contents):
         relative = preparation.safe_relative(content['sourceVideoUrl'])
