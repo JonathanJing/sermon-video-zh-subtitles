@@ -1,0 +1,34 @@
+{
+  "status": "passed",
+  "baseCommit": "1e9c6140",
+  "codeCommit": "78e96150",
+  "commands": [
+    {
+      "name": "targeted unittest",
+      "tests": 59,
+      "exitCode": 0,
+      "seconds": 3.462
+    },
+    {
+      "name": "legacy CLI help",
+      "exitCode": 0
+    },
+    {
+      "name": "diff check",
+      "exitCode": 0
+    },
+    {
+      "name": "implementation path assertion",
+      "exitCode": 0
+    }
+  ],
+  "coverage": [
+    "legacy import alias",
+    "PDF rendering and QA",
+    "interpretation font constants",
+    "legacy CLI from nonrepository working directory",
+    "path alias and loaded code identity",
+    "post-live command construction"
+  ],
+  "externalCalls": 0
+}

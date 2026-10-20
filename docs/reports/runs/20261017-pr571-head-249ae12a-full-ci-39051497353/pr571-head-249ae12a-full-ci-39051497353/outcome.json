@@ -1,0 +1,18 @@
+{
+  "status": "passed",
+  "exitCode": 0,
+  "deliveryType": "test",
+  "scope": "GitHub Actions Python tests for PR #571 exact current head",
+  "pr": 571,
+  "runId": 39051497353,
+  "runUrl": "https://github.com/JonathanJing/sermon-video-zh-subtitles/actions/runs/39051497353",
+  "headSha": "249ae12a34d19baaaaf899e2e1e1ad0106cf1c9c",
+  "startedAt": "2026-10-17T16:55:14Z",
+  "endedAt": "2026-10-17T17:15:48Z",
+  "workflowConclusion": "success",
+  "rootShardsPassed": 8,
+  "unittestAggregator": "success",
+  "nativeContractJob": "skipped",
+  "productionRun": "not_run",
+  "publication": "not_run"
+}

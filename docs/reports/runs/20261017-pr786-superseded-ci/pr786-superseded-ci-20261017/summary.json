@@ -1,0 +1,20 @@
+{
+  "status": "cancelled",
+  "headSha": "bf4a4fed079b4bb9715d78f7ed06a1116db01903",
+  "runs": [
+    {
+      "runId": 39068146465,
+      "workflow": "Python tests",
+      "conclusion": "cancelled",
+      "rootGroups": "cancelled before terminal pass"
+    },
+    {
+      "runId": 39068288187,
+      "workflow": "Tongxing iOS",
+      "conclusion": "cancelled"
+    }
+  ],
+  "reason": "superseded by the review-fix head 84fd2edd315f94dca9315f92c33e98e31ee1b572",
+  "acceptedAsPassingEvidence": false,
+  "nextRun": 39068576083
+}

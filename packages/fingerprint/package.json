@@ -1,0 +1,19 @@
+{
+  "name": "@tongxing/fingerprint",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Spectral-landmark audio fingerprint shared by the listening web client, the iOS golden fixtures and the production precompute CLI.",
+  "type": "module",
+  "exports": {
+    ".": "./src/fingerprint-core.mjs"
+  },
+  "bin": {
+    "build-fingerprint-index": "./bin/build_fingerprint_index.mjs"
+  },
+  "scripts": {
+    "test": "node --test test/*.test.mjs"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

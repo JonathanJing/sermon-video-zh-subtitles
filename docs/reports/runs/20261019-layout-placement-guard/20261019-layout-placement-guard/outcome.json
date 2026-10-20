@@ -1,0 +1,14 @@
+{
+  "status": "pass",
+  "exitCode": 0,
+  "deliveryType": "test",
+  "purpose": "scripts/ layout guard test (local)",
+  "startedAt": "2026-10-20T00:05:00Z",
+  "endedAt": "2026-10-20T00:06:00Z",
+  "results": {
+    "passed": 2,
+    "negativeCheck": "a probe file scripts/zz_probe_new.py made test_no_new_files_under_scripts fail, then was removed"
+  },
+  "modelCalls": 0,
+  "humanApproval": false
+}

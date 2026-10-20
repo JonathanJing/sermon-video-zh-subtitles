@@ -1,0 +1,9 @@
+{
+  "humanApproval": false,
+  "noTranscriptCorrection": true,
+  "receiptFileSha256": "2047e849b7a2b4cb23f43d6bd3aa31d98effb35aa9a1c69761d0753d9a265829",
+  "result": "meaning_notes_produced",
+  "schemaVersion": "source-meaning-run-outcome-v1",
+  "status": "completed",
+  "unitCount": 7
+}

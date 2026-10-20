@@ -12,8 +12,9 @@ import unittest
 class FingerprintPrecomputeTests(unittest.TestCase):
     def test_binding_hashes_real_track_and_rejects_stale_landmarks(self):
         here = Path(__file__).resolve().parent
+        package = here.parents[1] / 'packages/fingerprint'
         algorithm = subprocess.check_output(['node', '--input-type=module', '-e',
-            "import { CONFIG } from './web/fingerprint-core.mjs'; console.log(CONFIG.algorithmVersion)"], cwd=here, text=True).strip()
+            "import { CONFIG } from './src/fingerprint-core.mjs'; console.log(CONFIG.algorithmVersion)"], cwd=package, text=True).strip()
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)
             cache, track, output = root / 'source.json', root / 'track.mp3', root / 'index.json'
@@ -22,7 +23,7 @@ class FingerprintPrecomputeTests(unittest.TestCase):
                 'sourceSha256': 'a' * 64, 'sourceStartSeconds': 10, 'sourceEndSeconds': 20,
                 'durationSeconds': 10, 'landmarkCount': 1, 'postings': {'fixture': [1]}}))
             sha = lambda p: hashlib.sha256(p.read_bytes()).hexdigest()
-            command = ['node', str(here / 'build_fingerprint_index.mjs'), '--mode', 'bind',
+            command = ['node', str(package / 'bin/build_fingerprint_index.mjs'), '--mode', 'bind',
                 '--precomputed', str(cache), '--precomputed-sha', sha(cache), '--source-sha', 'a' * 64,
                 '--start', '10', '--end', '20', '--track', str(track), '--page-id', 'test-page', '--out', str(output)]
             subprocess.run(command, check=True, capture_output=True)

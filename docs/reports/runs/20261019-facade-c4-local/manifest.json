@@ -1,0 +1,177 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261019-facade-c4-local",
+  "runs": [
+    {
+      "label": "c4-local",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.claude/worktrees/opus-haiku-translation-review-4a3b7c/artifacts/c4-local",
+      "skipped": {
+        ".txt": 3,
+        ".json": 10
+      }
+    }
+  ],
+  "files": [
+    {
+      "run": "c4-local",
+      "path": "facade-survey.log",
+      "kind": "log",
+      "bytes": 53,
+      "truncated": false,
+      "sha256": "e70c2e63c32f104fc0fd40a6727c92ef495b46f4ce7fe03ab83fa9e5ad4b7627",
+      "redactions": {}
+    },
+    {
+      "run": "c4-local",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 1028,
+      "truncated": false,
+      "sha256": "e15a2e564e31abf873dc1739c314e2cb7590c1c4b193159a7b09bfdf2143d5bf",
+      "redactions": {}
+    },
+    {
+      "run": "c4-local",
+      "path": "pytest.log",
+      "kind": "log",
+      "bytes": 2226,
+      "truncated": false,
+      "sha256": "909b555135fdbc55659984d44698de57068478763f64d7a7e457bfb3f9e2f285",
+      "redactions": {}
+    },
+    {
+      "run": "c4-local",
+      "path": "shards/s0.log",
+      "kind": "log",
+      "bytes": 12943,
+      "truncated": true,
+      "sha256": "b1d00b3e71e34ef12a479f5fc926afc1bb3d7816166fbe4c2f891a17873be43d",
+      "redactions": {}
+    },
+    {
+      "run": "c4-local",
+      "path": "shards/s1.log",
+      "kind": "log",
+      "bytes": 8547,
+      "truncated": false,
+      "sha256": "fc6e6365236ad12828c988c4ff1fb3c4caf8570819d663f579b2c93483d7fa10",
+      "redactions": {}
+    },
+    {
+      "run": "c4-local",
+      "path": "shards/s2.log",
+      "kind": "log",
+      "bytes": 19310,
+      "truncated": true,
+      "sha256": "e39972ca8ba6292fe9b6790f23477d0a24db22afb20a48916e8525ada185071f",
+      "redactions": {}
+    },
+    {
+      "run": "c4-local",
+      "path": "shards/s3.log",
+      "kind": "log",
+      "bytes": 15496,
+      "truncated": true,
+      "sha256": "9428fdf4d347522176558d7ee779556f39bf007345fb11cede716b192f095299",
+      "redactions": {}
+    },
+    {
+      "run": "c4-local",
+      "path": "shards/s4.log",
+      "kind": "log",
+      "bytes": 9658,
+      "truncated": true,
+      "sha256": "67c742f3be40cef52506bfa5a1902523ccbc091f85ce74fb6dcf7a193f86de10",
+      "redactions": {}
+    },
+    {
+      "run": "c4-local",
+      "path": "shards/s5.log",
+      "kind": "log",
+      "bytes": 11638,
+      "truncated": true,
+      "sha256": "98d7b4c299eb4b4d8ec90eef9141ec81259e4a8f7d34f767dfbc6c46ee9bee6a",
+      "redactions": {}
+    },
+    {
+      "run": "c4-local",
+      "path": "shards/s6.log",
+      "kind": "log",
+      "bytes": 23964,
+      "truncated": true,
+      "sha256": "a35fff3264b378893941d6d60d85f4856c5c313ac3bf57fd4453f62efc14a9b3",
+      "redactions": {}
+    },
+    {
+      "run": "c4-local",
+      "path": "shards/s7.log",
+      "kind": "log",
+      "bytes": 15067,
+      "truncated": true,
+      "sha256": "e7889c2df1074ac921bc6e422c66075ee929e7d3e6b889798059eae4874df8f6",
+      "redactions": {}
+    },
+    {
+      "run": "c4-local",
+      "path": "shards/s8.log",
+      "kind": "log",
+      "bytes": 15050,
+      "truncated": true,
+      "sha256": "7d66f5ef6dc54c675334135937d1a1c19cf46181d8815e11af308e301b792d7a",
+      "redactions": {}
+    },
+    {
+      "run": "c4-local",
+      "path": "shards/s9.log",
+      "kind": "log",
+      "bytes": 21201,
+      "truncated": true,
+      "sha256": "ec2cc19eff0cdc7ce4f60457773a1ed9e2cdb6bb0469bf1fe00222b393990054",
+      "redactions": {}
+    },
+    {
+      "run": "c4-local",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 1326,
+      "truncated": false,
+      "sha256": "5246a0a7240f3f53875f3b5703cf196bcb8034e3e76eed3a9e19c20a730e099a",
+      "redactions": {}
+    },
+    {
+      "run": "c4-local",
+      "path": "targeted-before-fix.log",
+      "kind": "log",
+      "bytes": 43231,
+      "truncated": true,
+      "sha256": "23e4015789eebbbc8a340a25d4762d7ad981607fc849ec6c09a6e616f4b1d169",
+      "redactions": {
+        "email": 20,
+        "home_dir": 18
+      }
+    },
+    {
+      "run": "c4-local",
+      "path": "test-id-inventory.log",
+      "kind": "log",
+      "bytes": 767,
+      "truncated": false,
+      "sha256": "cf6f6f38a3972023348ec23940ca6035ddd7984463b0da84ff94a5106e81422e",
+      "redactions": {}
+    },
+    {
+      "run": "c4-local",
+      "path": "unittest-shards.log",
+      "kind": "log",
+      "bytes": 604,
+      "truncated": false,
+      "sha256": "5b4b895eee6636fde75288ce77fd3f7a954adf9a0367c1a9691e5963874d900c",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

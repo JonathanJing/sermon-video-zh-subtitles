@@ -21,7 +21,7 @@ from jsonschema import Draft202012Validator, FormatChecker
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parents[1]
 SCHEMA = ROOT / "schemas/sermon-field-benchmark-manifest-v1.schema.json"
-CORE = ROOT / "experiments/sermon-dubbing-poc/web/fingerprint-core.mjs"
+CORE = ROOT / "packages/fingerprint/src/fingerprint-core.mjs"
 WORKER = HERE / "measure-case.mjs"
 MAX_MANIFEST_BYTES = 8 * 1024 * 1024
 STATUSES = ("accepted", "rejected", "failed", "timeout")

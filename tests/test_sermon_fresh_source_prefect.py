@@ -10,13 +10,14 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-from scripts import sermon_accounting as accounting
+from tongxing_production.observability import accounting
 from scripts import sermon_bounded_business_callbacks as offline
 from scripts import sermon_fresh_diagnostic as fresh
 from scripts import sermon_fresh_source_prefect as engine
-from scripts import sermon_log_contract as log
-from scripts import sermon_review_contracts as c
-from scripts import sermon_public_snapshot as public
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.observability import log_contract as log
+from tongxing_production.review import contracts as c
+from tongxing_production.storage import snapshot as public
 from tests import test_sermon_fresh_source_causality as fixtures
 
 
@@ -40,9 +41,9 @@ def clean_child(payload_path):
     expected = value['plan']['executionIdentity']
     repository = Path(engine.__file__).resolve().parents[1]
     for name, digest in expected['loadedProjectCodeSha256'].items():
-        assert name.startswith('scripts/') and name.endswith('.py')
+        module_name = accounting.code_module_name(name)
         assert c.bytes_sha256((repository/name).read_bytes()) == digest
-        importlib.import_module(name[:-3].replace('/', '.'))
+        importlib.import_module(module_name)
     assert accounting.execution_identity() == expected, 'fresh clean code identity must match'
     def respond(request, timeout, *, deadline):
         assert value['allowSourceCalls'], 'normal repeat must not call synthetic providers'

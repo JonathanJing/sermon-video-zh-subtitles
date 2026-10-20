@@ -1,0 +1,76 @@
+{
+  "schemaVersion": "sermon-layer2-auto-repair-receipt-v1",
+  "routingVersion": "layer2-auto-repair-routing-v1",
+  "lineage": {
+    "targetLocale": "ko",
+    "englishSourcePackageJsonSha256": "95f3f48f6a2ce27aba563e7e7d9777764c1dc446a4cac23bb5c4ac696f55ae41",
+    "anchorManifestSha256": "ad3a80ae16c4fac27648d79645301f9b4029b6a87a7b01b89218db63343fda22",
+    "translationPolicySha256": "1afffd33d85b20f6e774d697e68fd2c1416adcbe0614cf274f800f519c9df437"
+  },
+  "status": "repair_stopped",
+  "rounds": 4,
+  "finalRunDirectory": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-r/l2-ko-r1/text/ko/repair-rounds/round-004",
+  "evidenceSha256": "5e1b3deb2452beba78ec3b6facdd1bb3c221c8ca6bd2e9d925d9e4f553e804b2",
+  "initialSpend": {
+    "calls": 100,
+    "callsWithoutUsage": 0,
+    "tokens": 615614
+  },
+  "repairSpend": {
+    "calls": 4,
+    "tokens": 29171
+  },
+  "stoppedGroups": [
+    {
+      "translationGroupId": "translation-0-u284",
+      "sourceUnitIds": [
+        "0-u284"
+      ],
+      "failureCodes": [
+        "negation_number_name_error"
+      ],
+      "reasonCode": "repair_spend_cap",
+      "evidencePath": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-r/l2/text/ko/repair-rounds/round-002"
+    },
+    {
+      "translationGroupId": "translation-0-u285",
+      "sourceUnitIds": [
+        "0-u285"
+      ],
+      "failureCodes": [
+        "negation_number_name_error"
+      ],
+      "reasonCode": "repair_spend_cap",
+      "evidencePath": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-r/l2/text/ko/repair-rounds/round-002"
+    },
+    {
+      "translationGroupId": "translation-0-u288",
+      "sourceUnitIds": [
+        "0-u288"
+      ],
+      "failureCodes": [
+        "meaning_shift",
+        "negation_number_name_error"
+      ],
+      "reasonCode": "repair_spend_cap",
+      "evidencePath": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-r/l2/text/ko/repair-rounds/round-002"
+    },
+    {
+      "translationGroupId": "translation-0-u307",
+      "sourceUnitIds": [
+        "0-u307"
+      ],
+      "failureCodes": [
+        "meaning_shift"
+      ],
+      "reasonCode": "repair_spend_cap",
+      "evidencePath": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-r/l2/text/ko/repair-rounds/round-002"
+    }
+  ],
+  "gatesPassed": [],
+  "releaseAuthority": "none",
+  "ledgerRoot": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-r/l2/.layer2-jobs.layer2-repair",
+  "ledgerHeadSha256": "ffc364bc333ab465808a23432289ad4d4f22b3e5418d80a8e4f30c4f5a7cfdbd",
+  "humanApproval": false,
+  "reviewKind": "machine_review"
+}

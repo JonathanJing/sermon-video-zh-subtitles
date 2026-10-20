@@ -1,0 +1,2 @@
+baseline, old CLI and new CLI agree: exit 0
+terminal result: PASS: 42 native symbols resolved by 48 SVG drawings (0 explicit legacy action mappings); both readers synchronized

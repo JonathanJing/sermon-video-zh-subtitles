@@ -1,0 +1,7 @@
+{
+  "status": "cancelled",
+  "run": "https://github.com/JonathanJing/sermon-video-zh-subtitles/actions/runs/39044491505",
+  "head": "34ffd1ca70fe7da88ce1f435a146f18761b8421d",
+  "reason": "combined child image run 39044515997 passed and covered parent schema loader",
+  "imagePublished": false
+}

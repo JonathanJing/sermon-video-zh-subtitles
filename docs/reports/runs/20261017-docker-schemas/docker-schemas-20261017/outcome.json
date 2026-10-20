@@ -1,0 +1,8 @@
+{
+  "schemaVersion": "sermon-test-run-outcome-v1",
+  "status": "passed_with_environment_limit",
+  "exitCode": 0,
+  "startedAt": "2026-10-17T14:48:14.796580Z",
+  "endedAt": "2026-10-17T14:48:14.796580Z",
+  "testScope": "Dockerfile schema COPY assertion and local host schema validator smoke; Docker unavailable"
+}

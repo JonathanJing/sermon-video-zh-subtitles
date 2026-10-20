@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261018-a4-fb640-full",
+  "runs": [
+    {
+      "label": "20261018-a4-fb640-full",
+      "source": "~/.codex/worktrees/g1-a4-audio/sermon-video-zh-subtitles/artifacts/local-runs/20261018-a4-fb640-full",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "20261018-a4-fb640-full",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 170,
+      "truncated": false,
+      "sha256": "dfb0e8f29cfe322b364029e5a4faa5012e6a97d0ea2f11eb856181a4e1b5e34c",
+      "redactions": {}
+    },
+    {
+      "run": "20261018-a4-fb640-full",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 152,
+      "truncated": false,
+      "sha256": "a3ecb3abf9f1e73f73259d315a3efb816715be54ea1dc174c6e2ba1341c7e891",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

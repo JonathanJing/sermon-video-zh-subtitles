@@ -22,7 +22,7 @@ Speaker Voice Registry（长期缓存依赖）───────────�
 - 讲员训练是低频资产准备，不是每周生产层。翻译可以在 checkpoint resolve／训练进行时继续；实际 Layer 3 合成同时等待本语言文字门禁和 voice capability。
 - Layer 1 identity 改变使所有 locale 失效；Layer 2 改变只使同 locale 的 Layer 3/4 失效；checkpoint 改变只使依赖它的 Layer 3/4 失效。
 
-可执行的计划编译器是 [`prepare_multilingual_weekly_plan.py`](../scripts/prepare_multilingual_weekly_plan.py)，输出 [`sermon-multilingual-weekly-plan-v1`](../schemas/sermon-multilingual-weekly-plan-v1.schema.json)。每个 lane 有独立 lease key；生产模式 fail closed，要求正式 Layer 1、对应用途授权和本语言人工认可。Shadow 模式允许 `unverified_poc`，但输出不能用于发布。
+可执行的计划编译器是 [`prepare_multilingual_weekly_plan.py`](../packages/production/src/tongxing_production/delivery/prepare_multilingual_weekly_plan.py)，输出 [`sermon-multilingual-weekly-plan-v1`](../schemas/sermon-multilingual-weekly-plan-v1.schema.json)。每个 lane 有独立 lease key；生产模式 fail closed，要求正式 Layer 1、对应用途授权和本语言人工认可。Shadow 模式允许 `unverified_poc`，但输出不能用于发布。
 
 ## 独立声音注册表
 
@@ -48,7 +48,7 @@ Speaker Voice Registry（长期缓存依赖）───────────�
 
 统一试听文稿位于 [`multilingual-voice-demo-script-v1.json`](../experiments/sermon-dubbing-poc/multilingual-voice-demo-script-v1.json)。四种文字表达相同短段落的意思，scope 固定为 `voice_capability_audition_not_sermon_translation`；它们不是讲员原话、某周证道译文或正式字幕。
 
-[`render_multilingual_voice_demos.py`](../scripts/render_multilingual_voice_demos.py) 以讲员为单位加载现有 SFT checkpoint，再顺序生成本讲员的中文、韩语和西班牙语，避免每种语言重复加载模型。[`render_vietnamese_voice_demos.py`](../scripts/render_vietnamese_voice_demos.py) 只消费 Registry 的越南语 adapter override，以同一讲员已授权原声参考进行零样本克隆。两个 renderer 的输出不能互换审核状态。每条输出绑定：
+[`render_multilingual_voice_demos.py`](../tools/ops/render_multilingual_voice_demos.py) 以讲员为单位加载现有 SFT checkpoint，再顺序生成本讲员的中文、韩语和西班牙语，避免每种语言重复加载模型。[`render_vietnamese_voice_demos.py`](../experiments/sermon-dubbing-poc/render_vietnamese_voice_demos.py) 只消费 Registry 的越南语 adapter override，以同一讲员已授权原声参考进行零样本克隆。两个 renderer 的输出不能互换审核状态。每条输出绑定：
 
 - registry、统一文稿和 renderer hash；
 - speaker、checkpoint ref/hash、locale 和 Qwen language 参数；
@@ -58,13 +58,13 @@ Speaker Voice Registry（长期缓存依赖）───────────�
 示例：
 
 ```bash
-python scripts/render_multilingual_voice_demos.py \
+python tools/ops/render_multilingual_voice_demos.py \
   --registry config/speaker-voice-registry.json \
   --script experiments/sermon-dubbing-poc/multilingual-voice-demo-script-v1.json \
   --checkpoint-map /private/path/speaker-checkpoints.json \
   --out artifacts/sermon-dubbing/2026-09-21-multilingual-voice-demos
 
-python scripts/render_vietnamese_voice_demos.py \
+python experiments/sermon-dubbing-poc/render_vietnamese_voice_demos.py \
   --registry config/speaker-voice-registry.json \
   --script experiments/sermon-dubbing-poc/multilingual-voice-demo-script-v1.json \
   --references experiments/sermon-dubbing-poc/multilingual-voice-demo-references-v1.json \
@@ -74,7 +74,7 @@ python scripts/render_vietnamese_voice_demos.py \
 
 输出目录已由根 `.gitignore` 排除。已有单条 WAV 只有在其 receipt 完整匹配当前输入时才能恢复；不匹配时停止，不覆盖旧试听。
 
-两种 adapter 完成后，先用 [`screen_multilingual_voice_demos.py`](../scripts/screen_multilingual_voice_demos.py) 对完整矩阵做 Qwen3-ASR 回转写；相似度只用于安排复核优先级，不是发音或自然度裁判。再用 [`package_multilingual_voice_demos.py`](../scripts/package_multilingual_voice_demos.py) 核对 Registry 的完整讲员 × locale 矩阵，将 WAV 编码为 128 kbps、44.1 kHz、mono MP3，并逐个完整解码。交付 manifest 保持 `humanListeningStatus=pending`，不能因文件可播放或 ASR 相似度高就升级能力状态。
+两种 adapter 完成后，先用 [`screen_multilingual_voice_demos.py`](../experiments/sermon-dubbing-poc/screen_multilingual_voice_demos.py) 对完整矩阵做 Qwen3-ASR 回转写；相似度只用于安排复核优先级，不是发音或自然度裁判。再用 [`package_multilingual_voice_demos.py`](../experiments/sermon-dubbing-poc/package_multilingual_voice_demos.py) 核对 Registry 的完整讲员 × locale 矩阵，将 WAV 编码为 128 kbps、44.1 kHz、mono MP3，并逐个完整解码。原 `python3 experiments/sermon-dubbing-poc/package_multilingual_voice_demos.py` 命令仍可使用。交付 manifest 保持 `humanListeningStatus=pending`，不能因文件可播放或 ASR 相似度高就升级能力状态。
 
 ## 本轮 demo 授权与限制
 
@@ -86,6 +86,6 @@ python scripts/render_vietnamese_voice_demos.py \
 
 本轮实跑已生成 6 位讲员 × 4 个 locale 共 24 条 WAV，并编码为 24 条 MP3；源 WAV 与交付 MP3 均完成全文件解码。Qwen3-ASR 完整覆盖筛查中，韩语和西班牙语为 1.00，中文约为 0.97；6 条越南语全部低于 0.85，已标为人工复核优先项。这个结果只证明文件可解码并给出文本一致性风险信号：所有新语言仍等待母语人耳审核，越南语不得进入正式生产。
 
-统一试听页可从 v2 交付目录离线重建：`python scripts/build_multilingual_voice_preview.py --root artifacts/sermon-dubbing/2026-09-21-multilingual-voice-demos-v2`。目录内若没有注册表与文稿快照，生成器从仓库的 `config/speaker-voice-registry.json` 和 `experiments/sermon-dubbing-poc/multilingual-voice-demo-script-v1.json` 读取，并核对交付清单哈希。它逐条比对生成清单中的 checkpoint 或越南语 adapter 身份与当前注册表、WAV／MP3 哈希，完整解码 24 条 MP3，随后写入同目录的 `index.html` 与 `preview-verification.json`。页面按讲员／语言筛选和播放，分别标示本次样音听审与既有语言能力状态；它本身不修改 Registry、正式音轨或发布资格。
+统一试听页可从 v2 交付目录离线重建：`python tools/ops/build_multilingual_voice_preview.py --root artifacts/sermon-dubbing/2026-09-21-multilingual-voice-demos-v2`。目录内若没有注册表与文稿快照，生成器从仓库的 `config/speaker-voice-registry.json` 和 `experiments/sermon-dubbing-poc/multilingual-voice-demo-script-v1.json` 读取，并核对交付清单哈希。它逐条比对生成清单中的 checkpoint 或越南语 adapter 身份与当前注册表、WAV／MP3 哈希，完整解码 24 条 MP3，随后写入同目录的 `index.html` 与 `preview-verification.json`。页面按讲员／语言筛选和播放，分别标示本次样音听审与既有语言能力状态；它本身不修改 Registry、正式音轨或发布资格。
 
 2026-09-20 证道六句片段的 Eric 单讲员实跑得到同样方向：中文 `0.961905`、韩语 `0.878505`、西班牙语 `1.0` 通过机器筛查门线，越南语 `0.195652` 进入人工复核优先。该结果足以冻结“筛查失败时停止晋升”的调度规则，但不足以断言前三种语言已通过发音、自然度或讲员相似度审核。越南语下一步保留 Gwen-TTS 为基线，同时对支持越南语声音克隆的候选 adapter 做相同文本、相同参考音频、相同 ASR 与母语盲听条件的对照；在对照完成前不把任何新 adapter 写成 Registry 的生产能力。具体固化步骤见[多语言片段 POC 固化流程](multilingual-fragment-poc-solidification.zh.md)。

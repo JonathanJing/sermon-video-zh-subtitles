@@ -1,0 +1,39 @@
+#!/usr/bin/env python3
+"""Dev-only audio entry: consume profile defaults through real producers.
+
+Pass the existing producer's required arguments after the stage. No retries,
+model dispatch on merge, approval, deployment or locale orchestration is added.
+"""
+from __future__ import annotations
+
+import argparse
+from pathlib import Path
+import sys
+
+if __package__ in {None, ""}:
+    sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+
+
+def main(argv=None):
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("stage", choices=("tts", "back-asr"))
+    parser.add_argument("producer_arguments", nargs=argparse.REMAINDER,
+                        help="Existing formal producer arguments; --batch-size may select a baseline/comparison")
+    args = parser.parse_args(argv)
+    forwarded = list(args.producer_arguments)
+    if forwarded[:1] == ["--"]:
+        forwarded.pop(0)
+    if any(value == "--dev-test" or value.startswith("--dev-test=") for value in forwarded):
+        parser.error("Dev mode is already enabled by this entry")
+    from scripts import tongxing_host  # noqa: F401  binds the production package ports
+    if args.stage == "tts":
+        from tongxing_production.audio import renderer as producer
+    else:
+        from tongxing_production.audio import screening as producer
+    # parse_args in the producer rejects unsupported settings;
+    # producer exceptions and exit status propagate without retries.
+    producer.main(["--dev-test", *forwarded])
+
+
+if __name__ == "__main__":
+    main(sys.argv[1:])

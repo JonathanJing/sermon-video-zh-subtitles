@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-outcome-marker-move-local-6",
+  "runs": [
+    {
+      "label": "outcome-marker-move-local-6",
+      "source": "/private/tmp/sermon-outcome-marker-move-20261017/artifacts/outcome-marker-move-local-6",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "outcome-marker-move-local-6",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 313,
+      "truncated": false,
+      "sha256": "f673cb852402346b39c553dfee3d21200b6c86d5fd7c0f24de5b6d3be9570647",
+      "redactions": {}
+    },
+    {
+      "run": "outcome-marker-move-local-6",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 449,
+      "truncated": false,
+      "sha256": "1b9b4afec83714db7325b0d41be8cca3fa05ec99954a9dd61dd83a30dc5e54a7",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

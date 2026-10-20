@@ -9,13 +9,14 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-from scripts import build_formal_dev_release_assets as assets_builder
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.delivery import formal_assets as assets_builder
 
 
 ROOT = Path(__file__).resolve().parents[1]
-SPEC = importlib.util.spec_from_file_location("stage_formal_multilingual_dev", ROOT / "scripts/stage_formal_multilingual_dev.py")
-MODULE = importlib.util.module_from_spec(SPEC)
-SPEC.loader.exec_module(MODULE)
+# The implementation moved to tongxing_production.delivery.formal_stage (L4 D2);
+# the scripts/ path is a facade naming the same module object.
+from tongxing_production.delivery import formal_stage as MODULE  # noqa: E402
 
 
 class FormalDevStageTests(unittest.TestCase):

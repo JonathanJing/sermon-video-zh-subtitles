@@ -12,14 +12,16 @@ from unittest.mock import patch
 
 from scripts import sermon_fresh_diagnostic_source as fresh
 from scripts import sermon_fresh_diagnostic as entry
-from scripts import sermon_review_contracts as c
-from scripts import sermon_review_budget as budget
+from tongxing_production.review import contracts as c
+from tongxing_production.review import review_budget as budget
 from scripts import sermon_diagnostic_provider as provider
-from scripts import sermon_log_profile as profile
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.observability import profile
 from scripts import sermon_strict_layer2 as immutable
-from scripts import sermon_accounting as accounting
+from tongxing_production.observability import accounting
 from scripts import sermon_bounded_business_callbacks as callbacks
-from scripts import sermon_public_snapshot as aggregate
+from tongxing_production.storage import snapshot as aggregate
+from tongxing_production import path_aliases
 from tests.diagnostic_dag_fixture import DiagnosticDAGFixture
 
 
@@ -102,7 +104,7 @@ class FreshPreloadTests(unittest.TestCase):
             from unittest.mock import patch
             sys.path.insert(0, sys.argv[1])
             from scripts import sermon_fresh_diagnostic as entry
-            from scripts import sermon_accounting as accounting
+            from scripts import tongxing_host; from tongxing_production.observability import accounting
             from scripts import sermon_strict_layer2 as strict
             from tests.test_sermon_strict_layer2 import StrictAdapterTests
             fixture = StrictAdapterTests()
@@ -111,7 +113,7 @@ class FreshPreloadTests(unittest.TestCase):
                 assert 'scripts.sermon_trace_artifacts' not in sys.modules
                 frozen = entry.preload_execution_modules([
                     Path(sys.argv[1]) / 'scripts/language_review_plugins/diagnostic_structural.py'])
-                assert 'scripts/sermon_trace_artifacts.py' in frozen['loadedProjectCodeSha256']
+                assert 'packages/production/src/tongxing_production/observability/trace_artifacts.py' in frozen['loadedProjectCodeSha256']
                 with patch('urllib.request.OpenerDirector.open', side_effect=AssertionError('network forbidden')) as network:
                     with fixture.session():
                         fixture.generate()
@@ -153,15 +155,16 @@ class FreshPreloadTests(unittest.TestCase):
             directory = Path(sys.argv[2])
             sys.path.insert(0, str(repository))
             from scripts import sermon_fresh_diagnostic as entry
-            from scripts import sermon_accounting as accounting
-            from scripts import sermon_log_profile as profile
-            assert 'scripts.sermon_workflow_evidence' not in sys.modules
+            from scripts import tongxing_host; from tongxing_production.observability import accounting
+            from tongxing_production.observability import profile
+            from tongxing_production.path_aliases import resolve
+            assert 'tongxing_production.observability.workflow_evidence' not in sys.modules
             with patch('urllib.request.OpenerDirector.open', side_effect=AssertionError('network forbidden')) as network:
                 frozen = entry.preload_execution_modules([
                     repository / 'scripts/language_review_plugins/diagnostic_structural.py'])
-                assert 'scripts/sermon_workflow_evidence.py' in frozen['loadedProjectCodeSha256']
+                assert resolve('scripts/sermon_workflow_evidence.py') in frozen['loadedProjectCodeSha256']
                 for module in ('sermon_model_call_report', 'sermon_model_call_observation', 'sermon_openai_runtime'):
-                    assert 'scripts/' + module + '.py' in frozen['loadedProjectCodeSha256'], module + ' not preloaded'
+                    assert resolve('scripts/' + module + '.py') in frozen['loadedProjectCodeSha256'], module + ' not preloaded'
                 with profile.session(directory, 'fresh-preload-regression',
                                      work_kind='engineering', evidence_mode='synthetic'):
                     assert accounting.execution_identity() == frozen, 'identity changed at session start'
@@ -350,7 +353,8 @@ class FreshDeliveryRoutingTests(unittest.TestCase):
 
     def test_new_fresh_validator_dependencies_are_eagerly_frozen(self):
         frozen = entry.preload_execution_modules()
-        for path in ('scripts/sermon_fresh_source_evidence.py', 'scripts/sermon_transcription_request.py'):
+        for key in ('scripts/sermon_fresh_source_evidence.py', 'scripts/sermon_transcription_request.py'):
+            path = path_aliases.resolve(key)
             self.assertEqual(frozen['loadedProjectCodeSha256'][path], c.bytes_sha256((Path(entry.__file__).resolve().parents[1]/path).read_bytes()))
 
 

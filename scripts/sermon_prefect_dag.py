@@ -20,14 +20,16 @@ import threading
 import tempfile
 import time
 
-from scripts import sermon_accounting as accounting
+from tongxing_production.observability import accounting
 from scripts import sermon_dag_contract as contract
-from scripts import sermon_log_profile as profile
+from tongxing_production.observability import profile
 from scripts import sermon_model_resources as resources
-from scripts import sermon_review_budget as budget
-from scripts import sermon_review_contracts as c
-from scripts import sermon_workflow_jobs as jobs
+from tongxing_production.review import review_budget as budget
+from tongxing_production.review import contracts as c
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.orchestration import jobs
 from scripts.sermon_execution_harness import work_lock, utc_now
+from tongxing_production import path_aliases
 
 REPO = Path(__file__).resolve().parents[1]
 CLOSURE = ('sermon_dag_contract.py', 'sermon_prefect_dag.py', 'run_sermon_prefect_dag.py',
@@ -43,8 +45,13 @@ CLOSURE = ('sermon_dag_contract.py', 'sermon_prefect_dag.py', 'run_sermon_prefec
 
 
 def code_identity():
-    return c.canonical_sha256({name: hashlib.sha256((REPO/'scripts'/name).read_bytes()).hexdigest()
-                               for name in CLOSURE})
+    # Keys stay the legacy scripts/ names; a member moved into the package is read where it lives.
+    # A member split across package files also hashes, by repository path, the files that took over the rest.
+    files = {name: hashlib.sha256((REPO/path_aliases.resolve('scripts/'+name)).read_bytes()).hexdigest()
+             for name in CLOSURE}
+    files.update({path: hashlib.sha256((REPO/path).read_bytes()).hexdigest()
+                  for name in CLOSURE for path in path_aliases.SPLIT_MEMBERS.get('scripts/'+name, ())})
+    return c.canonical_sha256(files)
 
 
 def read(path):

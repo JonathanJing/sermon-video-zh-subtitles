@@ -1,0 +1,12 @@
+{
+  "command": "/private/tmp/cuv-t5-venv-20261017/bin/python -m unittest tests.test_cuv_incremental_reuse tests.test_cuv_loaded_code_identity tests.test_sermon_cuv_translation tests.test_tongxing_production_package",
+  "tests": 63,
+  "failures": 0,
+  "errors": 0,
+  "elapsedSeconds": 45.489,
+  "testedImplementationFileHashes": {
+    "packages/production/src/tongxing_production/text/cuv_translation.py": "f07305a1f5966ced29b714908a9dd36893ce170f6bd1b972ee61ec6d8649858d",
+    "tests/test_cuv_incremental_reuse.py": "f669a88a176ebea69df87428c50e4f8f223a99041b2128995ee2acd93b36b394"
+  },
+  "note": "Executed before commit; these two file bytes match resultCommit. Documentation was edited afterward."
+}

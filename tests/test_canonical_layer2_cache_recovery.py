@@ -7,11 +7,12 @@ import sys
 import unittest
 from unittest.mock import patch
 
-from scripts import canonical_layer2_cache_recovery as subject
-from scripts import canonical_layer2_reconciliation as reconciliation
-from scripts import canonical_layer2_controller as layer2
-from scripts import sermon_workflow_jobs as jobs
-from scripts import sermon_accounting as accounting
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.text import cache_recovery as subject
+from tongxing_production.text import reconciliation as reconciliation
+from tongxing_production.text import controller as layer2
+from tongxing_production.orchestration import jobs
+from tongxing_production.observability import accounting
 from scripts import weekly_pipeline_report as weekly
 from tests import test_canonical_layer2_controller as fixtures
 
@@ -214,7 +215,7 @@ class CanonicalLayer2CacheRecoveryTests(unittest.TestCase):
         self.assertEqual(layer2.snapshot(self.config)['nodes']['text.zh-Hans']['status'], 'reconciliation_required')
 
     def test_cli_with_empty_key_restores_candidate_without_dispatch(self):
-        command = [sys.executable, str(Path(subject.__file__).resolve()), '--config', str(self.path),
+        command = [sys.executable, str(Path(__file__).resolve().parents[1] / 'tools/ops/run.py'), 'text.cache_recovery', '--config', str(self.path),
                    '--locale', 'zh-Hans', '--expected-state-revision', self.revision()]
         result = subprocess.run(command, env={**os.environ, 'OPENAI_API_KEY': '', 'CODEX_HOME': '/nonexistent/tongxing-test-no-auth'}, capture_output=True, timeout=25)
         self.assertEqual(result.returncode, 0, result.stderr)

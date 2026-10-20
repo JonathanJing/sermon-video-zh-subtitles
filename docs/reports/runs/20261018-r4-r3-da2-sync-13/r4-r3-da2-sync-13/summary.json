@@ -1,0 +1,5 @@
+{
+  "scope": "local unittest",
+  "command": "PYTHONPATH=. .venv/bin/python -m unittest tests.test_infrastructure_compute_leaves tests.test_implementation_freeze tests.test_check_run_start_drain -q",
+  "note": "R3 test-only parent synchronization; W/T/scoring/rate and physical map unchanged."
+}

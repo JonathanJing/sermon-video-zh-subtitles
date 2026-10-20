@@ -8,8 +8,9 @@ import unittest
 from unittest.mock import patch
 
 from scripts import sermon_diagnostic_preview_worker as worker
-from scripts import sermon_public_snapshot as public
-from scripts import sermon_review_contracts as c
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.storage import snapshot as public
+from tongxing_production.review import contracts as c
 from tests import test_sermon_diagnostic_preview_worker as fixture
 from tests import test_sermon_diagnostic_attempts as attempts_fixture
 

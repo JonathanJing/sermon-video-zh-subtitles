@@ -1,0 +1,35 @@
+{
+  "schemaVersion": "ci-run-summary-v1",
+  "runId": 39088555402,
+  "url": "https://github.com/JonathanJing/sermon-video-zh-subtitles/actions/runs/39088555402",
+  "headSha": "b6507b5ddffc9f0bfbe08044e0e47878f1b3f073",
+  "workflow": "Tongxing iOS",
+  "cancelReason": "Superseded by compute-leaf test fixture fix at da2f6ffc after Python root-7 failure",
+  "jobs": [
+    {
+      "name": "changes",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "ios-validation (transcript-collapse)",
+      "status": "completed",
+      "conclusion": "cancelled"
+    },
+    {
+      "name": "ios-validation (app-system)",
+      "status": "completed",
+      "conclusion": "cancelled"
+    },
+    {
+      "name": "ios-validation (remaining-listening)",
+      "status": "completed",
+      "conclusion": "cancelled"
+    },
+    {
+      "name": "contract-validation",
+      "status": "completed",
+      "conclusion": "skipped"
+    }
+  ]
+}

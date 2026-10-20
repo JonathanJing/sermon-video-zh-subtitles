@@ -1,0 +1,63 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261014-clip-e2e-opus100-20261004-h",
+  "runs": [
+    {
+      "label": "clip-e2e-20261004-opus-h",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-h",
+      "skipped": {
+        ".json": 6
+      }
+    }
+  ],
+  "files": [
+    {
+      "run": "clip-e2e-20261004-opus-h",
+      "path": "logs/inputs.log",
+      "kind": "log",
+      "bytes": 3873,
+      "truncated": false,
+      "sha256": "2c001c8be1315c29bdb9b61686e8d9966937f9d983c329a4f9bd4082f3a08935",
+      "redactions": {
+        "secret_field": 1,
+        "home_dir": 17
+      }
+    },
+    {
+      "run": "clip-e2e-20261004-opus-h",
+      "path": "logs/timeline-map.log",
+      "kind": "log",
+      "bytes": 1055,
+      "truncated": false,
+      "sha256": "dc4a22958f1ec75c1a89f8f40e68b32764992a91f3675da0a750d41217dcc997",
+      "redactions": {
+        "home_dir": 7
+      }
+    },
+    {
+      "run": "clip-e2e-20261004-opus-h",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 843,
+      "truncated": false,
+      "sha256": "62bda8d5fbc7d9463db185ea38b63666dcdfa83a288035e39afec98cbd3357e0",
+      "redactions": {
+        "home_dir": 2
+      }
+    },
+    {
+      "run": "clip-e2e-20261004-opus-h",
+      "path": "timings.tsv",
+      "kind": "whole",
+      "bytes": 54,
+      "truncated": false,
+      "sha256": "8d05445ee2189a97fa263b742ef1e6793d8ec35d3cd4595340299b672edb298c",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

@@ -3,13 +3,15 @@ import json
 import hashlib
 from pathlib import Path
 import shutil
+import subprocess
+import sys
 import tempfile
 import unittest
 from unittest import mock
 
-from scripts import clip_e2e_release as release
-from scripts import clip_e2e_spark as spark
-from scripts import run_clip_real_e2e as subject
+from tools.development import clip_e2e_release as release
+from tools.development import clip_e2e_spark as spark
+from tools.development import run_clip_real_e2e as subject
 
 ROOT = Path(__file__).resolve().parents[1]
 DISPLAY = {"series": "[test] s", "title": "[test] t", "speaker": "Speaker", "scripture": "Rev 9", "summary": "[test] x"}
@@ -287,6 +289,41 @@ class SparkTests(unittest.TestCase):
         self.assertEqual(command[command.index("--max-end-lag-seconds") + 1], "120.0")
         self.assertEqual(command[command.index("--seed") + 1], "42")
         self.assertNotIn("--unit-instructions", command)
+
+    def test_every_spark_launch_puts_the_production_package_on_the_path(self):
+        runtime = spark.load_runtime()
+        tail = spark.render_command(runtime, "/stage", "repo-x", lambda name: name, "/work/output/ko-raw/speech-job",
+                                    max_end_lag=120.0, unit_instructions=None)
+        self.assertIn("PYTHONPATH=/work/repo-x/packages/production/src:/work/repo-x", tail)
+        self.assertEqual(spark.container_pythonpath("/work/c", "/voice-packages"),
+                         "/voice-packages:/work/c/packages/production/src:/work/c")
+        source = Path(spark.__file__).read_text(encoding="utf-8")
+        settings = [line for line in source.splitlines() if '"PYTHONPATH=' in line or "'PYTHONPATH=" in line]
+        self.assertEqual(len(settings), 4)
+        self.assertTrue(all("container_pythonpath(" in line for line in settings), settings)
+        self.assertIn('c["codeRoot"]+"/' + spark.PACKAGE_SRC + '"', spark.RUNNER)
+
+    def test_spark_entry_points_import_outside_the_repo_with_only_the_container_path(self):
+        # Proposal §5.2. The images ship third-party packages but not tongxing_production: -S keeps this
+        # interpreter's .pth files (the editable install) off sys.path, and its site-packages stand in for the image's.
+        third_party = [p for p in sys.path if Path(p).name in ("site-packages", "dist-packages")]
+        # The container commands clip_e2e_spark runs; the package entry binds the host itself.
+        scripts = (("tools/ops/run.py", "audio.renderer"), ("tools/ops/run.py", "audio.compaction"),
+                   ("tools/ops/run.py", "audio.screening"), ("tools/ops/run.py", "review.qc_audio_run"))
+
+        def launch(script, pythonpath):
+            env = {"PATH": "/usr/bin:/bin", "PYTHONPATH": pythonpath, "PYTHONDONTWRITEBYTECODE": "1"}
+            return subprocess.run([sys.executable, "-S", str(ROOT / script[0]), *script[1:], "--help"], cwd=cwd,
+                                  env=env, capture_output=True, text=True, timeout=120)
+        with tempfile.TemporaryDirectory() as cwd:
+            before = launch(scripts[0], ":".join([*third_party, str(ROOT)]))
+            self.assertNotEqual(before.returncode, 0, "the package must not be importable without the container path")
+            self.assertIn("No module named 'tongxing_production'", before.stderr)
+            for script in scripts:
+                with self.subTest(script=script):
+                    result = launch(script, spark.container_pythonpath(str(ROOT), *third_party))
+                    self.assertEqual(result.returncode, 0, result.stderr[-2000:])
+                    self.assertIn("usage:", result.stdout)
 
     def test_mirrored_paths_must_be_under_the_mirror_root(self):
         root = ROOT / "artifacts"

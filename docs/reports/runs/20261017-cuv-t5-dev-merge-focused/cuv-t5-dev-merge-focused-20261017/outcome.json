@@ -1,0 +1,10 @@
+{
+  "status": "passed",
+  "exitCode": 0,
+  "deliveryType": "test",
+  "scope": "PR #832 post-dev-merge focused unittest",
+  "codeCommit": "d97938c34ed6972dbf5a2307d913d5b4f96b4fa1",
+  "testCount": 62,
+  "elapsedSeconds": 28.834,
+  "paidOrRemoteCalls": "none"
+}

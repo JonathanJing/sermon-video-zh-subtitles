@@ -1,0 +1,9 @@
+{
+  "status": "passed",
+  "baseSha": "fcc05e730e7835b508ff00ca516f21f4c02c3866",
+  "mergedHeadSha": "16d8670ce2e0e32fbac93a6e330cc893ae5ce1c9",
+  "commitStatus": "uncommitted_merge_preview",
+  "testCount": 93,
+  "elapsedSeconds": 57.995,
+  "exitCode": 0
+}

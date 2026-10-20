@@ -11,16 +11,17 @@ import subprocess
 import sys
 import time
 
-from scripts import sermon_accounting as accounting
-from scripts import sermon_completion as completion
-from scripts import sermon_durable_accounting as durable
-from scripts import sermon_log_profile as profile
-from scripts import sermon_log_contract as log_contract
+from tongxing_production.observability import accounting
+from tongxing_production.observability import completion
+from tongxing_production.observability import durable
+from tongxing_production.observability import profile
+from tongxing_production.observability import log_contract
 from scripts import sermon_mock_tts_contract as contract
 from scripts import sermon_mock_tts_worker as worker
-from scripts import sermon_public_snapshot as public
-from scripts import sermon_review_contracts as c
-from scripts import sermon_workflow_jobs as jobs
+from tongxing_production.storage import snapshot as public
+from tongxing_production.review import contracts as c
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.orchestration import jobs
 from scripts.sermon_release_workflow import _safe_path
 
 POLICY = 'sermon-mock-tts-control-policy-v1'
@@ -36,7 +37,7 @@ def _launcher_exit_reason(stderr):
     bodies, environment values or arbitrary producer-supplied error codes.
     """
     last = stderr[-4096:].splitlines()[-1:] if isinstance(stderr, str) else []
-    if last == ['scripts.sermon_review_contracts.ContractError: mock_tts_environment_not_scrubbed']:
+    if last == [f'{c.ContractError.__module__}.{c.ContractError.__qualname__}: mock_tts_environment_not_scrubbed']:
         return 'mock_tts_environment_not_scrubbed'
     if last and re.match(r'^(ModuleNotFoundError|ImportError):', last[0]):
         return 'mock_tts_launcher_import_error'

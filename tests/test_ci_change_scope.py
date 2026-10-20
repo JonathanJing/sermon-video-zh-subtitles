@@ -10,7 +10,7 @@ import tempfile
 import textwrap
 import unittest
 
-from scripts.ci_change_scope import change_scope
+from tools.development.ci_change_scope import change_scope
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -49,15 +49,17 @@ class CIChangeScopeTests(unittest.TestCase):
         self.git("commit", "-qm", "fixture")
         return self.git("rev-parse", "HEAD")
 
-    def scope(self, *, event="pull_request", base=None, head=None):
+    def scope(self, *, event="pull_request", base=None, head=None, entry="tool"):
         output = self.repo / ".git/action-output"
         output.unlink(missing_ok=True)
-        result = subprocess.run([
-            sys.executable, str(ROOT / "scripts/ci_change_scope.py"),
+        command = ([sys.executable, "-m", "tools.development.ci_change_scope"] if entry == "module"
+                   else [sys.executable, str(ROOT / "tools/development/ci_change_scope.py")])
+        result = subprocess.run([*command,
             "--base", self.base if base is None else base,
             "--head", self.git("rev-parse", "HEAD") if head is None else head,
             "--event", event, "--output", str(output),
-        ], cwd=self.repo, capture_output=True, text=True)
+        ], cwd=self.repo, env={**os.environ, "PYTHONPATH": str(ROOT)} if entry == "module" else None,
+            capture_output=True, text=True)
         self.assertEqual(result.returncode, 0, result.stderr)
         return output.read_text(encoding="utf-8").strip()
 
@@ -69,7 +71,8 @@ class CIChangeScopeTests(unittest.TestCase):
             (("apps/tongxing-ios/Core/Tests/TongxingCoreTests/Fixtures/shared-release-contracts.json",),
              "native", "full"),
             (("docs/guide.md", "apps/tongxing-ios/App/AppModel.swift"), "native", "full"),
-            (("apps/tongxing-ios/App/AppModel.swift", "scripts/build_multilingual_catalog.py"), "full", "full"),
+            (("apps/tongxing-ios/App/AppModel.swift",
+              "packages/production/src/tongxing_production/adapters/legacy/build_multilingual_catalog.py"), "full", "full"),
             (("apps/tongxing-ios/App/AppModel.swift", "schemas/catalog.schema.json"), "full", "full"),
             ((".github/workflows/python-tests.yml",), "full", "full"),
             (("new-runtime/unknown.py",), "full", "full"),
@@ -85,6 +88,9 @@ class CIChangeScopeTests(unittest.TestCase):
                 self.commit()
                 self.assertEqual(self.scope(), f"scope={pr_scope}")
                 self.assertEqual(self.scope(event="push"), f"scope={push_scope}")
+                if paths in (("docs/guide.md",), ("apps/tongxing-ios/App/AppModel.swift",),
+                             ("new-runtime/unknown.py",)):
+                    self.assertEqual(self.scope(entry="module"), f"scope={pr_scope}")
 
     def test_empty_invalid_and_new_branch_base_fail_closed(self):
         self.assertEqual(self.scope(), "scope=full")
@@ -158,7 +164,7 @@ class CIChangeScopeTests(unittest.TestCase):
             if "apps/tongxing-ios/" in content:
                 with self.subTest(consumer=path.name):
                     self.assertRegex(native_job, rf"\btests\.{re.escape(path.stem)}\b")
-        for path in (ROOT / "experiments/sermon-dubbing-poc/web").glob("*.test.mjs"):
+        for path in (ROOT / "apps/listening-web").glob("*.test.mjs"):
             if "apps/tongxing-ios/" in path.read_text(encoding="utf-8"):
                 with self.subTest(consumer=path.name):
                     self.assertIn(path.relative_to(ROOT).as_posix(), native_job)

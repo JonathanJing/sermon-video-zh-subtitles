@@ -1,0 +1,32 @@
+{
+  "suite": "post-live run status migration",
+  "finalRun": {
+    "tests": 65,
+    "failures": 0,
+    "errors": 0,
+    "exitCode": 0
+  },
+  "priorAttempts": [
+    {
+      "tests": 29,
+      "exitCode": 0,
+      "scope": "post-live status and generator"
+    },
+    {
+      "tests": 36,
+      "exitCode": 1,
+      "scope": "timeline and package",
+      "reason": "main checkout editable package in Python environment"
+    },
+    {
+      "tests": 9,
+      "exitCode": 0,
+      "scope": "package rerun in worktree environment"
+    }
+  ],
+  "checks": {
+    "diffCheck": "pass",
+    "worktreePackageResolution": "pass"
+  },
+  "realWorkflow": "not_run"
+}

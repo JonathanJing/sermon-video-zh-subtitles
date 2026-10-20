@@ -1,0 +1,14 @@
+{
+  "schemaVersion": "local-test-outcome-v1",
+  "status": "passed",
+  "exitCode": 0,
+  "startedAt": "2026-10-19T21:54:39Z",
+  "endedAt": "2026-10-19T22:12:43Z",
+  "scope": "Facade removal batch C4 (Layer 2 text): 9 scripts/ facades deleted, callers repointed to tongxing_production.text. Full unittest suite in 10 parallel shards on head 21f0f298 (dev@5eb39da3 + C3 880bf24c + C4) with PYTHONPATH=services/api/src, pytest-style files, targeted tests, §5.5 test-ID inventory, Appendix A survey, identity readback, git diff --check.",
+  "knownPreexistingFailures": [
+    "tests/test_codex_shared_pool_transport.py::test_busy_before_started_is_proven_no_dispatch (also fails on clean dev)"
+  ],
+  "fixedDuringRun": [
+    "first targeted run (targeted-before-fix.log, 1066 tests) found 2 failures and 19 errors from stale scripts.run_target_language_models patch strings, a facade-identity assertion in test_sermon_review_gate, and two subprocess snippets that lost host binding; fixed in the same commit and rerun green"
+  ]
+}

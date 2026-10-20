@@ -2,12 +2,18 @@
 from __future__ import annotations
 
 import copy
+import io
+import json
 from pathlib import Path
+from tempfile import TemporaryDirectory
+from types import SimpleNamespace
 import unittest
 from unittest.mock import patch
 
-from scripts import render_formal_target_language_speech as formal
-from scripts import render_speculative_target_language_speech as subject
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.audio import renderer as formal
+from tongxing_production.audio import speculative as subject
+from tongxing_production.observability import accounting as ledger_accounting
 from tests import test_prepare_target_language_speech_job as speech_fixture
 from tests import test_render_formal_target_language_speech as formal_fixture
 
@@ -21,6 +27,40 @@ class FakeSynth:
     def __call__(self, text, language, speaker, *, seed):
         self.calls.append((text, language, speaker, seed))
         return [0.03] * 1280, 16000
+
+
+class PreviewExecutionBindingTests(unittest.TestCase):
+    def test_every_producer_and_host_source_changes_binding(self):
+        code = formal._audio.current().code
+        sources = {
+            'packages/production/src/tongxing_production/audio/speculative.py':
+                code.physical_path('packages/production/src/tongxing_production/audio/speculative.py'),
+            'packages/production/src/tongxing_production/path_aliases.py':
+                code.physical_path('packages/production/src/tongxing_production/path_aliases.py'),
+            'packages/production/src/tongxing_production/audio/hosted.py':
+                code.module_path(formal.hosted_module),
+            'packages/production/src/tongxing_production/audio/backend.py':
+                code.module_path(formal._audio),
+            'scripts/tongxing_host.py': code.implementation_path('scripts/tongxing_host.py'),
+        }
+        with TemporaryDirectory() as directory:
+            copies = {}
+            for index, (name, source) in enumerate(sources.items()):
+                target = Path(directory) / f'{index}.py'
+                target.write_bytes(source.read_bytes())
+                copies[name] = target
+            modules = {formal.hosted_module: copies['packages/production/src/tongxing_production/audio/hosted.py'],
+                       formal._audio: copies['packages/production/src/tongxing_production/audio/backend.py']}
+            fake_code = SimpleNamespace(implementation_path=lambda name: copies[name],
+                                        physical_path=lambda name: copies[name],
+                                        module_path=lambda module: modules[module])
+            original = formal.preview_execution_binding_sha256(code=fake_code)
+            for name, target in copies.items():
+                with self.subTest(source=name):
+                    old = target.read_bytes()
+                    target.write_bytes(old + b'\n# changed binding\n')
+                    self.assertNotEqual(formal.preview_execution_binding_sha256(code=fake_code), original)
+                    target.write_bytes(old)
 
 
 class SpeculativeRenderTests(unittest.TestCase):
@@ -84,6 +124,33 @@ class SpeculativeRenderTests(unittest.TestCase):
         self.assertEqual(self.render(group_ids=["g2"])["renderedGroupIds"], ["g2"])
         self.assertEqual(len(FakeSynth.calls), 2)
 
+    def test_changed_execution_binding_blocks_same_folder_cache_before_model(self):
+        self.render(group_ids=['g1'])
+        FakeSynth.calls = []
+        with patch.object(subject.formal, 'preview_execution_binding_sha256', return_value='0' * 64):
+            with self.assertRaisesRegex(ValueError, 'another candidate'):
+                self.render(group_ids=['g1'])
+        self.assertEqual(FakeSynth.calls, [])
+
+    def test_changed_preview_implementation_bytes_block_same_folder_cache_before_model(self):
+        self.render(group_ids=['g1'])
+        FakeSynth.calls = []
+        facade = subject.formal._audio.current().code.physical_path(
+            'packages/production/src/tongxing_production/audio/speculative.py')
+        original_open = Path.open
+
+        def changed_open(path, *args, **kwargs):
+            mode = args[0] if args else kwargs.get('mode', 'r')
+            if path == facade and mode == 'rb':
+                with original_open(path, 'rb') as stream:
+                    return io.BytesIO(stream.read() + b'\n# changed facade\n')
+            return original_open(path, *args, **kwargs)
+
+        with patch.object(Path, 'open', changed_open):
+            with self.assertRaisesRegex(ValueError, 'another candidate'):
+                self.render(group_ids=['g1'])
+        self.assertEqual(FakeSynth.calls, [])
+
     def test_verified_adapter_with_unreviewed_locale_is_preview_only(self):
         self.fixture.adapter["capabilityStatus"] = "verified"
         speech_fixture.write_json(self.fixture.adapter_path, self.fixture.adapter)
@@ -115,8 +182,60 @@ class SpeculativeRenderTests(unittest.TestCase):
     def test_chinese_only_voice_purpose_cannot_render_korean_preview(self):
         self.fixture.adapter["authorizationPurpose"] = "chinese_dubbing"
         speech_fixture.write_json(self.fixture.adapter_path, self.fixture.adapter)
-        with self.assertRaisesRegex(ValueError, "demo/Chinese voice purpose"):
+        with self.assertRaisesRegex(ValueError, "demo or this locale's dubbing voice purpose"):
             self.render(group_ids=["g1"])
+
+    def test_a_locale_dubbing_voice_renders_a_preview_only_unit(self):
+        # The registry authorizes the voice for production dubbing; the preview stays preview_only.
+        self.fixture.registry["speakers"][0]["authorization"]["purposes"].append("multilingual_dubbing")
+        speech_fixture.write_json(self.fixture.registry_path, self.fixture.registry)
+        self.fixture.adapter["registryJsonSha256"] = subject.identity.json_sha256(self.fixture.registry)
+        self.fixture.adapter["authorizationPurpose"] = "multilingual_dubbing"
+        speech_fixture.write_json(self.fixture.adapter_path, self.fixture.adapter)
+        result = self.render(group_ids=["g1"])
+        receipt = json.loads((self.out / "receipts/unit-0000.json").read_text())
+        self.assertEqual((receipt["status"], receipt["fullDecode"]), ("preview_only", "pass"))
+        manifest = json.loads((self.out / "speculative-manifest.json").read_text()) \
+            if (self.out / "speculative-manifest.json").is_file() else None
+        for value in [receipt] + ([manifest] if manifest else []):
+            self.assertIsNot(value.get("releaseEligible"), True)
+            self.assertIsNot(value.get("synthesisEligible"), True)
+        self.assertTrue(result)
+
+    def use_normalization(self, normalization):
+        policies = json.loads(self.policies.read_text())
+        policies["normalization"] = normalization
+        speech_fixture.write_json(self.policies, policies)
+        self.fixture.adapter["normalizationPolicySha256"] = subject.identity.json_sha256(normalization)
+        speech_fixture.write_json(self.fixture.adapter_path, self.fixture.adapter)
+
+    def test_registered_spoken_forms_policy_renders_groups_it_leaves_unchanged(self):
+        # The formal job's policy; neither fixture group has a chapter or verse number.
+        self.use_normalization(subject.formal.FROZEN_V3_NORMALIZATION_POLICY)
+        result = self.render(group_ids=["g1", "g2"])
+        self.assertEqual(result["renderedGroupIds"], ["g1", "g2"])
+        self.assertEqual([call[0] for call in FakeSynth.calls],
+                         [group["targetText"] for group in self.fixture.candidate["groups"]])
+
+    def test_a_group_the_spoken_forms_rule_rewrites_is_refused_before_any_output(self):
+        policy = subject.formal.FROZEN_V3_NORMALIZATION_POLICY
+        self.use_normalization(policy)
+        rule = policy["spokenForms"]["ko"]
+        rewrite = ("ko", lambda text: text.replace("함께", "같이"))
+        with patch.dict(subject.formal.SPOKEN_FORM_RULES, {rule: rewrite}):
+            with self.assertRaisesRegex(ValueError, "may not rewrite target text"):
+                self.render(group_ids=["g1", "g2"])
+            self.assertFalse(self.out.exists())
+            self.assertEqual(self.render(group_ids=["g1"])["renderedGroupIds"], ["g1"])
+        self.assertEqual(len(FakeSynth.calls), 1)
+
+    def test_an_unregistered_rewriting_policy_is_refused(self):
+        policy = copy.deepcopy(subject.formal.FROZEN_V3_NORMALIZATION_POLICY)
+        policy["spokenForms"]["ko"] = "operator-supplied-rule"
+        self.use_normalization(policy)
+        with self.assertRaisesRegex(ValueError, "may not rewrite target text"):
+            self.render(group_ids=["g1"])
+        self.assertEqual(FakeSynth.calls, [])
 
     def test_committed_partial_audio_resumes_without_synthesis(self):
         self.render(group_ids=["g1"])
@@ -127,13 +246,13 @@ class SpeculativeRenderTests(unittest.TestCase):
         self.assertEqual(len(FakeSynth.calls), 1)
 
     def test_missing_predecessors_remain_unknown_and_explicit_root_is_known(self):
-        from scripts import sermon_log_profile as profile
+        from tongxing_production.observability import profile
         logs = self.fixture.root / 'predecessor-accounting'
         with profile.session(logs,'legacy-render',work_kind='engineering',evidence_mode='synthetic') as legacy:
             self.render(group_ids=['g1'])
         with profile.session(logs,'root-render',work_kind='engineering',evidence_mode='synthetic') as root:
             self.render(group_ids=['g1'],predecessor_spans=[])
-        rows, errors = subject.accounting.read_events(logs)
+        rows, errors = ledger_accounting.read_events(logs)
         self.assertFalse(errors)
         entries = {row['runId']:row for row in rows if row['event']=='stage_started' and row['stage']=='preview.validate_inputs'}
         self.assertIsNone(entries[legacy['runId']]['dependsOn'])
@@ -169,6 +288,7 @@ class FormalAdmissionTests(unittest.TestCase):
             "sourceJsonSha256": subject.identity.json_sha256(context["source"]),
             "anchorJsonSha256": subject.identity.json_sha256(context["anchor"]),
             "translationPolicySha256": pending["translationPolicySha256"],
+            "previewExecutionBindingSha256": formal.preview_execution_binding_sha256(),
         })
         for index, group in enumerate(pending["groups"]):
             sound = subject.sound_identity(context, index, seed=42,
@@ -181,6 +301,7 @@ class FormalAdmissionTests(unittest.TestCase):
                 self.spec_root / f"receipts/unit-{index:04d}.json", {
                     "schemaVersion": subject.UNIT_VERSION, "status": "preview_only",
                     "candidateJsonSha256": subject.identity.json_sha256(pending),
+                    "previewExecutionBindingSha256": formal.preview_execution_binding_sha256(),
                     "soundIdentity": sound, "audioSha256": subject.identity.sha256(audio),
                     "durationSeconds": 0.08, "fullDecode": "pass",
                 })
@@ -192,6 +313,37 @@ class FormalAdmissionTests(unittest.TestCase):
                                    self.fixture.root / "checkpoint-map.json",
                                    speculative_from=self.spec_root,
                                    synth_factory=FakeSynth)
+
+    def test_changed_preview_execution_binding_stops_before_model_dispatch(self):
+        with patch.object(formal, 'preview_execution_binding_sha256', return_value='0' * 64):
+            with self.assertRaisesRegex(ValueError, 'execution binding changed'):
+                self.formal_render()
+        self.assertEqual(FakeSynth.calls, [])
+
+    def test_legacy_preview_requires_frozen_checkout_before_model_dispatch(self):
+        manifest_path = self.spec_root / 'manifest.json'
+        manifest = json.loads(manifest_path.read_text())
+        manifest['schemaVersion'] = 'sermon-speculative-target-speech-v1'
+        manifest.pop('previewExecutionBindingSha256')
+        manifest_path.write_text(json.dumps(manifest))
+        with self.assertRaisesRegex(ValueError, 'frozen checkout'):
+            self.formal_render()
+        self.assertEqual(FakeSynth.calls, [])
+
+    def test_formal_adoption_of_a_dubbing_purpose_preview_stays_closed(self):
+        # The preview lane may render with the locale's dubbing voice; adopting such a preview
+        # into a formal render is a separate gate that this change leaves closed.
+        registry_path, adapter_path = self.spec_root / "registry.json", self.spec_root / "adapter.json"
+        registry = formal.package.read_object(registry_path)
+        registry["speakers"][0]["authorization"]["purposes"].append("multilingual_dubbing")
+        formal.write_json_atomic(registry_path, registry)
+        adapter = formal.package.read_object(adapter_path)
+        adapter.update(authorizationPurpose="multilingual_dubbing",
+                       registryJsonSha256=subject.identity.json_sha256(registry))
+        formal.write_json_atomic(adapter_path, adapter)
+        with self.assertRaisesRegex(ValueError, "Speculative voice purpose was not authorized"):
+            self.formal_render()
+        self.assertEqual(FakeSynth.calls, [])
 
     def test_same_audio_is_reused_only_after_formal_job_validation(self):
         # Admission is called by render() after checked_context; this unit test
@@ -324,6 +476,9 @@ class DiagnosticPreviewTests(unittest.TestCase):
         self.assertFalse(manifest['productionEligible'])
         self.assertEqual(manifest['humanAcceptance'], 'pending')
         self.assertEqual(manifest['diagnosticContextSha256'], subject.identity.json_sha256(self.context))
+        code = subject.audio_backend.current().code
+        self.assertEqual(manifest['previewRendererSha256'], subject.identity.sha256(
+            code.implementation_path('scripts/render_speculative_target_language_speech.py')))
         saved_source = formal.package.read_object(self.preview.out / 'source.json')
         self.assertEqual(saved_source, self.diag.source)
         self.assertFalse(saved_source['review']['humanApproval'])
@@ -333,6 +488,18 @@ class DiagnosticPreviewTests(unittest.TestCase):
         self.assertFalse((self.preview.out / 'job.json').exists())
         self.render()
         self.assertEqual(len(FakeSynth.calls), 2)
+
+    def test_scoped_v2_cache_cannot_resume_as_v4(self):
+        self.render(group_ids=['g1'])
+        manifest_path = self.preview.out / 'manifest.json'
+        manifest = json.loads(manifest_path.read_text())
+        manifest['schemaVersion'] = 'sermon-speculative-target-speech-v2'
+        manifest.pop('previewExecutionBindingSha256')
+        manifest_path.write_text(json.dumps(manifest))
+        FakeSynth.calls = []
+        with self.assertRaisesRegex(ValueError, 'another candidate'):
+            self.render(group_ids=['g1'])
+        self.assertEqual(FakeSynth.calls, [])
 
     def test_context_and_original_deadline_are_mandatory_for_pending_source(self):
         for overrides in ({'diagnostic_context': None}, {'deadline_monotonic': None},
@@ -441,13 +608,13 @@ class DiagnosticPreviewTests(unittest.TestCase):
 
     def test_cold_and_cache_accounting_contains_real_unit_dag_and_unknown_tokens(self):
         import json
-        from scripts import sermon_log_profile as profile
+        from tongxing_production.observability import profile
         log_root = self.f.root / 'preview-accounting'
         with profile.session(log_root, 'preview-test', work_kind='production', evidence_mode='synthetic') as cold:
             self.render()
         with profile.session(log_root, 'preview-test', work_kind='production', evidence_mode='synthetic') as warm:
             self.render()
-        rows, errors = subject.accounting.read_events(log_root)
+        rows, errors = ledger_accounting.read_events(log_root)
         self.assertFalse(errors)
         cold_rows = [row for row in rows if row['runId'] == cold['runId']]
         warm_rows = [row for row in rows if row['runId'] == warm['runId']]

@@ -7,3 +7,7 @@ yt-dlp>=2025.6.25
 reportlab>=4.2,<5
 openai-agents>=0.19.1,<0.20
 jsonschema>=4.23,<5
+# Production package; modules migrate here from scripts/ behind facades.
+-e ./packages/production
+# API service; backend/ keeps compatibility imports for the deployed HTTP app.
+-e ./services/api

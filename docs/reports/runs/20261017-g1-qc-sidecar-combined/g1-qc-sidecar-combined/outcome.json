@@ -1,0 +1,6 @@
+{
+  "status": "passed",
+  "exitCode": 0,
+  "deliveryType": "test",
+  "result": "45 pytest cases and 107 subtests passed after merging sidecar fix into G1 QC transport branch"
+}

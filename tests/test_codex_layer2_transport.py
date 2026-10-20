@@ -8,8 +8,9 @@ import unittest
 from unittest.mock import patch
 from jsonschema import ValidationError
 
-from scripts import run_target_language_models as runner
-from scripts.codex_layer2_transport import CodexLayer2Transport, output_schema
+from tongxing_production.text import models as runner
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.compute.transports.codex_layer2 import CodexLayer2Transport, output_schema
 from scripts import run_codex_layer2_test as command
 
 
@@ -142,7 +143,7 @@ class CodexRuntimeBoundaryTests(unittest.TestCase):
 
     def test_provider_output_cap_rejected_before_cli_dispatch(self):
         self.payload['max_completion_tokens'] = 128
-        with patch('scripts.codex_layer2_transport.subprocess.run') as blocked:
+        with patch('tongxing_production.compute.transports.codex_layer2.subprocess.run') as blocked:
             with self.assertRaisesRegex(ValueError, 'provider_output_cap_unsupported'):
                 self.transport('', self.payload)
             blocked.assert_not_called()
@@ -155,10 +156,11 @@ class CodexRuntimeBoundaryTests(unittest.TestCase):
 
     def test_failed_terminal_keeps_reported_credit_subtotal(self):
         import copy
-        from scripts import sermon_model_call_observation as observation
+        from scripts import tongxing_host  # noqa: F401  binds the production package ports
+        from tongxing_production.observability import model_call_observation as observation
         events = []
         with patch.object(observation.accounting, '_emit', side_effect=lambda row: events.append(copy.deepcopy(row))):
-            with patch('scripts.codex_layer2_transport.subprocess.run',
+            with patch('tongxing_production.compute.transports.codex_layer2.subprocess.run',
                        side_effect=self.process(completed=False, failed=True, exit_code=1)):
                 with self.assertRaises(RuntimeError):
                     self.transport('', self.payload)
@@ -169,7 +171,7 @@ class CodexRuntimeBoundaryTests(unittest.TestCase):
         self.assertIsNone(terminal['creditUsage']['actualCredits'])
 
     def test_runtime_success_has_own_envelope_and_matching_output(self):
-        with patch("scripts.codex_layer2_transport.subprocess.run", side_effect=self.process()) as run:
+        with patch("tongxing_production.compute.transports.codex_layer2.subprocess.run", side_effect=self.process()) as run:
             response = self.transport("", self.payload)
         self.assertEqual(response["id"], "codex:runtime-thread")
         self.assertEqual(response["requestedModel"], "gpt-6.1-sol")
@@ -181,12 +183,13 @@ class CodexRuntimeBoundaryTests(unittest.TestCase):
         self.assertEqual(len(list(self.transport.receipts_dir.glob("*/response.json"))), 1)
 
     def test_sol61_high_fast_configuration_requests_and_records_exact_model(self):
-        from scripts.codex_layer2_transport import TEST_CONFIGURATION
+        from scripts import tongxing_host  # noqa: F401  binds the production package ports
+        from tongxing_production.compute.transports.codex_layer2 import TEST_CONFIGURATION
         self.transport.models = {role: TEST_CONFIGURATION[role]['model'] for role in ('translator', 'reviewer')}
         self.transport.tiers = {'translator': 'fast', 'reviewer': 'fast'}
         self.transport.simulation_model_configuration = TEST_CONFIGURATION
         self.payload.update(model='gpt-6.1-sol', reasoning_effort='high', service_tier='fast')
-        with patch('scripts.codex_layer2_transport.subprocess.run', side_effect=self.process()) as run:
+        with patch('tongxing_production.compute.transports.codex_layer2.subprocess.run', side_effect=self.process()) as run:
             response = self.transport('', self.payload)
         command = run.call_args.args[0]
         self.assertEqual(command[command.index('-m') + 1], 'gpt-6.1-sol')
@@ -203,14 +206,14 @@ class CodexRuntimeBoundaryTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             CodexLayer2Transport.completed_content(response, 'gpt-6.1-sol', 'reviewer')
         self.payload['reasoning_effort'] = 'low'
-        with patch('scripts.codex_layer2_transport.subprocess.run') as blocked:
+        with patch('tongxing_production.compute.transports.codex_layer2.subprocess.run') as blocked:
             with self.assertRaisesRegex(ValueError, 'unsupported_codex_language_model'):
                 self.transport('', self.payload)
             blocked.assert_not_called()
 
     def test_default_transport_cannot_dispatch_new_translator_model(self):
         self.payload['model'] = 'gpt-6-astra'
-        with patch('scripts.codex_layer2_transport.subprocess.run') as blocked:
+        with patch('tongxing_production.compute.transports.codex_layer2.subprocess.run') as blocked:
             with self.assertRaisesRegex(ValueError, 'unsupported_codex_language_model'):
                 self.transport('', self.payload)
             blocked.assert_not_called()
@@ -219,7 +222,7 @@ class CodexRuntimeBoundaryTests(unittest.TestCase):
         cases = {"missing-completion": {"completed": False}, "tool": {"tool": True},
                  "nonzero-exit": {"exit_code": 2}}
         for name, options in cases.items():
-            with self.subTest(name=name), patch("scripts.codex_layer2_transport.subprocess.run",
+            with self.subTest(name=name), patch("tongxing_production.compute.transports.codex_layer2.subprocess.run",
                                                 side_effect=self.process(**options)):
                 with self.assertRaisesRegex(RuntimeError, "terminal_or_tool_failure"):
                     self.transport("", self.payload)
@@ -227,7 +230,7 @@ class CodexRuntimeBoundaryTests(unittest.TestCase):
         self.assertEqual(list(self.transport.receipts_dir.glob("*/response.json")), [])
 
     def test_runtime_rejects_stdout_file_disagreement(self):
-        with patch("scripts.codex_layer2_transport.subprocess.run", side_effect=self.process(mismatch=True)):
+        with patch("tongxing_production.compute.transports.codex_layer2.subprocess.run", side_effect=self.process(mismatch=True)):
             with self.assertRaisesRegex(RuntimeError, "final_message_file_mismatch"):
                 self.transport("", self.payload)
 
@@ -237,13 +240,13 @@ class CodexRuntimeBoundaryTests(unittest.TestCase):
         self.result["semanticReview"] = {"status": "pass", "checks": {
             key: "pass" for key in runner.SEMANTIC_CHECKS}, "evidence": "Meaning preserved.",
             "uncertainty": [], "issues": []}
-        with patch("scripts.codex_layer2_transport.subprocess.run", side_effect=self.process()) as run:
+        with patch("tongxing_production.compute.transports.codex_layer2.subprocess.run", side_effect=self.process()) as run:
             response = self.transport("", self.payload)
         command = run.call_args.args[0]
         self.assertIn('service_tier="fast"', command)
         self.assertIn("fast_mode", command)
         self.assertEqual(response["requestedServiceTier"], "fast")
-        with patch("scripts.codex_layer2_transport.subprocess.run") as blocked:
+        with patch("tongxing_production.compute.transports.codex_layer2.subprocess.run") as blocked:
             with self.assertRaisesRegex(ValueError, "must_not_receive_api_key"):
                 self.transport("fixture-secret", self.payload)
             blocked.assert_not_called()
@@ -253,7 +256,7 @@ class CodexRuntimeBoundaryTests(unittest.TestCase):
         policy = {"translator": {"model": "gpt-6.1-sol", "reasoningEffort": "high"}}
         prompt = {"instruction": "Translate.", "input": {"english": "Hello."}}
         error = subprocess.TimeoutExpired("fake-codex", 10, output=b"partial events", stderr=b"partial error")
-        with patch("scripts.codex_layer2_transport.subprocess.run", side_effect=error) as run:
+        with patch("tongxing_production.compute.transports.codex_layer2.subprocess.run", side_effect=error) as run:
             with self.assertRaises(subprocess.TimeoutExpired):
                 runner._model_call("translator", prompt, policy, output, "", self.transport)
             with self.assertRaises(ValueError):
@@ -275,7 +278,7 @@ class CodexRuntimeBoundaryTests(unittest.TestCase):
         environment = {"CODEX_HOME": str(auth_root), "OPENAI_API_KEY": "fixture-key",
                        "OPENAI_DEV_API_KEY": "fixture-dev-key", "CODEX_API_KEY": "fixture-codex-key"}
         with patch.dict(os.environ, environment), patch(
-                "scripts.codex_layer2_transport.subprocess.check_output", return_value="codex fixture-v1"):
+                "tongxing_production.compute.transports.codex_layer2.subprocess.check_output", return_value="codex fixture-v1"):
             transport = CodexLayer2Transport(cli_path=cli)
             self.assertFalse(any(key.startswith("OPENAI_") for key in transport.env))
             self.assertNotIn("CODEX_API_KEY", transport.env)
@@ -442,7 +445,7 @@ class CodexResourceBoundaryTests(unittest.TestCase):
     def test_busy_pre_dispatch_and_direct_calls_spawn_zero_cli(self):
         from scripts.sermon_unified import resources, contracts
         resources.reserve(self.policy, operation_id='occupied', owner='fixture-owner', resource='codex_cli')
-        with patch('scripts.codex_layer2_transport.subprocess.run') as run:
+        with patch('tongxing_production.compute.transports.codex_layer2.subprocess.run') as run:
             with self.assertRaisesRegex(contracts.ContractError, 'resource_broker_busy'):
                 self.transport.admit_resource(self.payload)
             with self.assertRaisesRegex(contracts.ContractError, 'resource_broker_busy'):
@@ -462,12 +465,12 @@ class CodexResourceBoundaryTests(unittest.TestCase):
             self.assertIsNotNone(evidence['responseSha256'])
             self.assertTrue((permit.directory / 'response.json').is_file())
             return real_release(*args, **kwargs)
-        with patch('scripts.codex_layer2_transport.subprocess.run', side_effect=self.process()) as run, \
+        with patch('tongxing_production.compute.transports.codex_layer2.subprocess.run', side_effect=self.process()) as run, \
              patch.object(resources, 'release', side_effect=checked_release):
             self.transport('', self.payload)
             self.assertEqual(run.call_count, 1)
         self.assertEqual([row['status'] for row in self.ledger()], ['released'])
-        with patch('scripts.codex_layer2_transport.subprocess.run') as run:
+        with patch('tongxing_production.compute.transports.codex_layer2.subprocess.run') as run:
             with self.assertRaisesRegex(contracts.ContractError, 'resource_operation_already_reserved'):
                 self.transport('', self.payload)
             run.assert_not_called()
@@ -479,7 +482,7 @@ class CodexResourceBoundaryTests(unittest.TestCase):
             with self.subTest(name=name):
                 self.transport.resource_policy = {**self.policy, 'brokerRoot': str(self.root / name)}
                 self.transport.receipts_dir = self.root / (name + '-receipts')
-                with patch('scripts.codex_layer2_transport.subprocess.run', side_effect=behavior) as run:
+                with patch('tongxing_production.compute.transports.codex_layer2.subprocess.run', side_effect=behavior) as run:
                     with self.assertRaises((subprocess.TimeoutExpired, RuntimeError)):
                         self.transport('', self.payload)
                     self.assertEqual(run.call_count, 1)
@@ -487,19 +490,19 @@ class CodexResourceBoundaryTests(unittest.TestCase):
                 self.assertEqual(outcome['status'], 'unknown_outcome')
                 # Reconstruct transport state, retaining bound run receipt root.
                 if hasattr(self.transport, '_resource_local'): del self.transport._resource_local
-                with patch('scripts.codex_layer2_transport.subprocess.run') as run:
+                with patch('tongxing_production.compute.transports.codex_layer2.subprocess.run') as run:
                     with self.assertRaisesRegex(contracts.ContractError, 'resource_operation_already_reserved'):
                         self.transport('', self.payload)
                     run.assert_not_called()
 
     def test_terminal_tool_rejection_releases_and_durable_write_failure_holds(self):
-        with patch('scripts.codex_layer2_transport.subprocess.run', side_effect=self.process(tool=True)):
+        with patch('tongxing_production.compute.transports.codex_layer2.subprocess.run', side_effect=self.process(tool=True)):
             with self.assertRaisesRegex(RuntimeError, 'terminal_or_tool_failure'):
                 self.transport('', self.payload)
         self.assertEqual([r['status'] for r in self.ledger()], ['released'])
         self.payload['messages'][1]['content'] = 'different fixture'
-        with patch('scripts.codex_layer2_transport.subprocess.run', side_effect=self.process()), \
-             patch('scripts.codex_layer2_resources.atomic_json', side_effect=OSError('fixture private detail')):
+        with patch('tongxing_production.compute.transports.codex_layer2.subprocess.run', side_effect=self.process()), \
+             patch('tongxing_production.compute.transports.codex_resources.atomic_json', side_effect=OSError('fixture private detail')):
             with self.assertRaises(OSError): self.transport('', self.payload)
         self.assertEqual(sorted(r['status'] for r in self.ledger()), ['held', 'released'])
 
@@ -512,13 +515,13 @@ class CodexResourceBoundaryTests(unittest.TestCase):
         self.assertNotIn('PATH', binding)
         del self.transport._resource_local
         self.transport.execution_identity = {'backend': 'codex_cli', 'version': 'changed'}
-        with patch('scripts.codex_layer2_transport.subprocess.run') as run:
+        with patch('tongxing_production.compute.transports.codex_layer2.subprocess.run') as run:
             with self.assertRaisesRegex(contracts.ContractError, 'resource_call_identity_changed'):
                 self.transport('', self.payload)
             run.assert_not_called()
 
     def test_confirmed_spawn_failure_records_terminal_before_release(self):
-        with patch('scripts.codex_layer2_transport.subprocess.run', side_effect=FileNotFoundError('private')):
+        with patch('tongxing_production.compute.transports.codex_layer2.subprocess.run', side_effect=FileNotFoundError('private')):
             with self.assertRaises(FileNotFoundError): self.transport('', self.payload)
         self.assertEqual([r['status'] for r in self.ledger()], ['released'])
         outcome = json.loads(next(self.transport.receipts_dir.glob('*/resource-outcome.json')).read_text())
@@ -532,7 +535,7 @@ class CodexResourceBoundaryTests(unittest.TestCase):
         auth_root.mkdir()
         (auth_root / 'auth.json').write_text(json.dumps({'auth_mode': 'chatgpt'}))
         with patch.dict(os.environ, {'CODEX_HOME': str(auth_root), 'OPENAI_API_KEY': 'fixture-secret'}), \
-             patch('scripts.codex_layer2_transport.subprocess.check_output', return_value='codex fixture-v1'):
+             patch('tongxing_production.compute.transports.codex_layer2.subprocess.check_output', return_value='codex fixture-v1'):
             with self.assertRaisesRegex(ValueError, 'resource_policy_requires_receipts_directory'):
                 CodexLayer2Transport(cli, resource_policy=self.policy)
             transport = CodexLayer2Transport(cli, resource_policy=self.policy, receipts_dir=self.root / 'durable')

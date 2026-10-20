@@ -6,10 +6,11 @@ import io
 import json
 
 import pytest
-from scripts import build_dev_180s_simulated_inputs as fixture
-from scripts import build_full_video_app_release as builder
-from scripts import delivery_contract as contract
-from scripts import prepare_dev_simulated_publication as publication
+from tools.development import build_dev_180s_simulated_inputs as fixture
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.delivery import app_release as builder
+from tongxing_production.delivery import contract
+from tongxing_production.delivery import baseline as publication
 
 
 def test_fresh_identity_and_explicit_legacy_id():
@@ -126,6 +127,23 @@ def test_release_plan_rejects_reused_page_id_and_wrong_receipt(plan_inputs):
     (base / 'baseline-receipt.json').write_text(json.dumps({**receipt, 'catalogSha256': 'old'}))
     with pytest.raises(ValueError, match='baseline receipt required'):
         publication.bound_release_plan(base, prepared)
+
+
+@pytest.mark.parametrize('prepare', [
+    lambda base, out: publication.asset_first(base, base / 'prepared', out),
+    lambda base, out: publication.overlay(base, base / 'public', base / 'catalog.json', out),
+    lambda base, out: publication.machine_checked_overlay(base, base / 'public', base / 'catalog.json', out),
+    lambda base, out: publication.runtime_repair(base, out)])
+def test_snapshot_builders_reach_the_four_product_builder(tmp_path, monkeypatch, prepare):
+    # The builder was read before its import in these four (D0); D3 reaches it through the host.
+    reached = []
+    def runtime_web_root():
+        reached.append(True)
+        raise LookupError('builder reached')
+    monkeypatch.setattr(builder, 'runtime_web_root', runtime_web_root)
+    with pytest.raises(LookupError, match='builder reached'):
+        prepare(tmp_path / 'base', tmp_path / 'out')
+    assert reached == [True]
 
 
 def test_simulated_page_joins_v4_so_v3_stays_its_human_projection(tmp_path):

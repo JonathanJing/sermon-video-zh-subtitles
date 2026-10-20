@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261018-voice-demo-pr-ci-superseded",
+  "runs": [
+    {
+      "label": "voice-demo-pr-ci-superseded-20261018",
+      "source": "~/.codex/worktrees/voice-demo-package-leaf/sermon-video-zh-subtitles/artifacts/test-runs/voice-demo-pr-ci-superseded-20261018",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "voice-demo-pr-ci-superseded-20261018",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 438,
+      "truncated": false,
+      "sha256": "7914065e9f86fa824394ea898d6f95f3ebc73972c93894fc5640ae50a406fad5",
+      "redactions": {}
+    },
+    {
+      "run": "voice-demo-pr-ci-superseded-20261018",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 701,
+      "truncated": false,
+      "sha256": "53ece0fe393072a86ddbe951452a486512cd7820efe3c30830e3ae2e9fa4c6fa",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

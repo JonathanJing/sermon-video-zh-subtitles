@@ -5,16 +5,17 @@ from pathlib import Path
 import unittest
 from unittest.mock import patch
 
-from scripts import machine_quality_release_basis as basis
-from scripts import machine_quality_waiver as waiver
-from scripts import machine_repair_ledger as ledger
-from scripts import screen_target_language_audio_units as audio_screen
-from scripts import target_text_auto_qc as text_screen
-from scripts.target_audio_auto_qc import THRESHOLDS, TRACK_ENVELOPE
-from scripts import prepare_target_language_speech_job as speech
-from scripts import sermon_sentence_interpretation as interpretation
-from scripts import sermon_unified_reviews as reviews
-from scripts import stage_formal_multilingual_dev as stage
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.review import release_basis as basis
+from tongxing_production.review import waiver
+from tongxing_production.review import repair_ledger as ledger
+from tongxing_production.audio import screening as audio_screen
+from tongxing_production.review import text_qc as text_screen
+from tongxing_production.review.audio_qc import THRESHOLDS, TRACK_ENVELOPE
+from tongxing_production.audio import speech_job as speech
+from tongxing_production.source import sentence_interpretation as interpretation
+from tongxing_production.review import unified_reviews as reviews
+from tongxing_production.delivery import formal_stage as stage
 # Reuse the speech-job fixture without collecting its tests a second time here.
 from tests import test_prepare_target_language_speech_job as speech_fixture
 from tests import auto_qc_fixtures as fixtures
@@ -182,7 +183,7 @@ class TextWaiverTests(unittest.TestCase):
         self.assertEqual(waiver.waive("ko", self.candidate, unjoined, None, matched)["status"], "blocked_calibration")
 
     def test_calibration_hashes_source_unit_joins_and_audio_spans(self):
-        from scripts import auto_qc_seeded_errors as seeded
+        from tongxing_production.review import seeded_errors as seeded
         groups = [{"groupId": "g1", "english": "Same English", "targetText": "相同译文", "sourceUnitIds": ["u1"]}]
         units = [{"groupId": "g1", "wav": b"same bytes", "text": "相同译文", "sourceSeconds": 2}]
         baseline = seeded.calibration_inputs(groups, units, None, self.policy, self.candidate)
@@ -392,7 +393,7 @@ class TextWaiverTests(unittest.TestCase):
         # The condensed script may be dubbed, but Layer 4 never takes it as the full text.
         write_json(self.waiver_path, receipt)
         self.prepare("condensed-job", self.waiver_path)
-        from scripts import build_full_video_app_release as builder
+        from tongxing_production.delivery import app_release as builder
         with self.assertRaisesRegex(ValueError, "condensed for dubbing cannot be the full text"):
             builder.admitted_text(self.candidate_path, self.waiver_path,
                                   basis.json_sha256(self.source_package), "ko")
@@ -769,7 +770,7 @@ class AudioWaiverTests(unittest.TestCase):
                 stage.validate_audio_screening_review(package, legacy, screening)
 
     def test_person_may_accept_failed_units_as_waiver_v3(self):
-        from scripts import audio_qc_human_acceptance as acceptance_rules
+        from tongxing_production.review import audio_qc_acceptance as acceptance_rules
         package, screening, qc, text = audio_fixture(flagged=True)
         failed = copy.deepcopy(qc)
         failed["status"] = "fail"
@@ -782,7 +783,7 @@ class AudioWaiverTests(unittest.TestCase):
             user_statement="Ko用现有读音发布", group_ids=["g2"],
             attribution={"g2": {"decidedBy": "Claude (delegated by Jony)", "decidedByRole": "delegated_agent",
                                 "reason": "numeral read as native Korean; shipped as is"}})
-        from scripts import machine_audio_waiver_acceptance as v3
+        from tongxing_production.review import audio_waiver_acceptance as v3
         anchor, candidate = audio_sources()
         cal = seeded_into(calibration(), audio=failed, candidate=candidate, condensed=False)
         receipt = v3.build_audio_waiver(

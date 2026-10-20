@@ -14,9 +14,10 @@ from unittest.mock import patch
 
 from scripts import sermon_dev_diagnostic_snapshot as dev
 from scripts import sermon_diagnostic_dag_session as sessions
-from scripts import sermon_accounting as accounting
-from scripts import sermon_log_profile as profile
-from scripts import sermon_review_contracts as c
+from tongxing_production.observability import accounting
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.observability import profile
+from tongxing_production.review import contracts as c
 from scripts import sermon_strict_layer2 as immutable
 from tests.diagnostic_dag_fixture import DiagnosticDAGFixture
 
@@ -54,7 +55,7 @@ class DevSnapshotTests(unittest.TestCase):
             self.assertFalse(row['diagnosticState']['machineCandidateAvailable'])
             self.assertEqual(row['fullTranscript'],[]);self.assertEqual(row['tracks'],[]);self.assertEqual(row['outline'],[])
             self.assertEqual(row['diagnosticInputSha256'],row['diagnosticState']['inputBindingSha256'])
-        for name in dev.UI:self.assertEqual(dev._sha(public/name),dev._sha(dev.REPO/'experiments/sermon-dubbing-poc/web'/name))
+        for name in dev.UI:self.assertEqual(dev._sha(public/name),dev._sha(dev.REPO/'apps/listening-web'/name))
         self.assertEqual((public/'published-weeks-before-diagnostic.mjs').read_text(),'original formal catalog loader')
         self.assertIn('published-weeks-parent-',(public/'published-weeks.mjs').read_text())
         self.assertFalse(result['publicationAuthorized']);self.no_network.assert_not_called()
@@ -65,7 +66,7 @@ class DevSnapshotTests(unittest.TestCase):
             'icons.mjs','icons.svg','brand-icon.svg','brand-icon-light.svg','fingerprint-diagnostics.mjs',
             'voice-samples.mjs','speaker-clip-demos.mjs','voice-demo.css')
         self.assertEqual(dev.UI, expected)
-        source = dev.REPO/'experiments/sermon-dubbing-poc/web'; old_public = self.base/'public'
+        source = dev.REPO/'apps/listening-web'; old_public = self.base/'public'
         new_dependencies = {'icons.mjs','icons.svg','brand-icon.svg','brand-icon-light.svg',
             'fingerprint-diagnostics.mjs','speaker-clip-demos.mjs','voice-demo.css'}
         # Real-shaped old Hosting tree: retain all earlier dependency modules,
@@ -154,8 +155,6 @@ class DevSnapshotTests(unittest.TestCase):
         self.assertEqual(pause.findall('svg:use', ns), [])
         registry = re.search(r"const names = new Set\(\[(.*?)\]\)", (public/'icons.mjs').read_text()).group(1)
         self.assertEqual(set(re.findall(r"'([^']+)'", registry)), {node.attrib['id'] for node in symbols})
-        for name in ('icons.svg','icons.mjs'):
-            self.assertEqual((source/name).read_bytes(), (dev.REPO/'firebase/dev/public'/name).read_bytes())
         for name in ('app.mjs','catalog.mjs','fingerprint-ui.mjs','locales-interface.mjs','locales-ko.mjs','locales-es.mjs'):
             self.assertIn(public/name, seen)
 

@@ -6,9 +6,11 @@ import unittest
 from pathlib import Path
 from unittest import mock
 
-from scripts import sermon_pipeline
-from scripts import run_post_live_timeline_job as job
-from scripts import sermon_accounting as accounting
+from tests.legacy_pipeline_patches import patch_both  # W3b: Layer 1 names live in two modules
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.workflows.dual_pdf import pipeline as sermon_pipeline
+from tongxing_production.workflows.dual_pdf import timeline as job
+from tongxing_production.observability import accounting
 from tests.test_run_post_live_timeline_job import make_args, write_state, make_handoff
 
 
@@ -39,7 +41,7 @@ class TimelineAccountingTests(unittest.TestCase):
             target.parent.mkdir(parents=True, exist_ok=True)
             target.write_bytes(b"fake")
             return target
-        with tempfile.TemporaryDirectory() as temp, mock.patch.dict(os.environ), mock.patch.object(sermon_pipeline, "chat_json", side_effect=AssertionError("Source verification must not classify")) as classifier, mock.patch.object(sermon_pipeline, "transcribe_openai_audio", side_effect=AssertionError("Source verification must not transcribe")) as asr, mock.patch.object(job.run_post_live_subtitle_generation, "probe_archive_audio", return_value={"format": {"duration": "3600"}, "streams": [{"codec_type": "audio"}]}), mock.patch("builtins.print"):
+        with tempfile.TemporaryDirectory() as temp, mock.patch.dict(os.environ), patch_both("chat_json", side_effect=AssertionError("Source verification must not classify")) as classifier, mock.patch.object(sermon_pipeline, "transcribe_openai_audio", side_effect=AssertionError("Source verification must not transcribe")) as asr, mock.patch.object(job.run_post_live_subtitle_generation, "probe_archive_audio", return_value={"format": {"duration": "3600"}, "streams": [{"codec_type": "audio"}]}), mock.patch("builtins.print"):
             self.clean_environment()
             root = Path(temp)
             state = root/"state.json"

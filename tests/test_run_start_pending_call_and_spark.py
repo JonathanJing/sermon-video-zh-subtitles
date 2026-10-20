@@ -9,7 +9,7 @@ from scripts import check_run_start as check
 
 class SparkSelectedHostTests(unittest.TestCase):
     def test_gpu_session_for_another_host_cannot_validate_selected_host(self):
-        with patch.dict(os.environ,{'SPARK_EXCLUSIVE_SESSION_ID':'fixture-session','SPARK_EXCLUSIVE_SESSION_OWNER':'fixture-owner','SPARK_EXCLUSIVE_HOST':'host-a'},clear=True),patch.object(check,'ssh') as ssh,patch('scripts.spark_exclusive_session.Client.require_ready') as ready:
+        with patch.dict(os.environ,{'SPARK_EXCLUSIVE_SESSION_ID':'fixture-session','SPARK_EXCLUSIVE_SESSION_OWNER':'fixture-owner','SPARK_EXCLUSIVE_HOST':'host-a'},clear=True),patch.object(check,'ssh') as ssh,patch('tongxing_production.compute.spark_exclusive_session.Client.require_ready') as ready:
             result=check.check_spark('host-b',True,None)
         self.assertEqual(result['status'],'fail')
         self.assertIn('host',result['problems'][0]);ssh.assert_not_called();ready.assert_not_called()
@@ -17,13 +17,13 @@ class SparkSelectedHostTests(unittest.TestCase):
     def test_same_selected_host_is_used_for_reachability_and_ready(self):
         hosts=[]
         def ready(client):hosts.append(client.host);return {'status':'ready'}
-        with patch.dict(os.environ,{'SPARK_EXCLUSIVE_SESSION_ID':'fixture-session','SPARK_EXCLUSIVE_SESSION_OWNER':'fixture-owner','SPARK_EXCLUSIVE_HOST':'host-a'},clear=True),patch.object(check,'ssh',return_value=Mock(returncode=0,stdout='synthetic')) as ssh,patch('scripts.spark_exclusive_session.Client.require_ready',ready):
+        with patch.dict(os.environ,{'SPARK_EXCLUSIVE_SESSION_ID':'fixture-session','SPARK_EXCLUSIVE_SESSION_OWNER':'fixture-owner','SPARK_EXCLUSIVE_HOST':'host-a'},clear=True),patch.object(check,'ssh',return_value=Mock(returncode=0,stdout='synthetic')) as ssh,patch('tongxing_production.compute.spark_exclusive_session.Client.require_ready',ready):
             result=check.check_spark('host-a',True,None)
         self.assertEqual(result['status'],'pass');self.assertEqual(hosts,['host-a'])
         ssh.assert_called_once_with('hostname','host-a')
 
     def test_api_only_reachability_does_not_require_session_host_match(self):
-        with patch.dict(os.environ,{'SPARK_EXCLUSIVE_HOST':'host-a'},clear=True),patch.object(check,'ssh',return_value=Mock(returncode=0,stdout='synthetic')),patch('scripts.spark_exclusive_session.Client.require_ready') as ready:
+        with patch.dict(os.environ,{'SPARK_EXCLUSIVE_HOST':'host-a'},clear=True),patch.object(check,'ssh',return_value=Mock(returncode=0,stdout='synthetic')),patch('tongxing_production.compute.spark_exclusive_session.Client.require_ready') as ready:
             result=check.check_spark('host-b',False,None)
         self.assertEqual(result['status'],'pass');self.assertEqual(result['session'],'not_required_api_only');ready.assert_not_called()
 
@@ -31,7 +31,10 @@ class SparkSelectedHostTests(unittest.TestCase):
 class Layer2CallMarkerTests(unittest.TestCase):
     def setUp(self):
         from tests.test_canonical_layer2_controller import CanonicalLayer2ControllerTests
-        from scripts import canonical_layer2_controller as controller, sermon_review_budget as budget
+        from scripts import tongxing_host  # noqa: F401  binds the production package ports
+        from tongxing_production.review import review_budget as budget
+        from scripts import tongxing_host  # noqa: F401  binds the production package ports
+        from tongxing_production.text import controller
         from tests.test_sermon_review_budget import authority, identity, request, result
         fixture=CanonicalLayer2ControllerTests();fixture.setUp();self.addCleanup(fixture.doCleanups)
         self.config=controller.load_configuration(fixture.path)
@@ -77,7 +80,11 @@ class Layer2CallMarkerTests(unittest.TestCase):
 
     def test_actual_plan_consumer_refuses_settled_ledger_with_unrestored_lane_marker(self):
         from tests.test_run_start_tools import PlanTests, run_plan
-        from scripts import canonical_layer2_budget as l2, canonical_layer2_controller as controller, sermon_review_budget as budget
+        from scripts import tongxing_host  # noqa: F401  binds the production package ports
+        from tongxing_production.review import review_budget as budget
+        from tongxing_production.text import budget as l2
+        from scripts import tongxing_host  # noqa: F401  binds the production package ports
+        from tongxing_production.text import controller
         from tests.test_sermon_review_budget import identity, request, result
         fixture=PlanTests();fixture.setUp();self.addCleanup(fixture.doCleanups)
         directory=fixture.base/'layer2-marker-plan'

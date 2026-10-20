@@ -4,7 +4,8 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from scripts import build_full_video_app_release as release
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.delivery import app_release as release
 
 
 class FullVideoAppReleaseTests(unittest.TestCase):
@@ -169,7 +170,7 @@ if __name__ == "__main__":
 
 class SimulatedMetadataIsolationTests(unittest.TestCase):
     def test_simulated_metadata_requires_exact_dev_route_and_visible_notice(self):
-        from scripts import build_formal_dev_release_assets as metadata
+        from tongxing_production.delivery import formal_assets as metadata
         from jsonschema import ValidationError
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
@@ -257,13 +258,13 @@ class ReaderClosureTests(unittest.TestCase):
                 release.runtime_web_files(root)
 
     def test_actual_reader_contains_catalog_navigation_dependency(self):
-        self.assertIn('catalog.mjs', release.RUNTIME_WEB_FILES)
-        self.assertIn('fingerprint-capture.mjs', release.RUNTIME_WEB_FILES)
-        self.assertIn('locales-ko.mjs', release.RUNTIME_WEB_FILES)
+        self.assertIn('catalog.mjs', release.runtime_web_files())
+        self.assertIn('fingerprint-capture.mjs', release.runtime_web_files())
+        self.assertIn('locales-ko.mjs', release.runtime_web_files())
         # The shell ships with the modules: the page, its styles, theme, icons,
         # offline worker and the fingerprint worker and worklet.
         for name in ('index.html', 'style.css', 'theme.js', 'icons.svg', 'brand-icon.svg', 'brand-icon-light.svg',
                      'brand-icon.png', 'offline-worker.js', 'fingerprint-worker.mjs', 'fingerprint-worklet.mjs',
                      'voice-samples.mjs', 'voice-demo.css'):
-            self.assertIn(name, release.RUNTIME_WEB_FILES, name)
-        self.assertFalse(any(name.endswith('.json') or '.test.' in name for name in release.RUNTIME_WEB_FILES))
+            self.assertIn(name, release.runtime_web_files(), name)
+        self.assertFalse(any(name.endswith('.json') or '.test.' in name for name in release.runtime_web_files()))

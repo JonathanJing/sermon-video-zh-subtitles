@@ -1,0 +1,45 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-docker-schemas-python-ci",
+  "runs": [
+    {
+      "label": "docker-schemas-ci-previous-head",
+      "source": "~/.codex/worktrees/docker-schemas/sermon-video-zh-subtitles/artifacts/docker-schemas-ci-previous-head",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "docker-schemas-ci-previous-head",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 131,
+      "truncated": false,
+      "sha256": "dd563428a0640e06f0362d9d2d15d8dfdfed82d6ef0f4c2b2bed3a7fe323b432",
+      "redactions": {}
+    },
+    {
+      "run": "docker-schemas-ci-previous-head",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 292,
+      "truncated": false,
+      "sha256": "b5bbe9a6f52154a5470b3a5761924c6d6508f3bc8e2d3a8e1526a2da0cae5704",
+      "redactions": {}
+    },
+    {
+      "run": "docker-schemas-ci-previous-head",
+      "path": "timings.tsv",
+      "kind": "whole",
+      "bytes": 83,
+      "truncated": false,
+      "sha256": "b48cc2ba6d7a94a0c7f3a997eefb2c6bc75aee31e709ca984f49605ebf14105c",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

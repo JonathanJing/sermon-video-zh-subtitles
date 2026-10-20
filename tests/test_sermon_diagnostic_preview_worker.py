@@ -1,5 +1,6 @@
 """Actual fixed child and speculative renderer; synthetic input/PCM only."""
 import copy
+import io
 import json
 import os
 from pathlib import Path
@@ -10,11 +11,12 @@ from unittest.mock import patch
 
 from scripts import sermon_diagnostic_preview_worker as subject
 from scripts import sermon_diagnostic_provider as provider
-from scripts import sermon_log_profile as profile
-from scripts import sermon_review_budget as budget
-from scripts import sermon_review_contracts as c
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.observability import profile
+from tongxing_production.review import review_budget as budget
+from tongxing_production.review import contracts as c
 from scripts import sermon_preview_checkpoint_manifest as checkpoint
-from scripts import sermon_public_snapshot as public
+from tongxing_production.storage import snapshot as public
 from scripts import sermon_diagnostic_delivery_preflight as delivery
 from tests import test_render_speculative_target_language_speech as fixtures
 from tests import test_sermon_diagnostic_provider as provider_fixtures
@@ -171,6 +173,49 @@ class PreviewWorkerTests(unittest.TestCase):
         events, errors = subject.accounting.read_events(self.root / 'preview-accounting')
         self.assertFalse(errors)
         self.assertTrue(any((row.get('stage') or '').endswith('.synthesis') for row in events))
+
+    def test_scoped_preview_binding_is_required_by_readonly_output_validation(self):
+        with self.session(): self.launch()
+        checked = subject.preview.checked_context(
+            {key: Path(value) for key, value in self.spec['paths'].items()},
+            Path(self.spec['checkpoint_map_path']), Path(self.spec['operation_policies_path']),
+            strict_rubric=self.f.rubric, diagnostic_context=self.context)
+        manifest_path = self.out / 'manifest.json'
+        manifest = json.loads(manifest_path.read_text())
+        binding = subject.preview.formal.preview_execution_binding_sha256()
+        self.assertEqual(manifest['previewExecutionBindingSha256'], binding)
+        self.assertEqual(subject._manifest(checked), manifest)
+        old_manifest = dict(manifest)
+        old_manifest.pop('previewExecutionBindingSha256')
+        old_manifest['schemaVersion'] = 'sermon-speculative-target-speech-v2'
+        manifest_path.write_text(json.dumps(old_manifest))
+        with self.assertRaisesRegex(ValueError, 'preview_manifest_changed'):
+            subject._outputs(self.root, self.spec, checked)
+        manifest_path.write_text(json.dumps(manifest))
+        unit_path = self.out / 'receipts/unit-0000.json'
+        unit = json.loads(unit_path.read_text())
+        for value in (None, '0' * 64):
+            broken = dict(unit)
+            if value is None: broken.pop('previewExecutionBindingSha256')
+            else: broken['previewExecutionBindingSha256'] = value
+            unit_path.write_text(json.dumps(broken))
+            with self.subTest(value=value), self.assertRaisesRegex(ValueError, 'preview_unit_receipt_changed'):
+                subject._outputs(self.root, self.spec, checked)
+        unit_path.write_text(json.dumps(unit))
+        facade = subject.preview.formal._audio.current().code.physical_path(
+            'packages/production/src/tongxing_production/audio/speculative.py')
+        original_open = Path.open
+
+        def changed_open(path, *args, **kwargs):
+            mode = args[0] if args else kwargs.get('mode', 'r')
+            if path == facade and mode == 'rb':
+                with original_open(path, 'rb') as stream:
+                    return io.BytesIO(stream.read() + b'\n# changed facade\n')
+            return original_open(path, *args, **kwargs)
+
+        with patch.object(Path, 'open', changed_open):
+            with self.assertRaisesRegex(ValueError, 'preview_manifest_changed'):
+                subject._outputs(self.root, self.spec, checked)
 
     def test_scrubbed_environment_has_no_credentials_or_proxy(self):
         with self.session(), patch.dict(os.environ, {'OPENAI_API_KEY': 'secret', 'HTTPS_PROXY': 'secret'}):

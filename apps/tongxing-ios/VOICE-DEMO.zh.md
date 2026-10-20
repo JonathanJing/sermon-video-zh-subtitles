@@ -38,11 +38,11 @@ Eric 原公开视频后来剪辑过；当前匹配区间为 1148.40–1161.36 �
 
 ```sh
 python3 -m unittest discover -s tests -p test_speaker_clip_demos.py
-node --test experiments/sermon-dubbing-poc/web/speaker-clip-demos.test.mjs
+node --test apps/listening-web/speaker-clip-demos.test.mjs
 python3 apps/tongxing-ios/scripts/preview.py --files VoiceDemoSection.swift \
   --voice-demo-catalog artifacts/speaker-clips-v2/20261001/public/voice-demos/speaker-clips-v2/catalog.json \
   --variants light,dark,dark-large --simulator "$TONGXING_SIMULATOR_UDID"
-python3 scripts/stage_speaker_clip_demo_ui.py --help
+python3 tools/ops/stage_speaker_clip_demo_ui.py --help
 ```
 
-素材 producer 和 Hosting overlay 的输入、缓存身份及不可覆盖规则分别由 `scripts/render_speaker_clip_demos.py`、`scripts/build_speaker_clip_demos.py` 和 `scripts/stage_speaker_clip_demo_ui.py` 实现。模型／媒体产物不提交 Git；overlay 命令只生成新的候选目录，不部署。
+素材 producer 和 Hosting overlay 的输入、缓存身份及不可覆盖规则分别由 `tools/ops/render_speaker_clip_demos.py`、`tools/ops/build_speaker_clip_demos.py` 和 `tools/ops/stage_speaker_clip_demo_ui.py` 实现。模型／媒体产物不提交 Git；overlay 命令只生成新的候选目录，不部署。

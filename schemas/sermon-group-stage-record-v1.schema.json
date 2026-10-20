@@ -1,0 +1,62 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.invalid/schemas/sermon-group-stage-record-v1.schema.json",
+  "title": "Per-group stage record: one immutable result of one stage for one translation group",
+  "description": "Intermediate evidence keyed by input. Never release material and never human approval. Keys and the per-stage input names are defined in tongxing_production.orchestration.group_records.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion", "stage", "stageName", "layer1", "targetLocale", "translationGroupId", "sourceUnitIds",
+    "inputs", "stageImplementationSha256", "inputKey", "outputs", "verdict", "spend", "provenance",
+    "releaseEligible", "humanApproval"
+  ],
+  "properties": {
+    "schemaVersion": {"const": "sermon-group-stage-record-v1"},
+    "stage": {"enum": ["T", "R", "P", "Q", "C", "S", "A", "U"]},
+    "stageName": {"enum": ["translation", "independent_review", "language_plugin", "text_qc",
+                           "spoken_condensation", "speech_synthesis", "asr_back_check", "unit_audio_qc"]},
+    "layer1": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["englishSourcePackageJsonSha256", "anchorManifestSha256"],
+      "properties": {
+        "englishSourcePackageJsonSha256": {"$ref": "#/$defs/sha256"},
+        "anchorManifestSha256": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "targetLocale": {"type": "string", "pattern": "^[A-Za-z]{2,3}(-[A-Za-z0-9]{2,8})*$"},
+    "translationGroupId": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,159}$"},
+    "sourceUnitIds": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}},
+    "inputs": {
+      "type": "object",
+      "description": "Named input hashes; null marks an input the stage did not have.",
+      "additionalProperties": {"oneOf": [{"$ref": "#/$defs/sha256"}, {"type": "null"}]}
+    },
+    "stageImplementationSha256": {"$ref": "#/$defs/sha256"},
+    "inputKey": {"$ref": "#/$defs/sha256"},
+    "outputs": {
+      "type": "object",
+      "additionalProperties": {"oneOf": [{"$ref": "#/$defs/sha256"}, {"type": "null"}]}
+    },
+    "verdict": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "codes"],
+      "properties": {
+        "status": {"enum": ["pass", "fail", "stopped", "unknown"]},
+        "codes": {"type": "array", "items": {"type": "string"}}
+      }
+    },
+    "spend": {
+      "type": "object",
+      "required": ["kind"],
+      "properties": {"kind": {"type": "string"}}
+    },
+    "provenance": {"type": "object"},
+    "releaseEligible": {"const": false},
+    "humanApproval": {"const": false}
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+  }
+}

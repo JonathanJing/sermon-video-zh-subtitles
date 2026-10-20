@@ -1,0 +1,27 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-pr771-catalog-ci",
+  "runs": [
+    {
+      "label": "pr771-full-ci-39064893791",
+      "source": "~/.codex/worktrees/backlog-lookup-tool/sermon-video-zh-subtitles/artifacts/pr771-full-ci-39064893791",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "pr771-full-ci-39064893791",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 367,
+      "truncated": false,
+      "sha256": "c918c07c2c50f99ecae927b83eea448c6ef1ad0554c9c813b7764a9a7994ece2",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

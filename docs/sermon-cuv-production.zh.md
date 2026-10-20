@@ -1,6 +1,6 @@
 # 和合本经文锁定与证道重译
 
-入口为 `scripts/sermon_cuv_translation.py`。它从冻结的配音 `job.json` 读取完整英文，在新目录中重译全部段落；不修改英文、原 job、PDF、时间轴或音频，也不自动发布。经文取自 `scripts.cuv_scripture.CuvLibrary` 严格校验的和合本全文库，模型只能选择库中的原文片段。
+入口为 `tools/ops/run.py text.cuv_translation`（实现在 `packages/production/src/tongxing_production/text/cuv_translation.py`）。它从冻结的配音 `job.json` 读取完整英文，在新目录中重译全部段落；不修改英文、原 job、PDF、时间轴或音频，也不自动发布。经文取自 `scripts.cuv_scripture.CuvLibrary` 严格校验的和合本全文库，模型只能选择库中的原文片段。
 
 ## 引用先分类、定位、冻结，再翻译
 
@@ -25,13 +25,15 @@
 
 密钥仅从已有 `OPENAI_API_KEY` 环境变量读取；程序不读取 `.env`，不创建密钥或配置文件。缺少密钥且没有所需模型缓存时明确失败。`validate` 不需要密钥、网络或模型。
 
+包化后的新运行写入 `sermon-cuv-translation-v3` manifest。`implementationIdentity` 同时绑定 CUV 实现文件、Layer 2 的项目代码闭包（`scripts/`、production package、schemas 与共享术语）和计时委派所用 POC 目录的全部 Python 文件（`experiments/sermon-dubbing-poc/**/*.py`）。任一闭包代码变化都阻断旧缓存复用及当前代码下的离线验证。模型请求、报告和审校扩展仍使用原有 v1 格式。v1/v2 manifest 与收据保持原样，只能在对应的冻结旧 checkout 离线 `validate`。新代码不从旧版本输出目录续跑，也不以 `--reuse-from` 或 `repair-timing` 跨版本使用其缓存；后续制作须开新输出目录，按新身份取得所需证据。
+
 ```bash
-.venv/bin/python scripts/sermon_cuv_translation.py run \
+.venv/bin/python tools/ops/run.py text.cuv_translation run \
   --parent-job /absolute/path/to/dubbing-v2/job.json \
   --workers 3 \
   --out artifacts/cuv-scripture/new-translation
 
-.venv/bin/python scripts/sermon_cuv_translation.py validate \
+.venv/bin/python tools/ops/run.py text.cuv_translation validate \
   --out artifacts/cuv-scripture/new-translation
 ```
 
@@ -116,7 +118,7 @@
 仅在上一版完整合成与正式 timing 报告齐全后使用；字数预警、局部 WAV 观察不能代替完整证据。
 
 ```bash
-.venv/bin/python scripts/sermon_cuv_translation.py repair-timing \
+.venv/bin/python tools/ops/run.py text.cuv_translation repair-timing \
   --prior-translation artifacts/cuv-scripture/prior-translation \
   --parent-job /absolute/path/to/current-dubbing/job.json \
   --timing-report /absolute/path/to/current-dubbing/synchronization/report.json \

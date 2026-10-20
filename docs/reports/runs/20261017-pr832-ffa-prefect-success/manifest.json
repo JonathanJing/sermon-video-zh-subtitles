@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-pr832-ffa-prefect-success",
+  "runs": [
+    {
+      "label": "pr832-ffa-prefect-success-39076715127",
+      "source": "/private/tmp/cuv-t5-package-move-20261017/artifacts/pr832-ffa-prefect-success-39076715127",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "pr832-ffa-prefect-success-39076715127",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 294,
+      "truncated": false,
+      "sha256": "707ac8b5fb0fbfd75e9e5f990de7cd82a9dd1ba1461585cfa5338ea5d435cfee",
+      "redactions": {}
+    },
+    {
+      "run": "pr832-ffa-prefect-success-39076715127",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 1352,
+      "truncated": false,
+      "sha256": "b9ebbb75f5694443eaf754c10a3e53383ca60e29aec4a71fe4e281300ea3023f",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

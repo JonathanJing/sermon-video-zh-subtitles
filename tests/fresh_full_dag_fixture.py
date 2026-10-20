@@ -16,15 +16,16 @@ from pathlib import Path
 import time
 
 from scripts import sermon_fresh_full_dag as dag
-from scripts import sermon_accounting as accounting
+from tongxing_production.observability import accounting
 from scripts import sermon_bounded_business_callbacks as offline
 from scripts import sermon_fresh_diagnostic as fresh
 from scripts import sermon_fresh_source_prefect as source_engine
-from scripts import sermon_log_contract as logs
+from tongxing_production.observability import log_contract as logs
 from scripts import sermon_mock_tts_control as control
-from scripts import sermon_review_budget as budget
-from scripts import sermon_review_contracts as c
-from scripts import sermon_workflow_jobs as jobs
+from tongxing_production.review import review_budget as budget
+from tongxing_production.review import contracts as c
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.orchestration import jobs
 from scripts import weekly_pipeline_report as weekly
 from tests.test_sermon_fresh_source_prefect import SourceEngineFixture
 from tests.diagnostic_dag_fixture import DiagnosticDAGFixture
@@ -113,9 +114,9 @@ def clean_child(payload_path):
     expected = value['plan']['executionIdentity']
     repository = Path(dag.__file__).resolve().parents[1]
     for name, digest in expected['loadedProjectCodeSha256'].items():
-        assert name.startswith('scripts/') and name.endswith('.py')
+        module_name = accounting.code_module_name(name)
         assert c.bytes_sha256((repository/name).read_bytes()) == digest
-        importlib.import_module(name[:-3].replace('/', '.'))
+        importlib.import_module(module_name)
     identity = accounting.execution_identity()
     assert identity['trackedWorkingTreeDirty'] is False, 'actual SDK requires clean committed code'
     assert identity == expected, 'fresh clean-process code identity must match exactly'

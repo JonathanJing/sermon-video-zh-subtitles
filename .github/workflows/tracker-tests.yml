@@ -4,16 +4,22 @@ on:
   pull_request:
     branches: [dev, main]
     paths:
-      - 'experiments/sermon-dubbing-poc/tracker-admin/**'
-      - 'scripts/build_tracker_dag_projection.py'
-      - 'scripts/build_four_layer_tracker_snapshot.py'
+      - 'apps/tracker-web/**'
+      - 'tools/ops/tracker-publisher/**'
+      - 'packages/tracker-contract/**'
+      - 'packages/production/src/tongxing_production/observability/projections/**'
+      - 'infra/firebase/tracker/**'
+      - 'tools/ops/run.py'
       - '.github/workflows/tracker-tests.yml'
   push:
     branches: [dev]
     paths:
-      - 'experiments/sermon-dubbing-poc/tracker-admin/**'
-      - 'scripts/build_tracker_dag_projection.py'
-      - 'scripts/build_four_layer_tracker_snapshot.py'
+      - 'apps/tracker-web/**'
+      - 'tools/ops/tracker-publisher/**'
+      - 'packages/tracker-contract/**'
+      - 'packages/production/src/tongxing_production/observability/projections/**'
+      - 'infra/firebase/tracker/**'
+      - 'tools/ops/run.py'
       - '.github/workflows/tracker-tests.yml'
 
 permissions:
@@ -23,14 +29,20 @@ jobs:
   tracker:
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    defaults:
-      run:
-        working-directory: experiments/sermon-dubbing-poc/tracker-admin
     steps:
       - uses: actions/checkout@v7
       - name: Install locked UI test and build dependencies
+        working-directory: apps/tracker-web
         run: npm ci --ignore-scripts
       - name: Check public contracts and DOM interactions
+        working-directory: apps/tracker-web
         run: npm test
       - name: Build tracker (no publish)
+        working-directory: apps/tracker-web
         run: npm run build
+      - name: Install locked publisher dependencies
+        working-directory: tools/ops/tracker-publisher
+        run: npm ci --ignore-scripts
+      - name: Check publisher projection and lifecycle
+        working-directory: tools/ops/tracker-publisher
+        run: npm test

@@ -1,0 +1,5 @@
+{"shape": "mostly-unpaid", "groupWorkers": 1, "groups": 60, "completeReturnedGroups": 7, "paidCalls": 106, "maxInFlight": 1, "wallSeconds": 188.87, "fixtureBuildSeconds": 2.31, "candidateJsonSha256": "95d6e4ac4593a5c5a55e857332ce4cefb6e7ec9fe1d5c67662f0b8cf5b7386dd"}
+{"shape": "mostly-unpaid", "groupWorkers": 8, "groups": 60, "completeReturnedGroups": 7, "paidCalls": 106, "maxInFlight": 8, "wallSeconds": 29.15, "fixtureBuildSeconds": 2.98, "candidateJsonSha256": "6ced026f51c18fc17b4e2c4d7071e7a13da98af4b5bdf18aebea838844cf647b"}
+{"shape": "mostly-returned", "groupWorkers": 1, "groups": 60, "completeReturnedGroups": 55, "paidCalls": 10, "maxInFlight": 1, "wallSeconds": 24.12, "fixtureBuildSeconds": 2.07, "candidateJsonSha256": "c82646d3f25e584be0e449b8d05fa0f5dc017129ba6c9518e9435fc03be352ca"}
+{"shape": "mostly-returned", "groupWorkers": 8, "groups": 60, "completeReturnedGroups": 55, "paidCalls": 10, "maxInFlight": 5, "wallSeconds": 9.67, "fixtureBuildSeconds": 2.8, "candidateJsonSha256": "244b31ed287ae616e6619f821876befa1f70250ee3cda6b15954ae38fa84c654"}
+exit=0

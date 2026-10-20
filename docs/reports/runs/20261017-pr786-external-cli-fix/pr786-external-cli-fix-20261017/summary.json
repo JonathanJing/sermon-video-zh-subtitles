@@ -1,0 +1,32 @@
+{
+  "status": "passed",
+  "codeCommit": "84fd2edd315f94dca9315f92c33e98e31ee1b572",
+  "scope": "moved Dev audio CLI external-directory bootstrap",
+  "trigger": "PR #786 P2 review finding on absolute-path invocation",
+  "commands": [
+    {
+      "name": "initial unittest invocation with nonexistent module name",
+      "exitCode": 1,
+      "cause": "test filename was test_dev_local_audio_entry.py; no tests executed"
+    },
+    {
+      "name": "tests.test_dev_local_audio_entry after fix",
+      "tests": 14,
+      "exitCode": 0,
+      "seconds": 4.887
+    },
+    {
+      "name": "back-asr --help from /tmp without PYTHONPATH",
+      "exitCode": 0
+    },
+    {
+      "name": "git diff --check",
+      "exitCode": 0
+    }
+  ],
+  "externalCalls": 0,
+  "limitations": [
+    "synthetic tests and CLI help only; no TTS, ASR or producer dispatch",
+    "remote full CI and fresh review pending"
+  ]
+}

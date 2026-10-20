@@ -4,8 +4,10 @@ import tempfile
 from types import SimpleNamespace
 import unittest
 
-from scripts import render_sentence_interpretation_tts as render_subject
-from scripts import screen_sentence_interpretation_tts as subject
+from tests import experiment_modules
+
+render_subject = experiment_modules.load("experiments/sentence-interpretation-tts/render_sentence_interpretation_tts.py")
+subject = experiment_modules.load("experiments/sentence-interpretation-tts/screen_sentence_interpretation_tts.py")
 
 
 def write_json(path, value):

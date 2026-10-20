@@ -1,0 +1,12 @@
+{
+  "schemaVersion": "pr832-ci-run-outcome-v1",
+  "deliveryType": "test",
+  "status": "cancelled",
+  "workflow": "Python tests",
+  "runUrl": "https://github.com/JonathanJing/sermon-video-zh-subtitles/actions/runs/39075673268",
+  "headSha": "d97938c34ed6972dbf5a2307d913d5b4f96b4fa1",
+  "runConclusion": "cancelled",
+  "startedAt": "2026-10-17T22:35:11Z",
+  "endedAt": "2026-10-17T22:41:17Z",
+  "modelCalls": 0
+}

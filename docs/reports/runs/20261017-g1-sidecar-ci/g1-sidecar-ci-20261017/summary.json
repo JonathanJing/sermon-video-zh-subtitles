@@ -1,0 +1,11 @@
+{
+  "scope": "PR 571 event identity sidecar CI at cd6a3e15",
+  "sourceUrl": "https://github.com/JonathanJing/sermon-video-zh-subtitles/actions/runs/39041250872",
+  "results": {
+    "changes": "success",
+    "testGroupRoot0to7": "8 success",
+    "unittestAggregate": "success",
+    "nativeClient": "success in companion run 39041250841"
+  },
+  "note": "This is CI code/test evidence only; no live sermon run, waiver issuance, publication or device verification."
+}

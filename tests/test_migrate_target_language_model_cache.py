@@ -3,9 +3,11 @@ import json
 import unittest
 from unittest.mock import patch
 
-from scripts import migrate_target_language_model_cache as subject
-from scripts import run_target_language_models as models
-from scripts import target_language_policy as policies
+from tongxing_production.text import model_cache_migration as subject
+from tongxing_production.text import models
+from tongxing_production.text import policy as policies
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.workflows.dual_pdf import pipeline as sermon_pipeline_module
 from tests import test_run_target_language_models as fixtures
 
 
@@ -29,7 +31,7 @@ class CacheMigrationTests(unittest.TestCase):
 
     def test_new_run_reuses_exact_payloads_with_zero_api_calls(self):
         before = {p.name: p.read_bytes() for p in self.old.glob('*') if p.is_file()}
-        with patch.object(models.sermon_pipeline, 'chat_json', side_effect=AssertionError('network')):
+        with patch.object(sermon_pipeline_module, 'chat_json', side_effect=AssertionError('network')):
             result = self.run_migration()
         self.assertEqual(result['modelCalls'], 0)
         self.assertEqual(result['reusedModelResponses'], 4)
@@ -45,7 +47,7 @@ class CacheMigrationTests(unittest.TestCase):
         new_plugin = self.old.parent / 'new-plugin.py'
         new_plugin.write_text(self.f.plugin_path.read_text() + '\n# implementation-only revision\n')
         policy = copy.deepcopy(self.f.policy)
-        from scripts import produce_target_language_candidate as producer
+        from tongxing_production.text import candidate as producer
         policy['languageReview']['pluginImplementationSha256'] = producer.plugin_implementation_sha256(new_plugin)
         policy['componentSha256']['languageReview'] = policies.canonical_sha256(policy['languageReview'])
         result = self.run_migration(policy, new_plugin)
@@ -63,7 +65,7 @@ class CacheMigrationTests(unittest.TestCase):
         models._run_prepared_groups(request, self.f.anchor, self.f.policy, self.old,
                                     'fixture-key', self.fixture.fake_call)
         self.fixture.calls.clear()
-        with patch.object(models.sermon_pipeline, 'chat_json', side_effect=AssertionError('network')):
+        with patch.object(sermon_pipeline_module, 'chat_json', side_effect=AssertionError('network')):
             with self.assertRaisesRegex(ValueError, 'lacks frozen rule receipt'):
                 self.run_migration()
         self.assertFalse(self.new.exists())

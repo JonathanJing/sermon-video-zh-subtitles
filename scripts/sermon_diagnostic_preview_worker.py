@@ -22,19 +22,20 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-from scripts import render_speculative_target_language_speech as preview
-from scripts import sermon_accounting as accounting
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.audio import speculative as preview
+from tongxing_production.observability import accounting
 from scripts import sermon_diagnostic_context as diagnostic
 from scripts import sermon_diagnostic_provider as provider
 from scripts import sermon_execution_harness as harness
-from scripts import sermon_log_profile as profile
-from scripts import sermon_public_snapshot as public
+from tongxing_production.observability import profile
+from tongxing_production.storage import snapshot as public
 from scripts import sermon_native_preview_runtime as native_runtime
-from scripts import sermon_clock_evidence as clock
+from tongxing_production.observability import clock_evidence as clock
 from scripts import sermon_preview_checkpoint_manifest as checkpoint_manifest
-from scripts import sermon_review_budget as budget
-from scripts import sermon_review_contracts as c
-from scripts import sermon_workflow_jobs as jobs
+from tongxing_production.review import review_budget as budget
+from tongxing_production.review import contracts as c
+from tongxing_production.orchestration import jobs
 from scripts.sermon_release_workflow import _safe_path
 
 SCHEMA = 'sermon-diagnostic-preview-worker-receipt-v4'
@@ -227,6 +228,7 @@ def _manifest(checked):
         candidateJsonSha256=c.canonical_sha256(candidate), sourceJsonSha256=c.canonical_sha256(checked['source']),
         anchorJsonSha256=c.canonical_sha256(checked['anchor']), translationPolicySha256=candidate['translationPolicySha256'],
         previewRendererSha256=preview.identity.sha256(Path(preview.__file__)),
+        previewExecutionBindingSha256=preview.formal.preview_execution_binding_sha256(),
         strictRubricSha256=c.canonical_sha256(checked['strict_rubric']),
         diagnosticContextSha256=c.canonical_sha256(checked['diagnostic_context']),
         humanAcceptance='pending', productionEligible=False)
@@ -235,7 +237,8 @@ def _manifest(checked):
 def _outputs(root, spec, checked):
     out = _tree(root, spec['out'])
     manifest = out / 'manifest.json'
-    c.require(_read(manifest) == _manifest(checked), 'preview_manifest_changed')
+    expected_manifest = _manifest(checked)
+    c.require(_read(manifest) == expected_manifest, 'preview_manifest_changed')
     snapshots = []
     for name in (*PATH_KEYS, 'strict_rubric', 'diagnostic_context'):
         path = out / (name + '.json')
@@ -254,7 +257,8 @@ def _outputs(root, spec, checked):
         measured = preview.integrity.probe_full_decode(wav)
         c.require(unit.get('schemaVersion') == preview.UNIT_VERSION and unit.get('status') == 'preview_only'
             and unit.get('candidateJsonSha256') == c.canonical_sha256(checked['candidate'])
-            and unit.get('previewContextSha256') == c.canonical_sha256(_manifest(checked))
+            and unit.get('previewContextSha256') == c.canonical_sha256(expected_manifest)
+            and unit.get('previewExecutionBindingSha256') == expected_manifest['previewExecutionBindingSha256']
             and unit.get('soundIdentity') == expected and unit.get('audioSha256') == _ref(wav)['fileBytesSha256']
             and unit.get('durationSeconds') == measured['durationSeconds'] and unit.get('fullDecode') == 'pass',
             'preview_unit_receipt_changed')

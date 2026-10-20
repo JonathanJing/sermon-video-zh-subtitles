@@ -1,0 +1,17 @@
+{
+  "schemaVersion": "l1-s5-shadow-identity-compare-v1",
+  "status": "passed",
+  "oldRunnerSha256": "66de6c0f0a2b962282bc52019db36bfb33f06b109262616b2587b5269083b7da",
+  "newRunnerSha256": "673f7aa064f0ca7f51d4e742cdd452901891c6ebc0845b2285f86481185220dd",
+  "runnerHashChanged": true,
+  "runDirectoryChanged": true,
+  "oldReceiptPreserved": true,
+  "newReceiptWritten": true,
+  "anchorJsonBytesEqual": true,
+  "sourcePackageBytesChanged": true,
+  "sourcePackageChangedFields": [
+    "anchors.artifact.path"
+  ],
+  "packageIdEqual": true,
+  "downstreamInvalidationKeyEqual": true
+}

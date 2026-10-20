@@ -1,6 +1,6 @@
 # 固定 Layer 3 adapter 与恢复
 
-统一 owner 使用 `scripts.sermon_unified_audio.inspect(config_path)` 生成计划，随后调用
+统一 owner 使用 `tongxing_production.audio.unified_stage.inspect(config_path)` 生成计划，随后调用
 `execute(config_path, output_path, expected_plan_hash=plan["planHash"], allow_synthesis=...)`。
 配置只选择数据和白名单设置，不支持命令、shell、任意模块或 argv。
 
@@ -64,7 +64,7 @@
 可选 ASR 裁决细节：
 
 ```sh
-.venv/bin/python scripts/target_audio_recovery.py \
+.venv/bin/python tools/ops/run.py audio.recovery \
   --audio-package /absolute/audio-package.json --artifact-root /absolute/render \
   --group GROUP_ID --reason asr_misrecognition --evidence '实际听审依据' \
   --corrected-transcript '正确转写' --out /absolute/new-adjudication.json
@@ -77,7 +77,7 @@
 ## 只读计时与容量实验
 
 ```sh
-.venv/bin/python scripts/benchmark_audio_receipts.py \
+.venv/bin/python experiments/local-layer-latency/benchmark_audio_receipts.py \
   --job /absolute/render/job.json --out /absolute/new-benchmark.json
 ```
 
@@ -110,7 +110,7 @@ execute 的结果保存 `artifactClosure` 和 `audioPackage` 引用，human revi
 
 ## ASR 细节与原有听审入口
 
-`review_target_language_audio.py prepare --details-template-out NEW_DETAILS.json` 可选生成
+`tools/ops/run.py audio.human_review prepare --details-template-out NEW_DETAILS.json` 可选生成
 绑定当前筛查收据的逐项空表与五种原因选项。操作员填写后，`approve --adjudication-details
 DETAILS.json --artifact-root ROOT` 校验每项 unit/track/text hash；修音频、修文字或未裁定的项
 不能被批准。空缺的可选细节不使既有整体批准失效，也不当作已得到逐项真值。

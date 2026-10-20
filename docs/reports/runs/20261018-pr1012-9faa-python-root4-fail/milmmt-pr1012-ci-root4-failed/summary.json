@@ -1,0 +1,10 @@
+{
+  "status": "failed",
+  "failedJob": "test-group (root-4)",
+  "failedTest": "tests.test_tongxing_production_package.ProductionPackageTests.test_every_facade_imports_by_bare_name_from_a_script_run_in_scripts",
+  "cause": "the smoke test classified an experiments/ sys.modules facade as production/tools",
+  "remediationCommit": "18ae775f",
+  "otherGroupStatus": "seven_other_root_groups_success",
+  "providerCalls": 0,
+  "modelCalls": 0
+}

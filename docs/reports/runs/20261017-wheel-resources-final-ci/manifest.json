@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-wheel-resources-final-ci",
+  "runs": [
+    {
+      "label": "wheel-resources-final-ci",
+      "source": "~/.codex/worktrees/wheel-resources/sermon-video-zh-subtitles/artifacts/wheel-resources-final-ci",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "wheel-resources-final-ci",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 90,
+      "truncated": false,
+      "sha256": "82221ca972a51a2a0a0623aaccfab8f48ef3f8eae5b25a01415edfea83a8bd2c",
+      "redactions": {}
+    },
+    {
+      "run": "wheel-resources-final-ci",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 327,
+      "truncated": false,
+      "sha256": "16fec6d9d0d28bb29b5e68e3e8faf316e328a1c99ca0f6cca8fe6652a353faba",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

@@ -7,7 +7,9 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-from scripts import sermon_mfa_identity as identity, sermon_review_contracts as c
+from tongxing_production.review import contracts as c
+from tongxing_production.source import mfa_identity as identity
+from scripts import tongxing_host as host
 
 
 def runtime_fixture(root):
@@ -21,7 +23,7 @@ def runtime_fixture(root):
     files.update(g2p_model=None, spoken_forms_path=None)
     return {'schemaVersion': 1, 'backend': 'macbook-local', 'runtime': {
         'version': '3.3.9', 'executionPlatform': 'Darwin', 'executionHost': 'private-old-host',
-        'adapterSha256': c.bytes_sha256((Path(identity.__file__).resolve().parents[1]/identity.ADAPTER).read_bytes()),
+        'adapterSha256': c.bytes_sha256((host.ROOT/identity.ADAPTER_PATH).read_bytes()),
         'files': files, 'nativeKalpy': {}, 'condaRecords': {}}}
 
 

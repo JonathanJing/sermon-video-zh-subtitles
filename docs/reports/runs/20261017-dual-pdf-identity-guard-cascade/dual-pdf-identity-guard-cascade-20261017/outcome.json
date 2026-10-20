@@ -1,0 +1,36 @@
+{
+  "status": "passed",
+  "deliveryType": "test",
+  "scope": "propagate #571 identity-bound legacy sidecar guard through dual PDF PR stack",
+  "upstreamHead": "496df474",
+  "stages": [
+    {
+      "pr": 584,
+      "head": "ae17a2443fecbde109fc1df1741a0aa1053413b6"
+    },
+    {
+      "pr": 594,
+      "head": "f9615b3abe0731bece6bc3f396c97732142eb420"
+    },
+    {
+      "pr": 598,
+      "head": "249953a3c8d89019c327a564c591ce7bc94e7bcd"
+    },
+    {
+      "pr": 602,
+      "head": "4dac2a0be4e6a8e72058062cedb8b4346c1f6393"
+    },
+    {
+      "pr": 607,
+      "head": "4721716634f792f5a92aa5b7f7fca5a9579c4201"
+    }
+  ],
+  "pytestPassed": 115,
+  "subtestsPassed": 90,
+  "pytestSeconds": 29.66,
+  "diffCheck": "passed_per_merge",
+  "ancestryCheck": "passed_per_branch",
+  "remoteCommitReadback": "passed_per_branch",
+  "productionRun": "not_run",
+  "publication": "not_run"
+}

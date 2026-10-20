@@ -1,0 +1,112 @@
+{
+  "schemaVersion": "g1-draft-identity-preview-v1",
+  "status": "preview_only",
+  "baselineHead": "249ae12a34d19baaaaf899e2e1e1ad0106cf1c9c",
+  "finalDraftHead": "be9c558d3883063a99343e1da8e18b3e0c5adcba",
+  "identities": {
+    "W": {
+      "before": "acbe525679820292bdb3a3028006a4daa2e1e47b5408b1379aa3c217cbe2b125",
+      "after": "6eeb52aa5d640df366ec9a623ae5b7998e353907528c019c53a388e2e73d6f89"
+    },
+    "T": {
+      "before": "27025236239627f6d9917f275db1af821d0bae09842502dec307e2e9317bf9d0",
+      "after": "d32c3865b5d3915778f8de3366d1c64d1abd700824f5d705ac5e033c2c17b4fa"
+    },
+    "scoring": {
+      "before": "cb123c807a0306e34fd6143935bd1c1f0df5b9759ef00b0fa51a3953354f6458",
+      "after": "bb055d32a3d1b06f5fac52d60fdaf1da1b324a5a33ac92d5b45fc41d6f95709c"
+    },
+    "rate": {
+      "before": "2e8ad1a69c4c9735b44b120d6476fedd304f402a4be0572543bcf9034ded4a66",
+      "after": "baab89fc2397739b73a76c412963630fed315258d67c9b3923ddabf0b0aea1ac"
+    }
+  },
+  "waiverClosure": {
+    "beforeMemberCount": 22,
+    "afterMemberCount": 23,
+    "addedKeys": [
+      "packages/production/src/tongxing_production/storage/files.py"
+    ],
+    "changedOrAdded": [
+      {
+        "key": "packages/production/src/tongxing_production/storage/files.py",
+        "before": null,
+        "after": "c497b0a81bd7e5787cb34df6536ce9d3e7c1269b59c584b59fc078cbf674ea80"
+      },
+      {
+        "key": "scripts/auto_qc_seeded_errors.py",
+        "before": "a08d0489b3c776189cff9a2821d3cf377a382337f5dbcf8e4b5acb05f9965dfa",
+        "after": "d8d11bafed281ef617f32c80974a9b160a894364cbdd6f2d9fac6f30cbb31cc7"
+      },
+      {
+        "key": "scripts/machine_qc_audio_transports.py",
+        "before": "ee2cc4fbf4508443026e04a37a15d89e77e460405cf95651bbcd74e2e98032e6",
+        "after": "6e2acad05dc48fef50393a799b059ef955aa89df34eea172da40a77833e0ecc8"
+      },
+      {
+        "key": "scripts/machine_qc_budget_authorization.py",
+        "before": "43c27b28f8c2291a5ac2bf7765ea67b4254a0b7ea33f4da0bbb92fa0c5be85bb",
+        "after": "e8fbfe11f0037ac055d8502dd0f72bf0b57589f40c077f65308c7c6c3867745a"
+      },
+      {
+        "key": "scripts/machine_quality_release_basis.py",
+        "before": "410988d188c495c69f8648f9467135d8038c25643137d61d01ad0c4ef7af8fc9",
+        "after": "710f2c2666e6709ad033fe4358888418bbe366d66854332e099e5e733b9411e0"
+      },
+      {
+        "key": "scripts/machine_quality_waiver.py",
+        "before": "da800566dd0c4a00349067f8e6c009460051ec5d651547cd1e0ba8999ad3f36b",
+        "after": "07871b059f22e4ca26e624e7a068318242d3837d5f7a57a2405a4ba0f23c6822"
+      },
+      {
+        "key": "scripts/render_formal_target_language_speech.py",
+        "before": "55fb124180fa6f19d915b93fb660b39dc4899eddcad9a8a645b599bc56657e55",
+        "after": "9085e0f15189e0ad032ca060c7d95aaad33fe99587218bf0d674981ed4b9bd49"
+      },
+      {
+        "key": "scripts/run_machine_qc_audio_test.py",
+        "before": "5ab0db4954e170cb19080bbf91db7d4d2065dbe37e5a212037d8c628a467397b",
+        "after": "44b39e2979f6ee5f987d4efd3761a85d643a6ce582a88cf3d48e7a6cf06f3b43"
+      },
+      {
+        "key": "scripts/run_machine_qc_clip_test.py",
+        "before": "4b4bf227c0e051fce8de158fdcbb3611d2ea5759756c16c3eb6408c1a7a24b6a",
+        "after": "71dd800c0563bee936ee0f714e3fb13197d0e6ada940c86e5bbe0e8b99a07cad"
+      },
+      {
+        "key": "scripts/screen_target_language_audio_units.py",
+        "before": "8005f9e3ee5b20c81ca0636fd24c38c29300cb128e25a84576703d887423f154",
+        "after": "840941b413246bf4c57b336e5454e2586fb78ee32d09a921eebb476fbc873efe"
+      },
+      {
+        "key": "scripts/sermon_workflow_jobs.py",
+        "before": "2957a9d354bf4494f94440602988dacc7ef88c73bd32e90697efb6580cfae98d",
+        "after": "3d48ac09c6a6580daf98a5a86e8f8feede910039b3c03eda0107fd4ee2c07f15"
+      },
+      {
+        "key": "scripts/spoken_condensation.py",
+        "before": "7328bdb1a74979836e5be3862cff2594041a6b9856af5636f045864a432a112a",
+        "after": "9491d8a3fd8c1d5c70a4e210688565ece704ae16a36b2e59c8bed5d3d36cc486"
+      },
+      {
+        "key": "scripts/target_audio_auto_qc.py",
+        "before": "03d0ee9475f1ba765a9f77f0901f7e678f4f47e71cbf3a2ab8273eca94be66d0",
+        "after": "325ff8c949e0349fd3e30b0ad04e9560f36d9da5c334ed7adf442d7e33dd2b91"
+      },
+      {
+        "key": "scripts/target_audio_predicted_schedule.py",
+        "before": "868bae3172210144c8a67419259eb05d0cb96a9d386923ffa4faf13e7f75037d",
+        "after": "a4a67aa9514ab4c2de07c07341507c8f7f1c83dfda3669d36f2571ad040865b5"
+      },
+      {
+        "key": "scripts/target_text_auto_qc.py",
+        "before": "8e8b0c5f0fa5dd72621a42ef89bed437db21b929288abd40e048dd7442877d57",
+        "after": "4097104c65f85f558bbc390a4f2d900981500bbeeaa0db0f12ac6986da902e9c"
+      }
+    ]
+  },
+  "limits": [
+    "Draft branch preview only; G1 opening and closing gate not satisfied",
+    "No locale recalibration, waiver issuance, QC budget approval, or release acceptance"
+  ]
+}

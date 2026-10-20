@@ -4,7 +4,9 @@ import json
 from pathlib import Path
 from unittest.mock import patch
 
-from scripts.experiments import prepare_next_concurrency_test as preparation
+from tests import experiment_modules
+
+preparation = experiment_modules.line_module("experiments/spark-diagnostic-audio/prepare_next_concurrency_test.py")
 from tests import test_codex_layer2_diagnostic as chain
 
 

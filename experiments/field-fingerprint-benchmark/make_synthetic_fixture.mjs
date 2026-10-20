@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import {createHash} from 'node:crypto';
 import {pathToFileURL} from 'node:url';
-import {fingerprint, CONFIG} from '../sermon-dubbing-poc/web/fingerprint-core.mjs';
+import {fingerprint, CONFIG} from '../../packages/fingerprint/src/fingerprint-core.mjs';
 const sha = b => createHash('sha256').update(b).digest('hex');
 function signal(rate, seconds, variant) {
   return Float32Array.from({length: rate * seconds}, (_, i) => {

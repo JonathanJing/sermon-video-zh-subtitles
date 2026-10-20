@@ -1,0 +1,53 @@
+......F...... [ 32%]
+...........................                                                         [100%]
+=================================== FAILURES ===================================
+_ ProductionPackageTests.test_every_facade_imports_by_bare_name_from_a_script_run_in_scripts _
+
+self = <test_tongxing_production_package.ProductionPackageTests testMethod=test_every_facade_imports_by_bare_name_from_a_script_run_in_scripts>
+
+    def test_every_facade_imports_by_bare_name_from_a_script_run_in_scripts(self):
+        """`python scripts/x.py` puts only scripts/ on sys.path; scripts that fall back to
+        bare imports (`import sermon_sentence_interpretation`) must still reach the package."""
+        facades = sorted(path.stem for path in (ROOT / "scripts").glob("*.py")
+                         if "sys.modules[__name__] = _implementation" in path.read_text(encoding="utf-8"))
+        self.assertTrue(facades)
+        code = ("import sys; sys.path[0] = sys.argv[1]\n"
+                "for name in sys.argv[2:]:\n"
+                "    module = __import__(name)\n"
+                # Operator and development tools live outside the production package.
+                "    assert module.__name__.startswith(('tongxing_production.', 'tools.ops.', 'tools.development.')), (name, module.__name__)\n")
+        environment = {key: value for key, value in os.environ.items() if key != "PYTHONPATH"}
+        with tempfile.TemporaryDirectory() as elsewhere:
+            result = subprocess.run([sys.executable, "-c", code, str(ROOT / "scripts"), *facades],
+                                    cwd=elsewhere, env=environment, capture_output=True, text=True, timeout=120)
+>       self.assertEqual(result.returncode, 0, result.stderr[-2000:])
+E       AssertionError: 1 != 0 : Traceback (most recent call last):
+E         File "~/.codex/worktrees/g1-r3-review/sermon-video-zh-subtitles/scripts/api_cli_outcomes.py", line 11, in <module>
+E           from scripts import tongxing_host  # noqa: F401  binds the production package ports
+E           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       ModuleNotFoundError: No module named 'scripts'
+E
+E       During handling of the above exception, another exception occurred:
+E
+E       Traceback (most recent call last):
+E         File "<string>", line 3, in <module>
+E           module = __import__(name)
+E         File "~/.codex/worktrees/g1-r3-review/sermon-video-zh-subtitles/scripts/api_cli_outcomes.py", line 14, in <module>
+E           from scripts import tongxing_host  # noqa: F401
+E           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E         File "~/.codex/worktrees/g1-r3-review/sermon-video-zh-subtitles/scripts/tongxing_host.py", line 1003, in <module>
+E           observability_backend.configure(observability_backend.ObservabilityBackend(
+E                                           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+E               checkout_root=ROOT, load_producer_imports=load_producer_imports,
+E               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           ...<2 lines>...
+E               decision_code=lambda: _observation_code('scripts.sermon_decision_accounting'),
+E               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E               safe_decision_observation=lambda fields: _safe_observation('scripts.sermon_decision_accounting', fields)))
+E               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       TypeError: ObservabilityBackend.__init__() got an unexpected keyword argument 'local_model_code'
+
+tests/test_tongxing_production_package.py:141: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_tongxing_production_package.py::ProductionPackageTests::test_every_facade_imports_by_bare_name_from_a_script_run_in_scripts
+1 failed, 39 passed, 552 subtests passed in 5.39s

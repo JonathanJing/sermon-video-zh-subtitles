@@ -5,7 +5,7 @@ import unittest
 from argparse import Namespace
 from pathlib import Path
 
-import scripts.write_model_access_recovery_plan as mod
+import tools.ops.write_model_access_recovery_plan as mod
 
 
 class WriteModelAccessRecoveryPlanTest(unittest.TestCase):
@@ -38,7 +38,7 @@ class WriteModelAccessRecoveryPlanTest(unittest.TestCase):
         self.assertIn("refresh_production_preflight_evidence.py", commands)
         self.assertIn("write_production_go_live_sequence.py", commands)
         self.assertNotIn("collect_production_evidence_matrix.py", commands)
-        translate_command = next(command for command in report["commands"] if "scripts/translate_playback_with_openai.py" in command)
+        translate_command = next(command for command in report["commands"] if "tools/ops/translate_playback_with_openai.py" in command)
         playback_js = "artifacts/evidence/offline-caption-route/web/playback-simulation.generated.js"
         self.assertEqual(translate_command[translate_command.index("--input") + 1], playback_js)
         self.assertEqual(translate_command[translate_command.index("--out") + 1], playback_js)

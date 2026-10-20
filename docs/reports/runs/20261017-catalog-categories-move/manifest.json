@@ -1,0 +1,27 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-catalog-categories-move",
+  "runs": [
+    {
+      "label": "catalog-categories-move-report-20261017",
+      "source": "~/.codex/worktrees/backlog-lookup-tool/sermon-video-zh-subtitles/artifacts/catalog-categories-move-report-20261017",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "catalog-categories-move-report-20261017",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 783,
+      "truncated": false,
+      "sha256": "77eb939eca93b8a2116621ec904141bab3a15441d94659694f462f15db29275d",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

@@ -5,7 +5,10 @@ from pathlib import Path
 import tempfile
 import unittest
 from unittest.mock import patch
-from scripts import run_local_asr_gpt_reaudit as subject
+from tests.legacy_pipeline_patches import patch_both  # W3b: Layer 1 names live in two modules
+from tests import experiment_modules
+
+subject = experiment_modules.load("experiments/local-asr/run_local_asr_gpt_reaudit.py")
 
 
 class AsrReauditOutcomeTests(unittest.TestCase):
@@ -30,8 +33,8 @@ class AsrReauditOutcomeTests(unittest.TestCase):
             root=Path(tmp);argv=self.fixture(root)
             with patch.dict(os.environ,{},clear=True),patch('sys.argv',argv), \
                  patch.object(subject,'read_secret',return_value='synthetic-key'), \
-                 patch.object(subject.sermon_pipeline,'multipart_request',return_value={'text':'Hello.'}) as asr, \
-                 patch('scripts.spark_exclusive_session.Client.from_environment',side_effect=AssertionError('Spark consulted')), \
+                 patch_both("multipart_request", return_value={'text':'Hello.'}) as asr, \
+                 patch('tongxing_production.compute.spark_exclusive_session.Client.from_environment',side_effect=AssertionError('Spark consulted')), \
                  patch('builtins.print'):
                 self.assertEqual(subject.main(),0)
                 self.assertEqual(subject.main(),0)
@@ -47,7 +50,7 @@ class AsrReauditOutcomeTests(unittest.TestCase):
             root=Path(tmp);argv=self.fixture(root)
             with patch.dict(os.environ,{},clear=True),patch('sys.argv',argv), \
                  patch.object(subject,'read_secret',return_value='synthetic-key'), \
-                 patch.object(subject.sermon_pipeline,'multipart_request',side_effect=TimeoutError('unknown')) as asr, \
+                 patch_both("multipart_request", side_effect=TimeoutError('unknown')) as asr, \
                  patch('builtins.print'):
                 self.assertEqual(subject.main(),1)
                 self.assertEqual(subject.main(),1)

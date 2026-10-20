@@ -5,10 +5,11 @@ import subprocess
 from unittest.mock import patch
 
 import pytest
-from scripts import sermon_codex_transport as transport
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.compute.transports import codex_cli as transport
 from scripts import sermon_codex_supervisor as supervisor
-from scripts import codex_layer2_resources as slots
-from scripts.production_concurrency_profile import profile_v1
+from tongxing_production.compute.transports import codex_resources as slots
+from tongxing_production.compute.concurrency_profile import profile_v1
 from scripts.sermon_unified import resources
 from tests import test_sermon_codex_transport as cli_fixtures
 from tests import test_sermon_codex_supervisor as supervisor_fixtures

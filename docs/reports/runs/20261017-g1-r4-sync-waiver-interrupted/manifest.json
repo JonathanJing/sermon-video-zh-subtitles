@@ -1,0 +1,27 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-g1-r4-sync-waiver-interrupted",
+  "runs": [
+    {
+      "label": "20261017-g1-r4-sync-waiver-interrupted",
+      "source": "~/.codex/worktrees/g1-r4-review/sermon-video-zh-subtitles/artifacts/local-test-runs/20261017-g1-r4-sync-waiver-interrupted",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "20261017-g1-r4-sync-waiver-interrupted",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 507,
+      "truncated": false,
+      "sha256": "dcd18903c1adfe7c744453fedfed91a98aa9c233c57670ed883cb3a21adc0b4f",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

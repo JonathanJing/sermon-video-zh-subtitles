@@ -1,0 +1,81 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261019-facade-batch-e",
+  "runs": [
+    {
+      "label": "20261019-facade-batch-e",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/local-runs/20261019-facade-batch-e",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "20261019-facade-batch-e",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 649,
+      "truncated": false,
+      "sha256": "922c119036f95880a8299b9641fbcdfb97027a2a673281e4b11d7f2bbbc16496",
+      "redactions": {}
+    },
+    {
+      "run": "20261019-facade-batch-e",
+      "path": "pytest-chunk.0.log",
+      "kind": "log",
+      "bytes": 120,
+      "truncated": false,
+      "sha256": "f51a1ad75c5a7dc5ab496de4794fbf4814e337d037c023ff570734b9a4f4c72c",
+      "redactions": {}
+    },
+    {
+      "run": "20261019-facade-batch-e",
+      "path": "pytest-chunk.1.log",
+      "kind": "log",
+      "bytes": 118,
+      "truncated": false,
+      "sha256": "9ac4919c102060695937493f483ad061e9cfd87dd817cf1a9cbe7740830e92bc",
+      "redactions": {}
+    },
+    {
+      "run": "20261019-facade-batch-e",
+      "path": "pytest-chunk.2.log",
+      "kind": "log",
+      "bytes": 139,
+      "truncated": false,
+      "sha256": "51f0dfd044f734511c40953c91cf5a06dc2f72e08f106d8aec9167767cc63c88",
+      "redactions": {}
+    },
+    {
+      "run": "20261019-facade-batch-e",
+      "path": "pytest-chunk.3.log",
+      "kind": "log",
+      "bytes": 208,
+      "truncated": false,
+      "sha256": "9d98fd58e768128731194c79ac2428afc9a149cd51c5dbb4000b4dea2cb1742d",
+      "redactions": {}
+    },
+    {
+      "run": "20261019-facade-batch-e",
+      "path": "pytest-chunk.4.log",
+      "kind": "log",
+      "bytes": 117,
+      "truncated": false,
+      "sha256": "87358af58be4bd0f5962e89ef7cec19c4ad5d3df83470569da65b7e5637202da",
+      "redactions": {}
+    },
+    {
+      "run": "20261019-facade-batch-e",
+      "path": "pytest-chunk.5.log",
+      "kind": "log",
+      "bytes": 166,
+      "truncated": false,
+      "sha256": "c15a5b459a8fdcdacecda14d7088a7f597d7aa5ee78fce423494c5ff9e09625d",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

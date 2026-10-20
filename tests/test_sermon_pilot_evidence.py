@@ -12,7 +12,8 @@ from unittest.mock import patch
 from scripts import sermon_pilot_evidence as evidence
 from scripts import sermon_prefect_dag as pilot
 from scripts import sermon_dag_contract as contract
-from scripts import sermon_log_profile as profile
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.observability import profile
 from scripts.sermon_execution_harness import work_lock
 
 
@@ -186,7 +187,7 @@ class PilotEngineEvidenceTests(unittest.TestCase):
                 plan_path = base/(name+'.json');plan_path.write_text(json.dumps(plan))
                 argv = [sys.executable, str(pilot.REPO/'scripts/run_sermon_prefect_dag.py'),
                         'mock', '--root', str(root), '--plan', str(plan_path)]
-                first = subprocess.run(argv, capture_output=True, text=True, timeout=120)
+                first = subprocess.run(argv, cwd=temp, capture_output=True, text=True, timeout=120)
                 self.assertEqual(first.returncode, 0 if name=='complete' else 2, (first.stdout[-4000:], first.stderr[-4000:]))
                 original = evidence.inventory(root)
                 report = evidence.inspect(root, diagnose_offline=True)
@@ -194,7 +195,7 @@ class PilotEngineEvidenceTests(unittest.TestCase):
                 self.assertEqual(report['progress']['plannedProcessedPercent'], 100 if name=='complete' else 80)
                 self.assertEqual(report['progress']['gateCompletionPercent'], 100 if name=='complete' else 70)
                 if name=='complete':
-                    second = subprocess.run(argv, capture_output=True, text=True, timeout=120)
+                    second = subprocess.run(argv, cwd=temp, capture_output=True, text=True, timeout=120)
                     self.assertEqual(second.returncode, 0, (second.stdout[-4000:], second.stderr[-4000:]))
                     replay = evidence.inspect(root)
                     self.assertEqual(report['validatedNodeEvidence'], replay['validatedNodeEvidence'])

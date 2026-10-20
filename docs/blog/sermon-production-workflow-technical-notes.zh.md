@@ -58,16 +58,16 @@
 
 Layer 1 身份变化影响全部语言；Layer 2/3 修订只使对应语言的下游失效。音频单元复用不免除重新排程、装配和适用的听审。9 月 20 日发音修订真实记录为 **8 个重新生成、118 个验证复用**；不能把最终复用检查的 0.649 秒当作 8 个发音的生成时间。
 
-翻译缓存和 partial repair 入口为 [run_target_language_models.py](../../scripts/run_target_language_models.py)，音频单元恢复入口为 [render_formal_target_language_speech.py](../../scripts/render_formal_target_language_speech.py)。把这些已有能力接入完整周编排、证明故障后新增调用的准确数量，仍是单独的集成验收。既有能力与边界见[效率研究](../reports/20260929-weekly-workflow-efficiency-findings.zh.md)。
+翻译缓存和 partial repair 入口为 [models.py](../../packages/production/src/tongxing_production/text/models.py)，音频单元恢复入口为 [render_formal_target_language_speech.py](../../packages/production/src/tongxing_production/audio/renderer.py)。把这些已有能力接入完整周编排、证明故障后新增调用的准确数量，仍是单独的集成验收。既有能力与边界见[效率研究](../reports/20260929-weekly-workflow-efficiency-findings.zh.md)。
 
 ## 控制职责及实现状态
 
 | 职责 | 当前代码和约束 | 已有验证与边界 |
 |---|---|---|
 | 固定流程推进 | [legacy controller](../../scripts/sermon_deterministic_controller.py) 的 `recommend`/`Controller`；固定 action registry，派发或等待后 tick 返回，绑定定义、状态与授权 | `legacy_page_release` adapter，不能冒充 canonical 四层；无 LLM 的夹具行为不能换算真实整周 token 收益 |
-| Canonical 业务依赖 | [DAG 定义](../../scripts/canonical_pipeline_definition.py) 按语言建立 Source→Text→Audio→Page，身份变化使对应后继失效 | 一般 planner `dispatchEnabled=false`，依赖可投影不等于全链可执行 |
-| 固定 Layer 2 dispatch | [Layer 2 controller](../../scripts/canonical_layer2_controller.py) 接入实际 producer、锁、durable jobs 和缓存 | 默认只读，显式 execute 才可派发；同 run 最多一个 active locale job，组内按冻结 policy 1–3 workers；验证仍以固定模型响应为主，停在人审 |
-| 有界歧义判断 | [bounded decision](../../scripts/sermon_bounded_decision.py) 的 `build_packet`/`propose`/`validate_decision` | 32 KiB、16 个 evidence refs、一次 propose 最多一轮，允许预算为 1–2 attempts；先预约再调用注入 responder，不创建 live SDK，不自动执行建议 |
+| Canonical 业务依赖 | [DAG 定义](../../packages/production/src/tongxing_production/contracts/pipeline_definition.py) 按语言建立 Source→Text→Audio→Page，身份变化使对应后继失效 | 一般 planner `dispatchEnabled=false`，依赖可投影不等于全链可执行 |
+| 固定 Layer 2 dispatch | [Layer 2 controller](../../packages/production/src/tongxing_production/text/controller.py) 接入实际 producer、锁、durable jobs 和缓存 | 默认只读，显式 execute 才可派发；同 run 最多一个 active locale job，组内按冻结 policy 1–3 workers；验证仍以固定模型响应为主，停在人审 |
+| 有界歧义判断 | [bounded decision](../../packages/production/src/tongxing_production/orchestration/supervisor/bounded_decision.py) 的 `build_packet`/`propose`/`validate_decision` | 32 KiB、16 个 evidence refs、一次 propose 最多一轮，允许预算为 1–2 attempts；先预约再调用注入 responder，不创建 live SDK，不自动执行建议 |
 | 工程升级 | Codex 分析未知程序故障，修代码、验证后回归固定规则 | 独立于每组生产；不是常规翻译或调度前置条件 |
 
 Bounded Decision 只接受当前代码列出的语义／时间修复范围歧义，不接受任意未知错误。packet 只传版本化字段、绑定 hash 和证据引用；`validate_decision` 核对 fresh packet、允许 action、单元集合与 evidence。`parentContextInherited=false` 是这个受控边界的元数据，不是对所有现有子 Agent 的事实声明。返回 `proposal_requires_locked_admission` 仍需原 controller 持锁检查与执行准入。详见[decision 日志](../bounded-decision-accounting.zh.md)与[持久预算](../durable-decision-budget.zh.md)。

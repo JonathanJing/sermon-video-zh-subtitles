@@ -1,0 +1,9 @@
+{
+  "deliveryType": "test",
+  "status": "passed",
+  "exitCode": 0,
+  "commit": "87fafa3f",
+  "workflow": "T6 strict review gate sync with origin/dev 7734f841",
+  "publication": "not_run",
+  "realProduction": "not_run"
+}

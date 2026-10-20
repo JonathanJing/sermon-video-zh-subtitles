@@ -1,0 +1,45 @@
+{
+  "status": "completed_byte_identical",
+  "exitCode": 0,
+  "deliveryType": "test",
+  "purpose": "DEV-GRP-002 per-group candidate assembly vs whole-sermon admission, 15030286 offline",
+  "startedAt": "2026-10-19T17:33:00Z",
+  "endedAt": "2026-10-19T17:36:00Z",
+  "code": "claude/dev-grp-002-assemble 4e85aae8 on dev 06d65999",
+  "plugins": "frozen run checkouts wt-l2rev (es, zh-Hans) and wt-l2rev2 (ko); shared plugin modules loaded from there for this check",
+  "results": {
+    "ko": {
+      "groups": 402,
+      "skippedNoRoundCache": 0,
+      "candidateBytesEqual": true,
+      "languageReviewBytesEqual": true,
+      "evidenceEqual": true,
+      "evidenceBytesEqual": true,
+      "candidateSha256": "d544e0c57b0f6d3014c34cc2461ccbe0c36678c07a33175739b735993c67d5e8",
+      "seconds": 3.9
+    },
+    "es": {
+      "groups": 402,
+      "skippedNoRoundCache": 0,
+      "candidateBytesEqual": true,
+      "languageReviewBytesEqual": true,
+      "evidenceEqual": true,
+      "evidenceBytesEqual": true,
+      "candidateSha256": "e787142fbeee3ac75cf27331d6af971cf28ec224f7f280e1e85892cf478de3b1",
+      "seconds": 5.6
+    },
+    "zh-Hans": {
+      "groups": 402,
+      "skippedNoRoundCache": 0,
+      "candidateBytesEqual": true,
+      "languageReviewBytesEqual": true,
+      "evidenceEqual": true,
+      "evidenceBytesEqual": true,
+      "candidateSha256": "06388d4cfe9c0488da440c10c1c87122a095f2eb376f5305f29a5d5077aa69aa",
+      "seconds": 5.0
+    }
+  },
+  "modelCalls": 0,
+  "humanApproval": false,
+  "releaseEligible": false
+}

@@ -25,7 +25,7 @@
 
 ## 私有后台报表
 
-在 `experiments/sermon-dubbing-poc/feedback-api` 安装锁定依赖并使用已授权的 Google ADC/IAM 凭据，运行：
+在 `services/feedback` 安装锁定依赖并使用已授权的 Google ADC/IAM 凭据，运行：
 
 ```sh
 GOOGLE_CLOUD_PROJECT=ai-for-god-caption-dev node admin.mjs listening --from 2026-09-27 --to 2026-09-27 --out /PRIVATE/NEW_REPORT_DIRECTORY
@@ -35,11 +35,11 @@ GOOGLE_CLOUD_PROJECT=ai-for-god-caption-dev node admin.mjs listening --from 2026
 
 ## 来源目录及部署
 
-新接口沿用 `/api/session`，使用独立会话及累计序号，支持幂等重试与终止性撤回。旧反馈、事件和使用接口不变。详细协议见 [后台说明](../experiments/sermon-dubbing-poc/feedback-api/README.zh.md)。
+新接口沿用 `/api/session`，使用独立会话及累计序号，支持幂等重试与终止性撤回。旧反馈、事件和使用接口不变。详细协议见 [后台说明](../services/feedback/README.zh.md)。
 
-`scripts/build_language_listening_catalog.py` 验证公开音频、字幕、正文及 release 的绑定后，向现有 v1 来源目录添加 `pageId`、`audioLocale`；保留未知历史来源。已发布 `multilingual-v4.json` 时读取 v4（人工审核语言仍是 `/releases-v2/` 下的 v2 或四件套 v3 发布；含机器质检语言：v4 release 须为 `published_http_verified`，状态、语言和英文源哈希与 v4 目录一致；时长取配音自己的 `audioDurationSeconds`，与客户端上报的音轨时长相同），否则读取只含人工审核语言的 v3 投影。必须明确传入 legacy 中文语言，不能从 UI 猜测。Hosting 静态部署需包含 `language-listening.mjs`、`language-listening-client.mjs`；本项目现有 `/api/**` rewrite 已覆盖新接口。
+`tools/ops/build_language_listening_catalog.py` 验证公开音频、字幕、正文及 release 的绑定后，向现有 v1 来源目录添加 `pageId`、`audioLocale`；保留未知历史来源。已发布 `multilingual-v4.json` 时读取 v4（人工审核语言仍是 `/releases-v2/` 下的 v2 或四件套 v3 发布；含机器质检语言：v4 release 须为 `published_http_verified`，状态、语言和英文源哈希与 v4 目录一致；时长取配音自己的 `audioDurationSeconds`，与客户端上报的音轨时长相同），否则读取只含人工审核语言的 v3 投影。必须明确传入 legacy 中文语言，不能从 UI 猜测。Hosting 静态部署需包含 `language-listening.mjs`、`language-listening-client.mjs`；本项目现有 `/api/**` rewrite 已覆盖新接口。
 
-原生公开隐私站的可维护来源为 [firebase/tongxing-support](../firebase/tongxing-support/README.zh.md)。App Store 的新增数据声明为 Device ID、Product Interaction，用途 Analytics，未关联身份、不用于跟踪；保留既有 Other Data 声明。
+原生公开隐私站的可维护来源为 [apps/support-web](../apps/support-web/)（Hosting 配置与发布命令见 [infra/firebase/support](../infra/firebase/support/README.zh.md)）。App Store 的新增数据声明为 Device ID、Product Interaction，用途 Analytics，未关联身份、不用于跟踪；保留既有 Other Data 声明。
 
 ## 2026-09-27 发布证据
 

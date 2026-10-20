@@ -6,11 +6,12 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-from scripts import sermon_accounting as accounting
-from scripts import sermon_completion as completion
-from scripts import sermon_log_profile as profile
-from scripts import sermon_review_contracts as c
-from scripts import sermon_source_producer_compatibility as compatibility
+from tongxing_production.observability import accounting
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.observability import completion
+from tongxing_production.observability import profile
+from tongxing_production.review import contracts as c
+from tongxing_production.source import producer_compatibility as compatibility
 from tests.test_accounting_log_contract import fixture
 
 
@@ -70,7 +71,8 @@ class CompletionTests(unittest.TestCase):
         # Isolate the real Source predecessor gate using in-memory upstream
         # inputs. Stop immediately after it, before alignment or output writes.
         with tempfile.TemporaryDirectory() as directory:
-            root = Path(directory)
+            # Resolve like _safe_path does (macOS /var -> /private/var).
+            root = Path(directory).resolve()
             config = dict(runId='a' * 64, sourceAudioSha256='c' * 64,
                 sourceMediaSha256='d' * 64, sourceClipSha256='e' * 64,
                 sourceWindowSeconds=[0, 1], totalWallSeconds=60)
@@ -143,8 +145,34 @@ class CompletionTests(unittest.TestCase):
         binding={key:'a'*64 for key in ('parentPlanSha256','newPlanSha256','sourceCanonicalSha256',
             'anchorCanonicalSha256','alignmentBytesSha256','asrReceiptSha256','sourceCheckReceiptSha256')}
         current=compatibility.FOLLOWUP_SOURCE_SHA256
-        actual=c.bytes_sha256((Path(compatibility.__file__).parent/'sermon_fresh_diagnostic_source.py').read_bytes())
-        self.assertEqual(compatibility.EXTRACTION_SOURCE_SHA256['scripts/sermon_fresh_diagnostic_source.py'],actual)
+        repository=Path(__file__).resolve().parents[1]
+        # The fresh producer changed again in v11 (D window); v3's current side is v11's historical side.
+        self.assertEqual(compatibility.EXTRACTION_SOURCE_SHA256['scripts/sermon_fresh_diagnostic_source.py'],
+            compatibility.FACADE_REMOVAL_HISTORICAL_SHA256['scripts/sermon_fresh_diagnostic_source.py'])
+        latest=compatibility.TRANSPORT_MOVE_SOURCE_SHA256
+        for path in {*compatibility.MOVE_CHANGED,*compatibility.PRODUCER_MOVE_CHANGED,*compatibility.TRANSPORT_MOVE_CHANGED}:
+            self.assertEqual(latest[path],c.bytes_sha256((repository/compatibility.resolve(path)).read_bytes()))
+        moved=compatibility.verify(compatibility.EXTRACTION_SOURCE_SHA256,compatibility.MOVE_SOURCE_SHA256,
+            {compatibility.resolve(path):sha for path,sha in compatibility.MOVE_SOURCE_SHA256.items()},binding)
+        self.assertEqual(moved['migrationId'],compatibility.MOVE_MIGRATION)
+        self.assertEqual(moved['changedModules'],compatibility.MOVE_CHANGED)
+        self.assertFalse(moved['productionEligible'])
+        for before,after,migration,changed in (
+                (compatibility.MOVE_SOURCE_SHA256,compatibility.PRODUCER_MOVE_SOURCE_SHA256,
+                 compatibility.PRODUCER_MOVE_MIGRATION,compatibility.PRODUCER_MOVE_CHANGED),
+                (compatibility.PRODUCER_MOVE_SOURCE_SHA256,latest,
+                 compatibility.TRANSPORT_MOVE_MIGRATION,compatibility.TRANSPORT_MOVE_CHANGED)):
+            step=compatibility.verify(before,after,
+                {compatibility.resolve(path):sha for path,sha in after.items()},binding)
+            self.assertEqual(step['migrationId'],migration)
+            self.assertEqual(step['changedModules'],changed)
+            self.assertEqual(step['newMFACalls'],0)
+        for skipped in (compatibility.EXTRACTION_SOURCE_SHA256,compatibility.MOVE_SOURCE_SHA256):
+            with self.assertRaises(c.ContractError):
+                compatibility.verify(skipped,latest,latest,binding)
+        with self.assertRaises(c.ContractError):
+            compatibility.verify(compatibility.FOLLOWUP_SOURCE_SHA256,compatibility.MOVE_SOURCE_SHA256,
+                compatibility.MOVE_SOURCE_SHA256,binding)
         extracted=compatibility.verify(current,compatibility.EXTRACTION_SOURCE_SHA256,
             compatibility.EXTRACTION_SOURCE_SHA256,binding)
         self.assertEqual(extracted['migrationId'],compatibility.EXTRACTION_MIGRATION)
@@ -159,5 +187,131 @@ class CompletionTests(unittest.TestCase):
         with self.assertRaises(c.ContractError):compatibility.verify(compatibility.CURRENT_SOURCE_SHA256,changed,changed,binding)
         with self.assertRaises(c.ContractError):compatibility.verify(compatibility.HISTORICAL_SOURCE_SHA256,current,current,binding)
 
+    def test_contracts_split_generation_covers_only_the_split_file(self):
+        binding={key:'a'*64 for key in ('parentPlanSha256','newPlanSha256','sourceCanonicalSha256',
+            'anchorCanonicalSha256','alignmentBytesSha256','asrReceiptSha256','sourceCheckReceiptSha256')}
+        repository=Path(__file__).resolve().parents[1]
+        before,after=compatibility.CONTRACTS_SPLIT_HISTORICAL_SHA256,compatibility.CONTRACTS_SPLIT_SOURCE_SHA256
+        for path in compatibility.CONTRACTS_SPLIT_CHANGED:
+            self.assertEqual(after[path],c.bytes_sha256((repository/compatibility.resolve(path)).read_bytes()))
+        self.assertEqual({path for path in after if after[path]!=before[path]},set(compatibility.CONTRACTS_SPLIT_CHANGED))
+        planned={compatibility.resolve(path):sha for path,sha in after.items()}
+        planned.update(compatibility.CONTRACTS_SPLIT_MEMBER_SHA256)
+        step=compatibility.verify(before,after,planned,binding)
+        self.assertEqual(step['migrationId'],compatibility.CONTRACTS_SPLIT_MIGRATION)
+        self.assertEqual(step['changedModules'],compatibility.CONTRACTS_SPLIT_CHANGED)
+        self.assertEqual(step['acceptedScope'],'read_only_original_source_under_package_move_no_new_inference')
+        self.assertEqual((step['newASRCalls'],step['newMFACalls'],step['productionEligible']),(0,0,False))
+        for member in compatibility.CONTRACTS_SPLIT_MEMBER_SHA256:
+            changed_members=dict(planned);changed_members[member]='f'*64
+            with self.assertRaises(c.ContractError):
+                compatibility.verify(before,after,changed_members,binding)
+        # The pre-I1 drift itself is not a reviewed step: only the exact pair is accepted.
+        for skipped in (compatibility.TRANSPORT_MOVE_SOURCE_SHA256,):
+            with self.assertRaises(c.ContractError):
+                compatibility.verify(skipped,after,after,binding)
+        with self.assertRaises(c.ContractError):
+            compatibility.verify(compatibility.TRANSPORT_MOVE_SOURCE_SHA256,before,before,binding)
+
+
+    def test_storage_move_generation_covers_only_the_moved_snapshot(self):
+        binding={key:'a'*64 for key in ('parentPlanSha256','newPlanSha256','sourceCanonicalSha256',
+            'anchorCanonicalSha256','alignmentBytesSha256','asrReceiptSha256','sourceCheckReceiptSha256')}
+        repository=Path(__file__).resolve().parents[1]
+        before,after=compatibility.STORAGE_MOVE_HISTORICAL_SHA256,compatibility.STORAGE_MOVE_SOURCE_SHA256
+        # The snapshot changed again in v10 (G1); v8's current side is v10's historical side.
+        for path in compatibility.STORAGE_MOVE_CHANGED:
+            self.assertEqual(after[path],compatibility.JOBS_SPLIT_HISTORICAL_SHA256[path])
+        for member,sha in compatibility.STORAGE_MOVE_MEMBER_SHA256.items():
+            self.assertEqual(sha,c.bytes_sha256((repository/member).read_bytes()))
+        self.assertEqual({path for path in after if after[path]!=before[path]},set(compatibility.STORAGE_MOVE_CHANGED))
+        planned={compatibility.resolve(path):sha for path,sha in after.items()}
+        planned.update(compatibility.STORAGE_MOVE_MEMBER_SHA256)
+        step=compatibility.verify(before,after,planned,binding)
+        self.assertEqual(step['migrationId'],compatibility.STORAGE_MOVE_MIGRATION)
+        self.assertEqual(step['changedModules'],compatibility.STORAGE_MOVE_CHANGED)
+        self.assertEqual(step['acceptedScope'],'read_only_original_source_under_package_move_no_new_inference')
+        self.assertEqual((step['newASRCalls'],step['newMFACalls'],step['productionEligible']),(0,0,False))
+        for member in compatibility.STORAGE_MOVE_MEMBER_SHA256:
+            changed_members=dict(planned);changed_members[member]='f'*64
+            with self.assertRaises(c.ContractError):
+                compatibility.verify(before,after,changed_members,binding)
+        # Generations do not compose: a pre-I1 parent cannot jump straight to the I2 checkout.
+        with self.assertRaises(c.ContractError):
+            compatibility.verify(compatibility.CONTRACTS_SPLIT_HISTORICAL_SHA256,after,planned,binding)
+
+    def test_measure_move_generation_covers_only_the_moved_measure(self):
+        binding={key:'a'*64 for key in ('parentPlanSha256','newPlanSha256','sourceCanonicalSha256',
+            'anchorCanonicalSha256','alignmentBytesSha256','asrReceiptSha256','sourceCheckReceiptSha256')}
+        repository=Path(__file__).resolve().parents[1]
+        before,after=compatibility.MEASURE_MOVE_HISTORICAL_SHA256,compatibility.MEASURE_MOVE_SOURCE_SHA256
+        for path in compatibility.MEASURE_MOVE_CHANGED:
+            self.assertEqual(after[path],c.bytes_sha256((repository/compatibility.resolve(path)).read_bytes()))
+        self.assertEqual({path for path in after if after[path]!=before[path]},set(compatibility.MEASURE_MOVE_CHANGED))
+        planned={compatibility.resolve(path):sha for path,sha in after.items()}
+        step=compatibility.verify(before,after,planned,binding)
+        self.assertEqual(step['migrationId'],compatibility.MEASURE_MOVE_MIGRATION)
+        self.assertEqual(step['changedModules'],compatibility.MEASURE_MOVE_CHANGED)
+        self.assertEqual(step['acceptedScope'],'read_only_original_source_under_package_move_no_new_inference')
+        self.assertEqual((step['newASRCalls'],step['newMFACalls'],step['productionEligible']),(0,0,False))
+        # Generations do not compose: a v7-era parent cannot jump straight to the I4 checkout.
+        with self.assertRaises(c.ContractError):
+            compatibility.verify(compatibility.STORAGE_MOVE_HISTORICAL_SHA256,after,planned,binding)
+
+    def test_jobs_split_generation_covers_only_the_snapshot_import_change(self):
+        binding={key:'a'*64 for key in ('parentPlanSha256','newPlanSha256','sourceCanonicalSha256',
+            'anchorCanonicalSha256','alignmentBytesSha256','asrReceiptSha256','sourceCheckReceiptSha256')}
+        repository=Path(__file__).resolve().parents[1]
+        before,after=compatibility.JOBS_SPLIT_HISTORICAL_SHA256,compatibility.JOBS_SPLIT_SOURCE_SHA256
+        for path in compatibility.JOBS_SPLIT_CHANGED:
+            self.assertEqual(after[path],c.bytes_sha256((repository/compatibility.resolve(path)).read_bytes()))
+        for member,sha in compatibility.JOBS_SPLIT_MEMBER_SHA256.items():
+            self.assertEqual(sha,c.bytes_sha256((repository/member).read_bytes()))
+        self.assertEqual({path for path in after if after[path]!=before[path]},set(compatibility.JOBS_SPLIT_CHANGED))
+        planned={compatibility.resolve(path):sha for path,sha in after.items()}
+        planned.update(compatibility.JOBS_SPLIT_MEMBER_SHA256)
+        step=compatibility.verify(before,after,planned,binding)
+        self.assertEqual(step['migrationId'],compatibility.JOBS_SPLIT_MIGRATION)
+        self.assertEqual(step['acceptedScope'],'read_only_original_source_under_package_move_no_new_inference')
+        for member in compatibility.JOBS_SPLIT_MEMBER_SHA256:
+            changed_members=dict(planned);changed_members[member]='f'*64
+            with self.assertRaises(c.ContractError):
+                compatibility.verify(before,after,changed_members,binding)
+
+    def test_facade_removal_generation_covers_only_the_two_anchor_imports(self):
+        binding={key:'a'*64 for key in ('parentPlanSha256','newPlanSha256','sourceCanonicalSha256',
+            'anchorCanonicalSha256','alignmentBytesSha256','asrReceiptSha256','sourceCheckReceiptSha256')}
+        repository=Path(__file__).resolve().parents[1]
+        before,after=compatibility.FACADE_REMOVAL_HISTORICAL_SHA256,compatibility.FACADE_REMOVAL_SOURCE_SHA256
+        # The two producers changed again in v12 (C batches); v11's current side is v12's historical side.
+        self.assertEqual(after,compatibility.C_FACADE_REMOVAL_HISTORICAL_SHA256)
+        self.assertEqual({path for path in after if after[path]!=before[path]},set(compatibility.FACADE_REMOVAL_CHANGED))
+        planned={compatibility.resolve(path):sha for path,sha in after.items()}
+        step=compatibility.verify(before,after,planned,binding)
+        self.assertEqual(step['migrationId'],compatibility.FACADE_REMOVAL_MIGRATION)
+        self.assertEqual(step['changedModules'],compatibility.FACADE_REMOVAL_CHANGED)
+        self.assertEqual(step['acceptedScope'],'read_only_original_source_under_package_move_no_new_inference')
+        self.assertEqual((step['newASRCalls'],step['newMFACalls'],step['productionEligible']),(0,0,False))
+        # Generations do not compose: a v9 parent cannot jump straight to the D-window checkout.
+        with self.assertRaises(c.ContractError):
+            compatibility.verify(compatibility.JOBS_SPLIT_HISTORICAL_SHA256,after,planned,binding)
+
+    def test_c_batch_generation_covers_only_the_two_producer_imports(self):
+        binding={key:'a'*64 for key in ('parentPlanSha256','newPlanSha256','sourceCanonicalSha256',
+            'anchorCanonicalSha256','alignmentBytesSha256','asrReceiptSha256','sourceCheckReceiptSha256')}
+        repository=Path(__file__).resolve().parents[1]
+        before,after=compatibility.C_FACADE_REMOVAL_HISTORICAL_SHA256,compatibility.C_FACADE_REMOVAL_SOURCE_SHA256
+        for path in compatibility.C_FACADE_REMOVAL_CHANGED:
+            self.assertEqual(after[path],c.bytes_sha256((repository/compatibility.resolve(path)).read_bytes()))
+        self.assertEqual({path for path in after if after[path]!=before[path]},set(compatibility.C_FACADE_REMOVAL_CHANGED))
+        planned={compatibility.resolve(path):sha for path,sha in after.items()}
+        step=compatibility.verify(before,after,planned,binding)
+        self.assertEqual(step['migrationId'],compatibility.C_FACADE_REMOVAL_MIGRATION)
+        self.assertEqual(step['changedModules'],compatibility.C_FACADE_REMOVAL_CHANGED)
+        self.assertEqual(step['acceptedScope'],'read_only_original_source_under_package_move_no_new_inference')
+        self.assertEqual((step['newASRCalls'],step['newMFACalls'],step['productionEligible']),(0,0,False))
+        # Generations do not compose: a v10 parent cannot jump straight to the C-batch checkout.
+        with self.assertRaises(c.ContractError):
+            compatibility.verify(compatibility.FACADE_REMOVAL_HISTORICAL_SHA256,after,planned,binding)
 
 if __name__=='__main__':unittest.main()

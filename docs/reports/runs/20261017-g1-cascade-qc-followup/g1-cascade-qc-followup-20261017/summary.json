@@ -1,0 +1,11 @@
+{
+  "status": "passed",
+  "head": "f5e5afaeb4c395067cec64fcd1a23e5cb45d2e20",
+  "targetPr": 568,
+  "upstreamHead": "745dea66",
+  "executed": 32,
+  "passed": 32,
+  "testScope": "accounting observability and profile",
+  "diffCheck": "passed",
+  "externalCalls": 0
+}

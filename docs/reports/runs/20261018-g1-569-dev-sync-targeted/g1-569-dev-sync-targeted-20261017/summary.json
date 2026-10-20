@@ -1,0 +1,11 @@
+{
+  "schemaVersion": "test-run-summary-v1",
+  "result": "40 passed, 459 subtests passed",
+  "worktreePackageBound": true,
+  "jobsAlias": true,
+  "waiverSha256": "e9de8928bfcb17f011caafbbb6c1f1489481916eb22b114e2370b673c53af7e7",
+  "transportSha256": "762d934f7ca35f993e22c96ad63e0c1ec699ed8e4d220dcc9f77bd4f6f86abe1",
+  "freezeKeys": "23/23",
+  "paidDispatch": false,
+  "productionRun": false
+}

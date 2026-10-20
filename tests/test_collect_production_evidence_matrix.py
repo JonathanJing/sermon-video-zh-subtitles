@@ -4,7 +4,7 @@ import unittest
 from argparse import Namespace
 from pathlib import Path
 
-import scripts.collect_production_evidence_matrix as mod
+from tools.ops import collect_production_evidence_matrix as mod
 
 
 class CollectProductionEvidenceMatrixTest(unittest.TestCase):
@@ -1697,7 +1697,7 @@ def no_caption_asr_plan():
         },
         "runnerCommand": [
             "python3",
-            "scripts/run_no_caption_archive_asr_route.py",
+            "tools/ops/run_no_caption_archive_asr_route.py",
             "--asr-model",
             "gpt-4o-transcribe",
             "--translation-model",
@@ -1708,26 +1708,26 @@ def no_caption_asr_plan():
         "commands": [
             [
                 "python3",
-                "scripts/run_offline_archive_preflight.py",
+                "tools/ops/run_offline_archive_preflight.py",
                 "--asr-model",
                 "gpt-4o-transcribe",
             ],
             [
                 "python3",
-                "scripts/prepare_live_link_playback.py",
+                "tools/ops/prepare_live_link_playback.py",
                 "--asr-model",
                 "gpt-4o-transcribe",
                 "--gcs-dry-run",
             ],
             [
                 "python3",
-                "scripts/translate_playback_with_openai.py",
+                "tools/ops/translate_playback_with_openai.py",
                 "--model",
                 "gpt-5.4-mini",
             ],
             [
                 "python3",
-                "scripts/export_playback_captions.py",
+                "tools/ops/export_playback_captions.py",
                 "--gcs-dry-run",
             ],
             [
@@ -1738,7 +1738,7 @@ def no_caption_asr_plan():
                 "--expected-translation-model",
                 "gpt-5.4-mini",
             ],
-            ["python3", "scripts/validate_production_readiness.py", "--allow-missing-realtime"],
+            ["python3", "tools/ops/validate_production_readiness.py", "--allow-missing-realtime"],
         ],
         "passCriteria": [
             "run_offline_archive_preflight.py reports decision=use_asr_fallback.",

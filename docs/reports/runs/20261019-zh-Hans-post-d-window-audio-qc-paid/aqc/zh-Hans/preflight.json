@@ -1,0 +1,49 @@
+{
+  "calibrationCoverage": {
+    "audio": {
+      "droppedKeyWordTrials": 9,
+      "truncationEligibleTrials": 13,
+      "untestableKinds": [],
+      "wrongSentenceUnits": 16
+    },
+    "text": {
+      "applicableGroups": {
+        "added_content": 16,
+        "added_number": 9,
+        "added_reference": 13,
+        "dropped_half": 10,
+        "dropped_name": 1,
+        "english_leak": 11,
+        "placeholder": 16,
+        "semantic_negation": 0,
+        "swapped_name": 0,
+        "swapped_quantity": 0,
+        "wrong_book": 1,
+        "wrong_number": 1,
+        "wrong_ordinal": 14
+      },
+      "notApplicableKinds": [
+        "semantic_negation",
+        "swapped_quantity",
+        "swapped_name"
+      ],
+      "untestableKinds": []
+    }
+  },
+  "flaggedGroups": [
+    "translation-chunk-0005-u013"
+  ],
+  "locale": "zh-Hans",
+  "packageJsonSha256": "4417a780504426450d69bc07a267658f8f9eaa0ac7281e793a831e4530fd7498",
+  "paths": {
+    "anchor": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/opus-e2e-dev216-20261014-g/l2/src/anchor.json",
+    "candidate": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/opus-e2e-dev216-20261014-g/l2/text/zh-Hans/candidate.json",
+    "job": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/opus-e2e-dev216-20261014-g/post-d-window-qc-20261019/zh-Hans/aqc-run/l3/speech-job.json",
+    "package": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/opus-e2e-dev216-20261014-g/post-d-window-qc-20261019/zh-Hans/l3/audio-package.json",
+    "policy": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/opus-e2e-dev216-20261014-g/l2/policy/zh-Hans-policy-clip.json",
+    "screening": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/opus-e2e-dev216-20261014-g/post-d-window-qc-20261019/zh-Hans/aqc-run/l3/asr-screening-receipt-v1.json",
+    "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/opus-e2e-dev216-20261014-g/l2/src/source.json",
+    "textWaiver": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/opus-e2e-dev216-20261014-g/post-d-window-qc-20261019/zh-Hans/text/zh-Hans/text-waiver-c6c2bfaefc1bcb7e.json"
+  },
+  "problems": []
+}

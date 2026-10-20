@@ -7,14 +7,16 @@ import unittest
 from unittest.mock import Mock, patch
 import urllib.error
 
+from tongxing_production.compute import legacy_openai  # C4: the remote-call group lives here
 from scripts import sermon_diagnostic_provider as p
-from scripts import sermon_provider_limits as limits
-from scripts import sermon_provider_error as errors
-from scripts import sermon_review_budget as budget
-from scripts import sermon_review_contracts as c
+from tongxing_production.compute import provider_limits as limits
+from tongxing_production.compute import sermon_provider_error as errors
+from tongxing_production.review import review_budget as budget
+from tongxing_production.review import contracts as c
 from scripts import sermon_strict_layer2 as strict
 from scripts import sermon_strict_budget_adapter as adapter
-from scripts import sermon_accounting as accounting
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.observability import accounting
 from scripts import sermon_strict_candidate_bridge as bridge
 from tests import test_sermon_strict_layer2 as fixtures
 
@@ -182,7 +184,7 @@ class ProviderTests(unittest.TestCase):
         self.assertEqual(rejected['cost']['estimatedUsd'],0)
         self.assertIsNone(rejected['responseId'])
         self.assertTrue(all(v is None for v in rejected['usage'].values()))
-        from scripts import sermon_log_contract as log_contract
+        from tongxing_production.observability import log_contract
         self.assertFalse(any(r['code']=='missing_model_finish'
             for r in log_contract.replay_integrity(rows)['diagnostics']))
         self.assertEqual(len(self.calls),1)
@@ -434,7 +436,7 @@ class ProviderTests(unittest.TestCase):
 
     def test_receipt_persisted_before_logging_failure_and_no_same_paid_retry(self):
         original=accounting.record_api_attempt
-        with self.f.session(),patch.object(p.pipeline,'record_api_attempt',side_effect=accounting.AccountingWriteError('synthetic')):
+        with self.f.session(),patch.object(legacy_openai,'record_api_attempt',side_effect=accounting.AccountingWriteError('synthetic')):
             with self.assertRaises(accounting.AccountingWriteError):self.generate()
         self.assertTrue((self.root/'generator.raw.json').is_file())
         with self.f.session():
@@ -443,7 +445,7 @@ class ProviderTests(unittest.TestCase):
         self.assertEqual(len(self.calls),1)
 
     def test_source_logging_failure_recovers_saved_response_without_second_call(self):
-        with self.f.session(),patch.object(p.pipeline,'record_api_attempt',side_effect=accounting.AccountingWriteError('synthetic')):
+        with self.f.session(),patch.object(legacy_openai,'record_api_attempt',side_effect=accounting.AccountingWriteError('synthetic')):
             with self.assertRaises(accounting.AccountingWriteError):
                 self.provider.chat('synthetic',self.payload(),operation_id='source-check.1')
         with self.f.session():
@@ -582,7 +584,7 @@ class TranscriptionIntegrationTests(unittest.TestCase):
 
     def test_audio_max_two_known_attempts_and_saved_response_on_logging_failure(self):
         raw=self.wav(180);subject=self.audio_provider(raw)
-        with self.f.session(),patch.object(p.pipeline,'record_api_attempt',side_effect=accounting.AccountingWriteError('synthetic')):
+        with self.f.session(),patch.object(legacy_openai,'record_api_attempt',side_effect=accounting.AccountingWriteError('synthetic')):
             with self.assertRaises(accounting.AccountingWriteError):subject.transcribe('synthetic',raw)
         with self.f.session():
             subject.transcribe('synthetic',raw)

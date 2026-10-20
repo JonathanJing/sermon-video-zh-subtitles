@@ -1,0 +1,45 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261018-ios-mixed-source-english",
+  "runs": [
+    {
+      "label": "ios-english-v1",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/weekend-live/layer4-broadcast-20261018/ios-english-v1",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "ios-english-v1",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 265,
+      "truncated": false,
+      "sha256": "7b8ad1cffa9754cd28b9f3c783ea66d2ca3f3b1e2885a9868d2442722eabaebc",
+      "redactions": {}
+    },
+    {
+      "run": "ios-english-v1",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 551,
+      "truncated": false,
+      "sha256": "a1f6ef88c6a703e57f05189299dcace1c5694cbfca9e392a4e2116b86fe9f9b8",
+      "redactions": {}
+    },
+    {
+      "run": "ios-english-v1",
+      "path": "timings.tsv",
+      "kind": "whole",
+      "bytes": 93,
+      "truncated": false,
+      "sha256": "397f10b3239350d9e11827775a9cc95789175a7caf21e21eeb7566357a27344d",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

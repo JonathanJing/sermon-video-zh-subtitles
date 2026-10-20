@@ -16,7 +16,7 @@
 
 新同步页面通过 `build_weekly_app.py --weekly-job` 自动构建、绑定并校验指纹，属于固定制作步骤；无需手工编辑页面目录。自然语速、未同步的试听候选明确记录定位不可用，不能当作完整同步页面交付。历史页面不会自动重建。详见[每周发行流程](tongxing-weekly-release.zh.md#新页面固定包含自动听音定位)。
 
-底层可在本机用 `experiments/sermon-dubbing-poc/build_fingerprint_index.mjs` 单独构建索引供诊断。必须提供 `--source`、`--source-sha`、`--track-sha`、`--page-id`、`--start`、`--end`、`--out`；脚本先核对原视频哈希，再提取获准范围，输出非播放特征 JSON，不保存 PCM，拒绝覆盖已有输出。`start/end` 是原视频秒数。
+底层可在本机用 `packages/fingerprint/bin/build_fingerprint_index.mjs` 单独构建索引供诊断。必须提供 `--source`、`--source-sha`、`--track-sha`、`--page-id`、`--start`、`--end`、`--out`；脚本先核对原视频哈希，再提取获准范围，输出非播放特征 JSON，不保存 PCM，拒绝覆盖已有输出。`start/end` 是原视频秒数。
 
 将生成文件以完整 SHA 的前16位命名，绑定到该页 `audioFingerprint`；索引只用于同一时钟、与证道窗口等长的同步中文音轨。新录制需独立生成并做回放与负例检查，不能复用旧源索引。发布仍走每周发行校验，功能验收不升级证道人工审核状态。
 

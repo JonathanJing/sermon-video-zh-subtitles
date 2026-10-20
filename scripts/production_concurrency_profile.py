@@ -1,26 +1,16 @@
-"""Explicit, versioned opt-in capacity; never changes legacy execution defaults."""
-import copy
-import json
+"""Transition facade: the implementation lives in tongxing_production.compute.concurrency_profile.
+
+Both import paths name one module object, so attribute patches apply to both.
+Remove once no caller imports the old path.
+"""
 from pathlib import Path
+import sys
 
-SCHEMA = 'sermon-production-concurrency-profile-v1'
-PROFILE = {'schemaVersion': SCHEMA, 'totalCodexSlots': 24, 'businessCodexSlots': 23,
-           'supervisorSlots': 1, 'maxBranches': 4, 'sourceASRWorkers': 4,
-           'sourceJudgeWorkers': 8, 'maxActiveLocales': 3, 'studyBranches': 2,
-           'backASRBatchSize': 8, 'cpuWorkers': 4, 'layer2GroupWorkers': 23,
-           'busyWaitSeconds': 180}
+try:
+    from scripts import tongxing_host  # noqa: F401  binds the production package ports
+except ModuleNotFoundError:  # imported by bare name from a script run directly in scripts/
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+    from scripts import tongxing_host  # noqa: F401
+from tongxing_production.compute import concurrency_profile as _implementation
 
-
-def profile_v1():
-    return copy.deepcopy(PROFILE)
-
-
-def validate_profile(value):
-    if type(value) is not dict or set(value) != set(PROFILE) or any(
-            type(value[k]) is not type(v) or value[k] != v for k, v in PROFILE.items()):
-        raise ValueError('invalid_production_concurrency_profile')
-    return copy.deepcopy(value)
-
-
-def load_profile(path):
-    return validate_profile(json.loads(Path(path).read_text()))
+sys.modules[__name__] = _implementation

@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261018-t6-review-gate-ios-ci",
+  "runs": [
+    {
+      "label": "t6-review-gate-ios-39095455800",
+      "source": "/private/tmp/t6-review-gate-leaf-20261017/artifacts/t6-review-gate-ios-39095455800",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "t6-review-gate-ios-39095455800",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 410,
+      "truncated": false,
+      "sha256": "0a2f53686c79542d6a6c8b822cd5d649cd1f10f54706c672704aaff74344b872",
+      "redactions": {}
+    },
+    {
+      "run": "t6-review-gate-ios-39095455800",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 378,
+      "truncated": false,
+      "sha256": "3b8f46e5c81b7f9467a87e04dc2a42f4ca5b5155f6413ea01cdc5b32ef7dbf89",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

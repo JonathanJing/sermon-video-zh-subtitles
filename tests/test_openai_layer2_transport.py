@@ -6,9 +6,11 @@ from types import SimpleNamespace
 import unittest
 from unittest.mock import patch
 
-from scripts import openai_layer2_transport as transport
-from scripts import sermon_pipeline
-from scripts import run_target_language_models as models
+from tongxing_production.compute.transports import openai_layer2 as transport
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.workflows.dual_pdf import pipeline as sermon_pipeline
+from tongxing_production.compute import legacy_openai  # C3: the transport calls the moved request functions
+from tongxing_production.text import models
 
 
 class OpenAILayer2TransportTests(unittest.TestCase):
@@ -20,7 +22,7 @@ class OpenAILayer2TransportTests(unittest.TestCase):
             'OPENAI_API_KEY': 'synthetic-test-key',
         }
         with patch.dict(os.environ, environment, clear=True), \
-                patch.object(sermon_pipeline, 'json_request', return_value={'id': 'response'}) as request:
+                patch.object(legacy_openai, 'json_request', return_value={'id': 'response'}) as request:
             caller = transport.OpenAILayer2Transport()
             self.assertEqual(caller.execution_identity['backend'], 'openai_api')
             self.assertEqual(caller.execution_identity['route']['projectId'], 'proj_testdev')
@@ -32,7 +34,7 @@ class OpenAILayer2TransportTests(unittest.TestCase):
 
     def test_unbound_environment_blocks_before_request(self):
         with patch.dict(os.environ, {}, clear=True), \
-                patch.object(sermon_pipeline, 'json_request', side_effect=AssertionError('no dispatch')) as request:
+                patch.object(legacy_openai, 'json_request', side_effect=AssertionError('no dispatch')) as request:
             with self.assertRaisesRegex(ValueError, 'openai_layer2_requires_explicit_dev_or_prod_launcher'):
                 transport.OpenAILayer2Transport()
             request.assert_not_called()
@@ -45,7 +47,7 @@ class OpenAILayer2TransportTests(unittest.TestCase):
             'OPENAI_API_KEY': 'synthetic-test-key',
         }
         with tempfile.TemporaryDirectory() as directory, patch.dict(os.environ, environment, clear=True), \
-                patch.object(sermon_pipeline, 'json_request', side_effect=AssertionError('no dispatch')) as request:
+                patch.object(legacy_openai, 'json_request', side_effect=AssertionError('no dispatch')) as request:
             caller = transport.OpenAILayer2Transport()
             output = Path(directory) / 'translation.json'
             for _ in range(2):
@@ -58,7 +60,7 @@ class OpenAILayer2TransportTests(unittest.TestCase):
 
     def test_shared_text_call_refuses_uncapped_sol_before_request(self):
         payload = {'model': 'gpt-6.1-sol', 'reasoning_effort': 'high', 'service_tier': 'fast'}
-        with patch.object(sermon_pipeline, 'json_request', side_effect=AssertionError('dispatched')) as request:
+        with patch.object(legacy_openai, 'json_request', side_effect=AssertionError('dispatched')) as request:
             with self.assertRaisesRegex(ValueError, 'unsupported_budget_capability'):
                 sermon_pipeline._chat_json('synthetic-test-key', payload)
             request.assert_not_called()
@@ -77,7 +79,7 @@ class OpenAILayer2TransportTests(unittest.TestCase):
                 '--anchor', str(root / 'anchor.json'), '--policy', str(root / 'policy.json'),
                 '--plugin', str(fixture.plugin_path), '--out-dir', str(root / 'models'),
                 '--budget-config', str(config.path), '--budget-authorization', str(root / 'budget.json')]
-        from scripts.target_language_policy import canonical_sha256
+        from tongxing_production.text.policy import canonical_sha256
         cases = [(workers, mismatch) for workers in (1, 4, 16)
                  for mismatch in (None, '--english-source-package', '--anchor', '--policy', '--plugin', '--out-dir')]
         for workers, mismatch in cases:
@@ -88,11 +90,11 @@ class OpenAILayer2TransportTests(unittest.TestCase):
                 selected[selected.index(mismatch) + 1] = str(root / 'other-input')
             with self.subTest(workers=workers, mismatch=mismatch), patch.object(sys, 'argv', selected), patch.object(
                     models.producer, '_load', side_effect=[fixture.source, fixture.anchor, fixture.policy]), patch(
-                    'scripts.run_target_language_models.require_plugin_identity'), patch(
-                    'scripts.run_target_language_models.rule_preflight.preflight'), patch(
-                    'scripts.production_spark_admission.require_session'), patch(
-                    'scripts.canonical_layer2_controller.load_configuration', return_value=config), patch(
-                    'scripts.canonical_layer2_controller.drive', return_value={'status': 'waiting'}) as drive, patch.object(
+                    'tongxing_production.text.models.require_plugin_identity'), patch(
+                    'tongxing_production.text.models.rule_preflight.preflight'), patch(
+                    'tongxing_production.compute.spark_admission.require_session'), patch(
+                    'tongxing_production.text.controller.load_configuration', return_value=config), patch(
+                    'tongxing_production.text.controller.drive', return_value={'status': 'waiting'}) as drive, patch.object(
                     transport, 'OpenAILayer2Transport') as factory:
                 if mismatch:
                     with self.assertRaisesRegex(ValueError, 'standalone_budget_inputs_not_registered'):

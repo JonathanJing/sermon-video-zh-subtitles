@@ -43,7 +43,7 @@ Dev 经文授权声明和样片页面／音频审核不能自动覆盖 Productio
 3. 使用 build_formal_dev_release_assets.py 与 stage_formal_multilingual_dev.py 准备同一新 page ID 的三语 stage。修订建立新身份，不能覆盖旧发布包。
 4. 在完整、已核验的 Production registry head 上执行：
 
-       .venv/bin/python scripts/assemble_multilingual_hosting.py \
+       .venv/bin/python tools/ops/run.py adapters.legacy.assemble_multilingual_hosting \
          --base-public /absolute/path/to/current-registry-head/public \
          --staged /absolute/path/to/reviewed-layer4-stage \
          --out /absolute/path/to/new-hosting-candidate \
@@ -51,7 +51,7 @@ Dev 经文授权声明和样片页面／音频审核不能自动覆盖 Productio
 
 5. 在发布窗口停止其他对同一 Hosting 站点的部署；逐文件核对线上旧站点与候选基线。若 registry head 或线上字节改变，废弃候选，从新 head 重建。保留旧完整 registry release 和候选的 rollback-multilingual-v2.json。
 
-       .venv/bin/python scripts/verify_multilingual_hosting.py \
+       .venv/bin/python tools/ops/run.py adapters.legacy.verify_multilingual_hosting \
          --candidate /absolute/path/to/new-hosting-candidate \
          --origin https://ai-for-god-sermon-audio.web.app \
          --preflight-baseline --http-workers 4 \
@@ -59,14 +59,14 @@ Dev 经文授权声明和样片页面／音频审核不能自动覆盖 Productio
 
 6. 审核 firebase.json、.firebaserc、build-report.json 的目标站点、反馈转发及修改文件清单。使用以下显式发布入口；先不加 --execute 可生成部署计划，真正发布须另用新的输出文件加 --execute：
 
-       .venv/bin/python scripts/deploy_multilingual_hosting.py \
+       .venv/bin/python tools/ops/run.py adapters.legacy.deploy_multilingual_hosting \
          --candidate /absolute/path/to/new-hosting-candidate \
          --preflight /absolute/path/to/preflight.json \
          --out /absolute/path/to/deployment.json --execute
 
 7. 发布后立即执行完整 GET/SHA、音频 Range 206、三语深链检查，并在真实浏览器／手机分别听播；不要从 HTTP 收据推断设备验收。之后按[海报交付流程](tongxing-weekly-release.zh.md#每周海报交付)制作本周海报。
 
-       .venv/bin/python scripts/verify_multilingual_hosting.py \
+       .venv/bin/python tools/ops/run.py adapters.legacy.verify_multilingual_hosting \
          --candidate /absolute/path/to/new-hosting-candidate \
          --origin https://ai-for-god-sermon-audio.web.app \
          --http-workers 4 --out /absolute/path/to/http-verification.json

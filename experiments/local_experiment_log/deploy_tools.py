@@ -36,8 +36,13 @@ def build(source, bundle, canonical_source_pin):
             if path.name.startswith('audit.') or path.name == 'DELIVERY.zh.md':
                 continue
             contents[path.relative_to(source).as_posix()] = path.read_bytes()
-    for relative in ('scripts/sermon_log_contract.py', 'schemas/sermon-accounting-log-contract-v1.schema.json'):
-        path = source/relative
+    # Imported here: install/verify/rollback run from the bundle without the production package.
+    from tongxing_production.path_aliases import resolve
+    for relative in ('scripts/sermon_log_contract.py',
+                     'schemas/sermon-accounting-log-contract-v1.schema.json',
+                     'schemas/sermon-accounting-log-contract-v2.schema.json'):
+        # The bundle keeps the legacy name; a file moved into the package is read where it lives.
+        path = source/resolve(relative)
         if path.is_symlink():
             raise ValueError('source_symlink_rejected')
         contents[relative] = path.read_bytes()

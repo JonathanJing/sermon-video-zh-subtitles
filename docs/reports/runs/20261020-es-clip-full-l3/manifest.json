@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261020-es-clip-full-l3",
+  "runs": [
+    {
+      "label": "20261020-es-clip-full-l3",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.agents/worktrees/codex/group-pipeline-orchestration/artifacts/local-runs/20261020-es-clip-full-l3",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "20261020-es-clip-full-l3",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 1134,
+      "truncated": false,
+      "sha256": "ecaa310471a344c0ae3c296ba4089066c70458e2e4dc177f078d426bc2a9961b",
+      "redactions": {
+        "home_dir": 1
+      }
+    },
+    {
+      "run": "20261020-es-clip-full-l3",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 398,
+      "truncated": false,
+      "sha256": "07882483024f9dc47f7033512b8ae213aa4a9d41aabad0b2976c4a12b01a3597",
+      "redactions": {}
+    },
+    {
+      "run": "20261020-es-clip-full-l3",
+      "path": "timings.tsv",
+      "kind": "whole",
+      "bytes": 115,
+      "truncated": false,
+      "sha256": "3436d75a85ee1f241d7ceeb265fb40da97184a91882c3cf26ac40a3d1d31b7ef",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

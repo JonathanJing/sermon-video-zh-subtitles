@@ -1,0 +1,11 @@
+discover	pass	0.0
+Publish for cloud review: scripts/publish_run_report.sh artifacts/run-reports/20261018-092545-machine-qc-text
+{
+  "zh-Hans": {
+    "status": "blocked_prior_failure",
+    "reason": "failed groups are unchanged; repair them in a new candidate revision",
+    "problems": [],
+    "calibration": null
+  }
+}
+Digest: /private/tmp/claude-501/-Users-jonathan-jing-SynologyDrive-GitHub-Active-sermon-video-zh-subtitles/57e9ca3b-01b2-495e-be2f-1ae3a8d903d6/scratchpad/wt-l2fresh/artifacts/run-reports/20261018-092545-machine-qc-text (3 files, 9 redactions)

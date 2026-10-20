@@ -1,0 +1,29 @@
+{
+  "status": "cancelled",
+  "pr": 582,
+  "runId": 39086714607,
+  "headSha": "c0e2a9c565a37dc23de72a935b1ac9597b867465",
+  "workflow": "Tongxing iOS",
+  "jobs": [
+    {
+      "name": "changes",
+      "status": "completed",
+      "conclusion": "cancelled"
+    },
+    {
+      "name": "native-client",
+      "status": "completed",
+      "conclusion": "failure"
+    },
+    {
+      "name": "ios-validation",
+      "status": "completed",
+      "conclusion": "cancelled"
+    },
+    {
+      "name": "contract-validation",
+      "status": "completed",
+      "conclusion": "cancelled"
+    }
+  ]
+}

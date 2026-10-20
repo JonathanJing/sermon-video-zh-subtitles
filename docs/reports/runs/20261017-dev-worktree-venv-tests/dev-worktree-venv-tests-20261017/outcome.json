@@ -1,0 +1,21 @@
+{
+  "status": "passed",
+  "scope": "worktree venv helper move, compatibility import and read-only CLI check",
+  "baseAtTest": "08e31cf8263daa40cb493ad9120b4ed3a637ff79 plus final uncommitted changes",
+  "committedAs": "995f6ac17ea472bc6c475257e24541c2416e8f0b",
+  "unitTests": {
+    "passed": 2,
+    "failed": 0,
+    "exitCode": 0
+  },
+  "cliCheck": {
+    "oldExitCode": 1,
+    "newExitCode": 1,
+    "outputsIdentical": true,
+    "reason": "fresh worktree has no .venv; check is read-only"
+  },
+  "importAlias": "same module object",
+  "root": "new implementation resolves worktree root",
+  "production": "not_run",
+  "publication": "not_run"
+}

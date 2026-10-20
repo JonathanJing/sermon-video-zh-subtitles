@@ -7,7 +7,7 @@ from unittest import mock
 
 from jsonschema import Draft202012Validator
 
-from scripts import build_sep27_page_audio_extension as subject
+from tools.ops import build_sep27_page_audio_extension as subject
 
 
 class DualTextBindingTests(unittest.TestCase):

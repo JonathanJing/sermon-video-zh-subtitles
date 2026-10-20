@@ -1,0 +1,42 @@
+{
+  "status": "failed",
+  "workflow": "Python tests",
+  "runId": 39049502001,
+  "headSha": "f43b562f4f7ba0d9df4e534fbc8847827aaa3185",
+  "base": "dev",
+  "shards": {
+    "passed": 7,
+    "failed": 1,
+    "failingShard": "root-7",
+    "root7": {
+      "run": 729,
+      "failures": 2,
+      "errors": 3,
+      "skipped": 7
+    }
+  },
+  "aggregateGate": "failed because TEST_GROUP_RESULT=failure",
+  "failures": [
+    {
+      "kind": "error",
+      "count": 3,
+      "reason": "event_size_limit during workflow_started structured accounting write",
+      "tests": [
+        "test_strict_locale_preflight_migration.SharedPreflightTests.test_expanded_rule_input_cap_is_rejected_by_shared_preflight",
+        "tests.test_sermon_clock_handshake.ClockHandshakeTests.test_changed_or_inverted_proofs_rejected_and_replay_is_pure",
+        "test_telemetry_008.DispatchObservationTests.test_live_unfinished_dependency_and_legacy_caller_remain_unknown"
+      ]
+    },
+    {
+      "kind": "assertion",
+      "count": 2,
+      "reason": "unified CLI call sequence stopped at media; expected audio-zh and sometimes release-zh",
+      "tests": [
+        "test_sermon_unified_parallel.ParallelOwnerTests.test_l3_failure_does_not_dispatch_l4",
+        "tests.test_sermon_unified_cli.UnifiedCliTests.test_l3_success_automatically_dispatches_l4_with_bound_audio_package"
+      ]
+    }
+  ],
+  "context": "CI head predates #571 sidecar fix; combined result unverified",
+  "rerun": "not_performed"
+}

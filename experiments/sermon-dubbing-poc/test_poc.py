@@ -108,12 +108,12 @@ class ServerTests(unittest.TestCase):
             self.assertEqual(response.read(), module)
 
     def test_library_fallback_serves_icon_modules_and_svg_bytes(self):
-        self.assert_static_icons(HERE / 'web')
+        self.assert_static_icons(HERE.parents[1] / 'apps' / 'listening-web')
 
     def test_weekly_pack_serves_its_own_icon_modules_and_svg_bytes(self):
         (self.pack / 'weekly.json').write_text('{}')
         for name in ['icons.mjs', 'icons.svg', 'brand-icon.svg', 'brand-icon-light.svg']:
-            data = (HERE / 'web' / name).read_bytes() + b'\n<!-- pack-specific -->' if name.endswith('.svg') else b'export const packOnly = true;'
+            data = (HERE.parents[1] / 'apps' / 'listening-web' / name).read_bytes() + b'\n<!-- pack-specific -->' if name.endswith('.svg') else b'export const packOnly = true;'
             (self.pack / name).write_bytes(data)
         self.assert_static_icons(self.pack)
 
@@ -132,10 +132,10 @@ class ServerTests(unittest.TestCase):
                 if weekly:
                     (self.pack / 'weekly.json').write_text('{}')
                     for filename, _ in server.STATIC.values():
-                        source = HERE / 'web' / filename
+                        source = HERE.parents[1] / 'apps' / 'listening-web' / filename
                         if source.is_file():
                             shutil.copyfile(source, self.pack / filename)
-                root = self.pack if weekly else HERE / 'web'
+                root = self.pack if weekly else HERE.parents[1] / 'apps' / 'listening-web'
                 pending, visited = ['/'], set()
                 while pending:
                     route = pending.pop()

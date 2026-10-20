@@ -1,0 +1,18 @@
+{
+  "schemaVersion": "test-run-outcome-v1",
+  "kind": "test",
+  "status": "passed",
+  "exitCode": 0,
+  "startedAt": "2026-10-17T21:46:24.980107+00:00",
+  "finishedAt": "2026-10-17T21:46:25.541823+00:00",
+  "durationSeconds": 0.56,
+  "command": [
+    "python",
+    "-m",
+    "pytest",
+    "-q",
+    "tests/test_target_audio_rate_identity.py::test_each_real_dependency_mutation_invalidates_stored_coefficients",
+    "tests/test_implementation_freeze.py::ImplementationFreezeTests::test_other_hash_is_reported_with_the_changed_files"
+  ],
+  "headBeforeRepairCommit": "2c333159c35d7b07bc34a6a5113933a87f29314d"
+}

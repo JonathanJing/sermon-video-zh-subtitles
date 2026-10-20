@@ -1,0 +1,15 @@
+{
+  "status": "success",
+  "exitCode": 0,
+  "deliveryType": "test",
+  "source": "local unittest after PR #594 merge and #598 retarget to dev",
+  "headCommitSha": "5db5351ae21d9189a035f33888ea35d9e75db332",
+  "testsPassed": 34,
+  "testModules": [
+    "tests.test_render_sermon_interpretation_pdf",
+    "tests.test_parallel_reading",
+    "tests.test_generate_notes_with_openai"
+  ],
+  "durationSeconds": 1.708,
+  "realProducerDispatches": 0
+}

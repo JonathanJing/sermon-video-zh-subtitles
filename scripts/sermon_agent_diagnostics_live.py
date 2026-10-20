@@ -13,12 +13,13 @@ import time
 
 from scripts import sermon_agent_diagnostics as diagnostic
 from scripts import sermon_agent_diagnostics_contracts as c
-from scripts import sermon_agents_api as api
-from scripts import sermon_accounting as accounting
-from scripts import sermon_provider_limits as pricing
-from scripts import sermon_log_profile as profile
+from tongxing_production.orchestration.supervisor import agents_api as api
+from tongxing_production.observability import accounting
+from tongxing_production.compute import provider_limits as pricing
+from tongxing_production.observability import profile
 from scripts import sermon_strict_layer2 as immutable
-from scripts import sermon_workflow_jobs as jobs
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.orchestration import jobs
 from scripts.sermon_release_workflow import _safe_path
 
 SCHEMA = 'sermon-live-diagnostic-authorization-v1'

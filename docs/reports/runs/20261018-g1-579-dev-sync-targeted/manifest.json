@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261018-g1-579-dev-sync-targeted",
+  "runs": [
+    {
+      "label": "g1-579-dev-sync-targeted-20261017",
+      "source": "~/.codex/worktrees/g1-r3-review/sermon-video-zh-subtitles/artifacts/g1-579-dev-sync-targeted-20261017",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "g1-579-dev-sync-targeted-20261017",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 489,
+      "truncated": false,
+      "sha256": "555a29197f3ed8f5905e9522e71f67141f0e58c16b2d84fe3529cd4901f3fec3",
+      "redactions": {}
+    },
+    {
+      "run": "g1-579-dev-sync-targeted-20261017",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 545,
+      "truncated": false,
+      "sha256": "d9810c6ad3a371e25b22e758cb34013dc30f3f443ead5b084b7de90779cb8f79",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

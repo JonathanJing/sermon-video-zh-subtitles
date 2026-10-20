@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261018-r4-guard-3",
+  "runs": [
+    {
+      "label": "20261018-r4-guard-3",
+      "source": "~/.codex/worktrees/g1-a4-audio/sermon-video-zh-subtitles/artifacts/local-runs/20261018-r4-guard-3",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "20261018-r4-guard-3",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 144,
+      "truncated": false,
+      "sha256": "66d119d0d6fe9c35d8b97ff98835555d3a51b7cb31d03085b562c4d3c568140a",
+      "redactions": {}
+    },
+    {
+      "run": "20261018-r4-guard-3",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 184,
+      "truncated": false,
+      "sha256": "8d656e9cd945a86aed4dcc67f618ca2fa2a6a365ec52cd1fecf8669feb3f3c48",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

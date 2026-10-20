@@ -1,0 +1,7 @@
+{
+  "status": "success",
+  "testCount": 62,
+  "wallSeconds": 43.23,
+  "scope": "diagnostic, four-identity, physical freeze and run-start modules",
+  "modelCalls": 0
+}

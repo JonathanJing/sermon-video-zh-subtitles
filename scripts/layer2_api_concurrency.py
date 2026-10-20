@@ -1,40 +1,16 @@
-"""Host-local shared semaphore for paid Layer 2 API requests.
+"""Transition facade: the implementation lives in tongxing_production.compute.api_concurrency.
 
-Each slot is held only while one request is in flight. ``flock`` releases it if a
-worker exits or the host reboots, so abandoned lock files do not consume capacity.
+Both import paths name one module object, so attribute patches apply to both.
+Remove once no caller imports the old path.
 """
-from __future__ import annotations
-
-from contextlib import contextmanager
-import fcntl
-import os
 from pathlib import Path
-import time
+import sys
 
-MAX_IN_FLIGHT_API_CALLS = 24
-MAX_GROUP_WORKERS_PER_LOCALE = 16
+try:
+    from scripts import tongxing_host  # noqa: F401  binds the production package ports
+except ModuleNotFoundError:  # imported by bare name from a script run directly in scripts/
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+    from scripts import tongxing_host  # noqa: F401
+from tongxing_production.compute import api_concurrency as _implementation
 
-
-@contextmanager
-def request_slot(job_root: Path):
-    job_root = Path(job_root)
-    # Keep lock metadata beside the durable job tree. The canonical job
-    # inspector treats entries under job_root as durable job records.
-    slots = job_root.parent / f'.{job_root.name}.layer2-api-slots'
-    slots.mkdir(parents=True, exist_ok=True)
-    while True:
-        for index in range(MAX_IN_FLIGHT_API_CALLS):
-            path = slots / f'{index:02d}.lock'
-            fd = os.open(path, os.O_CREAT | os.O_RDWR, 0o600)
-            try:
-                fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
-            except BlockingIOError:
-                os.close(fd)
-                continue
-            try:
-                yield
-            finally:
-                fcntl.flock(fd, fcntl.LOCK_UN)
-                os.close(fd)
-            return
-        time.sleep(0.05)
+sys.modules[__name__] = _implementation

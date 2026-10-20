@@ -9,11 +9,13 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-from scripts import build_tracker_dag_projection as public
-from scripts import four_layer_progress as tracker
-from scripts import sermon_accounting as accounting
-from scripts import sermon_log_contract as contract
-from scripts import sermon_log_profile as profile
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from scripts import tracker_projection_host  # noqa: F401  binds the read-only report ports
+from tongxing_production.observability.projections import tracker_dag_projection as public
+from tongxing_production.observability import progress as tracker
+from tongxing_production.observability import accounting
+from tongxing_production.observability import log_contract as contract
+from tongxing_production.observability import profile
 from scripts import sermon_run_progress as progress
 from scripts import weekly_pipeline_report as weekly
 
@@ -118,6 +120,29 @@ class PublicDagTests(unittest.TestCase):
         self.assertEqual({p.name for p in self.root.iterdir()}, {"events.jsonl"})
         return value
 
+    def test_snapshot_carries_referenced_loaded_code_sidecar(self):
+        loaded = {f"scripts/fixture_{index}.py": SHA for index in range(600)}
+        identity = accounting._bounded_event_identity(
+            self.root, {"loadedProjectCodeSha256": loaded})
+        self.assertEqual(identity["loadedProjectCodeSha256"], {})
+        self.rows.insert(1, dict(schemaVersion=accounting.SCHEMA,
+            eventId="workflow-sidecar", runId=RUN, event="workflow_started",
+            recordedAt=timestamp(1), workflowId="private-workflow",
+            workflow="fixture", executionIdentity=identity))
+        self.write()
+        observed, damaged, _ = public._snapshot(self.root)
+        self.assertFalse(damaged)
+        self.assertEqual(len(observed), len(self.rows))
+        self.assertEqual({path.name for path in self.root.iterdir()},
+                         {"events.jsonl", ".execution-identities"})
+        sidecar = next((self.root / ".execution-identities").glob("*.json"))
+        sidecar.chmod(0o644)
+        result = public.build_projection(self.root, run_id=RUN, at=AT)
+        self.assertEqual(result["quality"]["status"], "partial")
+        self.assertEqual(result["quality"]["damagedRowCount"], 1)
+        self.assertIn("damaged_events", result["quality"]["reasonCodes"])
+        self.assertEqual(result["summary"]["observedNodeCount"], 4)
+
     def test_parallel_observed_path_is_canonical_not_serial_eta(self):
         result = self.project()
         self.assertEqual(result["schemaVersion"], public.SCHEMA)
@@ -150,6 +175,10 @@ class PublicDagTests(unittest.TestCase):
             self.assertEqual(result["evidenceMode"], public_mode)
             self.assertEqual(result["quality"]["status"], "projected")
             self.assertEqual(result["logs"]["profileEventCount"], len(self.rows))
+            self.assertEqual(result["logs"]["contractVersions"], [contract.VERSION])
+        self.rows = [{**row, "contractVersion": contract.LEGACY_VERSION}
+                     for row in profiled(events())]
+        self.assertEqual(self.project()["logs"]["contractVersions"], [contract.LEGACY_VERSION])
         self.rows = events()
         for row in self.rows:
             row["evidenceMode"] = "current_execution"
@@ -166,6 +195,20 @@ class PublicDagTests(unittest.TestCase):
             self.assertEqual(result["criticalPath"]["status"], "unknown")
         self.rows[0]["schemaVersion"] = "future-schema"
         self.assertIn("unsupported_schema", self.project()["quality"]["reasonCodes"])
+
+    def test_invalid_sidecar_references_leave_partial_observed_projection(self):
+        for reference in ([], {}, "b" * 64):
+            with self.subTest(reference=reference):
+                self.rows = events()
+                self.rows.append(dict(self.rows[0], event="workflow_started", eventId="bad-reference",
+                    workflow="fixture", executionIdentity={"loadedProjectCodeSha256": {},
+                        "loadedProjectCodeManifestSha256": reference}))
+                result = self.project()
+                self.assertEqual(result["quality"]["status"], "partial")
+                self.assertIn("damaged_events", result["quality"]["reasonCodes"])
+                self.assertEqual(result["quality"]["damagedRowCount"], 1)
+                self.assertEqual(result["summary"]["observedNodeCount"], 4)
+                self.assertNotIn("accounting_invalid", result["quality"]["reasonCodes"])
 
     def test_stale_and_future_evidence_never_freshened_by_render(self):
         self.write()
@@ -432,7 +475,8 @@ class PublicDagTests(unittest.TestCase):
 
     def test_bounded_cli_and_separate_output_cannot_overwrite_ledger(self):
         self.write()
-        command = [sys.executable, str(Path(public.__file__)), "--accounting-dir", str(self.root), "--run-id", RUN, "--at", AT]
+        cli = Path(__file__).resolve().parents[1] / "tools/ops/run.py"
+        command = [sys.executable, str(cli), "observability.projections.tracker_dag_projection", "--accounting-dir", str(self.root), "--run-id", RUN, "--at", AT]
         result = subprocess.run(command, capture_output=True, text=True)
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertEqual(json.loads(result.stdout)["schemaVersion"], public.SCHEMA)

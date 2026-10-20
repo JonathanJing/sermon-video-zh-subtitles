@@ -1,0 +1,27 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261018-field-venue-dev-merge-local",
+  "runs": [
+    {
+      "label": "field-venue-dev-merge-local-20261018",
+      "source": "/private/tmp/field-venue-exp-leaf-20261017/artifacts/field-venue-dev-merge-local-20261018",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "field-venue-dev-merge-local-20261018",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 632,
+      "truncated": false,
+      "sha256": "a3c682108ecfec0e9c4a696292994118314beac4f6953a61557d95416e11c333",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

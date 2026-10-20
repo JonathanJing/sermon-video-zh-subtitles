@@ -8,9 +8,11 @@ from types import SimpleNamespace
 from pathlib import Path
 from unittest.mock import patch
 
-from scripts import sermon_pipeline as pipeline
-from scripts import run_post_live_subtitle_generation as production
-from scripts import sermon_accounting as accounting
+from tests.legacy_pipeline_patches import patch_both  # W3b: Layer 1 names live in two modules
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.workflows.dual_pdf import pipeline as pipeline
+from tongxing_production.workflows.dual_pdf import post_live as production
+from tongxing_production.observability import accounting
 
 
 class ParallelReadingTest(unittest.TestCase):
@@ -23,8 +25,8 @@ class ParallelReadingTest(unittest.TestCase):
         def transcribe(*args, **kwargs):
             barrier.wait(timeout=3)
             return [{"text": "frozen"}]
-        with patch.object(pipeline, "precompute_source_fingerprint", side_effect=fingerprint), \
-             patch.object(pipeline, "transcribe_reference", side_effect=transcribe):
+        with patch_both("precompute_source_fingerprint", side_effect=fingerprint), \
+             patch_both("transcribe_reference", side_effect=transcribe):
             with self.assertRaisesRegex(RuntimeError, "fingerprint failed"):
                 pipeline.transcribe_with_fingerprint(args, "unused", Path("clip"), Path("out"), 10, {}, 3, 23)
 
@@ -45,9 +47,9 @@ class ParallelReadingTest(unittest.TestCase):
                 barrier.wait(timeout=3)
                 return {"text": audio.stem}
 
-            with patch.object(pipeline, "ffprobe_duration", return_value=20), \
-                 patch.object(pipeline, "cut_chunk", side_effect=cut), \
-                 patch.object(pipeline, "transcribe_openai_audio", side_effect=transcribe), \
+            with patch_both("ffprobe_duration", return_value=20), \
+                 patch_both("cut_chunk", side_effect=cut), \
+                 patch_both("transcribe_openai_audio", side_effect=transcribe), \
                  accounting.accounting_session(root / "accounting", "test"), \
                  accounting.stage("pipeline.transcribe"):
                 chunks = pipeline.transcribe_reference_chunks("unused", clip, root, 10, "gpt-transcribe", {}, workers=2)
@@ -70,9 +72,9 @@ class ParallelReadingTest(unittest.TestCase):
                     raise RuntimeError("provider unavailable")
                 return {"text": "retained"}
 
-            with patch.object(pipeline, "ffprobe_duration", return_value=20), \
-                 patch.object(pipeline, "cut_chunk", side_effect=cut), \
-                 patch.object(pipeline, "transcribe_openai_audio", side_effect=transcribe):
+            with patch_both("ffprobe_duration", return_value=20), \
+                 patch_both("cut_chunk", side_effect=cut), \
+                 patch_both("transcribe_openai_audio", side_effect=transcribe):
                 with self.assertRaisesRegex(RuntimeError, "provider unavailable"):
                     pipeline.transcribe_reference_chunks("unused", root / "clip", root, 10, "gpt-transcribe", {}, workers=2)
             self.assertFalse((root / "asr_reference_chunks.json").exists())
@@ -173,6 +175,8 @@ class ParallelReadingTest(unittest.TestCase):
         self.assertEqual(candidate["status"], "waiting_voice_config")
         self.assertFalse(candidate["published"])
         self.assertEqual(len(calls), 2)
+        self.assertTrue(any(command[2:3] == ["workflows.dual_pdf.interpretation_pdf"]
+                            for command in calls))
 
     def test_dubbing_failure_blocks_join(self):
         def hook(config, week, run, executor):

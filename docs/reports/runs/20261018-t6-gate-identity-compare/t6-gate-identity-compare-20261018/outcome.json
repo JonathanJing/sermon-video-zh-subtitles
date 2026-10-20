@@ -1,0 +1,10 @@
+{
+  "deliveryType": "test",
+  "status": "passed",
+  "exitCode": 0,
+  "workflow": "local L2 and W identity comparison",
+  "baseCommit": "7eabdf6a22d06440e7d98fb422c7023c17732b1e",
+  "candidateCommit": "c0224028f1ae054b73fb86dd5984f5503578617e",
+  "publication": "not_run",
+  "realProduction": "not_run"
+}

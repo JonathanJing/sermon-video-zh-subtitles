@@ -11,9 +11,11 @@ import re
 import struct
 import wave
 
-from scripts import sermon_review_contracts as c
-from scripts import sermon_public_snapshot as public
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.review import contracts as c
+from tongxing_production.storage import snapshot as public
 from scripts.sermon_release_workflow import _safe_path
+from tongxing_production import path_aliases
 
 REQUEST = 'sermon-mock-tts-request-v1'
 RECEIPT = 'sermon-mock-tts-worker-receipt-v1'
@@ -68,7 +70,8 @@ def validate_request(request):
         and label(request['attemptId']) and len(request['attemptId']) <= 70
         and request['targetLocale'] in LOCALES and request['jobId'] == job_id(request),
         'mock_tts_request_identity_invalid')
-    from scripts import sermon_completion as completion
+    from scripts import tongxing_host  # noqa: F401  binds the production package ports
+    from tongxing_production.observability import completion
     c.require(type(request['attemptNumber']) is int and 1 <= request['attemptNumber'] <= 3
         and ((request['attemptNumber'] == 1 and request['retryOfRequestSha256'] is None)
              or (request['attemptNumber'] > 1 and sha(request['retryOfRequestSha256']))),
@@ -238,7 +241,12 @@ def implementation_sha256():
         'sermon_guarded_command.py', 'sermon_review_contracts.py', 'sermon_public_snapshot.py',
         'sermon_release_workflow.py', 'sermon_job_liveness.py', 'sermon_clock_evidence.py',
         'sermon_workflow_evidence.py', 'sermon_review_observation.py')
-    return c.canonical_sha256({name: c.bytes_sha256((root/'scripts'/name).read_bytes()) for name in names})
+    # Keys stay the legacy scripts/ names; a member moved into the package is read where it lives.
+    # A member split across package files also hashes, by repository path, the files that took over the rest.
+    files = {name: c.bytes_sha256((root/path_aliases.resolve('scripts/'+name)).read_bytes()) for name in names}
+    files.update({path: c.bytes_sha256((root/path).read_bytes())
+                  for name in names for path in path_aliases.SPLIT_MEMBERS.get('scripts/'+name, ())})
+    return c.canonical_sha256(files)
 
 
 def validate_input_binding(value, unit):

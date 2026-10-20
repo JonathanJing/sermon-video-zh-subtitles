@@ -16,9 +16,10 @@ import hashlib
 from urllib.parse import quote
 from urllib.request import Request,urlopen
 
-from scripts import sermon_accounting as accounting
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.observability import accounting
 from scripts import sermon_historical_identity as historical_identity
-from scripts import sermon_review_contracts as c
+from tongxing_production.review import contracts as c
 from scripts import sermon_strict_layer2 as immutable
 from scripts import sermon_diagnostic_context as diagnostic
 from scripts import sermon_diagnostic_preview_worker as worker
@@ -130,7 +131,7 @@ def build_snapshot(session, *, baseline, out, page_id, preview_receipts, stage_r
     with accounting.stage('diagnostic.dev_snapshot',depends_on=depends_on,executor_type='deterministic_program') as span:
         try:
             hosting=temp/'hosting';shutil.copytree(baseline,hosting);public=hosting/'public'
-            for name in UI:shutil.copyfile(REPO/'experiments/sermon-dubbing-poc/web'/name,public/name)
+            for name in UI:shutil.copyfile(REPO/'apps/listening-web'/name,public/name)
             clip=_safe_path(Path(session.plan['sourceClipPath']));video=public/'media'/page_id/'source.mp4'
             video.parent.mkdir(parents=True);shutil.copyfile(clip,video);_decode(video);duration=_probe(video)
             variants={};bindings={};source_by={u['sourceUnitId']:u['english'] for u in anchor['sourceUnits']}

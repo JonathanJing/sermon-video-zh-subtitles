@@ -1,17 +1,18 @@
 import argparse
-import importlib.util
+import hashlib
+import json
+import os
+import subprocess
 import sys
 import tempfile
 import unittest
 from pathlib import Path
 
 
-SCRIPT_PATH = Path(__file__).resolve().parents[1] / "scripts" / "run_local_post_live_download.py"
-SPEC = importlib.util.spec_from_file_location("run_local_post_live_download", SCRIPT_PATH)
-mod = importlib.util.module_from_spec(SPEC)
-assert SPEC.loader is not None
-sys.modules[SPEC.name] = mod
-SPEC.loader.exec_module(mod)
+ROOT = Path(__file__).resolve().parents[1]
+COMMAND = [sys.executable, str(ROOT / "tools/ops/run.py"), "workflows.dual_pdf.local_post_live_download"]
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.workflows.dual_pdf import local_post_live_download as mod
 
 
 def args_for(root: Path):
@@ -37,6 +38,49 @@ def args_for(root: Path):
 
 
 class LocalPostLiveDownloadTest(unittest.TestCase):
+    def test_legacy_import_and_path_identity(self):
+        from scripts import tongxing_host  # noqa: F401  binds the production package ports
+        from tongxing_production.observability import accounting as sermon_accounting
+        from tongxing_production import path_aliases
+
+        root = ROOT
+        self.assertEqual(mod.REPO_ROOT, root)
+        self.assertEqual(mod.resolve_path(Path("artifacts/example")), root / "artifacts/example")
+        self.assertEqual(mod.resolve_path(root / "absolute"), root / "absolute")
+        self.assertEqual(mod.display_path(root / "artifacts/example"), "artifacts/example")
+        self.assertEqual(mod.display_path(Path("/tmp/outside-example")), "/tmp/outside-example")
+        key = path_aliases.resolve("scripts/run_local_post_live_download.py")
+        self.assertEqual(key, "packages/production/src/tongxing_production/workflows/dual_pdf/local_post_live_download.py")
+        loaded = sermon_accounting.execution_identity()["loadedProjectCodeSha256"]
+        self.assertIn(key, loaded)
+        self.assertTrue({"backend/cloud.py", "backend/config.py", "packages/production/src/tongxing_production/workflows/dual_pdf/live_source_monitor.py",
+                         "packages/production/src/tongxing_production/source/youtube_data_api.py"}.issubset(loaded))
+
+    def test_legacy_cli_help_and_missing_source_from_other_directory(self):
+        root = ROOT
+        environment = os.environ.copy()
+        environment["PYTHONPATH"] = os.pathsep.join((str(root / "packages/production/src"), str(root)))
+        with tempfile.TemporaryDirectory() as tempdir:
+            folder = Path(tempdir)
+            help_result = subprocess.run([*COMMAND, "--help"],
+                                         cwd=folder, env=environment, capture_output=True, text=True, timeout=30)
+            self.assertEqual(help_result.returncode, 0, help_result.stderr)
+            report = folder / "report.json"
+            code = (
+                "import sys; from scripts import tongxing_host; "
+                "from tongxing_production.workflows.dual_pdf import local_post_live_download as m; "
+                "m.live_source_monitor.read_state=lambda *_: {}; "
+                "m.access_secret=lambda *_: 'mock-only'; "
+                "m.discover_sunday_video=lambda *_a, **_k: None; "
+                f"sys.argv=['legacy', '--sunday', '2026-07-12', '--state-file', 'unused', "
+                f"'--youtube-api-key-secret', 'projects/p/secrets/unused/versions/latest', '--out', {str(report)!r}]; "
+                "raise SystemExit(m.main())"
+            )
+            result = subprocess.run([sys.executable, "-c", code], cwd=folder, env=environment,
+                                    capture_output=True, text=True, timeout=30)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertEqual(json.loads(report.read_text(encoding="utf-8"))["status"], "missing_source")
+
     def test_missing_source_is_a_successful_polling_noop(self):
         self.assertEqual(mod.exit_code_for_status("missing_source"), 0)
         self.assertEqual(mod.exit_code_for_status("waiting_for_post_live"), 0)
@@ -100,7 +144,12 @@ class LocalPostLiveDownloadTest(unittest.TestCase):
         self.assertEqual(len(uploads), 2)
         self.assertTrue(report["audio"]["gcsUri"].endswith("/download/source_audio.m4a"))
         self.assertTrue(report["video"]["gcsUri"].endswith("/download/source_video.mp4"))
+        self.assertEqual(report["audio"]["sha256"], hashlib.sha256(b"audio").hexdigest())
+        self.assertEqual(report["video"]["sha256"], hashlib.sha256(b"video").hexdigest())
+        self.assertEqual(report["audio"]["sizeBytes"], 5)
+        self.assertEqual(report["video"]["sizeBytes"], 5)
         self.assertTrue(manifests[0][0].endswith("/download/local-download-manifest.json"))
+        self.assertEqual(json.loads(manifests[0][1])["audio"]["sha256"], report["audio"]["sha256"])
         self.assertNotIn("key", manifests[0][1])
 
     def test_complete_local_manifest_makes_retries_idempotent(self):

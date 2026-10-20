@@ -1,0 +1,19 @@
+{
+  "changedFile": ".github/workflows/tracker-tests.yml",
+  "filterAddedTo": [
+    "pull_request",
+    "push"
+  ],
+  "filter": "packages/production/src/tongxing_production/observability/projections/**",
+  "yamlParsed": true,
+  "positiveMatches": [
+    "tracker_dag_projection.py",
+    "four_layer_tracker_snapshot.py",
+    "backend.py"
+  ],
+  "negativeMatch": "observability/accounting.py",
+  "pathFiltersEqual": true,
+  "diffCheck": "passed",
+  "priorSidecarFinding": "fixed_on_current_head_c972c1cb_with_partial_projection_test",
+  "broadTests": "not_run"
+}

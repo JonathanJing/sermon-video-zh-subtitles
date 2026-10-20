@@ -1,0 +1,292 @@
+test_all_directory_entries_are_synced_before_worker_spawn (tests.test_sermon_workflow_jobs.WorkflowJobsTests.test_all_directory_entries_are_synced_before_worker_spawn) ... ok
+test_corrupt_request_cannot_keep_success_status_or_respawn (tests.test_sermon_workflow_jobs.WorkflowJobsTests.test_corrupt_request_cannot_keep_success_status_or_respawn) ... ok
+test_crash_before_spawn_never_reexecutes_unknown_job (tests.test_sermon_workflow_jobs.WorkflowJobsTests.test_crash_before_spawn_never_reexecutes_unknown_job) ... ok
+test_cross_process_duplicate_launch_executes_once (tests.test_sermon_workflow_jobs.WorkflowJobsTests.test_cross_process_duplicate_launch_executes_once) ... ok
+test_lock_retry_rejects_replaced_parent_directory (tests.test_sermon_workflow_jobs.WorkflowJobsTests.test_lock_retry_rejects_replaced_parent_directory) ... ok
+test_metadata_sync_failures_prevent_spawn_and_preserve_uncertainty (tests.test_sermon_workflow_jobs.WorkflowJobsTests.test_metadata_sync_failures_prevent_spawn_and_preserve_uncertainty) ... ok
+test_nonzero_and_timeout_are_retained_failures (tests.test_sermon_workflow_jobs.WorkflowJobsTests.test_nonzero_and_timeout_are_retained_failures) ... ok
+test_rejects_non_regular_evidence_without_blocking_on_fifo (tests.test_sermon_workflow_jobs.WorkflowJobsTests.test_rejects_non_regular_evidence_without_blocking_on_fifo) ... ok
+test_rejects_path_traversal_shell_strings_and_invalid_timeout (tests.test_sermon_workflow_jobs.WorkflowJobsTests.test_rejects_path_traversal_shell_strings_and_invalid_timeout) ... ok
+test_rejects_symlink_descendants_without_touching_targets (tests.test_sermon_workflow_jobs.WorkflowJobsTests.test_rejects_symlink_descendants_without_touching_targets) ... ok
+test_same_identity_cannot_change_command_or_timeout (tests.test_sermon_workflow_jobs.WorkflowJobsTests.test_same_identity_cannot_change_command_or_timeout) ... ok
+test_stale_owner_is_uncertain_and_child_stops (tests.test_sermon_workflow_jobs.WorkflowJobsTests.test_stale_owner_is_uncertain_and_child_stops) ... ok
+test_success_and_repeat_never_execute_twice (tests.test_sermon_workflow_jobs.WorkflowJobsTests.test_success_and_repeat_never_execute_twice) ... ok
+test_transient_lock_creation_enoent_retries_admission_only (tests.test_sermon_workflow_jobs.WorkflowJobsTests.test_transient_lock_creation_enoent_retries_admission_only) ... ok
+test_adapter_hash_keeps_legacy_file_keys_and_hashes_package_bytes (tests.test_sermon_unified_audio.UnifiedAudioTests.test_adapter_hash_keeps_legacy_file_keys_and_hashes_package_bytes) ... ERROR
+/opt/homebrew/Cellar/<email>/3.14.6/Frameworks/Python.framework/Versions/3.14/lib/python3.14/tempfile.py:961: ResourceWarning: Implicitly cleaning up <TemporaryDirectory '/var/folders/lt/dwyw5m911mz90jm8qrgbfbpc0000gn/T/tmptlqwh77d'>
+  _warnings.warn(warn_message, ResourceWarning)
+test_assembly_adapter_rejects_missing_without_dispatch (tests.test_sermon_unified_audio.UnifiedAudioTests.test_assembly_adapter_rejects_missing_without_dispatch) ... ERROR
+/opt/homebrew/Cellar/<email>/3.14.6/Frameworks/Python.framework/Versions/3.14/lib/python3.14/tempfile.py:961: ResourceWarning: Implicitly cleaning up <TemporaryDirectory '/var/folders/lt/dwyw5m911mz90jm8qrgbfbpc0000gn/T/tmphwkrprk3'>
+  _warnings.warn(warn_message, ResourceWarning)
+test_capacity_matrix_has_separate_cold_warm_and_cache (tests.test_sermon_unified_audio.UnifiedAudioTests.test_capacity_matrix_has_separate_cold_warm_and_cache) ... ERROR
+/opt/homebrew/Cellar/<email>/3.14.6/Frameworks/Python.framework/Versions/3.14/lib/python3.14/tempfile.py:961: ResourceWarning: Implicitly cleaning up <TemporaryDirectory '/var/folders/lt/dwyw5m911mz90jm8qrgbfbpc0000gn/T/tmp4693kybf'>
+  _warnings.warn(warn_message, ResourceWarning)
+test_capacity_reported_pass_requires_real_bound_evidence (tests.test_sermon_unified_audio.UnifiedAudioTests.test_capacity_reported_pass_requires_real_bound_evidence) ... ERROR
+/opt/homebrew/Cellar/<email>/3.14.6/Frameworks/Python.framework/Versions/3.14/lib/python3.14/tempfile.py:961: ResourceWarning: Implicitly cleaning up <TemporaryDirectory '/var/folders/lt/dwyw5m911mz90jm8qrgbfbpc0000gn/T/tmpgabq7cud'>
+  _warnings.warn(warn_message, ResourceWarning)
+test_closed_fields_reject_command_injection (tests.test_sermon_unified_audio.UnifiedAudioTests.test_closed_fields_reject_command_injection) ... ERROR
+/opt/homebrew/Cellar/<email>/3.14.6/Frameworks/Python.framework/Versions/3.14/lib/python3.14/tempfile.py:961: ResourceWarning: Implicitly cleaning up <TemporaryDirectory '/var/folders/lt/dwyw5m911mz90jm8qrgbfbpc0000gn/T/tmp5ia94my5'>
+  _warnings.warn(warn_message, ResourceWarning)
+test_exact_text_plan_does_not_add_registered_rule_dependency (tests.test_sermon_unified_audio.UnifiedAudioTests.test_exact_text_plan_does_not_add_registered_rule_dependency) ... ERROR
+/opt/homebrew/Cellar/<email>/3.14.6/Frameworks/Python.framework/Versions/3.14/lib/python3.14/tempfile.py:961: ResourceWarning: Implicitly cleaning up <TemporaryDirectory '/var/folders/lt/dwyw5m911mz90jm8qrgbfbpc0000gn/T/tmpwueax4ls'>
+  _warnings.warn(warn_message, ResourceWarning)
+test_explicit_v2_korean_instruction_plan_binds_rule_dependency (tests.test_sermon_unified_audio.UnifiedAudioTests.test_explicit_v2_korean_instruction_plan_binds_rule_dependency) ... ERROR
+/opt/homebrew/Cellar/<email>/3.14.6/Frameworks/Python.framework/Versions/3.14/lib/python3.14/tempfile.py:961: ResourceWarning: Implicitly cleaning up <TemporaryDirectory '/var/folders/lt/dwyw5m911mz90jm8qrgbfbpc0000gn/T/tmp_9ree8po'>
+  _warnings.warn(warn_message, ResourceWarning)
+test_full_cache_dispatches_fixed_renderer_and_retains_pending_review (tests.test_sermon_unified_audio.UnifiedAudioTests.test_full_cache_dispatches_fixed_renderer_and_retains_pending_review) ... ERROR
+/opt/homebrew/Cellar/<email>/3.14.6/Frameworks/Python.framework/Versions/3.14/lib/python3.14/tempfile.py:961: ResourceWarning: Implicitly cleaning up <TemporaryDirectory '/var/folders/lt/dwyw5m911mz90jm8qrgbfbpc0000gn/T/tmpbj2dh90y'>
+  _warnings.warn(warn_message, ResourceWarning)
+test_full_source_identity_rejects_another_run_on_same_media (tests.test_sermon_unified_audio.UnifiedAudioTests.test_full_source_identity_rejects_another_run_on_same_media) ... ERROR
+/opt/homebrew/Cellar/<email>/3.14.6/Frameworks/Python.framework/Versions/3.14/lib/python3.14/tempfile.py:961: ResourceWarning: Implicitly cleaning up <TemporaryDirectory '/var/folders/lt/dwyw5m911mz90jm8qrgbfbpc0000gn/T/tmp4jdmn6n1'>
+... 606 lines omitted; 102 error-like lines, 50 kept below ...
+[line 42] test_legacy_configuration_migrates_without_changing_sound_settings (tests.test_sermon_unified_audio.UnifiedAudioTests.test_legacy_configuration_migrates_without_changing_sound_settings) ... ERROR
+[line 45] test_legacy_korean_spoken_override_cannot_freeze_a_plan (tests.test_sermon_unified_audio.UnifiedAudioTests.test_legacy_korean_spoken_override_cannot_freeze_a_plan) ... ERROR
+[line 48] test_plan_change_cannot_dispatch (tests.test_sermon_unified_audio.UnifiedAudioTests.test_plan_change_cannot_dispatch) ... ERROR
+[line 51] test_registered_korean_plan_refuses_changed_spoken_form_dependency (tests.test_sermon_unified_audio.UnifiedAudioTests.test_registered_korean_plan_refuses_changed_spoken_form_dependency) ... ERROR
+[line 90] ERROR: test_adapter_hash_keeps_legacy_file_keys_and_hashes_package_bytes (tests.test_sermon_unified_audio.UnifiedAudioTests.test_adapter_hash_keeps_legacy_file_keys_and_hashes_package_bytes)
+[line 92] Traceback (most recent call last):
+[line 95]         "ffprobe", "-v", "error", "-show_entries", "format=duration",
+[line 97]     ], capture_output=True, text=True, check=True, timeout=90)
+[line 112]     raise child_exception_type(errno_num, err_msg, err_filename)
+[line 113] FileNotFoundError: [Errno 2] No such file or directory: 'ffprobe'
+[line 115] During handling of the above exception, another exception occurred:
+[line 117] Traceback (most recent call last):
+[line 144]     raise ValueError(message)
+[line 145] ValueError: Malformed MP4 box length
+[line 148] ERROR: test_assembly_adapter_rejects_missing_without_dispatch (tests.test_sermon_unified_audio.UnifiedAudioTests.test_assembly_adapter_rejects_missing_without_dispatch)
+[line 150] Traceback (most recent call last):
+[line 153]         "ffprobe", "-v", "error", "-show_entries", "format=duration",
+[line 155]     ], capture_output=True, text=True, check=True, timeout=90)
+[line 170]     raise child_exception_type(errno_num, err_msg, err_filename)
+[line 171] FileNotFoundError: [Errno 2] No such file or directory: 'ffprobe'
+[line 173] During handling of the above exception, another exception occurred:
+[line 175] Traceback (most recent call last):
+[line 202]     raise ValueError(message)
+[line 203] ValueError: Malformed MP4 box length
+[line 206] ERROR: test_capacity_matrix_has_separate_cold_warm_and_cache (tests.test_sermon_unified_audio.UnifiedAudioTests.test_capacity_matrix_has_separate_cold_warm_and_cache)
+[line 208] Traceback (most recent call last):
+[line 211]         "ffprobe", "-v", "error", "-show_entries", "format=duration",
+[line 213]     ], capture_output=True, text=True, check=True, timeout=90)
+[line 228]     raise child_exception_type(errno_num, err_msg, err_filename)
+[line 229] FileNotFoundError: [Errno 2] No such file or directory: 'ffprobe'
+[line 231] During handling of the above exception, another exception occurred:
+[line 233] Traceback (most recent call last):
+[line 260]     raise ValueError(message)
+[line 261] ValueError: Malformed MP4 box length
+[line 264] ERROR: test_capacity_reported_pass_requires_real_bound_evidence (tests.test_sermon_unified_audio.UnifiedAudioTests.test_capacity_reported_pass_requires_real_bound_evidence)
+[line 266] Traceback (most recent call last):
+[line 269]         "ffprobe", "-v", "error", "-show_entries", "format=duration",
+[line 271]     ], capture_output=True, text=True, check=True, timeout=90)
+[line 286]     raise child_exception_type(errno_num, err_msg, err_filename)
+[line 287] FileNotFoundError: [Errno 2] No such file or directory: 'ffprobe'
+[line 289] During handling of the above exception, another exception occurred:
+[line 291] Traceback (most recent call last):
+[line 318]     raise ValueError(message)
+[line 319] ValueError: Malformed MP4 box length
+[line 322] ERROR: test_closed_fields_reject_command_injection (tests.test_sermon_unified_audio.UnifiedAudioTests.test_closed_fields_reject_command_injection)
+[line 324] Traceback (most recent call last):
+[line 327]         "ffprobe", "-v", "error", "-show_entries", "format=duration",
+[line 329]     ], capture_output=True, text=True, check=True, timeout=90)
+[line 344]     raise child_exception_type(errno_num, err_msg, err_filename)
+[line 345] FileNotFoundError: [Errno 2] No such file or directory: 'ffprobe'
+... end of omitted section ...
+    self.clip_timeline = timeline_map.prepare(
+                         ~~~~~~~~~~~~~~~~~~~~^
+        self.paths["source"], self.paths["anchor"], self.clip_media_path, 0.0,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        self.paths["clip_timeline_map"])
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "~/Documents/Codex/verify-pr582-g1-20261017/packages/production/src/tongxing_production/audio/clip_timeline.py", line 393, in prepare
+    duration = media_duration(clip_path)
+  File "~/Documents/Codex/verify-pr582-g1-20261017/packages/production/src/tongxing_production/audio/clip_timeline.py", line 63, in media_duration
+    return mp4_movie_duration(path)
+  File "~/Documents/Codex/verify-pr582-g1-20261017/packages/production/src/tongxing_production/audio/clip_timeline.py", line 91, in mp4_movie_duration
+    for kind, box_end in boxes(end):
+                         ~~~~~^^^^^
+  File "~/Documents/Codex/verify-pr582-g1-20261017/packages/production/src/tongxing_production/audio/clip_timeline.py", line 86, in boxes
+    require(size >= header_size and start + size <= limit,
+    ~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            "Malformed MP4 box length")
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "~/Documents/Codex/verify-pr582-g1-20261017/packages/production/src/tongxing_production/audio/clip_timeline.py", line 28, in require
+    raise ValueError(message)
+ValueError: Malformed MP4 box length
+
+======================================================================
+ERROR: test_legacy_korean_spoken_override_cannot_freeze_a_plan (tests.test_sermon_unified_audio.UnifiedAudioTests.test_legacy_korean_spoken_override_cannot_freeze_a_plan)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "~/Documents/Codex/verify-pr582-g1-20261017/packages/production/src/tongxing_production/audio/clip_timeline.py", line 53, in media_duration
+    result = subprocess.run([
+        "ffprobe", "-v", "error", "-show_entries", "format=duration",
+        "-of", "default=noprint_wrappers=1:nokey=1", str(path),
+    ], capture_output=True, text=True, check=True, timeout=90)
+  File "/opt/homebrew/Cellar/<email>/3.14.6/Frameworks/Python.framework/Versions/3.14/lib/python3.14/subprocess.py", line 555, in run
+    with Popen(*popenargs, **kwargs) as process:
+         ~~~~~^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/<email>/3.14.6/Frameworks/Python.framework/Versions/3.14/lib/python3.14/subprocess.py", line 1039, in __init__
+    self._execute_child(args, executable, preexec_fn, close_fds,
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                        pass_fds, cwd, env,
+                        ^^^^^^^^^^^^^^^^^^^
+    ...<5 lines>...
+                        gid, gids, uid, umask,
+                        ^^^^^^^^^^^^^^^^^^^^^^
+                        start_new_session, process_group)
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/<email>/3.14.6/Frameworks/Python.framework/Versions/3.14/lib/python3.14/subprocess.py", line 1990, in _execute_child
+    raise child_exception_type(errno_num, err_msg, err_filename)
+FileNotFoundError: [Errno 2] No such file or directory: 'ffprobe'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "~/Documents/Codex/verify-pr582-g1-20261017/tests/test_sermon_unified_audio.py", line 19, in setUp
+    self.f.setUp()
+    ~~~~~~~~~~~~^^
+  File "~/Documents/Codex/verify-pr582-g1-20261017/tests/test_render_formal_target_language_speech.py", line 48, in setUp
+    fixture.setUp()
+    ~~~~~~~~~~~~~^^
+  File "~/Documents/Codex/verify-pr582-g1-20261017/tests/test_build_target_language_audio_package.py", line 193, in setUp
+    self.clip_timeline = timeline_map.prepare(
+                         ~~~~~~~~~~~~~~~~~~~~^
+        self.paths["source"], self.paths["anchor"], self.clip_media_path, 0.0,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        self.paths["clip_timeline_map"])
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "~/Documents/Codex/verify-pr582-g1-20261017/packages/production/src/tongxing_production/audio/clip_timeline.py", line 393, in prepare
+    duration = media_duration(clip_path)
+  File "~/Documents/Codex/verify-pr582-g1-20261017/packages/production/src/tongxing_production/audio/clip_timeline.py", line 63, in media_duration
+    return mp4_movie_duration(path)
+  File "~/Documents/Codex/verify-pr582-g1-20261017/packages/production/src/tongxing_production/audio/clip_timeline.py", line 91, in mp4_movie_duration
+    for kind, box_end in boxes(end):
+                         ~~~~~^^^^^
+  File "~/Documents/Codex/verify-pr582-g1-20261017/packages/production/src/tongxing_production/audio/clip_timeline.py", line 86, in boxes
+    require(size >= header_size and start + size <= limit,
+    ~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            "Malformed MP4 box length")
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "~/Documents/Codex/verify-pr582-g1-20261017/packages/production/src/tongxing_production/audio/clip_timeline.py", line 28, in require
+    raise ValueError(message)
+ValueError: Malformed MP4 box length
+
+======================================================================
+ERROR: test_plan_change_cannot_dispatch (tests.test_sermon_unified_audio.UnifiedAudioTests.test_plan_change_cannot_dispatch)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "~/Documents/Codex/verify-pr582-g1-20261017/packages/production/src/tongxing_production/audio/clip_timeline.py", line 53, in media_duration
+    result = subprocess.run([
+        "ffprobe", "-v", "error", "-show_entries", "format=duration",
+        "-of", "default=noprint_wrappers=1:nokey=1", str(path),
+    ], capture_output=True, text=True, check=True, timeout=90)
+  File "/opt/homebrew/Cellar/<email>/3.14.6/Frameworks/Python.framework/Versions/3.14/lib/python3.14/subprocess.py", line 555, in run
+    with Popen(*popenargs, **kwargs) as process:
+         ~~~~~^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/<email>/3.14.6/Frameworks/Python.framework/Versions/3.14/lib/python3.14/subprocess.py", line 1039, in __init__
+    self._execute_child(args, executable, preexec_fn, close_fds,
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                        pass_fds, cwd, env,
+                        ^^^^^^^^^^^^^^^^^^^
+    ...<5 lines>...
+                        gid, gids, uid, umask,
+                        ^^^^^^^^^^^^^^^^^^^^^^
+                        start_new_session, process_group)
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/<email>/3.14.6/Frameworks/Python.framework/Versions/3.14/lib/python3.14/subprocess.py", line 1990, in _execute_child
+    raise child_exception_type(errno_num, err_msg, err_filename)
+FileNotFoundError: [Errno 2] No such file or directory: 'ffprobe'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "~/Documents/Codex/verify-pr582-g1-20261017/tests/test_sermon_unified_audio.py", line 19, in setUp
+    self.f.setUp()
+    ~~~~~~~~~~~~^^
+  File "~/Documents/Codex/verify-pr582-g1-20261017/tests/test_render_formal_target_language_speech.py", line 48, in setUp
+    fixture.setUp()
+    ~~~~~~~~~~~~~^^
+  File "~/Documents/Codex/verify-pr582-g1-20261017/tests/test_build_target_language_audio_package.py", line 193, in setUp
+    self.clip_timeline = timeline_map.prepare(
+                         ~~~~~~~~~~~~~~~~~~~~^
+        self.paths["source"], self.paths["anchor"], self.clip_media_path, 0.0,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        self.paths["clip_timeline_map"])
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "~/Documents/Codex/verify-pr582-g1-20261017/packages/production/src/tongxing_production/audio/clip_timeline.py", line 393, in prepare
+    duration = media_duration(clip_path)
+  File "~/Documents/Codex/verify-pr582-g1-20261017/packages/production/src/tongxing_production/audio/clip_timeline.py", line 63, in media_duration
+    return mp4_movie_duration(path)
+  File "~/Documents/Codex/verify-pr582-g1-20261017/packages/production/src/tongxing_production/audio/clip_timeline.py", line 91, in mp4_movie_duration
+    for kind, box_end in boxes(end):
+                         ~~~~~^^^^^
+  File "~/Documents/Codex/verify-pr582-g1-20261017/packages/production/src/tongxing_production/audio/clip_timeline.py", line 86, in boxes
+    require(size >= header_size and start + size <= limit,
+    ~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            "Malformed MP4 box length")
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "~/Documents/Codex/verify-pr582-g1-20261017/packages/production/src/tongxing_production/audio/clip_timeline.py", line 28, in require
+    raise ValueError(message)
+ValueError: Malformed MP4 box length
+
+======================================================================
+ERROR: test_registered_korean_plan_refuses_changed_spoken_form_dependency (tests.test_sermon_unified_audio.UnifiedAudioTests.test_registered_korean_plan_refuses_changed_spoken_form_dependency)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "~/Documents/Codex/verify-pr582-g1-20261017/packages/production/src/tongxing_production/audio/clip_timeline.py", line 53, in media_duration
+    result = subprocess.run([
+        "ffprobe", "-v", "error", "-show_entries", "format=duration",
+        "-of", "default=noprint_wrappers=1:nokey=1", str(path),
+    ], capture_output=True, text=True, check=True, timeout=90)
+  File "/opt/homebrew/Cellar/<email>/3.14.6/Frameworks/Python.framework/Versions/3.14/lib/python3.14/subprocess.py", line 555, in run
+    with Popen(*popenargs, **kwargs) as process:
+         ~~~~~^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/<email>/3.14.6/Frameworks/Python.framework/Versions/3.14/lib/python3.14/subprocess.py", line 1039, in __init__
+    self._execute_child(args, executable, preexec_fn, close_fds,
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                        pass_fds, cwd, env,
+                        ^^^^^^^^^^^^^^^^^^^
+    ...<5 lines>...
+                        gid, gids, uid, umask,
+                        ^^^^^^^^^^^^^^^^^^^^^^
+                        start_new_session, process_group)
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/<email>/3.14.6/Frameworks/Python.framework/Versions/3.14/lib/python3.14/subprocess.py", line 1990, in _execute_child
+    raise child_exception_type(errno_num, err_msg, err_filename)
+FileNotFoundError: [Errno 2] No such file or directory: 'ffprobe'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "~/Documents/Codex/verify-pr582-g1-20261017/tests/test_sermon_unified_audio.py", line 19, in setUp
+    self.f.setUp()
+    ~~~~~~~~~~~~^^
+  File "~/Documents/Codex/verify-pr582-g1-20261017/tests/test_render_formal_target_language_speech.py", line 48, in setUp
+    fixture.setUp()
+    ~~~~~~~~~~~~~^^
+  File "~/Documents/Codex/verify-pr582-g1-20261017/tests/test_build_target_language_audio_package.py", line 193, in setUp
+    self.clip_timeline = timeline_map.prepare(
+                         ~~~~~~~~~~~~~~~~~~~~^
+        self.paths["source"], self.paths["anchor"], self.clip_media_path, 0.0,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        self.paths["clip_timeline_map"])
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "~/Documents/Codex/verify-pr582-g1-20261017/packages/production/src/tongxing_production/audio/clip_timeline.py", line 393, in prepare
+    duration = media_duration(clip_path)
+  File "~/Documents/Codex/verify-pr582-g1-20261017/packages/production/src/tongxing_production/audio/clip_timeline.py", line 63, in media_duration
+    return mp4_movie_duration(path)
+  File "~/Documents/Codex/verify-pr582-g1-20261017/packages/production/src/tongxing_production/audio/clip_timeline.py", line 91, in mp4_movie_duration
+    for kind, box_end in boxes(end):
+                         ~~~~~^^^^^
+  File "~/Documents/Codex/verify-pr582-g1-20261017/packages/production/src/tongxing_production/audio/clip_timeline.py", line 86, in boxes
+    require(size >= header_size and start + size <= limit,
+    ~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            "Malformed MP4 box length")
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "~/Documents/Codex/verify-pr582-g1-20261017/packages/production/src/tongxing_production/audio/clip_timeline.py", line 28, in require
+    raise ValueError(message)
+ValueError: Malformed MP4 box length
+
+----------------------------------------------------------------------
+Ran 60 tests in 6.542s
+
+FAILED (errors=13)

@@ -1,0 +1,11 @@
+{
+  "status": "completed_after_repair",
+  "deliveryType": "test",
+  "ciRunId": 39039995527,
+  "ciJobId": 117417440256,
+  "ciObservation": "root-4 failed: trace replay fixture returned partial after moving event bytes without their sidecar",
+  "repairCommit": "cd6a3e15",
+  "localReproduction": "full test module discovery followed by affected case failed before repair",
+  "localVerification": "same discovery context affected case passed; full trace export module 17 tests passed",
+  "productionRun": false
+}

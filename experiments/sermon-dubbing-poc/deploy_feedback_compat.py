@@ -13,6 +13,8 @@ from deploy_feedback import public_week_date, runtime_listening_sources
 from poc import sha256, write_json
 
 HERE = Path(__file__).resolve().parent
+# The Functions source moved from this POC's feedback-api/ to services/feedback/.
+SOURCE = HERE.parents[1] / "services" / "feedback"
 PROJECT = "ai-for-god-caption-dev"
 REGION = "us-west1"
 DATABASE = "sermon-dubbing-feedback"

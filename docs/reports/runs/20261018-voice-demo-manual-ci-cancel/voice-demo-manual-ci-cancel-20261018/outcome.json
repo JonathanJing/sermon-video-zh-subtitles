@@ -1,0 +1,11 @@
+{
+  "status": "cancelled",
+  "exitCode": null,
+  "startedAt": "2026-10-18T03:42:07Z",
+  "endedAt": "2026-10-18T03:42:57Z",
+  "deliveryType": "test",
+  "runId": 39094545454,
+  "headSha": "f831cdfe9995b19fd41dc29beccfc37744638ea8",
+  "runUrl": "https://github.com/JonathanJing/sermon-video-zh-subtitles/actions/runs/39094545454",
+  "reason": "manual full Python suite duplicated the exact-head pull-request suite; cancellation requested to free runners"
+}

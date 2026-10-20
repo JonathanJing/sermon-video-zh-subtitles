@@ -5,9 +5,8 @@ from pathlib import Path
 import tempfile
 import unittest
 
-spec = importlib.util.spec_from_file_location('listening_catalog', Path(__file__).resolve().parents[1] / 'scripts/build_language_listening_catalog.py')
-module = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(module)
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tools.ops import build_language_listening_catalog as module  # noqa: E402
 
 
 class CatalogTests(unittest.TestCase):

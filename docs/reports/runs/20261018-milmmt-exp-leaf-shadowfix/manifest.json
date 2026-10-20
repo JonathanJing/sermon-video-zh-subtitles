@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261018-milmmt-exp-leaf-shadowfix",
+  "runs": [
+    {
+      "label": "milmmt-exp-leaf-shadowfix",
+      "source": "~/.codex/worktrees/milmmt-exp-leaf/sermon-video-zh-subtitles/artifacts/milmmt-exp-leaf-shadowfix",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "milmmt-exp-leaf-shadowfix",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 306,
+      "truncated": false,
+      "sha256": "8184d7452172ac6673c4540a53ba8386ff7bf5b2f4f7de60a70d236e58255ebd",
+      "redactions": {}
+    },
+    {
+      "run": "milmmt-exp-leaf-shadowfix",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 126,
+      "truncated": false,
+      "sha256": "5163a1af1bae082b6ac3f98ff56bb4e4ccff913d089db1988113ac4d576ab072",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

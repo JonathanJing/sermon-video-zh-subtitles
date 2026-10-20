@@ -1,0 +1,37 @@
+
+== 2026-10-15T00:07:22+00:00 ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.venv/bin/python ~/.codex/worktrees/opus-layer1-larger-clip/sermon-video-zh-subtitles/scripts/prepare_target_language_speech_job.py --english-source-package ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-aa-3lang/l2/src/source.json --anchor ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-aa-3lang/l2/src/anchor.json --candidate ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-aa-3lang/l2/text/ko/candidate.json --policy ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-aa-3lang/l2/policy/ko-policy-clip.json --text-release-basis ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-aa-3lang/textqc-ko/out/ko/text-waiver-d3f7f40f6cbd01f2.json --adapter ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/post-live-runs/2026-10-04/resi-69ba7a66/tts-preflight-v1/spark-stage-v2/inputs/adapter-ko.json --speaker-registry ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/post-live-runs/2026-10-04/resi-69ba7a66/tts-preflight-v1/spark-stage-v2/inputs/registry.json --clip-voice-authorization ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-aa-3lang/l3/ko/clip-voice-authorization.json --clip-timeline-map ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-aa-3lang/l3/clip-timeline-map.json --out ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-aa-3lang/l3/ko/speech-job
+Traceback (most recent call last):
+  File "~/.codex/worktrees/opus-layer1-larger-clip/sermon-video-zh-subtitles/scripts/prepare_target_language_speech_job.py", line 774, in <module>
+    main()
+    ~~~~^^
+  File "~/.codex/worktrees/opus-layer1-larger-clip/sermon-video-zh-subtitles/scripts/prepare_target_language_speech_job.py", line 754, in main
+    job = prepare_job(
+        args.english_source_package, args.anchor, args.candidate, args.policy,
+    ...<6 lines>...
+        strict_rubric=_load(args.strict_rubric) if args.strict_rubric else None,
+    )
+  File "~/.codex/worktrees/opus-layer1-larger-clip/sermon-video-zh-subtitles/scripts/prepare_target_language_speech_job.py", line 615, in prepare_job
+    validate_adapter(adapter, locale, registry,
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                     clip_voice_authorization=<redacted>,
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                     source_voice_authorization=<redacted>,
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                     clip_voice_capability=clip_voice_capability,
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                     source_package=source_package, candidate=candidate)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "~/.codex/worktrees/opus-layer1-larger-clip/sermon-video-zh-subtitles/scripts/prepare_target_language_speech_job.py", line 571, in validate_adapter
+    _require((adapter["authorizationPurpose"] == purpose or scoped)
+    ~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+             and ((capability["status"] == "human_reviewed" and bool(capability["reviewEvidence"]))
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                  or (scoped and clip_voice_capability is not None))
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+             and (not override or bool(override.get("provider"))),
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+             "Verified speech adapter lacks production authorization or human-reviewed locale capability")
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "~/.codex/worktrees/opus-layer1-larger-clip/sermon-video-zh-subtitles/scripts/prepare_target_language_speech_job.py", line 57, in _require
+    raise ValueError(message)
+ValueError: Verified speech adapter lacks production authorization or human-reviewed locale capability

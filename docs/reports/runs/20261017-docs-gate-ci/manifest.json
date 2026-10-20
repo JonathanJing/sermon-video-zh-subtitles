@@ -1,0 +1,27 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-docs-gate-ci",
+  "runs": [
+    {
+      "label": "docs-gate-ci-20261017",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/docs-gate-ci-20261017",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "docs-gate-ci-20261017",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 521,
+      "truncated": false,
+      "sha256": "5e92558c05b2818b817283b90232696c0674128232d66322f69ecd2657c7f186",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

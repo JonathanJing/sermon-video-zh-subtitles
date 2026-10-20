@@ -14,11 +14,13 @@ import unittest
 from unittest.mock import Mock, patch
 import urllib.error
 
-from scripts import sermon_accounting as accounting
-from scripts import sermon_pipeline as pipeline
-from scripts import sermon_review_budget as budget
-from scripts import sermon_review_contracts as contracts
-from scripts import sermon_repair_planning as planning
+from tongxing_production.compute import legacy_openai  # C4: the remote-call group lives here
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.observability import accounting
+from tongxing_production.workflows.dual_pdf import pipeline as pipeline
+from tongxing_production.review import review_budget as budget
+from tongxing_production.review import contracts
+from tongxing_production.orchestration.supervisor import repair_planning as planning
 from scripts import sermon_strict_budget_adapter as adapter
 from scripts import sermon_strict_layer2 as strict
 from tests import test_sermon_strict_layer2 as strict_fixtures
@@ -282,7 +284,7 @@ class StrictBudgetTests(unittest.TestCase):
         attempts = []; executor = Mock(side_effect=AssertionError('must not dispatch'))
         caller = refused_before_observer(attempts, executor)
         with self.f.session():
-            with patch.object(pipeline, 'record_api_attempt', side_effect=accounting.AccountingWriteError('fault')):
+            with patch.object(legacy_openai, 'record_api_attempt', side_effect=accounting.AccountingWriteError('fault')):
                 with self.assertRaises(pipeline.PreDispatchRejection) as raised:
                     self.generate(caller=caller)
             self.assertTrue(raised.exception.sermon_logging_failed)
@@ -398,7 +400,7 @@ class StrictBudgetTests(unittest.TestCase):
             self.generate()
             error = urllib.error.HTTPError(pipeline.CHAT_URL, 400, 'private', {}, io.BytesIO(b'private'))
             with patch.object(pipeline.urllib.request, 'urlopen', side_effect=error) as calls:
-                with patch.object(pipeline, 'record_api_attempt', side_effect=accounting.AccountingWriteError('fault')):
+                with patch.object(legacy_openai, 'record_api_attempt', side_effect=accounting.AccountingWriteError('fault')):
                     with self.assertRaises(pipeline.TransportRejection): self.review(caller=self.f.http_caller)
                 self.restart()
                 self.assertEqual(self.review(caller=self.f.http_caller)['executionStatus'], 'failed')
@@ -704,8 +706,9 @@ class StrictBudgetTests(unittest.TestCase):
     def test_actual_process_exit_preserves_reservation_and_forbids_restart_dispatch(self):
         code = '''import json,os,sys
 from pathlib import Path
-from scripts import sermon_strict_layer2 as strict,sermon_accounting as accounting,sermon_log_profile as profile
-from scripts.sermon_review_budget import BudgetStore
+from scripts import sermon_strict_layer2 as strict
+from tongxing_production.observability import accounting, profile
+from scripts import tongxing_host; from tongxing_production.review.review_budget import BudgetStore
 from scripts.sermon_strict_budget_adapter import StrictBudgetAdapter
 from tests.test_sermon_strict_budget_adapter import authority,bounds
 value=json.load(sys.stdin)

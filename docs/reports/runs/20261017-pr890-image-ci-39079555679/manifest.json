@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-pr890-image-ci-39079555679",
+  "runs": [
+    {
+      "label": "20261017-pr890-image-ci-39079555679",
+      "source": "/private/tmp/backend-cloud-run-jobs-20261017/artifacts/20261017-pr890-image-ci-39079555679",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "20261017-pr890-image-ci-39079555679",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 220,
+      "truncated": false,
+      "sha256": "457535a940d523101061d8e9396bd7b9967b6373d02f80c61341b9f2990f506f",
+      "redactions": {}
+    },
+    {
+      "run": "20261017-pr890-image-ci-39079555679",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 538,
+      "truncated": false,
+      "sha256": "a67d178aa59c72aeec55d90260e3681ad2324b249e1f404d043474362d6e8bdb",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

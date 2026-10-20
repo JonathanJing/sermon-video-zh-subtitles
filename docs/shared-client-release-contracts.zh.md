@@ -21,7 +21,7 @@ Web 集成负例会重新计算 Release 的有效传输 hash，再移除其合�
 命令：
 
 ```sh
-node --test experiments/sermon-dubbing-poc/web/*.test.mjs
+node --test apps/listening-web/*.test.mjs
 node --test tests/test_formal_dev_adapter.mjs
 DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer swift test --package-path apps/tongxing-ios/Core --scratch-path /tmp/tongxing-contract-core
 DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer swift test --package-path apps/tongxing-ios --scratch-path /tmp/tongxing-contract-storage

@@ -1,0 +1,9 @@
+{
+  "deliveryType": "test",
+  "status": "failed",
+  "exitCode": 1,
+  "commit": "fdfb2000",
+  "workflow": "local full pytest suite on dev 9cfb3083 plus reworked #1108/#1111/#1117/#1121",
+  "publication": "not_run",
+  "realProduction": "not_run"
+}

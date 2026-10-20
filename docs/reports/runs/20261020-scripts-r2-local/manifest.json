@@ -1,0 +1,90 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261020-scripts-r2-local",
+  "runs": [
+    {
+      "label": "r2-local",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.claude/worktrees/scripts-r2-436a8d/artifacts/r2-local",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "r2-local",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 49,
+      "truncated": false,
+      "sha256": "525009338fe8178dd9d3ab5918e887f4775918892994250011521b392a59c3b2",
+      "redactions": {}
+    },
+    {
+      "run": "r2-local",
+      "path": "shards/s0.log",
+      "kind": "log",
+      "bytes": 175,
+      "truncated": false,
+      "sha256": "45c64fa70c3296bf6e4be80acea083c28a35423b91c3c3b8c0af5e3debbb4f8a",
+      "redactions": {}
+    },
+    {
+      "run": "r2-local",
+      "path": "shards/s1.log",
+      "kind": "log",
+      "bytes": 367,
+      "truncated": false,
+      "sha256": "c31be641dc99c78c0a4cf995cfcccea77f6f60826dc9daca3f16ffb4629cc36e",
+      "redactions": {}
+    },
+    {
+      "run": "r2-local",
+      "path": "shards/s2.log",
+      "kind": "log",
+      "bytes": 188,
+      "truncated": false,
+      "sha256": "66f072503274dcfd50579f998da4133f96ae644b612b299215cae4b6d266b4bb",
+      "redactions": {}
+    },
+    {
+      "run": "r2-local",
+      "path": "shards/s3.log",
+      "kind": "log",
+      "bytes": 232,
+      "truncated": false,
+      "sha256": "75e1a11684947d1e2f62ccbba1f2fb13f0d8531e45ce057bbace04edce20e3ac",
+      "redactions": {}
+    },
+    {
+      "run": "r2-local",
+      "path": "shards/s4.log",
+      "kind": "log",
+      "bytes": 192,
+      "truncated": false,
+      "sha256": "3850680ea500df9cd093d8ebdcd358ca91e5a4c31db90558bc81efc4a7993387",
+      "redactions": {}
+    },
+    {
+      "run": "r2-local",
+      "path": "shards/s5.log",
+      "kind": "log",
+      "bytes": 242,
+      "truncated": false,
+      "sha256": "c6668099f24fd0eeb3088778a82eb0e4a89f501979d3e12637d09ec1e713c754",
+      "redactions": {}
+    },
+    {
+      "run": "r2-local",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 974,
+      "truncated": false,
+      "sha256": "e4e07ffa935de9b328e57e6872ee4e2e57c0e2fd76f0f2aa288dd56f7f15d23e",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

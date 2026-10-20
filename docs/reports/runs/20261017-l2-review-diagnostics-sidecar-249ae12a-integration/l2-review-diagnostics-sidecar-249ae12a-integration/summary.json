@@ -1,0 +1,21 @@
+{
+  "checks": [
+    {
+      "name": "L2 diagnostics strict L2 fresh diagnostic package path aliases sidecars accounting Python tests",
+      "status": "passed",
+      "run": 85,
+      "passed": 84,
+      "skipped": 1
+    },
+    {
+      "name": "worktree-bound production package import",
+      "status": "passed"
+    },
+    {
+      "name": "git diff --check",
+      "status": "passed"
+    }
+  ],
+  "mergeConflicts": 0,
+  "limits": "No full CI result yet for combined head; no paid model or production L2 run; optional Temporal runtime absent."
+}

@@ -1,0 +1,19 @@
+{
+  "status": "passed",
+  "base": "origin/dev@7d892c92",
+  "head": "f43b562f4f7ba0d9df4e534fbc8847827aaa3185",
+  "executed": 70,
+  "passed": 69,
+  "skipped": 1,
+  "durationSeconds": 30.46,
+  "testModules": [
+    "test_sermon_review_diagnostics",
+    "test_sermon_strict_layer2",
+    "test_sermon_fresh_diagnostic",
+    "test_tongxing_production_package",
+    "test_infrastructure_path_aliases"
+  ],
+  "implementationBytesSha256": "6b3cc36b260c324b16a1a60020ca2342e4798fc6ec031ab0ab3276349565b2b0",
+  "diffCheck": "passed",
+  "externalCalls": 0
+}

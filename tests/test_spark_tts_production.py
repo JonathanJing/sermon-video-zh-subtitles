@@ -3,7 +3,8 @@ import fcntl
 from unittest.mock import patch
 import unittest
 
-from scripts import render_formal_target_language_speech as tts
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.audio import renderer as tts
 from tests import test_formal_audio_batching as batch_fixtures
 BatchEngine = batch_fixtures.BatchEngine
 

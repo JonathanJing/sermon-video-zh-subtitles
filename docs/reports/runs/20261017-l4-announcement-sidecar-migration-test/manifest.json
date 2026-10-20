@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-l4-announcement-sidecar-migration-test",
+  "runs": [
+    {
+      "label": "l4-announcement-sidecar-migration-test",
+      "source": "~/.codex/worktrees/l4-announcement-sidecar/sermon-video-zh-subtitles/artifacts/l4-announcement-sidecar-migration-test",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "l4-announcement-sidecar-migration-test",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 358,
+      "truncated": false,
+      "sha256": "63b69863f1468a1b1b40478b1fc4bb62a055a830635ba4ff92073a604573b972",
+      "redactions": {}
+    },
+    {
+      "run": "l4-announcement-sidecar-migration-test",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 1069,
+      "truncated": false,
+      "sha256": "59d7d192163bba5f7b1a766bc0365c46ec8186db48f528a0c3cbbefb8f805e86",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

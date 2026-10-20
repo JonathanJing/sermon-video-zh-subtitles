@@ -1,0 +1,30 @@
+{
+  "attempts": [
+    {
+      "asrChunksReturned": 11,
+      "config": "source-preparation.json",
+      "outcome": "failed_before_mfa_dispatch",
+      "reason": "ambiguous_numeric_reference"
+    },
+    {
+      "asrChunksReturned": 11,
+      "config": "source-preparation-v2.json",
+      "outcome": "failed_before_mfa_dispatch",
+      "reason": "spark_exclusive_session_required"
+    },
+    {
+      "config": "source-preparation-v2.json",
+      "outcome": "blocked_after_machine_judge",
+      "reason": "two_high_risk_boundaries_and_two_long_units"
+    }
+  ],
+  "candidateSha256": "297a3dde8ec006a3eb07aa023969d178ccbfd814ab5a2f4490cdf7881c095175",
+  "completedAt": "2026-10-18T02:32:35.789391+00:00",
+  "kind": "english_source_candidate",
+  "nextDecision": "source_boundary_policy_and_english_review",
+  "productionEligible": false,
+  "reason": "source_machine_judge_rejected",
+  "schemaVersion": "sermon-layer1-source-run-outcome-v1",
+  "sourceReviewPending": true,
+  "status": "blocked"
+}

@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-g1-top-full-ci",
+  "runs": [
+    {
+      "label": "g1-top-full-ci",
+      "source": "~/.codex/worktrees/g1-r4-review/sermon-video-zh-subtitles/artifacts/g1-top-full-ci",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "g1-top-full-ci",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 112,
+      "truncated": false,
+      "sha256": "594f0e740d6b9dfe9c80d8e99adf3992ae42a124c31561f531a2e7d916cb2196",
+      "redactions": {}
+    },
+    {
+      "run": "g1-top-full-ci",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 399,
+      "truncated": false,
+      "sha256": "c220d45a166f2eaf7d3b75c147bff7bedd3cebbe5ed8c5116384b34dbc0eaad0",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

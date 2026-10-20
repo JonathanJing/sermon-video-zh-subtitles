@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-ops-dev-snapshot-preflight-synthetic",
+  "runs": [
+    {
+      "label": "ops-dev-snapshot-preflight-synthetic",
+      "source": "~/.codex/worktrees/ops-dev-snapshot-preflight/sermon-video-zh-subtitles/artifacts/ops-dev-snapshot-preflight-synthetic",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "ops-dev-snapshot-preflight-synthetic",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 331,
+      "truncated": false,
+      "sha256": "fdc229a454cd69a9216e0cfbcb36f024e6935db2e5fba7e98c7e8ddb9a66028c",
+      "redactions": {}
+    },
+    {
+      "run": "ops-dev-snapshot-preflight-synthetic",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 350,
+      "truncated": false,
+      "sha256": "37dcacd2439c0876d8bbfba0b309e76ea8c57289fc20f55de97bc5d14982c94a",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

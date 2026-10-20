@@ -1,46 +1,16 @@
-"""Single-attempt OpenAI API transport for new standalone Layer 2 runs."""
-from __future__ import annotations
+"""Transition facade: the implementation lives in tongxing_production.compute.transports.openai_layer2.
 
-import hashlib
-import os
+Both import paths name one module object, so attribute patches apply to both.
+Remove once no caller imports the old path.
+"""
 from pathlib import Path
+import sys
 
-from scripts import run_target_language_models as models
-from scripts import sermon_pipeline
-from scripts.sermon_openai_runtime import selected_route
+try:
+    from scripts import tongxing_host  # noqa: F401  binds the production package ports
+except ModuleNotFoundError:  # imported by bare name from a script run directly in scripts/
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+    from scripts import tongxing_host  # noqa: F401
+from tongxing_production.compute.transports import openai_layer2 as _implementation
 
-
-class OpenAILayer2Transport:
-    billing = "api"
-
-    def __init__(self):
-        route = selected_route()
-        if route is None:
-            raise ValueError("openai_layer2_requires_explicit_dev_or_prod_launcher")
-        self.key = os.environ["OPENAI_API_KEY"]
-        self.execution_identity = {
-            "schemaVersion": "openai-layer2-transport-identity-v1",
-            "backend": "openai_api",
-            "provider": "openai",
-            "authMode": "project_api_key",
-            "route": route,
-            "adapterSha256": hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
-        }
-
-    def admit_resource(self, payload):
-        """Reject unsupported calls before the runner records an unknown dispatch."""
-        from scripts.strict_budget_capability import admit
-        decision = admit("standalone_api", payload=payload)
-        if decision["decision"] != "reserved":
-            raise ValueError(decision["reason"])
-        return decision
-
-    def __call__(self, api_key, payload):
-        if api_key != self.key:
-            raise ValueError("selected_openai_credential_override")
-        self.admit_resource(payload)
-        return sermon_pipeline.json_request(sermon_pipeline.CHAT_URL, api_key, payload, retries=1)
-
-    @staticmethod
-    def completed_content(response, model, role):
-        return models.completed_response_content(response, model, role)
+sys.modules[__name__] = _implementation

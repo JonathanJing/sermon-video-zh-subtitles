@@ -1,0 +1,18 @@
+{
+  "scope": "A4 local premerge verification",
+  "directA4": {
+    "tests": 51,
+    "result": "pass"
+  },
+  "unifiedCli": {
+    "passed": 228,
+    "skipped": 2,
+    "subtests": 32
+  },
+  "audioPorts": {
+    "tests": 64,
+    "result": "pass"
+  },
+  "logAvailability": "Only aggregate exit and count observations retained",
+  "realWorkflow": "not_run"
+}

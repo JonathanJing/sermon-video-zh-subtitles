@@ -1,0 +1,11 @@
+{
+  "schemaVersion": "sermon-test-run-summary-v1",
+  "status": "post_dev_merge_tests_passed_live_canary_pending",
+  "commit": "f259e4b7",
+  "testsPassed": 261,
+  "subtestsPassed": 532,
+  "testsFailed": 0,
+  "realProviderCalls": 0,
+  "editablePackageCurrentCheckout": true,
+  "productionReadback": "pending_after_pr_merge"
+}

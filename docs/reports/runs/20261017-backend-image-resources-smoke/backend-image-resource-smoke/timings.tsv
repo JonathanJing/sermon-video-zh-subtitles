@@ -1,0 +1,2 @@
+stage	status	seconds	result
+resource_smoke_job	pass	53	Docker build and two in-container reads

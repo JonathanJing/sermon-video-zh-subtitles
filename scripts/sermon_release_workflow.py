@@ -57,16 +57,13 @@ def _week(value):
     return value
 
 
-def _safe_path(path, *, recursive=False):
-    """Reject redirected config/output paths, allowing macOS system aliases."""
-    path = Path(os.path.abspath(Path(path).expanduser()))
-    aliases = {Path('/var'): Path('/private/var'), Path('/tmp'): Path('/private/tmp'), Path('/etc'): Path('/private/etc')}
-    for item in (path, *path.parents):
-        if item.is_symlink() and not (item in aliases and item.resolve() == aliases[item]):
-            raise ValueError("Symlink configuration/output paths are not supported")
-    if recursive and path.is_dir() and any(item.is_symlink() for item in path.rglob('*')):
-        raise ValueError("Symlink entries in workflow outputs are not supported")
-    return path.resolve()
+# The path constraint lives in tongxing_production.storage.paths (infrastructure I2).
+from tongxing_production.storage.paths import safe_path as _safe_path  # noqa: E402
+
+
+def safe_path(path, *, recursive=False):
+    """Public name for the orchestration package; delegates at call time."""
+    return _safe_path(path, recursive=recursive)
 
 
 def load_config(path):
@@ -325,7 +322,8 @@ def execute(config_path, sunday, action, *, expected_source_run_root=None, expec
             raise ValueError("Workflow configuration changed while acquiring locks")
         current = _snapshot(config, sunday)
         if expected_release_revision is not None:
-            from scripts.sermon_workflow_jobs import _digest
+            from scripts import tongxing_host  # noqa: F401  binds the production package ports
+            from tongxing_production.orchestration.jobs import _digest
             if _digest(current) != expected_release_revision:
                 return {"executed": False, "snapshot": current}
         if expected_source_run_root:

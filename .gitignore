@@ -34,7 +34,7 @@ data/benchmarks/field-venue-fingerprint/20261011-mid-back.json
 artifacts/
 output/pdf/
 tmp/
-web/playback-simulation.generated.js
+apps/operator-web/playback-simulation.generated.js
 
 # Local tracker publisher lifecycle state
 *.publisher-health.json
@@ -42,3 +42,4 @@ web/playback-simulation.generated.js
 *.publisher-runtime.json
 *.publisher-runtime.json.*.tmp
 *.publisher-start.lock
+*.egg-info/

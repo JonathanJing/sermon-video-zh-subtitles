@@ -1,0 +1,38 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-g1-s5-shared-venv-failure",
+  "runs": [
+    {
+      "label": "g1-s5-sync-20261017",
+      "source": "~/.codex/worktrees/g1-r3-review/sermon-video-zh-subtitles/artifacts/g1-s5-sync-20261017",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "g1-s5-sync-20261017",
+      "path": "focused-pytest.log",
+      "kind": "log",
+      "bytes": 4009,
+      "truncated": false,
+      "sha256": "6a42eda0642d9b5589596231ec457c82e0efd14f1ee26d3d8fd2883d6f7d3a8f",
+      "redactions": {
+        "home_dir": 3
+      }
+    },
+    {
+      "run": "g1-s5-sync-20261017",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 728,
+      "truncated": false,
+      "sha256": "143573ebbd7dddefd3a1bcd45c6ba15e43a6ff43ee40e16a453491ad68e33157",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

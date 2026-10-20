@@ -67,7 +67,7 @@ sequenceDiagram
 
 `expectedArtifactSha256` 只是示意。真实任务须绑定该审核 schema 要求的**全部**身份：英文 Source Package、Target Candidate、Audio Package、整轨、机器筛查收据及单元清单等。提交时后端核对任务修订；领取时本地再与当前原件逐一核对。任一身份不一致，指令进入 `rejected_stale`，保留旧决定但不产生新批准或进度；重新生成审核任务。
 
-`review_target_language_audio.py approve` 当前要求审核表明确记录全文播放、1 倍速视频同步、六项检查、所有 ASR 不确定项的逐项裁决、审核者和时间，并输出独立 v2 收据。远程审核页必须覆盖这些字段及真实媒体回放，不能用一个“通过”按钮补造。Layer 2 使用自己的分组审核收据。技术阻塞（如韩语 L3-02 合成失败）采用故障解决及重试动作，不接受“人审通过”动作。Layer 4 的发布、HTTP、设备和现场验收继续分开。
+`tools/ops/run.py audio.human_review approve` 当前要求审核表明确记录全文播放、1 倍速视频同步、六项检查、所有 ASR 不确定项的逐项裁决、审核者和时间，并输出独立 v2 收据。远程审核页必须覆盖这些字段及真实媒体回放，不能用一个“通过”按钮补造。Layer 2 使用自己的分组审核收据。技术阻塞（如韩语 L3-02 合成失败）采用故障解决及重试动作，不接受“人审通过”动作。Layer 4 的发布、HTTP、设备和现场验收继续分开。
 
 审核页先显示任务绑定的证据版本、可播放媒体或源文／候选文字、逐项审核要求，再提供「同意」「不同意」和具体意见输入。媒体不能播放时保留明确的文字说明与故障反馈入口；只有状态摘要或文字替代说明时，音频任务的正式「同意」必须禁用。不同意须记录原因和可定位的时间点／单元，作为新修订输入。当前公开 Mockup 的选择与输入仅在浏览器内存中演示，不能生成上述正式决定。
 
@@ -122,7 +122,7 @@ JSON 是结果投影，Agent 读取前仍须通过本地校验入口确认指令
 
 ## 参考
 
-- [当前 Tracker 发布器](../experiments/sermon-dubbing-poc/tracker-admin/publish.mjs)与[只读规则](../experiments/sermon-dubbing-poc/tracker-admin/firestore.rules)
-- [四层进度账本](../scripts/four_layer_progress.py)、[音频审核入口](../scripts/review_target_language_audio.py)、[音频审核收据 v2](../schemas/sermon-target-language-audio-human-review-receipt-v2.schema.json)
+- [当前 Tracker 发布器](../tools/ops/tracker-publisher/publish.mjs)与[只读规则](../infra/firebase/tracker/firestore.rules)
+- [四层进度账本](../packages/production/src/tongxing_production/observability/progress.py)、[音频审核入口](../packages/production/src/tongxing_production/audio/human_review.py)、[音频审核收据 v2](../schemas/sermon-target-language-audio-human-review-receipt-v2.schema.json)
 - [Firebase Callable Functions](https://firebase.google.com/docs/functions/callable)、[Firestore 实时监听](https://firebase.google.com/docs/firestore/query-data/listen)、[Firestore 事务](https://firebase.google.com/docs/firestore/manage-data/transactions)
 - [OpenAI Agents API 自托管执行环境](https://developers.openai.com/api/docs/guides/agents-api/environments/self-hosted)（可选后续运行方式，不是第一版依赖）

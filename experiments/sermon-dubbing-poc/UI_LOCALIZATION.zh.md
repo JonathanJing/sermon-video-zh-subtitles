@@ -64,7 +64,7 @@
 ## 验证
 
 ```sh
-node --test experiments/sermon-dubbing-poc/web/*.test.mjs
+node --test apps/listening-web/*.test.mjs
 .venv/bin/python -m unittest discover -s experiments/sermon-dubbing-poc -p 'test_build_weekly_app.py' -q
 .venv/bin/python -m unittest discover -s experiments/sermon-dubbing-poc -p 'test_weekly_release.py' -q
 git diff --check

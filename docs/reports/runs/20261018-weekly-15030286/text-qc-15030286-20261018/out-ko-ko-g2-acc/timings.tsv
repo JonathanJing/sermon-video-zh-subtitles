@@ -1,0 +1,5 @@
+stage	status	seconds
+discover	pass	0.0
+ko.calibration.prefetch	pass	925.2
+ko.calibration	pass	188.9
+ko.text-waiver	pass	0.1

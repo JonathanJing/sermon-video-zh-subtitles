@@ -1,0 +1,17 @@
+{
+  "status": "cancelled",
+  "event": "pull_request",
+  "root4": {
+    "status": "failure",
+    "testsRun": 738,
+    "failures": 1,
+    "skipped": 4,
+    "failingTest": "test_tongxing_production_package.ProductionPackageTests.test_every_facade_imports_by_bare_name_from_a_script_run_in_scripts",
+    "cause": "package smoke asserted every scripts facade maps into production/tools; voice experiment facade maps to checkout experiments",
+    "fixedByCommit": "975a33481e4cefabc3d5d7de79cc1a8ea8f14784"
+  },
+  "otherJobs": "root-1 success; other full shards canceled on supersession; aggregate unittest failed",
+  "successorRunId": 39095254253,
+  "testSuiteCompleted": false,
+  "productionRun": false
+}

@@ -1,0 +1,12 @@
+{
+  "schemaVersion": "local-test-outcome-v1",
+  "status": "pass",
+  "exitCode": 0,
+  "testsRun": 6,
+  "failures": 0,
+  "errors": 0,
+  "baseSha": "585c8d1d7b8e977890abe5c8c59daf457ae8eaa2",
+  "codeHeadSha": "56f981f4fb4f441fd875057dab3edbd5d06f1367",
+  "syntheticMergeSha": "c0aa9652",
+  "timing": "not recorded"
+}

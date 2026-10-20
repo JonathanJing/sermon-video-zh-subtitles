@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-g1-full-ci-39048445850",
+  "runs": [
+    {
+      "label": "g1-full-ci-39048445850",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/g1-full-ci-39048445850",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "g1-full-ci-39048445850",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 1266,
+      "truncated": false,
+      "sha256": "cd4105e880449d84c4cd31f136e5eba894fb5728c6b24a25c7616ba7066d67dd",
+      "redactions": {}
+    },
+    {
+      "run": "g1-full-ci-39048445850",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 694,
+      "truncated": false,
+      "sha256": "58dfa018373ba284614d7888be641bc9cf263976294b7ea82696e1b78c6d84b8",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

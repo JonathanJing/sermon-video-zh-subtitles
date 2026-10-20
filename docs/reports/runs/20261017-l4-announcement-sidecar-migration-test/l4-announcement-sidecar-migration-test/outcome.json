@@ -1,0 +1,17 @@
+{
+  "status": "pass",
+  "deliveryType": "test",
+  "scope": "L4 announcement sidecar byte-preserving migration",
+  "exitCode": 0,
+  "checks": {
+    "pytest": {
+      "passed": 4,
+      "failed": 0
+    },
+    "oldNewOutput": "byte_equal",
+    "diffCheck": "pass",
+    "remoteDevBase": "55d10a9e"
+  },
+  "productionRun": "not_run",
+  "publication": "not_run"
+}

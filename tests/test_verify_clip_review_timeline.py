@@ -1,6 +1,6 @@
 import unittest
 
-from scripts.verify_clip_review_timeline import verify
+from tools.ops.verify_clip_review_timeline import verify
 
 
 class ClipReviewTimelineTests(unittest.TestCase):

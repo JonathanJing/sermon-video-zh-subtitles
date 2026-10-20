@@ -1,0 +1,10 @@
+{
+  "deliveryType": "test",
+  "status": "passed",
+  "head": "5f8516dfadd649ead06ad897545e3fc17f5218dd",
+  "parentHead": "6013fb16000e701a9102821084faee8aeb989f08",
+  "testsRun": 18,
+  "testsPassed": 18,
+  "modelCalls": 0,
+  "paidDispatches": 0
+}

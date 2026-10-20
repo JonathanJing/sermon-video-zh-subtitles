@@ -1,0 +1,8 @@
+{"component": "post-live-subtitles", "event": "post_live_subtitle_generation_checked", "liveSource": {"host": "www.youtube.com", "path": "/watch", "urlHash": "95570d836fadda10"}, "loggedAt": "2026-10-17T21:28:21.923063+00:00", "pipelineOutdir": "/var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/tmpkc7k8gtc/runs/2026-06-28/mariners_MEZHufeQBjc/pipeline", "severity": "INFO", "status": "planned", "sunday": "2026-06-28"}
+{"component": "post-live-subtitles", "event": "post_live_subtitle_generation_checked", "liveSource": {"host": "www.youtube.com", "path": "/watch", "urlHash": "160163dd612c1ecf"}, "loggedAt": "2026-10-17T21:28:21.936715+00:00", "pipelineOutdir": "/var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/tmpnnu4u_dz/2026-06-28/mariners_MEZHufeQBjc/pipeline", "severity": "INFO", "status": "planned", "sunday": "2026-06-28"}
+{"component": "post-live-subtitles", "event": "post_live_subtitle_generation_checked", "liveSource": {"host": "www.youtube.com", "path": "/watch", "urlHash": "160163dd612c1ecf"}, "loggedAt": "2026-10-17T21:28:21.937837+00:00", "severity": "INFO", "status": "waiting_for_post_live", "sunday": "2026-06-28"}
+{"component": "post-live-subtitles", "event": "post_live_subtitle_generation_checked", "liveSource": {"host": "www.youtube.com", "path": "/watch", "urlHash": "160163dd612c1ecf"}, "loggedAt": "2026-10-17T21:28:22.148982+00:00", "pipelineOutdir": "/var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/tmp36z48z05/2026-06-28/mariners_MEZHufeQBjc/pipeline", "severity": "INFO", "status": "completed", "sunday": "2026-06-28"}
+----------------------------------------------------------------------
+Ran 44 tests in 4.803s
+
+OK

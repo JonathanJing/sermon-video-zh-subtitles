@@ -1,0 +1,11 @@
+{
+  "deliveryType": "test",
+  "status": "passed",
+  "exitCode": 0,
+  "commit": "cd6a3e1599494d7c05df4b74ff3631e67ef1f2dd",
+  "workflow": "Python tests",
+  "runId": 39041250872,
+  "rootShardsPassed": 8,
+  "aggregate": "success",
+  "publication": "not_run"
+}

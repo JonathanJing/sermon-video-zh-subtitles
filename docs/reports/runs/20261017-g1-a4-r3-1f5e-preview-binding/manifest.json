@@ -1,0 +1,27 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-g1-a4-r3-1f5e-preview-binding",
+  "runs": [
+    {
+      "label": "20261017-g1-a4-r3-1f5e-preview-binding",
+      "source": "~/.codex/worktrees/g1-a4-audio/sermon-video-zh-subtitles/artifacts/local-test-runs/20261017-g1-a4-r3-1f5e-preview-binding",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "20261017-g1-a4-r3-1f5e-preview-binding",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 946,
+      "truncated": false,
+      "sha256": "c27b18cf4f740aa9431b673795326ba868d2012e59988bda1d2ef1adaea49da1",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

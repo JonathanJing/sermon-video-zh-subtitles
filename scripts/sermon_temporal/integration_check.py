@@ -4,6 +4,7 @@ from __future__ import annotations
 import argparse
 import asyncio
 from datetime import timedelta
+import importlib.util
 import json
 from pathlib import Path
 import signal
@@ -65,6 +66,29 @@ async def wake(handle, binding, reason, *, epoch=None):
                         ResumeSignal(SIGNAL_SCHEMA, uuid.uuid4().hex, binding, reason, epoch))
 
 
+def _path_aliases():
+    # The isolated Temporal venv installs only temporalio, so the standard-library alias
+    # table is loaded from the checkout.
+    spec = importlib.util.spec_from_file_location(
+        "tongxing_path_aliases", ROOT / "packages/production/src/tongxing_production/path_aliases.py")
+    aliases = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(aliases)
+    return aliases
+
+
+def dependency_path(name):
+    """File a legacy dependency key names today."""
+    return ROOT / _path_aliases().resolve(name)
+
+
+def dependency_digests(names):
+    """Each key's current file, plus the package files that took over part of it."""
+    aliases = _path_aliases()
+    digests = {name: file_sha(dependency_path(name)) for name in names}
+    digests.update({path: file_sha(ROOT / path) for name in names for path in aliases.SPLIT_MEMBERS.get(name, ())})
+    return digests
+
+
 def free_port():
     with socket.socket() as sock:
         sock.bind(("127.0.0.1", 0))
@@ -85,9 +109,9 @@ class Check:
         self.report["sourceSha256"] = {str(path.relative_to(ROOT)): file_sha(path)
             for path in sorted((ROOT / "scripts/sermon_temporal").glob("*.py"))}
         self.report["runtime"] = read_json(TEMPORAL_ROOT / "runtime/runtime-manifest.json")
-        self.report["dependencySha256"] = {name: file_sha(ROOT / name) for name in (
+        self.report["dependencySha256"] = dependency_digests((
             "scripts/sermon_execution_harness.py", "scripts/sermon_guarded_command.py", "scripts/run_saturday_harness.py",
-            "scripts/sermon_production_supervisor.py", "experiments/sermon-dubbing-poc/continue_saturday_dubbing.py")}
+            "scripts/sermon_production_supervisor.py", "experiments/sermon-dubbing-poc/continue_saturday_dubbing.py"))
 
     async def start_server(self):
         record = await asyncio.to_thread(server.start, self.root / "server", port=self.port, ui_port=self.ui_port)

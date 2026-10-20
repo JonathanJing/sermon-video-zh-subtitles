@@ -7,10 +7,14 @@ import sys
 import unittest
 from unittest.mock import Mock, patch
 
-from scripts import sermon_pipeline, generate_notes_with_openai as notes
-from scripts import run_post_live_subtitle_generation as post_live
+from tongxing_production.compute import legacy_openai  # C4: the remote-call group lives here
+from tests.legacy_pipeline_patches import patch_both  # W3b: Layer 1 names live in two modules
+from scripts import generate_notes_with_openai as notes
+from tongxing_production.workflows.dual_pdf import pipeline as sermon_pipeline
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.workflows.dual_pdf import post_live as post_live
 from scripts import sermon_production_supervisor as supervisor
-from scripts import sermon_source_text_review as source_review
+from tongxing_production.source import text_review as source_review
 
 
 class TextRoleDefaultTests(unittest.TestCase):
@@ -46,10 +50,11 @@ class TextRoleDefaultTests(unittest.TestCase):
             transport.assert_called_once()
 
     def test_migrated_legacy_chat_caps_valid_copy_without_mutating_input(self):
-        from scripts.sermon_provider_limits import DEFAULT_REQUEST_LIMITS
+        from scripts import tongxing_host  # noqa: F401  binds the production package ports
+        from tongxing_production.compute.provider_limits import DEFAULT_REQUEST_LIMITS
         payload={'model':'gpt-6.1-sol','reasoning_effort':'high',
                  'messages':[{'role':'user','content':'synthetic'}], 'response_format':{'type':'json_object'}}
-        with tempfile.TemporaryDirectory() as tmp, patch.dict(os.environ, {'SERMON_ACCOUNTING_DIR':tmp}), patch.object(sermon_pipeline,'json_request',return_value={'ok':True}) as api:
+        with tempfile.TemporaryDirectory() as tmp, patch.dict(os.environ, {'SERMON_ACCOUNTING_DIR':tmp}), patch.object(legacy_openai,'json_request',return_value={'ok':True}) as api:
             sermon_pipeline.chat_json('synthetic-key',payload)
         self.assertNotIn('max_completion_tokens',payload)
         sent=api.call_args.args[2]
@@ -58,11 +63,12 @@ class TextRoleDefaultTests(unittest.TestCase):
         self.assertEqual(sent['messages'],payload['messages'])
 
     def test_already_supplied_cap_is_not_increased_or_silently_changed(self):
-        from scripts.sermon_provider_limits import DEFAULT_REQUEST_LIMITS
+        from scripts import tongxing_host  # noqa: F401  binds the production package ports
+        from tongxing_production.compute.provider_limits import DEFAULT_REQUEST_LIMITS
         payload={'model':'gpt-6.1-sol','reasoning_effort':'high',
                  'messages':[{'role':'user','content':'synthetic'}], 'response_format':{'type':'json_object'},
                  'max_completion_tokens':DEFAULT_REQUEST_LIMITS['maxCompletionTokens']-1}
-        with patch.object(sermon_pipeline,'json_request') as api:
+        with patch.object(legacy_openai,'json_request') as api:
             with self.assertRaises(ValueError):sermon_pipeline.chat_json('synthetic-key',payload)
         api.assert_not_called()
 
@@ -79,7 +85,7 @@ class TextRoleDefaultTests(unittest.TestCase):
         response = Mock(status_code=200, content=json.dumps(envelope).encode())
         response.json.return_value = envelope
         payload = {'model': 'gpt-6.1-sol', 'reasoning': {'effort': 'high'}, 'input': [{'role': 'user', 'content': [{'type': 'input_text', 'text': 'source'}]}]}
-        with tempfile.TemporaryDirectory() as tmp, patch.dict(os.environ, {'SERMON_ACCOUNTING_DIR':tmp}), patch.object(notes.requests, 'post', return_value=response) as api, patch('scripts.sermon_openai_runtime.project_headers', return_value={}):
+        with tempfile.TemporaryDirectory() as tmp, patch.dict(os.environ, {'SERMON_ACCOUNTING_DIR':tmp}), patch.object(notes.requests, 'post', return_value=response) as api, patch('tongxing_production.compute.openai_runtime.project_headers', return_value={}):
             result = notes.request_openai_notes(payload, 'synthetic-key', session_verifier=lambda: {'status':'offline_test'})
         api.assert_called_once()
         self.assertEqual(json.loads(notes.extract_response_text(result)), {'summaryZh': 'sample'})
@@ -87,7 +93,8 @@ class TextRoleDefaultTests(unittest.TestCase):
 
     def test_actual_legacy_builders_pass_validated_caps_to_offline_transport(self):
         from scripts import build_sermon_reading_edition_with_openai as reading
-        from scripts.sermon_provider_limits import DEFAULT_REQUEST_LIMITS
+        from scripts import tongxing_host  # noqa: F401  binds the production package ports
+        from tongxing_production.compute.provider_limits import DEFAULT_REQUEST_LIMITS
         sent=[]
         def respond(url,key,payload,**kwargs):
             sent.append(payload)
@@ -96,7 +103,7 @@ class TextRoleDefaultTests(unittest.TestCase):
             elif '<context>' in user:result={'id':0,'zh':'您好。'}
             else:result={'blocks':[{'id':0,'zh':'您好。'}]}
             return {'model':payload['model'],'choices':[{'message':{'content':json.dumps(result)}}]}
-        with tempfile.TemporaryDirectory() as tmp,patch.dict(os.environ,{'SERMON_ACCOUNTING_DIR':tmp}),patch.object(sermon_pipeline,'json_request',side_effect=respond):
+        with tempfile.TemporaryDirectory() as tmp,patch.dict(os.environ,{'SERMON_ACCOUNTING_DIR':tmp}),patch.object(legacy_openai,'json_request',side_effect=respond):
             root=Path(tmp);segments=[{'id':0,'start':0.0,'end':1.0,'text':'Hello.'}]
             sermon_pipeline.correct_english('synthetic-key',segments,[],root/'correct','gpt-6.1-sol',{},30)
             sermon_pipeline.translate_chinese('synthetic-key',segments,root/'translate','gpt-6.1-sol',{})
@@ -117,8 +124,9 @@ class LegacyBoundedCacheIdentityTests(unittest.TestCase):
         import hashlib
         from scripts import build_sermon_reading_edition_with_openai as reading
         from scripts import review_sermon_subtitles_with_openai as review
-        from scripts import run_sentence_interpretation_models as sentence
-        from scripts import sermon_provider_limits as limits
+        from tongxing_production.source import sentence_interpretation_models as sentence
+        from scripts import tongxing_host  # noqa: F401  binds the production package ports
+        from tongxing_production.compute import provider_limits as limits
         segment={'id':0,'start':0.,'end':1.,'text':'Hello.'}
         block={**segment,'en':'Hello.','zh':'你好。'}
         glossary={}
@@ -167,7 +175,7 @@ class LegacyBoundedCacheIdentityTests(unittest.TestCase):
                         module=reading
                     before=old_path.read_bytes()
                     api=Mock(return_value=response)
-                    with (patch.object(module,'chat_json',api) if module else patch.object(sentence,'RUN_SCHEMA',sentence.RUN_SCHEMA)):
+                    with ((patch_both('chat_json',api) if module is sermon_pipeline else patch.object(module,'chat_json',api)) if module else patch.object(sentence,'RUN_SCHEMA',sentence.RUN_SCHEMA)):
                         first=invoke();second=invoke()
                         self.assertEqual(first,second)
                         self.assertEqual(api.call_count,1)
@@ -183,7 +191,7 @@ class LegacyBoundedCacheIdentityTests(unittest.TestCase):
         from scripts import build_sermon_reading_edition_with_openai as reading
         payload={'model':'gpt-6.1-sol','reasoning_effort':'high','messages':[{'role':'user','content':'synthetic'}],'response_format':{'type':'json_object'}}
         block={'id':0,'start':0.,'end':1.,'en':'Hello.','zh':'你好。'}
-        with tempfile.TemporaryDirectory() as tmp,patch.dict(os.environ,{'SERMON_ACCOUNTING_DIR':tmp}),patch.object(sermon_pipeline,'json_request',side_effect=TimeoutError('synthetic unknown')) as api:
+        with tempfile.TemporaryDirectory() as tmp,patch.dict(os.environ,{'SERMON_ACCOUNTING_DIR':tmp}),patch.object(legacy_openai,'json_request',side_effect=TimeoutError('synthetic unknown')) as api:
             with self.assertRaises(TimeoutError):sermon_pipeline.chat_json('synthetic',payload)
             with self.assertRaisesRegex(ValueError,'api_cli_outcome_reconciliation_required'):
                 reading.edit_batch('synthetic',[block],[block],0,Path(tmp)/'reading',model='gpt-6.1-sol',reasoning_effort='high',qa_pass=False,provider='openai',codex_cli=Path('unused'),schema_path=Path('unused'))
@@ -194,7 +202,7 @@ class LegacyExecutionCacheIdentityTests(unittest.TestCase):
     def test_all_api_cache_readers_bind_project_credential_and_transport_before_lookup(self):
         from scripts import build_sermon_reading_edition_with_openai as reading
         from scripts import review_sermon_subtitles_with_openai as review
-        from scripts import run_sentence_interpretation_models as sentence
+        from tongxing_production.source import sentence_interpretation_models as sentence
         segment={'id':0,'start':0.,'end':1.,'text':'Hello.'}
         block={**segment,'en':'Hello.','zh':'你好。'}
         route={'environment':'dev','projectId':'proj_a','credentialAlias':'tongxing-dev-runtime','identitySource':'configured_runtime'}
@@ -216,10 +224,10 @@ class LegacyExecutionCacheIdentityTests(unittest.TestCase):
                         if role=='subtitle':return review.review_batch(key,[block],[block],0,root,'gpt-6.1-sol','medium')
                         if role=='sentence':return sentence.cached_call(out=root,stage='test',payload={'model':'gpt-6.1-sol','reasoning_effort':'high','messages':[{'role':'user','content':'synthetic'}],'response_format':{'type':'json_object'}},api_key=key,requested_model='gpt-6.1-sol',caller=fake)
                         return reading.edit_batch(key,[block],[block],0,root,model='gpt-6.1-sol',reasoning_effort='high',qa_pass=role=='reading-qa',provider='openai',codex_cli=Path('unused'),schema_path=Path('unused'))
-                    with patch('scripts.sermon_openai_runtime.selected_route',return_value=route),patch.object(sermon_pipeline,'chat_json',side_effect=fake),patch.object(review,'chat_json',side_effect=fake),patch.object(reading,'chat_json',side_effect=fake):
+                    with patch('tongxing_production.compute.openai_runtime.selected_route',return_value=route),patch_both("chat_json", side_effect=fake),patch.object(review,'chat_json',side_effect=fake),patch.object(reading,'chat_json',side_effect=fake):
                         run('synthetic-key-a');run('synthetic-key-a');self.assertEqual(len(calls),1)
                         run('synthetic-key-b');self.assertEqual(len(calls),2)
-                        with patch('scripts.sermon_openai_runtime.selected_route',return_value={**route,'projectId':'proj_b'}):run('synthetic-key-a')
+                        with patch('tongxing_production.compute.openai_runtime.selected_route',return_value={**route,'projectId':'proj_b'}):run('synthetic-key-a')
                         self.assertEqual(len(calls),3)
                         fake.execution_identity={'revision':'changed'}
                         with patch.object(sermon_pipeline._chat_json,'execution_identity',{'revision':'changed'},create=True):run('synthetic-key-a')
@@ -234,7 +242,7 @@ class LegacyExecutionCacheIdentityTests(unittest.TestCase):
         block={'id':0,'start':0.,'end':1.,'en':'Hello.','zh':'你好。'}
         response={'model':'gpt-6.1-sol','choices':[{'message':{'content':json.dumps({'blocks':[{'id':0,'zh':'您好。'}]})}}]}
         payload={'model':'gpt-6.1-sol','reasoning_effort':'high','messages':[{'role':'user','content':'other synthetic request'}],'response_format':{'type':'json_object'}}
-        with tempfile.TemporaryDirectory() as tmp,patch.dict(os.environ,{'SERMON_ACCOUNTING_DIR':tmp}),patch.object(sermon_pipeline,'json_request',side_effect=[response,TimeoutError('synthetic unknown')]) as provider:
+        with tempfile.TemporaryDirectory() as tmp,patch.dict(os.environ,{'SERMON_ACCOUNTING_DIR':tmp}),patch.object(legacy_openai,'json_request',side_effect=[response,TimeoutError('synthetic unknown')]) as provider:
             kwargs=dict(model='gpt-6.1-sol',reasoning_effort='high',qa_pass=False,provider='openai',codex_cli=Path('unused'),schema_path=Path('unused'))
             reading.edit_batch('synthetic',[block],[block],0,Path(tmp)/'reading',**kwargs)
             self.assertEqual(len(list((Path(tmp)/'reading').glob('*.json'))),1)
@@ -244,10 +252,11 @@ class LegacyExecutionCacheIdentityTests(unittest.TestCase):
             self.assertEqual(provider.call_count,2)
 
     def test_subtitle_and_sentence_outer_callers_use_actual_stage_identity_and_defaults(self):
-        from scripts import api_cli_outcomes as outcomes
-        from scripts.production_spark_admission import SessionBoundCaller
+        from scripts import tongxing_host  # noqa: F401  binds the production package ports
+        from tongxing_production.compute import outcomes
+        from tongxing_production.compute.spark_admission import SessionBoundCaller
         from scripts import review_sermon_subtitles_with_openai as review
-        from scripts import run_sentence_interpretation_models as sentence
+        from tongxing_production.source import sentence_interpretation_models as sentence
         rows=[{'id':0,'text':'Hello.','zh':'你好。'}]
         with tempfile.TemporaryDirectory() as tmp:
             for role,purpose in [('subtitle','subtitle-review'),('sentence','sentence-interpretation')]:

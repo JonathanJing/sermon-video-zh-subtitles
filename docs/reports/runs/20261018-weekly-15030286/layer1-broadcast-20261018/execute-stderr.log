@@ -1,0 +1,17 @@
+Traceback (most recent call last):
+  File "/private/tmp/claude-501/-Users-jonathan-jing-SynologyDrive-GitHub-Active-sermon-video-zh-subtitles/57e9ca3b-01b2-495e-be2f-1ae3a8d903d6/scratchpad/wt-l2fresh/scripts/sermon_unified_source.py", line 18, in <module>
+    raise SystemExit(_implementation.main())
+                     ~~~~~~~~~~~~~~~~~~~~^^
+  File "/private/tmp/claude-501/-Users-jonathan-jing-SynologyDrive-GitHub-Active-sermon-video-zh-subtitles/57e9ca3b-01b2-495e-be2f-1ae3a8d903d6/scratchpad/wt-l2fresh/packages/production/src/tongxing_production/source/unified_stage.py", line 588, in main
+    result = inspect(args.config) if args.command == 'inspect' else execute(args.config)
+                                                                    ~~~~~~~^^^^^^^^^^^^^
+  File "/private/tmp/claude-501/-Users-jonathan-jing-SynologyDrive-GitHub-Active-sermon-video-zh-subtitles/57e9ca3b-01b2-495e-be2f-1ae3a8d903d6/scratchpad/wt-l2fresh/packages/production/src/tongxing_production/source/unified_stage.py", line 362, in execute
+    return _execute(config, fresh, api_key=<redacted>, transport=transport,
+                    aligner=aligner or mfa_backend.align_reference_chunks,
+                    mfa_preflight=mfa_preflight or mfa_backend.preflight)
+  File "/private/tmp/claude-501/-Users-jonathan-jing-SynologyDrive-GitHub-Active-sermon-video-zh-subtitles/57e9ca3b-01b2-495e-be2f-1ae3a8d903d6/scratchpad/wt-l2fresh/packages/production/src/tongxing_production/source/unified_stage.py", line 418, in _execute
+    require(review_path.is_file(), 'source_text_review_required')
+    ~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/private/tmp/claude-501/-Users-jonathan-jing-SynologyDrive-GitHub-Active-sermon-video-zh-subtitles/57e9ca3b-01b2-495e-be2f-1ae3a8d903d6/scratchpad/wt-l2fresh/packages/production/src/tongxing_production/source/unified_stage.py", line 72, in require
+    raise ValueError(code)
+ValueError: source_text_review_required

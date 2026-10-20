@@ -1,0 +1,13 @@
+{
+  "status": "success",
+  "exitCode": 0,
+  "deliveryType": "test",
+  "source": "GitHub Actions Python tests",
+  "runId": 39055680750,
+  "headCommitSha": "f1aeae86fa3ad101e6bda96f6c71405a458a864f",
+  "createdAt": "2026-10-17T17:52:59Z",
+  "updatedAt": "2026-10-17T18:52:56Z",
+  "rootShardsPassed": 8,
+  "aggregator": "success",
+  "nativeSharedContracts": "skipped"
+}

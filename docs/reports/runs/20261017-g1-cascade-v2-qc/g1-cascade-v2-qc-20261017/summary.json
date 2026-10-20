@@ -1,0 +1,11 @@
+{
+  "status": "passed",
+  "head": "ef01ce772aef148e50aac319e79964af8eece68f",
+  "targetPr": 568,
+  "upstreamHead": "496df474",
+  "executed": 27,
+  "passed": 27,
+  "testScope": "accounting contract and observability",
+  "diffCheck": "passed",
+  "externalCalls": 0
+}

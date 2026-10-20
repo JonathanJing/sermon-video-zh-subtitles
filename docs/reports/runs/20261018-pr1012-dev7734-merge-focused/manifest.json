@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261018-pr1012-dev7734-merge-focused",
+  "runs": [
+    {
+      "label": "milmmt-pr1012-dev7734-merge-focused",
+      "source": "~/.codex/worktrees/milmmt-exp-leaf/sermon-video-zh-subtitles/artifacts/milmmt-pr1012-dev7734-merge-focused",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "milmmt-pr1012-dev7734-merge-focused",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 335,
+      "truncated": false,
+      "sha256": "f8b90448a61f3a0d234421b387c066f5dabf311709fd49edad89c49f6c884952",
+      "redactions": {}
+    },
+    {
+      "run": "milmmt-pr1012-dev7734-merge-focused",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 160,
+      "truncated": false,
+      "sha256": "ed11d2f17ccb8788288862200a4e0ef9a3bdfda884c86cd1ff24679cc9ac7e2a",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

@@ -1,0 +1,7 @@
+{
+  "schemaVersion": "local-test-summary-v1",
+  "command": ".venv/bin/python -m unittest tests.test_infrastructure_compute_leaves -v",
+  "result": "4 tests passed",
+  "note": "Temp root copies complete T physical list, mutates only moved transcription request target, then restores; no real checkout file changed.",
+  "scope": "targeted code tests; no model, paid request, calibration, waiver or release"
+}

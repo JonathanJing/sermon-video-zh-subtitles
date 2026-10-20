@@ -9,10 +9,11 @@ from pathlib import Path
 import unittest
 from unittest.mock import patch
 
-from scripts import canonical_layer2_reconciliation as subject
-from scripts import canonical_layer2_controller as layer2
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.text import reconciliation as subject
+from tongxing_production.text import controller as layer2
 from scripts import canonical_durable_jobs as durable
-from scripts import sermon_workflow_jobs as jobs
+from tongxing_production.orchestration import jobs
 from scripts.sermon_execution_harness import work_lock, WorkAlreadyRunning
 from tests import test_canonical_layer2_controller as fixtures
 
@@ -177,7 +178,7 @@ class CanonicalLayer2ReconciliationTests(unittest.TestCase):
 
     def test_two_cli_processes_publish_one_receipt_without_model_credentials(self):
         revision = self.view()['stateRevision']
-        command = [sys.executable, str(Path(subject.__file__).resolve()), '--config', str(self.path),
+        command = [sys.executable, str(Path(__file__).resolve().parents[1] / 'tools/ops/run.py'), 'text.reconciliation', '--config', str(self.path),
                    '--locale', 'zh-Hans', '--expected-state-revision', revision]
         env = {**os.environ, 'OPENAI_API_KEY': '', 'CODEX_HOME': '/nonexistent/tongxing-test-no-auth'}
         children = [subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=env)

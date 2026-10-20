@@ -1,0 +1,64 @@
+{
+  "status": "cancelled",
+  "pr": 582,
+  "runId": 39088912063,
+  "headSha": "16d8670ce2e0e32fbac93a6e330cc893ae5ce1c9",
+  "workflow": "Python tests",
+  "jobs": [
+    {
+      "name": "changes",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "test-group (root-1)",
+      "status": "completed",
+      "conclusion": "cancelled"
+    },
+    {
+      "name": "test-group (root-3)",
+      "status": "completed",
+      "conclusion": "cancelled"
+    },
+    {
+      "name": "test-group (root-0)",
+      "status": "completed",
+      "conclusion": "cancelled"
+    },
+    {
+      "name": "test-group (root-2)",
+      "status": "completed",
+      "conclusion": "cancelled"
+    },
+    {
+      "name": "test-group (root-6)",
+      "status": "completed",
+      "conclusion": "cancelled"
+    },
+    {
+      "name": "test-group (root-4)",
+      "status": "completed",
+      "conclusion": "cancelled"
+    },
+    {
+      "name": "test-group (root-5)",
+      "status": "completed",
+      "conclusion": "cancelled"
+    },
+    {
+      "name": "test-group (root-7)",
+      "status": "completed",
+      "conclusion": "cancelled"
+    },
+    {
+      "name": "Native and shared client contracts",
+      "status": "completed",
+      "conclusion": "skipped"
+    },
+    {
+      "name": "unittest",
+      "status": "completed",
+      "conclusion": "failure"
+    }
+  ]
+}

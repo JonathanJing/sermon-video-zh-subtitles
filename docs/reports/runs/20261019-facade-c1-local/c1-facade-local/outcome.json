@@ -1,0 +1,17 @@
+{
+  "schemaVersion": "local-test-outcome-v1",
+  "status": "passed_with_one_load_flake",
+  "exitCode": 1,
+  "startedAt": "2026-10-19T20:20:00+00:00",
+  "endedAt": "2026-10-19T21:00:00+00:00",
+  "scope": "Facade-removal batch C1 (PR #1155): 49 scripts/ facades of tools/ and experiments/ deleted; callers, tests, CI commands and runbooks repointed. Full unittest suite in 10 parallel shards on 0c640ae0, pytest-style files, node suites, section 5.5 test-ID inventory, Appendix A survey, git diff --check.",
+  "knownPreexistingFailures": [
+    "tests/test_codex_shared_pool_transport.py::test_busy_before_started_is_proven_no_dispatch (also fails on clean dev)"
+  ],
+  "environmentErrors": [
+    "test_backend_app and test_cloud_run_jobs: worktree venv lacks services/api/src (tongxing_api); both pass with PYTHONPATH=services/api/src"
+  ],
+  "flakes": [
+    "test_layer2_large_fan_in.test_129_group_actual_producer_can_assemble_and_resume_without_calls failed once under load with utc_clock_discontinuity diagnostics; passed alone (same flake as the A+B and D reports)"
+  ]
+}

@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261018-voice-demo-dev-merge-smoke",
+  "runs": [
+    {
+      "label": "voice-demo-dev-merge-smoke-20261018",
+      "source": "~/.codex/worktrees/voice-demo-package-leaf/sermon-video-zh-subtitles/artifacts/test-runs/voice-demo-dev-merge-smoke-20261018",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "voice-demo-dev-merge-smoke-20261018",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 286,
+      "truncated": false,
+      "sha256": "2bed418cc8e082a424b92d7e04847d2579d2ba8e2f57e1b4174e414fa13362e7",
+      "redactions": {}
+    },
+    {
+      "run": "voice-demo-dev-merge-smoke-20261018",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 473,
+      "truncated": false,
+      "sha256": "629767ee762d2917af690cfef1b046ee5e5bca27b5f2dd5390f6a1193899bbc9",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

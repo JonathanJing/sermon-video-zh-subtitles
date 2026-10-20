@@ -1,0 +1,14 @@
+{
+  "run": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-i",
+  "status": "rejected_layer1",
+  "stages": {},
+  "stopped": [
+    "Layer 1 Opus machine review rejected source sentence 0-s135: high-risk clause boundary between source units 0-u163 and 0-u164"
+  ],
+  "settledUsd": 10.422771,
+  "newOpenaiUsd": 0.0,
+  "layer1ClaudeSubscriptionListPriceEquivalentUsd": 0.7190544,
+  "layer2Dispatched": false,
+  "audioDispatched": false,
+  "published": false
+}

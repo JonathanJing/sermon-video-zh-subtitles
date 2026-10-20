@@ -10,7 +10,9 @@ import time
 import unittest
 from unittest.mock import patch
 
-from scripts import sermon_workflow_jobs as jobs
+from tests.job_store_patches import patch_job_store  # G1: job store primitives live in two modules
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.orchestration import jobs
 
 
 class WorkflowJobsTests(unittest.TestCase):
@@ -42,7 +44,7 @@ class WorkflowJobsTests(unittest.TestCase):
     def test_cross_process_duplicate_launch_executes_once(self):
         marker = Path(self.temp.name) / "calls.txt"
         command = [sys.executable, "-c", "import sys,time; from pathlib import Path; time.sleep(.15); p=Path(sys.argv[1]); p.write_text(p.read_text()+'x' if p.exists() else 'x')", str(marker)]
-        program = "from scripts.sermon_workflow_jobs import start_job; import sys,json; from pathlib import Path; print(json.dumps(start_job(Path(sys.argv[1]), {'stage':'duplicate'}, json.loads(sys.argv[2]),5)))"
+        program = "from scripts import tongxing_host; from tongxing_production.orchestration.jobs import start_job; import sys,json; from pathlib import Path; print(json.dumps(start_job(Path(sys.argv[1]), {'stage':'duplicate'}, json.loads(sys.argv[2]),5)))"
         children, outputs = [], []
         try:
             for _ in range(4):
@@ -138,7 +140,7 @@ class WorkflowJobsTests(unittest.TestCase):
                     self.assertEqual(state["status"], "queued")
                     self.assertTrue((root / key / "request.json").is_file())
                     raise KeyboardInterrupt("stop after verified persistence, before launch")
-                with patch.object(jobs, "_sync_directory", side_effect=sync), \
+                with patch_job_store("_sync_directory", side_effect=sync), \
                      patch.object(os, "fsync", side_effect=fsync), \
                      patch.object(jobs.subprocess, "Popen", side_effect=spawn) as spawned:
                     with self.assertRaises(KeyboardInterrupt):
@@ -163,7 +165,7 @@ class WorkflowJobsTests(unittest.TestCase):
                     if boundary == "lock":
                         raise OSError("injected lock sync failure")
                     original_fsync(fd)
-                with patch.object(jobs, "_sync_directory", side_effect=sync), \
+                with patch_job_store("_sync_directory", side_effect=sync), \
                      patch.object(os, "fsync", side_effect=fsync), \
                      patch.object(jobs.subprocess, "Popen") as spawn:
                     with self.assertRaises(OSError):

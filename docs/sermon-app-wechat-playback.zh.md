@@ -20,8 +20,8 @@
 
 ## 验证
 
-- `node --test experiments/sermon-dubbing-poc/web/audio-startup.test.mjs`：11 项通过，涵盖冷启动、同步点击、重试、15 秒超时、取消、延迟书签恢复与旧来源隔离。
-- `node --test experiments/sermon-dubbing-poc/web/playback-memory.test.mjs`：10 项通过；构建单元测试 11 项通过。
+- `node --test apps/listening-web/audio-startup.test.mjs`：11 项通过，涵盖冷启动、同步点击、重试、15 秒超时、取消、延迟书签恢复与旧来源隔离。
+- `node --test apps/listening-web/playback-memory.test.mjs`：10 项通过；构建单元测试 11 项通过。
 - Chrome 真实 GUI：播放/暂停、定位 01:00、刷新后继续从 01:00 播放。
 - 独立故障夹具：保持发布版 app 不变，仅将 HTML 预加载设为 none，服务端第一次主音频请求故意返回 503。观察到 readyState 0 时播放可点、定位禁用，错误后“重试播放”可点，点击后 readyState 4 并开始播放。此为受控故障验证，不是实际微信验收。
 - 线上文件与媒体分段请求验证收据存于同一发布目录。

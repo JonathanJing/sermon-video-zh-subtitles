@@ -14,13 +14,13 @@ from unittest.mock import patch
 
 from jsonschema import Draft202012Validator
 
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.delivery import intent as subject
+
 
 ROOT = Path(__file__).resolve().parents[1]
 FIXTURES = ROOT / "tests/fixtures/sermon_delivery_intent"
-SPEC = importlib.util.spec_from_file_location("sermon_delivery_intent", ROOT / "scripts/sermon_delivery_intent.py")
-subject = importlib.util.module_from_spec(SPEC)
-SPEC.loader.exec_module(subject)
-PLAN_SPEC = importlib.util.spec_from_file_location("legacy_weekly_plan", ROOT / "scripts/prepare_multilingual_weekly_plan.py")
+PLAN_SPEC = importlib.util.spec_from_file_location("legacy_weekly_plan", ROOT / "packages/production/src/tongxing_production/delivery/prepare_multilingual_weekly_plan.py")
 planner = importlib.util.module_from_spec(PLAN_SPEC)
 PLAN_SPEC.loader.exec_module(planner)
 
@@ -489,7 +489,7 @@ class DeliveryIntentTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             directory = Path(directory)
             manifest_path = directory / "intent.json"
-            command = [sys.executable, str(ROOT / "scripts/sermon_delivery_intent.py")]
+            command = [sys.executable, str(ROOT / "tools/ops/run.py"), "delivery.intent"]
             frozen = subprocess.run(command + ["freeze", "--request", str(FIXTURES / "synthetic-request.json"),
                                                 "--out", str(manifest_path)], capture_output=True, text=True)
             self.assertEqual(frozen.returncode, 0, frozen.stderr)

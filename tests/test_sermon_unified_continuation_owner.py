@@ -12,7 +12,7 @@ from pathlib import Path
 import unittest
 from unittest.mock import patch
 
-from scripts import sermon
+from tools.ops import sermon
 from scripts.sermon_unified import contracts as c, runtime
 from tests import test_sermon_unified_continuation as continuation_fixture
 

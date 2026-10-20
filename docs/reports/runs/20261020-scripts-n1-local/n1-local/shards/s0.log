@@ -1,0 +1,16 @@
+# chunk s0: 12 files
+tests/test_backend_manifest.py
+tests/test_build_no_caption_asr_sample_chain.py
+tests/test_observability.py
+tests/test_prepare_live_link_playback.py
+tests/test_realtime_openai_smoke_test.py
+tests/test_run_no_caption_archive_asr_route.py
+tests/test_run_realtime_audio_source_preflight.py
+tests/test_run_realtime_stable_reconnect_smoke.py
+tests/test_tongxing_production_package.py
+tests/test_validate_realtime_handoff.py
+tests/test_validate_sunday_manifest.py
+tests/test_write_operator_approval_bundle.py
+
+74 passed, 558 subtests passed in 46.69s
+exit 0

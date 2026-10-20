@@ -6,11 +6,12 @@ import json
 import subprocess
 from pathlib import Path
 import pytest
-from scripts import build_full_video_app_release as builder
-from scripts import sermon_unified_delivery as delivery
-from scripts import delivery_contract as d
-from scripts import review_target_language_audio as audio_review
-from scripts import study_artifacts
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.delivery import app_release as builder
+from tongxing_production.delivery import unified_stage as delivery
+from tongxing_production.delivery import contract as d
+from tongxing_production.audio import human_review as audio_review
+from tongxing_production.delivery import study_artifacts
 
 
 def save(root, name, value):
@@ -116,9 +117,9 @@ def test_real_prepare_seal_publish_inventory_contains_complete_reviewed_study(pr
     assert catalog['pages'][0]['sourceIdentitySha256']==release['englishSourcePackageJsonSha256']
     report=builder.read(sealed/'seal-report.json')
     assert sum('/study/' in row['path'] for row in report['files'])==3
-    assert {'/' + name for name in builder.RUNTIME_WEB_FILES} <= {row['path'] for row in report['files']}
-    for name in builder.RUNTIME_WEB_FILES:
-        assert (sealed/'public'/name).read_bytes() == (builder.RUNTIME_WEB_ROOT/name).read_bytes()
+    assert {'/' + name for name in builder.runtime_web_files()} <= {row['path'] for row in report['files']}
+    for name in builder.runtime_web_files():
+        assert (sealed/'public'/name).read_bytes() == (builder.runtime_web_root()/name).read_bytes()
     target=sealed/'public/study'/f['page']/f['locale']/'meditation.json';target.write_text('{}')
     with pytest.raises(ValueError):d.validate_catalog_snapshot(sealed)
 
@@ -134,7 +135,7 @@ def endpoint_fixture(f, sealed, catalog='/multilingual-v4.json'):
         'captionText':'current caption','captionLocale':locale,'syncErrorSeconds':0,'studyArtifacts':studies,'studyDisplayed':True}
     evidence=save(f['root'],'playback.json',telemetry)
     rows=[{'role':'catalog','path':catalog},{'role':'release','path':release_path}]+release['assets']
-    rows += [{'role':'reader_runtime','path':'/' + name} for name in builder.RUNTIME_WEB_FILES]
+    rows += [{'role':'reader_runtime','path':'/' + name} for name in builder.runtime_web_files()]
     receipt={'locales':[locale],'readback':{'schemaVersion':'sermon-client-readback-v2','intent':f['config']['intent'],
         'candidateSha256':candidate,'observedAt':'2026-10-04T20:00:00Z','resources':[{'role':r['role'],'url':origin+r['path'],
             'sha256':builder.digest(sealed/'public'/r['path'].lstrip('/'))} for r in rows]},
@@ -171,7 +172,7 @@ def test_endpoint_requires_all_study_resources_and_human_display_evidence(prepar
 
 def test_actual_builder_output_loads_complete_study_in_web(prepared):
     f=prepared;sealed=seal_fixture(f)
-    module=(builder.ROOT/'experiments/sermon-dubbing-poc/web/published-weeks.mjs').as_uri()
+    module=(builder.ROOT/'apps/listening-web/published-weeks.mjs').as_uri()
     script="""
 import {readFile} from 'node:fs/promises';
 const {loadPublishedWeeks}=await import(process.argv[1]);
@@ -189,7 +190,7 @@ console.log(JSON.stringify({status:'passed',studyArtifacts:week.studyArtifacts})
 
 def test_web_rejects_changed_study_bytes_and_cross_page_study(prepared):
     f=prepared;sealed=seal_fixture(f)
-    module=(builder.ROOT/'experiments/sermon-dubbing-poc/web/published-weeks.mjs').as_uri()
+    module=(builder.ROOT/'apps/listening-web/published-weeks.mjs').as_uri()
     script="""
 import {readFile} from 'node:fs/promises';
 const {loadPublishedWeeks}=await import(process.argv[1]);

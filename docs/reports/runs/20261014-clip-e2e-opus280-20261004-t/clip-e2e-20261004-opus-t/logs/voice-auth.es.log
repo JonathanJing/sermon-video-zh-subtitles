@@ -1,0 +1,25 @@
+
+== 2026-10-14T22:13:30+00:00 ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.venv/bin/python ~/.codex/worktrees/opus-layer1-larger-clip/sermon-video-zh-subtitles/scripts/prepare_clip_voice_authorization.py --source ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-t/l2/src/source.json --candidate ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-t/l2-es-r2/text/es/candidate.json --adapter ~/.codex/worktrees/opus-layer1-larger-clip/sermon-video-zh-subtitles/config/layer3-adapters/adapter-es.json --user-attestation ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-t/l3/es/clip-user-rights-attestation.json --out ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-t/l3/es/clip-voice-authorization.json
+Traceback (most recent call last):
+  File "~/.codex/worktrees/opus-layer1-larger-clip/sermon-video-zh-subtitles/scripts/prepare_clip_voice_authorization.py", line 61, in <module>
+    main()
+    ~~~~^^
+  File "~/.codex/worktrees/opus-layer1-larger-clip/sermon-video-zh-subtitles/scripts/prepare_clip_voice_authorization.py", line 54, in main
+    result = prepare(args.source, args.candidate, args.adapter,
+                     args.user_attestation, args.out)
+  File "~/.codex/worktrees/opus-layer1-larger-clip/sermon-video-zh-subtitles/scripts/prepare_clip_voice_authorization.py", line 40, in prepare
+    speech.validate_clip_voice_authorization(receipt, source, candidate, adapter)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "~/.codex/worktrees/opus-layer1-larger-clip/sermon-video-zh-subtitles/scripts/prepare_target_language_speech_job.py", line 305, in validate_clip_voice_authorization
+    _require(attestation.get("schemaVersion") == "sermon-clip-user-rights-attestation-v1"
+    ~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+             and isinstance(attestation.get("scope"), str)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<7 lines>...
+             and bool(attestation["userStatement"].strip()),
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+             "User attestation does not authorize this Dev clip voice")
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "~/.codex/worktrees/opus-layer1-larger-clip/sermon-video-zh-subtitles/scripts/prepare_target_language_speech_job.py", line 57, in _require
+    raise ValueError(message)
+ValueError: User attestation does not authorize this Dev clip voice

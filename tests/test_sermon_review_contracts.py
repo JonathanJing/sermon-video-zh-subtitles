@@ -1,13 +1,15 @@
 """D1 developer checks only. Synthetic receipts never establish human approval."""
 import copy
 import json
+import os
 from pathlib import Path
 import tempfile
 import unittest
 from unittest.mock import patch
 
-from scripts import sermon_review_contracts as c
-from scripts import target_language_policy as policy
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.review import contracts as c
+from tongxing_production.text import policy
 
 ROOT = Path(__file__).resolve().parents[1]
 FIXTURES = ROOT/'tests/fixtures/rqc'
@@ -65,11 +67,11 @@ class ReviewContractTests(unittest.TestCase):
             value,data=c.read_snapshot(path);self.assertEqual(value,json.loads(data))
             link=Path(tmp)/'link.json';link.symlink_to(path)
             with self.assertRaises(OSError):c.read_snapshot(link)
-            original=c.os.stat
+            original=os.stat
             def replaced(*args,**kwargs):
                 path.write_text('{}')
                 return original(*args,**kwargs)
-            with patch.object(c.os,'stat',side_effect=replaced),self.assertRaisesRegex(c.ContractError,'snapshot_changed'):
+            with patch.object(os,'stat',side_effect=replaced),self.assertRaisesRegex(c.ContractError,'snapshot_changed'):
                 c.read_snapshot(path)
 
     def test_pass_requires_all_checks_full_coverage_no_unresolved_issues(self):
@@ -189,7 +191,7 @@ class StrictPolicyTests(unittest.TestCase):
         with self.assertRaises(c.ContractError):policy.validate_strict_policy(strict,rubric)
 
     def test_legacy_editor_result_remains_raw_and_is_not_relabelled_strict(self):
-        from scripts import run_target_language_models as legacy
+        from tongxing_production.text import models as legacy
         data=(FIXTURES/'legacy-editor-result.json').read_bytes()
         self.assertEqual(c.bytes_sha256(data),load('legacy-golden-sha256')['fixtureLegacyEditorBytesSha256'])
         row=json.loads(data);before=c.canonical_bytes(row)

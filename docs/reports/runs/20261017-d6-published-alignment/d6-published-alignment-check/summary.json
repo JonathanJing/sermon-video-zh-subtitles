@@ -1,0 +1,27 @@
+{
+  "checks": [
+    {
+      "name": "published English reference and alignment binder unit tests",
+      "status": "passed",
+      "count": 17
+    },
+    {
+      "name": "production package boundaries and facade imports",
+      "status": "passed",
+      "count": 9
+    },
+    {
+      "name": "direct package import without scripts modules",
+      "status": "passed"
+    },
+    {
+      "name": "legacy CLI help and module alias",
+      "status": "passed"
+    },
+    {
+      "name": "git diff --check",
+      "status": "passed"
+    }
+  ],
+  "intermediateFailure": "Initial structural subprocess test used the main checkout package because PYTHONPATH was stripped; rerun in worktree-resolving virtualenv passed 9/9."
+}

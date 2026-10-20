@@ -1,0 +1,7 @@
+{
+  "schemaVersion": "test-run-outcome-v1",
+  "kind": "local-pytest",
+  "status": "pass",
+  "exitCode": 0,
+  "headBeforeCommit": "8ecf749381419c682fab06e3cd4796ac9e995018"
+}

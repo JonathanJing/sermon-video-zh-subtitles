@@ -8,7 +8,8 @@ import wave
 from email import policy
 from email.parser import BytesParser
 
-from scripts import sermon_transcription_request as subject
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.compute import transcription_request as subject
 
 
 def wav(frames=1600, rate=16000, channels=1, width=2):

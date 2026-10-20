@@ -1,0 +1,6 @@
+{
+  "status": "success",
+  "exitCode": 0,
+  "deliveryType": "test",
+  "result": "full Python CI passed on old #571 base"
+}

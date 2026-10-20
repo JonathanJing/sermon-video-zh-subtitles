@@ -1,0 +1,7 @@
+{
+  "schemaVersion": "local-test-summary-v1",
+  "command": ".venv/bin/python -m pytest -q tests/test_source_bound_diagnostic_audio.py tests/test_decision_api_cases_content.py",
+  "result": "4 failed, 15 passed",
+  "note": "Source-bound tests exposed old-worker timing compatibility mismatch after renderer identity change, and a CPU-thread validator facade ImportError.",
+  "scope": "targeted code tests; no model, paid request, calibration, waiver or release"
+}

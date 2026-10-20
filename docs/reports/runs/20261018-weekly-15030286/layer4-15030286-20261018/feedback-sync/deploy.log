@@ -1,0 +1,50 @@
+Preparing function...
+.done.
+Updating function (may take a while)...
+[Build]........................................................................................................................................................................................................................................................................................................................................................................................................................................................done
+[Service].......................................................................................................warning
+Completed with warnings:
+  [INFO] A new revision will be deployed serving with 100% traffic.
+You can view your function in the Cloud Console here: https://console.cloud.google.com/functions/details/us-west1/sermon-feedback-api?project=ai-for-god-caption-dev
+
+buildConfig:
+  automaticUpdatePolicy: {}
+  build: projects/592777073282/locations/us-west1/builds/addd9161-d12e-4f06-81b3-1adbd67207e9
+  dockerRegistry: ARTIFACT_REGISTRY
+  dockerRepository: projects/ai-for-god-caption-dev/locations/us-west1/repositories/sermon-feedback
+  entryPoint: sermonFeedback
+  runtime: nodejs22
+  serviceAccount: projects/ai-for-god-caption-dev/serviceAccounts/<email>
+  source:
+    storageSource:
+      bucket: gcf-v2-sources-592777073282-us-west1
+      generation: '1792337746074760'
+      object: sermon-feedback-api/function-source.zip
+  sourceProvenance:
+    resolvedStorageSource:
+      bucket: gcf-v2-sources-592777073282-us-west1
+      generation: '1792337746074760'
+      object: sermon-feedback-api/function-source.zip
+createTime: '2026-09-05T18:10:43.777654795Z'
+environment: GEN_2
+labels:
+  deployment-tool: cli-gcloud
+name: projects/ai-for-god-caption-dev/locations/us-west1/functions/sermon-feedback-api
+satisfiesPzi: true
+serviceConfig:
+  allTrafficOnLatestRevision: true
+  availableCpu: '1'
+  availableMemory: 256Mi
+  environmentVariables:
+    LOG_EXECUTION_ID: 'true'
+  ingressSettings: ALLOW_ALL
+  maxInstanceCount: 2
+  maxInstanceRequestConcurrency: 20
+  revision: sermon-feedback-api-00015-pay
+  service: projects/ai-for-god-caption-dev/locations/us-west1/services/sermon-feedback-api
+  serviceAccountEmail: <email>
+  timeoutSeconds: 15
+  uri: https://sermon-feedback-api-sq5hlpqdca-uw.a.run.app
+state: ACTIVE
+updateTime: '2026-10-18T15:36:40.517141303Z'
+url: https://us-west1-ai-for-god-caption-dev.cloudfunctions.net/sermon-feedback-api

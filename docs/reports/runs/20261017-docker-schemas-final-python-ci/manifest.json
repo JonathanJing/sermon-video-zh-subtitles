@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-docker-schemas-final-python-ci",
+  "runs": [
+    {
+      "label": "docker-schemas-final-python-ci",
+      "source": "~/.codex/worktrees/docker-schemas/sermon-video-zh-subtitles/artifacts/docker-schemas-final-python-ci",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "docker-schemas-final-python-ci",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 97,
+      "truncated": false,
+      "sha256": "a16c8efb1c9afac72b6c094f8a79cd3e22669e165b1f5b03b1e7671f12238029",
+      "redactions": {}
+    },
+    {
+      "run": "docker-schemas-final-python-ci",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 434,
+      "truncated": false,
+      "sha256": "a7ebb8d0c1753732441a6c1fee74c3700d4fbbe0582816565590a38a11ab408f",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

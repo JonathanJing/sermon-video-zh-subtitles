@@ -1,0 +1,11 @@
+{
+  "alignedSha256": "e60d893711a64c859990d2eebaff20a89bfbaa6ee64297338ff157f4a34a655a",
+  "asrOrMfaRerun": false,
+  "baseConfigurationSha256": "af0d43f2a278f878cc0a1df49d15b58626f6bac8a75c620b8d5b2b85ae864073",
+  "baseOutput": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/weekend-live/layer1-15030286-20261017/output-v2",
+  "boundaryOverridesSha256": "9839c49dbd420b8900e6655c67f5f6f5993fe4e0320e46d0c413054b7a9a8eb1",
+  "budgetAuthorizationSha256": "412bd74be765a8e2dd5b800d8fcbe056816d192567af962bc2509f8019a417c0",
+  "operatorAcceptanceSha256": null,
+  "rebuildIdentity": "ce2c376012ec9a679fd382dc274ac1e59b587ad83d94544ea862954e01ae0566",
+  "schemaVersion": "sermon-source-anchor-rebuild-v1"
+}

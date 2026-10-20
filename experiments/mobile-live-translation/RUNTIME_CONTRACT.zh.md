@@ -79,7 +79,7 @@
 
 MLX 最终同步须覆盖生成使用的 stream；CUDA 在计时开始前与结束时 `torch.cuda.synchronize()`，不得只量异步提交耗时。不要为了形式对齐给每个 token 额外插入昂贵同步；保留运行库自身 CPU 可见 token 的同步与开销。MLX lookahead 和流式缓冲也属于实际运行时成本，不能事后扣除。
 
-现有 [MLXEngine](../../scripts/serve_milmmt_v41_local.py) 的 `elapsedMs` 从 tokenize 前开始并在 `finally` 中同步，适合复用；constructor 先 `verify_package` 再导入和 `load(lazy=False)`，包住整个 constructor 的时间应标 `engineInitMs`。同一线程加载和生成；不启动、重启或改动已有服务来取得本地进程计时。
+现有 [MLXEngine](../milmmt-v41-local/serve_milmmt_v41_local.py) 的 `elapsedMs` 从 tokenize 前开始并在 `finally` 中同步，适合复用；constructor 先 `verify_package` 再导入和 `load(lazy=False)`，包住整个 constructor 的时间应标 `engineInitMs`。同一线程加载和生成；不启动、重启或改动已有服务来取得本地进程计时。
 
 ## 5. 最小执行与统计
 

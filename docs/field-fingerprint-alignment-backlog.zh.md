@@ -12,9 +12,9 @@
 |---|---|---|
 | [iOS 协调器](../apps/tongxing-ios/App/AudioAlignmentController.swift) | legacy packed 路径采音 8 秒，published 路径 10 秒；本地匹配、单调时钟补偿、来源绑定、取消和恢复播放后的二次校正 | 默认总截止 20 秒，包含准备过程；不是已经支持连续 10→15 秒 |
 | [iOS 采集器](../apps/tongxing-ios/App/MicrophoneCapture.swift) | 内存 PCM、有限采集、停止引擎、移除 tap、恢复播放会话 | `capture` 只接受 7—12 秒；忽略 tap 的音频时间参数，以回调时刻减缓冲长度近似首样本时刻 |
-| [Web 采集](../experiments/sermon-dubbing-poc/web/fingerprint-capture.mjs) | 已使用 AudioWorklet；启动、mute/context 中断、取消、晚到授权清理和有限重试已有实现 | 当前请求 AGC、降噪、回声消除均关闭；重试是重新采集，不是同一窗口延长 |
-| [Web 协调](../experiments/sermon-dubbing-poc/web/fingerprint-ui.mjs) | 绑定校验、过期拒绝、处理耗时补偿、Worker 匹配及播放启动处理 | 要求 `captureSeconds === 10`，录音长度为 9—11 秒；采集/匹配总计时器 35 秒、结果有效期和播放启动预算分别存在 |
-| [Web Worker](../experiments/sermon-dubbing-poc/web/fingerprint-worker.mjs) | 同源索引加载、SHA 与来源绑定、特征和匹配；不持久化现场 PCM | 采完后才进入索引 fetch/校验，HTTP 缓存命中不等于离线资料完整或没有准备成本 |
+| [Web 采集](../apps/listening-web/fingerprint-capture.mjs) | 已使用 AudioWorklet；启动、mute/context 中断、取消、晚到授权清理和有限重试已有实现 | 当前请求 AGC、降噪、回声消除均关闭；重试是重新采集，不是同一窗口延长 |
+| [Web 协调](../apps/listening-web/fingerprint-ui.mjs) | 绑定校验、过期拒绝、处理耗时补偿、Worker 匹配及播放启动处理 | 要求 `captureSeconds === 10`，录音长度为 9—11 秒；采集/匹配总计时器 35 秒、结果有效期和播放启动预算分别存在 |
+| [Web Worker](../apps/listening-web/fingerprint-worker.mjs) | 同源索引加载、SHA 与来源绑定、特征和匹配；不持久化现场 PCM | 采完后才进入索引 fetch/校验，HTTP 缓存命中不等于离线资料完整或没有准备成本 |
 | [Swift published 匹配器](../apps/tongxing-ios/Core/Sources/TongxingCore/PublishedFingerprintMatcher.swift) | 7—20 秒查询；已有 RMS、landmark、votes、独立 anchor、覆盖、runner-up 和三段覆盖门槛 | 已有多条件拒绝，不应当作从零开发；legacy packed 与 published 的量化不同，不能混用索引 |
 
 既有 [iOS 指纹方案](../apps/tongxing-ios/FINGERPRINT-ALIGNMENT.zh.md) 中的 8 秒基线和 ShazamKit 历史设想须按日期与算法路径阅读；本轮不切换 ShazamKit，不把历史文件回放成绩当作后排麦克风成绩。
@@ -134,11 +134,11 @@
 
 ## 5. 2026-10-13 会场中后排离线基准
 
-`FIELD-09` 增加第一份会场录音基准：真实素材清单与完整报告留在本机 `artifacts/field-benchmark/`，仓库只保留可复现脚本 `scripts/field_venue_fingerprint_benchmark.mjs` 和脱敏[运行报告 PR #412](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/412)。远场失败集中在 matchFraction 门槛，`FIELD-03` 的延长不能解决这一类；`FIELD-04` 应加入输入声道选择；`FIELD-10` 的查询端 `cmn` 在开发集上有提升但不一致，须用保留集验证。本批只作开发集，上方各项勾选和状态不变。
+`FIELD-09` 增加第一份会场录音基准：真实素材清单与完整报告留在本机 `artifacts/field-benchmark/`，仓库只保留可复现脚本 `tools/benchmarks/field_venue_fingerprint_benchmark.mjs` 和脱敏[运行报告 PR #412](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/412)。远场失败集中在 matchFraction 门槛，`FIELD-03` 的延长不能解决这一类；`FIELD-04` 应加入输入声道选择；`FIELD-10` 的查询端 `cmn` 在开发集上有提升但不一致，须用保留集验证。本批只作开发集，上方各项勾选和状态不变。
 
 ## 6. 2026-10-13 听声定位后台统计与影子对照
 
-维护者要求在后台统计触发次数和定位成功率。Web 新增 `POST /api/alignment-usage`（集合 `alignmentUsageSessions30d`，30 天 TTL）和私有报表 `admin.mjs alignment`，字段与口径见 [API 说明](../experiments/sermon-dubbing-poc/feedback-api/README.zh.md#听声定位统计alignment-v1)。
+维护者要求在后台统计触发次数和定位成功率。Web 新增 `POST /api/alignment-usage`（集合 `alignmentUsageSessions30d`，30 天 TTL）和私有报表 `admin.mjs alignment`，字段与口径见 [API 说明](../services/feedback/README.zh.md#听声定位统计alignment-v1)。
 
 - 这是维护者对 `FIELD-01`“不借匿名收听统计开关自动上传新增诊断”的明确调整，范围仅限每次触发一条计数记录：结束状态、最远步骤、匹配原因、错误码、音量区间、matchFraction 区间、采集秒数和 100 ms 取整的总耗时。会话诊断详情、PCM、landmark、设备与路由仍只留在本机。
 - 沿用现有匿名统计开关：Web 默认开启、可关闭，关闭即撤回；iOS 尚未接入（且 iOS 统计默认关闭）。
@@ -157,7 +157,7 @@
 - `cmn-v1` 影子对照改为只对最终 15 秒缓冲计算：Mac 上 15 秒 48 kHz 的特征计算约 430 ms、影子约 460 ms，若每个失败的检查点都计算，慢手机会拖慢后续检查点。7／10／12 秒前缀不再计算影子，成功路径不受影响。
 - 已发布索引的 binding 仍写 `captureSeconds: 10`；published 匹配器接受 7–20 秒查询，早停是客户端采集策略，不改索引或发布合同。
 - 离线依据：[会场基准](reports/20261013-field-venue-mid-back-benchmark.zh.md) 中 iPhone 单声道由 10 秒单次 16/40 提到早停 23/35，双声道合并 13/40 提到 18/35，均 0 误跳；同一开发集，不是保留集成绩。
-- 本地证据：单元测试覆盖前缀连续性、早停停麦、全部未命中、慢匹配跳过旧前缀、中断、超时和取消；`scripts/verify_fingerprint_browser_capture.py` 在 Chrome 155 合成设备上通过两次（7/10/12 前缀、15 秒完整缓冲、10 秒处早停后占麦约 10.2 秒、流与 context 全部释放），另有一次冷启动超时未得结果。Safari、真机和会场未验证。
+- 本地证据：单元测试覆盖前缀连续性、早停停麦、全部未命中、慢匹配跳过旧前缀、中断、超时和取消；`tools/development/verify_fingerprint_browser_capture.py` 在 Chrome 155 合成设备上通过两次（7/10/12 前缀、15 秒完整缓冲、10 秒处早停后占麦约 10.2 秒、流与 context 全部释放），另有一次冷启动超时未得结果。Safari、真机和会场未验证。
 
 `FIELD-03` 保持 in_progress：Safari／iPhone 实测、低配设备总时长和会场 A/B 仍待证据。
 

@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261018-g1-568-dev-sync-dependency-repair",
+  "runs": [
+    {
+      "label": "g1-568-dev-sync-dependency-repair-20261017",
+      "source": "~/.codex/worktrees/g1-qc-cascade/sermon-video-zh-subtitles/artifacts/g1-568-dev-sync-dependency-repair-20261017",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "g1-568-dev-sync-dependency-repair-20261017",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 359,
+      "truncated": false,
+      "sha256": "dac4a0f367202d2d62c9e97ada76b7a2dfc3f5e160af8e9177f5de23515488c5",
+      "redactions": {}
+    },
+    {
+      "run": "g1-568-dev-sync-dependency-repair-20261017",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 337,
+      "truncated": false,
+      "sha256": "d5cfdb3073e81945094e69d87fa78cf7ac95dd78adf1c90f88aea0d1fe6650c5",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

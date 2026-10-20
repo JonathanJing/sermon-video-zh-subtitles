@@ -4,8 +4,9 @@ import json
 from pathlib import Path
 import pytest
 from jsonschema import ValidationError
-from scripts import sermon_unified_delivery as app
-from scripts import delivery_contract as d
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.delivery import unified_stage as app
+from tongxing_production.delivery import contract as d
 
 
 def test_closed_configuration_rejects_injected_command(tmp_path):
@@ -53,7 +54,7 @@ def test_nested_input_snapshot_rejects_replaced_artifact(tmp_path):
     value = {'inputs': {'source': {'path': package.name, 'sha256': app.file_sha(package)}}}
     first = app._input_snapshot(value, tmp_path, {})
     assert set(first['dependencies']) == {str(package), str(nested)} | {
-        str(app.builder.RUNTIME_WEB_ROOT / name) for name in app.builder.RUNTIME_WEB_FILES}
+        str(app.builder.runtime_web_root() / name) for name in app.builder.runtime_web_files()}
     nested.write_bytes(b'replaced media')
     with pytest.raises(ValueError, match='Nested delivery input changed'):
         app._input_snapshot(value, tmp_path, {})

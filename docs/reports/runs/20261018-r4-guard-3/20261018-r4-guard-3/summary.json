@@ -1,0 +1,7 @@
+{
+  "status": "success",
+  "testCount": 3,
+  "wallSeconds": 0.04,
+  "scope": "same-object guard, old W49 refusal, physical Spark closure and guard mismatch cases",
+  "modelCalls": 0
+}
