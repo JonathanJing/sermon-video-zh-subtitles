@@ -1,0 +1,14 @@
+{
+  "schemaVersion": "sermon-production-run-summary-v1",
+  "status": "failed",
+  "locale": "es",
+  "stage": "layer2.plugin_only_partial_recovery",
+  "jobId": "cec16f20725e7cae0c9eed5b1f68aab68861e1dcd3c32ba9428ed11e2aaa75c8",
+  "failureCode": "layer2_reuse_operation_missing",
+  "providerCalls": 0,
+  "budgetReservations": 0,
+  "unknownOutcomes": 0,
+  "newCostMicrousd": 0,
+  "candidateProduced": false,
+  "rootCause": "Budget provenance lookup used the new plugin policy hash for the old direct-paid request before proving the plugin-only migration."
+}
