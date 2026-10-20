@@ -96,7 +96,8 @@ validator 全通过且无 unknown marker 时写到新的 sibling 目录；它只
 `layer2PartialRecovery`，每个 locale 显式绑定旧 `failedJobRoot + failedJobId`、失败轮目录和原始
 direct-paid budget root；新 `jobRoot` 与 `outputDirectory` 仍由 execution 配置给出。准入要求旧 job
 保持 `failed`、旧预算的每条 reservation 都是直接付费且已知成功，并把旧 job request/state、失败轮
-文件和预算账本摘要加入新 durable identity。`groupWorkers` 必须为 1。
+文件和预算账本摘要加入新 durable identity。`groupWorkers` 与 v6 相同，取 1–16，按[运行配置](weekly-run-profile.zh.md#并发设置)
+用 8（2026-10-20 起；此前要求为 1，原因见下）。
 
 有 PR #868 success sidecar 的组走原 v6 路径；缺 sidecar 的已返回角色只有在 policy preview 的完整
 bounded payload、parsed/raw response、provider request id、直接付费 result marker 与 response record
@@ -105,6 +106,25 @@ collector；因此旧内容失败不会被误签为成功。旧 started marker �
 provider outcome、损坏 bytes 或 intermediate reused 来源都会在任何新请求前阻断。旧预算里没有对应
 operation 的未派发组才可按新授权付费。完成后在新 lane 写
 `partial-round-recovery-receipt.json`，绑定旧 failed job 与新 successor job；旧 state 不改写。
+
+多组并发时，结果与串行相同的保证来自两条规则（`models._run_partial_recovery_groups`）：
+
+1. **先核对全部旧证据。** 派发前预检逐个检查失败轮里每个“译者已返回、复核未派发”的角色：文件齐全、
+   parsed 与 raw 一致、preview 自身哈希、属于计划中的该组、旧账本里有对应的直接付费行。
+2. **先回放已完整返回的组。** 译者与复核都已返回的组先跑完，这一阶段关闭付费派发：若误入付费调用，
+   在写 started marker 之前就失败，不产生未知结果。当前 payload 与旧 payload 的逐组比对因此全部发生
+   在任何新付费之前。之后其余组再按 `groupWorkers` 并行。
+
+付费的只有未派发的角色，与串行同一集合；证据按源顺序合并，failure 报告按组序排序，所以候选、证据、
+success sidecar 和恢复收据（除其点名的 successor job 与配置）与串行逐字节相同。每次付费仍在 `bound_call`
+里先取 job root 共享的 24 个 API 槽位并过同一预算账本。测试见 `tests/test_layer2_partial_recovery_parallel.py`。
+
+此前要求 `groupWorkers=1` 有两个原因，现都已解决：2026-10-17 的 v2 运行（8 组并发）因当前账本的
+provenance 读取与并发写入竞争而以 `snapshot_changed_during_read` 失败，PR #1005 已修复（那时 v7 尚未合并）；
+另外串行只在前驱也是串行（返回的组是前缀）时才保证“先核对旧证据、后付费”，乱序前驱下串行也会先为
+早组付费、后发现晚组证据损坏（#1011 的 Codex P1 意见），上面两条规则对任意组数都成立。放宽只去掉一项
+加载限制，配置字段与收据 schema 不变，旧 v7 配置（`groupWorkers: 1`）照常加载、配置与快照身份不变，
+不需要迁移；与任何代码改动一样，新代码身份需要新的预算授权，进行中的运行留在其固定的 worktree。
 
 ### 缓存命中不逐次复核绑定
 

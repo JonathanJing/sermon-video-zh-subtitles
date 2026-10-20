@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import argparse
 from concurrent.futures import FIRST_COMPLETED, ThreadPoolExecutor, wait
-from contextvars import copy_context
+from contextvars import ContextVar, copy_context
 import copy
 import hashlib
 import json
@@ -77,6 +77,10 @@ ROUND_RUNNER_IDENTITY_SCHEMA = "sermon-layer2-round-runner-identity-v1"
 # admission, receipt, or copying rules must mint a new value before reuse.
 PAYLOAD_CACHE_IMPLEMENTATION_SHA256 = "19b26224cf9c006aa208b1658b3c642f11d0e278f3f6dec5af6a50c1a423eed9"
 MAX_STANDALONE_GROUP_WORKERS = 3
+# Set while a partial recovery processes the groups whose translator and reviewer
+# both returned in the failed round: those groups never need a paid call, and a
+# paid dispatch there fails before its started marker (see _run_partial_recovery_groups).
+_RECOVERY_PAID_DISPATCH_CLOSED = ContextVar("layer2_recovery_paid_dispatch_closed", default=False)
 
 
 def revision_boundary_instruction(target_locale: str, *, revising: bool) -> str:
@@ -463,13 +467,19 @@ def _successful_payload_cache(prior_root: Path | None, stem: str, role: str,
             "binding": copy.deepcopy(selected)}
 
 
-def _require_partial_recovery_source(root: Path, budget_root: Path, caller, api_key: str) -> None:
+def _require_partial_recovery_source(root: Path, budget_root: Path, caller, api_key: str,
+                                     plan: list[dict[str, Any]]) -> list[int]:
     """Fail closed before dispatch when the failed round has an incomplete call.
 
     A started marker without the parsed response, raw provider response and
     frozen bounded payload is still an unknown outcome.  A recovery run may
     reuse complete returned calls and may pay only for groups that were never
-    dispatched by the failed predecessor.
+    dispatched by the failed predecessor.  Returns the indices of the groups
+    whose translator and reviewer both returned: they run first with paid
+    dispatch closed (_run_partial_recovery_groups).  Every other returned role
+    (a translator whose reviewer never ran) is checked here against its files
+    and direct-paid ledger row, so damaged evidence anywhere in the round stops
+    the run before any group pays.
     """
     require(root.is_dir() and not root.is_symlink(),
             f"Partial recovery source root is invalid: {root}")
@@ -484,21 +494,29 @@ def _require_partial_recovery_source(root: Path, budget_root: Path, caller, api_
     validator = getattr(caller, "validate_recovery_source", None)
     require(callable(validator), "Partial recovery requires a reuse-aware budget caller")
     validator(api_key, budget_root)
+    present: dict[int, set[str]] = {}
+    for entry in root.iterdir():
+        named = re.fullmatch(r"group-([0-9]{4})-(astra|sol)(?:\.raw|\.policy-preview)?\.json", entry.name)
+        if named is not None:
+            index = int(named.group(1))
+            require(1 <= index <= len(plan), f"Partial recovery response is outside the group plan: {entry}")
+            present.setdefault(index, set()).add(named.group(2))
+    complete = []
+    for index, suffixes in sorted(present.items()):
+        stem = f"group-{index:04d}"
+        if all((root / f"{stem}-{suffix}{tail}").is_file() for suffix in ("astra", "sol")
+               for tail in (".json", ".raw.json", ".policy-preview.json")):
+            complete.append(index)
+            continue
+        for suffix in sorted(suffixes):
+            _returned_role_evidence(root, stem, "translator" if suffix == "astra" else "reviewer",
+                                    plan[index - 1], caller, api_key, budget_root)
+    return complete
 
 
-def _returned_payload_cache(prior_root: Path | None, stem: str, role: str,
-                            payload_sha256: str, request: dict[str, Any],
-                            group: dict[str, Any], caller, api_key: str,
-                            budget_root: Path) -> dict[str, Any] | None:
-    """Recover one complete returned role that lacks a group-success sidecar.
-
-    This is deliberately weaker than success-cache admission: it proves only
-    that the exact provider call returned and was paid once.  The normal group
-    loop still parses the response and reruns semantic and language-plugin
-    checks before it may emit a new success sidecar.
-    """
-    if prior_root is None:
-        return None
+def _returned_role_evidence(prior_root: Path, stem: str, role: str, group: dict[str, Any],
+                            caller, api_key: str, budget_root: Path) -> dict[str, Any] | None:
+    """Check one returned role of a failed round independently of the current payload."""
     suffix = "astra" if role == "translator" else "sol"
     cache = prior_root / f"{stem}-{suffix}.json"
     raw = cache.with_suffix(".raw.json")
@@ -518,8 +536,8 @@ def _returned_payload_cache(prior_root: Path | None, stem: str, role: str,
     except (OSError, ValueError, TypeError, json.JSONDecodeError) as exc:
         raise ValueError(f"Partial recovery response is corrupt: {cache}") from exc
     response = raw_record.get("response")
-    require(cached.get("payloadSha256") == payload_sha256
-            and raw_record.get("payloadSha256") == payload_sha256
+    require(isinstance(cached.get("payloadSha256"), str)
+            and raw_record.get("payloadSha256") == cached.get("payloadSha256")
             and cached.get("model") == preview_record.get("payload", {}).get("model")
             and isinstance(cached.get("requestId"), str)
             and isinstance(response, dict)
@@ -544,15 +562,39 @@ def _returned_payload_cache(prior_root: Path | None, stem: str, role: str,
     require(callable(provenance_reader),
             "Partial recovery requires direct-paid response provenance")
     provenance = provenance_reader(api_key, preview_record["payload"], response, budget_root)
+    return {"cache": cache, "raw": raw, "preview": preview, "cached": cached,
+            "response": response, "paidProvenance": provenance}
+
+
+def _returned_payload_cache(prior_root: Path | None, stem: str, role: str,
+                            payload_sha256: str, request: dict[str, Any],
+                            group: dict[str, Any], caller, api_key: str,
+                            budget_root: Path) -> dict[str, Any] | None:
+    """Recover one complete returned role that lacks a group-success sidecar.
+
+    This is deliberately weaker than success-cache admission: it proves only
+    that the exact provider call returned and was paid once.  The normal group
+    loop still parses the response and reruns semantic and language-plugin
+    checks before it may emit a new success sidecar.
+    """
+    if prior_root is None:
+        return None
+    returned = _returned_role_evidence(prior_root, stem, role, group, caller, api_key, budget_root)
+    if returned is None:
+        return None
+    cached, cache = returned["cached"], returned["cache"]
+    require(cached["payloadSha256"] == payload_sha256,
+            f"Partial recovery payload identity changed: {cache}")
     binding = {
         "payloadSha256": payload_sha256,
         "cacheKeySha256": _payload_cache_key(role, payload_sha256),
         "model": cached["model"], "requestId": cached["requestId"],
-        "cacheSha256": _file_sha256(cache), "rawSha256": _file_sha256(raw),
-        "previewSha256": _file_sha256(preview), "paidProvenance": provenance,
+        "cacheSha256": _file_sha256(cache), "rawSha256": _file_sha256(returned["raw"]),
+        "previewSha256": _file_sha256(returned["preview"]),
+        "paidProvenance": returned["paidProvenance"],
     }
-    return {"path": cache, "paidProvenance": provenance,
-            "response": copy.deepcopy(response), "binding": binding}
+    return {"path": cache, "paidProvenance": returned["paidProvenance"],
+            "response": copy.deepcopy(returned["response"]), "binding": binding}
 
 
 def _require_replayed_payload_cache(output: Path, selected: dict[str, Any], role: str,
@@ -710,6 +752,8 @@ def _model_call(role: str, prompt: dict[str, Any], policy: dict[str, Any],
     else:
         require(not cache_only, f"Cache-only recovery has no returned {role} response: {output}")
         require(not marker.exists(), f"Uncertain paid {role} call; inspect before retry: {marker}")
+        require(not _RECOVERY_PAID_DISPATCH_CLOSED.get(),
+                f"Partial recovery reached a paid {role} call before its returned groups were verified: {output}")
         # Capacity denial is a proven no-dispatch outcome. Reserve before the
         # unknown-call marker; once reserved, a crash remains held in the broker.
         resource_admission = getattr(caller, "admit_resource", None)
@@ -1212,6 +1256,31 @@ def ordered_group_results(items: list, worker, workers: int, *, maximum_workers=
     return [results[index] for index in range(len(items))]
 
 
+def _run_partial_recovery_groups(plan: list, recovered: list[int], run_groups) -> list:
+    """Run a partial recovery's returned groups first, then the rest, merged in source order.
+
+    Groups whose translator and reviewer both returned in the failed round make
+    no paid call; they run with paid dispatch closed, so every returned call's
+    payload is matched against the current one before any group may pay. The
+    remaining groups then run with the same group workers. Paid calls are the
+    never-dispatched roles in both orders, and evidence merges in source order,
+    so a run with any worker count ends with the same result as a serial run.
+    """
+    returned = set(recovered)
+    items = list(enumerate(plan, 1))
+    first = [item for item in items if item[0] in returned]
+    rest = [item for item in items if item[0] not in returned]
+    token = _RECOVERY_PAID_DISPATCH_CLOSED.set(True)
+    try:
+        head = run_groups(first)
+    finally:
+        _RECOVERY_PAID_DISPATCH_CLOSED.reset(token)
+    tail = run_groups(rest)
+    merged = dict(zip([index for index, _ in first], head))
+    merged.update(zip([index for index, _ in rest], tail))
+    return [merged[index] for index, _ in items]
+
+
 def validate_standalone_worker_budget(policy: dict) -> None:
     workers = policy["batching"].get("workers")
     require(policy["batching"].get("batchSize") == 1
@@ -1471,9 +1540,10 @@ def _run_prepared_groups(request: dict[str, Any], anchor: dict[str, Any],
                  and reuse_from is None and resume_cache_from is None
                  and revision_brief is None and partial_repair_brief is None)),
                 "Partial recovery requires one failed first-round payload root")
+        recovered_groups = None
         if partial_recovery_from is not None:
-            _require_partial_recovery_source(
-                partial_recovery_from, partial_recovery_budget_root, caller, api_key)
+            recovered_groups = _require_partial_recovery_source(
+                partial_recovery_from, partial_recovery_budget_root, caller, api_key, plan)
         require(type(emit_payload_cache_success) is bool,
                 "Payload cache success emission flag must be boolean")
         require(type(payload_cache_required) is bool
@@ -1983,9 +2053,12 @@ def _run_prepared_groups(request: dict[str, Any], anchor: dict[str, Any],
         with accounting.stage(f"layer2.group.{request['targetLocale']}.{index:04d}",
                               billing="orchestrator"):
             return _process_group(item)
-    results = (ordered_group_results(list(enumerate(plan, 1)), process_group, workers,
-                                    maximum_workers=maximum_workers) if maximum_workers != 16 else
-               ordered_group_results(list(enumerate(plan, 1)), process_group, workers))
+    def run_groups(items):
+        return (ordered_group_results(items, process_group, workers,
+                                      maximum_workers=maximum_workers) if maximum_workers != 16 else
+                ordered_group_results(items, process_group, workers))
+    results = (run_groups(list(enumerate(plan, 1))) if recovered_groups is None else
+               _run_partial_recovery_groups(plan, recovered_groups, run_groups))
     if failure_collector is not None and failure_collector.has_failures():
         failure_collector.finish(out, request, plan)
     dependencies = accounting.bounded_dependencies(
