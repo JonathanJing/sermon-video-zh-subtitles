@@ -1,19 +1,27 @@
 """The Layer 2 worker's stat-guarded binding memo: unchanged inputs skip the full re-digest,
 and every change the full check catches is still caught."""
+import builtins
+import copy
 import dataclasses
+import io
 import json
 import os
 from pathlib import Path
+import shutil
 import tempfile
 import time
 import unittest
 from unittest.mock import patch
 
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from scripts import inspect_canonical_packages as inspection
+from tongxing_production.contracts import schemas as contract_schemas
 from tongxing_production.text import backend as text_backend
 from tongxing_production.text import controller as layer2
 from tongxing_production.text import controller as subject
+from tongxing_production.text import policy as policy_tools
 from tongxing_production.text import stat_memo
+from tests import test_canonical_layer2_controller as controller_fixtures
 from tests import test_canonical_layer2_controller_payload_cache as payload_fixtures
 
 
@@ -309,6 +317,276 @@ class CodeIdentityMemoTests(unittest.TestCase):
     def test_removed_file_changes_the_identity(self):
         (self.root / 'scripts/tool.py').unlink()
         self.assertNotEqual(layer2.code_identity(), self.baseline)
+
+    def test_single_file_ancestor_swapped_for_a_symlink_is_not_memoized(self):
+        for directory in ('docs', 'tools/ops'):
+            with self.subTest(directory=directory):
+                original, moved = self.root / directory, self.root / (directory + '-moved')
+                original.rename(moved)
+                os.symlink(moved, original)
+                try:
+                    calls = self.compute.calls
+                    with self.assertRaises(ValueError):
+                        layer2.code_identity()
+                    self.assertEqual(self.compute.calls, calls + 1)
+                finally:
+                    original.unlink()
+                    moved.rename(original)
+                self.assertEqual(layer2.code_identity(), self.baseline)
+
+class SharedListingTests(unittest.TestCase):
+    def setUp(self):
+        temporary = tempfile.TemporaryDirectory()
+        self.addCleanup(temporary.cleanup)
+        self.root = Path(temporary.name)
+        (self.root / 'a.json').write_text('{"a": 1}')
+        racy = patch.object(stat_memo, 'RACY_NS', 0)
+        racy.start()
+        self.addCleanup(racy.stop)
+        self.memo = stat_memo.StatMemo()
+        self.listings = Counting(stat_memo._listing)
+        patcher = patch.object(stat_memo, '_listing', self.listings)
+        patcher.start()
+        self.addCleanup(patcher.stop)
+
+    def test_one_listing_serves_every_check_in_the_block(self):
+        fingerprint = lambda: stat_memo.listing(self.root)
+        self.memo.get('a', fingerprint, lambda: 1)
+        self.memo.get('b', fingerprint, lambda: 2)
+        self.listings.calls = 0
+        with stat_memo.shared_listings():
+            self.assertEqual((self.memo.get('a', fingerprint, lambda: 0), self.memo.get('b', fingerprint, lambda: 0)),
+                             (1, 2))
+        self.assertEqual(self.listings.calls, 1)
+        self.assertEqual(self.memo.get('a', fingerprint, lambda: 0), 1)
+        self.assertEqual(self.listings.calls, 2)  # outside the block every check lists
+
+    def test_a_change_while_computing_is_seen_by_the_fresh_recheck(self):
+        def racing():
+            (self.root / 'a.json').write_text('{"a": 2}')
+            return 'stale'
+        fingerprint = lambda: stat_memo.listing(self.root)
+        with stat_memo.shared_listings():
+            self.memo.get('a', fingerprint, racing)
+        self.assertNotIn('a', self.memo._entries)  # the recheck listed afresh instead of reusing the block's listing
+        self.assertEqual(self.memo.get('a', fingerprint, lambda: 'fresh'), 'fresh')
+
+    def test_keep_false_returns_without_storing(self):
+        fingerprint = lambda: stat_memo.listing(self.root)
+        for _ in range(2):
+            self.assertEqual(self.memo.get('a', fingerprint, lambda: 'failed', keep=lambda value: False), 'failed')
+        self.assertEqual(self.memo.misses, 2)
+
+    def test_ancestor_swapped_for_a_symlink_changes_the_fingerprint(self):
+        nested = self.root / 'dir'
+        nested.mkdir()
+        (nested / 'f.json').write_text('{}')
+        before = stat_memo.files(nested / 'f.json') + stat_memo.ancestors(nested / 'f.json')
+        (nested / 'g.json').write_text('{}')  # a sibling write moves the directory's timestamps only
+        self.assertEqual(stat_memo.files(nested / 'f.json') + stat_memo.ancestors(nested / 'f.json'), before)
+        nested.rename(self.root / 'moved')
+        os.symlink(self.root / 'moved', nested)
+        # The file's own lstat is unchanged through the link; only the ancestor's kind shows the swap.
+        self.assertEqual(stat_memo.files(nested / 'f.json'), before[:1])
+        self.assertNotEqual(stat_memo.files(nested / 'f.json') + stat_memo.ancestors(nested / 'f.json'), before)
+
+
+class PackageViewMemoTests(unittest.TestCase):
+    """package_view's inspection under the memo, on the controller's real source/anchor/policy fixture."""
+
+    def setUp(self):
+        self.base = controller_fixtures.CanonicalLayer2ControllerTests('test_default_shadow_is_read_only_and_never_loads_credentials_or_dispatches')
+        self.base.setUp()
+        self.addCleanup(self.base.doCleanups)
+        self.memo = stat_memo.StatMemo()
+        self.inspections = Counting(inspection.inspect_configuration)
+        for patcher in (patch.object(stat_memo, 'RACY_NS', 0), patch.object(layer2, '_BINDING_MEMO', self.memo),
+                        patch.object(inspection, 'inspect_configuration', self.inspections)):
+            patcher.start()
+            self.addCleanup(patcher.stop)
+        self.config = layer2.load_configuration(self.base.path)
+        self.baseline = layer2.package_view(self.config)
+        self.assertEqual(self.baseline['nodes']['text.zh-Hans']['status'], 'ready')
+        self.assertEqual(self.baseline['inspectionDiagnostics'], {})
+        source = self.config.inspection_root / self.config.inspection['source']
+        summary, window, aligned, review = layer2._source_names(source)
+        root = self.config.inspection_root
+        self.inputs = {'source': source, 'anchor': root / self.config.inspection['anchor'],
+                       'policy': root / self.config.inspection['locales']['zh-Hans']['policy'],
+                       'summary': root / summary, 'window': root / window, 'aligned': root / aligned,
+                       'review': root / review}
+
+    def unmemoized(self):
+        with patch.object(layer2, '_BINDING_MEMO', stat_memo.StatMemo()):
+            return layer2.package_view(layer2.load_configuration(self.base.path))
+
+    def test_unchanged_inputs_inspect_once_with_the_same_view(self):
+        views = [layer2.package_view(self.config) for _ in range(3)]
+        self.assertEqual(views, [self.baseline] * 3)
+        self.assertEqual(self.inspections.calls, 1)
+        self.assertEqual(self.unmemoized(), self.baseline)
+        views[0]['packageIdentities']['x'] = 'mutated'  # each caller gets its own copy
+        self.assertNotIn('x', layer2.package_view(self.config)['packageIdentities'])
+
+    def test_every_input_edit_is_detected(self):
+        for name, path in self.inputs.items():
+            with self.subTest(input=name):
+                original = path.read_bytes()
+                flip_digit(path)
+                changed = layer2.package_view(self.config)
+                self.assertEqual(changed, self.unmemoized())
+                self.assertNotEqual(changed, self.baseline)
+                path.write_bytes(original)
+                self.assertEqual(layer2.package_view(self.config), self.baseline)
+
+    def test_terminology_and_schema_edits_are_detected(self):
+        copies = Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, copies)
+        table, real_table = copies / 'series-terminology.zh.md', policy_tools._series_table()
+        shutil.copyfile(real_table, table)
+        schemas = copies / 'schemas'
+        shutil.copytree(contract_schemas.root(), schemas)
+        original_root = contract_schemas.root()
+        contract_schemas.configure(schemas)
+        self.addCleanup(contract_schemas.configure, original_root)
+        current = text_backend.current()
+        bound = dataclasses.replace(current, terminology=dataclasses.replace(current.terminology, table_path=lambda: table))
+        with patch.object(text_backend, '_current', bound):
+            self.memo.clear()
+            baseline = layer2.package_view(self.config)
+            self.assertEqual(baseline, self.baseline)
+            calls = self.inspections.calls
+            rewrite_same_size(table, b'|', b'!')
+            self.assertNotEqual(layer2.package_view(self.config), baseline)
+            shutil.copyfile(real_table, table)
+            self.assertEqual(layer2.package_view(self.config), baseline)
+            self.assertEqual(layer2.package_view(self.config), baseline)
+            self.assertEqual(self.inspections.calls, calls + 2)  # the restored table is memoized again
+            source_schema = schemas / 'sermon-english-source-package-v1.schema.json'
+            text = source_schema.read_text()
+            source_schema.write_text(text.replace('"properties"', '"required": ["notAField"], "properties"', 1))
+            self.assertNotEqual(layer2.package_view(self.config), baseline)
+            source_schema.write_text(text)
+            self.assertEqual(layer2.package_view(self.config), baseline)
+            self.assertEqual(self.inspections.calls, calls + 4)
+
+    def test_ancestor_symlink_swap_is_rejected_as_before(self):
+        folder = self.inputs['summary'].parent
+        moved = folder.with_name(folder.name + '-moved')
+        folder.rename(moved)
+        os.symlink(moved, folder)
+        self.addCleanup(lambda: (folder.unlink(), moved.rename(folder)))
+        changed = layer2.package_view(self.config)
+        self.assertEqual(changed['inspectionDiagnostics'], {'source': 'source_or_anchor_not_validated'})
+        self.assertEqual(changed, self.unmemoized())
+
+    def test_failed_inspection_is_recomputed_every_time(self):
+        self.inputs['window'].unlink()
+        calls = self.inspections.calls
+        for _ in range(2):
+            self.assertIn('source', layer2.package_view(self.config)['inspectionDiagnostics'])
+        self.assertEqual(self.inspections.calls, calls + 2)
+
+    def test_registered_candidate_appearing_is_validated_without_the_memo(self):
+        self.base.output.mkdir(parents=True, exist_ok=True)
+        self.base.fixture.write('outputs/zh-Hans/candidate.json', self.base.fixture.candidate)
+        calls = self.inspections.calls
+        view = layer2.package_view(self.config)
+        self.assertEqual(view['nodes']['text.zh-Hans']['status'], 'validated')
+        self.assertEqual(view, self.unmemoized())
+        layer2.package_view(self.config)
+        self.assertEqual(self.inspections.calls, calls + 3)  # never memoized while a candidate exists
+        self.assertEqual(self.memo.hits, 0)
+
+    def test_every_path_a_full_inspection_touches_is_in_the_fingerprint(self):
+        """Trace stat, lstat, open and listing calls of an unmemoized inspection; each must be covered."""
+        effective = copy.deepcopy(self.config.inspection)
+        effective['locales']['zh-Hans'].pop('candidate', None)
+        digest, files, trees = layer2._inspection_reads(self.config.inspection_root, effective, 'production')
+        covered = {path for path, _ in layer2._inspection_fingerprint(files, trees)}
+        touched, descriptors = set(), {}
+
+        def traced(function, name):
+            def call(path, *args, **kwargs):
+                if isinstance(path, int):
+                    seen = descriptors.get(path)
+                else:
+                    seen = os.fspath(path)
+                    if kwargs.get('dir_fd') is not None:
+                        seen = os.path.join(descriptors[kwargs['dir_fd']], seen)
+                if seen is not None:
+                    touched.add((name, os.path.abspath(seen)))
+                result = function(path, *args, **kwargs)
+                if name == 'open' and isinstance(result, int) and isinstance(seen, str):
+                    descriptors[result] = os.path.abspath(seen)
+                return result
+            return call
+
+        inspection.inspect_configuration(self.config.inspection_root, effective)  # warm lazy imports
+        patchers = [patch.object(os, name, traced(getattr(os, name), name))
+                    for name in ('stat', 'lstat', 'open', 'scandir', 'listdir')]
+        patchers += [patch.object(builtins, 'open', traced(builtins.open, 'io_open')),
+                     patch.object(io, 'open', traced(io.open, 'io_open'))]
+        for patcher in patchers:
+            patcher.start()
+        try:
+            view = self.inspections.function(self.config.inspection_root, effective)
+        finally:
+            for patcher in reversed(patchers):
+                patcher.stop()
+        self.assertEqual(view['inspectionDiagnostics'], {})
+        self.assertIn(('io_open', str(self.inputs['aligned'])), touched)
+        missing = sorted(path for _, path in touched if path not in covered)
+        self.assertEqual(missing, [])
+        self.assertEqual(digest, layer2.jobs._digest(effective))
+
+
+class BindingDigestTests(unittest.TestCase):
+    def setUp(self):
+        fixture = payload_fixtures.CanonicalLayer2PayloadCacheTests(
+            'test_v7_partial_round_binds_failed_job_round_budget_and_successor_command')
+        fixture.setUp()
+        self.addCleanup(fixture.doCleanups)
+        fixture.make_prior()
+        fixture.enable_v7_partial_recovery()
+        self.path = fixture.base.path
+        for patcher in (patch.object(stat_memo, 'RACY_NS', 0), patch.object(layer2, '_BINDING_MEMO', stat_memo.StatMemo()),
+                        patch.object(layer2, '_BINDING_DIGESTS', {})):
+            patcher.start()
+            self.addCleanup(patcher.stop)
+
+    def test_reused_digest_equals_the_full_digest(self):
+        captured = []
+        original = layer2._binding_digest
+        with patch.object(layer2, '_binding_digest', lambda binding: captured.append(binding) or original(binding)):
+            first = layer2.load_configuration(self.path).sha256
+            second = layer2.load_configuration(self.path).sha256
+        self.assertEqual(first, second)
+        self.assertEqual(len(layer2._BINDING_DIGESTS), 1)
+        self.assertIs(captured[0]['partialRecoverySnapshots']['zh-Hans'],
+                      captured[1]['partialRecoverySnapshots']['zh-Hans'])  # the memo's shared snapshot
+        for binding in captured:
+            self.assertEqual(original(binding), layer2.jobs._digest(binding))
+        # An equal snapshot that is another object, or any other changed field, is digested in full.
+        copied = dict(captured[0], partialRecoverySnapshots={'zh-Hans': copy.deepcopy(
+            captured[0]['partialRecoverySnapshots']['zh-Hans'])})
+        self.assertEqual(original(copied), first)
+        self.assertEqual(len(layer2._BINDING_DIGESTS), 2)
+        snapshot = captured[0]['partialRecoverySnapshots']['zh-Hans']
+        altered = dict(captured[0], partialRecoverySnapshots={'zh-Hans': dict(snapshot, sha256='0' * 64)})
+        self.assertNotEqual(original(altered), first)
+        self.assertEqual(original(altered), layer2.jobs._digest(altered))
+        changed = dict(captured[0], plugins={'zh-Hans': '0' * 64})
+        self.assertEqual(original(changed), layer2.jobs._digest(changed))
+        self.assertNotEqual(original(changed), first)
+
+    def test_one_round_listing_per_load(self):
+        listings = Counting(stat_memo._listing)
+        layer2.load_configuration(self.path)
+        with patch.object(stat_memo, '_listing', listings):
+            layer2.load_configuration(self.path)
+        # failed job folder, round (shared by payload cache and recovery), budget root, its locks and store
+        self.assertEqual(listings.calls, 5)
 
 
 if __name__ == '__main__':
