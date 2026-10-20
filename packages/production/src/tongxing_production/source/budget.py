@@ -40,8 +40,13 @@ LEDGER_V2 = 'sermon-source-budget-ledger-v2'
 # and only migrate_to_v3() upgrades one. New ledgers start at v4.
 LEDGER_V3 = 'sermon-source-budget-ledger-v3'
 LEDGER_V4 = 'sermon-source-budget-ledger-v4'
-CONCURRENT_LEDGERS = (LEDGER_V2, LEDGER_V3, LEDGER_V4)
-SETTLED_LEDGERS = (LEDGER_V3, LEDGER_V4)
+# v5 adds one terminal non-charged outcome: ``failed_definitive`` for a provider
+# response that proves the call failed before returning content (HTTP 5xx/4xx).
+# It releases the reservation, never stores a response and never blocks a retry.
+LEDGER_V5 = 'sermon-source-budget-ledger-v5'
+CONCURRENT_LEDGERS = (LEDGER_V2, LEDGER_V3, LEDGER_V4, LEDGER_V5)
+SETTLED_LEDGERS = (LEDGER_V3, LEDGER_V4, LEDGER_V5)
+DEFINITIVE_FAILURE_STATUSES = {'failed_definitive'}
 # 'reused': a response another approved budget root already paid for; it costs nothing here.
 SETTLEMENT_STATUSES_V3 = {'estimated_upper_bound', 'unknown'}
 SETTLEMENT_STATUSES = SETTLEMENT_STATUSES_V3 | {'reused'}
@@ -169,23 +174,30 @@ class SourceBudget:
                                 and isinstance(ledger.get('requests'), dict)
                                 and set(ledger) == ({'schemaVersion', 'authority', 'requests'} if version not in CONCURRENT_LEDGERS
                                     else {'schemaVersion', 'authority', 'requests', 'maxConcurrent', 'resourcePolicySha256'}
-                                        | ({'reuseBudgetRoots'} if version == LEDGER_V4 else set()))
-                                and (version != LEDGER_V4 or ledger['reuseBudgetRoots'] == [str(root) for root in self.reuse_roots])
+                                        | ({'reuseBudgetRoots'} if version in (LEDGER_V4, LEDGER_V5) else set()))
+                                and (version not in (LEDGER_V4, LEDGER_V5) or ledger['reuseBudgetRoots'] == [str(root) for root in self.reuse_roots])
                                 and (version not in CONCURRENT_LEDGERS or (ledger['maxConcurrent'] == self.max_concurrent
                                     and ledger['resourcePolicySha256'] == self._resource_identity())), 'source_budget_identity_changed')
                         for operation, row in ledger['requests'].items():
                             require(isinstance(operation, str) and re.fullmatch(r'(asr\.[0-9]{4}|judge\.[a-f0-9]{64})', operation)
-                                    and isinstance(row, dict) and row.get('status') in {'returned', 'started_response_unconfirmed', 'live_started'}
+                                    and isinstance(row, dict) and row.get('status') in {'returned', 'started_response_unconfirmed', 'live_started', 'failed_definitive'}
                                     and set(row) - {'resourceBinding'} == ({'identitySha256', 'bounds', 'status', 'responseSha256'}
                                         | ({'settlement'} if version in SETTLED_LEDGERS else set())
                                         if row.get('status') == 'returned' else {'identitySha256', 'bounds', 'status', 'dispatchOwner'}
                                         if row.get('status') == 'live_started' and version in CONCURRENT_LEDGERS
+                                        else {'identitySha256', 'bounds', 'status', 'httpStatus', 'errorType'}
+                                        if row.get('status') == 'failed_definitive'
                                         else {'identitySha256', 'bounds', 'status'})
                                     and isinstance(row.get('identitySha256'), str)
                                     and re.fullmatch('[a-f0-9]{64}', row['identitySha256'])
                                     and isinstance(row.get('bounds'), dict) and set(row['bounds']) == set(METRICS)
                                     and row['bounds']['requests'] == 1
                                     and all(type(v) is int and 0 < v <= 10**15 for v in row['bounds'].values()),
+                                    'source_budget_ledger_corrupt')
+                            if row['status'] == 'failed_definitive':
+                                require(version == LEDGER_V5
+                                    and type(row.get('httpStatus')) is int and 100 <= row['httpStatus'] <= 599
+                                    and isinstance(row.get('errorType'), str) and row['errorType'],
                                     'source_budget_ledger_corrupt')
                             if row['status'] == 'returned':
                                 require(isinstance(row.get('responseSha256'), str)
@@ -382,12 +394,19 @@ class SourceBudget:
             try:
                 return self._call(operation=operation, identity=identity, bounds=bounds, request=request,
                     api_key=api_key, content_type=content_type, endpoint=endpoint, owner=owner)
-            except BaseException:
+            except BaseException as error:
                 with self._locked() as (ledger, path):
                     row = ledger['requests'].get(operation)
                     if row is not None and row.get('dispatchOwner') == owner:
-                        row.update(status='started_response_unconfirmed')
                         row.pop('dispatchOwner')
+                        status = getattr(error, 'code', None)
+                        if type(status) is int and 100 <= status <= 599:
+                            # The provider answered with an error status: no content was
+                            # returned, so this is a known non-charged failure.
+                            row.update(status='failed_definitive', httpStatus=status,
+                                       errorType=type(error).__name__)
+                        else:
+                            row.update(status='started_response_unconfirmed')
                         jobs._persist(path, ledger)
                 raise
 
@@ -409,13 +428,17 @@ class SourceBudget:
                     previous['status'] = 'started_response_unconfirmed'
                     previous.pop('dispatchOwner')
                     jobs._persist(path, ledger)
-                require(previous['status'] == 'returned', 'source_provider_outcome_unknown')
-                saved = jobs._read(response_path)
-                require(saved.get('identitySha256') == fingerprint
-                        and jobs._digest(saved.get('requestIdentity')) == fingerprint
-                        and jobs._digest(saved) == previous['responseSha256'], 'source_response_identity_changed')
-                self._release_resource(previous)
-                return saved['response']
+                require(previous['status'] in {'returned', 'failed_definitive'},
+                        'source_provider_outcome_unknown')
+                if previous['status'] == 'returned':
+                    saved = jobs._read(response_path)
+                    require(saved.get('identitySha256') == fingerprint
+                            and jobs._digest(saved.get('requestIdentity')) == fingerprint
+                            and jobs._digest(saved) == previous['responseSha256'], 'source_response_identity_changed')
+                    self._release_resource(previous)
+                    return saved['response']
+                # failed_definitive: no content exists, so dispatch afresh under the
+                # same identity; the row is replaced with the new live_started one.
             require(not self.reuse_roots or ledger['schemaVersion'] == LEDGER_V4,
                     'source_budget_v4_explicit_migration_required')
             reusable = self._reusable(operation, fingerprint) if self.reuse_roots else None
@@ -528,6 +551,53 @@ class SourceBudget:
             self._release_resource(row)
         return {'status': 'returned_response_reconciled', 'operation': operation,
                 'modelCalls': 0, 'humanApproval': False, 'reservationReleased': False}
+
+    def migrate_to_v5(self):
+        """Upgrade a v4 ledger so ``failed_definitive`` rows are legal; changes no row."""
+        self.verify()
+        with self._locked() as (ledger, path):
+            if ledger['schemaVersion'] == LEDGER_V5:
+                return {'status': 'already_v5', 'modelCalls': 0, 'humanApproval': False}
+            require(ledger['schemaVersion'] == LEDGER_V4, 'source_budget_v5_migration_requires_v4')
+            ledger['schemaVersion'] = LEDGER_V5
+            jobs._persist(path, ledger)
+        self.verify()
+        return {'status': 'migrated_to_v5', 'modelCalls': 0, 'humanApproval': False}
+
+    def reconcile_definitive_failure(self, operation, expected_identity_sha256, *, http_status, error_type,
+                                     evidence):
+        """Record a provider error status as a known, non-charged failure.
+
+        Only for a call that never returned content (no saved response) and that the
+        ledger left ``started_response_unconfirmed``. Writes an auditable sidecar and
+        releases the reservation. Never invokes a provider and never fabricates a response.
+        """
+        self.verify()
+        require(type(http_status) is int and 100 <= http_status <= 599, 'invalid_http_status')
+        require(isinstance(error_type, str) and error_type and isinstance(evidence, dict), 'invalid_failure_evidence')
+        receipt_dir = self.root / 'reconciliations'
+        receipt_dir.mkdir(parents=True, exist_ok=True, mode=0o700)
+        receipt_path = receipt_dir / f'{operation}.json'
+        with self._locked() as (ledger, path):
+            row = ledger['requests'].get(operation)
+            require(row is not None and row.get('status') == 'started_response_unconfirmed'
+                    and row.get('identitySha256') == expected_identity_sha256,
+                    'source_reconciliation_binding_changed')
+            require(not self._response_path(operation, expected_identity_sha256).is_file(),
+                    'source_returned_response_required')
+            require(ledger['schemaVersion'] == LEDGER_V5, 'source_budget_v5_migration_required')
+            receipt = {'schemaVersion': 'sermon-source-budget-definitive-failure-v1',
+                       'operation': operation, 'identitySha256': expected_identity_sha256,
+                       'httpStatus': http_status, 'errorType': error_type,
+                       'bounds': row['bounds'], 'evidence': evidence,
+                       'humanApproval': False, 'releaseEligible': False}
+            immutable._atomic(receipt_path, receipt)
+            row.update(status='failed_definitive', httpStatus=http_status, errorType=error_type)
+            jobs._persist(path, ledger)
+            self._release_resource(row)
+        self.verify()
+        return {'status': 'definitive_failure_reconciled', 'operation': operation,
+                'receipt': str(receipt_path), 'modelCalls': 0, 'humanApproval': False}
 
     def migrate_to_v3(self):
         """Explicitly upgrade a v2 ledger to v3, settling every returned row from its saved response.
