@@ -23,6 +23,11 @@ ROOT = Path(__file__).resolve().parents[2]
 PACKAGE = "tongxing_production"
 # Bound in this order; the tracker host only configures lazy report ports.
 HOSTS = ("scripts.tongxing_host", "scripts.tracker_projection_host")
+# Modules that compose the unified orchestration also need its Backend, which the
+# scripts/sermon_unified host binds (their facades imported it). Bound only for them,
+# so other commands' loaded code does not change.
+ORCHESTRATION_HOST = "scripts.sermon_unified"
+ORCHESTRATION_PREFIXES = ("orchestration.", "workflows.prepared.")
 NAME = re.compile(r"[a-z][a-z0-9_]*(?:\.[a-z][a-z0-9_]*)*")
 USAGE = "usage: run.py <module> [arguments ...]    e.g. run.py text.candidate --help"
 
@@ -48,6 +53,8 @@ def command(name):
     if name.startswith(PACKAGE + "."):
         raise UnknownModule(f"name the module without the {PACKAGE}. prefix: {name[len(PACKAGE) + 1:]}")
     bind_host()
+    if name.startswith(ORCHESTRATION_PREFIXES):
+        importlib.import_module(ORCHESTRATION_HOST)
     qualified = f"{PACKAGE}.{name}"
     try:
         spec = importlib.util.find_spec(qualified)

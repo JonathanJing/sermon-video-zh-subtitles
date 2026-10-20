@@ -7,9 +7,9 @@ import sys
 import unittest
 from unittest.mock import patch
 
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.text import cache_recovery as subject
 from tongxing_production.text import reconciliation as reconciliation
-from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.text import controller as layer2
 from tongxing_production.orchestration import jobs
 from tongxing_production.observability import accounting
