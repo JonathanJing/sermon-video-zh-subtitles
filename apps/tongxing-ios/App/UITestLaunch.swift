@@ -409,8 +409,9 @@ private enum UITestContent {
         let hash = SHA256.hash(data: image).map { String(format: "%02x", $0) }.joined()
         let poster = WeeklyPoster(url: "/posters/ui-test.png", sha256: hash, bytes: Int64(image.count), width: width, height: height)
         let items = page.targets.map { locale, target in
-            WeeklyAnnouncement(id: "ui-test-\(locale)", pageID: page.id, locale: locale,
-                releaseSHA256: target.releasePackageJsonSha256, sourceIdentitySHA256: page.sourceIdentitySha256,
+            let source = try! target.sourceBinding(in: page)
+            return WeeklyAnnouncement(id: "ui-test-\(locale)", pageID: page.id, locale: locale,
+                releaseSHA256: target.releasePackageJsonSha256, sourceIdentitySHA256: source.sourceIdentitySha256,
                 title: "本周海报 · 合成交互测试", publishedAt: "2026-10-04T00:00:00Z", poster: poster)
         }
         result["/weekly-announcements-v1.json"] = try! JSONEncoder().encode(WeeklyAnnouncementCatalog(announcements: items))

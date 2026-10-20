@@ -40,7 +40,8 @@ class APNsSingleDeviceTests(unittest.TestCase):
         target = {"contentStatus": "human_reviewed", "releasePackageJsonSha256": "a" * 64}
         catalog = {"schemaVersion": "sermon-multilingual-catalog-v3", "defaultPageId": "week",
                    "pages": [{"id": "week", "date": "2026-10-04", "targets": {"zh-Hans": target}}]}
-        payload, _ = apns.notice_payload(catalog, None, "zh-Hans")
+        payload, _, edition = apns.notice_payload(catalog, None, "zh-Hans")
+        self.assertEqual(edition, "week")
         self.assertEqual(payload["tongxing"]["pageID"], "week")
         for flag in ["simulationOnly", "diagnosticOnly"]:
             catalog["pages"][0][flag] = True
@@ -76,24 +77,61 @@ class APNsSingleDeviceTests(unittest.TestCase):
                 self.assertEqual(apns.verified_notice(catalog, None, "zh-Hans")["tongxing"]["pageID"], "week")
                 fetch.assert_called_once_with(apns.ORIGIN + target["releasePackageUrl"])
 
-    def test_catalog_fallback_only_for_missing_v4(self):
+    def test_catalog_fallback_only_for_missing_newer_catalog(self):
+        v5 = self.mixed_fixture()[0]
         v4 = self.fixture()[0]
         v3 = self.fixture(False)[0]
-        with patch.object(apns, "fetch_json", return_value=(v4, b"")) as fetch:
-            self.assertEqual(apns.load_catalog(), v4)
-            fetch.assert_called_once_with(apns.ORIGIN + "/multilingual-v4.json")
+        with patch.object(apns, "fetch_json", return_value=(v5, b"")) as fetch:
+            self.assertEqual(apns.load_catalog(), v5)
+            fetch.assert_called_once_with(apns.ORIGIN + "/multilingual-v5.json")
         missing = urllib.error.HTTPError("test", 404, "missing", {}, None)
-        with patch.object(apns, "fetch_json", side_effect=[missing, (v3, b"")]) as fetch:
+        with patch.object(apns, "fetch_json", side_effect=[missing, (v4, b"")]) as fetch:
+            self.assertEqual(apns.load_catalog(), v4)
+            self.assertEqual([call.args[0] for call in fetch.call_args_list],
+                             [apns.ORIGIN + "/multilingual-v5.json", apns.ORIGIN + "/multilingual-v4.json"])
+        with patch.object(apns, "fetch_json", side_effect=[missing, missing, (v3, b"")]) as fetch:
             self.assertEqual(apns.load_catalog(), v3)
-            self.assertEqual(fetch.call_count, 2)
+            self.assertEqual(fetch.call_count, 3)
         for failure in (urllib.error.HTTPError("test", 503, "unavailable", {}, None), ValueError("bad JSON")):
             with patch.object(apns, "fetch_json", side_effect=failure) as fetch:
                 with self.assertRaises(type(failure)):
                     apns.load_catalog()
                 self.assertEqual(fetch.call_count, 1)
+        with patch.object(apns, "fetch_json", side_effect=[missing, missing, missing]):
+            with self.assertRaises(urllib.error.HTTPError):
+                apns.load_catalog()
         with patch.object(apns, "fetch_json", return_value=(v3, b"")):
             with self.assertRaises(apns.TestValidationError):
                 apns.load_catalog()
+
+    def mixed_fixture(self):
+        """A v5 family page whose zh-Hans target lives under another source edition."""
+        catalog, target, release, _ = self.fixture()
+        release["pageId"] = "broadcast-edition"
+        raw = json.dumps(release).encode()
+        target.update(editionId="broadcast-edition", releasePackageUrl="/releases-v4/broadcast-edition/zh-Hans.json",
+                      releasePackageJsonSha256=hashlib.sha256(raw).hexdigest())
+        catalog.update(schemaVersion="sermon-multilingual-catalog-v5", defaultPageId="family")
+        catalog["pages"][0].update(id="family", sourceMode="per_target")
+        return catalog, target, release, raw
+
+    def test_v5_family_notice_keeps_family_id_and_verifies_the_edition_release(self):
+        catalog, target, release, raw = self.mixed_fixture()
+        with patch.object(apns, "fetch_json", return_value=(release, raw)) as fetch:
+            self.assertEqual(apns.verified_notice(catalog, None, "zh-Hans")["tongxing"]["pageID"], "family")
+            fetch.assert_called_once_with(apns.ORIGIN + "/releases-v4/broadcast-edition/zh-Hans.json")
+        for change in ({"pageId": "family"}, {"pageId": "other-edition"}):
+            bad = dict(release, **change)
+            bad_raw = json.dumps(bad).encode()
+            target["releasePackageJsonSha256"] = hashlib.sha256(bad_raw).hexdigest()
+            with patch.object(apns, "fetch_json", return_value=(bad, bad_raw)):
+                with self.assertRaises(apns.TestValidationError):
+                    apns.verified_notice(catalog, None, "zh-Hans")
+        catalog, target, release, raw = self.mixed_fixture()
+        target["releasePackageUrl"] = "/releases-v4/family/zh-Hans.json"
+        with patch.object(apns, "fetch_json", return_value=(release, raw)):
+            with self.assertRaises(apns.TestValidationError):
+                apns.verified_notice(catalog, None, "zh-Hans")
 
     def test_invalid_release_bindings_rejected(self):
         for field, value in (("status", "candidate"), ("schemaVersion", "sermon-target-language-release-package-v2"),

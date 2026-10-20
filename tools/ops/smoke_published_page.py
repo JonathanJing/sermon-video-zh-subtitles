@@ -28,9 +28,12 @@ HTTP asset verification.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
+import re
 import subprocess
 import sys
+import urllib.error
 import urllib.request
 from datetime import datetime, timezone
 from pathlib import Path
@@ -45,6 +48,16 @@ CDP_OBSERVER = Path(__file__).with_name("smoke_browser_cdp.mjs")
 LOCALES = ("zh-Hans", "ko", "es")
 # What the reader shows before any cue is loaded.
 CAPTION_PLACEHOLDERS = ("配音就绪后，字幕会显示在这里。", "")
+HASH = re.compile(r"^[a-f0-9]{64}$")
+CATALOGS = (("/multilingual-v5.json", "sermon-multilingual-catalog-v5"),
+            ("/multilingual-v4.json", "sermon-multilingual-catalog-v4"))
+
+
+class FetchedJson(dict):
+    """Decoded JSON retaining the exact response hash for catalog release binding."""
+    def __init__(self, value, body):
+        super().__init__(value)
+        self.body_sha256 = hashlib.sha256(body).hexdigest()
 
 
 def shell_paths() -> set[str]:
@@ -56,7 +69,35 @@ def shell_paths() -> set[str]:
 
 def fetch_json(url: str, timeout: float) -> dict:
     with urllib.request.urlopen(urllib.request.Request(url, headers={"Cache-Control": "no-cache"}), timeout=timeout) as response:
-        return json.loads(response.read().decode("utf-8"))
+        body = response.read()
+        return FetchedJson(json.loads(body.decode("utf-8")), body)
+
+
+def load_catalog(origin: str, fetch, timeout: float) -> tuple[dict, str, str]:
+    for path, version in CATALOGS:
+        try:
+            catalog = fetch(origin + path, timeout)
+        except KeyError:
+            catalog = None
+        except urllib.error.HTTPError as error:
+            if error.code != 404:
+                raise
+            catalog = None
+        if catalog is None:
+            continue
+        if catalog.get("schemaVersion") != version or not isinstance(catalog.get("pages"), list):
+            raise ValueError(f"Invalid live {version} catalog")
+        return catalog, path, version
+    raise ValueError("Live multilingual v5/v4 catalog is unavailable")
+
+
+def target_edition(page: dict, target: dict, catalog_version: str) -> str:
+    if catalog_version == "sermon-multilingual-catalog-v5" and page.get("sourceMode") == "per_target":
+        edition = target.get("editionId")
+        if not isinstance(edition, str) or not edition:
+            raise ValueError("v5 target lacks its source edition")
+        return edition
+    return page["id"]
 
 
 def track_source(page: dict, locale: str, audio_sha256: str) -> dict:
@@ -64,33 +105,53 @@ def track_source(page: dict, locale: str, audio_sha256: str) -> dict:
     return {"week": page["date"], "trackId": f"{page['id']}-{locale}-{audio_sha256[:12]}", "audioSha256": audio_sha256}
 
 
-def usage_anchor(origin: str, catalog: dict, fetch, timeout: float) -> dict | None:
+def usage_anchor(origin: str, catalog: dict, catalog_version: str, fetch, timeout: float) -> dict | None:
     """usage.mjs anchors its sessions on the reader catalog's first week with tracks: the
     default page in its default locale."""
     page = next((row for row in catalog.get("pages", []) if row.get("id") == catalog.get("defaultPageId")), None)
     target = (page or {}).get("targets", {}).get((page or {}).get("defaultTargetLocale"))
     if not target:
         return None
+    edition = target_edition(page, target, catalog_version)
+    expected_path = f"/releases-v{4 if 'machine_checked' in (target.get('contentStatus'), target.get('audioStatus')) else 2}/{edition}/{page['defaultTargetLocale']}.json"
+    if target.get("releasePackageUrl") != expected_path:
+        raise ValueError("usage anchor release path differs from target edition")
     release = fetch(origin + target["releasePackageUrl"], timeout)
     audio = next((row["sha256"] for row in release.get("assets", []) if row.get("role") == "audio"), None)
     return track_source(page, page["defaultTargetLocale"], audio) if audio else None
 
 
-def expected_identity(origin: str, page: dict, locale: str, release: dict, fetch, timeout: float) -> dict:
+def expected_identity(origin: str, page: dict, target: dict, locale: str, release: dict, fetch, timeout: float,
+                      catalog_path: str, catalog_version: str) -> dict:
     """What a correct rendering of this page in this locale must show, read from its release."""
     assets = {row["role"]: row for row in release.get("assets", []) if isinstance(row, dict)}
-    if release.get("pageId") != page["id"] or release.get("targetLocale") != locale or any(
-            role not in assets for role in ("audio", "content", "captions")):
-        raise ValueError(f"Release for {page['id']} {locale} lacks its identity or audio, content and captions")
+    edition = target_edition(page, target, catalog_version)
+    release_version = 4 if 'machine_checked' in (target.get('contentStatus'), target.get('audioStatus')) else 2
+    expected_release_path = f"/releases-v{release_version}/{edition}/{locale}.json"
+    if (target.get("releasePackageUrl") != expected_release_path
+            or not HASH.fullmatch(target.get("releasePackageJsonSha256", ""))
+            or (getattr(release, "body_sha256", target["releasePackageJsonSha256"]) != target["releasePackageJsonSha256"])
+            or release.get("pageId") != edition or release.get("targetLocale") != locale or any(
+            role not in assets for role in ("audio", "content", "captions"))):
+        raise ValueError(f"Release for {edition} {locale} lacks its identity or audio, content and captions")
+    expected_assets = {"audio": f"/media/{edition}/{locale}.mp3", "content": f"/content/{edition}/{locale}.json",
+                       "captions": f"/captions/{edition}/{locale}.json"}
+    if any(assets[role].get("path") != path or not HASH.fullmatch(assets[role].get("sha256", ""))
+           for role, path in expected_assets.items()):
+        raise ValueError(f"Release assets for {edition} {locale} differ from its edition")
     content = fetch(origin + assets["content"]["path"], timeout)
     captions = fetch(origin + assets["captions"]["path"], timeout)
+    if (getattr(content, "body_sha256", assets["content"]["sha256"]) != assets["content"]["sha256"]
+            or getattr(captions, "body_sha256", assets["captions"]["sha256"]) != assets["captions"]["sha256"]
+            or content.get("pageId") != edition or content.get("targetLocale") != locale):
+        raise ValueError(f"Content for {edition} {locale} differs from its edition")
     texts = [cue.get("text", "").strip() for cue in content.get("cues", []) + captions.get("cues", [])]
     audio = assets["audio"]["sha256"]
     return {"pageId": page["id"], "locale": locale, "title": content.get("title", "").strip(),
             "source": track_source(page, locale, audio),
             "audioPath": assets["audio"]["path"], "cueTexts": {text for text in texts if text},
             "firstCueTexts": [cue.get("text", "").strip() for cue in content.get("cues", [])[:3]],
-            "requiredPaths": {row["path"] for row in assets.values()} | {"/multilingual-v4.json"}}
+            "requiredPaths": {row["path"] for row in assets.values()} | {catalog_path}}
 
 
 def evaluate(expected: dict, observed: dict, *, required_paths: set[str], check_session: bool = True,
@@ -159,12 +220,12 @@ def load_in_browser(browser: str, url: str, *, settle_ms: int, deadline_ms: int)
 def smoke(origin: str, page_id: str, locales, *, browser: str, settle_ms: int = 4000, deadline_ms: int = 60000,
           timeout: float = 60, check_session: bool = True, loader=load_in_browser, fetch=fetch_json,
           shell=shell_paths) -> dict:
-    catalog = fetch(origin + "/multilingual-v4.json", timeout)
+    catalog, catalog_path, catalog_version = load_catalog(origin, fetch, timeout)
     page = next((row for row in catalog.get("pages", []) if row.get("id") == page_id), None)
     if page is None:
-        raise ValueError(f"Page {page_id} is not in the live v4 catalog")
+        raise ValueError(f"Page {page_id} is not in the live {catalog_version} catalog")
     shell_files = shell()
-    anchor = usage_anchor(origin, catalog, fetch, timeout)
+    anchor = usage_anchor(origin, catalog, catalog_version, fetch, timeout)
     results = []
     for locale in locales:
         target = page["targets"].get(locale)
@@ -172,7 +233,7 @@ def smoke(origin: str, page_id: str, locales, *, browser: str, settle_ms: int = 
             results.append({"locale": locale, "status": "fail", "problems": ["locale is not published for this page"], "warnings": []})
             continue
         release = fetch(origin + target["releasePackageUrl"], timeout)
-        expected = expected_identity(origin, page, locale, release, fetch, timeout)
+        expected = expected_identity(origin, page, target, locale, release, fetch, timeout, catalog_path, catalog_version)
         url = f"{origin}/?week={page_id}&contentLang={locale}"
         observed = loader(browser, url, settle_ms=settle_ms, deadline_ms=deadline_ms)
         problems, warnings = evaluate(expected, observed, check_session=check_session, anchor=anchor,
@@ -188,6 +249,7 @@ def smoke(origin: str, page_id: str, locales, *, browser: str, settle_ms: int = 
                         "sessionRequests": observed.get("sessionRequests", []), "usageAnchor": anchor})
     return {"schemaVersion": SCHEMA, "checkedAt": datetime.now(timezone.utc).isoformat(), "origin": origin,
             "pageId": page_id, "browser": browser, "settleMs": settle_ms, "deadlineMs": deadline_ms,
+            "catalogVersion": catalog_version,
             "status": "pass" if all(row["status"] == "pass" for row in results) else "fail",
             "locales": results, "scope": "browser_render_and_feedback_session_only"}
 

@@ -6,7 +6,8 @@ import unittest
 
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.delivery.published_alignment_catalog import bind_catalog, bind_catalogs, main
-from tongxing_production.delivery.contract import project_human_catalog
+from tongxing_production.delivery.contract import (project_human_catalog, project_legacy_catalog_v4,
+                                                   promote_page_to_per_target, upgrade_catalog_v5)
 from unittest import mock
 
 
@@ -191,6 +192,61 @@ class CatalogAlignmentTests(unittest.TestCase):
     def test_v4_refuses_dub_on_its_own_clock(self):
         self.seal_v4(audio_duration=24)
         with self.assertRaisesRegex(ValueError, 'source clock'):
+            bind_catalogs(self.public, 'week')
+
+    def seal_v5(self, *, per_target):
+        v4, binding = self.seal_v4()
+        if per_target:
+            # The edition page keeps id 'week'; the v5 family page that presents it is 'family'.
+            v4['pages'][0]['sourceMediaSha256'] = self.media
+            v4['pages'][0]['videoDelivery'] = dict(
+                schemaVersion='sermon-video-delivery-v1', canonicalUrl='/pages/week/full-video-browser.mp4',
+                storageUrl=f'https://storage.googleapis.com/ai-for-god-sermon-media-prod/weekly/week/{self.media}.mp4',
+                sha256=self.media, bytes=100)
+        v5 = upgrade_catalog_v5(v4)
+        if per_target:
+            v5['pages'][0] = dict(promote_page_to_per_target(v5['pages'][0]), id='family', title='Family')
+            v5['defaultPageId'] = 'family'
+        v4 = project_legacy_catalog_v4(v5)
+        self.save('/multilingual-v5.json', v5)
+        self.save('/multilingual-v4.json', v4)
+        self.save('/multilingual-v3.json', project_human_catalog(v4))
+        return v5, binding
+
+    def test_v5_binds_edition_targets_and_keeps_v4_v3_as_projections(self):
+        for per_target in (False, True):
+            with self.subTest(per_target=per_target):
+                self.setUp()
+                v5, es_binding = self.seal_v5(per_target=per_target)
+                with mock.patch('sys.argv', ['bind', '--public', str(self.public), '--page-id', 'week']), \
+                        mock.patch('builtins.print') as printed:
+                    main()
+                bound_v5, bound_v4 = self.read('multilingual-v5.json'), self.read('multilingual-v4.json')
+                self.assertEqual(project_legacy_catalog_v4(bound_v5), bound_v4)
+                self.assertEqual(project_human_catalog(bound_v4), self.read('multilingual-v3.json'))
+                page = bound_v5['pages'][0]
+                self.assertEqual(page['id'], 'family' if per_target else 'week')
+                self.assertEqual(page['targets']['es']['audioFingerprint'], es_binding)
+                self.assertEqual(page['targets']['ko']['audioFingerprint'], self.binding)
+                self.assertIn('alignment', page['targets']['ko']['capabilities'])
+                if not per_target:
+                    self.assertEqual(page['sourceMediaSha256'], self.media)
+                self.assertEqual(bound_v5['pages'][1], v5['pages'][1])
+                rows = json.loads(printed.call_args.args[0])['catalogs']
+                self.assertEqual([sorted(row['locales']) for row in rows], [['ko'], ['es', 'ko'], ['es', 'ko']])
+                # Idempotent, and a rerun after v3 and v4 were written but v5 was not is accepted.
+                catalogs = bind_catalogs(self.public, 'week')
+                self.assertEqual(catalogs['multilingual-v5.json'], bound_v5)
+                self.save('/multilingual-v5.json', v5)
+                self.assertEqual(bind_catalogs(self.public, 'week'), catalogs)
+
+    def test_v5_refuses_v4_that_is_not_its_projection(self):
+        self.seal_v5(per_target=True)
+        v4 = self.read('multilingual-v4.json')
+        v4['pages'][0]['title'] = 'Edited outside the seal'
+        self.save('/multilingual-v4.json', v4)
+        self.save('/multilingual-v3.json', project_human_catalog(v4))
+        with self.assertRaisesRegex(ValueError, 'edition projection'):
             bind_catalogs(self.public, 'week')
 
     def test_v3_snapshot_keeps_single_catalog_output(self):
