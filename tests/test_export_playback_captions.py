@@ -6,7 +6,7 @@ import unittest
 from pathlib import Path
 
 
-SCRIPT_PATH = Path(__file__).resolve().parents[1] / "scripts" / "export_playback_captions.py"
+SCRIPT_PATH = Path(__file__).resolve().parents[1] / "tools" / "ops" / "export_playback_captions.py"
 SPEC = importlib.util.spec_from_file_location("export_playback_captions", SCRIPT_PATH)
 mod = importlib.util.module_from_spec(SPEC)
 assert SPEC.loader is not None

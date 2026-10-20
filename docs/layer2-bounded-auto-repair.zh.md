@@ -77,7 +77,7 @@ runner 新增"收集失败"模式：门 1 或门 2 不通过时保存证据、�
 
 按 AGENTS.md，Sol 的任何失败、issue 或 uncertainty 都先开新修订重译一次；只有同一指纹在重译后重现，才转人工或源文复核。
 
-共有的失败码与 `scripts/sermon_repair_planning.py` 的 `FAILURE_ACTIONS` 动作一致。新增的失败码和"重现后转人工／源文复核"放在循环自己的路由表 `layer2-auto-repair-routing-v1` 里，不改 `sermon_repair_planning.py`。
+共有的失败码与 `packages/production/src/tongxing_production/orchestration/supervisor/repair_planning.py` 的 `FAILURE_ACTIONS` 动作一致。新增的失败码和"重现后转人工／源文复核"放在循环自己的路由表 `layer2-auto-repair-routing-v1` 里，不改 `sermon_repair_planning.py`。
 
 ### 3. 系统性判断
 

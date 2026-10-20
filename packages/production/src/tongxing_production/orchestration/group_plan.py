@@ -144,7 +144,8 @@ def derive_records(manifest: dict, base: Path, layer1: dict, anchor: dict) -> di
 
 
 def _current_inputs(stage: str, group: dict, context: dict, anchor: dict, policy: dict,
-                    locale_identity: dict, records_for_group: dict) -> dict:
+                    locale_identity: dict, records_for_group: dict,
+                    notes: dict | None = None) -> dict:
     """Current values for the inputs this plan can recompute; the rest are not compared.
 
     ``records_for_group`` holds the record already selected for each upstream stage, so
@@ -164,6 +165,11 @@ def _current_inputs(stage: str, group: dict, context: dict, anchor: dict, policy
                                                                       policy[role].get("reasoningEffort"))}
         if stage == "R" and "T" in records_for_group:
             values["draftTextSha256"] = records_for_group["T"]["outputs"].get("draftTextSha256")
+        note = (notes or {}).get(group["translationGroupId"])
+        if note:
+            # The operator directive is part of the prompt payload; without comparing it,
+            # the pre-directive record would stay "current" beside the new revision.
+            values["revisionSha256"] = records.json_sha256({"operatorRevision": note})
         return values
     if stage == "P":
         return {"languageReviewPolicySha256": locale_identity.get("languageReviewPolicySha256"),
@@ -195,9 +201,9 @@ def _current_inputs(stage: str, group: dict, context: dict, anchor: dict, policy
 
 
 def current_inputs(stage: str, group: dict, context: dict, anchor: dict, policy: dict,
-                   locale_identity: dict, records_for_group: dict) -> dict:
+                   locale_identity: dict, records_for_group: dict, notes: dict | None = None) -> dict:
     """The current input values ``evaluate`` compares (used by the merge, ``group_assembly``)."""
-    return _current_inputs(stage, group, context, anchor, policy, locale_identity, records_for_group)
+    return _current_inputs(stage, group, context, anchor, policy, locale_identity, records_for_group, notes)
 
 
 def _candidate_text(group: dict) -> str:

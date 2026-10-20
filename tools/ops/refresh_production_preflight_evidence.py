@@ -236,7 +236,7 @@ def build_commands(args: argparse.Namespace, paths: dict[str, Path]) -> dict[str
         ],
         "deployedWebrtcSession": [
             sys.executable,
-            "scripts/run_deployed_webrtc_session_smoke.py",
+            "tools/ops/run_deployed_webrtc_session_smoke.py",
             "--base-url",
             args.base_url,
             "--sunday",
@@ -292,7 +292,7 @@ def build_commands(args: argparse.Namespace, paths: dict[str, Path]) -> dict[str
         ],
         "serverRealtimeContract": [
             sys.executable,
-            "scripts/validate_server_realtime_contract.py",
+            "tools/ops/validate_server_realtime_contract.py",
             "--out",
             str(paths["serverRealtimeContract"]),
         ],
@@ -304,13 +304,13 @@ def build_commands(args: argparse.Namespace, paths: dict[str, Path]) -> dict[str
         ],
         "stableCorrectionContract": [
             sys.executable,
-            "scripts/validate_stable_correction_contract.py",
+            "tools/ops/validate_stable_correction_contract.py",
             "--out",
             str(paths["stableCorrectionContract"]),
         ],
         "live1130RunPlan": [
             sys.executable,
-            "scripts/write_1130_live_realtime_run_plan.py",
+            "tools/ops/write_1130_live_realtime_run_plan.py",
             "--sunday",
             args.sunday,
             "--base-url",
@@ -326,7 +326,7 @@ def build_commands(args: argparse.Namespace, paths: dict[str, Path]) -> dict[str
         ],
         "publicCaptionViewRuntime": [
             sys.executable,
-            "scripts/validate_public_caption_view_runtime.py",
+            "tools/ops/validate_public_caption_view_runtime.py",
             "--out",
             str(paths["publicCaptionViewRuntime"]),
         ],
@@ -354,7 +354,7 @@ def build_commands(args: argparse.Namespace, paths: dict[str, Path]) -> dict[str
         ],
         "localSundayManifestEvidence": [
             sys.executable,
-            "scripts/build_local_sunday_manifest_evidence.py",
+            "tools/ops/build_local_sunday_manifest_evidence.py",
             "--sunday",
             args.sunday,
             "--source-run-root",
@@ -368,7 +368,7 @@ def build_commands(args: argparse.Namespace, paths: dict[str, Path]) -> dict[str
         ],
         "gcsManifestPublishPlan": [
             sys.executable,
-            "scripts/plan_gcs_sunday_manifest_publish.py",
+            "tools/ops/plan_gcs_sunday_manifest_publish.py",
             "--sunday",
             args.sunday,
             "--local-root",
@@ -537,7 +537,7 @@ def production_go_live_sequence_command(args: argparse.Namespace, paths: dict[st
 def realtime_handoff_validation_command(paths: dict[str, Path]) -> list[str]:
     return [
         sys.executable,
-        "scripts/validate_realtime_handoff.py",
+        "tools/ops/validate_realtime_handoff.py",
         "--live-plan",
         str(paths["live1130RunPlan"]),
         "--operator-bundle",

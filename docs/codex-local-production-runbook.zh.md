@@ -64,6 +64,42 @@ QC 的 inputs v3 必须含实际 launcher 的非秘密 `openaiRoute`（schemaVer
 
 当前只有 Layer 1 producer 已进入生产 shadow；Layer 2–4 通用 producer 仍在迁移。新周次可以继续完成双 PDF 或 legacy 中文产物，但没有对应 canonical package 时必须报告具体范围，不得报告 `four_layer_release=complete`。一种 locale 失败不自动阻塞或批准其他 locale。
 
+### 逐组（DEV-GRP）操作入口（2026-10-20 起，部分）
+
+逐组流水线把每个 Layer 1 组（通常一句）从翻译到配音当作独立任务，只在发布前合并。入口是 `tools/ops/group_tasks.py`；配置是 `sermon-group-run-config-v1`：
+
+```json
+{"schemaVersion": "sermon-group-run-config-v1", "source": "english-source-package.json",
+ "anchor": "anchor-manifest.json", "locale": "ko", "policy": "policy.json",
+ "plugin": "plugin.py", "records": "run/groups", "work": "run/work", "merge": "run/merge"}
+```
+
+```bash
+python tools/ops/group_tasks.py status --config run.json          # 只读：每组每步状态 + layer3 进度
+python tools/ops/group_tasks.py run --config run.json --budget <budget.json>   # 只跑过期或点名的组
+python tools/ops/group_tasks.py redo --config run.json --group-id <id> --reason "…" --budget <budget.json>
+python tools/ops/group_tasks.py merge --config run.json [--affected <id> …]
+python tools/ops/group_tasks.py release-basis --config run.json --receipt <文本 QC/人审收据>
+python tools/ops/group_tasks.py prepare-l3 --config run.json --text-release-basis <收据> \
+  --adapter <adapter.json> --speaker-registry <registry.json> [--voice-authorization <收据>] --out <新目录>
+python tools/ops/group_tasks.py stages --config l3-stages.json --out <L3 输出目录> [--dry-run]
+python tools/ops/group_tasks.py plan --manifest <整篇产物清单> [--locale ko]   # 只读规划
+python tools/ops/group_tasks.py verify --manifest <整篇产物清单> --locale ko   # 只读：候选与逐组记录/插件收据一致
+```
+
+边界：
+
+- `run` 是一组一次 `run_accounted`，每次写新的 `attempt-NNNN` 轮目录；付费前必须用 `--budget`（逐组 `admit`）或显式 `--confirm-unbudgeted`。
+- `redo` 写一条 `sermon-group-directive-v1` 指令，理由进入 T/R prompt 与 `revisionSha256` 记录键；旧记录变 `stale`。指令不是内容批准。
+- `merge` 输出 candidate/evidence/language-review，放在 `merge/<locale>/<candidateSha256前16位>/`，`current.json` 指针原子切换；再次合并的变化组必须等于 `--affected`。第 4 步（校准）与第 7–10 步（渲染、排程/字幕、整轨、筛查/音频 QC、试听豁免）仍待接线。
+- `release-basis` 把现有文本 QC/校准或人审收据绑定到当前 candidate（校验 candidate/source/policy 哈希），写 `text-release.json`；它不创建 waiver、批准或披露。`prepare-l3` 发现已绑定的收据与传入的不同会拒绝。
+- `prepare-l3` 只调用现有 speech job producer；文本放行和声音授权由操作者提供，不在此创建或升级。
+- `stages` 的草案在 [`config/group-l3-stages.draft.json`](../config/group-l3-stages.draft.json)：它不是已验收配置，复制到目标运行旁、替换全部路径，并逐个核对 `produces` 是否是该运行真正写出的文件；先 `--dry-run`。
+- `stages` 的 `paths` 必须给 7 个输入文件；可选 `mergeDir` 指向当前合并目录时，运行后会在那里写一份最新 `l3-stages.json`（完整证据仍在 `--out`）。
+- `stages` 的 `paths` 必须给 7 个输入文件；`variables` 可声明 `locale`、`code`、`stageDir` 等字符串，在命令里用 `{变量名}` 引用；命令的工作目录是 `variables.repoRoot`（缺省为配置目录），所以仓库相对命令要设它。`produces` 必须写 producer 真正会生成的文件，否则按失败处理。
+- `stages` 按配置顺序执行第 7–9 步的现有 producer 命令（渲染、压缩/筛查、打包、音频 QC），每个 stage 绑定命令 SHA-256 并写 `stage-report.json`；非零退出或“成功但没产出 `produces`”都停止后续 stage。命令仍含未解析 `{placeholder}` 时在派发前拒绝。`--dry-run` 只计划。stage 可声明 `failures` 指向 producer 自己的汇总 JSON；失败时从 `failedGroups`/`failedGroupIds` 读出组 ID，写进 `stage-report.json` 的 `failedGroupIds` 与 `nextActions`，用于 `redo`。
+- 逐组记录、指令和合并产物都是中间证据，不能当发布批准。
+
 ### 本周中文配音策略（2026-09-27 起的新 job）
 
 用户听审 2026-09-20 的 POC 后，选择整句自然语速版，否决 40.67 秒的句内多段拼接版。新的 legacy 中文配音 job 绑定 `complete_chinese_sentence_natural_pace_v1`：按完整中文句子或已审稿中的完整分句建立 TTS 单元，每单元一次合成；禁止按英文词停顿把中文句内词组拆开，不做为了凑英文总时长的变速或时间拉伸。句间保留既有短停顿；英文原声的词级停顿只作为 Layer 1 参考和后续对齐证据，不直接成为中文合成切点。过长句子须回到文字审核选择自然断句，不能静默按词长切割。
@@ -113,6 +149,8 @@ shadow receipt 的 `ready_for_model_translation` 只表示自动锚点结构干�
 每次时间线、生成和配音运行自动追加阶段耗时、API Token 与费用估算；失败及缓存复用分别记录。交付时同时检查账本覆盖缺口，不把未知用量记为零。文件位置、汇总命令及费用口径见[流程记账说明](workflow-accounting.zh.md)。对话内审核／人工听审等进程外阶段另列未记录项，不用媒体时长代替执行时长。
 
 这些字段必须保存在本地 log 中，不能仅在对话结束时口头报告。每次完成或停止都保留执行摘要，并关联来源／版本、工作量、质量、审批、交付和恢复证据；尚未采集的指标明确注明。必记内容与现有采集边界见[日志内容规范](workflow-accounting.zh.md#已接入的指标与保留边界)。
+
+Layer 2 的每组耗时、恢复跑并行度和周投影诊断，按[周更运行配置的验收步骤](weekly-run-profile.zh.md#layer-2-本地开销与恢复并行真实运行怎么验收2026-10-20-改动)量，并与其中的 10-18 基线并列写进运行报告。
 
 排查最近一次执行：`.venv/bin/python scripts/sermon_logs.py artifacts/post-live-runs/YYYY-MM-DD/accounting --level WARNING`。需要完整事件去掉 `--level WARNING`；需要检查退出码加 `--check`。入口、阶段和子进程共享 `runId`，失败及业务等待状态保留在同一账本；详见[统一事件与错误追踪](workflow-accounting.zh.md#统一事件与错误追踪)。
 

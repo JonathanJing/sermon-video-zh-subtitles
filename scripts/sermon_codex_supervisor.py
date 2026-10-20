@@ -15,7 +15,7 @@ from scripts import sermon_agents_supervisor as guarded
 from scripts import sermon_end_to_end as workflow
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.compute import spark_admission
-from scripts.sermon_agents_api import AgentsAPIError, _write_json
+from tongxing_production.orchestration.supervisor.agents_api import AgentsAPIError, _write_json
 
 
 def session_report(args, config, instructions, decision_type, verify_decision, *, call_json=None):

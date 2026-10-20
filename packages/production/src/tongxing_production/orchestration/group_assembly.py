@@ -202,7 +202,7 @@ def _usable(record: dict, layer1: dict, locale: str, unit_ids: list[str], equiva
 
 def select(store: records.RecordStore, anchor: dict, policy: dict, layer1: dict, locale: str, plan: list[dict],
            identities: dict, *, resolutions: ResolutionStore | None = None,
-           equivalence_check: bool = False) -> dict[str, dict[str, dict]]:
+           equivalence_check: bool = False, notes: dict | None = None) -> dict[str, dict[str, dict]]:
     """One current, passing T, R and P record per group.
 
     A record counts only when its inputs and implementation match the current ones as
@@ -230,7 +230,7 @@ def select(store: records.RecordStore, anchor: dict, policy: dict, layer1: dict,
 
     def current(stage: str, group: dict, record: dict, upstream: dict, implementation: str | None) -> bool:
         values = group_plan.current_inputs(stage, group, contexts[group["translationGroupId"]], anchor, policy,
-                                           locale_identity, upstream)
+                                           locale_identity, upstream, notes)
         return not group_plan.evaluate(record, layer1, values, implementation)["reasons"]
 
     def attempt_is_current(stage: str, group: dict, record: dict) -> bool:
@@ -238,7 +238,7 @@ def select(store: records.RecordStore, anchor: dict, policy: dict, layer1: dict,
         if stage in {"T", "R"}:
             return current(stage, group, record, {}, runner)
         english = group_plan.current_inputs("T", group, contexts[group["translationGroupId"]], anchor, policy,
-                                            locale_identity, {})["englishUnitsSha256"]
+                                            locale_identity, {}, notes)["englishUnitsSha256"]
         expected = {"languageReviewPolicySha256": identities["languageReviewPolicySha256"],
                     "englishUnitsSha256": english}
         return not group_plan.evaluate(record, layer1, expected, identities["pluginImplementationSha256"])["reasons"]
@@ -283,7 +283,7 @@ def select(store: records.RecordStore, anchor: dict, policy: dict, layer1: dict,
         draft, review = pairs[0]
         target = review["outputs"]["targetTextSha256"]
         english = group_plan.current_inputs("T", group, contexts[group_id], anchor, policy, locale_identity,
-                                            {})["englishUnitsSha256"]
+                                            {}, notes)["englishUnitsSha256"]
         expected = {"languageReviewPolicySha256": identities["languageReviewPolicySha256"],
                     "englishUnitsSha256": english, "targetTextSha256": target}
         plugins = [record for record in usable["P"] if not group_plan.evaluate(
@@ -309,7 +309,7 @@ def legacy_contexts(anchor: dict, plan: list[dict]) -> dict[str, dict]:
 def assemble(source: dict, anchor: dict, policy: dict, request: dict, rule_receipt: dict | None,
              plugin_path: Path, store: records.RecordStore, payloads: PayloadStore, *,
              resolutions: ResolutionStore | None = None, runner_implementation_sha256: str | None = None,
-             equivalence_check: bool = False) -> dict[str, Any]:
+             equivalence_check: bool = False, notes: dict | None = None) -> dict[str, Any]:
     """Evidence, plugin receipt and candidate from the records, plus a manifest of what was used.
 
     The runner identity defaults to this checkout's ``RUNNER_PRODUCTION_IDENTITY_SHA256``;
@@ -330,7 +330,7 @@ def assemble(source: dict, anchor: dict, policy: dict, request: dict, rule_recei
     identities = {"runnerImplementationSha256": runner, "pluginImplementationSha256": plugin_sha,
                   "languageReviewPolicySha256": review_policy_sha}
     chosen = select(store, anchor, policy, layer1, locale, plan, identities, resolutions=resolutions,
-                    equivalence_check=equivalence_check)
+                    equivalence_check=equivalence_check, notes=notes)
     rows = []
     for group in plan:
         review = chosen[group["translationGroupId"]]["R"]

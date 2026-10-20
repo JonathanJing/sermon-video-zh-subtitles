@@ -1,0 +1,17 @@
+### chunk 0 (26 files)
+307 passed, 275 subtests passed in 638.31s (0:10:38)
+exit 0
+### chunk 1 (27 files)
+411 passed, 1 skipped, 233 subtests passed in 770.03s (0:12:50)
+exit 0
+### chunk 2 (27 files)
+E       AttributeError: module 'tongxing_production.compute.transports.codex_resources' has no attribute 'contracts'
+FAILED tests/test_codex_shared_pool_transport.py::test_busy_before_started_is_proven_no_dispatch
+1 failed, 422 passed, 388 subtests passed in 1264.40s (0:21:04)
+exit 1
+### chunk 3 (26 files)
+374 passed, 736 subtests passed in 773.10s (0:12:53)
+exit 0
+### chunk 3 first attempt: killed (exit 143) by an over-broad pkill; rerun above
+### post-rebase key tests (16 files)
+259 passed, 713 subtests passed in 100.68s (0:01:40)

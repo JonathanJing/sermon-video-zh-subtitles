@@ -353,7 +353,9 @@ def layer2_records(locale: str, groups: list[dict], rounds: list[Path]) -> dict[
             if reviewed is None or translator_text(load_json(files["astra"]).get("result") or {}, group) is None:
                 continue
             latest[group["translationGroupId"]] = (Path(root), files)
-            if reviewed[0] == joined_text(group["targetUtterances"]):
+            # Without a candidate (the per-group worker reads its own fresh round) the
+            # latest round decides; with one, only a round that produced its text does.
+            if "targetUtterances" not in group or reviewed[0] == joined_text(group["targetUtterances"]):
                 chosen[group["translationGroupId"]] = (Path(root), files)
     chosen = {**latest, **chosen}
     # A translator reply whose review never ran (the round stopped first) still gives T,

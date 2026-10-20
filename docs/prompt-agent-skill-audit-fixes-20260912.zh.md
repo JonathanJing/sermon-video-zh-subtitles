@@ -11,7 +11,7 @@
 | P2 上下文冲突 | [content pack](../experiments/local-live-poc/backend/content_pack.py)只注入当前源文匹配的已审术语/经文，同词高相关项优先；保留 cursor 与参考片段顺序、来源信息及 A0。 |
 | P2 exact-only 文档冲突 | [POC AGENTS](../experiments/local-live-poc/AGENTS.md)按已有 DESIGN/README 明确受限 A2 参考例外：最多两条、分数至少 1.5、已审且只作另一版本参考；不代表现场验收。 |
 | P2 fallback 重提取 | [SKILL](../skills/live-caption-zh-fallback/SKILL.md)优先从已有报告构建预览；新来源使用独立目录。自动发现 VOD 也要核实同篇与偏移。已有文件单独上传，不为发布再次提取。 |
-| P2 部分字幕误报 ready | [翻译](../scripts/translate_playback_with_openai.py)与[稳定化](../scripts/stabilize_realtime_deltas_with_openai.py)校验重复/未知 ID 与非空文本。缺失 cue 保留部分产物，状态 `partial`，CLI 返回 3 且不自动发布。翻译续跑使用 raw cue ID，不使用展示层重分段 ID；模型不能改写输入经文/注释。 |
+| P2 部分字幕误报 ready | [翻译](../tools/ops/translate_playback_with_openai.py)与[稳定化](../tools/ops/stabilize_realtime_deltas_with_openai.py)校验重复/未知 ID 与非空文本。缺失 cue 保留部分产物，状态 `partial`，CLI 返回 3 且不自动发布。翻译续跑使用 raw cue ID，不使用展示层重分段 ID；模型不能改写输入经文/注释。 |
 | P2 单篇审校规则 | [旧审校工具](../scripts/review_sermon_subtitles_with_openai.py)移除固定讲员、经文表、按 ID 覆盖及固定 1545 秒偏移；保留原始英文。绝对时间导出须传已核实的 `--sermon-start-seconds`，省略则仅导出相对字幕。人名消歧限于明确身份上下文。缓存绑定完整请求内容，校验通过后才写入。 |
 | P2 过期定时说明 | [中文 Supervisor 文档](sermon-production-supervisor-agent.zh.md)区分 2026-09-11 初查与后续创建回执；判断当前健康须另读实时状态，不能按旧说明重复创建。 |
 | P3 文档测试范围 | [iOS AGENTS](../apps/tongxing-ios/AGENTS.md)拆开文档与 CLI 验证，纯文档不再触发 Xcode dry-run。 |

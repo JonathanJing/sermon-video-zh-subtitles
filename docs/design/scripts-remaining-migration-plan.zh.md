@@ -133,6 +133,13 @@ R1 #1185、#1186，R2 #1189，R3 #1191，R4 #1187 已合并，运行报告分别
 
 dual_pdf 附属（R10）单独做一次 dual_pdf 身份换代，不在这四批里。
 
+**N2 结果（2026-10-20）。** 6 个文件迁出 5 个，原路径都留了门面：
+
+- `sermon_decision_accounting`、`sermon_bounded_decision`、`sermon_repair_planning`、`sermon_agents_api` 进 `orchestration/supervisor/`。前三个不放 `review/`，因为它们直接或间接导入 `orchestration.jobs._digest`，而 `review/` 不得导入 `orchestration/`（`test_layers_import_only_upstream`）；
+- `live_source_monitor` 进 `workflows/dual_pdf/`，不进 `orchestration/supervisor/`：它要用 Secret Manager、GCS 和日志函数，包里只有 dual_pdf 宿主记录带 `ports.Cloud`、`ports.Observability`，而 `orchestration/` 不得导入 `workflows/`。
+
+`sermon_production_supervisor` 留在 `scripts/`：它导入 `backend.leases`（`LeaseGuard`、`acquire_lease`、`release_lease`），宿主没有对应端口，包内又不得导入 `backend`；补端口要改宿主，所以并入 D-5 窗口，或者先把 `backend/leases.py` 迁进 `storage/` 并在原处留门面。它还导入 `workflows.dual_pdf`，所以目标应是 `workflows/` 而不是 `orchestration/`。`backend/app.py` 照旧导入 `scripts.live_source_monitor` 和 `scripts.sermon_production_supervisor`，不用改 Dockerfile，也不用重新部署。`dual_pdf` 宿主记录里的 `Unmoved.live_source_monitor` 字段要等闭包窗口改宿主时再删。
+
 **N3 结果（2026-10-20）。** 先用真实的哈希函数核对了 4 个经文与术语文件。它们都不进冻结翻译 policy：policy 只哈希术语表 `docs/series-terminology.zh.md`（`text/policy.py:87`）和插件实现（`text/candidate.py:58` 的 `plugin_implementation_sources()`，54 个来源文件里经文只有 `cuv_scripture`、`build_scripture_index`）。它们也不在豁免闭包（`review/waiver.py` 的 `IMPLEMENTATION_PHYSICAL_FILES`，也就是 `implementation_freeze.closure_files()`）、G1 的传输、计分、语速闭包或 `path_aliases` 的键里。18 个已冻结的 15030286 policy 在迁移前后都通过 `validate_policy`，哈希不变。但它们的字节进了另外两个身份，所以都留在 `scripts/`：
 
 | 文件 | 哈希位置 | 为什么不能留门面迁移 |

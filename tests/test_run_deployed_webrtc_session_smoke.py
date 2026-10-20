@@ -5,7 +5,7 @@ from argparse import Namespace
 from pathlib import Path
 from urllib.error import HTTPError
 
-import scripts.run_deployed_webrtc_session_smoke as mod
+import tools.ops.run_deployed_webrtc_session_smoke as mod
 
 
 class DeployedWebrtcSessionSmokeTest(unittest.TestCase):

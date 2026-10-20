@@ -7,10 +7,10 @@ An interrupted/unknown outcome requires reconciliation; it never resets budget.
 import os
 from pathlib import Path
 
-from scripts import sermon_bounded_decision as decision
+from tongxing_production.orchestration.supervisor import bounded_decision as decision
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.orchestration import jobs
-from scripts.sermon_decision_accounting import Observation
+from tongxing_production.orchestration.supervisor.decision_accounting import Observation
 from tongxing_production.observability.accounting import AccountingWriteError
 from scripts.sermon_release_workflow import _safe_path
 

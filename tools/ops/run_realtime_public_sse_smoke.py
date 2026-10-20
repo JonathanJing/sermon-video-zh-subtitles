@@ -19,16 +19,14 @@ EXPECTED_MODEL = "gpt-realtime-translate"
 EXPECTED_TARGET_LANGUAGE = "zh"
 EXPECTED_AUDIO_SOURCE_KIND = "ipad_mic"
 
-if __package__ in (None, ""):  # run directly from tools/ops: reach the scripts/ siblings
-    sys.path.insert(0, str(REPO_ROOT / "scripts"))
-try:
+try:  # run directly from tools/ops, the sibling is on sys.path
     from validate_realtime_session import (  # type: ignore
         parse_jsonl,
         read_text as read_validation_text,
         validate_realtime_session,
     )
 except ModuleNotFoundError:
-    from scripts.validate_realtime_session import (  # type: ignore
+    from tools.ops.validate_realtime_session import (  # type: ignore
         parse_jsonl,
         read_text as read_validation_text,
         validate_realtime_session,

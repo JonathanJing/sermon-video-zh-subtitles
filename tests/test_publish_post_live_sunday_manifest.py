@@ -7,7 +7,7 @@ from argparse import Namespace
 from pathlib import Path
 
 
-SCRIPT_PATH = Path(__file__).resolve().parents[1] / "scripts" / "publish_post_live_sunday_manifest.py"
+SCRIPT_PATH = Path(__file__).resolve().parents[1] / "tools" / "ops" / "publish_post_live_sunday_manifest.py"
 SPEC = importlib.util.spec_from_file_location("publish_post_live_sunday_manifest", SCRIPT_PATH)
 mod = importlib.util.module_from_spec(SPEC)
 assert SPEC.loader is not None

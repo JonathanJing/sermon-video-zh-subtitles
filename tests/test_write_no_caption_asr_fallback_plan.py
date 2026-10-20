@@ -26,9 +26,9 @@ class WriteNoCaptionAsrFallbackPlanTest(unittest.TestCase):
         self.assertIn("validate_production_readiness.py", commands)
         self.assertIn("--input", commands)
         self.assertNotIn("--playback-js", " ".join(" ".join(command) for command in report["commands"][:4]))
-        translate_command = next(command for command in report["commands"] if "scripts/translate_playback_with_openai.py" in command)
+        translate_command = next(command for command in report["commands"] if "tools/ops/translate_playback_with_openai.py" in command)
         playback_js = "artifacts/evidence/2026-06-28-no-caption-asr-route/web/playback-simulation.generated.js"
-        prepare_command = next(command for command in report["commands"] if "scripts/prepare_live_link_playback.py" in command)
+        prepare_command = next(command for command in report["commands"] if "tools/ops/prepare_live_link_playback.py" in command)
         self.assertEqual(
             prepare_command[prepare_command.index("--out-dir") + 1],
             "artifacts/evidence/2026-06-28-no-caption-asr-route/artifacts",
@@ -48,7 +48,7 @@ class WriteNoCaptionAsrFallbackPlanTest(unittest.TestCase):
         self.assertEqual(translate_command[translate_command.index("--input") + 1], playback_js)
         self.assertEqual(translate_command[translate_command.index("--out") + 1], playback_js)
         self.assertIn("--api-key-secret", translate_command)
-        export_command = next(command for command in report["commands"] if "scripts/export_playback_captions.py" in command)
+        export_command = next(command for command in report["commands"] if "tools/ops/export_playback_captions.py" in command)
         self.assertEqual(export_command[export_command.index("--input") + 1], playback_js)
         self.assertEqual(export_command[export_command.index("--stem") + 1], "sermon.zh.live-aligned")
         self.assertEqual(

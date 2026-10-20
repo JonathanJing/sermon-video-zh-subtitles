@@ -1,0 +1,45 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261020-scripts-n2-local",
+  "runs": [
+    {
+      "label": "scripts-n2-local",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.claude/worktrees/kind-poitras-a1f6f0/artifacts/scripts-n2-local",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "scripts-n2-local",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 786,
+      "truncated": false,
+      "sha256": "ab97daf25d8b31835c45cc0f73ee17b305d3fc9c866a1e0d13f81ab81ef90371",
+      "redactions": {}
+    },
+    {
+      "run": "scripts-n2-local",
+      "path": "pytest.log",
+      "kind": "log",
+      "bytes": 739,
+      "truncated": false,
+      "sha256": "dae6262767fd0dae22291201311093c9a73fd541f2a7b9091214c375fd9dec4b",
+      "redactions": {}
+    },
+    {
+      "run": "scripts-n2-local",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 1465,
+      "truncated": false,
+      "sha256": "3b55125c7a16ff61474b664211458eab62853415a39003046c3bf84d691e8e60",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

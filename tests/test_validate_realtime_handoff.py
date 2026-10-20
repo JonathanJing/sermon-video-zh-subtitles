@@ -4,7 +4,7 @@ import unittest
 from argparse import Namespace
 from pathlib import Path
 
-import scripts.validate_realtime_handoff as mod
+import tools.ops.validate_realtime_handoff as mod
 
 
 class ValidateRealtimeHandoffTest(unittest.TestCase):
@@ -164,7 +164,7 @@ def live_plan(*, remove_browser_evidence=False, remove_asr_model=False):
                 "expectedAudioSourceKinds": ["authorized_audio_url", "authorized_audio_file", "authorized_youtube_source"],
                 "command": [
                     "python3",
-                    "scripts/run_realtime_live_session.py",
+                    "tools/ops/run_realtime_live_session.py",
                     "--realtime-model",
                     "gpt-realtime-translate",
                     "--stable-model",
@@ -181,7 +181,7 @@ def live_plan(*, remove_browser_evidence=False, remove_asr_model=False):
             ],
             [
                 "python3",
-                "scripts/validate_realtime_session.py",
+                "tools/ops/validate_realtime_session.py",
                 "--expected-model",
                 "gpt-realtime-translate",
                 "--expected-stable-model",
@@ -251,9 +251,9 @@ def go_live_sequence(live, *, remove_asr_stage=False, incomplete_asr_stage=False
             ],
             "expandedCommands": [
                 ["python3", "tools/ops/run_offline_archive_preflight.py", "--asr-model", "gpt-4o-transcribe"],
-                ["python3", "scripts/prepare_live_link_playback.py", "--asr-model", "gpt-4o-transcribe"],
-                ["python3", "scripts/translate_playback_with_openai.py", "--model", "gpt-5.4-mini"],
-                ["python3", "scripts/export_playback_captions.py", "--stem", "sermon.zh.live-aligned"],
+                ["python3", "tools/ops/prepare_live_link_playback.py", "--asr-model", "gpt-4o-transcribe"],
+                ["python3", "tools/ops/translate_playback_with_openai.py", "--model", "gpt-5.4-mini"],
+                ["python3", "tools/ops/export_playback_captions.py", "--stem", "sermon.zh.live-aligned"],
                 [
                     "python3",
                     "scripts/validate_offline_chain.py",
