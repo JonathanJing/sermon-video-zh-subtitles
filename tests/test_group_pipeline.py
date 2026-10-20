@@ -169,6 +169,7 @@ class GroupPipelineTests(unittest.TestCase):
         self.assertEqual(receipt["schemaVersion"], group_pipeline.L3_PREPARATION_SCHEMA)
         self.assertTrue((out / "job.json").is_file())
         self.assertTrue((out / "l3-preparation.json").is_file())
+        self.assertTrue((merge_root / "l3-preparation.json").is_file())
         self.assertEqual(receipt["speechJobStatus"], "prepared_adapter_validation_required")
         self.assertEqual(receipt["pendingSteps"][0], "formal_render")
         self.assertFalse(receipt["releaseEligible"])

@@ -196,7 +196,11 @@ def prepare_l3(config: dict, *, text_basis: Path, adapter: Path, registry: Path,
                          "screening_and_audio_qc", "listening_waiver"],
         "releaseEligible": False, "humanApproval": False,
     }
-    _write_once(out / "l3-preparation.json", (json.dumps(receipt, ensure_ascii=False, indent=1) + "\n").encode("utf-8"))
+    data = (json.dumps(receipt, ensure_ascii=False, indent=1) + "\n").encode("utf-8")
+    _write_once(out / "l3-preparation.json", data)
+    # Keep the receipt beside the candidate it prepares, so the merge directory shows
+    # how far this locale got without reading the operator's job directory.
+    _write_once(directory / "l3-preparation.json", data)
     return receipt
 
 
