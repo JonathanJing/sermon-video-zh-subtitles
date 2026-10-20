@@ -55,7 +55,7 @@ The repository's `requirements.txt` already includes `requests` for this path.
 
 | Module | Old path | Since |
 |---|---|---|
-| `tongxing_production.compute.provider_limits` | `scripts/sermon_provider_limits.py` (facade kept) | 2026-10-15 |
+| `tongxing_production.compute.provider_limits` | `scripts/sermon_provider_limits.py` (facade removed in the D-5 closure window) | 2026-10-15 |
 | `tongxing_production.orchestration.unified` (`contracts`, `adapters`, `resources`, `runtime`, `backend`) | `scripts/sermon_unified/` (facade kept: binds the `Backend` and aliases the four modules) | 2026-10-15 |
 
 ## Injected collaborators

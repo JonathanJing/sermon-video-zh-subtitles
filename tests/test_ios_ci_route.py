@@ -97,7 +97,7 @@ class IOSRouteTest(unittest.TestCase):
             ("schemas/sermon-target-language-release-package-v2.schema.json", "contract"),
             ("schemas/sermon-weekly-catalog-v1.schema.json", "contract"),
             ("packages/production/src/tongxing_production/adapters/legacy/assemble_multilingual_v3_update.py", "contract"),
-            ("scripts/build_full_video_app_release.py", "contract"),
+            ("packages/production/src/tongxing_production/delivery/app_release.py", "contract"),
             ("packages/production/src/tongxing_production/delivery/formal_assets.py", "contract"),
             ("packages/production/src/tongxing_production/delivery/contract.py", "contract"),
             ("packages/production/src/tongxing_production/adapters/legacy/assemble_multilingual_hosting.py", "contract"),

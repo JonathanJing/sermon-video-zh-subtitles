@@ -50,7 +50,8 @@
 `accounting_session` 管理运行身份，`stage` 管理阶段与父子 span，`record_log` 用固定事件 code 记录业务状态。新字段仍属于 v2 的可选扩展，既有 v1/v2 字节不改写。事件携带 UTC 时间、进程／线程 ID、运行／流程／阶段 ID；独立线程会话使用各自上下文，主线程启动的子进程通过环境变量继承关联。若从 worker 线程启动子进程，需要显式传递该 worker 的会话环境，不能假设主线程环境属于该 worker。
 
 ```python
-from scripts.sermon_accounting import accounting_session, stage, record_log
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.observability.accounting import accounting_session, stage, record_log
 
 with accounting_session(work / "accounting", "weekly_task", {"sunday": sunday}):
     with stage("validate_inputs"):

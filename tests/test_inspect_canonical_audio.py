@@ -4,7 +4,7 @@ import unittest
 
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.audio import inspect as subject
-from scripts import inspect_canonical_packages as packages
+from tongxing_production.delivery import inspect_canonical_packages as packages
 from tongxing_production.audio import human_review as review
 from tongxing_production.source import english_source_package as english
 from tests import test_build_target_language_audio_package as fixtures

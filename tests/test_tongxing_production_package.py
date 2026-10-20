@@ -155,11 +155,12 @@ class ProductionPackageTests(unittest.TestCase):
         self.assertIs(backend.current().stage, stages.load)
 
     def test_scripts_facade_is_the_package_module(self):
-        from scripts import sermon_provider_limits as facade
-        from tongxing_production.compute import provider_limits as implementation
+        # One of the facades the dual_pdf identity still pins (facade plan section 7 (c)).
+        from scripts import sermon_pipeline as facade
+        from tongxing_production.workflows.dual_pdf import pipeline as implementation
         self.assertIs(facade, implementation)
-        self.assertIs(sys.modules["scripts.sermon_provider_limits"], implementation)
-        self.assertEqual(implementation.SCHEMA, "sermon-openai-chat-request-limits-v1")
+        self.assertIs(sys.modules["scripts.sermon_pipeline"], implementation)
+        self.assertTrue(callable(implementation.chat_json))
 
     def test_layer2_models_alias_and_editable_path_use_this_checkout(self):
         from tongxing_production import path_aliases

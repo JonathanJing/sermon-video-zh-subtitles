@@ -170,7 +170,7 @@ class DeliveryPortsTests(unittest.TestCase):
         # tongxing_host.EAGER_PRODUCER_IMPORTS), which reaches the waiver release
         # basis as it did before the move; it must not load Layer 4 itself.
         code = ("import sys; from scripts import tongxing_host; "
-                "loaded = [m for m in ('scripts.build_full_video_app_release', 'tongxing_production.delivery.publication', "
+                "loaded = [m for m in ('tongxing_production.delivery.publication', "
                 "'tongxing_production.delivery.baseline', 'tongxing_production.delivery.app_release', "
                 "'tongxing_production.delivery.formal_stage', 'tongxing_production.delivery.formal_assets', "
                 "'tongxing_production.review.audio_waiver_acceptance', 'tongxing_production.delivery.unified_stage', "
@@ -191,7 +191,7 @@ class DeliveryPortsTests(unittest.TestCase):
         self.assertTrue(legacy.firebase_config('dev-preview/dev-preview-label.mjs').is_file())
         weekly = legacy.weekly_release()
         self.assertEqual(Path(weekly.__file__).resolve(), host.ROOT / 'experiments/sermon-dubbing-poc/weekly_release.py')
-        from scripts import stage_voice_demo_dev
+        from tools.ops import stage_voice_demo_dev
         self.assertIs(legacy.voice_demo(), stage_voice_demo_dev)
 
     def test_legacy_poster_renderer_ships_with_the_package(self):

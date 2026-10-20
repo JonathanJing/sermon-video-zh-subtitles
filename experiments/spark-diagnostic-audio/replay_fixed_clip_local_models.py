@@ -143,7 +143,7 @@ def fixed_groups(evidence, media):
 
 
 def speaker_context(registry_path, checkpoint_map_path, target_locale='zh-Hans'):
-    from scripts import render_multilingual_voice_demos as demos
+    from tools.ops import render_multilingual_voice_demos as demos
     registry, mapping = read(registry_path), read(checkpoint_map_path)
     require(registry.get('schemaVersion') == 'sermon-speaker-voice-registry-v1' and
             mapping.get('schemaVersion') == 'sermon-speaker-checkpoint-map-v1', 'unsupported_voice_registry')

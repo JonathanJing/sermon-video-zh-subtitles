@@ -39,7 +39,7 @@ def cache_replay(inputs, source_media, out, forbidden):
     from tongxing_production.text import models
     from tongxing_production.text import candidate as producer
     from tongxing_production.text import policy as policies
-    from scripts.sermon_workflow_evidence import collect_workflow_evidence
+    from tongxing_production.observability.workflow_evidence import collect_workflow_evidence
     from scripts import tongxing_host  # noqa: F401  binds the production package ports
     report = {'scope': 'new_deterministic_replay_of_historical_paid_results_not_new_inference', 'locales': []}
     with accounting.accounting_session(out/'accounting', 'real_clip_trilingual_cached_replay', {'mode':'dry_run'}):
@@ -74,7 +74,7 @@ def cache_replay(inputs, source_media, out, forbidden):
 
 
 def local_asr(source, model, window, out):
-    from scripts import sermon_local_model_observation as observation
+    from tongxing_production.observability import local_model_observation as observation
     report={'scope':'new_local_decode_and_experimental_asr_not_formal_stage1','sourceMediaSha256':sha(source),
             'inputBytes':source.stat().st_size,'modelCacheSnapshot':model.name,'requestedModel':'mlx-community/whisper-large-v3-turbo-q4'}
     with accounting.accounting_session(out/'accounting','real_clip_local_asr_diagnostic',{'mode':'dry_run'}):
@@ -105,7 +105,7 @@ def local_asr(source, model, window, out):
 def audio_validation(inputs, out):
     from scripts import tongxing_host  # noqa: F401  binds the production package ports
     from tongxing_production.audio import inspect as audio
-    from scripts import inspect_canonical_packages as packages
+    from tongxing_production.delivery import inspect_canonical_packages as packages
     from tongxing_production.audio import package as builder
     from tongxing_production.observability.workflow_evidence import collect_workflow_evidence
     report={'scope':'new_read_only_validation_of_historical_audio_and_reviews_not_new_tts_or_human_signoff','locales':[]}

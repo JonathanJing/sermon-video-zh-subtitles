@@ -203,7 +203,7 @@ class ObservabilitySufficiencyTests(unittest.TestCase):
         self.assertEqual(run['status'], 'partial')
 
     def test_local_model_identity_keeps_provider_usage_not_applicable(self):
-        from scripts import sermon_local_model_observation as local
+        from tongxing_production.observability import local_model_observation as local
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             with accounting.accounting_session(root, 'local-test'):

@@ -13,7 +13,7 @@ from .. import ports
 class Legacy:
     """Host pieces only the legacy v2/v3 adapters (adapters/legacy) use; never four-product delivery."""
     weekly_release: Callable[[], ModuleType]   # experiments/sermon-dubbing-poc/weekly_release: the v1 weekly catalog
-    voice_demo: Callable[[], ModuleType]       # scripts.stage_voice_demo_dev: the Dev voice-demo overlay
+    voice_demo: Callable[[], ModuleType]       # tools/ops/stage_voice_demo_dev: the Dev voice-demo overlay
     firebase_config: Callable[[str], Path]     # firebase/<name>: checked-in Hosting overlay templates
 
 
@@ -24,7 +24,7 @@ class Unmoved:
     Each accessor returns the host's module at call time; it disappears when that
     module moves into delivery/ and its callers import it directly.
     """
-    app_release: Callable[[], ModuleType]       # scripts.build_full_video_app_release (D2): verified_assets, runtime web files
+    app_release: Callable[[], ModuleType]       # delivery.app_release (D2): verified_assets, runtime web files
     formal_stage: Callable[[], ModuleType]        # stage_formal_multilingual_dev (D2): canonical_sha, file_sha, reviewed_candidate, decode_audio
     execution_harness: Callable[[], ModuleType]   # sermon_execution_harness: WorkAlreadyRunning
 

@@ -23,7 +23,7 @@ from tongxing_production.compute import transcription_request as sermon_transcri
 from tongxing_production.text import human_ruling
 from tongxing_production.compute import qc_audio_transports as audio_transports
 from tongxing_production.review import waiver
-from scripts import prepare_target_language_speech_job as handoff
+from tongxing_production.audio import speech_job as handoff
 from tongxing_production.text import candidate
 from tongxing_production.compute import spark_admission as production_spark_admission
 from tongxing_production.compute import spark_exclusive_session
@@ -35,7 +35,7 @@ from scripts import sermon_production_supervisor as supervisor
 from tongxing_production.source import sentence_interpretation as interpretation
 from tongxing_production.source import budget as source_budget
 from tongxing_production.source import text_review
-from scripts import study_artifacts
+from tongxing_production.delivery import study_artifacts
 from tongxing_production.audio import predicted_schedule as predicted
 from tongxing_production.text import policy
 from tongxing_production import ports
@@ -206,15 +206,15 @@ class ReviewPortsTests(unittest.TestCase):
         # The host still loads what the moved producers imported at load time
         # (tongxing_host.EAGER_PRODUCER_IMPORTS), which reaches part of the waiver
         # closure as before; the review binding must not load anything more.
-        lazy = ('layer2_human_ruling', 'english_source_judge_cache',
-                'run_sentence_interpretation_models', 'sermon_production_supervisor', 'cuv_scripture',
-                'scripture_editions', 'english_scripture_coverage', 'scripture_candidate_queue', 'export_run_digest',
-                'sermon_codex_transport', 'spark_exclusive_session')
+        lazy = ('scripts.sermon_production_supervisor', 'scripts.cuv_scripture', 'scripts.scripture_editions',
+                'scripts.english_scripture_coverage', 'scripts.scripture_candidate_queue',
+                'tongxing_production.text.human_ruling', 'tongxing_production.source.english_source_judge_cache',
+                'tongxing_production.source.sentence_interpretation_models', 'tools.development.export_run_digest',
+                'tongxing_production.compute.transports.codex_cli', 'tongxing_production.compute.spark_exclusive_session',
+                'tongxing_production.audio.predicted_schedule', 'tongxing_production.audio.renderer',
+                'tongxing_production.compute.qc_audio_transports')
         code = ("import sys; from scripts import tongxing_host; "
-                f"print([m for m in {lazy!r} if 'scripts.' + m in sys.modules]"
-                " + [m for m in ('tongxing_production.compute.spark_exclusive_session',"
-                " 'tongxing_production.audio.predicted_schedule', 'tongxing_production.audio.renderer',"
-                " 'tongxing_production.compute.qc_audio_transports') if m in sys.modules])")
+                f"print([m for m in {lazy!r} if m in sys.modules])")
         result = subprocess.run([sys.executable, '-c', code], cwd=host.ROOT, capture_output=True, text=True, timeout=60)
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertEqual(result.stdout.strip(), '[]')

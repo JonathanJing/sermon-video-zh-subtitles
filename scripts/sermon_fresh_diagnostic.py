@@ -91,8 +91,8 @@ def preload_execution_modules(plugin_paths=()):
     for name in ('tongxing_production.observability.workflow_evidence','sermon_diagnostic_delivery_preflight','sermon_dev_diagnostic_snapshot',
                  'sermon_native_preview_runtime','sermon_strict_candidate_bridge','sermon_strict_controller',
                  'sermon_strict_budget_adapter','sermon_strict_locale','tongxing_production.audio.speech_job',
-                 'tongxing_production.audio.renderer','render_multilingual_voice_demos',
-                 'tongxing_production.audio.unit_integrity','sermon_local_model_observation',
+                 'tongxing_production.audio.renderer','tools.ops.render_multilingual_voice_demos',
+                 'tongxing_production.audio.unit_integrity','tongxing_production.observability.local_model_observation',
                  'tongxing_production.observability.model_call_report','tongxing_production.observability.model_call_observation','tongxing_production.compute.openai_runtime',
                  'sermon_trace_artifacts','tongxing_production.text.review_diagnostics','sermon_preview_checkpoint_manifest',
                  'sermon_fresh_source_evidence','sermon_historical_layer2','sermon_historical_native_seed','sermon_historical_identity','tongxing_production.source.producer_compatibility','tongxing_production.source.failure'):

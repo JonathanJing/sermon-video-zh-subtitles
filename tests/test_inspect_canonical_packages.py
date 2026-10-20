@@ -4,7 +4,7 @@ from pathlib import Path
 import tempfile
 import unittest
 
-from scripts import inspect_canonical_packages as inspect
+from tongxing_production.delivery import inspect_canonical_packages as inspect
 from tongxing_production.text import human_review as review
 from tests import test_produce_target_language_candidate as fixtures
 from tests import test_build_english_source_package as source_fixtures

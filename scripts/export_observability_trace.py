@@ -14,7 +14,7 @@ if __package__ in {None, ''}:
 from tongxing_production.observability import accounting
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.observability import cache_observation as cache
-from scripts import sermon_local_model_observation as local_model
+from tongxing_production.observability import local_model_observation as local_model
 from tongxing_production.orchestration.supervisor import decision_accounting as decision
 from tongxing_production.observability import workflow_evidence as evidence
 from scripts import weekly_pipeline_report as weekly

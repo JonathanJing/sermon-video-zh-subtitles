@@ -12,7 +12,7 @@ from tongxing_production.review import contracts as c
 from scripts import sermon_diagnostic_provider as provider
 from tongxing_production.review import review_budget as budget
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
-from scripts import sermon_diagnostic_attempts as attempts, sermon_accounting as accounting, sermon_log_profile as profile
+from scripts import sermon_diagnostic_attempts as attempts
 from tongxing_production.observability import accounting
 from tongxing_production.observability import profile
 from tongxing_production.text import policy as policies

@@ -14,7 +14,7 @@ from scripts import codex_layer2_diagnostic as diagnostic
 from tongxing_production.compute.transports import codex_cli as codex
 from tongxing_production.observability import accounting
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
-from scripts import study_artifacts
+from tongxing_production.delivery import study_artifacts
 from tongxing_production.workflows.prepared import study_generation as generation
 import diagnostic_audio_inputs as admission
 from scripts.sermon_execution_harness import work_lock

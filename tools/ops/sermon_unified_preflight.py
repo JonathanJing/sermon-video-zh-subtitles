@@ -14,7 +14,7 @@ if __package__ in {None, ''}:
 
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.text import controller as layer2
-from scripts import inspect_canonical_packages as packages
+from tongxing_production.delivery import inspect_canonical_packages as packages
 from tongxing_production.compute import api_concurrency as capacity
 from tongxing_production.orchestration import jobs
 

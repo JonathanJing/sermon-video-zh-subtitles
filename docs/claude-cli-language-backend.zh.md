@@ -1,6 +1,6 @@
 # Claude CLI 语言调用后端（候选）
 
-2026-10-08。`scripts/claude_layer2_transport.py` 用本机 Claude Code CLI 的订阅登录做 Layer 2 语言调用，接口与 `CodexLayer2Transport` 相同（`transport('', payload)` 返回带 `content`、`usage`、`elapsedSeconds` 的响应）。这是实验候选：正式翻译策略仍是 Sol 6.1 high 翻译 + Sol medium 复核，canonical runner 不接受 Claude 模型。
+2026-10-08。`compute/transports/claude_layer2.py` 用本机 Claude Code CLI 的订阅登录做 Layer 2 语言调用，接口与 `CodexLayer2Transport` 相同（`transport('', payload)` 返回带 `content`、`usage`、`elapsedSeconds` 的响应）。这是实验候选：正式翻译策略仍是 Sol 6.1 high 翻译 + Sol medium 复核，canonical runner 不接受 Claude 模型。
 
 ## 当前实现边界（2026-10-10）
 
