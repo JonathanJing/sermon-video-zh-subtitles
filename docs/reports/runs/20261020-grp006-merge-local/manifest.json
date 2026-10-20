@@ -1,0 +1,45 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261020-grp006-merge-local",
+  "runs": [
+    {
+      "label": "20261020-grp006-merge-local",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.agents/worktrees/codex/group-pipeline-orchestration/artifacts/local-runs/20261020-grp006-merge-local",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "20261020-grp006-merge-local",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 837,
+      "truncated": false,
+      "sha256": "2c850ed3f1773297b533f7f2de5d8477332a3778ca3af9805264c17000bf35ea",
+      "redactions": {}
+    },
+    {
+      "run": "20261020-grp006-merge-local",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 1025,
+      "truncated": false,
+      "sha256": "510f20383075487726ea179f7c4f3370993ea9911ded9096a3d5f18bb84c4a53",
+      "redactions": {}
+    },
+    {
+      "run": "20261020-grp006-merge-local",
+      "path": "timings.tsv",
+      "kind": "whole",
+      "bytes": 132,
+      "truncated": false,
+      "sha256": "cb595b19cb83f241adf11ec4611fb16e662a81918069d5c02a9199876aa3fd03",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}
