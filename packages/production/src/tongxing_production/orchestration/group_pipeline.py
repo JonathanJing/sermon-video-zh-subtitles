@@ -548,6 +548,10 @@ def text_summary(report: dict) -> str:
 
 
 def main(argv=None) -> int:
+    argv = list(sys.argv[1:] if argv is None else argv)
+    if argv[:1] == ["plan"]:
+        # plan's own options must reach group_plan's parser, not this one.
+        return group_plan.main(argv)
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     sub = parser.add_subparsers(dest="command", required=True)
     plan_command = sub.add_parser("plan", help="read-only per-group plan from run products (DEV-GRP-001)")
@@ -584,8 +588,6 @@ def main(argv=None) -> int:
                                help="group IDs this revision may change; must equal the changed set")
     merge_command.add_argument("--output", type=Path)
     args = parser.parse_args(argv)
-    if args.command == "plan":
-        return group_plan.main(args.rest)
     config = group_worker.load_configuration(args.config)
     if args.command == "status":
         report = status(config)

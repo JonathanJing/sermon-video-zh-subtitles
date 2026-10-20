@@ -64,6 +64,34 @@ QC 的 inputs v3 必须含实际 launcher 的非秘密 `openaiRoute`（schemaVer
 
 当前只有 Layer 1 producer 已进入生产 shadow；Layer 2–4 通用 producer 仍在迁移。新周次可以继续完成双 PDF 或 legacy 中文产物，但没有对应 canonical package 时必须报告具体范围，不得报告 `four_layer_release=complete`。一种 locale 失败不自动阻塞或批准其他 locale。
 
+### 逐组（DEV-GRP）操作入口（2026-10-20 起，部分）
+
+逐组流水线把每个 Layer 1 组（通常一句）从翻译到配音当作独立任务，只在发布前合并。入口是 `tools/ops/group_tasks.py`；配置是 `sermon-group-run-config-v1`：
+
+```json
+{"schemaVersion": "sermon-group-run-config-v1", "source": "english-source-package.json",
+ "anchor": "anchor-manifest.json", "locale": "ko", "policy": "policy.json",
+ "plugin": "plugin.py", "records": "run/groups", "work": "run/work", "merge": "run/merge"}
+```
+
+```bash
+python tools/ops/group_tasks.py status --config run.json          # 只读：每组每步状态
+python tools/ops/group_tasks.py run --config run.json --budget <budget.json>   # 只跑过期或点名的组
+python tools/ops/group_tasks.py redo --config run.json --group-id <id> --reason "…" --budget <budget.json>
+python tools/ops/group_tasks.py merge --config run.json [--affected <id> …]
+python tools/ops/group_tasks.py prepare-l3 --config run.json --text-release-basis <收据> \
+  --adapter <adapter.json> --speaker-registry <registry.json> [--voice-authorization <收据>] --out <新目录>
+python tools/ops/group_tasks.py plan --manifest <整篇产物清单> [--locale ko]   # 只读规划
+```
+
+边界：
+
+- `run` 是一组一次 `run_accounted`，每次写新的 `attempt-NNNN` 轮目录；付费前必须用 `--budget`（逐组 `admit`）或显式 `--confirm-unbudgeted`。
+- `redo` 写一条 `sermon-group-directive-v1` 指令，理由进入 T/R prompt 与 `revisionSha256` 记录键；旧记录变 `stale`。指令不是内容批准。
+- `merge` 输出 candidate/evidence/language-review，放在 `merge/<locale>/<candidateSha256前16位>/`，`current.json` 指针原子切换；再次合并的变化组必须等于 `--affected`。第 4 步（校准）与第 7–10 步（渲染、排程/字幕、整轨、筛查/音频 QC、试听豁免）仍待接线。
+- `prepare-l3` 只调用现有 speech job producer；文本放行和声音授权由操作者提供，不在此创建或升级。
+- 逐组记录、指令和合并产物都是中间证据，不能当发布批准。
+
 ### 本周中文配音策略（2026-09-27 起的新 job）
 
 用户听审 2026-09-20 的 POC 后，选择整句自然语速版，否决 40.67 秒的句内多段拼接版。新的 legacy 中文配音 job 绑定 `complete_chinese_sentence_natural_pace_v1`：按完整中文句子或已审稿中的完整分句建立 TTS 单元，每单元一次合成；禁止按英文词停顿把中文句内词组拆开，不做为了凑英文总时长的变速或时间拉伸。句间保留既有短停顿；英文原声的词级停顿只作为 Layer 1 参考和后续对齐证据，不直接成为中文合成切点。过长句子须回到文字审核选择自然断句，不能静默按词长切割。

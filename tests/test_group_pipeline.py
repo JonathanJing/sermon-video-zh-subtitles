@@ -174,6 +174,11 @@ class GroupPipelineTests(unittest.TestCase):
         self.assertFalse(receipt["releaseEligible"])
         self.assertFalse(receipt["humanApproval"])
 
+    def test_plan_subcommand_reaches_its_own_parser(self):
+        with self.assertRaises(SystemExit) as caught:
+            group_pipeline.main(["plan", "--help"])
+        self.assertEqual(caught.exception.code, 0)
+
     def test_merge_before_any_run_refuses_with_group_ids(self):
         report = group_pipeline.merge(self.config)
         self.assertEqual(report["outcome"], "refused")
