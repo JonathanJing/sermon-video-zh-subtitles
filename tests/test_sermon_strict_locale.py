@@ -202,7 +202,7 @@ class LocaleTests(unittest.TestCase):
         self.assertEqual(len(self.f.calls), 4)
 
     def test_locale_outputs_feed_real_gate_with_separate_synthetic_human_receipt(self):
-        from scripts import review_target_language_candidate as human
+        from tongxing_production.text import human_review as human
         from scripts import sermon_strict_gate_admission as admission
         with self.f.session():
             result = self.run_locale()

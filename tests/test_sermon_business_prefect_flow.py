@@ -86,7 +86,7 @@ class BusinessFlowTests(unittest.TestCase):
 
     def test_actual_same_store_human_admission_and_speech_preparation_stop_at_voice(self):
         from scripts import sermon_strict_gate_admission as admission
-        from scripts import review_target_language_candidate as human
+        from tongxing_production.text import human_review as human
         from scripts import sermon_local_business_callbacks as local
         from tests import test_prepare_target_language_speech_job as voice_fixtures
         from unittest.mock import patch

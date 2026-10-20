@@ -441,7 +441,7 @@ class FormalStrictDeliveryTests(unittest.TestCase):
         from scripts import sermon_strict_layer2 as strict
         from scripts import sermon_strict_candidate_bridge as bridge
         from scripts import sermon_strict_gate_admission as admission
-        from scripts import review_target_language_candidate as human
+        from tongxing_production.text import human_review as human
         from tongxing_production.delivery import formal_assets as builder
         from tests import test_sermon_strict_budget_adapter as budget_fixtures
         from tests import test_stage_formal_multilingual_dev as formal_fixtures

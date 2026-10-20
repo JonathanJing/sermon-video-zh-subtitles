@@ -3,7 +3,9 @@ import hashlib
 import json
 import shutil
 import pytest
-from scripts import sermon_unified_capabilities as c
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from scripts import sermon_unified  # noqa: F401  binds the orchestration this stage composes
+from tongxing_production.workflows.prepared import capabilities as c
 from scripts.sermon_production_supervisor import stable_hash, json_digest
 
 

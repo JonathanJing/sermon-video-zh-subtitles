@@ -14,7 +14,7 @@ from tongxing_production.review import contracts as c
 from scripts import sermon_strict_layer2 as strict
 from scripts import sermon_strict_budget_adapter as adapter
 from scripts import sermon_strict_candidate_bridge as bridge
-from scripts import review_target_language_candidate as human
+from tongxing_production.text import human_review as human
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.orchestration import jobs
 from tests import test_sermon_strict_layer2 as fixtures
