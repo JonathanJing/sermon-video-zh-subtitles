@@ -6,13 +6,12 @@ voice authorization and human validators decide synthesis eligibility unchanged.
 """
 from pathlib import Path
 import json
-from tongxing_production.review import contracts as c
-from scripts import tongxing_host  # noqa: F401  binds the production package ports
-from tongxing_production.orchestration import jobs
-from tongxing_production.review import review_budget as budget
-from tongxing_production.storage import snapshot as public
-from tongxing_production.audio import speech_job as speech
-from scripts.sermon_release_workflow import _safe_path
+from ..review import contracts as c
+from ..orchestration import jobs
+from ..review import review_budget as budget
+from ..storage import snapshot as public
+from ..storage.paths import safe_path as _safe_path
+from . import speech_job as speech
 
 VOICE_INPUTS={'clip_voice_authorization_path','source_voice_authorization_path',
               'clip_voice_capability_path','clip_timeline_map_path'}

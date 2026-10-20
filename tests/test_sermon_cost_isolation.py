@@ -10,7 +10,7 @@ import unittest
 
 import jsonschema
 
-from scripts import sermon_cost_isolation as isolation
+from tongxing_production.observability import cost_isolation as isolation
 
 
 def config():

@@ -1,7 +1,7 @@
 import unittest
 import json
 from unittest.mock import patch
-from scripts import sermon_strict_layer3_preparation as prep
+from tongxing_production.audio import strict_preparation as prep
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.review import contracts as c
 from tongxing_production.storage import snapshot as public
