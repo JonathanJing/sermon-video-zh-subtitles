@@ -135,6 +135,7 @@ The stable workflow is implemented mainly by these scripts:
 
 These parts of the repository already work, but they are not the primary documentation entrypoint today:
 
+- [../packages/production/src/tongxing_production/workflows/dual_pdf/content_json_pdf.py](../packages/production/src/tongxing_production/workflows/dual_pdf/content_json_pdf.py): export a local Chinese-English reading PDF from published `/content/<pageId>/zh-Hans.json` full text (content v2/v3) with `.venv/bin/python tools/ops/run.py workflows.dual_pdf.content_json_pdf --page-id <pageId>`. It reads the production Chinese text and pairs English by `textGroupId` from the hash-bound `/english-reference/<pageId>.json`; `--content <file>` reads a local file and `--no-english` drops the English. No retranslation or upload, and a machine-checked disclosure stays in the footer
 - [../backend/README.md](../backend/README.md): backend worker and Cloud Run orchestration
 - [../apps/operator-web/README.md](../apps/operator-web/README.md): frontend/admin and playback prototype
 
