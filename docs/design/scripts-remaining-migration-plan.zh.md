@@ -89,3 +89,13 @@
 2. **用户定 D-1 到 D-4。** 然后做 R5（避开直播周末）、R6（与一次 Cloud Run 部署一起）。
 3. **R11 先核对 policy 绑定**，再决定按叶子批迁移还是重新冻结。
 4. **用户定 D-5 后开闭包窗口**，做 R7、R8、R9 和 R12 中须开窗口的部分，同时删掉 §7 (a) 组的门面。L1 兼容部分与下一代 L1 兼容一起做，dual_pdf 部分（R10）单独换代一次。
+
+## 8 R1–R4 执行记录（2026-10-20，`dev@3f712ba4`）
+
+R1 #1185、#1186，R2 #1189，R3 #1191，R4 #1187 已合并，运行报告分别是 #1197、#1190、#1192、#1188。`scripts/` 里不是门面的文件从 249 个降到 178 个。
+
+- **R1：** 36 个文件全部迁出，没有留门面，调用方都已改指。
+- **R2、R3：** 宿主点名的文件留了门面，其余改指；`youtube_data_api` 进了 `source/`，因为它通过 source 后端的 provider 端口读 API key。
+- **R4：** 13 个只迁出 2 个：`cost_isolation` 进 `observability/`，`strict_preparation` 进 `audio/`。
+
+**补充规则：** 包内代码不能导入 `scripts.*`（`test_package_never_imports_transition_trees_or_locates_the_checkout`）。新增端口只能加在宿主里，而宿主在 G1 闭包里。所以一个文件要等它导入的 `scripts/` 模块都迁走，或者有了现成端口，才能迁移；要按依赖从下往上迁。R4 留下的 11 个依赖诊断链（`sermon_historical_layer2`、`sermon_trace_artifacts`、`sermon_diagnostic_context.validate_runtime`、`run_bounded_diagnostic`、`sermon_diagnostic_provider`）和监督代理（`sermon_decision_accounting`、`sermon_end_to_end`、`sermon_production_supervisor`），所以随 R9、R6 一起做。严格链要在 `ports.Diagnostic` 上新增 `validate_runtime`，这要改宿主，因此并入闭包窗口。
