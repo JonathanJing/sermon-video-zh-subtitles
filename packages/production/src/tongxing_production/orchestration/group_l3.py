@@ -32,9 +32,10 @@ REQUIRED_STAGES = ("formal_render", "compact", "screen", "package", "audio_qc")
 
 
 class StageRefused(ValueError):
-    def __init__(self, stage: str, reason: str):
+    def __init__(self, stage: str, reason: str, group_ids: list[str] | None = None):
         self.stage, self.reason = stage, reason
-        super().__init__(f"{stage}:{reason}")
+        self.group_ids = sorted(set(group_ids or ()))
+        super().__init__(f"{stage}:{reason}" + (f":{','.join(self.group_ids)}" if self.group_ids else ""))
 
 
 def _require(condition: bool, message: str) -> None:
@@ -57,14 +58,18 @@ def load_configuration(path: Path) -> dict:
     seen = set()
     for stage in stages:
         _require(isinstance(stage, dict)
-                 and set(stage) == {"name", "command", "produces"}
+                 and {"name", "command", "produces"} <= set(stage) <= {"name", "command", "produces", "failures"}
                  and isinstance(stage["name"], str) and STAGE_NAME.fullmatch(stage["name"])
                  and stage["name"] not in seen
                  and isinstance(stage["command"], list) and stage["command"]
                  and all(isinstance(part, str) and part for part in stage["command"])
                  and isinstance(stage["produces"], str) and stage["produces"]
                  and not Path(stage["produces"]).is_absolute()
-                 and ".." not in Path(stage["produces"]).parts,
+                 and ".." not in Path(stage["produces"]).parts
+                 and (stage.get("failures") is None
+                      or (isinstance(stage["failures"], str) and stage["failures"]
+                          and not Path(stage["failures"]).is_absolute()
+                          and ".." not in Path(stage["failures"]).parts)),
                  "invalid_group_l3_stage")
         seen.add(stage["name"])
     return {"path": path, "paths": paths, "stages": stages}
@@ -95,7 +100,8 @@ def run_stages(config: dict, out: Path, *, dry_run: bool = False) -> dict:
                                      "produces": str(produces)})
             continue
         command = [_substitute(part, paths) for part in stage["command"]]
-        _require(all("{" not in part for part in command), f"unresolved_placeholder:{name}")
+        _require(not any(re.search(r"\{[A-Za-z][A-Za-z0-9_]*\}", part) for part in command),
+                 f"unresolved_placeholder:{name}")
         entry = {"name": name, "commandSha256": _command_sha256(command), "command": command,
                  "startedAt": _now()}
         if dry_run:
@@ -109,11 +115,14 @@ def run_stages(config: dict, out: Path, *, dry_run: bool = False) -> dict:
                      exitCode=completed.returncode,
                      stdoutTail=_tail(completed.stdout), stderrTail=_tail(completed.stderr))
         if completed.returncode != 0:
-            entry["status"] = "failed"
+            group_ids = _failed_groups(out, stage)
+            entry.update(status="failed", failedGroupIds=group_ids)
             report["stages"].append(entry)
             report["status"] = "failed"
+            report["nextActions"] = [{"action": "redo", "groupIds": group_ids,
+                                      "reason": f"{name} failed"}] if group_ids else []
             _write_report(out, report)
-            raise StageRefused(name, f"exit {completed.returncode}")
+            raise StageRefused(name, f"exit {completed.returncode}", group_ids)
         if not produces.exists():
             # A zero exit that produced nothing is not a completed stage.
             entry["status"] = "failed"
@@ -127,6 +136,26 @@ def run_stages(config: dict, out: Path, *, dry_run: bool = False) -> dict:
     report["status"] = "planned" if dry_run else "completed"
     _write_report(out, report)
     return report
+
+
+def _failed_groups(out: Path, stage: dict) -> list[str]:
+    """Group IDs a failed producer named in its own summary, if the stage declares one."""
+    name = stage.get("failures")
+    if not name:
+        return []
+    path = Path(out) / name
+    if not path.is_file():
+        return []
+    try:
+        document = json.loads(path.read_text(encoding="utf-8"))
+    except (ValueError, OSError):
+        return []
+    found: list[str] = []
+    for key in ("failedGroups", "failedGroupIds", "groupIds", "shortenGroupIds"):
+        value = document.get(key) if isinstance(document, dict) else None
+        if isinstance(value, list) and all(isinstance(item, str) and item for item in value):
+            found.extend(value)
+    return sorted(set(found))
 
 
 def _command_sha256(command: list[str]) -> str:
@@ -162,7 +191,8 @@ def main(argv=None) -> int:
     try:
         report = run_stages(config, args.out, dry_run=args.dry_run)
     except StageRefused as exc:
-        print(json.dumps({"status": "failed", "stage": exc.stage, "reason": exc.reason}))
+        print(json.dumps({"status": "failed", "stage": exc.stage, "reason": exc.reason,
+                          "groupIds": exc.group_ids}))
         return 5
     print(json.dumps({"status": report["status"], "stages": len(report["stages"])}))
     return 0

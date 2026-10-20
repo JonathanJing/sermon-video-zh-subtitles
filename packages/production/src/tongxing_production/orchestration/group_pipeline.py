@@ -601,7 +601,8 @@ def main(argv=None) -> int:
             report = group_l3.run_stages(group_l3.load_configuration(args.config), args.out,
                                          dry_run=args.dry_run)
         except group_l3.StageRefused as exc:
-            print(json.dumps({"status": "failed", "stage": exc.stage, "reason": exc.reason}))
+            print(json.dumps({"status": "failed", "stage": exc.stage, "reason": exc.reason,
+                              "groupIds": exc.group_ids}))
             return 5
         print(json.dumps({"status": report["status"], "stages": len(report["stages"])}))
         return 0

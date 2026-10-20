@@ -77,6 +77,20 @@ class GroupL3StagesTests(unittest.TestCase):
         self.assertEqual(report["status"], "failed")
         self.assertEqual(report["stages"][-1]["exitCode"], 3)
 
+    def test_failure_reads_the_producers_group_ids(self):
+        command = ("import json, pathlib; "
+                   "pathlib.Path(r'{out}/qc.json').write_text("
+                   "json.dumps({'failedGroups': ['g1', 'g2']})); raise SystemExit(1)")
+        self.write_config([{"name": "audio_qc", "command": [PY, "-c", command],
+                            "produces": "qc-done.json", "failures": "qc.json"}])
+        with self.assertRaises(group_l3.StageRefused) as caught:
+            self.execute()
+        self.assertEqual(caught.exception.group_ids, ["g1", "g2"])
+        report = json.loads((self.out / "stage-report.json").read_text(encoding="utf-8"))
+        self.assertEqual(report["stages"][-1]["failedGroupIds"], ["g1", "g2"])
+        self.assertEqual(report["nextActions"], [{"action": "redo", "groupIds": ["g1", "g2"],
+                                                  "reason": "audio_qc failed"}])
+
     def test_success_without_the_named_product_is_refused(self):
         self.write_config([{"name": "formal_render", "command": [PY, "-c", "pass"], "produces": "missing.json"}])
         with self.assertRaisesRegex(group_l3.StageRefused, "produces_missing"):
