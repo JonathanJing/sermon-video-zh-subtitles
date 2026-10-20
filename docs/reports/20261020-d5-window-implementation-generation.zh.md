@@ -5,14 +5,15 @@
 ## 依据与范围
 
 - 决定：[scripts/ 迁移计划](../design/scripts-remaining-migration-plan.zh.md) §9.1 的 D-5（用户 2026-10-20 确认）与 §9.2；[门面计划](../design/facade-removal-plan.zh.md) §7。做法照 [D 窗口代记录](20261019-d-window-implementation-generation.zh.md)：草稿一起合并，只重新校准一次。
-- 入站基线 `dev@5ba8c87c`（含 N1–N4）。集合在 `dev@810349e2` 上推导，之后合入的 15 个 PR（App、iOS、delivery、L2 预算等）不改下表除 L2 代码身份以外的任何值，也没有引入对迁移文件的新引用。下面的“D-5”值在合入 `5ba8c87c` 后的分支头 `8a9561b5` 上计算；合并后按文末命令在真实 `dev` 上读回，值不同以读回为准并补记。
+- 入站基线 `dev@5ba8c87c`（含 N1–N4）。集合在 `dev@810349e2` 上推导，之后合入的 15 个 PR（App、iOS、delivery、L2 预算等）不改下表除 L2 代码身份以外的任何值，也没有引入对迁移文件的新引用。下面的“D-5”值在合入 `5ba8c87c` 后的分支头 `882682ee` 上计算；合并后按文末命令在真实 `dev` 上读回，值不同以读回为准并补记。
 - 实际集合、去向与留下的门面见迁移计划 §11。概要：删宿主点名的门面 39 个，移出 `scripts/` 65 个文件，再删调用方已随窗口移走的门面 18 个；新增 `ports.Diagnostic.validate_runtime` 与 dual_pdf 的 `ports.Leases`。
+- 用户 2026-10-20 决定把 #432 的音频校准修复并入本窗口（#432 已由 #1215 取代并关闭），所以 W 在本窗口里只变一次，见下“#432 校准修复”。
 
 ## 身份值
 
-| 身份 | 入站 `dev@5ba8c87c` | D-5（`8a9561b5`） |
+| 身份 | 入站 `dev@5ba8c87c` | D-5（`882682ee`） |
 |---|---|---|
-| W（`review.waiver.implementation_sha256`） | `1c28f4aa38c05b9287db01cc8668995e10ba31c21d9d05fbaa508474a8a19961` | `b6ecff232e60ebbdcfe5f4ed6c0659264367ac72192dcb3918e04c6c4b15410e` |
+| W（`review.waiver.implementation_sha256`） | `1c28f4aa38c05b9287db01cc8668995e10ba31c21d9d05fbaa508474a8a19961` | `1bb748bcb1178f124bc250bcd2da72e42a885077770906a6b75890b61bdc36d3` |
 | T（`compute.qc_audio_transports`） | `8ec15fe1556ba0ff5e3b64c9ff5d2f82896216f06bb2c25495385feaf4f5a851` | `2d85dac8caddcae9dae292877444656fdbdb4bdb42a30f9e084b085381324595` |
 | 计分（`audio.screening`） | `9f2ff8077671b22a29d1846e30cdfb8c7c9999d30054bd67e7c4b50fa2c20310` | `a210a65205d013807e11efb93d96c8d7c6ae4ee51a1dc6e3a7e6d4daf4d329e9` |
 | 语速（`audio.predicted_schedule.rate_implementation_sha256`） | `8f50c233e07bf130d569e15b91abeb35a231f26d18b3e3874b2c7de3581ed9f2` | `06515788efd8575cd92230001ffc5b906cbac8842107a754832ac91bcbe5b398` |
@@ -21,28 +22,39 @@
 | L1 producer compatibility 最新代 | `c-batch-facade-import-removal-v12` | `d5-window-diagnostic-package-move-v13` |
 | Prefect `code_identity()` | `02a1083084f1e3dce038957513574a36afbc9ad29a4435e15cd6fdd03b1ca3e4` | `bf6665767e4bf3218f281dece02553f5f78cf4c4a09bab7292816c4d3016cc24` |
 | 模拟 TTS `implementation_sha256()` | `db8f0832df947eff0f7667bb5848af10905f1482b564125766ac4a1270017cce` | `73901a3181903a43e0dcdc7637e602fd95e3fed4c0a2c405d22c4956bd4b4cb3` |
-| L2 `text.controller.code_identity()` | `b21330666b95f142290e3bc0d69f618dbd8f182dc130a49ba0abe897f0b0e1df` | `b539cbd09a62f01e7fbda953fec5d9037a0d1cc6f3a5ec91431706a76ca7a1ae` |
+| L2 `text.controller.code_identity()` | `b21330666b95f142290e3bc0d69f618dbd8f182dc130a49ba0abe897f0b0e1df` | `77273baf3e06a27ba692614bcfc3e75664aeb3039fbdb63bc1edc2ac37df1689` |
 
 物理清单不变：W 30 个文件、T 7、计分 8、语速 10，文件集合与入站逐一相同。
 
 ### 为什么变
 
-- **W、T、计分、语速、预览绑定。** 四个闭包和预览绑定都含 `path_aliases.py` 与 `scripts/tongxing_host.py`。W 的 30 个物理文件里只有这两个字节改变，其余 28 个与入站逐字节相同：
+- **W、T、计分、语速、预览绑定。** 四个闭包和预览绑定都含 `path_aliases.py` 与 `scripts/tongxing_host.py`。W 另含 `review/seeded_errors.py`（#432 修复）。W 的 30 个物理文件里只有这三个字节改变，其余 27 个与入站逐字节相同；T、计分、语速、预览不含 `seeded_errors.py`，只因前两个文件而变：
 
 | 仓库相对路径 | 入站物理 SHA-256 | D-5 物理 SHA-256 |
 |---|---|---|
 | `packages/production/src/tongxing_production/path_aliases.py` | `f96b722e627bb4792c6c2387f6bb3105408d017bb786d08b85361d269cc5d31a` | `8e3b2031fe1f8194c1754c941e29a423b1e72e76451695990e015936a67ca50d` |
+| `packages/production/src/tongxing_production/review/seeded_errors.py` | `d8d11bafed281ef617f32c80974a9b160a894364cbdd6f2d9fac6f30cbb31cc7` | `24b7b22e79f155d6c90475676cee482aa74f2db1c31c967a033696a5ac80e2f9` |
 | `scripts/tongxing_host.py` | `8f69b29d53405e9fa6544dfb303c0eadfcf6369faea94c85ade2edd04391e18f` | `3b128ce23f675654f96d2baa9ec840b8c5dd681d0c9eca5ca258107c2e5cb680` |
 
-  `path_aliases.py` 新增 `D5_WINDOW` 一节（65 个旧键），宿主改为导入包内模块并新增两个端口。`audio/`、`review/`、`compute/qc_audio_transports.py` 和 `storage/` 下没有文件改变；`source/` 下只有 `producer_compatibility.py`（v13，不在这几个闭包里）。
+  `path_aliases.py` 新增 `D5_WINDOW` 一节（65 个旧键），宿主改为导入包内模块并新增两个端口。`audio/`、`compute/qc_audio_transports.py` 和 `storage/` 下没有文件改变，`review/` 下只有 `seeded_errors.py`；`source/` 下只有 `producer_compatibility.py`（v13，不在这几个闭包里）。
 - **Prefect 与模拟 TTS。** 两个闭包仍以 `scripts/` 旧名为键，经新增别名读迁入包内的文件。成员 `sermon_dag_contract`、`sermon_prefect_dag`、`run_sermon_prefect_dag`、`sermon_execution_harness`、`sermon_model_resources`、`sermon_job_liveness`、`sermon_release_workflow`、`sermon_guarded_command` 和三个 `sermon_mock_tts_*` 的字节随迁移改了导入，所以两个身份都换代。只用于模拟、诊断；旧 pilot 根的 `runtime.json` 会报 `pilot_code_changed_requires_explicit_migration`，要另起新根。
 - **L2 代码身份**随 `scripts/` 与包内任何 `.py` 变化而变，每批都会变。
 
 ### 声音身份不变的证明
 
 - `RENDERER_SOUND_IDENTITY_SHA256` 是 `audio/renderer.py` 里的常量，入站与 D-5 相同（上表）。
-- `audio/renderer.py` 在本窗口与入站逐字节相同（`git diff 5ba8c87c 8a9561b5 -- packages/production/src/tongxing_production/audio/` 为空），合成、单元指令、排程与 MP3 编码代码都没有动。
+- `audio/renderer.py` 在本窗口与入站逐字节相同（`git diff 5ba8c87c 882682ee -- packages/production/src/tongxing_production/audio/` 为空），合成、单元指令、排程与 MP3 编码代码都没有动。
 - 预览执行绑定随 `path_aliases.py` 和宿主字节换代，预览缓存与正式复用按规则失效；已渲染的声音按声音身份判断复用。
+
+## #432 校准修复（并入本窗口）
+
+- **改了什么。** `review/seeded_errors.py` 的 `drop_key_word(..., "zh-Hans")` 原来删掉第一个中文数字串，所以 一切、一起 里的 一 也会成为“漏读关键词”注错试验，而 TTS 与 ASR 可能正常地把它读成别的字，这样的试验无效。现在中文数字只在数字语境里算作试验：
+  - 在 第 之后；
+  - 在量词之前，量词表沿用 #432：章節节位个個人年天次岁歲点點分秒名本句；
+  - 在句末或标点前，且带位值（十百千万亿，如 三十。）。
+
+  句末分支收紧到“带位值”，是为了解决 #432 留下的 Codex 线程 `PRRT_kwDOTCFsGM6shcO2`：合一。、统一。 不再被删。检出阈值（`CALIBRATION_MINIMUMS`、`PER_KIND_MINIMUM_TRIALS`）不变。回归测试是 `test_lexical_chinese_numerals_are_not_dropped_key_word_trials`。
+- **对上次 zh-Hans 拒签的影响。** D 窗口 zh-Hans 音频校准 `audio.dropped_key_word` 7/9 而拒签（#1153），漏检的 u004、u012 正是 一切、一起 里的 一，u018 的 一片 也属此类。按新规则，同一片段的这一类试验从 9 个变成 6 个（u007、u009、u010、u013、u016、u017），上次 6 个全部检出。6 不低于每类最少 5 次，所以 zh-Hans 这次很可能签发。这是基于上次结果的推断，要以复验收据为准。
 
 ## 其他绑定的变化
 
@@ -73,7 +85,7 @@
 - **预计实际花费：** 文字三语合计约 US$1.01（发票未核验）；二级 ASR（`gpt-transcribe` 行未标价，按预留计）合计约 US$0.20–0.31。全部约 US$1.2–1.4。**预留上限合计 US$13.015**（文字 US$6.94 + 二级 ASR US$6.075）。
 - **预算根布局：** 每语只开一个预算根，授权的 `costMicrousd` 一次给到“文字上限 + 二级 ASR 上限”。音频 QC 的文字判定从同一根重放（D 窗口 es、zh-Hans 就是这样，音频阶段没有新增文字请求）。上次 ko 的文字根只授权了文字（总界 US$2.34，预留 US$2.335 后没有余量），音频阶段只好另开一根、再预留一份文字上限；这次 ko 的根直接授权 US$4.365，就不需要第二份文字预留。
 - **Spark 时间：** D 窗口每语渲染约 87–89 s、压缩约 17 s、筛查约 39–43 s、打包约 5 s、音频 QC 23–150 s，即每语约 3–5 分钟计算；加上独占会话开关和容器启动，三语顺序跑约 25–35 分钟独占 Spark。文字 QC 在 Mac 上，每语约 190–225 s。上 Spark 前先在本机用 spawn 方式冒烟一次 `tools/ops/run.py audio.renderer`（#1151 的教训）。
-- **预期结果：** 输入与 D 窗口完全相同，最可能复现同样的结论：es 签发；zh-Hans 校准 `audio.dropped_key_word` 7/9 而拒绝签发；ko 在 seed 42 的 u007 `requires_repair`、停在校准前。这次复验证明的是新身份下结论不变，不是修复这两项。
+- **预期结果：** 输入与 D 窗口相同。es 预计签发。zh-Hans 预计这次签发：#432 修复去掉了两个漏检的无效试验，剩下 6 个上次全部检出（见上节）。ko 预计仍在 seed 42 的 u007 `requires_repair`，停在校准前；这一项本窗口不修。
 - 新授权要绑定新 W（`qcContext.qcImplementationSha256`），旧授权文件不能沿用。
 
 ## 前置条件（2026-10-20 20:41Z，只读）

@@ -214,6 +214,8 @@ N1 #1201、N2 #1203、N3 #1205、N4 #1212 已合并，运行报告分别是 #120
 - Temporal 留在 `scripts/sermon_temporal/`（D-3）：隔离 venv 不能导入包，`local_io.py` 按路径加载 `storage/files.py`；`integration_check` 的 `dependencySha256` 键不变，经新增的 `path_aliases` 键读新文件。
 - `weekly_pipeline_report` 的键本来就指向 `observability/weekly_projection.py`，只把命令行搬到 `tools/ops/`。
 
+**#432 校准修复。** 用户 2026-10-20 决定把 #432 的中文数字注错修复并入本窗口（`review/seeded_errors.py` 在 W 里），所以 W 在本窗口里只变一次；做法与对上次 zh-Hans 拒签的影响见生成记录。
+
 **门面。** 删 39 + 18 个：宿主点名、只属 §7 (a) 组的 39 个；L1 (d) 组 4 个和 `mfa_backend`；以及调用方全在窗口里、窗口后只剩测试或冻结实验计划引用的 13 个 N 批门面。留下 18 个：`produce_target_language_candidate`、`target_language_policy`、`scripture_adjudication`（冻结插件）；`sermon_pipeline`、`render_sermon_interpretation_pdf`（dual_pdf 身份）；`live_source_monitor`、`upload_file_to_gcs` 和新留的 `sermon_production_supervisor`、`run_sermon_production_supervisor_agent`（Cloud Run 镜像，D-2，随下次部署删）；N1 的 4 个 worker 门面（`backend/worker.py` 按路径运行）；`run_openai_model_access_preflight`、`run_with_openai_environment`、`sermon`、`sermon_agents_api`、`sermon_repair_planning`（窗口外的调用方）。
 
 **留在 `scripts/` 的非门面文件。** §3 的 29 个、Temporal 20 个、dual_pdf 附属（R10）、3 个经文生成器文件（N3），以及从来不受窗口约束、可以另做叶子批的 `check_run_start`、`plan_run_budgets`、`run_live_sermon_benchmark_source_audio_audit`、`validate_offline_chain`（`backend/worker.py` 按路径运行）、`export_saturday_live_context`。
