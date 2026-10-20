@@ -790,9 +790,26 @@ def stage_layer4(run: Run):
 
 
 def stage_report(run: Run):
+    from tools.development import export_run_digest
     name = datetime.now(timezone.utc).strftime("%Y%m%d") + "-clip-e2e-" + run.spec["name"]
-    run.sh("report", [PY, ROOT / "tools/development/export_run_digest.py", run.dir, "--name", name])
-    run.mark("report", "done", name=name)
+    digest = ROOT / "artifacts/run-reports" / name
+    if digest.exists():
+        # The export was interrupted after writing, or the stage was not marked: accept only a complete
+        # digest of this run that still passes redaction; never overwrite or delete it here.
+        try:
+            manifest = read(digest / "manifest.json")
+        except (OSError, ValueError):
+            manifest = {}
+        require(manifest.get("name") == name
+                and [row.get("label") for row in manifest.get("runs", [])] == [run.dir.resolve().name],
+                "existing run digest does not match this run")
+        missing = export_run_digest.incomplete(digest)
+        if missing:
+            raise Stop(f"report: existing run digest {name} is incomplete; reconcile before retry: {missing[:5]}")
+        run.sh("report-verify", [PY, ROOT / "tools/development/export_run_digest.py", digest, "--verify"])
+    else:
+        run.sh("report", [PY, ROOT / "tools/development/export_run_digest.py", run.dir, "--name", name])
+    run.mark("report", "done", reportName=name)
 
 
 # ---------------------------------------------------------------- driver

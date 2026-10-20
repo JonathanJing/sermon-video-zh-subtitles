@@ -207,6 +207,17 @@ class ExportRunDigestTests(unittest.TestCase):
                 (dest / "INDEX.md").write_text(leak)
                 self.assertEqual(digest.main([str(dest), "--verify"]), 1, leak)
 
+    def test_incomplete_names_what_the_manifest_lists_but_the_digest_lacks(self):
+        dest = self.export()
+        self.assertEqual(digest.incomplete(dest), [])
+        (dest / "RETROSPECTIVE.md").unlink()
+        copied = next(e for e in json.loads((dest / "manifest.json").read_text())["files"] if not e.get("omitted"))
+        (dest / copied["run"] / copied["path"]).unlink()
+        self.assertEqual(digest.incomplete(dest), ["RETROSPECTIVE.md: missing",
+                                                   f"{copied['run']}/{copied['path']}: missing"])
+        (dest / "manifest.json").unlink()
+        self.assertEqual(digest.incomplete(dest), ["manifest.json: missing or unreadable"])
+
     def test_tidy_whitespace_satisfies_git_diff_check_and_skips_binary(self):
         (self.run / "render.log").write_text("UserWarning: x  \r\n  indented\t\n\n\n")
         dest = self.export()

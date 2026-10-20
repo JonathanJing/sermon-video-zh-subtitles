@@ -127,6 +127,34 @@ class RunTests(unittest.TestCase):
         self.run.mark("audio.es", "failed")
         self.assertEqual(self.run.open_qc_caps(), 0)
 
+    def test_report_resumes_only_a_complete_digest_of_this_run(self):
+        from datetime import datetime, timezone
+        from tools.development import export_run_digest
+
+        class Fixed(datetime):
+            @classmethod
+            def now(cls, tz=None):
+                return datetime(2026, 10, 14, 20, tzinfo=timezone.utc)
+        name, calls = "20261014-clip-e2e-u101-test", []
+        reports = self.base / "artifacts/run-reports"
+        with mock.patch.object(subject, "ROOT", self.base), mock.patch.object(subject, "datetime", Fixed), \
+                mock.patch.object(self.run, "sh", lambda label, argv, **kw: calls.append(label)):
+            subject.stage_report(self.run)
+            self.assertEqual((calls, self.run.stages["report"]["reportName"]), (["report"], name))
+            # The export finished but the stage was not marked: verify, do not export again.
+            self.assertEqual(export_run_digest.main([str(self.run_dir), "--out", str(reports), "--name", name]), 0)
+            calls.clear()
+            subject.stage_report(self.run)
+            self.assertEqual(calls, ["report-verify"])
+            (reports / name / "INDEX.md").unlink()
+            with self.assertRaisesRegex(subject.Stop, "incomplete"):
+                subject.stage_report(self.run)
+            manifest = reports / name / "manifest.json"
+            subject.write(manifest, {**subject.read(manifest), "runs": [{"label": "another-run"}]})
+            with self.assertRaisesRegex(ValueError, "does not match this run"):
+                subject.stage_report(self.run)
+        self.assertEqual(calls, ["report-verify"])
+
     def test_one_locale_stopping_does_not_stop_the_others_and_layer4_needs_all(self):
         calls = []
         record = lambda name: (lambda run, *args: (calls.append((name, *args[:1])), run.mark(name, "done")))
