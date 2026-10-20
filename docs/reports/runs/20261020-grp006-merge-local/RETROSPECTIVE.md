@@ -14,6 +14,8 @@
 
 再补充（`3125e1bd`）：`group_tasks.py plan` 的子命令分发已修（原来把选项直接交给 `group_plan` 的解析器会报错），`prepare-l3`（合并第 5–6 步）与失败映射已加入。`15030286` ko 的 `plan` 在当前树上仍是零调用只读：402 组，T/R/S `expected_reusable`，P/Q/A/U `stale`，约 4 秒；本地生产 runbook 已加逐组操作入口。`tests/test_group_pipeline.py` 增至 11 项。
 
+再补充（`8256bec5`）：第 7–9 步的可恢复执行器 `group_tasks.py stages` 已加。它按 `sermon-group-l3-stages-v1` 顺序运行现有 producer 命令，逐 stage 绑定命令 SHA-256、退出码与耗时；非零退出或“成功但缺 `produces`”都停止，已有产物按 resume 跳过，未解析占位符在派发前拒绝。`tests/test_group_l3_stages.py` 7 项通过。真实 Spark 渲染与音频 QC 仍未运行。
+
 证据边界：没有真实付费调用、TTS、ASR、部署或 Firebase 操作。`merge` 只到 candidate 与合并清单；第 4–10 步（校准、豁免、speech job、渲染、排程、整轨、筛查/音频 QC、试听豁免）未接线，合并清单记录为 `pendingSteps`，结果是 `candidate_ready_layer3_pending`，不能当四层完成。
 
 ## 总时间
