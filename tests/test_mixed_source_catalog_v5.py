@@ -63,6 +63,18 @@ def test_v5_projects_mixed_family_to_two_honest_legacy_pages():
     assert legacy['defaultPageId'] == 'broadcast-edition'
 
 
+
+def test_v5_projection_defaults_do_not_depend_on_target_order():
+    value = catalog(('zh-Hans', 'ko', 'es'))
+    reordered = copy.deepcopy(value)
+    reordered['pages'][0]['targets'] = dict(sorted(reordered['pages'][0]['targets'].items(), reverse=True))
+    first, second = (contract.project_legacy_catalog_v4(item) for item in (value, reordered))
+    defaults = lambda legacy: {page['id']: page['defaultTargetLocale'] for page in legacy['pages']}
+    assert defaults(first) == defaults(second) == {'broadcast-edition': 'zh-Hans', 'family-page': 'ko'}
+    value['pages'][0]['defaultTargetLocale'] = 'es'
+    assert defaults(contract.project_legacy_catalog_v4(value))['family-page'] == 'es'
+
+
 def test_v5_incremental_merge_allows_target_source_to_differ_from_siblings():
     baseline = catalog(('es', 'ko'))
     candidate = catalog(('zh-Hans',))

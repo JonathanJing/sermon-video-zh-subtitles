@@ -184,6 +184,10 @@ def project_legacy_catalog_v4(catalog):
               'defaultPageId': None, 'pages': []}
     by_id = {}
     default_edition = None
+    # Each edition page's default is the v5 page default when that locale lands on
+    # the edition, else the fixed locale order: never the targets' key order, which
+    # a sorted write and reload changes.
+    declared_default = {}
     for page in catalog['pages']:
         for locale, target in page['targets'].items():
             per_target = page['sourceMode'] == 'per_target'
@@ -192,6 +196,7 @@ def project_legacy_catalog_v4(catalog):
             source_media = target['sourceMediaSha256'] if per_target else page.get('sourceMediaSha256')
             video = target['videoDelivery'] if per_target else page.get('videoDelivery')
             if locale == page['defaultTargetLocale']:
+                declared_default.setdefault(edition, locale)
                 default_edition = edition if page['id'] == catalog['defaultPageId'] else default_edition
             projected_target = {key: copy.deepcopy(value) for key, value in target.items()
                                 if key not in {'editionId', 'sourceIdentitySha256', 'sourceMediaSha256', 'videoDelivery'}}
@@ -217,9 +222,8 @@ def project_legacy_catalog_v4(catalog):
     require(default_edition in by_id, 'Default v5 target edition is missing')
     result['defaultPageId'] = default_edition
     for page in result['pages']:
-        if page['defaultTargetLocale'] not in page['targets']:
-            page['defaultTargetLocale'] = next((locale for locale in ('zh-Hans', 'ko', 'es')
-                                                if locale in page['targets']), sorted(page['targets'])[0])
+        page['defaultTargetLocale'] = declared_default.get(page['id']) or next(
+            (locale for locale in ('zh-Hans', 'ko', 'es') if locale in page['targets']), sorted(page['targets'])[0])
     return validate_catalog_schema(result)
 
 
