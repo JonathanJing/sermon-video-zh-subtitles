@@ -1,0 +1,50 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261019-local-full-test",
+  "runs": [
+    {
+      "label": "20261019-full-local-test",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/local-runs/20261019-full-local-test",
+      "skipped": {
+        ".md": 1,
+        ".json": 1
+      }
+    },
+    {
+      "label": "20261019-grp-step0-identity",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/local-runs/20261019-grp-step0-identity",
+      "skipped": {
+        ".md": 1,
+        ".json": 4,
+        ".txt": 1
+      }
+    }
+  ],
+  "files": [
+    {
+      "run": "20261019-full-local-test",
+      "path": "full-dev-final.log",
+      "kind": "log",
+      "bytes": 146113,
+      "truncated": true,
+      "sha256": "a37d3b680f654b715a78ca49e840351e5eb547da288f1de2301ed3c755807673",
+      "redactions": {}
+    },
+    {
+      "run": "20261019-full-local-test",
+      "path": "full-dev-v2-without-api-or-ps.log",
+      "kind": "log",
+      "bytes": 154056,
+      "truncated": true,
+      "sha256": "4b2f98c4b768016d82418f6256f80a294fa0692c60615bd90d3df5e2e1c2a44b",
+      "redactions": {
+        "email": 17
+      }
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}
