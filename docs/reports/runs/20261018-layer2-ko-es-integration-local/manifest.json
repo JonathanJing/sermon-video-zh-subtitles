@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261018-layer2-ko-es-integration-local",
+  "runs": [
+    {
+      "label": "integration-163dfcc9-test",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/weekend-live/layer2-15030286-20261017/integration-163dfcc9-test",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "integration-163dfcc9-test",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 376,
+      "truncated": false,
+      "sha256": "3dc43b42e0a2d40803b621bb3a0d2c24101081929c592fa7bc6527efc14fe481",
+      "redactions": {}
+    },
+    {
+      "run": "integration-163dfcc9-test",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 512,
+      "truncated": false,
+      "sha256": "66944c75aa3593c98c2d94c5da5a5271f51b5c25ff33dc49ebedc6f5afedaeae",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

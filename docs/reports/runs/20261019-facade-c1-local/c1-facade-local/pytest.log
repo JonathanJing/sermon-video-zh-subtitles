@@ -1,0 +1,4 @@
+tests/test_codex_shared_pool_transport.py:62: AttributeError
+=========================== short test summary info ============================
+FAILED tests/test_codex_shared_pool_transport.py::test_busy_before_started_is_proven_no_dispatch
+1 failed, 1110 passed, 27 subtests passed in 194.66s (0:03:14)

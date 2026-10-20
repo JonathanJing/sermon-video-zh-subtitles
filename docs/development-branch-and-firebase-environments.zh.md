@@ -57,7 +57,7 @@ Firebase 官方建议每个开发环境使用独立 project。听译 App 应建�
 - 当前 `deploy_firebase.py` 已强制显式传入 `--project` 和 `--site`，并先校验完整发布清单；继续保留这个 fail-closed 接口。
 - Dev 和 Production 使用不同的 project ID、site ID、短期凭据／服务身份和预算告警。不要在仓库提交 `.firebaserc`、token 或 service-account key。
 - 代码 PR 和每周内容发布分开。Firebase PR 预览如启用，只能使用独立 Dev project 的合成 fixture；正式 Dev 页面继续要求已审产物。预览渠道仍连接其所属项目的真实后端，不得用 Production project 预览未经审查的变更。
-- 正式 Dev／Production 内容发布使用 `scripts/run_multilingual_cd.py` 的显式入口：先逐文件核对线上基线，随后部署并完成 HTTP/SHA、音轨 Range 与语言深链核验。`--execute` 只接受干净、与远端同 SHA 的 `dev`／`main` checkout，以及明确输入的代码 SHA 和候选报告 SHA。`main` push 本身不自动部署；签名 iOS 包／TestFlight 也只在原生 App 发版时单独构建。
+- 正式 Dev／Production 内容发布使用 `tools/ops/run_multilingual_cd.py` 的显式入口：先逐文件核对线上基线，随后部署并完成 HTTP/SHA、音轨 Range 与语言深链核验。`--execute` 只接受干净、与远端同 SHA 的 `dev`／`main` checkout，以及明确输入的代码 SHA 和候选报告 SHA。`main` push 本身不自动部署；签名 iOS 包／TestFlight 也只在原生 App 发版时单独构建。
 - 发布收据、候选目录和媒体均保留在 ignored artifacts，不上传到 Git。GitHub Actions 目前负责代码门禁；约 700 MB 的内容候选使用本机受控 CD。未来若迁到 GitHub runner，必须先定义候选存储、凭据、环境审核和同站点串行部署，不能把本机路径写进云端工作流。
 - 多语言功能先在 Dev App 验证 locale 选择、资源缺失降级、音频切换和旧中文周次回归；通过不等于自动发布 Production。
 
@@ -65,9 +65,9 @@ Firebase 官方建议每个开发环境使用独立 project。听译 App 应建�
 
 Dev Web 的「更多」可按讲员展开音色 Demo：每位先放原始英语片段，再放中文、韩语、西班牙语、越南语的 AI 样音。样音使用统一示例文稿，属于音色能力试听；其 `humanListeningStatus=pending` 必须保持独立于每周正式 Layer 2／3 审核。英语参考文字也只标为机器转写参考。此 Demo 不写入正式多语言 catalog、release package 或默认播放器。
 
-本机用 `scripts/stage_voice_demo_dev.py` 把 `artifacts/sermon-dubbing/2026-09-21-multilingual-voice-demos-v2` 的 24 条已解码样音、六位讲员的英语原声和前端组件叠加到**已发布且已有 HTTP 收据**的完整 Dev 候选。脚本校验来源 SHA、四语言覆盖和既有 121 个文件不被改变；原声缺失时用 `--reference speakerId=/path/to/original.wav` 明确补入。产物是新的 immutable v3 候选，Demo 媒体与目录仍留在 ignored `artifacts/` 或本机临时目录。此后按上面的本机 CD 入口先核对线上基线，再用干净且与远端一致的 `dev` checkout 执行部署和逐文件 HTTP 核验；30 条音频优先检查 Range 206，Firebase 对小文件返回完整 200 时核对完整长度与 SHA，并在收据中记录回退。浏览器听测与人工音色审核仍分别记录。
+本机用 `tools/ops/stage_voice_demo_dev.py` 把 `artifacts/sermon-dubbing/2026-09-21-multilingual-voice-demos-v2` 的 24 条已解码样音、六位讲员的英语原声和前端组件叠加到**已发布且已有 HTTP 收据**的完整 Dev 候选。脚本校验来源 SHA、四语言覆盖和既有 121 个文件不被改变；原声缺失时用 `--reference speakerId=/path/to/original.wav` 明确补入。产物是新的 immutable v3 候选，Demo 媒体与目录仍留在 ignored `artifacts/` 或本机临时目录。此后按上面的本机 CD 入口先核对线上基线，再用干净且与远端一致的 `dev` checkout 执行部署和逐文件 HTTP 核验；30 条音频优先检查 Range 206，Firebase 对小文件返回完整 200 时核对完整长度与 SHA，并在收据中记录回退。浏览器听测与人工音色审核仍分别记录。
 
-正式站现有「讲员音色」卡片可独立追加 Dev 的六位讲员韩语与西语 Demo。`scripts/stage_production_voice_samples.py stage` 读取完整已发布 Production 快照、Dev Demo 候选及 `--delivery` 指向的原始交付目录；核对授权用途、注册表、统一文稿、24 条音频来源链，再逐条核对选出的 12 个 MP3 大小、SHA 与 `humanListeningStatus=pending`。候选只新增独立 Demo 目录及 `voice-samples.mjs`，并更新首页引用和样式。旧 `weekly.json` 与每周发布资源保持原样；新目录标明样音使用示例文稿，不代表正式韩／西证道音轨。`run_multilingual_cd.py --mode production` 对此类候选执行完整线上基线预检，`--execute` 仍要求干净且与远端同 SHA 的 `main`，部署后逐文件 HTTP/SHA 核验。下一次旧版中文周更可用 `stage_production_voice_samples.py refresh-weekly` 从已发布且完整 HTTP 核验的音色候选叠加新旧版发行包；它保留样音与当前首页，并把新周次、反馈目录绑定到新的候选与 CD 收据。真人听审、设备试听与现场验收各自记录。
+正式站现有「讲员音色」卡片可独立追加 Dev 的六位讲员韩语与西语 Demo。`tools/ops/stage_production_voice_samples.py stage` 读取完整已发布 Production 快照、Dev Demo 候选及 `--delivery` 指向的原始交付目录；核对授权用途、注册表、统一文稿、24 条音频来源链，再逐条核对选出的 12 个 MP3 大小、SHA 与 `humanListeningStatus=pending`。候选只新增独立 Demo 目录及 `voice-samples.mjs`，并更新首页引用和样式。旧 `weekly.json` 与每周发布资源保持原样；新目录标明样音使用示例文稿，不代表正式韩／西证道音轨。`run_multilingual_cd.py --mode production` 对此类候选执行完整线上基线预检，`--execute` 仍要求干净且与远端同 SHA 的 `main`，部署后逐文件 HTTP/SHA 核验。下一次旧版中文周更可用 `stage_production_voice_samples.py refresh-weekly` 从已发布且完整 HTTP 核验的音色候选叠加新旧版发行包；它保留样音与当前首页，并把新周次、反馈目录绑定到新的候选与 CD 收据。真人听审、设备试听与现场验收各自记录。
 
 ## 建立 Dev App 的接受标准
 

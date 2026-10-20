@@ -9,9 +9,10 @@ import unittest
 from pathlib import Path
 
 
-SCRIPT_PATH = Path(__file__).resolve().parents[1] / "scripts" / "run_local_post_live_download.py"
-from scripts import run_local_post_live_download as mod
-from tongxing_production.workflows.dual_pdf import local_post_live_download as implementation
+ROOT = Path(__file__).resolve().parents[1]
+COMMAND = [sys.executable, str(ROOT / "tools/ops/run.py"), "workflows.dual_pdf.local_post_live_download"]
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.workflows.dual_pdf import local_post_live_download as mod
 
 
 def args_for(root: Path):
@@ -38,12 +39,11 @@ def args_for(root: Path):
 
 class LocalPostLiveDownloadTest(unittest.TestCase):
     def test_legacy_import_and_path_identity(self):
-        from scripts import sermon_accounting
+        from scripts import tongxing_host  # noqa: F401  binds the production package ports
+        from tongxing_production.observability import accounting as sermon_accounting
         from tongxing_production import path_aliases
 
-        root = SCRIPT_PATH.parents[1]
-        self.assertIs(mod, implementation)
-        self.assertIs(sys.modules["scripts.run_local_post_live_download"], implementation)
+        root = ROOT
         self.assertEqual(mod.REPO_ROOT, root)
         self.assertEqual(mod.resolve_path(Path("artifacts/example")), root / "artifacts/example")
         self.assertEqual(mod.resolve_path(root / "absolute"), root / "absolute")
@@ -53,21 +53,22 @@ class LocalPostLiveDownloadTest(unittest.TestCase):
         self.assertEqual(key, "packages/production/src/tongxing_production/workflows/dual_pdf/local_post_live_download.py")
         loaded = sermon_accounting.execution_identity()["loadedProjectCodeSha256"]
         self.assertIn(key, loaded)
-        self.assertTrue({"backend/cloud.py", "backend/config.py", "scripts/live_source_monitor.py",
-                         "scripts/youtube_data_api.py"}.issubset(loaded))
+        self.assertTrue({"backend/cloud.py", "backend/config.py", "packages/production/src/tongxing_production/workflows/dual_pdf/live_source_monitor.py",
+                         "packages/production/src/tongxing_production/source/youtube_data_api.py"}.issubset(loaded))
 
     def test_legacy_cli_help_and_missing_source_from_other_directory(self):
-        root = SCRIPT_PATH.parents[1]
+        root = ROOT
         environment = os.environ.copy()
         environment["PYTHONPATH"] = os.pathsep.join((str(root / "packages/production/src"), str(root)))
         with tempfile.TemporaryDirectory() as tempdir:
             folder = Path(tempdir)
-            help_result = subprocess.run([sys.executable, str(SCRIPT_PATH), "--help"],
+            help_result = subprocess.run([*COMMAND, "--help"],
                                          cwd=folder, env=environment, capture_output=True, text=True, timeout=30)
             self.assertEqual(help_result.returncode, 0, help_result.stderr)
             report = folder / "report.json"
             code = (
-                "import sys; from scripts import run_local_post_live_download as m; "
+                "import sys; from scripts import tongxing_host; "
+                "from tongxing_production.workflows.dual_pdf import local_post_live_download as m; "
                 "m.live_source_monitor.read_state=lambda *_: {}; "
                 "m.access_secret=lambda *_: 'mock-only'; "
                 "m.discover_sunday_video=lambda *_a, **_k: None; "

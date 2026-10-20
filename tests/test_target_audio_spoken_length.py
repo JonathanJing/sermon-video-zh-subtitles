@@ -3,9 +3,10 @@ import hashlib
 
 import pytest
 
-from scripts import render_formal_target_language_speech as formal
-from scripts import target_audio_auto_qc as qc
-from scripts import target_audio_predicted_schedule as predicted
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.audio import renderer as formal
+from tongxing_production.review import audio_qc as qc
+from tongxing_production.audio import predicted_schedule as predicted
 from tests.test_machine_quality_waiver import IDENTITY
 
 
@@ -112,7 +113,7 @@ def test_standalone_qc_cli_requires_and_binds_policy_job(tmp_path, monkeypatch):
 
 
 def test_audio_waiver_rejects_unbound_or_other_job_duration_qc():
-    from scripts import machine_quality_release_basis as basis
+    from tongxing_production.review import release_basis as basis
     from tests.test_machine_quality_release_basis import audio_fixture
     package, screening, receipt, text = audio_fixture()
     frozen = job()
@@ -127,7 +128,7 @@ def test_audio_waiver_rejects_unbound_or_other_job_duration_qc():
 
 
 def test_real_calibration_entry_uses_policy_context_without_claiming_job_binding(monkeypatch):
-    from scripts import auto_qc_seeded_errors as seeded
+    from tongxing_production.review import seeded_errors as seeded
     from tests import auto_qc_fixtures as fixtures
     units = [{"groupId": f"g{i}", "text": "가" * 10, "sourceSeconds": 20,
               "wav": fixtures.speech_wav(1)} for i in range(5)]

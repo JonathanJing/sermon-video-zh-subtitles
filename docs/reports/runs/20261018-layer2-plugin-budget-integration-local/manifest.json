@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261018-layer2-plugin-budget-integration-local",
+  "runs": [
+    {
+      "label": "integration-c9804373-test",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/weekend-live/layer2-15030286-20261017/integration-c9804373-test",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "integration-c9804373-test",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 250,
+      "truncated": false,
+      "sha256": "8a40bf831bbef11d53583ea2fe8d4e711d9fb552413f95d91e869b1d6490df04",
+      "redactions": {}
+    },
+    {
+      "run": "integration-c9804373-test",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 433,
+      "truncated": false,
+      "sha256": "a3c7ddf013000ac192017fe62b7a25e7f63a23e016f556405b7e987dbec96915",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

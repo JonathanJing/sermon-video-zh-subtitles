@@ -7,7 +7,8 @@ Production callers omit this context and retain every existing approval gate.
 from copy import deepcopy
 import math
 import re
-from scripts import sermon_review_contracts as c
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.review import contracts as c
 
 SCHEMA = 'sermon-diagnostic-context-v1'
 HASH_FIELDS = ('runId', 'runConfigSha256', 'storeSha256', 'sourceCanonicalSha256',
@@ -48,9 +49,9 @@ def _anchor_issue(issue):
 
 
 def validate_source(source, anchor, context):
-    from scripts import prepare_target_language_speech_job as speech
-    from scripts import build_english_source_package as english
-    from scripts import sermon_sentence_interpretation as interpretation
+    from tongxing_production.audio import speech_job as speech
+    from tongxing_production.source import english_source_package as english
+    from tongxing_production.source import sentence_interpretation as interpretation
     context = validate_context(context)
     c.require(c.canonical_sha256(source) == context['sourceCanonicalSha256'] and
         c.canonical_sha256(anchor) == context['anchorCanonicalSha256'], 'diagnostic_source_identity_changed')

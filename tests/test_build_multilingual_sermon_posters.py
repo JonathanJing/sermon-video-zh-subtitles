@@ -7,7 +7,8 @@ import unittest
 from urllib.parse import parse_qs, urlsplit
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'scripts'))
-import build_multilingual_sermon_posters as poster
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.delivery.posters import build as poster
 
 
 class MultilingualPosterTests(unittest.TestCase):

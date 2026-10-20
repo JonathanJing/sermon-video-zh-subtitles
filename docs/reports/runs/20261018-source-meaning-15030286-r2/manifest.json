@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261018-source-meaning-15030286-r2",
+  "runs": [
+    {
+      "label": "report-input-r2",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/weekend-live/source-meaning-15030286-20261018/report-input-r2",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "report-input-r2",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 287,
+      "truncated": false,
+      "sha256": "23d9b80cd8e2411c80893a4150df99b3990ab93be250f1db2c55bd08cafee1ad",
+      "redactions": {}
+    },
+    {
+      "run": "report-input-r2",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 1005,
+      "truncated": false,
+      "sha256": "9804e55259a21c7c07fb9bce46b9615d12226eb853c4751cd4169ac0b37e5ea5",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

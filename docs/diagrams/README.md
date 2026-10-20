@@ -4,7 +4,7 @@
 
 [英文技术导览](../project-technical-overview.md)与[中英后端设计](../backend-workflow-system-design.zh-en.md)各包含四层业务 DAG 和计划中的有界修订 DAG；[App 系统图](../app-system-design.zh.md)与[执行环境图](../execution-environment-design.zh.md)补充另两个设计面。默认展示原生 SVG，Markdown 折叠区保留可复制的 Mermaid 拓扑源。GitHub rich Mermaid 预览曾返回无法渲染，因此静态图不依赖该服务。
 
-六张新图沿用现有 `diagram-specs.json` 与 `render_diagrams.py`，既有 SVG 图稿输出保持不变；渲染器仅增加新图显式箭头颜色的可选字段，兼容静态 SVG 预览。节点 ID、边、状态与英/双语源对应；PR164 strict review/gate/repair 明确为 planned，PR165 D1 的 schema 不代表执行已完成。渲染命令、文件映射与校验见[架构 SVG 再生成](architecture-rendering.md)。纯文档 PR 的 `scripts/docs_change_gate.py` 在 spec 改变时重建全组并比较；修改 renderer 会触发完整代码 CI，仍须单独执行图稿再生成比较；另外核查无环、L3 必经、locale 隔离、实际字号、箭头与文字边界。
+六张新图沿用现有 `diagram-specs.json` 与 `render_diagrams.py`，既有 SVG 图稿输出保持不变；渲染器仅增加新图显式箭头颜色的可选字段，兼容静态 SVG 预览。节点 ID、边、状态与英/双语源对应；PR164 strict review/gate/repair 明确为 planned，PR165 D1 的 schema 不代表执行已完成。渲染命令、文件映射与校验见[架构 SVG 再生成](architecture-rendering.md)。纯文档 PR 的 `tools/development/docs_change_gate.py` 在 spec 改变时重建全组并比较；修改 renderer 会触发完整代码 CI，仍须单独执行图稿再生成比较；另外核查无环、L3 必经、locale 隔离、实际字号、箭头与文字边界。
 
 以下保留既有 SVG 的来源、时间和再生成说明。
 

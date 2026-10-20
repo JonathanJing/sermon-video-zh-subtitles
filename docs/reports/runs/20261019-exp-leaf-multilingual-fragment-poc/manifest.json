@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261019-exp-leaf-multilingual-fragment-poc",
+  "runs": [
+    {
+      "label": "exp-leaf-multilingual-fragment-poc-20261019",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.claude/worktrees/practical-boyd-f19465/artifacts/test-runs/exp-leaf-multilingual-fragment-poc-20261019",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "exp-leaf-multilingual-fragment-poc-20261019",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 236,
+      "truncated": false,
+      "sha256": "c785b8a86b371aaf101b66e4574856b2d67f751a6d3bc45ff3652fcbad77150f",
+      "redactions": {}
+    },
+    {
+      "run": "exp-leaf-multilingual-fragment-poc-20261019",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 688,
+      "truncated": false,
+      "sha256": "1b84553064b334427d23a511bcfcb826a1973bde82810fa331ff4923daae12a8",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

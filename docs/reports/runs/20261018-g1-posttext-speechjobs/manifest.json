@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261018-g1-posttext-speechjobs",
+  "runs": [
+    {
+      "label": "g1-posttext-speechjobs",
+      "source": "/private/tmp/g1-baseline-20261017/artifacts/local-runs/g1-posttext-speechjobs",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "g1-posttext-speechjobs",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 155,
+      "truncated": false,
+      "sha256": "c308ee4f7cf32136476774facca11c969f81f3d779882993c5fefd21464d7bf8",
+      "redactions": {}
+    },
+    {
+      "run": "g1-posttext-speechjobs",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 1268,
+      "truncated": false,
+      "sha256": "e53cc9481bd64bf9b44b8866ff09f2a9cbfdc2ead52742cd58f0aa9584b5c1f7",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

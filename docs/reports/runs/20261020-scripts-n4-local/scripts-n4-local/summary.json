@@ -1,0 +1,57 @@
+{
+  "status": "passed",
+  "codePr": 1212,
+  "moved": {
+    "scripts/export_sermon_trace.py": "tongxing_production.observability.trace_export",
+    "scripts/sermon_logs.py": "tongxing_production.observability.logs",
+    "scripts/sermon_unified_observability.py": "tongxing_production.observability.unified_projection",
+    "scripts/sermon_trace_artifacts.py": "tongxing_production.observability.trace_artifacts",
+    "scripts/sermon_identity_sidecars.py": "tongxing_production.observability.identity_sidecars",
+    "scripts/sermon_guarded_worker.py": "tongxing_production.orchestration.guarded_worker",
+    "scripts/local_audio_resource_admission.py": "tongxing_production.compute.local_audio_admission",
+    "scripts/sermon_agent_diagnostics_contracts.py": "tongxing_production.workflows.diagnostic.agent_contracts",
+    "scripts/sermon_dag_evidence.py": "tongxing_production.workflows.diagnostic.dag_evidence",
+    "scripts/sermon_execution_extensions.py": "tongxing_production.workflows.diagnostic.execution_extensions",
+    "scripts/sermon_fresh_source_causality.py": "tongxing_production.workflows.diagnostic.fresh_source_causality",
+    "scripts/sermon_historical_identity.py": "tongxing_production.workflows.diagnostic.historical_identity",
+    "scripts/openai_layer2_diagnostic_transport.py": "tongxing_production.workflows.diagnostic.openai_layer2_transport",
+    "scripts/sermon_preview_checkpoint_manifest.py": "tongxing_production.workflows.diagnostic.preview_checkpoint_manifest",
+    "scripts/sermon_observability.py": "tools/ops/sermon_observability.py"
+  },
+  "facadesKept": 10,
+  "windowBound": [
+    "sermon_dag_contract",
+    "sermon_model_resources",
+    "sermon_job_liveness",
+    "sermon_guarded_command",
+    "codex_layer2_diagnostic",
+    "run_codex_layer2_test",
+    "sermon_diagnostic_source_evidence",
+    "export_observability_trace",
+    "sermon_run_progress"
+  ],
+  "frozenClosureHits": 0,
+  "pytest": {
+    "preMerge": {
+      "files": 197,
+      "chunks": 6,
+      "passed": 2696,
+      "failed": 5,
+      "preexistingOnDev": 3,
+      "loadSensitive": 2
+    },
+    "postMerge": {
+      "files": 49,
+      "chunks": 4,
+      "passed": 711,
+      "failed": 0
+    }
+  },
+  "l2CodeIdentity": {
+    "dev@b8e7fdc9": "d61bdfddc5180b39f5202d6b15a2bad3300643bac356fa68d05d2406400c3ddf",
+    "dev@123d592a": "0ec0f74b993380c7fd58e9beffbbf7c231de9aaee96372304cda6dd607c924ce",
+    "branch@b4234755": "f3a81a3ced24dd7a4d23dcdd731c72cfaafb86b61960f66da78a7b98a28805ef"
+  },
+  "g1IdentitiesChanged": false,
+  "hostChanged": false
+}

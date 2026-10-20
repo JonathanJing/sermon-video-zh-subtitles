@@ -1,22 +1,10 @@
 import unittest
 from unittest.mock import Mock
-from scripts.cuv_preflight import POLICY, EvidenceBlocked, preflight, require_ready
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.text.cuv_preflight import POLICY, EvidenceBlocked, preflight, require_ready
 
 
 class PreflightTests(unittest.TestCase):
-    def test_legacy_import_uses_package_implementation(self):
-        from pathlib import Path
-        from scripts import cuv_preflight as legacy
-        from tongxing_production import path_aliases
-        from tongxing_production.text import cuv_preflight as package
-
-        self.assertIs(legacy, package)
-        self.assertEqual(
-            Path(package.__file__).resolve(),
-            (Path(__file__).resolve().parents[1] /
-             path_aliases.resolve('scripts/cuv_preflight.py')).resolve(),
-        )
-
     def make(self):
         blocks = [{'id': 'a', 'en': 'Word plus'}, {'id': 'b', 'en': 'Word'}]
         quote = {'quoteId': 'q', 'reference': 'REV 3:21', 'start': 0, 'end': 4, 'uncertainty': []}
@@ -98,7 +86,7 @@ class RunPreflightTests(unittest.TestCase):
         import tempfile
         from pathlib import Path
         from unittest import mock
-        from scripts import sermon_cuv_translation as mod
+        from tongxing_production.text import cuv_translation as mod
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             video = root / 'source.mp4'
@@ -138,7 +126,7 @@ class RunPreflightTests(unittest.TestCase):
             self.assertFalse((out / 'spoken-review.json').exists())
 
     def test_global_audit_findings_are_evidence_blocked(self):
-        from scripts import sermon_cuv_translation as mod
+        from tongxing_production.text import cuv_translation as mod
         audit = {'issues': ['Missing direct quote'], 'blocks': [{'id': 0}]}
         with self.assertRaises(EvidenceBlocked) as caught:
             mod.narration_caveats(audit, {'path': 'fixture', 'sha256': 'fixture'},
@@ -147,7 +135,7 @@ class RunPreflightTests(unittest.TestCase):
         self.assertEqual('quotation_audit', caught.exception.stage)
 
     def test_audit_reports_all_global_and_block_failures_together(self):
-        from scripts import sermon_cuv_translation as mod
+        from tongxing_production.text import cuv_translation as mod
         blocks = [{'id': i, 'en': f'English {i}'} for i in range(3)]
         audit = {'issues': ['Unresolved shared verse'], 'blocks': [
             {'id': 0, 'quoteCoverage': 'fail', 'issues': ['Missing quotation'],

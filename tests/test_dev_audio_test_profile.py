@@ -8,7 +8,8 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-from scripts import dev_audio_test_profile as subject
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.audio import dev_profile as subject
 
 
 class DevAudioTestProfileTests(unittest.TestCase):

@@ -1,0 +1,32 @@
+{
+  "status": "passed",
+  "codePr": 1177,
+  "facadesDeleted": 3,
+  "facadesKeptPolicyFrozenPlugin": [
+    "scripture_adjudication"
+  ],
+  "facadesCallersOnlyG1": 21,
+  "surveyAfter": {
+    "after": 51,
+    "now": 2,
+    "total": 53
+  },
+  "unittestShards": {
+    "count": 10,
+    "tests": 5996,
+    "failuresPreexistingOrTiming": 3
+  },
+  "changedTests": {
+    "files": 133,
+    "fixedPreexistingIsolationFailure": 1,
+    "afterRebaseOverlapFiles": 20
+  },
+  "testIds": {
+    "addedOrRemoved": 0
+  },
+  "l2CodeIdentity": {
+    "dev": "a20678dc8acb34b6d148085d537265b905a2849e6d1e7c3bfa084968bb4812bc",
+    "branch": "f07ded681549237978803414fd58036887fa73cba0dd7da14e9e208414516638"
+  },
+  "g1IdentitiesChanged": false
+}

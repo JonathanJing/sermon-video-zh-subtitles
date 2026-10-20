@@ -7,7 +7,9 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-from scripts.experiments import supervisor_ab as ab
+from tests import experiment_modules
+
+ab = experiment_modules.load("experiments/agents-api-trials/supervisor_ab.py")
 
 
 class SupervisorABTests(unittest.TestCase):

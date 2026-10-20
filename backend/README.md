@@ -161,7 +161,7 @@ not confirmed as the same sermon, and emits an operator-audio fallback alert
 after the configured deadline:
 
 ```bash
-python3 scripts/live_source_monitor.py \
+.venv/bin/python tools/ops/run.py workflows.dual_pdf.live_source_monitor \
   --sunday 2026-06-28 \
   --expected-title 'The Cure for Our Rebellion - Eric Geiger | Mariners Church' \
   --out artifacts/live-source-monitor/2026-06-28.json
@@ -190,7 +190,7 @@ Secret Manager resource names.
 Cloud Scheduler can be configured with a redacted dry run first:
 
 ```bash
-python3 scripts/configure_live_source_scheduler.py \
+python3 tools/ops/configure_live_source_scheduler.py \
   --project ai-for-god \
   --location us-west1 \
   --service-url "$SERVICE_URL"
@@ -208,7 +208,7 @@ add `--post-generate` and pass either the operator token or the internal task
 token through the runtime environment:
 
 ```bash
-python3 scripts/live_source_monitor.py \
+.venv/bin/python tools/ops/run.py workflows.dual_pdf.live_source_monitor \
   --sunday 2026-06-28 \
   --backend-url https://SERVICE_URL \
   --post-generate \
@@ -281,7 +281,7 @@ resource names.
 Validate a promoted Sunday manifest before treating it as production-ready:
 
 ```bash
-python3 scripts/validate_sunday_manifest.py \
+python3 tools/ops/validate_sunday_manifest.py \
   --manifest "gs://$SERMON_ARTIFACT_BUCKET/$SERMON_ARTIFACT_PREFIX/2026-06-28/cloud-manifest.json" \
   --sunday 2026-06-28 \
   --require-readable-artifacts
@@ -295,7 +295,7 @@ When offline artifacts, the promoted Sunday manifest, and realtime JSONL are all
 available, run the combined production gate:
 
 ```bash
-python3 scripts/run_sunday_evidence_bundle.py \
+python3 tools/ops/run_sunday_evidence_bundle.py \
   --sunday 2026-06-28 \
   --session-id <worker_session_id> \
   --artifact-location gcs \
@@ -352,7 +352,7 @@ Server-side media workers can create a backend-only realtime session and publish
 events into the same SSE/public-caption contract:
 
 ```bash
-python3 scripts/realtime_media_worker.py \
+python3 tools/ops/realtime_media_worker.py \
   --sunday 2026-06-28 \
   --backend-url http://127.0.0.1:8080 \
   --create-backend-session \
@@ -363,7 +363,7 @@ For an authorized local audio source, the worker plans an `ffmpeg` normalization
 step:
 
 ```bash
-python3 scripts/realtime_media_worker.py \
+python3 tools/ops/realtime_media_worker.py \
   --sunday 2026-06-28 \
   --audio-file /path/to/authorized-sermon-audio.m4a \
   --dry-run
@@ -374,7 +374,7 @@ download step and let `ffmpeg` read the live stream directly. Reports redact URL
 query strings so short-lived stream tokens do not end up in artifacts:
 
 ```bash
-python3 scripts/realtime_media_worker.py \
+python3 tools/ops/realtime_media_worker.py \
   --sunday 2026-06-28 \
   --audio-url 'https://audio.example.test/live/sermon.m3u8?token=...' \
   --backend-url http://127.0.0.1:8080 \
@@ -390,7 +390,7 @@ caption deltas, maps `session.input_transcript.delta` to English sidecar deltas,
 and posts both to the backend event stream:
 
 ```bash
-python3 scripts/realtime_media_worker.py \
+python3 tools/ops/realtime_media_worker.py \
   --sunday 2026-06-28 \
   --audio-file /path/to/authorized-sermon-audio.m4a \
   --backend-url http://127.0.0.1:8080 \
@@ -404,7 +404,7 @@ validating `iPad/iPhone mic or captured audio -> gpt-realtime-translate ->
 backend event stream -> public SSE`:
 
 ```bash
-python3 scripts/realtime_openai_smoke_test.py \
+python3 tools/ops/realtime_openai_smoke_test.py \
   --sunday 2026-06-28 \
   --audio-file /path/to/authorized-short-sermon-audio.wav \
   --backend-url http://127.0.0.1:8080 \
@@ -423,7 +423,7 @@ realtime JSONL. Use `--audio-url` for a venue-authorized stream, `--youtube-url`
 for an authorized YouTube live source, or `--audio-file` for rehearsal:
 
 ```bash
-python3 scripts/run_realtime_live_session.py \
+python3 tools/ops/run_realtime_live_session.py \
   --sunday 2026-06-28 \
   --audio-url 'https://audio.example.test/live/sermon.m3u8?token=...' \
   --backend-url http://127.0.0.1:8080 \
@@ -442,7 +442,7 @@ After a live/smoke session, validate the saved JSONL evidence before treating th
 realtime path as production-ready:
 
 ```bash
-python3 scripts/validate_realtime_session.py \
+python3 tools/ops/validate_realtime_session.py \
   --events-jsonl /tmp/sermon-realtime-events/<session_id>.jsonl
 ```
 
@@ -459,7 +459,7 @@ authorized source and platform rules before Sunday production.
 Saved realtime JSONL can be stabilized with `gpt-5.4-mini` after a short delay:
 
 ```bash
-python3 scripts/stabilize_realtime_deltas_with_openai.py \
+python3 tools/ops/stabilize_realtime_deltas_with_openai.py \
   --input-jsonl /tmp/sermon-realtime-events/<session_id>.jsonl \
   --api-key-secret projects/PROJECT_ID/secrets/openai-api-key/versions/latest
 ```
@@ -471,7 +471,7 @@ internal task token; the backend accepts those tokens only for
 `gpt-5.4-mini-stable-correction` `caption_final` events:
 
 ```bash
-python3 scripts/stabilize_realtime_deltas_with_openai.py \
+python3 tools/ops/stabilize_realtime_deltas_with_openai.py \
   --input-jsonl /tmp/sermon-realtime-events/<session_id>.jsonl \
   --api-key-secret projects/PROJECT_ID/secrets/openai-api-key/versions/latest \
   --post-backend-url http://127.0.0.1:8080 \
@@ -487,7 +487,7 @@ After stable corrections have posted, rerun the realtime session verifier with
 the correction gate enabled:
 
 ```bash
-python3 scripts/validate_realtime_session.py \
+python3 tools/ops/validate_realtime_session.py \
   --events-jsonl /tmp/sermon-realtime-events/<session_id>.jsonl \
   --require-stable-correction
 ```
@@ -497,7 +497,7 @@ repeat the correction pass using admin/internal auth and skip segments it has
 already posted. `--input-jsonl` may be a local event log or the GCS mirror URI:
 
 ```bash
-python3 scripts/run_realtime_stabilizer_loop.py \
+python3 tools/ops/run_realtime_stabilizer_loop.py \
   --input-jsonl gs://sermon-zh-artifacts-ai-for-god/realtime-events/2026-06-28/<session_id>.jsonl \
   --api-key-secret projects/PROJECT_ID/secrets/openai-api-key/versions/latest \
   --backend-url http://127.0.0.1:8080 \
@@ -510,7 +510,7 @@ python3 scripts/run_realtime_stabilizer_loop.py \
 The output is `artifacts/realtime-stable-corrections/stable-corrections.json`
 plus a report and raw model-output JSONL. The loop report includes
 `stableCaption` and `stableLatency`; production evidence should include it with
-`scripts/collect_production_evidence_matrix.py --realtime-stabilizer-loop-report`
+`tools/ops/collect_production_evidence_matrix.py --realtime-stabilizer-loop-report`
 and should show windowed `caption_stable` events with p95 stable latency between
 3000 and 6000 ms. This is the bridge from low-latency draft captions to
 higher-quality stable captions.

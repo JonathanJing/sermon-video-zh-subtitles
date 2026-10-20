@@ -9,8 +9,9 @@ from pathlib import Path
 import unittest
 from unittest.mock import Mock, patch
 
-from scripts.experiments import decision_api_weekly_ab as ab
-from scripts.experiments.decision_api_cases_rules import build_rule_cases
+from tests import experiment_modules
+ab = experiment_modules.load("experiments/decision-api-ab/decision_api_weekly_ab.py")
+build_rule_cases = experiment_modules.load("experiments/decision-api-ab/decision_api_cases_rules.py").build_rule_cases
 
 
 class RunnerTests(unittest.TestCase):
@@ -21,6 +22,12 @@ class RunnerTests(unittest.TestCase):
         self.case = next(c for c in build_rule_cases() if c['stageId'] == 'E03')
         self.bound = ab.authority(self.root, [self.case], Decimal('20'), 200, 'user test authority')
         self.ledger = ab.Ledger(self.root, self.bound)
+
+    def test_authority_hashes_every_moved_experiment_file(self):
+        line = ab.ROOT / 'experiments/decision-api-ab'
+        files = {str(path.relative_to(ab.ROOT)) for path in line.glob('*.py')}
+        self.assertGreaterEqual(len(files), 8)
+        self.assertLessEqual(files, set(self.bound['codeDependencies']))
 
     def response(self):
         answers = []

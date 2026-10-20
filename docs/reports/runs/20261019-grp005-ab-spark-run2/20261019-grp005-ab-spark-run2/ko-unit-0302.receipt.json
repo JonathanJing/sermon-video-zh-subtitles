@@ -1,0 +1,40 @@
+{
+  "schemaVersion": "sermon-speculative-target-speech-unit-v2",
+  "status": "preview_only",
+  "candidateJsonSha256": "d544e0c57b0f6d3014c34cc2461ccbe0c36678c07a33175739b735993c67d5e8",
+  "previewExecutionBindingSha256": "ca586cd70ffdd31a016c8ed007eb354aab63a35203831012095a3b4179b3d594",
+  "soundIdentity": {
+    "unitIndex": 302,
+    "sourceJsonSha256": "137fed8486da0ec4ea22258035a230f30172be43a016faa4c382b410f830e3a9",
+    "anchorJsonSha256": "2587ffdd446ea3c1feee26980fc2bb6f22da3bfea12c614bbf45f036ffb1d1fb",
+    "translationPolicySha256": "5dc5635d13b81a02bc2cca703b6baba718d6850d97c309a5dd55fb7d6afea898",
+    "adapterId": "qwen3_tts_sft",
+    "model": "Qwen/Qwen3-TTS-12Hz-1.7B-Base",
+    "modelRevision": "fd4b254389122332181a7c3db7f27e918eec64e3",
+    "conditioningRef": "speaker-voice://qwen3-tts-12hz-1.7b-base/steve_bang_lee/b480bc6ab05863ccf1971bb7d968d99b31f64c5570d21d9cb7d10d4c993953a9",
+    "checkpointMapFileSha256": "8801e3d8afac09dd41dad7b2a7730721487c172821d1e4772f0b3db6c8918e2e",
+    "operationPoliciesFileSha256": "0694af4e143d2bc351d442c4fbf8e01774c1b2bb8890b4b4992158fd55824a44",
+    "checkpointSha256": "b480bc6ab05863ccf1971bb7d968d99b31f64c5570d21d9cb7d10d4c993953a9",
+    "speakerId": "steve_bang_lee",
+    "speakerKey": "steve_bang_lee",
+    "targetLocale": "ko",
+    "languageParameter": "Korean",
+    "groupId": "translation-chunk-0007-u021",
+    "sourceUnitIds": [
+      "chunk-0007-u021"
+    ],
+    "textSha256": "5b4d671b12b40e73011eaaebcf412d49129f618738f84e2d45a0b6661c3f64b4",
+    "rendererSha256": "44323070a68d412171cbfc01036b95c7eedee425d300fe0c7ea56396dba6b9e6",
+    "seed": 43,
+    "temperature": 0.7,
+    "repetitionPenalty": 1.05,
+    "maxNewTokens": 768,
+    "dtype": "bfloat16",
+    "attention": "sdpa",
+    "deliveryInstruction": null,
+    "ratePolicy": "natural_no_time_stretch"
+  },
+  "audioSha256": "96fe3113ee0ea94d11932f9763e26b3a565e207a4ed271ccf87f5d047e575956",
+  "durationSeconds": 11.84,
+  "fullDecode": "pass"
+}

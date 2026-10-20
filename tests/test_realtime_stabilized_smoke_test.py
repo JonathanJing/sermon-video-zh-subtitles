@@ -9,7 +9,7 @@ from types import SimpleNamespace
 
 
 SCRIPT_DIR = Path(__file__).resolve().parents[1] / "scripts"
-SCRIPT_PATH = SCRIPT_DIR / "realtime_stabilized_smoke_test.py"
+SCRIPT_PATH = SCRIPT_DIR.parent / "tools" / "ops" / "realtime_stabilized_smoke_test.py"
 if str(SCRIPT_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPT_DIR))
 SPEC = importlib.util.spec_from_file_location("realtime_stabilized_smoke_test", SCRIPT_PATH)

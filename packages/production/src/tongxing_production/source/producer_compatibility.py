@@ -125,6 +125,27 @@ JOBS_SPLIT_MEMBER_SHA256 = {
 JOBS_SPLIT_MIGRATION = 'g1-job-store-file-primitives-split-v10'
 JOBS_SPLIT_CHANGED = ['scripts/sermon_public_snapshot.py']
 
+# Closure window D removed the scripts/ facades of the G1 closures: the two diagnostic
+# Source producers import the anchor generator as tongxing_production.source.
+# sentence_interpretation instead of through its removed facade (the same module object),
+# with the same output bytes. The checkout before was exactly the v10 current table.
+FACADE_REMOVAL_HISTORICAL_SHA256 = JOBS_SPLIT_SOURCE_SHA256
+FACADE_REMOVAL_SOURCE_SHA256 = {**JOBS_SPLIT_SOURCE_SHA256,
+    'scripts/sermon_diagnostic_context.py': '63d3a4d3e672fde090b9c0d44d368c3e974553a3adb453269d29f9482414aeb1',
+    'scripts/sermon_fresh_diagnostic_source.py': '5fc2c07ce59fa65aec5fb423250d139d654aa69d6f3a84d35b929045279e2c18'}
+FACADE_REMOVAL_MIGRATION = 'd-window-closure-facade-removal-v11'
+FACADE_REMOVAL_CHANGED = ['scripts/sermon_diagnostic_context.py', 'scripts/sermon_fresh_diagnostic_source.py']
+
+# C-batch facade removal: the same two producers import every package module directly
+# instead of through its scripts/ facade (the same module objects) and bind the host
+# themselves, with the same output bytes. The checkout before was exactly the v11 current table.
+C_FACADE_REMOVAL_HISTORICAL_SHA256 = FACADE_REMOVAL_SOURCE_SHA256
+C_FACADE_REMOVAL_SOURCE_SHA256 = {**FACADE_REMOVAL_SOURCE_SHA256,
+    'scripts/sermon_diagnostic_context.py': '1cac2a769d82a922d116e5d9c5f281c3a68230731c3f0d2052ebce22938ac81d',
+    'scripts/sermon_fresh_diagnostic_source.py': '4806b661ca10217b22d75024bc0ce7be7f8510c3bcf0097dfc458e6f713137e6'}
+C_FACADE_REMOVAL_MIGRATION = 'c-batch-facade-import-removal-v12'
+C_FACADE_REMOVAL_CHANGED = ['scripts/sermon_diagnostic_context.py', 'scripts/sermon_fresh_diagnostic_source.py']
+
 
 def verify(historical,current,planned,binding):
     _require(type(historical) is dict and type(current) is dict and type(planned) is dict
@@ -143,12 +164,15 @@ def verify(historical,current,planned,binding):
     storage_move = historical==STORAGE_MOVE_HISTORICAL_SHA256 and current==STORAGE_MOVE_SOURCE_SHA256
     measure_move = historical==MEASURE_MOVE_HISTORICAL_SHA256 and current==MEASURE_MOVE_SOURCE_SHA256
     jobs_split = historical==JOBS_SPLIT_HISTORICAL_SHA256 and current==JOBS_SPLIT_SOURCE_SHA256
+    facade_removal = historical==FACADE_REMOVAL_HISTORICAL_SHA256 and current==FACADE_REMOVAL_SOURCE_SHA256
+    c_facade_removal = historical==C_FACADE_REMOVAL_HISTORICAL_SHA256 and current==C_FACADE_REMOVAL_SOURCE_SHA256
     package_move = (move or producer_move or transport_move or contracts_split or storage_move or measure_move
-                    or jobs_split)
+                    or jobs_split or facade_removal or c_facade_removal)
     changed = (CHANGED if original else MOVE_CHANGED if move else PRODUCER_MOVE_CHANGED if producer_move
         else TRANSPORT_MOVE_CHANGED if transport_move else CONTRACTS_SPLIT_CHANGED if contracts_split
         else STORAGE_MOVE_CHANGED if storage_move else MEASURE_MOVE_CHANGED if measure_move
-        else JOBS_SPLIT_CHANGED if jobs_split else ['scripts/sermon_fresh_diagnostic_source.py'])
+        else JOBS_SPLIT_CHANGED if jobs_split else FACADE_REMOVAL_CHANGED if facade_removal
+        else C_FACADE_REMOVAL_CHANGED if c_facade_removal else ['scripts/sermon_fresh_diagnostic_source.py'])
     _require((original or followup or extraction or package_move) and {path for path in current if current[path]!=historical[path]}==set(changed),
         'source_producer_compatibility_unknown_revision')
     _require(not contracts_split or all(recorded(planned,path)==sha
@@ -167,7 +191,8 @@ def verify(historical,current,planned,binding):
     migration = (MIGRATION if original else MOVE_MIGRATION if move else PRODUCER_MOVE_MIGRATION if producer_move
         else TRANSPORT_MOVE_MIGRATION if transport_move else CONTRACTS_SPLIT_MIGRATION if contracts_split
         else STORAGE_MOVE_MIGRATION if storage_move else MEASURE_MOVE_MIGRATION if measure_move
-        else JOBS_SPLIT_MIGRATION if jobs_split else EXTRACTION_MIGRATION if extraction else FOLLOWUP_MIGRATION)
+        else JOBS_SPLIT_MIGRATION if jobs_split else FACADE_REMOVAL_MIGRATION if facade_removal
+        else C_FACADE_REMOVAL_MIGRATION if c_facade_removal else EXTRACTION_MIGRATION if extraction else FOLLOWUP_MIGRATION)
     return {'schemaVersion':SCHEMA,'migrationId':migration,'binding':binding,
         'historicalProducerSha256':historical,'currentInspectorProducerSha256':current,
         'changedModules':changed,'migrationCodeSha256':_source.current().code.module_sha256(sys.modules[__name__]),

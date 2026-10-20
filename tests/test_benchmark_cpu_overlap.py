@@ -9,7 +9,9 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-from scripts.experiments import benchmark_cpu_overlap as subject
+from tests import experiment_modules
+
+subject = experiment_modules.load("experiments/local-layer-latency/benchmark_cpu_overlap.py")
 
 sys.path.insert(0, str(subject.LEGACY))
 import test_cpu_render_pipeline as renderer_fixtures  # noqa: E402

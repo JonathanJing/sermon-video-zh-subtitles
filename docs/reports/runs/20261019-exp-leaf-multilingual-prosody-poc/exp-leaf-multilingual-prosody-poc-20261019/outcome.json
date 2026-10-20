@@ -1,0 +1,9 @@
+{
+  "deliveryType": "test",
+  "status": "passed",
+  "exitCode": 0,
+  "commit": "6129b747",
+  "workflow": "local experiment leaf move verification (multilingual-prosody-poc)",
+  "publication": "not_run",
+  "realProduction": "not_run"
+}

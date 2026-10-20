@@ -26,8 +26,9 @@ MiLMMT 服务的正常 `serve/start` 入口将日志默认绑定到 `<state-dir>
 ## 新模型通用接入
 
 ```python
-from scripts.sermon_accounting import accounting_session
-from scripts.sermon_model_call_observation import invocation
+from scripts import tongxing_host  # binds the production package ports
+from tongxing_production.observability.accounting import accounting_session
+from tongxing_production.observability.model_call_observation import invocation
 
 with accounting_session(work / "accounting", "supervision"):
     with invocation(
@@ -50,7 +51,7 @@ Codex 的 `--json` 事件及 turn usage 来自[官方非交互模式文档](http
 set -o pipefail
 codex exec --ignore-user-config --json --model gpt-6-luna \
   -c 'service_tier="default"' '<approved-prompt>' \
-  | .venv/bin/python scripts/capture_supervisor_model_usage.py \
+  | .venv/bin/python tools/ops/capture_supervisor_model_usage.py \
       --format codex-exec-live --live --model gpt-6-luna \
       --service-tier default \
       --accounting-dir artifacts/<run>/accounting
@@ -61,7 +62,7 @@ codex exec --ignore-user-config --json --model gpt-6-luna \
 `--live` 明确要求实时管道：不要将保存的 JSONL 用 cat 重放后测速度，缓冲/重放耗时不能充当原调用耗时。历史日志只有附带原测量时间的版本化 observation 才能导入。其他宿主可以输出 `sermon-model-call-observation-v1` 的 fields JSONL：
 
 ```bash
-.venv/bin/python scripts/capture_supervisor_model_usage.py \
+.venv/bin/python tools/ops/capture_supervisor_model_usage.py \
   --format observations --accounting-dir artifacts/<run>/accounting \
   < observed-model-calls.jsonl
 ```
@@ -89,7 +90,7 @@ ChatGPT 登录的 CLI worker 和 Codex 监督采集器都自动记录 v2 observa
 历史观测未记 tier 时仍未知。若另有匹配的 CLI response/resource receipt，可只读核对 model、usage、call/resource 身份和响应 hash，生成独立派生日志：
 
 ```bash
-.venv/bin/python scripts/project_codex_credit_usage.py \
+.venv/bin/python tools/ops/project_codex_credit_usage.py \
   --accounting-dir artifacts/<run>/cli/accounting \
   --cli-receipts-dir artifacts/<run>/cli/_cli_calls \
   --out-dir artifacts/<run>/credit-projection-new

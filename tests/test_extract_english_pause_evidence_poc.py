@@ -1,7 +1,9 @@
 import array
 import unittest
 
-from scripts import extract_english_pause_evidence_poc as subject
+from tests import experiment_modules
+
+subject = experiment_modules.load("experiments/multilingual-prosody-poc/extract_english_pause_evidence_poc.py")
 
 
 class EnglishPauseEvidenceTest(unittest.TestCase):

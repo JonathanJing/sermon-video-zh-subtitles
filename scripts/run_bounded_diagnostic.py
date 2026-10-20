@@ -18,13 +18,14 @@ import subprocess
 import sys
 from unittest.mock import patch
 
-from scripts import sermon_accounting as accounting
+from tongxing_production.observability import accounting
 from scripts import sermon_diagnostic_provider as provider
-from scripts import sermon_log_profile as profile
-from scripts import sermon_provider_http as http
-from scripts import sermon_provider_limits as limits
-from scripts import sermon_review_budget as budget
-from scripts import sermon_review_contracts as c
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.observability import profile
+from tongxing_production.compute import provider_http as http
+from tongxing_production.compute import provider_limits as limits
+from tongxing_production.review import review_budget as budget
+from tongxing_production.review import contracts as c
 from scripts import sermon_strict_layer2 as strict
 from scripts import sermon_strict_locale as locale
 from scripts import sermon_execution_extensions as extensions

@@ -6,7 +6,7 @@ import unittest
 from unittest.mock import patch
 import wave
 
-from scripts import mfa_alignment as mfa
+from tongxing_production.source import mfa_alignment as mfa
 
 
 class AlignmentTest(unittest.TestCase):

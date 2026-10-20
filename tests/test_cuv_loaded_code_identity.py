@@ -15,10 +15,11 @@ class CuvLoadedCodeIdentityTests(unittest.TestCase):
 import hashlib
 import sys
 from pathlib import Path
-from scripts import sermon_cuv_translation
+from scripts import tongxing_host
+from tongxing_production.text import cuv_translation as sermon_cuv_translation
 from tongxing_production.observability.accounting import execution_identity
 loaded = execution_identity()['loadedProjectCodeSha256']
-for name in ('scripts.sermon_accounting', 'scripts.sermon_pipeline', 'scripts.cuv_scripture'):
+for name in ('tongxing_production.observability.accounting', 'scripts.sermon_pipeline', 'scripts.cuv_scripture'):
     module = sys.modules[name]
     path = Path(module.__file__).resolve()
     key = str(path.relative_to(Path.cwd()))

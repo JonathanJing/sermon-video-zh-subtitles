@@ -1,0 +1,5 @@
+stage	status	seconds
+core	pass	20
+storage	pass	3
+production_live	pass	1
+ui_simulator	pass	75

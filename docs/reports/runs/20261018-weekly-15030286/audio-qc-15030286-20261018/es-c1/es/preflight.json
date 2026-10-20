@@ -1,0 +1,61 @@
+{
+  "calibrationCoverage": {
+    "audio": {
+      "droppedKeyWordTrials": 8,
+      "truncationEligibleTrials": 30,
+      "untestableKinds": [],
+      "wrongSentenceUnits": 30
+    },
+    "text": {
+      "applicableGroups": {
+        "added_content": 402,
+        "added_number": 327,
+        "added_reference": 394,
+        "dropped_half": 299,
+        "dropped_name": 11,
+        "english_leak": 325,
+        "placeholder": 402,
+        "semantic_negation": 28,
+        "swapped_name": 0,
+        "swapped_quantity": 8,
+        "wrong_book": 8,
+        "wrong_number": 50,
+        "wrong_ordinal": 398
+      },
+      "notApplicableKinds": [
+        "swapped_name"
+      ],
+      "untestableKinds": []
+    }
+  },
+  "flaggedGroups": [
+    "translation-chunk-0000-u003",
+    "translation-chunk-0002-u029",
+    "translation-chunk-0003-u031",
+    "translation-chunk-0003-u033",
+    "translation-chunk-0003-u034",
+    "translation-chunk-0005-u023",
+    "translation-chunk-0006-u017",
+    "translation-chunk-0007-u008",
+    "translation-chunk-0007-u009",
+    "translation-chunk-0007-u012",
+    "translation-chunk-0007-u015",
+    "translation-chunk-0007-u018",
+    "translation-chunk-0007-u022",
+    "translation-chunk-0009-u014",
+    "translation-chunk-0010-u013"
+  ],
+  "locale": "es",
+  "packageJsonSha256": "d4ce0ce3434fd475d7644cbc4726402d707d9ead7b18fb136d770c7dfdbf7027",
+  "paths": {
+    "anchor": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/weekend-live/layer1-15030286-20261017/output-rebuild-v3/anchor-manifest.json",
+    "candidate": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/weekend-live/layer2-15030286-20261017/text-es-g2/es/candidate.json",
+    "job": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/weekend-live/layer3-15030286-20261018/es/spark-es-c1/speech-job/job.json",
+    "package": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/weekend-live/layer3-15030286-20261018/es/audio-package-c1.json",
+    "policy": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/weekend-live/layer2-15030286-20261017/policies/es-policy-frozen-15030286-v4.json",
+    "screening": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/weekend-live/layer3-15030286-20261018/es/spark-es-c1/speech-job/asr-screening-receipt-c1.json",
+    "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/weekend-live/layer1-15030286-20261017/formal-v3/english-source-package.json",
+    "textWaiver": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/weekend-live/text-qc-15030286-20261018/out-es-es-g2-acc/es/text-waiver-81bdf9c3603ffd9c.json"
+  },
+  "problems": []
+}

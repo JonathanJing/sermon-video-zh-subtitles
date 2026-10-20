@@ -4,8 +4,9 @@ from pathlib import Path
 import json
 import unittest
 
-from scripts import target_language_policy as subject
-from scripts import sermon_sentence_interpretation as interpretation
+from tongxing_production.text import policy as subject
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.source import sentence_interpretation as interpretation
 
 
 ROOT = Path(__file__).resolve().parents[1]

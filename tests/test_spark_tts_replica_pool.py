@@ -3,7 +3,8 @@ import os
 import time
 import unittest
 
-from scripts.spark_tts_replica_pool import ReplicaPool, ReplicaPoolError
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.compute.spark_tts_replica_pool import ReplicaPool, ReplicaPoolError
 
 
 class FakeEngine:
@@ -181,7 +182,8 @@ class ReplicaWindowTimingTests(unittest.TestCase):
 class ParallelBatchEngineTimingTests(unittest.TestCase):
     def test_last_window_seconds_is_the_worker_time_not_the_parent_wait(self):
         import time as clock
-        from scripts.spark_tts_window_scheduler import ParallelBatchEngine
+        from scripts import tongxing_host  # noqa: F401  binds the production package ports
+        from tongxing_production.compute.spark_tts_window_scheduler import ParallelBatchEngine
 
         class FakePool:
             replicas = 2

@@ -1,0 +1,81 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261019-es-post-d-window-text-qc-paid",
+  "runs": [
+    {
+      "label": "text",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/opus-e2e-dev216-20261014-g/post-d-window-qc-20261019/es/text",
+      "skipped": {
+        ".lock": 1,
+        ".json": 4
+      }
+    },
+    {
+      "label": ".api-budget",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/opus-e2e-dev216-20261014-g/plans/post-d-window-qc-20261019-es-zh/qc-es/.api-budget",
+      "skipped": {
+        ".lock": 221,
+        ".json": 220
+      }
+    }
+  ],
+  "files": [
+    {
+      "run": "text",
+      "path": "es/preflight.json",
+      "kind": "whole",
+      "bytes": 1352,
+      "truncated": false,
+      "sha256": "3f5de84c9dd3dcedb526a0658bddef989e22b5d8ef44a5386364505034dea216",
+      "redactions": {
+        "home_dir": 4
+      }
+    },
+    {
+      "run": "text",
+      "path": "preflight.json",
+      "kind": "whole",
+      "bytes": 1555,
+      "truncated": false,
+      "sha256": "a12ad493293ea93eab9d329e546e6770d0a6e2c65bf7164218068b927531e548",
+      "redactions": {
+        "home_dir": 3
+      }
+    },
+    {
+      "run": "text",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 3089,
+      "truncated": false,
+      "sha256": "2f9f00607a231edae4499b2dbb913d0374f16e48d51a40b3460da1cea0f4e3d8",
+      "redactions": {
+        "home_dir": 7
+      }
+    },
+    {
+      "run": "text",
+      "path": "timings.tsv",
+      "kind": "whole",
+      "bytes": 172,
+      "truncated": false,
+      "sha256": "fd43d68f77e040413dcf93e4f9c3a39ffef03757b249b9eaaac7241bf1c26469",
+      "redactions": {}
+    },
+    {
+      "run": ".api-budget",
+      "path": "source-budget.settlement.json",
+      "kind": "budget",
+      "bytes": 210093,
+      "truncated": false,
+      "source": "source-budget.json",
+      "sha256": "33e9d79e15d04c71df1cf9bb821298f0f9c049077f1e86add922c0225ab6b476",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

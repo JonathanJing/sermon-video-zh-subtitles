@@ -1,0 +1,45 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261018-layer2-zh-v7-r3-terminal",
+  "runs": [
+    {
+      "label": "20261018-layer2-zh-v7-r3-terminal",
+      "source": "~/.codex/worktrees/layer2-zh-manual-revision/sermon-video-zh-subtitles/artifacts/test-runs/20261018-layer2-zh-v7-r3-terminal",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "20261018-layer2-zh-v7-r3-terminal",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 477,
+      "truncated": false,
+      "sha256": "a3558bac891568e994b5672af65245563334b3be252cce802abe72f99bf42e84",
+      "redactions": {}
+    },
+    {
+      "run": "20261018-layer2-zh-v7-r3-terminal",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 1581,
+      "truncated": false,
+      "sha256": "14e167719d0653b07f6644fa5ab58203b138e661ad06449fd92a6f0c8216ec2b",
+      "redactions": {}
+    },
+    {
+      "run": "20261018-layer2-zh-v7-r3-terminal",
+      "path": "terminal-receipt.json",
+      "kind": "whole",
+      "bytes": 929,
+      "truncated": false,
+      "sha256": "9e1f16a0b9f657f77c045e770ce11c38b730a79a9b0e68ed015869e5729745d7",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

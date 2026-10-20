@@ -1,0 +1,11 @@
+{
+  "scope": "Move Decisions API A/B experiments from scripts/experiments to experiments/decision-api-ab, from origin/dev 06d65999",
+  "results": {
+    "targetedTests": "81 passed, 621 subtests passed (6 decision test modules, test_tongxing_production_package, test_experiment_leaf_facades)",
+    "testIdInventory": "6969 IDs before, 6972 after; no IDs removed, 3 facade tests added",
+    "legacyCli": "--help exits 0 via legacy, new and -m paths from an external CWD, except decision_api_cases_content direct file run, which exits 1 on both old and new paths (no sys.path bootstrap, unchanged)",
+    "budgetAuthority": "dependency keys rebound to the moved files",
+    "diffCheck": "git diff --check passed"
+  },
+  "limits": "Local deterministic tests only; no production, paid model, Spark, or public delivery. CI workflows disabled by user decision 2026-10-19."
+}

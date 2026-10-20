@@ -8,7 +8,7 @@ import tempfile
 import unittest
 from pathlib import Path
 from unittest.mock import patch
-from scripts import mfa_spark as spark
+from tongxing_production.source import mfa_spark as spark
 
 
 class SparkTransportTests(unittest.TestCase):

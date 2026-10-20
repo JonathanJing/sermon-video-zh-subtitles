@@ -1,0 +1,19 @@
+{
+  "schemaVersion": "sermon-run-summary-v1",
+  "status": "pass",
+  "scope": "ios_mixed_source_full_transcript_english",
+  "productionCatalog": "sermon-multilingual-catalog-v5",
+  "familyPageId": "resi-20261018-15030286",
+  "editionId": "resi-20261018-broadcast",
+  "fullTextCount": 416,
+  "captionCount": 416,
+  "englishFullTextCount": 416,
+  "englishCaptionCount": 416,
+  "coreTests": 115,
+  "storageTests": 29,
+  "liveTests": 1,
+  "uiTests": 1,
+  "simulator": "iPhone Duo / iOS 27.1",
+  "deviceAcceptance": "not_run",
+  "distribution": "not_run"
+}

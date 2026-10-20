@@ -126,7 +126,8 @@ class ArchiveCaptionTests(unittest.TestCase):
             archive.reviewed_inputs(run, media_probe=self.probe)
 
     def test_translation_accounting_records_usage_without_changing_model_settings(self):
-        from scripts.sermon_accounting import record_api_attempt, read_events
+        from scripts import tongxing_host  # noqa: F401  binds the production package ports
+        from tongxing_production.observability.accounting import record_api_attempt, read_events
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             run = root / "run"
@@ -135,8 +136,8 @@ class ArchiveCaptionTests(unittest.TestCase):
                 record_api_attempt("gpt-6-astra", {"usage": {"prompt_tokens": 11, "completion_tokens": 7}}, .01)
                 return []
             with patch.object(archive, "validate", wraps=lambda source: archive.caption_segments(Path(source["captions"]["path"]), 5)), \
-                 patch("scripts.sermon_pipeline.load_env"), patch.dict("os.environ", {"OPENAI_API_KEY": "test-only"}), \
-                 patch("scripts.sermon_pipeline.translate_chinese", side_effect=translated) as translate:
+                 patch("tongxing_production.workflows.dual_pdf.pipeline.load_env"), patch.dict("os.environ", {"OPENAI_API_KEY": "test-only"}), \
+                 patch("tongxing_production.workflows.dual_pdf.pipeline.translate_chinese", side_effect=translated) as translate:
                 archive.translate(run)
             self.assertEqual(translate.call_args.args[3], "gpt-6-astra")
             self.assertEqual(translate.call_args.kwargs, {"reasoning_effort": "medium", "workers": 4})

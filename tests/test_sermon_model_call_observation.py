@@ -4,7 +4,8 @@ from pathlib import Path
 import unittest
 from unittest.mock import patch
 
-from scripts import sermon_model_call_observation as observation
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.observability import model_call_observation as observation
 
 
 class ModelCallObservationTests(unittest.TestCase):

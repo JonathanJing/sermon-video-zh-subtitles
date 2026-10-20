@@ -5,7 +5,8 @@ import unittest
 from unittest.mock import patch
 
 from scripts import sermon_execution_extensions as ext
-from scripts import sermon_review_contracts as c
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.review import contracts as c
 from scripts import run_bounded_diagnostic as entry, sermon_strict_layer2 as strict
 from tests import test_run_bounded_diagnostic as fixtures
 

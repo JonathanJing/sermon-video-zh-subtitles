@@ -5,7 +5,8 @@ from pathlib import Path
 import tempfile
 import unittest
 
-from scripts import sermon_accounting as accounting
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.observability import accounting
 from tests.mock_tts_sdk_diagnostics import result_summary, status_diagnostics
 from tests.test_accounting_log_contract import fixture
 

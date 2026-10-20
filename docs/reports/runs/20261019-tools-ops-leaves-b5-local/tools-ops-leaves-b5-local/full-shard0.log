@@ -1,0 +1,5 @@
+FAIL: test_129_group_actual_producer_can_assemble_and_resume_without_calls (test_layer2_large_fan_in.LargeLayer2FanInTests.test_129_group_actual_producer_can_assemble_and_resume_without_calls)
+FAIL: test_65_group_worker_and_cache_only_recovery_preserve_every_dependency (test_layer2_large_fan_in.LargeLayer2FanInTests.test_65_group_worker_and_cache_only_recovery_preserve_every_dependency)
+Ran 1490 tests in 1274.514s
+FAILED (failures=2, skipped=8)
+exit 1

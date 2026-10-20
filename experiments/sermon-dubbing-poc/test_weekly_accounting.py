@@ -11,8 +11,9 @@ from unittest.mock import patch
 
 import run_weekly_dubbing as runner
 import check_weekly_timing as timing
-from scripts.sermon_accounting import ENV_KEYS, accounting_session
-from scripts import sermon_accounting as accounting
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.observability.accounting import ENV_KEYS, accounting_session
+from tongxing_production.observability import accounting
 from test_resume_integrity import candidate_fixture
 
 

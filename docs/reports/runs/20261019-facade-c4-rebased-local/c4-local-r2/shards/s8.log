@@ -1,0 +1,246 @@
+Estimating 210 unprofiled modules from measured per-case cost
+Shard 9/10: 619 tests from 369 modules
+....................................Digest: /var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/tmp6xpen6dj/export/20261014-cli-private (1 files, 0 redactions)
+{"component": "api", "event": "post_live_subtitle_generation_triggered", "inlineWorker": false, "loggedAt": "2026-10-19T23:02:30.734358+00:00", "severity": "INFO", "sunday": "2026-07-26", "triggerSource": "internal-task"}
+.{"component": "api", "event": "sermon_production_supervisor_triggered", "inlineWorker": false, "loggedAt": "2026-10-19T23:02:30.734481+00:00", "mode": "shadow", "severity": "INFO", "sunday": "2026-08-02", "triggerSource": "cloud-scheduler"}
+{"component": "api", "errorClass": "ConnectionError", "event": "sermon_production_supervisor_source_check_failed", "loggedAt": "2026-10-19T23:02:30.734505+00:00", "mode": "shadow", "severity": "ERROR", "sunday": "2026-08-02", "triggerSource": "cloud-scheduler"}
+................usage: run_unittest_ci.py [-h] {build,verdicts} ...
+run_unittest_ci.py: error: output directory already exists: /var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/tmp2xpietdl/sheet
+usage: run_unittest_ci.py build [-h] --audio-package AUDIO_PACKAGE
+                                --candidate CANDIDATE --anchors ANCHORS
+                                --screening SCREENING [--audio-qc AUDIO_QC]
+                                [--sample-size SAMPLE_SIZE] [--seed SEED]
+                                --out OUT
+run_unittest_ci.py build: error: the following arguments are required: --screening
+..........................................{"locale": "zh-Hans", "rows": 7, "flagged": 2, "sampled": 5, "sheet": "/var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/tmp2xpietdl/sheet/listening-sample.md"}
+{"role": "translator", "model": "gpt-6.1-sol", "tier": "fast", "elapsedSeconds": 0.0, "usage": {"input_tokens": 100, "cached_input_tokens": 50, "output_tokens": 20}, "creditUsage": {"schemaVersion": "codex-credit-usage-v1", "status": "estimated", "estimatedCredits": 0.01525, "actualCredits": null, "actualQuotaUsage": null, "basis": "purchased_credit_equivalent", "model": "gpt-6.1-sol", "modelSource": "requested", "requestedServiceTier": "fast", "appliedServiceTier": "fast", "tierSource": "requested", "rateCardVersion": "codex-credits-2026-10-05", "rateCardSha256": "557d283646a6dd8ed49cc32a88e8459a165b72066339be99233ea75146c21edf", "verifiedAt": "2026-10-05", "sources": ["https://learn.chatgpt.com/docs/pricing", "https://learn.chatgpt.com/docs/agent-configuration/speed"], "ratesPerMillionTokens": {"input": 50, "cachedInput": 2.5, "output": 250}, "speedMultiplier": 2, "reason": "requested_identity_assumption"}}
+......................................................................................................................................................................................Digest: /var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/tmpv0vsjeh7/digests/20261007-e2e (6 files, 9 redactions)
+Digest: /var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/tmp5y3zurhj/digests/20261007-e2e (5 files, 9 redactions)
+Tidied whitespace: /var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/tmp5y3zurhj/digests/20261007-e2e/INDEX.md
+No unredacted values found.
+{"status": "deployed_http_verification_pending", "out": "/var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/tmp4a_cvr7j/new/receipt.json"}
+{
+  "status": "ok",
+  "out": "/var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/tmp3976eac7/interpretation.pdf",
+  "qa": "/var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/tmp3976eac7/interpretation.qa.json",
+  "qaStatus": "pass",
+  "pageCount": 2
+}
+{"stage": "tts", "batchIndex": 0, "completedGroups": 2}
+{"stage": "tts", "batchIndex": 1, "completedGroups": 4}
+{"stage": "tts", "batchIndex": 2, "completedGroups": 6}
+{"stage": "tts", "batchIndex": 3, "completedGroups": 8}
+{"stage": "tts", "batchIndex": 4, "completedGroups": 10}
+{"stage": "tts", "batchIndex": 5, "completedGroups": 12}
+{"stage": "tts", "batchIndex": 6, "completedGroups": 13}
+............discover	pass	0.0
+ko.text-qc.prefetch	pass	0.0
+ko.text-qc	pass	0.1
+ko.calibration.prefetch	pass	0.2
+ko.calibration	pass	0.4
+... 229 lines omitted; 4 error-like lines, 4 kept below ...
+[line 62]     "reason": "audio QC failed; re-render the failed units as the repair ladder says",
+[line 71]     "reason": "failed units still have the same audio; re-render them (new seed or revised text) first",
+[line 110] run_unittest_ci.py: error: real runs need --state-dir: the run's persistent state dir holding its repair ledger
+[line 126] .........................................................................................................................s..................s...................................................SERMON_LOGGING_WRITE_FAILED errorType=AccountingWriteError
+... end of omitted section ...
+    },
+    "operatorChoices": [
+      {
+        "default": true,
+        "evidenceReports": [
+          "artifacts/evidence/web-realtime-contract.json",
+          "artifacts/evidence/realtime-public-sse-smoke.json"
+        ],
+        "expectedAudioSourceKind": "ipad_mic",
+        "expectedAudioSourceKinds": null,
+        "id": "browser_webrtc_ipad_or_iphone_mic",
+        "operatorAction": "Open the admin page, choose iPad mic realtime mode, and start the microphone session.",
+        "path": "browser WebRTC -> gpt-realtime-translate -> backend session events -> public caption SSE",
+        "source": "iPad/iPhone mic"
+      },
+      {
+        "command": [
+          "python3",
+          "scripts/run_realtime_live_session.py",
+          "--realtime-model",
+          "gpt-realtime-translate",
+          "--stable-model",
+          "gpt-5.4-mini"
+        ],
+        "default": false,
+        "expectedAudioSourceKind": null,
+        "expectedAudioSourceKinds": [
+          "authorized_audio_url",
+          "authorized_audio_file",
+          "authorized_youtube_source"
+        ],
+        "id": "server_worker_authorized_audio",
+        "operatorAction": null,
+        "path": "server media worker -> gpt-realtime-translate -> backend session events -> public caption SSE",
+        "source": "authorized audio URL/file or authorized YouTube live source"
+      }
+    ],
+    "passCriteria": [
+      "Realtime session uses gpt-realtime-translate and targetLanguage=zh.",
+      "Offline post-live route never uses gpt-realtime-translate."
+    ],
+    "postLiveOfflineHandoff": {
+      "captionFirst": [
+        "Try requested English captions/VTT first.",
+        "Translate with gpt-5.4-mini."
+      ],
+      "noCaptionFallback": [
+        "Transcribe with gpt-4o-transcribe.",
+        "Translate with gpt-5.4-mini."
+      ],
+      "trigger": "Run only after the YouTube live archive is available."
+    },
+    "stabilizerFallbackCommand": [
+      "python3",
+      "scripts/run_realtime_stabilizer_loop.py",
+      "--model",
+      "gpt-5.4-mini"
+    ],
+    "status": "ready_for_operator_review",
+    "sunday": "2026-06-28",
+    "targetWindow": {
+      "liveCaptionStart": "11:30 PT",
+      "publicReadinessDeadline": "11:50 PT"
+    }
+  },
+  "postApprovalEvidence": [
+    "artifacts/evidence/cloud-run-realtime-config.json",
+    "artifacts/evidence/cloud-run-api-preflight.json",
+    "artifacts/evidence/web-realtime-contract.json",
+    "artifacts/evidence/realtime-public-sse-smoke.json",
+    "artifacts/evidence/realtime-public-sse-smoke.session-validation.json",
+    "artifacts/evidence/sunday-manifest-validation.json",
+    "artifacts/evidence/production-evidence-matrix.json",
+    "artifacts/evidence/production-goal-readiness-audit.json"
+  ],
+  "postApprovalFollowupSteps": [
+    {
+      "commands": [
+        [
+          "python3",
+          "tools/ops/run_cloud_run_realtime_preflight.py"
+        ]
+      ],
+      "dependency": null,
+      "expectedChecks": [],
+      "id": "rerun_cloud_run_api_preflight",
+      "planReport": null,
+      "planStatus": null,
+      "reason": null,
+      "requiresExplicitApproval": false,
+      "sourceRow": "cloud_run_api_preflight",
+      "state": "pending"
+    },
+    {
+      "commands": [
+        [
+          "python3",
+          "tools/ops/run_realtime_public_sse_smoke.py",
+          "--web-realtime-contract-report",
+          "artifacts/evidence/web-realtime-contract.json"
+        ]
+      ],
+      "dependency": null,
+      "expectedChecks": [],
+      "id": "rerun_deployed_public_sse_smoke",
+      "planReport": null,
+      "planStatus": null,
+      "reason": null,
+      "requiresExplicitApproval": false,
+      "sourceRow": "realtime_public_sse_contract",
+      "state": "pending"
+    }
+  ],
+  "postApprovalValidation": {
+    "commands": [
+      [
+        "python3",
+        "tools/ops/validate_cloud_run_realtime_config.py"
+      ],
+      [
+        "python3",
+        "tools/ops/run_cloud_run_realtime_preflight.py"
+      ],
+      [
+        "python3",
+        "tools/ops/run_realtime_public_sse_smoke.py",
+        "--web-realtime-contract-report",
+        "artifacts/evidence/web-realtime-contract.json"
+      ]
+    ],
+    "expectedChecks": [
+      "browser_normalized_event_payloads",
+      "no_secret_material_in_http_responses",
+      "realtime_local_session_create",
+      "realtime_local_session_metadata",
+      "session_jsonl_validation",
+      "sse_stable_correction_matches_draft_segment"
+    ],
+    "requiredEvidence": [
+      "artifacts/evidence/cloud-run-realtime-config.json",
+      "artifacts/evidence/cloud-run-api-preflight.json",
+      "artifacts/evidence/realtime-public-sse-smoke.json",
+      "artifacts/evidence/realtime-public-sse-smoke.session-validation.json",
+      "artifacts/evidence/sunday-manifest-validation.json",
+      "artifacts/evidence/production-evidence-matrix.json",
+      "artifacts/evidence/production-goal-readiness-audit.json"
+    ]
+  },
+  "requiredApprovals": [
+    {
+      "approvalKind": "cloud_run_runtime_update",
+      "id": "apply_cloud_run_realtime_config",
+      "reason": "Apply the approved Cloud Run realtime update plan.",
+      "requiresExplicitApproval": true,
+      "state": "approval_required"
+    },
+    {
+      "approvalKind": "gcs_manifest_publish",
+      "id": "publish_sunday_manifest_to_gcs",
+      "reason": "Upload/promote the manifest and artifacts to GCS.",
+      "requiresExplicitApproval": true,
+      "state": "approval_required"
+    }
+  ],
+  "rollback": {
+    "available": true,
+    "commands": [
+      [
+        "gcloud",
+        "run",
+        "services",
+        "update",
+        "sermon-zh-caption-web",
+        "--remove-env-vars",
+        "REALTIME_EVENT_GCS_PREFIX"
+      ]
+    ],
+    "requiresExplicitApproval": true
+  },
+  "schemaVersion": 1,
+  "secretResourceNamesIncluded": false,
+  "status": "approval_required",
+  "sunday": "2026-06-28"
+}....
+----------------------------------------------------------------------
+Ran 619 tests in 1555.646s
+
+OK (skipped=2)
+
+ 504.04s     7  test_machine_quality_waiver
+ 247.21s     2  test_run_machine_qc_audio_test
+  92.35s     2  test_sermon_unified_parallel
+  42.95s     7  test_sermon_delivery_intent_binding
+  42.94s     2  test_canonical_layer2_cache_recovery
+  37.81s     4  test_sermon_mock_tts_dag
+  28.64s     2  test_sermon_historical_layer2
+  26.62s     6  test_sermon_cuv_translation
+  26.00s     5  test_sermon_strict_layer2
+  25.19s     1  test_sermon_fresh_mfa_boundaries
+exit 0

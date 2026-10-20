@@ -34,7 +34,7 @@ def main():
     if args.output.exists():
         parser.error('output must be a new directory; existing results are never overwritten')
     root = Path(__file__).resolve().parents[2]
-    spec = importlib.util.spec_from_file_location('v41_service', root / 'scripts/serve_milmmt_v41_local.py')
+    spec = importlib.util.spec_from_file_location('v41_service', root / 'experiments/milmmt-v41-local/serve_milmmt_v41_local.py')
     service = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(service)
     rows = [json.loads(line) for line in args.samples.read_text().splitlines() if line.strip()]

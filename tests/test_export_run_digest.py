@@ -6,7 +6,7 @@ import zipfile
 from pathlib import Path
 from unittest.mock import patch
 
-from scripts import export_run_digest as digest
+from tools.development import export_run_digest as digest
 
 
 class ExportRunDigestTests(unittest.TestCase):
@@ -215,14 +215,16 @@ class ExportRunDigestTests(unittest.TestCase):
         (self.run / "upload.log").write_text(
             f"source {folder}\nsee [doc](https://docs.google.com/document/d/1xYz/edit)\n"
             "https://www.dropbox.com/scl/fi/abc/broadcast.mp4?rlkey=xyz&dl=0 https://1drv.ms/f/s!Abc\n"
-            "https://onedrive.live.com/?id=X https://www.icloud.com/iclouddrive/0abc#broadcast\n")
+            "https://onedrive.live.com/?id=X https://www.icloud.com/iclouddrive/0abc#broadcast\n"
+            "https://contoso-my.sharepoint.com/personal/jon_contoso_com/Documents/broadcast.mp4 "
+            "https://contoso.sharepoint.com/:f:/s/media/EAbC?e=1 https://www.dropbox.com/sh/abc/xyz?dl=0\n")
         dest = self.export()
         summary = json.loads((dest / self.run.name / "layer1-broadcast-20261018" / "output" / "summary.json").read_text())
         self.assertEqual(summary, {"status": "ok", "sourceUrl": "<private-drive-link>"})
         log = (dest / self.run.name / "upload.log").read_text()
-        for host in ("drive.google", "docs.google", "dropbox", "1drv", "onedrive", "icloud"):
+        for host in ("drive.google", "docs.google", "dropbox", "1drv", "onedrive", "icloud", "sharepoint"):
             self.assertNotIn(host, log)
-        self.assertEqual(log.count("<private-drive-link>"), 6)
+        self.assertEqual(log.count("<private-drive-link>"), 9)
         self.assertEqual(digest.verify(dest, []), [])
 
         leaked = dest / self.run.name / "layer1-broadcast-20261018" / "output" / "summary.json"
@@ -233,8 +235,17 @@ class ExportRunDigestTests(unittest.TestCase):
         (dest / "RETROSPECTIVE.md").write_text(f"来源：[广播版]({folder})\n")
         self.assertEqual(digest.main([str(dest), "--verify"]), 1)
         # Public pages on the same providers are not share links.
-        (dest / "RETROSPECTIVE.md").write_text("https://www.dropbox.com/home https://docs.google.com/forms\n")
+        (dest / "RETROSPECTIVE.md").write_text("https://www.dropbox.com/home https://docs.google.com/forms "
+                                                "https://contoso.sharepoint.com/sites/team\n")
         self.assertEqual(digest.main([str(dest), "--verify"]), 0)
+
+    def test_private_drive_link_keeps_the_prose_after_it(self):
+        folder = "https://drive.google.com/drive/folders/1AbC"
+        for text, expected in ((f"来源 {folder}。状态：失败", "来源 <private-drive-link>。状态：失败"),
+                               (f"see {folder}/view.", "see <private-drive-link>."),
+                               (f"（{folder}）重试", "（<private-drive-link>）重试"),
+                               (f"{folder}?usp=sharing, then", "<private-drive-link>, then")):
+            self.assertEqual(digest.redact(text, [])[0], expected)
 
     def test_tidy_whitespace_satisfies_git_diff_check_and_skips_binary(self):
         (self.run / "render.log").write_text("UserWarning: x  \r\n  indented\t\n\n\n")

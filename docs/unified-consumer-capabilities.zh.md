@@ -1,10 +1,10 @@
 # Unified 消费端能力预检
 
-`scripts/sermon_unified_capabilities.py` 在未来 Layer 1/2/3/4 产物尚未生成时，只检查可事前验证的真实输入。`inspect(path)` 不写文件、不访问网络、不调用模型；`freeze(path, output)` 仅以排他创建方式写入新配置，要求同目录以保留相对路径含义。
+`workflows/prepared/capabilities.py`（命令 `tools/ops/run.py workflows.prepared.capabilities`） 在未来 Layer 1/2/3/4 产物尚未生成时，只检查可事前验证的真实输入。`inspect(path)` 不写文件、不访问网络、不调用模型；`freeze(path, output)` 仅以排他创建方式写入新配置，要求同目录以保留相对路径含义。
 
 ```sh
-.venv/bin/python -m scripts.sermon_unified_capabilities capabilities.json --freeze-out capabilities.frozen.json
-.venv/bin/python -m scripts.sermon_unified_capabilities capabilities.frozen.json
+.venv/bin/python tools/ops/run.py workflows.prepared.capabilities capabilities.json --freeze-out capabilities.frozen.json
+.venv/bin/python tools/ops/run.py workflows.prepared.capabilities capabilities.frozen.json
 ```
 
 配置字段（不接受其他字段）：

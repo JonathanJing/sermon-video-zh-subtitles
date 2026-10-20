@@ -1,0 +1,11 @@
+{
+  "schemaVersion": "local-test-summary-v1",
+  "capabilities": [
+    "full L3 chain ran on Spark with the formal producers",
+    "audio QC issued a machine waiver for the 16-unit es clip"
+  ],
+  "limits": [
+    "machine waiver is not human approval; no release, deployment, device or venue acceptance",
+    "render exit 1 was the renderer's unit-flag code; the screen/QC decided, per the driver contract"
+  ]
+}

@@ -1,0 +1,244 @@
+Estimating 213 unprofiled modules from measured per-case cost
+Shard 10/10: 616 tests from 374 modules
+........................................E...................................................{"group": "group-0001", "solSeconds": 2.0, "opusSeconds": 1.0}
+{"group": "group-0002", "solSeconds": 2.0, "opusSeconds": 1.0}
+{"freshCalls": {"sol": 2, "opus": 2, "review": 0}, "groups": 2, "targetLocale": "ko"}
+...s.....{"role": "reviewer", "model": "gpt-6.1-sol", "tier": "fast", "elapsedSeconds": 0.0, "usage": {"input_tokens": 100, "cached_input_tokens": 50, "output_tokens": 20}, "creditUsage": {"schemaVersion": "codex-credit-usage-v1", "status": "estimated", "estimatedCredits": 0.01525, "actualCredits": null, "actualQuotaUsage": null, "basis": "purchased_credit_equivalent", "model": "gpt-6.1-sol", "modelSource": "requested", "requestedServiceTier": "fast", "appliedServiceTier": "fast", "tierSource": "requested", "rateCardVersion": "codex-credits-2026-10-05", "rateCardSha256": "557d283646a6dd8ed49cc32a88e8459a165b72066339be99233ea75146c21edf", "verifiedAt": "2026-10-05", "sources": ["https://learn.chatgpt.com/docs/pricing", "https://learn.chatgpt.com/docs/agent-configuration/speed"], "ratesPerMillionTokens": {"input": 50, "cachedInput": 2.5, "output": 250}, "speedMultiplier": 2, "reason": "requested_identity_assumption"}}
+...........reviewed 0-0
+{
+  "status": "reviewed-needs-operator-approval",
+  "promptVersion": "sermon-source-bound-review-v3",
+  "model": "gpt-6.1-sol",
+  "segmentCount": 1,
+  "inputSha256": {
+    "english": "9e04e4bf2d59856f9035477c66da5df4f25caf221a0e0ab1c5e413f7a2f101b5",
+    "chinese": "601718c859e818e731932b05887e3e4843671e87df2f381984459920b650abf8"
+  },
+  "archiveOffsetSeconds": null,
+  "remainingEllipsisSegmentIds": [],
+  "qa": {
+    "segmentCount": 1,
+    "emptyEnglish": [],
+    "emptyChinese": [],
+    "overlaps": [],
+    "durationViolations": [],
+    "englishLineLengthViolations": [],
+    "chineseLineLengthViolations": [],
+    "chineseCpsWarnings": [],
+    "glossaryTermsNotObserved": [],
+    "latinBibleTermWarnings": [],
+    "suspiciousAsrWarnings": [],
+    "translationIdMismatchCount": 0,
+    "hardFailures": {
+      "emptyEnglish": 0,
+      "emptyChinese": 0,
+      "overlaps": 0,
+      "translationIdMismatchCount": 0
+    }
+  },
+  "notes": []
+}
+... 46 lines omitted; 2 error-like lines, 2 kept below ...
+[line 45] run_unittest_ci.py: error: --name must be YYYYMMDD-<label> using ASCII letters, digits, '.', '_' and '-'
+[line 49] progress: error: ledger already exists; refusing to overwrite
+... end of omitted section ...
+L1 shared        0/4 (0%)  未知
+L2 ko            0/4 (0%)  未知
+L2 es            0/4 (0%)  未知
+L3 ko            0/6 (0%)  未知
+L3 es            0/6 (0%)  未知
+L4 ko            0/4 (0%)  未知
+L4 es            0/4 (0%)  未知
+ETA（连续串行、无审核等待）: 未知
+缺估时 32 项: L1-01, L1-02, L1-03, L1-04, L2-01@ko, L2-02@ko …
+独立验收 ko: 设备=not_run，现场=not_run
+独立验收 es: 设备=not_run，现场=not_run
+注意：进度账本不授予 Layer 门禁、发布或验收状态。
+......................................SERMON_LOGGING_WRITE_FAILED errorType=AccountingWriteError
+..............................................$ upload_file_to_gcs.py --source /var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/tmpte0c22um/artifacts/report.json --destination gs://sermon-zh-poc/runs/2026-06-22/artifacts/report.json
+{"stage": "tts", "batchIndex": 0, "completedGroups": 2}
+{"stage": "tts", "batchIndex": 1, "completedGroups": 4}
+{"stage": "tts", "batchIndex": 2, "completedGroups": 6}
+{"stage": "tts", "batchIndex": 3, "completedGroups": 8}
+{"stage": "tts", "batchIndex": 4, "completedGroups": 10}
+{"stage": "tts", "batchIndex": 5, "completedGroups": 12}
+{"stage": "tts", "batchIndex": 6, "completedGroups": 13}
+.............{
+  "decision": {
+    "action": "already_complete"
+  },
+  "schemaVersion": 1,
+  "status": "complete"
+}
+discover	pass	0.0
+ko.text-qc.prefetch	pass	0.0
+ko.text-qc	pass	0.0
+ko.calibration.prefetch	pass	0.6
+ko.calibration	pass	0.4
+ko.text-waiver	pass	0.0
+{
+  "ko": {
+    "status": "text_waiver_issued",
+    "reason": null,
+    "problems": [],
+    "calibration": {
+      "overallDetectionRate": 1.0,
+      "cleanFalsePositiveRate": 0.0,
+      "trials": 90,
+      "detected": 90
+    }
+  }
+}
+discover	pass	0.0
+ko.track-check	pass	0.0
+ko.secondary-asr	pass	0.0
+ko.audio-qc	pass	0.5
+{
+  "ko": {
+    "status": "requires_repair",
+    "reason": "audio QC failed; re-render the failed units as the repair ladder says",
+    "problems": [],
+    "calibration": null
+  }
+}
+discover	pass	0.0
+..{
+  "ko": {
+    "status": "blocked_prior_failure",
+    "reason": "failed units still have the same audio; re-render them (new seed or revised text) first",
+    "problems": [],
+    "calibration": null
+  }
+}
+discover	pass	0.0
+ko.text-qc.prefetch	pass	0.0
+ko.text-qc	pass	0.0
+ko.calibration.prefetch	pass	0.4
+ko.calibration	pass	0.3
+ko.text-waiver	pass	0.0
+{
+  "ko": {
+    "status": "fake_plumbing_pass",
+    "reason": "fake judge: waiver built in memory, never saved",
+    "problems": [],
+    "calibration": {
+      "overallDetectionRate": 1.0,
+      "cleanFalsePositiveRate": 0.0,
+      "trials": 90,
+      "detected": 90
+    }
+  }
+}
+discover	pass	0.0
+ko.text-qc.prefetch	pass	0.0
+ko.text-qc	pass	0.0
+ko.calibration.prefetch	pass	0.2
+ko.calibration	pass	0.2
+ko.text-waiver	pass	0.0
+..usage: run_unittest_ci.py [-h] [--run-dir RUN_DIR] --out OUT
+                          [--state-dir STATE_DIR] [--locales LOCALES]
+                          [--candidate LOCALE=PATH]
+                          [--spoken-binding LOCALE=PATH]
+                          [--text-backend {codex,api,fake}]
+                          [--workers WORKERS] [--preflight-only]
+                          [--human-acceptance LOCALE=PATH]
+                          [--api-budget-authorization API_BUDGET_AUTHORIZATION]
+                          [--expected-implementation SHA256]
+run_unittest_ci.py: error: real runs need --state-dir: the run's persistent state dir holding its repair ledger
+............{
+  "ko": {
+    "status": "fake_plumbing_pass",
+    "reason": "fake judge: waiver built in memory, never saved",
+    "problems": [],
+    "calibration": {
+      "overallDetectionRate": 1.0,
+      "cleanFalsePositiveRate": 0.0,
+      "trials": 90,
+      "detected": 90
+    }
+  }
+}
+translated sentence batches 1/1
+reviewed sentence batches 1/1
+translated sentence batches 1/1
+reviewed sentence batches 1/1
+..................................SERMON_LOGGING_WRITE_FAILED errorType=AccountingWriteError
+......................................SERMON_LOGGING_WRITE_FAILED errorType=AccountingWriteError
+........................SERMON_LOGGING_WRITE_FAILED errorType=AccountingWriteError
+........................s.................s.................s................................SERMON_LOGGING_WRITE_FAILED errorType=AccountingWriteError
+...............................................v4.1 package verified; model loaded and warmup finished.
+..v4.1 实验翻译已就绪：http://127.0.0.1:18771 （PID 123456）
+v4.1 实验翻译已就绪：http://127.0.0.1:18771 （PID 123456）
+v4.1 package verified; model loaded and warmup finished.
+........................................................................
+======================================================================
+ERROR: test_backend_app (unittest.loader._FailedTest.test_backend_app)
+----------------------------------------------------------------------
+ImportError: Failed to import test module: test_backend_app
+Traceback (most recent call last):
+  File "/opt/homebrew/Cellar/<email>/3.13.16/Frameworks/Python.framework/Versions/3.13/lib/python3.13/unittest/loader.py", line 403, in _find_test_path
+    module = self._get_module_from_name(name)
+  File "/opt/homebrew/Cellar/<email>/3.13.16/Frameworks/Python.framework/Versions/3.13/lib/python3.13/unittest/loader.py", line 346, in _get_module_from_name
+    __import__(name)
+    ~~~~~~~~~~^^^^^^
+  File "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.claude/worktrees/opus-haiku-translation-review-4a3b7c/tests/test_backend_app.py", line 8, in <module>
+    from backend.app import ApiHandler, WEB_ROOT
+  File "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.claude/worktrees/opus-haiku-translation-review-4a3b7c/backend/app.py", line 11, in <module>
+    from .cloud_run_jobs import dispatch_cloud_run_job
+  File "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.claude/worktrees/opus-haiku-translation-review-4a3b7c/backend/cloud_run_jobs.py", line 8, in <module>
+    from tongxing_api import cloud_run_jobs as _implementation
+ModuleNotFoundError: No module named 'tongxing_api'
+
+
+======================================================================
+FAIL: test_65_group_worker_and_cache_only_recovery_preserve_every_dependency (test_layer2_large_fan_in.LargeLayer2FanInTests.test_65_group_worker_and_cache_only_recovery_preserve_every_dependency)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.claude/worktrees/opus-haiku-translation-review-4a3b7c/tests/test_layer2_large_fan_in.py", line 99, in test_65_group_worker_and_cache_only_recovery_preserve_every_dependency
+    self.assert_dag(c.output/'accounting',65)
+    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.claude/worktrees/opus-haiku-translation-review-4a3b7c/tests/test_layer2_large_fan_in.py", line 70, in assert_dag
+    for run in runs:self.assertEqual(run['status'],'projected',run['diagnostics'])
+                    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'partial' != 'projected'
+- partial
++ projected
+ : ['utc_clock_discontinuity_local_duration_preserved', 'utc_clock_discontinuity_between_spans', 'run_utc_wall_untrusted']
+
+----------------------------------------------------------------------
+Ran 616 tests in 1887.257s
+
+FAILED (failures=1, errors=1, skipped=5)
+{
+  "apiKeyMaterialIncluded": false,
+  "commandCount": 8,
+  "notesIncluded": false,
+  "prefix": "sundays/2026-06-28/runs/caption-first-plan",
+  "promoteBeforeNotes": true,
+  "schemaVersion": 1,
+  "secretResourceNamesIncluded": false,
+  "sessionId": "caption-first-plan",
+  "stages": [
+    "model-access",
+    "prepare",
+    "translate",
+    "export-captions",
+    "validate-offline",
+    "upload-playback",
+    "upload-manifest",
+    "promote"
+  ],
+  "status": "ok",
+  "translationMode": "fresh_model_call"
+}
+ 660.43s     7  test_machine_quality_waiver
+ 174.12s     2  test_sermon_mock_tts_dag
+ 159.43s     2  test_run_machine_qc_audio_test
+ 116.42s     1  test_layer2_large_fan_in
+  83.02s     9  test_sermon_delivery_intent_binding
+  60.01s     4  test_sermon_pilot_evidence
+  53.78s     4  test_sermon_diagnostic_preview_worker
+  31.25s     2  test_sermon_historical_layer2
+  26.39s     2  test_sermon_local_business_callbacks
+  24.58s     2  test_canonical_layer2_cache_recovery
+exit 1

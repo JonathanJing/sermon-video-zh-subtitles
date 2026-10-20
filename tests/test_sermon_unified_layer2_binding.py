@@ -4,7 +4,8 @@ import unittest
 from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import patch
-from scripts import sermon_unified_layer2_binding as s
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.text import unified_binding as s
 
 class Layer2BindingTests(unittest.TestCase):
     def setUp(self):

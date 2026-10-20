@@ -6,8 +6,9 @@ import tempfile
 import unittest
 from unittest import mock
 
-from scripts import build_target_language_audio_package as audio_package
-from scripts import clip_timeline_map as subject
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.audio import package as audio_package
+from tongxing_production.audio import clip_timeline as subject
 
 
 class CompleteMediaTimelineMapTests(unittest.TestCase):

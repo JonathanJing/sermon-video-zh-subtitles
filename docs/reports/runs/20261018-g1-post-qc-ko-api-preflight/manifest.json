@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261018-g1-post-qc-ko-api-preflight",
+  "runs": [
+    {
+      "label": "g1-post-qc-ko-api-preflight",
+      "source": "/private/tmp/g1-baseline-20261017/artifacts/local-runs/g1-post-qc-ko-api-preflight",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "g1-post-qc-ko-api-preflight",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 169,
+      "truncated": false,
+      "sha256": "05a71b83e3618cfd955f8f261f197c8be278320cbac21dce58363e1eecb28393",
+      "redactions": {}
+    },
+    {
+      "run": "g1-post-qc-ko-api-preflight",
+      "path": "preflight.json",
+      "kind": "whole",
+      "bytes": 1400,
+      "truncated": false,
+      "sha256": "8754b0c99d2136dd064632b42b5f3e01099a212edd77d61054043cdf5efb4231",
+      "redactions": {
+        "home_dir": 2
+      }
+    },
+    {
+      "run": "g1-post-qc-ko-api-preflight",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 248,
+      "truncated": false,
+      "sha256": "060c6b1bb9fe7527a6e2b1e5e17b13fdc0a0990a172fb33ed47094f4b7613fbd",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

@@ -1,7 +1,8 @@
 from pathlib import Path
 import unittest
 
-from scripts import measure_codex_cli_tps as cli
+from tests import experiment_modules
+cli = experiment_modules.load("experiments/model-throughput/measure_codex_cli_tps.py")
 
 
 class CliEnvironmentTests(unittest.TestCase):

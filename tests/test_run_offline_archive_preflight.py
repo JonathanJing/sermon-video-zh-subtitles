@@ -3,7 +3,7 @@ from argparse import Namespace
 from unittest.mock import patch
 import sys
 
-import scripts.run_offline_archive_preflight as mod
+from tools.ops import run_offline_archive_preflight as mod
 
 
 class OfflineArchivePreflightTest(unittest.TestCase):

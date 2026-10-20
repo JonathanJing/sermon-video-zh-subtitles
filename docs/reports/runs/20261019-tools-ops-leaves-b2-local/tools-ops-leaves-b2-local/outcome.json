@@ -1,0 +1,8 @@
+{
+  "schemaVersion": "local-test-outcome-v1",
+  "status": "passed",
+  "exitCode": 0,
+  "startedAt": "2026-10-19T17:39:29.322531+00:00",
+  "endedAt": "2026-10-19T17:39:37.442531+00:00",
+  "scope": "把 6 个站点和 Web 运维辅助工具从 scripts/ 移到 tools/ops/ (PR #1127); affected unit tests and package test; 7013 test IDs identical before/after; CLI/import equivalence vs origin/dev"
+}

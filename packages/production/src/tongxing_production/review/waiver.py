@@ -82,8 +82,8 @@ IMPLEMENTATION_FILES = (
     "scripts/machine_repair_ledger.py",
 )
 # Keep the recorded logical keys above and their public alias lookup unchanged.
-# A frozen implementation also includes each executable scripts/ facade, its
-# package target, the resolver that selects the target, and the guard that
+# A frozen implementation hashes each key's current file (a moved key's package
+# target), the resolver that selects the target, and the guard that
 # refuses stale code before model or remote work. Reading guard bytes is not a
 # call back into its mismatch() function.
 IMPLEMENTATION_PHYSICAL_FILES = path_aliases.physical_closure_paths(

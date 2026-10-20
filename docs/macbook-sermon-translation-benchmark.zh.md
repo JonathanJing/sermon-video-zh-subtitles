@@ -9,7 +9,7 @@
 
 这版 Benchmark 专门筛选能够在 `MacBook Pro / Apple M1 Max / 64 GB unified memory` 上通过 Ollama 或 MLX 运行的证道英译中模型。MacBook 是主部署与性能目标；DGX Spark 结果只作为研究参考。
 
-机器可读协议位于 `data/benchmarks/live-sermon-translation-v1/macbook-text-benchmark-v1.json`，硬件和资源门禁位于 `macbook-m1-max-64gb-profile.json`。
+机器可读协议位于 `data/benchmarks/live-sermon-translation-v1/macbook-text-benchmark-v1.json`，硬件和资源门禁位于 `macbook-m1-max-64gb-profile.json`。runner 现在位于 `experiments/macbook-text-benchmark/`，评分器位于 `tools/benchmarks/`；协议里的工具路径与 SHA-256 记录的是冻结时 `scripts/` 下的版本。
 
 ## 数据集复用结论
 
@@ -46,7 +46,7 @@
 正式运行前先用 `ollama list` 和本地 `/api/show` 固定模型身份。当前 Homebrew CLI 不支持 `ollama show <model> --json`，不要把该形式写入自动化。模型的创建、拉取或 GGUF 导入是独立步骤，不属于本协议自动执行的动作。
 
 ```bash
-python3 scripts/run_macbook_sermon_text_benchmark.py \
+python3 experiments/macbook-text-benchmark/run_macbook_sermon_text_benchmark.py \
   --backend ollama \
   --base-url http://127.0.0.1:11434 \
   --model <ollama-model-name> \
@@ -82,7 +82,7 @@ mlx_lm.server \
 随后运行：
 
 ```bash
-python3 scripts/run_macbook_sermon_text_benchmark.py \
+python3 experiments/macbook-text-benchmark/run_macbook_sermon_text_benchmark.py \
   --backend openai-completion \
   --base-url http://127.0.0.1:8080/v1 \
   --model <mlx-server-model-name> \
@@ -108,7 +108,7 @@ MLX/GGUF 量化和后端选择阶段只能传入非 test 的 dev 文件；五篇
 生成完成后，使用固定 sacreBLEU 版本运行评分：
 
 ```bash
-uv run --quiet --with sacrebleu==2.5.1 python scripts/score_sermon_text_benchmark.py \
+uv run --quiet --with sacrebleu==2.5.1 python tools/benchmarks/score_sermon_text_benchmark.py \
   --predictions data/benchmarks/live-sermon-translation-v1/runs/macbook-text-baselines/<run-id>/predictions.jsonl \
   --reference data/benchmarks/live-sermon-translation-v1/reference/8u9B8u_5ISI/segments.zh.sol-reviewed.jsonl \
   --reference data/benchmarks/live-sermon-translation-v1/reference/hAWaaBVaMzY/segments.zh.sol-reviewed.jsonl \
@@ -122,7 +122,7 @@ uv run --quiet --with sacrebleu==2.5.1 python scripts/score_sermon_text_benchmar
 资源采样器接受一个或多个已核实 PID，并自动包含其子进程：
 
 ```bash
-python3 scripts/sample_macbook_resources.py \
+python3 tools/benchmarks/sample_macbook_resources.py \
   --pid <verified-server-pid> \
   --duration-seconds <run-duration> \
   --output data/benchmarks/live-sermon-translation-v1/runs/macbook-text-baselines/<run-id>/resource-samples.jsonl

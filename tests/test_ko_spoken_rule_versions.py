@@ -4,9 +4,10 @@ import json
 import pytest
 
 from scripts import ko_spoken_numerals as ko
-from scripts import render_formal_target_language_speech as formal
-from scripts import target_audio_predicted_schedule as predicted
-from scripts import target_audio_auto_qc as qc
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.audio import renderer as formal
+from tongxing_production.audio import predicted_schedule as predicted
+from tongxing_production.review import audio_qc as qc
 
 
 @pytest.mark.parametrize("locale", ["ko", "es", "zh-Hans"])
@@ -109,7 +110,7 @@ def test_arbitrary_noun_counter_is_conservative_and_not_admitted_as_sino(tmp_pat
                                           ("하지만 다시 2장으로 돌아가 봅시다.", "하지만 다시 이장으로 돌아가 봅시다."),
                                           ("따라서, 3장을 보십시오.", "따라서, 삼장을 보십시오.")])
 def test_explicit_bare_chapter_contexts_still_generate_and_screen(text, spoken):
-    from scripts import screen_target_language_audio_units as screen
+    from tongxing_production.audio import screening as screen
     assert ko.spoken_form(text) == spoken
     assert ko.equivalent(text, spoken)
     assert screen.score(text, spoken, "ko", .88)[2]
@@ -120,13 +121,13 @@ def test_explicit_bare_chapter_contexts_still_generate_and_screen(text, spoken):
                                           ("3장부터4장까지", "3장4장까지"), ("3장4장", "3장-4장"),
                                           ("3장4절", "3절4장")])
 def test_current_bare_reference_structure_rejects_wrong_digit_runs_and_connectors(expected, wrong):
-    from scripts import screen_target_language_audio_units as screen
+    from tongxing_production.audio import screening as screen
     assert not screen.score(expected, wrong, "ko", .88)[2]
     assert screen.score(expected, ko.spoken_form(expected), "ko", .88)[2]
 
 
 def test_previous_asr_scoring_keeps_its_recorded_bare_range_semantics():
-    from scripts import screen_target_language_audio_units as screen
+    from tongxing_production.audio import screening as screen
     for version in [screen.SCORING_V3, screen.SCORING_V4]:
         assert screen.score("12-3장", "1-23장", "ko", .88, scoring=version)[2]
     assert not screen.score("12-3장", "1-23장", "ko", .88)[2]

@@ -66,6 +66,6 @@ class UnifiedRuntimeSafetyTests(unittest.TestCase):
         machine_only = {'nodes': {'text.zh-Hans': {'status': 'validated'},
                                  'audio.zh-Hans': {'status': 'blocked', 'reasonCode': 'translation_review_required'}}}
         with patch.object(adapters, 'inspect_step'), patch.object(adapters, 'config_path', return_value=Path('/unused')), \
-                patch('scripts.sermon_unified_canonical_binding.inspect_bound', return_value=machine_only):
+                patch('tongxing_production.workflows.prepared.canonical_binding.inspect_bound', return_value=machine_only):
             result = adapters.execute({}, Path('/'), step, self.root / 'out.json')
         self.assertNotEqual(result['status'], 'succeeded')

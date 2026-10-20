@@ -7,11 +7,12 @@ import sys
 import unittest
 from unittest.mock import patch
 
-from scripts import sermon_accounting as accounting
-from scripts import sermon_log_contract as logs
+from tongxing_production.observability import accounting
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.observability import log_contract as logs
 from scripts import sermon_mock_tts_control as control
 from scripts import sermon_mock_tts_worker as worker
-from scripts import sermon_review_contracts as c
+from tongxing_production.review import contracts as c
 from tests.test_sermon_mock_tts_worker import WorkerFixture
 
 
