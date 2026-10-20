@@ -43,7 +43,7 @@ class Write1130LiveRealtimeRunPlanTest(unittest.TestCase):
         self.assertIn("artifacts/evidence/web-realtime-contract.json", live_validation_commands)
         offline_commands = json.dumps(report["postLiveOfflineHandoff"]["commands"])
         no_caption_runner = report["postLiveOfflineHandoff"]["noCaptionRunnerCommand"]
-        self.assertIn("scripts/run_no_caption_archive_asr_route.py", no_caption_runner)
+        self.assertIn("tools/ops/run_no_caption_archive_asr_route.py", no_caption_runner)
         self.assertEqual(no_caption_runner[no_caption_runner.index("--asr-model") + 1], "gpt-4o-transcribe")
         self.assertEqual(no_caption_runner[no_caption_runner.index("--translation-model") + 1], "gpt-5.4-mini")
         self.assertIn("scripts/validate_offline_chain.py", offline_commands)

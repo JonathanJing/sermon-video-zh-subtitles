@@ -9,7 +9,9 @@ from tongxing_production.observability import accounting
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.observability import profile
 from tools.ops import capture_supervisor_model_usage as capture
-from scripts import serve_milmmt_v41_local as local
+from tests import experiment_modules
+
+local = experiment_modules.load("experiments/milmmt-v41-local/serve_milmmt_v41_local.py")
 
 
 def ledger(directory):

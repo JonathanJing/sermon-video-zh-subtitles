@@ -6,10 +6,8 @@ scripts/bounded_audio_cpu.py
 scripts/build_english_source_package.py
 scripts/build_four_layer_timeline.py
 scripts/build_full_video_app_release.py
-scripts/build_local_asr_model_reviewed_reference.py
 scripts/build_local_sunday_manifest_evidence.py
 scripts/build_multistage_post_live_timeline.py
-scripts/build_no_caption_asr_sample_chain.py
 scripts/build_playback_simulation.py
 scripts/build_post_live_timeline.py
 scripts/build_scripture_index.py
@@ -20,7 +18,6 @@ scripts/check_run_start.py
 scripts/claude_layer2_transport.py
 scripts/codex_layer2_diagnostic.py
 scripts/codex_layer2_transport.py
-scripts/compare_local_asr_quality_runs.py
 scripts/cuv_scripture.py
 scripts/english_scripture_coverage.py
 scripts/english_source_judge_cache.py
@@ -85,8 +82,6 @@ scripts/openai_layer2_transport.py
 scripts/plan_gcs_sunday_manifest_publish.py
 scripts/plan_run_budgets.py
 scripts/prepare_live_link_playback.py
-scripts/prepare_local_asr_gold_queue.py
-scripts/prepare_local_asr_human_calibration.py
 scripts/prepare_target_language_speech_job.py
 scripts/produce_target_language_candidate.py
 scripts/production_concurrency_profile.py
@@ -97,24 +92,13 @@ scripts/realtime_media_worker.py
 scripts/realtime_openai_smoke_test.py
 scripts/render_multilingual_voice_demos.py
 scripts/render_sermon_interpretation_pdf.py
-scripts/rescore_local_asr_predictions.py
 scripts/review_sermon_subtitles_with_openai.py
 scripts/run_bounded_diagnostic.py
 scripts/run_bounded_diagnostic_continuation.py
 scripts/run_codex_layer2_test.py
 scripts/run_deployed_webrtc_session_smoke.py
-scripts/run_dgx_sermon_a0_baseline.py
-scripts/run_dgx_sermon_hymt2_baseline.py
-scripts/run_dgx_sermon_source_probe.py
 scripts/run_diagnostic_new_attempt.py
 scripts/run_live_sermon_benchmark_source_audio_audit.py
-scripts/run_local_asr_benchmark.py
-scripts/run_local_asr_gpt_reaudit.py
-scripts/run_local_asr_websocket_replay.py
-scripts/run_local_asr_whisper_server_replay.py
-scripts/run_macbook_sermon_text_benchmark.py
-scripts/run_no_caption_archive_asr_route.py
-scripts/run_offline_archive_preflight.py
 scripts/run_openai_model_access_preflight.py
 scripts/run_realtime_live_session.py
 scripts/run_realtime_stabilizer_loop.py
@@ -124,9 +108,7 @@ scripts/run_sentence_interpretation_models.py
 scripts/run_sermon_prefect_dag.py
 scripts/run_sermon_production_supervisor_agent.py
 scripts/run_spoken_condensation.py
-scripts/run_voxtral_tts_poc.py
 scripts/run_with_openai_environment.py
-scripts/score_sermon_text_benchmark.py
 scripts/scripture_adjudication.py
 scripts/scripture_candidate_queue.py
 scripts/scripture_editions.py
@@ -240,7 +222,6 @@ scripts/sermon_unified/__init__.py
 scripts/sermon_unified_observability.py
 scripts/sermon_unified_reviews.py
 scripts/sermon_workflow_evidence.py
-scripts/serve_milmmt_v41_local.py
 scripts/source_meaning_machine_adjudication.py
 scripts/spark_exclusive_session.py
 scripts/spark_tts_replica_pool.py
@@ -250,7 +231,6 @@ scripts/stage_formal_multilingual_dev.py
 scripts/stage_voice_demo_dev.py
 scripts/study_artifacts.py
 scripts/subtitle_output_contract.py
-scripts/summarize_local_asr_gpt_reaudit.py
 scripts/target_language_policy.py
 scripts/tongxing_host.py
 scripts/tracker_projection_host.py
@@ -265,5 +245,4 @@ scripts/validate_stable_correction_contract.py
 scripts/validate_sunday_manifest.py
 scripts/weekly_pipeline_report.py
 scripts/write_1130_live_realtime_run_plan.py
-scripts/write_no_caption_asr_fallback_plan.py
 scripts/youtube_data_api.py

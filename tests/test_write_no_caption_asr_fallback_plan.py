@@ -5,7 +5,7 @@ import unittest
 from argparse import Namespace
 from pathlib import Path
 
-import scripts.write_no_caption_asr_fallback_plan as mod
+from tools.ops import write_no_caption_asr_fallback_plan as mod
 
 
 class WriteNoCaptionAsrFallbackPlanTest(unittest.TestCase):
@@ -42,7 +42,7 @@ class WriteNoCaptionAsrFallbackPlanTest(unittest.TestCase):
         self.assertIn("--gcs-dry-run", prepare_command)
         self.assertIn("--no-discover", prepare_command)
         self.assertIn("--sermon-start", prepare_command)
-        preflight_command = next(command for command in report["commands"] if "scripts/run_offline_archive_preflight.py" in command)
+        preflight_command = next(command for command in report["commands"] if "tools/ops/run_offline_archive_preflight.py" in command)
         self.assertIn("--no-discover", preflight_command)
         self.assertIn("--sermon-start", preflight_command)
         self.assertEqual(translate_command[translate_command.index("--input") + 1], playback_js)

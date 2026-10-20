@@ -7,7 +7,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 
-SCRIPT_PATH = Path(__file__).resolve().parents[1] / "scripts" / "run_no_caption_archive_asr_route.py"
+SCRIPT_PATH = Path(__file__).resolve().parents[1] / "tools" / "ops" / "run_no_caption_archive_asr_route.py"
 SPEC = importlib.util.spec_from_file_location("run_no_caption_archive_asr_route", SCRIPT_PATH)
 mod = importlib.util.module_from_spec(SPEC)
 assert SPEC.loader is not None

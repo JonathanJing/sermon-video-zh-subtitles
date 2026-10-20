@@ -389,7 +389,7 @@ def no_caption_asr_plan():
         "status": "needs_real_no_caption_archive",
         "runnerCommand": [
             "python3",
-            "scripts/run_no_caption_archive_asr_route.py",
+            "tools/ops/run_no_caption_archive_asr_route.py",
             "--live-url",
             "<NO_CAPTION_YOUTUBE_LIVE_ARCHIVE_URL>",
             "--api-key-secret",
@@ -406,7 +406,7 @@ def no_caption_asr_plan():
         "commands": [
             [
                 "python3",
-                "scripts/run_offline_archive_preflight.py",
+                "tools/ops/run_offline_archive_preflight.py",
                 "--live-url",
                 "<NO_CAPTION_YOUTUBE_LIVE_ARCHIVE_URL>",
                 "--asr-model",

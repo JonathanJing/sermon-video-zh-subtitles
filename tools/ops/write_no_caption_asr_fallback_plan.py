@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import Any
 
 
-REPO_ROOT = Path(__file__).resolve().parents[1]
+REPO_ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_OUT = REPO_ROOT / "artifacts" / "evidence" / "no-caption-asr-fallback-plan.json"
 
 
@@ -59,7 +59,7 @@ def build_plan(args: argparse.Namespace) -> dict[str, Any]:
         },
         "runnerCommand": [
             "python3",
-            "scripts/run_no_caption_archive_asr_route.py",
+            "tools/ops/run_no_caption_archive_asr_route.py",
             "--live-url",
             live_url,
             "--api-key-secret",
@@ -80,7 +80,7 @@ def build_plan(args: argparse.Namespace) -> dict[str, Any]:
         "commands": [
             [
                 "python3",
-                "scripts/run_offline_archive_preflight.py",
+                "tools/ops/run_offline_archive_preflight.py",
                 "--live-url",
                 live_url,
                 "--no-discover",

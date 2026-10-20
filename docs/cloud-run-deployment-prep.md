@@ -478,7 +478,7 @@ Before the offline OpenAI/translation chain, validate the YouTube archive route
 without downloading captions or calling OpenAI:
 
 ```bash
-python3 scripts/run_offline_archive_preflight.py \
+python3 tools/ops/run_offline_archive_preflight.py \
   --live-url "https://www.youtube.com/watch?v=VIDEO_ID" \
   --sunday YYYY-MM-DD \
   --out artifacts/evidence/offline-archive-preflight.json

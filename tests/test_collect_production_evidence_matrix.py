@@ -1697,7 +1697,7 @@ def no_caption_asr_plan():
         },
         "runnerCommand": [
             "python3",
-            "scripts/run_no_caption_archive_asr_route.py",
+            "tools/ops/run_no_caption_archive_asr_route.py",
             "--asr-model",
             "gpt-4o-transcribe",
             "--translation-model",
@@ -1708,7 +1708,7 @@ def no_caption_asr_plan():
         "commands": [
             [
                 "python3",
-                "scripts/run_offline_archive_preflight.py",
+                "tools/ops/run_offline_archive_preflight.py",
                 "--asr-model",
                 "gpt-4o-transcribe",
             ],

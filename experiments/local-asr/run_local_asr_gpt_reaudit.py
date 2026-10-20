@@ -14,18 +14,20 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-REPO_ROOT = Path(__file__).resolve().parents[1]
+REPO_ROOT = Path(__file__).resolve().parents[2]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
+if str(Path(__file__).resolve().parent) not in sys.path:  # sibling modules of this experiment line
+    sys.path.append(str(Path(__file__).resolve().parent))
 
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.workflows.dual_pdf import pipeline as sermon_pipeline  # noqa: E402
 from tongxing_production.observability.accounting import accounting_session
-from scripts.build_local_asr_model_reviewed_reference import (  # noqa: E402
+from build_local_asr_model_reviewed_reference import (  # noqa: E402
     CRITICAL_TERMS,
     contains_term,
 )
-from scripts.run_local_asr_benchmark import normalize_words  # noqa: E402
+from run_local_asr_benchmark import normalize_words  # noqa: E402
 
 
 PROMPT = (

@@ -10,7 +10,7 @@ import re
 from pathlib import Path
 
 
-REPO_ROOT = Path(__file__).resolve().parents[1]
+REPO_ROOT = Path(__file__).resolve().parents[2]
 CHUNK_ID_RE = re.compile(r"timeline_chunk_(\d+)\.m4a$")
 
 CRITICAL_TERMS = [
