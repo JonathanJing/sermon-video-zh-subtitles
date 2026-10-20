@@ -176,3 +176,14 @@ dual_pdf 附属（R10）单独做一次 dual_pdf 身份换代，不在这四批�
 | `sermon_diagnostic_source_evidence` | 导入 `sermon_diagnostic_context` |
 | `export_observability_trace` | 导入 `weekly_pipeline_report`（`path_aliases` 键）；它导入的 `sermon_decision_accounting`（N2）和 `sermon_local_model_observation`（N3）已有包内实现 |
 | `sermon_run_progress` | 导入 `weekly_pipeline_report` 和 `build_four_layer_timeline`；`tracker_projection_host` 点名它，迁移时要留门面 |
+
+## 10 N1–N4 执行记录（2026-10-20，`dev@174a0b8c`）
+
+N1 #1201、N2 #1203、N3 #1205、N4 #1212 已合并，运行报告分别是 #1202、#1204、#1211、#1213。`scripts/` 里不是门面的文件从 178 个降到 133 个。
+
+- **N1：** 按 D-1 处理实时与周日清单脚本：删除候选按 PR 里列出的证据删除，校验与冒烟进 `tools/ops/`，后端在用的留门面。
+- **N2：** 6 个迁出 5 个，都留门面。`sermon_production_supervisor` 导入 `backend.leases`；包内代码不能导入 `backend`，加端口又要改冻结的宿主，所以它随 D-5 窗口一起做。
+- **N3：** 4 个经文与术语文件都被冻结身份哈希，留在 `scripts/`，各自被哪里哈希见 N3 的 PR；口播精简、本地模型观测和统一 CLI 已迁出。
+- **N4：** 24 个迁出 15 个，留 10 个门面；其余 9 个随 D-5 窗口一起做。`test_sermon_fresh_full_dag` 的重试用例在负载约 430 时会撞上 45 秒观察超时。在同样负载下把 N4 和 `dev` 并排跑，各用约 12 分 40 秒，都通过，所以是负载问题，不是回归。
+
+剩下的 133 个都受 §3（留在 `scripts/`）、D-3（Temporal）、§9.2 的环，或 D-5 窗口约束。不需要窗口的迁移到此做完。
