@@ -70,8 +70,9 @@ final class WeeklyUpdateModelTests: XCTestCase {
         let hash = SHA256.hash(data: png).map { String(format: "%02x", $0) }.joined()
         func announcement(_ page: MultilingualPage) throws -> WeeklyAnnouncement {
             let target = try XCTUnwrap(page.targets[locale])
+            let source = try target.sourceBinding(in: page)
             return .init(id: page.id, pageID: page.id, locale: locale,
-                releaseSHA256: target.releasePackageJsonSha256, sourceIdentitySHA256: page.sourceIdentitySha256,
+                releaseSHA256: target.releasePackageJsonSha256, sourceIdentitySHA256: source.sourceIdentitySha256,
                 title: page.title ?? "Synthetic weekly poster", publishedAt: "2026-10-07T00:00:00Z",
                 poster: .init(url: "/posters/fixture.png", sha256: hash, bytes: Int64(png.count), width: 1, height: 1))
         }

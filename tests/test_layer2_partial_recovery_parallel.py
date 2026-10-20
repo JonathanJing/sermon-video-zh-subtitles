@@ -60,7 +60,7 @@ class _Calls:
                 with self.lock:
                     self.in_flight -= 1
 
-        def provenance(_key, payload, response, *_root):
+        def provenance(_key, payload, response, *_root, policy_migration=None):
             return {"fixturePayload": models.policy_tools.canonical_sha256(payload),
                     "fixtureResponseId": response["id"]}
 

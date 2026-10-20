@@ -481,7 +481,7 @@ def _successful_payload_cache(prior_root: Path | None, stem: str, role: str,
 
 
 def _require_partial_recovery_source(root: Path, budget_root: Path, caller, api_key: str,
-                                     plan: list[dict[str, Any]]) -> list[int]:
+                                     plan: list[dict[str, Any]], policy: dict[str, Any]) -> list[int]:
     """Fail closed before dispatch when the failed round has an incomplete call.
 
     A started marker without the parsed response, raw provider response and
@@ -523,12 +523,13 @@ def _require_partial_recovery_source(root: Path, budget_root: Path, caller, api_
             continue
         for suffix in sorted(suffixes):
             _returned_role_evidence(root, stem, "translator" if suffix == "astra" else "reviewer",
-                                    plan[index - 1], caller, api_key, budget_root)
+                                    plan[index - 1], policy, caller, api_key, budget_root)
     return complete
 
 
 def _returned_role_evidence(prior_root: Path, stem: str, role: str, group: dict[str, Any],
-                            caller, api_key: str, budget_root: Path) -> dict[str, Any] | None:
+                            policy: dict[str, Any], caller, api_key: str,
+                            budget_root: Path) -> dict[str, Any] | None:
     """Check one returned role of a failed round independently of the current payload."""
     suffix = "astra" if role == "translator" else "sol"
     cache = prior_root / f"{stem}-{suffix}.json"
@@ -574,14 +575,22 @@ def _returned_role_evidence(prior_root: Path, stem: str, role: str, group: dict[
     provenance_reader = getattr(caller, "recover_returned_response", None)
     require(callable(provenance_reader),
             "Partial recovery requires direct-paid response provenance")
-    provenance = provenance_reader(api_key, preview_record["payload"], response, budget_root)
+    # A plugin-only successor policy may recover this paid call under its prior
+    # policy identity; the caller rechecks that proof before using it.
+    migration = {
+        "before": copy.deepcopy(preview_record),
+        "after": policy_preview.payload_preview(role, preview_record["payload"], policy),
+    }
+    provenance = provenance_reader(
+        api_key, preview_record["payload"], response, budget_root,
+        policy_migration=migration)
     return {"cache": cache, "raw": raw, "preview": preview, "cached": cached,
             "response": response, "paidProvenance": provenance}
 
 
 def _returned_payload_cache(prior_root: Path | None, stem: str, role: str,
                             payload_sha256: str, request: dict[str, Any],
-                            group: dict[str, Any], caller, api_key: str,
+                            group: dict[str, Any], policy: dict[str, Any], caller, api_key: str,
                             budget_root: Path) -> dict[str, Any] | None:
     """Recover one complete returned role that lacks a group-success sidecar.
 
@@ -592,7 +601,7 @@ def _returned_payload_cache(prior_root: Path | None, stem: str, role: str,
     """
     if prior_root is None:
         return None
-    returned = _returned_role_evidence(prior_root, stem, role, group, caller, api_key, budget_root)
+    returned = _returned_role_evidence(prior_root, stem, role, group, policy, caller, api_key, budget_root)
     if returned is None:
         return None
     cached, cache = returned["cached"], returned["cache"]
@@ -1562,7 +1571,7 @@ def _run_prepared_groups(request: dict[str, Any], anchor: dict[str, Any],
         recovered_groups = None
         if partial_recovery_from is not None:
             recovered_groups = _require_partial_recovery_source(
-                partial_recovery_from, partial_recovery_budget_root, caller, api_key, plan)
+                partial_recovery_from, partial_recovery_budget_root, caller, api_key, plan, policy)
         require(type(emit_payload_cache_success) is bool,
                 "Payload cache success emission flag must be boolean")
         require(type(payload_cache_required) is bool
@@ -1867,7 +1876,7 @@ def _run_prepared_groups(request: dict[str, Any], anchor: dict[str, Any],
                 payload_translator_cache = _returned_payload_cache(
                     partial_recovery_from, stem, "translator",
                     _model_fingerprint(translator_payload, caller, api_key), request, group,
-                    caller, api_key, partial_recovery_budget_root)
+                    policy, caller, api_key, partial_recovery_budget_root)
             if (payload_translator_cache is None and payload_cache_enabled
                     and prior_cache_root is not None):
                 # A later auto-repair round carries the original direct-paid
@@ -1973,7 +1982,7 @@ def _run_prepared_groups(request: dict[str, Any], anchor: dict[str, Any],
                 payload_reviewer_cache = _returned_payload_cache(
                     partial_recovery_from, stem, "reviewer",
                     _model_fingerprint(reviewer_payload, caller, api_key), request, group,
-                    caller, api_key, partial_recovery_budget_root)
+                    policy, caller, api_key, partial_recovery_budget_root)
             if (payload_reviewer_cache is None and payload_cache_enabled
                     and prior_cache_root is not None):
                 payload_reviewer_cache = _successful_payload_cache(

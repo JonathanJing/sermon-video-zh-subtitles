@@ -26,6 +26,7 @@ SRT_TIMESTAMP_RE = re.compile(
 MOBILE_PAGE_SIZE = (390, 844)
 FONT_FALLBACK_CID = "STSong-Light"
 FONT_EMBEDDED = "MobileCJK"
+DEFAULT_SUBJECT = "Mobile Chinese-English sermon reading edition"
 DEFAULT_DISCLAIMER = (
     "免责声明：本 PDF 为独立个人项目，基于公开或经授权的讲道内容进行 AI 辅助英文听写和中文翻译；"
     "与 Mariners Church 无隶属、授权或背书关系，不代表教会官方立场。"
@@ -53,6 +54,7 @@ SECONDARY_INDENT = 8
 MARGIN_X = 24
 MARGIN_TOP = 30
 MARGIN_BOTTOM_WITH_DISCLAIMER = 76
+FOOTER_MAX_LINES = 3
 MARGIN_BOTTOM_WITHOUT_DISCLAIMER = 32
 KINSOKU_NO_LINE_START = frozenset("，。！？；：、）》】〉』”’…—％‰℃")
 KINSOKU_NO_LINE_END = frozenset("（《【〈『“‘")
@@ -376,8 +378,15 @@ def build_reading_blocks(
     preferred_block_seconds: float = 32.0,
     preferred_primary_chars: int = 180,
     preferred_secondary_chars: int = 850,
+    paired_secondary: Sequence[str] | None = None,
 ) -> list[ReadingBlock]:
-    secondary_by_index = align_secondary_cues(primary_cues, secondary_cues or [])
+    # Callers that already know each cue's secondary text pass it in order and skip timestamp alignment.
+    if paired_secondary is not None:
+        if len(paired_secondary) != len(primary_cues):
+            raise ValueError("paired_secondary must have one entry per primary cue")
+        secondary_by_index = list(paired_secondary)
+    else:
+        secondary_by_index = align_secondary_cues(primary_cues, secondary_cues or [])
     blocks: list[ReadingBlock] = []
     current_primary: list[str] = []
     current_secondary: list[str] = []
@@ -561,6 +570,8 @@ def render_reading_pdf(
     preferred_block_seconds: float = 32.0,
     preferred_primary_chars: int = 180,
     preferred_secondary_chars: int = 850,
+    subject: str = DEFAULT_SUBJECT,
+    paired_secondary: Sequence[str] | None = None,
 ) -> dict:
     blocks = build_reading_blocks(
         cues,
@@ -572,6 +583,7 @@ def render_reading_pdf(
         preferred_block_seconds=preferred_block_seconds,
         preferred_primary_chars=preferred_primary_chars,
         preferred_secondary_chars=preferred_secondary_chars,
+        paired_secondary=paired_secondary,
     )
     font_name = register_cjk_font(font_path)
     body_width = MOBILE_PAGE_SIZE[0] - MARGIN_X * 2
@@ -604,6 +616,7 @@ def render_reading_pdf(
         disclaimer=disclaimer,
         source_url=source_url,
         source_offset_seconds=source_offset_seconds,
+        subject=subject,
     )
 
 
@@ -654,6 +667,7 @@ def render_paginated_pdf(
     disclaimer: str | None,
     source_url: str | None,
     source_offset_seconds: float,
+    subject: str = DEFAULT_SUBJECT,
 ) -> dict:
     page_width, page_height = MOBILE_PAGE_SIZE
     margin_bottom = MARGIN_BOTTOM_WITH_DISCLAIMER if disclaimer else MARGIN_BOTTOM_WITHOUT_DISCLAIMER
@@ -696,7 +710,7 @@ def render_paginated_pdf(
     doc.setTitle(title)
     doc.setAuthor(speaker or "sermon-video-zh-subtitles")
     doc.setCreator("sermon-video-zh-subtitles")
-    doc.setSubject("Mobile Chinese-English sermon reading edition")
+    doc.setSubject(subject)
     doc._doc.Catalog.Lang = PDFString("zh-CN")
 
     last_outline_bucket = -1
@@ -1006,7 +1020,11 @@ def greedy_render_pages(
     return pages
 
 
+SELECTED_FONT: dict = {}
+
+
 def register_cjk_font(font_path: Path | None = None) -> str:
+    """Register the first usable CJK font; SELECTED_FONT records which one was used."""
     for candidate in candidate_fonts(font_path):
         if not candidate.path.is_file():
             continue
@@ -1018,10 +1036,14 @@ def register_cjk_font(font_path: Path | None = None) -> str:
                     subfontIndex=candidate.subfont_index,
                 )
             )
+            SELECTED_FONT.clear()
+            SELECTED_FONT.update(path=str(candidate.path), subfontIndex=candidate.subfont_index)
             return FONT_EMBEDDED
         except Exception:
             continue
     pdfmetrics.registerFont(UnicodeCIDFont(FONT_FALLBACK_CID))
+    SELECTED_FONT.clear()
+    SELECTED_FONT.update(cid=FONT_FALLBACK_CID)
     return FONT_FALLBACK_CID
 
 
@@ -1219,7 +1241,7 @@ def draw_footer(
     canvas_obj.setFillColor(colors.HexColor("#526172"))
     canvas_obj.setFont(font_name, FOOTER_FONT_SIZE)
     footer_width = page_width - margin_x * 2
-    max_lines = 3 if disclaimer == DEFAULT_DISCLAIMER else 2
+    max_lines = FOOTER_MAX_LINES
     footer_lines = wrap_text(disclaimer, font_name, FOOTER_FONT_SIZE, footer_width)[:max_lines]
     y = 48 if len(footer_lines) == 3 else 40 if len(footer_lines) == 2 else 31
     for line in footer_lines:

@@ -25,6 +25,16 @@ def digest(data):
 def build(catalog, release_bytes, receipt, poster_bytes, locale, page_id, allow_rebind=False):
     page = next(p for p in catalog["pages"] if p["id"] == page_id)
     target = page["targets"][locale]
+    per_target = catalog.get("schemaVersion") == "sermon-multilingual-catalog-v5" and page.get("sourceMode") == "per_target"
+    edition_id = target.get("editionId") if per_target else page_id
+    source_identity = target.get("sourceIdentitySha256") if per_target else page["sourceIdentitySha256"]
+    if not isinstance(edition_id, str) or not isinstance(source_identity, str):
+        raise ValueError("announcement target source identity is incomplete")
+    if per_target:
+        video = target.get("videoDelivery")
+        if (not isinstance(video, dict) or video.get("canonicalUrl") != f"/pages/{edition_id}/full-video-browser.mp4"
+                or video.get("sha256") != target.get("sourceMediaSha256")):
+            raise ValueError("announcement target video differs from source edition")
     if target["contentStatus"] not in ("human_reviewed", "machine_checked"):
         raise ValueError("announcement must reference published content")
     release_hash = digest(release_bytes)
@@ -33,9 +43,12 @@ def build(catalog, release_bytes, receipt, poster_bytes, locale, page_id, allow_
     release = json.loads(release_bytes)
     source = receipt["source"]
     if (receipt.get("status") != "complete" or source["pageId"] != page_id
-            or source["targetLocale"] != locale or source["sourceIdentitySha256"] != page["sourceIdentitySha256"]
-            or release["pageId"] != page_id or release["targetLocale"] != locale):
+            or source["targetLocale"] != locale or source["sourceIdentitySha256"] != source_identity
+            or (per_target and source.get("editionId") != edition_id)
+            or release["pageId"] != edition_id or release["targetLocale"] != locale):
         raise ValueError("poster receipt is incomplete or source/page/language changed")
+    if release.get("englishSourcePackageJsonSha256") is not None and release["englishSourcePackageJsonSha256"] != source_identity:
+        raise ValueError("announcement release source identity changed")
     content_hash = next(a["sha256"] for a in release["assets"] if a["role"] == "content")
     if content_hash != source["contentSha256"]:
         raise ValueError("poster content changed; upstream poster must be regenerated")
@@ -55,11 +68,11 @@ def build(catalog, release_bytes, receipt, poster_bytes, locale, page_id, allow_
             raise ValueError("unsafe identifier")
     image_path = f"/posters/{page_id}/{locale}-{poster_hash}.png"
     announcement = dict(id=f"{page_id}-{locale}", pageID=page_id, locale=locale,
-        releaseSHA256=release_hash, sourceIdentitySHA256=page["sourceIdentitySha256"],
+        releaseSHA256=release_hash, sourceIdentitySHA256=source_identity,
         title=source["brief"]["title"], publishedAt=datetime.datetime.now(datetime.timezone.utc).isoformat(timespec="seconds").replace("+00:00", "Z"),
         poster=dict(url=image_path, sha256=poster_hash, bytes=len(poster_bytes), width=width, height=height))
     evidence = dict(schemaVersion="tongxing-announcement-binding-receipt-v1", pageID=page_id, locale=locale,
-        sourceIdentitySHA256=page["sourceIdentitySha256"], contentSHA256=content_hash,
+        sourceIdentitySHA256=source_identity, contentSHA256=content_hash,
         originalReleaseSHA256=source["releasePackageSha256"], currentReleaseSHA256=release_hash,
         metadataRebound=rebind, posterSHA256=poster_hash, originalPosterOrigin=source["brief"]["origin"],
         note="Poster image is unchanged. Source and frozen content match exactly. Existing QR may target original origin; App action uses current catalog.")

@@ -266,6 +266,33 @@ def test_seal_over_human_baseline_publishes_v4_and_keeps_v3_human_only(prepared,
         d.validate_catalog_snapshot(sealed)
 
 
+def test_seal_over_v5_baseline_regenerates_v5_with_v4_v3_projections(prepared, machine):
+    from tongxing_production.delivery import baseline as baseline_tools
+    baseline = seal_fixture(prepared)
+    public = baseline / 'public'
+    baseline_tools.write(public / 'multilingual-v5.json', d.upgrade_catalog_v5(d.snapshot_catalog_v4(baseline)))
+    report_path = baseline / 'seal-report.json'
+    report = {**builder.read(report_path), **baseline_tools.catalog_report(public),
+              'files': baseline_tools.files_report(public)}
+    report_path.unlink(); baseline_tools.write(report_path, report)
+    baseline_v3 = d.validate_catalog_snapshot(baseline)
+    plan = save(machine['root'], 'plan.json', {
+        'schemaVersion': 'sermon-locale-release-plan-v1', 'pageId': PAGE, 'locales': [LOCALE], 'requiredLocales': [LOCALE],
+        'mode': 'incremental', 'baselineCatalogSha256': d.sha(baseline_v3), 'baselineVersion': 'sites/test-dev/versions/1',
+        'parentGeneration': 0})
+    prepared_dir = machine['root'] / 'work/prepared'
+    receipt = http_receipt(machine['root'], prepared_dir, machine['config']['intent']['origin'])
+    sealed = machine['root'] / 'sealed'
+    result = builder.seal(argparse.Namespace(prepared=prepared_dir, http_verification=receipt, out=sealed,
+                                             baseline=baseline, release_plan=plan))
+    v5 = builder.read(sealed / 'public/multilingual-v5.json')
+    assert result['catalogV5Sha256'] == builder.digest(sealed / 'public/multilingual-v5.json')
+    assert [page['id'] for page in v5['pages']] == [prepared['page'], PAGE]
+    assert {page['sourceMode'] for page in v5['pages']} == {'single_source'}
+    assert d.project_legacy_catalog_v4(v5) == builder.read(sealed / 'public/multilingual-v4.json')
+    d.validate_catalog_snapshot(sealed)
+
+
 def test_mixed_review_bases_set_each_status_independently(tmp_path):
     root = tmp_path / 'mixed'; root.mkdir()
     documents, proposal, fixtures = machine_inputs(root)

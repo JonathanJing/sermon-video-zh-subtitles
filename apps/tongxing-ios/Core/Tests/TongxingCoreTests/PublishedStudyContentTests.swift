@@ -16,7 +16,7 @@ struct PublishedStudyContentTests {
             "schemaVersion": locale == "zh-Hans" ? "sermon-formal-dev-content-v1" : "sermon-dev-podcast-candidate-content-v2",
             "pageId": page.id, "sourceLocale": "en", "locale": locale, "contentStatus": package.contentStatus,
             "audioStatus": package.audioStatus, "date": page.date,
-            "englishSourcePackageJsonSha256": page.sourceIdentitySha256,
+            "englishSourcePackageJsonSha256": try #require(page.sourceIdentitySha256),
             "targetLanguageCandidateJsonSha256": package.targetLanguageCandidateJsonSha256,
             "targetLanguageAudioPackageJsonSha256": package.targetLanguageAudioPackageJsonSha256!,
             "durationSeconds": 10, "title": "Synthetic title", "cues": [cue],

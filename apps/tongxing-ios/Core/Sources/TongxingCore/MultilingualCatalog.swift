@@ -10,6 +10,9 @@ public struct MultilingualCatalog: Codable, Sendable, Equatable {
     /// v3 plus machine-checked targets under /releases-v4/. /multilingual-v3.json
     /// stays the human-only projection for clients that predate v4.
     public static let machineCheckedSchemaVersion = "sermon-multilingual-catalog-v4"
+    /// A family page whose independently published locale targets may bind
+    /// different source editions. Older catalogs remain single-source.
+    public static let mixedSourceSchemaVersion = "sermon-multilingual-catalog-v5"
     public static let productionSchemaVersion = dualScriptSchemaVersion
     public let schemaVersion: String
     public let generatedAt: String
@@ -20,7 +23,8 @@ public struct MultilingualCatalog: Codable, Sendable, Equatable {
 
     /// v3 and v4 catalogs both carry titled dual-script pages for the native reader.
     public var isDualScript: Bool {
-        schemaVersion == Self.dualScriptSchemaVersion || schemaVersion == Self.machineCheckedSchemaVersion
+        [Self.dualScriptSchemaVersion, Self.machineCheckedSchemaVersion,
+         Self.mixedSourceSchemaVersion].contains(schemaVersion)
     }
 
     public static func decode(_ data: Data, allowDevCandidates: Bool = false) throws -> Self {
@@ -38,7 +42,8 @@ public struct MultilingualCatalog: Codable, Sendable, Equatable {
             return MultilingualPage(id: page.id, title: page.title, date: page.date,
                 sourceLocale: page.sourceLocale, sourceIdentitySha256: page.sourceIdentitySha256,
                 sourceMediaSha256: page.sourceMediaSha256, mediaType: page.mediaType, displayCategory: page.displayCategory, defaultTargetLocale: locale, targets: targets,
-                diagnosticOnly: page.diagnosticOnly, simulationOnly: page.simulationOnly)
+                diagnosticOnly: page.diagnosticOnly, simulationOnly: page.simulationOnly,
+                sourceMode: page.sourceMode)
         }
         let projected = Self(schemaVersion: value.schemaVersion, generatedAt: value.generatedAt,
             defaultPageId: pages.contains { $0.id == value.defaultPageId } ? value.defaultPageId : (pages.first?.id ?? ""),
@@ -72,7 +77,8 @@ public struct MultilingualCatalog: Codable, Sendable, Equatable {
             return MultilingualPage(id: page.id, title: page.title, date: page.date,
                 sourceLocale: page.sourceLocale, sourceIdentitySha256: page.sourceIdentitySha256,
                 sourceMediaSha256: page.sourceMediaSha256, mediaType: page.mediaType, displayCategory: page.displayCategory, defaultTargetLocale: locale, targets: targets,
-                diagnosticOnly: page.diagnosticOnly, simulationOnly: page.simulationOnly)
+                diagnosticOnly: page.diagnosticOnly, simulationOnly: page.simulationOnly,
+                sourceMode: page.sourceMode)
         }
         let result = Self(schemaVersion: schemaVersion, generatedAt: generatedAt,
             defaultPageId: selected.contains { $0.id == defaultPageId } ? defaultPageId : (selected.first?.id ?? ""), pages: selected)
@@ -81,7 +87,8 @@ public struct MultilingualCatalog: Codable, Sendable, Equatable {
     }
 
     public func validate(allowDevCandidates: Bool = false) throws {
-        guard [Self.supportedSchemaVersion, Self.dualScriptSchemaVersion, Self.machineCheckedSchemaVersion].contains(schemaVersion) else {
+        guard [Self.supportedSchemaVersion, Self.dualScriptSchemaVersion, Self.machineCheckedSchemaVersion,
+               Self.mixedSourceSchemaVersion].contains(schemaVersion) else {
             throw CatalogError.invalid("不支持的多语言目录版本")
         }
         guard !pages.isEmpty, pages.count <= 104 else { throw CatalogError.invalid("多语言目录页数无效") }
@@ -112,7 +119,7 @@ public struct MultilingualPage: Codable, Sendable, Equatable, Identifiable {
     public let title: String?
     public let date: String
     public let sourceLocale: String
-    public let sourceIdentitySha256: String
+    public let sourceIdentitySha256: String?
     public let sourceMediaSha256: String?
     public let mediaType: String?
     public var displayCategory: PageDisplayCategory? = nil
@@ -120,21 +127,36 @@ public struct MultilingualPage: Codable, Sendable, Equatable, Identifiable {
     public let targets: [String: PageTarget]
     public let diagnosticOnly: Bool?
     public let simulationOnly: Bool?
+    /// v5 explicitly removes a fake page-wide source and binds every target.
+    public var sourceMode: String? = nil
 
     public func validate(catalogSchemaVersion: String = MultilingualCatalog.supportedSchemaVersion,
                          allowDevCandidates: Bool = false) throws {
         guard allowDevCandidates || (diagnosticOnly != true && simulationOnly != true) else {
             throw CatalogError.invalid("开发页面需要明确的 Dev 上下文")
         }
+        let v5 = catalogSchemaVersion == MultilingualCatalog.mixedSourceSchemaVersion
+        let mixedSource = v5 && sourceMode == "per_target"
         guard Validation.identifier(id), Validation.isoDate(date), sourceLocale == "en",
-              Validation.sha256(sourceIdentitySha256), Validation.locale(defaultTargetLocale),
-              sourceMediaSha256.map(Validation.sha256) ?? true,
+              Validation.locale(defaultTargetLocale),
               mediaType.map({ ["podcast", "video"].contains($0) }) ?? true,
               title.map({ !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }) ?? true,
               !targets.isEmpty, targets.count <= 16, targets[defaultTargetLocale] != nil
         else { throw CatalogError.invalid("多语言页面来源、日期或默认语言无效") }
-        if catalogSchemaVersion == MultilingualCatalog.dualScriptSchemaVersion
-            || catalogSchemaVersion == MultilingualCatalog.machineCheckedSchemaVersion {
+        if mixedSource {
+            guard sourceMode == "per_target", sourceIdentitySha256 == nil,
+                  sourceMediaSha256 == nil else {
+                throw CatalogError.invalid("混合来源页面不能声明单一来源身份")
+            }
+        } else {
+            guard (!v5 && sourceMode == nil) || (v5 && sourceMode == "single_source"),
+                  sourceIdentitySha256.map(Validation.sha256) == true,
+                  sourceMediaSha256.map(Validation.sha256) ?? true else {
+                throw CatalogError.invalid("单一来源页面缺少来源身份")
+            }
+        }
+        if [MultilingualCatalog.dualScriptSchemaVersion, MultilingualCatalog.machineCheckedSchemaVersion,
+            MultilingualCatalog.mixedSourceSchemaVersion].contains(catalogSchemaVersion) {
             guard let title, !title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
                   title.count <= 180 else { throw CatalogError.invalid("双稿页面缺少有效标题") }
         }
@@ -142,9 +164,12 @@ public struct MultilingualPage: Codable, Sendable, Equatable, Identifiable {
         for (locale, target) in targets {
             guard Validation.locale(locale) else { throw CatalogError.invalid("目标语言代码无效") }
             try target.validate(pageID: id, locale: locale, catalogSchemaVersion: catalogSchemaVersion,
+                                sourceMode: sourceMode,
                                 allowDevCandidates: allowDevCandidates)
+            let source = try target.sourceBinding(in: self, catalogSchemaVersion: catalogSchemaVersion)
             if let binding = target.audioFingerprint {
-                guard sourceMediaSha256 == binding.sourceSha256 else {
+                guard source.sourceMediaSha256 == binding.sourceSha256,
+                      source.editionId == binding.pageId else {
                     throw CatalogError.invalid("多语言页面声音指纹来源不符")
                 }
             }
@@ -222,6 +247,12 @@ public struct PageTarget: Codable, Sendable, Equatable {
     public let audioFingerprint: PublishedFingerprintBinding?
     public let diagnosticOnly: Bool?
     public let simulationOnly: Bool?
+    /// v5 resource edition. The family page ID remains stable for selection and history.
+    public var editionId: String? = nil
+    /// v5 source identity and media are target-local. Nil means the legacy page binding.
+    public var sourceIdentitySha256: String? = nil
+    public var sourceMediaSha256: String? = nil
+    public var videoDelivery: PublishedVideoDelivery? = nil
 
     /// A bound machine quality waiver admitted the text or the audio. This is
     /// production visible but never a human approval; readers show the disclosure.
@@ -233,22 +264,27 @@ public struct PageTarget: Codable, Sendable, Equatable {
 
     public func validate(pageID: String, locale: String,
                          catalogSchemaVersion: String = MultilingualCatalog.supportedSchemaVersion,
+                         sourceMode: String? = nil,
                          allowDevCandidates: Bool = false) throws {
         guard allowDevCandidates || (diagnosticOnly != true && simulationOnly != true) else {
             throw CatalogError.invalid("开发语言需要明确的 Dev 上下文")
         }
         // Only a v4 catalog may route a machine-checked target, and only to /releases-v4/.
-        let machineChecked = catalogSchemaVersion == MultilingualCatalog.machineCheckedSchemaVersion && isMachineChecked
+        let mixedSource = catalogSchemaVersion == MultilingualCatalog.mixedSourceSchemaVersion
+            && sourceMode == "per_target"
+        let machineChecked = [MultilingualCatalog.machineCheckedSchemaVersion,
+                              MultilingualCatalog.mixedSourceSchemaVersion].contains(catalogSchemaVersion) && isMachineChecked
         let directory: String
         if machineChecked {
             directory = "releases-v4"
-        } else if catalogSchemaVersion == MultilingualCatalog.dualScriptSchemaVersion
-                    || catalogSchemaVersion == MultilingualCatalog.machineCheckedSchemaVersion {
+        } else if [MultilingualCatalog.dualScriptSchemaVersion, MultilingualCatalog.machineCheckedSchemaVersion,
+                   MultilingualCatalog.mixedSourceSchemaVersion].contains(catalogSchemaVersion) {
             directory = "releases-v2"
         } else {
             directory = "releases"
         }
-        let expected = "/\(directory)/\(pageID)/\(locale).json"
+        let resourcePageID = editionId ?? pageID
+        let expected = "/\(directory)/\(resourcePageID)/\(locale).json"
         let statusesValid: Bool
         if machineChecked {
             // Machine-checked delivery always carries text, captions and audio.
@@ -264,9 +300,23 @@ public struct PageTarget: Codable, Sendable, Equatable {
               hasPublishedAudio == capabilities.contains(.audio),
               (audioFingerprint != nil) == capabilities.contains(.alignment)
         else { throw CatalogError.invalid("目标语言发布引用或能力无效") }
+        if mixedSource {
+            guard editionId.map(Validation.identifier) == true,
+                  sourceIdentitySha256.map(Validation.sha256) == true,
+                  sourceMediaSha256.map(Validation.sha256) == true,
+                  videoDelivery != nil else {
+                throw CatalogError.invalid("混合来源目标缺少独立资源或来源身份")
+            }
+            try videoDelivery?.validate(editionId: resourcePageID)
+            guard videoDelivery.map({ $0.sha256 == sourceMediaSha256 }) ?? true else {
+                throw CatalogError.invalid("目标语言视频与来源媒体哈希不符")
+            }
+        } else if editionId != nil || sourceIdentitySha256 != nil || sourceMediaSha256 != nil || videoDelivery != nil {
+            throw CatalogError.invalid("旧目录不能声明目标级来源身份")
+        }
         if let audioFingerprint {
             try audioFingerprint.validate()
-            guard audioFingerprint.pageId == pageID, hasPublishedAudio else {
+            guard audioFingerprint.pageId == resourcePageID, hasPublishedAudio else {
                 throw CatalogError.invalid("目标语言声音指纹与页面不符")
             }
         }
@@ -274,6 +324,58 @@ public struct PageTarget: Codable, Sendable, Equatable {
 
     public func packageURL(relativeTo baseURL: URL) throws -> URL {
         try secureURL(path: releasePackageUrl, baseURL: baseURL)
+    }
+}
+
+public struct PageTargetSourceBinding: Sendable, Equatable {
+    public let familyPageId: String
+    public let editionId: String
+    public let sourceIdentitySha256: String
+    public let sourceMediaSha256: String?
+    public let videoDelivery: PublishedVideoDelivery?
+}
+
+public extension PageTarget {
+    /// Resolve the one source identity used by release, transcript, audio,
+    /// fingerprint and cache checks. v4 and earlier are single-source.
+    func sourceBinding(in page: MultilingualPage,
+                       catalogSchemaVersion: String? = nil) throws -> PageTargetSourceBinding {
+        let mixed = page.sourceMode == "per_target"
+        let result = PageTargetSourceBinding(
+            familyPageId: page.id,
+            editionId: mixed ? (editionId ?? "") : page.id,
+            sourceIdentitySha256: mixed ? (sourceIdentitySha256 ?? "") : (page.sourceIdentitySha256 ?? ""),
+            sourceMediaSha256: mixed ? sourceMediaSha256 : page.sourceMediaSha256,
+            videoDelivery: mixed ? videoDelivery : nil)
+        guard Validation.identifier(result.familyPageId), Validation.identifier(result.editionId),
+              Validation.sha256(result.sourceIdentitySha256),
+              result.sourceMediaSha256.map(Validation.sha256) ?? true else {
+            throw CatalogError.invalid("目标语言来源身份无效")
+        }
+        try result.videoDelivery?.validate(editionId: result.editionId)
+        return result
+    }
+}
+
+public struct PublishedVideoDelivery: Codable, Sendable, Equatable {
+    public let schemaVersion: String
+    public let canonicalUrl: String
+    public let storageUrl: String
+    public let sha256: String
+    public let bytes: Int64
+
+    public func validate(editionId: String) throws {
+        let allowedStorageURLs = ["dev", "prod"].map {
+            "https://storage.googleapis.com/ai-for-god-sermon-media-\($0)/weekly/\(editionId)/\(sha256).mp4"
+        }
+        guard schemaVersion == "sermon-video-delivery-v1", Validation.identifier(editionId),
+              canonicalUrl == "/pages/\(editionId)/full-video-browser.mp4",
+              Validation.sha256(sha256), bytes > 0,
+              allowedStorageURLs.contains(storageUrl),
+              let url = URL(string: storageUrl), url.scheme == "https",
+              url.host == "storage.googleapis.com", url.query == nil, url.fragment == nil,
+              url.user == nil, url.password == nil
+        else { throw CatalogError.invalid("视频交付绑定无效") }
     }
 }
 

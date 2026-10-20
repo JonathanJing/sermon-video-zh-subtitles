@@ -1,0 +1,292 @@
+Full suite: 5832 tests from 515 modules
+.........................................................................................................................................usage: run_unittest_ci.py [-h] --out OUT [--backend {live,fake}]
+                          [--model MODEL] [--case CASE] [--plan PLAN]
+                          [--max-sessions MAX_SESSIONS]
+                          [--risk-repeats RISK_REPEATS]
+                          [--max-tool-calls MAX_TOOL_CALLS]
+                          [--max-seconds MAX_SECONDS]
+                          {timeline,diagnose,refute,preflight,risk,all}
+run_unittest_ci.py: error: argument --risk-repeats: must be a positive integer
+.................................................................................................................................................................................................................................E......................................................................................................Automatic merge went well; stopped before committing as requested
+.........................................................usage: run_unittest_ci.py [-h] {build,verdicts} ...
+run_unittest_ci.py: error: output directory already exists: /var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/tmpn7ul8yfs/sheet
+usage: run_unittest_ci.py build [-h] --audio-package AUDIO_PACKAGE
+                                --candidate CANDIDATE --anchors ANCHORS
+                                --screening SCREENING [--audio-qc AUDIO_QC]
+                                [--sample-size SAMPLE_SIZE] [--seed SEED]
+                                --out OUT
+run_unittest_ci.py build: error: the following arguments are required: --screening
+................................................................................................................................................................................................................................................................................................................................Digest: /var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/tmphe8mguka/export/20261014-cli-private (1 files, 0 redactions)
+{
+  "schemaVersion": "sermon-english-source-package-v1",
+  "packageId": "english-source-958d31220614f72b507ac819",
+  "sourceLocale": "en",
+  "status": "blocked",
+  "candidateTranslationEligible": false,
+  "translationEligible": false,
+  "implementation": {
+    "builderSha256": "51a2e2a00a6a6720f47067807c6cb5922c9094ec57111b8b47f628bdfe8fd250",
+    "anchorGeneratorSha256": "5aa19b0580febb3652f9b694cf2ac9f1cbba1c241320c02396a99f0a63a439c1"
+  },
+  "source": {
+    "sourceId": "sermon-fixture",
+    "sourceUrlHash": "2222222222222222222222222222222222222222222222222222222222222222",
+    "serviceDate": "2026-09-20",
+    "media": {
+      "sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+      "sizeBytes": 1000,
+      "durationSeconds": 300.0
+    },
+    "approvedWindow": {
+... 3565 lines omitted; 95 error-like lines, 50 kept below ...
+[line 260] run_unittest_ci.py: error: --name must be YYYYMMDD-<label> using ASCII letters, digits, '.', '_' and '-'
+[line 265] run_unittest_ci.py: error: /var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/tmpzsqxmfkb/digests/20261007-e2e already exists; pick another --name
+[line 269] run_unittest_ci.py: error: --name must be YYYYMMDD-<label> using ASCII letters, digits, '.', '_' and '-'
+[line 278] progress: error: ledger already exists; refusing to overwrite
+[line 279] .................................................................................s........................................................................................................................................................................................................SERMON_LOGGING_WRITE_FAILED errorType=AccountingWriteError
+[line 280] ...................................SERMON_LOGGING_WRITE_FAILED errorType=AccountingWriteError
+[line 281] ..SERMON_LOGGING_WRITE_FAILED errorType=AccountingWriteError
+[line 355] runtime_tts_mac.py: error: this bounded diagnostic writes only its declared output directory
+[line 356] ......................................................................SERMON_LOGGING_WRITE_FAILED errorType=AccountingWriteError
+[line 400] run_unittest_ci.py: error: recording a decision needs --choice, --decided-by
+[line 503] run_unittest_ci.py: error: Choose replay-only --reuse-from or --resume-qc-authorization, not both
+[line 521]         "error": null,
+[line 565]   "failedChecks": [],
+[line 571]     "error": null,
+[line 641]     "reason": "audio QC failed; re-render the failed units as the repair ladder says",
+[line 650]     "reason": "failed units still have the same audio; re-render them (new seed or revised text) first",
+[line 920] run_unittest_ci.py: error: the secondary ASR uses the OpenAI API: start under scripts/run_with_openai_environment.py --environment dev (prod for formal content)
+[line 936] run_unittest_ci.py: error: real audio runs require --api-budget-authorization (planned per-locale QC authorization v4), including --text-backend codex for the secondary ASR budget
+[line 956]     "reason": "text QC failed; repair the failed groups in a new candidate revision",
+[line 965]     "reason": "failed groups are unchanged; repair them in a new candidate revision",
+[line 974]     "reason": "failed groups are unchanged; repair them in a new candidate revision",
+[line 983]     "reason": "text QC failed; repair the failed groups in a new candidate revision",
+[line 994]     "reason": "text QC failed; repair the failed groups in a new candidate revision",
+[line 1003]     "reason": "failed groups are unchanged; repair them in a new candidate revision",
+[line 1152]     "status": "error",
+[line 1153]     "reason": "ValueError: /private/var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/tmp6bgzr3s5/real/ko/text-waiver-8a4ed43e9846828b.json changed after it was written",
+[line 1223]     "reason": "text QC failed; repair the failed groups in a new candidate revision",
+[line 1232]     "reason": "failed groups are unchanged; repair them in a new candidate revision",
+[line 1241]     "reason": "failed groups are unchanged; repair them in a new candidate revision",
+[line 1261] run_unittest_ci.py: error: --locales must name one or more of zh-Hans, ko, es
+[line 1271] run_unittest_ci.py: error: --locales must name one or more of zh-Hans, ko, es
+[line 1281] run_unittest_ci.py: error: --workers must be between 1 and 16
+[line 1291] run_unittest_ci.py: error: --workers must be between 1 and 16
+[line 1301] run_unittest_ci.py: error: --candidate 'k0=/var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/tmp48hh9wqi/run/diagnostic-previews/ko/native-1/candidate.json': use LOCALE=PATH once per requested locale (ko)
+[line 1311] run_unittest_ci.py: error: --candidate 'es=/var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/tmp48hh9wqi/run/diagnostic-previews/ko/native-1/candidate.json': use LOCALE=PATH once per requested locale (ko)
+[line 1321] run_unittest_ci.py: error: --candidate '/var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/tmp48hh9wqi/run/diagnostic-previews/ko/native-1/candidate.json': use LOCALE=PATH once per requested locale (ko)
+[line 1331] run_unittest_ci.py: error: --candidate 'ko=/var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/tmp48hh9wqi/run/diagnostic-previews/ko/native-1/candidate.json': use LOCALE=PATH once per requested locale (ko)
+[line 1409] run_unittest_ci.py: error: real runs need --state-dir: the run's persistent state dir holding its repair ledger
+[line 1422]     "reason": "text QC failed; repair the failed groups in a new candidate revision",
+[line 1433]     "reason": "text QC failed; repair the failed groups in a new candidate revision",
+[line 1444]     "reason": "text QC failed; repair the failed groups in a new candidate revision",
+[line 1455]     "reason": "text QC failed; repair the failed groups in a new candidate revision",
+[line 1605]   "failedChecks": [],
+[line 1621] .{"component": "post-live-timeline-job", "event": "post_live_timeline_job_checked", "liveSource": {"host": "www.youtube.com", "path": "/watch", "urlHash": "3dd1687429a3473c"}, "loggedAt": "2026-10-19T16:18:39.563922+00:00", "severity": "INFO", "status": "failed", "sunday": "2026-07-12"}
+[line 1646]   "failedGroupIds": []
+[line 1649]   "status": "error",
+[line 1650]   "reason": "ValueError: /private/var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/tmp9jch30w5/out/condensation-record-17af5c10d60c2500.json changed after it was written",
+[line 1654]   "failedGroupIds": null
+[line 1660]   "reason": "every shorten group failed its checks; those groups stay subtitle-only in the dub",
+[line 1664]   "failedGroupIds": [
+... end of omitted section ...
+  File "/opt/homebrew/Cellar/<email>/3.13.16/Frameworks/Python.framework/Versions/3.13/lib/python3.13/unittest/loader.py", line 403, in _find_test_path
+    module = self._get_module_from_name(name)
+  File "/opt/homebrew/Cellar/<email>/3.13.16/Frameworks/Python.framework/Versions/3.13/lib/python3.13/unittest/loader.py", line 346, in _get_module_from_name
+    __import__(name)
+    ~~~~~~~~~~^^^^^^
+  File "/private/tmp/sermon-dev-test/tests/test_cloud_run_jobs.py", line 5, in <module>
+    from backend import cloud_run_jobs
+  File "/private/tmp/sermon-dev-test/backend/cloud_run_jobs.py", line 8, in <module>
+    from tongxing_api import cloud_run_jobs as _implementation
+ModuleNotFoundError: No module named 'tongxing_api'
+
+
+======================================================================
+ERROR: test_escaped_pipe_holder_cannot_hide_timeout_or_block_cleanup_forever (test_sermon_execution_harness.ExecutionHarnessProcessTests.test_escaped_pipe_holder_cannot_hide_timeout_or_block_cleanup_forever)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/private/tmp/sermon-dev-test/tests/test_sermon_execution_harness.py", line 183, in test_escaped_pipe_holder_cannot_hide_timeout_or_block_cleanup_forever
+    wait_for(lambda: not alive(pid))
+    ~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/private/tmp/sermon-dev-test/tests/test_sermon_execution_harness.py", line 23, in wait_for
+    if predicate():
+       ~~~~~~~~~^^
+  File "/private/tmp/sermon-dev-test/tests/test_sermon_execution_harness.py", line 183, in <lambda>
+    wait_for(lambda: not alive(pid))
+                         ~~~~~^^^^^
+  File "/private/tmp/sermon-dev-test/tests/test_sermon_execution_harness.py", line 30, in alive
+    result = subprocess.run(["ps", "-p", str(pid), "-o", "stat="], capture_output=True, text=True)
+  File "/opt/homebrew/Cellar/<email>/3.13.16/Frameworks/Python.framework/Versions/3.13/lib/python3.13/subprocess.py", line 555, in run
+    with Popen(*popenargs, **kwargs) as process:
+         ~~~~~^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/<email>/3.13.16/Frameworks/Python.framework/Versions/3.13/lib/python3.13/subprocess.py", line 1040, in __init__
+    self._execute_child(args, executable, preexec_fn, close_fds,
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                        pass_fds, cwd, env,
+                        ^^^^^^^^^^^^^^^^^^^
+    ...<5 lines>...
+                        gid, gids, uid, umask,
+                        ^^^^^^^^^^^^^^^^^^^^^^
+                        start_new_session, process_group)
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/<email>/3.13.16/Frameworks/Python.framework/Versions/3.13/lib/python3.13/subprocess.py", line 1992, in _execute_child
+    raise child_exception_type(errno_num, err_msg, err_filename)
+PermissionError: [Errno 1] Operation not permitted: 'ps'
+
+======================================================================
+ERROR: test_guarded_nested_groups_cascade_when_intermediate_owner_is_killed (test_sermon_execution_harness.ExecutionHarnessProcessTests.test_guarded_nested_groups_cascade_when_intermediate_owner_is_killed)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/private/tmp/sermon-dev-test/tests/test_sermon_execution_harness.py", line 220, in test_guarded_nested_groups_cascade_when_intermediate_owner_is_killed
+    wait_for(lambda: not alive(pid))
+    ~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/private/tmp/sermon-dev-test/tests/test_sermon_execution_harness.py", line 23, in wait_for
+    if predicate():
+       ~~~~~~~~~^^
+  File "/private/tmp/sermon-dev-test/tests/test_sermon_execution_harness.py", line 220, in <lambda>
+    wait_for(lambda: not alive(pid))
+                         ~~~~~^^^^^
+  File "/private/tmp/sermon-dev-test/tests/test_sermon_execution_harness.py", line 30, in alive
+    result = subprocess.run(["ps", "-p", str(pid), "-o", "stat="], capture_output=True, text=True)
+  File "/opt/homebrew/Cellar/<email>/3.13.16/Frameworks/Python.framework/Versions/3.13/lib/python3.13/subprocess.py", line 555, in run
+    with Popen(*popenargs, **kwargs) as process:
+         ~~~~~^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/<email>/3.13.16/Frameworks/Python.framework/Versions/3.13/lib/python3.13/subprocess.py", line 1040, in __init__
+    self._execute_child(args, executable, preexec_fn, close_fds,
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                        pass_fds, cwd, env,
+                        ^^^^^^^^^^^^^^^^^^^
+    ...<5 lines>...
+                        gid, gids, uid, umask,
+                        ^^^^^^^^^^^^^^^^^^^^^^
+                        start_new_session, process_group)
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/<email>/3.13.16/Frameworks/Python.framework/Versions/3.13/lib/python3.13/subprocess.py", line 1992, in _execute_child
+    raise child_exception_type(errno_num, err_msg, err_filename)
+PermissionError: [Errno 1] Operation not permitted: 'ps'
+
+======================================================================
+ERROR: test_killed_owner_keeps_inherited_child_lock_until_child_exits (test_sermon_execution_harness.ExecutionHarnessProcessTests.test_killed_owner_keeps_inherited_child_lock_until_child_exits)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/private/tmp/sermon-dev-test/tests/test_sermon_execution_harness.py", line 118, in test_killed_owner_keeps_inherited_child_lock_until_child_exits
+    self.assertTrue(alive(pid))
+                    ~~~~~^^^^^
+  File "/private/tmp/sermon-dev-test/tests/test_sermon_execution_harness.py", line 30, in alive
+    result = subprocess.run(["ps", "-p", str(pid), "-o", "stat="], capture_output=True, text=True)
+  File "/opt/homebrew/Cellar/<email>/3.13.16/Frameworks/Python.framework/Versions/3.13/lib/python3.13/subprocess.py", line 555, in run
+    with Popen(*popenargs, **kwargs) as process:
+         ~~~~~^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/<email>/3.13.16/Frameworks/Python.framework/Versions/3.13/lib/python3.13/subprocess.py", line 1040, in __init__
+    self._execute_child(args, executable, preexec_fn, close_fds,
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                        pass_fds, cwd, env,
+                        ^^^^^^^^^^^^^^^^^^^
+    ...<5 lines>...
+                        gid, gids, uid, umask,
+                        ^^^^^^^^^^^^^^^^^^^^^^
+                        start_new_session, process_group)
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/<email>/3.13.16/Frameworks/Python.framework/Versions/3.13/lib/python3.13/subprocess.py", line 1992, in _execute_child
+    raise child_exception_type(errno_num, err_msg, err_filename)
+PermissionError: [Errno 1] Operation not permitted: 'ps'
+
+======================================================================
+ERROR: test_timeout_kills_process_group_including_term_ignoring_grandchild (test_sermon_execution_harness.ExecutionHarnessProcessTests.test_timeout_kills_process_group_including_term_ignoring_grandchild)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/private/tmp/sermon-dev-test/tests/test_sermon_execution_harness.py", line 156, in test_timeout_kills_process_group_including_term_ignoring_grandchild
+    wait_for(lambda: not alive(pid))
+    ~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/private/tmp/sermon-dev-test/tests/test_sermon_execution_harness.py", line 23, in wait_for
+    if predicate():
+       ~~~~~~~~~^^
+  File "/private/tmp/sermon-dev-test/tests/test_sermon_execution_harness.py", line 156, in <lambda>
+    wait_for(lambda: not alive(pid))
+                         ~~~~~^^^^^
+  File "/private/tmp/sermon-dev-test/tests/test_sermon_execution_harness.py", line 30, in alive
+    result = subprocess.run(["ps", "-p", str(pid), "-o", "stat="], capture_output=True, text=True)
+  File "/opt/homebrew/Cellar/<email>/3.13.16/Frameworks/Python.framework/Versions/3.13/lib/python3.13/subprocess.py", line 555, in run
+    with Popen(*popenargs, **kwargs) as process:
+         ~~~~~^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/<email>/3.13.16/Frameworks/Python.framework/Versions/3.13/lib/python3.13/subprocess.py", line 1040, in __init__
+    self._execute_child(args, executable, preexec_fn, close_fds,
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                        pass_fds, cwd, env,
+                        ^^^^^^^^^^^^^^^^^^^
+    ...<5 lines>...
+                        gid, gids, uid, umask,
+                        ^^^^^^^^^^^^^^^^^^^^^^
+                        start_new_session, process_group)
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/<email>/3.13.16/Frameworks/Python.framework/Versions/3.13/lib/python3.13/subprocess.py", line 1992, in _execute_child
+    raise child_exception_type(errno_num, err_msg, err_filename)
+PermissionError: [Errno 1] Operation not permitted: 'ps'
+
+======================================================================
+ERROR: test_owner_sigkill_stops_child_and_grandchild_before_lease_expiry (test_supervisor_owner_death.SupervisorOwnerDeathTests.test_owner_sigkill_stops_child_and_grandchild_before_lease_expiry)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/private/tmp/sermon-dev-test/tests/test_supervisor_owner_death.py", line 85, in test_owner_sigkill_stops_child_and_grandchild_before_lease_expiry
+    self.assertTrue(all(alive(pid) for pid in pids))
+                    ~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/private/tmp/sermon-dev-test/tests/test_supervisor_owner_death.py", line 85, in <genexpr>
+    self.assertTrue(all(alive(pid) for pid in pids))
+                        ~~~~~^^^^^
+  File "/private/tmp/sermon-dev-test/tests/test_supervisor_owner_death.py", line 28, in alive
+    check = subprocess.run(["ps", "-p", str(pid), "-o", "stat="], capture_output=True, text=True)
+  File "/opt/homebrew/Cellar/<email>/3.13.16/Frameworks/Python.framework/Versions/3.13/lib/python3.13/subprocess.py", line 555, in run
+    with Popen(*popenargs, **kwargs) as process:
+         ~~~~~^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/<email>/3.13.16/Frameworks/Python.framework/Versions/3.13/lib/python3.13/subprocess.py", line 1040, in __init__
+    self._execute_child(args, executable, preexec_fn, close_fds,
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                        pass_fds, cwd, env,
+                        ^^^^^^^^^^^^^^^^^^^
+    ...<5 lines>...
+                        gid, gids, uid, umask,
+                        ^^^^^^^^^^^^^^^^^^^^^^
+                        start_new_session, process_group)
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/<email>/3.13.16/Frameworks/Python.framework/Versions/3.13/lib/python3.13/subprocess.py", line 1992, in _execute_child
+    raise child_exception_type(errno_num, err_msg, err_filename)
+PermissionError: [Errno 1] Operation not permitted: 'ps'
+
+----------------------------------------------------------------------
+Ran 5832 tests in 3330.195s
+
+FAILED (errors=7, skipped=38, expected failures=2)
+
+{
+  "apiKeyMaterialIncluded": false,
+  "commandCount": 8,
+  "notesIncluded": false,
+  "prefix": "sundays/2026-06-28/runs/caption-first-plan",
+  "promoteBeforeNotes": true,
+  "schemaVersion": 1,
+  "secretResourceNamesIncluded": false,
+  "sessionId": "caption-first-plan",
+  "stages": [
+    "model-access",
+    "prepare",
+    "translate",
+    "export-captions",
+    "validate-offline",
+    "upload-playback",
+    "upload-manifest",
+    "promote"
+  ],
+  "status": "ok",
+  "translationMode": "fresh_model_call"
+}
+ 771.27s    67  test_machine_quality_waiver
+ 288.38s     8  test_sermon_fresh_full_dag
+ 282.64s    17  test_run_machine_qc_audio_test
+ 193.77s    13  test_sermon_mock_tts_dag
+  75.49s    48  test_sermon_delivery_intent_binding
+  56.08s    49  test_sermon_cuv_translation
+  49.30s    23  test_sermon_app_delivery_workflow
+  48.49s    13  test_sermon_pilot_evidence
+  42.98s    13  test_sermon_historical_layer2
+  42.18s    18  test_sermon_local_business_callbacks

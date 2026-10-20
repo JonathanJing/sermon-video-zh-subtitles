@@ -46,7 +46,8 @@ MACHINE_REVIEW_LABELS = {
            ('human_reviewed', 'machine_checked'): 'Traducción revisada · Audio con control de calidad automático, sin revisión humana del audio',
            ('machine_checked', 'human_reviewed'): 'Traducción con control de calidad automático, sin revisión humana de la traducción · Audio revisado'},
 }
-CATALOGS = (('multilingual-v4.json', 'sermon-multilingual-catalog-v4'),
+CATALOGS = (('multilingual-v5.json', 'sermon-multilingual-catalog-v5'),
+            ('multilingual-v4.json', 'sermon-multilingual-catalog-v4'),
             ('multilingual-v3.json', 'sermon-multilingual-catalog-v3'))
 
 
@@ -112,13 +113,28 @@ def checked_json(path, expected=None):
     return read(path), value
 
 
+def target_source(page, target, catalog_version):
+    if catalog_version == 'sermon-multilingual-catalog-v5' and page.get('sourceMode') == 'per_target':
+        edition = target.get('editionId')
+        identity = target.get('sourceIdentitySha256')
+        media = target.get('sourceMediaSha256')
+        video = target.get('videoDelivery')
+        if not all(isinstance(value, str) and value for value in (edition, identity, media)):
+            raise ValueError('per-target poster source identity is incomplete')
+        if (not isinstance(video, dict) or video.get('canonicalUrl') != f'/pages/{edition}/full-video-browser.mp4'
+                or video.get('sha256') != media):
+            raise ValueError('per-target poster video differs from source edition')
+        return edition, identity, media
+    return page['id'], page['sourceIdentitySha256'], page.get('sourceMediaSha256')
+
+
 def load_sources(release, page_id, origin, english_reference=None, locales=None):
     public = release / 'public'
     # New clients read v4 first; v3 is its human-only projection and lacks machine-checked weeks.
     name, version = next((row for row in CATALOGS if (public / row[0]).is_file()), CATALOGS[-1])
     catalog, catalog_sha = checked_json(public / name)
     if catalog.get('schemaVersion') != version:
-        raise ValueError('expected multilingual v3 or v4 catalog')
+        raise ValueError('expected multilingual v3, v4 or v5 catalog')
     pages = [page for page in catalog['pages'] if page['id'] == page_id]
     if len(pages) != 1:
         raise ValueError('page ID must match exactly one published page')
@@ -136,9 +152,10 @@ def load_sources(release, page_id, origin, english_reference=None, locales=None)
     for locale in locales:
         copy = COPY[locale]
         target = page['targets'][locale]
+        edition_id, source_identity, source_media = target_source(page, target, version)
         release_path = target['releasePackageUrl']
         package, package_sha = checked_json(asset_file(public, release_path), target['releasePackageJsonSha256'])
-        if (package.get('pageId') != page_id or package.get('targetLocale') != locale or
+        if (package.get('pageId') != edition_id or package.get('targetLocale') != locale or
                 package.get('status') != 'published_http_verified' or
                 (package.get('contentStatus'), package.get('audioStatus')) !=
                 (target.get('contentStatus', 'human_reviewed'), target.get('audioStatus', 'human_reviewed'))):
@@ -147,11 +164,20 @@ def load_sources(release, page_id, origin, english_reference=None, locales=None)
         assets = [a for a in package['assets'] if a['role'] == 'content']
         if len(assets) != 1:
             raise ValueError('expected one approved content asset')
+        if version == 'sermon-multilingual-catalog-v5':
+            release_version = 4 if 'machine_checked' in (target.get('contentStatus'), target.get('audioStatus')) else 2
+            if (release_path != f'/releases-v{release_version}/{edition_id}/{locale}.json' or
+                    assets[0].get('path') != f'/content/{edition_id}/{locale}.json'):
+                raise ValueError('per-target release/content asset path mismatch')
         content, content_sha = checked_json(asset_file(public, assets[0]['path']), assets[0]['sha256'])
-        if (content.get('pageId') != page_id or content.get('targetLocale') != locale or
-                content.get('englishSourcePackageJsonSha256') != page['sourceIdentitySha256'] or
+        if (content.get('pageId') != edition_id or content.get('targetLocale') != locale or
+                content.get('englishSourcePackageJsonSha256') != source_identity or
+                (source_media is not None and content.get('sourceMediaSha256') != source_media) or
                 content.get('targetLanguageCandidateJsonSha256') != package['targetLanguageCandidateJsonSha256']):
             raise ValueError('content source or locale identity mismatch')
+        if (package.get('englishSourcePackageJsonSha256') is not None and
+                package['englishSourcePackageJsonSha256'] != source_identity):
+            raise ValueError('release source identity mismatch')
         for key in ('title', 'series', 'scripture', 'speaker'):
             if not isinstance(content.get(key), str) or not content[key].strip():
                 raise ValueError('missing content metadata: ' + key)
@@ -159,11 +185,14 @@ def load_sources(release, page_id, origin, english_reference=None, locales=None)
         brief = dict(locale=locale, date=page['date'], origin=origin,
                      **{key: content[key] for key in ('title', 'series', 'scripture', 'speaker')},
                      tagline=copy['tagline'], reviewLabel=label, labels=labels,
-                     qrURL=origin + '/?' + urlencode(dict(week=page_id, contentLang=locale, lang=copy['lang'])))
+                     qrURL=origin + '/?' + urlencode(dict(week=edition_id, contentLang=locale, lang=copy['lang'])))
         checks.update({release_path: package_sha, assets[0]['path']: content_sha})
-        bundles[locale] = dict(brief=brief, source=dict(pageId=page_id, targetLocale=locale,
-            sourceIdentitySha256=page['sourceIdentitySha256'], catalogSha256=catalog_sha,
-            releasePackageSha256=package_sha, contentSha256=content_sha, brief=brief))
+        source = dict(pageId=page_id, targetLocale=locale, sourceIdentitySha256=source_identity,
+                      catalogSha256=catalog_sha, releasePackageSha256=package_sha,
+                      contentSha256=content_sha, brief=brief)
+        if version == 'sermon-multilingual-catalog-v5' and page.get('sourceMode') == 'per_target':
+            source.update(editionId=edition_id, sourceMediaSha256=source_media)
+        bundles[locale] = dict(brief=brief, source=source)
     for bundle in bundles.values():
         apply_template(bundle)
     if english_reference is not None:

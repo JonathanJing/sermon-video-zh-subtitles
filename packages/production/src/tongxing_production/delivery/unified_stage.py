@@ -83,6 +83,9 @@ def load(config_path):
         paths['baseline'] = (base / value['baseline']['path']).resolve()
         d.validate_catalog_snapshot(paths['baseline'])
         d.require(file_sha(paths['baseline'] / 'public/multilingual-v3.json') == value['baseline']['catalogSha256'], 'Baseline catalog binding changed')
+        if value['baseline'].get('catalogV5Sha256') is not None:
+            d.require(file_sha(paths['baseline'] / 'public/multilingual-v5.json') == value['baseline']['catalogV5Sha256'],
+                      'Baseline v5 catalog binding changed')
     if 'releasePlan' in paths:
         plan = read(paths['releasePlan'])
         d.require(plan.get('schemaVersion') == 'sermon-locale-release-plan-v1'
@@ -90,8 +93,12 @@ def load(config_path):
                   and set(plan.get('locales', [])) == set(value['locales']), 'Release plan scope differs')
         d.require(type(plan.get('parentGeneration')) is int and plan['parentGeneration'] >= 0, 'Release plan generation required')
         if 'baseline' in paths:
+            expected_catalog = ('multilingual-v5.json' if plan.get('baselineCatalogV5Sha256') is not None
+                                else 'multilingual-v3.json')
+            expected_key = 'baselineCatalogV5Sha256' if expected_catalog.endswith('v5.json') else 'baselineCatalogSha256'
             d.require(plan.get('baselineVersion') == value['baseline']['version']
-                      and plan.get('baselineCatalogSha256') == d.sha(read(paths['baseline'] / 'public/multilingual-v3.json')), 'Release plan baseline differs')
+                      and plan.get(expected_key) == d.sha(read(paths['baseline'] / 'public' / expected_catalog)),
+                      'Release plan baseline differs')
     for destination in (work / 'prepared', work / 'sealed'):
         d.require(not any(path == destination or path.is_relative_to(destination) for path in input_paths), 'Output overlaps bound input')
         if 'baseline' in paths:
@@ -301,6 +308,51 @@ def _verify_publication(sealed, attempt, reader):
     return d.verify_attempt(attempt, http, intent=attempt['intent'], catalog_sha=report['catalogSha256'], assets_sha=d.sha(report['files']))
 
 
+def _endpoint_release(public, page, locale):
+    """Validate one catalog target locally before trusting endpoint readback evidence."""
+    target = page['targets'][locale]
+    release_path = target['releasePackageUrl']
+    local = public / release_path.lstrip('/')
+    d.require(file_sha(local) == target['releasePackageJsonSha256'],
+              'Endpoint release bytes differ from catalog target')
+    release = read(local)
+    d.require(release.get('status') == 'published_http_verified'
+              and release.get('targetLocale') == locale
+              and release.get('contentStatus') == target['contentStatus']
+              and release.get('audioStatus') == target['audioStatus'],
+              'Endpoint release status/locale differs from catalog target')
+    content_rows = [asset for asset in release.get('assets', []) if asset.get('role') == 'content']
+    d.require(len(content_rows) == 1, 'Endpoint release needs one content asset')
+    content_path = content_rows[0]['path']
+    content_local = public / content_path.lstrip('/')
+    d.require(file_sha(content_local) == content_rows[0]['sha256'],
+              'Endpoint content bytes differ from release')
+    content = read(content_local)
+    if release.get('schemaVersion') in d.FOUR_PRODUCT_RELEASES:
+        d.validate_release_target(release, page, locale)
+    else:
+        d.require(page.get('sourceMode') == 'per_target'
+                  and release.get('schemaVersion') == 'sermon-target-language-release-package-v2',
+                  'Endpoint requires a four-product release or target-bound human v2 release')
+        d.validate_content_target(content, page, locale)
+    return target, release_path, release, content_path
+
+
+def _validate_study_observation(telemetry, playback, expected_study):
+    """Four-product locales prove study UI; human v2 locales prove it was not claimed."""
+    checks = playback.get('checks', {})
+    if expected_study is not None:
+        d.require(telemetry.get('studyArtifacts') == expected_study
+                  and telemetry.get('studyDisplayed') is True
+                  and all(checks.get(kind) == 'pass' for kind in ('outline', 'meditation')),
+                  'Endpoint did not display both current approved study artifacts')
+    else:
+        d.require(telemetry.get('studyDisplayed') is False
+                  and telemetry.get('studyArtifacts') is None
+                  and all(checks.get(kind) == 'not_applicable' for kind in ('outline', 'meditation')),
+                  'Legacy v2 endpoint must mark study as not applicable')
+
+
 def _endpoints(value, base, sealed, state, reader):
     runtime_root = builder.runtime_web_root()
     runtime_files = builder.runtime_web_files(runtime_root)
@@ -311,35 +363,35 @@ def _endpoints(value, base, sealed, state, reader):
         path = (base / endpoint['receipt']['path']).resolve()
         d.require(file_sha(path) == endpoint['receipt']['sha256'], 'Endpoint receipt changed')
         receipt = read(path)
-        d.require(receipt.get('readback', {}).get('schemaVersion') == 'sermon-client-readback-v2', 'Four-product endpoints require client readback v2')
+        d.require(receipt.get('readback', {}).get('schemaVersion') == 'sermon-client-readback-v2', 'Published endpoints require client readback v2')
         d.require(set(receipt['locales']) == set(value['locales']), 'Endpoint locale coverage incomplete')
         resources = receipt['readback']['resources']
         observed_paths = {row['url'].removeprefix(endpoint['intent']['origin']) for row in resources}
         # Current clients read v4 first; v3 is the human-only projection that older
         # builds read. When the site carries v4, the readback must show the v4 path
         # current clients take, even for an all-human run.
+        has_v5 = (sealed / 'public/multilingual-v5.json').exists()
         has_v4 = (sealed / 'public/multilingual-v4.json').exists()
-        catalog = read(sealed / 'public' / ('multilingual-v4.json' if has_v4 else 'multilingual-v3.json'))
+        catalog_name = 'multilingual-v5.json' if has_v5 else 'multilingual-v4.json' if has_v4 else 'multilingual-v3.json'
+        catalog = read(sealed / 'public' / catalog_name)
         page = next(page for page in catalog['pages'] if page['id'] == value['pageId'])
-        required_paths = {'/multilingual-v4.json' if has_v4 else '/multilingual-v3.json'}
+        required_paths = ({'/multilingual-v5.json', '/multilingual-v4.json', '/multilingual-v3.json'}
+                          if has_v5 else {'/' + catalog_name})
         if endpoint['name'] in ('dev', 'production_web'):
             required_paths.update('/' + name for name in runtime_files)
         audio_paths = {}
         study_requirements = {}
         for locale in value['locales']:
-            release_path = page['targets'][locale]['releasePackageUrl']
+            target, release_path, release, content_path = _endpoint_release(sealed / 'public', page, locale)
             required_paths.add(release_path)
-            release = read(sealed / 'public' / release_path.lstrip('/'))
-            d.require(release['schemaVersion'] in d.FOUR_PRODUCT_RELEASES, 'Endpoint requires a four-product release (v3 or v4)')
-            d.require(release['pageId'] == value['pageId'] and release['targetLocale'] == locale
-                      and release['englishSourcePackageJsonSha256'] == state['sourcePackageSha256']
-                      and release['sourceIdentity'] == state['sourceIdentity'], 'Endpoint release source/page identity differs')
-            def study_reader(url):
-                status, payload = reader(endpoint['intent']['origin'] + url)
-                d.require(status == 200, 'Endpoint study HTTP failure')
-                return payload
-            d.validate_public_study(release, reader=study_reader)
-            study_requirements[locale] = {kind: release['fourProducts'][kind + 'ArtifactSha256'] for kind in ('outline', 'meditation')}
+            required_paths.add(content_path)
+            if release['schemaVersion'] in d.FOUR_PRODUCT_RELEASES:
+                def study_reader(url):
+                    status, payload = reader(endpoint['intent']['origin'] + url)
+                    d.require(status == 200, 'Endpoint study HTTP failure')
+                    return payload
+                d.validate_public_study(release, reader=study_reader)
+                study_requirements[locale] = {kind: release['fourProducts'][kind + 'ArtifactSha256'] for kind in ('outline', 'meditation')}
             for asset in release['assets']:
                 if asset['role'] in ('page', 'content', 'audio', 'captions', 'outline', 'meditation', 'product_manifest'):
                     required_paths.add(asset['path'])
@@ -352,11 +404,12 @@ def _endpoints(value, base, sealed, state, reader):
             d.require(evidence_path.is_relative_to(evidence_root), 'Playback evidence outside root')
             telemetry = read(evidence_path)
             d.require(telemetry.get('audioUrl') == audio_paths.get(playback.get('locale')), 'Playback audio is not current locale asset')
+            _validate_study_observation(telemetry, playback, study_requirements.get(playback.get('locale')))
         for row in resources:
             relative = row['url'].removeprefix(endpoint['intent']['origin'])
             d.require(files.get(relative) == row['sha256'], 'Endpoint resource does not bind current release')
         result = d.verify_client_acceptance(receipt, expected_intent=endpoint['intent'], candidate_sha=state['candidateSha256'],
-                                            reader=reader, evidence_root=evidence_root, study_requirements=study_requirements)
+                                            reader=reader, evidence_root=evidence_root, study_requirements=None)
         if result['status'] == 'pass':
             d.require(endpoint['name'] == endpoint['intent']['channel'], 'Endpoint channel differs')
             d.require(endpoint['name'] not in verified, 'Duplicate endpoint receipt')
@@ -403,6 +456,7 @@ def execute(config_path, expected_plan_hash, *, reader=None, request=None, run=N
             attempt = publisher.publish(sealed, intent=value['intent'], routes=value['routes'],
                       baseline_version=value['baseline']['version'], baseline_catalog_sha=value['baseline']['catalogSha256'],
                       baseline_catalog_v4_sha=read(paths['baseline'] / 'seal-report.json').get('catalogV4Sha256'),
+                      baseline_catalog_v5_sha=read(paths['baseline'] / 'seal-report.json').get('catalogV5Sha256'),
                       lease_bucket=value['leaseBucket'], request=request or publisher.authenticated_transport(), reader=read_public, **kwargs)
         else:
             attempt = read(sealed / 'deployment-attempt-v2.json')

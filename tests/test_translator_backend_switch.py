@@ -294,6 +294,21 @@ class ClaudeCliOpusBackendTests(unittest.TestCase):
         self.assertEqual(sorted(built), [(CLAUDE, 'high', Path('/lane/claude-calls')),
                                          (CLAUDE, 'medium', Path('/lane/claude-calls'))])
 
+    def test_claude_cache_identity_follows_transports_not_revision_budget(self):
+        from tongxing_production.text import controller
+        transports = self.transports()
+        for role, transport in transports.items():
+            transport.execution_identity = {'model': CLAUDE, 'role': role, 'effort': transport.effort}
+        first = controller.claude_model_transport_identity(transports)
+        # A QC revision has a new budget authorization; its unchanged groups must
+        # still prove the same model payload and transport fingerprint.
+        second = controller.claude_model_transport_identity(transports)
+        self.assertEqual(first, second)
+        self.assertNotIn('budgetAuthorizationSha256', first)
+        transports['reviewer'].execution_identity = {**transports['reviewer'].execution_identity,
+                                                     'effort': 'high'}
+        self.assertNotEqual(first, controller.claude_model_transport_identity(transports))
+
 
 class ClaudeCliOpusPlanTests(unittest.TestCase):
     """The planner caps a claude_cli_opus Layer 2 by list price, outside the approved USD total."""
