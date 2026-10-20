@@ -512,6 +512,16 @@ def mixed_source_catalog_overlay(baseline_path, catalog_path, release_plan_path,
     v4 = contract.project_legacy_catalog_v4(merged)
     v3 = contract.project_human_catalog(v4)
     out.mkdir(parents=True)
+    try:
+        return _stage_mixed_source_overlay(base, out, candidate, current, merged, v4, v3, environment)
+    except BaseException:
+        # out did not exist before this call; leave no partial candidate behind, so a
+        # retry with the same path works and nothing half-built looks immutable.
+        shutil.rmtree(out, ignore_errors=True)
+        raise
+
+
+def _stage_mixed_source_overlay(base, out, candidate, current, merged, v4, v3, environment):
     shutil.copytree(base / 'public', out / 'public')
     shutil.copyfile(base / 'baseline-receipt.json', out / 'baseline-receipt.json')
     public = out / 'public'

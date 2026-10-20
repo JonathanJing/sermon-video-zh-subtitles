@@ -327,6 +327,11 @@ def test_catalog_only_overlay_keeps_assets_and_writes_v5_plus_two_legacy_edition
     (base / 'firebase.json').unlink(); baseline_tools.write(base / 'firebase.json', conflicting)
     with pytest.raises(ValueError, match='redirect conflicts'):
         baseline_tools.mixed_source_catalog_overlay(base, candidate_path, plan_path, tmp_path / 'conflict')
+    # A failure after staging began leaves nothing behind, so the same path can be retried.
+    assert not (tmp_path / 'conflict').exists()
+    (base / 'firebase.json').unlink(); baseline_tools.write(base / 'firebase.json', config)
+    baseline_tools.mixed_source_catalog_overlay(base, candidate_path, plan_path, tmp_path / 'conflict')
+    assert (tmp_path / 'conflict/mixed-source-catalog-plan.json').is_file()
 
 
 def test_video_bucket_must_match_publication_environment():
