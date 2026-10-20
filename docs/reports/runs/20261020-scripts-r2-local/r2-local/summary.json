@@ -1,0 +1,34 @@
+{
+  "run": "scripts-r2-local",
+  "kind": "local_code_test",
+  "branch": "claude/scripts-r2",
+  "head": "a8e4d663",
+  "base": "dev@0916d4ec",
+  "pr": "https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/1189",
+  "pytest": {
+    "files": 54,
+    "chunks": 6,
+    "passed": 751,
+    "failed": 0,
+    "note": "chunk s0 first failed at collection (test_write_worker_caption_first_plan read scripts/ path); fixed before commit and rerun: 68 passed"
+  },
+  "nodeTest": {
+    "file": "apps/listening-web/field-venue-benchmark.test.mjs",
+    "passed": 14,
+    "failed": 0
+  },
+  "helpChecks": {
+    "ok": 31,
+    "expectedRefusal": [
+      "tools/development/clip_e2e_release.py (not a direct CLI)"
+    ]
+  },
+  "gitDiffCheck": "clean",
+  "g1PhysicalClosureOverlap": [],
+  "l2CodeIdentity": {
+    "dev@0916d4ec": "5017a9f1ee44d69f06e6a482a921045b3d1eba74d24c4dcf4632faddcbf81e9d",
+    "a8e4d663": "ba7c317294fdd399bb324045d7b281e4a17a85ecb1664b89da153e7ebae48e9e"
+  },
+  "modelCalls": 0,
+  "outcome": "passed"
+}
