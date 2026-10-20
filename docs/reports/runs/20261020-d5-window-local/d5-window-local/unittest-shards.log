@@ -1,0 +1,13 @@
+shard 0: Ran 560 tests in 1455.555s OK (skipped=5)
+shard 1: Ran 576 tests in 2112.531s OK (skipped=4)
+shard 2: Ran 596 tests in 1589.524s OK (skipped=3)
+shard 3: Ran 620 tests in 1334.921s OK (skipped=3)
+shard 4: Ran 620 tests in 2045.516s OK (skipped=4)
+shard 5: Ran 626 tests in 1966.552s OK (skipped=4)
+shard 6: Ran 625 tests in 2676.713s OK (skipped=5)
+shard 7: Ran 634 tests in 1833.741s OK (skipped=3)
+shard 8: Ran 633 tests in 1721.256s FAILED (failures=1, skipped=4)
+shard 9: Ran 635 tests in 2153.638s OK (skipped=3)
+FAIL: test_100_transitions_with_persistent_intents (test_sermon_unified_parallel.ParallelOwnerTests.test_100_transitions_with_persistent_int
+    AssertionError: 3.237415 not less than or equal to 2
+    n-video-zh-subtitles/.claude/worktrees/kind-poitras-a1f6f0/tests/test_sermon_unified_cli.py", line 60, in test_100_transitions_with_persistent_intents

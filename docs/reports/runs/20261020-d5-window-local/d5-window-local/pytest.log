@@ -1,0 +1,4 @@
+FAILED tests/test_codex_shared_pool_transport.py::test_busy_before_started_is_proven_no_dispatch
+1 failed, 1113 passed, 27 subtests passed in 288.08s (0:04:48)
+exit 1
+FAILED tests/test_codex_shared_pool_transport.py::test_busy_before_started_is_proven_no_dispatch

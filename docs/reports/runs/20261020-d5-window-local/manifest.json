@@ -1,0 +1,90 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261020-d5-window-local",
+  "runs": [
+    {
+      "label": "d5-window-local",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.claude/worktrees/kind-poitras-a1f6f0/artifacts/d5-window-local",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "d5-window-local",
+      "path": "facade-survey.log",
+      "kind": "log",
+      "bytes": 20,
+      "truncated": false,
+      "sha256": "f91f827619c9a2464d1979fd4d29eb8e816a9c39fa9483debcf6c3ec7788eeae",
+      "redactions": {}
+    },
+    {
+      "run": "d5-window-local",
+      "path": "help.log",
+      "kind": "log",
+      "bytes": 1655,
+      "truncated": false,
+      "sha256": "72d0558a3c6e4e0aa2e4bda5e7d1e14db1a23be0886883a593624206fac0ae85",
+      "redactions": {}
+    },
+    {
+      "run": "d5-window-local",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 1191,
+      "truncated": false,
+      "sha256": "3f375f10c106ef8502dc8968c900452eb5b14bfad0389f4334459043be99413a",
+      "redactions": {}
+    },
+    {
+      "run": "d5-window-local",
+      "path": "pytest.log",
+      "kind": "log",
+      "bytes": 264,
+      "truncated": false,
+      "sha256": "9921cb8eadea608c044c415aae43048b3bba02a53f60840ebbb2dde622c891dc",
+      "redactions": {}
+    },
+    {
+      "run": "d5-window-local",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 863,
+      "truncated": false,
+      "sha256": "1d9b512b359e47e15fdc31ea17b099da8e0f14bbef2e18d08096121fce38fa1d",
+      "redactions": {}
+    },
+    {
+      "run": "d5-window-local",
+      "path": "test-id-diff.log",
+      "kind": "log",
+      "bytes": 136,
+      "truncated": false,
+      "sha256": "334c7862d2088c69bd50cfe7f0d9b4526e3b06a3910218040b7e717d4bf9cf43",
+      "redactions": {}
+    },
+    {
+      "run": "d5-window-local",
+      "path": "timings.tsv",
+      "kind": "whole",
+      "bytes": 75,
+      "truncated": false,
+      "sha256": "6362b62ed5584c8096ef431c768a89964645f35025403d6e15cccfeb6d320bec",
+      "redactions": {}
+    },
+    {
+      "run": "d5-window-local",
+      "path": "unittest-shards.log",
+      "kind": "log",
+      "bytes": 889,
+      "truncated": false,
+      "sha256": "40e9b1a2f7cb285c847e29397048bf5f833c58d925f64dc3156a433cda7feb64",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

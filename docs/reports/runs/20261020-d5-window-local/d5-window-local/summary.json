@@ -1,0 +1,40 @@
+{
+  "unittest": {
+    "shards": 10,
+    "cases": 6125,
+    "failures": 1,
+    "errors": 0,
+    "failing": [
+      "test_sermon_unified_parallel.ParallelOwnerTests.test_100_transitions_with_persistent_intents"
+    ]
+  },
+  "pytestStyle": {
+    "files": 38,
+    "passed": 1113,
+    "failed": 1,
+    "failing": [
+      "tests/test_codex_shared_pool_transport.py::test_busy_before_started_is_proven_no_dispatch"
+    ]
+  },
+  "testIds": {
+    "dev@5ba8c87c": 6124,
+    "branch": 6125,
+    "added": [
+      "test_sermon_completion.CompletionTests.test_d5_generation_covers_only_the_two_moved_producers"
+    ],
+    "removed": []
+  },
+  "appendixA": {
+    "dev@810349e2": 73,
+    "branch": 18,
+    "hostNamed": 0
+  },
+  "packageCommandsHelp": {
+    "checked": 17,
+    "ok": 17
+  },
+  "earlierRuns": {
+    "first": "full run before fixes: about 60 failures from stale test paths and host binding order, all fixed",
+    "second": "after wiring commit: 4 failures fixed in the next commit, plus the 2 known"
+  }
+}

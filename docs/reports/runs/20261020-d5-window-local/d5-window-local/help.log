@@ -1,0 +1,17 @@
+orchestration.guarded_command rc=0 usage: orchestration.guarded_command [-h] --owner-fd OWNER_F
+orchestration.release_workflow rc=0 usage: orchestration.release_workflow [-h] --config CONFIG -
+orchestration.canonical_durable_jobs rc=0 usage: orchestration.canonical_durable_jobs [-h] --config CO
+orchestration.prefect.run rc=0 usage: orchestration.prefect.run [-h] --root ROOT [--plan PL
+compute.mock_tts.worker rc=0 usage: compute.mock_tts.worker [-h] --request REQUEST
+observability.observability_trace rc=0 usage: observability.observability_trace [-h] --accounting-d
+observability.run_progress rc=0 usage: observability.run_progress [-h] {freeze,project} ...
+workflows.supervisor.deterministic_controller rc=0 usage: workflows.supervisor.deterministic_controller [-h] --
+workflows.supervisor.agent rc=0 usage: workflows.supervisor.agent [-h]
+workflows.diagnostic.preview_worker rc=0 usage: workflows.diagnostic.preview_worker [-h] --worker WOR
+workflows.diagnostic.native_preview_runtime rc=0 usage: workflows.diagnostic.native_preview_runtime [-h] [--i
+workflows.diagnostic.prefect_flow rc=0 usage: workflows.diagnostic.prefect_flow [-h] --plan PLAN
+workflows.diagnostic.bounded rc=0 usage: workflows.diagnostic.bounded [-h] --plan PLAN
+workflows.diagnostic.bounded_continuation rc=0 usage: workflows.diagnostic.bounded_continuation [-h] --plan
+workflows.diagnostic.new_attempt rc=0 usage: workflows.diagnostic.new_attempt [-h] --parent-plan P
+workflows.diagnostic.inspect_prefect_pilot rc=0 usage: workflows.diagnostic.inspect_prefect_pilot [-h] --roo
+workflows.diagnostic.mock_tts_dag rc=0 usage: workflows.diagnostic.mock_tts_dag [-h] --plan PLAN
