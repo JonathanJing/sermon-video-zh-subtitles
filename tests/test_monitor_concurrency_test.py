@@ -2,7 +2,9 @@ import fcntl
 import json
 import unittest
 from unittest.mock import patch
-from scripts.experiments import monitor_concurrency_test as monitor
+from tests import experiment_modules
+
+monitor = experiment_modules.line_module("experiments/spark-diagnostic-audio/monitor_concurrency_test.py")
 from tests import test_run_concurrency_preflight as fixtures
 
 class DiagnosticMonitorTests(unittest.TestCase):

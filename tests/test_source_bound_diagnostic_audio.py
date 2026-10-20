@@ -6,8 +6,10 @@ from types import SimpleNamespace
 import unittest
 from unittest.mock import Mock, patch
 
-from scripts.experiments import replay_fixed_clip_local_models as worker
-from scripts.experiments import diagnostic_audio_inputs as inputs
+from tests import experiment_modules
+
+worker = experiment_modules.line_module("experiments/spark-diagnostic-audio/replay_fixed_clip_local_models.py")
+inputs = experiment_modules.line_module("experiments/spark-diagnostic-audio/diagnostic_audio_inputs.py")
 from scripts.sermon_unified import resources
 from tests import test_codex_layer2_diagnostic as chain_fixtures
 from tests import test_replay_fixed_clip_local_models as audio_fixtures
@@ -68,7 +70,7 @@ class SourceBoundAudioTests(unittest.TestCase):
         return groups, binding
 
     def test_pre_timing_run_requires_its_frozen_checkout_after_renderer_identity_change(self):
-        from scripts.experiments import diagnostic_timing_compatibility as compatibility
+        import diagnostic_timing_compatibility as compatibility
         groups, binding = self.fake_binding(8)
         with patch.object(inputs, 'checked_inputs', return_value=(groups, binding)), \
              patch('tongxing_production.compute.spark_tts_replica_pool.ReplicaPool', FakePool), patch('builtins.print'):
@@ -88,7 +90,7 @@ class SourceBoundAudioTests(unittest.TestCase):
             self.assertTrue(all(path.read_bytes() == content for path, content in frozen.items()))
 
     def test_timing_compatibility_requires_exact_known_worker_versions(self):
-        from scripts.experiments import diagnostic_timing_compatibility as compatibility
+        import diagnostic_timing_compatibility as compatibility
         current = worker.sha(worker.__file__)
         self.assertNotEqual(current, compatibility.COMPATIBLE_CURRENT_WORKER)
         for saved in (compatibility.PRE_TIMING_WORKER, compatibility.TIMING_WORKER):
@@ -100,7 +102,7 @@ class SourceBoundAudioTests(unittest.TestCase):
             self.assertEqual(compatibility.compatible_worker(current, saved), current)
 
     def test_pr_timing_run_requires_its_frozen_checkout_after_renderer_identity_change(self):
-        from scripts.experiments import diagnostic_timing_compatibility as compatibility
+        import diagnostic_timing_compatibility as compatibility
         groups, binding = self.fake_binding(8)
         with patch.object(inputs, 'checked_inputs', return_value=(groups, binding)), \
              patch('tongxing_production.compute.spark_tts_replica_pool.ReplicaPool', FakePool), patch('builtins.print'):

@@ -8,13 +8,15 @@ import sys
 from types import SimpleNamespace
 if __package__ in (None,''):
     sys.path.insert(0,str(Path(__file__).resolve().parents[2]))
+if str(Path(__file__).resolve().parent) not in sys.path:  # sibling modules of this experiment line
+    sys.path.append(str(Path(__file__).resolve().parent))
 from scripts import codex_layer2_diagnostic as diagnostic
 from tongxing_production.compute.transports import codex_cli as codex
 from tongxing_production.observability import accounting
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from scripts import study_artifacts
 from tongxing_production.workflows.prepared import study_generation as generation
-from scripts.experiments import diagnostic_audio_inputs as admission
+import diagnostic_audio_inputs as admission
 from scripts.sermon_execution_harness import work_lock
 from scripts.sermon_unified import resources
 from tongxing_production.compute.concurrency_profile import load_profile

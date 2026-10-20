@@ -47,10 +47,10 @@ TERMINAL_EXIT_CODES = (0, 1, 2)
 PACKAGE_SRC = "packages/production/src"
 
 RUNNER = r'''import json,os,pathlib,subprocess,sys
-c=json.loads(sys.argv[1]);sys.path[:0]=[c["codeRoot"],c["codeRoot"]+"/packages/production/src"]
+c=json.loads(sys.argv[1]);sys.path[:0]=[c["codeRoot"],c["codeRoot"]+"/experiments/spark-diagnostic-audio",c["codeRoot"]+"/packages/production/src"]
 os.environ.update(c["sessionEnvironment"]);os.environ["SPARK_EXCLUSIVE_REMOTE_LOCAL"]="1"
 from scripts.spark_exclusive_session import Client
-from scripts.experiments.run_spark_diagnostic_audio import AdmissionGateway
+from run_spark_diagnostic_audio import AdmissionGateway
 session=Client.from_environment();session.require_ready();session.bind_job(c["sparkHold"],pid=os.getpid())
 gateway=AdmissionGateway(c["gatewayDirectory"],session,c["sparkHold"],runner_pid=os.getpid())
 try:

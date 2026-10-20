@@ -11,7 +11,7 @@ from types import SimpleNamespace
 import unittest
 from unittest.mock import Mock, patch
 
-from scripts.experiments import benchmark_back_asr as subject
+from tools.benchmarks import benchmark_back_asr as subject
 
 
 class BenchmarkBackAsrTests(unittest.TestCase):

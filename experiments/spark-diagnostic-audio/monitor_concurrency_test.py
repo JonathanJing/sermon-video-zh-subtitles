@@ -8,7 +8,9 @@ import sys
 import time
 if __package__ in (None,''):
     sys.path.insert(0,str(Path(__file__).resolve().parents[2]))
-from scripts.experiments import run_concurrency_preflight as batch
+if str(Path(__file__).resolve().parent) not in sys.path:  # sibling modules of this experiment line
+    sys.path.append(str(Path(__file__).resolve().parent))
+import run_concurrency_preflight as batch
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.compute.transports import codex_cli as codex
 from tongxing_production.observability import accounting

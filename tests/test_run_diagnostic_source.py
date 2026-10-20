@@ -6,7 +6,9 @@ import wave
 from pathlib import Path
 from unittest.mock import patch, MagicMock
 
-from scripts.experiments import run_diagnostic_source as subject
+from tests import experiment_modules
+
+subject = experiment_modules.line_module("experiments/spark-diagnostic-audio/run_diagnostic_source.py")
 from tongxing_production.compute.concurrency_profile import profile_v1
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.orchestration import jobs

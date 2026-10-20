@@ -7,7 +7,9 @@ from unittest.mock import patch
 
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.orchestration import outcome_marker
-from scripts.experiments import run_spark_diagnostic_audio as runner
+from tests import experiment_modules
+
+runner = experiment_modules.line_module("experiments/spark-diagnostic-audio/run_spark_diagnostic_audio.py")
 from tongxing_production.orchestration import outcome_marker as package_outcome_marker
 
 

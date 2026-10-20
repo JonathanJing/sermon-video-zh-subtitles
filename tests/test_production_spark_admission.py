@@ -149,7 +149,9 @@ class ProductionSessionCallTests(unittest.TestCase):
 
     def test_qwen_constructors_deny_before_import_or_model_load(self):
         def denied():raise sessions.SessionError('session_not_ready')
-        from scripts.experiments.replay_fixed_clip_local_models import LocalASR
+        from tests import experiment_modules
+        LocalASR = experiment_modules.line_module(
+            "experiments/spark-diagnostic-audio/replay_fixed_clip_local_models.py").LocalASR
         for cls in (speech.QwenSynthesizer, speech.SparkQwenSynthesizer):
             with self.subTest(cls=cls.__name__):
                 with self.assertRaisesRegex(sessions.SessionError, 'session_not_ready'):

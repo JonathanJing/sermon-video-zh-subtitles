@@ -2,7 +2,7 @@
 # Run one Spark-bound command, then close its exclusive session whatever happened.
 #
 # Usage (repo root, run in the background so the completion is notified):
-#   scripts/experiments/spark_session_round.sh <session-id> <owner> -- <command...>
+#   experiments/spark-diagnostic-audio/spark_session_round.sh <session-id> <owner> -- <command...>
 #
 # The finish call always runs after the command, so services stop being held
 # by a waiter that never checked. A failing command keeps its own exit code.

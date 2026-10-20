@@ -44,17 +44,17 @@ CLI 版本、入口及二进制 SHA、适配器 SHA、输出 schema、速度档�
 
 ## 接本地模型诊断
 
-[固定片段本地 worker](../scripts/experiments/replay_fixed_clip_local_models.py) 消费本轮新的 `evidence.json` 和同一源视频，运行真实 TTS batch=2、回听 ASR batch=4。它复用注册 voice/checkpoint 的验证与现有 QwenSynthesizer，始终 `diagnosticOnly=true`、`humanApproval=false`、`formalEligible=false`；不创建正式 speech job、同步轨或发布包。checkpoint map 使用该执行容器内的本地权重路径，留在 ignored artifacts。
+[固定片段本地 worker](../experiments/spark-diagnostic-audio/replay_fixed_clip_local_models.py) 消费本轮新的 `evidence.json` 和同一源视频，运行真实 TTS batch=2、回听 ASR batch=4。它复用注册 voice/checkpoint 的验证与现有 QwenSynthesizer，始终 `diagnosticOnly=true`、`humanApproval=false`、`formalEligible=false`；不创建正式 speech job、同步轨或发布包。checkpoint map 使用该执行容器内的本地权重路径，留在 ignored artifacts。
 
 ```sh
-python scripts/experiments/replay_fixed_clip_local_models.py tts \
+python experiments/spark-diagnostic-audio/replay_fixed_clip_local_models.py tts \
   --evidence NEW-RUN/cli/evidence.json --media FIXED-SOURCE.mp4 \
   --registry config/speaker-voice-registry.json \
   --checkpoint-map LOCAL-CHECKPOINT-MAP.json --out NEW-RUN/tts
-python scripts/experiments/replay_fixed_clip_local_models.py asr \
+python experiments/spark-diagnostic-audio/replay_fixed_clip_local_models.py asr \
   --tts-manifest NEW-RUN/tts/manifest.json \
   --model-path LOCAL-ASR-SNAPSHOT --out NEW-RUN/asr
-python scripts/experiments/assess_fixed_clip_local_models.py \
+python experiments/spark-diagnostic-audio/assess_fixed_clip_local_models.py \
   --tts-dir NEW-RUN/tts --asr-dir NEW-RUN/asr \
   --anchor FIXTURE/anchor.json --media FIXED-SOURCE.mp4 \
   --out NEW-RUN/assessment.json
@@ -72,7 +72,7 @@ python scripts/experiments/assess_fixed_clip_local_models.py \
 
 独立本地 `tts`／`asr` 命令也接受 `--resource-policy`，两者保守共用 `spark_tts=1`，覆盖整个 job。完成批次、模型释放和 GPU 清理收据、最终 manifest、outcome 持久化之后才释放。清理失败或结果未知保持占槽。必须在同一协调主机共用 brokerRoot；这不是 Mac 与 Spark 间的跨主机调度。canonical.audio 已占 GPU 时不要再嵌套这份许可。
 
-Python producer 的 `render_tts`／`back_asr` 新增可选 `model_session` 与 `runtime_identity_sha256`，供隔离实验复用 [`LocalModelSession`](../scripts/experiments/local_model_session.py)。调用者须冻结实际容器／依赖运行时身份 SHA，使用显式 session 生命周期；同一权重、checkpoint、设备、dtype、attention、运行时和实现才复用。只允许一个缓存模型和一个活动借用，切换先释放旧模型；加载、清理或借用期间失败即禁止后续复用。该实验接口尚未部署常驻服务，不能与每 job GPU 策略同时启用：跨 job 驻留必须先实现覆盖整个 session 的 GPU 许可。fake factory 测试证明复用机制，真实冷暖速度尚未测量。
+Python producer 的 `render_tts`／`back_asr` 新增可选 `model_session` 与 `runtime_identity_sha256`，供隔离实验复用 [`LocalModelSession`](../experiments/spark-diagnostic-audio/local_model_session.py)。调用者须冻结实际容器／依赖运行时身份 SHA，使用显式 session 生命周期；同一权重、checkpoint、设备、dtype、attention、运行时和实现才复用。只允许一个缓存模型和一个活动借用，切换先释放旧模型；加载、清理或借用期间失败即禁止后续复用。该实验接口尚未部署常驻服务，不能与每 job GPU 策略同时启用：跨 job 驻留必须先实现覆盖整个 session 的 GPU 许可。fake factory 测试证明复用机制，真实冷暖速度尚未测量。
 
 评估输出升级为 `fixed-clip-local-model-assessment-v2`，保留旧 v1 文件作为历史证据，用新输出路径运行。新增只读[时间修复计划](../packages/production/src/tongxing_production/audio/timing_plan.py)，复用未修改的正式 scheduler：源句超长是警告，累计延迟和片尾溢出分别判断。计划不修改文本／音频，也不授予批准。详见[本次开发复盘](reports/20261005-fixed-180s-followup-development.zh.md)。
 
