@@ -3,11 +3,10 @@ from copy import deepcopy
 from pathlib import Path
 import re
 
-from tongxing_production.review import contracts as c
-from tongxing_production.storage import snapshot as public
-from scripts import tongxing_host  # noqa: F401  binds the production package ports
-from tongxing_production.orchestration import jobs
-from scripts.sermon_release_workflow import _safe_path
+from ...review import contracts as c
+from ...storage import snapshot as public
+from ...orchestration import jobs
+from ...storage.paths import safe_path as _safe_path
 
 SCHEMA = 'sermon-execution-identity-extension-v1'
 IDENTITY_KEYS = {'gitCommit', 'trackedWorkingTreeDirty', 'loadedProjectCodeSha256',
@@ -56,7 +55,7 @@ def _hash(value):
 
 
 def _modules(value):
-    from tongxing_production.observability.accounting import CODE_PATH_PATTERN
+    from ...observability.accounting import CODE_PATH_PATTERN
     c.require(type(value) is dict and len(value) <= 1024, 'invalid_extension_modules')
     for path, digest in value.items():
         c.require(type(path) is str and len(path) <= 256 and CODE_PATH_PATTERN.fullmatch(path)

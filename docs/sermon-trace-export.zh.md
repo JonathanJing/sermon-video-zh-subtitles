@@ -1,9 +1,9 @@
 # 周六 OpenTelemetry 导出、接收与展示
 
-[export_sermon_trace.py](../scripts/export_sermon_trace.py) 把现有 `sermon-workflow-accounting-v2` 的已完成 run / workflow / stage 转成独立的 OTLP JSON `ExportTraceServiceRequest`。只读原始 `events.jsonl`，不调用模型、网络或 Collector，不增加 SDK 依赖。
+[trace_export.py](../packages/production/src/tongxing_production/observability/trace_export.py) 把现有 `sermon-workflow-accounting-v2` 的已完成 run / workflow / stage 转成独立的 OTLP JSON `ExportTraceServiceRequest`。只读原始 `events.jsonl`，不调用模型、网络或 Collector，不增加 SDK 依赖。
 
 ```sh
-python3 scripts/export_sermon_trace.py \
+.venv/bin/python tools/ops/run.py observability.trace_export \
   --accounting-dir artifacts/本次任务/accounting \
   --out artifacts/本次任务/trace.otlp.json \
   --diagnostics artifacts/本次任务/trace-diagnostics.json
@@ -26,12 +26,12 @@ python3 scripts/export_sermon_trace.py \
 
 ## 本机接收、持久化与展示
 
-[sermon_observability.py](../scripts/sermon_observability.py) 安装固定版本 **Jaeger 2.20.0**，核对官方 macOS arm64 压缩包 SHA-256，仅提取指定可执行文件。Jaeger v2 自身是 OpenTelemetry Collector 的发行版，包含 OTLP receiver、存储及查询 UI，因此本机不再额外启动第二个 Collector。部署范围及 Badger 单实例限制见 [Jaeger 官方架构](https://www.jaegertracing.io/docs/2.20/architecture/)。
+[sermon_observability.py](../tools/ops/sermon_observability.py) 安装固定版本 **Jaeger 2.20.0**，核对官方 macOS arm64 压缩包 SHA-256，仅提取指定可执行文件。Jaeger v2 自身是 OpenTelemetry Collector 的发行版，包含 OTLP receiver、存储及查询 UI，因此本机不再额外启动第二个 Collector。部署范围及 Badger 单实例限制见 [Jaeger 官方架构](https://www.jaegertracing.io/docs/2.20/architecture/)。
 
 ```sh
-.venv/bin/python scripts/sermon_observability.py start
-.venv/bin/python scripts/sermon_observability.py status
-.venv/bin/python scripts/sermon_observability.py send \
+.venv/bin/python tools/ops/sermon_observability.py start
+.venv/bin/python tools/ops/sermon_observability.py status
+.venv/bin/python tools/ops/sermon_observability.py send \
   --accounting-dir artifacts/本次任务/accounting --site macbook
 ```
 
@@ -45,12 +45,12 @@ python3 scripts/export_sermon_trace.py \
 ## 持续观察新账本
 
 ```sh
-.venv/bin/python scripts/sermon_observability.py observer-start \
+.venv/bin/python tools/ops/sermon_observability.py observer-start \
   --scan-root artifacts/post-live-runs \
   --scan-root artifacts/post-live-fallback-runs \
   --scan-root artifacts/sermon-dubbing/weekly-bridge \
   --accounting-dir artifacts/sermon-dubbing/2026-09-06-live-fallback-v3-numbers/accounting
-.venv/bin/python scripts/sermon_observability.py observer-status
+.venv/bin/python tools/ops/sermon_observability.py observer-status
 ```
 
 观察器只在显式根目录中发现 `accounting/events.jsonl`，也支持逐个指定账本。文件变化后重导出已有完成的 spans；未完成阶段留在原账本和 Temporal 当前状态中，不虚构结束时间。一份账本不可读或无法写回执，不影响其他账本，下一轮仍会重试。重启观察器会重新送出当前快照，稳定 ID 保持关联。
@@ -58,8 +58,8 @@ python3 scripts/export_sermon_trace.py \
 `observer-start` 和 `start` 都以保存的启动时间、PID 和完整命令核对本任务进程。重复启动不会创建第二个同配置进程；停止只操作已核实的进程组。修改观察目录时先停止观察器再启动新配置：
 
 ```sh
-.venv/bin/python scripts/sermon_observability.py observer-stop
-.venv/bin/python scripts/sermon_observability.py stop
+.venv/bin/python tools/ops/sermon_observability.py observer-stop
+.venv/bin/python tools/ops/sermon_observability.py stop
 ```
 
 这些是本机常驻进程，不会修改既有 Codex 定时任务，也没有新增开机启动项。Mac 重启后运行上述 `start` 和 `observer-start` 即可从保存的数据库及账本恢复。

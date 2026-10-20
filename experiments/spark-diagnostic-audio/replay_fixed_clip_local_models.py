@@ -277,7 +277,8 @@ def synchronize(model):
 
 def render_tts(args, *, factory=None, writer=audio_output, model_session=None, runtime_identity_sha256=None):
     process_started = time.perf_counter()
-    from scripts import local_audio_resource_admission as gpu
+    from scripts import sermon_unified  # noqa: F401  binds the unified Backend the admission reserves through
+    from tongxing_production.compute import local_audio_admission as gpu
     resource_policy=gpu.policy_from_path(getattr(args, 'resource_policy', None))
     evidence = read(args.evidence)
     general = getattr(args, 'diagnostic_fixture', None) is not None
@@ -509,7 +510,8 @@ class LocalASR:
 
 def back_asr(args, *, factory=LocalASR, model_session=None, runtime_identity_sha256=None):
     process_started = time.perf_counter()
-    from scripts import local_audio_resource_admission as gpu
+    from scripts import sermon_unified  # noqa: F401  binds the unified Backend the admission reserves through
+    from tongxing_production.compute import local_audio_admission as gpu
     resource_policy=gpu.policy_from_path(getattr(args, 'resource_policy', None))
     source = read(args.tts_manifest)
     general = source.get('schemaVersion') == 'source-bound-local-tts-run-v1'

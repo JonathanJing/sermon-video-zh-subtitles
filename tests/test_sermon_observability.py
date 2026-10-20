@@ -8,7 +8,7 @@ import threading
 import unittest
 from unittest.mock import patch
 
-from scripts import sermon_observability as observer
+from tools.ops import sermon_observability as observer
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.observability.accounting import accounting_session, stage
 

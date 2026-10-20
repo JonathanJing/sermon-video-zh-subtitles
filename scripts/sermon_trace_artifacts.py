@@ -1,0 +1,16 @@
+"""Transition facade: the implementation lives in tongxing_production.observability.trace_artifacts.
+
+Both import paths name one module object, so attribute patches apply to both.
+Remove once nothing in scripts/ (the strict Layer 2 chain, the fresh diagnostic and the weekly report import it) uses the old path.
+"""
+from pathlib import Path
+import sys
+
+try:
+    from scripts import tongxing_host  # noqa: F401  binds the production package ports
+except ModuleNotFoundError:  # run directly, or imported by bare name, from scripts/
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+    from scripts import tongxing_host  # noqa: F401
+from tongxing_production.observability import trace_artifacts as _implementation  # noqa: E402
+
+sys.modules[__name__] = _implementation

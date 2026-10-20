@@ -17,7 +17,7 @@ from tongxing_production.observability import outbox
 from tongxing_production.observability import profile
 from tongxing_production.observability import review_observation as review
 from scripts import weekly_pipeline_report as weekly
-from scripts import export_sermon_trace as otlp
+from tongxing_production.observability import trace_export as otlp
 from scripts import export_observability_trace as safe
 from scripts import sermon_logs as logs
 from tests.test_accounting_log_contract import fixture

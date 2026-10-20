@@ -6,12 +6,11 @@ cannot manufacture dependencies from containment, timestamps or empty arrays.
 from copy import deepcopy
 from pathlib import Path
 
-from tongxing_production.observability import accounting
-from scripts import tongxing_host  # noqa: F401  binds the production package ports
-from tongxing_production.observability import completion
-from tongxing_production.review import contracts as c
-from tongxing_production.storage import snapshot as public
-from scripts.sermon_release_workflow import _safe_path
+from ...observability import accounting
+from ...observability import completion
+from ...review import contracts as c
+from ...storage import snapshot as public
+from ...storage.paths import safe_path as _safe_path
 
 SCHEMA = 'sermon-fresh-source-causality-v1'
 ORDER = ('intake', 'transcription', 'sourceCheck', 'alignment', 'sourcePackage')

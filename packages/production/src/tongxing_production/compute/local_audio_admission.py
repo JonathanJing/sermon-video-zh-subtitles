@@ -4,10 +4,9 @@ TTS and ASR share spark_tts conservatively. Uncertain outcomes remain held;
 only a verified durable completed manifest permits release, including recovery.
 """
 from pathlib import Path
-from scripts.sermon_unified import resources, contracts
-from scripts.sermon_execution_harness import atomic_json
-from scripts import tongxing_host  # noqa: F401  binds the production package ports
-from tongxing_production.orchestration import jobs
+from ..orchestration.unified import resources, contracts
+from ..orchestration import jobs
+from ..storage.files import atomic_json
 
 
 def policy_from_path(path):

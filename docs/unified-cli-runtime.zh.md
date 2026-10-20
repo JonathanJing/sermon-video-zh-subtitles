@@ -86,7 +86,7 @@ Source、音频与交付的配置参见[Source adapter](unified-source-preparati
 
 owner在人工等待期间持续观察持久stateRevision，新的审核证据触发同一程序继续，无需聊天轮询。owner事件记录ready、enqueued、started、finished/approved；UTC与同进程monotonic分开。跨进程恢复缺失的monotonic耗时保持未知。现有provider/job accounting通过dispatch span和持久job context接入，模型token、缓存、预算估计、账单与Codex上下文分别记录。关键路径缺边不补零；没有同工作负载标定时不猜ETA。
 
-`sermon_unified_observability.bounded_packet`提供显式字节上限的诊断包，带遗漏数量，不携带全文，也不授予执行或批准权限。
+`observability.unified_projection.bounded_packet`提供显式字节上限的诊断包，带遗漏数量，不携带全文，也不授予执行或批准权限。
 
 ```bash
 .venv/bin/python experiments/workflow-experiment/sermon_workflow_experiment.py \

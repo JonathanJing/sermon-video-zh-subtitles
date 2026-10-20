@@ -10,13 +10,12 @@ import threading
 import time
 import urllib.request
 
-from scripts import tongxing_host  # noqa: F401  binds the production package ports
-from tongxing_production.text import models
-from tongxing_production.compute import provider_limits
-from tongxing_production.compute.transports.codex_layer2 import API_LUNA_TEST_CONFIGURATION
-from scripts.sermon_unified import resources
-from tongxing_production.compute.concurrency_profile import validate_profile
-from scripts.sermon_execution_harness import atomic_json
+from ...text import models
+from ...compute import provider_limits
+from ...compute.transports.codex_layer2 import API_LUNA_TEST_CONFIGURATION
+from ...orchestration.unified import backend, resources
+from ...compute.concurrency_profile import validate_profile
+from ...storage.files import atomic_json
 
 
 def _digest(value):
@@ -70,7 +69,7 @@ class OpenAILayer2DiagnosticTransport:
         self.reuse_receipts_dir = None
         if reuse_receipts_dir is not None:
             raw_reuse = Path(reuse_receipts_dir)
-            artifact_root = Path(__file__).resolve().parents[1] / 'artifacts'
+            artifact_root = backend.current().artifact_root
             if raw_reuse.is_symlink() or not raw_reuse.is_dir() or not raw_reuse.resolve().is_relative_to(artifact_root):
                 raise ValueError('diagnostic_openai_reuse_receipts_must_be_artifacts')
             self.reuse_receipts_dir = raw_reuse.resolve()

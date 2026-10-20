@@ -19,14 +19,14 @@
 先查看最近一次执行，命令不会重写文件、调用模型或读取远端：
 
 ```bash
-.venv/bin/python scripts/sermon_logs.py artifacts/post-live-runs/YYYY-MM-DD/accounting
+.venv/bin/python tools/ops/run.py observability.logs artifacts/post-live-runs/YYYY-MM-DD/accounting
 
 # 只看警告和错误；--run-id 也可传具体 runId 或 all
-.venv/bin/python scripts/sermon_logs.py artifacts/post-live-runs/YYYY-MM-DD/accounting \
+.venv/bin/python tools/ops/run.py observability.logs artifacts/post-live-runs/YYYY-MM-DD/accounting \
   --run-id latest --level WARNING --tail 30
 
 # 给脚本读取的诊断结果
-.venv/bin/python scripts/sermon_logs.py artifacts/post-live-runs/YYYY-MM-DD/accounting --json --check
+.venv/bin/python tools/ops/run.py observability.logs artifacts/post-live-runs/YYYY-MM-DD/accounting --json --check
 ```
 
 `--check` 退出码：0 表示所选执行没有检测到错误／未结束记录；2 表示错误、未结束阶段／调用或账本损坏；3 表示账本不可读或找不到所选运行。API 重试中的失败也会保留并触发 2。`interrupted_or_running` 无法区分仍在运行与已被终止；它不是进程探活。账本完整性按整个文件检查，即使只筛选最近一次运行，旧损坏也不会被隐藏。这些检查均不代表业务 QA、人工批准或发布验收通过。

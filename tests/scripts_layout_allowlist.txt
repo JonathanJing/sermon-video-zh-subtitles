@@ -24,7 +24,6 @@ scripts/export_observability_trace.py
 scripts/export_playback_captions.py
 scripts/export_run_digest.py
 scripts/export_saturday_live_context.py
-scripts/export_sermon_trace.py
 scripts/four_layer_measure.py
 scripts/four_layer_timeline_template.html
 scripts/generate_notes_with_openai.py
@@ -57,7 +56,6 @@ scripts/language_review_plugins/zh_hans_weekly_cuv.py
 scripts/layer2_api_concurrency.py
 scripts/layer2_human_ruling.py
 scripts/live_source_monitor.py
-scripts/local_audio_resource_admission.py
 scripts/machine_audio_waiver_acceptance.py
 scripts/mfa_backend.py
 scripts/openai_layer2_diagnostic_transport.py
@@ -149,7 +147,6 @@ scripts/sermon_mock_tts_dag.py
 scripts/sermon_mock_tts_worker.py
 scripts/sermon_model_resources.py
 scripts/sermon_native_preview_runtime.py
-scripts/sermon_observability.py
 scripts/sermon_pilot_evidence.py
 scripts/sermon_pipeline.py
 scripts/sermon_prefect_dag.py

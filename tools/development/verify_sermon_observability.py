@@ -27,7 +27,8 @@ if str(ROOT) not in sys.path:
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.observability import accounting
 from scripts import sermon_identity_sidecars as sidecars
-from scripts import sermon_observability as observer
+from tongxing_production.observability import trace_export
+from tools.ops import sermon_observability as observer
 from scripts.sermon_execution_harness import atomic_json, utc_now, work_lock
 
 DEFAULT_ACCOUNTING = ROOT / "artifacts/sermon-dubbing/2026-09-06-live-fallback-v3-numbers/accounting"
@@ -120,7 +121,7 @@ def run(runtime, source_directory, expected_span_count):
                "humanGoldClaimed": False, "modelCalls": 0, "steps": [],
                "implementationSha256": {str(path.relative_to(ROOT)): observer.sha(path)
                     for path in (Path(__file__), Path(observer.__file__),
-                                 ROOT / "scripts/export_sermon_trace.py", Path(accounting.__file__),
+                                 Path(trace_export.__file__), Path(accounting.__file__),
                                  Path(sidecars.__file__))}}
     atomic_json(receipt_path, receipt)
     test_runtime = verification / "observer-control"

@@ -10,7 +10,7 @@ from scripts import tongxing_host  # noqa: F401  binds the production package po
 from tongxing_production.observability import log_contract as contract
 from tongxing_production.observability import accounting
 from scripts import export_observability_trace as safe
-from scripts import export_sermon_trace as otlp
+from tongxing_production.observability import trace_export as otlp
 from scripts import weekly_pipeline_report as weekly
 
 FIXTURES = Path(__file__).parent / 'fixtures/accounting_log_contract'

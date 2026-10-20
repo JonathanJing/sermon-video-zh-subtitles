@@ -27,7 +27,9 @@ BACKEND_ONLY = frozenset(('scripts/sermon_accounting.py', 'scripts/export_sermon
                          'scripts/weekly_pipeline_report.py', 'scripts/pipeline_compatibility_gate.py',
                          'tools/development/pipeline_compatibility_gate.py',
                          # I3: the accounting implementation behind the scripts/ facade.
-                         'packages/production/src/tongxing_production/observability/accounting.py'))
+                         'packages/production/src/tongxing_production/observability/accounting.py',
+                         # N4: the OTLP exporter, moved from scripts/export_sermon_trace.py.
+                         'packages/production/src/tongxing_production/observability/trace_export.py'))
 POLICY = 'sermon-backend-compatibility-policy-v1'
 
 

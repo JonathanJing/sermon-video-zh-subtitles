@@ -12,9 +12,10 @@ from functools import lru_cache
 import hashlib
 import json
 import math
-from pathlib import Path
 
 from jsonschema import Draft202012Validator, FormatChecker, validators
+
+from ...contracts import schemas
 
 MAX_INPUT_BYTES = 64 * 1024
 MAX_OUTPUT_BYTES = 32 * 1024
@@ -22,7 +23,6 @@ MAX_NODES = 8000
 MAX_DEPTH = 12
 INPUT_VERSION = "sermon-agent-diagnostic-input-v1"
 OUTPUT_VERSION = "sermon-agent-diagnosis-v1"
-SCHEMA_ROOT = Path(__file__).resolve().parents[1] / "schemas"
 
 
 class DiagnosticContractError(ValueError):
@@ -93,7 +93,7 @@ def evidence_sha256(row):
 @lru_cache(maxsize=2)
 def _validator(version):
     require(version in {INPUT_VERSION, OUTPUT_VERSION}, "unsupported_schema_version")
-    schema = json.loads((SCHEMA_ROOT / (version + ".schema.json")).read_text())
+    schema = json.loads(schemas.path(version + ".schema.json").read_text())
     Draft202012Validator.check_schema(schema)
     checker = FormatChecker()
     @checker.checks("date-time", raises=(ValueError, TypeError))

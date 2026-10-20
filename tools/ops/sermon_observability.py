@@ -23,11 +23,13 @@ import urllib.parse
 import urllib.request
 import uuid
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
-from scripts.export_sermon_trace import export
-from scripts.sermon_execution_harness import atomic_json, utc_now, work_lock
+from scripts import tongxing_host  # noqa: F401,E402  binds the production package ports
+from tongxing_production.observability.trace_export import export  # noqa: E402
+from tongxing_production.storage.files import atomic_json, utc_now  # noqa: E402
+from tongxing_production.storage.locks import work_lock  # noqa: E402
 
 VERSION = "2.20.0"
 ARCHIVE = f"jaeger-{VERSION}-darwin-arm64.tar.gz"

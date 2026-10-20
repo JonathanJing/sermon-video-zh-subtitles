@@ -2,9 +2,8 @@
 import os
 from pathlib import Path
 import uuid
-from scripts import tongxing_host  # noqa: F401  binds the production package ports
-from tongxing_production.orchestration import jobs
-from scripts.sermon_release_workflow import _safe_path
+from ..orchestration import jobs
+from ..storage.paths import safe_path as _safe_path
 
 
 def new_directory(path):
