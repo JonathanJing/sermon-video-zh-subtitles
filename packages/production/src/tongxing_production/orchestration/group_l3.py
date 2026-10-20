@@ -1,0 +1,172 @@
+"""Run the Layer 3 stages of a group merge as an ordered, resumable command plan.
+
+Merge steps 7-9 (formal render, compaction/screening, audio package, audio QC) are
+executed today by existing producers with operator-frozen commands. This module runs
+those commands in order, records one receipt per stage, and refuses to continue when a
+stage fails or its command still carries an unresolved placeholder. It never composes
+a model prompt, edits a receipt or treats an exit code as content approval.
+
+A stage is skipped only when its ``produces`` file already exists: that is resume, not
+reuse authority. The stage command is bound by SHA-256 in the report; the report is run
+evidence, never release material.
+"""
+from __future__ import annotations
+
+import hashlib
+import json
+import os
+from pathlib import Path
+import re
+import subprocess
+import sys
+import time
+from typing import Any
+
+CONFIG_SCHEMA = "sermon-group-l3-stages-v1"
+REPORT_SCHEMA = "sermon-group-l3-stages-report-v1"
+# Inputs a command may interpolate; anything else is refused before dispatch.
+PLACEHOLDERS = frozenset({"speechJob", "source", "anchor", "candidate", "policy",
+                          "adapter", "registry", "out", "mergeDir"})
+STAGE_NAME = re.compile(r"[a-z][a-z0-9_]{0,63}")
+REQUIRED_STAGES = ("formal_render", "compact", "screen", "package", "audio_qc")
+
+
+class StageRefused(ValueError):
+    def __init__(self, stage: str, reason: str):
+        self.stage, self.reason = stage, reason
+        super().__init__(f"{stage}:{reason}")
+
+
+def _require(condition: bool, message: str) -> None:
+    if not condition:
+        raise ValueError(message)
+
+
+def load_configuration(path: Path) -> dict:
+    path = Path(path).resolve()
+    config = json.loads(path.read_text(encoding="utf-8"))
+    _require(isinstance(config, dict) and config.get("schemaVersion") == CONFIG_SCHEMA,
+             "invalid_group_l3_stages_config")
+    _require(set(config) == {"schemaVersion", "paths", "stages"}, "unknown_group_l3_stages_field")
+    paths = {key: (path.parent / value if not Path(value).is_absolute() else Path(value))
+             for key, value in config["paths"].items()}
+    _require(set(paths) == {"speechJob", "source", "anchor", "candidate", "policy",
+                            "adapter", "registry", "mergeDir"}, "invalid_group_l3_paths")
+    stages = config["stages"]
+    _require(isinstance(stages, list) and stages, "group_l3_needs_stages")
+    seen = set()
+    for stage in stages:
+        _require(isinstance(stage, dict)
+                 and set(stage) == {"name", "command", "produces"}
+                 and isinstance(stage["name"], str) and STAGE_NAME.fullmatch(stage["name"])
+                 and stage["name"] not in seen
+                 and isinstance(stage["command"], list) and stage["command"]
+                 and all(isinstance(part, str) and part for part in stage["command"])
+                 and isinstance(stage["produces"], str) and stage["produces"]
+                 and not Path(stage["produces"]).is_absolute()
+                 and ".." not in Path(stage["produces"]).parts,
+                 "invalid_group_l3_stage")
+        seen.add(stage["name"])
+    return {"path": path, "paths": paths, "stages": stages}
+
+
+def _substitute(value: str, paths: dict) -> str:
+    def replace(match: re.Match) -> str:
+        name = match.group(1)
+        _require(name in PLACEHOLDERS, f"unknown_placeholder:{name}")
+        return str(paths[name])
+    return re.sub(r"\{([A-Za-z][A-Za-z0-9_]*)\}", replace, value)
+
+
+def run_stages(config: dict, out: Path, *, dry_run: bool = False) -> dict:
+    """Execute the configured stages in order; stop at the first failure."""
+    out = Path(out)
+    paths = {**config["paths"], "out": out}
+    for name in ("source", "anchor", "candidate", "policy", "adapter", "registry", "speechJob"):
+        _require(Path(paths[name]).is_file(), f"missing_group_l3_input:{name}")
+    _require(out.is_dir() or dry_run, "group_l3_output_must_exist")
+    report = {"schemaVersion": REPORT_SCHEMA, "mode": "dry_run" if dry_run else "execute",
+              "startedAt": _now(), "stages": [], "releaseEligible": False, "humanApproval": False}
+    for stage in config["stages"]:
+        name = stage["name"]
+        produces = out / stage["produces"]
+        if produces.exists():
+            report["stages"].append({"name": name, "status": "skipped_existing",
+                                     "produces": str(produces)})
+            continue
+        command = [_substitute(part, paths) for part in stage["command"]]
+        _require(all("{" not in part for part in command), f"unresolved_placeholder:{name}")
+        entry = {"name": name, "commandSha256": _command_sha256(command), "command": command,
+                 "startedAt": _now()}
+        if dry_run:
+            entry["status"] = "planned"
+            report["stages"].append(entry)
+            continue
+        started = time.monotonic()
+        completed = subprocess.run(command, cwd=str(config["path"].parent), text=True,
+                                   stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        entry.update(endedAt=_now(), seconds=round(time.monotonic() - started, 3),
+                     exitCode=completed.returncode,
+                     stdoutTail=_tail(completed.stdout), stderrTail=_tail(completed.stderr))
+        if completed.returncode != 0:
+            entry["status"] = "failed"
+            report["stages"].append(entry)
+            report["status"] = "failed"
+            _write_report(out, report)
+            raise StageRefused(name, f"exit {completed.returncode}")
+        if not produces.exists():
+            # A zero exit that produced nothing is not a completed stage.
+            entry["status"] = "failed"
+            entry["reason"] = "produces_missing_after_success"
+            report["stages"].append(entry)
+            report["status"] = "failed"
+            _write_report(out, report)
+            raise StageRefused(name, "produces_missing_after_success")
+        entry["status"] = "done"
+        report["stages"].append(entry)
+    report["status"] = "planned" if dry_run else "completed"
+    _write_report(out, report)
+    return report
+
+
+def _command_sha256(command: list[str]) -> str:
+    return hashlib.sha256(json.dumps(command, ensure_ascii=False).encode("utf-8")).hexdigest()
+
+
+def _tail(value: str, limit: int = 2000) -> str:
+    value = value or ""
+    return value[-limit:]
+
+
+def _now() -> str:
+    from datetime import datetime, timezone
+    return datetime.now(timezone.utc).isoformat(timespec="seconds").replace("+00:00", "Z")
+
+
+def _write_report(out: Path, report: dict) -> None:
+    out.mkdir(parents=True, exist_ok=True)
+    path = out / "stage-report.json"
+    temporary = out / f".stage-report.{os.getpid()}.tmp"
+    temporary.write_text(json.dumps(report, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
+    os.replace(temporary, path)
+
+
+def main(argv=None) -> int:
+    import argparse
+    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    parser.add_argument("--config", type=Path, required=True)
+    parser.add_argument("--out", type=Path, required=True)
+    parser.add_argument("--dry-run", action="store_true")
+    args = parser.parse_args(argv)
+    config = load_configuration(args.config)
+    try:
+        report = run_stages(config, args.out, dry_run=args.dry_run)
+    except StageRefused as exc:
+        print(json.dumps({"status": "failed", "stage": exc.stage, "reason": exc.reason}))
+        return 5
+    print(json.dumps({"status": report["status"], "stages": len(report["stages"])}))
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

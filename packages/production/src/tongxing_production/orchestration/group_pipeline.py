@@ -566,6 +566,10 @@ def main(argv=None) -> int:
     run_command.add_argument("--confirm-unbudgeted", action="store_true",
                              help="accept model spend without a per-group budget document (explicit operator decision)")
     run_command.add_argument("--output", type=Path)
+    stages_command = sub.add_parser("stages", help="run the configured Layer 3 stage commands in order")
+    stages_command.add_argument("--config", type=Path, required=True)
+    stages_command.add_argument("--out", type=Path, required=True)
+    stages_command.add_argument("--dry-run", action="store_true")
     prepare_command = sub.add_parser("prepare-l3", help="prepare the Layer 3 speech job for the current merge")
     prepare_command.add_argument("--config", type=Path, required=True)
     prepare_command.add_argument("--text-release-basis", type=Path, required=True)
@@ -591,6 +595,16 @@ def main(argv=None) -> int:
     config = group_worker.load_configuration(args.config)
     if args.command == "status":
         report = status(config)
+    elif args.command == "stages":
+        from . import group_l3
+        try:
+            report = group_l3.run_stages(group_l3.load_configuration(args.config), args.out,
+                                         dry_run=args.dry_run)
+        except group_l3.StageRefused as exc:
+            print(json.dumps({"status": "failed", "stage": exc.stage, "reason": exc.reason}))
+            return 5
+        print(json.dumps({"status": report["status"], "stages": len(report["stages"])}))
+        return 0
     elif args.command == "prepare-l3":
         report = prepare_l3(config, text_basis=args.text_release_basis, adapter=args.adapter,
                             registry=args.speaker_registry,

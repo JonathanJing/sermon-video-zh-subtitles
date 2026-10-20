@@ -81,6 +81,7 @@ python tools/ops/group_tasks.py redo --config run.json --group-id <id> --reason 
 python tools/ops/group_tasks.py merge --config run.json [--affected <id> …]
 python tools/ops/group_tasks.py prepare-l3 --config run.json --text-release-basis <收据> \
   --adapter <adapter.json> --speaker-registry <registry.json> [--voice-authorization <收据>] --out <新目录>
+python tools/ops/group_tasks.py stages --config l3-stages.json --out <L3 输出目录> [--dry-run]
 python tools/ops/group_tasks.py plan --manifest <整篇产物清单> [--locale ko]   # 只读规划
 ```
 
@@ -90,6 +91,7 @@ python tools/ops/group_tasks.py plan --manifest <整篇产物清单> [--locale k
 - `redo` 写一条 `sermon-group-directive-v1` 指令，理由进入 T/R prompt 与 `revisionSha256` 记录键；旧记录变 `stale`。指令不是内容批准。
 - `merge` 输出 candidate/evidence/language-review，放在 `merge/<locale>/<candidateSha256前16位>/`，`current.json` 指针原子切换；再次合并的变化组必须等于 `--affected`。第 4 步（校准）与第 7–10 步（渲染、排程/字幕、整轨、筛查/音频 QC、试听豁免）仍待接线。
 - `prepare-l3` 只调用现有 speech job producer；文本放行和声音授权由操作者提供，不在此创建或升级。
+- `stages` 按配置顺序执行第 7–9 步的现有 producer 命令（渲染、压缩/筛查、打包、音频 QC），每个 stage 绑定命令 SHA-256 并写 `stage-report.json`；非零退出或“成功但没产出 `produces`”都停止后续 stage。命令仍含未解析 `{placeholder}` 时在派发前拒绝。`--dry-run` 只计划。
 - 逐组记录、指令和合并产物都是中间证据，不能当发布批准。
 
 ### 本周中文配音策略（2026-09-27 起的新 job）
