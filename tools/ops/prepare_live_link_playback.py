@@ -11,13 +11,13 @@ import sys
 from pathlib import Path
 
 
-REPO_ROOT = Path(__file__).resolve().parents[1]
+REPO_ROOT = Path(__file__).resolve().parents[2]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
 from backend.cloud import upload_file_to_gcs
 
-OFFLINE_POC = REPO_ROOT / "scripts" / "offline_live_sermon_subtitles.py"
+OFFLINE_POC = REPO_ROOT / "tools" / "ops" / "offline_live_sermon_subtitles.py"
 BUILD_PLAYBACK = REPO_ROOT / "scripts" / "build_playback_simulation.py"
 DEFAULT_ASR_MODEL = "gpt-4o-transcribe"
 DEFAULT_REALTIME_MODEL = "gpt-realtime-translate"

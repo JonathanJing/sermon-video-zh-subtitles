@@ -5,7 +5,7 @@ import unittest
 from pathlib import Path
 
 
-SCRIPT_PATH = Path(__file__).resolve().parents[1] / "scripts" / "promote_sunday_manifest.py"
+SCRIPT_PATH = Path(__file__).resolve().parents[1] / "tools" / "ops" / "promote_sunday_manifest.py"
 SPEC = importlib.util.spec_from_file_location("promote_sunday_manifest", SCRIPT_PATH)
 promote = importlib.util.module_from_spec(SPEC)
 assert SPEC and SPEC.loader

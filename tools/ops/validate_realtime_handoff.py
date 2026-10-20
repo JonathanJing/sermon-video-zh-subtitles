@@ -11,7 +11,7 @@ import re
 from typing import Any
 
 
-REPO_ROOT = Path(__file__).resolve().parents[1]
+REPO_ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_LIVE_PLAN = REPO_ROOT / "artifacts" / "evidence" / "live-1130-realtime-run-plan.json"
 DEFAULT_OPERATOR_BUNDLE = REPO_ROOT / "artifacts" / "evidence" / "operator-approval-bundle.json"
 DEFAULT_GO_LIVE_SEQUENCE = REPO_ROOT / "artifacts" / "evidence" / "production-go-live-sequence.json"
@@ -146,7 +146,7 @@ def add_operator_choices_check(checks: list[dict[str, Any]], name: str, choices:
         and browser.get("default") is True
         and browser.get("expectedAudioSourceKind") == "ipad_mic"
         and not observed["browserEvidenceMissing"]
-        and "scripts/run_realtime_live_session.py" in server_command
+        and "tools/ops/run_realtime_live_session.py" in server_command
         and "gpt-realtime-translate" in server_command
         and "gpt-5.4-mini" in server_command
     )
@@ -158,7 +158,7 @@ def add_live_validation_commands_check(checks: list[dict[str, Any]], name: str, 
     observed = {
         "hasSseSmoke": "tools/ops/run_realtime_public_sse_smoke.py" in command_text,
         "hasWebContractReport": "--web-realtime-contract-report" in command_text,
-        "hasSessionValidator": "scripts/validate_realtime_session.py" in command_text,
+        "hasSessionValidator": "tools/ops/validate_realtime_session.py" in command_text,
         "hasRealtimeModel": "gpt-realtime-translate" in command_text,
         "hasStableModel": "gpt-5.4-mini" in command_text,
         "requiresStableCorrection": "--require-stable-correction" in command_text,
@@ -192,9 +192,9 @@ def add_no_caption_asr_stage_check(checks: list[dict[str, Any]], name: str, stag
         "state": stage_obj.get("state"),
         "hasRunnerCommand": "tools/ops/run_no_caption_archive_asr_route.py" in runner_text,
         "hasArchivePreflight": "tools/ops/run_offline_archive_preflight.py" in command_text,
-        "hasPreparePlayback": "scripts/prepare_live_link_playback.py" in command_text,
-        "hasTranslate": "scripts/translate_playback_with_openai.py" in command_text,
-        "hasExport": "scripts/export_playback_captions.py" in command_text,
+        "hasPreparePlayback": "tools/ops/prepare_live_link_playback.py" in command_text,
+        "hasTranslate": "tools/ops/translate_playback_with_openai.py" in command_text,
+        "hasExport": "tools/ops/export_playback_captions.py" in command_text,
         "hasOfflineChainValidation": "scripts/validate_offline_chain.py" in command_text,
         "hasProductionReadinessValidation": "tools/ops/validate_production_readiness.py" in command_text,
         "hasAsrModel": "gpt-4o-transcribe" in command_text and required_models.get("offlineAsr") == "gpt-4o-transcribe",

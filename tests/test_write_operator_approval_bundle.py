@@ -84,7 +84,7 @@ class WriteOperatorApprovalBundleTest(unittest.TestCase):
         self.assertIn("--web-realtime-contract-report", live_validation_commands)
         self.assertIn("validate_realtime_session.py", live_validation_commands)
         self.assertIn(
-            "scripts/run_realtime_stabilizer_loop.py",
+            "tools/ops/run_realtime_stabilizer_loop.py",
             report["live1130Runbook"]["stabilizerFallbackCommand"],
         )
         server_choice = next(
@@ -100,7 +100,7 @@ class WriteOperatorApprovalBundleTest(unittest.TestCase):
         self.assertIn("artifacts/evidence/web-realtime-contract.json", browser_choice["evidenceReports"])
         self.assertIn("artifacts/evidence/realtime-public-sse-smoke.json", browser_choice["evidenceReports"])
         rendered_server_command = json.dumps(server_choice["command"])
-        self.assertIn("scripts/run_realtime_live_session.py", rendered_server_command)
+        self.assertIn("tools/ops/run_realtime_live_session.py", rendered_server_command)
         self.assertIn("gpt-realtime-translate", rendered_server_command)
         self.assertIn("gpt-5.4-mini", rendered_server_command)
         self.assertTrue(cloud["secretReferencesIncluded"])
@@ -219,7 +219,7 @@ def unblock_plan(no_caption_plan=None):
                 "commands": [
                     [
                         "python3",
-                        "scripts/plan_gcs_sunday_manifest_publish.py",
+                        "tools/ops/plan_gcs_sunday_manifest_publish.py",
                         "--apply",
                         "--confirm-production-stable",
                     ]
@@ -338,7 +338,7 @@ def live_1130_run_plan():
                 "expectedAudioSourceKinds": ["authorized_audio_url", "authorized_audio_file", "authorized_youtube_source"],
                 "command": [
                     "python3",
-                    "scripts/run_realtime_live_session.py",
+                    "tools/ops/run_realtime_live_session.py",
                     "--realtime-model",
                     "gpt-realtime-translate",
                     "--stable-model",
@@ -359,14 +359,14 @@ def live_1130_run_plan():
             ],
             [
                 "python3",
-                "scripts/validate_realtime_session.py",
+                "tools/ops/validate_realtime_session.py",
                 "--expected-model",
                 "gpt-realtime-translate",
             ],
         ],
         "stabilizerFallbackCommand": [
             "python3",
-            "scripts/run_realtime_stabilizer_loop.py",
+            "tools/ops/run_realtime_stabilizer_loop.py",
             "--model",
             "gpt-5.4-mini",
         ],
@@ -414,7 +414,7 @@ def no_caption_asr_plan():
             ],
             [
                 "python3",
-                "scripts/translate_playback_with_openai.py",
+                "tools/ops/translate_playback_with_openai.py",
                 "--model",
                 "gpt-5.4-mini",
             ],

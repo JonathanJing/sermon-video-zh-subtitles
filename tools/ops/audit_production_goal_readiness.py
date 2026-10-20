@@ -23,7 +23,7 @@ LOCAL_REQUIREMENTS = [
     {
         "id": "realtime_event_archive",
         "description": "Realtime English/Chinese deltas are saved and streamable.",
-        "files": ["backend/realtime.py", "backend/app.py", "scripts/validate_realtime_session.py"],
+        "files": ["backend/realtime.py", "backend/app.py", "tools/ops/validate_realtime_session.py"],
         "needles": ["RealtimeEventArchive", "input_transcript_delta", "caption_delta"],
     },
     {
@@ -43,8 +43,8 @@ LOCAL_REQUIREMENTS = [
         "id": "server_media_worker_realtime_path",
         "description": "YouTube live or authorized audio uses the server media worker and saves English/Chinese realtime deltas.",
         "files": [
-            "scripts/realtime_media_worker.py",
-            "scripts/validate_server_realtime_contract.py",
+            "tools/ops/realtime_media_worker.py",
+            "tools/ops/validate_server_realtime_contract.py",
             "backend/app.py",
         ],
         "needles": [
@@ -63,9 +63,9 @@ LOCAL_REQUIREMENTS = [
         "id": "realtime_stable_correction",
         "description": "Delayed stable corrections use gpt-5.4-mini and write caption_final events.",
         "files": [
-            "scripts/stabilize_realtime_deltas_with_openai.py",
-            "scripts/run_realtime_stabilizer_loop.py",
-            "scripts/run_realtime_live_session.py",
+            "tools/ops/stabilize_realtime_deltas_with_openai.py",
+            "tools/ops/run_realtime_stabilizer_loop.py",
+            "tools/ops/run_realtime_live_session.py",
         ],
         "needles": ["gpt-5.4-mini", "gpt-5.4-mini-stable-correction", "caption_final"],
     },
@@ -75,9 +75,9 @@ LOCAL_REQUIREMENTS = [
         "files": [
             "backend/realtime.py",
             "apps/operator-web/app.js",
-            "scripts/validate_public_caption_view_runtime.py",
-            "scripts/run_realtime_stable_reconnect_smoke.py",
-            "scripts/validate_realtime_session.py",
+            "tools/ops/validate_public_caption_view_runtime.py",
+            "tools/ops/run_realtime_stable_reconnect_smoke.py",
+            "tools/ops/validate_realtime_session.py",
         ],
         "needles": [
             "caption_stable",
@@ -91,7 +91,7 @@ LOCAL_REQUIREMENTS = [
     {
         "id": "offline_captions_first",
         "description": "Offline route prefers captions/VTT before ASR fallback.",
-        "files": ["scripts/offline_live_sermon_subtitles.py", "scripts/validate_offline_chain.py"],
+        "files": ["tools/ops/offline_live_sermon_subtitles.py", "scripts/validate_offline_chain.py"],
         "needles": ["captions_first_then_asr", "use_caption_track", "use_asr_fallback"],
     },
     {
@@ -104,9 +104,9 @@ LOCAL_REQUIREMENTS = [
         "id": "offline_outputs",
         "description": "Offline chain exports translated VTT/SRT/playback JS/GCS manifest evidence.",
         "files": [
-            "scripts/export_playback_captions.py",
-            "scripts/promote_sunday_manifest.py",
-            "scripts/validate_sunday_manifest.py",
+            "tools/ops/export_playback_captions.py",
+            "tools/ops/promote_sunday_manifest.py",
+            "tools/ops/validate_sunday_manifest.py",
             "tools/ops/run_sunday_evidence_bundle.py",
         ],
         "needles": ["sermon.zh.live-aligned.vtt", "sermon.zh.live-aligned.srt", "playback-simulation.generated.js"],
@@ -116,8 +116,8 @@ LOCAL_REQUIREMENTS = [
         "description": "Offline playback publishes raw/display/review layers with readable display segments and raw cue traceability.",
         "files": [
             "scripts/build_playback_simulation.py",
-            "scripts/prepare_live_link_playback.py",
-            "scripts/export_playback_captions.py",
+            "tools/ops/prepare_live_link_playback.py",
+            "tools/ops/export_playback_captions.py",
             "scripts/validate_offline_chain.py",
             "apps/operator-web/app.js",
         ],

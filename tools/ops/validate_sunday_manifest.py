@@ -12,7 +12,7 @@ from pathlib import Path
 from typing import Any
 
 
-REPO_ROOT = Path(__file__).resolve().parents[1]
+REPO_ROOT = Path(__file__).resolve().parents[2]
 JS_PREFIX = "window.SERMON_PLAYBACK_SIMULATION = "
 EXPECTED_MODELS = {
     "realtimeDraft": {"gpt-realtime-translate"},

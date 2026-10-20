@@ -16,7 +16,7 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-from scripts.export_playback_captions import render_srt, render_vtt, CaptionCue  # noqa: E402
+from tools.ops.export_playback_captions import render_srt, render_vtt, CaptionCue  # noqa: E402
 from scripts.build_playback_simulation import refresh_polished_layers  # noqa: E402
 from scripts.validate_offline_chain import (  # noqa: E402
     parse_json_object,

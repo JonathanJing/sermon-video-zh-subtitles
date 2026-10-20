@@ -1714,20 +1714,20 @@ def no_caption_asr_plan():
             ],
             [
                 "python3",
-                "scripts/prepare_live_link_playback.py",
+                "tools/ops/prepare_live_link_playback.py",
                 "--asr-model",
                 "gpt-4o-transcribe",
                 "--gcs-dry-run",
             ],
             [
                 "python3",
-                "scripts/translate_playback_with_openai.py",
+                "tools/ops/translate_playback_with_openai.py",
                 "--model",
                 "gpt-5.4-mini",
             ],
             [
                 "python3",
-                "scripts/export_playback_captions.py",
+                "tools/ops/export_playback_captions.py",
                 "--gcs-dry-run",
             ],
             [

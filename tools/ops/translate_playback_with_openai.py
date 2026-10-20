@@ -22,7 +22,7 @@ from typing import Any
 import requests
 
 
-REPO_ROOT = Path(__file__).resolve().parents[1]
+REPO_ROOT = Path(__file__).resolve().parents[2]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
@@ -30,7 +30,7 @@ from backend.cloud import access_secret as cloud_access_secret
 from backend.cloud import upload_file_to_gcs
 from scripts.subtitle_output_contract import cue_coverage
 
-PLAYBACK_BUILDER_PATH = Path(__file__).with_name("build_playback_simulation.py")
+PLAYBACK_BUILDER_PATH = REPO_ROOT / "scripts" / "build_playback_simulation.py"
 PLAYBACK_BUILDER_SPEC = importlib.util.spec_from_file_location("build_playback_simulation", PLAYBACK_BUILDER_PATH)
 playback_builder = importlib.util.module_from_spec(PLAYBACK_BUILDER_SPEC)
 assert PLAYBACK_BUILDER_SPEC.loader is not None
