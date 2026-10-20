@@ -17,7 +17,7 @@ from scripts import tongxing_host as host
 from tongxing_production.source import english_source_package as english_package
 from scripts import cuv_scripture, english_scripture_coverage, scripture_candidate_queue, scripture_editions
 from tongxing_production.source import english_source_judge_cache as judge_cache
-from scripts import export_run_digest
+from tools.development import export_run_digest
 from tongxing_production.compute.transports import codex_cli as sermon_codex_transport
 from tongxing_production.compute import transcription_request as sermon_transcription_request
 from tongxing_production.text import human_ruling

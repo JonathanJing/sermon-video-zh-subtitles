@@ -219,7 +219,7 @@ def add_model_access_step(
             "commandsAfterAccessIsFixed": [
                 [
                     "python3",
-                    "scripts/run_openai_model_access_preflight.py",
+                    "tools/ops/run_openai_model_access_preflight.py",
                     "--model",
                     "gpt-5.4-mini",
                     "--out",

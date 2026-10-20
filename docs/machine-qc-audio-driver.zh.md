@@ -30,7 +30,7 @@
 # 管线演练（全部假传输，豁免只在内存中构建）
 .venv/bin/python tools/ops/run.py review.qc_audio_run --out artifacts/machine-qc-audio/20261001 --backend fake
 # 实跑（Spark，dev Project；--state-dir 与文字驱动相同）
-python scripts/run_with_openai_environment.py --environment dev -- \
+python tools/ops/run_with_openai_environment.py --environment dev -- \
   .venv/bin/python tools/ops/run.py review.qc_audio_run --run-dir artifacts/dev-full-rerun-20261001 \
   --out artifacts/machine-qc-audio/20261001 --state-dir artifacts/dev-full-rerun-20261001/machine-qc-state \
   --asr-model-path /models/Qwen3-ASR-0.6B --tts-checkpoint-map path/to/checkpoint-map.json --locales ko \

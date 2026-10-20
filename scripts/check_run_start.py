@@ -76,7 +76,7 @@ def check_code(expected_commit, expected_implementation):
 
 
 def check_openai(environment, env_file):
-    command = [sys.executable, str(ROOT / "scripts/run_with_openai_environment.py"), "--environment", environment,
+    command = [sys.executable, str(ROOT / "tools/ops/run_with_openai_environment.py"), "--environment", environment,
                *(["--env-file", str(env_file)] if env_file else []), "--check"]
     done = subprocess.run(command, capture_output=True, text=True, cwd=ROOT)
     # Report the launcher's verdict, never its output: it may name key aliases.
@@ -87,7 +87,7 @@ def check_openai(environment, env_file):
 
 def selected_launcher_identity(environment, env_file):
     """Resolve the real launcher file read-only; retain only non-secret identity."""
-    from scripts import run_with_openai_environment as launcher
+    from tools.ops import run_with_openai_environment as launcher
     from scripts import tongxing_host  # noqa: F401  binds the production package ports
     from tongxing_production.review.qc_budget_authorization import credential_fingerprint
     from tongxing_production.compute.openai_runtime import safe_route

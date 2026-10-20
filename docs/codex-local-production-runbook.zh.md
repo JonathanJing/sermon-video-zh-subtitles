@@ -11,7 +11,7 @@
 1. 按[运行配置](../config/weekly-run-profile.json)为当前选定阶段写出预算文件：每种语言一个质检预算根（文本质检、校准、音频质检共用），以及绑定已有 Layer 2 执行配置的预算。`--approved-by`／`--evidence` 写明实际批准人和出处，工具不代写批准；任一环节上限加已结算超过总额时不写任何文件。全部 cap 超过总额时必须显式选择 `--stage`，未选不写授权。前一阶段先结算与对账；同一冻结代码身份换预算根时才可用 `--reuse-from <上一份计划目录>`，该模式只重放已有响应，缺失操作拒绝付费。部分 QC 使用 `--resume-qc-authorization <原v4授权>` 在原根、原额度下继续；两模式互斥，见[恢复合同](canonical-layer2-budget-and-migration.zh.md#qc-部分运行继续原授权与跨根只读重放分开)。#380 合并后的首次运行禁止复用旧身份缓存。
 
 ```sh
-.venv/bin/python scripts/run_with_openai_environment.py --environment dev -- \
+.venv/bin/python tools/ops/run_with_openai_environment.py --environment dev -- \
   .venv/bin/python scripts/plan_run_budgets.py --out <新目录> --scale clip|week --total-usd <批准总额> --settled-usd <已结算> --approved-by <批准人> --evidence <出处> [--stage qc.ko|layer2] [--qc-inputs <inputs.json>] [--layer2-execution <execution.json>] [--reuse-from <上一份计划目录>]
 ```
 
@@ -127,7 +127,7 @@ shadow receipt 的 `ready_for_model_translation` 只表示自动锚点结构干�
 需要连同配音候选一起检查或顺序推进时，使用[周六统一入口](saturday-harness.zh.md)：默认只读，显式 `execute` 才调用现有生产阶段；不会自动替换当前定时任务。续租、超时、目录锁和远端结果核对见[执行保护与恢复](sermon-execution-harness.zh.md)。
 
 ```bash
-.venv/bin/python scripts/run_with_openai_environment.py --environment prod -- \
+.venv/bin/python tools/ops/run_with_openai_environment.py --environment prod -- \
   .venv/bin/python tools/ops/run.py workflows.dual_pdf.codex_local \
   --mode execute --agent-backend codex-cli --model gpt-6-luna --reasoning-effort medium --service-tier fast \
   --notify-sendgrid-secret '' --notify-recipients-secret '' --notify-sender-secret ''
@@ -234,7 +234,7 @@ Supervisor 的 generation 命令显式传入 Sol 6.1、high、阅读稿 provider
 缺少有效窗口审批或绑定的 source/timeline 已改变时，Operator 必须独立观看完整回放并确认绝对时间；已存在匹配审批时直接续跑：
 
 ```bash
-.venv/bin/python scripts/run_with_openai_environment.py --environment prod -- \
+.venv/bin/python tools/ops/run_with_openai_environment.py --environment prod -- \
   .venv/bin/python scripts/run_sermon_production_supervisor_agent.py \
   --sunday YYYY-MM-DD \
   --state-file 'gs://sermon-zh-artifacts-ai-for-god/sundays/live-source-monitor/backend-state.json' \
@@ -307,7 +307,7 @@ Supervisor 以新读取的 `snapshot.recommendedAction.action == "complete"` 为
 每次正式运行或测试结束后，不论成功失败，都按[运行报告与复盘](test-run-retrospective.zh.md)生成脱敏报告并开报告 PR，云端会话据此复盘。运行目录有多处时（例如 L2 和音频），一并传给导出命令：
 
 ```bash
-.venv/bin/python scripts/export_run_digest.py artifacts/<运行目录> [更多运行目录...] --name <YYYYMMDD-简称>
+.venv/bin/python tools/development/export_run_digest.py artifacts/<运行目录> [更多运行目录...] --name <YYYYMMDD-简称>
 tools/development/publish_run_report.sh artifacts/run-reports/<YYYYMMDD-简称>
 ```
 

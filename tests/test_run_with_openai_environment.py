@@ -5,7 +5,7 @@ import sys
 import tempfile
 import unittest
 
-from scripts.run_with_openai_environment import child_environment, ROOT
+from tools.ops.run_with_openai_environment import child_environment, ROOT
 
 
 class RuntimeEnvironmentTests(unittest.TestCase):
@@ -48,10 +48,40 @@ class RuntimeEnvironmentTests(unittest.TestCase):
 
     def test_child_process_uses_selected_environment_and_propagates_exit(self):
         code = "import os,sys; assert os.environ['OPENAI_API_KEY']=='fake-prod'; assert 'OPENAI_DEV_API_KEY' not in os.environ; sys.exit(7)"
-        result = subprocess.run([sys.executable, str(ROOT / 'scripts/run_with_openai_environment.py'),
+        result = subprocess.run([sys.executable, str(ROOT / 'tools/ops/run_with_openai_environment.py'),
             '--environment', 'prod', '--env-file', str(self.path), '--', sys.executable, '-c', code], capture_output=True)
         self.assertEqual(result.returncode, 7)
         self.assertNotIn(b'fake-prod', result.stdout + result.stderr)
+
+    def test_extra_or_repeated_keys_rejected(self):
+        text = self.path.read_text()
+        for extra in ('OPENAI_API_KEY=fake-extra\n', 'OPENAI_ORG_ID=org_extra\n', 'OPENAI_DEV_API_KEY=fake-again\n'):
+            self.path.write_text(text + extra)
+            with self.assertRaisesRegex(ValueError, '^invalid_credential_file_assignment$'):
+                child_environment(self.path, 'dev', {})
+        self.path.write_text(text)
+
+    def test_selected_project_must_be_explicit(self):
+        text = self.path.read_text()
+        for project in ('', 'REPLACE_WITH_DEV_PROJECT', 'org-not-a-project'):
+            self.path.write_text(text.replace('proj_dev', project))
+            with self.assertRaisesRegex(ValueError, '^selected_environment_not_configured$'):
+                child_environment(self.path, 'dev', {})
+        self.path.write_text(text)
+
+    def test_default_key_file_is_at_the_repository_root(self):
+        self.assertTrue((ROOT / 'AGENTS.md').is_file())
+        self.assertEqual(ROOT, Path(__file__).resolve().parents[1])
+
+    def test_scripts_path_runs_the_same_launcher(self):
+        from scripts import run_with_openai_environment as old
+        from tools.ops import run_with_openai_environment as new
+        self.assertIs(old, new)
+        code = "import os,sys; assert os.environ['OPENAI_PROJECT_ID']=='proj_dev'; sys.exit(5)"
+        result = subprocess.run([sys.executable, str(ROOT / 'scripts/run_with_openai_environment.py'),
+            '--environment', 'dev', '--env-file', str(self.path), '--', sys.executable, '-c', code], capture_output=True)
+        self.assertEqual(result.returncode, 5)
+        self.assertNotIn(b'fake-dev', result.stdout + result.stderr)
 
     def test_legacy_dotenv_cannot_override_selected_key(self):
         from scripts import tongxing_host  # noqa: F401  binds the production package ports

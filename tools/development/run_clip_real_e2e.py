@@ -165,7 +165,7 @@ class Run:
 
     def sh(self, label, argv, *, launcher=False, check=True, cwd=ROOT, env=None) -> subprocess.CompletedProcess:
         if launcher:
-            argv = [PY, str(ROOT / "scripts/run_with_openai_environment.py"), "--environment",
+            argv = [PY, str(ROOT / "tools/ops/run_with_openai_environment.py"), "--environment",
                     self.spec["openai"]["environment"], "--env-file", self.spec["openai"]["envFile"], "--", *argv]
         log = self.dir / "logs" / f"{label}.log"
         started = time.time()
@@ -202,7 +202,7 @@ class Run:
     # -- budget
     def settled(self) -> float:
         """Earlier spend plus this run's Layer 2 results and QC ledgers; unpriced rows count at their reservation."""
-        from scripts.export_run_digest import budget_summary
+        from tools.development.export_run_digest import budget_summary
         total = 0
         for path in self.dir.rglob("*.result.json"):
             if "layer2-budget" in str(path) and "responses" not in path.parts:
@@ -776,7 +776,7 @@ def stage_layer4(run: Run):
 
 def stage_report(run: Run):
     name = datetime.now(timezone.utc).strftime("%Y%m%d") + "-clip-e2e-" + run.spec["name"]
-    run.sh("report", [PY, ROOT / "scripts/export_run_digest.py", run.dir, "--name", name])
+    run.sh("report", [PY, ROOT / "tools/development/export_run_digest.py", run.dir, "--name", name])
     run.mark("report", "done", name=name)
 
 
@@ -843,7 +843,7 @@ def _route(out: Path):
     from tongxing_production.review import qc_budget_authorization as auth
     from tongxing_production.compute.openai_runtime import selected_route
     route = selected_route()
-    require(route is not None, "run inside scripts/run_with_openai_environment.py")
+    require(route is not None, "run inside tools/ops/run_with_openai_environment.py")
     write(out, {"openaiRoute": route, "credentialSha256": auth.credential_fingerprint(os.environ["OPENAI_API_KEY"])})
 
 

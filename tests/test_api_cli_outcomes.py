@@ -182,7 +182,7 @@ class ApiCliOutcomeTests(unittest.TestCase):
                 outcomes.recover(directory, row['requestSha256'], row['purpose'])
 
     def test_cli_private_terminal_bytes_are_omitted_from_export(self):
-        from scripts import export_run_digest as exporter
+        from tools.development import export_run_digest as exporter
         import base64
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory); source = root/'source'; dest = root/'export'

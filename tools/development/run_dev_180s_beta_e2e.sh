@@ -74,7 +74,7 @@ printf 'stage\tstatus\tseconds\n' > "$OUT/timings.tsv"
 # Whatever happens next, leave a redacted run report for cloud review.
 report() {
   local status=$? name="${RUN_ID:4:8}-dev-180s-$RUN_ID"
-  if [[ -x "$PY" ]] && "$PY" scripts/export_run_digest.py "$OUT" --name "$name" >/dev/null 2>&1; then
+  if [[ -x "$PY" ]] && "$PY" tools/development/export_run_digest.py "$OUT" --name "$name" >/dev/null 2>&1; then
     echo "Run report: artifacts/run-reports/$name (exit $status)"
     echo "Publish for cloud review: tools/development/publish_run_report.sh artifacts/run-reports/$name"
   else

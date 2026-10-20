@@ -76,7 +76,7 @@ result = drive(execution_config, target_locale, budget_authorization=authorizati
 在原显式环境启动器中生成恢复计划（输入、旧 out/state 和批准代码必须保持一致）：
 
 ```sh
-python scripts/run_with_openai_environment.py --environment dev -- \
+python tools/ops/run_with_openai_environment.py --environment dev -- \
   python scripts/plan_run_budgets.py --out artifacts/resume-plan --scale clip --locales ko \
   --stage qc.ko --qc-inputs artifacts/original-inputs.json --total-usd 10 \
   --approved-by '<实际操作者>' --evidence '<原运行继续执行的批准证据>' \
@@ -86,7 +86,7 @@ python scripts/run_with_openai_environment.py --environment dev -- \
 实际恢复仍把同一原授权交给原 QC 入口，不改 root：
 
 ```sh
-python scripts/run_with_openai_environment.py --environment dev -- \
+python tools/ops/run_with_openai_environment.py --environment dev -- \
   .venv/bin/python tools/ops/run.py review.qc_text_run --run-dir artifacts/original-run \
   --out artifacts/original-text-qc --state-dir artifacts/original-state --locales ko --text-backend api \
   --api-budget-authorization artifacts/original-plan/qc-ko/api-budget-authorization.json

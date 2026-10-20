@@ -54,7 +54,7 @@ class LocalPostLiveDownloadTest(unittest.TestCase):
         loaded = sermon_accounting.execution_identity()["loadedProjectCodeSha256"]
         self.assertIn(key, loaded)
         self.assertTrue({"backend/cloud.py", "backend/config.py", "scripts/live_source_monitor.py",
-                         "scripts/youtube_data_api.py"}.issubset(loaded))
+                         "packages/production/src/tongxing_production/source/youtube_data_api.py"}.issubset(loaded))
 
     def test_legacy_cli_help_and_missing_source_from_other_directory(self):
         root = ROOT

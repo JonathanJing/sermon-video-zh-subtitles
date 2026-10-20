@@ -449,7 +449,7 @@ def audio_qc(args, runtime, spark, session) -> int:
             "-e", "NUMBA_CACHE_DIR=/tmp/numba", "-e", "TRITON_CACHE_DIR=/tmp/triton",
             "-e", "TORCHINDUCTOR_CACHE_DIR=/tmp/torchinductor", "-e", "XDG_CACHE_HOME=/tmp/cache",
             "-w", code, "--entrypoint", "python", runtime["images"]["pytorchFfmpeg"],
-            f"{code}/scripts/run_with_openai_environment.py", "--environment", args.openai_environment,
+            f"{code}/tools/ops/run_with_openai_environment.py", "--environment", args.openai_environment,
             "--env-file", "/secrets/openai.env",
             "python", f"{code}/tools/ops/run.py", "review.qc_audio_run",
             "--run-dir", run_dir, "--out", out, "--state-dir", state, "--locales", loc,

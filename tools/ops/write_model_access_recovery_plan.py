@@ -70,7 +70,7 @@ def build_plan(args: argparse.Namespace) -> dict[str, Any]:
         "commands": [
             [
                 "python3",
-                "scripts/run_openai_model_access_preflight.py",
+                "tools/ops/run_openai_model_access_preflight.py",
                 "--model",
                 args.required_model,
                 "--out",

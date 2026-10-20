@@ -111,7 +111,7 @@ python scripts/run_spoken_condensation.py --candidate full-candidate.json --budg
 # 第 4 层：精简过的配音要带同一份精简绑定（sermon_unified_delivery 的 inputs.condensation_binding 同理）
 .venv/bin/python tools/ops/run.py delivery.app_release prepare ... --condensation-binding ko=condensation-binding.json
 # 在已有 Dev 运行上一次跑完整条试听链（预检、整轨核对、音频 QC、注错校准、试听豁免），见 [机器试听豁免驱动](machine-qc-audio-driver.zh.md)
-python scripts/run_with_openai_environment.py --environment dev -- .venv/bin/python tools/ops/run.py review.qc_audio_run \
+python tools/ops/run_with_openai_environment.py --environment dev -- .venv/bin/python tools/ops/run.py review.qc_audio_run \
   --run-dir <run> --out artifacts/machine-qc-audio/<run> --state-dir <文字驱动的状态目录> \
   --asr-model-path <Qwen3-ASR 目录> --tts-checkpoint-map <checkpoint map> --locales ko \
   --api-budget-authorization <已批准的计划中 qc.ko 授权 v4 路径>

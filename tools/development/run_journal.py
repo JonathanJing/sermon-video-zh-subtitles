@@ -2,10 +2,10 @@
 """Append-only run journal: one JSON line per stage event, so a retrospective
 reads one file instead of reconstructing the night from dispatch logs.
 
-    python3 scripts/run_journal.py append --run-dir <run> --stage layer3.render.ko --event started
-    python3 scripts/run_journal.py append --run-dir <run> --stage layer3.render.ko --event finished
-    python3 scripts/run_journal.py append --run-dir <run> --stage audio-qc.ko --event waiting --waiting-on "human acceptance"
-    python3 scripts/run_journal.py summary --run-dir <run>
+    python3 tools/development/run_journal.py append --run-dir <run> --stage layer3.render.ko --event started
+    python3 tools/development/run_journal.py append --run-dir <run> --stage layer3.render.ko --event finished
+    python3 tools/development/run_journal.py append --run-dir <run> --stage audio-qc.ko --event waiting --waiting-on "human acceptance"
+    python3 tools/development/run_journal.py summary --run-dir <run>
 
 Events: ``started``, ``finished``, ``failed``, ``waiting`` (blocked on something
 outside the stage, named by ``--waiting-on``) and ``resumed``. A stage that starts

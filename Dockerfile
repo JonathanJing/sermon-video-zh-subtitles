@@ -15,6 +15,8 @@ COPY backend/ /app/backend/
 COPY scripts/ /app/scripts/
 COPY tools/ops/sermon_unified_preflight.py /app/tools/ops/sermon_unified_preflight.py
 COPY tools/ops/run.py /app/tools/ops/run.py
+COPY tools/ops/run_openai_model_access_preflight.py /app/tools/ops/run_openai_model_access_preflight.py
+COPY tools/ops/upload_file_to_gcs.py /app/tools/ops/upload_file_to_gcs.py
 COPY schemas/ /app/schemas/
 COPY docs/series-terminology.zh.md /app/docs/series-terminology.zh.md
 COPY data/scripture/ /app/data/scripture/
