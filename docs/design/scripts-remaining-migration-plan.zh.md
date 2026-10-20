@@ -99,3 +99,34 @@ R1 #1185、#1186，R2 #1189，R3 #1191，R4 #1187 已合并，运行报告分别
 - **R4：** 13 个只迁出 2 个：`cost_isolation` 进 `observability/`，`strict_preparation` 进 `audio/`。
 
 **补充规则：** 包内代码不能导入 `scripts.*`（`test_package_never_imports_transition_trees_or_locates_the_checkout`）。新增端口只能加在宿主里，而宿主在 G1 闭包里。所以一个文件要等它导入的 `scripts/` 模块都迁走，或者有了现成端口，才能迁移；要按依赖从下往上迁。R4 留下的 11 个依赖诊断链（`sermon_historical_layer2`、`sermon_trace_artifacts`、`sermon_diagnostic_context.validate_runtime`、`run_bounded_diagnostic`、`sermon_diagnostic_provider`）和监督代理（`sermon_decision_accounting`、`sermon_end_to_end`、`sermon_production_supervisor`），所以随 R9、R6 一起做。严格链要在 `ports.Diagnostic` 上新增 `validate_runtime`，这要改宿主，因此并入闭包窗口。
+
+## 9 决定与依赖顺序（2026-10-20，用户确认 D-1 到 D-5）
+
+### 9.1 五项决定
+
+| 决定 | 结论 |
+|---|---|
+| D-1 实时与周日清单 | 不用这批 2026-06 的实时脚本新建 `live/` 包；现行周日直播是 `experiments/local-live-poc`（[说明](../../experiments/local-live-poc/AGENTS.md)）。删除没有代码调用方、没有文档或 CI 引用、且 2026-09-01 以后没有有意义改动的文件，删除清单写进 PR。Cloud Run `backend/` 还在用的文件迁移时留门面，校验与冒烟脚本进 `tools/ops/`。等 local-live-poc 晋级后再建 `live/` 包。只在工作日迁移 |
+| D-2 监督与代理 | 现在迁移并留门面：`backend/app.py` 的 `from scripts import sermon_production_supervisor` 经门面照常工作，镜像本来就复制 `packages/` 和 `scripts/`，不需要改 Dockerfile，也不用重新部署。门面等下一次 Cloud Run 部署时再删 |
+| D-3 Temporal | P2，没有排期（`DEV-R242-024`），留在 `scripts/sermon_temporal/`；晋级时再进 `orchestration/` 做 adapter |
+| D-4 诊断链 | 归生产包 `workflows/diagnostic/`，只用于诊断，从不进入发布资格。严格 L2 链导入它们，包内代码又不能导入 `scripts.*`，所以它们必须进包 |
+| D-5 闭包窗口 | 不需要窗口的工作做完后，只开一次窗口，装进：§7 (a) 组 39 个宿主门面、`path_aliases` 的各个键（Prefect、模拟 TTS、`sermon_execution_harness`、`sermon_release_workflow`、`weekly_pipeline_report`）、`ports.Diagnostic.validate_runtime`、§9.2 的环，以及依赖 `sermon_release_workflow` 的监督链。条件同 D 窗口：没有进行中的 L2、统一 CLI 或 app-delivery 运行，Spark 空闲，当前 W 下没有未发布的生产语言；合并后在 post-G1 测试片段上做三语付费复验，预算由用户另行授权。L1 兼容钉住的两个诊断文件，在同一窗口里出一代新的 L1 兼容 |
+
+### 9.2 依赖顺序
+
+对剩下 128 个可迁移的 `.py`（不含 §3 的 29 个、Temporal 的 20 个和 52 个门面）做 AST 导入图，按从下往上的层次分：0 层 42 个，1 层 20 个，2 层 14 个，3 层 8 个，4 层 4 个，5 层 1 个；另有 **39 个文件互相导入成一个环**，只能一起迁：严格 L2 链、诊断主链（`sermon_diagnostic_*`、`sermon_fresh_*`、`sermon_historical_*`、`run_bounded_diagnostic*` 等）、`sermon_business_prefect_flow`、`sermon_mock_tts_dag`、`sermon_delivery_intent_binding`。环里有 L1 兼容钉住的文件和 Prefect 的 `path_aliases` 键，所以整个环归 D-5 窗口。
+
+`sermon_execution_harness` 和 `sermon_release_workflow` 有 `path_aliases` 键，压在 `canonical_durable_jobs`、`sermon_end_to_end`、多数监督代理和 `run_saturday_harness` 下面，所以这些也随窗口走。
+
+迁到 `tools/` 或 `experiments/` 的文件可以照常导入 `scripts.*`，不受层次限制；迁进包的文件要等它导入的 `scripts/` 模块都迁走。
+
+### 9.3 不需要窗口的四批（N1–N4，可以并行）
+
+| 批 | 内容 | 目标 |
+|---|---|---|
+| N1 实时与周日清单 | D-1 的 27 个：删除候选、`tools/ops/` 校验与冒烟、后端在用的留门面 | `tools/ops/`；删除 |
+| N2 监督代理 | `sermon_production_supervisor` 连同它导入的 `live_source_monitor`、`sermon_agents_api`、`sermon_decision_accounting`、`sermon_bounded_decision`、`sermon_repair_planning` | `orchestration/supervisor/`、`review/` |
+| N3 经文与核心杂项 | 先核对 4 个经文与术语文件是否进了冻结 policy（进了就只记录，留到重新冻结 policy 时），再迁 `run_spoken_condensation`、`sermon_local_model_observation`、`sermon.py`（统一 CLI 进 `tools/ops/`） | `text/scripture/`、`review/`、`observability/`、`tools/ops/` |
+| N4 观测与诊断外围 | 环外、不带 `path_aliases` 键的诊断和观测文件，按层从下往上迁：trace、guarded、job liveness、logs、model resources、identity sidecars 等；跳过 `sermon_execution_harness`、`sermon_diagnostic_context` 和 Prefect／模拟 TTS | `observability/`、`orchestration/`、`workflows/diagnostic/` |
+
+dual_pdf 附属（R10）单独做一次 dual_pdf 身份换代，不在这四批里。
