@@ -1,9 +1,10 @@
 import copy
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import json
 import os
 from pathlib import Path
 import tempfile
+import time
 import unittest
 from unittest.mock import patch
 from tongxing_production.observability import accounting
@@ -119,3 +120,72 @@ class ClockDomainTests(unittest.TestCase):
             rows,_=accounting.read_events(root)
             start=next(e for e in rows if e['event']=='stage_started');end=next(e for e in rows if e['event']=='stage_finished' and e['spanId']==start['spanId'])
             self.assertIsNotNone(clocks.monotonic_interval(start,end))
+
+
+class ClockPairingTests(unittest.TestCase):
+    """Thread stalls between clock reads are not wall-clock steps; real steps still are."""
+    STEP_DIAGNOSTICS = {'utc_clock_discontinuity_between_spans', 'utc_clock_discontinuity_local_duration_preserved',
+                        'utc_clock_discontinuity_monotonic_anchored_export'}
+
+    def session(self, spans=6, now=None, write_delay=0.0):
+        root = Path(tempfile.mkdtemp()); self.addCleanup(__import__('shutil').rmtree, root, True)
+        write = accounting._write_event
+        def delayed_write(event):
+            if event.get('event') == 'stage_finished':
+                time.sleep(write_delay)  # a ledger lock or GIL wait after the endpoint
+            return write(event)
+        with patch.object(accounting, 'now', side_effect=now or accounting.now), \
+                patch.object(accounting, '_write_event', side_effect=delayed_write):
+            with accounting.accounting_session(root, 'clock_pairing'):
+                previous = []
+                for i in range(spans):
+                    with accounting.stage('paired', depends_on=previous, work_unit_id='unit-%d' % i) as span:
+                        previous = [span]
+        exported = {row['code'] for row in otlp.export(root)[1]['diagnostics']}
+        return set(weekly.project(root)['runs'][0]['diagnostics']) | exported
+
+    def test_stall_between_monotonic_and_utc_reads_is_retried_not_reported(self):
+        calls = [0]
+        def stalled_now():
+            calls[0] += 1
+            if calls[0] % 2:
+                time.sleep(0.03)  # a GIL hand-off between the two reads
+            return datetime.now(timezone.utc).isoformat()
+        self.assertFalse(self.session(now=stalled_now) & self.STEP_DIAGNOSTICS)
+
+    def test_delayed_ledger_write_after_endpoint_is_not_a_utc_step(self):
+        self.assertFalse(self.session(write_delay=0.03) & self.STEP_DIAGNOSTICS)
+
+    def test_clock_pair_retries_a_split_read_and_keeps_the_tightest_bracket(self):
+        # Wide first bracket (a stall), tight second: the second pair wins.
+        reads = iter([0, 30_000_000, 40_000_000, 40_200_000])
+        with patch.object(accounting.time, 'monotonic_ns', side_effect=lambda: next(reads)), \
+                patch.object(accounting, 'now', side_effect=['stalled', 'paired']):
+            self.assertEqual(accounting.clock_pair(), (40_100_000, 'paired'))
+        # Every bracket wide: bounded retries, the narrowest is kept.
+        widths = [9, 3, 7, 5, 8, 6, 4, 9]
+        reads = iter([v for k, w in enumerate(widths) for v in (k * 100_000_000, k * 100_000_000 + w * 1_000_000)])
+        with patch.object(accounting.time, 'monotonic_ns', side_effect=lambda: next(reads)), \
+                patch.object(accounting, 'now', side_effect=['w%d' % k for k in range(8)]):
+            self.assertEqual(accounting.clock_pair(), (101_500_000, 'w1'))
+
+    def test_steady_rate_drift_is_not_a_step_but_a_step_on_top_of_it_is(self):
+        # 40 minutes of readings every 30 s at the measured 7.9 ppm drift.
+        readings = [(m, 1_800_000_000 + m * (1 + 7.9e-6)) for m in range(0, 2400, 30)]
+        offsets = [u - m for m, u in readings]
+        self.assertGreater(max(offsets) - min(offsets), 0.01)  # the old whole-run check flagged this
+        self.assertFalse(clocks.unstable_clock_domains({'d': readings}))
+        for step in (0.05, -0.05, 0.015, 30):
+            with self.subTest(step=step):
+                stepped = [(m, u + (step if m >= 1200 else 0)) for m, u in readings]
+                self.assertEqual(clocks.unstable_clock_domains({'d': stepped}), {'d'})
+
+    def test_genuine_utc_step_between_spans_is_still_reported(self):
+        for step in (30.0, -30.0, 0.05):
+            with self.subTest(step=step):
+                calls = [0]
+                def stepped_now():
+                    calls[0] += 1
+                    shift = timedelta(seconds=step) if calls[0] > 6 else timedelta()
+                    return (datetime.now(timezone.utc) + shift).isoformat()
+                self.assertIn('utc_clock_discontinuity_between_spans', self.session(now=stepped_now))

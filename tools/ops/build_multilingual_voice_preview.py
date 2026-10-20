@@ -58,7 +58,7 @@ def snapshot_path(root: Path, name: str, repository_relative: str) -> Path:
     local = root / name
     if local.is_file():
         return local
-    return Path(__file__).resolve().parents[1] / repository_relative
+    return Path(__file__).resolve().parents[2] / repository_relative
 
 
 def validate(root: Path, *, decode: bool = True) -> tuple[dict[str, Any],

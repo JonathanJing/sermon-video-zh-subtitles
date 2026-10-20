@@ -22,20 +22,13 @@ import subprocess
 import sys
 import tempfile
 
-if __package__ in (None, ""):  # run directly from tools/ops: reach the scripts/ siblings
-    import sys
-    sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "scripts"))
 if __package__ in (None, ""):  # run directly: reach the repository root
     import sys
     sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 from scripts import tongxing_host  # noqa: E402,F401  binds the production package ports
 from tongxing_production.adapters.legacy import verify_multilingual_hosting as http  # noqa: E402
-try:
-    from scripts import align_firebase_dev_v3 as dev
-    from scripts import firebase_dev_weekly_dry_run as dry
-except ImportError:
-    import align_firebase_dev_v3 as dev
-    import firebase_dev_weekly_dry_run as dry
+from tools.ops import align_firebase_dev_v3 as dev  # noqa: E402
+from tools.ops import firebase_dev_weekly_dry_run as dry  # noqa: E402
 
 
 ROOT = Path(__file__).resolve().parents[2]

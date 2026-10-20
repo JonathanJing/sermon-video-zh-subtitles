@@ -117,7 +117,7 @@ def load_spec(path: Path) -> dict:
     page = spec.get("page") or {}
     require(isinstance(page.get("pageId"), str) and page["pageId"].startswith("mockup-"),
             "page.pageId must be an isolated mockup- page")
-    from scripts import clip_e2e_release
+    from tools.development import clip_e2e_release
     clip_e2e_release.validate_display(page.get("display"), locales)
     spark = spec.setdefault("spark", {})
     spark.setdefault("sessionId", "clip-e2e-" + spec["name"])
@@ -150,7 +150,7 @@ class Run:
         self.stages_path = self.dir / "stages.json"
         self.stages = read(self.stages_path) if self.stages_path.exists() else {}
         (self.dir / "logs").mkdir(exist_ok=True)
-        from scripts import clip_e2e_spark
+        from tools.development import clip_e2e_spark
         self.runtime = clip_e2e_spark.load_runtime()
         self.stage_dir = f"{self.runtime['stageRoot'].rstrip('/')}/clip-e2e-{self.spec['name']}"
         self.session_up = False
@@ -254,10 +254,10 @@ class Run:
 
 def stage_inputs(run: Run):
     # The clip builder writes only under its own ignored test root; the run keeps copies of what it binds.
-    from scripts.build_dev_180s_simulated_inputs import TEST_ROOT
+    from tools.development.build_dev_180s_simulated_inputs import TEST_ROOT
     inputs = TEST_ROOT / ("clip-e2e-" + run.spec["name"]) / "inputs"
     if not (inputs / "source.json").exists():
-        run.sh("inputs", [PY, ROOT / "scripts/build_dev_180s_simulated_inputs.py", "--clip-spec", run.spec["clipSpec"],
+        run.sh("inputs", [PY, ROOT / "tools/development/build_dev_180s_simulated_inputs.py", "--clip-spec", run.spec["clipSpec"],
                           "--run-id", "clip-e2e-" + run.spec["name"], "--out", inputs])
     src = run.l2 / "src"
     src.mkdir(parents=True, exist_ok=True)
@@ -475,7 +475,7 @@ def finish_session(run: Run):
 
 def stage_code(run: Run) -> str:
     code = "repo-" + run.head()[:8]
-    from scripts.clip_e2e_spark import Spark
+    from tools.development.clip_e2e_spark import Spark
     spark = Spark(run.runtime["host"])
     target = f"{run.stage_dir}/{code}"
     if "present" not in spark.out(f"test -d {target} && echo present || true"):
@@ -535,7 +535,7 @@ def stage_audio(run: Run, locale: str, code: str):
               "--human-review-receipt", waiver, "--speaker-registry", registry, "--adapter", adapter,
               "--clip-voice-authorization", voice, "--clip-timeline-map", timeline,
               "--audio-operation-policies", ROOT / "config/layer3-audio-operation-policies.json"]
-    spark = [PY, ROOT / "scripts/clip_e2e_spark.py"]
+    spark = [PY, ROOT / "tools/development/clip_e2e_spark.py"]
     common = ["--locale", locale, "--stage", run.stage_dir, "--code", code]
     raw, compacted = f"{locale}-raw", f"{locale}-c"
     lag = str(run.spec["layer3"]["maxEndLagSeconds"])
@@ -640,7 +640,7 @@ def repair_audio(run: Run, locale: str, seed: int, code: str, *, unit_instructio
               "--human-review-receipt", waiver, "--speaker-registry", registry, "--adapter", adapter,
               "--clip-voice-authorization", voice, "--clip-timeline-map", timeline,
               "--audio-operation-policies", ROOT / "config/layer3-audio-operation-policies.json"]
-    spark = [PY, ROOT / "scripts/clip_e2e_spark.py"]
+    spark = [PY, ROOT / "tools/development/clip_e2e_spark.py"]
     common = ["--locale", locale, "--stage", run.stage_dir, "--code", code]
     raw, compacted = f"{locale}-seed-{seed}-raw", f"{locale}-seed-{seed}-c"
     lag = str(run.spec["layer3"]["maxEndLagSeconds"])
@@ -706,7 +706,7 @@ def repair_audio(run: Run, locale: str, seed: int, code: str, *, unit_instructio
 
 
 def stage_layer4(run: Run):
-    from scripts import clip_e2e_release
+    from tools.development import clip_e2e_release
     spec, l4 = run.spec, run.dir / "l4"
     page = spec["page"]
     if not (l4 / "prepare-result.json").exists():

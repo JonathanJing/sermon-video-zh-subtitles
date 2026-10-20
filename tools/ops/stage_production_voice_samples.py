@@ -15,19 +15,15 @@ import tempfile
 
 if __package__ in (None, ""):  # run directly: reach the repository root
     import sys
-    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+    sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 from scripts import tongxing_host  # noqa: E402,F401  binds the production package ports
 from tongxing_production.adapters.legacy import assemble_multilingual_hosting as hosting  # noqa: E402
 from tongxing_production.adapters.legacy import verify_multilingual_hosting as http  # noqa: E402
-try:
-    from scripts import stage_voice_demo_dev as dev_demo
-    from scripts import build_multilingual_voice_preview as voice_preview
-except ImportError:
-    import stage_voice_demo_dev as dev_demo
-    import build_multilingual_voice_preview as voice_preview
+from tools.ops import stage_voice_demo_dev as dev_demo  # noqa: E402
+from tools.ops import build_multilingual_voice_preview as voice_preview  # noqa: E402
 
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 ORIGIN = "https://ai-for-god-sermon-audio.web.app"
 PROJECT = "ai-for-god-caption-dev"
 SITE = "ai-for-god-sermon-audio"

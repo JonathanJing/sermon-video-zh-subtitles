@@ -42,7 +42,7 @@
 
 ```sh
 .venv/bin/python scripts/export_run_digest.py artifacts/agent-api-trials/20261008-expanded --name 20261008-agent-api-trials-expanded
-scripts/publish_run_report.sh artifacts/run-reports/20261008-agent-api-trials-expanded
+tools/development/publish_run_report.sh artifacts/run-reports/20261008-agent-api-trials-expanded
 ```
 
 `summary.json` 汇总各项分数和 token，中途失败时也会写出（`status: failed`，含已完成的部分）；`diagnose.json`、`refute.json`、`preflight.json`、`risk.json` 保留每份报告和判分细节；会话原始记录在 `diagnose/<case>/<arm>/` 等目录。会话刚结束时 API 往往还没填用量；脚本会再读几次会话，读到的用量存在 `<会话>.usage.json`，`result.json` 不改。

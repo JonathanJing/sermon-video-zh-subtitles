@@ -10,11 +10,11 @@ import shutil
 import subprocess
 import sys
 
-# The renderer and its own imports are bare scripts/ modules. Reach them however this
-# file is loaded: run directly, as tools.ops.build_speaker_clip_demos, or through the facade.
-_SCRIPTS = str(Path(__file__).resolve().parents[2] / "scripts")
-if _SCRIPTS not in sys.path:
-    sys.path.append(_SCRIPTS)
+# The clip wrapper and the renderer it wraps import each other by bare name from this
+# directory. Reach them however this file is loaded: run directly or as tools.ops.build_speaker_clip_demos.
+_HERE = str(Path(__file__).resolve().parent)
+if _HERE not in sys.path:
+    sys.path.append(_HERE)
 from render_speaker_clip_demos import validate_scripts
 
 PREFIX = '/voice-demos/speaker-clips-v2/'

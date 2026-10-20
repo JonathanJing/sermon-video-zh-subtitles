@@ -8,7 +8,7 @@
 
 ```sh
 .venv/bin/python tools/development/verify_dev_180s_page_test.py --help
-.venv/bin/python -m scripts.build_dev_180s_simulated_inputs --help
+.venv/bin/python -m tools.development.build_dev_180s_simulated_inputs --help
 .venv/bin/python tools/ops/prepare_dev_simulated_publication.py --help
 ```
 
@@ -28,7 +28,7 @@
 
 ```sh
 CLIP_SPEC=/absolute/path/clip-spec.json BASELINE_CACHE=/absolute/path/previous-dev-baseline \
-  scripts/run_dev_180s_beta_e2e.sh --execute
+  tools/development/run_dev_180s_beta_e2e.sh --execute
 ```
 
 `BASELINE_CACHE` 指向上一次已核验的 Dev baseline 目录（含 `public/` 与 `baseline-receipt.json`）：线上哈希仍一致的文件直接复用。Dev 站的 09-27 整场视频在下载约 560 MB 时会被服务端截断，不带缓存时 baseline 会稳定失败。
