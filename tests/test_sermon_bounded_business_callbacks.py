@@ -2,8 +2,8 @@ import json
 import socket
 import unittest
 from unittest.mock import patch
-from tongxing_production.workflows.diagnostic import bounded_business_callbacks as callbacks
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.workflows.diagnostic import bounded_business_callbacks as callbacks
 from tongxing_production.review import contracts as c
 from tests import test_run_bounded_diagnostic as fixtures
 

@@ -14,12 +14,12 @@ import unittest
 from unittest.mock import Mock, patch
 import urllib.request
 
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.workflows.diagnostic import bounded as run
 from tongxing_production.workflows.diagnostic import provider
 from tongxing_production.review import contracts as c
 from tongxing_production.observability import accounting
 from tongxing_production.text.strict import layer2 as strict
-from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.compute import transcription_request as audio
 from tests import test_sermon_diagnostic_provider as provider_fixtures
 config = provider_fixtures.config

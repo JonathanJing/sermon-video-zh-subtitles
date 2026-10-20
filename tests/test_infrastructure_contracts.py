@@ -9,8 +9,8 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-from tongxing_production.contracts import pipeline_definition as legacy_pipeline
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.contracts import pipeline_definition as legacy_pipeline
 from tongxing_production.observability import accounting
 from tongxing_production.compute.mock_tts import contract as mock_tts
 from tongxing_production.workflows.dual_pdf import pipeline as sermon_pipeline

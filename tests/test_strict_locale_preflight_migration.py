@@ -3,9 +3,9 @@ from copy import deepcopy
 import json
 from pathlib import Path
 import unittest
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.workflows.diagnostic import bounded_continuation as continuation
 from tongxing_production.text.strict import locale
-from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.review import contracts as c
 from tongxing_production.workflows.diagnostic import provider
 from tests import test_sermon_strict_locale as fixtures_locale

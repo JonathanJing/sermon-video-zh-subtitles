@@ -6,8 +6,9 @@ import unittest
 import tempfile
 from unittest.mock import patch
 
-from tongxing_production.workflows.diagnostic import fresh_source_evidence as subject
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.workflows.diagnostic import fresh_source_evidence as subject
+from tongxing_production import path_aliases
 from tongxing_production.storage import snapshot as public
 from tongxing_production.review import review_budget as budget
 from tongxing_production.review import contracts as c
@@ -80,11 +81,11 @@ class CurrentFreshEvidenceTests(unittest.TestCase):
             original = path.read_bytes(); path.write_bytes(original+b' ')
             with self.subTest(path=path.name), self.assertRaises(c.ContractError): self.inspect()
             path.write_bytes(original)
-        original = self.f.plan['executionIdentity']['loadedProjectCodeSha256']['scripts/sermon_fresh_diagnostic_source.py']
-        self.f.plan['executionIdentity']['loadedProjectCodeSha256']['scripts/sermon_fresh_diagnostic_source.py'] = 'f'*64
+        original = self.f.plan['executionIdentity']['loadedProjectCodeSha256'][path_aliases.resolve('scripts/sermon_fresh_diagnostic_source.py')]
+        self.f.plan['executionIdentity']['loadedProjectCodeSha256'][path_aliases.resolve('scripts/sermon_fresh_diagnostic_source.py')] = 'f'*64
         (self.f.root/'run-plan.json').write_bytes(c.canonical_bytes(self.f.plan))
         with self.assertRaises(c.ContractError): self.inspect()
-        self.f.plan['executionIdentity']['loadedProjectCodeSha256']['scripts/sermon_fresh_diagnostic_source.py'] = original
+        self.f.plan['executionIdentity']['loadedProjectCodeSha256'][path_aliases.resolve('scripts/sermon_fresh_diagnostic_source.py')] = original
 
     def test_usage_cannot_be_fabricated_even_when_raw_refs_are_rebound(self):
         folder = self.f.root/'budget'/budget.STORE_ID/'provider-run'

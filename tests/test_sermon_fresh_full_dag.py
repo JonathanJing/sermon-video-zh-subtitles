@@ -17,8 +17,8 @@ import time
 import unittest
 from unittest.mock import patch
 
-from tongxing_production.observability import accounting
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.observability import accounting
 from tongxing_production.observability import completion
 from tongxing_production.workflows.diagnostic import fresh_full_dag as dag
 from tongxing_production.workflows.diagnostic import fresh_source_prefect as source_engine

@@ -4,8 +4,8 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-from tongxing_production.delivery import inspect_canonical_packages as packages
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.delivery import inspect_canonical_packages as packages
 from tongxing_production.storage import snapshot as public
 from tongxing_production.review import contracts as c
 from tongxing_production.review import review_budget as budget

@@ -15,6 +15,7 @@ import stat
 from pathlib import Path
 import time
 
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.workflows.diagnostic import fresh_full_dag as dag
 from tongxing_production.observability import accounting
 from tongxing_production.workflows.diagnostic import bounded_business_callbacks as offline
@@ -24,7 +25,6 @@ from tongxing_production.observability import log_contract as logs
 from tongxing_production.compute.mock_tts import control
 from tongxing_production.review import review_budget as budget
 from tongxing_production.review import contracts as c
-from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.orchestration import jobs
 from tongxing_production.observability import weekly_projection as weekly
 from tests.test_sermon_fresh_source_prefect import SourceEngineFixture

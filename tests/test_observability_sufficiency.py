@@ -6,9 +6,9 @@ from pathlib import Path
 import tempfile
 import unittest
 from unittest import mock
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production import path_aliases
 from tongxing_production.observability import accounting
-from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.observability import cache_observation as cache
 from tongxing_production.observability import workflow_evidence as evidence
 from tongxing_production.observability import weekly_projection as weekly

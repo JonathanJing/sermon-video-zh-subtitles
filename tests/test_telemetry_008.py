@@ -9,8 +9,8 @@ import subprocess
 import sys
 from unittest.mock import patch
 
-from tongxing_production.observability import accounting
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.observability import accounting
 from tongxing_production.observability import profile
 from tongxing_production.observability import weekly_projection as report
 from tongxing_production.observability import dispatch_observation as dispatch
@@ -26,7 +26,9 @@ class DispatchObservationTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
             tracked = subprocess.check_output(['git', '-C', str(repository), 'ls-files',
-                'scripts', 'schemas', 'packages/production/src'], text=True).splitlines()
+                'scripts', 'schemas', 'packages/production/src',
+                # The renderer's load-time voice-demo tool (host ENTRY_LOAD_TIME_IMPORTS).
+                'tools/ops/render_multilingual_voice_demos.py'], text=True).splitlines()
             for name in tracked:
                 source = repository/name
                 if source.is_file():

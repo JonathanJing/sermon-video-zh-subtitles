@@ -42,6 +42,13 @@ SAFE_REASONS=frozenset({'machine_candidate_missing','preview_audio_unavailable',
     'diagnostic_flow_plan_changed','diagnostic_flow_frozen_inputs_changed','diagnostic_unbounded_subprocess_forbidden','unclassified_failure'}) | historical_identity.PRE_PROVIDER_CODES
 
 
+def __getattr__(name):
+    # Callers and tests that read the former module constant.
+    if name == 'REPO':
+        return checkout.root()
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+
+
 def stage_presentation(observation, *, candidate, preview):
     """Typed observations only; no raw error body or inferred root cause."""
     if preview:return 'ready',None

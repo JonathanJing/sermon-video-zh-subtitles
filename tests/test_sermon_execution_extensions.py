@@ -4,8 +4,8 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-from tongxing_production.workflows.diagnostic import execution_extensions as ext
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.workflows.diagnostic import execution_extensions as ext
 from tongxing_production.review import contracts as c
 from tongxing_production.workflows.diagnostic import bounded as entry
 from tongxing_production.text.strict import layer2 as strict

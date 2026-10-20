@@ -4,12 +4,12 @@ from pathlib import Path
 import tempfile
 import unittest
 
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.delivery import inspect_canonical_packages as inspect
 from tongxing_production.text import human_review as review
 from tests import test_produce_target_language_candidate as fixtures
 from tests import test_build_english_source_package as source_fixtures
 from tongxing_production.source import english_source_package as english
-from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.source import sentence_interpretation as anchors
 from tongxing_production.text import policy as policies
 

@@ -8,9 +8,9 @@ from types import SimpleNamespace
 import unittest
 from unittest.mock import patch
 
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.observability import accounting
 from tongxing_production.workflows.diagnostic import fresh_full_dag as full
-from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.observability import log_contract as contract
 from tongxing_production.observability import profile
 from tongxing_production.observability import logs

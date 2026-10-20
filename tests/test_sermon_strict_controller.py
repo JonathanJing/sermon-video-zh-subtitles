@@ -5,11 +5,11 @@ import unittest
 from unittest.mock import patch
 from unittest.mock import Mock
 
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.observability import accounting
 from tongxing_production.review import review_budget as budget
 from tongxing_production.review import contracts as c
 from tongxing_production.text.strict import controller
-from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.orchestration import jobs
 from tongxing_production.text.strict import budget_adapter as adapter
 from tongxing_production.compute import provider_limits as limits

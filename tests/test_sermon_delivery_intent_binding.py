@@ -7,6 +7,7 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.delivery import intent
 from tongxing_production.workflows.diagnostic import delivery_intent_binding as subject
 from tests import test_inspect_canonical_packages as inspection_fixtures

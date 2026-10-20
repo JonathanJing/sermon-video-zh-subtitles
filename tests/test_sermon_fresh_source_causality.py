@@ -5,9 +5,9 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.compute import legacy_openai  # C4: the remote-call group lives here
 from tongxing_production.observability import accounting
-from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.observability import completion
 from tongxing_production.workflows.diagnostic import fresh as entry
 from tongxing_production.workflows.diagnostic import fresh_source_causality as causality

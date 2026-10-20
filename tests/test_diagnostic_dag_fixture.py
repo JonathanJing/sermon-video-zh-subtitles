@@ -5,13 +5,13 @@ import time
 import unittest
 from unittest.mock import patch
 
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.workflows.diagnostic import bounded_continuation as entry
 from tongxing_production.observability import accounting
 from tongxing_production.workflows.diagnostic import dag_session as session_module
 from tongxing_production.workflows.diagnostic import source_evidence
 from tongxing_production.workflows.diagnostic import prefect_flow as flow
 from tongxing_production.review import contracts as c
-from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.audio import speculative as preview
 from tests.diagnostic_dag_fixture import DiagnosticDAGFixture
 from tests.test_render_speculative_target_language_speech import FakeSynth

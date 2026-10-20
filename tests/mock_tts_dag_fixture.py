@@ -2,6 +2,7 @@
 from copy import deepcopy
 
 # Load this closure before the original continuation records its code identity.
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.workflows.diagnostic import mock_tts_dag as dag
 from tongxing_production.compute.mock_tts import control
 from tests.diagnostic_dag_fixture import DiagnosticDAGFixture

@@ -3,8 +3,8 @@ from pathlib import Path
 import unittest
 from unittest.mock import patch
 
-from tongxing_production.text import budget
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.text import budget
 from tongxing_production.text import controller
 from tongxing_production.review import review_budget as ledger
 from tongxing_production.orchestration import jobs

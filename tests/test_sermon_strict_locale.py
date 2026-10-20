@@ -5,8 +5,8 @@ from pathlib import Path
 import unittest
 from unittest.mock import patch
 
-from tongxing_production.text.strict import locale as subject
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.text.strict import locale as subject
 from tongxing_production.review import review_budget as budget
 from tongxing_production.review import contracts as c
 from tongxing_production.text.strict import layer2 as strict

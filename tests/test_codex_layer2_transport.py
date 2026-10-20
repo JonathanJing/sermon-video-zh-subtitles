@@ -8,8 +8,8 @@ import unittest
 from unittest.mock import patch
 from jsonschema import ValidationError
 
-from tongxing_production.text import models as runner
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.text import models as runner
 from tongxing_production.compute.transports.codex_layer2 import CodexLayer2Transport, output_schema
 from tools.development import run_codex_layer2_test as command
 

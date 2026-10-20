@@ -2,8 +2,8 @@ import json
 
 import pytest
 
-from tongxing_production.workflows.diagnostic.openai_layer2_transport import OpenAILayer2DiagnosticTransport, _digest
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.workflows.diagnostic.openai_layer2_transport import OpenAILayer2DiagnosticTransport, _digest
 from tongxing_production.compute import provider_limits as sermon_provider_limits
 
 

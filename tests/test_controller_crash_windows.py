@@ -8,8 +8,8 @@ import time
 import unittest
 from unittest.mock import patch
 
-from tongxing_production.workflows.supervisor import deterministic_controller as ctrl
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.workflows.supervisor import deterministic_controller as ctrl
 from tongxing_production.orchestration import jobs
 from tongxing_production.workflows.supervisor.production import SupervisorConfig
 

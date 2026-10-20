@@ -16,13 +16,13 @@ import time
 import unittest
 from unittest.mock import patch
 
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.observability import accounting
 from tongxing_production.observability import completion
 from tongxing_production.observability import log_contract as logs
 from tongxing_production.observability import profile
 from tongxing_production.workflows.diagnostic import mock_tts_dag as dag
 from tongxing_production.review import contracts as c
-from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.orchestration import jobs
 from tongxing_production.workflows.diagnostic.dag_session import DiagnosticSession
 from tests.mock_tts_dag_fixture import MockTTSDAGFixture

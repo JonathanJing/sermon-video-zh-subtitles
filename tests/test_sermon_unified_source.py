@@ -6,8 +6,8 @@ from pathlib import Path
 from unittest.mock import patch
 import wave
 
-from tongxing_production.source import unified_stage as subject
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.source import unified_stage as subject
 from tongxing_production.source import budget
 from tongxing_production.source import english_source_judge as judge
 from tongxing_production.orchestration import jobs

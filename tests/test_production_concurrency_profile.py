@@ -9,9 +9,9 @@ from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import patch
 
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.compute.concurrency_profile import profile_v1, validate_profile
 from tongxing_production.compute.transports import codex_resources as admission
-from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.text import controller
 from tongxing_production.text import models as runner
 from scripts.sermon_unified import resources

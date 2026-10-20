@@ -10,6 +10,7 @@ import time
 import unittest
 from unittest.mock import patch
 
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.observability import accounting
 from tongxing_production.observability import completion
 from tongxing_production.observability import durable
@@ -19,7 +20,6 @@ from tongxing_production.compute.mock_tts import contract
 from tongxing_production.compute.mock_tts import worker
 from tongxing_production.storage import snapshot as public
 from tongxing_production.review import contracts as c
-from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.orchestration import jobs
 
 

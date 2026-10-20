@@ -4,9 +4,9 @@ import tempfile
 import unittest
 from unittest.mock import Mock, patch
 
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.compute import legacy_openai  # C4: the remote-call group lives here
 from tests.legacy_pipeline_patches import patch_both  # W3b: Layer 1 names live in two modules
-from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.compute import spark_admission as admission
 from tongxing_production.compute import spark_exclusive_session as sessions
 from tongxing_production.source import mfa_spark

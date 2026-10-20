@@ -5,6 +5,7 @@ from pathlib import Path
 import unittest
 from unittest.mock import Mock, patch
 
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.workflows.diagnostic import historical_layer2 as h
 from tongxing_production.text.strict import layer2 as strict
 from tongxing_production.workflows.diagnostic import bounded
@@ -12,7 +13,6 @@ from tongxing_production.text.strict import candidate_bridge as bridge
 from tongxing_production.review import contracts as c
 from tongxing_production.workflows.diagnostic import provider
 from tongxing_production.review import review_budget as budget
-from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.workflows.diagnostic import attempts
 from tongxing_production.observability import accounting
 from tongxing_production.observability import profile

@@ -10,11 +10,11 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.observability import accounting
 from tongxing_production.workflows.diagnostic import bounded_business_callbacks as offline
 from tongxing_production.workflows.diagnostic import fresh
 from tongxing_production.workflows.diagnostic import fresh_source_prefect as engine
-from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.observability import log_contract as log
 from tongxing_production.review import contracts as c
 from tongxing_production.storage import snapshot as public

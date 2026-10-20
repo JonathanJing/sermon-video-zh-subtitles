@@ -7,6 +7,7 @@ import unittest
 from unittest.mock import Mock, patch
 import urllib.error
 
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.compute import legacy_openai  # C4: the remote-call group lives here
 from tongxing_production.workflows.diagnostic import provider as p
 from tongxing_production.compute import provider_limits as limits
@@ -15,7 +16,6 @@ from tongxing_production.review import review_budget as budget
 from tongxing_production.review import contracts as c
 from tongxing_production.text.strict import layer2 as strict
 from tongxing_production.text.strict import budget_adapter as adapter
-from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.observability import accounting
 from tongxing_production.text.strict import candidate_bridge as bridge
 from tests import test_sermon_strict_layer2 as fixtures

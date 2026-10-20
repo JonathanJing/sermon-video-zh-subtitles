@@ -9,9 +9,9 @@ import time
 import unittest
 from unittest.mock import patch
 
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.workflows.diagnostic import preview_worker as subject
 from tongxing_production.workflows.diagnostic import provider
-from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.observability import profile
 from tongxing_production.review import review_budget as budget
 from tongxing_production.review import contracts as c

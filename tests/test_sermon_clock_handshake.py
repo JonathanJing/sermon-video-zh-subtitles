@@ -9,8 +9,8 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-from tongxing_production.observability import accounting
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.observability import accounting
 from tongxing_production.observability import clock_evidence as clock
 from tongxing_production.observability import profile
 from tongxing_production.workflows.diagnostic import dag_evidence as evidence

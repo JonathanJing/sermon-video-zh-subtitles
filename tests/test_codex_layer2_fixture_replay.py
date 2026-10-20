@@ -103,7 +103,7 @@ class FixtureReplayTests(unittest.TestCase):
              patch('builtins.print'):
             # The command binds its own bytes; create that harmless synthetic source.
             p = Path(subject.__file__)
-            p.parent.mkdir()
+            p.parent.mkdir(parents=True)
             p.write_text('fixture command')
             report = subject.run_test(fixture, fixture / 'policy.json', out,
                 cli_path=self.root / 'does-not-exist', mock_responses_dir=self.receipts)

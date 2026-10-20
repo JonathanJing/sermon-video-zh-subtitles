@@ -10,12 +10,12 @@ import textwrap
 import unittest
 from unittest.mock import patch
 
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.workflows.diagnostic import fresh_source as fresh
 from tongxing_production.workflows.diagnostic import fresh as entry
 from tongxing_production.review import contracts as c
 from tongxing_production.review import review_budget as budget
 from tongxing_production.workflows.diagnostic import provider
-from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.observability import profile
 from tongxing_production.text.strict import layer2 as immutable
 from tongxing_production.observability import accounting

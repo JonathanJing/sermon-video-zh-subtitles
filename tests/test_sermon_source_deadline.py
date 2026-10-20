@@ -4,12 +4,12 @@ from copy import deepcopy
 import json,os,sys,tempfile,time,subprocess,unittest
 from types import SimpleNamespace
 from unittest.mock import patch
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.source import mfa_alignment as mfa
 from tongxing_production.source import mfa_backend as backend
 from tongxing_production.source import producer_compatibility as compat
 from tongxing_production.review import contracts as c
 from tongxing_production.source import failure
-from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.workflows.diagnostic import fresh as entry
 from tongxing_production.observability import profile
 from tongxing_production.observability import accounting

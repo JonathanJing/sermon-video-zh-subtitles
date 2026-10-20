@@ -10,11 +10,11 @@ from types import SimpleNamespace
 import unittest
 from unittest.mock import Mock, patch
 from jsonschema import Draft202012Validator, ValidationError
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.compute import legacy_openai  # C4: the remote-call group lives here
 from tongxing_production.text.strict import layer2 as s
 from tongxing_production.review import contracts as c
 from tongxing_production.observability import accounting
-from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.observability import profile
 from tongxing_production.text import policy as policies
 from tests import test_produce_target_language_candidate as legacy_fixtures

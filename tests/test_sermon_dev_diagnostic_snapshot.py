@@ -12,10 +12,10 @@ import unittest
 import xml.etree.ElementTree as ET
 from unittest.mock import patch
 
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.workflows.diagnostic import dev_snapshot as dev
 from tongxing_production.workflows.diagnostic import dag_session as sessions
 from tongxing_production.observability import accounting
-from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.observability import profile
 from tongxing_production.review import contracts as c
 from tongxing_production.text.strict import layer2 as immutable
