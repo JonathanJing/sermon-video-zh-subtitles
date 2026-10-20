@@ -1,6 +1,4 @@
 import copy
-import json
-from pathlib import Path
 
 import pytest
 
@@ -418,14 +416,25 @@ def test_v5_rollback_rejects_crossing_a_source_mode_promotion():
 
 
 def test_mixed_source_v2_release_must_name_its_target_edition_locale_and_status():
-    fixture = Path(__file__).resolve().parents[1] / (
-        'apps/tongxing-ios/Core/Tests/TongxingCoreTests/Fixtures/shared-release-contracts.json')
-    template = json.loads(fixture.read_text())['cases'][0]['release']
+    edition = 'broadcast-edition'
+    template = {
+        'schemaVersion': 'sermon-target-language-release-package-v2', 'packageId': edition + '-zh-Hans',
+        'pageId': edition, 'sourceLocale': 'en', 'targetLocale': 'zh-Hans',
+        'targetLanguageCandidateJsonSha256': 'e' * 64, 'spokenTargetLanguageCandidateJsonSha256': 'f' * 64,
+        'targetLanguageAudioPackageJsonSha256': '9' * 64, 'status': 'published_http_verified',
+        'contentStatus': 'human_reviewed', 'audioStatus': 'human_reviewed',
+        'interfaceLocale': 'zh-Hans', 'contentLocale': 'zh-Hans', 'audioLocale': 'zh-Hans',
+        'assets': [{'role': role, 'path': path, 'sha256': '8' * 64} for role, path in (
+            ('page', f'/pages/{edition}/zh-Hans/index.html'), ('content', f'/content/{edition}/zh-Hans.json'),
+            ('captions', f'/captions/{edition}/zh-Hans.json'), ('audio', f'/media/{edition}/zh-Hans.mp3'))],
+        'httpVerification': {'status': 'pass', 'evidenceSha256': '7' * 64},
+        'deviceAcceptance': {'status': 'not_run', 'evidenceSha256': None},
+        'venueAcceptance': {'status': 'not_run', 'evidenceSha256': None}, 'issues': []}
     value = catalog(('zh-Hans', 'es'))
     page = value['pages'][0]
     page['targets']['zh-Hans'].update(releasePackageUrl='/releases-v2/broadcast-edition/zh-Hans.json',
                                       contentStatus='human_reviewed', audioStatus='human_reviewed')
-    good = dict(copy.deepcopy(template), pageId='broadcast-edition')
+    good = copy.deepcopy(template)
     assert contract.validate_v2_release_target(good, page, 'zh-Hans') == good
     for change in ({'pageId': 'family-page'}, {'targetLocale': 'es'}, {'audioLocale': 'es'},
                    {'audioStatus': 'unavailable'}, {'status': 'candidate'}):
