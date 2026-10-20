@@ -1,6 +1,6 @@
 # 逐组独立任务：从 Layer 2 到 Layer 3，发布前唯一合并
 
-状态：**设计稿；`DEV-GRP-001`（逐组记录、输入键、只读 `plan`）、`DEV-GRP-002` 的逐组 T/R/P worker 与 `DEV-GRP-003`（逐组预算上界）已实施；合并第 1–3 步与合并清单（`DEV-GRP-006` 的前半）已实施，第 4–10 步仍待接线；`DEV-GRP-007` 已提供 `plan`/`status`/`run`/`merge`/`redo` 命令，并行 worker 与 runbook 接线尚未实现**。backlog 前缀 `DEV-GRP`（见文末分批计划）。本页不改变任何现行门限、豁免规则或 schema；不授权付费、Spark 独占会话或发布。Layer 2 逐组返修（按组 ID 重做）由另一分支的“Layer 2 revise-by-group-ID”实现承担，对应 `DEV-GRP-002`；本页定义它写入的逐组记录合同和它下游的其余各步。
+状态：**设计稿；`DEV-GRP-001`（逐组记录、输入键、只读 `plan`）、`DEV-GRP-002` 的逐组 T/R/P worker 与 `DEV-GRP-003`（逐组预算上界）已实施；合并第 1–3 步、合并清单与第 5–6 步（speech job 准备）已实施，第 4 步与第 7–10 步仍待接线；`DEV-GRP-007` 已提供 `plan`/`status`/`run`/`merge`/`redo` 命令，并行 worker 与 runbook 接线尚未实现**。backlog 前缀 `DEV-GRP`（见文末分批计划）。本页不改变任何现行门限、豁免规则或 schema；不授权付费、Spark 独占会话或发布。Layer 2 逐组返修（按组 ID 重做）由另一分支的“Layer 2 revise-by-group-ID”实现承担，对应 `DEV-GRP-002`；本页定义它写入的逐组记录合同和它下游的其余各步。
 
 ## 一、为什么要改
 
@@ -163,6 +163,10 @@ python tools/ops/group_tasks.py run    --config <run-config.json> [--group-id g0
 python tools/ops/group_tasks.py redo   --config <run-config.json> --group-id g0123 --reason "修订意见" \
                                        [--budget <group-budget.json> | --confirm-unbudgeted]
 python tools/ops/group_tasks.py merge  --config <run-config.json> [--affected g0123 ...]
+python tools/ops/group_tasks.py prepare-l3 --config <run-config.json> \
+                                       --text-release-basis <文本放行收据> --adapter <adapter.json> \
+                                       --speaker-registry <registry.json> [--voice-authorization <收据>] \
+                                       [--clip-authorization] --out <新目录>
 ```
 
 `plan` 只读现有整篇产物（DEV-GRP-001）；`status` 只读逐组记录；`run` 对过期或点名的组执行 T/R/P（付费，需逐组预算或显式 `--confirm-unbudgeted`）；`merge` 组装 candidate 并写合并清单。`redo` 先写操作者指令收据，再只重跑点名的组；并行 worker 尚未实现（DEV-GRP-002/007 剩余项）。其余全部自动：
@@ -224,6 +228,7 @@ python tools/ops/group_tasks.py merge  --config <run-config.json> [--affected g0
 - **合并范围。** `merge` 做第 1–3 步：就绪检查与 candidate 组装（调用未修改的 `admit_evidence`）、长度离群检查，并写 `candidate.json`、`evidence.json`、`language-review.json` 与合并清单。第 4–10 步（校准、译文豁免、speech job、正式渲染、排程/字幕、整轨、筛查/音频 QC、试听豁免）**尚未接线**：合并清单把它们列为 `pendingSteps`，并给出 `l3Handoff` 命令；`merge` 返回 `candidate_ready_layer3_pending`，不是四层完成。
 - **预算。** `run --budget <sermon-group-budget-v1>` 逐组 `admit`；未预留的组不派发。不给预算时必须显式 `--confirm-unbudgeted`。
 - **`15030286` 离线只读检查。** ko 402 组 `status` 在无逐组记录时全部 `missing`，零模型调用、不写记录；这份报告只证明入口与路径解析，不构成复用或生产证据。
+- **L3 准备（合并第 5–6 步）。** `prepare-l3` 从当前合并目录读 candidate，调用现有 `audio.speech_job.prepare_job` 校验 candidate/policy/adapter/registry 并写不可变 speech job；文本放行收据与声音授权必须由操作者提供，本命令不创建、不升级它们。输出 `l3-preparation.json` 绑定 candidate、收据、adapter 与 job 的 SHA-256，并把渲染、排程、筛查和试听豁免列为 `pendingSteps`。
 - **`redo` 与修订身份（DEV-GRP-007）。** `redo --group-id … --reason …` 从当前合并产物读出该组已拒绝的译文，写一条只追加的 `sermon-group-directive-v1` 指令（含 `priorTargetText`、其 SHA-256 与操作者理由），然后只重跑这些组。worker 把指令作为 `operatorRevision` 放进 T/R 的 prompt，`revisionSha256` 因此进入记录键：旧记录变成 `stale`，新记录是新修订而不是冲突；每次运行写独立的 `attempt-NNNN` 轮目录，避免覆盖已冻结的模型输入。指令不是内容批准，`humanApproval` 保持 false。合并输出按 candidate SHA-256 存到独立目录，`current.json` 指针原子切换。
 - **L3 形状预检。** `merge` 用 L3 自己的 `validate_target_candidate(..., require_human_approval=False)` 核对 candidate 的 schema、locale 与来源覆盖；通过只表示形状可进 L3，不表示文字已批准或可配音（`layer3Preflight.admissible=false`）。
 - **合并比较（DEV-GRP-008 的第一部分）。** 再次 `merge` 时读上一份合并清单，按每条记录的哈希算出变化组；变化组必须恰好等于 `--affected` 给出的组 ID，多一组或少一组都拒绝并列出组 ID。第一次合并没有前一份清单，`changedGroupIds=[]`。

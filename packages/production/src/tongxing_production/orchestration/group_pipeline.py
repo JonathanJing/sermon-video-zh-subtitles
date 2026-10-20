@@ -159,6 +159,47 @@ def _reviewed_view(group: dict, review: dict | None, payloads) -> dict:
             "targetText": "".join(row["targetUtterances"])}
 
 
+L3_PREPARATION_SCHEMA = "sermon-group-l3-preparation-v1"
+
+
+def prepare_l3(config: dict, *, text_basis: Path, adapter: Path, registry: Path,
+               voice_authorization: Path | None = None, clip_authorization: bool = False,
+               out: Path) -> dict:
+    """Prepare the Layer 3 speech job for the current merge (merge steps 5-6).
+
+    The text release basis and the voice authorization are operator-supplied receipts;
+    this function does not create or upgrade either. The existing speech-job producer
+    validates the candidate, policy, adapter and registry and writes an immutable job.
+    Rendering, scheduling, screening and the listening waiver stay pending (steps 7-9).
+    """
+    from ..audio import speech_job
+    directory = _current_merge_dir(config)
+    candidate_path = directory / "candidate.json"
+    _require(candidate_path.is_file(), "prepare_l3_needs_a_merged_candidate")
+    out = Path(out)
+    _require(not out.exists(), "prepare_l3_needs_a_new_output_directory")
+    job = speech_job.prepare_job(
+        config["source"], config["anchor"], candidate_path, config["policy"], Path(text_basis),
+        Path(adapter), Path(registry), out,
+        clip_voice_authorization_path=Path(voice_authorization) if voice_authorization and clip_authorization else None,
+        source_voice_authorization_path=Path(voice_authorization) if voice_authorization and not clip_authorization else None,
+    )
+    job_path = out / "job.json"
+    receipt = {
+        "schemaVersion": L3_PREPARATION_SCHEMA, "targetLocale": config["locale"],
+        "candidateSha256": legacy.file_sha256(candidate_path),
+        "textReleaseBasisSha256": legacy.file_sha256(Path(text_basis)),
+        "adapterSha256": legacy.file_sha256(Path(adapter)),
+        "speechJobSha256": legacy.file_sha256(job_path),
+        "speechJobPath": str(job_path), "speechJobStatus": job.get("status"),
+        "pendingSteps": ["formal_render", "schedule_and_subtitles", "track_package",
+                         "screening_and_audio_qc", "listening_waiver"],
+        "releaseEligible": False, "humanApproval": False,
+    }
+    _write_once(out / "l3-preparation.json", (json.dumps(receipt, ensure_ascii=False, indent=1) + "\n").encode("utf-8"))
+    return receipt
+
+
 def _directive_path(config: dict) -> Path:
     return Path(config["records"]) / DIRECTIVE_DIRECTORY / f"{config['locale']}.jsonl"
 
@@ -494,6 +535,15 @@ def main(argv=None) -> int:
     run_command.add_argument("--confirm-unbudgeted", action="store_true",
                              help="accept model spend without a per-group budget document (explicit operator decision)")
     run_command.add_argument("--output", type=Path)
+    prepare_command = sub.add_parser("prepare-l3", help="prepare the Layer 3 speech job for the current merge")
+    prepare_command.add_argument("--config", type=Path, required=True)
+    prepare_command.add_argument("--text-release-basis", type=Path, required=True)
+    prepare_command.add_argument("--adapter", type=Path, required=True)
+    prepare_command.add_argument("--speaker-registry", type=Path, required=True)
+    prepare_command.add_argument("--voice-authorization", type=Path)
+    prepare_command.add_argument("--clip-authorization", action="store_true")
+    prepare_command.add_argument("--out", type=Path, required=True)
+    prepare_command.add_argument("--output", type=Path)
     redo_command = sub.add_parser("redo", help="record an operator reason and rerun exactly those groups")
     redo_command.add_argument("--config", type=Path, required=True)
     redo_command.add_argument("--group-id", nargs="+", required=True)
@@ -512,6 +562,11 @@ def main(argv=None) -> int:
     config = group_worker.load_configuration(args.config)
     if args.command == "status":
         report = status(config)
+    elif args.command == "prepare-l3":
+        report = prepare_l3(config, text_basis=args.text_release_basis, adapter=args.adapter,
+                            registry=args.speaker_registry,
+                            voice_authorization=args.voice_authorization,
+                            clip_authorization=args.clip_authorization, out=args.out)
     elif args.command == "redo":
         if args.budget is None and not args.confirm_unbudgeted:
             parser.error("redo needs --budget <group budget> or --confirm-unbudgeted")

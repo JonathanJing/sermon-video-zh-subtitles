@@ -7,6 +7,7 @@ import tempfile
 import unittest
 
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tests import test_prepare_target_language_speech_job as speech_fixture
 from tests import test_produce_target_language_candidate as candidate_fixture
 from tests.test_layer2_payload_cache_reuse import _Caller
 from tongxing_production.orchestration import group_budget
@@ -148,6 +149,30 @@ class GroupPipelineTests(unittest.TestCase):
         self.assertEqual(merged["outcome"], "candidate_ready_layer3_pending")
         self.assertEqual(merged["changedGroupIds"], [group_id])
         self.assertEqual(group_pipeline.load_directives(self.config)[group_id]["note"], "请更贴近原文")
+
+    def test_prepare_l3_uses_the_speech_job_producer(self):
+        fixture = speech_fixture.TargetLanguageSpeechJobTests(
+            "test_korean_candidate_and_prepared_job_match_published_contracts")
+        fixture.setUp()
+        self.addCleanup(fixture.doCleanups)
+        merge_root = self.root / "l3merge" / "ko"
+        merge_root.mkdir(parents=True)
+        (merge_root / "candidate.json").write_bytes(fixture.candidate_path.read_bytes())
+        (merge_root / "current.json").write_text(json.dumps({"directory": "."}), encoding="utf-8")
+        config = {"source": fixture.source_package_path, "anchor": fixture.anchor_path,
+                  "policy": fixture.policy_path, "locale": "ko", "merge": self.root / "l3merge",
+                  "records": self.root / "l3records"}
+        out = self.root / "l3job"
+        receipt = group_pipeline.prepare_l3(
+            config, text_basis=fixture.human_review_receipt_path, adapter=fixture.adapter_path,
+            registry=fixture.registry_path, out=out)
+        self.assertEqual(receipt["schemaVersion"], group_pipeline.L3_PREPARATION_SCHEMA)
+        self.assertTrue((out / "job.json").is_file())
+        self.assertTrue((out / "l3-preparation.json").is_file())
+        self.assertEqual(receipt["speechJobStatus"], "prepared_adapter_validation_required")
+        self.assertEqual(receipt["pendingSteps"][0], "formal_render")
+        self.assertFalse(receipt["releaseEligible"])
+        self.assertFalse(receipt["humanApproval"])
 
     def test_merge_before_any_run_refuses_with_group_ids(self):
         report = group_pipeline.merge(self.config)
