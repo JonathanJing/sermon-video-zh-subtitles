@@ -191,6 +191,29 @@ class GroupPipelineTests(unittest.TestCase):
         self.assertFalse(receipt["releaseEligible"])
         self.assertFalse(receipt["humanApproval"])
 
+    def test_compare_offline_accepts_consistent_products(self):
+        import hashlib
+        sha = lambda value: hashlib.sha256(value.encode()).hexdigest()
+        text = "要记得起初的爱。"
+        checks = [{"checkId": "natural", "status": "pass", "evidence": "e"}]
+        candidate = {"schemaVersion": "candidate", "targetLocale": "zh-Hans",
+                     "englishSourcePackageJsonSha256": "1" * 64, "anchorManifestSha256": "2" * 64,
+                     "translationPolicySha256": "3" * 64,
+                     "groups": [{"translationGroupId": "g1", "sourceUnitIds": ["u1"],
+                                 "targetUtterances": [text], "languageReview": {"checks": checks}}]}
+        receipt = {"englishSourcePackageJsonSha256": "1" * 64, "anchorManifestSha256": "2" * 64,
+                   "translationPolicySha256": "3" * 64,
+                   "groupReviews": [{"translationGroupId": "g1", "targetTextSha256": sha(text),
+                                     "status": "pass", "checks": checks}]}
+        derived = {"g1": {"T": {"verdict": {"status": "pass"}, "spend": {"requestId": "t1"}},
+                          "R": {"verdict": {"status": "pass"},
+                                "outputs": {"targetTextSha256": sha(text)}, "spend": {"requestId": "r1"}}}}
+        report = group_pipeline.compare_offline(candidate, receipt, derived)
+        self.assertTrue(report["consistent"])
+        self.assertEqual(report["mismatchCount"], 0)
+        broken = dict(receipt, groupReviews=[dict(receipt["groupReviews"][0], targetTextSha256="0" * 64)])
+        self.assertFalse(group_pipeline.compare_offline(candidate, broken, derived)["consistent"])
+
     def test_plan_subcommand_reaches_its_own_parser(self):
         with self.assertRaises(SystemExit) as caught:
             group_pipeline.main(["plan", "--help"])

@@ -84,6 +84,7 @@ python tools/ops/group_tasks.py prepare-l3 --config run.json --text-release-basi
   --adapter <adapter.json> --speaker-registry <registry.json> [--voice-authorization <收据>] --out <新目录>
 python tools/ops/group_tasks.py stages --config l3-stages.json --out <L3 输出目录> [--dry-run]
 python tools/ops/group_tasks.py plan --manifest <整篇产物清单> [--locale ko]   # 只读规划
+python tools/ops/group_tasks.py verify --manifest <整篇产物清单> --locale ko   # 只读：候选与逐组记录/插件收据一致
 ```
 
 边界：
@@ -95,7 +96,7 @@ python tools/ops/group_tasks.py plan --manifest <整篇产物清单> [--locale k
 - `prepare-l3` 只调用现有 speech job producer；文本放行和声音授权由操作者提供，不在此创建或升级。
 - `stages` 的草案在 [`config/group-l3-stages.draft.json`](../config/group-l3-stages.draft.json)：它不是已验收配置，复制到目标运行旁、替换全部路径，并逐个核对 `produces` 是否是该运行真正写出的文件；先 `--dry-run`。
 - `stages` 的 `paths` 必须给 7 个输入文件；可选 `mergeDir` 指向当前合并目录时，运行后会在那里写一份最新 `l3-stages.json`（完整证据仍在 `--out`）。
-- `stages` 的 `paths` 必须给 7 个输入文件；`variables` 可声明 `locale`、`code`、`stageDir` 等字符串，在命令里用 `{变量名}` 引用。`produces` 必须写 producer 真正会生成的文件，否则按失败处理。
+- `stages` 的 `paths` 必须给 7 个输入文件；`variables` 可声明 `locale`、`code`、`stageDir` 等字符串，在命令里用 `{变量名}` 引用；命令的工作目录是 `variables.repoRoot`（缺省为配置目录），所以仓库相对命令要设它。`produces` 必须写 producer 真正会生成的文件，否则按失败处理。
 - `stages` 按配置顺序执行第 7–9 步的现有 producer 命令（渲染、压缩/筛查、打包、音频 QC），每个 stage 绑定命令 SHA-256 并写 `stage-report.json`；非零退出或“成功但没产出 `produces`”都停止后续 stage。命令仍含未解析 `{placeholder}` 时在派发前拒绝。`--dry-run` 只计划。stage 可声明 `failures` 指向 producer 自己的汇总 JSON；失败时从 `failedGroups`/`failedGroupIds` 读出组 ID，写进 `stage-report.json` 的 `failedGroupIds` 与 `nextActions`，用于 `redo`。
 - 逐组记录、指令和合并产物都是中间证据，不能当发布批准。
 

@@ -147,6 +147,86 @@ def _report_group(store, payloads, group: dict, anchor: dict, policy: dict, cont
             "stages": stages, "conflicts": conflicts, "readyToMerge": not blockers, "blockers": blockers}
 
 
+VERIFY_SCHEMA = "sermon-group-offline-verify-v1"
+
+
+def verify_offline(manifest_path: Path, locale: str) -> dict:
+    """Check that a run's own products and recorded plugin receipt agree, with no model call.
+
+    This is the zero-cost check the blocking plugin-closure drift allows on an old run:
+    T/R records are derived from its round caches, and each candidate group is compared
+    with its R record and with the plugin receipt that was recorded for it. It proves
+    consistency of the recorded evidence, not a fresh admission and not a release.
+    """
+    manifest_path = Path(manifest_path).resolve()
+    manifest = legacy.load_json(manifest_path)
+    _require(manifest.get("schemaVersion") == group_plan.MANIFEST_SCHEMA, "invalid_plan_manifest")
+    _require(locale in manifest["locales"], f"unknown_locale:{locale}")
+    entry = manifest["locales"][locale]
+    base = manifest_path.parent
+    candidate = legacy.load_json(_resolve(entry["candidate"], base))
+    receipt = legacy.load_json(_resolve(entry["languageReview"], base))
+    rounds = [_resolve(path, base) for path in entry.get("layer2Rounds") or []]
+    _require(bool(rounds), "verify_needs_layer2_rounds")
+    derived = legacy.layer2_records(locale, candidate["groups"], rounds)
+    return compare_offline(candidate, receipt, derived)
+
+
+def _resolve(value, base: Path) -> Path:
+    path = Path(value)
+    return path if path.is_absolute() else base / path
+
+
+def compare_offline(candidate: dict, receipt: dict, derived: dict) -> dict:
+    """Compare a recorded candidate with its per-group T/R records and plugin receipt."""
+    locale = candidate.get("targetLocale")
+    layer1 = records.layer1_identity(candidate.get("englishSourcePackageJsonSha256"),
+                                     candidate.get("anchorManifestSha256"))
+    mismatches = []
+    if records.layer1_identity(receipt.get("englishSourcePackageJsonSha256"),
+                               receipt.get("anchorManifestSha256")) != layer1:
+        mismatches.append({"group": None, "check": "receipt_layer1", "detail": "differs from candidate"})
+    if receipt.get("translationPolicySha256") != candidate.get("translationPolicySha256"):
+        mismatches.append({"group": None, "check": "receipt_policy", "detail": "differs from candidate"})
+    reviews = receipt.get("groupReviews") or []
+    groups = candidate.get("groups") or []
+    if [row.get("translationGroupId") for row in reviews] != [row.get("translationGroupId") for row in groups]:
+        mismatches.append({"group": None, "check": "receipt_groups", "detail": "order or count differs"})
+    request_ids = []
+    for group, review in zip(groups, reviews):
+        group_id = group.get("translationGroupId")
+        target = "".join(group.get("targetUtterances") or [])
+        target_sha = records.text_sha256(target)
+        rec = derived.get(group_id) or {}
+        translator, reviewer = rec.get("T"), rec.get("R")
+        if not translator or translator.get("verdict", {}).get("status") != "pass":
+            mismatches.append({"group": group_id, "check": "T", "detail": "no passing translation record"})
+        if not reviewer or reviewer.get("verdict", {}).get("status") != "pass":
+            mismatches.append({"group": group_id, "check": "R", "detail": "no passing review record"})
+        elif (reviewer.get("outputs") or {}).get("targetTextSha256") != target_sha:
+            mismatches.append({"group": group_id, "check": "R_text", "detail": "reviewed text differs"})
+        if review.get("targetTextSha256") != target_sha:
+            mismatches.append({"group": group_id, "check": "receipt_text", "detail": "plugin receipt text differs"})
+        if review.get("status") != "pass":
+            mismatches.append({"group": group_id, "check": "plugin", "detail": str(review.get("status"))})
+        actual = sorted((check.get("checkId"), check.get("status")) for check in review.get("checks") or [])
+        expected = sorted((check.get("checkId"), check.get("status"))
+                          for check in (group.get("languageReview") or {}).get("checks") or [])
+        if actual != expected:
+            mismatches.append({"group": group_id, "check": "plugin_checks", "detail": "candidate and receipt differ"})
+        for stage in (translator, reviewer):
+            request_id = ((stage or {}).get("spend") or {}).get("requestId")
+            if not isinstance(request_id, str) or not request_id:
+                mismatches.append({"group": group_id, "check": "request_id", "detail": "missing"})
+            else:
+                request_ids.append(request_id)
+    if len(request_ids) != len(set(request_ids)):
+        mismatches.append({"group": None, "check": "request_ids", "detail": "not distinct across groups"})
+    return {"schemaVersion": VERIFY_SCHEMA, "targetLocale": locale, "groupCount": len(groups),
+            "consistent": not mismatches, "mismatchCount": len(mismatches), "mismatches": mismatches[:50],
+            "modelCalls": 0, "releaseEligible": False, "humanApproval": False}
+
+
 def _layer3_state(config: dict) -> dict:
     """How far this locale got after the merge, read from the current merge directory."""
     directory = _current_merge_dir(config)
@@ -635,6 +715,10 @@ def main(argv=None) -> int:
     run_command.add_argument("--confirm-unbudgeted", action="store_true",
                              help="accept model spend without a per-group budget document (explicit operator decision)")
     run_command.add_argument("--output", type=Path)
+    verify_command = sub.add_parser("verify", help="check an old run's products and plugin receipt, zero calls")
+    verify_command.add_argument("--manifest", type=Path, required=True)
+    verify_command.add_argument("--locale", required=True)
+    verify_command.add_argument("--output", type=Path)
     release_command = sub.add_parser("release-basis", help="bind a text QC/human receipt to the merged candidate")
     release_command.add_argument("--config", type=Path, required=True)
     release_command.add_argument("--receipt", type=Path, required=True)
@@ -666,6 +750,13 @@ def main(argv=None) -> int:
                                help="group IDs this revision may change; must equal the changed set")
     merge_command.add_argument("--output", type=Path)
     args = parser.parse_args(argv)
+    if args.command == "verify":
+        report = verify_offline(args.manifest, args.locale)
+        if args.output:
+            _write_report(args.output, report)
+        print(json.dumps({"consistent": report["consistent"], "mismatches": report["mismatchCount"],
+                          "groups": report["groupCount"]}))
+        return 0 if report["consistent"] else 4
     if args.command == "stages":
         # stages takes its own plan (producer commands), not a group run configuration.
         from . import group_l3

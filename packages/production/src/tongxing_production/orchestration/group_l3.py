@@ -119,7 +119,8 @@ def run_stages(config: dict, out: Path, *, dry_run: bool = False) -> dict:
             report["stages"].append(entry)
             continue
         started = time.monotonic()
-        completed = subprocess.run(command, cwd=str(config["path"].parent), text=True,
+        workdir = Path(config.get("variables", {}).get("repoRoot") or config["path"].parent)
+        completed = subprocess.run(command, cwd=str(workdir), text=True,
                                    stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         entry.update(endedAt=_now(), seconds=round(time.monotonic() - started, 3),
                      exitCode=completed.returncode,

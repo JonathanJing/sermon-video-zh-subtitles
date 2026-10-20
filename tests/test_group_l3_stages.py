@@ -116,6 +116,17 @@ class GroupL3StagesTests(unittest.TestCase):
         self.assertEqual(report["stages"][0]["status"], "planned")
         self.assertFalse((self.out / "rendered.json").exists())
 
+    def test_repo_root_variable_sets_the_working_directory(self):
+        self.write_config([{"name": "formal_render",
+                            "command": [PY, "-c", "import os, pathlib; pathlib.Path(r'{out}/cwd.txt').write_text(os.getcwd())"],
+                            "produces": "cwd.txt"}])
+        config = json.loads(self.config_path.read_text(encoding="utf-8"))
+        config["variables"] = {"repoRoot": str(self.root)}
+        self.config_path.write_text(json.dumps(config), encoding="utf-8")
+        self.execute()
+        self.assertEqual((self.out / "cwd.txt").read_text(encoding="utf-8"),
+                         str(Path(self.root).resolve()))
+
     def test_declared_variables_interpolate_into_commands(self):
         self.write_config([{"name": "formal_render",
                             "command": [PY, "-c", "import pathlib; pathlib.Path(r'{out}/{locale}-{code}.txt').write_text('x')"],
