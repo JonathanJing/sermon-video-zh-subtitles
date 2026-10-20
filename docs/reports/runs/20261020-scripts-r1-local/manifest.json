@@ -1,0 +1,108 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261020-scripts-r1-local",
+  "runs": [
+    {
+      "label": "r1-local",
+      "source": "/private/tmp/claude-501/-Users-jonathan-jing-SynologyDrive-GitHub-Active-sermon-video-zh-subtitles--claude-worktrees-scripts-r1-131a68/8d4852bf-efae-4f9f-9137-49928bcc9844/scratchpad/wt-dev/artifacts/r1-local",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "r1-local",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 169,
+      "truncated": false,
+      "sha256": "8784e91a1ae6ecc7f73347f89dbca894ebb39972e15c7cbc92c8d3eab3ebbd0a",
+      "redactions": {}
+    },
+    {
+      "run": "r1-local",
+      "path": "shards/s0.log",
+      "kind": "log",
+      "bytes": 42,
+      "truncated": false,
+      "sha256": "0675ccb969b37bd5332052a02edd4c9ad5f79c71cad47e7d43f7b2d0bbc60d83",
+      "redactions": {}
+    },
+    {
+      "run": "r1-local",
+      "path": "shards/s1.log",
+      "kind": "log",
+      "bytes": 42,
+      "truncated": false,
+      "sha256": "435b614eb8718855701cce6db8e7d3aaee490f12a575b91730b7f7cd6558a4ca",
+      "redactions": {}
+    },
+    {
+      "run": "r1-local",
+      "path": "shards/s2.log",
+      "kind": "log",
+      "bytes": 42,
+      "truncated": false,
+      "sha256": "8e01fa98f2cff417baedeb0ac738d33e3c0b86a51475a3ccf39ced35f0476d77",
+      "redactions": {}
+    },
+    {
+      "run": "r1-local",
+      "path": "shards/s3.log",
+      "kind": "log",
+      "bytes": 136,
+      "truncated": false,
+      "sha256": "cee5bd6e7993a39dcaf645e3f2120abe3ccb1fa6afbe52432992c7f62bc0d0e1",
+      "redactions": {}
+    },
+    {
+      "run": "r1-local",
+      "path": "shards/s4.log",
+      "kind": "log",
+      "bytes": 42,
+      "truncated": false,
+      "sha256": "1476afb5d21d401f04d5dfa4d18bd84bba755b0641735c8ca8ae1665053e591f",
+      "redactions": {}
+    },
+    {
+      "run": "r1-local",
+      "path": "shards/s5.log",
+      "kind": "log",
+      "bytes": 42,
+      "truncated": false,
+      "sha256": "f3622b967ca2b3f1ca3cd05ac009edd0421b15b746f9d2d8266983edf48e0d97",
+      "redactions": {}
+    },
+    {
+      "run": "r1-local",
+      "path": "shards/s6.log",
+      "kind": "log",
+      "bytes": 42,
+      "truncated": false,
+      "sha256": "1f5bc7753e192c759cd5aa265363e77c11019aedd2a40f62677307ca3c9af3f9",
+      "redactions": {}
+    },
+    {
+      "run": "r1-local",
+      "path": "shards/s7.log",
+      "kind": "log",
+      "bytes": 261,
+      "truncated": false,
+      "sha256": "190e9a36592e765e5968179c8cf2f358b005c7e736665393eb8f9a274d2566c9",
+      "redactions": {}
+    },
+    {
+      "run": "r1-local",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 2527,
+      "truncated": false,
+      "sha256": "4a94b007c6d7522f2a95146f1eb519f08a269903ca5e6c5547e665277634a668",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

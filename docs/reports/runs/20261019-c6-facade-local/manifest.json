@@ -1,0 +1,90 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261019-c6-facade-local",
+  "runs": [
+    {
+      "label": "c6-facade-local",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.claude/worktrees/refactor-closure-docs-016c13/artifacts/c6-facade-local",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "c6-facade-local",
+      "path": "facade-survey.log",
+      "kind": "log",
+      "bytes": 59,
+      "truncated": false,
+      "sha256": "d3a98908cabb702da86ab5458d9eb91db003212ba596461788c213a68fd97fc4",
+      "redactions": {}
+    },
+    {
+      "run": "c6-facade-local",
+      "path": "fixture-compare.log",
+      "kind": "log",
+      "bytes": 286,
+      "truncated": false,
+      "sha256": "e677cf57aa5249879d2fa0a48974514ad84da68d7e8afe20c7497de034719e81",
+      "redactions": {}
+    },
+    {
+      "run": "c6-facade-local",
+      "path": "identity.log",
+      "kind": "log",
+      "bytes": 155,
+      "truncated": false,
+      "sha256": "ea5569285fa79e0fcec6ddf9b12ae6175e9d5fdf9d74f92db8304811a571372f",
+      "redactions": {}
+    },
+    {
+      "run": "c6-facade-local",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 1052,
+      "truncated": false,
+      "sha256": "64f9e262bd5f6cf5cb1f306637e46546d3785e62330d57f296c512a4d5e3088c",
+      "redactions": {}
+    },
+    {
+      "run": "c6-facade-local",
+      "path": "pytest.log",
+      "kind": "log",
+      "bytes": 2207,
+      "truncated": false,
+      "sha256": "0d91290449d1fffe291a49f84faa14ccca0ad36caa87cc2c84c2186b6953a99c",
+      "redactions": {}
+    },
+    {
+      "run": "c6-facade-local",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 1314,
+      "truncated": false,
+      "sha256": "6445aeb0ddbb69c5ac508efaed6b0f1bf3377d488e0f4fd0be54a9fbfac11028",
+      "redactions": {}
+    },
+    {
+      "run": "c6-facade-local",
+      "path": "test-id-inventory.log",
+      "kind": "log",
+      "bytes": 240,
+      "truncated": false,
+      "sha256": "5de913e7df1731c806130eb547abfa920ae28e367193c3ff50ea52264f29a9c9",
+      "redactions": {}
+    },
+    {
+      "run": "c6-facade-local",
+      "path": "unittest-shards.log",
+      "kind": "log",
+      "bytes": 1574,
+      "truncated": false,
+      "sha256": "f5ddeee9a683586deb0b2312f9bb9004d30853a4c8ac642e3b4e6a3b30d6907f",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

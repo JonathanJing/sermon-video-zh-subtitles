@@ -6,7 +6,7 @@ import unittest
 
 ROOT = Path(__file__).parents[1]
 SPEC = importlib.util.spec_from_file_location(
-    "render_multilingual_voice_demos", ROOT / "scripts/render_multilingual_voice_demos.py"
+    "render_multilingual_voice_demos", ROOT / "tools/ops/render_multilingual_voice_demos.py"
 )
 subject = importlib.util.module_from_spec(SPEC)
 assert SPEC.loader is not None

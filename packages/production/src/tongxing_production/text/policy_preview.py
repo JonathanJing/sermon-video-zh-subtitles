@@ -38,6 +38,33 @@ def freeze_payload_preview(role: str, payload: dict, policy: dict, path: Path) -
     return preview
 
 
+PLUGIN_POLICY_FIELDS = frozenset({'/languageReview/pluginImplementationSha256', '/languageReview/pluginId',
+                                  '/languageReview/implementationStatus', '/languageReview/requiredChecks'})
+APPROVAL_POLICY_FIELDS = frozenset({'/sourceScope/termApprovalReceipt/reviewedBy',
+                                    '/sourceScope/termApprovalReceipt/reviewedAt',
+                                    '/sourceScope/termApprovalReceipt/userStatement',
+                                    '/sourceScope/termApprovalEvidence'})
+
+
+def classify_policy_change(old_policy: dict, new_policy: dict) -> dict:
+    """Classify a frozen-policy revision by the same fields ``compare_previews`` uses.
+
+    ``plugin_only_migration`` and ``approval_rebinding`` leave every model-facing
+    field unchanged, so a translator/reviewer result made under the old policy saw
+    the same instructions. ``content_modified`` changes what a model is told."""
+    changes = [p for p in _changes(old_policy, new_policy) if not p.startswith('/componentSha256/')]
+    if any(p not in PLUGIN_POLICY_FIELDS | APPROVAL_POLICY_FIELDS for p in changes):
+        kind = 'content_modified'
+    elif any(p in PLUGIN_POLICY_FIELDS for p in changes):
+        kind = 'plugin_only_migration'
+    elif changes:
+        kind = 'approval_rebinding'
+    else:
+        kind = 'unchanged'
+    return {'classification': kind, 'changedPolicyPaths': changes,
+            'priorPolicySha256': canonical_sha256(old_policy), 'policySha256': canonical_sha256(new_policy)}
+
+
 def _changes(old, new, path=''):
     if isinstance(old, dict) and isinstance(new, dict):
         result = []
@@ -65,12 +92,7 @@ def compare_previews(old: dict, new: dict, *, prior_outcome: str = 'unknown') ->
     payload_changes = _changes(old['payload'], new['payload'])
     policy_changes = _changes(old['policy'], new['policy'])
     meaningful = [p for p in policy_changes if not p.startswith('/componentSha256/')]
-    plugin_fields = {'/languageReview/pluginImplementationSha256', '/languageReview/pluginId',
-                     '/languageReview/implementationStatus', '/languageReview/requiredChecks'}
-    approval_fields = {'/sourceScope/termApprovalReceipt/reviewedBy',
-                       '/sourceScope/termApprovalReceipt/reviewedAt',
-                       '/sourceScope/termApprovalReceipt/userStatement',
-                       '/sourceScope/termApprovalEvidence'}
+    plugin_fields, approval_fields = PLUGIN_POLICY_FIELDS, APPROVAL_POLICY_FIELDS
     if payload_changes or any(p not in plugin_fields | approval_fields for p in meaningful):
         kind = 'content_modified'
         # A reviewer-only configuration/instruction edit starts at review.

@@ -1,8 +1,8 @@
 """What the durable job store still takes from its host.
 
 ``bounded_process`` and ``ExecutionTerminated`` stay in the harness and job liveness in
-the checkout until their orchestration batch; the worker the store spawns keeps running
-``scripts/sermon_workflow_jobs.py`` (infrastructure design, closure window row).
+the checkout until their orchestration batch; the worker the store spawns runs
+``tools/ops/run.py orchestration.jobs worker`` (the D closure window removed its facade).
 """
 from __future__ import annotations
 

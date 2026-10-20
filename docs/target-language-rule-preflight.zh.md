@@ -17,12 +17,12 @@
 ```sh
 # run_target_language_models.py --plugin 会先生成 RUN/rule-preflight.json。
 # 以下两个确定性入口明确消费并核验同一份冻结输入；不调用模型。
-.venv/bin/python scripts/produce_target_language_candidate.py review-language \
+.venv/bin/python tools/ops/run.py text.candidate review-language \
   --english-source-package SOURCE.json --anchor ANCHOR.json --policy POLICY.json \
   --request RUN/request.json --evidence RUN/evidence.json \
   --plugin PLUGIN.py --plugin-sha256 PLUGIN_SHA \
   --rule-preflight RUN/rule-preflight.json --out RUN/language-receipt.json
-.venv/bin/python scripts/produce_target_language_candidate.py admit \
+.venv/bin/python tools/ops/run.py text.candidate admit \
   --english-source-package SOURCE.json --anchor ANCHOR.json --policy POLICY.json \
   --request RUN/request.json --evidence RUN/evidence.json \
   --language-receipt RUN/language-receipt.json \

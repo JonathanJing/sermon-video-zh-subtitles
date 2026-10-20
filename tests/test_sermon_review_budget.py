@@ -9,8 +9,9 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-from scripts import sermon_review_budget as budget
-from scripts import sermon_workflow_jobs as jobs
+from tongxing_production.review import review_budget as budget
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.orchestration import jobs
 
 
 def identity(unit='group-1', locale='zh-Hans'):
@@ -81,7 +82,7 @@ class BudgetTests(unittest.TestCase):
         self.assertEqual(path.read_bytes(), before)
 
     def test_near_size_limit_rejects_before_callback_when_result_cannot_fit(self):
-        from scripts import sermon_review_contracts as contracts
+        from tongxing_production.review import contracts
         self.store.snapshot(identity())
         path = self.root / budget.STORE_ID / 'state.json'
         ledger = json.loads(path.read_text())
@@ -97,7 +98,7 @@ class BudgetTests(unittest.TestCase):
         self.assertEqual(path.read_bytes(), before)
 
     def test_pending_and_unknown_settlement_capacity_survives_near_cap_and_restart(self):
-        from scripts import sermon_review_contracts as contracts
+        from tongxing_production.review import contracts
         maximal = dict(result(), contentStatus='not_assessed',
                        usage={key: 1 if key == 'requests' else 10**15 for key in budget.METRICS})
         first = self.store.reserve(identity(), **request())
@@ -348,7 +349,7 @@ class BudgetTests(unittest.TestCase):
 
     def test_actual_process_restart_never_reruns_unknown_request(self):
         code = '''import json, os, sys
-from scripts.sermon_review_budget import BudgetStore
+from scripts import tongxing_host; from tongxing_production.review.review_budget import BudgetStore
 from tests.test_sermon_review_budget import authority, identity, request
 s=BudgetStore(sys.argv[1], authority())
 s.execute_local(identity(), callback=lambda _: os._exit(73), **request())

@@ -25,16 +25,11 @@ def main(argv=None):
         forwarded.pop(0)
     if any(value == "--dev-test" or value.startswith("--dev-test=") for value in forwarded):
         parser.error("Dev mode is already enabled by this entry")
+    from scripts import tongxing_host  # noqa: F401  binds the production package ports
     if args.stage == "tts":
-        try:
-            from scripts import render_formal_target_language_speech as producer
-        except ImportError:
-            import render_formal_target_language_speech as producer
+        from tongxing_production.audio import renderer as producer
     else:
-        try:
-            from scripts import screen_target_language_audio_units as producer
-        except ImportError:
-            import screen_target_language_audio_units as producer
+        from tongxing_production.audio import screening as producer
     # parse_args in the producer rejects unsupported settings;
     # producer exceptions and exit status propagate without retries.
     producer.main(["--dev-test", *forwarded])

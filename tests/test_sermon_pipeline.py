@@ -15,12 +15,14 @@ from tongxing_production.compute import legacy_openai  # C4: the remote-call gro
 # The implementation moved to tongxing_production.workflows.dual_pdf.pipeline (W3a);
 # the scripts/ path is a facade naming the same module object.
 from tests.legacy_pipeline_patches import patch_both  # W3b: Layer 1 names live in two modules
-from scripts import sermon_pipeline as mod  # noqa: E402
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.workflows.dual_pdf import pipeline as mod  # noqa: E402
 
 
 class SermonPipelineTest(unittest.TestCase):
     def test_chat_rejects_unknown_models_before_dispatch_or_retry(self):
-        from scripts.sermon_provider_limits import DEFAULT_REQUEST_LIMITS, bounded_payload
+        from scripts import tongxing_host  # noqa: F401  binds the production package ports
+        from tongxing_production.compute.provider_limits import DEFAULT_REQUEST_LIMITS, bounded_payload
         valid = bounded_payload({"model": "gpt-6.1-sol", "reasoning_effort": "high",
             "messages": [{"role": "user", "content": "Return synthetic JSON."}],
             "response_format": {"type": "json_object"}}, DEFAULT_REQUEST_LIMITS)
@@ -44,7 +46,7 @@ class SermonPipelineTest(unittest.TestCase):
     def test_alignment_preflight_failure_prevents_transcription(self):
         args = SimpleNamespace(output_mode="reading", reading_aligner="mfa", glossary=None,
                                english_transcript_only=False)
-        with mock.patch("scripts.mfa_backend.preflight", side_effect=RuntimeError("MFA unavailable")), \
+        with mock.patch("tongxing_production.source.mfa_backend.preflight", side_effect=RuntimeError("MFA unavailable")), \
                 mock.patch.object(mod, "transcribe_with_fingerprint") as transcribe:
             with self.assertRaisesRegex(RuntimeError, "MFA unavailable"):
                 mod.produce_pipeline(args, "unused-key", 10.0, 1.0, 3.0, Path("unused"))
@@ -66,7 +68,7 @@ class SermonPipelineTest(unittest.TestCase):
             english = [{"id": 0, "start": 0.0, "end": 2.0, "text": "Hello world.",
                         "words": [{"word": "Hello", "start": 0.0, "end": 1.0},
                                   {"word": "world.", "start": 1.0, "end": 2.0}]}]
-            with mock.patch("scripts.mfa_backend.preflight", return_value={"backend": "local"}), \
+            with mock.patch("tongxing_production.source.mfa_backend.preflight", return_value={"backend": "local"}), \
                     mock.patch.object(mod, "load_glossary", return_value={}), \
                     patch_both("stage", side_effect=lambda *a, **k: nullcontext()), \
                     mock.patch.object(mod, "clip_and_normalize"), \
@@ -96,7 +98,7 @@ class SermonPipelineTest(unittest.TestCase):
                 reading_chunk_seconds=1200.0,
             )
             chunks = [{"start": 0.0, "end": 2.0, "text": "Hello world."}]
-            with mock.patch("scripts.mfa_backend.preflight") as preflight, \
+            with mock.patch("tongxing_production.source.mfa_backend.preflight") as preflight, \
                     mock.patch.object(mod, "load_glossary", return_value={}), \
                     patch_both("stage", side_effect=lambda *a, **k: nullcontext()), \
                     mock.patch.object(mod, "clip_and_normalize"), \

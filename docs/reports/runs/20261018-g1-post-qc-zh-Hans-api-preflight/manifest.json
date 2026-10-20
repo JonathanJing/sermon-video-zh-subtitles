@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261018-g1-post-qc-zh-Hans-api-preflight",
+  "runs": [
+    {
+      "label": "g1-post-qc-zh-Hans-api-preflight",
+      "source": "/private/tmp/g1-baseline-20261017/artifacts/local-runs/g1-post-qc-zh-Hans-api-preflight",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "g1-post-qc-zh-Hans-api-preflight",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 174,
+      "truncated": false,
+      "sha256": "768a9f35b55d42d9558e024dd1ad33259f33daf69e883a5d4ded764b86594c72",
+      "redactions": {}
+    },
+    {
+      "run": "g1-post-qc-zh-Hans-api-preflight",
+      "path": "preflight.json",
+      "kind": "whole",
+      "bytes": 1405,
+      "truncated": false,
+      "sha256": "3a2de3ad382f941e7c19410dac2958f0439c91165f2bc5bdf836865879105c05",
+      "redactions": {
+        "home_dir": 2
+      }
+    },
+    {
+      "run": "g1-post-qc-zh-Hans-api-preflight",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 253,
+      "truncated": false,
+      "sha256": "2cd2775e33d04f67f29f5149c1932213a5a5f0bb552fd2899bcd7ee0b673854d",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

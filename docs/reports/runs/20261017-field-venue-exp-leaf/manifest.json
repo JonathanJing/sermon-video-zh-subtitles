@@ -1,0 +1,27 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-field-venue-exp-leaf",
+  "runs": [
+    {
+      "label": "field-venue-exp-leaf-20261017",
+      "source": "/private/tmp/field-venue-exp-leaf-20261017/artifacts/field-venue-exp-leaf-20261017",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "field-venue-exp-leaf-20261017",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 519,
+      "truncated": false,
+      "sha256": "f764e5108530d468d0584327676b949f7d11530db27548c6cf5160f91a12ef52",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

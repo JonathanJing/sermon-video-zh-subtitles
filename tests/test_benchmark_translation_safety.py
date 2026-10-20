@@ -6,7 +6,8 @@ import tempfile
 import threading
 import unittest
 
-from scripts.experiments import benchmark_layer2_bounded as subject
+from tests import experiment_modules
+subject = experiment_modules.load("experiments/layer2-translation-ab/benchmark_layer2_bounded.py")
 
 
 class TranslationBudgetSafetyTests(unittest.TestCase):

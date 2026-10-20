@@ -1,0 +1,15 @@
+{
+  "status": "failed_input_validation",
+  "exitCode": 1,
+  "deliveryType": "test",
+  "purpose": "DEV-GRP-005 batch-identity A/B, alone arm (preview lane), 15030286 ko+es",
+  "startedAt": "2026-10-19T15:54:55Z",
+  "endedAt": "2026-10-19T15:56:38Z",
+  "code": "origin/dev 7ae4b59be1df (#1098, #1099)",
+  "failedAt": "speculative.checked_context: normalization policy (formal job binds v2 registered spoken forms; preview lane accepted v1 only)",
+  "modelCalls": 0,
+  "synthesizedUnits": 0,
+  "esDispatched": false,
+  "fix": "PR #1100",
+  "humanApproval": false
+}

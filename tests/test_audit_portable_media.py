@@ -13,9 +13,9 @@ import unittest
 from unittest import mock
 
 from jsonschema import Draft202012Validator
-from scripts import audit_portable_media as subject
-from tools.ops import audit_portable_media as implementation
-from scripts import review_target_language_audio as review
+from tools.ops import audit_portable_media as subject
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.audio import human_review as review
 
 
 def write_json(path, value):
@@ -336,11 +336,8 @@ class PortableMediaTests(unittest.TestCase):
                 "--expected-locale", "ko", "--expected-candidate-sha256", "b" * 64]
 
     def test_cli_audit_subprocess_pass_and_redacted_failure(self):
-        self.assertIs(subject, implementation)
         root = Path(__file__).resolve().parents[1]
         commands = (
-            [sys.executable, str(root / "scripts/audit_portable_media.py")],
-            [sys.executable, "-m", "scripts.audit_portable_media"],
             [sys.executable, str(root / "tools/ops/audit_portable_media.py")],
             [sys.executable, "-m", "tools.ops.audit_portable_media"],
         )

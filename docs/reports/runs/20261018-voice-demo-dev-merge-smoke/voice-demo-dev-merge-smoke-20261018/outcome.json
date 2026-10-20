@@ -1,0 +1,9 @@
+{
+  "status": "passed",
+  "exitCode": 0,
+  "reportedAt": "2026-10-18T10:31:32Z",
+  "deliveryType": "test",
+  "headSha": "f2b3c6be300a95ceac2b3e49e85d3e553612eaaf",
+  "baseDevSha": "7734f841971e4a987990d03709eb004f43cf8b4a",
+  "scope": "merge-current-dev focused synthetic tests only"
+}

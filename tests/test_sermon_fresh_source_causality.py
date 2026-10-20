@@ -6,16 +6,17 @@ import unittest
 from unittest.mock import patch
 
 from tongxing_production.compute import legacy_openai  # C4: the remote-call group lives here
-from scripts import sermon_accounting as accounting
-from scripts import sermon_completion as completion
+from tongxing_production.observability import accounting
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.observability import completion
 from scripts import sermon_fresh_diagnostic as entry
 from scripts import sermon_fresh_source_causality as causality
-from scripts import sermon_log_profile as profile
-from scripts import sermon_review_contracts as c
-from scripts import sermon_review_budget as budget
+from tongxing_production.observability import profile
+from tongxing_production.review import contracts as c
+from tongxing_production.review import review_budget as budget
 from scripts import sermon_diagnostic_provider as provider
 from scripts import sermon_bounded_business_callbacks as callbacks
-from scripts import sermon_public_snapshot as public
+from tongxing_production.storage import snapshot as public
 from tests import test_sermon_fresh_diagnostic as fixtures
 
 
@@ -145,7 +146,8 @@ class FreshCausalityTests(unittest.TestCase):
         self.assertEqual(len(self.f.f.transport.observations)-before,2)
 
     def test_interrupted_model_log_recovery_keeps_old_run_partial(self):
-        from scripts import sermon_pipeline as pipeline, sermon_log_contract as contract
+        from tongxing_production.observability import log_contract as contract
+        from tongxing_production.workflows.dual_pdf import pipeline
         before=len(self.f.f.transport.observations)
         with patch.object(accounting,'execution_identity',return_value=self.plan['executionIdentity']):
             session=entry.FreshDiagnosticSession(self.plan,offline_transport=self.f.f.transport)

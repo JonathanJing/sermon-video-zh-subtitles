@@ -1,0 +1,5 @@
+before=    5943 (dev@5eb39da3) after=    5943
+4691c4691
+< test_sermon_source_deadline.TypedFailureTests.test_legacy_import_and_identity_resolve_to_moved_implementation
+---
+> test_sermon_source_deadline.TypedFailureTests.test_legacy_identity_key_resolves_to_moved_implementation

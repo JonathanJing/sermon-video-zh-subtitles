@@ -2,7 +2,7 @@
 
 从一场已制作周次的讲道里截一段（约 16 句），用真实模型和真实配音走完 Layer 1–4，发布到 Firebase Dev 的隔离测试页。用来验证合并后的整条链路，以及新规则（读法、质检、预算、发布）在真实输出上的表现。
 
-入口是 [`scripts/run_clip_real_e2e.py`](../scripts/run_clip_real_e2e.py)。它只把现有的正式入口按顺序串起来，不另造规则：预算由 `plan_run_budgets.py` 规划，开工条件由 `check_run_start.py` 检查，Layer 2 走 canonical controller，质检、渲染和音频包也都用各自的正式脚本。
+入口是 [`tools/development/run_clip_real_e2e.py`](../tools/development/run_clip_real_e2e.py)。它只把现有的正式入口按顺序串起来，不另造规则：预算由 `plan_run_budgets.py` 规划，开工条件由 `check_run_start.py` 检查，Layer 2 走 canonical controller，质检、渲染和音频包也都用各自的正式脚本。
 
 零模型的模拟 E2E 见[固定三分钟 Dev 页面测试](dev-180s-page-test.zh.md)（`run_dev_180s_beta_e2e.sh`）。它不调用模型，也不占用 Spark，适合只验证发布链路的情况。
 
@@ -44,7 +44,7 @@
 ## 命令
 
 ```bash
-.venv/bin/python scripts/run_clip_real_e2e.py run --spec artifacts/<run>/run-spec.json --run-dir artifacts/<run>
+.venv/bin/python tools/development/run_clip_real_e2e.py run --spec artifacts/<run>/run-spec.json --run-dir artifacts/<run>
 ```
 
 - **续跑：** 同一条命令。已完成的阶段跳过；运行目录绑定首次使用的规格，改过的规格会被拒绝。
@@ -60,7 +60,7 @@
 
 | 阶段 | 做什么 | 结果 |
 |---|---|---|
-| `inputs` | `build_dev_180s_simulated_inputs.py --clip-spec` 截出片段的英文来源、锚点和媒体；`clip_timeline_map.py` 生成片段时间轴映射 | 片段输入在 `artifacts/dev-180s-page-test-20261004/clip-e2e-<name>/inputs/`（输入构建器只写自己的测试根目录）；运行目录里有 `l2/src/` 的副本和 `l3/clip-timeline-map.json` |
+| `inputs` | `build_dev_180s_simulated_inputs.py --clip-spec` 截出片段的英文来源、锚点和媒体；`tools/ops/run.py audio.clip_timeline` 生成片段时间轴映射 | 片段输入在 `artifacts/dev-180s-page-test-20261004/clip-e2e-<name>/inputs/`（输入构建器只写自己的测试根目录）；运行目录里有 `l2/src/` 的副本和 `l3/clip-timeline-map.json` |
 | `layer2-setup` | 每种语言：把源周次的冻结政策收窄到本片段的来源范围和术语后重新冻结（片段里出现、但源周次回执没有译法的术语会被拒绝）；写 canonical 执行配置（v3）；在 launcher 里取得非秘密的 API 路由和凭据指纹，写入质检输入 | `l2/policy/`、`l2/execution.json`、`l2/qc-inputs.json` |
 | `layer2` | 规划 Layer 2 预算 → 开工检查 → 逐语言 tick controller，直到全部 `succeeded`；有语言 `blocked` 就停 | `l2/text/<语言>/candidate.json` |
 | `qc.<语言>` | 为该语言规划质检预算（文本质检、校准、音频质检共用一个根）→ 开工检查 → 文本质检。失败的组带着质检收据回到 Layer 2，开新修订（执行配置 v5，[gate 4](layer2-bounded-auto-repair.zh.md)），再质检新候选，最多 `maxRevisions` 次 | `textqc-<语言>/`；修订在 `l2-<语言>-r<N>/` |

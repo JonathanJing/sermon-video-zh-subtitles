@@ -1,0 +1,9 @@
+{
+  "scope": "post-G1 Spark audio admission",
+  "remoteCodeClosure": "pass_for_50_W_physical_files",
+  "remoteModelPathsAndImages": "present",
+  "remoteDevCredentialRouteMatchesPlan": true,
+  "gpuStageAdmission": "waiting_on_own_begun_session",
+  "otherSessionStatus": "exclusive_ready_no_jobs",
+  "note": "Read-only state and code checks only; no GPU model or paid ASR dispatched."
+}

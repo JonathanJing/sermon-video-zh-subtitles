@@ -1,0 +1,34 @@
+============================= test session starts ==============================
+platform darwin -- Python 3.13.16, pytest-9.1.1, pluggy-1.6.0 -- ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.claude/worktrees/scripts-r3-3df8c4/.venv/bin/python
+rootdir: ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.claude/worktrees/scripts-r3-3df8c4
+plugins: anyio-4.14.2
+collecting ... collected 26 items
+
+tests/test_live_source_monitor.py::LiveSourceMonitorTest::test_actual_start_time_classifies_520_stream_as_sat530 PASSED [  3%]
+tests/test_live_source_monitor.py::LiveSourceMonitorTest::test_alerts_operator_after_deadline_when_no_source_is_usable PASSED [  7%]
+tests/test_live_source_monitor.py::LiveSourceMonitorTest::test_failed_notification_delivery_does_not_dedupe PASSED [ 11%]
+tests/test_live_source_monitor.py::LiveSourceMonitorTest::test_fallback_notification_waits_until_operator_alert PASSED [ 15%]
+tests/test_live_source_monitor.py::LiveSourceMonitorTest::test_fallback_poll_does_not_erase_confirmed_same_sunday_source PASSED [ 19%]
+tests/test_live_source_monitor.py::LiveSourceMonitorTest::test_fallback_poll_does_not_preserve_a_previous_sunday_source PASSED [ 23%]
+tests/test_live_source_monitor.py::LiveSourceMonitorTest::test_falls_forward_to_1000_when_830_is_not_confirmed PASSED [ 26%]
+tests/test_live_source_monitor.py::LiveSourceMonitorTest::test_fetch_candidate_extracts_title_and_scores_expected_sermon PASSED [ 30%]
+tests/test_live_source_monitor.py::LiveSourceMonitorTest::test_fetch_default_candidates_uses_channel_live_url_when_metadata_is_blocked PASSED [ 34%]
+tests/test_live_source_monitor.py::LiveSourceMonitorTest::test_fetch_default_candidates_uses_channel_live_url_when_streams_tab_misses_current_live PASSED [ 38%]
+tests/test_live_source_monitor.py::LiveSourceMonitorTest::test_fetch_youtube_streams_candidate_prefers_actual_watch_url PASSED [ 42%]
+tests/test_live_source_monitor.py::LiveSourceMonitorTest::test_fetch_youtube_streams_rejects_unvalidated_watch_urls PASSED [ 46%]
+tests/test_live_source_monitor.py::LiveSourceMonitorTest::test_fetch_youtube_streams_rejects_wrong_service_date PASSED [ 50%]
+tests/test_live_source_monitor.py::LiveSourceMonitorTest::test_fetch_youtube_streams_skips_stale_first_watch_url PASSED [ 53%]
+tests/test_live_source_monitor.py::LiveSourceMonitorTest::test_fetch_youtube_streams_uses_yt_dlp_tab_when_html_urls_are_stale PASSED [ 57%]
+tests/test_live_source_monitor.py::LiveSourceMonitorTest::test_main_writes_report PASSED [ 61%]
+tests/test_live_source_monitor.py::LiveSourceMonitorTest::test_manual_url_is_used_when_automatic_sources_fail PASSED [ 65%]
+tests/test_live_source_monitor.py::LiveSourceMonitorTest::test_notification_dedupes_selected_source PASSED [ 69%]
+tests/test_live_source_monitor.py::LiveSourceMonitorTest::test_parses_email_recipient_secret_without_exposing_values PASSED [ 73%]
+tests/test_live_source_monitor.py::LiveSourceMonitorTest::test_post_generation_request_sends_selected_source_without_returning_tokens PASSED [ 76%]
+tests/test_live_source_monitor.py::LiveSourceMonitorTest::test_post_generation_request_skips_without_selected_source PASSED [ 80%]
+tests/test_live_source_monitor.py::LiveSourceMonitorTest::test_saturday_auto_falls_forward_to_530_when_400_is_not_confirmed PASSED [ 84%]
+tests/test_live_source_monitor.py::LiveSourceMonitorTest::test_saturday_default_candidates_do_not_use_generic_mariners_page PASSED [ 88%]
+tests/test_live_source_monitor.py::LiveSourceMonitorTest::test_selects_830_source_when_same_sermon_is_confirmed PASSED [ 92%]
+tests/test_live_source_monitor.py::LiveSourceMonitorTest::test_state_can_round_trip_through_gcs_uri PASSED [ 96%]
+tests/test_live_source_monitor.py::LiveSourceMonitorTest::test_state_persists_generation_request_for_post_live_worker PASSED [100%]
+
+============================== 26 passed in 3.08s ==============================

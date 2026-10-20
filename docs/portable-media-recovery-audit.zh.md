@@ -2,7 +2,7 @@
 
 [English](portable-media-recovery-audit.md)
 
-现有 [Layer 3 producer](../scripts/build_target_language_audio_package.py) 会把媒体引用
+现有 [Layer 3 producer](../packages/production/src/tongxing_production/audio/package.py) 会把媒体引用
 解析为本机绝对路径。直接修改路径会改变已批准 package 的 JSON SHA，导致独立人审收据
 失效。这个新增工具使用独立 sidecar 验证私有归档，不改写原包、人审收据、producer 或
 staging 接口。
@@ -41,7 +41,7 @@ staging 接口。
 以下变量需由操作者本地设置，工具不会自动发现它们：
 
 ```sh
-python3 scripts/audit_portable_media.py prepare \
+.venv/bin/python tools/ops/audit_portable_media.py prepare \
   --package "$ORIGINAL_PACKAGE" --approval "$ORIGINAL_APPROVAL" \
   --archive-root "$ARCHIVE_ROOT" --mapping "$PRIVATE_MAPPING" \
   --archive-id weekly-ko-r2 \
@@ -59,7 +59,7 @@ python3 scripts/audit_portable_media.py prepare \
 收据和 sidecar 的原字节：
 
 ```sh
-python3 scripts/audit_portable_media.py audit \
+.venv/bin/python tools/ops/audit_portable_media.py audit \
   --package "$ORIGINAL_PACKAGE" --approval "$ORIGINAL_APPROVAL" \
   --manifest "$PRIVATE_SIDECAR" --archive-root "$DESTINATION_ARCHIVE_ROOT" \
   --expected-source-sha256 "$EXPECTED_SOURCE_JSON_SHA256" \

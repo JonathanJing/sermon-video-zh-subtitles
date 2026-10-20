@@ -630,7 +630,8 @@ def project_progress(plan, receipts, *, samples=(), at=None, previous=None, reso
 
 def plan_from_tracker(ledger, plan_id, version, run_id, unit_specs, resources, **kwargs):
     """Reuse existing formal checkpoint dependencies; never import completion."""
-    from scripts import four_layer_progress
+    from scripts import tongxing_host  # noqa: F401  binds the production package ports
+    from tongxing_production.observability import progress as four_layer_progress
     from scripts.build_four_layer_timeline import dependencies
     if ledger.get("schemaVersion") != four_layer_progress.SCHEMA or not isinstance(ledger.get("steps"), dict):
         raise ValueError("unsupported_tracker_schema")

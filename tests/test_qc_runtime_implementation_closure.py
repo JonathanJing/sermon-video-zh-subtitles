@@ -3,8 +3,9 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from scripts import auto_qc_seeded_errors as seeded
-from scripts import machine_quality_waiver as waiver
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.review import seeded_errors as seeded
+from tongxing_production.review import waiver
 from tests import auto_qc_fixtures as fixtures
 
 

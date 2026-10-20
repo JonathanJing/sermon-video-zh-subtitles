@@ -8,18 +8,19 @@ from contextlib import contextmanager
 from pathlib import Path
 from types import SimpleNamespace
 
-from scripts import sermon_mfa_identity as mfa_identity
+from tongxing_production.source import mfa_identity
 from scripts import sermon_fresh_source_causality as causality
-from scripts import sermon_accounting as accounting
-from scripts import sermon_provider_limits as limits
-from scripts import sermon_transcription_request as audio
+from tongxing_production.observability import accounting
+from tongxing_production.compute import provider_limits as limits
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.compute import transcription_request as audio
 from scripts import sermon_cached_fresh_diagnostic_source as cache
 from scripts import sermon_diagnostic_context as diagnostic
 from scripts import sermon_diagnostic_provider as provider
 from scripts import sermon_fresh_diagnostic_source as fresh
-from scripts import sermon_public_snapshot as public
-from scripts import sermon_review_budget as budget
-from scripts import sermon_review_contracts as c
+from tongxing_production.storage import snapshot as public
+from tongxing_production.review import review_budget as budget
+from tongxing_production.review import contracts as c
 from scripts.sermon_release_workflow import _safe_path
 
 SCHEMA = 'sermon-fresh-diagnostic-source-validation-v2'
@@ -130,7 +131,7 @@ def _current(root, plan, subject, context, evidence, files, state):
     source, anchor = files.json(root/'source.json'), files.json(root/'anchor-manifest.json')
     diagnostic.validate_source(source, anchor, context)
     repository = Path(__file__).resolve().parents[1]
-    from scripts import sermon_source_producer_compatibility as compatibility
+    from tongxing_production.source import producer_compatibility as compatibility
     producers = plan['executionIdentity']['loadedProjectCodeSha256']
     # Keys stay the legacy identity names; a moved file is read at its alias.
     c.require(all(compatibility.recorded(producers,'scripts/'+name+'.py') == files.file(repository/compatibility.resolve('scripts/'+name+'.py'))

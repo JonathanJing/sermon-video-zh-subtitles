@@ -1,0 +1,8 @@
+{
+  "schemaVersion": "local-test-outcome-v1",
+  "status": "passed",
+  "exitCode": 0,
+  "startedAt": "2026-10-19T17:12:45.811196+00:00",
+  "endedAt": "2026-10-19T17:15:27.141196+00:00",
+  "scope": "tools leaf batch 1 (PR #1109): six ops tools moved to tools/ops; affected unit tests, package test, code_identity and check_run_start tests; 7013 test IDs identical before/after; CLI/import equivalence vs origin/dev"
+}

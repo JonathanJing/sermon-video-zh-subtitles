@@ -11,7 +11,8 @@ import threading
 import unittest
 from unittest.mock import patch
 
-from scripts import sermon_accounting as accounting
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.observability import accounting
 
 
 class LoggingReliabilityTests(unittest.TestCase):
@@ -213,7 +214,7 @@ class LoggingReliabilityTests(unittest.TestCase):
                     accounting.record_log("nested.ready")
                 self.assertEqual(os.environ[accounting.WORKFLOW_ENV], parent["workflowId"])
                 code = (
-                    "from scripts.sermon_accounting import accounting_session,record_log\n"
+                    "from scripts import tongxing_host; from tongxing_production.observability.accounting import accounting_session,record_log\n"
                     "with accounting_session('unused-inherited-directory', 'subprocess'):\n"
                     " record_log('subprocess.ready')\n"
                 )

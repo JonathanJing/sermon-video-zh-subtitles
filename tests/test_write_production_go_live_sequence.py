@@ -5,7 +5,7 @@ import unittest
 from argparse import Namespace
 from pathlib import Path
 
-import scripts.write_production_go_live_sequence as mod
+import tools.ops.write_production_go_live_sequence as mod
 
 
 class WriteProductionGoLiveSequenceTest(unittest.TestCase):
@@ -35,7 +35,7 @@ class WriteProductionGoLiveSequenceTest(unittest.TestCase):
         self.assertIn("--web-realtime-contract-report", live_validation_commands)
         self.assertIn("validate_realtime_session.py", live_validation_commands)
         self.assertIn(
-            "scripts/run_realtime_stabilizer_loop.py",
+            "tools/ops/run_realtime_stabilizer_loop.py",
             stages["live_1130_realtime_run"]["stabilizerFallbackCommand"],
         )
         live_choices = {
@@ -233,7 +233,7 @@ class WriteProductionGoLiveSequenceTest(unittest.TestCase):
                             "sourceRow": "realtime_live",
                             "state": "pending",
                             "reason": "Run the 11:30 iPad mic or authorized live source.",
-                            "commands": [["python3", "scripts/run_realtime_live_session.py"]],
+                            "commands": [["python3", "tools/ops/run_realtime_live_session.py"]],
                             "expectedChecks": ["caption_events", "input_transcript_events"],
                         },
                     ],
@@ -333,7 +333,7 @@ def write_reports(root: Path, **overrides):
             },
             "runnerCommand": [
                 "python3",
-                "scripts/run_no_caption_archive_asr_route.py",
+                "tools/ops/run_no_caption_archive_asr_route.py",
                 "--live-url",
                 "<NO_CAPTION_YOUTUBE_LIVE_ARCHIVE_URL>",
                 "--api-key-secret",
@@ -348,7 +348,7 @@ def write_reports(root: Path, **overrides):
             "commands": [
                 [
                     "python3",
-                    "scripts/prepare_live_link_playback.py",
+                    "tools/ops/prepare_live_link_playback.py",
                     "--asr-model",
                     "gpt-4o-transcribe",
                     "--web-out",
@@ -356,7 +356,7 @@ def write_reports(root: Path, **overrides):
                 ],
                 [
                     "python3",
-                    "scripts/translate_playback_with_openai.py",
+                    "tools/ops/translate_playback_with_openai.py",
                     "--model",
                     "gpt-5.4-mini",
                 ],
@@ -408,7 +408,7 @@ def write_reports(root: Path, **overrides):
                     "expectedAudioSourceKinds": ["authorized_audio_url", "authorized_audio_file", "authorized_youtube_source"],
                     "command": [
                         "python3",
-                        "scripts/run_realtime_live_session.py",
+                        "tools/ops/run_realtime_live_session.py",
                         "--realtime-model",
                         "gpt-realtime-translate",
                         "--stable-model",
@@ -419,20 +419,20 @@ def write_reports(root: Path, **overrides):
             "liveValidationCommands": [
                 [
                     "python3",
-                    "scripts/run_realtime_public_sse_smoke.py",
+                    "tools/ops/run_realtime_public_sse_smoke.py",
                     "--web-realtime-contract-report",
                     "artifacts/evidence/web-realtime-contract.json",
                 ],
                 [
                     "python3",
-                    "scripts/validate_realtime_session.py",
+                    "tools/ops/validate_realtime_session.py",
                     "--expected-model",
                     "gpt-realtime-translate",
                 ],
             ],
             "stabilizerFallbackCommand": [
                 "python3",
-                "scripts/run_realtime_stabilizer_loop.py",
+                "tools/ops/run_realtime_stabilizer_loop.py",
                 "--model",
                 "gpt-5.4-mini",
             ],

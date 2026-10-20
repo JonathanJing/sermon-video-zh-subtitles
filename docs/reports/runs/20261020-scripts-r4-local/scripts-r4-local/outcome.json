@@ -1,0 +1,9 @@
+{
+  "schemaVersion": "local-test-outcome-v1",
+  "status": "passed",
+  "exitCode": 0,
+  "startedAt": "2026-10-20T14:25:00+00:00",
+  "endedAt": "2026-10-20T15:15:00+00:00",
+  "scope": "scripts/ remaining migration batch R4 (PR #1187): sermon_cost_isolation -> observability/cost_isolation, sermon_strict_layer3_preparation -> audio/strict_preparation, both with sys.modules facades; 11 strict/bounded files blocked by unmoved scripts imports and left in place. 40 affected test files in 4 parallel pytest chunks plus tests/test_sermon_cost_isolation.py on dev@0916d4ec.",
+  "knownPreexistingFailures": []
+}

@@ -7,7 +7,7 @@ import unittest
 from pathlib import Path
 
 
-SCRIPT_PATH = Path(__file__).resolve().parents[1] / "scripts" / "validate_realtime_session.py"
+SCRIPT_PATH = Path(__file__).resolve().parents[1] / "tools" / "ops" / "validate_realtime_session.py"
 SPEC = importlib.util.spec_from_file_location("validate_realtime_session", SCRIPT_PATH)
 mod = importlib.util.module_from_spec(SPEC)
 assert SPEC.loader is not None

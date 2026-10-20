@@ -1,0 +1,243 @@
+Estimating 210 unprofiled modules from measured per-case cost
+Shard 2/10: 562 tests from 339 modules
+.........................................{"component": "api", "event": "sermon_production_supervisor_triggered", "inlineWorker": false, "loggedAt": "2026-10-19T23:02:25.653108+00:00", "mode": "shadow", "severity": "INFO", "sunday": "2026-08-02", "triggerSource": "internal-task"}
+.................................................{"locale": "zh-Hans", "rows": 7, "flagged": 2, "sampled": 5, "sheet": "/var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/tmphg6di929/sheet/listening-sample.md"}
+{"group": "group-0001", "solSeconds": 2.0, "opusSeconds": 1.0, "solReviewPassed": true, "opusReviewPassed": true}
+{"group": "group-0002", "solSeconds": 2.0, "opusSeconds": 1.0, "solReviewPassed": true, "opusReviewPassed": false}
+{"freshCalls": {"sol": 2, "opus": 2, "review": 4}, "groups": 2, "targetLocale": "ko"}
+{"group": "group-0001", "solSeconds": 2.0, "opusSeconds": 1.0, "solReviewPassed": true, "opusReviewPassed": true}
+{"group": "group-0002", "solSeconds": 2.0, "opusSeconds": 1.0, "solReviewPassed": true, "opusReviewPassed": false}
+{"freshCalls": {"sol": 0, "opus": 0, "review": 0}, "groups": 2, "targetLocale": "ko"}
+.......{"role": "translator", "model": "gpt-6.1-sol", "tier": "fast", "elapsedSeconds": 0.0, "usage": {"input_tokens": 100, "cached_input_tokens": 50, "output_tokens": 20}, "creditUsage": {"schemaVersion": "codex-credit-usage-v1", "status": "estimated", "estimatedCredits": 0.01525, "actualCredits": null, "actualQuotaUsage": null, "basis": "purchased_credit_equivalent", "model": "gpt-6.1-sol", "modelSource": "requested", "requestedServiceTier": "fast", "appliedServiceTier": "fast", "tierSource": "requested", "rateCardVersion": "codex-credits-2026-10-05", "rateCardSha256": "557d283646a6dd8ed49cc32a88e8459a165b72066339be99233ea75146c21edf", "verifiedAt": "2026-10-05", "sources": ["https://learn.chatgpt.com/docs/pricing", "https://learn.chatgpt.com/docs/agent-configuration/speed"], "ratesPerMillionTokens": {"input": 50, "cachedInput": 2.5, "output": 250}, "speedMultiplier": 2, "reason": "requested_identity_assumption"}}
+..................s............................................................................................................................Digest: /var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/tmpc_et9jj_/digests/20261007-e2e (5 files, 14 redactions)
+test-page · dev · 检查点 0/18
+层 / 语言       完成       剩余串行工时
+L1 shared        0/4 (0%)  未知
+L2 ko            0/4 (0%)  未知
+L3 ko            0/6 (0%)  未知
+L4 ko            0/4 (0%)  未知
+ETA（连续串行、无审核等待）: 未知
+缺估时 18 项: L1-01, L1-02, L1-03, L1-04, L2-01@ko, L2-02@ko …
+独立验收 ko: 设备=not_run，现场=not_run
+注意：进度账本不授予 Layer 门禁、发布或验收状态。
+{"status": "prepared_adapter_validation_required", "targetLocale": "ko", "synthesisEligible": false, "job": "/private/var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/tmpt04r6wtu/timed-speech-job/job.json"}
+corrected 1/1
+corrected 1/1
+translated zh 1/1
+translated zh 1/1
+........................................{"at": "2026-10-19T23:06:43+00:00", "stage": "layer1", "event": "started", "hostId": "host-9aef9fbf6b80", "pid": 79050}
+{"at": "2026-10-19T23:06:43+00:00", "stage": "layer1", "event": "finished", "hostId": "host-9aef9fbf6b80", "pid": 79050, "costMicrousd": 0, "refs": ["summary.json"]}
+{
+ "schemaVersion": "sermon-run-journal-summary-v1",
+ "events": 2,
+ "firstAt": "2026-10-19T23:06:43+00:00",
+ "lastAt": "2026-10-19T23:06:43+00:00",
+ "wallSeconds": 0.0,
+ "stages": {
+  "layer1": {
+   "starts": 1,
+   "computeSeconds": 0.0,
+   "waitingSeconds": 0.0,
+... 79 lines omitted; 1 error-like lines, 1 kept below ...
+[line 111] run_unittest_ci.py: error: --candidate 'k0=/var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/tmpon7urmfj/run/diagnostic-previews/ko/native-1/candidate.json': use LOCALE=PATH once per requested locale (ko)
+... end of omitted section ...
+                          [--expected-implementation SHA256]
+run_unittest_ci.py: error: --candidate 'es=/var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/tmpon7urmfj/run/diagnostic-previews/ko/native-1/candidate.json': use LOCALE=PATH once per requested locale (ko)
+usage: run_unittest_ci.py [-h] [--run-dir RUN_DIR] --out OUT
+                          [--state-dir STATE_DIR] [--locales LOCALES]
+                          [--candidate LOCALE=PATH]
+                          [--spoken-binding LOCALE=PATH]
+                          [--text-backend {codex,api,fake}]
+                          [--workers WORKERS] [--preflight-only]
+                          [--human-acceptance LOCALE=PATH]
+                          [--api-budget-authorization API_BUDGET_AUTHORIZATION]
+                          [--expected-implementation SHA256]
+run_unittest_ci.py: error: --candidate '/var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/tmpon7urmfj/run/diagnostic-previews/ko/native-1/candidate.json': use LOCALE=PATH once per requested locale (ko)
+usage: run_unittest_ci.py [-h] [--run-dir RUN_DIR] --out OUT
+                          [--state-dir STATE_DIR] [--locales LOCALES]
+                          [--candidate LOCALE=PATH]
+                          [--spoken-binding LOCALE=PATH]
+                          [--text-backend {codex,api,fake}]
+                          [--workers WORKERS] [--preflight-only]
+                          [--human-acceptance LOCALE=PATH]
+                          [--api-budget-authorization API_BUDGET_AUTHORIZATION]
+                          [--expected-implementation SHA256]
+run_unittest_ci.py: error: --candidate 'ko=/var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/tmpon7urmfj/run/diagnostic-previews/ko/native-1/candidate.json': use LOCALE=PATH once per requested locale (ko)
+.{
+  "es": [
+    "no unique candidate; found 0: []"
+  ]
+}
+discover	pass	0.0
+.......{
+  "ko": [
+    "candidate is a condensed spoken script; screen it with --spoken-binding"
+  ]
+}
+{"component": "post-live-timeline-job", "event": "post_live_timeline_job_checked", "liveSource": {"host": "www.youtube.com", "path": "/watch", "urlHash": "3dd1687429a3473c"}, "loggedAt": "2026-10-19T23:07:48.894130+00:00", "severity": "INFO", "status": "requires_operator_review", "sunday": "2026-07-12", "timelineGcsUri": "gs://test-bucket/sundays/2026-07-12/post-live-subtitles/sermon_5GuhLMPflds/timeline/source-media-report.json"}
+......s..............................................................................................s..........SERMON_LOGGING_WRITE_FAILED errorType=ValueError
+SERMON_LOGGING_WRITE_FAILED errorType=ValueError
+SERMON_LOGGING_WRITE_FAILED errorType=ValueError
+SERMON_LOGGING_WRITE_FAILED errorType=ValueError
+........{
+  "status": "blocked_unknown_outcome",
+  "reason": "condenser calls with an unknown outcome; reconcile them first",
+  "record": null,
+  "revisionBrief": null,
+  "condensedGroupIds": null,
+  "failedGroupIds": null
+}
+{"candidateCount": 4, "sourceUnitCount": 6}
+gpt-4o-transcribe reference chunk 1/1
+.............................................................................v4.1 package verified; model loaded and warmup finished.
+..v4.1 package verified; model loaded and warmup finished.
+Generation failed: RuntimeError
+..................................SERMON_LOGGING_WRITE_FAILED errorType=AccountingWriteError
+.......................................
+----------------------------------------------------------------------
+Ran 562 tests in 880.133s
+
+OK (skipped=3)
+{
+  "alternativeModel": "gpt-5.5",
+  "apiKeyMaterialIncluded": false,
+  "commands": [
+    [
+      "python3",
+      "scripts/run_openai_model_access_preflight.py",
+      "--model",
+      "gpt-5.4-mini",
+      "--out",
+      "artifacts/evidence/openai-model-access-preflight.json"
+    ],
+    [
+      "python3",
+      "scripts/translate_playback_with_openai.py",
+      "--input",
+      "artifacts/evidence/offline-caption-route/web/playback-simulation.generated.js",
+      "--model",
+      "gpt-5.4-mini",
+      "--api-key-secret",
+      "<OPENAI_API_KEY_SECRET_RESOURCE>",
+      "--out",
+      "artifacts/evidence/offline-caption-route/web/playback-simulation.generated.js",
+      "--out-dir",
+      "artifacts/evidence/offline-caption-route/model-output"
+    ],
+    [
+      "python3",
+      "scripts/export_playback_captions.py",
+      "--input",
+      "artifacts/evidence/offline-caption-route/web/playback-simulation.generated.js",
+      "--out-dir",
+      "artifacts/evidence/offline-caption-route/artifacts",
+      "--stem",
+      "sermon.zh.live-aligned",
+      "--manifest",
+      "artifacts/evidence/offline-caption-route/artifacts/cloud-manifest.json"
+    ],
+    [
+      "python3",
+      "scripts/validate_offline_chain.py",
+      "--report",
+      "artifacts/evidence/offline-caption-route/artifacts/report.json",
+      "--playback-js",
+      "artifacts/evidence/offline-caption-route/web/playback-simulation.generated.js",
+      "--zh-vtt",
+      "artifacts/evidence/offline-caption-route/artifacts/sermon.zh.live-aligned.vtt",
+      "--zh-srt",
+      "artifacts/evidence/offline-caption-route/artifacts/sermon.zh.live-aligned.srt",
+      "--manifest",
+      "artifacts/evidence/offline-caption-route/artifacts/cloud-manifest.json",
+      "--expected-translation-model",
+      "gpt-5.4-mini",
+      "--out",
+      "artifacts/evidence/offline-caption-route/offline-chain-validation.json"
+    ],
+    [
+      "python3",
+      "scripts/stabilize_realtime_deltas_with_openai.py",
+      "--input-jsonl",
+      "<REALTIME_SESSION_EVENTS_JSONL>",
+      "--api-key-secret",
+      "<OPENAI_API_KEY_SECRET_RESOURCE>",
+      "--model",
+      "gpt-5.4-mini",
+      "--out-dir",
+      "artifacts/evidence/realtime-stable-correction-recovery",
+      "--post-backend-url",
+      "<BACKEND_BASE_URL>",
+      "--post-session-id",
+      "<REALTIME_SESSION_ID>",
+      "--post-event-token",
+      "<REALTIME_EVENT_TOKEN_OR_ADMIN_TOKEN>"
+    ],
+    [
+      "python3",
+      "scripts/validate_realtime_session.py",
+      "--events-jsonl",
+      "<REALTIME_SESSION_EVENTS_JSONL>",
+      "--expected-model",
+      "gpt-realtime-translate",
+      "--expected-stable-model",
+      "gpt-5.4-mini",
+      "--require-stable-correction",
+      "--out",
+      "artifacts/evidence/realtime-stable-correction-recovery/session-validation.json"
+    ],
+    [
+      "python3",
+      "tools/ops/refresh_production_preflight_evidence.py",
+      "--sunday",
+      "2026-06-28",
+      "--out",
+      "artifacts/evidence/production-preflight-refresh.json"
+    ],
+    [
+      "python3",
+      "scripts/write_production_go_live_sequence.py",
+      "--sunday",
+      "2026-06-28",
+      "--out",
+      "artifacts/evidence/production-go-live-sequence.json"
+    ]
+  ],
+  "eventTokenIncluded": false,
+  "modelPolicy": {
+    "alternativeModelIsSideEvidenceOnly": true,
+    "doNotSubstitute": true,
+    "requiredStableAndOfflineModel": "gpt-5.4-mini"
+  },
+  "observedAlternativeModelAccess": {
+    "model": "gpt-5.5",
+    "status": "missing_report"
+  },
+  "observedRequiredModelAccess": {
+    "model": "gpt-5.4-mini",
+    "status": "missing_report"
+  },
+  "passCriteria": [
+    "run_openai_model_access_preflight.py reports responses_model:gpt-5.4-mini=pass.",
+    "Offline translation report uses gpt-5.4-mini.",
+    "validate_offline_chain.py status is ok and not_realtime_chain passes.",
+    "Stable correction events have source gpt-5.4-mini-stable-correction and model gpt-5.4-mini.",
+    "validate_realtime_session.py passes with --require-stable-correction.",
+    "gpt-5.5 availability is not used as a substitute for gpt-5.4-mini."
+  ],
+  "requiredModel": "gpt-5.4-mini",
+  "schemaVersion": 1,
+  "secretResourceNamesIncluded": false,
+  "status": "waiting_for_required_model_access",
+  "sunday": "2026-06-28"
+}
+ 368.73s     1  test_sermon_fresh_full_dag
+ 131.68s     7  test_machine_quality_waiver
+  63.75s     2  test_run_machine_qc_audio_test
+  25.84s     5  test_sermon_cuv_translation
+  22.31s     1  test_canonical_layer2_auto_repair
+  13.31s     2  test_canonical_layer2_runtime_authorization
+  11.23s     4  test_sermon_diagnostic_provider
+  11.04s     3  test_sermon_app_delivery_workflow
+   9.64s     5  test_build_target_language_audio_package
+   8.95s     2  test_sermon_unified_owner_wait
+exit 0

@@ -1,0 +1,8 @@
+{
+  "schemaVersion": "sermon-test-run-outcome-v1",
+  "status": "passed",
+  "startedAt": "2026-10-18T06:38:54.753082+00:00",
+  "completedAt": "2026-10-18T06:39:25.357488+00:00",
+  "exitCode": 0,
+  "summary": "Plugin-only policy migration budget provenance fix: real recover and record_reuse plus fail-closed regressions"
+}

@@ -12,7 +12,7 @@
 
 本周 Production 已新增 `multilingual-v3.json`、三语 `releases-v2/` 和音轨，并有 HTTP、Range 与浏览器短时播放收据。旧 `releases/` v1 候选仍绑定旧 `packages/layer3/` 的 `audio_unavailable` 文字版包；v2 Release 则绑定私有已听审 Layer 3 包的规范化 JSON hash。两套版本各有用途，不覆盖旧不可变路径。已听审包包含本机绝对路径，不能直接复制到公开 Hosting。
 
-本分支新增只读本地审计入口 [`audit_production_release_bindings.py`](../scripts/audit_production_release_bindings.py)：输入公开目录和每种语言私有的已批准短口播稿、口播人审收据、已听审音频包、音频人审收据，检查 v3→v2→口播稿→音频→公开文件的身份与 SHA。9 月 27 日本地发布快照三语通过，覆盖西语 420、韩语 420、中文 419 个已听审音频单元；这不是重新执行 Production 部署或真机验收。尚未把该入口接入发布命令，公开目录的额外私有资料泄漏扫描也尚未实现。
+本分支新增只读本地审计入口 [`audit_production_release_bindings.py`](../tools/ops/audit_production_release_bindings.py)：输入公开目录和每种语言私有的已批准短口播稿、口播人审收据、已听审音频包、音频人审收据，检查 v3→v2→口播稿→音频→公开文件的身份与 SHA。9 月 27 日本地发布快照三语通过，覆盖西语 420、韩语 420、中文 419 个已听审音频单元；这不是重新执行 Production 部署或真机验收。尚未把该入口接入发布命令，公开目录的额外私有资料泄漏扫描也尚未实现。
 
 后续周更使用 [Production v3 内容与刷新合同](multilingual-production-interfaces.zh.md#每周-app-内容合同与刷新门槛)：逐语言 v2 Release 和 v3 catalog 的 Schema 已入库。`DEV-L4-004` 已于 2026-09-27 开始，新增只在本地生成候选的 [`assemble_multilingual_v3_update.py`](../packages/production/src/tongxing_production/adapters/legacy/assemble_multilingual_v3_update.py)，验证新旧 v3 目录、v2 Release、公开资产、英文对照、定位侧文件、完整视频与 stage allowlist，拒绝覆盖旧文件，输出回滚目录及文件哈希报告。它尚不部署或做在线预检。旧 `assemble_multilingual_hosting.py`、`deploy_multilingual_hosting.py`、`verify_multilingual_hosting.py` 仍只支持 v2 catalog／v1 Release。本周一次性 Web 桥接运行时还在忽略的 staging 目录。正式音频审计接入、线上基线 CAS、部署后 HTTP／Range 与同版本双 App 客户端验收仍待完成，不能把本地候选当成正式周更发布收据。
 
@@ -30,7 +30,7 @@
 ## 当前实现切片（2026-09-21）
 
 - 新增 `sermon-multilingual-catalog-v2` 和 `sermon-target-language-release-receipt-v1` schema。
-- `scripts/build_multilingual_catalog.py` 只聚合精确 hash 匹配、人工翻译批准、HTTP 已验证且无 unresolved issue 的 Release Package；跨 locale source identity、同 locale 音频包绑定和完整听审任一不符即停止。
+- `adapters/legacy/build_multilingual_catalog.py` 只聚合精确 hash 匹配、人工翻译批准、HTTP 已验证且无 unresolved issue 的 Release Package；跨 locale source identity、同 locale 音频包绑定和完整听审任一不符即停止。
 - iOS Core 解码并验证 v2 catalog 和 immutable Release Package；Infrastructure 下载时复算 package hash，并把 package/page URL 限定到配置的同一 HTTPS origin。
 - Debug build 指向独立 Firebase Dev origin；Release build 继续指向 Production origin。两者沿用同一原生收听界面和功能；运行时测试仍可显式注入隔离 origin。
 - 标题附近的“证道语言”按钮打开语言 Sheet；只显示 catalog 中 `human_reviewed` 文字版本，并显示文字、字幕、音频和下载能力。选择后先取得并验证该 locale 的 Release Package，再打开其 `page` asset。

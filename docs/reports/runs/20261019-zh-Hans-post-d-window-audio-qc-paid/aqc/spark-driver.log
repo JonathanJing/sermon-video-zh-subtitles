@@ -1,0 +1,50 @@
+discover	pass	0.0
+zh-Hans.track-check	pass	0.4
+zh-Hans.secondary-asr	pass	0.4
+zh-Hans.audio-qc	pass	0.2
+zh-Hans.calibration.prefetch	pass	3.2
+W1019 20:49:39.035000 49 torch/utils/_pytree.py:630] <enum 'KernelPreference'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
+W1019 20:49:39.047000 49 torch/utils/_pytree.py:630] <enum 'ScaleCalculationMode'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
+[0;93m2026-10-19 20:49:39.483715169 [W:onnxruntime:Default, device_discovery.cc:164 DiscoverDevicesForPlatform] GPU device discovery failed: device_discovery.cc:89 ReadFileContents Failed to open file: "/sys/class/drm/card0/device/vendor"[m
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+The following generation flags are not valid and may be ignored: ['temperature']. Set `TRANSFORMERS_VERBOSITY=info` for more details.
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+code_predictor_config is None. Initializing code_predictor model with default values
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+code_predictor_config is None. Initializing code_predictor model with default values
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+code_predictor_config is None. Initializing code_predictor model with default values
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+code_predictor_config is None. Initializing code_predictor model with default values
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+code_predictor_config is None. Initializing code_predictor model with default values
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+code_predictor_config is None. Initializing code_predictor model with default values
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+code_predictor_config is None. Initializing code_predictor model with default values
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+code_predictor_config is None. Initializing code_predictor model with default values
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+zh-Hans.calibration	pass	134.6
+zh-Hans.audio-waiver	fail	0.0
+{
+  "zh-Hans": {
+    "status": "waiver_refused",
+    "reason": "Calibration does not allow a waiver: seeded-error detection below minimum for ['audio.dropped_key_word']",
+    "problems": [],
+    "calibration": {
+      "overallDetectionRate": 0.988701,
+      "cleanFalsePositiveRate": 0.0,
+      "trials": 177,
+      "detected": 175
+    }
+  }
+}

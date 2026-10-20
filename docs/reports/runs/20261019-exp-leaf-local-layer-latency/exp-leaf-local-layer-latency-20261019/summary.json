@@ -1,0 +1,10 @@
+{
+  "scope": "Move layer2_concurrency and benchmark_cpu_overlap from scripts/experiments to experiments/local-layer-latency, from origin/dev 06d65999",
+  "results": {
+    "targetedTests": "29 passed, 548 subtests passed (test_layer2_concurrency_experiment, test_benchmark_cpu_overlap, test_tongxing_production_package, test_experiment_leaf_facades)",
+    "testIdInventory": "6969 IDs before, 6972 after; no IDs removed, 3 facade tests added",
+    "legacyCli": "-m form exits 0 for both; layer2_concurrency direct file run exits 1 on old, new and clean dev alike",
+    "diffCheck": "git diff --check passed"
+  },
+  "limits": "Local deterministic tests only; no production, paid model, Spark, or public delivery. CI workflows disabled by user decision 2026-10-19."
+}

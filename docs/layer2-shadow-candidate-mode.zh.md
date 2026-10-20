@@ -64,7 +64,7 @@
 
 收据须至少包含 schema version、候选 canonical JSON 哈希、源包/锚点/冻结策略哈希、targetLocale、reviewer、reviewedAt、`reviewedSourceUnitIds`、逐术语审阅决定、`decision: approved`、`humanApproval: true`、`formalLayer2Admitted: false`。批准必须由真实人工输入产生，模型结果或 worksheet 生成不能自动批准。
 
-`freeze --shadow-candidate` 与 content-approval 输入须验证该闭合 schema，再调用术语哈希及覆盖校验。普通 `review_target_language_candidate.py` 的现有收据没有这些字段，不能充当新收据。术语批准只允许冻结被审阅的未变术语；新正式候选必须重新完成生产 translator/reviewer/plugin/admission 链和实际所需审阅门禁。
+`freeze --shadow-candidate` 与 content-approval 输入须验证该闭合 schema，再调用术语哈希及覆盖校验。普通 `tools/ops/run.py text.human_review` 的现有收据没有这些字段，不能充当新收据。术语批准只允许冻结被审阅的未变术语；新正式候选必须重新完成生产 translator/reviewer/plugin/admission 链和实际所需审阅门禁。
 
 ## 后续实现的验收条件
 

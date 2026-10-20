@@ -7,7 +7,8 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-from scripts.claude_layer2_transport import ClaudeLayer2Transport, child_environment, normalize_usage
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.compute.transports.claude_layer2 import ClaudeLayer2Transport, child_environment, normalize_usage
 
 SOURCE = {'translationGroupId': 'g001', 'sourceUnitIds': ['u1']}
 CONTENT = {'translationGroupId': 'g001', 'sourceUnitIds': ['u1'], 'targetUtterances': ['你好。'],

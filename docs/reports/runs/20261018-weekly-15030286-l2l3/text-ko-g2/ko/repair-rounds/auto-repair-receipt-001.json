@@ -1,0 +1,46 @@
+{
+  "schemaVersion": "sermon-layer2-auto-repair-receipt-v1",
+  "routingVersion": "layer2-auto-repair-routing-v1",
+  "lineage": {
+    "targetLocale": "ko",
+    "englishSourcePackageJsonSha256": "137fed8486da0ec4ea22258035a230f30172be43a016faa4c382b410f830e3a9",
+    "anchorManifestSha256": "2587ffdd446ea3c1feee26980fc2bb6f22da3bfea12c614bbf45f036ffb1d1fb",
+    "translationPolicySha256": "5dc5635d13b81a02bc2cca703b6baba718d6850d97c309a5dd55fb7d6afea898",
+    "groupRevisionSha256": "d22abe46247bea7a38b3e85ddd403b9eea889fd1bec95f2adeed6020634179a6"
+  },
+  "status": "all_groups_passed",
+  "rounds": 1,
+  "finalRunDirectory": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/weekend-live/layer2-15030286-20261017/text-ko-g2/ko/repair-rounds/round-001",
+  "evidenceSha256": "90974b59bd7ad243fd28a51fe4c8b466c17a9cc086a962e61d96d370d0d8cdfe",
+  "initialSpend": {
+    "calls": 2,
+    "tokens": 5015,
+    "callsWithoutUsage": 0
+  },
+  "repairSpend": {
+    "calls": 0,
+    "tokens": 0
+  },
+  "stoppedGroups": [],
+  "gatesPassed": [
+    "independent_review",
+    "language_plugin"
+  ],
+  "releaseAuthority": "none",
+  "ledgerRoot": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/weekend-live/layer2-15030286-20261017/.jobs-ko-g2.layer2-repair",
+  "ledgerHeadSha256": "cc96eb098ca996a26ca2f77a186814420cda84e6e8cb91957835aa97b8ec0e25",
+  "humanApproval": false,
+  "reviewKind": "machine_review",
+  "repairAllowance": {
+    "basis": "operator_listed_groups",
+    "listedGroups": 1,
+    "repairPairsPerListedGroup": 2,
+    "pairs": 2,
+    "calls": 4,
+    "tokens": 73728,
+    "worstCaseTokensPerCall": 18432,
+    "worstCasePairCostMicrousd": 122880,
+    "remainingCostMicrousdAtStart": 60000000,
+    "usdCap": "budget_authorization"
+  }
+}

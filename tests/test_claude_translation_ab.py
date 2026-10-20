@@ -8,8 +8,10 @@ import unittest
 from unittest.mock import patch
 
 from tests.job_store_patches import patch_job_store  # G1: job store primitives live in two modules
-from scripts.experiments import claude_translation_ab as ab
-from scripts import sermon_workflow_jobs as jobs
+from tests import experiment_modules
+ab = experiment_modules.load("experiments/layer2-translation-ab/claude_translation_ab.py")
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.orchestration import jobs
 
 
 def content(group, text='好。'):

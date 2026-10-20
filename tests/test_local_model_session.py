@@ -4,9 +4,12 @@ from types import SimpleNamespace
 import unittest
 from unittest.mock import Mock, patch
 
-from scripts.experiments.local_model_session import (
-    LocalModelSession, ModelKey, cleanup_loaded_gpu,
-)
+from tests import experiment_modules
+
+session_module = experiment_modules.line_module("experiments/spark-diagnostic-audio/local_model_session.py")
+LocalModelSession = session_module.LocalModelSession
+ModelKey = session_module.ModelKey
+cleanup_loaded_gpu = session_module.cleanup_loaded_gpu
 
 
 def key(**kwargs):

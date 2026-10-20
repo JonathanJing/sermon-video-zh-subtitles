@@ -1,0 +1,11 @@
+{
+  "scope": "Move Layer 2 translation A/B experiments from scripts/experiments to experiments/layer2-translation-ab, from origin/dev 06d65999",
+  "results": {
+    "targetedTests": "69 passed, 556 subtests passed (7 A/B test modules, test_tongxing_production_package, test_experiment_leaf_facades)",
+    "firstAttempt": "4 test_benchmark_layer2_bounded cases failed (frozen code map hashed facades); fixed by mapping the two moved files; clean dev passes 12/12",
+    "testIdInventory": "6969 IDs before, 6972 after; no IDs removed, 3 facade tests added",
+    "legacyCli": "-m form exits 0 for all 8; 5 direct file runs exit 1 on old, new and clean dev alike",
+    "diffCheck": "git diff --check passed"
+  },
+  "limits": "Local deterministic tests only; no production, paid model, Spark, or public delivery. CI workflows disabled by user decision 2026-10-19."
+}

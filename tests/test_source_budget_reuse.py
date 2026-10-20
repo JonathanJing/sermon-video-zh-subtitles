@@ -3,8 +3,9 @@ from pathlib import Path
 import tempfile
 import unittest
 
-from scripts import sermon_source_budget as subject
-from scripts import sermon_workflow_jobs as jobs
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.source import budget as subject
+from tongxing_production.orchestration import jobs
 from tests.test_source_budget_settlement import AUTHORITY, BOUNDS, IDENTITY, OPERATION, USAGE, call, ledger
 
 
@@ -99,8 +100,8 @@ class JudgeAuthorizationTests(unittest.TestCase):
 
     def test_reuse_roots_must_be_named_by_the_approval(self):
         from unittest.mock import patch
-        from scripts import run_machine_qc_clip_test as driver
-        with tempfile.TemporaryDirectory() as name, patch("scripts.sermon_openai_runtime.selected_route", return_value=None):
+        from tongxing_production.review import qc_text_run as driver
+        with tempfile.TemporaryDirectory() as name, patch("tongxing_production.compute.openai_runtime.selected_route", return_value=None):
             directory = Path(name)
             unapproved = self.write(directory, approved_reuse=None, requested_reuse=[str(directory / "text")])
             with self.assertRaisesRegex(ValueError, "not bound to its approval"):
@@ -113,8 +114,8 @@ class JudgeAuthorizationTests(unittest.TestCase):
     def test_legacy_v1_rejects_reuse_even_empty_and_scoped_v2_is_not_reuse_v2(self):
         import json
         from unittest.mock import patch
-        from scripts import run_machine_qc_clip_test as driver
-        with tempfile.TemporaryDirectory() as name,patch('scripts.sermon_openai_runtime.selected_route',return_value=None):
+        from tongxing_production.review import qc_text_run as driver
+        with tempfile.TemporaryDirectory() as name,patch('tongxing_production.compute.openai_runtime.selected_route',return_value=None):
             root=Path(name)
             path=self.write(root,approved_reuse=None,requested_reuse=None)
             with self.assertRaisesRegex(ValueError,'dev or prod OpenAI launcher'):driver.ApiJudge(path)
@@ -127,14 +128,14 @@ class JudgeAuthorizationTests(unittest.TestCase):
     def test_judge_source_key_and_project_binding_prevents_cross_root_reuse(self):
         import hashlib,json
         from unittest.mock import patch
-        from scripts import run_machine_qc_clip_test as driver
+        from tongxing_production.review import qc_text_run as driver
         route={'environment':'dev','credentialAlias':'tongxing-dev-runtime','projectId':'proj_one'}
         schema={'type':'object','properties':{'ok':{'type':'boolean'}},'required':['ok'],'additionalProperties':False}
         for changed in ('same','key','project'):
             with self.subTest(changed=changed),tempfile.TemporaryDirectory() as name:
                 root=Path(name);source=root/'source';dest=root/'dest';source.mkdir();dest.mkdir()
                 source_auth=self.write(source,approved_reuse=None,requested_reuse=None)
-                with patch('scripts.sermon_openai_runtime.selected_route',return_value=route),patch.dict('os.environ',{'OPENAI_API_KEY':'synthetic-key-one'}):
+                with patch('tongxing_production.compute.openai_runtime.selected_route',return_value=route),patch.dict('os.environ',{'OPENAI_API_KEY':'synthetic-key-one'}):
                     old=driver.ApiJudge(source_auth)
                     old.ledger.transport=lambda *args:{'model':'gpt-6.1-sol','usage':USAGE,'choices':[{'finish_reason':'stop','message':{'content':'{"ok":true}'}}]}
                     self.assertEqual(old('review','system','user',schema),{'ok':True})
@@ -146,7 +147,7 @@ class JudgeAuthorizationTests(unittest.TestCase):
                 dest_auth=self.write(dest,approved_reuse=reuse,requested_reuse=reuse)
                 newroute={**route,'projectId':'proj_two'} if changed=='project' else route
                 key='synthetic-key-two' if changed=='key' else 'synthetic-key-one'
-                with patch('scripts.sermon_openai_runtime.selected_route',return_value=newroute),patch.dict('os.environ',{'OPENAI_API_KEY':key}):
+                with patch('tongxing_production.compute.openai_runtime.selected_route',return_value=newroute),patch.dict('os.environ',{'OPENAI_API_KEY':key}):
                     new=driver.ApiJudge(dest_auth);calls=[]
                     new.ledger.transport=lambda *args:calls.append(1)
                     if changed=='same':self.assertEqual(new('review','system','user',schema),{'ok':True})
@@ -157,9 +158,9 @@ class JudgeAuthorizationTests(unittest.TestCase):
 
     def test_environment_key_and_project_mutation_refused_after_judge_admission(self):
         from unittest.mock import patch
-        from scripts import run_machine_qc_clip_test as driver
+        from tongxing_production.review import qc_text_run as driver
         route={'environment':'dev','credentialAlias':'tongxing-dev-runtime','projectId':'proj_one'}
-        with tempfile.TemporaryDirectory() as name,patch('scripts.sermon_openai_runtime.selected_route',return_value=route) as selected,patch.dict('os.environ',{'OPENAI_API_KEY':'synthetic-key'}):
+        with tempfile.TemporaryDirectory() as name,patch('tongxing_production.compute.openai_runtime.selected_route',return_value=route) as selected,patch.dict('os.environ',{'OPENAI_API_KEY':'synthetic-key'}):
             root=Path(name);path=self.write(root,approved_reuse=None,requested_reuse=None);judge=driver.ApiJudge(path)
             calls=[];judge.ledger.transport=lambda *args:calls.append(1)
             import os
@@ -172,8 +173,8 @@ class JudgeAuthorizationTests(unittest.TestCase):
     def test_legacy_unversioned_approval_keeps_original_admission(self):
         import hashlib,json
         from unittest.mock import patch
-        from scripts import run_machine_qc_clip_test as driver
-        with tempfile.TemporaryDirectory() as name,patch('scripts.sermon_openai_runtime.selected_route',return_value=None):
+        from tongxing_production.review import qc_text_run as driver
+        with tempfile.TemporaryDirectory() as name,patch('tongxing_production.compute.openai_runtime.selected_route',return_value=None):
             root=Path(name);path=self.write(root,approved_reuse=None,requested_reuse=None)
             approval=root/'approval.json';value=json.loads(approval.read_text());value.pop('schemaVersion')
             approval.write_text(json.dumps(value));auth=json.loads(path.read_text())

@@ -1,0 +1,136 @@
+{
+  "schemaVersion": "sermon-batch-identity-ab-key-v1",
+  "selectionSha256": "e6a2a00960879efb152513b781ade070c1fe567c47463e9dbc273a40bf90fc47",
+  "pairs": [
+    {
+      "pair": 1,
+      "translationGroupId": "translation-chunk-0000-u021",
+      "arms": {
+        "X": "alone",
+        "Y": "batch"
+      },
+      "audioSha256": {
+        "X": "05c68e4b102532b3a7102d07db2fb5dd36234a8ca3381ebea43c6bd2bbbbbc62",
+        "Y": "f8d9093074f1a3f8ceb118bb9dc554e39d99ba572a04471117d9b71fb118fdd6"
+      },
+      "previewSoundIdentitySha256": "57cbfb84b9dc5a9e72da33ad77e9a007d50453094ba1efab4daacdb869a4739e"
+    },
+    {
+      "pair": 2,
+      "translationGroupId": "translation-chunk-0000-u036",
+      "arms": {
+        "X": "alone",
+        "Y": "batch"
+      },
+      "audioSha256": {
+        "X": "353fdd018577044195c09d6d8b97f57880f7ce6be2bce324e7a28a91d74ab66d",
+        "Y": "c0270a3bb6f5611f0a598ec713736f93a4f48872db0f6d316935076e87d30593"
+      },
+      "previewSoundIdentitySha256": "3d9b4e779fb0ca11bfd31a933719d98fcb9d383039bfdf6d23fc114f0b0d2a79"
+    },
+    {
+      "pair": 3,
+      "translationGroupId": "translation-chunk-0001-u029",
+      "arms": {
+        "X": "alone",
+        "Y": "batch"
+      },
+      "audioSha256": {
+        "X": "034bb46c74f6efcc525e5a174a73749c021f29a071c19ab390eb51c4539464fa",
+        "Y": "cbbf1a9be1d5eea97f7811aef48ff906a705ce728954cd723532523650dd1a7b"
+      },
+      "previewSoundIdentitySha256": "2be2205dc3d06ece820e25ed5876fea84071d70d5d6f28a99f4916af97749dba"
+    },
+    {
+      "pair": 4,
+      "translationGroupId": "translation-chunk-0002-u014",
+      "arms": {
+        "X": "batch",
+        "Y": "alone"
+      },
+      "audioSha256": {
+        "X": "b94c195fe2fc936a7a0203cf4123f36906c7636281491aa9555abe21baddef6c",
+        "Y": "854c760a796a7655ca533ffa04a82788080f0e6b07c3aa2b28a65e11c133eba7"
+      },
+      "previewSoundIdentitySha256": "b70fa270b22fe4fac2e6967ea23f0bb45f4d697b62df21026dc8c49eaf964e9a"
+    },
+    {
+      "pair": 5,
+      "translationGroupId": "translation-chunk-0002-u016",
+      "arms": {
+        "X": "batch",
+        "Y": "alone"
+      },
+      "audioSha256": {
+        "X": "5e81b990bb93c19a1e3325ba5cf82f181184937be8710bd07100ab1d669320ea",
+        "Y": "c3d11e8390fe492bc16a133179b6c331e2d25375076576d05e7d3118030a3420"
+      },
+      "previewSoundIdentitySha256": "a3e3cda192b11d4c95d5346c0a3aea2913db4d9b6feb5d583064d0e340957745"
+    },
+    {
+      "pair": 6,
+      "translationGroupId": "translation-chunk-0003-u005",
+      "arms": {
+        "X": "batch",
+        "Y": "alone"
+      },
+      "audioSha256": {
+        "X": "43b544fdb6d21bfaf227a49ea0b33c50e90ce42b81d4e6cd54faa3f25354fc17",
+        "Y": "167a800dcf7a890928088440a6dc59424f700fe60d5f9db1ea3fa97a2656818a"
+      },
+      "previewSoundIdentitySha256": "66debd306f2f306a73b2e571d1fb2f96bca1294ce5a851d60d8d901092125e40"
+    },
+    {
+      "pair": 7,
+      "translationGroupId": "translation-chunk-0005-u008",
+      "arms": {
+        "X": "alone",
+        "Y": "batch"
+      },
+      "audioSha256": {
+        "X": "2220a92013452b51c674733286275f726f54055ee50cc39964ec2c9e3e039723",
+        "Y": "f7c8ed7ec0efb00ad45d6372e9db2e00dba13e164fb929d234912baa4c9916f5"
+      },
+      "previewSoundIdentitySha256": "dec42fc3766a40bd469d07f885d7e11bebcb65c14ed52c54c2d489d90df74770"
+    },
+    {
+      "pair": 8,
+      "translationGroupId": "translation-chunk-0006-u013",
+      "arms": {
+        "X": "batch",
+        "Y": "alone"
+      },
+      "audioSha256": {
+        "X": "bd8fd72b71d62c13ba8c6953c129515f9a5926916602ae25c55478b24200999a",
+        "Y": "d094463ce83c45b92aaa5000b4786df6da16a6334f95bf3f46dc9f0d7259182c"
+      },
+      "previewSoundIdentitySha256": "26a9efda0fd3e399aa40476fd8333d6e9ed053eb88add56d57369efaeaec12a0"
+    },
+    {
+      "pair": 9,
+      "translationGroupId": "translation-chunk-0007-u021",
+      "arms": {
+        "X": "alone",
+        "Y": "batch"
+      },
+      "audioSha256": {
+        "X": "96fe3113ee0ea94d11932f9763e26b3a565e207a4ed271ccf87f5d047e575956",
+        "Y": "0ee43de277e218fd695c689616896ba8438b8edeafd58b4bbbcd2c19a358e495"
+      },
+      "previewSoundIdentitySha256": "14b2bcc5077c12fa6d1f6977c1fce32ffc2389765f784badcd4c44c189d40712"
+    },
+    {
+      "pair": 10,
+      "translationGroupId": "translation-chunk-0007-u034",
+      "arms": {
+        "X": "alone",
+        "Y": "batch"
+      },
+      "audioSha256": {
+        "X": "364f33016f6424f0280cce056fea8412765f1744fdd9b7d36253c1b7f0b2b950",
+        "Y": "cc7a22a83174d85904858eed59f024f4744db2a232efbe221d5c321eb678c030"
+      },
+      "previewSoundIdentitySha256": "ae77cc9946ccced1b00dfa4e9443aadc4eaade9d774a7367a61f3dbf5e87f602"
+    }
+  ]
+}

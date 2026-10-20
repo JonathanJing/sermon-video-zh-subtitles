@@ -69,7 +69,7 @@ export MFA_SPARK_RELAY_HOST_KEY_ALIAS=jonys-mac-mini.local
 
 SSH 成功只证明连接与认证；仍须检查本次所需的 Python、MFA 模型和执行路径。上述环境变量只适用于支持它们的 MFA producer，不代表 canonical TTS／ASR 已自动使用中转；后者须核对各自的远程执行与文件传输入口。离开局域网时，中转也不会让 Mac 的直连 NFS 自动可用，静态文件可通过 SSH 读取。
 
-Spark 运行根目录为 `/home/achillesjing/sermon-mfa-runtime/`，分别保存 `env/`、`models/`、`bin/mfa-run`、`jobs/`。本次 ARM64 部署发现 Conda 的 `kalpy` 包不可直接取得，使用 [Spark MFA 安装脚本](../scripts/setup_spark_mfa.sh) 在独立环境源码构建。安装脚本包含 SQLite 依赖；修复原生 SQLite 运行依赖后，已验证 MFA 3.4.2 在 Spark 完成真实 A 样本对齐，详见下方冒烟记录。此结果只确认已测样本路径，不代表完整周次验收。MFA 可在 Spark CPU 执行，不必占用或重启现有 GPU 模型服务。
+Spark 运行根目录为 `/home/achillesjing/sermon-mfa-runtime/`，分别保存 `env/`、`models/`、`bin/mfa-run`、`jobs/`。本次 ARM64 部署发现 Conda 的 `kalpy` 包不可直接取得，使用 [Spark MFA 安装脚本](../tools/ops/setup_spark_mfa.sh) 在独立环境源码构建。安装脚本包含 SQLite 依赖；修复原生 SQLite 运行依赖后，已验证 MFA 3.4.2 在 Spark 完成真实 A 样本对齐，详见下方冒烟记录。此结果只确认已测样本路径，不代表完整周次验收。MFA 可在 Spark CPU 执行，不必占用或重启现有 GPU 模型服务。
 
 ### 哪些失败可以使用备用
 

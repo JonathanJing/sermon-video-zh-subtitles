@@ -1,0 +1,39 @@
+...................F.................................................... [  6%]
+........................................................................ [ 12%]
+........................................................................ [ 19%]
+........................................................................ [ 25%]
+........................................................................ [ 32%]
+........................................................................ [ 38%]
+........................................................................ [ 45%]
+........................................................................ [ 51%]
+........................................................................ [ 58%]
+........................................................................ [ 64%]
+........................................................................ [ 71%]
+........................................................................ [ 77%]
+........................................................................ [ 84%]
+..................................................................... [ 90%]
+........................................................................ [ 96%]
+....................................                                     [100%]
+=================================== FAILURES ===================================
+________________ test_busy_before_started_is_proven_no_dispatch ________________
+
+cli = <tests.test_sermon_codex_transport.ProductionCodexTransportTests testMethod=runTest>
+
+    def test_busy_before_started_is_proven_no_dispatch(cli):
+        value = policy(cli.root)
+>       with patch.object(slots.Admission, 'reserve', side_effect=slots.contracts.ContractError('resource_broker_busy')):
+                                                                  ^^^^^^^^^^^^^^^
+E       AttributeError: module 'tongxing_production.compute.transports.codex_resources' has no attribute 'contracts'
+
+tests/test_codex_shared_pool_transport.py:62: AttributeError
+=============================== warnings summary ===============================
+tests/test_run_unittest_ci.py::test_roots
+  ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.venv/lib/python3.13/site-packages/_pytest/python.py:171: PytestReturnNotNoneWarning: Test functions should return None, but tests/test_run_unittest_ci.py::test_roots returned <class 'list'>.
+  Did you mean to use `assert` instead of `return`?
+  See https://docs.pytest.org/en/stable/how-to/assert.html#return-not-none for more information.
+    warnings.warn(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_codex_shared_pool_transport.py::test_busy_before_started_is_proven_no_dispatch
+1 failed, 1112 passed, 1 warning, 3 subtests passed in 82.46s (0:01:22)

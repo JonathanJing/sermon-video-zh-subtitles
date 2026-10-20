@@ -3,7 +3,7 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 import unittest
 
-from scripts import align_firebase_dev_v3 as dev
+from tools.ops import align_firebase_dev_v3 as dev
 
 
 PAGE_ID = "resi-test"

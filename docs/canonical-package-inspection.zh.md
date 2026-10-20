@@ -1,6 +1,6 @@
 # Canonical package 只读检查
 
-`python scripts/inspect_canonical_packages.py --config inspection.json` 输出
+`python tools/ops/run.py delivery.inspect_canonical_packages --config inspection.json` 输出
 Source → 各语言 Text → Audio → Page 的 shadow proposal。它不 dispatch、写入
 批准记录、启动模型、发布页面或修改作业状态。Page 的 `ready` 只表示其前置
 package 和所需 receipt 已验证；v3 可继续验证现有 formal-dev Layer 4 candidate。
@@ -44,7 +44,7 @@ candidate、policy 和 Text human receipt 由已验证的上游 lane 提供，�
 `audio` 中另行覆盖。生产 source voice 授权路径可使用现有 producer 支持的
 `sourceVoiceAuthorization`；具体授权组合仍由原有 speech-job validator 检查。
 
-Audio adapter 使用 `build_target_language_audio_package.build_package` 在内存
+Audio adapter 使用 `tongxing_production.audio.package.build_package` 在内存
 重建 package，核对现有音频的 hash、decode、unit receipt、时间表、字幕、
 job 与声线授权。重建结果不会写回；必须另有已保存且一致的 Audio Package。
 这会运行本机 ffprobe/ffmpeg 的只读媒体检查，完整视频可能耗时；不是 TTS。

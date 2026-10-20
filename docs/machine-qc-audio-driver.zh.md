@@ -1,6 +1,6 @@
 # 机器试听豁免驱动（音频 QC 实跑）
 
-`scripts/run_machine_qc_audio_test.py` 是文字驱动 `scripts/run_machine_qc_clip_test.py` 的音频版本：在已有译文豁免、speech job v3、正式音频包和 v2 ASR 筛查的 Dev 运行上，逐语言跑完机器试听豁免链。规则本身见[机器质检豁免](machine-quality-waiver.zh.md)；本文只说明驱动和传输。
+`tongxing_production.review.qc_audio_run` 是文字驱动 `tongxing_production.review.qc_text_run` 的音频版本：在已有译文豁免、speech job v3、正式音频包和 v2 ASR 筛查的 Dev 运行上，逐语言跑完机器试听豁免链。规则本身见[机器质检豁免](machine-quality-waiver.zh.md)；本文只说明驱动和传输。
 
 ## 链路
 
@@ -12,7 +12,7 @@
 
 收据、校准、豁免都按输入哈希命名，只写一次；重跑复用，产物一变就生成新文件，不覆盖旧证据。`summary.json`、`timings.tsv` 记录结果和耗时。驱动不发布，不写人工批准。
 
-## 传输（`scripts/machine_qc_audio_transports.py`）
+## 传输（`tongxing_production.compute.qc_audio_transports`）
 
 | 角色 | 实现 | 说明 |
 |---|---|---|
@@ -26,12 +26,12 @@
 
 ```bash
 # 预检，不调用模型
-python scripts/run_machine_qc_audio_test.py --out artifacts/machine-qc-audio/20261001 --preflight-only
+.venv/bin/python tools/ops/run.py review.qc_audio_run --out artifacts/machine-qc-audio/20261001 --preflight-only
 # 管线演练（全部假传输，豁免只在内存中构建）
-python scripts/run_machine_qc_audio_test.py --out artifacts/machine-qc-audio/20261001 --backend fake
+.venv/bin/python tools/ops/run.py review.qc_audio_run --out artifacts/machine-qc-audio/20261001 --backend fake
 # 实跑（Spark，dev Project；--state-dir 与文字驱动相同）
-python scripts/run_with_openai_environment.py --environment dev -- \
-  python scripts/run_machine_qc_audio_test.py --run-dir artifacts/dev-full-rerun-20261001 \
+python tools/ops/run_with_openai_environment.py --environment dev -- \
+  .venv/bin/python tools/ops/run.py review.qc_audio_run --run-dir artifacts/dev-full-rerun-20261001 \
   --out artifacts/machine-qc-audio/20261001 --state-dir artifacts/dev-full-rerun-20261001/machine-qc-state \
   --asr-model-path /models/Qwen3-ASR-0.6B --tts-checkpoint-map path/to/checkpoint-map.json --locales ko \
   --api-budget-authorization artifacts/budget-plan/qc-ko/api-budget-authorization.json

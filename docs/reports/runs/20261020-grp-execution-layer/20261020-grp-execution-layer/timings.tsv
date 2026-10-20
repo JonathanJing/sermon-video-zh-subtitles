@@ -1,0 +1,4 @@
+stage	status	seconds
+unit.group_suite	pass	9.5
+offline.plan	pass	3.24
+offline.status	pass	0.41

@@ -1,6 +1,6 @@
 # 机器源文裁定（源文语义疑点不再需要人）
 
-2026-10-08 按 Jony 的决定"u076 这种用 AI 判定"加入。工具：[source_meaning_machine_adjudication.py](../scripts/source_meaning_machine_adjudication.py)，测试 [test_source_meaning_machine_adjudication.py](../tests/test_source_meaning_machine_adjudication.py)。
+2026-10-08 按 Jony 的决定"u076 这种用 AI 判定"加入。工具：[source_meaning_machine_adjudication.py](../packages/production/src/tongxing_production/review/source_meaning.py)，测试 [test_source_meaning_machine_adjudication.py](../tests/test_source_meaning_machine_adjudication.py)。
 
 ## 解决什么
 
@@ -24,8 +24,8 @@ Sol 复核有时对一个冻结英文单元本身存疑（605 的 `0-u076` "You'
 ## 怎么跑（Mac 只带 openai 复听；加 qwen 复听要在 Spark 会话内）
 
 ```sh
-python3 scripts/run_with_openai_environment.py --environment dev -- \
-  python3 scripts/source_meaning_machine_adjudication.py <含 source.json、anchor.json 的目录> \
+python3 tools/ops/run_with_openai_environment.py --environment dev -- \
+  .venv/bin/python tools/ops/run.py review.source_meaning <含 source.json、anchor.json 的目录> \
     --media <source.json 绑定的媒体文件> --unit 0-u076 \
     --out-dir <新目录> \
     --listener openai [--listener qwen --asr-model-path <Qwen3-ASR 权重>] \

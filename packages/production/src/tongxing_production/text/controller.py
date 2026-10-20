@@ -9,6 +9,7 @@ from __future__ import annotations
 import argparse
 import copy
 from dataclasses import dataclass
+from functools import lru_cache
 import hashlib
 import json
 import os
@@ -20,8 +21,10 @@ from . import auto_repair
 from . import backend as _text
 from . import budget as budget_tools
 from . import candidate as producer
+from . import group_revision
 from . import models
 from . import rule_preflight
+from . import stat_memo
 from contextlib import nullcontext
 
 
@@ -74,8 +77,14 @@ QC_REPAIR_SCHEMA = 'sermon-canonical-layer2-execution-v5'
 PAYLOAD_CACHE_SCHEMA = 'sermon-canonical-layer2-execution-v6'
 # v7 is v6 plus an explicit failed-job partial-round predecessor.  It can reuse
 # complete direct-paid responses without pretending that a missing success
-# sidecar passed semantic or language-plugin review.
+# sidecar passed semantic or language-plugin review.  Any groupWorkers value is
+# valid: every returned call is checked and replayed before a group may pay
+# (models._run_partial_recovery_groups); v7 configurations with 1 load unchanged.
 PARTIAL_RECOVERY_SCHEMA = 'sermon-canonical-layer2-execution-v7'
+# v8 is v3 plus a per-locale operator group revision (text/group_revision.py): the lane
+# translates again only the groups its revision request lists and carries every other
+# group from the named prior candidate. It does not combine with v5-v7 fields.
+GROUP_REVISION_SCHEMA = 'sermon-canonical-layer2-execution-v8'
 PAYLOAD_CACHE_CONFIG_SCHEMA = 'sermon-canonical-layer2-payload-cache-config-v1'
 PAYLOAD_CACHE_SNAPSHOT_SCHEMA = 'sermon-canonical-layer2-payload-cache-snapshot-v1'
 PARTIAL_RECOVERY_CONFIG_SCHEMA = 'sermon-canonical-layer2-partial-recovery-config-v1'
@@ -84,6 +93,11 @@ PARTIAL_RECOVERY_RECEIPT_SCHEMA = 'sermon-canonical-layer2-partial-recovery-rece
 MAX_PAYLOAD_CACHE_GROUPS = 4096
 MAX_PAYLOAD_CACHE_FILE_BYTES = 4 * 1024 * 1024
 MAX_AUTO_REPAIR_LOCALES = 3
+# The worker rechecks its binding around every guarded operation (current_binding in
+# run_worker); these derivations are reused while every file they read keeps its stat
+# identity, and recomputed in full otherwise (text/stat_memo.py says what that detects).
+_BINDING_MEMO = stat_memo.StatMemo()
+_BINDING_DIGESTS = {}  # see _binding_digest
 
 
 def _auto_repair_binding(value, *, allow_qc=False):
@@ -131,6 +145,7 @@ def _path(root, value):
     return _safe_path(root / value)
 
 
+@lru_cache(maxsize=4096)  # a pure function of two paths; every configuration load asks it ~50 times
 def _overlap(a, b):
     return a == b or a in b.parents or b in a.parents
 
@@ -150,6 +165,7 @@ class Configuration:
     candidate_mode: str = 'production'
     payload_cache: dict | None = None
     partial_recovery: dict | None = None
+    group_revision: dict | None = None
 
 
 def _file_digest(path):
@@ -170,6 +186,12 @@ def _payload_cache_snapshot(root):
     """
     root = _safe_path(root)
     require(root.is_dir() and not root.is_symlink(), 'invalid_payload_cache_root')
+    # Every file read below is a direct entry of root.
+    return _BINDING_MEMO.get(('payloadCache', str(root)), lambda: stat_memo.listing(root),
+                             lambda: _payload_cache_snapshot_of(root))
+
+
+def _payload_cache_snapshot_of(root):
     receipts = {}
     markers = []
     for entry in root.iterdir():
@@ -252,6 +274,18 @@ def _partial_recovery_snapshot(failed_job_root, failed_job_id, round_root,
             and round_root.is_dir() and not round_root.is_symlink()
             and direct_budget_root.is_dir() and not direct_budget_root.is_symlink(),
             'invalid_partial_recovery_source')
+    # The failed job's folder, the round's direct entries and the budget ledger
+    # (with the lock paths budget._store_snapshot refuses as links) are all it reads.
+    return _BINDING_MEMO.get(
+        ('partialRecovery', str(failed_job_root), failed_job_id, str(round_root), str(direct_budget_root), locale),
+        lambda: (stat_memo.listing(failed_job_root / failed_job_id) + stat_memo.listing(round_root)
+                 + stat_memo.listing(direct_budget_root) + stat_memo.listing(direct_budget_root / '.locks')
+                 + stat_memo.listing(direct_budget_root / budget_tools.budget.STORE_ID)),
+        lambda: _partial_recovery_snapshot_of(failed_job_root, failed_job_id, round_root,
+                                              direct_budget_root, locale))
+
+
+def _partial_recovery_snapshot_of(failed_job_root, failed_job_id, round_root, direct_budget_root, locale):
     folder = _safe_path(failed_job_root / failed_job_id)
     request_path, state_path = folder / 'request.json', folder / 'state.json'
     request, state = jobs._read(request_path), jobs._read(state_path)
@@ -341,6 +375,12 @@ def _partial_recovery_binding(value, path, locales, payload_cache):
 
 
 def load_configuration(path):
+    # One listing per directory per load: a v7 recovery round is also its payload-cache root.
+    with stat_memo.shared_listings():
+        return _load_configuration(path)
+
+
+def _load_configuration(path):
     path = _safe_path(Path(path).absolute())
     value = _json(path)
     required_keys = {'schemaVersion', 'productionRunId', 'inspectionConfig', 'jobRoot', 'locales'}
@@ -357,7 +397,9 @@ def load_configuration(path):
                                                   'layer2PartialRecovery'}
                  and value['schemaVersion'] == PARTIAL_RECOVERY_SCHEMA)
              or (set(value) == required_keys | {'layer2AutoRepair', 'candidateMode'}
-                 and value['schemaVersion'] == SHADOW_SCHEMA and candidate_mode == 'shadow'))
+                 and value['schemaVersion'] == SHADOW_SCHEMA and candidate_mode == 'shadow')
+             or (set(value) == required_keys | {'layer2AutoRepair', 'layer2GroupRevision'}
+                 and value['schemaVersion'] == GROUP_REVISION_SCHEMA))
             and pipeline._sha(value['productionRunId'])
             and isinstance(value['locales'], dict) and bool(value['locales'])
             and set(value['locales']) <= set(pipeline.LOCALES), 'invalid_execution_configuration')
@@ -366,14 +408,28 @@ def load_configuration(path):
                                                                                PAYLOAD_CACHE_SCHEMA,
                                                                                PARTIAL_RECOVERY_SCHEMA})
                       if value['schemaVersion'] in {AUTO_REPAIR_SCHEMA, SHADOW_SCHEMA, QC_REPAIR_SCHEMA,
-                                                    PAYLOAD_CACHE_SCHEMA, PARTIAL_RECOVERY_SCHEMA} else None)
+                                                    PAYLOAD_CACHE_SCHEMA, PARTIAL_RECOVERY_SCHEMA,
+                                                    GROUP_REVISION_SCHEMA} else None)
     payload_cache = (_payload_cache_binding(value['layer2PayloadCache'], path, value['locales'])
                      if value['schemaVersion'] in {PAYLOAD_CACHE_SCHEMA, PARTIAL_RECOVERY_SCHEMA} else None)
     partial_recovery = (_partial_recovery_binding(
         value['layer2PartialRecovery'], path, value['locales'], payload_cache)
         if value['schemaVersion'] == PARTIAL_RECOVERY_SCHEMA else None)
-    require(partial_recovery is None or repair_binding['groupWorkers'] == 1,
-            'partial_recovery_requires_serial_group_worker')
+    revisions = None
+    if value['schemaVersion'] == GROUP_REVISION_SCHEMA:
+        named = value['layer2GroupRevision']
+        # The operator's per-group notes are the revision's only brief; meaning notes reopen a repair chain.
+        require('sourceMeaningNotes' not in repair_binding, 'invalid_execution_configuration')
+        require(isinstance(named, dict) and bool(named) and set(named) <= set(value['locales'])
+                and all(type(item) is str and item for item in named.values()), 'invalid_execution_configuration')
+        revisions = {}
+        for locale, item in sorted(named.items()):
+            try:
+                loaded = group_revision.load_request(_path(path.parent, item))
+            except (OSError, ValueError, KeyError, TypeError) as error:
+                raise ValueError('invalid_group_revision_request') from error
+            require(loaded['value']['targetLocale'] == locale, 'invalid_group_revision_request')
+            revisions[locale] = loaded
     inspection_path = _path(path.parent, value['inspectionConfig'])
     inspection = _json(inspection_path)
     require(inspection.get('schemaVersion') == packages.SCHEMA
@@ -388,6 +444,8 @@ def load_configuration(path):
     if partial_recovery:
         input_paths.extend(item for binding in partial_recovery.values()
                            for item in (binding['failedJobRoot'], binding['roundRoot'], binding['budgetRoot']))
+    if revisions:
+        input_paths.extend(item for loaded in revisions.values() for item in group_revision.input_paths(loaded))
     if repair_binding and repair_binding.get('sourceMeaningNotes'):
         notes_path = _path(path.parent, repair_binding['sourceMeaningNotes'])
         repair_binding['sourceMeaningNotes'] = str(notes_path)
@@ -447,10 +505,10 @@ def load_configuration(path):
             locale: item['snapshot'] for locale, item in sorted(partial_recovery.items())}
     if concurrency_profile is not None:
         binding.update(concurrencyProfile=concurrency_profile, resourcePolicy=resource_policy)
-    sha = jobs._digest(binding)
+    sha = _binding_digest(binding)
     return Configuration(path, root, inspection, job_root, value['productionRunId'], lanes, sha,
                          concurrency_profile, resource_policy, repair_binding,
-                         candidate_mode, payload_cache, partial_recovery)
+                         candidate_mode, payload_cache, partial_recovery, revisions)
 
 
 def repair_ledger_root(config):
@@ -459,15 +517,52 @@ def repair_ledger_root(config):
     return config.job_root.parent / ('.' + config.job_root.name + '.layer2-repair')
 
 
+def _binding_digest(binding):
+    """``jobs._digest(binding)``, reusing the last value while its partial-recovery snapshots are the
+    very objects the binding memo returned then and everything else digests the same.
+
+    A v7 snapshot lists every round file (5k+ rows), so encoding it is most of the digest. The
+    snapshot objects are the memo's shared, never-mutated values: a recomputed snapshot is a new
+    object, and the rest of the binding is digested on every call.
+    """
+    snapshots = binding.get('partialRecoverySnapshots')
+    if not snapshots:
+        return jobs._digest(binding)
+    rest = jobs._digest({key: value for key, value in binding.items() if key != 'partialRecoverySnapshots'})
+    key = (rest, tuple((locale, id(snapshot)) for locale, snapshot in sorted(snapshots.items())))
+    entry = _BINDING_DIGESTS.get(key)
+    if entry is not None:  # it holds the snapshots, so no other object can take their ids while it is kept
+        return entry[1]
+    digest = jobs._digest(binding)
+    if len(_BINDING_DIGESTS) >= 4:  # one entry per configuration a process checks; each holds its snapshots
+        _BINDING_DIGESTS.clear()
+    _BINDING_DIGESTS[key] = (dict(snapshots), digest)
+    return digest
+
+
 def code_identity():
     # Pin the runtime source/schema closure, not a branch name or stale commit
     # label. The worker rechecks it before any paid call and candidate admission.
     # Code that moved into the production package runs from there; scripts/
-    # keeps only its import facade, so the package source is part of the closure.
-    root = _text.current().core.repo_root
+    # keeps only its import facade, so the package source is part of the closure. Package commands
+    # also run through tools/ops/run.py, which binds the host and picks the module, so it is hashed too.
+    root = _safe_path(_text.current().core.repo_root)
+    single = (root / 'docs/series-terminology.zh.md', root / 'tools/ops/sermon_unified_preflight.py',
+              root / 'tools/ops/run.py')
+    return _BINDING_MEMO.get(
+        ('code', str(root)),
+        lambda: (stat_memo.tree(root / 'scripts', ('.py',)) + stat_memo.tree(root / 'packages/production/src', ('.py',))
+                 + stat_memo.tree(root / 'schemas', ('.json',)) + stat_memo.files(*single)
+                 # _safe_path rejects a symlinked ancestor; a directory swapped for a symlink to
+                 # itself keeps every leaf's lstat identity, so the ancestors' kind is fingerprinted too.
+                 + stat_memo.ancestors(*single, root / 'scripts', root / 'packages/production/src',
+                                       root / 'schemas')),
+        lambda: _code_identity_of(root, single))
+
+
+def _code_identity_of(root, single):
     files = sorted([*root.joinpath('scripts').rglob('*.py'), *root.joinpath('packages/production/src').rglob('*.py'),
-                    *root.joinpath('schemas').rglob('*.json'), root / 'docs/series-terminology.zh.md',
-                    root / 'tools/ops/sermon_unified_preflight.py'])
+                    *root.joinpath('schemas').rglob('*.json'), *single])
     return jobs._digest({str(p.relative_to(root)): hashlib.sha256(_safe_path(p).read_bytes()).hexdigest() for p in files})
 
 
@@ -481,7 +576,7 @@ def package_view(config):
             # Only this registered future output may be absent. An existing
             # invalid package is always validated and blocks the lane.
             effective['locales'][locale].pop('candidate', None)
-    view = packages.inspect_configuration(config.inspection_root, effective, candidate_mode=config.candidate_mode)
+    view = _inspected(config.inspection_root, effective, config.candidate_mode)
     notes = (getattr(config, 'auto_repair', None) or {}).get('sourceMeaningNotes')
     if notes:
         # The meaning notes the repair loop reads are a Layer 1 input of every text job: new notes are
@@ -496,6 +591,12 @@ def package_view(config):
         view['packageIdentities']['backTranslationQc.' + locale] = digest
         view['stateRevision'] = jobs._digest({'packages': view['stateRevision'],
                                               'backTranslationQc.' + locale: digest})
+    for locale, loaded in sorted((getattr(config, 'group_revision', None) or {}).items()):
+        # The group list, notes, prior candidate and operator decision are inputs of that locale's
+        # text job: a new list or note is a new job identity.
+        key = 'groupRevision.' + locale
+        view['packageIdentities'][key] = group_revision.identity(loaded)
+        view['stateRevision'] = jobs._digest({'packages': view['stateRevision'], key: view['packageIdentities'][key]})
     for locale, binding in sorted((getattr(config, 'payload_cache', None) or {}).items()):
         # The resolved path stays in the execution configuration. Durable
         # identity receives only the content/implementation descriptor digest.
@@ -507,6 +608,71 @@ def package_view(config):
         view['packageIdentities'][key] = binding['identity']
         view['stateRevision'] = jobs._digest({'packages': view['stateRevision'], key: binding['identity']})
     return view
+
+
+def _inspected(root, effective, candidate_mode):
+    """``packages.inspect_configuration``, reused while every file it reads keeps its identity.
+
+    Only a configuration without candidates is memoized: the worker's checks before its
+    candidate exists. Its read set is then fixed by the code and enumerated by
+    _inspection_reads (tests/test_layer2_binding_stat_memo.py traces every stat, open and
+    listing of a full inspection against it). A view with any diagnostic is never stored.
+    """
+    reads = _inspection_reads(root, effective, candidate_mode)
+    if reads is None:
+        return packages.inspect_configuration(root, effective, candidate_mode=candidate_mode)
+    digest, files, trees = reads
+    view = _BINDING_MEMO.get(
+        ('packageView', str(root), digest, candidate_mode), lambda: _inspection_fingerprint(files, trees),
+        lambda: packages.inspect_configuration(root, effective, candidate_mode=candidate_mode),
+        keep=lambda value: not value['inspectionDiagnostics'])
+    return copy.deepcopy(view)  # package_view and its callers extend the view they get
+
+
+def _inspection_reads(root, effective, candidate_mode):
+    """The key digest and every path inspect_configuration reads for a candidate-free configuration, or None.
+
+    The root; the source and anchor packages; the pipeline summary, window approval, aligned
+    transcript and review receipt the source package names; each lane's policy; the
+    terminology table and the schema directory (as files) and their ancestors. None (no
+    memo) when the configuration has a candidate or a field the inspection would reject.
+    """
+    try:
+        lanes = effective['locales']
+        names = [effective['source'], effective['anchor'], *(lane['policy'] for lane in lanes.values())]
+        if (candidate_mode != 'production' or not isinstance(lanes, dict)
+                or any(not isinstance(lane, dict) or 'candidate' in lane for lane in lanes.values())
+                or any(type(name) is not str or not name for name in names)):
+            return None
+        root = Path(root)
+        source = root / effective['source']
+        named = _BINDING_MEMO.get(('sourceNames', str(source)), lambda: stat_memo.files(source),
+                                  lambda: _source_names(source), keep=lambda value: value is not None)
+        digest = jobs._digest(effective)
+    except (TypeError, KeyError, ValueError, AttributeError):
+        return None
+    if named is None:
+        return None
+    current = _text.current()
+    schemas = current.schemas.path('sermon-english-source-package-v1.schema.json').parent
+    files = (root, *(root / name for name in names + list(named)), current.terminology.table_path())
+    return digest, tuple(Path(os.path.abspath(path)) for path in files), (Path(os.path.abspath(schemas)),)
+
+
+def _inspection_fingerprint(files, trees):
+    return (stat_memo.files(*files) + stat_memo.ancestors(*files, *trees)
+            + tuple(row for tree in trees for row in stat_memo.tree(tree, ('.json',))))
+
+
+def _source_names(path):
+    """The files a source package names for the source gate, read as the gate reads it; None if it cannot."""
+    try:
+        source = json.loads(path.read_text(encoding='utf-8'))
+        names = (source['evidence']['pipelineSummary']['path'], source['source']['approvedWindow']['evidence']['path'],
+                 source['transcript']['artifact']['path'], source['review']['evidence']['path'])
+    except (OSError, ValueError, TypeError, KeyError):
+        return None
+    return names if all(type(name) is str and name for name in names) else None
 
 
 def _payload_cache_for(config, locale):
@@ -630,6 +796,30 @@ def _inputs(config, locale, view):
     return source, anchor, policy
 
 
+def _revision_gate(config, locale, view):
+    """None when ``locale`` has no group revision or its request passes every pre-dispatch check;
+    otherwise the public reason (and the unlisted groups the current plugin rejects).
+
+    Read-only: shadow and execute ticks run it before a job exists, so a list that misses a
+    failing group is corrected without leaving a failed durable job behind."""
+    loaded = (getattr(config, 'group_revision', None) or {}).get(locale)
+    if loaded is None:
+        return None
+    try:
+        source, anchor, policy = _inputs(config, locale, view)
+        request = producer.prepare_request(source, anchor, policy, candidate_mode=config.candidate_mode)
+        rules = rule_preflight.preflight(request, policy, config.lanes[locale]['plugin'],
+                                         models.group_plan(request, anchor))
+        group_revision.prepare(loaded, source, anchor, policy, config.lanes[locale]['plugin'], rules)
+    except group_revision.GroupRevisionGateFailed as failed:
+        return {'reasonCode': 'group_revision_unlisted_groups_fail_current_checks',
+                'unlistedFailures': failed.report['unlistedFailures']}
+    except (ValueError, OSError, KeyError, TypeError) as error:
+        reason = str(error).split(':')[0]
+        return {'reasonCode': reason if reason.startswith('group_revision_') else 'group_revision_inputs_invalid'}
+    return None
+
+
 def _unreconciled_paid_call(config, locale):
     """A started-call marker with neither a validated cache nor a saved raw
     response is an unknown paid outcome. The runner's reconciliation check uses
@@ -654,8 +844,8 @@ def _locale_capacity(config):
 
 
 def _worker_command(config, locale, job_id, code_sha, budget_authorization=None):
-    # The host keeps naming scripts/canonical_layer2_controller.py, so new requests
-    # match the argv existing durable jobs recorded.
+    # The host names the package entry (tools/ops/run.py text.controller); recovery
+    # compares this argv with the one the durable job recorded.
     command = _text.current().worker_command('worker', '--config', str(config.path),
             '--locale', locale, '--expected-configuration', config.sha256,
             '--expected-code', code_sha, '--expected-job', job_id)
@@ -740,6 +930,10 @@ class Controller:
         except (ValueError, OSError, KeyError, TypeError):
             return self._result('blocked', 'configuration_code_or_evidence_invalid', dispatched=False)
         locale = self._choose(observed, requested_locale)
+        gate = _revision_gate(config, locale, observed) if locale else None
+        if gate is not None:
+            return self._result('blocked', gate['reasonCode'], proposedWorkUnit='text.' + locale,
+                                groupRevision=gate, stateRevision=observed['stateRevision'], dispatched=False)
         if self.mode == 'deterministic_shadow':
             return self._result('ready' if locale else 'waiting',
                                 'layer2_capacity_reached' if self._capacity_full(observed) else 'shadow_only',
@@ -757,6 +951,7 @@ class Controller:
                     reason = 'layer2_capacity_reached' if self._capacity_full(fresh) else 'no_admitted_layer2_work'
                     return self._result('waiting', reason, nodes=fresh['nodes'], dispatched=False)
                 _inputs(config, locale, fresh)
+                require(_revision_gate(config, locale, fresh) is None, 'group_revision_gate_blocked')
                 ident = durable.identity(fresh, config.run_id, 'text.' + locale)
                 key = jobs._digest(ident)
                 dispatch_attempted = True
@@ -822,6 +1017,7 @@ def execute(config_path, locale, expected_configuration, expected_code, expected
                     'worker_requires_active_bound_durable_job')
             source, anchor, policy = _inputs(config, locale, current)
         with liveness.report(request_path.parent, request) as progress:
+            budgeted = None
             if caller is None:
                 require(budget_binding is not None, 'bound_budget_authorization_required')
                 # OpenAI API only: no Spark session (2026-10-13; only GPU stages occupy Spark).
@@ -834,6 +1030,7 @@ def execute(config_path, locale, expected_configuration, expected_code, expected
                 transports = claude_transports(policy, lane) if backend == 'claude_cli_opus' else None
                 caller = budget_tools.BudgetedCaller(budget_binding, config, source, anchor, policy,
                                                      claude_transports=transports)
+                budgeted = caller
                 if transports is not None:
                     caller.execution_identity = {
                         'schemaVersion': 'claude-layer2-budget-transport-identity-v1', 'backend': 'claude_cli',
@@ -849,6 +1046,7 @@ def execute(config_path, locale, expected_configuration, expected_code, expected
             elif budget_binding is not None:
                 _text.current().compute.reject_cli_transport(caller)
                 caller = budget_tools.BudgetedCaller(budget_binding, config, source, anchor, policy, transport=caller)
+                budgeted = caller
             def current_binding():
                 fresh_config = load_configuration(config.path)
                 require(fresh_config.sha256 == expected_configuration and code_identity() == expected_code,
@@ -864,33 +1062,30 @@ def execute(config_path, locale, expected_configuration, expected_code, expected
                     current_binding()
                     progress.progress('model_request')
                     return caller(key, payload)
-            # Preserve passive transport metadata. Cache-sensitive methods get
-            # wrappers below so a hit rechecks config/code/package identity just
-            # like a paid dispatch; otherwise prior bytes could change between
-            # admission and copy without ever entering bound_call().
-            for attribute in ('execution_identity', 'completed_content', 'admit_resource', 'billing'):
-                if hasattr(caller, attribute):
-                    setattr(bound_call, attribute, getattr(caller, attribute))
-            if hasattr(caller, 'verify_execution'):
-                def verify_execution(key):
-                    current_binding()
-                    result = caller.verify_execution(key)
-                    current_binding()
-                    return result
-                bound_call.verify_execution = verify_execution
-            for attribute in ('paid_response_provenance', 'record_reuse',
+            # Cache-hit and provenance methods pass through without a binding recheck
+            # (docs/canonical-layer2-controller.zh.md, "缓存命中不逐次复核绑定"). Each still
+            # verifies its own evidence: the budget authorization and runtime, the exact
+            # direct-paid closure, the prior files' hashes and the copied bytes. What a hit
+            # writes is bound to the inputs admitted in memory. Drift of the config, code,
+            # package or prior snapshot on disk is caught before every paid dispatch
+            # (bound_call), at post_model_binding and before the candidate is saved, so a
+            # drifted run saves no candidate; drift during the candidate writes fails the
+            # worker at final_package_validation.
+            for attribute in ('execution_identity', 'completed_content', 'admit_resource', 'billing',
+                              'verify_execution', 'paid_response_provenance', 'record_reuse',
                               'validate_recovery_source', 'recover_returned_response'):
                 if hasattr(caller, attribute):
-                    operation = getattr(caller, attribute)
-                    def guarded(*args, _operation=operation, **kwargs):
-                        current_binding()
-                        result = _operation(*args, **kwargs)
-                        current_binding()
-                        return result
-                    setattr(bound_call, attribute, guarded)
+                    setattr(bound_call, attribute, getattr(caller, attribute))
             model_completion = []
+            revision = None
             with (budget_tools.request_limits(budget_binding['limits']) if budget_binding else nullcontext()):
-                if config.auto_repair:
+                if locale in (getattr(config, 'group_revision', None) or {}):
+                    evidence, model_output, revision = _run_group_revision(
+                        config, lane, source, anchor, policy, api_key, bound_call, progress.progress,
+                        admission_span, model_completion,
+                        revision_digest=current['packageIdentities']['groupRevision.' + locale],
+                        remaining_cost_microusd=budgeted.remaining_cost_microusd() if budgeted is not None else None)
+                elif config.auto_repair:
                     evidence, model_output = _run_auto_repair(
                         config, lane, source, anchor, policy, api_key, bound_call, progress.progress,
                         admission_span, model_completion,
@@ -919,15 +1114,26 @@ def execute(config_path, locale, expected_configuration, expected_code, expected
                     lane['plugin'], plugin_sha, rule_preflight_receipt=rule_receipt)
                 candidate = producer.admit_evidence(source, anchor, policy, original_request, evidence,
                     receipt, lane['plugin'], plugin_sha, rule_preflight_receipt=rule_receipt)
+                revision_receipt = (group_revision.receipt(revision['prepared'], candidate, revision['repairReceipt'],
+                                                           revision['allowance'], job_id=expected_job)
+                                    if revision is not None else None)
                 current_binding()
                 progress.progress('candidate_validated')
                 models.save_new(lane['output'] / 'language-review.json', receipt)
                 models.save_new(lane['candidate'], candidate)
+                if revision_receipt is not None:
+                    models.save_new(lane['output'] / 'group-revision-receipt.json', revision_receipt)
                 accounting.record_workload('layer2.candidate_identity', {'candidateSha256': jobs._digest(candidate),
                     'languageReviewSha256': jobs._digest(receipt)})
             with accounting.stage('layer2.final_package_validation.' + locale, depends_on=[candidate_span],
                     executor_type='deterministic_program', work_unit_id='l2.' + locale + '.final_package_validation'):
-                checked = package_view(fresh_config)
+                # The last current_binding() runs before the candidate is written; recheck the
+                # configuration and code after the writes so drift there cannot end in success.
+                # (current_binding() itself requires the node to still be 'ready'.)
+                final_config = load_configuration(config.path)
+                require(final_config.sha256 == expected_configuration and code_identity() == expected_code,
+                        'worker_configuration_or_code_changed_during_models')
+                checked = package_view(final_config)
                 require(checked['nodes']['text.' + locale]['status'] == 'validated', 'worker_candidate_not_validated')
             recovery_receipt_sha = None
             if partial_recovery is not None:
@@ -954,7 +1160,9 @@ def execute(config_path, locale, expected_configuration, expected_code, expected
             return {'status': 'machine_review_pass_human_review_pending',
                     'candidateJsonSha256': jobs._digest(candidate), 'releaseEligible': False,
                     **({'partialRecoveryReceiptSha256': recovery_receipt_sha}
-                       if recovery_receipt_sha is not None else {})}
+                       if recovery_receipt_sha is not None else {}),
+                    **({'groupRevisionReceiptSha256': jobs._digest(revision_receipt)}
+                       if revision_receipt is not None else {})}
 
 
 def _run_auto_repair(config, lane, source, anchor, policy, api_key, call, progress, admission_span,
@@ -1016,6 +1224,53 @@ def _run_auto_repair(config, lane, source, anchor, policy, api_key, call, progre
     return evidence, final
 
 
+def _run_group_revision(config, lane, source, anchor, policy, api_key, call, progress, admission_span,
+                        completion_spans, *, revision_digest, remaining_cost_microusd):
+    """Translate again only the groups the lane's revision request lists, inside this job.
+
+    Before any paid call: the request must be the one the admitted job identity bound, the
+    current plugin passes every unlisted prior group (or the job fails naming them), and the
+    repair allowance is frozen from the listed groups and the budget's remaining USD cap.
+    Listed groups then run in parallel through the bounded repair loop on a chain of their
+    own; unlisted groups are carried from the prior candidate and make no model call."""
+    locale = policy['targetLocale']
+    loaded = config.group_revision[locale]
+    require(group_revision.identity(loaded) == revision_digest, 'group_revision_changed_after_admission')
+    request = producer.prepare_request(source, anchor, policy, candidate_mode=config.candidate_mode)
+    plan = models.group_plan(request, anchor)
+    rule_receipt = rule_preflight.preflight(request, policy, lane['plugin'], plan)
+    prepared = group_revision.prepare(loaded, source, anchor, policy, lane['plugin'], rule_receipt,
+                                      gate_report_path=lane['output'] / 'group-revision-plugin-gate.json')
+    # Frozen at the first attempt: a resumed job keeps the caps its earlier rounds were chosen under.
+    allowance_path = lane['output'] / 'group-revision-allowance.json'
+    if allowance_path.exists():
+        allowance = producer._load(allowance_path)
+        require(allowance.get('listedGroups') == len(prepared['listed']), 'group_revision_allowance_changed')
+    else:
+        allowance = group_revision.allowance(len(prepared['listed']), policy, remaining_cost_microusd)
+        models.save_new(allowance_path, allowance)
+    rounds_root = lane['output'] / 'repair-rounds'
+
+    def run_round(out, reuse_from, brief, collector):
+        progress('repair_round')
+        return models.run_accounted(source, anchor, policy, out, api_key, call, None, lane['plugin'],
+                                    None, reuse_from, partial_repair_brief=brief,
+                                    progress_callback=progress, predecessor_spans=[admission_span],
+                                    completion_spans=completion_spans, failure_collector=collector,
+                                    candidate_mode=config.candidate_mode, operator_revision=prepared['brief'])
+
+    repair_receipt = auto_repair.drive(request, len(plan), run_round, rounds_root, repair_ledger_root(config),
+                                       group_workers=config.auto_repair['groupWorkers'],
+                                       lineage_extra=prepared['lineageExtra'], repair_allowance=allowance)
+    require(repair_receipt['status'] == 'all_groups_passed', 'layer2_group_revision_stopped')
+    final = Path(repair_receipt['finalRunDirectory'])
+    require(_overlap(rounds_root.resolve(), final.resolve()) and final.resolve() != rounds_root.resolve(),
+            'auto_repair_final_round_outside_lane')
+    evidence = producer._load(final / 'evidence.json')
+    require(auto_repair.json_sha256(evidence) == repair_receipt['evidenceSha256'], 'auto_repair_evidence_changed')
+    return evidence, final, {'prepared': prepared, 'allowance': allowance, 'repairReceipt': repair_receipt}
+
+
 REOPEN_RESULT_SCHEMA = 'sermon-canonical-layer2-reopen-result-v1'
 
 
@@ -1034,8 +1289,13 @@ def _reopen_plan(config, locale, view):
     require(not _unreconciled_paid_call(config, locale), 'unknown_paid_outcome_requires_reconciliation')
     key = failed[0]['jobId']
     request = jobs._read(_safe_path(config.job_root / key / 'request.json'))
+    # The worker argv starts with the host's entry prefix; a job recorded under another
+    # entry (the scripts/ facade before the D closure window) does not match it.
+    prefix = _text.current().worker_command()
     require(jobs._request_valid(request, key) and jobs._digest(request) == failed[0]['requestSha256']
-            and request['command'][2:7] == ['worker', '--config', str(config.path), '--locale', locale],
+            and request['command'][:len(prefix)] == prefix
+            and request['command'][len(prefix):len(prefix) + 5] == ['worker', '--config', str(config.path),
+                                                                    '--locale', locale],
             'original_execution_binding_changed')
     _, cache_enabled, cache_identity, _ = _payload_cache_for(config, locale)
     require(_command_option(request['command'], '--expected-payload-cache')

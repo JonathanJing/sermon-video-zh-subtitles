@@ -1,14 +1,14 @@
-"""A changed executable facade or alias mapping invalidates each bound identity."""
+"""A changed package target or alias mapping invalidates each bound identity; removed facades are not hashed."""
 import io
 from pathlib import Path
 import unittest
 from unittest.mock import patch
 
 from scripts import tongxing_host as host  # noqa: F401  configures package ports
-from scripts import machine_qc_audio_transports as transport
-from scripts import machine_quality_waiver as waiver
-from scripts import screen_target_language_audio_units as screening
-from scripts import target_audio_predicted_schedule as predicted
+from tongxing_production.compute import qc_audio_transports as transport
+from tongxing_production.review import waiver
+from tongxing_production.audio import screening
+from tongxing_production.audio import predicted_schedule as predicted
 from tongxing_production import path_aliases
 
 
@@ -17,7 +17,7 @@ RESOLVER = path_aliases.PRODUCTION + "path_aliases.py"
 
 
 class FourIdentityFacadeTests(unittest.TestCase):
-    def test_each_physical_facade_target_and_resolver_changes_its_identity(self):
+    def test_each_physical_target_and_resolver_changes_its_identity(self):
         cases = (
             ("waiver", waiver.implementation_sha256, waiver.IMPLEMENTATION_PHYSICAL_FILES,
              "scripts/machine_quality_waiver.py", path_aliases.resolve("scripts/machine_quality_waiver.py")),
@@ -32,7 +32,10 @@ class FourIdentityFacadeTests(unittest.TestCase):
         for label, identity, physical, facade, target in cases:
             self.assertEqual(tuple(sorted(set(physical))), physical)
             baseline = identity()
-            for name in (facade, target, RESOLVER):
+            # The D closure window removed the scripts/ facades: the closure names the target only.
+            self.assertNotIn(facade, physical)
+            self.assertFalse((ROOT / facade).exists())
+            for name in (target, RESOLVER):
                 with self.subTest(identity=label, name=name):
                     self.assertIn(name, physical)
                     path_to_change = ROOT / name

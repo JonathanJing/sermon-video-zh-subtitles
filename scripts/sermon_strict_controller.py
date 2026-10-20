@@ -16,14 +16,15 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from scripts import sermon_accounting as accounting
-from scripts import sermon_log_profile as profile
-from scripts import sermon_repair_planning as planning
-from scripts import sermon_review_budget as budget
-from scripts import sermon_review_contracts as c
+from tongxing_production.observability import accounting
+from tongxing_production.observability import profile
+from tongxing_production.orchestration.supervisor import repair_planning as planning
+from tongxing_production.review import review_budget as budget
+from tongxing_production.review import contracts as c
 from scripts import sermon_strict_budget_adapter as adapter
 from scripts import sermon_strict_layer2 as strict
-from scripts import sermon_workflow_jobs as jobs
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.orchestration import jobs
 from scripts.sermon_strict_repair_planner import RepairPlanner
 from scripts.sermon_release_workflow import _safe_path
 

@@ -6,8 +6,8 @@ try:
 except ImportError:
     from language_review_plugins.weekly_15030286_common import REQUIRED, review_15030286_group
 
-PLUGIN_ID = "ko-weekly-15030286-v1"
-PLUGIN_VERSION = "2026-10-17-v1"
+PLUGIN_ID = "ko-weekly-15030286-v2"
+PLUGIN_VERSION = "2026-10-18-v2"
 FORBIDDEN_REGISTER = r"\b(?:너는|너희는|당신은)\b|하옵나이다|하겠사옵니다"
 
 

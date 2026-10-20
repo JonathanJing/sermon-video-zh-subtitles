@@ -1,0 +1,24 @@
+discover	pass	0.4
+Run report not written ([Errno 30] Read-only file system: '/work/repo-d1314424/artifacts'); export it by hand with scripts/export_run_digest.py
+{
+  "zh-Hans": [
+    "speech job input englishSourcePackage is missing or changed",
+    "speech job input anchorManifest is missing or changed",
+    "speech job input targetLanguageCandidate is missing or changed",
+    "speech job input targetLanguagePolicy is missing or changed",
+    "speech job input textReleaseBasis is missing or changed"
+  ]
+}
+discover	pass	0.4
+zh-Hans.track-check	pass	7.2
+zh-Hans.secondary-asr	pass	4.6
+zh-Hans.audio-qc	pass	5.7
+Run report not written ([Errno 30] Read-only file system: '/work/repo-d1314424/artifacts'); export it by hand with scripts/export_run_digest.py
+{
+  "zh-Hans": {
+    "status": "requires_repair",
+    "reason": "audio QC failed; re-render the failed units as the repair ladder says",
+    "problems": [],
+    "calibration": null
+  }
+}

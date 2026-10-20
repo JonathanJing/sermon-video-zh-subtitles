@@ -7,8 +7,9 @@ import unittest
 from unittest.mock import patch
 from tongxing_production import path_aliases
 from tongxing_production.observability import accounting as accounting_impl
-from scripts import sermon_accounting as accounting
-from scripts import sermon_log_profile as log_profile
+from tongxing_production.observability import accounting
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.observability import profile as log_profile
 from scripts import export_observability_trace as safe_export
 
 
@@ -21,7 +22,7 @@ class ObservabilityTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary:
             (Path(temporary) / 'events.jsonl').write_text(json.dumps(row) + '\n')
             events, damaged = accounting.read_events(temporary)
-            from scripts import sermon_identity_sidecars as sidecars
+            from tongxing_production.observability import identity_sidecars as sidecars
             self.assertEqual(sidecars.collect(temporary, events), {})
             safe_export.export(Path(temporary), Path(temporary) / 'export')
         self.assertEqual(events, [row])
@@ -57,7 +58,7 @@ class ObservabilityTests(unittest.TestCase):
                             transitional / '.execution-identities')
             legacy_rows = [{**row, 'contractVersion': 'sermon-accounting-log-contract-v1'}
                            for row in rows]
-            from scripts import sermon_log_contract as log_contract
+            from tongxing_production.observability import log_contract
             from tongxing_production.observability import outbox
             legacy_started = next(row for row in legacy_rows if row['event'] == 'workflow_started')
             self.assertFalse(log_contract.validator().is_valid(legacy_started))

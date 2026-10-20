@@ -6,11 +6,14 @@ import wave
 from pathlib import Path
 from unittest.mock import patch, MagicMock
 
-from scripts.experiments import run_diagnostic_source as subject
-from scripts.production_concurrency_profile import profile_v1
-from scripts import sermon_workflow_jobs as jobs
-from scripts import judge_english_source_for_translation as judge
-from scripts import english_source_judge_cache as cache
+from tests import experiment_modules
+
+subject = experiment_modules.line_module("experiments/spark-diagnostic-audio/run_diagnostic_source.py")
+from tongxing_production.compute.concurrency_profile import profile_v1
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.orchestration import jobs
+from tongxing_production.source import english_source_judge as judge
+from tongxing_production.source import english_source_judge_cache as cache
 from scripts.sermon_unified import resources
 
 
@@ -107,7 +110,7 @@ class DiagnosticSourceTests(unittest.TestCase):
         options = dict(api_key='', api_transport=api, aligner=self.align,
                        mfa_preflight=lambda **k: {'fixture': True}, cli_call=cli)
         result = subject.execute(prepared['configPath'], **options)
-        from scripts.spark_exclusive_session import IDENTIFIER
+        from tongxing_production.compute.spark_exclusive_session import IDENTIFIER
         self.assertRegex(self.session.start_job.call_args.args[0], IDENTIFIER)
         self.assertEqual(counts, {'api': 4, 'cli': 8})
         self.assertFalse(result['productionEligible'])

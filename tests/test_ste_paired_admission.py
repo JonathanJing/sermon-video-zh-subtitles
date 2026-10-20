@@ -4,7 +4,8 @@ import json
 from pathlib import Path
 import tempfile
 import unittest
-from scripts.experiments import ste_paired_admission as subject
+from tests import experiment_modules
+subject = experiment_modules.load("experiments/layer2-translation-ab/ste_paired_admission.py")
 from tests import test_produce_target_language_candidate as fixture
 
 

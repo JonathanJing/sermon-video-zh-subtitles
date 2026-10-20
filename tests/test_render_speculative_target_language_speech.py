@@ -5,16 +5,15 @@ import copy
 import io
 import json
 from pathlib import Path
-import subprocess
-import sys
 from tempfile import TemporaryDirectory
 from types import SimpleNamespace
 import unittest
 from unittest.mock import patch
 
-from scripts import render_formal_target_language_speech as formal
-from scripts import render_speculative_target_language_speech as subject
-from scripts import sermon_accounting as ledger_accounting
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.audio import renderer as formal
+from tongxing_production.audio import speculative as subject
+from tongxing_production.observability import accounting as ledger_accounting
 from tests import test_prepare_target_language_speech_job as speech_fixture
 from tests import test_render_formal_target_language_speech as formal_fixture
 
@@ -31,26 +30,9 @@ class FakeSynth:
 
 
 class PreviewExecutionBindingTests(unittest.TestCase):
-    def test_isolated_facade_bootstraps_package_without_site_or_checkout_cwd(self):
-        import jsonschema
-        facade = Path(__file__).resolve().parents[1] / 'scripts/render_speculative_target_language_speech.py'
-        package = facade.parents[1] / 'packages/production/src/tongxing_production/__init__.py'
-        dependencies = Path(jsonschema.__file__).resolve().parents[1]
-        smoke = ('import sys,runpy;sys.path.insert(0,sys.argv[1]);'
-                 'runpy.run_path(sys.argv[2],run_name="preview_import_smoke");'
-                 'import tongxing_production;print(tongxing_production.__file__)')
-        with TemporaryDirectory() as directory:
-            result = subprocess.run([sys.executable, '-I', '-B', '-S', '-c', smoke,
-                                     str(dependencies), str(facade)],
-                                    cwd=directory, text=True, capture_output=True, check=False)
-        self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertEqual(result.stdout.strip(), str(package))
-
     def test_every_producer_and_host_source_changes_binding(self):
         code = formal._audio.current().code
         sources = {
-            'scripts/render_speculative_target_language_speech.py':
-                code.physical_path('scripts/render_speculative_target_language_speech.py'),
             'packages/production/src/tongxing_production/audio/speculative.py':
                 code.physical_path('packages/production/src/tongxing_production/audio/speculative.py'),
             'packages/production/src/tongxing_production/path_aliases.py':
@@ -150,11 +132,11 @@ class SpeculativeRenderTests(unittest.TestCase):
                 self.render(group_ids=['g1'])
         self.assertEqual(FakeSynth.calls, [])
 
-    def test_changed_facade_bytes_block_same_folder_cache_before_model(self):
+    def test_changed_preview_implementation_bytes_block_same_folder_cache_before_model(self):
         self.render(group_ids=['g1'])
         FakeSynth.calls = []
         facade = subject.formal._audio.current().code.physical_path(
-            'scripts/render_speculative_target_language_speech.py')
+            'packages/production/src/tongxing_production/audio/speculative.py')
         original_open = Path.open
 
         def changed_open(path, *args, **kwargs):
@@ -200,8 +182,60 @@ class SpeculativeRenderTests(unittest.TestCase):
     def test_chinese_only_voice_purpose_cannot_render_korean_preview(self):
         self.fixture.adapter["authorizationPurpose"] = "chinese_dubbing"
         speech_fixture.write_json(self.fixture.adapter_path, self.fixture.adapter)
-        with self.assertRaisesRegex(ValueError, "demo/Chinese voice purpose"):
+        with self.assertRaisesRegex(ValueError, "demo or this locale's dubbing voice purpose"):
             self.render(group_ids=["g1"])
+
+    def test_a_locale_dubbing_voice_renders_a_preview_only_unit(self):
+        # The registry authorizes the voice for production dubbing; the preview stays preview_only.
+        self.fixture.registry["speakers"][0]["authorization"]["purposes"].append("multilingual_dubbing")
+        speech_fixture.write_json(self.fixture.registry_path, self.fixture.registry)
+        self.fixture.adapter["registryJsonSha256"] = subject.identity.json_sha256(self.fixture.registry)
+        self.fixture.adapter["authorizationPurpose"] = "multilingual_dubbing"
+        speech_fixture.write_json(self.fixture.adapter_path, self.fixture.adapter)
+        result = self.render(group_ids=["g1"])
+        receipt = json.loads((self.out / "receipts/unit-0000.json").read_text())
+        self.assertEqual((receipt["status"], receipt["fullDecode"]), ("preview_only", "pass"))
+        manifest = json.loads((self.out / "speculative-manifest.json").read_text()) \
+            if (self.out / "speculative-manifest.json").is_file() else None
+        for value in [receipt] + ([manifest] if manifest else []):
+            self.assertIsNot(value.get("releaseEligible"), True)
+            self.assertIsNot(value.get("synthesisEligible"), True)
+        self.assertTrue(result)
+
+    def use_normalization(self, normalization):
+        policies = json.loads(self.policies.read_text())
+        policies["normalization"] = normalization
+        speech_fixture.write_json(self.policies, policies)
+        self.fixture.adapter["normalizationPolicySha256"] = subject.identity.json_sha256(normalization)
+        speech_fixture.write_json(self.fixture.adapter_path, self.fixture.adapter)
+
+    def test_registered_spoken_forms_policy_renders_groups_it_leaves_unchanged(self):
+        # The formal job's policy; neither fixture group has a chapter or verse number.
+        self.use_normalization(subject.formal.FROZEN_V3_NORMALIZATION_POLICY)
+        result = self.render(group_ids=["g1", "g2"])
+        self.assertEqual(result["renderedGroupIds"], ["g1", "g2"])
+        self.assertEqual([call[0] for call in FakeSynth.calls],
+                         [group["targetText"] for group in self.fixture.candidate["groups"]])
+
+    def test_a_group_the_spoken_forms_rule_rewrites_is_refused_before_any_output(self):
+        policy = subject.formal.FROZEN_V3_NORMALIZATION_POLICY
+        self.use_normalization(policy)
+        rule = policy["spokenForms"]["ko"]
+        rewrite = ("ko", lambda text: text.replace("함께", "같이"))
+        with patch.dict(subject.formal.SPOKEN_FORM_RULES, {rule: rewrite}):
+            with self.assertRaisesRegex(ValueError, "may not rewrite target text"):
+                self.render(group_ids=["g1", "g2"])
+            self.assertFalse(self.out.exists())
+            self.assertEqual(self.render(group_ids=["g1"])["renderedGroupIds"], ["g1"])
+        self.assertEqual(len(FakeSynth.calls), 1)
+
+    def test_an_unregistered_rewriting_policy_is_refused(self):
+        policy = copy.deepcopy(subject.formal.FROZEN_V3_NORMALIZATION_POLICY)
+        policy["spokenForms"]["ko"] = "operator-supplied-rule"
+        self.use_normalization(policy)
+        with self.assertRaisesRegex(ValueError, "may not rewrite target text"):
+            self.render(group_ids=["g1"])
+        self.assertEqual(FakeSynth.calls, [])
 
     def test_committed_partial_audio_resumes_without_synthesis(self):
         self.render(group_ids=["g1"])
@@ -212,7 +246,7 @@ class SpeculativeRenderTests(unittest.TestCase):
         self.assertEqual(len(FakeSynth.calls), 1)
 
     def test_missing_predecessors_remain_unknown_and_explicit_root_is_known(self):
-        from scripts import sermon_log_profile as profile
+        from tongxing_production.observability import profile
         logs = self.fixture.root / 'predecessor-accounting'
         with profile.session(logs,'legacy-render',work_kind='engineering',evidence_mode='synthetic') as legacy:
             self.render(group_ids=['g1'])
@@ -293,6 +327,21 @@ class FormalAdmissionTests(unittest.TestCase):
         manifest.pop('previewExecutionBindingSha256')
         manifest_path.write_text(json.dumps(manifest))
         with self.assertRaisesRegex(ValueError, 'frozen checkout'):
+            self.formal_render()
+        self.assertEqual(FakeSynth.calls, [])
+
+    def test_formal_adoption_of_a_dubbing_purpose_preview_stays_closed(self):
+        # The preview lane may render with the locale's dubbing voice; adopting such a preview
+        # into a formal render is a separate gate that this change leaves closed.
+        registry_path, adapter_path = self.spec_root / "registry.json", self.spec_root / "adapter.json"
+        registry = formal.package.read_object(registry_path)
+        registry["speakers"][0]["authorization"]["purposes"].append("multilingual_dubbing")
+        formal.write_json_atomic(registry_path, registry)
+        adapter = formal.package.read_object(adapter_path)
+        adapter.update(authorizationPurpose="multilingual_dubbing",
+                       registryJsonSha256=subject.identity.json_sha256(registry))
+        formal.write_json_atomic(adapter_path, adapter)
+        with self.assertRaisesRegex(ValueError, "Speculative voice purpose was not authorized"):
             self.formal_render()
         self.assertEqual(FakeSynth.calls, [])
 
@@ -559,7 +608,7 @@ class DiagnosticPreviewTests(unittest.TestCase):
 
     def test_cold_and_cache_accounting_contains_real_unit_dag_and_unknown_tokens(self):
         import json
-        from scripts import sermon_log_profile as profile
+        from tongxing_production.observability import profile
         log_root = self.f.root / 'preview-accounting'
         with profile.session(log_root, 'preview-test', work_kind='production', evidence_mode='synthetic') as cold:
             self.render()

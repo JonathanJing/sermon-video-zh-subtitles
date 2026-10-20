@@ -1,0 +1,9 @@
+{
+  "deliveryType": "test",
+  "status": "passed",
+  "exitCode": 0,
+  "commit": "e754d423",
+  "workflow": "local experiment leaf move verification (local-layer-latency)",
+  "publication": "not_run",
+  "realProduction": "not_run"
+}

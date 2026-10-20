@@ -5,7 +5,7 @@ from argparse import Namespace
 from pathlib import Path
 from unittest.mock import patch
 
-import scripts.run_realtime_audio_source_preflight as mod
+import tools.ops.run_realtime_audio_source_preflight as mod
 
 
 class RealtimeAudioSourcePreflightTest(unittest.TestCase):

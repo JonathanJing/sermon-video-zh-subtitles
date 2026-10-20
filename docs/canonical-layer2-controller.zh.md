@@ -31,15 +31,15 @@ inspectionConfig 而不列入本批执行 lanes。每个 lane 输出、输入及
 
 ```sh
 # 默认只读：不建 job/lock/output，不读取 API key。
-python scripts/canonical_layer2_controller.py tick --config /absolute/execution.json
+.venv/bin/python tools/ops/run.py text.controller tick --config /absolute/execution.json
 
 # 只在该次来源、生产预算与运行授权已具备后使用；可能调用既有生产 API。
-python scripts/canonical_layer2_controller.py tick \
+.venv/bin/python tools/ops/run.py text.controller tick \
   --config /absolute/execution.json --mode deterministic_execute
 ```
 
 一个 tick 至多派发一个固定 worker 然后返回。第一版同一 production run 至多一个 active
-locale job；uncertain owner 继续占用该名额直到 reconciliation。当前 controller 代码允许冻结 policy 的 1–16 个组 workers，共享 job-root 对应的 API 槽位最多 24 个；独立 `run_target_language_models.py` CLI 仍限制 1–3 workers。API 槽位不等于 Codex CLI 账号并发额度，也不是跨所有 job-root 的全局 API/TTS 资源调度器。见 [并发实现](../scripts/layer2_api_concurrency.py) 与 [controller 准入](../packages/production/src/tongxing_production/text/controller.py)。
+locale job；uncertain owner 继续占用该名额直到 reconciliation。当前 controller 代码允许冻结 policy 的 1–16 个组 workers，共享 job-root 对应的 API 槽位最多 24 个；独立 `run_target_language_models.py` CLI 仍限制 1–3 workers。API 槽位不等于 Codex CLI 账号并发额度，也不是跨所有 job-root 的全局 API/TTS 资源调度器。见 [并发实现](../packages/production/src/tongxing_production/compute/api_concurrency.py) 与 [controller 准入](../packages/production/src/tongxing_production/text/controller.py)。
 显式并发配置使用新的 `sermon-canonical-layer2-execution-v2`，在 v1 字段上增加 `concurrencyProfile` 和 `resourcePolicy` 两个文件路径；v1 不接受这两个新字段，也不会自动升档。迁移时创建新配置与运行身份，绑定文件内容 hash，勿修改旧 job 的容量／凭据／输出目录。当前 profile v1 将最多活动 locale 升到 3，CLI 业务池 23、监督专槽 1；uncertain 仍阻止整个 run 的新派发。正式预算／批准仍须各自通过，详见[本轮诊断准备](reports/20261005-next-concurrency-test-preparation.zh.md)。
 
 自动修复配置 `sermon-canonical-layer2-execution-v3` 在 v1 字段上增加 `layer2AutoRepair`（路由版本、每语言组并发 `groupWorkers` 1–16、同时活跃语言 `maxActiveLocales` 1–3），在 worker 的同一个持久 job 里跑[有界自动修复](layer2-bounded-auto-repair.zh.md)；它不接受 v2 profile，API 仍共用 24 个在途槽。
@@ -47,7 +47,7 @@ locale job；uncertain owner 继续占用该名额直到 reconciliation。当前
 修复循环因 `request_source_review` 停下、job 失败后，L1 含义备注到达时用显式命令重开，不调用模型：
 
 ```sh
-python scripts/canonical_layer2_controller.py reopen-repair \
+.venv/bin/python tools/ops/run.py text.controller reopen-repair \
   --config /absolute/execution.json --locale zh-Hans \
   --expected-state-revision <shadow tick 输出的 stateRevision>
 ```
@@ -96,7 +96,8 @@ validator 全通过且无 unknown marker 时写到新的 sibling 目录；它只
 `layer2PartialRecovery`，每个 locale 显式绑定旧 `failedJobRoot + failedJobId`、失败轮目录和原始
 direct-paid budget root；新 `jobRoot` 与 `outputDirectory` 仍由 execution 配置给出。准入要求旧 job
 保持 `failed`、旧预算的每条 reservation 都是直接付费且已知成功，并把旧 job request/state、失败轮
-文件和预算账本摘要加入新 durable identity。`groupWorkers` 必须为 1。
+文件和预算账本摘要加入新 durable identity。`groupWorkers` 与 v6 相同，取 1–16，按[运行配置](weekly-run-profile.zh.md#并发设置)
+用 8（2026-10-20 起；此前要求为 1，原因见下）。
 
 有 PR #868 success sidecar 的组走原 v6 路径；缺 sidecar 的已返回角色只有在 policy preview 的完整
 bounded payload、parsed/raw response、provider request id、直接付费 result marker 与 response record
@@ -105,6 +106,121 @@ collector；因此旧内容失败不会被误签为成功。旧 started marker �
 provider outcome、损坏 bytes 或 intermediate reused 来源都会在任何新请求前阻断。旧预算里没有对应
 operation 的未派发组才可按新授权付费。完成后在新 lane 写
 `partial-round-recovery-receipt.json`，绑定旧 failed job 与新 successor job；旧 state 不改写。
+
+多组并发时，结果与串行相同的保证来自两条规则（`models._run_partial_recovery_groups`）：
+
+1. **先核对全部旧证据。** 派发前预检逐个检查失败轮里每个“译者已返回、复核未派发”的角色：文件齐全、
+   parsed 与 raw 一致、preview 自身哈希、属于计划中的该组、旧账本里有对应的直接付费行。
+2. **先回放已完整返回的组。** 译者与复核都已返回的组先跑完，这一阶段关闭付费派发：若误入付费调用，
+   在写 started marker 之前就失败，不产生未知结果。当前 payload 与旧 payload 的逐组比对因此全部发生
+   在任何新付费之前。之后其余组再按 `groupWorkers` 并行。
+
+付费的只有未派发的角色，与串行同一集合；证据按源顺序合并，failure 报告按组序排序，所以候选、证据、
+success sidecar 和恢复收据（除其点名的 successor job 与配置）与串行逐字节相同。每次付费仍在 `bound_call`
+里先取 job root 共享的 24 个 API 槽位并过同一预算账本。测试见 `tests/test_layer2_partial_recovery_parallel.py`。
+
+此前要求 `groupWorkers=1` 有两个原因，现都已解决：2026-10-17 的 v2 运行（8 组并发）因当前账本的
+provenance 读取与并发写入竞争而以 `snapshot_changed_during_read` 失败，PR #1005 已修复（那时 v7 尚未合并）；
+另外串行只在前驱也是串行（返回的组是前缀）时才保证“先核对旧证据、后付费”，乱序前驱下串行也会先为
+早组付费、后发现晚组证据损坏（#1011 的 Codex P1 意见），上面两条规则对任意组数都成立。放宽只去掉一项
+加载限制，配置字段与收据 schema 不变，旧 v7 配置（`groupWorkers: 1`）照常加载、配置与快照身份不变，
+不需要迁移；与任何代码改动一样，新代码身份需要新的预算授权，进行中的运行留在其固定的 worktree。
+
+### 缓存命中不逐次复核绑定
+
+worker 的完整绑定复核（执行配置、代码身份、package view、durable 身份）只在三处运行：worker 准入、每次
+付费派发前（`bound_call`，取得 API 槽位前后各一次），以及结束时（`post_model_binding`、候选保存前、
+`final_package_validation`）。缓存命中与来源核对方法（`verify_execution`、`record_reuse`、
+`recover_returned_response`、`paid_response_provenance`、`validate_recovery_source`）不再在前后各复核一次；
+它们各自的核对照旧：预算授权与运行身份、direct-paid 闭环（响应必须等于原付费记录）、prior 文件哈希与
+复制后字节复查。
+
+运行中途改了配置、代码、package 输入或 prior 快照时：读到被改的组在读取时失败；之后的付费调用在派发前
+被拒；其余情况在结束复核时拒绝，不保存候选。代价是不再 fail-fast：漂移后的命中组会继续跑到结束。
+候选写盘期间的漂移由 `final_package_validation` 抓住：写盘后重新加载执行配置并核对其哈希和代码身份，
+不一致则 worker 失败、不报成功。
+
+漂移后、结束复核前写下的持久产物仍然安全：
+- **预算账本的复用行**：`record_reuse` 只在响应与批准来源账本的直接付费记录逐字节一致时写 `$0 reused`
+  行，绑定准入时内存中的 source/anchor/policy 与 payload 指纹。复用行永远不能当后续复用或 partial
+  recovery 的来源（`_direct_paid_provenance` 要求无 `settlement`）。
+- **payload-cache 成功收据与组缓存副本**：收据绑定准入时内存中的请求（source、anchor、policy 哈希）和
+  原付费响应的字节哈希，不绑定 job 的配置身份或最终结果；失败 job 的收据本来就可被后续运行复用。后续
+  运行复用时重新核对请求绑定、文件哈希和付费闭环，用自己的代码重新解析响应、重跑语义门与逐组语言插件；
+  输入不同的运行直接拒收。
+- **partial-recovery 读取**：只读，每次独立核对失败轮与原付费账本的闭环。
+
+该改动改变代码身份：已有 job 保留冻结的 `--expected-code`，在新代码上恢复按原规则报
+`worker_configuration_or_code_changed`；只有新准入的 job 按此执行。没有 schema、配置字段或迁移变化。
+
+### Worker 绑定复核的 stat 备忘
+
+worker 在准入、每次付费派发前和结束时重算绑定（见上节「缓存命中不逐次复核绑定」）：执行配置、代码身份、
+package view 与 durable 身份。其中 v6/v7 的 prior root 与 partial-recovery 快照（每次重读并
+摘要数千个文件）和代码身份由进程内 stat 备忘复用（`text/stat_memo.py`）：只要它们读过的每个路径的
+`lstat` 身份 `(dev, ino, mode, size, mtime_ns, ctime_ns)` 与目录条目名都没变，就沿用上次结果；任一
+变化就整体重算。调用次数和位置不变，执行配置文件与 durable 身份仍每次完整重算。
+
+package view 的包检查（`inspect_configuration`）在没有候选时也走这个备忘：worker 写出候选之前的每次
+复核都是这种形状。读集按代码枚举：inspection 根目录、source 与 anchor 包、source 包里写明的 pipeline
+summary、窗口批准、对齐转写和 review 收据、各语言 policy、术语表和 schema 目录，以及这些路径的所有
+上级目录。上级目录只记 `(dev, ino, mode)`：换成符号链接或换成另一个目录都会变，同目录写入别的文件
+不会变。候选探测（`candidate.json` 是否存在）仍每次在备忘之外执行；一旦有候选，整次检查不走备忘。
+带任何诊断的结果不入备忘。测试会追踪一次完整检查的每个 stat、open 和目录列举，要求都落在这个读集里，
+所以以后有人给检查加了新的读，测试会失败。
+
+一次 `load_configuration` 内同一目录只列举一次：v7 的 recovery round 必须就是 payload-cache 根目录，
+原来每次复核要 stat 这几千个文件两遍。命中后，绑定摘要在其余部分摘要不变、且 partial-recovery 快照
+仍是备忘返回的同一个对象时沿用上次的值（快照几千行，重新编码它就是摘要的大头）。`_overlap` 是两个
+路径的纯函数，加了 `lru_cache`。
+
+能发现：内容写入、截断、追加、chmod、rename/替换、删除和新增条目；同大小改写后再用 `os.utime`
+还原 mtime 也会改变 ctime。发现不了：不更新 ctime 的改动（需把系统时钟往回拨、直写块设备，或不维护
+ctime 的文件系统）；上级目录只记 kind，所以属主或 ACL 改动让一个没变的文件变得不可读时也发现不了。
+时间戳粒度内的竞态由 racy 规则关闭：只有 ctime 早于取样时刻 3 秒以上、且计算期间身份未变（重算后的
+复核总是重新列举）的结果才会入备忘；失败结果从不入备忘。备忘只在单个进程内，新 worker 先完整计算一次。
+
+该备忘只改本地开销，不改任何身份的算法或取值：配置、快照、package view、durable job 和代码身份的摘要
+与改动前逐字节相同。但编辑 `controller.py` 与 `stat_memo.py` 本身改变代码身份，所以已有 job 保留其冻结的 `--expected-code`，
+在新代码上恢复会按原规则报 `worker_configuration_or_code_changed`；只有新准入的 job 使用它。没有
+schema、配置字段或迁移变化。
+
+## 按组号修订（execution v8）
+
+操作者看完候选、只想改几组时用这条路径（2026-10-18 周产出的教训：改动只能写进插件、policy 哈希一变，v6 缓存重放拒收旧成功收据，v7 只能单组串行、修复上限按“重放调用为 0”只剩约 4 组，最后整篇重新付费）。唯一必需的输入是**已有候选 + 每个语言的组号列表**，每组可附一句备注；怎么改由译者模型和独立复核决定，列表外的一切不动。
+
+1. 先用 `record_decision.py --governs <旧候选> …` 记下操作者的决定，这一行按旧候选字节绑定（`artifact_bound`）。
+2. 每个语言写一份修订请求 `sermon-layer2-group-revision-request-v1`（[schema](../schemas/sermon-layer2-group-revision-request-v1.schema.json)，路径相对请求文件）：
+
+```json
+{
+  "schemaVersion": "sermon-layer2-group-revision-request-v1",
+  "targetLocale": "es",
+  "priorCandidate": "../text/es/candidate.json",
+  "groups": [24, {"group": 25, "note": "金额只说一次"}, 86],
+  "decision": {"decisionsFile": "../run/decisions.ndjson", "rowSha256": "<该决定行的规范 SHA-256>"}
+}
+```
+
+   组号是运行文件 `group-NNNN` 的 1 起序号，也可写确切的 `translationGroupId`。冻结 policy 与旧候选不同时（例如插件改过），还要 `priorPolicy` 和旧运行的 `priorRulePreflight`（`rule-preflight.json`）。
+3. 复制执行配置，`schemaVersion` 改为 `sermon-canonical-layer2-execution-v8`（v3 字段加 `layer2GroupRevision: {"es": "revision/es.json"}`；不接受 v5–v7 字段和 `sourceMeaningNotes`），该语言的 `outputDirectory` 换到新目录（如 `text-r2/es`），`jobRoot` 不变。请求文件和它指向的每个文件的字节进入 `text.<locale>` 的输入身份（`packageIdentities.groupRevision.<locale>`），换列表或备注就是新 job。为新配置签发 Layer 2 预算（预算根按配置隔离：`.<jobRoot>.layer2-budget-revision-<配置哈希>`），照常 `tick`/`drive`。
+
+派发前（shadow tick、execute tick 和 worker 各查一次，都不调用模型）：
+
+- 旧候选必须通过当前 validator，并绑定它自己的 policy；policy 变化只允许 `plugin_only_migration` 或 `approval_rebinding`（`policy_preview.classify_policy_change`，与 `compare_previews` 同一组字段），提示词、模型、术语、经文等面向模型的字段变了就拒绝（`group_revision_model_facing_policy_changed`）。
+- 规则包（`rule-preflight`）只允许插件的数字、名称和经文引文形式变化；某个未列出的组自己的经文引文规则变了，它必须进列表。
+- 当前插件在本地对旧候选的**每一组**重跑。未列出的组现在不通过时，tick 返回 `blocked`、`group_revision_unlisted_groups_fail_current_checks`，并列出这些组号（worker 另写 `group-revision-plugin-gate.json`），不建 job、不付费；把它们加进列表（或修插件）后重来。不会静默放过。
+- 决定行必须存在、`artifact_bound` 且绑定旧候选的确切字节。
+
+执行：列出的组按 `groupWorkers` 并行，各发新的译者请求（提示里带 `operatorRevision`：旧译文、其哈希和备注，标明旧译文已被否、备注要对照英文核实）和独立复核请求，再过插件；未列出的组直接取旧候选那一行（译文、coverage、复核结论和原请求 ID），不调用模型、不重新复核，也不在轮目录留下任何文件。列出的组若在门 1/门 2 失败，进入同一个有界修复循环，但：
+
+- 修复账本另起一条链（lineage 加 `groupRevisionSha256`，绑定请求、简报和决定行），不会把同 policy 已通过的链误当成结果；
+- 修复额度按列表算：每个列出的组最多 2 对译者／复核（`REPAIR_PAIRS_PER_LISTED_GROUP`），每次按强制的最坏 token 数预留，再受预算授权剩余美元上限约束（先扣掉首轮每组一对），第一次计算时冻结在 `group-revision-allowance.json`；不再用“首轮调用的 10%”（重放时为 0，10-18 只够约 4 组）。每单元 4 次、指纹重现和耐心规则照旧；
+- 列出的组同一失败码分散出现不算系统性（它们本来就是因同类问题被挑出来的），连续早停照旧。
+
+结果是普通的 `sermon-target-language-candidate-v2`：仍由 `run_language_plugin` + `admit_evidence` 准入（插件再对全部组跑一次），`status=machine_review_pass_human_review_pending`、`humanApproval` 不变，文本质检、语音任务、音频包和发布 v4 按原样消费；整篇文本质检仍要在这个最终候选上跑。准入前核对每个未列出的组与旧候选逐字节相同、请求 ID 不变，再在 lane 写 `group-revision-receipt.json`（[schema](../schemas/sermon-layer2-group-revision-receipt-v1.schema.json)）：新旧候选与 policy 哈希、policy 变化分类、规则包变化、插件门报告哈希、决定行（哈希、谁、何时、问题与选择）、每个修订组的新旧译文哈希、备注哈希和新请求 ID、每个沿用组的译文哈希、旧组哈希和证据行哈希，以及修复额度、修复收据和账本链头。它是机器证据，`releaseEligible=false`、`humanApproval=false`。
+
+离线验证：`tests/test_layer2_group_revision.py`（组号接口、沿用绑定、插件变化门、并行与额度，以及 402 句里改 3 组、其余零调用的端到端）。没有真实模型、付费金额或翻译质量结论。
 
 默认顺序是排序后的可准入 locale，没有循环轮询或无限 Agent 对话。工作中可重复调用 tick
 检查，但 active/failed/unknown durable receipt 不会产生第二个相同工作。

@@ -5,7 +5,7 @@ import unittest
 from argparse import Namespace
 from pathlib import Path
 
-import scripts.write_operator_approval_bundle as mod
+import tools.ops.write_operator_approval_bundle as mod
 
 
 class WriteOperatorApprovalBundleTest(unittest.TestCase):
@@ -84,7 +84,7 @@ class WriteOperatorApprovalBundleTest(unittest.TestCase):
         self.assertIn("--web-realtime-contract-report", live_validation_commands)
         self.assertIn("validate_realtime_session.py", live_validation_commands)
         self.assertIn(
-            "scripts/run_realtime_stabilizer_loop.py",
+            "tools/ops/run_realtime_stabilizer_loop.py",
             report["live1130Runbook"]["stabilizerFallbackCommand"],
         )
         server_choice = next(
@@ -100,7 +100,7 @@ class WriteOperatorApprovalBundleTest(unittest.TestCase):
         self.assertIn("artifacts/evidence/web-realtime-contract.json", browser_choice["evidenceReports"])
         self.assertIn("artifacts/evidence/realtime-public-sse-smoke.json", browser_choice["evidenceReports"])
         rendered_server_command = json.dumps(server_choice["command"])
-        self.assertIn("scripts/run_realtime_live_session.py", rendered_server_command)
+        self.assertIn("tools/ops/run_realtime_live_session.py", rendered_server_command)
         self.assertIn("gpt-realtime-translate", rendered_server_command)
         self.assertIn("gpt-5.4-mini", rendered_server_command)
         self.assertTrue(cloud["secretReferencesIncluded"])
@@ -207,7 +207,7 @@ def unblock_plan(no_caption_plan=None):
                 "state": "approval_required",
                 "requiresApproval": True,
                 "reason": "Apply the approved Cloud Run realtime update plan.",
-                "commands": [["python3", "scripts/apply_cloud_run_realtime_update_plan.py", "--approve"]],
+                "commands": [["python3", "tools/ops/apply_cloud_run_realtime_update_plan.py", "--approve"]],
             },
             {
                 "id": "publish_sunday_manifest_to_gcs",
@@ -219,7 +219,7 @@ def unblock_plan(no_caption_plan=None):
                 "commands": [
                     [
                         "python3",
-                        "scripts/plan_gcs_sunday_manifest_publish.py",
+                        "tools/ops/plan_gcs_sunday_manifest_publish.py",
                         "--apply",
                         "--confirm-production-stable",
                     ]
@@ -230,7 +230,7 @@ def unblock_plan(no_caption_plan=None):
                 "sourceRow": "cloud_run_api_preflight",
                 "state": "pending",
                 "requiresApproval": False,
-                "commands": [["python3", "scripts/run_cloud_run_realtime_preflight.py"]],
+                "commands": [["python3", "tools/ops/run_cloud_run_realtime_preflight.py"]],
             },
             {
                 "id": "rerun_deployed_public_sse_smoke",
@@ -240,7 +240,7 @@ def unblock_plan(no_caption_plan=None):
                 "commands": [
                     [
                         "python3",
-                        "scripts/run_realtime_public_sse_smoke.py",
+                        "tools/ops/run_realtime_public_sse_smoke.py",
                         "--web-realtime-contract-report",
                         "artifacts/evidence/web-realtime-contract.json",
                     ]
@@ -285,7 +285,7 @@ def cloud_dry_run():
             "--remove-env-vars",
             "REALTIME_EVENT_GCS_PREFIX",
         ],
-        "wouldValidate": [["python3", "scripts/validate_cloud_run_realtime_config.py"]],
+        "wouldValidate": [["python3", "tools/ops/validate_cloud_run_realtime_config.py"]],
     }
 
 
@@ -338,7 +338,7 @@ def live_1130_run_plan():
                 "expectedAudioSourceKinds": ["authorized_audio_url", "authorized_audio_file", "authorized_youtube_source"],
                 "command": [
                     "python3",
-                    "scripts/run_realtime_live_session.py",
+                    "tools/ops/run_realtime_live_session.py",
                     "--realtime-model",
                     "gpt-realtime-translate",
                     "--stable-model",
@@ -353,20 +353,20 @@ def live_1130_run_plan():
         "liveValidationCommands": [
             [
                 "python3",
-                "scripts/run_realtime_public_sse_smoke.py",
+                "tools/ops/run_realtime_public_sse_smoke.py",
                 "--web-realtime-contract-report",
                 "artifacts/evidence/web-realtime-contract.json",
             ],
             [
                 "python3",
-                "scripts/validate_realtime_session.py",
+                "tools/ops/validate_realtime_session.py",
                 "--expected-model",
                 "gpt-realtime-translate",
             ],
         ],
         "stabilizerFallbackCommand": [
             "python3",
-            "scripts/run_realtime_stabilizer_loop.py",
+            "tools/ops/run_realtime_stabilizer_loop.py",
             "--model",
             "gpt-5.4-mini",
         ],
@@ -389,7 +389,7 @@ def no_caption_asr_plan():
         "status": "needs_real_no_caption_archive",
         "runnerCommand": [
             "python3",
-            "scripts/run_no_caption_archive_asr_route.py",
+            "tools/ops/run_no_caption_archive_asr_route.py",
             "--live-url",
             "<NO_CAPTION_YOUTUBE_LIVE_ARCHIVE_URL>",
             "--api-key-secret",
@@ -406,7 +406,7 @@ def no_caption_asr_plan():
         "commands": [
             [
                 "python3",
-                "scripts/run_offline_archive_preflight.py",
+                "tools/ops/run_offline_archive_preflight.py",
                 "--live-url",
                 "<NO_CAPTION_YOUTUBE_LIVE_ARCHIVE_URL>",
                 "--asr-model",
@@ -414,7 +414,7 @@ def no_caption_asr_plan():
             ],
             [
                 "python3",
-                "scripts/translate_playback_with_openai.py",
+                "tools/ops/translate_playback_with_openai.py",
                 "--model",
                 "gpt-5.4-mini",
             ],

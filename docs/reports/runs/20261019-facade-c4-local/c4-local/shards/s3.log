@@ -1,0 +1,246 @@
+Estimating 212 unprofiled modules from measured per-case cost
+Shard 4/10: 606 tests from 379 modules
+......................................................................................................{"role": "translator", "model": "gpt-6.1-sol", "tier": "fast", "elapsedSeconds": 0.0, "usage": {"input_tokens": 100, "cached_input_tokens": 50, "output_tokens": 20}, "creditUsage": {"schemaVersion": "codex-credit-usage-v1", "status": "estimated", "estimatedCredits": 0.01525, "actualCredits": null, "actualQuotaUsage": null, "basis": "purchased_credit_equivalent", "model": "gpt-6.1-sol", "modelSource": "requested", "requestedServiceTier": "fast", "appliedServiceTier": "fast", "tierSource": "requested", "rateCardVersion": "codex-credits-2026-10-05", "rateCardSha256": "557d283646a6dd8ed49cc32a88e8459a165b72066339be99233ea75146c21edf", "verifiedAt": "2026-10-05", "sources": ["https://learn.chatgpt.com/docs/pricing", "https://learn.chatgpt.com/docs/agent-configuration/speed"], "ratesPerMillionTokens": {"input": 50, "cachedInput": 2.5, "output": 250}, "speedMultiplier": 2, "reason": "requested_identity_assumption"}}
+.........................................................................................SERMON_LOGGING_WRITE_FAILED errorType=AccountingWriteError
+.............................................Digest: /var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/tmpipe3mrpv/digests/20261007-e2e (5 files, 14 redactions)
+gpt-transcribe reference chunk 2/2
+gpt-transcribe reference chunk 1/2
+......................Prepared playback simulation: /var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/tmp3xddg4iw/web/test-asr.generated.js
+Open apps/operator-web/index.html and click 模拟播放.
+edited reading blocks 0-0
+proofread reading blocks 0-0
+.....................{"stage": "tts", "batchIndex": 0, "completedGroups": 2}
+{"stage": "tts", "batchIndex": 1, "completedGroups": 4}
+{"stage": "tts", "batchIndex": 2, "completedGroups": 6}
+{"stage": "tts", "batchIndex": 3, "completedGroups": 8}
+{"stage": "tts", "batchIndex": 4, "completedGroups": 10}
+{"stage": "tts", "batchIndex": 5, "completedGroups": 12}
+{"stage": "tts", "batchIndex": 6, "completedGroups": 13}
+....usage: run_unittest_ci.py [-h] --out OUT --scale {clip,week}
+                          [--locales LOCALES] [--stage STAGE]
+                          --total-usd TOTAL_USD [--settled-usd SETTLED_USD]
+                          --approved-by APPROVED_BY --evidence EVIDENCE
+                          [--layer2-execution LAYER2_EXECUTION]
+                          [--qc-inputs QC_INPUTS] [--reuse-from REUSE_FROM]
+                          [--resume-qc-authorization RESUME_QC_AUTHORIZATION]
+                          [--layer2-reuse-budget-root LOCALE=ABSOLUTE_ROOT]
+                          [--profile PROFILE]
+run_unittest_ci.py: error: Choose replay-only --reuse-from or --resume-qc-authorization, not both
+........discover	pass	0.0
+ko.text-qc.prefetch	pass	0.0
+ko.text-qc	pass	0.0
+ko.calibration.prefetch	pass	0.1
+ko.calibration	pass	0.1
+ko.text-waiver	pass	0.1
+{
+  "ko": {
+    "status": "text_waiver_issued",
+    "reason": null,
+    "problems": [],
+    "calibration": {
+... 110 lines omitted; 4 error-like lines, 4 kept below ...
+[line 83] run_unittest_ci.py: error: --locales must name one or more of zh-Hans, ko, es
+[line 93] run_unittest_ci.py: error: --locales must name one or more of zh-Hans, ko, es
+[line 103] run_unittest_ci.py: error: --workers must be between 1 and 16
+[line 113] run_unittest_ci.py: error: --workers must be between 1 and 16
+... end of omitted section ...
+                          --total-usd TOTAL_USD [--settled-usd SETTLED_USD]
+                          --approved-by APPROVED_BY --evidence EVIDENCE
+                          [--layer2-execution LAYER2_EXECUTION]
+                          [--qc-inputs QC_INPUTS] [--reuse-from REUSE_FROM]
+                          [--resume-qc-authorization RESUME_QC_AUTHORIZATION]
+                          [--layer2-reuse-budget-root LOCALE=ABSOLUTE_ROOT]
+                          [--profile PROFILE]
+run_unittest_ci.py: error: Output must be new or empty
+.................s...............................................................................................................................................................SERMON_LOGGING_WRITE_FAILED errorType=AccountingWriteError
+SERMON_LOGGING_WRITE_FAILED errorType=AccountingWriteError
+SERMON_LOGGING_WRITE_FAILED errorType=AccountingWriteError
+SERMON_LOGGING_WRITE_FAILED errorType=AccountingWriteError
+....................................{
+  "status": "error",
+  "reason": "ValueError: Policy is not the candidate's frozen translation policy",
+  "record": null,
+  "revisionBrief": null,
+  "condensedGroupIds": null,
+  "failedGroupIds": null
+}
+v4.1 package verified; model loaded and warmup finished.
+............................................................................
+----------------------------------------------------------------------
+Ran 606 tests in 777.574s
+
+OK (skipped=2)
+{
+  "apiKeyMaterialIncluded": false,
+  "commands": [
+    [
+      "python3",
+      "scripts/run_offline_archive_preflight.py",
+      "--live-url",
+      "<NO_CAPTION_YOUTUBE_LIVE_ARCHIVE_URL>",
+      "--no-discover",
+      "--lang",
+      "en-orig",
+      "--lang",
+      "en",
+      "--sermon-start",
+      "<SERMON_START_TIMECODE_IF_KNOWN>",
+      "--asr-model",
+      "gpt-4o-transcribe",
+      "--out",
+      "artifacts/evidence/no-caption-archive-preflight.json"
+    ],
+    [
+      "python3",
+      "scripts/prepare_live_link_playback.py",
+      "--live-url",
+      "<NO_CAPTION_YOUTUBE_LIVE_ARCHIVE_URL>",
+      "--no-discover",
+      "--lang",
+      "en-orig",
+      "--lang",
+      "en",
+      "--sermon-start",
+      "<SERMON_START_TIMECODE_IF_KNOWN>",
+      "--asr-model",
+      "gpt-4o-transcribe",
+      "--api-key-secret",
+      "<OPENAI_API_KEY_SECRET_RESOURCE>",
+      "--out-dir",
+      "artifacts/evidence/2026-06-28-no-caption-asr-route/artifacts",
+      "--web-out",
+      "artifacts/evidence/2026-06-28-no-caption-asr-route/web/playback-simulation.generated.js",
+      "--gcs-bucket",
+      "sermon-zh-artifacts-ai-for-god",
+      "--gcs-prefix",
+      "sundays/2026-06-28/runs/no-caption-asr-route",
+      "--gcs-dry-run"
+    ],
+    [
+      "python3",
+      "scripts/translate_playback_with_openai.py",
+      "--input",
+      "artifacts/evidence/2026-06-28-no-caption-asr-route/web/playback-simulation.generated.js",
+      "--model",
+      "gpt-5.4-mini",
+      "--api-key-secret",
+      "<OPENAI_API_KEY_SECRET_RESOURCE>",
+      "--out",
+      "artifacts/evidence/2026-06-28-no-caption-asr-route/web/playback-simulation.generated.js",
+      "--out-dir",
+      "artifacts/evidence/2026-06-28-no-caption-asr-route/model-output"
+    ],
+    [
+      "python3",
+      "scripts/export_playback_captions.py",
+      "--input",
+      "artifacts/evidence/2026-06-28-no-caption-asr-route/web/playback-simulation.generated.js",
+      "--out-dir",
+      "artifacts/evidence/2026-06-28-no-caption-asr-route/artifacts",
+      "--stem",
+      "sermon.zh.live-aligned",
+      "--manifest",
+      "artifacts/evidence/2026-06-28-no-caption-asr-route/artifacts/cloud-manifest.json",
+      "--gcs-bucket",
+      "sermon-zh-artifacts-ai-for-god",
+      "--gcs-prefix",
+      "sundays/2026-06-28/runs/no-caption-asr-route",
+      "--gcs-dry-run"
+    ],
+    [
+      "python3",
+      "scripts/validate_offline_chain.py",
+      "--report",
+      "artifacts/evidence/2026-06-28-no-caption-asr-route/artifacts/report.json",
+      "--playback-js",
+      "artifacts/evidence/2026-06-28-no-caption-asr-route/web/playback-simulation.generated.js",
+      "--zh-vtt",
+      "artifacts/evidence/2026-06-28-no-caption-asr-route/artifacts/sermon.zh.live-aligned.vtt",
+      "--zh-srt",
+      "artifacts/evidence/2026-06-28-no-caption-asr-route/artifacts/sermon.zh.live-aligned.srt",
+      "--manifest",
+      "artifacts/evidence/2026-06-28-no-caption-asr-route/artifacts/cloud-manifest.json",
+      "--expected-asr-model",
+      "gpt-4o-transcribe",
+      "--expected-translation-model",
+      "gpt-5.4-mini",
+      "--out",
+      "artifacts/evidence/no-caption-offline-chain-validation.json"
+    ],
+    [
+      "python3",
+      "scripts/validate_production_readiness.py",
+      "--offline-report",
+      "artifacts/evidence/2026-06-28-no-caption-asr-route/artifacts/report.json",
+      "--playback-js",
+      "artifacts/evidence/2026-06-28-no-caption-asr-route/web/playback-simulation.generated.js",
+      "--zh-vtt",
+      "artifacts/evidence/2026-06-28-no-caption-asr-route/artifacts/sermon.zh.live-aligned.vtt",
+      "--zh-srt",
+      "artifacts/evidence/2026-06-28-no-caption-asr-route/artifacts/sermon.zh.live-aligned.srt",
+      "--sunday-manifest",
+      "artifacts/evidence/2026-06-28-no-caption-asr-route/artifacts/cloud-manifest.json",
+      "--allow-missing-realtime",
+      "--out",
+      "artifacts/evidence/asr-route-readiness.json"
+    ]
+  ],
+  "passCriteria": [
+    "run_offline_archive_preflight.py reports decision=use_asr_fallback.",
+    "prepare_live_link_playback.py runs offline_live_sermon_subtitles.py, builds playback JS, and writes a cloud-manifest.json dry-run manifest.",
+    "Prepared offline report has caption_source.kind=openai_asr.",
+    "validate_offline_chain.py confirms no requested English caption track exists before ASR fallback.",
+    "validate_offline_chain.py confirms the openai_asr output source_file is an extracted audio artifact.",
+    "ASR model is gpt-4o-transcribe.",
+    "Chinese translation model is gpt-5.4-mini.",
+    "validate_offline_chain.py status is ok and not_realtime_chain passes.",
+    "validate_production_readiness.py output records offlineRoute.decision=use_asr_fallback."
+  ],
+  "requiredModels": {
+    "forbiddenOfflineModel": "gpt-realtime-translate",
+    "offlineAsr": "gpt-4o-transcribe",
+    "offlineTranslation": "gpt-5.4-mini"
+  },
+  "requiredSource": {
+    "authorizationRequirement": "Use only a source we are authorized to process.",
+    "captionRequirement": "No requested English caption track is available.",
+    "kind": "youtube_live_archive",
+    "placeholderUrl": "<NO_CAPTION_YOUTUBE_LIVE_ARCHIVE_URL>"
+  },
+  "runnerCommand": [
+    "python3",
+    "scripts/run_no_caption_archive_asr_route.py",
+    "--live-url",
+    "<NO_CAPTION_YOUTUBE_LIVE_ARCHIVE_URL>",
+    "--api-key-secret",
+    "<OPENAI_API_KEY_SECRET_RESOURCE>",
+    "--sunday",
+    "2026-06-28",
+    "--session-id",
+    "no-caption-asr-route",
+    "--sermon-start",
+    "<SERMON_START_TIMECODE_IF_KNOWN>",
+    "--asr-model",
+    "gpt-4o-transcribe",
+    "--translation-model",
+    "gpt-5.4-mini",
+    "--out",
+    "artifacts/evidence/no-caption-asr-route-run.json"
+  ],
+  "schemaVersion": 1,
+  "secretResourceNamesIncluded": false,
+  "sessionId": "no-caption-asr-route",
+  "status": "needs_real_no_caption_archive",
+  "sunday": "2026-06-28"
+}
+ 146.76s     1  test_sermon_mock_tts_dag
+ 121.71s     7  test_machine_quality_waiver
+  49.56s     1  test_run_machine_qc_audio_test
+  24.80s     5  test_sermon_cuv_translation
+  22.57s     2  test_canonical_layer2_cache_recovery
+  20.36s     5  test_sermon_delivery_intent_binding
+  17.86s     2  test_canonical_layer2_reconciliation
+  17.15s     3  test_sermon_diagnostic_dag_session
+  16.58s     2  test_sermon_fresh_source_evidence
+  16.32s     2  test_sermon_local_business_callbacks
+exit 0

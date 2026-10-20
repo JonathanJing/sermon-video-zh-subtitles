@@ -1,0 +1,11 @@
+{
+  "scope": "Move six standalone experiment scripts from scripts/ into experiments/model-throughput, local-layer-latency, observability-diagnostic and workflow-experiment, from origin/dev 06d65999",
+  "results": {
+    "targetedTests": "45 passed, 1 failed, 557 subtests passed (5 test modules, test_tongxing_production_package, test_experiment_leaf_facades)",
+    "preexistingFailure": "test_observability_diagnostic_driver::test_real_producer_source_identity_includes_media_hash fails identically on clean origin/dev 06d65999 (KeyError tongxing_production.source.english_source_package), passes alone",
+    "testIdInventory": "6969 IDs before, 6972 after; no IDs removed, 3 facade tests added",
+    "legacyCli": "-m form exits 0 for all 6; sermon_workflow_experiment direct file run exits 1 on old, new and clean dev alike",
+    "diffCheck": "git diff --check passed"
+  },
+  "limits": "Local deterministic tests only; no production, paid model, Spark, or public delivery. CI workflows disabled by user decision 2026-10-19."
+}

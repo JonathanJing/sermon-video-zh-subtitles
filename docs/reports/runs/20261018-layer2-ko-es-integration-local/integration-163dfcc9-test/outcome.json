@@ -1,0 +1,11 @@
+{
+  "schemaVersion": "sermon-local-test-outcome-v1",
+  "status": "passed",
+  "exitCode": 0,
+  "commit": "163dfcc9b6e809fc1e66823b6a3c9468db06eb60",
+  "testsPassed": 110,
+  "subtestsPassed": 179,
+  "wallTimeSeconds": 12.11,
+  "providerCalls": 0,
+  "scope": "Layer 2 plugin-only recovery, ko/es source-bound deterministic checks, budget same-job provenance and payload cache"
+}

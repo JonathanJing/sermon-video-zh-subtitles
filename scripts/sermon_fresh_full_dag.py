@@ -11,20 +11,22 @@ from pathlib import Path
 import tempfile
 import uuid
 
-from scripts import sermon_accounting as accounting
-from scripts import sermon_completion as completion
-from scripts import sermon_durable_accounting as durable
+from tongxing_production.observability import accounting
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.observability import completion
+from tongxing_production.observability import durable
 from scripts import sermon_fresh_diagnostic as fresh
 from scripts import sermon_fresh_source_prefect as source_engine
 from scripts import sermon_fresh_source_stages as stages
-from scripts import sermon_log_contract as log
+from tongxing_production.observability import log_contract as log
 from scripts import sermon_logs as logs
 from scripts import sermon_mock_tts_contract as contract
 from scripts import sermon_mock_tts_dag as mock
-from scripts import sermon_public_snapshot as public
-from scripts import sermon_review_contracts as c
-from scripts import sermon_review_observation as _review_observation  # preload summary-consumer closure
-from scripts import sermon_source_failure as failure
+from tongxing_production.storage import snapshot as public
+from tongxing_production.review import contracts as c
+from tongxing_production.observability import review_observation as _review_observation  # preload summary-consumer closure
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.source import failure
 from scripts.sermon_execution_harness import work_lock
 from scripts.sermon_release_workflow import _safe_path
 
@@ -137,7 +139,7 @@ class FullFreshDAG(mock.MockTTSDAG):
             and self.invocation_binding['planSha256'] == self.plan_sha256, 'mock_dag_invocation_changed')
         c.require(all(source_engine.source._sha(path) == digest for path, digest in self.binding['inputFiles'].items())
             and all(source_engine.source._sha(row['path']) == row['sha256'] for row in self.binding['recipe']['files'].values())
-            and all(mock.diagnostic._hash_file(mock.diagnostic.pilot.REPO/name) == digest
+            and all(mock.code_sha256(name) == digest
                 for name, digest in self.binding['codeFiles'].items()), 'fresh_full_input_or_code_changed')
         c.require(self.root == _safe_path(self.session.root/'fresh-full-dag'/self.plan_sha256, recursive=True)
             and self.fixture_root == _safe_path(self.session.root), 'fresh_full_scope_changed')

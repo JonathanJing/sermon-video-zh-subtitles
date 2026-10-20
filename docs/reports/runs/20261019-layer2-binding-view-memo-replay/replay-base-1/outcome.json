@@ -1,0 +1,14 @@
+{
+  "schemaVersion": "layer2-binding-memo-replay-outcome-v1",
+  "deliveryType": "test",
+  "status": "stopped_at_first_cache_miss",
+  "code": "claude/layer2-binding-memo a25e2b94 (before; PR #1150 head)",
+  "startedAt": "2026-10-19T21:01:21+00:00",
+  "error": "RuntimeError: cache_only_replay_refuses_dispatch",
+  "providerCalls": 0,
+  "dispatchRefused": 1,
+  "humanApproval": false,
+  "releaseEligible": false,
+  "exitCode": 1,
+  "endedAt": "2026-10-19T21:02:13+00:00"
+}

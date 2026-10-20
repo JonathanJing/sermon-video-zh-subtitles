@@ -2,7 +2,8 @@
 import json
 import unittest
 from pathlib import Path
-from scripts import check_run_start as check, plan_run_budgets as planner, run_machine_qc_clip_test as driver
+from scripts import check_run_start as check, plan_run_budgets as planner
+from tongxing_production.review import qc_text_run as driver
 from tests import test_run_start_tools as fixtures
 
 SCHEMA={'type':'object','properties':{'status':{'type':'string'}},'required':['status'],'additionalProperties':False}
@@ -63,7 +64,8 @@ class ResumeRemainingPreflightTests(unittest.TestCase):
         self.assertEqual(self.snapshot(),before);self.assertFalse(self.root.exists())
 
     def exhaust_nonrequest_dimension(self,metric):
-        from scripts import sermon_workflow_jobs as jobs
+        from scripts import tongxing_host  # noqa: F401  binds the production package ports
+        from tongxing_production.orchestration import jobs
         import os
         plan=self.prepare(4)
         frozen=self.f.load('resume')['stages'][0]['remainingReservationBounds']

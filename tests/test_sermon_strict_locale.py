@@ -6,10 +6,11 @@ import unittest
 from unittest.mock import patch
 
 from scripts import sermon_strict_locale as subject
-from scripts import sermon_review_budget as budget
-from scripts import sermon_review_contracts as c
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.review import review_budget as budget
+from tongxing_production.review import contracts as c
 from scripts import sermon_strict_layer2 as strict
-from scripts import produce_target_language_candidate as producer
+from tongxing_production.text import candidate as producer
 from tests import test_sermon_strict_layer2 as fixtures
 from tests import test_sermon_strict_budget_adapter as budget_fixtures
 
@@ -201,7 +202,7 @@ class LocaleTests(unittest.TestCase):
         self.assertEqual(len(self.f.calls), 4)
 
     def test_locale_outputs_feed_real_gate_with_separate_synthetic_human_receipt(self):
-        from scripts import review_target_language_candidate as human
+        from tongxing_production.text import human_review as human
         from scripts import sermon_strict_gate_admission as admission
         with self.f.session():
             result = self.run_locale()

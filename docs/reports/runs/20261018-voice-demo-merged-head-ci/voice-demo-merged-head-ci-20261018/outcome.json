@@ -1,0 +1,10 @@
+{
+  "status": "passed",
+  "exitCode": 0,
+  "startedAt": "2026-10-18T10:31:19Z",
+  "endedAt": "2026-10-18T10:46:17Z",
+  "deliveryType": "test",
+  "runId": 39119582168,
+  "headSha": "f2b3c6be300a95ceac2b3e49e85d3e553612eaaf",
+  "runUrl": "https://github.com/JonathanJing/sermon-video-zh-subtitles/actions/runs/39119582168"
+}

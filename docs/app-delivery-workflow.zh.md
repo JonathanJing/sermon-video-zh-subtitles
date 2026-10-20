@@ -28,12 +28,12 @@ python -m scripts.sermon_app_delivery_workflow inspect \
 实际 local production 入口可以观察或执行一次固定动作。观察不会创建任务或包；执行会启动受锁保护的本地复制 worker，不调用模型、读取生产凭据或刷新来源：
 
 ```sh
-python -m scripts.run_codex_local_sermon_production \
+python tools/ops/run.py workflows.dual_pdf.codex_local \
   --app-delivery-config artifacts/app-delivery/2026-10-04/workflow.json \
   --sunday 2026-10-04 --mode shadow \
   --out artifacts/app-delivery/2026-10-04/shadow.json
 
-python -m scripts.run_codex_local_sermon_production \
+python tools/ops/run.py workflows.dual_pdf.codex_local \
   --app-delivery-config artifacts/app-delivery/2026-10-04/workflow.json \
   --sunday 2026-10-04 --mode execute \
   --out artifacts/app-delivery/2026-10-04/run.json
