@@ -1,0 +1,11 @@
+{
+  "schemaVersion": "local-test-outcome-v1",
+  "status": "passed",
+  "exitCode": 0,
+  "startedAt": "2026-10-20T20:58:00+00:00",
+  "endedAt": "2026-10-20T21:05:00+00:00",
+  "scope": "PR #1215 (port of #432 onto dev@810349e2): 37 affected test files in 4 parallel chunks in the worktree venv, load ~430.",
+  "knownPreexistingFailures": [
+    "tests/test_sermon_job_liveness.py::LivenessTests::test_real_monitor_cancels_stalls_and_never_restarts_unknown_work (liveness_start_timeout under load; fails side by side on dev@810349e2)"
+  ]
+}
