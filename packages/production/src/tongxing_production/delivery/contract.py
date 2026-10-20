@@ -465,7 +465,12 @@ def rollback_locale(current, previous, *, page_id, locale, expected_current_sha)
     old_page = next((p for p in previous['pages'] if p['id'] == page_id), None)
     old = old_page.get('targets', {}).get(locale) if old_page else None
     if old:
-        if current['schemaVersion'] != CATALOG_V5:
+        if current['schemaVersion'] == CATALOG_V5:
+            # A single-source target has no per-target binding to carry into a
+            # per_target page (or back); undo a promotion as a whole page instead.
+            require(old_page.get('sourceMode', 'single_source') == page['sourceMode'],
+                    'Rollback crosses a source-mode promotion; restore the whole page')
+        if page.get('sourceMode', 'single_source') == 'single_source':
             require(old_page['sourceIdentitySha256'] == page['sourceIdentitySha256'], 'Rollback source differs')
         page['targets'][locale] = copy.deepcopy(old)
     else:

@@ -387,3 +387,17 @@ def test_mixed_endpoint_marks_v2_study_not_applicable_and_v4_study_verified():
     forged = {'studyDisplayed': True, 'studyArtifacts': expected}
     with pytest.raises(ValueError, match='not applicable'):
         unified_stage._validate_study_observation(forged, v2_playback, None)
+
+
+def test_v5_rollback_rejects_crossing_a_source_mode_promotion():
+    previous = contract.upgrade_catalog_v5(contract.project_legacy_catalog_v4(catalog(('es', 'ko'))))
+    current = catalog()
+    with pytest.raises(ValueError, match='crosses a source-mode promotion'):
+        contract.rollback_locale(current, previous, page_id='family-page', locale='es',
+                                 expected_current_sha=contract.sha(current))
+    older = catalog()
+    older['pages'][0]['targets']['es']['releasePackageJsonSha256'] = '9' * 64
+    restored = contract.rollback_locale(current, older, page_id='family-page', locale='es',
+                                        expected_current_sha=contract.sha(current))
+    assert restored['pages'][0]['targets']['es'] == older['pages'][0]['targets']['es']
+    contract.validate_catalog_schema(restored)
