@@ -1,0 +1,21 @@
+{
+  "status": "l3_package_rebuilt",
+  "exitCode": 0,
+  "deliveryType": "test",
+  "purpose": "Real Layer 3 audio-package producer run through group_tasks stages on the 16-unit es clip; no synthesis, ASR or QC",
+  "startedAt": "2026-10-20T19:20:00Z",
+  "endedAt": "2026-10-20T19:21:00Z",
+  "code": "codex/group-pipeline-orchestration d31b22db",
+  "results": {
+    "stage": "package",
+    "seconds": 5.93,
+    "exitCode": 0,
+    "packageSchema": "sermon-target-language-audio-package-v1",
+    "units": 16,
+    "canonicalPackageEqual": true,
+    "canonicalSha256": "7bac907bcb4d934b7808150ab594da98d611a45cf5073c370b061336295a8cce",
+    "modelCalls": 0,
+    "paidCalls": 0,
+    "sparkRuns": 0
+  }
+}
