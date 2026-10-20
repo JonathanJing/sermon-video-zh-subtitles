@@ -11,11 +11,11 @@ import json
 from pathlib import Path
 import re
 
-from scripts import run_target_language_models as translation
+from tongxing_production.text import models as translation
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.source import english_source_judge as english
 from tongxing_production.source import sentence_interpretation as identity
-from scripts import target_language_policy as policy_tools
+from tongxing_production.text import policy as policy_tools
 
 LAST_MISSING: list[dict] = []
 CONTENT_ADAPTERS = {"english_source_judge_v1", "translation_independent_review_v1"}

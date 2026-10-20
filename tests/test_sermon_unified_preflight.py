@@ -5,6 +5,7 @@ from unittest.mock import patch
 
 from tests import test_canonical_layer2_controller as fixtures
 from tools.ops import sermon_unified_preflight as subject
+from tongxing_production.text import stat_memo
 
 
 class UnifiedPreflightTests(unittest.TestCase):
@@ -21,7 +22,9 @@ class UnifiedPreflightTests(unittest.TestCase):
             return data
 
         baseline = subject.layer2.code_identity()
-        with patch.object(Path, 'read_bytes', changed_bytes):
+        # A patched read leaves the stat identity unchanged; a fresh binding memo forces the full hash.
+        with patch.object(Path, 'read_bytes', changed_bytes), \
+                patch.object(subject.layer2, '_BINDING_MEMO', stat_memo.StatMemo()):
             changed = subject.layer2.code_identity()
         self.assertTrue(touched)
         self.assertNotEqual(baseline, changed)

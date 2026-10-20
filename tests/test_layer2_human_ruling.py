@@ -3,8 +3,8 @@ from pathlib import Path
 import tempfile
 import unittest
 
-from scripts import layer2_auto_repair as repair
-from scripts import layer2_human_ruling as ruling
+from tongxing_production.text import auto_repair as repair
+from tongxing_production.text import human_ruling as ruling
 from scripts import source_meaning_machine_adjudication as source_meaning
 
 

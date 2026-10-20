@@ -95,7 +95,7 @@ class SharedPreflightTests(unittest.TestCase):
         self.assertTrue(all('rulePreflight' in item and 'ruleContext' in item for item in observed))
 
     def test_quote_group_rules_fail_before_provider_or_credentials(self):
-        from scripts import produce_target_language_candidate as producer
+        from tongxing_production.text import candidate as producer
         plugin=Path(self.spec['pluginPath'])
         source,_=c.read_snapshot(Path(self.spec['source']))
         anchor,_=c.read_snapshot(Path(self.spec['anchor']))

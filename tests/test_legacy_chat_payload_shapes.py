@@ -41,7 +41,7 @@ class LegacyChatShapeTests(unittest.TestCase):
         self.assertEqual(network.call_args.args[2]['max_completion_tokens'],4096)
 
     def test_actual_cuv_image_audit_entry_reaches_fake_transport(self):
-        from scripts import sermon_cuv_translation as cuv
+        from tongxing_production.text import cuv_translation as cuv
         with tempfile.TemporaryDirectory() as tmp,patch.dict(os.environ,{'SERMON_ACCOUNTING_DIR':tmp,'OPENAI_API_KEY':'synthetic-key'}),patch.object(cuv,'audit_user_content',return_value=image_content((1920,1080))),patch.object(legacy_openai,'json_request',return_value={'model':cuv.MODEL,'choices':[{'finish_reason':'stop','message':{'content':'{"ok":true}'}}]}) as network:
             result,_=cuv.cached_call(Path(tmp)/'cuv','audit-quotes',cuv.AUDIT_QUOTES,{},{} )
         self.assertEqual(result,{'ok':True});self.assertEqual(network.call_count,1)

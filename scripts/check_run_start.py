@@ -115,7 +115,7 @@ def check_launcher_binding(plan_dir, environment, env_file):
         qc_count = l2_count = 0
         for stage in stages:
             if stage['stage'] == 'layer2':
-                from scripts import canonical_layer2_budget as l2
+                from tongxing_production.text import budget as l2
                 from scripts import tongxing_host  # noqa: F401  binds the production package ports
                 from tongxing_production.text import controller
                 config = controller.load_configuration(Path(stage['execution']))
@@ -309,7 +309,7 @@ def check_budget(plan_dir: Path):
     from scripts import tongxing_host  # noqa: F401  binds the production package ports
     from tongxing_production.review import qc_budget_authorization as qc_auth
     from scripts import plan_run_budgets as planner
-    from scripts import canonical_layer2_budget as l2_budget
+    from tongxing_production.text import budget as l2_budget
     from scripts import tongxing_host  # noqa: F401  binds the production package ports
     from tongxing_production.text import controller
     problems = []

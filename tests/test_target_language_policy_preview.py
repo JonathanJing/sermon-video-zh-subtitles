@@ -4,8 +4,8 @@ from pathlib import Path
 import tempfile
 import unittest
 
-from scripts import target_language_policy_preview as subject
-from scripts import run_target_language_models as runner
+from tongxing_production.text import policy_preview as subject
+from tongxing_production.text import models as runner
 
 
 class ConsumedPolicyPreviewTests(unittest.TestCase):

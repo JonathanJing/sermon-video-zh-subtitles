@@ -9,8 +9,8 @@ from pathlib import Path
 
 from scripts import sermon_review_contracts as c
 from scripts import sermon_strict_layer2 as strict
-from scripts import produce_target_language_candidate as producer
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.text import candidate as producer
 from tongxing_production.audio import speech_job as handoff
 from scripts.sermon_release_workflow import _safe_path
 
@@ -178,7 +178,7 @@ def compile_candidate(source_bytes, anchor_bytes, policy_bytes, rubric_bytes,
     if any(row['status'] != 'pass' for row in plugin['groupReviews']):
         raise LanguagePluginRejected(plugin, bindings)
     if rule_receipt is not None:
-        from scripts.target_language_rule_preflight import verify_consumer_receipt
+        from tongxing_production.text.rule_preflight import verify_consumer_receipt
         verify_consumer_receipt(request, policy, Path(plugin_path), evidence, rule_receipt)
     candidate_groups = []
     for group, result in zip(groups, plugin['groupReviews']):

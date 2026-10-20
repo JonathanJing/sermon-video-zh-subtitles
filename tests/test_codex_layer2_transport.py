@@ -8,7 +8,7 @@ import unittest
 from unittest.mock import patch
 from jsonschema import ValidationError
 
-from scripts import run_target_language_models as runner
+from tongxing_production.text import models as runner
 from scripts.codex_layer2_transport import CodexLayer2Transport, output_schema
 from scripts import run_codex_layer2_test as command
 

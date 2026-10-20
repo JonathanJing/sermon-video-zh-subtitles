@@ -35,7 +35,8 @@ def reviewed_blocks(parent, review_path):
     old = read(parent / "job.json")
     review = read(review_path)
     if "cuvTranslation" in review:
-        from scripts.sermon_cuv_translation import validate_spoken_review
+        from scripts import tongxing_host  # noqa: F401  binds the production package ports
+        from tongxing_production.text.cuv_translation import validate_spoken_review
         validate_spoken_review(parent, review_path)
     ids = [b["id"] for b in old["blocks"]]
     if review.get("schemaVersion") != SCHEMA or review.get("parentJobSha256") != sha256(parent / "job.json"):

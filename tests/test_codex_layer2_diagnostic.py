@@ -10,8 +10,8 @@ from scripts import codex_layer2_diagnostic as subject
 from scripts import run_codex_layer2_test as command
 from tongxing_production.source import english_source_package as english
 from scripts import sermon_diagnostic_context as diagnostic
-from scripts import target_language_policy as policies
-from scripts import run_target_language_models as runner
+from tongxing_production.text import policy as policies
+from tongxing_production.text import models as runner
 from scripts.codex_layer2_transport import CodexLayer2Transport, TEST_CONFIGURATION
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.workflows.dual_pdf import pipeline as sermon_pipeline_module

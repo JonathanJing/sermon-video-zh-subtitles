@@ -15,7 +15,7 @@ from scripts import tongxing_host  # noqa: F401  binds the production package po
 from tongxing_production.review import seeded_errors as seeded
 from tongxing_production.review import waiver
 from tongxing_production.review import repair_ledger as ledger
-from scripts import produce_target_language_candidate as producer
+from tongxing_production.text import candidate as producer
 from tongxing_production.review import audio_qc
 from tongxing_production.audio import predicted_schedule as predicted
 from tongxing_production.review import text_qc

@@ -9,7 +9,7 @@ from scripts import sermon_strict_locale as subject
 from scripts import sermon_review_budget as budget
 from scripts import sermon_review_contracts as c
 from scripts import sermon_strict_layer2 as strict
-from scripts import produce_target_language_candidate as producer
+from tongxing_production.text import candidate as producer
 from tests import test_sermon_strict_layer2 as fixtures
 from tests import test_sermon_strict_budget_adapter as budget_fixtures
 

@@ -1,0 +1,13 @@
+before=    5943 (C3 head 880bf24c) after=    5943
+4567c4567
+< test_sermon_review_diagnostics.ReviewDiagnosticsTests.test_legacy_import_and_identity_key_resolve_to_package_implementation
+---
+> test_sermon_review_diagnostics.ReviewDiagnosticsTests.test_legacy_identity_key_resolves_to_package_implementation
+4588d4587
+< test_sermon_review_gate.GateEvaluationTests.test_legacy_import_names_the_package_module
+4590a4590
+> test_sermon_review_gate.GateEvaluationTests.test_package_module_uses_the_shared_contracts
+5569c5569
+< test_tongxing_production_package.ProductionPackageTests.test_layer2_models_facade_alias_and_editable_path_use_this_checkout
+---
+> test_tongxing_production_package.ProductionPackageTests.test_layer2_models_alias_and_editable_path_use_this_checkout

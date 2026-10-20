@@ -6,7 +6,7 @@ import tempfile
 import unittest
 from unittest.mock import patch
 from scripts import run_codex_layer2_test as subject
-from scripts import target_language_policy as policy
+from tongxing_production.text import policy
 
 
 class FixtureReplayTests(unittest.TestCase):

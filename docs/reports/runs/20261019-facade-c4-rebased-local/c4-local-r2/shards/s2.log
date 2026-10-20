@@ -1,0 +1,228 @@
+Estimating 210 unprofiled modules from measured per-case cost
+Shard 3/10: 580 tests from 356 modules
+......................................{"candidateCount": 1, "component": "api", "event": "live_source_monitor_completed", "loggedAt": "2026-10-19T23:02:31.108237+00:00", "operatorAlert": false, "selectedKind": "youtube-streams", "selectedService": "830", "severity": "INFO", "status": "source_detected", "sunday": "2026-06-28", "triggerSource": "internal-task"}
+.{"component": "api", "event": "sermon_production_supervisor_triggered", "inlineWorker": false, "loggedAt": "2026-10-19T23:02:31.108589+00:00", "mode": "execute", "severity": "INFO", "sunday": "2026-08-02", "triggerSource": "cloud-scheduler"}
+{"component": "api", "event": "sermon_production_supervisor_dispatched", "loggedAt": "2026-10-19T23:02:31.108616+00:00", "mode": "execute", "operationName": "operations/run-1", "severity": "INFO", "sunday": "2026-08-02", "triggerSource": "cloud-scheduler"}
+...............Automatic merge went well; stopped before committing as requested
+................................{"group": "group-0001", "solSeconds": 2.0, "opusSeconds": 1.0}
+{"group": "group-0002", "solSeconds": 2.0, "opusSeconds": 1.0}
+{"freshCalls": {"sol": 2, "opus": 2, "review": 0}, "groups": 2, "targetLocale": "ko"}
+{"group": "group-0001", "solSeconds": 2.0, "opusSeconds": 1.0}
+{"group": "group-0002", "solSeconds": 2.0, "opusSeconds": 1.0}
+{"freshCalls": {"sol": 0, "opus": 0, "review": 0}, "groups": 2, "targetLocale": "ko"}
+....s.....{"role": "translator", "model": "gpt-6.1-sol", "tier": "fast", "elapsedSeconds": 0.0, "usage": {"input_tokens": 100, "cached_input_tokens": 50, "output_tokens": 20}, "creditUsage": {"schemaVersion": "codex-credit-usage-v1", "status": "estimated", "estimatedCredits": 0.01525, "actualCredits": null, "actualQuotaUsage": null, "basis": "purchased_credit_equivalent", "model": "gpt-6.1-sol", "modelSource": "requested", "requestedServiceTier": "fast", "appliedServiceTier": "fast", "tierSource": "requested", "rateCardVersion": "codex-credits-2026-10-05", "rateCardSha256": "557d283646a6dd8ed49cc32a88e8459a165b72066339be99233ea75146c21edf", "verifiedAt": "2026-10-05", "sources": ["https://learn.chatgpt.com/docs/pricing", "https://learn.chatgpt.com/docs/agent-configuration/speed"], "ratesPerMillionTokens": {"input": 50, "cachedInput": 2.5, "output": 250}, "speedMultiplier": 2, "reason": "requested_identity_assumption"}}
+...............s......................Digest would be 5373 bytes (cap 10); nothing written. Pass fewer run directories.
+........................................................................................................Digest: /var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/tmp4g1oyp0x/digests/20261007-e2e (5 files, 9 redactions)
+Digest: /var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/tmp5app0i4g/digests/20261007-e2e (5 files, 9 redactions)
+corrected 1/1
+translated zh 1/1
+.....edited reading blocks 0-0
+proofread reading blocks 0-0
+.......................{"stage": "tts", "batchIndex": 0, "completedGroups": 2}
+{"stage": "tts", "batchIndex": 1, "completedGroups": 4}
+{"stage": "tts", "batchIndex": 2, "completedGroups": 6}
+{"stage": "tts", "batchIndex": 3, "completedGroups": 8}
+{"stage": "tts", "batchIndex": 4, "completedGroups": 10}
+{"stage": "tts", "batchIndex": 5, "completedGroups": 12}
+{"stage": "tts", "batchIndex": 6, "completedGroups": 13}
+.............discover	pass	0.0
+ko.text-qc.prefetch	pass	0.0
+ko.text-qc	pass	0.0
+ko.calibration.prefetch	pass	0.1
+ko.calibration	pass	0.1
+ko.text-waiver	pass	0.0
+{
+  "ko": {
+    "status": "text_waiver_issued",
+    "reason": null,
+    "problems": [],
+    "calibration": {
+      "overallDetectionRate": 1.0,
+      "cleanFalsePositiveRate": 0.0,
+      "trials": 90,
+      "detected": 90
+    }
+  }
+}
+discover	pass	0.0
+..{
+  "ko": [
+    "this material cannot be calibrated for: audio.truncated"
+  ]
+}
+discover	pass	0.0
+ko.text-qc.prefetch	pass	0.0
+ko.text-qc	pass	0.0
+ko.calibration.prefetch	pass	0.4
+ko.calibration	pass	0.1
+ko.text-waiver	pass	0.0
+{
+  "ko": {
+    "status": "text_waiver_issued",
+    "reason": null,
+    "problems": [],
+    "calibration": {
+      "overallDetectionRate": 1.0,
+      "cleanFalsePositiveRate": 0.0,
+      "trials": 90,
+      "detected": 90
+    }
+  }
+}
+discover	pass	0.0
+ko.text-qc.prefetch	pass	0.1
+ko.text-qc	pass	0.0
+ko.calibration.prefetch	pass	0.3
+ko.calibration	pass	0.4
+ko.text-waiver	pass	0.0
+..{
+  "ko": {
+    "status": "text_waiver_issued",
+    "reason": null,
+    "problems": [],
+    "calibration": {
+      "overallDetectionRate": 1.0,
+      "cleanFalsePositiveRate": 0.0,
+      "trials": 90,
+      "detected": 90
+    }
+  }
+}
+discover	pass	0.0
+ko.text-qc.prefetch	pass	0.0
+ko.text-qc	pass	0.1
+ko.calibration.prefetch	pass	0.3
+ko.calibration	pass	0.2
+ko.text-waiver	pass	0.0
+{
+  "ko": {
+    "status": "fake_plumbing_pass",
+    "reason": "fake judge: waiver built in memory, never saved",
+    "problems": [],
+    "calibration": {
+      "overallDetectionRate": 1.0,
+      "cleanFalsePositiveRate": 0.0,
+      "trials": 90,
+      "detected": 90
+    }
+  }
+}
+discover	pass	0.0
+ko.text-waiver	pass	0.0
+......{
+  "ko": {
+    "status": "fake_plumbing_pass",
+    "reason": "fake judge: waiver built in memory, never saved",
+    "problems": [],
+    "calibration": {
+      "overallDetectionRate": 1.0,
+      "cleanFalsePositiveRate": 0.0,
+      "trials": 90,
+      "detected": 90
+    }
+  }
+}
+{"component": "post-live-subtitles", "event": "post_live_subtitle_generation_checked", "liveSource": {"host": "www.youtube.com", "path": "/watch", "urlHash": "160163dd612c1ecf"}, "loggedAt": "2026-10-19T23:07:24.469722+00:00", "pipelineOutdir": "/var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/tmpxn732vrx/2026-06-28/mariners_MEZHufeQBjc/pipeline", "severity": "INFO", "status": "completed", "sunday": "2026-06-28"}
+..{"component": "post-live-timeline-job", "event": "post_live_timeline_job_checked", "liveSource": {"host": "www.youtube.com", "path": "/watch", "urlHash": "3dd1687429a3473c"}, "loggedAt": "2026-10-19T23:07:25.951710+00:00", "severity": "INFO", "status": "requires_operator_review", "sunday": "2026-07-12", "timelineGcsUri": "gs://test-bucket/sundays/2026-07-12/post-live-subtitles/sermon_5GuhLMPflds/timeline/source-media-report.json"}
+.{"component": "post-live-timeline-job", "event": "post_live_timeline_job_checked", "liveSource": {"host": "www.youtube.com", "path": "/watch", "urlHash": "3dd1687429a3473c"}, "loggedAt": "2026-10-19T23:07:27.199648+00:00", "severity": "INFO", "status": "waiting_for_download_access", "sunday": "2026-07-12"}
+....s..zh-Hans.condense.prefetch	pass	0.0
+zh-Hans.condense	pass	0.0
+.....usage: run_unittest_ci.py [-h] --out OUT --scale {clip,week}
+                          [--locales LOCALES] [--stage STAGE]
+                          --total-usd TOTAL_USD [--settled-usd SETTLED_USD]
+                          --approved-by APPROVED_BY --evidence EVIDENCE
+                          [--layer2-execution LAYER2_EXECUTION]
+                          [--qc-inputs QC_INPUTS] [--reuse-from REUSE_FROM]
+                          [--resume-qc-authorization RESUME_QC_AUTHORIZATION]
+                          [--layer2-reuse-budget-root LOCALE=ABSOLUTE_ROOT]
+                          [--profile PROFILE]
+run_unittest_ci.py: error: Reuse root has no paid ledger to reconcile
+usage: run_unittest_ci.py [-h] --out OUT --scale {clip,week}
+                          [--locales LOCALES] [--stage STAGE]
+                          --total-usd TOTAL_USD [--settled-usd SETTLED_USD]
+                          --approved-by APPROVED_BY --evidence EVIDENCE
+                          [--layer2-execution LAYER2_EXECUTION]
+                          [--qc-inputs QC_INPUTS] [--reuse-from REUSE_FROM]
+                          [--resume-qc-authorization RESUME_QC_AUTHORIZATION]
+                          [--layer2-reuse-budget-root LOCALE=ABSOLUTE_ROOT]
+                          [--profile PROFILE]
+run_unittest_ci.py: error: Duplicate reuse root; list each approved source only once
+.................s.....{
+  "status": "brief_ready",
+  "reason": null,
+  "record": "/private/var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/tmpcvwqs2fz/out/condensation-record-17af5c10d60c2500.json",
+  "revisionBrief": "/private/var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/tmpcvwqs2fz/out/revision-brief-af62edeebd482a42.json",
+  "condensedGroupIds": [
+    "g2"
+  ],
+  "failedGroupIds": []
+}
+{
+  "status": "error",
+  "reason": "ValueError: /private/var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/tmpcvwqs2fz/out/condensation-record-17af5c10d60c2500.json changed after it was written",
+  "record": null,
+  "revisionBrief": null,
+  "condensedGroupIds": null,
+  "failedGroupIds": null
+}
+{"status": "independent_model_review_pass", "groups": 0, "evidence": "/private/var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/tmpvtvc1t3z/run/evidence.json"}
+{"status": "independent_model_review_pass", "groups": 0, "evidence": "/private/var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/tmpvtvc1t3z/run/evidence.json"}
+translated zh 1/1
+translated zh 1/1
+..SERMON_LOGGING_WRITE_FAILED errorType=AccountingWriteError
+....................................SERMON_LOGGING_WRITE_FAILED errorType=AccountingWriteError
+....................SERMON_LOGGING_WRITE_FAILED errorType=AccountingWriteError
+................s......................s.............................................SERMON_LOGGING_WRITE_FAILED errorType=AccountingWriteError
+..............................s.....{
+  "status": "english_transcript_candidate",
+  "source": "/var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/tmpuqsvi4p4/service.mp4",
+  "sourceDurationSeconds": 10.0,
+  "sourceClip": "/var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/tmpuqsvi4p4/pipeline/source_clip.m4a",
+  "clipDurationSeconds": 2.0,
+  "sermonStartSeconds": 1.0,
+  "sermonEndSeconds": 3.0,
+  "models": {
+    "referenceAsr": "gpt-transcribe"
+  },
+  "pipelineInputIdentity": {
+    "sourceAudio": {
+      "sha256": "01d927478e2a048dc357754e810696f101ee21aa242cdae231ca23d060c38e54",
+      "sizeBytes": 15
+    }
+  },
+  "asrChunkCount": 1,
+  "asrChunkJsonSha256": "a1252c20706201e8b13d5681a7b7f4476206771043bac6ef5effd110885c158a",
+  "alignmentStatus": "pending_mfa",
+  "humanReview": "pending",
+  "outputs": [
+    "asr_reference.json",
+    "asr_reference_chunks.json"
+  ],
+  "argv": [
+    "--weights",
+    ".github/unittest-module-timings.json",
+    "--shard-count",
+    "10",
+    "--shard-index",
+    "2",
+    "--report",
+    "artifacts/c4-local-r2/shards/r2.json"
+  ]
+}
+v4.1 package verified; model loaded and warmup finished.
+..........................................................................
+----------------------------------------------------------------------
+Ran 580 tests in 906.350s
+
+OK (skipped=7)
+ 318.77s     1  test_sermon_fresh_full_dag
+ 156.95s     6  test_machine_quality_waiver
+  30.41s     5  test_sermon_cuv_translation
+  22.09s     2  test_canonical_layer2_controller
+  16.73s     5  test_sermon_delivery_intent_binding
+  12.96s     3  test_sermon_diagnostic_dag_session
+  12.77s     1  test_sermon_mock_tts_worker
+  11.28s     1  test_sermon_fresh_source_stages
+  10.88s     2  test_sermon_diagnostic_delivery_preflight
+  10.82s     4  test_sermon_strict_budget_adapter
+exit 0

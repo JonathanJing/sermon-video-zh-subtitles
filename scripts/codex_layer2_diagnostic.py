@@ -7,10 +7,11 @@ import json
 import re
 from pathlib import Path
 
-from scripts import produce_target_language_candidate as producer
-from scripts import run_target_language_models as runner
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.text import candidate as producer
+from tongxing_production.text import models as runner
 from scripts import sermon_diagnostic_context as diagnostic
-from scripts import target_language_policy as policies
+from tongxing_production.text import policy as policies
 from scripts.sermon_execution_harness import work_lock
 
 ROOT = Path(__file__).resolve().parents[1]

@@ -1,0 +1,13 @@
+s0.log: Ran 547 tests in 840.894s OK (skipped=3)  exit 0
+s1.log: Ran 563 tests in 730.824s OK (skipped=4)  exit 0
+s2.log: Ran 581 tests in 783.107s OK (skipped=4)  exit 0
+s3.log: Ran 606 tests in 777.574s OK (skipped=2)  exit 0
+s4.log: Ran 607 tests in 869.313s OK (skipped=3)  exit 0
+s5.log: Ran 611 tests in 894.888s OK (skipped=4)  exit 0
+s6.log: Ran 611 tests in 818.672s OK (skipped=5)  exit 0
+s7.log: Ran 619 tests in 841.882s OK (skipped=5)  exit 0
+s8.log: Ran 620 tests in 809.626s OK (skipped=5)  exit 0
+s9.log: Ran 620 tests in 1069.975s OK (skipped=3)  exit 0
+
+[exited with code 1]
+total=5985
