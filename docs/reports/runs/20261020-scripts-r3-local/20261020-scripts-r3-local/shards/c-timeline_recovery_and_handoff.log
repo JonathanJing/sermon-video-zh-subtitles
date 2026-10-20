@@ -1,0 +1,25 @@
+============================= test session starts ==============================
+platform darwin -- Python 3.13.16, pytest-9.1.1, pluggy-1.6.0 -- ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.claude/worktrees/scripts-r3-3df8c4/.venv/bin/python
+rootdir: ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.claude/worktrees/scripts-r3-3df8c4
+plugins: anyio-4.14.2
+collecting ... collected 12 items
+
+tests/test_timeline_recovery_and_handoff.py::TimelineHandoffTest::test_bad_remote_bytes_never_enter_timeline_or_media_upload PASSED [  8%]
+tests/test_timeline_recovery_and_handoff.py::TimelineHandoffTest::test_byte_identical_canonical_reuses_handoff_without_download PASSED [ 16%]
+tests/test_timeline_recovery_and_handoff.py::TimelineHandoffTest::test_equal_length_wrong_cache_is_preserved_and_correct_handoff_uses_isolated_path PASSED [ 25%]
+tests/test_timeline_recovery_and_handoff.py::TimelineHandoffTest::test_manifest_source_scope_and_byte_evidence_are_mandatory
+tests/test_timeline_recovery_and_handoff.py::TimelineHandoffTest::test_manifest_source_scope_and_byte_evidence_are_mandatory PASSED [ 33%]
+tests/test_timeline_recovery_and_handoff.py::TimelineResumeTest::test_gcs_only_failed_run_status_is_archived_before_remote_status_is_replaced PASSED [ 41%]
+tests/test_timeline_recovery_and_handoff.py::TimelineResumeTest::test_nonresume_gcs_failure_survives_missing_or_unready_metadata
+tests/test_timeline_recovery_and_handoff.py::TimelineResumeTest::test_nonresume_gcs_failure_survives_missing_or_unready_metadata PASSED [ 50%]
+tests/test_timeline_recovery_and_handoff.py::TimelineResumeTest::test_recovery_tool_still_runs_at_most_once_and_decision_accepts_action PASSED [ 58%]
+tests/test_timeline_recovery_and_handoff.py::TimelineResumeTest::test_repaired_cache_resumes_from_failure_to_review_and_preserves_failure_hash PASSED [ 66%]
+tests/test_timeline_recovery_and_handoff.py::TimelineResumeTest::test_resume_requires_the_exact_failed_report_before_any_mutation PASSED [ 75%]
+tests/test_timeline_recovery_and_handoff.py::TimelineResumeTest::test_shared_output_from_another_source_is_preserved_and_never_returned_as_current
+tests/test_timeline_recovery_and_handoff.py::TimelineResumeTest::test_shared_output_from_another_source_is_preserved_and_never_returned_as_current PASSED [ 83%]
+tests/test_timeline_recovery_and_handoff.py::TimelineResumeTest::test_unknown_failure_and_wrong_source_remain_inspection_only
+tests/test_timeline_recovery_and_handoff.py::TimelineResumeTest::test_unknown_failure_and_wrong_source_remain_inspection_only PASSED [ 91%]
+tests/test_timeline_recovery_and_handoff.py::TimelineDurationMetadataTest::test_public_metadata_fills_only_same_video_duration
+tests/test_timeline_recovery_and_handoff.py::TimelineDurationMetadataTest::test_public_metadata_fills_only_same_video_duration PASSED [100%]
+
+=================== 12 passed, 22 subtests passed in 23.69s ====================
