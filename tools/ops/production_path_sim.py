@@ -12,14 +12,27 @@ scheduler and compares:
 
 The model is deliberately coarse: it keeps the critical resources (API
 workers, the Spark TTS window, the operator and the deploy lane) and the
-two human gates (text review, audio review).  It does not claim to
-reproduce every retry of a real run.  Run it with ``--calibrate`` to see
-the observed 2026-10-18 baseline.
+two human gates (text review, audio review).  Streaming paths schedule each
+group: groups finish translation in waves of API workers, are reviewed one by
+one as they arrive, and render in TTS batch windows once every member is
+reviewed.  It does not claim to reproduce every retry of a real run.
+
+A "page" here is the text/audio release of one locale (or the family page)
+being deployed.  Layer 4 study products (per-locale outline and meditation
+and their human approvals) are not modeled, so a four-product page needs
+those on top, including on the machine-checked path.
+
+    .venv/bin/python tools/ops/production_path_sim.py [--trials N] [--audio full] [--sweep]
+    .venv/bin/python tools/ops/production_path_sim.py --calibrate
+
+``--calibrate`` compares ``batch_family_actual`` with the observed
+2026-10-18 baseline (158 minutes from video to the Chinese page).
 """
 
 from __future__ import annotations
 
 import argparse
+import heapq
 import json
 import math
 import random
@@ -40,6 +53,7 @@ class StageDurations:
     post: float = 5.0
     audio_spot: float = 3.0
     audio_full: float = 33.0
+    text_package: float = 5.0
     deploy: float = 5.0
     announce: float = 2.0
     family_deploy: float = 5.0
@@ -71,6 +85,16 @@ class Scenario:
     )
     durations: StageDurations = field(default_factory=StageDurations)
 
+    def __post_init__(self) -> None:
+        allowed = {"stream": {"none", "group"}, "barrier": {"none", "whole", "systemic"}}[self.text_mode]
+        if self.rework not in allowed:
+            raise ValueError(f"{self.text_mode} text does not model {self.rework!r} rework")
+
+
+# API workers translating groups at once, and the TTS renderer's batch window.
+API_WORKERS = 16
+TTS_BATCH = 8
+
 
 # ---------------------------------------------------------------------------
 # Resource timeline
@@ -83,6 +107,7 @@ class Resource:
         self.capacity = capacity
         self.name = name
         self.reservations: list[tuple[float, float, int]] = []
+        self.horizon = 0.0
 
     def _free_for(self, start: float, duration: float, units: int) -> bool:
         end = start + duration
@@ -95,6 +120,8 @@ class Resource:
 
     def earliest(self, start: float, duration: float, units: int = 1) -> float:
         """Return the earliest time >= start with units free for duration."""
+        if start >= self.horizon:
+            return start
         candidates = {start}
         for busy_start, busy_end, _ in self.reservations:
             if busy_end > start:
@@ -105,6 +132,14 @@ class Resource:
         raise RuntimeError(f"no slot found for {self.name}")
 
     def reserve(self, start: float, duration: float, units: int = 1) -> None:
+        # Back-to-back per-group work extends the last reservation, so the
+        # timeline stays short when hundreds of groups are scheduled one by one.
+        self.horizon = max(self.horizon, start + duration)
+        if self.reservations:
+            last_start, last_end, last_units = self.reservations[-1]
+            if last_units == units and abs(last_end - start) < 1e-9:
+                self.reservations[-1] = (last_start, start + duration, units)
+                return
         self.reservations.append((start, start + duration, units))
 
     def busy_minutes(self) -> float:
@@ -113,28 +148,36 @@ class Resource:
 
 # ---------------------------------------------------------------------------
 # Rework sampling
+#
+# "whole" and "systemic" are whole-text reruns: the operator finds the problem
+# during text review, the text is regenerated, and the changed Layer 2
+# evidence is reviewed again in full.  "group" fails single groups: a text
+# failure found in review regenerates and re-reviews that group alone; a TTS
+# failure re-renders the group's batch window, because batch members stay in
+# the voice identity (the DEV-GRP-005 A/B did not pass, 2026-10-19).
+
+WHOLE_TEXT_RERUN = {"whole": (0.3, 17.0), "systemic": (0.5, 50.0)}
+WHOLE_TTS_RERUN = {"whole": 0.2, "systemic": 0.2}
+GROUP_TEXT_FAILURE = 0.05
+GROUP_TTS_FAILURE = 0.03
 
 
-def sample_text_rework(scenario: Scenario, locale: Locale, rng: random.Random) -> float:
-    if scenario.rework == "systemic":
-        return 50.0 if rng.random() < 0.5 else 0.0
-    if scenario.rework == "whole":
-        return 17.0 if rng.random() < 0.3 else 0.0
-    if scenario.rework == "group":
-        failures = sum(1 for _ in range(locale.groups) if rng.random() < 0.05)
-        return failures * 0.65 / 16.0
-    return 0.0
+def sample_text_rerun(scenario: Scenario, rng: random.Random) -> float:
+    """Minutes of whole-text regeneration found in review (0 when none)."""
+    probability, minutes = WHOLE_TEXT_RERUN.get(scenario.rework, (0.0, 0.0))
+    return minutes if probability and rng.random() < probability else 0.0
 
 
-def sample_tts_rework(scenario: Scenario, groups: int, rng: random.Random) -> float:
-    if scenario.rework == "whole":
-        return 14.0 if rng.random() < 0.2 else 0.0
-    if scenario.rework == "group":
-        failures = sum(1 for _ in range(groups) if rng.random() < 0.03)
-        return failures * 0.269 / 8.0
-    if scenario.rework == "systemic":
-        return 14.0 if rng.random() < 0.2 else 0.0
-    return 0.0
+def sample_group_failures(scenario: Scenario, groups: int, probability: float,
+                          rng: random.Random) -> list[bool]:
+    if scenario.rework != "group":
+        return [False] * groups
+    return [rng.random() < probability for _ in range(groups)]
+
+
+def sample_tts_rerun(scenario: Scenario, durations: StageDurations, rng: random.Random) -> float:
+    probability = WHOLE_TTS_RERUN.get(scenario.rework, 0.0)
+    return durations.tts if probability and rng.random() < probability else 0.0
 
 
 def audio_review_minutes(scenario: Scenario, durations: StageDurations) -> float:
@@ -163,13 +206,57 @@ class RunResult:
     deploy_busy: float
 
 
+def _review_groups(human: Resource, arrivals: list[float], unit: float,
+                   failed: list[bool], redo: float) -> list[float]:
+    """Review groups in arrival order; a failed group is regenerated and reviewed again.
+
+    A regenerated group goes ahead of the groups still waiting, so its batch
+    window is not held back to the end.  Returns when each group's final
+    review ends."""
+    order = sorted(range(len(arrivals)), key=arrivals.__getitem__)
+    retries: list[tuple[float, int]] = []
+    done = [0.0] * len(arrivals)
+    free, position = 0.0, 0
+    while position < len(order) or retries:
+        if retries and (retries[0][0] <= free or position == len(order)
+                        or retries[0][0] <= arrivals[order[position]]):
+            arrival, group = heapq.heappop(retries)
+            retried = True
+        else:
+            group = order[position]
+            arrival, retried = arrivals[group], False
+            position += 1
+        start = human.earliest(max(free, arrival), unit)
+        human.reserve(start, unit)
+        free = start + unit
+        if failed[group] and not retried:
+            heapq.heappush(retries, (free + redo, group))
+        else:
+            done[group] = free
+    return done
+
+
+def _render_groups(spark: Resource, ready: list[float], unit: float,
+                   failed: list[bool]) -> float:
+    """Render batch windows as their groups become ready; return the last end."""
+    end = 0.0
+    for first in range(0, len(ready), TTS_BATCH):
+        window = range(first, min(len(ready), first + TTS_BATCH))
+        duration = unit * len(window) * (2 if any(failed[i] for i in window) else 1)
+        start = spark.earliest(max(end, max(ready[i] for i in window)), duration)
+        spark.reserve(start, duration)
+        end = start + duration
+    return end
+
+
 def simulate_once(scenario: Scenario, seed: int) -> RunResult:
     rng = random.Random(seed)
     durations = scenario.durations
-    api = Resource(16, "api")
+    api = Resource(API_WORKERS, "api")
     human = Resource(1, "human")
     spark = Resource(1, "spark")
     deploy = Resource(1, "deploy")
+    api_redo = 0.0
 
     l1_end = durations.l1
     pages: dict[str, float] = {}
@@ -180,51 +267,54 @@ def simulate_once(scenario: Scenario, seed: int) -> RunResult:
         if locale.locale_id in scenario.prebuilt:
             pages[locale.locale_id] = 0.0
             continue
+        groups = locale.groups
         base_text = scenario.text_override.get(locale.locale_id, durations.text)
-        text_duration = base_text + sample_text_rework(scenario, locale, rng)
-        text_start = api.earliest(l1_end, text_duration, 16)
-        api.reserve(text_start, text_duration, 16)
-        text_end = text_start + text_duration
+        # One group takes text_unit on one of the API workers; review and TTS
+        # are the observed whole-locale times spread evenly over the groups.
+        text_unit = base_text * API_WORKERS / groups
+        review_unit = durations.text_review / groups
+        tts_unit = durations.tts / groups
+        text_failed = sample_group_failures(scenario, groups, GROUP_TEXT_FAILURE, rng)
+        tts_failed = sample_group_failures(scenario, groups, GROUP_TTS_FAILURE, rng)
+        rerun = sample_text_rerun(scenario, rng)
 
-        if scenario.text_review:
-            review_start_request = (
-                text_start + text_duration / 8.0
-                if scenario.text_mode == "stream"
-                else text_end
-            )
-            review_start = human.earliest(
-                review_start_request, durations.text_review, 1
-            )
-            human.reserve(review_start, durations.text_review, 1)
-            review_end = review_start + durations.text_review
-            if scenario.text_mode == "stream":
-                review_end = max(
-                    review_end, text_end + durations.text_review / 8.0
-                )
-        else:
-            review_start = review_end = text_end
+        text_start = api.earliest(l1_end, base_text, API_WORKERS)
+        api.reserve(text_start, base_text, API_WORKERS)
+        text_end = text_start + base_text
 
-        if scenario.text_mode == "stream" and scenario.text_review:
-            tts_request = max(
-                text_start + text_duration / 8.0,
-                review_start + durations.text_review / 8.0,
-            )
-        elif scenario.text_mode == "stream":
-            tts_request = text_start + text_duration / 8.0
-        else:
-            tts_request = max(text_end, review_end)
-
-        tts_duration = durations.tts + sample_tts_rework(
-            scenario, locale.groups, rng
-        )
-        tts_start = spark.earliest(tts_request, tts_duration, 1)
-        spark.reserve(tts_start, tts_duration, 1)
         if scenario.text_mode == "stream":
-            tts_end = max(
-                tts_start + tts_duration,
-                review_end + tts_duration / 8.0,
-            )
+            # Groups finish in waves of API_WORKERS; each is reviewed (and
+            # rendered) as soon as it is ready.
+            arrivals = [text_start + (index // API_WORKERS + 1) * text_unit for index in range(groups)]
+            if scenario.text_review:
+                ready = _review_groups(human, arrivals, review_unit, text_failed, text_unit)
+            else:
+                ready = [arrival + (text_unit if text_failed[i] else 0.0)
+                         for i, arrival in enumerate(arrivals)]
+            api_redo += text_unit * sum(text_failed)
+            review_end = max(ready)
+            tts_end = _render_groups(spark, ready, tts_unit, tts_failed)
         else:
+            if scenario.text_review:
+                review_start = human.earliest(text_end, durations.text_review)
+                human.reserve(review_start, durations.text_review)
+                review_end = review_start + durations.text_review
+                if rerun:
+                    # The rerun changes the Layer 2 evidence, so it is reviewed again.
+                    rerun_start = api.earliest(review_end, rerun, API_WORKERS)
+                    api.reserve(rerun_start, rerun, API_WORKERS)
+                    again = human.earliest(rerun_start + rerun, durations.text_review)
+                    human.reserve(again, durations.text_review)
+                    review_end = again + durations.text_review
+            else:
+                review_end = text_end
+                if rerun:
+                    rerun_start = api.earliest(text_end, rerun, API_WORKERS)
+                    api.reserve(rerun_start, rerun, API_WORKERS)
+                    review_end = rerun_start + rerun
+            tts_duration = durations.tts + sample_tts_rerun(scenario, durations, rng)
+            tts_start = spark.earliest(review_end, tts_duration)
+            spark.reserve(tts_start, tts_duration)
             tts_end = tts_start + tts_duration
 
         post_end = tts_end + durations.post
@@ -244,7 +334,10 @@ def simulate_once(scenario: Scenario, seed: int) -> RunResult:
             audio_end = post_end
 
         if scenario.page_mode == "text_first":
-            text_deploy_start = deploy.earliest(review_end, durations.deploy, 1)
+            # A text-only release still needs its Layer 3 audio_unavailable
+            # package (no producer exists yet; its duration is an assumption).
+            package_end = review_end + durations.text_package
+            text_deploy_start = deploy.earliest(package_end, durations.deploy, 1)
             deploy.reserve(text_deploy_start, durations.deploy, 1)
             text_pages[locale.locale_id] = (
                 text_deploy_start + durations.deploy + scenario.overhead
@@ -285,7 +378,7 @@ def simulate_once(scenario: Scenario, seed: int) -> RunResult:
         text_pages=text_pages,
         human_busy=human.busy_minutes(),
         spark_busy=spark.busy_minutes(),
-        api_busy=api.busy_minutes(),
+        api_busy=api.busy_minutes() + api_redo,
         deploy_busy=deploy.busy_minutes(),
     )
 
@@ -435,7 +528,7 @@ SCENARIOS: dict[str, Scenario] = {
         page_mode="family",
         text_mode="stream",
         rework="none",
-        overhead=58.0,
+        overhead=62.0,
         text_override={"zh-Hans": 67.0},
         prebuilt=("es", "ko"),
     ),
@@ -488,15 +581,33 @@ def format_markdown(rows: list[dict]) -> str:
     return "\n".join(lines)
 
 
-def main() -> int:
-    parser = argparse.ArgumentParser(description=__doc__)
+# 2026-10-18: video at 07:04, Chinese page live at 09:42.
+OBSERVED_FIRST_PAGE_MINUTES = 158.0
+
+
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--trials", type=int, default=2000)
     parser.add_argument("--seed", type=int, default=20261018)
     parser.add_argument("--audio", choices=["spot", "full", "none"])
     parser.add_argument("--text-review", choices=["human", "none"])
-    parser.add_argument("--sweep", action="store_true")
+    mode = parser.add_mutually_exclusive_group()
+    mode.add_argument("--sweep", action="store_true",
+                      help="one-parameter sweeps of the default scenarios (no --audio/--text-review)")
+    mode.add_argument("--calibrate", action="store_true",
+                      help="compare batch_family_actual with the observed 2026-10-18 run")
     parser.add_argument("--json", action="store_true")
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
+    if (args.sweep or args.calibrate) and (args.audio or args.text_review):
+        # Sweeps and the calibration vary or pin these settings themselves.
+        parser.error("--audio and --text-review apply to the scenario table only")
+    if args.calibrate:
+        row = simulate(SCENARIOS["batch_family_actual"], args.trials, args.seed)
+        result = {"scenario": row["scenario"], "simulatedFirstPageMinutes": round(row["first_p50"], 1),
+                  "observedFirstPageMinutes": OBSERVED_FIRST_PAGE_MINUTES,
+                  "overheadMinutes": SCENARIOS["batch_family_actual"].overhead}
+        print(json.dumps(result, ensure_ascii=False, indent=None if not args.json else 2))
+        return 0
     scenarios = list(SCENARIOS.values())
     if args.audio:
         scenarios = [replace(s, audio_review=args.audio) for s in scenarios]
