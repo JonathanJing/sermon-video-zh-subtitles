@@ -72,6 +72,8 @@ class GroupPipelineTests(unittest.TestCase):
         self.assertEqual(merged["completedSteps"],
                          ["readiness", "candidate_assembly", "whole_text_checks"])
         self.assertIn("speech_job_v3", merged["pendingSteps"])
+        self.assertEqual(merged["layer3Preflight"]["candidateShape"], "pass")
+        self.assertFalse(merged["layer3Preflight"]["admissible"])
         self.assertFalse(merged["releaseEligible"])
         self.assertFalse(merged["humanApproval"])
         directory = self.root / "merge" / self.config["locale"]

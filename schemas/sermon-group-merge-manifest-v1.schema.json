@@ -139,6 +139,34 @@
         "minLength": 1
       },
       "uniqueItems": true
+    },
+    "layer3Preflight": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "candidateShape",
+        "textApproval",
+        "speechJob",
+        "admissible",
+        "note"
+      ],
+      "properties": {
+        "candidateShape": {
+          "const": "pass"
+        },
+        "textApproval": {
+          "type": "string"
+        },
+        "speechJob": {
+          "type": "string"
+        },
+        "admissible": {
+          "const": false
+        },
+        "note": {
+          "type": "string"
+        }
+      }
     }
   },
   "$defs": {

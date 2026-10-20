@@ -222,6 +222,7 @@ python tools/ops/group_tasks.py merge  --config <run-config.json>
 - **合并范围。** `merge` 做第 1–3 步：就绪检查与 candidate 组装（调用未修改的 `admit_evidence`）、长度离群检查，并写 `candidate.json`、`evidence.json`、`language-review.json` 与合并清单。第 4–10 步（校准、译文豁免、speech job、正式渲染、排程/字幕、整轨、筛查/音频 QC、试听豁免）**尚未接线**：合并清单把它们列为 `pendingSteps`，并给出 `l3Handoff` 命令；`merge` 返回 `candidate_ready_layer3_pending`，不是四层完成。
 - **预算。** `run --budget <sermon-group-budget-v1>` 逐组 `admit`；未预留的组不派发。不给预算时必须显式 `--confirm-unbudgeted`。
 - **`15030286` 离线只读检查。** ko 402 组 `status` 在无逐组记录时全部 `missing`，零模型调用、不写记录；这份报告只证明入口与路径解析，不构成复用或生产证据。
+- **L3 形状预检。** `merge` 用 L3 自己的 `validate_target_candidate(..., require_human_approval=False)` 核对 candidate 的 schema、locale 与来源覆盖；通过只表示形状可进 L3，不表示文字已批准或可配音（`layer3Preflight.admissible=false`）。
 - **合并比较（DEV-GRP-008 的第一部分）。** 再次 `merge` 时读上一份合并清单，按每条记录的哈希算出变化组；变化组必须恰好等于 `--affected` 给出的组 ID，多一组或少一组都拒绝并列出组 ID。第一次合并没有前一份清单，`changedGroupIds=[]`。
 - **尚未实现。** `redo --reason` 的修正指令进入 payload（需要 revision brief 接线；当前同输入重跑不能写第二条记录，因为输入键相同）、逐组 Q/C/S/A/U、并行 worker 的 provider 路由级停止、合并第 4–10 步，以及从合并产物继续到 L3/L4 的正式 dispatch。
 

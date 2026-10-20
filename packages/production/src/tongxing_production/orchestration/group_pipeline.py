@@ -272,6 +272,18 @@ def merge(config: dict, *, affected=()) -> dict:
         return {"schemaVersion": MERGE_SCHEMA, "targetLocale": locale, "outcome": "refused",
                 "reasons": {"text_length_outlier": [row["translationGroupId"] for row in outliers]},
                 "outliers": outliers, "releaseEligible": False, "humanApproval": False}
+    from ..audio import speech_job
+    try:
+        # Shape, locale and source-coverage check with the L3 producer's own validator.
+        # It cannot approve: the candidate is still machine-review-pending.
+        speech_job.validate_target_candidate(source, anchor, candidate, require_human_approval=False)
+    except ValueError as exc:
+        return {"schemaVersion": MERGE_SCHEMA, "targetLocale": locale, "outcome": "refused",
+                "reasons": {"layer3_candidate_incompatible": [str(exc)]},
+                "releaseEligible": False, "humanApproval": False}
+    preflight = {"candidateShape": "pass", "textApproval": "pending_or_machine_waiver_required",
+                 "speechJob": "not_prepared", "admissible": False,
+                 "note": "shape check only; L3 still needs a text release basis and a prepared speech job"}
     _write_once(directory / "candidate.json", group_assembly.file_bytes(candidate))
     _write_once(directory / "evidence.json", group_assembly.file_bytes(assembled["evidence"]))
     _write_once(directory / "language-review.json", group_assembly.file_bytes(assembled["languageReview"]))
@@ -282,8 +294,8 @@ def merge(config: dict, *, affected=()) -> dict:
         "completedSteps": ["readiness", "candidate_assembly", "whole_text_checks"],
         "pendingSteps": list(PENDING_STEPS), "pendingReason": "Layer 3 merge steps are not wired in this adapter yet",
         "textLengthOutliers": [], "candidateSha256": assembled["manifest"]["candidateSha256"],
-        "l3Handoff": L3_HANDOFF, "changedGroupIds": sorted(changed),
-        "affectedGroupIds": sorted(set(affected)),
+        "l3Handoff": L3_HANDOFF, "layer3Preflight": preflight,
+        "changedGroupIds": sorted(changed), "affectedGroupIds": sorted(set(affected)),
         "releaseEligible": False, "humanApproval": False,
     }
     _validate_merge_manifest(manifest)
