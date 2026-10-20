@@ -6,7 +6,7 @@ import io
 import json
 
 import pytest
-from scripts import build_dev_180s_simulated_inputs as fixture
+from tools.development import build_dev_180s_simulated_inputs as fixture
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.delivery import app_release as builder
 from tongxing_production.delivery import contract

@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import Any
 
 
-REPO_ROOT = Path(__file__).resolve().parents[1]
+REPO_ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_OUT = REPO_ROOT / "artifacts" / "evidence" / "model-access-recovery-plan.json"
 DEFAULT_REQUIRED_REPORT = REPO_ROOT / "artifacts" / "evidence" / "openai-model-access-preflight.json"
 DEFAULT_ALTERNATIVE_REPORT = REPO_ROOT / "artifacts" / "evidence" / "openai-model-access-preflight-gpt-5.5.json"
@@ -161,7 +161,7 @@ def build_plan(args: argparse.Namespace) -> dict[str, Any]:
             ],
             [
                 "python3",
-                "scripts/write_production_go_live_sequence.py",
+                "tools/ops/write_production_go_live_sequence.py",
                 "--sunday",
                 args.sunday,
                 "--out",

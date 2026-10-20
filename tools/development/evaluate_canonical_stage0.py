@@ -19,7 +19,7 @@ _ROOT = str(Path(__file__).resolve().parents[2])
 if _ROOT not in sys.path:
     sys.path.insert(0, _ROOT)
 
-from scripts import evaluate_backend_four_layer_dry_run as backend
+from tools.development import evaluate_backend_four_layer_dry_run as backend
 from tools.development import pipeline_compatibility_gate as compatibility
 
 ROOT = Path(__file__).resolve().parents[2]

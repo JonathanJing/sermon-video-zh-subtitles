@@ -13,7 +13,7 @@ import sys
 if __package__ in {None, ""}:
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
-from tongxing_production.observability.clock_evidence import monotonic_interval
+from tongxing_production.observability.clock_evidence import monotonic_interval, utc_offset_allowance
 from tongxing_production.observability.accounting import READABLE_SCHEMAS, SCHEMA, read_events, receipt_integrity, profile_integrity
 
 # Export only known application labels. Unknown labels retain a hash, never text.
@@ -139,7 +139,11 @@ def export(directory):
             begin = nanos(start.get("startedAt", start["recordedAt"]))
             finish = nanos(end["recordedAt"])
             timing = monotonic_interval(start, end) if key[1] == 'stage' else None
-            clock_shift = timing and abs((finish-begin)/1e9 - timing['elapsedSeconds']) > .01
+            # monotonicEndNs pairs with completedAt; recordedAt is the later write.
+            completed = nanos(end.get("completedAt") or end["recordedAt"])
+            clock_shift = timing and (abs((completed-begin)/1e9 - timing['elapsedSeconds']) >
+                                      utc_offset_allowance(timing['elapsedSeconds'])
+                                      or finish < completed - 10_000_000)
             recorded_finish = finish
             if clock_shift:
                 finish = begin + int(timing['monotonicEndNs']) - int(timing['monotonicStartNs'])
