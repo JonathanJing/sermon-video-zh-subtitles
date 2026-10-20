@@ -1,8 +1,10 @@
 # 复盘：20261019 本地完整测试
 
+数据见同目录 [INDEX.md](INDEX.md)、[manifest.json](manifest.json)（标准导出 `sermon-run-digest-v1`）和人工整理的 [TEST-RECORD.md](TEST-RECORD.md)。
+
 ## 结论
 
-- 全量 Python 测试 **5874 passed / 0 failed / 0 error**，38 skipped，2 expected failures，退出码 0，墙钟 3777.5 秒（约 63 分钟）。
+- 全量 Python 测试运行 **5,874 项，通过 5,834 项**，38 项跳过，2 项预期失败，0 failure，0 error，退出码 0，墙钟 3777.5 秒（约 63 分钟）。
 - 前两次全量失败都是环境配置，不是代码：共享 `.venv` 指向主 checkout，以及缺 `services/api/src` / `ps` 权限。
 - step 0 冻结闭包验证通过：P 全部 fresh，Q/A 只剩真实失败组，paid-stage redo = 0。
 

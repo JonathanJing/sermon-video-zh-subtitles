@@ -1,59 +1,50 @@
 {
-  "schemaVersion": "sermon-local-test-record-v1",
-  "testedBaselineCommit": "d31895a5",
-  "reportBaseCommit": "c5f46d44",
-  "testedAt": {
-    "start": "2026-10-19T10:10:37-07:00",
-    "end": "2026-10-19T11:13:38-07:00"
-  },
-  "environment": {
-    "os": "macOS 27.0.1",
-    "python": "3.13.15",
-    "worktreeVenv": true,
-    "extraPythonPath": "services/api/src",
-    "processAccessForPsTests": true
-  },
-  "testCounts": {
-    "discovered": 5874,
-    "skipped": 38,
-    "expectedFailures": 2,
-    "failures": 0,
-    "errors": 0
-  },
-  "elapsedSeconds": 3777.547,
-  "commands": [
-    "python3 scripts/worktree_venv.py",
-    "PYTHONPATH=<worktree>/services/api/src .venv/bin/python scripts/run_unittest_ci.py --report <tmp>/full-dev-report-final.json",
-    "pytest tests/test_production_path_sim.py tests/test_shared_text_only_release_fixtures.py",
-    "pytest tests/test_group_stage_records.py tests/test_auto_qc_text_review_regressions.py",
-    "pytest tests/test_build_multilingual_catalog.py tests/test_shared_text_only_release_fixtures.py tests/test_sermon_app_delivery.py tests/test_sermon_delivery_intent.py tests/test_build_english_source_package.py"
-  ],
-  "evidence": [
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261019-local-full-test",
+  "runs": [
     {
-      "name": "full-dev-final.log",
-      "sha256": "a37d3b680f654b715a78ca49e840351e5eb547da288f1de2301ed3c755807673",
-      "committed": false
+      "label": "20261019-full-local-test",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/local-runs/20261019-full-local-test",
+      "skipped": {
+        ".md": 1,
+        ".json": 1
+      }
     },
     {
-      "name": "full-dev-report-final.json",
-      "sha256": "2a16f3ef49f3fcf11924ae6c9938687f168fa46755f1a00d6db630e1d10a717f",
-      "committed": false
-    },
-    {
-      "name": "full-dev-v2.log",
-      "sha256": "4b2f98c4b768016d82418f6256f80a294fa0692c60615bd90d3df5e2e1c2a44b",
-      "committed": false
-    },
-    {
-      "name": "step0-plan-frozen.json",
-      "sha256": "449d5d7d2489dee4700680e143407b7e7ed49ca7fa910433b2e1ea4db79548a6",
-      "committed": false
-    },
-    {
-      "name": "step0-inputs.json",
-      "sha256": "b3c79f65a0f53c5d7972ecbabf25e246fdc16a16916bf0646c23e535b0913c4d",
-      "committed": false
+      "label": "20261019-grp-step0-identity",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/local-runs/20261019-grp-step0-identity",
+      "skipped": {
+        ".md": 1,
+        ".json": 4,
+        ".txt": 1
+      }
     }
   ],
-  "boundary": "Python tests only; no Spark, paid model, deployment, Node/JS, iOS, device or venue evidence."
+  "files": [
+    {
+      "run": "20261019-full-local-test",
+      "path": "full-dev-final.log",
+      "kind": "log",
+      "bytes": 146113,
+      "truncated": true,
+      "sha256": "a37d3b680f654b715a78ca49e840351e5eb547da288f1de2301ed3c755807673",
+      "redactions": {}
+    },
+    {
+      "run": "20261019-full-local-test",
+      "path": "full-dev-v2-without-api-or-ps.log",
+      "kind": "log",
+      "bytes": 154056,
+      "truncated": true,
+      "sha256": "4b2f98c4b768016d82418f6256f80a294fa0692c60615bd90d3df5e2e1c2a44b",
+      "redactions": {
+        "email": 17
+      }
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
 }
