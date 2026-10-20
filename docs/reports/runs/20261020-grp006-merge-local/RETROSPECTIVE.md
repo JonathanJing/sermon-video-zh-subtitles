@@ -10,6 +10,8 @@
 
 补充（同一分支后续提交 `066a1624`）：再次 `merge` 会与上一份合并清单逐组比较记录哈希，变化组必须恰好等于 `--affected`，多一组或少一组都拒绝并列出组 ID；`tests/test_group_pipeline.py` 增至 8 项。`15030286` 的离线 merge 复放无法在 dev 上完成：该 run 冻结 policy 的插件实现哈希属于运行分支的四文件闭包，`admit_evidence` 在任何组比较前就拒绝记录的插件收据；因此 `plan`/`status` 仍是该产物上受支持的零调用检查。
 
+再次补充（`6026d183`）：`redo --group-id … --reason …` 已实现。它从当前合并产物读出被拒译文，写只追加的 `sermon-group-directive-v1` 指令，把指令作为 `operatorRevision` 送进 T/R 的 prompt，`revisionSha256` 进入记录键，旧记录变 `stale`、新记录是新修订。每次运行写独立 `attempt-NNNN` 目录；合并输出按 candidate SHA-256 存放并用 `current.json` 指针切换。`tests/test_group_pipeline.py` 9 项、组与 Layer 2 相关回归 117 项通过。
+
 证据边界：没有真实付费调用、TTS、ASR、部署或 Firebase 操作。`merge` 只到 candidate 与合并清单；第 4–10 步（校准、豁免、speech job、渲染、排程、整轨、筛查/音频 QC、试听豁免）未接线，合并清单记录为 `pendingSteps`，结果是 `candidate_ready_layer3_pending`，不能当四层完成。
 
 ## 总时间
