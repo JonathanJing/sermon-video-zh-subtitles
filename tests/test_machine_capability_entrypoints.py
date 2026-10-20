@@ -4,7 +4,7 @@ from unittest import mock
 
 import pytest
 
-from scripts import sermon_unified_capabilities as capabilities
+from tongxing_production.workflows.prepared import capabilities as capabilities
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.delivery import unified_stage as delivery
 from tongxing_production.review import unified_reviews as reviews

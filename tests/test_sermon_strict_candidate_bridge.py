@@ -8,7 +8,7 @@ from scripts import sermon_strict_candidate_bridge as bridge
 from scripts import sermon_strict_layer2 as strict
 from tongxing_production.review import contracts as c
 from tongxing_production.text import candidate as producer
-from scripts import review_target_language_candidate as human
+from tongxing_production.text import human_review as human
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.audio import speech_job as handoff
 from tests import test_sermon_strict_layer2 as fixtures

@@ -3,7 +3,7 @@ import json
 import unittest
 from unittest.mock import patch
 
-from scripts import migrate_target_language_model_cache as subject
+from tongxing_production.text import model_cache_migration as subject
 from tongxing_production.text import models
 from tongxing_production.text import policy as policies
 from scripts import tongxing_host  # noqa: F401  binds the production package ports

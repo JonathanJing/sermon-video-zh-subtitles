@@ -15,7 +15,7 @@
 单独只读测量：
 
 ```sh
-.venv/bin/python -m scripts.target_audio_anomaly \
+.venv/bin/python tools/ops/run.py audio.anomaly \
   --wav /path/to/unit.wav --out artifacts/diagnostics/unit-edge.json
 ```
 

@@ -6,8 +6,9 @@ import unittest
 from unittest.mock import patch
 import wave
 
-from scripts import target_audio_anomaly as subject
-from scripts import target_audio_recovery as recovery
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.audio import anomaly as subject
+from tongxing_production.audio import recovery as recovery
 from tests import test_render_formal_target_language_speech as fixtures
 
 
