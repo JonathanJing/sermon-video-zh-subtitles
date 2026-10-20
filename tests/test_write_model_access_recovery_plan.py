@@ -5,7 +5,7 @@ import unittest
 from argparse import Namespace
 from pathlib import Path
 
-import scripts.write_model_access_recovery_plan as mod
+import tools.ops.write_model_access_recovery_plan as mod
 
 
 class WriteModelAccessRecoveryPlanTest(unittest.TestCase):

@@ -6,7 +6,7 @@
  * only counts, offsets and gate diagnostics.
  *
  * Usage (manifest paths resolve against --data-root, default the repository root):
- *   node scripts/field_venue_fingerprint_benchmark.mjs <manifest.json> --out <dir> [--data-root <checkout>] [--variants base,cmn] [--neg-step 5]
+ *   node tools/benchmarks/field_venue_fingerprint_benchmark.mjs <manifest.json> --out <dir> [--data-root <checkout>] [--variants base,cmn] [--neg-step 5]
  *
  * Query variants other than `base` are FIELD-10 experiments: they change only
  * query-side peak picking, keep the index, hash layout and every matcher threshold,
@@ -17,9 +17,9 @@ import {readFileSync, writeFileSync, mkdirSync, existsSync, realpathSync, statSy
 import {dirname, resolve, sep} from 'node:path';
 import {spawnSync} from 'node:child_process';
 import {fileURLToPath, pathToFileURL} from 'node:url';
-import {fingerprint, matchFingerprint, CONFIG} from '../packages/fingerprint/src/fingerprint-core.mjs';
+import {fingerprint, matchFingerprint, CONFIG} from '../../packages/fingerprint/src/fingerprint-core.mjs';
 
-let ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
+let ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const SR = CONFIG.sampleRate, N = CONFIG.fftSize, H = CONFIG.hopSize;
 export const WINDOW_SECONDS = [7, 10, 12, 15];
 export const CHECKPOINTS = [7, 10, 12, 15];
@@ -354,7 +354,7 @@ async function main() {
   const W0 = index.sourceStartSeconds;
 
   const execution = {runnerSha256: sha256(fileURLToPath(import.meta.url)),
-    matcherSha256: sha256(resolve(dirname(fileURLToPath(import.meta.url)), '../packages/fingerprint/src/fingerprint-core.mjs')),
+    matcherSha256: sha256(resolve(dirname(fileURLToPath(import.meta.url)), '../../packages/fingerprint/src/fingerprint-core.mjs')),
     variants: args.variants, negativeWindowStepSeconds: args.negStep, roomWindowStepSeconds: 1,
     windowSeconds: WINDOW_SECONDS, checkpointSeconds: CHECKPOINTS, localizationToleranceSeconds: .5};
   const report = {schemaVersion: 'field-venue-fingerprint-report-v2', manifestSha256: sha256(manifestPath), benchmarkId: manifest.benchmarkId,

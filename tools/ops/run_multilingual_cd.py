@@ -14,9 +14,6 @@ from pathlib import Path
 import subprocess
 import sys
 
-if __package__ in (None, ""):  # run directly from tools/ops: reach the scripts/ siblings
-    import sys
-    sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "scripts"))
 if __package__ in (None, ""):  # run directly: reach the repository root
     import sys
     sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
@@ -66,10 +63,7 @@ def release_voice_samples(candidate: Path, out: Path, *, execute: bool,
                           legacy_release: Path | None) -> dict:
     """Publish a demo-only Production overlay through the same main-branch gate."""
     from datetime import datetime, timezone
-    try:
-        from scripts import stage_production_voice_samples as voices
-    except ImportError:
-        import stage_production_voice_samples as voices
+    from tools.ops import stage_production_voice_samples as voices
 
     build_sha = hosting.digest(candidate / "build-report.json")
     if expected_build_report_sha256 and build_sha != expected_build_report_sha256:
@@ -101,7 +95,7 @@ def release_voice_samples(candidate: Path, out: Path, *, execute: bool,
     with lock_path.open("a+b") as lock:
         fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
         preflight = out / "preflight.json"
-        run_command(str(ROOT / "scripts/stage_production_voice_samples.py"), "preflight",
+        run_command(str(ROOT / "tools/ops/stage_production_voice_samples.py"), "preflight",
                     "--candidate", str(candidate), "--out", str(preflight))
         receipt = hosting.load(preflight)
         if (receipt.get("status") != "pass" or receipt.get("phase") != "baseline"
@@ -135,7 +129,7 @@ def release_voice_samples(candidate: Path, out: Path, *, execute: bool,
                                               indent=2) + "\n", encoding="utf-8")
         verification = out / "http-verification.json"
         if execute:
-            run_command(str(ROOT / "scripts/stage_production_voice_samples.py"), "verify",
+            run_command(str(ROOT / "tools/ops/stage_production_voice_samples.py"), "verify",
                         "--candidate", str(candidate), "--out", str(verification))
             checked = hosting.load(verification)
             if (checked.get("status") != "pass" or checked.get("phase") != "published"
@@ -164,10 +158,7 @@ def release_ui(candidate: Path, out: Path, *, execute: bool,
                expected_build_report_sha256: str | None) -> dict:
     """Publish only the bound root UI delta; preserve all content and config."""
     from datetime import datetime, timezone
-    try:
-        from scripts import stage_production_ui as ui
-    except ImportError:
-        import stage_production_ui as ui
+    from tools.ops import stage_production_ui as ui
 
     build_sha = hosting.digest(candidate / "build-report.json")
     if expected_build_report_sha256 and build_sha != expected_build_report_sha256:

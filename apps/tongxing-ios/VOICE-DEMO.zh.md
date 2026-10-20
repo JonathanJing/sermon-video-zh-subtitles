@@ -45,4 +45,4 @@ python3 apps/tongxing-ios/scripts/preview.py --files VoiceDemoSection.swift \
 python3 tools/ops/stage_speaker_clip_demo_ui.py --help
 ```
 
-素材 producer 和 Hosting overlay 的输入、缓存身份及不可覆盖规则分别由 `scripts/render_speaker_clip_demos.py`、`tools/ops/build_speaker_clip_demos.py` 和 `tools/ops/stage_speaker_clip_demo_ui.py` 实现。模型／媒体产物不提交 Git；overlay 命令只生成新的候选目录，不部署。
+素材 producer 和 Hosting overlay 的输入、缓存身份及不可覆盖规则分别由 `tools/ops/render_speaker_clip_demos.py`、`tools/ops/build_speaker_clip_demos.py` 和 `tools/ops/stage_speaker_clip_demo_ui.py` 实现。模型／媒体产物不提交 Git；overlay 命令只生成新的候选目录，不部署。

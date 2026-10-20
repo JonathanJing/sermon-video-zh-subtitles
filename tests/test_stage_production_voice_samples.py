@@ -7,7 +7,7 @@ from unittest.mock import patch
 
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.adapters.legacy import assemble_multilingual_hosting as hosting
-from scripts import stage_production_voice_samples as voices
+from tools.ops import stage_production_voice_samples as voices
 
 
 def write(path: Path, value) -> None:

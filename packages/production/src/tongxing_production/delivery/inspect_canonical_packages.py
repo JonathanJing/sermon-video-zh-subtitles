@@ -7,20 +7,14 @@ from __future__ import annotations
 import argparse
 import json
 from pathlib import Path
-import sys
-
-if __package__ in {None, ''}:
-    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from tongxing_production.contracts import pipeline_definition as pipeline
-from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.source import english_source_package as english
 from tongxing_production.audio import speech_job as handoff
 from tongxing_production.text import candidate as producer
 from tongxing_production.audio import inspect as audio_inspector
-from scripts import inspect_canonical_release as release_inspector
-from scripts.sermon_release_workflow import _safe_path
-from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.delivery import inspect_canonical_release as release_inspector
+from tongxing_production.storage.paths import safe_path as _safe_path
 from tongxing_production.orchestration.jobs import _digest, _read
 
 SCHEMA = 'sermon-canonical-package-inspection-config-v1'

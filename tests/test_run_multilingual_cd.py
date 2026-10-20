@@ -116,7 +116,7 @@ class MultilingualCDTest(unittest.TestCase):
                                                 "adapters.legacy.deploy_multilingual_hosting"))
 
     def test_ui_overlay_requires_bound_code_and_preserves_feedback(self):
-        from scripts import stage_production_ui as ui
+        from tools.ops import stage_production_ui as ui
         report = {"schemaVersion": "sermon-production-ui-overlay-v1",
                   "status": "validated_not_deployed", "sourceRoot": str(cd.ROOT),
                   "sourceCodeCommit": "a" * 40, "baseFiles": [{}], "files": [{}, {}]}
@@ -141,7 +141,7 @@ class MultilingualCDTest(unittest.TestCase):
         self.assertTrue((self.out / "http-verification.json").is_file())
 
     def test_ui_overlay_stops_before_deploy_on_live_baseline_mismatch(self):
-        from scripts import stage_production_ui as ui
+        from tools.ops import stage_production_ui as ui
         report = {"schemaVersion": "sermon-production-ui-overlay-v1",
                   "status": "validated_not_deployed", "sourceRoot": str(cd.ROOT),
                   "sourceCodeCommit": "a" * 40, "baseFiles": [{}], "files": [{}, {}]}
@@ -160,7 +160,7 @@ class MultilingualCDTest(unittest.TestCase):
         self.assertFalse((self.out / "cd-receipt.json").exists())
 
     def test_ui_report_change_after_preflight_stops_before_deploy(self):
-        from scripts import stage_production_ui as ui
+        from tools.ops import stage_production_ui as ui
         report = {"schemaVersion": "sermon-production-ui-overlay-v1",
                   "status": "validated_not_deployed", "sourceRoot": str(cd.ROOT),
                   "sourceCodeCommit": "a" * 40, "baseFiles": [{}], "files": [{}, {}]}

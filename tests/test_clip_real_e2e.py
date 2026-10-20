@@ -9,8 +9,8 @@ import tempfile
 import unittest
 from unittest import mock
 
-from scripts import clip_e2e_release as release
-from scripts import clip_e2e_spark as spark
+from tools.development import clip_e2e_release as release
+from tools.development import clip_e2e_spark as spark
 from tools.development import run_clip_real_e2e as subject
 
 ROOT = Path(__file__).resolve().parents[1]

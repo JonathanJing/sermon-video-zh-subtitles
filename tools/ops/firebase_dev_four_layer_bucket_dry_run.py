@@ -25,7 +25,7 @@ from urllib.request import urlopen
 
 if __package__ in (None, ""):  # run directly: reach the repository root
     import sys
-    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+    sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 from scripts import tongxing_host  # noqa: E402,F401  binds the production package ports
 from tongxing_production.adapters.legacy import assemble_multilingual_v3_update as weekly  # noqa: E402
 

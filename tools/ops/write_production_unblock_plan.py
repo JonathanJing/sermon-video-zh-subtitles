@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import Any
 
 
-REPO_ROOT = Path(__file__).resolve().parents[1]
+REPO_ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_OUT = REPO_ROOT / "artifacts" / "evidence" / "production-unblock-plan.json"
 DEFAULT_CLOUD_RUN_UPDATE_PLAN = REPO_ROOT / "artifacts" / "evidence" / "cloud-run-realtime-update-plan.json"
 DEFAULT_NO_CAPTION_ASR_PLAN = "artifacts/evidence/no-caption-asr-fallback-plan.json"
