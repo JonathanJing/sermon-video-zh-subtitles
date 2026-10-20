@@ -15,13 +15,16 @@ const buttonActions = {
 };
 const nudgeActions = { '-1': 'nudge_back_1_click', '-0.25': 'nudge_back_quarter_click', '0.25': 'nudge_forward_quarter_click', '1': 'nudge_forward_1_click' };
 
-export function usageBootstrapWeek(catalog) {
-  return catalog.weeks.find(week => week.id === catalog.defaultWeekId && week.tracks.length)
+// Pick the default on the catalog's own IDs, then map it to the engagement
+// identity; mapping first would lose a page ID that differs from its date.
+export function usageBootstrapWeek(catalog, weekIdentity = week => week) {
+  const week = catalog.weeks.find(week => week.id === catalog.defaultWeekId && week.tracks.length)
     || catalog.weeks.find(week => week.tracks.length);
+  return week ? weekIdentity(week) : undefined;
 }
 
-export function createUsage({ catalog, config, audio, context, onError = () => {} }) {
-  const bootstrapWeek = usageBootstrapWeek(catalog);
+export function createUsage({ catalog, weekIdentity, config, audio, context, onError = () => {} }) {
+  const bootstrapWeek = usageBootstrapWeek(catalog, weekIdentity);
   if (!config?.enabled || !bootstrapWeek) return { setEnabled() {}, retract: async () => {}, record() {}, recordAlignment() {} };
   const bootstrapTrack = bootstrapWeek.tracks[0];
   const source = { week: bootstrapWeek.id, trackId: bootstrapTrack.id, audioSha256: bootstrapTrack.sha256, appVersion: config.appVersion };

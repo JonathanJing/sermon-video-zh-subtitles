@@ -938,7 +938,7 @@ async function initializeEngagement() {
     const engagement = await fetch("/engagement.json");
     if (engagement.ok) {
       const config = await engagement.json();
-      usage = createUsage({ catalog: { ...catalog, weeks: catalog.weeks.map(engagementWeek) }, config, audio,
+      usage = createUsage({ catalog, weekIdentity: engagementWeek, config, audio,
         context: () => ({ week: engagementWeek(week), track, panel: activeView.replace('tab-', '') }),
         onError: () => { if ($('statistics-opt-in').checked) feedback.usageDeliveryError?.(); },
       });
