@@ -1,0 +1,93 @@
+{
+  "schemaVersion": "sermon-group-l3-stages-v1",
+  "note": "Draft only. Copy next to the run you intend to execute, replace every path, and check each `produces` against the files that run actually writes. The command shapes come from tools/development/run_clip_real_e2e.py (render -> compact -> screen -> package -> audio qc). Dry-run with: group_tasks.py stages --config <copy> --out <dir> --dry-run. Nothing here authorizes Spark, paid ASR or audio QC.",
+  "paths": {
+    "speechJob": "SPEECH_JOB/job.json",
+    "source": "english-source-package.json",
+    "anchor": "anchor-manifest.json",
+    "candidate": "merge/candidate.json",
+    "policy": "policy.json",
+    "adapter": "adapter.json",
+    "registry": "speaker-voice-registry.json",
+    "textRelease": "text-release-receipt.json",
+    "voiceAuthorization": "voice-authorization.json"
+  },
+  "variables": {
+    "python": ".venv/bin/python",
+    "locale": "ko",
+    "code": "REPLACE_WITH_40_CHAR_COMMIT",
+    "stageDir": "/absolute/path/on/the/spark/host",
+    "maxEndLagSeconds": "8"
+  },
+  "stages": [
+    {
+      "name": "formal_render",
+      "note": "Renderer exits 1 when its own screening flags units; the ASR screen below decides. Check dispatch.result.json for a known terminal outcome.",
+      "command": [
+        "{python}", "tools/development/clip_e2e_spark.py", "render",
+        "--locale", "{locale}", "--stage", "{stageDir}", "--code", "{code}",
+        "--job", "{speechJob}", "--source", "{source}", "--anchor", "{anchor}",
+        "--candidate", "{candidate}", "--policy", "{policy}",
+        "--human-review-receipt", "{textRelease}", "--speaker-registry", "{registry}",
+        "--adapter", "{adapter}", "--source-voice-authorization", "{voiceAuthorization}",
+        "--remote-name", "{locale}-raw", "--max-end-lag-seconds", "{maxEndLagSeconds}"
+      ],
+      "produces": "l3/{locale}/dispatch.result.json"
+    },
+    {
+      "name": "compact",
+      "note": "Produces the compacted speech job that the screen and package stages read.",
+      "command": [
+        "{python}", "tools/development/clip_e2e_spark.py", "compact",
+        "--locale", "{locale}", "--stage", "{stageDir}", "--code", "{code}",
+        "--job", "{speechJob}", "--source", "{source}", "--anchor", "{anchor}",
+        "--candidate", "{candidate}", "--policy", "{policy}",
+        "--human-review-receipt", "{textRelease}", "--speaker-registry", "{registry}",
+        "--adapter", "{adapter}", "--source-voice-authorization", "{voiceAuthorization}",
+        "--raw-name", "{locale}-raw", "--remote-name", "{locale}-compact",
+        "--max-end-lag-seconds", "{maxEndLagSeconds}", "--trim-trailing",
+        "--padding-seconds", "0.03", "--inter-utterance-gap-seconds", "0",
+        "--reaction-lag-seconds", "0", "--tail-overrun-seconds", "1.0"
+      ],
+      "produces": "l3/{locale}/compact.result.json"
+    },
+    {
+      "name": "screen",
+      "note": "ASR screening of the compacted job; writes the receipt that the package and audio QC stages read.",
+      "command": [
+        "{python}", "tools/development/clip_e2e_spark.py", "screen",
+        "--locale", "{locale}", "--stage", "{stageDir}", "--code", "{code}",
+        "--job", "{speechJob}", "--remote-name", "{locale}-compact",
+        "--batch-size", "1", "--tag", "v1"
+      ],
+      "produces": "l3/{locale}/spark-{locale}-compact/screen-v1.result.json"
+    },
+    {
+      "name": "package",
+      "note": "Deterministic audio package from the screened render.",
+      "command": [
+        "{python}", "tools/ops/run.py", "audio.package",
+        "--source", "{source}", "--anchor", "{anchor}", "--candidate", "{candidate}",
+        "--job", "{speechJob}", "--adapter", "{adapter}", "--policy", "{policy}",
+        "--human-review-receipt", "{textRelease}", "--speaker-registry", "{registry}",
+        "--source-voice-authorization", "{voiceAuthorization}",
+        "--render-manifest", "l3/{locale}/spark-{locale}-compact/spark-output/speech-job/render-manifest-screened-v1.json",
+        "--artifact-root", "l3/{locale}/spark-{locale}-compact/spark-output/speech-job",
+        "--out", "{out}/audio-package.json"
+      ],
+      "produces": "audio-package.json"
+    },
+    {
+      "name": "audio_qc",
+      "note": "Reads the package and screening receipt; failures are read back from its summary.",
+      "command": [
+        "{python}", "tools/development/clip_e2e_spark.py", "audio-qc",
+        "--locale", "{locale}", "--stage", "{stageDir}", "--code", "{code}",
+        "--audio-package", "{out}/audio-package.json",
+        "--out", "{out}/aqc"
+      ],
+      "produces": "aqc/summary.json",
+      "failures": "aqc/summary.json"
+    }
+  ]
+}
