@@ -12,8 +12,9 @@ import unittest
 from unittest.mock import patch
 
 from scripts import sermon_diagnostic_prefect_flow as flow
-from scripts import sermon_review_contracts as c
-from scripts import sermon_log_profile as profile
+from tongxing_production.review import contracts as c
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.observability import profile
 
 
 class SessionFixture:
@@ -173,7 +174,7 @@ class DiagnosticFlowTests(unittest.TestCase):
         self.assertEqual(self.session.calls, [('source', None), ('locale', 'ko'), ('preview', 'ko'),
                                              ('locale', 'zh-Hans'), ('preview', 'zh-Hans'), ('delivery', None)])
         self.assertTrue(all(row['humanAcceptance'] == 'pending' and not row['productionEligible'] for row in results.values()))
-        from scripts import sermon_accounting as accounting
+        from tongxing_production.observability import accounting
         events, errors = accounting.read_events(self.root / 'logs'); self.assertFalse(errors)
         starts = {event['spanId']: event for event in events if event['event'] == 'stage_started'}
         self.assertEqual(starts[results['preview.ko']['completionSpans'][0]]['dependsOn'],
@@ -383,9 +384,9 @@ class DiagnosticFlowTests(unittest.TestCase):
 
 class ActualDiagnosticFlowTests(unittest.TestCase):
     def test_actual_source_strict_locale_worker_delivery_and_replay_preserve_original_store(self):
-        from scripts import sermon_accounting as accounting
+        from tongxing_production.observability import accounting
         from scripts import sermon_diagnostic_dag_session as sessions
-        from scripts import sermon_review_budget as budget
+        from tongxing_production.review import review_budget as budget
         from tests.diagnostic_dag_fixture import DiagnosticDAGFixture
         f = DiagnosticDAGFixture(); self.addCleanup(f.doCleanups); f.setUp()
         config = {'schemaVersion': flow.SCHEMA, 'locales': {locale: {
@@ -395,7 +396,7 @@ class ActualDiagnosticFlowTests(unittest.TestCase):
             dag = flow.DiagnosticDAG(session, config)
             path = f.root / 'budget' / budget.STORE_ID / 'provider-run/state.json'
             original = c.read_snapshot(path)[0]
-            from scripts import sermon_log_profile as profile
+            from tongxing_production.observability import profile
             with profile.session(f.root/'flow-logs', 'flow-context-check', work_kind='control',
                                  evidence_mode='synthetic', production_run_id=f.context['runId']):
                 dag.freeze()
@@ -434,8 +435,8 @@ import sys
 sys.path.insert(0, sys.argv[1])
 from scripts import sermon_diagnostic_prefect_flow as flow
 from scripts.sermon_diagnostic_dag_session import DiagnosticSession
-from scripts import sermon_review_budget as budget
-from scripts import sermon_review_contracts as c
+from scripts import tongxing_host; from tongxing_production.review import review_budget as budget
+from tongxing_production.review import contracts as c
 from tests.diagnostic_dag_fixture import DiagnosticDAGFixture
 fixture=DiagnosticDAGFixture(); fixture.setUp()
 config={'schemaVersion':flow.SCHEMA,'locales':{locale:{'localeSpec':fixture.locale_specs[locale],

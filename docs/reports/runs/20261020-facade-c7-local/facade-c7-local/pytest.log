@@ -1,0 +1,10 @@
+== pytest-style CI files + ops entry + spark session
+262 passed, 8 subtests passed in 103.66s (0:01:43)
+exit 0
+== sermon-dubbing-poc discover
+Ran 401 tests in 48.735s
+OK
+== isolated re-runs
+tests/test_lease_fencing.py + tests/test_sermon_unified_parallel.py: 1 failed, 40 passed (test_100_transitions_with_persistent_intents, 2.586 > 2)
+same test on clean origin/dev: 1 failed (same bound)
+tests/test_canonical_layer2_runtime_authorization.py after fix: 12 passed

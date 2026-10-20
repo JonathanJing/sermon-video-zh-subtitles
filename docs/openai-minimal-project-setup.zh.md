@@ -23,15 +23,15 @@ python3 -c 'from pathlib import Path; p=Path(".env.openai"); f=p.open("x"); f.wr
 
 ```sh
 # 只检查本地配置，不请求 OpenAI、不计费。
-python3 scripts/run_with_openai_environment.py --environment dev --check
-python3 scripts/run_with_openai_environment.py --environment prod --check
+python3 tools/ops/run_with_openai_environment.py --environment dev --check
+python3 tools/ops/run_with_openai_environment.py --environment prod --check
 
 # 用显式环境启动现有命令；后面的 producer 参数仍须按原合同提供。
-python3 scripts/run_with_openai_environment.py --environment dev -- \
-  .venv/bin/python scripts/run_target_language_models.py --help
+python3 tools/ops/run_with_openai_environment.py --environment dev -- \
+  .venv/bin/python tools/ops/run.py text.models --help
 ```
 
-实际生成时将 `--help` 替换为生产命令及其参数。必须从启动器进入；直接运行旧 producer 仍遵循原环境／`.env`／Secret Manager 行为，不会自动切换到两项目配置。现有 `sermon_pipeline.load_env` 使用 setdefault，不覆盖启动器已选择的 key。
+启动器 2026-10-20 起在 `tools/ops/`；旧路径 `scripts/run_with_openai_environment.py` 暂留为门面，行为相同，因为 G1 闭包里的音频质检模块和已哈希的实验计划仍写着它，下一次闭包窗口删除。实际生成时将 `--help` 替换为生产命令及其参数。必须从启动器进入；直接运行旧 producer 仍遵循原环境／`.env`／Secret Manager 行为，不会自动切换到两项目配置。现有 `sermon_pipeline.load_env` 使用 setdefault，不覆盖启动器已选择的 key。
 
 长期 supervisor／controller 应在启动整个进程时选定环境，切换环境要重启。已有持久任务不自动迁移到新凭据；需检查其实际 worker 启动方式，不能仅改变父 shell 就宣称续跑已切换。当前启动器只保证直接子进程及正常继承环境的后代，不改 Cloud Run 或持久 job 的凭据配置。
 
@@ -41,8 +41,8 @@ Spark 上的 GPU 任务（例如音频质检的二级转写）也要调 OpenAI A
 
 ```sh
 # 在 Spark 上只检查配置，不请求 OpenAI。
-python3 scripts/run_with_openai_environment.py --environment dev --env-file ~/.config/tongxing/openai.env --check
-python3 scripts/run_with_openai_environment.py --environment prod --env-file ~/.config/tongxing/openai.env --check
+python3 tools/ops/run_with_openai_environment.py --environment dev --env-file ~/.config/tongxing/openai.env --check
+python3 tools/ops/run_with_openai_environment.py --environment prod --env-file ~/.config/tongxing/openai.env --check
 ```
 
 派发到容器时把这个文件只读挂进去，在容器里经启动器选环境；不要另建只含 prod 的文件。旧路径 `~/.config/tongxing/openai-prod.env` 已废弃，10-11 运行目录里的音频质检派发脚本仍写着它，那是冻结证据，下一轮派发改读本文件。

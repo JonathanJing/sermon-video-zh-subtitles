@@ -8,8 +8,9 @@ import threading
 import unittest
 from unittest.mock import patch
 
-from scripts import sermon_observability as observer
-from scripts.sermon_accounting import accounting_session, stage
+from tools.ops import sermon_observability as observer
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.observability.accounting import accounting_session, stage
 
 
 class ObservabilityTests(unittest.TestCase):
@@ -18,7 +19,7 @@ class ObservabilityTests(unittest.TestCase):
         self.addCleanup(self.temp.cleanup)
         self.root = Path(self.temp.name).resolve()
         self.accounting = self.root / "accounting"
-        with patch("scripts.sermon_accounting.execution_identity", return_value={"gitCommit": None}):
+        with patch("tongxing_production.observability.accounting.execution_identity", return_value={"gitCommit": None}):
             with accounting_session(self.accounting, "weekly_dubbing"):
                 with stage("render", billing="local", cache_hit=True):
                     pass

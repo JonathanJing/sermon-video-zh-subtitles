@@ -5,7 +5,9 @@ import tempfile
 import unittest
 
 from scripts import sermon_diagnostic_attempts as attempts, sermon_diagnostic_provider as provider
-from scripts import sermon_review_budget as budget, sermon_review_contracts as c
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.review import review_budget as budget
+from tongxing_production.review import contracts as c
 from scripts import sermon_strict_layer2 as strict
 from tests import test_run_bounded_diagnostic as fixtures
 
@@ -140,7 +142,8 @@ class NewAttemptV2Tests(unittest.TestCase):
         with self.f.f.f.session():
             cached=self.f.subject.transcribe('synthetic',self.f.f.raw)
         self.assertIsInstance(cached,dict);self.assertEqual(len(self.f.f.calls),1)
-        from scripts import sermon_pipeline as pipeline
+        from scripts import tongxing_host  # noqa: F401  binds the production package ports
+        from tongxing_production.workflows.dual_pdf import pipeline as pipeline
         with self.assertRaisesRegex(pipeline.PreDispatchRejection,'permanently_closed'):
             self.f.subject._reserve('new-call',{'api':{'model':'gpt-transcribe'}},self.f.subject.limits,
                 audio_bounds=dict(requests=1,wallTimeMs=1,costMicrousd=1))

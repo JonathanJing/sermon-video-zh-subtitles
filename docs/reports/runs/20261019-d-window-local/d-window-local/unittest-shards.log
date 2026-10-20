@@ -1,0 +1,12 @@
+s0.log: Ran 546 tests in 475.036s OK (skipped=3)  exit 0
+s1.log: Ran 562 tests in 489.328s OK (skipped=4)  exit 0
+s2.log: Ran 581 tests in 600.693s OK (skipped=5)  exit 0
+s3.log: Ran 605 tests in 565.413s OK (skipped=7)  exit 0
+s4.log: Ran 606 tests in 583.517s OK (skipped=4)  exit 0
+s5.log: Ran 611 tests in 564.789s OK (skipped=2)  exit 0
+s6.log: Ran 611 tests in 665.970s OK (skipped=2)  exit 0
+s7.log: Ran 619 tests in 792.033s FAILED (failures=1, skipped=3)  exit 1
+s8.log: Ran 619 tests in 705.721s OK (skipped=2)  exit 0
+s9.log: Ran 620 tests in 665.891s OK (skipped=6)  exit 0
+FAIL: test_129_group_actual_producer_can_assemble_and_resume_without_calls (test_layer2_large_fan_in.LargeLayer2FanInTests.test_129_group_actual_producer_can_assemble_and_resume_without_calls)
+start=2026-10-19T19:30:05Z end=2026-10-19T19:44:13Z

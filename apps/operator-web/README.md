@@ -66,7 +66,7 @@ Prototype scope:
 From the repository root, test with a live archive link:
 
 ```bash
-python3 scripts/prepare_live_link_playback.py \
+python3 tools/ops/prepare_live_link_playback.py \
   --live-url 'https://www.youtube.com/watch?v=FsUijL9uB1I'
 ```
 

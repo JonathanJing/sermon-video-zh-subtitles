@@ -9,8 +9,8 @@ from unittest import mock
 
 from scripts.language_review_plugins import es_sermon, ko_sermon, zh_hans_sermon
 from scripts.language_review_plugins import common as locale_common
-from scripts import target_language_policy
-from scripts import produce_target_language_candidate as producer
+from tongxing_production.text import policy as target_language_policy
+from tongxing_production.text import candidate as producer
 
 
 ROOT = Path(__file__).resolve().parents[1]

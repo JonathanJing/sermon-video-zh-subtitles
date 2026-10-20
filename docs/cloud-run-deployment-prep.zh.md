@@ -330,7 +330,7 @@ caption route 没有抽音频，ASR route 标记为 `no_requested_caption_track`
 步骤需要续跑，可以不再调用 OpenAI，直接重放已保存翻译：
 
 ```bash
-python3 scripts/translate_playback_with_openai.py \
+python3 tools/ops/translate_playback_with_openai.py \
   --input /tmp/sermon-worker/YYYY-MM-DD/<session_id>/web/playback-simulation.generated.js \
   --out /tmp/sermon-worker/YYYY-MM-DD/<session_id>/web/playback-simulation.generated.js \
   --out-dir /tmp/sermon-worker/YYYY-MM-DD/<session_id>/model-output \
@@ -344,7 +344,7 @@ playback/VTT/SRT/manifest，但不能当作新的 `gpt-5.4-mini` API 调用成�
 每次 Sunday worker run 和 promotion 后，用 verifier 检查稳定 Sunday manifest 和公开 artifacts：
 
 ```bash
-python3 scripts/validate_sunday_manifest.py \
+python3 tools/ops/validate_sunday_manifest.py \
   --manifest gs://sermon-zh-artifacts-ai-for-god/sundays/YYYY-MM-DD/cloud-manifest.json \
   --sunday YYYY-MM-DD \
   --require-readable-artifacts \
@@ -359,7 +359,7 @@ Manager resource name。
 实时 session 的 durable JSONL mirror 要单独验证：
 
 ```bash
-python3 scripts/validate_realtime_session.py \
+python3 tools/ops/validate_realtime_session.py \
   --events-jsonl gs://sermon-zh-artifacts-ai-for-god/realtime-events/YYYY-MM-DD/<session_id>.jsonl \
   --require-stable-correction
 ```
@@ -522,7 +522,7 @@ event token、API key 或 Secret Manager resource name。
 跑离线 OpenAI/翻译链路前，先验证 YouTube archive route，不下载 captions，也不调用 OpenAI：
 
 ```bash
-python3 scripts/run_offline_archive_preflight.py \
+python3 tools/ops/run_offline_archive_preflight.py \
   --live-url "https://www.youtube.com/watch?v=VIDEO_ID" \
   --sunday YYYY-MM-DD \
   --out artifacts/evidence/offline-archive-preflight.json
@@ -536,7 +536,7 @@ realtime。
 跑离线翻译或 stable-correction 前，先用生产同款 OpenAI Responses 路径预检文本模型：
 
 ```bash
-python3 scripts/run_openai_model_access_preflight.py \
+python3 tools/ops/run_openai_model_access_preflight.py \
   --cloud-run-service sermon-zh-caption-web \
   --project ai-for-god \
   --region us-west1 \

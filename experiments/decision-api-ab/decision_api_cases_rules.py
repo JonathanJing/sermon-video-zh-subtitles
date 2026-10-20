@@ -109,7 +109,8 @@ def _read_frozen_json(path):
 
 
 def _screen_values(expected_text, recognized_text, locale, threshold):
-    from scripts.screen_target_language_audio_units import tokens
+    from scripts import tongxing_host  # noqa: F401  binds the production package ports
+    from tongxing_production.audio.screening import tokens
     expected=tokens(expected_text,locale);actual=tokens(recognized_text,locale)
     if not expected:
         raise ValueError('empty_expected_asr_tokens')
@@ -237,7 +238,9 @@ def _case(stage, name, adapter, evidence, labels, *, cluster=None):
 
 
 def _repair_evidence(variant):
-    from scripts import sermon_repair_planning as p, sermon_review_contracts as c
+    from scripts import tongxing_host  # noqa: F401  binds the production package ports
+    from scripts import sermon_repair_planning as p
+    from tongxing_production.review import contracts as c
     fixtures = ROOT / 'tests/fixtures/rqc'
     def load(name):
         return json.loads((fixtures / (name + '.json')).read_text())
@@ -392,7 +395,9 @@ def run_rule_a(case):
     if case['a']['kind']=='no_executable_baseline':
         return {'status':'no_executable_baseline','labels':{}}
     if adapter=='plan_repair':
-        from scripts import sermon_repair_planning as p, sermon_review_contracts as c
+        from scripts import tongxing_host  # noqa: F401  binds the production package ports
+        from scripts import sermon_repair_planning as p
+        from tongxing_production.review import contracts as c
         evidence.pop('policy');evidence['candidate_bytes']=evidence.pop('candidateArtifactUtf8').encode()
         evidence['review_bytes']=c.canonical_bytes(evidence['review'])
         row=evidence['budget'];row['limits']=p.Limits(**row['limits'])
@@ -401,7 +406,8 @@ def run_rule_a(case):
         result=p.plan_repair(**evidence)
         return {'labels':{key:result[key] for key in ('action','status','reasonCode')}}
     if adapter=='provider_error':
-        from scripts import sermon_provider_error as p
+        from scripts import tongxing_host  # noqa: F401  binds the production package ports
+        from tongxing_production.compute import sermon_provider_error as p
         result=p.diagnostic(evidence['httpStatus'],json.dumps({'error':evidence['error']}).encode())
         return {'labels':{'reasonCode':result['reasonCode']}}
     if adapter=='asr_screening_rule_wrapper':
@@ -409,7 +415,8 @@ def run_rule_a(case):
                                 evidence['targetLocale'],evidence['policy']['minSimilarity'])
         return {'labels':{'status':status}}
     if adapter=='target_audio_timing_plan':
-        from scripts.target_audio_timing_plan import plan
+        from scripts import tongxing_host  # noqa: F401  binds the production package ports
+        from tongxing_production.audio.timing_plan import plan
         evidence.pop('taskPolicy');result=plan(**evidence)
         return {'labels':{'formalScheduleStatus':result['formalScheduleStatus'],
                           'unchangedAudioCannotFitSerialTimeline':str(result['unchangedAudioCannotFitSerialTimeline']).lower()}}

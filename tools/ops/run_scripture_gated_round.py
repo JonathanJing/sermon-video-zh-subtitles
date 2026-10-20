@@ -32,7 +32,8 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from scripts import codex_layer2_diagnostic as diagnostic  # noqa: E402
-from scripts import scripture_adjudication as adjudication  # noqa: E402
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.review import scripture as adjudication  # noqa: E402
 from scripts.language_review_plugins import diagnostic_admitted_quotes as admitted  # noqa: E402
 
 TARGET_LOCALE = 'zh-Hans'
@@ -94,11 +95,11 @@ def run_models(args: argparse.Namespace, fixture: Path, out: Path) -> dict[str, 
     audio = out / 'audio'
     chain = (f'{python} scripts/run_codex_layer2_test.py --fixture-dir {rel(fixture)} --diagnostic-fixture '
              f'--out-dir {rel(layer2)} --translator-model {args.translator_model} --reviewer-tier fast && '
-             f'{python} scripts/experiments/run_spark_diagnostic_audio.py execute --fixture {rel(fixture)} '
+             f'{python} experiments/spark-diagnostic-audio/run_spark_diagnostic_audio.py execute --fixture {rel(fixture)} '
              f'--layer2-out {rel(layer2)} --media {args.media} --out {rel(audio)} '
              f'--remote-stage {args.remote_stage} --spark-session-id {args.spark_session_id} '
              f'--spark-session-owner {args.spark_session_owner}')
-    begin = subprocess.run([str(python), 'scripts/spark_exclusive_session.py', 'begin',
+    begin = subprocess.run([str(python), 'tools/ops/run.py', 'compute.spark_exclusive_session', 'begin',
                             '--session-id', args.spark_session_id, '--owner', args.spark_session_owner,
                             '--minimum-available-gib', '64', '--preempt', '--allow-interrupted-restart'],
                            cwd=ROOT, capture_output=True, text=True)
@@ -107,7 +108,7 @@ def run_models(args: argparse.Namespace, fixture: Path, out: Path) -> dict[str, 
     # The L2 CLI and the Spark runner both require the session identity in the environment.
     environment = dict(os.environ, SPARK_EXCLUSIVE_SESSION_ID=args.spark_session_id,
                        SPARK_EXCLUSIVE_SESSION_OWNER=args.spark_session_owner)
-    run_result = subprocess.run(['scripts/experiments/spark_session_round.sh', args.spark_session_id,
+    run_result = subprocess.run(['experiments/spark-diagnostic-audio/spark_session_round.sh', args.spark_session_id,
                                  args.spark_session_owner, '--', 'sh', '-c', chain], cwd=ROOT, env=environment)
     return {'modelRun': 'completed' if run_result.returncode == 0 else 'failed',
             'modelRunExitCode': run_result.returncode, 'publication': 'not_run'}

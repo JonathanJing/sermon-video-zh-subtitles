@@ -13,22 +13,29 @@ import hashlib
 import json
 import os
 from pathlib import Path
+import sys
 import threading
 import time
 import urllib.request
 from unittest.mock import patch
 
-from scripts import produce_target_language_candidate as producer
-from scripts import run_target_language_models as production
-from scripts import sermon_accounting as accounting
-from scripts import sermon_pipeline as pipeline
-from scripts import sermon_provider_http as transport
-from scripts import sermon_provider_limits as provider_limits
-from scripts import target_language_policy as policy_tools
-from scripts.experiments import layer2_ab
+ROOT = Path(__file__).resolve().parents[2]
+if str(ROOT) not in sys.path:  # direct execution: ``scripts`` imports need the repository root
+    sys.path.insert(0, str(ROOT))
+if str(Path(__file__).resolve().parent) not in sys.path:  # sibling modules of this experiment line
+    sys.path.append(str(Path(__file__).resolve().parent))
+
+from tongxing_production.text import candidate as producer
+from tongxing_production.text import models as production
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.observability import accounting
+from tongxing_production.workflows.dual_pdf import pipeline as pipeline
+from tongxing_production.compute import provider_http as transport
+from tongxing_production.compute import provider_limits
+from tongxing_production.text import policy as policy_tools
+import layer2_ab
 from scripts.sermon_execution_harness import atomic_json, work_lock
 
-ROOT = Path(__file__).resolve().parents[2]
 SCHEMA = 'sermon-bounded-layer2-experiment-v1'
 LIMITS = {**provider_limits.DEFAULT_REQUEST_LIMITS, 'maxCompletionTokens': 2048}
 PRICES = {'gpt-6-astra': {'input': '10', 'cached': '1', 'cacheWrite': '12.5', 'output': '50'},
@@ -256,7 +263,7 @@ def revise_local_input_admission(out, expected_returned_calls=13):
             prompt = copy.deepcopy(selected[stem]['prompts'][role])
             if role == 'reviewer': prompt['input']['astraDraft'] = read(out / workers / (stem + '-astra.json'))['result']
             payload = production.model_payload(role, prompt, policy, LIMITS)
-            from scripts.sermon_review_contracts import decode_json
+            from tongxing_production.review.contracts import decode_json
             result = decode_json(production.completed_response_content(response, policy[role]['model'], role).encode())
             production.require(raw['payloadSha256'] == cached['payloadSha256'] == reservation['payloadSha256']
                 == policy_tools.canonical_sha256(payload) and cached['model'] == response['model'] == reservation['requestedModel']
@@ -445,7 +452,7 @@ def run_arm(out, manifest, workers, key, ledger, caller=official_call):
                         with accounting.stage(f'experiment.{phase}.{stem}', depends_on=[span],
                                 executor_type='deterministic_program') as previous:
                             raw = read(path.with_suffix('.raw.json'))
-                            from scripts.sermon_review_contracts import decode_json
+                            from tongxing_production.review.contracts import decode_json
                             raw_result = decode_json(production.completed_response_content(raw['response'], policy[role]['model'], role).encode())
                             production.require(raw['payloadSha256'] == policy_tools.canonical_sha256(payload)
                                 and result['requestId'] == raw['response']['id'] and result['result'] == raw_result,

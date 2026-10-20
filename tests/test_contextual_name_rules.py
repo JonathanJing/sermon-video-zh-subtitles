@@ -19,7 +19,8 @@ SPEC.loader.exec_module(mod)
 class ContextualNameRulesTest(unittest.TestCase):
     def test_real_main_binds_worker_outcome_without_accounting_environment(self):
         from types import SimpleNamespace
-        from scripts import sermon_pipeline
+        from scripts import tongxing_host  # noqa: F401  binds the production package ports
+        from tongxing_production.workflows.dual_pdf import pipeline as sermon_pipeline
         with tempfile.TemporaryDirectory() as directory:
             out = Path(directory)
             source = [{"id": 0, "start": 0, "end": 2, "text": "Do not fear."}]

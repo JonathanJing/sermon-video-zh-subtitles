@@ -1,0 +1,243 @@
+Estimating 213 unprofiled modules from measured per-case cost
+Shard 6/10: 607 tests from 366 modules
+.............................................................................................................s...........................................................................SERMON_LOGGING_WRITE_FAILED errorType=AccountingWriteError
+..............................................................Digest: /var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/tmpede3amv2/digests/20261007-e2e (6 files, 9 redactions)
+Digest: /var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/tmp6h0h2qdi/digests/20261007-e2e (5 files, 9 redactions)
+Tidied whitespace: /var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/tmp6h0h2qdi/digests/20261007-e2e/INDEX.md
+No unredacted values found.
+{"status": "deployed_http_verification_pending", "out": "/var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/tmpty6yi7jx/new/receipt.json"}
+corrected 1/1
+corrected 1/1
+corrected 1/1
+corrected 1/1
+translated zh 1/1
+translated zh 1/1
+translated zh 1/1
+translated zh 1/1
+.............................{"stage": "tts", "batchIndex": 0, "completedGroups": 2}
+{"stage": "tts", "batchIndex": 1, "completedGroups": 4}
+{"stage": "tts", "batchIndex": 2, "completedGroups": 6}
+{"stage": "tts", "batchIndex": 3, "completedGroups": 8}
+{"stage": "tts", "batchIndex": 4, "completedGroups": 10}
+{"stage": "tts", "batchIndex": 5, "completedGroups": 12}
+{"stage": "tts", "batchIndex": 6, "completedGroups": 13}
+.............discover	pass	0.0
+ko.text-qc.prefetch	pass	0.0
+ko.text-qc	pass	0.0
+ko.calibration.prefetch	pass	0.4
+ko.calibration	pass	0.3
+ko.text-waiver	pass	0.0
+usage: run_unittest_ci.py [-h] [--run-dir RUN_DIR] --out OUT
+                          [--state-dir STATE_DIR] [--locales LOCALES]
+                          [--audio-package LOCALE=PATH]
+                          [--backend {real,fake}]
+                          [--asr-model-path ASR_MODEL_PATH]
+                          [--tts-checkpoint-map TTS_CHECKPOINT_MAP]
+                          [--tts-seed TTS_SEED] [--tts-device TTS_DEVICE]
+                          [--tts-dtype {bfloat16,float32}]
+                          [--tts-attention TTS_ATTENTION]
+                          [--tts-instruct TTS_INSTRUCT]
+                          [--max-api-calls MAX_API_CALLS] [--workers WORKERS]
+... 17 lines omitted; 1 error-like lines, 1 kept below ...
+[line 45] run_unittest_ci.py: error: the secondary ASR uses the OpenAI API: start under scripts/run_with_openai_environment.py --environment dev (prod for formal content)
+... end of omitted section ...
+                          [--text-backend {codex,api}]
+                          [--api-budget-authorization API_BUDGET_AUTHORIZATION]
+                          [--expected-implementation SHA256]
+run_unittest_ci.py: error: real audio runs require --api-budget-authorization (planned per-locale QC authorization v4), including --text-backend codex for the secondary ASR budget
+.{
+  "ko": {
+    "status": "text_waiver_issued",
+    "reason": null,
+    "problems": [],
+    "calibration": {
+      "overallDetectionRate": 1.0,
+      "cleanFalsePositiveRate": 0.0,
+      "trials": 90,
+      "detected": 90
+    }
+  }
+}
+discover	pass	0.0
+ko.text-qc.prefetch	pass	0.0
+ko.text-qc	pass	0.0
+discover	pass	0.0
+ko.calibration.prefetch	pass	0.3
+ko.calibration	pass	0.2
+ko.text-waiver	pass	0.0
+..{
+  "ko": {
+    "status": "text_waiver_issued",
+    "reason": null,
+    "problems": [],
+    "calibration": {
+      "overallDetectionRate": 1.0,
+      "cleanFalsePositiveRate": 0.0,
+      "trials": 90,
+      "detected": 90
+    }
+  }
+}
+discover	pass	0.0
+...........{
+  "ko": [
+    "candidate schemaVersion is 'sermon-target-language-candidate-v1', not 'sermon-target-language-candidate-v2'",
+    "Layer 3 would refuse this candidate: Unsupported target-language candidate"
+  ]
+}
+translated sentence batches 1/1
+reviewed sentence batches 1/1
+....................{"unit": 0, "similarity": 1.0, "differences": 0}
+...................................................SERMON_LOGGING_WRITE_FAILED errorType=AccountingWriteError
+...........................................s..............................gpt-4o-transcribe reference chunk 1/1
+.....................................................................................v4.1 package verified; model loaded and warmup finished.
+Generation failed: RuntimeError
+..........................................................................
+----------------------------------------------------------------------
+Ran 607 tests in 1254.158s
+
+OK (skipped=2)
+{"translationPolicySha256": "e57bc5a3d91f44dfaa095885d87c191c00773362d955c893c8a1abba200ea2f0", "languageReviewPolicySha256": "48ad38e7af7047a7cfeec627fbb5f3472b6ed5fda270013e01d306edf281bc06", "componentSha256": {"translator": "c055e64763c428815d38ca5b54cef53bc7a28d8912d10b3198bc0cde04b42a94", "reviewer": "ed2b9eb86f63ea81be1999923fafd4456bbe546e7ae34f76558c7136ad2f7617", "terminology": "baffdeabe1751fa5880611b831669224c869e4107d76e38dddbab84464a7c2b0", "scripture": "9227153760176d5f4a9cc8ef7359262936cc2fd6c3f3ce189c1e2cb961477486", "languageReview": "48ad38e7af7047a7cfeec627fbb5f3472b6ed5fda270013e01d306edf281bc06", "formatting": "3b454a12748597187fde2f165a954fb45a586236ff95ffab279e5bb531425c1e", "batching": "e07870c4a83888b3266158ceee0af1e1ef1d34caf1b0f73742ad5f4d05914059"}, "productionPolicyReady": false, "unresolved": ["scripture_policy_pending", "language_review_plugin_pending", "plugin_implementation_hash_unbound_migrate_to_v2", "terminology_review_pending"]}
+{
+  "alternativeModel": "gpt-5.5",
+  "apiKeyMaterialIncluded": false,
+  "commands": [
+    [
+      "python3",
+      "scripts/run_openai_model_access_preflight.py",
+      "--model",
+      "gpt-5.4-mini",
+      "--out",
+      "artifacts/evidence/openai-model-access-preflight.json"
+    ],
+    [
+      "python3",
+      "scripts/translate_playback_with_openai.py",
+      "--input",
+      "artifacts/evidence/offline-caption-route/web/playback-simulation.generated.js",
+      "--model",
+      "gpt-5.4-mini",
+      "--api-key-secret",
+      "<OPENAI_API_KEY_SECRET_RESOURCE>",
+      "--out",
+      "artifacts/evidence/offline-caption-route/web/playback-simulation.generated.js",
+      "--out-dir",
+      "artifacts/evidence/offline-caption-route/model-output"
+    ],
+    [
+      "python3",
+      "scripts/export_playback_captions.py",
+      "--input",
+      "artifacts/evidence/offline-caption-route/web/playback-simulation.generated.js",
+      "--out-dir",
+      "artifacts/evidence/offline-caption-route/artifacts",
+      "--stem",
+      "sermon.zh.live-aligned",
+      "--manifest",
+      "artifacts/evidence/offline-caption-route/artifacts/cloud-manifest.json"
+    ],
+    [
+      "python3",
+      "scripts/validate_offline_chain.py",
+      "--report",
+      "artifacts/evidence/offline-caption-route/artifacts/report.json",
+      "--playback-js",
+      "artifacts/evidence/offline-caption-route/web/playback-simulation.generated.js",
+      "--zh-vtt",
+      "artifacts/evidence/offline-caption-route/artifacts/sermon.zh.live-aligned.vtt",
+      "--zh-srt",
+      "artifacts/evidence/offline-caption-route/artifacts/sermon.zh.live-aligned.srt",
+      "--manifest",
+      "artifacts/evidence/offline-caption-route/artifacts/cloud-manifest.json",
+      "--expected-translation-model",
+      "gpt-5.4-mini",
+      "--out",
+      "artifacts/evidence/offline-caption-route/offline-chain-validation.json"
+    ],
+    [
+      "python3",
+      "scripts/stabilize_realtime_deltas_with_openai.py",
+      "--input-jsonl",
+      "<REALTIME_SESSION_EVENTS_JSONL>",
+      "--api-key-secret",
+      "<OPENAI_API_KEY_SECRET_RESOURCE>",
+      "--model",
+      "gpt-5.4-mini",
+      "--out-dir",
+      "artifacts/evidence/realtime-stable-correction-recovery",
+      "--post-backend-url",
+      "<BACKEND_BASE_URL>",
+      "--post-session-id",
+      "<REALTIME_SESSION_ID>",
+      "--post-event-token",
+      "<REALTIME_EVENT_TOKEN_OR_ADMIN_TOKEN>"
+    ],
+    [
+      "python3",
+      "scripts/validate_realtime_session.py",
+      "--events-jsonl",
+      "<REALTIME_SESSION_EVENTS_JSONL>",
+      "--expected-model",
+      "gpt-realtime-translate",
+      "--expected-stable-model",
+      "gpt-5.4-mini",
+      "--require-stable-correction",
+      "--out",
+      "artifacts/evidence/realtime-stable-correction-recovery/session-validation.json"
+    ],
+    [
+      "python3",
+      "scripts/refresh_production_preflight_evidence.py",
+      "--sunday",
+      "2026-06-28",
+      "--out",
+      "artifacts/evidence/production-preflight-refresh.json"
+    ],
+    [
+      "python3",
+      "scripts/write_production_go_live_sequence.py",
+      "--sunday",
+      "2026-06-28",
+      "--out",
+      "artifacts/evidence/production-go-live-sequence.json"
+    ]
+  ],
+  "eventTokenIncluded": false,
+  "modelPolicy": {
+    "alternativeModelIsSideEvidenceOnly": true,
+    "doNotSubstitute": true,
+    "requiredStableAndOfflineModel": "gpt-5.4-mini"
+  },
+  "observedAlternativeModelAccess": {
+    "model": "gpt-5.5",
+    "status": "missing_report"
+  },
+  "observedRequiredModelAccess": {
+    "model": "gpt-5.4-mini",
+    "status": "missing_report"
+  },
+  "passCriteria": [
+    "run_openai_model_access_preflight.py reports responses_model:gpt-5.4-mini=pass.",
+    "Offline translation report uses gpt-5.4-mini.",
+    "validate_offline_chain.py status is ok and not_realtime_chain passes.",
+    "Stable correction events have source gpt-5.4-mini-stable-correction and model gpt-5.4-mini.",
+    "validate_realtime_session.py passes with --require-stable-correction.",
+    "gpt-5.5 availability is not used as a substitute for gpt-5.4-mini."
+  ],
+  "requiredModel": "gpt-5.4-mini",
+  "schemaVersion": 1,
+  "secretResourceNamesIncluded": false,
+  "status": "waiting_for_required_model_access",
+  "sunday": "2026-06-28"
+}
+ 420.41s     7  test_machine_quality_waiver
+ 146.45s     1  test_sermon_mock_tts_dag
+  61.00s     2  test_run_machine_qc_audio_test
+  30.68s     6  test_sermon_cuv_translation
+  27.91s     3  test_sermon_fresh_diagnostic
+  25.27s     2  test_sermon_mock_tts_worker
+  24.29s     2  test_canonical_layer2_cache_recovery
+  21.53s     1  test_canonical_layer2_auto_repair
+  20.04s     2  test_sermon_historical_layer2
+  19.91s     3  test_sermon_diagnostic_preview_worker
+exit 0

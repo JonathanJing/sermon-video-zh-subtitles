@@ -1,0 +1,19 @@
+## chunk_0: tests/test_import_openai_costs.py tests/test_scripts_layout_guard.py tests/test_sermon_cached_fresh_diagnostic_source.py tests/test_sermon_dev_diagnostic_snapshot.py tests/test_sermon_execution_extensions.py tests/test_sermon_historical_layer2.py tests/test_sermon_repair_planning.py tests/test_sermon_strict_controller.py tests/test_sermon_strict_locale.py tests/test_tongxing_production_package.py
+.....................       [100%]
+143 passed, 643 subtests passed in 535.40s (0:08:55)
+exit=0
+## chunk_1: tests/test_controller_crash_windows.py tests/test_layer2_auto_repair.py tests/test_sermon_bounded_business_callbacks.py tests/test_sermon_decision_budget.py tests/test_sermon_diagnostic_attempts.py tests/test_sermon_fresh_diagnostic.py tests/test_sermon_local_business_callbacks.py tests/test_sermon_review_diagnostics.py tests/test_sermon_strict_gate_admission.py tests/test_sermon_strict_repair_planner.py
+....................                                                [100%]
+149 passed, 92 subtests passed in 578.11s (0:09:38)
+exit=0
+## chunk_2: tests/test_decision_api_cases_rules.py tests/test_ops_run_entry.py tests/test_sermon_bounded_decision.py tests/test_sermon_delivery_intent_binding.py tests/test_sermon_diagnostic_context.py tests/test_sermon_fresh_source_causality.py tests/test_sermon_public_snapshot.py tests/test_sermon_strict_budget_adapter.py tests/test_sermon_strict_layer2.py tests/test_sermon_strict_revisions.py
+..............................................................................                     [100%]
+190 passed, 150 subtests passed in 900.11s (0:15:00)
+exit=0
+## chunk_3: tests/test_diagnostic_continuation_entry.py tests/test_run_bounded_diagnostic.py tests/test_sermon_business_prefect_flow.py tests/test_sermon_deterministic_controller.py tests/test_sermon_diagnostic_provider.py tests/test_sermon_fresh_source_prefect.py tests/test_sermon_release_workflow.py tests/test_sermon_strict_candidate_bridge.py tests/test_sermon_strict_layer3_preparation.py tests/test_strict_locale_preflight_migration.py
+....................                                                  [100%]
+120 passed, 4 skipped, 43 subtests passed in 424.04s (0:07:04)
+exit=0
+...............................                                     [100%]
+## tests/test_sermon_cost_isolation.py (run separately)
+31 passed, 5 subtests passed in 4.41s

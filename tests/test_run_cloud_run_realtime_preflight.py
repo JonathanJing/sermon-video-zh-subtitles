@@ -4,7 +4,7 @@ import unittest
 from argparse import Namespace
 from pathlib import Path
 
-import scripts.run_cloud_run_realtime_preflight as mod
+from tools.ops import run_cloud_run_realtime_preflight as mod
 
 
 class CloudRunRealtimePreflightTest(unittest.TestCase):

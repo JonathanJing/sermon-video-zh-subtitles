@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Source-bound, non-production Layer 2 translator comparison.
 
-Run with ``python -m scripts.experiments.layer2_ab --help``. The three arms
+Run with ``python experiments/layer2-translation-ab/layer2_ab.py --help``. The three arms
 share one approved English source, group plan, policy body, prompts, reasoning
 effort, and independent Sol reviewer. Only the translator model differs.
 Outputs contain model text and belong in ignored artifacts, never in Git.
@@ -24,13 +24,18 @@ from pathlib import Path
 import secrets
 import statistics
 import subprocess
+import sys
 import time
 from typing import Any, Callable
 
-from scripts import produce_target_language_candidate as producer
-from scripts import run_target_language_models as production
-from scripts import sermon_pipeline
-from scripts import target_language_policy as policy_tools
+ROOT = Path(__file__).resolve().parents[2]
+if str(ROOT) not in sys.path:  # direct execution: ``scripts`` imports need the repository root
+    sys.path.insert(0, str(ROOT))
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.text import candidate as producer
+from tongxing_production.text import models as production
+from tongxing_production.workflows.dual_pdf import pipeline as sermon_pipeline
+from tongxing_production.text import policy as policy_tools
 
 
 MODELS = {"A": "gpt-6-astra", "B": "gpt-6-sol", "C": "gpt-6-luna"}
@@ -196,11 +201,11 @@ def _call_with_receipt(role: str, prompt: dict[str, Any], policy: dict[str, Any]
             raise
 
     effective_caller = measured
-    from scripts.production_spark_admission import SessionBoundCaller
+    from tongxing_production.compute.spark_admission import SessionBoundCaller
     if isinstance(caller, SessionBoundCaller) and not caller.requires_spark and not caller.outcome_guarded:
         # Expose the durable gate to _model_call so it binds its started marker
         # and can recover a returned outcome before rejecting that marker.
-        from scripts import api_cli_outcomes
+        from tongxing_production.compute import outcomes as api_cli_outcomes
         measured.execution_identity = api_cli_outcomes.execution_binding(caller.caller, {'api_key': key})
         # Equal reviewer prompts in separate arms are independent trials.
         # Bind the operation as well as payload so durable replay cannot collapse them.
@@ -408,7 +413,7 @@ def run(source: dict[str, Any], anchor: dict[str, Any], base_policy: dict[str, A
                 "reviewerInstruction": REVIEWER_INSTRUCTION}
     migration = _check_run_identity(out, identity)
     if caller is sermon_pipeline.chat_json:
-        from scripts.production_spark_admission import SessionBoundCaller
+        from tongxing_production.compute.spark_admission import SessionBoundCaller
         caller = SessionBoundCaller(caller, purpose="layer2-ab",
                                     requires_spark=False, outcome_directory=out / "api-cli-outcomes")
     comparison_path = out / "comparison.json"

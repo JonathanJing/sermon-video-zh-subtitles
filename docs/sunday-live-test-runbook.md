@@ -172,7 +172,7 @@ Required checks:
 Run the realtime draft smoke first for the live path:
 
 ```bash
-python3 scripts/realtime_openai_smoke_test.py \
+python3 tools/ops/realtime_openai_smoke_test.py \
   --audio-file authorized-smoke.wav \
   --api-key-secret projects/PROJECT_ID/secrets/openai-api-key/versions/latest \
   --backend-url https://CLOUD_RUN_URL \
@@ -213,7 +213,7 @@ memory, streams the authorized source through `gpt-realtime-translate`, and runs
 `gpt-5.4-mini` stable corrections against the saved realtime JSONL:
 
 ```bash
-python3 scripts/run_realtime_live_session.py \
+python3 tools/ops/run_realtime_live_session.py \
   --audio-url 'https://AUTHORIZED_AUDIO_SOURCE/live.m3u8?token=...' \
   --api-key-secret projects/PROJECT_ID/secrets/openai-api-key/versions/latest \
   --backend-url https://CLOUD_RUN_URL \
@@ -233,7 +233,7 @@ creates a realtime session, run the stabilizer loop with admin/internal auth so
 the event token stays inside the browser session:
 
 ```bash
-python3 scripts/run_realtime_stabilizer_loop.py \
+python3 tools/ops/run_realtime_stabilizer_loop.py \
   --input-jsonl gs://sermon-zh-artifacts-ai-for-god/realtime-events/YYYY-MM-DD/<browser_session_id>.jsonl \
   --api-key-secret projects/PROJECT_ID/secrets/openai-api-key/versions/latest \
   --backend-url https://CLOUD_RUN_URL \

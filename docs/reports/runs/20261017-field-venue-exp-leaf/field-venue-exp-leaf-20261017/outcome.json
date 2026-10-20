@@ -1,0 +1,24 @@
+{
+  "schemaVersion": "local-exp-leaf-verification-v1",
+  "status": "passed",
+  "exitCode": 0,
+  "deliveryType": "test",
+  "scope": "mock-only CLI compatibility and synthetic audio",
+  "nodeTests": {
+    "passed": 14,
+    "failed": 0
+  },
+  "cliMissingOut": {
+    "facadeExit": 2,
+    "directExit": 2,
+    "matchesBaseline": true
+  },
+  "syntheticTruth": {
+    "facadeMatchesDirect": true,
+    "offCwdMatchesDirect": true,
+    "outputMode": "0600"
+  },
+  "realVenue": "not_run",
+  "spark": "not_run",
+  "paidCalls": 0
+}

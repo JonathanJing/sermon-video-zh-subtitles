@@ -18,14 +18,22 @@ import hashlib
 import json
 from pathlib import Path
 import statistics
+import sys
 from datetime import datetime, timezone
 
-from scripts.codex_layer2_transport import CodexLayer2Transport, output_schema
-from scripts.claude_layer2_transport import ClaudeLayer2Transport
-from scripts.experiments.codex_translation_ab import save, save_or_check, sha, validate
-from scripts.run_target_language_models import SEMANTIC_CHECKS, save_new
-from scripts.target_language_policy import canonical_sha256
-from scripts.target_language_policy_preview import SCHEMA as PREVIEW_SCHEMA
+ROOT = Path(__file__).resolve().parents[2]
+if str(ROOT) not in sys.path:  # direct execution: ``scripts`` imports need the repository root
+    sys.path.insert(0, str(ROOT))
+if str(Path(__file__).resolve().parent) not in sys.path:  # sibling modules of this experiment line
+    sys.path.append(str(Path(__file__).resolve().parent))
+
+from tongxing_production.compute.transports.codex_layer2 import CodexLayer2Transport, output_schema
+from tongxing_production.compute.transports.claude_layer2 import ClaudeLayer2Transport
+from codex_translation_ab import save, save_or_check, sha, validate
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.text.models import SEMANTIC_CHECKS, save_new
+from tongxing_production.text.policy import canonical_sha256
+from tongxing_production.text.policy_preview import SCHEMA as PREVIEW_SCHEMA
 
 ARMS = ('sol', 'opus')
 REPAIR_FIELDS = ('revisionBrief', 'partialRepair')
@@ -142,7 +150,8 @@ def run_call(directory, call, payload, source, schema, *, execution):
 
 def usage_totals(responses):
     keys = ['inputTokens', 'cachedInputTokens', 'outputTokens', 'reasoningTokens']
-    from scripts.sermon_model_call_observation import normalize_usage
+    from scripts import tongxing_host  # noqa: F401  binds the production package ports
+    from tongxing_production.observability.model_call_observation import normalize_usage
     rows = [normalize_usage(r.get('usage')) if r.get('schemaVersion', '').startswith('codex') else (r.get('usage') or {})
             for r in responses]
     return {key: sum(row[key] for row in rows) if all(type(row.get(key)) is int for row in rows) else None

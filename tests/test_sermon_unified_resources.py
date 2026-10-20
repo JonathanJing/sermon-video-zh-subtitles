@@ -8,7 +8,8 @@ import threading
 import unittest
 
 from scripts.sermon_unified import contracts, resources
-from scripts import sermon_workflow_jobs as jobs
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.orchestration import jobs
 
 
 def _reserve_and_exit(policy, output):

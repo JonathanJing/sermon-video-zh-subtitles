@@ -58,7 +58,7 @@ def _request_json(req, retries=3, *, response_observer=None, request_executor=No
 
 
 def _reject_secret_override(value):
-    from scripts import sermon_openai_runtime
+    from tongxing_production.compute import openai_runtime as sermon_openai_runtime
     return sermon_openai_runtime.reject_secret_override(value)
 
 
@@ -88,13 +88,13 @@ def _http_execute(req, timeout_seconds, *, deadline=None):
 
 
 def _transcription_request(wav_bytes, expected_audio_sha256):
-    from scripts import sermon_transcription_request
+    from tongxing_production.compute import transcription_request as sermon_transcription_request
     return sermon_transcription_request.build_request(wav_bytes, expected_audio_sha256)
 
 
 def _transcription_limits():
     from types import SimpleNamespace
-    from scripts import sermon_transcription_request as transcription
+    from tongxing_production.compute import transcription_request as transcription
     return SimpleNamespace(MAX_RESPONSE_BYTES=transcription.MAX_RESPONSE_BYTES, WALL_TIME_MS=transcription.WALL_TIME_MS,
                            MICROUSD_PER_MINUTE=transcription.MICROUSD_PER_MINUTE)
 
@@ -105,17 +105,17 @@ def _request_metadata(payload):
 
 
 def _selected_route():
-    from scripts import sermon_openai_runtime
+    from tongxing_production.compute import openai_runtime as sermon_openai_runtime
     return sermon_openai_runtime.selected_route()
 
 
 def _safe_route(value):
-    from scripts import sermon_openai_runtime
+    from tongxing_production.compute import openai_runtime as sermon_openai_runtime
     return sermon_openai_runtime.safe_route(value)
 
 
 def _project_headers(api_key):
-    from scripts import sermon_openai_runtime
+    from tongxing_production.compute import openai_runtime as sermon_openai_runtime
     return sermon_openai_runtime.project_headers(api_key)
 
 
@@ -148,7 +148,7 @@ def provider() -> ports.Provider:
 
 
 def _code_identity():
-    from scripts import canonical_layer2_controller
+    from tongxing_production.text import controller as canonical_layer2_controller
     return canonical_layer2_controller.code_identity()
 
 
@@ -247,7 +247,7 @@ def _resources():
 
 @contextlib.contextmanager
 def _ledger_transaction(policy):
-    from scripts import sermon_workflow_jobs as jobs
+    from tongxing_production.orchestration import jobs
     ledger_module = _resources()
     with jobs._lock(ledger_module._safe_path(policy['brokerRoot']), ledger_module.BROKER_LOCK_ID) as (folder, _, held):
         if not held:
@@ -470,7 +470,7 @@ def _validate_codex_test_configuration(configuration):
 def transports() -> ports.Transports:
     return ports.Transports(caller=_transport_caller, claude_chat_envelope=_claude_chat_envelope,
                             validate_codex_test_configuration=_validate_codex_test_configuration,
-                            audio_qc=_module('scripts.machine_qc_audio_transports'))
+                            audio_qc=_module('tongxing_production.compute.qc_audio_transports'))
 
 
 def _validate_handoff_schema(value, filename, label):
@@ -508,10 +508,15 @@ def diagnostic() -> ports.Diagnostic:
                             require_policy_ready=_require_diagnostic_policy_ready)
 
 
+# The package command entry binds this host before it runs a module's main(). Durable
+# job requests record the worker argv and recovery matches it byte for byte; the D
+# closure window moved it here from the removed scripts/ facades, so a job root holds
+# only one generation of argv (jobs recorded with the old argv were terminal first).
+PACKAGE_ENTRY = ROOT / 'tools/ops/run.py'
+
+
 def layer2_worker_command(*arguments):
-    # Existing durable job requests record this argv; it keeps naming the
-    # scripts/ entry point so recovery matches them byte for byte.
-    return [sys.executable, str(ROOT / 'scripts/canonical_layer2_controller.py'), *arguments]
+    return [sys.executable, str(PACKAGE_ENTRY), 'text.controller', *arguments]
 
 
 def _module(name):
@@ -608,9 +613,7 @@ def waivers() -> ports.Waivers:
 
 
 def app_delivery_worker_command(*arguments):
-    # Existing durable job requests record this argv; it keeps naming the
-    # scripts/ entry point so recovery matches them byte for byte.
-    return [sys.executable, str(ROOT / 'scripts/sermon_app_delivery_workflow.py'), *arguments]
+    return [sys.executable, str(PACKAGE_ENTRY), 'delivery.app_workflow', *arguments]
 
 
 def _legacy_weekly_release():
@@ -638,12 +641,12 @@ def delivery_legacy() -> delivery_backend.Legacy:
 # when called, so the renderer, audio QC and spoken-rule modules stay unloaded
 # at host load.
 def _sync_directory_ancestry(path):
-    from scripts import sermon_workflow_jobs
+    from tongxing_production.orchestration import jobs as sermon_workflow_jobs
     return sermon_workflow_jobs._sync_directory_ancestry(path)
 
 
 def _read_json(path):
-    from scripts import sermon_workflow_jobs
+    from tongxing_production.orchestration import jobs as sermon_workflow_jobs
     return sermon_workflow_jobs._read(path)
 
 
@@ -669,7 +672,7 @@ def _accounting_orchestration(name, *, depends_on=None, work_unit_id=None):
 
 
 def _screening_asr_settings(screening):
-    from scripts import target_audio_auto_qc
+    from tongxing_production.review import audio_qc as target_audio_auto_qc
     return target_audio_auto_qc.screening_asr_settings(screening)
 
 
@@ -745,9 +748,9 @@ def audio_unmoved() -> audio_backend.Unmoved:
 # pinned file, so nothing here imports it at host load and no pinned file gains a
 # public name: functions are called through their scripts/ module at call time, so
 # patches still intercept, and constants and classes are read when used.
-_PREDICTED = 'scripts.target_audio_predicted_schedule'
-_SCREENING = 'scripts.screen_target_language_audio_units'
-_RENDERER = 'scripts.render_formal_target_language_speech'
+_PREDICTED = 'tongxing_production.audio.predicted_schedule'
+_SCREENING = 'tongxing_production.audio.screening'
+_RENDERER = 'tongxing_production.audio.renderer'
 
 
 def audio_rules() -> ports.AudioRules:
@@ -780,15 +783,15 @@ def text_rules() -> ports.TextRules:
 def source_evidence() -> ports.SourceEvidence:
     judge, judge_value = (partial(_rule_function, 'scripts.english_source_judge_cache'),
                           partial(_rule_constant, 'scripts.english_source_judge_cache'))
-    interpretation = partial(_rule_function, 'scripts.sermon_sentence_interpretation')
+    interpretation = partial(_rule_function, 'tongxing_production.source.sentence_interpretation')
     return ports.SourceEvidence(
         text_review=_module('scripts.sermon_source_text_review'),
         text_sha256=_rule_function('scripts.sermon_source_text_review', 'text_sha256'),
         judge_cached_call=judge('cached_call'), reconcile_returned_response=judge('reconcile_returned_response'),
         judge_run_schema=judge_value('RUN_SCHEMA'), atomic_json=judge('_atomic'),
         model_result=_rule_function('scripts.run_sentence_interpretation_models', '_model_result'),
-        source_budget=_rule_constant('scripts.sermon_source_budget', 'SourceBudget'),
-        budget_metrics=_rule_constant('scripts.sermon_source_budget', 'METRICS'),
+        source_budget=_rule_constant('tongxing_production.source.budget', 'SourceBudget'),
+        budget_metrics=_rule_constant('tongxing_production.source.budget', 'METRICS'),
         sha256=interpretation('sha256'), json_sha256=interpretation('json_sha256'))
 
 
@@ -845,7 +848,7 @@ def qc_runtime() -> ports.QcRuntime:
                            codex_text_transport=_module('scripts.sermon_codex_transport'),
                            validate_target_candidate=_rule_function('tongxing_production.audio.speech_job',
                                                                     'validate_target_candidate'),
-                           implementation_freeze=_module('scripts.implementation_freeze'),
+                           implementation_freeze=_module('tongxing_production.review.implementation_freeze'),
                            audio_waiver_acceptance=_module('scripts.machine_audio_waiver_acceptance'))
 
 
@@ -859,13 +862,16 @@ def qc_runtime() -> ports.QcRuntime:
 # partially initialized modules.
 EAGER_PRODUCER_IMPORTS = (
     'api_cli_outcomes', 'canonical_durable_jobs', 'canonical_pipeline_definition', 'four_layer_measure',
-    'inspect_canonical_packages', 'layer2_api_concurrency', 'machine_quality_release_basis',
+    'inspect_canonical_packages', 'layer2_api_concurrency',
     'prepare_target_language_speech_job', 'production_spark_admission',
     'series_terminology', 'sermon_accounting', 'sermon_cache_observation',
     'sermon_execution_harness', 'sermon_job_liveness', 'sermon_pipeline', 'sermon_provider_http',
     'sermon_provider_limits', 'sermon_public_snapshot', 'sermon_release_workflow', 'sermon_review_budget',
-    'sermon_review_contracts', 'sermon_transcription_request', 'sermon_unified_reviews', 'sermon_workflow_jobs',
+    'sermon_review_contracts', 'sermon_unified_reviews',
     'source_meaning_machine_adjudication',
+    # Facades removed in the D closure window; a dotted name is imported as written.
+    'tongxing_production.compute.transcription_request', 'tongxing_production.orchestration.jobs',
+    'tongxing_production.review.release_basis',
 )
 
 
@@ -923,13 +929,13 @@ def _upcoming_sunday(*arguments, **options):
 
 def compute_unmoved():
     return compute_backend.Unmoved(
-        waiver=_scripts_module('machine_quality_waiver'), audio_qc=_scripts_module('target_audio_auto_qc'),
-        budget_authorization=_scripts_module('machine_qc_budget_authorization'),
-        screener=_scripts_module('screen_target_language_audio_units'),
-        predicted_schedule=_scripts_module('target_audio_predicted_schedule'),
-        formal_renderer=_scripts_module('render_formal_target_language_speech'),
+        waiver=_module('tongxing_production.review.waiver'), audio_qc=_module('tongxing_production.review.audio_qc'),
+        budget_authorization=_module('tongxing_production.review.qc_budget_authorization'),
+        screener=_module('tongxing_production.audio.screening'),
+        predicted_schedule=_module('tongxing_production.audio.predicted_schedule'),
+        formal_renderer=_module('tongxing_production.audio.renderer'),
         voice_demos=_scripts_module('render_multilingual_voice_demos'),
-        jobs=_scripts_module('sermon_workflow_jobs'))
+        jobs=_module('tongxing_production.orchestration.jobs'))
 
 
 def dual_pdf_unmoved():
@@ -972,9 +978,9 @@ ENTRY_LOAD_TIME_IMPORTS = {
         'scripts.ko_spoken_numerals'),
     'tongxing_production.audio.package': ('scripts.sermon_accounting',),
     # G1: the audio QC transport imported the waiver and the audio QC checks at load time.
-    'tongxing_production.compute.qc_audio_transports': ('scripts.machine_quality_waiver', 'scripts.target_audio_auto_qc'),
+    'tongxing_production.compute.qc_audio_transports': ('tongxing_production.review.waiver', 'tongxing_production.review.audio_qc'),
     # L4 D2: the app release builder imported the waiver release basis at load time.
-    'tongxing_production.delivery.app_release': ('scripts.machine_quality_release_basis',),
+    'tongxing_production.delivery.app_release': ('tongxing_production.review.release_basis',),
     'tongxing_production.workflows.dual_pdf.codex_local': (
         'backend.config', 'backend.cloud', 'scripts.live_source_monitor',
         'scripts.run_sermon_production_supervisor_agent', 'scripts.sermon_accounting',
@@ -983,8 +989,7 @@ ENTRY_LOAD_TIME_IMPORTS = {
 
 
 def _jobs_worker_command(root, job_id, lock_fd):
-    # The job worker keeps running the scripts/ entry (its facade dispatches main()).
-    return [sys.executable, str(ROOT / 'scripts/sermon_workflow_jobs.py'), 'worker', '--root', str(root),
+    return [sys.executable, str(PACKAGE_ENTRY), 'orchestration.jobs', 'worker', '--root', str(root),
             '--job-id', job_id, '--lock-fd', str(lock_fd)]
 
 
@@ -1007,7 +1012,7 @@ def jobs_host() -> jobs_host_module.JobsHost:
 def load_producer_imports():
     import importlib
     for name in EAGER_PRODUCER_IMPORTS:
-        importlib.import_module('scripts.' + name)
+        importlib.import_module(name if '.' in name else 'scripts.' + name)
     # An entry's imports can load another entry (the codex-local supervisor imports post-live).
     pending = True
     while pending:

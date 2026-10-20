@@ -7,7 +7,7 @@ import unittest
 from dataclasses import replace
 from unittest import mock
 from tests import test_sermon_cuv_translation as fixtures
-from scripts import sermon_cuv_translation as mod
+from tongxing_production.text import cuv_translation as mod
 from scripts.tongxing_host import cuv_poc_code_closure_sha256
 
 

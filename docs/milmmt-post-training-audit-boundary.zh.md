@@ -13,7 +13,7 @@
 
 ## 审计工具
 
-[`experiments/milmmt/audit_post_training_state.py`](../experiments/milmmt/audit_post_training_state.py) 对已有训练集、开发集及冻结清单做数量、哈希、覆盖和重叠检查；不调用模型，也不运行训练。它输出 `authorizationGates`，其中外部学生训练保持 `blocked`。原 `scripts/audit_milmmt_post_training_state.py` 命令及导入保留为兼容入口。
+[`experiments/milmmt/audit_post_training_state.py`](../experiments/milmmt/audit_post_training_state.py) 对已有训练集、开发集及冻结清单做数量、哈希、覆盖和重叠检查；不调用模型，也不运行训练。它输出 `authorizationGates`，其中外部学生训练保持 `blocked`。原 `scripts/audit_milmmt_post_training_state.py` 兼容入口已删除（[门面退出计划](design/facade-removal-plan.zh.md) B 批）。
 
 ```bash
 python3 experiments/milmmt/audit_post_training_state.py \

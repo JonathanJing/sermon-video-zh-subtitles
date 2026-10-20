@@ -20,7 +20,7 @@ This Supervisor currently owns the `dual_pdf` scope. Its `complete` decision is 
 
 ## Current operator entry
 
-Use [the local production runbook](./codex-local-production-runbook.zh.md) and `scripts/run_codex_local_sermon_production.py`. Resume from current durable state and reuse valid approval. This document details the state/tool contract; the older Scheduler-to-Cloud-Run topology below is a rollback reference, not the default local execution path.
+Use [the local production runbook](./codex-local-production-runbook.zh.md) and `tools/ops/run.py workflows.dual_pdf.codex_local`. Resume from current durable state and reuse valid approval. This document details the state/tool contract; the older Scheduler-to-Cloud-Run topology below is a rollback reference, not the default local execution path.
 
 ## Architecture
 
@@ -52,8 +52,8 @@ The polling interval determined when the next handoff could be observed, in addi
 
 - Agent runner: `scripts/run_sermon_production_supervisor_agent.py`
 - Deterministic state/tool contract: `scripts/sermon_production_supervisor.py`
-- Source-media preparation (legacy filename): `scripts/run_post_live_timeline_job.py`
-- Reading-PDF tool: `scripts/run_post_live_subtitle_generation.py`
+- Source-media preparation (legacy filename): `tools/ops/run.py workflows.dual_pdf.timeline`
+- Reading-PDF tool: `tools/ops/run.py workflows.dual_pdf.post_live`
 - API: `POST /api/admin/sundays/<date>/production-supervisor`
 
 The SDK rollback path retains this bounded Python dependency; it does not implement the Agents API server-side loop:
@@ -90,18 +90,18 @@ The following parameters are integrated in the local runner. Check the verificat
 
 ```bash
 # Create a controlled session and persist its state and tool results.
-.venv/bin/python scripts/run_codex_local_sermon_production.py \
+.venv/bin/python tools/ops/run.py workflows.dual_pdf.codex_local \
   --mode shadow --agent-backend agents-api \
   --agent-run-dir artifacts/sermon-production-supervisor/api-shadow
 
 # Resume that same session.
-.venv/bin/python scripts/run_codex_local_sermon_production.py \
+.venv/bin/python tools/ops/run.py workflows.dual_pdf.codex_local \
   --mode shadow --agent-backend agents-api \
   --agent-run-dir artifacts/sermon-production-supervisor/api-shadow \
   --resume-agent-session
 
 # Explicit SDK / Responses rollback.
-.venv/bin/python scripts/run_codex_local_sermon_production.py \
+.venv/bin/python tools/ops/run.py workflows.dual_pdf.codex_local \
   --mode shadow --agent-backend sdk
 ```
 

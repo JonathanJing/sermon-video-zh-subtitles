@@ -5,16 +5,15 @@ import copy
 import io
 import json
 from pathlib import Path
-import subprocess
-import sys
 from tempfile import TemporaryDirectory
 from types import SimpleNamespace
 import unittest
 from unittest.mock import patch
 
-from scripts import render_formal_target_language_speech as formal
-from scripts import render_speculative_target_language_speech as subject
-from scripts import sermon_accounting as ledger_accounting
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.audio import renderer as formal
+from tongxing_production.audio import speculative as subject
+from tongxing_production.observability import accounting as ledger_accounting
 from tests import test_prepare_target_language_speech_job as speech_fixture
 from tests import test_render_formal_target_language_speech as formal_fixture
 
@@ -31,26 +30,9 @@ class FakeSynth:
 
 
 class PreviewExecutionBindingTests(unittest.TestCase):
-    def test_isolated_facade_bootstraps_package_without_site_or_checkout_cwd(self):
-        import jsonschema
-        facade = Path(__file__).resolve().parents[1] / 'scripts/render_speculative_target_language_speech.py'
-        package = facade.parents[1] / 'packages/production/src/tongxing_production/__init__.py'
-        dependencies = Path(jsonschema.__file__).resolve().parents[1]
-        smoke = ('import sys,runpy;sys.path.insert(0,sys.argv[1]);'
-                 'runpy.run_path(sys.argv[2],run_name="preview_import_smoke");'
-                 'import tongxing_production;print(tongxing_production.__file__)')
-        with TemporaryDirectory() as directory:
-            result = subprocess.run([sys.executable, '-I', '-B', '-S', '-c', smoke,
-                                     str(dependencies), str(facade)],
-                                    cwd=directory, text=True, capture_output=True, check=False)
-        self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertEqual(result.stdout.strip(), str(package))
-
     def test_every_producer_and_host_source_changes_binding(self):
         code = formal._audio.current().code
         sources = {
-            'scripts/render_speculative_target_language_speech.py':
-                code.physical_path('scripts/render_speculative_target_language_speech.py'),
             'packages/production/src/tongxing_production/audio/speculative.py':
                 code.physical_path('packages/production/src/tongxing_production/audio/speculative.py'),
             'packages/production/src/tongxing_production/path_aliases.py':
@@ -150,11 +132,11 @@ class SpeculativeRenderTests(unittest.TestCase):
                 self.render(group_ids=['g1'])
         self.assertEqual(FakeSynth.calls, [])
 
-    def test_changed_facade_bytes_block_same_folder_cache_before_model(self):
+    def test_changed_preview_implementation_bytes_block_same_folder_cache_before_model(self):
         self.render(group_ids=['g1'])
         FakeSynth.calls = []
         facade = subject.formal._audio.current().code.physical_path(
-            'scripts/render_speculative_target_language_speech.py')
+            'packages/production/src/tongxing_production/audio/speculative.py')
         original_open = Path.open
 
         def changed_open(path, *args, **kwargs):
@@ -264,7 +246,7 @@ class SpeculativeRenderTests(unittest.TestCase):
         self.assertEqual(len(FakeSynth.calls), 1)
 
     def test_missing_predecessors_remain_unknown_and_explicit_root_is_known(self):
-        from scripts import sermon_log_profile as profile
+        from tongxing_production.observability import profile
         logs = self.fixture.root / 'predecessor-accounting'
         with profile.session(logs,'legacy-render',work_kind='engineering',evidence_mode='synthetic') as legacy:
             self.render(group_ids=['g1'])
@@ -626,7 +608,7 @@ class DiagnosticPreviewTests(unittest.TestCase):
 
     def test_cold_and_cache_accounting_contains_real_unit_dag_and_unknown_tokens(self):
         import json
-        from scripts import sermon_log_profile as profile
+        from tongxing_production.observability import profile
         log_root = self.f.root / 'preview-accounting'
         with profile.session(log_root, 'preview-test', work_kind='production', evidence_mode='synthetic') as cold:
             self.render()

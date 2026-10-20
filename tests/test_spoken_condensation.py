@@ -3,12 +3,13 @@ import hashlib
 import json
 import unittest
 
-from scripts import auto_qc_seeded_errors as seeded
-from scripts import machine_quality_waiver as waiver
-from scripts import run_target_language_models as runner
-from scripts import spoken_condensation as condensation
-from scripts import target_audio_predicted_schedule as predicted
-from scripts import target_text_auto_qc as text_qc
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.review import seeded_errors as seeded
+from tongxing_production.review import waiver
+from tongxing_production.text import models as runner
+from tongxing_production.review import condensation
+from tongxing_production.audio import predicted_schedule as predicted
+from tongxing_production.review import text_qc
 from tests import auto_qc_fixtures as fixtures
 
 LOCALE = "zh-Hans"

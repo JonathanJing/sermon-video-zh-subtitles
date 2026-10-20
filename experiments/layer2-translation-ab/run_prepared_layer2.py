@@ -9,7 +9,8 @@ if __package__ in (None,''):
     sys.path.insert(0,str(Path(__file__).resolve().parents[2]))
 from scripts import codex_layer2_diagnostic as diagnostic
 from scripts.run_codex_layer2_test import run_diagnostic_test
-from scripts import sermon_workflow_jobs as jobs
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.orchestration import jobs
 
 
 def _sha(path):

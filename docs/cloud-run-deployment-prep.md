@@ -263,7 +263,7 @@ the caption/export step must be resumed, replay the saved translations without
 calling OpenAI again:
 
 ```bash
-python3 scripts/translate_playback_with_openai.py \
+python3 tools/ops/translate_playback_with_openai.py \
   --input /tmp/sermon-worker/YYYY-MM-DD/<session_id>/web/playback-simulation.generated.js \
   --out /tmp/sermon-worker/YYYY-MM-DD/<session_id>/web/playback-simulation.generated.js \
   --out-dir /tmp/sermon-worker/YYYY-MM-DD/<session_id>/model-output \
@@ -279,7 +279,7 @@ After a Sunday worker run and promotion, validate the stable Sunday manifest and
 its public artifacts:
 
 ```bash
-python3 scripts/validate_sunday_manifest.py \
+python3 tools/ops/validate_sunday_manifest.py \
   --manifest gs://sermon-zh-artifacts-ai-for-god/sundays/YYYY-MM-DD/cloud-manifest.json \
   --sunday YYYY-MM-DD \
   --require-readable-artifacts \
@@ -296,7 +296,7 @@ For a live realtime session, validate the durable JSONL mirror as a separate
 gate:
 
 ```bash
-python3 scripts/validate_realtime_session.py \
+python3 tools/ops/validate_realtime_session.py \
   --events-jsonl gs://sermon-zh-artifacts-ai-for-god/realtime-events/YYYY-MM-DD/<session_id>.jsonl \
   --require-stable-correction
 ```
@@ -478,7 +478,7 @@ Before the offline OpenAI/translation chain, validate the YouTube archive route
 without downloading captions or calling OpenAI:
 
 ```bash
-python3 scripts/run_offline_archive_preflight.py \
+python3 tools/ops/run_offline_archive_preflight.py \
   --live-url "https://www.youtube.com/watch?v=VIDEO_ID" \
   --sunday YYYY-MM-DD \
   --out artifacts/evidence/offline-archive-preflight.json
@@ -493,7 +493,7 @@ Before any offline translation or stable-correction run, preflight the text
 model through the same OpenAI Responses route used by production:
 
 ```bash
-python3 scripts/run_openai_model_access_preflight.py \
+python3 tools/ops/run_openai_model_access_preflight.py \
   --cloud-run-service sermon-zh-caption-web \
   --project ai-for-god \
   --region us-west1 \

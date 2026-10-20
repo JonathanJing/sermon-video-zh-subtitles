@@ -3,8 +3,8 @@
 
 Run only through the explicit dev launcher, so the dev project and dev key are used:
 
-  python3 scripts/run_with_openai_environment.py --environment dev -- \
-    python3 scripts/measure_openai_model_tps.py --rounds 3
+  python3 tools/ops/run_with_openai_environment.py --environment dev -- \
+    python3 experiments/model-throughput/measure_openai_model_tps.py --rounds 3
 
 Each request is a streamed chat completion with the same fixed prompt, the same
 reasoning effort and a capped max_completion_tokens. Tiers alternate within each
@@ -33,7 +33,8 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-from scripts.sermon_openai_runtime import bind_request, selected_route  # noqa: E402
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.compute.openai_runtime import bind_request, selected_route  # noqa: E402
 
 CHAT_URL = "https://api.openai.com/v1/chat/completions"
 TIERS = ("default", "fast")
@@ -202,7 +203,7 @@ def main(argv=None):
         print(str(exc), file=sys.stderr)
         return 2
     if route is None or route["environment"] != "dev":
-        print("Run through: scripts/run_with_openai_environment.py --environment dev -- ...", file=sys.stderr)
+        print("Run through: tools/ops/run_with_openai_environment.py --environment dev -- ...", file=sys.stderr)
         return 2
     if not os.environ.get("OPENAI_API_KEY"):
         print("selected_openai_key_missing", file=sys.stderr)

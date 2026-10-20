@@ -8,7 +8,8 @@ import hashlib
 from pathlib import Path
 import unittest
 
-from scripts import sermon_pipeline
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.workflows.dual_pdf import pipeline as sermon_pipeline
 from tongxing_production.compute import legacy_openai, outcomes
 
 

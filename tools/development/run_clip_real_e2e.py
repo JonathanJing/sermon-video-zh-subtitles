@@ -48,7 +48,7 @@ SPEC_SCHEMA = "sermon-clip-real-e2e-run-v1"
 LOCALES = ("zh-Hans", "ko", "es")
 DEV_ORIGIN = "https://ai-for-god-sermon-audio-dev.web.app"
 PY = sys.executable
-WORKER_PATTERN = "canonical_layer2_controller.py worker"
+WORKER_PATTERN = "run.py text.controller worker"
 
 
 class Stop(Exception):
@@ -117,7 +117,7 @@ def load_spec(path: Path) -> dict:
     page = spec.get("page") or {}
     require(isinstance(page.get("pageId"), str) and page["pageId"].startswith("mockup-"),
             "page.pageId must be an isolated mockup- page")
-    from scripts import clip_e2e_release
+    from tools.development import clip_e2e_release
     clip_e2e_release.validate_display(page.get("display"), locales)
     spark = spec.setdefault("spark", {})
     spark.setdefault("sessionId", "clip-e2e-" + spec["name"])
@@ -150,7 +150,7 @@ class Run:
         self.stages_path = self.dir / "stages.json"
         self.stages = read(self.stages_path) if self.stages_path.exists() else {}
         (self.dir / "logs").mkdir(exist_ok=True)
-        from scripts import clip_e2e_spark
+        from tools.development import clip_e2e_spark
         self.runtime = clip_e2e_spark.load_runtime()
         self.stage_dir = f"{self.runtime['stageRoot'].rstrip('/')}/clip-e2e-{self.spec['name']}"
         self.session_up = False
@@ -165,7 +165,7 @@ class Run:
 
     def sh(self, label, argv, *, launcher=False, check=True, cwd=ROOT, env=None) -> subprocess.CompletedProcess:
         if launcher:
-            argv = [PY, str(ROOT / "scripts/run_with_openai_environment.py"), "--environment",
+            argv = [PY, str(ROOT / "tools/ops/run_with_openai_environment.py"), "--environment",
                     self.spec["openai"]["environment"], "--env-file", self.spec["openai"]["envFile"], "--", *argv]
         log = self.dir / "logs" / f"{label}.log"
         started = time.time()
@@ -191,7 +191,8 @@ class Run:
         return Path(info.get("candidate") or self.l2 / "text" / locale / "candidate.json")
 
     def impl(self) -> str:
-        from scripts import machine_quality_waiver as waiver
+        from scripts import tongxing_host  # noqa: F401  binds the production package ports
+        from tongxing_production.review import waiver
         return waiver.implementation_sha256()
 
     def head(self) -> str:
@@ -201,7 +202,7 @@ class Run:
     # -- budget
     def settled(self) -> float:
         """Earlier spend plus this run's Layer 2 results and QC ledgers; unpriced rows count at their reservation."""
-        from scripts.export_run_digest import budget_summary
+        from tools.development.export_run_digest import budget_summary
         total = 0
         for path in self.dir.rglob("*.result.json"):
             if "layer2-budget" in str(path) and "responses" not in path.parts:
@@ -253,10 +254,10 @@ class Run:
 
 def stage_inputs(run: Run):
     # The clip builder writes only under its own ignored test root; the run keeps copies of what it binds.
-    from scripts.build_dev_180s_simulated_inputs import TEST_ROOT
+    from tools.development.build_dev_180s_simulated_inputs import TEST_ROOT
     inputs = TEST_ROOT / ("clip-e2e-" + run.spec["name"]) / "inputs"
     if not (inputs / "source.json").exists():
-        run.sh("inputs", [PY, ROOT / "scripts/build_dev_180s_simulated_inputs.py", "--clip-spec", run.spec["clipSpec"],
+        run.sh("inputs", [PY, ROOT / "tools/development/build_dev_180s_simulated_inputs.py", "--clip-spec", run.spec["clipSpec"],
                           "--run-id", "clip-e2e-" + run.spec["name"], "--out", inputs])
     src = run.l2 / "src"
     src.mkdir(parents=True, exist_ok=True)
@@ -266,7 +267,7 @@ def stage_inputs(run: Run):
     timeline = run.dir / "l3" / "clip-timeline-map.json"
     if not timeline.exists():
         timeline.parent.mkdir(parents=True, exist_ok=True)
-        run.sh("timeline-map", [PY, ROOT / "scripts/clip_timeline_map.py", "--source", src / "source.json",
+        run.sh("timeline-map", [PY, ROOT / "tools/ops/run.py", "audio.clip_timeline", "--source", src / "source.json",
                                 "--anchor", src / "anchor.json", "--clip-media", inputs / "clip/source.mp4",
                                 "--out", timeline])
     anchor = read(src / "anchor.json")
@@ -275,7 +276,7 @@ def stage_inputs(run: Run):
 
 def freeze_clip_policy(template: Path, source: dict, anchor: dict, *, reviewed_by: str, statement: str) -> dict:
     """The source week's frozen policy narrowed to this clip's source scope and terms, frozen again."""
-    from scripts import target_language_policy as tp
+    from tongxing_production.text import policy as tp
     rows = anchor["sourceUnits"]
     observed = tp.source_scoped_proper_names(rows, set())
     frozen = read(template)
@@ -318,8 +319,9 @@ def stage_layer2_setup(run: Run):
         write(l2 / "inspection.json", {"schemaVersion": "sermon-canonical-package-inspection-config-v1",
                                        "source": "src/source.json", "anchor": "src/anchor.json",
                                        "locales": {k: {"policy": f"policy/{k}-policy-clip.json"} for k in spec["locales"]}})
-        from scripts import canonical_layer2_controller as controller
-        from scripts import layer2_auto_repair as auto_repair
+        from scripts import tongxing_host  # noqa: F401  binds the production package ports
+        from tongxing_production.text import controller
+        from tongxing_production.text import auto_repair
         run_id = hashlib.sha256(("clip-real-e2e " + spec["name"] + " " + ",".join(spec["locales"])).encode()).hexdigest()
         write(l2 / "execution.json", {
             "schemaVersion": controller.AUTO_REPAIR_SCHEMA, "productionRunId": run_id, "inspectionConfig": "inspection.json",
@@ -381,7 +383,7 @@ def text_qc(run: Run, locale: str, candidate: Path, out_name: str) -> dict:
     shutil.copyfile(run.l2 / "policy" / f"{locale}-policy-clip.json", work / "policies" / f"{locale}-policy-clip.json")
     shutil.copyfile(candidate, work / locale / "candidate.json")
     run.sh(f"text-qc.{locale}.{out_name}",
-           [PY, ROOT / "scripts/run_machine_qc_clip_test.py", "--run-dir", work, "--out", out, "--state-dir", root / "state",
+           [PY, ROOT / "tools/ops/run.py", "review.qc_text_run", "--run-dir", work, "--out", out, "--state-dir", root / "state",
             "--locales", locale, "--text-backend", "api", "--api-budget-authorization", authorization,
             "--workers", 8, "--expected-implementation", run.impl()], launcher=True, check=False)
     summary = read(out / "summary.json")["locales"][locale]
@@ -392,7 +394,8 @@ def text_qc(run: Run, locale: str, candidate: Path, out_name: str) -> dict:
 
 def revise(run: Run, locale: str, receipt: str, number: int) -> Path:
     """A Layer 2 revision of one locale carrying its failed QC receipt (execution v5, gate 4)."""
-    from scripts import canonical_layer2_controller as controller
+    from scripts import tongxing_host  # noqa: F401  binds the production package ports
+    from tongxing_production.text import controller
     schema = getattr(controller, "QC_REPAIR_SCHEMA", None)
     require(schema is not None, "QC repair needs execution schema v5 (PR #402)")
     revision = run.dir / f"l2-{locale}-r{number}"
@@ -453,7 +456,7 @@ def ensure_session(run: Run):
     os.environ.update(env)
     for attempt in range(1, 4):
         # begin may need a second call while Spark services stop; every attempt keeps its own output.
-        done = run.sh(f"spark-begin-{attempt}", [PY, ROOT / "scripts/spark_exclusive_session.py", "begin",
+        done = run.sh(f"spark-begin-{attempt}", [PY, ROOT / "tools/ops/run.py", "compute.spark_exclusive_session", "begin",
                                                   "--session-id", env["SPARK_EXCLUSIVE_SESSION_ID"],
                                                   "--owner", env["SPARK_EXCLUSIVE_SESSION_OWNER"]], check=False)
         if done.returncode == 0:
@@ -465,14 +468,14 @@ def ensure_session(run: Run):
 
 def finish_session(run: Run):
     if run.session_up:
-        run.sh("spark-finish", [PY, ROOT / "scripts/spark_exclusive_session.py", "finish",
+        run.sh("spark-finish", [PY, ROOT / "tools/ops/run.py", "compute.spark_exclusive_session", "finish",
                                 "--session-id", run.spec["spark"]["sessionId"], "--owner", run.spec["spark"]["owner"]])
         run.session_up = False
 
 
 def stage_code(run: Run) -> str:
     code = "repo-" + run.head()[:8]
-    from scripts.clip_e2e_spark import Spark
+    from tools.development.clip_e2e_spark import Spark
     spark = Spark(run.runtime["host"])
     target = f"{run.stage_dir}/{code}"
     if "present" not in spark.out(f"test -d {target} && echo present || true"):
@@ -484,7 +487,8 @@ def stage_code(run: Run) -> str:
 
 
 def attestation(run: Run, locale: str) -> Path:
-    from scripts import sermon_sentence_interpretation as interp
+    from scripts import tongxing_host  # noqa: F401  binds the production package ports
+    from tongxing_production.source import sentence_interpretation as interp
     path = run.dir / "l3" / locale / "clip-user-rights-attestation.json"
     if not path.exists():
         template = read(run.spec["layer3"]["attestationTemplates"][locale])
@@ -517,10 +521,10 @@ def stage_audio(run: Run, locale: str, code: str):
     voice = l3 / "clip-voice-authorization.json"
     job_dir = l3 / "speech-job"
     if not (job_dir / "job.json").exists():
-        run.sh(f"voice-auth.{locale}", [PY, ROOT / "scripts/prepare_clip_voice_authorization.py", "--source", src,
+        run.sh(f"voice-auth.{locale}", [PY, ROOT / "tools/ops/prepare_clip_voice_authorization.py", "--source", src,
                                         "--candidate", candidate, "--adapter", adapter,
                                         "--user-attestation", attestation(run, locale), "--out", voice])
-        run.sh(f"speech-job.{locale}", [PY, ROOT / "scripts/prepare_target_language_speech_job.py",
+        run.sh(f"speech-job.{locale}", [PY, ROOT / "tools/ops/run.py", "audio.speech_job",
                                         "--english-source-package", src, "--anchor", anchor, "--candidate", candidate,
                                         "--policy", policy, "--text-release-basis", waiver, "--adapter", adapter,
                                         "--speaker-registry", registry, "--clip-voice-authorization", voice,
@@ -531,7 +535,7 @@ def stage_audio(run: Run, locale: str, code: str):
               "--human-review-receipt", waiver, "--speaker-registry", registry, "--adapter", adapter,
               "--clip-voice-authorization", voice, "--clip-timeline-map", timeline,
               "--audio-operation-policies", ROOT / "config/layer3-audio-operation-policies.json"]
-    spark = [PY, ROOT / "scripts/clip_e2e_spark.py"]
+    spark = [PY, ROOT / "tools/development/clip_e2e_spark.py"]
     common = ["--locale", locale, "--stage", run.stage_dir, "--code", code]
     raw, compacted = f"{locale}-raw", f"{locale}-c"
     lag = str(run.spec["layer3"]["maxEndLagSeconds"])
@@ -555,7 +559,7 @@ def stage_audio(run: Run, locale: str, code: str):
     rendered = compacted_local / "spark-output" / "speech-job"
     package = l3 / "audio-package.json"
     if not package.exists():
-        run.sh(f"package.{locale}", [PY, ROOT / "scripts/build_target_language_audio_package.py", "--source", src,
+        run.sh(f"package.{locale}", [PY, ROOT / "tools/ops/run.py", "audio.package", "--source", src,
                                      "--anchor", anchor, "--candidate", candidate, "--job", rendered / "job.json",
                                      "--adapter", adapter, "--policy", policy, "--human-review-receipt", waiver,
                                      "--speaker-registry", registry, "--clip-voice-authorization", voice,
@@ -636,7 +640,7 @@ def repair_audio(run: Run, locale: str, seed: int, code: str, *, unit_instructio
               "--human-review-receipt", waiver, "--speaker-registry", registry, "--adapter", adapter,
               "--clip-voice-authorization", voice, "--clip-timeline-map", timeline,
               "--audio-operation-policies", ROOT / "config/layer3-audio-operation-policies.json"]
-    spark = [PY, ROOT / "scripts/clip_e2e_spark.py"]
+    spark = [PY, ROOT / "tools/development/clip_e2e_spark.py"]
     common = ["--locale", locale, "--stage", run.stage_dir, "--code", code]
     raw, compacted = f"{locale}-seed-{seed}-raw", f"{locale}-seed-{seed}-c"
     lag = str(run.spec["layer3"]["maxEndLagSeconds"])
@@ -659,7 +663,7 @@ def repair_audio(run: Run, locale: str, seed: int, code: str, *, unit_instructio
     rendered = compacted_local / "spark-output" / "speech-job"
     package = repair / "audio-package.json"
     if not package.exists():
-        run.sh(f"package.{locale}.seed-{seed}", [PY, ROOT / "scripts/build_target_language_audio_package.py",
+        run.sh(f"package.{locale}.seed-{seed}", [PY, ROOT / "tools/ops/run.py", "audio.package",
                "--source", src, "--anchor", anchor, "--candidate", candidate, "--job", rendered / "job.json",
                "--adapter", adapter, "--policy", policy, "--human-review-receipt", waiver,
                "--speaker-registry", registry, "--clip-voice-authorization", voice,
@@ -702,7 +706,7 @@ def repair_audio(run: Run, locale: str, seed: int, code: str, *, unit_instructio
 
 
 def stage_layer4(run: Run):
-    from scripts import clip_e2e_release
+    from tools.development import clip_e2e_release
     spec, l4 = run.spec, run.dir / "l4"
     page = spec["page"]
     if not (l4 / "prepare-result.json").exists():
@@ -718,7 +722,7 @@ def stage_layer4(run: Run):
     if not (l4 / "baseline").exists():
         cache = (["--cache-public", page["baselineCachePublic"], "--cache-receipt", page["baselineCacheReceipt"]]
                  if page.get("baselineCachePublic") else [])
-        run.sh("layer4-baseline", [PY, ROOT / "scripts/prepare_dev_simulated_publication.py", "baseline",
+        run.sh("layer4-baseline", [PY, ROOT / "tools/ops/prepare_dev_simulated_publication.py", "baseline",
                                    "--environment", "dev", "--out", l4 / "baseline", *cache])
     if not run.publish:
         run.mark("layer4", "prepared_not_published")
@@ -728,7 +732,7 @@ def stage_layer4(run: Run):
     if not state_path.exists():
         if workflow.exists() and any(workflow.iterdir()):
             raise Stop("Layer 4 publish files exist without a terminal receipt; reconcile before retry")
-        run.sh("layer4-publish", [PY, ROOT / "scripts/run_dev_simulated_delivery.py", "--baseline", l4 / "baseline",
+        run.sh("layer4-publish", [PY, ROOT / "tools/development/run_dev_simulated_delivery.py", "--baseline", l4 / "baseline",
                                   "--prepared", l4 / "work/prepared", "--out", workflow, "--machine-checked", "--execute"])
     state = read(state_path)
     report_path = workflow / "run-report.json"
@@ -763,7 +767,7 @@ def stage_layer4(run: Run):
     smoke = next((path for path in receipts if passed_smoke(path)), None)
     if smoke is None:
         smoke = l4 / f"browser-smoke-retry-{len(receipts) + 1}.json"
-        run.sh("layer4-smoke", [PY, ROOT / "scripts/smoke_published_page.py", "--origin", DEV_ORIGIN, "--page-id",
+        run.sh("layer4-smoke", [PY, ROOT / "tools/ops/smoke_published_page.py", "--origin", DEV_ORIGIN, "--page-id",
                                 page["pageId"], "--settle-ms", "15000", "--no-session", "--out", smoke])
         require(passed_smoke(smoke), "Layer 4 browser smoke did not pass")
     run.mark("layer4", "done", pageId=page["pageId"], smoke="pass", smokeReceipt=str(smoke),
@@ -772,7 +776,7 @@ def stage_layer4(run: Run):
 
 def stage_report(run: Run):
     name = datetime.now(timezone.utc).strftime("%Y%m%d") + "-clip-e2e-" + run.spec["name"]
-    run.sh("report", [PY, ROOT / "scripts/export_run_digest.py", run.dir, "--name", name])
+    run.sh("report", [PY, ROOT / "tools/development/export_run_digest.py", run.dir, "--name", name])
     run.mark("report", "done", name=name)
 
 
@@ -835,15 +839,17 @@ def execute(run: Run, *, through: str | None = None) -> dict:
 
 def _route(out: Path):
     """Inside the explicit launcher: the non-secret route and the credential fingerprint."""
-    from scripts import machine_qc_budget_authorization as auth
-    from scripts.sermon_openai_runtime import selected_route
+    from scripts import tongxing_host  # noqa: F401  binds the production package ports
+    from tongxing_production.review import qc_budget_authorization as auth
+    from tongxing_production.compute.openai_runtime import selected_route
     route = selected_route()
-    require(route is not None, "run inside scripts/run_with_openai_environment.py")
+    require(route is not None, "run inside tools/ops/run_with_openai_environment.py")
     write(out, {"openaiRoute": route, "credentialSha256": auth.credential_fingerprint(os.environ["OPENAI_API_KEY"])})
 
 
 def _drive(execution: Path, authorization: Path, locales: list[str], out: Path):
-    from scripts.canonical_layer2_controller import drive
+    from scripts import tongxing_host  # noqa: F401  binds the production package ports
+    from tongxing_production.text.controller import drive
     results = {}
     for locale in locales:
         result = drive(execution, locale, budget_authorization=authorization)

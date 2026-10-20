@@ -31,10 +31,10 @@ inspectionConfig 而不列入本批执行 lanes。每个 lane 输出、输入及
 
 ```sh
 # 默认只读：不建 job/lock/output，不读取 API key。
-.venv/bin/python scripts/canonical_layer2_controller.py tick --config /absolute/execution.json
+.venv/bin/python tools/ops/run.py text.controller tick --config /absolute/execution.json
 
 # 只在该次来源、生产预算与运行授权已具备后使用；可能调用既有生产 API。
-.venv/bin/python scripts/canonical_layer2_controller.py tick \
+.venv/bin/python tools/ops/run.py text.controller tick \
   --config /absolute/execution.json --mode deterministic_execute
 ```
 
@@ -47,7 +47,7 @@ locale job；uncertain owner 继续占用该名额直到 reconciliation。当前
 修复循环因 `request_source_review` 停下、job 失败后，L1 含义备注到达时用显式命令重开，不调用模型：
 
 ```sh
-.venv/bin/python scripts/canonical_layer2_controller.py reopen-repair \
+.venv/bin/python tools/ops/run.py text.controller reopen-repair \
   --config /absolute/execution.json --locale zh-Hans \
   --expected-state-revision <shadow tick 输出的 stateRevision>
 ```
@@ -73,6 +73,13 @@ symlink，或者与当前 output、job、repair、budget、source、anchor、pol
 抢先付费；false 才允许正常的新请求。auto-repair 只有 fresh 首轮读取跨运行 prior，后续轮继续使用本
 job 的 `reuse_from`；每轮都为最终成功组生成新收据。
 
+执行配置 v7 的 partial-round recovery 还覆盖 **plugin-only policy migration**：只有
+`languageReview` 的插件实现身份改变、模型实际收到的 bounded payload 字节不变时，恢复器从批准的
+原始直接付费账本核对 translator/reviewer 返回值，在新输出里以 `$0 reused` 重放，再运行新插件。
+新 policy、插件和候选身份全部重新绑定；任一模型 payload 改变都会 cache miss 并走正常新请求，不能
+把插件迁移扩大成模型提示词复用。来源预算根必须仍是 direct-paid succeeded，不能拿 reused 中间链
+继续转签。
+
 生产复用还要求 `sermon-canonical-layer2-budget-authorization-v4`／批准 v3。授权的
 `reuseBudgetRoots` 明确列出每语言原始直接付费账本根；目标 BudgetStore v2 把命中记为
 `settlement.costStatus=reused`、`costMicrousd=0`，不占请求、token、时间或美元 cap。来源必须是
@@ -89,7 +96,8 @@ validator 全通过且无 unknown marker 时写到新的 sibling 目录；它只
 `layer2PartialRecovery`，每个 locale 显式绑定旧 `failedJobRoot + failedJobId`、失败轮目录和原始
 direct-paid budget root；新 `jobRoot` 与 `outputDirectory` 仍由 execution 配置给出。准入要求旧 job
 保持 `failed`、旧预算的每条 reservation 都是直接付费且已知成功，并把旧 job request/state、失败轮
-文件和预算账本摘要加入新 durable identity。`groupWorkers` 必须为 1。
+文件和预算账本摘要加入新 durable identity。`groupWorkers` 与 v6 相同，取 1–16，按[运行配置](weekly-run-profile.zh.md#并发设置)
+用 8（2026-10-20 起；此前要求为 1，原因见下）。
 
 有 PR #868 success sidecar 的组走原 v6 路径；缺 sidecar 的已返回角色只有在 policy preview 的完整
 bounded payload、parsed/raw response、provider request id、直接付费 result marker 与 response record
@@ -98,6 +106,84 @@ collector；因此旧内容失败不会被误签为成功。旧 started marker �
 provider outcome、损坏 bytes 或 intermediate reused 来源都会在任何新请求前阻断。旧预算里没有对应
 operation 的未派发组才可按新授权付费。完成后在新 lane 写
 `partial-round-recovery-receipt.json`，绑定旧 failed job 与新 successor job；旧 state 不改写。
+
+多组并发时，结果与串行相同的保证来自两条规则（`models._run_partial_recovery_groups`）：
+
+1. **先核对全部旧证据。** 派发前预检逐个检查失败轮里每个“译者已返回、复核未派发”的角色：文件齐全、
+   parsed 与 raw 一致、preview 自身哈希、属于计划中的该组、旧账本里有对应的直接付费行。
+2. **先回放已完整返回的组。** 译者与复核都已返回的组先跑完，这一阶段关闭付费派发：若误入付费调用，
+   在写 started marker 之前就失败，不产生未知结果。当前 payload 与旧 payload 的逐组比对因此全部发生
+   在任何新付费之前。之后其余组再按 `groupWorkers` 并行。
+
+付费的只有未派发的角色，与串行同一集合；证据按源顺序合并，failure 报告按组序排序，所以候选、证据、
+success sidecar 和恢复收据（除其点名的 successor job 与配置）与串行逐字节相同。每次付费仍在 `bound_call`
+里先取 job root 共享的 24 个 API 槽位并过同一预算账本。测试见 `tests/test_layer2_partial_recovery_parallel.py`。
+
+此前要求 `groupWorkers=1` 有两个原因，现都已解决：2026-10-17 的 v2 运行（8 组并发）因当前账本的
+provenance 读取与并发写入竞争而以 `snapshot_changed_during_read` 失败，PR #1005 已修复（那时 v7 尚未合并）；
+另外串行只在前驱也是串行（返回的组是前缀）时才保证“先核对旧证据、后付费”，乱序前驱下串行也会先为
+早组付费、后发现晚组证据损坏（#1011 的 Codex P1 意见），上面两条规则对任意组数都成立。放宽只去掉一项
+加载限制，配置字段与收据 schema 不变，旧 v7 配置（`groupWorkers: 1`）照常加载、配置与快照身份不变，
+不需要迁移；与任何代码改动一样，新代码身份需要新的预算授权，进行中的运行留在其固定的 worktree。
+
+### 缓存命中不逐次复核绑定
+
+worker 的完整绑定复核（执行配置、代码身份、package view、durable 身份）只在三处运行：worker 准入、每次
+付费派发前（`bound_call`，取得 API 槽位前后各一次），以及结束时（`post_model_binding`、候选保存前、
+`final_package_validation`）。缓存命中与来源核对方法（`verify_execution`、`record_reuse`、
+`recover_returned_response`、`paid_response_provenance`、`validate_recovery_source`）不再在前后各复核一次；
+它们各自的核对照旧：预算授权与运行身份、direct-paid 闭环（响应必须等于原付费记录）、prior 文件哈希与
+复制后字节复查。
+
+运行中途改了配置、代码、package 输入或 prior 快照时：读到被改的组在读取时失败；之后的付费调用在派发前
+被拒；其余情况在结束复核时拒绝，不保存候选。代价是不再 fail-fast：漂移后的命中组会继续跑到结束。
+候选写盘期间的漂移由 `final_package_validation` 抓住：写盘后重新加载执行配置并核对其哈希和代码身份，
+不一致则 worker 失败、不报成功。
+
+漂移后、结束复核前写下的持久产物仍然安全：
+- **预算账本的复用行**：`record_reuse` 只在响应与批准来源账本的直接付费记录逐字节一致时写 `$0 reused`
+  行，绑定准入时内存中的 source/anchor/policy 与 payload 指纹。复用行永远不能当后续复用或 partial
+  recovery 的来源（`_direct_paid_provenance` 要求无 `settlement`）。
+- **payload-cache 成功收据与组缓存副本**：收据绑定准入时内存中的请求（source、anchor、policy 哈希）和
+  原付费响应的字节哈希，不绑定 job 的配置身份或最终结果；失败 job 的收据本来就可被后续运行复用。后续
+  运行复用时重新核对请求绑定、文件哈希和付费闭环，用自己的代码重新解析响应、重跑语义门与逐组语言插件；
+  输入不同的运行直接拒收。
+- **partial-recovery 读取**：只读，每次独立核对失败轮与原付费账本的闭环。
+
+该改动改变代码身份：已有 job 保留冻结的 `--expected-code`，在新代码上恢复按原规则报
+`worker_configuration_or_code_changed`；只有新准入的 job 按此执行。没有 schema、配置字段或迁移变化。
+
+### Worker 绑定复核的 stat 备忘
+
+worker 在准入、每次付费派发前和结束时重算绑定（见上节「缓存命中不逐次复核绑定」）：执行配置、代码身份、
+package view 与 durable 身份。其中 v6/v7 的 prior root 与 partial-recovery 快照（每次重读并
+摘要数千个文件）和代码身份由进程内 stat 备忘复用（`text/stat_memo.py`）：只要它们读过的每个路径的
+`lstat` 身份 `(dev, ino, mode, size, mtime_ns, ctime_ns)` 与目录条目名都没变，就沿用上次结果；任一
+变化就整体重算。调用次数和位置不变，执行配置文件与 durable 身份仍每次完整重算。
+
+package view 的包检查（`inspect_configuration`）在没有候选时也走这个备忘：worker 写出候选之前的每次
+复核都是这种形状。读集按代码枚举：inspection 根目录、source 与 anchor 包、source 包里写明的 pipeline
+summary、窗口批准、对齐转写和 review 收据、各语言 policy、术语表和 schema 目录，以及这些路径的所有
+上级目录。上级目录只记 `(dev, ino, mode)`：换成符号链接或换成另一个目录都会变，同目录写入别的文件
+不会变。候选探测（`candidate.json` 是否存在）仍每次在备忘之外执行；一旦有候选，整次检查不走备忘。
+带任何诊断的结果不入备忘。测试会追踪一次完整检查的每个 stat、open 和目录列举，要求都落在这个读集里，
+所以以后有人给检查加了新的读，测试会失败。
+
+一次 `load_configuration` 内同一目录只列举一次：v7 的 recovery round 必须就是 payload-cache 根目录，
+原来每次复核要 stat 这几千个文件两遍。命中后，绑定摘要在其余部分摘要不变、且 partial-recovery 快照
+仍是备忘返回的同一个对象时沿用上次的值（快照几千行，重新编码它就是摘要的大头）。`_overlap` 是两个
+路径的纯函数，加了 `lru_cache`。
+
+能发现：内容写入、截断、追加、chmod、rename/替换、删除和新增条目；同大小改写后再用 `os.utime`
+还原 mtime 也会改变 ctime。发现不了：不更新 ctime 的改动（需把系统时钟往回拨、直写块设备，或不维护
+ctime 的文件系统）；上级目录只记 kind，所以属主或 ACL 改动让一个没变的文件变得不可读时也发现不了。
+时间戳粒度内的竞态由 racy 规则关闭：只有 ctime 早于取样时刻 3 秒以上、且计算期间身份未变（重算后的
+复核总是重新列举）的结果才会入备忘；失败结果从不入备忘。备忘只在单个进程内，新 worker 先完整计算一次。
+
+该备忘只改本地开销，不改任何身份的算法或取值：配置、快照、package view、durable job 和代码身份的摘要
+与改动前逐字节相同。但编辑 `controller.py` 与 `stat_memo.py` 本身改变代码身份，所以已有 job 保留其冻结的 `--expected-code`，
+在新代码上恢复会按原规则报 `worker_configuration_or_code_changed`；只有新准入的 job 使用它。没有
+schema、配置字段或迁移变化。
 
 ## 按组号修订（execution v8）
 

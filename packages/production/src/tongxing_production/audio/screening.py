@@ -98,8 +98,7 @@ SCORING_PHYSICAL_FILES = path_aliases.physical_closure_paths(SCORING_IMPLEMENTAT
 
 def implementation_sha256(root: Path | None = None) -> str:
     """Current scoring closure; v5 single-file receipts require explicit rescreening."""
-    # Each key names the actual file read, including the executed facade and
-    # package target when a legacy path moved.
+    # Each key names the actual file read: the package target when a legacy path moved.
     checkout = root or _audio.current().core.repo_root
     digest = hashlib.sha256()
     for name in SCORING_PHYSICAL_FILES:

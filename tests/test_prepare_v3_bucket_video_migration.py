@@ -5,9 +5,9 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 import unittest
 
-from scripts import prepare_v3_bucket_video_migration as migration
-from tools.ops import prepare_v3_bucket_video_migration as implementation
-from scripts import assemble_multilingual_v3_update as weekly
+from tools.ops import prepare_v3_bucket_video_migration as migration
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.adapters.legacy import assemble_multilingual_v3_update as weekly
 from tests.test_assemble_multilingual_v3_update import page_fixture, catalog, write
 
 
@@ -51,15 +51,12 @@ class BucketVideoMigrationTests(unittest.TestCase):
                       config["headers"][0]["headers"][0]["value"])
         weekly.validate_page(out / "public", candidate_page)
 
-    def test_legacy_and_new_cli_candidate_bytes_match(self) -> None:
-        self.assertIs(migration, implementation)
+    def test_direct_and_module_cli_candidate_bytes_match(self) -> None:
         repo = Path(__file__).resolve().parents[1]
         source = {p.relative_to(self.base).as_posix(): p.read_bytes()
                   for p in self.base.rglob("*") if p.is_file()}
         candidates = []
         for index, command in enumerate((
-            [sys.executable, str(repo / "scripts/prepare_v3_bucket_video_migration.py")],
-            [sys.executable, "-m", "scripts.prepare_v3_bucket_video_migration"],
             [sys.executable, str(repo / "tools/ops/prepare_v3_bucket_video_migration.py")],
             [sys.executable, "-m", "tools.ops.prepare_v3_bucket_video_migration"],
         )):

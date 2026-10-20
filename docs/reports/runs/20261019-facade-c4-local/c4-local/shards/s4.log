@@ -1,0 +1,242 @@
+Estimating 212 unprofiled modules from measured per-case cost
+Shard 5/10: 607 tests from 372 modules
+..............usage: run_unittest_ci.py [-h] --out OUT [--backend {live,fake}]
+                          [--model MODEL] [--case CASE] [--plan PLAN]
+                          [--max-sessions MAX_SESSIONS]
+                          [--risk-repeats RISK_REPEATS]
+                          [--max-tool-calls MAX_TOOL_CALLS]
+                          [--max-seconds MAX_SECONDS]
+                          {timeline,diagnose,refute,preflight,risk,all}
+run_unittest_ci.py: error: argument --risk-repeats: must be a positive integer
+............................{"component": "api", "event": "sermon_production_supervisor_triggered", "inlineWorker": false, "loggedAt": "2026-10-19T21:54:57.792254+00:00", "mode": "shadow", "severity": "INFO", "sunday": "2026-08-02", "triggerSource": "cloud-scheduler"}
+.................usage: run_unittest_ci.py [-h] {build,verdicts} ...
+run_unittest_ci.py: error: output directory already exists: /var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/tmpi_eu5k5f/sheet
+usage: run_unittest_ci.py build [-h] --audio-package AUDIO_PACKAGE
+                                --candidate CANDIDATE --anchors ANCHORS
+                                --screening SCREENING [--audio-qc AUDIO_QC]
+                                [--sample-size SAMPLE_SIZE] [--seed SEED]
+                                --out OUT
+run_unittest_ci.py build: error: the following arguments are required: --screening
+....................................................................................Digest would be 5373 bytes (cap 10); nothing written. Pass fewer run directories.
+....................................................................................................................{"locale": "zh-Hans", "rows": 7, "flagged": 2, "sampled": 5, "sheet": "/var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/tmpi_eu5k5f/sheet/listening-sample.md"}
+$ upload_file_to_gcs.py --source /var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/tmpjkfp8df1/artifacts/sermon.zh.live-aligned.vtt --destination gs://sermon-zh-poc/sundays/2026-06-28/runs/test/artifacts/sermon.zh.live-aligned.vtt
+Digest: /var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/tmp9lfk1n1m/digests/20261007-e2e (5 files, 9 redactions)
+Digest: /var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/tmpqwuo6oxw/digests/20261007-e2e (5 files, 9 redactions)
+{"status": "prepared_adapter_validation_required", "targetLocale": "ko", "synthesisEligible": false, "job": "/private/var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/tmpzhipypow/timed-speech-job/job.json"}
+edited reading blocks 0-0
+proofread reading blocks 0-0
+edited reading blocks 0-0
+.......................{
+  "status": "ok",
+  "out": "/var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/tmpc4l7_xnp/interpretation.pdf",
+  "qa": "/var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/tmpc4l7_xnp/interpretation.qa.json",
+  "qaStatus": "pass",
+  "pageCount": 2
+}
+{"stage": "tts", "batchIndex": 0, "completedGroups": 2}
+{"stage": "tts", "batchIndex": 1, "completedGroups": 4}
+{"stage": "tts", "batchIndex": 2, "completedGroups": 6}
+{"stage": "tts", "batchIndex": 3, "completedGroups": 8}
+{"stage": "tts", "batchIndex": 4, "completedGroups": 10}
+... 10 lines omitted; 0 error-like lines, 0 kept below ...
+... end of omitted section ...
+ko.calibration	pass	0.3
+ko.text-waiver	pass	0.0
+{
+  "ko": {
+    "status": "text_waiver_issued",
+    "reason": null,
+    "problems": [],
+    "calibration": {
+      "overallDetectionRate": 1.0,
+      "cleanFalsePositiveRate": 0.0,
+      "trials": 90,
+      "detected": 90
+    }
+  }
+}
+discover	pass	0.0
+ko.track-check	pass	0.0
+ko.secondary-asr	pass	0.0
+ko.audio-qc	pass	0.6
+ko.calibration.prefetch	pass	0.2
+ko.calibration	pass	101.0
+ko.audio-waiver	pass	0.2
+{
+  "ko": {
+    "status": "audio_waiver_issued",
+    "reason": null,
+    "problems": [],
+    "calibration": {
+      "overallDetectionRate": 1.0,
+      "cleanFalsePositiveRate": 0.0,
+      "trials": 164,
+      "detected": 164
+    }
+  }
+}
+discover	pass	0.0
+..{
+  "ko": {
+    "status": "audio_waiver_issued",
+    "reason": null,
+    "problems": [],
+    "calibration": {
+      "overallDetectionRate": 1.0,
+      "cleanFalsePositiveRate": 0.0,
+      "trials": 164,
+      "detected": 164
+    }
+  }
+}
+discover	pass	0.0
+ko.text-qc.prefetch	pass	0.0
+ko.text-qc	pass	0.0
+ko.calibration.prefetch	pass	0.2
+ko.calibration	pass	0.2
+ko.text-waiver	pass	0.0
+{
+  "ko": {
+    "status": "text_waiver_issued",
+    "reason": null,
+    "problems": [],
+    "calibration": {
+      "overallDetectionRate": 1.0,
+      "cleanFalsePositiveRate": 0.0,
+      "trials": 90,
+      "detected": 90
+    }
+  }
+}
+discover	pass	0.0
+{
+  "ko": {
+    "status": "text_waiver_issued",
+    "reason": null,
+    "problems": [],
+    "calibration": {
+      "overallDetectionRate": 1.0,
+      "cleanFalsePositiveRate": 0.0,
+      "trials": 90,
+      "detected": 90
+    }
+  }
+}
+discover	pass	0.0
+.{
+  "ko": {
+    "status": "error",
+    "reason": "ValueError: /private/var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/tmphocl4_zz/real/ko/text-waiver-628a40980939ae78.json changed after it was written",
+    "problems": [],
+    "calibration": null
+  }
+}
+discover	pass	0.0
+ko.text-qc.prefetch	pass	0.0
+ko.text-qc	pass	0.0
+ko.calibration.prefetch	pass	0.2
+ko.calibration	pass	0.2
+ko.text-waiver	pass	0.0
+.{
+  "ko": {
+    "status": "fake_plumbing_pass",
+    "reason": "fake judge: waiver built in memory, never saved",
+    "problems": [],
+    "calibration": {
+      "overallDetectionRate": 1.0,
+      "cleanFalsePositiveRate": 0.0,
+      "trials": 90,
+      "detected": 90
+    }
+  }
+}
+discover	pass	0.0
+ko.text-qc.prefetch	pass	0.0
+ko.text-qc	pass	0.0
+{
+  "ko": {
+    "status": "requires_repair",
+    "reason": "text QC failed; repair the failed groups in a new candidate revision",
+    "problems": [],
+    "calibration": null
+  }
+}
+discover	pass	0.0
+ko.text-qc.prefetch	pass	0.0
+ko.text-qc	pass	0.0
+{
+  "ko": {
+    "status": "requires_repair",
+    "reason": "text QC failed; repair the failed groups in a new candidate revision",
+    "problems": [],
+    "calibration": null
+  }
+}
+discover	pass	0.0
+ko.text-qc.prefetch	pass	0.0
+ko.text-qc	pass	0.0
+{
+  "ko": {
+    "status": "requires_repair",
+    "reason": "text QC failed; repair the failed groups in a new candidate revision",
+    "problems": [],
+    "calibration": null
+  }
+}
+discover	pass	0.0
+ko.text-qc.prefetch	pass	0.0
+ko.text-qc	pass	0.0
+{
+  "ko": {
+    "status": "requires_repair",
+    "reason": "text QC failed; repair the failed groups in a new candidate revision",
+    "problems": [],
+    "calibration": null
+  }
+}
+discover	pass	0.0
+ko.text-qc.prefetch	pass	0.0
+ko.text-qc	pass	0.0
+{
+  "ko": {
+    "status": "source_text_fallback",
+    "reason": "the repair limit is used up; waiver v1 cannot release an English fallback",
+    "problems": [],
+    "calibration": null
+  }
+}
+discover	pass	0.0
+.....{
+  "ko": {
+    "status": "source_text_fallback",
+    "reason": "the repair limit is used up; waiver v1 cannot release an English fallback",
+    "problems": [],
+    "calibration": null
+  }
+}
+{"component": "post-live-subtitles", "event": "post_live_subtitle_generation_checked", "liveSource": {"host": "www.youtube.com", "path": "/watch", "urlHash": "160163dd612c1ecf"}, "loggedAt": "2026-10-19T22:04:04.267370+00:00", "pipelineOutdir": "/var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/tmpr7km7uns/2026-06-28/mariners_MEZHufeQBjc/pipeline", "severity": "INFO", "status": "planned", "sunday": "2026-06-28"}
+..{"component": "post-live-timeline-job", "event": "post_live_timeline_job_checked", "liveSource": {"host": "www.youtube.com", "path": "/watch", "urlHash": "3dd1687429a3473c"}, "loggedAt": "2026-10-19T22:04:05.196938+00:00", "severity": "INFO", "status": "failed", "sunday": "2026-07-12"}
+.....translated sentence batches 1/1
+reviewed sentence batches 1/1
+....................{"unit": 0, "similarity": 1.0, "differences": 0}
+...................................s......................................................s.......................................................................................................s.....v4.1 package verified; model loaded and warmup finished.
+..v4.1 实验翻译已就绪：http://127.0.0.1:18771 （PID 123456）
+v4.1 实验翻译已就绪：http://127.0.0.1:18771 （PID 123456）
+v4.1 package verified; model loaded and warmup finished.
+...............{"status": "candidate", "targetLocale": "ko", "renderManifest": "/private/var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/tmp1s3_r3vu/clip-job/render-manifest.json", "machineScreening": "not_run", "humanListeningReview": "pending"}
+...........................................................
+----------------------------------------------------------------------
+Ran 607 tests in 869.313s
+
+OK (skipped=3)
+ 251.65s     2  test_run_machine_qc_audio_test
+ 149.29s     6  test_machine_quality_waiver
+  71.00s     1  test_sermon_mock_tts_dag
+  23.22s     6  test_sermon_cuv_translation
+  20.06s     5  test_sermon_delivery_intent_binding
+  20.03s     2  test_canonical_layer2_cache_recovery
+  18.09s     3  test_sermon_diagnostic_preview_worker
+  18.01s     2  test_sermon_diagnostic_dag_session
+  17.20s     2  test_canonical_layer2_reconciliation
+  15.61s     3  test_sermon_dev_diagnostic_snapshot
+exit 0

@@ -1,0 +1,51 @@
+{
+  "status": "passed_with_one_load_flake",
+  "facadesDeleted": 49,
+  "surveyBefore": {
+    "after": 165,
+    "c1Targets": 49,
+    "note": "dev@e8b197be"
+  },
+  "surveyAfter": {
+    "after": 116,
+    "now": 1,
+    "nowNote": "hard-coded PATH_FACADES entry of the deleted field_venue_independent_truth.py"
+  },
+  "unittestShards": {
+    "count": 10,
+    "tests": 5935,
+    "failures": 1,
+    "errors": 2,
+    "failureKind": "load flake",
+    "errorKind": "worktree venv missing services/api/src"
+  },
+  "pytestStyle": {
+    "passed": 1110,
+    "failed": 1,
+    "failedPreexistingOnDev": 1
+  },
+  "node": {
+    "fingerprintAndListeningWeb": "607 pass, 1 skip, 0 fail",
+    "testsMjs": "28 pass"
+  },
+  "testIdsBefore": {
+    "unittest": 5943
+  },
+  "testIdsAfter": {
+    "unittest": 5935,
+    "removedFacadeIdentityTests": 10,
+    "renamed": 2
+  },
+  "l2CodeIdentity": {
+    "devAt5eb39da3": "e04411e924de8d251f2d3975b2e897e8be0c1309e62f56ce7e8c5dac74279b7d",
+    "head": "5d92d7e3f112540c2237525fece96552231579c665f52461808c954c059a9863"
+  },
+  "gateIdentitiesUnchanged": [
+    "W 1c28f4aa",
+    "T 8ec15fe1",
+    "scoring 9f2ff807",
+    "rate 8f50c233",
+    "preview 794bb5f1",
+    "renderer sound fef76048"
+  ]
+}

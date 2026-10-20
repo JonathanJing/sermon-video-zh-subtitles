@@ -9,9 +9,10 @@ import tempfile
 import unittest
 from unittest.mock import Mock
 
-from scripts import sermon_review_contracts as c
-from scripts import sermon_review_gate as g
-from scripts import target_language_policy as policy
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.review import contracts as c
+from tongxing_production.text import strict_review_gate as g
+from tongxing_production.text import policy
 
 FIXTURES = Path(__file__).resolve().parent / 'fixtures/rqc'
 NOW = '2026-09-30T00:00:00Z'
@@ -95,11 +96,7 @@ def change_review(snapshot, mutate, *, inventory=True):
 
 
 class GateEvaluationTests(unittest.TestCase):
-    def test_legacy_import_names_the_package_module(self):
-        from tongxing_production.text import strict_review_gate
-
-        self.assertIs(g, strict_review_gate)
-        self.assertIs(sys.modules['scripts.sermon_review_gate'], strict_review_gate)
+    def test_package_module_uses_the_shared_contracts(self):
         self.assertIs(g.c, c)
 
     def test_direct_package_import_uses_explicit_schema_binding(self):

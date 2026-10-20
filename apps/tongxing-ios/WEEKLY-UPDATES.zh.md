@@ -13,7 +13,7 @@
 每周发布页面后，用已有、完整海报 receipt 生成目录：
 
 ```sh
-python3 scripts/build_weekly_announcement_sidecar.py \
+.venv/bin/python tools/ops/run.py delivery.posters.announcement_sidecar \
   --catalog "$CURRENT_CATALOG" --release "$CURRENT_RELEASE" \
   --poster-receipt "$POSTER_RECEIPT" --poster-file "$POSTER_PNG" \
   --page-id "$PAGE_ID" --locale "$LOCALE" --origin "$CONTENT_ORIGIN" \

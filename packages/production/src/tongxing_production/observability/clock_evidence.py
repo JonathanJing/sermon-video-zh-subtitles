@@ -31,6 +31,37 @@ def clock_domain():
         return _domain
 
 
+# UTC readings correlate with monotonic ones only within this tolerance.
+UTC_STEP_TOLERANCE_SECONDS = 0.01
+# The process monotonic clock is never slewed while UTC is NTP-disciplined, so
+# their offset drifts steadily (7.9 ppm measured on the production Mac; 13 ms
+# over a 27-minute run). Allow that drift over the monotonic time between two
+# readings; a step is a change beyond the tolerance plus this bounded drift.
+CLOCK_RATE_TOLERANCE = 100e-6
+
+
+def utc_offset_allowance(monotonic_seconds):
+    return UTC_STEP_TOLERANCE_SECONDS + CLOCK_RATE_TOLERANCE * abs(monotonic_seconds)
+
+
+def unstable_clock_domains(observations):
+    """Domains whose UTC/monotonic offset steps between consecutive readings.
+
+    ``observations`` maps a clock domain to (monotonic seconds, UTC seconds)
+    pairs. Neighbours in monotonic order are compared, so steady drift does
+    not accumulate into a false step while a genuine step still appears as
+    one jump between the readings on either side of it.
+    """
+    unstable = set()
+    for domain, pairs in observations.items():
+        ordered = sorted(pairs)
+        for (m0, u0), (m1, u1) in zip(ordered, ordered[1:]):
+            if abs((u1 - m1) - (u0 - m0)) > utc_offset_allowance(m1 - m0):
+                unstable.add(domain)
+                break
+    return unstable
+
+
 def monotonic_interval(start, end):
     keys = ('clockDomainId', 'monotonicStartNs', 'monotonicEndNs')
     if not any(k in e for e in (start,end) for k in keys):

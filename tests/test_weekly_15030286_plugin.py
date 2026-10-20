@@ -1,7 +1,7 @@
 import unittest
 from pathlib import Path
 
-from scripts import produce_target_language_candidate as candidate
+from tongxing_production.text import candidate
 from scripts.language_review_plugins import es_weekly_15030286 as plugin
 from scripts.language_review_plugins import ko_weekly_15030286 as ko_plugin
 from scripts.language_review_plugins import weekly_15030286_common as common
@@ -88,9 +88,6 @@ class KoreanWeekly15030286PluginTests(unittest.TestCase):
             self.policy(), [{"sourceUnitId": unit_id, "english": english}],
             group(unit_id, target))
 
-    # Needs the run branch's auto_qc_text_common.py rules, which wait for the next W
-    # window together with #1056; dev keeps the shared file unchanged until then.
-    @unittest.expectedFailure
     def test_new_one_is_a_pronoun_not_the_number_one(self):
         rows = self.review(
             "chunk-0000-u010",
@@ -114,9 +111,6 @@ class KoreanWeekly15030286PluginTests(unittest.TestCase):
             tail_id, tail_english,
             "그 로고 디자인을 외부 업체에 맡기는 데 150만 달러를 썼다는 겁니다."), "numbers"), "fail")
 
-    # Needs the run branch's auto_qc_text_common.py rules, which wait for the next W
-    # window together with #1056; dev keeps the shared file unchanged until then.
-    @unittest.expectedFailure
     def test_trilogy_may_be_rendered_as_an_explicit_three_part_work(self):
         rows = self.review(
             "chunk-0008-u019",

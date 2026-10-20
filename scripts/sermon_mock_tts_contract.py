@@ -11,8 +11,9 @@ import re
 import struct
 import wave
 
-from scripts import sermon_review_contracts as c
-from scripts import sermon_public_snapshot as public
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.review import contracts as c
+from tongxing_production.storage import snapshot as public
 from scripts.sermon_release_workflow import _safe_path
 from tongxing_production import path_aliases
 
@@ -69,7 +70,8 @@ def validate_request(request):
         and label(request['attemptId']) and len(request['attemptId']) <= 70
         and request['targetLocale'] in LOCALES and request['jobId'] == job_id(request),
         'mock_tts_request_identity_invalid')
-    from scripts import sermon_completion as completion
+    from scripts import tongxing_host  # noqa: F401  binds the production package ports
+    from tongxing_production.observability import completion
     c.require(type(request['attemptNumber']) is int and 1 <= request['attemptNumber'] <= 3
         and ((request['attemptNumber'] == 1 and request['retryOfRequestSha256'] is None)
              or (request['attemptNumber'] > 1 and sha(request['retryOfRequestSha256']))),

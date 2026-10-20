@@ -24,8 +24,8 @@ Sol 复核有时对一个冻结英文单元本身存疑（605 的 `0-u076` "You'
 ## 怎么跑（Mac 只带 openai 复听；加 qwen 复听要在 Spark 会话内）
 
 ```sh
-python3 scripts/run_with_openai_environment.py --environment dev -- \
-  .venv/bin/python scripts/source_meaning_machine_adjudication.py <含 source.json、anchor.json 的目录> \
+python3 tools/ops/run_with_openai_environment.py --environment dev -- \
+  .venv/bin/python tools/ops/run.py review.source_meaning <含 source.json、anchor.json 的目录> \
     --media <source.json 绑定的媒体文件> --unit 0-u076 \
     --out-dir <新目录> \
     --listener openai [--listener qwen --asr-model-path <Qwen3-ASR 权重>] \

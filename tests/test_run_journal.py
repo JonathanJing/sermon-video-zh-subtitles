@@ -3,7 +3,7 @@ from pathlib import Path
 import tempfile
 import unittest
 
-from scripts import run_journal as journal
+from tools.development import run_journal as journal
 
 
 class Clock:
@@ -116,7 +116,7 @@ class RunJournalTests(unittest.TestCase):
         self.assertEqual(sorted(path.name for path in self.run.iterdir()), [journal.SALT_NAME, journal.FILE_NAME])
 
     def test_the_digest_exports_the_journal_but_not_its_salt(self):
-        from scripts import export_run_digest as digest
+        from tools.development import export_run_digest as digest
         self.event("layer1", "started", "2026-10-18T03:00:00+00:00")
         out = Path(self.temp.name) / "reports"
         self.assertEqual(digest.main([str(self.run), "--name", "20261018-journal", "--out", str(out)]), 0)

@@ -1,0 +1,9 @@
+{
+  "deliveryType": "test",
+  "status": "passed",
+  "exitCode": 0,
+  "commit": "837a10a8",
+  "workflow": "local verification of pickle-safe experiment facades",
+  "publication": "not_run",
+  "realProduction": "not_run"
+}

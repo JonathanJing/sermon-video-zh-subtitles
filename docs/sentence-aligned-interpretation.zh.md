@@ -151,18 +151,18 @@ end   = start + measured_natural_audio_duration
 ## 运行与验证
 
 ```bash
-.venv/bin/python scripts/sermon_sentence_interpretation.py prepare \
+.venv/bin/python tools/ops/run.py source.sentence_interpretation prepare \
   --mfa-segments <segments.json> \
   --out artifacts/sentence-interpretation-poc/<run-id> \
   --unit-policy clause_stable_v2 \
   --max-unit-seconds 8
 
-.venv/bin/python scripts/sermon_sentence_interpretation.py prepare-review \
+.venv/bin/python tools/ops/run.py source.sentence_interpretation prepare-review \
   --anchor-manifest <anchor-manifest.json> \
   --draft <translation-draft.json> \
   --out <independent-review-request.json>
 
-.venv/bin/python scripts/run_sentence_interpretation_models.py \
+.venv/bin/python tools/ops/run.py source.sentence_interpretation_models \
   --anchor-manifest <anchor-manifest.json> \
   --out artifacts/sentence-interpretation-poc/<run-id>/models-gpt-6-astra \
   --model gpt-6-astra \
@@ -195,7 +195,7 @@ HF_HUB_OFFLINE=1 artifacts/english-word-timeline-poc/runtime/bin/python \
   --out artifacts/sentence-interpretation-poc/<run-id>/tts/screening \
   --indices <first,longest,dense-terminology>
 
-.venv/bin/python scripts/sermon_sentence_interpretation.py validate \
+.venv/bin/python tools/ops/run.py source.sentence_interpretation validate \
   --anchor-manifest <anchor-manifest.json> \
   --candidate <candidate.json> \
   --out <validation-report.json>

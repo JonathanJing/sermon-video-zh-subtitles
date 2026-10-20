@@ -1,0 +1,48 @@
+== shard 0
+Ran 542 tests in 710.762s
+OK (skipped=1)
+exit 0
+== shard 1
+FAIL: test_public_cli_round_trip_from_outside_repository (experiments.local_experiment_log.tests.test_cli.FileInterfaceTests.test_public_cli_round_trip_from_outside_repository)
+Ran 559 tests in 967.155s
+FAILED (failures=1, skipped=4)
+exit 1
+== shard 2
+Ran 577 tests in 1074.975s
+OK (skipped=4)
+exit 0
+== shard 3
+Ran 601 tests in 1004.425s
+OK (skipped=3)
+exit 0
+== shard 4
+ERROR: test_cloud_run_jobs (unittest.loader._FailedTest.test_cloud_run_jobs)
+FAIL: test_packaged_bridge_uses_bundled_shared_validator (experiments.local_experiment_log.tests.test_cli.FileInterfaceTests.test_packaged_bridge_uses_bundled_shared_validator)
+FAIL: test_moved_module_keeps_a_repository_identity_key (test_tongxing_production_package.ProductionPackageTests.test_moved_module_keeps_a_repository_identity_key)
+Ran 602 tests in 1183.299s
+FAILED (failures=2, errors=1, skipped=5)
+exit 1
+== shard 5
+Ran 608 tests in 1237.029s
+OK (skipped=1)
+exit 0
+== shard 6
+Ran 607 tests in 1109.063s
+OK (skipped=5)
+exit 0
+== shard 7
+FAIL: test_129_group_actual_producer_can_assemble_and_resume_without_calls (test_layer2_large_fan_in.LargeLayer2FanInTests.test_129_group_actual_producer_can_assemble_and_resume_without_calls)
+Ran 615 tests in 1087.437s
+FAILED (failures=1, skipped=8)
+exit 1
+== shard 8
+FAIL: test_template_export_is_new_and_explicitly_synthetic (experiments.local_experiment_log.tests.test_cli.FileInterfaceTests.test_template_export_is_new_and_explicitly_synthetic)
+Ran 616 tests in 1087.576s
+FAILED (failures=1, skipped=4)
+exit 1
+== shard 9
+ERROR: test_backend_app (unittest.loader._FailedTest.test_backend_app)
+FAIL: test_conflicting_sidecar_cannot_publish_summary (experiments.local_experiment_log.tests.test_cli.FileInterfaceTests.test_conflicting_sidecar_cannot_publish_summary)
+Ran 617 tests in 1421.051s
+FAILED (failures=1, errors=1, skipped=3)
+exit 1

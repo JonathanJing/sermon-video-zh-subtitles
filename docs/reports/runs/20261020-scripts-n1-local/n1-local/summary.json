@@ -1,0 +1,46 @@
+{
+  "run": "scripts-n1-local",
+  "kind": "local_code_test",
+  "branch": "claude/scripts-n1-2f9a94",
+  "head": "f1b1c2a6",
+  "base": "dev@510fa154",
+  "pr": "https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/1201",
+  "moved": 22,
+  "facades": [
+    "prepare_live_link_playback",
+    "translate_playback_with_openai",
+    "export_playback_captions",
+    "promote_sunday_manifest"
+  ],
+  "deleted": 0,
+  "leftInScripts": [
+    "live_source_monitor",
+    "subtitle_output_contract",
+    "build_playback_simulation",
+    "export_saturday_live_context",
+    "run_saturday_harness"
+  ],
+  "pytest": {
+    "files": 50,
+    "chunks": 4,
+    "passed": 479,
+    "failed": 0
+  },
+  "helpChecks": {
+    "ok": 34,
+    "failed": 0,
+    "facadeModuleIdentity": "4/4 same object"
+  },
+  "imageLayoutCheck": {
+    "scriptsHelpOk": 7,
+    "workerScriptPathsExist": true,
+    "deployed": false
+  },
+  "gitDiffCheck": "clean",
+  "g1PhysicalClosureOverlap": [],
+  "l2CodeIdentity": {
+    "dev@510fa154": "d61bdfddc5180b39f5202d6b15a2bad3300643bac356fa68d05d2406400c3ddf",
+    "f1b1c2a6": "fbcda0421c0dbb6d9b30c440d2cba12b3a68177934c68f91a39746cc0d12c2bf"
+  },
+  "inProgressL2OrUnifiedRun": "none (ps)"
+}

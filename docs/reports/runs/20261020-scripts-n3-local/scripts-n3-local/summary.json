@@ -1,0 +1,66 @@
+{
+  "status": "passed",
+  "codePr": 1205,
+  "moved": {
+    "scripts/run_spoken_condensation.py": "tools/ops/run_spoken_condensation.py",
+    "scripts/sermon_local_model_observation.py": "tongxing_production.observability.local_model_observation",
+    "scripts/sermon.py": "tools/ops/sermon.py"
+  },
+  "facadesKept": [
+    "scripts/sermon_local_model_observation.py",
+    "scripts/sermon.py"
+  ],
+  "boundAndLeft": {
+    "scripts/scripture_editions.py": "review/scripture_machine.py:86 GENERATOR_MODULES -> implementation_sha256 (:119)",
+    "scripts/scripture_candidate_queue.py": "review/scripture_machine.py:86 GENERATOR_MODULES -> implementation_sha256 (:119)",
+    "scripts/english_scripture_coverage.py": "review/scripture_machine.py:86 GENERATOR_MODULES -> implementation_sha256 (:119)",
+    "scripts/series_terminology.py": "workflows/dual_pdf/post_live.py:111 -> file_content_identity (:1442) in dual_pdf input identity"
+  },
+  "frozenPolicyHits": 0,
+  "waiverOrG1ClosureHits": 0,
+  "pathAliasesKeyHits": 0,
+  "pluginSourceHits": 0,
+  "frozen15030286Policies": {
+    "validated": 18,
+    "failed": 0,
+    "hashesUnchanged": true
+  },
+  "unchangedIdentities": {
+    "waiverW": "1c28f4aa38c05b9287db01cc8668995e10ba31c21d9d05fbaa508474a8a19961",
+    "scoring": "9f2ff8077671b22a29d1846e30cdfb8c7c9999d30054bd67e7c4b50fa2c20310",
+    "transport": "8ec15fe1556ba0ff5e3b64c9ff5d2f82896216f06bb2c25495385feaf4f5a851",
+    "rate": "8f50c233e07bf130d569e15b91abeb35a231f26d18b3e3874b2c7de3581ed9f2",
+    "scriptureMachine": "3d2180fec9511ac9a39fe7823f2d340e960edb36a544d8bb9fe3d918c0f1fbc1",
+    "condensation": "9491d8a3fd8c1d5c70a4e210688565ece704ae16a36b2e59c8bed5d3d36cc486",
+    "dualPdfSeriesTerminology": "a2c16cfc353acbb58ea15e6ed95223178e87c49cd8383db8bb92f2426644ce74"
+  },
+  "l2CodeIdentity": {
+    "devBefore": "d61bdfddc5180b39f5202d6b15a2bad3300643bac356fa68d05d2406400c3ddf",
+    "branchBefore": "e01ee9e32b8b8cb050ef9870816e05b51e218830dd3fe97cd0f433c575c7142d",
+    "devTip_e0f42cf5": "e044175ba7c0cd3fe1817e202fd4ebd0dd74cbfbbd17ea55a39a03198457f607",
+    "branchMerged_2ea9740e": "0ec0f74b993380c7fd58e9beffbbf7c231de9aaee96372304cda6dd607c924ce"
+  },
+  "pytest": {
+    "files": 362,
+    "passed": 5145,
+    "skipped": 29,
+    "failed": 6,
+    "failedAlsoOnDev": 6,
+    "partial": {
+      "tests/test_machine_quality_waiver.py": "47 of 67 passed, 0 failed; stopped: CPU-bound calibration under load"
+    },
+    "focusedAfterMerge": {
+      "passed": 279,
+      "skipped": 7,
+      "failed": 0
+    }
+  },
+  "helpChecked": [
+    "tools/ops/sermon.py",
+    "scripts/sermon.py",
+    "tools/ops/run_spoken_condensation.py"
+  ],
+  "hostChanged": false,
+  "pathAliasesChanged": false,
+  "dockerfileChanged": false
+}

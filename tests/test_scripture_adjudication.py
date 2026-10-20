@@ -10,7 +10,8 @@ import unittest
 from pathlib import Path
 
 from scripts import cuv_scripture
-from scripts import scripture_adjudication as adjudication
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.review import scripture as adjudication
 from scripts import scripture_editions
 
 UNITS = ['u-quote-1', 'u-quote-2']
@@ -68,7 +69,8 @@ class ReceiptValidationTests(unittest.TestCase):
         self.assertEqual(reason(receipt(decidedBy='  ')), 'decided_by_missing')
 
     def test_machine_adjudicator_receipt_is_admitted_only_when_the_generator_reproduces_it(self):
-        from scripts import scripture_machine_adjudication as machine
+        from scripts import tongxing_host  # noqa: F401  binds the production package ports
+        from tongxing_production.review import scripture_machine as machine
         rows = [{'sourceUnitId': 'r1', 'english': f'John 3:16 says, {READ_3_16}', 'start': 0.0, 'end': 1.0},
                 {'sourceUnitId': 'r2', 'english': 'Amen.', 'start': 1.0, 'end': 2.0}]
         inputs = {'source.json': {'source': {'sourceId': 'synthetic'}}, 'anchor.json': {'sourceUnits': rows},
@@ -99,7 +101,8 @@ class ReceiptValidationTests(unittest.TestCase):
 
     def test_a_frozen_machine_receipt_survives_a_later_generator(self):
         from unittest import mock
-        from scripts import scripture_machine_adjudication as machine
+        from scripts import tongxing_host  # noqa: F401  binds the production package ports
+        from tongxing_production.review import scripture_machine as machine
         rows = [{'sourceUnitId': 'r1', 'english': f'John 3:16 says, {READ_3_16}', 'start': 0.0, 'end': 1.0},
                 {'sourceUnitId': 'r2', 'english': 'Amen.', 'start': 1.0, 'end': 2.0}]
         inputs = {'source.json': {'source': {'sourceId': 'synthetic'}}, 'anchor.json': {'sourceUnits': rows},

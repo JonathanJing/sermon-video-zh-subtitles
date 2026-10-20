@@ -1,0 +1,36 @@
+{
+  "status": "passed",
+  "codePr": 1187,
+  "moved": {
+    "scripts/sermon_cost_isolation.py": "tongxing_production.observability.cost_isolation",
+    "scripts/sermon_strict_layer3_preparation.py": "tongxing_production.audio.strict_preparation"
+  },
+  "facadesKept": 2,
+  "blocked": [
+    "sermon_strict_layer2",
+    "sermon_strict_candidate_bridge",
+    "sermon_strict_locale",
+    "sermon_strict_controller",
+    "sermon_strict_budget_adapter",
+    "sermon_strict_gate_admission",
+    "sermon_strict_repair_planner",
+    "sermon_bounded_business_callbacks",
+    "sermon_bounded_decision",
+    "sermon_repair_planning",
+    "sermon_deterministic_controller"
+  ],
+  "frozenClosureHits": 0,
+  "pytest": {
+    "files": 41,
+    "chunks": 4,
+    "passed": 633,
+    "skipped": 4,
+    "failed": 0
+  },
+  "l2CodeIdentity": {
+    "dev": "5017a9f1ee44d69f06e6a482a921045b3d1eba74d24c4dcf4632faddcbf81e9d",
+    "branch": "39e85d388d2d9975aaab05ec7dab2bfd1eb15a1ee5355064031ae2851bd5f9ff"
+  },
+  "g1IdentitiesChanged": false,
+  "hostChanged": false
+}

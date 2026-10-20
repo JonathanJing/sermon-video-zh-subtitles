@@ -1,7 +1,8 @@
 """Unmarked source plurals may read back singular; added plural meaning stays major."""
 import unittest
 
-from scripts import target_text_auto_qc as text_qc
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.review import text_qc
 
 
 class UnmarkedPluralTests(unittest.TestCase):

@@ -1,0 +1,5 @@
+stage	status	seconds
+live_baseline	pass	2
+poster_binding	pass	1
+hosting_publish	pass	18
+http_readback	pass	2

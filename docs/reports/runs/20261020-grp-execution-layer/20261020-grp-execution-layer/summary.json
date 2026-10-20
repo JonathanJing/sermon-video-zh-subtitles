@@ -1,0 +1,21 @@
+{
+  "schemaVersion": "local-test-summary-v1",
+  "suites": [
+    {
+      "name": "group pipeline + worker + l3 stages + assembly + stage records",
+      "tests": 102,
+      "result": "pass"
+    }
+  ],
+  "capabilities": [
+    "redo --reason writes sermon-group-directive-v1 and reruns only listed groups",
+    "prepare-l3 calls audio.speech_job.prepare_job and mirrors the receipt beside the candidate",
+    "stages runs a frozen command plan with resume and failure-to-group mapping",
+    "merge/run refusals emit nextActions with group IDs"
+  ],
+  "limits": [
+    "No model, TTS, ASR, Spark, deployment or Firebase call was made.",
+    "Layer 3 steps 7-9 have an executor but no real Spark run; step 4 calibration is still external.",
+    "15030286 merge replay is blocked by plugin-closure drift; plan/status are the supported zero-call checks."
+  ]
+}

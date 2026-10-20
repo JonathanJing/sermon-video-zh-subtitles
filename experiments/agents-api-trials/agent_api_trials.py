@@ -1947,7 +1947,8 @@ class DecisionsClient:
         return response
 
     def _post(self, request):
-        from scripts.sermon_openai_runtime import project_headers
+        from scripts import tongxing_host  # noqa: F401  binds the production package ports
+        from tongxing_production.compute.openai_runtime import project_headers
         if not self.api_key:
             raise RuntimeError('OPENAI_API_KEY missing; run under the dev launcher')
         req = urllib.request.Request('https://api.openai.com/v1/decisions', method='POST',
@@ -2114,7 +2115,7 @@ def main(argv=None):
                     max_tool_calls=args.max_tool_calls, poll_seconds=poll, max_sessions=args.max_sessions,
                     risk_repeats=args.risk_repeats, decisions=decisions, case_ids=args.case, plan_ids=args.plan,
                     route=route)
-    from scripts.outcome_marker import run_with_outcome
+    from tongxing_production.orchestration.outcome_marker import run_with_outcome
 
     def reported(body):
         summary = body()

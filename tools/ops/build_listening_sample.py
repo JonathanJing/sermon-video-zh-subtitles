@@ -54,9 +54,12 @@ if __package__ in (None, ""):  # run directly from tools/ops: reach the scripts/
     import sys
     sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "scripts"))
 try:
-    from scripts import sermon_sentence_interpretation as identity
+    from scripts import tongxing_host  # noqa: F401  binds the production package ports
+    from tongxing_production.source import sentence_interpretation as identity
 except ImportError:  # pragma: no cover - direct CLI runs from scripts/
-    import sermon_sentence_interpretation as identity
+    sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+    from scripts import tongxing_host  # noqa: F401  binds the production package ports
+    from tongxing_production.source import sentence_interpretation as identity
 
 SCHEMA = "sermon-listening-sample-v1"
 VERDICTS_SCHEMA = "sermon-listening-verdicts-v1"

@@ -1,7 +1,8 @@
 import copy
 import json
 import unittest
-from scripts import canonical_pipeline_definition as p
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.contracts import pipeline_definition as p
 
 
 class CanonicalPlanningTests(unittest.TestCase):

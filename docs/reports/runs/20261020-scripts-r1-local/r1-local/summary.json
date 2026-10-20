@@ -1,0 +1,70 @@
+{
+  "run": "scripts-r1-local",
+  "kind": "local_code_test",
+  "branches": {
+    "claude/scripts-r1-131a68": "b9124256",
+    "claude/scripts-r1-spark-diagnostic": "c98d5f27"
+  },
+  "base": "dev@5a40e8c2 (merged into both heads); both still merge cleanly on dev@85d4cf63",
+  "prs": [
+    "https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/1185",
+    "https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/1186"
+  ],
+  "affectedTests": {
+    "r1a": {
+      "files": 17,
+      "passed": 183,
+      "failed": 0,
+      "tree": "b9124256"
+    },
+    "r1b": {
+      "files": 23,
+      "passed": 320,
+      "failed": 1,
+      "tree": "c98d5f27",
+      "note": "test_run_concurrency_preflight four_branches peak-concurrency assertion (25 ms sleeps) failed while the full suite ran; 5/5 alone on the branch and 5/5 alone on dev"
+    },
+    "combined": {
+      "files": 34,
+      "passed": 468,
+      "skipped": 7,
+      "failed": 0,
+      "tree": "dev@5a40e8c2 + r1a + r1b"
+    }
+  },
+  "fullSuite": {
+    "runner": "tools/development/run_unittest_ci.py, 8 shards",
+    "shards1to7Tree": "dev@0916d4ec + r1a + r1b (pre-rebase f2e06998), 7 shards in parallel",
+    "shard0Tree": "dev@5a40e8c2 + r1a + r1b (b432ac46), alone",
+    "tests": 5998,
+    "failed": 4,
+    "failures": [
+      "test_run_concurrency_preflight four_branches_two_study_nodes (peak concurrency 3 != 4)",
+      "test_layer2_large_fan_in 129_group and 65_group (accounting projection partial != projected)",
+      "test_sermon_unified_parallel 100_transitions (handoff p95 5.2 s > 2 s)"
+    ],
+    "isolatedRerun": "all 4 pass alone on dev@5a40e8c2 + r1a + r1b",
+    "contractPytest": {
+      "passed": 193,
+      "failed": 0
+    },
+    "dubbingPocUnittest": {
+      "ran": 401,
+      "failed": 0
+    }
+  },
+  "helpChecks": "every moved Python entry runs --help from /tmp; library-only modules excluded; score_sermon_text_benchmark needs sacrebleu via uv run --with as documented",
+  "sparkRunnerImport": "REMOTE_RUNNER sys.path imports AdmissionGateway and Client from outside the repo",
+  "gitDiffCheck": "clean",
+  "l2CodeIdentity": {
+    "dev@0916d4ec": "5017a9f1ee44d69f06e6a482a921045b3d1eba74d24c4dcf4632faddcbf81e9d",
+    "dev@85d4cf63": "9d3205660e590a6ae25bfda76d83853768acb9fd30360fab264b5c0dacc57304",
+    "dev@85d4cf63+r1a": "e1b260ff70f167dadd1341d47355a9dc6b7e18568203243e7d869d1f45fdfe5d",
+    "dev@85d4cf63+r1a+r1b": "e0b37c66bcc966538fa25d38c5fe47ae7d6007c2043a06d73ae2be45881cf60e",
+    "method": "controller._code_identity_of over git objects; matched live code_identity() on f2e06998"
+  },
+  "inProgressL2OrUnifiedRuns": 0,
+  "modelCalls": 0,
+  "spark": "not_run",
+  "outcome": "passed"
+}

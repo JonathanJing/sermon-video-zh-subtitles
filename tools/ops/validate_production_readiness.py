@@ -25,8 +25,8 @@ def import_script(module_name: str, path: Path) -> Any:
 
 
 offline_validator = import_script("validate_offline_chain", SCRIPTS_DIR / "validate_offline_chain.py")
-sunday_validator = import_script("validate_sunday_manifest", SCRIPTS_DIR / "validate_sunday_manifest.py")
-realtime_validator = import_script("validate_realtime_session", SCRIPTS_DIR / "validate_realtime_session.py")
+sunday_validator = import_script("validate_sunday_manifest", Path(__file__).resolve().parent / "validate_sunday_manifest.py")
+realtime_validator = import_script("validate_realtime_session", Path(__file__).resolve().parent / "validate_realtime_session.py")
 
 
 def main() -> int:

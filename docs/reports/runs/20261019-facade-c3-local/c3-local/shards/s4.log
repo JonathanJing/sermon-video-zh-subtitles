@@ -1,0 +1,251 @@
+Estimating 213 unprofiled modules from measured per-case cost
+Shard 5/10: 603 tests from 360 modules
+............usage: run_unittest_ci.py [-h] --out OUT [--backend {live,fake}]
+                          [--model MODEL] [--case CASE] [--plan PLAN]
+                          [--max-sessions MAX_SESSIONS]
+                          [--risk-repeats RISK_REPEATS]
+                          [--max-tool-calls MAX_TOOL_CALLS]
+                          [--max-seconds MAX_SECONDS]
+                          {timeline,diagnose,refute,preflight,risk,all}
+run_unittest_ci.py: error: argument --risk-repeats: must be a positive integer
+..........................................................................{"locale": "zh-Hans", "rows": 7, "flagged": 2, "sampled": 5, "sheet": "/var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/tmpk__w2rdl/sheet/listening-sample.md"}
+{
+  "failures": [
+    "forced_failure"
+  ],
+  "provider": "codex",
+  "status": "needs_revision",
+  "qualityRuleVersion": "sermon-reading-edition-quality-v4",
+  "reviewManifest": {
+    "path": "/var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/tmpqx3ftp19/review-manifest.json",
+    "sha256": "a220f2f8145325143a86c5830a6e240dbd507af26f5558c7b0e72e2d787b54cc"
+  },
+  "appliedReviewCorrections": [
+    {
+      "blockId": 45,
+      "field": "en",
+      "reason": "Verified spelling.",
+      "disposition": "applied"
+    }
+  ],
+  "repairedExisting": true
+}
+{"group": "group-0001", "solSeconds": 2.0, "opusSeconds": 1.0, "solReviewPassed": true, "opusReviewPassed": true}
+{"group": "group-0002", "solSeconds": 2.0, "opusSeconds": 1.0, "solReviewPassed": true, "opusReviewPassed": false}
+{"freshCalls": {"sol": 2, "opus": 2, "review": 4}, "groups": 2, "targetLocale": "ko"}
+{"group": "group-0001", "solSeconds": 2.0, "opusSeconds": 1.0, "solReviewPassed": true, "opusReviewPassed": true}
+{"group": "group-0002", "solSeconds": 2.0, "opusSeconds": 1.0, "solReviewPassed": true, "opusReviewPassed": false}
+{"freshCalls": {"sol": 0, "opus": 0, "review": 0}, "groups": 2, "targetLocale": "ko"}
+...E............................................Digest would be 5373 bytes (cap 10); nothing written. Pass fewer run directories.
+..................................................................................usage: runtime_tts_mac.py [-h] [--output OUTPUT]
+... 386 lines omitted; 9 error-like lines, 9 kept below ...
+[line 41] runtime_tts_mac.py: error: this bounded diagnostic writes only its declared output directory
+[line 144]     "status": "error",
+[line 145]     "reason": "ValueError: /private/var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/tmpfv7mpz72/real/ko/text-waiver-47c690301186ad9c.json changed after it was written",
+[line 175]     "reason": "text QC failed; repair the failed groups in a new candidate revision",
+[line 186]     "reason": "text QC failed; repair the failed groups in a new candidate revision",
+[line 197]     "reason": "text QC failed; repair the failed groups in a new candidate revision",
+[line 208]     "reason": "text QC failed; repair the failed groups in a new candidate revision",
+[line 255]   "failedChecks": [],
+[line 267] Generation failed: RuntimeError
+... end of omitted section ...
+          "python3",
+          "scripts/run_realtime_live_session.py",
+          "--realtime-model",
+          "gpt-realtime-translate",
+          "--stable-model",
+          "gpt-5.4-mini"
+        ],
+        "default": false,
+        "expectedAudioSourceKind": null,
+        "expectedAudioSourceKinds": [
+          "authorized_audio_url",
+          "authorized_audio_file",
+          "authorized_youtube_source"
+        ],
+        "id": "server_worker_authorized_audio",
+        "operatorAction": null,
+        "path": "server media worker -> gpt-realtime-translate -> backend session events -> public caption SSE",
+        "source": "authorized audio URL/file or authorized YouTube live source"
+      }
+    ],
+    "passCriteria": [
+      "Realtime session uses gpt-realtime-translate and targetLanguage=zh.",
+      "Offline post-live route never uses gpt-realtime-translate."
+    ],
+    "postLiveOfflineHandoff": {
+      "captionFirst": [
+        "Try requested English captions/VTT first.",
+        "Translate with gpt-5.4-mini."
+      ],
+      "noCaptionFallback": [
+        "Transcribe with gpt-4o-transcribe.",
+        "Translate with gpt-5.4-mini."
+      ],
+      "trigger": "Run only after the YouTube live archive is available."
+    },
+    "stabilizerFallbackCommand": [
+      "python3",
+      "scripts/run_realtime_stabilizer_loop.py",
+      "--model",
+      "gpt-5.4-mini"
+    ],
+    "status": "ready_for_operator_review",
+    "sunday": "2026-06-28",
+    "targetWindow": {
+      "liveCaptionStart": "11:30 PT",
+      "publicReadinessDeadline": "11:50 PT"
+    }
+  },
+  "postApprovalEvidence": [
+    "artifacts/evidence/cloud-run-realtime-config.json",
+    "artifacts/evidence/cloud-run-api-preflight.json",
+    "artifacts/evidence/web-realtime-contract.json",
+    "artifacts/evidence/realtime-public-sse-smoke.json",
+    "artifacts/evidence/realtime-public-sse-smoke.session-validation.json",
+    "artifacts/evidence/sunday-manifest-validation.json",
+    "artifacts/evidence/production-evidence-matrix.json",
+    "artifacts/evidence/production-goal-readiness-audit.json"
+  ],
+  "postApprovalFollowupSteps": [
+    {
+      "commands": [
+        [
+          "python3",
+          "scripts/run_cloud_run_realtime_preflight.py"
+        ]
+      ],
+      "dependency": null,
+      "expectedChecks": [],
+      "id": "rerun_cloud_run_api_preflight",
+      "planReport": null,
+      "planStatus": null,
+      "reason": null,
+      "requiresExplicitApproval": false,
+      "sourceRow": "cloud_run_api_preflight",
+      "state": "pending"
+    },
+    {
+      "commands": [
+        [
+          "python3",
+          "scripts/run_realtime_public_sse_smoke.py",
+          "--web-realtime-contract-report",
+          "artifacts/evidence/web-realtime-contract.json"
+        ]
+      ],
+      "dependency": null,
+      "expectedChecks": [],
+      "id": "rerun_deployed_public_sse_smoke",
+      "planReport": null,
+      "planStatus": null,
+      "reason": null,
+      "requiresExplicitApproval": false,
+      "sourceRow": "realtime_public_sse_contract",
+      "state": "pending"
+    }
+  ],
+  "postApprovalValidation": {
+    "commands": [
+      [
+        "python3",
+        "scripts/validate_cloud_run_realtime_config.py"
+      ],
+      [
+        "python3",
+        "scripts/run_cloud_run_realtime_preflight.py"
+      ],
+      [
+        "python3",
+        "scripts/run_realtime_public_sse_smoke.py",
+        "--web-realtime-contract-report",
+        "artifacts/evidence/web-realtime-contract.json"
+      ]
+    ],
+    "expectedChecks": [
+      "browser_normalized_event_payloads",
+      "no_secret_material_in_http_responses",
+      "realtime_local_session_create",
+      "realtime_local_session_metadata",
+      "session_jsonl_validation",
+      "sse_stable_correction_matches_draft_segment"
+    ],
+    "requiredEvidence": [
+      "artifacts/evidence/cloud-run-realtime-config.json",
+      "artifacts/evidence/cloud-run-api-preflight.json",
+      "artifacts/evidence/realtime-public-sse-smoke.json",
+      "artifacts/evidence/realtime-public-sse-smoke.session-validation.json",
+      "artifacts/evidence/sunday-manifest-validation.json",
+      "artifacts/evidence/production-evidence-matrix.json",
+      "artifacts/evidence/production-goal-readiness-audit.json"
+    ]
+  },
+  "requiredApprovals": [
+    {
+      "approvalKind": "cloud_run_runtime_update",
+      "id": "apply_cloud_run_realtime_config",
+      "reason": "Apply the approved Cloud Run realtime update plan.",
+      "requiresExplicitApproval": true,
+      "state": "approval_required"
+    },
+    {
+      "approvalKind": "gcs_manifest_publish",
+      "id": "publish_sunday_manifest_to_gcs",
+      "reason": "Upload/promote the manifest and artifacts to GCS.",
+      "requiresExplicitApproval": true,
+      "state": "approval_required"
+    }
+  ],
+  "rollback": {
+    "available": true,
+    "commands": [
+      [
+        "gcloud",
+        "run",
+        "services",
+        "update",
+        "sermon-zh-caption-web",
+        "--remove-env-vars",
+        "REALTIME_EVENT_GCS_PREFIX"
+      ]
+    ],
+    "requiresExplicitApproval": true
+  },
+  "schemaVersion": 1,
+  "secretResourceNamesIncluded": false,
+  "status": "approval_required",
+  "sunday": "2026-06-28"
+}.....
+======================================================================
+ERROR: test_cloud_run_jobs (unittest.loader._FailedTest.test_cloud_run_jobs)
+----------------------------------------------------------------------
+ImportError: Failed to import test module: test_cloud_run_jobs
+Traceback (most recent call last):
+  File "/opt/homebrew/Cellar/<email>/3.13.16/Frameworks/Python.framework/Versions/3.13/lib/python3.13/unittest/loader.py", line 403, in _find_test_path
+    module = self._get_module_from_name(name)
+  File "/opt/homebrew/Cellar/<email>/3.13.16/Frameworks/Python.framework/Versions/3.13/lib/python3.13/unittest/loader.py", line 346, in _get_module_from_name
+    __import__(name)
+    ~~~~~~~~~~^^^^^^
+  File "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.claude/worktrees/opus-haiku-translation-review-4a3b7c/tests/test_cloud_run_jobs.py", line 5, in <module>
+    from backend import cloud_run_jobs
+  File "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.claude/worktrees/opus-haiku-translation-review-4a3b7c/backend/cloud_run_jobs.py", line 8, in <module>
+    from tongxing_api import cloud_run_jobs as _implementation
+ModuleNotFoundError: No module named 'tongxing_api'
+
+
+----------------------------------------------------------------------
+Ran 603 tests in 1167.987s
+
+FAILED (errors=1, skipped=2)
+
+ 290.82s     2  test_run_machine_qc_audio_test
+ 177.92s     1  test_sermon_mock_tts_dag
+ 155.13s     6  test_machine_quality_waiver
+  26.98s     6  test_sermon_cuv_translation
+  25.03s     2  test_canonical_layer2_cache_recovery
+  23.27s     5  test_sermon_delivery_intent_binding
+  22.25s     2  test_canonical_layer2_reconciliation
+  19.66s     3  test_sermon_diagnostic_preview_worker
+  18.78s     2  test_sermon_diagnostic_dag_session
+  16.88s     2  test_sermon_fresh_source_evidence
+exit 1

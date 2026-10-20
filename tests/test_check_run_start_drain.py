@@ -5,7 +5,8 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-from scripts import api_cli_outcomes, check_run_start as subject
+from scripts import check_run_start as subject
+from tongxing_production.compute import outcomes as api_cli_outcomes
 from scripts import tongxing_host  # noqa: F401  binds the layer backends the port test reads
 from tongxing_production import ports
 from tongxing_production.source import backend as source

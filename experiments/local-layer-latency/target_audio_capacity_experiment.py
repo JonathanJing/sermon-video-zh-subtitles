@@ -3,13 +3,14 @@ from __future__ import annotations
 import json
 import math
 from pathlib import Path
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
 try:
-    from scripts import sermon_sentence_interpretation as identity
+    from tongxing_production.source import sentence_interpretation as identity
 except ImportError:  # Direct execution of this file: add the repository root.
     import sys
 
     sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
-    from scripts import sermon_sentence_interpretation as identity
+    from tongxing_production.source import sentence_interpretation as identity
 
 
 def plan(*, speech_job_sha256, sound_identity_sha256, unit_indices, max_generated_units,
@@ -42,12 +43,8 @@ def plan(*, speech_job_sha256, sound_identity_sha256, unit_indices, max_generate
 
 
 def _quality_evidence(row, experiment):
-    try:
-        from scripts import review_target_language_audio as review
-        from scripts import validate_target_language_audio_unit as integrity
-    except ImportError:
-        import review_target_language_audio as review
-        import validate_target_language_audio_unit as integrity
+    from tongxing_production.audio import human_review as review
+    from tongxing_production.audio import unit_integrity as integrity
     if not {'speechJobPath', 'audioPackagePath', 'humanReviewReceiptPath'} <= row.keys():
         raise ValueError('Capacity comparison requires bound job, package, and human receipt files')
     job_path = Path(row['speechJobPath'])

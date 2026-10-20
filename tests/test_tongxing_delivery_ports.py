@@ -11,14 +11,14 @@ import unittest
 from unittest.mock import patch
 
 from scripts import tongxing_host as host
-from scripts import build_full_video_app_release as builder
-from scripts import guarded_hosting_publish as publisher
-from scripts import machine_audio_waiver_acceptance as audio_waivers
-from scripts import machine_quality_release_basis as machine_basis
-from scripts import sermon_app_delivery_workflow as app_workflow
-from scripts import sermon_unified_delivery as unified_delivery
-from scripts import sermon_unified_reviews as reviews
-from scripts import stage_formal_multilingual_dev as formal_stage
+from tongxing_production.delivery import app_release as builder
+from tongxing_production.delivery import publication as publisher
+from tongxing_production.review import audio_waiver_acceptance as audio_waivers
+from tongxing_production.review import release_basis as machine_basis
+from tongxing_production.delivery import app_workflow
+from tongxing_production.delivery import unified_stage as unified_delivery
+from tongxing_production.review import unified_reviews as reviews
+from tongxing_production.delivery import formal_stage
 from tongxing_production import ports
 from tongxing_production.delivery import backend as delivery
 from tongxing_production.storage import hosting as hosting_adapter
@@ -27,7 +27,7 @@ from tongxing_production.text import backend as text
 
 
 def app_workflow_module():
-    return sys.modules['scripts.sermon_app_delivery_workflow']
+    return sys.modules['tongxing_production.delivery.app_workflow']
 
 
 class DeliveryPortsTests(unittest.TestCase):
@@ -52,10 +52,10 @@ class DeliveryPortsTests(unittest.TestCase):
         import inspect
         parameters = list(inspect.signature(app_workflow._worker_command).parameters)
         recorded = app_workflow._worker_command(*[config if name == 'config' else 'b' * 64 for name in parameters])
-        self.assertEqual(delivery.current().worker_command(*recorded[2:]), recorded)
+        self.assertEqual(delivery.current().worker_command(*recorded[3:]), recorded)
         self.assertEqual(recorded[0], sys.executable)
-        # D4: the workflow moved into the package; recorded requests still name the scripts/ entry point.
-        self.assertEqual(recorded[1], str(host.ROOT / 'scripts/sermon_app_delivery_workflow.py'))
+        # The D closure window removed the scripts/ facade; requests name the package entry.
+        self.assertEqual(recorded[1:3], [str(host.ROOT / 'tools/ops/run.py'), 'delivery.app_workflow'])
 
     def test_app_workflow_identity_hashes_the_moved_files_under_their_legacy_keys(self):
         from tongxing_production import path_aliases
@@ -136,7 +136,7 @@ class DeliveryPortsTests(unittest.TestCase):
 
     def test_google_auth_is_imported_only_by_the_hosting_adapter_when_a_session_opens(self):
         code = ("import sys; from scripts import tongxing_host; "
-                "from scripts import guarded_hosting_publish, prepare_dev_simulated_publication; "
+                "from tongxing_production.delivery import baseline, publication; "
                 "print(sorted(m for m in sys.modules if m == 'google.auth' or m.startswith('google.auth.')))")
         result = subprocess.run([sys.executable, '-c', code], cwd=host.ROOT, capture_output=True, text=True, timeout=60)
         self.assertEqual(result.returncode, 0, result.stderr)
@@ -173,8 +173,8 @@ class DeliveryPortsTests(unittest.TestCase):
                 "loaded = [m for m in ('scripts.build_full_video_app_release', 'tongxing_production.delivery.publication', "
                 "'tongxing_production.delivery.baseline', 'tongxing_production.delivery.app_release', "
                 "'tongxing_production.delivery.formal_stage', 'tongxing_production.delivery.formal_assets', "
-                "'scripts.machine_audio_waiver_acceptance', 'scripts.sermon_unified_delivery', "
-                "'scripts.sermon_app_delivery_workflow', 'tongxing_production.delivery.app_workflow', "
+                "'tongxing_production.review.audio_waiver_acceptance', 'tongxing_production.delivery.unified_stage', "
+                "'tongxing_production.delivery.app_workflow', 'tongxing_production.delivery.app_workflow', "
                 "'tongxing_production.delivery.app_delivery', 'tongxing_production.adapters.legacy.assemble_multilingual_hosting', "
                 "'weekly_release') if m in sys.modules]; print(loaded)")
         result = subprocess.run([sys.executable, '-c', code], cwd=host.ROOT, capture_output=True, text=True, timeout=60)
@@ -195,7 +195,7 @@ class DeliveryPortsTests(unittest.TestCase):
         self.assertIs(legacy.voice_demo(), stage_voice_demo_dev)
 
     def test_legacy_poster_renderer_ships_with_the_package(self):
-        from scripts import build_sermon_poster as poster
+        from tongxing_production.adapters.legacy import build_sermon_poster as poster
         import tomllib
         renderer = poster.renderer_source()
         self.assertEqual(renderer.name, 'render_sermon_poster.swift')

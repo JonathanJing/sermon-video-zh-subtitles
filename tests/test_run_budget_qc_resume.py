@@ -8,7 +8,8 @@ from pathlib import Path
 import unittest
 from unittest.mock import patch
 from scripts import plan_run_budgets as planner, check_run_start as check
-from scripts import run_machine_qc_clip_test as driver
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.review import qc_text_run as driver
 from tests import test_run_start_tools as fixtures
 
 SCHEMA={'type':'object','properties':{'status':{'type':'string'}},'required':['status'],'additionalProperties':False}
@@ -103,7 +104,7 @@ class QcResumePlanTests(unittest.TestCase):
 
     def test_current_implementation_changed_refuses_original_authority_without_writes(self):
         before=self.business_files()
-        with patch('scripts.machine_quality_waiver.implementation_sha256',return_value='f'*64):
+        with patch('tongxing_production.review.waiver.implementation_sha256',return_value='f'*64):
             with self.assertRaisesRegex(ValueError,'context_changed'):
                 self.resume('stale-implementation')
         self.assertFalse((self.f.base/'stale-implementation').exists());self.assertEqual(self.business_files(),before)

@@ -1,0 +1,44 @@
+{
+  "status": "passed",
+  "codePr": 1203,
+  "moved": {
+    "scripts/sermon_decision_accounting.py": "tongxing_production.orchestration.supervisor.decision_accounting",
+    "scripts/sermon_bounded_decision.py": "tongxing_production.orchestration.supervisor.bounded_decision",
+    "scripts/sermon_repair_planning.py": "tongxing_production.orchestration.supervisor.repair_planning",
+    "scripts/sermon_agents_api.py": "tongxing_production.orchestration.supervisor.agents_api",
+    "scripts/live_source_monitor.py": "tongxing_production.workflows.dual_pdf.live_source_monitor"
+  },
+  "facadesKept": 5,
+  "blocked": {
+    "sermon_production_supervisor": "imports backend.leases; no host port, host frozen"
+  },
+  "outOfScope": [
+    "sermon_end_to_end",
+    "sermon_agents_supervisor",
+    "sermon_codex_supervisor",
+    "sermon_deterministic_controller",
+    "sermon_decision_budget",
+    "sermon_gemini_supervisor",
+    "run_sermon_production_supervisor_agent"
+  ],
+  "frozenClosureHits": 0,
+  "pytest": {
+    "files": 106,
+    "chunks": 4,
+    "passed": 1514,
+    "skipped": 1,
+    "failed": 1,
+    "failedPreexisting": 1,
+    "postRebaseFiles": 16,
+    "postRebasePassed": 259
+  },
+  "backendHealthSmoke": "passed",
+  "l2CodeIdentity": {
+    "dev": "fbcda0421c0dbb6d9b30c440d2cba12b3a68177934c68f91a39746cc0d12c2bf",
+    "branch": "ce10b3f88c6279522cdb77dde75e342e6f40777fe767ee555f60201f30003169"
+  },
+  "g1IdentitiesChanged": false,
+  "hostChanged": false,
+  "dockerfileChanged": false,
+  "deployed": false
+}

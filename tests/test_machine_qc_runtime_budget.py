@@ -7,13 +7,14 @@ from unittest.mock import patch
 
 import pytest
 
-from scripts import machine_qc_budget_authorization as auth
-from scripts import run_machine_qc_clip_test as text
-from scripts import run_machine_qc_audio_test as audio
-from scripts import machine_qc_audio_transports as transports
-from scripts import sermon_source_budget as budget
-from scripts import sermon_workflow_jobs as jobs
-from scripts import sermon_transcription_request as transcription
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.review import qc_budget_authorization as auth
+from tongxing_production.review import qc_text_run as text
+from tongxing_production.review import qc_audio_run as audio
+from tongxing_production.compute import qc_audio_transports as transports
+from tongxing_production.source import budget
+from tongxing_production.orchestration import jobs
+from tongxing_production.compute import transcription_request as transcription
 from tests.test_source_budget_settlement import AUTHORITY, BOUNDS
 from tests.test_run_machine_qc_audio_test import OPENAI_ENV
 from tests.auto_qc_fixtures import speech_wav
@@ -99,7 +100,7 @@ def test_scoped_runtime_refuses_other_artifacts_or_default_three_locales(tmp_pat
 
 def test_valid_scoped_runtime_rechecks_files_without_gpu_session(tmp_path, scoped_paths):
     path = authorization(tmp_path, scoped_paths)
-    with patch.dict('os.environ', OPENAI_ENV), patch('scripts.production_spark_admission.require_session', side_effect=AssertionError('GPU')):
+    with patch.dict('os.environ', OPENAI_ENV), patch('tongxing_production.compute.spark_admission.require_session', side_effect=AssertionError('GPU')):
         judge = text.api_judge_for_resolved(path, {'zh-Hans':scoped_paths}, requested_locales=['zh-Hans'])
         assert judge.identity['settings']['qcContext'] == auth.context_from_paths(scoped_paths,'zh-Hans','dev',route=OPENAI_ROUTE,credential_sha256=auth.credential_fingerprint(OPENAI_ENV["OPENAI_API_KEY"]))
         assert judge.ledger.qc_context == judge.identity['settings']['qcContext']
@@ -114,7 +115,7 @@ def test_valid_scoped_runtime_rechecks_files_without_gpu_session(tmp_path, scope
 
 def test_old_v1_approval_keeps_original_minimal_contract(tmp_path):
     path = authorization(tmp_path)
-    with patch.dict('os.environ', OPENAI_ENV), patch('scripts.production_spark_admission.require_session', side_effect=AssertionError('GPU')):
+    with patch.dict('os.environ', OPENAI_ENV), patch('tongxing_production.compute.spark_admission.require_session', side_effect=AssertionError('GPU')):
         judge = text.api_judge_for_resolved(path, {'zh-Hans':{},'ko':{},'es':{}})
         assert judge.ledger.qc_context is None
 
@@ -228,7 +229,7 @@ def test_api_transport_has_one_attempt_and_audio_response_byte_bound(tmp_path):
 def test_scoped_judge_and_secondary_share_one_bound_ledger_and_locale(tmp_path, scoped_paths):
     path=authorization(tmp_path,scoped_paths,global_bounds={'requests':1})
     called=[]
-    with patch.dict('os.environ',OPENAI_ENV), patch('scripts.production_spark_admission.require_session',side_effect=AssertionError('GPU')):
+    with patch.dict('os.environ',OPENAI_ENV), patch('tongxing_production.compute.spark_admission.require_session',side_effect=AssertionError('GPU')):
         judge=text.api_judge_for_resolved(path,{'zh-Hans':scoped_paths},requested_locales=['zh-Hans'])
         judge.ledger.transport=lambda *args: called.append(args) or {'choices':[{'finish_reason':'stop','message':{'content':'{}'}}]}
         assert judge('semantic','fixture','fixture',{'type':'object'})=={}
@@ -243,7 +244,7 @@ def test_scoped_judge_and_secondary_share_one_bound_ledger_and_locale(tmp_path, 
 
 
 def test_current_qc_implementation_change_invalidates_scoped_runtime_approval(tmp_path, scoped_paths):
-    from scripts import machine_quality_waiver as waiver
+    from tongxing_production.review import waiver
     path=authorization(tmp_path,scoped_paths)
     with patch.dict('os.environ',OPENAI_ENV):
         judge=text.api_judge_for_resolved(path,{'zh-Hans':scoped_paths},requested_locales=['zh-Hans'])

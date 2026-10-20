@@ -1,7 +1,8 @@
 """A listener-directed discourse marker may read back as an audience address; added common-knowledge claims stay major."""
 import unittest
 
-from scripts import target_text_auto_qc as text_qc
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.review import text_qc
 
 
 class DiscourseMarkerTests(unittest.TestCase):

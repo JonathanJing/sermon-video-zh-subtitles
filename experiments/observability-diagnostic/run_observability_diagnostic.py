@@ -14,7 +14,8 @@ import sys
 import time
 if __package__ in {None, ''}:
     sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
-from scripts import sermon_accounting as accounting
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.observability import accounting
 
 ASR_CHECKPOINT_SHA256 = "862bbc832b05f3f4ec19dd632b701d61a6d3f5c7906360a10d72a79870642a80"
 
@@ -35,10 +36,11 @@ def files(root):
 
 
 def cache_replay(inputs, source_media, out, forbidden):
-    from scripts import run_target_language_models as models
-    from scripts import produce_target_language_candidate as producer
-    from scripts import target_language_policy as policies
+    from tongxing_production.text import models
+    from tongxing_production.text import candidate as producer
+    from tongxing_production.text import policy as policies
     from scripts.sermon_workflow_evidence import collect_workflow_evidence
+    from scripts import tongxing_host  # noqa: F401  binds the production package ports
     report = {'scope': 'new_deterministic_replay_of_historical_paid_results_not_new_inference', 'locales': []}
     with accounting.accounting_session(out/'accounting', 'real_clip_trilingual_cached_replay', {'mode':'dry_run'}):
         with accounting.stage('diagnostic.real_source_decode', depends_on=[], executor_type='deterministic_program') as decode:
@@ -101,10 +103,11 @@ def local_asr(source, model, window, out):
 
 
 def audio_validation(inputs, out):
-    from scripts import inspect_canonical_audio as audio
+    from scripts import tongxing_host  # noqa: F401  binds the production package ports
+    from tongxing_production.audio import inspect as audio
     from scripts import inspect_canonical_packages as packages
-    from scripts import build_target_language_audio_package as builder
-    from scripts.sermon_workflow_evidence import collect_workflow_evidence
+    from tongxing_production.audio import package as builder
+    from tongxing_production.observability.workflow_evidence import collect_workflow_evidence
     report={'scope':'new_read_only_validation_of_historical_audio_and_reviews_not_new_tts_or_human_signoff','locales':[]}
     previous=[]
     with accounting.accounting_session(out/'accounting','real_historical_audio_revalidation',{'mode':'dry_run'}):

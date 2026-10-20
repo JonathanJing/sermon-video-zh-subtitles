@@ -187,7 +187,7 @@ def build_commands(args: argparse.Namespace, paths: dict[str, Path]) -> dict[str
     return {
         "cloudRunConfig": [
             sys.executable,
-            "scripts/validate_cloud_run_realtime_config.py",
+            "tools/ops/validate_cloud_run_realtime_config.py",
             "--service",
             args.service,
             "--project",
@@ -199,7 +199,7 @@ def build_commands(args: argparse.Namespace, paths: dict[str, Path]) -> dict[str
         ],
         "cloudRunUpdatePlan": [
             sys.executable,
-            "scripts/prepare_cloud_run_realtime_update_plan.py",
+            "tools/ops/prepare_cloud_run_realtime_update_plan.py",
             "--config-report",
             str(paths["cloudRunConfig"]),
             "--service",
@@ -215,7 +215,7 @@ def build_commands(args: argparse.Namespace, paths: dict[str, Path]) -> dict[str
         ],
         "cloudRunUpdateDryRun": [
             sys.executable,
-            "scripts/apply_cloud_run_realtime_update_plan.py",
+            "tools/ops/apply_cloud_run_realtime_update_plan.py",
             "--plan",
             str(paths["cloudRunUpdatePlan"]),
             "--out",
@@ -223,7 +223,7 @@ def build_commands(args: argparse.Namespace, paths: dict[str, Path]) -> dict[str
         ],
         "cloudRunApiPreflight": [
             sys.executable,
-            "scripts/run_cloud_run_realtime_preflight.py",
+            "tools/ops/run_cloud_run_realtime_preflight.py",
             "--base-url",
             args.base_url,
             "--cloud-run-config-report",
@@ -236,7 +236,7 @@ def build_commands(args: argparse.Namespace, paths: dict[str, Path]) -> dict[str
         ],
         "deployedWebrtcSession": [
             sys.executable,
-            "scripts/run_deployed_webrtc_session_smoke.py",
+            "tools/ops/run_deployed_webrtc_session_smoke.py",
             "--base-url",
             args.base_url,
             "--sunday",
@@ -248,7 +248,7 @@ def build_commands(args: argparse.Namespace, paths: dict[str, Path]) -> dict[str
         ],
         "requiredModelAccess": [
             sys.executable,
-            "scripts/run_openai_model_access_preflight.py",
+            "tools/ops/run_openai_model_access_preflight.py",
             "--cloud-run-service",
             args.service,
             "--project",
@@ -262,7 +262,7 @@ def build_commands(args: argparse.Namespace, paths: dict[str, Path]) -> dict[str
         ],
         "alternativeModelAccess": [
             sys.executable,
-            "scripts/run_openai_model_access_preflight.py",
+            "tools/ops/run_openai_model_access_preflight.py",
             "--cloud-run-service",
             args.service,
             "--project",
@@ -276,7 +276,7 @@ def build_commands(args: argparse.Namespace, paths: dict[str, Path]) -> dict[str
         ],
         "modelAccessRecoveryPlan": [
             sys.executable,
-            "scripts/write_model_access_recovery_plan.py",
+            "tools/ops/write_model_access_recovery_plan.py",
             "--sunday",
             args.sunday,
             "--required-model",
@@ -292,25 +292,25 @@ def build_commands(args: argparse.Namespace, paths: dict[str, Path]) -> dict[str
         ],
         "serverRealtimeContract": [
             sys.executable,
-            "scripts/validate_server_realtime_contract.py",
+            "tools/ops/validate_server_realtime_contract.py",
             "--out",
             str(paths["serverRealtimeContract"]),
         ],
         "webRealtimeContract": [
             sys.executable,
-            "scripts/validate_web_realtime_contract.py",
+            "tools/ops/validate_web_realtime_contract.py",
             "--out",
             str(paths["webRealtimeContract"]),
         ],
         "stableCorrectionContract": [
             sys.executable,
-            "scripts/validate_stable_correction_contract.py",
+            "tools/ops/validate_stable_correction_contract.py",
             "--out",
             str(paths["stableCorrectionContract"]),
         ],
         "live1130RunPlan": [
             sys.executable,
-            "scripts/write_1130_live_realtime_run_plan.py",
+            "tools/ops/write_1130_live_realtime_run_plan.py",
             "--sunday",
             args.sunday,
             "--base-url",
@@ -320,19 +320,19 @@ def build_commands(args: argparse.Namespace, paths: dict[str, Path]) -> dict[str
         ],
         "offlineWorkerPlan": [
             sys.executable,
-            "scripts/write_worker_caption_first_plan.py",
+            "tools/ops/write_worker_caption_first_plan.py",
             "--out",
             str(paths["offlineWorkerPlan"]),
         ],
         "publicCaptionViewRuntime": [
             sys.executable,
-            "scripts/validate_public_caption_view_runtime.py",
+            "tools/ops/validate_public_caption_view_runtime.py",
             "--out",
             str(paths["publicCaptionViewRuntime"]),
         ],
         "noCaptionAsrPlan": [
             sys.executable,
-            "scripts/write_no_caption_asr_fallback_plan.py",
+            "tools/ops/write_no_caption_asr_fallback_plan.py",
             "--sunday",
             args.sunday,
             "--out",
@@ -340,7 +340,7 @@ def build_commands(args: argparse.Namespace, paths: dict[str, Path]) -> dict[str
         ],
         "offlineAsrSampleChain": [
             sys.executable,
-            "scripts/build_no_caption_asr_sample_chain.py",
+            "tools/ops/build_no_caption_asr_sample_chain.py",
             "--asr-smoke-report",
             str(paths["offlineAsrSmoke"]),
             "--sunday",
@@ -354,7 +354,7 @@ def build_commands(args: argparse.Namespace, paths: dict[str, Path]) -> dict[str
         ],
         "localSundayManifestEvidence": [
             sys.executable,
-            "scripts/build_local_sunday_manifest_evidence.py",
+            "tools/ops/build_local_sunday_manifest_evidence.py",
             "--sunday",
             args.sunday,
             "--source-run-root",
@@ -368,7 +368,7 @@ def build_commands(args: argparse.Namespace, paths: dict[str, Path]) -> dict[str
         ],
         "gcsManifestPublishPlan": [
             sys.executable,
-            "scripts/plan_gcs_sunday_manifest_publish.py",
+            "tools/ops/plan_gcs_sunday_manifest_publish.py",
             "--sunday",
             args.sunday,
             "--local-root",
@@ -394,7 +394,7 @@ def build_commands(args: argparse.Namespace, paths: dict[str, Path]) -> dict[str
 def production_matrix_command(paths: dict[str, Path]) -> list[str]:
     return [
         sys.executable,
-        "scripts/collect_production_evidence_matrix.py",
+        "tools/ops/collect_production_evidence_matrix.py",
         "--cloud-run-config-report",
         str(paths["cloudRunConfig"]),
         "--cloud-run-api-preflight-report",
@@ -459,7 +459,7 @@ def production_matrix_command(paths: dict[str, Path]) -> list[str]:
 def goal_audit_command(paths: dict[str, Path]) -> list[str]:
     return [
         sys.executable,
-        "scripts/audit_production_goal_readiness.py",
+        "tools/ops/audit_production_goal_readiness.py",
         "--cloud-run-config-report",
         str(paths["cloudRunConfig"]),
         "--cloud-run-api-preflight-report",
@@ -476,7 +476,7 @@ def goal_audit_command(paths: dict[str, Path]) -> list[str]:
 def production_unblock_plan_command(paths: dict[str, Path]) -> list[str]:
     return [
         sys.executable,
-        "scripts/write_production_unblock_plan.py",
+        "tools/ops/write_production_unblock_plan.py",
         "--evidence-matrix",
         str(paths["productionMatrix"]),
         "--gcs-manifest-publish-plan",
@@ -491,7 +491,7 @@ def production_unblock_plan_command(paths: dict[str, Path]) -> list[str]:
 def operator_approval_bundle_command(args: argparse.Namespace, paths: dict[str, Path]) -> list[str]:
     return [
         sys.executable,
-        "scripts/write_operator_approval_bundle.py",
+        "tools/ops/write_operator_approval_bundle.py",
         "--sunday",
         args.sunday,
         "--unblock-plan",
@@ -512,7 +512,7 @@ def operator_approval_bundle_command(args: argparse.Namespace, paths: dict[str, 
 def production_go_live_sequence_command(args: argparse.Namespace, paths: dict[str, Path]) -> list[str]:
     return [
         sys.executable,
-        "scripts/write_production_go_live_sequence.py",
+        "tools/ops/write_production_go_live_sequence.py",
         "--sunday",
         args.sunday,
         "--preflight-refresh",
@@ -537,7 +537,7 @@ def production_go_live_sequence_command(args: argparse.Namespace, paths: dict[st
 def realtime_handoff_validation_command(paths: dict[str, Path]) -> list[str]:
     return [
         sys.executable,
-        "scripts/validate_realtime_handoff.py",
+        "tools/ops/validate_realtime_handoff.py",
         "--live-plan",
         str(paths["live1130RunPlan"]),
         "--operator-bundle",

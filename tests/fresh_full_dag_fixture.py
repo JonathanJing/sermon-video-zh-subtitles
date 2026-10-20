@@ -16,15 +16,16 @@ from pathlib import Path
 import time
 
 from scripts import sermon_fresh_full_dag as dag
-from scripts import sermon_accounting as accounting
+from tongxing_production.observability import accounting
 from scripts import sermon_bounded_business_callbacks as offline
 from scripts import sermon_fresh_diagnostic as fresh
 from scripts import sermon_fresh_source_prefect as source_engine
-from scripts import sermon_log_contract as logs
+from tongxing_production.observability import log_contract as logs
 from scripts import sermon_mock_tts_control as control
-from scripts import sermon_review_budget as budget
-from scripts import sermon_review_contracts as c
-from scripts import sermon_workflow_jobs as jobs
+from tongxing_production.review import review_budget as budget
+from tongxing_production.review import contracts as c
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.orchestration import jobs
 from scripts import weekly_pipeline_report as weekly
 from tests.test_sermon_fresh_source_prefect import SourceEngineFixture
 from tests.diagnostic_dag_fixture import DiagnosticDAGFixture

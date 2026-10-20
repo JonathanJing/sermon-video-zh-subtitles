@@ -1,0 +1,253 @@
+Estimating 213 unprofiled modules from measured per-case cost
+Shard 8/10: 615 tests from 373 modules
+.........................................................................................{"group": "group-0001", "solSeconds": 2.0, "opusSeconds": 1.0}
+{"group": "group-0002", "solSeconds": 2.0, "opusSeconds": 1.0}
+{"freshCalls": {"sol": 2, "opus": 2, "review": 0}, "groups": 2, "targetLocale": "ko"}
+{"group": "group-0001", "solSeconds": 2.0, "opusSeconds": 1.0}
+{"group": "group-0002", "solSeconds": 2.0, "opusSeconds": 1.0}
+{"freshCalls": {"sol": 0, "opus": 0, "review": 0}, "groups": 2, "targetLocale": "ko"}
+........{"role": "translator", "model": "gpt-6.1-sol", "tier": "fast", "elapsedSeconds": 0.0, "usage": {"input_tokens": 100, "cached_input_tokens": 50, "output_tokens": 20}, "creditUsage": {"schemaVersion": "codex-credit-usage-v1", "status": "estimated", "estimatedCredits": 0.01525, "actualCredits": null, "actualQuotaUsage": null, "basis": "purchased_credit_equivalent", "model": "gpt-6.1-sol", "modelSource": "requested", "requestedServiceTier": "fast", "appliedServiceTier": "fast", "tierSource": "requested", "rateCardVersion": "codex-credits-2026-10-05", "rateCardSha256": "557d283646a6dd8ed49cc32a88e8459a165b72066339be99233ea75146c21edf", "verifiedAt": "2026-10-05", "sources": ["https://learn.chatgpt.com/docs/pricing", "https://learn.chatgpt.com/docs/agent-configuration/speed"], "ratesPerMillionTokens": {"input": 50, "cachedInput": 2.5, "output": 250}, "speedMultiplier": 2, "reason": "requested_identity_assumption"}}
+....................................................................................FSERMON_LOGGING_WRITE_FAILED errorType=AccountingWriteError
+.........Digest: /var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/tmpy8r3qo1t/digests/20261007-e2e (4 files, 9 redactions)
+Digest: /var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/tmp6xah6po_/digests/20261007-e2e (4 files, 9 redactions)
+translated zh 1/1
+translated zh 1/1
+translated zh 1/1
+corrected 1/1
+corrected 1/1
+corrected 1/1
+...............................................................$ write /var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/tmpl6kwyhyt/sundays/2026-06-28/cloud-manifest.json
+edited reading blocks 0-0
+proofread reading blocks 0-0
+..................{"stage": "tts", "batchIndex": 0, "completedGroups": 2}
+{"stage": "tts", "batchIndex": 1, "completedGroups": 4}
+{"stage": "tts", "batchIndex": 2, "completedGroups": 6}
+{"stage": "tts", "batchIndex": 3, "completedGroups": 8}
+{"stage": "tts", "batchIndex": 4, "completedGroups": 10}
+{"stage": "tts", "batchIndex": 5, "completedGroups": 12}
+{"stage": "tts", "batchIndex": 6, "completedGroups": 13}
+.{"stage": "tts", "batchIndex": 0, "completedGroups": 2}
+{"stage": "tts", "batchIndex": 1, "completedGroups": 4}
+............{
+  "apiKeyMaterialIncluded": false,
+  "baseUrl": "https://example.run.app",
+  "checks": [
+    {
+      "name": "create_webrtc_realtime_session",
+      "observed": {
+        "audioSourceKind": "ipad_mic",
+        "clientSecretExpiresAtReturned": true,
+        "clientSecretReturned": true,
+... 263 lines omitted; 11 error-like lines, 11 kept below ...
+[line 41]         "error": null,
+[line 85]   "failedChecks": [],
+[line 91]     "error": null,
+[line 135]     "reason": "text QC failed; repair the failed groups in a new candidate revision",
+[line 144]     "reason": "failed groups are unchanged; repair them in a new candidate revision",
+[line 153]     "reason": "failed groups are unchanged; repair them in a new candidate revision",
+[line 162]     "reason": "text QC failed; repair the failed groups in a new candidate revision",
+[line 193] run_unittest_ci.py: error: --backend fake never writes to a persistent state dir
+[line 202]   "failedGroupIds": []
+[line 216]     "failed": 3,
+[line 298]       "error": "The requested model 'gpt-5.4-mini' does not exist.",
+... end of omitted section ...
+      "requiresApproval": false,
+      "sourceRows": [
+        "stable_correction",
+        "offline_caption_route"
+      ],
+      "state": "external_dependency"
+    },
+    {
+      "commands": [
+        [
+          "python3",
+          "scripts/run_cloud_run_realtime_preflight.py",
+          "--base-url",
+          "https://sermon-zh-caption-web-wu7uk5rgdq-uw.a.run.app",
+          "--cloud-run-config-report",
+          "artifacts/evidence/cloud-run-realtime-config.json",
+          "--create-realtime-session",
+          "--internal-task-token",
+          "$INTERNAL_TASK_TOKEN",
+          "--out",
+          "artifacts/evidence/cloud-run-api-preflight.json"
+        ]
+      ],
+      "dependency": "prior_step",
+      "expectedChecks": [
+        "realtime_local_session_create",
+        "realtime_local_session_metadata",
+        "no_secret_material_in_http_responses"
+      ],
+      "id": "rerun_cloud_run_api_preflight",
+      "reason": "Rerun preflight with --create-realtime-session.",
+      "requiresApproval": false,
+      "sourceRow": "cloud_run_api_preflight",
+      "state": "pending"
+    },
+    {
+      "commands": [
+        [
+          "python3",
+          "scripts/run_realtime_public_sse_smoke.py",
+          "--base-url",
+          "https://sermon-zh-caption-web-wu7uk5rgdq-uw.a.run.app",
+          "--sunday",
+          "2026-06-28",
+          "--internal-task-token",
+          "$INTERNAL_TASK_TOKEN",
+          "--realtime-event-gcs-prefix",
+          "gs://sermon-zh-artifacts-ai-for-god/realtime-events",
+          "--web-realtime-contract-report",
+          "artifacts/evidence/web-realtime-contract.json",
+          "--session-validation-out",
+          "artifacts/evidence/realtime-public-sse-smoke.session-validation.json",
+          "--out",
+          "artifacts/evidence/realtime-public-sse-smoke.json"
+        ]
+      ],
+      "dependency": "prior_step",
+      "expectedChecks": [
+        "create_local_session_metadata",
+        "sse_session_metadata",
+        "browser_normalized_event_payloads",
+        "sse_stable_correction_matches_draft_segment",
+        "session_jsonl_validation"
+      ],
+      "id": "rerun_deployed_public_sse_smoke",
+      "reason": "Rerun realtime public SSE smoke against Cloud Run.",
+      "requiresApproval": false,
+      "sourceRow": "realtime_public_sse_contract",
+      "state": "pending"
+    },
+    {
+      "commands": [
+        [
+          "python3",
+          "scripts/run_realtime_live_session.py",
+          "--audio-url",
+          "<AUTHORIZED_AUDIO_URL>",
+          "--api-key-secret",
+          "<OPENAI_API_KEY_SECRET_RESOURCE>",
+          "--backend-url",
+          "https://sermon-zh-caption-web-wu7uk5rgdq-uw.a.run.app",
+          "--sunday",
+          "2026-06-28",
+          "--internal-task-token",
+          "$INTERNAL_TASK_TOKEN",
+          "--target-language",
+          "zh",
+          "--realtime-model",
+          "gpt-realtime-translate",
+          "--stable-model",
+          "gpt-5.4-mini",
+          "--realtime-event-gcs-prefix",
+          "gs://sermon-zh-artifacts-ai-for-god/realtime-events",
+          "--require-stable-correction",
+          "--out",
+          "artifacts/evidence/realtime-live-session/report.json",
+          "--worker-report-out",
+          "artifacts/evidence/realtime-live-session/worker-report.json",
+          "--stable-out-dir",
+          "artifacts/evidence/realtime-live-session/stable-corrections"
+        ],
+        [
+          "python3",
+          "scripts/validate_realtime_session.py",
+          "--events-jsonl",
+          "gs://sermon-zh-artifacts-ai-for-god/realtime-events/2026-06-28/<REALTIME_SESSION_ID>.jsonl",
+          "--expected-model",
+          "gpt-realtime-translate",
+          "--expected-stable-model",
+          "gpt-5.4-mini",
+          "--require-stable-correction",
+          "--out",
+          "artifacts/evidence/realtime-live-session/session-validation.json"
+        ]
+      ],
+      "defaultPath": "browser WebRTC iPad/iPhone mic -> gpt-realtime-translate -> backend session events -> public caption SSE",
+      "dependency": "post_approval_validation",
+      "expectedChecks": [
+        "realtime_model",
+        "caption_events",
+        "input_transcript_events",
+        "stable_correction",
+        "stable_correction_matches_realtime_draft_segment",
+        "stable_correction_context"
+      ],
+      "fallbackPath": "server media worker authorized audio -> gpt-realtime-translate -> backend session events -> public caption SSE",
+      "id": "run_real_realtime_field_session",
+      "reason": "Realtime OpenAI smoke passed on synthetic audio only.",
+      "requiresApproval": false,
+      "sourceRow": "realtime_live",
+      "state": "pending"
+    },
+    {
+      "dependency": "model_access",
+      "id": "rerun_offline_caption_route_after_model_access",
+      "reason": "Fix offline translation model/access issue.",
+      "requiresApproval": false,
+      "sourceRow": "offline_caption_route",
+      "state": "pending"
+    },
+    {
+      "dependency": "model_access",
+      "id": "rerun_stable_correction_after_model_access",
+      "reason": "Fix gpt-5.4-mini model access.",
+      "requiresApproval": false,
+      "sourceRow": "stable_correction",
+      "state": "pending"
+    },
+    {
+      "dependency": "real_source",
+      "expectedChecks": [
+        "asr_is_caption_fallback",
+        "asr_no_requested_caption_tracks",
+        "asr_audio_source_artifact",
+        "asr_model",
+        "offline_translation_model",
+        "not_realtime_chain",
+        "zh_vtt_timeline_alignment",
+        "zh_srt_timeline_alignment"
+      ],
+      "id": "run_real_no_caption_archive_asr_route",
+      "planReport": "artifacts/evidence/no-caption-asr-fallback-plan.json",
+      "reason": "Run a real no-caption YouTube archive.",
+      "requiresApproval": false,
+      "sourceRow": "offline_asr_route",
+      "state": "pending"
+    }
+  ]
+}....
+======================================================================
+FAIL: test_129_group_actual_producer_can_assemble_and_resume_without_calls (test_layer2_large_fan_in.LargeLayer2FanInTests.test_129_group_actual_producer_can_assemble_and_resume_without_calls)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.claude/worktrees/opus-haiku-translation-review-4a3b7c/tests/test_layer2_large_fan_in.py", line 110, in test_129_group_actual_producer_can_assemble_and_resume_without_calls
+    self.assert_dag(out/'accounting',129)
+    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^
+  File "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.claude/worktrees/opus-haiku-translation-review-4a3b7c/tests/test_layer2_large_fan_in.py", line 70, in assert_dag
+    for run in runs:self.assertEqual(run['status'],'projected',run['diagnostics'])
+                    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'partial' != 'projected'
+- partial
++ projected
+ : ['utc_clock_discontinuity_local_duration_preserved', 'utc_clock_discontinuity_between_spans', 'run_utc_wall_untrusted']
+
+----------------------------------------------------------------------
+Ran 615 tests in 1006.683s
+
+FAILED (failures=1, skipped=4)
+
+ 123.53s     7  test_machine_quality_waiver
+  75.41s     2  test_spark_tts_production
+  47.89s     3  test_sermon_historical_layer2
+  47.54s     1  test_run_machine_qc_audio_test
+  31.83s     6  test_sermon_delivery_intent_binding
+  31.41s     3  test_sermon_fresh_source_evidence
+  30.89s     6  test_sermon_cuv_translation
+  27.68s     3  test_sermon_local_business_callbacks
+  22.12s     2  test_canonical_layer2_reconciliation
+  22.03s     2  test_sermon_mock_tts_control
+exit 1

@@ -1,7 +1,7 @@
 import unittest
 from pathlib import Path
 
-from scripts import produce_target_language_candidate as producer
+from tongxing_production.text import candidate as producer
 from scripts.language_review_plugins import es_weekly_reference, ko_weekly_reference
 
 

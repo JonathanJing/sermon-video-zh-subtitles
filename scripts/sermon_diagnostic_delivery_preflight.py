@@ -9,15 +9,16 @@ import os
 from pathlib import Path
 import stat
 
-from scripts import render_speculative_target_language_speech as preview
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.audio import speculative as preview
 from scripts import sermon_diagnostic_context as diagnostic
 from scripts import sermon_diagnostic_provider as provider
 from scripts import sermon_diagnostic_preview_worker as worker
 from scripts import sermon_diagnostic_source_evidence as source_evidence
 from scripts import sermon_fresh_source_evidence as fresh_source
-from scripts import sermon_public_snapshot as public
-from scripts import sermon_review_budget as budget
-from scripts import sermon_review_contracts as c
+from tongxing_production.storage import snapshot as public
+from tongxing_production.review import review_budget as budget
+from tongxing_production.review import contracts as c
 from scripts.sermon_release_workflow import _safe_path
 
 SCHEMA = 'sermon-diagnostic-delivery-preflight-v1'

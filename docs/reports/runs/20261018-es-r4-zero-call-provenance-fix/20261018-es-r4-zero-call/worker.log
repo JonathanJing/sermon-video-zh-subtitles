@@ -1,0 +1,72 @@
+Traceback (most recent call last):
+  File "~/.codex/worktrees/layer2-local-ko-es-successor/sermon-video-zh-subtitles/scripts/canonical_layer2_controller.py", line 18, in <module>
+    raise SystemExit(_implementation.main())
+                     ~~~~~~~~~~~~~~~~~~~~^^
+  File "~/.codex/worktrees/layer2-local-ko-es-successor/sermon-video-zh-subtitles/packages/production/src/tongxing_production/text/controller.py", line 1189, in main
+    result = execute(args.config, args.locale, args.expected_configuration, args.expected_code, args.expected_job,
+                     budget_authorization=<redacted>, expected_budget=args.expected_budget,
+                     expected_payload_cache=args.expected_payload_cache,
+                     expected_partial_recovery=args.expected_partial_recovery)
+  File "~/.codex/worktrees/layer2-local-ko-es-successor/sermon-video-zh-subtitles/packages/production/src/tongxing_production/text/controller.py", line 894, in execute
+    evidence, model_output = _run_auto_repair(
+                             ~~~~~~~~~~~~~~~~^
+        config, lane, source, anchor, policy, api_key, bound_call, progress.progress,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        admission_span, model_completion,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        qc_digest=current['packageIdentities'].get('backTranslationQc.' + locale))
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "~/.codex/worktrees/layer2-local-ko-es-successor/sermon-video-zh-subtitles/packages/production/src/tongxing_production/text/controller.py", line 1007, in _run_auto_repair
+    receipt = auto_repair.drive(request, total_groups, run_round, rounds_root, repair_ledger_root(config),
+                                group_workers=config.auto_repair['groupWorkers'], meaning_notes=notes,
+                                meaning_notes_sha256=notes_artifact_sha256, back_translation_qc=qc_receipt)
+  File "~/.codex/worktrees/layer2-local-ko-es-successor/sermon-video-zh-subtitles/packages/production/src/tongxing_production/text/auto_repair.py", line 889, in drive
+    evidence = run_round(out, reuse_from, brief, collector)
+  File "~/.codex/worktrees/layer2-local-ko-es-successor/sermon-video-zh-subtitles/packages/production/src/tongxing_production/text/controller.py", line 979, in run_round
+    return models.run_accounted(source, anchor, policy, out, api_key, call, None, lane['plugin'],
+           ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                                None, reuse_from, partial_repair_brief=brief,
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<8 lines>...
+                                emit_payload_cache_success=payload_cache_enabled,
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                                payload_cache_required=payload_cache_required if reuse_from is None else False)
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "~/.codex/worktrees/layer2-local-ko-es-successor/sermon-video-zh-subtitles/packages/production/src/tongxing_production/text/models.py", line 1924, in run_accounted
+    evidence = _run_prepared_groups(
+        request, anchor, policy, out_dir, api_key, call, plan, plugin,
+    ...<5 lines>...
+        progress_callback=progress_callback, completion_spans=completion_spans,
+        failure_collector=failure_collector)
+  File "~/.codex/worktrees/layer2-local-ko-es-successor/sermon-video-zh-subtitles/packages/production/src/tongxing_production/text/models.py", line 1853, in _run_prepared_groups
+    ordered_group_results(list(enumerate(plan, 1)), process_group, workers))
+    ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "~/.codex/worktrees/layer2-local-ko-es-successor/sermon-video-zh-subtitles/packages/production/src/tongxing_production/text/models.py", line 1103, in ordered_group_results
+    return [worker(item) for item in items]
+            ~~~~~~^^^^^^
+  File "~/.codex/worktrees/layer2-local-ko-es-successor/sermon-video-zh-subtitles/packages/production/src/tongxing_production/text/models.py", line 1850, in process_group
+    return _process_group(item)
+  File "~/.codex/worktrees/layer2-local-ko-es-successor/sermon-video-zh-subtitles/packages/production/src/tongxing_production/text/models.py", line 1639, in _process_group
+    payload_translator_cache = _returned_payload_cache(
+        partial_recovery_from, stem, "translator",
+        _model_fingerprint(translator_payload, caller, api_key), request, group,
+        caller, api_key, partial_recovery_budget_root)
+  File "~/.codex/worktrees/layer2-local-ko-es-successor/sermon-video-zh-subtitles/packages/production/src/tongxing_production/text/models.py", line 545, in _returned_payload_cache
+    provenance = provenance_reader(api_key, preview_record["payload"], response, budget_root)
+  File "~/.codex/worktrees/layer2-local-ko-es-successor/sermon-video-zh-subtitles/packages/production/src/tongxing_production/text/controller.py", line 887, in guarded
+    result = _operation(*args, **kwargs)
+  File "~/.codex/worktrees/layer2-local-ko-es-successor/sermon-video-zh-subtitles/packages/production/src/tongxing_production/text/budget.py", line 387, in recover_returned_response
+    return self._direct_paid_provenance(
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        root, request, fingerprint, response,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        max_bytes=LOCALE_LEDGER_MAX_BYTES if self.auth.get('scope') == 'locale' else None)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "~/.codex/worktrees/layer2-local-ko-es-successor/sermon-video-zh-subtitles/packages/production/src/tongxing_production/text/budget.py", line 311, in _direct_paid_provenance
+    require(row is not None and row.get('request') == expected_request,
+    ~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            'layer2_reuse_operation_missing')
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "~/.codex/worktrees/layer2-local-ko-es-successor/sermon-video-zh-subtitles/packages/production/src/tongxing_production/text/budget.py", line 90, in require
+    raise ValueError(code)
+ValueError: layer2_reuse_operation_missing

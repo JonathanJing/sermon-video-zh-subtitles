@@ -1,0 +1,48 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261018-g1-spark-audio-preflight",
+  "runs": [
+    {
+      "label": "g1-spark-audio-preflight",
+      "source": "/private/tmp/g1-baseline-20261017/artifacts/local-runs/g1-spark-audio-preflight",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "g1-spark-audio-preflight",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 154,
+      "truncated": false,
+      "sha256": "7a3963ad81bb2709245269c00a29554e2870fb83bfd8177f4129be1c34257946",
+      "redactions": {}
+    },
+    {
+      "run": "g1-spark-audio-preflight",
+      "path": "preflight.json",
+      "kind": "whole",
+      "bytes": 1669,
+      "truncated": false,
+      "sha256": "636e6d660c89386bac90e347cdea679db7317244c08b512061e34fb6b495b3a1",
+      "redactions": {
+        "home_dir": 3,
+        "email": 1
+      }
+    },
+    {
+      "run": "g1-spark-audio-preflight",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 385,
+      "truncated": false,
+      "sha256": "5f0dafb48669b6192b180ffed8ad7313a54164e2674a379f2639f0dce153c85a",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

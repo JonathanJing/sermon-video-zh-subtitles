@@ -1,0 +1,13 @@
+{
+  "schemaVersion": "sermon-test-run-outcome-v1",
+  "status": "passed",
+  "deliveryType": "test",
+  "commit": "c7a1cf3ddc3b2d9fab4bd1a13283c4364fff751b",
+  "baseCommit": "7e29289df58cc8f3ef44eab65f8efbdd9a1c624a",
+  "testScope": "Layer 2 current-ledger paid provenance concurrency regression plus focused budget, payload-cache, controller, auto-repair, runtime authorization, sharding and concurrency suites",
+  "testsPassed": 99,
+  "subtestsPassed": 38,
+  "realProviderCalls": 0,
+  "productionRunModified": false,
+  "pullRequest": "https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/1005"
+}

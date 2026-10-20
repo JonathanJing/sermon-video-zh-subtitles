@@ -1,7 +1,9 @@
 import copy
 import json
 import pytest
-from scripts import sermon_unified_canonical_binding as adapter
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from scripts import sermon_unified  # noqa: F401  binds the orchestration these stages compose
+from tongxing_production.workflows.prepared import canonical_binding as adapter
 from scripts.sermon_unified import contracts as c
 
 

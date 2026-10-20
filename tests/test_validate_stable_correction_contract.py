@@ -7,7 +7,7 @@ import unittest
 from pathlib import Path
 
 
-SCRIPT_PATH = Path(__file__).resolve().parents[1] / "scripts" / "validate_stable_correction_contract.py"
+SCRIPT_PATH = Path(__file__).resolve().parents[1] / "tools" / "ops" / "validate_stable_correction_contract.py"
 SPEC = importlib.util.spec_from_file_location("validate_stable_correction_contract", SCRIPT_PATH)
 mod = importlib.util.module_from_spec(SPEC)
 assert SPEC.loader is not None

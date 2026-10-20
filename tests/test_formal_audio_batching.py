@@ -7,8 +7,9 @@ from types import SimpleNamespace
 import unittest
 from unittest.mock import MagicMock, patch
 
-from scripts import render_formal_target_language_speech as tts
-from scripts import screen_target_language_audio_units as asr
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.audio import renderer as tts
+from tongxing_production.audio import screening as asr
 from tests import test_render_formal_target_language_speech as render_fixtures
 from tests import test_screen_target_language_audio_units as screen_fixtures
 

@@ -7,10 +7,10 @@
 先用缓存生成新的隔离页面。省略 `--run-id` 时自动生成时间戳和随机后缀；同一输出目录不能覆盖。显式 `--page-id` 只用于有意选择页面身份，发布预检仍拒绝与已有页面重名。
 
 ```bash
-.venv/bin/python scripts/build_dev_180s_simulated_inputs.py \
+.venv/bin/python tools/development/build_dev_180s_simulated_inputs.py \
   --run-id <unique-run-id> --out artifacts/dev-180s-page-test-20261004/<unique-run-id>/inputs
 
-.venv/bin/python scripts/prepare_dev_simulated_publication.py baseline \
+.venv/bin/python tools/ops/prepare_dev_simulated_publication.py baseline \
   --out artifacts/dev-180s-page-test-20261004/<unique-run-id>/baseline \
   --cache-public <verified-cache-public> --cache-receipt <verified-baseline-receipt>
 

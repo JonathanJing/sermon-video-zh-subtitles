@@ -1,0 +1,13 @@
+before=    5935 (dev@377e2b4e) after=    5935
+4560c4560
+< test_sermon_review_diagnostics.ReviewDiagnosticsTests.test_legacy_import_and_identity_key_resolve_to_package_implementation
+---
+> test_sermon_review_diagnostics.ReviewDiagnosticsTests.test_legacy_identity_key_resolves_to_package_implementation
+4581d4580
+< test_sermon_review_gate.GateEvaluationTests.test_legacy_import_names_the_package_module
+4583a4583
+> test_sermon_review_gate.GateEvaluationTests.test_package_module_uses_the_shared_contracts
+5562c5562
+< test_tongxing_production_package.ProductionPackageTests.test_layer2_models_facade_alias_and_editable_path_use_this_checkout
+---
+> test_tongxing_production_package.ProductionPackageTests.test_layer2_models_alias_and_editable_path_use_this_checkout
