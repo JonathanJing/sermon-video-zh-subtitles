@@ -1,6 +1,5 @@
 """Explicit local-model identity: no provider tokens, price or quality inference."""
 import re
-from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.observability import accounting
 
 CODE = 'local_model_observation'

@@ -5,13 +5,15 @@
 ## 计划与冻结
 
 ```bash
-.venv/bin/python scripts/sermon.py run plan --manifest /absolute/run.json --json
-.venv/bin/python scripts/sermon.py run submit --manifest /absolute/run.json \
+.venv/bin/python tools/ops/sermon.py run plan --manifest /absolute/run.json --json
+.venv/bin/python tools/ops/sermon.py run submit --manifest /absolute/run.json \
   --plan-hash <plan.planHash> --json
-.venv/bin/python scripts/sermon.py job status --run-id <subject.id> --json
-.venv/bin/python scripts/sermon.py job wait --run-id <subject.id> --timeout 30 --json
-.venv/bin/python scripts/sermon.py run events --run-id <subject.id> --after-event <eventId> --json
+.venv/bin/python tools/ops/sermon.py job status --run-id <subject.id> --json
+.venv/bin/python tools/ops/sermon.py job wait --run-id <subject.id> --timeout 30 --json
+.venv/bin/python tools/ops/sermon.py run events --run-id <subject.id> --after-event <eventId> --json
 ```
+
+入口是 `tools/ops/sermon.py`。旧路径 `scripts/sermon.py` 是兼容门面，参数与输出相同；统一宿主启动的 `worker run` 子进程仍走旧路径。
 
 `plan/status/result/events`不写运行状态、查询不触发对账；`wait`超时只结束等待。JSON 退出码：成功0、等待3、门禁4、执行失败5、未知6、CAS/身份冲突7、基础设施/输入异常8、查无记录9、取消10。`job.status`查询成功可返回0，同时其 JSON `outcome`仍反映实际状态。
 
@@ -50,7 +52,7 @@ Source、音频与交付的配置参见[Source adapter](unified-source-preparati
 模型预算授权绑定配置、代码、请求上限与固定账本根。总额度在派发前保守预留，每次真实调用再次检查硬上限；未知结果不退款、不自动重试。软件的价格上界不表示账单已核销。
 
 ```bash
-.venv/bin/python scripts/sermon.py review ingest --run-id <run-key> \
+.venv/bin/python tools/ops/sermon.py review ingest --run-id <run-key> \
   --job-id <stage-job-id> --receipt /absolute/review.json \
   --expected-revision <stateRevision> --json
 ```
@@ -58,7 +60,7 @@ Source、音频与交付的配置参见[Source adapter](unified-source-preparati
 续跑配方中的证据槽通过同一审核入口导入；此动作只存入证据，不将已有审核 gate 标为批准：
 
 ```bash
-.venv/bin/python scripts/sermon.py review ingest --run-id <run-key> \
+.venv/bin/python tools/ops/sermon.py review ingest --run-id <run-key> \
   --binding <frozen-recipe-slot> --receipt /absolute/evidence.json \
   --expected-revision <stateRevision> --json
 ```
@@ -70,11 +72,11 @@ Source、音频与交付的配置参见[Source adapter](unified-source-preparati
 ## 修订、停止和未知结果
 
 ```bash
-.venv/bin/python scripts/sermon.py worker drain --run-id <run-key> \
+.venv/bin/python tools/ops/sermon.py worker drain --run-id <run-key> \
   --expected-revision <stateRevision> --json
-.venv/bin/python scripts/sermon.py run submit --manifest /absolute/revision-2.json \
+.venv/bin/python tools/ops/sermon.py run submit --manifest /absolute/revision-2.json \
   --plan-hash <new-plan-hash> --expected-revision <drained-stateRevision> --json
-.venv/bin/python scripts/sermon.py job reconcile --run-id <run-key> \
+.venv/bin/python tools/ops/sermon.py job reconcile --run-id <run-key> \
   --job-id <stage-job-id> --expected-revision <stateRevision> --json
 ```
 
@@ -101,7 +103,7 @@ fixture使用真正CLI和脱离聊天的owner，固定100次转移、零API，�
 继续使用现有独立SDK环境；SDK worker通过项目Python调用同一pump和账本。默认不注册统一生产activity。
 
 ```bash
-.venv/bin/python scripts/sermon.py worker transfer --run-id <run-key> \
+.venv/bin/python tools/ops/sermon.py worker transfer --run-id <run-key> \
   --scheduler temporal --expected-revision <drained-stateRevision> --json
 artifacts/temporal/runtime/venv/bin/python -m scripts.sermon_temporal worker \
   --profile production --allow-production-execute --enable-unified

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Unified CLI. Run with .venv/bin/python scripts/sermon.py --help."""
+"""Unified CLI. Run with .venv/bin/python tools/ops/sermon.py --help."""
 from __future__ import annotations
 import argparse
 import json
@@ -11,7 +11,7 @@ import uuid
 sys.dont_write_bytecode=True
 
 if __package__ in (None,''):
-    sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
+    sys.path.insert(0,str(Path(__file__).resolve().parents[2]))
 from scripts.sermon_unified import contracts as c
 from scripts.sermon_unified import runtime as r
 

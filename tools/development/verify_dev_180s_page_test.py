@@ -71,7 +71,7 @@ def verify(source_run, out):
     save(out / 'media-manifest.json', manifest)
     env = {k: v for k, v in os.environ.items() if k not in ('OPENAI_API_KEY', 'GEMINI_API_KEY', 'GOOGLE_API_KEY')}
     def cli(label, *args, accepted=(0,)):
-        result = subprocess.run([sys.executable, str(c.ROOT / 'scripts/sermon.py'), *args,
+        result = subprocess.run([sys.executable, str(c.ROOT / 'tools/ops/sermon.py'), *args,
                                  '--state-root', str(out / 'store'), '--json'],
                                 capture_output=True, text=True, timeout=180, env=env)
         (out / (label + '.stderr.log')).write_text(result.stderr)

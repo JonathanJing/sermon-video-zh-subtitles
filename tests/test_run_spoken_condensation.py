@@ -7,7 +7,7 @@ from unittest.mock import patch
 
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.review import qc_text_run as clip
-from scripts import run_spoken_condensation as driver
+from tools.ops import run_spoken_condensation as driver
 from tongxing_production.compute.transports import codex_cli as codex
 from tongxing_production.review import condensation
 from tests import auto_qc_fixtures as fixtures

@@ -25,7 +25,7 @@
 
 来源 ASR、OpenAI 音频、MFA、Spark Qwen TTS／回转写 ASR、ImageGen 继续使用各自入口。其他文字入口保留其实际接线范围；本次修复不证明所有旧 producer 已消费此策略。
 
-配音精简（`scripts/run_spoken_condensation.py`）沿用 Layer 2 初译的 `gpt-6.1-sol` `high`，与机器质检回译（`tongxing_production.review.qc_text_run`，`gpt-6.1-sol` `medium`）一样经 ChatGPT 登录的本机 Codex CLI（requested tier `fast`）调用，不用 API key；两者各用自己的缓存命名空间，按请求和 transport 身份（CLI 版本、CLI／二进制／适配器哈希）缓存。精简不是 Layer 2 翻译入口：它只产出精简记录和 revision brief，口播候选仍经 Layer 2 链按上表生成。
+配音精简（`tools/ops/run_spoken_condensation.py`）沿用 Layer 2 初译的 `gpt-6.1-sol` `high`，与机器质检回译（`tongxing_production.review.qc_text_run`，`gpt-6.1-sol` `medium`）一样经 ChatGPT 登录的本机 Codex CLI（requested tier `fast`）调用，不用 API key；两者各用自己的缓存命名空间，按请求和 transport 身份（CLI 版本、CLI／二进制／适配器哈希）缓存。精简不是 Layer 2 翻译入口：它只产出精简记录和 revision brief，口播候选仍经 Layer 2 链按上表生成。
 
 ## 执行与证据
 

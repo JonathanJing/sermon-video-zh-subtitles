@@ -40,7 +40,7 @@ tongxing_production.ports.Unbound: tongxing_production.text needs a configured T
 
 ## 3 宿主绑定
 
-宿主仍是 `scripts/tongxing_host.py`。它不是门面，不在 250 个门面之内，而且它自己的字节进了 G1 的 W、计分、语速三个物理闭包，所以改它要开 G1 窗口。分发器只导入它，不改它。`scripts/tracker_projection_host.py` 只配置延迟加载的报表端口，所以总是一起绑定：目前只有两个 tracker 投影门面需要它，多绑定一次没有副作用。统一 CLI 的宿主 `scripts/sermon_unified/__init__.py` 不绑定，因为统一 CLI 的入口 `scripts/sermon.py` 不是门面，继续直接运行。
+宿主仍是 `scripts/tongxing_host.py`。它不是门面，不在 250 个门面之内，而且它自己的字节进了 G1 的 W、计分、语速三个物理闭包，所以改它要开 G1 窗口。分发器只导入它，不改它。`scripts/tracker_projection_host.py` 只配置延迟加载的报表端口，所以总是一起绑定：目前只有两个 tracker 投影门面需要它，多绑定一次没有副作用。统一 CLI 的宿主 `scripts/sermon_unified/__init__.py` 不绑定，因为统一 CLI 的入口 `tools/ops/sermon.py` 直接运行，不经分发器；旧路径 `scripts/sermon.py` 是它的兼容门面（N3）。
 
 ## 4 Layer 2 controller 与 durable worker 不改
 
