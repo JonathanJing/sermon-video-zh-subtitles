@@ -163,6 +163,11 @@ class GroupPipelineTests(unittest.TestCase):
                   "policy": fixture.policy_path, "locale": "ko", "merge": self.root / "l3merge",
                   "records": self.root / "l3records"}
         out = self.root / "l3job"
+        group_pipeline.release_basis(config, fixture.human_review_receipt_path)
+        with self.assertRaisesRegex(ValueError, "text_basis_differs"):
+            group_pipeline.prepare_l3(
+                config, text_basis=self.root / "source.json", adapter=fixture.adapter_path,
+                registry=fixture.registry_path, out=self.root / "l3job-wrong")
         receipt = group_pipeline.prepare_l3(
             config, text_basis=fixture.human_review_receipt_path, adapter=fixture.adapter_path,
             registry=fixture.registry_path, out=out)
@@ -179,6 +184,30 @@ class GroupPipelineTests(unittest.TestCase):
         with self.assertRaises(SystemExit) as caught:
             group_pipeline.main(["plan", "--help"])
         self.assertEqual(caught.exception.code, 0)
+
+    def test_release_basis_binds_the_existing_receipt_to_the_candidate(self):
+        fixture = speech_fixture.TargetLanguageSpeechJobTests(
+            "test_korean_candidate_and_prepared_job_match_published_contracts")
+        fixture.setUp()
+        self.addCleanup(fixture.doCleanups)
+        merge_root = self.root / "rb" / "ko"
+        merge_root.mkdir(parents=True)
+        (merge_root / "candidate.json").write_bytes(fixture.candidate_path.read_bytes())
+        (merge_root / "current.json").write_text(json.dumps({"directory": "."}), encoding="utf-8")
+        config = {"source": fixture.source_package_path, "anchor": fixture.anchor_path,
+                  "policy": fixture.policy_path, "locale": "ko", "merge": self.root / "rb",
+                  "records": self.root / "rbrecords"}
+        record = group_pipeline.release_basis(config, fixture.human_review_receipt_path)
+        self.assertEqual(record["schemaVersion"], group_pipeline.TEXT_RELEASE_SCHEMA)
+        self.assertEqual(record["reviewKind"], "human_review")
+        self.assertFalse(record["humanApproval"])
+        self.assertTrue((merge_root / "text-release.json").is_file())
+        other = json.loads(fixture.human_review_receipt_path.read_text(encoding="utf-8"))
+        other["candidateJsonSha256"] = "0" * 64
+        bad = self.root / "bad-receipt.json"
+        bad.write_text(json.dumps(other), encoding="utf-8")
+        with self.assertRaises(ValueError):
+            group_pipeline.release_basis(config, bad)
 
     def test_merge_before_any_run_refuses_with_group_ids(self):
         report = group_pipeline.merge(self.config)

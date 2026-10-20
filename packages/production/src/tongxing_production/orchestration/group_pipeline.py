@@ -159,6 +159,39 @@ def _reviewed_view(group: dict, review: dict | None, payloads) -> dict:
             "targetText": "".join(row["targetUtterances"])}
 
 
+TEXT_RELEASE_SCHEMA = "sermon-group-text-release-v1"
+
+
+def release_basis(config: dict, receipt: Path) -> dict:
+    """Bind the existing QC/human text receipt to the current merge candidate (step 4-5 gate).
+
+    The receipt is produced by the existing text QC/calibration or human review path.
+    This command only proves it releases this exact candidate and records the binding;
+    it creates no waiver, approval or disclosure.
+    """
+    from ..audio import backend as _audio
+    from ..audio import speech_job
+    directory = _current_merge_dir(config)
+    candidate_path = directory / "candidate.json"
+    _require(candidate_path.is_file(), "release_basis_needs_a_merged_candidate")
+    source = legacy.load_json(config["source"])
+    anchor = legacy.load_json(config["anchor"])
+    candidate = legacy.load_json(candidate_path)
+    document = legacy.load_json(Path(receipt))
+    kind = "machine_waiver" if _audio.current().waivers.is_text_waiver(document) else "human_review"
+    text_policy = speech_job.validate_text_release_basis(source, anchor, candidate, document)
+    record = {
+        "schemaVersion": TEXT_RELEASE_SCHEMA, "targetLocale": config["locale"],
+        "candidateSha256": legacy.file_sha256(candidate_path),
+        "receiptSha256": legacy.file_sha256(Path(receipt)),
+        "reviewKind": kind, "textPolicy": text_policy,
+        "releaseEligible": False, "humanApproval": False,
+    }
+    data = (json.dumps(record, ensure_ascii=False, indent=1) + "\n").encode("utf-8")
+    _write_once(directory / "text-release.json", data)
+    return record
+
+
 L3_PREPARATION_SCHEMA = "sermon-group-l3-preparation-v1"
 
 
@@ -176,6 +209,11 @@ def prepare_l3(config: dict, *, text_basis: Path, adapter: Path, registry: Path,
     directory = _current_merge_dir(config)
     candidate_path = directory / "candidate.json"
     _require(candidate_path.is_file(), "prepare_l3_needs_a_merged_candidate")
+    binding = directory / "text-release.json"
+    if binding.is_file():
+        bound = legacy.load_json(binding)
+        _require(bound.get("receiptSha256") == legacy.file_sha256(Path(text_basis)),
+                 "prepare_l3_text_basis_differs_from_the_bound_release")
     out = Path(out)
     _require(not out.exists(), "prepare_l3_needs_a_new_output_directory")
     job = speech_job.prepare_job(
@@ -570,6 +608,10 @@ def main(argv=None) -> int:
     run_command.add_argument("--confirm-unbudgeted", action="store_true",
                              help="accept model spend without a per-group budget document (explicit operator decision)")
     run_command.add_argument("--output", type=Path)
+    release_command = sub.add_parser("release-basis", help="bind a text QC/human receipt to the merged candidate")
+    release_command.add_argument("--config", type=Path, required=True)
+    release_command.add_argument("--receipt", type=Path, required=True)
+    release_command.add_argument("--output", type=Path)
     stages_command = sub.add_parser("stages", help="run the configured Layer 3 stage commands in order")
     stages_command.add_argument("--config", type=Path, required=True)
     stages_command.add_argument("--out", type=Path, required=True)
@@ -599,6 +641,8 @@ def main(argv=None) -> int:
     config = group_worker.load_configuration(args.config)
     if args.command == "status":
         report = status(config)
+    elif args.command == "release-basis":
+        report = release_basis(config, args.receipt)
     elif args.command == "stages":
         from . import group_l3
         try:
