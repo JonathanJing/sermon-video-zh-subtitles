@@ -1,0 +1,6 @@
+stage	status	seconds
+verify-clip	pass	13
+build-inputs	pass	12
+baseline	pass	14
+delivery-preflight	pass	4
+delivery-execute	pass	367
