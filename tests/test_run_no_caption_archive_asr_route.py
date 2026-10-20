@@ -171,7 +171,7 @@ class RunNoCaptionArchiveAsrRouteTest(unittest.TestCase):
 
         def fake_run(command, **kwargs):
             calls.append(command)
-            if "scripts/prepare_live_link_playback.py" in command:
+            if "tools/ops/prepare_live_link_playback.py" in command:
                 return completed(
                     2,
                     stderr="bad sk-secret123 projects/p/secrets/openai-api-key/versions/latest",

@@ -21,8 +21,8 @@ English version: [system-design-gap-analysis.md](./system-design-gap-analysis.md
 | 领域 | 当前状态 | 证据 |
 |---|---|---|
 | Public VOD 时间分析 | 已完成 | Public VOD 对 11:30 场太晚，设计已经正确转向早场 live source。 |
-| Live archive POC | 部分完成 | `scripts/prepare_live_link_playback.py` 可以从 live archive URL 生成本地/GCS 播放数据。 |
-| OpenAI 翻译 E2E | 部分完成 | `scripts/translate_playback_with_openai.py` 可以把 prepared playback 里的占位中文替换成真实 segment-level 翻译。 |
+| Live archive POC | 部分完成 | `tools/ops/prepare_live_link_playback.py` 可以从 live archive URL 生成本地/GCS 播放数据。 |
+| OpenAI 翻译 E2E | 部分完成 | `tools/ops/translate_playback_with_openai.py` 可以把 prepared playback 里的占位中文替换成真实 segment-level 翻译。 |
 | 静态 PWA | 部分完成 | Cloud Run 当前能服务 web prototype，local/remote E2E 检查通过。 |
 | 免责声明与 secret hygiene | 部分完成 | Public UI 有免责声明，测试会扫描 browser playback 输出，公开生成物不含 raw key 和 Secret Manager resource name。 |
 | Backend scaffold | 部分完成 | `backend/` 有 public Sunday read API、admin generation API、realtime session/event API、manifest filtering、worker planner；当前 Dockerfile 启动 `python -m backend.app`。 |
@@ -39,7 +39,7 @@ English version: [system-design-gap-analysis.md](./system-design-gap-analysis.md
 | 11:25 readiness 和 publish gate | 部分完成 | `promote_sunday_manifest.py` 现在会写入 `readiness` 合约，包含 state、checks、publish time、published manifest URI、source mode、fallback reason 和模型路由。`SundaySliceService` 与 `/api/admin/status` 会暴露这些状态。仍缺 Cloud Run 部署 smoke evidence 和真实周日发布证据。 |
 | 真实生成中文字幕 | 部分完成 | prepared playback 已能 batch OpenAI 翻译；默认 worker plan 现在是 prepare -> translate -> export zh VTT/SRT -> validate offline chain -> upload playback/manifest -> promote。可选 notes 只在显式请求时运行，不阻塞字幕发布。`validate_production_readiness.py` 现在可以汇总 offline、promoted manifest、realtime JSONL 三类证据；仍需用真实周日输入做 production 验证。 |
 | 离线 ASR fallback | 部分完成 | 没有英文 captions 时，live-archive preparation path 可以抽音频并请求 `gpt-4o-transcribe`，再进入 `gpt-5.4-mini` 翻译；还需要用真实 YouTube/archive 验证。 |
-| 低延迟实时字幕 | 部分完成 | Admin iPad/iPhone mic 可以创建 OpenAI Realtime translation session，用 browser WebRTC 送音频，把英文/中文 deltas 发回 backend memory/JSONL，并通过 SSE 推给会众字幕页。`scripts/realtime_media_worker.py` 可以创建 backend-only session，接收本地授权音频文件、场地提供的授权 HTTP(S) 音频流或授权 YouTube source，把 24 kHz PCM16 音频送入 OpenAI translation WebSocket，并把英文/中文 deltas 发布到同一条 session stream。`scripts/realtime_openai_smoke_test.py` 现在可以在有凭据和短授权音频时验证 OpenAI Realtime 到 backend SSE 的端到端路径。`scripts/stabilize_realtime_deltas_with_openai.py` 可以用 `gpt-5.4-mini` 把保存的 realtime 英文窗口生成 stable Chinese corrections，并作为 `caption_final` events 回灌；`scripts/run_realtime_stabilizer_loop.py` 会重复执行延迟修正并跳过已回灌片段。还缺真实授权源 live validation 和 durable state storage。 |
+| 低延迟实时字幕 | 部分完成 | Admin iPad/iPhone mic 可以创建 OpenAI Realtime translation session，用 browser WebRTC 送音频，把英文/中文 deltas 发回 backend memory/JSONL，并通过 SSE 推给会众字幕页。`tools/ops/realtime_media_worker.py` 可以创建 backend-only session，接收本地授权音频文件、场地提供的授权 HTTP(S) 音频流或授权 YouTube source，把 24 kHz PCM16 音频送入 OpenAI translation WebSocket，并把英文/中文 deltas 发布到同一条 session stream。`tools/ops/realtime_openai_smoke_test.py` 现在可以在有凭据和短授权音频时验证 OpenAI Realtime 到 backend SSE 的端到端路径。`tools/ops/stabilize_realtime_deltas_with_openai.py` 可以用 `gpt-5.4-mini` 把保存的 realtime 英文窗口生成 stable Chinese corrections，并作为 `caption_final` events 回灌；`tools/ops/run_realtime_stabilizer_loop.py` 会重复执行延迟修正并跳过已回灌片段。还缺真实授权源 live validation 和 durable state storage。 |
 | 经文、人名、术语优先 | 未完成 | UI 有静态 sidebar 示例，但没有 Bible index、glossary resolver、review queue。 |
 | 笔记和金句提取 | 部分完成 | Worker plan 可在请求 `includeInsights` 时追加 `generate_notes_with_openai.py` 和 `gpt-5.4-mini`；production review 和 UI 展示还要继续硬化。 |
 | Cloud Run API 部署 | 部分完成 | 当前 `Dockerfile` 启动 `backend.app`；仍需验证部署环境里的 `/api/*`、Secret Manager 和 realtime session creation。 |

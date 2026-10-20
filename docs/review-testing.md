@@ -7,8 +7,8 @@ Scope: current POC for live-link input, sermon title display, "正在生成" cap
 ## Findings
 
 1. P1 - GCS publishing can leave partial output without a completion marker.
-   - File: `scripts/prepare_live_link_playback.py:59`
-   - Evidence: artifacts are uploaded first, then `cloud-manifest.json` is written and uploaded after those uploads complete (`scripts/prepare_live_link_playback.py:68`). If any early `gcloud storage cp` succeeds and a later copy fails, GCS may contain partial generated content with no explicit failed/incomplete state. Cloud Run or the operator UI could accidentally read stale/partial files.
+   - File: `tools/ops/prepare_live_link_playback.py:59`
+   - Evidence: artifacts are uploaded first, then `cloud-manifest.json` is written and uploaded after those uploads complete (`tools/ops/prepare_live_link_playback.py:68`). If any early `gcloud storage cp` succeeds and a later copy fails, GCS may contain partial generated content with no explicit failed/incomplete state. Cloud Run or the operator UI could accidentally read stale/partial files.
    - Suggested fix: publish under a unique run prefix, upload a manifest with `status: "uploading"` first or write to a temp prefix, then atomically publish a final `cloud-manifest.json` with `status: "ready"` only after all files succeed.
 
 2. P2 - GCS upload path and subprocess behavior are only dry-run tested.
@@ -22,7 +22,7 @@ Scope: current POC for live-link input, sermon title display, "正在生成" cap
    - Suggested fix: add a small Playwright smoke test that loads `apps/operator-web/index.html`, clicks `模拟播放`, and asserts `#sermonTitle`, `#generationStatus`, `#stableCaption`, and `#segmentCount`.
 
 4. Resolved - Secret Manager resource names are stripped from public generated artifacts.
-   - Files: `scripts/build_playback_simulation.py`, `scripts/prepare_live_link_playback.py`, `scripts/translate_playback_with_openai.py`
+   - Files: `scripts/build_playback_simulation.py`, `tools/ops/prepare_live_link_playback.py`, `tools/ops/translate_playback_with_openai.py`
    - Evidence: browser playback JS, GCS `cloud-manifest.json`, and OpenAI translation reports now record `apiKeyMaterialIncluded=false` and `secretResourceNamesIncluded=false` without writing `apiKeySecret` or `projects/.../secrets/...`.
 
 ## Suggested Tests
@@ -43,7 +43,7 @@ Result: passed, 9 tests.
 Current mainline rerun after sub-agent integration: passed, 13 tests.
 
 ```bash
-python3 -m py_compile scripts/offline_live_sermon_subtitles.py scripts/build_playback_simulation.py scripts/prepare_live_link_playback.py
+python3 -m py_compile tools/ops/offline_live_sermon_subtitles.py scripts/build_playback_simulation.py tools/ops/prepare_live_link_playback.py
 ```
 
 Result: passed.
@@ -69,7 +69,7 @@ Result: passed; generated 3 playback segments and preserved `apiKeyMaterialInclu
 ## Commands To Run Before Production-Like Test
 
 ```bash
-python3 scripts/prepare_live_link_playback.py \
+python3 tools/ops/prepare_live_link_playback.py \
   --live-url 'https://www.youtube.com/watch?v=FsUijL9uB1I' \
   --gcs-bucket sermon-zh-artifacts \
   --gcs-prefix runs/manual-test/FsUijL9uB1I \

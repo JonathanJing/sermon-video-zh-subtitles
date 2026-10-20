@@ -11,12 +11,12 @@ import sys
 from typing import Any
 
 
-REPO_ROOT = Path(__file__).resolve().parents[1]
+REPO_ROOT = Path(__file__).resolve().parents[2]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
 from backend.realtime import RealtimeEventArchive, RealtimeSessionStore  # noqa: E402
-from scripts.validate_realtime_session import validate_realtime_session  # noqa: E402
+from tools.ops.validate_realtime_session import validate_realtime_session  # noqa: E402
 
 
 def main() -> int:

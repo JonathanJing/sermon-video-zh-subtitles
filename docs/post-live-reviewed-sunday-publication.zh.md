@@ -348,7 +348,7 @@ gcloud storage cp \
 使用脚本把 reviewed post-live 字幕转成正式页面 artifact 包，并写稳定 manifest：
 
 ```bash
-python3 scripts/publish_post_live_sunday_manifest.py \
+python3 tools/ops/publish_post_live_sunday_manifest.py \
   --sunday YYYY-MM-DD \
   --slug <VIDEO_ID> \
   --pipeline-outdir artifacts/post-live-subtitles/YYYY-MM-DD/<VIDEO_ID>/pipeline_HHMM_HHMM \
@@ -374,7 +374,7 @@ python3 scripts/publish_post_live_sunday_manifest.py \
 GCS manifest 必须通过：
 
 ```bash
-python3 scripts/validate_sunday_manifest.py \
+python3 tools/ops/validate_sunday_manifest.py \
   --manifest gs://sermon-zh-artifacts-ai-for-god/sundays/YYYY-MM-DD/cloud-manifest.json \
   --sunday YYYY-MM-DD \
   --require-readable-artifacts \

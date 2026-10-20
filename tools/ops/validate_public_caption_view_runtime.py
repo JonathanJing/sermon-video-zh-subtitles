@@ -12,7 +12,7 @@ import tempfile
 from typing import Any
 
 
-REPO_ROOT = Path(__file__).resolve().parents[1]
+REPO_ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_APP_JS = REPO_ROOT / "apps" / "operator-web" / "app.js"
 
 

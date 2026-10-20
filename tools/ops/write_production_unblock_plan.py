@@ -142,7 +142,7 @@ def add_gcs_publish_step(steps: list[dict[str, Any]], row: dict[str, Any] | None
         commands.append(
             [
                 "python3",
-                "scripts/plan_gcs_sunday_manifest_publish.py",
+                "tools/ops/plan_gcs_sunday_manifest_publish.py",
                 "--sunday",
                 str(publish_plan.get("sunday")),
                 "--local-root",
@@ -165,7 +165,7 @@ def add_gcs_publish_step(steps: list[dict[str, Any]], row: dict[str, Any] | None
     commands.append(
         [
             "python3",
-            "scripts/validate_sunday_manifest.py",
+            "tools/ops/validate_sunday_manifest.py",
             "--manifest",
             stable_uri,
             "--sunday",
@@ -302,7 +302,7 @@ def add_realtime_field_run_step(steps: list[dict[str, Any]], row: dict[str, Any]
         step["commands"] = [
             [
                 "python3",
-                "scripts/run_realtime_live_session.py",
+                "tools/ops/run_realtime_live_session.py",
                 "--audio-url",
                 "<AUTHORIZED_AUDIO_URL>",
                 "--api-key-secret",
@@ -331,7 +331,7 @@ def add_realtime_field_run_step(steps: list[dict[str, Any]], row: dict[str, Any]
             ],
             [
                 "python3",
-                "scripts/validate_realtime_session.py",
+                "tools/ops/validate_realtime_session.py",
                 "--events-jsonl",
                 f"{DEFAULT_REALTIME_EVENT_GCS_PREFIX}/{DEFAULT_SUNDAY}/<REALTIME_SESSION_ID>.jsonl",
                 "--expected-model",
@@ -381,7 +381,7 @@ def add_stable_correction_step(steps: list[dict[str, Any]], row: dict[str, Any] 
     step["commands"] = [
         [
             "python3",
-            "scripts/validate_realtime_session.py",
+            "tools/ops/validate_realtime_session.py",
             "--events-jsonl",
             f"{DEFAULT_REALTIME_EVENT_GCS_PREFIX}/{DEFAULT_SUNDAY}/<REALTIME_SESSION_ID>.jsonl",
             "--expected-model",

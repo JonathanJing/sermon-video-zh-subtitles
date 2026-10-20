@@ -97,7 +97,7 @@ def build_plan(args: argparse.Namespace) -> dict[str, Any]:
             ],
             [
                 "python3",
-                "scripts/prepare_live_link_playback.py",
+                "tools/ops/prepare_live_link_playback.py",
                 "--live-url",
                 live_url,
                 "--no-discover",
@@ -123,7 +123,7 @@ def build_plan(args: argparse.Namespace) -> dict[str, Any]:
             ],
             [
                 "python3",
-                "scripts/translate_playback_with_openai.py",
+                "tools/ops/translate_playback_with_openai.py",
                 "--input",
                 web_out,
                 "--model",
@@ -137,7 +137,7 @@ def build_plan(args: argparse.Namespace) -> dict[str, Any]:
             ],
             [
                 "python3",
-                "scripts/export_playback_captions.py",
+                "tools/ops/export_playback_captions.py",
                 "--input",
                 web_out,
                 "--out-dir",

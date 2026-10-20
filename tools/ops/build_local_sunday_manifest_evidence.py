@@ -10,12 +10,12 @@ import sys
 from pathlib import Path
 from typing import Any
 
-REPO_ROOT = Path(__file__).resolve().parents[1]
+REPO_ROOT = Path(__file__).resolve().parents[2]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-from scripts.promote_sunday_manifest import promote_manifest
-from scripts.validate_sunday_manifest import validate_manifest_contract
+from tools.ops.promote_sunday_manifest import promote_manifest
+from tools.ops.validate_sunday_manifest import validate_manifest_contract
 from scripts.validate_offline_chain import parse_playback_js, validate_offline_chain
 
 

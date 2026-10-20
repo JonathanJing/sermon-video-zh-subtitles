@@ -1279,7 +1279,11 @@ class BackendAppTest(unittest.TestCase):
         for path in ("tools/ops/sermon_unified_preflight.py", "tools/ops/run.py"):
             self.assertIn(f"COPY {path} /app/{path}", text)
         # backend/worker.py runs these through their scripts/ facades.
-        for path in ("tools/ops/run_openai_model_access_preflight.py", "tools/ops/upload_file_to_gcs.py"):
+        for path in ("tools/ops/run_openai_model_access_preflight.py", "tools/ops/upload_file_to_gcs.py",
+                     "tools/ops/prepare_live_link_playback.py", "tools/ops/translate_playback_with_openai.py",
+                     "tools/ops/export_playback_captions.py", "tools/ops/promote_sunday_manifest.py",
+                     # prepare_live_link_playback runs it.
+                     "tools/ops/offline_live_sermon_subtitles.py"):
             self.assertIn(f"COPY {path} /app/{path}", text)
 
 

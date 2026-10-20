@@ -11,11 +11,11 @@ import tempfile
 from pathlib import Path
 from typing import Any
 
-REPO_ROOT = Path(__file__).resolve().parents[1]
+REPO_ROOT = Path(__file__).resolve().parents[2]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-from scripts.validate_sunday_manifest import validate_manifest_contract
+from tools.ops.validate_sunday_manifest import validate_manifest_contract
 
 
 DEFAULT_LOCAL_ROOT = REPO_ROOT / "artifacts" / "evidence" / "manifest-promotion-guard"
@@ -145,7 +145,7 @@ def build_publish_plan(
             ["gcloud", "storage", "cp", "<generated-stable-manifest>", stable_manifest_uri],
             [
                 sys.executable,
-                "scripts/validate_sunday_manifest.py",
+                "tools/ops/validate_sunday_manifest.py",
                 "--manifest",
                 stable_manifest_uri,
                 "--sunday",

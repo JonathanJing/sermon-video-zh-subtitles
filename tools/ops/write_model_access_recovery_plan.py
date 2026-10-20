@@ -78,7 +78,7 @@ def build_plan(args: argparse.Namespace) -> dict[str, Any]:
             ],
             [
                 "python3",
-                "scripts/translate_playback_with_openai.py",
+                "tools/ops/translate_playback_with_openai.py",
                 "--input",
                 playback_js,
                 "--model",
@@ -92,7 +92,7 @@ def build_plan(args: argparse.Namespace) -> dict[str, Any]:
             ],
             [
                 "python3",
-                "scripts/export_playback_captions.py",
+                "tools/ops/export_playback_captions.py",
                 "--input",
                 playback_js,
                 "--out-dir",
@@ -122,7 +122,7 @@ def build_plan(args: argparse.Namespace) -> dict[str, Any]:
             ],
             [
                 "python3",
-                "scripts/stabilize_realtime_deltas_with_openai.py",
+                "tools/ops/stabilize_realtime_deltas_with_openai.py",
                 "--input-jsonl",
                 args.realtime_events_jsonl,
                 "--api-key-secret",
@@ -140,7 +140,7 @@ def build_plan(args: argparse.Namespace) -> dict[str, Any]:
             ],
             [
                 "python3",
-                "scripts/validate_realtime_session.py",
+                "tools/ops/validate_realtime_session.py",
                 "--events-jsonl",
                 args.realtime_events_jsonl,
                 "--expected-model",

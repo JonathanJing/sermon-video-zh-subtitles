@@ -157,7 +157,7 @@ def route_commands(args: argparse.Namespace, paths: dict[str, Path]) -> list[lis
         ],
         [
             sys.executable,
-            "scripts/prepare_live_link_playback.py",
+            "tools/ops/prepare_live_link_playback.py",
             "--live-url",
             args.live_url,
             "--no-discover",
@@ -179,7 +179,7 @@ def route_commands(args: argparse.Namespace, paths: dict[str, Path]) -> list[lis
         ],
         [
             sys.executable,
-            "scripts/translate_playback_with_openai.py",
+            "tools/ops/translate_playback_with_openai.py",
             "--input",
             str(paths["webOut"]),
             "--model",
@@ -193,7 +193,7 @@ def route_commands(args: argparse.Namespace, paths: dict[str, Path]) -> list[lis
         ],
         [
             sys.executable,
-            "scripts/export_playback_captions.py",
+            "tools/ops/export_playback_captions.py",
             "--input",
             str(paths["webOut"]),
             "--out-dir",
