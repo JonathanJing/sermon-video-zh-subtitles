@@ -114,6 +114,8 @@ shadow receipt 的 `ready_for_model_translation` 只表示自动锚点结构干�
 
 这些字段必须保存在本地 log 中，不能仅在对话结束时口头报告。每次完成或停止都保留执行摘要，并关联来源／版本、工作量、质量、审批、交付和恢复证据；尚未采集的指标明确注明。必记内容与现有采集边界见[日志内容规范](workflow-accounting.zh.md#已接入的指标与保留边界)。
 
+Layer 2 的每组耗时、恢复跑并行度和周投影诊断，按[周更运行配置的验收步骤](weekly-run-profile.zh.md#layer-2-本地开销与恢复并行真实运行怎么验收2026-10-20-改动)量，并与其中的 10-18 基线并列写进运行报告。
+
 排查最近一次执行：`.venv/bin/python scripts/sermon_logs.py artifacts/post-live-runs/YYYY-MM-DD/accounting --level WARNING`。需要完整事件去掉 `--level WARNING`；需要检查退出码加 `--check`。入口、阶段和子进程共享 `runId`，失败及业务等待状态保留在同一账本；详见[统一事件与错误追踪](workflow-accounting.zh.md#统一事件与错误追踪)。
 
 ## 每周默认交付海报

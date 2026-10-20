@@ -80,6 +80,95 @@ Layer 2 政策冻结为 `claude_cli_opus` 时（[运行时模型政策](producti
 - **质检规则改变后，用新的 state 目录。** 修复账本会拒绝原样重筛已失败的候选（`blocked_prior_failure`），旧 state 留作证据。
 - **同一候选不要反复重跑质检直到通过。** 质检失败的组，开新修订（Layer 2 重新翻译）后再质检。
 
+## Layer 2 本地开销与恢复并行：真实运行怎么验收（2026-10-20 改动）
+
+10-18 周末（来源 15030286）的账本显示，缓存命中多的 Layer 2 运行，墙钟大部分花在本地复核上，不是 API，也不是 Python 本身慢：worker 在每次缓存命中前后都把执行配置、代码身份和输入完整重验一遍，每组约 12 次、每次约 0.6 秒。全新调用多的运行则卡在并行度上：v6/v7 恢复跑按 `groupWorkers: 1` 一次只跑一组。改动如下：
+
+| PR | 改了什么 | 影响谁 |
+|---|---|---|
+| #1150、#1161 | 绑定复核按文件 stat 备忘，文件没变就不重算快照、代码身份和 package view（[stat 备忘](canonical-layer2-controller.zh.md#worker-绑定复核的-stat-备忘)） | 所有 canonical Layer 2 worker |
+| #1164 | 缓存命中不再前后复核；完整复核只在准入、每次付费派发前和结束时做，结束时在候选写盘后再核对配置和代码身份（[缓存命中不逐次复核绑定](canonical-layer2-controller.zh.md#缓存命中不逐次复核绑定)） | 同上 |
+| #1174 | span 的 UTC 与 monotonic 读数配对、允许匀速漂移，高负载下不再误报 `utc_clock_discontinuity_between_spans`（[日志合同](workflow-accounting-log-contract.zh.md)） | 所有记账与周投影 |
+| #1193 | v7 部分恢复允许多组并行；v6/v7 恢复跑按本页[并发设置](#并发设置)用 `groupWorkers: 8` | v6 缓存续跑、v7 部分恢复 |
+| #1144 | 单独 codex-cli 路径的请求身份不再每次哈希 250 MB 的 CLI 二进制 | 只有 standalone codex-cli runner，不含 controller |
+
+这些改动改变代码身份：**只有新准入的 job 用新代码**。已有 job 保留冻结的 `--expected-code`，在新代码上恢复会照旧报 `worker_configuration_or_code_changed`，这是预期行为，不是故障。目前的证据只有单元测试和缓存回放（[#1163 回放](reports/runs/20261019-layer2-cache-hit-end-binding-replay/INDEX.md)：24 个缓存命中组约 85 秒降到约 2 秒；[#1194 回放](reports/runs/20261020-layer2-parallel-v7-recovery/INDEX.md)）；真实周跑尚未验证，报告里不能写成已验证。
+
+### 基线（10-18 周末，旧代码）
+
+| 运行 | 形态 | 墙钟 | 组数 | 同时在跑的组 | API 调用（中位数） | 缓存回放中位数 | 每组本地秒 |
+|---|---|---|---|---|---|---|---|
+| `text-zh-c2`（v7） | 几乎全是缓存命中 | 99.9 分钟 | 804 | 1 | 10（12.4 秒） | 1.31 秒 | 7.28 |
+| `text-zh-f1`（v3，16 路） | 一半新调用、一半命中 | 30.4 分钟 | 804 | 16 | 814（24.5 秒） | 11.22 秒 | 11.19 |
+| `text-ko-r3`（v6） | 全部新调用，串行 | 110.1 分钟 | 403 | 1 | 804（7.4 秒） | — | 0.68 |
+
+账本在 `artifacts/weekend-live/layer2-15030286-20261017/<run>/<locale>/accounting/`。c2 的周投影里 `leafElapsedByExecutor.deterministic_program` 为 5,858 秒，`production_model` 只有 133 秒。
+
+### 预期与判定
+
+| 看什么 | 旧值 | 新代码预期 | 不达预期时先查 |
+|---|---|---|---|
+| 缓存命中组的每组本地秒 | 7.28（c2，串行） | 低于 1 秒 | 这个 job 是否用新代码准入（见下） |
+| 16 路时缓存回放中位数 | 11.22 秒（f1） | 低于 1 秒 | 同上；机器负载 |
+| v6/v7 恢复跑同时在跑的组 | 1 | 8 | 执行配置里的 `layer2AutoRepair.groupWorkers` |
+| v6 全新调用恢复跑墙钟 | 110.1 分钟（ko-r3） | 约 15–20 分钟（按 8 路估算） | 同上；API 槽位 24 是否被别的 locale 占满 |
+| 周投影诊断 | 高负载下出现 `utc_clock_discontinuity_between_spans` | 不出现 | 账本是否来自新代码；是否真的有墙钟跳变 |
+| 周投影 `deterministic_program` 与 `production_model` 之比 | c2 约 44:1 | 大幅下降 | 同第一行 |
+
+预期值来自回放和估算，不是实测；以实测为准，偏离时如实记录。另有两条行为变化要认得：缓存命中期间配置、代码或输入被改，不再立刻失败，而是跑到结束时报 `worker_configuration_or_code_changed_during_models` 且不保存候选；之后的付费调用仍会在派发前被拒。
+
+### 怎么量
+
+确认这次 job 用的是新代码：运行报告记录的提交须包含 #1164 与 #1193 的合并提交。
+
+```bash
+git merge-base --is-ancestor 2a04804a <运行时的提交> && git merge-base --is-ancestor bb0a52b4 <运行时的提交> && echo new-code
+```
+
+账本完整性与错误。退出码 2 表示账本里有失败或未结束的尝试（重试很常见）；先用 `--level WARNING` 看是哪次 `runId`，下面的耗时只拿成功完成的那次比较：
+
+```bash
+.venv/bin/python scripts/sermon_logs.py <lane 输出目录>/accounting --json --check
+```
+
+周投影的诊断与按执行者分的耗时，看 `report.json` 里 `runs[].diagnostics` 与 `runs[].leafElapsedByExecutor`：
+
+```bash
+.venv/bin/python scripts/weekly_pipeline_report.py --accounting-dir <lane 输出目录>/accounting --out-dir <临时目录>
+```
+
+每组耗时（只读 `stage-attempts.csv`，与上面基线同一口径；第二个参数可选，只统计该 `runId`，不给则统计账本里的全部尝试）：
+
+```bash
+python3 - <lane 输出目录>/accounting [runId] <<'PY'
+import csv, re, statistics, sys
+from datetime import datetime
+from pathlib import Path
+run = sys.argv[2] if len(sys.argv) > 2 else None
+rows = [r for r in csv.DictReader(open(Path(sys.argv[1]) / "stage-attempts.csv", encoding="utf-8-sig"))
+        if r["finishedAt"] and run in (None, r["runId"])]
+if not rows:
+    sys.exit("no finished stages" + (f" for runId {run}" if run else ""))
+ts = lambda s: datetime.fromisoformat(s).timestamp()
+groups = [r for r in rows if re.match(r"layer2\.group\.", r["stage"])]
+leaf = [r for r in rows if re.match(r"layer2\.(prepare|translator|draft_validation|reviewer|review_validation)\.", r["stage"])]
+api = [float(r["elapsedSeconds"]) for r in leaf if r["billing"] == "api"]
+local = sum(float(r["elapsedSeconds"]) for r in leaf if r["billing"] != "api")
+hits = sorted(float(r["elapsedSeconds"]) for r in leaf if r["cacheHit"] == "True")
+events = sorted([(ts(r["startedAt"]), 1) for r in groups] + [(ts(r["finishedAt"]), -1) for r in groups])
+inflight = peak = 0
+for _, step in events:
+    inflight += step; peak = max(peak, inflight)
+wall = max(ts(r["finishedAt"]) for r in rows) - min(ts(r["startedAt"]) for r in rows)
+print(f"wall {wall / 60:.1f} min | groups {len(groups)} | max groups in flight {peak}")
+print(f"API calls {len(api)} | median {statistics.median(api) if api else 0:.1f} s")
+print(f"cache-hit replays {len(hits)} | median {statistics.median(hits) if hits else 0:.2f} s")
+print(f"local (non-API) seconds per group {local / max(len(groups), 1):.2f}")
+PY
+```
+
+每个 locale 的 lane 各量一次。结果连同机器负载（`sysctl -n vm.loadavg`）写进该次[运行报告](test-run-retrospective.zh.md)，与上面的基线表并列，并标明哪些是实测、哪些仍是回放或估算。
+
 ## 不在本页范围
 
 模型、reasoning 档位、审核链路以[运行时模型政策](production-model-runtime-policy.zh.md)为准；预算批准流程以[预算与迁移](canonical-layer2-budget-and-migration.zh.md)为准。本页只给数值和编排建议，不构成新的预算或支出授权。
