@@ -309,7 +309,7 @@ def render_tts(args, *, factory=None, writer=audio_output, model_session=None, r
                 'evidenceSha256': sha(args.evidence), 'voice': voice, 'batchSize': batch_size,
                 'backend': 'local', 'model': 'Qwen/Qwen3-TTS-12Hz-1.7B-speaker-checkpoint',
                 'synthesizerImplementationSha256': sha(Path(__file__).resolve().parents[2] / compatibility.resolve('scripts/render_formal_target_language_speech.py')),
-                'checkpointValidatorImplementationSha256': sha(Path(__file__).resolve().parents[2] / 'scripts' / 'render_multilingual_voice_demos.py'),
+                'checkpointValidatorImplementationSha256': sha(Path(__file__).resolve().parents[2] / 'tools' / 'ops' / 'render_multilingual_voice_demos.py'),
                 'settings': {'seed': args.seed, 'device': args.device, 'dtype': 'bfloat16',
                              'attention': args.attention}, 'workerSha256': worker_identity(args.out)}
     if general:
