@@ -1,0 +1,54 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261020-pr-integrate-tools-local",
+  "runs": [
+    {
+      "label": "pr-integrate-tools-local",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.claude/worktrees/pr-integrate-tools-1ecafc/artifacts/pr-integrate-tools-local",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "pr-integrate-tools-local",
+      "path": "chunks.log",
+      "kind": "log",
+      "bytes": 532,
+      "truncated": false,
+      "sha256": "cee944716f3db7f89671f3c9016c9838394985b0e542b63e8fd073bd26bcaa26",
+      "redactions": {}
+    },
+    {
+      "run": "pr-integrate-tools-local",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 570,
+      "truncated": false,
+      "sha256": "e972d7ef898e0b1f0c4c8559d2f74e66a0895dd7b7bce6f95be879c3144c9e79",
+      "redactions": {}
+    },
+    {
+      "run": "pr-integrate-tools-local",
+      "path": "pytest.log",
+      "kind": "log",
+      "bytes": 2321,
+      "truncated": false,
+      "sha256": "29319b2cd84205323600ab5f7398e9e78a7c3668d8c4e3fc0d5c5ef30ba87b0c",
+      "redactions": {}
+    },
+    {
+      "run": "pr-integrate-tools-local",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 882,
+      "truncated": false,
+      "sha256": "f319864f776eb9d08e851970d824aa3612d3c96775d171c580ca631b9486f60f",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

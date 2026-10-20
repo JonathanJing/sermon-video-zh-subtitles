@@ -1,0 +1,8 @@
+{
+  "schemaVersion": "local-test-outcome-v1",
+  "status": "passed",
+  "exitCode": 0,
+  "startedAt": "2026-10-20T21:33:22Z",
+  "endedAt": "2026-10-20T21:41:31Z",
+  "scope": "Older-PR integration onto dev@810349e2: #565 (content JSON reading PDF moved to workflows/dual_pdf), #1080 (alignment window binding), #1092 (drive-link redaction in tools/development), #1095 (per-group path simulator), #1137 (re-exported 20261019 report). All five heads merged locally into one branch; 96 affected test files plus package, ops-run and layout-guard tests in 8 parallel chunks."
+}
