@@ -1,0 +1,12 @@
+{
+  "schemaVersion": "layer2-parallel-v7-tests-outcome-v1",
+  "deliveryType": "test",
+  "status": "passed",
+  "code": "claude/lucid-kepler-ccb4a5 46615b1e (PR #1193)",
+  "exitCode": 0,
+  "result": "313 passed, 127 subtests passed in 411.91s",
+  "modules": 23,
+  "providerCalls": 0,
+  "humanApproval": false,
+  "releaseEligible": false
+}
