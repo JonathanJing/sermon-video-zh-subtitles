@@ -6,7 +6,7 @@
 
 交付类型：**测试**（本地单元与离线只读检查），不是 `four_layer_release`。
 
-最终状态：新增的 `group_worker`（逐组 T/R/P）与 `group_pipeline`（`status`/`run`/`merge`，合并第 1–3 步）单元测试通过；相关 Layer 2 回归 206 项通过；CI shard 0、1 本地通过。`15030286` 的 ko 402 组离线 `status` 全为 `missing`（该 run 没有逐组记录），零模型调用、零记录写入。
+最终状态：新增的 `group_worker`（逐组 T/R/P）与 `group_pipeline`（`status`/`run`/`merge`，合并第 1–3 步）单元测试通过；相关 Layer 2 回归 206 项通过（并在合入最新 dev 后重跑 145 项相关测试通过）；本地 CI 分片 0、1、2、3 通过，分片 4–7 未完成（分支在运行中合入 dev，结果不作为证据）。仓库的 Python tests 等工作流当前为 `disabled_manually`，PR 上没有 CI 检查，故本轮以本地分片为验证证据。`15030286` 的 ko 402 组离线 `status` 全为 `missing`（该 run 没有逐组记录），零模型调用、零记录写入。
 
 证据边界：没有真实付费调用、TTS、ASR、部署或 Firebase 操作。`merge` 只到 candidate 与合并清单；第 4–10 步（校准、豁免、speech job、渲染、排程、整轨、筛查/音频 QC、试听豁免）未接线，合并清单记录为 `pendingSteps`，结果是 `candidate_ready_layer3_pending`，不能当四层完成。
 
@@ -14,7 +14,7 @@
 
 自动汇总（核对后保留）：
 
-- `20261020-grp006-merge-local`（outcome.json）：墙钟约 1h10m；没有 journal，计算和等待未拆分。等待主要是本地 CI shard 运行与上下文整理。
+- `20261020-grp006-merge-local`（outcome.json）：墙钟约 1h10m；没有 journal，计算和等待未拆分。等待主要是本地 CI 分片运行与上下文整理。
 
 ## 各层模型、耗时与速度
 
@@ -50,7 +50,7 @@
 
 ## 实际覆盖范围
 
-- **执行**：新增单元测试 `tests/test_group_worker.py`（5 项，含锁、unknown、内容失败）、`tests/test_group_pipeline.py`（5 项，含 status、预算拒绝、merge、CLI），相关 Layer 2 回归 206 项。
+- **执行**：新增单元测试 `tests/test_group_worker.py`（5 项，含锁、unknown、内容失败）、`tests/test_group_pipeline.py`（5 项，含 status、预算拒绝、merge、CLI），相关 Layer 2 回归 206 项；合入最新 dev 后相关子集 145 项重跑通过。
 - **复用**：无。测试 fixture 为合成来源、锚点、policy 与插件。
 - **未执行**：真实模型、Spark、TTS/ASR、音频质检、L3/L4 构建与发布、`15030286` 的逐组重跑。
 
