@@ -12,6 +12,8 @@
 
 再次补充（`6026d183`）：`redo --group-id … --reason …` 已实现。它从当前合并产物读出被拒译文，写只追加的 `sermon-group-directive-v1` 指令，把指令作为 `operatorRevision` 送进 T/R 的 prompt，`revisionSha256` 进入记录键，旧记录变 `stale`、新记录是新修订。每次运行写独立 `attempt-NNNN` 目录；合并输出按 candidate SHA-256 存放并用 `current.json` 指针切换。`tests/test_group_pipeline.py` 9 项、组与 Layer 2 相关回归 117 项通过。
 
+再补充（`3125e1bd`）：`group_tasks.py plan` 的子命令分发已修（原来把选项直接交给 `group_plan` 的解析器会报错），`prepare-l3`（合并第 5–6 步）与失败映射已加入。`15030286` ko 的 `plan` 在当前树上仍是零调用只读：402 组，T/R/S `expected_reusable`，P/Q/A/U `stale`，约 4 秒；本地生产 runbook 已加逐组操作入口。`tests/test_group_pipeline.py` 增至 11 项。
+
 证据边界：没有真实付费调用、TTS、ASR、部署或 Firebase 操作。`merge` 只到 candidate 与合并清单；第 4–10 步（校准、豁免、speech job、渲染、排程、整轨、筛查/音频 QC、试听豁免）未接线，合并清单记录为 `pendingSteps`，结果是 `candidate_ready_layer3_pending`，不能当四层完成。
 
 ## 总时间
