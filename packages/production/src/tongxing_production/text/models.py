@@ -1432,7 +1432,8 @@ def _run_prepared_groups(request: dict[str, Any], anchor: dict[str, Any],
                          failure_collector=None,
                          operator_revision: dict[str, Any] | None = None,
                          allow_subset: bool = False,
-                         context_plan: list[dict[str, Any]] | None = None) -> dict[str, Any]:
+                         context_plan: list[dict[str, Any]] | None = None,
+                         operator_notes: dict[str, dict[str, Any]] | None = None) -> dict[str, Any]:
     """Shared group loop; the formal entry above still enforces Layer 1 approval.
 
     Simulated requests carry an extra marker that prevents formal candidate
@@ -1803,13 +1804,16 @@ def _run_prepared_groups(request: dict[str, Any], anchor: dict[str, Any],
                     "priorTargetTextSha256": brief["priorTargetTextSha256"],
                     "proposedTargetText": brief["proposedTargetText"],
                 }
-            if operator_row is not None:
+            operator_note = (operator_notes or {}).get(group["translationGroupId"])
+            if operator_row is not None or operator_note is not None:
+                row = operator_row if operator_row is not None else operator_note
                 common["operatorRevision"] = {
-                    "priorTargetText": operator_row["priorTargetText"],
-                    "priorTargetTextSha256": operator_row["priorTargetTextSha256"],
-                    **({"note": operator_row["note"]} if operator_row["note"] is not None else {}),
+                    "priorTargetText": row["priorTargetText"],
+                    "priorTargetTextSha256": row["priorTargetTextSha256"],
+                    **({"note": row["note"]} if row.get("note") is not None else {}),
                 }
-            operator_instruction = OPERATOR_REVISION_INSTRUCTION if operator_row is not None else ""
+            operator_instruction = (OPERATOR_REVISION_INSTRUCTION
+                                    if operator_row is not None or operator_note is not None else "")
             prompt_repair = repair if repair is not None else prior_repair
             if prompt_repair is not None:
                 common["partialRepair"] = {
@@ -2129,7 +2133,10 @@ def run_accounted(source: dict, anchor: dict, policy: dict, out_dir: Path,
                   predecessor_spans=(), completion_spans: list[str] | None = None,
                   failure_collector=None, candidate_mode: str = "production",
                   operator_revision: dict | None = None, allow_subset: bool = False,
-                  context_plan: list[dict[str, Any]] | None = None) -> dict:
+                  context_plan: list[dict[str, Any]] | None = None,
+                  operator_notes: dict[str, dict[str, Any]] | None = None) -> dict:
+    require(operator_revision is None or operator_notes is None,
+            "Use one operator revision mechanism at a time")
     require(candidate_mode == "production",
             "Shadow execution is not implemented: candidate schema, plugin admission and human receipt are required")
     require(plugin is not None,
@@ -2160,7 +2167,8 @@ def run_accounted(source: dict, anchor: dict, policy: dict, out_dir: Path,
                 source_admission_span=source_span, cache_only=cache_only,
                 progress_callback=progress_callback, completion_spans=completion_spans,
                 failure_collector=failure_collector, operator_revision=operator_revision,
-                allow_subset=allow_subset, context_plan=context_plan)
+                allow_subset=allow_subset, context_plan=context_plan,
+                operator_notes=operator_notes)
         metrics["doneUnits"] = len(evidence["groups"])
     return evidence
 

@@ -43,6 +43,15 @@ class GroupWorkerError(RuntimeError):
         super().__init__(f"{kind}:{group_id}:{detail}")
 
 
+def _round_dir(config: dict, locale: str, group_id: str) -> Path:
+    """A new attempt directory per run: a redo must not overwrite frozen model inputs."""
+    base = Path(config["work"]) / locale / group_id
+    attempts = sorted(path for path in base.glob("attempt-*") if path.is_dir()) if base.is_dir() else []
+    if not attempts and (base / "request.json").is_file():
+        return base  # earlier layout wrote the first attempt directly under the group
+    return base / f"attempt-{len(attempts) + 1:04d}"
+
+
 class GroupBusy(GroupWorkerError):
     def __init__(self, group_id: str):
         super().__init__("group_busy", group_id, "another worker holds this group's lock", dispatched=False)
@@ -138,13 +147,15 @@ def _rebuilt(record: dict, *, provenance: dict, outputs: dict | None = None) -> 
         codes=record["verdict"]["codes"], spend=record["spend"], provenance=provenance)
 
 
-def _provenance(round_dir: Path, record: dict) -> dict:
-    return {"derivation": DERIVATION, "round": str(round_dir), "worker": "group_worker",
+def _provenance(record: dict) -> dict:
+    # No run-local path: provenance is not part of the input key, so a second attempt with
+    # the same inputs must write the same bytes, and a changed attempt a changed key.
+    return {"derivation": DERIVATION, "worker": "group_worker",
             "notRecorded": list(record["provenance"].get("notRecorded") or [])}
 
 
 def run_group(config: dict, group: dict, *, source: dict, anchor: dict, policy: dict,
-              request: dict, caller, api_key: str) -> dict:
+              request: dict, caller, api_key: str, note: dict | None = None) -> dict:
     """Run T, R and P for one group and write its records.
 
     Returns ``{"group", "records", "dispatched", "round"}``. Raises ``GroupWorkerError``
@@ -156,18 +167,18 @@ def run_group(config: dict, group: dict, *, source: dict, anchor: dict, policy: 
     locale = config["locale"]
     store = records.RecordStore(config["records"])
     payloads = group_assembly.PayloadStore(config["records"])
-    round_dir = Path(config["work"]) / locale / group_id
+    round_dir = _round_dir(config, locale, group_id)
     round_dir.mkdir(parents=True, exist_ok=True)
     try:
         with _GroupLock(config["records"], locale, group_id):
             return _run_locked(store, payloads, round_dir, group, source, anchor, policy,
-                               request, caller, api_key, config["plugin"])
+                               request, caller, api_key, config["plugin"], note)
     except BlockingIOError:
         raise GroupBusy(group_id)
 
 
 def _run_locked(store, payloads, round_dir, group, source, anchor, policy, request,
-                caller, api_key, plugin_path) -> dict:
+                caller, api_key, plugin_path, note=None) -> dict:
     from ..text import candidate as producer
     from ..text import models
     from ..text import policy as policy_tools
@@ -182,7 +193,8 @@ def _run_locked(store, payloads, round_dir, group, source, anchor, policy, reque
         evidence = models.run_accounted(source, anchor, policy, round_dir, api_key, counting,
                                         [group], plugin_path, None, None,
                                         emit_payload_cache_success=True, allow_subset=True,
-                                        context_plan=full_plan)
+                                        context_plan=full_plan,
+                                        operator_notes=({group_id: note} if note else None))
     except Exception as exc:  # noqa: BLE001 - classified below, never swallowed
         error = exc
 
@@ -197,7 +209,7 @@ def _run_locked(store, payloads, round_dir, group, source, anchor, policy, reque
         # Content failure: the round returned, so write what it can name.
         for stage in ("T", "R"):
             if stage in derived:
-                wrote.append(_write(store, _rebuilt(derived[stage], provenance=_provenance(round_dir, derived[stage]))))
+                wrote.append(_write(store, _rebuilt(derived[stage], provenance=_provenance(derived[stage]))))
         raise GroupWorkerError("failed", group_id, str(error), dispatched=counting.calls > 0)
 
     _require(evidence is not None and len(evidence.get("groups") or []) == 1,
@@ -209,8 +221,8 @@ def _run_locked(store, payloads, round_dir, group, source, anchor, policy, reque
              f"reviewed_text_differs_from_evidence:{group_id}")
     reviewed = group_assembly.reviewed_outputs(row, payloads)
     _require(reviewed["targetTextSha256"] == target, f"evidence_row_and_record_differ:{group_id}")
-    wrote.append(_write(store, _rebuilt(derived["T"], provenance=_provenance(round_dir, derived["T"]))))
-    wrote.append(_write(store, _rebuilt(derived["R"], provenance=_provenance(round_dir, derived["R"]),
+    wrote.append(_write(store, _rebuilt(derived["T"], provenance=_provenance(derived["T"]))))
+    wrote.append(_write(store, _rebuilt(derived["R"], provenance=_provenance(derived["R"]),
                                         outputs=reviewed)))
     plugin_sha = policy["languageReview"]["pluginImplementationSha256"]
     review = producer.evaluate_plugin_groups(policy, request, plugin_path, plugin_sha, [row])["groupReviews"][0]
@@ -223,7 +235,7 @@ def _run_locked(store, payloads, round_dir, group, source, anchor, policy, reque
         plugin_sha, group_assembly.plugin_outputs(review, payloads),
         "pass" if review["status"] == "pass" else "fail",
         codes=[] if review["status"] == "pass" else ["plugin_group_failed"],
-        provenance={"derivation": DERIVATION, "round": str(round_dir), "worker": "group_worker"})
+        provenance={"derivation": DERIVATION, "worker": "group_worker"})
     wrote.append(_write(store, plugin_record))
     if review["status"] != "pass":
         raise GroupWorkerError("failed", group_id, "language plugin rejected the reviewed group", dispatched=True)

@@ -10,6 +10,7 @@ from scripts import tongxing_host  # noqa: F401  binds the production package po
 from tests import test_produce_target_language_candidate as candidate_fixture
 from tests.test_layer2_payload_cache_reuse import _Caller
 from tongxing_production.orchestration import group_budget
+from tongxing_production.orchestration import group_records as records
 from tongxing_production.orchestration import group_pipeline
 from tongxing_production.text import models
 
@@ -40,6 +41,11 @@ class GroupPipelineTests(unittest.TestCase):
             "records": "records", "work": "work", "merge": "merge",
         }, ensure_ascii=False), encoding="utf-8")
         self.config = group_pipeline.group_worker.load_configuration(self.config_path)
+
+    def merge_dir(self):
+        root = self.root / "merge" / self.config["locale"]
+        pointer = json.loads((root / "current.json").read_text(encoding="utf-8"))
+        return root / pointer["directory"]
 
     def caller(self, **options):
         return _Caller(self, **options)
@@ -76,7 +82,7 @@ class GroupPipelineTests(unittest.TestCase):
         self.assertFalse(merged["layer3Preflight"]["admissible"])
         self.assertFalse(merged["releaseEligible"])
         self.assertFalse(merged["humanApproval"])
-        directory = self.root / "merge" / self.config["locale"]
+        directory = self.merge_dir()
         self.assertTrue((directory / "candidate.json").is_file())
         self.assertTrue((directory / "merge-manifest.json").is_file())
         on_disk = json.loads((directory / "merge-manifest.json").read_text(encoding="utf-8"))
@@ -97,9 +103,8 @@ class GroupPipelineTests(unittest.TestCase):
         self.assertEqual(second["outcome"], "candidate_ready_layer3_pending")
         self.assertEqual(second["changedGroupIds"], [])
         self.assertEqual(first["candidateSha256"], second["candidateSha256"])
-        directory = self.root / "merge" / self.config["locale"]
-        self.assertEqual(json.loads((directory / "merge-manifest.json").read_text(encoding="utf-8")),
-                         json.loads((directory / "merge-manifest.json").read_text(encoding="utf-8")))
+        directory = self.merge_dir()
+        self.assertTrue((directory / "merge-manifest.json").is_file())
 
     def test_merge_refuses_an_affected_list_that_does_not_match(self):
         self.run_all()
@@ -118,13 +123,38 @@ class GroupPipelineTests(unittest.TestCase):
         self.assertEqual(group_pipeline._changed_groups(previous, current), {"g2"})
         self.assertEqual(group_pipeline._changed_groups(None, current), {"g1", "g2"})
 
+    def test_redo_records_the_reason_and_reruns_only_the_listed_group(self):
+        caller = self.caller()
+        self.run_all(caller)
+        self.assertEqual(group_pipeline.merge(self.config)["outcome"], "candidate_ready_layer3_pending")
+        group_id = self.plan[0]["translationGroupId"]
+        before = len(caller.calls)
+        report = group_pipeline.redo(self.config, [group_id], "请更贴近原文",
+                                     budget=None, caller=caller, api_key="fixture-key")
+        self.assertEqual([row["outcome"] for row in report["results"]], ["pass"])
+        self.assertEqual(report["operatorDirective"]["groupIds"], [group_id])
+        self.assertEqual(len(caller.calls) - before, 2)
+        self.assertTrue(any("请更贴近原文" in json.dumps(payload, ensure_ascii=False)
+                            for payload in caller.calls[-2:]))
+        status = group_pipeline.status(self.config)
+        row = next(item for item in status["groups"] if item["translationGroupId"] == group_id)
+        self.assertEqual(row["stages"]["T"]["status"], "fresh")
+        store = records.RecordStore(self.config["records"])
+        self.assertEqual(len(store.records(self.config["locale"], group_id, "T")), 2)
+        refused = group_pipeline.merge(self.config)
+        self.assertEqual(refused["outcome"], "refused")
+        self.assertEqual(refused["unexpectedGroupIds"], [group_id])
+        merged = group_pipeline.merge(self.config, affected=[group_id])
+        self.assertEqual(merged["outcome"], "candidate_ready_layer3_pending")
+        self.assertEqual(merged["changedGroupIds"], [group_id])
+        self.assertEqual(group_pipeline.load_directives(self.config)[group_id]["note"], "请更贴近原文")
+
     def test_merge_before_any_run_refuses_with_group_ids(self):
         report = group_pipeline.merge(self.config)
         self.assertEqual(report["outcome"], "refused")
         self.assertTrue(report["reasons"])
         self.assertTrue(all(isinstance(ids, list) for ids in report["reasons"].values()))
-        directory = self.root / "merge" / self.config["locale"]
-        self.assertFalse((directory / "candidate.json").exists())
+        self.assertFalse((self.root / "merge" / self.config["locale"] / "current.json").exists())
 
     def test_cli_status_and_merge_use_the_config(self):
         self.assertEqual(group_pipeline.main(["status", "--config", str(self.config_path)]), 0)

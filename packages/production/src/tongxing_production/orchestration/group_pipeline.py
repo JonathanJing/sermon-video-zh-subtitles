@@ -20,6 +20,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 from pathlib import Path
 import sys
 
@@ -33,6 +34,8 @@ from . import group_worker
 STATUS_SCHEMA = "sermon-group-status-v1"
 RUN_SCHEMA = "sermon-group-run-report-v1"
 MERGE_SCHEMA = "sermon-group-merge-manifest-v1"
+DIRECTIVE_SCHEMA = "sermon-group-directive-v1"
+DIRECTIVE_DIRECTORY = "_directives"
 PENDING_STEPS = (
     "calibration", "text_release_basis", "speech_job_v3", "formal_render",
     "schedule_and_subtitles", "track_package", "screening_and_audio_qc", "listening_waiver",
@@ -76,7 +79,7 @@ def _implementation(stage: str, identities: dict) -> str | None:
 
 
 def _report_group(store, payloads, group: dict, anchor: dict, policy: dict, context: dict, layer1: dict,
-                  identities: dict) -> dict:
+                  identities: dict, notes: dict | None = None) -> dict:
     """Status of every stage of one group, compared with the current inputs."""
     locale_identity = identities
     selected: dict[str, dict] = {}
@@ -91,13 +94,6 @@ def _report_group(store, payloads, group: dict, anchor: dict, policy: dict, cont
         if not found:
             stages[stage] = {"status": "missing", "reasons": ["no_record"]}
             continue
-        keys = {record["inputKey"] for record in found}
-        if len(keys) > 1:
-            # Two different results under one key, or keys this report cannot tell apart.
-            stages[stage] = {"status": "conflict", "reasons": ["multiple_records"],
-                             "inputKeys": sorted(keys)}
-            conflicts.append(stage)
-            continue
         record = found[0]
         view = group
         if stage not in {"T", "R"}:
@@ -110,13 +106,27 @@ def _report_group(store, payloads, group: dict, anchor: dict, policy: dict, cont
             except ValueError:
                 stages[stage] = {"status": "conflict", "reasons": ["reviewed_payload_missing"]}
                 continue
-        current = group_plan.current_inputs(stage, view, context, anchor, policy, locale_identity, selected)
+        current = group_plan.current_inputs(stage, view, context, anchor, policy, locale_identity, selected, notes)
         if stage == "U":
             current["thresholdsSha256"] = identities["audioQcThresholdsSha256"]
-        result = group_plan.evaluate(record, layer1, current, _implementation(stage, identities))
-        if stage in {"Q", "U"} and not record["provenance"].get("ledger"):
-            result["status"] = "stale"
-            result["reasons"].append("repair_ledger_not_supplied")
+        evaluated = []
+        for candidate_record in found:
+            result = group_plan.evaluate(candidate_record, layer1, current,
+                                         _implementation(stage, identities))
+            if stage in {"Q", "U"} and not candidate_record["provenance"].get("ledger"):
+                result = dict(result, status="stale",
+                              reasons=list(result["reasons"]) + ["repair_ledger_not_supplied"])
+            evaluated.append((result, candidate_record))
+        current_records = [item for item in evaluated if item[0]["status"] in {"fresh", "expected_reusable"}]
+        if len(current_records) > 1:
+            # Two records claim the current inputs; a redo must supersede, not compete.
+            stages[stage] = {"status": "conflict", "reasons": ["multiple_current_records"],
+                             "inputKeys": sorted(item[1]["inputKey"] for item in current_records)}
+            conflicts.append(stage)
+            continue
+        result, record = (current_records[0] if current_records else
+                          min(evaluated, key=lambda item: (item[0]["status"] != "stale",
+                                                           item[0]["status"] != "failed")))
         stages[stage] = result
         if result["status"] in {"fresh", "expected_reusable"}:
             selected[stage] = record
@@ -149,6 +159,74 @@ def _reviewed_view(group: dict, review: dict | None, payloads) -> dict:
             "targetText": "".join(row["targetUtterances"])}
 
 
+def _directive_path(config: dict) -> Path:
+    return Path(config["records"]) / DIRECTIVE_DIRECTORY / f"{config['locale']}.jsonl"
+
+
+def load_directives(config: dict) -> dict[str, dict]:
+    """The latest operator directive per group, as the T/R prompt receives it."""
+    path = _directive_path(config)
+    if not path.is_file():
+        return {}
+    latest: dict[str, dict] = {}
+    for line in path.read_text(encoding="utf-8").splitlines():
+        if not line.strip():
+            continue
+        row = json.loads(line)
+        _require(row.get("schemaVersion") == DIRECTIVE_SCHEMA
+                 and row.get("targetLocale") == config["locale"], "invalid_group_directive")
+        _require(isinstance(row.get("translationGroupId"), str) and row["translationGroupId"]
+                 and isinstance(row.get("priorTargetText"), str) and row["priorTargetText"]
+                 and row.get("priorTargetTextSha256") == records.text_sha256(row["priorTargetText"])
+                 and isinstance(row.get("note"), str) and row["note"].strip(), "invalid_group_directive")
+        latest[row["translationGroupId"]] = {"priorTargetText": row["priorTargetText"],
+                                             "priorTargetTextSha256": row["priorTargetTextSha256"],
+                                             "note": row["note"]}
+    return latest
+
+
+def record_directive(config: dict, translation_group_id: str, prior_target_text: str, note: str) -> Path:
+    """Append one operator directive; it is a revision instruction, never content approval."""
+    _require(records.GROUP_ID.fullmatch(translation_group_id) is not None, "invalid_translation_group_id")
+    _require(isinstance(note, str) and note.strip() and len(note) <= 2000, "invalid_directive_note")
+    row = {"schemaVersion": DIRECTIVE_SCHEMA, "targetLocale": config["locale"],
+           "translationGroupId": translation_group_id,
+           "priorTargetText": prior_target_text,
+           "priorTargetTextSha256": records.text_sha256(prior_target_text),
+           "note": note.strip(), "createdAt": _now(), "operator": "cli",
+           "humanApproval": False}
+    path = _directive_path(config)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with open(path, "a", encoding="utf-8") as stream:
+        stream.write(json.dumps(row, ensure_ascii=False, sort_keys=True) + "\n")
+        stream.flush()
+        os.fsync(stream.fileno())
+    return path
+
+
+def redo(config: dict, groups: list[str], reason: str, *, budget: dict | None,
+         budget_sha256: str | None = None, caller=None, api_key: str = "") -> dict:
+    """Record an operator reason for the named groups and run exactly those groups again."""
+    _require(bool(groups), "redo_needs_group_ids")
+    _require(isinstance(reason, str) and reason.strip(), "redo_needs_a_reason")
+    candidate_path = _current_merge_dir(config) / "candidate.json"
+    _require(candidate_path.is_file(), "redo_needs_a_merged_candidate")
+    candidate = json.loads(candidate_path.read_text(encoding="utf-8"))
+    by_id = {row["translationGroupId"]: row for row in candidate["groups"]}
+    _require(set(groups) <= set(by_id), f"redo_names_unknown_group:{sorted(set(groups) - set(by_id))[:3]}")
+    for group_id in groups:
+        record_directive(config, group_id, "".join(by_id[group_id]["targetUtterances"]), reason)
+    report = run(config, groups, budget=budget, budget_sha256=budget_sha256,
+                 caller=caller, api_key=api_key)
+    report["operatorDirective"] = {"groupIds": groups, "reason": reason.strip()}
+    return report
+
+
+def _now() -> str:
+    from datetime import datetime, timezone
+    return datetime.now(timezone.utc).isoformat(timespec="seconds").replace("+00:00", "Z")
+
+
 def status(config: dict) -> dict:
     """Read-only per-group stage status; no dispatch, no model call, no record write."""
     from ..text import candidate as producer
@@ -163,8 +241,9 @@ def status(config: dict) -> dict:
     identities = stage_identities(config)
     store = records.RecordStore(config["records"])
     payloads = group_assembly.PayloadStore(config["records"])
+    notes = load_directives(config)
     rows = [_report_group(store, payloads, group, anchor, policy, contexts[group["translationGroupId"]],
-                          layer1, identities) for group in groups]
+                          layer1, identities, notes) for group in groups]
     summary = {}
     for stage in records.STAGES:
         counts: dict[str, int] = {}
@@ -210,7 +289,8 @@ def run(config: dict, groups: list[str], *, budget: dict | None, budget_sha256: 
                 continue
         try:
             outcome = group_worker.run_group(config, group, source=source, anchor=anchor, policy=policy,
-                                             request=request, caller=caller, api_key=api_key)
+                                             request=request, caller=caller, api_key=api_key,
+                                             note=load_directives(config).get(group_id))
             results.append({"group": group_id, "outcome": "pass", **outcome, "reservation": reservation})
         except group_worker.GroupWorkerError as exc:
             results.append({"group": group_id, "outcome": exc.kind, "detail": exc.detail,
@@ -244,12 +324,12 @@ def merge(config: dict, *, affected=()) -> dict:
     resolutions = group_assembly.ResolutionStore(config["records"])
     try:
         assembled = group_assembly.assemble(source, anchor, policy, request, None, config["plugin"],
-                                            store, payloads, resolutions=resolutions)
+                                            store, payloads, resolutions=resolutions,
+                                            notes=load_directives(config))
     except group_assembly.AssemblyRefused as exc:
         return {"schemaVersion": MERGE_SCHEMA, "targetLocale": locale, "outcome": "refused",
                 "reasons": exc.reasons, "releaseEligible": False, "humanApproval": False}
-    directory = Path(config["merge"]) / locale
-    previous = _previous_manifest(directory)
+    previous = _previous_manifest(config)
     # The first merge has nothing to compare with: every group is new, not "changed".
     changed = set() if previous is None else _changed_groups(previous, assembled["manifest"])
     if previous is not None and changed != set(affected):
@@ -284,6 +364,7 @@ def merge(config: dict, *, affected=()) -> dict:
     preflight = {"candidateShape": "pass", "textApproval": "pending_or_machine_waiver_required",
                  "speechJob": "not_prepared", "admissible": False,
                  "note": "shape check only; L3 still needs a text release basis and a prepared speech job"}
+    directory = Path(config["merge"]) / locale / assembled["manifest"]["candidateSha256"][:16]
     _write_once(directory / "candidate.json", group_assembly.file_bytes(candidate))
     _write_once(directory / "evidence.json", group_assembly.file_bytes(assembled["evidence"]))
     _write_once(directory / "language-review.json", group_assembly.file_bytes(assembled["languageReview"]))
@@ -301,11 +382,24 @@ def merge(config: dict, *, affected=()) -> dict:
     _validate_merge_manifest(manifest)
     data = (json.dumps(manifest, ensure_ascii=False, indent=1) + "\n").encode("utf-8")
     _write_once(directory / "merge-manifest.json", data)
+    _write_pointer(directory.parent, directory)
     return {**manifest, "outcome": "candidate_ready_layer3_pending", "directory": str(directory)}
 
 
-def _previous_manifest(directory: Path) -> dict | None:
-    path = Path(directory) / "merge-manifest.json"
+def _current_merge_dir(config: dict) -> Path:
+    """The directory of the latest merge, from its content-addressed pointer."""
+    root = Path(config["merge"]) / config["locale"]
+    pointer = root / "current.json"
+    if not pointer.is_file():
+        return root / "unmerged"
+    document = json.loads(pointer.read_text(encoding="utf-8"))
+    _require(isinstance(document, dict) and isinstance(document.get("directory"), str),
+             "invalid_merge_pointer")
+    return root / document["directory"]
+
+
+def _previous_manifest(config: dict) -> dict | None:
+    path = _current_merge_dir(config) / "merge-manifest.json"
     if not path.is_file():
         return None
     return json.loads(path.read_text(encoding="utf-8"))
@@ -324,6 +418,20 @@ def _changed_groups(previous: dict | None, current: dict) -> set[str]:
         return set(current_hashes)
     previous_hashes = _group_record_hashes((previous or {}).get("assembly") or {})
     return {group_id for group_id, sha in current_hashes.items() if previous_hashes.get(group_id) != sha}
+
+
+def _write_pointer(root: Path, directory: Path) -> None:
+    """Atomically point the locale at its latest content-addressed merge."""
+    root.mkdir(parents=True, exist_ok=True)
+    payload = {"schemaVersion": "sermon-group-merge-pointer-v1", "directory": directory.name}
+    temporary = root / f".current.{os.getpid()}.tmp"
+    temporary.write_text(json.dumps(payload, ensure_ascii=False) + "\n", encoding="utf-8")
+    os.replace(temporary, root / "current.json")
+    handle = os.open(root, os.O_RDONLY)
+    try:
+        os.fsync(handle)
+    finally:
+        os.close(handle)
 
 
 def _validate_merge_manifest(manifest: dict) -> None:
@@ -386,6 +494,13 @@ def main(argv=None) -> int:
     run_command.add_argument("--confirm-unbudgeted", action="store_true",
                              help="accept model spend without a per-group budget document (explicit operator decision)")
     run_command.add_argument("--output", type=Path)
+    redo_command = sub.add_parser("redo", help="record an operator reason and rerun exactly those groups")
+    redo_command.add_argument("--config", type=Path, required=True)
+    redo_command.add_argument("--group-id", nargs="+", required=True)
+    redo_command.add_argument("--reason", required=True)
+    redo_command.add_argument("--budget", type=Path)
+    redo_command.add_argument("--confirm-unbudgeted", action="store_true")
+    redo_command.add_argument("--output", type=Path)
     merge_command = sub.add_parser("merge", help="assemble the locale candidate from group records")
     merge_command.add_argument("--config", type=Path, required=True)
     merge_command.add_argument("--affected", nargs="+", default=[],
@@ -397,6 +512,14 @@ def main(argv=None) -> int:
     config = group_worker.load_configuration(args.config)
     if args.command == "status":
         report = status(config)
+    elif args.command == "redo":
+        if args.budget is None and not args.confirm_unbudgeted:
+            parser.error("redo needs --budget <group budget> or --confirm-unbudgeted")
+        budget = _read_budget(args.budget, config["locale"]) if args.budget else None
+        budget_sha = legacy.file_sha256(args.budget) if args.budget else None
+        caller, api_key = _openai_transport()
+        report = redo(config, args.group_id, args.reason, budget=budget, budget_sha256=budget_sha,
+                      caller=caller, api_key=api_key)
     elif args.command == "run":
         if args.budget is None and not args.confirm_unbudgeted:
             parser.error("run needs --budget <group budget> or --confirm-unbudgeted")
