@@ -16,7 +16,7 @@ All backend, worker, and promotion logs are written as structured JSON to stdout
 
 | Event | Source | Purpose |
 |---|---|---|
-| `live_source_monitor_completed` | `POST /api/admin/sundays/YYYY-MM-DD/discover-source` or `scripts/live_source_monitor.py` | Records source discovery status, selected service/source kind, fallback/operator-alert state, and candidate count. |
+| `live_source_monitor_completed` | `POST /api/admin/sundays/YYYY-MM-DD/discover-source` or `packages/production/src/tongxing_production/workflows/dual_pdf/live_source_monitor.py` | Records source discovery status, selected service/source kind, fallback/operator-alert state, and candidate count. |
 | `live_capture_triggered` | `POST /api/admin/sundays/YYYY-MM-DD/generate` | Records that live capture was requested, including `triggerSource`, `sunday`, `sessionId`, `runPrefix`, and a safe live-source summary. |
 | `live_capture_planned` | API when inline worker is disabled | Records the generated worker plan when the API is only planning or queueing work. |
 | `live_capture_worker_started` | `python -m backend.worker` | Records that a Cloud Run Job or manual worker run actually started. |

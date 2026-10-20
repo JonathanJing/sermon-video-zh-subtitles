@@ -238,7 +238,7 @@ def validate_repair(prepared,candidate_id,revision_id,repair):
     if type(repair) is dict and 'languagePluginRepair' in repair:
         from scripts.sermon_historical_layer2 import validate_language_repair
         return validate_language_repair(prepared,candidate_id,revision_id,repair)
-    from scripts.sermon_repair_planning import CONTENT_FAILURES
+    from tongxing_production.orchestration.supervisor.repair_planning import CONTENT_FAILURES
     c.require(type(repair) is dict and set(repair)=={'parentRevision','parentCandidateBytes','plan',
         'triggerReview','inputManifest','sidecars','priorRevisions','priorRepairs'},'invalid_strict_repair_inputs')
     parent,plan,review,inputs=[repair[k] for k in ('parentRevision','plan','triggerReview','inputManifest')]

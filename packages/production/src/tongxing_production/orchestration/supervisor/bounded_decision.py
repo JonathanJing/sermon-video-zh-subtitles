@@ -8,11 +8,10 @@ from __future__ import annotations
 import copy
 import json
 
-from tongxing_production.contracts.pipeline_definition import LOCALES, VERSION, _sha
-from scripts import tongxing_host  # noqa: F401  binds the production package ports
-from tongxing_production.orchestration.jobs import _digest
-from scripts.sermon_decision_accounting import Observation
-from tongxing_production.observability import accounting
+from ...contracts.pipeline_definition import LOCALES, VERSION, _sha
+from ..jobs import _digest
+from .decision_accounting import Observation
+from ...observability import accounting
 
 PACKET_SCHEMA = 'sermon-decision-state-v1'
 DECISION_SCHEMA = 'sermon-decision-v1'

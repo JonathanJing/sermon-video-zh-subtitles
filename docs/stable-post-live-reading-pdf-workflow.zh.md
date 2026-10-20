@@ -45,7 +45,7 @@
 尽量直接使用 canonical YouTube watch URL。
 
 ```bash
-python3 scripts/live_source_monitor.py \
+.venv/bin/python tools/ops/run.py workflows.dual_pdf.live_source_monitor \
   --sunday 2026-07-26 \
   --manual-url 'https://www.youtube.com/watch?v=VIDEO_ID' \
   --out artifacts/live-source-monitor/report.json \
@@ -124,7 +124,7 @@ Supervisor 路径以新读取的确定性 `recommendedAction.action == "complete
 
 这条稳定工作流主要由下面几个脚本实现：
 
-- [../scripts/live_source_monitor.py](../scripts/live_source_monitor.py)
+- [../packages/production/src/tongxing_production/workflows/dual_pdf/live_source_monitor.py](../packages/production/src/tongxing_production/workflows/dual_pdf/live_source_monitor.py)
 - [../packages/production/src/tongxing_production/workflows/dual_pdf/post_live.py](../packages/production/src/tongxing_production/workflows/dual_pdf/post_live.py)
 - [../packages/production/src/tongxing_production/workflows/dual_pdf/pipeline.py](../packages/production/src/tongxing_production/workflows/dual_pdf/pipeline.py)
 - [../packages/production/src/tongxing_production/workflows/dual_pdf/mobile_pdf.py](../packages/production/src/tongxing_production/workflows/dual_pdf/mobile_pdf.py)

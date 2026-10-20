@@ -89,8 +89,7 @@ class AgentsAPIClient:
         return min(self.timeout, remaining)
 
     def _request(self, method: str, path: str, payload: Mapping[str, Any] | None = None) -> dict[str, Any]:
-        from scripts import tongxing_host  # noqa: F401  binds the production package ports
-        from tongxing_production.compute.openai_runtime import project_headers
+        from ...compute.openai_runtime import project_headers
         timeout = self._remaining_timeout()
         request = urllib.request.Request(
             "https://api.openai.com/v1" + path,

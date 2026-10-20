@@ -8,7 +8,6 @@ import json
 import re
 import shutil
 import subprocess
-import sys
 from dataclasses import dataclass, replace
 from datetime import date, datetime, timedelta, time
 from difflib import SequenceMatcher
@@ -20,13 +19,47 @@ from urllib.parse import quote
 from zoneinfo import ZoneInfo
 
 
-REPO_ROOT = Path(__file__).resolve().parents[1]
-if str(REPO_ROOT) not in sys.path:
-    sys.path.insert(0, str(REPO_ROOT))
+from ...source import backend as _source
+from ...source import youtube_data_api
+from . import host as _host
 
-from backend.observability import log_event, stable_hash, url_summary  # noqa: E402
-from backend.cloud import access_secret, read_gcs_text, write_gcs_text  # noqa: E402
-from scripts import youtube_data_api  # noqa: E402
+
+def __getattr__(name: str):
+    # Callers and tests that read the former module constant.
+    if name == "REPO_ROOT":
+        return _repo_root()
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+
+
+def _repo_root() -> Path:
+    """The checkout this run binds to, from the host (never derived from this file)."""
+    return _source.current().core.repo_root
+
+
+# Host helpers under backend/ (temporary Cloud and observability ports). Module-level
+# names, so patches on this module still intercept every call.
+def log_event(event: str, **fields: Any) -> None:
+    return _host.current().observability.log_event(event, **fields)
+
+
+def stable_hash(value: str) -> str:
+    return _host.current().observability.stable_hash(value)
+
+
+def url_summary(url: Any) -> Any:
+    return _host.current().observability.url_summary(url)
+
+
+def access_secret(resource_name: str) -> str:
+    return _host.current().cloud.access_secret(resource_name)
+
+
+def read_gcs_text(uri: str) -> str:
+    return _host.current().cloud.read_gcs_text(uri)
+
+
+def write_gcs_text(uri: str, text: str, **options: Any) -> None:
+    return _host.current().cloud.write_gcs_text(uri, text, **options)
 
 
 DEFAULT_TIMEZONE = "America/Los_Angeles"
@@ -1227,7 +1260,7 @@ def validate_sunday(value: str) -> None:
 
 
 def resolve_repo_path(path: Path) -> Path:
-    return path if path.is_absolute() else REPO_ROOT / path
+    return path if path.is_absolute() else _repo_root() / path
 
 
 def compact_text(value: str) -> str:

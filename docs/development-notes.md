@@ -15,7 +15,7 @@ This repository started with feasibility analysis. The current product goal is t
 
 ## Proposed Modules
 
-- `scripts/live_source_monitor.py`
+- `packages/production/src/tongxing_production/workflows/dual_pdf/live_source_monitor.py`
   - Start every Sunday at 08:20 PT for the 8:30 service.
   - Check Mariners Online, YouTube streams, and manually configured fallback URLs.
   - Fall forward to the 10:00 service if the 8:30 source is missing or not confirmed as the same sermon.

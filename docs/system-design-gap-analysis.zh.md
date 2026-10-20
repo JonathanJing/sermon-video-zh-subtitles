@@ -33,7 +33,7 @@ English version: [system-design-gap-analysis.md](./system-design-gap-analysis.md
 | 需求 | 状态 | 缺口 |
 |---|---|---|
 | Admin 手动触发 live URL 和可选证道开始时间 | 部分完成 | UI 概念和 backend planner 字段存在，但线上服务没有真正可用的 admin generation API。 |
-| 定时自动抓取 live source | 部分完成 | `scripts/live_source_monitor.py` 可以评估 Mariners Online、YouTube streams 和手动授权 URL；fixture tests 覆盖 same-sermon confidence、8:30 -> 10:00 fallback、09:58 operator-audio alert。`/api/admin/sundays/{sunday}/discover-source` 暴露同一套 handoff，并可返回 sanitized generation-plan summary。`tools/ops/configure_live_source_scheduler.py` 现在可以生成 redacted Cloud Scheduler job plan，固定调用 `/api/admin/sundays/current/discover-source`；仍缺真实 `--apply`、Cloud Logging 证据和真实页面验证。 |
+| 定时自动抓取 live source | 部分完成 | `packages/production/src/tongxing_production/workflows/dual_pdf/live_source_monitor.py` 可以评估 Mariners Online、YouTube streams 和手动授权 URL；fixture tests 覆盖 same-sermon confidence、8:30 -> 10:00 fallback、09:58 operator-audio alert。`/api/admin/sundays/{sunday}/discover-source` 暴露同一套 handoff，并可返回 sanitized generation-plan summary。`tools/ops/configure_live_source_scheduler.py` 现在可以生成 redacted Cloud Scheduler job plan，固定调用 `/api/admin/sundays/current/discover-source`；仍缺真实 `--apply`、Cloud Logging 证据和真实页面验证。 |
 | 同一周日所有用户看到同一份生成物 | 部分完成 | 存储模型已写入设计，但没有 promoted `sundays/YYYY-MM-DD/cloud-manifest.json` 指针。 |
 | 会众只读视图 | 本地已实现 | `apps/operator-web/index.html` 现在是只读字幕视图，DOM 中没有 operator controls；`apps/operator-web/admin.html` 保留 generation、export、test、publish controls。`tests/test_public_admin_boundary.py` 和 browser E2E 会守住这个拆分；仍需部署后 smoke evidence。 |
 | 11:25 readiness 和 publish gate | 部分完成 | `promote_sunday_manifest.py` 现在会写入 `readiness` 合约，包含 state、checks、publish time、published manifest URI、source mode、fallback reason 和模型路由。`SundaySliceService` 与 `/api/admin/status` 会暴露这些状态。仍缺 Cloud Run 部署 smoke evidence 和真实周日发布证据。 |
@@ -51,7 +51,7 @@ English version: [system-design-gap-analysis.md](./system-design-gap-analysis.md
 1. **验证并部署 backend/API surface。** 仓库 container 现在由 `backend.app` 同时服务 static assets 和 `/api/*`；production 还需要验证 routing、auth、Secret Manager、realtime session creation，以及 public/admin 只读拆分。
 2. **在 Cloud Run/GCS 验证稳定 Sunday manifest promotion。** 每个周日需要稳定 pointer `gs://<bucket>/sundays/YYYY-MM-DD/cloud-manifest.json`，并能读回 readiness state。
 3. **用新周日输入验证真实 generation chain。** `backend.worker` 现在规划 prepare -> translate -> export zh VTT/SRT -> validate offline chain -> upload playback/manifest -> promote，并显式使用 `gpt-4o-transcribe` 和 `gpt-5.4-mini`；`validate_production_readiness.py` 可以打包证据，但还需要用 live archive captions 和无 captions 的 ASR fallback 各跑一次 E2E。
-4. **在 Cloud Run 验证 scheduled source discovery。** `scripts/live_source_monitor.py`、`/api/admin/sundays/{sunday}/discover-source` 和 `tools/ops/configure_live_source_scheduler.py` 已有 fixture tests 和 redacted dry-run path，但还需要真实 `--apply`、Cloud Logging 证据和真实 Mariners/YouTube 页面验证。
+4. **在 Cloud Run 验证 scheduled source discovery。** `packages/production/src/tongxing_production/workflows/dual_pdf/live_source_monitor.py`、`/api/admin/sundays/{sunday}/discover-source` 和 `tools/ops/configure_live_source_scheduler.py` 已有 fixture tests 和 redacted dry-run path，但还需要真实 `--apply`、Cloud Logging 证据和真实 Mariners/YouTube 页面验证。
 
 ## P1/P2 缺口
 

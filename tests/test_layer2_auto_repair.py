@@ -62,7 +62,7 @@ class ClassificationTests(unittest.TestCase):
         self.assertEqual(subject.systemic_threshold(474), 5)
 
     def test_shared_codes_route_like_the_repair_planner(self):
-        from scripts import sermon_repair_planning as planning
+        from tongxing_production.orchestration.supervisor import repair_planning as planning
         # Canonical auto-repair gives a plugin finding one repair before escalating;
         # the strict planner escalates it at once.
         for code, action in subject.ACTIONS.items():

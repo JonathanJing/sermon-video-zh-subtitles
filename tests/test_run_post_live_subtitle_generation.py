@@ -753,7 +753,7 @@ class LoadedCodeIdentityTests(unittest.TestCase):
     def test_entry_load_time_imports_are_in_the_identity(self):
         loaded = self.run_identity("from scripts import tongxing_host; "
                                    "from tongxing_production.workflows.dual_pdf import post_live")
-        for path in ("backend/cloud.py", "backend/observability.py", "scripts/live_source_monitor.py",
+        for path in ("backend/cloud.py", "backend/observability.py", "packages/production/src/tongxing_production/workflows/dual_pdf/live_source_monitor.py",
                      "packages/production/src/tongxing_production/workflows/dual_pdf/run_status.py", "scripts/series_terminology.py",
                      "packages/production/src/tongxing_production/workflows/dual_pdf/post_live.py"):
             self.assertIn(path, loaded)

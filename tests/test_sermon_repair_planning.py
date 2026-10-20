@@ -6,7 +6,7 @@ from pathlib import Path
 import unittest
 from unittest.mock import patch
 
-from scripts import sermon_repair_planning as p
+from tongxing_production.orchestration.supervisor import repair_planning as p
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.review import contracts as c
 
