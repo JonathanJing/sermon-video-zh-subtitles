@@ -13,11 +13,7 @@ import re
 import time
 from typing import Protocol
 
-from scripts.sermon_agent_diagnostics_contracts import (
-    DiagnosticContractError, OUTPUT_VERSION, MAX_OUTPUT_BYTES,
-    bounded_json, decode_json, fingerprint, evidence_sha256, require,
-    contract_schema, validate_manifest, validate_diagnosis,
-)
+from tongxing_production.workflows.diagnostic.agent_contracts import DiagnosticContractError, OUTPUT_VERSION, MAX_OUTPUT_BYTES, bounded_json, decode_json, fingerprint, evidence_sha256, require, contract_schema, validate_manifest, validate_diagnosis
 
 READ_TOOLS = ("read_diagnostic_packet", "read_evidence", "read_version_diff")
 RECOMMENDATIONS = ("none", "inspect_evidence", "reconcile_unknown", "request_engineering_review",
@@ -201,7 +197,7 @@ def diagnose(manifest, *, client: OfflineAgentsClient, limits=DiagnosticLimits()
     """
     live = getattr(client, 'offline', False) is not True
     if live:
-        from scripts.sermon_agent_diagnostics_live import LiveDiagnosticClient
+        from tongxing_production.workflows.diagnostic.agent_diagnostics_live import LiveDiagnosticClient
         require(type(client) is LiveDiagnosticClient, 'live_diagnostic_not_authorized')
         client.validate_scope(manifest, limits, model)
         require(callable(checkpoint_writer), 'live_checkpoint_writer_required')

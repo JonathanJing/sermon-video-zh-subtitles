@@ -7,7 +7,6 @@ Production callers omit this context and retain every existing approval gate.
 from copy import deepcopy
 import math
 import re
-from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.review import contracts as c
 
 SCHEMA = 'sermon-diagnostic-context-v1'

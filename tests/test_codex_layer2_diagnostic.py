@@ -6,10 +6,10 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-from scripts import codex_layer2_diagnostic as subject
-from scripts import run_codex_layer2_test as command
+from tools.development import codex_layer2_diagnostic as subject
+from tools.development import run_codex_layer2_test as command
 from tongxing_production.source import english_source_package as english
-from scripts import sermon_diagnostic_context as diagnostic
+from tongxing_production.workflows.diagnostic import context as diagnostic
 from tongxing_production.text import policy as policies
 from tongxing_production.text import models as runner
 from tongxing_production.compute.transports.codex_layer2 import CodexLayer2Transport, TEST_CONFIGURATION

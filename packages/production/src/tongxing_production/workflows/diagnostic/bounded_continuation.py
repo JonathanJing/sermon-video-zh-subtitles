@@ -9,18 +9,17 @@ import json
 import os
 from pathlib import Path
 
-from scripts import run_bounded_diagnostic as run
+from tongxing_production.workflows.diagnostic import bounded as run
 from tongxing_production.observability import accounting
-from scripts import sermon_diagnostic_context as diagnostic
-from scripts import sermon_diagnostic_provider as provider
-from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.workflows.diagnostic import context as diagnostic
+from tongxing_production.workflows.diagnostic import provider
 from tongxing_production.observability import profile
 from tongxing_production.storage import snapshot as public
 from tongxing_production.review import review_budget as budget
 from tongxing_production.review import contracts as c
-from scripts import sermon_strict_layer2 as strict
-from scripts.sermon_diagnostic_source_evidence import validate_prior_source_evidence
-from scripts.sermon_release_workflow import _safe_path
+from tongxing_production.text.strict import layer2 as strict
+from tongxing_production.workflows.diagnostic.source_evidence import validate_prior_source_evidence
+from tongxing_production.storage.paths import safe_path as _safe_path
 
 
 def prepare_continuation(plan, continuation, *, request_limits=None):
@@ -78,7 +77,7 @@ def preflight_locale_inputs(subject, context, spec):
     c.require(type(spec) is dict and set(spec) == {'source', 'anchor', 'policy', 'rubric', 'graph',
         'pluginPath', 'pluginSha256', 'groupPlan'}, 'invalid_diagnostic_locale_spec')
     artifacts = [public.read_snapshot(Path(spec[name]))[1] for name in ('source', 'anchor', 'policy', 'rubric')]
-    from scripts.sermon_strict_locale import prepare_locale_inputs
+    from tongxing_production.text.strict.locale import prepare_locale_inputs
     _, _, _, plan, prepared = prepare_locale_inputs(*artifacts,
         plugin_path=Path(spec['pluginPath']), expected_plugin_sha256=spec['pluginSha256'],
         group_plan=spec['groupPlan'], request_limits=subject.limits, diagnostic_context=context)

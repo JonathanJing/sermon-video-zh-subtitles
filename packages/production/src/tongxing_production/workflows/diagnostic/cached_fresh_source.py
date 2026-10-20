@@ -13,19 +13,18 @@ from pathlib import Path
 import stat
 from types import SimpleNamespace
 
-from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.workflows.diagnostic import checkout
 from tongxing_production.source import mfa_identity
-from scripts import sermon_fresh_source_causality as causality
-from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.workflows.diagnostic import fresh_source_causality as causality
 from tongxing_production.observability import accounting
-from scripts import sermon_diagnostic_attempts as attempts
-from scripts import sermon_diagnostic_context as diagnostic
-from scripts import sermon_diagnostic_provider as provider
-from scripts import sermon_fresh_diagnostic_source as fresh
+from tongxing_production.workflows.diagnostic import attempts
+from tongxing_production.workflows.diagnostic import context as diagnostic
+from tongxing_production.workflows.diagnostic import provider
+from tongxing_production.workflows.diagnostic import fresh_source as fresh
 from tongxing_production.storage import snapshot as public
 from tongxing_production.review import review_budget as budget
 from tongxing_production.review import contracts as c
-from scripts.sermon_release_workflow import _safe_path
+from tongxing_production.storage.paths import safe_path as _safe_path
 
 SCHEMA = 'sermon-cached-fresh-diagnostic-source-v1'
 SOURCE_MODULES = ('sermon_fresh_diagnostic_source', 'build_english_source_package',
@@ -183,7 +182,7 @@ def _capture(new_plan, subject, parent_plan_path, authorization):
             aligned_sha256=evidence['alignedSegmentsSha256'], source_sha256=evidence['sourceCanonicalSha256'])
         c.require(c.canonical_sha256(causal) == causal_hash, 'fresh_causality_receipt_changed')
         refs.append(oldroot/'fresh-source-causality.json')
-    repository = Path(__file__).resolve().parents[1]
+    repository = checkout.root()
     from tongxing_production.source import producer_compatibility as compatibility
     producers = {}; current_producers={}
     for name in SOURCE_MODULES:

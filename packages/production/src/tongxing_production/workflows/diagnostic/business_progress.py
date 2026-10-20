@@ -8,10 +8,9 @@ this adapter cannot manufacture a reconciliation proof.
 from datetime import datetime, timezone
 from pathlib import Path
 
-from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.review import contracts as c
-from scripts import sermon_run_progress as progress
-from scripts import sermon_strict_layer2 as strict
+from tongxing_production.observability import run_progress as progress
+from tongxing_production.text.strict import layer2 as strict
 
 
 def freeze(dag):

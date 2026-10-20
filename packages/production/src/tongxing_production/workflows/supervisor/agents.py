@@ -17,10 +17,9 @@ from pathlib import Path
 from typing import Any
 import uuid
 
-from scripts import sermon_production_supervisor as production
-from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.workflows.supervisor import production
 from tongxing_production.observability import accounting as sermon_accounting
-from scripts import sermon_end_to_end as workflow
+from tongxing_production.workflows.supervisor import end_to_end as workflow
 from tongxing_production.orchestration.supervisor.agents_api import AgentsAPIClient, AgentsAPIError, run_agent_session, _write_json
 
 
@@ -150,7 +149,6 @@ def bound_configuration(config):
     if getattr(config, 'app_delivery_config', None) is None:
         value.pop('app_delivery_config', None)
     else:
-        from scripts import tongxing_host  # noqa: F401  binds the production package ports
         from tongxing_production.delivery import app_workflow as sermon_app_delivery_workflow
         value['appDeliveryConfigurationSha256'] = sermon_app_delivery_workflow.load_configuration(
             config.app_delivery_config, sunday=config.sunday).sha256

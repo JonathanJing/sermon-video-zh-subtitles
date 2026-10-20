@@ -72,7 +72,7 @@ class DeliveryPortsTests(unittest.TestCase):
                                   host.ROOT / 'schemas/sermon-app-delivery-v1.schema.json'})
 
     def test_unmoved_record_reaches_the_modules_the_app_gate_used(self):
-        from scripts import sermon_execution_harness
+        from tongxing_production.orchestration import execution_harness as sermon_execution_harness
         unmoved = delivery.current().unmoved
         self.assertIs(unmoved.formal_stage(), formal_stage)
         self.assertIs(unmoved.execution_harness(), sermon_execution_harness)

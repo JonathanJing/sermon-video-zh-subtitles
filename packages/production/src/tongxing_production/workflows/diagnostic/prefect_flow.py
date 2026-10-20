@@ -17,19 +17,19 @@ import tempfile
 import threading
 from types import SimpleNamespace
 
+from tongxing_production.workflows.diagnostic import checkout
 from tongxing_production.observability import accounting
-from scripts import sermon_historical_identity as historical_identity
-from scripts import sermon_dag_evidence as dag_evidence
-from scripts import sermon_bounded_business_callbacks as offline
-from scripts import sermon_diagnostic_preview_worker as preview_worker
-from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.workflows.diagnostic import historical_identity
+from tongxing_production.workflows.diagnostic import dag_evidence
+from tongxing_production.workflows.diagnostic import bounded_business_callbacks as offline
+from tongxing_production.workflows.diagnostic import preview_worker
 from tongxing_production.observability import profile
-from scripts import sermon_prefect_dag as pilot
+from tongxing_production.orchestration.prefect import dag as pilot
 from tongxing_production.storage import snapshot as public
 from tongxing_production.review import contracts as c
-from scripts import sermon_strict_layer2 as strict
-from scripts.sermon_execution_harness import work_lock
-from scripts.sermon_release_workflow import _safe_path
+from tongxing_production.text.strict import layer2 as strict
+from tongxing_production.orchestration.execution_harness import work_lock
+from tongxing_production.storage.paths import safe_path as _safe_path
 
 SCHEMA = 'sermon-diagnostic-prefect-flow-v1'
 LOCALES = frozenset({'zh-Hans', 'ko', 'es'})
@@ -37,7 +37,7 @@ _LOCK = threading.Lock()  # Callback guards affect process-global sockets.
 
 
 def _session_class():
-    from scripts.sermon_diagnostic_dag_session import DiagnosticSession
+    from tongxing_production.workflows.diagnostic.dag_session import DiagnosticSession
     return DiagnosticSession
 
 
@@ -159,7 +159,7 @@ def _config(config, session):
 
 class DiagnosticDAG:
     def __init__(self, session, config, *, resume_plan=None, resume_binding=None, resume_binding_source=None, defer_limits=False):
-        from scripts.sermon_fresh_diagnostic import FreshDiagnosticSession
+        from tongxing_production.workflows.diagnostic.fresh import FreshDiagnosticSession
         c.require(type(session) in (_session_class(), FreshDiagnosticSession) and
                   (not session.offline_fixture or type(session.subject.executor) is offline.OfflineHTTPTransport),
                   'diagnostic_flow_offline_session_required')
@@ -189,7 +189,7 @@ class DiagnosticDAG:
             c.require(previous.get('schemaVersion') == 'sermon-diagnostic-dag-session-v1'
                       and current.get('schemaVersion') == 'sermon-diagnostic-dag-session-v2',
                       'diagnostic_flow_session_migration_version_invalid')
-            from scripts.sermon_diagnostic_dag_session import validate_legacy_session
+            from tongxing_production.workflows.diagnostic.dag_session import validate_legacy_session
             validate_legacy_session(previous, current, session.continuation,
                                     legacy_continuation=session.legacy_continuation)
             excluded = {'sessionBinding', 'codeSha256'}
@@ -430,7 +430,7 @@ def preflight_live(plan, continuation, config, *, request_limits=None, resume_pl
     This read-only scope has no executor and cannot enter run(). The real
     constructor repeats original state/code/source checks after key injection.
     """
-    from scripts import run_bounded_diagnostic_continuation as entry
+    from tongxing_production.workflows.diagnostic import bounded_continuation as entry
     if request_limits is None and resume_plan is not None:
         request_limits = public.read_snapshot(_path(str(resume_plan)))[0]['sessionBinding'].get('requestLimits')
     root, subject, context, deadline, evidence = entry.prepare_continuation(plan, continuation, request_limits=request_limits)
@@ -440,7 +440,7 @@ def preflight_live(plan, continuation, config, *, request_limits=None, resume_pl
                             _path=lambda value, plugin=False: _path(str(value)))
     config = _config(config, scope)
     if resume_plan is not None:
-        from scripts.sermon_diagnostic_dag_session import validate_legacy_session
+        from tongxing_production.workflows.diagnostic.dag_session import validate_legacy_session
         old = public.read_snapshot(_path(str(resume_plan)))[0]
         current = {'schemaVersion':'sermon-diagnostic-dag-session-v2',
             'originalPlanSha256':c.canonical_sha256(plan),
@@ -450,7 +450,7 @@ def preflight_live(plan, continuation, config, *, request_limits=None, resume_pl
             'runId':context['runId'],'storeSha256':subject.store.store_sha256,
             'deadlineMonotonic':deadline,'evidenceMode':'current_execution',
             'humanAcceptance':'pending','productionEligible':False,
-            'implementationSha256':_hash_file(Path(__file__).with_name('sermon_diagnostic_dag_session.py'))}
+            'implementationSha256':_hash_file(checkout.legacy('sermon_diagnostic_dag_session.py'))}
         validate_legacy_session(old['sessionBinding'],current,continuation,
                                 legacy_continuation=legacy_continuation)
         c.require(old['config'] == config and old['inputFiles'] == _inventory(config,scope),

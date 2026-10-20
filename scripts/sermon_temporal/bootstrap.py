@@ -12,8 +12,7 @@ import subprocess
 import tarfile
 import urllib.request
 
-from scripts.sermon_execution_harness import atomic_json
-from .local_io import TEMPORAL_ROOT
+from .local_io import TEMPORAL_ROOT, atomic_json
 
 CLI_VERSION = "1.8.3"
 SDK_VERSION = "1.32.0"

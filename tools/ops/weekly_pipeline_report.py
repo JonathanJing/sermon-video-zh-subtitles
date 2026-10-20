@@ -9,7 +9,7 @@ import sys
 try:
     from scripts import tongxing_host  # noqa: F401  configures observability readers
 except ModuleNotFoundError:  # direct script execution outside the checkout
-    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+    sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
     from scripts import tongxing_host  # noqa: F401
 
 from tongxing_production.observability import weekly_projection as _projection
@@ -26,7 +26,7 @@ def main():
     parser.add_argument('--out-dir', required=True, type=Path)
     args = parser.parse_args()
     # Keep projections away from the append-only source and existing outputs.
-    from scripts import sermon_trace_artifacts as artifacts
+    from tongxing_production.observability import trace_artifacts as artifacts
     artifacts.new_directory(args.out_dir)
     report = project(args.accounting_dir)
     for name, content in [('report.json', json.dumps(report, indent=2, allow_nan=False) + '\n'),

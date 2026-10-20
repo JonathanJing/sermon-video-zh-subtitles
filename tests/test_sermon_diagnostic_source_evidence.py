@@ -6,7 +6,7 @@ import tempfile
 import unittest
 
 from tongxing_production.observability import accounting
-from scripts import sermon_diagnostic_source_evidence as evidence
+from tongxing_production.workflows.diagnostic import source_evidence as evidence
 from tongxing_production.compute import provider_limits as limits
 from tongxing_production.review import review_budget as budget
 from tongxing_production.review import contracts as c

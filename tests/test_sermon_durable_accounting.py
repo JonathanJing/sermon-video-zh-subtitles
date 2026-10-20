@@ -17,9 +17,9 @@ from tongxing_production.observability import durable
 from tongxing_production.observability import log_contract as contract
 from tongxing_production.observability import outbox
 from tongxing_production.observability import profile
-from scripts import export_observability_trace as safe_export
+from tongxing_production.observability import observability_trace as safe_export
 from tongxing_production.observability import trace_export as trace
-from scripts import weekly_pipeline_report as weekly
+from tongxing_production.observability import weekly_projection as weekly
 from tests.test_accounting_log_contract import fixture
 
 BINDING = dict(scope_id='scope', plan_sha256='a' * 64, production_run_id='b' * 64, purpose='dag')

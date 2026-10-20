@@ -16,17 +16,17 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from tongxing_production.text import backend as _text_backend
 from tongxing_production.observability import accounting
 from tongxing_production.observability import profile
 from tongxing_production.orchestration.supervisor import repair_planning as planning
 from tongxing_production.review import review_budget as budget
 from tongxing_production.review import contracts as c
-from scripts import sermon_strict_budget_adapter as adapter
-from scripts import sermon_strict_layer2 as strict
-from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.text.strict import budget_adapter as adapter
+from tongxing_production.text.strict import layer2 as strict
 from tongxing_production.orchestration import jobs
-from scripts.sermon_strict_repair_planner import RepairPlanner
-from scripts.sermon_release_workflow import _safe_path
+from tongxing_production.text.strict.repair_planner import RepairPlanner
+from tongxing_production.storage.paths import safe_path as _safe_path
 
 SCHEMA = 'sermon-strict-group-controller-v1'
 
@@ -63,7 +63,7 @@ def run_group(prepared, *, root, store, job_root, production_run_id, graph,
     budget._amounts(bounds, positive=True)
     c.require(bounds['requests'] == 1, 'reservation_requires_one_request')
     if 'diagnosticContext' in prepared:
-        from scripts.sermon_diagnostic_context import validate_runtime
+        validate_runtime = _text_backend.current().diagnostic.validate_runtime
         validate_runtime(prepared['diagnosticContext'], run_id=production_run_id, store_sha256=store.store_sha256)
     identity = adapter.chain_identity(prepared)
     closure = planning.dependency_closure(graph, [prepared['workUnitId']])

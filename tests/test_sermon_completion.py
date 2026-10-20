@@ -66,7 +66,7 @@ class CompletionTests(unittest.TestCase):
             completion.validate_synthetic(production, production_events, production_run_id='a' * 64)
 
     def test_source_predecessor_requires_production_completion(self):
-        from scripts import sermon_fresh_diagnostic_source as source
+        from tongxing_production.workflows.diagnostic import fresh_source as source
 
         # Isolate the real Source predecessor gate using in-memory upstream
         # inputs. Stop immediately after it, before alignment or output writes.
@@ -301,8 +301,8 @@ class CompletionTests(unittest.TestCase):
             'anchorCanonicalSha256','alignmentBytesSha256','asrReceiptSha256','sourceCheckReceiptSha256')}
         repository=Path(__file__).resolve().parents[1]
         before,after=compatibility.C_FACADE_REMOVAL_HISTORICAL_SHA256,compatibility.C_FACADE_REMOVAL_SOURCE_SHA256
-        for path in compatibility.C_FACADE_REMOVAL_CHANGED:
-            self.assertEqual(after[path],c.bytes_sha256((repository/compatibility.resolve(path)).read_bytes()))
+        # The two producers moved in v13 (D-5 window); v12's current side is v13's historical side.
+        self.assertEqual(after,compatibility.D5_MOVE_HISTORICAL_SHA256)
         self.assertEqual({path for path in after if after[path]!=before[path]},set(compatibility.C_FACADE_REMOVAL_CHANGED))
         planned={compatibility.resolve(path):sha for path,sha in after.items()}
         step=compatibility.verify(before,after,planned,binding)
@@ -313,5 +313,27 @@ class CompletionTests(unittest.TestCase):
         # Generations do not compose: a v10 parent cannot jump straight to the C-batch checkout.
         with self.assertRaises(c.ContractError):
             compatibility.verify(compatibility.FACADE_REMOVAL_HISTORICAL_SHA256,after,planned,binding)
+
+    def test_d5_generation_covers_only_the_two_moved_producers(self):
+        binding={key:'a'*64 for key in ('parentPlanSha256','newPlanSha256','sourceCanonicalSha256',
+            'anchorCanonicalSha256','alignmentBytesSha256','asrReceiptSha256','sourceCheckReceiptSha256')}
+        repository=Path(__file__).resolve().parents[1]
+        before,after=compatibility.D5_MOVE_HISTORICAL_SHA256,compatibility.D5_MOVE_SOURCE_SHA256
+        # Every key reads the file it names today; only the two moved producers changed bytes.
+        for path,sha in after.items():
+            self.assertEqual(sha,c.bytes_sha256((repository/compatibility.resolve(path)).read_bytes()),path)
+        self.assertEqual(compatibility.resolve('scripts/sermon_fresh_diagnostic_source.py'),
+                         'packages/production/src/tongxing_production/workflows/diagnostic/fresh_source.py')
+        self.assertEqual({path for path in after if after[path]!=before[path]},set(compatibility.D5_MOVE_CHANGED))
+        planned={compatibility.resolve(path):sha for path,sha in after.items()}
+        step=compatibility.verify(before,after,planned,binding)
+        self.assertEqual(step['migrationId'],compatibility.D5_MOVE_MIGRATION)
+        self.assertEqual(step['changedModules'],compatibility.D5_MOVE_CHANGED)
+        self.assertEqual(step['acceptedScope'],'read_only_original_source_under_package_move_no_new_inference')
+        self.assertEqual((step['newASRCalls'],step['newMFACalls'],step['newSourceCheckCalls'],step['productionEligible'],
+                          step['historicalSourcePreserved']),(0,0,0,False,True))
+        # Generations do not compose: a v11 parent cannot jump straight to the D-5 checkout.
+        with self.assertRaises(c.ContractError):
+            compatibility.verify(compatibility.C_FACADE_REMOVAL_HISTORICAL_SHA256,after,planned,binding)
 
 if __name__=='__main__':unittest.main()

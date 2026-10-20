@@ -5,7 +5,7 @@ import unittest
 from unittest.mock import patch
 
 from tongxing_production.observability import accounting
-from scripts import sermon_fresh_diagnostic as entry
+from tongxing_production.workflows.diagnostic import fresh as entry
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.observability import profile
 from tongxing_production.storage import snapshot as public

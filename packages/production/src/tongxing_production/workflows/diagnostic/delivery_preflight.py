@@ -9,17 +9,17 @@ import os
 from pathlib import Path
 import stat
 
-from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.workflows.diagnostic import checkout
 from tongxing_production.audio import speculative as preview
-from scripts import sermon_diagnostic_context as diagnostic
-from scripts import sermon_diagnostic_provider as provider
-from scripts import sermon_diagnostic_preview_worker as worker
-from scripts import sermon_diagnostic_source_evidence as source_evidence
-from scripts import sermon_fresh_source_evidence as fresh_source
+from tongxing_production.workflows.diagnostic import context as diagnostic
+from tongxing_production.workflows.diagnostic import provider
+from tongxing_production.workflows.diagnostic import preview_worker as worker
+from tongxing_production.workflows.diagnostic import source_evidence
+from tongxing_production.workflows.diagnostic import fresh_source_evidence as fresh_source
 from tongxing_production.storage import snapshot as public
 from tongxing_production.review import review_budget as budget
 from tongxing_production.review import contracts as c
-from scripts.sermon_release_workflow import _safe_path
+from tongxing_production.storage.paths import safe_path as _safe_path
 
 SCHEMA = 'sermon-diagnostic-delivery-preflight-v1'
 WORKER_SCHEMA = 'sermon-diagnostic-preview-worker-receipt-v1'
@@ -280,7 +280,7 @@ def inspect_completed_fresh_delivery(root, subject, context, previews, *, expect
     unchanged producers are still validated. The caller records the original
     run result separately; this report never overwrites a failed DAG/result.
     """
-    from scripts import sermon_diagnostic_attempts as attempts
+    from tongxing_production.workflows.diagnostic import attempts
     files = _Snapshot(); root = files.path(root)
     closed_path = root/'budget'/budget.STORE_ID/'provider-run/closed.json'
     closed = files.json(closed_path)
@@ -293,7 +293,7 @@ def inspect_completed_fresh_delivery(root, subject, context, previews, *, expect
         c.require(files.file(row['path']) == row['bytesSha256'], 'fresh_delivery_closed_evidence_changed')
     inspected = inspect_fresh_delivery(root, subject, context, previews, expected_locales=expected_locales,
         plan=plan, source_evidence=source_evidence)
-    implementation = {name: files.file(Path(__file__).parent/name) for name in
+    implementation = {name: files.file(checkout.legacy(name)) for name in
         ('sermon_fresh_source_evidence.py', 'sermon_diagnostic_delivery_preflight.py', 'sermon_fresh_diagnostic.py')}
     files.recheck()
     result = dict(schemaVersion=REINSPECTION_SCHEMA, status='fresh_delivery_evidence_validated',

@@ -4,7 +4,8 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from scripts import sermon_production_supervisor as mod
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.workflows.supervisor import production as mod
 
 
 def write_json(path: Path, payload):

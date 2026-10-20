@@ -14,7 +14,9 @@ import signal
 import sys
 import time
 
-from scripts.sermon_execution_harness import ExecutionTerminated, atomic_json, bounded_process, utc_now, work_lock
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.orchestration.execution_harness import (ExecutionTerminated, atomic_json, bounded_process,
+                                                                  utc_now, work_lock)
 from .contracts import Observation, Request, digest, operator_harness_argv, validate_configuration_profile
 from .local_io import ROOT, TEMPORAL_ROOT, active_execution, file_sha, private_directory, process_identity, read_json
 
@@ -40,7 +42,7 @@ def load_config(request: Request) -> dict:
 
 def fixture_observation(request: Request, config: dict, state_dir: Path, exclude=None) -> Observation:
     # The actual project validator is reused even for fake source/timeline data.
-    from scripts.sermon_production_supervisor import json_digest, validate_window_approval
+    from tongxing_production.workflows.supervisor.production import json_digest, validate_window_approval
     root = Path(config["fixtureRoot"]).resolve()
     source_sha = file_sha(root / "source.bin")
     timeline = read_json(root / "timeline.json")
@@ -63,7 +65,7 @@ def fixture_observation(request: Request, config: dict, state_dir: Path, exclude
 
 
 def production_args(config: dict):
-    from scripts import run_saturday_harness as harness
+    from tools.ops import run_saturday_harness as harness
     argv = operator_harness_argv(config)
     if (not isinstance(argv, list) or any(not isinstance(item, str) for item in argv)
             or any(flag in argv for flag in ("--mode", "--out", "--help", "-h"))):
@@ -113,7 +115,7 @@ def route_bindings(bridge: dict, plan: dict | None) -> dict:
 
 
 def production_observation(request: Request, config: dict, state_dir: Path, exclude=None) -> Observation:
-    from scripts import sermon_production_supervisor as supervisor
+    from tongxing_production.workflows.supervisor import production as supervisor
     args = production_args(config)
     snapshot = supervisor.production_snapshot(supervisor.SupervisorConfig(
         sunday=args.sunday, state_file=args.state_file, work_root=args.work_root,
@@ -194,7 +196,7 @@ def execute(request: Request, config: dict, state_dir: Path, expected_binding: s
             atomic_json(root / "result.json", {"schemaVersion": "sermon-temporal-fixture-result-v1",
                         "fixtureOnly": True, "sourceBinding": fresh.source_binding, "completedAt": utc_now()})
         else:
-            from scripts import run_saturday_harness as harness
+            from tools.ops import run_saturday_harness as harness
             args = production_args(config)
             args.mode = "execute"
             args.out = state_dir / "harness-execute.json"

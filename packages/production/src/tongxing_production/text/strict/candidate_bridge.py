@@ -7,12 +7,16 @@ snapshot before creating a Layer 3 intent. CLI/default producers stay legacy.
 import copy
 from pathlib import Path
 
+from tongxing_production.text import backend as _text_backend
 from tongxing_production.review import contracts as c
-from scripts import sermon_strict_layer2 as strict
-from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.text.strict import layer2 as strict
 from tongxing_production.text import candidate as producer
-from tongxing_production.audio import speech_job as handoff
-from scripts.sermon_release_workflow import _safe_path
+from tongxing_production.storage.paths import safe_path as _safe_path
+
+
+def _handoff():
+    # The Layer 3 hand-off checks (audio.speech_job), reached through the host: text never imports audio.
+    return _text_backend.current().unmoved.speech_handoff()
 
 
 class LanguagePluginRejected(c.ContractError):
@@ -54,7 +58,7 @@ def compile_candidate(source_bytes, anchor_bytes, policy_bytes, rubric_bytes,
             return value, data
 
         if diagnostic_context is not None:
-            from scripts.sermon_diagnostic_context import validate_context
+            validate_context = _text_backend.current().diagnostic.validate_context
             c.require(read('diagnostic-context.json')[0] == validate_context(diagnostic_context), 'strict_bridge_diagnostic_context_changed')
         else:
             c.require(not (root/'diagnostic-context.json').exists(), 'strict_bridge_diagnostic_context_required')
@@ -79,7 +83,7 @@ def compile_candidate(source_bytes, anchor_bytes, policy_bytes, rubric_bytes,
         dispatch_proofs={}
         if repair is not None:strict.validate_repair(prepared,manifest['candidateId'],manifest['revisionId'],repair)
         if repair is not None and 'languagePluginRepair' in repair:
-            from scripts.sermon_historical_layer2 import validate_repair_return
+            from tongxing_production.workflows.diagnostic.historical_layer2 import validate_repair_return
             read('language-plugin-repair.json')
             for role in ('translator','reviewer'):
                 returned,_=read(role+'-historical-return-proof.json')
@@ -91,7 +95,7 @@ def compile_candidate(source_bytes, anchor_bytes, policy_bytes, rubric_bytes,
                     'strict_bridge_language_repair_proof_changed')
                 dispatch_proofs[role]=proof
         if (root/'historical-rebind.json').exists():
-            from scripts.sermon_historical_layer2 import validate_rebind
+            from tongxing_production.workflows.diagnostic.historical_layer2 import validate_rebind
             proof,_=read('historical-rebind.json');validate_rebind(prepared,root,proof)
         for key, value in strict.common_identity(prepared, manifest['candidateId'], manifest['revisionId']).items():
             c.require(manifest[key] == value, 'strict_bridge_current_identity_changed')
@@ -187,16 +191,16 @@ def compile_candidate(source_bytes, anchor_bytes, policy_bytes, rubric_bytes,
             'targetText': ''.join(group['targetUtterances']),
             'languageReview': {'status': result['status'], 'pluginId': plugin['pluginId'],
                 'policySha256': plugin['languageReviewPolicySha256'], 'checks': result['checks']}})
-    candidate = {'schemaVersion': handoff.CANDIDATE_SCHEMA, 'sourceLocale': 'en',
+    candidate = {'schemaVersion': _handoff().CANDIDATE_SCHEMA, 'sourceLocale': 'en',
         **{k: request[k] for k in ('targetLocale', 'englishSourcePackageJsonSha256',
                                    'anchorManifestSha256', 'translationPolicySha256')},
         'status': 'machine_review_pass_human_review_pending', 'releaseEligible': False,
         'generation': generation, 'groups': candidate_groups,
         'modelReview': {'status': 'pass', 'reviewedGroupIds': [g['translationGroupId'] for g in groups]},
         'humanReview': {'translation': 'pending', 'reviewer': None, 'reviewedAt': None, 'reviewedGroupIds': []}}
-    handoff._validate_schema(candidate, 'sermon-target-language-candidate-v2.schema.json', 'strict public candidate')
-    handoff.validate_target_candidate(source, anchor, candidate, require_human_approval=False, diagnostic_context=diagnostic_context)
-    handoff.validate_policy_binding(candidate, policy, strict_rubric=rubric, diagnostic_context=diagnostic_context)
+    _handoff()._validate_schema(candidate, 'sermon-target-language-candidate-v2.schema.json', 'strict public candidate')
+    _handoff().validate_target_candidate(source, anchor, candidate, require_human_approval=False, diagnostic_context=diagnostic_context)
+    _handoff().validate_policy_binding(candidate, policy, strict_rubric=rubric, diagnostic_context=diagnostic_context)
     for root, captured in snapshots:
         for name, data in captured.items():
             c.require(c.read_snapshot(root / name)[1] == data, 'strict_bridge_snapshot_changed')
@@ -219,12 +223,12 @@ def validate_approved_chain(source_bytes, anchor_bytes, policy_bytes, rubric_byt
         'strict_bridge_public_candidate_changed')
     source, anchor, policy, rubric = [c.decode_json(b) for b in
         (source_bytes, anchor_bytes, policy_bytes, rubric_bytes)]
-    handoff._validate_schema(candidate, 'sermon-target-language-candidate-v2.schema.json', 'approved candidate')
-    released = handoff.validate_released_candidate(source, anchor, candidate, human_receipt)
+    _handoff()._validate_schema(candidate, 'sermon-target-language-candidate-v2.schema.json', 'approved candidate')
+    released = _handoff().validate_released_candidate(source, anchor, candidate, human_receipt)
     # Strict gate decisions record the receipt as a human approval; a machine
     # waiver takes the non-strict speech-job path until they record waivers apart.
-    c.require(released['textPolicy'] == handoff.HUMAN_TEXT_POLICY, 'strict_bridge_requires_human_receipt')
-    handoff.validate_policy_binding(candidate, policy, strict_rubric=rubric)
+    c.require(released['textPolicy'] == _handoff().HUMAN_TEXT_POLICY, 'strict_bridge_requires_human_receipt')
+    _handoff().validate_policy_binding(candidate, policy, strict_rubric=rubric)
     return {**result, 'candidate': copy.deepcopy(candidate),
         'humanReceiptSha256': c.canonical_sha256(human_receipt), 'textPolicy': released['textPolicy'],
         'publicCandidateSha256': c.canonical_sha256(candidate), 'admissionStatus': 'validated_only'}

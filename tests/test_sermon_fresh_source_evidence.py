@@ -6,7 +6,7 @@ import unittest
 import tempfile
 from unittest.mock import patch
 
-from scripts import sermon_fresh_source_evidence as subject
+from tongxing_production.workflows.diagnostic import fresh_source_evidence as subject
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.storage import snapshot as public
 from tongxing_production.review import review_budget as budget
@@ -164,7 +164,8 @@ def pin_producers(identity, compatibility, table):
 class MigratedCachedFreshEvidenceTests(unittest.TestCase):
     def migration_fixture(self, *, approved_identity=False):
         from tongxing_production.source import producer_compatibility as compatibility
-        from scripts import sermon_diagnostic_attempts as attempts, sermon_diagnostic_provider as provider
+        from tongxing_production.workflows.diagnostic import attempts
+        from tongxing_production.workflows.diagnostic import provider
         f = fresh_fixtures.FreshSourceTests(); self.addCleanup(f.doCleanups); f.setUp()
         # Build the synthetic historical package with its historical producer
         # identities from the outset. Updating only the plan after generating a
@@ -216,7 +217,7 @@ class MigratedCachedFreshEvidenceTests(unittest.TestCase):
         from scripts import tongxing_host  # noqa: F401  binds the production package ports
         from tongxing_production.observability import profile
         f, root, plan, runtime = self.migration_fixture(approved_identity=True)
-        repository = Path(subject.cache.__file__).resolve().parents[1]
+        repository = Path(__file__).resolve().parents[1]
         approved_paths = {repository/compatibility.resolve(path): sha
                           for path, sha in compatibility.CURRENT_SOURCE_SHA256.items()}
         original_ref = subject.cache._ref
@@ -252,7 +253,7 @@ class MigratedCachedFreshEvidenceTests(unittest.TestCase):
     def test_actual_current_unknown_revision_rejects_without_calls_locks_or_cache_artifacts(self):
         from tongxing_production.source import producer_compatibility as compatibility
         f, root, plan, runtime = self.migration_fixture()
-        repository = Path(subject.cache.__file__).resolve().parents[1]
+        repository = Path(__file__).resolve().parents[1]
         actual = {path: subject.cache._ref(repository/compatibility.resolve(path))['bytesSha256']
                   for path in compatibility.CURRENT_SOURCE_SHA256}
         self.assertNotEqual(actual, compatibility.CURRENT_SOURCE_SHA256)
@@ -270,7 +271,7 @@ class MigratedCachedFreshEvidenceTests(unittest.TestCase):
 
 class CurrentMFAEvidenceTests(unittest.TestCase):
     def test_actual_builders_over_synthetic_mfa_receipt_replay_no_alignment_and_runtime_drift_rejected(self):
-        from scripts import sermon_fresh_diagnostic_source as adapter
+        from tongxing_production.workflows.diagnostic import fresh_source as adapter
         from scripts import tongxing_host  # noqa: F401  binds the production package ports
         from tongxing_production.observability import profile
         f = fresh_fixtures.FreshSourceTests(); self.addCleanup(f.doCleanups); f.setUp()
@@ -336,7 +337,8 @@ class CurrentMFAEvidenceTests(unittest.TestCase):
         evidence_path.write_bytes(evidence_raw)
         # The real closed-parent cache path consumes the parent's MFA producer,
         # rechecks all bytes, and leaves original evidence/receipts unchanged.
-        from scripts import sermon_diagnostic_attempts as attempts, sermon_diagnostic_provider as provider
+        from tongxing_production.workflows.diagnostic import attempts
+        from tongxing_production.workflows.diagnostic import provider
         attempts.close_parent(f.root/'run-plan.json', instruction_reference_sha256='f'*64)
         terminal = attempts.terminal_parent(f.plan)
         new_root = Path(self.enterContext(tempfile.TemporaryDirectory())).resolve()/'successor'

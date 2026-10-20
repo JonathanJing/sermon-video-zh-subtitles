@@ -5,14 +5,15 @@ from pathlib import Path
 import unittest
 from unittest.mock import Mock, patch
 
-from scripts import sermon_historical_layer2 as h, sermon_strict_layer2 as strict
-from scripts import run_bounded_diagnostic as bounded
-from scripts import sermon_strict_candidate_bridge as bridge
+from tongxing_production.workflows.diagnostic import historical_layer2 as h
+from tongxing_production.text.strict import layer2 as strict
+from tongxing_production.workflows.diagnostic import bounded
+from tongxing_production.text.strict import candidate_bridge as bridge
 from tongxing_production.review import contracts as c
-from scripts import sermon_diagnostic_provider as provider
+from tongxing_production.workflows.diagnostic import provider
 from tongxing_production.review import review_budget as budget
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
-from scripts import sermon_diagnostic_attempts as attempts
+from tongxing_production.workflows.diagnostic import attempts
 from tongxing_production.observability import accounting
 from tongxing_production.observability import profile
 from tongxing_production.text import policy as policies
@@ -76,7 +77,7 @@ def review_group(policy,english_units,group):
                                            rule_preflight=receipt, rule_context={'pluginPath': str(plugin), 'groupPlan': [self.group]})
         if repair_steps:
             import json
-            from scripts import sermon_strict_controller as controller
+            from tongxing_production.text.strict import controller
             original=self.f.http;reviews=[]
             def semantic_failure(req,timeout,**kw):
                 response=original(req,timeout,**kw)

@@ -2,11 +2,11 @@ import copy
 import json
 import unittest
 from unittest.mock import patch
-from scripts import sermon_strict_repair_planner as adapter
+from tongxing_production.text.strict import repair_planner as adapter
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.review import review_budget as budget
 from tongxing_production.review import contracts as c
-from scripts import sermon_strict_layer2 as strict
+from tongxing_production.text.strict import layer2 as strict
 from tests import test_sermon_strict_revisions as revisions
 from tests import test_sermon_review_budget as budget_fixtures
 from tests import test_sermon_strict_budget_adapter as runtime_fixtures

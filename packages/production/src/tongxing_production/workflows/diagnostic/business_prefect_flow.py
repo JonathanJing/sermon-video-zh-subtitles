@@ -15,21 +15,19 @@ import re
 import tempfile
 import threading
 
-from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.source import english_source_package as source_builder
 from tongxing_production.audio import speech_job as handoff
 from tongxing_production.observability import accounting
-from scripts import sermon_bounded_business_callbacks as bounded
-from scripts import sermon_local_business_callbacks as local
-from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.workflows.diagnostic import bounded_business_callbacks as bounded
+from tongxing_production.workflows.diagnostic import local_business_callbacks as local
 from tongxing_production.observability import profile
-from scripts import sermon_prefect_dag as pilot
+from tongxing_production.orchestration.prefect import dag as pilot
 from tongxing_production.storage import snapshot as public
 from tongxing_production.review import contracts as c
-from scripts import sermon_strict_gate_admission as admission
-from scripts import sermon_strict_layer2 as strict
-from scripts.sermon_execution_harness import work_lock
-from scripts.sermon_release_workflow import _safe_path
+from tongxing_production.text.strict import gate_admission as admission
+from tongxing_production.text.strict import layer2 as strict
+from tongxing_production.orchestration.execution_harness import work_lock
+from tongxing_production.storage.paths import safe_path as _safe_path
 
 OPERATIONS = frozenset({'transcribe', 'source_check', 'locale', 'prepare_speech',
                         'render_speech', 'delivery_preflight', 'admit_locale'})
@@ -440,7 +438,7 @@ def run(root, callbacks, nodes):
                   not settings.server.analytics_enabled and not settings.cloud.enable_orchestration_telemetry,
                   'business_prefect_settings_not_isolated')
 
-        from scripts import sermon_business_progress as progress
+        from tongxing_production.workflows.diagnostic import business_progress as progress
 
         @task(retries=0, cache_policy=NO_CACHE, persist_result=False)
         def dispatch(node_id, upstream):

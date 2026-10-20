@@ -13,9 +13,8 @@ import time
 from temporalio import activity
 from temporalio.exceptions import ApplicationError
 
-from scripts.sermon_execution_harness import atomic_json
 from .contracts import ActivityInput, Observation
-from .local_io import PROJECT_PYTHON, ROOT, private_directory
+from .local_io import PROJECT_PYTHON, ROOT, atomic_json, private_directory
 
 
 async def stop_process_group(process):

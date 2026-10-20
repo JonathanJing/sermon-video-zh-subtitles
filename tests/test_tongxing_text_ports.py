@@ -16,14 +16,15 @@ from tongxing_production.compute import api_concurrency as layer2_api_concurrenc
 from tongxing_production.observability import accounting as sermon_accounting
 from tongxing_production.observability import measure as four_layer_measure
 from tongxing_production.text import candidate
-from scripts import four_layer_measure, series_terminology
+from scripts import series_terminology
+from tongxing_production.observability import measure as four_layer_measure
 from tongxing_production.observability import accounting as sermon_accounting
 from tongxing_production.compute import api_concurrency as layer2_api_concurrency
 from tongxing_production.audio import speech_job as handoff
 from tongxing_production.compute import concurrency_profile as production_concurrency_profile
 from tongxing_production.compute import openai_runtime as sermon_openai_runtime
 from tongxing_production.compute import budget_capability as strict_budget_capability
-from scripts import sermon_diagnostic_context
+from tongxing_production.workflows.diagnostic import context as sermon_diagnostic_context
 from tongxing_production.review import source_meaning as meaning
 from tongxing_production.text import policy
 from tongxing_production import path_aliases, ports

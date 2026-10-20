@@ -5,7 +5,8 @@ from pathlib import Path
 import tempfile
 import unittest
 from unittest.mock import patch
-from scripts import run_codex_layer2_test as subject
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tools.development import run_codex_layer2_test as subject
 from tongxing_production.text import policy
 
 
@@ -93,7 +94,7 @@ class FixtureReplayTests(unittest.TestCase):
             transport('', self.payloads['group-0001-astra'])
             out.mkdir()
             return {'groups': [{} for _ in range(13)]}
-        with patch.object(subject, '__file__', str(self.root / 'scripts/run_codex_layer2_test.py')), \
+        with patch.object(subject, '__file__', str(self.root / 'tools/development/run_codex_layer2_test.py')), \
              patch.object(subject.CodexLayer2Transport, '__init__', side_effect=AssertionError('CLI constructed')), \
              patch.object(subject.runner, 'validate_standalone_worker_budget'), \
              patch.object(subject.runner, 'group_plan'), \

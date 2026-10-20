@@ -11,12 +11,11 @@ import time
 
 from tongxing_production.review import contracts as c
 from tongxing_production.review import review_budget as budget
-from scripts import sermon_diagnostic_provider as provider
-from scripts import sermon_execution_extensions as extensions
+from tongxing_production.workflows.diagnostic import provider
+from tongxing_production.workflows.diagnostic import execution_extensions as extensions
 from tongxing_production.storage import snapshot as public
-from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.orchestration import jobs
-from scripts.sermon_release_workflow import _safe_path
+from tongxing_production.storage.paths import safe_path as _safe_path
 
 SCHEMA = 'sermon-diagnostic-linked-attempt-v1'
 AUTH_SCHEMA = 'sermon-diagnostic-new-attempt-authorization-v1'

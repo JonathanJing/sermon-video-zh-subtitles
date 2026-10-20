@@ -14,14 +14,10 @@ from pathlib import Path
 import re
 import sys
 
-if __package__ in {None, ''}:
-    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-
 from tongxing_production.contracts import pipeline_definition as pipeline
 from tongxing_production.delivery import inspect_canonical_packages as packages
-from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.orchestration import jobs
-from scripts.sermon_release_workflow import _safe_path
+from tongxing_production.storage.paths import safe_path as _safe_path
 
 IDENTITY_SCHEMA = 'sermon-canonical-workflow-job-identity-v1'
 VIEW_SCHEMA = 'sermon-canonical-durable-job-inspection-v1'

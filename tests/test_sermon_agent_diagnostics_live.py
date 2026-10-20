@@ -6,9 +6,10 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-from scripts import sermon_agent_diagnostics as diagnostic
-from scripts import sermon_agent_diagnostics_contracts as c
-from scripts import sermon_agent_diagnostics_live as live
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.workflows.diagnostic import agent_diagnostics as diagnostic
+from tongxing_production.workflows.diagnostic import agent_contracts as c
+from tongxing_production.workflows.diagnostic import agent_diagnostics_live as live
 from tests.test_sermon_agent_diagnostics import fixture, frame, final_item
 
 

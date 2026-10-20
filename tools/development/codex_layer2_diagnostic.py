@@ -10,11 +10,11 @@ from pathlib import Path
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.text import candidate as producer
 from tongxing_production.text import models as runner
-from scripts import sermon_diagnostic_context as diagnostic
+from tongxing_production.workflows.diagnostic import context as diagnostic
 from tongxing_production.text import policy as policies
-from scripts.sermon_execution_harness import work_lock
+from tongxing_production.orchestration.execution_harness import work_lock
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 SCHEMA = 'codex-layer2-diagnostic-fixture-v1'
 
 

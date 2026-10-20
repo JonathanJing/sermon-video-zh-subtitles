@@ -34,7 +34,7 @@
 
 > **一个有 dependency 的业务 DAG + 一个观察/调度 DAG 的 control plane。**
 
-现有 `scripts/sermon_end_to_end.py` 已经体现正确基础：
+现有 `packages/production/src/tongxing_production/workflows/supervisor/end_to_end.py` 已经体现正确基础：
 
 - 先读取 upstream production snapshot；
 - upstream 未 complete 时，不进入 downstream release；
@@ -43,7 +43,7 @@
 - 子进程 exit 0 不等于业务 complete；
 - configuration/source identity 变化会阻止继续使用旧结果。
 
-现有 `scripts/sermon_release_workflow.py` 已经把后半段依赖编码为状态机：
+现有 `packages/production/src/tongxing_production/orchestration/release_workflow.py` 已经把后半段依赖编码为状态机：
 
     generate_audio_candidate
         ↓

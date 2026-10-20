@@ -19,13 +19,10 @@ import subprocess
 import sys
 import tempfile
 
-ROOT = Path(__file__).resolve().parents[1]
-if str(ROOT) not in sys.path:
-    sys.path.insert(0, str(ROOT))
-from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.workflows.diagnostic import checkout
 from tongxing_production.storage import snapshot as public
 from tongxing_production.review import contracts as c
-from scripts.sermon_release_workflow import _safe_path
+from tongxing_production.storage.paths import safe_path as _safe_path
 
 SCHEMA = 'sermon-native-preview-runtime-v1'
 INVENTORY_SCHEMA = 'sermon-native-preview-runtime-inventory-v1'
@@ -202,7 +199,8 @@ def smoke(manifest_path, output):
     stdout_path = output.with_suffix('.stdout.log'); stderr_path = output.with_suffix('.stderr.log')
     c.require(not any(p.exists() for p in (output, stdout_path, stderr_path)), 'native_runtime_smoke_receipt_exists')
     environment = clean_environment();environment['SERMON_NATIVE_IMPORT_MANIFEST'] = str(_safe_path(manifest_path))
-    result = subprocess.run([manifest['python']['executable'], '-I', '-B', str(Path(__file__)), '--import-probe'],
+    result = subprocess.run([manifest['python']['executable'], '-I', '-B', str(checkout.entry()),
+                             'workflows.diagnostic.native_preview_runtime', '--import-probe'],
                             env=environment,capture_output=True,text=True,check=False,timeout=180)
     output.parent.mkdir(parents=True, exist_ok=True)
     for path, text in ((stdout_path,result.stdout),(stderr_path,result.stderr)):
@@ -220,7 +218,7 @@ def smoke(manifest_path, output):
                'observed':observed,'processReturncode':result.returncode,'nativeWorkerGuardUnchanged':True,
                'inference':'not_run','productionEligible':False,'stdoutSha256':c.bytes_sha256(result.stdout.encode()),
                'stderrSha256':c.bytes_sha256(result.stderr.encode()), 'stdout':artifact(stdout_path),'stderr':artifact(stderr_path),
-               'workerCodeSha256':sha(ROOT/'scripts/sermon_diagnostic_preview_worker.py'),
+               'workerCodeSha256':sha(checkout.legacy('sermon_diagnostic_preview_worker.py')),
                'status':'guarded_import_failed' if failure else 'guarded_import_pass','failureReasonCode':failure}
     public.save_once(output,receipt)
     c.require(failure is None, 'native_runtime_guarded_import_failed_receipt:' + str(output))
@@ -230,7 +228,7 @@ def smoke(manifest_path, output):
 def import_probe():
     manifest = _safe_path(os.environ['SERMON_NATIVE_IMPORT_MANIFEST'])
     binding = validate(manifest,require_process=True)
-    from scripts import sermon_diagnostic_preview_worker as worker
+    from tongxing_production.workflows.diagnostic import preview_worker as worker
     from unittest.mock import patch
     with worker._local_only(False), patch.object(worker.preview.formal.QwenSynthesizer,'__init__',side_effect=AssertionError('no model construction')):
         from qwen_tts import Qwen3TTSModel

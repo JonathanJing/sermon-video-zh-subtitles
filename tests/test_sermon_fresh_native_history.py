@@ -7,12 +7,12 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-from scripts import sermon_fresh_diagnostic as fresh
-from scripts import sermon_diagnostic_dag_session as sessions
-from scripts import sermon_diagnostic_prefect_flow as flow
-from scripts import sermon_historical_native_seed as native
-from scripts import sermon_diagnostic_attempts as attempts
-from scripts import sermon_diagnostic_preview_worker as worker
+from tongxing_production.workflows.diagnostic import fresh
+from tongxing_production.workflows.diagnostic import dag_session as sessions
+from tongxing_production.workflows.diagnostic import prefect_flow as flow
+from tongxing_production.workflows.diagnostic import historical_native_seed as native
+from tongxing_production.workflows.diagnostic import attempts
+from tongxing_production.workflows.diagnostic import preview_worker as worker
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.storage import snapshot as public
 from tongxing_production.review import contracts as c

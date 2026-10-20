@@ -11,9 +11,8 @@ import os
 from pathlib import Path
 import time
 import uuid
-from scripts import sermon_agents_supervisor as guarded
-from scripts import sermon_end_to_end as workflow
-from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.workflows.supervisor import agents as guarded
+from tongxing_production.workflows.supervisor import end_to_end as workflow
 from tongxing_production.compute import spark_admission
 from tongxing_production.orchestration.supervisor.agents_api import AgentsAPIError, _write_json
 
@@ -21,7 +20,6 @@ from tongxing_production.orchestration.supervisor.agents_api import AgentsAPIErr
 def session_report(args, config, instructions, decision_type, verify_decision, *, call_json=None):
     real_caller = call_json is None
     if real_caller:
-        from scripts import tongxing_host  # noqa: F401  binds the production package ports
         from tongxing_production.compute.transports.codex_cli import call_json
         call_json = spark_admission.SessionBoundCaller(call_json, purpose="production-supervisor", requires_spark=False, outcome_guarded=True)
     timeout = getattr(args, 'agent_timeout_seconds', 21600)
@@ -38,9 +36,8 @@ def session_report(args, config, instructions, decision_type, verify_decision, *
     if (profile_path is None)!=(policy_path is None):
         raise AgentsAPIError('supervisor_profile_and_resource_policy_required')
     if profile_path is not None:
-        from scripts import tongxing_host  # noqa: F401  binds the production package ports
         from tongxing_production.compute.concurrency_profile import load_profile
-        from scripts.sermon_unified import resources, contracts
+        from tongxing_production.orchestration.unified import resources, contracts
         profile=load_profile(profile_path)
         policy=resources.validate_policy(contracts.read(policy_path))
         if policy['capacities']['codex_cli']!=profile['totalCodexSlots']:
@@ -119,14 +116,12 @@ def session_report(args, config, instructions, decision_type, verify_decision, *
                                    output_dir=turn_dir, timeout_seconds=max(0.001, timeout - (time.monotonic() - started)),
                                    **resource_options)
             except Exception as exc:
-                from scripts import tongxing_host  # noqa: F401  binds the production package ports
                 from tongxing_production.compute.transports.codex_cli import CodexResourceBusy
                 outcome_path = turn_dir / 'outcome.json'
                 identity_path = turn_dir / 'identity.json'
                 if (isinstance(exc, CodexResourceBusy) and not (turn_dir / 'started.json').exists()
                         and outcome_path.is_file() and identity_path.is_file()):
                     outcome = guarded.read_object(outcome_path)
-                    from scripts import tongxing_host  # noqa: F401  binds the production package ports
                     from tongxing_production.compute.transports.codex_cli import _hash
                     if (outcome.get('status') == 'not_dispatched_resource_busy'
                             and outcome.get('identitySha256') == _hash(guarded.read_object(identity_path))):

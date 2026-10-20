@@ -1,13 +1,10 @@
-#!/usr/bin/env python3
-"""Print a private, read-only report of a frozen local MOCK pilot. No dispatch."""
+"""Print a private, read-only report of a frozen local MOCK pilot. No dispatch.
+
+Run it as ``tools/ops/run.py workflows.diagnostic.inspect_prefect_pilot``."""
 import argparse
 import json
 from pathlib import Path
-import sys
-REPO = Path(__file__).resolve().parents[1]
-if str(REPO) not in sys.path:
-    sys.path.insert(0, str(REPO))
-from scripts.sermon_pilot_evidence import inspect
+from tongxing_production.workflows.diagnostic.pilot_evidence import inspect
 
 
 def main():

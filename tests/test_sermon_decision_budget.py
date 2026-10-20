@@ -9,7 +9,7 @@ from unittest.mock import patch
 
 from tests.job_store_patches import patch_job_store  # G1: job store primitives live in two modules
 from tongxing_production.orchestration.supervisor import bounded_decision as decision
-from scripts import sermon_decision_budget as subject
+from tongxing_production.orchestration.supervisor import decision_budget as subject
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.orchestration import jobs
 
@@ -69,7 +69,7 @@ class DecisionBudgetTests(unittest.TestCase):
     def test_process_death_after_reservation_never_reopens_budget(self):
         program = '''
 import json, os, sys
-from scripts.sermon_decision_budget import Budget
+from tongxing_production.orchestration.supervisor.decision_budget import Budget
 p=json.loads(sys.argv[2]); assert Budget(sys.argv[1],p['productionRunId']).reserve(p)
 os._exit(77)
 '''
@@ -85,7 +85,7 @@ os._exit(77)
         program = '''
 import json,sys,time
 from pathlib import Path
-from scripts.sermon_decision_budget import Budget
+from tongxing_production.orchestration.supervisor.decision_budget import Budget
 p=json.loads(sys.argv[2]); deadline=time.monotonic()+5
 while not Path(sys.argv[3]).exists():
     if time.monotonic()>deadline: raise RuntimeError('barrier timeout')

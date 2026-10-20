@@ -7,7 +7,7 @@ from unittest.mock import patch
 from tongxing_production.observability import accounting
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.observability import log_contract as logs
-from scripts import sermon_mock_tts_control as control
+from tongxing_production.compute.mock_tts import control
 from tongxing_production.storage import snapshot as public
 from tongxing_production.review import contracts as c
 from tests import test_sermon_mock_tts_worker as fixtures

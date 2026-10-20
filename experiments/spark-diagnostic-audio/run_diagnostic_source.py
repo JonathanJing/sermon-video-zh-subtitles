@@ -35,7 +35,7 @@ from tongxing_production.observability import accounting
 from tongxing_production.source import mfa_backend
 from tongxing_production.compute.concurrency_profile import validate_profile, load_profile
 from scripts.sermon_unified import resources
-from scripts.sermon_execution_harness import work_lock
+from tongxing_production.orchestration.execution_harness import work_lock
 
 ROOT = Path(__file__).resolve().parents[2]
 SCHEMA = 'diagnostic-source-execution-v1'

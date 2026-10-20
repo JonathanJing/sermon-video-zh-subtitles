@@ -9,7 +9,7 @@ import subprocess
 import tempfile
 import time
 
-from scripts.sermon_execution_harness import ExecutionTerminated, _LOCK_FDS
+from tongxing_production.orchestration.execution_harness import ExecutionTerminated, _LOCK_FDS
 
 
 def memory_snapshot():

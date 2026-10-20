@@ -11,7 +11,7 @@ import json
 from pathlib import Path
 import sys
 if __package__ in (None, ''):
-    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+    sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.text import models as runner
 from tongxing_production.observability import accounting
@@ -102,7 +102,7 @@ def run_diagnostic_test(fixture_dir, out_dir, *, cli_path, reviewer_tier='fast',
                         mock_responses_dir=None, resource_policy_path=None, translator_model=None,
                         session_verifier=None, backend='codex', reuse_api_receipts=None,
                         budget_config_path=None, reuse_from=None, partial_repair_brief=None):
-    from scripts import codex_layer2_diagnostic as diagnostic
+    from tools.development import codex_layer2_diagnostic as diagnostic
     inputs = diagnostic.load_fixture(fixture_dir)  # All gates before constructing a CLI transport.
     source, anchor, policy, plan, plugin, request, receipt, scope, manifest = inputs
     out_dir = diagnostic.artifact_directory(out_dir)
@@ -137,7 +137,7 @@ def run_diagnostic_test(fixture_dir, out_dir, *, cli_path, reviewer_tier='fast',
     if mock_responses_dir is None:
         spark_admission.require_session(verifier=session_verifier)
     if backend=='openai_api':
-        from scripts.openai_layer2_diagnostic_transport import OpenAILayer2DiagnosticTransport
+        from tongxing_production.workflows.diagnostic.openai_layer2_transport import OpenAILayer2DiagnosticTransport
         if resource_policy_path is None or manifest.get('concurrencyProfile') is None:
             raise ValueError('openai_diagnostic_shared_resource_policy_required')
         if budget_config_path is None or configuration is None:
@@ -207,7 +207,7 @@ def run_test(fixture_dir, policy_path, out_dir, *, cli_path, reviewer_tier='fast
     if reuse_from is not None or partial_repair_brief is not None:
         raise ValueError('diagnostic_repair_requires_diagnostic_fixture')
     fixture_dir, out_dir = Path(fixture_dir).resolve(), Path(out_dir).resolve()
-    root = Path(__file__).resolve().parents[1]
+    root = Path(__file__).resolve().parents[2]
     if not out_dir.is_relative_to(root / 'artifacts') or out_dir == root / 'artifacts':
         raise ValueError('CLI test outputs must be a dedicated ignored artifacts directory')
     load = lambda name: json.loads((fixture_dir / name).read_text())

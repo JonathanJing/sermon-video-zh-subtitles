@@ -45,7 +45,6 @@ class LivenessError(RuntimeError):
 
 class Reporter:
     def __init__(self, folder, request):
-        from scripts import tongxing_host  # noqa: F401  binds the production package ports
         from tongxing_production.orchestration import jobs
         self.folder, self.jobs = folder, jobs
         self.policy = validate_policy(request['livenessPolicy'])
@@ -116,7 +115,6 @@ def report(folder, request):
 
 class Monitor:
     def __init__(self, folder, request, *, clock=time.monotonic):
-        from scripts import tongxing_host  # noqa: F401  binds the production package ports
         from tongxing_production.orchestration import jobs
         self.folder, self.request, self.jobs = folder, request, jobs
         self.policy = validate_policy(request['livenessPolicy'])

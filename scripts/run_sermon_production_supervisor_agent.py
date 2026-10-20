@@ -1,8 +1,9 @@
-"""Transition facade: the implementation lives in tongxing_production.observability.measure.
+"""Transition facade: the implementation lives in tongxing_production.workflows.supervisor.agent.
 
 Both import paths name one module object, so attribute patches apply to both.
-``python scripts/four_layer_measure.py`` still runs the command. Remove once no caller
-imports or runs the old path.
+backend/app.py and the Cloud Run job run ``scripts/run_sermon_production_supervisor_agent.py``
+by path in the deployed image, so remove it together with the next Cloud Run deploy
+(decision D-2). Prefer ``tools/ops/run.py workflows.supervisor.agent``.
 """
 from pathlib import Path
 import sys
@@ -12,7 +13,7 @@ try:
 except ModuleNotFoundError:  # run directly, or imported by bare name, from scripts/
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
     from scripts import tongxing_host  # noqa: F401
-from tongxing_production.observability import measure as _implementation  # noqa: E402
+from tongxing_production.workflows.supervisor import agent as _implementation  # noqa: E402
 
 if __name__ == "__main__":
     raise SystemExit(_implementation.main())

@@ -80,7 +80,7 @@ def _command(command):
     require(script.suffix == '.py' and script.is_file()
         and (script.is_relative_to(ROOT / 'experiments/spark-diagnostic-audio')
              or ('diagnostic' in script.stem and script.parent == ROOT / 'scripts')
-             or script == ROOT / 'scripts/run_codex_layer2_test.py')
+             or script == ROOT / 'tools/development/run_codex_layer2_test.py')
         and script != Path(__file__).resolve(), 'diagnostic_script_not_allowed')
     return [str(interpreter), str(script), *command[2:]], {
         'interpreterSha256': hashlib.sha256(resolved_interpreter.read_bytes()).hexdigest(),

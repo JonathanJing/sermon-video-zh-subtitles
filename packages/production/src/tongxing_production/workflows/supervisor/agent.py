@@ -13,19 +13,19 @@ from datetime import date
 from pathlib import Path
 from typing import Any, Callable, Literal
 
-REPO_ROOT = Path(__file__).resolve().parents[1]
-if str(REPO_ROOT) not in sys.path:
-    sys.path.insert(0, str(REPO_ROOT))
+from agents import Agent, ModelSettings, RunConfig, RunContextWrapper, Runner, function_tool
+from pydantic import BaseModel, Field
+from openai.types.shared import Reasoning
 
-from agents import Agent, ModelSettings, RunConfig, RunContextWrapper, Runner, function_tool  # noqa: E402
-from pydantic import BaseModel, Field  # noqa: E402
-from openai.types.shared import Reasoning  # noqa: E402
+from tongxing_production.workflows.dual_pdf import host as _host
+from tongxing_production.workflows.supervisor import production as sermon_production_supervisor
+from tongxing_production.observability import accounting as sermon_accounting
+from tongxing_production.workflows.supervisor.agents import executable_stage
 
-from backend.cloud import access_secret  # noqa: E402
-from scripts import sermon_production_supervisor  # noqa: E402
-from scripts import tongxing_host  # noqa: E402,F401  binds the production package ports
-from tongxing_production.observability import accounting as sermon_accounting  # noqa: E402
-from scripts.sermon_agents_supervisor import executable_stage  # noqa: E402
+
+def access_secret(resource_name: str) -> str:
+    # backend.cloud.access_secret through the dual_pdf Cloud port; a module-level name patches intercept.
+    return _host.current().cloud.access_secret(resource_name)
 
 
 class SupervisorDecision(BaseModel):
@@ -268,7 +268,6 @@ async def run_agent(args: argparse.Namespace) -> dict[str, Any]:
     if config.app_delivery_config is not None:
         if getattr(args, 'approve_window', False):
             raise ValueError('App scope consumes existing reviews; it cannot create window approval')
-        from scripts import tongxing_host  # noqa: F401  binds the production package ports
         from tongxing_production.delivery import app_workflow as sermon_app_delivery_workflow
         return sermon_app_delivery_workflow.run(config.app_delivery_config,
             mode=args.mode, sunday=config.sunday)
@@ -304,7 +303,7 @@ async def run_agent(args: argparse.Namespace) -> dict[str, Any]:
 
     execute = args.mode == "execute"
     if getattr(args, "agent_backend", "codex-cli") == "codex-cli":
-        from scripts.sermon_codex_supervisor import session_report
+        from tongxing_production.workflows.supervisor.codex import session_report
         instructions = supervisor_instructions("agents-api", page_release=config.release_workflow_config is not None)
         report = session_report(args, config, instructions, SupervisorDecision, verify_decision)
         report["approvalWritten"] = approval
@@ -312,7 +311,7 @@ async def run_agent(args: argparse.Namespace) -> dict[str, Any]:
     if config.api_key_secret and not os.getenv("OPENAI_API_KEY"):
         os.environ["OPENAI_API_KEY"] = access_secret(config.api_key_secret)
     if getattr(args, "agent_backend", "codex-cli") == "agents-api":
-        from scripts.sermon_agents_supervisor import session_report
+        from tongxing_production.workflows.supervisor.agents import session_report
         instructions = supervisor_instructions(
             "agents-api", page_release=config.release_workflow_config is not None
         )

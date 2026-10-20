@@ -13,7 +13,7 @@ from tongxing_production.text import reconciliation as reconciliation
 from tongxing_production.text import controller as layer2
 from tongxing_production.orchestration import jobs
 from tongxing_production.observability import accounting
-from scripts import weekly_pipeline_report as weekly
+from tongxing_production.observability import weekly_projection as weekly
 from tests import test_canonical_layer2_controller as fixtures
 
 

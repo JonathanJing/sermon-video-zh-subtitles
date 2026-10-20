@@ -55,6 +55,12 @@ def _load(path: Path) -> dict[str, Any]:
     return result
 
 
+def _diagnostic_context_file() -> Path:
+    # The diagnostic plugins' shared context checks, read where the legacy key names them today
+    # (workflows/diagnostic/context.py since the D-5 closure window).
+    return _text.current().code.implementation_path("scripts/sermon_diagnostic_context.py")
+
+
 def plugin_implementation_sources(plugin_path: Path) -> list[Path]:
     """Hash the reviewed built-in plugin and its executable shared rules."""
     path = plugin_path.resolve()
@@ -65,7 +71,7 @@ def plugin_implementation_sources(plugin_path: Path) -> list[Path]:
            and isinstance(node.targets[0], ast.Name) and node.targets[0].id == 'DIAGNOSTIC_PINNED_QUOTES'
            and isinstance(node.value, ast.Constant) and node.value.value is True for node in facts.body):
         return [path, builtins / 'diagnostic_pinned_quotes.py', builtins / 'diagnostic_structural.py',
-                builtins / 'common.py', builtins.parent / 'sermon_diagnostic_context.py']
+                builtins / 'common.py', _diagnostic_context_file()]
     if path.parent == builtins and path.name in BUILTIN_PLUGIN_NAMES:
         return [path, builtins / "common.py"]
     if path.parent == builtins and path.name in LAODICEA_PLUGIN_NAMES:
@@ -81,7 +87,7 @@ def plugin_implementation_sources(plugin_path: Path) -> list[Path]:
         return [path, builtins / "common.py", builtins.parent / "cuv_scripture.py",
                 builtins.parent / "build_scripture_index.py"]
     if path.parent == builtins and path.name == "diagnostic_structural.py":
-        return [path, builtins / "common.py", builtins.parent / "sermon_diagnostic_context.py"]
+        return [path, builtins / "common.py", _diagnostic_context_file()]
     return [path]
 
 

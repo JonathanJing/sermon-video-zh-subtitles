@@ -10,20 +10,20 @@ from pathlib import Path
 import unicodedata
 import tempfile
 
-from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.workflows.diagnostic import checkout
 from tongxing_production.review import contracts as c
 from tongxing_production.review import review_budget as budget
-from scripts import sermon_strict_layer2 as immutable
+from tongxing_production.text.strict import layer2 as immutable
 from tongxing_production.source import sentence_interpretation as anchors
 from tongxing_production.source import english_source_package as english
-from scripts import sermon_diagnostic_context as diagnostic
+from tongxing_production.workflows.diagnostic import context as diagnostic
 from tongxing_production.observability import accounting
 from tongxing_production.storage import snapshot as aggregate
 from tongxing_production.source import mfa_backend
 from tongxing_production.observability import completion
-from scripts import sermon_fresh_source_causality as causality
+from tongxing_production.workflows.diagnostic import fresh_source_causality as causality
 from tongxing_production.source import mfa_identity
-from scripts.sermon_release_workflow import _safe_path
+from tongxing_production.storage.paths import safe_path as _safe_path
 
 
 def _read(path):
@@ -126,7 +126,7 @@ def preflight_recipe(plan, recipe, authorization):
         raise c.ContractError('fresh_source_recipe_consumer_incompatible') from exc
     # These actual fixed builders/consumers must be included before the plan is
     # frozen. No late importer or unknown recipe may buy a request first.
-    repository = Path(__file__).resolve().parents[1]
+    repository = checkout.root()
     frozen = plan['executionIdentity']['loadedProjectCodeSha256']
     for module in (__file__, english.__file__, anchors.__file__, diagnostic.__file__,
                    completion.__file__, causality.__file__, mfa_identity.__file__):
@@ -454,7 +454,7 @@ def prepare_source_package(plan, subject, *, recipe, authorization, source_compl
     if (inputs['root']/'fresh-source-evidence.json').exists():
         # A complete original package is authoritative even when a separate
         # controller acknowledgement was not saved. Inspect, never rebuild it.
-        from scripts import sermon_fresh_source_evidence as inspector
+        from tongxing_production.workflows.diagnostic import fresh_source_evidence as inspector
         prepared = {key: _read(inputs['root']/name)[0] for key, name in
             (('source', 'source.json'), ('anchor', 'anchor-manifest.json'),
              ('context', 'diagnostic-context.json'), ('evidence', 'fresh-source-evidence.json'))}

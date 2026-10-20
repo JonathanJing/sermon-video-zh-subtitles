@@ -7,14 +7,14 @@ provider ledger, never invented D5 reservations or a fabricated semantic failure
 from copy import deepcopy
 from pathlib import Path
 
+from tongxing_production.text import backend as _text
 from tongxing_production.review import contracts as c
 from tongxing_production.review import review_budget as budget
-from scripts import tongxing_host  # noqa: F401  binds the production package ports
-from scripts import sermon_strict_layer2 as strict
+from tongxing_production.text.strict import layer2 as strict
 from tongxing_production.observability import accounting
-from scripts import sermon_diagnostic_attempts as attempts
+from tongxing_production.workflows.diagnostic import attempts
 from tongxing_production.storage import snapshot as aggregate
-from scripts.sermon_release_workflow import _safe_path
+from tongxing_production.storage.paths import safe_path as _safe_path
 
 SPEC = 'sermon-historical-layer2-spec-v1'
 REBIND = 'sermon-historical-layer2-rebind-v1'
@@ -119,20 +119,19 @@ class HistoricalLayer2Reuse:
 
     def bind_current(self):
         """Acquire real Git/tree identity outside the HTTP-only process guard."""
-        from scripts import sermon_historical_identity as identity
+        from tongxing_production.workflows.diagnostic import historical_identity as identity
         self._closed()
         self._identity_witness=identity.ExecutionIdentityWitness.capture(self.new_plan['executionIdentity'])
 
     def _current(self):
-        from scripts import sermon_historical_identity as identity
+        from tongxing_production.workflows.diagnostic import historical_identity as identity
         self._closed()
         c.require(type(getattr(self,'_identity_witness',None)) is identity.ExecutionIdentityWitness,
                   'historical_identity_witness_required')
         self._identity_witness.validate(self.new_plan['executionIdentity'])
 
     def _inventory(self):
-        from scripts import sermon_strict_candidate_bridge as bridge
-        from scripts import tongxing_host  # noqa: F401  binds the production package ports
+        from tongxing_production.text.strict import candidate_bridge as bridge
         from tongxing_production.text import candidate as producer
         self._closed()
         if hasattr(self,'_inventory_cache'):
@@ -280,7 +279,7 @@ class HistoricalLayer2Reuse:
                     strict.save_once(current/(stem+suffix+'.json'), value)
             transport, cache_only = _no_dispatch, True
         else:
-            from scripts import sermon_diagnostic_provider as provider
+            from tongxing_production.workflows.diagnostic import provider
             c.require(type(caller) is provider.DiagnosticProvider and caller.config == self.new_plan['providerConfig'] and
                       caller.store.root==self.successor/'budget' and caller.store.authority==self.new_plan['authority'],
                       'historical_repair_pinned_provider_required')
@@ -372,7 +371,8 @@ class HistoricalLayer2Reuse:
         failed = prior['groupReview']
         c.require(failed['status']=='fail' and {r['checkId'] for r in failed['checks'] if r['status']=='fail'} ==
                   {'term_surface_preservation'}, 'historical_plugin_repair_not_supported')
-        from scripts.language_review_plugins.diagnostic_structural import _contains
+        # The policy-frozen plugin stays in scripts/; the host's Plugins port loads it in place.
+        _contains = _text.current().plugins.module('language_review_plugins.diagnostic_structural')._contains
         candidate = c.decode_json(prior['parentCandidateBytes']); target = ''.join(candidate['targetUtterances'])
         source = ' '.join(u['english'] for u in prepared['units'])
         terms = [deepcopy(term) for terms_of_kind in prepared['policy']['terminology'].values() if type(terms_of_kind) is list for term in terms_of_kind if

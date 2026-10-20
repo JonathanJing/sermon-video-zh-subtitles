@@ -16,12 +16,11 @@ from tongxing_production.observability import accounting
 from tongxing_production.observability import profile
 from tongxing_production.review import review_budget as budget
 from tongxing_production.review import contracts as c
-from scripts import sermon_strict_layer2 as strict
-from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.text.strict import layer2 as strict
 from tongxing_production.orchestration import jobs
 from tongxing_production.workflows.dual_pdf.pipeline import TransportRejection
 from tongxing_production.workflows.dual_pdf.pipeline import PreDispatchRejection, PRE_DISPATCH_REASONS
-from scripts.sermon_release_workflow import _safe_path
+from tongxing_production.storage.paths import safe_path as _safe_path
 
 DISPATCH_LOCK_ATTEMPTS = 100
 DISPATCH_LOCK_DELAY_SECONDS = 0.05

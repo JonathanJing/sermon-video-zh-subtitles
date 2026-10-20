@@ -6,7 +6,8 @@ import signal
 import sys
 import time
 
-from scripts.sermon_execution_harness import atomic_json, bounded_process
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.orchestration.execution_harness import atomic_json, bounded_process
 from .fixtures import fixture_root
 from .local_io import process_identity, read_json
 

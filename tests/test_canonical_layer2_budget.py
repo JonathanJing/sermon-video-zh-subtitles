@@ -103,7 +103,7 @@ class CanonicalLayer2BudgetTests(unittest.TestCase):
     def test_new_api_policy_needs_its_launcher_not_spark_before_model_dispatch(self):
         # 2026-10-13: an API-only Layer 2 worker takes no Spark session; without the dev/prod
         # launcher it still refuses before any model dispatch or budget reservation.
-        from scripts import canonical_durable_jobs as durable
+        from tongxing_production.orchestration import canonical_durable_jobs as durable
         view = controller.package_view(self.config)
         ident = durable.identity(view, self.config.run_id, 'text.zh-Hans')
         key = jobs._digest(ident)
@@ -126,7 +126,7 @@ class CanonicalLayer2BudgetTests(unittest.TestCase):
         self.assertFalse(list(self.config.lanes['zh-Hans']['output'].glob('*-astra.started.json')))
 
     def test_budgeted_worker_rejects_codex_cli_before_model_dispatch(self):
-        from scripts import canonical_durable_jobs as durable
+        from tongxing_production.orchestration import canonical_durable_jobs as durable
         view = controller.package_view(self.config)
         ident = durable.identity(view, self.config.run_id, 'text.zh-Hans')
         key = jobs._digest(ident)

@@ -9,11 +9,11 @@ import unittest
 from unittest.mock import patch
 
 from tongxing_production.observability import accounting
-from scripts import sermon_fresh_full_dag as full
+from tongxing_production.workflows.diagnostic import fresh_full_dag as full
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.observability import log_contract as contract
 from tongxing_production.observability import profile
-from scripts import sermon_logs as logs
+from tongxing_production.observability import logs
 
 
 class ReportSnapshotTests(unittest.TestCase):

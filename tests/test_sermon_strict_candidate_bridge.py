@@ -4,8 +4,8 @@ import json
 import unittest
 from unittest.mock import patch
 
-from scripts import sermon_strict_candidate_bridge as bridge
-from scripts import sermon_strict_layer2 as strict
+from tongxing_production.text.strict import candidate_bridge as bridge
+from tongxing_production.text.strict import layer2 as strict
 from tongxing_production.review import contracts as c
 from tongxing_production.text import candidate as producer
 from tongxing_production.text import human_review as human

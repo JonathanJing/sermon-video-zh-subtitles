@@ -9,7 +9,7 @@ import json
 import re
 from pathlib import Path
 
-from scripts import sermon_production_supervisor as production
+from tongxing_production.workflows.supervisor import production
 
 ACTIONS = ('generate_audio_candidate', 'sync_audio', 'build_page', 'prepare_release',
            'deploy_release', 'verify_release', 'record_published')
@@ -46,7 +46,6 @@ def _recommend(action, human=False):
 
 
 def _inspect_job(root, job_id, *, read_only=False):
-    from scripts import tongxing_host  # noqa: F401  binds the production package ports
     from tongxing_production.orchestration.jobs import inspect_job, peek_job
     try:
         return (peek_job if read_only else inspect_job)(root, job_id)
@@ -84,7 +83,7 @@ def snapshot(config, *, read_only=False):
     path = configuration(config)
     if path is None:
         return upstream
-    from scripts import sermon_release_workflow as release
+    from tongxing_production.orchestration import release_workflow as release
     # Validate opt-in configuration even while upstream is waiting.
     release.load_config(path)
     result = dict(upstream)
@@ -138,7 +137,6 @@ def snapshot(config, *, read_only=False):
 
 
 def state_revision(observed):
-    from scripts import tongxing_host  # noqa: F401  binds the production package ports
     from tongxing_production.orchestration.jobs import _digest
     return _digest({key: value for key, value in observed.items() if key != 'checkedAt'})
 
@@ -146,7 +144,6 @@ def state_revision(observed):
 def start_action(config, action, *, timeout_seconds=21600, expected_config_sha=None,
                  expected_state_revision=None):
     if getattr(config, 'app_delivery_config', None) is not None:
-        from scripts import tongxing_host  # noqa: F401  binds the production package ports
         from tongxing_production.delivery import app_workflow
         if action != app_workflow.ACTION:
             return {'status': 'blocked'}
@@ -162,7 +159,6 @@ def start_action(config, action, *, timeout_seconds=21600, expected_config_sha=N
     path = configuration(config)
     if path is None:
         return {'status': 'blocked'}
-    from scripts import tongxing_host  # noqa: F401  binds the production package ports
     from tongxing_production.orchestration.jobs import _lock, _digest
     # Serialize admission across configurations, and recheck evidence under lock.
     week_root = job_root(config, path).parent
@@ -194,14 +190,13 @@ def _start_action_locked(config, action, *, timeout_seconds=21600, expected_conf
     # The downstream config fixes the work/source/release; each stage is allowed
     # one durable attempt for this configuration, across all agent sessions.
     identity = {'schemaVersion': 1, 'sunday': config.sunday, 'configSha256': digest, 'action': action}
-    command = [config.python_executable, str(Path(__file__).with_name('sermon_release_workflow.py')),
-               '--config', str(path), '--sunday', config.sunday, '--action', action,
+    command = [config.python_executable, str(production._repo_root() / 'tools/ops/run.py'),
+               'orchestration.release_workflow', '--config', str(path), '--sunday', config.sunday, '--action', action,
                '--expected-config-sha', digest]
     source_root = (current.get('locations') or {}).get('runRoot')
     if not source_root:
         raise ValueError('Current production source run is required for release execution')
     command.extend(['--expected-source-run-root', str(Path(source_root).resolve())])
-    from scripts import tongxing_host  # noqa: F401  binds the production package ports
     from tongxing_production.orchestration.jobs import start_job, _digest, _persist
     if current.get('releaseWorkflow') is not None:
         command.extend(['--expected-release-revision', _digest(current['releaseWorkflow'])])

@@ -7,7 +7,7 @@
 | 优先级 / 审计项 | 实际变更 |
 |---|---|
 | P1 同行范围与验收 | [prompt](../packages/production/src/tongxing_production/source/review_prompts.py)、[生成器](../scripts/generate_notes_with_openai.py)和[PDF QA](../packages/production/src/tongxing_production/workflows/dual_pdf/interpretation_pdf.py)统一到 notes schema v3 / `sermon-companion-v3`。删除生成式讨论题、指南与祷告字段；取消可选内容最低配额，保留核心内容、来源与精确引文校验。 |
-| P2 提前结束 | [Supervisor](../scripts/run_sermon_production_supervisor_agent.py)为 SDK/API 提供各自真实字段契约。[API 提交工具](../scripts/sermon_agents_supervisor.py)重新检查并拒绝尚有未尝试可执行阶段的最终提交；host 同时阻断提前完成。失败已尝试阶段可恢复停止，每阶段一次、审批和 lease 不变。 |
+| P2 提前结束 | [Supervisor](../packages/production/src/tongxing_production/workflows/supervisor/agent.py)为 SDK/API 提供各自真实字段契约。[API 提交工具](../packages/production/src/tongxing_production/workflows/supervisor/agents.py)重新检查并拒绝尚有未尝试可执行阶段的最终提交；host 同时阻断提前完成。失败已尝试阶段可恢复停止，每阶段一次、审批和 lease 不变。 |
 | P2 上下文冲突 | [content pack](../experiments/local-live-poc/backend/content_pack.py)只注入当前源文匹配的已审术语/经文，同词高相关项优先；保留 cursor 与参考片段顺序、来源信息及 A0。 |
 | P2 exact-only 文档冲突 | [POC AGENTS](../experiments/local-live-poc/AGENTS.md)按已有 DESIGN/README 明确受限 A2 参考例外：最多两条、分数至少 1.5、已审且只作另一版本参考；不代表现场验收。 |
 | P2 fallback 重提取 | [SKILL](../skills/live-caption-zh-fallback/SKILL.md)优先从已有报告构建预览；新来源使用独立目录。自动发现 VOD 也要核实同篇与偏移。已有文件单独上传，不为发布再次提取。 |

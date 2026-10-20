@@ -1,6 +1,6 @@
 # 周六统一生产入口
 
-`scripts/run_saturday_harness.py` 负责按顺序运行已有 PDF Supervisor 和配音桥接器，并把 PDF、音频候选、人工审核、同步、发布分别报告。它不重新实现审批、质量检查或完成门槛。
+`tools/ops/run_saturday_harness.py` 负责按顺序运行已有 PDF Supervisor 和配音桥接器，并把 PDF、音频候选、人工审核、同步、发布分别报告。它不重新实现审批、质量检查或完成门槛。
 
 这是迁移期的 legacy 编排入口，不是[四层生产接口](multilingual-production-interfaces.zh.md)的替代品。现有 PDF 状态属于 `dual_pdf`，桥接器只覆盖当前中文候选链的一部分；`workflowComplete=false` 也不能升级为 `four_layer_release`。今后的预制生产必须绑定 Layer 1 的 `English Source Package`，再由独立 Layer 2／3／4 producer 消费冻结输出并留下各层正式包。
 
@@ -14,7 +14,7 @@
 
 ```bash
 .venv/bin/python tools/ops/run_with_openai_environment.py --environment prod -- \
-  .venv/bin/python scripts/run_saturday_harness.py \
+  .venv/bin/python tools/ops/run_saturday_harness.py \
   --mode inspect --agent-backend codex-cli \
   --sunday YYYY-MM-DD \
   --state-file gs://sermon-zh-artifacts-ai-for-god/sundays/live-source-monitor/backend-state.json \

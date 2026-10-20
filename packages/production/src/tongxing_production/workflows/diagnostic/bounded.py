@@ -19,17 +19,16 @@ import sys
 from unittest.mock import patch
 
 from tongxing_production.observability import accounting
-from scripts import sermon_diagnostic_provider as provider
-from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.workflows.diagnostic import provider
 from tongxing_production.observability import profile
 from tongxing_production.compute import provider_http as http
 from tongxing_production.compute import provider_limits as limits
 from tongxing_production.review import review_budget as budget
 from tongxing_production.review import contracts as c
-from scripts import sermon_strict_layer2 as strict
-from scripts import sermon_strict_locale as locale
-from scripts import sermon_execution_extensions as extensions
-from scripts.sermon_release_workflow import _safe_path
+from tongxing_production.text.strict import layer2 as strict
+from tongxing_production.text.strict import locale
+from tongxing_production.workflows.diagnostic import execution_extensions as extensions
+from tongxing_production.storage.paths import safe_path as _safe_path
 
 
 @contextmanager
@@ -103,14 +102,14 @@ class BoundedRun:
         c.require(source['source']['media']['sha256'] == self.provider.config['sourceMediaSha256'],
                   'diagnostic_source_media_changed')
         if diagnostic_context is not None:
-            from scripts import sermon_diagnostic_context as diagnostic
+            from tongxing_production.workflows.diagnostic import context as diagnostic
             diagnostic.validate_context(diagnostic_context)
             c.require(diagnostic_context['runId'] == self.provider.config['runId'] and
                       diagnostic_context['runConfigSha256'] == c.canonical_sha256(self.provider.config) and
                       diagnostic_context['storeSha256'] == self.provider.store.store_sha256,
                       'diagnostic_continuation_provider_changed')
         if historical_reuse is not None:
-            from scripts import sermon_historical_layer2 as historical
+            from tongxing_production.workflows.diagnostic import historical_layer2 as historical
             c.require(type(historical_reuse) is historical.HistoricalLayer2Reuse,
                       'diagnostic_historical_fixed_resolver_required')
             historical_reuse.bind_current()

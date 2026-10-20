@@ -12,7 +12,7 @@ from unittest.mock import patch
 from tongxing_production.observability import accounting
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.observability import profile
-from scripts import weekly_pipeline_report as report
+from tongxing_production.observability import weekly_projection as report
 from tongxing_production.observability import dispatch_observation as dispatch
 from tests.test_weekly_pipeline_report import WeeklyPipelineReportTests
 from tests.test_sermon_clock_handshake import ClockHandshakeTests
@@ -46,7 +46,8 @@ sys.path.insert(0,str(Path(sys.argv[1])/'packages/production/src'))
 def denied(*a,**k):raise AssertionError('network forbidden')
 socket.socket.connect=denied
 socket.create_connection=denied
-from scripts import sermon_fresh_diagnostic as entry
+from scripts import tongxing_host
+from tongxing_production.workflows.diagnostic import fresh as entry
 from tongxing_production.observability import accounting, profile
 entry.preload_execution_modules()
 before=accounting.execution_identity()

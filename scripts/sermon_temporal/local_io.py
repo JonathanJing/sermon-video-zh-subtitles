@@ -2,14 +2,38 @@
 from __future__ import annotations
 
 import hashlib
+import importlib.util
 import json
 import os
 from pathlib import Path
 import subprocess
-
-from scripts.sermon_execution_harness import atomic_json
+import sys
 
 ROOT = Path(__file__).resolve().parents[2]
+
+
+def _storage_files():
+    """storage/files.py (standard library only): the package module, or this checkout's file by path.
+
+    The isolated Temporal venv installs only temporalio, so it loads the file under a private
+    name without making the package importable; the project Python imports the package module."""
+    try:
+        from tongxing_production.storage import files
+        return files
+    except ModuleNotFoundError as exc:
+        if exc.name != "tongxing_production":
+            raise
+    name = "sermon_temporal_storage_files"
+    if name not in sys.modules:
+        spec = importlib.util.spec_from_file_location(
+            name, ROOT / "packages/production/src/tongxing_production/storage/files.py")
+        module = importlib.util.module_from_spec(spec)
+        sys.modules[name] = module
+        spec.loader.exec_module(module)
+    return sys.modules[name]
+
+
+atomic_json, utc_now = _storage_files().atomic_json, _storage_files().utc_now
 TEMPORAL_ROOT = ROOT / "artifacts" / "temporal"
 PROJECT_PYTHON = ROOT / ".venv" / "bin" / "python"
 

@@ -7,7 +7,7 @@ This caller integrates the reviewed Prefect (#185), progress/ETA (#184), and off
 After the local mock flow exits:
 
 ```sh
-python scripts/inspect_sermon_prefect_pilot.py --root /absolute/mock-run --offline-diagnosis
+python tools/ops/run.py workflows.diagnostic.inspect_prefect_pilot --root /absolute/mock-run --offline-diagnosis
 ```
 
 The command prints a private JSON report to stdout; it writes no run state or report file. The optional diagnostic uses the known in-memory `OfflineReplayClient`, with a synthetic request for missing evidence. It is a lifecycle demonstration, not model reasoning. There is no arbitrary injected client, live model, action execution or paid retry in this entry.

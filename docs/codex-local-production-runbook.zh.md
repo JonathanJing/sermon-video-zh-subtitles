@@ -194,14 +194,14 @@ Layer 2 的每组耗时、恢复跑并行度和周投影诊断，按[周更运�
 
 ### 旧 Agents API 会话恢复
 
-恢复使用 `scripts/run_sermon_production_supervisor_agent.py` 的直接入口，显式传入 `--agent-backend agents-api --agent-run-dir ORIGINAL_AGENT_RUN_DIR --resume-agent-session`。Saturday harness 没有会话恢复参数；本地自动入口要求新 API 任务使用环境启动器，也不能拿它的新任务模板替换旧会话配置。
+恢复使用 `tools/ops/run.py workflows.supervisor.agent` 的直接入口，显式传入 `--agent-backend agents-api --agent-run-dir ORIGINAL_AGENT_RUN_DIR --resume-agent-session`。Saturday harness 没有会话恢复参数；本地自动入口要求新 API 任务使用环境启动器，也不能拿它的新任务模板替换旧会话配置。
 
 以下仅适用于原会话使用旧 Secret Manager 引用的情况。清除新 Project 路由及继承的 OpenAI key，让直接入口读取**原来的 secret 引用**；不使用 dev/prod 启动器，不创建 key。将所有 `ORIGINAL_*`、日期及原有可选参数从原完整启动命令与绑定配置复原。示例为原 `execute` 会话，原会话为 `shadow` 时须保留 `shadow`；模型、目录、GCS、glossary、cookies、通知及可选 release 配置同样不得因当前默认值改变。
 
 ```bash
 env -u SERMON_OPENAI_ENVIRONMENT -u SERMON_OPENAI_CREDENTIAL_ALIAS \
   -u OPENAI_PROJECT_ID -u OPENAI_API_KEY \
-  .venv/bin/python scripts/run_sermon_production_supervisor_agent.py \
+  .venv/bin/python tools/ops/run.py workflows.supervisor.agent \
   --sunday YYYY-MM-DD --state-file ORIGINAL_STATE_FILE \
   --work-root ORIGINAL_WORK_ROOT --out ORIGINAL_REPORT_PATH \
   --gcs-bucket ORIGINAL_BUCKET --gcs-prefix ORIGINAL_PREFIX \
@@ -273,7 +273,7 @@ Supervisor 的 generation 命令显式传入 Sol 6.1、high、阅读稿 provider
 
 ```bash
 .venv/bin/python tools/ops/run_with_openai_environment.py --environment prod -- \
-  .venv/bin/python scripts/run_sermon_production_supervisor_agent.py \
+  .venv/bin/python tools/ops/run.py workflows.supervisor.agent \
   --sunday YYYY-MM-DD \
   --state-file 'gs://sermon-zh-artifacts-ai-for-god/sundays/live-source-monitor/backend-state.json' \
   --work-root artifacts/post-live-runs \
@@ -328,7 +328,7 @@ export SERMON_YOUTUBE_COOKIES_FILE=/absolute/path/youtube.cookies.txt
 - 当前人工审批仍与 source URL 和 timeline SHA-256 匹配
 - generation 的 `publication.status=pass`，已验证本地/远端要求产物的 hash 一致；配置周日导出时也包含该批 Context Pack/readiness 产物
 
-Supervisor 以新读取的 `snapshot.recommendedAction.action == "complete"` 为 `dual_pdf` 范围的最终判断；其实现位于 [sermon_production_supervisor.py](../scripts/sermon_production_supervisor.py)。不要另列更宽松的模型口头标准。
+Supervisor 以新读取的 `snapshot.recommendedAction.action == "complete"` 为 `dual_pdf` 范围的最终判断；其实现位于 [sermon_production_supervisor.py](../packages/production/src/tongxing_production/workflows/supervisor/production.py)。不要另列更宽松的模型口头标准。
 
 **`four_layer_release` 范围完成**还必须有：
 

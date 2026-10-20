@@ -3,8 +3,7 @@ import argparse
 import json
 from pathlib import Path
 
-from scripts import tongxing_host  # noqa: F401  binds the production package ports
-from scripts import sermon_diagnostic_attempts as attempts
+from tongxing_production.workflows.diagnostic import attempts
 from tongxing_production.observability import accounting
 from tongxing_production.review import contracts as c
 from tongxing_production.storage import snapshot as public

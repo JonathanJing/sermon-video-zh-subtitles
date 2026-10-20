@@ -10,7 +10,7 @@
 | `artifacts/next-concurrency-605s-20261005-r8-final/code-stage-manifest.json` 与 `stage-descriptor.json` | 代码文件 539 项、全文件 580 项；均包含相同 gate 哈希。`snapshotSha256=7056eb324fa04326b5a2a7035e9a9b4028d095d171754051b1058a3e6a4f43a0`。 |
 | 同轮 `validated-command-preparation.json`、`comparison-ready/latest-run.json` | 前者为 `ready_for_new_exclusive_session`，后者为 `blocked`；准备完成不等于实验完成。 |
 
-旧 gate 哈希与本次审计时 `origin/dev` 的 `scripts/sermon_review_gate.py` 原文件相同。旧计划属于旧实现：不得用新门面或包文件的哈希补写旧收据。静态路径也不能据文件名排除 Prefect：[`sermon_business_prefect_flow.py`](../../scripts/sermon_business_prefect_flow.py) 导入 [`sermon_strict_gate_admission.py`](../../scripts/sermon_strict_gate_admission.py)，后者导入旧 gate。
+旧 gate 哈希与本次审计时 `origin/dev` 的 `scripts/sermon_review_gate.py` 原文件相同。旧计划属于旧实现：不得用新门面或包文件的哈希补写旧收据。静态路径也不能据文件名排除 Prefect：[`sermon_business_prefect_flow.py`](../../packages/production/src/tongxing_production/workflows/diagnostic/business_prefect_flow.py) 导入 [`sermon_strict_gate_admission.py`](../../packages/production/src/tongxing_production/text/strict/gate_admission.py)，后者导入旧 gate。
 
 ## 新候选的身份边界
 

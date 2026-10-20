@@ -31,7 +31,7 @@ ROOT = Path(__file__).resolve().parents[2]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from scripts import codex_layer2_diagnostic as diagnostic  # noqa: E402
+from tools.development import codex_layer2_diagnostic as diagnostic  # noqa: E402
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.review import scripture as adjudication  # noqa: E402
 from scripts.language_review_plugins import diagnostic_admitted_quotes as admitted  # noqa: E402
@@ -93,7 +93,7 @@ def run_models(args: argparse.Namespace, fixture: Path, out: Path) -> dict[str, 
     rel = lambda path: str(Path(path).relative_to(ROOT))  # noqa: E731
     layer2 = out / 'layer2'
     audio = out / 'audio'
-    chain = (f'{python} scripts/run_codex_layer2_test.py --fixture-dir {rel(fixture)} --diagnostic-fixture '
+    chain = (f'{python} tools/development/run_codex_layer2_test.py --fixture-dir {rel(fixture)} --diagnostic-fixture '
              f'--out-dir {rel(layer2)} --translator-model {args.translator_model} --reviewer-tier fast && '
              f'{python} experiments/spark-diagnostic-audio/run_spark_diagnostic_audio.py execute --fixture {rel(fixture)} '
              f'--layer2-out {rel(layer2)} --media {args.media} --out {rel(audio)} '

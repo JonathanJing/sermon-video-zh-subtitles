@@ -1,7 +1,8 @@
 """Supervisor helpers: bounded decision proposals and their hash-only accounting,
-D5 repair planning, and the bounded Agents API session client.
+D5 repair planning, the decision budget, the Gemini snapshot transport and the
+bounded Agents API session client.
 
-The supervisor itself (scripts/sermon_production_supervisor.py) and its agents stay
-in scripts/ until backend.leases has a host port (scripts migration plan section 9).
+The supervisor itself and its agents drive the dual_pdf entries, so they live in
+workflows/supervisor/ (orchestration/ may not import workflows/).
 Callers bind the host first (tools/ops/run.py or scripts/tongxing_host.py).
 """

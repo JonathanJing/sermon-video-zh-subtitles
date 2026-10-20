@@ -62,7 +62,7 @@ Agent 检查状态并调用命名工具；本地代码决定动作是否允许�
 使用项目现有的状态文件、Secret 和其他生产参数。检查通过后，将模式改为 `execute` 可执行已允许的步骤。只读检查后半段也可运行：
 
 ```sh
-python scripts/sermon_release_workflow.py \
+python tools/ops/run.py orchestration.release_workflow \
   --config /absolute/path/release-workflow.json --sunday 2026-09-20
 ```
 

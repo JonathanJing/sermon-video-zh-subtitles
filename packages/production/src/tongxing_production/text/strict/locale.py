@@ -7,6 +7,7 @@ a separate selective invalidation adapter and are rejected before transport.
 """
 from pathlib import Path
 
+from tongxing_production.text import backend as _text_backend
 from tongxing_production.text import candidate as producer
 from tongxing_production.text import models
 from tongxing_production.observability import accounting
@@ -14,12 +15,11 @@ from tongxing_production.observability import profile
 from tongxing_production.orchestration.supervisor import repair_planning as planning
 from tongxing_production.storage import snapshot as public
 from tongxing_production.review import contracts as c
-from scripts import sermon_strict_candidate_bridge as bridge
-from scripts import sermon_strict_controller as controller
-from scripts import sermon_strict_layer2 as strict
-from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.text.strict import candidate_bridge as bridge
+from tongxing_production.text.strict import controller
+from tongxing_production.text.strict import layer2 as strict
 from tongxing_production.orchestration import jobs
-from scripts.sermon_release_workflow import _safe_path
+from tongxing_production.storage.paths import safe_path as _safe_path
 
 
 def prepare_locale_inputs(source_bytes, anchor_bytes, policy_bytes, rubric_bytes, *,
@@ -89,14 +89,14 @@ def run_locale(source_bytes, anchor_bytes, policy_bytes, rubric_bytes, *, root,
     """
     c.require(profile.current() is not None, 'strict_requires_accounting_profile')
     if diagnostic_context is not None:
-        from scripts.sermon_diagnostic_context import validate_runtime
+        validate_runtime = _text_backend.current().diagnostic.validate_runtime
         diagnostic_context = validate_runtime(diagnostic_context, run_id=production_run_id, store_sha256=store.store_sha256)
     raw, source, policy, plan, prepared = prepare_locale_inputs(
         source_bytes, anchor_bytes, policy_bytes, rubric_bytes, plugin_path=plugin_path,
         expected_plugin_sha256=expected_plugin_sha256, group_plan=group_plan,
         request_limits=request_limits, diagnostic_context=diagnostic_context)
     if historical_reuse is not None:
-        from scripts.sermon_historical_layer2 import HistoricalLayer2Reuse
+        from tongxing_production.workflows.diagnostic.historical_layer2 import HistoricalLayer2Reuse
         c.require(type(historical_reuse) is HistoricalLayer2Reuse,'trusted_historical_layer2_required')
         historical_reuse._current()
     if hasattr(caller, 'preflight_locale'):

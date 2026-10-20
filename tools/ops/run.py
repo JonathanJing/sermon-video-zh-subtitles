@@ -27,7 +27,9 @@ HOSTS = ("scripts.tongxing_host", "scripts.tracker_projection_host")
 # scripts/sermon_unified host binds (their facades imported it). Bound only for them,
 # so other commands' loaded code does not change.
 ORCHESTRATION_HOST = "scripts.sermon_unified"
-ORCHESTRATION_PREFIXES = ("orchestration.", "workflows.prepared.")
+ORCHESTRATION_PREFIXES = ("orchestration.", "workflows.prepared.",
+                          # The Codex supervisor reserves slots in the unified run's resource ledger.
+                          "workflows.supervisor.")
 NAME = re.compile(r"[a-z][a-z0-9_]*(?:\.[a-z][a-z0-9_]*)*")
 USAGE = "usage: run.py <module> [arguments ...]    e.g. run.py text.candidate --help"
 

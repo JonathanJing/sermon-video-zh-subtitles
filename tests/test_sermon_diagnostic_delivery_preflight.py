@@ -6,8 +6,8 @@ from pathlib import Path
 import unittest
 from unittest.mock import patch
 
-from scripts import sermon_diagnostic_delivery_preflight as subject
-from scripts import sermon_diagnostic_provider as provider
+from tongxing_production.workflows.diagnostic import delivery_preflight as subject
+from tongxing_production.workflows.diagnostic import provider
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.review import review_budget as budget
 from tongxing_production.review import contracts as c
@@ -264,7 +264,7 @@ class FreshDeliveryInspectionTests(unittest.TestCase):
             native.assert_not_called()
 
     def test_expired_closed_inspection_repeats_without_dispatch_deadline_reset_or_original_result_write(self):
-        from scripts import sermon_diagnostic_attempts as attempts
+        from tongxing_production.workflows.diagnostic import attempts
         from tests.test_sermon_fresh_source_evidence import existing_bytes
         # Time can pass while inspecting complete evidence; it cannot authorize
         # another execution. Real worker deadline/native proofs remain tested

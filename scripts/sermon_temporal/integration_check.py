@@ -18,12 +18,12 @@ from temporalio.client import Client, WorkflowFailureError
 from temporalio.exceptions import CancelledError, WorkflowAlreadyStartedError
 from temporalio.service import RPCError, RPCStatusCode
 
-from scripts.sermon_execution_harness import atomic_json, utc_now
 from . import server
 from .client import build_request, submit
 from .contracts import SIGNAL_SCHEMA, ResumeSignal
 from .fixtures import initialize, write_approval
-from .local_io import ROOT, TEMPORAL_ROOT, file_sha, private_directory, read_json, receipt_process_alive
+from .local_io import (ROOT, TEMPORAL_ROOT, atomic_json, file_sha,
+                       private_directory, read_json, receipt_process_alive, utc_now)
 from .workflows import SaturdayWorkflow
 
 

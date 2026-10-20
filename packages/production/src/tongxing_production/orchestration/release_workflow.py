@@ -17,13 +17,9 @@ import re
 import sys
 from urllib.parse import urlsplit
 
-if str(Path(__file__).resolve().parents[1]) not in sys.path:
-    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from tongxing_production.orchestration.execution_harness import atomic_json, bounded_process, work_lock, utc_now
+from tongxing_production.orchestration import jobs_host as _jobs_host
 
-from scripts.sermon_execution_harness import atomic_json, bounded_process, work_lock, utc_now
-
-ROOT = Path(__file__).resolve().parents[1]
-POC = ROOT / "experiments/sermon-dubbing-poc"
 SCHEMA = "sermon-release-workflow-v1"
 ACTIONS = frozenset({"generate_audio_candidate", "sync_audio", "build_page", "prepare_release", "deploy_release", "verify_release", "record_published"})
 PATHS = ("bridgeConfig", "work", "candidate", "release", "registry", "stateDir", "authorization")
@@ -44,9 +40,28 @@ def digest(path):
     return h.hexdigest()
 
 
+def _root():
+    """The checkout the host binds (workers run from it); never derived from this file."""
+    return _jobs_host.current().repo_root
+
+
+def _poc():
+    return _root() / "experiments/sermon-dubbing-poc"
+
+
+def __getattr__(name):
+    # Callers and tests that read the former module constants.
+    if name == "ROOT":
+        return _root()
+    if name == "POC":
+        return _poc()
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+
+
 def _module(name):
-    if str(POC) not in sys.path:
-        sys.path.insert(0, str(POC))
+    poc = _poc()
+    if str(poc) not in sys.path:
+        sys.path.insert(0, str(poc))
     return importlib.import_module(name)
 
 
@@ -138,7 +153,7 @@ def _command(settings, sunday, action):
     if action == "prepare_release":
         for page in settings.get("replacePages", []):
             command += ["--replace-page", page]
-    return [sys.executable, str(POC / command[0]), *command[1:]]
+    return [sys.executable, str(_poc() / command[0]), *command[1:]]
 
 
 def _review(work, job):
@@ -322,7 +337,6 @@ def execute(config_path, sunday, action, *, expected_source_run_root=None, expec
             raise ValueError("Workflow configuration changed while acquiring locks")
         current = _snapshot(config, sunday)
         if expected_release_revision is not None:
-            from scripts import tongxing_host  # noqa: F401  binds the production package ports
             from tongxing_production.orchestration.jobs import _digest
             if _digest(current) != expected_release_revision:
                 return {"executed": False, "snapshot": current}
@@ -341,7 +355,7 @@ def execute(config_path, sunday, action, *, expected_source_run_root=None, expec
         try:
             with (state_dir / f"{action}.log").open("w") as log:
                 bounded_process(_command(settings, sunday, action), timeout=21600 if action == "generate_audio_candidate" else 3600,
-                                cwd=ROOT, check=True, stdout=log, stderr=-2)
+                                cwd=_root(), check=True, stdout=log, stderr=-2)
             if action == "build_page":
                 _module("weekly_release").read_release(Path(settings["candidate"]))
                 receipt["outputSha256"] = digest(Path(settings["candidate"]) / "build-report.json")

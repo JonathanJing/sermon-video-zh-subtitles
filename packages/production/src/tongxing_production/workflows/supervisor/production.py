@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import hashlib
+import importlib.util
 import json
 import math
 import os
@@ -16,16 +17,62 @@ from datetime import date, datetime, timezone
 from pathlib import Path
 from typing import Any, Callable
 
-REPO_ROOT = Path(__file__).resolve().parents[1]
-if str(REPO_ROOT) not in sys.path:
-    sys.path.insert(0, str(REPO_ROOT))
+from tongxing_production.source import backend as _source
+from tongxing_production.workflows.dual_pdf import host as _host
+from tongxing_production.workflows.dual_pdf import live_source_monitor
+from tongxing_production.workflows.dual_pdf import post_live as run_post_live_subtitle_generation
 
-from backend.cloud import read_gcs_text, write_gcs_text  # noqa: E402
-from backend.leases import LeaseGuard, LeaseHandle, acquire_lease, release_lease  # noqa: E402
-from backend.observability import stable_hash, url_summary  # noqa: E402
-from scripts import tongxing_host  # noqa: E402,F401  binds the package ports
-from tongxing_production.workflows.dual_pdf import live_source_monitor  # noqa: E402
-from tongxing_production.workflows.dual_pdf import post_live as run_post_live_subtitle_generation  # noqa: E402
+
+def __getattr__(name: str):
+    # Callers and tests that read the former module constant.
+    if name == "REPO_ROOT":
+        return _repo_root()
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+
+
+def _repo_root() -> Path:
+    """The checkout this run binds to, from the host (never derived from this file)."""
+    return _source.current().core.repo_root
+
+
+# Host helpers under backend/ (the dual_pdf Cloud, Observability and Leases ports). Module-level
+# names, so default arguments and patches on this module still intercept every call.
+def read_gcs_text(uri: str) -> str:
+    return _host.current().cloud.read_gcs_text(uri)
+
+
+def write_gcs_text(uri: str, text: str, **options: Any) -> None:
+    return _host.current().cloud.write_gcs_text(uri, text, **options)
+
+
+def stable_hash(value: str) -> str:
+    return _host.current().observability.stable_hash(value)
+
+
+def url_summary(url: Any) -> Any:
+    return _host.current().observability.url_summary(url)
+
+
+LeaseHandle = Any  # backend.leases.LeaseHandle, named in annotations only
+
+
+def _leases() -> Any:
+    leases = _host.current().leases
+    if leases is None:
+        raise RuntimeError("the production supervisor needs the host's Leases port")
+    return leases
+
+
+def acquire_lease(*arguments: Any, **options: Any) -> Any:
+    return _leases().acquire(*arguments, **options)
+
+
+def release_lease(handle: Any) -> None:
+    return _leases().release(handle)
+
+
+def LeaseGuard(*arguments: Any, **options: Any) -> Any:  # noqa: N802  the backend class, constructed at call time
+    return _leases().guard()(*arguments, **options)
 
 
 DEFAULT_BUCKET = "sermon-zh-artifacts-ai-for-god"
@@ -33,6 +80,8 @@ DEFAULT_GCS_PREFIX = "sundays"
 DEFAULT_WORK_ROOT = Path("/tmp/sermon-post-live-subtitles")
 TIMECODE_RE = re.compile(r"^(?P<hours>\d{1,3}):(?P<minutes>[0-5]\d):(?P<seconds>[0-5]\d(?:\.\d{1,3})?)$")
 _SUBPROCESS_RUN = subprocess.run
+# The standard-library guardian (orchestration/guarded_worker.py), run by path as before the move.
+_GUARDED_WORKER = importlib.util.find_spec("tongxing_production.orchestration.guarded_worker").origin
 
 
 @dataclass(frozen=True)
@@ -79,7 +128,6 @@ def production_snapshot(config: SupervisorConfig) -> dict[str, Any]:
     """Read durable workflow evidence and return a sanitized supervisor snapshot."""
     validate_config(config)
     if config.app_delivery_config is not None:
-        from scripts import tongxing_host  # noqa: F401  binds the production package ports
         from tongxing_production.delivery import app_workflow as sermon_app_delivery_workflow
         return sermon_app_delivery_workflow.snapshot(config.app_delivery_config, sunday=config.sunday)
     state = read_supervisor_state(config.state_file)
@@ -665,7 +713,7 @@ def run_guarded_command(command, *, runner, guard):
     sentinel_read, sentinel_write = os.pipe()
     try:
         process = subprocess.Popen(
-            [sys.executable, str(REPO_ROOT / "scripts" / "sermon_guarded_worker.py"), "--", *command],
+            [sys.executable, _GUARDED_WORKER, "--", *command],
             stdin=sentinel_read, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
             text=True, start_new_session=True,
         )
@@ -736,7 +784,7 @@ def validate_generation_archive_identity(locations: dict[str, str]) -> None:
 def build_timeline_command(config: SupervisorConfig, snapshot: dict[str, Any]) -> list[str]:
     command = [
         config.python_executable,
-        str(REPO_ROOT / "tools" / "ops" / "run.py"),
+        str(_repo_root() / "tools" / "ops" / "run.py"),
         "workflows.dual_pdf.timeline",
         "--sunday",
         config.sunday,
@@ -783,7 +831,7 @@ def build_generation_command(
 ) -> list[str]:
     command = [
         config.python_executable,
-        str(REPO_ROOT / "tools" / "ops" / "run.py"),
+        str(_repo_root() / "tools" / "ops" / "run.py"),
         "workflows.dual_pdf.post_live",
         "--sunday",
         config.sunday,

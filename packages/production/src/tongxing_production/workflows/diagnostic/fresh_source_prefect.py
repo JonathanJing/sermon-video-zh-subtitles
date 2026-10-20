@@ -12,20 +12,18 @@ import tempfile
 import uuid
 
 from tongxing_production.observability import accounting
-from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.observability import completion
 from tongxing_production.observability import durable
-from scripts import sermon_fresh_diagnostic as fresh
-from scripts import sermon_fresh_diagnostic_source as source
-from scripts import sermon_fresh_source_stages as stages
+from tongxing_production.workflows.diagnostic import fresh
+from tongxing_production.workflows.diagnostic import fresh_source as source
+from tongxing_production.workflows.diagnostic import fresh_source_stages as stages
 from tongxing_production.observability import profile
-from scripts import sermon_mock_tts_dag as mock
+from tongxing_production.workflows.diagnostic import mock_tts_dag as mock
 from tongxing_production.storage import snapshot as public
 from tongxing_production.review import contracts as c
-from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.source import failure
-from scripts.sermon_execution_harness import work_lock
-from scripts.sermon_release_workflow import _safe_path
+from tongxing_production.orchestration.execution_harness import work_lock
+from tongxing_production.storage.paths import safe_path as _safe_path
 
 SCHEMA = 'sermon-fresh-source-prefect-plan-v1'
 NAMES = {'intake': 'source.preflight', 'transcription': 'transcription.initial',

@@ -15,8 +15,9 @@ import uuid
 
 import jsonschema
 
-from scripts.sermon_unified import resources
-from scripts.sermon_execution_harness import atomic_json
+from tongxing_production.orchestration import jobs_host as _jobs_host
+from tongxing_production.orchestration.unified import resources
+from tongxing_production.storage.files import atomic_json
 
 MODEL = 'gemini-3.8-flash'
 ENDPOINT = f'https://generativelanguage.googleapis.com/v1beta/models/{MODEL}:generateContent'
@@ -26,7 +27,7 @@ def _key():
     value = os.environ.get('GOOGLE_API_KEY', '').strip()
     if value:
         return value
-    path = Path(__file__).resolve().parents[1] / '.env'
+    path = _jobs_host.current().repo_root / '.env'
     if path.is_file():
         for line in path.read_text().splitlines():
             if line.startswith('GOOGLE_API_KEY='):

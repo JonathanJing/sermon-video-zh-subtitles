@@ -10,6 +10,7 @@ import json
 from pathlib import Path
 import re
 
+from tongxing_production.text import backend as _text_backend
 from tongxing_production.text import models as shared
 from tongxing_production.text import candidate as producer
 from tongxing_production.text import policy as policies
@@ -17,9 +18,8 @@ from tongxing_production.review import contracts as c
 from tongxing_production.observability import review_observation as observation
 from tongxing_production.observability import profile
 from tongxing_production.observability import accounting
-from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.orchestration import jobs
-from scripts.sermon_release_workflow import _safe_path
+from tongxing_production.storage.paths import safe_path as _safe_path
 
 RESPONSE_CONTRACT_VERSION = 'strict-layer2-response-v2'
 
@@ -70,14 +70,14 @@ def prepare(source_bytes,anchor_bytes,policy_bytes,rubric_bytes,group,*,request_
     if diagnostic_context is None:
         producer.validate_source_for_translation(source,anchor)
     else:
-        from scripts.sermon_diagnostic_context import validate_source
+        validate_source = _text_backend.current().diagnostic.validate_source
         validate_source(source,anchor,diagnostic_context)
     identity=policies.validate_strict_policy(policy,rubric)
     policies.validate_strict_source_scope(policy,rubric,source,anchor)
     if diagnostic_context is None:
         c.require(identity['productionPolicyReady'],'strict_policy_not_ready')
     else:
-        from scripts.sermon_diagnostic_context import require_policy_ready
+        require_policy_ready = _text_backend.current().diagnostic.require_policy_ready
         require_policy_ready(identity,diagnostic_context)
     c.require(type(group) is dict and set(group)=={'translationGroupId','sourceUnitIds'},'invalid_strict_group')
     label(group['translationGroupId']);unit=label('l2.'+policy['targetLocale']+'.'+group['translationGroupId'])
@@ -98,7 +98,7 @@ def prepare(source_bytes,anchor_bytes,policy_bytes,rubric_bytes,group,*,request_
         from tongxing_production.compute.provider_limits import validate_request_limits
         result['requestLimits'] = validate_request_limits(request_limits)
     if diagnostic_context is not None:
-        from scripts.sermon_diagnostic_context import validate_context
+        validate_context = _text_backend.current().diagnostic.validate_context
         result['diagnosticContext'] = validate_context(diagnostic_context)
     if rule_preflight is not None:
         result['rulePreflight'] = _validate_rule_preflight(source, anchor, policy, rubric, rule_preflight, rule_context, diagnostic_context)
@@ -236,7 +236,7 @@ def validate_repair(prepared,candidate_id,revision_id,repair):
     reserve against the pinned shared ledger before invoking this adapter.
     """
     if type(repair) is dict and 'languagePluginRepair' in repair:
-        from scripts.sermon_historical_layer2 import validate_language_repair
+        from tongxing_production.workflows.diagnostic.historical_layer2 import validate_language_repair
         return validate_language_repair(prepared,candidate_id,revision_id,repair)
     from tongxing_production.orchestration.supervisor.repair_planning import CONTENT_FAILURES
     c.require(type(repair) is dict and set(repair)=={'parentRevision','parentCandidateBytes','plan',
@@ -287,7 +287,7 @@ def generation_prompt(prepared,repair=None):
 
 
 def save_repair(root,repair):
-    from scripts import sermon_trace_artifacts as artifacts
+    from tongxing_production.observability import trace_artifacts as artifacts
     for key,name in [('parentRevision','parent-revision'),('plan','repair-plan'),
                      ('triggerReview','trigger-review'),('inputManifest','repair-input')]:
         save_once(root/(name+'.json'),repair[key])
@@ -443,7 +443,7 @@ def generate(prepared,root,candidate_id,revision_id,api_key,caller,*,cache_only=
                 path=root/'candidate.json'
                 if path.exists():c.require(path.read_bytes()==data,'immutable_candidate_changed')
                 else:
-                    from scripts import sermon_trace_artifacts as artifacts
+                    from tongxing_production.observability import trace_artifacts as artifacts
                     artifacts.write(path,data.decode())
                 if (root/'revision.json').exists():
                     old,_=c.read_snapshot(root/'revision.json');manifest['createdAt']=old['createdAt']

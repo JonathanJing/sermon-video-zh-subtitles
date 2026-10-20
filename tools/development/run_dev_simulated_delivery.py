@@ -26,7 +26,7 @@ from tongxing_production.delivery import app_release as builder
 from tongxing_production.delivery import contract
 from tongxing_production.delivery import publication as publisher
 from tongxing_production.delivery import baseline as preparation
-from scripts.sermon_execution_harness import atomic_json
+from tongxing_production.orchestration.execution_harness import atomic_json
 
 
 def now():

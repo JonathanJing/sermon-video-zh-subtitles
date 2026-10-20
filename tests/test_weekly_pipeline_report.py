@@ -9,7 +9,7 @@ import unittest
 
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.observability.accounting import SCHEMA
-from scripts.weekly_pipeline_report import digest, markdown, project
+from tongxing_production.observability.weekly_projection import digest, markdown, project
 
 
 class WeeklyPipelineReportTests(unittest.TestCase):
@@ -283,7 +283,7 @@ class WeeklyPipelineReportTests(unittest.TestCase):
     def test_cli_preserves_source_and_refuses_existing_output(self):
         self.result()
         original = (self.root / 'events.jsonl').read_bytes()
-        command = [sys.executable, '-m', 'scripts.weekly_pipeline_report', '--accounting-dir',
+        command = [sys.executable, '-m', 'tools.ops.weekly_pipeline_report', '--accounting-dir',
                    str(self.root), '--out-dir', str(self.root / 'report')]
         p = subprocess.run(command, capture_output=True)
         self.assertEqual(p.returncode, 0, p.stderr)

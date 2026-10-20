@@ -17,10 +17,10 @@ from pathlib import Path
 import subprocess
 import sys
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
-from scripts.sermon_execution_harness import bounded_process
+from tongxing_production.orchestration.execution_harness import bounded_process
 
 SCHEMA = "sermon-saturday-harness-report-v1"
 

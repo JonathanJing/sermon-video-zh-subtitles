@@ -10,7 +10,8 @@ POC = HERE.parent
 ROOT = POC.parents[1]
 sys.path[:0] = [str(POC), str(ROOT)]
 from poc import probe, sha256
-from scripts.sermon_execution_harness import bounded_process
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.orchestration.execution_harness import bounded_process
 
 
 def read(path):

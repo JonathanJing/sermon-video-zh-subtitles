@@ -14,7 +14,8 @@ from unittest import mock
 from google.api_core.exceptions import NotFound, PreconditionFailed
 
 from backend import leases
-from scripts import sermon_production_supervisor as supervisor
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.workflows.supervisor import production as supervisor
 
 
 def contend(location, start, output):

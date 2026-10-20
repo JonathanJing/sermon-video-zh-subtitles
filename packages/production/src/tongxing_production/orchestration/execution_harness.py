@@ -11,6 +11,7 @@ from contextvars import ContextVar
 from datetime import datetime, timezone
 import fcntl
 import hashlib
+import importlib.util
 import json
 import math
 import os
@@ -24,30 +25,16 @@ import time
 import uuid
 
 # The work lock, its ContextVar and atomic writes live in tongxing_production.storage
-# (infrastructure I2); bounded_process below reads the same _LOCK_FDS object.
-try:
-    from tongxing_production.storage.files import atomic_json, utc_now  # noqa: F401
-    from tongxing_production.storage.locks import _LOCK_FDS, WorkAlreadyRunning, work_lock  # noqa: F401
-except ModuleNotFoundError as exc:
-    if exc.name != "tongxing_production":
-        raise
-    # The isolated Temporal venv installs only temporalio. Load these two standard-library
-    # files from the checkout under private names, without making the package importable:
-    # a Spark image whose container path omits the package must still fail loudly. The
-    # package cannot load in such a process, so _LOCK_FDS is still the one object.
-    import importlib.util
+# (infrastructure I2); bounded_process below reads the same _LOCK_FDS object. The isolated
+# Temporal venv, which cannot import this package, loads storage/files.py by path itself
+# (scripts/sermon_temporal/local_io.py).
+from ..storage.files import atomic_json, utc_now  # noqa: F401
+from ..storage.locks import _LOCK_FDS, WorkAlreadyRunning, work_lock  # noqa: F401
 
-    def _checkout_storage_module(name):
-        path = Path(__file__).resolve().parents[1] / "packages/production/src/tongxing_production/storage" / f"{name}.py"
-        spec = importlib.util.spec_from_file_location(f"sermon_harness_storage_{name}", path)
-        module = importlib.util.module_from_spec(spec)
-        sys.modules[spec.name] = module
-        spec.loader.exec_module(module)
-        return module
 
-    _files, _locks = _checkout_storage_module("files"), _checkout_storage_module("locks")
-    atomic_json, utc_now = _files.atomic_json, _files.utc_now
-    _LOCK_FDS, WorkAlreadyRunning, work_lock = _locks._LOCK_FDS, _locks.WorkAlreadyRunning, _locks.work_lock
+# The guardian is a standard-library script run by path, as before the move; find_spec names
+# the installed file without importing it into this process.
+_GUARDED_COMMAND = importlib.util.find_spec("tongxing_production.orchestration.guarded_command").origin
 
 
 class RemoteOutcomeUnknown(RuntimeError):
@@ -112,8 +99,7 @@ def bounded_process(command, *, timeout, check=False, capture_output=False,
             # even SIGKILL of an intermediate owner closes its pipe and cascades
             # cleanup, without racing equal graceful-shutdown deadlines.
             sentinel_read, sentinel_write = os.pipe()
-            actual_command = [sys.executable, str(Path(__file__).with_name("sermon_guarded_command.py")),
-                              "--owner-fd", str(sentinel_read)]
+            actual_command = [sys.executable, _GUARDED_COMMAND, "--owner-fd", str(sentinel_read)]
             for fd in inherited:
                 actual_command += ["--inherit-fd", str(fd)]
             actual_command += ["--", *command]

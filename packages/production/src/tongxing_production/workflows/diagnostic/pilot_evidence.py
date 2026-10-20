@@ -12,10 +12,11 @@ import os
 from pathlib import Path
 import stat
 
-from scripts import sermon_prefect_dag as pilot
-from scripts import sermon_run_progress as progress
-from scripts import sermon_agent_diagnostics as diagnostics
-from scripts import sermon_agent_diagnostics_contracts as dc
+from tongxing_production.workflows.diagnostic import checkout
+from tongxing_production.orchestration.prefect import dag as pilot
+from tongxing_production.observability import run_progress as progress
+from tongxing_production.workflows.diagnostic import agent_diagnostics as diagnostics
+from tongxing_production.workflows.diagnostic import agent_contracts as dc
 
 SCHEMA = 'sermon-pilot-inspection-v1'
 
@@ -242,7 +243,7 @@ def inspect(root, *, diagnose_offline=False):
             'executionPlanSha256': plan['planSha256'], 'runtimeCodeSha256': pilot.code_identity(),
             # Keys keep the scripts/ names; the diagnostic contracts are read where they live (N4).
             'readerCodeSha256': pilot.c.canonical_sha256({name: hashlib.sha256(
-                ({'sermon_agent_diagnostics_contracts.py': Path(dc.__file__)}.get(name) or pilot.REPO/'scripts'/name).read_bytes()).hexdigest()
+                checkout.legacy(name).read_bytes()).hexdigest()
                 for name in ('sermon_pilot_evidence.py', 'sermon_run_progress.py', 'sermon_agent_diagnostics.py',
                              'sermon_agent_diagnostics_contracts.py')}),
             'evidenceSnapshotSha256': pilot.c.canonical_sha256(files), 'sourceLedgerSha256': ledger_hash,

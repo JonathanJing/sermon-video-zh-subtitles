@@ -9,15 +9,14 @@ from copy import deepcopy
 from pathlib import Path
 
 from tongxing_production.observability import accounting
-from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.observability import completion
-from scripts import sermon_fresh_diagnostic as fresh
-from scripts import sermon_fresh_diagnostic_source as source
-from scripts import sermon_fresh_source_causality as causality
+from tongxing_production.workflows.diagnostic import fresh
+from tongxing_production.workflows.diagnostic import fresh_source as source
+from tongxing_production.workflows.diagnostic import fresh_source_causality as causality
 from tongxing_production.storage import snapshot as public
 from tongxing_production.review import contracts as c
-from scripts import sermon_strict_layer2 as immutable
-from scripts.sermon_release_workflow import _safe_path
+from tongxing_production.text.strict import layer2 as immutable
+from tongxing_production.storage.paths import safe_path as _safe_path
 
 SCHEMA = 'sermon-fresh-source-stage-result-v1'
 ORDER = causality.ORDER

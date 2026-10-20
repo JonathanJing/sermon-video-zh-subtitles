@@ -10,8 +10,9 @@ import unittest
 from concurrent.futures import ThreadPoolExecutor
 from unittest.mock import patch
 
-from scripts.sermon_execution_harness import Execution, ExecutionTerminated, bounded_process
-from scripts.sermon_model_resources import local_model_slot
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.orchestration.execution_harness import Execution, ExecutionTerminated, bounded_process
+from tongxing_production.orchestration.prefect.model_resources import local_model_slot
 
 
 class ParallelExecutionTests(unittest.TestCase):
@@ -46,7 +47,7 @@ class ParallelExecutionTests(unittest.TestCase):
 
     def test_two_slots_third_waiter_cancels(self):
         snapshot = {'totalBytes':64*1024**3,'availableBytes':32*1024**3}
-        with tempfile.TemporaryDirectory() as tmp, patch.dict(os.environ, {'SERMON_LOCAL_MODEL_LOCK_ROOT':tmp,'SERMON_LOCAL_MODEL_SLOTS':'2'}), patch('scripts.sermon_model_resources.memory_snapshot', return_value=snapshot):
+        with tempfile.TemporaryDirectory() as tmp, patch.dict(os.environ, {'SERMON_LOCAL_MODEL_LOCK_ROOT':tmp,'SERMON_LOCAL_MODEL_SLOTS':'2'}), patch('tongxing_production.orchestration.prefect.model_resources.memory_snapshot', return_value=snapshot):
             cancel = threading.Event()
             with local_model_slot() as first, local_model_slot() as second:
                 self.assertNotEqual(first['slot'], second['slot'])
@@ -60,6 +61,6 @@ class ParallelExecutionTests(unittest.TestCase):
             with local_model_slot() as reused: self.assertEqual(reused['slot'], 0)
 
     def test_low_memory_does_not_admit_or_dispatch_remote(self):
-        with tempfile.TemporaryDirectory() as tmp, patch.dict(os.environ, {'SERMON_LOCAL_MODEL_LOCK_ROOT':tmp}), patch('scripts.sermon_model_resources.memory_snapshot', return_value={'totalBytes':64*1024**3,'availableBytes':1}):
+        with tempfile.TemporaryDirectory() as tmp, patch.dict(os.environ, {'SERMON_LOCAL_MODEL_LOCK_ROOT':tmp}), patch('tongxing_production.orchestration.prefect.model_resources.memory_snapshot', return_value={'totalBytes':64*1024**3,'availableBytes':1}):
             with self.assertRaises(ExecutionTerminated):
                 with local_model_slot(timeout=.02): self.fail('Low memory must queue')

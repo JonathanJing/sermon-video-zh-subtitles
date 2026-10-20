@@ -3,11 +3,11 @@ from copy import deepcopy
 import json
 from pathlib import Path
 import unittest
-from scripts import run_bounded_diagnostic_continuation as continuation
-from scripts import sermon_strict_locale as locale
+from tongxing_production.workflows.diagnostic import bounded_continuation as continuation
+from tongxing_production.text.strict import locale
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.review import contracts as c
-from scripts import sermon_diagnostic_provider as provider
+from tongxing_production.workflows.diagnostic import provider
 from tests import test_sermon_strict_locale as fixtures_locale
 from tests.diagnostic_dag_fixture import DiagnosticDAGFixture
 
@@ -124,7 +124,7 @@ class SharedPreflightTests(unittest.TestCase):
         # Same real provider validator as preflight_live, without a credential.
         from scripts import tongxing_host  # noqa: F401  binds the production package ports
         from tongxing_production.review import review_budget as budget
-        from scripts import sermon_strict_layer2 as strict
+        from tongxing_production.text.strict import layer2 as strict
         from scripts import tongxing_host  # noqa: F401  binds the production package ports
         from tongxing_production.compute import provider_limits as limits
         raw=[Path(self.spec[key]).read_bytes() for key in ('source','anchor','policy','rubric')]

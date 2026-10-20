@@ -13,7 +13,7 @@ import run_weekly_dubbing as runner
 from poc import sha256, write_json
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.observability import accounting
-from scripts.sermon_execution_harness import RemoteOutcomeUnknown, WorkAlreadyRunning, work_lock
+from tongxing_production.orchestration.execution_harness import RemoteOutcomeUnknown, WorkAlreadyRunning, work_lock
 from test_resume_integrity import candidate_fixture, snapshot
 import test_weekly_accounting as weekly_accounting
 from weekly_dubbing import read

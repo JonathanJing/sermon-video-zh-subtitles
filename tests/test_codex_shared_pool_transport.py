@@ -7,7 +7,7 @@ from unittest.mock import patch
 import pytest
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.compute.transports import codex_cli as transport
-from scripts import sermon_codex_supervisor as supervisor
+from tongxing_production.workflows.supervisor import codex as supervisor
 from tongxing_production.compute.transports import codex_resources as slots
 from tongxing_production.compute.concurrency_profile import profile_v1
 from scripts.sermon_unified import resources

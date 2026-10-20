@@ -61,7 +61,7 @@
 
 ## 接入位置
 
-- `scripts/codex_layer2_diagnostic.py`：
+- `tools/development/codex_layer2_diagnostic.py`：
   - `freeze_fixture` 在 `scriptureClassification == 'contains_direct_quotations'` 时要求传入收据，校验通过后把收据写入 fixture 目录（`scripture-adjudication.json`），并把它的路径和哈希记入 fixture manifest。
   - CLI 用 `--scripture-adjudication /path/to/receipt.json` 读取收据；含直接引文的样本还需指定 `--scripture-classification contains_direct_quotations` 和各个 `--source-quotation-unit`。
   - 冻结和加载时，pinned-quote 插件的源单元、引文分类、规范化经文引用和按顺序合并的目标文本必须与收据一致；非引文裁决不能授权注入经文。冻结在取得写锁后再次确认目录不存在，收据使用不可变写入路径。

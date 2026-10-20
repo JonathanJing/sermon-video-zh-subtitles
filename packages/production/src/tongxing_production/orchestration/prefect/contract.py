@@ -7,7 +7,6 @@ authoritative. This version intentionally has no production adapter or publish.
 from copy import deepcopy
 import math
 
-from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.contracts import pipeline_definition as canonical
 from tongxing_production.review import contracts as c
 

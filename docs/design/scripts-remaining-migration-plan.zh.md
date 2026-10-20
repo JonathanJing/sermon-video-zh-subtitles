@@ -187,3 +187,33 @@ N1 #1201、N2 #1203、N3 #1205、N4 #1212 已合并，运行报告分别是 #120
 - **N4：** 24 个迁出 15 个，留 10 个门面；其余 9 个随 D-5 窗口一起做。`test_sermon_fresh_full_dag` 的重试用例在负载约 430 时会撞上 45 秒观察超时。在同样负载下把 N4 和 `dev` 并排跑，各用约 12 分 40 秒，都通过，所以是负载问题，不是回归。
 
 剩下的 133 个都受 §3（留在 `scripts/`）、D-3（Temporal）、§9.2 的环，或 D-5 窗口约束。不需要窗口的迁移到此做完。
+
+## 11 D-5 闭包窗口（2026-10-20，草稿，基于 `dev@810349e2`）
+
+按 §9.1 的 D-5 做成一个窗口：先删宿主点名的门面，再纯 `git mv`，再接线。只产生一代 W、T、计分、语速身份，合并后做一次三语付费复验。身份新旧值、声音身份不变的证明和要重新校准的语言见[生成记录](../reports/20261020-d5-window-implementation-generation.zh.md)。
+
+**重新普查。** 在 `dev@810349e2` 上用附录 A（[门面计划](facade-removal-plan.zh.md)）和 AST 导入图重取集合：门面 73 个，其中宿主点名 48 个（10-19 的 39 个加上 R2、R3、N2、N3 新留的 9 个）。去掉宿主、§3 的 29 个和 Temporal 后，可迁移的 `.py` 有 83 个；§9.2 说的 39 个文件的大环已经不在了（N4 把环里的诊断叶子迁走），现在最大的环是 5 个文件（`sermon_diagnostic_attempts`、`sermon_diagnostic_provider`、`sermon_historical_layer2`、`sermon_strict_candidate_bridge`、`sermon_strict_layer2`）。所以窗口集合按“被宿主、`path_aliases` 键或 L1 兼容表钉住，以及依赖它们的文件”取，共 65 个。
+
+| 去向 | 文件 |
+|---|---|
+| `workflows/diagnostic/`（只用于诊断，D-4） | 诊断主链 30 个：`sermon_diagnostic_*`、`sermon_fresh_*`、`sermon_cached_fresh_diagnostic_source`、`sermon_historical_layer2`、`sermon_historical_native_seed`、`sermon_native_preview_runtime`、`run_bounded_diagnostic*`、`run_diagnostic_new_attempt`、`sermon_*_business_*`、`sermon_dev_diagnostic_snapshot`、`sermon_agent_diagnostics*`、`sermon_pilot_evidence`、`inspect_sermon_prefect_pilot`、`sermon_mock_tts_dag`、`sermon_delivery_intent_binding` |
+| `text/strict/` | 严格链 7 个（R4 留下的 `sermon_strict_*`） |
+| `workflows/supervisor/` | `sermon_production_supervisor`、`sermon_end_to_end`、`sermon_agents_supervisor`、`sermon_codex_supervisor`、`sermon_deterministic_controller`、`run_sermon_production_supervisor_agent` |
+| `orchestration/` | `execution_harness`、`guarded_command`、`job_liveness`、`release_workflow`、`canonical_durable_jobs`；`prefect/` 4 个；`supervisor/` 的 `decision_budget`、`gemini` |
+| `compute/mock_tts/` | `sermon_mock_tts_contract`、`_worker`、`_control` |
+| `observability/` | `observability_trace`（原 `export_observability_trace`）、`run_progress` |
+| `tools/` | `ops/weekly_pipeline_report`、`ops/run_saturday_harness`、`development/codex_layer2_diagnostic`、`development/run_codex_layer2_test` |
+
+**与 §9 的不同。**
+
+- 监督链去 `workflows/supervisor/`，不去 `orchestration/supervisor/`：`sermon_production_supervisor` 驱动 dual_pdf 入口，`orchestration/` 不得导入 `workflows/`（`test_layers_import_only_upstream`），而其余四个都导入它。`decision_budget` 和 Gemini 传输不依赖 dual_pdf，进 `orchestration/supervisor/`。
+- `backend.leases` 用宿主端口解：`ports.Leases`（acquire、release、guard、handle），挂在 dual_pdf 宿主记录上，和已有的 `Cloud`、`Observability` 同一做法。把 `backend/leases.py` 迁进 `storage/` 要连带 GCS 客户端（它导入 `backend.cloud`），不如端口干净。
+- `ports.Diagnostic` 新增 `validate_runtime`；严格链经 text 后端的 `diagnostic` 端口调用四个诊断上下文检查，经 `unmoved.speech_handoff` 调 L3 交接检查（text 不导入 audio）。
+- 诊断链导入的冻结插件 `diagnostic_structural` 和插件目录经 `Plugins` 端口；仓库根经宿主（`workflows/diagnostic/checkout.py`），自哈希的诊断文件列入 `READS_LOADED_MODULE_FILES`。
+- 自启动的 worker（预览 worker、原生预览运行时探针、模拟 TTS worker、Prefect 节点 worker、release workflow）改用 `tools/ops/run.py <模块>`；harness 与监督代理的守护子进程仍按路径运行标准库脚本（`find_spec(...).origin`）。
+- Temporal 留在 `scripts/sermon_temporal/`（D-3）：隔离 venv 不能导入包，`local_io.py` 按路径加载 `storage/files.py`；`integration_check` 的 `dependencySha256` 键不变，经新增的 `path_aliases` 键读新文件。
+- `weekly_pipeline_report` 的键本来就指向 `observability/weekly_projection.py`，只把命令行搬到 `tools/ops/`。
+
+**门面。** 删 39 + 18 个：宿主点名、只属 §7 (a) 组的 39 个；L1 (d) 组 4 个和 `mfa_backend`；以及调用方全在窗口里、窗口后只剩测试或冻结实验计划引用的 13 个 N 批门面。留下 18 个：`produce_target_language_candidate`、`target_language_policy`、`scripture_adjudication`（冻结插件）；`sermon_pipeline`、`render_sermon_interpretation_pdf`（dual_pdf 身份）；`live_source_monitor`、`upload_file_to_gcs` 和新留的 `sermon_production_supervisor`、`run_sermon_production_supervisor_agent`（Cloud Run 镜像，D-2，随下次部署删）；N1 的 4 个 worker 门面（`backend/worker.py` 按路径运行）；`run_openai_model_access_preflight`、`run_with_openai_environment`、`sermon`、`sermon_agents_api`、`sermon_repair_planning`（窗口外的调用方）。
+
+**留在 `scripts/` 的非门面文件。** §3 的 29 个、Temporal 20 个、dual_pdf 附属（R10）、3 个经文生成器文件（N3），以及从来不受窗口约束、可以另做叶子批的 `check_run_start`、`plan_run_budgets`、`run_live_sermon_benchmark_source_audio_audit`、`validate_offline_chain`（`backend/worker.py` 按路径运行）、`export_saturday_live_context`。

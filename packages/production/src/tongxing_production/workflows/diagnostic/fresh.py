@@ -10,25 +10,25 @@ from contextlib import contextmanager
 from pathlib import Path
 import importlib
 
-from scripts import run_bounded_diagnostic as bounded
+from tongxing_production.text import backend as _text
+from tongxing_production.workflows.diagnostic import bounded
 from tongxing_production.observability import accounting
-from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.observability import completion
 from tongxing_production.source import mfa_identity
 from tongxing_production.observability import profile
 from tongxing_production.review import contracts as c
 from tongxing_production.storage import snapshot as public
-from scripts import sermon_strict_layer2 as strict
-from scripts import sermon_diagnostic_context as diagnostic
-from scripts import sermon_bounded_business_callbacks as offline
-from scripts import sermon_diagnostic_dag_session as sessions
-from scripts import sermon_diagnostic_prefect_flow as flow
-from scripts import sermon_fresh_diagnostic_source as source_adapter
-from scripts import sermon_cached_fresh_diagnostic_source as cached_source
+from tongxing_production.text.strict import layer2 as strict
+from tongxing_production.workflows.diagnostic import context as diagnostic
+from tongxing_production.workflows.diagnostic import bounded_business_callbacks as offline
+from tongxing_production.workflows.diagnostic import dag_session as sessions
+from tongxing_production.workflows.diagnostic import prefect_flow as flow
+from tongxing_production.workflows.diagnostic import fresh_source as source_adapter
+from tongxing_production.workflows.diagnostic import cached_fresh_source as cached_source
 from tongxing_production.text import policy as policy_builder
 from tongxing_production.text import candidate as producer
 from tongxing_production.text import models
-from scripts.sermon_release_workflow import _safe_path
+from tongxing_production.storage.paths import safe_path as _safe_path
 
 TERMINAL_REASONS=frozenset({'diagnostic_continuation_code_changed','diagnostic_dag_binding_changed',
     'diagnostic_prior_outcome_requires_reconciliation','diagnostic_flow_frozen_inputs_changed',
@@ -88,22 +88,24 @@ def _save_result(session,result):
 
 def preload_execution_modules(plugin_paths=()):
     """Call BEFORE freezing a fresh plan; imports only fixed local stage code."""
-    for name in ('tongxing_production.observability.workflow_evidence','sermon_diagnostic_delivery_preflight','sermon_dev_diagnostic_snapshot',
-                 'sermon_native_preview_runtime','sermon_strict_candidate_bridge','sermon_strict_controller',
-                 'sermon_strict_budget_adapter','sermon_strict_locale','tongxing_production.audio.speech_job',
-                 'tongxing_production.audio.renderer','tools.ops.render_multilingual_voice_demos',
-                 'tongxing_production.audio.unit_integrity','tongxing_production.observability.local_model_observation',
-                 'tongxing_production.observability.model_call_report','tongxing_production.observability.model_call_observation','tongxing_production.compute.openai_runtime',
-                 'sermon_trace_artifacts','tongxing_production.text.review_diagnostics','sermon_preview_checkpoint_manifest',
-                 'sermon_fresh_source_evidence','sermon_historical_layer2','sermon_historical_native_seed','sermon_historical_identity','tongxing_production.source.producer_compatibility','tongxing_production.source.failure'):
-        # A dotted name is a package module whose scripts/ facade was removed.
-        importlib.import_module(name if '.' in name else 'scripts.'+name)
-    repository=Path(__file__).resolve().parents[1]
+    # The voice demo tool (tools/ops) is loaded with the renderer through the host's entry-import table.
+    for name in ('observability.workflow_evidence', 'workflows.diagnostic.delivery_preflight',
+                 'workflows.diagnostic.dev_snapshot', 'workflows.diagnostic.native_preview_runtime',
+                 'text.strict.candidate_bridge', 'text.strict.controller', 'text.strict.budget_adapter',
+                 'text.strict.locale', 'audio.speech_job', 'audio.renderer', 'audio.unit_integrity',
+                 'observability.local_model_observation', 'observability.model_call_report',
+                 'observability.model_call_observation', 'compute.openai_runtime', 'observability.trace_artifacts',
+                 'text.review_diagnostics', 'workflows.diagnostic.preview_checkpoint_manifest',
+                 'workflows.diagnostic.fresh_source_evidence', 'workflows.diagnostic.historical_layer2',
+                 'workflows.diagnostic.historical_native_seed', 'workflows.diagnostic.historical_identity',
+                 'source.producer_compatibility', 'source.failure'):
+        importlib.import_module('tongxing_production.' + name)
+    plugins = _text.current().plugins
     for path in plugin_paths:
         path=_safe_path(Path(path))
-        c.require(path.is_relative_to(repository/'scripts/language_review_plugins') and path.suffix=='.py',
+        c.require(path.is_relative_to(plugins.root()) and path.suffix=='.py',
                   'fresh_diagnostic_plugin_scope_invalid')
-        importlib.import_module('.'.join(path.relative_to(repository).with_suffix('').parts))
+        plugins.module('language_review_plugins.' + '.'.join(path.relative_to(plugins.root()).with_suffix('').parts))
     return accounting.execution_identity()
 
 
@@ -117,7 +119,7 @@ class FreshDiagnosticSession(sessions.DiagnosticSession):
         self.root,self.subject=bounded.prepare_plan(plan)
         c.require(fixture or not (self.root/'offline-business-scope.json').exists(), 'diagnostic_dag_fixture_cannot_become_live')
         if request_limits is not None:
-            from scripts import sermon_diagnostic_provider as provider
+            from tongxing_production.workflows.diagnostic import provider
             self.subject=provider.DiagnosticProvider(self.subject.store,self.subject.config,request_limits=request_limits)
         if fixture:
             self.subject.executor=offline_transport
@@ -172,7 +174,7 @@ class FreshDiagnosticSession(sessions.DiagnosticSession):
                 # boundary, not only delivery. A valid completion proves what
                 # finished then; it cannot certify MFA artifacts/dependencies
                 # that have changed since Source preparation.
-                from scripts import sermon_fresh_source_evidence as inspector
+                from tongxing_production.workflows.diagnostic import fresh_source_evidence as inspector
                 inspector.validate_fresh_source_evidence(self.root, self.plan, self.subject,
                     self.context, self.binding['sourceEvidence'])
         return self.binding['sourceEvidence'] if self.binding else None
@@ -180,7 +182,7 @@ class FreshDiagnosticSession(sessions.DiagnosticSession):
     def _check_historical_inputs(self):
         self._check_historical_native_inputs()
         if self._historical_specification is not None:
-            from scripts import sermon_historical_layer2 as historical
+            from tongxing_production.workflows.diagnostic import historical_layer2 as historical
             frozen_spec,data=c.read_snapshot(self._historical_specification_path)
             c.require(frozen_spec==self._historical_specification
                 and c.bytes_sha256(data)==self.binding['historicalLayer2Inputs']['bytesSha256']
@@ -193,8 +195,8 @@ class FreshDiagnosticSession(sessions.DiagnosticSession):
         frozen=getattr(self,'_historical_native_specification',None)
         if frozen is None:
             return
-        from scripts import sermon_historical_native_seed as historical
-        from scripts import sermon_diagnostic_delivery_preflight as delivery
+        from tongxing_production.workflows.diagnostic import historical_native_seed as historical
+        from tongxing_production.workflows.diagnostic import delivery_preflight as delivery
         files=delivery._Snapshot()
         path=self._historical_native_specification_path
         actual=files.json(path)
@@ -221,8 +223,8 @@ class FreshDiagnosticSession(sessions.DiagnosticSession):
         lanes=_preflight_historical_native_specs(specifications,{locale:None for locale in locales},
             offline_fixture=self.offline_fixture,plan=self.plan)
         c.require(parent_preflight is None or lanes==parent_preflight,'fresh_historical_native_parent_changed')
-        from scripts import sermon_historical_native_seed as historical
-        from scripts import sermon_diagnostic_delivery_preflight as delivery
+        from tongxing_production.workflows.diagnostic import historical_native_seed as historical
+        from tongxing_production.workflows.diagnostic import delivery_preflight as delivery
         files=delivery._Snapshot();source=files.json(self.root/'source.json');anchor=files.json(self.root/'anchor-manifest.json')
         for lane in lanes.values():
             c.require(lane['parentPreflight']['sourceJsonSha256']==c.canonical_sha256(source)
@@ -246,7 +248,7 @@ class FreshDiagnosticSession(sessions.DiagnosticSession):
 
     def configure_historical_locales(self, specifications, locales):
         """Freeze explicit closed-parent rebind specs, never general callbacks."""
-        from scripts import sermon_historical_layer2 as historical
+        from tongxing_production.workflows.diagnostic import historical_layer2 as historical
         self._check()
         c.require(type(specifications) is dict and bool(specifications)
             and set(specifications)<=set(locales) and c._strict_json(specifications),
@@ -298,7 +300,7 @@ class FreshDiagnosticSession(sessions.DiagnosticSession):
                 frozen_recipe.pop('schemaVersion')
         strict.save_once(existing_recipe, frozen_recipe)
         if (self.root/'fresh-source-evidence.json').exists():
-            from scripts import sermon_fresh_source_evidence as inspector
+            from tongxing_production.workflows.diagnostic import fresh_source_evidence as inspector
             prepared = {key:c.read_snapshot(self.root/name)[0] for key,name in
                 (('source','source.json'),('anchor','anchor-manifest.json'),
                  ('context','diagnostic-context.json'),('evidence','fresh-source-evidence.json'))}
@@ -348,7 +350,7 @@ class FreshDiagnosticSession(sessions.DiagnosticSession):
         return prepared
 
     def inspect_delivery(self, previews, expected_locales):
-        from scripts import sermon_diagnostic_delivery_preflight as delivery
+        from tongxing_production.workflows.diagnostic import delivery_preflight as delivery
         evidence = self._check()
         c.require(evidence is not None and self.context is not None, 'fresh_source_preparation_required')
         return delivery.inspect_fresh_delivery(self.root, self.subject, self.context, previews,
@@ -388,8 +390,8 @@ def _preflight_historical_native_specs(specifications, locale_drafts, *, offline
     """
     if specifications is None:
         return {}
-    from scripts import sermon_historical_native_seed as historical
-    from scripts import sermon_diagnostic_delivery_preflight as delivery
+    from tongxing_production.workflows.diagnostic import historical_native_seed as historical
+    from tongxing_production.workflows.diagnostic import delivery_preflight as delivery
     c.require(not offline_fixture and type(specifications) is dict and bool(specifications)
         and set(specifications)<=set(locale_drafts) and set(specifications)<=flow.LOCALES,
         'fresh_historical_native_locales_invalid')
@@ -413,7 +415,7 @@ def _preflight_historical_native_specs(specifications, locale_drafts, *, offline
             and observed['parentPlan']==spec['parentPlan'] and observed['workerReceipt']==spec['workerReceipt']
             and observed['grantsExecutionAuthority'] is False and observed['productionEligible'] is False,
             'fresh_historical_native_parent_changed')
-        from scripts import sermon_diagnostic_attempts as attempts
+        from tongxing_production.workflows.diagnostic import attempts
         parent_plan,parent_root=attempts._project(spec['parentPlan']['path'])
         c.require(all(plan['providerConfig'][key]==parent_plan['providerConfig'][key] for key in
             ('sourceMediaSha256','sourceClipSha256','sourceAudioSha256','sourceWindowSeconds')),
@@ -433,9 +435,9 @@ def _preflight_historical_native_specs(specifications, locale_drafts, *, offline
 
 def _preflight_preview_specs(preview_specs, locale_drafts, *, offline_fixture, plan=None):
     """Validate cheap native input contracts before any paid Source stage."""
-    from scripts import sermon_diagnostic_preview_worker as worker
-    from scripts import sermon_native_preview_runtime as native
-    from scripts import sermon_preview_checkpoint_manifest as checkpoint
+    from tongxing_production.workflows.diagnostic import preview_worker as worker
+    from tongxing_production.workflows.diagnostic import native_preview_runtime as native
+    from tongxing_production.workflows.diagnostic import preview_checkpoint_manifest as checkpoint
     checkpoint_keys={'checkpoint_manifest_path','checkpoint_stage_declaration_path'}
     c.require(type(preview_specs) is dict and set(preview_specs)==set(locale_drafts)
         and bool(preview_specs) and set(preview_specs)<=flow.LOCALES,'fresh_diagnostic_preview_locales_changed')
@@ -584,7 +586,7 @@ def run_fresh_diagnostic(plan, *, key, execute=False, source_recipe, authorizati
                 'formalReleasePackageCreated':False,'planSha256':c.canonical_sha256(plan),'sourceEvidenceSha256':c.canonical_sha256(prepared['evidence'])}
             _save_result(session,result)
             if dev_snapshot is not None:
-                from scripts import sermon_dev_diagnostic_snapshot as dev
+                from tongxing_production.workflows.diagnostic import dev_snapshot as dev
                 c.require(type(dev_snapshot) is dict and set(dev_snapshot)=={'baseline','out','page_id'},'fresh_dev_snapshot_inputs_invalid')
                 previews={loc:dag.results[f'preview.{loc}'] for loc in specs if f'preview.{loc}' in dag.results}
                 leaves=[span for observation in results.values() for span in observation['completionSpans']]

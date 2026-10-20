@@ -28,7 +28,7 @@ from scripts import tongxing_host  # noqa: F401  binds the production package po
 from tongxing_production.observability import accounting
 from tongxing_production.observability import identity_sidecars as sidecars, trace_export
 from tools.ops import sermon_observability as observer
-from scripts.sermon_execution_harness import atomic_json, utc_now, work_lock
+from tongxing_production.orchestration.execution_harness import atomic_json, utc_now, work_lock
 
 DEFAULT_ACCOUNTING = ROOT / "artifacts/sermon-dubbing/2026-09-06-live-fallback-v3-numbers/accounting"
 

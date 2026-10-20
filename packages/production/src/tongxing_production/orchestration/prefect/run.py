@@ -1,15 +1,12 @@
-#!/usr/bin/env python3
-"""Local mock DAG only. Does not load media, credentials, models or publishers."""
+"""Local mock DAG only. Does not load media, credentials, models or publishers.
+
+Run it as ``tools/ops/run.py orchestration.prefect.run``."""
 from pathlib import Path
 import argparse
 import json
-import sys
 
-REPO = Path(__file__).resolve().parents[1]
-if str(REPO) not in sys.path:
-    sys.path.insert(0,str(REPO))
-from scripts import sermon_dag_contract as contract
-from scripts import sermon_prefect_dag as pilot
+from tongxing_production.orchestration.prefect import contract
+from tongxing_production.orchestration.prefect import dag as pilot
 
 
 def main():

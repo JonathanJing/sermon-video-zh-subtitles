@@ -34,7 +34,7 @@ from tongxing_production.compute import provider_http as transport
 from tongxing_production.compute import provider_limits
 from tongxing_production.text import policy as policy_tools
 import layer2_ab
-from scripts.sermon_execution_harness import atomic_json, work_lock
+from tongxing_production.orchestration.execution_harness import atomic_json, work_lock
 
 SCHEMA = 'sermon-bounded-layer2-experiment-v1'
 LIMITS = {**provider_limits.DEFAULT_REQUEST_LIMITS, 'maxCompletionTokens': 2048}

@@ -30,8 +30,7 @@ from tongxing_production.compute import provider_limits as limits
 from tongxing_production.compute import provider_http as http
 from tongxing_production.review import review_budget as budget
 from tongxing_production.review import contracts as c
-from scripts import sermon_strict_layer2 as strict
-from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.text.strict import layer2 as strict
 from tongxing_production.orchestration import jobs
 
 SCHEMA = 'sermon-diagnostic-provider-v1'

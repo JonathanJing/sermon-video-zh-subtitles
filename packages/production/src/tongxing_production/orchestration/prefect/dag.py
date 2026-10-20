@@ -21,17 +21,24 @@ import tempfile
 import time
 
 from tongxing_production.observability import accounting
-from scripts import sermon_dag_contract as contract
+from tongxing_production.orchestration.prefect import contract
 from tongxing_production.observability import profile
-from scripts import sermon_model_resources as resources
+from tongxing_production.orchestration.prefect import model_resources as resources
 from tongxing_production.review import review_budget as budget
 from tongxing_production.review import contracts as c
-from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.orchestration import jobs
-from scripts.sermon_execution_harness import work_lock, utc_now
+from tongxing_production.orchestration.execution_harness import work_lock, utc_now
 from tongxing_production import path_aliases
+from tongxing_production.orchestration import jobs_host as _jobs_host
 
-REPO = Path(__file__).resolve().parents[1]
+
+def __getattr__(name):
+    # Callers and tests that read the former module constant.
+    if name == 'REPO':
+        return _jobs_host.current().repo_root
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+
+
 CLOSURE = ('sermon_dag_contract.py', 'sermon_prefect_dag.py', 'run_sermon_prefect_dag.py',
            'canonical_pipeline_definition.py', 'sermon_workflow_jobs.py',
            'sermon_execution_harness.py', 'sermon_review_budget.py', 'sermon_model_resources.py',
@@ -47,9 +54,10 @@ CLOSURE = ('sermon_dag_contract.py', 'sermon_prefect_dag.py', 'run_sermon_prefec
 def code_identity():
     # Keys stay the legacy scripts/ names; a member moved into the package is read where it lives.
     # A member split across package files also hashes, by repository path, the files that took over the rest.
-    files = {name: hashlib.sha256((REPO/path_aliases.resolve('scripts/'+name)).read_bytes()).hexdigest()
+    repo = _jobs_host.current().repo_root
+    files = {name: hashlib.sha256((repo/path_aliases.resolve('scripts/'+name)).read_bytes()).hexdigest()
              for name in CLOSURE}
-    files.update({path: hashlib.sha256((REPO/path).read_bytes()).hexdigest()
+    files.update({path: hashlib.sha256((repo/path).read_bytes()).hexdigest()
                   for name in CLOSURE for path in path_aliases.SPLIT_MEMBERS.get('scripts/'+name, ())})
     return c.canonical_sha256(files)
 
@@ -330,8 +338,8 @@ class Runner:
             with self.execution_slot(node) as ownership:
                 if self.dispatch_closed:
                     return self.observe(node,'blocked','prior_worker_lifetime_unresolved',**metadata)
-                argv = [sys.executable,str(REPO/'scripts/run_sermon_prefect_dag.py'),'worker',
-                        '--root',str(self.root),'--node',node['id'],'--request-sha',c.canonical_sha256(request)]
+                argv = [sys.executable,str(_jobs_host.current().repo_root/'tools/ops/run.py'),
+                        'orchestration.prefect.run','worker','--root',str(self.root),'--node',node['id'],'--request-sha',c.canonical_sha256(request)]
                 with profile.context(workKind='control',evidenceMode='synthetic',workUnitId=node['id'],attemptId='mock-1'):
                     ownership['dispatchMayHaveOccurred']=True
                     state = jobs.start_job(self.root/'jobs',job_identity,argv,node['timeoutSeconds'])

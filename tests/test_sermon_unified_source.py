@@ -23,7 +23,7 @@ class UnifiedSourceTests(unittest.TestCase):
             stream.setnchannels(1); stream.setsampwidth(2); stream.setframerate(16000)
             stream.writeframes(b'\0\0' * 16000 * 181)
         self.window = {'startSeconds': 0, 'endSeconds': 181}
-        from scripts.sermon_production_supervisor import stable_hash, json_digest
+        from tongxing_production.workflows.supervisor.production import stable_hash, json_digest
         url = 'https://example.invalid/synthetic-source'
         timeline = {'schemaVersion': 2, 'stage': 'source_media_verified', 'boundaryMethod': 'operator_supplied',
             'status': 'requires_operator_review', 'sourceUrl': url, 'sunday': '2026-10-04',

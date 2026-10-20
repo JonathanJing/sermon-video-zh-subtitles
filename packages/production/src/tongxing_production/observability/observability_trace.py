@@ -2,22 +2,19 @@
 
 The export proves no execution beyond the supplied ledger. Source SHA and removed
 fields/counts make this transformation explicit; hashes are not anonymization.
+Run it as ``tools/ops/run.py observability.observability_trace``.
 """
 import argparse
 from datetime import datetime
 import hashlib
 import json
 from pathlib import Path
-import sys
-if __package__ in {None, ''}:
-    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from tongxing_production.observability import accounting
-from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.observability import cache_observation as cache
 from tongxing_production.observability import local_model_observation as local_model
 from tongxing_production.orchestration.supervisor import decision_accounting as decision
 from tongxing_production.observability import workflow_evidence as evidence
-from scripts import weekly_pipeline_report as weekly
+from tongxing_production.observability import weekly_projection as weekly
 
 LABELS = {'event', 'eventId', 'runId', 'workflow', 'workflowId', 'parentWorkflowId', 'spanId', 'parentSpanId',
           'stage', 'status', 'billing', 'executorType', 'workUnitId', 'attemptId', 'decisionId',
@@ -96,7 +93,7 @@ def export(directory, output):
     before, after = accounting.receipt_integrity(events), accounting.receipt_integrity(safe)
     if (before['status'], len(before['conflicts']), before['equivalentDuplicatesIgnored']) != (after['status'], len(after['conflicts']), after['equivalentDuplicatesIgnored']):
         raise ValueError('export_changes_receipt_reconciliation')
-    from scripts import sermon_trace_artifacts as artifacts
+    from tongxing_production.observability import trace_artifacts as artifacts
     artifacts.new_directory(output)
     references = {identity.get('loadedProjectCodeManifestSha256')
                   for e in events if e.get('event') == 'workflow_started'
@@ -126,9 +123,14 @@ def export(directory, output):
     return manifest
 
 
-if __name__ == '__main__':
+def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--accounting-dir', type=Path, required=True)
     parser.add_argument('--out-dir', type=Path, required=True)
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
     print(json.dumps(export(args.accounting_dir, args.out_dir)))
+    return 0
+
+
+if __name__ == '__main__':
+    raise SystemExit(main())

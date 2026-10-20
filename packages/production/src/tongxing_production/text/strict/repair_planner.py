@@ -12,16 +12,15 @@ import re
 from tongxing_production.review import contracts as c
 from tongxing_production.orchestration.supervisor import repair_planning as planning
 from tongxing_production.review import review_budget as budget
-from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.orchestration import jobs
 from tongxing_production.text.controller import ADMISSION_LOCK
-from scripts import sermon_strict_layer2 as strict
-from scripts import sermon_strict_budget_adapter as execution
+from tongxing_production.text.strict import layer2 as strict
+from tongxing_production.text.strict import budget_adapter as execution
 from tongxing_production.text import strict_review_gate as gate
 from tongxing_production.observability import accounting
 from tongxing_production.observability import profile
 from tongxing_production.observability import review_observation as observation
-from scripts.sermon_release_workflow import _safe_path
+from tongxing_production.storage.paths import safe_path as _safe_path
 
 SCHEMA='sermon-strict-repair-history-v1'
 

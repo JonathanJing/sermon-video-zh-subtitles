@@ -8,11 +8,10 @@ import os
 from pathlib import Path
 
 from tongxing_production.orchestration.supervisor import bounded_decision as decision
-from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.orchestration import jobs
 from tongxing_production.orchestration.supervisor.decision_accounting import Observation
 from tongxing_production.observability.accounting import AccountingWriteError
-from scripts.sermon_release_workflow import _safe_path
+from tongxing_production.storage.paths import safe_path as _safe_path
 
 SCHEMA = 'sermon-decision-budget-v1'
 

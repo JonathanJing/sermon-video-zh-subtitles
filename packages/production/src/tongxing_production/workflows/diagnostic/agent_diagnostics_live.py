@@ -11,16 +11,15 @@ import json
 from pathlib import Path
 import time
 
-from scripts import sermon_agent_diagnostics as diagnostic
-from scripts import sermon_agent_diagnostics_contracts as c
+from tongxing_production.workflows.diagnostic import agent_diagnostics as diagnostic
+from tongxing_production.workflows.diagnostic import agent_contracts as c
 from tongxing_production.orchestration.supervisor import agents_api as api
 from tongxing_production.observability import accounting
 from tongxing_production.compute import provider_limits as pricing
 from tongxing_production.observability import profile
-from scripts import sermon_strict_layer2 as immutable
-from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.text.strict import layer2 as immutable
 from tongxing_production.orchestration import jobs
-from scripts.sermon_release_workflow import _safe_path
+from tongxing_production.storage.paths import safe_path as _safe_path
 
 SCHEMA = 'sermon-live-diagnostic-authorization-v1'
 EXTENDED_SCHEMA = 'sermon-live-diagnostic-authorization-v2'

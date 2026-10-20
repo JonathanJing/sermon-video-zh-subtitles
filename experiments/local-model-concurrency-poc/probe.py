@@ -13,7 +13,8 @@ import time
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
-from scripts.sermon_model_resources import local_model_slot, memory_snapshot
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.orchestration.prefect.model_resources import local_model_slot, memory_snapshot
 
 ASR_MODEL = 'mlx-community/Qwen3-ASR-0.6B-8bit'
 ASR_REVISION = '89e96d92ba34aca20b3e29fb10cc284097d1219f'

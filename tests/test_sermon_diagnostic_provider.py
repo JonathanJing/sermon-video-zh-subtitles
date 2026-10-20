@@ -8,16 +8,16 @@ from unittest.mock import Mock, patch
 import urllib.error
 
 from tongxing_production.compute import legacy_openai  # C4: the remote-call group lives here
-from scripts import sermon_diagnostic_provider as p
+from tongxing_production.workflows.diagnostic import provider as p
 from tongxing_production.compute import provider_limits as limits
 from tongxing_production.compute import sermon_provider_error as errors
 from tongxing_production.review import review_budget as budget
 from tongxing_production.review import contracts as c
-from scripts import sermon_strict_layer2 as strict
-from scripts import sermon_strict_budget_adapter as adapter
+from tongxing_production.text.strict import layer2 as strict
+from tongxing_production.text.strict import budget_adapter as adapter
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.observability import accounting
-from scripts import sermon_strict_candidate_bridge as bridge
+from tongxing_production.text.strict import candidate_bridge as bridge
 from tests import test_sermon_strict_layer2 as fixtures
 
 
@@ -237,7 +237,7 @@ class ProviderTests(unittest.TestCase):
                     resolution_evidence_sha256='a'*64,approval_sha256='3'*64)
 
     def test_configuration_stop_skips_untouched_locale_groups_without_new_reservations(self):
-        from scripts import sermon_strict_locale as locale
+        from tongxing_production.text.strict import locale
         calls=[]
         def rejected(req,timeout,*,deadline=None):
             calls.append(req)
@@ -265,7 +265,7 @@ class ProviderTests(unittest.TestCase):
         self.assertEqual(len(list((self.f.root/'locale'/'not-started').glob('*.json'))),1)
 
     def test_reviewer_configuration_stop_preserves_generation_and_does_not_auto_retry(self):
-        from scripts import sermon_strict_controller as controller
+        from tongxing_production.text.strict import controller
         from tests import test_sermon_strict_budget_adapter as budgets
         original=self.http
         def configured(req,timeout,*,deadline=None):

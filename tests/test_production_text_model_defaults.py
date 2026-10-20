@@ -13,7 +13,7 @@ from scripts import generate_notes_with_openai as notes
 from tongxing_production.workflows.dual_pdf import pipeline as sermon_pipeline
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.workflows.dual_pdf import post_live as post_live
-from scripts import sermon_production_supervisor as supervisor
+from tongxing_production.workflows.supervisor import production as supervisor
 from tongxing_production.source import text_review as source_review
 
 
@@ -73,7 +73,7 @@ class TextRoleDefaultTests(unittest.TestCase):
         api.assert_not_called()
 
     def test_supervisor_defaults_cli_and_preserves_explicit_historical_api(self):
-        from scripts import run_sermon_production_supervisor_agent as agent
+        from tongxing_production.workflows.supervisor import agent
         argv = ['supervisor', '--sunday', '2026-10-04', '--state-file', 'unused.json']
         with patch.object(sys, 'argv', argv):
             self.assertEqual(agent.parse_args().agent_backend, 'codex-cli')

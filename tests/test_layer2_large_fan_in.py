@@ -9,7 +9,7 @@ from scripts import tongxing_host  # noqa: F401  binds the production package po
 from tongxing_production.source import sentence_interpretation as anchors
 from tongxing_production.text import policy as policies
 from tongxing_production.observability import accounting
-from scripts import weekly_pipeline_report as weekly
+from tongxing_production.observability import weekly_projection as weekly
 from tongxing_production.text import cache_recovery as recovery
 from tongxing_production.text import controller
 from tongxing_production.text import models

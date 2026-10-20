@@ -10,17 +10,17 @@ from contextlib import nullcontext
 import os
 from pathlib import Path
 
-from scripts import run_bounded_diagnostic as bounded
-from scripts import run_bounded_diagnostic_continuation as entry
+from tongxing_production.workflows.diagnostic import checkout
+from tongxing_production.workflows.diagnostic import bounded
+from tongxing_production.workflows.diagnostic import bounded_continuation as entry
 from tongxing_production.observability import accounting
-from scripts import sermon_bounded_business_callbacks as offline
-from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.workflows.diagnostic import bounded_business_callbacks as offline
 from tongxing_production.observability import profile
 from tongxing_production.storage import snapshot as public
 from tongxing_production.review import contracts as c
-from scripts import sermon_strict_layer2 as strict
-from scripts.sermon_diagnostic_source_evidence import validate_prior_source_evidence
-from scripts.sermon_release_workflow import _safe_path
+from tongxing_production.text.strict import layer2 as strict
+from tongxing_production.workflows.diagnostic.source_evidence import validate_prior_source_evidence
+from tongxing_production.storage.paths import safe_path as _safe_path
 
 
 class DiagnosticSession:
@@ -90,7 +90,7 @@ class DiagnosticSession:
         c.require(Path(path).is_absolute(), 'diagnostic_dag_absolute_path_required')
         path = _safe_path(Path(path))
         # The versioned language plugin is repository code, not fixture data.
-        repository = Path(__file__).resolve().parent.parent
+        repository = checkout.root()
         c.require(not self.offline_fixture or self.root in path.parents or
                   (plugin and repository in path.parents and path.is_file()),
                   'diagnostic_dag_path_outside_scope')
@@ -168,8 +168,8 @@ class DiagnosticSession:
         return result
 
     def preview(self, locale, spec, *, depends_on=None, historical_seed=None):
-        from scripts import sermon_diagnostic_preview_worker as worker
-        from scripts import sermon_historical_native_seed as historical
+        from tongxing_production.workflows.diagnostic import preview_worker as worker
+        from tongxing_production.workflows.diagnostic import historical_native_seed as historical
         c.require(historical_seed is None or (not self.offline_fixture and type(historical_seed) is historical.HistoricalSeed),
             'diagnostic_dag_native_seed_type_invalid')
         self._check()
@@ -203,7 +203,7 @@ class DiagnosticSession:
                                          **({'historical_seed':historical_seed} if historical_seed is not None else {}))
 
     def inspect_delivery(self, previews, expected_locales):
-        from scripts import sermon_diagnostic_delivery_preflight as delivery
+        from tongxing_production.workflows.diagnostic import delivery_preflight as delivery
         self._check()
         return delivery.inspect_delivery(self.root, self.subject, getattr(self, 'locale_context', self.context), previews,
                                          expected_locales=expected_locales)
@@ -226,7 +226,7 @@ def validate_legacy_session(previous, current, continuation, *, legacy_continuat
               'diagnostic_flow_session_migration_identity_changed')
     changed = any(previous[k] != current[k] for k in ('continuationSha256','diagnosticContextSha256'))
     if changed:
-        from scripts import sermon_diagnostic_context as diagnostic
+        from tongxing_production.workflows.diagnostic import context as diagnostic
         c.require(type(legacy_continuation) is dict and
                   set(legacy_continuation) == set(continuation) and
                   legacy_continuation['schemaVersion'] == continuation['schemaVersion'] and

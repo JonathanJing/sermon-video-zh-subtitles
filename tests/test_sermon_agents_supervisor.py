@@ -13,10 +13,10 @@ from unittest.mock import AsyncMock, Mock, patch
 
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.workflows.dual_pdf import codex_local as local_entry
-from scripts import run_sermon_production_supervisor_agent as entry
-from scripts import sermon_agents_supervisor as mod
+from tongxing_production.workflows.supervisor import agent as entry
+from tongxing_production.workflows.supervisor import agents as mod
 from tongxing_production.orchestration.supervisor.agents_api import AgentsAPIError, run_agent_session
-from scripts.sermon_production_supervisor import SupervisorConfig
+from tongxing_production.workflows.supervisor.production import SupervisorConfig
 
 
 def snapshot(action="run_timeline_probe", human=False):
@@ -704,7 +704,7 @@ class SupervisorBoundaryTests(unittest.TestCase):
             args = entry.parse_args()
         with patch.dict('os.environ', {'OPENAI_API_KEY': 'synthetic-test-key'}), \
              patch.object(mod, 'session_report', side_effect=AssertionError('API forbidden')) as remote, \
-             patch('scripts.sermon_codex_supervisor.session_report', return_value={'status': 'observed'}) as cli:
+             patch('tongxing_production.workflows.supervisor.codex.session_report', return_value={'status': 'observed'}) as cli:
             asyncio.run(entry.run_agent(args))
         remote.assert_not_called()
         cli.assert_called_once()

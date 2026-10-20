@@ -10,14 +10,13 @@ from pathlib import Path
 import json
 
 from tongxing_production.observability import accounting
-from scripts import sermon_diagnostic_context as diagnostic
+from tongxing_production.workflows.diagnostic import context as diagnostic
 from tongxing_production.compute import provider_limits as limits
 from tongxing_production.storage import snapshot as public
 from tongxing_production.review import review_budget as budget
 from tongxing_production.review import contracts as c
-from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.compute import transcription_request as transcription
-from scripts.sermon_release_workflow import _safe_path
+from tongxing_production.storage.paths import safe_path as _safe_path
 
 REASONS = ('possible_boundary_fragment', 'title_orthography', 'speech_restart', 'unusual_wording')
 PROHIBITED = {'production_approval', 'publication', 'deployment', 'new_ASR_or_source_check', 'new_budget_or_clock_reset'}

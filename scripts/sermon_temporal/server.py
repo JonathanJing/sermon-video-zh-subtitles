@@ -12,8 +12,8 @@ import socket
 import subprocess
 import time
 
-from scripts.sermon_execution_harness import atomic_json, utc_now
-from .local_io import TEMPORAL_ROOT, file_sha, private_directory, process_identity, read_json, receipt_process_alive
+from .local_io import (TEMPORAL_ROOT, atomic_json, file_sha, private_directory,
+                       process_identity, read_json, receipt_process_alive, utc_now)
 
 CLI_VERSION = "1.8.3"
 DEFAULT_BINARY = TEMPORAL_ROOT / "runtime" / "temporal"

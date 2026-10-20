@@ -11,7 +11,7 @@ from unittest.mock import patch
 from tests.legacy_pipeline_patches import patch_both  # W3b: Layer 1 names live in two modules
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.workflows.dual_pdf import post_live as generation
-from scripts import sermon_production_supervisor as supervisor
+from tongxing_production.workflows.supervisor import production as supervisor
 from tongxing_production.workflows.dual_pdf import pipeline as sermon_pipeline
 
 

@@ -16,19 +16,18 @@ import hashlib
 from urllib.parse import quote
 from urllib.request import Request,urlopen
 
-from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.workflows.diagnostic import checkout
 from tongxing_production.observability import accounting
-from scripts import sermon_historical_identity as historical_identity
+from tongxing_production.workflows.diagnostic import historical_identity
 from tongxing_production.review import contracts as c
-from scripts import sermon_strict_layer2 as immutable
-from scripts import sermon_diagnostic_context as diagnostic
-from scripts import sermon_diagnostic_preview_worker as worker
-from scripts import run_bounded_diagnostic as bounded
-from scripts.sermon_release_workflow import _safe_path
+from tongxing_production.text.strict import layer2 as immutable
+from tongxing_production.workflows.diagnostic import context as diagnostic
+from tongxing_production.workflows.diagnostic import preview_worker as worker
+from tongxing_production.workflows.diagnostic import bounded
+from tongxing_production.storage.paths import safe_path as _safe_path
 
 PROJECT='ai-for-god-sermon-audio-dev'
 ORIGIN='https://ai-for-god-sermon-audio-dev.web.app'
-REPO=Path(__file__).resolve().parents[1]
 SCHEMA='sermon-dev-diagnostic-snapshot-v1'
 UI=('app.mjs','catalog.mjs','locales-app.mjs','index.html','style.css','theme.js',
     'fingerprint-ui.mjs','locales-interface.mjs','locales-ko.mjs','locales-es.mjs',
@@ -131,7 +130,7 @@ def build_snapshot(session, *, baseline, out, page_id, preview_receipts, stage_r
     with accounting.stage('diagnostic.dev_snapshot',depends_on=depends_on,executor_type='deterministic_program') as span:
         try:
             hosting=temp/'hosting';shutil.copytree(baseline,hosting);public=hosting/'public'
-            for name in UI:shutil.copyfile(REPO/'apps/listening-web'/name,public/name)
+            for name in UI:shutil.copyfile(checkout.root()/'apps/listening-web'/name,public/name)
             clip=_safe_path(Path(session.plan['sourceClipPath']));video=public/'media'/page_id/'source.mp4'
             video.parent.mkdir(parents=True);shutil.copyfile(clip,video);_decode(video);duration=_probe(video)
             variants={};bindings={};source_by={u['sourceUnitId']:u['english'] for u in anchor['sourceUnits']}

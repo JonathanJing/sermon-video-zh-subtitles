@@ -630,9 +630,10 @@ def project_progress(plan, receipts, *, samples=(), at=None, previous=None, reso
 
 def plan_from_tracker(ledger, plan_id, version, run_id, unit_specs, resources, **kwargs):
     """Reuse existing formal checkpoint dependencies; never import completion."""
-    from scripts import tongxing_host  # noqa: F401  binds the production package ports
     from tongxing_production.observability import progress as four_layer_progress
-    from scripts.build_four_layer_timeline import dependencies
+    # The checkpoint timeline stays in scripts/ (dual_pdf extras); the Tracker host binds it.
+    from tongxing_production.observability.projections.backend import timeline
+    dependencies = timeline.dependencies
     if ledger.get("schemaVersion") != four_layer_progress.SCHEMA or not isinstance(ledger.get("steps"), dict):
         raise ValueError("unsupported_tracker_schema")
     deps = dependencies(ledger["steps"])
@@ -652,7 +653,7 @@ def samples_from_accounting(plan, events, bindings):
     The native stage/model/work-unit must match the explicit binding. Durations are
     samples only: successful process exits do not yield validated status receipts.
     """
-    from scripts.weekly_pipeline_report import project_run, digest as span_digest
+    from tongxing_production.observability.weekly_projection import project_run, digest as span_digest
     units = {row["id"]: row for row in validate_plan(plan)["units"]}
     samples, issues = [], []
     for run_id in sorted({row["accountingRunId"] for row in bindings.values()}):
@@ -774,6 +775,4 @@ def main(argv=None):
 
 
 if __name__ == "__main__":
-    if __package__ in {None, ""}:
-        sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
     raise SystemExit(main())

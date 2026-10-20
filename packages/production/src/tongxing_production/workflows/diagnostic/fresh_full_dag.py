@@ -12,23 +12,21 @@ import tempfile
 import uuid
 
 from tongxing_production.observability import accounting
-from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.observability import completion
 from tongxing_production.observability import durable
-from scripts import sermon_fresh_diagnostic as fresh
-from scripts import sermon_fresh_source_prefect as source_engine
-from scripts import sermon_fresh_source_stages as stages
+from tongxing_production.workflows.diagnostic import fresh
+from tongxing_production.workflows.diagnostic import fresh_source_prefect as source_engine
+from tongxing_production.workflows.diagnostic import fresh_source_stages as stages
 from tongxing_production.observability import log_contract as log
-from scripts import sermon_logs as logs
-from scripts import sermon_mock_tts_contract as contract
-from scripts import sermon_mock_tts_dag as mock
+from tongxing_production.observability import logs
+from tongxing_production.compute.mock_tts import contract
+from tongxing_production.workflows.diagnostic import mock_tts_dag as mock
 from tongxing_production.storage import snapshot as public
 from tongxing_production.review import contracts as c
 from tongxing_production.observability import review_observation as _review_observation  # preload summary-consumer closure
-from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.source import failure
-from scripts.sermon_execution_harness import work_lock
-from scripts.sermon_release_workflow import _safe_path
+from tongxing_production.orchestration.execution_harness import work_lock
+from tongxing_production.storage.paths import safe_path as _safe_path
 
 SCHEMA = 'sermon-fresh-full-dag-v1'
 QUALIFICATIONS = {**mock.QUALIFICATIONS, 'downstreamEngineTakeover': True,

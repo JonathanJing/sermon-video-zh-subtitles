@@ -9,19 +9,15 @@ import re
 import sys
 import time
 
-REPO = Path(__file__).resolve().parents[1]
-if str(REPO) not in sys.path:
-    sys.path.insert(0, str(REPO))
-
 from tongxing_production.observability import accounting
 from tongxing_production.observability import completion
 from tongxing_production.observability import profile
-from scripts import sermon_mock_tts_contract as contract
+from tongxing_production.compute.mock_tts import contract
 from tongxing_production.storage import snapshot as public
 from tongxing_production.review import contracts as c
-from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.orchestration import jobs
-from scripts.sermon_release_workflow import _safe_path
+from tongxing_production.orchestration import jobs_host as _jobs_host
+from tongxing_production.storage.paths import safe_path as _safe_path
 
 ENV_KEYS = frozenset((*accounting.ENV_KEYS, accounting.WORKFLOW_ENV,
     profile.PROFILE_ENV, profile.CONTEXT_ENV, 'PATH', 'HOME', 'TMPDIR', 'LANG', 'LC_ALL', 'LC_CTYPE',
@@ -70,8 +66,13 @@ def require_environment():
 
 def command(request_path, request_sha256):
     c.require(contract.sha(request_sha256), 'mock_tts_frozen_request_hash_required')
-    return [sys.executable, '-I', str(Path(__file__).resolve()), 'execute', '--request', str(request_path),
-        '--request-sha256', request_sha256]
+    return launcher('execute', request_path, request_sha256)
+
+
+def launcher(action, request_path, request_sha256):
+    """This worker in an isolated interpreter, through the package entry that binds the host."""
+    return [sys.executable, '-I', str(_jobs_host.current().repo_root/'tools/ops/run.py'), 'compute.mock_tts.worker',
+        action, '--request', str(request_path), '--request-sha256', request_sha256]
 
 
 def submit(request_path, request_sha256):

@@ -10,7 +10,7 @@ from tongxing_production.source import producer_compatibility as compat
 from tongxing_production.review import contracts as c
 from tongxing_production.source import failure
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
-from scripts import sermon_fresh_diagnostic as entry
+from tongxing_production.workflows.diagnostic import fresh as entry
 from tongxing_production.observability import profile
 from tongxing_production.observability import accounting
 from tongxing_production.workflows.dual_pdf.pipeline import PreDispatchRejection
@@ -144,7 +144,7 @@ class SourceTransmissionTests(unittest.TestCase):
 
     def test_changed_asr_alignment_gets_exact_deadline_and_safe_typed_error(self):
         f=source_fixtures.FreshSourceTests();f.setUp();self.addCleanup(f.doCleanups)
-        from scripts import sermon_fresh_diagnostic_source as source
+        from tongxing_production.workflows.diagnostic import fresh_source as source
         original=source.returned_receipt
         def changed(root,config,operation,model):
             receipt,ref=original(root,config,operation,model)

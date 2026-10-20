@@ -31,7 +31,7 @@ if __package__ in (None, ''):
 if str(Path(__file__).resolve().parent) not in sys.path:  # sibling modules of this experiment line
     sys.path.append(str(Path(__file__).resolve().parent))
 import diagnostic_audio_inputs as inputs
-from scripts import codex_layer2_diagnostic as diagnostic
+from tools.development import codex_layer2_diagnostic as diagnostic
 
 HOST = 'achillesjing@192.168.1.152'
 CHECKPOINT = '/home/achillesjing/dgx-spark-benchmark/results/sermon-voice-poc-20260905/checkpoints/checkpoint-epoch-0'

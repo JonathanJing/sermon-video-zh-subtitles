@@ -5,7 +5,7 @@
 ## 调用
 
 ```sh
-.venv/bin/python -m scripts.run_codex_layer2_test \
+.venv/bin/python -m tools.development.run_codex_layer2_test \
   --fixture-dir artifacts/dev-180s-page-test-20261004/dev-merged-rerun-20261005/inputs \
   --policy config/target-language-policies/zh-Hans.json \
   --out-dir artifacts/codex-cli-layer2-180s-NEW-RUN \
@@ -14,7 +14,7 @@
 
 Astra 翻译使用普通速度；Sol 审核可选 `default` 或 `fast`，推理强度来自所选策略（本例为 medium）。同一输出目录可用完全相同参数和实现恢复；改 CLI 版本、适配器、输入、策略、速度档位或测试实现须建立新目录，不覆盖旧证据。把 `NEW-RUN` 替换为独立运行标识。本轮实测回执留在 `artifacts/codex-cli-layer2-180s-20261005/`，代码补强后不能用当前实现恢复那个旧身份；见 [实测复盘](reports/20261005-codex-cli-layer2-180s.zh.md)。
 
-[`run_codex_layer2_test.py`](../scripts/run_codex_layer2_test.py) 验证固定 fixture 的 simulation scope、媒体身份、39 单元、13 组和单 worker。只读取旧候选的 group membership，不读取其译文；真实翻译和审核由 [`codex_layer2_transport.py`](../packages/production/src/tongxing_production/compute/transports/codex_layer2.py) 注入 [`models.py`](../packages/production/src/tongxing_production/text/models.py) 的共享循环。正式入口的 Layer 1/策略/plugin 门禁和默认 API 调用没有改动；本测试不能替代 canonical controller 端到端 dispatch 验收。
+[`run_codex_layer2_test.py`](../tools/development/run_codex_layer2_test.py) 验证固定 fixture 的 simulation scope、媒体身份、39 单元、13 组和单 worker。只读取旧候选的 group membership，不读取其译文；真实翻译和审核由 [`codex_layer2_transport.py`](../packages/production/src/tongxing_production/compute/transports/codex_layer2.py) 注入 [`models.py`](../packages/production/src/tongxing_production/text/models.py) 的共享循环。正式入口的 Layer 1/策略/plugin 门禁和默认 API 调用没有改动；本测试不能替代 canonical controller 端到端 dispatch 验收。
 
 ## 先跑 Mockup
 
@@ -86,17 +86,17 @@ Python producer 的 `render_tts`／`back_asr` 新增可选 `model_session` 与 `
 
 ## 新规则冻结与实际 plugin／候选诊断链
 
-[`codex_layer2_diagnostic.py`](../scripts/codex_layer2_diagnostic.py) 接收真实未批准的 English Source Package，不把历史批准包重新标为未批准，也不制造人审收据。冻结 source、clip-relative anchor、source-scoped v2 policy、完整分组、plugin 实现、授权引用 hash、代码 commit 与父媒体绝对窗口。首个 CLI transport 建立前完成源、边界、覆盖、术语和 modelRules 前检。
+[`codex_layer2_diagnostic.py`](../tools/development/codex_layer2_diagnostic.py) 接收真实未批准的 English Source Package，不把历史批准包重新标为未批准，也不制造人审收据。冻结 source、clip-relative anchor、source-scoped v2 policy、完整分组、plugin 实现、授权引用 hash、代码 commit 与父媒体绝对窗口。首个 CLI transport 建立前完成源、边界、覆盖、术语和 modelRules 前检。
 
 ```sh
-.venv/bin/python -m scripts.codex_layer2_diagnostic \
+.venv/bin/python -m tools.development.codex_layer2_diagnostic \
   --source SOURCE.json --anchor ANCHOR.json --policy SCOPED-V2-POLICY.json \
   --group-plan GROUP-PLAN.json \
   --plugin scripts/language_review_plugins/diagnostic_structural.py \
   --out artifacts/NEW-FIXTURE --authorization-ref '本次隔离测试授权引用' \
   --code-commit FULL-COMMIT-SHA --translator-model gpt-6.1-sol \
   --scripture-classification no_direct_quotations
-.venv/bin/python scripts/run_codex_layer2_test.py \
+.venv/bin/python tools/development/run_codex_layer2_test.py \
   --diagnostic-fixture --fixture-dir artifacts/NEW-FIXTURE \
   --out-dir artifacts/NEW-RUN --reviewer-tier fast --timeout-seconds 240
 ```

@@ -40,7 +40,17 @@ READS_LOADED_MODULE_FILES = {"observability/accounting.py",
                              # Diagnostic identity witnesses bind their own bytes (helperSha256), never the checkout.
                              "workflows/diagnostic/historical_identity.py",
                              # Checkpoint manifests bind the validator's own bytes (validatorCode, checkpointCode).
-                             "workflows/diagnostic/preview_checkpoint_manifest.py"}
+                             "workflows/diagnostic/preview_checkpoint_manifest.py",
+                             # D-5 window: diagnostic receipts bind their own bytes (codeSha256,
+                             # implementationSha256, workerCodeSha256, inspectorCode, builderCodeSha256) or
+                             # the loaded modules they ran (previewRendererSha256, helperRef, the frozen
+                             # Source consumers, the HTTP worker argv); the checkout root comes from the host.
+                             "workflows/diagnostic/bounded.py", "workflows/diagnostic/business_prefect_flow.py",
+                             "workflows/diagnostic/dag_session.py", "workflows/diagnostic/delivery_preflight.py",
+                             "workflows/diagnostic/fresh.py", "workflows/diagnostic/fresh_source.py",
+                             "workflows/diagnostic/historical_native_seed.py",
+                             "workflows/diagnostic/native_preview_runtime.py", "workflows/diagnostic/prefect_flow.py",
+                             "workflows/diagnostic/preview_worker.py"}
 
 
 def imports_of(path):

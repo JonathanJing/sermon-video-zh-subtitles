@@ -8,8 +8,9 @@ import sys
 import tempfile
 import unittest
 
-from scripts import sermon_dag_contract as contract
-from scripts import sermon_prefect_dag as pilot
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.orchestration.prefect import contract
+from tongxing_production.orchestration.prefect import dag as pilot
 
 
 @unittest.skipUnless(os.environ.get('SERMON_TEST_PREFECT')=='1','optional local Prefect integration')
@@ -22,7 +23,7 @@ import os, sys, socket
 from pathlib import Path
 from unittest.mock import patch
 sys.path.insert(0,sys.argv[1])
-from scripts import sermon_prefect_dag as pilot
+from tongxing_production.orchestration.prefect import dag as pilot
 root=Path(sys.argv[2])
 for key in ('CI','GITHUB_ACTIONS','GITLAB_CI','JENKINS_URL','TRAVIS','CIRCLECI',
             'BUILDKITE','TF_BUILD','CODEBUILD_BUILD_ID','BITBUCKET_COMMIT',
@@ -72,7 +73,7 @@ print('isolated-interactive-import-ok')
             root=Path(temp)/'run'; plan_path=Path(temp)/'plan.json'
             plan=contract.make_plan(run_id='3'*64,input_identity_sha256='4'*64,delay_seconds=.4)
             plan_path.write_text(json.dumps(plan))
-            argv=[sys.executable,str(pilot.REPO/'scripts/run_sermon_prefect_dag.py'),'mock',
+            argv=[sys.executable,str(pilot.REPO/'tools/ops/run.py'),'orchestration.prefect.run','mock',
                   '--root',str(root),'--plan',str(plan_path)]
             first=subprocess.run(argv,cwd=temp,capture_output=True,text=True,timeout=120)
             self.assertEqual(first.returncode,0,first.stderr[-6000:])

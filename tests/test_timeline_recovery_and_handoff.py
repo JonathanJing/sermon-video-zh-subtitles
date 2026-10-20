@@ -16,8 +16,8 @@ from scripts import tongxing_host  # noqa: F401  binds the production package po
 from tongxing_production.workflows.dual_pdf import timeline as timeline
 from tongxing_production.workflows.dual_pdf import pipeline as sermon_pipeline
 from tongxing_production.workflows.dual_pdf import post_live as generation
-from scripts import sermon_production_supervisor as supervisor
-from scripts import run_sermon_production_supervisor_agent as agent
+from tongxing_production.workflows.supervisor import production as supervisor
+from tongxing_production.workflows.supervisor import agent
 from tests.test_run_post_live_timeline_job import make_args, make_handoff, write_state
 
 

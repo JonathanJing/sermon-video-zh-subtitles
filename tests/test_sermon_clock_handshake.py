@@ -13,8 +13,8 @@ from tongxing_production.observability import accounting
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.observability import clock_evidence as clock
 from tongxing_production.observability import profile
-from scripts import sermon_dag_evidence as evidence
-from scripts import weekly_pipeline_report as report
+from tongxing_production.workflows.diagnostic import dag_evidence as evidence
+from tongxing_production.observability import weekly_projection as report
 
 
 CHILD = '''

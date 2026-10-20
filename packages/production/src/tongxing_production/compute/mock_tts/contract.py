@@ -11,10 +11,9 @@ import re
 import struct
 import wave
 
-from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.review import contracts as c
 from tongxing_production.storage import snapshot as public
-from scripts.sermon_release_workflow import _safe_path
+from tongxing_production.storage.paths import safe_path as _safe_path
 from tongxing_production import path_aliases
 
 REQUEST = 'sermon-mock-tts-request-v1'
@@ -70,7 +69,6 @@ def validate_request(request):
         and label(request['attemptId']) and len(request['attemptId']) <= 70
         and request['targetLocale'] in LOCALES and request['jobId'] == job_id(request),
         'mock_tts_request_identity_invalid')
-    from scripts import tongxing_host  # noqa: F401  binds the production package ports
     from tongxing_production.observability import completion
     c.require(type(request['attemptNumber']) is int and 1 <= request['attemptNumber'] <= 3
         and ((request['attemptNumber'] == 1 and request['retryOfRequestSha256'] is None)
@@ -233,7 +231,8 @@ def require_intent(root, request):
 
 
 def implementation_sha256():
-    root = Path(__file__).resolve().parents[1]
+    from tongxing_production.orchestration import jobs_host
+    root = jobs_host.current().repo_root
     names = ('sermon_mock_tts_contract.py', 'sermon_mock_tts_worker.py', 'sermon_accounting.py',
         'sermon_log_profile.py', 'sermon_log_contract.py', 'sermon_log_outbox.py',
         'sermon_completion.py', 'sermon_mock_tts_control.py', 'sermon_durable_accounting.py',

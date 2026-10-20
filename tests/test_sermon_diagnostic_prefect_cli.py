@@ -8,12 +8,12 @@ from unittest.mock import patch
 
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.observability import accounting
-from scripts import sermon_diagnostic_prefect_flow as flow
+from tongxing_production.workflows.diagnostic import prefect_flow as flow
 from tongxing_production.compute import provider_http as http
 from tongxing_production.review import review_budget as budget
 from tongxing_production.review import contracts as c
 from tongxing_production.storage import snapshot as public
-from scripts import sermon_preview_checkpoint_manifest as checkpoint
+from tongxing_production.workflows.diagnostic import preview_checkpoint_manifest as checkpoint
 from tests.diagnostic_dag_fixture import DiagnosticDAGFixture
 
 

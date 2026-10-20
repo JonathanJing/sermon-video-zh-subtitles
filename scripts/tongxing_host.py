@@ -328,7 +328,7 @@ def measure() -> ports.Measure:
 
 
 def _work_lock(work):
-    from scripts.sermon_execution_harness import work_lock
+    from tongxing_production.orchestration.execution_harness import work_lock
     return work_lock(work)
 
 
@@ -490,23 +490,29 @@ def schemas() -> ports.Schemas:
 
 
 def _validate_diagnostic_source(source, anchor, context):
-    from scripts import sermon_diagnostic_context
+    from tongxing_production.workflows.diagnostic import context as sermon_diagnostic_context
     return sermon_diagnostic_context.validate_source(source, anchor, context)
 
 
 def _validate_diagnostic_context(context):
-    from scripts import sermon_diagnostic_context
+    from tongxing_production.workflows.diagnostic import context as sermon_diagnostic_context
     return sermon_diagnostic_context.validate_context(context)
 
 
 def _require_diagnostic_policy_ready(identity, context=None):
-    from scripts import sermon_diagnostic_context
+    from tongxing_production.workflows.diagnostic import context as sermon_diagnostic_context
     return sermon_diagnostic_context.require_policy_ready(identity, context)
+
+
+def _validate_diagnostic_runtime(context, *, run_id, store_sha256):
+    from tongxing_production.workflows.diagnostic import context as sermon_diagnostic_context
+    return sermon_diagnostic_context.validate_runtime(context, run_id=run_id, store_sha256=store_sha256)
 
 
 def diagnostic() -> ports.Diagnostic:
     return ports.Diagnostic(validate_source=_validate_diagnostic_source, validate_context=_validate_diagnostic_context,
-                            require_policy_ready=_require_diagnostic_policy_ready)
+                            require_policy_ready=_require_diagnostic_policy_ready,
+                            validate_runtime=_validate_diagnostic_runtime)
 
 
 # The package command entry binds this host before it runs a module's main(). Durable
@@ -544,9 +550,9 @@ def _record_cache_observation(role, saved, output, *, mode, origin=None):
 
 def text_unmoved() -> text_backend.Unmoved:
     return text_backend.Unmoved(
-        durable_jobs=_module('scripts.canonical_durable_jobs'),
+        durable_jobs=_module('tongxing_production.orchestration.canonical_durable_jobs'),
         package_inspection=_module('tongxing_production.delivery.inspect_canonical_packages'),
-        liveness=_module('scripts.sermon_job_liveness'),
+        liveness=_module('tongxing_production.orchestration.job_liveness'),
         review_budget=_module('tongxing_production.review.review_budget'),
         speech_handoff=_module('tongxing_production.audio.speech_job'),
         orchestration_contracts=_module('scripts.sermon_unified.contracts'),
@@ -629,7 +635,7 @@ def _legacy_weekly_release():
 def delivery_unmoved() -> delivery_backend.Unmoved:
     return delivery_backend.Unmoved(app_release=_module('tongxing_production.delivery.app_release'),
                                     formal_stage=_module('tongxing_production.delivery.formal_stage'),
-                                    execution_harness=_module('scripts.sermon_execution_harness'))
+                                    execution_harness=_module('tongxing_production.orchestration.execution_harness'))
 
 
 def delivery_legacy() -> delivery_backend.Legacy:
@@ -798,7 +804,7 @@ def source_evidence() -> ports.SourceEvidence:
 
 
 def stage_gates() -> ports.StageGates:
-    supervisor = partial(_rule_function, 'scripts.sermon_production_supervisor')
+    supervisor = partial(_rule_function, 'tongxing_production.workflows.supervisor.production')
     return ports.StageGates(
         window_approval=supervisor('validate_window_approval'), parse_timecode=supervisor('parse_timecode'),
         stable_hash=supervisor('stable_hash'),
@@ -864,19 +870,20 @@ def qc_runtime() -> ports.QcRuntime:
 # partially initialized modules.
 EAGER_PRODUCER_IMPORTS = (
     # Each name is imported as written. The D-5 closure window replaced the scripts/
-    # facade names with the package modules they bound (the same module objects).
-    'scripts.canonical_durable_jobs', 'scripts.series_terminology', 'scripts.sermon_execution_harness',
-    'scripts.sermon_job_liveness', 'scripts.sermon_release_workflow',
-    'tongxing_production.audio.speech_job', 'tongxing_production.compute.api_concurrency',
-    'tongxing_production.compute.outcomes', 'tongxing_production.compute.provider_http',
-    'tongxing_production.compute.provider_limits', 'tongxing_production.compute.spark_admission',
-    'tongxing_production.compute.transcription_request', 'tongxing_production.contracts.pipeline_definition',
-    'tongxing_production.delivery.inspect_canonical_packages', 'tongxing_production.observability.accounting',
-    'tongxing_production.observability.cache_observation', 'tongxing_production.observability.measure',
-    'tongxing_production.orchestration.jobs', 'tongxing_production.review.contracts',
-    'tongxing_production.review.release_basis', 'tongxing_production.review.review_budget',
-    'tongxing_production.review.source_meaning', 'tongxing_production.review.unified_reviews',
-    'tongxing_production.storage.snapshot', 'tongxing_production.workflows.dual_pdf.pipeline',
+    # names of moved files and removed facades with the package modules they bound.
+    'scripts.series_terminology', 'tongxing_production.audio.speech_job',
+    'tongxing_production.compute.api_concurrency', 'tongxing_production.compute.outcomes',
+    'tongxing_production.compute.provider_http', 'tongxing_production.compute.provider_limits',
+    'tongxing_production.compute.spark_admission', 'tongxing_production.compute.transcription_request',
+    'tongxing_production.contracts.pipeline_definition', 'tongxing_production.delivery.inspect_canonical_packages',
+    'tongxing_production.observability.accounting', 'tongxing_production.observability.cache_observation',
+    'tongxing_production.observability.measure', 'tongxing_production.orchestration.canonical_durable_jobs',
+    'tongxing_production.orchestration.execution_harness', 'tongxing_production.orchestration.job_liveness',
+    'tongxing_production.orchestration.jobs', 'tongxing_production.orchestration.release_workflow',
+    'tongxing_production.review.contracts', 'tongxing_production.review.release_basis',
+    'tongxing_production.review.review_budget', 'tongxing_production.review.source_meaning',
+    'tongxing_production.review.unified_reviews', 'tongxing_production.storage.snapshot',
+    'tongxing_production.workflows.dual_pdf.pipeline',
 )
 
 
@@ -900,6 +907,26 @@ def _observability_function(name):
         return getattr(implementation, name)(*arguments, **options)
     call.__name__ = name
     return call
+
+
+def _lease_function(name):
+    def call(*arguments, **options):
+        from backend import leases as implementation
+        return getattr(implementation, name)(*arguments, **options)
+    call.__name__ = name
+    return call
+
+
+def _lease_class(name):
+    def get():
+        from backend import leases as implementation
+        return getattr(implementation, name)
+    return get
+
+
+def leases() -> ports.Leases:
+    return ports.Leases(acquire=_lease_function('acquire_lease'), release=_lease_function('release_lease'),
+                        guard=_lease_class('LeaseGuard'), handle=_lease_class('LeaseHandle'))
 
 
 def observability() -> ports.Observability:
@@ -951,8 +978,8 @@ def dual_pdf_unmoved():
         export_saturday_live_context=_scripts_module('export_saturday_live_context'),
         reading_edition=_scripts_module('build_sermon_reading_edition_with_openai'),
         sentence_shadow=_module('tongxing_production.source.sentence_interpretation_shadow'),
-        supervisor=_scripts_module('sermon_production_supervisor'),
-        supervisor_agent=_scripts_module('run_sermon_production_supervisor_agent'),
+        supervisor=_module('tongxing_production.workflows.supervisor.production'),
+        supervisor_agent=_module('tongxing_production.workflows.supervisor.agent'),
         accounting=_module('tongxing_production.observability.accounting'),
         dubbing_producer_hook=_dubbing_producer_hook, upcoming_sunday=_upcoming_sunday)
 
@@ -991,10 +1018,13 @@ ENTRY_LOAD_TIME_IMPORTS = {
                                                         'tongxing_production.review.audio_qc'),
     # L4 D2: the app release builder imported the waiver release basis at load time.
     'tongxing_production.delivery.app_release': ('tongxing_production.review.release_basis',),
+    # D-5: the supervisor and its agent imported these backend helpers at load time; ports now defer them.
+    'tongxing_production.workflows.supervisor.production': ('backend.cloud', 'backend.leases', 'backend.observability'),
+    'tongxing_production.workflows.supervisor.agent': ('backend.cloud',),
     'tongxing_production.workflows.dual_pdf.codex_local': (
         'backend.config', 'backend.cloud', 'tongxing_production.workflows.dual_pdf.live_source_monitor',
-        'scripts.run_sermon_production_supervisor_agent', 'tongxing_production.observability.accounting',
-        'scripts.sermon_production_supervisor'),
+        'tongxing_production.workflows.supervisor.agent', 'tongxing_production.observability.accounting',
+        'tongxing_production.workflows.supervisor.production'),
 }
 
 
@@ -1004,19 +1034,19 @@ def _jobs_worker_command(root, job_id, lock_fd):
 
 
 def _bounded_process(*arguments, **options):
-    from scripts import sermon_execution_harness
+    from tongxing_production.orchestration import execution_harness as sermon_execution_harness
     return sermon_execution_harness.bounded_process(*arguments, **options)
 
 
 def _execution_terminated():
-    from scripts.sermon_execution_harness import ExecutionTerminated
+    from tongxing_production.orchestration.execution_harness import ExecutionTerminated
     return ExecutionTerminated
 
 
 def jobs_host() -> jobs_host_module.JobsHost:
     return jobs_host_module.JobsHost(repo_root=ROOT, worker_command=_jobs_worker_command,
                                      bounded_process=_bounded_process, execution_terminated=_execution_terminated,
-                                     liveness=_scripts_module('sermon_job_liveness'))
+                                     liveness=_module('tongxing_production.orchestration.job_liveness'))
 
 
 def load_producer_imports():
@@ -1098,4 +1128,4 @@ review_backend.configure(review_backend.ReviewBackend(core=_core, code=_code, sn
                                                       gates=stage_gates(), scripture=scripture(),
                                                       qc_runtime=qc_runtime(), waivers=_waivers))
 dual_pdf_host.configure(dual_pdf_host.DualPdfHost(cloud=cloud(), observability=observability(),
-                                                  unmoved=dual_pdf_unmoved()))
+                                                  unmoved=dual_pdf_unmoved(), leases=leases()))

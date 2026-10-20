@@ -34,6 +34,7 @@ class DualPdfHost:
     cloud: ports.Cloud
     observability: ports.Observability
     unmoved: Unmoved
+    leases: ports.Leases | None = None   # the production supervisor's stage leases (backend/leases.py)
 
 
 _current: DualPdfHost | None = None

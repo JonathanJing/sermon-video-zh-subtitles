@@ -11,11 +11,7 @@ import json
 from pathlib import Path
 import sys
 
-if __package__ in {None, ''}:
-    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-
-from scripts import sermon_end_to_end as workflow
-from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.workflows.supervisor import end_to_end as workflow
 from tongxing_production.orchestration import jobs
 
 DEFINITION_VERSION = 'sermon-legacy-page-controller-v1'
@@ -187,7 +183,7 @@ class Controller:
 
 
 def main():
-    from scripts.sermon_production_supervisor import SupervisorConfig
+    from tongxing_production.workflows.supervisor.production import SupervisorConfig
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--sunday', required=True)
     parser.add_argument('--state-file', required=True)

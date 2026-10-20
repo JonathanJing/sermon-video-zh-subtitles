@@ -18,25 +18,21 @@ import sys
 import time
 from unittest.mock import patch
 
-REPO_ROOT = Path(__file__).resolve().parents[1]
-if str(REPO_ROOT) not in sys.path:
-    sys.path.insert(0, str(REPO_ROOT))
-
-from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.workflows.diagnostic import checkout
 from tongxing_production.audio import speculative as preview
 from tongxing_production.observability import accounting
-from scripts import sermon_diagnostic_context as diagnostic
-from scripts import sermon_diagnostic_provider as provider
-from scripts import sermon_execution_harness as harness
+from tongxing_production.workflows.diagnostic import context as diagnostic
+from tongxing_production.workflows.diagnostic import provider
+from tongxing_production.orchestration import execution_harness as harness
 from tongxing_production.observability import profile
 from tongxing_production.storage import snapshot as public
-from scripts import sermon_native_preview_runtime as native_runtime
+from tongxing_production.workflows.diagnostic import native_preview_runtime as native_runtime
 from tongxing_production.observability import clock_evidence as clock
-from scripts import sermon_preview_checkpoint_manifest as checkpoint_manifest
+from tongxing_production.workflows.diagnostic import preview_checkpoint_manifest as checkpoint_manifest
 from tongxing_production.review import review_budget as budget
 from tongxing_production.review import contracts as c
 from tongxing_production.orchestration import jobs
-from scripts.sermon_release_workflow import _safe_path
+from tongxing_production.storage.paths import safe_path as _safe_path
 
 SCHEMA = 'sermon-diagnostic-preview-worker-receipt-v4'
 V3_SCHEMA = 'sermon-diagnostic-preview-worker-receipt-v3'
@@ -45,7 +41,7 @@ V1_SCHEMA = 'sermon-diagnostic-preview-worker-receipt-v1'
 READONLY_WORKER_CODE_SHA256 = '4e20ac030220414690509a2c81b6b2fd73ea4cc97b7ba2c9e522d0e50290f068'
 # Narrow read-only native producer pin; never authorizes old requests.
 READONLY_NATIVE_WORKER_CODE_SHA256 = '2ca16aac1ed10826307394ea6c277d37a4feeb117a4bb3bee67ea86e334d8172'
-from scripts import sermon_historical_native_seed as historical_seed_helper
+from tongxing_production.workflows.diagnostic import historical_native_seed as historical_seed_helper
 
 PATH_KEYS = ('source', 'anchor', 'candidate', 'policy', 'adapter', 'registry')
 REQUIRED = {'paths', 'checkpoint_map_path', 'operation_policies_path', 'strict_rubric_path', 'out', 'execute'}
@@ -435,9 +431,10 @@ def launch_preview(root, subject, context, spec, *, offline_fixture=False, depen
                     # Accounting/file setup consumes the same original clock.
                     remaining = deadline - time.monotonic()
                     c.require(remaining > 0, 'preview_original_deadline_reached')
-                    result = harness.bounded_process([sys.executable, '-I', '-B', str(Path(__file__).resolve()),
-                        '--worker', str(out / 'worker-request.json')], timeout=remaining, check=False,
-                        cwd=REPO_ROOT, env=env, stdout=stdout, stderr=stderr, text=True)
+                    result = harness.bounded_process([sys.executable, '-I', '-B', str(checkout.entry()),
+                        'workflows.diagnostic.preview_worker', '--worker', str(out / 'worker-request.json')],
+                        timeout=remaining, check=False, cwd=checkout.root(), env=env, stdout=stdout, stderr=stderr,
+                        text=True)
                 c.require(result.returncode == 0, 'preview_worker_failed_requires_reconciliation')
                 child_result = _read(out / 'worker-result.json')
                 c.require(child_result['requestSha256'] == request_sha, 'preview_worker_result_changed')

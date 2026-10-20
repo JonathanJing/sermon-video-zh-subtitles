@@ -16,13 +16,12 @@ from tongxing_production.observability import completion
 from tongxing_production.observability import durable
 from tongxing_production.observability import profile
 from tongxing_production.observability import log_contract
-from scripts import sermon_mock_tts_contract as contract
-from scripts import sermon_mock_tts_worker as worker
+from tongxing_production.compute.mock_tts import contract
+from tongxing_production.compute.mock_tts import worker
 from tongxing_production.storage import snapshot as public
 from tongxing_production.review import contracts as c
-from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.orchestration import jobs
-from scripts.sermon_release_workflow import _safe_path
+from tongxing_production.storage.paths import safe_path as _safe_path
 
 POLICY = 'sermon-mock-tts-control-policy-v1'
 INTENT = 'sermon-mock-tts-intent-v1'
@@ -197,8 +196,7 @@ class MockTTSClient:
                         depends_on=[request['parentCompletion']['spanId']]) as dispatch:
                     # Capture this actual dispatch leaf in the detached job context.
                     env = worker.environment(self.root/'launcher')
-                    command = [sys.executable, '-I', worker.__file__, 'submit', '--request', str(path),
-                        '--request-sha256', c.canonical_sha256(request)]
+                    command = worker.launcher('submit', path, c.canonical_sha256(request))
                     failure = None
                     try:
                         boundary['entered'] = True

@@ -16,10 +16,10 @@ from tongxing_production.observability import log_contract as contract
 from tongxing_production.observability import outbox
 from tongxing_production.observability import profile
 from tongxing_production.observability import review_observation as review
-from scripts import weekly_pipeline_report as weekly
+from tongxing_production.observability import weekly_projection as weekly
 from tongxing_production.observability import trace_export as otlp
-from scripts import export_observability_trace as safe
-from scripts import sermon_logs as logs
+from tongxing_production.observability import observability_trace as safe
+from tongxing_production.observability import logs
 from tests.test_accounting_log_contract import fixture
 from tests.test_sermon_review_contracts import load
 
@@ -378,7 +378,7 @@ class DurableProfileContextTests(unittest.TestCase):
 class AtomicTraceArtifactTests(unittest.TestCase):
     def test_failed_replace_preserves_old_report_and_bound_ledger_digest(self):
         import hashlib
-        from scripts import sermon_trace_artifacts as artifacts
+        from tongxing_production.observability import trace_artifacts as artifacts
         with tempfile.TemporaryDirectory() as tmp:
             directory=Path(tmp)/'output';artifacts.new_directory(directory)
             path=directory/'report.json';artifacts.write(path,'old')

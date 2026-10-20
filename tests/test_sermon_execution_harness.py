@@ -10,9 +10,8 @@ import time
 import unittest
 from unittest.mock import patch
 
-from scripts.sermon_execution_harness import (
-    Execution, RemoteOutcomeUnknown, WorkAlreadyRunning, bounded_process, work_lock,
-)
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.orchestration.execution_harness import Execution, RemoteOutcomeUnknown, WorkAlreadyRunning, bounded_process, work_lock
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -76,7 +75,7 @@ class ExecutionHarnessProcessTests(unittest.TestCase):
         owner = self.script("owner.py", """
 from pathlib import Path
 import sys, time
-from scripts.sermon_execution_harness import work_lock
+from tongxing_production.orchestration.execution_harness import work_lock
 with work_lock(sys.argv[1]):
     Path(sys.argv[2]).write_text('ready')
     time.sleep(30)
@@ -105,7 +104,7 @@ while not Path(sys.argv[2]).exists():
 """)
         owner = self.script("owner.py", """
 import sys
-from scripts.sermon_execution_harness import work_lock, bounded_process
+from tongxing_production.orchestration.execution_harness import work_lock, bounded_process
 with work_lock(sys.argv[1]):
     bounded_process([sys.executable, sys.argv[2], sys.argv[3], sys.argv[4]], timeout=30)
 """)
@@ -186,7 +185,7 @@ time.sleep(30)
         node = self.script("nested.py", """
 from pathlib import Path
 import json, os, signal, sys, time
-from scripts.sermon_execution_harness import bounded_process
+from tongxing_production.orchestration.execution_harness import bounded_process
 depth = int(sys.argv[1])
 if depth == 1:
     signal.signal(signal.SIGTERM, signal.SIG_IGN)
@@ -198,7 +197,7 @@ else:
 """)
         owner = self.script("guarded-owner.py", """
 import os, sys
-from scripts.sermon_execution_harness import bounded_process, work_lock
+from tongxing_production.orchestration.execution_harness import bounded_process, work_lock
 os.environ['SERMON_HARNESS_GUARDED_CHILDREN'] = '1'
 with work_lock(sys.argv[1]):
     bounded_process([sys.executable, sys.argv[2], '3', sys.argv[3]], timeout=30)
@@ -266,7 +265,7 @@ class ExecutionHarnessReceiptTests(unittest.TestCase):
         self.assertTrue(record["stages"][0]["cacheHit"])
 
     def test_fixed_deadline_does_not_restart_at_new_stage(self):
-        with patch("scripts.sermon_execution_harness.time.monotonic", return_value=100) as clock:
+        with patch("tongxing_production.orchestration.execution_harness.time.monotonic", return_value=100) as clock:
             execution = Execution(self.work, "a" * 64, timeout=10)
             with self.assertRaises(subprocess.TimeoutExpired):
                 with execution:
@@ -307,7 +306,7 @@ class ExecutionHarnessReceiptTests(unittest.TestCase):
         self.assertIs(record["published"], False)
 
     def test_unbounded_or_shell_commands_rejected_without_spawning(self):
-        with patch("scripts.sermon_execution_harness.subprocess.Popen") as spawn:
+        with patch("tongxing_production.orchestration.execution_harness.subprocess.Popen") as spawn:
             for timeout in (0, -1, float("nan"), float("inf"), "1"):
                 with self.subTest(timeout=timeout), self.assertRaises(ValueError):
                     bounded_process([sys.executable], timeout=timeout)

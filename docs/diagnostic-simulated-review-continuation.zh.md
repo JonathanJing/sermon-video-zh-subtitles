@@ -9,11 +9,11 @@
 命令：
 
 ```sh
-python -m scripts.run_bounded_diagnostic_continuation \
+python tools/ops/run.py workflows.diagnostic.bounded_continuation \
   --plan PRIVATE/run-plan.json --continuation PRIVATE/continuation.json \
   --phase preflight --input PRIVATE/zh-Hans.spec.json
 # 通过预检、固定代码审查和 CI 后，由已授权私有 FD 传入现有 key：
-python -m scripts.run_bounded_diagnostic_continuation \
+python tools/ops/run.py workflows.diagnostic.bounded_continuation \
   --plan PRIVATE/run-plan.json --continuation PRIVATE/continuation.json \
   --phase locale --input PRIVATE/zh-Hans.spec.json --key-fd 3
 ```

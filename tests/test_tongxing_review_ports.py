@@ -31,7 +31,7 @@ from tongxing_production.audio import renderer
 from tongxing_production.source import sentence_interpretation_models as interpretation_models
 from tongxing_production.audio import screening
 from tongxing_production.review import scripture_machine
-from scripts import sermon_production_supervisor as supervisor
+from tongxing_production.workflows.supervisor import production as supervisor
 from tongxing_production.source import sentence_interpretation as interpretation
 from tongxing_production.source import budget as source_budget
 from tongxing_production.source import text_review
@@ -206,7 +206,7 @@ class ReviewPortsTests(unittest.TestCase):
         # The host still loads what the moved producers imported at load time
         # (tongxing_host.EAGER_PRODUCER_IMPORTS), which reaches part of the waiver
         # closure as before; the review binding must not load anything more.
-        lazy = ('scripts.sermon_production_supervisor', 'scripts.cuv_scripture', 'scripts.scripture_editions',
+        lazy = ('tongxing_production.workflows.supervisor.production', 'scripts.cuv_scripture', 'scripts.scripture_editions',
                 'scripts.english_scripture_coverage', 'scripts.scripture_candidate_queue',
                 'tongxing_production.text.human_ruling', 'tongxing_production.source.english_source_judge_cache',
                 'tongxing_production.source.sentence_interpretation_models', 'tools.development.export_run_digest',

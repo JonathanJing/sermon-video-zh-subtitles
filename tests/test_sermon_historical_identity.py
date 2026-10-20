@@ -6,7 +6,8 @@ from unittest.mock import patch
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.review import contracts as c
 from tongxing_production.observability import accounting
-from scripts import run_bounded_diagnostic as bounded,sermon_historical_identity as identity
+from tongxing_production.workflows.diagnostic import historical_identity as identity
+from tongxing_production.workflows.diagnostic import bounded
 
 
 
