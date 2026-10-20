@@ -335,7 +335,12 @@ def asset_first(baseline_path, prepared, out, source_video=None):
     contract.require(not out.exists() and not out.is_relative_to(base) and not out.is_relative_to(prepared), 'Unsafe asset-first output')
     contract.validate_catalog_snapshot(base)
     manifest, assets = builder.verified_assets(prepared)
-    contract.require(set(manifest['releases']) == {'zh-Hans', 'ko', 'es'}, 'Three locales required')
+    locales = set(manifest['releases'])
+    if str(manifest.get('pageId', '')).startswith(('mockup-', 'dryrun-', 'dev-')):
+        # A diagnostic page may carry one locale; production pages stay three-locale.
+        contract.require(locales and locales <= {'zh-Hans', 'ko', 'es'}, 'At least one known locale required')
+    else:
+        contract.require(locales == {'zh-Hans', 'ko', 'es'}, 'Three locales required')
     receipt = read(base / 'baseline-receipt.json')
     contract.require(receipt['project'] == PROJECT and receipt['site'] == SITE and receipt['origin'] == ORIGIN, 'Dev target only')
     out.mkdir(parents=True)

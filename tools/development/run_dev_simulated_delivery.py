@@ -193,7 +193,10 @@ def _run(args):
     page_id = manifest['pageId']
     contract.require(page_id.startswith(('mockup-', 'dryrun-', 'dev-')), 'Diagnostic page ID required')
     locales = set(manifest['releases'])
-    contract.require(locales and locales <= {'zh-Hans', 'ko', 'es'}, 'At least one known locale required')
+    diagnostic_page = str(page_id).startswith(('mockup-', 'dryrun-', 'dev-'))
+    contract.require(locales and locales <= {'zh-Hans', 'ko', 'es'}
+                     and (diagnostic_page or locales == {'zh-Hans', 'ko', 'es'}),
+                     'At least one known locale required' if diagnostic_page else 'Three locales required')
     contract.require(all(page['id'] != page_id for page in baseline_catalog['pages']),
                      'Test page already exists; build a new run-specific page ID')
     contents = [preparation.read(prepared / 'public' / preparation.safe_relative(row['path']))
