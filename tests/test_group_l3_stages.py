@@ -119,6 +119,13 @@ class GroupL3StagesTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "unknown_placeholder"):
             self.execute()
 
+    def test_group_tasks_stages_dispatches_to_the_stage_runner(self):
+        from tongxing_production.orchestration import group_pipeline
+        self.write_config([self.write_stage("formal_render", "rendered.json")])
+        code = group_pipeline.main(["stages", "--config", str(self.config_path), "--out", str(self.out)])
+        self.assertEqual(code, 0)
+        self.assertTrue((self.out / "rendered.json").is_file())
+
     def test_cli_returns_five_on_a_failed_stage(self):
         self.write_config([{"name": "formal_render", "command": [PY, "-c", "raise SystemExit(2)"],
                             "produces": "x.json"}])

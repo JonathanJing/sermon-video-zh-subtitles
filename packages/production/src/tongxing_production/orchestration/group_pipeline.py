@@ -616,6 +616,7 @@ def main(argv=None) -> int:
     stages_command.add_argument("--config", type=Path, required=True)
     stages_command.add_argument("--out", type=Path, required=True)
     stages_command.add_argument("--dry-run", action="store_true")
+    stages_command.add_argument("--output", type=Path)
     prepare_command = sub.add_parser("prepare-l3", help="prepare the Layer 3 speech job for the current merge")
     prepare_command.add_argument("--config", type=Path, required=True)
     prepare_command.add_argument("--text-release-basis", type=Path, required=True)
@@ -638,12 +639,8 @@ def main(argv=None) -> int:
                                help="group IDs this revision may change; must equal the changed set")
     merge_command.add_argument("--output", type=Path)
     args = parser.parse_args(argv)
-    config = group_worker.load_configuration(args.config)
-    if args.command == "status":
-        report = status(config)
-    elif args.command == "release-basis":
-        report = release_basis(config, args.receipt)
-    elif args.command == "stages":
+    if args.command == "stages":
+        # stages takes its own plan (producer commands), not a group run configuration.
         from . import group_l3
         try:
             report = group_l3.run_stages(group_l3.load_configuration(args.config), args.out,
@@ -652,8 +649,15 @@ def main(argv=None) -> int:
             print(json.dumps({"status": "failed", "stage": exc.stage, "reason": exc.reason,
                               "groupIds": exc.group_ids}))
             return 5
+        if args.output:
+            _write_report(args.output, report)
         print(json.dumps({"status": report["status"], "stages": len(report["stages"])}))
         return 0
+    config = group_worker.load_configuration(args.config)
+    if args.command == "status":
+        report = status(config)
+    elif args.command == "release-basis":
+        report = release_basis(config, args.receipt)
     elif args.command == "prepare-l3":
         report = prepare_l3(config, text_basis=args.text_release_basis, adapter=args.adapter,
                             registry=args.speaker_registry,
