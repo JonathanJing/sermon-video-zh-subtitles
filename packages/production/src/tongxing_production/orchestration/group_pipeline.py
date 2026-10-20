@@ -1,0 +1,380 @@
+"""Executable per-group orchestration: status, run (T/R/P) and merge (DEV-GRP-006/007).
+
+docs/design/per-group-independent-pipeline.zh.md: a locale's groups are independent
+Layer 2 tasks and are merged once before Layer 3. This module is the operator entry:
+
+* ``status`` reports every group's stage state from the record store and the current
+  inputs, without dispatching or writing anything but its own report;
+* ``run`` executes T, R and P for the groups that are stale or missing, one group at a
+  time, through ``group_worker`` (a paid command: it requires a per-group budget
+  document and stops on an unknown paid outcome);
+* ``merge`` assembles the candidate from the group records with the unchanged
+  ``text.candidate`` admission, checks whole-text length outliers, and writes the
+  merge manifest. It does not run Layer 3: steps 4-10 are named as pending with the
+  exact command that continues them.
+
+No function here grants human approval or publishes anything. ``merge`` output is a
+machine-review candidate plus a merge manifest; Layer 3 still needs its own receipts.
+"""
+from __future__ import annotations
+
+import argparse
+import json
+from pathlib import Path
+import sys
+
+from . import group_assembly
+from . import group_budget
+from . import group_legacy as legacy
+from . import group_plan
+from . import group_records as records
+from . import group_worker
+
+STATUS_SCHEMA = "sermon-group-status-v1"
+RUN_SCHEMA = "sermon-group-run-report-v1"
+MERGE_SCHEMA = "sermon-group-merge-manifest-v1"
+PENDING_STEPS = (
+    "calibration", "text_release_basis", "speech_job_v3", "formal_render",
+    "schedule_and_subtitles", "track_package", "screening_and_audio_qc", "listening_waiver",
+)
+L3_HANDOFF = ("python tools/ops/run.py audio.speech_job --text-release-basis <text-release-basis> "
+              "--out <speech-job>")
+# Stages the per-group worker currently executes. Q/C/S/A/U are not dispatched here yet.
+WORKER_STAGES = ("T", "R", "P")
+UNSETTLED = {"stale", "missing", "conflict", "failed", "stopped"}
+
+
+def _require(condition: bool, message: str) -> None:
+    if not condition:
+        raise ValueError(message)
+
+
+def stage_identities(config: dict) -> dict:
+    """Current implementation identities for every stage, from this checkout's code."""
+    from ..audio import renderer, screening
+    from ..review import audio_qc, waiver
+    from ..text import candidate as producer
+    from ..text import models
+    from ..text import policy as policy_tools
+    policy = legacy.load_json(config["policy"])
+    return {
+        "runnerImplementationSha256": models.RUNNER_PRODUCTION_IDENTITY_SHA256,
+        "machineQcImplementationSha256": waiver.implementation_sha256(),
+        "rendererSoundIdentitySha256": renderer.RENDERER_SOUND_IDENTITY_SHA256,
+        "asrImplementationSha256": screening.implementation_sha256(),
+        "audioQcThresholdsSha256": records.json_sha256(audio_qc.THRESHOLDS),
+        "pluginImplementationSha256": producer.plugin_implementation_sha256(config["plugin"]),
+        "languageReviewPolicySha256": policy_tools.validate_policy(policy)["languageReviewPolicySha256"],
+    }
+
+
+def _implementation(stage: str, identities: dict) -> str | None:
+    return {"T": identities["runnerImplementationSha256"], "R": identities["runnerImplementationSha256"],
+            "P": identities["pluginImplementationSha256"], "Q": identities["machineQcImplementationSha256"],
+            "C": identities["machineQcImplementationSha256"], "S": identities["rendererSoundIdentitySha256"],
+            "A": identities["asrImplementationSha256"], "U": identities["machineQcImplementationSha256"]}[stage]
+
+
+def _report_group(store, payloads, group: dict, anchor: dict, policy: dict, context: dict, layer1: dict,
+                  identities: dict) -> dict:
+    """Status of every stage of one group, compared with the current inputs."""
+    locale_identity = identities
+    selected: dict[str, dict] = {}
+    stages = {}
+    conflicts = []
+    view = group
+    for stage in records.STAGES:
+        found = store.records(policy["targetLocale"], group["translationGroupId"], stage)
+        if stage == "C" and not found:
+            stages[stage] = {"status": "not_applicable", "reasons": ["no_spoken_condensation_record"]}
+            continue
+        if not found:
+            stages[stage] = {"status": "missing", "reasons": ["no_record"]}
+            continue
+        keys = {record["inputKey"] for record in found}
+        if len(keys) > 1:
+            # Two different results under one key, or keys this report cannot tell apart.
+            stages[stage] = {"status": "conflict", "reasons": ["multiple_records"],
+                             "inputKeys": sorted(keys)}
+            conflicts.append(stage)
+            continue
+        record = found[0]
+        view = group
+        if stage not in {"T", "R"}:
+            if "R" not in selected:
+                # Every stage after R reads its reviewed text; without it they cannot be judged.
+                stages[stage] = {"status": "missing", "reasons": ["reviewed_text_missing"]}
+                continue
+            try:
+                view = _reviewed_view(group, selected["R"], payloads)
+            except ValueError:
+                stages[stage] = {"status": "conflict", "reasons": ["reviewed_payload_missing"]}
+                continue
+        current = group_plan.current_inputs(stage, view, context, anchor, policy, locale_identity, selected)
+        if stage == "U":
+            current["thresholdsSha256"] = identities["audioQcThresholdsSha256"]
+        result = group_plan.evaluate(record, layer1, current, _implementation(stage, identities))
+        if stage in {"Q", "U"} and not record["provenance"].get("ledger"):
+            result["status"] = "stale"
+            result["reasons"].append("repair_ledger_not_supplied")
+        stages[stage] = result
+        if result["status"] in {"fresh", "expected_reusable"}:
+            selected[stage] = record
+    for stage in records.STAGES:
+        if stages[stage]["status"] == "not_applicable":
+            continue
+        upstream = [up for up in records.UPSTREAM[stage] if up in records.PRODUCES
+                    and stages[up]["status"] in UNSETTLED | {"unknown"} | {"conflict"}]
+        if upstream and stages[stage]["status"] not in {"missing", "conflict"}:
+            stages[stage] = dict(stages[stage], status="stale",
+                                 reasons=list(stages[stage].get("reasons", []))
+                                 + [f"upstream_will_change:{up}" for up in upstream])
+    blockers = []
+    for stage in WORKER_STAGES:
+        if stages[stage]["status"] not in {"fresh", "expected_reusable"}:
+            blockers.append({"stage": stage, "status": stages[stage]["status"]})
+    return {"translationGroupId": group["translationGroupId"], "sourceUnitIds": group["sourceUnitIds"],
+            "stages": stages, "conflicts": conflicts, "readyToMerge": not blockers, "blockers": blockers}
+
+
+def _reviewed_view(group: dict, review: dict | None, payloads) -> dict:
+    """The group with the reviewed text its R record names, for the stages after R."""
+    if not review:
+        return group
+    sha = (review.get("outputs") or {}).get("evidenceRowSha256")
+    if not sha:
+        return group
+    row = payloads.get(sha)
+    return {**group, "targetUtterances": row["targetUtterances"],
+            "targetText": "".join(row["targetUtterances"])}
+
+
+def status(config: dict) -> dict:
+    """Read-only per-group stage status; no dispatch, no model call, no record write."""
+    from ..text import candidate as producer
+    from ..text import models
+    source = legacy.load_json(config["source"])
+    anchor = legacy.load_json(config["anchor"])
+    policy = legacy.load_json(config["policy"])
+    request = producer.prepare_request(source, anchor, policy)
+    layer1 = records.layer1_identity(request["englishSourcePackageJsonSha256"], request["anchorManifestSha256"])
+    groups = models.group_plan(request, anchor)
+    contexts = legacy.group_contexts(anchor, groups)
+    identities = stage_identities(config)
+    store = records.RecordStore(config["records"])
+    payloads = group_assembly.PayloadStore(config["records"])
+    rows = [_report_group(store, payloads, group, anchor, policy, contexts[group["translationGroupId"]],
+                          layer1, identities) for group in groups]
+    summary = {}
+    for stage in records.STAGES:
+        counts: dict[str, int] = {}
+        for row in rows:
+            value = row["stages"][stage]["status"]
+            counts[value] = counts.get(value, 0) + 1
+        summary[stage] = counts
+    locale = policy["targetLocale"]
+    return {"schemaVersion": STATUS_SCHEMA, "mode": "read_only", "dispatched": False, "modelCalls": 0,
+            "targetLocale": locale, "layer1": layer1, "groupCount": len(rows), "summary": summary,
+            "readyToMerge": all(row["readyToMerge"] for row in rows),
+            "groups": rows, "releaseEligible": False, "humanApproval": False}
+
+
+def run(config: dict, groups: list[str], *, budget: dict | None, budget_sha256: str | None = None,
+        caller=None, api_key: str = "") -> dict:
+    """Execute T, R and P for the named groups (or every group not ready to merge)."""
+    from ..text import candidate as producer
+    from ..text import models
+    _require(caller is not None, "run_requires_a_model_caller")
+    if budget is not None:
+        _require(isinstance(budget, dict) and budget.get("schemaVersion") == group_budget.SCHEMA,
+                 "invalid_group_budget")
+    source = legacy.load_json(config["source"])
+    anchor = legacy.load_json(config["anchor"])
+    policy = legacy.load_json(config["policy"])
+    request = producer.prepare_request(source, anchor, policy)
+    layer1 = records.layer1_identity(request["englishSourcePackageJsonSha256"], request["anchorManifestSha256"])
+    plan = models.group_plan(request, anchor)
+    report = status(config)
+    by_id = {row["translationGroupId"]: row for row in report["groups"]}
+    _require(set(groups) <= set(by_id), f"unknown_group_id:{sorted(set(groups) - set(by_id))[:3]}")
+    targets = groups or [row["translationGroupId"] for row in report["groups"] if not row["readyToMerge"]]
+    results, stopped = [], None
+    for group_id in targets:
+        group = next(item for item in plan if item["translationGroupId"] == group_id)
+        reservation = None
+        if budget is not None:
+            try:
+                reservation = group_budget.admit(budget, group_id)
+            except ValueError as exc:
+                results.append({"group": group_id, "outcome": "refused", "reason": str(exc)})
+                continue
+        try:
+            outcome = group_worker.run_group(config, group, source=source, anchor=anchor, policy=policy,
+                                             request=request, caller=caller, api_key=api_key)
+            results.append({"group": group_id, "outcome": "pass", **outcome, "reservation": reservation})
+        except group_worker.GroupWorkerError as exc:
+            results.append({"group": group_id, "outcome": exc.kind, "detail": exc.detail,
+                            "dispatched": exc.dispatched, "reservation": reservation})
+            if exc.kind in {"unknown", "group_busy"}:
+                stopped = exc.kind
+                break
+    final = status(config)
+    return {"schemaVersion": RUN_SCHEMA, "mode": "execute", "targetLocale": policy["targetLocale"],
+            "layer1": layer1, "requestedGroups": targets, "results": results, "stopped": stopped,
+            "budgetSha256": budget_sha256, "status": final, "releaseEligible": False, "humanApproval": False}
+
+
+def merge(config: dict) -> dict:
+    """Assemble the locale candidate from its group records and write the merge manifest."""
+    from ..review import qc_text_run, text_qc
+    from ..text import candidate as producer
+    source = legacy.load_json(config["source"])
+    anchor = legacy.load_json(config["anchor"])
+    policy = legacy.load_json(config["policy"])
+    request = producer.prepare_request(source, anchor, policy)
+    locale = policy["targetLocale"]
+    store = records.RecordStore(config["records"])
+    payloads = group_assembly.PayloadStore(config["records"])
+    resolutions = group_assembly.ResolutionStore(config["records"])
+    try:
+        assembled = group_assembly.assemble(source, anchor, policy, request, None, config["plugin"],
+                                            store, payloads, resolutions=resolutions)
+    except group_assembly.AssemblyRefused as exc:
+        return {"schemaVersion": MERGE_SCHEMA, "targetLocale": locale, "outcome": "refused",
+                "reasons": exc.reasons, "releaseEligible": False, "humanApproval": False}
+    candidate = assembled["candidate"]
+    outliers = []
+    rows = qc_text_run.qc_groups(candidate, anchor)
+    median = text_qc.candidate_length_median(rows)
+    for group in rows:
+        problem = text_qc.length_problem(group, median)
+        if problem:
+            outliers.append({"translationGroupId": group["groupId"], "problem": problem})
+    if outliers:
+        return {"schemaVersion": MERGE_SCHEMA, "targetLocale": locale, "outcome": "refused",
+                "reasons": {"text_length_outlier": [row["translationGroupId"] for row in outliers]},
+                "outliers": outliers, "releaseEligible": False, "humanApproval": False}
+    directory = Path(config["merge"]) / locale
+    _write_once(directory / "candidate.json", group_assembly.file_bytes(candidate))
+    _write_once(directory / "evidence.json", group_assembly.file_bytes(assembled["evidence"]))
+    _write_once(directory / "language-review.json", group_assembly.file_bytes(assembled["languageReview"]))
+    manifest = {
+        "schemaVersion": MERGE_SCHEMA, "targetLocale": locale, "layer1": assembled["manifest"]["layer1"],
+        "translationPolicySha256": assembled["manifest"]["translationPolicySha256"],
+        "groupCount": len(candidate["groups"]), "assembly": assembled["manifest"],
+        "completedSteps": ["readiness", "candidate_assembly", "whole_text_checks"],
+        "pendingSteps": list(PENDING_STEPS), "pendingReason": "Layer 3 merge steps are not wired in this adapter yet",
+        "textLengthOutliers": [], "candidateSha256": assembled["manifest"]["candidateSha256"],
+        "l3Handoff": L3_HANDOFF,
+        "releaseEligible": False, "humanApproval": False,
+    }
+    _validate_merge_manifest(manifest)
+    data = (json.dumps(manifest, ensure_ascii=False, indent=1) + "\n").encode("utf-8")
+    _write_once(directory / "merge-manifest.json", data)
+    return {**manifest, "outcome": "candidate_ready_layer3_pending", "directory": str(directory)}
+
+
+def _validate_merge_manifest(manifest: dict) -> None:
+    from jsonschema import Draft202012Validator
+    from ..text import backend as _text
+    schema = json.loads(_text.current().schemas.path(f"{MERGE_SCHEMA}.schema.json").read_text(encoding="utf-8"))
+    errors = list(Draft202012Validator(schema).iter_errors(manifest))
+    _require(not errors, f"invalid_merge_manifest:{errors[0].message if errors else ''}")
+
+
+def _write_once(path: Path, data: bytes) -> None:
+    group_assembly._write_once(path, data, f"merge_output_changed:{path}")
+
+
+def _write_report(path: Path, report: dict) -> None:
+    text = json.dumps(report, ensure_ascii=False, indent=1) + "\n"
+    group_plan._write_new(path, text)
+
+
+def text_summary(report: dict) -> str:
+    locale = report.get("targetLocale")
+    if report.get("schemaVersion") == STATUS_SCHEMA:
+        lines = [f"Group status {locale}: {report['groupCount']} groups; ready to merge: {report['readyToMerge']}"]
+        for stage in records.STAGES:
+            counts = ", ".join(f"{status} {count}" for status, count in sorted(report["summary"][stage].items()))
+            lines.append(f"  {stage} {records.STAGE_NAMES[stage]:<20} {counts}")
+        for row in report["groups"]:
+            if not row["readyToMerge"]:
+                blockers = ", ".join(f"{item['stage']}={item['status']}" for item in row["blockers"])
+                lines.append(f"  needs work: {row['translationGroupId']}  {blockers}")
+        return "\n".join(lines)
+    if report.get("schemaVersion") == RUN_SCHEMA:
+        lines = [f"Group run {locale}: {len(report['results'])} attempted; stopped={report['stopped']}"]
+        for row in report["results"]:
+            lines.append(f"  {row['group']}: {row['outcome']}"
+                         + (f" ({row.get('detail')})" if row.get("detail") else ""))
+        lines.append(f"  after: ready to merge = {report['status']['readyToMerge']}")
+        return "\n".join(lines)
+    if report.get("schemaVersion") == MERGE_SCHEMA:
+        if report.get("outcome") == "refused":
+            return f"Merge {locale}: refused; {json.dumps(report.get('reasons'), ensure_ascii=False)}"
+        return (f"Merge {locale}: candidate written for {report['groupCount']} groups\n"
+                f"  pending Layer 3 steps: {', '.join(report['pendingSteps'])}\n"
+                f"  handoff: {report['l3Handoff']}")
+    return json.dumps(report, ensure_ascii=False)
+
+
+def main(argv=None) -> int:
+    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    sub = parser.add_subparsers(dest="command", required=True)
+    plan_command = sub.add_parser("plan", help="read-only per-group plan from run products (DEV-GRP-001)")
+    plan_command.add_argument("rest", nargs=argparse.REMAINDER)
+    status_command = sub.add_parser("status", help="per-group stage status from the record store")
+    status_command.add_argument("--config", type=Path, required=True)
+    status_command.add_argument("--output", type=Path)
+    run_command = sub.add_parser("run", help="execute T, R and P for stale or listed groups")
+    run_command.add_argument("--config", type=Path, required=True)
+    run_command.add_argument("--group-id", nargs="+", default=[])
+    run_command.add_argument("--budget", type=Path, help="sermon-group-budget-v1 document from plan --budget-profile")
+    run_command.add_argument("--confirm-unbudgeted", action="store_true",
+                             help="accept model spend without a per-group budget document (explicit operator decision)")
+    run_command.add_argument("--output", type=Path)
+    merge_command = sub.add_parser("merge", help="assemble the locale candidate from group records")
+    merge_command.add_argument("--config", type=Path, required=True)
+    merge_command.add_argument("--output", type=Path)
+    args = parser.parse_args(argv)
+    if args.command == "plan":
+        return group_plan.main(args.rest)
+    config = group_worker.load_configuration(args.config)
+    if args.command == "status":
+        report = status(config)
+    elif args.command == "run":
+        if args.budget is None and not args.confirm_unbudgeted:
+            parser.error("run needs --budget <group budget> or --confirm-unbudgeted")
+        budget = _read_budget(args.budget, config["locale"]) if args.budget else None
+        budget_sha = legacy.file_sha256(args.budget) if args.budget else None
+        caller, api_key = _openai_transport()
+        report = run(config, args.group_id, budget=budget, budget_sha256=budget_sha,
+                     caller=caller, api_key=api_key)
+    else:
+        report = merge(config)
+    if args.output:
+        _write_report(args.output, report)
+    print(text_summary(report))
+    return 0 if report.get("outcome") != "refused" else 4
+
+
+def _read_budget(path: Path, locale: str) -> dict:
+    """A group budget document, or the budget block of a ``plan`` report."""
+    document = legacy.load_json(path)
+    if document.get("schemaVersion") == group_budget.SCHEMA:
+        return document
+    budget = ((document.get("locales") or {}).get(locale) or {}).get("budget")
+    _require(isinstance(budget, dict), f"budget_document_has_no_locale:{locale}")
+    return budget
+
+
+def _openai_transport() -> tuple:
+    from ..text import backend as _text
+    from ..text import models
+    transport = _text.current().transports.caller("openai-api")
+    return models._session_bound_caller()(transport, requires_spark=False), transport.key
+
+
+if __name__ == "__main__":
+    sys.exit(main())

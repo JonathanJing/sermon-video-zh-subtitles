@@ -1,6 +1,6 @@
 # 逐组独立任务：从 Layer 2 到 Layer 3，发布前唯一合并
 
-状态：**设计稿；`DEV-GRP-001`（逐组记录、输入键、只读 `plan`）与 `DEV-GRP-003`（逐组预算上界）已实施；`DEV-GRP-002` 的按组 ID 返修（#1072）与合并第 1–2 步的 candidate 组装（`orchestration/group_assembly.py`）已实施，并行 worker、单飞锁与按 provider 路由停止尚未实现；其余批次未实现**。backlog 前缀 `DEV-GRP`（见文末分批计划）。本页不改变任何现行门限、豁免规则或 schema；不授权付费、Spark 独占会话或发布。Layer 2 逐组返修（按组 ID 重做）由另一分支的“Layer 2 revise-by-group-ID”实现承担，对应 `DEV-GRP-002`；本页定义它写入的逐组记录合同和它下游的其余各步。
+状态：**设计稿；`DEV-GRP-001`（逐组记录、输入键、只读 `plan`）、`DEV-GRP-002` 的逐组 T/R/P worker 与 `DEV-GRP-003`（逐组预算上界）已实施；合并第 1–3 步与合并清单（`DEV-GRP-006` 的前半）已实施，第 4–10 步仍待接线；`DEV-GRP-007` 已提供 `plan`/`status`/`run`/`merge` 命令，`redo` 与并行 worker 尚未实现**。backlog 前缀 `DEV-GRP`（见文末分批计划）。本页不改变任何现行门限、豁免规则或 schema；不授权付费、Spark 独占会话或发布。Layer 2 逐组返修（按组 ID 重做）由另一分支的“Layer 2 revise-by-group-ID”实现承担，对应 `DEV-GRP-002`；本页定义它写入的逐组记录合同和它下游的其余各步。
 
 ## 一、为什么要改
 
@@ -156,13 +156,14 @@ Layer 1 的英文单句修订仍使全部失效：这是 AGENTS.md 不变式 3 �
 操作者只写：
 
 ```bash
-python scripts/group_tasks.py plan  --run <run> --locale ko --group-id g0123 g0201   # 列出将重做的步骤、复用数和预算上界，不派发
-python scripts/group_tasks.py redo  --run <run> --locale ko --group-id g0123 g0201 [--reason <修订意见>]
-python scripts/group_tasks.py status --run <run>                                       # 每组每步的状态
-python scripts/group_tasks.py merge --run <run> --locale ko
+python tools/ops/group_tasks.py plan   --manifest <inputs.json> [--locale ko --group-id g0123 g0201]
+python tools/ops/group_tasks.py status --config <run-config.json>
+python tools/ops/group_tasks.py run    --config <run-config.json> [--group-id g0123 g0201] \
+                                       [--budget <group-budget.json> | --confirm-unbudgeted]
+python tools/ops/group_tasks.py merge  --config <run-config.json>
 ```
 
-（命令名为占位，第一批确定。）其余全部自动：
+`plan` 只读现有整篇产物（DEV-GRP-001）；`status` 只读逐组记录；`run` 对过期或点名的组执行 T/R/P（付费，需逐组预算或显式 `--confirm-unbudgeted`）；`merge` 组装 candidate 并写合并清单。`redo --reason` 与并行 worker 尚未实现（DEV-GRP-002/007 剩余项）。其余全部自动：
 
 - **键与哈希由系统计算。** 操作者从不输入哈希、收据路径或状态字段；`plan` 根据现有产物算出过期步骤。
 - **逐组记录永远不是发布物。** 每份记录写死 `releaseEligible=false`、`humanApproval=false`；preview 音频沿用 `preview_only`、`synthesisEligible=false`。合并之前不存在可发布的 locale 状态。
@@ -212,6 +213,16 @@ python scripts/group_tasks.py merge --run <run> --locale ko
 - **文件。** `plan --budget-profile config/weekly-run-profile.json [--budget-scale week|clip]` 在每个 locale 下输出 `sermon-group-budget-v1`（只读、`humanApproval=false`，派发前须由操作者批准并按哈希绑定）。现行 Layer 2 v1–v4 与机器质检的预算授权格式不变、照旧可读；逐组明细与派发的接线随派发器（`DEV-GRP-006`/`007`）落地。
 - **`15030286` 离线结果（week 档）。** 每对翻译加复核上界 $0.12288（与 v8 按组号修订收据的 `worstCasePairCostMicrousd` 一致），每组回译加比对上界 $0.09216。三语文字 QC 因 W 变化全部过期：按最坏情况预留，整语言重跑文字 QC 需约 $37，超过 QC 每 locale 上限 $30，所以 77 组标为 `repair_spend_cap`。这是最坏情况的输入上界（16,384 token），不是实际花费。ko 点名 3 组时，3 组各预留 4 次，排在最前面全部预留。
 - **限制。** 二级 ASR 每次按一个被标出的单元、180 秒上限预留。QC 请求按请求上限计算最坏情况，没有用实际请求大小。合并第 4 步的校准试验费用属于 `DEV-GRP-004`。
+
+### DEV-GRP-002 worker 与 DEV-GRP-006 合并（2026-10-20，部分）
+
+- **代码。** [`group_worker.py`](../../packages/production/src/tongxing_production/orchestration/group_worker.py) 执行一组的 T/R/P：[`group_pipeline.py`](../../packages/production/src/tongxing_production/orchestration/group_pipeline.py) 提供 `status`/`run`/`merge`；[`tools/ops/group_tasks.py`](../../tools/ops/group_tasks.py) 是操作者入口；合并清单 schema 为 [`sermon-group-merge-manifest-v1`](../../schemas/sermon-group-merge-manifest-v1.schema.json)。
+- **一组一次运行。** worker 用一组的 custom plan 调用现有 `text.models.run_accounted`（新增 `allow_subset` 与 `context_plan`，上下文仍按完整 Layer 1 计划计算），打开 payload-cache 成功收据，再从该 round 自己的 preview/cache 读出 T、R 输入；P 由冻结插件对该组零调用重算。记录 provenance 写 `per_group_pipeline`，永不写 `releaseEligible`/`humanApproval`。同一 `(locale, group)` 用非阻塞独占锁，第二个 worker 在调用前拒绝。
+- **失败分类。** 未派发就失败 → `not_dispatched`，不写记录；已派发但 transport 异常 → `unknown`，不写记录并让 `run` 停止后续派发；内容/插件失败 → 写出能命名的 T/R 终态记录后报 `failed`。
+- **合并范围。** `merge` 做第 1–3 步：就绪检查与 candidate 组装（调用未修改的 `admit_evidence`）、长度离群检查，并写 `candidate.json`、`evidence.json`、`language-review.json` 与合并清单。第 4–10 步（校准、译文豁免、speech job、正式渲染、排程/字幕、整轨、筛查/音频 QC、试听豁免）**尚未接线**：合并清单把它们列为 `pendingSteps`，并给出 `l3Handoff` 命令；`merge` 返回 `candidate_ready_layer3_pending`，不是四层完成。
+- **预算。** `run --budget <sermon-group-budget-v1>` 逐组 `admit`；未预留的组不派发。不给预算时必须显式 `--confirm-unbudgeted`。
+- **`15030286` 离线只读检查。** ko 402 组 `status` 在无逐组记录时全部 `missing`，零模型调用、不写记录；这份报告只证明入口与路径解析，不构成复用或生产证据。
+- **尚未实现。** `redo --reason` 的修正指令进入 payload（需要 revision brief 接线）、逐组 Q/C/S/A/U、并行 worker 的 provider 路由级停止、合并第 4–10 步，以及从合并产物继续到 L3/L4 的正式 dispatch。
 
 依赖：001 → 002、003 可并行 → 004、005 可并行 → 006 → 008 → 007。008 的失败路由与合并比较在 006 内先实现；降级显示依赖 L3／L4 的支持，未接通前达到上限的组使本 locale 走人工路径或暂停，不阻塞其他 locale。002 的逐组记录格式以 001 为准；若 002 先合入且格式不同，001 以适配层读取，不改已写记录。
 

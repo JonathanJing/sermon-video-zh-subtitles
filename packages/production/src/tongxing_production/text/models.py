@@ -215,17 +215,26 @@ def save_new(path: Path, value: object, *, private=False) -> None:
 
 
 def group_plan(request: dict[str, Any], anchor: dict[str, Any],
-               custom: list[dict[str, Any]] | None = None) -> list[dict[str, Any]]:
+               custom: list[dict[str, Any]] | None = None, *, allow_subset: bool = False) -> list[dict[str, Any]]:
+    """The translation groups in source order.
+
+    ``allow_subset`` is for the per-group worker (DEV-GRP-002): it accepts an ordered
+    subset of the Layer 1 groups, because one group is one task. It never accepts a
+    group boundary other than Layer 1's, a reordering or a duplicate; candidate
+    admission still requires every source unit exactly once.
+    """
     expected = [unit["sourceUnitId"] for unit in request["sourceUnits"]]
+    anchor_plan = anchor.get("translationRequests")
+    base = ([{"translationGroupId": row["translationGroupId"],
+              "sourceUnitIds": row["sourceUnitIds"]} for row in anchor_plan]
+            if isinstance(anchor_plan, list) and anchor_plan else
+            [{"translationGroupId": f"translation-{unit_id}",
+              "sourceUnitIds": [unit_id]} for unit_id in expected])
     if custom is None:
-        anchor_plan = anchor.get("translationRequests")
-        if isinstance(anchor_plan, list) and anchor_plan:
-            plan = [{"translationGroupId": row["translationGroupId"],
-                     "sourceUnitIds": row["sourceUnitIds"]} for row in anchor_plan]
-        else:
-            plan = [{"translationGroupId": f"translation-{unit_id}",
-                     "sourceUnitIds": [unit_id]} for unit_id in expected]
+        plan = base
     else:
+        if allow_subset:
+            require(all(row in base for row in custom), "Group subset must name Layer 1 groups")
         plan = custom
     require(isinstance(plan, list) and bool(plan), "Group plan must be a nonempty array")
     require(all(isinstance(row, dict)
@@ -235,8 +244,12 @@ def group_plan(request: dict[str, Any], anchor: dict[str, Any],
                 for row in plan), "Invalid group plan")
     ids = [row["translationGroupId"] for row in plan]
     assigned = [unit_id for row in plan for unit_id in row["sourceUnitIds"]]
-    require(len(set(ids)) == len(ids) and assigned == expected,
-            "Group plan must cover source units exactly once and in order")
+    if allow_subset:
+        require(len(set(ids)) == len(ids) and assigned == [unit for unit in expected if unit in set(assigned)],
+                "Group subset must keep Layer 1 groups in source order without duplicates")
+    else:
+        require(len(set(ids)) == len(ids) and assigned == expected,
+                "Group plan must cover source units exactly once and in order")
     return plan
 
 
@@ -1417,7 +1430,9 @@ def _run_prepared_groups(request: dict[str, Any], anchor: dict[str, Any],
                          completion_spans: list[str] | None = None,
                          diagnostic_context=None,
                          failure_collector=None,
-                         operator_revision: dict[str, Any] | None = None) -> dict[str, Any]:
+                         operator_revision: dict[str, Any] | None = None,
+                         allow_subset: bool = False,
+                         context_plan: list[dict[str, Any]] | None = None) -> dict[str, Any]:
     """Shared group loop; the formal entry above still enforces Layer 1 approval.
 
     Simulated requests carry an extra marker that prevents formal candidate
@@ -1513,7 +1528,10 @@ def _run_prepared_groups(request: dict[str, Any], anchor: dict[str, Any],
                 "Per-group production runner requires batchSize=1 and workers=1..16")
         if plugin_path is not None:
             require_plugin_identity(plugin_path, policy["languageReview"]["pluginImplementationSha256"])
-        plan = group_plan(request, anchor, custom_plan)
+        plan = group_plan(request, anchor, custom_plan, allow_subset=allow_subset)
+        # A subset run still gives its group the surrounding English context of the full
+        # Layer 1 plan (DEV-GRP-002); otherwise a one-group plan would shift every context.
+        context_plan = group_plan(request, anchor) if context_plan is None else context_plan
         rule_receipt = (rule_preflight.preflight(request, policy, plugin_path, plan)
                         if plugin_path is not None else None)
         accounting.record_workload("layer2.rule_preflight", {
@@ -1750,7 +1768,9 @@ def _run_prepared_groups(request: dict[str, Any], anchor: dict[str, Any],
                                            prior_evidence["groups"][index - 1], policy), prepare_span
             source_rows = [{"sourceUnitId": unit_id, "english": units[unit_id]}
                            for unit_id in group["sourceUnitIds"]]
-            context = surrounding_context(request, plan, index - 1)
+            context_index = next((position for position, item in enumerate(context_plan)
+                                  if item["translationGroupId"] == group["translationGroupId"]), index - 1)
+            context = surrounding_context(request, context_plan, context_index)
             korean_boundary = revision_boundary_instruction(
                 request["targetLocale"], revising=brief is not None)
             common = {"translationGroupId": group["translationGroupId"],
@@ -2108,7 +2128,8 @@ def run_accounted(source: dict, anchor: dict, policy: dict, out_dir: Path,
                   cache_only: bool = False, progress_callback=None,
                   predecessor_spans=(), completion_spans: list[str] | None = None,
                   failure_collector=None, candidate_mode: str = "production",
-                  operator_revision: dict | None = None) -> dict:
+                  operator_revision: dict | None = None, allow_subset: bool = False,
+                  context_plan: list[dict[str, Any]] | None = None) -> dict:
     require(candidate_mode == "production",
             "Shadow execution is not implemented: candidate schema, plugin admission and human receipt are required")
     require(plugin is not None,
@@ -2122,7 +2143,7 @@ def run_accounted(source: dict, anchor: dict, policy: dict, out_dir: Path,
                                   executor_type="deterministic_program",
                                   work_unit_id=f"l2.{locale}.source_admission") as source_span:
                 request = producer.prepare_request(source, anchor, policy, candidate_mode=candidate_mode)
-                plan = group_plan(request, anchor, group_plan_data)
+                plan = group_plan(request, anchor, group_plan_data, allow_subset=allow_subset)
                 window = source["source"]["approvedWindow"]
                 accounting.record_workload("layer2.source_identity", {
                     **{k: request[k] for k in ("englishSourcePackageJsonSha256", "anchorManifestSha256", "translationPolicySha256")},
@@ -2138,7 +2159,8 @@ def run_accounted(source: dict, anchor: dict, policy: dict, out_dir: Path,
                 backfill_payload_cache_success,
                 source_admission_span=source_span, cache_only=cache_only,
                 progress_callback=progress_callback, completion_spans=completion_spans,
-                failure_collector=failure_collector, operator_revision=operator_revision)
+                failure_collector=failure_collector, operator_revision=operator_revision,
+                allow_subset=allow_subset, context_plan=context_plan)
         metrics["doneUnits"] = len(evidence["groups"])
     return evidence
 
