@@ -1,0 +1,27 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-field-venue-proxy-head-ci-cancelled",
+  "runs": [
+    {
+      "label": "field-venue-proxy-head-ci-cancelled-20261017",
+      "source": "/private/tmp/field-venue-exp-leaf-20261017/artifacts/field-venue-proxy-head-ci-cancelled-20261017",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "field-venue-proxy-head-ci-cancelled-20261017",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 631,
+      "truncated": false,
+      "sha256": "7c48f3e79d5c849a4b314be65f4055a8950ba230b15049e38f70b8457040186c",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}
