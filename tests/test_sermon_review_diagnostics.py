@@ -5,7 +5,7 @@ from pathlib import Path
 import unittest
 
 from scripts import sermon_review_contracts as c
-from scripts import sermon_review_diagnostics as d
+from tongxing_production.text import review_diagnostics as d
 from scripts import sermon_strict_layer2 as s
 from tests import test_sermon_strict_layer2 as strict_fixtures
 from tongxing_production import path_aliases
@@ -13,8 +13,7 @@ from tongxing_production.text import review_diagnostics as implementation
 
 
 class ReviewDiagnosticsTests(unittest.TestCase):
-    def test_legacy_import_and_identity_key_resolve_to_package_implementation(self):
-        self.assertIs(d, implementation)
+    def test_legacy_identity_key_resolves_to_package_implementation(self):
         key = 'scripts/sermon_review_diagnostics.py'
         self.assertEqual(path_aliases.resolve(key),
                          'packages/production/src/tongxing_production/text/review_diagnostics.py')

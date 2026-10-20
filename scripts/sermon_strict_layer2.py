@@ -10,9 +10,9 @@ import json
 from pathlib import Path
 import re
 
-from scripts import run_target_language_models as shared
-from scripts import produce_target_language_candidate as producer
-from scripts import target_language_policy as policies
+from tongxing_production.text import models as shared
+from tongxing_production.text import candidate as producer
+from tongxing_production.text import policy as policies
 from scripts import sermon_review_contracts as c
 from tongxing_production.observability import review_observation as observation
 from tongxing_production.observability import profile
@@ -53,7 +53,7 @@ def material_bytes(value):return c.canonical_bytes(value)+b'\n'
 
 
 def _validate_rule_preflight(source, anchor, policy, rubric, receipt, context, diagnostic_context=None):
-    from scripts import target_language_rule_preflight as rules
+    from tongxing_production.text import rule_preflight as rules
     c.require(type(context) is dict and set(context) == {'pluginPath', 'groupPlan'},
               'strict_rule_verification_context_required')
     plugin = _safe_path(Path(context['pluginPath']))
@@ -221,7 +221,7 @@ def _with_frozen_rules(prepared, request):
     receipt = prepared.get('rulePreflight')
     if receipt is None:
         return request
-    from scripts.target_language_rule_preflight import INSTRUCTION, group_rules
+    from tongxing_production.text.rule_preflight import INSTRUCTION, group_rules
     request['input']['formatting'] = copy.deepcopy(receipt['modelRules']['formatting'])
     request['input']['modelRules'] = group_rules(receipt, request['input']['sourceUnitIds'])
     if INSTRUCTION not in request['instruction']:
@@ -502,7 +502,7 @@ def _review_structural_diagnostic(prepared,manifest,inputs,output):
     Separate v1 sidecar migration is additive: old failure/receipt v1 caches
     without this sidecar retain their original evidence and are not rewritten.
     """
-    from scripts import sermon_review_diagnostics as diagnostics
+    from tongxing_production.text import review_diagnostics as diagnostics
     raw,raw_bytes=c.read_snapshot(output.with_suffix('.raw.json'))
     call,call_bytes=c.read_snapshot(output.with_suffix('.call.json'))
     candidate,candidate_bytes=c.read_snapshot(output.parent/'candidate.json')

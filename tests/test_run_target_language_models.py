@@ -10,13 +10,13 @@ import time
 import unittest
 from pathlib import Path
 
-from scripts import run_target_language_models as subject
+from tongxing_production.text import models as subject
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.observability import measure
 from tongxing_production.observability import progress
 from tongxing_production.observability import accounting
-from scripts import produce_target_language_candidate as producer
-from scripts import target_language_policy as policy_tools
+from tongxing_production.text import candidate as producer
+from tongxing_production.text import policy as policy_tools
 from tests import test_produce_target_language_candidate as fixture_module
 
 

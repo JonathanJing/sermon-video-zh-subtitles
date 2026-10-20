@@ -431,7 +431,7 @@ class FormalStrictDeliveryTests(unittest.TestCase):
         from types import SimpleNamespace
         import subprocess
         from scripts import sermon_review_contracts as c
-        from scripts import target_language_policy as policies
+        from tongxing_production.text import policy as policies
         from scripts import sermon_strict_layer2 as strict
         from scripts import sermon_strict_candidate_bridge as bridge
         from scripts import sermon_strict_gate_admission as admission
@@ -469,9 +469,9 @@ class FormalStrictDeliveryTests(unittest.TestCase):
             with engine.session():
                 for group in b.strict_fixture.f.groups:
                     engine.f.evidence['groups'][0] = group
-                    from scripts import produce_target_language_candidate as producer
-                    from scripts import run_target_language_models as models
-                    from scripts import target_language_rule_preflight as rule_preflight
+                    from tongxing_production.text import candidate as producer
+                    from tongxing_production.text import models
+                    from tongxing_production.text import rule_preflight
                     source_value, anchor_value = c.decode_json(args[0]), c.decode_json(args[1])
                     request = producer.prepare_request(source_value, anchor_value, policy, strict_rubric=locale_rubric)
                     receipt = rule_preflight.preflight(request, policy, b.boundary.config.plugin,

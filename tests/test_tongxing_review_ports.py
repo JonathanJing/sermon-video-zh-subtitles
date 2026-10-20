@@ -19,11 +19,11 @@ from scripts import cuv_scripture, english_scripture_coverage, scripture_candida
 from tongxing_production.source import english_source_judge_cache as judge_cache
 from scripts import export_run_digest, sermon_codex_transport
 from tongxing_production.compute import transcription_request as sermon_transcription_request
-from scripts import layer2_human_ruling as human_ruling
+from tongxing_production.text import human_ruling
 from tongxing_production.compute import qc_audio_transports as audio_transports
 from tongxing_production.review import waiver
 from scripts import prepare_target_language_speech_job as handoff
-from scripts import produce_target_language_candidate as candidate
+from tongxing_production.text import candidate
 from scripts import production_spark_admission, spark_exclusive_session
 from tongxing_production.audio import renderer
 from tongxing_production.source import sentence_interpretation_models as interpretation_models
@@ -35,7 +35,7 @@ from tongxing_production.source import budget as source_budget
 from tongxing_production.source import text_review
 from scripts import study_artifacts
 from tongxing_production.audio import predicted_schedule as predicted
-from scripts import target_language_policy as policy
+from tongxing_production.text import policy
 from tongxing_production import ports
 from tongxing_production.delivery import backend as delivery
 from tongxing_production.review import backend as review

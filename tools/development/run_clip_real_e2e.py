@@ -276,7 +276,7 @@ def stage_inputs(run: Run):
 
 def freeze_clip_policy(template: Path, source: dict, anchor: dict, *, reviewed_by: str, statement: str) -> dict:
     """The source week's frozen policy narrowed to this clip's source scope and terms, frozen again."""
-    from scripts import target_language_policy as tp
+    from tongxing_production.text import policy as tp
     rows = anchor["sourceUnits"]
     observed = tp.source_scoped_proper_names(rows, set())
     frozen = read(template)
@@ -321,7 +321,7 @@ def stage_layer2_setup(run: Run):
                                        "locales": {k: {"policy": f"policy/{k}-policy-clip.json"} for k in spec["locales"]}})
         from scripts import tongxing_host  # noqa: F401  binds the production package ports
         from tongxing_production.text import controller
-        from scripts import layer2_auto_repair as auto_repair
+        from tongxing_production.text import auto_repair
         run_id = hashlib.sha256(("clip-real-e2e " + spec["name"] + " " + ",".join(spec["locales"])).encode()).hexdigest()
         write(l2 / "execution.json", {
             "schemaVersion": controller.AUTO_REPAIR_SCHEMA, "productionRunId": run_id, "inspectionConfig": "inspection.json",

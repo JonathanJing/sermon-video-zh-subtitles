@@ -11,7 +11,7 @@ from scripts import canonical_durable_jobs as subject
 from scripts import inspect_canonical_packages as packages
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.orchestration import jobs
-from scripts import target_language_policy as policies
+from tongxing_production.text import policy as policies
 from tests import test_inspect_canonical_packages as fixtures
 
 

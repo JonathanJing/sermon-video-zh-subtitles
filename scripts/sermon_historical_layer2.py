@@ -130,7 +130,9 @@ class HistoricalLayer2Reuse:
         self._identity_witness.validate(self.new_plan['executionIdentity'])
 
     def _inventory(self):
-        from scripts import sermon_strict_candidate_bridge as bridge, produce_target_language_candidate as producer
+        from scripts import sermon_strict_candidate_bridge as bridge
+        from scripts import tongxing_host  # noqa: F401  binds the production package ports
+        from tongxing_production.text import candidate as producer
         self._closed()
         if hasattr(self,'_inventory_cache'):
             for snapshot in self._inventory_cache_refs:check_ref(snapshot,json_required=False)

@@ -30,9 +30,10 @@ if str(Path(__file__).resolve().parent) not in sys.path:  # sibling modules of t
 from scripts.codex_layer2_transport import CodexLayer2Transport, output_schema
 from scripts.claude_layer2_transport import ClaudeLayer2Transport
 from codex_translation_ab import save, save_or_check, sha, validate
-from scripts.run_target_language_models import SEMANTIC_CHECKS, save_new
-from scripts.target_language_policy import canonical_sha256
-from scripts.target_language_policy_preview import SCHEMA as PREVIEW_SCHEMA
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.text.models import SEMANTIC_CHECKS, save_new
+from tongxing_production.text.policy import canonical_sha256
+from tongxing_production.text.policy_preview import SCHEMA as PREVIEW_SCHEMA
 
 ARMS = ('sol', 'opus')
 REPAIR_FIELDS = ('revisionBrief', 'partialRepair')

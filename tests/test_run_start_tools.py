@@ -191,7 +191,7 @@ class PlanTests(unittest.TestCase):
 
     def test_week_authority_is_locale_sharded_and_bound_by_the_actual_validator(self):
         from tests.test_canonical_layer2_controller import CanonicalLayer2ControllerTests
-        from scripts import canonical_layer2_budget as budget
+        from tongxing_production.text import budget
         from tongxing_production.text import controller
         fixture=CanonicalLayer2ControllerTests();fixture.setUp();self.addCleanup(fixture.doCleanups)
         profile=json.loads(plan.PROFILE.read_text());config=controller.load_configuration(fixture.path)
@@ -281,7 +281,7 @@ class PlanTests(unittest.TestCase):
 
     def test_layer2_policy_bytes_and_locale_shard_pending_calls_are_checked(self):
         from tests.test_canonical_layer2_controller import CanonicalLayer2ControllerTests
-        from scripts import canonical_layer2_budget as l2
+        from tongxing_production.text import budget as l2
         from tongxing_production.text import controller
         from scripts import sermon_review_budget as budget
         from tongxing_production.orchestration import jobs

@@ -7,7 +7,7 @@ import unittest
 from tongxing_production.compute import legacy_openai  # C4: the remote-call group lives here
 from tests import experiment_modules
 subject = experiment_modules.load("experiments/layer2-translation-ab/layer2_ab.py")
-from scripts import target_language_policy as policy_tools
+from tongxing_production.text import policy as policy_tools
 from tests import test_produce_target_language_candidate as fixture_module
 
 
@@ -122,7 +122,7 @@ class Layer2ABTests(unittest.TestCase):
         self.assertEqual(len({policy["translator"]["model"] for policy in arm_policies}), 3)
 
     def test_frozen_batch_size_does_not_change_group_plan(self):
-        from scripts import target_language_policy as policy_tools
+        from tongxing_production.text import policy as policy_tools
         policy = copy.deepcopy(self.fixture.policy)
         policy["batching"]["batchSize"] = 15
         policy["componentSha256"]["batching"] = policy_tools.canonical_sha256(
@@ -329,7 +329,7 @@ class Layer2ABTests(unittest.TestCase):
         changed = copy.deepcopy(self.fixture.policy)
         changed["translator"]["reasoningEffort"] = "high"
         changed["reviewer"]["reasoningEffort"] = "high"
-        from scripts import target_language_policy as policy_tools
+        from tongxing_production.text import policy as policy_tools
         for role in ("translator", "reviewer"):
             changed["componentSha256"][role] = policy_tools.canonical_sha256(changed[role])
         with self.assertRaisesRegex(ValueError, "Run identity changed"):

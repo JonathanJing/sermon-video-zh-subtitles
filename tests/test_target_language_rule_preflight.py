@@ -3,10 +3,10 @@ import json
 import unittest
 from unittest.mock import patch
 
-from scripts import produce_target_language_candidate as producer
-from scripts import run_target_language_models as runner
-from scripts import target_language_policy as policy_tools
-from scripts import target_language_rule_preflight as subject
+from tongxing_production.text import candidate as producer
+from tongxing_production.text import models as runner
+from tongxing_production.text import policy as policy_tools
+from tongxing_production.text import rule_preflight as subject
 from tests import test_run_target_language_models as fixture_module
 
 

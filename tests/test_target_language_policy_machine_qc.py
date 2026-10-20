@@ -9,11 +9,11 @@ from tongxing_production.source import english_source_package as english_source
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.review import release_basis as basis
 from tongxing_production.audio import speech_job as handoff
-from scripts import produce_target_language_candidate as producer
+from tongxing_production.text import candidate as producer
 from tongxing_production.review import qc_text_run as clip_test
 from tongxing_production.source import sentence_interpretation as interpretation
-from scripts import target_language_policy as subject
-from scripts import target_language_rule_preflight as rule_preflight
+from tongxing_production.text import policy as subject
+from tongxing_production.text import rule_preflight
 from tongxing_production.review import text_qc
 from scripts.language_review_plugins import auto_qc_text_common, es_weekly_auto, ko_weekly_auto
 # Module imports only, so their tests are not collected a second time here.

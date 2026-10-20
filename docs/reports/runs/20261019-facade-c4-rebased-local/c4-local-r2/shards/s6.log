@@ -1,0 +1,246 @@
+Estimating 210 unprofiled modules from measured per-case cost
+Shard 7/10: 611 tests from 371 modules
+....................................{"component": "api", "event": "realtime_caption_event", "eventType": "caption_final", "loggedAt": "2026-10-19T23:02:30.526084+00:00", "segmentId": "seg_1", "sessionId": "rt_L6O6xcE7VW-XUg7u", "severity": "INFO"}
+...{"component": "api", "event": "realtime_caption_event", "eventType": "caption_delta", "loggedAt": "2026-10-19T23:02:30.526716+00:00", "segmentId": "resp_delta_1", "sessionId": "rt_xoIkfueGnobEoPqF", "severity": "INFO"}
+...................................................{"locale": "zh-Hans", "rows": 7, "flagged": 2, "sampled": 5, "sheet": "/var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/tmpjqvl6ohq/sheet/listening-sample.md"}
+{"group": "group-0001", "solSeconds": 2.0, "opusSeconds": 1.0}
+{"group": "group-0002", "solSeconds": 2.0, "opusSeconds": 1.0}
+{"freshCalls": {"sol": 2, "opus": 2, "review": 0}, "groups": 2, "targetLocale": "ko"}
+{"group": "group-0001", "solSeconds": 2.0, "opusSeconds": 1.0}
+...s.....{"role": "translator", "model": "gpt-6.1-sol", "tier": "fast", "elapsedSeconds": 0.0, "usage": {"input_tokens": 100, "cached_input_tokens": 50, "output_tokens": 20}, "creditUsage": {"schemaVersion": "codex-credit-usage-v1", "status": "estimated", "estimatedCredits": 0.01525, "actualCredits": null, "actualQuotaUsage": null, "basis": "purchased_credit_equivalent", "model": "gpt-6.1-sol", "modelSource": "requested", "requestedServiceTier": "fast", "appliedServiceTier": "fast", "tierSource": "requested", "rateCardVersion": "codex-credits-2026-10-05", "rateCardSha256": "557d283646a6dd8ed49cc32a88e8459a165b72066339be99233ea75146c21edf", "verifiedAt": "2026-10-05", "sources": ["https://learn.chatgpt.com/docs/pricing", "https://learn.chatgpt.com/docs/agent-configuration/speed"], "ratesPerMillionTokens": {"input": 50, "cachedInput": 2.5, "output": 250}, "speedMultiplier": 2, "reason": "requested_identity_assumption"}}
+.............................................................................................................................SERMON_LOGGING_WRITE_FAILED errorType=AccountingWriteError
+......................Digest: /var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/tmpsv6veqpa/digests/20261007-e2e (4 files, 0 redactions)
+Digest: /var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/tmpz2wn02jv/digests/20261007-e2e (5 files, 9 redactions)
+$ upload_file_to_gcs.py --source /var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/tmpcdqfo_z6/artifacts/report.json --destination gs://sermon-zh-poc/runs/2026-06-22/artifacts/report.json
+$ upload_file_to_gcs.py --source /var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/tmpcdqfo_z6/artifacts/report.md --destination gs://sermon-zh-poc/runs/2026-06-22/artifacts/report.md
+$ upload_file_to_gcs.py --source /var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/tmpcdqfo_z6/artifacts/sermon.en.live-aligned.srt --destination gs://sermon-zh-poc/runs/2026-06-22/artifacts/sermon.en.live-aligned.srt
+$ upload_file_to_gcs.py --source /var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/tmpcdqfo_z6/artifacts/sermon.en.live-aligned.vtt --destination gs://sermon-zh-poc/runs/2026-06-22/artifacts/sermon.en.live-aligned.vtt
+$ upload_file_to_gcs.py --source /var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/tmpcdqfo_z6/web/playback-simulation.generated.js --destination gs://sermon-zh-poc/runs/2026-06-22/web/playback-simulation.generated.js
+corrected 1/1
+corrected 1/1
+corrected 1/1
+corrected 1/1
+translated zh 1/1
+translated zh 1/1
+translated zh 1/1
+translated zh 1/1
+............................$ write /var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/tmpgc1_a8ff/sundays/2026-06-28/cloud-manifest.json
+{"stage": "tts", "batchIndex": 0, "completedGroups": 2}
+{"stage": "tts", "batchIndex": 1, "completedGroups": 4}
+{"stage": "tts", "batchIndex": 2, "completedGroups": 6}
+{"stage": "tts", "batchIndex": 3, "completedGroups": 8}
+{"stage": "tts", "batchIndex": 4, "completedGroups": 10}
+{"stage": "tts", "batchIndex": 5, "completedGroups": 12}
+{"stage": "tts", "batchIndex": 6, "completedGroups": 13}
+.............{
+  "decision": {
+    "action": "already_complete"
+  },
+  "schemaVersion": 1,
+  "status": "complete"
+... 162 lines omitted; 4 error-like lines, 4 kept below ...
+[line 63] run_unittest_ci.py: error: the secondary ASR uses the OpenAI API: start under scripts/run_with_openai_environment.py --environment dev (prod for formal content)
+[line 79] run_unittest_ci.py: error: real audio runs require --api-budget-authorization (planned per-locale QC authorization v4), including --text-backend codex for the secondary ASR budget
+[line 121] .Model initialization failed: ValueError: test initialization failure
+[line 122] Model initialization failed: ValueError: test warmup failure
+... end of omitted section ...
+    },
+    {
+      "name": "operator_bundle_status",
+      "observed": "approval_required",
+      "state": "pass"
+    },
+    {
+      "name": "operator_runbook_model_policy",
+      "observed": {
+        "missingOrWrong": {},
+        "observed": {
+          "forbiddenOfflineModel": "gpt-realtime-translate",
+          "offlineAsrModel": "gpt-4o-transcribe",
+          "offlineTranslationModel": "gpt-5.4-mini",
+          "realtimeDraftModel": "gpt-realtime-translate",
+          "stableCorrectionModel": "gpt-5.4-mini"
+        }
+      },
+      "state": "pass"
+    },
+    {
+      "name": "operator_runbook_operator_choices",
+      "observed": {
+        "browserAudioSourceKind": "ipad_mic",
+        "browserDefault": true,
+        "browserEvidenceMissing": [],
+        "choiceIds": [
+          "browser_webrtc_ipad_or_iphone_mic",
+          "server_worker_authorized_audio"
+        ],
+        "serverCommand": [
+          "python3",
+          "scripts/run_realtime_live_session.py",
+          "--realtime-model",
+          "gpt-realtime-translate",
+          "--stable-model",
+          "gpt-5.4-mini"
+        ]
+      },
+      "state": "pass"
+    },
+    {
+      "name": "operator_runbook_validation_commands",
+      "observed": {
+        "hasRealtimeModel": true,
+        "hasSessionValidator": true,
+        "hasSseSmoke": true,
+        "hasStableModel": true,
+        "hasWebContractReport": true,
+        "requiresStableCorrection": true
+      },
+      "state": "pass"
+    },
+    {
+      "name": "operator_runbook_offline_handoff",
+      "observed": {
+        "archiveTrigger": true,
+        "asrModel": true,
+        "captionFirst": true,
+        "exportsSubtitleArtifacts": true,
+        "forbidsRealtimeOffline": true,
+        "translationModel": true
+      },
+      "state": "pass"
+    },
+    {
+      "name": "operator_bundle_secret_flags",
+      "observed": {
+        "apiKeyMaterialIncluded": false,
+        "eventTokenIncluded": false,
+        "secretResourceNamesIncluded": false
+      },
+      "state": "pass"
+    },
+    {
+      "name": "go_live_sequence_status",
+      "observed": "not_ready_for_go_live",
+      "state": "pass"
+    },
+    {
+      "name": "go_live_live_stage_model_policy",
+      "observed": {
+        "missingOrWrong": {},
+        "observed": {
+          "forbiddenOfflineModel": "gpt-realtime-translate",
+          "offlineAsrModel": "gpt-4o-transcribe",
+          "offlineTranslationModel": "gpt-5.4-mini",
+          "realtimeDraftModel": "gpt-realtime-translate",
+          "stableCorrectionModel": "gpt-5.4-mini"
+        }
+      },
+      "state": "pass"
+    },
+    {
+      "name": "go_live_live_stage_operator_choices",
+      "observed": {
+        "browserAudioSourceKind": "ipad_mic",
+        "browserDefault": true,
+        "browserEvidenceMissing": [],
+        "choiceIds": [
+          "browser_webrtc_ipad_or_iphone_mic",
+          "server_worker_authorized_audio"
+        ],
+        "serverCommand": [
+          "python3",
+          "scripts/run_realtime_live_session.py",
+          "--realtime-model",
+          "gpt-realtime-translate",
+          "--stable-model",
+          "gpt-5.4-mini"
+        ]
+      },
+      "state": "pass"
+    },
+    {
+      "name": "go_live_live_stage_validation_commands",
+      "observed": {
+        "hasRealtimeModel": true,
+        "hasSessionValidator": true,
+        "hasSseSmoke": true,
+        "hasStableModel": true,
+        "hasWebContractReport": true,
+        "requiresStableCorrection": true
+      },
+      "state": "pass"
+    },
+    {
+      "name": "go_live_no_caption_asr_stage",
+      "observed": {
+        "criteriaRequireNotRealtime": true,
+        "criteriaRequireOpenaiAsr": true,
+        "forbidsRealtimeOffline": true,
+        "hasArchivePreflight": true,
+        "hasArchivePreflightReport": true,
+        "hasAsrModel": true,
+        "hasAsrReadinessReport": true,
+        "hasExport": true,
+        "hasMatrixHandoffInstruction": true,
+        "hasOfflineAsrChainReport": true,
+        "hasOfflineChainValidation": true,
+        "hasPreparePlayback": true,
+        "hasProductionReadinessValidation": true,
+        "hasRunnerCommand": true,
+        "hasTranslate": true,
+        "hasTranslationModel": true,
+        "state": "needs_real_no_caption_archive"
+      },
+      "state": "pass"
+    },
+    {
+      "name": "go_live_sequence_secret_flags",
+      "observed": {
+        "apiKeyMaterialIncluded": false,
+        "eventTokenIncluded": false,
+        "secretResourceNamesIncluded": false
+      },
+      "state": "pass"
+    },
+    {
+      "name": "no_secret_material",
+      "observed": null,
+      "state": "pass"
+    }
+  ],
+  "eventTokenIncluded": false,
+  "failedChecks": [],
+  "generatedAt": "2026-10-19T23:25:17.189887+00:00",
+  "models": {
+    "forbiddenOfflineModel": "gpt-realtime-translate",
+    "offlineAsrModel": "gpt-4o-transcribe",
+    "offlineTranslationModel": "gpt-5.4-mini",
+    "realtimeDraftModel": "gpt-realtime-translate",
+    "stableCorrectionModel": "gpt-5.4-mini"
+  },
+  "reports": {
+    "goLiveSequence": "/var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/tmpoeycgvr9/production-go-live-sequence.json",
+    "livePlan": "/var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/tmpoeycgvr9/live-1130-realtime-run-plan.json",
+    "operatorBundle": "/var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/tmpoeycgvr9/operator-approval-bundle.json"
+  },
+  "requiredEvidenceReports": [
+    "artifacts/evidence/public-caption-view-runtime.json",
+    "artifacts/evidence/realtime-public-sse-smoke.json",
+    "artifacts/evidence/realtime-public-sse-smoke.session-validation.json",
+    "artifacts/evidence/web-realtime-contract.json"
+  ],
+  "schemaVersion": 1,
+  "secretResourceNamesIncluded": false,
+  "status": "ok"
+}
+ 533.53s     7  test_machine_quality_waiver
+ 169.40s     1  test_sermon_fresh_full_dag
+  65.31s     2  test_run_machine_qc_audio_test
+  57.13s     2  test_canonical_layer2_cache_recovery
+  30.73s     3  test_sermon_historical_layer2
+  25.58s     6  test_sermon_delivery_intent_binding
+  23.68s     2  test_sermon_mock_tts_dag
+  20.45s     4  test_sermon_strict_layer2
+  19.60s     5  test_sermon_cuv_translation
+  16.21s     3  test_sermon_dev_diagnostic_snapshot
+exit 0

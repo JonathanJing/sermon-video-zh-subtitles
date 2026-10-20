@@ -15,7 +15,7 @@ from scripts import review_target_language_candidate as human_review
 from tongxing_production.audio import unit_integrity as audio_integrity
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.source import sentence_interpretation as interpretation
-from scripts import target_language_policy as policy_tools
+from tongxing_production.text import policy as policy_tools
 from tongxing_production.observability import progress
 from tongxing_production.observability import accounting
 

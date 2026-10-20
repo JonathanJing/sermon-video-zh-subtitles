@@ -1,0 +1,255 @@
+Estimating 212 unprofiled modules from measured per-case cost
+Shard 3/10: 581 tests from 355 modules
+.....................................{"candidateCount": 1, "component": "api", "event": "live_source_monitor_completed", "loggedAt": "2026-10-19T21:55:03.482005+00:00", "operatorAlert": false, "selectedKind": "youtube-streams", "selectedService": "1000", "severity": "INFO", "status": "source_detected", "sunday": "2026-06-28", "triggerSource": "internal-task"}
+{"commandCount": 8, "component": "api", "event": "live_capture_planned", "liveSource": {"host": "www.youtube.com", "path": "/watch", "urlHash": "e0496c2c0f75a190"}, "loggedAt": "2026-10-19T21:55:03.482231+00:00", "runPrefix": "sundays/2026-06-28/runs/worker-20261019T215503Z", "sessionId": "worker-20261019T215503Z", "severity": "INFO", "sunday": "2026-06-28", "triggerSource": "live-source-monitor"}
+..{"component": "api", "event": "sermon_production_supervisor_triggered", "inlineWorker": false, "loggedAt": "2026-10-19T21:55:03.482897+00:00", "mode": "shadow", "severity": "INFO", "sunday": "2026-08-02", "triggerSource": "cloud-scheduler"}
+..............Automatic merge went well; stopped before committing as requested
+...................................{"group": "group-0002", "solSeconds": 2.0, "opusSeconds": 1.0}
+{"freshCalls": {"sol": 1, "opus": 1, "review": 0}, "groups": 1, "targetLocale": "ko"}
+.................................................................................................Digest: /var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/tmpu8yufiuk/digests/20261007-e2e (5 files, 11 redactions)
+Digest: /var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/tmpngym2l06/digests/20261007-e2e (6 files, 9 redactions)
+test-page · dev · 检查点 0/18
+层 / 语言       完成       剩余串行工时
+L1 shared        0/4 (0%)  未知
+L2 ko            0/4 (0%)  未知
+L3 ko            0/6 (0%)  未知
+L4 ko            0/4 (0%)  未知
+ETA（连续串行、无审核等待）: 未知
+缺估时 18 项: L1-01, L1-02, L1-03, L1-04, L2-01@ko, L2-02@ko …
+独立验收 ko: 设备=not_run，现场=not_run
+注意：进度账本不授予 Layer 门禁、发布或验收状态。
+{"httpStatus": 0, "reason": null, "receipt": "/private/var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/tmpz66i1z6r/9cf2b7c8-cb5a-4265-9e84-4845bd8e943c.json"}
+{"dispatchEnabled": false, "translationGroups": 1, "workers": [1, 2, 3]}
+translated zh 1/1
+corrected 1/1
+.................................................................................................{"status": "waiting"}
+{"status": "waiting"}
+{"status": "waiting"}
+$ write /var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/tmpawsakap4/sundays/2026-06-28/cloud-manifest.json
+{
+  "apiKeyMaterialIncluded": false,
+  "baseUrl": "https://example.run.app",
+  "checks": [
+    {
+      "name": "create_webrtc_realtime_session",
+      "observed": {
+        "audioSourceKind": "ipad_mic",
+        "clientSecretExpiresAtReturned": true,
+        "clientSecretReturned": true,
+        "error": null,
+        "eventTokenReturned": true,
+... 293 lines omitted; 13 error-like lines, 13 kept below ...
+[line 83]   "failedChecks": [],
+[line 89]     "error": null,
+[line 135]     "reason": "text QC failed; repair the failed groups in a new candidate revision",
+[line 144]     "reason": "failed groups are unchanged; repair them in a new candidate revision",
+[line 155]     "reason": "text QC failed; repair the failed groups in a new candidate revision",
+[line 164]     "reason": "failed groups are unchanged; repair them in a new candidate revision",
+[line 173]     "reason": "failed groups are unchanged; repair them in a new candidate revision",
+[line 227] run_unittest_ci.py: error: QC stages require --qc-inputs binding the frozen source and locale policies
+[line 236]   "failedGroupIds": []
+[line 246]   "failedGroupIds": []
+[line 251] ..................................................SERMON_LOGGING_WRITE_FAILED errorType=AccountingWriteError
+[line 253] Generation failed: RuntimeError
+[line 261]     "failed": 3,
+... end of omitted section ...
+          "scripts/run_openai_model_access_preflight.py",
+          "--model",
+          "gpt-5.4-mini",
+          "--out",
+          "artifacts/evidence/openai-model-access-preflight.json"
+        ]
+      ],
+      "dependency": "external",
+      "doNotSubstitute": true,
+      "error": "The requested model 'gpt-5.4-mini' does not exist.",
+      "failureKind": "model_unavailable_or_not_found",
+      "httpStatus": 400,
+      "id": "fix_required_gpt_5_4_mini_access",
+      "model": "gpt-5.4-mini",
+      "recoveryPlan": "artifacts/evidence/model-access-recovery-plan.json",
+      "requiresApproval": false,
+      "sourceRows": [
+        "stable_correction",
+        "offline_caption_route"
+      ],
+      "state": "external_dependency"
+    },
+    {
+      "commands": [
+        [
+          "python3",
+          "scripts/run_cloud_run_realtime_preflight.py",
+          "--base-url",
+          "https://sermon-zh-caption-web-wu7uk5rgdq-uw.a.run.app",
+          "--cloud-run-config-report",
+          "artifacts/evidence/cloud-run-realtime-config.json",
+          "--create-realtime-session",
+          "--internal-task-token",
+          "$INTERNAL_TASK_TOKEN",
+          "--out",
+          "artifacts/evidence/cloud-run-api-preflight.json"
+        ]
+      ],
+      "dependency": "prior_step",
+      "expectedChecks": [
+        "realtime_local_session_create",
+        "realtime_local_session_metadata",
+        "no_secret_material_in_http_responses"
+      ],
+      "id": "rerun_cloud_run_api_preflight",
+      "reason": "Rerun preflight with --create-realtime-session.",
+      "requiresApproval": false,
+      "sourceRow": "cloud_run_api_preflight",
+      "state": "pending"
+    },
+    {
+      "commands": [
+        [
+          "python3",
+          "scripts/run_realtime_public_sse_smoke.py",
+          "--base-url",
+          "https://sermon-zh-caption-web-wu7uk5rgdq-uw.a.run.app",
+          "--sunday",
+          "2026-06-28",
+          "--internal-task-token",
+          "$INTERNAL_TASK_TOKEN",
+          "--realtime-event-gcs-prefix",
+          "gs://sermon-zh-artifacts-ai-for-god/realtime-events",
+          "--web-realtime-contract-report",
+          "artifacts/evidence/web-realtime-contract.json",
+          "--session-validation-out",
+          "artifacts/evidence/realtime-public-sse-smoke.session-validation.json",
+          "--out",
+          "artifacts/evidence/realtime-public-sse-smoke.json"
+        ]
+      ],
+      "dependency": "prior_step",
+      "expectedChecks": [
+        "create_local_session_metadata",
+        "sse_session_metadata",
+        "browser_normalized_event_payloads",
+        "sse_stable_correction_matches_draft_segment",
+        "session_jsonl_validation"
+      ],
+      "id": "rerun_deployed_public_sse_smoke",
+      "reason": "Rerun realtime public SSE smoke against Cloud Run.",
+      "requiresApproval": false,
+      "sourceRow": "realtime_public_sse_contract",
+      "state": "pending"
+    },
+    {
+      "commands": [
+        [
+          "python3",
+          "scripts/run_realtime_live_session.py",
+          "--audio-url",
+          "<AUTHORIZED_AUDIO_URL>",
+          "--api-key-secret",
+          "<OPENAI_API_KEY_SECRET_RESOURCE>",
+          "--backend-url",
+          "https://sermon-zh-caption-web-wu7uk5rgdq-uw.a.run.app",
+          "--sunday",
+          "2026-06-28",
+          "--internal-task-token",
+          "$INTERNAL_TASK_TOKEN",
+          "--target-language",
+          "zh",
+          "--realtime-model",
+          "gpt-realtime-translate",
+          "--stable-model",
+          "gpt-5.4-mini",
+          "--realtime-event-gcs-prefix",
+          "gs://sermon-zh-artifacts-ai-for-god/realtime-events",
+          "--require-stable-correction",
+          "--out",
+          "artifacts/evidence/realtime-live-session/report.json",
+          "--worker-report-out",
+          "artifacts/evidence/realtime-live-session/worker-report.json",
+          "--stable-out-dir",
+          "artifacts/evidence/realtime-live-session/stable-corrections"
+        ],
+        [
+          "python3",
+          "scripts/validate_realtime_session.py",
+          "--events-jsonl",
+          "gs://sermon-zh-artifacts-ai-for-god/realtime-events/2026-06-28/<REALTIME_SESSION_ID>.jsonl",
+          "--expected-model",
+          "gpt-realtime-translate",
+          "--expected-stable-model",
+          "gpt-5.4-mini",
+          "--require-stable-correction",
+          "--out",
+          "artifacts/evidence/realtime-live-session/session-validation.json"
+        ]
+      ],
+      "defaultPath": "browser WebRTC iPad/iPhone mic -> gpt-realtime-translate -> backend session events -> public caption SSE",
+      "dependency": "post_approval_validation",
+      "expectedChecks": [
+        "realtime_model",
+        "caption_events",
+        "input_transcript_events",
+        "stable_correction",
+        "stable_correction_matches_realtime_draft_segment",
+        "stable_correction_context"
+      ],
+      "fallbackPath": "server media worker authorized audio -> gpt-realtime-translate -> backend session events -> public caption SSE",
+      "id": "run_real_realtime_field_session",
+      "reason": "Realtime OpenAI smoke passed on synthetic audio only.",
+      "requiresApproval": false,
+      "sourceRow": "realtime_live",
+      "state": "pending"
+    },
+    {
+      "dependency": "model_access",
+      "id": "rerun_offline_caption_route_after_model_access",
+      "reason": "Fix offline translation model/access issue.",
+      "requiresApproval": false,
+      "sourceRow": "offline_caption_route",
+      "state": "pending"
+    },
+    {
+      "dependency": "model_access",
+      "id": "rerun_stable_correction_after_model_access",
+      "reason": "Fix gpt-5.4-mini model access.",
+      "requiresApproval": false,
+      "sourceRow": "stable_correction",
+      "state": "pending"
+    },
+    {
+      "dependency": "real_source",
+      "expectedChecks": [
+        "asr_is_caption_fallback",
+        "asr_no_requested_caption_tracks",
+        "asr_audio_source_artifact",
+        "asr_model",
+        "offline_translation_model",
+        "not_realtime_chain",
+        "zh_vtt_timeline_alignment",
+        "zh_srt_timeline_alignment"
+      ],
+      "id": "run_real_no_caption_archive_asr_route",
+      "planReport": "artifacts/evidence/no-caption-asr-fallback-plan.json",
+      "reason": "Run a real no-caption YouTube archive.",
+      "requiresApproval": false,
+      "sourceRow": "offline_asr_route",
+      "state": "pending"
+    }
+  ]
+}...
+----------------------------------------------------------------------
+Ran 581 tests in 783.107s
+
+OK (skipped=4)
+
+ 234.91s     2  test_sermon_fresh_full_dag
+ 207.08s     7  test_machine_quality_waiver
+  48.36s     1  test_run_machine_qc_audio_test
+  24.72s     5  test_sermon_cuv_translation
+  14.24s     5  test_sermon_delivery_intent_binding
+  10.38s     3  test_sermon_diagnostic_dag_session
+  10.27s     2  test_canonical_layer2_controller
+   9.55s     5  test_build_target_language_audio_package
+   9.03s     2  test_sermon_diagnostic_delivery_preflight
+   8.72s     1  test_ci_change_scope
+exit 0

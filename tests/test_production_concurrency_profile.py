@@ -13,7 +13,7 @@ from scripts.production_concurrency_profile import profile_v1, validate_profile
 from scripts import codex_layer2_resources as admission
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.text import controller
-from scripts import run_target_language_models as runner
+from tongxing_production.text import models as runner
 from scripts.sermon_unified import resources
 
 

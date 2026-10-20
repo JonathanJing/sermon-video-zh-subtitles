@@ -3,7 +3,7 @@ import json
 import tempfile
 import unittest
 
-from scripts import canonical_layer2_budget as budget
+from tongxing_production.text import budget
 from scripts import sermon_review_budget as ledger
 from tests import test_canonical_layer2_budget as base_tests
 

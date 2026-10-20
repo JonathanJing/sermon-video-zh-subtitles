@@ -14,13 +14,14 @@ from tongxing_production.text import controller
 from scripts import layer2_api_concurrency, series_terminology
 from tongxing_production.observability import accounting as sermon_accounting
 from tongxing_production.observability import measure as four_layer_measure
-from scripts import produce_target_language_candidate as candidate
+from tongxing_production.text import candidate
+from scripts import four_layer_measure, layer2_api_concurrency, sermon_accounting, series_terminology
 from scripts import prepare_target_language_speech_job as handoff
 from scripts import production_concurrency_profile
 from tongxing_production.compute import openai_runtime as sermon_openai_runtime
 from tongxing_production.compute import budget_capability as strict_budget_capability
 from scripts import sermon_diagnostic_context, source_meaning_machine_adjudication as meaning
-from scripts import target_language_policy as policy
+from tongxing_production.text import policy
 from tongxing_production import path_aliases, ports
 from tongxing_production.source import backend as source
 from tongxing_production.source import producer_compatibility

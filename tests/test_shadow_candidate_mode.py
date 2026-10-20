@@ -4,8 +4,8 @@ from unittest.mock import patch
 
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.text import controller
-from scripts import produce_target_language_candidate as produce
-from scripts import target_language_policy as policy_tools
+from tongxing_production.text import candidate as produce
+from tongxing_production.text import policy as policy_tools
 from tests import test_canonical_layer2_controller as fixtures
 
 
@@ -50,7 +50,7 @@ class ShadowCandidatePreparationTests(unittest.TestCase):
                     produce.prepare_request(SOURCE, ANCHOR, {"targetLocale": "zh-Hans"}, candidate_mode="shadow")
 
     def test_shadow_model_runner_refuses_before_transport(self):
-        from scripts import run_target_language_models as models
+        from tongxing_production.text import models
         from unittest.mock import Mock
         call = Mock()
         with self.assertRaisesRegex(ValueError, "Shadow execution is not implemented"):

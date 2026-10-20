@@ -99,7 +99,7 @@ def resume_qc_stage(path, context):
     """Reference an unchanged prior authority; never grant missing replay-root calls."""
     from scripts import tongxing_host  # noqa: F401  binds the production package ports
     from tongxing_production.review import qc_budget_authorization as auth
-    from scripts import canonical_layer2_budget as l2
+    from tongxing_production.text import budget as l2
     from scripts.check_run_start import inspect_source_root
     value = auth.validate(path, context=context, require_scope=True)
     if value.get('reuseBudgetRoots'):
@@ -128,7 +128,7 @@ def layer2_backend_of(execution):
     """The one Layer 2 backend every lane policy of this execution freezes."""
     from scripts import tongxing_host  # noqa: F401  binds the production package ports
     from tongxing_production.text import controller
-    from scripts import run_target_language_models as models
+    from tongxing_production.text import models
     config = controller.load_configuration(execution)
     backends = {models.production_backend(controller._json(lane["policy"])) for lane in config.lanes.values()}
     if len(backends) != 1:
@@ -197,7 +197,7 @@ def layer2_spec(execution, locales, profile, scale):
 
 def layer2_files(out, execution, locales, profile, scale, *, approved_by, evidence, reviewed_at,
                  prepared=None, reuse_budget_roots=None):
-    from scripts import canonical_layer2_budget as budget_tools
+    from tongxing_production.text import budget as budget_tools
     from scripts import tongxing_host  # noqa: F401  binds the production package ports
     from tongxing_production.text import controller
     config, per_locale, sizing = prepared or layer2_spec(execution, locales, profile, scale)

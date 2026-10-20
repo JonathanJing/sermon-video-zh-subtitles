@@ -10,7 +10,8 @@ import threading
 import time
 import urllib.request
 
-from scripts import run_target_language_models as models
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.text import models
 from scripts import sermon_provider_limits as provider_limits
 from scripts.codex_layer2_transport import API_LUNA_TEST_CONFIGURATION
 from scripts.sermon_unified import resources

@@ -6,7 +6,7 @@ from unittest.mock import patch
 
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.text import controller as subject
-from scripts import layer2_auto_repair as auto_repair
+from tongxing_production.text import auto_repair
 from tongxing_production.orchestration import jobs
 from tests import test_canonical_layer2_controller as controller_tests
 

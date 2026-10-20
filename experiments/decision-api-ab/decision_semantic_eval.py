@@ -23,7 +23,7 @@ if str(Path(__file__).resolve().parent) not in sys.path:  # sibling modules of t
 import decision_api_weekly_ab as ab
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.source import english_source_judge as english
-from scripts import run_target_language_models as translation
+from tongxing_production.text import models as translation
 
 
 def configure_phase_limits():
