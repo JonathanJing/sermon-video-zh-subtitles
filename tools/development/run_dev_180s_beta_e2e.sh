@@ -8,9 +8,9 @@
 # docs/test-run-retrospective.zh.md).
 #
 # Usage (repo root, on the frozen candidate commit):
-#   scripts/run_dev_180s_beta_e2e.sh                        # dry runs only
-#   scripts/run_dev_180s_beta_e2e.sh --execute              # publish the page to Dev
-#   scripts/run_dev_180s_beta_e2e.sh --execute --with-beta  # also archive + TestFlight
+#   tools/development/run_dev_180s_beta_e2e.sh                        # dry runs only
+#   tools/development/run_dev_180s_beta_e2e.sh --execute              # publish the page to Dev
+#   tools/development/run_dev_180s_beta_e2e.sh --execute --with-beta  # also archive + TestFlight
 # The current Beta already reads Dev release/catalog v3, so this simulated page
 # needs no new build. --with-beta is only for clients that must read catalog v4
 # (machine-checked locales).
@@ -74,9 +74,9 @@ printf 'stage\tstatus\tseconds\n' > "$OUT/timings.tsv"
 # Whatever happens next, leave a redacted run report for cloud review.
 report() {
   local status=$? name="${RUN_ID:4:8}-dev-180s-$RUN_ID"
-  if [[ -x "$PY" ]] && "$PY" scripts/export_run_digest.py "$OUT" --name "$name" >/dev/null 2>&1; then
+  if [[ -x "$PY" ]] && "$PY" tools/development/export_run_digest.py "$OUT" --name "$name" >/dev/null 2>&1; then
     echo "Run report: artifacts/run-reports/$name (exit $status)"
-    echo "Publish for cloud review: scripts/publish_run_report.sh artifacts/run-reports/$name"
+    echo "Publish for cloud review: tools/development/publish_run_report.sh artifacts/run-reports/$name"
   else
     echo "Run report could not be written; export it by hand from $OUT"
   fi
@@ -120,10 +120,10 @@ echo "Commit $COMMIT  run $RUN_ID  out $OUT"
 
 # 1. Page: fixed clip checks, simulated inputs, live Dev baseline, local preflight.
 if [[ -n "${CLIP_SPEC:-}" ]]; then
-  stage build-inputs "$PY" scripts/build_dev_180s_simulated_inputs.py --clip-spec "$CLIP_SPEC" --run-id "$RUN_ID" --out "$OUT/inputs"
+  stage build-inputs "$PY" tools/development/build_dev_180s_simulated_inputs.py --clip-spec "$CLIP_SPEC" --run-id "$RUN_ID" --out "$OUT/inputs"
 else
   stage verify-clip  "$PY" tools/development/verify_dev_180s_page_test.py --source-run "$SOURCE_RUN" --out "$OUT/preflight"
-  stage build-inputs "$PY" scripts/build_dev_180s_simulated_inputs.py --run-id "$RUN_ID" --out "$OUT/inputs"
+  stage build-inputs "$PY" tools/development/build_dev_180s_simulated_inputs.py --run-id "$RUN_ID" --out "$OUT/inputs"
 fi
 stage baseline      "$PY" tools/ops/prepare_dev_simulated_publication.py baseline --out "$OUT/baseline" ${BASELINE_ARGS[@]+"${BASELINE_ARGS[@]}"}
 DELIVERY=("$PY" tools/development/run_dev_simulated_delivery.py --baseline "$OUT/baseline"

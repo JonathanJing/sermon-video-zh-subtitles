@@ -106,22 +106,62 @@ provider outcome、损坏 bytes 或 intermediate reused 来源都会在任何新
 operation 的未派发组才可按新授权付费。完成后在新 lane 写
 `partial-round-recovery-receipt.json`，绑定旧 failed job 与新 successor job；旧 state 不改写。
 
+### 缓存命中不逐次复核绑定
+
+worker 的完整绑定复核（执行配置、代码身份、package view、durable 身份）只在三处运行：worker 准入、每次
+付费派发前（`bound_call`，取得 API 槽位前后各一次），以及结束时（`post_model_binding`、候选保存前、
+`final_package_validation`）。缓存命中与来源核对方法（`verify_execution`、`record_reuse`、
+`recover_returned_response`、`paid_response_provenance`、`validate_recovery_source`）不再在前后各复核一次；
+它们各自的核对照旧：预算授权与运行身份、direct-paid 闭环（响应必须等于原付费记录）、prior 文件哈希与
+复制后字节复查。
+
+运行中途改了配置、代码、package 输入或 prior 快照时：读到被改的组在读取时失败；之后的付费调用在派发前
+被拒；其余情况在结束复核时拒绝，不保存候选。代价是不再 fail-fast：漂移后的命中组会继续跑到结束。
+候选写盘期间的漂移由 `final_package_validation` 抓住：写盘后重新加载执行配置并核对其哈希和代码身份，
+不一致则 worker 失败、不报成功。
+
+漂移后、结束复核前写下的持久产物仍然安全：
+- **预算账本的复用行**：`record_reuse` 只在响应与批准来源账本的直接付费记录逐字节一致时写 `$0 reused`
+  行，绑定准入时内存中的 source/anchor/policy 与 payload 指纹。复用行永远不能当后续复用或 partial
+  recovery 的来源（`_direct_paid_provenance` 要求无 `settlement`）。
+- **payload-cache 成功收据与组缓存副本**：收据绑定准入时内存中的请求（source、anchor、policy 哈希）和
+  原付费响应的字节哈希，不绑定 job 的配置身份或最终结果；失败 job 的收据本来就可被后续运行复用。后续
+  运行复用时重新核对请求绑定、文件哈希和付费闭环，用自己的代码重新解析响应、重跑语义门与逐组语言插件；
+  输入不同的运行直接拒收。
+- **partial-recovery 读取**：只读，每次独立核对失败轮与原付费账本的闭环。
+
+该改动改变代码身份：已有 job 保留冻结的 `--expected-code`，在新代码上恢复按原规则报
+`worker_configuration_or_code_changed`；只有新准入的 job 按此执行。没有 schema、配置字段或迁移变化。
+
 ### Worker 绑定复核的 stat 备忘
 
-worker 在每次模型调用、缓存命中复核（`verify_execution`、`record_reuse`、`recover_returned_response`、
-`paid_response_provenance`、`validate_recovery_source`）前后都重算绑定：执行配置、代码身份、package
-view 与 durable 身份，一组约 12 次。其中 v6/v7 的 prior root 与 partial-recovery 快照（每次重读并
+worker 在准入、每次付费派发前和结束时重算绑定（见上节「缓存命中不逐次复核绑定」）：执行配置、代码身份、
+package view 与 durable 身份。其中 v6/v7 的 prior root 与 partial-recovery 快照（每次重读并
 摘要数千个文件）和代码身份由进程内 stat 备忘复用（`text/stat_memo.py`）：只要它们读过的每个路径的
 `lstat` 身份 `(dev, ino, mode, size, mtime_ns, ctime_ns)` 与目录条目名都没变，就沿用上次结果；任一
-变化就整体重算。调用次数和位置不变，执行配置文件、package view 与 durable 身份仍每次完整重算。
+变化就整体重算。调用次数和位置不变，执行配置文件与 durable 身份仍每次完整重算。
+
+package view 的包检查（`inspect_configuration`）在没有候选时也走这个备忘：worker 写出候选之前的每次
+复核都是这种形状。读集按代码枚举：inspection 根目录、source 与 anchor 包、source 包里写明的 pipeline
+summary、窗口批准、对齐转写和 review 收据、各语言 policy、术语表和 schema 目录，以及这些路径的所有
+上级目录。上级目录只记 `(dev, ino, mode)`：换成符号链接或换成另一个目录都会变，同目录写入别的文件
+不会变。候选探测（`candidate.json` 是否存在）仍每次在备忘之外执行；一旦有候选，整次检查不走备忘。
+带任何诊断的结果不入备忘。测试会追踪一次完整检查的每个 stat、open 和目录列举，要求都落在这个读集里，
+所以以后有人给检查加了新的读，测试会失败。
+
+一次 `load_configuration` 内同一目录只列举一次：v7 的 recovery round 必须就是 payload-cache 根目录，
+原来每次复核要 stat 这几千个文件两遍。命中后，绑定摘要在其余部分摘要不变、且 partial-recovery 快照
+仍是备忘返回的同一个对象时沿用上次的值（快照几千行，重新编码它就是摘要的大头）。`_overlap` 是两个
+路径的纯函数，加了 `lru_cache`。
 
 能发现：内容写入、截断、追加、chmod、rename/替换、删除和新增条目；同大小改写后再用 `os.utime`
 还原 mtime 也会改变 ctime。发现不了：不更新 ctime 的改动（需把系统时钟往回拨、直写块设备，或不维护
-ctime 的文件系统）。时间戳粒度内的竞态由 racy 规则关闭：只有 ctime 早于取样时刻 3 秒以上、且计算
-期间身份未变的结果才会入备忘；失败结果从不入备忘。备忘只在单个进程内，新 worker 先完整计算一次。
+ctime 的文件系统）；上级目录只记 kind，所以属主或 ACL 改动让一个没变的文件变得不可读时也发现不了。
+时间戳粒度内的竞态由 racy 规则关闭：只有 ctime 早于取样时刻 3 秒以上、且计算期间身份未变（重算后的
+复核总是重新列举）的结果才会入备忘；失败结果从不入备忘。备忘只在单个进程内，新 worker 先完整计算一次。
 
-该备忘只改本地开销，不改任何身份的算法或取值：配置、快照、代码身份的摘要与改动前逐字节相同。但编辑
-`controller.py` 并新增 `stat_memo.py` 本身改变代码身份，所以已有 job 保留其冻结的 `--expected-code`，
+该备忘只改本地开销，不改任何身份的算法或取值：配置、快照、package view、durable job 和代码身份的摘要
+与改动前逐字节相同。但编辑 `controller.py` 与 `stat_memo.py` 本身改变代码身份，所以已有 job 保留其冻结的 `--expected-code`，
 在新代码上恢复会按原规则报 `worker_configuration_or_code_changed`；只有新准入的 job 使用它。没有
 schema、配置字段或迁移变化。
 

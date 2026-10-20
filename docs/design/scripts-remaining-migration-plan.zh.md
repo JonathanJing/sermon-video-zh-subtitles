@@ -44,6 +44,25 @@
 | R3 运行记录工具 | `run_journal`、`export_run_digest`、`run_openai_model_access_preflight`、`run_with_openai_environment`、`upload_file_to_gcs`、`youtube_data_api` | `tools/development/`（日志与运行报告）、`tools/ops/`（环境启动器、预检）、`storage/`（GCS、YouTube 客户端） | `run_with_openai_environment` 是 AGENTS.md 指定的 OpenAI 环境启动器，也在 Spark 容器命令里，迁移时 AGENTS.md、runbook 与容器命令同批改；`export_run_digest`、`upload_file_to_gcs`、`youtube_data_api` 被宿主点名，留门面；`weekly_pipeline_report` 有 `path_aliases` 键，放到 R12 |
 | R4 严格 L2 | `sermon_strict_*` 8、`sermon_bounded_*` 2、`sermon_deterministic_controller`、`sermon_repair_planning`、`sermon_cost_isolation` | `text/strict/`（门禁链）、`review/`（返修规划） | 诊断链（R9）大量导入它们，所以先留门面；`sermon_business_prefect_flow` 读 `sermon_strict_gate_admission`，归 R7 处理；旧实验快照只读 |
 
+**R4 结果（2026-10-20）。** 包内模块不得导入 `scripts.*`（`tests/test_tongxing_production_package.py`），而能补端口的宿主冻结在 G1 与豁免闭包里，所以 R4 只有两个文件能按叶子批迁移，都留了门面：
+
+- `sermon_cost_isolation` 迁到 `observability/cost_isolation.py`：它做离线费用对账，与 `observability/accounting.py` 同属记账，不是门禁或复核规则；
+- `sermon_strict_layer3_preparation` 迁到 `audio/strict_preparation.py`：它把 L2 intent 写成 L3 speech job，而 `text/` 不得导入 `audio/`。
+
+其余 11 个留在 `scripts/`，原因如下：
+
+| 文件 | 阻塞 |
+|---|---|
+| `sermon_strict_layer2` | 导入 `sermon_historical_layer2`（R9，反过来导入严格链）和 `sermon_trace_artifacts` |
+| `sermon_strict_candidate_bridge`、`sermon_strict_locale` | 导入 `sermon_historical_layer2`；`locale` 还要 `sermon_diagnostic_context.validate_runtime`，它不在 `ports.Diagnostic` 里，所在文件被 L1 兼容代钉住 |
+| `sermon_strict_controller` | 导入 `validate_runtime` 和 `sermon_strict_layer2` |
+| `sermon_strict_budget_adapter`、`sermon_strict_gate_admission`、`sermon_strict_repair_planner` | 只经 `sermon_strict_layer2` 等同批文件间接受阻 |
+| `sermon_bounded_business_callbacks` | 导入 `run_bounded_diagnostic`、`sermon_diagnostic_provider`（R9） |
+| `sermon_bounded_decision`、`sermon_repair_planning` | 导入 `sermon_decision_accounting`（R6），宿主按模块名哈希它；`repair_planning` 经 `bounded_decision` 间接受阻 |
+| `sermon_deterministic_controller` | 导入 `sermon_end_to_end`、`sermon_production_supervisor`（R6，Cloud Run 镜像） |
+
+严格链要和 `sermon_historical_layer2`、`sermon_trace_artifacts` 一起迁，并在宿主的 `ports.Diagnostic` 上补 `validate_runtime`，所以并入 R9 与闭包窗口。`bounded_decision`、`repair_planning`、`deterministic_controller` 跟 R6 一起迁。
+
 ## 5 先要定设计（R5–R6）
 
 | 批 | 内容（文件数） | 拟定目标 | 需要用户决定的 |

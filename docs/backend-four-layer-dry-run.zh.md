@@ -6,12 +6,12 @@
 
 ## 当前可运行的短流程
 
-`scripts/backend_four_layer_dry_run.py` 使用仓库内 6 秒固定夹具。模拟链接固定为 `.invalid` 域名，不发网络请求。它在本地生成短 WAV、固定英文词时间和三语文字；通过真实的 Layer 1 锚点/English Source Package 构建器和三语 shadow lane planner。Layer 2 逐组使用正式 Astra→Sol 调度循环，但响应由固定夹具提供；Layer 3 使用正式的 1 倍速排程和 PCM16 音轨拼接函数，最后输出独立的 `preview_only` 页面和报告。接链、媒体夹具、Layer 1、shadow 规划、每个语言及每次模拟模型响应／音频单元、Layer 4 均记录开始、结束、耗时和失败原因；失败注入可定位断点。
+`tools/ops/backend_four_layer_dry_run.py` 使用仓库内 6 秒固定夹具。模拟链接固定为 `.invalid` 域名，不发网络请求。它在本地生成短 WAV、固定英文词时间和三语文字；通过真实的 Layer 1 锚点/English Source Package 构建器和三语 shadow lane planner。Layer 2 逐组使用正式 Astra→Sol 调度循环，但响应由固定夹具提供；Layer 3 使用正式的 1 倍速排程和 PCM16 音轨拼接函数，最后输出独立的 `preview_only` 页面和报告。接链、媒体夹具、Layer 1、shadow 规划、每个语言及每次模拟模型响应／音频单元、Layer 4 均记录开始、结束、耗时和失败原因；失败注入可定位断点。
 
 以后修改四层后端、模型调度、音频排程或 Dev 导入器时，先运行本地评估，再提交 PR。`dev`/`main` 的 Python CI 也会执行相同评估，验证成功路径、四个故障阻断点及无效故障点拒绝；模拟结果只用于开发回归，不给正式周更授予审核或发布资格。
 
 ```bash
-/absolute/path/to/repo/.venv/bin/python scripts/evaluate_backend_four_layer_dry_run.py \
+/absolute/path/to/repo/.venv/bin/python tools/development/evaluate_backend_four_layer_dry_run.py \
   --out /absolute/path/to/ignored/dry-run-evaluation.json
 ```
 
@@ -21,18 +21,18 @@ BASE=/absolute/path/to/last-verified-complete-dev-candidate
 FEATURE=/absolute/path/to/latest-ci-green-production-layout-public
 OUT=/absolute/path/to/ignored/dry-run-run
 
-"$PY" scripts/backend_four_layer_dry_run.py --out "$OUT/backend"
-"$PY" scripts/firebase_dev_weekly_dry_run.py build \
+"$PY" tools/ops/backend_four_layer_dry_run.py --out "$OUT/backend"
+"$PY" tools/ops/firebase_dev_weekly_dry_run.py build \
   --dev-base-candidate "$BASE" --feature-public "$FEATURE" \
   --backend-run "$OUT/backend" --preview-id 2026-10-04-backend-flow \
   --out "$OUT/dev-candidate"
-"$PY" scripts/firebase_dev_weekly_dry_run.py preflight \
+"$PY" tools/ops/firebase_dev_weekly_dry_run.py preflight \
   --candidate "$OUT/dev-candidate" --dev-base-candidate "$BASE" \
   --out "$OUT/dev-preflight.json"
-"$PY" scripts/firebase_dev_weekly_dry_run.py deploy \
+"$PY" tools/ops/firebase_dev_weekly_dry_run.py deploy \
   --candidate "$OUT/dev-candidate" --preflight "$OUT/dev-preflight.json" \
   --out "$OUT/dev-deployment.json"
-"$PY" scripts/firebase_dev_weekly_dry_run.py verify \
+"$PY" tools/ops/firebase_dev_weekly_dry_run.py verify \
   --candidate "$OUT/dev-candidate" --out "$OUT/dev-http.json"
 ```
 

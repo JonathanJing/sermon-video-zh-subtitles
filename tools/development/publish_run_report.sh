@@ -2,9 +2,9 @@
 # Open a docs-only PR that adds one redacted run report for cloud review.
 #
 # Usage (repo root):
-#   scripts/publish_run_report.sh artifacts/run-reports/<YYYYMMDD-label> [--base dev]
+#   tools/development/publish_run_report.sh artifacts/run-reports/<YYYYMMDD-label> [--base dev]
 #
-# The report comes from scripts/export_run_digest.py. This script re-checks its
+# The report comes from tools/development/export_run_digest.py. This script re-checks its
 # redaction, then commits it as docs/reports/runs/<name>/ on a new branch
 # run-report/<name> cut from the base, in a detached temporary worktree, so the
 # current checkout and its branches are left untouched. It pushes that branch and opens a
@@ -30,7 +30,7 @@ BRANCH="run-report/$NAME"
 [[ "$NAME" =~ ^[0-9]{8}-[A-Za-z0-9._-]+$ ]] || { echo "Report name must be YYYYMMDD-<label>: $NAME" >&2; exit 2; }
 [[ -f "$REPORT/manifest.json" && -f "$REPORT/INDEX.md" ]] || { echo "$REPORT is not a run report" >&2; exit 2; }
 
-"$PY" "$REPO/scripts/export_run_digest.py" --verify "$REPORT" \
+"$PY" "$REPO/tools/development/export_run_digest.py" --verify "$REPORT" \
   || { echo "Redaction check failed; fix the report before publishing." >&2; exit 1; }
 
 git -C "$REPO" fetch -q origin "$BASE"
@@ -46,7 +46,7 @@ mkdir -p "$TARGET"
 cp -R "$REPORT/." "$TARGET/"
 find "$TARGET" -name '*.zip' -delete
 # The docs gate runs `git diff --check`; hand edits after export can add trailing whitespace again.
-"$PY" "$REPO/scripts/export_run_digest.py" --tidy-whitespace "$TARGET"
+"$PY" "$REPO/tools/development/export_run_digest.py" --tidy-whitespace "$TARGET"
 # -f: the repository ignores *.log, but these logs are the verified, redacted copies.
 git -C "$WORKTREE" add -f "docs/reports/runs/$NAME"
 git -C "$WORKTREE" diff --cached --check \

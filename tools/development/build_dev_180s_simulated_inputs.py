@@ -24,10 +24,10 @@ from datetime import datetime, timezone
 from uuid import uuid4
 import subprocess
 from pathlib import Path
-# Support both python -m scripts.<name> and direct script invocation.
+# Support both python -m tools.development.<name> and direct script invocation.
 if __package__ in (None, ''):
     import sys
-    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+    sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.source import english_source_package as source_builder
 from tongxing_production.source import english_source_judge as source_judge
@@ -38,7 +38,7 @@ from tongxing_production.delivery import unified_stage as delivery
 from tongxing_production.review import unified_reviews as reviews
 from tongxing_production.delivery import study_artifacts
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 SIM = 'simulation test only - not a real human approval'
 STAMP = '2026-10-05T00:00:00Z'
 LOCALES = ['zh-Hans', 'ko', 'es']

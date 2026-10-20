@@ -260,29 +260,153 @@ class CanonicalLayer2PayloadCacheTests(unittest.TestCase):
         current = self.base.output / "repair-rounds" / "round-001"
         self.assertEqual(len(list(current.glob("*-payload-cache-success.json"))), 2)
 
-    def test_cache_hit_rechecks_prior_snapshot_during_runtime_verification(self):
-        self.make_prior()
-        self.enable_v6()
+    # Cache hits pass through without a per-hit binding recheck: drift is caught when
+    # a group is read, before any paid dispatch, or at post_model_binding.
+    def drifting_run(self, drift, *, at=3):
+        """Run the worker on cache hits, calling ``drift`` at the ``at``-th model call."""
         caller = self.api_caller(forbidden=True)
-        changed = False
 
-        def mutate_prior(_key):
-            nonlocal changed
+        def verify(_key):
             caller.verifications += 1
-            if not changed:
-                changed = True
-                receipt = next(self.prior.glob("*-payload-cache-success.json"))
-                value = json.loads(receipt.read_text())
-                value["humanApproval"] = True
-                receipt.write_text(json.dumps(value))
+            if caller.verifications == at:
+                drift()
 
-        caller.verify_execution = mutate_prior
-        with patch.object(subject, "code_identity", return_value="c" * 64), self.active() as (config, code, key, _):
-            with self.assertRaisesRegex(ValueError, "worker_configuration_or_code_changed"):
-                subject.execute(config.path, "zh-Hans", config.sha256, code, key,
+        caller.verify_execution = verify
+        code = {"value": "c" * 64}
+        with patch.object(subject, "code_identity", side_effect=lambda: code["value"]), \
+                self.active() as (config, expected_code, key, _):
+            self.drift_code = lambda: code.update(value="d" * 64)
+            with self.assertRaises(ValueError) as raised:
+                subject.execute(config.path, "zh-Hans", config.sha256, expected_code, key,
                                 caller=caller, api_key="fixture-key",
                                 expected_payload_cache=config.payload_cache["zh-Hans"]["identity"])
         self.assertEqual(self.base.calls, [])
+        self.assertFalse((self.base.output / "candidate.json").exists())
+        return str(raised.exception), caller.verifications, config
+
+    @staticmethod
+    def flip_last_digit(path):
+        data = path.read_bytes()
+        index = max(i for i, c in enumerate(data) if 48 <= c <= 57)
+        path.write_bytes(data[:index] + (b"1" if data[index:index + 1] == b"0" else b"0") + data[index + 1:])
+
+    def test_edit_of_an_unread_prior_group_fails_closed_when_that_group_is_read(self):
+        self.make_prior()
+        self.enable_v6()
+        receipt = self.prior / "group-0002-payload-cache-success.json"
+        error, verifications, _ = self.drifting_run(lambda: self.flip_last_digit(receipt), at=1)
+        self.assertRegex(error, "Prior payload cache success identity changed|Prior payload cache files changed")
+        self.assertLess(verifications, 4)
+
+    def test_edit_of_a_consumed_prior_group_is_rejected_at_the_end_binding(self):
+        self.make_prior()
+        self.enable_v6()
+        receipt = self.prior / "group-0001-payload-cache-success.json"
+        error, verifications, _ = self.drifting_run(lambda: self.flip_last_digit(receipt))
+        self.assertEqual(error, "worker_configuration_or_code_changed_during_models")
+        self.assertEqual(verifications, 4)  # the hits after the edit ran; the end check refused
+
+    def test_configuration_edit_during_hits_is_rejected_at_the_end_binding(self):
+        self.make_prior()
+        self.enable_v6()
+
+        def drift():
+            self.base.config_data["layer2PayloadCache"]["cacheRequired"] = False
+            self.base.save_config()
+
+        error, verifications, _ = self.drifting_run(drift, at=2)
+        self.assertEqual(error, "worker_configuration_or_code_changed_during_models")
+        self.assertEqual(verifications, 4)
+
+    def test_code_edit_during_hits_is_rejected_at_the_end_binding(self):
+        self.make_prior()
+        self.enable_v6()
+        error, verifications, _ = self.drifting_run(lambda: self.drift_code())
+        self.assertEqual(error, "worker_configuration_or_code_changed_during_models")
+        self.assertEqual(verifications, 4)
+
+    def drift_during_candidate_write(self, drift):
+        self.make_prior()
+        self.enable_v6()
+        caller = self.api_caller(forbidden=True)
+        code = {"value": "c" * 64}
+        self.drift_code = lambda: code.update(value="d" * 64)
+        original = subject.models.save_new
+
+        def save_new(path, value, *args, **kwargs):
+            result = original(path, value, *args, **kwargs)
+            if Path(path).name == "candidate.json":
+                drift()
+            return result
+
+        with patch.object(subject, "code_identity", side_effect=lambda: code["value"]), \
+                patch.object(subject.models, "save_new", side_effect=save_new), \
+                self.active() as (config, expected_code, key, _):
+            with self.assertRaises(ValueError) as raised:
+                subject.execute(config.path, "zh-Hans", config.sha256, expected_code, key,
+                                caller=caller, api_key="fixture-key",
+                                expected_payload_cache=config.payload_cache["zh-Hans"]["identity"])
+        self.assertEqual(self.base.calls, [])
+        return str(raised.exception)
+
+    def test_configuration_edit_during_candidate_writes_fails_final_validation(self):
+        def drift():
+            self.base.config_data["layer2PayloadCache"]["cacheRequired"] = False
+            self.base.save_config()
+
+        self.assertEqual(self.drift_during_candidate_write(drift),
+                         "worker_configuration_or_code_changed_during_models")
+
+    def test_code_edit_during_candidate_writes_fails_final_validation(self):
+        self.assertEqual(self.drift_during_candidate_write(lambda: self.drift_code()),
+                         "worker_configuration_or_code_changed_during_models")
+
+    def test_paid_dispatch_after_drift_is_blocked_before_the_call(self):
+        self.make_prior()
+        for path in self.prior.glob("group-0002-*"):
+            path.unlink()  # group 0002 is a cache miss and needs a paid call
+        self.enable_v6()
+
+        def drift():
+            self.base.config_data["layer2PayloadCache"]["cacheRequired"] = False
+            self.base.save_config()
+
+        error, verifications, _ = self.drifting_run(drift, at=1)
+        # The forbidden caller was never reached: bound_call's check refused first.
+        self.assertEqual(error, "worker_configuration_or_code_changed_during_models")
+        self.assertEqual(verifications, 3)
+
+    def test_writes_under_a_stale_binding_bind_only_admitted_inputs_and_exact_paid_bytes(self):
+        self.make_prior()
+        self.enable_v6()
+
+        def drift():
+            self.base.config_data["layer2PayloadCache"]["cacheRequired"] = False
+            self.base.save_config()
+
+        self.drifting_run(drift, at=2)
+        written = self.base.output / "repair-rounds" / "round-001"
+        admitted = subject.models._request_cache_binding(jobs._read(written / "request.json"))
+        for stem in ("group-0001", "group-0002"):
+            receipt = jobs._read(written / f"{stem}-payload-cache-success.json")
+            prior = jobs._read(self.prior / f"{stem}-payload-cache-success.json")
+            # Bound to the inputs admitted in memory, carrying the prior's exact paid responses.
+            self.assertEqual(receipt["requestBinding"], admitted)
+            self.assertFalse(receipt["humanApproval"])
+            for role in ("translator", "reviewer"):
+                self.assertEqual(receipt["roles"][role]["rawSha256"], prior["roles"][role]["rawSha256"])
+                self.assertEqual(receipt["roles"][role]["payloadSha256"], prior["roles"][role]["payloadSha256"])
+            # A later run on any other source, anchor or policy refuses these receipts.
+            group = {"translationGroupId": receipt["translationGroupId"], "sourceUnitIds": receipt["sourceUnitIds"]}
+            request = jobs._read(written / "request.json")
+            for key in ("englishSourcePackageJsonSha256", "anchorManifestSha256", "translationPolicySha256"):
+                changed = {**request, key: "0" * 64} if key in request else None
+                if changed is None:
+                    continue
+                with self.subTest(stem=stem, key=key), self.assertRaisesRegex(ValueError, "identity changed"):
+                    subject.models._successful_payload_cache(
+                        written, stem, "translator", receipt["roles"]["translator"]["payloadSha256"],
+                        changed, group)
 
     def test_auto_repair_uses_prior_only_on_fresh_round_and_always_emits(self):
         self.make_prior()

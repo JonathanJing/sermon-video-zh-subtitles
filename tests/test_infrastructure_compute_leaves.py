@@ -52,7 +52,7 @@ class ComputeLeafTests(unittest.TestCase):
     def test_package_modules_import_with_only_the_spark_container_path(self):
         """Spark containers run without site-packages and put <code>/packages/production/src
         and <code> on PYTHONPATH (clip_e2e_spark.PACKAGE_SRC)."""
-        from scripts import clip_e2e_spark
+        from tools.development import clip_e2e_spark
         environment = {key: value for key, value in os.environ.items() if key != 'PYTHONPATH'}
         environment['PYTHONPATH'] = os.pathsep.join([str(ROOT/clip_e2e_spark.PACKAGE_SRC), str(ROOT)])
         code = ('import sys\n'

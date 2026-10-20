@@ -4,8 +4,8 @@ from tempfile import TemporaryDirectory
 import unittest
 from unittest.mock import patch
 
-from scripts import backend_four_layer_dry_run as dry
-from scripts.firebase_dev_weekly_dry_run import checked_backend_run
+from tools.ops import backend_four_layer_dry_run as dry
+from tools.ops.firebase_dev_weekly_dry_run import checked_backend_run
 
 
 class BackendFourLayerDryRunTests(unittest.TestCase):

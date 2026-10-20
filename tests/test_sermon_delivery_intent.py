@@ -20,7 +20,7 @@ from tongxing_production.delivery import intent as subject
 
 ROOT = Path(__file__).resolve().parents[1]
 FIXTURES = ROOT / "tests/fixtures/sermon_delivery_intent"
-PLAN_SPEC = importlib.util.spec_from_file_location("legacy_weekly_plan", ROOT / "scripts/prepare_multilingual_weekly_plan.py")
+PLAN_SPEC = importlib.util.spec_from_file_location("legacy_weekly_plan", ROOT / "packages/production/src/tongxing_production/delivery/prepare_multilingual_weekly_plan.py")
 planner = importlib.util.module_from_spec(PLAN_SPEC)
 PLAN_SPEC.loader.exec_module(planner)
 

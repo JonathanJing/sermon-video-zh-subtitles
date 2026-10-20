@@ -5,7 +5,7 @@ import unittest
 from argparse import Namespace
 from pathlib import Path
 
-import scripts.write_operator_approval_bundle as mod
+import tools.ops.write_operator_approval_bundle as mod
 
 
 class WriteOperatorApprovalBundleTest(unittest.TestCase):

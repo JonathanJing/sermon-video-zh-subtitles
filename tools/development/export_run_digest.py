@@ -24,14 +24,14 @@ pre-filled with the run's total time and the model identities, tokens and
 speeds found in the copied receipts.
 
 It is written to ignored ``artifacts/run-reports/<name>/``. To make it readable
-by cloud sessions, ``scripts/publish_run_report.sh`` verifies it and opens a
+by cloud sessions, ``tools/development/publish_run_report.sh`` verifies it and opens a
 docs-only PR that adds it as ``docs/reports/runs/<name>/``. The repository is
 public, so that script re-checks the redaction before anything is pushed.
 
 Usage (repo root):
   .venv/bin/python tools/development/export_run_digest.py artifacts/dev-180s-page-test-20261004/<run-id>
   .venv/bin/python tools/development/export_run_digest.py RUN_DIR [RUN_DIR ...] --name 20261008-8x8-round2
-  scripts/publish_run_report.sh artifacts/run-reports/<name>
+  tools/development/publish_run_report.sh artifacts/run-reports/<name>
 """
 from __future__ import annotations
 
@@ -679,7 +679,7 @@ def write_report(run_dirs: list[Path], label: str) -> Path | None:
         print(f"Run report not written ({error}); export it by hand with tools/development/export_run_digest.py",
               file=sys.stderr)
         return None
-    print(f"Publish for cloud review: scripts/publish_run_report.sh artifacts/run-reports/{name}", file=sys.stderr)
+    print(f"Publish for cloud review: tools/development/publish_run_report.sh artifacts/run-reports/{name}", file=sys.stderr)
     return ROOT / "artifacts/run-reports" / name
 
 

@@ -11,11 +11,11 @@
 
 ## 首次对齐与预演
 
-`scripts/align_firebase_dev_v3.py` 是 9/27 的一次性迁移入口。它拒绝错误的 Firebase 站点、未审核的三语 Release、意料之外的同名文件覆盖，以及已经是 v3 的 Dev 基线。构建报告、预检和 HTTP 收据保存在 Git 忽略的 `artifacts/` 中。
+`tools/ops/align_firebase_dev_v3.py` 是 9/27 的一次性迁移入口。它拒绝错误的 Firebase 站点、未审核的三语 Release、意料之外的同名文件覆盖，以及已经是 v3 的 Dev 基线。构建报告、预检和 HTTP 收据保存在 Git 忽略的 `artifacts/` 中。
 
 ```bash
 PY=/absolute/path/to/repo/.venv/bin/python
-TOOL=/absolute/path/to/weekly-worktree/scripts/align_firebase_dev_v3.py
+TOOL=/absolute/path/to/weekly-worktree/tools/ops/align_firebase_dev_v3.py
 BASE=/absolute/path/to/complete-current-dev-candidate
 PROD=/absolute/path/to/complete-reviewed-production-snapshot
 OUT=/absolute/path/to/ignored/dev-dry-run
@@ -34,11 +34,11 @@ OUT=/absolute/path/to/ignored/dev-dry-run
 
 ## Dev App 内生成测试页面
 
-`scripts/firebase_dev_weekly_dry_run.py` 从**已部署且有完整收据的 Dev 候选**生成 `/dry-run/<preview-id>/index.html`，复用站点根目录的 App 模块、样式和已审核的三语样本。首页 Dev 提示条会出现「每周演练页」入口；演练页提供中／韩／西三种内容语言链接，并显示 `DRY RUN · preview_only` 和样本来源。给 `build` 增加 `--backend-run` 时，它还会把已通过的后端模拟产物纳入隔离的 `/dry-run/<id>/flow/`，并在演练页显示入口。它不加入 `multilingual-v3.json`，不新建正式 Release 包。
+`tools/ops/firebase_dev_weekly_dry_run.py` 从**已部署且有完整收据的 Dev 候选**生成 `/dry-run/<preview-id>/index.html`，复用站点根目录的 App 模块、样式和已审核的三语样本。首页 Dev 提示条会出现「每周演练页」入口；演练页提供中／韩／西三种内容语言链接，并显示 `DRY RUN · preview_only` 和样本来源。给 `build` 增加 `--backend-run` 时，它还会把已通过的后端模拟产物纳入隔离的 `/dry-run/<id>/flow/`，并在演练页显示入口。它不加入 `multilingual-v3.json`，不新建正式 Release 包。
 
 ```bash
 PY=/absolute/path/to/repo/.venv/bin/python
-TOOL=/absolute/path/to/worktree/scripts/firebase_dev_weekly_dry_run.py
+TOOL=/absolute/path/to/worktree/tools/ops/firebase_dev_weekly_dry_run.py
 BASE=/absolute/path/to/last-verified-complete-dev-candidate
 FEATURE=/absolute/path/to/latest-ci-green-production-layout-public
 OUT=/absolute/path/to/ignored/dry-run-artifacts

@@ -26,7 +26,7 @@
 ## 重跑要点
 
 1. 从已核对的 9/27 播放视频按以下参数准确重编码 720p H.264/AAC 测试片，记录片段 SHA 和 `ffprobe` 时长。将片段放在本机 HTTP 服务下；一次只使用不含凭据的链接，脚本限制输入为 50 MiB。
-2. 首次用 [`install_firebase_dev_dry_run_app.py`](../tools/ops/install_firebase_dev_dry_run_app.py) 在完整 Dev 快照上安装模拟周次 adapter；以后复用它。用 [`preflight_firebase_dev_snapshot.py`](../tools/ops/preflight_firebase_dev_snapshot.py) 将当前 Dev 全部线上文件与本地快照比对；相邻两次有收据时，可对未变文件核对 ETag，只下载变更文件。在该快照上运行 [`firebase_dev_four_layer_bucket_dry_run.py`](../scripts/firebase_dev_four_layer_bucket_dry_run.py)；传入模拟 URL、片段与母版 SHA、已审 English Source Package 和 anchor manifest、正式公开素材快照、Dev 快照、基线收据及新 `dryrun-...` ID。脚本重切母版证明截片来源，再生成不覆盖现有周目录的候选，并更新唯一 Dev App 指针。
+2. 首次用 [`install_firebase_dev_dry_run_app.py`](../tools/ops/install_firebase_dev_dry_run_app.py) 在完整 Dev 快照上安装模拟周次 adapter；以后复用它。用 [`preflight_firebase_dev_snapshot.py`](../tools/ops/preflight_firebase_dev_snapshot.py) 将当前 Dev 全部线上文件与本地快照比对；相邻两次有收据时，可对未变文件核对 ETag，只下载变更文件。在该快照上运行 [`firebase_dev_four_layer_bucket_dry_run.py`](../tools/ops/firebase_dev_four_layer_bucket_dry_run.py)；传入模拟 URL、片段与母版 SHA、已审 English Source Package 和 anchor manifest、正式公开素材快照、Dev 快照、基线收据及新 `dryrun-...` ID。脚本重切母版证明截片来源，再生成不覆盖现有周目录的候选，并更新唯一 Dev App 指针。
 3. 把候选视频上传到 Dev bucket，验证完整 GET／SHA、CORS 和首尾 Range；然后以候选 `hosting/firebase.json` 发布完整 Dev 快照。不要从旧快照删除其他 Dev 功能。
 4. 运行 [`verify_firebase_dev_four_layer_bucket_dry_run.py`](../tools/ops/verify_firebase_dev_four_layer_bucket_dry_run.py)，传入候选和基线预检收据，核对 22 个变更 Hosting 文件、原有文件的 ETag、bucket 视频和三语音轨。**从 Dev App 首页选择新周次**，切换三语并在 App 内试播，同时检查英文对照与模拟标识。正式发布器和 iOS 验收分别运行，不由本模拟结果代替。
 

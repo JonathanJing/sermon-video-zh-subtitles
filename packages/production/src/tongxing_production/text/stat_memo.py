@@ -20,9 +20,17 @@ stat was taken, and the identities did not change while the value was computed.
 
 Only successful results are memoized; a failure recomputes every time. The memo
 lives in one process: each worker starts empty and pays the full cost once.
+
+Ancestor directories of a path that ``safe_path`` checks are recorded by kind
+only, ``(dev, ino, mode)``: that is what path resolution and the symlink check
+depend on (a directory swapped for a symlink or another directory changes it),
+while their timestamps also move whenever a sibling file is written. What this
+misses: an ownership or ACL change on an ancestor that leaves an unchanged file
+unreadable.
 """
 from __future__ import annotations
 
+from contextlib import contextmanager
 import os
 import stat
 import threading
@@ -31,6 +39,7 @@ import time
 # Wider than the coarsest timestamp of a filesystem a run may use (FAT 2 s; HFS+ 1 s).
 RACY_NS = 3_000_000_000
 _DIRECTORY = ('directory',)  # a directory whose entries are listed by name, not by its own timestamps
+_SHARED = threading.local()
 
 
 def identity(path):
@@ -47,6 +56,44 @@ def files(*paths):
     return tuple((str(path), identity(path)) for path in paths)
 
 
+def ancestors(*paths):
+    """The kind ``(dev, ino, mode)`` of every directory above ``paths``, None when absent."""
+    rows = {}
+    for path in paths:
+        current = os.path.dirname(os.path.abspath(path))
+        while current not in rows:
+            try:
+                value = os.lstat(current)
+                rows[current] = ('ancestor', value.st_dev, value.st_ino, value.st_mode)
+            except FileNotFoundError:
+                rows[current] = None
+            parent = os.path.dirname(current)
+            if parent == current:
+                break
+            current = parent
+    return tuple(sorted(rows.items()))
+
+
+@contextmanager
+def shared_listings():
+    """Within this block a directory is listed once for every validity check that names it.
+
+    Several bindings of one configuration can read the same directory (a v7
+    partial recovery's round is its payload-cache root); each check then sees
+    the directory as it was at its first listing in the block, as if both had
+    been read at that moment. The recheck after a recomputation always lists
+    afresh, so a change made while computing is still seen.
+    """
+    if getattr(_SHARED, 'listings', None) is not None:
+        yield
+        return
+    _SHARED.listings = {}
+    try:
+        yield
+    finally:
+        _SHARED.listings = None
+
+
 def listing(directory):
     """Every direct entry of ``directory`` with its identity.
 
@@ -55,6 +102,16 @@ def listing(directory):
     move when a sibling is created) are not needed. A path that is absent or not
     a directory is recorded by its own identity.
     """
+    shared = getattr(_SHARED, 'listings', None)
+    if shared is None:
+        return _listing(directory)
+    key = os.fspath(directory)
+    if key not in shared:
+        shared[key] = _listing(directory)
+    return shared[key]
+
+
+def _listing(directory):
     own = identity(directory)
     if own is None or not stat.S_ISDIR(own[2]):
         return ((str(directory), own),)
@@ -94,7 +151,17 @@ def _entry_identity(entry):
 
 
 def _settled(fingerprint, started_ns):
-    return all(row is None or row is _DIRECTORY or row[5] < started_ns - RACY_NS for _, row in fingerprint)
+    # Tagged rows (a listed directory, an ancestor's kind) carry no timestamp.
+    return all(row is None or isinstance(row[0], str) or row[5] < started_ns - RACY_NS for _, row in fingerprint)
+
+
+@contextmanager
+def _fresh():
+    shared, _SHARED.listings = getattr(_SHARED, 'listings', None), None
+    try:
+        yield
+    finally:
+        _SHARED.listings = shared
 
 
 class StatMemo:
@@ -105,7 +172,12 @@ class StatMemo:
         self._entries = {}
         self.hits = self.misses = 0
 
-    def get(self, key, fingerprint, compute):
+    def get(self, key, fingerprint, compute, keep=None):
+        """``compute()``, or its stored value while ``fingerprint()`` is unchanged.
+
+        ``keep(value)`` false means the value is returned but not stored (a result
+        that records a failure instead of raising one).
+        """
         started_ns = time.time_ns()
         before = fingerprint()
         with self._lock:
@@ -117,7 +189,9 @@ class StatMemo:
         value = compute()
         # Store only a value whose inputs held still while it was computed and whose
         # timestamps are old enough that a later write must produce a new identity.
-        if fingerprint() == before and _settled(before, started_ns):
+        with _fresh():
+            after = fingerprint()
+        if after == before and _settled(before, started_ns) and (keep is None or keep(value)):
             with self._lock:
                 self._entries[key] = (before, value)
         else:

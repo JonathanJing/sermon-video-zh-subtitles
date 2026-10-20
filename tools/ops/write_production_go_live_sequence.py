@@ -10,7 +10,7 @@ from pathlib import Path
 from typing import Any
 
 
-REPO_ROOT = Path(__file__).resolve().parents[1]
+REPO_ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_OUT = REPO_ROOT / "artifacts" / "evidence" / "production-go-live-sequence.json"
 DEFAULT_PREFLIGHT_REFRESH = REPO_ROOT / "artifacts" / "evidence" / "production-preflight-refresh.json"
 DEFAULT_GOAL_AUDIT = REPO_ROOT / "artifacts" / "evidence" / "production-goal-readiness-audit.json"
@@ -393,7 +393,7 @@ def final_readiness_audit_stage(
             ],
             [
                 "python3",
-                "scripts/write_production_go_live_sequence.py",
+                "tools/ops/write_production_go_live_sequence.py",
                 "--sunday",
                 args.sunday,
                 "--out",

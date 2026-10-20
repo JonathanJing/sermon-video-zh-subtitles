@@ -1,6 +1,6 @@
 # Canonical package 只读检查
 
-`python scripts/inspect_canonical_packages.py --config inspection.json` 输出
+`python tools/ops/run.py delivery.inspect_canonical_packages --config inspection.json` 输出
 Source → 各语言 Text → Audio → Page 的 shadow proposal。它不 dispatch、写入
 批准记录、启动模型、发布页面或修改作业状态。Page 的 `ready` 只表示其前置
 package 和所需 receipt 已验证；v3 可继续验证现有 formal-dev Layer 4 candidate。

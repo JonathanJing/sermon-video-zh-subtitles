@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import Any
 
 
-REPO_ROOT = Path(__file__).resolve().parents[1]
+REPO_ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_OUT = REPO_ROOT / "artifacts" / "evidence" / "operator-approval-bundle.json"
 DEFAULT_UNBLOCK_PLAN = REPO_ROOT / "artifacts" / "evidence" / "production-unblock-plan.json"
 DEFAULT_CLOUD_RUN_UPDATE_PLAN = REPO_ROOT / "artifacts" / "evidence" / "cloud-run-realtime-update-plan.json"

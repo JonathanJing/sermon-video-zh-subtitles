@@ -33,7 +33,7 @@ import shlex
 import subprocess
 import sys
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 from scripts import tongxing_host  # noqa: F401  binds the production package ports

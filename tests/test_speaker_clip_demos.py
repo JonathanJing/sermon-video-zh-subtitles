@@ -6,7 +6,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
-sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'scripts'))
+sys.path.append(str(Path(__file__).resolve().parents[1]/'tools/ops'))
 from render_speaker_clip_demos import validate_scripts, validate_manifest
 from tools.ops.build_speaker_clip_demos import build, encode_audio, checked_video_receipt, sha
 
@@ -56,7 +56,7 @@ class SpeakerClipsTests(unittest.TestCase):
             validate_manifest({'registryJsonSha256':'0'*64}, {'schemaVersion':'registry'}, {'locales':[]})
 
     def test_builder_imports_through_package_paths(self):
-        # Only the repo root on sys.path: the builder must still reach its bare scripts/ siblings.
+        # Only the repo root on sys.path: the builder must still reach its bare tools/ops siblings.
         root = Path(__file__).resolve().parents[1]
         environment = {key: value for key, value in os.environ.items() if key != 'PYTHONPATH'}
         code = ('import sys; sys.path[0] = sys.argv[1]\n'

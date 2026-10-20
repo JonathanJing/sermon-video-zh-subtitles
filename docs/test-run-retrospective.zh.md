@@ -29,7 +29,7 @@
    - 内容：媒体和模型输出一律不复制。
    - 规则匹配不能保证完全，合并报告 PR 前仍要看一眼 diff。
 5. **自动接入。** 下列入口退出时（成功或失败）自动生成报告，并打印公开命令：
-   - 三分钟 e2e：`scripts/run_dev_180s_beta_e2e.sh`
+   - 三分钟 e2e：`tools/development/run_dev_180s_beta_e2e.sh`
    - 机器质检文字驱动：`tongxing_production.review.qc_text_run`
    - 机器质检音频驱动：`tongxing_production.review.qc_audio_run`
 
@@ -49,7 +49,7 @@
 .venv/bin/python tools/development/export_run_digest.py artifacts/<运行目录> [更多运行目录...] --name <YYYYMMDD-简称>
 
 # 2. 复查脱敏、开报告 PR（Mac 上有 gh 时直接开草稿 PR，否则打印 compare 链接）
-scripts/publish_run_report.sh artifacts/run-reports/<YYYYMMDD-简称>
+tools/development/publish_run_report.sh artifacts/run-reports/<YYYYMMDD-简称>
 ```
 
 不传 `--name` 时，默认用当天 UTC 日期加第一个运行目录名。只想检查一份已有报告时，用 `export_run_digest.py --verify <报告目录>`。
