@@ -84,7 +84,7 @@
 
 ## 验证
 
-本地（CI 自 2026-10-19 关闭）：完整 unittest 十个分片、pytest 风格文件、§5.5 测试 ID 清单、附录 A、`scripts/` 布局守卫与 `git diff --check`。结果见本窗口的本地运行报告 PR。测试 ID 6066 → 6067（新增 v13 测试 1 个，没有丢失）。附录 A：`dev` 73 个门面 → 18 个，宿主不再点名任何门面；窗口集合里只剩 Cloud Run 镜像用的 `sermon_production_supervisor` 与 `run_sermon_production_supervisor_agent`（D-2，随下次部署删）。
+本地（CI 自 2026-10-19 关闭）：完整 unittest 十个分片、pytest 风格文件、§5.5 测试 ID 清单、附录 A、`scripts/` 布局守卫与 `git diff --check`。结果见本窗口的本地运行报告 PR。测试 ID 6124 → 6125（对 `dev@5ba8c87c`；新增 v13 测试 1 个，没有丢失）。附录 A：`dev` 73 个门面 → 18 个，宿主不再点名任何门面；窗口集合里只剩 Cloud Run 镜像用的 `sermon_production_supervisor` 与 `run_sermon_production_supervisor_agent`（D-2，随下次部署删）。
 
 ## 合并后读回
 
