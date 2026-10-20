@@ -1032,11 +1032,7 @@ def execute(config_path, locale, expected_configuration, expected_code, expected
                                                      claude_transports=transports)
                 budgeted = caller
                 if transports is not None:
-                    caller.execution_identity = {
-                        'schemaVersion': 'claude-layer2-budget-transport-identity-v1', 'backend': 'claude_cli',
-                        'layer2Backend': backend,
-                        'transports': {role: t.execution_identity for role, t in sorted(transports.items())},
-                        'budgetAuthorizationSha256': budget_binding['sha256']}
+                    caller.execution_identity = claude_model_transport_identity(transports)
                 elif budget_binding.get('runtimeIdentity') is None:
                     caller.execution_identity = {
                         'schemaVersion': 'openai-layer2-budget-transport-identity-v1',
@@ -1380,6 +1376,19 @@ def reopen_repair(config_path, locale, expected_revision):
                         'originalJobStatus': 'failed', 'nextJobId': jobs._digest(plan['nextIdentity']),
                         'reopenedGroups': plan['reopenedGroups'], 'modelCalls': 0, 'runtimeCodexTurns': 0,
                         'humanApprovalCreated': False}
+
+
+def claude_model_transport_identity(transports):
+    """Stable cache identity for the CLI, independent of a revision's budget approval.
+
+    BudgetedCaller.verify_execution still checks the current authorization before
+    every cache hit or provider dispatch. The approval hash is not a property of
+    the actual model transport and changes during a bounded QC revision.
+    """
+    require(set(transports) == {'translator', 'reviewer'}, 'claude_transport_roles_incomplete')
+    return {'schemaVersion': 'claude-layer2-model-transport-identity-v2',
+            'backend': 'claude_cli', 'layer2Backend': 'claude_cli_opus',
+            'transports': {role: t.execution_identity for role, t in sorted(transports.items())}}
 
 
 def claude_transports(policy, lane):

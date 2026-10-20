@@ -44,6 +44,7 @@ class SpecificationTests(unittest.TestCase):
 
     def test_paths_resolve_beside_the_specification_and_defaults_apply(self):
         spec = subject.load_spec(spec_files(self.base))
+        self.assertEqual(spec["layer2"]["backend"], "openai_api")
         self.assertEqual(spec["layer2"]["policyTemplates"]["ko"], str((self.base / "ko-policy.json").resolve()))
         self.assertEqual(spec["clipSpec"], str((self.base / "clip.json").resolve()))
         self.assertEqual((spec["qc"]["maxRevisions"], spec["openai"]["environment"], spec["layer3"]["maxEndLagSeconds"]),
@@ -57,6 +58,8 @@ class SpecificationTests(unittest.TestCase):
                ({"budget": {"totalUsd": 10, "settledUsdBefore": 12}}, "totalUsd > settledUsdBefore"),
                ({"locales": ["ko", "fr"]}, "locales must be"),
                ({"extra": 1}, "unknown run specification field"),
+               ({"layer2": {"backend": "claude_cli", "policyTemplates": {"ko": "ko-policy.json", "es": "es-policy.json"},
+                             "plugins": {"ko": "ko.py", "es": "es.py"}}}, "layer2.backend must be"),
                ({"layer3": {"attestationTemplates": {"ko": "ko-att.json"}, "speakerRegistry": "registry.json"}},
                 "attestationTemplates missing a locale"),
                ({"page": {"pageId": "mockup-x", "display": {"ko": DISPLAY}}}, "display texts missing")]
@@ -105,13 +108,62 @@ class RunTests(unittest.TestCase):
                   "settlement": {"costStatus": "reused", "costMicrousd": 0}}}})
         self.assertAlmostEqual(self.run.settled(), 15.3 + 0.2 + 0.003 + 0.0135)
 
+    def test_claude_subscription_list_price_is_separate_from_approved_dollars(self):
+        self.run.spec["layer2"]["backend"] = "claude_cli_opus"
+        subject.write(self.run_dir / "l2/.layer2-jobs.layer2-budget/x/a.result.json",
+                      {"result": {"usage": {"costMicrousd": 200_000}}})
+        subject.write(self.run_dir / "plans/qc-ko/qc-ko/.api-budget/source-budget.json", {"requests": {
+            "a": {"status": "returned", "bounds": {"costMicrousd": 9_000},
+                  "settlement": {"costStatus": "estimated_upper_bound", "costMicrousd": 3_000,
+                                 "requestedModel": "gpt-6.1-sol"}}}})
+        self.assertAlmostEqual(self.run.settled(), 15.303)
+        self.assertAlmostEqual(self.run.claude_list_price_equivalent(), 0.2)
+
     def test_open_qc_caps_count_until_the_locale_finishes_audio(self):
         for locale in ("ko", "es"):
-            subject.write(self.run_dir / f"plans/qc-{locale}/plan.json", {"stages": [{"capUsd": 5.525}]})
+            root = self.run_dir / f"plans/qc-{locale}/qc-{locale}/.api-budget"
+            subject.write(self.run_dir / f"plans/qc-{locale}/plan.json",
+                          {"stages": [{"capUsd": 5.525, "budgetRoot": str(root)}]})
+            subject.write(root / "source-budget.json", {"requests": {
+                "a": {"status": "returned", "bounds": {"costMicrousd": 2_000_000},
+                      "settlement": {"costStatus": "estimated_upper_bound", "costMicrousd": 1_000_000}}}})
         self.assertAlmostEqual(self.run.open_qc_caps(), 11.05)
         self.run.mark("audio.ko", "done")
         self.run.mark("audio.es", "failed")
+        # The failed locale's QC authority stays valid: its unreserved remainder still bounds a repair plan.
+        self.assertAlmostEqual(self.run.open_qc_caps(), 3.525)
+        subject.write(self.run_dir / "plans/qc-es-audio-seed-43/plan.json", {"stages": [{"capUsd": 1.0}]})
+        self.assertAlmostEqual(self.run.open_qc_caps(), 4.525)
+        self.run.mark("audio.es", "done")
         self.assertEqual(self.run.open_qc_caps(), 0)
+
+    def test_report_resumes_only_a_complete_digest_of_this_run(self):
+        from datetime import datetime, timezone
+        from tools.development import export_run_digest
+
+        class Fixed(datetime):
+            @classmethod
+            def now(cls, tz=None):
+                return datetime(2026, 10, 14, 20, tzinfo=timezone.utc)
+        name, calls = "20261014-clip-e2e-u101-test", []
+        reports = self.base / "artifacts/run-reports"
+        with mock.patch.object(subject, "ROOT", self.base), mock.patch.object(subject, "datetime", Fixed), \
+                mock.patch.object(self.run, "sh", lambda label, argv, **kw: calls.append(label)):
+            subject.stage_report(self.run)
+            self.assertEqual((calls, self.run.stages["report"]["reportName"]), (["report"], name))
+            # The export finished but the stage was not marked: verify, do not export again.
+            self.assertEqual(export_run_digest.main([str(self.run_dir), "--out", str(reports), "--name", name]), 0)
+            calls.clear()
+            subject.stage_report(self.run)
+            self.assertEqual(calls, ["report-verify"])
+            (reports / name / "INDEX.md").unlink()
+            with self.assertRaisesRegex(subject.Stop, "incomplete"):
+                subject.stage_report(self.run)
+            manifest = reports / name / "manifest.json"
+            subject.write(manifest, {**subject.read(manifest), "runs": [{"label": "another-run"}]})
+            with self.assertRaisesRegex(ValueError, "does not match this run"):
+                subject.stage_report(self.run)
+        self.assertEqual(calls, ["report-verify"])
 
     def test_one_locale_stopping_does_not_stop_the_others_and_layer4_needs_all(self):
         calls = []
@@ -236,7 +288,9 @@ class RunTests(unittest.TestCase):
     def test_layer4_resume_uses_bound_publish_and_later_browser_pass_without_redeploy(self):
         self.run.publish = True
         l4 = self.run_dir / "l4"
+        workflow = l4 / "workflow"
         page_id = self.run.spec["page"]["pageId"]
+        sha = lambda path: hashlib.sha256(path.read_bytes()).hexdigest()
         subject.write(l4 / "prepare-result.json", {"status": "succeeded"})
         files = {"preparedManifestSha256": l4 / "work/prepared/preparation-manifest.json",
                  "baselineReceiptSha256": l4 / "baseline/baseline-receipt.json",
@@ -245,24 +299,48 @@ class RunTests(unittest.TestCase):
         for field, path in files.items():
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_text(field)
-            inputs[field] = hashlib.sha256(path.read_bytes()).hexdigest()
+            inputs[field] = sha(path)
+        targets = {locale: {"releasePackageUrl": f"/releases-v4/{page_id}/{locale}.json",
+                            "releasePackageJsonSha256": locale * 32} for locale in ("ko", "es")}
+        catalog = workflow / "final-overlay/public/multilingual-v4.json"
+        subject.write(catalog, {"pages": [{"id": page_id, "targets": targets}]})
+        subject.write(workflow / "final-overlay/seal-report.json", {"catalogV4Sha256": sha(catalog)})
+        stages = {}
+        for name in subject.PUBLISH_STAGES:
+            output = workflow / ("final-overlay/seal-report.json" if name == "prepare_overlay" else f"{name}.json")
+            if not output.exists():
+                subject.write(output, {"stage": name})
+            stages[name] = {"status": "succeeded", "outputs": {str(output.relative_to(workflow)): sha(output)}}
         state = {"status": "diagnostic_dev_http_verified", "inputs": inputs,
-                 "completedAt": "2026-10-14T12:00:00+00:00",
-                 "stages": {name: {"status": "succeeded"} for name in
-                            ("publish_assets", "verify_assets", "publish_catalog", "live_readback")}}
-        subject.write(l4 / "workflow/workflow-state.json", state)
-        subject.write(l4 / "workflow/run-report.json", {"status": state["status"], "inputs": inputs})
+                 "completedAt": "2026-10-14T12:00:00+00:00", "stages": stages}
+        subject.write(workflow / "workflow-state.json", state)
+        subject.write(workflow / "run-report.json", {"status": state["status"], "inputs": inputs})
         subject.write(l4 / "browser-smoke.json", {"status": "fail", "pageId": page_id})
         passed = l4 / "browser-smoke-later.json"
-        subject.write(passed, {"status": "pass", "pageId": page_id, "origin": subject.DEV_ORIGIN,
-                               "checkedAt": "2026-10-14T12:01:00+00:00",
-                               "locales": [{"locale": locale, "status": "pass"} for locale in ("ko", "es")]})
+        receipt = {"status": "pass", "pageId": page_id, "origin": subject.DEV_ORIGIN,
+                   "checkedAt": "2026-10-14T12:01:00+00:00",
+                   "locales": [{"locale": locale, "status": "pass", **targets[locale]} for locale in ("ko", "es")]}
+        subject.write(passed, receipt)
         with mock.patch.object(self.run, "sh", side_effect=AssertionError("must not deploy or resmoke")):
             subject.stage_layer4(self.run)
         self.assertEqual(self.run.stages["layer4"]["status"], "done")
         self.assertEqual(self.run.stages["layer4"]["smokeReceipt"], str(passed.resolve()))
+
+        # A pass for another release under the same page ID is not this run's browser evidence.
+        receipt["locales"][1]["releasePackageJsonSha256"] = "f" * 64
+        subject.write(passed, receipt)
+        with mock.patch.object(self.run, "sh", side_effect=AssertionError("resmoke")), \
+                self.assertRaisesRegex(AssertionError, "resmoke"):
+            subject.stage_layer4(self.run)
+
+        # A recorded stage output that changed after publication needs reconciliation, not acceptance.
+        subject.write(workflow / "live_readback.json", {"stage": "edited"})
+        with mock.patch.object(self.run, "sh", side_effect=AssertionError("must not deploy")), \
+                self.assertRaisesRegex(subject.Stop, "needs reconciliation"):
+            subject.stage_layer4(self.run)
+        subject.write(workflow / "live_readback.json", {"stage": "live_readback"})
         state["status"] = "running"
-        subject.write(l4 / "workflow/workflow-state.json", state)
+        subject.write(workflow / "workflow-state.json", state)
         with mock.patch.object(self.run, "sh", side_effect=AssertionError("must not deploy")), \
                 self.assertRaisesRegex(subject.Stop, "needs reconciliation"):
             subject.stage_layer4(self.run)

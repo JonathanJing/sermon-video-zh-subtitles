@@ -212,6 +212,34 @@ def verify(dest: Path, secrets: list[str]) -> list[str]:
     return leaks
 
 
+def incomplete(dest: Path) -> list[str]:
+    """Return what a written digest lacks against its own manifest: an export interrupted after the manifest,
+    or a file removed later. It checks presence only; verify() checks redaction."""
+    try:
+        manifest = json.loads((dest / "manifest.json").read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return ["manifest.json: missing or unreadable"]
+    if (not isinstance(manifest, dict) or manifest.get("schemaVersion") != SCHEMA
+            or not isinstance(manifest.get("runs"), list) or not isinstance(manifest.get("files"), list)):
+        return ["manifest.json: not a run digest manifest"]
+    problems = [f"{name}: missing" for name in ("INDEX.md", "RETROSPECTIVE.md") if not (dest / name).is_file()]
+    labels = {row.get("label") for row in manifest["runs"] if isinstance(row, dict)}
+    root = dest.resolve()
+    for entry in manifest["files"]:
+        if not isinstance(entry, dict) or entry.get("run") not in labels or not isinstance(entry.get("path"), str):
+            problems.append("manifest.json: malformed file entry")
+            continue
+        if entry.get("omitted"):
+            continue
+        target = dest / entry["run"] / entry["path"]
+        for path in [target, *(target.parent / name for name in entry.get("chunks", []))]:
+            if not path.resolve().is_relative_to(root):
+                problems.append(f"manifest.json: entry outside the digest: {entry['path']}")
+            elif not path.is_file():
+                problems.append(f"{path.relative_to(dest)}: missing")
+    return problems
+
+
 def tidy_whitespace(dest: Path) -> list[str]:
     """Strip trailing whitespace and blank lines at EOF from every text file, as `git diff --check` requires.
 
