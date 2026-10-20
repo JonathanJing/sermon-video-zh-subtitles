@@ -5,12 +5,12 @@
 ## 依据与范围
 
 - 决定：[scripts/ 迁移计划](../design/scripts-remaining-migration-plan.zh.md) §9.1 的 D-5（用户 2026-10-20 确认）与 §9.2；[门面计划](../design/facade-removal-plan.zh.md) §7。做法照 [D 窗口代记录](20261019-d-window-implementation-generation.zh.md)：草稿一起合并，只重新校准一次。
-- 入站基线 `dev@810349e2`（含 N1–N4）。下面的“D-5”值在代码分支头 `26cb6880` 上计算；合并后按文末命令在真实 `dev` 上读回，值不同以读回为准并补记。
+- 入站基线 `dev@5ba8c87c`（含 N1–N4）。集合在 `dev@810349e2` 上推导，之后合入的 15 个 PR（App、iOS、delivery、L2 预算等）不改下表除 L2 代码身份以外的任何值，也没有引入对迁移文件的新引用。下面的“D-5”值在合入 `5ba8c87c` 后的分支头 `8a9561b5` 上计算；合并后按文末命令在真实 `dev` 上读回，值不同以读回为准并补记。
 - 实际集合、去向与留下的门面见迁移计划 §11。概要：删宿主点名的门面 39 个，移出 `scripts/` 65 个文件，再删调用方已随窗口移走的门面 18 个；新增 `ports.Diagnostic.validate_runtime` 与 dual_pdf 的 `ports.Leases`。
 
 ## 身份值
 
-| 身份 | 入站 `dev@810349e2` | D-5（`26cb6880`） |
+| 身份 | 入站 `dev@5ba8c87c` | D-5（`8a9561b5`） |
 |---|---|---|
 | W（`review.waiver.implementation_sha256`） | `1c28f4aa38c05b9287db01cc8668995e10ba31c21d9d05fbaa508474a8a19961` | `b6ecff232e60ebbdcfe5f4ed6c0659264367ac72192dcb3918e04c6c4b15410e` |
 | T（`compute.qc_audio_transports`） | `8ec15fe1556ba0ff5e3b64c9ff5d2f82896216f06bb2c25495385feaf4f5a851` | `2d85dac8caddcae9dae292877444656fdbdb4bdb42a30f9e084b085381324595` |
@@ -21,7 +21,7 @@
 | L1 producer compatibility 最新代 | `c-batch-facade-import-removal-v12` | `d5-window-diagnostic-package-move-v13` |
 | Prefect `code_identity()` | `02a1083084f1e3dce038957513574a36afbc9ad29a4435e15cd6fdd03b1ca3e4` | `bf6665767e4bf3218f281dece02553f5f78cf4c4a09bab7292816c4d3016cc24` |
 | 模拟 TTS `implementation_sha256()` | `db8f0832df947eff0f7667bb5848af10905f1482b564125766ac4a1270017cce` | `73901a3181903a43e0dcdc7637e602fd95e3fed4c0a2c405d22c4956bd4b4cb3` |
-| L2 `text.controller.code_identity()` | `f3a81a3ced24dd7a4d23dcdd731c72cfaafb86b61960f66da78a7b98a28805ef` | `d29579ab9a945f132ed02e142bd8d4a358a715b1646481385cabae5951049608` |
+| L2 `text.controller.code_identity()` | `b21330666b95f142290e3bc0d69f618dbd8f182dc130a49ba0abe897f0b0e1df` | `b539cbd09a62f01e7fbda953fec5d9037a0d1cc6f3a5ec91431706a76ca7a1ae` |
 
 物理清单不变：W 30 个文件、T 7、计分 8、语速 10，文件集合与入站逐一相同。
 
@@ -41,7 +41,7 @@
 ### 声音身份不变的证明
 
 - `RENDERER_SOUND_IDENTITY_SHA256` 是 `audio/renderer.py` 里的常量，入站与 D-5 相同（上表）。
-- `audio/renderer.py` 在本窗口与入站逐字节相同（`git diff 810349e2 26cb6880 -- packages/production/src/tongxing_production/audio/` 为空），合成、单元指令、排程与 MP3 编码代码都没有动。
+- `audio/renderer.py` 在本窗口与入站逐字节相同（`git diff 5ba8c87c 8a9561b5 -- packages/production/src/tongxing_production/audio/` 为空），合成、单元指令、排程与 MP3 编码代码都没有动。
 - 预览执行绑定随 `path_aliases.py` 和宿主字节换代，预览缓存与正式复用按规则失效；已渲染的声音按声音身份判断复用。
 
 ## 其他绑定的变化
