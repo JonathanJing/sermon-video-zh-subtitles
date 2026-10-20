@@ -13,8 +13,9 @@ from types import SimpleNamespace
 from unittest.mock import patch
 
 from scripts import cuv_scripture
-from scripts import run_scripture_gated_round as round_tool
-from scripts import scripture_adjudication as adjudication
+from tools.ops import run_scripture_gated_round as round_tool
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.review import scripture as adjudication
 
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT / 'artifacts' / 'next-concurrency-605s-20261005-r3' / 'zh-Hans' / 'fixture'
@@ -71,7 +72,8 @@ class GatedRoundTests(unittest.TestCase):
         self.assertFalse((self.work / 'machine').exists())
 
     def test_machine_adjudicator_receipt_runs_without_human_approval(self):
-        from scripts import scripture_machine_adjudication as machine
+        from scripts import tongxing_host  # noqa: F401  binds the production package ports
+        from tongxing_production.review import scripture_machine as machine
         generated, _ = machine.adjudicate_fixture(SOURCE, target_locale='zh-Hans', flagged_units=['0-u067', '0-u068'])
         code, out = self.run_round(generated, name='by-machine')
         self.assertEqual(code, 0)

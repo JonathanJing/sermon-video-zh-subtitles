@@ -21,7 +21,7 @@
 |---|---|---|---|---|
 | `index.html` | `backend/app.py` 静态挂载 `/` 与任何无扩展名的深链（回退到它）；Cloud Run 线上与仓库同哈希 | `web/README.md`、`docs/system-design-gap-analysis*.md`、`tests/test_public_admin_boundary.py`、`tests/e2e_public_playback.py`；Cloud Run 文档与监控的健康检查 URL | 2026-07-09 `ab692ab1` | **公开会众字幕页** |
 | `admin.html` | `backend/app.py` 的 `/admin`、`/admin/`、`/admin.html`、`/admin/index.html` | `docs/admin-workflow.md`、`docs/post-live-reviewed-sunday-publication.zh.md`、`tests/test_public_admin_boundary.py`、`tests/test_web_app_realtime_contract.py`、`tests/test_backend_app.py` | 2026-07-09 `ab692ab1` | **仅操作员** |
-| `app.js` | 同上，两个页面都加载 `app.js?v=20260709-paragraph-caption` | `scripts/validate_web_realtime_contract.py`、`scripts/validate_public_caption_view_runtime.py`（默认读取）；`tests/test_web_app_realtime_contract.py`、`tests/test_public_admin_boundary.py`；`docs/open-source-readiness*.md`、`docs/review-testing.md` 的 `node --check web/app.js` | 2026-07-09 `ab692ab1` | **共享**（公开 + 操作员逻辑同文件） |
+| `app.js` | 同上，两个页面都加载 `app.js?v=20260709-paragraph-caption` | `scripts/validate_web_realtime_contract.py`、`tools/ops/validate_public_caption_view_runtime.py`（默认读取）；`tests/test_web_app_realtime_contract.py`、`tests/test_public_admin_boundary.py`；`docs/open-source-readiness*.md`、`docs/review-testing.md` 的 `node --check web/app.js` | 2026-07-09 `ab692ab1` | **共享**（公开 + 操作员逻辑同文件） |
 | `styles.css` | 同上，两个页面共用 | `tests/test_public_admin_boundary.py` 检查其中的 admin 选择器 | 2026-07-09 `ab692ab1` | **共享** |
 | `manifest.webmanifest` | 同上；`start_url` 为 `./index.html`，名称“11:30 会众中文字幕”，`icons` 为空 | 两个页面的 `<link rel="manifest">` | 2026-06-22 `5ac4c430` | **共享**（语义上偏公开页） |
 | `scripture-cmn-cu89s.generated.js` | 同上；是 `/api/scripture/...` 的静态回退 | 两个页面的 `<script>`；`scripts/build_scripture_index.py --out` 默认生成它；`docs/scripture-source*.md`、`web/README.md` | 2026-06-23 `f739781d` | **共享资源**（生成物） |
@@ -59,7 +59,7 @@
 | `tests/test_public_admin_boundary.py:6` | `index.html`、`admin.html`、`app.js`、`styles.css` | 改 `WEB_ROOT`；断言本身保护“公开页无操作员控件”，**迁移必须保留** |
 | `tests/test_web_app_realtime_contract.py:11,154` | `app.js`、`admin.html` | 改路径 |
 | `tests/e2e_public_playback.py:26` | 本地静态服务整个目录（需要 Playwright，不在默认 CI 中） | 改路径 |
-| `scripts/validate_web_realtime_contract.py:17`、`scripts/validate_public_caption_view_runtime.py:16` | `app.js` 默认路径 | 改默认值；它们生成的 `artifacts/evidence/web-realtime-contract.json` 被十余个 `write_*` / `collect_*` 脚本与测试引用，**报告文件名不变**，但内容里会记录 `appJs` 路径 |
+| `scripts/validate_web_realtime_contract.py:17`、`tools/ops/validate_public_caption_view_runtime.py:16` | `app.js` 默认路径 | 改默认值；它们生成的 `artifacts/evidence/web-realtime-contract.json` 被十余个 `write_*` / `collect_*` 脚本与测试引用，**报告文件名不变**，但内容里会记录 `appJs` 路径 |
 | `scripts/build_scripture_index.py:185` | 默认输出 `web/scripture-cmn-cu89s.generated.js` | 改默认值，同步 `docs/scripture-source*.md`、`web/README.md` 命令 |
 | 5 个脚本默认值 + `.gitignore:37` | `web/playback-simulation.generated.js` | 改默认值与忽略规则 |
 | `backend/worker.py:69,123,224` 及多个 `run_root/"web"` 脚本 | **运行目录下的 `web/` 子目录**（`/tmp/.../<session>/web/…`、`gs://…/web/…`），与仓库 `web/` 无关 | **不要改**，否则会破坏历史 GCS 路径与既有 receipt |

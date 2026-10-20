@@ -16,7 +16,7 @@ import sys
 
 from tongxing_production.orchestration.unified import adapters, backend, contracts, resources, runtime
 from tongxing_production.workflows.prepared import stages
-from scripts import sermon_workflow_jobs as _jobs
+from tongxing_production.orchestration import jobs as _jobs
 from scripts.sermon_execution_harness import atomic_json as _atomic_json, utc_now as _utc_now
 from scripts.sermon_release_workflow import safe_path as _safe_path
 from scripts import tongxing_host  # noqa: F401  binds the source and text layers, whose stage entries these stages load

@@ -1,0 +1,43 @@
+== shard 0
+Ran 548 tests in 1353.573s
+OK (skipped=4)
+exit 0
+== shard 1
+Ran 563 tests in 2060.778s
+OK (skipped=2)
+exit 0
+== shard 2
+FAIL: test_hung_renewal_still_terminates_execution_at_local_deadline (test_lease_fencing.SupervisorLeaseExecutionTests.test_hung_renewal_still_terminates_execution_at_local_deadline)
+Ran 583 tests in 1643.597s
+FAILED (failures=1, skipped=5)
+exit 1
+== shard 3
+Ran 607 tests in 1277.833s
+OK (skipped=4)
+exit 0
+== shard 4
+Ran 608 tests in 2033.589s
+OK (skipped=1)
+exit 0
+== shard 5
+Ran 613 tests in 1642.415s
+OK (skipped=6)
+exit 0
+== shard 6
+Ran 612 tests in 2709.003s
+OK (skipped=3)
+exit 0
+== shard 7
+FAIL: test_129_group_actual_producer_can_assemble_and_resume_without_calls (test_layer2_large_fan_in.LargeLayer2FanInTests.test_129_group_actual_producer_can_assemble_and_resume_without_calls)
+Ran 620 tests in 1915.437s
+FAILED (failures=1, skipped=5)
+exit 1
+== shard 8
+FAIL: test_100_transitions_with_persistent_intents (test_sermon_unified_parallel.ParallelOwnerTests.test_100_transitions_with_persistent_intents)
+Ran 620 tests in 1530.871s
+FAILED (failures=1, skipped=4)
+exit 1
+== shard 9
+Ran 622 tests in 1629.850s
+OK (skipped=4)
+exit 0

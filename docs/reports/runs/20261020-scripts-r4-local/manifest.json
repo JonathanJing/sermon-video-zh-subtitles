@@ -1,0 +1,45 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261020-scripts-r4-local",
+  "runs": [
+    {
+      "label": "scripts-r4-local",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.claude/worktrees/scripts-r4-622b8e/artifacts/scripts-r4-local",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "scripts-r4-local",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 604,
+      "truncated": false,
+      "sha256": "120dac7b420162151d7df58b35dd47304854ee6752b4d6354624004f69f7e841",
+      "redactions": {}
+    },
+    {
+      "run": "scripts-r4-local",
+      "path": "pytest.log",
+      "kind": "log",
+      "bytes": 2389,
+      "truncated": false,
+      "sha256": "a22ea6782d75ace67bbfb26c8e86415a3da5ad2322169f8bc75d02f5738ee9ae",
+      "redactions": {}
+    },
+    {
+      "run": "scripts-r4-local",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 1039,
+      "truncated": false,
+      "sha256": "eb22b9f1bd823b2356c7a59f4a678d79920e83fe42cb240a43a460377a8575fb",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

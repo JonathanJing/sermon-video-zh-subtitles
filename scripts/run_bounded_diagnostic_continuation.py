@@ -10,13 +10,14 @@ import os
 from pathlib import Path
 
 from scripts import run_bounded_diagnostic as run
-from scripts import sermon_accounting as accounting
+from tongxing_production.observability import accounting
 from scripts import sermon_diagnostic_context as diagnostic
 from scripts import sermon_diagnostic_provider as provider
-from scripts import sermon_log_profile as profile
-from scripts import sermon_public_snapshot as public
-from scripts import sermon_review_budget as budget
-from scripts import sermon_review_contracts as c
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.observability import profile
+from tongxing_production.storage import snapshot as public
+from tongxing_production.review import review_budget as budget
+from tongxing_production.review import contracts as c
 from scripts import sermon_strict_layer2 as strict
 from scripts.sermon_diagnostic_source_evidence import validate_prior_source_evidence
 from scripts.sermon_release_workflow import _safe_path

@@ -1,0 +1,32 @@
+Pre-fix regression
+==================
+Command: python -m unittest tests.test_canonical_layer2_budget_reuse.CanonicalLayer2BudgetReuseTests.test_paid_provenance_coordinates_with_concurrent_ledger_writer
+Result: expected failure
+Error: tongxing_production.contracts.canonical.ContractError: snapshot_changed_during_read
+Tests run: 1; errors: 1
+
+Post-fix direct regression
+==========================
+Command: python -m unittest tests.test_canonical_layer2_budget_reuse.CanonicalLayer2BudgetReuseTests.test_paid_provenance_coordinates_with_concurrent_ledger_writer
+Result: passed
+Tests run: 1; passed: 1
+
+Budget reuse file
+=================
+Command: python -m unittest tests.test_canonical_layer2_budget_reuse
+Result: passed
+Tests run: 8; passed: 8
+
+Focused Layer 2 suite
+=====================
+Command: python -m pytest -q tests/test_canonical_layer2_budget.py tests/test_canonical_layer2_budget_reuse.py tests/test_canonical_layer2_budget_shards.py tests/test_canonical_layer2_controller.py tests/test_canonical_layer2_auto_repair.py tests/test_canonical_layer2_controller_payload_cache.py tests/test_canonical_layer2_runtime_authorization.py tests/test_layer2_payload_cache_reuse.py tests/test_layer2_concurrency_experiment.py
+Result: passed
+Tests passed: 99; subtests passed: 38; elapsed: 68.26 seconds
+
+Discarded selector attempt
+==========================
+One preliminary expanded command named a nonexistent tests/test_layer2_api_concurrency.py file. Pytest exited before collection with no tests run. The corrected focused suite above used tests/test_layer2_concurrency_experiment.py and passed.
+
+Scope boundary
+==============
+No OpenAI provider call, production worker retry, candidate generation, deployment, device check or venue acceptance was performed by this test run.

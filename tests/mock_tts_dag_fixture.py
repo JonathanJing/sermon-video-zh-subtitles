@@ -26,9 +26,11 @@ def resume_in_clean_process(payload_path):
     import importlib
     import json
     from pathlib import Path
-    from scripts import sermon_accounting as accounting
+    from scripts import tongxing_host  # noqa: F401  binds the production package ports
+    from tongxing_production.observability import accounting
     from scripts import sermon_bounded_business_callbacks as offline
-    from scripts import sermon_review_contracts as c
+    from scripts import tongxing_host  # noqa: F401  binds the production package ports
+    from tongxing_production.review import contracts as c
     from scripts.sermon_diagnostic_dag_session import DiagnosticSession
     value = json.loads(Path(payload_path).read_text())
     expected = value['continuation']['executionIdentity']

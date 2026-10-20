@@ -1,7 +1,9 @@
 """Focused integration regressions identified in final adapter audit."""
 import json
 from unittest.mock import patch
-from scripts import sermon_unified_study as study
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from scripts import sermon_unified  # noqa: F401  binds the orchestration these stages compose
+from tongxing_production.workflows.prepared import study
 from scripts.sermon_unified import contracts as c
 
 

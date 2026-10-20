@@ -16,7 +16,7 @@ if __package__ in (None, ""):
     sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
 try:
-    from scripts import firebase_dev_four_layer_bucket_dry_run as dry
+    from tools.ops import firebase_dev_four_layer_bucket_dry_run as dry
 except ImportError:
     import firebase_dev_four_layer_bucket_dry_run as dry
 

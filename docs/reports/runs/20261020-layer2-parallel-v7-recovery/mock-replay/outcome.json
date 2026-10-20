@@ -1,0 +1,12 @@
+{
+  "schemaVersion": "layer2-parallel-v7-mock-replay-outcome-v1",
+  "deliveryType": "test",
+  "status": "completed",
+  "code": "claude/lucid-kepler-ccb4a5 46615b1e (PR #1193)",
+  "startedAt": "2026-10-20T16:04:20Z",
+  "endedAt": "2026-10-20T16:08:44Z",
+  "exitCode": 0,
+  "providerCalls": 0,
+  "humanApproval": false,
+  "releaseEligible": false
+}

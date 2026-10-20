@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261018-ko-r5-plugin-migration-preflight-failure",
+  "runs": [
+    {
+      "label": "20261018-ko-r5-plugin-migration-preflight-failure",
+      "source": "~/.codex/worktrees/layer2-source-bound-number-fixes/sermon-video-zh-subtitles/artifacts/test-runs/20261018-ko-r5-plugin-migration-preflight-failure",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "20261018-ko-r5-plugin-migration-preflight-failure",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 1170,
+      "truncated": false,
+      "sha256": "12458e22d0b046b00b91ec22735f87e736a555f45429dc03a0b46c8291c566e1",
+      "redactions": {}
+    },
+    {
+      "run": "20261018-ko-r5-plugin-migration-preflight-failure",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 1176,
+      "truncated": false,
+      "sha256": "c24162368c4b0b120989a28c3a44bfe78217ea8ec3090b711f1f553c0a1b8b27",
+      "redactions": {
+        "secret_field": 1
+      }
+    },
+    {
+      "run": "20261018-ko-r5-plugin-migration-preflight-failure",
+      "path": "targeted.log",
+      "kind": "log",
+      "bytes": 770,
+      "truncated": false,
+      "sha256": "b129598f534f4922af5c028a2d930c2b7801064cfae6804aea066a50c8bc2b74",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

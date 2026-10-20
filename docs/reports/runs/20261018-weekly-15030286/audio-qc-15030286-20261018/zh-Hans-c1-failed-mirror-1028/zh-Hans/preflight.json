@@ -1,0 +1,14 @@
+{
+  "locale": "zh-Hans",
+  "paths": {
+    "job": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/weekend-live/layer3-15030286-20261018/zh-Hans/spark-zh-Hans-c1/speech-job/job.json",
+    "package": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/weekend-live/layer3-15030286-20261018/zh-Hans/audio-package-c1.json"
+  },
+  "problems": [
+    "speech job input englishSourcePackage is missing or changed",
+    "speech job input anchorManifest is missing or changed",
+    "speech job input targetLanguageCandidate is missing or changed",
+    "speech job input targetLanguagePolicy is missing or changed",
+    "speech job input textReleaseBasis is missing or changed"
+  ]
+}

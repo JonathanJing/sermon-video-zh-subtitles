@@ -1,0 +1,18 @@
+{
+  "schemaVersion": "local-test-outcome-v1",
+  "status": "passed_with_load_flakes",
+  "exitCode": 1,
+  "startedAt": "2026-10-19T19:40:00+00:00",
+  "endedAt": "2026-10-19T21:10:00+00:00",
+  "scope": "Facade-removal batch C5 (PR #1157): 7 Layer 3 audio scripts/ facades deleted; importers repointed to tongxing_production.audio; Spark compaction container command and clip E2E argv moved to tools/ops/run.py. Full unittest suite in 10 parallel shards, pytest-style files, section 5.5 test-ID inventory, Appendix A survey, identity check, git diff --check.",
+  "knownPreexistingFailures": [
+    "tests/test_codex_shared_pool_transport.py::test_busy_before_started_is_proven_no_dispatch (also fails on clean dev)"
+  ],
+  "environmentGaps": [
+    "scripts/worktree_venv.py does not install services/api, so test_backend_app and test_cloud_run_jobs failed to import tongxing_api; they pass after pip install -e ./services/api"
+  ],
+  "flakes": [
+    "test_layer2_large_fan_in 65/129-group: utc_clock_discontinuity diagnostics at host load average ~220; also recorded in the A+B and D-window reports",
+    "test_sermon_unified_cli test_100_transitions_with_persistent_intents: handoff p95 2.19 s > 2 s under the same load"
+  ]
+}

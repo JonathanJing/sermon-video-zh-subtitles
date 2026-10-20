@@ -1,16 +1,9 @@
 import unittest
 
-from scripts.verify_clip_review_timeline import verify
-from tools.ops import verify_clip_review_timeline as implementation
+from tools.ops.verify_clip_review_timeline import verify
 
 
 class ClipReviewTimelineTests(unittest.TestCase):
-    def test_legacy_import_is_implementation_module(self):
-        import scripts.verify_clip_review_timeline as legacy
-
-        self.assertIs(legacy, implementation)
-        self.assertIs(verify, implementation.verify)
-
     def setUp(self):
         self.anchor = {"sourceUnits": [
             {"sourceUnitId": "block-09-u001", "start": 320.16, "end": 327.28},

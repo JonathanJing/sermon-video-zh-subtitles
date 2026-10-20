@@ -1,0 +1,17 @@
+{
+  "schemaVersion": "local-test-outcome-v1",
+  "status": "passed",
+  "exitCode": 0,
+  "startedAt": "2026-10-20T15:20:00+00:00",
+  "endedAt": "2026-10-20T20:40:00+00:00",
+  "scope": "scripts/ remaining migration batch N4 (PR #1212): 15 of 24 diagnostic/observability files moved into the production package (observability/, orchestration/, compute/, workflows/diagnostic/) and tools/ops/, 10 facades; 9 window-bound. Pre-merge 197 affected test files in 6 parallel chunks; post-merge 49 files in 4 chunks on dev@123d592a.",
+  "knownPreexistingFailures": [
+    "tests/test_codex_shared_pool_transport.py::test_busy_before_started_is_proven_no_dispatch",
+    "tests/test_sermon_unified_parallel.py::ParallelOwnerTests::test_100_transitions_with_persistent_intents",
+    "tests/test_telemetry_008.py::DispatchObservationTests::test_cold_isolated_preload_then_actual_profile_stage_preserves_code_identity"
+  ],
+  "loadSensitive": [
+    "tests/test_sermon_fresh_full_dag.py::FreshFullDAGComponents::test_confirmed_failed_unit_retry_reuses_successful_neighbor",
+    "tests/test_sermon_mock_tts_dag.py::MockTTSDAGComponents::test_known_worker_failure_then_explicit_retry_keeps_successful_neighbor"
+  ]
+}

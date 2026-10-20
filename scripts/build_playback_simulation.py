@@ -17,7 +17,7 @@ import importlib.util
 import sys
 
 
-POC_SCRIPT = Path(__file__).with_name("offline_live_sermon_subtitles.py")
+POC_SCRIPT = Path(__file__).resolve().parents[1] / "tools" / "ops" / "offline_live_sermon_subtitles.py"
 SCRIPTURE_SCRIPT = Path(__file__).with_name("build_scripture_index.py")
 REPO_ROOT = Path(__file__).resolve().parents[1]
 SECRET_RESOURCE_RE = re.compile(

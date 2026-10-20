@@ -1,7 +1,8 @@
 import copy
 import unittest
 
-from scripts.sermon_model_call_report import report
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.observability.model_call_report import report
 
 
 def event(kind, ident='a', run='r', **extra):
@@ -31,7 +32,7 @@ def local(status, ident):
 
 
 def codex(**overrides):
-    from scripts.codex_credit_usage import estimate_credit_usage
+    from tongxing_production.observability.codex_credit_usage import estimate_credit_usage
     usage = dict(inputTokens=1000, cachedInputTokens=400, outputTokens=200,
                  totalTokens=1200, reasoningTokens=75)
     fields = dict(schemaVersion='sermon-model-call-observation-v2', model='gpt-6.1-sol',
@@ -254,7 +255,7 @@ class ModelCallReportTests(unittest.TestCase):
         self.assertEqual(result['creditUsage']['unknownCallCount'], 1)
 
     def test_codex_requested_tier_changed_mid_call_is_conflict(self):
-        from scripts.codex_credit_usage import estimate_credit_usage
+        from tongxing_production.observability.codex_credit_usage import estimate_credit_usage
         finished = codex(); started = generic(**{
             **finished['fields'], 'phase': 'started', 'status': 'started', 'usage': {},
             'elapsedSeconds': None, 'finishedAt': None, 'creditUsage': estimate_credit_usage(

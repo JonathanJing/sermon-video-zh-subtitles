@@ -6,7 +6,8 @@ from pathlib import Path
 
 from jsonschema import Draft202012Validator, FormatChecker
 
-from scripts import build_multilingual_catalog as MODULE
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.adapters.legacy import build_multilingual_catalog as MODULE
 
 
 ROOT = Path(__file__).resolve().parents[1]

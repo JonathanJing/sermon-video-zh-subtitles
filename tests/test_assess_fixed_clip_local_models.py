@@ -1,6 +1,8 @@
 import copy
 import unittest
-from scripts.experiments.assess_fixed_clip_local_models import assess_rows
+from tests import experiment_modules
+
+assess_rows = experiment_modules.line_module("experiments/spark-diagnostic-audio/assess_fixed_clip_local_models.py").assess_rows
 
 
 class AssessmentTests(unittest.TestCase):

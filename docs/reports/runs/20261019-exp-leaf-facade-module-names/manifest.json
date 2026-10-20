@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261019-exp-leaf-facade-module-names",
+  "runs": [
+    {
+      "label": "exp-leaf-facade-module-names-20261019",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.claude/worktrees/practical-boyd-f19465/artifacts/test-runs/exp-leaf-facade-module-names-20261019",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "exp-leaf-facade-module-names-20261019",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 221,
+      "truncated": false,
+      "sha256": "e581cf2d6a2351916d4feca44a89f71bd8cf8ec8fc2264f34859e15e1c60ea7f",
+      "redactions": {}
+    },
+    {
+      "run": "exp-leaf-facade-module-names-20261019",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 786,
+      "truncated": false,
+      "sha256": "7ae6494b846970169631efe96be888ede54600ef7865b8192658e63b33cc4cf1",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

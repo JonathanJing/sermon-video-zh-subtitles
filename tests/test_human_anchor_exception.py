@@ -4,7 +4,8 @@ from pathlib import Path
 import tempfile
 import unittest
 
-from scripts import build_target_language_audio_package as subject
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.audio import package as subject
 
 
 class AnchorExceptionTests(unittest.TestCase):

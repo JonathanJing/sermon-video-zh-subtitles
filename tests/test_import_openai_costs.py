@@ -9,8 +9,8 @@ import unittest
 
 from jsonschema import Draft202012Validator
 
-from scripts import import_openai_costs as importer
-from scripts import sermon_cost_isolation as costs
+from tools.ops import import_openai_costs as importer
+from tongxing_production.observability import cost_isolation as costs
 from tests.test_sermon_cost_isolation import config, attempts, attempt
 
 

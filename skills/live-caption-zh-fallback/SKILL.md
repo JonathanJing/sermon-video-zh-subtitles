@@ -14,7 +14,7 @@ Run the commands from the repository root. Infer routine defaults and reuse know
 Inspect existing reports and artifacts before acquiring media again. For a new source:
 
 ```bash
-python3 scripts/offline_live_sermon_subtitles.py --live-url 'LIVE_OR_ARCHIVE_URL' \
+python3 tools/ops/offline_live_sermon_subtitles.py --live-url 'LIVE_OR_ARCHIVE_URL' \
   --out-dir 'artifacts/offline-live-sermon-poc/DATE-SOURCE_ID'
 ```
 
@@ -34,7 +34,7 @@ For a requested legacy playback preview, reuse the verified report and its exist
 python3 scripts/build_playback_simulation.py \
   --report 'artifacts/offline-live-sermon-poc/DATE-SOURCE_ID/report.json' \
   --out web/playback-simulation.generated.js
-python3 scripts/translate_playback_with_openai.py \
+python3 tools/ops/translate_playback_with_openai.py \
   --input web/playback-simulation.generated.js \
   --out web/playback-simulation.generated.js \
   --api-key-secret projects/PROJECT_ID/secrets/SECRET_ID/versions/latest
@@ -46,7 +46,7 @@ Open the local page for requested UI/timing review. Preserve the public AI-assis
 
 ## Optional publication
 
-Publish already verified files with the existing artifact uploader (`scripts/upload_file_to_gcs.py --help`) to the authorized destination. `prepare_live_link_playback.py --gcs-bucket BUCKET --gcs-prefix runs/DATE/ID` is for runs that still need extraction; `--gcs-dry-run` previews uploads but still performs extraction/build. Reuse an already approved destination and credential route. Ask only if publication itself lacks authorization or its destination is unresolved.
+Publish already verified files with the existing artifact uploader (`tools/ops/upload_file_to_gcs.py --help`) to the authorized destination. `prepare_live_link_playback.py --gcs-bucket BUCKET --gcs-prefix runs/DATE/ID` is for runs that still need extraction; `--gcs-dry-run` previews uploads but still performs extraction/build. Reuse an already approved destination and credential route. Ask only if publication itself lacks authorization or its destination is unresolved.
 
 Before public delivery, check generated browser files/manifests for raw secrets, private identifiers and Secret Manager resource names. Verify the actual remote result; local generation or a dry-run is not publication. Preserve source access restrictions and avoid cookie exports.
 

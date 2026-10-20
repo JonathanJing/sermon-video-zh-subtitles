@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261018-g1-mock-audio-qc-final-dev",
+  "runs": [
+    {
+      "label": "g1-mock-audio-qc-final-dev",
+      "source": "/private/tmp/g1-baseline-20261017/artifacts/local-runs/g1-mock-audio-qc-final-dev",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "g1-mock-audio-qc-final-dev",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 145,
+      "truncated": false,
+      "sha256": "0a3d1b9f9089999a150a9268d467db0633a21a64f0f0a58ffb94241c3f664029",
+      "redactions": {}
+    },
+    {
+      "run": "g1-mock-audio-qc-final-dev",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 400,
+      "truncated": false,
+      "sha256": "3503b66bb88445263cef8b5ca53774840d6f11dbb9fa76b09609ad913579c9d8",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

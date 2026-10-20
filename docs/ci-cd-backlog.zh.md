@@ -13,7 +13,7 @@
 | 后端 API 与 producer 代码 | 反馈／会话 API、权限、Layer 1–4 producer 或共享合同改变的 PR | 部署实际改变的服务并验证授权、写入／读回和失败路径；每周生产入口仍消费经审候选，不把代码合并当作内容发布。 |
 | 每周证道内容 | producer 变动时跑快速模拟流程；每次周产检查来源、包、hash、审核和文件清单 | 按当周发布计划，将已批准包追加到 Dev／Production；记录线上资产、Web、同版本 iOS 设备及现场的各自结果。 |
 
-当前 [Python CI](../.github/workflows/python-tests.yml) 已包含 Web 和反馈 API 测试，[iOS CI](../.github/workflows/tongxing-ios.yml) 会按原生／合同改动选择 Swift 或模拟器检查；固定 `unittest`／`native-client` 检查仍须返回结果。[分支与环境流程](development-branch-and-firebase-environments.zh.md)规定 `dev`／`main` 分离，`main` push 不自动部署，约 700 MB 的内容候选使用本机受控 CD。已有 [`run_multilingual_cd.py`](../scripts/run_multilingual_cd.py) 要求显式 `--execute`、代码和候选 hash，但其当前 schema 范围不能直接证明新 v3 周更已发布。
+当前 [Python CI](../.github/workflows/python-tests.yml) 已包含 Web 和反馈 API 测试，[iOS CI](../.github/workflows/tongxing-ios.yml) 会按原生／合同改动选择 Swift 或模拟器检查；固定 `unittest`／`native-client` 检查仍须返回结果。[分支与环境流程](development-branch-and-firebase-environments.zh.md)规定 `dev`／`main` 分离，`main` push 不自动部署，约 700 MB 的内容候选使用本机受控 CD。已有 [`run_multilingual_cd.py`](../tools/ops/run_multilingual_cd.py) 要求显式 `--execute`、代码和候选 hash，但其当前 schema 范围不能直接证明新 v3 周更已发布。
 
 ## P0：下一次完整周产需要的交付边界
 
@@ -41,7 +41,7 @@
 
 本批只修正测试选择，不修改 draft 的 macOS 跳过策略、required check 名称、客户端协议或发布行为。`native-client` 成功且 `contract-validation`／`ios-validation` skipped 仍不是 Swift／模拟器通过。未知路径走全检查的策略和真实设备验收仍待后续，不能据本批关闭矩阵全部验收。随后补充的 [共用 Release v2 夹具](shared-client-release-contracts.zh.md) 以同一 18 个场景验证 Web／原生并修正入站证据检查；catalog／text-only 等其他共用 fixture 尚未齐备，E6 仍需客户端兼容性审核。
 
-2026-10-01 CI 减负补充：Python 的选择范围由 [路径分类器](../scripts/ci_change_scope.py) 给出，固定 `unittest` 汇总须确认分类成功、对应检查成功且其他检查按计划跳过。错误 scope、失败或取消均不能通过。
+2026-10-01 CI 减负补充：Python 的选择范围由 [路径分类器](../tools/development/ci_change_scope.py) 给出，固定 `unittest` 汇总须确认分类成功、对应检查成功且其他检查按计划跳过。错误 scope、失败或取消均不能通过。
 
 | 改动范围 | Python workflow |
 |---|---|
@@ -58,7 +58,7 @@
 [模块权重](../.github/unittest-module-timings.json) 自 2026-10-07 起为 schema v2（新增 `slowCases`；runner 仍可读取 v1 文件，按无慢用例处理），改用三次成功的 hosted Ubuntu／Python 3.12 报告中位数，来源 run URL 和提交保存在 `source`。仅用来估算分片；不以本机耗时冒充 CI 实测。runner 根据当前用例数调整已有模块权重，未测模块按已测平均每例成本估算，并在日志提示。2026-10-07 起分片单位从模块改为单个用例，并由两 shard 改为四 shard：单个慢模块不再把一个 shard 拖到 13 分钟以上，各 shard 内保持发现顺序。同日再改为八 shard：四 shard 时 hosted 根套件合计约 62 分钟、最慢 shard 约 18 分钟，每个 shard 准备步骤不到 1 分钟，八 shard 预计约 9 到 10 分钟；最慢单例约 4 分钟以上，再加 shard 收益有限；用例集合、required `unittest` 汇总与超时不变。报告新增 `slowCases`（单例不少于 5 秒的用例耗时），权重文件同名字段让慢用例按自身耗时分配，其余用例分摊模块剩余耗时。首批 `slowCases` 来自本地 Linux 四 shard 通过的运行（当时无法下载 hosted artifact），刷新时以成功 hosted 报告的 `slowCases` 替换。测试结构明显改变或新增模块较多时，从成功 run 下载全部八份 `unittest-timings-root-*` artifact 后刷新权重：同一模块分散在多个 shard，须把各份的模块 `seconds`／`tests` 相加，并合并各份 `slowCases`；不得以失败或不完整分片更新。用以下命令检查完整根套件并保存新计时：
 
 ```sh
-python scripts/run_unittest_ci.py --weights .github/unittest-module-timings.json --report artifacts/ci/unittest-local.json
+python tools/development/run_unittest_ci.py --weights .github/unittest-module-timings.json --report artifacts/ci/unittest-local.json
 ```
 
 测试准备优化保留每例独立文件、真实 validator 与 ledger。基础 scope 检查单独执行，严格交付 fixture 直接构造所需上游，避免重复准备随后丢弃的 legacy chain；完整集成与失败恢复测试继续执行。

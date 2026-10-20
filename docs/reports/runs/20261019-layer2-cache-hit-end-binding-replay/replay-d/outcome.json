@@ -1,0 +1,14 @@
+{
+  "schemaVersion": "layer2-cache-hit-replay-outcome-v1",
+  "deliveryType": "test",
+  "status": "stopped_at_first_cache_miss",
+  "exitCode": 1,
+  "code": "claude/layer2-cache-hit-end-binding 49f087c5 (option D)",
+  "startedAt": "2026-10-19T21:33:02+00:00",
+  "endedAt": "2026-10-19T21:33:04+00:00",
+  "error": "RuntimeError: cache_only_replay_refuses_dispatch",
+  "providerCalls": 0,
+  "dispatchRefused": 1,
+  "humanApproval": false,
+  "releaseEligible": false
+}

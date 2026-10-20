@@ -6,8 +6,9 @@ import threading
 import unittest
 from pathlib import Path
 
-from scripts import sermon_source_budget as subject
-from scripts import sermon_workflow_jobs as jobs
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.source import budget as subject
+from tongxing_production.orchestration import jobs
 
 
 class SourceBudgetConcurrencyTests(unittest.TestCase):
@@ -25,7 +26,7 @@ class SourceBudgetConcurrencyTests(unittest.TestCase):
             bounds=self.bounds, request=b'fixture', api_key='', content_type='fixture', endpoint='fixture')
 
     def judge_payload(self):
-        from scripts import judge_english_source_for_translation as judge
+        from tongxing_production.source import english_source_judge as judge
         with subject.judge_limits(self.authority['requestLimits']):
             return judge._payload([], manifest_hash='b' * 64, anchor_policy={},
                                   model='gpt-6.1-sol', effort='high')

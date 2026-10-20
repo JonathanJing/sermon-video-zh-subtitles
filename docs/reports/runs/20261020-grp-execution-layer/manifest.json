@@ -1,0 +1,45 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261020-grp-execution-layer",
+  "runs": [
+    {
+      "label": "20261020-grp-execution-layer",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.agents/worktrees/codex/group-pipeline-orchestration/artifacts/local-runs/20261020-grp-execution-layer",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "20261020-grp-execution-layer",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 913,
+      "truncated": false,
+      "sha256": "4bbd9f0d1b585394104c100f50e2121239d0b72315b5e047d4627e2428585b4d",
+      "redactions": {}
+    },
+    {
+      "run": "20261020-grp-execution-layer",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 829,
+      "truncated": false,
+      "sha256": "c8257634450bf7f9deecf42e8a39e40428617ae33e229fe48eac562ccd871649",
+      "redactions": {}
+    },
+    {
+      "run": "20261020-grp-execution-layer",
+      "path": "timings.tsv",
+      "kind": "whole",
+      "bytes": 95,
+      "truncated": false,
+      "sha256": "1d0206de6e502984c2b1f0fd0ed1936a1350f6e926546fedf1124593192291f5",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261019-exp-leaf-voice-sentence-tts",
+  "runs": [
+    {
+      "label": "exp-leaf-voice-sentence-tts-20261019",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.claude/worktrees/practical-boyd-f19465/artifacts/test-runs/exp-leaf-voice-sentence-tts-20261019",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "exp-leaf-voice-sentence-tts-20261019",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 236,
+      "truncated": false,
+      "sha256": "ee64a4d406dc459157c88b53225395340e1be2e56698916e59e05c314c386d48",
+      "redactions": {}
+    },
+    {
+      "run": "exp-leaf-voice-sentence-tts-20261019",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 740,
+      "truncated": false,
+      "sha256": "e46aa6de2d70d9a9bc81bb24cd3799c8da94825a82fbfcc254052558d7d86bc6",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

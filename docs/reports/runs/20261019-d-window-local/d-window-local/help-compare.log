@@ -1,0 +1,23 @@
+scripts/auto_qc_seeded_errors.py -> run.py review.seeded_errors: old_exit=0 new_exit=0 help_same=True
+scripts/canonical_layer2_controller.py -> run.py text.controller: old_exit=0 new_exit=0 help_same=True
+implementation_freeze: no main() (not a CLI)
+machine_qc_audio_transports: no main() (not a CLI)
+machine_qc_budget_authorization: <redacted> main() (not a CLI)
+scripts/machine_quality_release_basis.py -> run.py review.release_basis: old_exit=0 new_exit=0 help_same=True
+scripts/machine_quality_waiver.py -> run.py review.waiver: old_exit=0 new_exit=0 help_same=True
+machine_repair_ledger: no main() (not a CLI)
+scripts/render_formal_target_language_speech.py -> run.py audio.renderer: old_exit=0 new_exit=0 help_same=True
+scripts/render_speculative_target_language_speech.py -> run.py audio.speculative: old_exit=0 new_exit=0 help_same=True
+scripts/run_machine_qc_audio_test.py -> run.py review.qc_audio_run: old_exit=0 new_exit=0 help_same=True
+scripts/run_machine_qc_clip_test.py -> run.py review.qc_text_run: old_exit=0 new_exit=0 help_same=True
+scripts/screen_target_language_audio_units.py -> run.py audio.screening: old_exit=0 new_exit=0 help_same=True
+scripts/sermon_app_delivery_workflow.py -> run.py delivery.app_workflow: old_exit=0 new_exit=0 help_same=True
+sermon_openai_runtime: no main() (not a CLI)
+scripts/sermon_sentence_interpretation.py -> run.py source.sentence_interpretation: old_exit=0 new_exit=0 help_same=False (old facade printed nothing: no __main__ block)
+sermon_source_budget: no main() (not a CLI)
+sermon_transcription_request: no main() (not a CLI)
+scripts/sermon_workflow_jobs.py -> run.py orchestration.jobs: old_exit=0 new_exit=0 help_same=True
+scripts/spoken_condensation.py -> run.py review.condensation: old_exit=0 new_exit=0 help_same=True
+scripts/target_audio_auto_qc.py -> run.py review.audio_qc: old_exit=0 new_exit=0 help_same=True
+scripts/target_audio_predicted_schedule.py -> run.py audio.predicted_schedule: old_exit=0 new_exit=0 help_same=True
+target_text_auto_qc: no main() (not a CLI)

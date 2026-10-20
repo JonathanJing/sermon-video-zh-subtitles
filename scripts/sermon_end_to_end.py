@@ -46,7 +46,8 @@ def _recommend(action, human=False):
 
 
 def _inspect_job(root, job_id, *, read_only=False):
-    from scripts.sermon_workflow_jobs import inspect_job, peek_job
+    from scripts import tongxing_host  # noqa: F401  binds the production package ports
+    from tongxing_production.orchestration.jobs import inspect_job, peek_job
     try:
         return (peek_job if read_only else inspect_job)(root, job_id)
     except FileNotFoundError:
@@ -137,14 +138,16 @@ def snapshot(config, *, read_only=False):
 
 
 def state_revision(observed):
-    from scripts.sermon_workflow_jobs import _digest
+    from scripts import tongxing_host  # noqa: F401  binds the production package ports
+    from tongxing_production.orchestration.jobs import _digest
     return _digest({key: value for key, value in observed.items() if key != 'checkedAt'})
 
 
 def start_action(config, action, *, timeout_seconds=21600, expected_config_sha=None,
                  expected_state_revision=None):
     if getattr(config, 'app_delivery_config', None) is not None:
-        from scripts import sermon_app_delivery_workflow as app_workflow
+        from scripts import tongxing_host  # noqa: F401  binds the production package ports
+        from tongxing_production.delivery import app_workflow
         if action != app_workflow.ACTION:
             return {'status': 'blocked'}
         current = snapshot(config, read_only=True)
@@ -159,7 +162,8 @@ def start_action(config, action, *, timeout_seconds=21600, expected_config_sha=N
     path = configuration(config)
     if path is None:
         return {'status': 'blocked'}
-    from scripts.sermon_workflow_jobs import _lock, _digest
+    from scripts import tongxing_host  # noqa: F401  binds the production package ports
+    from tongxing_production.orchestration.jobs import _lock, _digest
     # Serialize admission across configurations, and recheck evidence under lock.
     week_root = job_root(config, path).parent
     with _lock(week_root, _digest({'purpose': 'release-admission'})) as (_, _, held):
@@ -197,7 +201,8 @@ def _start_action_locked(config, action, *, timeout_seconds=21600, expected_conf
     if not source_root:
         raise ValueError('Current production source run is required for release execution')
     command.extend(['--expected-source-run-root', str(Path(source_root).resolve())])
-    from scripts.sermon_workflow_jobs import start_job, _digest, _persist
+    from scripts import tongxing_host  # noqa: F401  binds the production package ports
+    from tongxing_production.orchestration.jobs import start_job, _digest, _persist
     if current.get('releaseWorkflow') is not None:
         command.extend(['--expected-release-revision', _digest(current['releaseWorkflow'])])
     root.mkdir(parents=True, exist_ok=True, mode=0o700)

@@ -1,0 +1,45 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261019-tools-ops-leaves-b3-local",
+  "runs": [
+    {
+      "label": "tools-ops-leaves-b3-local",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.claude/worktrees/opus-haiku-translation-review-4a3b7c/artifacts/tools-ops-leaves-b3-local",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "tools-ops-leaves-b3-local",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 427,
+      "truncated": false,
+      "sha256": "b4599f2f08c50e1dbe5cc8cc96ae2d2870e5945cb203211a2bac6f718805a68a",
+      "redactions": {}
+    },
+    {
+      "run": "tools-ops-leaves-b3-local",
+      "path": "pytest.log",
+      "kind": "log",
+      "bytes": 156,
+      "truncated": false,
+      "sha256": "497023b0820670a703854616325e998fe409587b2571d4e7a3a36c5cb43a76a2",
+      "redactions": {}
+    },
+    {
+      "run": "tools-ops-leaves-b3-local",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 210,
+      "truncated": false,
+      "sha256": "8ceceb2e811ceb83bc774d844f16ab244dfd07001dfaaf4a951781c204f44047",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

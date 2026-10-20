@@ -1,0 +1,13 @@
+Group plan (read only, 0 model calls, nothing dispatched)
+
+ko: 402 groups; operator-listed 3
+  T translation          fresh 399, stale 3  [operator_directive 3]
+  R independent_review   fresh 399, stale 3  [upstream_will_change 3]
+  P language_plugin      stale 402  [stage_implementation_changed 402, upstream_will_change 3]
+  Q text_qc              stale 402  [stage_implementation_changed 402, upstream_will_change 3]
+  C spoken_condensation  not_applicable 402  [text_qc_mode 402]
+  S speech_synthesis     fresh 399, stale 3  [upstream_will_change 3]
+  A asr_back_check       stale 402  [stage_implementation_changed 402, upstream_will_change 3]
+  U unit_audio_qc        stale 402  [stage_implementation_changed 402, upstream_will_change 405]
+  stale or missing paid-stage group steps: 408
+  budget upper bound (week): layer2 $1.47 of $5.00, qc $29.95 of $30.00, secondaryAsr $0.16 of $20.25; groups reserved 316, repair_spend_cap 86, repair_limit_reached 0; reused at $0: 0

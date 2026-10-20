@@ -15,7 +15,7 @@ This repository started with feasibility analysis. The current product goal is t
 
 ## Proposed Modules
 
-- `scripts/live_source_monitor.py`
+- `packages/production/src/tongxing_production/workflows/dual_pdf/live_source_monitor.py`
   - Start every Sunday at 08:20 PT for the 8:30 service.
   - Check Mariners Online, YouTube streams, and manually configured fallback URLs.
   - Fall forward to the 10:00 service if the 8:30 source is missing or not confirmed as the same sermon.
@@ -54,7 +54,7 @@ This repository started with feasibility analysis. The current product goal is t
   - Extract audio and run ASR when captions are missing.
   - Translate, align, enrich scripture references, generate notes, and export VTT/SRT.
 
-- `scripts/offline_live_sermon_subtitles.py`
+- `tools/ops/offline_live_sermon_subtitles.py`
   - POC for accepting a YouTube live archive URL.
   - Discover a same-title edited sermon VOD when the live archive has no captions.
   - Infer sermon start from `live_duration - sermon_duration` unless manually overridden.
@@ -65,7 +65,7 @@ This repository started with feasibility analysis. The current product goal is t
   - Let the PWA simulate a live archive playback timeline from the real live link output.
   - Preserve English source captions as sidecar text when Chinese captions are not yet generated, so the next model-integration step can be tested without changing the playback contract.
 
-- `scripts/prepare_live_link_playback.py`
+- `tools/ops/prepare_live_link_playback.py`
   - Operator-facing POC command: accept a YouTube live archive URL and prepare the browser playback file in one step.
   - Run the offline-live extractor, build merged playback segments, and emit `apps/operator-web/playback-simulation.generated.js`.
   - Optionally publish generated reports, subtitles, playback data, and cloud manifest to a GCS bucket.
@@ -82,7 +82,7 @@ For Mariners Church, the public YouTube VOD source should be treated as post-eve
 
 ## Current POC Loop
 
-1. Run `scripts/prepare_live_link_playback.py --live-url <youtube-live-archive-url>`.
+1. Run `tools/ops/prepare_live_link_playback.py --live-url <youtube-live-archive-url>`.
 2. Confirm the inferred sermon start and generated live-aligned VTT/SRT in `artifacts/offline-live-sermon-poc/`.
 3. For production-style runs, add `--gcs-bucket <bucket>` and `--api-key-secret projects/<project>/secrets/<name>/versions/latest`.
 4. Open the PWA and click `模拟播放`.

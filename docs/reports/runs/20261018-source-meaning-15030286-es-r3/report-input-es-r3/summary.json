@@ -1,0 +1,31 @@
+{
+  "budgetAuthoritySha256": "752f8c30c1c548cd9ba3d4fb2efb084ebadf880db275a46f68131d9ea12d7ed9",
+  "budgetLedgerSha256": "853e05ac39ac48cff7005b81eb43e87d240958ff4504fd2d10ff57a30ac67e44",
+  "contentAndMediaOmitted": true,
+  "costStatuses": {
+    "estimated_upper_bound": 4,
+    "unknown": 4
+  },
+  "humanApproval": false,
+  "invoiceVerified": false,
+  "knownEstimatedCostMicrousd": 16498,
+  "noTranscriptCorrection": true,
+  "providerRequestCount": 8,
+  "providerRequestStatuses": {
+    "returned": 8
+  },
+  "receiptFileSha256": "ea65fc15de8bf5d2c9c337a10de535a5f292da3494f8ab7dc3b8384166d81190",
+  "reservedCostMicrousd": 226880,
+  "schemaVersion": "source-meaning-run-summary-v1",
+  "scope": "machine source-meaning adjudication",
+  "sourceBindings": {
+    "anchor.json": "2587ffdd446ea3c1feee26980fc2bb6f22da3bfea12c614bbf45f036ffb1d1fb",
+    "source.json": "137fed8486da0ec4ea22258035a230f30172be43a016faa4c382b410f830e3a9"
+  },
+  "unitDecisions": {
+    "chunk-0000-u024": "undetermined",
+    "chunk-0000-u025": "undetermined",
+    "chunk-0003-u001": "transcript_confirmed",
+    "chunk-0009-u004": "transcript_confirmed"
+  }
+}

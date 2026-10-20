@@ -15,8 +15,9 @@ import urllib.request
 import urllib.response
 import venv
 
-from scripts import sermon_provider_http as http
-from scripts import sermon_provider_error as errors
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.compute import provider_http as http
+from tongxing_production.compute import sermon_provider_error as errors
 
 URL = 'https://api.openai.com/v1/chat/completions'
 TOKEN = 'Bearer synthetic-never-real-key'

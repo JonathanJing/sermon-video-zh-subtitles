@@ -8,7 +8,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from unittest.mock import patch
 
-from scripts import four_layer_progress as tracker
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.observability import progress as tracker
 
 
 class FourLayerProgressTest(unittest.TestCase):

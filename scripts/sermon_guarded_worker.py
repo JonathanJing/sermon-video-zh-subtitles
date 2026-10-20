@@ -1,45 +1,13 @@
-"""POSIX guardian: parent-owned stdin pipe EOF terminates this entire child group."""
-from __future__ import annotations
+"""Transition facade: the implementation lives in tongxing_production.orchestration.guarded_worker.
 
-import os
-import signal
-import subprocess
+Both import paths name one module object, so attribute patches apply to both.
+``python scripts/sermon_guarded_worker.py`` still runs the command; prefer ``tools/ops/run.py orchestration.guarded_worker``.
+Remove once nothing in scripts/ (the production supervisor runs it) uses the old path.
+"""
 import sys
-import threading
 
-
-def watch_owner():
-    try:
-        while os.read(0, 4096):
-            pass
-    except OSError:
-        pass
-    # The supervisor creates this dedicated process group before exec. Never
-    # forward stdin to the workload: it must remain solely an owner-liveness FD.
-    os.killpg(os.getpgrp(), signal.SIGKILL)
-
-
-def main(argv=None):
-    command = list(sys.argv[1:] if argv is None else argv)
-    if command and command[0] == "--":
-        command.pop(0)
-    if not command or os.getpgrp() != os.getpid():
-        print("guarded_worker_requires_command_and_dedicated_process_group", file=sys.stderr)
-        return 2
-    threading.Thread(target=watch_owner, name="supervisor-owner-sentinel", daemon=True).start()
-    try:
-        process = subprocess.Popen(command, stdin=subprocess.DEVNULL)
-        code = process.wait()
-    except OSError:
-        print("guarded_worker_command_start_failed", file=sys.stderr)
-        return 127
-    if code < 0:
-        sig = -code
-        if sig not in {signal.SIGKILL, signal.SIGSTOP}:
-            signal.signal(sig, signal.SIG_DFL)
-        os.kill(os.getpid(), sig)
-    return code
-
+from tongxing_production.orchestration import guarded_worker as _implementation
 
 if __name__ == "__main__":
-    sys.exit(main())
+    raise SystemExit(_implementation.main())
+sys.modules[__name__] = _implementation

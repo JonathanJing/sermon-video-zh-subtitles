@@ -4,14 +4,15 @@ import json
 import unittest
 from pathlib import Path
 
-from scripts import build_english_source_package as english
-from scripts import sermon_sentence_interpretation as anchors
-from scripts import target_language_policy as policies
-from scripts import sermon_accounting as accounting
+from tongxing_production.source import english_source_package as english
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.source import sentence_interpretation as anchors
+from tongxing_production.text import policy as policies
+from tongxing_production.observability import accounting
 from scripts import weekly_pipeline_report as weekly
-from scripts import canonical_layer2_cache_recovery as recovery
-from scripts import canonical_layer2_controller as controller
-from scripts import run_target_language_models as models
+from tongxing_production.text import cache_recovery as recovery
+from tongxing_production.text import controller
+from tongxing_production.text import models
 from tests import test_canonical_layer2_controller as fixtures
 from tests import test_build_english_source_package as source_fixtures
 

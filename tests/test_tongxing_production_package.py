@@ -11,7 +11,8 @@ import sys
 import tempfile
 import unittest
 
-from scripts import sermon_accounting as accounting
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.observability import accounting
 
 ROOT = Path(__file__).resolve().parents[1]
 PACKAGE_SRC = ROOT / "packages/production/src/tongxing_production"
@@ -35,7 +36,11 @@ READS_LOADED_MODULE_FILES = {"observability/accounting.py",
                              # (adapterSha256; codex_layer2 also its resource helper's),
                              # never to locate the checkout (workflows design section 4.1).
                              "compute/transports/claude_layer2.py", "compute/transports/codex_layer2.py",
-                             "compute/transports/openai_layer2.py", "compute/transports/codex_cli.py"}
+                             "compute/transports/openai_layer2.py", "compute/transports/codex_cli.py",
+                             # Diagnostic identity witnesses bind their own bytes (helperSha256), never the checkout.
+                             "workflows/diagnostic/historical_identity.py",
+                             # Checkpoint manifests bind the validator's own bytes (validatorCode, checkpointCode).
+                             "workflows/diagnostic/preview_checkpoint_manifest.py"}
 
 
 def imports_of(path):
@@ -129,11 +134,13 @@ class ProductionPackageTests(unittest.TestCase):
         facades = sorted(path.stem for path in (ROOT / "scripts").glob("*.py")
                          if "sys.modules[__name__] = _implementation" in path.read_text(encoding="utf-8"))
         self.assertTrue(facades)
-        code = ("import sys; sys.path[0] = sys.argv[1]\n"
+        code = ("import sys; from pathlib import Path; sys.path[0] = sys.argv[1]\n"
                 "for name in sys.argv[2:]:\n"
                 "    module = __import__(name)\n"
-                # Operator and development tools live outside the production package.
-                "    assert module.__name__.startswith(('tongxing_production.', 'tools.ops.', 'tools.development.')), (name, module.__name__)\n")
+                # Operator/development tools, experiment facades and research audits live outside the production package.
+                "    target = Path(module.__file__).resolve()\n"
+                "    experiment_root = Path(sys.argv[1]).resolve().parent / 'experiments'\n"
+                "    assert module.__name__.startswith(('tongxing_production.', 'tools.ops.', 'tools.development.')) or target.is_relative_to(experiment_root), (name, module.__name__, str(target))\n")
         environment = {key: value for key, value in os.environ.items() if key != "PYTHONPATH"}
         with tempfile.TemporaryDirectory() as elsewhere:
             result = subprocess.run([sys.executable, "-c", code, str(ROOT / "scripts"), *facades],
@@ -154,13 +161,10 @@ class ProductionPackageTests(unittest.TestCase):
         self.assertIs(sys.modules["scripts.sermon_provider_limits"], implementation)
         self.assertEqual(implementation.SCHEMA, "sermon-openai-chat-request-limits-v1")
 
-    def test_layer2_models_facade_alias_and_editable_path_use_this_checkout(self):
-        from scripts import run_target_language_models as facade
+    def test_layer2_models_alias_and_editable_path_use_this_checkout(self):
         from tongxing_production import path_aliases
         from tongxing_production.text import models as implementation
         expected = ROOT / "packages/production/src/tongxing_production/text/models.py"
-        self.assertIs(facade, implementation)
-        self.assertIs(sys.modules["scripts.run_target_language_models"], implementation)
         self.assertEqual(Path(implementation.__file__).resolve(), expected.resolve())
         self.assertEqual(path_aliases.resolve("scripts/run_target_language_models.py"),
                          "packages/production/src/tongxing_production/text/models.py")
@@ -168,7 +172,7 @@ class ProductionPackageTests(unittest.TestCase):
         environment = {key: value for key, value in os.environ.items() if key != "PYTHONPATH"}
         with tempfile.TemporaryDirectory() as elsewhere:
             result = subprocess.run(
-                [sys.executable, str(ROOT / "scripts/run_target_language_models.py"), "--help"],
+                [sys.executable, str(ROOT / "tools/ops/run.py"), "text.models", "--help"],
                 cwd=elsewhere, env=environment, capture_output=True, text=True, timeout=60)
         self.assertEqual(result.returncode, 0, result.stderr[-2000:])
         self.assertIn("--payload-cache-from", result.stdout)

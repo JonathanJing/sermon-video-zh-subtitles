@@ -12,10 +12,11 @@ import sys
 if __package__ in {None, ''}:
     sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
-from scripts import canonical_layer2_controller as layer2
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.text import controller as layer2
 from scripts import inspect_canonical_packages as packages
-from scripts import layer2_api_concurrency as capacity
-from scripts import sermon_workflow_jobs as jobs
+from tongxing_production.compute import api_concurrency as capacity
+from tongxing_production.orchestration import jobs
 
 SCHEMA = 'sermon-unified-preflight-v1'
 ERRORS = (ValueError, OSError, KeyError, TypeError)

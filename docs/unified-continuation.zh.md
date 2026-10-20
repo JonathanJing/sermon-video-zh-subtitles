@@ -1,6 +1,6 @@
 # 统一生产的受限 continuation recipe
 
-`scripts/sermon_unified_continuation.py` 只负责把已验证的上游产物接到下一份配置和 manifest。它不调用模型、TTS、审核写入器、预算预留或部署，也不修改 owner/state。`ready` 表示下一 revision 的文件准备好了；root owner 仍须重新执行正常 admission，并在没有 active/unknown 操作时用 CAS 切换 revision。
+[`workflows/prepared/continuation.py`](../packages/production/src/tongxing_production/workflows/prepared/continuation.py) 只负责把已验证的上游产物接到下一份配置和 manifest。它不调用模型、TTS、审核写入器、预算预留或部署，也不修改 owner/state。`ready` 表示下一 revision 的文件准备好了；root owner 仍须重新执行正常 admission，并在没有 active/unknown 操作时用 CAS 切换 revision。
 
 ## 冻结与版本
 

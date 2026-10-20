@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261019-exp-leaf-multilingual-prosody-poc",
+  "runs": [
+    {
+      "label": "exp-leaf-multilingual-prosody-poc-20261019",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.claude/worktrees/practical-boyd-f19465/artifacts/test-runs/exp-leaf-multilingual-prosody-poc-20261019",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "exp-leaf-multilingual-prosody-poc-20261019",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 235,
+      "truncated": false,
+      "sha256": "ece1faf3cd831bd4151bbb24cbef0651b14fa6ecfa8d7288d7fb80c4e6ae00d6",
+      "redactions": {}
+    },
+    {
+      "run": "exp-leaf-multilingual-prosody-poc-20261019",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 688,
+      "truncated": false,
+      "sha256": "393f3b7eba41442fe2882082ab5dbe973799cc6b6725e3df4626b822d0369fbc",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

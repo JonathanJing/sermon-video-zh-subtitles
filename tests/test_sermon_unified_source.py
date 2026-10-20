@@ -6,10 +6,11 @@ from pathlib import Path
 from unittest.mock import patch
 import wave
 
-from scripts import sermon_unified_source as subject
-from scripts import sermon_source_budget as budget
-from scripts import judge_english_source_for_translation as judge
-from scripts import sermon_workflow_jobs as jobs
+from tongxing_production.source import unified_stage as subject
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.source import budget
+from tongxing_production.source import english_source_judge as judge
+from tongxing_production.orchestration import jobs
 
 
 class UnifiedSourceTests(unittest.TestCase):
@@ -153,7 +154,7 @@ class UnifiedSourceTests(unittest.TestCase):
         authorization_path.write_text(json.dumps(authorization))
 
     def test_operator_reviewed_text_stops_before_mfa_then_applies_without_new_asr(self):
-        from scripts import sermon_source_text_review as review_module
+        from tongxing_production.source import text_review as review_module
         self.config.update(schemaVersion=subject.SCHEMA_V2, asrWorkers=1, sourceTextReview='review.json')
         self.rebind_budget()
         aligned = []
@@ -268,9 +269,9 @@ class UnifiedSourceTests(unittest.TestCase):
         self.assertFalse((self.root / 'source/english-source-candidate.json').exists())
 
     def test_sol_source_judge_budget_is_bounded_for_api(self):
-        from scripts import sermon_source_budget as budget
-        from scripts import sermon_provider_limits as limits
-        from scripts import judge_english_source_for_translation as judge
+        from tongxing_production.source import budget
+        from tongxing_production.compute import provider_limits as limits
+        from tongxing_production.source import english_source_judge as judge
         request = {'model': 'gpt-6.1-sol', 'reasoning_effort': 'high',
             'messages': [{'role': 'user', 'content': 'synthetic source'}],
             'response_format': {'type': 'json_schema', 'json_schema': {

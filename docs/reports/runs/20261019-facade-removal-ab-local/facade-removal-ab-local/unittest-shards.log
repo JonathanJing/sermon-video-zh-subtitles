@@ -1,0 +1,292 @@
+Estimating 211 unprofiled modules from measured per-case cost
+Shard 1/10: 545 tests from 344 modules
+...................................{"component": "api", "event": "sermon_production_supervisor_triggered", "inlineWorker": true, "loggedAt": "2026-10-19T18:45:08.307843+00:00", "mode": "execute", "severity": "INFO", "sunday": "2026-08-02", "triggerSource": "internal-task"}
+.{"audioSourceKind": "ipad_mic", "component": "api", "event": "realtime_session_created", "loggedAt": "2026-10-19T18:45:08.308097+00:00", "model": "gpt-realtime-translate", "sessionId": "rt_5SsqhHSMz018lrFL", "severity": "INFO", "sunday": "2026-06-28", "targetLanguage": "zh", "triggerSource": "local-realtime-session"}
+.{"component": "api", "event": "realtime_caption_event", "eventType": "input_transcript_delta", "loggedAt": "2026-10-19T18:45:08.308207+00:00", "segmentId": "resp_delta_1", "sessionId": "rt_hhLmit60mo7xw_sX", "severity": "INFO"}
+.............................................{
+  "failures": [
+    "forced_failure"
+  ],
+  "provider": "codex",
+  "status": "needs_revision",
+  "qualityRuleVersion": "sermon-reading-edition-quality-v4",
+  "reviewManifest": {
+    "path": "/var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/tmpcezakzyd/review-manifest.json",
+    "sha256": "a220f2f8145325143a86c5830a6e240dbd507af26f5558c7b0e72e2d787b54cc"
+  },
+  "appliedReviewCorrections": [
+    {
+      "blockId": 45,
+      "field": "en",
+      "reason": "Verified spelling.",
+      "disposition": "applied"
+    }
+  ],
+  "repairedExisting": true
+}
+{"group": "group-0001", "solSeconds": 2.0, "opusSeconds": 1.0}
+{"group": "group-0002", "solSeconds": 2.0, "opusSeconds": 1.0}
+{"freshCalls": {"sol": 2, "opus": 2, "review": 0}, "groups": 2, "targetLocale": "ko"}
+{"group": "group-0001", "solSeconds": 2.0, "opusSeconds": 1.0}
+{"group": "group-0002", "solSeconds": 2.0, "opusSeconds": 1.0}
+{"freshCalls": {"sol": 0, "opus": 0, "review": 0}, "groups": 2, "targetLocale": "ko"}
+.........{"role": "translator", "model": "gpt-6.1-sol", "tier": "fast", "elapsedSeconds": 0.0, "usage": {"input_tokens": 100, "cached_input_tokens": 50, "output_tokens": 20}, "creditUsage": {"schemaVersion": "codex-credit-usage-v1", "status": "estimated", "estimatedCredits": 0.01525, "actualCredits": null, "actualQuotaUsage": null, "basis": "purchased_credit_equivalent", "model": "gpt-6.1-sol", "modelSource": "requested", "requestedServiceTier": "fast", "appliedServiceTier": "fast", "tierSource": "requested", "rateCardVersion": "codex-credits-2026-10-05", "rateCardSha256": "557d283646a6dd8ed49cc32a88e8459a165b72066339be99233ea75146c21edf", "verifiedAt": "2026-10-05", "sources": ["https://learn.chatgpt.com/docs/pricing", "https://learn.chatgpt.com/docs/agent-configuration/speed"], "ratesPerMillionTokens": {"input": 50, "cachedInput": 2.5, "output": 250}, "speedMultiplier": 2, "reason": "requested_identity_assumption"}}
+.........reviewed 0-0
+{
+  "status": "reviewed-needs-operator-approval",
+  "promptVersion": "sermon-source-bound-review-v3",
+  "model": "gpt-6.1-sol",
+  "segmentCount": 1,
+  "inputSha256": {
+... 3563 lines omitted; 77 error-like lines, 50 kept below ...
+[line 113] .....................................SERMON_LOGGING_WRITE_FAILED errorType=AccountingWriteError
+[line 213]   "reason": "every shorten group failed its checks; those groups stay subtitle-only in the dub",
+[line 217]   "failedGroupIds": [
+[line 276] runtime_tts_mac.py: error: this bounded diagnostic writes only its declared output directory
+[line 319]     "reason": "audio QC failed; re-render the failed units as the repair ladder says",
+[line 328]     "reason": "failed units still have the same audio; re-render them (new seed or revised text) first",
+[line 367] run_unittest_ci.py: error: real runs need --state-dir: the run's persistent state dir holding its repair ledger
+[line 403]   "failedChecks": [],
+[line 414] .................................s..................................s..........................................................SERMON_LOGGING_WRITE_FAILED errorType=AccountingWriteError
+[line 436] run_unittest_ci.py: error: output directory already exists: /var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/tmpoiz_5sg7/sheet
+[line 442] run_unittest_ci.py build: error: the following arguments are required: --screening
+[line 458] run_unittest_ci.py: error: recording a decision needs --choice, --decided-by
+[line 600] run_unittest_ci.py: error: Reuse root has no paid ledger to reconcile
+[line 610] run_unittest_ci.py: error: Duplicate reuse root; list each approved source only once
+[line 619]   "failedGroupIds": []
+[line 622]   "status": "error",
+[line 623]   "reason": "ValueError: /private/var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/tmp90sts2iv/out/condensation-record-17af5c10d60c2500.json changed after it was written",
+[line 627]   "failedGroupIds": null
+[line 630] ................................................SERMON_LOGGING_WRITE_FAILED errorType=AccountingWriteError
+[line 790] .......................................................................................SERMON_LOGGING_WRITE_FAILED errorType=AccountingWriteError
+[line 863] ..........................s....................................................................................................................s...........................................SERMON_LOGGING_WRITE_FAILED errorType=AccountingWriteError
+[line 864] SERMON_LOGGING_WRITE_FAILED errorType=AccountingWriteError
+[line 865] SERMON_LOGGING_WRITE_FAILED errorType=AccountingWriteError
+[line 866] SERMON_LOGGING_WRITE_FAILED errorType=AccountingWriteError
+[line 868] .Model initialization failed: ValueError: test initialization failure
+[line 869] Model initialization failed: ValueError: test warmup failure
+[line 1115]   "failedChecks": [],
+[line 1158] run_unittest_ci.py: error: /var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/tmp0odehzhi/digests/20261007-e2e already exists; pick another --name
+[line 1162] run_unittest_ci.py: error: --name must be YYYYMMDD-<label> using ASCII letters, digits, '.', '_' and '-'
+[line 1195] run_unittest_ci.py: error: the secondary ASR uses the OpenAI API: start under scripts/run_with_openai_environment.py --environment dev (prod for formal content)
+[line 1211] run_unittest_ci.py: error: real audio runs require --api-budget-authorization (planned per-locale QC authorization v4), including --text-backend codex for the secondary ASR budget
+[line 1252] {"component": "post-live-timeline-job", "event": "post_live_timeline_job_checked", "liveSource": {"host": "www.youtube.com", "path": "/watch", "urlHash": "3dd1687429a3473c"}, "loggedAt": "2026-10-19T18:53:56.564083+00:00", "severity": "INFO", "status": "failed", "sunday": "2026-07-12"}
+[line 1255] Model initialization failed: ValueError: test initialization failure
+[line 1445] ..s.................................................................................................SERMON_LOGGING_WRITE_FAILED errorType=AccountingWriteError
+[line 1487]         "error": null,
+[line 1531]   "failedChecks": [],
+[line 1537]     "error": null,
+[line 1640]     "status": "error",
+[line 1641]     "reason": "ValueError: /private/var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/tmpz64orirg/real/ko/text-waiver-163d7b91a372daa8.json changed after it was written",
+[line 1671]     "reason": "text QC failed; repair the failed groups in a new candidate revision",
+[line 1682]     "reason": "text QC failed; repair the failed groups in a new candidate revision",
+[line 1693]     "reason": "text QC failed; repair the failed groups in a new candidate revision",
+[line 1704]     "reason": "text QC failed; repair the failed groups in a new candidate revision",
+[line 1731] ...........................................................................SERMON_LOGGING_WRITE_FAILED errorType=AccountingWriteError
+[line 1742]     "failed": 3,
+[line 1824]       "error": "The requested model 'gpt-5.4-mini' does not exist.",
+[line 2018] .........................................SERMON_LOGGING_WRITE_FAILED errorType=AccountingWriteError
+[line 2063]     "reason": "text QC failed; repair the failed groups in a new candidate revision",
+[line 2072]     "reason": "failed groups are unchanged; repair them in a new candidate revision",
+[line 2083]     "reason": "text QC failed; repair the failed groups in a new candidate revision",
+... end of omitted section ...
+                          --approved-by APPROVED_BY --evidence EVIDENCE
+                          [--layer2-execution LAYER2_EXECUTION]
+                          [--qc-inputs QC_INPUTS] [--reuse-from REUSE_FROM]
+                          [--resume-qc-authorization RESUME_QC_AUTHORIZATION]
+                          [--layer2-reuse-budget-root LOCALE=ABSOLUTE_ROOT]
+                          [--profile PROFILE]
+run_unittest_ci.py: error: Choose replay-only --reuse-from or --resume-qc-authorization, not both
+.........discover	pass	0.0
+ko.text-qc.prefetch	pass	0.0
+ko.text-qc	pass	0.0
+ko.calibration.prefetch	pass	0.1
+ko.calibration	pass	0.1
+ko.text-waiver	pass	0.0
+{
+  "ko": {
+    "status": "text_waiver_issued",
+    "reason": null,
+    "problems": [],
+    "calibration": {
+      "overallDetectionRate": 1.0,
+      "cleanFalsePositiveRate": 0.0,
+      "trials": 90,
+      "detected": 90
+    }
+  }
+}
+discover	pass	0.0
+.{
+  "ko": [
+    "calibration rendered its omitted-word audio with a TTS other than the package's voice"
+  ]
+}
+discover	pass	0.0
+ko.text-qc.prefetch	pass	0.1
+ko.text-qc	pass	0.0
+ko.calibration.prefetch	pass	0.1
+ko.calibration	pass	0.1
+ko.text-waiver	pass	0.0
+{
+  "ko": {
+    "status": "fake_plumbing_pass",
+    "reason": "fake judge: waiver built in memory, never saved",
+    "problems": [],
+    "calibration": {
+      "overallDetectionRate": 1.0,
+      "cleanFalsePositiveRate": 0.0,
+      "trials": 90,
+      "detected": 90
+    }
+  }
+}
+discover	pass	0.0
+.usage: run_unittest_ci.py [-h] [--run-dir RUN_DIR] --out OUT
+                          [--state-dir STATE_DIR] [--locales LOCALES]
+                          [--candidate LOCALE=PATH]
+                          [--spoken-binding LOCALE=PATH]
+                          [--text-backend {codex,api,fake}]
+                          [--workers WORKERS] [--preflight-only]
+                          [--human-acceptance LOCALE=PATH]
+                          [--api-budget-authorization API_BUDGET_AUTHORIZATION]
+                          [--expected-implementation SHA256]
+run_unittest_ci.py: error: --locales must name one or more of zh-Hans, ko, es
+usage: run_unittest_ci.py [-h] [--run-dir RUN_DIR] --out OUT
+                          [--state-dir STATE_DIR] [--locales LOCALES]
+                          [--candidate LOCALE=PATH]
+                          [--spoken-binding LOCALE=PATH]
+                          [--text-backend {codex,api,fake}]
+                          [--workers WORKERS] [--preflight-only]
+                          [--human-acceptance LOCALE=PATH]
+                          [--api-budget-authorization API_BUDGET_AUTHORIZATION]
+                          [--expected-implementation SHA256]
+run_unittest_ci.py: error: --locales must name one or more of zh-Hans, ko, es
+usage: run_unittest_ci.py [-h] [--run-dir RUN_DIR] --out OUT
+                          [--state-dir STATE_DIR] [--locales LOCALES]
+                          [--candidate LOCALE=PATH]
+                          [--spoken-binding LOCALE=PATH]
+                          [--text-backend {codex,api,fake}]
+                          [--workers WORKERS] [--preflight-only]
+                          [--human-acceptance LOCALE=PATH]
+                          [--api-budget-authorization API_BUDGET_AUTHORIZATION]
+                          [--expected-implementation SHA256]
+run_unittest_ci.py: error: --workers must be between 1 and 16
+usage: run_unittest_ci.py [-h] [--run-dir RUN_DIR] --out OUT
+                          [--state-dir STATE_DIR] [--locales LOCALES]
+                          [--candidate LOCALE=PATH]
+                          [--spoken-binding LOCALE=PATH]
+                          [--text-backend {codex,api,fake}]
+                          [--workers WORKERS] [--preflight-only]
+                          [--human-acceptance LOCALE=PATH]
+                          [--api-budget-authorization API_BUDGET_AUTHORIZATION]
+                          [--expected-implementation SHA256]
+run_unittest_ci.py: error: --workers must be between 1 and 16
+.{
+  "es": [
+    "no unique candidate; found 0: []"
+  ]
+}
+discover	pass	0.0
+.{
+  "ko": [
+    "candidate schema: <root>: 'generation' is a required property"
+  ]
+}
+discover	pass	0.0
+ko.text-qc.prefetch	pass	0.0
+ko.text-qc	pass	0.0
+ko.calibration.prefetch	pass	0.2
+ko.calibration	pass	0.2
+ko.text-waiver	pass	0.0
+......{
+  "ko": {
+    "status": "fake_plumbing_pass",
+    "reason": "fake judge: waiver built in memory, never saved",
+    "problems": [],
+    "calibration": {
+      "overallDetectionRate": 1.0,
+      "cleanFalsePositiveRate": 0.0,
+      "trials": 93,
+      "detected": 93
+    }
+  }
+}
+{"component": "post-live-subtitles", "event": "post_live_subtitle_generation_checked", "liveSource": {"host": "www.youtube.com", "path": "/watch", "urlHash": "160163dd612c1ecf"}, "loggedAt": "2026-10-19T18:52:34.072809+00:00", "pipelineOutdir": "/var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/tmpz0mof_e0/2026-06-28/mariners_MEZHufeQBjc/pipeline", "severity": "INFO", "status": "planned", "sunday": "2026-06-28"}
+......s......usage: run_unittest_ci.py [-h] --out OUT --scale {clip,week}
+                          [--locales LOCALES] [--stage STAGE]
+                          --total-usd TOTAL_USD [--settled-usd SETTLED_USD]
+                          --approved-by APPROVED_BY --evidence EVIDENCE
+                          [--layer2-execution LAYER2_EXECUTION]
+                          [--qc-inputs QC_INPUTS] [--reuse-from REUSE_FROM]
+                          [--resume-qc-authorization RESUME_QC_AUTHORIZATION]
+                          [--layer2-reuse-budget-root LOCALE=ABSOLUTE_ROOT]
+                          [--profile PROFILE]
+run_unittest_ci.py: error: Output must be new or empty
+...................s.......................................................................................s..................s...SERMON_LOGGING_WRITE_FAILED errorType=ValueError
+SERMON_LOGGING_WRITE_FAILED errorType=ValueError
+SERMON_LOGGING_WRITE_FAILED errorType=ValueError
+SERMON_LOGGING_WRITE_FAILED errorType=ValueError
+...................................................................................................{
+  "status": "error",
+  "reason": "ValueError: Policy is not the candidate's frozen translation policy",
+  "record": null,
+  "revisionBrief": null,
+  "condensedGroupIds": null,
+  "failedGroupIds": null
+}
+{
+  "status": "english_transcript_candidate",
+  "source": "/var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/tmpf3iyc6qc/service.mp4",
+  "sourceDurationSeconds": 10.0,
+  "sourceClip": "/var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/tmpf3iyc6qc/pipeline/source_clip.m4a",
+  "clipDurationSeconds": 2.0,
+  "sermonStartSeconds": 1.0,
+  "sermonEndSeconds": 3.0,
+  "models": {
+    "referenceAsr": "gpt-transcribe"
+  },
+  "pipelineInputIdentity": {
+    "sourceAudio": {
+      "sha256": "01d927478e2a048dc357754e810696f101ee21aa242cdae231ca23d060c38e54",
+      "sizeBytes": 15
+    }
+  },
+  "asrChunkCount": 1,
+  "asrChunkJsonSha256": "a1252c20706201e8b13d5681a7b7f4476206771043bac6ef5effd110885c158a",
+  "alignmentStatus": "pending_mfa",
+  "humanReview": "pending",
+  "outputs": [
+    "asr_reference.json",
+    "asr_reference_chunks.json"
+  ],
+  "argv": [
+    "--weights",
+    ".github/unittest-module-timings.json",
+    "--shard-count",
+    "10",
+    "--shard-index",
+    "9",
+    "--report",
+    "/private/tmp/claude-501/-Users-jonathan-jing-SynologyDrive-GitHub-Active-sermon-video-zh-subtitles--claude-worktrees-facade-removal-ab-a8ca38/85d42206-1c39-40c4-8abb-284c79770d46/scratchpad/shards2/report-9.json"
+  ]
+}
+v4.1 package verified; model loaded and warmup finished.
+Generation failed: RuntimeError
+.v4.1 package verified; model loaded and warmup finished.
+....................................SERMON_LOGGING_WRITE_FAILED errorType=AccountingWriteError
+..........................................
+----------------------------------------------------------------------
+Ran 619 tests in 725.549s
+
+OK (skipped=5)
+ 268.89s     7  test_machine_quality_waiver
+  59.59s     1  test_layer2_large_fan_in
+  51.62s     9  test_sermon_delivery_intent_binding
+  47.41s     2  test_sermon_mock_tts_dag
+  31.23s     1  test_run_machine_qc_audio_test
+  18.48s     4  test_sermon_pilot_evidence
+  13.70s     4  test_sermon_diagnostic_preview_worker
+  11.95s     2  test_canonical_layer2_cache_recovery
+  10.67s     2  test_canonical_layer2_reconciliation
+  10.26s     2  test_sermon_historical_layer2

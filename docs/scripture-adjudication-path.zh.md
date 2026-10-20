@@ -1,6 +1,6 @@
 # 经文审核路径：设计与第一阶段实现
 
-状态（2026-10-08）：收据校验与付费前门、候选队列（`scripts/scripture_candidate_queue.py`，只列不判）、机器裁定（`scripts/scripture_machine_adjudication.py`，门禁用同一输入重跑才准入）、经文感知的诊断插件（`scripts/language_review_plugins/diagnostic_admitted_quotes.py`，由 `scripts/run_scripture_gated_round.py` 按已准入收据冻结）都已实现并有离线测试。还没有的是 `ko`、`es` 的已核验版本，以及用机器收据重新冻结 605 并跑真实轮次，见[后续](#后续)。本页不改变任何层的完成状态，不把机器结果称为人工批准。
+状态（2026-10-08）：收据校验与付费前门、候选队列（`scripts/scripture_candidate_queue.py`，只列不判）、机器裁定（`scripts/scripture_machine_adjudication.py`，门禁用同一输入重跑才准入）、经文感知的诊断插件（`scripts/language_review_plugins/diagnostic_admitted_quotes.py`，由 `tools/ops/run_scripture_gated_round.py` 按已准入收据冻结）都已实现并有离线测试。还没有的是 `ko`、`es` 的已核验版本，以及用机器收据重新冻结 605 并跑真实轮次，见[后续](#后续)。本页不改变任何层的完成状态，不把机器结果称为人工批准。
 
 ## 为什么需要
 

@@ -1,0 +1,255 @@
+Estimating 210 unprofiled modules from measured per-case cost
+Shard 5/10: 606 tests from 373 modules
+.............usage: run_unittest_ci.py [-h] --out OUT [--backend {live,fake}]
+                          [--model MODEL] [--case CASE] [--plan PLAN]
+                          [--max-sessions MAX_SESSIONS]
+                          [--risk-repeats RISK_REPEATS]
+                          [--max-tool-calls MAX_TOOL_CALLS]
+                          [--max-seconds MAX_SECONDS]
+                          {timeline,diagnose,refute,preflight,risk,all}
+run_unittest_ci.py: error: argument --risk-repeats: must be a positive integer
+........................{"component": "api", "event": "sermon_production_supervisor_triggered", "inlineWorker": true, "loggedAt": "2026-10-19T23:02:34.836895+00:00", "mode": "execute", "severity": "INFO", "sunday": "2026-08-02", "triggerSource": "internal-task"}
+.{"audioSourceKind": "ipad_mic", "component": "api", "event": "realtime_session_created", "loggedAt": "2026-10-19T23:02:34.837061+00:00", "model": "gpt-realtime-translate", "sessionId": "rt_b1Kze2znj4hGE9nx", "severity": "INFO", "sunday": "2026-06-28", "targetLanguage": "zh", "triggerSource": "local-realtime-session"}
+.{"component": "api", "event": "realtime_caption_event", "eventType": "input_transcript_delta", "loggedAt": "2026-10-19T23:02:34.837154+00:00", "segmentId": "resp_delta_1", "sessionId": "rt__g19g0kcStPPgLf9", "severity": "INFO"}
+................................................{
+  "schemaVersion": "sermon-english-source-package-v1",
+  "packageId": "english-source-e2ee41dc233ae2658b34c948",
+  "sourceLocale": "en",
+  "status": "blocked",
+  "candidateTranslationEligible": false,
+  "translationEligible": false,
+  "implementation": {
+    "builderSha256": "51a2e2a00a6a6720f47067807c6cb5922c9094ec57111b8b47f628bdfe8fd250",
+    "anchorGeneratorSha256": "5aa19b0580febb3652f9b694cf2ac9f1cbba1c241320c02396a99f0a63a439c1"
+  },
+  "source": {
+    "sourceId": "sermon-fixture",
+    "sourceUrlHash": "2222222222222222222222222222222222222222222222222222222222222222",
+    "serviceDate": "2026-09-20",
+    "media": {
+      "sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+      "sizeBytes": 1000,
+      "durationSeconds": 300.0
+    },
+    "approvedWindow": {
+      "startSeconds": 10.0,
+      "endSeconds": 20.0,
+      "status": "approved",
+      "humanApproval": true,
+      "evidence": {
+        "path": "/private/var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/tmpts5y2qij/approval.json",
+... 532 lines omitted; 13 error-like lines, 13 kept below ...
+[line 246] run_unittest_ci.py: error: Choose replay-only --reuse-from or --resume-qc-authorization, not both
+[line 301] run_unittest_ci.py: error: --locales must name one or more of zh-Hans, ko, es
+[line 311] run_unittest_ci.py: error: --locales must name one or more of zh-Hans, ko, es
+[line 321] run_unittest_ci.py: error: --workers must be between 1 and 16
+[line 331] run_unittest_ci.py: error: --workers must be between 1 and 16
+[line 363] ..{"component": "post-live-timeline-job", "event": "post_live_timeline_job_checked", "liveSource": {"host": "www.youtube.com", "path": "/watch", "urlHash": "3dd1687429a3473c"}, "loggedAt": "2026-10-19T23:11:04.459274+00:00", "severity": "INFO", "status": "failed", "sunday": "2026-07-12"}
+[line 375] run_unittest_ci.py: error: Output must be new or empty
+[line 377]   "status": "error",
+[line 378]   "reason": "ValueError: Policy is not the candidate's frozen translation policy",
+[line 382]   "failedGroupIds": null
+[line 385] .......s...........................s..........................................................s............................s..............................................................................Model initialization failed: ValueError: test initialization failure
+[line 397]     "failedPreflightSteps": [
+[line 402]     "goalAuditFailedChecks": [
+... end of omitted section ...
+          "expectedAudioSourceKinds": null,
+          "id": "browser_webrtc_ipad_or_iphone_mic",
+          "operatorAction": "Open the admin page, choose iPad mic realtime mode, and start the microphone session.",
+          "path": "browser WebRTC -> gpt-realtime-translate -> backend session events -> public caption SSE",
+          "source": "iPad/iPhone mic"
+        },
+        {
+          "command": [
+            "python3",
+            "scripts/run_realtime_live_session.py",
+            "--realtime-model",
+            "gpt-realtime-translate",
+            "--stable-model",
+            "gpt-5.4-mini"
+          ],
+          "default": false,
+          "expectedAudioSourceKind": null,
+          "expectedAudioSourceKinds": [
+            "authorized_audio_url",
+            "authorized_audio_file",
+            "authorized_youtube_source"
+          ],
+          "id": "server_worker_authorized_audio",
+          "operatorAction": null,
+          "path": "server media worker -> gpt-realtime-translate -> backend session events -> public caption SSE",
+          "source": "authorized audio URL/file or authorized YouTube live source"
+        }
+      ],
+      "stabilizerFallbackCommand": [
+        "python3",
+        "scripts/run_realtime_stabilizer_loop.py",
+        "--model",
+        "gpt-5.4-mini"
+      ],
+      "state": "ready_for_operator_review",
+      "targetWindow": {
+        "liveCaptionStart": "11:30 PT",
+        "publicReadinessDeadline": "11:50 PT"
+      }
+    },
+    {
+      "alternativeModel": "gpt-5.5",
+      "dependsOn": [
+        "post_approval_validation"
+      ],
+      "doNotSubstitute": true,
+      "handoffReport": "/var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/tmpz6hzh_m9/model-access-recovery-plan.json",
+      "id": "required_model_recovery",
+      "nextAction": "Rerun required model access preflight, then offline translation and stable correction validation.",
+      "requiredModel": "gpt-5.4-mini",
+      "state": "blocked_by_required_model_access"
+    },
+    {
+      "commands": [
+        [
+          "python3",
+          "scripts/run_no_caption_archive_asr_route.py",
+          "--live-url",
+          "<NO_CAPTION_YOUTUBE_LIVE_ARCHIVE_URL>",
+          "--api-key-secret",
+          "<OPENAI_API_KEY_SECRET_RESOURCE>",
+          "--sunday",
+          "2026-06-28",
+          "--asr-model",
+          "gpt-4o-transcribe",
+          "--translation-model",
+          "gpt-5.4-mini"
+        ]
+      ],
+      "currentEvidence": {
+        "matrixRow": "offline_asr_route",
+        "state": "missing"
+      },
+      "dependsOn": [
+        "required_model_recovery"
+      ],
+      "expandedCommands": [
+        [
+          "python3",
+          "scripts/prepare_live_link_playback.py",
+          "--asr-model",
+          "gpt-4o-transcribe",
+          "--web-out",
+          "artifacts/evidence/2026-06-28-no-caption-asr-route/web/playback-simulation.generated.js"
+        ],
+        [
+          "python3",
+          "scripts/translate_playback_with_openai.py",
+          "--model",
+          "gpt-5.4-mini"
+        ],
+        [
+          "python3",
+          "scripts/validate_offline_chain.py",
+          "--out",
+          "artifacts/evidence/no-caption-offline-chain-validation.json"
+        ]
+      ],
+      "handoffReport": "/var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/tmpz6hzh_m9/no-caption-asr-fallback-plan.json",
+      "id": "real_no_caption_asr_validation",
+      "nextAction": "Run the no-caption ASR fallback plan against a real source, then feed artifacts/evidence/no-caption-offline-chain-validation.json into collect_production_evidence_matrix.py via --offline-asr-chain-validation-report.",
+      "passCriteria": [
+        "run_offline_archive_preflight.py reports decision=use_asr_fallback.",
+        "Prepared offline report has caption_source.kind=openai_asr.",
+        "validate_offline_chain.py confirms no requested English caption track exists before ASR fallback.",
+        "validate_offline_chain.py confirms the openai_asr output source_file is an extracted audio artifact.",
+        "ASR model is gpt-4o-transcribe.",
+        "Chinese translation model is gpt-5.4-mini.",
+        "validate_offline_chain.py status is ok and not_realtime_chain passes."
+      ],
+      "requiredModels": {
+        "forbiddenOfflineModel": "gpt-realtime-translate",
+        "offlineAsr": "gpt-4o-transcribe",
+        "offlineTranslation": "gpt-5.4-mini"
+      },
+      "requiredReports": [
+        "artifacts/evidence/no-caption-archive-preflight.json",
+        "artifacts/evidence/no-caption-offline-chain-validation.json",
+        "artifacts/evidence/asr-route-readiness.json"
+      ],
+      "requiredSource": "Authorized YouTube live archive without requested English captions.",
+      "state": "needs_real_no_caption_archive"
+    },
+    {
+      "commands": [
+        [
+          "python3",
+          "tools/ops/refresh_production_preflight_evidence.py",
+          "--sunday",
+          "2026-06-28",
+          "--out",
+          "artifacts/evidence/production-preflight-refresh.json"
+        ],
+        [
+          "python3",
+          "scripts/write_production_go_live_sequence.py",
+          "--sunday",
+          "2026-06-28",
+          "--out",
+          "artifacts/evidence/production-go-live-sequence.json"
+        ]
+      ],
+      "dependsOn": [
+        "operator_approval",
+        "post_approval_validation",
+        "live_1130_realtime_run",
+        "required_model_recovery",
+        "real_no_caption_asr_validation"
+      ],
+      "id": "final_readiness_audit",
+      "requiredReports": [
+        "artifacts/evidence/production-preflight-refresh.json",
+        "artifacts/evidence/production-evidence-matrix.json",
+        "artifacts/evidence/production-goal-readiness-audit.json",
+        "artifacts/evidence/production-go-live-sequence.json"
+      ],
+      "state": "pending_final_audit"
+    }
+  ],
+  "status": "not_ready_for_go_live",
+  "sunday": "2026-06-28"
+}.....
+----------------------------------------------------------------------
+Ran 606 tests in 1159.336s
+
+OK (skipped=6)
+
+{
+  "apiKeyMaterialIncluded": false,
+  "commandCount": 8,
+  "notesIncluded": false,
+  "prefix": "sundays/2026-06-28/runs/caption-first-plan",
+  "promoteBeforeNotes": true,
+  "schemaVersion": 1,
+  "secretResourceNamesIncluded": false,
+  "sessionId": "caption-first-plan",
+  "stages": [
+    "model-access",
+    "prepare",
+    "translate",
+    "export-captions",
+    "validate-offline",
+    "upload-playback",
+    "upload-manifest",
+    "promote"
+  ],
+  "status": "ok",
+  "translationMode": "fresh_model_call"
+}
+ 265.39s     7  test_machine_quality_waiver
+ 263.28s     1  test_sermon_mock_tts_dag
+  63.32s     1  test_run_machine_qc_audio_test
+  38.02s     2  test_canonical_layer2_cache_recovery
+  27.83s     5  test_sermon_delivery_intent_binding
+  26.52s     6  test_sermon_cuv_translation
+  23.56s     3  test_sermon_diagnostic_preview_worker
+  22.12s     2  test_sermon_diagnostic_dag_session
+  20.80s     1  test_sermon_historical_layer2
+  19.87s     3  test_sermon_dev_diagnostic_snapshot
+exit 0

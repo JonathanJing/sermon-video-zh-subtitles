@@ -1,28 +1,68 @@
 #!/usr/bin/env python3
-"""Upload one local file to GCS using the Cloud Run service account."""
+"""Compatibility entry point for ``tools/ops/upload_file_to_gcs.py``.
 
-from __future__ import annotations
+backend/worker.py runs this path in the Cloud Run image. Remove once the
+backend points at tools/ops (with a redeploy).
+The implementation is loaded by absolute path from this checkout, independent of
+the CWD; bare and ``scripts.`` imports share one ``tools.ops.upload_file_to_gcs`` module object.
+"""
 
-import argparse
-import sys
+import importlib
+from importlib import util
 from pathlib import Path
-
-REPO_ROOT = Path(__file__).resolve().parents[1]
-if str(REPO_ROOT) not in sys.path:
-    sys.path.insert(0, str(REPO_ROOT))
-
-from backend.cloud import upload_file_to_gcs
+import runpy
+import sys
 
 
-def main() -> int:
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--source", required=True)
-    parser.add_argument("--destination", required=True)
-    args = parser.parse_args()
-    upload_file_to_gcs(args.source, args.destination)
-    print(f"Uploaded {args.source} -> {args.destination}")
-    return 0
+_IMPLEMENTATION = (Path(__file__).resolve().parents[1] / "tools/ops/upload_file_to_gcs.py").resolve()
+_MODULE_NAME = "tools.ops.upload_file_to_gcs"
+
+
+def _load():
+    existing = sys.modules.get(_MODULE_NAME)
+    if existing is not None:
+        if Path(existing.__file__).resolve() != _IMPLEMENTATION:
+            raise ImportError(f"{_MODULE_NAME} is already loaded from another checkout")
+        return existing
+    spec = util.spec_from_file_location(_MODULE_NAME, _IMPLEMENTATION)
+    if spec is None or spec.loader is None:
+        raise ImportError(f"Cannot load {_IMPLEMENTATION}")
+    module = util.module_from_spec(spec)
+    sys.modules[_MODULE_NAME] = module
+    try:
+        spec.loader.exec_module(module)
+    except BaseException:
+        del sys.modules[_MODULE_NAME]
+        raise
+    try:  # ``import tools.ops.upload_file_to_gcs`` also reaches it through the namespace parent.
+        setattr(importlib.import_module("tools.ops"), "upload_file_to_gcs", module)
+    except ImportError:
+        pass
+    return module
 
 
 if __name__ == "__main__":
-    raise SystemExit(main())
+    runpy.run_path(str(_IMPLEMENTATION), run_name="__main__")
+else:
+    _implementation = _load()
+
+    class _Forward(type(sys)):
+        # A caller that loads this file with spec_from_file_location keeps this
+        # facade object; its reads, writes and mock patches reach the implementation.
+        def __getattr__(self, name):
+            return getattr(_implementation, name)
+
+        def __setattr__(self, name, value):
+            setattr(_implementation, name, value)
+
+        def __delattr__(self, name):
+            delattr(_implementation, name)
+
+    def __getattr__(name):
+        # Also serves a spec-loaded copy that was never put in sys.modules.
+        return getattr(_implementation, name)
+
+    _facade = sys.modules.get(__name__)
+    if _facade is not None and _facade.__dict__ is globals():
+        _facade.__class__ = _Forward
+    sys.modules[__name__] = _implementation

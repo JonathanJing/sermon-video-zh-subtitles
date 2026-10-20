@@ -1,0 +1,14 @@
+{
+  "schemaVersion": "layer2-cache-hit-replay-outcome-v1",
+  "deliveryType": "test",
+  "status": "stopped_at_first_cache_miss",
+  "exitCode": 1,
+  "code": "dev + PR 1150 + option D (scratch merge, context only)",
+  "startedAt": "2026-10-19T21:33:05+00:00",
+  "endedAt": "2026-10-19T21:33:06+00:00",
+  "error": "RuntimeError: cache_only_replay_refuses_dispatch",
+  "providerCalls": 0,
+  "dispatchRefused": 1,
+  "humanApproval": false,
+  "releaseEligible": false
+}

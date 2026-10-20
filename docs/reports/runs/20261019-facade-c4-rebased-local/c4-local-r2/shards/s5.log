@@ -1,0 +1,146 @@
+Estimating 210 unprofiled modules from measured per-case cost
+Shard 6/10: 611 tests from 373 modules
+............................................{"component": "api", "event": "sermon_production_supervisor_triggered", "inlineWorker": false, "loggedAt": "2026-10-19T23:02:37.265071+00:00", "mode": "shadow", "severity": "INFO", "sunday": "2026-08-02", "triggerSource": "cloud-scheduler"}
+...................................................{"group": "group-0002", "solSeconds": 2.0, "opusSeconds": 1.0}
+{"freshCalls": {"sol": 1, "opus": 1, "review": 0}, "groups": 1, "targetLocale": "ko"}
+...s......{"role": "reviewer", "model": "gpt-6.1-sol", "tier": "fast", "elapsedSeconds": 0.0, "usage": {"input_tokens": 100, "cached_input_tokens": 50, "output_tokens": 20}, "creditUsage": {"schemaVersion": "codex-credit-usage-v1", "status": "estimated", "estimatedCredits": 0.01525, "actualCredits": null, "actualQuotaUsage": null, "basis": "purchased_credit_equivalent", "model": "gpt-6.1-sol", "modelSource": "requested", "requestedServiceTier": "fast", "appliedServiceTier": "fast", "tierSource": "requested", "rateCardVersion": "codex-credits-2026-10-05", "rateCardSha256": "557d283646a6dd8ed49cc32a88e8459a165b72066339be99233ea75146c21edf", "verifiedAt": "2026-10-05", "sources": ["https://learn.chatgpt.com/docs/pricing", "https://learn.chatgpt.com/docs/agent-configuration/speed"], "ratesPerMillionTokens": {"input": 50, "cachedInput": 2.5, "output": 250}, "speedMultiplier": 2, "reason": "requested_identity_assumption"}}
+.......................................usage: run_unittest_ci.py [-h] [--verify] [--tidy-whitespace] [--name NAME]
+                          [--out OUT] [--zip]
+                          run_dirs [run_dirs ...]
+run_unittest_ci.py: error: /var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/tmpwl88ubm9/digests/20261007-e2e already exists; pick another --name
+usage: run_unittest_ci.py [-h] [--verify] [--tidy-whitespace] [--name NAME]
+                          [--out OUT] [--zip]
+                          run_dirs [run_dirs ...]
+run_unittest_ci.py: error: --name must be YYYYMMDD-<label> using ASCII letters, digits, '.', '_' and '-'
+.......................................SERMON_LOGGING_WRITE_FAILED errorType=AccountingWriteError
+....SERMON_LOGGING_WRITE_FAILED errorType=AccountingWriteError
+.........................................................................................$ upload_file_to_gcs.py --source /var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/tmpwrxhg03n/artifacts/sermon.zh.live-aligned.vtt --destination gs://sermon-zh-poc/sundays/2026-06-28/runs/test/artifacts/sermon.zh.live-aligned.vtt
+Digest: /var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/tmpn7g35b2q/digests/20261019-e2e-20261007T193332Z (4 files, 8 redactions)
+Digest: /var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/tmpwl88ubm9/digests/20261007-e2e (4 files, 9 redactions)
+{"stage": "tts", "batchIndex": 0, "completedGroups": 2}
+{"stage": "tts", "batchIndex": 1, "completedGroups": 4}
+{"stage": "tts", "batchIndex": 2, "completedGroups": 6}
+{"stage": "tts", "batchIndex": 3, "completedGroups": 8}
+{"stage": "tts", "batchIndex": 4, "completedGroups": 10}
+{"stage": "tts", "batchIndex": 5, "completedGroups": 12}
+{"stage": "tts", "batchIndex": 6, "completedGroups": 13}
+.{"stage": "tts", "batchIndex": 0, "completedGroups": 2}
+{"stage": "tts", "batchIndex": 1, "completedGroups": 4}
+............Digest: /var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/tmpq68q73tn/reports/20261018-journal (1 files, 0 redactions)
+discover	pass	0.0
+ko.text-qc.prefetch	pass	0.1
+ko.text-qc	pass	0.0
+ko.calibration.prefetch	pass	0.2
+ko.calibration	pass	0.1
+ko.text-waiver	pass	0.0
+{
+  "ko": {
+    "status": "text_waiver_issued",
+    "reason": null,
+    "problems": [],
+    "calibration": {
+      "overallDetectionRate": 1.0,
+      "cleanFalsePositiveRate": 0.0,
+      "trials": 90,
+      "detected": 90
+    }
+  }
+}
+discover	pass	0.0
+.{
+  "ko": []
+}
+discover	pass	0.0
+ko.text-qc.prefetch	pass	0.0
+ko.text-qc	pass	0.0
+{
+  "ko": {
+    "status": "requires_repair",
+    "reason": "text QC failed; repair the failed groups in a new candidate revision",
+    "problems": [],
+    "calibration": null
+  }
+}
+discover	pass	0.0
+{
+  "ko": {
+    "status": "blocked_prior_failure",
+    "reason": "failed groups are unchanged; repair them in a new candidate revision",
+    "problems": [],
+    "calibration": null
+  }
+}
+discover	pass	0.0
+{
+  "ko": {
+    "status": "blocked_prior_failure",
+    "reason": "failed groups are unchanged; repair them in a new candidate revision",
+    "problems": [],
+    "calibration": null
+  }
+}
+discover	pass	0.0
+.{
+  "ko": {
+    "status": "requires_repair",
+    "reason": "text QC failed; repair the failed groups in a new candidate revision",
+    "problems": [],
+    "calibration": null
+  }
+}
+discover	pass	0.0
+.{
+  "ko": {
+    "status": "blocked_unknown_outcome",
+    "reason": "model calls with an unknown outcome in /private/var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/tmpgaqp2p_g/real-state/codex-calls; reconcile them first",
+    "problems": [],
+    "calibration": null
+  }
+}
+discover	pass	0.0
+.....{
+  "ko": [
+    "status is 'human_translation_approved', not 'machine_review_pass_human_review_pending'"
+  ]
+}
+{"component": "post-live-subtitles", "event": "post_live_subtitle_generation_checked", "liveSource": {"host": "www.youtube.com", "path": "/watch", "urlHash": "160163dd612c1ecf"}, "loggedAt": "2026-10-19T23:07:09.121413+00:00", "severity": "INFO", "status": "waiting_for_post_live", "sunday": "2026-06-28"}
+.....stranslated sentence batches 1/1
+reviewed sentence batches 1/1
+...zh-Hans.condense.prefetch	pass	0.0
+zh-Hans.condense	pass	0.0
+usage: run_unittest_ci.py [-h] --candidate CANDIDATE --budget BUDGET
+                          --anchor ANCHOR --policy POLICY --out OUT
+                          [--state-dir STATE_DIR] [--backend {codex,fake}]
+                          [--workers WORKERS]
+run_unittest_ci.py: error: --backend fake never writes to a persistent state dir
+....................s.s............................................SERMON_LOGGING_WRITE_FAILED errorType=AccountingWriteError
+........................................s.........................................................................................................................{
+  "status": "brief_ready",
+  "reason": null,
+  "record": "/private/var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/tmp0ofpwsm0/out/fake-plumbing/condensation-record-f32714a180488e8b.json",
+  "revisionBrief": "/private/var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/tmp0ofpwsm0/out/fake-plumbing/revision-brief-16a6c9909bdcf27b.json",
+  "condensedGroupIds": [
+    "g2"
+  ],
+  "failedGroupIds": []
+}
+v4.1 实验翻译已就绪：http://127.0.0.1:18771 （PID 123456）
+v4.1 实验翻译已就绪：http://127.0.0.1:18771 （PID 123456）
+v4.1 package verified; model loaded and warmup finished.
+............................................................................
+----------------------------------------------------------------------
+Ran 611 tests in 944.334s
+
+OK (skipped=5)
+{"status": "candidate", "targetLocale": "ko", "renderManifest": "/private/var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/tmpldett27s/clip-job/render-manifest.json", "machineScreening": "not_run", "humanListeningReview": "pending"}
+ 165.53s     1  test_sermon_mock_tts_dag
+  65.43s     1  test_run_machine_qc_audio_test
+  61.58s     7  test_machine_quality_waiver
+  35.53s     3  test_sermon_fresh_diagnostic
+  34.13s     6  test_sermon_cuv_translation
+  25.73s     1  test_canonical_layer2_budget_shards
+  25.36s     2  test_sermon_historical_layer2
+  22.24s     3  test_sermon_historical_native_seed
+  20.93s     3  test_sermon_diagnostic_preview_worker
+  19.55s     3  test_sermon_business_prefect_flow
+exit 0

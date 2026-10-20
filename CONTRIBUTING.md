@@ -49,6 +49,24 @@ python3 -m unittest discover -s tests
 
 For documentation-only changes, also check that links point to existing files and that no generated artifacts are staged.
 
+### Tests in a git worktree
+
+Worktrees under `.claude/worktrees/` share the main checkout's `.venv`, whose editable install points at the main checkout's `packages/production/src`. Without help, a test run from a worktree imports the main checkout's code and fails (or passes) for the wrong tree.
+
+- **pytest with the shared venv.** `tests/conftest.py` puts this tree's `packages/production/src` and `services/api/src` first on `sys.path` and on `PYTHONPATH`, so tests and the Python children that inherit the environment import the worktree. A test that starts a child with a fresh `env=` passes it through `tests.tree_paths.child_env()`. The pytest header names the package source and warns when `python -I` children would import another tree.
+
+  ```bash
+  ../../../.venv/bin/python -m pytest -q tests/test_canonical_layer2_controller.py
+  ```
+
+- **Children started with `python -I`, tests that clear `PYTHONPATH`, and `unittest`.** These bypass `PYTHONPATH` or the conftest. Give the worktree its own venv; it keeps the shared venv's dependencies and lists only the worktree's package sources:
+
+  ```bash
+  python3 tools/development/worktree_venv.py
+  ```
+
+  Then run tests with `.venv/bin/python`. Install dependencies into the shared venv, and rerun the script after its Python version changes.
+
 Before a broad public release, run the [open-source readiness checklist](./docs/open-source-readiness.md).
 
 ## Pull Request Checklist

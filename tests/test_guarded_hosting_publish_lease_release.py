@@ -1,7 +1,8 @@
 import hashlib
 import json
 import pytest
-from scripts import guarded_hosting_publish as p
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.delivery import publication as p
 from tests.test_guarded_hosting_publish import write_deploy_result
 
 

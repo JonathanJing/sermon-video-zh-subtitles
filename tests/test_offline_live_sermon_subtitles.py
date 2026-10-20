@@ -6,7 +6,7 @@ import unittest
 from pathlib import Path
 
 
-SCRIPT_PATH = Path(__file__).resolve().parents[1] / "scripts" / "offline_live_sermon_subtitles.py"
+SCRIPT_PATH = Path(__file__).resolve().parents[1] / "tools" / "ops" / "offline_live_sermon_subtitles.py"
 SPEC = importlib.util.spec_from_file_location("offline_live_sermon_subtitles", SCRIPT_PATH)
 mod = importlib.util.module_from_spec(SPEC)
 assert SPEC.loader is not None

@@ -5,9 +5,10 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-from scripts import machine_repair_ledger as ledger
-from scripts import target_audio_auto_qc as audio_qc
-from scripts import target_text_auto_qc as text_qc
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.review import repair_ledger as ledger
+from tongxing_production.review import audio_qc
+from tongxing_production.review import text_qc
 from tests import auto_qc_fixtures as fixtures
 
 LINEAGE = ledger.lineage("text", "ko", "1" * 64, "2" * 64)

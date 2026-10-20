@@ -18,7 +18,7 @@
 - 可选真实 Chrome 假设备检查：
 
   ```sh
-  python3 scripts/verify_fingerprint_browser_capture.py \
+  python3 tools/development/verify_fingerprint_browser_capture.py \
     --browser '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome' \
     --out /tmp/fingerprint-capture.json
   ```

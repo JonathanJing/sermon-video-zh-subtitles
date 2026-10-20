@@ -1,6 +1,7 @@
 import unittest
 
-from scripts import four_layer_progress
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.observability import progress as four_layer_progress
 from scripts.build_four_layer_timeline import dependencies, production_data, simulation_data
 
 

@@ -1,0 +1,63 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261019-grp005-ab-listening",
+  "runs": [
+    {
+      "label": "20261019-grp005-ab-listening",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/local-runs/20261019-grp005-ab-listening",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "20261019-grp005-ab-listening",
+      "path": "ab-key-es.receipt.json",
+      "kind": "whole",
+      "bytes": 4280,
+      "truncated": false,
+      "sha256": "adb1de1bad0af83fcc624c6f5bad7d1d57e07daaa05bfbce9379f23ba92e00b8",
+      "redactions": {}
+    },
+    {
+      "run": "20261019-grp005-ab-listening",
+      "path": "ab-key-ko.receipt.json",
+      "kind": "whole",
+      "bytes": 4280,
+      "truncated": false,
+      "sha256": "2d3d76f3633738974cdbc0b52ecffdd55e8d5e0aa7095053c57062eb780c72ca",
+      "redactions": {}
+    },
+    {
+      "run": "20261019-grp005-ab-listening",
+      "path": "ab-result-es.receipt.json",
+      "kind": "whole",
+      "bytes": 1482,
+      "truncated": false,
+      "sha256": "b1ec586fd5abe4af43a772e2cd74817cc037902060f0013965e977e15ab0e761",
+      "redactions": {}
+    },
+    {
+      "run": "20261019-grp005-ab-listening",
+      "path": "ab-result-ko.receipt.json",
+      "kind": "whole",
+      "bytes": 1485,
+      "truncated": false,
+      "sha256": "a161388ac1c5c0b3a32560a3cd9e056246848c79d943d3a5805cd85ef28331d4",
+      "redactions": {}
+    },
+    {
+      "run": "20261019-grp005-ab-listening",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 698,
+      "truncated": false,
+      "sha256": "694e252f77c7771cd2e5d49d073c300df1fe8495b536283f07c935794d88e7af",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

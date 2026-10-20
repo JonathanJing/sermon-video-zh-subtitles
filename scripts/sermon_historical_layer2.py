@@ -7,10 +7,13 @@ provider ledger, never invented D5 reservations or a fabricated semantic failure
 from copy import deepcopy
 from pathlib import Path
 
-from scripts import sermon_review_contracts as c, sermon_review_budget as budget
-from scripts import sermon_strict_layer2 as strict, sermon_accounting as accounting
+from tongxing_production.review import contracts as c
+from tongxing_production.review import review_budget as budget
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from scripts import sermon_strict_layer2 as strict
+from tongxing_production.observability import accounting
 from scripts import sermon_diagnostic_attempts as attempts
-from scripts import sermon_public_snapshot as aggregate
+from tongxing_production.storage import snapshot as aggregate
 from scripts.sermon_release_workflow import _safe_path
 
 SPEC = 'sermon-historical-layer2-spec-v1'
@@ -128,7 +131,9 @@ class HistoricalLayer2Reuse:
         self._identity_witness.validate(self.new_plan['executionIdentity'])
 
     def _inventory(self):
-        from scripts import sermon_strict_candidate_bridge as bridge, produce_target_language_candidate as producer
+        from scripts import sermon_strict_candidate_bridge as bridge
+        from scripts import tongxing_host  # noqa: F401  binds the production package ports
+        from tongxing_production.text import candidate as producer
         self._closed()
         if hasattr(self,'_inventory_cache'):
             for snapshot in self._inventory_cache_refs:check_ref(snapshot,json_required=False)

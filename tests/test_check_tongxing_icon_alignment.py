@@ -6,7 +6,6 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-from scripts import check_tongxing_icon_alignment as legacy
 from tools.development import check_tongxing_icon_alignment as gate
 
 
@@ -28,8 +27,7 @@ class IconAlignmentTests(unittest.TestCase):
         (self.web / "style.css").write_bytes(b"base styles")
         (reader / "styles.css").write_bytes(b"base styles and reader styles")
 
-    def test_legacy_import_and_repository_root_match_package(self):
-        self.assertIs(legacy, gate)
+    def test_repository_root_matches_checkout(self):
         self.assertEqual(gate.ROOT, Path(__file__).resolve().parents[1])
 
     def test_matching_native_web_and_reader_icons_pass(self):

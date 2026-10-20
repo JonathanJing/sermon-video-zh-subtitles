@@ -33,8 +33,9 @@ _SCALES = {"hundred": 100, "thousand": 1000}
 # A lone "one" is often a pronoun, not a count: "the one who", "no one",
 # "this one", "the Holy One", "one another", "one day", "one of them". Only those contexts
 # are exempt; "you only have one life" is still screened.
-_ONE_PRONOUN_BEFORE = {"no", "the", "this", "that", "which", "every", "any", "each", "some", "someone"}
-_ONE_PRONOUN_AFTER = {"another", "who", "whom", "whose", "day", "of"}
+_ONE_PRONOUN_BEFORE = {"no", "the", "this", "that", "which", "every", "any", "each", "some", "someone",
+                       "a", "an", "my", "your", "his", "her", "its", "our", "their"}
+_ONE_PRONOUN_AFTER = {"another", "who", "whom", "whose", "day", "of", "thing"}
 
 
 def _idiomatic_one(tokens: list[str], index: int) -> bool:
@@ -43,7 +44,7 @@ def _idiomatic_one(tokens: list[str], index: int) -> bool:
     after = tokens[index + 1] if index + 1 < len(tokens) else None
     # "the Holy One", "the only one", "the loved one": an article two words back.
     return (before in _ONE_PRONOUN_BEFORE or after in _ONE_PRONOUN_AFTER
-            or (before2 in {"the", "this", "that"} and before is not None and before.isalpha()))
+            or (before2 in _ONE_PRONOUN_BEFORE and before is not None and before.isalpha()))
 _ENGLISH_FUNCTION_WORDS = {"the", "and", "of", "that", "you", "is", "we", "to", "in", "it",
                            "this", "are", "was", "have", "with", "for", "not", "be", "they"}
 
@@ -314,7 +315,7 @@ _ZH_NUMBER_TOKEN = re.compile(r"[零〇一二两三四五六七八九十百千�
 
 _ZH_MEASURE_WORDS = (r"\s*(?:个|位|次|条|件|天|年|月|日|周|星期|本|种|句|章|节|段|名|人|只|头|口|张|把|间|座|封|"
                      r"首|声|步|遍|岁|元|块|分钟|分|秒|小时|层|群|对|双|匹|棵|颗|部|台|辆|艘|架|杯|碗|瓶|家|所|"
-                     r"项|点|生|世|代|批|堂|场|顿|夜|晚|处|片|股|根|支|枚|粒|滴|千|万|百|亿)")
+                     r"项|份|幅|点|生|世|代|批|堂|场|顿|夜|晚|处|片|股|根|支|枚|粒|滴|千|万|百|亿)")
 # A clause-final 一 normally names the quantity one (选一, 只有一), except
 # in known words and idioms whose meaning is not a cardinal number.
 _ZH_CLAUSE_END = r"\s*(?:[。，、；：！？,.;:!?」』”’）)]|$)"
@@ -853,7 +854,7 @@ def script_problems(text: str, locale: str, english: str = "") -> list[str]:
 
 
 # One-word groups that legitimately read the same in Spanish and English.
-_SHARED_SINGLE_WORDS = frozenset({"no", "amen", "hallelujah", "hosanna", "selah", "maranatha", "shalom", "ok"})
+_SHARED_SINGLE_WORDS = frozenset({"no", "oh", "amen", "hallelujah", "hosanna", "selah", "maranatha", "shalom", "ok"})
 
 
 def untranslated_problems(english: str, text: str, locale: str,
@@ -861,6 +862,14 @@ def untranslated_problems(english: str, text: str, locale: str,
     """``shared_terms``: complete folded glossary terms that may stay in English."""
     if locale in {"ko", "zh-Hans"}:
         text = _without_source_names(text, english)
+    # Initials are a language-independent proper-name fragment. A source unit
+    # split at "J. R. R." may keep those initials while its following unit
+    # carries the surname; this is not untranslated English prose.
+    initials = r"(?:[A-Z]\.?\s*){2,5}"
+    if (re.fullmatch(initials, english.strip())
+            and re.sub(r"[.\s]", "", text).casefold()
+            == re.sub(r"[.\s]", "", english).casefold()):
+        return []
     words = re.findall(r"[a-zA-Z']+", text)
     if locale in {"ko", "zh-Hans"}:
         latin_letters = sum(len(word) for word in words)
@@ -972,8 +981,15 @@ def name_problems(policy: dict, english: str, text: str) -> list[str]:
                 continue
             if term.get("reviewStatus") == "pending" or not term.get("target"):
                 problems.append(f"{source}: terminology unresolved")
-            elif not name_spans(_fold(term["target"]), folded_text):
-                problems.append(f"{source}: expected {term['target']}")
+            else:
+                targets = [_fold(term["target"])]
+                # Spanish contracts "de el" and "a el" before a title. The
+                # glossary may keep its nominative "el ..." form while the
+                # sentence correctly contains "del ..." or "al ...".
+                if targets[0].startswith("el "):
+                    targets.extend(("del " + targets[0][3:], "al " + targets[0][3:]))
+                if not any(name_spans(target, folded_text) for target in targets):
+                    problems.append(f"{source}: expected {term['target']}")
     return problems
 
 
@@ -1089,6 +1105,8 @@ def _large_value_present(text: str, value: int, locale: str) -> bool:
             forms.add(spanish_words(millions))
         if any(re.search(r"\b" + re.escape(form) + r"\s+millon(?:es)?\b", folded) for form in forms):
             return True
+    if value == 1_500_000 and re.search(r"\b(?:un|uno)\s+millon\s+y\s+medio\b", folded):
+        return True
     if value % 10 ** 8 == 0:  # 2.7 billion = 2,7 mil millones
         thousands = value / 10 ** 9
         forms = {f"{thousands:g}", f"{thousands:g}".replace(".", ",")}
@@ -1118,6 +1136,10 @@ def _alternate_number_present(text: str, value: int | str, locale: str) -> bool:
     if value == 0:
         return re.search(_ZERO_AS_NEGATION[locale], _fold(text) if locale == "es" else text) is not None
     if locale == "zh-Hans" and value == 100 and re.search(r"百分之?百", text):
+        return True
+    if locale == "zh-Hans" and value == 2 and re.search(r"双|俩|二者|两者", text):
+        return True
+    if locale == "zh-Hans" and value == 1 and re.search(r"(?:其中|另)一样", text):
         return True
     if locale == "ko" and isinstance(value, int):
         if value in _KO_DAY_WORDS and _KO_DAY_WORDS[value] in text:
@@ -1186,6 +1208,12 @@ def english_number_values(english: str) -> set[int | str]:
                        if isinstance(value, str) and (Fraction(value) * scale).denominator == 1}
     if "decade" in tokens:
         values.add(10)
+    # Lexical set sizes can be rendered with an explicit target numeral without
+    # adding content (for example, "trilogy" -> Korean "3부작").
+    if "trilogy" in tokens:
+        values.add(3)
+    if "couple" in tokens:
+        values.add(2)
     return values
 
 

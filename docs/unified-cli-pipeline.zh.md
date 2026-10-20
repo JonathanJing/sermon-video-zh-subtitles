@@ -244,5 +244,5 @@ iOS Beta 与 Firebase Dev 分开记录。一端通过不代替另一端。正式
 | 组级修复和单元音频复用已有测试，周编排尚未接上。`cache_hit` 不能单独当命中 | [效率研究](reports/20260929-weekly-workflow-efficiency-findings.zh.md) |
 | 长会话的缓存输入远大于生产 API | [编排 token 分析](reports/20260929-codex-orchestration-token-analysis.zh.md) |
 | 54 行诊断导出里 4 个 runId 共用一个 productionRunId | [bounded source events](reports/20260930-bounded-source-diagnostic/events.jsonl) |
-| App 交付闭包、observation 与 Sunday-only workflow 的当前代码边界 | `scripts/sermon_app_delivery.py`、`scripts/sermon_app_delivery_workflow.py` |
+| App 交付闭包、observation 与 Sunday-only workflow 的当前代码边界 | `tongxing_production.delivery.app_delivery`、`tongxing_production.delivery.app_workflow` |
 | 四层包、人审和发布门禁 | [四层合同](multilingual-production-interfaces.zh.md)、[Astra→Sol 说明](target-language-astra-sol-production.zh.md) |

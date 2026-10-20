@@ -7,7 +7,7 @@ from argparse import Namespace
 from pathlib import Path
 
 
-SCRIPT_PATH = Path(__file__).resolve().parents[1] / "scripts" / "run_openai_model_access_preflight.py"
+SCRIPT_PATH = Path(__file__).resolve().parents[1] / "tools" / "ops" / "run_openai_model_access_preflight.py"
 SPEC = importlib.util.spec_from_file_location("run_openai_model_access_preflight", SCRIPT_PATH)
 mod = importlib.util.module_from_spec(SPEC)
 assert SPEC.loader is not None

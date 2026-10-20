@@ -1,0 +1,81 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261019-facade-c8-local",
+  "runs": [
+    {
+      "label": "c8-facade-local",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.claude/worktrees/facade-removal-ab-a8ca38/artifacts/c8-facade-local",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "c8-facade-local",
+      "path": "facade-survey.log",
+      "kind": "log",
+      "bytes": 30,
+      "truncated": false,
+      "sha256": "98b066947aebd93ded3a90e72a7212926bb0ac799cbbdfe5686109a24191ba7a",
+      "redactions": {}
+    },
+    {
+      "run": "c8-facade-local",
+      "path": "image-commands.log",
+      "kind": "log",
+      "bytes": 484,
+      "truncated": false,
+      "sha256": "c1abfb8535f496d27ae45390b3c980db08464fdbf0413cb2bb821061f0bb2c8e",
+      "redactions": {}
+    },
+    {
+      "run": "c8-facade-local",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 1210,
+      "truncated": false,
+      "sha256": "6f9149b40a00ba0ef1c1b3bc010538613103ff91d2933a9ef5ecb9df03fcb6f8",
+      "redactions": {}
+    },
+    {
+      "run": "c8-facade-local",
+      "path": "pytest.log",
+      "kind": "log",
+      "bytes": 241,
+      "truncated": false,
+      "sha256": "3bb3d3b5715548091dee373ce7c24c5e313c136d14d02dba3adec3938eb31b13",
+      "redactions": {}
+    },
+    {
+      "run": "c8-facade-local",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 1280,
+      "truncated": false,
+      "sha256": "4e1ca103a40d7c449194b5da4ff98462eef60f99ca5693d84366889076279e42",
+      "redactions": {}
+    },
+    {
+      "run": "c8-facade-local",
+      "path": "test-id-inventory.log",
+      "kind": "log",
+      "bytes": 150,
+      "truncated": false,
+      "sha256": "1f9e6403fb1b35c4996c515cfe60ac4db885a6c974dac07d9e5e6eb26a0fde17",
+      "redactions": {}
+    },
+    {
+      "run": "c8-facade-local",
+      "path": "unittest-shards.log",
+      "kind": "log",
+      "bytes": 1031,
+      "truncated": false,
+      "sha256": "88f92cd4192e7be33aebf1ed6c49cb0f94b085eda09d2e3f528c4f6df3000950",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

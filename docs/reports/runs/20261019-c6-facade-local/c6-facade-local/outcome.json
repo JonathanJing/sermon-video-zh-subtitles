@@ -1,0 +1,14 @@
+{
+  "schemaVersion": "local-test-outcome-v1",
+  "status": "passed_with_load_flakes",
+  "exitCode": 1,
+  "startedAt": "2026-10-19T21:20:00+00:00",
+  "endedAt": "2026-10-19T22:20:00+00:00",
+  "scope": "Facade-removal batch C6 (PR #1167, stacked on C5 #1157): 18 Layer 4 delivery and adapters/legacy scripts/ facades deleted; importers and by-path fallbacks repointed; run_multilingual_cd and clip E2E argv moved to tools/ops/run.py or tools/ops; tongxing-ios.yml shared_contracts and pipeline_compatibility_gate updated. No deploy. Full unittest suite twice in 10 shards, pytest-style files, L4 fixture build compared before/after, section 5.5 test-ID inventory, Appendix A survey, identity check, git diff --check.",
+  "knownPreexistingFailures": [
+    "tests/test_codex_shared_pool_transport.py::test_busy_before_started_is_proven_no_dispatch (also fails on clean dev)"
+  ],
+  "flakes": [
+    "test_layer2_large_fan_in 129-group (first run) and 65-group (second run): utc_clock_discontinuity at load average ~140; module passes alone at load 20"
+  ]
+}

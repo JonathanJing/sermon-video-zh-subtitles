@@ -7,7 +7,7 @@ from pathlib import Path
 from types import SimpleNamespace
 
 
-SCRIPT_PATH = Path(__file__).resolve().parents[1] / "scripts" / "audit_production_goal_readiness.py"
+SCRIPT_PATH = Path(__file__).resolve().parents[1] / "tools" / "ops" / "audit_production_goal_readiness.py"
 SPEC = importlib.util.spec_from_file_location("audit_production_goal_readiness", SCRIPT_PATH)
 mod = importlib.util.module_from_spec(SPEC)
 assert SPEC.loader is not None

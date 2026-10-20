@@ -1,0 +1,27 @@
+# N3 local pytest (summary lines; full logs stay in ignored artifacts/n3/)
+chunk1.log: 612 passed, 490 subtests passed in 1864.67s (0:31:04)
+chunk2.log: 1 failed, 567 passed, 7 skipped, 537 subtests passed in 4884.00s (1:21:23)
+chunk3.log: 1 failed, 597 passed, 112 subtests passed in 2015.33s (0:33:35)
+chunk5.log: 1 failed, 527 passed, 284 subtests passed in 1400.97s (0:23:20)
+chunk6.log: 1 failed, 589 passed, 6 skipped, 381 subtests passed in 1395.24s (0:23:15)
+chunk7.log: 1 failed, 935 passed, 3 skipped, 919 subtests passed in 838.65s (0:13:58)
+rest_p1.log: 110 passed, 109 subtests passed in 126.67s (0:02:06)
+rest_p2.log: 166 passed, 1 skipped, 88 subtests passed in 3385.39s (0:56:25)
+rest_p3.log: 1 failed, 226 passed, 10 skipped, 296 subtests passed in 2700.45s (0:45:00)
+rest_q0.log: 75 passed, 1 skipped, 69 subtests passed in 294.34s (0:04:54)
+rest_q1.log: 71 passed, 1 skipped, 36 subtests passed in 49.90s
+rest_q2.log: 67 passed, 27 subtests passed in 223.05s (0:03:43)
+chunk0, chunk4: stopped after slow CPU-bound files; their remaining files re-run as rest_p*/rest_q*
+test_machine_quality_waiver.py: 47 of 67 PASSED before stop, 0 failed
+FAILED tests/test_codex_shared_pool_transport.py::test_busy_before_started_is_proven_no_dispatch
+FAILED tests/test_sermon_app_delivery_workflow.py::AppDeliveryWorkflowTests::test_two_actual_supervisor_cli_processes_admit_one_fixed_bundle_job
+FAILED tests/test_sermon_fresh_full_dag.py::FreshFullDAGComponents::test_confirmed_failed_unit_retry_reuses_successful_neighbor
+FAILED tests/test_sermon_log_profile.py::DurableProfileContextTests::test_detached_job_restores_private_bounded_context_and_runs_once
+FAILED tests/test_sermon_unified_parallel.py::ParallelOwnerTests::test_100_transitions_with_persistent_intents
+FAILED tests/test_telemetry_008.py::DispatchObservationTests::test_cold_isolated_preload_then_actual_profile_stage_preserves_code_identity
+focused after merge: 279 passed, 7 skipped, 752 subtests passed in 148.51s (0:02:28)
+baseline dev@b8e7fdc9: 4 failures in completed chunks
+FAILED tests/test_sermon_historical_native_seed.py::SeedCacheTests::test_changed_sound_runtime_or_full_tree_blocks_before_seed
+FAILED tests/test_sermon_unified_parallel.py::ParallelOwnerTests::test_100_transitions_with_persistent_intents
+FAILED tests/test_production_concurrency_profile.py::ProfileTests::test_23_worker_executor_is_opt_in_and_preserves_source_order
+FAILED tests/test_codex_shared_pool_transport.py::test_busy_before_started_is_proven_no_dispatch

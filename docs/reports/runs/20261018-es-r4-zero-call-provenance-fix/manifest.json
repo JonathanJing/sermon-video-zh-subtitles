@@ -1,0 +1,98 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261018-es-r4-zero-call-provenance-fix",
+  "runs": [
+    {
+      "label": "20261018-es-r4-zero-call",
+      "source": "~/.codex/worktrees/layer2-plugin-policy-budget-provenance/artifacts/production-runs/20261018-es-r4-zero-call",
+      "skipped": {}
+    },
+    {
+      "label": "20261018-plugin-policy-budget-provenance",
+      "source": "~/.codex/worktrees/layer2-plugin-policy-budget-provenance/artifacts/test-runs/20261018-plugin-policy-budget-provenance",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "20261018-es-r4-zero-call",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 314,
+      "truncated": false,
+      "sha256": "9418a02079c4383faa8926dca474e87fab2de2edeb4b0d23770e2f5036c564bb",
+      "redactions": {}
+    },
+    {
+      "run": "20261018-es-r4-zero-call",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 554,
+      "truncated": false,
+      "sha256": "b8d0d666ed26f7546385efad87c1409a2cbd2bd057fe660712f2c1340ff3ac99",
+      "redactions": {}
+    },
+    {
+      "run": "20261018-es-r4-zero-call",
+      "path": "timings.tsv",
+      "kind": "whole",
+      "bytes": 57,
+      "truncated": false,
+      "sha256": "bdccf3f7cbe2cb53112d71ad1c96a980c5e3756eea4e26c32266c9a75040934b",
+      "redactions": {}
+    },
+    {
+      "run": "20261018-es-r4-zero-call",
+      "path": "worker.log",
+      "kind": "log",
+      "bytes": 6740,
+      "truncated": false,
+      "sha256": "8a41676378aeef10f07bb646571d2dbdfed0f2d02c3618a66680007b64ef660f",
+      "redactions": {
+        "secret_field": 1,
+        "home_dir": 16
+      }
+    },
+    {
+      "run": "20261018-plugin-policy-budget-provenance",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 322,
+      "truncated": false,
+      "sha256": "28b9e409cf90b9956eefe9fe67116190d80ac3ce7f208ae73336deae1ae42aac",
+      "redactions": {}
+    },
+    {
+      "run": "20261018-plugin-policy-budget-provenance",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 470,
+      "truncated": false,
+      "sha256": "063d186d3d1b5bfa6dfaf157a40a9299859805295de9afdb6e43c6f8a5cb5258",
+      "redactions": {}
+    },
+    {
+      "run": "20261018-plugin-policy-budget-provenance",
+      "path": "tests.log",
+      "kind": "log",
+      "bytes": 170,
+      "truncated": false,
+      "sha256": "59dd999a618a3e125f8b0cfa86037896852a32237f8759ecd4c97a0379f921ca",
+      "redactions": {}
+    },
+    {
+      "run": "20261018-plugin-policy-budget-provenance",
+      "path": "timings.tsv",
+      "kind": "whole",
+      "bytes": 68,
+      "truncated": false,
+      "sha256": "b6acb1f03937e541d5d2b541dc479a06a3a9aa8e2c643539c8dab3005d0b0486",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}
