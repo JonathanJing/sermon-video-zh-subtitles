@@ -121,10 +121,20 @@ class RunTests(unittest.TestCase):
 
     def test_open_qc_caps_count_until_the_locale_finishes_audio(self):
         for locale in ("ko", "es"):
-            subject.write(self.run_dir / f"plans/qc-{locale}/plan.json", {"stages": [{"capUsd": 5.525}]})
+            root = self.run_dir / f"plans/qc-{locale}/qc-{locale}/.api-budget"
+            subject.write(self.run_dir / f"plans/qc-{locale}/plan.json",
+                          {"stages": [{"capUsd": 5.525, "budgetRoot": str(root)}]})
+            subject.write(root / "source-budget.json", {"requests": {
+                "a": {"status": "returned", "bounds": {"costMicrousd": 2_000_000},
+                      "settlement": {"costStatus": "estimated_upper_bound", "costMicrousd": 1_000_000}}}})
         self.assertAlmostEqual(self.run.open_qc_caps(), 11.05)
         self.run.mark("audio.ko", "done")
         self.run.mark("audio.es", "failed")
+        # The failed locale's QC authority stays valid: its unreserved remainder still bounds a repair plan.
+        self.assertAlmostEqual(self.run.open_qc_caps(), 3.525)
+        subject.write(self.run_dir / "plans/qc-es-audio-seed-43/plan.json", {"stages": [{"capUsd": 1.0}]})
+        self.assertAlmostEqual(self.run.open_qc_caps(), 4.525)
+        self.run.mark("audio.es", "done")
         self.assertEqual(self.run.open_qc_caps(), 0)
 
     def test_report_resumes_only_a_complete_digest_of_this_run(self):

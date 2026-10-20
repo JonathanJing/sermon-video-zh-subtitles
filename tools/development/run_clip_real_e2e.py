@@ -229,14 +229,25 @@ class Run:
         return round(self.layer2_result_microusd() / 1e6, 6)
 
     def open_qc_caps(self) -> float:
-        """Full caps of QC budgets planned in this run whose locale has not finished audio QC."""
+        """QC authority still spendable for locales that have not finished audio QC: the full caps of their QC
+        plans. A failed locale's earlier authorities (its QC plan and earlier repair plans) stay valid, so each
+        counts its cap less what its ledger has already reserved; settled() counts that reserved spend."""
+        from tools.development.export_run_digest import budget_summary
         caps = 0.0
         for locale in self.spec["locales"]:
-            plan = self.dir / "plans" / f"qc-{locale}" / "plan.json"
-            if plan.exists() and not self.done("audio." + locale) and (self.stages.get("audio." + locale) or {}).get(
-                    "status") != "failed":
-                caps += sum(stage["capUsd"] for stage in read(plan)["stages"])
-        return caps
+            if self.done("audio." + locale):
+                continue
+            failed = (self.stages.get("audio." + locale) or {}).get("status") == "failed"
+            plans = [self.dir / "plans" / f"qc-{locale}" / "plan.json"]
+            if failed:
+                plans += sorted((self.dir / "plans").glob(f"qc-{locale}-audio-seed-*/plan.json"))
+            for plan in (path for path in plans if path.exists()):
+                for stage in read(plan)["stages"]:
+                    ledger = Path(stage["budgetRoot"]) / "source-budget.json" if stage.get("budgetRoot") else None
+                    reserved = (budget_summary(read(ledger)).get("reservedMicrousd", 0)
+                                if failed and ledger is not None and ledger.exists() else 0)
+                    caps += max(0.0, stage["capUsd"] - reserved / 1e6)
+        return round(caps, 6)
 
     def plan(self, out: Path, stages: list[str], locales: list[str], *, extra: list = (), include_open_qc=True):
         if (out / "plan.json").exists():
