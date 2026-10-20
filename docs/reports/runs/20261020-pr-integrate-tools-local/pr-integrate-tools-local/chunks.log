@@ -1,0 +1,8 @@
+pytest-all-0: 180 passed, 68 subtests passed in 225.08s (0:03:45)
+pytest-all-1: 313 passed, 262 subtests passed in 302.78s (0:05:02)
+pytest-all-2: 174 passed, 182 subtests passed in 206.01s (0:03:26)
+pytest-all-3: 214 passed, 129 subtests passed in 82.82s (0:01:22)
+pytest-all-4: 174 passed, 293 subtests passed in 485.25s (0:08:05)
+pytest-all-5: 118 passed, 235 subtests passed in 65.46s (0:01:05)
+pytest-all-6: 138 passed, 56 subtests passed in 209.59s (0:03:29)
+pytest-all-7: 226 passed, 746 subtests passed in 337.52s (0:05:37)
