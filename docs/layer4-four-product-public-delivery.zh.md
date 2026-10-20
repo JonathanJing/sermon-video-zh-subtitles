@@ -57,6 +57,8 @@ PDF 不进入该身份。静态 HTML 包含 `study-outline` 和 `study-meditatio
 
 v5 同时投影出诚实的 v4/v3 兼容目录：v4 按 edition 拆成独立页面，v3 仍是 v4 的 human-only 投影。旧客户端因此可能看到两个来源版本；支持 v5 的 Web/iOS 只显示一个 family 页面。single-source 页面可无损升级为 v5 `single_source`，但只有发布计划一次性覆盖原页面全部 targets、每个旧 locale 的来源字段不变且被吸收的独立 edition target 逐字段一致时，才允许晋升为 `per_target`。发布前后 CAS 和 readback 必须同时核对 v5、v4、v3；不得只写 v5 或改写任一旧 release/content 哈希。
 
+站点一旦带 v5，后续改目录的工具都以 v5 为准，再重新投影 v4、v3：[对齐绑定](../packages/production/src/tongxing_production/delivery/published_alignment_catalog.py)的 `--page-id` 指 edition，先按原规则在 v4 edition 页上校验，再把同一绑定写到 v5 中该 edition 的各 target，并要求 v4、v3 正是 v5 的投影，按 v3、v4、v5 顺序原子替换；普通单一来源周更封存时把该页带进 v5，若该页是 `per_target` family 或其中的 edition 则拒绝，须按 `per_target` 封存。v4 投影里各 edition 页的默认语言取 v5 页面声明的默认语言（该语言落在此 edition 时），否则按 zh-Hans、ko、es 顺序，不随 target 的键顺序变化。跨 `single_source`／`per_target` 的单语言回滚会被拒绝，须整页恢复。
+
 附加资源工具在站点带 v4 时读 v4，否则照旧只读 v3，人工周次的输出逐字节不变。读 v4 前都先核对 v3 正是 v4 的人工投影，不一致就拒绝。[英文对照](../packages/production/src/tongxing_production/delivery/published_english_reference.py)和定位补充资产（`experiments/sermon-dubbing-poc/bind_published_fingerprints.mjs`）也覆盖机器质检语言；英文对照的 `reviewState=human_approved` 只表示英文来源经人工批准，各语言译文仍以自己的 release 和正文状态为准。[对齐绑定](../packages/production/src/tongxing_production/delivery/published_alignment_catalog.py)把绑定写进 v4，再把 v3 重写为新 v4 的人工投影，先写 v3、后写 v4，每份都原子替换；中断后重跑仍可接受。目录状态只从 release 原样核对，从不提升。配音不在原视频时钟上（`audioDurationSeconds` 与 `durationSeconds` 相差 0.1 秒及以上，例如精简口播）的语言不能做声纹定位，绑定会拒绝。绑定会改变两份目录的 SHA，之后发布要以绑定后的候选为准。[听审统计来源目录](../tools/ops/build_language_listening_catalog.py)已按 #260 读取 v4。[旧版 v3 周更组装](../packages/production/src/tongxing_production/adapters/legacy/assemble_multilingual_v3_update.py)只会写 v3，基线带 v4 时仍会拒绝。
 
 ## 封存、发布与端点
