@@ -24,9 +24,9 @@ from typing import Any
 
 CONFIG_SCHEMA = "sermon-group-l3-stages-v1"
 REPORT_SCHEMA = "sermon-group-l3-stages-report-v1"
-# Inputs a command may interpolate; anything else is refused before dispatch.
-PLACEHOLDERS = frozenset({"speechJob", "source", "anchor", "candidate", "policy",
-                          "adapter", "registry", "out", "mergeDir"})
+# Files the runner requires before any stage; additional string variables (locale, code,
+# stage directory, extra receipts) may be declared and interpolated too.
+REQUIRED_PATHS = ("speechJob", "source", "anchor", "candidate", "policy", "adapter", "registry")
 STAGE_NAME = re.compile(r"[a-z][a-z0-9_]{0,63}")
 REQUIRED_STAGES = ("formal_render", "compact", "screen", "package", "audio_qc")
 
@@ -48,11 +48,18 @@ def load_configuration(path: Path) -> dict:
     config = json.loads(path.read_text(encoding="utf-8"))
     _require(isinstance(config, dict) and config.get("schemaVersion") == CONFIG_SCHEMA,
              "invalid_group_l3_stages_config")
-    _require(set(config) == {"schemaVersion", "paths", "stages"}, "unknown_group_l3_stages_field")
+    _require(set(config) <= {"schemaVersion", "paths", "variables", "stages"}
+             and {"schemaVersion", "paths", "stages"} <= set(config), "unknown_group_l3_stages_field")
+    variables = config.get("variables") or {}
+    _require(isinstance(variables, dict)
+             and all(isinstance(value, str) and value for value in variables.values()),
+             "invalid_group_l3_variable")
+    _require(isinstance(config["paths"], dict) and set(REQUIRED_PATHS) <= set(config["paths"]),
+             "invalid_group_l3_paths")
+    _require(all(isinstance(value, str) and value for value in config["paths"].values()),
+             "invalid_group_l3_path_value")
     paths = {key: (path.parent / value if not Path(value).is_absolute() else Path(value))
              for key, value in config["paths"].items()}
-    _require(set(paths) == {"speechJob", "source", "anchor", "candidate", "policy",
-                            "adapter", "registry", "mergeDir"}, "invalid_group_l3_paths")
     stages = config["stages"]
     _require(isinstance(stages, list) and stages, "group_l3_needs_stages")
     seen = set()
@@ -72,13 +79,13 @@ def load_configuration(path: Path) -> dict:
                           and ".." not in Path(stage["failures"]).parts)),
                  "invalid_group_l3_stage")
         seen.add(stage["name"])
-    return {"path": path, "paths": paths, "stages": stages}
+    return {"path": path, "paths": paths, "variables": variables, "stages": stages}
 
 
 def _substitute(value: str, paths: dict) -> str:
     def replace(match: re.Match) -> str:
         name = match.group(1)
-        _require(name in PLACEHOLDERS, f"unknown_placeholder:{name}")
+        _require(name in paths or name == "out", f"unknown_placeholder:{name}")
         return str(paths[name])
     return re.sub(r"\{([A-Za-z][A-Za-z0-9_]*)\}", replace, value)
 
@@ -86,8 +93,8 @@ def _substitute(value: str, paths: dict) -> str:
 def run_stages(config: dict, out: Path, *, dry_run: bool = False) -> dict:
     """Execute the configured stages in order; stop at the first failure."""
     out = Path(out)
-    paths = {**config["paths"], "out": out}
-    for name in ("source", "anchor", "candidate", "policy", "adapter", "registry", "speechJob"):
+    paths = {**config.get("variables", {}), **config["paths"], "out": out}
+    for name in REQUIRED_PATHS:
         _require(Path(paths[name]).is_file(), f"missing_group_l3_input:{name}")
     _require(out.is_dir() or dry_run, "group_l3_output_must_exist")
     report = {"schemaVersion": REPORT_SCHEMA, "mode": "dry_run" if dry_run else "execute",

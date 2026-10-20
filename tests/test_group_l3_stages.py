@@ -103,6 +103,16 @@ class GroupL3StagesTests(unittest.TestCase):
         self.assertEqual(report["stages"][0]["status"], "planned")
         self.assertFalse((self.out / "rendered.json").exists())
 
+    def test_declared_variables_interpolate_into_commands(self):
+        self.write_config([{"name": "formal_render",
+                            "command": [PY, "-c", "import pathlib; pathlib.Path(r'{out}/{locale}-{code}.txt').write_text('x')"],
+                            "produces": "ko-abc.txt"}], paths=None)
+        config = json.loads(self.config_path.read_text(encoding="utf-8"))
+        config["variables"] = {"locale": "ko", "code": "abc"}
+        self.config_path.write_text(json.dumps(config), encoding="utf-8")
+        self.execute()
+        self.assertTrue((self.out / "ko-abc.txt").is_file())
+
     def test_unknown_placeholder_is_refused_before_dispatch(self):
         self.write_config([{"name": "formal_render",
                             "command": [PY, "-c", "pass", "{nope}"], "produces": "x.json"}])
