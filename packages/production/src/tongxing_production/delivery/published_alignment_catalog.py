@@ -12,6 +12,7 @@ import argparse
 import copy
 import hashlib
 import json
+import math
 import os
 from pathlib import Path
 
@@ -24,6 +25,10 @@ PUBLISHED = {'human_reviewed', 'machine_checked'}
 
 # Seconds a dubbed track may end after the approved clip and still count as source-clocked.
 TAIL_OVERRUN_ALLOWANCE = 1.0
+# Content `sourceWindow` block; its length may differ from durationSeconds by the
+# listening-web reader's tolerance (apps/listening-web/published-weeks.mjs).
+SOURCE_WINDOW = 'sermon-original-recording-window-v1'
+WINDOW_DURATION_TOLERANCE = .001
 
 def digest(path):
     with Path(path).open('rb') as stream:
@@ -64,7 +69,7 @@ def _bind(public, catalog, page_id, *, machine):
             and sidecar.get('pageId') == page_id
             and sidecar.get('sourceIdentitySha256') == page['sourceIdentitySha256'], 'Alignment source mismatch')
     require(set(sidecar['targets']) == set(page['targets']), 'Alignment locale mismatch')
-    source_sha = None
+    source_sha = source_window = None
     for locale, target in page['targets'].items():
         evidence = sidecar['targets'][locale]
         require(evidence['releasePackageJsonSha256'] == target['releasePackageJsonSha256'], 'Release binding mismatch')
@@ -100,20 +105,17 @@ def _bind(public, catalog, page_id, *, machine):
                 and binding.get('algorithmVersion') == 'spectral-landmarks-v1'
                 and binding.get('captureSeconds') == 10 and binding.get('pageId') == page_id
                 and binding.get('trackSha256') == assets['audio']['sha256'], 'Invalid fingerprint binding')
-        source_window = content.get('sourceWindow')
         start, end = binding.get('sourceStartSeconds'), binding.get('sourceEndSeconds')
-        require(isinstance(source_window, dict)
-                and isinstance(start, (int, float)) and not isinstance(start, bool)
-                and isinstance(end, (int, float)) and not isinstance(end, bool)
-                and 0 <= start < end
+        duration = content.get('durationSeconds')
+        require(_seconds(start) and _seconds(end) and _seconds(duration) and 0 <= start < end and duration > 0
                 and content.get('sourceMediaSha256') == binding['sourceSha256']
-                and source_window.get('mediaSha256') == binding['sourceSha256']
-                and source_window.get('startSeconds') == start
-                and source_window.get('endSeconds') == end
+                and _window_matches(content.get('sourceWindow'), binding['sourceSha256'], start, end, duration)
                 and content.get('englishSourcePackageJsonSha256') == page['sourceIdentitySha256']
-                and content.get('pageId') == page_id and content.get('targetLocale') == locale
-                and end - start == content.get('durationSeconds')
-                and content['durationSeconds'] > 0, 'Fingerprint source/window mismatch')
+                and content.get('pageId') == page_id and content.get('targetLocale') == locale,
+                'Fingerprint source/window mismatch')
+        # Every locale shares the page's source identity, so one approved window.
+        require(source_window in (None, (start, end)), 'Locales have different source windows')
+        source_window = (start, end)
         if machine:
             # Landmark alignment maps the dub 1:1 onto source time; a dub on its own
             # clock (e.g. a condensed spoken script) cannot be located that way.
@@ -130,8 +132,7 @@ def _bind(public, catalog, page_id, *, machine):
         require(index.get('schemaVersion') == 'sermon-landmark-index-v1'
                 and all(index.get(k) == binding[k] for k in ('algorithmVersion', 'pageId', 'sourceSha256', 'trackSha256',
                                                             'sourceStartSeconds', 'sourceEndSeconds'))
-                and index.get('durationSeconds') == end - start == content['durationSeconds'],
-                'Index identity mismatch')
+                and index.get('durationSeconds') == end - start, 'Index identity mismatch')
         require('audio' in target['capabilities'], 'Missing audio capability')
         require(target.get('audioFingerprint', binding) == binding, 'Existing binding conflicts')
         target['audioFingerprint'] = copy.deepcopy(binding)
@@ -140,6 +141,26 @@ def _bind(public, catalog, page_id, *, machine):
     require(page.get('sourceMediaSha256', source_sha) == source_sha, 'Existing media identity conflicts')
     page['sourceMediaSha256'] = source_sha
     return catalog
+
+
+def _seconds(value):
+    return isinstance(value, (int, float)) and not isinstance(value, bool) and math.isfinite(value)
+
+
+def _window_matches(window, media_sha256, start, end, duration):
+    """The fingerprint window is the content's approved source window.
+
+    Content with a ``sourceWindow`` block must name the same master media and
+    endpoints, and its duration may differ from the window length by the
+    published reader's 1 ms tolerance. Historical content without the block keeps
+    the zero-origin rule: the window starts at 0 and ends at the content duration.
+    """
+    if window is None:
+        return start == 0 and end == duration
+    return (isinstance(window, dict) and window.get('schemaVersion') == SOURCE_WINDOW
+            and window.get('mediaSha256') == media_sha256
+            and window.get('startSeconds') == start and window.get('endSeconds') == end
+            and abs(end - start - duration) < WINDOW_DURATION_TOLERANCE)
 
 
 def write_catalogs(public, catalogs, page_id):
