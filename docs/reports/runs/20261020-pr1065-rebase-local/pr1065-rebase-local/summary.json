@@ -1,0 +1,28 @@
+{
+  "status": "passed",
+  "codePr": 1065,
+  "branch": "codex/layer2-plugin-policy-budget-provenance",
+  "head": "72f4c538",
+  "baseRetargeted": "codex/layer2-local-ko-es-integration -> dev (its one commit 163dfcc9 is already on dev by patch id)",
+  "conflictsResolved": [
+    "text/models.py: policy threaded through _require_partial_recovery_source and _returned_role_evidence (dev split)",
+    "tests/test_layer2_partial_recovery_parallel.py fake accepts policy_migration"
+  ],
+  "identities": {
+    "W": "1c28f4aa38c0 (unchanged)",
+    "l2CodeIdentity": {
+      "dev@810349e2": "f3a81a3ced24dd7a4d23dcdd731c72cfaafb86b61960f66da78a7b98a28805ef",
+      "branch": "77eb210967e9ee6a2a72e6944195c9a157211de326e23f624fd4388eb964aad0",
+      "dev+#1215+#1065": "e572c22144d1d2ceb8cc22f025663240bb1c8664268d7c965bade826627c6fec"
+    }
+  },
+  "pytest": {
+    "files": 54,
+    "chunks": 6,
+    "passed": 888,
+    "failed": 1,
+    "failedSubtests": 2,
+    "preexistingOnDev": 3
+  },
+  "layer2RunInProgress": false
+}
