@@ -16,8 +16,8 @@ Media, model outputs and any other file are left out and only counted. Human
 acceptances and approvals reach the report as hash-bound entries in the decision
 record, not as copies: their files can hold sermon text. Every
 copied file is redacted (API keys, tokens, cookies, private keys, emails,
-private IPs, home directories, and the values of secret-like environment
-variables) before it is written. The digest gets ``manifest.json`` (source
+private IPs, cloud-drive share links, home directories, and the values of
+secret-like environment variables) before it is written. The digest gets ``manifest.json`` (source
 hashes, truncation and redaction counts), ``INDEX.md`` (outcomes, stage
 timings, failed stages and error lines) and a ``RETROSPECTIVE.md`` skeleton
 pre-filled with the run's total time and the model identities, tokens and
@@ -87,6 +87,11 @@ SECRET_KEY = re.compile(r"(?i)(?:api[_-]?key|token|secret|password|passwd|cookie
 PLACEHOLDERS = {"<redacted>", '"<redacted>"', "'<redacted>'"}
 ERROR_LINE = re.compile(r"Traceback|Error\b|Exception|FAILED|\bfail(ed)?\b|refused|denied|timed? ?out", re.I)
 
+# A share link ends at whitespace, quoting or markup, at CJK/fullwidth punctuation
+# (Chinese prose follows a link without a space), and never on trailing ASCII punctuation.
+LINK_CHAR = r"[^\s\"'<>()\[\]`|\\\u3000-\u303f\uff00-\uffef]"
+LINK_TAIL = LINK_CHAR + r"*(?<![.,;:!?])"
+
 REDACTIONS: list[tuple[str, re.Pattern[str], str]] = [
     ("private_key", re.compile(r"-----BEGIN [A-Z ]*PRIVATE KEY-----.*?-----END [A-Z ]*PRIVATE KEY-----", re.S),
      "<private-key>"),
@@ -94,6 +99,16 @@ REDACTIONS: list[tuple[str, re.Pattern[str], str]] = [
     ("github_token", re.compile(r"\b(?:gh[pousr]_[A-Za-z0-9]{20,}|github_pat_[A-Za-z0-9_]{20,})"), "<github-token>"),
     ("google_key", re.compile(r"\bAIza[0-9A-Za-z_-]{35}\b"), "<google-key>"),
     ("bearer", re.compile(r"(?i)\bBearer\s+[A-Za-z0-9._~+/=-]+"), "Bearer <redacted>"),
+    # Share links to private cloud folders: a Google Drive folder link in a Layer 1 summary's sourceUrl
+    # reached run-report PR #1084 on 2026-10-18. Runs before secret_field so a query string goes with its URL.
+    # OneDrive covers consumer hosts, organization <tenant>-my.sharepoint.com and SharePoint :x:/ share
+    # links; Dropbox covers file (s, scl) and folder (sh) shares.
+    ("private_drive_link", re.compile(
+        r"(?i)(?:https?://)?(?<![\w.-])(?:(?:drive\.google\.com|onedrive\.live\.com|1drv\.ms)(?![\w.-])"
+        r"|docs\.google\.com/(?:" + LINK_CHAR[:-1] + r"/]+/)*d/"
+        r"|[\w-]+-my\.sharepoint\.com(?![\w.-])|[\w-]+\.sharepoint\.com/:[a-z]{1,2}:/"
+        r"|(?:www\.)?dropbox\.com/(?:s|scl|sh)/"
+        r"|(?:www\.)?icloud\.com/iclouddrive\b)" + LINK_TAIL), "<private-drive-link>"),
     ("secret_field", re.compile(
         r"(?i)(\"?[\w-]*(?:api[_-]?key|token|secret|password|passwd|cookie|authorization)\"?\s*[:=]\s*)"
         r"(\"[^\"\n]*\"|'[^'\n]*'|[^\s,;}]+)"),
