@@ -88,6 +88,17 @@ class GroupPipelineTests(unittest.TestCase):
         self.assertTrue((directory / "merge-manifest.json").is_file())
         on_disk = json.loads((directory / "merge-manifest.json").read_text(encoding="utf-8"))
         self.assertEqual(on_disk["schemaVersion"], group_pipeline.MERGE_SCHEMA)
+        layer3 = group_pipeline.status(self.config)["layer3"]
+        self.assertEqual(layer3["merge"], "merged")
+        self.assertEqual(layer3["preparation"], "not_prepared")
+        (directory / "l3-preparation.json").write_text(json.dumps(
+            {"speechJobSha256": "a" * 64, "speechJobPath": "/tmp/job.json"}), encoding="utf-8")
+        (directory / "l3-stages.json").write_text(json.dumps(
+            {"status": "completed", "stages": [{"name": "formal_render"}]}), encoding="utf-8")
+        layer3 = group_pipeline.status(self.config)["layer3"]
+        self.assertEqual(layer3["preparation"], "prepared")
+        self.assertEqual(layer3["stages"], "completed")
+        self.assertEqual(layer3["stageNames"], ["formal_render"])
         self.assertEqual(on_disk["pendingSteps"], list(group_pipeline.PENDING_STEPS))
 
     def test_run_skips_groups_a_budget_did_not_reserve(self):

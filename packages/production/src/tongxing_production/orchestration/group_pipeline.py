@@ -147,6 +147,32 @@ def _report_group(store, payloads, group: dict, anchor: dict, policy: dict, cont
             "stages": stages, "conflicts": conflicts, "readyToMerge": not blockers, "blockers": blockers}
 
 
+def _layer3_state(config: dict) -> dict:
+    """How far this locale got after the merge, read from the current merge directory."""
+    directory = _current_merge_dir(config)
+    candidate = directory / "candidate.json"
+    if not candidate.is_file():
+        return {"merge": "unmerged"}
+    state = {"merge": "merged", "candidateSha256": legacy.file_sha256(candidate),
+             "textRelease": "missing", "preparation": "not_prepared", "stages": "not_run"}
+    release = directory / "text-release.json"
+    if release.is_file():
+        state["textRelease"] = "bound"
+        state["textReleaseReceiptSha256"] = legacy.load_json(release).get("receiptSha256")
+    preparation = directory / "l3-preparation.json"
+    if preparation.is_file():
+        prepared = legacy.load_json(preparation)
+        state["preparation"] = "prepared"
+        state["speechJobSha256"] = prepared.get("speechJobSha256")
+        state["speechJobPath"] = prepared.get("speechJobPath")
+    stages = directory / "l3-stages.json"
+    if stages.is_file():
+        report = legacy.load_json(stages)
+        state["stages"] = report.get("status")
+        state["stageNames"] = [row.get("name") for row in report.get("stages") or []]
+    return state
+
+
 def _reviewed_view(group: dict, review: dict | None, payloads) -> dict:
     """The group with the reviewed text its R record names, for the stages after R."""
     if not review:
@@ -351,6 +377,7 @@ def status(config: dict) -> dict:
     return {"schemaVersion": STATUS_SCHEMA, "mode": "read_only", "dispatched": False, "modelCalls": 0,
             "targetLocale": locale, "layer1": layer1, "groupCount": len(rows), "summary": summary,
             "readyToMerge": all(row["readyToMerge"] for row in rows),
+            "layer3": _layer3_state(config),
             "groups": rows, "releaseEligible": False, "humanApproval": False}
 
 

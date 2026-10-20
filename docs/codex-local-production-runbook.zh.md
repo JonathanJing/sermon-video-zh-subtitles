@@ -75,7 +75,7 @@ QC 的 inputs v3 必须含实际 launcher 的非秘密 `openaiRoute`（schemaVer
 ```
 
 ```bash
-python tools/ops/group_tasks.py status --config run.json          # 只读：每组每步状态
+python tools/ops/group_tasks.py status --config run.json          # 只读：每组每步状态 + layer3 进度
 python tools/ops/group_tasks.py run --config run.json --budget <budget.json>   # 只跑过期或点名的组
 python tools/ops/group_tasks.py redo --config run.json --group-id <id> --reason "…" --budget <budget.json>
 python tools/ops/group_tasks.py merge --config run.json [--affected <id> …]
