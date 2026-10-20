@@ -17,6 +17,7 @@ class TemplateTests(unittest.TestCase):
     save_catalog = fixtures.MultilingualPosterTests.save_catalog
     load = fixtures.MultilingualPosterTests.load
     machine_week = fixtures.MultilingualPosterTests.machine_week
+    make_mixed_source_v5 = fixtures.MultilingualPosterTests.make_mixed_source_v5
     def reference(self, bundles):
         source = bundles['zh-Hans']['source']
         return dict(**{k:source[k] for k in ('pageId','sourceIdentitySha256','contentSha256')},
@@ -38,6 +39,13 @@ class TemplateTests(unittest.TestCase):
         self.assertFalse(en['source']['announcementEligible'])
         self.assertIn('contentLang=zh-Hans&lang=en',en['brief']['qrURL'])
         self.assertEqual(en['source']['releasePackageSha256'],bundles['zh-Hans']['source']['releasePackageSha256'])
+
+    def test_mixed_source_english_poster_links_the_chinese_edition(self):
+        self.make_mixed_source_v5()
+        bundles, _ = self.load()
+        template.add_english_reference(bundles, self.reference(bundles))
+        self.assertIn('?week=broadcast-edition&contentLang=zh-Hans&', bundles['zh-Hans']['brief']['qrURL'])
+        self.assertTrue(bundles['en']['brief']['qrURL'].endswith('/?week=broadcast-edition&contentLang=zh-Hans&lang=en'))
 
     def test_english_copy_is_bound_to_exact_week_and_frozen_text(self):
         bundles, _ = self.load()
