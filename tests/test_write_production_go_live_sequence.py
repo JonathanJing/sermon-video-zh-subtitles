@@ -333,7 +333,7 @@ def write_reports(root: Path, **overrides):
             },
             "runnerCommand": [
                 "python3",
-                "scripts/run_no_caption_archive_asr_route.py",
+                "tools/ops/run_no_caption_archive_asr_route.py",
                 "--live-url",
                 "<NO_CAPTION_YOUTUBE_LIVE_ARCHIVE_URL>",
                 "--api-key-secret",

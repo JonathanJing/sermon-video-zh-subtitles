@@ -25,7 +25,7 @@ import uuid
 import webbrowser
 
 if __package__ in (None, ''):
-    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+    sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
 def official_prompt(source: str) -> str:
     """Frozen source-only MiLMMT A0 prompt; never apply a chat template."""
@@ -37,7 +37,7 @@ MANIFEST_SHA = "5f313eadf8951eb3251056686fee965feae3d189b2a6cbe844118982d0d27179
 WEIGHTS_SHA = "6057e793922b8aa0c30c5180b490d8e5cac14a3dcd1a000b1b906d0da8fa6987"
 MODEL = Path.home() / "Models/milmmt-sermon-v41-experimental-mlx-q5"
 STATE_DIR = Path.home() / "Library/Caches/sermon-video-zh-subtitles/milmmt-v41-local"
-PAGE = Path(__file__).resolve().parents[1] / "experiments/milmmt-v41-local/index.html"
+PAGE = Path(__file__).resolve().with_name("index.html")
 MAX_SOURCE = 2048
 MAX_PROMPT_TOKENS = 1024
 MAX_BODY = 16384

@@ -10,8 +10,9 @@ import time
 import unittest
 from unittest.mock import patch
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
-import serve_milmmt_v41_local as server
+from tests import experiment_modules
+
+server = experiment_modules.load("experiments/milmmt-v41-local/serve_milmmt_v41_local.py")
 
 
 class FakeEngine:

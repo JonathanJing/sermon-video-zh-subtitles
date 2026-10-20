@@ -190,8 +190,8 @@ def add_no_caption_asr_stage_check(checks: list[dict[str, Any]], name: str, stag
     required_models = stage_obj.get("requiredModels") if isinstance(stage_obj.get("requiredModels"), dict) else {}
     observed = {
         "state": stage_obj.get("state"),
-        "hasRunnerCommand": "scripts/run_no_caption_archive_asr_route.py" in runner_text,
-        "hasArchivePreflight": "scripts/run_offline_archive_preflight.py" in command_text,
+        "hasRunnerCommand": "tools/ops/run_no_caption_archive_asr_route.py" in runner_text,
+        "hasArchivePreflight": "tools/ops/run_offline_archive_preflight.py" in command_text,
         "hasPreparePlayback": "scripts/prepare_live_link_playback.py" in command_text,
         "hasTranslate": "scripts/translate_playback_with_openai.py" in command_text,
         "hasExport": "scripts/export_playback_captions.py" in command_text,

@@ -242,7 +242,7 @@ def go_live_sequence(live, *, remove_asr_stage=False, incomplete_asr_stage=False
             "commands": [
                 [
                     "python3",
-                    "scripts/run_no_caption_archive_asr_route.py",
+                    "tools/ops/run_no_caption_archive_asr_route.py",
                     "--asr-model",
                     "gpt-4o-transcribe",
                     "--translation-model",
@@ -250,7 +250,7 @@ def go_live_sequence(live, *, remove_asr_stage=False, incomplete_asr_stage=False
                 ],
             ],
             "expandedCommands": [
-                ["python3", "scripts/run_offline_archive_preflight.py", "--asr-model", "gpt-4o-transcribe"],
+                ["python3", "tools/ops/run_offline_archive_preflight.py", "--asr-model", "gpt-4o-transcribe"],
                 ["python3", "scripts/prepare_live_link_playback.py", "--asr-model", "gpt-4o-transcribe"],
                 ["python3", "scripts/translate_playback_with_openai.py", "--model", "gpt-5.4-mini"],
                 ["python3", "scripts/export_playback_captions.py", "--stem", "sermon.zh.live-aligned"],

@@ -13,7 +13,7 @@ import sys
 from typing import Any
 
 
-REPO_ROOT = Path(__file__).resolve().parents[1]
+REPO_ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_BUCKET = "sermon-zh-artifacts-ai-for-god"
 DEFAULT_SESSION_ID = "no-caption-asr-route"
 DEFAULT_ASR_MODEL = "gpt-4o-transcribe"
@@ -144,7 +144,7 @@ def route_commands(args: argparse.Namespace, paths: dict[str, Path]) -> list[lis
     return [
         [
             sys.executable,
-            "scripts/run_offline_archive_preflight.py",
+            "tools/ops/run_offline_archive_preflight.py",
             "--live-url",
             args.live_url,
             "--no-discover",

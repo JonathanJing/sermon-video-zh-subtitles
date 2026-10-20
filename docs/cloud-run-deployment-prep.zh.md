@@ -522,7 +522,7 @@ event token、API key 或 Secret Manager resource name。
 跑离线 OpenAI/翻译链路前，先验证 YouTube archive route，不下载 captions，也不调用 OpenAI：
 
 ```bash
-python3 scripts/run_offline_archive_preflight.py \
+python3 tools/ops/run_offline_archive_preflight.py \
   --live-url "https://www.youtube.com/watch?v=VIDEO_ID" \
   --sunday YYYY-MM-DD \
   --out artifacts/evidence/offline-archive-preflight.json

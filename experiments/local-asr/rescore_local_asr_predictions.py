@@ -10,11 +10,13 @@ import sys
 from pathlib import Path
 
 
-REPO_ROOT = Path(__file__).resolve().parents[1]
+REPO_ROOT = Path(__file__).resolve().parents[2]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
+if str(Path(__file__).resolve().parent) not in sys.path:  # sibling modules of this experiment line
+    sys.path.append(str(Path(__file__).resolve().parent))
 
-from scripts.run_local_asr_benchmark import (  # noqa: E402
+from run_local_asr_benchmark import (  # noqa: E402
     SCORABLE_REFERENCE_STATUSES,
     contains_term,
     edit_distance,

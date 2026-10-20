@@ -5,7 +5,7 @@
 在仓库根目录可独立启动：
 
 ```bash
-~/.local/share/uv/tools/mlx-lm/bin/python scripts/serve_milmmt_v41_local.py start --open
+~/.local/share/uv/tools/mlx-lm/bin/python experiments/milmmt-v41-local/serve_milmmt_v41_local.py start --open
 ```
 
 使用固定模型 `~/Models/milmmt-sermon-v41-experimental-mlx-q5` 和本机端口 18771；启动会验证冻结模型包、依赖及模型输出。模型仍为未经人工确认、未通过神学质量门的实验候选。

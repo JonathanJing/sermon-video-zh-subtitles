@@ -10,7 +10,7 @@ import re
 from pathlib import Path
 
 
-REPO_ROOT = Path(__file__).resolve().parents[1]
+REPO_ROOT = Path(__file__).resolve().parents[2]
 NON_SPEECH_CUE_RE = re.compile(
     r"[\[(][^\])]*(?:music|applause|laughter|cheering|silence)[^\])]*[\])]",
     re.IGNORECASE,

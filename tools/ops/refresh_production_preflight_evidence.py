@@ -332,7 +332,7 @@ def build_commands(args: argparse.Namespace, paths: dict[str, Path]) -> dict[str
         ],
         "noCaptionAsrPlan": [
             sys.executable,
-            "scripts/write_no_caption_asr_fallback_plan.py",
+            "tools/ops/write_no_caption_asr_fallback_plan.py",
             "--sunday",
             args.sunday,
             "--out",
@@ -340,7 +340,7 @@ def build_commands(args: argparse.Namespace, paths: dict[str, Path]) -> dict[str
         ],
         "offlineAsrSampleChain": [
             sys.executable,
-            "scripts/build_no_caption_asr_sample_chain.py",
+            "tools/ops/build_no_caption_asr_sample_chain.py",
             "--asr-smoke-report",
             str(paths["offlineAsrSmoke"]),
             "--sunday",

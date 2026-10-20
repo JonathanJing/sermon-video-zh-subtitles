@@ -6,7 +6,9 @@ import tempfile
 import unittest
 from unittest.mock import patch
 from tests.legacy_pipeline_patches import patch_both  # W3b: Layer 1 names live in two modules
-from scripts import run_local_asr_gpt_reaudit as subject
+from tests import experiment_modules
+
+subject = experiment_modules.load("experiments/local-asr/run_local_asr_gpt_reaudit.py")
 
 
 class AsrReauditOutcomeTests(unittest.TestCase):

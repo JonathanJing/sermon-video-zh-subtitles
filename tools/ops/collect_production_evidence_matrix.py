@@ -1517,11 +1517,11 @@ def state_from_no_caption_asr_plan(report: dict[str, Any] | None, path: str | No
         "offlineAsrModel": required_models.get("offlineAsr") == "gpt-4o-transcribe",
         "offlineTranslationModel": required_models.get("offlineTranslation") == "gpt-5.4-mini",
         "forbiddenOfflineModel": required_models.get("forbiddenOfflineModel") == "gpt-realtime-translate",
-        "runnerCommand": "scripts/run_no_caption_archive_asr_route.py" in runner_text
+        "runnerCommand": "tools/ops/run_no_caption_archive_asr_route.py" in runner_text
         and "gpt-4o-transcribe" in runner_text
         and "gpt-5.4-mini" in runner_text
         and "artifacts/evidence/no-caption-asr-route-run.json" in runner_text,
-        "preflightCommand": "scripts/run_offline_archive_preflight.py" in command_text and "use_asr_fallback" in criteria_text,
+        "preflightCommand": "tools/ops/run_offline_archive_preflight.py" in command_text and "use_asr_fallback" in criteria_text,
         "audioExtractionCommand": "scripts/prepare_live_link_playback.py" in command_text and "gpt-4o-transcribe" in command_text,
         "translationCommand": "scripts/translate_playback_with_openai.py" in command_text and "gpt-5.4-mini" in command_text,
         "exportCommand": "scripts/export_playback_captions.py" in command_text and "--gcs-dry-run" in command_text,
