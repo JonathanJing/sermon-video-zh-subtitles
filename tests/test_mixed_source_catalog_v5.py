@@ -433,3 +433,13 @@ def test_mixed_source_v2_release_must_name_its_target_edition_locale_and_status(
             contract.validate_v2_release_target(dict(copy.deepcopy(good), **change), page, 'zh-Hans')
     with pytest.raises(Exception):
         contract.validate_v2_release_target({k: v for k, v in good.items() if k != 'packageId'}, page, 'zh-Hans')
+
+
+def test_single_source_carry_refuses_a_mixed_family_or_its_edition():
+    family = catalog()
+    legacy = contract.project_legacy_catalog_v4(family)
+    for page_id in ('family-page', 'broadcast-edition'):
+        with pytest.raises(ValueError, match='mixed-source family'):
+            contract.carry_single_source_into_v5(family, legacy, page_id)
+    upgraded = contract.upgrade_catalog_v5(legacy)
+    assert contract.carry_single_source_into_v5(upgraded, legacy, 'broadcast-edition')['pages'] == upgraded['pages']

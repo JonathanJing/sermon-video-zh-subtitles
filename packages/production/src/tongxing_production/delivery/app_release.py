@@ -809,10 +809,10 @@ def seal(args: argparse.Namespace) -> dict:
                     and (baseline_report.get("catalogV4Sha256") is None
                          or baseline_report["catalogV4Sha256"] == digest(args.baseline / "public/multilingual-v4.json")),
                     "Baseline catalog hash differs")
-            if source_mode == 'per_target':
-                require(baseline_report.get('catalogV5Sha256') is None
-                        or baseline_report['catalogV5Sha256'] == digest(args.baseline / 'public/multilingual-v5.json'),
-                        'Baseline v5 catalog hash differs')
+            baseline_v5_path = args.baseline / 'public/multilingual-v5.json'
+            require(baseline_report.get('catalogV5Sha256') is None
+                    or (baseline_v5_path.is_file() and baseline_report['catalogV5Sha256'] == digest(baseline_v5_path)),
+                    'Baseline v5 catalog hash differs')
             for row in baseline_report["files"]:
                 relative = Path(row["path"].lstrip("/"))
                 require(not relative.is_absolute() and ".." not in relative.parts, "Unsafe baseline path")
@@ -828,6 +828,12 @@ def seal(args: argparse.Namespace) -> dict:
                             (relative.as_posix() in replacement_paths and relative.as_posix() not in protected_paths),
                             "Asset collision would damage sibling locale")
         delivery_contract.validate_catalog_schema(catalog)
+        if (getattr(args, "baseline", None) and catalog['schemaVersion'] == delivery_contract.CATALOG_V4
+                and (args.baseline / 'public/multilingual-v5.json').exists()):
+            # Once v5 is live it is what v5 clients read first: carry an ordinary
+            # single-source release into it, so the copied baseline v5 never goes stale.
+            catalog = delivery_contract.carry_single_source_into_v5(
+                delivery_contract.snapshot_catalog_v5(args.baseline), catalog, plan['pageId'])
         v5 = catalog if catalog['schemaVersion'] == delivery_contract.CATALOG_V5 else None
         v4 = (delivery_contract.project_legacy_catalog_v4(v5) if v5 is not None else catalog)
         human = delivery_contract.validate_catalog_schema(delivery_contract.project_human_catalog(v4))

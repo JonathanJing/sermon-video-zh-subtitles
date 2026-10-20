@@ -247,6 +247,36 @@ def project_legacy_catalog_v4(catalog):
     return validate_catalog_schema(result)
 
 
+def carry_single_source_into_v5(baseline_v5, merged_v4, page_id):
+    """Apply an ordinary single-source v4 merge to the v5 catalog the baseline v4 projects from.
+
+    A single-source v5 page is its v4 page plus ``sourceMode``, so the merged page is
+    carried over (replaced in place or appended) and the result must project back to
+    exactly ``merged_v4``. A page that is, or is an edition inside, a per_target
+    family is refused: sealing it single-source would split the family.
+    """
+    require(baseline_v5.get('schemaVersion') == CATALOG_V5 and merged_v4.get('schemaVersion') == CATALOG_V4,
+            'Single-source v5 carry needs a v5 baseline and a merged v4 catalog')
+    require(not any(page['sourceMode'] == 'per_target'
+                    and (page['id'] == page_id
+                         or any(target['editionId'] == page_id for target in page['targets'].values()))
+                    for page in baseline_v5['pages']),
+            'Single-source release targets a mixed-source family; seal it per_target')
+    page = next(item for item in merged_v4['pages'] if item['id'] == page_id)
+    carried = {**copy.deepcopy(page), 'sourceMode': 'single_source'}
+    result = copy.deepcopy(baseline_v5)
+    result['generatedAt'] = merged_v4['generatedAt']
+    index = next((i for i, item in enumerate(result['pages']) if item['id'] == page_id), None)
+    if index is None:
+        result['pages'].append(carried)
+    else:
+        result['pages'][index] = carried
+    validate_catalog_schema(result)
+    require(project_legacy_catalog_v4(result) == merged_v4,
+            'Single-source release differs between v5 and its v4 projection')
+    return result
+
+
 def promote_page_to_per_target(page, incoming_targets=None):
     """Move a legacy page source onto each target before adding another source edition."""
     require(page.get('sourceMode') == 'single_source'
