@@ -148,13 +148,11 @@ def build_reference(public, page_id, source_path):
         require(content.get("pageId") == page_id and content.get("targetLocale") == locale
                 and content.get("status") == release["contentStatus"], f"Content identity/status mismatch: {locale}")
         if release_version == "sermon-target-language-release-package-v2":
-            require(page.get("sourceMediaSha256") == media_sha, f"Catalog source media mismatch: {locale}")
-            require(content.get("englishSourcePackageJsonSha256") == page["sourceIdentitySha256"]
-                    and content.get("sourceMediaSha256") == page["sourceMediaSha256"],
-                    f"Content source mismatch: {locale}")
-        else:
-            require(content.get("englishSourcePackageJsonSha256") == source_sha
-                    and content.get("sourceMediaSha256") == media_sha, f"Content source mismatch: {locale}")
+            # A v2 release carries no source identity; its content bytes prove it.
+            # The page-level media hash is optional in v3/v4 and checked only when present.
+            require(page.get("sourceMediaSha256", media_sha) == media_sha, f"Catalog source media mismatch: {locale}")
+        require(content.get("englishSourcePackageJsonSha256") == source_sha
+                and content.get("sourceMediaSha256") == media_sha, f"Content source mismatch: {locale}")
         require(content.get("targetLanguageCandidateJsonSha256") == release.get("targetLanguageCandidateJsonSha256"),
                 f"Content candidate mismatch: {locale}")
         groups = content["cues"]

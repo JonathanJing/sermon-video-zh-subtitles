@@ -129,6 +129,24 @@ class EnglishReferenceTests(unittest.TestCase):
         self.assertEqual(reference['targets']['ko']['contentSha256'],
                          json.loads((self.public / 'releases-v2/week/ko.json').read_text())['assets'][0]['sha256'])
 
+    def test_human_v2_page_without_catalog_media_hash_is_bound_by_content(self):
+        del self.page['sourceMediaSha256']
+        self.page['targets']['ko'] = self.publish(
+            'ko', 'human_reviewed', 'human_reviewed',
+            release_schema='sermon-target-language-release-package-v2')
+        v4 = dict(self.v3, schemaVersion='sermon-multilingual-catalog-v4')
+        self.save('/multilingual-v4.json', v4)
+        self.save('/multilingual-v3.json', project_human_catalog(v4))
+        self.assertEqual(list(build_reference(self.public, 'week', self.source_path)['targets']), ['ko'])
+        self.page['targets']['ko'] = self.publish(
+            'ko', 'human_reviewed', 'human_reviewed', content_overrides={'sourceMediaSha256': 'e' * 64},
+            release_schema='sermon-target-language-release-package-v2')
+        v4 = dict(self.v3, schemaVersion='sermon-multilingual-catalog-v4')
+        self.save('/multilingual-v4.json', v4)
+        self.save('/multilingual-v3.json', project_human_catalog(v4))
+        with self.assertRaisesRegex(ValueError, 'Content source mismatch: ko'):
+            build_reference(self.public, 'week', self.source_path)
+
     def test_v4_projection_rejects_human_v2_content_from_another_source(self):
         self.page['targets']['ko'] = self.publish(
             'ko', 'human_reviewed', 'human_reviewed',
