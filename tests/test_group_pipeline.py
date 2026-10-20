@@ -179,6 +179,11 @@ class GroupPipelineTests(unittest.TestCase):
         self.assertEqual(report["outcome"], "refused")
         self.assertTrue(report["reasons"])
         self.assertTrue(all(isinstance(ids, list) for ids in report["reasons"].values()))
+        self.assertTrue(report["nextActions"])
+        known = {group["translationGroupId"] for group in self.plan}
+        for action in report["nextActions"]:
+            self.assertIn(action["action"], {"run", "redo", "reconcile", "merge"})
+            self.assertTrue(set(action["groupIds"]) <= known)
         self.assertFalse((self.root / "merge" / self.config["locale"] / "current.json").exists())
 
     def test_cli_status_and_merge_use_the_config(self):

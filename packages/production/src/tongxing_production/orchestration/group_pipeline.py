@@ -200,6 +200,19 @@ def prepare_l3(config: dict, *, text_basis: Path, adapter: Path, registry: Path,
     return receipt
 
 
+def _refusal_actions(reasons: dict) -> list[dict]:
+    """Map each refusal reason to the operator action and the group IDs it names."""
+    actions = []
+    for reason, groups in sorted((reasons or {}).items()):
+        if not isinstance(groups, list) or not groups:
+            continue
+        action = "redo" if not reason.startswith(("P:missing_for_current", "T:missing_or_not_current")) else "run"
+        if reason.startswith("unknown_outcome"):
+            action = "reconcile"
+        actions.append({"action": action, "groupIds": sorted(groups), "reason": reason})
+    return actions
+
+
 def _directive_path(config: dict) -> Path:
     return Path(config["records"]) / DIRECTIVE_DIRECTORY / f"{config['locale']}.jsonl"
 
@@ -340,8 +353,17 @@ def run(config: dict, groups: list[str], *, budget: dict | None, budget_sha256: 
                 stopped = exc.kind
                 break
     final = status(config)
+    next_actions = []
+    failed = [row["group"] for row in results if row["outcome"] == "failed"]
+    unknown = [row["group"] for row in results if row["outcome"] == "unknown"]
+    if failed:
+        next_actions.append({"action": "redo", "groupIds": failed, "reason": "group content failed"})
+    if unknown:
+        next_actions.append({"action": "reconcile", "groupIds": unknown,
+                             "reason": "paid outcome unknown; reconcile before new dispatch"})
     return {"schemaVersion": RUN_SCHEMA, "mode": "execute", "targetLocale": policy["targetLocale"],
             "layer1": layer1, "requestedGroups": targets, "results": results, "stopped": stopped,
+            "nextActions": next_actions,
             "budgetSha256": budget_sha256, "status": final, "releaseEligible": False, "humanApproval": False}
 
 
@@ -369,7 +391,8 @@ def merge(config: dict, *, affected=()) -> dict:
                                             notes=load_directives(config))
     except group_assembly.AssemblyRefused as exc:
         return {"schemaVersion": MERGE_SCHEMA, "targetLocale": locale, "outcome": "refused",
-                "reasons": exc.reasons, "releaseEligible": False, "humanApproval": False}
+                "reasons": exc.reasons, "nextActions": _refusal_actions(exc.reasons),
+                "releaseEligible": False, "humanApproval": False}
     previous = _previous_manifest(config)
     # The first merge has nothing to compare with: every group is new, not "changed".
     changed = set() if previous is None else _changed_groups(previous, assembled["manifest"])
@@ -378,6 +401,8 @@ def merge(config: dict, *, affected=()) -> dict:
         missing = sorted(set(affected) - changed)
         return {"schemaVersion": MERGE_SCHEMA, "targetLocale": locale, "outcome": "refused",
                 "reasons": {"changed_groups_not_affected": (unexpected or missing)},
+                "nextActions": [{"action": "merge", "groupIds": sorted(set(affected)),
+                                 "reason": "declare the actual changed groups with --affected"}],
                 "changedGroupIds": sorted(changed), "affectedGroupIds": sorted(set(affected)),
                 "unexpectedGroupIds": unexpected, "missingChangedGroupIds": missing,
                 "releaseEligible": False, "humanApproval": False}
@@ -392,6 +417,8 @@ def merge(config: dict, *, affected=()) -> dict:
     if outliers:
         return {"schemaVersion": MERGE_SCHEMA, "targetLocale": locale, "outcome": "refused",
                 "reasons": {"text_length_outlier": [row["translationGroupId"] for row in outliers]},
+                "nextActions": [{"action": "redo", "groupIds": [row["translationGroupId"] for row in outliers],
+                                 "reason": "length outlier: revise these groups"}],
                 "outliers": outliers, "releaseEligible": False, "humanApproval": False}
     from ..audio import speech_job
     try:
