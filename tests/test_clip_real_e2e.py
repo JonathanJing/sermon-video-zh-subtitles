@@ -44,6 +44,7 @@ class SpecificationTests(unittest.TestCase):
 
     def test_paths_resolve_beside_the_specification_and_defaults_apply(self):
         spec = subject.load_spec(spec_files(self.base))
+        self.assertEqual(spec["layer2"]["backend"], "openai_api")
         self.assertEqual(spec["layer2"]["policyTemplates"]["ko"], str((self.base / "ko-policy.json").resolve()))
         self.assertEqual(spec["clipSpec"], str((self.base / "clip.json").resolve()))
         self.assertEqual((spec["qc"]["maxRevisions"], spec["openai"]["environment"], spec["layer3"]["maxEndLagSeconds"]),
@@ -57,6 +58,8 @@ class SpecificationTests(unittest.TestCase):
                ({"budget": {"totalUsd": 10, "settledUsdBefore": 12}}, "totalUsd > settledUsdBefore"),
                ({"locales": ["ko", "fr"]}, "locales must be"),
                ({"extra": 1}, "unknown run specification field"),
+               ({"layer2": {"backend": "claude_cli", "policyTemplates": {"ko": "ko-policy.json", "es": "es-policy.json"},
+                             "plugins": {"ko": "ko.py", "es": "es.py"}}}, "layer2.backend must be"),
                ({"layer3": {"attestationTemplates": {"ko": "ko-att.json"}, "speakerRegistry": "registry.json"}},
                 "attestationTemplates missing a locale"),
                ({"page": {"pageId": "mockup-x", "display": {"ko": DISPLAY}}}, "display texts missing")]
@@ -104,6 +107,17 @@ class RunTests(unittest.TestCase):
             "c": {"status": "returned", "bounds": {"costMicrousd": 50_000},
                   "settlement": {"costStatus": "reused", "costMicrousd": 0}}}})
         self.assertAlmostEqual(self.run.settled(), 15.3 + 0.2 + 0.003 + 0.0135)
+
+    def test_claude_subscription_list_price_is_separate_from_approved_dollars(self):
+        self.run.spec["layer2"]["backend"] = "claude_cli_opus"
+        subject.write(self.run_dir / "l2/.layer2-jobs.layer2-budget/x/a.result.json",
+                      {"result": {"usage": {"costMicrousd": 200_000}}})
+        subject.write(self.run_dir / "plans/qc-ko/qc-ko/.api-budget/source-budget.json", {"requests": {
+            "a": {"status": "returned", "bounds": {"costMicrousd": 9_000},
+                  "settlement": {"costStatus": "estimated_upper_bound", "costMicrousd": 3_000,
+                                 "requestedModel": "gpt-6.1-sol"}}}})
+        self.assertAlmostEqual(self.run.settled(), 15.303)
+        self.assertAlmostEqual(self.run.claude_list_price_equivalent(), 0.2)
 
     def test_open_qc_caps_count_until_the_locale_finishes_audio(self):
         for locale in ("ko", "es"):
