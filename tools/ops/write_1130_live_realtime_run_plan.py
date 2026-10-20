@@ -10,7 +10,7 @@ from pathlib import Path
 from typing import Any
 
 
-REPO_ROOT = Path(__file__).resolve().parents[1]
+REPO_ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_OUT = REPO_ROOT / "artifacts" / "evidence" / "live-1130-realtime-run-plan.json"
 
 
@@ -81,7 +81,7 @@ def build_plan(args: argparse.Namespace) -> dict[str, Any]:
                 ],
                 "command": [
                     "python3",
-                    "scripts/run_realtime_live_session.py",
+                    "tools/ops/run_realtime_live_session.py",
                     "--audio-url",
                     "<AUTHORIZED_AUDIO_URL>",
                     "--api-key-secret",
@@ -112,7 +112,7 @@ def build_plan(args: argparse.Namespace) -> dict[str, Any]:
         ],
         "stabilizerFallbackCommand": [
             "python3",
-            "scripts/run_realtime_stabilizer_loop.py",
+            "tools/ops/run_realtime_stabilizer_loop.py",
             "--input-jsonl",
             realtime_events_jsonl,
             "--api-key-secret",
@@ -155,7 +155,7 @@ def build_plan(args: argparse.Namespace) -> dict[str, Any]:
             ],
             [
                 "python3",
-                "scripts/validate_realtime_session.py",
+                "tools/ops/validate_realtime_session.py",
                 "--events-jsonl",
                 realtime_events_jsonl,
                 "--expected-model",

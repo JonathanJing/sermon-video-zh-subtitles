@@ -1,9 +1,8 @@
 #!/usr/bin/env python3
 """Compatibility entry point for ``tools/ops/run_openai_model_access_preflight.py``.
 
-backend/worker.py runs this path in the Cloud Run image, and
-scripts/run_realtime_stabilizer_loop.py imports it by bare name. Remove once both
-move (the backend with a redeploy).
+backend/worker.py runs this path in the Cloud Run image. Remove when the
+backend moves (with a redeploy).
 The implementation is loaded by absolute path from this checkout, independent of
 the CWD; bare and ``scripts.`` imports share one ``tools.ops.run_openai_model_access_preflight`` module object.
 """

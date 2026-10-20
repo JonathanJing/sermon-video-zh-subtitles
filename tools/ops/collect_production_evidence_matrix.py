@@ -1522,9 +1522,9 @@ def state_from_no_caption_asr_plan(report: dict[str, Any] | None, path: str | No
         and "gpt-5.4-mini" in runner_text
         and "artifacts/evidence/no-caption-asr-route-run.json" in runner_text,
         "preflightCommand": "tools/ops/run_offline_archive_preflight.py" in command_text and "use_asr_fallback" in criteria_text,
-        "audioExtractionCommand": "scripts/prepare_live_link_playback.py" in command_text and "gpt-4o-transcribe" in command_text,
-        "translationCommand": "scripts/translate_playback_with_openai.py" in command_text and "gpt-5.4-mini" in command_text,
-        "exportCommand": "scripts/export_playback_captions.py" in command_text and "--gcs-dry-run" in command_text,
+        "audioExtractionCommand": "tools/ops/prepare_live_link_playback.py" in command_text and "gpt-4o-transcribe" in command_text,
+        "translationCommand": "tools/ops/translate_playback_with_openai.py" in command_text and "gpt-5.4-mini" in command_text,
+        "exportCommand": "tools/ops/export_playback_captions.py" in command_text and "--gcs-dry-run" in command_text,
         "offlineValidationCommand": "scripts/validate_offline_chain.py" in command_text and "not_realtime_chain" in criteria_text,
         "readinessCommand": "tools/ops/validate_production_readiness.py" in command_text
         and "--allow-missing-realtime" in command_text,

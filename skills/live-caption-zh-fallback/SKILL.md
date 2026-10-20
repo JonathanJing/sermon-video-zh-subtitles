@@ -14,7 +14,7 @@ Run the commands from the repository root. Infer routine defaults and reuse know
 Inspect existing reports and artifacts before acquiring media again. For a new source:
 
 ```bash
-python3 scripts/offline_live_sermon_subtitles.py --live-url 'LIVE_OR_ARCHIVE_URL' \
+python3 tools/ops/offline_live_sermon_subtitles.py --live-url 'LIVE_OR_ARCHIVE_URL' \
   --out-dir 'artifacts/offline-live-sermon-poc/DATE-SOURCE_ID'
 ```
 
@@ -34,7 +34,7 @@ For a requested legacy playback preview, reuse the verified report and its exist
 python3 scripts/build_playback_simulation.py \
   --report 'artifacts/offline-live-sermon-poc/DATE-SOURCE_ID/report.json' \
   --out web/playback-simulation.generated.js
-python3 scripts/translate_playback_with_openai.py \
+python3 tools/ops/translate_playback_with_openai.py \
   --input web/playback-simulation.generated.js \
   --out web/playback-simulation.generated.js \
   --api-key-secret projects/PROJECT_ID/secrets/SECRET_ID/versions/latest

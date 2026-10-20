@@ -281,7 +281,7 @@ def post_approval_validation_stage(
             ],
             [
                 "python3",
-                "scripts/validate_sunday_manifest.py",
+                "tools/ops/validate_sunday_manifest.py",
                 "--manifest",
                 "gs://<BUCKET>/<PREFIX>/<SUNDAY>/cloud-manifest.json",
                 "--sunday",

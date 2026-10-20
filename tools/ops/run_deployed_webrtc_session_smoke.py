@@ -12,7 +12,7 @@ from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 
 
-REPO_ROOT = Path(__file__).resolve().parents[1]
+REPO_ROOT = Path(__file__).resolve().parents[2]
 EXPECTED_MODEL = "gpt-realtime-translate"
 EXPECTED_TARGET_LANGUAGE = "zh"
 EXPECTED_AUDIO_SOURCE_KIND = "ipad_mic"
