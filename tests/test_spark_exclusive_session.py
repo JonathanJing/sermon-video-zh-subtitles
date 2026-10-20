@@ -4,7 +4,8 @@ import os
 from pathlib import Path
 from unittest.mock import patch
 import pytest
-from scripts.spark_exclusive_session import Engine, Client, SessionError, UNITS, RESTORE_ORDER, LinuxBackend, dispatch, RESOURCE_TRACKER_HELPER, RESOURCE_TRACKER_ARGUMENT
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.compute.spark_exclusive_session import Engine, Client, SessionError, UNITS, RESTORE_ORDER, LinuxBackend, dispatch, RESOURCE_TRACKER_HELPER, RESOURCE_TRACKER_ARGUMENT
 
 class FakeBackend:
     def __init__(self):
@@ -501,7 +502,7 @@ def linux_launcher_backend(processes=None, gpu_error=None):
 def test_linux_stop_unit_completes_for_launcher_without_children(monkeypatch):
     import signal as sig
     kills = []
-    monkeypatch.setattr('scripts.spark_exclusive_session.os.kill', lambda pid, signum: kills.append(signum))
+    monkeypatch.setattr('tongxing_production.compute.spark_exclusive_session.os.kill', lambda pid, signum: kills.append(signum))
     backend = linux_launcher_backend()
     backend.stop_unit('spark-api.service')
     assert kills == [sig.SIGSTOP, sig.SIGCONT]
@@ -511,7 +512,7 @@ def test_linux_stop_unit_completes_for_launcher_without_children(monkeypatch):
 def test_linux_stop_unit_resumes_frozen_launcher_when_preflight_fails(monkeypatch):
     import signal as sig
     kills = []
-    monkeypatch.setattr('scripts.spark_exclusive_session.os.kill', lambda pid, signum: kills.append(signum))
+    monkeypatch.setattr('tongxing_production.compute.spark_exclusive_session.os.kill', lambda pid, signum: kills.append(signum))
     backend = linux_launcher_backend(gpu_error=AttributeError('preflight'))
     with pytest.raises(AttributeError): backend.stop_unit('spark-api.service')
     assert kills == [sig.SIGSTOP, sig.SIGCONT]
@@ -549,7 +550,8 @@ def test_snapshot_from_before_the_timer_is_refused_on_require(engine):
 
 
 def test_process_role_keeps_the_formal_renderer_a_worker_under_the_package_entry():
-    from scripts.spark_exclusive_session import process_role
+    from scripts import tongxing_host  # noqa: F401  binds the production package ports
+    from tongxing_production.compute.spark_exclusive_session import process_role
     renderer = ['/usr/bin/python', '/work/repo-x/tools/ops/run.py', 'audio.renderer', '--spark-production']
     assert process_role('python3.12', renderer) == 'worker'
     assert process_role('python3.12', ['/usr/bin/python', '/work/repo-x/scripts/render_formal_target_language_speech.py']) == 'worker'

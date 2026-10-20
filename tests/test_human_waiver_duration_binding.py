@@ -1,7 +1,7 @@
 """Human acceptance cannot bypass frozen duration normalization binding."""
 import copy
 import pytest
-from scripts import machine_audio_waiver_acceptance as v3
+from tongxing_production.review import audio_waiver_acceptance as v3
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.review import audio_qc as qc
 from tongxing_production.review import audio_qc_acceptance as acceptance_rules

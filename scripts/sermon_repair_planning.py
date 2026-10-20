@@ -20,7 +20,8 @@ import re
 from types import MappingProxyType
 
 from scripts import sermon_bounded_decision as decision
-from scripts import sermon_review_contracts as c
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.review import contracts as c
 
 ROUTING_VERSION = 'rqc-layer2-failure-routing-v1'
 CONTENT_FAILURES = frozenset({'meaning_omission', 'meaning_addition', 'negation_error',

@@ -8,6 +8,7 @@ import os
 from pathlib import Path
 import unittest
 from unittest.mock import patch
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.text import budget as b
 from tongxing_production.text import controller
 from scripts import plan_run_budgets as planner, check_run_start as check
@@ -88,7 +89,8 @@ class Layer2RuntimeAuthorizationTests(unittest.TestCase):
                 'message':{'content':'{"fixture":true}'}}], 'usage':{'prompt_tokens':20,'completion_tokens':10}}
         caller=self.caller(transport); output=self.root/'cache'/'translation.json'
         prompt={'instruction':'Translate.', 'input':{'english':'A full sentence.'}}
-        from scripts.production_spark_admission import SessionBoundCaller
+        from scripts import tongxing_host  # noqa: F401  binds the production package ports
+        from tongxing_production.compute.spark_admission import SessionBoundCaller
         wrapped = SessionBoundCaller(caller, requires_spark=False, outcome_guarded=True)
         args=('translator', prompt, self.base.policy, output, self.env['OPENAI_API_KEY'], wrapped)
         first=models._model_call(*args, request_limits=self.base.limits)
@@ -118,7 +120,8 @@ class Layer2RuntimeAuthorizationTests(unittest.TestCase):
             return {'id':'offline-response', 'model':payload['model'], 'choices':[{'finish_reason':'stop',
                 'message':{'content':'{"fixture":true}'}}], 'usage':{'prompt_tokens':20,'completion_tokens':10}}
         caller=self.caller(transport)
-        from scripts.production_spark_admission import SessionBoundCaller
+        from scripts import tongxing_host  # noqa: F401  binds the production package ports
+        from tongxing_production.compute.spark_admission import SessionBoundCaller
         output=self.root/'repair-cache'/'translation.json'
         prompt={'instruction':'Translate.', 'input':{'english':'A full sentence.'}}
         first=models._model_call('translator',prompt,self.base.policy,output,self.env['OPENAI_API_KEY'],

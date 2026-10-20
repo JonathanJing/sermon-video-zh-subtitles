@@ -5,7 +5,8 @@ import time
 from unittest.mock import patch
 from tests.test_sermon_unified_cli import UnifiedCliTests
 from scripts.sermon_unified import contracts as c, runtime as r
-from scripts.production_concurrency_profile import profile_v1
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.compute.concurrency_profile import profile_v1
 
 
 class ParallelOwnerTests(UnifiedCliTests):

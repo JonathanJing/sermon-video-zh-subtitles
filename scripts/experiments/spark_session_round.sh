@@ -19,12 +19,12 @@ SESSION_ID="$1"; OWNER="$2"; shift 3
 
 REPO="$(git rev-parse --show-toplevel)"
 PY="$REPO/.venv/bin/python"
-CONTROL="$REPO/scripts/spark_exclusive_session.py"
+CONTROL="$REPO/tools/ops/run.py"
 
 "$@"
 RUN_STATUS=$?
 
-FINISH_OUTPUT="$("$PY" "$CONTROL" finish --session-id "$SESSION_ID" --owner "$OWNER" 2>&1)"
+FINISH_OUTPUT="$("$PY" "$CONTROL" compute.spark_exclusive_session finish --session-id "$SESSION_ID" --owner "$OWNER" 2>&1)"
 FINISH_STATUS=$?
 
 echo "round: command_exit=$RUN_STATUS finish_exit=$FINISH_STATUS session=$SESSION_ID"

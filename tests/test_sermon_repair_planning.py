@@ -7,7 +7,8 @@ import unittest
 from unittest.mock import patch
 
 from scripts import sermon_repair_planning as p
-from scripts import sermon_review_contracts as c
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.review import contracts as c
 
 FIXTURES = Path(__file__).parent / 'fixtures' / 'rqc'
 UNIT = 'l2.zh-Hans.group.001'

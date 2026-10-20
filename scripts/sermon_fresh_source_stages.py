@@ -14,8 +14,8 @@ from tongxing_production.observability import completion
 from scripts import sermon_fresh_diagnostic as fresh
 from scripts import sermon_fresh_diagnostic_source as source
 from scripts import sermon_fresh_source_causality as causality
-from scripts import sermon_public_snapshot as public
-from scripts import sermon_review_contracts as c
+from tongxing_production.storage import snapshot as public
+from tongxing_production.review import contracts as c
 from scripts import sermon_strict_layer2 as immutable
 from scripts.sermon_release_workflow import _safe_path
 

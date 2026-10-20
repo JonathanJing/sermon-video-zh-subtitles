@@ -456,7 +456,7 @@ def ensure_session(run: Run):
     os.environ.update(env)
     for attempt in range(1, 4):
         # begin may need a second call while Spark services stop; every attempt keeps its own output.
-        done = run.sh(f"spark-begin-{attempt}", [PY, ROOT / "scripts/spark_exclusive_session.py", "begin",
+        done = run.sh(f"spark-begin-{attempt}", [PY, ROOT / "tools/ops/run.py", "compute.spark_exclusive_session", "begin",
                                                   "--session-id", env["SPARK_EXCLUSIVE_SESSION_ID"],
                                                   "--owner", env["SPARK_EXCLUSIVE_SESSION_OWNER"]], check=False)
         if done.returncode == 0:
@@ -468,7 +468,7 @@ def ensure_session(run: Run):
 
 def finish_session(run: Run):
     if run.session_up:
-        run.sh("spark-finish", [PY, ROOT / "scripts/spark_exclusive_session.py", "finish",
+        run.sh("spark-finish", [PY, ROOT / "tools/ops/run.py", "compute.spark_exclusive_session", "finish",
                                 "--session-id", run.spec["spark"]["sessionId"], "--owner", run.spec["spark"]["owner"]])
         run.session_up = False
 

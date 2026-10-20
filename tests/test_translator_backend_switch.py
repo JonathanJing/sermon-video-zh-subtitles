@@ -3,10 +3,10 @@ import json
 import unittest
 
 from tongxing_production.text import budget
-from scripts import claude_layer2_transport as claude
+from tongxing_production.compute.transports import claude_layer2 as claude
 from tongxing_production.text import models
-from scripts import sermon_provider_limits as limits
-from scripts import sermon_review_budget as ledger
+from tongxing_production.compute import provider_limits as limits
+from tongxing_production.review import review_budget as ledger
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.orchestration import jobs
 from tongxing_production.text import policy as policy_tools

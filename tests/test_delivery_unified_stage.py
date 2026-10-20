@@ -7,7 +7,7 @@ original schema set (v1/v2, not the v3 listening waiver).
 """
 import unittest
 
-from scripts import machine_audio_waiver_acceptance as acceptance
+from tongxing_production.review import audio_waiver_acceptance as acceptance
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.review import release_basis as basis
 from tongxing_production.delivery import unified_stage as stage

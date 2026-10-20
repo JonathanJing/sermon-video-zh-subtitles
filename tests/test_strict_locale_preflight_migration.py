@@ -5,7 +5,8 @@ from pathlib import Path
 import unittest
 from scripts import run_bounded_diagnostic_continuation as continuation
 from scripts import sermon_strict_locale as locale
-from scripts import sermon_review_contracts as c
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.review import contracts as c
 from scripts import sermon_diagnostic_provider as provider
 from tests import test_sermon_strict_locale as fixtures_locale
 from tests.diagnostic_dag_fixture import DiagnosticDAGFixture
@@ -121,9 +122,11 @@ class SharedPreflightTests(unittest.TestCase):
 
     def test_expanded_rule_input_cap_is_rejected_by_shared_preflight(self):
         # Same real provider validator as preflight_live, without a credential.
-        from scripts import sermon_review_budget as budget
+        from scripts import tongxing_host  # noqa: F401  binds the production package ports
+        from tongxing_production.review import review_budget as budget
         from scripts import sermon_strict_layer2 as strict
-        from scripts import sermon_provider_limits as limits
+        from scripts import tongxing_host  # noqa: F401  binds the production package ports
+        from tongxing_production.compute import provider_limits as limits
         raw=[Path(self.spec[key]).read_bytes() for key in ('source','anchor','policy','rubric')]
         checked=locale.prepare_locale_inputs(*raw,plugin_path=self.spec['pluginPath'],
             expected_plugin_sha256=self.spec['pluginSha256'],group_plan=self.spec['groupPlan'],

@@ -55,7 +55,8 @@ def prepare(saved, operation):
     from tongxing_production.observability import durable
     from tongxing_production.observability import log_contract as contract
     from scripts import sermon_logs
-    from scripts import sermon_review_contracts as c
+    from scripts import tongxing_host  # noqa: F401  binds the production package ports
+    from tongxing_production.review import contracts as c
     from scripts import weekly_pipeline_report as weekly
     from tests.mock_tts_sdk_diagnostics import status_diagnostics
 

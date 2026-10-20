@@ -11,7 +11,9 @@ from scripts import sermon_diagnostic_attempts as attempts, sermon_diagnostic_pr
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from scripts import sermon_fresh_diagnostic as entry
 from tongxing_production.observability import profile
-from scripts import sermon_public_snapshot as public, sermon_review_budget as budget, sermon_review_contracts as c
+from tongxing_production.storage import snapshot as public
+from tongxing_production.review import review_budget as budget
+from tongxing_production.review import contracts as c
 from scripts import sermon_strict_layer2 as strict
 from tests import test_sermon_fresh_diagnostic as source_fixtures
 

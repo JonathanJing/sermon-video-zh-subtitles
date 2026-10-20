@@ -5,7 +5,8 @@ from unittest.mock import patch
 from scripts import run_codex_layer2_test as command
 from scripts.experiments import run_diagnostic_study as study
 from scripts import codex_layer2_diagnostic as diagnostic
-from scripts.production_concurrency_profile import profile_v1
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.compute.concurrency_profile import profile_v1
 from tests import test_source_bound_diagnostic_audio as audio_tests
 from tests import test_codex_layer2_diagnostic as chain_tests
 

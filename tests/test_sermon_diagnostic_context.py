@@ -4,7 +4,7 @@ import json
 from pathlib import Path
 import unittest
 from scripts import sermon_diagnostic_context as diagnostic
-from scripts import sermon_review_contracts as c
+from tongxing_production.review import contracts as c
 from scripts import sermon_strict_layer2 as strict
 from scripts import sermon_strict_locale as locale
 from scripts import sermon_strict_candidate_bridge as bridge

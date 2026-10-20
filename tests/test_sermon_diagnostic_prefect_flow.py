@@ -12,7 +12,7 @@ import unittest
 from unittest.mock import patch
 
 from scripts import sermon_diagnostic_prefect_flow as flow
-from scripts import sermon_review_contracts as c
+from tongxing_production.review import contracts as c
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.observability import profile
 
@@ -386,7 +386,7 @@ class ActualDiagnosticFlowTests(unittest.TestCase):
     def test_actual_source_strict_locale_worker_delivery_and_replay_preserve_original_store(self):
         from tongxing_production.observability import accounting
         from scripts import sermon_diagnostic_dag_session as sessions
-        from scripts import sermon_review_budget as budget
+        from tongxing_production.review import review_budget as budget
         from tests.diagnostic_dag_fixture import DiagnosticDAGFixture
         f = DiagnosticDAGFixture(); self.addCleanup(f.doCleanups); f.setUp()
         config = {'schemaVersion': flow.SCHEMA, 'locales': {locale: {
@@ -435,8 +435,8 @@ import sys
 sys.path.insert(0, sys.argv[1])
 from scripts import sermon_diagnostic_prefect_flow as flow
 from scripts.sermon_diagnostic_dag_session import DiagnosticSession
-from scripts import sermon_review_budget as budget
-from scripts import sermon_review_contracts as c
+from scripts import tongxing_host; from tongxing_production.review import review_budget as budget
+from tongxing_production.review import contracts as c
 from tests.diagnostic_dag_fixture import DiagnosticDAGFixture
 fixture=DiagnosticDAGFixture(); fixture.setUp()
 config={'schemaVersion':flow.SCHEMA,'locales':{locale:{'localeSpec':fixture.locale_specs[locale],

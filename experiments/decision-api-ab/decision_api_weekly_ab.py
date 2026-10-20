@@ -190,7 +190,8 @@ def payload_and_bounds(case, arm):
         payload["max_completion_tokens"] = existing_cap or MAX_COMPLETION
         payload["service_tier"] = tier
         # Count the actual schema, not an artificial json_object substitute.
-        from scripts import sermon_provider_limits as limits
+        from scripts import tongxing_host  # noqa: F401  binds the production package ports
+        from tongxing_production.compute import provider_limits as limits
         input_bound = limits._input_upper_bound(payload)
         key = payload["model"] + (":fast" if tier == "fast" else "")
         output_bound, kind = payload["max_completion_tokens"], "chat"

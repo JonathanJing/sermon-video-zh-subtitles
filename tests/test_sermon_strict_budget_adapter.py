@@ -18,8 +18,8 @@ from tongxing_production.compute import legacy_openai  # C4: the remote-call gro
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.observability import accounting
 from tongxing_production.workflows.dual_pdf import pipeline as pipeline
-from scripts import sermon_review_budget as budget
-from scripts import sermon_review_contracts as contracts
+from tongxing_production.review import review_budget as budget
+from tongxing_production.review import contracts
 from scripts import sermon_repair_planning as planning
 from scripts import sermon_strict_budget_adapter as adapter
 from scripts import sermon_strict_layer2 as strict
@@ -708,7 +708,7 @@ class StrictBudgetTests(unittest.TestCase):
 from pathlib import Path
 from scripts import sermon_strict_layer2 as strict
 from tongxing_production.observability import accounting, profile
-from scripts.sermon_review_budget import BudgetStore
+from scripts import tongxing_host; from tongxing_production.review.review_budget import BudgetStore
 from scripts.sermon_strict_budget_adapter import StrictBudgetAdapter
 from tests.test_sermon_strict_budget_adapter import authority,bounds
 value=json.load(sys.stdin)

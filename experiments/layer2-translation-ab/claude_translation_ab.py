@@ -27,8 +27,8 @@ if str(ROOT) not in sys.path:  # direct execution: ``scripts`` imports need the 
 if str(Path(__file__).resolve().parent) not in sys.path:  # sibling modules of this experiment line
     sys.path.append(str(Path(__file__).resolve().parent))
 
-from scripts.codex_layer2_transport import CodexLayer2Transport, output_schema
-from scripts.claude_layer2_transport import ClaudeLayer2Transport
+from tongxing_production.compute.transports.codex_layer2 import CodexLayer2Transport, output_schema
+from tongxing_production.compute.transports.claude_layer2 import ClaudeLayer2Transport
 from codex_translation_ab import save, save_or_check, sha, validate
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.text.models import SEMANTIC_CHECKS, save_new

@@ -12,15 +12,15 @@ from unittest.mock import patch
 
 from scripts import sermon_fresh_diagnostic_source as fresh
 from scripts import sermon_fresh_diagnostic as entry
-from scripts import sermon_review_contracts as c
-from scripts import sermon_review_budget as budget
+from tongxing_production.review import contracts as c
+from tongxing_production.review import review_budget as budget
 from scripts import sermon_diagnostic_provider as provider
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.observability import profile
 from scripts import sermon_strict_layer2 as immutable
 from tongxing_production.observability import accounting
 from scripts import sermon_bounded_business_callbacks as callbacks
-from scripts import sermon_public_snapshot as aggregate
+from tongxing_production.storage import snapshot as aggregate
 from tongxing_production import path_aliases
 from tests.diagnostic_dag_fixture import DiagnosticDAGFixture
 

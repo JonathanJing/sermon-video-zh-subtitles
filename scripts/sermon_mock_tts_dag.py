@@ -27,8 +27,8 @@ from tongxing_production.observability import profile
 from tongxing_production import path_aliases
 from scripts import sermon_mock_tts_contract as contract
 from scripts import sermon_mock_tts_control as control
-from scripts import sermon_public_snapshot as public
-from scripts import sermon_review_contracts as c
+from tongxing_production.storage import snapshot as public
+from tongxing_production.review import contracts as c
 from scripts import sermon_strict_candidate_bridge as bridge
 from scripts import run_bounded_diagnostic_continuation as continuation
 from scripts.sermon_diagnostic_dag_session import DiagnosticSession

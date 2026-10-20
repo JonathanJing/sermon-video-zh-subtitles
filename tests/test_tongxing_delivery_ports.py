@@ -13,11 +13,11 @@ from unittest.mock import patch
 from scripts import tongxing_host as host
 from tongxing_production.delivery import app_release as builder
 from tongxing_production.delivery import publication as publisher
-from scripts import machine_audio_waiver_acceptance as audio_waivers
+from tongxing_production.review import audio_waiver_acceptance as audio_waivers
 from tongxing_production.review import release_basis as machine_basis
 from tongxing_production.delivery import app_workflow
 from tongxing_production.delivery import unified_stage as unified_delivery
-from scripts import sermon_unified_reviews as reviews
+from tongxing_production.review import unified_reviews as reviews
 from tongxing_production.delivery import formal_stage
 from tongxing_production import ports
 from tongxing_production.delivery import backend as delivery
@@ -173,7 +173,7 @@ class DeliveryPortsTests(unittest.TestCase):
                 "loaded = [m for m in ('scripts.build_full_video_app_release', 'tongxing_production.delivery.publication', "
                 "'tongxing_production.delivery.baseline', 'tongxing_production.delivery.app_release', "
                 "'tongxing_production.delivery.formal_stage', 'tongxing_production.delivery.formal_assets', "
-                "'scripts.machine_audio_waiver_acceptance', 'tongxing_production.delivery.unified_stage', "
+                "'tongxing_production.review.audio_waiver_acceptance', 'tongxing_production.delivery.unified_stage', "
                 "'tongxing_production.delivery.app_workflow', 'tongxing_production.delivery.app_workflow', "
                 "'tongxing_production.delivery.app_delivery', 'tongxing_production.adapters.legacy.assemble_multilingual_hosting', "
                 "'weekly_release') if m in sys.modules]; print(loaded)")

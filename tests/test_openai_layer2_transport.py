@@ -6,7 +6,7 @@ from types import SimpleNamespace
 import unittest
 from unittest.mock import patch
 
-from scripts import openai_layer2_transport as transport
+from tongxing_production.compute.transports import openai_layer2 as transport
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.workflows.dual_pdf import pipeline as sermon_pipeline
 from tongxing_production.compute import legacy_openai  # C3: the transport calls the moved request functions
@@ -92,7 +92,7 @@ class OpenAILayer2TransportTests(unittest.TestCase):
                     models.producer, '_load', side_effect=[fixture.source, fixture.anchor, fixture.policy]), patch(
                     'tongxing_production.text.models.require_plugin_identity'), patch(
                     'tongxing_production.text.models.rule_preflight.preflight'), patch(
-                    'scripts.production_spark_admission.require_session'), patch(
+                    'tongxing_production.compute.spark_admission.require_session'), patch(
                     'tongxing_production.text.controller.load_configuration', return_value=config), patch(
                     'tongxing_production.text.controller.drive', return_value={'status': 'waiting'}) as drive, patch.object(
                     transport, 'OpenAILayer2Transport') as factory:

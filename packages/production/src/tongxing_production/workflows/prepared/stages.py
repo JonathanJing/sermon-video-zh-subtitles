@@ -22,7 +22,7 @@ STAGE_MODULES = {
     'layer2_budget': 'tongxing_production.text.budget',
     'layer2_controller': 'tongxing_production.text.controller',
     'parallel': 'tongxing_production.orchestration.unified.parallel',
-    'reviews': 'scripts.sermon_unified_reviews',
+    'reviews': 'tongxing_production.review.unified_reviews',
     'runtime_identity': 'tongxing_production.compute.runtime_identity',
     'source': 'tongxing_production.source.unified_stage',
     'study': 'tongxing_production.workflows.prepared.study',

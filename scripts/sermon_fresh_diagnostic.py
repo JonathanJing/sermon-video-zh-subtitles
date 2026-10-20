@@ -16,8 +16,8 @@ from scripts import tongxing_host  # noqa: F401  binds the production package po
 from tongxing_production.observability import completion
 from tongxing_production.source import mfa_identity
 from tongxing_production.observability import profile
-from scripts import sermon_review_contracts as c
-from scripts import sermon_public_snapshot as public
+from tongxing_production.review import contracts as c
+from tongxing_production.storage import snapshot as public
 from scripts import sermon_strict_layer2 as strict
 from scripts import sermon_diagnostic_context as diagnostic
 from scripts import sermon_bounded_business_callbacks as offline

@@ -10,11 +10,11 @@ if __package__ in (None,''):
     sys.path.insert(0,str(Path(__file__).resolve().parents[2]))
 from scripts.experiments import run_concurrency_preflight as batch
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
-from scripts import sermon_codex_transport as codex
+from tongxing_production.compute.transports import codex_cli as codex
 from tongxing_production.observability import accounting
 from scripts import sermon_gemini_supervisor as gemini
 from scripts.sermon_execution_harness import work_lock
-from scripts import production_spark_admission as spark_admission
+from tongxing_production.compute import spark_admission
 
 
 def snapshot(out_dir):

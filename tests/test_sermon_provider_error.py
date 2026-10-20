@@ -1,7 +1,8 @@
 """Offline error fixtures never use provider requests or real secrets."""
 import json
 import unittest
-from scripts import sermon_provider_error as errors
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.compute import sermon_provider_error as errors
 
 class ErrorDiagnosticsTests(unittest.TestCase):
     def test_code_parameter_and_summary_are_safe_and_bounded(self):

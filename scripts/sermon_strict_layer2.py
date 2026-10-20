@@ -13,7 +13,7 @@ import re
 from tongxing_production.text import models as shared
 from tongxing_production.text import candidate as producer
 from tongxing_production.text import policy as policies
-from scripts import sermon_review_contracts as c
+from tongxing_production.review import contracts as c
 from tongxing_production.observability import review_observation as observation
 from tongxing_production.observability import profile
 from tongxing_production.observability import accounting
@@ -95,7 +95,7 @@ def prepare(source_bytes,anchor_bytes,policy_bytes,rubric_bytes,group,*,request_
         'units':units[first:last+1],'context':context,
         'bytes':dict(englishSource=source_bytes,anchor=anchor_bytes,policy=policy_bytes,rubric=rubric_bytes,context=material_bytes(context))}
     if request_limits is not None:
-        from scripts.sermon_provider_limits import validate_request_limits
+        from tongxing_production.compute.provider_limits import validate_request_limits
         result['requestLimits'] = validate_request_limits(request_limits)
     if diagnostic_context is not None:
         from scripts.sermon_diagnostic_context import validate_context

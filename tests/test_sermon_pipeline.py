@@ -21,7 +21,8 @@ from tongxing_production.workflows.dual_pdf import pipeline as mod  # noqa: E402
 
 class SermonPipelineTest(unittest.TestCase):
     def test_chat_rejects_unknown_models_before_dispatch_or_retry(self):
-        from scripts.sermon_provider_limits import DEFAULT_REQUEST_LIMITS, bounded_payload
+        from scripts import tongxing_host  # noqa: F401  binds the production package ports
+        from tongxing_production.compute.provider_limits import DEFAULT_REQUEST_LIMITS, bounded_payload
         valid = bounded_payload({"model": "gpt-6.1-sol", "reasoning_effort": "high",
             "messages": [{"role": "user", "content": "Return synthetic JSON."}],
             "response_format": {"type": "json_object"}}, DEFAULT_REQUEST_LIMITS)

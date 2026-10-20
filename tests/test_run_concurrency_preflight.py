@@ -7,7 +7,8 @@ from pathlib import Path
 from unittest.mock import patch, MagicMock
 
 from scripts.experiments import run_concurrency_preflight as subject
-from scripts.production_concurrency_profile import profile_v1
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.compute.concurrency_profile import profile_v1
 from scripts.sermon_unified import resources
 
 
@@ -190,7 +191,8 @@ class DiagnosticCommandDAGTests(unittest.TestCase):
         self.prepare([self.node('source', kind='source')])
         subject.run(self.out, execute=True, executor=self.executor)
         purpose = self.session.start_job.call_args.args[0]
-        from scripts.spark_exclusive_session import IDENTIFIER
+        from scripts import tongxing_host  # noqa: F401  binds the production package ports
+        from tongxing_production.compute.spark_exclusive_session import IDENTIFIER
         self.assertRegex(purpose, IDENTIFIER)
 
     def test_command_preserves_virtual_environment_entrypoint(self):

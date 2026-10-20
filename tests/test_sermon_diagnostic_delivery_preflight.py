@@ -8,8 +8,9 @@ from unittest.mock import patch
 
 from scripts import sermon_diagnostic_delivery_preflight as subject
 from scripts import sermon_diagnostic_provider as provider
-from scripts import sermon_review_budget as budget
-from scripts import sermon_review_contracts as c
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.review import review_budget as budget
+from tongxing_production.review import contracts as c
 from tests import test_render_speculative_target_language_speech as previews
 from tests import test_sermon_diagnostic_source_evidence as sources
 from tests.test_sermon_diagnostic_provider import authority

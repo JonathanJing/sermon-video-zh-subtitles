@@ -12,8 +12,8 @@ from tongxing_production.text import models
 from tongxing_production.observability import accounting
 from tongxing_production.observability import profile
 from scripts import sermon_repair_planning as planning
-from scripts import sermon_public_snapshot as public
-from scripts import sermon_review_contracts as c
+from tongxing_production.storage import snapshot as public
+from tongxing_production.review import contracts as c
 from scripts import sermon_strict_candidate_bridge as bridge
 from scripts import sermon_strict_controller as controller
 from scripts import sermon_strict_layer2 as strict

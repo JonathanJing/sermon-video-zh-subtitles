@@ -4,7 +4,8 @@ from decimal import localcontext
 import json
 import unittest
 
-from scripts import sermon_provider_limits as limits
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.compute import provider_limits as limits
 
 
 def payload(model='gpt-6-astra', text='synthetic input'):

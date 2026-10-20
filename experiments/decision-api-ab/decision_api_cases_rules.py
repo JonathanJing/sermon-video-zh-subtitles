@@ -238,7 +238,9 @@ def _case(stage, name, adapter, evidence, labels, *, cluster=None):
 
 
 def _repair_evidence(variant):
-    from scripts import sermon_repair_planning as p, sermon_review_contracts as c
+    from scripts import tongxing_host  # noqa: F401  binds the production package ports
+    from scripts import sermon_repair_planning as p
+    from tongxing_production.review import contracts as c
     fixtures = ROOT / 'tests/fixtures/rqc'
     def load(name):
         return json.loads((fixtures / (name + '.json')).read_text())
@@ -393,7 +395,9 @@ def run_rule_a(case):
     if case['a']['kind']=='no_executable_baseline':
         return {'status':'no_executable_baseline','labels':{}}
     if adapter=='plan_repair':
-        from scripts import sermon_repair_planning as p, sermon_review_contracts as c
+        from scripts import tongxing_host  # noqa: F401  binds the production package ports
+        from scripts import sermon_repair_planning as p
+        from tongxing_production.review import contracts as c
         evidence.pop('policy');evidence['candidate_bytes']=evidence.pop('candidateArtifactUtf8').encode()
         evidence['review_bytes']=c.canonical_bytes(evidence['review'])
         row=evidence['budget'];row['limits']=p.Limits(**row['limits'])
@@ -402,7 +406,8 @@ def run_rule_a(case):
         result=p.plan_repair(**evidence)
         return {'labels':{key:result[key] for key in ('action','status','reasonCode')}}
     if adapter=='provider_error':
-        from scripts import sermon_provider_error as p
+        from scripts import tongxing_host  # noqa: F401  binds the production package ports
+        from tongxing_production.compute import sermon_provider_error as p
         result=p.diagnostic(evidence['httpStatus'],json.dumps({'error':evidence['error']}).encode())
         return {'labels':{'reasonCode':result['reasonCode']}}
     if adapter=='asr_screening_rule_wrapper':

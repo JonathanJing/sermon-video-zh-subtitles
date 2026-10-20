@@ -22,8 +22,8 @@ from tongxing_production.observability import log_contract as log
 from scripts import sermon_logs as logs
 from scripts import sermon_mock_tts_contract as contract
 from scripts import sermon_mock_tts_dag as mock
-from scripts import sermon_public_snapshot as public
-from scripts import sermon_review_contracts as c
+from tongxing_production.storage import snapshot as public
+from tongxing_production.review import contracts as c
 from tongxing_production.observability import review_observation as _review_observation  # preload summary-consumer closure
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.source import failure

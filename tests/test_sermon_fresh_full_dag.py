@@ -24,8 +24,8 @@ from scripts import sermon_fresh_full_dag as dag
 from scripts import sermon_fresh_source_prefect as source_engine
 from tongxing_production.observability import log_contract as logs
 from scripts import sermon_mock_tts_contract as mock_contract
-from scripts import sermon_public_snapshot as public
-from scripts import sermon_review_contracts as c
+from tongxing_production.storage import snapshot as public
+from tongxing_production.review import contracts as c
 from scripts import weekly_pipeline_report as weekly
 from tests.fresh_full_dag_fixture import (
     FullFreshDAGFixture, LOCALE, SOURCE_NODES, UNITS,

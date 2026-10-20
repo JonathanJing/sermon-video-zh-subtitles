@@ -17,7 +17,7 @@ import sys
 if __package__ in {None, ''}:
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from scripts import canonical_pipeline_definition as pipeline
+from tongxing_production.contracts import pipeline_definition as pipeline
 from scripts import inspect_canonical_packages as packages
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.orchestration import jobs

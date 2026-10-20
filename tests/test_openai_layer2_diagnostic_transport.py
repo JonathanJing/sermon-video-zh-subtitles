@@ -3,7 +3,8 @@ import json
 import pytest
 
 from scripts.openai_layer2_diagnostic_transport import OpenAILayer2DiagnosticTransport, _digest
-from scripts import sermon_provider_limits
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.compute import provider_limits as sermon_provider_limits
 
 
 def test_reuse_requires_exact_completed_prior_receipt(tmp_path, monkeypatch):

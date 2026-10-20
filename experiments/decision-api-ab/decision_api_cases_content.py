@@ -235,7 +235,7 @@ def _translation_cases(root: Path, maximum: int) -> list[dict]:
             if saved.get("requestId") != response.get("id"):
                 raise ValueError("original_response_id_mismatch")
             if str(response.get("schemaVersion", "")).startswith("codex-cli-layer2-response-"):
-                from scripts.codex_layer2_transport import CodexLayer2Transport
+                from tongxing_production.compute.transports.codex_layer2 import CodexLayer2Transport
                 content = CodexLayer2Transport.completed_content(response, payload["model"], "reviewer")
                 original_backend = "codex-cli"
             else:

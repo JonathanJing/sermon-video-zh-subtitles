@@ -35,7 +35,7 @@ from tongxing_production.delivery import app_release as release
 from tongxing_production.delivery import contract
 from tongxing_production.text import candidate as candidate_validator
 from tongxing_production.delivery import unified_stage as delivery
-from scripts import sermon_unified_reviews as reviews
+from tongxing_production.review import unified_reviews as reviews
 from tongxing_production.delivery import study_artifacts
 
 ROOT = Path(__file__).resolve().parents[1]

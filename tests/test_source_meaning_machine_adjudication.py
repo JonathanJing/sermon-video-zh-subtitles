@@ -21,11 +21,11 @@ import wave
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.text import controller
 from tongxing_production.compute import qc_audio_transports as transports
-from scripts import sermon_provider_limits as limits
+from tongxing_production.compute import provider_limits as limits
 from tongxing_production.source import sentence_interpretation as contract
 from tongxing_production.source import budget as source_budget
 from tongxing_production.source import text_review as source_review
-from scripts import source_meaning_machine_adjudication as machine
+from tongxing_production.review import source_meaning as machine
 from tongxing_production.text import policy as policies
 
 WINDOW_START = 63.32
@@ -744,7 +744,7 @@ class SourceMeaningAdjudicationTests(unittest.TestCase):
                                         session_verifier=lambda: dict(session, secret='x'))
         self.assertEqual(listener.identity()['host'], 'spark_exclusive_session')
         # The weights load only once a live Spark exclusive session owns this process.
-        from scripts.spark_exclusive_session import SessionError
+        from tongxing_production.compute.spark_exclusive_session import SessionError
 
         def refused():
             raise SessionError('model_session_requires_bound_live_parent')

@@ -7,7 +7,7 @@ snapshot before creating a Layer 3 intent. CLI/default producers stay legacy.
 import copy
 from pathlib import Path
 
-from scripts import sermon_review_contracts as c
+from tongxing_production.review import contracts as c
 from scripts import sermon_strict_layer2 as strict
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.text import candidate as producer

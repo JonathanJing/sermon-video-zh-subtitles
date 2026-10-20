@@ -12,7 +12,7 @@ from unittest.mock import Mock, patch
 from jsonschema import Draft202012Validator, ValidationError
 from tongxing_production.compute import legacy_openai  # C4: the remote-call group lives here
 from scripts import sermon_strict_layer2 as s
-from scripts import sermon_review_contracts as c
+from tongxing_production.review import contracts as c
 from tongxing_production.observability import accounting
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.observability import profile
@@ -235,7 +235,7 @@ class StrictAdapterTests(unittest.TestCase):
         self.assertEqual(len(self.calls),2)
 
     def test_structural_failure_preserves_d5_actual_usage_and_reservation_bounds(self):
-        from scripts import sermon_review_budget as budget
+        from tongxing_production.review import review_budget as budget
         from scripts import sermon_strict_budget_adapter as adapter
         from tests.test_sermon_strict_budget_adapter import authority,bounds,measured
         store=budget.BudgetStore(self.root/'shared-budget',authority());subject=adapter.StrictBudgetAdapter(store)

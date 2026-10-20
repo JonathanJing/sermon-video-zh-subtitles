@@ -6,12 +6,13 @@ from unittest.mock import Mock, patch
 
 from tongxing_production.compute import legacy_openai  # C4: the remote-call group lives here
 from tests.legacy_pipeline_patches import patch_both  # W3b: Layer 1 names live in two modules
-from scripts import production_spark_admission as admission
-from scripts import spark_exclusive_session as sessions
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.compute import spark_admission as admission
+from tongxing_production.compute import spark_exclusive_session as sessions
 from tongxing_production.source import mfa_spark
 from tongxing_production.audio import renderer as speech
 from tongxing_production.source import budget as budgets
-from scripts import sermon_provider_http as provider_http
+from tongxing_production.compute import provider_http
 from scripts import run_codex_layer2_test as layer2
 from tests import test_codex_layer2_diagnostic as fixtures
 
@@ -193,7 +194,8 @@ class ProductionSessionCallTests(unittest.TestCase):
 
 def test_normal_supervisor_default_cli_takes_no_spark_session(tmp_path):
     from scripts import sermon_codex_supervisor as supervisor
-    from scripts import sermon_codex_transport as transport
+    from scripts import tongxing_host  # noqa: F401  binds the production package ports
+    from tongxing_production.compute.transports import codex_cli as transport
     from tests import test_sermon_codex_supervisor as support
     from scripts.run_sermon_production_supervisor_agent import SupervisorDecision, supervisor_instructions, verify_decision
     args, config = support.setup(tmp_path)

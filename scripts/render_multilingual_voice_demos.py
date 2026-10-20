@@ -147,7 +147,8 @@ def _expected_receipt(task: dict[str, Any], script_hash: str, renderer_hash: str
 
 
 def render(args: argparse.Namespace, *, session_verifier=None) -> dict[str, Any]:
-    from scripts.production_spark_admission import SessionBoundCaller
+    from scripts import tongxing_host  # noqa: F401  binds the production package ports
+    from tongxing_production.compute.spark_admission import SessionBoundCaller
     return SessionBoundCaller(_render, verifier=session_verifier, purpose="voice-demo-render")(
         args, session_verifier=session_verifier)
 
@@ -169,7 +170,8 @@ def _render(args: argparse.Namespace, *, session_verifier=None) -> dict[str, Any
     if manifest_path.exists():
         raise ValueError("Completed demo manifest already exists; use a new output directory")
 
-    from scripts.production_spark_admission import require_bound_model_session
+    from scripts import tongxing_host  # noqa: F401  binds the production package ports
+    from tongxing_production.compute.spark_admission import require_bound_model_session
     require_bound_model_session(verifier=session_verifier)
     import numpy as np
     import soundfile as sf

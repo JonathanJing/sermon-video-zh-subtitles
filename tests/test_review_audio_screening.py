@@ -10,7 +10,7 @@ import dataclasses
 import unittest
 from unittest.mock import patch
 
-from scripts import machine_audio_waiver_acceptance as audio_waivers
+from tongxing_production.review import audio_waiver_acceptance as audio_waivers
 from tongxing_production.audio import human_review as review_audio
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.delivery import formal_stage as stage

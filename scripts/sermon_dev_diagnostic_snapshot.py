@@ -19,7 +19,7 @@ from urllib.request import Request,urlopen
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.observability import accounting
 from scripts import sermon_historical_identity as historical_identity
-from scripts import sermon_review_contracts as c
+from tongxing_production.review import contracts as c
 from scripts import sermon_strict_layer2 as immutable
 from scripts import sermon_diagnostic_context as diagnostic
 from scripts import sermon_diagnostic_preview_worker as worker

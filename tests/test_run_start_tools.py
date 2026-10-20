@@ -283,7 +283,7 @@ class PlanTests(unittest.TestCase):
         from tests.test_canonical_layer2_controller import CanonicalLayer2ControllerTests
         from tongxing_production.text import budget as l2
         from tongxing_production.text import controller
-        from scripts import sermon_review_budget as budget
+        from tongxing_production.review import review_budget as budget
         from tongxing_production.orchestration import jobs
         fixture=CanonicalLayer2ControllerTests();fixture.setUp();self.addCleanup(fixture.doCleanups)
         config=controller.load_configuration(fixture.path);locales=','.join(config.lanes)

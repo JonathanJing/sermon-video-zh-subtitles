@@ -9,10 +9,10 @@ import urllib.error
 
 from tongxing_production.compute import legacy_openai  # C4: the remote-call group lives here
 from scripts import sermon_diagnostic_provider as p
-from scripts import sermon_provider_limits as limits
-from scripts import sermon_provider_error as errors
-from scripts import sermon_review_budget as budget
-from scripts import sermon_review_contracts as c
+from tongxing_production.compute import provider_limits as limits
+from tongxing_production.compute import sermon_provider_error as errors
+from tongxing_production.review import review_budget as budget
+from tongxing_production.review import contracts as c
 from scripts import sermon_strict_layer2 as strict
 from scripts import sermon_strict_budget_adapter as adapter
 from scripts import tongxing_host  # noqa: F401  binds the production package ports

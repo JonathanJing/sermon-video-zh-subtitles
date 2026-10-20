@@ -71,7 +71,7 @@ class SourceBoundAudioTests(unittest.TestCase):
         from scripts.experiments import diagnostic_timing_compatibility as compatibility
         groups, binding = self.fake_binding(8)
         with patch.object(inputs, 'checked_inputs', return_value=(groups, binding)), \
-             patch('scripts.spark_tts_replica_pool.ReplicaPool', FakePool), patch('builtins.print'):
+             patch('tongxing_production.compute.spark_tts_replica_pool.ReplicaPool', FakePool), patch('builtins.print'):
             # Simulate interruption after batch completion, before final outcome publication.
             with patch.object(worker, 'worker_identity', return_value=compatibility.PRE_TIMING_WORKER), \
                  patch('scripts.local_audio_resource_admission.finish'):
@@ -103,7 +103,7 @@ class SourceBoundAudioTests(unittest.TestCase):
         from scripts.experiments import diagnostic_timing_compatibility as compatibility
         groups, binding = self.fake_binding(8)
         with patch.object(inputs, 'checked_inputs', return_value=(groups, binding)), \
-             patch('scripts.spark_tts_replica_pool.ReplicaPool', FakePool), patch('builtins.print'):
+             patch('tongxing_production.compute.spark_tts_replica_pool.ReplicaPool', FakePool), patch('builtins.print'):
             with patch.object(worker, 'worker_identity', return_value=compatibility.TIMING_WORKER):
                 first = worker.render_tts(self.args)
             frozen = {path: path.read_bytes() for path in self.args.out.glob('*.json')}
@@ -116,7 +116,7 @@ class SourceBoundAudioTests(unittest.TestCase):
     def test_fake_46_group_tts_8x8_cpu4_then_single_asr_batch8_and_cached_zero_calls(self):
         groups, binding = self.fake_binding()
         with patch.object(inputs, 'checked_inputs', return_value=(groups, binding)), \
-             patch('scripts.spark_tts_replica_pool.ReplicaPool', FakePool), patch('builtins.print'):
+             patch('tongxing_production.compute.spark_tts_replica_pool.ReplicaPool', FakePool), patch('builtins.print'):
             tts = worker.render_tts(self.args)
             self.assertEqual(FakePool.instances[0].calls, [(i, min(8, 46-i), 42+i) for i in range(0, 46, 8)])
             self.assertTrue(FakePool.instances[0].closed)
@@ -146,7 +146,7 @@ class SourceBoundAudioTests(unittest.TestCase):
         groups, binding = self.fake_binding()
         FakePool.failure = 8
         with patch.object(inputs, 'checked_inputs', return_value=(groups, binding)), \
-             patch('scripts.spark_tts_replica_pool.ReplicaPool', FakePool), patch('builtins.print'):
+             patch('tongxing_production.compute.spark_tts_replica_pool.ReplicaPool', FakePool), patch('builtins.print'):
             with self.assertRaisesRegex(RuntimeError, 'outcome unknown'):
                 worker.render_tts(self.args)
             self.assertFalse((self.args.out / 'manifest.json').exists())
@@ -203,12 +203,13 @@ class SourceBoundAudioTests(unittest.TestCase):
         self.assertEqual(loader.from_pretrained.call_args.kwargs['max_inference_batch_size'], 8)
 
     def test_explicit_frozen_profile_requires_actual_cpu4_and_asr8_consumption(self):
-        from scripts.production_concurrency_profile import profile_v1
+        from scripts import tongxing_host  # noqa: F401  binds the production package ports
+        from tongxing_production.compute.concurrency_profile import profile_v1
         groups, binding = self.fake_binding(8)
         binding['concurrencyProfile'] = profile_v1()
         self.args.cpu_workers = 0
         with patch.object(inputs, 'checked_inputs', return_value=(groups, binding)), \
-             patch('scripts.spark_tts_replica_pool.ReplicaPool', FakePool), patch('builtins.print'):
+             patch('tongxing_production.compute.spark_tts_replica_pool.ReplicaPool', FakePool), patch('builtins.print'):
             with self.assertRaisesRegex(ValueError, 'cpu_profile_not_consumed'):
                 worker.render_tts(self.args)
             self.args.cpu_workers = 4
@@ -232,7 +233,7 @@ class SourceBoundAudioTests(unittest.TestCase):
             binding['targetLocale'] = locale
             args = copy.copy(self.args); args.out = self.voice.root / ('tts-' + locale)
             with patch.object(inputs, 'checked_inputs', return_value=(groups, binding)), \
-                 patch('scripts.spark_tts_replica_pool.ReplicaPool', FakePool), patch('builtins.print'):
+                 patch('tongxing_production.compute.spark_tts_replica_pool.ReplicaPool', FakePool), patch('builtins.print'):
                 tts = worker.render_tts(args)
                 self.assertEqual(tts['voice']['modelLanguage'], language)
                 self.assertFalse(tts['humanApproval'] or tts['productionEligible'])
