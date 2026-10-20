@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
-"""Prepare one production-safe mixed-source Hosting snapshot without deploying it."""
+"""Prepare one production-safe mixed-source Hosting snapshot without deploying it.
+
+The command-line entry; the implementation is
+tongxing_production.delivery.baseline.mixed_source_catalog_overlay.
+"""
 from __future__ import annotations
 
 import argparse
@@ -7,13 +11,12 @@ import json
 from pathlib import Path
 import sys
 
-try:
-    from scripts import tongxing_host  # noqa: F401  binds production package ports
-except ModuleNotFoundError:
-    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-    from scripts import tongxing_host  # noqa: F401
-
-from tongxing_production.delivery import baseline
+# Run by path from tools/ops: bind the production package to this checkout first.
+ROOT = Path(__file__).resolve().parents[2]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+from scripts import tongxing_host  # noqa: E402,F401  binds the production package ports
+from tongxing_production.delivery import baseline  # noqa: E402
 
 
 def main(argv=None):

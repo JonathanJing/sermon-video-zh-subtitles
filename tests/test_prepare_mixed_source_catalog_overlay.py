@@ -1,6 +1,6 @@
 import json
 
-from scripts import prepare_mixed_source_catalog_overlay as command
+from tools.ops import prepare_mixed_source_catalog_overlay as command
 
 
 def test_cli_defaults_to_production_and_forwards_exact_paths(tmp_path, monkeypatch, capsys):

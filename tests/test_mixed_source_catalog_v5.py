@@ -2,8 +2,9 @@ import copy
 
 import pytest
 
-from scripts import delivery_contract as contract
-from scripts import build_full_video_app_release as app_release
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.delivery import app_release
+from tongxing_production.delivery import contract
 from tongxing_production.delivery import baseline as baseline_tools
 from tongxing_production.delivery import unified_stage
 
