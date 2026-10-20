@@ -1,0 +1,45 @@
+{
+  "alignedSegments": 390,
+  "anchorIssues": [
+    {
+      "durationSeconds": 11.5,
+      "maximumSeconds": 8.0,
+      "sourceSentenceId": "chunk-0002-s018",
+      "type": "clause_unit_exceeds_target_without_safe_boundary"
+    },
+    {
+      "durationSeconds": 10.2,
+      "maximumSeconds": 8.0,
+      "sourceSentenceId": "chunk-0003-s002",
+      "type": "clause_unit_exceeds_target_without_safe_boundary"
+    }
+  ],
+  "anchorUnits": 417,
+  "budgetUpperUsd": 50,
+  "candidateStatus": "blocked",
+  "estimatedMicrousd": 5501330,
+  "humanSourceReview": "pending",
+  "invoiceVerified": false,
+  "judgeFail": 2,
+  "judgeModel": "gpt-6-astra",
+  "judgePass": 388,
+  "judgeReasoningEffort": "medium",
+  "latestDevCommit": "fcc05e730e7835b508ff00ca516f21f4c02c3866",
+  "machineJudgeStatus": "rejected_for_layer2_shadow",
+  "openaiEnvironment": "prod",
+  "reservedMicrousd": 22770966,
+  "schemaVersion": "sermon-layer1-source-run-summary-v1",
+  "sourceChunks": 11,
+  "sourceMediaSha256": "d5a53b515fd50a1939cda35ef9e6c471f2fdcda2d7b43dec3406628ce066002c",
+  "sourceModel": "gpt-transcribe",
+  "sourceSentences": 390,
+  "sourceWindowSeconds": [
+    1963,
+    3858
+  ],
+  "sparkExclusiveSession": "layer1-15030286-overnight-20261017",
+  "sparkSessionStatusAtWrite": "exclusive_ready",
+  "translationEligible": false,
+  "unknownSettlementCount": 22,
+  "workflowScope": "layer1_source_candidate"
+}

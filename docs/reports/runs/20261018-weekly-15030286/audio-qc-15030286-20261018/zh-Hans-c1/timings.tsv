@@ -1,0 +1,6 @@
+stage	status	seconds
+discover	pass	0.4
+discover	pass	0.4
+zh-Hans.track-check	pass	7.2
+zh-Hans.secondary-asr	pass	4.6
+zh-Hans.audio-qc	pass	5.7

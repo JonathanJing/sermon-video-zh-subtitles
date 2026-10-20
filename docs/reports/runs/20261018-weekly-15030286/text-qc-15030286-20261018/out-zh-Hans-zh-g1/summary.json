@@ -1,0 +1,85 @@
+{
+  "implementationSha256": "51e2b9cae5804344684d11a52d7872ce84a4a434f4aea17adce9708c467c0d55",
+  "locales": {
+    "zh-Hans": {
+      "calibration": {
+        "cleanFalsePositiveRate": 0.062189,
+        "detected": 261,
+        "overallDetectionRate": 0.996183,
+        "trials": 262
+      },
+      "calibrationCoverage": {
+        "applicableGroups": {
+          "added_content": 402,
+          "added_number": 327,
+          "added_reference": 394,
+          "dropped_half": 299,
+          "dropped_name": 12,
+          "english_leak": 325,
+          "placeholder": 402,
+          "semantic_negation": 18,
+          "swapped_name": 0,
+          "swapped_quantity": 1,
+          "wrong_book": 8,
+          "wrong_number": 13,
+          "wrong_ordinal": 394
+        },
+        "notApplicableKinds": [
+          "swapped_name"
+        ],
+        "untestableKinds": []
+      },
+      "calibrationMisses": {
+        "text.swapped_name": {
+          "applicableGroupIds": [],
+          "detected": 0,
+          "missedGroupIds": [],
+          "rate": 0.0,
+          "trials": 0
+        }
+      },
+      "candidateJsonSha256": "06388d4cfe9c0488da440c10c1c87122a095f2eb376f5305f29a5d5077aa69aa",
+      "failedGroups": [
+        "translation-chunk-0000-u024",
+        "translation-chunk-0000-u025",
+        "translation-chunk-0000-u026",
+        "translation-chunk-0000-u030",
+        "translation-chunk-0000-u036",
+        "translation-chunk-0001-u003",
+        "translation-chunk-0001-u011",
+        "translation-chunk-0001-u025",
+        "translation-chunk-0002-u001",
+        "translation-chunk-0002-u026",
+        "translation-chunk-0002-u038",
+        "translation-chunk-0003-u029",
+        "translation-chunk-0004-u022",
+        "translation-chunk-0005-u021",
+        "translation-chunk-0005-u026",
+        "translation-chunk-0005-u038",
+        "translation-chunk-0006-u023",
+        "translation-chunk-0007-u005",
+        "translation-chunk-0007-u007",
+        "translation-chunk-0007-u027",
+        "translation-chunk-0007-u029",
+        "translation-chunk-0008-u021",
+        "translation-chunk-0008-u030",
+        "translation-chunk-0010-u005",
+        "translation-chunk-0010-u007"
+      ],
+      "locale": "zh-Hans",
+      "paths": {
+        "anchor": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/weekend-live/text-qc-15030286-20261018/run-zh-Hans-zh-g1/anchor.json",
+        "candidate": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/weekend-live/text-qc-15030286-20261018/run-zh-Hans-zh-g1/zh-Hans/candidate.json",
+        "policy": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/weekend-live/text-qc-15030286-20261018/run-zh-Hans-zh-g1/policies/zh-Hans-policy-frozen-15030286-v3.json",
+        "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/weekend-live/text-qc-15030286-20261018/run-zh-Hans-zh-g1/source.json"
+      },
+      "problems": [],
+      "status": "text_waiver_issued",
+      "textQc": "requires_repair",
+      "textQcReceipt": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/weekend-live/text-qc-15030286-20261018/state-zh-Hans/qc-receipts/text/zh-Hans/fd57d3ce800506489000ae30e35f45cd8511e4cd36e79c55f914605079ddf074/entry-000002.json",
+      "textWaiver": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/weekend-live/text-qc-15030286-20261018/out-zh-Hans-zh-g1/zh-Hans/text-waiver-1209559ad687ef56.json"
+    }
+  },
+  "runDir": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/weekend-live/text-qc-15030286-20261018/run-zh-Hans-zh-g1",
+  "textBackend": "api"
+}
