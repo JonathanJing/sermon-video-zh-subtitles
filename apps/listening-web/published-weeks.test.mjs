@@ -1079,11 +1079,14 @@ test('v5 rejects cross-source content, fingerprint and English-reference hashes'
   }
 });
 
-test('v5 rejects a missing video delivery or a storage object from another edition/hash', async () => {
+test('v5 rejects a missing video delivery or a storage object from another bucket/edition/hash or with a query', async () => {
   for (const mutate of [
     target => { delete target.videoDelivery; },
     target => { target.videoDelivery.storageUrl = `https://storage.googleapis.com/ai-for-god-sermon-media-prod/weekly/other-edition/${target.sourceMediaSha256}.mp4`; },
     target => { target.videoDelivery.storageUrl = `https://storage.googleapis.com/ai-for-god-sermon-media-prod/weekly/${target.editionId}/${'f'.repeat(64)}.mp4`; },
+    target => { target.videoDelivery.storageUrl = `https://storage.googleapis.com/unrelated-bucket/weekly/${target.editionId}/${target.sourceMediaSha256}.mp4`; },
+    target => { target.videoDelivery.storageUrl += '?alt=media'; },
+    target => { target.videoDelivery.storageUrl += '#t=10'; },
   ]) {
     const {f, catalog} = mixedSourceFixture();
     mutate(catalog.pages[0].targets['zh-Hans']);

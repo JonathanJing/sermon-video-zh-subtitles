@@ -105,18 +105,15 @@ const perTargetSources = (page, catalogVersion) => catalogVersion === CATALOG_V5
 
 function validateVideoDelivery(delivery, editionId, sourceMediaSha256) {
   required(delivery && typeof delivery === 'object' && !Array.isArray(delivery), 'Invalid target video delivery');
-  let storage;
-  try { storage = new URL(delivery.storageUrl); } catch { storage = null; }
-  const storagePath = storage?.pathname.split('/');
+  // Exactly the bound object in one of the two media buckets, as the schema and iOS require.
+  const storageUrls = ['dev', 'prod'].map(environment =>
+    `https://storage.googleapis.com/ai-for-god-sermon-media-${environment}/weekly/${editionId}/${sourceMediaSha256}.mp4`);
   required(delivery.schemaVersion === 'sermon-video-delivery-v1'
     && delivery.canonicalUrl === `/pages/${editionId}/full-video-browser.mp4`
     && assetPath(delivery.canonicalUrl) === delivery.canonicalUrl
     && HASH.test(delivery.sha256) && delivery.sha256 === sourceMediaSha256
     && Number.isSafeInteger(delivery.bytes) && delivery.bytes > 0
-    && storage?.protocol === 'https:' && storage.hostname === 'storage.googleapis.com'
-    && !storage.username && !storage.password
-    && storagePath?.length === 5 && text(storagePath[1]) && storagePath[2] === 'weekly'
-    && storagePath[3] === editionId && storagePath[4] === `${sourceMediaSha256}.mp4`,
+    && storageUrls.includes(delivery.storageUrl),
   'Invalid target video delivery');
   return delivery;
 }
