@@ -1,0 +1,63 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261020-facade-c7-local",
+  "runs": [
+    {
+      "label": "facade-c7-local",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.claude/worktrees/facade-cli-entry-86e06d/artifacts/facade-c7-local",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "facade-c7-local",
+      "path": "changed-tests.log",
+      "kind": "log",
+      "bytes": 11587,
+      "truncated": false,
+      "sha256": "ffaf341f9e8618568922b359ae82389e4a5501830da70673aec126339e68a803",
+      "redactions": {}
+    },
+    {
+      "run": "facade-c7-local",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 938,
+      "truncated": false,
+      "sha256": "27f23c0689e993e14c9a92f44ac85d675649c041544fa34037283eb8aab883bf",
+      "redactions": {}
+    },
+    {
+      "run": "facade-c7-local",
+      "path": "pytest.log",
+      "kind": "log",
+      "bytes": 464,
+      "truncated": false,
+      "sha256": "a38e23d8c5e84ddad003fa4e993352054ccd1ad98a6d9d8c49a836a332e798e4",
+      "redactions": {}
+    },
+    {
+      "run": "facade-c7-local",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 645,
+      "truncated": false,
+      "sha256": "182ea3b51e6505d16739f3254438bdb0523c8564f71a0b13f1b6d51f15bb1c66",
+      "redactions": {}
+    },
+    {
+      "run": "facade-c7-local",
+      "path": "unittest-shards.log",
+      "kind": "log",
+      "bytes": 1170,
+      "truncated": false,
+      "sha256": "65d31dbd40077a04271e89dd43639ac5e6433995a4807f85d2d7c01be0fcdd6b",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}
