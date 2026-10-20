@@ -33,6 +33,8 @@
 | `language_review_plugins/` 下 23 个 | 被 policy 冻结，插件实现哈希进 policy；只有重新冻结 policy 才能动 |
 | `ko_spoken_numerals.py`、`cuv_scripture.py`、`build_scripture_index.py` | 字节被冻结身份或插件闭包哈希 |
 
+N3 核对后，`scripture_editions`、`scripture_candidate_queue`、`english_scripture_coverage`、`series_terminology` 也留下：它们的字节进了经文机器裁决的生成器身份或 dual_pdf 输入身份，见 §9.3。
+
 ## 4 普通叶子批（R1–R4，可以并行）
 
 做法同 C 批：先只做 `git mv` 一次提交，再改调用方或留门面一次提交；跑受影响的测试，导出运行报告。四批改的文件互不重叠，可以分别交给四个会话并行。
@@ -137,3 +139,16 @@ dual_pdf 附属（R10）单独做一次 dual_pdf 身份换代，不在这四批�
 - `live_source_monitor` 进 `workflows/dual_pdf/`，不进 `orchestration/supervisor/`：它要用 Secret Manager、GCS 和日志函数，包里只有 dual_pdf 宿主记录带 `ports.Cloud`、`ports.Observability`，而 `orchestration/` 不得导入 `workflows/`。
 
 `sermon_production_supervisor` 留在 `scripts/`：它导入 `backend.leases`（`LeaseGuard`、`acquire_lease`、`release_lease`），宿主没有对应端口，包内又不得导入 `backend`；补端口要改宿主，所以并入 D-5 窗口，或者先把 `backend/leases.py` 迁进 `storage/` 并在原处留门面。它还导入 `workflows.dual_pdf`，所以目标应是 `workflows/` 而不是 `orchestration/`。`backend/app.py` 照旧导入 `scripts.live_source_monitor` 和 `scripts.sermon_production_supervisor`，不用改 Dockerfile，也不用重新部署。`dual_pdf` 宿主记录里的 `Unmoved.live_source_monitor` 字段要等闭包窗口改宿主时再删。
+
+**N3 结果（2026-10-20）。** 先用真实的哈希函数核对了 4 个经文与术语文件。它们都不进冻结翻译 policy：policy 只哈希术语表 `docs/series-terminology.zh.md`（`text/policy.py:87`）和插件实现（`text/candidate.py:58` 的 `plugin_implementation_sources()`，54 个来源文件里经文只有 `cuv_scripture`、`build_scripture_index`）。它们也不在豁免闭包（`review/waiver.py` 的 `IMPLEMENTATION_PHYSICAL_FILES`，也就是 `implementation_freeze.closure_files()`）、G1 的传输、计分、语速闭包或 `path_aliases` 的键里。18 个已冻结的 15030286 policy 在迁移前后都通过 `validate_policy`，哈希不变。但它们的字节进了另外两个身份，所以都留在 `scripts/`：
+
+| 文件 | 哈希位置 | 为什么不能留门面迁移 |
+|---|---|---|
+| `scripture_editions`、`scripture_candidate_queue`、`english_scripture_coverage` | `review/scripture_machine.py:86` 的 `GENERATOR_MODULES`。`_generator_paths()`（:91）按 `implementation_path('scripts/<文件名>')` 读这几个文件，`implementation_inputs()`（:103）和 `implementation_sha256()`（:119）哈希它们；这个哈希写进机器经文裁决回执的 `decidedBy` 签名（:534）和 basis 的 `implementationInputs`（:539），`review/scripture.py:91` 又按它判断回执是否出自冻结的生成器 | 没有 `path_aliases` 键时，这个路径读到的是门面的字节，生成器身份就变了，已冻结的回执只能按冻结记录接纳，不能再复现。加键要改 G1 物理闭包里的 `path_aliases.py`。另外 `scripture_editions`（:23）和 `english_scripture_coverage`（:29）用 `Path(__file__).parents[1]` 定位仓库，迁移本来就要改字节。所以放进 D-5 闭包窗口，加键后迁移 |
+| `series_terminology` | `workflows/dual_pdf/post_live.py:111` 的 `_series_terminology_path()` 经 `file_content_identity()`（:1442）写进 dual_pdf 输入身份：`implementation.seriesTerminology`（:1491、:1541）和 `terminology`（:1674） | 它用 `Path(__file__).parents[1]` 找术语表（`scripts/series_terminology.py:18`），包内代码又不能自己定位检出，迁移就要改字节，dual_pdf 输入身份随之改变，整条管线的缓存不能再复用。所以和 R10 的 dual_pdf 身份换代一起迁移 |
+
+核心杂项三个都已迁出：
+
+- `run_spoken_condensation` 迁到 `tools/ops/run_spoken_condensation.py`，不留门面。它只是精简的命令行驱动，只有自己的测试导入它；W 里的是 `review/condensation.py`，驱动不在闭包里。
+- `sermon_local_model_observation` 迁到 `observability/local_model_observation.py`。宿主点名它，所以留门面。
+- 统一 CLI `sermon.py` 迁到 `tools/ops/sermon.py`，runbook 改用新路径。`scripts/sermon.py` 留作兼容门面，因为 `scripts/sermon_unified/__init__.py` 的 `worker_command()` 和现有操作员还在运行旧路径。

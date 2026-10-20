@@ -9,7 +9,7 @@ import tempfile
 import unittest
 import wave
 from unittest.mock import patch
-from scripts import sermon
+from tools.ops import sermon
 from scripts.sermon_unified import contracts as c,runtime as r,adapters
 from scripts.sermon_unified_observability import project,events,compare
 

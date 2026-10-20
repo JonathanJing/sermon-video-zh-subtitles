@@ -82,7 +82,6 @@ scripts/run_saturday_harness.py
 scripts/run_sentence_interpretation_models.py
 scripts/run_sermon_prefect_dag.py
 scripts/run_sermon_production_supervisor_agent.py
-scripts/run_spoken_condensation.py
 scripts/run_with_openai_environment.py
 scripts/scripture_adjudication.py
 scripts/scripture_candidate_queue.py

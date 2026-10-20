@@ -59,7 +59,7 @@ def verify(root, *, with_resource_policy=False, media_path=None):
     path=root/'manifest.json';path.write_text(json.dumps(manifest));store=root/'store'
     env={k:v for k,v in os.environ.items() if not k.startswith(('OPENAI_', 'GEMINI_', 'GOOGLE_API_')) and k!='CODEX_API_KEY'}
     def cli(*args,accepted=(0,)):
-        result=subprocess.run([sys.executable,str(c.ROOT/'scripts/sermon.py'),*args,'--state-root',str(store),'--json'],
+        result=subprocess.run([sys.executable,str(c.ROOT/'tools/ops/sermon.py'),*args,'--state-root',str(store),'--json'],
                               capture_output=True,text=True,timeout=240,env=env)
         if result.returncode not in accepted:
             raise RuntimeError(f'CLI {args[:2]} failed: {result.returncode} {result.stdout} {result.stderr}')

@@ -31,7 +31,7 @@
 | 豁免收据 | `tongxing_production.review.waiver` | 汇总最终 QC 结果，按上面的 5% 规则决定这个语言是自动发布、只发文字还是暂停。先核对 QC 收据确实检查的是这份候选（每组译文哈希）和这份音频包（候选哈希、每句音频哈希），对不上就报错 |
 | 门禁收据 | `tongxing_production.review.release_basis` | 生成并校验两种绑定到具体产物的收据：**译文豁免**（`sermon-target-language-machine-text-waiver-v1`，绑定一个 L2 候选；有精简组时还必须绑定一份通过的精简绑定（`sermon-spoken-condensation-binding-v2`，记录复核时的 QC `implementationSha256`，必须等于签发时的实现；v1 绑定和旧实现的绑定要用当前代码重新 bind），组别完全一致，并记录 `condensedGroupIds` 和 `condensationBindingJsonSha256`。这样的收据只能当口播稿的依据，L4 不接受它作完整译文）和**试听豁免**（`sermon-target-language-machine-audio-waiver-v2`，绑定一个 L3 音频包、它的 ASR 筛查和口播稿的译文豁免） |
 | 文字链驱动 | `tongxing_production.review.qc_text_run` | 在已有 Dev 运行上按哈希找候选、英文源包、锚点和 policy，从修复账本头做文字 QC（回译走本机 Codex CLI，Sol 6.1 medium，按请求缓存），再注错校准、签发译文豁免。`--spoken-binding LOCALE=PATH` 按绑定里的哈希找口播候选、完整候选和精简记录，用当前代码重算绑定，按口播模式 QC、校准口播各类并签发口播稿的译文豁免。`--text-backend fake` 只演练管线，不保存豁免 |
-| 精简驱动 | `scripts/run_spoken_condensation.py` | 读完整候选、8 秒预算、冻结锚点和候选自己的 policy，用本机 Codex CLI（Sol 6.1 high，缓存命名空间 `spoken-condensation-v1`）精简 `shorten` 组，写出精简记录和 L2 revision brief；同输入重跑复用，不覆盖已有证据，结果未知的调用会停止派发。`--backend fake` 只演练管线 |
+| 精简驱动 | `tools/ops/run_spoken_condensation.py` | 读完整候选、8 秒预算、冻结锚点和候选自己的 policy，用本机 Codex CLI（Sol 6.1 high，缓存命名空间 `spoken-condensation-v1`）精简 `shorten` 组，写出精简记录和 L2 revision brief；同输入重跑复用，不覆盖已有证据，结果未知的调用会停止派发。`--backend fake` 只演练管线 |
 | 试听链驱动 | `tongxing_production.review.qc_audio_run`（传输在 `tongxing_production.compute.qc_audio_transports`） | 按哈希预检音频包、speech job v3、译文豁免和 v2 筛查；一级 ASR 意见取筛查收据本身，校准新合成的音频前核对本机 Qwen3-ASR 权重、推理身份和筛查脚本与收据一致；二级 ASR 为 `gpt-transcribe`（OpenAI 音频转写 API，只上传单句音频，不发送预期文字和 keywords，须经 `run_with_openai_environment.py` 选定 Project，付费调用不重发，结果未知即停止派发，`--max-api-calls` 限额）；漏词音频由 speech job 自己的 TTS checkpoint 用正式渲染器合成。`--backend fake` 只演练管线，不保存豁免。详见 [机器试听豁免驱动](machine-qc-audio-driver.zh.md) |
 
 文本 QC 逐组记录 `englishSha256` 与 `sourceUnitIdsSha256`，签发豁免时按候选的 source-unit 顺序与冻结 anchor 中的英文核对。旧 QC 收据缺少这些字段时须重新检查，不能沿用。音频 QC 的 `thresholds` 必须等于当前标准 `THRESHOLDS`，放宽设置的结果不能授权试听豁免。
@@ -73,7 +73,7 @@ ASR 还保护完整韩文数字词、已知书卷名和常用人名，以及冻�
 # 整轨核对（读取音频包里的排程、单句音频和音轨；MP3 需要 ffmpeg 和同名 .wav 母带）
 .venv/bin/python tools/ops/run.py review.audio_qc --track-package audio-package.json --out track-check.json
 # 精简（本机 Codex CLI，Sol 6.1 high，按请求缓存；写出精简记录和 L2 revision brief，同输入重跑复用，不覆盖已有证据；--backend fake 只验证流程）
-python scripts/run_spoken_condensation.py --candidate full-candidate.json --budget budget.json \
+python tools/ops/run_spoken_condensation.py --candidate full-candidate.json --budget budget.json \
   --anchor anchor.json --policy policy.json --out artifacts/<run>/condensation/ko --state-dir artifacts/<run>/state
 # 已有精简记录时也可单独导出 brief
 .venv/bin/python tools/ops/run.py review.condensation brief --record condensation.json --candidate full-candidate.json --out brief.json
