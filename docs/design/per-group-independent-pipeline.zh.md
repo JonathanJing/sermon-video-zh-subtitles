@@ -9,7 +9,7 @@
 | 现象 | 位置 | 根因 |
 |---|---|---|
 | 改一个语言插件，全部旧证据作废 | [`text/controller.py`](../../packages/production/src/tongxing_production/text/controller.py) `code_identity()` | Layer 2 job 身份哈希全部 `scripts/**/*.py`、`packages/production/src/**/*.py`、schema 与术语表；任何代码字节变化都是新 job，不区分是哪一步的代码 |
-| 部分恢复只能串行 | [controller 文档](../canonical-layer2-controller.zh.md) execution v7 | `layer2PartialRecovery` 要求 `groupWorkers=1` |
+| 部分恢复只能串行（2026-10-20 已解除） | [controller 文档](../canonical-layer2-controller.zh.md) execution v7 | `layer2PartialRecovery` 曾要求 `groupWorkers=1`；现先核对旧证据、先回放完整返回的组，再并行 |
 | 重放时返修额度为 0 | [`text/auto_repair.py`](../../packages/production/src/tongxing_production/text/auto_repair.py) `_affordable_repairs`、`token_cap` | 额度 = 首轮调用与 token 的 10%（至少 `MINIMUM_REPAIR_CALLS`）；重放时首轮全部命中缓存，按 0 次计算，只剩保底 2 组 |
 | 候选、豁免、音频只收整篇 | [`text/candidate.py`](../../packages/production/src/tongxing_production/text/candidate.py) `admit_evidence`；[`audio/speech_job.py`](../../packages/production/src/tongxing_production/audio/speech_job.py) `validate_target_candidate`；[机器质检豁免](../machine-quality-waiver.zh.md) | 准入要求全部组一次给齐、插件逐组 pass；speech job 要求 `reviewedGroupIds` 等于全部组；校准绑定整份成品的 `textGroupsSha256`／`audioUnitsSha256` |
 

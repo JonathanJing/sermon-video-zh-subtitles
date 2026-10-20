@@ -17,7 +17,7 @@
 
 | 环节 | 设置 | 说明 |
 |---|---|---|
-| Layer 2 翻译与复核（OpenAI API） | execution-v3 `layer2AutoRepair`：`groupWorkers: 8`；`maxActiveLocales`：正式周更 3，10 美元以内的 dev 测试 1 | 共享 job-root 的 API 槽位上限 24（[controller 合同](canonical-layer2-controller.zh.md#并发上限)）。三语同开时，三份预留同时占用预算 |
+| Layer 2 翻译与复核（OpenAI API） | execution-v3 及以上（含 v6 缓存续跑、v7 部分恢复）`layer2AutoRepair`：`groupWorkers: 8`；`maxActiveLocales`：正式周更 3，10 美元以内的 dev 测试 1 | 共享 job-root 的 API 槽位上限 24（[controller 合同](canonical-layer2-controller.zh.md#并发上限)）。三语同开时，三份预留同时占用预算 |
 | 文本质检与校准（OpenAI API） | `run_machine_qc_clip_test.py --workers 8`；预算账本 `maxConcurrent` 16 | 只在 Mac 上调 API，不占 Spark，可以与另一语言的 Spark 环节重叠 |
 | 配音渲染（Spark） | `--spark-production`：8 个常驻副本、每批 8 句、CUDA/BF16/SDPA | 全篇约 6–8 分钟／语言 |
 | 静音压缩（Spark CPU） | 单任务 | 约 15 秒／片段 |

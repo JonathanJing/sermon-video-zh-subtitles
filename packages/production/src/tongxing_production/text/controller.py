@@ -77,7 +77,9 @@ QC_REPAIR_SCHEMA = 'sermon-canonical-layer2-execution-v5'
 PAYLOAD_CACHE_SCHEMA = 'sermon-canonical-layer2-execution-v6'
 # v7 is v6 plus an explicit failed-job partial-round predecessor.  It can reuse
 # complete direct-paid responses without pretending that a missing success
-# sidecar passed semantic or language-plugin review.
+# sidecar passed semantic or language-plugin review.  Any groupWorkers value is
+# valid: every returned call is checked and replayed before a group may pay
+# (models._run_partial_recovery_groups); v7 configurations with 1 load unchanged.
 PARTIAL_RECOVERY_SCHEMA = 'sermon-canonical-layer2-execution-v7'
 # v8 is v3 plus a per-locale operator group revision (text/group_revision.py): the lane
 # translates again only the groups its revision request lists and carries every other
@@ -413,8 +415,6 @@ def _load_configuration(path):
     partial_recovery = (_partial_recovery_binding(
         value['layer2PartialRecovery'], path, value['locales'], payload_cache)
         if value['schemaVersion'] == PARTIAL_RECOVERY_SCHEMA else None)
-    require(partial_recovery is None or repair_binding['groupWorkers'] == 1,
-            'partial_recovery_requires_serial_group_worker')
     revisions = None
     if value['schemaVersion'] == GROUP_REVISION_SCHEMA:
         named = value['layer2GroupRevision']
