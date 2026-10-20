@@ -13,7 +13,7 @@ from scripts import canonical_pipeline_definition as legacy_pipeline
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.observability import accounting
 from scripts import sermon_mock_tts_contract as mock_tts
-from scripts import sermon_pipeline
+from tongxing_production.workflows.dual_pdf import pipeline as sermon_pipeline
 from scripts import sermon_prefect_dag as prefect
 from scripts import sermon_review_contracts as legacy
 from tongxing_production.orchestration import jobs

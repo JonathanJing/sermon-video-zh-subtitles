@@ -152,7 +152,7 @@ class BackendAppTest(unittest.TestCase):
             "2026-06-28",
         )
 
-        self.assertIn("run_post_live_subtitle_generation.py", command[1])
+        self.assertEqual(command[1:3], [str(WEB_ROOT.parents[1] / "tools/ops/run.py"), "workflows.dual_pdf.post_live"])
         self.assertEqual(command[command.index("--sunday") + 1], "2026-06-28")
         self.assertEqual(
             command[command.index("--state-file") + 1],
@@ -204,7 +204,7 @@ class BackendAppTest(unittest.TestCase):
         self.assertEqual(captured["status"], 202)
         self.assertEqual(captured["payload"]["status"], "planned")
         self.assertEqual(captured["payload"]["mode"], "generate-reviewed")
-        self.assertIn("run_post_live_subtitle_generation.py", captured["payload"]["command"][1])
+        self.assertEqual(captured["payload"]["command"][2], "workflows.dual_pdf.post_live")
         self.assertFalse(captured["payload"]["apiKeyMaterialIncluded"])
         self.assertTrue(captured["payload"]["secretResourceNamesIncluded"])
 

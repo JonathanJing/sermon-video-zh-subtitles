@@ -117,7 +117,8 @@ class ProductionSessionCallTests(unittest.TestCase):
         # neither check the exclusive session nor take a durable Spark job hold.
         from scripts import generate_notes_with_openai as notes
         from scripts import build_sermon_reading_edition_with_openai as reading
-        from scripts import sermon_pipeline as pipeline
+        from scripts import tongxing_host  # noqa: F401  binds the production package ports
+        from tongxing_production.workflows.dual_pdf import pipeline as pipeline
         spark = Mock(side_effect=AssertionError("API-only caller consulted Spark"))
         with tempfile.TemporaryDirectory() as directory, \
              patch.dict("os.environ", {"SERMON_ACCOUNTING_DIR": directory}), \

@@ -92,7 +92,7 @@ def read_evidence(path, sunday, *, bridge=False, config_hash=None):
 
 def commands(args):
     state_file = args.state_file if args.state_file.startswith("gs://") else str(Path(args.state_file).expanduser().absolute())
-    pdf = [sys.executable, str(ROOT / "scripts/run_codex_local_sermon_production.py"),
+    pdf = [sys.executable, str(ROOT / "tools/ops/run.py"), "workflows.dual_pdf.codex_local",
         "--mode", "execute", "--sunday", args.sunday, "--state-file", state_file,
         "--work-root", str(args.work_root.absolute()), "--out", str(args.supervisor_report.absolute()),
         "--gcs-bucket", args.gcs_bucket, "--gcs-prefix", args.gcs_prefix,

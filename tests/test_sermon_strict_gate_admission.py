@@ -315,7 +315,7 @@ class FailedReviewInventoryTests(unittest.TestCase):
     def test_two_failed_attempts_remain_distinct_through_planner_and_admission(self):
         import io
         import urllib.error
-        from scripts import sermon_pipeline as pipeline
+        from tongxing_production.workflows.dual_pdf import pipeline as pipeline
         from scripts.sermon_strict_repair_planner import RepairPlanner
 
         class InvalidJSONResponse:

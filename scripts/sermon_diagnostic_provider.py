@@ -23,7 +23,7 @@ import urllib.request
 
 from tongxing_production.observability import accounting
 from tongxing_production.observability import completion
-from scripts import sermon_pipeline as pipeline
+from tongxing_production.workflows.dual_pdf import pipeline as pipeline
 from scripts import sermon_provider_error as errors
 from tongxing_production.observability import profile
 from scripts import sermon_provider_limits as limits

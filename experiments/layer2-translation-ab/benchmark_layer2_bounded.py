@@ -29,7 +29,7 @@ from tongxing_production.text import candidate as producer
 from tongxing_production.text import models as production
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.observability import accounting
-from scripts import sermon_pipeline as pipeline
+from tongxing_production.workflows.dual_pdf import pipeline as pipeline
 from scripts import sermon_provider_http as transport
 from scripts import sermon_provider_limits as provider_limits
 from tongxing_production.text import policy as policy_tools

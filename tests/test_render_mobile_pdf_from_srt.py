@@ -6,20 +6,18 @@ import unittest
 from pathlib import Path
 
 
-SCRIPT_PATH = Path(__file__).resolve().parents[1] / "scripts" / "render_mobile_pdf_from_srt.py"
-from scripts import render_mobile_pdf_from_srt as mod
-from tongxing_production.workflows.dual_pdf import mobile_pdf as implementation
+COMMAND = [sys.executable, str(Path(__file__).resolve().parents[1] / "tools/ops/run.py"), "workflows.dual_pdf.mobile_pdf"]
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.workflows.dual_pdf import mobile_pdf as mod
 
 
 class RenderMobilePdfFromSrtTest(unittest.TestCase):
     def test_legacy_import_and_interpretation_font_symbols(self):
-        from scripts import render_sermon_interpretation_pdf as interpretation
         from scripts import tongxing_host  # noqa: F401  binds the production package ports
+        from tongxing_production.workflows.dual_pdf import interpretation_pdf as interpretation
         from tongxing_production.observability import accounting as sermon_accounting
         from tongxing_production import path_aliases
 
-        self.assertIs(mod, implementation)
-        self.assertIs(sys.modules["scripts.render_mobile_pdf_from_srt"], implementation)
         self.assertEqual(interpretation.MOBILE_PAGE_SIZE, mod.MOBILE_PAGE_SIZE)
         self.assertEqual(path_aliases.resolve("scripts/render_mobile_pdf_from_srt.py"),
                          "packages/production/src/tongxing_production/workflows/dual_pdf/mobile_pdf.py")
@@ -32,7 +30,7 @@ class RenderMobilePdfFromSrtTest(unittest.TestCase):
             source = folder / "source.srt"
             output = folder / "reading.pdf"
             source.write_text("1\n00:00:01,000 --> 00:00:02,500\n神爱世人。\n", encoding="utf-8")
-            result = subprocess.run([sys.executable, str(SCRIPT_PATH), "--input", str(source),
+            result = subprocess.run([*COMMAND, "--input", str(source),
                                      "--out", str(output), "--title", "Test Sermon"],
                                     cwd=folder, capture_output=True, text=True, timeout=60)
             self.assertEqual(result.returncode, 0, result.stderr)

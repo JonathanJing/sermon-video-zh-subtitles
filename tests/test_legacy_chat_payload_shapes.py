@@ -9,7 +9,8 @@ import unittest
 from unittest.mock import patch
 from PIL import Image
 from tongxing_production.compute import legacy_openai  # C4: the remote-call group lives here
-from scripts import sermon_pipeline as pipeline
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.workflows.dual_pdf import pipeline as pipeline
 from scripts import sermon_provider_limits as limits
 from scripts import api_cli_outcomes as outcomes
 

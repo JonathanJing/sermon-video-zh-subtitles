@@ -7,9 +7,9 @@ from pathlib import Path
 from unittest import mock
 
 from tests.legacy_pipeline_patches import patch_both  # W3b: Layer 1 names live in two modules
-from scripts import sermon_pipeline
-from scripts import run_post_live_timeline_job as job
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.workflows.dual_pdf import pipeline as sermon_pipeline
+from tongxing_production.workflows.dual_pdf import timeline as job
 from tongxing_production.observability import accounting
 from tests.test_run_post_live_timeline_job import make_args, write_state, make_handoff
 

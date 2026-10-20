@@ -36,8 +36,9 @@ from .scripture import ScriptureNotFoundError, ScriptureService
 from .storage import GcsArtifactReader
 from .worker import build_generation_plan, parse_generation_request
 from scripts import live_source_monitor
-from scripts import run_post_live_subtitle_generation
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from scripts import sermon_production_supervisor
+from tongxing_production.workflows.dual_pdf import post_live as run_post_live_subtitle_generation
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -714,7 +715,8 @@ class ApiHandler(BaseHTTPRequestHandler):
         work_root = payload.get("workRoot") or payload.get("work_root") or "/tmp/sermon-post-live-subtitles"
         command = [
             sys.executable,
-            str(run_post_live_subtitle_generation.REPO_ROOT / "scripts" / "run_post_live_subtitle_generation.py"),
+            str(REPO_ROOT / "tools" / "ops" / "run.py"),
+            "workflows.dual_pdf.post_live",
             "--sunday",
             sunday,
             "--state-file",

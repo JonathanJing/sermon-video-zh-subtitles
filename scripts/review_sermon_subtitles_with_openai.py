@@ -16,7 +16,8 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-from scripts.sermon_pipeline import (
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.workflows.dual_pdf.pipeline import (
     chat_json,
     clean_text,
     qa_report,
@@ -131,7 +132,7 @@ def review_batch(
     reasoning_effort: str,
     *, caller=None,
 ) -> dict:
-    from scripts.sermon_pipeline import bounded_legacy_chat_payload, legacy_text_cache_contract, legacy_text_execution_identity
+    from tongxing_production.workflows.dual_pdf.pipeline import bounded_legacy_chat_payload, legacy_text_cache_contract, legacy_text_execution_identity
     payload = bounded_legacy_chat_payload(batch_payload(all_segments, batch, start_index, model, reasoning_effort))
     execution = legacy_text_execution_identity(api_key, payload, caller=caller)
     identity = hashlib.sha256(

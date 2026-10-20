@@ -11,9 +11,9 @@ from scripts import sermon_review_contracts as c
 from tongxing_production.source import failure
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from scripts import sermon_fresh_diagnostic as entry
-from tongxing_production.observability import accounting
 from tongxing_production.observability import profile
-from scripts.sermon_pipeline import PreDispatchRejection
+from tongxing_production.observability import accounting
+from tongxing_production.workflows.dual_pdf.pipeline import PreDispatchRejection
 from tests import test_mfa_alignment as alignment_fixtures
 from tests import test_sermon_fresh_diagnostic as source_fixtures
 

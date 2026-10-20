@@ -275,7 +275,8 @@ class StrictAdapterTests(unittest.TestCase):
 
     def test_closed_provider_run_is_typed_non_dispatch_with_safe_reason_and_cached_terminal(self):
         from unittest.mock import Mock
-        from scripts import sermon_pipeline as pipeline
+        from scripts import tongxing_host  # noqa: F401  binds the production package ports
+        from tongxing_production.workflows.dual_pdf import pipeline as pipeline
         from scripts import sermon_strict_budget_adapter as adapter
         from tests import test_sermon_strict_budget_adapter as fixtures
         runtime=fixtures.StrictBudgetTests();self.addCleanup(runtime.doCleanups); runtime.setUp()
@@ -405,7 +406,7 @@ class StrictAdapterTests(unittest.TestCase):
             self.assertEqual(len(self.calls),1)
 
     def test_shared_http_path_persists_before_log_failure_without_hidden_retry(self):
-        from scripts import sermon_pipeline as pipeline
+        from tongxing_production.workflows.dual_pdf import pipeline as pipeline
         value={k:self.f.evidence['groups'][0][k] for k in ('translationGroupId','sourceUnitIds','targetUtterances','coverage')}
         response=dict(id='real-path-synthetic-response',model='gpt-6-astra',choices=[dict(finish_reason='stop',message={'content':json.dumps(value)})])
         class HTTP:
@@ -457,7 +458,7 @@ class StrictAdapterTests(unittest.TestCase):
             self.assertEqual(len(self.calls),1)
 
     def test_known_http_rejections_are_failed_without_content_assessment_or_retry(self):
-        from scripts import sermon_pipeline as pipeline
+        from tongxing_production.workflows.dual_pdf import pipeline as pipeline
         base=self.root
         def caller(key,payload,*,response_observer):
             # Deliberately use the legacy default; a strict observer must remain single-attempt.
@@ -482,11 +483,11 @@ class StrictAdapterTests(unittest.TestCase):
 
     @staticmethod
     def http_caller(key,payload,*,response_observer):
-        from scripts import sermon_pipeline as pipeline
+        from tongxing_production.workflows.dual_pdf import pipeline as pipeline
         return pipeline.json_request(pipeline.CHAT_URL,key,payload,response_observer=response_observer)
 
     def test_ambiguous_http_and_transport_failures_stay_unknown_without_retry(self):
-        from scripts import sermon_pipeline as pipeline
+        from tongxing_production.workflows.dual_pdf import pipeline as pipeline
         base=self.root
         errors=[urllib.error.HTTPError(pipeline.CHAT_URL,status,'private',{},io.BytesIO(b'private'))
                 for status in (408,409,500,502,503,504)]
@@ -508,7 +509,7 @@ class StrictAdapterTests(unittest.TestCase):
                     self.assertFalse((self.root/'revision/reviewer.rejection.json').exists())
 
     def test_rejection_is_durable_before_finish_logging_and_recovery_does_not_call(self):
-        from scripts import sermon_pipeline as pipeline
+        from tongxing_production.workflows.dual_pdf import pipeline as pipeline
         with self.session():
             self.generate()
             error=urllib.error.HTTPError(pipeline.CHAT_URL,429,'private',{},io.BytesIO(b'private'))
@@ -533,7 +534,7 @@ class StrictAdapterTests(unittest.TestCase):
             self.assertEqual((self.root/'revision/reviewer.rejection.json').stat().st_mode&0o777,0o600)
 
     def test_rejection_marker_must_bind_original_payload_and_call(self):
-        from scripts import sermon_pipeline as pipeline
+        from tongxing_production.workflows.dual_pdf import pipeline as pipeline
         base=self.root
         for field,value in [('modelCallId','different-call'),('payloadSha256','0'*64),('httpStatus',500),('httpStatus',True)]:
             with self.subTest(field=field,value=value):
@@ -553,7 +554,7 @@ class StrictAdapterTests(unittest.TestCase):
                     self.assertFalse((self.root/'revision/review-receipt.json').exists())
 
     def test_typed_exception_without_durable_rejection_proof_stays_unknown(self):
-        from scripts import sermon_pipeline as pipeline
+        from tongxing_production.workflows.dual_pdf import pipeline as pipeline
         def unproven(key,payload,*,response_observer):
             aid=accounting.record_api_started(payload['model'])
             response_observer.request_started(aid)
@@ -564,7 +565,7 @@ class StrictAdapterTests(unittest.TestCase):
             self.assertEqual(receipt['executionStatus'],'outcome_unknown')
 
     def test_rejection_persistence_failure_keeps_pending_and_propagates(self):
-        from scripts import sermon_pipeline as pipeline
+        from tongxing_production.workflows.dual_pdf import pipeline as pipeline
         original=s.save_once
         def fail(path,value):
             if path.name.endswith('.rejection.json'):raise OSError('injected persistence fault')

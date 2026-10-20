@@ -34,7 +34,7 @@ if str(ROOT) not in sys.path:  # direct execution: ``scripts`` imports need the 
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.text import candidate as producer
 from tongxing_production.text import models as production
-from scripts import sermon_pipeline
+from tongxing_production.workflows.dual_pdf import pipeline as sermon_pipeline
 from tongxing_production.text import policy as policy_tools
 
 

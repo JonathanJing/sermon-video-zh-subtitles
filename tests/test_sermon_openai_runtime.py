@@ -35,7 +35,7 @@ class RuntimeBindingTests(unittest.TestCase):
                 self.assertNotIn('test-key', json.dumps(runtime.selected_route()))
 
     def test_central_transport_guards_raw_headers_before_dispatch(self):
-        from scripts import sermon_pipeline as pipeline
+        from tongxing_production.workflows.dual_pdf import pipeline as pipeline
         import urllib.request
         with patch.dict(os.environ, selected(), clear=True):
             for key, project, expected in [('other-key', 'proj_dev', 'credential_override'),
@@ -57,7 +57,7 @@ class RuntimeBindingTests(unittest.TestCase):
                 runtime.project_headers('test-key')
 
     def test_json_and_audio_transports_bind_project(self):
-        from scripts import sermon_pipeline as pipeline
+        from tongxing_production.workflows.dual_pdf import pipeline as pipeline
         with patch.dict(os.environ, selected(), clear=True), patch.object(legacy_openai, 'request_json', return_value={}) as send:
             pipeline.json_request('https://api.openai.com/v1/responses', 'test-key', {'model': 'model'})
             self.assertEqual(send.call_args.args[0].get_header('Openai-project'), 'proj_dev')

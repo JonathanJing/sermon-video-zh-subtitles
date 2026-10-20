@@ -12,7 +12,7 @@ import requests
 from scripts import generate_notes_with_openai as notes
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.observability import accounting
-from scripts import sermon_pipeline as pipeline
+from tongxing_production.workflows.dual_pdf import pipeline as pipeline
 
 
 class AccountingRetrySafetyTests(unittest.TestCase):

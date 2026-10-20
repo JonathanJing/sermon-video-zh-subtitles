@@ -79,7 +79,7 @@ class SentenceInterpretationModelRunnerTests(unittest.TestCase):
 
     def test_real_run_binds_worker_outcomes_and_recovers_before_cache_write(self):
         from unittest.mock import patch
-        from scripts import sermon_pipeline
+        from tongxing_production.workflows.dual_pdf import pipeline as sermon_pipeline
         out = self.root / "durable"
         def http(_url, key, payload, **kwargs):
             return self.fake_call(key, payload)

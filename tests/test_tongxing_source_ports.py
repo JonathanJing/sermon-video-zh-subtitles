@@ -5,7 +5,7 @@ import unittest
 from unittest.mock import patch
 
 from scripts import tongxing_host as host
-from scripts import sermon_pipeline
+from tongxing_production.workflows.dual_pdf import pipeline as sermon_pipeline
 from tongxing_production.compute import openai_runtime as sermon_openai_runtime
 from tongxing_production.text import controller
 from tongxing_production.source import english_source_package as builder

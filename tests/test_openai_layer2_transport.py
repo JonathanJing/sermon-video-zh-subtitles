@@ -7,7 +7,8 @@ import unittest
 from unittest.mock import patch
 
 from scripts import openai_layer2_transport as transport
-from scripts import sermon_pipeline
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.workflows.dual_pdf import pipeline as sermon_pipeline
 from tongxing_production.compute import legacy_openai  # C3: the transport calls the moved request functions
 from tongxing_production.text import models
 

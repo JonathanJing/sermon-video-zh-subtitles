@@ -76,7 +76,7 @@ sermon-sun-1000-source-discovery */2 9-10 * * SUN service=1000 operatorAlertTime
 POST /api/admin/sundays/upcoming/post-live-subtitles
 ```
 
-推荐 Scheduler 窗口是在周六晚间每 10 分钟检查一次，直到 YouTube metadata 变成 `post_live` / `was_live` 后才下载归档音频并运行 `scripts/sermon_pipeline.py`：
+推荐 Scheduler 窗口是在周六晚间每 10 分钟检查一次，直到 YouTube metadata 变成 `post_live` / `was_live` 后才下载归档音频并运行 `tools/ops/run.py workflows.dual_pdf.pipeline`：
 
 ```text
 sermon-sat-post-live-subtitles  */10 18-23 * * SAT  action=post-live-subtitles

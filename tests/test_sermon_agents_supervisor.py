@@ -11,7 +11,8 @@ import tempfile
 import unittest
 from unittest.mock import AsyncMock, Mock, patch
 
-from scripts import run_codex_local_sermon_production as local_entry
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.workflows.dual_pdf import codex_local as local_entry
 from scripts import run_sermon_production_supervisor_agent as entry
 from scripts import sermon_agents_supervisor as mod
 from scripts.sermon_agents_api import AgentsAPIError, run_agent_session

@@ -20,7 +20,8 @@ from scripts import tongxing_host  # noqa: F401  binds the production package po
 from tongxing_production.observability import accounting
 from scripts.build_sermon_reading_edition_with_openai import build_semantic_blocks, reading_quality_report, write_block_srt
 from scripts.generate_notes_with_openai import segments_from_srt, merge_aligned_segments, build_note_slices, summarize_slices
-from scripts.sermon_pipeline import clean_text, reference_chunks_to_reading_segments, source_file_identity, parse_timecode
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.workflows.dual_pdf.pipeline import clean_text, reference_chunks_to_reading_segments, source_file_identity, parse_timecode
 import test_saturday_bridge as live_fixture
 from weekly_dubbing import prepare, read, validate_frozen
 from check_weekly_timing import budgets

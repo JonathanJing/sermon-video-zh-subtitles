@@ -57,7 +57,7 @@ class ReviewIntegrityTests(unittest.TestCase):
             "humanApproval": True, "reviewedBy": "synthetic fixture reviewer", "reviewedAt": "2026-09-05T00:00:00Z", "blocks": [{"blockId": 0, "start": 1, "end": 4}]})
 
     def test_unchanged_sync_still_delegates_to_original_saturday_gate(self):
-        module = types.ModuleType("scripts.run_codex_local_sermon_production")
+        module = types.ModuleType("tongxing_production.workflows.dual_pdf.codex_local")
         module.local_completion_artifacts = Mock(return_value=True)
         with tempfile.TemporaryDirectory() as tmp, patch.dict(sys.modules, {module.__name__: module}):
             work = self.fixture(Path(tmp))
@@ -85,7 +85,7 @@ class ReviewIntegrityTests(unittest.TestCase):
     def test_human_reviewed_placement_reaches_original_saturday_gate(self):
         for completed in [True, False]:
             with self.subTest(saturday_complete=completed), tempfile.TemporaryDirectory() as tmp:
-                module = types.ModuleType("scripts.run_codex_local_sermon_production")
+                module = types.ModuleType("tongxing_production.workflows.dual_pdf.codex_local")
                 module.local_completion_artifacts = Mock(return_value=completed)
                 work = self.fixture(Path(tmp))
                 path = self.add_reviewed_placement(work)
