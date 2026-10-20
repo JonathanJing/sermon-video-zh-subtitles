@@ -26,8 +26,7 @@ if str(ROOT) not in sys.path:
 
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.observability import accounting
-from scripts import sermon_identity_sidecars as sidecars
-from tongxing_production.observability import trace_export
+from tongxing_production.observability import identity_sidecars as sidecars, trace_export
 from tools.ops import sermon_observability as observer
 from scripts.sermon_execution_harness import atomic_json, utc_now, work_lock
 

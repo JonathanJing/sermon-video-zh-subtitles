@@ -5,11 +5,10 @@ import os
 import re
 import stat
 
-from scripts import tongxing_host  # noqa: F401  binds the production package ports
-from tongxing_production.review import contracts as c
-from tongxing_production.storage import snapshot as public
-from scripts import sermon_execution_extensions as extensions
-from scripts.sermon_release_workflow import _safe_path
+from ...review import contracts as c
+from ...storage import snapshot as public
+from ...storage.paths import safe_path as _safe_path
+from . import execution_extensions as extensions
 
 SCHEMA='sermon-preview-checkpoint-manifest-v1'
 INVENTORY_SCHEMA='sermon-preview-checkpoint-inventory-v1'

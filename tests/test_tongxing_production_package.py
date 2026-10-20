@@ -38,7 +38,9 @@ READS_LOADED_MODULE_FILES = {"observability/accounting.py",
                              "compute/transports/claude_layer2.py", "compute/transports/codex_layer2.py",
                              "compute/transports/openai_layer2.py", "compute/transports/codex_cli.py",
                              # Diagnostic identity witnesses bind their own bytes (helperSha256), never the checkout.
-                             "workflows/diagnostic/historical_identity.py"}
+                             "workflows/diagnostic/historical_identity.py",
+                             # Checkpoint manifests bind the validator's own bytes (validatorCode, checkpointCode).
+                             "workflows/diagnostic/preview_checkpoint_manifest.py"}
 
 
 def imports_of(path):

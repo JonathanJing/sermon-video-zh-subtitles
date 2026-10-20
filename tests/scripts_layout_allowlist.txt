@@ -135,7 +135,6 @@ scripts/sermon_guarded_worker.py
 scripts/sermon_historical_identity.py
 scripts/sermon_historical_layer2.py
 scripts/sermon_historical_native_seed.py
-scripts/sermon_identity_sidecars.py
 scripts/sermon_job_liveness.py
 scripts/sermon_local_business_callbacks.py
 scripts/sermon_local_model_observation.py

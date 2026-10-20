@@ -4,10 +4,9 @@ import json
 from pathlib import Path
 import re
 
-from tongxing_production.observability import accounting
-from scripts import sermon_trace_artifacts as artifacts
-from scripts import tongxing_host  # noqa: F401  binds the production package ports
-from tongxing_production.orchestration import jobs
+from . import accounting
+from . import trace_artifacts as artifacts
+from ..orchestration import jobs
 
 
 def rows_in_snapshot(data):
