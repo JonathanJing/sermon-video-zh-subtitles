@@ -131,7 +131,7 @@ def test_live_qc_judge_rechecks_approval_roots_and_runtime_before_dispatch(tmp_p
     path = JudgeAuthorizationTests().write(tmp_path, approved_reuse=[str(tmp_path/'source')], requested_reuse=[str(tmp_path/'source')])
     route = {'environment':'dev', 'credentialAlias':'tongxing-dev-runtime', 'projectId':'proj_fixture'}
     with patch('tongxing_production.compute.openai_runtime.selected_route', return_value=route) as selected, \
-         patch('scripts.production_spark_admission.require_session'), patch.dict('os.environ', {'OPENAI_API_KEY':'fixture-not-a-key'}):
+         patch('tongxing_production.compute.spark_admission.require_session'), patch.dict('os.environ', {'OPENAI_API_KEY':'fixture-not-a-key'}):
         judge = driver.ApiJudge(path)
         if changed == 'runtime':
             selected.return_value = dict(route, environment='prod')

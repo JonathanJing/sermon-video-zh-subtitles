@@ -1,0 +1,228 @@
+Estimating 213 unprofiled modules from measured per-case cost
+Shard 2/10: 558 tests from 343 modules
+....................................................................................{"pageId": "page-2026-09-20", "source": "first_seen", "complete": 0, "total": 46, "out": "/var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/tmpo9awi51x/public-snapshot.json"}
+{"locale": "zh-Hans", "rows": 7, "flagged": 2, "sampled": 5, "sheet": "/var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/tmp2dj3a8fr/sheet/listening-sample.md"}
+{"group": "group-0001", "solSeconds": 2.0, "opusSeconds": 1.0}
+{"group": "group-0002", "solSeconds": 2.0, "opusSeconds": 1.0}
+{"freshCalls": {"sol": 2, "opus": 2, "review": 0}, "groups": 2, "targetLocale": "ko"}
+{"group": "group-0001", "solSeconds": 2.0, "opusSeconds": 1.0}
+...........................s......................./var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/tmp63f9uylu/digests/20261007-e2e/INDEX.md: openai_key, env_secret
+/var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/tmp63f9uylu/digests/20261007-e2e/INDEX.md: secret_field
+/var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/tmp63f9uylu/digests/20261007-e2e/INDEX.md: secret_field
+..........................................................................................Digest: /var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/tmp1ig_36yl/digests/20261007-e2e (5 files, 9 redactions)
+Digest: /var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/tmp18jzxsxg/digests/20261007-e2e (5 files, 49 redactions)
+Digest: /var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/tmp63f9uylu/digests/20261007-e2e (4 files, 9 redactions)
+No unredacted values found.
+test-page · dev · 检查点 0/18
+层 / 语言       完成       剩余串行工时
+L1 shared        0/4 (0%)  未知
+L2 ko            0/4 (0%)  未知
+L3 ko            0/6 (0%)  未知
+L4 ko            0/4 (0%)  未知
+ETA（连续串行、无审核等待）: 未知
+缺估时 18 项: L1-01, L1-02, L1-03, L1-04, L2-01@ko, L2-02@ko …
+独立验收 ko: 设备=not_run，现场=not_run
+注意：进度账本不授予 Layer 门禁、发布或验收状态。
+gpt-transcribe reference chunk 1/2
+gpt-transcribe reference chunk 2/2
+...............{"status": "source_bound_request", "out": "/private/var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/tmpk07wuvn3/request.json"}
+{"pageId": "test-page", "source": "not_checked", "complete": 0, "total": 18, "out": "/var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/tmpk07wuvn3/public-snapshot.json"}
+corrected 1/1
+translated zh 1/1
+...........................{"stage": "tts", "batchIndex": 0, "completedGroups": 2}
+{"stage": "tts", "batchIndex": 1, "completedGroups": 4}
+{"stage": "tts", "batchIndex": 2, "completedGroups": 6}
+{"stage": "tts", "batchIndex": 3, "completedGroups": 8}
+{"stage": "tts", "batchIndex": 4, "completedGroups": 10}
+{"stage": "tts", "batchIndex": 5, "completedGroups": 12}
+{"stage": "tts", "batchIndex": 6, "completedGroups": 13}
+.............discover	pass	0.0
+ko.text-qc.prefetch	pass	0.0
+ko.text-qc	pass	0.0
+ko.calibration.prefetch	pass	0.1
+ko.calibration	pass	0.2
+ko.text-waiver	pass	0.0
+{
+  "ko": {
+    "status": "text_waiver_issued",
+    "reason": null,
+    "problems": [],
+    "calibration": {
+      "overallDetectionRate": 1.0,
+      "cleanFalsePositiveRate": 0.0,
+      "trials": 90,
+      "detected": 90
+    }
+  }
+}
+discover	pass	0.0
+..{
+  "ko": [
+    "this material cannot be calibrated for: audio.truncated"
+  ]
+}
+discover	pass	0.0
+ko.text-qc.prefetch	pass	0.0
+ko.text-qc	pass	0.0
+ko.calibration.prefetch	pass	0.2
+ko.calibration	pass	0.1
+ko.text-waiver	pass	0.0
+{
+  "ko": {
+    "status": "text_waiver_issued",
+    "reason": null,
+    "problems": [],
+    "calibration": {
+      "overallDetectionRate": 1.0,
+      "cleanFalsePositiveRate": 0.0,
+      "trials": 90,
+      "detected": 90
+    }
+  }
+}
+discover	pass	0.0
+ko.text-qc.prefetch	pass	0.0
+ko.text-qc	pass	0.0
+ko.calibration.prefetch	pass	0.2
+ko.calibration	pass	0.2
+ko.text-waiver	pass	0.0
+..{
+  "ko": {
+    "status": "text_waiver_issued",
+    "reason": null,
+    "problems": [],
+    "calibration": {
+      "overallDetectionRate": 1.0,
+      "cleanFalsePositiveRate": 0.0,
+      "trials": 90,
+      "detected": 90
+    }
+  }
+}
+discover	pass	0.0
+ko.text-qc.prefetch	pass	0.0
+ko.text-qc	pass	0.0
+ko.calibration.prefetch	pass	0.3
+ko.calibration	pass	0.4
+ko.text-waiver	pass	0.0
+{
+  "ko": {
+    "status": "fake_plumbing_pass",
+    "reason": "fake judge: waiver built in memory, never saved",
+    "problems": [],
+    "calibration": {
+      "overallDetectionRate": 1.0,
+      "cleanFalsePositiveRate": 0.0,
+      "trials": 90,
+      "detected": 90
+    }
+  }
+}
+discover	pass	0.0
+ko.text-waiver	pass	0.0
+........s..{
+  "ko": {
+    "status": "fake_plumbing_pass",
+    "reason": "fake judge: waiver built in memory, never saved",
+    "problems": [],
+    "calibration": {
+      "overallDetectionRate": 1.0,
+      "cleanFalsePositiveRate": 0.0,
+      "trials": 90,
+      "detected": 90
+    }
+  }
+}
+zh-Hans.condense.prefetch	pass	0.0
+zh-Hans.condense	pass	0.0
+.....usage: run_unittest_ci.py [-h] --out OUT --scale {clip,week}
+                          [--locales LOCALES] [--stage STAGE]
+                          --total-usd TOTAL_USD [--settled-usd SETTLED_USD]
+                          --approved-by APPROVED_BY --evidence EVIDENCE
+                          [--layer2-execution LAYER2_EXECUTION]
+                          [--qc-inputs QC_INPUTS] [--reuse-from REUSE_FROM]
+                          [--resume-qc-authorization RESUME_QC_AUTHORIZATION]
+                          [--layer2-reuse-budget-root LOCALE=ABSOLUTE_ROOT]
+                          [--profile PROFILE]
+run_unittest_ci.py: error: Reuse root has no paid ledger to reconcile
+usage: run_unittest_ci.py [-h] --out OUT --scale {clip,week}
+                          [--locales LOCALES] [--stage STAGE]
+                          --total-usd TOTAL_USD [--settled-usd SETTLED_USD]
+                          --approved-by APPROVED_BY --evidence EVIDENCE
+                          [--layer2-execution LAYER2_EXECUTION]
+                          [--qc-inputs QC_INPUTS] [--reuse-from REUSE_FROM]
+                          [--resume-qc-authorization RESUME_QC_AUTHORIZATION]
+                          [--layer2-reuse-budget-root LOCALE=ABSOLUTE_ROOT]
+                          [--profile PROFILE]
+run_unittest_ci.py: error: Duplicate reuse root; list each approved source only once
+..................s...................................................................s.......................................................................................s........{
+  "status": "brief_ready",
+  "reason": null,
+  "record": "/private/var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/tmpll7j7az9/out/condensation-record-17af5c10d60c2500.json",
+  "revisionBrief": "/private/var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/tmpll7j7az9/out/revision-brief-af62edeebd482a42.json",
+  "condensedGroupIds": [
+    "g2"
+  ],
+  "failedGroupIds": []
+}
+{
+  "status": "error",
+  "reason": "ValueError: /private/var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/tmpll7j7az9/out/condensation-record-17af5c10d60c2500.json changed after it was written",
+  "record": null,
+  "revisionBrief": null,
+  "condensedGroupIds": null,
+  "failedGroupIds": null
+}
+{
+  "status": "english_transcript_candidate",
+  "source": "/var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/tmpk22_ecbg/service.mp4",
+  "sourceDurationSeconds": 10.0,
+  "sourceClip": "/var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/tmpk22_ecbg/pipeline/source_clip.m4a",
+  "clipDurationSeconds": 2.0,
+  "sermonStartSeconds": 1.0,
+  "sermonEndSeconds": 3.0,
+  "models": {
+    "referenceAsr": "gpt-transcribe"
+  },
+  "pipelineInputIdentity": {
+    "sourceAudio": {
+      "sha256": "01d927478e2a048dc357754e810696f101ee21aa242cdae231ca23d060c38e54",
+      "sizeBytes": 15
+    }
+  },
+  "asrChunkCount": 1,
+  "asrChunkJsonSha256": "a1252c20706201e8b13d5681a7b7f4476206771043bac6ef5effd110885c158a",
+  "alignmentStatus": "pending_mfa",
+  "humanReview": "pending",
+  "outputs": [
+    "asr_reference.json",
+    "asr_reference_chunks.json"
+  ],
+  "argv": [
+    "--weights",
+    ".github/unittest-module-timings.json",
+    "--shard-count",
+    "10",
+    "--shard-index",
+    "1",
+    "--report",
+    "artifacts/c3-local/shards/r1.json"
+  ]
+}
+v4.1 package verified; model loaded and warmup finished.
+...........................................................................
+----------------------------------------------------------------------
+Ran 558 tests in 825.346s
+
+OK (skipped=5)
+ 318.61s     1  test_sermon_fresh_full_dag
+ 221.79s     6  test_machine_quality_waiver
+  20.27s     5  test_sermon_cuv_translation
+  13.01s     1  test_canonical_layer2_auto_repair
+  10.60s     1  test_sermon_mock_tts_worker
+  10.30s     8  test_sermon_unified_cli
+  10.24s     1  test_sermon_fresh_source_stages
+   8.42s     2  test_canonical_layer2_controller_payload_cache
+   7.99s     1  test_sermon_fresh_source_causality
+   7.93s     6  test_build_target_language_audio_package
+exit 0

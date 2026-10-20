@@ -16,8 +16,8 @@ import urllib.request
 
 from scripts import run_bounded_diagnostic as run
 from scripts import sermon_diagnostic_provider as provider
-from scripts import sermon_review_contracts as c
-from scripts import sermon_accounting as accounting
+from tongxing_production.review import contracts as c
+from tongxing_production.observability import accounting
 from scripts import sermon_strict_layer2 as strict
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.compute import transcription_request as audio
@@ -104,7 +104,7 @@ class BoundedRunTests(unittest.TestCase):
         self.assertTrue(checks)
 
     def test_default_input_cap_still_blocks_expanded_review_before_dispatch(self):
-        from scripts import sermon_provider_limits as limits
+        from tongxing_production.compute import provider_limits as limits
         self.subject = provider.DiagnosticProvider(self.fixture.store, self.subject.config,
             request_limits=limits.DEFAULT_REQUEST_LIMITS, executor=self.capture,
             monotonic=lambda:100., domain=lambda:'7'*64)

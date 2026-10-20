@@ -8,9 +8,11 @@ from pathlib import Path
 import sys
 if __package__ in (None,''):
     sys.path.insert(0,str(Path(__file__).resolve().parents[2]))
-from scripts import codex_layer2_diagnostic as diagnostic, target_language_policy as policies
+from scripts import codex_layer2_diagnostic as diagnostic
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.text import policy as policies
 from scripts.language_review_plugins import diagnostic_pinned_quotes as quotes
-from scripts.production_concurrency_profile import profile_v1
+from tongxing_production.compute.concurrency_profile import profile_v1
 
 # Trial surfaces only, pending human verification; no Bible edition claim.
 TARGETS={

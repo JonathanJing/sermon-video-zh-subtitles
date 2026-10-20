@@ -35,7 +35,7 @@ class RuntimeBindingTests(unittest.TestCase):
                 self.assertNotIn('test-key', json.dumps(runtime.selected_route()))
 
     def test_central_transport_guards_raw_headers_before_dispatch(self):
-        from scripts import sermon_pipeline as pipeline
+        from tongxing_production.workflows.dual_pdf import pipeline as pipeline
         import urllib.request
         with patch.dict(os.environ, selected(), clear=True):
             for key, project, expected in [('other-key', 'proj_dev', 'credential_override'),
@@ -57,7 +57,7 @@ class RuntimeBindingTests(unittest.TestCase):
                 runtime.project_headers('test-key')
 
     def test_json_and_audio_transports_bind_project(self):
-        from scripts import sermon_pipeline as pipeline
+        from tongxing_production.workflows.dual_pdf import pipeline as pipeline
         with patch.dict(os.environ, selected(), clear=True), patch.object(legacy_openai, 'request_json', return_value={}) as send:
             pipeline.json_request('https://api.openai.com/v1/responses', 'test-key', {'model': 'model'})
             self.assertEqual(send.call_args.args[0].get_header('Openai-project'), 'proj_dev')
@@ -77,7 +77,7 @@ class RuntimeBindingTests(unittest.TestCase):
             self.assertEqual(request.get_header('Openai-project'), 'proj_prod')
 
     def test_judge_rejects_secret_override_before_cloud_access(self):
-        from scripts import judge_english_source_for_translation as judge
+        from tongxing_production.source import english_source_judge as judge
         import sys
         argv = ['judge', '--aligned-segments', 'unused', '--anchor-manifest', 'unused',
                 '--out', 'unused', '--api-key-secret', 'legacy-secret']
@@ -86,9 +86,9 @@ class RuntimeBindingTests(unittest.TestCase):
                 judge.main()
 
     def test_actual_ledger_and_report_capture_safe_configured_route(self):
-        from scripts import sermon_accounting as accounting
-        from scripts import sermon_log_profile as profile
-        from scripts.sermon_model_call_report import report
+        from tongxing_production.observability import accounting
+        from tongxing_production.observability import profile
+        from tongxing_production.observability.model_call_report import report
         with tempfile.TemporaryDirectory() as tmp, patch.dict(os.environ, selected(), clear=True):
             with profile.session(tmp, 'runtime-test', work_kind='engineering', evidence_mode='synthetic'):
                 with accounting.stage('model-call', executor_type='production_model'), profile.context(logicalCallId='runtime-call'):
@@ -102,8 +102,8 @@ class RuntimeBindingTests(unittest.TestCase):
             self.assertEqual(calls[0]['openaiRoute']['identitySource'], 'configured_runtime')
 
     def test_imported_api_observation_does_not_inherit_local_route(self):
-        from scripts import sermon_accounting as accounting
-        from scripts import sermon_model_call_observation as observation
+        from tongxing_production.observability import accounting
+        from tongxing_production.observability import model_call_observation as observation
         captured = []
         with patch.object(observation, '_emit', side_effect=captured.append):
             with observation.invocation('foreign-model', backend='api', provider='openai', role='supervisor'):

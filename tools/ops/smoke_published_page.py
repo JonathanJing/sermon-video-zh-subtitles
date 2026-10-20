@@ -49,7 +49,8 @@ CAPTION_PLACEHOLDERS = ("配音就绪后，字幕会显示在这里。", "")
 
 def shell_paths() -> set[str]:
     """The reader shell a release ships (see build_full_video_app_release.runtime_web_files)."""
-    from scripts.build_full_video_app_release import runtime_web_files
+    from scripts import tongxing_host  # noqa: F401  binds the production package ports
+    from tongxing_production.delivery.app_release import runtime_web_files
     return {"/", "/index.html"} | {"/" + name for name in runtime_web_files()}
 
 

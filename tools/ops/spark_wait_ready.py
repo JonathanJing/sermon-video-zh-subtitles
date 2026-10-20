@@ -27,10 +27,9 @@ ROOT = Path(__file__).resolve().parents[2]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-try:
-    from scripts.spark_exclusive_session import Client, SessionError
-except ImportError:  # pragma: no cover - direct CLI runs from scripts/
-    from spark_exclusive_session import Client, SessionError
+# Run by path from tools/ops: bind the production package to this checkout first.
+from scripts import tongxing_host  # noqa: E402,F401  binds the production package ports
+from tongxing_production.compute.spark_exclusive_session import Client, SessionError  # noqa: E402
 
 RETRYABLE_PREFIXES = ("competing_service_active:",)
 RETRYABLE = {"competing_launcher_active", "insufficient_available_memory"}

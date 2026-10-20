@@ -18,9 +18,10 @@ import time
 from datetime import datetime, timezone
 
 import jsonschema
-from scripts.codex_layer2_transport import output_schema
-from scripts.run_target_language_models import _coverage_substring
-from scripts.target_language_policy import canonical_sha256
+from tongxing_production.compute.transports.codex_layer2 import output_schema
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.text.models import _coverage_substring
+from tongxing_production.text.policy import canonical_sha256
 
 
 def sha(path):

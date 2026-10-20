@@ -300,7 +300,7 @@ def render_tts(args, *, factory=None, writer=audio_output, model_session=None, r
     target_locale = binding['targetLocale'] if general else 'zh-Hans'
     checkpoint, voice = speaker_context(args.registry, args.checkpoint_map, target_locale)
     offline()
-    from scripts import sermon_source_producer_compatibility as compatibility
+    from tongxing_production.source import producer_compatibility as compatibility
     identity = {'schemaVersion': 'fixed-clip-local-tts-run-v1', **FLAGS,
                 'mediaSha256': binding['sourceMediaSha256'] if general else MEDIA_SHA,
                 'sourceUnitCount': binding['sourceUnitCount'] if general else 39, 'groupCount': len(groups),
@@ -337,7 +337,8 @@ def render_tts(args, *, factory=None, writer=audio_output, model_session=None, r
         identity['modelSessionImplementationSha256']=sha(resident.__file__)
     root = args.out.resolve()
     with output_lock(root), ExitStack() as borrowed:
-        from scripts.bounded_audio_cpu import BoundedAudioCPU
+        from scripts import tongxing_host  # noqa: F401  binds the production package ports
+        from tongxing_production.compute.bounded_audio_cpu import BoundedAudioCPU
         cpu = BoundedAudioCPU(cpu_workers, getattr(args, 'cpu_queue_units', 16))
         borrowed.callback(cpu.close)
         bind_run(root, identity)
@@ -363,10 +364,12 @@ def render_tts(args, *, factory=None, writer=audio_output, model_session=None, r
             gpu.admit(root, identity, resource_policy)
         attempts, pool = {}, None
         if replicas == 8 and not all(receipts):
-            from scripts import spark_tts_replica_pool as pool_module
+            from scripts import tongxing_host  # noqa: F401  binds the production package ports
+            from tongxing_production.compute import spark_tts_replica_pool as pool_module
             from scripts import tongxing_host  # noqa: F401  binds the production package ports
             from tongxing_production.audio.renderer import SparkQwenSynthesizer
-            from scripts.spark_tts_window_scheduler import ParallelBatchEngine
+            from scripts import tongxing_host  # noqa: F401  binds the production package ports
+            from tongxing_production.compute.spark_tts_window_scheduler import ParallelBatchEngine
             windows = {}
             for index, start in enumerate(range(0, len(groups), batch_size)):
                 if receipts[index] is None:
@@ -480,7 +483,8 @@ def render_tts(args, *, factory=None, writer=audio_output, model_session=None, r
 
 class LocalASR:
     def __init__(self, path, *, device, batch_size=4, language='Chinese', session_verifier=None):
-        from scripts.production_spark_admission import require_bound_model_session
+        from scripts import tongxing_host  # noqa: F401  binds the production package ports
+        from tongxing_production.compute.spark_admission import require_bound_model_session
         require_bound_model_session(verifier=session_verifier)
         import torch
         from qwen_asr import Qwen3ASRModel

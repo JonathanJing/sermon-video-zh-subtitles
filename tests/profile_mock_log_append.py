@@ -11,8 +11,9 @@ import statistics
 import tempfile
 import time
 
-from scripts import sermon_log_contract as contract
-from scripts import sermon_log_outbox as outbox
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.observability import log_contract as contract
+from tongxing_production.observability import outbox
 
 
 def measure(directory, *, seed_bytes=641503, record_bytes=1400, samples=30, trials=3):

@@ -217,7 +217,7 @@ class ReleaseWorkflowTests(unittest.TestCase):
         work = self.root / 'review-fixture'
         work.mkdir()
         fixture.ReviewIntegrityTests().fixture(work)
-        with patch.dict('sys.modules', {'scripts.run_codex_local_sermon_production': production}):
+        with patch.dict('sys.modules', {'tongxing_production.workflows.dual_pdf.codex_local': production}):
             weekly.validate_review(work, write_receipt=False)
         production.local_completion_artifacts.assert_called_once()
         self.assertFalse((work / 'saturday-completion.json').exists())

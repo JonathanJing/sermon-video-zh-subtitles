@@ -37,7 +37,8 @@ class SharedClientContractFixturesTests(unittest.TestCase):
                 validator.validate(row['release'])
 
     def test_producer_page_boundary_is_not_reused_as_package_identifier_limit(self):
-        from scripts import build_full_video_app_release as producer
+        from scripts import tongxing_host  # noqa: F401  binds the production package ports
+        from tongxing_production.delivery import app_release as producer
         matrix = json.loads((ROOT / 'apps/tongxing-ios/Core/Tests/TongxingCoreTests/Fixtures/shared-release-contracts.json').read_text())
         boundaries = [row for row in matrix['cases'] if row['id'].startswith('producer-page-')]
         self.assertEqual(len(boundaries), 9)

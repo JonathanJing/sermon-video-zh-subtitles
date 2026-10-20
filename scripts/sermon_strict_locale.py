@@ -7,13 +7,13 @@ a separate selective invalidation adapter and are rejected before transport.
 """
 from pathlib import Path
 
-from scripts import produce_target_language_candidate as producer
-from scripts import run_target_language_models as models
-from scripts import sermon_accounting as accounting
-from scripts import sermon_log_profile as profile
+from tongxing_production.text import candidate as producer
+from tongxing_production.text import models
+from tongxing_production.observability import accounting
+from tongxing_production.observability import profile
 from scripts import sermon_repair_planning as planning
-from scripts import sermon_public_snapshot as public
-from scripts import sermon_review_contracts as c
+from tongxing_production.storage import snapshot as public
+from tongxing_production.review import contracts as c
 from scripts import sermon_strict_candidate_bridge as bridge
 from scripts import sermon_strict_controller as controller
 from scripts import sermon_strict_layer2 as strict
@@ -33,7 +33,7 @@ def prepare_locale_inputs(source_bytes, anchor_bytes, policy_bytes, rubric_bytes
     # The current whole-locale Gate accepts at most 128 current revisions.
     # Do not spend on a locale that cannot reach that existing boundary.
     c.require(len(plan) <= 128, 'strict_locale_admission_inventory_limit')
-    from scripts import target_language_rule_preflight as rule_preflight
+    from tongxing_production.text import rule_preflight
     checked_plugin = _safe_path(Path(plugin_path))
     models.require_plugin_identity(checked_plugin, expected_plugin_sha256)
     c.require(policy['languageReview']['pluginImplementationSha256'] == expected_plugin_sha256,

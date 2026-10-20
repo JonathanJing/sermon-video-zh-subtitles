@@ -1,6 +1,6 @@
 # 和合本经文锁定与证道重译
 
-入口为 `scripts/sermon_cuv_translation.py`。它从冻结的配音 `job.json` 读取完整英文，在新目录中重译全部段落；不修改英文、原 job、PDF、时间轴或音频，也不自动发布。经文取自 `scripts.cuv_scripture.CuvLibrary` 严格校验的和合本全文库，模型只能选择库中的原文片段。
+入口为 `tools/ops/run.py text.cuv_translation`（实现在 `packages/production/src/tongxing_production/text/cuv_translation.py`）。它从冻结的配音 `job.json` 读取完整英文，在新目录中重译全部段落；不修改英文、原 job、PDF、时间轴或音频，也不自动发布。经文取自 `scripts.cuv_scripture.CuvLibrary` 严格校验的和合本全文库，模型只能选择库中的原文片段。
 
 ## 引用先分类、定位、冻结，再翻译
 

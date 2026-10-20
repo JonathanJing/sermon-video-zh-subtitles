@@ -170,11 +170,11 @@ jobs:
           python -m py_compile
           scripts/build_sermon_reading_edition_with_openai.py
           scripts/generate_notes_with_openai.py
-          scripts/post_live_run_status.py
-          scripts/render_sermon_interpretation_pdf.py
-          scripts/review_prompts.py
-          scripts/run_codex_local_sermon_production.py
-          scripts/run_post_live_subtitle_generation.py
+          packages/production/src/tongxing_production/workflows/dual_pdf/run_status.py
+          packages/production/src/tongxing_production/workflows/dual_pdf/interpretation_pdf.py
+          packages/production/src/tongxing_production/source/review_prompts.py
+          packages/production/src/tongxing_production/workflows/dual_pdf/codex_local.py
+          packages/production/src/tongxing_production/workflows/dual_pdf/post_live.py
           scripts/run_sermon_production_supervisor_agent.py
           scripts/sermon_production_supervisor.py
 

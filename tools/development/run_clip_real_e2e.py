@@ -276,7 +276,7 @@ def stage_inputs(run: Run):
 
 def freeze_clip_policy(template: Path, source: dict, anchor: dict, *, reviewed_by: str, statement: str) -> dict:
     """The source week's frozen policy narrowed to this clip's source scope and terms, frozen again."""
-    from scripts import target_language_policy as tp
+    from tongxing_production.text import policy as tp
     rows = anchor["sourceUnits"]
     observed = tp.source_scoped_proper_names(rows, set())
     frozen = read(template)
@@ -321,7 +321,7 @@ def stage_layer2_setup(run: Run):
                                        "locales": {k: {"policy": f"policy/{k}-policy-clip.json"} for k in spec["locales"]}})
         from scripts import tongxing_host  # noqa: F401  binds the production package ports
         from tongxing_production.text import controller
-        from scripts import layer2_auto_repair as auto_repair
+        from tongxing_production.text import auto_repair
         run_id = hashlib.sha256(("clip-real-e2e " + spec["name"] + " " + ",".join(spec["locales"])).encode()).hexdigest()
         write(l2 / "execution.json", {
             "schemaVersion": controller.AUTO_REPAIR_SCHEMA, "productionRunId": run_id, "inspectionConfig": "inspection.json",
@@ -456,7 +456,7 @@ def ensure_session(run: Run):
     os.environ.update(env)
     for attempt in range(1, 4):
         # begin may need a second call while Spark services stop; every attempt keeps its own output.
-        done = run.sh(f"spark-begin-{attempt}", [PY, ROOT / "scripts/spark_exclusive_session.py", "begin",
+        done = run.sh(f"spark-begin-{attempt}", [PY, ROOT / "tools/ops/run.py", "compute.spark_exclusive_session", "begin",
                                                   "--session-id", env["SPARK_EXCLUSIVE_SESSION_ID"],
                                                   "--owner", env["SPARK_EXCLUSIVE_SESSION_OWNER"]], check=False)
         if done.returncode == 0:
@@ -468,7 +468,7 @@ def ensure_session(run: Run):
 
 def finish_session(run: Run):
     if run.session_up:
-        run.sh("spark-finish", [PY, ROOT / "scripts/spark_exclusive_session.py", "finish",
+        run.sh("spark-finish", [PY, ROOT / "tools/ops/run.py", "compute.spark_exclusive_session", "finish",
                                 "--session-id", run.spec["spark"]["sessionId"], "--owner", run.spec["spark"]["owner"]])
         run.session_up = False
 
@@ -722,7 +722,7 @@ def stage_layer4(run: Run):
     if not (l4 / "baseline").exists():
         cache = (["--cache-public", page["baselineCachePublic"], "--cache-receipt", page["baselineCacheReceipt"]]
                  if page.get("baselineCachePublic") else [])
-        run.sh("layer4-baseline", [PY, ROOT / "scripts/prepare_dev_simulated_publication.py", "baseline",
+        run.sh("layer4-baseline", [PY, ROOT / "tools/ops/prepare_dev_simulated_publication.py", "baseline",
                                    "--environment", "dev", "--out", l4 / "baseline", *cache])
     if not run.publish:
         run.mark("layer4", "prepared_not_published")

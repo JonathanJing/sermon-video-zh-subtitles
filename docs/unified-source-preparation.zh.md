@@ -1,6 +1,6 @@
 # 统一 CLI 的正式 Source 候选准备
 
-固定模块 `scripts/sermon_unified_source.py` 提供：
+固定模块 `packages/production/src/tongxing_production/source/unified_stage.py` 提供：
 
 ```python
 inspect(config_path)   # 只读本地身份/批准/预算检查；不访问模型或远程 MFA

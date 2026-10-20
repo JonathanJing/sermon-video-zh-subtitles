@@ -47,8 +47,8 @@ Cloud Scheduler 不会把一个 HTTP target 的返回结果自动传给另一个
 
 - Agent runner：`scripts/run_sermon_production_supervisor_agent.py`
 - 确定性工具与状态契约：`scripts/sermon_production_supervisor.py`
-- 来源媒体准备工具（保留历史文件名）：`scripts/run_post_live_timeline_job.py`
-- 阅读版生成工具：`scripts/run_post_live_subtitle_generation.py`
+- 来源媒体准备工具（保留历史文件名）：`tools/ops/run.py workflows.dual_pdf.timeline`
+- 阅读版生成工具：`tools/ops/run.py workflows.dual_pdf.post_live`
 - API 入口：`POST /api/admin/sundays/<date>/production-supervisor`
 
 兼容回退路径仍保留以下 Python 依赖；它不是 Agents API 服务端控制循环：

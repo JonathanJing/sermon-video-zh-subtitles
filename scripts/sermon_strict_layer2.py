@@ -10,13 +10,13 @@ import json
 from pathlib import Path
 import re
 
-from scripts import run_target_language_models as shared
-from scripts import produce_target_language_candidate as producer
-from scripts import target_language_policy as policies
-from scripts import sermon_review_contracts as c
-from scripts import sermon_review_observation as observation
-from scripts import sermon_log_profile as profile
-from scripts import sermon_accounting as accounting
+from tongxing_production.text import models as shared
+from tongxing_production.text import candidate as producer
+from tongxing_production.text import policy as policies
+from tongxing_production.review import contracts as c
+from tongxing_production.observability import review_observation as observation
+from tongxing_production.observability import profile
+from tongxing_production.observability import accounting
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.orchestration import jobs
 from scripts.sermon_release_workflow import _safe_path
@@ -53,7 +53,7 @@ def material_bytes(value):return c.canonical_bytes(value)+b'\n'
 
 
 def _validate_rule_preflight(source, anchor, policy, rubric, receipt, context, diagnostic_context=None):
-    from scripts import target_language_rule_preflight as rules
+    from tongxing_production.text import rule_preflight as rules
     c.require(type(context) is dict and set(context) == {'pluginPath', 'groupPlan'},
               'strict_rule_verification_context_required')
     plugin = _safe_path(Path(context['pluginPath']))
@@ -95,7 +95,7 @@ def prepare(source_bytes,anchor_bytes,policy_bytes,rubric_bytes,group,*,request_
         'units':units[first:last+1],'context':context,
         'bytes':dict(englishSource=source_bytes,anchor=anchor_bytes,policy=policy_bytes,rubric=rubric_bytes,context=material_bytes(context))}
     if request_limits is not None:
-        from scripts.sermon_provider_limits import validate_request_limits
+        from tongxing_production.compute.provider_limits import validate_request_limits
         result['requestLimits'] = validate_request_limits(request_limits)
     if diagnostic_context is not None:
         from scripts.sermon_diagnostic_context import validate_context
@@ -221,7 +221,7 @@ def _with_frozen_rules(prepared, request):
     receipt = prepared.get('rulePreflight')
     if receipt is None:
         return request
-    from scripts.target_language_rule_preflight import INSTRUCTION, group_rules
+    from tongxing_production.text.rule_preflight import INSTRUCTION, group_rules
     request['input']['formatting'] = copy.deepcopy(receipt['modelRules']['formatting'])
     request['input']['modelRules'] = group_rules(receipt, request['input']['sourceUnitIds'])
     if INSTRUCTION not in request['instruction']:
@@ -320,7 +320,7 @@ def _payload(prepared,role,request):
 def _transport_rejection(output,payload_sha256):
     path=output.with_suffix('.rejection.json')
     if not path.exists():return None
-    from scripts.sermon_pipeline import KNOWN_REQUEST_REJECTIONS
+    from tongxing_production.workflows.dual_pdf.pipeline import KNOWN_REQUEST_REJECTIONS
     evidence,_=c.read_snapshot(path)
     call,_=c.read_snapshot(output.with_suffix('.call.json'))
     started,_=c.read_snapshot(output.with_suffix('.started.json'))
@@ -353,7 +353,7 @@ def call_model(prepared,role,request,output,api_key,caller,*,attempt_number=1,ca
     payload_sha256=policies.canonical_sha256(_payload(prepared,role,request))
     rejection=_transport_rejection(output,payload_sha256)
     if rejection is not None:
-        from scripts.sermon_pipeline import TransportRejection
+        from tongxing_production.workflows.dual_pdf.pipeline import TransportRejection
         details = output.with_suffix('.rejection-diagnostic.json')
         diagnostic = None
         if details.exists():
@@ -371,7 +371,7 @@ def call_model(prepared,role,request,output,api_key,caller,*,attempt_number=1,ca
     def request_started(model_call_id):
         save_once(output.with_suffix('.call.json'),{'modelCallId':label(model_call_id)})
     def request_rejected(error,model_call_id):
-        from scripts.sermon_pipeline import TransportRejection
+        from tongxing_production.workflows.dual_pdf.pipeline import TransportRejection
         c.require(type(error) is TransportRejection,'invalid_strict_transport_rejection')
         try:
             save_once(output.with_suffix('.rejection.json'),{
@@ -502,7 +502,7 @@ def _review_structural_diagnostic(prepared,manifest,inputs,output):
     Separate v1 sidecar migration is additive: old failure/receipt v1 caches
     without this sidecar retain their original evidence and are not rewritten.
     """
-    from scripts import sermon_review_diagnostics as diagnostics
+    from tongxing_production.text import review_diagnostics as diagnostics
     raw,raw_bytes=c.read_snapshot(output.with_suffix('.raw.json'))
     call,call_bytes=c.read_snapshot(output.with_suffix('.call.json'))
     candidate,candidate_bytes=c.read_snapshot(output.parent/'candidate.json')
@@ -623,7 +623,7 @@ def _validate_cached_review_evidence(receipt,manifest,output,prepared=None,input
                 rejection is not None and saved['rejectionSha256']==c.canonical_sha256(rejection) and
                 saved['modelCallId']==receipt['modelCallId']==rejection['modelCallId'] and
                 saved['payloadSha256']==payload_sha256,'strict_rejection_diagnostic_binding_changed')
-            from scripts.sermon_pipeline import TransportRejection
+            from tongxing_production.workflows.dual_pdf.pipeline import TransportRejection
             TransportRejection(rejection['httpStatus'],saved['diagnostic'])
         if structural.exists():
             c.require(prepared is not None and inputs is not None,'strict_review_diagnostic_context_required')
@@ -672,7 +672,7 @@ def review(prepared,root,candidate_id,revision_id,api_key,caller,*,cache_only=Fa
                         output,api_key,caller,cache_only=cache_only,attempt_number=attempt_number)
             except accounting.AccountingWriteError:raise
             except Exception as exc:
-                from scripts.sermon_pipeline import PreDispatchRejection
+                from tongxing_production.workflows.dual_pdf.pipeline import PreDispatchRejection
                 # No model was invoked. Let the budget adapter persist and
                 # settle this typed guard result without fabricating a review.
                 if isinstance(exc,PreDispatchRejection):raise

@@ -1,6 +1,6 @@
 # 每周证道主视觉 brief 与提示词 v1
 
-本流程承接 [已确认海报格式](tongxing-weekly-poster-format.zh.md)。每周与临时制作、历史重做都使用同一单行标题模板；版式固定，视觉概念由对应周次内容决定，不根据标题随机搭配风景。主视觉按本规范用内置 ImageGen 生成一次，再由 `build_multilingual_sermon_posters.py` 合成所需语言；只需一语时用 `--locales`，命令见 [每周发行流程](tongxing-weekly-release.zh.md#每周海报交付)。
+本流程承接 [已确认海报格式](tongxing-weekly-poster-format.zh.md)。每周与临时制作、历史重做都使用同一单行标题模板；版式固定，视觉概念由对应周次内容决定，不根据标题随机搭配风景。主视觉按本规范用内置 ImageGen 生成一次，再由 `tools/ops/run.py delivery.posters.build` 合成所需语言；只需一语时用 `--locales`，命令见 [每周发行流程](tongxing-weekly-release.zh.md#每周海报交付)。
 
 ## 三语页面优先
 

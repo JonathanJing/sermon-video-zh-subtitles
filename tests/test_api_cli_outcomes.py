@@ -4,8 +4,9 @@ import tempfile
 import unittest
 from unittest.mock import Mock, patch
 from tongxing_production.compute import legacy_openai  # C4: the remote-call group lives here
-from scripts import api_cli_outcomes as outcomes
-from scripts.production_spark_admission import SessionBoundCaller
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.compute import outcomes
+from tongxing_production.compute.spark_admission import SessionBoundCaller
 
 
 def reconciliation_evidence(request_sha256, response, *, terminal_failure=False):
@@ -392,7 +393,7 @@ class ApiCliOutcomeTests(unittest.TestCase):
             root = Path(tmp)
             outcomes._write(root/('a'*64)/'outcome.json', {'schemaVersion':outcomes.V2_SCHEMA,'requestSha256':'a'*64,'purpose':'production-model-call','status':'started'})
             result = subprocess.run([sys.executable, '-c',
-                'from scripts.production_spark_admission import SessionBoundCaller; '
+                'from scripts import tongxing_host; from tongxing_production.compute.spark_admission import SessionBoundCaller; '
                 'import sys; SessionBoundCaller(lambda: print("DISPATCHED"), '
                 'requires_spark=False, outcome_directory=sys.argv[1])()', tmp],
                 text=True, capture_output=True)
@@ -401,7 +402,8 @@ class ApiCliOutcomeTests(unittest.TestCase):
             self.assertIn('reconciliation_required', result.stderr)
 
     def test_legacy_text_unknown_never_retries_inside_hold(self):
-        from scripts import sermon_pipeline as pipeline
+        from scripts import tongxing_host  # noqa: F401  binds the production package ports
+        from tongxing_production.workflows.dual_pdf import pipeline as pipeline
         with tempfile.TemporaryDirectory() as tmp, \
              patch.dict('os.environ', {'SERMON_ACCOUNTING_DIR':tmp}), \
              patch('tongxing_production.compute.budget_capability.require_bounded_api_payload'), \
@@ -468,7 +470,7 @@ class ApiCliOutcomeTests(unittest.TestCase):
             self.assertEqual(outcomes.recover(tmp,row['requestSha256'],'production-model-call'),{'ok':True})
 
     def test_confirmed_no_dispatch_terminal_failure_preserves_reason(self):
-        from scripts.sermon_pipeline import PreDispatchRejection
+        from tongxing_production.workflows.dual_pdf.pipeline import PreDispatchRejection
         with tempfile.TemporaryDirectory() as tmp:
             def guarded(payload):
                 outcomes.observed_no_dispatch('provider_configuration_blocked')

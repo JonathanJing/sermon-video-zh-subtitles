@@ -181,7 +181,7 @@ python3 experiments/sermon-dubbing-poc/weekly_release.py record-published \
 
 ## 每周海报交付
 
-今后所有每周、临时（ad hoc）、历史周次重做及单语补图，统一采用用户已确认的[单行标题格式规范](tongxing-weekly-poster-format.zh.md)：2:3 竖版、按完整标题宽度缩放的书卷风格单行标题、系统字体正文、两个独立二维码和完整免责声明。唯一的新海报入口是 `scripts/build_multilingual_sermon_posters.py`；只做一种语言也使用 `--locales`。`build_sermon_poster.py`／`render_sermon_poster.swift` 仅用于复现既有 `weekly.json` 旧格式，不再作为任何新交付或临时打样的备选入口。
+今后所有每周、临时（ad hoc）、历史周次重做及单语补图，统一采用用户已确认的[单行标题格式规范](tongxing-weekly-poster-format.zh.md)：2:3 竖版、按完整标题宽度缩放的书卷风格单行标题、系统字体正文、两个独立二维码和完整免责声明。唯一的新海报入口是 `tools/ops/run.py delivery.posters.build`；只做一种语言也使用 `--locales`。`build_sermon_poster.py`／`render_sermon_poster.swift` 仅用于复现既有 `weekly.json` 旧格式，不再作为任何新交付或临时打样的备选入口。
 
 海报生成是 Layer 4 页面发布后的收尾步骤，默认先完成发行计划内各语言的页面与逐语言 HTTP 核验，再制作对应语言海报；详细顺序见 [Layer 4 收尾](multilingual-production-interfaces.zh.md#layer-4-收尾先三语页面再三语海报)。页面的设备／现场验收独立记录。每周海报默认交付，无需重复提出；图片不自动上传站点或向外部渠道发送。
 
@@ -191,7 +191,7 @@ python3 experiments/sermon-dubbing-poc/weekly_release.py record-published \
 
 ### 多语言已发布页面海报（周更与临时制作的统一入口）
 
-对于 v3 或 v4 目录中的多语言正式页面，使用 `scripts/build_multilingual_sermon_posters.py`，从同一发布目录中按 page ID 读取每个 locale 的已发布包和完整文稿，沿用发布包里的标题、系列、日期、讲员与经文。发布目录有 `multilingual-v4.json` 时读 v4；机器质检的语言仍须有同语言的发布包披露文案；海报保留完整的 AI 内容及独立项目免责声明，不显示单独的审核状态横幅；机器质检语言在信息区显示本地化的质检／未经人工审核说明。完整披露继续在正式页面及发布包中呈现。中文、韩语和西班牙语各交付 1200 × 1800 PNG、600 × 900 预览及收据，复用同一 ImageGen 主视觉。新渲染器使用书卷风格标题与系统字体正文、官方语言徽章、正式 App Store 下载码和本周网页码，最终两尺寸各验证两个码。传入绑定原始来源和中文文稿的 `--english-reference` 时，同时自动排版英语参考海报；它的 `targetLocale` 保持 zh-Hans，manifest 标为不适用 App announcement。该适配器不改变旧中文周次的海报路径。
+对于 v3 或 v4 目录中的多语言正式页面，使用 `tools/ops/run.py delivery.posters.build`，从同一发布目录中按 page ID 读取每个 locale 的已发布包和完整文稿，沿用发布包里的标题、系列、日期、讲员与经文。发布目录有 `multilingual-v4.json` 时读 v4；机器质检的语言仍须有同语言的发布包披露文案；海报保留完整的 AI 内容及独立项目免责声明，不显示单独的审核状态横幅；机器质检语言在信息区显示本地化的质检／未经人工审核说明。完整披露继续在正式页面及发布包中呈现。中文、韩语和西班牙语各交付 1200 × 1800 PNG、600 × 900 预览及收据，复用同一 ImageGen 主视觉。新渲染器使用书卷风格标题与系统字体正文、官方语言徽章、正式 App Store 下载码和本周网页码，最终两尺寸各验证两个码。传入绑定原始来源和中文文稿的 `--english-reference` 时，同时自动排版英语参考海报；它的 `targetLocale` 保持 zh-Hans，manifest 标为不适用 App announcement。该适配器不改变旧中文周次的海报路径。
 
 ```bash
 # 页面先发布并 HTTP 验证；不传 art 时准备来源绑定的各语言 brief。

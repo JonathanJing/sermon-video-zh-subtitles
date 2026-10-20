@@ -56,7 +56,7 @@ Sol 对任何一组报告 fail、问题或不确定性时，停止生成 `eviden
   --out "$OUT/candidate.machine.json"
 ```
 
-插件必须与 policy 中冻结的实现 hash 完全一致，且逐组检查通过；`admit` 会重新执行插件并核对收据。输出状态为 `machine_review_pass_human_review_pending`、`releaseEligible=false`。然后按 `review_target_language_candidate.py` 的 `prepare` 与 `approve` 流程进行逐组人工审核，生成新的、独立的批准候选及收据。只有 Layer 3 准备器核实同源、同 policy、同候选及人审收据后，才进入音频层。
+插件必须与 policy 中冻结的实现 hash 完全一致，且逐组检查通过；`admit` 会重新执行插件并核对收据。输出状态为 `machine_review_pass_human_review_pending`、`releaseEligible=false`。然后按 `tools/ops/run.py text.human_review` 的 `prepare` 与 `approve` 流程进行逐组人工审核，生成新的、独立的批准候选及收据。只有 Layer 3 准备器核实同源、同 policy、同候选及人审收据后，才进入音频层。
 
 ## 验证范围
 

@@ -373,7 +373,8 @@ def validate_review(work, *, write_receipt=True):
     # interpretation of its publication receipts.
     from poc import ROOT
     sys.path.insert(0, str(ROOT))
-    from scripts.run_codex_local_sermon_production import local_completion_artifacts
+    from scripts import tongxing_host  # noqa: F401  binds the production package ports
+    from tongxing_production.workflows.dual_pdf.codex_local import local_completion_artifacts
     run = Path(job["inputs"]["sourceContract" if job.get("sourceRoute") == "same_video" else "windowApproval"]["path"]).parent
     generation = read(run / "agent-generation-report.json")
     artifacts = generation.get("publication", {}).get("artifacts", [])
@@ -389,7 +390,7 @@ def validate_review(work, *, write_receipt=True):
         raise ValueError("Existing Saturday PDF / GCS completion check has not passed")
     if write_receipt:
         write_json(work / "saturday-completion.json", {"status": "completed", "sourceId": job["sourceId"], "jobSha256": sha256(work / "job.json"),
-            "checkedAt": datetime.now(timezone.utc).isoformat(), "validator": "scripts.run_codex_local_sermon_production.local_completion_artifacts"})
+            "checkedAt": datetime.now(timezone.utc).isoformat(), "validator": "tongxing_production.workflows.dual_pdf.codex_local.local_completion_artifacts"})
     return review
 
 

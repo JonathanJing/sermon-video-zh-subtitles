@@ -82,7 +82,7 @@ class ProductionWheelResourceTests(unittest.TestCase):
             # The retained script entry point must still reach the installed
             # package when invoked by absolute path from outside the checkout.
             cli_env = dict(env, PYTHONPATH=str(site))
-            result = run(str(ROOT / "scripts/build_multilingual_sermon_posters.py"), "--help", environment=cli_env)
+            result = run(str(ROOT / 'tools/ops/run.py'), 'delivery.posters.build', "--help", environment=cli_env)
             self.assertIn("--page-id", result.stdout)
 
 

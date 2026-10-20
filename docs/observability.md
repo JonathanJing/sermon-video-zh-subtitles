@@ -85,7 +85,7 @@ Post-live offline SRT/VTT generation uses the same state object. The follow-up j
 POST /api/admin/sundays/upcoming/post-live-subtitles
 ```
 
-The recommended Scheduler window checks every 10 minutes on Saturday evening. It waits until YouTube metadata becomes `post_live` / `was_live`, then downloads archived audio and runs `scripts/sermon_pipeline.py`:
+The recommended Scheduler window checks every 10 minutes on Saturday evening. It waits until YouTube metadata becomes `post_live` / `was_live`, then downloads archived audio and runs `tools/ops/run.py workflows.dual_pdf.pipeline`:
 
 ```text
 sermon-sat-post-live-subtitles  */10 18-23 * * SAT  action=post-live-subtitles

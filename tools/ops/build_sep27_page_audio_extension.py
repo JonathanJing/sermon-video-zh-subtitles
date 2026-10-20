@@ -19,10 +19,11 @@ from jsonschema import Draft202012Validator
 if __package__ in (None, ""):  # run directly from tools/ops: reach the scripts/ siblings
     import sys
     sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "scripts"))
-try:
-    from scripts import stage_formal_multilingual_dev as stage
-except ImportError:
-    import stage_formal_multilingual_dev as stage
+if __package__ in (None, ""):  # run directly: reach the repository root
+    import sys
+    sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+from scripts import tongxing_host  # noqa: E402,F401  binds the production package ports
+from tongxing_production.delivery import formal_stage as stage  # noqa: E402
 
 
 ROOT = Path(__file__).resolve().parents[2]

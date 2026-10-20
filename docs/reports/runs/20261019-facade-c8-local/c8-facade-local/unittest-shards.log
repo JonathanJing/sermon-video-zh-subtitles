@@ -1,0 +1,14 @@
+s0.log: Ran 545 tests in 995.825s OK (skipped=4)
+s1.log: Ran 562 tests in 873.661s OK (skipped=3)
+s2.log: Ran 580 tests in 881.224s OK (skipped=7)
+s3.log: Ran 604 tests in 1099.611s OK (skipped=2)
+s4.log: Ran 606 tests in 1040.779s OK (skipped=6)
+s5.log: Ran 611 tests in 896.203s OK (skipped=5)
+s6.log: Ran 611 tests in 1228.382s OK (skipped=2)
+s7.log: Ran 619 tests in 2005.576s OK (skipped=3)
+s8.log: Ran 619 tests in 1488.358s FAILED (failures=1, skipped=2)
+s9.log: Ran 620 tests in 1137.950s FAILED (failures=1, skipped=4)
+
+FAIL: test_65_group_worker_and_cache_only_recovery_preserve_every_dependency (test_layer2_large_fan_in.LargeLayer2FanInTests.test_65_group_worker_and_cache_only_recovery_preserve_every_dependency)
+FAIL: test_100_transitions_with_persistent_intents (test_sermon_unified_parallel.ParallelOwnerTests.test_100_transitions_with_persistent_intents)
+load average ~250 (other sessions' suites); test_65_group passed alone; test_100_transitions fails identically on the unchanged merge-base under the same load

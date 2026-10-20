@@ -100,7 +100,8 @@ def run(argv, **kwargs):
 
 
 def _spark_session(session_id=None, owner=None):
-    from scripts.spark_exclusive_session import Client
+    from scripts import tongxing_host  # noqa: F401  binds the production package ports
+    from tongxing_production.compute.spark_exclusive_session import Client
     return Client.from_environment(session_id=session_id, owner=owner)
 
 
@@ -371,7 +372,8 @@ def main(argv=None):
         print(json.dumps(preflight(args), ensure_ascii=False))
         return
     # Mark completion on both paths so waiters need no polling of result files.
-    from scripts.outcome_marker import run_with_outcome
+    from scripts import tongxing_host  # noqa: F401  binds the production package ports
+    from tongxing_production.orchestration.outcome_marker import run_with_outcome
     receipt = run_with_outcome(ROOT / relative(args.out) / 'outcome.json', 'spark-diagnostic-audio-execute',
                                lambda: execute(args))
     print(json.dumps(receipt, ensure_ascii=False))

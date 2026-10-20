@@ -327,6 +327,8 @@ adapter 接收明确的运行时位置/版本，不能用仓库相对路径寻�
 
 2026-10-19 补充（只读，未删除任何门面）：阶段 6 的逐门面调用方清单见[门面退出计划](facade-removal-plan.zh.md)。`dev@556458d4` 合入 #1105 后的 187 个 `scripts/` 门面中，5 个现在可删，159 个改调用方后可删（其中 35 个只剩测试），23 个必须保留。必须保留的门面有两种：21 个的自身字节被 G1 冻结身份（W／T／计分／语速）或预览执行绑定按物理路径哈希；3 个的路径记在 durable job 的 worker argv 里（`sermon_workflow_jobs.py` 两者都占）。L2 `code_identity()` 与统一 CLI 执行准入都覆盖全部 `scripts/` 文件，所以任何删除都会产生新一代 L2 身份，并要求已冻结的统一 CLI 运行先到达终态，门面要成批删除。包内 CLI 要先有能绑定宿主的新入口，runbook 命令才能离开门面路径。同日的决定见[包内命令入口](package-cli-entry.zh.md)：用分发器 `tools/ops/run.py <模块>`，不用包内 console script，§6 说的 console entry point 也由它代替。现行 runbook 已改到这个入口；其余 133 个 C 批门面按[门面退出计划](facade-removal-plan.zh.md) §6 的 C1–C8 层批与 G1 窗口退出。
 
+2026-10-19 收尾：A+B（#1138）、D 窗口（#1140、#1151）、C1–C8 与 E 批（#1179）已合并，阶段 6 除[门面退出计划](facade-removal-plan.zh.md) §7 的四组 42 个门面外完成；这 42 个各自要等闭包窗口、policy 重新冻结、dual_pdf 身份换代或 L1 兼容代。`scripts/` 里还有约 220 个不是门面的文件要迁移，分批计划见[剩余代码迁移计划](scripts-remaining-migration-plan.zh.md)。
+
 ## 9 验收门槛
 
 ### 此设计文件的验收

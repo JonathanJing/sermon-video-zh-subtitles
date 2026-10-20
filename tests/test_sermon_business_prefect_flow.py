@@ -9,7 +9,8 @@ import unittest
 
 from scripts import sermon_business_prefect_flow as flow
 from scripts import sermon_bounded_business_callbacks as callbacks
-from scripts import sermon_review_contracts as c
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.review import contracts as c
 from tests import test_run_bounded_diagnostic as fixtures
 
 
@@ -73,7 +74,8 @@ class BusinessFlowTests(unittest.TestCase):
         for key in ('speech.prepare', 'speech.render', 'delivery'):
             self.assertEqual(result[key]['executionStatus'], 'blocked')
             self.assertFalse(result[key]['processed'])
-        from scripts import sermon_accounting as accounting
+        from scripts import tongxing_host  # noqa: F401  binds the production package ports
+        from tongxing_production.observability import accounting
         rows, errors = accounting.read_events(self.f.f.root / 'logs')
         self.assertFalse(errors)
         starts = {r['spanId']: r for r in rows if r['event'] == 'stage_started'}
@@ -84,7 +86,7 @@ class BusinessFlowTests(unittest.TestCase):
 
     def test_actual_same_store_human_admission_and_speech_preparation_stop_at_voice(self):
         from scripts import sermon_strict_gate_admission as admission
-        from scripts import review_target_language_candidate as human
+        from tongxing_production.text import human_review as human
         from scripts import sermon_local_business_callbacks as local
         from tests import test_prepare_target_language_speech_job as voice_fixtures
         from unittest.mock import patch

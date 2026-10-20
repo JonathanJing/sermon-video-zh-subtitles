@@ -1,0 +1,255 @@
+Estimating 213 unprofiled modules from measured per-case cost
+Shard 3/10: 577 tests from 355 modules
+.................................................................................{"group": "group-0001", "solSeconds": 2.0, "opusSeconds": 1.0}
+{"group": "group-0002", "solSeconds": 2.0, "opusSeconds": 1.0}
+{"freshCalls": {"sol": 2, "opus": 2, "review": 0}, "groups": 2, "targetLocale": "ko"}
+..........................s.......................................................................Digest: /var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/tmppzhgqgz7/digests/20261007-e2e (5 files, 11 redactions)
+Digest: /var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/tmpms45p235/digests/20261007-e2e (6 files, 9 redactions)
+{"httpStatus": 0, "reason": null, "receipt": "/private/var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/tmpcht8xn_x/d3c5f98c-2598-4d4d-948e-45ad65a50b81.json"}
+translated zh 1/1
+corrected 1/1
+...............................................................{"status": "waiting"}
+{"status": "waiting"}
+{"status": "waiting"}
+edited reading blocks 0-0
+proofread reading blocks 0-0
+edited reading blocks 0-0
+......................................discover	pass	0.0
+ko.text-qc.prefetch	pass	0.0
+ko.text-qc	pass	0.1
+ko.calibration.prefetch	pass	0.2
+ko.calibration	pass	0.2
+ko.text-waiver	pass	0.0
+{
+  "ko": {
+    "status": "text_waiver_issued",
+    "reason": null,
+    "problems": [],
+    "calibration": {
+      "overallDetectionRate": 1.0,
+      "cleanFalsePositiveRate": 0.0,
+      "trials": 90,
+      "detected": 90
+    }
+  }
+}
+discover	pass	0.0
+.{
+  "ko": [
+    "speech job is 'sermon-target-language-speech-job-v2'; the listening waiver needs the v3 job that binds a text waiver",
+    "ASR screening does not record its runtime settings; rescreen with screening v2"
+... 544 lines omitted; 13 error-like lines, 13 kept below ...
+[line 49]     "reason": "text QC failed; repair the failed groups in a new candidate revision",
+[line 58]     "reason": "failed groups are unchanged; repair them in a new candidate revision",
+[line 69]     "reason": "text QC failed; repair the failed groups in a new candidate revision",
+[line 78]     "reason": "failed groups are unchanged; repair them in a new candidate revision",
+[line 87]     "reason": "failed groups are unchanged; repair them in a new candidate revision",
+[line 143] run_unittest_ci.py: error: QC stages require --qc-inputs binding the frozen source and locale policies
+[line 144] ..................s..............................................................................................s.............................................SERMON_LOGGING_WRITE_FAILED errorType=AccountingWriteError
+[line 153]   "failedGroupIds": []
+[line 163]   "failedGroupIds": []
+[line 209] .Model initialization failed: ValueError: test initialization failure
+[line 210] Model initialization failed: ValueError: test warmup failure
+[line 431]     "failedPreflightSteps": [
+[line 436]     "goalAuditFailedChecks": [
+... end of omitted section ...
+          "python3",
+          "scripts/validate_realtime_session.py",
+          "--expected-model",
+          "gpt-realtime-translate"
+        ]
+      ],
+      "modelPolicy": {
+        "forbiddenOfflineModel": "gpt-realtime-translate",
+        "offlineAsrModel": "gpt-4o-transcribe",
+        "offlineTranslationModel": "gpt-5.4-mini",
+        "realtimeDraftModel": "gpt-realtime-translate",
+        "stableCorrectionModel": "gpt-5.4-mini"
+      },
+      "nextAction": "Use this operator plan for the 11:30 realtime run after deployed preflight gates pass.",
+      "operatorChoices": [
+        {
+          "default": true,
+          "evidenceReports": [
+            "artifacts/evidence/web-realtime-contract.json",
+            "artifacts/evidence/realtime-public-sse-smoke.json"
+          ],
+          "expectedAudioSourceKind": "ipad_mic",
+          "expectedAudioSourceKinds": null,
+          "id": "browser_webrtc_ipad_or_iphone_mic",
+          "operatorAction": "Open the admin page, choose iPad mic realtime mode, and start the microphone session.",
+          "path": "browser WebRTC -> gpt-realtime-translate -> backend session events -> public caption SSE",
+          "source": "iPad/iPhone mic"
+        },
+        {
+          "command": [
+            "python3",
+            "scripts/run_realtime_live_session.py",
+            "--realtime-model",
+            "gpt-realtime-translate",
+            "--stable-model",
+            "gpt-5.4-mini"
+          ],
+          "default": false,
+          "expectedAudioSourceKind": null,
+          "expectedAudioSourceKinds": [
+            "authorized_audio_url",
+            "authorized_audio_file",
+            "authorized_youtube_source"
+          ],
+          "id": "server_worker_authorized_audio",
+          "operatorAction": null,
+          "path": "server media worker -> gpt-realtime-translate -> backend session events -> public caption SSE",
+          "source": "authorized audio URL/file or authorized YouTube live source"
+        }
+      ],
+      "stabilizerFallbackCommand": [
+        "python3",
+        "scripts/run_realtime_stabilizer_loop.py",
+        "--model",
+        "gpt-5.4-mini"
+      ],
+      "state": "ready_for_operator_review",
+      "targetWindow": {
+        "liveCaptionStart": "11:30 PT",
+        "publicReadinessDeadline": "11:50 PT"
+      }
+    },
+    {
+      "alternativeModel": "gpt-5.5",
+      "dependsOn": [
+        "post_approval_validation"
+      ],
+      "doNotSubstitute": true,
+      "handoffReport": "/var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/tmpex6e7vka/model-access-recovery-plan.json",
+      "id": "required_model_recovery",
+      "nextAction": "Rerun required model access preflight, then offline translation and stable correction validation.",
+      "requiredModel": "gpt-5.4-mini",
+      "state": "blocked_by_required_model_access"
+    },
+    {
+      "commands": [
+        [
+          "python3",
+          "scripts/run_no_caption_archive_asr_route.py",
+          "--live-url",
+          "<NO_CAPTION_YOUTUBE_LIVE_ARCHIVE_URL>",
+          "--api-key-secret",
+          "<OPENAI_API_KEY_SECRET_RESOURCE>",
+          "--sunday",
+          "2026-06-28",
+          "--asr-model",
+          "gpt-4o-transcribe",
+          "--translation-model",
+          "gpt-5.4-mini"
+        ]
+      ],
+      "currentEvidence": {
+        "matrixRow": "offline_asr_route",
+        "state": "missing"
+      },
+      "dependsOn": [
+        "required_model_recovery"
+      ],
+      "expandedCommands": [
+        [
+          "python3",
+          "scripts/prepare_live_link_playback.py",
+          "--asr-model",
+          "gpt-4o-transcribe",
+          "--web-out",
+          "artifacts/evidence/2026-06-28-no-caption-asr-route/web/playback-simulation.generated.js"
+        ],
+        [
+          "python3",
+          "scripts/translate_playback_with_openai.py",
+          "--model",
+          "gpt-5.4-mini"
+        ],
+        [
+          "python3",
+          "scripts/validate_offline_chain.py",
+          "--out",
+          "artifacts/evidence/no-caption-offline-chain-validation.json"
+        ]
+      ],
+      "handoffReport": "/var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/tmpex6e7vka/no-caption-asr-fallback-plan.json",
+      "id": "real_no_caption_asr_validation",
+      "nextAction": "Run the no-caption ASR fallback plan against a real source, then feed artifacts/evidence/no-caption-offline-chain-validation.json into collect_production_evidence_matrix.py via --offline-asr-chain-validation-report.",
+      "passCriteria": [
+        "run_offline_archive_preflight.py reports decision=use_asr_fallback.",
+        "Prepared offline report has caption_source.kind=openai_asr.",
+        "validate_offline_chain.py confirms no requested English caption track exists before ASR fallback.",
+        "validate_offline_chain.py confirms the openai_asr output source_file is an extracted audio artifact.",
+        "ASR model is gpt-4o-transcribe.",
+        "Chinese translation model is gpt-5.4-mini.",
+        "validate_offline_chain.py status is ok and not_realtime_chain passes."
+      ],
+      "requiredModels": {
+        "forbiddenOfflineModel": "gpt-realtime-translate",
+        "offlineAsr": "gpt-4o-transcribe",
+        "offlineTranslation": "gpt-5.4-mini"
+      },
+      "requiredReports": [
+        "artifacts/evidence/no-caption-archive-preflight.json",
+        "artifacts/evidence/no-caption-offline-chain-validation.json",
+        "artifacts/evidence/asr-route-readiness.json"
+      ],
+      "requiredSource": "Authorized YouTube live archive without requested English captions.",
+      "state": "needs_real_no_caption_archive"
+    },
+    {
+      "commands": [
+        [
+          "python3",
+          "scripts/refresh_production_preflight_evidence.py",
+          "--sunday",
+          "2026-06-28",
+          "--out",
+          "artifacts/evidence/production-preflight-refresh.json"
+        ],
+        [
+          "python3",
+          "scripts/write_production_go_live_sequence.py",
+          "--sunday",
+          "2026-06-28",
+          "--out",
+          "artifacts/evidence/production-go-live-sequence.json"
+        ]
+      ],
+      "dependsOn": [
+        "operator_approval",
+        "post_approval_validation",
+        "live_1130_realtime_run",
+        "required_model_recovery",
+        "real_no_caption_asr_validation"
+      ],
+      "id": "final_readiness_audit",
+      "requiredReports": [
+        "artifacts/evidence/production-preflight-refresh.json",
+        "artifacts/evidence/production-evidence-matrix.json",
+        "artifacts/evidence/production-goal-readiness-audit.json",
+        "artifacts/evidence/production-go-live-sequence.json"
+      ],
+      "state": "pending_final_audit"
+    }
+  ],
+  "status": "not_ready_for_go_live",
+  "sunday": "2026-06-28"
+}.....
+----------------------------------------------------------------------
+Ran 577 tests in 905.372s
+
+OK (skipped=4)
+
+ 273.81s     1  test_sermon_fresh_full_dag
+ 221.85s     7  test_machine_quality_waiver
+  45.39s     1  test_run_machine_qc_audio_test
+  23.43s     5  test_sermon_cuv_translation
+  14.36s     5  test_sermon_delivery_intent_binding
+  14.15s     2  test_canonical_layer2_controller
+  13.99s     2  test_sermon_diagnostic_delivery_preflight
+  12.33s     3  test_sermon_diagnostic_dag_session
+  11.19s     1  test_ci_change_scope
+   9.42s     4  test_sermon_strict_budget_adapter
+exit 0

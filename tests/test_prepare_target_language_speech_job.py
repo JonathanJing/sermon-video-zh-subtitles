@@ -11,13 +11,13 @@ from unittest.mock import patch
 from jsonschema import Draft202012Validator, FormatChecker
 
 from tongxing_production.audio import speech_job as subject
-from scripts import review_target_language_candidate as human_review
+from tongxing_production.text import human_review as human_review
 from tongxing_production.audio import unit_integrity as audio_integrity
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.source import sentence_interpretation as interpretation
-from scripts import target_language_policy as policy_tools
-from scripts import four_layer_progress as progress
-from scripts import sermon_accounting as accounting
+from tongxing_production.text import policy as policy_tools
+from tongxing_production.observability import progress
+from tongxing_production.observability import accounting
 
 
 def write_json(path: Path, value: object) -> None:
@@ -588,7 +588,7 @@ class TargetLanguageSpeechJobTests(unittest.TestCase):
 
     def test_batch_review_cli_writes_the_same_bound_receipt(self):
         write_json(self.candidate_path, self.machine_candidate())
-        script = Path(__file__).parents[1] / "scripts/review_target_language_candidate.py"
+        script = Path(__file__).parents[1] / "tools/ops/run.py"
         common = [
             "--english-source-package", str(self.source_package_path),
             "--anchor", str(self.anchor_path),
@@ -596,10 +596,10 @@ class TargetLanguageSpeechJobTests(unittest.TestCase):
             "--policy", str(self.policy_path),
         ]
         worksheet_path = self.root / "batch-worksheet.json"
-        subprocess.run([sys.executable, str(script), "prepare", *common,
+        subprocess.run([sys.executable, str(script), "text.human_review", "prepare", *common,
                         "--out", str(worksheet_path)], check=True, capture_output=True, text=True)
         output = self.root / "batch-approved"
-        subprocess.run([sys.executable, str(script), "approve-batch", *common,
+        subprocess.run([sys.executable, str(script), "text.human_review", "approve-batch", *common,
                         "--worksheet", str(worksheet_path), "--reviewer", "Korean reviewer",
                         "--reviewed-at", "2026-09-20T12:00:00Z",
                         "--full-review-evidence", "Reviewed every source and target group.",
@@ -702,7 +702,7 @@ class TargetLanguageSpeechJobTests(unittest.TestCase):
 
     def test_group_review_cli_aggregates_only_complete_receipts(self):
         write_json(self.candidate_path, self.machine_candidate())
-        script = Path(__file__).parents[1] / "scripts/review_target_language_candidate.py"
+        script = Path(__file__).parents[1] / "tools/ops/run.py"
         common = [
             "--english-source-package", str(self.source_package_path),
             "--anchor", str(self.anchor_path),
@@ -712,7 +712,7 @@ class TargetLanguageSpeechJobTests(unittest.TestCase):
         receipts = []
         for group_id in ("g1", "g2"):
             path = self.root / f"{group_id}-review.json"
-            subprocess.run([sys.executable, str(script), "record-group", *common,
+            subprocess.run([sys.executable, str(script), "text.human_review", "record-group", *common,
                             "--group-id", group_id, "--decision", "approved",
                             "--evidence", "Reviewed source and block context.",
                             "--reviewer", "Korean reviewer",
@@ -720,7 +720,7 @@ class TargetLanguageSpeechJobTests(unittest.TestCase):
                            check=True, capture_output=True, text=True)
             receipts.append(path)
         out = self.root / "assembled-group-review"
-        subprocess.run([sys.executable, str(script), "approve-groups", *common,
+        subprocess.run([sys.executable, str(script), "text.human_review", "approve-groups", *common,
                         *(part for path in receipts for part in ("--group-receipt", str(path))),
                         "--out", str(out)], check=True, capture_output=True, text=True)
         approved = json.loads((out / "candidate.approved.json").read_text())
@@ -730,7 +730,7 @@ class TargetLanguageSpeechJobTests(unittest.TestCase):
 
     def test_human_review_cli_writes_immutable_pair(self):
         write_json(self.candidate_path, self.machine_candidate())
-        script = Path(__file__).parents[1] / "scripts/review_target_language_candidate.py"
+        script = Path(__file__).parents[1] / "tools/ops/run.py"
         common = [
             "--english-source-package", str(self.source_package_path),
             "--anchor", str(self.anchor_path),
@@ -738,7 +738,7 @@ class TargetLanguageSpeechJobTests(unittest.TestCase):
             "--policy", str(self.policy_path),
         ]
         worksheet_path = self.root / "human-worksheet.json"
-        subprocess.run([sys.executable, str(script), "prepare", *common,
+        subprocess.run([sys.executable, str(script), "text.human_review", "prepare", *common,
                         "--out", str(worksheet_path)], check=True, capture_output=True, text=True)
         worksheet = json.loads(worksheet_path.read_text(encoding="utf-8"))
         worksheet["decision"] = "approved"
@@ -749,13 +749,13 @@ class TargetLanguageSpeechJobTests(unittest.TestCase):
             row["evidence"] = "Reviewed against source."
         write_json(worksheet_path, worksheet)
         out = self.root / "human-approved"
-        subprocess.run([sys.executable, str(script), "approve", *common,
+        subprocess.run([sys.executable, str(script), "text.human_review", "approve", *common,
                         "--worksheet", str(worksheet_path), "--out", str(out)],
                        check=True, capture_output=True, text=True)
         approved = json.loads((out / "candidate.approved.json").read_text(encoding="utf-8"))
         receipt = json.loads((out / "human-review-receipt.json").read_text(encoding="utf-8"))
         subject.validate_human_review_receipt(self.source_package, self.anchor, approved, receipt)
-        repeated = subprocess.run([sys.executable, str(script), "approve", *common,
+        repeated = subprocess.run([sys.executable, str(script), "text.human_review", "approve", *common,
                                    "--worksheet", str(worksheet_path), "--out", str(out)],
                                   capture_output=True, text=True)
         self.assertNotEqual(repeated.returncode, 0)

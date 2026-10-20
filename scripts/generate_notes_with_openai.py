@@ -22,9 +22,9 @@ if str(REPO_ROOT) not in sys.path:
 
 from backend.cloud import access_secret as cloud_access_secret
 from backend.cloud import upload_file_to_gcs
-from scripts import review_prompts
+from tongxing_production.source import review_prompts
 from scripts import series_terminology
-from scripts.sermon_accounting import _finalize, accounting_session, stage, record_api_attempt, record_api_started, request_metadata
+from tongxing_production.observability.accounting import _finalize, accounting_session, stage, record_api_attempt, record_api_started, request_metadata
 
 JS_PREFIX = "window.SERMON_PLAYBACK_SIMULATION = "
 SECRET_RESOURCE_RE = re.compile(
@@ -600,7 +600,8 @@ def request_openai_notes(
     timeout_seconds: int = 120,
     *, session_verifier=None,
 ) -> dict[str, Any]:
-    from scripts.production_spark_admission import SessionBoundCaller
+    from scripts import tongxing_host  # noqa: F401  binds the production package ports
+    from tongxing_production.compute.spark_admission import SessionBoundCaller
     return SessionBoundCaller(_request_openai_notes, verifier=session_verifier,
         purpose="production-study-notes", requires_spark=False)(payload, api_key, timeout_seconds)
 
@@ -627,7 +628,8 @@ def _request_openai_notes(payload, api_key, timeout_seconds):
                            elapsed_seconds=time.perf_counter() - started,
                            status="failed", error_type=type(exc).__name__, attempt_id=attempt_id), exc)
         raise
-    from scripts import api_cli_outcomes
+    from scripts import tongxing_host  # noqa: F401  binds the production package ports
+    from tongxing_production.compute import outcomes as api_cli_outcomes
     if api_cli_outcomes.observing():
         api_cli_outcomes.observed_response(response.content, http_status=response.status_code)
     if response.status_code >= 400:

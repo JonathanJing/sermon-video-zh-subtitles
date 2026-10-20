@@ -2,7 +2,7 @@ import copy
 import unittest
 
 from tongxing_production.audio import human_review as subject
-from scripts import stage_formal_multilingual_dev as stage
+from tongxing_production.delivery import formal_stage as stage
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.source import sentence_interpretation as identity
 

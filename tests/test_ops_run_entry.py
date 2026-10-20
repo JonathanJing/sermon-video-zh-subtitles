@@ -109,7 +109,6 @@ def test_own_usage(tmp_path):
 
 @pytest.mark.parametrize("facade, module", [
     ("scripts/produce_target_language_candidate.py", "text.candidate"),
-    ("scripts/build_four_layer_tracker_snapshot.py", "observability.projections.four_layer_tracker_snapshot"),
 ])
 def test_help_matches_the_facade(tmp_path, facade, module):
     old = subprocess.run([sys.executable, str(ROOT / facade), "--help"], cwd=tmp_path,
@@ -130,3 +129,16 @@ def test_spawned_children_bind_the_host_before_unpickling(tmp_path):
                             capture_output=True, text=True, timeout=120)
     assert result.returncode == 0, result.stderr[-2000:]
     assert len(result.stdout.strip()) == 64
+
+
+def test_orchestration_modules_get_the_unified_backend(tmp_path):
+    """A prepared-workflow command needs the orchestration Backend its scripts/ facade used to bind."""
+    probe = ("import runpy, sys; sys.argv = [sys.argv[1]]; g = runpy.run_path(sys.argv[0], run_name='probe'); "
+             "g['command']('workflows.prepared.capabilities'); "
+             "from tongxing_production.orchestration.unified import backend; backend.current(); "
+             "print('scripts.sermon_unified' in sys.modules)")
+    env = {**os.environ, "PYTHONPATH": ""}
+    result = subprocess.run([sys.executable, "-c", probe, str(ENTRY)], cwd=tmp_path, env=env,
+                            capture_output=True, text=True, timeout=120)
+    assert result.returncode == 0, result.stderr[-2000:]
+    assert result.stdout.strip().endswith("True")

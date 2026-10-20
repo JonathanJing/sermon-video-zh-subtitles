@@ -12,9 +12,10 @@ from unittest import mock
 from agents.tool_context import ToolContext
 
 from tests.legacy_pipeline_patches import patch_both  # W3b: Layer 1 names live in two modules
-from scripts import run_post_live_timeline_job as timeline
-from scripts import sermon_pipeline
-from scripts import run_post_live_subtitle_generation as generation
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.workflows.dual_pdf import timeline as timeline
+from tongxing_production.workflows.dual_pdf import pipeline as sermon_pipeline
+from tongxing_production.workflows.dual_pdf import post_live as generation
 from scripts import sermon_production_supervisor as supervisor
 from scripts import run_sermon_production_supervisor_agent as agent
 from tests.test_run_post_live_timeline_job import make_args, make_handoff, write_state

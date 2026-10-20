@@ -6,11 +6,11 @@ import unittest
 from unittest.mock import patch
 
 from scripts import run_bounded_diagnostic_continuation as entry
-from scripts import sermon_accounting as accounting
+from tongxing_production.observability import accounting
 from scripts import sermon_diagnostic_dag_session as session_module
 from scripts import sermon_diagnostic_source_evidence as source_evidence
 from scripts import sermon_diagnostic_prefect_flow as flow
-from scripts import sermon_review_contracts as c
+from tongxing_production.review import contracts as c
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.audio import speculative as preview
 from tests.diagnostic_dag_fixture import DiagnosticDAGFixture

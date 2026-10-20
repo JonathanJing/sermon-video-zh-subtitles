@@ -20,16 +20,14 @@ import urllib.request
 
 from jsonschema import Draft202012Validator, FormatChecker
 
-try:
-    from scripts import multilingual_dev_preview as old_dev
-    from scripts import verify_multilingual_hosting as http
-    from scripts import assemble_multilingual_v3_update as weekly
-    from scripts import verify_v3_bucket_video as bucket_http
-except ImportError:
-    import multilingual_dev_preview as old_dev
-    import verify_multilingual_hosting as http
-    import assemble_multilingual_v3_update as weekly
-    import verify_v3_bucket_video as bucket_http
+if __package__ in (None, ""):  # run directly: reach the repository root
+    import sys
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from scripts import tongxing_host  # noqa: E402,F401  binds the production package ports
+from tongxing_production.adapters.legacy import multilingual_dev_preview as old_dev  # noqa: E402
+from tongxing_production.adapters.legacy import verify_multilingual_hosting as http  # noqa: E402
+from tongxing_production.adapters.legacy import assemble_multilingual_v3_update as weekly  # noqa: E402
+from tongxing_production.adapters.legacy import verify_v3_bucket_video as bucket_http  # noqa: E402
 
 
 ROOT = Path(__file__).resolve().parents[1]

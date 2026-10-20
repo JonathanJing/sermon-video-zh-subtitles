@@ -12,10 +12,11 @@ from unittest.mock import Mock, patch
 from jsonschema import Draft202012Validator, ValidationError
 from tongxing_production.compute import legacy_openai  # C4: the remote-call group lives here
 from scripts import sermon_strict_layer2 as s
-from scripts import sermon_review_contracts as c
-from scripts import sermon_accounting as accounting
-from scripts import sermon_log_profile as profile
-from scripts import target_language_policy as policies
+from tongxing_production.review import contracts as c
+from tongxing_production.observability import accounting
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.observability import profile
+from tongxing_production.text import policy as policies
 from tests import test_produce_target_language_candidate as legacy_fixtures
 from tests.test_sermon_review_contracts import load
 
@@ -34,9 +35,9 @@ class StrictAdapterTests(unittest.TestCase):
         policy=policies.freeze_strict_policy(draft,rubric)
         self.args=[s.material_bytes(v) for v in (f.source,f.anchor,policy,rubric)]
         self.group={k:f.evidence['groups'][0][k] for k in ('translationGroupId','sourceUnitIds')}
-        from scripts import produce_target_language_candidate as producer
-        from scripts import run_target_language_models as models
-        from scripts import target_language_rule_preflight as rule_preflight
+        from tongxing_production.text import candidate as producer
+        from tongxing_production.text import models
+        from tongxing_production.text import rule_preflight
         request = producer.prepare_request(f.source, f.anchor, policy, strict_rubric=rubric)
         self.rule_preflight = rule_preflight.preflight(
             request, policy, f.plugin_path, [{k: row[k] for k in ('translationGroupId', 'sourceUnitIds')} for row in f.evidence['groups']])
@@ -234,7 +235,7 @@ class StrictAdapterTests(unittest.TestCase):
         self.assertEqual(len(self.calls),2)
 
     def test_structural_failure_preserves_d5_actual_usage_and_reservation_bounds(self):
-        from scripts import sermon_review_budget as budget
+        from tongxing_production.review import review_budget as budget
         from scripts import sermon_strict_budget_adapter as adapter
         from tests.test_sermon_strict_budget_adapter import authority,bounds,measured
         store=budget.BudgetStore(self.root/'shared-budget',authority());subject=adapter.StrictBudgetAdapter(store)
@@ -274,7 +275,8 @@ class StrictAdapterTests(unittest.TestCase):
 
     def test_closed_provider_run_is_typed_non_dispatch_with_safe_reason_and_cached_terminal(self):
         from unittest.mock import Mock
-        from scripts import sermon_pipeline as pipeline
+        from scripts import tongxing_host  # noqa: F401  binds the production package ports
+        from tongxing_production.workflows.dual_pdf import pipeline as pipeline
         from scripts import sermon_strict_budget_adapter as adapter
         from tests import test_sermon_strict_budget_adapter as fixtures
         runtime=fixtures.StrictBudgetTests();self.addCleanup(runtime.doCleanups); runtime.setUp()
@@ -404,7 +406,7 @@ class StrictAdapterTests(unittest.TestCase):
             self.assertEqual(len(self.calls),1)
 
     def test_shared_http_path_persists_before_log_failure_without_hidden_retry(self):
-        from scripts import sermon_pipeline as pipeline
+        from tongxing_production.workflows.dual_pdf import pipeline as pipeline
         value={k:self.f.evidence['groups'][0][k] for k in ('translationGroupId','sourceUnitIds','targetUtterances','coverage')}
         response=dict(id='real-path-synthetic-response',model='gpt-6-astra',choices=[dict(finish_reason='stop',message={'content':json.dumps(value)})])
         class HTTP:
@@ -456,7 +458,7 @@ class StrictAdapterTests(unittest.TestCase):
             self.assertEqual(len(self.calls),1)
 
     def test_known_http_rejections_are_failed_without_content_assessment_or_retry(self):
-        from scripts import sermon_pipeline as pipeline
+        from tongxing_production.workflows.dual_pdf import pipeline as pipeline
         base=self.root
         def caller(key,payload,*,response_observer):
             # Deliberately use the legacy default; a strict observer must remain single-attempt.
@@ -481,11 +483,11 @@ class StrictAdapterTests(unittest.TestCase):
 
     @staticmethod
     def http_caller(key,payload,*,response_observer):
-        from scripts import sermon_pipeline as pipeline
+        from tongxing_production.workflows.dual_pdf import pipeline as pipeline
         return pipeline.json_request(pipeline.CHAT_URL,key,payload,response_observer=response_observer)
 
     def test_ambiguous_http_and_transport_failures_stay_unknown_without_retry(self):
-        from scripts import sermon_pipeline as pipeline
+        from tongxing_production.workflows.dual_pdf import pipeline as pipeline
         base=self.root
         errors=[urllib.error.HTTPError(pipeline.CHAT_URL,status,'private',{},io.BytesIO(b'private'))
                 for status in (408,409,500,502,503,504)]
@@ -507,7 +509,7 @@ class StrictAdapterTests(unittest.TestCase):
                     self.assertFalse((self.root/'revision/reviewer.rejection.json').exists())
 
     def test_rejection_is_durable_before_finish_logging_and_recovery_does_not_call(self):
-        from scripts import sermon_pipeline as pipeline
+        from tongxing_production.workflows.dual_pdf import pipeline as pipeline
         with self.session():
             self.generate()
             error=urllib.error.HTTPError(pipeline.CHAT_URL,429,'private',{},io.BytesIO(b'private'))
@@ -532,7 +534,7 @@ class StrictAdapterTests(unittest.TestCase):
             self.assertEqual((self.root/'revision/reviewer.rejection.json').stat().st_mode&0o777,0o600)
 
     def test_rejection_marker_must_bind_original_payload_and_call(self):
-        from scripts import sermon_pipeline as pipeline
+        from tongxing_production.workflows.dual_pdf import pipeline as pipeline
         base=self.root
         for field,value in [('modelCallId','different-call'),('payloadSha256','0'*64),('httpStatus',500),('httpStatus',True)]:
             with self.subTest(field=field,value=value):
@@ -552,7 +554,7 @@ class StrictAdapterTests(unittest.TestCase):
                     self.assertFalse((self.root/'revision/review-receipt.json').exists())
 
     def test_typed_exception_without_durable_rejection_proof_stays_unknown(self):
-        from scripts import sermon_pipeline as pipeline
+        from tongxing_production.workflows.dual_pdf import pipeline as pipeline
         def unproven(key,payload,*,response_observer):
             aid=accounting.record_api_started(payload['model'])
             response_observer.request_started(aid)
@@ -563,7 +565,7 @@ class StrictAdapterTests(unittest.TestCase):
             self.assertEqual(receipt['executionStatus'],'outcome_unknown')
 
     def test_rejection_persistence_failure_keeps_pending_and_propagates(self):
-        from scripts import sermon_pipeline as pipeline
+        from tongxing_production.workflows.dual_pdf import pipeline as pipeline
         original=s.save_once
         def fail(path,value):
             if path.name.endswith('.rejection.json'):raise OSError('injected persistence fault')
@@ -640,7 +642,7 @@ class StrictAdapterTests(unittest.TestCase):
             transport.assert_not_called()
 
     def test_duplicate_model_json_keys_do_not_silently_choose_last_value(self):
-        from scripts import run_target_language_models as shared
+        from tongxing_production.text import models as shared
         payload={'id':'fixture-duplicate','model':'gpt-6-astra',
             'choices':[{'finish_reason':'stop','message':{'content':'{"translationGroupId":"bad","translationGroupId":"g1"}'}}]}
         def caller(key,request,*,response_observer):

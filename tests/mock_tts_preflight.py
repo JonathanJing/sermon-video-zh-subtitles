@@ -6,7 +6,8 @@ import sys
 import tempfile
 import time
 
-from scripts import sermon_log_profile as profile
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.observability import profile
 from scripts import sermon_mock_tts_worker as worker
 
 SCHEMA = 'sermon-mock-worker-preflight-v1'

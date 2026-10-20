@@ -35,7 +35,8 @@ class SparkAudioWrapperTests(unittest.TestCase):
             'groups': 1, 'sourceUnits': 1, 'checkpointSha256': 'a' * 64}
 
     def test_session_job_purpose_is_identifier_safe_and_opaque(self):
-        from scripts.spark_exclusive_session import IDENTIFIER
+        from scripts import tongxing_host  # noqa: F401  binds the production package ports
+        from tongxing_production.compute.spark_exclusive_session import IDENTIFIER
         purpose = subject._session_job_purpose(self.args.out)
         self.assertRegex(purpose, IDENTIFIER)
         self.assertNotIn(str(self.args.out), purpose)
@@ -187,9 +188,10 @@ class SparkAudioWrapperTests(unittest.TestCase):
         first = request(valid)['result']
         self.assertEqual(first['status'], 'running')
         self.assertEqual(first['jobId'], 'fixture-job')
-        from scripts.spark_exclusive_session import Client
+        from scripts import tongxing_host  # noqa: F401  binds the production package ports
+        from tongxing_production.compute.spark_exclusive_session import Client
         with patch.dict(os.environ, {'SPARK_EXCLUSIVE_SOCKET': str(gateway.path)}), \
-             patch('scripts.spark_exclusive_session.subprocess.run') as no_ssh:
+             patch('tongxing_production.compute.spark_exclusive_session.subprocess.run') as no_ssh:
             result = Client('fixture-session', 'fixture-owner').require_ready()
             self.assertEqual(result['status'], 'running')
             no_ssh.assert_not_called()

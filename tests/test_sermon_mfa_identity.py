@@ -7,7 +7,8 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-from scripts import sermon_mfa_identity as identity, sermon_review_contracts as c
+from tongxing_production.review import contracts as c
+from tongxing_production.source import mfa_identity as identity
 from scripts import tongxing_host as host
 
 

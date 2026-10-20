@@ -1,7 +1,8 @@
 """Offline error fixtures never use provider requests or real secrets."""
 import json
 import unittest
-from scripts import sermon_provider_error as errors
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.compute import sermon_provider_error as errors
 
 class ErrorDiagnosticsTests(unittest.TestCase):
     def test_code_parameter_and_summary_are_safe_and_bounded(self):
@@ -29,7 +30,8 @@ class ErrorDiagnosticsTests(unittest.TestCase):
         import urllib.error
         import urllib.request
         from unittest.mock import Mock
-        from scripts import sermon_pipeline as pipeline
+        from scripts import tongxing_host  # noqa: F401  binds the production package ports
+        from tongxing_production.workflows.dual_pdf import pipeline as pipeline
         for message,expected in (('API_KEY=private /Users/private source','http_request_rejected'),
                 ('Audio file might be corrupted or unsupported; private','Audio file might be corrupted or unsupported')):
             raw=json.dumps({'error':{'message':message}}).encode()

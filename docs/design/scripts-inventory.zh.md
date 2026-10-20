@@ -765,7 +765,7 @@
 
 - 仓库内**没有** LaunchAgent plist。`git grep -il "launchagent\|launchctl\|launchd" -- . ":!docs/reports"` 只命中 Tracker 远程审核桥设计文档（`docs/tracker-remote-review-bridge.zh.md`，计划中的 LaunchAgent 领取器）、`tools/ops/tracker-publisher/README.md`、`apps/tracker-web/README.zh.md`、`docs/backlog.zh.md` 和 `config/agent-trials/risk-actions.json`；没有任何 `scripts/` 文件被 LaunchAgent 定义直接引用。
 - `Makefile` 只有 iOS 预览目标，不引用 `scripts/*.py`。
-- 唯一从非 `scripts/` 的工具子进程调用 `scripts/` 的已知入口：`tools/ops/tracker-publisher/publish.mjs` 执行 `scripts/build_four_layer_tracker_snapshot.py`（提案 §3.2 要求搬动该构建器时同批保留这个调用）。
+- 唯一从非 `scripts/` 的工具子进程调用 `scripts/` 的已知入口：`tools/ops/tracker-publisher/publish.mjs` 执行 `scripts/build_four_layer_tracker_snapshot.py`（提案 §3.2 要求搬动该构建器时同批保留这个调用）。门面退出 C2 批起改为执行 `tools/ops/run.py observability.projections.four_layer_tracker_snapshot`。
 
 ### 5.5 runbook / 文档引用与非 `.py` 文件
 

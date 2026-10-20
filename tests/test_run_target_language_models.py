@@ -10,18 +10,19 @@ import time
 import unittest
 from pathlib import Path
 
-from scripts import run_target_language_models as subject
-from scripts import four_layer_measure as measure
-from scripts import four_layer_progress as progress
-from scripts import sermon_accounting as accounting
-from scripts import produce_target_language_candidate as producer
-from scripts import target_language_policy as policy_tools
+from tongxing_production.text import models as subject
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.observability import measure
+from tongxing_production.observability import progress
+from tongxing_production.observability import accounting
+from tongxing_production.text import candidate as producer
+from tongxing_production.text import policy as policy_tools
 from tests import test_produce_target_language_candidate as fixture_module
 
 
 class RunTargetLanguageModelsTests(unittest.TestCase):
     def test_strict_budget_uses_approved_default_tier_for_sol(self):
-        from scripts import sermon_provider_limits as limits
+        from tongxing_production.compute import provider_limits as limits
         policy = {'translator': {'model': 'gpt-6.1-sol', 'reasoningEffort': 'high'}}
         prompt = {'instruction': 'Return JSON.', 'input': {'sample': 'synthetic'}}
         standalone = subject.model_payload('translator', prompt, policy)
@@ -76,9 +77,9 @@ class RunTargetLanguageModelsTests(unittest.TestCase):
             with self.subTest(backend=backend), patch.object(sys, 'argv',
                     argv if backend == 'openai-api' else argv + ['--model-backend', backend]), patch.object(
                     subject.producer, '_load', side_effect=[self.fixture.source, self.fixture.anchor, self.fixture.policy]), patch(
-                    'scripts.production_spark_admission.require_session'), patch(
-                    'scripts.codex_layer2_transport.CodexLayer2Transport', return_value=cli) as cli_factory, patch(
-                    'scripts.openai_layer2_transport.OpenAILayer2Transport', return_value=api) as api_factory, patch.object(
+                    'tongxing_production.compute.spark_admission.require_session'), patch(
+                    'tongxing_production.compute.transports.codex_layer2.CodexLayer2Transport', return_value=cli) as cli_factory, patch(
+                    'tongxing_production.compute.transports.openai_layer2.OpenAILayer2Transport', return_value=api) as api_factory, patch.object(
                     subject, 'run_accounted', return_value={'groups': []}) as run:
                 subject.main()
             self.assertEqual(run.call_args.args[4], '' if backend == 'codex-cli' else 'historical-key')
@@ -115,7 +116,7 @@ class RunTargetLanguageModelsTests(unittest.TestCase):
 
     def test_standalone_recovers_durable_outcome_before_raw_marker_without_redispatch(self):
         from unittest.mock import patch
-        from scripts.production_spark_admission import SessionBoundCaller
+        from tongxing_production.compute.spark_admission import SessionBoundCaller
         f=self.fixture
         wrapped=SessionBoundCaller(self.fake_call,requires_spark=False,
                                    outcome_directory=self.out/'accounting'/'api-cli-outcomes')
@@ -136,8 +137,8 @@ class RunTargetLanguageModelsTests(unittest.TestCase):
 
     def test_standalone_returned_receipt_from_another_request_is_refused(self):
         from unittest.mock import patch
-        from scripts.production_spark_admission import SessionBoundCaller
-        from scripts import api_cli_outcomes as outcomes
+        from tongxing_production.compute.spark_admission import SessionBoundCaller
+        from tongxing_production.compute import outcomes
         f=self.fixture; root=self.out/'accounting'/'api-cli-outcomes'
         wrapped=SessionBoundCaller(self.fake_call,requires_spark=False,outcome_directory=root)
         save=subject.save_new
@@ -159,7 +160,7 @@ class RunTargetLanguageModelsTests(unittest.TestCase):
 
     def test_explicit_prior_root_recovers_paid_raw_into_new_run_without_redispatch(self):
         from unittest.mock import patch
-        from scripts.production_spark_admission import SessionBoundCaller
+        from tongxing_production.compute.spark_admission import SessionBoundCaller
         prior=self.out.parent/'prior';prior_root=prior/'accounting'/'api-cli-outcomes'
         old=SessionBoundCaller(self.fake_call,requires_spark=False,outcome_directory=prior_root)
         prompt={'instruction':'Return synthetic JSON.', 'input':{'translationGroupId':self.fixture.evidence['groups'][0]['translationGroupId']}}
@@ -208,7 +209,7 @@ class RunTargetLanguageModelsTests(unittest.TestCase):
         self.assertEqual(len(self.calls),1)
 
     def simulation_configuration_fixture(self):
-        from scripts.codex_layer2_transport import TEST_CONFIGURATION
+        from tongxing_production.compute.transports.codex_layer2 import TEST_CONFIGURATION
         policy = copy.deepcopy(self.fixture.policy)
         policy['simulationModelConfiguration'] = copy.deepcopy(TEST_CONFIGURATION)
         for role in subject.MODEL_ROLES:
@@ -508,9 +509,9 @@ class RunTargetLanguageModelsTests(unittest.TestCase):
     def test_progress_ledger_tracks_translation_and_review_groups_separately(self):
         f = self.fixture
         ledger_path = self.out.parent / "four-layer-progress.json"
-        from scripts import four_layer_measure as measure
-        from scripts import four_layer_progress as progress
-        from scripts import sermon_accounting as accounting
+        from tongxing_production.observability import measure
+        from tongxing_production.observability import progress
+        from tongxing_production.observability import accounting
         progress.save(ledger_path, progress.new_ledger("test-page", ["ko"]))
         step = "L2-02@ko"
         with measure.producer_step(ledger_path, step, locale="ko"):

@@ -3,10 +3,11 @@ import json
 import unittest
 from unittest.mock import patch
 
-from scripts import migrate_target_language_model_cache as subject
-from scripts import run_target_language_models as models
-from scripts import target_language_policy as policies
-from scripts import sermon_pipeline as sermon_pipeline_module
+from tongxing_production.text import model_cache_migration as subject
+from tongxing_production.text import models
+from tongxing_production.text import policy as policies
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.workflows.dual_pdf import pipeline as sermon_pipeline_module
 from tests import test_run_target_language_models as fixtures
 
 
@@ -46,7 +47,7 @@ class CacheMigrationTests(unittest.TestCase):
         new_plugin = self.old.parent / 'new-plugin.py'
         new_plugin.write_text(self.f.plugin_path.read_text() + '\n# implementation-only revision\n')
         policy = copy.deepcopy(self.f.policy)
-        from scripts import produce_target_language_candidate as producer
+        from tongxing_production.text import candidate as producer
         policy['languageReview']['pluginImplementationSha256'] = producer.plugin_implementation_sha256(new_plugin)
         policy['componentSha256']['languageReview'] = policies.canonical_sha256(policy['languageReview'])
         result = self.run_migration(policy, new_plugin)

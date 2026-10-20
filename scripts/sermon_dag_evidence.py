@@ -1,5 +1,6 @@
 """Read-only terminal execution leaves; wrappers confer no completion authority."""
-from scripts import sermon_accounting as accounting
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.observability import accounting
 
 
 def terminal_leaves(events, run_id, root_span_id):

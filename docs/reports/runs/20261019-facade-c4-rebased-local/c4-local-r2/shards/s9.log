@@ -1,0 +1,249 @@
+Estimating 210 unprofiled modules from measured per-case cost
+Shard 10/10: 620 tests from 365 modules
+...................................{"component": "api", "event": "realtime_caption_event", "eventType": "caption_final", "loggedAt": "2026-10-19T23:02:39.874015+00:00", "segmentId": "seg_1", "sessionId": "rt_XiCUtQ7cMFjz9tvf", "severity": "INFO"}
+.............................................................................................................................................................Digest: /var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/tmpevy0w10x/digests/20261007-e2e (4 files, 9 redactions)
+Digest: /var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/tmphd1idtyq/digests/20261007-e2e (4 files, 9 redactions)
+translated zh 1/1
+translated zh 1/1
+translated zh 1/1
+corrected 1/1
+corrected 1/1
+corrected 1/1
+....................................................................................................Prepared playback simulation: /var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/tmpfc7stca9/web/test-asr.generated.js
+Open apps/operator-web/index.html and click 模拟播放.
+discover	pass	0.0
+ko.text-qc.prefetch	pass	0.0
+ko.text-qc	pass	0.0
+ko.calibration.prefetch	pass	0.2
+ko.calibration	pass	0.4
+ko.text-waiver	pass	0.0
+{
+  "ko": {
+    "status": "text_waiver_issued",
+    "reason": null,
+    "problems": [],
+    "calibration": {
+      "overallDetectionRate": 1.0,
+      "cleanFalsePositiveRate": 0.0,
+      "trials": 90,
+      "detected": 90
+    }
+  }
+}
+discover	pass	0.0
+.{
+  "ko": [
+    "speech job is 'sermon-target-language-speech-job-v2'; the listening waiver needs the v3 job that binds a text waiver",
+    "ASR screening does not record its runtime settings; rescreen with screening v2"
+  ]
+}
+discover	pass	0.0
+... 102 lines omitted; 7 error-like lines, 7 kept below ...
+[line 46]     "reason": "text QC failed; repair the failed groups in a new candidate revision",
+[line 55]     "reason": "failed groups are unchanged; repair them in a new candidate revision",
+[line 66]     "reason": "text QC failed; repair the failed groups in a new candidate revision",
+[line 75]     "reason": "failed groups are unchanged; repair them in a new candidate revision",
+[line 84]     "reason": "failed groups are unchanged; repair them in a new candidate revision",
+[line 140] run_unittest_ci.py: error: QC stages require --qc-inputs binding the frozen source and locale policies
+[line 141] ..................s......................................................................s........................................s.....................................................SERMON_LOGGING_WRITE_FAILED errorType=AccountingWriteError
+... end of omitted section ...
+  "status": "brief_ready",
+  "reason": null,
+  "record": "/private/var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/tmpjgsmzd57/out/condensation-record-17af5c10d60c2500.json",
+  "revisionBrief": "/private/var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/tmpjgsmzd57/out/revision-brief-af62edeebd482a42.json",
+  "condensedGroupIds": [
+    "g2"
+  ],
+  "failedGroupIds": []
+}
+{
+  "status": "brief_ready",
+  "reason": null,
+  "record": "/private/var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/tmpjgsmzd57/out/condensation-record-17af5c10d60c2500.json",
+  "revisionBrief": "/private/var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/tmpjgsmzd57/out/revision-brief-af62edeebd482a42.json",
+  "condensedGroupIds": [
+    "g2"
+  ],
+  "failedGroupIds": []
+}
+{"receiptSha256": "d33e204fd86cf6a056a0a0c998c1bde89fb022271e27ceda9ebb288f2ebd3607", "flaggedUnits": ["u3", "u4"], "decisions": [["m001", "direct_quote"], ["m002", "direct_quote"]]}
+v4.1 package verified; model loaded and warmup finished.
+..........................................................................
+----------------------------------------------------------------------
+Ran 620 tests in 1302.435s
+
+OK (skipped=4)
+{
+  "apiKeyMaterialIncluded": false,
+  "commands": [
+    [
+      "python3",
+      "scripts/run_offline_archive_preflight.py",
+      "--live-url",
+      "<NO_CAPTION_YOUTUBE_LIVE_ARCHIVE_URL>",
+      "--no-discover",
+      "--lang",
+      "en-orig",
+      "--lang",
+      "en",
+      "--sermon-start",
+      "<SERMON_START_TIMECODE_IF_KNOWN>",
+      "--asr-model",
+      "gpt-4o-transcribe",
+      "--out",
+      "artifacts/evidence/no-caption-archive-preflight.json"
+    ],
+    [
+      "python3",
+      "scripts/prepare_live_link_playback.py",
+      "--live-url",
+      "<NO_CAPTION_YOUTUBE_LIVE_ARCHIVE_URL>",
+      "--no-discover",
+      "--lang",
+      "en-orig",
+      "--lang",
+      "en",
+      "--sermon-start",
+      "<SERMON_START_TIMECODE_IF_KNOWN>",
+      "--asr-model",
+      "gpt-4o-transcribe",
+      "--api-key-secret",
+      "<OPENAI_API_KEY_SECRET_RESOURCE>",
+      "--out-dir",
+      "artifacts/evidence/2026-06-28-no-caption-asr-route/artifacts",
+      "--web-out",
+      "artifacts/evidence/2026-06-28-no-caption-asr-route/web/playback-simulation.generated.js",
+      "--gcs-bucket",
+      "sermon-zh-artifacts-ai-for-god",
+      "--gcs-prefix",
+      "sundays/2026-06-28/runs/no-caption-asr-route",
+      "--gcs-dry-run"
+    ],
+    [
+      "python3",
+      "scripts/translate_playback_with_openai.py",
+      "--input",
+      "artifacts/evidence/2026-06-28-no-caption-asr-route/web/playback-simulation.generated.js",
+      "--model",
+      "gpt-5.4-mini",
+      "--api-key-secret",
+      "<OPENAI_API_KEY_SECRET_RESOURCE>",
+      "--out",
+      "artifacts/evidence/2026-06-28-no-caption-asr-route/web/playback-simulation.generated.js",
+      "--out-dir",
+      "artifacts/evidence/2026-06-28-no-caption-asr-route/model-output"
+    ],
+    [
+      "python3",
+      "scripts/export_playback_captions.py",
+      "--input",
+      "artifacts/evidence/2026-06-28-no-caption-asr-route/web/playback-simulation.generated.js",
+      "--out-dir",
+      "artifacts/evidence/2026-06-28-no-caption-asr-route/artifacts",
+      "--stem",
+      "sermon.zh.live-aligned",
+      "--manifest",
+      "artifacts/evidence/2026-06-28-no-caption-asr-route/artifacts/cloud-manifest.json",
+      "--gcs-bucket",
+      "sermon-zh-artifacts-ai-for-god",
+      "--gcs-prefix",
+      "sundays/2026-06-28/runs/no-caption-asr-route",
+      "--gcs-dry-run"
+    ],
+    [
+      "python3",
+      "scripts/validate_offline_chain.py",
+      "--report",
+      "artifacts/evidence/2026-06-28-no-caption-asr-route/artifacts/report.json",
+      "--playback-js",
+      "artifacts/evidence/2026-06-28-no-caption-asr-route/web/playback-simulation.generated.js",
+      "--zh-vtt",
+      "artifacts/evidence/2026-06-28-no-caption-asr-route/artifacts/sermon.zh.live-aligned.vtt",
+      "--zh-srt",
+      "artifacts/evidence/2026-06-28-no-caption-asr-route/artifacts/sermon.zh.live-aligned.srt",
+      "--manifest",
+      "artifacts/evidence/2026-06-28-no-caption-asr-route/artifacts/cloud-manifest.json",
+      "--expected-asr-model",
+      "gpt-4o-transcribe",
+      "--expected-translation-model",
+      "gpt-5.4-mini",
+      "--out",
+      "artifacts/evidence/no-caption-offline-chain-validation.json"
+    ],
+    [
+      "python3",
+      "tools/ops/validate_production_readiness.py",
+      "--offline-report",
+      "artifacts/evidence/2026-06-28-no-caption-asr-route/artifacts/report.json",
+      "--playback-js",
+      "artifacts/evidence/2026-06-28-no-caption-asr-route/web/playback-simulation.generated.js",
+      "--zh-vtt",
+      "artifacts/evidence/2026-06-28-no-caption-asr-route/artifacts/sermon.zh.live-aligned.vtt",
+      "--zh-srt",
+      "artifacts/evidence/2026-06-28-no-caption-asr-route/artifacts/sermon.zh.live-aligned.srt",
+      "--sunday-manifest",
+      "artifacts/evidence/2026-06-28-no-caption-asr-route/artifacts/cloud-manifest.json",
+      "--allow-missing-realtime",
+      "--out",
+      "artifacts/evidence/asr-route-readiness.json"
+    ]
+  ],
+  "passCriteria": [
+    "run_offline_archive_preflight.py reports decision=use_asr_fallback.",
+    "prepare_live_link_playback.py runs offline_live_sermon_subtitles.py, builds playback JS, and writes a cloud-manifest.json dry-run manifest.",
+    "Prepared offline report has caption_source.kind=openai_asr.",
+    "validate_offline_chain.py confirms no requested English caption track exists before ASR fallback.",
+    "validate_offline_chain.py confirms the openai_asr output source_file is an extracted audio artifact.",
+    "ASR model is gpt-4o-transcribe.",
+    "Chinese translation model is gpt-5.4-mini.",
+    "validate_offline_chain.py status is ok and not_realtime_chain passes.",
+    "validate_production_readiness.py output records offlineRoute.decision=use_asr_fallback."
+  ],
+  "requiredModels": {
+    "forbiddenOfflineModel": "gpt-realtime-translate",
+    "offlineAsr": "gpt-4o-transcribe",
+    "offlineTranslation": "gpt-5.4-mini"
+  },
+  "requiredSource": {
+    "authorizationRequirement": "Use only a source we are authorized to process.",
+    "captionRequirement": "No requested English caption track is available.",
+    "kind": "youtube_live_archive",
+    "placeholderUrl": "<NO_CAPTION_YOUTUBE_LIVE_ARCHIVE_URL>"
+  },
+  "runnerCommand": [
+    "python3",
+    "scripts/run_no_caption_archive_asr_route.py",
+    "--live-url",
+    "<NO_CAPTION_YOUTUBE_LIVE_ARCHIVE_URL>",
+    "--api-key-secret",
+    "<OPENAI_API_KEY_SECRET_RESOURCE>",
+    "--sunday",
+    "2026-06-28",
+    "--session-id",
+    "no-caption-asr-route",
+    "--sermon-start",
+    "<SERMON_START_TIMECODE_IF_KNOWN>",
+    "--asr-model",
+    "gpt-4o-transcribe",
+    "--translation-model",
+    "gpt-5.4-mini",
+    "--out",
+    "artifacts/evidence/no-caption-asr-route-run.json"
+  ],
+  "schemaVersion": 1,
+  "secretResourceNamesIncluded": false,
+  "sessionId": "no-caption-asr-route",
+  "status": "needs_real_no_caption_archive",
+  "sunday": "2026-06-28"
+}
+ 230.63s     2  test_sermon_mock_tts_dag
+ 166.48s     7  test_machine_quality_waiver
+ 137.53s     2  test_layer2_large_fan_in
+  81.45s     9  test_sermon_delivery_intent_binding
+  62.59s     1  test_run_machine_qc_audio_test
+  54.95s     4  test_sermon_pilot_evidence
+  36.41s     2  test_canonical_layer2_cache_recovery
+  30.15s     4  test_sermon_diagnostic_preview_worker
+  29.83s     2  test_sermon_historical_layer2
+  29.33s     2  test_sermon_local_business_callbacks
+exit 0

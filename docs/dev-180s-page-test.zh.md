@@ -9,7 +9,7 @@
 ```sh
 .venv/bin/python tools/development/verify_dev_180s_page_test.py --help
 .venv/bin/python -m scripts.build_dev_180s_simulated_inputs --help
-.venv/bin/python -m scripts.prepare_dev_simulated_publication --help
+.venv/bin/python tools/ops/prepare_dev_simulated_publication.py --help
 ```
 
 `verify_dev_180s_page_test` 对固定媒体 SHA、时长、完整解码及 CLI 正负准入进行只读验证，输出使用新的目录。`build_dev_180s_simulated_inputs` 从 `artifacts/dev-full-rerun-20261001` 提取既有单元、译文与音频，构造醒目标记的独立模拟包并执行正常 delivery prepare。其 `--out` 应使用独立的 artifacts 子目录，不得指向正式 run 或已需保留的产物。

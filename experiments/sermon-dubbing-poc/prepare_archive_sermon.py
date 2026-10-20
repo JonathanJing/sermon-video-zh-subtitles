@@ -126,7 +126,8 @@ def sentence_segments(rows):
 
 
 def plan(run, source, title, speaker, python=sys.executable):
-    from scripts.run_post_live_subtitle_generation import build_reading_pdf_command, build_sermon_interpretation_command
+    from scripts import tongxing_host  # noqa: F401  binds the production package ports
+    from tongxing_production.workflows.dual_pdf.post_live import build_reading_pdf_command, build_sermon_interpretation_command
     pipeline = run / "pipeline"
     args = argparse.Namespace(sunday=source["week"], sermon_title=title, speaker=speaker, start_time="00:00:00",
         end_time=timecode(source["durationSeconds"]), interpretation_model="gpt-6-astra", interpretation_reasoning_effort="medium")
@@ -181,14 +182,15 @@ def validate_caption_receipt(run, source):
 
 
 def translate(run):
-    from scripts.sermon_accounting import accounting_session
+    from scripts import tongxing_host  # noqa: F401  binds the production package ports
+    from tongxing_production.observability.accounting import accounting_session
     run = Path(run).resolve()
     with accounting_session(run / "pipeline/accounting", "archive_caption_translate", evidence_directory=run / "pipeline"):
         return _translate(run)
 
 
 def _translate(run):
-    from scripts.sermon_pipeline import translate_chinese, load_glossary, load_env
+    from tongxing_production.workflows.dual_pdf.pipeline import translate_chinese, load_glossary, load_env
     run = Path(run).resolve()
     source = read(run / CONTRACT)
     segments = validate(source)
@@ -245,7 +247,8 @@ def reviewed_inputs(run, media_probe=probe):
 
 
 def seal_reviewed(run, media_probe=probe, *, runner=None):
-    from scripts.sermon_accounting import accounting_session
+    from scripts import tongxing_host  # noqa: F401  binds the production package ports
+    from tongxing_production.observability.accounting import accounting_session
     run = Path(run).resolve()
     with accounting_session(run / "accounting", "archive_caption_handoff", evidence_directory=run):
         return _seal_reviewed(run, media_probe=media_probe, runner=runner)
@@ -269,7 +272,7 @@ def _seal_reviewed(run, media_probe=probe, *, runner=None):
             command[command.index("--out") + 1] = str(stage / "sermon_zh_en_reading.pdf")
             frozen = {key: sha256(path) for key, path in paths.items()}
             runner(command, check=True)
-            runner([sys.executable, str(ROOT / "scripts/render_sermon_interpretation_pdf.py"), "--input", str(paths["outline"]),
+            runner([sys.executable, str(ROOT / "tools/ops/run.py"), "workflows.dual_pdf.interpretation_pdf", "--input", str(paths["outline"]),
                 "--out", str(stage / "sermon_interpretation_zh.pdf"), "--qa-out", str(stage / "sermon_interpretation_zh.qa.json")], check=True)
             require(frozen == {key: sha256(path) for key, path in reviewed_inputs(run, media_probe)[1].items()}, "Text changed during PDF rendering")
             require(all((stage / name).is_file() and (stage / name).stat().st_size for name in files.values())

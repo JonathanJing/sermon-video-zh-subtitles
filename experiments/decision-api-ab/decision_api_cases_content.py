@@ -11,11 +11,11 @@ import json
 from pathlib import Path
 import re
 
-from scripts import judge_english_source_for_translation as english
-from scripts import run_target_language_models as translation
+from tongxing_production.text import models as translation
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.source import english_source_judge as english
 from tongxing_production.source import sentence_interpretation as identity
-from scripts import target_language_policy as policy_tools
+from tongxing_production.text import policy as policy_tools
 
 LAST_MISSING: list[dict] = []
 CONTENT_ADAPTERS = {"english_source_judge_v1", "translation_independent_review_v1"}
@@ -100,7 +100,7 @@ def _english_cases(root: Path, maximum: int) -> list[dict]:
         try:
             saved = _load(path)
             request, response = saved["request"], saved["response"]
-            from scripts.run_sentence_interpretation_models import RUN_SCHEMA
+            from tongxing_production.source.sentence_interpretation_models import RUN_SCHEMA
             if request.get("schemaVersion") != RUN_SCHEMA:
                 raise ValueError("original_request_schema_mismatch")
             if saved.get("requestSha256") != _sha(request) or saved.get("responseSha256") != _sha(response):
@@ -235,7 +235,7 @@ def _translation_cases(root: Path, maximum: int) -> list[dict]:
             if saved.get("requestId") != response.get("id"):
                 raise ValueError("original_response_id_mismatch")
             if str(response.get("schemaVersion", "")).startswith("codex-cli-layer2-response-"):
-                from scripts.codex_layer2_transport import CodexLayer2Transport
+                from tongxing_production.compute.transports.codex_layer2 import CodexLayer2Transport
                 content = CodexLayer2Transport.completed_content(response, payload["model"], "reviewer")
                 original_backend = "codex-cli"
             else:

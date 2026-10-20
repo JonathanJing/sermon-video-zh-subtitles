@@ -21,12 +21,12 @@ import wave
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.text import controller
 from tongxing_production.compute import qc_audio_transports as transports
-from scripts import sermon_provider_limits as limits
+from tongxing_production.compute import provider_limits as limits
 from tongxing_production.source import sentence_interpretation as contract
 from tongxing_production.source import budget as source_budget
-from scripts import sermon_source_text_review as source_review
-from scripts import source_meaning_machine_adjudication as machine
-from scripts import target_language_policy as policies
+from tongxing_production.source import text_review as source_review
+from tongxing_production.review import source_meaning as machine
+from tongxing_production.text import policy as policies
 
 WINDOW_START = 63.32
 MEDIA_SECONDS = 20
@@ -744,7 +744,7 @@ class SourceMeaningAdjudicationTests(unittest.TestCase):
                                         session_verifier=lambda: dict(session, secret='x'))
         self.assertEqual(listener.identity()['host'], 'spark_exclusive_session')
         # The weights load only once a live Spark exclusive session owns this process.
-        from scripts.spark_exclusive_session import SessionError
+        from tongxing_production.compute.spark_exclusive_session import SessionError
 
         def refused():
             raise SessionError('model_session_requires_bound_live_parent')
@@ -1110,7 +1110,7 @@ class SourceMeaningAdjudicationTests(unittest.TestCase):
         # A started marker the ledger holds no response for may come from a run that sent the request directly,
         # before this ledger existed: its outcome is unknown, so it is refused rather than sent again, whatever
         # the cap allows, for Sol and the listener alike. Nothing is numbered or reserved and the marker stays.
-        from scripts import english_source_judge_cache as judge_cache
+        from tongxing_production.source import english_source_judge_cache as judge_cache
         before = json.loads((self.out / machine.BUDGET_DIR / 'source-budget.json').read_text(encoding='utf-8'))
         with mock.patch.dict(os.environ, route):
             legacy = machine.SolAdjudicator(api_key='k', cache=cache, budget=budget, max_calls=5)

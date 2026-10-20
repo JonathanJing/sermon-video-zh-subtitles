@@ -4,7 +4,7 @@ import tempfile
 import unittest
 
 from tongxing_production.compute import legacy_openai  # C4: the remote-call group lives here
-from scripts import run_sentence_interpretation_models as runner
+from tongxing_production.source import sentence_interpretation_models as runner
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.source import sentence_interpretation as contract
 
@@ -79,7 +79,7 @@ class SentenceInterpretationModelRunnerTests(unittest.TestCase):
 
     def test_real_run_binds_worker_outcomes_and_recovers_before_cache_write(self):
         from unittest.mock import patch
-        from scripts import sermon_pipeline
+        from tongxing_production.workflows.dual_pdf import pipeline as sermon_pipeline
         out = self.root / "durable"
         def http(_url, key, payload, **kwargs):
             return self.fake_call(key, payload)

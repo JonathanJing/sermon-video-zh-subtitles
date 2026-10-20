@@ -285,7 +285,7 @@ def test_current_scoring_hash_covers_every_new_local_dependency(tmp_path):
     from pathlib import Path
     import shutil
     from tongxing_production.review import waiver
-    from scripts import sermon_source_producer_compatibility as compatibility
+    from tongxing_production.source import producer_compatibility as compatibility
     root = Path(__file__).resolve().parents[1]
     for name in subject.SCORING_PHYSICAL_FILES:
         target = tmp_path / name

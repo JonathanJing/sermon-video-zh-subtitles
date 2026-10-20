@@ -10,8 +10,9 @@ from unittest.mock import patch
 import urllib.error
 
 from tongxing_production.compute import legacy_openai  # C4: the remote-call group lives here
-from scripts import sermon_accounting as a
-from scripts import sermon_pipeline as pipeline
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.observability import accounting as a
+from tongxing_production.workflows.dual_pdf import pipeline as pipeline
 
 
 def response(ident="one", **extra):
@@ -86,7 +87,7 @@ class AccountingTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as t:
             with a.accounting_session(t,"parent"):
                 with a.stage("child_stage",billing="orchestrator"):
-                    subprocess.run([sys.executable,"-c", "from scripts.sermon_accounting import *; "
+                    subprocess.run([sys.executable,"-c", "from scripts import tongxing_host; from tongxing_production.observability.accounting import *; "
                         +"record_api_attempt('gpt-6-astra', {'usage': {'input_tokens': 7, 'output_tokens': 2}}, .1)"],check=True)
                 with a.stage("cache",cache_hit=True):pass
             d=a.summarize(t)
@@ -208,7 +209,7 @@ class AccountingTests(unittest.TestCase):
 
     def test_hard_interruption_preserves_potential_billable_attempt(self):
         with tempfile.TemporaryDirectory() as t:
-            code = "import os; from scripts.sermon_accounting import *\nwith accounting_session(" + repr(t) + ", 'killed'):\n record_api_started('gpt-6-astra')\n os._exit(9)\n"
+            code = "import os; from scripts import tongxing_host; from tongxing_production.observability.accounting import *\nwith accounting_session(" + repr(t) + ", 'killed'):\n record_api_started('gpt-6-astra')\n os._exit(9)\n"
             done = subprocess.run([sys.executable, "-c", code])
             self.assertEqual(done.returncode, 9)
             d = a.summarize(t)
@@ -262,7 +263,7 @@ class AccountingTests(unittest.TestCase):
 
     def test_concurrent_processes_keep_all_runs_and_current_summary(self):
         with tempfile.TemporaryDirectory() as t:
-            code = "from scripts.sermon_accounting import *\nwith accounting_session(" + repr(t) + ", 'worker'):\n record_api_attempt('gpt-6-astra', {}, .1)\n"
+            code = "from scripts import tongxing_host; from tongxing_production.observability.accounting import *\nwith accounting_session(" + repr(t) + ", 'worker'):\n record_api_attempt('gpt-6-astra', {}, .1)\n"
             children = [subprocess.Popen([sys.executable, "-c", code]) for _ in range(5)]
             self.assertEqual([p.wait() for p in children], [0]*5)
             saved = json.loads((Path(t)/"summary.json").read_text())

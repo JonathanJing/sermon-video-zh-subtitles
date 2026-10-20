@@ -13,16 +13,21 @@ import unittest
 from unittest.mock import patch
 
 from scripts import tongxing_host as host
-from scripts import bounded_audio_cpu, four_layer_measure, ko_spoken_numerals, production_spark_admission
+from scripts import ko_spoken_numerals
+from tongxing_production.compute import bounded_audio_cpu
+from tongxing_production.compute import spark_admission as production_spark_admission
+from tongxing_production.observability import measure as four_layer_measure
 from tongxing_production.review import release_basis as machine_basis
 from tongxing_production.review import waiver
 from tongxing_production.audio import renderer
 from scripts import render_multilingual_voice_demos as demos
 from tongxing_production.audio import human_review as audio_review
 from tongxing_production.audio import screening
-from scripts import sermon_accounting, sermon_local_model_observation
+from scripts import sermon_local_model_observation
+from tongxing_production.observability import accounting as sermon_accounting
 from tongxing_production.orchestration import jobs as sermon_workflow_jobs
-from scripts import spark_tts_replica_pool, spark_tts_window_scheduler
+from tongxing_production.compute import spark_tts_replica_pool
+from tongxing_production.compute import spark_tts_window_scheduler
 from tongxing_production.review import audio_qc as target_audio_auto_qc
 from tongxing_production.audio import dev_profile as dev_audio_test_profile
 from tongxing_production.audio import predicted_schedule as predicted

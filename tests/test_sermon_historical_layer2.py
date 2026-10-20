@@ -7,10 +7,16 @@ from unittest.mock import Mock, patch
 
 from scripts import sermon_historical_layer2 as h, sermon_strict_layer2 as strict
 from scripts import run_bounded_diagnostic as bounded
-from scripts import sermon_strict_candidate_bridge as bridge, sermon_review_contracts as c
-from scripts import sermon_review_budget as budget, sermon_diagnostic_provider as provider
+from scripts import sermon_strict_candidate_bridge as bridge
+from tongxing_production.review import contracts as c
+from scripts import sermon_diagnostic_provider as provider
+from tongxing_production.review import review_budget as budget
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from scripts import sermon_diagnostic_attempts as attempts, sermon_accounting as accounting, sermon_log_profile as profile
-from scripts import target_language_policy as policies, produce_target_language_candidate as producer
+from tongxing_production.observability import accounting
+from tongxing_production.observability import profile
+from tongxing_production.text import policy as policies
+from tongxing_production.text import candidate as producer
 from tests import test_sermon_diagnostic_provider as fixtures
 
 
@@ -61,8 +67,8 @@ def review_group(policy,english_units,group):
             draft['reviewContract']['rubricCanonicalJsonSha256']=c.canonical_sha256(rubric)
             policy=policies.freeze_strict_policy(draft,rubric)
             self.f.f.args[2:]=[strict.material_bytes(policy),strict.material_bytes(rubric)]
-            from scripts import run_target_language_models as models
-            from scripts import target_language_rule_preflight as rule_preflight
+            from tongxing_production.text import models
+            from tongxing_production.text import rule_preflight
             source, anchor = c.decode_json(self.f.f.args[0]), c.decode_json(self.f.f.args[1])
             request = producer.prepare_request(source, anchor, policy, strict_rubric=rubric)
             receipt = rule_preflight.preflight(request, policy, plugin, [self.group])

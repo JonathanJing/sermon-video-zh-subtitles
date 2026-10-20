@@ -7,9 +7,10 @@ import unittest
 from urllib.error import HTTPError
 from urllib.parse import urlparse
 
-from scripts import assemble_multilingual_hosting as hosting
-from scripts import deploy_multilingual_hosting as deployment
-from scripts import verify_multilingual_hosting as verification
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.adapters.legacy import assemble_multilingual_hosting as hosting
+from tongxing_production.adapters.legacy import deploy_multilingual_hosting as deployment
+from tongxing_production.adapters.legacy import verify_multilingual_hosting as verification
 from tests.test_assemble_multilingual_hosting import fixture, write
 
 

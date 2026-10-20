@@ -32,7 +32,8 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from scripts import codex_layer2_diagnostic as diagnostic  # noqa: E402
-from scripts import scripture_adjudication as adjudication  # noqa: E402
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.review import scripture as adjudication  # noqa: E402
 from scripts.language_review_plugins import diagnostic_admitted_quotes as admitted  # noqa: E402
 
 TARGET_LOCALE = 'zh-Hans'
@@ -98,7 +99,7 @@ def run_models(args: argparse.Namespace, fixture: Path, out: Path) -> dict[str, 
              f'--layer2-out {rel(layer2)} --media {args.media} --out {rel(audio)} '
              f'--remote-stage {args.remote_stage} --spark-session-id {args.spark_session_id} '
              f'--spark-session-owner {args.spark_session_owner}')
-    begin = subprocess.run([str(python), 'scripts/spark_exclusive_session.py', 'begin',
+    begin = subprocess.run([str(python), 'tools/ops/run.py', 'compute.spark_exclusive_session', 'begin',
                             '--session-id', args.spark_session_id, '--owner', args.spark_session_owner,
                             '--minimum-available-gib', '64', '--preempt', '--allow-interrupted-restart'],
                            cwd=ROOT, capture_output=True, text=True)

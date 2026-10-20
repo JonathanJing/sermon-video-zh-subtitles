@@ -7,9 +7,10 @@ from pathlib import Path
 from unittest.mock import patch
 import sys
 
-from scripts import produce_target_language_candidate as producer
-from scripts import run_target_language_models as subject
-from scripts import sermon_accounting as accounting
+from tongxing_production.text import candidate as producer
+from tongxing_production.text import models as subject
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.observability import accounting
 from tests import test_produce_target_language_candidate as fixture_module
 
 

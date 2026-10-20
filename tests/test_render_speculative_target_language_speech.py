@@ -13,7 +13,7 @@ from unittest.mock import patch
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.audio import renderer as formal
 from tongxing_production.audio import speculative as subject
-from scripts import sermon_accounting as ledger_accounting
+from tongxing_production.observability import accounting as ledger_accounting
 from tests import test_prepare_target_language_speech_job as speech_fixture
 from tests import test_render_formal_target_language_speech as formal_fixture
 
@@ -246,7 +246,7 @@ class SpeculativeRenderTests(unittest.TestCase):
         self.assertEqual(len(FakeSynth.calls), 1)
 
     def test_missing_predecessors_remain_unknown_and_explicit_root_is_known(self):
-        from scripts import sermon_log_profile as profile
+        from tongxing_production.observability import profile
         logs = self.fixture.root / 'predecessor-accounting'
         with profile.session(logs,'legacy-render',work_kind='engineering',evidence_mode='synthetic') as legacy:
             self.render(group_ids=['g1'])
@@ -608,7 +608,7 @@ class DiagnosticPreviewTests(unittest.TestCase):
 
     def test_cold_and_cache_accounting_contains_real_unit_dag_and_unknown_tokens(self):
         import json
-        from scripts import sermon_log_profile as profile
+        from tongxing_production.observability import profile
         log_root = self.f.root / 'preview-accounting'
         with profile.session(log_root, 'preview-test', work_kind='production', evidence_mode='synthetic') as cold:
             self.render()

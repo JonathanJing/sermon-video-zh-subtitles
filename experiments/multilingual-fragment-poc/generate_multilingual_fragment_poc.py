@@ -77,7 +77,8 @@ def response_text(data: dict[str, Any]) -> str:
 
 def request_json(api_key: str, model: str, system: str, user: object) -> tuple[str, dict[str, Any]]:
     if model == 'gpt-6.1-sol':
-        from scripts.sermon_codex_transport import chat_json
+        from scripts import tongxing_host  # noqa: F401  binds the production package ports
+        from tongxing_production.compute.transports.codex_cli import chat_json
         response = chat_json('', {'model': model, 'reasoning_effort': 'high', 'service_tier': 'fast',
             'response_format': {'type': 'json_object'}, 'messages': [
                 {'role': 'system', 'content': system},

@@ -115,7 +115,7 @@ def check_launcher_binding(plan_dir, environment, env_file):
         qc_count = l2_count = 0
         for stage in stages:
             if stage['stage'] == 'layer2':
-                from scripts import canonical_layer2_budget as l2
+                from tongxing_production.text import budget as l2
                 from scripts import tongxing_host  # noqa: F401  binds the production package ports
                 from tongxing_production.text import controller
                 config = controller.load_configuration(Path(stage['execution']))
@@ -225,7 +225,8 @@ def inspect_source_root(root, *, expected=None, reuse_roots=None, required=False
 
 
 def inspect_layer2_root(root, authority, *, locale_scope, reuse_roots=(), as_reuse_source=False):
-    from scripts import sermon_review_budget as ledger
+    from scripts import tongxing_host  # noqa: F401  binds the production package ports
+    from tongxing_production.review import review_budget as ledger
     from scripts import tongxing_host  # noqa: F401  binds the production package ports
     from tongxing_production.orchestration import jobs
     root = Path(root).resolve()
@@ -309,7 +310,7 @@ def check_budget(plan_dir: Path):
     from scripts import tongxing_host  # noqa: F401  binds the production package ports
     from tongxing_production.review import qc_budget_authorization as qc_auth
     from scripts import plan_run_budgets as planner
-    from scripts import canonical_layer2_budget as l2_budget
+    from tongxing_production.text import budget as l2_budget
     from scripts import tongxing_host  # noqa: F401  binds the production package ports
     from tongxing_production.text import controller
     problems = []
@@ -434,7 +435,8 @@ def ssh(command: str, host: str) -> subprocess.CompletedProcess:
 
 def check_spark(host, spark_stages, code_dir):
     if spark_stages:
-        from scripts.spark_exclusive_session import DEFAULT_HOST
+        from scripts import tongxing_host  # noqa: F401  binds the production package ports
+        from tongxing_production.compute.spark_exclusive_session import DEFAULT_HOST
         session_host = os.environ.get('SPARK_EXCLUSIVE_HOST', DEFAULT_HOST)
         if host != session_host:
             return result('spark', 'fail', host=host,
@@ -447,7 +449,8 @@ def check_spark(host, spark_stages, code_dir):
         if not (os.environ.get("SPARK_EXCLUSIVE_SESSION_ID") and os.environ.get("SPARK_EXCLUSIVE_SESSION_OWNER")):
             problems.append("Spark stages need SPARK_EXCLUSIVE_SESSION_ID/OWNER of a begun session")
         else:
-            from scripts.spark_exclusive_session import Client
+            from scripts import tongxing_host  # noqa: F401  binds the production package ports
+            from tongxing_production.compute.spark_exclusive_session import Client
             try:
                 Client.from_environment().require_ready()
                 evidence["session"] = "ready"

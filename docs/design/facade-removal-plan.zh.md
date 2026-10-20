@@ -310,6 +310,29 @@
 - **C8 dual_pdf（删 6，G1 1）。** 删 `post_live_run_status`、`render_mobile_pdf_from_srt`、`render_sermon_interpretation_pdf`、`run_codex_local_sermon_production`、`run_post_live_subtitle_generation`、`run_post_live_timeline_job`。只改调用方：`sermon_pipeline`。调用方：`backend/app.py` 拼的 `run_post_live_subtitle_generation.py`，`scripts/sermon_production_supervisor.py` 拼的它与 `run_post_live_timeline_job.py`；`build_post_live_timeline.py`、`build_multistage_post_live_timeline.py` 的提示文字；`post_live.py` 的 `SERMON_PIPELINE_SCRIPT`、`MOBILE_PDF_SCRIPT` 和 `render_sermon_interpretation_pdf.py` 命令；`run_saturday_harness.py`；两个 sermon-dubbing-poc 实验脚本；`python-tests.yml` 四条；backlog 链接。`Dockerfile` 现在只复制 `tools/ops/sermon_unified_preflight.py`，要同批加上 `COPY tools/ops/run.py`，否则镜像里的 backend 找不到入口。Cloud Run 的重建与部署是另一步，由用户决定；已部署的镜像带着旧门面，不受影响。dual_pdf 身份哈希的是 `*_IMPLEMENTATION`，改 argv 不改变它。风险最高，放最后。
 - **G1 窗口（并入 §4 第 4 条的 D）。** 上面 40 个只改了闭包外调用方的门面，到窗口时只剩闭包内的引用：`tongxing_host.py` 的 `from scripts import …` 包装与 `_module('scripts.…')` 端口、`renderer.py` 的 `clip_timeline_map`、`auto_qc_text_common.py`（要冻结新 policy）。它们与 23 个必须保留门面、三个 `worker_command` 以及 `clip_e2e_spark.py` 的另外三条容器命令一起改、一起删，只重新校准一次。
 
+## 7 收尾状态（2026-10-19，`dev@25cd754f`）
+
+C1–C8 与 E 批合并后（C1 #1155、C2 #1165、C3 #1160、C4 #1170、C5 #1157、C6 #1167、C7 #1177、C8 #1175、E #1179），附录 A 在 `dev@25cd754f` 上只剩 **42** 个门面，全部为“改调用方后”，没有现在可删的。（附录 A 原先把 C1 已删的路径门面 `field_venue_independent_truth` 仍报为现在可删；脚本已改为只报仍存在的路径门面。）剩下的门面各自至少有一个调用方受冻结身份保护，不能在布局迁移的普通批次里改。按阻塞原因分四组，有的门面同时属于几组：
+
+| 组 | 门面数 | 阻塞的调用方 | 什么时候能删 |
+|---|---|---|---|
+| (a) 宿主 | 39 | `scripts/tongxing_host.py`：`EAGER_PRODUCER_IMPORTS`、`_module('scripts.…')` 端口和 `from scripts import …` 包装。宿主文件的字节在 W、计分、语速三个闭包里 | 下一次闭包窗口：改宿主导入、删门面、一次重新校准；开窗由用户决定（同 G1、D 窗口） |
+| (b) 冻结插件 | 3 | `scripts/language_review_plugins/` 下被 policy 冻结的插件（`auto_qc_text_common`、`diagnostic_admitted_quotes`、`diagnostic_pinned_quotes` 等）按旧名导入 | 重新冻结用到这些插件的 policy（插件实现哈希变化），旧 policy 的运行留在旧 revision |
+| (c) dual_pdf | 2 | dual_pdf 内容哈希的文件（`workflows/dual_pdf/pipeline.py`、`post_live.py`、`compute/legacy_openai.py`、`scripts/generate_notes_with_openai.py`） | dual_pdf 实现身份换代时一起改 |
+| (d) L1 兼容 | 5 | 被 L1 兼容代钉住字节的 `scripts/sermon_cached_fresh_diagnostic_source.py`（和 `scripts/sermon_fresh_source_evidence.py` 的 argv） | 下一个 L1 producer compatibility 代（v12 之后）在同一批改这些文件 |
+
+逐个门面：
+
+- **只属 (a)（32）：** `api_cli_outcomes`、`bounded_audio_cpu`、`build_full_video_app_release`（另有 `tongxing-ios.yml` 的 `shared_contracts`，随门面一起删）、`canonical_pipeline_definition`、`claude_layer2_transport`、`codex_layer2_transport`、`english_source_judge_cache`、`layer2_api_concurrency`、`layer2_human_ruling`、`machine_audio_waiver_acceptance`、`openai_layer2_transport`、`prepare_target_language_speech_job`、`production_concurrency_profile`、`production_spark_admission`、`run_sentence_interpretation_models`、`sermon_accounting`（另有 `pipeline_compatibility_gate.BACKEND_ONLY`）、`sermon_cache_observation`、`sermon_clock_evidence`、`sermon_codex_transport`、`sermon_log_profile`、`sermon_provider_http`、`sermon_provider_limits`、`sermon_review_budget`、`sermon_source_text_review`、`sermon_unified_reviews`、`sermon_workflow_evidence`、`source_meaning_machine_adjudication`、`spark_exclusive_session`（另有 `scripts/clip_e2e_spark.py` 与 Spark 诊断）、`spark_tts_replica_pool`、`spark_tts_window_scheduler`、`stage_formal_multilingual_dev`（另有 `shared_contracts` 与 `pipeline_compatibility_gate.PRODUCERS`）、`study_artifacts`（另有 `scripts/experiments/run_diagnostic_study.py` 与冻结计划 `config/decision-api-weekly-ab-plan-v1.json`）。
+- **(a)+(b)（2）：** `produce_target_language_candidate`、`target_language_policy`。
+- **(a)+(c)（1）：** `sermon_pipeline`。
+- **(a)+(d)（4）：** `build_english_source_package`、`four_layer_measure`、`sermon_public_snapshot`、`sermon_review_contracts`。
+- **只属 (b)（1）：** `scripture_adjudication`。
+- **只属 (c)（1）：** `render_sermon_interpretation_pdf`。
+- **只属 (d)（1）：** `mfa_backend`。
+
+做这几组时的两点经验：附录 A 不统计把 `scripts/` 放进 `sys.path` 的测试里的裸 `from <门面> import`，删除前要另外 grep；删门面前要读门面自身的导入，门面可能顺带绑定了别的宿主（E 批的 `sermon_unified_capabilities` 绑定了编排 Backend，`tools/ops/run.py` 因此为 `orchestration.*`、`workflows.prepared.*` 增加了这项绑定）。
+
 ## 附录 A 调用方普查脚本
 
 脚本不作为仓库文件提交：`tools/` 与 `scripts/` 都在统一 CLI 执行准入闭包里（§2），新增文件会改变该身份。先从本文抽到临时目录，再在仓库根目录用 worktree 的 `.venv` 运行（只读；会导入 `scripts.tongxing_host` 和四个闭包模块以读出物理闭包，不调用模型或远端）。`--table` 打印上表与分类合计，`--json` 打印每个门面的全部调用方文件。
@@ -355,7 +378,7 @@ def git(*a):
 
 tracked = [p for p in git('ls-files').splitlines() if pathlib.Path(p).is_file()]
 facades = {p for p in tracked if p.startswith('scripts/') and p.endswith('.py')
-           and FACADE.search(pathlib.Path(p).read_text())} | set(PATH_FACADES)
+           and FACADE.search(pathlib.Path(p).read_text())} | {p for p in PATH_FACADES if p in tracked}
 stem = {f[len('scripts/'):-3]: f for f in facades}
 
 

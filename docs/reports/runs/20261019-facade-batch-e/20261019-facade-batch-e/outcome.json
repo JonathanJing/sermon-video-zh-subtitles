@@ -1,0 +1,19 @@
+{
+  "status": "pass",
+  "exitCode": 0,
+  "deliveryType": "test",
+  "purpose": "facade batch E (#1179): delete 10 unblocked scripts/ facades; local pytest on changed tests",
+  "startedAt": "2026-10-19T23:20:00Z",
+  "endedAt": "2026-10-19T23:40:00Z",
+  "code": "claude/facade-batch-e on dev 1e30c921",
+  "results": {
+    "passed": 291,
+    "skipped": 1,
+    "failed": 0,
+    "chunks": 6
+  },
+  "l2CodeIdentity": "5017a9f1ee44d69f06e6a482a921045b3d1eba74d24c4dcf4632faddcbf81e9d",
+  "firstRunFailures": "10 (host bound after package import in 2 tests; capabilities needed the orchestration Backend) fixed before the final run",
+  "modelCalls": 0,
+  "humanApproval": false
+}

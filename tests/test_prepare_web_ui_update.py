@@ -4,7 +4,8 @@ import subprocess
 
 import pytest
 
-from scripts import prepare_dev_simulated_publication as staging
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.delivery import baseline as staging
 from tools.ops import prepare_dev_web_ui_update as ui
 
 

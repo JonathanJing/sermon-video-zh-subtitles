@@ -9,12 +9,12 @@ from unittest.mock import patch
 import unittest
 
 from scripts import sermon_strict_gate_admission as admission
-from scripts import sermon_review_budget as budget
-from scripts import sermon_review_contracts as c
+from tongxing_production.review import review_budget as budget
+from tongxing_production.review import contracts as c
 from scripts import sermon_strict_layer2 as strict
 from scripts import sermon_strict_budget_adapter as adapter
 from scripts import sermon_strict_candidate_bridge as bridge
-from scripts import review_target_language_candidate as human
+from tongxing_production.text import human_review as human
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.orchestration import jobs
 from tests import test_sermon_strict_layer2 as fixtures
@@ -138,7 +138,7 @@ class AdmissionTests(unittest.TestCase):
         self.assertEqual(len(self.boundary.reconcile()['intents']), 2)
 
     def test_profile_records_group_decisions_and_commit_failure_keeps_unique_intent(self):
-        from scripts import sermon_accounting as accounting
+        from tongxing_production.observability import accounting
         with self.f.f.session():
             with patch.object(accounting,'record_log',side_effect=accounting.AccountingWriteError('fault')):
                 result=self.admit()
@@ -315,7 +315,7 @@ class FailedReviewInventoryTests(unittest.TestCase):
     def test_two_failed_attempts_remain_distinct_through_planner_and_admission(self):
         import io
         import urllib.error
-        from scripts import sermon_pipeline as pipeline
+        from tongxing_production.workflows.dual_pdf import pipeline as pipeline
         from scripts.sermon_strict_repair_planner import RepairPlanner
 
         class InvalidJSONResponse:

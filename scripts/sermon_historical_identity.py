@@ -13,7 +13,9 @@ import re
 import stat
 import subprocess
 import sys
-from scripts import sermon_accounting as accounting, sermon_review_contracts as c
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.review import contracts as c
+from tongxing_production.observability import accounting
 from scripts.sermon_release_workflow import _safe_path
 
 SCHEMA='sermon-historical-execution-witness-v1'

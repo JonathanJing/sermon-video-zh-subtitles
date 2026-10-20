@@ -6,8 +6,9 @@ import unittest
 from unittest.mock import patch
 
 from jsonschema import Draft202012Validator, FormatChecker
-from scripts import sermon_log_contract as contract
-from scripts import sermon_accounting as accounting
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.observability import log_contract as contract
+from tongxing_production.observability import accounting
 from scripts import export_observability_trace as safe
 from scripts import export_sermon_trace as otlp
 from scripts import weekly_pipeline_report as weekly
