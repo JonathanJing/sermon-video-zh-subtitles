@@ -63,7 +63,8 @@ class TargetFormTests(unittest.TestCase):
 
 
     def test_spanish_wrong_book_seed_plants_on_a_bare_chapter_and_is_caught(self):
-        from scripts import auto_qc_seeded_errors as seeds
+        from scripts import tongxing_host  # noqa: F401  binds the production package ports
+        from tongxing_production.review import seeded_errors as seeds
         english, target = "in Luke 15,", "en Lucas 15,"
         mutated = seeds.mutate_text({"english": english, "targetText": target}, "wrong_book", "es", None)
         self.assertEqual(mutated, "en Juan 15,")
@@ -71,21 +72,24 @@ class TargetFormTests(unittest.TestCase):
 
     def test_driver_reports_siteless_kinds_as_not_applicable(self):
         import inspect
-        from scripts import run_machine_qc_clip_test as driver
+        from scripts import tongxing_host  # noqa: F401  binds the production package ports
+        from tongxing_production.review import qc_text_run as driver
         source = inspect.getsource(driver.calibration_coverage)
         self.assertIn('"notApplicableKinds"', source)
         self.assertIn('"untestableKinds": []', source)
 
 
     def test_added_content_seed_prefers_a_sentence_that_states_something(self):
-        from scripts import auto_qc_seeded_errors as seeds
+        from scripts import tongxing_host  # noqa: F401  binds the production package ports
+        from tongxing_production.review import seeded_errors as seeds
         group = {"groupId": "g1", "english": "God is holy.", "targetText": "Dios es santo."}
         others = [group, {"groupId": "g2", "english": "Why?", "targetText": "¿Por qué?"},
                   {"groupId": "g3", "english": "He brings the report card home to his father.", "targetText": "Lleva la boleta a casa."}]
         self.assertEqual(seeds.mutate_text(group, "added_content", "es", None, others), "Dios es santo. Lleva la boleta a casa.")
 
     def test_per_kind_gate_needs_a_minimum_sample(self):
-        from scripts import machine_quality_waiver as waiver
+        from scripts import tongxing_host  # noqa: F401  binds the production package ports
+        from tongxing_production.review import waiver
         row = {"trials": 2, "detected": 1, "rate": 0.5}
         self.assertLess(row["trials"], waiver.PER_KIND_MINIMUM_TRIALS)
 

@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261020-grp-l3-package-es-clip",
+  "runs": [
+    {
+      "label": "20261020-grp-l3-package-es-clip",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/local-runs/20261020-grp-l3-package-es-clip",
+      "skipped": {
+        ".json": 3
+      }
+    }
+  ],
+  "files": [
+    {
+      "run": "20261020-grp-l3-package-es-clip",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 665,
+      "truncated": false,
+      "sha256": "686d7c06f962a1e00ce20eed82010f2a08ff1cf09fbed6ed63bcecfb41032b6d",
+      "redactions": {}
+    },
+    {
+      "run": "20261020-grp-l3-package-es-clip",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 645,
+      "truncated": false,
+      "sha256": "7a138270d94d3e24e68706373046594681a930a24f5af186bfadcb7243f6c591",
+      "redactions": {}
+    },
+    {
+      "run": "20261020-grp-l3-package-es-clip",
+      "path": "timings.tsv",
+      "kind": "whole",
+      "bytes": 42,
+      "truncated": false,
+      "sha256": "cfe4ec8702ff5a32180d992a5fe8aa620d49bed5e68ebafec72da2eeac63501a",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

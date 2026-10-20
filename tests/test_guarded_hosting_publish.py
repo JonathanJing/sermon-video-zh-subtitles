@@ -3,7 +3,8 @@ import json
 from pathlib import Path
 import pytest
 import time
-from scripts import guarded_hosting_publish as p
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.delivery import publication as p
 from tongxing_production.storage import hosting
 
 
@@ -190,7 +191,8 @@ def test_process_crash_releases_local_lock_but_needs_explicit_remote_reconciliat
                   lease_bucket='bucket', request=remote, reader=v3_only(data), run=interrupted)
     # A separate live owner prevents reconciliation, even with confirmed remote bytes.
     child = subprocess.Popen([sys.executable, '-c',
-                              "from scripts.guarded_hosting_publish import publisher_lock\n"
+                              "from scripts import tongxing_host\n"
+                              "from tongxing_production.delivery.publication import publisher_lock\n"
                               "import sys, time\n"
                               "with publisher_lock(sys.argv[1]):\n"
                               "    print('locked', flush=True)\n"

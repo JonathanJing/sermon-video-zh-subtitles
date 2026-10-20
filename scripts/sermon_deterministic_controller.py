@@ -15,7 +15,8 @@ if __package__ in {None, ''}:
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from scripts import sermon_end_to_end as workflow
-from scripts import sermon_workflow_jobs as jobs
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.orchestration import jobs
 
 DEFINITION_VERSION = 'sermon-legacy-page-controller-v1'
 STATE_SCHEMA = 'sermon-deterministic-controller-state-v1'

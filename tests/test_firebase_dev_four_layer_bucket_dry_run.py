@@ -2,7 +2,7 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 import unittest
 
-from scripts import firebase_dev_four_layer_bucket_dry_run as dry
+from tools.ops import firebase_dev_four_layer_bucket_dry_run as dry
 
 
 class FirebaseDevFourLayerBucketDryRunTests(unittest.TestCase):

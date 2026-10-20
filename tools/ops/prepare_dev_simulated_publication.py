@@ -2,8 +2,7 @@
 """Acquire a complete live-bound Hosting snapshot or isolated Dev overlay.
 
 The command-line entry (L4 D8); the implementation lives in
-tongxing_production.delivery.baseline. ``scripts/prepare_dev_simulated_publication.py`` and
-``python -m scripts.prepare_dev_simulated_publication`` still run this command.
+tongxing_production.delivery.baseline.
 """
 import argparse
 import json

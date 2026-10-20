@@ -29,7 +29,7 @@ def is_documentation_path(path: str) -> bool:
     if not path.startswith("docs/") or ".." in file.parts:
         return False
     if path.startswith("docs/reports/runs/") and file.suffix.lower() in RUN_REPORT_SUFFIXES:
-        return True  # redacted run evidence from scripts/export_run_digest.py; nothing executes it
+        return True  # redacted run evidence from tools/development/export_run_digest.py; nothing executes it
     return file.suffix.lower() in {".md", ".svg", *IMAGE_SUFFIXES} or path == "docs/diagrams/diagram-specs.json"
 
 

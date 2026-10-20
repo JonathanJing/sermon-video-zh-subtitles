@@ -4,8 +4,9 @@ import json
 from pathlib import Path
 import pytest
 from jsonschema import ValidationError
-from scripts import sermon_unified_delivery as app
-from scripts import delivery_contract as d
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.delivery import unified_stage as app
+from tongxing_production.delivery import contract as d
 
 
 def test_closed_configuration_rejects_injected_command(tmp_path):

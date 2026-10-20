@@ -323,6 +323,10 @@ Each batch updates its necessary build and CI paths immediately. Phase 5 is fina
 
 Move the shared fingerprint runtime before, or atomically with, switching its Python/browser callers; never leave an intermediate dependency on app source. A Tracker move carries its exporter/sanitizer contract, publisher entrypoint and access-policy fixtures together. Test-discovery inventory equivalence from §5.5 is an exit condition for every affected phase. Neither this documentation amendment nor either experiment's completion authorizes merging into dev or starting a migration; both lines must finish and the user must renew the implementation decision.
 
+### 8.1 Facade retirement plan
+
+Added 2026-10-19 (read-only; no facade was deleted): the per-facade caller inventory for phase 6 is in the [facade retirement plan](facade-removal-plan.zh.md). Of the 187 `scripts/` facades on `dev@556458d4` with #1105 applied, 5 can be removed now and 159 after their callers change (35 of these have only tests left). The other 23 must stay. For 21 of them, the frozen G1 identities (W/T/scoring/rate) or the preview execution binding hash the facade's own bytes by physical path. For 3, durable job requests record the facade path in their worker argv (`sermon_workflow_jobs.py` falls in both groups). The Layer 2 `code_identity()` and the unified CLI execution admission both cover every file under `scripts/`. Any deletion therefore starts a new Layer 2 identity generation and needs frozen unified CLI runs to be terminal first, so facades should be removed in batches. Package CLIs need a new entry point that binds the host before runbook commands can stop naming the facade path.
+
 ## 9 Acceptance gates
 
 ### This design change

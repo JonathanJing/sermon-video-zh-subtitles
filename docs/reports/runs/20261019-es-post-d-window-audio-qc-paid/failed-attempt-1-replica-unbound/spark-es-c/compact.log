@@ -1,0 +1,15 @@
+Traceback (most recent call last):
+  File "/work/repo-e8b197be/scripts/compact_formal_target_audio.py", line 18, in <module>
+    raise SystemExit(_implementation.main())
+                     ^^^^^^^^^^^^^^^^^^^^^^
+  File "/work/repo-e8b197be/packages/production/src/tongxing_production/audio/compaction.py", line 297, in main
+    manifest = compact(paths, args.source_job, args.destination_root, args.checkpoint_map,
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/work/repo-e8b197be/packages/production/src/tongxing_production/audio/compaction.py", line 208, in compact
+    rows = [compact_unit(source_job, destination_job, index, expected_job_hash=job_hash,
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/work/repo-e8b197be/packages/production/src/tongxing_production/audio/compaction.py", line 109, in compact_unit
+    require(all(path.is_file() for path in (raw, receipt, intent, commit)),
+  File "/work/repo-e8b197be/packages/production/src/tongxing_production/audio/compaction.py", line 38, in require
+    raise ValueError(message)
+ValueError: Raw committed unit missing: 0

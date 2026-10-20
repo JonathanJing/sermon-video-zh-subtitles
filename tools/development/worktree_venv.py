@@ -9,16 +9,17 @@ started with ``python -I`` (for example ``scripts/sermon_mock_tts_control.py``)
 ignore it.
 
 This creates ``<worktree>/.venv`` from the shared venv's interpreter, without
-pip, and writes one .pth that lists ``<worktree>/packages/production/src``
-first and then the shared venv's site-packages. The shared venv's .pth files
-are not processed, so the main checkout's source never lands on ``sys.path``.
+pip, and writes one .pth that lists ``<worktree>/packages/production/src`` and
+``<worktree>/services/api/src`` first and then the shared venv's site-packages.
+The shared venv's .pth files are not processed, so the main checkout's source
+never lands on ``sys.path``.
 ``python -I`` still reads site-packages .pth files, so child processes started
 with ``sys.executable`` import the worktree package too, and scripts that look
 for ``$REPO/.venv/bin/python`` find this venv. Install dependencies into the
 shared venv; rerun this after its Python version changes.
 
-    python3 scripts/worktree_venv.py             create or refresh <worktree>/.venv
-    python3 scripts/worktree_venv.py --check     only report what .venv/bin/python -I imports
+    python3 tools/development/worktree_venv.py             create or refresh <worktree>/.venv
+    python3 tools/development/worktree_venv.py --check     only report what .venv/bin/python -I imports
 """
 from __future__ import annotations
 
@@ -29,6 +30,8 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 PACKAGE_SRC = Path('packages/production/src')
+# The API package requirements.txt also installs in editable mode (tests/test_backend_app.py imports it).
+API_SRC = Path('services/api/src')
 MARKER = 'worktree-venv.txt'
 PTH_NAME = '_worktree_paths.pth'
 
@@ -60,7 +63,7 @@ def build(worktree: Path, shared_venv: Path) -> Path:
         raise SystemExit(f'{target} exists and was not made by this script; move it aside first')
     subprocess.run([str(shared_python), '-m', 'venv', '--clear', '--without-pip', str(target)], check=True)
     python = target / 'bin' / 'python'
-    lines = [str(worktree / PACKAGE_SRC), str(site_packages(shared_python))]
+    lines = [str(worktree / PACKAGE_SRC), str(worktree / API_SRC), str(site_packages(shared_python))]
     (site_packages(python) / PTH_NAME).write_text('\n'.join(lines) + '\n', encoding='utf-8')
     (target / MARKER).write_text(f'shared venv: {shared_venv}\n', encoding='utf-8')
     return python

@@ -1,0 +1,44 @@
+{
+  "status": "passed",
+  "facadesDeleted": 75,
+  "facadesNoCaller": 8,
+  "facadesTestOnly": 67,
+  "surveyAfter": {
+    "after": 165,
+    "stay": 23,
+    "total": 188
+  },
+  "unittestShards": {
+    "count": 10,
+    "tests": 5975,
+    "failures": 0
+  },
+  "changedTests": {
+    "files": 79,
+    "passed": 835,
+    "skipped": 7,
+    "subtests": 1221
+  },
+  "pytestStyle": {
+    "passed": 1112,
+    "failed": 1,
+    "failedPreexistingOnDev": 1
+  },
+  "testIdsBefore": {
+    "unittest": 5982,
+    "pytest": 7036
+  },
+  "testIdsAfter": {
+    "unittest": 5975,
+    "pytest": 7029
+  },
+  "deletedIdentityTests": 7,
+  "renamedTests": 7,
+  "l2CodeIdentityBefore": "64c7202ee1289ee8f7f7bd10dbc11c074aae7635d8e4f0e05bfc72bc589b257a",
+  "l2CodeIdentityAfter": "91ec35dcd09a72f63098135475d393aa1f14705e7c842b7c16ce9c3d5957c38b",
+  "earlierRunFlakes": "First full run (70-facade tree, dev@cb99733c) had 3 load-related failures (test_layer2_large_fan_in x2, test_sermon_log_profile) that passed alone on branch and dev, plus test_sermon_diagnostic_dag_session cross-commit failing on dev too (fixed on dev by 9174b620). Final run clean.",
+  "providerCalls": 0,
+  "modelCalls": 0,
+  "networkCalls": 0,
+  "productionWrites": 0
+}

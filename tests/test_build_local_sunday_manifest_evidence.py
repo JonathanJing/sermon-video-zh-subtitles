@@ -3,7 +3,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-import scripts.build_local_sunday_manifest_evidence as mod
+import tools.ops.build_local_sunday_manifest_evidence as mod
 from scripts.build_playback_simulation import refresh_polished_layers
 
 

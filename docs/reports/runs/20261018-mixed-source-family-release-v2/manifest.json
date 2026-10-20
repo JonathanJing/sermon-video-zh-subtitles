@@ -1,0 +1,113 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261018-mixed-source-family-release-v2",
+  "runs": [
+    {
+      "label": "prod-mixed-family-v4",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/weekend-live/layer4-broadcast-20261018/prod-mixed-family-v4",
+      "skipped": {
+        ".cache": 1,
+        ".json": 110,
+        ".lock": 1,
+        ".mjs": 33,
+        ".png": 24,
+        ".svg": 3,
+        ".js": 5,
+        ".srt": 2,
+        ".mp3": 52,
+        ".pdf": 4,
+        ".html": 17,
+        ".jpg": 1,
+        ".css": 3
+      }
+    },
+    {
+      "label": "feedback-function-v3",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/weekend-live/layer4-broadcast-20261018/feedback-function-v3",
+      "skipped": {
+        ".json": 5,
+        ".mjs": 5
+      }
+    },
+    {
+      "label": "zh-family-v2",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/sermon-poster/2026-10-18/zh-family-v2",
+      "skipped": {
+        ".svg": 1,
+        ".json": 5,
+        ".txt": 1,
+        ".png": 3
+      }
+    }
+  ],
+  "files": [
+    {
+      "run": "prod-mixed-family-v4",
+      "path": "baseline-receipt.json",
+      "kind": "whole",
+      "bytes": 93103,
+      "truncated": false,
+      "sha256": "935a58976d9e4e2724d717003e31f0b7fb59fa887423f7ca650a7fef031f324a",
+      "redactions": {}
+    },
+    {
+      "run": "prod-mixed-family-v4",
+      "path": "hosting-publish.log",
+      "kind": "log",
+      "bytes": 0,
+      "truncated": false,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "redactions": {}
+    },
+    {
+      "run": "prod-mixed-family-v4",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 461,
+      "truncated": false,
+      "sha256": "8e7edd628664db60542e61b46b5606fa04833eec5d24d6a289d09992f81673c0",
+      "redactions": {}
+    },
+    {
+      "run": "prod-mixed-family-v4",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 1086,
+      "truncated": false,
+      "sha256": "60a8456377eae8342273993a2f5d5a7fc48d5284f191865742c18f99773f8b25",
+      "redactions": {}
+    },
+    {
+      "run": "prod-mixed-family-v4",
+      "path": "timings.tsv",
+      "kind": "whole",
+      "bytes": 415,
+      "truncated": false,
+      "sha256": "0080ec5b874704d38f7d57f93ebf3fab55a971f489fb59b1f40c38c57057540a",
+      "redactions": {}
+    },
+    {
+      "run": "feedback-function-v3",
+      "path": "deploy-receipt.json",
+      "kind": "whole",
+      "bytes": 613,
+      "truncated": false,
+      "sha256": "8b8e3b7660c5593186460f416260a94ef522c6b1a22b41f2a6e6d399a77d2e0c",
+      "redactions": {}
+    },
+    {
+      "run": "zh-family-v2",
+      "path": "zh-Hans/poster-receipt.json",
+      "kind": "whole",
+      "bytes": 3803,
+      "truncated": false,
+      "sha256": "5d9d7cc0f6e2fae6c674eb0d27ebc9cbcb7efd5a91084264ad8a2fbf3b8f4d50",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

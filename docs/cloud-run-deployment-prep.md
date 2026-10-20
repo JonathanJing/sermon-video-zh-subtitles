@@ -167,7 +167,7 @@ Pass criteria:
 Configure the weekly live-source discovery job with a redacted dry run first:
 
 ```bash
-python3 scripts/configure_live_source_scheduler.py \
+python3 tools/ops/configure_live_source_scheduler.py \
   --project ai-for-god \
   --location us-west1 \
   --service-url https://sermon-zh-caption-web-wu7uk5rgdq-uw.a.run.app
@@ -263,7 +263,7 @@ the caption/export step must be resumed, replay the saved translations without
 calling OpenAI again:
 
 ```bash
-python3 scripts/translate_playback_with_openai.py \
+python3 tools/ops/translate_playback_with_openai.py \
   --input /tmp/sermon-worker/YYYY-MM-DD/<session_id>/web/playback-simulation.generated.js \
   --out /tmp/sermon-worker/YYYY-MM-DD/<session_id>/web/playback-simulation.generated.js \
   --out-dir /tmp/sermon-worker/YYYY-MM-DD/<session_id>/model-output \
@@ -279,7 +279,7 @@ After a Sunday worker run and promotion, validate the stable Sunday manifest and
 its public artifacts:
 
 ```bash
-python3 scripts/validate_sunday_manifest.py \
+python3 tools/ops/validate_sunday_manifest.py \
   --manifest gs://sermon-zh-artifacts-ai-for-god/sundays/YYYY-MM-DD/cloud-manifest.json \
   --sunday YYYY-MM-DD \
   --require-readable-artifacts \
@@ -296,7 +296,7 @@ For a live realtime session, validate the durable JSONL mirror as a separate
 gate:
 
 ```bash
-python3 scripts/validate_realtime_session.py \
+python3 tools/ops/validate_realtime_session.py \
   --events-jsonl gs://sermon-zh-artifacts-ai-for-god/realtime-events/YYYY-MM-DD/<session_id>.jsonl \
   --require-stable-correction
 ```
@@ -320,7 +320,7 @@ realtime config fails. It also refreshes the non-mutating Cloud Run update plan
 and apply dry-run evidence, but never passes `--approve`:
 
 ```bash
-python3 scripts/refresh_production_preflight_evidence.py \
+python3 tools/ops/refresh_production_preflight_evidence.py \
   --out artifacts/evidence/production-preflight-refresh.json
 ```
 
@@ -335,7 +335,7 @@ gcloud run services describe sermon-zh-caption-web \
   --region=us-west1 \
   --format=json > artifacts/evidence/cloud-run-service.json
 
-python3 scripts/validate_cloud_run_realtime_config.py \
+python3 tools/ops/validate_cloud_run_realtime_config.py \
   --service-json artifacts/evidence/cloud-run-service.json \
   --out artifacts/evidence/cloud-run-realtime-config.json
 ```
@@ -349,7 +349,7 @@ If the config verifier fails, generate the approval bundle before changing the
 service:
 
 ```bash
-python3 scripts/prepare_cloud_run_realtime_update_plan.py \
+python3 tools/ops/prepare_cloud_run_realtime_update_plan.py \
   --config-report artifacts/evidence/cloud-run-realtime-config.json \
   --service sermon-zh-caption-web \
   --project ai-for-god \
@@ -372,7 +372,7 @@ After approval, use the plan runner so the apply, validation, and optional
 rollback are recorded in one redacted execution report:
 
 ```bash
-python3 scripts/apply_cloud_run_realtime_update_plan.py \
+python3 tools/ops/apply_cloud_run_realtime_update_plan.py \
   --plan artifacts/evidence/cloud-run-realtime-update-plan.json \
   --approve \
   --rollback-on-failure \
@@ -390,7 +390,7 @@ Then run the deployed API preflight. The first command is read-only and leaves
 realtime session creation as a warning:
 
 ```bash
-python3 scripts/run_cloud_run_realtime_preflight.py \
+python3 tools/ops/run_cloud_run_realtime_preflight.py \
   --base-url https://sermon-zh-caption-web-wu7uk5rgdq-uw.a.run.app \
   --cloud-run-config-report artifacts/evidence/cloud-run-realtime-config.json \
   --out artifacts/evidence/cloud-run-api-preflight-readonly.json
@@ -400,7 +400,7 @@ After the operator/internal token deployment is approved, run the mutation-aware
 session check and use this report for the final audit:
 
 ```bash
-python3 scripts/run_cloud_run_realtime_preflight.py \
+python3 tools/ops/run_cloud_run_realtime_preflight.py \
   --base-url https://sermon-zh-caption-web-wu7uk5rgdq-uw.a.run.app \
   --cloud-run-config-report artifacts/evidence/cloud-run-realtime-config.json \
   --create-realtime-session \
@@ -416,7 +416,7 @@ whether an event token was returned but never writes the token value.
 Also verify the public SSE contract without calling OpenAI:
 
 ```bash
-python3 scripts/run_realtime_public_sse_smoke.py \
+python3 tools/ops/run_realtime_public_sse_smoke.py \
   --base-url https://sermon-zh-caption-web-wu7uk5rgdq-uw.a.run.app \
   --sunday YYYY-MM-DD \
   --internal-task-token "$INTERNAL_TASK_TOKEN" \
@@ -429,7 +429,7 @@ For local backend runs before Cloud Run, replace the GCS prefix with the local
 event log directory:
 
 ```bash
-python3 scripts/run_realtime_public_sse_smoke.py \
+python3 tools/ops/run_realtime_public_sse_smoke.py \
   --base-url http://127.0.0.1:8080 \
   --sunday YYYY-MM-DD \
   --internal-task-token "$INTERNAL_TASK_TOKEN" \
@@ -450,7 +450,7 @@ Before the OpenAI realtime smoke, validate the authorized audio source without
 calling OpenAI:
 
 ```bash
-python3 scripts/run_realtime_audio_source_preflight.py \
+python3 tools/ops/run_realtime_audio_source_preflight.py \
   --sunday YYYY-MM-DD \
   --audio-file /path/to/authorized-rehearsal-audio.wav \
   --prepare-audio \
@@ -464,7 +464,7 @@ checks, and sanitized command results.
 Validate the browser-side iPad/iPhone mic contract as its own local evidence:
 
 ```bash
-python3 scripts/validate_web_realtime_contract.py \
+python3 tools/ops/validate_web_realtime_contract.py \
   --out artifacts/evidence/web-realtime-contract.json
 ```
 
@@ -478,7 +478,7 @@ Before the offline OpenAI/translation chain, validate the YouTube archive route
 without downloading captions or calling OpenAI:
 
 ```bash
-python3 scripts/run_offline_archive_preflight.py \
+python3 tools/ops/run_offline_archive_preflight.py \
   --live-url "https://www.youtube.com/watch?v=VIDEO_ID" \
   --sunday YYYY-MM-DD \
   --out artifacts/evidence/offline-archive-preflight.json
@@ -493,7 +493,7 @@ Before any offline translation or stable-correction run, preflight the text
 model through the same OpenAI Responses route used by production:
 
 ```bash
-python3 scripts/run_openai_model_access_preflight.py \
+python3 tools/ops/run_openai_model_access_preflight.py \
   --cloud-run-service sermon-zh-caption-web \
   --project ai-for-god \
   --region us-west1 \
@@ -510,7 +510,7 @@ stable-correction validation.
 When all three evidence sets are available, run the combined readiness gate:
 
 ```bash
-python3 scripts/run_sunday_evidence_bundle.py \
+python3 tools/ops/run_sunday_evidence_bundle.py \
   --sunday YYYY-MM-DD \
   --session-id <worker_session_id> \
   --artifact-location gcs \
@@ -568,7 +568,7 @@ After collecting provider, offline, Cloud Run, and Sunday-manifest evidence,
 generate the readable evidence matrix:
 
 ```bash
-python3 scripts/collect_production_evidence_matrix.py \
+python3 tools/ops/collect_production_evidence_matrix.py \
   --cloud-run-config-report artifacts/evidence/cloud-run-realtime-config.json \
   --cloud-run-api-preflight-report artifacts/evidence/cloud-run-api-preflight.json \
   --realtime-audio-source-preflight-report artifacts/evidence/realtime-audio-source-preflight.json \
@@ -608,7 +608,7 @@ the matrix/unblock/audit artifacts without applying Cloud Run changes or
 uploading GCS artifacts:
 
 ```bash
-python3 scripts/refresh_production_preflight_evidence.py \
+python3 tools/ops/refresh_production_preflight_evidence.py \
   --sunday YYYY-MM-DD \
   --out artifacts/evidence/production-preflight-refresh.json
 ```
@@ -616,7 +616,7 @@ python3 scripts/refresh_production_preflight_evidence.py \
 After generating the matrix, run the goal-level audit:
 
 ```bash
-python3 scripts/audit_production_goal_readiness.py \
+python3 tools/ops/audit_production_goal_readiness.py \
   --production-readiness-report artifacts/evidence/caption-route-readiness.json \
   --production-readiness-report artifacts/evidence/asr-route-readiness.json \
   --cloud-run-config-report artifacts/evidence/cloud-run-realtime-config.json \

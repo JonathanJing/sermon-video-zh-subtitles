@@ -1,0 +1,3 @@
+dev listing (before services/api install)=    5943 C6=    5985 stacked=    5985
+C6 vs stacked: no differences
+dev vs C6: only test_backend_app/test_cloud_run_jobs cases (import failures on the dev listing before services/api was installed)

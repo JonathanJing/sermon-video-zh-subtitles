@@ -4,7 +4,7 @@ from pathlib import Path
 import struct
 import unittest
 
-spec = importlib.util.spec_from_file_location("weekly_announcements", Path(__file__).resolve().parents[1] / "scripts/build_weekly_announcement_sidecar.py")
+spec = importlib.util.spec_from_file_location("weekly_announcements", Path(__file__).resolve().parents[1] / "packages/production/src/tongxing_production/delivery/posters/announcement_sidecar.py")
 module = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(module)
 

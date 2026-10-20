@@ -1,0 +1,11 @@
+{
+  "schemaVersion": "local-test-outcome-v1",
+  "status": "passed",
+  "exitCode": 0,
+  "startedAt": "2026-10-19T19:25:00+00:00",
+  "endedAt": "2026-10-19T21:30:00+00:00",
+  "scope": "Facade removal batch C2 (PR #1165): 13 observability/orchestration/prepared scripts/ facades deleted, callers of 6 closure-bound facades repointed, Layer 1 producer compatibility v12. Changed tests per file in isolation, full unittest suite in 10 parallel shards, pytest-style files, tracker node tests and a real buildFromConfig smoke, test-ID inventory and Appendix A on dev@5eb39da3.",
+  "knownPreexistingFailures": [
+    "tests/test_layer2_large_fan_in.py (2 cases, utc_clock_discontinuity; also fails on clean origin/dev)"
+  ]
+}

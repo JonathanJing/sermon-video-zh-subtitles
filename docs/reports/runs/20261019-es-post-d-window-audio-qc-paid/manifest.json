@@ -1,0 +1,202 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261019-es-post-d-window-audio-qc-paid",
+  "runs": [
+    {
+      "label": "aqc",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/opus-e2e-dev216-20261014-g/post-d-window-qc-20261019/es/aqc",
+      "skipped": {
+        ".lock": 1,
+        ".tsv": 1,
+        ".json": 9
+      }
+    },
+    {
+      "label": "l3",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/opus-e2e-dev216-20261014-g/post-d-window-qc-20261019/es/l3",
+      "skipped": {
+        ".json": 287,
+        ".sha256": 34,
+        ".wav": 61,
+        ".mp3": 2,
+        ".lock": 2,
+        ".jsonl": 1,
+        ".csv": 3
+      }
+    },
+    {
+      "label": "failed-attempt-1-replica-unbound",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/opus-e2e-dev216-20261014-g/post-d-window-qc-20261019/es/failed-attempt-1-replica-unbound",
+      "skipped": {
+        ".json": 26,
+        ".lock": 2,
+        ".jsonl": 1,
+        ".csv": 3
+      }
+    },
+    {
+      "label": ".api-budget",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/opus-e2e-dev216-20261014-g/plans/post-d-window-qc-20261019-es-zh/qc-es/.api-budget",
+      "skipped": {
+        ".lock": 241,
+        ".json": 240
+      }
+    }
+  ],
+  "files": [
+    {
+      "run": "aqc",
+      "path": "es/preflight.json",
+      "kind": "whole",
+      "bytes": 2345,
+      "truncated": false,
+      "sha256": "86ce256b3ff75bbcf7c337cd0b21110f9d61cc86ffceae7e6f817704b75f68ea",
+      "redactions": {
+        "home_dir": 8
+      }
+    },
+    {
+      "run": "aqc",
+      "path": "spark-driver.log",
+      "kind": "log",
+      "bytes": 2170,
+      "truncated": false,
+      "sha256": "ac60c5d7eb269efd9cd3e5a3e93b5e9827b9380bcea6c75bff5cbef8c7ec528a",
+      "redactions": {}
+    },
+    {
+      "run": "aqc",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 4571,
+      "truncated": false,
+      "sha256": "f78131da14f125c4ee06ee3c141df57d9ae231c8a9c1f34347b69c0c8b65ad61",
+      "redactions": {
+        "home_dir": 12
+      }
+    },
+    {
+      "run": "aqc",
+      "path": "timings.tsv",
+      "kind": "whole",
+      "bytes": 194,
+      "truncated": false,
+      "sha256": "d75a6bd795e5f3ca3d81bd14244c522c9ffaae80597675d9c2d1ef9b00314234",
+      "redactions": {}
+    },
+    {
+      "run": "l3",
+      "path": "spark-es-r2-c/compact.log",
+      "kind": "log",
+      "bytes": 189,
+      "truncated": false,
+      "sha256": "05853f4cb65f1bb92b1d180c348a9a5b4f390dcd1c88d1497e17a806d488ba8e",
+      "redactions": {}
+    },
+    {
+      "run": "l3",
+      "path": "spark-es-r2-c/spark-output/compact.log",
+      "kind": "log",
+      "bytes": 189,
+      "truncated": false,
+      "sha256": "05853f4cb65f1bb92b1d180c348a9a5b4f390dcd1c88d1497e17a806d488ba8e",
+      "redactions": {}
+    },
+    {
+      "run": "l3",
+      "path": "spark-es-r2-c/spark-output/screen-v1.log",
+      "kind": "log",
+      "bytes": 1944,
+      "truncated": false,
+      "sha256": "26cb8cae3386259c4c1f79ba64a7a1b589e48b484115a91cb346d3dbbb5de8ea",
+      "redactions": {}
+    },
+    {
+      "run": "l3",
+      "path": "spark-es-r2-c/spark-output/speech-job/asr-screening-receipt-v1.json",
+      "kind": "whole",
+      "bytes": 11094,
+      "truncated": false,
+      "sha256": "815a03eb099b36b6fcc51e2ff828668ae34b47f2705838420b1b876484ca9c06",
+      "redactions": {}
+    },
+    {
+      "run": "l3",
+      "path": "spark-output/render.log",
+      "kind": "log",
+      "bytes": 6124,
+      "truncated": false,
+      "sha256": "59be5cec849dfdea051184365291e3b22fe65d5073178dc2bb96a9c9cab038f4",
+      "redactions": {}
+    },
+    {
+      "run": "l3",
+      "path": "spark-output/speech-job/accounting/operations.log",
+      "kind": "log",
+      "bytes": 81134,
+      "truncated": true,
+      "sha256": "0caa8012e0b4dc12ec7de43357d6720e66d7c3c32a9f801d77c29c8997b71d08",
+      "redactions": {}
+    },
+    {
+      "run": "l3",
+      "path": "spark-output/speech-job/accounting/summary.json",
+      "kind": "whole",
+      "bytes": 215100,
+      "truncated": false,
+      "sha256": "8981a7777d345739dd25874591f00fb57fdd0f434dd4e21b75fe305ab1a6dc4c",
+      "redactions": {}
+    },
+    {
+      "run": "failed-attempt-1-replica-unbound",
+      "path": "spark-es-c/compact.log",
+      "kind": "log",
+      "bytes": 1183,
+      "truncated": false,
+      "sha256": "8b868a6616b78a9f330da65b55536f3860d7bca78852af0bd9996f7843c020f2",
+      "redactions": {}
+    },
+    {
+      "run": "failed-attempt-1-replica-unbound",
+      "path": "spark-output/render.log",
+      "kind": "log",
+      "bytes": 4389,
+      "truncated": false,
+      "sha256": "43e725f47134afb5758e354d386b18cb766b073c5f461a784a99ad5d84fb43cf",
+      "redactions": {}
+    },
+    {
+      "run": "failed-attempt-1-replica-unbound",
+      "path": "spark-output/speech-job/accounting/operations.log",
+      "kind": "log",
+      "bytes": 6066,
+      "truncated": false,
+      "sha256": "d61c5a8ee93e9674289562976367d6a4765e8c9f27579cb9f6ca97df2da4b1a3",
+      "redactions": {}
+    },
+    {
+      "run": "failed-attempt-1-replica-unbound",
+      "path": "spark-output/speech-job/accounting/summary.json",
+      "kind": "whole",
+      "bytes": 38182,
+      "truncated": false,
+      "sha256": "083c64c9154415517fbcec9487ba15e6086772d907ef00a9775d1d9aa4480a0b",
+      "redactions": {}
+    },
+    {
+      "run": ".api-budget",
+      "path": "source-budget.settlement.json",
+      "kind": "budget",
+      "bytes": 226072,
+      "truncated": false,
+      "source": "source-budget.json",
+      "sha256": "ec018dd676e2c3144114069058f5f2774ae4196ecf6bdc6df0dfffb79befc540",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

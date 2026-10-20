@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261018-layer2-provenance-snapshot-race",
+  "runs": [
+    {
+      "label": "20261018-layer2-provenance-snapshot-race",
+      "source": "~/.codex/worktrees/layer2-provenance-snapshot-race/sermon-video-zh-subtitles/artifacts/test-runs/20261018-layer2-provenance-snapshot-race",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "20261018-layer2-provenance-snapshot-race",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 605,
+      "truncated": false,
+      "sha256": "c6e329714bb9dfbf0864f9f33387c067608bde9bae914e60ce5c0d9e70404bbf",
+      "redactions": {}
+    },
+    {
+      "run": "20261018-layer2-provenance-snapshot-race",
+      "path": "targeted.log",
+      "kind": "log",
+      "bytes": 1779,
+      "truncated": false,
+      "sha256": "bbd8284e33731cd0a531f5b3b4a4b7498693469bab9246d96b34764ecc5ecce2",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

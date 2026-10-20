@@ -48,7 +48,7 @@ class TextBackend:
     transports: ports.Transports
     schemas: ports.Schemas
     diagnostic: ports.Diagnostic
-    worker_command: Callable[..., list]          # (*arguments) -> [python, scripts/canonical_layer2_controller.py, *arguments]
+    worker_command: Callable[..., list]          # (*arguments) -> [python, tools/ops/run.py, text.controller, *arguments]
     unmoved: Unmoved
 
 

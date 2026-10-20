@@ -53,7 +53,7 @@ Agent 检查状态并调用命名工具；本地代码决定动作是否允许�
 `work` 必须精确匹配 bridge 对当前源规划的任务目录。可以先按现有 bridge 检查命令获得该路径。初始 registry 仍通过[每周发行流程](tongxing-weekly-release.zh.md)建立，不自动把未知线上内容登记为基线。当前适配器支持专用 Firebase `SITE.web.app`；自定义域名尚未接入。
 
 ```sh
-python scripts/run_codex_local_sermon_production.py \
+.venv/bin/python tools/ops/run.py workflows.dual_pdf.codex_local \
   --sunday 2026-09-20 \
   --release-workflow-config /absolute/path/release-workflow.json \
   --mode shadow

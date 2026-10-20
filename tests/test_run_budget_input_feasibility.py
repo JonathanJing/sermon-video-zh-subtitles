@@ -8,7 +8,8 @@ import unittest
 from unittest import mock
 
 from scripts import plan_run_budgets as plan
-from scripts import sermon_provider_limits as limits
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.compute import provider_limits as limits
 from tests import test_canonical_layer2_controller as controller_fixtures
 
 
@@ -56,7 +57,7 @@ class RunBudgetInputFeasibilityTests(unittest.TestCase):
         # Actual serialized reviewer inputs include generated text, UTF-8 and
         # JSON escaping. The ceiling safely covers every admitted payload;
         # generation beyond it is rejected, never silently counted as free.
-        from scripts.run_target_language_models import model_payload
+        from tongxing_production.text.models import model_payload
         for candidate in ('한글' * 300, '\\"\n' * 500):
             payload = model_payload('reviewer', {'instruction': 'Review source and draft',
                 'input': {'englishUnits': [{'english': 'Source'}], 'astraDraft': candidate}}, policy, selected)
@@ -103,8 +104,10 @@ class RunBudgetInputFeasibilityTests(unittest.TestCase):
     def bind_real_groups(self, count):
         """Build reviewed Layer 1 through actual builders, not a mocked group count."""
         from tests import test_build_english_source_package as sf
-        from scripts import build_english_source_package as english, sermon_sentence_interpretation as anchors
-        from scripts import target_language_policy as policies
+        from tongxing_production.source import english_source_package as english
+        from scripts import tongxing_host  # noqa: F401  binds the production package ports
+        from tongxing_production.source import sentence_interpretation as anchors
+        from tongxing_production.text import policy as policies
         source=sf.EnglishSourcePackageTests();source.setUp();self.addCleanup(source.doCleanups)
         segments=[]
         for index in range(count):

@@ -1,0 +1,10 @@
+{
+  "status": "prepared",
+  "exitCode": 0,
+  "headSha": "974862e6b85d7fa581240a6fa84f74da806f2391",
+  "locales": [
+    "es",
+    "ko",
+    "zh-Hans"
+  ]
+}

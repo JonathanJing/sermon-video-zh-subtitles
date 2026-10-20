@@ -1,0 +1,57 @@
+{
+  "calibrationCoverage": {
+    "audio": {
+      "droppedKeyWordTrials": 17,
+      "truncationEligibleTrials": 30,
+      "untestableKinds": [],
+      "wrongSentenceUnits": 30
+    },
+    "text": {
+      "applicableGroups": {
+        "added_content": 402,
+        "added_number": 327,
+        "added_reference": 394,
+        "dropped_half": 299,
+        "dropped_name": 12,
+        "english_leak": 325,
+        "placeholder": 402,
+        "semantic_negation": 18,
+        "swapped_name": 0,
+        "swapped_quantity": 1,
+        "wrong_book": 8,
+        "wrong_number": 13,
+        "wrong_ordinal": 394
+      },
+      "notApplicableKinds": [
+        "swapped_name"
+      ],
+      "untestableKinds": []
+    }
+  },
+  "flaggedGroups": [
+    "translation-chunk-0000-u027",
+    "translation-chunk-0000-u037",
+    "translation-chunk-0001-u026",
+    "translation-chunk-0002-u015",
+    "translation-chunk-0002-u035",
+    "translation-chunk-0005-u007",
+    "translation-chunk-0006-u009",
+    "translation-chunk-0007-u031",
+    "translation-chunk-0008-u024",
+    "translation-chunk-0009-u036",
+    "translation-chunk-0010-u013"
+  ],
+  "locale": "zh-Hans",
+  "packageJsonSha256": "538cb3db39506f3181377307d15a66893c38fb3e5888de1423fe18ac75e085e7",
+  "paths": {
+    "anchor": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/weekend-live/layer1-15030286-20261017/output-rebuild-v3/anchor-manifest.json",
+    "candidate": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/weekend-live/layer2-15030286-20261017/text-zh-g1/zh-Hans/candidate.json",
+    "job": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/weekend-live/layer3-15030286-20261018/zh-Hans/spark-zh-Hans-c1/speech-job/job.json",
+    "package": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/weekend-live/layer3-15030286-20261018/zh-Hans/audio-package-c1.json",
+    "policy": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/weekend-live/layer2-15030286-20261017/policies/zh-Hans-policy-frozen-15030286-v3.json",
+    "screening": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/weekend-live/layer3-15030286-20261018/zh-Hans/spark-zh-Hans-c1/speech-job/asr-screening-receipt-c1.json",
+    "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/weekend-live/layer1-15030286-20261017/formal-v3/english-source-package.json",
+    "textWaiver": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/weekend-live/text-qc-15030286-20261018/out-zh-Hans-zh-g1-acc2/zh-Hans/text-waiver-1209559ad687ef56.json"
+  },
+  "problems": []
+}

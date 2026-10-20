@@ -3,7 +3,8 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 import unittest
 
-from scripts import assemble_multilingual_hosting as hosting
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.adapters.legacy import assemble_multilingual_hosting as hosting
 
 
 def write(path, value):

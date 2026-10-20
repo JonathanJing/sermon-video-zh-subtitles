@@ -14,7 +14,7 @@
 
 | Event | 来源 | 用途 |
 |---|---|---|
-| `live_source_monitor_completed` | `POST /api/admin/sundays/YYYY-MM-DD/discover-source` 或 `scripts/live_source_monitor.py` | 记录找源结果、选中的 service/source kind、fallback/operator alert 状态和候选数量。 |
+| `live_source_monitor_completed` | `POST /api/admin/sundays/YYYY-MM-DD/discover-source` 或 `packages/production/src/tongxing_production/workflows/dual_pdf/live_source_monitor.py` | 记录找源结果、选中的 service/source kind、fallback/operator alert 状态和候选数量。 |
 | `live_capture_triggered` | `POST /api/admin/sundays/YYYY-MM-DD/generate` | 记录直播采集被触发，包含 `triggerSource`、`sunday`、`sessionId`、`runPrefix`、live source 摘要。 |
 | `live_capture_planned` | API inline worker 关闭时 | 记录后端已生成 worker plan，适合 Cloud Scheduler 只负责排队/计划的模式。 |
 | `live_capture_worker_started` | `python -m backend.worker` | 记录 Cloud Run Job / 手动 worker 真正开始跑。 |
@@ -76,7 +76,7 @@ sermon-sun-1000-source-discovery */2 9-10 * * SUN service=1000 operatorAlertTime
 POST /api/admin/sundays/upcoming/post-live-subtitles
 ```
 
-推荐 Scheduler 窗口是在周六晚间每 10 分钟检查一次，直到 YouTube metadata 变成 `post_live` / `was_live` 后才下载归档音频并运行 `scripts/sermon_pipeline.py`：
+推荐 Scheduler 窗口是在周六晚间每 10 分钟检查一次，直到 YouTube metadata 变成 `post_live` / `was_live` 后才下载归档音频并运行 `tools/ops/run.py workflows.dual_pdf.pipeline`：
 
 ```text
 sermon-sat-post-live-subtitles  */10 18-23 * * SAT  action=post-live-subtitles
@@ -85,7 +85,7 @@ sermon-sat-post-live-subtitles  */10 18-23 * * SAT  action=post-live-subtitles
 dry-run 配置示例：
 
 ```bash
-python3 scripts/configure_live_source_scheduler.py \
+python3 tools/ops/configure_live_source_scheduler.py \
   --project ai-for-god \
   --location us-west1 \
   --service-url 'https://sermon-zh-caption-web-...' \
@@ -102,7 +102,7 @@ python3 scripts/configure_live_source_scheduler.py \
 如果 `ENABLE_INLINE_WORKER` 关闭，该 endpoint 只返回计划命令；生产长任务更推荐用返回的命令配置 Cloud Run Job。手动运行同一逻辑：
 
 ```bash
-python3 scripts/run_post_live_subtitle_generation.py \
+.venv/bin/python tools/ops/run.py workflows.dual_pdf.post_live \
   --sunday YYYY-MM-DD \
   --state-file 'gs://sermon-zh-artifacts-ai-for-god/sundays/live-source-monitor/backend-state.json' \
   --slug mariners_<youtube_video_id> \

@@ -1,0 +1,14 @@
+{
+  "schemaVersion": "sermon-test-run-outcome-v1",
+  "status": "passed",
+  "deliveryType": "test",
+  "commit": "4c32954c44b80ca39939f509ae11aa489b3ce266",
+  "baseCommit": "ce05f79acf45029b3d620860253001d889788f06",
+  "pullRequest": "https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/1056",
+  "testScope": "Korean source-bound 15030286 language plugin, plugin-only partial recovery, deterministic number rules, budget reuse, candidate admission and machine-QC policy",
+  "testsPassed": 94,
+  "subtestsPassed": 170,
+  "realProviderCalls": 0,
+  "productionArtifactsModifiedByTests": false,
+  "layer3Started": false
+}

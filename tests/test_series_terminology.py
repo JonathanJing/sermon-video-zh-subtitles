@@ -7,7 +7,8 @@ import unittest
 from unittest.mock import patch
 
 from scripts import series_terminology as names
-from scripts import sermon_pipeline as pipeline
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.workflows.dual_pdf import pipeline as pipeline
 from scripts import build_sermon_reading_edition_with_openai as reading
 from scripts import generate_notes_with_openai as notes
 

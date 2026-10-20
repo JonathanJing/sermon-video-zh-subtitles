@@ -1,0 +1,249 @@
+Estimating 212 unprofiled modules from measured per-case cost
+Shard 8/10: 619 tests from 372 modules
+..............................................................................................{"role": "translator", "model": "gpt-6.1-sol", "tier": "fast", "elapsedSeconds": 0.0, "usage": {"input_tokens": 100, "cached_input_tokens": 50, "output_tokens": 20}, "creditUsage": {"schemaVersion": "codex-credit-usage-v1", "status": "estimated", "estimatedCredits": 0.01525, "actualCredits": null, "actualQuotaUsage": null, "basis": "purchased_credit_equivalent", "model": "gpt-6.1-sol", "modelSource": "requested", "requestedServiceTier": "fast", "appliedServiceTier": "fast", "tierSource": "requested", "rateCardVersion": "codex-credits-2026-10-05", "rateCardSha256": "557d283646a6dd8ed49cc32a88e8459a165b72066339be99233ea75146c21edf", "verifiedAt": "2026-10-05", "sources": ["https://learn.chatgpt.com/docs/pricing", "https://learn.chatgpt.com/docs/agent-configuration/speed"], "ratesPerMillionTokens": {"input": 50, "cachedInput": 2.5, "output": 250}, "speedMultiplier": 2, "reason": "requested_identity_assumption"}}
+.................s.........................................................................Digest: /var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/tmp1j7cfbo5/digests/20261007-e2e (4 files, 9 redactions)
+Digest: /var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/tmp4g6ece7e/digests/20261007-e2e (4 files, 9 redactions)
+translated zh 1/1
+translated zh 1/1
+translated zh 1/1
+corrected 1/1
+corrected 1/1
+corrected 1/1
+.....................................................................................{"status": "source_bound_request", "out": "/private/var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/tmp2bgxdhzu/request.json"}
+{"pageId": "test-page", "source": "not_checked", "complete": 0, "total": 18, "out": "/var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/tmp2bgxdhzu/public-snapshot.json"}
+{"stage": "tts", "batchIndex": 0, "completedGroups": 2}
+{"stage": "tts", "batchIndex": 1, "completedGroups": 4}
+{"stage": "tts", "batchIndex": 2, "completedGroups": 6}
+{"stage": "tts", "batchIndex": 3, "completedGroups": 8}
+{"stage": "tts", "batchIndex": 4, "completedGroups": 10}
+{"stage": "tts", "batchIndex": 5, "completedGroups": 12}
+{"stage": "tts", "batchIndex": 6, "completedGroups": 13}
+.{"stage": "tts", "batchIndex": 0, "completedGroups": 2}
+{"stage": "tts", "batchIndex": 1, "completedGroups": 4}
+..............Digest: /var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/tmpgf3yo388/reports/20261018-journal (1 files, 0 redactions)
+discover	pass	0.0
+ko.text-qc.prefetch	pass	0.0
+ko.text-qc	pass	0.0
+ko.calibration.prefetch	pass	0.4
+ko.calibration	pass	0.2
+ko.text-waiver	pass	0.0
+{
+  "ko": {
+    "status": "text_waiver_issued",
+    "reason": null,
+    "problems": [],
+    "calibration": {
+      "overallDetectionRate": 1.0,
+      "cleanFalsePositiveRate": 0.0,
+      "trials": 90,
+      "detected": 90
+    }
+... 150 lines omitted; 7 error-like lines, 7 kept below ...
+[line 53]     "reason": "text QC failed; repair the failed groups in a new candidate revision",
+[line 62]     "reason": "failed groups are unchanged; repair them in a new candidate revision",
+[line 71]     "reason": "failed groups are unchanged; repair them in a new candidate revision",
+[line 80]     "reason": "text QC failed; repair the failed groups in a new candidate revision",
+[line 108] run_unittest_ci.py: error: --backend fake never writes to a persistent state dir
+[line 117]   "failedGroupIds": []
+[line 164] ......................................SERMON_LOGGING_WRITE_FAILED errorType=AccountingWriteError
+... end of omitted section ...
+      "gs://sermon-zh-artifacts-ai-for-god/realtime-events",
+      "--web-realtime-contract-report",
+      "artifacts/evidence/web-realtime-contract.json",
+      "--session-validation-out",
+      "artifacts/evidence/realtime-public-sse-smoke.session-validation.json",
+      "--out",
+      "artifacts/evidence/realtime-public-sse-smoke.json"
+    ],
+    [
+      "python3",
+      "scripts/validate_realtime_session.py",
+      "--events-jsonl",
+      "gs://sermon-zh-artifacts-ai-for-god/realtime-events/2026-06-28/<REALTIME_SESSION_ID>.jsonl",
+      "--expected-model",
+      "gpt-realtime-translate",
+      "--expected-stable-model",
+      "gpt-5.4-mini",
+      "--require-stable-correction",
+      "--out",
+      "artifacts/evidence/realtime-live-session/session-validation.json"
+    ]
+  ],
+  "modelPolicy": {
+    "doNotSubstituteAlternativeForRequiredMini": true,
+    "forbiddenOfflineModel": "gpt-realtime-translate",
+    "offlineAsrModel": "gpt-4o-transcribe",
+    "offlineTranslationModel": "gpt-5.4-mini",
+    "realtimeDraftModel": "gpt-realtime-translate",
+    "stableCorrectionModel": "gpt-5.4-mini"
+  },
+  "operatorChoices": [
+    {
+      "default": true,
+      "evidenceReports": [
+        "artifacts/evidence/web-realtime-contract.json",
+        "artifacts/evidence/public-caption-view-runtime.json",
+        "artifacts/evidence/realtime-public-sse-smoke.json",
+        "artifacts/evidence/realtime-public-sse-smoke.session-validation.json"
+      ],
+      "expectedAudioSourceKind": "ipad_mic",
+      "id": "browser_webrtc_ipad_or_iphone_mic",
+      "operatorAction": "Open the admin page, choose iPad mic realtime mode, and start the microphone session.",
+      "path": "browser WebRTC -> gpt-realtime-translate -> backend session events -> public caption SSE",
+      "source": "iPad/iPhone mic"
+    },
+    {
+      "command": [
+        "python3",
+        "scripts/run_realtime_live_session.py",
+        "--audio-url",
+        "<AUTHORIZED_AUDIO_URL>",
+        "--api-key-secret",
+        "<OPENAI_API_KEY_SECRET_RESOURCE>",
+        "--backend-url",
+        "https://example.test",
+        "--sunday",
+        "2026-06-28",
+        "--internal-task-token",
+        "$INTERNAL_TASK_TOKEN",
+        "--target-language",
+        "zh",
+        "--realtime-model",
+        "gpt-realtime-translate",
+        "--stable-model",
+        "gpt-5.4-mini",
+        "--realtime-event-gcs-prefix",
+        "gs://sermon-zh-artifacts-ai-for-god/realtime-events",
+        "--require-stable-correction",
+        "--out",
+        "artifacts/evidence/realtime-live-session/report.json",
+        "--worker-report-out",
+        "artifacts/evidence/realtime-live-session/worker-report.json",
+        "--stable-out-dir",
+        "artifacts/evidence/realtime-live-session/stable-corrections"
+      ],
+      "default": false,
+      "expectedAudioSourceKinds": [
+        "authorized_audio_url",
+        "authorized_audio_file",
+        "authorized_youtube_source"
+      ],
+      "id": "server_worker_authorized_audio",
+      "path": "server media worker -> gpt-realtime-translate -> backend session events -> public caption SSE",
+      "source": "authorized audio URL/file or authorized YouTube live source"
+    }
+  ],
+  "passCriteria": [
+    "Realtime session uses gpt-realtime-translate and targetLanguage=zh.",
+    "English input transcript deltas and Chinese caption deltas are saved as backend session events.",
+    "Public caption view receives caption_delta and caption_final over SSE.",
+    "Stable corrections are gpt-5.4-mini caption_final events that match realtime draft segmentId.",
+    "Offline post-live route never uses gpt-realtime-translate.",
+    "Offline no-caption fallback uses gpt-4o-transcribe before gpt-5.4-mini translation."
+  ],
+  "postLiveOfflineHandoff": {
+    "captionFirst": [
+      "Try requested English captions/VTT first.",
+      "Translate with gpt-5.4-mini.",
+      "Export zh VTT/SRT/playback JS/GCS manifest."
+    ],
+    "commands": [
+      [
+        "python3",
+        "scripts/write_no_caption_asr_fallback_plan.py",
+        "--sunday",
+        "2026-06-28",
+        "--out",
+        "artifacts/evidence/no-caption-asr-fallback-plan.json"
+      ],
+      [
+        "python3",
+        "scripts/validate_offline_chain.py",
+        "--report",
+        "<OFFLINE_REPORT_JSON>",
+        "--playback-js",
+        "<PLAYBACK_JS>",
+        "--zh-vtt",
+        "<ZH_VTT>",
+        "--zh-srt",
+        "<ZH_SRT>",
+        "--manifest",
+        "<CLOUD_MANIFEST_JSON>",
+        "--expected-asr-model",
+        "gpt-4o-transcribe",
+        "--expected-translation-model",
+        "gpt-5.4-mini",
+        "--out",
+        "artifacts/evidence/offline-chain-validation.json"
+      ]
+    ],
+    "noCaptionFallback": [
+      "If requested English captions are absent, extract authorized archive audio.",
+      "Transcribe with gpt-4o-transcribe.",
+      "Translate with gpt-5.4-mini.",
+      "Validate not_realtime_chain before publishing."
+    ],
+    "noCaptionRunnerCommand": [
+      "python3",
+      "scripts/run_no_caption_archive_asr_route.py",
+      "--live-url",
+      "<NO_CAPTION_YOUTUBE_LIVE_ARCHIVE_URL>",
+      "--api-key-secret",
+      "<OPENAI_API_KEY_SECRET_RESOURCE>",
+      "--sunday",
+      "2026-06-28",
+      "--session-id",
+      "no-caption-asr-route",
+      "--asr-model",
+      "gpt-4o-transcribe",
+      "--translation-model",
+      "gpt-5.4-mini",
+      "--out",
+      "artifacts/evidence/no-caption-asr-route-run.json"
+    ],
+    "trigger": "Run only after the YouTube live archive is available."
+  },
+  "schemaVersion": 1,
+  "secretResourceNamesIncluded": false,
+  "stabilizerFallbackCommand": [
+    "python3",
+    "scripts/run_realtime_stabilizer_loop.py",
+    "--input-jsonl",
+    "gs://sermon-zh-artifacts-ai-for-god/realtime-events/2026-06-28/<REALTIME_SESSION_ID>.jsonl",
+    "--api-key-secret",
+    "<OPENAI_API_KEY_SECRET_RESOURCE>",
+    "--backend-url",
+    "https://example.test",
+    "--session-id",
+    "<REALTIME_SESSION_ID>",
+    "--internal-task-token",
+    "$INTERNAL_TASK_TOKEN",
+    "--model",
+    "gpt-5.4-mini",
+    "--interval-seconds",
+    "5",
+    "--min-age-seconds",
+    "4",
+    "--model-preflight-out",
+    "artifacts/evidence/realtime-stable-correction-recovery/model-access.json",
+    "--out-dir",
+    "artifacts/evidence/realtime-stable-correction-recovery"
+  ],
+  "status": "ready_for_operator_review",
+  "sunday": "2026-06-28",
+  "targetWindow": {
+    "liveCaptionStart": "11:30 PT",
+    "publicReadinessDeadline": "11:50 PT"
+  }
+}
+ 126.20s     7  test_machine_quality_waiver
+  47.68s     1  test_run_machine_qc_audio_test
+  45.09s     3  test_sermon_historical_layer2
+  44.86s     2  test_spark_tts_production
+  32.47s     6  test_sermon_cuv_translation
+  25.51s     2  test_sermon_mock_tts_control
+  24.81s     3  test_sermon_local_business_callbacks
+  24.59s     6  test_sermon_delivery_intent_binding
+  24.11s     3  test_sermon_fresh_source_evidence
+  19.14s     2  test_canonical_layer2_reconciliation
+exit 0

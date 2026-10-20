@@ -4,7 +4,8 @@ import json
 from pathlib import Path
 import tempfile
 import unittest
-from scripts.experiments import decision_semantic_eval as e
+from tests import experiment_modules
+e = experiment_modules.load("experiments/decision-api-ab/decision_semantic_eval.py")
 from tests import test_decision_api_cases_content as content_fixtures
 response = content_fixtures.response
 
@@ -59,7 +60,7 @@ class SemanticEvalTests(unittest.TestCase):
         fixture = content_fixtures.ContentCasesTests(); fixture.setUp()
         try:
             fixture.english_fixture()
-            from scripts.experiments import decision_api_cases_content as c
+            c = experiment_modules.load("experiments/decision-api-ab/decision_api_cases_content.py")
             original = c.build_content_cases(fixture.root)[0]
             case = e.english_batch([original])
             self.assertEqual({c["value"] for c in case["b"]["questions"][0]["choices"]}, {"pass","fail"})

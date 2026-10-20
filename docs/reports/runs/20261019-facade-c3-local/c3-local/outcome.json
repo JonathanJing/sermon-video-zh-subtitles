@@ -1,0 +1,17 @@
+{
+  "schemaVersion": "local-test-outcome-v1",
+  "status": "passed_with_load_flakes_and_env_errors",
+  "exitCode": 1,
+  "startedAt": "2026-10-19T20:46:32Z",
+  "endedAt": "2026-10-19T21:18:15Z",
+  "scope": "Facade removal batch C3 (Layer 1 source): 8 scripts/ facades deleted, callers repointed to tongxing_production.source. Full unittest suite in 10 parallel shards on head 880bf24c (dev@5eb39da3 + C3), pytest-style files, targeted tests, §5.5 test-ID inventory, Appendix A survey, identity readback, git diff --check.",
+  "knownPreexistingFailures": [
+    "tests/test_codex_shared_pool_transport.py::test_busy_before_started_is_proven_no_dispatch (also fails on clean dev; D-window report records it)"
+  ],
+  "environmentErrors": [
+    "test_cloud_run_jobs and test_backend_app fail to import tongxing_api: this worktree venv does not install services/api; both pass with PYTHONPATH=services/api/src"
+  ],
+  "flakes": [
+    "test_layer2_large_fan_in test_129_group_actual_producer_can_assemble_and_resume_without_calls and test_65_group_worker_and_cache_only_recovery_preserve_every_dependency failed with utc_clock_discontinuity diagnostics under 10-shard load; the module passed alone on the same tree (A+B and D-window reports record the same flake)"
+  ]
+}

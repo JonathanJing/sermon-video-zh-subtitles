@@ -1,7 +1,8 @@
 import unittest
 
-from scripts import spark_wait_ready as subject
-from scripts.spark_exclusive_session import SessionError
+from tools.ops import spark_wait_ready as subject
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.compute.spark_exclusive_session import SessionError
 
 
 class FakeClient:

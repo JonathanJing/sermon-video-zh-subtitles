@@ -51,7 +51,7 @@ Run with the repository's existing `jsonschema` dependency installed:
 
 ```sh
 python -m unittest tests.test_sermon_agent_diagnostics -v
-python -m py_compile scripts/sermon_agent_diagnostics.py scripts/sermon_agent_diagnostics_contracts.py
+python -m py_compile scripts/sermon_agent_diagnostics.py packages/production/src/tongxing_production/workflows/diagnostic/agent_contracts.py
 ```
 
 The [fixtures](../tests/fixtures/sermon_agent_diagnostics/) contain synthetic identities and metadata only. Tests cover schemas/hashes, secret/private-content/instruction rejection, opaque exports, scope/version/cutoff mismatches, extra tools/URLs/paths, fabricated evidence and cause/reproduction claims, uncertainty requests, stale identity, limits, repeated-result replay, lost acknowledgements, unknown creation, tampered checkpoints, terminal identity and null-versus-zero usage. The success case forbids socket/subprocess execution and runs without environment credentials. These establish offline contract behavior, not live diagnostic quality, cost savings, production readiness or real-media sign-off.

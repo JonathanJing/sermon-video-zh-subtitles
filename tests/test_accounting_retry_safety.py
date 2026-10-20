@@ -10,8 +10,9 @@ import urllib.error
 import requests
 
 from scripts import generate_notes_with_openai as notes
-from scripts import sermon_accounting as accounting
-from scripts import sermon_pipeline as pipeline
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.observability import accounting
+from tongxing_production.workflows.dual_pdf import pipeline as pipeline
 
 
 class AccountingRetrySafetyTests(unittest.TestCase):
@@ -40,7 +41,7 @@ class AccountingRetrySafetyTests(unittest.TestCase):
 
     @staticmethod
     def bounded_chat():
-        from scripts import sermon_provider_limits as limits
+        from tongxing_production.compute import provider_limits as limits
         return limits.bounded_payload({
             'model': 'gpt-6-astra', 'reasoning_effort': 'medium',
             'messages': [{'role': 'user', 'content': 'synthetic retry fixture'}],
@@ -87,7 +88,7 @@ class AccountingRetrySafetyTests(unittest.TestCase):
                     self.assertEqual(network.call_count, 1)
 
     def test_known_http_rejection_does_not_poison_corrected_work_or_repeat_same_call(self):
-        from scripts import api_cli_outcomes as outcomes
+        from tongxing_production.compute import outcomes
         error = urllib.error.HTTPError("https://example.invalid", 503, "unavailable", {}, io.BytesIO(b"retryable"))
         with patch.object(pipeline.urllib.request, "urlopen", side_effect=[error, self.urllib_response()]) as network:
             with self.assertRaises(RuntimeError):
@@ -101,7 +102,7 @@ class AccountingRetrySafetyTests(unittest.TestCase):
         attempts = [event for event in self.events() if event["event"] == "api_attempt"]
         self.assertEqual([event["status"] for event in attempts], ["failed", "completed"])
         self.assertEqual(attempts[0]["httpStatus"], 503)
-        from scripts.sermon_provider_error import diagnostic
+        from tongxing_production.compute.sermon_provider_error import diagnostic
         self.assertEqual(error.safe_diagnostic, diagnostic(503,b"retryable"))
 
     def test_notes_successful_response_keeps_write_failure_distinct(self):

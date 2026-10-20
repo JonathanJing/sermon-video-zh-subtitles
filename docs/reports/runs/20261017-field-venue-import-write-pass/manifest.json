@@ -1,0 +1,27 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-field-venue-import-write-pass",
+  "runs": [
+    {
+      "label": "field-venue-import-write-pass-20261017",
+      "source": "/private/tmp/field-venue-exp-leaf-20261017/artifacts/field-venue-import-write-pass-20261017",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "field-venue-import-write-pass-20261017",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 578,
+      "truncated": false,
+      "sha256": "5d509efd16395268fd0de78561251e36c0c388c65a65f7d3b09ad20a7dd4c68b",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

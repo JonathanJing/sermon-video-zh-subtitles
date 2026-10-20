@@ -4,8 +4,9 @@ import tempfile
 import unittest
 from unittest.mock import Mock, patch
 from tongxing_production.compute import legacy_openai  # C4: the remote-call group lives here
-from scripts import api_cli_outcomes as outcomes
-from scripts.production_spark_admission import SessionBoundCaller
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.compute import outcomes
+from tongxing_production.compute.spark_admission import SessionBoundCaller
 
 
 def reconciliation_evidence(request_sha256, response, *, terminal_failure=False):
@@ -181,7 +182,7 @@ class ApiCliOutcomeTests(unittest.TestCase):
                 outcomes.recover(directory, row['requestSha256'], row['purpose'])
 
     def test_cli_private_terminal_bytes_are_omitted_from_export(self):
-        from scripts import export_run_digest as exporter
+        from tools.development import export_run_digest as exporter
         import base64
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory); source = root/'source'; dest = root/'export'
@@ -392,7 +393,7 @@ class ApiCliOutcomeTests(unittest.TestCase):
             root = Path(tmp)
             outcomes._write(root/('a'*64)/'outcome.json', {'schemaVersion':outcomes.V2_SCHEMA,'requestSha256':'a'*64,'purpose':'production-model-call','status':'started'})
             result = subprocess.run([sys.executable, '-c',
-                'from scripts.production_spark_admission import SessionBoundCaller; '
+                'from scripts import tongxing_host; from tongxing_production.compute.spark_admission import SessionBoundCaller; '
                 'import sys; SessionBoundCaller(lambda: print("DISPATCHED"), '
                 'requires_spark=False, outcome_directory=sys.argv[1])()', tmp],
                 text=True, capture_output=True)
@@ -401,10 +402,11 @@ class ApiCliOutcomeTests(unittest.TestCase):
             self.assertIn('reconciliation_required', result.stderr)
 
     def test_legacy_text_unknown_never_retries_inside_hold(self):
-        from scripts import sermon_pipeline as pipeline
+        from scripts import tongxing_host  # noqa: F401  binds the production package ports
+        from tongxing_production.workflows.dual_pdf import pipeline as pipeline
         with tempfile.TemporaryDirectory() as tmp, \
              patch.dict('os.environ', {'SERMON_ACCOUNTING_DIR':tmp}), \
-             patch('scripts.strict_budget_capability.require_bounded_api_payload'), \
+             patch('tongxing_production.compute.budget_capability.require_bounded_api_payload'), \
              patch.object(legacy_openai, 'json_request', side_effect=TimeoutError('unknown')) as request, \
              patch.object(pipeline.time, 'sleep'):
             with self.assertRaises(TimeoutError):
@@ -468,7 +470,7 @@ class ApiCliOutcomeTests(unittest.TestCase):
             self.assertEqual(outcomes.recover(tmp,row['requestSha256'],'production-model-call'),{'ok':True})
 
     def test_confirmed_no_dispatch_terminal_failure_preserves_reason(self):
-        from scripts.sermon_pipeline import PreDispatchRejection
+        from tongxing_production.workflows.dual_pdf.pipeline import PreDispatchRejection
         with tempfile.TemporaryDirectory() as tmp:
             def guarded(payload):
                 outcomes.observed_no_dispatch('provider_configuration_blocked')
@@ -514,12 +516,12 @@ class ApiCliOutcomeTests(unittest.TestCase):
         def changed(api_key,payload):calls.append(2);return {'new':True}
         for kind in ('route','key','implementation'):
             with self.subTest(kind=kind),tempfile.TemporaryDirectory() as tmp:
-                with patch('scripts.sermon_openai_runtime.selected_route',return_value=route):
+                with patch('tongxing_production.compute.openai_runtime.selected_route',return_value=route):
                     wrapped=SessionBoundCaller(first,requires_spark=False,outcome_directory=tmp)
                     wrapped('secret-original',{'request':1})
                     old=outcomes.request_identity(first,('secret-original',{'request':1}),{},wrapped.purpose)
                     newroute={**route,'environment':'prod','credentialAlias':'tongxing-prod-runtime'} if kind=='route' else route
-                    with patch('scripts.sermon_openai_runtime.selected_route',return_value=newroute):
+                    with patch('tongxing_production.compute.openai_runtime.selected_route',return_value=newroute):
                         caller=changed if kind=='implementation' else first
                         key='secret-changed' if kind=='key' else 'secret-original'
                         self.assertNotEqual(old,outcomes.request_identity(caller,(key,{'request':1}),{},wrapped.purpose))

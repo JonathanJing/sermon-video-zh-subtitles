@@ -20,7 +20,8 @@ ROOT = HERE.parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from scripts import mfa_spark  # noqa: E402
+from scripts import tongxing_host  # noqa: E402,F401  binds the production package ports
+from tongxing_production.source import mfa_spark  # noqa: E402
 
 
 SCHEMA = "sermon-mfa-from-word-report-poc-v1"

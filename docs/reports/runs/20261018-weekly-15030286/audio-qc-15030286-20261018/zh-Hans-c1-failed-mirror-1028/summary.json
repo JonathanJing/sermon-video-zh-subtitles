@@ -1,0 +1,23 @@
+{
+  "backend": "real",
+  "implementationSha256": "51e2b9cae5804344684d11a52d7872ce84a4a434f4aea17adce9708c467c0d55",
+  "locales": {
+    "zh-Hans": {
+      "locale": "zh-Hans",
+      "paths": {
+        "job": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/weekend-live/layer3-15030286-20261018/zh-Hans/spark-zh-Hans-c1/speech-job/job.json",
+        "package": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/weekend-live/layer3-15030286-20261018/zh-Hans/audio-package-c1.json"
+      },
+      "problems": [
+        "speech job input englishSourcePackage is missing or changed",
+        "speech job input anchorManifest is missing or changed",
+        "speech job input targetLanguageCandidate is missing or changed",
+        "speech job input targetLanguagePolicy is missing or changed",
+        "speech job input textReleaseBasis is missing or changed"
+      ],
+      "status": "blocked"
+    }
+  },
+  "runDir": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/weekend-live",
+  "transportSha256": "0c58ef32ea8005566fd350dfd2a1e3337ce163e2754cc497bdae3dfe8988a8c4"
+}

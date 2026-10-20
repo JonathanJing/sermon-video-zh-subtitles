@@ -3,10 +3,11 @@ from pathlib import Path
 import unittest
 from unittest.mock import patch
 
-from scripts import canonical_layer2_budget as budget
-from scripts import canonical_layer2_controller as controller
-from scripts import sermon_review_budget as ledger
-from scripts import sermon_workflow_jobs as jobs
+from tongxing_production.text import budget
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.text import controller
+from tongxing_production.review import review_budget as ledger
+from tongxing_production.orchestration import jobs
 from tests import test_canonical_layer2_controller as fixtures
 
 
@@ -116,7 +117,7 @@ class CanonicalLayer2BudgetTests(unittest.TestCase):
             jobs._persist(folder / 'request.json', request)
             jobs._persist(folder / 'state.json', {'schemaVersion': jobs.SCHEMA, 'jobId': key,
                 'status': 'running', 'requestSha256': jobs._digest(request)})
-            with patch('scripts.codex_layer2_transport.CodexLayer2Transport', side_effect=AssertionError('CLI dispatch forbidden')) as cli:
+            with patch('tongxing_production.compute.transports.codex_layer2.CodexLayer2Transport', side_effect=AssertionError('CLI dispatch forbidden')) as cli:
                 with self.assertRaisesRegex(Exception, 'openai_layer2_requires_explicit_dev_or_prod_launcher'):
                     controller.execute(self.config.path, 'zh-Hans', self.config.sha256,
                         self.code, key, budget_authorization=self.auth_path, expected_budget=self.auth['sha256'])

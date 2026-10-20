@@ -79,6 +79,22 @@ def atomic_json(path, value):
     finally:
         if temporary.exists(): temporary.unlink()
 
+
+def process_role(executable, arguments):
+    """'model' for a model server, 'worker' for a GPU worker process, else None."""
+    role = None
+    names = {Path(arg).name for arg in arguments}
+    if executable in {'llama-server', 'vllm', 'sglang'} or names & {'llama-server', 'vllm', 'sglang', 'vllm.entrypoints.openai.api_server'}:
+        role = 'model'
+    if names & {'task_worker.py', 'job_runtime.py', 'replay_fixed_clip_local_models.py', 'render_formal_target_language_speech.py'}:
+        role = 'worker'
+    # Since the D closure window the formal renderer runs as tools/ops/run.py audio.renderer.
+    if any(Path(entry).name == 'run.py' and module == 'audio.renderer'
+           for entry, module in zip(arguments, arguments[1:])):
+        role = 'worker'
+    return role
+
+
 class LinuxBackend:
     """Read-only inventory and fixed allowlist mutations, all subprocesses bounded."""
     def __init__(self, *, queue_path=None, samples=3, interval=0.25):
@@ -125,12 +141,7 @@ class LinuxBackend:
                 arguments = [part.decode(errors='replace') for part in cmd if part]
                 executable = Path(os.readlink(path / 'exe')).name
                 cgroup = (path / 'cgroup').read_text()
-                role = None
-                names = {Path(arg).name for arg in arguments}
-                if executable in {'llama-server', 'vllm', 'sglang'} or names & {'llama-server', 'vllm', 'sglang', 'vllm.entrypoints.openai.api_server'}:
-                    role = 'model'
-                if names & {'task_worker.py', 'job_runtime.py', 'replay_fixed_clip_local_models.py', 'render_formal_target_language_speech.py'}:
-                    role = 'worker'
+                role = process_role(executable, arguments)
                 helper = None
                 if len(arguments) == 3 and arguments[1] == '-c' and Path(arguments[0]).name.startswith('python') and RESOURCE_TRACKER_ARGUMENT.match(arguments[2]):
                     helper = RESOURCE_TRACKER_HELPER

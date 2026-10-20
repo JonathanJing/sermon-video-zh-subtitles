@@ -1,0 +1,16 @@
+s0: Ran 543 tests in 1516.507s OK (skipped=4) exit=0
+s1: Ran 558 tests in 1243.307s OK (skipped=5) exit=0
+s2: Ran 577 tests in 1359.816s OK (skipped=4) exit=0
+s3: Ran 602 tests in 1275.704s OK (skipped=3) exit=0
+s4: Ran 603 tests in 1526.017s FAILED (errors=1, skipped=2) exit=1
+s5: Ran 607 tests in 1596.308s OK (skipped=2) exit=0
+s6: Ran 607 tests in 1380.778s OK (skipped=5) exit=0
+s7: Ran 615 tests in 1391.726s FAILED (failures=1, skipped=4) exit=1
+s8: Ran 615 tests in 1357.322s FAILED (failures=1, skipped=4) exit=1
+s9: Ran 616 tests in 2141.204s FAILED (failures=1, errors=1, skipped=5) exit=1
+ERROR: test_cloud_run_jobs (unittest.loader._FailedTest.test_cloud_run_jobs)
+FAIL: test_100_transitions_with_persistent_intents (test_sermon_unified_parallel.ParallelOwnerTests.test_100_transitions_with_persistent_intents)
+ERROR: test_backend_app (unittest.loader._FailedTest.test_backend_app)
+FAIL: test_65_group_worker_and_cache_only_recovery_preserve_every_dependency (test_layer2_large_fan_in.LargeLayer2FanInTests.test_65_group_worker_and_cache_only_recovery_preserve_every_dependency)
+FAIL: test_129_group_actual_producer_can_assemble_and_resume_without_calls (test_layer2_large_fan_in.LargeLayer2FanInTests.test_129_group_actual_producer_can_assemble_and_resume_without_calls)
+rerun after `pip install -e ./services/api` (worktree_venv.py does not install it): test_backend_app, test_cloud_run_jobs pass; test_layer2_large_fan_in 65/129 still fail with utc_clock_discontinuity at load average ~221

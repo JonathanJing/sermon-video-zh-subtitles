@@ -4,14 +4,14 @@
 
 并发、请求上限和新计划预算的当前规则见[周更运行配置](weekly-run-profile.zh.md)；既有运行保留冻结授权与缓存身份，API-only 阶段不占 Spark，GPU 阶段按原准入门执行。
 
-在 git worktree 里跑测试或脚本前，先执行 `python3 scripts/worktree_venv.py`。共享 `.venv` 的可编辑安装指向主 checkout，`PYTHONPATH` 管不到 `python -I` 启动的子进程；该脚本建 `<worktree>/.venv`，先导入本 worktree 的 `packages/production/src`，再用共享 `.venv` 的依赖（依赖仍装在共享 `.venv`）。
+在 git worktree 里跑测试或脚本前，先执行 `python3 tools/development/worktree_venv.py`。共享 `.venv` 的可编辑安装指向主 checkout，`PYTHONPATH` 管不到 `python -I` 启动的子进程；该脚本建 `<worktree>/.venv`，先导入本 worktree 的 `packages/production/src` 与 `services/api/src`，再用共享 `.venv` 的依赖（依赖仍装在共享 `.venv`）。只用共享 `.venv` 跑 pytest 时见 [CONTRIBUTING](../CONTRIBUTING.zh.md#在-git-worktree-里跑测试)。
 
 ### 开工前：预算文件与开工检查（2026-10-13 起）
 
 1. 按[运行配置](../config/weekly-run-profile.json)为当前选定阶段写出预算文件：每种语言一个质检预算根（文本质检、校准、音频质检共用），以及绑定已有 Layer 2 执行配置的预算。`--approved-by`／`--evidence` 写明实际批准人和出处，工具不代写批准；任一环节上限加已结算超过总额时不写任何文件。全部 cap 超过总额时必须显式选择 `--stage`，未选不写授权。前一阶段先结算与对账；同一冻结代码身份换预算根时才可用 `--reuse-from <上一份计划目录>`，该模式只重放已有响应，缺失操作拒绝付费。部分 QC 使用 `--resume-qc-authorization <原v4授权>` 在原根、原额度下继续；两模式互斥，见[恢复合同](canonical-layer2-budget-and-migration.zh.md#qc-部分运行继续原授权与跨根只读重放分开)。#380 合并后的首次运行禁止复用旧身份缓存。
 
 ```sh
-.venv/bin/python scripts/run_with_openai_environment.py --environment dev -- \
+.venv/bin/python tools/ops/run_with_openai_environment.py --environment dev -- \
   .venv/bin/python scripts/plan_run_budgets.py --out <新目录> --scale clip|week --total-usd <批准总额> --settled-usd <已结算> --approved-by <批准人> --evidence <出处> [--stage qc.ko|layer2] [--qc-inputs <inputs.json>] [--layer2-execution <execution.json>] [--reuse-from <上一份计划目录>]
 ```
 
@@ -30,11 +30,11 @@ QC 的 inputs v3 必须含实际 launcher 的非秘密 `openaiRoute`（schemaVer
 
 额度耗尽时的后续方向见[API fallback 设计](codex-quota-api-fallback-design.zh.md)：需要明确拒绝证据、独立调用身份、入口验收和绑定预算；目前没有实现或启用。不能通过更换环境变量、认证或删除 started marker 将未决调用转到 API。
 
-合并后用真实模型把一段周次片段完整跑到 Dev 测试页（Layer 1–4、按语言质检、质检失败回 Layer 2 修订、Spark 配音与音频质检、受控发布），按[真实模型片段 E2E](clip-real-e2e.zh.md)用 `scripts/run_clip_real_e2e.py` 和一份运行规格执行，可断点续跑。
+合并后用真实模型把一段周次片段完整跑到 Dev 测试页（Layer 1–4、按语言质检、质检失败回 Layer 2 修订、Spark 配音与音频质检、受控发布），按[真实模型片段 E2E](clip-real-e2e.zh.md)用 `tools/development/run_clip_real_e2e.py` 和一份运行规格执行，可断点续跑。
 
-真实Dev音频测试按[已接入的参数入口](local-production-next-dev-test-parameters.zh.md#已接入的音频入口)运行`python -m scripts.run_dev_local_audio_test tts|back-asr`：自动读取profile选配音batch2、回转写batch4，显式batch1作基线、回转写8作对照。此入口保留正式producer门禁与独立回执；合并dev和CI不会自动运行GPU或付费模型。
+真实Dev音频测试按[已接入的参数入口](local-production-next-dev-test-parameters.zh.md#已接入的音频入口)运行`python tools/development/run_dev_local_audio_test.py tts|back-asr`：自动读取profile选配音batch2、回转写batch4，显式batch1作基线、回转写8作对照。此入口保留正式producer门禁与独立回执；合并dev和CI不会自动运行GPU或付费模型。
 
-每周正式制作前先运行 `python scripts/evaluate_backend_four_layer_dry_run.py --out <忽略目录内的评估收据>`，再按[后端四层快速 Dry Run](backend-four-layer-dry-run.zh.md)生成 Firebase Dev 独立测试页。该评估模拟拿到链接，走 Layer 1–4 的短夹具交接，并测试四处失败阻断及无效故障点；CI 也在非文档 PR 上执行。模拟通过只说明这条测试链路工作；正式周次仍从真实来源、审核和音频证据继续。本 runbook 下文的 Supervisor 仍只覆盖 `dual_pdf` 范围。
+每周正式制作前先运行 `python tools/development/evaluate_backend_four_layer_dry_run.py --out <忽略目录内的评估收据>`，再按[后端四层快速 Dry Run](backend-four-layer-dry-run.zh.md)生成 Firebase Dev 独立测试页。该评估模拟拿到链接，走 Layer 1–4 的短夹具交接，并测试四处失败阻断及无效故障点；CI 也在非文档 PR 上执行。模拟通过只说明这条测试链路工作；正式周次仍从真实来源、审核和音频证据继续。本 runbook 下文的 Supervisor 仍只覆盖 `dual_pdf` 范围。
 
 2026-09-11 的安装与验收状态见 [Agents API 生产切换记录](agents-api-production-cutover-20260911.zh.md)：当时代码已安装，正式入口 shadow/execute 验收通过，每周调度已启用，业务状态为等待目标周日匹配源。该状态是切换收据，不是永久运行状态；每次执行必须重新读取当前 source、lease、审批、run status 与 QA。2026-09-20 的完整内容制作证据另见[本周制作记录](production-2026-09-20.zh.md)。
 
@@ -64,6 +64,42 @@ QC 的 inputs v3 必须含实际 launcher 的非秘密 `openaiRoute`（schemaVer
 
 当前只有 Layer 1 producer 已进入生产 shadow；Layer 2–4 通用 producer 仍在迁移。新周次可以继续完成双 PDF 或 legacy 中文产物，但没有对应 canonical package 时必须报告具体范围，不得报告 `four_layer_release=complete`。一种 locale 失败不自动阻塞或批准其他 locale。
 
+### 逐组（DEV-GRP）操作入口（2026-10-20 起，部分）
+
+逐组流水线把每个 Layer 1 组（通常一句）从翻译到配音当作独立任务，只在发布前合并。入口是 `tools/ops/group_tasks.py`；配置是 `sermon-group-run-config-v1`：
+
+```json
+{"schemaVersion": "sermon-group-run-config-v1", "source": "english-source-package.json",
+ "anchor": "anchor-manifest.json", "locale": "ko", "policy": "policy.json",
+ "plugin": "plugin.py", "records": "run/groups", "work": "run/work", "merge": "run/merge"}
+```
+
+```bash
+python tools/ops/group_tasks.py status --config run.json          # 只读：每组每步状态 + layer3 进度
+python tools/ops/group_tasks.py run --config run.json --budget <budget.json>   # 只跑过期或点名的组
+python tools/ops/group_tasks.py redo --config run.json --group-id <id> --reason "…" --budget <budget.json>
+python tools/ops/group_tasks.py merge --config run.json [--affected <id> …]
+python tools/ops/group_tasks.py release-basis --config run.json --receipt <文本 QC/人审收据>
+python tools/ops/group_tasks.py prepare-l3 --config run.json --text-release-basis <收据> \
+  --adapter <adapter.json> --speaker-registry <registry.json> [--voice-authorization <收据>] --out <新目录>
+python tools/ops/group_tasks.py stages --config l3-stages.json --out <L3 输出目录> [--dry-run]
+python tools/ops/group_tasks.py plan --manifest <整篇产物清单> [--locale ko]   # 只读规划
+python tools/ops/group_tasks.py verify --manifest <整篇产物清单> --locale ko   # 只读：候选与逐组记录/插件收据一致
+```
+
+边界：
+
+- `run` 是一组一次 `run_accounted`，每次写新的 `attempt-NNNN` 轮目录；付费前必须用 `--budget`（逐组 `admit`）或显式 `--confirm-unbudgeted`。
+- `redo` 写一条 `sermon-group-directive-v1` 指令，理由进入 T/R prompt 与 `revisionSha256` 记录键；旧记录变 `stale`。指令不是内容批准。
+- `merge` 输出 candidate/evidence/language-review，放在 `merge/<locale>/<candidateSha256前16位>/`，`current.json` 指针原子切换；再次合并的变化组必须等于 `--affected`。第 4 步（校准）与第 7–10 步（渲染、排程/字幕、整轨、筛查/音频 QC、试听豁免）仍待接线。
+- `release-basis` 把现有文本 QC/校准或人审收据绑定到当前 candidate（校验 candidate/source/policy 哈希），写 `text-release.json`；它不创建 waiver、批准或披露。`prepare-l3` 发现已绑定的收据与传入的不同会拒绝。
+- `prepare-l3` 只调用现有 speech job producer；文本放行和声音授权由操作者提供，不在此创建或升级。
+- `stages` 的草案在 [`config/group-l3-stages.draft.json`](../config/group-l3-stages.draft.json)：它不是已验收配置，复制到目标运行旁、替换全部路径，并逐个核对 `produces` 是否是该运行真正写出的文件；先 `--dry-run`。
+- `stages` 的 `paths` 必须给 7 个输入文件；可选 `mergeDir` 指向当前合并目录时，运行后会在那里写一份最新 `l3-stages.json`（完整证据仍在 `--out`）。
+- `stages` 的 `paths` 必须给 7 个输入文件；`variables` 可声明 `locale`、`code`、`stageDir` 等字符串，在命令里用 `{变量名}` 引用；命令的工作目录是 `variables.repoRoot`（缺省为配置目录），所以仓库相对命令要设它。`produces` 必须写 producer 真正会生成的文件，否则按失败处理。
+- `stages` 按配置顺序执行第 7–9 步的现有 producer 命令（渲染、压缩/筛查、打包、音频 QC），每个 stage 绑定命令 SHA-256 并写 `stage-report.json`；非零退出或“成功但没产出 `produces`”都停止后续 stage。命令仍含未解析 `{placeholder}` 时在派发前拒绝。`--dry-run` 只计划。stage 可声明 `failures` 指向 producer 自己的汇总 JSON；失败时从 `failedGroups`/`failedGroupIds` 读出组 ID，写进 `stage-report.json` 的 `failedGroupIds` 与 `nextActions`，用于 `redo`。
+- 逐组记录、指令和合并产物都是中间证据，不能当发布批准。
+
 ### 本周中文配音策略（2026-09-27 起的新 job）
 
 用户听审 2026-09-20 的 POC 后，选择整句自然语速版，否决 40.67 秒的句内多段拼接版。新的 legacy 中文配音 job 绑定 `complete_chinese_sentence_natural_pace_v1`：按完整中文句子或已审稿中的完整分句建立 TTS 单元，每单元一次合成；禁止按英文词停顿把中文句内词组拆开，不做为了凑英文总时长的变速或时间拉伸。句间保留既有短停顿；英文原声的词级停顿只作为 Layer 1 参考和后续对齐证据，不直接成为中文合成切点。过长句子须回到文字审核选择自然断句，不能静默按词长切割。
@@ -83,7 +119,7 @@ OpenAI 云端转写与语言 API 保持不变。legacy 每周 TTS 和配音质�
 已有完整本地礼拜录像、且不应重新下载时，可先用 `sermon_pipeline.py` 的 `--english-source-only` 从原文件和已批准的绝对窗口生成英文 ASR、MFA 词时间与 `summary.json`。该模式要求 reading/MFA，写入 `status=english_source_candidate`，不调用中文翻译，也不授予 Layer 2 正式资格。`summary.json` 将原媒体 SHA-256 绑定到 `pipelineInputIdentity.sourceAudio`；仍须用同一媒体哈希、来源 URL hash 和窗口另存人工范围收据，再生成锚点、机器裁判和英文人工审核收据。没有可用的本机或 Spark MFA 时，默认按预检要求停在付费转写之前。若操作员明确授权这份媒体的外部转写，可单独选择 `--english-transcript-only`：它保存原始英文 ASR 和 `transcript-only-summary.json`，不运行 MFA、翻译或正式 Layer 1 放行；MFA 恢复后以同一 `--outdir` 运行 `--english-source-only`，按输入身份复用仍有效的 ASR 缓存。
 
 ```bash
-.venv/bin/python scripts/sermon_pipeline.py \
+.venv/bin/python tools/ops/run.py workflows.dual_pdf.pipeline \
   --input /absolute/path/to/service-complete.mp4 \
   --start-time HH:MM:SS --end-time HH:MM:SS \
   --slug weekly-source --outdir /absolute/path/to/ignored/run/pipeline \
@@ -114,11 +150,13 @@ shadow receipt 的 `ready_for_model_translation` 只表示自动锚点结构干�
 
 这些字段必须保存在本地 log 中，不能仅在对话结束时口头报告。每次完成或停止都保留执行摘要，并关联来源／版本、工作量、质量、审批、交付和恢复证据；尚未采集的指标明确注明。必记内容与现有采集边界见[日志内容规范](workflow-accounting.zh.md#已接入的指标与保留边界)。
 
-排查最近一次执行：`.venv/bin/python scripts/sermon_logs.py artifacts/post-live-runs/YYYY-MM-DD/accounting --level WARNING`。需要完整事件去掉 `--level WARNING`；需要检查退出码加 `--check`。入口、阶段和子进程共享 `runId`，失败及业务等待状态保留在同一账本；详见[统一事件与错误追踪](workflow-accounting.zh.md#统一事件与错误追踪)。
+Layer 2 的每组耗时、恢复跑并行度和周投影诊断，按[周更运行配置的验收步骤](weekly-run-profile.zh.md#layer-2-本地开销与恢复并行真实运行怎么验收2026-10-20-改动)量，并与其中的 10-18 基线并列写进运行报告。
+
+排查最近一次执行：`.venv/bin/python tools/ops/run.py observability.logs artifacts/post-live-runs/YYYY-MM-DD/accounting --level WARNING`。需要完整事件去掉 `--level WARNING`；需要检查退出码加 `--check`。入口、阶段和子进程共享 `runId`，失败及业务等待状态保留在同一账本；详见[统一事件与错误追踪](workflow-accounting.zh.md#统一事件与错误追踪)。
 
 ## 每周默认交付海报
 
-每周内容发行并完成 HTTP 核验后，默认继续制作本周分享海报，作为周末交付的一部分；用户无需每周重复提出。复用已核验的发行包和页面 ID，由 Codex 使用内置 ImageGen 生成主视觉，再用 `scripts/build_multilingual_sermon_posters.py` 按[当前单行标题格式规范](tongxing-weekly-poster-format.zh.md)合成本周已发布语言的双二维码海报。临时制作、历史重做和单语补图也走同一模板与入口，单语用 `--locales`；旧 `build_sermon_poster.py` 只供复现既有 `weekly.json` 格式。不传 `--art` 先准备来源 brief，再按[内容 brief 流程](tongxing-weekly-poster-content-brief.zh.md)写实际主视觉 prompt；提供 `--art`、`--art-prompt` 后渲染并通过公开 HTTP 核验输入，实际目视后追加 `--visual-reviewed` 记录机器验收。交付 `poster.png`、`poster-preview.png` 与 `poster-receipt.json`。详细命令、绑定和验收见[每周海报交付](tongxing-weekly-release.zh.md#每周海报交付)。
+每周内容发行并完成 HTTP 核验后，默认继续制作本周分享海报，作为周末交付的一部分；用户无需每周重复提出。复用已核验的发行包和页面 ID，由 Codex 使用内置 ImageGen 生成主视觉，再用 `tools/ops/run.py delivery.posters.build` 按[当前单行标题格式规范](tongxing-weekly-poster-format.zh.md)合成本周已发布语言的双二维码海报。临时制作、历史重做和单语补图也走同一模板与入口，单语用 `--locales`；旧 `build_sermon_poster.py` 只供复现既有 `weekly.json` 格式。不传 `--art` 先准备来源 brief，再按[内容 brief 流程](tongxing-weekly-poster-content-brief.zh.md)写实际主视觉 prompt；提供 `--art`、`--art-prompt` 后渲染并通过公开 HTTP 核验输入，实际目视后追加 `--visual-reviewed` 记录机器验收。交付 `poster.png`、`poster-preview.png` 与 `poster-receipt.json`。详细命令、绑定和验收见[每周海报交付](tongxing-weekly-release.zh.md#每周海报交付)。
 
 此处是 Codex 执行流程约定，不表示现有 Supervisor 或 Scheduler 已接入图像工具。准备与本地合成不自动发起付费 API 调用，不自动上传或发送海报；ImageGen 阶段由 Codex 按工具与已有授权执行。工具不可用或 QA 未通过时，保留待完成状态与证据，不把页面发行完成等同于海报完成。
 
@@ -127,8 +165,8 @@ shadow receipt 的 `ready_for_model_translation` 只表示自动锚点结构干�
 需要连同配音候选一起检查或顺序推进时，使用[周六统一入口](saturday-harness.zh.md)：默认只读，显式 `execute` 才调用现有生产阶段；不会自动替换当前定时任务。续租、超时、目录锁和远端结果核对见[执行保护与恢复](sermon-execution-harness.zh.md)。
 
 ```bash
-.venv/bin/python scripts/run_with_openai_environment.py --environment prod -- \
-  .venv/bin/python scripts/run_codex_local_sermon_production.py \
+.venv/bin/python tools/ops/run_with_openai_environment.py --environment prod -- \
+  .venv/bin/python tools/ops/run.py workflows.dual_pdf.codex_local \
   --mode execute --agent-backend codex-cli --model gpt-6-luna --reasoning-effort medium --service-tier fast \
   --notify-sendgrid-secret '' --notify-recipients-secret '' --notify-sender-secret ''
 ```
@@ -181,7 +219,7 @@ env -u SERMON_OPENAI_ENVIRONMENT -u SERMON_OPENAI_CREDENTIAL_ALIAS \
 
 新 canonical Layer 2 的翻译／复核按[当前模型及调用策略](production-model-runtime-policy.zh.md)执行。legacy 双 PDF、阅读稿和证道同行仍以各入口实际参数与运行收据为准：`sermon_pipeline` 的文字请求走 OpenAI API，手动阅读稿入口默认 `--reading-edition-provider openai`，Supervisor 的 generation 命令显式指定阅读稿 provider 为 `codex`。这些入口不能统称为“全部 CLI”或视为已自动迁移到 canonical Layer 2。ASR 保持 `gpt-transcribe` 及所属 API 环境。模型审核只标记机器审核，不等于人工 Gold 或周日双语提示词批准。
 
-后续同行制作默认使用和合本（CUV）。英文来源冻结后、交付与配音前，按[和合本经文锁定与证道重译](sermon-cuv-production.zh.md)执行 `scripts/sermon_cuv_translation.py run`：识别直接经文、从固定库精确取文、锁定引用，再完成全篇翻译和独立审校。字幕、阅读 PDF、TTS 及大纲中的经文引用须采用同一份通过审校的锁定中文；大纲仍可概括讲解，不能作为配音稿。解释、玩笑和讲员错引保留为讲员话，不强改成经文；机器审核不授予人工批准。现有 Supervisor 不会自动调用此新步骤，须核对实际执行收据；重译后更新关联产物，并用新音频重新测量时长。
+后续同行制作默认使用和合本（CUV）。英文来源冻结后、交付与配音前，按[和合本经文锁定与证道重译](sermon-cuv-production.zh.md)执行 `tools/ops/run.py text.cuv_translation run`：识别直接经文、从固定库精确取文、锁定引用，再完成全篇翻译和独立审校。字幕、阅读 PDF、TTS 及大纲中的经文引用须采用同一份通过审校的锁定中文；大纲仍可概括讲解，不能作为配音稿。解释、玩笑和讲员错引保留为讲员话，不强改成经文；机器审核不授予人工批准。现有 Supervisor 不会自动调用此新步骤，须核对实际执行收据；重译后更新关联产物，并用新音频重新测量时长。
 
 Supervisor 的 generation 命令显式传入 Sol 6.1、high、阅读稿 provider `codex` 及 `--export-sunday-context`，不据此推断其他阶段的后端或实际 service tier。手动调用 `run_post_live_subtitle_generation.py` 时按其各项 provider/model 参数执行；需要周日产物时显式加 `--export-sunday-context`。
 
@@ -215,7 +253,7 @@ Supervisor 的 generation 命令显式传入 Sol 6.1、high、阅读稿 provider
 
 - **代码身份冻结。** 运行开始时在运行计划里记下 `machine_quality_waiver.implementation_sha256()`（`python3 -c "from scripts import machine_quality_waiver as w; print(w.implementation_sha256())"`），之后每次调用 `run_machine_qc_clip_test.py`／`run_machine_qc_audio_test.py` 都带 `--expected-implementation <该值>`；代码不一致时驱动在任何模型调用之前以退出码 2 拒绝并打印各哈希文件的当前哈希。运行期间不改哈希文件集里的代码；要改就开新运行计划。2026-10-11 两次未察觉的改动让已签发的豁免失效，重签了两轮。
 - **一周一份预算授权。** `api-budget-authorization-<ISO 周>.json` 只写一份，筛查、校准、重签都复用它和同一账本（账本本就支持跨轮复用）；请求上限按三语 × 一次筛查 + 一次校准估，本周账本 27,292 次请求里 Layer 2 只占约 220 次，其余是哈希翻转导致的重签。超限即停并通知，不自动续。
-- **Spark 独占会话冻结定时器，派发前等待。** `spark_exclusive_session.py begin` 现在把 `job-reasoning-review.timer` 一起停掉、结束时最后恢复（主机上没有该定时器时记为 `not-found`）。派发链在每次派发前运行 `python3 scripts/spark_wait_ready.py --poll-seconds 30 --max-minutes 30`：只对 `competing_service_active:*`、`competing_launcher_active`、`insufficient_available_memory` 等会自行消退的状态轮询，其他错误立即返回；退出码 0 就绪、3 超时、1 需要人处理。
+- **Spark 独占会话冻结定时器，派发前等待。** `spark_exclusive_session.py begin` 现在把 `job-reasoning-review.timer` 一起停掉、结束时最后恢复（主机上没有该定时器时记为 `not-found`）。派发链在每次派发前运行 `.venv/bin/python tools/ops/spark_wait_ready.py --poll-seconds 30 --max-minutes 30`：只对 `competing_service_active:*`、`competing_launcher_active`、`insufficient_available_memory` 等会自行消退的状态轮询，其他错误立即返回；退出码 0 就绪、3 超时、1 需要人处理。
 
 ## CUV 证据与生产收尾
 
@@ -234,7 +272,7 @@ Supervisor 的 generation 命令显式传入 Sol 6.1、high、阅读稿 provider
 缺少有效窗口审批或绑定的 source/timeline 已改变时，Operator 必须独立观看完整回放并确认绝对时间；已存在匹配审批时直接续跑：
 
 ```bash
-.venv/bin/python scripts/run_with_openai_environment.py --environment prod -- \
+.venv/bin/python tools/ops/run_with_openai_environment.py --environment prod -- \
   .venv/bin/python scripts/run_sermon_production_supervisor_agent.py \
   --sunday YYYY-MM-DD \
   --state-file 'gs://sermon-zh-artifacts-ai-for-god/sundays/live-source-monitor/backend-state.json' \
@@ -307,8 +345,8 @@ Supervisor 以新读取的 `snapshot.recommendedAction.action == "complete"` 为
 每次正式运行或测试结束后，不论成功失败，都按[运行报告与复盘](test-run-retrospective.zh.md)生成脱敏报告并开报告 PR，云端会话据此复盘。运行目录有多处时（例如 L2 和音频），一并传给导出命令：
 
 ```bash
-.venv/bin/python scripts/export_run_digest.py artifacts/<运行目录> [更多运行目录...] --name <YYYYMMDD-简称>
-scripts/publish_run_report.sh artifacts/run-reports/<YYYYMMDD-简称>
+.venv/bin/python tools/development/export_run_digest.py artifacts/<运行目录> [更多运行目录...] --name <YYYYMMDD-简称>
+tools/development/publish_run_report.sh artifacts/run-reports/<YYYYMMDD-简称>
 ```
 
 报告只汇总证据，不改变 `dual_pdf` 或 `four_layer_release` 的完成判断。

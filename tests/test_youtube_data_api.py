@@ -1,15 +1,6 @@
-import importlib.util
-import sys
 import unittest
-from pathlib import Path
 
-
-SCRIPT_PATH = Path(__file__).resolve().parents[1] / "scripts" / "youtube_data_api.py"
-SPEC = importlib.util.spec_from_file_location("youtube_data_api", SCRIPT_PATH)
-mod = importlib.util.module_from_spec(SPEC)
-assert SPEC.loader is not None
-sys.modules[SPEC.name] = mod
-SPEC.loader.exec_module(mod)
+from tongxing_production.source import youtube_data_api as mod
 
 
 class FakeResponse:

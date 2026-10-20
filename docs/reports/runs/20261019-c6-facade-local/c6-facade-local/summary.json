@@ -1,0 +1,30 @@
+{
+  "schemaVersion": "local-test-summary-v1",
+  "status": "passed_with_load_flakes",
+  "pullRequest": 1167,
+  "stackedOn": 1157,
+  "head": "15e3dfed",
+  "base": "dev@5eb39da3",
+  "facadesDeleted": 18,
+  "facadesKept": {
+    "build_full_video_app_release": "scripts/tongxing_host.py names it",
+    "stage_formal_multilingual_dev": "scripts/tongxing_host.py names it",
+    "study_artifacts": "scripts/tongxing_host.py names it"
+  },
+  "deliveryReceipts": "L4 fixture build (20 modules, 232 tests) on C6 alone vs dev@e8b197be: 198/198 run-stable (path, sha256) pairs reproduced; per-path counts identical; app_workflow.implementation_identity unchanged (104d0c50...)",
+  "identity": {
+    "appDeliveryImplementationIdentity": "104d0c50d8938682544dbd9067997887e391b6dc1d229b48bdb0827ff2abf74b (unchanged)",
+    "layer2CodeIdentityDev": "e04411e924de8d251f2d3975b2e897e8be0c1309e62f56ce7e8c5dac74279b7d",
+    "layer2CodeIdentityAfterC5C6": "2d7507174c9a4accd8a6e157c778d7babc20371f2329c5cf060466165b52abbf"
+  },
+  "tests": {
+    "targeted": "714 passed",
+    "unittestShards": "two 10-shard runs; only the fan-in load flake",
+    "pytestStyle": "1110 passed, 1 known dev failure",
+    "postStackRebase": "193 passed"
+  },
+  "notRun": [
+    "deploy (Firebase, Cloud Run)",
+    "apps/listening-web suite (no web file changed)"
+  ]
+}

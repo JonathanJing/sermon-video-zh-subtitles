@@ -7,8 +7,8 @@ import tempfile
 import unittest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'scripts'))
-import weekly_poster_template as template
 import test_build_multilingual_sermon_posters as fixtures
+from tongxing_production.delivery.posters import template
 
 
 class TemplateTests(unittest.TestCase):

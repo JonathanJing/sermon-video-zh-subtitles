@@ -1,0 +1,33 @@
+{
+  "sessionId": "grp005-batch-ab-20261019-r2",
+  "owner": "claude-grp005-ab",
+  "exclusiveReadyAt": "2026-10-19T16:06:56Z",
+  "memAvailableGiBAfterStop": 117.4,
+  "jobs": [
+    {
+      "purpose": "grp005-ab-preview.ko",
+      "jobId": "de929a53f7d94047adffb56b35f4163e",
+      "startedAt": "2026-10-19T16:07:08.592697+00:00",
+      "commandSha256": "7520fade6e1020faec9652e8f2ca0fd48503656eae3ec6135e21eab8d5b3765d",
+      "exitCode": 0,
+      "outcome": "known_terminal",
+      "status": "terminal"
+    },
+    {
+      "purpose": "grp005-ab-preview.es",
+      "jobId": "9e30834e2b4b476a9f60d928d2cb618c",
+      "startedAt": "2026-10-19T16:08:32.093496+00:00",
+      "commandSha256": "346192fa45b5c2d6bb6492ed347d15fee65a0234a63a070de43254b98a74a5cd",
+      "exitCode": 0,
+      "outcome": "known_terminal",
+      "status": "terminal"
+    }
+  ],
+  "closedAt": "2026-10-19T16:10:15Z",
+  "restore": "all five units started and read back; model_health_restored",
+  "postInspect": {
+    "llamaServer": "running, healthy, Qwen3.8-27B",
+    "containers": 0,
+    "queueOutstanding": 0
+  }
+}

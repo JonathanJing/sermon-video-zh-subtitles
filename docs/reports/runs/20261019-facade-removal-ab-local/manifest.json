@@ -1,0 +1,65 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261019-facade-removal-ab-local",
+  "runs": [
+    {
+      "label": "facade-removal-ab-local",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.claude/worktrees/facade-removal-ab-a8ca38/artifacts/facade-removal-ab-local",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "facade-removal-ab-local",
+      "path": "changed-tests.log",
+      "kind": "log",
+      "bytes": 1044,
+      "truncated": false,
+      "sha256": "6a419bda7b095be187721e35063d0d367a36fabed3c6b68be74751e6761c25ed",
+      "redactions": {}
+    },
+    {
+      "run": "facade-removal-ab-local",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 632,
+      "truncated": false,
+      "sha256": "1a6356aeb2e9ff8b501dabce5ad663a465f8a86fba3a45e4f3f6bbce4ee7db4a",
+      "redactions": {}
+    },
+    {
+      "run": "facade-removal-ab-local",
+      "path": "pytest.log",
+      "kind": "log",
+      "bytes": 2892,
+      "truncated": false,
+      "sha256": "c584810324a1cf4c099219f9e81f191fa81ad31862b22d4e3bc763df59a75ad9",
+      "redactions": {
+        "home_dir": 1
+      }
+    },
+    {
+      "run": "facade-removal-ab-local",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 1120,
+      "truncated": false,
+      "sha256": "6d7255c35746d14a02a42ef7dfa2532a769cb877838a07cd88b2aa8459f4faab",
+      "redactions": {}
+    },
+    {
+      "run": "facade-removal-ab-local",
+      "path": "unittest-shards.log",
+      "kind": "log",
+      "bytes": 153124,
+      "truncated": true,
+      "sha256": "1af25b2945ae648b94cec35dfaaba5c4caff840a7605ebae8999fc8279edfd48",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

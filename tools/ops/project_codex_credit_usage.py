@@ -13,10 +13,11 @@ import sys
 if __package__ in (None, ''):
     sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
-from scripts import sermon_accounting as accounting
-from scripts import sermon_identity_sidecars as sidecars
-from scripts import sermon_model_call_observation as observation
-from scripts.codex_credit_usage import estimate_credit_usage
+from tongxing_production.observability import accounting
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.observability import identity_sidecars as sidecars
+from tongxing_production.observability import model_call_observation as observation
+from tongxing_production.observability.codex_credit_usage import estimate_credit_usage
 
 
 def _sha(path):

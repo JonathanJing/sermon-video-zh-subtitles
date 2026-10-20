@@ -1,0 +1,33 @@
+{
+  "status": "tests_passed",
+  "exitCode": 0,
+  "deliveryType": "test",
+  "purpose": "DEV-GRP-006/007 execution layer: redo with operator directive, prepare-l3, L3 stage runner, failure-to-group mapping; zero-call offline checks on 15030286",
+  "startedAt": "2026-10-20T18:20:00Z",
+  "endedAt": "2026-10-20T19:10:00Z",
+  "code": "codex/group-pipeline-orchestration 841f2e9b",
+  "results": {
+    "unit": {
+      "groupSuite": "102 passed, 10 subtests, 9.5s"
+    },
+    "offline15030286": {
+      "locale": "ko",
+      "groups": 402,
+      "plan": {
+        "status": "read_only",
+        "modelCalls": 0,
+        "seconds": 3.24,
+        "summary": "T/R/S expected_reusable; P/Q/A/U stale; C not_applicable"
+      },
+      "status": {
+        "status": "read_only",
+        "modelCalls": 0,
+        "seconds": 0.41,
+        "summary": "all stages missing (no per-group records in this run)"
+      }
+    },
+    "paidCalls": 0,
+    "sparkRuns": 0,
+    "deployments": 0
+  }
+}

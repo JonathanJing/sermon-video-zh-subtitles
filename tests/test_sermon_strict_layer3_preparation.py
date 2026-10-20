@@ -1,10 +1,11 @@
 import unittest
 import json
 from unittest.mock import patch
-from scripts import sermon_strict_layer3_preparation as prep
-from scripts import sermon_review_contracts as c
-from scripts import sermon_public_snapshot as public
-from scripts import sermon_review_budget as budget
+from tongxing_production.audio import strict_preparation as prep
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.review import contracts as c
+from tongxing_production.storage import snapshot as public
+from tongxing_production.review import review_budget as budget
 from scripts import sermon_strict_gate_admission as admission
 from tests import test_sermon_strict_gate_admission as gates
 from tests import test_prepare_target_language_speech_job as voices

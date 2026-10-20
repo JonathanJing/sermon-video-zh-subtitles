@@ -196,7 +196,7 @@ class PlaybackPlacementTests(unittest.TestCase):
                 validate_review(work)
 
     def test_legacy_approved_release_without_placements_keeps_original_completion_gate(self):
-        module = types.ModuleType("scripts.run_codex_local_sermon_production")
+        module = types.ModuleType("tongxing_production.workflows.dual_pdf.codex_local")
         module.local_completion_artifacts = Mock(return_value=True)
         with tempfile.TemporaryDirectory() as tmp, patch.dict(sys.modules, {module.__name__: module}):
             work = review_fixtures.ReviewIntegrityTests().fixture(Path(tmp))

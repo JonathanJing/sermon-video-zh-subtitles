@@ -1,0 +1,5 @@
+{
+  "status": "passed",
+  "stage": "local-verification",
+  "note": "4 full-suite failures under 7-way parallel load; each passes when rerun alone on the rebased tree"
+}

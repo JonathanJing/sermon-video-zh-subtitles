@@ -1,0 +1,54 @@
+{
+  "status": "passed_with_load_timing_failures",
+  "facadesDeleted": 6,
+  "facadesKept": {
+    "scripts/sermon_pipeline.py": "G1: scripts/tongxing_host.py imports it; build_sermon_reading_edition_with_openai.py is readingEdition-hashed",
+    "scripts/render_sermon_interpretation_pdf.py": "last importer generate_notes_with_openai.py is the frozen interpretation generator identity"
+  },
+  "surveyAfter": {
+    "after": 68,
+    "now": 1
+  },
+  "targetedTests": {
+    "passed": 726,
+    "afterDevMerge": 227
+  },
+  "sermonDubbingPoc": {
+    "tests": 401,
+    "result": "OK"
+  },
+  "unittestShards": {
+    "count": 10,
+    "tests": 5977,
+    "failures": 2,
+    "failureKind": "timing under load average ~250"
+  },
+  "pytestStyle": {
+    "passed": 1111,
+    "failed": 1,
+    "failedPreexistingOnDev": 1
+  },
+  "node": {
+    "fingerprintAndListeningWeb": "607 pass, 1 skip",
+    "testsMjs": "28 pass"
+  },
+  "testIds": {
+    "mergeBase": 5977,
+    "head": 5977,
+    "devD4f36cdf": 5995,
+    "mergedHead": 5995
+  },
+  "l2CodeIdentity": {
+    "devAtD4f36cdf": "06c025cf18964d84998f438ae905aa5fd96a2fdffeee8c5f1c5902944dd6fc14",
+    "head": "ffd20558c033c3afbbf799cd0e549c014d1f036899fd67f761d74d5cfbeb2e66"
+  },
+  "gateIdentitiesUnchanged": [
+    "W 1c28f4aa",
+    "T 8ec15fe1",
+    "scoring 9f2ff807",
+    "rate 8f50c233",
+    "preview 794bb5f1",
+    "renderer sound fef76048"
+  ],
+  "dualPdfHashedFilesUnchanged": true
+}

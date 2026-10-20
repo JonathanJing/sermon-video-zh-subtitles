@@ -9,9 +9,10 @@ import unittest
 from pathlib import Path
 
 from scripts import cuv_scripture
-from scripts import scripture_adjudication as adjudication
-from scripts import target_language_policy as policies
-from scripts import target_language_rule_preflight as preflight
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.review import scripture as adjudication
+from tongxing_production.text import policy as policies
+from tongxing_production.text import rule_preflight as preflight
 from scripts.language_review_plugins import diagnostic_admitted_quotes as helper
 
 LIBRARY = cuv_scripture.CuvLibrary.from_path()

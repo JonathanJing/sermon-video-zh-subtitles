@@ -74,7 +74,7 @@ def build_plan(args: argparse.Namespace) -> dict[str, Any]:
     validation_commands = [
         [
             "python3",
-            "scripts/validate_cloud_run_realtime_config.py",
+            "tools/ops/validate_cloud_run_realtime_config.py",
             "--service",
             service,
             "--project",
@@ -86,7 +86,7 @@ def build_plan(args: argparse.Namespace) -> dict[str, Any]:
         ],
         [
             "python3",
-            "scripts/run_cloud_run_realtime_preflight.py",
+            "tools/ops/run_cloud_run_realtime_preflight.py",
             "--base-url",
             "https://sermon-zh-caption-web-wu7uk5rgdq-uw.a.run.app",
             "--cloud-run-config-report",

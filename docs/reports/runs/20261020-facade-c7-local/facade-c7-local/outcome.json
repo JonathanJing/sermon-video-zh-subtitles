@@ -1,0 +1,13 @@
+{
+  "schemaVersion": "local-test-outcome-v1",
+  "status": "passed",
+  "exitCode": 0,
+  "startedAt": "2026-10-19T23:35:00+00:00",
+  "endedAt": "2026-10-20T02:10:00+00:00",
+  "scope": "Facade removal batch C7 (PR #1177): 3 compute/review scripts/ facades deleted, out-of-closure callers of 21 closure-bound facades repointed, scripture_adjudication kept for a policy-frozen plugin. Changed tests per file in isolation, full unittest suite in 10 parallel shards, pytest-style files, test-ID inventory and Appendix A; rebased on dev@a447faf2 and overlapping tests re-run.",
+  "knownPreexistingFailures": [
+    "tests/test_layer2_large_fan_in.py (utc_clock_discontinuity; also fails on clean dev)",
+    "tests/test_sermon_unified_parallel.py::test_100_transitions_with_persistent_intents (timing bound; also fails alone on clean dev)",
+    "tests/test_lease_fencing.py hung-renewal case (timing bound under parallel load; passes alone)"
+  ]
+}

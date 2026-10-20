@@ -1,0 +1,19 @@
+{
+  "schemaVersion": "sermon-ko-r5-plugin-migration-failure-summary-v1",
+  "error": {
+    "code": "layer2_reuse_operation_missing",
+    "stage": "partial_recovery_direct_paid_provenance",
+    "cause": "The plugin-only policy migration preserved the provider payload but changed translationPolicySha256. Real BudgetedCaller provenance reconstructed the expected old-ledger request with the new policy identity, so the exact old reservation could not match.",
+    "providerOutcome": "no_new_request_dispatched",
+    "retryAllowed": false
+  },
+  "evidenceSha256": {
+    "jobRequest": "9f4b933c4009dbe91eb399856dd473f75d66f07390dfc7d16e99ec2404794e1e",
+    "jobState": "d68fd010fde31641985a1dfcee7e3ab6a6bea1ae33b094e9676b1b4f862e39a2",
+    "jobLiveness": "48214a07566baa09b4648c89913196cfa3ad1f9eb20d24db01ab472657ed2572",
+    "workerLog": "8a41676378aeef10f07bb646571d2dbdfed0f2d02c3618a66680007b64ef660f",
+    "execution": "727269937ea5315eb5f9ad8383833f1984dba04cb81f355b3c27f012c6245796",
+    "budgetPlan": "c400db0286945e05767493edff2a83dc951733f204c5c9ab02d0dce8d556dd15",
+    "budgetAuthorization": "<redacted>"
+  }
+}

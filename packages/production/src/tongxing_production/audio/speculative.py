@@ -81,11 +81,13 @@ def checked_context(paths: dict[str, Path], checkpoint_map_path: Path,
     speech.validate_adapter(adapter, candidate["targetLocale"], registry,
                             source_package=source, candidate=candidate,
                             preview_only=True)
+    # A preview is preview_only and never enters an audio package, so a voice authorized for
+    # this locale's production dubbing may render it, as may a demo voice. Formal adoption of a
+    # dubbing-purpose preview (renderer --speculative-from) is a separate gate and stays closed.
+    dubbing = "chinese_dubbing" if candidate["targetLocale"] == "zh-Hans" else "multilingual_dubbing"
     formal.require(adapter["adapterId"] == "qwen3_tts_sft"
-                   and (adapter["authorizationPurpose"] == "multilingual_voice_demo"
-                        or (candidate["targetLocale"] == "zh-Hans"
-                            and adapter["authorizationPurpose"] == "chinese_dubbing")),
-                   "Speculative speech requires a registered demo/Chinese voice purpose")
+                   and adapter["authorizationPurpose"] in {"multilingual_voice_demo", dubbing},
+                   "Speculative speech requires a registered demo or this locale's dubbing voice purpose")
     policies = formal.package.read_object(operation_policies_path)
     formal.require(all(isinstance(policies.get(name), dict)
                        and identity.json_sha256(policies[name]) == adapter[field]
@@ -93,9 +95,17 @@ def checked_context(paths: dict[str, Path], checkpoint_map_path: Path,
                                            ("asrScreening", "asrScreeningPolicySha256"),
                                            ("subtitle", "subtitlePolicySha256"))),
                    "Speculative speech operation policy differs from adapter")
-    formal.require(policies["normalization"].get("policy")
-                   == "exact_human_approved_target_text_no_rewrite",
+    # A registered spoken-forms policy (the formal job's) is allowed, but a preview never
+    # speaks a rewritten form: render() refuses any selected group its rule would change.
+    normalization = policies["normalization"]
+    registered = normalization in formal.REGISTERED_NORMALIZATION_POLICIES
+    formal.require(normalization.get("policy") == formal.EXACT_TEXT_POLICY or registered,
                    "Speculative speech may not rewrite target text")
+    rule = normalization["spokenForms"].get(candidate["targetLocale"]) if registered else None
+    spell = formal.SPOKEN_FORM_RULES[rule][1] if rule is not None else None
+    data["spokenFormGroupIds"] = sorted(
+        group["translationGroupId"] for group in candidate["groups"]
+        if spell is not None and spell(group["targetText"]) != group["targetText"])
     mapping = demos.read_object(checkpoint_map_path, "checkpoint map")
     formal.require(mapping.get("schemaVersion") == "sermon-speaker-checkpoint-map-v1",
                    "Unsupported checkpoint map")
@@ -181,6 +191,8 @@ def render(paths: dict[str, Path], checkpoint_map_path: Path,
     formal.require(bool(selected) and selected <= available
                    and (group_ids is None or len(group_ids) == len(selected)),
                    "Unknown, empty, or duplicate speculative group selection")
+    formal.require(not selected & set(context["spokenFormGroupIds"]),
+                   "Speculative speech may not rewrite target text")
     out = out.resolve()
     out.mkdir(parents=True, exist_ok=True)
     manifest_path = out / "manifest.json"

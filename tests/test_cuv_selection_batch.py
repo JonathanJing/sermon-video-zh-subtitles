@@ -6,7 +6,7 @@ import time
 import unittest
 from pathlib import Path
 from unittest.mock import patch
-from scripts import sermon_cuv_translation as m
+from tongxing_production.text import cuv_translation as m
 from scripts.cuv_scripture import CuvLibrary
 
 class SelectionBatchTests(unittest.TestCase):

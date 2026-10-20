@@ -7,10 +7,11 @@ import json
 import re
 from pathlib import Path
 
-from scripts import produce_target_language_candidate as producer
-from scripts import run_target_language_models as runner
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.text import candidate as producer
+from tongxing_production.text import models as runner
 from scripts import sermon_diagnostic_context as diagnostic
-from scripts import target_language_policy as policies
+from tongxing_production.text import policy as policies
 from scripts.sermon_execution_harness import work_lock
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -47,8 +48,7 @@ def freeze_fixture(source, anchor, policy, plan, plugin, out, *, authorization_r
     baseline = copy.deepcopy(policy)
     policies.validate_policy(baseline)
     if translator_model is not None or reviewer_model is not None:
-        from scripts.codex_layer2_transport import (API_LUNA_TEST_CONFIGURATION, TEST_CONFIGURATION,
-                                                     validate_test_configuration)
+        from tongxing_production.compute.transports.codex_layer2 import API_LUNA_TEST_CONFIGURATION, TEST_CONFIGURATION, validate_test_configuration
         require(translator_model == 'gpt-6.1-sol', 'Unsupported isolated diagnostic translator')
         if reviewer_model is None:
             configuration = validate_test_configuration(TEST_CONFIGURATION)
@@ -78,7 +78,7 @@ def freeze_fixture(source, anchor, policy, plan, plugin, out, *, authorization_r
     admission = None
     if scripture_classification == 'contains_direct_quotations':
         # A human adjudication receipt must cover every flagged unit before freezing.
-        from scripts import scripture_adjudication as adjudication
+        from tongxing_production.review import scripture as adjudication
         require(scripture_adjudication is not None, 'scripture_adjudication_required')
         bindings = {name: policies.canonical_sha256(material[name]) for name in adjudication.BINDING_KEYS}
         admission = adjudication.validate_receipt(scripture_adjudication, target_locale=policy['targetLocale'],
@@ -94,7 +94,7 @@ def freeze_fixture(source, anchor, policy, plan, plugin, out, *, authorization_r
                 key: admission['generator'][key]
                 for key in ('reproduced', 'version', 'implementationSha256', 'signatureCurrent')}
     if concurrency_profile is not None:
-        from scripts.production_concurrency_profile import validate_profile
+        from tongxing_production.compute.concurrency_profile import validate_profile
         manifest['concurrencyProfile'] = validate_profile(concurrency_profile)
     config_hash = policies.canonical_sha256(manifest)
     context = {'schemaVersion': diagnostic.SCHEMA, 'runId': config_hash,
@@ -201,7 +201,7 @@ def load_fixture(directory):
     request = producer.prepare_request(source, anchor, policy, diagnostic_context=context)
     runner.validate_standalone_worker_budget(policy)
     if manifest.get('concurrencyProfile') is not None:
-        from scripts.production_concurrency_profile import validate_profile
+        from tongxing_production.compute.concurrency_profile import validate_profile
         validate_profile(manifest['concurrencyProfile'])
     else:
         require(policy['batching']['workers'] == 1, 'CLI diagnostic runs one group and locale at a time')
@@ -210,7 +210,7 @@ def load_fixture(directory):
     admission = None
     if manifest.get('scriptureClassification') == 'contains_direct_quotations':
         # Re-admit the frozen human receipt before any model dispatch can start.
-        from scripts import scripture_adjudication as adjudication
+        from tongxing_production.review import scripture as adjudication
         admission = adjudication.require_admitted(manifest, directory, target_locale=policy['targetLocale'],
             bindings={name: manifest['files'][name] for name in adjudication.BINDING_KEYS},
             flagged_units=list(manifest.get('sourceQuotationUnits') or []))
@@ -272,7 +272,7 @@ def main():
     parser.add_argument('--scripture-adjudication', type=Path, help='Human scripture adjudication receipt JSON')
     parser.add_argument('--source-quotation-unit', action='append', default=[], help='Bound source risk annotation, not quotation approval')
     args = parser.parse_args()
-    from scripts.production_concurrency_profile import load_profile
+    from tongxing_production.compute.concurrency_profile import load_profile
     concurrency_profile = load_profile(args.concurrency_profile) if args.concurrency_profile else None
     values = [json.loads(path.read_text()) for path in (args.source, args.anchor, args.policy, args.group_plan)]
     print(json.dumps(freeze_fixture(*values, args.plugin, args.out, authorization_ref=args.authorization_ref,

@@ -1,0 +1,5 @@
+Ran 761 tests in 3039.433s
+FAILED (failures=3, skipped=7)
+FAIL: test_129_group_actual_producer_can_assemble_and_resume_without_calls
+FAIL: test_65_group_worker_and_cache_only_recovery_preserve_every_dependency
+FAIL: test_100_transitions_with_persistent_intents

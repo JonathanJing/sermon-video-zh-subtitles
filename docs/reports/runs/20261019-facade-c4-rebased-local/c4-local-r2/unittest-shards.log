@@ -1,0 +1,13 @@
+s0.log: Ran 545 tests in 1051.511s OK (skipped=4)  exit 0
+s1.log: Ran 562 tests in 880.133s OK (skipped=3)  exit 0
+s2.log: Ran 580 tests in 906.350s OK (skipped=7)  exit 0
+s3.log: Ran 604 tests in 1233.988s OK (skipped=2)  exit 0
+s4.log: Ran 606 tests in 1159.336s OK (skipped=6)  exit 0
+s5.log: Ran 611 tests in 944.334s OK (skipped=5)  exit 0
+s6.log: Ran 611 tests in 1379.802s OK (skipped=2)  exit 0
+s7.log: Ran 619 tests in 2159.399s OK (skipped=3)  exit 0
+s8.log: Ran 619 tests in 1555.646s OK (skipped=2)  exit 0
+s9.log: Ran 620 tests in 1302.435s OK (skipped=4)  exit 0
+
+[exited with code 0]
+total=5977 (head 586fe78b on dev@377e2b4e); after rebase onto dev@c7b3397e (#1150): 57 overlapping/new tests OK on 8ccfb417

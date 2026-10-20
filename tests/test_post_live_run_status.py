@@ -1,6 +1,7 @@
 import unittest
 
-from scripts import post_live_run_status as mod
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.workflows.dual_pdf import run_status as mod
 
 
 class PostLiveRunStatusTest(unittest.TestCase):

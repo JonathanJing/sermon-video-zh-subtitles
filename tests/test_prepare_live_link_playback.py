@@ -8,7 +8,7 @@ from contextlib import redirect_stdout
 from pathlib import Path
 
 
-SCRIPT_PATH = Path(__file__).resolve().parents[1] / "scripts" / "prepare_live_link_playback.py"
+SCRIPT_PATH = Path(__file__).resolve().parents[1] / "tools" / "ops" / "prepare_live_link_playback.py"
 SPEC = importlib.util.spec_from_file_location("prepare_live_link_playback", SCRIPT_PATH)
 mod = importlib.util.module_from_spec(SPEC)
 assert SPEC.loader is not None

@@ -1,0 +1,8 @@
+{
+  "schemaVersion": "local-test-outcome-v1",
+  "status": "passed",
+  "exitCode": 0,
+  "startedAt": "2026-10-18T03:28:46.038471+00:00",
+  "endedAt": "2026-10-18T03:28:46.337907+00:00",
+  "scope": "synthetic MiLMMT audit unit and CLI compatibility"
+}

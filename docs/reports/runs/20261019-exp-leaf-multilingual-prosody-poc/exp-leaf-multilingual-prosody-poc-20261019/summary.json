@@ -1,0 +1,10 @@
+{
+  "scope": "Move five prosody POC scripts from scripts/ to experiments/multilingual-prosody-poc, from origin/dev 06d65999",
+  "results": {
+    "targetedTests": "27 passed, 544 subtests passed (5 prosody test modules, test_tongxing_production_package, test_experiment_leaf_facades)",
+    "testIdInventory": "6969 IDs before, 6972 after; no IDs removed, 3 facade tests added",
+    "legacyCli": "--help exits 0 via legacy, new and -m paths for all 5, same as clean dev",
+    "diffCheck": "git diff --check passed"
+  },
+  "limits": "Local deterministic tests only; no production, paid model, audio rendering, Spark, or public delivery. CI workflows disabled by user decision 2026-10-19."
+}

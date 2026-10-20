@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261019-exp-leaf-misc-experiments",
+  "runs": [
+    {
+      "label": "exp-leaf-misc-experiments-20261019",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.claude/worktrees/practical-boyd-f19465/artifacts/test-runs/exp-leaf-misc-experiments-20261019",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "exp-leaf-misc-experiments-20261019",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 233,
+      "truncated": false,
+      "sha256": "6a49f61178b5d3c2d15ee155f68451c05f096462311107b60941f3d81fbfd185",
+      "redactions": {}
+    },
+    {
+      "run": "exp-leaf-misc-experiments-20261019",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 1028,
+      "truncated": false,
+      "sha256": "238fd3251f8a208c9342c32a95f483ecf8bc0f2037718876bd7f2d02fb69a073",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

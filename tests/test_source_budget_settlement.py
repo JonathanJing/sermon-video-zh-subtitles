@@ -2,8 +2,9 @@ from pathlib import Path
 import tempfile
 import unittest
 
-from scripts import sermon_source_budget as subject
-from scripts import sermon_workflow_jobs as jobs
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.source import budget as subject
+from tongxing_production.orchestration import jobs
 
 USAGE = {"prompt_tokens": 1200, "completion_tokens": 300, "total_tokens": 1500,
          "prompt_tokens_details": {"cached_tokens": 1000}, "completion_tokens_details": {"reasoning_tokens": 100}}

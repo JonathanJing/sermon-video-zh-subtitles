@@ -11,7 +11,8 @@ import unittest
 from unittest.mock import patch
 
 from tests.job_store_patches import patch_job_store  # G1: job store primitives live in two modules
-from scripts import sermon_workflow_jobs as jobs
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.orchestration import jobs
 
 
 class WorkflowJobsTests(unittest.TestCase):
@@ -43,7 +44,7 @@ class WorkflowJobsTests(unittest.TestCase):
     def test_cross_process_duplicate_launch_executes_once(self):
         marker = Path(self.temp.name) / "calls.txt"
         command = [sys.executable, "-c", "import sys,time; from pathlib import Path; time.sleep(.15); p=Path(sys.argv[1]); p.write_text(p.read_text()+'x' if p.exists() else 'x')", str(marker)]
-        program = "from scripts.sermon_workflow_jobs import start_job; import sys,json; from pathlib import Path; print(json.dumps(start_job(Path(sys.argv[1]), {'stage':'duplicate'}, json.loads(sys.argv[2]),5)))"
+        program = "from scripts import tongxing_host; from tongxing_production.orchestration.jobs import start_job; import sys,json; from pathlib import Path; print(json.dumps(start_job(Path(sys.argv[1]), {'stage':'duplicate'}, json.loads(sys.argv[2]),5)))"
         children, outputs = [], []
         try:
             for _ in range(4):

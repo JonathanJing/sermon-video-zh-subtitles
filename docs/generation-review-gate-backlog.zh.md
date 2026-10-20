@@ -28,7 +28,7 @@ Owner 是职责分工，不是已经指派人员或取得签字；真实媒体�
 | D3：生成与审核适配器 | RQC-01；`scripts/run_target_language_models.py` 中拆接口并保留 shared caller/cache；新 strict-only verifier；`scripts/produce_target_language_candidate.py` 兼容准入 | D1/D2 | 生成器/审核器写权限测试；review failure 不触发新翻译；legacy output 不变；strict 产物只在新 policy/目录 |
 | D4：固定 Gate | RQC-02/03；复用 candidate、language plugin、human receipt validators 和 canonical admission；新增 Review→Gate adapter | D3 | 全覆盖且硬检查全通过才到待人审/准入；锁内重核 hash/state；过期、错绑、冲突均 blocked |
 | D5：修复闭环 | RQC-03；接 `validate_partial_repair_brief`、durable jobs 与有界 Decision proposal；补 atomic budget reservation 和修复依赖闭包 | D2/D4 | 2次内容修订/每版2次审核执行/每单元链1次监管决策的实验默认边界可测试；共享预算不因恢复重置；unknown outcome不盲重付 |
-| D6：Stage 0 与人工校准准备 | RQC-05/06；扩展 `tests/test_run_target_language_models.py`、现有 logging/reliability 测试和 `scripts/evaluate_backend_four_layer_dry_run.py`；新增 RQC fixtures/报告 | D1—D5；样本标注可提前 | synthetic 不计真实质量；全部故障注入与真实事件重建通过；人工标签与阈值计划齐备后才进真实运行 |
+| D6：Stage 0 与人工校准准备 | RQC-05/06；扩展 `tests/test_run_target_language_models.py`、现有 logging/reliability 测试和 `tools/development/evaluate_backend_four_layer_dry_run.py`；新增 RQC fixtures/报告 | D1—D5；样本标注可提前 | synthetic 不计真实质量；全部故障注入与真实事件重建通过；人工标签与阈值计划齐备后才进真实运行 |
 | D7：真实分级实验 | RQC-05/06；冻结 run manifest、预算、工具预检；约3分钟→10分钟→完整往期视频，逐级报告/sign-off | D6；每级前一sign-off | fresh inference与cache replay分开；人工批准、Dev授权/HTTP、客户端兼容不得缺省 |
 | D8：guarded rollout | RQC-06；显式 policy/mode 开关、新运行启用、旧运行 finish-on-old、回滚演练及第二新周复现 | D7完整视频sign-off | 不扩大发布授权；不将模式切换伪装成原缓存续跑；DEV-TRK-002留证 |
 
