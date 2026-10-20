@@ -1,0 +1,31 @@
+# N4 local pytest summary (redacted: counts and failing test ids only)
+
+## Pre-merge, branch @374447b3 on dev@b8e7fdc9, 197 files, 6 chunks
+chunk 0: 1 failed, 503 passed, 9 skipped, 708 subtests passed in 3916.40s (1:05:16)
+FAILED tests/test_sermon_mock_tts_dag.py::MockTTSDAGComponents::test_known_worker_failure_then_explicit_retry_keeps_successful_neighbor
+chunk 1: 1 failed, 469 passed, 4 skipped, 268 subtests passed in 5282.49s (1:28:02)
+FAILED tests/test_sermon_fresh_full_dag.py::FreshFullDAGComponents::test_confirmed_failed_unit_retry_reuses_successful_neighbor
+chunk 2: 1 failed, 465 passed, 651 subtests passed in 1148.72s (0:19:08)
+FAILED tests/test_telemetry_008.py::DispatchObservationTests::test_cold_isolated_preload_then_actual_profile_stage_preserves_code_identity
+chunk 3: 393 passed, 2 skipped, 228 subtests passed in 5571.34s (1:32:51)
+chunk 4: 432 passed, 1 skipped, 285 subtests passed in 761.12s (0:12:41)
+chunk 5: 2 failed, 434 passed, 1 skipped, 259 subtests passed in 1448.14s (0:24:08)
+FAILED tests/test_codex_shared_pool_transport.py::test_busy_before_started_is_proven_no_dispatch
+FAILED tests/test_sermon_unified_parallel.py::ParallelOwnerTests::test_100_transitions_with_persistent_intents
+
+## Baselines and reruns
+dev@b8e7fdc9, the 3 suspected pre-existing + mock TTS retry: 3 failed, 1 passed in 963.20s (0:16:03)
+  FAILED tests/test_codex_shared_pool_transport.py::test_busy_before_started_is_proven_no_dispatch
+  FAILED tests/test_sermon_unified_parallel.py::ParallelOwnerTests::test_100_transitions_with_persistent_intents
+  FAILED tests/test_telemetry_008.py::DispatchObservationTests::test_cold_isolated_preload_then_actual_profile_stage_preserves_code_identity
+dev@5f4ae357 fresh/mock retry (concurrent with next): 2 passed in 1425.41s (0:23:45)
+N4 @9e85aab6 fresh/mock retry (concurrent): 1 failed, 1 passed in 1193.86s (0:19:53)
+  FAILED tests/test_sermon_fresh_full_dag.py::FreshFullDAGComponents::test_confirmed_failed_unit_retry_reuses_successful_neighbor
+dev@5f4ae357 fresh retry, load ~470 (concurrent): 1 passed in 841.03s (0:14:01)
+N4 @9e85aab6 fresh retry, load ~470 (concurrent): 1 passed in 843.13s (0:14:03)
+
+## Post-merge, branch @b4234755 on dev@123d592a, 49 files, 4 chunks
+chunk 0: 149 passed, 137 subtests passed in 200.11s (0:03:20)
+chunk 1: 212 passed, 164 subtests passed in 94.54s (0:01:34)
+chunk 2: 120 passed, 149 subtests passed in 151.09s (0:02:31)
+chunk 3: 230 passed, 701 subtests passed in 206.37s (0:03:26)

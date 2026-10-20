@@ -1,0 +1,45 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261020-scripts-n4-local",
+  "runs": [
+    {
+      "label": "scripts-n4-local",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.claude/worktrees/strange-rubin-8cb20e/artifacts/scripts-n4-local",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "scripts-n4-local",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 1196,
+      "truncated": false,
+      "sha256": "5c7e5fa6cec4696585e992ddbbef15f3f2d1552e4216b18ddba51c0ea6662d6c",
+      "redactions": {}
+    },
+    {
+      "run": "scripts-n4-local",
+      "path": "pytest.log",
+      "kind": "log",
+      "bytes": 2478,
+      "truncated": false,
+      "sha256": "3cc5ac50d64d0336d77b663d379ee67bbd7e904f426f7c58f0efac873cb4e6c2",
+      "redactions": {}
+    },
+    {
+      "run": "scripts-n4-local",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 2548,
+      "truncated": false,
+      "sha256": "419287f125ca8b7dc224b2cf385ef0e60732fadd15ed004719cd753bea44ed8c",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}
