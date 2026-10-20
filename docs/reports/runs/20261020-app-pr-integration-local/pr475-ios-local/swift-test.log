@@ -1,0 +1,242 @@
+Building for debugging...
+[Computing dependencies]
+[Pre-planning 86 / 125]
+[Planning deferred tasks]
+[39 / 67] TongxingCore_TongxingCoreTests
+[41 / 67] TongxingCore_TongxingCoreTests
+[42 / 67]
+[43 / 68] TongxingCore
+[43 / 80]
+[52 / 114]
+[53 / 114]
+[55 / 114]
+[58 / 114]
+[60 / 114]
+[61 / 114]
+[62 / 114]
+[65 / 114]
+[66 / 114]
+[67 / 114]
+[68 / 114]
+[69 / 114]
+[71 / 114]
+[74 / 114]
+[76 / 114]
+[77 / 114]
+[78 / 114]
+[89 / 114] TongxingCore
+[90 / 114] TongxingCore
+[97 / 114] TongxingCore
+[104 / 115] TongxingCoreTests-product
+[108 / 133]
+[109 / 133]
+[111 / 133]
+[122 / 133] TongxingCoreTests-product
+[127 / 133] TongxingCoreTests-product
+[129 / 133] TongxingCoreTests-product
+[131 / 133] TongxingCoreTests-product
+Build complete! (58.75 sec)
+Test Suite 'All tests' started at 2026-10-20 13:43:47.770.
+Test Suite 'All tests' passed at 2026-10-20 13:43:47.773.
+... 61 lines omitted; 0 error-like lines, 0 kept below ...
+... end of omitted section ...
+◇ Test missingEnglishStaysMissingAndDoesNotInventOriginalText() started.
+◇ Test removesOnlyDeclaredSeriesAndRecognizedEdition() started.
+◇ Test identifierFallbackKeepsExplicitFormalEdition() started.
+◇ Test preservesMeaningfulPunctuationAndNeverInventsMetadata() started.
+◇ Test duoSizedSafeAreasKeepControlsOnOneSideOfAnActiveDivision() started.
+◇ Test flatAndInactiveRegionsDoNotDisplaceControls() started.
+➜ Test realPublishedReferenceWindowsAndSilence() skipped.
+◇ Test shortNarrowAndInvalidBoundsRemainBounded() started.
+◇ Test reviewedAudioStillRequiresMatchingSourceAndEvidence() started.
+◇ Test condensedDubCaptionsShowTheFullTranslationOnTheDubTiming() started.
+◇ Test publishedBindingAndIndexRoundTripWithoutLegacyCapability() started.
+➜ Test frozenPublishedCatalogAndIndexWhenRequested() skipped.
+◇ Test cameraAndFoldAreBothExcludedWithoutChangingSafeBounds() started.
+◇ Test malformedPostingsAndDifferentAlgorithmRejected() started.
+◇ Test devContentCandidateNeedsExplicitOptInAndExactPath() started.
+◇ Test productionCatalogV3UsesV2ReleasePathsAndPageTitle() started.
+◇ Test bookAndTabletopKeepControlsTogetherAwayFromFold() started.
+◇ Test catalogKeepsContentAndAudioCapabilitiesDistinct() started.
+◇ Test filteredMachineTargetsStillRequireValidIdentityAndKnownStatus() started.
+◇ Test publishedPageFingerprintRequiresExactSourceAndTrack() started.
+◇ Test remoteCategoryOverridesLegacyAndSurvivesBothCatalogProjections() started.
+◇ Test dualScriptCatalogRoutesOnlyToVersionedReleases() started.
+◇ Test dualScriptReleaseKeepsDisplayAndSpokenBindingsDistinct() started.
+➜ Test frozenPublishedCatalogDecodesInNativeClient() skipped.
+◇ Test independentlyPublishedPagesKeepTheirOwnLocales() started.
+◇ Test productionReleaseV2RequiresSpokenScriptIdentity() started.
+➜ Test frozenPublishedReleaseDecodesInNativeClient() skipped.
+◇ Test sourceCategoriesPreserveKnownArchivesAndExplicitPodcastType() started.
+◇ Test mismatchedSourceWindowTrackAndUnsafeURLCannotEnable() started.
+◇ Test identicalWebAndNativeCatalogHeadersAndPages() started.
+◇ Test catalogRejectsLocaleKeyPathAndCapabilityMismatches() started.
+◇ Test humanTextWithMachineCheckedAudioKeepsHumanTextStatus() started.
+◇ Test legacyQuestionsSurviveCatalogCacheRoundTrip() started.
+◇ Test partialAndOldContentDoNotCreateOrRetainStudyFields() started.
+◇ Test reviewedStudyFieldsKeepIndependentSourceAndAudioClocks() started.
+◇ Test invalidSourceCannotSupplyStudyContent() started.
+◇ Test unavailableAudioMayBindSameLocaleLayer3Package() started.
+◇ Test testCueLookupRespectsGapEndAndSharedBoundary() started.
+➜ Test testOptionalFrozenPublishedCatalogSmoke() skipped.
+◇ Test remoteCategoryFailsClosedAndCannotLabelSimulationAsFormal() started.
+◇ Test testInvalidDatesAndSourceURLsFailClosed() started.
+◇ Test testSyntheticCatalogPreservesSourceAndCandidateEvidence() started.
+◇ Test machineReviewedCandidateDoesNotExposeStudyMaterialAsReviewed() started.
+◇ Test testHashAndDurationValidation() started.
+◇ Test reviewedStudyFieldsPreserveBothPublishedOutlineRepresentations() started.
+◇ Test testDuplicateWeekAndTrackIDsFailClosed() started.
+◇ Test sharedVideoDeliveryCatalogAdmission() started.
+◇ Test testMediaURLCannotEscapeConfiguredHostOrDirectory() started.
+◇ Test testOverlappingReversedAndDuplicateCuesFailClosed() started.
+◇ Test rejectsForeignTraversalQueriesAndHugeImages() started.
+➜ Test realTwoWeekReferencesAndNegativeRecordings() skipped.
+◇ Test sidecarMatchesExactReleaseLanguageAndSource() started.
+◇ Test releasePackageRoutesOnlyToSameOriginPublishedPage() started.
+◇ Test deduplicationSeparatesVersionLanguageAndRecipient() started.
+◇ Test localizedTextOnlyCopyAndMalformedBindings() started.
+◇ Test devDualScriptPodcastCandidateAllowsWavOnlyWithExplicitOptIn() started.
+◇ Test rejectsOptOutWrongLanguageAndProductionChannel() started.
+◇ Test unavailableAudioCannotExposeAnAudioAsset() started.
+◇ Test repeatedReferencePostingsRemainAmbiguous() started.
+◇ Test webGeneratedIndexLocatesArbitraryOffsetsAndPreservesPausedSafeResultContract() started.
+◇ Test invalidSamplesAndMalformedIndexesFailClosed() started.
+◇ Test microphoneRateResamplingAndNoiseRetainTheOriginalQueryClock() started.
+◇ Test cancelledMatchingTaskDoesNotReturnASeek() started.
+◇ Test admittedReleaseUsesExactContentLanguageAndVersion() started.
+◇ Test silenceToneNoiseUnrelatedAudioAndContradictorySplicesNeverOfferASeek() started.
+◇ Test changedArtworkDoesNotReannounceAndDuplicateBindingFails() started.
+◇ Test testUnsupportedSchemaAndMissingDefaultFailClosed() started.
+◇ Test rejectsStaleHashMissingPageAndForeignEnvironment() started.
+◇ Test testUnknownApprovalMetadataIsPreservedAsData() started.
+◇ Suite PublishedFingerprintMatcherTests started.
+◇ Test editorialApprovalPreservesSourceBoundAlignment() started.
+✔ Test identicalWebAndNativeReleaseFixtures() passed after 0.456 seconds.
+✔ Test testBookmarkBoundToWeekTrackHashAndSource() passed after 0.456 seconds.
+✔ Test testTwoSecondBoundariesClearPreviousBookmark() passed after 0.456 seconds.
+✔ Test testSeekClampsAndUndoIsConsumedOnce() passed after 0.456 seconds.
+✔ Test sharedTextOnlyAdmissionAndReadablePage() passed after 0.456 seconds.
+✔ Test testTimeFormattingAndStrictParsing() passed after 0.456 seconds.
+✔ Test testBadValuesDoNotErasePreviousBookmark() passed after 0.456 seconds.
+✔ Test testBookmarkRoundTripRestoresExactPositionAndOffset() passed after 0.456 seconds.
+✔ Test testThirtyDayExpiryAndFutureTimestamp() passed after 0.456 seconds.
+✔ Test testMalformedRowsAreIgnoredWithoutLosingValidEntries() passed after 0.456 seconds.
+✔ Test testChangedDurationCannotRestoreOutsideCurrentTrack() passed after 0.456 seconds.
+✔ Test testOnlyTwelveRecentEntriesAndStableTiesRetained() passed after 0.456 seconds.
+✔ Test naturalAudioMayOutlastSourceWithoutChangingSourceClock() passed after 0.457 seconds.
+✔ Test shorterAudioStillLeavesFullTextOnSourceTimeline() passed after 0.457 seconds.
+✔ Test legacyAbsentAudioClockFallsBackButDeclaredClockIsHonored() passed after 0.457 seconds.
+✔ Test numericAndStringCueIDsAssociateByDeclaredIdentityRatherThanArrayPosition() passed after 0.457 seconds.
+✔ Test identicalWebAndNativeMachineCheckedContent() passed after 0.456 seconds.
+✔ Test olderReleasesCannotDeclareMachineCheckedFields() passed after 0.456 seconds.
+✔ Test identicalWebAndNativeMachineCheckedReleases() passed after 0.456 seconds.
+✔ Test machineCheckedContentReadsOnlyThroughAMatchingV4Release() passed after 0.456 seconds.
+✔ Test identicalWebAndNativeCatalogTargets() passed after 0.456 seconds.
+✔ Test pr232DualScriptCandidateExtensionIsCompatibleWithoutWideningProduction() passed after 0.456 seconds.
+✔ Test machineCheckedTargetsNeedACatalogV4AndItsOwnReleaseDirectory() passed after 0.456 seconds.
+✔ Test eachCueSetMustStayWithinItsOwnClock() passed after 0.456 seconds.
+✔ Test realCandidatesRequireDevOptInAndNeverBecomePublishedOrHumanReviewed() passed after 0.456 seconds.
+✔ Test optionalExtensionsRoundTripAndOriginalEnglishAppearsOnlyAtMatchingBlockEnd() passed after 0.457 seconds.
+✔ Test identifiersNeverBecomeDisplayTitles() passed after 0.456 seconds.
+✔ Test hiddenDefaultsFallBackByPageAndLocaleWithoutUsingTitle() passed after 0.456 seconds.
+✔ Test removesOnlyDeclaredSeriesAndRecognizedEdition() passed after 0.456 seconds.
+✔ Test identifierFallbackKeepsExplicitFormalEdition() passed after 0.456 seconds.
+✔ Test preservesMeaningfulPunctuationAndNeverInventsMetadata() passed after 0.456 seconds.
+✔ Test duoSizedSafeAreasKeepControlsOnOneSideOfAnActiveDivision() passed after 0.456 seconds.
+✔ Test flatAndInactiveRegionsDoNotDisplaceControls() passed after 0.456 seconds.
+✔ Test shortNarrowAndInvalidBoundsRemainBounded() passed after 0.456 seconds.
+✔ Test identicalWebAndNativeMachineCheckedCatalogTargets() passed after 0.456 seconds.
+✔ Test reviewedAudioStillRequiresMatchingSourceAndEvidence() passed after 0.456 seconds.
+✔ Test missingEnglishStaysMissingAndDoesNotInventOriginalText() passed after 0.456 seconds.
+✔ Test cameraAndFoldAreBothExcludedWithoutChangingSafeBounds() passed after 0.456 seconds.
+✔ Test malformedPostingsAndDifferentAlgorithmRejected() passed after 0.456 seconds.
+✔ Test duplicateMissingAndInvalidTranscriptIdentitiesFailClosed() passed after 0.457 seconds.
+✔ Test productionCatalogV3UsesV2ReleasePathsAndPageTitle() passed after 0.456 seconds.
+✔ Test bookAndTabletopKeepControlsTogetherAwayFromFold() passed after 0.456 seconds.
+✔ Test publishedBindingAndIndexRoundTripWithoutLegacyCapability() passed after 0.456 seconds.
+✔ Test devContentCandidateNeedsExplicitOptInAndExactPath() passed after 0.456 seconds.
+✔ Test condensedDubCaptionsShowTheFullTranslationOnTheDubTiming() passed after 0.457 seconds.
+✔ Test filteredMachineTargetsStillRequireValidIdentityAndKnownStatus() passed after 0.456 seconds.
+✔ Test publishedPageFingerprintRequiresExactSourceAndTrack() passed after 0.456 seconds.
+✔ Test productionKeepsMachineCheckedButDropsDevMachineReviewed() passed after 0.457 seconds.
+✔ Test dualScriptReleaseKeepsDisplayAndSpokenBindingsDistinct() passed after 0.456 seconds.
+✔ Test dualScriptCatalogRoutesOnlyToVersionedReleases() passed after 0.456 seconds.
+✔ Test productionReleaseV2RequiresSpokenScriptIdentity() passed after 0.456 seconds.
+✔ Test frozenRealDevCatalogKeepsHumanLocalesIndependentAndMachineStateIntact() passed after 0.457 seconds.
+✔ Test catalogKeepsContentAndAudioCapabilitiesDistinct() passed after 0.456 seconds.
+✔ Test catalogRejectsLocaleKeyPathAndCapabilityMismatches() passed after 0.456 seconds.
+✔ Test humanTextWithMachineCheckedAudioKeepsHumanTextStatus() passed after 0.456 seconds.
+✔ Test mismatchedSourceWindowTrackAndUnsafeURLCannotEnable() passed after 0.456 seconds.
+✔ Test syntheticCandidateTranscriptRequiresExplicitContextAndExactAudioClockBinding() passed after 0.457 seconds.
+✔ Test independentlyPublishedPagesKeepTheirOwnLocales() passed after 0.456 seconds.
+✔ Test legacyQuestionsSurviveCatalogCacheRoundTrip() passed after 0.456 seconds.
+✔ Test unavailableAudioMayBindSameLocaleLayer3Package() passed after 0.456 seconds.
+✔ Test invalidSourceCannotSupplyStudyContent() passed after 0.456 seconds.
+✔ Test testCueLookupRespectsGapEndAndSharedBoundary() passed after 0.456 seconds.
+✔ Test v2RequiresKnownReviewModeAndExplicitDevSimulationContext() passed after 0.458 seconds.
+✔ Test candidateCapabilityRemainsBoundToSourceHashTimelineAndReview() passed after 0.457 seconds.
+✔ Test machineReviewedCandidateDoesNotExposeStudyMaterialAsReviewed() passed after 0.456 seconds.
+✔ Test remoteCategoryFailsClosedAndCannotLabelSimulationAsFormal() passed after 0.457 seconds.
+✔ Test reviewedStudyFieldsKeepIndependentSourceAndAudioClocks() passed after 0.456 seconds.
+✔ Test testInvalidDatesAndSourceURLsFailClosed() passed after 0.456 seconds.
+✔ Test testSyntheticCatalogPreservesSourceAndCandidateEvidence() passed after 0.456 seconds.
+✔ Test remoteCategoryOverridesLegacyAndSurvivesBothCatalogProjections() passed after 0.457 seconds.
+✔ Test testDuplicateWeekAndTrackIDsFailClosed() passed after 0.456 seconds.
+✔ Test partialAndOldContentDoNotCreateOrRetainStudyFields() passed after 0.457 seconds.
+✔ Suite FingerprintReplayTests passed after 0.459 seconds.
+✔ Test reviewedStudyFieldsPreserveBothPublishedOutlineRepresentations() passed after 0.457 seconds.
+✔ Test releasePackageRoutesOnlyToSameOriginPublishedPage() passed after 0.457 seconds.
+✔ Test deduplicationSeparatesVersionLanguageAndRecipient() passed after 0.457 seconds.
+✔ Test localizedTextOnlyCopyAndMalformedBindings() passed after 0.457 seconds.
+✔ Test devDualScriptPodcastCandidateAllowsWavOnlyWithExplicitOptIn() passed after 0.457 seconds.
+✔ Test rejectsForeignTraversalQueriesAndHugeImages() passed after 0.457 seconds.
+✔ Test unavailableAudioCannotExposeAnAudioAsset() passed after 0.457 seconds.
+✔ Test sourceCategoriesPreserveKnownArchivesAndExplicitPodcastType() passed after 0.457 seconds.
+✔ Test rejectsOptOutWrongLanguageAndProductionChannel() passed after 0.457 seconds.
+✔ Test testHashAndDurationValidation() passed after 0.457 seconds.
+✔ Test testMediaURLCannotEscapeConfiguredHostOrDirectory() passed after 0.457 seconds.
+✔ Test sidecarMatchesExactReleaseLanguageAndSource() passed after 0.457 seconds.
+✔ Test admittedReleaseUsesExactContentLanguageAndVersion() passed after 0.457 seconds.
+✔ Test testOverlappingReversedAndDuplicateCuesFailClosed() passed after 0.457 seconds.
+✔ Test changedArtworkDoesNotReannounceAndDuplicateBindingFails() passed after 0.457 seconds.
+✔ Test testUnsupportedSchemaAndMissingDefaultFailClosed() passed after 0.457 seconds.
+✔ Test rejectsStaleHashMissingPageAndForeignEnvironment() passed after 0.457 seconds.
+✔ Test testUnknownApprovalMetadataIsPreservedAsData() passed after 0.457 seconds.
+◇ Test invalidAudioIsRejectedBeforeDSP() started.
+◇ Test publishedDSPMatchesBrowserGolden(sampleRate:) started.
+✔ Test editorialApprovalPreservesSourceBoundAlignment() passed after 0.457 seconds.
+◇ Test case passing 1 argument sampleRate → 8000 to publishedDSPMatchesBrowserGolden(sampleRate:) started.
+◇ Test case passing 1 argument sampleRate → 44100 to publishedDSPMatchesBrowserGolden(sampleRate:) started.
+◇ Test case passing 1 argument sampleRate → 48000 to publishedDSPMatchesBrowserGolden(sampleRate:) started.
+✔ Suite SharedReleaseContractTests passed after 1.359 seconds.
+✔ Suite PlaybackTests passed after 1.359 seconds.
+✔ Suite SharedTextOnlyReleaseTests passed after 1.360 seconds.
+✔ Suite CatalogExtensionTests passed after 1.359 seconds.
+✔ Suite SharedMachineCheckedContractTests passed after 1.359 seconds.
+✔ Suite SharedCatalogTargetTests passed after 1.359 seconds.
+✔ Suite DevCandidateCatalogTests passed after 1.359 seconds.
+✔ Suite SermonHeadingTests passed after 1.359 seconds.
+✔ Suite PlaybackControlRegionTests passed after 1.359 seconds.
+✔ Suite PublishedFingerprintTests passed after 1.359 seconds.
+✔ Suite MultilingualCatalogTests passed after 1.359 seconds.
+✔ Suite PublishedStudyContentTests passed after 1.359 seconds.
+✔ Suite CatalogTests passed after 1.359 seconds.
+✔ Suite BetaNotificationTests passed after 1.359 seconds.
+✔ Suite WeeklyAnnouncementTests passed after 1.359 seconds.
+✔ Test invalidAudioIsRejectedBeforeDSP() passed after 0.900 seconds.
+✔ Test v2RequiresAudioDurationAndRejectsInvalidDeclaredClocks() passed after 1.358 seconds.
+✔ Test sharedVideoDeliveryCatalogAdmission() passed after 1.357 seconds.
+✔ Suite PublishedTranscriptClockTests passed after 1.360 seconds.
+✔ Suite SharedVideoDeliveryTests passed after 1.360 seconds.
+✔ Test cancelledMatchingTaskDoesNotReturnASeek() passed after 1.357 seconds.
+✔ Test identicalWebAndNativeCatalogHeadersAndPages() passed after 1.499 seconds.
+✔ Suite SharedCatalogPageTests passed after 1.502 seconds.
+✔ Test invalidSamplesAndMalformedIndexesFailClosed() passed after 1.504 seconds.
+✔ Test repeatedReferencePostingsRemainAmbiguous() passed after 11.940 seconds.
+✔ Test silenceToneNoiseUnrelatedAudioAndContradictorySplicesNeverOfferASeek() passed after 37.957 seconds.
+✔ Test webGeneratedIndexLocatesArbitraryOffsetsAndPreservesPausedSafeResultContract() passed after 52.322 seconds.
+✔ Test microphoneRateResamplingAndNoiseRetainTheOriginalQueryClock() passed after 79.853 seconds.
+✔ Suite FingerprintTests passed after 79.856 seconds.
+✔ Test publishedDSPMatchesBrowserGolden(sampleRate:) with 3 test cases passed after 85.308 seconds.
+✔ Suite PublishedFingerprintMatcherTests passed after 85.766 seconds.
+✔ Test run with 109 tests in 21 suites passed after 85.769 seconds.
