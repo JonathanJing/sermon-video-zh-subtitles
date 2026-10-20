@@ -278,7 +278,9 @@ class RunTests(unittest.TestCase):
     def test_layer4_resume_uses_bound_publish_and_later_browser_pass_without_redeploy(self):
         self.run.publish = True
         l4 = self.run_dir / "l4"
+        workflow = l4 / "workflow"
         page_id = self.run.spec["page"]["pageId"]
+        sha = lambda path: hashlib.sha256(path.read_bytes()).hexdigest()
         subject.write(l4 / "prepare-result.json", {"status": "succeeded"})
         files = {"preparedManifestSha256": l4 / "work/prepared/preparation-manifest.json",
                  "baselineReceiptSha256": l4 / "baseline/baseline-receipt.json",
@@ -287,24 +289,48 @@ class RunTests(unittest.TestCase):
         for field, path in files.items():
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_text(field)
-            inputs[field] = hashlib.sha256(path.read_bytes()).hexdigest()
+            inputs[field] = sha(path)
+        targets = {locale: {"releasePackageUrl": f"/releases-v4/{page_id}/{locale}.json",
+                            "releasePackageJsonSha256": locale * 32} for locale in ("ko", "es")}
+        catalog = workflow / "final-overlay/public/multilingual-v4.json"
+        subject.write(catalog, {"pages": [{"id": page_id, "targets": targets}]})
+        subject.write(workflow / "final-overlay/seal-report.json", {"catalogV4Sha256": sha(catalog)})
+        stages = {}
+        for name in subject.PUBLISH_STAGES:
+            output = workflow / ("final-overlay/seal-report.json" if name == "prepare_overlay" else f"{name}.json")
+            if not output.exists():
+                subject.write(output, {"stage": name})
+            stages[name] = {"status": "succeeded", "outputs": {str(output.relative_to(workflow)): sha(output)}}
         state = {"status": "diagnostic_dev_http_verified", "inputs": inputs,
-                 "completedAt": "2026-10-14T12:00:00+00:00",
-                 "stages": {name: {"status": "succeeded"} for name in
-                            ("publish_assets", "verify_assets", "publish_catalog", "live_readback")}}
-        subject.write(l4 / "workflow/workflow-state.json", state)
-        subject.write(l4 / "workflow/run-report.json", {"status": state["status"], "inputs": inputs})
+                 "completedAt": "2026-10-14T12:00:00+00:00", "stages": stages}
+        subject.write(workflow / "workflow-state.json", state)
+        subject.write(workflow / "run-report.json", {"status": state["status"], "inputs": inputs})
         subject.write(l4 / "browser-smoke.json", {"status": "fail", "pageId": page_id})
         passed = l4 / "browser-smoke-later.json"
-        subject.write(passed, {"status": "pass", "pageId": page_id, "origin": subject.DEV_ORIGIN,
-                               "checkedAt": "2026-10-14T12:01:00+00:00",
-                               "locales": [{"locale": locale, "status": "pass"} for locale in ("ko", "es")]})
+        receipt = {"status": "pass", "pageId": page_id, "origin": subject.DEV_ORIGIN,
+                   "checkedAt": "2026-10-14T12:01:00+00:00",
+                   "locales": [{"locale": locale, "status": "pass", **targets[locale]} for locale in ("ko", "es")]}
+        subject.write(passed, receipt)
         with mock.patch.object(self.run, "sh", side_effect=AssertionError("must not deploy or resmoke")):
             subject.stage_layer4(self.run)
         self.assertEqual(self.run.stages["layer4"]["status"], "done")
         self.assertEqual(self.run.stages["layer4"]["smokeReceipt"], str(passed.resolve()))
+
+        # A pass for another release under the same page ID is not this run's browser evidence.
+        receipt["locales"][1]["releasePackageJsonSha256"] = "f" * 64
+        subject.write(passed, receipt)
+        with mock.patch.object(self.run, "sh", side_effect=AssertionError("resmoke")), \
+                self.assertRaisesRegex(AssertionError, "resmoke"):
+            subject.stage_layer4(self.run)
+
+        # A recorded stage output that changed after publication needs reconciliation, not acceptance.
+        subject.write(workflow / "live_readback.json", {"stage": "edited"})
+        with mock.patch.object(self.run, "sh", side_effect=AssertionError("must not deploy")), \
+                self.assertRaisesRegex(subject.Stop, "needs reconciliation"):
+            subject.stage_layer4(self.run)
+        subject.write(workflow / "live_readback.json", {"stage": "live_readback"})
         state["status"] = "running"
-        subject.write(l4 / "workflow/workflow-state.json", state)
+        subject.write(workflow / "workflow-state.json", state)
         with mock.patch.object(self.run, "sh", side_effect=AssertionError("must not deploy")), \
                 self.assertRaisesRegex(subject.Stop, "needs reconciliation"):
             subject.stage_layer4(self.run)

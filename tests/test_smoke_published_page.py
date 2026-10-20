@@ -133,6 +133,9 @@ class SmokeFlowTests(unittest.TestCase):
         self.assertEqual(report["schemaVersion"], smoke.SCHEMA)
         self.assertEqual([row["status"] for row in report["locales"]], ["pass", "pass", "fail"])
         self.assertEqual(report["locales"][2]["problems"], ["locale is not published for this page"])
+        # Each judged locale names the release the live catalog served, so a later run can bind the pass to it.
+        self.assertEqual(report["locales"][1]["releasePackageUrl"], f"/releases-v4/{PAGE}/ko.json")
+        self.assertIn("releasePackageJsonSha256", report["locales"][1])
         self.assertEqual(calls, [f"{ORIGIN}/?week={PAGE}&contentLang=zh-Hans", f"{ORIGIN}/?week={PAGE}&contentLang=ko"])
 
     def test_a_stale_shell_showing_chinese_for_korean_fails_korean_only(self):

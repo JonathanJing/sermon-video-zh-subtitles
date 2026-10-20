@@ -39,7 +39,7 @@ from urllib.parse import urlsplit
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
 
-SCHEMA = "sermon-published-page-browser-smoke-v2"
+SCHEMA = "sermon-published-page-browser-smoke-v3"
 DEFAULT_BROWSER = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
 CDP_OBSERVER = Path(__file__).with_name("smoke_browser_cdp.mjs")
 LOCALES = ("zh-Hans", "ko", "es")
@@ -178,7 +178,10 @@ def smoke(origin: str, page_id: str, locales, *, browser: str, settle_ms: int = 
         problems, warnings = evaluate(expected, observed, check_session=check_session, anchor=anchor,
                                       required_paths=expected["requiredPaths"] | {target["releasePackageUrl"]} | shell_files)
         dom = observed.get("dom") or {}
+        # The live catalog's release identity at smoke time binds this pass to one publication.
         results.append({"locale": locale, "url": url, "status": "pass" if not problems else "fail",
+                        "releasePackageUrl": target["releasePackageUrl"],
+                        "releasePackageJsonSha256": target.get("releasePackageJsonSha256"),
                         "problems": problems, "warnings": warnings, "browserStatus": observed.get("status"),
                         "elapsedMs": observed.get("elapsedMs"), "title": dom.get("title"), "audioSrc": dom.get("audioSrc"),
                         "captionText": (dom.get("captionText") or "")[:120], "consoleErrors": observed.get("consoleErrors", []),

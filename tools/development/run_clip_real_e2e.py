@@ -720,6 +720,10 @@ def repair_audio(run: Run, locale: str, seed: int, code: str, *, unit_instructio
 # ---------------------------------------------------------------- stages: Layer 4 and report
 
 
+PUBLISH_STAGES = ("prepare_assets", "publish_assets", "refresh_baseline", "verify_assets", "release_plan", "seal",
+                  "prepare_overlay", "publish_catalog", "live_readback")
+
+
 def stage_layer4(run: Run):
     from tools.development import clip_e2e_release
     spec, l4 = run.spec, run.dir / "l4"
@@ -750,10 +754,20 @@ def stage_layer4(run: Run):
         run.sh("layer4-publish", [PY, ROOT / "tools/development/run_dev_simulated_delivery.py", "--baseline", l4 / "baseline",
                                   "--prepared", l4 / "work/prepared", "--out", workflow, "--machine-checked", "--execute"])
     state = read(state_path)
+    stages = state.get("stages") or {}
     report_path = workflow / "run-report.json"
     report = read(report_path) if report_path.exists() else {}
     inputs = state.get("inputs") or {}
     sha = lambda path: hashlib.sha256(path.read_bytes()).hexdigest()
+
+    def intact(stage):
+        # Each journal stage's recorded outputs must still hash as recorded, as on a journal resume.
+        row = stages.get(stage) or {}
+        outputs = row.get("outputs")
+        return (row.get("status") == "succeeded" and isinstance(outputs, dict) and bool(outputs)
+                and all(isinstance(rel, str) and (workflow / rel).resolve().is_relative_to(workflow.resolve())
+                        and (workflow / rel).is_file() and sha(workflow / rel) == digest
+                        for rel, digest in outputs.items()))
     expected = (("preparedManifestSha256", l4 / "work/prepared/preparation-manifest.json"),
                 ("baselineReceiptSha256", l4 / "baseline/baseline-receipt.json"),
                 ("baselineSealSha256", l4 / "baseline/seal-report.json"))
@@ -763,17 +777,25 @@ def stage_layer4(run: Run):
             or (inputs.get("target") or {}).get("origin") != DEV_ORIGIN
             or inputs.get("contentMode") != "machine_checked"
             or any(not path.is_file() or inputs.get(key) != sha(path) for key, path in expected)
-            or any((state.get("stages") or {}).get(stage, {}).get("status") != "succeeded"
-                   for stage in ("publish_assets", "verify_assets", "publish_catalog", "live_readback"))):
+            or not all(intact(stage) for stage in PUBLISH_STAGES)):
         raise Stop("Layer 4 publish receipt needs reconciliation; refusing to deploy again")
+    # The catalog this run published, bound through the sealed overlay report the journal hashed.
+    catalog = workflow / "final-overlay/public/multilingual-v4.json"
+    seal = read(workflow / "final-overlay/seal-report.json")
+    published = (next((row for row in read(catalog).get("pages", []) if row.get("id") == page["pageId"]), None)
+                 if catalog.is_file() and sha(catalog) == seal.get("catalogV4Sha256") else None)
+    releases = {locale: ((published or {}).get("targets") or {}).get(locale) or {} for locale in spec["locales"]}
+    if not all(row.get("releasePackageUrl") and row.get("releasePackageJsonSha256") for row in releases.values()):
+        raise Stop("Layer 4 published catalog does not bind this page's releases; reconcile before retry")
 
     def passed_smoke(path):
         try:
             receipt = read(path)
+            passed = {row["locale"]: row for row in receipt.get("locales", []) if row.get("status") == "pass"}
             return (receipt.get("status") == "pass" and receipt.get("pageId") == page["pageId"]
-                    and receipt.get("origin") == DEV_ORIGIN
-                    and {row["locale"] for row in receipt.get("locales", []) if row.get("status") == "pass"}
-                    == set(spec["locales"])
+                    and receipt.get("origin") == DEV_ORIGIN and set(passed) == set(spec["locales"])
+                    and all(passed[locale].get(field) == releases[locale][field] for locale in spec["locales"]
+                            for field in ("releasePackageUrl", "releasePackageJsonSha256"))
                     and datetime.fromisoformat(receipt["checkedAt"]) >= datetime.fromisoformat(state["completedAt"]))
         except (OSError, ValueError, KeyError, TypeError):
             return False
