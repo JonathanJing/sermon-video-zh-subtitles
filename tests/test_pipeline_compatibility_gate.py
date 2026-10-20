@@ -4,7 +4,7 @@ import subprocess
 import tempfile
 import unittest
 
-from scripts.pipeline_compatibility_gate import evaluate
+from tools.development.pipeline_compatibility_gate import evaluate
 
 
 class CompatibilityGateTests(unittest.TestCase):

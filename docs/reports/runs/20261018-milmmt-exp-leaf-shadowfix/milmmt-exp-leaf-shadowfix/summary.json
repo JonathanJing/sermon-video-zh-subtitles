@@ -1,0 +1,8 @@
+{
+  "status": "passed",
+  "tests": 8,
+  "providerCalls": 0,
+  "modelCalls": 0,
+  "networkCalls": 0,
+  "productionWrites": 0
+}

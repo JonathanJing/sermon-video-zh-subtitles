@@ -1,0 +1,17 @@
+# chunk s2: 13 files
+tests/test_backend_app.py
+tests/test_backend_worker.py
+tests/test_collect_production_evidence_matrix.py
+tests/test_ops_run_entry.py
+tests/test_publish_post_live_sunday_manifest.py
+tests/test_refresh_production_preflight_evidence.py
+tests/test_run_offline_asr_fallback_smoke.py
+tests/test_run_realtime_public_sse_smoke.py
+tests/test_scripts_layout_guard.py
+tests/test_validate_production_readiness.py
+tests/test_validate_server_realtime_contract.py
+tests/test_write_model_access_recovery_plan.py
+tests/test_write_production_unblock_plan.py
+
+176 passed, 5 subtests passed in 22.39s
+exit 0

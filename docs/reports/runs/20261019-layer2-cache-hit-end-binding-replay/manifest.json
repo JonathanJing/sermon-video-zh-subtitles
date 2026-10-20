@@ -1,0 +1,151 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261019-layer2-cache-hit-end-binding-replay",
+  "runs": [
+    {
+      "label": "replay-base",
+      "source": "<scratchpad>/replay-base",
+      "skipped": {
+        ".lock": 4,
+        ".json": 178,
+        ".jsonl": 1,
+        ".csv": 3
+      }
+    },
+    {
+      "label": "replay-d",
+      "source": "<scratchpad>/replay-d",
+      "skipped": {
+        ".lock": 4,
+        ".json": 178,
+        ".jsonl": 1,
+        ".csv": 3
+      }
+    },
+    {
+      "label": "replay-combo",
+      "source": "<scratchpad>/replay-combo",
+      "skipped": {
+        ".lock": 4,
+        ".json": 178,
+        ".jsonl": 1,
+        ".csv": 3
+      }
+    }
+  ],
+  "files": [
+    {
+      "run": "replay-base",
+      "path": "out/zh-Hans/accounting/operations.log",
+      "kind": "log",
+      "bytes": 129723,
+      "truncated": true,
+      "sha256": "25f53c1309b2ced1a044424c44ac26df1bb2a0f5938ec976781191decb75284e",
+      "redactions": {}
+    },
+    {
+      "run": "replay-base",
+      "path": "out/zh-Hans/accounting/summary.json",
+      "kind": "whole",
+      "bytes": 318400,
+      "truncated": false,
+      "sha256": "d79f0f99d2885435f2e03ad843dd3d5813bcb7d6935549a24dd22c61ac176984",
+      "omitted": "over_size_cap"
+    },
+    {
+      "run": "replay-base",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 417,
+      "truncated": false,
+      "sha256": "9ed91f6f441df2465ea71dbe385dc401fbdd303f2d814ca504c11ce58aef4d0b",
+      "redactions": {}
+    },
+    {
+      "run": "replay-base",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 864,
+      "truncated": false,
+      "sha256": "86be605d45d883d1d449659477183ba8cb2ecc6340ed5dff852148848f7177e7",
+      "redactions": {}
+    },
+    {
+      "run": "replay-d",
+      "path": "out/zh-Hans/accounting/operations.log",
+      "kind": "log",
+      "bytes": 129721,
+      "truncated": true,
+      "sha256": "915177d0ec7f2a3596e8a59b1c8aa267bbe5443fa5ea1a53b6054036ebdc0c7e",
+      "redactions": {}
+    },
+    {
+      "run": "replay-d",
+      "path": "out/zh-Hans/accounting/summary.json",
+      "kind": "whole",
+      "bytes": 318457,
+      "truncated": false,
+      "sha256": "bcd101535a81cf102def7edd79af5e62e3112a4168929ad4fb597cbd6cc82ed5",
+      "omitted": "over_size_cap"
+    },
+    {
+      "run": "replay-d",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 451,
+      "truncated": false,
+      "sha256": "9111742c8a1f1106ab2f916737fce718607a5de912223d6adb747bd95e509774",
+      "redactions": {}
+    },
+    {
+      "run": "replay-d",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 894,
+      "truncated": false,
+      "sha256": "3f8a932edbdfcbf84975704c9300bc8cb83803f42c85630dae94d450db5845ed",
+      "redactions": {}
+    },
+    {
+      "run": "replay-combo",
+      "path": "out/zh-Hans/accounting/operations.log",
+      "kind": "log",
+      "bytes": 129722,
+      "truncated": true,
+      "sha256": "ff7b01b296af424043db32d78a48168b9a5089e6fbe1fa620d819b76168d3b01",
+      "redactions": {}
+    },
+    {
+      "run": "replay-combo",
+      "path": "out/zh-Hans/accounting/summary.json",
+      "kind": "whole",
+      "bytes": 318751,
+      "truncated": false,
+      "sha256": "85a682c749d496da8a43ce2d4e9aba9e34d45f5f8ab0d8ca474cf7359ed296e5",
+      "omitted": "over_size_cap"
+    },
+    {
+      "run": "replay-combo",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 450,
+      "truncated": false,
+      "sha256": "777f2f333b0f4635e4ae162884116196d639a96b6a7873467a4c53d397d4f90e",
+      "redactions": {}
+    },
+    {
+      "run": "replay-combo",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 892,
+      "truncated": false,
+      "sha256": "136233ff91bce879ca6b15774ca25c3865540602489cc933e99419508b1580d4",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

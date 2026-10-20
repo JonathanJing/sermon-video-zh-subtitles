@@ -20,6 +20,8 @@ import json
 import os
 from pathlib import Path
 import tempfile
+import threading
+import time
 
 _active = ContextVar('api_cli_outcome_admitted', default=False)
 SCHEMA = 'sermon-api-cli-outcome-v3'
@@ -90,6 +92,41 @@ def request_identity(caller, args, kwargs, purpose):
 
 EXECUTABLE_KEYS = {'codex_cli','cli_path','executable','executable_path','binary_path'}
 
+# Per-process memo of executable digests. The Codex CLI bundle is ~250 MB and a
+# request identity needs it several times per group; the digests themselves are
+# unchanged. An entry is reused only while the resolved path and the stat key of
+# both hashed files are unchanged, and never for a file modified within the
+# timestamp-granularity window before hashing began (a same-size rewrite in that
+# window could keep its stat key).
+_EXECUTABLE_IDENTITIES = {}
+_EXECUTABLE_LOCKS = {}
+_EXECUTABLE_LOCKS_GUARD = threading.Lock()
+_RACY_MTIME_SECONDS = 2.0
+
+
+def _reset_executable_locks():
+    # A forked child must not inherit a lock held by a parent thread mid-hash.
+    global _EXECUTABLE_LOCKS_GUARD
+    _EXECUTABLE_LOCKS_GUARD = threading.Lock()
+    _EXECUTABLE_LOCKS.clear()
+
+
+os.register_at_fork(after_in_child=_reset_executable_locks)
+
+
+def _file_stat_key(path):
+    try:
+        st = os.stat(path)
+    except FileNotFoundError:
+        return None
+    return (st.st_dev, st.st_ino, st.st_size, st.st_mtime_ns, st.st_ctime_ns)
+
+
+def _file_sha256(path):
+    with open(path, 'rb') as stream:
+        return hashlib.file_digest(stream, 'sha256').hexdigest()
+
+
 def executable_identity(value):
     path=Path(value).expanduser()
     if not path.is_file() and len(path.parts)==1:
@@ -98,10 +135,24 @@ def executable_identity(value):
     resolved=path.resolve(strict=True)
     if not resolved.is_file() or not os.access(resolved,os.X_OK):
         raise ValueError('api_cli_executable_identity_invalid')
-    identity={'resolvedPath':str(resolved),'sha256':hashlib.sha256(resolved.read_bytes()).hexdigest()}
     bundled=resolved.parent.parent/'CodexCLI.app/Contents/MacOS/codex'
-    if bundled.is_file():identity['bundleBinarySha256']=hashlib.sha256(bundled.read_bytes()).hexdigest()
-    return identity
+    with _EXECUTABLE_LOCKS_GUARD:
+        lock=_EXECUTABLE_LOCKS.setdefault(str(resolved),threading.Lock())
+    with lock:
+        key=(_file_stat_key(resolved),_file_stat_key(bundled) if bundled.is_file() else None)
+        cached=_EXECUTABLE_IDENTITIES.get(str(resolved))
+        if cached is not None and cached[0]==key:
+            return dict(cached[1])
+        started=time.time_ns()
+        identity={'resolvedPath':str(resolved),'sha256':_file_sha256(resolved)}
+        if bundled.is_file():identity['bundleBinarySha256']=_file_sha256(bundled)
+        after=(_file_stat_key(resolved),_file_stat_key(bundled) if bundled.is_file() else None)
+        racy=any(part is not None and part[3]>=started-int(_RACY_MTIME_SECONDS*1e9) for part in key)
+        if after==key and key[0] is not None and not racy:
+            _EXECUTABLE_IDENTITIES[str(resolved)]=(key,dict(identity))
+        else:
+            _EXECUTABLE_IDENTITIES.pop(str(resolved),None)
+        return identity
 
 
 def _code_identity(code):

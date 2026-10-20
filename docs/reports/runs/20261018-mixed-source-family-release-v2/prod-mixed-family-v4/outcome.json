@@ -1,0 +1,18 @@
+{
+  "schemaVersion": "sermon-run-outcome-v1",
+  "runType": "four_layer_release",
+  "status": "complete_web_published",
+  "startedAt": "2026-10-18T16:18:43Z",
+  "endedAt": "2026-10-18T16:49:20Z",
+  "pageId": "resi-20261018-15030286",
+  "hostingVersion": "sites/ai-for-god-sermon-audio/versions/2152c1a3074b7646",
+  "locales": [
+    "zh-Hans",
+    "ko",
+    "es"
+  ],
+  "modelCalls": 0,
+  "browserSmoke": "pass",
+  "deviceAcceptance": "not_run",
+  "venueAcceptance": "not_run"
+}

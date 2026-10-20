@@ -12,14 +12,15 @@ from copy import deepcopy
 from pathlib import Path
 import time
 
-from scripts import sermon_accounting as accounting
-from scripts import sermon_log_profile as profile
-from scripts import sermon_review_budget as budget
-from scripts import sermon_review_contracts as c
+from tongxing_production.observability import accounting
+from tongxing_production.observability import profile
+from tongxing_production.review import review_budget as budget
+from tongxing_production.review import contracts as c
 from scripts import sermon_strict_layer2 as strict
-from scripts import sermon_workflow_jobs as jobs
-from scripts.sermon_pipeline import TransportRejection
-from scripts.sermon_pipeline import PreDispatchRejection, PRE_DISPATCH_REASONS
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.orchestration import jobs
+from tongxing_production.workflows.dual_pdf.pipeline import TransportRejection
+from tongxing_production.workflows.dual_pdf.pipeline import PreDispatchRejection, PRE_DISPATCH_REASONS
 from scripts.sermon_release_workflow import _safe_path
 
 DISPATCH_LOCK_ATTEMPTS = 100

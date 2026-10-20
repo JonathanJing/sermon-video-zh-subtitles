@@ -9,9 +9,10 @@ import unittest
 from unittest.mock import patch
 from PIL import Image
 from tongxing_production.compute import legacy_openai  # C4: the remote-call group lives here
-from scripts import sermon_pipeline as pipeline
-from scripts import sermon_provider_limits as limits
-from scripts import api_cli_outcomes as outcomes
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.workflows.dual_pdf import pipeline as pipeline
+from tongxing_production.compute import provider_limits as limits
+from tongxing_production.compute import outcomes
 
 
 def image_content(size=(1,1)):
@@ -27,7 +28,7 @@ def payload(content='synthetic'):
 
 class LegacyChatShapeTests(unittest.TestCase):
     def test_actual_standalone_source_judge_strict_schema_reaches_transport(self):
-        from scripts import judge_english_source_for_translation as judge
+        from tongxing_production.source import english_source_judge as judge
         from tests.test_judge_english_source_for_translation import EnglishSourceMachineJudgeTests
         fixture=EnglishSourceMachineJudgeTests();fixture.setUp()
         self.addCleanup(fixture.doCleanups)
@@ -40,7 +41,7 @@ class LegacyChatShapeTests(unittest.TestCase):
         self.assertEqual(network.call_args.args[2]['max_completion_tokens'],4096)
 
     def test_actual_cuv_image_audit_entry_reaches_fake_transport(self):
-        from scripts import sermon_cuv_translation as cuv
+        from tongxing_production.text import cuv_translation as cuv
         with tempfile.TemporaryDirectory() as tmp,patch.dict(os.environ,{'SERMON_ACCOUNTING_DIR':tmp,'OPENAI_API_KEY':'synthetic-key'}),patch.object(cuv,'audit_user_content',return_value=image_content((1920,1080))),patch.object(legacy_openai,'json_request',return_value={'model':cuv.MODEL,'choices':[{'finish_reason':'stop','message':{'content':'{"ok":true}'}}]}) as network:
             result,_=cuv.cached_call(Path(tmp)/'cuv','audit-quotes',cuv.AUDIT_QUOTES,{},{} )
         self.assertEqual(result,{'ok':True});self.assertEqual(network.call_count,1)
@@ -84,7 +85,7 @@ class LegacyChatShapeTests(unittest.TestCase):
         route={'environment':'dev','projectId':'proj_original','credentialAlias':'tongxing-dev-runtime'}
         for role in ('translation','correction'):
             for changed in ('project','key','caller'):
-                with self.subTest(role=role,changed=changed),tempfile.TemporaryDirectory() as tmp,patch.dict(os.environ,{'SERMON_ACCOUNTING_DIR':tmp}),patch('scripts.sermon_openai_runtime.selected_route',return_value=route) as selected:
+                with self.subTest(role=role,changed=changed),tempfile.TemporaryDirectory() as tmp,patch.dict(os.environ,{'SERMON_ACCOUNTING_DIR':tmp}),patch('tongxing_production.compute.openai_runtime.selected_route',return_value=route) as selected:
                     root=Path(tmp);segments=[{'id':0,'start':0.0,'end':1.0,'text':'Hello.'}]
                     response={'choices':[{'message':{'content':json.dumps({'id':0,'zh':'您好。'} if role=='translation' else {'segments':[{'id':0,'text':'Hello.'}]})}}]}
                     def run(key='synthetic-key'):

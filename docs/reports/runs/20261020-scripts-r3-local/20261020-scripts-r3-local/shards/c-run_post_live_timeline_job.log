@@ -1,0 +1,21 @@
+============================= test session starts ==============================
+platform darwin -- Python 3.13.16, pytest-9.1.1, pluggy-1.6.0 -- ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.claude/worktrees/scripts-r3-3df8c4/.venv/bin/python
+rootdir: ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.claude/worktrees/scripts-r3-3df8c4
+plugins: anyio-4.14.2
+collecting ... collected 13 items
+
+tests/test_run_post_live_timeline_job.py::PostLiveTimelineJobTest::test_cli_has_no_model_or_chunk_controls PASSED [  7%]
+tests/test_run_post_live_timeline_job.py::PostLiveTimelineJobTest::test_consumes_local_gcs_handoff_before_youtube_download PASSED [ 15%]
+tests/test_run_post_live_timeline_job.py::PostLiveTimelineJobTest::test_dedupes_completed_review_gate PASSED [ 23%]
+tests/test_run_post_live_timeline_job.py::PostLiveTimelineJobTest::test_downloads_uploads_probes_and_stops_for_review PASSED [ 30%]
+tests/test_run_post_live_timeline_job.py::PostLiveTimelineJobTest::test_incomplete_audio_fails_without_model_or_media_report PASSED [ 38%]
+tests/test_run_post_live_timeline_job.py::PostLiveTimelineJobTest::test_metadata_falls_back_to_ytdlp_when_data_api_fails PASSED [ 46%]
+tests/test_run_post_live_timeline_job.py::PostLiveTimelineJobTest::test_metadata_prefers_youtube_data_api_without_calling_ytdlp PASSED [ 53%]
+tests/test_run_post_live_timeline_job.py::PostLiveTimelineJobTest::test_preserves_existing_source_media_report_on_conflict PASSED [ 61%]
+tests/test_run_post_live_timeline_job.py::PostLiveTimelineJobTest::test_rejects_cached_review_from_another_source PASSED [ 69%]
+tests/test_run_post_live_timeline_job.py::PostLiveTimelineJobTest::test_rejects_cookie_secret_and_local_file_together PASSED [ 76%]
+tests/test_run_post_live_timeline_job.py::PostLiveTimelineJobTest::test_reports_download_access_separately_after_metadata_is_ready PASSED [ 84%]
+tests/test_run_post_live_timeline_job.py::PostLiveTimelineJobTest::test_resolves_explicit_local_cookie_file PASSED [ 92%]
+tests/test_run_post_live_timeline_job.py::PostLiveTimelineJobTest::test_waits_while_stream_is_live PASSED [100%]
+
+============================== 13 passed in 6.73s ==============================

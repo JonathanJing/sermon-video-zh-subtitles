@@ -65,7 +65,8 @@ class ParallelBridgeTests(unittest.TestCase):
                 self.assertEqual(len(list((root / 'bridge-output').rglob('job.json'))), 1)
 
     def test_real_producer_loader_separates_readiness_wait_from_invalid_evidence(self):
-        from scripts.run_post_live_subtitle_generation import load_dubbing_producer_hook
+        from scripts import tongxing_host  # noqa: F401  binds the production package ports
+        from tongxing_production.workflows.dual_pdf.post_live import load_dubbing_producer_hook
         hook, not_ready = load_dubbing_producer_hook()
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)

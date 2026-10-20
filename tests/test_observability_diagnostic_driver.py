@@ -7,9 +7,12 @@ import time
 import types
 import unittest
 from unittest.mock import patch
-from scripts import run_observability_diagnostic as driver
-from scripts import sermon_accounting as accounting
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.observability import accounting
 from scripts import weekly_pipeline_report as weekly
+from tests import experiment_modules
+
+driver = experiment_modules.load("experiments/observability-diagnostic/run_observability_diagnostic.py")
 
 
 class DiagnosticDriverTests(unittest.TestCase):
@@ -41,7 +44,8 @@ class DiagnosticDriverTests(unittest.TestCase):
             self.assertEqual(report['transcriptSha256'],hashlib.sha256((out/'fresh-local-asr.json').read_bytes()).hexdigest())
 
     def test_audio_locale_wrappers_follow_actual_serial_invocations(self):
-        from scripts import inspect_canonical_audio as audio
+        from scripts import tongxing_host  # noqa: F401  binds the production package ports
+        from tongxing_production.audio import inspect as audio
         with tempfile.TemporaryDirectory() as tmp:
             root=Path(tmp);assets=root/'assets';assets.mkdir();package=assets/'package.json';package.write_text(json.dumps({'units':[{'audio':{'sha256':'a'*64}}]}))
             inputs=[{'locale':locale,'artifactRoot':str(assets),'package':str(package),'trackedFiles':[str(package)],
@@ -62,7 +66,7 @@ class DiagnosticDriverTests(unittest.TestCase):
 
     def test_real_producer_source_identity_includes_media_hash(self):
         from tests import test_run_target_language_models as fixtures
-        from scripts import run_target_language_models as models
+        from tongxing_production.text import models
         t=fixtures.RunTargetLanguageModelsTests();t.setUp();self.addCleanup(t.doCleanups);f=t.fixture
         models.run_accounted(f.source,f.anchor,f.policy,t.out,'fixture-key',t.fake_call,None,f.plugin_path,None,None)
         events,_=accounting.read_events(t.out/'accounting')

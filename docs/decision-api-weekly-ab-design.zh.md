@@ -29,21 +29,21 @@
 |---|---|
 | E01 | [英文硬检查和模型裁判](../packages/production/src/tongxing_production/source/english_source_judge.py)：deterministic_review、run，默认 Sol 6.1 high |
 | E02 | [独立审核器](../packages/production/src/tongxing_production/text/models.py)：review_prompt 明确先纠正 targetUtterances 再返回 semanticReview；保留冻结术语／经文规则与插件 |
-| E03 | [修复规划](../scripts/sermon_repair_planning.py)：plan_repair、build_ambiguous_packet、validate_ambiguous_proposal；[受限 proposal](../scripts/sermon_bounded_decision.py)：propose 的 injected responder，无执行权 |
-| E04 | [音频单元文本筛查](../scripts/screen_target_language_audio_units.py)：相似度及短句精确规则；[人工音频审核](../scripts/review_target_language_audio.py)负责疑点裁决 |
-| E05 | [实测时长诊断](../scripts/target_audio_timing_plan.py)：plan 调用同一正式 scheduler，modelCalls=0 |
-| E06 | [大纲／默想生成](../scripts/sermon_study_generation.py)和[人工审核消费](../packages/production/src/tongxing_production/delivery/study_artifacts.py) |
-| E07 | [provider 分类](../scripts/sermon_provider_error.py)、[确定性推荐](../scripts/sermon_production_supervisor.py)、[CLI Supervisor 与 verify_decision](../scripts/run_sermon_production_supervisor_agent.py) |
+| E03 | [修复规划](../packages/production/src/tongxing_production/orchestration/supervisor/repair_planning.py)：plan_repair、build_ambiguous_packet、validate_ambiguous_proposal；[受限 proposal](../packages/production/src/tongxing_production/orchestration/supervisor/bounded_decision.py)：propose 的 injected responder，无执行权 |
+| E04 | [音频单元文本筛查](../packages/production/src/tongxing_production/audio/screening.py)：相似度及短句精确规则；[人工音频审核](../packages/production/src/tongxing_production/audio/human_review.py)负责疑点裁决 |
+| E05 | [实测时长诊断](../packages/production/src/tongxing_production/audio/timing_plan.py)：plan 调用同一正式 scheduler，modelCalls=0 |
+| E06 | [大纲／默想生成](../packages/production/src/tongxing_production/workflows/prepared/study_generation.py)和[人工审核消费](../packages/production/src/tongxing_production/delivery/study_artifacts.py) |
+| E07 | [provider 分类](../packages/production/src/tongxing_production/compute/sermon_provider_error.py)、[确定性推荐](../scripts/sermon_production_supervisor.py)、[CLI Supervisor 与 verify_decision](../scripts/run_sermon_production_supervisor_agent.py) |
 | E08 | [反馈字段和类别](../services/feedback/core.mjs)、[人工管理](../services/feedback/admin.mjs) |
-| 计时 | [accounting](../scripts/sermon_accounting.py)、[bounded decision observation](../scripts/sermon_decision_accounting.py)、[日志合同](bounded-decision-accounting.zh.md) |
-| harness 参考 | [Supervisor A/B](../scripts/experiments/supervisor_ab.py)、[Layer 2 A/B](../scripts/experiments/layer2_ab.py)。复用 hash、独立目录、原始响应、轮换顺序与恢复身份；不直接复用旧 model/backend 或虚构统计实现 |
+| 计时 | [accounting](../packages/production/src/tongxing_production/observability/accounting.py)、[bounded decision observation](../packages/production/src/tongxing_production/orchestration/supervisor/decision_accounting.py)、[日志合同](bounded-decision-accounting.zh.md) |
+| harness 参考 | [Supervisor A/B](../experiments/agents-api-trials/supervisor_ab.py)、[Layer 2 A/B](../experiments/layer2-translation-ab/layer2_ab.py)。复用 hash、独立目录、原始响应、轮换顺序与恢复身份；不直接复用旧 model/backend 或虚构统计实现 |
 
 本地已核验的候选素材：
 
 - 605 秒来源样本的 machine-judge：114 句、136 单元，113 pass、1 high-risk fail。历史缓存含 CLI 收据，缺相应在线总耗时；只作案例输入或待核验标签，不能当新 API 的时间基线。
 - [9 月 20 日正式音频收据目录](evidence/2026-09-20-formal-audio/)：中 45、韩 44、西 44 单元；11 个 ASR flags 均被人工批准。适合评估误报，缺真实漏读／错读阳性，不能只用这批宣称严重问题召回可靠。
 - [RQC fixtures](../tests/fixtures/rqc/)与[诊断 fixtures](../tests/fixtures/sermon_agent_diagnostics/)用于协议、错误和护栏测试；synthetic 不算生产 gold。
-- [Supervisor fixtures](../scripts/experiments/supervisor_ab_fixtures.json)覆盖缺来源、审批、租约、QA、发布缺项等 12 个 shadow 状态；只复用状态，不复用历史模型速度。
+- [Supervisor fixtures](../experiments/agents-api-trials/supervisor_ab_fixtures.json)覆盖缺来源、审批、租约、QA、发布缺项等 12 个 shadow 状态；只复用状态，不复用历史模型速度。
 
 实际案例内容、媒体、完整错误与原始响应放 ignored artifacts，计划和公共账本只保留 hash、计数、安全 metadata。解析 evidenceRefs 后验 hash，向 B 提供脱敏内容；仅发送 hash 不构成语义证据。
 

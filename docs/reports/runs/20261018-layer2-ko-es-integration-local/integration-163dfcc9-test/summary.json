@@ -1,0 +1,6 @@
+{
+  "command": ".venv/bin/python -m pytest -q tests/test_weekly_15030286_plugin.py tests/test_auto_qc_text_review_regressions.py tests/test_auto_qc_text_target_forms.py tests/test_machine_quality_waiver.py::TextRuleTests tests/test_layer2_payload_cache_reuse.py tests/test_canonical_layer2_budget_reuse.py tests/test_canonical_layer2_controller_payload_cache.py",
+  "result": "110 passed, 179 subtests passed in 11.87s",
+  "codeIdentity": "local integration HEAD 163dfcc9",
+  "externalProviderDispatch": false
+}

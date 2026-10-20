@@ -1,0 +1,71 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261020-layer2-parallel-v7-recovery",
+  "runs": [
+    {
+      "label": "mock-replay",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.claude/worktrees/lucid-kepler-ccb4a5/artifacts/l2-parallel-v7-20261020/mock-replay",
+      "skipped": {
+        ".txt": 4,
+        ".json": 1
+      }
+    },
+    {
+      "label": "tests",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.claude/worktrees/lucid-kepler-ccb4a5/artifacts/l2-parallel-v7-20261020/tests",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "mock-replay",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 347,
+      "truncated": false,
+      "sha256": "f73b0149baa1b0b939ff05d1ad11809bc74227b7471f464be2c69bab5fe661ca",
+      "redactions": {}
+    },
+    {
+      "run": "mock-replay",
+      "path": "replay.log",
+      "kind": "log",
+      "bytes": 1078,
+      "truncated": false,
+      "sha256": "0ca18395b93635a52fcb6a041fbe93e3740ac12dd442aa89abfd3a8b7d12ff17",
+      "redactions": {}
+    },
+    {
+      "run": "mock-replay",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 1747,
+      "truncated": false,
+      "sha256": "bb5108c824b74b343db8d334d32fc90114ed58901746344308e4d83026d79e5b",
+      "redactions": {}
+    },
+    {
+      "run": "tests",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 337,
+      "truncated": false,
+      "sha256": "0ab8aa7610ad2b97b6fb9648ee3c723569478f72e71408c27bb6cb613f615cff",
+      "redactions": {}
+    },
+    {
+      "run": "tests",
+      "path": "suite.log",
+      "kind": "log",
+      "bytes": 478,
+      "truncated": false,
+      "sha256": "9c75f9e2c0ff1ae3bf10475042ebaef0c891766ad97482ce58b7992c37edc98f",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

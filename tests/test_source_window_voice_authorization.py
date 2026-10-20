@@ -2,8 +2,9 @@ import copy
 import unittest
 from unittest import mock
 
-from scripts import prepare_target_language_speech_job as subject
-from scripts import sermon_sentence_interpretation as interpretation
+from tongxing_production.audio import speech_job as subject
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.source import sentence_interpretation as interpretation
 
 
 class ApprovedWindowAuthorizationTests(unittest.TestCase):

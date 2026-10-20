@@ -1,0 +1,110 @@
+experiments/local_experiment_log/tests/test_deploy_tools.py :: 9 passed in 4.44s
+tests/test_accounting_clock_domains.py :: 8 passed, 10 subtests passed in 1.32s
+tests/test_accounting_log_contract.py :: 15 passed, 19 subtests passed in 5.21s
+tests/test_accounting_observability.py :: 13 passed in 10.39s
+tests/test_accounting_receipt_conflicts.py :: 8 passed, 4 subtests passed in 5.22s
+tests/test_accounting_retry_safety.py :: 6 passed, 6 subtests passed in 0.75s
+tests/test_benchmark_layer2_bounded.py :: 12 passed in 10.79s
+tests/test_build_english_source_package.py :: 10 passed in 1.48s
+tests/test_build_four_layer_tracker_snapshot.py :: 23 passed, 7 subtests passed in 18.51s
+tests/test_build_tracker_dag_projection.py :: 35 passed, 3 subtests passed in 9.42s
+tests/test_canonical_layer2_cache_recovery.py :: 13 passed in 170.98s (0:02:50)
+tests/test_canonical_layer2_controller.py :: 23 passed, 6 subtests passed in 129.06s (0:02:09)
+tests/test_capture_supervisor_model_usage.py :: 10 passed in 8.40s
+tests/test_codex_credit_usage.py :: 9 passed in 1.04s
+tests/test_codex_layer2_transport.py :: 34 passed, 15 subtests passed in 1.62s
+tests/test_cuv_loaded_code_identity.py :: 1 passed in 1.84s
+tests/test_diagnostic_continuation_entry.py :: 3 passed, 4 subtests passed in 5.53s
+tests/test_diagnostic_dag_fixture.py :: 3 passed in 13.67s
+tests/test_four_layer_measure.py :: 15 passed in 4.51s
+tests/test_four_layer_progress.py :: 11 passed in 0.83s
+tests/test_four_layer_timeline.py :: 4 passed in 0.58s
+tests/test_infrastructure_contracts.py :: 11 passed, 69 subtests passed in 2.48s
+tests/test_infrastructure_path_aliases.py :: 5 passed, 1 skipped in 0.75s
+tests/test_layer2_concurrency_experiment.py :: 9 passed, 7 subtests passed in 2.86s
+tests/test_layer2_large_fan_in.py :: 1 failed in 14.65s
+tests/test_layer2_leaf_accounting.py :: 5 passed in 5.82s
+tests/test_layer2_payload_cache_reuse.py :: 25 passed, 3 subtests passed in 30.48s
+tests/test_layer3_dependency_accounting.py :: 5 passed in 17.77s
+tests/test_logging_reliability.py :: 9 passed, 2 subtests passed in 1.41s
+tests/test_mock_tts_sdk_diagnostics.py :: 6 passed, 4 subtests passed in 2.09s
+tests/test_observability_diagnostic_driver.py :: 1 failed, 2 passed in 2.55s
+tests/test_observability_sufficiency.py :: 18 passed in 7.48s
+tests/test_ops_run_entry.py :: 18 passed in 5.05s
+tests/test_outcome_marker.py :: 6 passed in 0.72s
+tests/test_parallel_reading.py :: 9 passed in 1.42s
+tests/test_prepare_target_language_speech_job.py :: 24 passed in 7.27s
+tests/test_produce_target_language_candidate.py :: 9 passed in 2.56s
+tests/test_production_logging.py :: 14 passed, 16 subtests passed in 6.64s
+tests/test_project_codex_credit_usage.py :: 6 passed in 10.24s
+tests/test_reading_accounting.py :: 8 passed, 5 subtests passed in 1.68s
+tests/test_render_formal_target_language_speech.py :: 32 passed, 2 subtests passed in 66.12s (0:01:06)
+tests/test_render_mobile_pdf_from_srt.py :: 20 passed in 3.23s
+tests/test_render_sermon_interpretation_pdf.py :: 14 passed in 11.88s
+tests/test_render_speculative_target_language_speech.py :: 38 passed, 16 subtests passed in 63.97s (0:01:03)
+tests/test_report_snapshot.py :: 7 passed in 7.81s
+tests/test_run_bounded_diagnostic.py :: 12 passed, 4 subtests passed in 22.85s
+tests/test_run_local_post_live_download.py :: 6 passed in 3.15s
+tests/test_run_post_live_subtitle_generation.py :: 27 passed in 10.19s
+tests/test_run_target_language_models.py :: 46 passed, 12 subtests passed in 7.35s
+tests/test_sermon_accounting.py :: 21 passed, 3 subtests passed in 7.67s
+tests/test_sermon_bounded_business_callbacks.py :: 7 passed in 12.74s
+tests/test_sermon_business_prefect_flow.py :: 14 passed, 1 skipped in 34.52s
+tests/test_sermon_cached_fresh_diagnostic_source.py :: 11 passed in 45.23s
+tests/test_sermon_clock_handshake.py :: 7 passed in 18.34s
+tests/test_sermon_completion.py :: 11 passed, 11 subtests passed in 4.52s
+tests/test_sermon_completion_batch.py :: 9 passed, 13 subtests passed in 7.55s
+tests/test_sermon_decision_accounting.py :: 9 passed, 11 subtests passed in 4.78s
+tests/test_sermon_delivery_intent_binding.py :: 48 passed, 10 subtests passed in 297.61s (0:04:57)
+tests/test_sermon_dev_diagnostic_snapshot.py :: 20 passed, 23 subtests passed in 66.50s (0:01:06)
+tests/test_sermon_diagnostic_context.py :: 8 passed, 12 subtests passed in 14.46s
+tests/test_sermon_diagnostic_dag_session.py :: 20 passed, 15 subtests passed in 82.49s (0:01:22)
+tests/test_sermon_diagnostic_pre_provider_failure.py :: 5 passed in 5.76s
+tests/test_sermon_diagnostic_prefect_cli.py :: 4 passed, 2 subtests passed in 11.16s
+tests/test_sermon_diagnostic_prefect_flow.py :: 19 passed, 1 skipped, 3 subtests passed in 29.84s
+tests/test_sermon_diagnostic_preview_worker.py :: 21 passed, 4 subtests passed in 125.96s (0:02:05)
+tests/test_sermon_diagnostic_provider.py :: 31 passed, 5 subtests passed in 47.27s
+tests/test_sermon_diagnostic_source_evidence.py :: 6 passed, 4 subtests passed in 2.30s
+tests/test_sermon_durable_accounting.py :: 23 passed, 34 subtests passed in 18.46s
+tests/test_sermon_fresh_diagnostic.py :: 17 passed, 10 subtests passed in 63.19s (0:01:03)
+tests/test_sermon_fresh_full_dag.py :: 1 failed in 8.51s
+tests/test_sermon_fresh_mfa_boundaries.py :: 2 passed, 18 subtests passed in 35.38s
+tests/test_sermon_fresh_native_history.py :: 9 passed in 20.77s
+tests/test_sermon_fresh_source_causality.py :: 10 passed, 8 subtests passed in 46.91s
+tests/test_sermon_fresh_source_evidence.py :: 12 passed, 12 subtests passed in 54.33s
+tests/test_sermon_fresh_source_prefect.py :: 2 passed, 3 skipped in 27.64s
+tests/test_sermon_fresh_source_stages.py :: 3 passed in 24.89s
+tests/test_sermon_historical_identity.py :: 9 passed, 2 subtests passed in 10.44s
+tests/test_sermon_historical_layer2.py :: 13 passed in 102.02s (0:01:42)
+tests/test_sermon_local_business_callbacks.py :: 18 passed, 33 subtests passed in 124.70s (0:02:04)
+tests/test_sermon_log_profile.py :: 20 passed, 4 subtests passed in 21.79s
+tests/test_sermon_log_schema_snapshots.py :: 13 passed, 3 subtests passed in 30.20s
+tests/test_sermon_log_validation_cache.py :: 20 passed, 162 subtests passed in 21.61s
+tests/test_sermon_logs.py :: 7 passed, 3 subtests passed in 3.66s
+tests/test_sermon_mock_tts_control.py :: 8 passed in 93.62s (0:01:33)
+tests/test_sermon_mock_tts_dag.py :: 1 failed in 7.93s
+tests/test_sermon_mock_tts_launch.py :: 9 passed, 6 subtests passed in 10.69s
+tests/test_sermon_mock_tts_worker.py :: 4 passed, 9 subtests passed in 58.05s
+tests/test_sermon_model_call_observation.py :: 8 passed, 17 subtests passed in 0.87s
+tests/test_sermon_model_call_report.py :: 37 passed in 0.68s
+tests/test_sermon_observability.py :: 7 passed, 8 subtests passed in 4.48s
+tests/test_sermon_openai_runtime.py :: 9 passed in 3.99s
+tests/test_sermon_pilot_evidence.py :: 12 passed, 1 skipped, 3 subtests passed in 175.15s (0:02:55)
+tests/test_sermon_prefect_dag.py :: 19 passed in 51.06s
+tests/test_sermon_run_progress.py :: 36 passed, 15 subtests passed in 1.47s
+tests/test_sermon_source_deadline.py :: 15 passed, 19 subtests passed in 16.33s
+tests/test_sermon_strict_budget_adapter.py :: 38 passed in 56.01s
+tests/test_sermon_strict_controller.py :: 24 passed, 4 subtests passed in 53.39s
+tests/test_sermon_strict_gate_admission.py :: 17 passed, 5 subtests passed in 85.94s (0:01:25)
+tests/test_sermon_strict_layer2.py :: 34 passed, 41 subtests passed in 75.39s (0:01:15)
+tests/test_sermon_strict_revisions.py :: 4 passed, 5 subtests passed in 15.28s
+tests/test_sermon_study_generation.py :: 11 passed in 1.49s
+tests/test_sermon_trace_export.py :: 17 passed, 45 subtests passed in 5.02s
+tests/test_sermon_workflow_evidence.py :: 9 passed in 0.60s
+tests/test_telemetry_008.py :: 57 passed, 18 subtests passed in 58.86s
+tests/test_timeline_accounting.py :: 2 passed in 1.59s
+tests/test_tongxing_audio_ports.py :: 11 passed, 85 subtests passed in 1.87s
+tests/test_tongxing_production_package.py :: 1 failed, 4 passed, 318 subtests passed in 10.84s
+tests/test_tongxing_text_ports.py :: 9 passed, 159 subtests passed in 0.50s
+tests/test_verify_sermon_observability_sidecars.py :: 2 passed in 3.73s
+tests/test_weekly_pipeline_report.py :: 17 passed, 9 subtests passed in 5.41s

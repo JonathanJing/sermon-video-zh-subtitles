@@ -11,14 +11,15 @@ import threading
 import unittest
 from unittest.mock import patch
 
-from scripts import canonical_layer2_controller as subject
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.text import controller as subject
 from scripts import canonical_durable_jobs as durable
-from scripts import record_decision
-from scripts import sermon_workflow_jobs as jobs
-from scripts import build_english_source_package as english_source
-from scripts import produce_target_language_candidate as producer
-from scripts import sermon_sentence_interpretation as interpretation
-from scripts import target_language_policy as policy_tools
+from tools.ops import record_decision
+from tongxing_production.orchestration import jobs
+from tongxing_production.source import english_source_package as english_source
+from tongxing_production.text import candidate as producer
+from tongxing_production.source import sentence_interpretation as interpretation
+from tongxing_production.text import policy as policy_tools
 from tests import test_build_english_source_package as source_fixtures
 from tongxing_production.text import auto_repair, group_revision, policy_preview
 
@@ -138,10 +139,14 @@ class RevisionFixture:
 
     def decide(self, governs=None):
         run = self.root / "run"
+        # Rows are stamped to the second; two identical decisions inside one second would be one
+        # indistinguishable row twice, so each fixture decision gets its own second.
+        self.decisions = getattr(self, "decisions", 0) + 1
         row = record_decision.record(run, question="Which es/zh groups need revision?",
                                      choice="Revise the listed groups only", decided_by="Operator (chat)",
                                      governs=[str(governs or self.prior_path)],
-                                     evidence=["operator listed group numbers"])
+                                     evidence=["operator listed group numbers"],
+                                     now=lambda: f"2026-10-19T00:00:{self.decisions:02d}+00:00")
         return run / record_decision.FILE_NAME, policy_tools.canonical_sha256(row)
 
     def revision_request(self, groups, *, decision=None, **extra):

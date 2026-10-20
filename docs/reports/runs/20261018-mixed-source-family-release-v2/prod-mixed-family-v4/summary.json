@@ -1,0 +1,30 @@
+{
+  "schemaVersion": "sermon-run-summary-v1",
+  "status": "complete_web_published",
+  "deliveryType": "four_layer_release",
+  "pageId": "resi-20261018-15030286",
+  "sourceMode": "per_target",
+  "reusedStages": [
+    "layer1",
+    "layer2",
+    "layer3",
+    "existing_release_content_audio_captions"
+  ],
+  "executedStages": [
+    "catalog_v5",
+    "web_reader",
+    "ios_reader_code",
+    "english_reference",
+    "hosting_publish",
+    "feedback_catalog",
+    "browser_smoke",
+    "zh_hans_poster"
+  ],
+  "hostingVersion": "sites/ai-for-god-sermon-audio/versions/2152c1a3074b7646",
+  "feedbackRevision": "sermon-feedback-api-00017-mev",
+  "catalogV5Sha256": "b86fdbdea7b8d478c20091533481861b0f8b8fa0eccb08d6cb80c90675116b4e",
+  "englishReferenceSha256": "62bef3f8f589504b6b6ddafb9eed32d249feb22b9f31f151a9dd8d472a29860d",
+  "browserSmokeReport": "browser-smoke-all-v1.json",
+  "posterSha256": "9f67e356b799c91e8aa24fd8f18c2d314e8a56e1f968f2a4942c610affb5df2c",
+  "evidenceBoundary": "Production Web and HTTP readback passed. iOS code tests passed, but no distributed build, physical-device acceptance, or venue acceptance was performed."
+}

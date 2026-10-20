@@ -1,0 +1,37 @@
+Group plan (read only, 0 model calls, nothing dispatched)
+
+zh-Hans: 402 groups; operator-listed 0
+  T translation          fresh 402
+  R independent_review   fresh 402
+  P language_plugin      stale 402  [stage_implementation_changed 402]
+  Q text_qc              stale 402  [stage_implementation_changed 402]
+  C spoken_condensation  not_applicable 402  [text_qc_mode 402]
+  S speech_synthesis     missing 402  [no_record 402]
+  A asr_back_check       missing 402  [no_record 402]
+  U unit_audio_qc        missing 402  [no_record 402]
+  stale or missing paid-stage group steps: 402
+  budget upper bound (week): layer2 $0.00 of $5.00, qc $29.95 of $30.00, secondaryAsr $4.39 of $20.25; groups reserved 325, repair_spend_cap 77, repair_limit_reached 0; reused at $0: 0
+
+es: 402 groups; operator-listed 0
+  T translation          fresh 402
+  R independent_review   fresh 402
+  P language_plugin      stale 402  [stage_implementation_changed 402]
+  Q text_qc              stale 402  [stage_implementation_changed 402]
+  C spoken_condensation  not_applicable 402  [text_qc_mode 402]
+  S speech_synthesis     fresh 402
+  A asr_back_check       stale 402  [stage_implementation_changed 402]
+  U unit_audio_qc        stale 402  [stage_implementation_changed 402, upstream_will_change 402]
+  stale or missing paid-stage group steps: 402
+  budget upper bound (week): layer2 $0.00 of $5.00, qc $29.95 of $30.00, secondaryAsr $0.00 of $20.25; groups reserved 325, repair_spend_cap 77, repair_limit_reached 0; reused at $0: 0
+
+ko: 402 groups; operator-listed 0
+  T translation          fresh 402
+  R independent_review   fresh 402
+  P language_plugin      stale 402  [stage_implementation_changed 402]
+  Q text_qc              stale 402  [stage_implementation_changed 402]
+  C spoken_condensation  not_applicable 402  [text_qc_mode 402]
+  S speech_synthesis     fresh 402
+  A asr_back_check       stale 402  [stage_implementation_changed 402]
+  U unit_audio_qc        stale 402  [stage_implementation_changed 402, upstream_will_change 402]
+  stale or missing paid-stage group steps: 402
+  budget upper bound (week): layer2 $0.00 of $5.00, qc $29.95 of $30.00, secondaryAsr $0.00 of $20.25; groups reserved 325, repair_spend_cap 77, repair_limit_reached 0; reused at $0: 0

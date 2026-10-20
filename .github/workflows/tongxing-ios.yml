@@ -62,18 +62,13 @@ jobs:
                   "packages/production/src/tongxing_production/delivery/",
                   "packages/production/src/tongxing_production/adapters/legacy/",
               )
+              # The implementations sit under the delivery/ and adapters/legacy/
+              # prefixes above; these two scripts/ facades stay until the G1 window.
               shared_contracts = {
-                  "scripts/build_multilingual_catalog.py",
                   "scripts/stage_formal_multilingual_dev.py",
                   # The audio screening release gate, moved out of the formal stage (L4 D2a).
                   "packages/production/src/tongxing_production/review/audio_screening.py",
-                  "scripts/build_formal_dev_release_assets.py",
                   "scripts/build_full_video_app_release.py",
-                  "scripts/assemble_multilingual_hosting.py",
-                  "scripts/assemble_multilingual_v3_update.py",
-                  "scripts/bind_published_alignment_catalog.py",
-                  "scripts/refresh_multilingual_hosting_with_legacy.py",
-                  "scripts/seal_multilingual_dev_catalog.py",
                   "apps/listening-web/catalog.mjs",
                   "apps/listening-web/published-weeks.mjs",
                   "apps/listening-web/reader/formal-dev-adapter.mjs",

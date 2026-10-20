@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "sermon-ko-layer2-v7-failure-summary-v1",
+  "error": {
+    "code": "layer2_reuse_operation_missing",
+    "stage": "round-003_same_run_carry_forward",
+    "cause": "A newly paid round-002 success sidecar named the current destination budget root. Round 003 treated that same-run direct provenance as an external reuse source and searched only the approved predecessor direct-paid root.",
+    "providerOutcome": "all_known_succeeded",
+    "retryAllowed": false
+  },
+  "secondRoundFailures": [
+    {
+      "group": 10,
+      "reason": "language_plugin_failed_new_one_pronoun"
+    },
+    {
+      "group": 24,
+      "reason": "language_plugin_failed_split_amount_lead"
+    },
+    {
+      "group": 25,
+      "reason": "language_plugin_failed_split_amount_tail"
+    },
+    {
+      "group": 162,
+      "reason": "repair_spend_cap_incomplete_spoken_fragment"
+    },
+    {
+      "group": 316,
+      "reason": "repair_spend_cap_ambiguous_great_fragment"
+    },
+    {
+      "group": 335,
+      "reason": "repair_spend_cap_trilogy_lexical_number"
+    }
+  ],
+  "evidenceSha256": {
+    "jobRequest": "30dfa658b9c3a4c7cecadc73eb17e08a878ab31ddebd0069c6a7c0e3a08ef8d0",
+    "jobState": "657b6568d2a7c204d18c302ec7d12553f8d40d7e5a1583544173dfaaabe403d0",
+    "jobLiveness": "a06ffeae3a620cbe99a390f74107d012f060b83abac36c8544c97fe8b064ed90",
+    "workerLog": "1adce85f50037dbe8fec77ca40398c13f3c52204db914b1ceebccd7bb1d279a9",
+    "round1Failures": "6f553f0500788f8151396ff7c50362eb5dd73e499f95590253a3951c45b9acb6",
+    "round2Failures": "dbee60deedcf30d43be0df34746efa4f7cb40d6f9a4595b5f17c44d2865eae",
+    "repairLedgerRound1": "fab442109ee4af9461e1a53ae9d29e5a527246dec52ff43211d899d752e686fe",
+    "repairLedgerRound2": "e303ff1f1b22ee747f0320014bdea54e83b3f05120268aea5f164da0ca8b7a59",
+    "budgetLedger": "91ccf4a280af8a816a59900af65b11ac653ba7d0688ec5038e89113806f50479"
+  }
+}

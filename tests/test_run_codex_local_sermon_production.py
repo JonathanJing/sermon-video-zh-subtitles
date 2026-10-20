@@ -10,7 +10,8 @@ from datetime import date
 from pathlib import Path
 from unittest import mock
 
-from scripts import run_codex_local_sermon_production as mod
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.workflows.dual_pdf import codex_local as mod
 
 
 class RunCodexLocalSermonProductionTest(unittest.TestCase):
@@ -70,7 +71,7 @@ class RunCodexLocalSermonProductionTest(unittest.TestCase):
 
     def test_script_help_runs_from_repo_root(self):
         completed = subprocess.run(
-            [sys.executable, str(mod.REPO_ROOT / "scripts" / "run_codex_local_sermon_production.py"), "--help"],
+            [sys.executable, str(mod.REPO_ROOT / "tools/ops/run.py"), "workflows.dual_pdf.codex_local", "--help"],
             cwd=mod.REPO_ROOT,
             check=False,
             capture_output=True,

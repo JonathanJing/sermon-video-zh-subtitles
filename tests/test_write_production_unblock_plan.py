@@ -4,7 +4,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-import scripts.write_production_unblock_plan as mod
+import tools.ops.write_production_unblock_plan as mod
 
 
 class WriteProductionUnblockPlanTest(unittest.TestCase):

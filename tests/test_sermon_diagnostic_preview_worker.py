@@ -11,11 +11,12 @@ from unittest.mock import patch
 
 from scripts import sermon_diagnostic_preview_worker as subject
 from scripts import sermon_diagnostic_provider as provider
-from scripts import sermon_log_profile as profile
-from scripts import sermon_review_budget as budget
-from scripts import sermon_review_contracts as c
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.observability import profile
+from tongxing_production.review import review_budget as budget
+from tongxing_production.review import contracts as c
 from scripts import sermon_preview_checkpoint_manifest as checkpoint
-from scripts import sermon_public_snapshot as public
+from tongxing_production.storage import snapshot as public
 from scripts import sermon_diagnostic_delivery_preflight as delivery
 from tests import test_render_speculative_target_language_speech as fixtures
 from tests import test_sermon_diagnostic_provider as provider_fixtures
@@ -202,7 +203,7 @@ class PreviewWorkerTests(unittest.TestCase):
                 subject._outputs(self.root, self.spec, checked)
         unit_path.write_text(json.dumps(unit))
         facade = subject.preview.formal._audio.current().code.physical_path(
-            'scripts/render_speculative_target_language_speech.py')
+            'packages/production/src/tongxing_production/audio/speculative.py')
         original_open = Path.open
 
         def changed_open(path, *args, **kwargs):

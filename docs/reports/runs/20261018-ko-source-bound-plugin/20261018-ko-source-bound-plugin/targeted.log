@@ -1,0 +1,15 @@
+Korean source-bound plugin verification
+=======================================
+Command: pytest tests/test_weekly_15030286_plugin.py tests/test_auto_qc_text_review_regressions.py tests/test_layer2_payload_cache_reuse.py tests/test_canonical_layer2_budget_reuse.py tests/test_canonical_layer2_controller_payload_cache.py tests/test_produce_target_language_candidate.py tests/test_target_language_policy_machine_qc.py
+Result: 94 passed, 170 subtests passed in 11.92 seconds
+
+Read-only production-text check
+===============================
+group 0010: pass; new one is a pronoun, not cardinal one
+group 0024: pass; 1.5 million is rendered once in the lead unit
+group 0025: expected fail; the current text repeats the amount and the successor must omit it
+group 0335: pass; trilogy may be rendered as Korean 3-part-work wording
+
+Scope boundary
+==============
+No provider call, production candidate, human approval, TTS render, audio QC, publication, device check or venue acceptance was performed.

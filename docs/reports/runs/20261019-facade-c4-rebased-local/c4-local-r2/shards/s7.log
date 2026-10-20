@@ -1,0 +1,242 @@
+Estimating 210 unprofiled modules from measured per-case cost
+Shard 8/10: 619 tests from 363 modules
+......................................{"component": "api", "event": "post_live_subtitle_generation_triggered", "inlineWorker": false, "loggedAt": "2026-10-19T23:02:28.678090+00:00", "severity": "INFO", "sunday": "2026-06-28", "triggerSource": "internal-task"}
+.{"component": "api", "event": "sermon_production_supervisor_triggered", "inlineWorker": false, "loggedAt": "2026-10-19T23:02:28.678190+00:00", "mode": "shadow", "severity": "INFO", "sunday": "2026-08-02", "triggerSource": "cloud-scheduler"}
+........................................................{"pageId": "page-2026-09-20", "source": "first_seen", "complete": 0, "total": 46, "out": "/var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/tmp6a1fcgie/public-snapshot.json"}
+{"locale": "zh-Hans", "rows": 7, "flagged": 2, "sampled": 5, "sheet": "/var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/tmp_5_49je2/sheet/listening-sample.md"}
+{"locale": "zh-Hans", "pass": 6, "issue": 1, "verdicts": "/var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/tmp_5_49je2/sheet/listening-verdicts.json"}
+{"group": "group-0002", "solSeconds": 2.0, "opusSeconds": 1.0}
+{"freshCalls": {"sol": 1, "opus": 1, "review": 0}, "groups": 1, "targetLocale": "ko"}
+...............................................usage: run_unittest_ci.py [-h] [--verify] [--tidy-whitespace] [--name NAME]
+                          [--out OUT] [--zip]
+                          run_dirs [run_dirs ...]
+run_unittest_ci.py: error: --name must be YYYYMMDD-<label> using ASCII letters, digits, '.', '_' and '-'
+......................................................................................usage: runtime_tts_mac.py [-h] [--output OUTPUT]
+runtime_tts_mac.py: error: this bounded diagnostic writes only its declared output directory
+............Digest: /var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/tmp2nnd5xs8/digests/20261019-run (1 files, 0 redactions)
+Digest: /var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/tmpncg_87fm/digests/20261007-e2e (8 files, 15 redactions)
+test-page · dev · 检查点 0/18
+层 / 语言       完成       剩余串行工时
+L1 shared        0/4 (0%)  未知
+L2 ko            0/4 (0%)  未知
+L3 ko            0/6 (0%)  未知
+L4 ko            0/4 (0%)  未知
+ETA（连续串行、无审核等待）: 未知
+缺估时 18 项: L1-01, L1-02, L1-03, L1-04, L2-01@ko, L2-02@ko …
+独立验收 ko: 设备=not_run，现场=not_run
+注意：进度账本不授予 Layer 门禁、发布或验收状态。
+gpt-transcribe reference chunk 1/2
+gpt-transcribe reference chunk 2/2
+............................................{"status": "source_bound_request", "out": "/private/var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/tmpku8rbo0w/request.json"}
+{"pageId": "test-page", "source": "not_checked", "complete": 0, "total": 18, "out": "/var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/tmpku8rbo0w/public-snapshot.json"}
+{"stage": "tts", "batchIndex": 0, "completedGroups": 2}
+{"stage": "tts", "batchIndex": 1, "completedGroups": 4}
+{"stage": "tts", "batchIndex": 2, "completedGroups": 6}
+{"stage": "tts", "batchIndex": 3, "completedGroups": 8}
+{"stage": "tts", "batchIndex": 4, "completedGroups": 10}
+{"stage": "tts", "batchIndex": 5, "completedGroups": 12}
+{"stage": "tts", "batchIndex": 6, "completedGroups": 13}
+{"stage": "asr", "batchIndex": 0, "completedGroups": 4}
+{"stage": "asr", "batchIndex": 1, "completedGroups": 8}
+... 28 lines omitted; 0 error-like lines, 0 kept below ...
+... end of omitted section ...
+{
+  "ko": {
+    "status": "audio_waiver_issued",
+    "reason": null,
+    "problems": [],
+    "calibration": {
+      "overallDetectionRate": 1.0,
+      "cleanFalsePositiveRate": 0.0,
+      "trials": 164,
+      "detected": 164
+    }
+  }
+}
+discover	pass	0.0
+..{
+  "ko": {
+    "status": "audio_waiver_issued",
+    "reason": null,
+    "problems": [],
+    "calibration": {
+      "overallDetectionRate": 1.0,
+      "cleanFalsePositiveRate": 0.0,
+      "trials": 164,
+      "detected": 164
+    }
+  }
+}
+discover	pass	0.0
+ko.text-qc.prefetch	pass	0.1
+ko.text-qc	pass	0.0
+ko.calibration.prefetch	pass	0.1
+ko.calibration	pass	0.2
+ko.text-waiver	pass	0.0
+{
+  "ko": {
+    "status": "text_waiver_issued",
+    "reason": null,
+    "problems": [],
+    "calibration": {
+      "overallDetectionRate": 1.0,
+      "cleanFalsePositiveRate": 0.0,
+      "trials": 90,
+      "detected": 90
+    }
+  }
+}
+discover	pass	0.0
+{
+  "ko": {
+    "status": "text_waiver_issued",
+    "reason": null,
+    "problems": [],
+    "calibration": {
+      "overallDetectionRate": 1.0,
+      "cleanFalsePositiveRate": 0.0,
+      "trials": 90,
+      "detected": 90
+    }
+  }
+}
+discover	pass	0.0
+.{
+  "ko": {
+    "status": "error",
+    "reason": "ValueError: /private/var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/tmpib0bo83o/real/ko/text-waiver-64489bf8499932b4.json changed after it was written",
+    "problems": [],
+    "calibration": null
+  }
+}
+discover	pass	0.0
+ko.text-qc.prefetch	pass	0.0
+ko.text-qc	pass	0.0
+ko.calibration.prefetch	pass	0.3
+ko.calibration	pass	0.2
+ko.text-waiver	pass	0.0
+.{
+  "ko": {
+    "status": "fake_plumbing_pass",
+    "reason": "fake judge: waiver built in memory, never saved",
+    "problems": [],
+    "calibration": {
+      "overallDetectionRate": 1.0,
+      "cleanFalsePositiveRate": 0.0,
+      "trials": 90,
+      "detected": 90
+    }
+  }
+}
+discover	pass	0.0
+ko.text-qc.prefetch	pass	0.0
+ko.text-qc	pass	0.0
+{
+  "ko": {
+    "status": "requires_repair",
+    "reason": "text QC failed; repair the failed groups in a new candidate revision",
+    "problems": [],
+    "calibration": null
+  }
+}
+discover	pass	0.0
+ko.text-qc.prefetch	pass	0.0
+ko.text-qc	pass	0.0
+{
+  "ko": {
+    "status": "requires_repair",
+    "reason": "text QC failed; repair the failed groups in a new candidate revision",
+    "problems": [],
+    "calibration": null
+  }
+}
+discover	pass	0.0
+ko.text-qc.prefetch	pass	0.0
+ko.text-qc	pass	0.0
+{
+  "ko": {
+    "status": "requires_repair",
+    "reason": "text QC failed; repair the failed groups in a new candidate revision",
+    "problems": [],
+    "calibration": null
+  }
+}
+discover	pass	0.0
+ko.text-qc.prefetch	pass	0.0
+ko.text-qc	pass	0.0
+{
+  "ko": {
+    "status": "requires_repair",
+    "reason": "text QC failed; repair the failed groups in a new candidate revision",
+    "problems": [],
+    "calibration": null
+  }
+}
+discover	pass	0.0
+ko.text-qc.prefetch	pass	0.0
+ko.text-qc	pass	0.0
+{
+  "ko": {
+    "status": "source_text_fallback",
+    "reason": "the repair limit is used up; waiver v1 cannot release an English fallback",
+    "problems": [],
+    "calibration": null
+  }
+}
+discover	pass	0.0
+..................................................................................................................s..........................s.....................................................................................s.......{
+  "ko": {
+    "status": "source_text_fallback",
+    "reason": "the repair limit is used up; waiver v1 cannot release an English fallback",
+    "problems": [],
+    "calibration": null
+  }
+}
+{
+  "apiKeyMaterialIncluded": false,
+  "checks": [
+    {
+      "name": "api_key_secret_access",
+      "observed": "secret value read from Secret Manager",
+      "state": "pass"
+    },
+    {
+      "name": "responses_model:gpt-5.4-mini",
+      "observed": {
+        "endpoint": "responses",
+        "httpStatus": 200,
+        "model": "gpt-5.4-mini",
+        "responseJson": {
+          "ok": true
+        },
+        "status": "ok"
+      },
+      "state": "pass"
+    }
+  ],
+  "failedChecks": [],
+  "generatedAt": "2026-10-19T23:27:42.364778+00:00",
+  "models": [
+    "gpt-5.4-mini"
+  ],
+  "schemaVersion": 1,
+  "secretResourceNamesIncluded": false,
+  "status": "ok"
+}
+v4.1 package verified; model loaded and warmup finished.
+...................................................................................
+----------------------------------------------------------------------
+Ran 619 tests in 2159.399s
+
+OK (skipped=3)
+ 953.85s     7  test_machine_quality_waiver
+ 342.48s     2  test_run_machine_qc_audio_test
+  83.89s     2  test_spark_tts_production
+  69.23s     3  test_sermon_historical_layer2
+  36.71s     3  test_sermon_fresh_source_evidence
+  33.09s     3  test_sermon_local_business_callbacks
+  31.61s     2  test_sermon_mock_tts_control
+  30.33s     6  test_sermon_cuv_translation
+  26.13s     1  test_canonical_layer2_cache_recovery
+  23.53s     6  test_sermon_delivery_intent_binding
+exit 0

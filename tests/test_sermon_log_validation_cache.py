@@ -12,7 +12,8 @@ import threading
 import unittest
 from unittest.mock import patch
 
-from scripts import sermon_log_contract as contract
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.observability import log_contract as contract
 from tests.test_accounting_log_contract import fixture
 
 

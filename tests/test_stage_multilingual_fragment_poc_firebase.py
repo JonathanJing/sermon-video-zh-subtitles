@@ -8,7 +8,9 @@ import tempfile
 import unittest
 from unittest import mock
 
-from scripts import stage_multilingual_fragment_poc_firebase as subject
+from tests import experiment_modules
+
+subject = experiment_modules.load("experiments/multilingual-fragment-poc/stage_multilingual_fragment_poc_firebase.py")
 
 
 def sha(raw: bytes) -> str:

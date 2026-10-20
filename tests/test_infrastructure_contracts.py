@@ -10,12 +10,13 @@ import unittest
 from unittest.mock import patch
 
 from scripts import canonical_pipeline_definition as legacy_pipeline
-from scripts import sermon_accounting as accounting
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.observability import accounting
 from scripts import sermon_mock_tts_contract as mock_tts
-from scripts import sermon_pipeline
+from tongxing_production.workflows.dual_pdf import pipeline as sermon_pipeline
 from scripts import sermon_prefect_dag as prefect
 from scripts import sermon_review_contracts as legacy
-from scripts import sermon_workflow_jobs as jobs
+from tongxing_production.orchestration import jobs
 from tongxing_production import path_aliases, ports
 from tongxing_production.contracts import canonical, pipeline_definition, reasons, schemas
 from tongxing_production.review import contracts as review_contracts
@@ -73,7 +74,7 @@ class ContractsSplitTests(unittest.TestCase):
     def test_schemas_load_from_the_configured_root_outside_the_repository(self):
         self.assertEqual(schemas.root(), ROOT / 'schemas')
         with tempfile.TemporaryDirectory() as directory:
-            result = child('from scripts import sermon_review_contracts as c\n'
+            result = child('from scripts import tongxing_host; from tongxing_production.review import contracts as c\n'
                            'c.validator("sermon-review-receipt-v1"); c.validator("sermon-target-language-policy-v3")\n'
                            'from scripts import tongxing_host\n'
                            'from tongxing_production.text import backend\n'

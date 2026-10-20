@@ -7,7 +7,7 @@ import unittest
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
-from scripts import english_source_judge_cache as cache
+from tongxing_production.source import english_source_judge_cache as cache
 from tests.test_api_cli_outcomes import reconciliation_evidence
 
 
@@ -37,8 +37,9 @@ class JudgeSingleFlightTests(unittest.TestCase):
 
     def test_sibling_unknown_blocks_before_marker_then_explicit_reconciliation_allows_work(self):
         from threading import Event
-        from scripts import api_cli_outcomes as outcomes
-        from scripts.production_spark_admission import SessionBoundCaller
+        from scripts import tongxing_host  # noqa: F401  binds the production package ports
+        from tongxing_production.compute import outcomes
+        from tongxing_production.compute.spark_admission import SessionBoundCaller
         entered, release, sibling_started = Event(), Event(), Event()
         root = self.root / 'api-cli-outcomes'
         def provider(key, payload):
@@ -87,8 +88,9 @@ class JudgeSingleFlightTests(unittest.TestCase):
         self.assertEqual(len(list(root.glob('*/outcome.json'))), 2)
 
     def test_existing_cache_cannot_bypass_unknown_sibling_and_replays_after_reconcile(self):
-        from scripts import api_cli_outcomes as outcomes
-        from scripts.production_spark_admission import SessionBoundCaller
+        from scripts import tongxing_host  # noqa: F401  binds the production package ports
+        from tongxing_production.compute import outcomes
+        from tongxing_production.compute.spark_admission import SessionBoundCaller
         root = self.root / 'api-cli-outcomes'
         def provider(key, payload):
             self.calls.append(payload['group'])
@@ -202,7 +204,8 @@ class JudgeSingleFlightTests(unittest.TestCase):
 
     def test_durable_api_return_recovers_before_source_marker_without_dispatch(self):
         from unittest.mock import patch
-        from scripts.production_spark_admission import SessionBoundCaller
+        from scripts import tongxing_host  # noqa: F401  binds the production package ports
+        from tongxing_production.compute.spark_admission import SessionBoundCaller
         wrapped=SessionBoundCaller(self.provider,requires_spark=False,outcome_directory=self.root/'api-cli-outcomes')
         original=cache._atomic
         def crash(path,value):
@@ -217,7 +220,8 @@ class JudgeSingleFlightTests(unittest.TestCase):
 
     def test_wrong_request_marker_does_not_recover_another_return(self):
         from unittest.mock import patch
-        from scripts.production_spark_admission import SessionBoundCaller
+        from scripts import tongxing_host  # noqa: F401  binds the production package ports
+        from tongxing_production.compute.spark_admission import SessionBoundCaller
         wrapped=SessionBoundCaller(self.provider,requires_spark=False,outcome_directory=self.root/'api-cli-outcomes')
         original=cache._atomic
         def crash(path,value):

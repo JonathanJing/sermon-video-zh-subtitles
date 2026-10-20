@@ -1,0 +1,16 @@
+s0.log: Ran 542 tests in 1215.991s OK (skipped=4)  exit=0
+s1.log: Ran 558 tests in 1140.890s OK (skipped=1)  exit=0
+s2.log: Ran 576 tests in 1126.876s OK (skipped=8)  exit=0
+s3.log: Ran 600 tests in 1332.791s OK (skipped=4)  exit=0
+s4.log: Ran 602 tests in 1273.604s OK (skipped=3)  exit=0
+s5.log: Ran 607 tests in 1131.574s OK (skipped=5)  exit=0
+s6.log: Ran 606 tests in 1520.407s FAILED (errors=1, skipped=3)  exit=1
+s7.log: Ran 615 tests in 2044.278s FAILED (failures=1, skipped=5)  exit=1
+s8.log: Ran 614 tests in 1699.035s FAILED (errors=1, skipped=1)  exit=1
+s9.log: Ran 615 tests in 1390.609s OK (skipped=4)  exit=0
+
+ERROR: test_backend_app (unittest.loader._FailedTest.test_backend_app)
+ERROR: test_cloud_run_jobs (unittest.loader._FailedTest.test_cloud_run_jobs)
+FAIL: test_129_group_actual_producer_can_assemble_and_resume_without_calls (test_layer2_large_fan_in.LargeLayer2FanInTests.test_129_group_actual_producer_can_assemble_and_resume_without_calls)
+ModuleNotFoundError: No module named 'tongxing_api'
+rerun: test_backend_app 40 OK, test_cloud_run_jobs 4 OK with PYTHONPATH=services/api/src; test_129_group passed alone

@@ -6,12 +6,13 @@ import unittest
 from contextlib import ExitStack
 from unittest.mock import patch
 
-from scripts import machine_quality_release_basis as basis
-from scripts import machine_repair_ledger as ledger
-from scripts import run_machine_qc_clip_test as driver
-from scripts import spoken_condensation as condensation
-from scripts import sermon_sentence_interpretation as interpretation
-from scripts import build_english_source_package as english_source
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.review import release_basis as basis
+from tongxing_production.review import repair_ledger as ledger
+from tongxing_production.review import qc_text_run as driver
+from tongxing_production.review import condensation
+from tongxing_production.source import sentence_interpretation as interpretation
+from tongxing_production.source import english_source_package as english_source
 from tests import auto_qc_fixtures as qc_fixtures
 from tests import test_build_english_source_package as source_fixtures
 from tests import test_prepare_target_language_speech_job as speech_fixtures
@@ -527,7 +528,7 @@ class MachineQcClipDriverTests(unittest.TestCase):
 
     def test_codex_judge_uses_sol_medium_and_a_per_request_cache(self):
         from unittest.mock import patch
-        from scripts import sermon_codex_transport as codex
+        from tongxing_production.compute.transports import codex_cli as codex
         seen = []
 
         def fake_call(prompt, **options):

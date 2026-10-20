@@ -1,0 +1,27 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261019-layout-placement-guard",
+  "runs": [
+    {
+      "label": "20261019-layout-placement-guard",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/local-runs/20261019-layout-placement-guard",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "20261019-layout-placement-guard",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 380,
+      "truncated": false,
+      "sha256": "71fd40b8765f97e6e84c8446e63599730b2825014585bfc8f643bd66038607fb",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

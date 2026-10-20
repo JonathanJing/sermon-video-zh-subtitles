@@ -1,0 +1,11 @@
+{
+  "schemaVersion": "local-test-outcome-v1",
+  "status": "passed",
+  "exitCode": 0,
+  "startedAt": "2026-10-20T17:00:00+00:00",
+  "endedAt": "2026-10-20T17:45:00+00:00",
+  "scope": "scripts/ remaining migration batch N2 (PR #1203): sermon_decision_accounting, sermon_bounded_decision, sermon_repair_planning, sermon_agents_api -> orchestration/supervisor/; live_source_monitor -> workflows/dual_pdf/; facades kept; sermon_production_supervisor left (backend.leases has no host port). 106 affected test files in 4 parallel pytest chunks on dev@b8e7fdc9, 16 key files again after rebase on dev@5248d6c0, backend.app health smoke.",
+  "knownPreexistingFailures": [
+    "tests/test_codex_shared_pool_transport.py::test_busy_before_started_is_proven_no_dispatch (also fails on dev@510fa154)"
+  ]
+}

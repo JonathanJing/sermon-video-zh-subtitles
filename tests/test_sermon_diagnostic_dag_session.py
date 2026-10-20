@@ -6,10 +6,11 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-from scripts import sermon_accounting as accounting
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.observability import accounting
 from scripts import sermon_diagnostic_dag_session as session
-from scripts import sermon_review_budget as budget
-from scripts import sermon_review_contracts as c
+from tongxing_production.review import review_budget as budget
+from tongxing_production.review import contracts as c
 from tests.diagnostic_dag_fixture import DiagnosticDAGFixture
 
 
@@ -65,7 +66,7 @@ class DiagnosticSessionTests(unittest.TestCase):
         if change is not None:
             change(binding)
         root = self.f.root / 'diagnostic-prefect' / c.canonical_sha256(binding)
-        from scripts import sermon_public_snapshot as public
+        from tongxing_production.storage import snapshot as public
         root.mkdir(parents=True, exist_ok=True)
         public.save_once(root / 'plan.json', binding)
         return root / 'plan.json'
@@ -394,9 +395,10 @@ class CrossCommitMigrationTests(unittest.TestCase):
         with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as directory:
             repo = Path(directory)
             source = Path(__file__).resolve().parents[1]
-            for name in ('scripts','tests','schemas','config'):
+            # tools/: legacy scripts/ facades of moved tools load their implementation from there.
+            for name in ('scripts','tests','schemas','config','tools'):
                 shutil.copytree(source/name,repo/name,
-                    ignore=shutil.ignore_patterns('__pycache__','*.pyc'))
+                    ignore=shutil.ignore_patterns('__pycache__','*.pyc','node_modules'))
             (repo/'docs').mkdir()
             shutil.copy2(source/'docs/series-terminology.zh.md',repo/'docs/series-terminology.zh.md')
             def command(*args):
@@ -409,9 +411,9 @@ class CrossCommitMigrationTests(unittest.TestCase):
 from copy import deepcopy
 from pathlib import Path
 import subprocess
-from scripts import sermon_accounting as accounting
-from scripts import sermon_review_contracts as c
-from scripts import sermon_public_snapshot as public
+from scripts import tongxing_host; from tongxing_production.observability import accounting
+from tongxing_production.review import contracts as c
+from tongxing_production.storage import snapshot as public
 from scripts.sermon_diagnostic_dag_session import DiagnosticSession
 from scripts import sermon_diagnostic_prefect_flow as flow
 from tests.diagnostic_dag_fixture import DiagnosticDAGFixture

@@ -14,7 +14,8 @@ from pathlib import Path
 import re
 from typing import Any
 
-from scripts import target_language_policy as policies
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.text import policy as policies
 
 SCHEMA = 'sermon-scripture-candidate-queue-v1'
 BOOKS = (

@@ -12,7 +12,8 @@ import urllib.request
 from pathlib import Path
 from unittest.mock import Mock, patch
 
-from scripts.sermon_agents_api import AgentsAPIClient, AgentsAPIError, _NoRedirect, run_agent_session
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.orchestration.supervisor.agents_api import AgentsAPIClient, AgentsAPIError, _NoRedirect, run_agent_session
 
 
 PAYLOAD = {"agent": {"model": "gpt-6-astra", "instructions": "Review evidence."},
@@ -179,11 +180,11 @@ class ClientTests(unittest.TestCase):
         self.client.set_deadline(103)
         self.client._opener = Mock()
         self.client._opener.open.return_value = io.BytesIO(b'{"id":"sess_1"}')
-        with patch("scripts.sermon_agents_api.time.time", return_value=100):
+        with patch("tongxing_production.orchestration.supervisor.agents_api.time.time", return_value=100):
             self.client.retrieve_session("sess_1")
         self.assertEqual(self.client._opener.open.call_args.kwargs["timeout"], 3)
         self.client._opener.open.reset_mock()
-        with patch("scripts.sermon_agents_api.time.time", return_value=104):
+        with patch("tongxing_production.orchestration.supervisor.agents_api.time.time", return_value=104):
             with self.assertRaisesRegex(AgentsAPIError, "deadline_exceeded"):
                 self.client.retrieve_session("sess_1")
         self.client._opener.open.assert_not_called()
@@ -191,7 +192,7 @@ class ClientTests(unittest.TestCase):
     def test_pagination_stops_at_deadline_between_pages(self):
         self.client.set_deadline(101)
         page = {"data": [{"id": "a"}], "has_more": True, "last_id": "a"}
-        with patch("scripts.sermon_agents_api.time.time", side_effect=[100, 102]):
+        with patch("tongxing_production.orchestration.supervisor.agents_api.time.time", side_effect=[100, 102]):
             with patch.object(self.client, "_request", return_value=page) as request:
                 with self.assertRaisesRegex(AgentsAPIError, "deadline_exceeded"):
                     self.client.list_items("sess_1")
@@ -238,7 +239,7 @@ class RunnerTests(unittest.TestCase):
 
     def test_idle_and_subagent_completed_do_not_establish_root_success(self):
         client = FakeClient(turns=[[{"id": "child", "subagent_id": "sub_1", "status": "completed"}]])
-        with patch("scripts.sermon_agents_api.time.time", side_effect=[100, 102, 102]):
+        with patch("tongxing_production.orchestration.supervisor.agents_api.time.time", side_effect=[100, 102, 102]):
             result = self.run_session(client, max_seconds=1)
         self.assertEqual(result["status"], "timed_out")
         self.assertEqual(client.cancelled, 1)
@@ -321,7 +322,7 @@ class RunnerTests(unittest.TestCase):
     def test_cancel_failure_does_not_claim_remote_cancellation(self):
         client = FakeClient(turns=[RUNNING])
         client.cancel = Mock(side_effect=RuntimeError("private secret"))
-        with patch("scripts.sermon_agents_api.time.time", side_effect=[100, 102, 102]):
+        with patch("tongxing_production.orchestration.supervisor.agents_api.time.time", side_effect=[100, 102, 102]):
             result = self.run_session(client, max_seconds=1)
         self.assertEqual(result["status"], "timed_out")
         self.assertFalse(result["cancel_requested"])
@@ -362,7 +363,7 @@ class RunnerTests(unittest.TestCase):
         for remote_status in ("running", "cancelled"):
             with self.subTest(remote_status=remote_status), tempfile.TemporaryDirectory() as tmp:
                 client = FakeClient(turns=[[{**RUNNING[0], "status": remote_status}]])
-                with patch("scripts.sermon_agents_api.time.time", side_effect=[100, 102, 102]):
+                with patch("tongxing_production.orchestration.supervisor.agents_api.time.time", side_effect=[100, 102, 102]):
                     result = run_agent_session(client, Path(tmp), PAYLOAD, self.handler, max_seconds=1)
                 self.assertTrue(result["cancel_requested"])
                 self.assertEqual(result["cancellation_observed"], remote_status == "cancelled")
@@ -375,7 +376,7 @@ class RunnerTests(unittest.TestCase):
             return {"artifact": "completed locally"}
         self.handler.side_effect = handler
         client = FakeClient(sessions=[{"required_actions": [ACTION]}], turns=[RUNNING])
-        with patch("scripts.sermon_agents_api.time.time", side_effect=lambda: now[0]):
+        with patch("tongxing_production.orchestration.supervisor.agents_api.time.time", side_effect=lambda: now[0]):
             result = self.run_session(client, max_seconds=60)
         self.assertEqual(result["status"], "timed_out")
         self.assertEqual(client.submitted, [])
@@ -391,7 +392,7 @@ class RunnerTests(unittest.TestCase):
         self.handler.side_effect = handler
         client = FakeClient(sessions=[{"required_actions": [ACTION]}, {}], turns=[RUNNING, COMPLETED])
         client.set_deadline = Mock()
-        with patch("scripts.sermon_agents_api.time.time", side_effect=lambda: now[0]):
+        with patch("tongxing_production.orchestration.supervisor.agents_api.time.time", side_effect=lambda: now[0]):
             result = self.run_session(client, max_seconds=6 * 3600)
         self.assertEqual(result["status"], "completed")
         self.assertEqual(len(client.submitted), 1)

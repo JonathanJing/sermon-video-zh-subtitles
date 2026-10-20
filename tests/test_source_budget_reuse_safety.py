@@ -6,8 +6,9 @@ from unittest.mock import patch
 
 import pytest
 
-from scripts import sermon_source_budget as budget
-from scripts import sermon_workflow_jobs as jobs
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.source import budget
+from tongxing_production.orchestration import jobs
 from tests.test_source_budget_reuse import store, JudgeAuthorizationTests
 from tests.test_source_budget_settlement import AUTHORITY, BOUNDS, IDENTITY, OPERATION, call, ledger
 
@@ -126,11 +127,11 @@ def test_v3_rejects_reused_enum_and_v4_provenance_cannot_be_removed(tmp_path):
 
 @pytest.mark.parametrize('changed', ['authorization', 'approval', 'runtime'])
 def test_live_qc_judge_rechecks_approval_roots_and_runtime_before_dispatch(tmp_path, changed):
-    from scripts import run_machine_qc_clip_test as driver
+    from tongxing_production.review import qc_text_run as driver
     path = JudgeAuthorizationTests().write(tmp_path, approved_reuse=[str(tmp_path/'source')], requested_reuse=[str(tmp_path/'source')])
     route = {'environment':'dev', 'credentialAlias':'tongxing-dev-runtime', 'projectId':'proj_fixture'}
-    with patch('scripts.sermon_openai_runtime.selected_route', return_value=route) as selected, \
-         patch('scripts.production_spark_admission.require_session'), patch.dict('os.environ', {'OPENAI_API_KEY':'fixture-not-a-key'}):
+    with patch('tongxing_production.compute.openai_runtime.selected_route', return_value=route) as selected, \
+         patch('tongxing_production.compute.spark_admission.require_session'), patch.dict('os.environ', {'OPENAI_API_KEY':'fixture-not-a-key'}):
         judge = driver.ApiJudge(path)
         if changed == 'runtime':
             selected.return_value = dict(route, environment='prod')

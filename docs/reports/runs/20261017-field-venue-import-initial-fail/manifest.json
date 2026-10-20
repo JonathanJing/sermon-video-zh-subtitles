@@ -1,0 +1,27 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-field-venue-import-initial-fail",
+  "runs": [
+    {
+      "label": "field-venue-import-initial-fail-20261017",
+      "source": "/private/tmp/field-venue-exp-leaf-20261017/artifacts/field-venue-import-initial-fail-20261017",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "field-venue-import-initial-fail-20261017",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 454,
+      "truncated": false,
+      "sha256": "737400ca92494ff4eb01832a0c8098a05b665751a96bb2c446680bfc9977cbd8",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

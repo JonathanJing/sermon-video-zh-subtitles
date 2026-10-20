@@ -8,7 +8,7 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-from scripts.experiments import benchmark_formal_tts as benchmark
+from tools.benchmarks import benchmark_formal_tts as benchmark
 
 
 def manifest():

@@ -15,11 +15,11 @@ PROTECTED = ('apps/tongxing-ios/', 'schemas/', 'firebase/', 'infra/firebase/', '
              # builders (delivery/) and the v2/v3 catalog assemblers (adapters/legacy/).
              'packages/production/src/tongxing_production/delivery/',
              'packages/production/src/tongxing_production/adapters/legacy/')
-# The v2 catalog builder moved in L4 D7; its scripts/ facade stays listed while it exists.
+# The v2 catalog builder moved in L4 D7; its scripts/ facade was removed in facade batch C6.
 # The formal stage's audio screening release gate moved to review/ in L4 D2a.
 PRODUCERS = ('packages/production/src/tongxing_production/adapters/legacy/build_multilingual_catalog.py',
              'packages/production/src/tongxing_production/review/audio_screening.py',
-             'scripts/build_multilingual_catalog.py', 'scripts/stage_formal_multilingual_dev.py',
+             'scripts/stage_formal_multilingual_dev.py',
              'scripts/build_target_language_release_package.py',
              'scripts/build_formal_multilingual_dev.py', '.github/workflows/tongxing-ios.yml')
 # Only these audited observability files are known to leave client content alone.
@@ -27,7 +27,9 @@ BACKEND_ONLY = frozenset(('scripts/sermon_accounting.py', 'scripts/export_sermon
                          'scripts/weekly_pipeline_report.py', 'scripts/pipeline_compatibility_gate.py',
                          'tools/development/pipeline_compatibility_gate.py',
                          # I3: the accounting implementation behind the scripts/ facade.
-                         'packages/production/src/tongxing_production/observability/accounting.py'))
+                         'packages/production/src/tongxing_production/observability/accounting.py',
+                         # N4: the OTLP exporter, moved from scripts/export_sermon_trace.py.
+                         'packages/production/src/tongxing_production/observability/trace_export.py'))
 POLICY = 'sermon-backend-compatibility-policy-v1'
 
 

@@ -8,7 +8,7 @@ import unittest
 from unittest.mock import Mock, patch
 import urllib.error
 
-from scripts import align_firebase_dev_v3 as dev
+from tools.ops import align_firebase_dev_v3 as dev
 
 
 class DevBucketHostingTests(unittest.TestCase):

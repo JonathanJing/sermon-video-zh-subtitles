@@ -152,7 +152,7 @@ class BackendAppTest(unittest.TestCase):
             "2026-06-28",
         )
 
-        self.assertIn("run_post_live_subtitle_generation.py", command[1])
+        self.assertEqual(command[1:3], [str(WEB_ROOT.parents[1] / "tools/ops/run.py"), "workflows.dual_pdf.post_live"])
         self.assertEqual(command[command.index("--sunday") + 1], "2026-06-28")
         self.assertEqual(
             command[command.index("--state-file") + 1],
@@ -204,7 +204,7 @@ class BackendAppTest(unittest.TestCase):
         self.assertEqual(captured["status"], 202)
         self.assertEqual(captured["payload"]["status"], "planned")
         self.assertEqual(captured["payload"]["mode"], "generate-reviewed")
-        self.assertIn("run_post_live_subtitle_generation.py", captured["payload"]["command"][1])
+        self.assertEqual(captured["payload"]["command"][2], "workflows.dual_pdf.post_live")
         self.assertFalse(captured["payload"]["apiKeyMaterialIncluded"])
         self.assertTrue(captured["payload"]["secretResourceNamesIncluded"])
 
@@ -1275,6 +1275,16 @@ class BackendAppTest(unittest.TestCase):
         self.assertIn("pip install", text)
         self.assertIn("COPY backend/", text)
         self.assertIn('CMD ["python", "-m", "backend.app"]', text)
+        # Layer 2 code_identity() hashes these tools/ files, so the image must carry them.
+        for path in ("tools/ops/sermon_unified_preflight.py", "tools/ops/run.py"):
+            self.assertIn(f"COPY {path} /app/{path}", text)
+        # backend/worker.py runs these through their scripts/ facades.
+        for path in ("tools/ops/run_openai_model_access_preflight.py", "tools/ops/upload_file_to_gcs.py",
+                     "tools/ops/prepare_live_link_playback.py", "tools/ops/translate_playback_with_openai.py",
+                     "tools/ops/export_playback_captions.py", "tools/ops/promote_sunday_manifest.py",
+                     # prepare_live_link_playback runs it.
+                     "tools/ops/offline_live_sermon_subtitles.py"):
+            self.assertIn(f"COPY {path} /app/{path}", text)
 
 
 if __name__ == "__main__":

@@ -196,7 +196,7 @@
 
 验收：截断、空文件、错 unit、旧 job 音频和 hash 漂移 fixture 全部被拒绝。
 
-开发入口：`.venv/bin/python scripts/validate_target_language_audio_unit.py --job <job-dir>/job.json --unit-index <n> --audio <job-dir>/languages/<locale>/audio/unit-<n>.wav --out <new-unit-receipt.json>`。只对 `synthesisEligible=true` 的 job 生成收据；单元音频收据不授予 ASR、排程、人工听审或发布资格。
+开发入口：`.venv/bin/python tools/ops/run.py audio.unit_integrity --job <job-dir>/job.json --unit-index <n> --audio <job-dir>/languages/<locale>/audio/unit-<n>.wav --out <new-unit-receipt.json>`。只对 `synthesisEligible=true` 的 job 生成收据；单元音频收据不授予 ASR、排程、人工听审或发布资格。
 
 #### L3-004 抽出语言中立滚动排程器
 

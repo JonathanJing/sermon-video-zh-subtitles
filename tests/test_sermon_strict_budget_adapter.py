@@ -15,11 +15,12 @@ from unittest.mock import Mock, patch
 import urllib.error
 
 from tongxing_production.compute import legacy_openai  # C4: the remote-call group lives here
-from scripts import sermon_accounting as accounting
-from scripts import sermon_pipeline as pipeline
-from scripts import sermon_review_budget as budget
-from scripts import sermon_review_contracts as contracts
-from scripts import sermon_repair_planning as planning
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.observability import accounting
+from tongxing_production.workflows.dual_pdf import pipeline as pipeline
+from tongxing_production.review import review_budget as budget
+from tongxing_production.review import contracts
+from tongxing_production.orchestration.supervisor import repair_planning as planning
 from scripts import sermon_strict_budget_adapter as adapter
 from scripts import sermon_strict_layer2 as strict
 from tests import test_sermon_strict_layer2 as strict_fixtures
@@ -705,8 +706,9 @@ class StrictBudgetTests(unittest.TestCase):
     def test_actual_process_exit_preserves_reservation_and_forbids_restart_dispatch(self):
         code = '''import json,os,sys
 from pathlib import Path
-from scripts import sermon_strict_layer2 as strict,sermon_accounting as accounting,sermon_log_profile as profile
-from scripts.sermon_review_budget import BudgetStore
+from scripts import sermon_strict_layer2 as strict
+from tongxing_production.observability import accounting, profile
+from scripts import tongxing_host; from tongxing_production.review.review_budget import BudgetStore
 from scripts.sermon_strict_budget_adapter import StrictBudgetAdapter
 from tests.test_sermon_strict_budget_adapter import authority,bounds
 value=json.load(sys.stdin)

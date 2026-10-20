@@ -8,7 +8,7 @@ from pathlib import Path
 from unittest import mock
 
 
-SCRIPT_PATH = Path(__file__).resolve().parents[1] / "scripts" / "run_sunday_evidence_bundle.py"
+SCRIPT_PATH = Path(__file__).resolve().parents[1] / "tools" / "ops" / "run_sunday_evidence_bundle.py"
 SPEC = importlib.util.spec_from_file_location("run_sunday_evidence_bundle", SCRIPT_PATH)
 mod = importlib.util.module_from_spec(SPEC)
 assert SPEC.loader is not None

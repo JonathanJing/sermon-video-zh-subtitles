@@ -1,0 +1,55 @@
+{
+  "purpose": "Mock replay of the canonical Layer 2 worker on an execution-v7 partial recovery, groupWorkers 1 vs 8 (synthetic transport; no credentials, no budget ledger)",
+  "fixture": "tests/test_layer2_partial_recovery_parallel.py harness on the large fan-in fixture, 60 groups; each run builds its own temporary fixture, so candidate hashes differ by fixture (source and anchor embed temp paths) and are not compared here; the byte-equality check is the unit test",
+  "providerLatency": "seeded draws from artifacts/weekend-live/layer2-15030286-20261017/text-ko-r3/ko/accounting/model-calls.csv elapsedSeconds x 0.25, plus 0.05 s per call",
+  "loadAverage1m": {
+    "start": 487.66,
+    "end": 392.58
+  },
+  "runs": [
+    {
+      "shape": "mostly-unpaid",
+      "groupWorkers": 1,
+      "groups": 60,
+      "completeReturnedGroups": 7,
+      "paidCalls": 106,
+      "maxInFlight": 1,
+      "wallSeconds": 188.87,
+      "fixtureBuildSeconds": 2.31
+    },
+    {
+      "shape": "mostly-unpaid",
+      "groupWorkers": 8,
+      "groups": 60,
+      "completeReturnedGroups": 7,
+      "paidCalls": 106,
+      "maxInFlight": 8,
+      "wallSeconds": 29.15,
+      "fixtureBuildSeconds": 2.98
+    },
+    {
+      "shape": "mostly-returned",
+      "groupWorkers": 1,
+      "groups": 60,
+      "completeReturnedGroups": 55,
+      "paidCalls": 10,
+      "maxInFlight": 1,
+      "wallSeconds": 24.12,
+      "fixtureBuildSeconds": 2.07
+    },
+    {
+      "shape": "mostly-returned",
+      "groupWorkers": 8,
+      "groups": 60,
+      "completeReturnedGroups": 55,
+      "paidCalls": 10,
+      "maxInFlight": 5,
+      "wallSeconds": 9.67,
+      "fixtureBuildSeconds": 2.8
+    }
+  ],
+  "speedup": {
+    "mostly-unpaid": 6.48,
+    "mostly-returned": 2.49
+  }
+}

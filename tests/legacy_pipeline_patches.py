@@ -8,7 +8,8 @@ see every call and a "must not be called" guard still intercepts.
 from contextlib import contextmanager
 from unittest.mock import patch
 
-from scripts import sermon_pipeline as pipeline
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.workflows.dual_pdf import pipeline as pipeline
 from tongxing_production.source import post_live_english
 
 

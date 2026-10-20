@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261019-facade-cli-entry-local",
+  "runs": [
+    {
+      "label": "facade-cli-entry-local",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.claude/worktrees/facade-cli-entry-86e06d/artifacts/facade-cli-entry-local",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "facade-cli-entry-local",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 416,
+      "truncated": false,
+      "sha256": "7eece748a1a2bd68fc1394c99a5dcf0a7aaea77885df43789e67f3edc1cf1cf4",
+      "redactions": {}
+    },
+    {
+      "run": "facade-cli-entry-local",
+      "path": "pytest.log",
+      "kind": "log",
+      "bytes": 9785,
+      "truncated": false,
+      "sha256": "1bb98b216bb18c9c1c0c2f74a39b42918bfdbcd90dc0c4ea43aaea4a46389135",
+      "redactions": {
+        "home_dir": 1
+      }
+    },
+    {
+      "run": "facade-cli-entry-local",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 604,
+      "truncated": false,
+      "sha256": "4250683c35513f91593ed46fc9a346bcc70c21f383a0ed92768b910d4b351cb2",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "artifact": "verified",
+  "candidateSha256": "43c3e3d8a63daa72bc5c0c58f8cd66b502ac489c03aea977d6469690342880db",
+  "completedAt": "2026-10-18T03:01:38.405370+00:00",
+  "completionScope": "layer1_machine_candidate",
+  "humanApprovalCreated": false,
+  "kind": "english_source_candidate",
+  "machineJudgeStatus": "approved_for_layer2_shadow",
+  "productionEligible": false,
+  "reason": "human_source_review_required",
+  "review": "human_pending",
+  "schemaVersion": "sermon-layer1-rebuild-outcome-v1",
+  "startedAt": "2026-10-18T02:47:53.672654+00:00",
+  "status": "succeeded"
+}

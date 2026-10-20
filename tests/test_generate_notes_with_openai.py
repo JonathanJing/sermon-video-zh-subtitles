@@ -17,7 +17,8 @@ SPEC.loader.exec_module(mod)
 
 class GenerateNotesWithOpenAITest(unittest.TestCase):
     def test_lazy_pdf_consumer_reaches_moved_renderer(self):
-        from scripts import render_sermon_interpretation_pdf as renderer
+        from scripts import tongxing_host  # noqa: F401  binds the production package ports
+        from tongxing_production.workflows.dual_pdf import interpretation_pdf as renderer
         with patch.object(renderer, "render_interpretation_pdf", return_value={"status": "pass"}) as render:
             self.assertEqual(mod.render_interpretation_pdf({"fixed": True}, Path("fixed.pdf")),
                              {"status": "pass"})

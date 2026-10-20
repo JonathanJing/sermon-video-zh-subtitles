@@ -1,0 +1,35 @@
+{
+  "schemaVersion": "local-test-summary-v1",
+  "suites": [
+    {
+      "name": "tests/test_group_worker.py",
+      "tests": 5,
+      "result": "pass"
+    },
+    {
+      "name": "tests/test_group_pipeline.py",
+      "tests": 5,
+      "result": "pass"
+    },
+    {
+      "name": "tests/test_group_assembly.py + stage records + layer2 cache + candidate",
+      "tests": 135,
+      "result": "pass"
+    },
+    {
+      "name": "canonical layer2 regression",
+      "tests": 206,
+      "result": "pass"
+    }
+  ],
+  "offlineStatus": {
+    "input": "artifacts/local-runs/20261018-grp001-plan-15030286/group-config-ko-20261020.json",
+    "output": "artifacts/local-runs/20261018-grp001-plan-15030286/group-status-ko-20261020.json",
+    "note": "read-only status on the 15030286 Layer 1/product paths; the run has no per-group records yet"
+  },
+  "limits": [
+    "No model, TTS, ASR, deployment or Firebase call was made.",
+    "Layer 3 merge steps 4-10 are not wired; merge returns candidate_ready_layer3_pending.",
+    "CI shards 2-7 were still running locally when this report was written; CI runs all shards on the PR."
+  ]
+}

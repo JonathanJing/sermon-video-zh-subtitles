@@ -7,7 +7,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 
-SCRIPT_PATH = Path(__file__).resolve().parents[1] / "scripts" / "run_no_caption_archive_asr_route.py"
+SCRIPT_PATH = Path(__file__).resolve().parents[1] / "tools" / "ops" / "run_no_caption_archive_asr_route.py"
 SPEC = importlib.util.spec_from_file_location("run_no_caption_archive_asr_route", SCRIPT_PATH)
 mod = importlib.util.module_from_spec(SPEC)
 assert SPEC.loader is not None
@@ -41,7 +41,7 @@ class RunNoCaptionArchiveAsrRouteTest(unittest.TestCase):
                         ],
                     },
                 )
-            if "scripts/validate_production_readiness.py" in command:
+            if "tools/ops/validate_production_readiness.py" in command:
                 write_json_arg(
                     command,
                     {
@@ -133,7 +133,7 @@ class RunNoCaptionArchiveAsrRouteTest(unittest.TestCase):
                         ],
                     },
                 )
-            if "scripts/validate_production_readiness.py" in command:
+            if "tools/ops/validate_production_readiness.py" in command:
                 write_json_arg(command, {"status": "failed", "failedChecks": ["sunday_manifest"]})
                 return completed(2, stdout="failed", stderr="")
             return completed(0, stdout="ok", stderr="")
@@ -171,7 +171,7 @@ class RunNoCaptionArchiveAsrRouteTest(unittest.TestCase):
 
         def fake_run(command, **kwargs):
             calls.append(command)
-            if "scripts/prepare_live_link_playback.py" in command:
+            if "tools/ops/prepare_live_link_playback.py" in command:
                 return completed(
                     2,
                     stderr="bad sk-secret123 projects/p/secrets/openai-api-key/versions/latest",

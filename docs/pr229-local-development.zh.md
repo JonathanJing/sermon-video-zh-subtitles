@@ -7,7 +7,7 @@
 在仓库根目录运行：
 
 ```bash
-python -m scripts.sermon_app_delivery inspect --plan /path/to/frozen-inputs/plan.json
+.venv/bin/python tools/ops/run.py delivery.app_delivery inspect --plan /path/to/frozen-inputs/plan.json
 ```
 
 输入合同为 [sermon-app-delivery-v1.schema.json](../schemas/sermon-app-delivery-v1.schema.json) 的 `plan`；输出为 `inspection`。输入文件和引用文件放在 plan 所在目录内，可保留其子目录结构；逐项核验字节 SHA 和提供的 JSON SHA，拒绝路径逃逸和符号链接。原产物不改写。缺少依赖时使用仓库 requirements 配置的 Python 环境；音频验证另需 `ffprobe` 和 `ffmpeg`，available 的按需 PDF 单独使用 `pdfinfo` 验证可读页数。
@@ -43,11 +43,11 @@ Web 根据显式环境和 catalog 的 `diagnosticOnly`／`simulationOnly` 标记
 ## 费用隔离与离线对账
 
 ```bash
-python -m scripts.sermon_cost_isolation validate-config --config /path/to/routes.json
-python -m scripts.import_openai_costs \
+.venv/bin/python tools/ops/run.py observability.cost_isolation validate-config --config /path/to/routes.json
+.venv/bin/python tools/ops/import_openai_costs.py \
   --config /path/to/routes.json \
   --export /path/to/captured-costs-export.json > /path/to/normalized-daily-costs.json
-python -m scripts.sermon_cost_isolation reconcile \
+.venv/bin/python tools/ops/run.py observability.cost_isolation reconcile \
   --config /path/to/routes.json \
   --attempts /path/to/attempts.json \
   --daily-costs /path/to/normalized-daily-costs.json

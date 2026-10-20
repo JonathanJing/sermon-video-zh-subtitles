@@ -11,7 +11,7 @@
 3. 记录每句实测语音时长、句尾累计偏差和完整解码；
 4. 对超出 `±0.4s` 的单元使用同一 Qwen 模型的 pace instruct 生成第二候选。
 
-脚本为 [`run_multilingual_prosody_poc.py`](../scripts/run_multilingual_prosody_poc.py)。它不修改 Layer 1/2 冻结接口，不做时间拉伸，也不把机器审核译文升级为人工批准。
+脚本为 [`run_multilingual_prosody_poc.py`](../experiments/multilingual-prosody-poc/run_multilingual_prosody_poc.py)。它不修改 Layer 1/2 冻结接口，不做时间拉伸，也不把机器审核译文升级为人工批准。
 
 ## 实测结果
 
@@ -49,7 +49,7 @@
 2. 整句只调用一次 Qwen，用自然语言要求重读“吼声／压倒了／撒但”并在指定短语后停顿；
 3. 将不变的中文句子切成三个短语分别生成，确定性插入 Layer 1 的两段句内静音。
 
-[`run_internal_prosody_poc.py`](../scripts/run_internal_prosody_poc.py) 将实验配置绑定到基线 plan 和 Layer 1 anchor 的 canonical hash，检查英文词覆盖完整且有序，并要求三个中文短语无损拼回原句。整句指令是否真正落在目标词上、短语拼接是否自然，都必须通过人耳判断；完整解码、时长或 ASR 一致不能代替这一步。
+[`run_internal_prosody_poc.py`](../experiments/multilingual-prosody-poc/run_internal_prosody_poc.py) 将实验配置绑定到基线 plan 和 Layer 1 anchor 的 canonical hash，检查英文词覆盖完整且有序，并要求三个中文短语无损拼回原句。整句指令是否真正落在目标词上、短语拼接是否自然，都必须通过人耳判断；完整解码、时长或 ASR 一致不能代替这一步。
 
 首轮实测：上一轮句级基线为 `3.20s`；整句句内指令候选为 `3.12s`，仅从总时长不能看到要求的两段长停顿已稳定实现；短语装配候选为 `6.13s`，相对英文 `5.68s` 晚 `0.45s`，并确定性保留 `1.20s / 0.61s` 两段停顿。三条 MP3 均已完整解码，重音位置与短语拼接自然度仍为 `humanListeningStatus=pending`。
 
@@ -57,13 +57,13 @@
 
 Layer 3 不应机械复制英文静音长度。它先测量目标语言短语音频，再以**下一英文短语开始时间**为锚点补静音：`pauseBefore = max(0, sourcePhraseStart - currentTargetCursor)`。如果目标语音已经越过锚点，只记录 overrun 并进入语速候选／译文／重分段修复，绝不使用负停顿、裁切或时间拉伸。
 
-[`assemble_adaptive_phrase_audio.py`](../scripts/assemble_adaptive_phrase_audio.py) 对当前末句复用同一组三段中文语音，动态插入 `0.70s / 0.94s`，使第二、第三短语分别从 `2.30s / 4.28s` 的英文锚点开始；最大短语起点误差为 `0.000001s`（采样舍入），无短语越界。成品为 `5.96s`，相对英文句尾晚 `0.28s`。
+[`assemble_adaptive_phrase_audio.py`](../experiments/multilingual-prosody-poc/assemble_adaptive_phrase_audio.py) 对当前末句复用同一组三段中文语音，动态插入 `0.70s / 0.94s`，使第二、第三短语分别从 `2.30s / 4.28s` 的英文锚点开始；最大短语起点误差为 `0.000001s`（采样舍入），无短语越界。成品为 `5.96s`，相对英文句尾晚 `0.28s`。
 
 Layer 4 只公开完整中文句子和整句时间范围；内部三段短语、锚点和动态静音保留在发布包的 `internalSchedule` 证据中，不把工程分段显示成三条用户字幕。该候选仍是 Dev POC，完整解码与 HTTP 可取不等于人耳审核通过。
 
 ### 六句长样本
 
-长样本把同一机制扩展到完整的六句、`40.880001s` 英文窗口。配置文件 [`2026-09-20-zh-Hans-long.json`](../experiments/multilingual-prosody-poc/2026-09-20-zh-Hans-long.json) 将六个完整中文译句无损映射为 18 个内部短语；[`prepare_longform_adaptive_prosody_poc.py`](../scripts/prepare_longform_adaptive_prosody_poc.py) 验证每句英文词 ID 完整、有序覆盖，且短语重新拼接后与 Layer 2 候选逐字一致。
+长样本把同一机制扩展到完整的六句、`40.880001s` 英文窗口。配置文件 [`2026-09-20-zh-Hans-long.json`](../experiments/multilingual-prosody-poc/2026-09-20-zh-Hans-long.json) 将六个完整中文译句无损映射为 18 个内部短语；[`prepare_longform_adaptive_prosody_poc.py`](../experiments/multilingual-prosody-poc/prepare_longform_adaptive_prosody_poc.py) 验证每句英文词 ID 完整、有序覆盖，且短语重新拼接后与 Layer 2 候选逐字一致。
 
 实测成品为 `41.08s`，相对英文窗口最终晚 `0.199999s`。其中 7 个短语因自然语音超过下一英文锚点而记录 overrun，最大短语起点偏差为 `0.850001s`；调度器没有压速、裁切或删除文字，并在后续有余量的锚点重新对齐。此样本的用途是校对跨多句的停顿、拼接、重音和 App 字幕行为，不代表已经达到正式 Layer 3 门线。
 
@@ -73,7 +73,7 @@ Layer 4 的 `long-adaptive-pauses` 版本只提供六条完整句子 cue，内�
 
 上面的 18 短语版本暴露了错误的层级责任：Layer 3 把每个预设短语的英文词起点当成补静音目标，连没有真实停顿的词边界也被切开；中文读得较短时还会为追时间轴补出过长的静音。`long-adaptive-pauses` 现在保留为旧版对照，Dev 默认改为 `source-acoustic-pauses`。
 
-新的 [`extract_english_pause_evidence_poc.py`](../scripts/extract_english_pause_evidence_poc.py) 只读取英文原声和冻结的 Layer 1 词时间轴，输出独立的 [英文声学停顿证据](../experiments/multilingual-prosody-poc/2026-09-20-en-acoustic-pause-evidence.json)。它分别记录词对齐空档与原声低能量区间；只在两者重合时标为 `supported_pause_candidate`，单靠词间距不能通过。这是 Layer 1 的 shadow 侧车文件，不修改已冻结的正式包或把机器候选写成人工确认。
+新的 [`extract_english_pause_evidence_poc.py`](../experiments/multilingual-prosody-poc/extract_english_pause_evidence_poc.py) 只读取英文原声和冻结的 Layer 1 词时间轴，输出独立的 [英文声学停顿证据](../experiments/multilingual-prosody-poc/2026-09-20-en-acoustic-pause-evidence.json)。它分别记录词对齐空档与原声低能量区间；只在两者重合时标为 `supported_pause_candidate`，单靠词间距不能通过。这是 Layer 1 的 shadow 侧车文件，不修改已冻结的正式包或把机器候选写成人工确认。
 
 新的 [中文短语配置](../experiments/multilingual-prosody-poc/2026-09-20-zh-Hans-acoustic.json) 绑定声学证据 hash；Layer 3 准备器仅接受有 Layer 1 声学候选的句内边界，因此六句由 18 个降为 15 个合成单元，其中 9 个是句内停顿。Layer 3 生成目标语音后，按该边界的原声停顿长度限制插入静音；目标语音越过锚点时仍保留最多 `0.2s` 的可听停顿，并如实记录时间偏差。句间若只有对齐空档、声学低能量被背景声掩盖，POC 保留该句间空档为待听审候选，不能把它说成已由声学检测确认。
 

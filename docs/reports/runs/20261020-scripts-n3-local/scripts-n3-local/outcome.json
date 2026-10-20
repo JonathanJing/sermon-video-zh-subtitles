@@ -1,0 +1,16 @@
+{
+  "schemaVersion": "local-test-outcome-v1",
+  "status": "passed",
+  "exitCode": 0,
+  "startedAt": "2026-10-20T16:52:36+00:00",
+  "endedAt": "2026-10-20T19:42:57+00:00",
+  "scope": "scripts/ remaining migration batch N3 (PR #1205): binding check of scripture_editions, scripture_candidate_queue, english_scripture_coverage and series_terminology (all bound, left in place); run_spoken_condensation -> tools/ops (no facade), sermon_local_model_observation -> observability/local_model_observation (facade), sermon.py -> tools/ops/sermon.py (facade). 362 affected test files in parallel pytest chunks on dev@b8e7fdc9 plus a focused re-run after merging dev@e0f42cf5.",
+  "knownPreexistingFailures": [
+    "tests/test_codex_shared_pool_transport.py::test_busy_before_started_is_proven_no_dispatch",
+    "tests/test_sermon_unified_parallel.py::ParallelOwnerTests::test_100_transitions_with_persistent_intents",
+    "tests/test_sermon_log_profile.py::DurableProfileContextTests::test_detached_job_restores_private_bounded_context_and_runs_once",
+    "tests/test_sermon_app_delivery_workflow.py::AppDeliveryWorkflowTests::test_two_actual_supervisor_cli_processes_admit_one_fixed_bundle_job",
+    "tests/test_sermon_fresh_full_dag.py::FreshFullDAGComponents::test_confirmed_failed_unit_retry_reuses_successful_neighbor",
+    "tests/test_telemetry_008.py::DispatchObservationTests::test_cold_isolated_preload_then_actual_profile_stage_preserves_code_identity"
+  ]
+}

@@ -8,9 +8,10 @@ import tempfile
 import unittest
 from pathlib import Path
 from unittest.mock import patch
-from scripts import api_cli_outcomes as outcomes
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.compute import outcomes
 from scripts import build_sermon_reading_edition_with_openai as reading
-from scripts import sermon_codex_transport as transport
+from tongxing_production.compute.transports import codex_cli as transport
 
 
 class ReadingCliTerminalTests(unittest.TestCase):

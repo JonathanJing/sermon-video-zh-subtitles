@@ -18,7 +18,7 @@ from pathlib import Path
 if __package__ in (None, ''):
     sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
-from scripts import sermon_cost_isolation as costs
+from tongxing_production.observability import cost_isolation as costs
 
 VERSION = "sermon-openai-costs-export-v1"
 

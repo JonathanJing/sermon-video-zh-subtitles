@@ -256,16 +256,17 @@ def resolve(key):
 
 
 def physical_closure_paths(keys):
-    """Files executed by an identity closure, including moved facades and targets.
+    """Files executed by an identity closure: each key's current file and the resolver.
 
     Use actual repository paths as keys so a per-file hash always names the
     bytes it describes. The resolver itself decides which target is reached.
+    A moved key names only its target: the D closure window removed the scripts/
+    facades the closures used to hash next to it.
     """
     paths = {PRODUCTION + 'path_aliases.py'}
     for key in keys:
         if not key.startswith(('scripts/', 'packages/')):
             raise ValueError(f'Closure key is not a repository-relative file: {key}')
-        paths.add(key)
         paths.add(resolve(key))
     return tuple(sorted(paths))
 

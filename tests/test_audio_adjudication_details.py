@@ -1,7 +1,8 @@
 import tempfile
 from pathlib import Path
 import unittest
-from scripts import review_target_language_audio as review
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.audio import human_review as review
 from tests.test_review_target_language_audio import fixture
 
 

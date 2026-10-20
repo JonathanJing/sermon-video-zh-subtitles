@@ -10,7 +10,8 @@ import unittest
 from unittest.mock import patch
 
 import jsonschema
-from scripts import sermon_codex_transport as mod
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.compute.transports import codex_cli as mod
 
 
 @contextmanager

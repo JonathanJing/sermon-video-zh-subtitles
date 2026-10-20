@@ -10,7 +10,8 @@ import { sanitizeSnapshot } from '../../../packages/tracker-contract/src/sanitiz
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const REPO = resolve(HERE, '../../..');
-const BUILDER = resolve(REPO, 'scripts/build_four_layer_tracker_snapshot.py');
+// The package entry binds the checkout and tracker hosts before running the snapshot builder.
+const BUILDER = [resolve(REPO, 'tools/ops/run.py'), 'observability.projections.four_layer_tracker_snapshot'];
 const ARG_MAP = {
   ledger: '--ledger', out: '--out', sourceMonitor: '--source-monitor',
   sourcePageUrl: '--source-page-url', serviceDate: '--service-date',
@@ -65,7 +66,7 @@ export function buildFromConfig(path) {
   }
   for (const path of config.releasePackages || []) args.push('--release-package', String(path));
   for (const path of config.fingerprintEvidence || []) args.push('--fingerprint-evidence', String(path));
-  execFileSync(process.env.PYTHON || 'python3', [BUILDER, ...args], {
+  execFileSync(process.env.PYTHON || 'python3', [...BUILDER, ...args], {
     cwd: REPO, stdio: 'pipe', timeout: 30000,
   });
   return resolve(REPO, config.out);

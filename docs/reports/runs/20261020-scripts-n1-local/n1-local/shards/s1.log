@@ -1,0 +1,17 @@
+# chunk s1: 13 files
+tests/test_audit_production_goal_readiness.py
+tests/test_backend_storage.py
+tests/test_build_playback_simulation.py
+tests/test_offline_live_sermon_subtitles.py
+tests/test_promote_sunday_manifest.py
+tests/test_realtime_stabilized_smoke_test.py
+tests/test_run_offline_archive_preflight.py
+tests/test_run_realtime_live_session.py
+tests/test_run_sunday_evidence_bundle.py
+tests/test_translate_playback_with_openai.py
+tests/test_validate_realtime_session.py
+tests/test_write_1130_live_realtime_run_plan.py
+tests/test_write_production_go_live_sequence.py
+
+140 passed, 9 subtests passed in 21.53s
+exit 0

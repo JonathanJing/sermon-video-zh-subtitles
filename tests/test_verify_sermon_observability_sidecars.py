@@ -6,10 +6,12 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-from scripts import sermon_accounting as accounting
-from scripts import build_tracker_dag_projection as tracker
-from scripts import sermon_log_profile as profile
-from scripts import verify_sermon_observability as verification
+from tongxing_production.observability import accounting
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from scripts import tracker_projection_host  # noqa: F401  binds the read-only report ports
+from tongxing_production.observability.projections import tracker_dag_projection as tracker
+from tongxing_production.observability import profile
+from tools.development import verify_sermon_observability as verification
 from tongxing_production.observability import accounting as accounting_impl
 
 
@@ -69,7 +71,7 @@ class VerificationSidecarTests(unittest.TestCase):
             with patch.object(verification.observer, 'export', side_effect=inspect_replay) as export:
                 receipt, _ = verification.run(runtime, source, expected_span_count=1)
             export.assert_called_once()
-            self.assertEqual(receipt['implementationSha256']['scripts/sermon_identity_sidecars.py'],
+            self.assertEqual(receipt['implementationSha256']['packages/production/src/tongxing_production/observability/identity_sidecars.py'],
                              verification.observer.sha(Path(verification.sidecars.__file__)))
             self.assertEqual(receipt['status'], 'failed')  # Deliberate stop before Jaeger work.
             self.assertEqual(receipt['failureCode'], 'unexpected_real_span_count')

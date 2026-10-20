@@ -1,0 +1,9 @@
+{
+  "deliveryType": "test",
+  "status": "passed",
+  "exitCode": 0,
+  "commit": "bd67c1a7",
+  "workflow": "local experiment leaf move verification (voice demos, sentence TTS)",
+  "publication": "not_run",
+  "realProduction": "not_run"
+}
