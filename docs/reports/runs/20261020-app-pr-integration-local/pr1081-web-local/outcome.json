@@ -1,0 +1,11 @@
+{
+  "schemaVersion": "local-test-outcome-v1",
+  "status": "passed",
+  "exitCode": 0,
+  "startedAt": "2026-10-20T20:36:00+00:00",
+  "endedAt": "2026-10-20T20:50:00+00:00",
+  "scope": "PR #1081 (usage bootstrap default week) after merging origin/dev@810349e2 and fixing the Codex thread (select the default before engagement-ID mapping): node --test apps/listening-web/*.test.mjs: 608 tests, 607 pass, 0 fail, 1 skipped (opt-in frozen fixture).",
+  "notRun": [
+    "browser rendering or deployed-page check (no deploy)"
+  ]
+}

@@ -1,0 +1,127 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261020-app-pr-integration-local",
+  "runs": [
+    {
+      "label": "pr475-ios-local",
+      "source": "/private/tmp/claude-501/-Users-jonathan-jing-SynologyDrive-GitHub-Active-sermon-video-zh-subtitles--claude-worktrees-scripts-r1-131a68/266830db-8a19-4348-949f-54599e83d292/scratchpad/runs/pr475-ios-local",
+      "skipped": {}
+    },
+    {
+      "label": "pr1081-web-local",
+      "source": "/private/tmp/claude-501/-Users-jonathan-jing-SynologyDrive-GitHub-Active-sermon-video-zh-subtitles--claude-worktrees-scripts-r1-131a68/266830db-8a19-4348-949f-54599e83d292/scratchpad/runs/pr1081-web-local",
+      "skipped": {}
+    },
+    {
+      "label": "pr1082-local",
+      "source": "/private/tmp/claude-501/-Users-jonathan-jing-SynologyDrive-GitHub-Active-sermon-video-zh-subtitles--claude-worktrees-scripts-r1-131a68/266830db-8a19-4348-949f-54599e83d292/scratchpad/runs/pr1082-local",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "pr475-ios-local",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 622,
+      "truncated": false,
+      "sha256": "586e0efb80669f3bd76a1dfbd69664f0b6c37abfc0d37caa518f1fef4b85ad72",
+      "redactions": {}
+    },
+    {
+      "run": "pr475-ios-local",
+      "path": "swift-test.log",
+      "kind": "log",
+      "bytes": 20576,
+      "truncated": true,
+      "sha256": "d3294cbd813992ab59907c1b24fb217cf2a7037b9f30b9873230d84d172d3ac3",
+      "redactions": {}
+    },
+    {
+      "run": "pr1081-web-local",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 523,
+      "truncated": false,
+      "sha256": "2d52efa675e10200282a7ac785ff627188144171e46f460fb987e69023db52c7",
+      "redactions": {}
+    },
+    {
+      "run": "pr1082-local",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 1569,
+      "truncated": false,
+      "sha256": "6ab74bd93ad81b32db6547e10c2b191b8b9d5fbadfb749ab1a541bd80a0dccf8",
+      "redactions": {}
+    },
+    {
+      "run": "pr1082-local",
+      "path": "pr1082-py-0.log",
+      "kind": "log",
+      "bytes": 476,
+      "truncated": false,
+      "sha256": "1d1bae8e357e783e75565ee6d07c3350e2b3de6749930b29bce4632db7019860",
+      "redactions": {}
+    },
+    {
+      "run": "pr1082-local",
+      "path": "pr1082-py-1.log",
+      "kind": "log",
+      "bytes": 577,
+      "truncated": false,
+      "sha256": "1978ac67bbe5ad8f06f29c584bf0efb401d5eed7f7ea9b270b230bca1018953e",
+      "redactions": {}
+    },
+    {
+      "run": "pr1082-local",
+      "path": "pr1082-py-2.log",
+      "kind": "log",
+      "bytes": 4210,
+      "truncated": false,
+      "sha256": "e9acd22c812a25f6e1d8b2e880bb31f785028564d0917169bee71d31e11fe2e1",
+      "redactions": {}
+    },
+    {
+      "run": "pr1082-local",
+      "path": "pr1082-py-3.log",
+      "kind": "log",
+      "bytes": 820,
+      "truncated": false,
+      "sha256": "0fa687748aba0bfc4305cad2f98976fc9eb0769f880d4187887b04b6398cb4bb",
+      "redactions": {}
+    },
+    {
+      "run": "pr1082-local",
+      "path": "pr1082-swift-infra.log",
+      "kind": "log",
+      "bytes": 14177,
+      "truncated": false,
+      "sha256": "78597a5f7381b21c82d907ac655c5279ff5a6638a34301a9d4f6705d2d03bdfd",
+      "redactions": {}
+    },
+    {
+      "run": "pr1082-local",
+      "path": "pr1082-swift.log",
+      "kind": "log",
+      "bytes": 21596,
+      "truncated": true,
+      "sha256": "9a57bc98209703da1e3e47d1c9b26cef621aa1ab0eda695edd43e2812f9d4098",
+      "redactions": {}
+    },
+    {
+      "run": "pr1082-local",
+      "path": "pr1082-web.log",
+      "kind": "log",
+      "bytes": 54499,
+      "truncated": true,
+      "sha256": "768daa03ffa8b747e9eebba119f2c0e1e0482f98de9ad93ea923fd70264dcb8e",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}
