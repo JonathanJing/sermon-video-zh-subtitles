@@ -1,39 +1,32 @@
-#!/usr/bin/env python3
 """Render a reading PDF from a published `/content/<pageId>/zh-Hans.json` full text.
 
 The PDF is a local convenience export of text that is already published; it does
 not create a new release identity and is not uploaded anywhere.
+
+    .venv/bin/python tools/ops/run.py workflows.dual_pdf.content_json_pdf --page-id <pageId>
 """
 
 from __future__ import annotations
 
 import argparse
 import hashlib
-import importlib.util
 import json
 import math
 import re
-import sys
 import urllib.request
 from pathlib import Path
 
-import jsonschema
+from ...contracts import schemas
+from . import mobile_pdf as renderer
 
 
 DEFAULT_BASE_URL = "https://ai-for-god-sermon-audio.web.app"
 LOCALE = "zh-Hans"
 REFERENCE_SCHEMA = "sermon-published-english-reference-v1"
 # Published full-text schemas; v2 is human_reviewed only, v3 adds machine_checked with a disclosure.
-SCHEMA_DIR = Path(__file__).resolve().parents[1] / "schemas"
 CONTENT_SCHEMAS = {"sermon-full-video-text-content-v2", "sermon-full-video-text-content-v3"}
 DURATION_TOLERANCE_SECONDS = 1.0
 SAFE_ID = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]*")
-_RENDERER_PATH = Path(__file__).resolve().parent / "render_mobile_pdf_from_srt.py"
-_SPEC = importlib.util.spec_from_file_location("render_mobile_pdf_from_srt", _RENDERER_PATH)
-renderer = importlib.util.module_from_spec(_SPEC)
-assert _SPEC.loader is not None
-sys.modules[_SPEC.name] = renderer
-_SPEC.loader.exec_module(renderer)
 
 
 def main() -> int:
@@ -128,8 +121,7 @@ def check_content(content: dict, page_id: str | None = None) -> None:
     schema = content.get("schemaVersion")
     if schema not in CONTENT_SCHEMAS:
         raise SystemExit(f"Unsupported content schema {schema!r}; expected one of {sorted(CONTENT_SCHEMAS)}.")
-    errors = sorted(jsonschema.Draft202012Validator(json.loads((SCHEMA_DIR / f"{schema}.schema.json").read_text(
-        encoding="utf-8"))).iter_errors(content), key=lambda error: list(error.path))
+    errors = sorted(schemas.validator(schema).iter_errors(content), key=lambda error: list(error.path))
     if errors:
         raise SystemExit(f"Content does not match {schema}: {errors[0].message}")
     if content["reviewMode"] != "formal":

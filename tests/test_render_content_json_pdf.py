@@ -1,17 +1,16 @@
-import importlib.util
 import json
+import subprocess
 import sys
 import tempfile
 import unittest
 from pathlib import Path
 
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.workflows.dual_pdf import content_json_pdf as mod
 
-SCRIPT_PATH = Path(__file__).resolve().parents[1] / "scripts" / "render_content_json_pdf.py"
-SPEC = importlib.util.spec_from_file_location("render_content_json_pdf", SCRIPT_PATH)
-mod = importlib.util.module_from_spec(SPEC)
-assert SPEC.loader is not None
-sys.modules[SPEC.name] = mod
-SPEC.loader.exec_module(mod)
+
+COMMAND = [sys.executable, str(Path(__file__).resolve().parents[1] / "tools/ops/run.py"),
+           "workflows.dual_pdf.content_json_pdf"]
 
 
 CONTENT = {
@@ -125,6 +124,18 @@ class RenderContentJsonPdfTest(unittest.TestCase):
             self.assertEqual(qa["contentStatus"], "machine_checked")
             self.assertTrue(qa["font"])
             self.assertEqual((qa["includeEnglish"], qa["includeTimecodes"]), (True, True))
+
+    def test_cli_renders_local_content_from_other_directory(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            folder = Path(tmp)
+            (folder / "content.json").write_text(json.dumps(CONTENT, ensure_ascii=False), encoding="utf-8")
+            result = subprocess.run([*COMMAND, "--content", "content.json", "--out", "out/page.pdf"],
+                                    cwd=folder, capture_output=True, text=True, timeout=120)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertTrue((folder / "out/page.pdf").read_bytes().startswith(b"%PDF"))
+            qa = json.loads((folder / "out/page.qa.json").read_text(encoding="utf-8"))
+            self.assertEqual(qa["contentSource"], "content.json")
+            self.assertEqual(qa["contentStatus"], "machine_checked")
 
 
 if __name__ == "__main__":
