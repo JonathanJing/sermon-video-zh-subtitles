@@ -18,7 +18,7 @@ from pathlib import Path
 
 from tongxing_production.observability import accounting
 from tongxing_production.observability import profile
-from scripts import sermon_repair_planning as planning
+from tongxing_production.orchestration.supervisor import repair_planning as planning
 from tongxing_production.review import review_budget as budget
 from tongxing_production.review import contracts as c
 from scripts import sermon_strict_budget_adapter as adapter

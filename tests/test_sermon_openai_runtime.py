@@ -67,7 +67,7 @@ class RuntimeBindingTests(unittest.TestCase):
             self.assertEqual(send.call_args.args[0].get_header('Openai-project'), 'proj_dev')
 
     def test_agents_transport_binds_selected_project(self):
-        from scripts.sermon_agents_api import AgentsAPIClient
+        from tongxing_production.orchestration.supervisor.agents_api import AgentsAPIClient
         with patch.dict(os.environ, selected('prod'), clear=True):
             client = AgentsAPIClient()
             client._opener = Mock()

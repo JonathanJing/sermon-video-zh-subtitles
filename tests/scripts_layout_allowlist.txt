@@ -80,7 +80,6 @@ scripts/run_saturday_harness.py
 scripts/run_sentence_interpretation_models.py
 scripts/run_sermon_prefect_dag.py
 scripts/run_sermon_production_supervisor_agent.py
-scripts/run_spoken_condensation.py
 scripts/run_with_openai_environment.py
 scripts/scripture_adjudication.py
 scripts/scripture_candidate_queue.py
@@ -190,7 +189,6 @@ scripts/sermon_temporal/worker_service.py
 scripts/sermon_temporal/workflows.py
 scripts/sermon_trace_artifacts.py
 scripts/sermon_unified/__init__.py
-scripts/sermon_unified_observability.py
 scripts/sermon_unified_reviews.py
 scripts/sermon_workflow_evidence.py
 scripts/source_meaning_machine_adjudication.py

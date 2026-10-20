@@ -39,13 +39,13 @@ import sys
 import threading
 
 if __package__ in (None, ""):
-    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+    sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.review import qc_text_run as clip
 from tongxing_production.review import condensation
 from tongxing_production.audio import predicted_schedule as predicted
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 CACHE_NAMESPACE = "spoken-condensation-v1"
 REASONING_EFFORT = "high"  # Same as Layer 2 initial translation (production-model-runtime-policy).
 TIMEOUT_SECONDS = 600

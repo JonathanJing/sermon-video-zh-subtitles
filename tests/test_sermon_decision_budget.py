@@ -8,7 +8,7 @@ import unittest
 from unittest.mock import patch
 
 from tests.job_store_patches import patch_job_store  # G1: job store primitives live in two modules
-from scripts import sermon_bounded_decision as decision
+from tongxing_production.orchestration.supervisor import bounded_decision as decision
 from scripts import sermon_decision_budget as subject
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.orchestration import jobs

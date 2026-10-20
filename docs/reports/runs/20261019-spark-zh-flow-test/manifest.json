@@ -1,0 +1,56 @@
+{
+  "schemaVersion": "sermon-spark-flow-test-record-v1",
+  "testedAt": "2026-10-19",
+  "testCode": "repo-d1314424",
+  "reportBaseCommit": "c7b3397e",
+  "packageCodeCommit": "c03b9416",
+  "sessions": [
+    {
+      "id": "test-zh-audio-20261019",
+      "owner": "codex-test-zh-audio",
+      "startedAt": "2026-10-19T19:21:42Z",
+      "closedAt": "2026-10-19T20:28:39Z",
+      "modelHealthAfter": "healthy"
+    },
+    {
+      "id": "test-zh-audio-2-20261019",
+      "owner": "codex-test-zh-audio",
+      "startedAt": "2026-10-19T21:21:07Z",
+      "closedAt": "2026-10-19T21:26:02Z",
+      "modelHealthAfter": "healthy"
+    }
+  ],
+  "tests": {
+    "renderUnits": 402,
+    "renderedWavs": 1108,
+    "replicas": 1,
+    "renderMinutes": 26,
+    "compactExit": 0,
+    "screenExit": 0,
+    "packageExit": 0
+  },
+  "package": {
+    "path": "artifacts/weekend-live/layer3-test-zh-20261019c/zh-Hans/audio-package-c4.json",
+    "status": "candidate",
+    "units": 402,
+    "sha256": "b7027f07fbd62ba9611e7dcd85c1919f0d7a26025a14c7405990baa579904ee8",
+    "trackSha256": "fba18e8fc7f95b30caca568ffa3e223144dd4f0a19721f00ffc216938549674d",
+    "captionsSha256": "bdde6aba6c395fda60d5178fc6677452d6873b0da9ce4656a747368bbbe22ec8",
+    "machineScreening": "requires_review"
+  },
+  "evidence": [
+    {
+      "name": "render-manifest-screened-c4.json",
+      "sha256": "8357bc992f6e097ee30a429b5f842b99d27032c5ca67caba46a59a17949b8e40"
+    },
+    {
+      "name": "old-zh-text-waiver",
+      "sha256": "2623046e4794dce92dc8a799551c753ff5260425e85e21d03838cb192ca4eed2"
+    },
+    {
+      "name": "qc-resign-attempt-summary",
+      "sha256": "d63f912d30a85e1685c1f0a1a0f586e8bfda2180e41e876d298f244a7813d6ee"
+    }
+  ],
+  "boundary": "No L4 page, audio QC/waiver, human listening, device or venue acceptance; test artifacts local only."
+}

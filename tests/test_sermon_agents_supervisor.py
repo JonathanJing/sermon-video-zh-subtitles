@@ -15,7 +15,7 @@ from scripts import tongxing_host  # noqa: F401  binds the production package po
 from tongxing_production.workflows.dual_pdf import codex_local as local_entry
 from scripts import run_sermon_production_supervisor_agent as entry
 from scripts import sermon_agents_supervisor as mod
-from scripts.sermon_agents_api import AgentsAPIError, run_agent_session
+from tongxing_production.orchestration.supervisor.agents_api import AgentsAPIError, run_agent_session
 from scripts.sermon_production_supervisor import SupervisorConfig
 
 

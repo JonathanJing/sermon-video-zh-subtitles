@@ -13,7 +13,7 @@ import time
 
 from scripts import sermon_agent_diagnostics as diagnostic
 from scripts import sermon_agent_diagnostics_contracts as c
-from scripts import sermon_agents_api as api
+from tongxing_production.orchestration.supervisor import agents_api as api
 from tongxing_production.observability import accounting
 from tongxing_production.compute import provider_limits as pricing
 from tongxing_production.observability import profile

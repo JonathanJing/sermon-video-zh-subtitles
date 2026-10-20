@@ -161,7 +161,7 @@ not confirmed as the same sermon, and emits an operator-audio fallback alert
 after the configured deadline:
 
 ```bash
-python3 scripts/live_source_monitor.py \
+.venv/bin/python tools/ops/run.py workflows.dual_pdf.live_source_monitor \
   --sunday 2026-06-28 \
   --expected-title 'The Cure for Our Rebellion - Eric Geiger | Mariners Church' \
   --out artifacts/live-source-monitor/2026-06-28.json
@@ -208,7 +208,7 @@ add `--post-generate` and pass either the operator token or the internal task
 token through the runtime environment:
 
 ```bash
-python3 scripts/live_source_monitor.py \
+.venv/bin/python tools/ops/run.py workflows.dual_pdf.live_source_monitor \
   --sunday 2026-06-28 \
   --backend-url https://SERVICE_URL \
   --post-generate \
