@@ -82,7 +82,7 @@ class RecoveryTests(unittest.TestCase):
             recovery.validate_adjudication(detail, changed, track, artifact_root=f.root)
 
     def test_reserve_failure_contains_measured_and_unknown_fields(self):
-        from scripts.spark_tts_replica_pool import ReplicaPool, ReplicaPoolError
+        from tongxing_production.compute.spark_tts_replica_pool import ReplicaPool, ReplicaPoolError
         events = []
         pool = ReplicaPool('unused', factory=lambda: None, engine_kwargs={}, memory_reader=lambda: 1,
                            telemetry=events.append)

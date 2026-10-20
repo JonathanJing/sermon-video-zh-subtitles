@@ -100,7 +100,8 @@ def run(argv, **kwargs):
 
 
 def _spark_session(session_id=None, owner=None):
-    from scripts.spark_exclusive_session import Client
+    from scripts import tongxing_host  # noqa: F401  binds the production package ports
+    from tongxing_production.compute.spark_exclusive_session import Client
     return Client.from_environment(session_id=session_id, owner=owner)
 
 

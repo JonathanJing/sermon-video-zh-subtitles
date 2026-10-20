@@ -14,9 +14,9 @@ from scripts import sermon_diagnostic_provider as provider
 from scripts import sermon_diagnostic_source_evidence as evidence
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.observability import profile
-from scripts import sermon_review_budget as budget
-from scripts import sermon_review_contracts as c
-from scripts import sermon_provider_limits as limits
+from tongxing_production.review import review_budget as budget
+from tongxing_production.review import contracts as c
+from tongxing_production.compute import provider_limits as limits
 from tests import test_run_bounded_diagnostic as bounded_fixture
 from tests import test_sermon_diagnostic_context as context_fixture
 from tests import test_render_speculative_target_language_speech as preview_fixture

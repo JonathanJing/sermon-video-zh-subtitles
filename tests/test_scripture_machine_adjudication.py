@@ -13,8 +13,9 @@ from unittest import mock
 
 from scripts import cuv_scripture
 from scripts import english_scripture_coverage as coverage_module
-from scripts import scripture_adjudication as adjudication
-from scripts import scripture_machine_adjudication as machine
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.review import scripture as adjudication
+from tongxing_production.review import scripture_machine as machine
 
 LIBRARY = cuv_scripture.CuvLibrary.from_path()
 

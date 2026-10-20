@@ -7,8 +7,10 @@ from unittest.mock import Mock, patch
 
 from scripts import sermon_historical_layer2 as h, sermon_strict_layer2 as strict
 from scripts import run_bounded_diagnostic as bounded
-from scripts import sermon_strict_candidate_bridge as bridge, sermon_review_contracts as c
-from scripts import sermon_review_budget as budget, sermon_diagnostic_provider as provider
+from scripts import sermon_strict_candidate_bridge as bridge
+from tongxing_production.review import contracts as c
+from scripts import sermon_diagnostic_provider as provider
+from tongxing_production.review import review_budget as budget
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from scripts import sermon_diagnostic_attempts as attempts, sermon_accounting as accounting, sermon_log_profile as profile
 from tongxing_production.observability import accounting

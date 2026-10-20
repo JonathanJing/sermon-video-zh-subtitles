@@ -8,7 +8,8 @@ import sys
 from types import SimpleNamespace
 if __package__ in (None,''):
     sys.path.insert(0,str(Path(__file__).resolve().parents[2]))
-from scripts import codex_layer2_diagnostic as diagnostic, sermon_codex_transport as codex
+from scripts import codex_layer2_diagnostic as diagnostic
+from tongxing_production.compute.transports import codex_cli as codex
 from tongxing_production.observability import accounting
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from scripts import study_artifacts
@@ -16,8 +17,8 @@ from tongxing_production.workflows.prepared import study_generation as generatio
 from scripts.experiments import diagnostic_audio_inputs as admission
 from scripts.sermon_execution_harness import work_lock
 from scripts.sermon_unified import resources
-from scripts.production_concurrency_profile import load_profile
-from scripts import production_spark_admission as spark_admission
+from tongxing_production.compute.concurrency_profile import load_profile
+from tongxing_production.compute import spark_admission
 
 
 def execute(*,fixture,candidate,evidence,media,out_dir,kind,profile,resource_policy,cli_path=None,caller=None,session_verifier=None):

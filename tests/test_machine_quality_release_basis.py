@@ -14,7 +14,7 @@ from tongxing_production.review import text_qc as text_screen
 from tongxing_production.review.audio_qc import THRESHOLDS, TRACK_ENVELOPE
 from tongxing_production.audio import speech_job as speech
 from tongxing_production.source import sentence_interpretation as interpretation
-from scripts import sermon_unified_reviews as reviews
+from tongxing_production.review import unified_reviews as reviews
 from tongxing_production.delivery import formal_stage as stage
 # Reuse the speech-job fixture without collecting its tests a second time here.
 from tests import test_prepare_target_language_speech_job as speech_fixture
@@ -783,7 +783,7 @@ class AudioWaiverTests(unittest.TestCase):
             user_statement="Ko用现有读音发布", group_ids=["g2"],
             attribution={"g2": {"decidedBy": "Claude (delegated by Jony)", "decidedByRole": "delegated_agent",
                                 "reason": "numeral read as native Korean; shipped as is"}})
-        from scripts import machine_audio_waiver_acceptance as v3
+        from tongxing_production.review import audio_waiver_acceptance as v3
         anchor, candidate = audio_sources()
         cal = seeded_into(calibration(), audio=failed, candidate=candidate, condensed=False)
         receipt = v3.build_audio_waiver(

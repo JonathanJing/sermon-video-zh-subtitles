@@ -28,7 +28,8 @@ def failing(*checks, uncertainty=(), issues=("problem",)):
 class ClassificationTests(unittest.TestCase):
     def test_repair_bound_uses_enforced_input_and_completion_limits(self):
         from tongxing_production.text.budget import CURRENT_LIMITS, request_limits
-        from scripts.sermon_provider_limits import DEFAULT_REQUEST_LIMITS
+        from scripts import tongxing_host  # noqa: F401  binds the production package ports
+        from tongxing_production.compute.provider_limits import DEFAULT_REQUEST_LIMITS
         with request_limits(DEFAULT_REQUEST_LIMITS):
             self.assertEqual(subject._repair_token_bound(),
                              DEFAULT_REQUEST_LIMITS["maxInputTokens"] + DEFAULT_REQUEST_LIMITS["maxCompletionTokens"])

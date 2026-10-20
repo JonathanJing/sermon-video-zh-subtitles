@@ -25,8 +25,8 @@ from scripts import sermon_diagnostic_preview_worker as preview_worker
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.observability import profile
 from scripts import sermon_prefect_dag as pilot
-from scripts import sermon_public_snapshot as public
-from scripts import sermon_review_contracts as c
+from tongxing_production.storage import snapshot as public
+from tongxing_production.review import contracts as c
 from scripts import sermon_strict_layer2 as strict
 from scripts.sermon_execution_harness import work_lock
 from scripts.sermon_release_workflow import _safe_path

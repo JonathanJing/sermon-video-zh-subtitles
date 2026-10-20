@@ -14,7 +14,7 @@ from unittest.mock import patch
 from scripts import sermon_local_business_callbacks as subject
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.observability import profile
-from scripts import sermon_review_contracts as c
+from tongxing_production.review import contracts as c
 from tests import test_sermon_strict_layer3_preparation as speech_fixtures
 from tests import test_sermon_delivery_intent_binding as delivery_fixtures
 from tests import test_render_formal_target_language_speech as render_fixtures

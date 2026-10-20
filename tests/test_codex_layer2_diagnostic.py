@@ -12,7 +12,7 @@ from tongxing_production.source import english_source_package as english
 from scripts import sermon_diagnostic_context as diagnostic
 from tongxing_production.text import policy as policies
 from tongxing_production.text import models as runner
-from scripts.codex_layer2_transport import CodexLayer2Transport, TEST_CONFIGURATION
+from tongxing_production.compute.transports.codex_layer2 import CodexLayer2Transport, TEST_CONFIGURATION
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.workflows.dual_pdf import pipeline as sermon_pipeline_module
 from tests import test_run_target_language_models as fixtures
@@ -98,7 +98,7 @@ class DiagnosticChainTests(unittest.TestCase):
                 return cli_process(argv, **kwargs)
             return real_run(argv, **kwargs)
         with patch.object(command, 'CodexLayer2Transport', return_value=transport or self.transport()), \
-             patch('scripts.codex_layer2_transport.subprocess.run', side_effect=dispatch), \
+             patch('tongxing_production.compute.transports.codex_layer2.subprocess.run', side_effect=dispatch), \
              patch.object(sermon_pipeline_module, 'chat_json', side_effect=AssertionError('API forbidden')), patch('builtins.print'):
             return command.run_test(self.fixture, None, self.out, cli_path=self.root / 'unused', diagnostic_fixture=True, resource_policy_path=resource_policy_path, session_verifier=lambda: {"status":"offline_test"})
 
@@ -213,7 +213,7 @@ class DiagnosticChainTests(unittest.TestCase):
 
     def test_speaker_words_units_load_beside_admitted_quotations(self):
         from scripts import cuv_scripture
-        from scripts import scripture_adjudication as adjudication
+        from tongxing_production.review import scripture as adjudication
         from scripts.language_review_plugins import diagnostic_admitted_quotes as admitted
         units = [unit['sourceUnitId'] for unit in self.anchor['sourceUnits']]
         bindings = {'source.json': policies.canonical_sha256(self.source),

@@ -227,7 +227,8 @@ class StrictDeliveryBindingTests(DeliveryBindingTests):
     """Real strict adapters and durable ledger, synthetic provider/human evidence."""
     def setUp(self):
         from tests import test_sermon_strict_gate_admission as gate_fixtures
-        from scripts import sermon_review_contracts as contracts
+        from scripts import tongxing_host  # noqa: F401  binds the production package ports
+        from tongxing_production.review import contracts
         self.strict_fixture = gate_fixtures.AdmissionTests()
         self.strict_fixture.setUp()
         self.addCleanup(self.strict_fixture.doCleanups)
@@ -248,7 +249,8 @@ class StrictDeliveryBindingTests(DeliveryBindingTests):
             candidate=str(self.boundary.config.public_candidate), humanReview=str(self.boundary.config.human_receipt))
 
     def rewrite_intent_receipt_identity(self, receipt_hash):
-        from scripts import sermon_review_contracts as contracts
+        from scripts import tongxing_host  # noqa: F401  binds the production package ports
+        from tongxing_production.review import contracts
         from scripts import tongxing_host  # noqa: F401  binds the production package ports
         from tongxing_production.orchestration import jobs
         old_id = self.strict_admissions['zh-Hans']['intentId']
@@ -313,7 +315,8 @@ class StrictDeliveryBindingTests(DeliveryBindingTests):
         with self.assertRaises(ValueError): self.freeze()
 
     def test_strict_missing_generation_reservation_blocks(self):
-        from scripts import sermon_review_budget as budget
+        from scripts import tongxing_host  # noqa: F401  binds the production package ports
+        from tongxing_production.review import review_budget as budget
         from scripts import tongxing_host  # noqa: F401  binds the production package ports
         from tongxing_production.orchestration import jobs
         path = self.boundary.store.root / budget.STORE_ID / 'state.json'
@@ -390,7 +393,8 @@ class StrictDeliveryBindingTests(DeliveryBindingTests):
         with self.assertRaisesRegex(ValueError, 'shared_admission_store_required'): self.freeze()
 
     def test_strict_unrelated_ledger_mutation_during_validation_is_not_silently_accepted(self):
-        from scripts import sermon_review_budget as budget
+        from scripts import tongxing_host  # noqa: F401  binds the production package ports
+        from tongxing_production.review import review_budget as budget
         from scripts import tongxing_host  # noqa: F401  binds the production package ports
         from tongxing_production.orchestration import jobs
         real = intent.preflight
@@ -405,8 +409,9 @@ class StrictDeliveryBindingTests(DeliveryBindingTests):
             with self.assertRaisesRegex(ValueError, 'delivery_strict_ledger_changed'): self.freeze()
 
     def test_strict_pending_other_group_budget_requires_reconciliation(self):
-        from scripts import sermon_review_budget as budget
-        from scripts import sermon_review_contracts as contracts
+        from scripts import tongxing_host  # noqa: F401  binds the production package ports
+        from tongxing_production.review import review_budget as budget
+        from tongxing_production.review import contracts
         root = self.strict_fixture.f.revisions[1][0]
         manifest = contracts.read_snapshot(root / 'revision.json')[0]
         identity = {key: manifest[key] for key in budget.IDENTITY_FIELDS
@@ -430,7 +435,8 @@ class FormalStrictDeliveryTests(unittest.TestCase):
         from dataclasses import replace
         from types import SimpleNamespace
         import subprocess
-        from scripts import sermon_review_contracts as c
+        from scripts import tongxing_host  # noqa: F401  binds the production package ports
+        from tongxing_production.review import contracts as c
         from tongxing_production.text import policy as policies
         from scripts import sermon_strict_layer2 as strict
         from scripts import sermon_strict_candidate_bridge as bridge

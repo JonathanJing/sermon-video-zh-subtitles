@@ -5,7 +5,9 @@ import tempfile
 import unittest
 
 from scripts import sermon_diagnostic_attempts as attempts, sermon_diagnostic_provider as provider
-from scripts import sermon_review_budget as budget, sermon_review_contracts as c
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.review import review_budget as budget
+from tongxing_production.review import contracts as c
 from scripts import sermon_strict_layer2 as strict
 from tests import test_run_bounded_diagnostic as fixtures
 

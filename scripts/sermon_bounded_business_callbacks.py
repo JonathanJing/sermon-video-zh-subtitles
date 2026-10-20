@@ -19,7 +19,7 @@ from scripts import sermon_diagnostic_provider as provider
 from tongxing_production.observability import accounting
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.observability import profile
-from scripts import sermon_review_contracts as c
+from tongxing_production.review import contracts as c
 from scripts import sermon_strict_layer2 as strict
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.source import english_source_package as source_builder

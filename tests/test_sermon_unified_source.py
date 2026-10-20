@@ -270,7 +270,7 @@ class UnifiedSourceTests(unittest.TestCase):
 
     def test_sol_source_judge_budget_is_bounded_for_api(self):
         from tongxing_production.source import budget
-        from scripts import sermon_provider_limits as limits
+        from tongxing_production.compute import provider_limits as limits
         from tongxing_production.source import english_source_judge as judge
         request = {'model': 'gpt-6.1-sol', 'reasoning_effort': 'high',
             'messages': [{'role': 'user', 'content': 'synthetic source'}],

@@ -17,18 +17,20 @@ from scripts import tongxing_host as host
 from tongxing_production.source import english_source_package as english_package
 from scripts import cuv_scripture, english_scripture_coverage, scripture_candidate_queue, scripture_editions
 from tongxing_production.source import english_source_judge_cache as judge_cache
-from scripts import export_run_digest, sermon_codex_transport
+from scripts import export_run_digest
+from tongxing_production.compute.transports import codex_cli as sermon_codex_transport
 from tongxing_production.compute import transcription_request as sermon_transcription_request
 from tongxing_production.text import human_ruling
 from tongxing_production.compute import qc_audio_transports as audio_transports
 from tongxing_production.review import waiver
 from scripts import prepare_target_language_speech_job as handoff
 from tongxing_production.text import candidate
-from scripts import production_spark_admission, spark_exclusive_session
+from tongxing_production.compute import spark_admission as production_spark_admission
+from tongxing_production.compute import spark_exclusive_session
 from tongxing_production.audio import renderer
 from tongxing_production.source import sentence_interpretation_models as interpretation_models
 from tongxing_production.audio import screening
-from scripts import scripture_machine_adjudication as scripture_machine
+from tongxing_production.review import scripture_machine
 from scripts import sermon_production_supervisor as supervisor
 from tongxing_production.source import sentence_interpretation as interpretation
 from tongxing_production.source import budget as source_budget

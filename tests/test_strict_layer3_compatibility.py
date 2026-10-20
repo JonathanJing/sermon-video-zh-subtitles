@@ -9,7 +9,7 @@ from scripts import tongxing_host  # noqa: F401  binds the production package po
 from tongxing_production.audio import renderer as render
 from tongxing_production.audio import human_review as audio_review
 from tongxing_production.text import policy as policies
-from scripts import sermon_review_contracts as contracts
+from tongxing_production.review import contracts
 from tongxing_production.audio import unit_integrity as integrity
 from tests import test_build_target_language_audio_package as fixtures
 from tests.test_sermon_review_contracts import load

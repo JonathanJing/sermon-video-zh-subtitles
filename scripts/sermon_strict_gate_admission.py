@@ -28,9 +28,9 @@ import re
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.text import controller
 from tongxing_production.text import candidate as producer
-from scripts import sermon_review_budget as budget
-from scripts import sermon_review_contracts as c
-from scripts import sermon_public_snapshot as public_snapshot
+from tongxing_production.review import review_budget as budget
+from tongxing_production.review import contracts as c
+from tongxing_production.storage import snapshot as public_snapshot
 from tongxing_production.text import strict_review_gate as gate
 from scripts import sermon_strict_candidate_bridge as bridge
 from scripts import sermon_strict_budget_adapter as adapter

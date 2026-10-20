@@ -14,7 +14,7 @@ import stat
 import subprocess
 import sys
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
-from scripts import sermon_review_contracts as c
+from tongxing_production.review import contracts as c
 from tongxing_production.observability import accounting
 from scripts.sermon_release_workflow import _safe_path
 

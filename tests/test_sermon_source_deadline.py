@@ -7,7 +7,7 @@ from unittest.mock import patch
 from tongxing_production.source import mfa_alignment as mfa
 from tongxing_production.source import mfa_backend as backend
 from tongxing_production.source import producer_compatibility as compat
-from scripts import sermon_review_contracts as c
+from tongxing_production.review import contracts as c
 from tongxing_production.source import failure
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from scripts import sermon_fresh_diagnostic as entry

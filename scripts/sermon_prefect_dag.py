@@ -24,8 +24,8 @@ from tongxing_production.observability import accounting
 from scripts import sermon_dag_contract as contract
 from tongxing_production.observability import profile
 from scripts import sermon_model_resources as resources
-from scripts import sermon_review_budget as budget
-from scripts import sermon_review_contracts as c
+from tongxing_production.review import review_budget as budget
+from tongxing_production.review import contracts as c
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.orchestration import jobs
 from scripts.sermon_execution_harness import work_lock, utc_now

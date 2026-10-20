@@ -50,7 +50,8 @@ class TextRoleDefaultTests(unittest.TestCase):
             transport.assert_called_once()
 
     def test_migrated_legacy_chat_caps_valid_copy_without_mutating_input(self):
-        from scripts.sermon_provider_limits import DEFAULT_REQUEST_LIMITS
+        from scripts import tongxing_host  # noqa: F401  binds the production package ports
+        from tongxing_production.compute.provider_limits import DEFAULT_REQUEST_LIMITS
         payload={'model':'gpt-6.1-sol','reasoning_effort':'high',
                  'messages':[{'role':'user','content':'synthetic'}], 'response_format':{'type':'json_object'}}
         with tempfile.TemporaryDirectory() as tmp, patch.dict(os.environ, {'SERMON_ACCOUNTING_DIR':tmp}), patch.object(legacy_openai,'json_request',return_value={'ok':True}) as api:
@@ -62,7 +63,8 @@ class TextRoleDefaultTests(unittest.TestCase):
         self.assertEqual(sent['messages'],payload['messages'])
 
     def test_already_supplied_cap_is_not_increased_or_silently_changed(self):
-        from scripts.sermon_provider_limits import DEFAULT_REQUEST_LIMITS
+        from scripts import tongxing_host  # noqa: F401  binds the production package ports
+        from tongxing_production.compute.provider_limits import DEFAULT_REQUEST_LIMITS
         payload={'model':'gpt-6.1-sol','reasoning_effort':'high',
                  'messages':[{'role':'user','content':'synthetic'}], 'response_format':{'type':'json_object'},
                  'max_completion_tokens':DEFAULT_REQUEST_LIMITS['maxCompletionTokens']-1}
@@ -91,7 +93,8 @@ class TextRoleDefaultTests(unittest.TestCase):
 
     def test_actual_legacy_builders_pass_validated_caps_to_offline_transport(self):
         from scripts import build_sermon_reading_edition_with_openai as reading
-        from scripts.sermon_provider_limits import DEFAULT_REQUEST_LIMITS
+        from scripts import tongxing_host  # noqa: F401  binds the production package ports
+        from tongxing_production.compute.provider_limits import DEFAULT_REQUEST_LIMITS
         sent=[]
         def respond(url,key,payload,**kwargs):
             sent.append(payload)
@@ -122,7 +125,8 @@ class LegacyBoundedCacheIdentityTests(unittest.TestCase):
         from scripts import build_sermon_reading_edition_with_openai as reading
         from scripts import review_sermon_subtitles_with_openai as review
         from tongxing_production.source import sentence_interpretation_models as sentence
-        from scripts import sermon_provider_limits as limits
+        from scripts import tongxing_host  # noqa: F401  binds the production package ports
+        from tongxing_production.compute import provider_limits as limits
         segment={'id':0,'start':0.,'end':1.,'text':'Hello.'}
         block={**segment,'en':'Hello.','zh':'你好。'}
         glossary={}
@@ -248,8 +252,9 @@ class LegacyExecutionCacheIdentityTests(unittest.TestCase):
             self.assertEqual(provider.call_count,2)
 
     def test_subtitle_and_sentence_outer_callers_use_actual_stage_identity_and_defaults(self):
-        from scripts import api_cli_outcomes as outcomes
-        from scripts.production_spark_admission import SessionBoundCaller
+        from scripts import tongxing_host  # noqa: F401  binds the production package ports
+        from tongxing_production.compute import outcomes
+        from tongxing_production.compute.spark_admission import SessionBoundCaller
         from scripts import review_sermon_subtitles_with_openai as review
         from tongxing_production.source import sentence_interpretation_models as sentence
         rows=[{'id':0,'text':'Hello.','zh':'你好。'}]

@@ -9,7 +9,8 @@ import tempfile
 import unittest
 from unittest.mock import Mock
 
-from scripts import sermon_review_contracts as c
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.review import contracts as c
 from tongxing_production.text import strict_review_gate as g
 from tongxing_production.text import policy
 

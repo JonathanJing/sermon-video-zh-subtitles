@@ -7,8 +7,9 @@ authoritative. This version intentionally has no production adapter or publish.
 from copy import deepcopy
 import math
 
-from scripts import canonical_pipeline_definition as canonical
-from scripts import sermon_review_contracts as c
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.contracts import pipeline_definition as canonical
+from tongxing_production.review import contracts as c
 
 PLAN_SCHEMA = 'sermon-dag-plan-v1'
 SNAPSHOT_SCHEMA = 'sermon-dag-snapshot-v1'

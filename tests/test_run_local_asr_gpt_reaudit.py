@@ -32,7 +32,7 @@ class AsrReauditOutcomeTests(unittest.TestCase):
             with patch.dict(os.environ,{},clear=True),patch('sys.argv',argv), \
                  patch.object(subject,'read_secret',return_value='synthetic-key'), \
                  patch_both("multipart_request", return_value={'text':'Hello.'}) as asr, \
-                 patch('scripts.spark_exclusive_session.Client.from_environment',side_effect=AssertionError('Spark consulted')), \
+                 patch('tongxing_production.compute.spark_exclusive_session.Client.from_environment',side_effect=AssertionError('Spark consulted')), \
                  patch('builtins.print'):
                 self.assertEqual(subject.main(),0)
                 self.assertEqual(subject.main(),0)

@@ -12,10 +12,10 @@ import urllib.request
 
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.text import models
-from scripts import sermon_provider_limits as provider_limits
-from scripts.codex_layer2_transport import API_LUNA_TEST_CONFIGURATION
+from tongxing_production.compute import provider_limits
+from tongxing_production.compute.transports.codex_layer2 import API_LUNA_TEST_CONFIGURATION
 from scripts.sermon_unified import resources
-from scripts.production_concurrency_profile import validate_profile
+from tongxing_production.compute.concurrency_profile import validate_profile
 from scripts.sermon_execution_harness import atomic_json
 
 

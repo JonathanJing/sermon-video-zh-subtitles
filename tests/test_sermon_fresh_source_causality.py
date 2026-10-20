@@ -12,11 +12,11 @@ from tongxing_production.observability import completion
 from scripts import sermon_fresh_diagnostic as entry
 from scripts import sermon_fresh_source_causality as causality
 from tongxing_production.observability import profile
-from scripts import sermon_review_contracts as c
-from scripts import sermon_review_budget as budget
+from tongxing_production.review import contracts as c
+from tongxing_production.review import review_budget as budget
 from scripts import sermon_diagnostic_provider as provider
 from scripts import sermon_bounded_business_callbacks as callbacks
-from scripts import sermon_public_snapshot as public
+from tongxing_production.storage import snapshot as public
 from tests import test_sermon_fresh_diagnostic as fixtures
 
 

@@ -22,8 +22,8 @@ from scripts import sermon_fresh_diagnostic as fresh
 from scripts import sermon_fresh_source_prefect as source_engine
 from tongxing_production.observability import log_contract as logs
 from scripts import sermon_mock_tts_control as control
-from scripts import sermon_review_budget as budget
-from scripts import sermon_review_contracts as c
+from tongxing_production.review import review_budget as budget
+from tongxing_production.review import contracts as c
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.orchestration import jobs
 from scripts import weekly_pipeline_report as weekly

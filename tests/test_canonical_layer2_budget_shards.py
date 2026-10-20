@@ -4,7 +4,8 @@ import tempfile
 import unittest
 
 from tongxing_production.text import budget
-from scripts import sermon_review_budget as ledger
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.review import review_budget as ledger
 from tests import test_canonical_layer2_budget as base_tests
 
 PER_CALL = {"requests": 1, "inputTokens": 16384, "outputTokens": 4096, "wallTimeMs": 300000,

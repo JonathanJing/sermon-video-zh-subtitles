@@ -100,7 +100,7 @@ def test_scoped_runtime_refuses_other_artifacts_or_default_three_locales(tmp_pat
 
 def test_valid_scoped_runtime_rechecks_files_without_gpu_session(tmp_path, scoped_paths):
     path = authorization(tmp_path, scoped_paths)
-    with patch.dict('os.environ', OPENAI_ENV), patch('scripts.production_spark_admission.require_session', side_effect=AssertionError('GPU')):
+    with patch.dict('os.environ', OPENAI_ENV), patch('tongxing_production.compute.spark_admission.require_session', side_effect=AssertionError('GPU')):
         judge = text.api_judge_for_resolved(path, {'zh-Hans':scoped_paths}, requested_locales=['zh-Hans'])
         assert judge.identity['settings']['qcContext'] == auth.context_from_paths(scoped_paths,'zh-Hans','dev',route=OPENAI_ROUTE,credential_sha256=auth.credential_fingerprint(OPENAI_ENV["OPENAI_API_KEY"]))
         assert judge.ledger.qc_context == judge.identity['settings']['qcContext']
@@ -115,7 +115,7 @@ def test_valid_scoped_runtime_rechecks_files_without_gpu_session(tmp_path, scope
 
 def test_old_v1_approval_keeps_original_minimal_contract(tmp_path):
     path = authorization(tmp_path)
-    with patch.dict('os.environ', OPENAI_ENV), patch('scripts.production_spark_admission.require_session', side_effect=AssertionError('GPU')):
+    with patch.dict('os.environ', OPENAI_ENV), patch('tongxing_production.compute.spark_admission.require_session', side_effect=AssertionError('GPU')):
         judge = text.api_judge_for_resolved(path, {'zh-Hans':{},'ko':{},'es':{}})
         assert judge.ledger.qc_context is None
 
@@ -229,7 +229,7 @@ def test_api_transport_has_one_attempt_and_audio_response_byte_bound(tmp_path):
 def test_scoped_judge_and_secondary_share_one_bound_ledger_and_locale(tmp_path, scoped_paths):
     path=authorization(tmp_path,scoped_paths,global_bounds={'requests':1})
     called=[]
-    with patch.dict('os.environ',OPENAI_ENV), patch('scripts.production_spark_admission.require_session',side_effect=AssertionError('GPU')):
+    with patch.dict('os.environ',OPENAI_ENV), patch('tongxing_production.compute.spark_admission.require_session',side_effect=AssertionError('GPU')):
         judge=text.api_judge_for_resolved(path,{'zh-Hans':scoped_paths},requested_locales=['zh-Hans'])
         judge.ledger.transport=lambda *args: called.append(args) or {'choices':[{'finish_reason':'stop','message':{'content':'{}'}}]}
         assert judge('semantic','fixture','fixture',{'type':'object'})=={}

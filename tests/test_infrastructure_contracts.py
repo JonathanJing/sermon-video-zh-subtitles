@@ -74,7 +74,7 @@ class ContractsSplitTests(unittest.TestCase):
     def test_schemas_load_from_the_configured_root_outside_the_repository(self):
         self.assertEqual(schemas.root(), ROOT / 'schemas')
         with tempfile.TemporaryDirectory() as directory:
-            result = child('from scripts import sermon_review_contracts as c\n'
+            result = child('from scripts import tongxing_host; from tongxing_production.review import contracts as c\n'
                            'c.validator("sermon-review-receipt-v1"); c.validator("sermon-target-language-policy-v3")\n'
                            'from scripts import tongxing_host\n'
                            'from tongxing_production.text import backend\n'

@@ -189,7 +189,8 @@ def main() -> int:
     cache_dir = args.outdir / "review_windows"
     cache_dir.mkdir(parents=True, exist_ok=True)
 
-    from scripts.production_spark_admission import SessionBoundCaller
+    from scripts import tongxing_host  # noqa: F401  binds the production package ports
+    from tongxing_production.compute.spark_admission import SessionBoundCaller
     caller = SessionBoundCaller(chat_json, purpose="subtitle-review",
                                 requires_spark=False, outcome_directory=args.outdir / "api-cli-outcomes")
 

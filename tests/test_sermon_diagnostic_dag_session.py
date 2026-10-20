@@ -9,8 +9,8 @@ from unittest.mock import patch
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.observability import accounting
 from scripts import sermon_diagnostic_dag_session as session
-from scripts import sermon_review_budget as budget
-from scripts import sermon_review_contracts as c
+from tongxing_production.review import review_budget as budget
+from tongxing_production.review import contracts as c
 from tests.diagnostic_dag_fixture import DiagnosticDAGFixture
 
 
@@ -66,7 +66,7 @@ class DiagnosticSessionTests(unittest.TestCase):
         if change is not None:
             change(binding)
         root = self.f.root / 'diagnostic-prefect' / c.canonical_sha256(binding)
-        from scripts import sermon_public_snapshot as public
+        from tongxing_production.storage import snapshot as public
         root.mkdir(parents=True, exist_ok=True)
         public.save_once(root / 'plan.json', binding)
         return root / 'plan.json'
@@ -412,8 +412,8 @@ from copy import deepcopy
 from pathlib import Path
 import subprocess
 from scripts import tongxing_host; from tongxing_production.observability import accounting
-from scripts import sermon_review_contracts as c
-from scripts import sermon_public_snapshot as public
+from tongxing_production.review import contracts as c
+from tongxing_production.storage import snapshot as public
 from scripts.sermon_diagnostic_dag_session import DiagnosticSession
 from scripts import sermon_diagnostic_prefect_flow as flow
 from tests.diagnostic_dag_fixture import DiagnosticDAGFixture

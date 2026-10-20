@@ -4,8 +4,9 @@ import tempfile
 import unittest
 from unittest.mock import Mock, patch
 from tongxing_production.compute import legacy_openai  # C4: the remote-call group lives here
-from scripts import api_cli_outcomes as outcomes
-from scripts.production_spark_admission import SessionBoundCaller
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.compute import outcomes
+from tongxing_production.compute.spark_admission import SessionBoundCaller
 
 
 def reconciliation_evidence(request_sha256, response, *, terminal_failure=False):
@@ -392,7 +393,7 @@ class ApiCliOutcomeTests(unittest.TestCase):
             root = Path(tmp)
             outcomes._write(root/('a'*64)/'outcome.json', {'schemaVersion':outcomes.V2_SCHEMA,'requestSha256':'a'*64,'purpose':'production-model-call','status':'started'})
             result = subprocess.run([sys.executable, '-c',
-                'from scripts.production_spark_admission import SessionBoundCaller; '
+                'from scripts import tongxing_host; from tongxing_production.compute.spark_admission import SessionBoundCaller; '
                 'import sys; SessionBoundCaller(lambda: print("DISPATCHED"), '
                 'requires_spark=False, outcome_directory=sys.argv[1])()', tmp],
                 text=True, capture_output=True)

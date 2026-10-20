@@ -4,7 +4,7 @@ import tempfile,unittest
 from unittest.mock import patch
 from scripts import sermon_diagnostic_prefect_flow as flow,sermon_historical_identity as identity
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
-from scripts import sermon_review_contracts as c
+from tongxing_production.review import contracts as c
 from tongxing_production.observability import accounting
 from tongxing_production.observability import profile
 from tests.test_sermon_diagnostic_prefect_flow import SessionFixture,config_fixture

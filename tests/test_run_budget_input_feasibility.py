@@ -8,7 +8,8 @@ import unittest
 from unittest import mock
 
 from scripts import plan_run_budgets as plan
-from scripts import sermon_provider_limits as limits
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.compute import provider_limits as limits
 from tests import test_canonical_layer2_controller as controller_fixtures
 
 

@@ -9,9 +9,9 @@ from pathlib import Path
 import json
 import re
 
-from scripts import sermon_review_contracts as c
+from tongxing_production.review import contracts as c
 from scripts import sermon_repair_planning as planning
-from scripts import sermon_review_budget as budget
+from tongxing_production.review import review_budget as budget
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.orchestration import jobs
 from tongxing_production.text.controller import ADMISSION_LOCK

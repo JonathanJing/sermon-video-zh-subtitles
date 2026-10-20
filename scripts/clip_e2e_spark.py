@@ -535,7 +535,7 @@ def main(argv=None) -> int:
     args = parser().parse_args(argv)
     runtime = load_runtime(args.runtime)
     require(args.stage.startswith(runtime["stageRoot"].rstrip("/") + "/"), "stage_outside_runtime_stage_root")
-    from scripts.spark_exclusive_session import Client
+    from tongxing_production.compute.spark_exclusive_session import Client
     session = Client.from_environment()
     handler = {"render": render, "compact": compact, "screen": screen, "audio-qc": audio_qc}[args.command]
     return handler(args, runtime, Spark(runtime["host"]), session)

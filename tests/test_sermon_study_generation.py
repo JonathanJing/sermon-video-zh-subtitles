@@ -5,7 +5,7 @@ import unittest
 from unittest.mock import patch
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.workflows.prepared import study_generation as g
-from scripts import sermon_provider_limits as limits
+from tongxing_production.compute import provider_limits as limits
 from scripts.sermon_unified import contracts as c
 from tongxing_production.workflows.prepared import study as owner
 

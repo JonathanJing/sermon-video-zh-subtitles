@@ -225,7 +225,8 @@ def inspect_source_root(root, *, expected=None, reuse_roots=None, required=False
 
 
 def inspect_layer2_root(root, authority, *, locale_scope, reuse_roots=(), as_reuse_source=False):
-    from scripts import sermon_review_budget as ledger
+    from scripts import tongxing_host  # noqa: F401  binds the production package ports
+    from tongxing_production.review import review_budget as ledger
     from scripts import tongxing_host  # noqa: F401  binds the production package ports
     from tongxing_production.orchestration import jobs
     root = Path(root).resolve()
@@ -434,7 +435,8 @@ def ssh(command: str, host: str) -> subprocess.CompletedProcess:
 
 def check_spark(host, spark_stages, code_dir):
     if spark_stages:
-        from scripts.spark_exclusive_session import DEFAULT_HOST
+        from scripts import tongxing_host  # noqa: F401  binds the production package ports
+        from tongxing_production.compute.spark_exclusive_session import DEFAULT_HOST
         session_host = os.environ.get('SPARK_EXCLUSIVE_HOST', DEFAULT_HOST)
         if host != session_host:
             return result('spark', 'fail', host=host,
@@ -447,7 +449,8 @@ def check_spark(host, spark_stages, code_dir):
         if not (os.environ.get("SPARK_EXCLUSIVE_SESSION_ID") and os.environ.get("SPARK_EXCLUSIVE_SESSION_OWNER")):
             problems.append("Spark stages need SPARK_EXCLUSIVE_SESSION_ID/OWNER of a begun session")
         else:
-            from scripts.spark_exclusive_session import Client
+            from scripts import tongxing_host  # noqa: F401  binds the production package ports
+            from tongxing_production.compute.spark_exclusive_session import Client
             try:
                 Client.from_environment().require_ready()
                 evidence["session"] = "ready"

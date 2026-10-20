@@ -9,8 +9,8 @@ from unittest.mock import patch
 import unittest
 
 from scripts import sermon_strict_gate_admission as admission
-from scripts import sermon_review_budget as budget
-from scripts import sermon_review_contracts as c
+from tongxing_production.review import review_budget as budget
+from tongxing_production.review import contracts as c
 from scripts import sermon_strict_layer2 as strict
 from scripts import sermon_strict_budget_adapter as adapter
 from scripts import sermon_strict_candidate_bridge as bridge

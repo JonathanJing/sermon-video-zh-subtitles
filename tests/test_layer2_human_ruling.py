@@ -5,7 +5,8 @@ import unittest
 
 from tongxing_production.text import auto_repair as repair
 from tongxing_production.text import human_ruling as ruling
-from scripts import source_meaning_machine_adjudication as source_meaning
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.review import source_meaning
 
 
 SOURCE = {"source": {"sourceId": "s"}, "anchors": {}}

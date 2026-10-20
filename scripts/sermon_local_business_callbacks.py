@@ -22,7 +22,7 @@ from tongxing_production.audio import renderer
 from tongxing_production.observability import accounting
 from scripts import sermon_delivery_intent_binding as delivery
 from tongxing_production.observability import profile
-from scripts import sermon_review_contracts as contracts
+from tongxing_production.review import contracts
 from scripts import sermon_strict_gate_admission as admission
 from scripts import sermon_strict_layer3_preparation as preparation
 

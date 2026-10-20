@@ -562,7 +562,7 @@ def codex_json(
     output_path: Path,
     session_verifier=None,
 ) -> dict[str, Any]:
-    from scripts.production_spark_admission import SessionBoundCaller
+    from tongxing_production.compute.spark_admission import SessionBoundCaller
     return SessionBoundCaller(_codex_json, verifier=session_verifier, purpose="production-reading-edition",
                               requires_spark=False)(
         payload, codex_cli=codex_cli, model=model, reasoning_effort=reasoning_effort,
@@ -571,7 +571,7 @@ def codex_json(
 
 def _codex_json(payload, *, codex_cli, model, reasoning_effort, schema_path, output_path):
     if model == "gpt-6.1-sol":
-        from scripts.sermon_codex_transport import chat_json as codex_chat_json
+        from tongxing_production.compute.transports.codex_cli import chat_json as codex_chat_json
         cli_payload = {**payload, "response_format": {"type": "json_schema",
             "json_schema": {"name": "reading_edit", "strict": True,
                             "schema": json.loads(schema_path.read_text())}}}
@@ -622,7 +622,7 @@ def _codex_json(payload, *, codex_cli, model, reasoning_effort, schema_path, out
         )
         # A returned process is terminal even if decoding/validation below fails.
         # Timeouts/interruptions never reach this observation.
-        from scripts import api_cli_outcomes
+        from tongxing_production.compute import outcomes as api_cli_outcomes
         try:
             output_bytes = output_path.read_bytes()
         except OSError:

@@ -16,8 +16,8 @@ from scripts import tongxing_host  # noqa: F401  binds the production package po
 from tongxing_production.text import models as runner
 from tongxing_production.observability import accounting
 from tongxing_production.text import policy as policy_tools
-from scripts import production_spark_admission as spark_admission
-from scripts.codex_layer2_transport import CodexLayer2Transport, TEST_CONFIGURATION, validate_test_configuration
+from tongxing_production.compute import spark_admission
+from tongxing_production.compute.transports.codex_layer2 import CodexLayer2Transport, TEST_CONFIGURATION, validate_test_configuration
 
 
 def bind_context(out_dir, context):

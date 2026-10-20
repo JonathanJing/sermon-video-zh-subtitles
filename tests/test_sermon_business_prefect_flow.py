@@ -9,7 +9,8 @@ import unittest
 
 from scripts import sermon_business_prefect_flow as flow
 from scripts import sermon_bounded_business_callbacks as callbacks
-from scripts import sermon_review_contracts as c
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.review import contracts as c
 from tests import test_run_bounded_diagnostic as fixtures
 
 

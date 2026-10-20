@@ -528,7 +528,7 @@ class MachineQcClipDriverTests(unittest.TestCase):
 
     def test_codex_judge_uses_sol_medium_and_a_per_request_cache(self):
         from unittest.mock import patch
-        from scripts import sermon_codex_transport as codex
+        from tongxing_production.compute.transports import codex_cli as codex
         seen = []
 
         def fake_call(prompt, **options):
