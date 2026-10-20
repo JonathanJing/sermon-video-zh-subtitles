@@ -22,7 +22,9 @@ from pydantic import BaseModel, Field  # noqa: E402
 from openai.types.shared import Reasoning  # noqa: E402
 
 from backend.cloud import access_secret  # noqa: E402
-from scripts import sermon_accounting, sermon_production_supervisor  # noqa: E402
+from scripts import sermon_production_supervisor  # noqa: E402
+from scripts import tongxing_host  # noqa: E402,F401  binds the production package ports
+from tongxing_production.observability import accounting as sermon_accounting  # noqa: E402
 from scripts.sermon_agents_supervisor import executable_stage  # noqa: E402
 
 
@@ -266,7 +268,8 @@ async def run_agent(args: argparse.Namespace) -> dict[str, Any]:
     if config.app_delivery_config is not None:
         if getattr(args, 'approve_window', False):
             raise ValueError('App scope consumes existing reviews; it cannot create window approval')
-        from scripts import sermon_app_delivery_workflow
+        from scripts import tongxing_host  # noqa: F401  binds the production package ports
+        from tongxing_production.delivery import app_workflow as sermon_app_delivery_workflow
         return sermon_app_delivery_workflow.run(config.app_delivery_config,
             mode=args.mode, sunday=config.sunday)
     if getattr(args, "agent_backend", "codex-cli") == "sdk":

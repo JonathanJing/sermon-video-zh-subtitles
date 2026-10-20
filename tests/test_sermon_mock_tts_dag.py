@@ -16,13 +16,14 @@ import time
 import unittest
 from unittest.mock import patch
 
-from scripts import sermon_accounting as accounting
-from scripts import sermon_completion as completion
-from scripts import sermon_log_contract as logs
-from scripts import sermon_log_profile as profile
+from tongxing_production.observability import accounting
+from tongxing_production.observability import completion
+from tongxing_production.observability import log_contract as logs
+from tongxing_production.observability import profile
 from scripts import sermon_mock_tts_dag as dag
-from scripts import sermon_review_contracts as c
-from scripts import sermon_workflow_jobs as jobs
+from tongxing_production.review import contracts as c
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.orchestration import jobs
 from scripts.sermon_diagnostic_dag_session import DiagnosticSession
 from tests.mock_tts_dag_fixture import MockTTSDAGFixture
 
@@ -56,7 +57,7 @@ class MockTTSDAGComponents(unittest.TestCase):
         old['mockImplementationSha256'] = 'd'*64
         root = self.f.root/'mock-tts-dag'/c.canonical_sha256(old)
         root.mkdir(parents=True)
-        from scripts import sermon_public_snapshot as public
+        from tongxing_production.storage import snapshot as public
         public.save_once(root/'plan.json', old)
         saved = (root/'plan.json').read_bytes()
         marker = root/'original-recovery.json'; marker.write_bytes(b'preserved')
@@ -282,7 +283,7 @@ import json, os, subprocess, sys, time
 from pathlib import Path
 sys.path.insert(0, sys.argv[1])
 from scripts import sermon_mock_tts_dag as dag
-from scripts import sermon_workflow_jobs as jobs
+from tongxing_production.orchestration import jobs
 from scripts.sermon_diagnostic_dag_session import DiagnosticSession
 from tests.mock_tts_dag_fixture import MockTTSDAGFixture
 from tests.mock_tts_sdk_diagnostics import result_summary, preserve_evidence
@@ -296,7 +297,7 @@ try:
         'queueDelaySeconds': 0, 'runDelaySeconds': 2 if scenario=='timeout' else 0}}
     config=f.dag_config(faults=faults, observation_timeout=.01 if scenario=='timeout' else 45)
     # Obtain the canonical existing ledger path from the actual store, not a replacement.
-    from scripts import sermon_review_budget as budget
+    from scripts import tongxing_host; from tongxing_production.review import review_budget as budget
     state_path=f.subject.store.root/budget.STORE_ID/'provider-run'/'state.json'
     original_state=json.loads(state_path.read_text())
     child_script="import sys; sys.path.insert(0, sys.argv[1]); from tests.mock_tts_dag_fixture import resume_in_clean_process; resume_in_clean_process(sys.argv[2])"

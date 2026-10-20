@@ -2,7 +2,7 @@ from pathlib import Path
 import tempfile
 import unittest
 
-from scripts.firebase_dev_weekly_dry_run import DEV_CSS, feature_parity, paths
+from tools.ops.firebase_dev_weekly_dry_run import DEV_CSS, feature_parity, paths
 
 
 class FirebaseDevWeeklyDryRunTests(unittest.TestCase):

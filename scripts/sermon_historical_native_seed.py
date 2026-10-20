@@ -11,14 +11,15 @@ import os
 import shutil
 import time
 
-from scripts import sermon_accounting as accounting  # eager identity inventory
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.observability import accounting  # eager identity inventory
 from scripts import sermon_diagnostic_attempts as attempts
 from scripts import sermon_diagnostic_delivery_preflight as delivery
 from scripts import sermon_diagnostic_provider as provider
 from scripts import sermon_diagnostic_preview_worker as worker
-from scripts import sermon_public_snapshot as public
-from scripts import sermon_review_budget as budget
-from scripts import sermon_review_contracts as c
+from tongxing_production.storage import snapshot as public
+from tongxing_production.review import review_budget as budget
+from tongxing_production.review import contracts as c
 
 SCHEMA = 'sermon-historical-native-rebind-proof-v1'
 # The accepted original native producer is reviewed source, not caller input.

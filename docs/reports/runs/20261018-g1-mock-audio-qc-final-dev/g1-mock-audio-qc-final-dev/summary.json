@@ -1,0 +1,7 @@
+{
+  "scope": "local mock audio QC on final dev",
+  "command": "PYTHONPATH=. .venv/bin/python -m unittest tests.test_run_machine_qc_audio_test.MachineQcAudioDriverTests.test_fake_backend_proves_the_path_but_never_saves_a_waiver -v",
+  "fakeStatus": "fake_plumbing_pass",
+  "waiverSaved": false,
+  "note": "Uses synthetic fixture and fake transports; no Spark, GPU, OpenAI API or real audio waiver."
+}

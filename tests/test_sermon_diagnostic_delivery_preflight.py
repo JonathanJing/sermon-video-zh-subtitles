@@ -8,8 +8,9 @@ from unittest.mock import patch
 
 from scripts import sermon_diagnostic_delivery_preflight as subject
 from scripts import sermon_diagnostic_provider as provider
-from scripts import sermon_review_budget as budget
-from scripts import sermon_review_contracts as c
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.review import review_budget as budget
+from tongxing_production.review import contracts as c
 from tests import test_render_speculative_target_language_speech as previews
 from tests import test_sermon_diagnostic_source_evidence as sources
 from tests.test_sermon_diagnostic_provider import authority
@@ -107,7 +108,7 @@ class PreviewInspectionTests(unittest.TestCase):
         self.receipt['artifacts'] = [self.ref(row['path']) for row in self.receipt['artifacts']]
         self.save_receipt()
         facade = subject.preview.formal._audio.current().code.physical_path(
-            'scripts/render_speculative_target_language_speech.py')
+            'packages/production/src/tongxing_production/audio/speculative.py')
         original_open = Path.open
 
         def changed_open(path, *args, **kwargs):

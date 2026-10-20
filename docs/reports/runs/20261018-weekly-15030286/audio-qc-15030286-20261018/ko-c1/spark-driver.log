@@ -1,0 +1,13 @@
+discover	pass	2.7
+ko.track-check	pass	8.1
+ko.secondary-asr	pass	8.9
+ko.audio-qc	pass	7.9
+Run report not written ([Errno 30] Read-only file system: '/work/repo-d1314424/artifacts'); export it by hand with scripts/export_run_digest.py
+{
+  "ko": {
+    "status": "requires_repair",
+    "reason": "audio QC failed; re-render the failed units as the repair ladder says",
+    "problems": [],
+    "calibration": null
+  }
+}

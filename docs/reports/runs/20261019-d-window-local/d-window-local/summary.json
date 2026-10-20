@@ -1,0 +1,81 @@
+{
+  "status": "passed_with_one_load_flake",
+  "facadesDeleted": 23,
+  "surveyBefore": {
+    "stay": 23,
+    "note": "dev@cb99733c, same 23 as plan §3.3"
+  },
+  "surveyAfter": {
+    "after": 165,
+    "stay": 0
+  },
+  "unittestShards": {
+    "count": 10,
+    "tests": 5980,
+    "failures": 1,
+    "failureKind": "load flake (see outcome.json)"
+  },
+  "earlierFullRuns": {
+    "r2": "5982 tests, 0 failures (before merging #1138/dev)",
+    "r3": "2 failures in test_review_leaves from the #1138 merge, fixed; module passes"
+  },
+  "pytestStyle": {
+    "passed": 1110,
+    "failed": 1,
+    "failedPreexistingOnDev": 1
+  },
+  "testIdsBefore": {
+    "unittest": 5982
+  },
+  "testIdsAfter": {
+    "unittest": 5979
+  },
+  "renamedTests": 6,
+  "removedFacadeIdentityTests": 3,
+  "addedTests": {
+    "unittest": 1,
+    "pytest": 1
+  },
+  "helpComparison": "15 package CLIs exit 0 on --help; 14 identical to the old facade except prog; source.sentence_interpretation's old facade printed nothing (no __main__)",
+  "identities": {
+    "schemaVersion": "d-window-identities-v1",
+    "incoming": {
+      "checkout": "dev@a5bd24df",
+      "W": "51e2b9cae5804344684d11a52d7872ce84a4a434f4aea17adce9708c467c0d55",
+      "T": "0c58ef32ea8005566fd350dfd2a1e3337ce163e2754cc497bdae3dfe8988a8c4",
+      "scoring": "40bc41198d5f8c332061eae99eda0e9fa5f1be18c9901cca4b5bead5e6562689",
+      "rate": "88cfb1d8aa030283c0c67b22afb4a5d8448b2a263868ecb3ed83a8dc303bb185",
+      "preview": "ca586cd70ffdd31a016c8ed007eb354aab63a35203831012095a3b4179b3d594",
+      "RENDERER_SOUND_IDENTITY_SHA256": "fef7604882470137f46f1b01fbd06c7c3c9a07166da91003243608785fa47f0b",
+      "L2code": "3a22f8b23b1c5416cbbb5ef5701eaa4acf575637a5ad0700a393f9e23b6809dc",
+      "Wkeys": 28,
+      "Wphysical": 50,
+      "Tphysical": 12,
+      "scoringPhysical": 9,
+      "ratePhysical": 13,
+      "WfileMapSha256": "a88e08308d350b756f4e5ea5dc82c7804f5e86b2600243b31d9d57078e04cfc9"
+    },
+    "dWindow": {
+      "checkout": "claude/facade-d-window-0ab4fe@bae4dc2144c5",
+      "W": "1c28f4aa38c05b9287db01cc8668995e10ba31c21d9d05fbaa508474a8a19961",
+      "T": "8ec15fe1556ba0ff5e3b64c9ff5d2f82896216f06bb2c25495385feaf4f5a851",
+      "scoring": "9f2ff8077671b22a29d1846e30cdfb8c7c9999d30054bd67e7c4b50fa2c20310",
+      "rate": "8f50c233e07bf130d569e15b91abeb35a231f26d18b3e3874b2c7de3581ed9f2",
+      "preview": "794bb5f1c7ac87bbddbd75b27633958835373b1d71c6c01a3b3355e7aa9c9de9",
+      "RENDERER_SOUND_IDENTITY_SHA256": "fef7604882470137f46f1b01fbd06c7c3c9a07166da91003243608785fa47f0b",
+      "L2code": "b00992e39d6fcc69ba5749c7366465e6cdf6c8c27fff1b4db0d2392c46913c58",
+      "Wkeys": 28,
+      "Wphysical": 30,
+      "Tphysical": 7,
+      "scoringPhysical": 8,
+      "ratePhysical": 10,
+      "WfileMapSha256": "ac453ba815da1a731122f3c81ea96b6b14de9ab9f78901edd00dfff6c18339b0"
+    }
+  },
+  "soundIdentityUnchanged": true,
+  "providerCalls": 0,
+  "modelCalls": 0,
+  "networkCalls": 0,
+  "productionWrites": 0,
+  "sparkInspect": "read-only; no exclusive session held; last session grp005-batch-ab-20261019-r2 closed 16:10Z; llama-server healthy"
+}

@@ -8,7 +8,9 @@ import time
 import unittest
 from unittest.mock import patch
 
-from scripts.experiments import agent_api_trials as trials
+from tests import experiment_modules
+
+trials = experiment_modules.load("experiments/agents-api-trials/agent_api_trials.py")
 
 
 def decision(**tier):
@@ -483,7 +485,7 @@ class RunTests(unittest.TestCase):
                 return Body()
         client = trials.DecisionsClient(self.out, api_key='sk-test')
         with patch('urllib.request.build_opener', return_value=Opener()), \
-                patch('scripts.sermon_openai_runtime.project_headers', return_value={}):
+                patch('tongxing_production.compute.openai_runtime.project_headers', return_value={}):
             with self.assertRaisesRegex(RuntimeError, 'size limit'):
                 client.decide('a01', {'q': 1})
         with self.assertRaisesRegex(RuntimeError, 'outcome unknown'):
@@ -587,7 +589,7 @@ class RunTests(unittest.TestCase):
                 return Body()
         client = trials.DecisionsClient(self.out, api_key='sk-test', timeout=0.3)
         with patch('urllib.request.build_opener', return_value=Opener()), \
-                patch('scripts.sermon_openai_runtime.project_headers', return_value={}):
+                patch('tongxing_production.compute.openai_runtime.project_headers', return_value={}):
             began = time.monotonic()
             with self.assertRaisesRegex(TimeoutError, 'total deadline'):
                 client.decide('a01', {'q': 1})
@@ -1027,12 +1029,12 @@ class LatestReviewTests(unittest.TestCase):
                 return Opener()
             return opener
         with patch.object(trials.urllib.request, 'build_opener', fail(503)), \
-                patch('scripts.sermon_openai_runtime.project_headers', return_value={}):
+                patch('tongxing_production.compute.openai_runtime.project_headers', return_value={}):
             with self.assertRaisesRegex(RuntimeError, 'outcome unknown'):
                 client.decide('a', {'input': 'x'})
         self.assertTrue((client.dir / 'a.started.json').exists())
         with patch.object(trials.urllib.request, 'build_opener', fail(400)), \
-                patch('scripts.sermon_openai_runtime.project_headers', return_value={}):
+                patch('tongxing_production.compute.openai_runtime.project_headers', return_value={}):
             with self.assertRaisesRegex(RuntimeError, 'rejected'):
                 client.decide('b', {'input': 'x'})
         self.assertFalse((client.dir / 'b.started.json').exists())
@@ -1822,7 +1824,7 @@ class LiveBudgetAndDistributionTests(unittest.TestCase):
         out = trials.ROOT / 'artifacts/live-budget-blocked-fixture'
         with patch.object(trials.agents, 'AgentsAPIClient') as agents_client, \
                 patch.object(trials, 'DecisionsClient') as decisions_client, \
-                patch('scripts.sermon_openai_runtime.selected_route', return_value={'environment': 'dev'}), \
+                patch('tongxing_production.compute.openai_runtime.selected_route', return_value={'environment': 'dev'}), \
                 patch('sys.stderr'), self.assertRaises(SystemExit) as stopped:
             trials.main(['all', '--backend', 'live', '--out', str(out)])
         self.assertEqual(stopped.exception.code, 2)

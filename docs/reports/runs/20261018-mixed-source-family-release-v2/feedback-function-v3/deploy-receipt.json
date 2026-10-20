@@ -1,0 +1,16 @@
+{
+  "schemaVersion": "sermon-feedback-function-deploy-receipt-v1",
+  "status": "active",
+  "project": "ai-for-god-caption-dev",
+  "region": "us-west1",
+  "function": "sermon-feedback-api",
+  "revision": "sermon-feedback-api-00017-mev",
+  "runtime": "nodejs22",
+  "entryPoint": "sermonFeedback",
+  "sourceGeneration": "1792342040618276",
+  "catalogSha256": "31725ca910e07bfd3e0a995a042495bb2e3d34962290638801419448938cc970",
+  "sourceCount": 26,
+  "familyPageId": "resi-20261018-15030286",
+  "familyChineseTrackId": "resi-20261018-15030286-zh-Hans-a614af1126ae",
+  "deployedAt": "2026-10-18T16:48:12.676250751Z"
+}

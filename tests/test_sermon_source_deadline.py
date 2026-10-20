@@ -4,11 +4,16 @@ from copy import deepcopy
 import json,os,sys,tempfile,time,subprocess,unittest
 from types import SimpleNamespace
 from unittest.mock import patch
-from scripts import mfa_alignment as mfa,mfa_backend as backend
-from scripts import sermon_source_producer_compatibility as compat
-from scripts import sermon_source_failure as failure,sermon_review_contracts as c
-from scripts import sermon_fresh_diagnostic as entry,sermon_log_profile as profile,sermon_accounting as accounting
-from scripts.sermon_pipeline import PreDispatchRejection
+from tongxing_production.source import mfa_alignment as mfa
+from tongxing_production.source import mfa_backend as backend
+from tongxing_production.source import producer_compatibility as compat
+from tongxing_production.review import contracts as c
+from tongxing_production.source import failure
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from scripts import sermon_fresh_diagnostic as entry
+from tongxing_production.observability import profile
+from tongxing_production.observability import accounting
+from tongxing_production.workflows.dual_pdf.pipeline import PreDispatchRejection
 from tests import test_mfa_alignment as alignment_fixtures
 from tests import test_sermon_fresh_diagnostic as source_fixtures
 
@@ -166,12 +171,10 @@ class TypedFailureTests(unittest.TestCase):
         self.plan={'providerConfig':{'runId':'a'*64}}
         self.known={'unknownModelCallIds':[],'reservedMicrousd':123}
 
-    def test_legacy_import_and_identity_resolve_to_moved_implementation(self):
-        from tongxing_production.source import failure as moved
+    def test_legacy_identity_key_resolves_to_moved_implementation(self):
         from tongxing_production.path_aliases import resolve
         from tongxing_production.compute.legacy_openai import PreDispatchRejection as MovedRejection
         from tongxing_production.contracts.canonical import ContractError
-        self.assertIs(failure, moved)
         self.assertIs(PreDispatchRejection, MovedRejection)
         self.assertIs(c.ContractError, ContractError)
         self.assertEqual(resolve('scripts/sermon_source_failure.py'),

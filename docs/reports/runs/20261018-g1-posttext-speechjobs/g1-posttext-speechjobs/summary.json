@@ -1,0 +1,30 @@
+{
+  "scope": "deterministic post-G1 Layer 3 job preparation",
+  "jobs": {
+    "es": {
+      "jobFileSha256": "fffb68f7b2b96817507f9407a205c7622bc41028efde1ea4d1d1a79aacf4f52e",
+      "schemaVersion": "sermon-target-language-speech-job-v3",
+      "unitCount": 16,
+      "synthesisEligible": true,
+      "releaseEligible": false,
+      "textReleaseBasisSha256": "36cffc478de230be17e1adc448f5f23adfd3f9cf56d521dd31d49d57a3d083b8"
+    },
+    "ko": {
+      "jobFileSha256": "fa43134e8290f3502e9d020681feaece76a2cca60a3313a9b473ff8955a80328",
+      "schemaVersion": "sermon-target-language-speech-job-v3",
+      "unitCount": 16,
+      "synthesisEligible": true,
+      "releaseEligible": false,
+      "textReleaseBasisSha256": "5a7177e3722e8265f6fabe33e7a69b2c258456a3580de54d3f620e3734a3641a"
+    },
+    "zh-Hans": {
+      "jobFileSha256": "134214bd1440722eafff38f4b2ada1b1e9474c2afe4fc2cd05855c806d8b8220",
+      "schemaVersion": "sermon-target-language-speech-job-v3",
+      "unitCount": 16,
+      "synthesisEligible": true,
+      "releaseEligible": false,
+      "textReleaseBasisSha256": "3b529bfc8b6eb301939d29a431b07ce0defa5e7a48c6a927d2bc680310deedeb"
+    }
+  },
+  "note": "No translation, synthesis, ASR, paid API or publication; machine text waiver binding only."
+}

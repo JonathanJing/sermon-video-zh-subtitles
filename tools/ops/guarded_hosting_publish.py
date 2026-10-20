@@ -2,8 +2,7 @@
 """Hosting publisher with remote generation-fenced lease and immutable live baseline.
 
 The command-line entry (L4 D8); the implementation lives in
-tongxing_production.delivery.publication. ``scripts/guarded_hosting_publish.py`` and
-``python -m scripts.guarded_hosting_publish`` still run this command.
+tongxing_production.delivery.publication.
 """
 import argparse
 import json

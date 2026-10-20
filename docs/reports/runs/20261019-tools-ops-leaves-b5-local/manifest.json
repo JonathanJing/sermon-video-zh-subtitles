@@ -1,0 +1,92 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261019-tools-ops-leaves-b5-local",
+  "runs": [
+    {
+      "label": "tools-ops-leaves-b5-local",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.claude/worktrees/opus-haiku-translation-review-4a3b7c/artifacts/tools-ops-leaves-b5-local",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "tools-ops-leaves-b5-local",
+      "path": "dag-fanin-rerun.log",
+      "kind": "log",
+      "bytes": 1869,
+      "truncated": false,
+      "sha256": "382059b043ffcce27854ab42fdd72ed9f21aa7681e9176870d2ea5e15baf5cf2",
+      "redactions": {}
+    },
+    {
+      "run": "tools-ops-leaves-b5-local",
+      "path": "full-shard0.log",
+      "kind": "log",
+      "bytes": 456,
+      "truncated": false,
+      "sha256": "bee88dc4534f7fea612616c645cf7d14c060f7b31857566d368de3e68f477d67",
+      "redactions": {}
+    },
+    {
+      "run": "tools-ops-leaves-b5-local",
+      "path": "full-shard1.log",
+      "kind": "log",
+      "bytes": 72,
+      "truncated": false,
+      "sha256": "bd98d3a3e7629dcab42048fea5519a02ebc655598ece12285ba88a5461b3f579",
+      "redactions": {}
+    },
+    {
+      "run": "tools-ops-leaves-b5-local",
+      "path": "full-shard2.log",
+      "kind": "log",
+      "bytes": 50,
+      "truncated": false,
+      "sha256": "8a0ba374331f18c708c0849a956b926cf411cd52a7e23827854b0898b09e70dc",
+      "redactions": {}
+    },
+    {
+      "run": "tools-ops-leaves-b5-local",
+      "path": "full-shard3.log",
+      "kind": "log",
+      "bytes": 297,
+      "truncated": false,
+      "sha256": "6aa9e491194b10c45539694172ceef048fe7c056b45b2fb440f382932ee6b9a0",
+      "redactions": {}
+    },
+    {
+      "run": "tools-ops-leaves-b5-local",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 517,
+      "truncated": false,
+      "sha256": "65055f4cb46dc557d3aadd9d7090d916bf3bd9db64e0905d66463b00484c4a29",
+      "redactions": {}
+    },
+    {
+      "run": "tools-ops-leaves-b5-local",
+      "path": "pytest.log",
+      "kind": "log",
+      "bytes": 1576,
+      "truncated": false,
+      "sha256": "ca7cc80f2b47dba9f555f104f7656d9b006ee34da97bb4f0cee795e986b8aaad",
+      "redactions": {
+        "home_dir": 1
+      }
+    },
+    {
+      "run": "tools-ops-leaves-b5-local",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 211,
+      "truncated": false,
+      "sha256": "377501f2761955c8c6df8b3a3be6231b44a1da3b6a6381867bec02e8a062e010",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

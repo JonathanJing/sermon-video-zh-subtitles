@@ -3,7 +3,7 @@ import json
 
 import pytest
 
-from scripts import reconcile_spark_dispatcher_receipt as recovery
+from tools.ops import reconcile_spark_dispatcher_receipt as recovery
 
 
 def fixture(tmp_path):

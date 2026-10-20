@@ -1,0 +1,15 @@
+{
+  "schemaVersion": "local-test-outcome-v1",
+  "status": "passed_with_load_timing_failures",
+  "exitCode": 1,
+  "startedAt": "2026-10-19T22:10:00+00:00",
+  "endedAt": "2026-10-20T00:20:00+00:00",
+  "scope": "Facade-removal batch C8 (PR #1175): 6 dual_pdf scripts/ facades deleted; Cloud Run service, supervisor, post_live subprocess, harness and sermon-dubbing-poc commands run tools/ops/run.py workflows.dual_pdf.<module>; sermon_pipeline (G1) and render_sermon_interpretation_pdf (identity-hashed importer) kept. Targeted tests, sermon-dubbing-poc discover, full unittest in 10 shards, pytest-style files, node, test-ID inventory, image-layout command check, Appendix A, git diff --check. No deploy.",
+  "knownPreexistingFailures": [
+    "tests/test_codex_shared_pool_transport.py::test_busy_before_started_is_proven_no_dispatch (also fails on clean dev)"
+  ],
+  "flakes": [
+    "test_layer2_large_fan_in.test_65_group_worker_and_cache_only_recovery_preserve_every_dependency: utc_clock_discontinuity under load; passed alone",
+    "test_sermon_unified_parallel.test_100_transitions_with_persistent_intents: p95 handoff 2.17s > 2s at load average ~250; fails the same way on the unchanged merge-base"
+  ]
+}

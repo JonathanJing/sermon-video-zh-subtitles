@@ -1,0 +1,189 @@
+Estimating 213 unprofiled modules from measured per-case cost
+Shard 4/10: 602 tests from 376 modules
+.................................................................................................{"role": "translator", "model": "gpt-6.1-sol", "tier": "fast", "elapsedSeconds": 0.0, "usage": {"input_tokens": 100, "cached_input_tokens": 50, "output_tokens": 20}, "creditUsage": {"schemaVersion": "codex-credit-usage-v1", "status": "estimated", "estimatedCredits": 0.01525, "actualCredits": null, "actualQuotaUsage": null, "basis": "purchased_credit_equivalent", "model": "gpt-6.1-sol", "modelSource": "requested", "requestedServiceTier": "fast", "appliedServiceTier": "fast", "tierSource": "requested", "rateCardVersion": "codex-credits-2026-10-05", "rateCardSha256": "557d283646a6dd8ed49cc32a88e8459a165b72066339be99233ea75146c21edf", "verifiedAt": "2026-10-05", "sources": ["https://learn.chatgpt.com/docs/pricing", "https://learn.chatgpt.com/docs/agent-configuration/speed"], "ratesPerMillionTokens": {"input": 50, "cachedInput": 2.5, "output": 250}, "speedMultiplier": 2, "reason": "requested_identity_assumption"}}
+.........................................................................................SERMON_LOGGING_WRITE_FAILED errorType=AccountingWriteError
+........................................................................................Digest: /var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/tmphvz0xiep/digests/20261007-e2e (5 files, 14 redactions)
+{"status": "pass", "groups": 5, "reviewQueue": []}
+test-page · dev · 检查点 0/18
+层 / 语言       完成       剩余串行工时
+L1 shared        0/4 (0%)  未知
+L2 ko            0/4 (0%)  未知
+L3 ko            0/6 (0%)  未知
+L4 ko            0/4 (0%)  未知
+ETA（连续串行、无审核等待）: 未知
+缺估时 18 项: L1-01, L1-02, L1-03, L1-04, L2-01@ko, L2-02@ko …
+独立验收 ko: 设备=not_run，现场=not_run
+注意：进度账本不授予 Layer 门禁、发布或验收状态。
+{"stage": "tts", "batchIndex": 0, "completedGroups": 2}
+{"stage": "tts", "batchIndex": 1, "completedGroups": 4}
+{"stage": "tts", "batchIndex": 2, "completedGroups": 6}
+{"stage": "tts", "batchIndex": 3, "completedGroups": 8}
+{"stage": "tts", "batchIndex": 4, "completedGroups": 10}
+{"stage": "tts", "batchIndex": 5, "completedGroups": 12}
+{"stage": "tts", "batchIndex": 6, "completedGroups": 13}
+.....usage: run_unittest_ci.py [-h] --out OUT --scale {clip,week}
+                          [--locales LOCALES] [--stage STAGE]
+                          --total-usd TOTAL_USD [--settled-usd SETTLED_USD]
+                          --approved-by APPROVED_BY --evidence EVIDENCE
+                          [--layer2-execution LAYER2_EXECUTION]
+                          [--qc-inputs QC_INPUTS] [--reuse-from REUSE_FROM]
+                          [--resume-qc-authorization RESUME_QC_AUTHORIZATION]
+                          [--layer2-reuse-budget-root LOCALE=ABSOLUTE_ROOT]
+                          [--profile PROFILE]
+run_unittest_ci.py: error: Choose replay-only --reuse-from or --resume-qc-authorization, not both
+.........discover	pass	0.0
+ko.text-qc.prefetch	pass	0.0
+ko.text-qc	pass	0.0
+ko.calibration.prefetch	pass	0.2
+ko.calibration	pass	0.2
+ko.text-waiver	pass	0.0
+{
+  "ko": {
+    "status": "text_waiver_issued",
+    "reason": null,
+    "problems": [],
+    "calibration": {
+      "overallDetectionRate": 1.0,
+      "cleanFalsePositiveRate": 0.0,
+      "trials": 90,
+      "detected": 90
+    }
+  }
+}
+discover	pass	0.0
+.{
+  "ko": [
+    "calibration rendered its omitted-word audio with a TTS other than the package's voice"
+  ]
+}
+discover	pass	0.0
+ko.text-qc.prefetch	pass	0.0
+ko.text-qc	pass	0.0
+ko.calibration.prefetch	pass	0.2
+ko.calibration	pass	0.4
+ko.text-waiver	pass	0.1
+{
+  "ko": {
+    "status": "fake_plumbing_pass",
+    "reason": "fake judge: waiver built in memory, never saved",
+    "problems": [],
+    "calibration": {
+      "overallDetectionRate": 1.0,
+      "cleanFalsePositiveRate": 0.0,
+      "trials": 90,
+      "detected": 90
+    }
+  }
+}
+discover	pass	0.0
+.usage: run_unittest_ci.py [-h] [--run-dir RUN_DIR] --out OUT
+                          [--state-dir STATE_DIR] [--locales LOCALES]
+                          [--candidate LOCALE=PATH]
+                          [--spoken-binding LOCALE=PATH]
+                          [--text-backend {codex,api,fake}]
+                          [--workers WORKERS] [--preflight-only]
+                          [--human-acceptance LOCALE=PATH]
+                          [--api-budget-authorization API_BUDGET_AUTHORIZATION]
+                          [--expected-implementation SHA256]
+run_unittest_ci.py: error: --locales must name one or more of zh-Hans, ko, es
+usage: run_unittest_ci.py [-h] [--run-dir RUN_DIR] --out OUT
+                          [--state-dir STATE_DIR] [--locales LOCALES]
+                          [--candidate LOCALE=PATH]
+                          [--spoken-binding LOCALE=PATH]
+                          [--text-backend {codex,api,fake}]
+                          [--workers WORKERS] [--preflight-only]
+                          [--human-acceptance LOCALE=PATH]
+                          [--api-budget-authorization API_BUDGET_AUTHORIZATION]
+                          [--expected-implementation SHA256]
+run_unittest_ci.py: error: --locales must name one or more of zh-Hans, ko, es
+usage: run_unittest_ci.py [-h] [--run-dir RUN_DIR] --out OUT
+                          [--state-dir STATE_DIR] [--locales LOCALES]
+                          [--candidate LOCALE=PATH]
+                          [--spoken-binding LOCALE=PATH]
+                          [--text-backend {codex,api,fake}]
+                          [--workers WORKERS] [--preflight-only]
+                          [--human-acceptance LOCALE=PATH]
+                          [--api-budget-authorization API_BUDGET_AUTHORIZATION]
+                          [--expected-implementation SHA256]
+run_unittest_ci.py: error: --workers must be between 1 and 16
+usage: run_unittest_ci.py [-h] [--run-dir RUN_DIR] --out OUT
+                          [--state-dir STATE_DIR] [--locales LOCALES]
+                          [--candidate LOCALE=PATH]
+                          [--spoken-binding LOCALE=PATH]
+                          [--text-backend {codex,api,fake}]
+                          [--workers WORKERS] [--preflight-only]
+                          [--human-acceptance LOCALE=PATH]
+                          [--api-budget-authorization API_BUDGET_AUTHORIZATION]
+                          [--expected-implementation SHA256]
+run_unittest_ci.py: error: --workers must be between 1 and 16
+.{
+  "es": [
+    "no unique candidate; found 0: []"
+  ]
+}
+discover	pass	0.0
+.{
+  "ko": [
+    "candidate schema: <root>: 'generation' is a required property"
+  ]
+}
+discover	pass	0.0
+ko.text-qc.prefetch	pass	0.0
+ko.text-qc	pass	0.0
+ko.calibration.prefetch	pass	0.4
+ko.calibration	pass	0.3
+ko.text-waiver	pass	0.0
+....{
+  "ko": {
+    "status": "fake_plumbing_pass",
+    "reason": "fake judge: waiver built in memory, never saved",
+    "problems": [],
+    "calibration": {
+      "overallDetectionRate": 1.0,
+      "cleanFalsePositiveRate": 0.0,
+      "trials": 93,
+      "detected": 93
+    }
+  }
+}
+{"component": "post-live-subtitles", "event": "post_live_subtitle_generation_checked", "liveSource": {"host": "www.youtube.com", "path": "/watch", "urlHash": "95570d836fadda10"}, "loggedAt": "2026-10-19T20:52:38.041221+00:00", "pipelineOutdir": "/var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/tmp1dbjo1yk/runs/2026-06-28/mariners_MEZHufeQBjc/pipeline", "severity": "INFO", "status": "planned", "sunday": "2026-06-28"}
+...{"component": "post-live-timeline-job", "event": "post_live_timeline_job_checked", "liveSource": {"host": "www.youtube.com", "path": "/watch", "urlHash": "3dd1687429a3473c"}, "loggedAt": "2026-10-19T20:52:38.971337+00:00", "severity": "INFO", "status": "requires_operator_review", "sunday": "2026-07-12", "timelineGcsUri": "gs://test-bucket/sundays/2026-07-12/post-live-subtitles/sermon_5GuhLMPflds/timeline/source-media-report.json"}
+......s......usage: run_unittest_ci.py [-h] --out OUT --scale {clip,week}
+                          [--locales LOCALES] [--stage STAGE]
+                          --total-usd TOTAL_USD [--settled-usd SETTLED_USD]
+                          --approved-by APPROVED_BY --evidence EVIDENCE
+                          [--layer2-execution LAYER2_EXECUTION]
+                          [--qc-inputs QC_INPUTS] [--reuse-from REUSE_FROM]
+                          [--resume-qc-authorization RESUME_QC_AUTHORIZATION]
+                          [--layer2-reuse-budget-root LOCALE=ABSOLUTE_ROOT]
+                          [--profile PROFILE]
+run_unittest_ci.py: error: Output must be new or empty
+...................s.................................................................................s.............................................................................SERMON_LOGGING_WRITE_FAILED errorType=AccountingWriteError
+SERMON_LOGGING_WRITE_FAILED errorType=AccountingWriteError
+SERMON_LOGGING_WRITE_FAILED errorType=AccountingWriteError
+SERMON_LOGGING_WRITE_FAILED errorType=AccountingWriteError
+..................................{
+  "status": "error",
+  "reason": "ValueError: Policy is not the candidate's frozen translation policy",
+  "record": null,
+  "revisionBrief": null,
+  "condensedGroupIds": null,
+  "failedGroupIds": null
+}
+v4.1 package verified; model loaded and warmup finished.
+.............................................................................
+----------------------------------------------------------------------
+Ran 602 tests in 876.207s
+
+OK (skipped=3)
+ 175.22s     1  test_sermon_mock_tts_dag
+ 134.04s     7  test_machine_quality_waiver
+  51.83s     1  test_run_machine_qc_audio_test
+  30.10s     2  test_canonical_layer2_cache_recovery
+  24.91s     5  test_sermon_cuv_translation
+  22.50s     2  test_sermon_fresh_source_evidence
+  21.42s     2  test_canonical_layer2_reconciliation
+  20.82s     2  test_sermon_local_business_callbacks
+  19.28s     5  test_sermon_delivery_intent_binding
+  18.89s     3  test_sermon_diagnostic_dag_session
+exit 0

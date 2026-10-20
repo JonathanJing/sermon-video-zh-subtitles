@@ -9,7 +9,8 @@ from pathlib import Path
 from unittest import mock
 
 
-from scripts import run_post_live_timeline_job as mod
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.workflows.dual_pdf import timeline as mod
 
 
 def make_args(root: Path, state_file: str, **overrides):

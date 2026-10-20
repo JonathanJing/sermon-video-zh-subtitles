@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261019-exp-leaf-layer2-translation-ab",
+  "runs": [
+    {
+      "label": "exp-leaf-layer2-translation-ab-20261019",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.claude/worktrees/practical-boyd-f19465/artifacts/test-runs/exp-leaf-layer2-translation-ab-20261019",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "exp-leaf-layer2-translation-ab-20261019",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 232,
+      "truncated": false,
+      "sha256": "842499d48f9353c59590849e8686674b6b127b75137086a06d3144f85ad99beb",
+      "redactions": {}
+    },
+    {
+      "run": "exp-leaf-layer2-translation-ab-20261019",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 861,
+      "truncated": false,
+      "sha256": "1dbc41d8257b08d9817390eac7c350b0ceac3df7ace0cc6c52450aa203f6b19f",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

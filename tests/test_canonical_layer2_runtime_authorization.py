@@ -8,8 +8,11 @@ import os
 from pathlib import Path
 import unittest
 from unittest.mock import patch
-from scripts import canonical_layer2_budget as b, canonical_layer2_controller as controller
-from scripts import run_target_language_models as models, plan_run_budgets as planner, check_run_start as check
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.text import budget as b
+from tongxing_production.text import controller
+from scripts import plan_run_budgets as planner, check_run_start as check
+from tongxing_production.text import models
 from tests import test_canonical_layer2_budget as fixtures
 from tests.test_run_machine_qc_audio_test import OPENAI_ENV
 
@@ -86,7 +89,8 @@ class Layer2RuntimeAuthorizationTests(unittest.TestCase):
                 'message':{'content':'{"fixture":true}'}}], 'usage':{'prompt_tokens':20,'completion_tokens':10}}
         caller=self.caller(transport); output=self.root/'cache'/'translation.json'
         prompt={'instruction':'Translate.', 'input':{'english':'A full sentence.'}}
-        from scripts.production_spark_admission import SessionBoundCaller
+        from scripts import tongxing_host  # noqa: F401  binds the production package ports
+        from tongxing_production.compute.spark_admission import SessionBoundCaller
         wrapped = SessionBoundCaller(caller, requires_spark=False, outcome_guarded=True)
         args=('translator', prompt, self.base.policy, output, self.env['OPENAI_API_KEY'], wrapped)
         first=models._model_call(*args, request_limits=self.base.limits)
@@ -116,7 +120,8 @@ class Layer2RuntimeAuthorizationTests(unittest.TestCase):
             return {'id':'offline-response', 'model':payload['model'], 'choices':[{'finish_reason':'stop',
                 'message':{'content':'{"fixture":true}'}}], 'usage':{'prompt_tokens':20,'completion_tokens':10}}
         caller=self.caller(transport)
-        from scripts.production_spark_admission import SessionBoundCaller
+        from scripts import tongxing_host  # noqa: F401  binds the production package ports
+        from tongxing_production.compute.spark_admission import SessionBoundCaller
         output=self.root/'repair-cache'/'translation.json'
         prompt={'instruction':'Translate.', 'input':{'english':'A full sentence.'}}
         first=models._model_call('translator',prompt,self.base.policy,output,self.env['OPENAI_API_KEY'],
@@ -206,7 +211,7 @@ class Layer2RuntimeAuthorizationTests(unittest.TestCase):
 
     def test_continuation_ingests_v3_both_scopes_without_changing_legacy_shapes(self):
         from tests import test_sermon_unified_continuation as fixtures
-        from scripts import sermon_unified_continuation as continuation
+        from tongxing_production.workflows.prepared import continuation
         from scripts.sermon_unified import contracts as c
         f=fixtures.ContinuationTests();f.setUp();self.addCleanup(f.doCleanups)
         # This pre-existing continuation fixture freezes controller code to a
@@ -231,7 +236,7 @@ class Layer2RuntimeAuthorizationTests(unittest.TestCase):
 
     def test_continuation_ingests_exact_v4_reuse_binding(self):
         from tests import test_sermon_unified_continuation as fixtures
-        from scripts import sermon_unified_continuation as continuation
+        from tongxing_production.workflows.prepared import continuation
         from scripts.sermon_unified import contracts as c
         f=fixtures.ContinuationTests();f.setUp();self.addCleanup(f.doCleanups)
         self.base.code=controller.code_identity()

@@ -1,0 +1,66 @@
+{
+  "schemaVersion": "sermon-layer2-auto-repair-receipt-v1",
+  "routingVersion": "layer2-auto-repair-routing-v1",
+  "lineage": {
+    "targetLocale": "zh-Hans",
+    "englishSourcePackageJsonSha256": "5dc7deb518491cef0d0c98c8c21b5c7f8aebc3730c13042afc6427b640f75e2c",
+    "anchorManifestSha256": "dc7777a2bfe7ea5f4e482f59ad36a5a4e5c081e931ec3cb3edfe9aba32d4b140",
+    "translationPolicySha256": "027da4dbec69fa307d22cf71696f375a738faebe81652287216508cf5364c119"
+  },
+  "status": "repair_stopped",
+  "rounds": 3,
+  "finalRunDirectory": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/weekend-live/layer2-broadcast-20261018/text-zh-5/zh-Hans/repair-rounds/round-003",
+  "evidenceSha256": null,
+  "initialSpend": {
+    "calls": 831,
+    "tokens": 1881272,
+    "callsWithoutUsage": 0
+  },
+  "repairSpend": {
+    "calls": 12,
+    "tokens": 37551
+  },
+  "stoppedGroups": [
+    {
+      "translationGroupId": "translation-chunk-0001-u015",
+      "sourceUnitIds": [
+        "chunk-0001-u015"
+      ],
+      "failureCodes": [
+        "meaning_omission",
+        "review_uncertainty"
+      ],
+      "reasonCode": "request_human_review",
+      "evidencePath": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/weekend-live/layer2-broadcast-20261018/text-zh-5/zh-Hans/repair-rounds/round-003/group-0051-sol.json"
+    },
+    {
+      "translationGroupId": "translation-chunk-0009-u036",
+      "sourceUnitIds": [
+        "chunk-0009-u036"
+      ],
+      "failureCodes": [
+        "meaning_omission",
+        "review_uncertainty"
+      ],
+      "reasonCode": "repair_spend_cap",
+      "evidencePath": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/weekend-live/layer2-broadcast-20261018/text-zh-5/zh-Hans/repair-rounds/round-003/group-0375-sol.json"
+    },
+    {
+      "translationGroupId": "translation-chunk-0010-u012",
+      "sourceUnitIds": [
+        "chunk-0010-u012"
+      ],
+      "failureCodes": [
+        "language_plugin_failed"
+      ],
+      "reasonCode": "repair_spend_cap",
+      "evidencePath": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/weekend-live/layer2-broadcast-20261018/text-zh-5/zh-Hans/repair-rounds/round-003/group-failures.json"
+    }
+  ],
+  "gatesPassed": [],
+  "releaseAuthority": "none",
+  "ledgerRoot": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/weekend-live/layer2-broadcast-20261018/.jobs-zh-5.layer2-repair",
+  "ledgerHeadSha256": "cd9e0a4205edfa5ea9708c6c8e19254dbc2b4f4f3d32b0aaa5f14adeee144ee1",
+  "humanApproval": false,
+  "reviewKind": "machine_review"
+}

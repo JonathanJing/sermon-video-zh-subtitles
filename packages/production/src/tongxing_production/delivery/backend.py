@@ -39,7 +39,7 @@ class DeliveryBackend:
     runtime_web: ports.RuntimeWeb
     hosting: ports.Hosting
     waivers: ports.Waivers
-    worker_command: Callable[..., list]          # (*arguments) -> [python, scripts/sermon_app_delivery_workflow.py, *arguments]
+    worker_command: Callable[..., list]          # (*arguments) -> [python, tools/ops/run.py, delivery.app_workflow, *arguments]
     legacy: Legacy
     unmoved: Unmoved
 

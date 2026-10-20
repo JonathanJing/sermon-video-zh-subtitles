@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261018-milmmt-exp-leaf-unit",
+  "runs": [
+    {
+      "label": "milmmt-exp-leaf-unit",
+      "source": "~/.codex/worktrees/milmmt-exp-leaf/sermon-video-zh-subtitles/artifacts/milmmt-exp-leaf-unit",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "milmmt-exp-leaf-unit",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 250,
+      "truncated": false,
+      "sha256": "e8cbb2fc0b581d0c64694c2099764da07a95da433778634a99c0f12ca9613cd5",
+      "redactions": {}
+    },
+    {
+      "run": "milmmt-exp-leaf-unit",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 126,
+      "truncated": false,
+      "sha256": "5163a1af1bae082b6ac3f98ff56bb4e4ccff913d089db1988113ac4d576ab072",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

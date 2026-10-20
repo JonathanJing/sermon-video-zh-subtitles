@@ -9,7 +9,8 @@ from poc import sha256, write_json
 from speech_backend import ASR, ALIGNER
 from render_weekly_audio import render_identity
 import run_weekly_dubbing as runner
-from scripts import sermon_accounting as accounting
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.observability import accounting
 from weekly_dubbing import read
 
 

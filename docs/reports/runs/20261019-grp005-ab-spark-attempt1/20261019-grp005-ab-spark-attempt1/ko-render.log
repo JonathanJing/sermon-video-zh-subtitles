@@ -1,0 +1,15 @@
+Traceback (most recent call last):
+  File "/work/repo-7ae4b59be1df/scripts/render_speculative_target_language_speech.py", line 16, in <module>
+    raise SystemExit(_implementation.main())
+                     ^^^^^^^^^^^^^^^^^^^^^^
+  File "/work/repo-7ae4b59be1df/packages/production/src/tongxing_production/audio/speculative.py", line 377, in main
+    print(json.dumps(render(paths, args.checkpoint_map,
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/work/repo-7ae4b59be1df/packages/production/src/tongxing_production/audio/speculative.py", line 176, in render
+    context = checked_context(paths, checkpoint_map_path, operation_policies_path,
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/work/repo-7ae4b59be1df/packages/production/src/tongxing_production/audio/speculative.py", line 98, in checked_context
+    formal.require(policies["normalization"].get("policy")
+  File "/work/repo-7ae4b59be1df/packages/production/src/tongxing_production/audio/renderer.py", line 141, in require
+    raise ValueError(message)
+ValueError: Speculative speech may not rewrite target text

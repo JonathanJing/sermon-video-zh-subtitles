@@ -8,14 +8,15 @@ import unittest
 from contextlib import ExitStack
 from unittest.mock import patch
 
-from scripts import machine_qc_audio_transports as transports
-from scripts import machine_quality_release_basis as basis
-from scripts import machine_repair_ledger as ledger
-from scripts import run_machine_qc_audio_test as driver
-from scripts import run_machine_qc_clip_test as text_driver
-from scripts import screen_target_language_audio_units as audio_screen
-from scripts import target_audio_auto_qc as audio_qc
-from scripts.target_audio_predicted_schedule import SYNTHESIS_IDENTITY_FIELDS, speech_units
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.compute import qc_audio_transports as transports
+from tongxing_production.review import release_basis as basis
+from tongxing_production.review import repair_ledger as ledger
+from tongxing_production.review import qc_audio_run as driver
+from tongxing_production.review import qc_text_run as text_driver
+from tongxing_production.audio import screening as audio_screen
+from tongxing_production.review import audio_qc
+from tongxing_production.audio.predicted_schedule import SYNTHESIS_IDENTITY_FIELDS, speech_units
 from tests import auto_qc_fixtures as qc_fixtures
 from tests import test_run_machine_qc_clip_test as text_tests
 
@@ -218,7 +219,7 @@ class MachineQcAudioDriverTests(unittest.TestCase):
         stack.enter_context(patch.dict(os.environ, OPENAI_ENV))
         real_make = driver.make_transports
         def bounded_fake(backend, *args, **kwargs):
-            from scripts.sermon_source_budget import SourceBudget
+            from tongxing_production.source.budget import SourceBudget
             self.assertIsInstance(kwargs.get("budget"), SourceBudget)
             return real_make("fake", *args, **kwargs)
         stack.enter_context(patch.object(driver, "make_transports", bounded_fake))
@@ -236,8 +237,8 @@ class MachineQcAudioDriverTests(unittest.TestCase):
         # when this fixture substitutes fake audio transports.
         from tests.test_source_budget_settlement import AUTHORITY
         bounds = {"globalBounds": AUTHORITY["globalBounds"], "requestLimits": AUTHORITY["requestLimits"]}
-        from scripts import machine_qc_budget_authorization as auth
-        from scripts.sermon_openai_runtime import selected_route
+        from tongxing_production.review import qc_budget_authorization as auth
+        from tongxing_production.compute.openai_runtime import selected_route
         paths = driver.resolve_locale(self.run_dir, text_driver.index_run(self.run_dir), LOCALE, None)['paths']
         # This historical fake-driver fixture has a minimal terminology policy,
         # not a canonical production policy. Supply its explicit synthetic bound
@@ -369,8 +370,8 @@ class TransportTests(unittest.TestCase):
                 transports.OpenAiTranscribeSecondary(LOCALE, cache=self.root, max_calls=5)
 
     def secondary_budget(self, executor, name="secondary-budget"):
-        from scripts import sermon_source_budget as source_budget
-        from scripts.sermon_openai_runtime import project_headers
+        from tongxing_production.source import budget as source_budget
+        from tongxing_production.compute.openai_runtime import project_headers
         from tests.test_source_budget_settlement import AUTHORITY
         import urllib.request
         def transport(endpoint, body, content_type, key):
@@ -378,8 +379,8 @@ class TransportTests(unittest.TestCase):
                 "Authorization": "Bearer " + key, "Content-Type": content_type, **project_headers(key)})
             return executor(request)
         store = source_budget.SourceBudget(self.root / name, AUTHORITY, verify=lambda: None, transport=transport)
-        from scripts import machine_qc_budget_authorization as auth
-        from scripts.sermon_openai_runtime import selected_route
+        from tongxing_production.review import qc_budget_authorization as auth
+        from tongxing_production.compute.openai_runtime import selected_route
         store.qc_context = {'schemaVersion': auth.CONTEXT_SCHEMA, 'targetLocale': LOCALE, 'environment': 'dev',
                             'openaiRoute': selected_route(),
                             'credentialSha256': auth.credential_fingerprint(OPENAI_ENV['OPENAI_API_KEY'])}
@@ -518,7 +519,7 @@ class TransportTests(unittest.TestCase):
         audio_qc.decode_pcm16(first)
         self.assertEqual(basis.waiver.render_identity_problems(render.identity), [])
         self.assertEqual(render.identity["checkpointSha256"], sha(b"tts weights"))
-        from scripts import render_formal_target_language_speech as formal
+        from tongxing_production.audio import renderer as formal
         # Legacy normalization retains the raw calibration text.
         legacy = render("요한복음 03-04장", LOCALE)
         self.assertEqual(said[-1][0], "요한복음 03-04장")
@@ -564,7 +565,7 @@ class AudioBudgetCliContractTests(unittest.TestCase):
     def test_real_main_legacy_authorization_never_creates_state_or_ledger(self):
         from contextlib import redirect_stderr
         from io import StringIO
-        from scripts import sermon_source_budget as source_budget
+        from tongxing_production.source import budget as source_budget
         from tests.test_source_budget_settlement import AUTHORITY
         for backend in ('api', 'codex'):
             with self.subTest(backend=backend), tempfile.TemporaryDirectory() as folder:

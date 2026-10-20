@@ -1,0 +1,32 @@
+{
+  "calibrationCoverage": {
+    "applicableGroups": {
+      "added_content": 402,
+      "added_number": 327,
+      "added_reference": 394,
+      "dropped_half": 299,
+      "dropped_name": 11,
+      "english_leak": 325,
+      "placeholder": 402,
+      "semantic_negation": 28,
+      "swapped_name": 0,
+      "swapped_quantity": 8,
+      "wrong_book": 8,
+      "wrong_number": 50,
+      "wrong_ordinal": 398
+    },
+    "notApplicableKinds": [
+      "swapped_name"
+    ],
+    "untestableKinds": []
+  },
+  "candidateJsonSha256": "e787142fbeee3ac75cf27331d6af971cf28ec224f7f280e1e85892cf478de3b1",
+  "locale": "es",
+  "paths": {
+    "anchor": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/weekend-live/text-qc-15030286-20261018/run-es-es-g2-acc/anchor.json",
+    "candidate": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/weekend-live/text-qc-15030286-20261018/run-es-es-g2-acc/es/candidate.json",
+    "policy": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/weekend-live/text-qc-15030286-20261018/run-es-es-g2-acc/policies/es-policy-frozen-15030286-v4.json",
+    "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/weekend-live/text-qc-15030286-20261018/run-es-es-g2-acc/source.json"
+  },
+  "problems": []
+}

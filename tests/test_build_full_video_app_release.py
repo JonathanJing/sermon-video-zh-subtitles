@@ -4,7 +4,8 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from scripts import build_full_video_app_release as release
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.delivery import app_release as release
 
 
 class FullVideoAppReleaseTests(unittest.TestCase):
@@ -169,7 +170,7 @@ if __name__ == "__main__":
 
 class SimulatedMetadataIsolationTests(unittest.TestCase):
     def test_simulated_metadata_requires_exact_dev_route_and_visible_notice(self):
-        from scripts import build_formal_dev_release_assets as metadata
+        from tongxing_production.delivery import formal_assets as metadata
         from jsonschema import ValidationError
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

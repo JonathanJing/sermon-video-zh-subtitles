@@ -4,7 +4,7 @@ import tempfile
 import unittest
 from pathlib import Path
 from unittest.mock import patch
-from scripts import render_tongxing_page_header as renderer
+from tools.ops import render_tongxing_page_header as renderer
 
 
 class HeaderQuoteGuardTests(unittest.TestCase):

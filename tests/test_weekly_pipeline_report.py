@@ -7,7 +7,8 @@ import sys
 import tempfile
 import unittest
 
-from scripts.sermon_accounting import SCHEMA
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.observability.accounting import SCHEMA
 from scripts.weekly_pipeline_report import digest, markdown, project
 
 

@@ -1,0 +1,7 @@
+Korean Layer 2 plugin-only successor
+====================================
+The production shadow and artifact-bound v4 budget preflight passed on integration commit 163dfcc9. The durable job then failed during the first recovered translator role, before any destination reservation or provider call.
+
+Error: layer2_reuse_operation_missing
+
+The provider payload stayed unchanged across the source-bound plugin migration. The old direct-paid budget request also binds the old translation policy hash. Real BudgetedCaller provenance used the new policy hash when reconstructing that old request, so it could not find the old reservation. The destination budget root contains zero rows and zero unknown outcomes. No retry, candidate, human review or Layer 3 action followed.

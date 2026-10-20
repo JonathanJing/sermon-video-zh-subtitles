@@ -62,7 +62,7 @@
 
 ## 运行配置
 
-机器可读配置：`data/benchmarks/live-sermon-translation-v1/local-asr-benchmark-v1.json`。
+机器可读配置：`data/benchmarks/live-sermon-translation-v1/local-asr-benchmark-v1.json`。脚本现在位于 `experiments/local-asr/`；配置里的 runner 路径与 SHA-256 记录的是冻结时 `scripts/` 下的版本，复验在那个 revision 上做，重跑须另冻结配置。
 
 第一轮离线 smoke 固定 `language=en`、temperature 0、beam 1、best-of 1、关闭 temperature fallback、不使用 initial prompt。此阶段每片单独启动 CLI，因此性能只代表冷加载工程 smoke；生产性能必须通过 persistent provider 或 `whisper-stream` 的连续 replay 测量。
 

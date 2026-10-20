@@ -1,0 +1,12 @@
+{
+  "status": "passed",
+  "stage": "local-verification",
+  "scope": "R3 scripts/ migration, PR #1191 head 2a6fa8e0 (dev@2a04804a merged in)",
+  "notCompleted": [
+    "tests/test_run_machine_qc_audio_test.py: 1 of 17 passed; CPU-bound in audio/screening.py Korean regex at load average ~400, still running locally"
+  ],
+  "l2CodeIdentity": {
+    "dev@2a04804a": "41360cbe30b0271526d9e471b22b4162c1d9335b343041a5ad958676c435b763",
+    "2a6fa8e0": "9d3205660e590a6ae25bfda76d83853768acb9fd30360fab264b5c0dacc57304"
+  }
+}

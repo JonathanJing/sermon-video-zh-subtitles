@@ -5,10 +5,13 @@ from types import SimpleNamespace
 
 import pytest
 
-from scripts import sermon_accounting as accounting
-from scripts import sermon_log_profile as profile
-from scripts import capture_supervisor_model_usage as capture
-from scripts import serve_milmmt_v41_local as local
+from tongxing_production.observability import accounting
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.observability import profile
+from tools.ops import capture_supervisor_model_usage as capture
+from tests import experiment_modules
+
+local = experiment_modules.load("experiments/milmmt-v41-local/serve_milmmt_v41_local.py")
 
 
 def ledger(directory):
@@ -142,7 +145,7 @@ def test_local_mlx_cancel_retains_partial_real_counts(tmp_path):
 
 
 def test_service_default_session_attributes_worker_calls(tmp_path, monkeypatch):
-    from scripts import sermon_model_call_observation as observations
+    from tongxing_production.observability import model_call_observation as observations
     def fake_service(args):
         def worker():
             with observations.invocation('test-local', backend='local', provider='mlx', role='production',

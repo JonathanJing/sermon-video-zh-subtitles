@@ -11,7 +11,7 @@
 | `StrictBudgetAdapter.generate/review` | 同一个可信全局预算根；先持久化 reservation/request，再调用注入的单次 transport；稳定 identity 不含输出目录；未知 usage 保持未结算 | 真实文件与模拟 transport，断点、日志失败、恢复、已知拒绝、重复请求限制 |
 | `RepairPlanner.plan_group` | 在现有 admission lock 和预算锁内，读取实际候选、完整 review inventory、预算回执、源/policy/rubric；保存单组计划和依赖闭包；实际消费过的失败 fingerprint 跨 revision 保留 | 原候选不变、只创建绑定的新 revision；重复失败及陈旧证据阻断；计划记录进入 LOGC profile |
 | `AdmissionBoundary.snapshot/admit/reconcile` | 整个 locale 所有组的当前 generation/review 与 durable ledger；现有公共 Candidate、语言插件、独立人审 receipt；锁内重新加载和 CAS，原子保存唯一 `prepare_layer3` intent | 两组、修订链、遗漏/未知回执、复制目录、并发、commit 前后故障；不产生人审批准 |
-| `sermon_strict_layer3_preparation.prepare` | 消费已验证 intent，重新检查整组证据、voice/adapter 输入；生成原有 speech-job schema，固定输出位置；已有 job 丢失或变化时阻断 | 实际 speech-job builder，未知落盘确认后复用同一 job；未启动 TTS/worker；原来的 `synthesisEligible` 门禁保留 |
+| `tongxing_production.audio.strict_preparation.prepare` | 消费已验证 intent，重新检查整组证据、voice/adapter 输入；生成原有 speech-job schema，固定输出位置；已有 job 丢失或变化时阻断 | 实际 speech-job builder，未知落盘确认后复用同一 job；未启动 TTS/worker；原来的 `synthesisEligible` 门禁保留 |
 
 `BudgetStore` 现在在 reservation 前为所有 pending/unknown 行预留最大合法结果的格式化 JSON 空间；锁竞争不消耗尚未开始的执行许可，不确定持久化仍然消耗许可。内容修订还必须在同一锁内匹配持久化计划、sidecars 和失败 fingerprint，不能提交另一个合法格式的计划绕过 planner。缓存 generator/reviewer 的 terminal envelope 与新返回响应执行同一校验，`length`、`content_filter` 或多 choice 不能变成 machine pass。
 

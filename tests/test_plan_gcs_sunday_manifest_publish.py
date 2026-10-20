@@ -4,9 +4,9 @@ import unittest
 from pathlib import Path
 from unittest import mock
 
-import scripts.plan_gcs_sunday_manifest_publish as mod
+import tools.ops.plan_gcs_sunday_manifest_publish as mod
 from tests.test_build_local_sunday_manifest_evidence import write_source_run
-import scripts.build_local_sunday_manifest_evidence as local_builder
+import tools.ops.build_local_sunday_manifest_evidence as local_builder
 
 
 class PlanGcsSundayManifestPublishTest(unittest.TestCase):
@@ -62,7 +62,7 @@ class PlanGcsSundayManifestPublishTest(unittest.TestCase):
                 validation_out=None,
             )
 
-            with mock.patch("scripts.plan_gcs_sunday_manifest_publish.subprocess.run") as run:
+            with mock.patch("tools.ops.plan_gcs_sunday_manifest_publish.subprocess.run") as run:
                 run.return_value = type("Completed", (), {"returncode": 0})()
                 report = mod.build_publish_plan(
                     sunday="2026-06-28",

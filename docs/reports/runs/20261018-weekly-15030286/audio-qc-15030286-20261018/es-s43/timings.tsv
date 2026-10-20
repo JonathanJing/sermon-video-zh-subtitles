@@ -1,0 +1,5 @@
+stage	status	seconds
+discover	pass	4.4
+es.track-check	pass	7.4
+es.secondary-asr	pass	5.4
+es.audio-qc	pass	5.9

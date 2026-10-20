@@ -4,8 +4,8 @@ from tempfile import TemporaryDirectory
 import unittest
 from unittest.mock import patch
 
-from scripts import backend_four_layer_dry_run as dry
-from scripts.firebase_dev_weekly_dry_run import checked_backend_run
+from tools.ops import backend_four_layer_dry_run as dry
+from tools.ops.firebase_dev_weekly_dry_run import checked_backend_run
 
 
 class BackendFourLayerDryRunTests(unittest.TestCase):
@@ -114,8 +114,9 @@ class BackendFourLayerDryRunTests(unittest.TestCase):
         self.assertEqual(events[:2], ["layer2:zh-Hans:unit-0:astra", "layer2:zh-Hans:unit-0:sol"])
 
     def test_layer4_uses_formal_copy_gate_and_changed_upstream_never_creates_preview(self):
-        from scripts import build_formal_dev_release_assets as formal
-        from scripts import build_full_video_app_release as full
+        from scripts import tongxing_host  # noqa: F401  binds the production package ports
+        from tongxing_production.delivery import formal_assets as formal
+        from tongxing_production.delivery import app_release as full
         self.assertIs(dry.copy_bound_asset, formal.copy_bound_asset)
         self.assertIs(dry.copy_bound_asset, full.copy_bound_asset)
         real_copy = dry.copy_bound_asset

@@ -8,7 +8,7 @@ from jsonschema import Draft202012Validator
 
 ROOT = Path(__file__).parents[1]
 SPEC = importlib.util.spec_from_file_location(
-    "prepare_multilingual_weekly_plan", ROOT / "scripts/prepare_multilingual_weekly_plan.py"
+    "prepare_multilingual_weekly_plan", ROOT / "packages/production/src/tongxing_production/delivery/prepare_multilingual_weekly_plan.py"
 )
 subject = importlib.util.module_from_spec(SPEC)
 assert SPEC.loader is not None

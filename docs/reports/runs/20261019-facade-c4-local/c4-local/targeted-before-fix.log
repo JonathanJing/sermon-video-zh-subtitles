@@ -1,0 +1,275 @@
+.........................................................................................................................{"role": "translator", "model": "gpt-6.1-sol", "tier": "fast", "elapsedSeconds": 0.0, "usage": {"input_tokens": 100, "cached_input_tokens": 50, "output_tokens": 20}, "creditUsage": {"schemaVersion": "codex-credit-usage-v1", "status": "estimated", "estimatedCredits": 0.01525, "actualCredits": null, "actualQuotaUsage": null, "basis": "purchased_credit_equivalent", "model": "gpt-6.1-sol", "modelSource": "requested", "requestedServiceTier": "fast", "appliedServiceTier": "fast", "tierSource": "requested", "rateCardVersion": "codex-credits-2026-10-05", "rateCardSha256": "557d283646a6dd8ed49cc32a88e8459a165b72066339be99233ea75146c21edf", "verifiedAt": "2026-10-05", "sources": ["https://learn.chatgpt.com/docs/pricing", "https://learn.chatgpt.com/docs/agent-configuration/speed"], "ratesPerMillionTokens": {"input": 50, "cachedInput": 2.5, "output": 250}, "speedMultiplier": 2, "reason": "requested_identity_assumption"}}
+..{"role": "translator", "model": "gpt-6.1-sol", "tier": "fast", "elapsedSeconds": 0.0, "usage": {"input_tokens": 100, "cached_input_tokens": 50, "output_tokens": 20}, "creditUsage": {"schemaVersion": "codex-credit-usage-v1", "status": "estimated", "estimatedCredits": 0.01525, "actualCredits": null, "actualQuotaUsage": null, "basis": "purchased_credit_equivalent", "model": "gpt-6.1-sol", "modelSource": "requested", "requestedServiceTier": "fast", "appliedServiceTier": "fast", "tierSource": "requested", "rateCardVersion": "codex-credits-2026-10-05", "rateCardSha256": "557d283646a6dd8ed49cc32a88e8459a165b72066339be99233ea75146c21edf", "verifiedAt": "2026-10-05", "sources": ["https://learn.chatgpt.com/docs/pricing", "https://learn.chatgpt.com/docs/agent-configuration/speed"], "ratesPerMillionTokens": {"input": 50, "cachedInput": 2.5, "output": 250}, "speedMultiplier": 2, "reason": "requested_identity_assumption"}}
+.....{"role": "reviewer", "model": "gpt-6.1-sol", "tier": "fast", "elapsedSeconds": 0.0, "usage": {"input_tokens": 100, "cached_input_tokens": 50, "output_tokens": 20}, "creditUsage": {"schemaVersion": "codex-credit-usage-v1", "status": "estimated", "estimatedCredits": 0.01525, "actualCredits": null, "actualQuotaUsage": null, "basis": "purchased_credit_equivalent", "model": "gpt-6.1-sol", "modelSource": "requested", "requestedServiceTier": "fast", "appliedServiceTier": "fast", "tierSource": "requested", "rateCardVersion": "codex-credits-2026-10-05", "rateCardSha256": "557d283646a6dd8ed49cc32a88e8459a165b72066339be99233ea75146c21edf", "verifiedAt": "2026-10-05", "sources": ["https://learn.chatgpt.com/docs/pricing", "https://learn.chatgpt.com/docs/agent-configuration/speed"], "ratesPerMillionTokens": {"input": 50, "cachedInput": 2.5, "output": 250}, "speedMultiplier": 2, "reason": "requested_identity_assumption"}}
+....{"role": "translator", "model": "gpt-6.1-sol", "tier": "fast", "elapsedSeconds": 0.0, "usage": {"input_tokens": 100, "cached_input_tokens": 50, "output_tokens": 20}, "creditUsage": {"schemaVersion": "codex-credit-usage-v1", "status": "estimated", "estimatedCredits": 0.01525, "actualCredits": null, "actualQuotaUsage": null, "basis": "purchased_credit_equivalent", "model": "gpt-6.1-sol", "modelSource": "requested", "requestedServiceTier": "fast", "appliedServiceTier": "fast", "tierSource": "requested", "rateCardVersion": "codex-credits-2026-10-05", "rateCardSha256": "557d283646a6dd8ed49cc32a88e8459a165b72066339be99233ea75146c21edf", "verifiedAt": "2026-10-05", "sources": ["https://learn.chatgpt.com/docs/pricing", "https://learn.chatgpt.com/docs/agent-configuration/speed"], "ratesPerMillionTokens": {"input": 50, "cachedInput": 2.5, "output": 250}, "speedMultiplier": 2, "reason": "requested_identity_assumption"}}
+...{"role": "translator", "model": "gpt-6.1-sol", "tier": "fast", "elapsedSeconds": 0.002, "usage": {"input_tokens": 100, "cached_input_tokens": 50, "output_tokens": 20}, "creditUsage": {"schemaVersion": "codex-credit-usage-v1", "status": "estimated", "estimatedCredits": 0.01525, "actualCredits": null, "actualQuotaUsage": null, "basis": "purchased_credit_equivalent", "model": "gpt-6.1-sol", "modelSource": "requested", "requestedServiceTier": "fast", "appliedServiceTier": "fast", "tierSource": "requested", "rateCardVersion": "codex-credits-2026-10-05", "rateCardSha256": "557d283646a6dd8ed49cc32a88e8459a165b72066339be99233ea75146c21edf", "verifiedAt": "2026-10-05", "sources": ["https://learn.chatgpt.com/docs/pricing", "https://learn.chatgpt.com/docs/agent-configuration/speed"], "ratesPerMillionTokens": {"input": 50, "cachedInput": 2.5, "output": 250}, "speedMultiplier": 2, "reason": "requested_identity_assumption"}}
+...............F......................................ssss.........................................................................................................................................SERMON_LOGGING_WRITE_FAILED errorType=AccountingWriteError
+......................................{"dispatchEnabled": false, "translationGroups": 1, "workers": [1, 2, 3]}
+translated zh 1/1
+translated zh 1/1
+translated zh 1/1
+corrected 1/1
+corrected 1/1
+corrected 1/1
+.translated zh 1/1
+corrected 1/1
+.............................................................................................SERMON_LOGGING_WRITE_FAILED errorType=AccountingWriteError
+......EEEEEEEEEEEEEEEEEE.........F..................................................................usage: python -m unittest [-h] --out OUT --scale {clip,week}
+                          [--locales LOCALES] [--stage STAGE]
+                          --total-usd TOTAL_USD [--settled-usd SETTLED_USD]
+                          --approved-by APPROVED_BY --evidence EVIDENCE
+                          [--layer2-execution LAYER2_EXECUTION]
+                          [--qc-inputs QC_INPUTS] [--reuse-from REUSE_FROM]
+                          [--resume-qc-authorization RESUME_QC_AUTHORIZATION]
+                          [--layer2-reuse-budget-root LOCALE=ABSOLUTE_ROOT]
+                          [--profile PROFILE]
+python -m unittest: error: QC stages require --qc-inputs binding the frozen source and locale policies
+.usage: python -m unittest [-h] --out OUT --scale {clip,week}
+                          [--locales LOCALES] [--stage STAGE]
+                          --total-usd TOTAL_USD [--settled-usd SETTLED_USD]
+                          --approved-by APPROVED_BY --evidence EVIDENCE
+                          [--layer2-execution LAYER2_EXECUTION]
+                          [--qc-inputs QC_INPUTS] [--reuse-from REUSE_FROM]
+                          [--resume-qc-authorization RESUME_QC_AUTHORIZATION]
+                          [--layer2-reuse-budget-root LOCALE=ABSOLUTE_ROOT]
+                          [--profile PROFILE]
+python -m unittest: error: Output must be new or empty
+.....usage: python -m unittest [-h] --out OUT --scale {clip,week}
+                          [--locales LOCALES] [--stage STAGE]
+                          --total-usd TOTAL_USD [--settled-usd SETTLED_USD]
+                          --approved-by APPROVED_BY --evidence EVIDENCE
+... 157 lines omitted; 33 error-like lines, 33 kept below ...
+[line 46] python -m unittest: error: Reuse root has no paid ledger to reconcile
+[line 56] python -m unittest: error: Duplicate reuse root; list each approved source only once
+[line 57] ...................................................................................................................................................................................................................E.................................SERMON_LOGGING_WRITE_FAILED errorType=AccountingWriteError
+[line 58] .SERMON_LOGGING_WRITE_FAILED errorType=AccountingWriteError
+[line 59] SERMON_LOGGING_WRITE_FAILED errorType=AccountingWriteError
+[line 60] SERMON_LOGGING_WRITE_FAILED errorType=AccountingWriteError
+[line 61] SERMON_LOGGING_WRITE_FAILED errorType=AccountingWriteError
+[line 64] ERROR: test_bound_standalone_uses_canonical_dispatch_and_rejects_input_override (tests.test_openai_layer2_transport.OpenAILayer2TransportTests.test_bound_standalone_uses_canonical_dispatch_and_rejects_input_override) (workers=1, mismatch=None)
+[line 66] Traceback (most recent call last):
+[line 77] AttributeError: module 'scripts' has no attribute 'run_target_language_models'
+[line 80] ERROR: test_bound_standalone_uses_canonical_dispatch_and_rejects_input_override (tests.test_openai_layer2_transport.OpenAILayer2TransportTests.test_bound_standalone_uses_canonical_dispatch_and_rejects_input_override) (workers=1, mismatch='--english-source-package')
+[line 82] Traceback (most recent call last):
+[line 93] AttributeError: module 'scripts' has no attribute 'run_target_language_models'
+[line 96] ERROR: test_bound_standalone_uses_canonical_dispatch_and_rejects_input_override (tests.test_openai_layer2_transport.OpenAILayer2TransportTests.test_bound_standalone_uses_canonical_dispatch_and_rejects_input_override) (workers=1, mismatch='--anchor')
+[line 98] Traceback (most recent call last):
+[line 109] AttributeError: module 'scripts' has no attribute 'run_target_language_models'
+[line 112] ERROR: test_bound_standalone_uses_canonical_dispatch_and_rejects_input_override (tests.test_openai_layer2_transport.OpenAILayer2TransportTests.test_bound_standalone_uses_canonical_dispatch_and_rejects_input_override) (workers=1, mismatch='--policy')
+[line 114] Traceback (most recent call last):
+[line 125] AttributeError: module 'scripts' has no attribute 'run_target_language_models'
+[line 128] ERROR: test_bound_standalone_uses_canonical_dispatch_and_rejects_input_override (tests.test_openai_layer2_transport.OpenAILayer2TransportTests.test_bound_standalone_uses_canonical_dispatch_and_rejects_input_override) (workers=1, mismatch='--plugin')
+[line 130] Traceback (most recent call last):
+[line 141] AttributeError: module 'scripts' has no attribute 'run_target_language_models'
+[line 144] ERROR: test_bound_standalone_uses_canonical_dispatch_and_rejects_input_override (tests.test_openai_layer2_transport.OpenAILayer2TransportTests.test_bound_standalone_uses_canonical_dispatch_and_rejects_input_override) (workers=1, mismatch='--out-dir')
+[line 146] Traceback (most recent call last):
+[line 157] AttributeError: module 'scripts' has no attribute 'run_target_language_models'
+[line 160] ERROR: test_bound_standalone_uses_canonical_dispatch_and_rejects_input_override (tests.test_openai_layer2_transport.OpenAILayer2TransportTests.test_bound_standalone_uses_canonical_dispatch_and_rejects_input_override) (workers=4, mismatch=None)
+[line 162] Traceback (most recent call last):
+[line 173] AttributeError: module 'scripts' has no attribute 'run_target_language_models'
+[line 176] ERROR: test_bound_standalone_uses_canonical_dispatch_and_rejects_input_override (tests.test_openai_layer2_transport.OpenAILayer2TransportTests.test_bound_standalone_uses_canonical_dispatch_and_rejects_input_override) (workers=4, mismatch='--english-source-package')
+[line 178] Traceback (most recent call last):
+[line 189] AttributeError: module 'scripts' has no attribute 'run_target_language_models'
+[line 192] ERROR: test_bound_standalone_uses_canonical_dispatch_and_rejects_input_override (tests.test_openai_layer2_transport.OpenAILayer2TransportTests.test_bound_standalone_uses_canonical_dispatch_and_rejects_input_override) (workers=4, mismatch='--anchor')
+[line 194] Traceback (most recent call last):
+... end of omitted section ...
+    'scripts.run_target_language_models.require_plugin_identity'), patch(
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/<email>/3.13.16/Frameworks/Python.framework/Versions/3.13/lib/python3.13/unittest/mock.py", line 1487, in __enter__
+    self.target = self.getter()
+                  ~~~~~~~~~~~^^
+  File "/opt/homebrew/Cellar/<email>/3.13.16/Frameworks/Python.framework/Versions/3.13/lib/python3.13/pkgutil.py", line 528, in resolve_name
+    result = getattr(result, p)
+AttributeError: module 'scripts' has no attribute 'run_target_language_models'
+
+======================================================================
+ERROR: test_bound_standalone_uses_canonical_dispatch_and_rejects_input_override (tests.test_openai_layer2_transport.OpenAILayer2TransportTests.test_bound_standalone_uses_canonical_dispatch_and_rejects_input_override) (workers=4, mismatch='--policy')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.claude/worktrees/opus-haiku-translation-review-4a3b7c/tests/test_openai_layer2_transport.py", line 91, in test_bound_standalone_uses_canonical_dispatch_and_rejects_input_override
+    models.producer, '_load', side_effect=[fixture.source, fixture.anchor, fixture.policy]), patch(
+                                                                                             ~~~~~^
+    'scripts.run_target_language_models.require_plugin_identity'), patch(
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/<email>/3.13.16/Frameworks/Python.framework/Versions/3.13/lib/python3.13/unittest/mock.py", line 1487, in __enter__
+    self.target = self.getter()
+                  ~~~~~~~~~~~^^
+  File "/opt/homebrew/Cellar/<email>/3.13.16/Frameworks/Python.framework/Versions/3.13/lib/python3.13/pkgutil.py", line 528, in resolve_name
+    result = getattr(result, p)
+AttributeError: module 'scripts' has no attribute 'run_target_language_models'
+
+======================================================================
+ERROR: test_bound_standalone_uses_canonical_dispatch_and_rejects_input_override (tests.test_openai_layer2_transport.OpenAILayer2TransportTests.test_bound_standalone_uses_canonical_dispatch_and_rejects_input_override) (workers=4, mismatch='--plugin')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.claude/worktrees/opus-haiku-translation-review-4a3b7c/tests/test_openai_layer2_transport.py", line 91, in test_bound_standalone_uses_canonical_dispatch_and_rejects_input_override
+    models.producer, '_load', side_effect=[fixture.source, fixture.anchor, fixture.policy]), patch(
+                                                                                             ~~~~~^
+    'scripts.run_target_language_models.require_plugin_identity'), patch(
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/<email>/3.13.16/Frameworks/Python.framework/Versions/3.13/lib/python3.13/unittest/mock.py", line 1487, in __enter__
+    self.target = self.getter()
+                  ~~~~~~~~~~~^^
+  File "/opt/homebrew/Cellar/<email>/3.13.16/Frameworks/Python.framework/Versions/3.13/lib/python3.13/pkgutil.py", line 528, in resolve_name
+    result = getattr(result, p)
+AttributeError: module 'scripts' has no attribute 'run_target_language_models'
+
+======================================================================
+ERROR: test_bound_standalone_uses_canonical_dispatch_and_rejects_input_override (tests.test_openai_layer2_transport.OpenAILayer2TransportTests.test_bound_standalone_uses_canonical_dispatch_and_rejects_input_override) (workers=4, mismatch='--out-dir')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.claude/worktrees/opus-haiku-translation-review-4a3b7c/tests/test_openai_layer2_transport.py", line 91, in test_bound_standalone_uses_canonical_dispatch_and_rejects_input_override
+    models.producer, '_load', side_effect=[fixture.source, fixture.anchor, fixture.policy]), patch(
+                                                                                             ~~~~~^
+    'scripts.run_target_language_models.require_plugin_identity'), patch(
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/<email>/3.13.16/Frameworks/Python.framework/Versions/3.13/lib/python3.13/unittest/mock.py", line 1487, in __enter__
+    self.target = self.getter()
+                  ~~~~~~~~~~~^^
+  File "/opt/homebrew/Cellar/<email>/3.13.16/Frameworks/Python.framework/Versions/3.13/lib/python3.13/pkgutil.py", line 528, in resolve_name
+    result = getattr(result, p)
+AttributeError: module 'scripts' has no attribute 'run_target_language_models'
+
+======================================================================
+ERROR: test_bound_standalone_uses_canonical_dispatch_and_rejects_input_override (tests.test_openai_layer2_transport.OpenAILayer2TransportTests.test_bound_standalone_uses_canonical_dispatch_and_rejects_input_override) (workers=16, mismatch=None)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.claude/worktrees/opus-haiku-translation-review-4a3b7c/tests/test_openai_layer2_transport.py", line 91, in test_bound_standalone_uses_canonical_dispatch_and_rejects_input_override
+    models.producer, '_load', side_effect=[fixture.source, fixture.anchor, fixture.policy]), patch(
+                                                                                             ~~~~~^
+    'scripts.run_target_language_models.require_plugin_identity'), patch(
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/<email>/3.13.16/Frameworks/Python.framework/Versions/3.13/lib/python3.13/unittest/mock.py", line 1487, in __enter__
+    self.target = self.getter()
+                  ~~~~~~~~~~~^^
+  File "/opt/homebrew/Cellar/<email>/3.13.16/Frameworks/Python.framework/Versions/3.13/lib/python3.13/pkgutil.py", line 528, in resolve_name
+    result = getattr(result, p)
+AttributeError: module 'scripts' has no attribute 'run_target_language_models'
+
+======================================================================
+ERROR: test_bound_standalone_uses_canonical_dispatch_and_rejects_input_override (tests.test_openai_layer2_transport.OpenAILayer2TransportTests.test_bound_standalone_uses_canonical_dispatch_and_rejects_input_override) (workers=16, mismatch='--english-source-package')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.claude/worktrees/opus-haiku-translation-review-4a3b7c/tests/test_openai_layer2_transport.py", line 91, in test_bound_standalone_uses_canonical_dispatch_and_rejects_input_override
+    models.producer, '_load', side_effect=[fixture.source, fixture.anchor, fixture.policy]), patch(
+                                                                                             ~~~~~^
+    'scripts.run_target_language_models.require_plugin_identity'), patch(
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/<email>/3.13.16/Frameworks/Python.framework/Versions/3.13/lib/python3.13/unittest/mock.py", line 1487, in __enter__
+    self.target = self.getter()
+                  ~~~~~~~~~~~^^
+  File "/opt/homebrew/Cellar/<email>/3.13.16/Frameworks/Python.framework/Versions/3.13/lib/python3.13/pkgutil.py", line 528, in resolve_name
+    result = getattr(result, p)
+AttributeError: module 'scripts' has no attribute 'run_target_language_models'
+
+======================================================================
+ERROR: test_bound_standalone_uses_canonical_dispatch_and_rejects_input_override (tests.test_openai_layer2_transport.OpenAILayer2TransportTests.test_bound_standalone_uses_canonical_dispatch_and_rejects_input_override) (workers=16, mismatch='--anchor')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.claude/worktrees/opus-haiku-translation-review-4a3b7c/tests/test_openai_layer2_transport.py", line 91, in test_bound_standalone_uses_canonical_dispatch_and_rejects_input_override
+    models.producer, '_load', side_effect=[fixture.source, fixture.anchor, fixture.policy]), patch(
+                                                                                             ~~~~~^
+    'scripts.run_target_language_models.require_plugin_identity'), patch(
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/<email>/3.13.16/Frameworks/Python.framework/Versions/3.13/lib/python3.13/unittest/mock.py", line 1487, in __enter__
+    self.target = self.getter()
+                  ~~~~~~~~~~~^^
+  File "/opt/homebrew/Cellar/<email>/3.13.16/Frameworks/Python.framework/Versions/3.13/lib/python3.13/pkgutil.py", line 528, in resolve_name
+    result = getattr(result, p)
+AttributeError: module 'scripts' has no attribute 'run_target_language_models'
+
+======================================================================
+ERROR: test_bound_standalone_uses_canonical_dispatch_and_rejects_input_override (tests.test_openai_layer2_transport.OpenAILayer2TransportTests.test_bound_standalone_uses_canonical_dispatch_and_rejects_input_override) (workers=16, mismatch='--policy')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.claude/worktrees/opus-haiku-translation-review-4a3b7c/tests/test_openai_layer2_transport.py", line 91, in test_bound_standalone_uses_canonical_dispatch_and_rejects_input_override
+    models.producer, '_load', side_effect=[fixture.source, fixture.anchor, fixture.policy]), patch(
+                                                                                             ~~~~~^
+    'scripts.run_target_language_models.require_plugin_identity'), patch(
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/<email>/3.13.16/Frameworks/Python.framework/Versions/3.13/lib/python3.13/unittest/mock.py", line 1487, in __enter__
+    self.target = self.getter()
+                  ~~~~~~~~~~~^^
+  File "/opt/homebrew/Cellar/<email>/3.13.16/Frameworks/Python.framework/Versions/3.13/lib/python3.13/pkgutil.py", line 528, in resolve_name
+    result = getattr(result, p)
+AttributeError: module 'scripts' has no attribute 'run_target_language_models'
+
+======================================================================
+ERROR: test_bound_standalone_uses_canonical_dispatch_and_rejects_input_override (tests.test_openai_layer2_transport.OpenAILayer2TransportTests.test_bound_standalone_uses_canonical_dispatch_and_rejects_input_override) (workers=16, mismatch='--plugin')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.claude/worktrees/opus-haiku-translation-review-4a3b7c/tests/test_openai_layer2_transport.py", line 91, in test_bound_standalone_uses_canonical_dispatch_and_rejects_input_override
+    models.producer, '_load', side_effect=[fixture.source, fixture.anchor, fixture.policy]), patch(
+                                                                                             ~~~~~^
+    'scripts.run_target_language_models.require_plugin_identity'), patch(
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/<email>/3.13.16/Frameworks/Python.framework/Versions/3.13/lib/python3.13/unittest/mock.py", line 1487, in __enter__
+    self.target = self.getter()
+                  ~~~~~~~~~~~^^
+  File "/opt/homebrew/Cellar/<email>/3.13.16/Frameworks/Python.framework/Versions/3.13/lib/python3.13/pkgutil.py", line 528, in resolve_name
+    result = getattr(result, p)
+AttributeError: module 'scripts' has no attribute 'run_target_language_models'
+
+======================================================================
+ERROR: test_bound_standalone_uses_canonical_dispatch_and_rejects_input_override (tests.test_openai_layer2_transport.OpenAILayer2TransportTests.test_bound_standalone_uses_canonical_dispatch_and_rejects_input_override) (workers=16, mismatch='--out-dir')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.claude/worktrees/opus-haiku-translation-review-4a3b7c/tests/test_openai_layer2_transport.py", line 91, in test_bound_standalone_uses_canonical_dispatch_and_rejects_input_override
+    models.producer, '_load', side_effect=[fixture.source, fixture.anchor, fixture.policy]), patch(
+                                                                                             ~~~~~^
+    'scripts.run_target_language_models.require_plugin_identity'), patch(
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/<email>/3.13.16/Frameworks/Python.framework/Versions/3.13/lib/python3.13/unittest/mock.py", line 1487, in __enter__
+    self.target = self.getter()
+                  ~~~~~~~~~~~^^
+  File "/opt/homebrew/Cellar/<email>/3.13.16/Frameworks/Python.framework/Versions/3.13/lib/python3.13/pkgutil.py", line 528, in resolve_name
+    result = getattr(result, p)
+AttributeError: module 'scripts' has no attribute 'run_target_language_models'
+
+======================================================================
+ERROR: test_legacy_import_names_the_package_module (tests.test_sermon_review_gate.GateEvaluationTests.test_legacy_import_names_the_package_module)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.claude/worktrees/opus-haiku-translation-review-4a3b7c/tests/test_sermon_review_gate.py", line 102, in test_legacy_import_names_the_package_module
+    self.assertIs(sys.modules['scripts.sermon_review_gate'], strict_review_gate)
+                  ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+KeyError: 'scripts.sermon_review_gate'
+
+======================================================================
+FAIL: test_former_load_time_dependencies_are_in_execution_identity (tests.test_cuv_loaded_code_identity.CuvLoadedCodeIdentityTests.test_former_load_time_dependencies_are_in_execution_identity)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.claude/worktrees/opus-haiku-translation-review-4a3b7c/tests/test_cuv_loaded_code_identity.py", line 31, in test_former_load_time_dependencies_are_in_execution_identity
+    self.assertEqual(0, result.returncode, result.stderr)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 0 != 1 : Traceback (most recent call last):
+  File "<string>", line 7, in <module>
+    loaded = execution_identity()['loadedProjectCodeSha256']
+             ~~~~~~~~~~~~~~~~~~^^
+  File "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.claude/worktrees/opus-haiku-translation-review-4a3b7c/packages/production/src/tongxing_production/observability/accounting.py", line 220, in execution_identity
+    _observability.current().load_producer_imports()
+    ~~~~~~~~~~~~~~~~~~~~~~^^
+  File "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.claude/worktrees/opus-haiku-translation-review-4a3b7c/packages/production/src/tongxing_production/observability/backend.py", line 39, in current
+    raise ports.Unbound('tongxing_production.observability needs a configured ObservabilityBackend')
+tongxing_production.ports.Unbound: tongxing_production.observability needs a configured ObservabilityBackend
+
+
+======================================================================
+FAIL: test_process_exit_after_admission_keeps_paid_attempt_unknown (tests.test_paid_model_cache_durability.PaidModelCacheDurabilityTests.test_process_exit_after_admission_keeps_paid_attempt_unknown)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.claude/worktrees/opus-haiku-translation-review-4a3b7c/tests/test_paid_model_cache_durability.py", line 189, in test_process_exit_after_admission_keeps_paid_attempt_unknown
+    self.assertEqual(child.returncode, 27, child.stderr)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 1 != 27 : b'Traceback (most recent call last):\n  File "<string>", line 7, in <module>\n    runner._model_call(\'translator\', {\'instruction\':\'Synthetic test only\',\'input\':{\'group\':1}},\n    ~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n        {\'translator\':{\'model\':\'gpt-6-astra\',\'reasoningEffort\':\'high\'}}, Path(sys.argv[1]),\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n        \'synthetic-not-a-key\', responder)\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.claude/worktrees/opus-haiku-translation-review-4a3b7c/packages/production/src/tongxing_production/text/models.py", line 663, in _model_call\n    fingerprint = _model_fingerprint(payload, caller, api_key)\n  File "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.claude/worktrees/opus-haiku-translation-review-4a3b7c/packages/production/src/tongxing_production/text/models.py", line 302, in _model_fingerprint\n    if isinstance(caller, _session_bound_caller()) and not caller.requires_spark and not caller.outcome_guarded:\n                          ~~~~~~~~~~~~~~~~~~~~~^^\n  File "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.claude/worktrees/opus-haiku-translation-review-4a3b7c/packages/production/src/tongxing_production/text/models.py", line 54, in _session_bound_caller\n    return _text.current().compute.session_bound_caller\n           ~~~~~~~~~~~~~^^\n  File "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.claude/worktrees/opus-haiku-translation-review-4a3b7c/packages/production/src/tongxing_production/text/backend.py", line 67, in current\n    raise ports.Unbound(\'tongxing_production.text needs a configured TextBackend\')\ntongxing_production.ports.Unbound: tongxing_production.text needs a configured TextBackend\n'
+
+----------------------------------------------------------------------
+Ran 1066 tests in 1915.265s
+
+FAILED (failures=2, errors=19, skipped=4)
+{"status": "prepared_adapter_validation_required", "targetLocale": "ko", "synthesisEligible": false, "job": "/private/var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/tmp3f4bv6gx/timed-speech-job/job.json"}
+{"status": "source_bound_request", "out": "/private/var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/tmph3_7_vzu/request.json"}
+{"pageId": "test-page", "source": "not_checked", "complete": 0, "total": 18, "out": "/var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/tmph3_7_vzu/public-snapshot.json"}
+{"status": "independent_model_review_pass", "groups": 0, "evidence": "/private/var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/tmp0dumvr9t/run/evidence.json"}
+{"status": "independent_model_review_pass", "groups": 0, "evidence": "/private/var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/tmp0dumvr9t/run/evidence.json"}
+{"translationPolicySha256": "e57bc5a3d91f44dfaa095885d87c191c00773362d955c893c8a1abba200ea2f0", "languageReviewPolicySha256": "48ad38e7af7047a7cfeec627fbb5f3472b6ed5fda270013e01d306edf281bc06", "componentSha256": {"translator": "c055e64763c428815d38ca5b54cef53bc7a28d8912d10b3198bc0cde04b42a94", "reviewer": "ed2b9eb86f63ea81be1999923fafd4456bbe546e7ae34f76558c7136ad2f7617", "terminology": "baffdeabe1751fa5880611b831669224c869e4107d76e38dddbab84464a7c2b0", "scripture": "9227153760176d5f4a9cc8ef7359262936cc2fd6c3f3ce189c1e2cb961477486", "languageReview": "48ad38e7af7047a7cfeec627fbb5f3472b6ed5fda270013e01d306edf281bc06", "formatting": "3b454a12748597187fde2f165a954fb45a586236ff95ffab279e5bb531425c1e", "batching": "e07870c4a83888b3266158ceee0af1e1ef1d34caf1b0f73742ad5f4d05914059"}, "productionPolicyReady": false, "unresolved": ["scripture_policy_pending", "language_review_plugin_pending", "plugin_implementation_hash_unbound_migrate_to_v2", "terminology_review_pending"]}

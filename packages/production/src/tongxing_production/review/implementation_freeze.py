@@ -8,7 +8,7 @@ whose bytes changed. On 2026-10-11 two unnoticed edits to hashed files
 invalidated issued waivers and cost two re-issue rounds; a guard at the entry
 turns that into an immediate, explained refusal.
 
-Its executable facade and package bytes join the physical closure, so changes
+Its package bytes join the physical closure, so changes
 to the admission guard invalidate a frozen run.
 """
 from __future__ import annotations

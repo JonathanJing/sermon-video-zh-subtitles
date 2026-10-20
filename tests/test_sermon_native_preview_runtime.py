@@ -7,7 +7,8 @@ import unittest
 from unittest.mock import patch
 
 from scripts import sermon_native_preview_runtime as subject
-from scripts import sermon_review_contracts as c
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.review import contracts as c
 
 
 class NativeRuntimeTests(unittest.TestCase):

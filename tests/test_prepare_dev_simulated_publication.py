@@ -6,10 +6,11 @@ import io
 import json
 
 import pytest
-from scripts import build_dev_180s_simulated_inputs as fixture
-from scripts import build_full_video_app_release as builder
-from scripts import delivery_contract as contract
-from scripts import prepare_dev_simulated_publication as publication
+from tools.development import build_dev_180s_simulated_inputs as fixture
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.delivery import app_release as builder
+from tongxing_production.delivery import contract
+from tongxing_production.delivery import baseline as publication
 
 
 def test_fresh_identity_and_explicit_legacy_id():

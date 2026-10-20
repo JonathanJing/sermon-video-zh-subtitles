@@ -5,8 +5,8 @@ from pathlib import Path
 import tempfile
 import unittest
 
-# The tool moved to tools/ops (L4 D8); the scripts/ path is a facade naming the same module.
-from scripts import build_language_listening_catalog as module  # noqa: E402
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tools.ops import build_language_listening_catalog as module  # noqa: E402
 
 
 class CatalogTests(unittest.TestCase):

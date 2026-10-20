@@ -6,8 +6,10 @@ import tempfile
 from types import SimpleNamespace
 import unittest
 
-from scripts import render_sentence_interpretation_tts as subject
-from scripts import sermon_sentence_interpretation as interpretation
+from tests import experiment_modules
+subject = experiment_modules.load("experiments/sentence-interpretation-tts/render_sentence_interpretation_tts.py")
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.source import sentence_interpretation as interpretation
 
 
 def write_json(path, value):

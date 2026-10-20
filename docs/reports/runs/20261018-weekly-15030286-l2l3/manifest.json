@@ -1,0 +1,350 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261018-weekly-15030286-l2l3",
+  "runs": [
+    {
+      "label": "text-zh-g1",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/weekend-live/layer2-15030286-20261017/text-zh-g1",
+      "skipped": {
+        ".lock": 2,
+        ".jsonl": 1,
+        ".csv": 3,
+        ".json": 32
+      }
+    },
+    {
+      "label": "text-es-g2",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/weekend-live/layer2-15030286-20261017/text-es-g2",
+      "skipped": {
+        ".lock": 2,
+        ".jsonl": 1,
+        ".csv": 3,
+        ".json": 14
+      }
+    },
+    {
+      "label": "text-ko-g2",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/weekend-live/layer2-15030286-20261017/text-ko-g2",
+      "skipped": {
+        ".lock": 2,
+        ".jsonl": 1,
+        ".csv": 3,
+        ".json": 14
+      }
+    },
+    {
+      "label": "human-text",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/weekend-live/layer2-15030286-20261017/human-text",
+      "skipped": {
+        ".json": 4
+      }
+    },
+    {
+      "label": "repair-s43",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/weekend-live/layer3-15030286-20261018/es/repair-s43",
+      "skipped": {
+        ".json": 10480,
+        ".lock": 4,
+        ".jsonl": 2,
+        ".csv": 6,
+        ".sha256": 1564,
+        ".wav": 2666,
+        ".mp3": 2
+      }
+    }
+  ],
+  "files": [
+    {
+      "run": "text-zh-g1",
+      "path": "zh-Hans/accounting/operations.log",
+      "kind": "log",
+      "bytes": 631285,
+      "truncated": true,
+      "sha256": "5e7ef00f02e5a0846dbabf9119fb2b402f9ff7f10899123b1c5125faa28e20a7",
+      "redactions": {}
+    },
+    {
+      "run": "text-zh-g1",
+      "path": "zh-Hans/accounting/summary.json",
+      "kind": "whole",
+      "bytes": 1550507,
+      "truncated": false,
+      "sha256": "2d5ebe8fba3b74d668d9658c1bfffd750cf40bdfa6b7f4db5f609691d100c4b3",
+      "omitted": "over_size_cap"
+    },
+    {
+      "run": "text-zh-g1",
+      "path": "zh-Hans/group-revision-receipt.json",
+      "kind": "whole",
+      "bytes": 154247,
+      "truncated": false,
+      "sha256": "1a3e9b4bedd1d5cd331da61654defd7a071075fd0a4805991fe0a57eab4d8f6b",
+      "redactions": {}
+    },
+    {
+      "run": "text-zh-g1",
+      "path": "zh-Hans/repair-rounds/auto-repair-receipt-001.json",
+      "kind": "whole",
+      "bytes": 1819,
+      "truncated": false,
+      "sha256": "4b04e7bc771667bf7a7ba392ad4716a5eefc5b68bf4abe2acdd7debaaea7aa02",
+      "redactions": {
+        "home_dir": 2
+      }
+    },
+    {
+      "run": "text-es-g2",
+      "path": "es/accounting/operations.log",
+      "kind": "log",
+      "bytes": 610348,
+      "truncated": true,
+      "sha256": "c702a1115ba17702fd3f100e48b00487cd831e1e1f61107e93d099da49c6f543",
+      "redactions": {}
+    },
+    {
+      "run": "text-es-g2",
+      "path": "es/accounting/summary.json",
+      "kind": "whole",
+      "bytes": 1511448,
+      "truncated": false,
+      "sha256": "c062e4569028c3c33ebeebc020ce3cd39c396f076cda68c10ebe2d8011205c85",
+      "omitted": "over_size_cap"
+    },
+    {
+      "run": "text-es-g2",
+      "path": "es/group-revision-receipt.json",
+      "kind": "whole",
+      "bytes": 153670,
+      "truncated": false,
+      "sha256": "6c222894c6d883275a17ce66dd4339dbddd657b5254f0476569b91215c930fe2",
+      "redactions": {}
+    },
+    {
+      "run": "text-es-g2",
+      "path": "es/repair-rounds/auto-repair-receipt-001.json",
+      "kind": "whole",
+      "bytes": 1806,
+      "truncated": false,
+      "sha256": "8ff19b4bc2eacbe6d21cea702643ce046d057d0445f0a390e5b1477526ba4f9d",
+      "redactions": {
+        "home_dir": 2
+      }
+    },
+    {
+      "run": "text-ko-g2",
+      "path": "ko/accounting/operations.log",
+      "kind": "log",
+      "bytes": 610351,
+      "truncated": true,
+      "sha256": "d72e4a5585cb0fc95289217f51ff6e8ed15270760dce9886ae3de81909da9036",
+      "redactions": {}
+    },
+    {
+      "run": "text-ko-g2",
+      "path": "ko/accounting/summary.json",
+      "kind": "whole",
+      "bytes": 1511406,
+      "truncated": false,
+      "sha256": "a337f05c98037e38f59f96cd205fde894f9ad9267be02c1337bcf1edee759e98",
+      "omitted": "over_size_cap"
+    },
+    {
+      "run": "text-ko-g2",
+      "path": "ko/group-revision-receipt.json",
+      "kind": "whole",
+      "bytes": 248600,
+      "truncated": false,
+      "sha256": "96ca02f105f35e966379266b20cacb1baedee98ffa7fd0eb003a83138d820274",
+      "redactions": {}
+    },
+    {
+      "run": "text-ko-g2",
+      "path": "ko/repair-rounds/auto-repair-receipt-001.json",
+      "kind": "whole",
+      "bytes": 1806,
+      "truncated": false,
+      "sha256": "d8fecc215202fd1329b1d17ea7383ebe0b9a8b21860485e39aea3aa09aa89568",
+      "redactions": {
+        "home_dir": 2
+      }
+    },
+    {
+      "run": "human-text",
+      "path": "es/human-review-receipt.json",
+      "kind": "whole",
+      "bytes": 152187,
+      "truncated": false,
+      "sha256": "5458eabae0de1cc0785d35d1afbddd25222039f868acbb9e0100cadc271dc0a1",
+      "redactions": {}
+    },
+    {
+      "run": "human-text",
+      "path": "ko/human-review-receipt.json",
+      "kind": "whole",
+      "bytes": 133695,
+      "truncated": false,
+      "sha256": "e8607039a1d0a983e1ac7d79709ee5c633a5629e4aa8c339e90fd67b702f5d4c",
+      "redactions": {}
+    },
+    {
+      "run": "repair-s43",
+      "path": "compact.log",
+      "kind": "log",
+      "bytes": 52,
+      "truncated": false,
+      "sha256": "2a26a05dac6ea49e846a84af98dbd978065987cb0b664f007149cfe948cbea7a",
+      "redactions": {}
+    },
+    {
+      "run": "repair-s43",
+      "path": "failed-attempt-reserve-1335/render.log",
+      "kind": "log",
+      "bytes": 128,
+      "truncated": false,
+      "sha256": "6db819f4100d30014ca9eac39ea860fa95f386fbd183dc03138d07ae6919a8bb",
+      "redactions": {}
+    },
+    {
+      "run": "repair-s43",
+      "path": "failed-attempt-reserve-1335/spark-output/render.log",
+      "kind": "log",
+      "bytes": 9980,
+      "truncated": false,
+      "sha256": "0bdda95e0b9b9e310ced1579d671cad5b3c6307c4db23bb77fbe310385aee147",
+      "redactions": {}
+    },
+    {
+      "run": "repair-s43",
+      "path": "failed-attempt-reserve-1335/spark-output/speech-job/accounting/operations.log",
+      "kind": "log",
+      "bytes": 1369402,
+      "truncated": true,
+      "sha256": "c80ca280c6709bfc3c1546b14a555f53692d18ecfefc6a61b6783a81d906919d",
+      "redactions": {}
+    },
+    {
+      "run": "repair-s43",
+      "path": "failed-attempt-reserve-1335/spark-output/speech-job/accounting/summary.json",
+      "kind": "whole",
+      "bytes": 3259034,
+      "truncated": false,
+      "sha256": "c1de1460260ef54c95a0d328acb7cdac4b64c4d86204986f9159085e035a8cd0",
+      "omitted": "over_size_cap"
+    },
+    {
+      "run": "repair-s43",
+      "path": "package.log",
+      "kind": "log",
+      "bytes": 209,
+      "truncated": false,
+      "sha256": "ce879e177e2ce430864ea55f81a2ea1e67d25e8334170cf47b0491422e8dd1bd",
+      "redactions": {
+        "home_dir": 1
+      }
+    },
+    {
+      "run": "repair-s43",
+      "path": "render.log",
+      "kind": "log",
+      "bytes": 128,
+      "truncated": false,
+      "sha256": "6db819f4100d30014ca9eac39ea860fa95f386fbd183dc03138d07ae6919a8bb",
+      "redactions": {}
+    },
+    {
+      "run": "repair-s43",
+      "path": "screen.log",
+      "kind": "log",
+      "bytes": 55,
+      "truncated": false,
+      "sha256": "e76f6e92087c8b4c5624444fd75d23d67a122c085e95b8dc3c91ae4504863613",
+      "redactions": {}
+    },
+    {
+      "run": "repair-s43",
+      "path": "spark-es-s43-c1/compact.log",
+      "kind": "log",
+      "bytes": 190,
+      "truncated": false,
+      "sha256": "f690a6d702801c629e827fadebb19f4c009458ccf429ffb1894b1545d4bfff4e",
+      "redactions": {}
+    },
+    {
+      "run": "repair-s43",
+      "path": "spark-es-s43-c1/screen-c1.log",
+      "kind": "log",
+      "bytes": 8708,
+      "truncated": false,
+      "sha256": "4c0000afc74f133ac743b17fd3683ecfd6ed760647c665f173a58444582d4163",
+      "redactions": {}
+    },
+    {
+      "run": "repair-s43",
+      "path": "spark-es-s43-c1/speech-job/asr-screening-receipt-c1.json",
+      "kind": "whole",
+      "bytes": 216371,
+      "truncated": false,
+      "sha256": "6a8f0e5a390c8f2b1e3d63d21810b0d2a972237dafbc93f8c2c18e321bebe277",
+      "redactions": {}
+    },
+    {
+      "run": "repair-s43",
+      "path": "spark-output/compact.log",
+      "kind": "log",
+      "bytes": 190,
+      "truncated": false,
+      "sha256": "f690a6d702801c629e827fadebb19f4c009458ccf429ffb1894b1545d4bfff4e",
+      "redactions": {}
+    },
+    {
+      "run": "repair-s43",
+      "path": "spark-output/render.log",
+      "kind": "log",
+      "bytes": 6711,
+      "truncated": false,
+      "sha256": "e7e283716e1f4acddb6ee7f646222127df0009bf181d56c129184b328f579732",
+      "redactions": {}
+    },
+    {
+      "run": "repair-s43",
+      "path": "spark-output/screen-c1.log",
+      "kind": "log",
+      "bytes": 8708,
+      "truncated": false,
+      "sha256": "4c0000afc74f133ac743b17fd3683ecfd6ed760647c665f173a58444582d4163",
+      "redactions": {}
+    },
+    {
+      "run": "repair-s43",
+      "path": "spark-output/speech-job/accounting/operations.log",
+      "kind": "log",
+      "bytes": 1863927,
+      "truncated": true,
+      "sha256": "947fef22954d66b31a8b2b6d81e748897b951086a5b390eec8ac337291b201d1",
+      "redactions": {}
+    },
+    {
+      "run": "repair-s43",
+      "path": "spark-output/speech-job/accounting/summary.json",
+      "kind": "whole",
+      "bytes": 4410367,
+      "truncated": false,
+      "sha256": "2671ed7cdbb9d2f440f6cf34be5ff3b1349bd86915e19030c3a38e7e250f36ae",
+      "omitted": "over_size_cap"
+    },
+    {
+      "run": "repair-s43",
+      "path": "spark-output/speech-job/asr-screening-receipt-c1.json",
+      "kind": "whole",
+      "bytes": 216371,
+      "truncated": false,
+      "sha256": "6a8f0e5a390c8f2b1e3d63d21810b0d2a972237dafbc93f8c2c18e321bebe277",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

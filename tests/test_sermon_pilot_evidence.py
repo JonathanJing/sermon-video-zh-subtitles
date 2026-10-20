@@ -12,7 +12,8 @@ from unittest.mock import patch
 from scripts import sermon_pilot_evidence as evidence
 from scripts import sermon_prefect_dag as pilot
 from scripts import sermon_dag_contract as contract
-from scripts import sermon_log_profile as profile
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.observability import profile
 from scripts.sermon_execution_harness import work_lock
 
 

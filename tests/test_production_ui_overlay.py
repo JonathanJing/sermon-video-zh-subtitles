@@ -7,7 +7,7 @@ import unittest
 from unittest.mock import patch
 from urllib.error import HTTPError
 
-from scripts import stage_production_ui as ui
+from tools.ops import stage_production_ui as ui
 
 
 class Response(io.BytesIO):

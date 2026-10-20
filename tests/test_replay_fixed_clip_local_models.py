@@ -10,7 +10,9 @@ from types import SimpleNamespace
 import unittest
 from unittest.mock import Mock, patch
 
-from scripts.experiments import replay_fixed_clip_local_models as worker
+from tests import experiment_modules
+
+worker = experiment_modules.line_module("experiments/spark-diagnostic-audio/replay_fixed_clip_local_models.py")
 
 
 class FakeTTS:
@@ -106,7 +108,7 @@ class FixedClipReplayTests(unittest.TestCase):
 
     def test_full_tts_batches_receipts_and_no_model_on_resume(self):
         report, model, _ = self.tts()
-        from scripts import sermon_source_producer_compatibility as compatibility
+        from tongxing_production.source import producer_compatibility as compatibility
         implementation = Path(__file__).resolve().parents[1] / compatibility.resolve(
             'scripts/render_formal_target_language_speech.py')
         self.assertEqual(worker.read(self.tts_args.out / 'run.json')['synthesizerImplementationSha256'],
@@ -140,23 +142,24 @@ class FixedClipReplayTests(unittest.TestCase):
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 import sys
-from scripts.experiments import replay_fixed_clip_local_models as worker
-from scripts.render_formal_target_language_speech import write_pcm16
-assert 'scripts.validate_target_language_audio_unit' not in sys.modules
+from tests import experiment_modules
+
+worker = experiment_modules.line_module("experiments/spark-diagnostic-audio/replay_fixed_clip_local_models.py")
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.audio.renderer import write_pcm16
 root = Path(sys.argv[1])
 with ThreadPoolExecutor(max_workers=4) as pool:
     results = list(pool.map(lambda i: worker.audio_output(root, {'groupId': f'g{i}'},
                                                        [0.2, -0.2] * 800, 16000), range(4)))
 assert len(results) == 4
 assert all(row['audioSeconds'] > 0 for row in results)
-assert 'scripts.validate_target_language_audio_unit' not in sys.modules
 '''
         completed = subprocess.run([sys.executable, '-c', script, str(self.root)],
                                    text=True, capture_output=True, timeout=30)
         self.assertEqual(completed.returncode, 0, completed.stderr)
 
     def test_resident_model_reuses_exact_key_across_two_tts_jobs(self):
-        from scripts.experiments.local_model_session import LocalModelSession
+        from local_model_session import LocalModelSession
         model=FakeTTS();factory=Mock(return_value=model)
         with LocalModelSession(cleanup=lambda:None) as session:
             first=worker.render_tts(self.tts_args,factory=factory,writer=fake_writer,
@@ -194,7 +197,7 @@ assert 'scripts.validate_target_language_audio_unit' not in sys.modules
         policy={'schemaVersion':resources.POLICY_VERSION,'brokerRoot':str(self.root/'broker'),
                 'capacities':{'cpu':1,'online_api':0,'codex_cli':1,'spark_tts':1,'publisher':0}}
         p=self.root/'resource-policy.json';self.write(p,policy);self.tts_args.resource_policy=p
-        with patch('scripts.experiments.local_model_session.cleanup_loaded_gpu',
+        with patch('local_model_session.cleanup_loaded_gpu',
                    side_effect=RuntimeError('cleanup failed')):
             with self.assertRaisesRegex(RuntimeError,'cleanup failed'):self.tts()
         self.assertFalse((self.tts_args.out/'manifest.json').exists())
@@ -207,7 +210,7 @@ assert 'scripts.validate_target_language_audio_unit' not in sys.modules
         self.assertEqual([r['status'] for r in ledger['reservations'].values()],['held'])
 
     def test_resident_and_per_job_resource_admission_cannot_be_combined(self):
-        from scripts.experiments.local_model_session import LocalModelSession
+        from local_model_session import LocalModelSession
         from scripts.sermon_unified import resources
         policy={'schemaVersion':resources.POLICY_VERSION,'brokerRoot':str(self.root/'broker'),
                 'capacities':{'cpu':1,'online_api':0,'codex_cli':1,'spark_tts':1,'publisher':0}}

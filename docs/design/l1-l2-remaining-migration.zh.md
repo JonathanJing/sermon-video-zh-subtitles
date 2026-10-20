@@ -8,8 +8,8 @@
 
 | 工作线 | 当前证据与下一步 | 写入边界 |
 |---|---|---|
-| L1 shadow | [旧入口](../../scripts/prepare_sentence_interpretation_shadow.py) 已是门面；[#805](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/805) 的包内实现见 [`source/sentence_interpretation_shadow.py`](../../packages/production/src/tongxing_production/source/sentence_interpretation_shadow.py)。对仍在冻结 checkout 的旧收据，只读核对实现身份与缓存；不把新门面当作旧字节。 | 只读；不改 shadow、收据或现有缓存。 |
-| CUV 翻译 | [旧 CLI](../../scripts/sermon_cuv_translation.py) 已是门面；[#832](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/832) 的包内实现见 [`text/cuv_translation.py`](../../packages/production/src/tongxing_production/text/cuv_translation.py)。新 manifest 的实现身份与旧 v1/v2 收据分开核对；仍需保留冻结 checkout 的历史复现。 | 只读；不发模型请求、不改任何 job/manifest。 |
+| L1 shadow | 旧入口门面已删除；[#805](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/805) 的包内实现见 [`source/sentence_interpretation_shadow.py`](../../packages/production/src/tongxing_production/source/sentence_interpretation_shadow.py)。对仍在冻结 checkout 的旧收据，只读核对实现身份与缓存；不把新门面当作旧字节。 | 只读；不改 shadow、收据或现有缓存。 |
+| CUV 翻译 | 旧 CLI 门面已删除；[#832](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/832) 的包内实现见 [`text/cuv_translation.py`](../../packages/production/src/tongxing_production/text/cuv_translation.py)。新 manifest 的实现身份与旧 v1/v2 收据分开核对；仍需保留冻结 checkout 的历史复现。 | 只读；不发模型请求、不改任何 job/manifest。 |
 | 严格 L2 | 对下表 11 个实现和已迁的 diagnostics，重新提取**顶层及延迟导入**；用两条实验线保存的计划/manifest，逐文件核对活跃入口和依赖闭包。明确记录能证明闭包外、仍受影响、无法排除三种结果及可恢复证据。 | 只读；不改冻结 checkout、预算账本或作业。 |
 
 三线可各自核验并提交独立的设计差异；核验结果不是迁移、运行成功或解冻收据。
@@ -22,7 +22,7 @@
 
 ### T5：CUV 翻译（已由 #832 实施）
 
-当前 [实现](../../scripts/sermon_cuv_translation.py) 约 1,678 行，是单独文档化的 [`run`/`validate`/`repair-timing` 入口](../sermon-cuv-production.zh.md)，不属于原 T0–T4 范围。先决定其 `text/` 业务逻辑与 CLI 的边界：repo/POC 路径、模型调用、会计、经文库经宿主端口提供；包导入不得倒向 `scripts/`。保留旧命令与导入门面，并逐一比较完整请求、缓存键、`cuv-manifest.json`、复用/修复链和离线 `validate` 结果。当前新运行的 manifest 记录 `schemaVersion`、模型/推理设置、输入文件哈希等，**没有实现代码身份**；`compatible_reuse` 比较这些设置及输入哈希（精确请求模式不比 `batchSize`），不能据此证明移动前后实现等价。代码批次须为新运行引入版本化实现身份，或对精确 old/new 源码及请求/产物字节完成独立审查后给出有范围的兼容映射；旧产物在冻结 checkout 验证，不能把旧 `VERSION` 字符串当成等价证明。禁止通过“忽略版本不一致”复用历史付费结果。与 S5 可分别设计，但代码批次须检查共享宿主、`sermon_pipeline` 和其他进行中分支的差异后再合并。
+当前 [实现](../../packages/production/src/tongxing_production/text/cuv_translation.py) 约 1,678 行，是单独文档化的 [`run`/`validate`/`repair-timing` 入口](../sermon-cuv-production.zh.md)，不属于原 T0–T4 范围。先决定其 `text/` 业务逻辑与 CLI 的边界：repo/POC 路径、模型调用、会计、经文库经宿主端口提供；包导入不得倒向 `scripts/`。保留旧命令与导入门面，并逐一比较完整请求、缓存键、`cuv-manifest.json`、复用/修复链和离线 `validate` 结果。当前新运行的 manifest 记录 `schemaVersion`、模型/推理设置、输入文件哈希等，**没有实现代码身份**；`compatible_reuse` 比较这些设置及输入哈希（精确请求模式不比 `batchSize`），不能据此证明移动前后实现等价。代码批次须为新运行引入版本化实现身份，或对精确 old/new 源码及请求/产物字节完成独立审查后给出有范围的兼容映射；旧产物在冻结 checkout 验证，不能把旧 `VERSION` 字符串当成等价证明。禁止通过“忽略版本不一致”复用历史付费结果。与 S5 可分别设计，但代码批次须检查共享宿主、`sermon_pipeline` 和其他进行中分支的差异后再合并。
 
 ### T6：严格 L2 门禁链
 

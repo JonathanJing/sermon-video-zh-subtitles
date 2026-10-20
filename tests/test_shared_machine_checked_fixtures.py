@@ -3,7 +3,8 @@ import json
 from pathlib import Path
 import unittest
 from jsonschema import Draft202012Validator, ValidationError
-from scripts import delivery_contract as contract
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.delivery import contract
 
 ROOT = Path(__file__).resolve().parents[1]
 MATRIX = ROOT / 'apps/tongxing-ios/Core/Tests/TongxingCoreTests/Fixtures/shared-machine-checked-contracts.json'

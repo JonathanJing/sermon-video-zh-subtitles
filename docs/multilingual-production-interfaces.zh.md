@@ -89,7 +89,7 @@ Target-Language Candidate + Target-Language Audio Package
 - `candidate_ready_for_translation`：结构检查和绑定的逐句机器裁判通过，可用于 Layer 2 shadow 开发，但仍缺生产所需的来源或人工门禁。干净锚点在机器裁判前的 shadow 收据为 `waiting_machine_judge`。
 - `ready_for_translation`：媒体身份、批准范围和四项英文人工检查均已绑定，允许正式 Layer 2 消费。
 
-当前生成器：[english_source_package.py](../packages/production/src/tongxing_production/source/english_source_package.py)；[独立机器裁判](../packages/production/src/tongxing_production/source/english_source_judge.py)只产生 `humanApproval=false`、`productionTranslationEligible=false` 的 shadow 收据。未来周入口 [prepare_sentence_interpretation_shadow.py](../scripts/prepare_sentence_interpretation_shadow.py) 同时写出 `anchor-manifest.json` 和 `english-source-package.json`；`run_post_live_subtitle_generation.py` 可用 `--sentence-interpretation-english-review` 绑定人工审核收据并重跑 Layer 1。这一层不写入中文 prompt，也不生成目标语言文字。
+当前生成器：[english_source_package.py](../packages/production/src/tongxing_production/source/english_source_package.py)；[独立机器裁判](../packages/production/src/tongxing_production/source/english_source_judge.py)只产生 `humanApproval=false`、`productionTranslationEligible=false` 的 shadow 收据。未来周入口 [prepare_sentence_interpretation_shadow.py](../packages/production/src/tongxing_production/source/sentence_interpretation_shadow.py) 同时写出 `anchor-manifest.json` 和 `english-source-package.json`；`run_post_live_subtitle_generation.py` 可用 `--sentence-interpretation-english-review` 绑定人工审核收据并重跑 Layer 1。这一层不写入中文 prompt，也不生成目标语言文字。
 
 ## Layer 2：目标语言文字
 
@@ -128,7 +128,7 @@ Target-Language Candidate + Target-Language Audio Package
 1. 按当前 release plan 所含的语言（默认三语；单语计划只含中文）分别准备页面、文稿、字幕、同语言音频或允许的显式 `audio_unavailable`、大纲／默想及 Release Package；逐语言检查完整性与上游 hash。三种页面各自绑定本语言的包，不能用中文页面代替另外两种。
 2. 按发行合同发布页面与资产、最后更新 catalog，再分别核验 `zh-Hans`、`ko`、`es` 的准确周次、内容语言、界面语言、GET／SHA 和适用 Range。页面发布汇合条件仍由当前 release plan 决定；已可发布的页面不等海报。
 3. 三语页面交付阶段完成后，再以同一周的已核对内容提取视觉 brief，生成一个共享的无文字主视觉；遵守 [内容对应提示词](tongxing-weekly-poster-content-brief.zh.md)。客户端／现场验收单独安排，`not_run` 不阻断这个 HTTP 发布后的海报步骤。
-4. 用 `scripts/build_multilingual_sermon_posters.py` 新模板入口为 release plan 已发布的语言分别合成海报（默认中、韩、西三张；纯文字 `audio_unavailable` 语言暂不生成，记为海报待完成），遵循[规范海报](tongxing-weekly-poster-format.zh.md)，每种各有高清图、手机预览与收据；标题、系列、经文、日期、讲员、免责声明和机器／人工审核披露按对应语言的实际内容与状态取值。下载徽章使用对应语言官方素材，网页版二维码分别绑定该语言；固定 iOS 下载二维码共用。
+4. 用 `tools/ops/run.py delivery.posters.build` 新模板入口为 release plan 已发布的语言分别合成海报（默认中、韩、西三张；纯文字 `audio_unavailable` 语言暂不生成，记为海报待完成），遵循[规范海报](tongxing-weekly-poster-format.zh.md)，每种各有高清图、手机预览与收据；标题、系列、经文、日期、讲员、免责声明和机器／人工审核披露按对应语言的实际内容与状态取值。下载徽章使用对应语言官方素材，网页版二维码分别绑定该语言；固定 iOS 下载二维码共用。
 5. 逐语言对两尺寸最终图独立解码两个二维码，目视核对文字及裁切，浏览器验证对应页面。计划包含海报上云时，页面发布核验后再上传图片，最后更新海报索引；每条 sidecar 绑定同环境、同 pageId、同 locale 的当前 release SHA，保留其他语言／历史文件，读回验证图片与索引。
 6. 收尾分别报告三语页面、三语海报、上传与设备验收状态。一种海报失败只续跑该海报，不重发已经核验的页面或重跑上游。release plan 内某语言页面未就绪时保留该语言页面与海报为待完成；不在本周 release plan 内的语言不产生页面或海报待办，不为制作海报跳过发布门禁；继续推进其他已授权页面，后续补齐语言再完成海报收尾。
 
