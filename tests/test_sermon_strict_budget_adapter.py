@@ -20,7 +20,7 @@ from tongxing_production.observability import accounting
 from tongxing_production.workflows.dual_pdf import pipeline as pipeline
 from tongxing_production.review import review_budget as budget
 from tongxing_production.review import contracts
-from scripts import sermon_repair_planning as planning
+from tongxing_production.orchestration.supervisor import repair_planning as planning
 from scripts import sermon_strict_budget_adapter as adapter
 from scripts import sermon_strict_layer2 as strict
 from tests import test_sermon_strict_layer2 as strict_fixtures

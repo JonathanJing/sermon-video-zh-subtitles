@@ -53,7 +53,7 @@ class LocalPostLiveDownloadTest(unittest.TestCase):
         self.assertEqual(key, "packages/production/src/tongxing_production/workflows/dual_pdf/local_post_live_download.py")
         loaded = sermon_accounting.execution_identity()["loadedProjectCodeSha256"]
         self.assertIn(key, loaded)
-        self.assertTrue({"backend/cloud.py", "backend/config.py", "scripts/live_source_monitor.py",
+        self.assertTrue({"backend/cloud.py", "backend/config.py", "packages/production/src/tongxing_production/workflows/dual_pdf/live_source_monitor.py",
                          "packages/production/src/tongxing_production/source/youtube_data_api.py"}.issubset(loaded))
 
     def test_legacy_cli_help_and_missing_source_from_other_directory(self):

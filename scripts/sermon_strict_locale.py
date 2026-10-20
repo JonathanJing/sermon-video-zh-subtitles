@@ -11,7 +11,7 @@ from tongxing_production.text import candidate as producer
 from tongxing_production.text import models
 from tongxing_production.observability import accounting
 from tongxing_production.observability import profile
-from scripts import sermon_repair_planning as planning
+from tongxing_production.orchestration.supervisor import repair_planning as planning
 from tongxing_production.storage import snapshot as public
 from tongxing_production.review import contracts as c
 from scripts import sermon_strict_candidate_bridge as bridge

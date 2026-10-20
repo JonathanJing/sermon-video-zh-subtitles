@@ -45,7 +45,7 @@ Reuse the saved source and still-valid human approval; request a new window revi
 Use a canonical YouTube watch URL when possible.
 
 ```bash
-python3 scripts/live_source_monitor.py \
+.venv/bin/python tools/ops/run.py workflows.dual_pdf.live_source_monitor \
   --sunday 2026-07-26 \
   --manual-url 'https://www.youtube.com/watch?v=VIDEO_ID' \
   --out artifacts/live-source-monitor/report.json \
@@ -124,7 +124,7 @@ For the Supervisor path, the fresh deterministic `recommendedAction.action == "c
 
 The stable workflow is implemented mainly by these scripts:
 
-- [../scripts/live_source_monitor.py](../scripts/live_source_monitor.py)
+- [../packages/production/src/tongxing_production/workflows/dual_pdf/live_source_monitor.py](../packages/production/src/tongxing_production/workflows/dual_pdf/live_source_monitor.py)
 - [../packages/production/src/tongxing_production/workflows/dual_pdf/post_live.py](../packages/production/src/tongxing_production/workflows/dual_pdf/post_live.py)
 - [../packages/production/src/tongxing_production/workflows/dual_pdf/pipeline.py](../packages/production/src/tongxing_production/workflows/dual_pdf/pipeline.py)
 - [../packages/production/src/tongxing_production/workflows/dual_pdf/mobile_pdf.py](../packages/production/src/tongxing_production/workflows/dual_pdf/mobile_pdf.py)

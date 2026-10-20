@@ -23,7 +23,8 @@ if str(REPO_ROOT) not in sys.path:
 from backend.cloud import read_gcs_text, write_gcs_text  # noqa: E402
 from backend.leases import LeaseGuard, LeaseHandle, acquire_lease, release_lease  # noqa: E402
 from backend.observability import stable_hash, url_summary  # noqa: E402
-from scripts import live_source_monitor, tongxing_host  # noqa: E402,F401  tongxing_host binds the package ports
+from scripts import tongxing_host  # noqa: E402,F401  binds the package ports
+from tongxing_production.workflows.dual_pdf import live_source_monitor  # noqa: E402
 from tongxing_production.workflows.dual_pdf import post_live as run_post_live_subtitle_generation  # noqa: E402
 
 

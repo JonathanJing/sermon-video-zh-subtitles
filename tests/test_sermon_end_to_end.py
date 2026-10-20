@@ -137,7 +137,7 @@ class EndToEndTests(unittest.TestCase):
                 flow.snapshot(self.config)
 
     def test_config_edit_invalidates_existing_agent_tool_session(self):
-        from scripts.sermon_agents_api import AgentsAPIError
+        from tongxing_production.orchestration.supervisor.agents_api import AgentsAPIError
         folder=self.root/'session';folder.mkdir()
         tools=agent.ProductionTools(self.config,True,folder,entry.SupervisorDecision)
         self.path.write_text('{"changed":true}')
