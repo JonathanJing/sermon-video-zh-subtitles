@@ -4,7 +4,7 @@
   "runs": [
     {
       "label": "e2e-20261020T161828Z",
-      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/dev-180s-page-test-20261004/e2e-20261020T161828Z",
+      "source": "<workspace>/artifacts/dev-180s-page-test-20261004/e2e-20261020T161828Z",
       "skipped": {
         ".json": 2591,
         ".js": 44,
