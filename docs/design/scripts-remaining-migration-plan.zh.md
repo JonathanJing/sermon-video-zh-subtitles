@@ -130,3 +130,29 @@ R1 #1185、#1186，R2 #1189，R3 #1191，R4 #1187 已合并，运行报告分别
 | N4 观测与诊断外围 | 环外、不带 `path_aliases` 键的诊断和观测文件，按层从下往上迁：trace、guarded、job liveness、logs、model resources、identity sidecars 等；跳过 `sermon_execution_harness`、`sermon_diagnostic_context` 和 Prefect／模拟 TTS | `observability/`、`orchestration/`、`workflows/diagnostic/` |
 
 dual_pdf 附属（R10）单独做一次 dual_pdf 身份换代，不在这四批里。
+
+### 9.4 N4 执行记录（2026-10-20，`dev@b8e7fdc9`）
+
+24 个候选迁了 15 个，分两步（0 层 13 个、1 层 2 个），每步一个纯 `git mv` 提交加一个接线提交。`sermon_release_workflow._safe_path` 本来就是包里 `storage.paths.safe_path` 的再导出，`sermon_execution_harness` 的 `atomic_json`、`utc_now`、`work_lock` 也已在 `storage/`，所以原先看着压在这两个键下面的 8 个文件可以直接改导入包。
+
+| 迁到 | 文件 |
+|---|---|
+| `observability/` | `trace_export`（原 `export_sermon_trace`）、`logs`、`unified_projection`（原 `sermon_unified_observability`）、`trace_artifacts`、`identity_sidecars` |
+| `orchestration/` | `guarded_worker` |
+| `compute/` | `local_audio_admission`（原 `local_audio_resource_admission`） |
+| `workflows/diagnostic/`（只用于诊断） | `agent_contracts`、`dag_evidence`、`execution_extensions`、`fresh_source_causality`、`historical_identity`、`openai_layer2_transport`、`preview_checkpoint_manifest` |
+| `tools/ops/` | `sermon_observability`：本机 Jaeger 运行时，按自身路径重启 watcher，包里不能用 `__file__` |
+
+`export_sermon_trace`、`sermon_observability`、`local_audio_resource_admission`、`sermon_identity_sidecars` 在 `scripts/` 里没有调用方，不留门面；其余 11 个留门面。`historical_identity` 和 `preview_checkpoint_manifest` 只哈希自己的字节，加进 `READS_LOADED_MODULE_FILES`。
+
+剩下 9 个随 D-5 窗口走：
+
+| 文件 | 原因 |
+|---|---|
+| `sermon_dag_contract`、`sermon_model_resources`、`sermon_job_liveness` | 在 `sermon_prefect_dag.CLOSURE` 里（按 `scripts/` 名哈希，搬走要加 `path_aliases` 键）；`sermon_job_liveness` 也在模拟 TTS 的 `implementation_sha256` 里，宿主还点名它；`sermon_model_resources` 还导入 harness 自己定义的 `ExecutionTerminated` |
+| `sermon_guarded_command` | Temporal `integration_check` 的 `dependencySha256`、Prefect `CLOSURE`、模拟 TTS 闭包都列了它；harness 按同目录路径启动它 |
+| `codex_layer2_diagnostic` | 导入 L1 兼容钉住的 `sermon_diagnostic_context`，还导入留在 `scripts/` 的 `cuv_scripture` 和 policy 冻结的 `diagnostic_structural` 插件；要在窗口里加端口 |
+| `run_codex_layer2_test` | 导入 `codex_layer2_diagnostic`；也可以改进 `tools/development/`（那里能导入 `scripts.*`） |
+| `sermon_diagnostic_source_evidence` | 导入 `sermon_diagnostic_context` |
+| `export_observability_trace` | 导入 `weekly_pipeline_report`（`path_aliases` 键），以及 N2 的 `sermon_decision_accounting`、N3 的 `sermon_local_model_observation` |
+| `sermon_run_progress` | 导入 `weekly_pipeline_report` 和 `build_four_layer_timeline`；`tracker_projection_host` 点名它，迁移时要留门面 |
