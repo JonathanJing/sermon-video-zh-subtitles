@@ -1,4 +1,6 @@
 import copy
+import json
+from pathlib import Path
 
 import pytest
 
@@ -401,3 +403,21 @@ def test_v5_rollback_rejects_crossing_a_source_mode_promotion():
                                         expected_current_sha=contract.sha(current))
     assert restored['pages'][0]['targets']['es'] == older['pages'][0]['targets']['es']
     contract.validate_catalog_schema(restored)
+
+
+def test_mixed_source_v2_release_must_name_its_target_edition_locale_and_status():
+    fixture = Path(__file__).resolve().parents[1] / (
+        'apps/tongxing-ios/Core/Tests/TongxingCoreTests/Fixtures/shared-release-contracts.json')
+    template = json.loads(fixture.read_text())['cases'][0]['release']
+    value = catalog(('zh-Hans', 'es'))
+    page = value['pages'][0]
+    page['targets']['zh-Hans'].update(releasePackageUrl='/releases-v2/broadcast-edition/zh-Hans.json',
+                                      contentStatus='human_reviewed', audioStatus='human_reviewed')
+    good = dict(copy.deepcopy(template), pageId='broadcast-edition')
+    assert contract.validate_v2_release_target(good, page, 'zh-Hans') == good
+    for change in ({'pageId': 'family-page'}, {'targetLocale': 'es'}, {'audioLocale': 'es'},
+                   {'audioStatus': 'unavailable'}, {'status': 'candidate'}):
+        with pytest.raises(ValueError, match='Release differs from target edition/locale/status'):
+            contract.validate_v2_release_target(dict(copy.deepcopy(good), **change), page, 'zh-Hans')
+    with pytest.raises(Exception):
+        contract.validate_v2_release_target({k: v for k, v in good.items() if k != 'packageId'}, page, 'zh-Hans')

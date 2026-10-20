@@ -121,6 +121,26 @@ def validate_release_target(release, page, locale):
     return release
 
 
+def validate_v2_release_target(release, page, locale):
+    """A human v2 release has no source identity, but must still name this target.
+
+    Mirrors what the Web and iOS readers admit: edition, locales, path, the catalog
+    statuses and a passed HTTP verification. The bound content proves the source.
+    """
+    validate_release_schema(release)
+    target = page['targets'][locale]
+    edition = target_source_identity(page, target)[0]
+    require(release['schemaVersion'] == 'sermon-target-language-release-package-v2'
+            and release['pageId'] == edition and release['sourceLocale'] == 'en'
+            and all(release[key] == locale for key in ('targetLocale', 'contentLocale', 'audioLocale', 'interfaceLocale'))
+            and target['releasePackageUrl'] == release_path(release)
+            and (release['contentStatus'], release['audioStatus']) == (target['contentStatus'], target['audioStatus'])
+            and release['status'] == 'published_http_verified' and release['httpVerification']['status'] == 'pass'
+            and not release['issues'],
+            'Release differs from target edition/locale/status')
+    return release
+
+
 def validate_content_target(content, page, locale):
     """Legacy v2 releases still prove their target source through bound content bytes."""
     edition, source_sha, media_sha = target_source_identity(page, page['targets'][locale])
@@ -644,6 +664,7 @@ def validate_catalog_snapshot(snapshot):
                         'Baseline release locale/status differs from its catalog target')
                 validate_public_study(release, reader=lambda url: (public / url.lstrip('/')).read_bytes())
             elif page.get('sourceMode') == 'per_target':
+                validate_v2_release_target(release, page, locale)
                 content_rows = [asset for asset in release['assets'] if asset['role'] == 'content']
                 require(len(content_rows) == 1, 'Mixed-source release needs one content asset')
                 validate_content_target(json.loads((public / content_rows[0]['path'].lstrip('/')).read_text()),
