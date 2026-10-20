@@ -10,7 +10,9 @@ from types import SimpleNamespace
 import unittest
 from unittest.mock import patch, MagicMock
 
-from scripts.experiments import run_spark_diagnostic_audio as subject
+from tests import experiment_modules
+
+subject = experiment_modules.line_module("experiments/spark-diagnostic-audio/run_spark_diagnostic_audio.py")
 
 
 class SparkAudioWrapperTests(unittest.TestCase):
@@ -64,7 +66,7 @@ class SparkAudioWrapperTests(unittest.TestCase):
         self.args.out = Path(os.path.relpath(self.args.out, Path.cwd()))
         self.assertFalse(self.args.out.is_absolute())
         response = subprocess.CompletedProcess([], 0, stdout=json.dumps({'files': {
-            'scripts/experiments/run_spark_diagnostic_audio.py': '0' * 64}}))
+            subject.LINE + '/run_spark_diagnostic_audio.py': '0' * 64}}))
         with patch.object(subject, 'preflight', return_value=self.proof), \
              patch.object(subject, 'run', return_value=response):
             with self.assertRaisesRegex(ValueError, 'remote_code_differs'):
@@ -88,7 +90,7 @@ class SparkAudioWrapperTests(unittest.TestCase):
 
     def test_staged_code_drift_blocks_before_model_dispatch(self):
         response = subprocess.CompletedProcess([], 0, stdout=json.dumps({'files': {
-            'scripts/experiments/run_spark_diagnostic_audio.py': '0' * 64}}))
+            subject.LINE + '/run_spark_diagnostic_audio.py': '0' * 64}}))
         with patch.object(subject, 'preflight', return_value=self.proof), \
              patch.object(subject, 'run', return_value=response) as remote:
             with self.assertRaisesRegex(ValueError, 'remote_code_differs'):
@@ -97,7 +99,7 @@ class SparkAudioWrapperTests(unittest.TestCase):
         self.assertFalse((self.args.out / 'dispatch.started.json').exists())
 
     def staged_code(self):
-        names = ('scripts/experiments/run_spark_diagnostic_audio.py',
+        names = (*(subject.LINE + '/' + name for name in subject.STAGED_LINE_FILES),
                  'packages/production/src/tongxing_production/__init__.py')
         return {name: subject.inputs.sha(subject.ROOT / name) for name in names}
 
@@ -114,10 +116,11 @@ class SparkAudioWrapperTests(unittest.TestCase):
 
     def test_worker_and_renderer_import_outside_the_repo_with_only_the_container_path(self):
         # Proposal §5.2. -S keeps this interpreter's editable install off sys.path; its site-packages stand in
-        # for the image's. The worker inserts the code root itself and imports the renderer lazily.
+        # for the image's. Running the worker puts its line directory first on sys.path; it inserts the code
+        # root itself and imports the renderer lazily.
         third_party = [p for p in sys.path if Path(p).name in ('site-packages', 'dist-packages')]
-        probe = ('import sys; sys.path.insert(0, sys.argv[1]); '
-                 'import scripts.experiments.replay_fixed_clip_local_models; '
+        probe = ('import sys; sys.path.insert(0, sys.argv[1]); sys.path.insert(0, sys.argv[1] + "/experiments/spark-diagnostic-audio"); '
+                 'import replay_fixed_clip_local_models; '
                  'from scripts import tongxing_host; '
                  'from tongxing_production.audio.renderer import SparkQwenSynthesizer; print("ok")')
 

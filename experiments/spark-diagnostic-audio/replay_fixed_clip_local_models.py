@@ -23,6 +23,8 @@ import uuid
 
 if __package__ in (None, ''):
     sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+if str(Path(__file__).resolve().parent) not in sys.path:  # sibling modules of this experiment line
+    sys.path.append(str(Path(__file__).resolve().parent))
 
 MEDIA_SHA = '79bada8f2e960adb470a146f183449db433308b53c20d03ea9c7e2e0a66e906b'
 SOURCE_UNITS_SHA = 'c9ed80d95e8bdc287c9fded61c8505bf5e932f2b2d1868c11349393f8eded24e'
@@ -59,7 +61,7 @@ def read(path):
 
 def worker_identity(root):
     """Reuse only an explicitly compatible timing-only worker's frozen identity."""
-    from scripts.experiments.diagnostic_timing_compatibility import compatible_worker
+    from diagnostic_timing_compatibility import compatible_worker
     path = Path(root) / 'run.json'
     saved = read(path).get('workerSha256') if path.exists() else None
     return compatible_worker(sha(__file__), saved)
@@ -282,7 +284,7 @@ def render_tts(args, *, factory=None, writer=audio_output, model_session=None, r
     require(general == (getattr(args, 'diagnostic_candidate', None) is not None), 'diagnostic_fixture_candidate_required_together')
     binding = None
     if general:
-        from scripts.experiments.diagnostic_audio_inputs import checked_inputs, check_frozen
+        from diagnostic_audio_inputs import checked_inputs, check_frozen
         groups, binding = checked_inputs(args)
     else:
         groups = fixed_groups(evidence, args.media)
@@ -307,7 +309,7 @@ def render_tts(args, *, factory=None, writer=audio_output, model_session=None, r
                 'evidenceSha256': sha(args.evidence), 'voice': voice, 'batchSize': batch_size,
                 'backend': 'local', 'model': 'Qwen/Qwen3-TTS-12Hz-1.7B-speaker-checkpoint',
                 'synthesizerImplementationSha256': sha(Path(__file__).resolve().parents[2] / compatibility.resolve('scripts/render_formal_target_language_speech.py')),
-                'checkpointValidatorImplementationSha256': sha(Path(__file__).resolve().parents[1] / 'render_multilingual_voice_demos.py'),
+                'checkpointValidatorImplementationSha256': sha(Path(__file__).resolve().parents[2] / 'tools' / 'ops' / 'render_multilingual_voice_demos.py'),
                 'settings': {'seed': args.seed, 'device': args.device, 'dtype': 'bfloat16',
                              'attention': args.attention}, 'workerSha256': worker_identity(args.out)}
     if general:
@@ -324,7 +326,7 @@ def render_tts(args, *, factory=None, writer=audio_output, model_session=None, r
     session_key=None
     if model_session is not None:
         require(resource_policy is None, 'resident_session_requires_whole_session_gpu_admission')
-        from scripts.experiments import local_model_session as resident
+        import local_model_session as resident
         session_key=resident.ModelKey(
             stage='tts' if 'voice' in identity else 'asr',
             model_tree_sha256=identity['voice']['checkpointTreeSha256'] if 'voice' in identity else identity['modelTreeSha256'],
@@ -468,7 +470,7 @@ def render_tts(args, *, factory=None, writer=audio_output, model_session=None, r
             runtime['status'] = 'closed'; save(root / 'replica-runtime.json', runtime)
         if resource_policy is not None:
             if model is not None or pool is not None:
-                from scripts.experiments.local_model_session import dispose_model, cleanup_loaded_gpu
+                from local_model_session import dispose_model, cleanup_loaded_gpu
                 import gc
                 if model is not None:
                     dispose_model(model); model=None
@@ -524,7 +526,7 @@ def back_asr(args, *, factory=LocalASR, model_session=None, runtime_identity_sha
     tts_identity = read(tts_root / 'run.json')
     require(all(source.get(key) == value for key, value in tts_identity.items()), 'tts_manifest_identity_changed')
     if general:
-        from scripts.experiments.diagnostic_audio_inputs import checked_inputs, check_frozen
+        from diagnostic_audio_inputs import checked_inputs, check_frozen
         binding = source['diagnosticBinding']
         bound_args = SimpleNamespace(diagnostic_fixture=Path(binding['fixtureDirectory']),
             diagnostic_candidate=Path(binding['candidatePath']), evidence=Path(binding['evidencePath']),
@@ -577,7 +579,7 @@ def back_asr(args, *, factory=LocalASR, model_session=None, runtime_identity_sha
     session_key=None
     if model_session is not None:
         require(resource_policy is None, 'resident_session_requires_whole_session_gpu_admission')
-        from scripts.experiments import local_model_session as resident
+        import local_model_session as resident
         session_key=resident.ModelKey(
             stage='tts' if 'voice' in identity else 'asr',
             model_tree_sha256=identity['voice']['checkpointTreeSha256'] if 'voice' in identity else identity['modelTreeSha256'],
@@ -668,7 +670,7 @@ def back_asr(args, *, factory=LocalASR, model_session=None, runtime_identity_sha
                                      'sha256': sha(batch_paths(root, i)[1])} for i in range(len(receipts))]}
         if resource_policy is not None:
             if model is not None:
-                from scripts.experiments.local_model_session import dispose_model, cleanup_loaded_gpu
+                from local_model_session import dispose_model, cleanup_loaded_gpu
                 import gc
                 dispose_model(model); model=None
                 gc.collect(); cleanup_loaded_gpu()

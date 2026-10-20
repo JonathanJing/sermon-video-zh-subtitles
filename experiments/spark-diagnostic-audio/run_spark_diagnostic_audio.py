@@ -22,9 +22,15 @@ import sys
 import uuid
 
 ROOT = Path(__file__).resolve().parents[2]
+LINE = 'experiments/spark-diagnostic-audio'  # this experiment line, relative to the staged code root
+# The remote runner, the container worker and the modules they import must be in the staged code.
+STAGED_LINE_FILES = ('run_spark_diagnostic_audio.py', 'replay_fixed_clip_local_models.py',
+                     'diagnostic_audio_inputs.py', 'diagnostic_timing_compatibility.py', 'local_model_session.py')
 if __package__ in (None, ''):
     sys.path.insert(0, str(ROOT))
-from scripts.experiments import diagnostic_audio_inputs as inputs
+if str(Path(__file__).resolve().parent) not in sys.path:  # sibling modules of this experiment line
+    sys.path.append(str(Path(__file__).resolve().parent))
+import diagnostic_audio_inputs as inputs
 from scripts import codex_layer2_diagnostic as diagnostic
 
 HOST = 'achillesjing@192.168.1.152'
@@ -199,7 +205,7 @@ def docker_commands(args, session=None, hold=None):
             '-e', 'SPARK_EXCLUSIVE_SESSION_OWNER=' + session.environment['SPARK_EXCLUSIVE_SESSION_OWNER'],
             '-e', 'SPARK_EXCLUSIVE_SOCKET=/spark-session-gateway/admission.sock',
             '-v', str(Path('/tmp/tongxing-spark-gateway') / hold['jobId']) + ':/spark-session-gateway:ro']
-    worker = 'scripts/experiments/replay_fixed_clip_local_models.py'
+    worker = LINE + '/replay_fixed_clip_local_models.py'
     tts = common + [IMAGES['tts'], worker, 'tts', '--diagnostic-fixture', str(args.fixture.resolve()),
         '--diagnostic-candidate', str((args.layer2_out / 'diagnostic-candidate.json').resolve()),
         '--evidence', str((args.layer2_out / 'evidence.json').resolve()), '--media', str(media),
@@ -213,7 +219,7 @@ def docker_commands(args, session=None, hold=None):
 
 
 def verify_outputs(root, proof):
-    from scripts.experiments import replay_fixed_clip_local_models as worker
+    import replay_fixed_clip_local_models as worker
     tts = inputs.read(root / 'tts' / 'manifest.json')
     asr = inputs.read(root / 'asr' / 'manifest.json')
     require(tts['mediaSha256'] == proof['sourceMediaSha256']
@@ -249,10 +255,10 @@ def verify_outputs(root, proof):
 
 
 REMOTE_RUNNER = '''import fcntl,json,pathlib,subprocess,sys,time,os
-c=json.loads(sys.argv[1]);sys.path[:0]=[c['codeRoot'],c['codeRoot']+'/packages/production/src']
+c=json.loads(sys.argv[1]);sys.path[:0]=[c['codeRoot'],c['codeRoot']+'/experiments/spark-diagnostic-audio',c['codeRoot']+'/packages/production/src']
 os.environ.update(c['sessionEnvironment']);os.environ['SPARK_EXCLUSIVE_REMOTE_LOCAL']='1'
 from scripts.spark_exclusive_session import Client
-from scripts.experiments.run_spark_diagnostic_audio import AdmissionGateway
+from run_spark_diagnostic_audio import AdmissionGateway
 session=Client.from_environment();session.require_ready();session.bind_job(c['sparkHold'],pid=os.getpid())
 broker=pathlib.Path(c['broker']);broker.mkdir(parents=True,exist_ok=True)
 out=pathlib.Path(c['out']);out.mkdir(parents=True,exist_ok=True)
@@ -282,7 +288,7 @@ def execute(args):
     # Anchor a cwd-relative --out before any job hold; later paths use relative_to(ROOT).
     args.out = ROOT / relative(args.out)
     args.out.mkdir(parents=True, exist_ok=True)
-    from scripts.experiments.replay_fixed_clip_local_models import save
+    from replay_fixed_clip_local_models import save
     with (args.out / '.dispatch.lock').open('a') as lock:
         fcntl.flock(lock.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
         completed = args.out / 'result.json'
@@ -315,7 +321,7 @@ def execute(args):
         # Code staging must have happened separately after the final freeze.
         staged = run(remote_command(['cat', stage + '/code-stage-manifest.json']), capture_output=True, text=True)
         code = json.loads(staged.stdout)['files']
-        require('scripts/experiments/run_spark_diagnostic_audio.py' in code
+        require(all(LINE + '/' + name in code for name in STAGED_LINE_FILES)
                 and PACKAGE_SRC + '/tongxing_production/__init__.py' in code
                 and all((ROOT / name).resolve().is_relative_to(ROOT)
                         and (ROOT / name).is_file() and inputs.sha(ROOT / name) == expected

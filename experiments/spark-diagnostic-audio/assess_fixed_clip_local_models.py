@@ -12,7 +12,9 @@ import subprocess
 import sys
 if __package__ in (None, ''):
     sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
-from scripts.experiments import replay_fixed_clip_local_models as worker
+if str(Path(__file__).resolve().parent) not in sys.path:  # sibling modules of this experiment line
+    sys.path.append(str(Path(__file__).resolve().parent))
+import replay_fixed_clip_local_models as worker
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.audio.screening import tokens
 from tongxing_production.audio import timing_plan as target_audio_timing_plan

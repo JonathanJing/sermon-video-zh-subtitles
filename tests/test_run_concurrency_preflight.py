@@ -6,7 +6,9 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch, MagicMock
 
-from scripts.experiments import run_concurrency_preflight as subject
+from tests import experiment_modules
+
+subject = experiment_modules.line_module("experiments/spark-diagnostic-audio/run_concurrency_preflight.py")
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.compute.concurrency_profile import profile_v1
 from scripts.sermon_unified import resources
@@ -25,7 +27,7 @@ class DiagnosticCommandDAGTests(unittest.TestCase):
         self.root = Path(self.temp.name).resolve()
         self.patch = patch.object(subject, 'ROOT', self.root)
         self.patch.start(); self.addCleanup(self.patch.stop)
-        self.script = self.root / 'scripts/experiments/fake_diagnostic.py'
+        self.script = self.root / 'experiments/spark-diagnostic-audio/fake_diagnostic.py'
         self.script.parent.mkdir(parents=True)
         self.script.write_text('synthetic executor fixture; never execute this file')
         self.out = self.root / 'artifacts/batch'

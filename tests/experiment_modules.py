@@ -4,7 +4,7 @@ The module name matches the one the scripts/ facades used, so a test and any rem
 of the same file share one module object.
 """
 import hashlib
-from importlib import util
+from importlib import import_module, util
 from pathlib import Path
 import sys
 
@@ -27,3 +27,15 @@ def load(relative):
         del sys.modules[name]
         raise
     return module
+
+
+def line_module(relative):
+    """Import an experiment line's module by its bare name, as its sibling modules import it.
+
+    Lines whose files import each other by bare name (the line directory on ``sys.path``) need
+    tests to share that one module object, so patches on a sibling reach its importers.
+    """
+    path = (ROOT / relative).resolve()
+    if str(path.parent) not in sys.path:
+        sys.path.append(str(path.parent))
+    return import_module(path.stem)
