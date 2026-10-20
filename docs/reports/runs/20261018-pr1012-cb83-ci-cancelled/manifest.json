@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261018-pr1012-cb83-ci-cancelled",
+  "runs": [
+    {
+      "label": "milmmt-pr1012-obsolete-ci-cb83",
+      "source": "~/.codex/worktrees/milmmt-exp-leaf/sermon-video-zh-subtitles/artifacts/milmmt-pr1012-obsolete-ci-cb83",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "milmmt-pr1012-obsolete-ci-cb83",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 395,
+      "truncated": false,
+      "sha256": "72874de6ffa884981f1f909cf2419672cfb0eacc20005074e8989d2672565126",
+      "redactions": {}
+    },
+    {
+      "run": "milmmt-pr1012-obsolete-ci-cb83",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 214,
+      "truncated": false,
+      "sha256": "0fb8ff834baf27bdec4aa8ea2ccb611d24da752f3eeca655b94c8dea3921f2f0",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}
