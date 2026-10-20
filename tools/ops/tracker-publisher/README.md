@@ -4,7 +4,7 @@ The privileged side of the four-layer Tracker: the only process that writes to t
 
 | File | Role |
 |---|---|
-| `publish.mjs` | Validate one snapshot through `packages/tracker-contract` and publish it, or `--watch` a local ledger via `scripts/build_four_layer_tracker_snapshot.py` and republish on semantic change. Dry run unless `--execute`. |
+| `publish.mjs` | Validate one snapshot through `packages/tracker-contract` and publish it, or `--watch` a local ledger via `tools/ops/run.py observability.projections.four_layer_tracker_snapshot` and republish on semantic change. Dry run unless `--execute`. |
 | `publisher-control.mjs` | `start` / `stop` / `status` for one detached watcher; health, runtime, lock and log files sit beside the watch config and are Git-ignored. |
 | `bridge-mock.mjs` | Dev-only Firestore → local transport probe (`mock_ping`); applies no review. |
 | `watch-config.example.json`, `fingerprint-evidence.example.json` | Templates; copy to an ignored `artifacts/` run directory. |

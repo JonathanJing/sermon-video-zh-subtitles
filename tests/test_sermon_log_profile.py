@@ -11,11 +11,11 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-from scripts import sermon_accounting as accounting
-from scripts import sermon_log_contract as contract
-from scripts import sermon_log_outbox as outbox
-from scripts import sermon_log_profile as profile
-from scripts import sermon_review_observation as review
+from tongxing_production.observability import accounting
+from tongxing_production.observability import log_contract as contract
+from tongxing_production.observability import outbox
+from tongxing_production.observability import profile
+from tongxing_production.observability import review_observation as review
 from scripts import weekly_pipeline_report as weekly
 from scripts import export_sermon_trace as otlp
 from scripts import export_observability_trace as safe
@@ -201,10 +201,10 @@ class ProfileWriterTests(unittest.TestCase):
                 event=outbox.prepare(tmp,lambda e,p,s:dict(writer_fixture('stage-start'),eventId=e,producerId=p,sequence=s,spanId=f'span-{i}'))
                 outbox.deliver(tmp,event)
             with ThreadPoolExecutor(max_workers=4) as pool:list(pool.map(deliver,range(12)))
-            code="""from scripts import sermon_log_outbox as o
+            code="""from tongxing_production.observability import outbox as o
 from tests.test_accounting_log_contract import fixture
 import sys
-from scripts import sermon_log_contract as c
+from tongxing_production.observability import log_contract as c
 for i in range(3):
  e=o.prepare(sys.argv[1],lambda e,p,s:dict(fixture('stage-start'),contractVersion=c.VERSION,eventId=e,producerId=p,sequence=s,spanId='child-'+str(i)))
  o.deliver(sys.argv[1],e)
@@ -223,7 +223,7 @@ for i in range(3):
             with profile.session(tmp,'synthetic',work_kind='production',evidence_mode='synthetic'):
                 with accounting.stage('parent',work_unit_id='l2.zh-Hans.group.001',depends_on=[]) as parent:
                     env=accounting.subprocess_environment()
-                    code="from scripts import sermon_accounting as a\nwith a.stage('child',depends_on=[]):a.record_workload('child',{'segmentCount':1})"
+                    code="from scripts import tongxing_host; from tongxing_production.observability import accounting as a\nwith a.stage('child',depends_on=[]):a.record_workload('child',{'segmentCount':1})"
                     subprocess.run([sys.executable,'-c',code],env=env,check=True,capture_output=True)
                     broken=dict(env);broken.pop(profile.PROFILE_ENV);broken.pop(profile.CONTEXT_ENV)
                     result=subprocess.run([sys.executable,'-c',code],env=broken,capture_output=True)
@@ -336,7 +336,7 @@ class DurableProfileContextTests(unittest.TestCase):
         from tongxing_production.orchestration import jobs
         with tempfile.TemporaryDirectory() as tmp:
             root=Path(tmp);ledger=root/'accounting';jobroot=root/'jobs'
-            code="from scripts import sermon_accounting as a\nwith a.stage('worker',depends_on=[]):a.record_workload('worker',{'segmentCount':1})"
+            code="from scripts import tongxing_host; from tongxing_production.observability import accounting as a\nwith a.stage('worker',depends_on=[]):a.record_workload('worker',{'segmentCount':1})"
             command=[sys.executable,'-c',code]
             with profile.session(ledger,'synthetic',work_kind='production',evidence_mode='synthetic'):
                 with accounting.stage('dispatch',work_unit_id='l2.zh-Hans.group.001',depends_on=[]) as dispatch:

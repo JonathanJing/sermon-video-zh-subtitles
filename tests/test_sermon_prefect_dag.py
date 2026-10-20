@@ -10,7 +10,7 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-from scripts import sermon_log_profile as profile
+from tongxing_production.observability import profile
 from scripts import sermon_dag_contract as contract
 from scripts import sermon_prefect_dag as pilot
 from scripts import sermon_review_budget as budget

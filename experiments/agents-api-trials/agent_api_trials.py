@@ -2115,7 +2115,7 @@ def main(argv=None):
                     max_tool_calls=args.max_tool_calls, poll_seconds=poll, max_sessions=args.max_sessions,
                     risk_repeats=args.risk_repeats, decisions=decisions, case_ids=args.case, plan_ids=args.plan,
                     route=route)
-    from scripts.outcome_marker import run_with_outcome
+    from tongxing_production.orchestration.outcome_marker import run_with_outcome
 
     def reported(body):
         summary = body()

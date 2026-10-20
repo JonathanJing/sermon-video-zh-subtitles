@@ -12,9 +12,9 @@ from pathlib import Path
 import sys
 if __package__ in (None, ''):
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from scripts import sermon_accounting as accounting
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.text import models as runner
+from tongxing_production.observability import accounting
 from tongxing_production.text import policy as policy_tools
 from scripts import production_spark_admission as spark_admission
 from scripts.codex_layer2_transport import CodexLayer2Transport, TEST_CONFIGURATION, validate_test_configuration
@@ -327,7 +327,7 @@ def main():
     parser.add_argument('--reuse-from', type=Path, help='Prior diagnostic output for a one-group revision')
     parser.add_argument('--partial-repair-brief', type=Path, help='Source-bound one-group repair instruction JSON')
     args = parser.parse_args()
-    from scripts.outcome_marker import run_with_outcome
+    from tongxing_production.orchestration.outcome_marker import run_with_outcome
     run_with_outcome(args.out_dir / 'outcome.json', 'codex-layer2-test', lambda: run_test(
         args.fixture_dir, args.policy, args.out_dir, cli_path=args.codex_cli,
         reviewer_tier=args.reviewer_tier, timeout_seconds=args.timeout_seconds,

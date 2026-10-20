@@ -11,11 +11,11 @@ from pathlib import Path
 import importlib
 
 from scripts import run_bounded_diagnostic as bounded
-from scripts import sermon_accounting as accounting
-from scripts import sermon_completion as completion
+from tongxing_production.observability import accounting
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.observability import completion
 from tongxing_production.source import mfa_identity
-from scripts import sermon_log_profile as profile
+from tongxing_production.observability import profile
 from scripts import sermon_review_contracts as c
 from scripts import sermon_public_snapshot as public
 from scripts import sermon_strict_layer2 as strict
@@ -88,15 +88,15 @@ def _save_result(session,result):
 
 def preload_execution_modules(plugin_paths=()):
     """Call BEFORE freezing a fresh plan; imports only fixed local stage code."""
-    for name in ('sermon_workflow_evidence','sermon_diagnostic_delivery_preflight','sermon_dev_diagnostic_snapshot',
+    for name in ('tongxing_production.observability.workflow_evidence','sermon_diagnostic_delivery_preflight','sermon_dev_diagnostic_snapshot',
                  'sermon_native_preview_runtime','sermon_strict_candidate_bridge','sermon_strict_controller',
                  'sermon_strict_budget_adapter','sermon_strict_locale','tongxing_production.audio.speech_job',
                  'tongxing_production.audio.renderer','render_multilingual_voice_demos',
                  'tongxing_production.audio.unit_integrity','sermon_local_model_observation',
-                 'sermon_model_call_report','sermon_model_call_observation','tongxing_production.compute.openai_runtime',
+                 'tongxing_production.observability.model_call_report','tongxing_production.observability.model_call_observation','tongxing_production.compute.openai_runtime',
                  'sermon_trace_artifacts','tongxing_production.text.review_diagnostics','sermon_preview_checkpoint_manifest',
                  'sermon_fresh_source_evidence','sermon_historical_layer2','sermon_historical_native_seed','sermon_historical_identity','tongxing_production.source.producer_compatibility','tongxing_production.source.failure'):
-        # A dotted name is a package module whose scripts/ facade the D closure window removed.
+        # A dotted name is a package module whose scripts/ facade was removed.
         importlib.import_module(name if '.' in name else 'scripts.'+name)
     repository=Path(__file__).resolve().parents[1]
     for path in plugin_paths:

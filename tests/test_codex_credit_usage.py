@@ -6,8 +6,9 @@ from unittest.mock import patch
 
 import jsonschema
 
-from scripts import codex_credit_usage as credits
-from scripts import sermon_model_call_observation as observation
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.observability import codex_credit_usage as credits
+from tongxing_production.observability import model_call_observation as observation
 
 
 class CodexCreditUsageTests(unittest.TestCase):

@@ -3,7 +3,8 @@ from copy import deepcopy
 import unittest
 from unittest.mock import patch
 
-from scripts import sermon_completion as completion
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.observability import completion
 from scripts import sermon_review_contracts as c
 from tests.test_sermon_completion import completion_fixture
 

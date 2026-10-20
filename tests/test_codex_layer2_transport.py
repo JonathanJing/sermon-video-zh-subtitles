@@ -155,7 +155,8 @@ class CodexRuntimeBoundaryTests(unittest.TestCase):
 
     def test_failed_terminal_keeps_reported_credit_subtotal(self):
         import copy
-        from scripts import sermon_model_call_observation as observation
+        from scripts import tongxing_host  # noqa: F401  binds the production package ports
+        from tongxing_production.observability import model_call_observation as observation
         events = []
         with patch.object(observation.accounting, '_emit', side_effect=lambda row: events.append(copy.deepcopy(row))):
             with patch('scripts.codex_layer2_transport.subprocess.run',

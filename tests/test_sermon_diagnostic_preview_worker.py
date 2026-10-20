@@ -11,7 +11,8 @@ from unittest.mock import patch
 
 from scripts import sermon_diagnostic_preview_worker as subject
 from scripts import sermon_diagnostic_provider as provider
-from scripts import sermon_log_profile as profile
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.observability import profile
 from scripts import sermon_review_budget as budget
 from scripts import sermon_review_contracts as c
 from scripts import sermon_preview_checkpoint_manifest as checkpoint

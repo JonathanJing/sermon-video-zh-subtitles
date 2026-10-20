@@ -6,7 +6,8 @@ import tempfile
 import unittest
 
 from scripts.export_sermon_trace import export, nanos, span_id, trace_id
-from scripts.sermon_accounting import SCHEMA
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.observability.accounting import SCHEMA
 
 
 class SermonTraceExportTests(unittest.TestCase):
@@ -204,8 +205,8 @@ class ReceiptExportTests(unittest.TestCase):
     result = SermonTraceExportTests.result
 
     def test_outbox_postappend_preack_replay_is_exported_once(self):
-        from scripts import sermon_accounting as accounting
-        from scripts import sermon_log_profile as profile
+        from tongxing_production.observability import accounting
+        from tongxing_production.observability import profile
         import copy
         logdir=self.work/'profile-log'
         with profile.session(logdir,'export-replay-test',work_kind='production',evidence_mode='synthetic'):
@@ -293,7 +294,7 @@ class ReceiptExportTests(unittest.TestCase):
 
         with patch('scripts.export_sermon_trace.read_events', return_value=(self.events, [])), \
              patch('scripts.export_sermon_trace.profile_integrity', side_effect=replay_with_quarantined_terminal), \
-             patch('scripts.sermon_accounting.profile_integrity', side_effect=replay_with_quarantined_terminal):
+             patch('tongxing_production.observability.accounting.profile_integrity', side_effect=replay_with_quarantined_terminal):
             payload, diagnostics = export(self.work)
         spans = {s['spanId']: s for s in payload['resourceSpans'][0]['scopeSpans'][0]['spans']}
 

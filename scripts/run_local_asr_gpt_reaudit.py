@@ -19,7 +19,8 @@ if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
 from scripts import sermon_pipeline  # noqa: E402
-from scripts.sermon_accounting import accounting_session
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.observability.accounting import accounting_session
 from scripts.build_local_asr_model_reviewed_reference import (  # noqa: E402
     CRITICAL_TERMS,
     contains_term,

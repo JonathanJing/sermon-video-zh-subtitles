@@ -103,8 +103,9 @@ class MLXEngine:
             raise ValueError("unexpected EOS configuration")
 
     def translate(self, source, emit, cancelled):
-        from scripts import sermon_model_call_observation as model_calls
-        from scripts import sermon_accounting as accounting
+        from scripts import tongxing_host  # noqa: F401  binds the production package ports
+        from tongxing_production.observability import model_call_observation as model_calls
+        from tongxing_production.observability import accounting
         name = 'milmmt.warmup' if source == WARMUP else 'milmmt.translate'
         with accounting.stage(name, billing='local', executor_type='production_model'):
             with model_calls.invocation('milmmt-sermon-v41-experimental-mlx-q5', backend='local', provider='mlx',
@@ -364,7 +365,8 @@ def write_state(path, value):
 
 
 def serve(args):
-    from scripts import sermon_accounting as accounting
+    from scripts import tongxing_host  # noqa: F401  binds the production package ports
+    from tongxing_production.observability import accounting
     # Main-thread session exports attribution to the dedicated MLX worker.
     # The existing service state directory keeps logs outside tracked source.
     with accounting.accounting_session(args.state_dir / 'accounting', 'milmmt_local_service', {'mode': 'execute'}):

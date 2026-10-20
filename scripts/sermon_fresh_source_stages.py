@@ -8,8 +8,9 @@ MFA execution, human approval or production eligibility is exposed.
 from copy import deepcopy
 from pathlib import Path
 
-from scripts import sermon_accounting as accounting
-from scripts import sermon_completion as completion
+from tongxing_production.observability import accounting
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.observability import completion
 from scripts import sermon_fresh_diagnostic as fresh
 from scripts import sermon_fresh_diagnostic_source as source
 from scripts import sermon_fresh_source_causality as causality

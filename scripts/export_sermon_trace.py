@@ -12,8 +12,9 @@ import sys
 
 if __package__ in {None, ""}:
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from scripts.sermon_clock_evidence import monotonic_interval
-from scripts.sermon_accounting import READABLE_SCHEMAS, SCHEMA, read_events, receipt_integrity, profile_integrity
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.observability.clock_evidence import monotonic_interval
+from tongxing_production.observability.accounting import READABLE_SCHEMAS, SCHEMA, read_events, receipt_integrity, profile_integrity
 
 # Export only known application labels. Unknown labels retain a hash, never text.
 LABELS = frozenset("""
@@ -277,7 +278,7 @@ def export(directory):
         for field, count in sorted(missing[key].items()):
             spans[key]["attributes"].append(attribute("sermon.unknownCalls." + field, count))
 
-    from scripts.sermon_review_observation import observations
+    from tongxing_production.observability.review_observation import observations
     rqc = observations(accepted)
     for observation in rqc:
         key=(observation['runId'], 'stage', observation['spanId'])

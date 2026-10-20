@@ -20,7 +20,8 @@ if str(REPO_ROOT) not in sys.path:
 
 from scripts.sermon_pipeline import chat_json, clean_text, read_json, write_json
 from scripts import series_terminology
-from scripts.sermon_accounting import accounting_session, stage, record_workload
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.observability.accounting import accounting_session, stage, record_workload
 
 
 PROMPT_VERSION = "sermon-reading-edition-gpt56sol-v1"

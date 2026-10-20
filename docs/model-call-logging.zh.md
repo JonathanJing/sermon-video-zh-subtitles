@@ -26,8 +26,9 @@ MiLMMT 服务的正常 `serve/start` 入口将日志默认绑定到 `<state-dir>
 ## 新模型通用接入
 
 ```python
-from scripts.sermon_accounting import accounting_session
-from scripts.sermon_model_call_observation import invocation
+from scripts import tongxing_host  # binds the production package ports
+from tongxing_production.observability.accounting import accounting_session
+from tongxing_production.observability.model_call_observation import invocation
 
 with accounting_session(work / "accounting", "supervision"):
     with invocation(

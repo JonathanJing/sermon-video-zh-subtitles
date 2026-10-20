@@ -109,7 +109,6 @@ def test_own_usage(tmp_path):
 
 @pytest.mark.parametrize("facade, module", [
     ("scripts/produce_target_language_candidate.py", "text.candidate"),
-    ("scripts/build_four_layer_tracker_snapshot.py", "observability.projections.four_layer_tracker_snapshot"),
 ])
 def test_help_matches_the_facade(tmp_path, facade, module):
     old = subprocess.run([sys.executable, str(ROOT / facade), "--help"], cwd=tmp_path,

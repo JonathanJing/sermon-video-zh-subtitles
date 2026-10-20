@@ -16,7 +16,8 @@ from types import SimpleNamespace
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.source import mfa_identity
 from scripts import sermon_fresh_source_causality as causality
-from scripts import sermon_accounting as accounting
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.observability import accounting
 from scripts import sermon_diagnostic_attempts as attempts
 from scripts import sermon_diagnostic_context as diagnostic
 from scripts import sermon_diagnostic_provider as provider

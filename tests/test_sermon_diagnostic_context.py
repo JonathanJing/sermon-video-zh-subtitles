@@ -13,7 +13,8 @@ from scripts import tongxing_host  # noqa: F401  binds the production package po
 from tongxing_production.source import english_source_package as english
 from tongxing_production.text import candidate as producer
 from tongxing_production.text import policy as policies
-from scripts import sermon_accounting as accounting
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.observability import accounting
 from tests import test_sermon_strict_locale as locale_fixtures
 
 

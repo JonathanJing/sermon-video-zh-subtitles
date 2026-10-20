@@ -16,7 +16,8 @@ from continue_saturday_dubbing import continue_saturday
 from poc import sha256, write_json
 from speech_backend import ASR, ALIGNER
 from run_weekly_dubbing import validate_candidate
-from scripts import sermon_accounting as accounting
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.observability import accounting
 from scripts.build_sermon_reading_edition_with_openai import build_semantic_blocks, reading_quality_report, write_block_srt
 from scripts.generate_notes_with_openai import segments_from_srt, merge_aligned_segments, build_note_slices, summarize_slices
 from scripts.sermon_pipeline import clean_text, reference_chunks_to_reading_segments, source_file_identity, parse_timecode

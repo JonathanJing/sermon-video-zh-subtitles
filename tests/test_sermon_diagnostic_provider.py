@@ -15,7 +15,8 @@ from scripts import sermon_review_budget as budget
 from scripts import sermon_review_contracts as c
 from scripts import sermon_strict_layer2 as strict
 from scripts import sermon_strict_budget_adapter as adapter
-from scripts import sermon_accounting as accounting
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.observability import accounting
 from scripts import sermon_strict_candidate_bridge as bridge
 from tests import test_sermon_strict_layer2 as fixtures
 
@@ -183,7 +184,7 @@ class ProviderTests(unittest.TestCase):
         self.assertEqual(rejected['cost']['estimatedUsd'],0)
         self.assertIsNone(rejected['responseId'])
         self.assertTrue(all(v is None for v in rejected['usage'].values()))
-        from scripts import sermon_log_contract as log_contract
+        from tongxing_production.observability import log_contract
         self.assertFalse(any(r['code']=='missing_model_finish'
             for r in log_contract.replay_integrity(rows)['diagnostics']))
         self.assertEqual(len(self.calls),1)

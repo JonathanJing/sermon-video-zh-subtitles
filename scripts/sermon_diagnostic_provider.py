@@ -21,11 +21,11 @@ import sys
 import time
 import urllib.request
 
-from scripts import sermon_accounting as accounting
-from scripts import sermon_completion as completion
+from tongxing_production.observability import accounting
+from tongxing_production.observability import completion
 from scripts import sermon_pipeline as pipeline
 from scripts import sermon_provider_error as errors
-from scripts import sermon_log_profile as profile
+from tongxing_production.observability import profile
 from scripts import sermon_provider_limits as limits
 from scripts import sermon_provider_http as http
 from scripts import sermon_review_budget as budget

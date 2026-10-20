@@ -56,7 +56,7 @@ def _hash(value):
 
 
 def _modules(value):
-    from scripts.sermon_accounting import CODE_PATH_PATTERN
+    from tongxing_production.observability.accounting import CODE_PATH_PATTERN
     c.require(type(value) is dict and len(value) <= 1024, 'invalid_extension_modules')
     for path, digest in value.items():
         c.require(type(path) is str and len(path) <= 256 and CODE_PATH_PATTERN.fullmatch(path)

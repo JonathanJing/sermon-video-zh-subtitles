@@ -73,7 +73,8 @@ class BusinessFlowTests(unittest.TestCase):
         for key in ('speech.prepare', 'speech.render', 'delivery'):
             self.assertEqual(result[key]['executionStatus'], 'blocked')
             self.assertFalse(result[key]['processed'])
-        from scripts import sermon_accounting as accounting
+        from scripts import tongxing_host  # noqa: F401  binds the production package ports
+        from tongxing_production.observability import accounting
         rows, errors = accounting.read_events(self.f.f.root / 'logs')
         self.assertFalse(errors)
         starts = {r['spanId']: r for r in rows if r['event'] == 'stage_started'}
