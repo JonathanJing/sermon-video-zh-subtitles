@@ -43,11 +43,11 @@ Web 根据显式环境和 catalog 的 `diagnosticOnly`／`simulationOnly` 标记
 ## 费用隔离与离线对账
 
 ```bash
-python -m scripts.sermon_cost_isolation validate-config --config /path/to/routes.json
-python tools/ops/import_openai_costs.py \
+.venv/bin/python tools/ops/run.py observability.cost_isolation validate-config --config /path/to/routes.json
+.venv/bin/python tools/ops/import_openai_costs.py \
   --config /path/to/routes.json \
   --export /path/to/captured-costs-export.json > /path/to/normalized-daily-costs.json
-python -m scripts.sermon_cost_isolation reconcile \
+.venv/bin/python tools/ops/run.py observability.cost_isolation reconcile \
   --config /path/to/routes.json \
   --attempts /path/to/attempts.json \
   --daily-costs /path/to/normalized-daily-costs.json
