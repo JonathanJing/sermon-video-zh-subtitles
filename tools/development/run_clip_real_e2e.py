@@ -537,7 +537,8 @@ def stage_audio(run: Run, locale: str, code: str):
               "--audio-operation-policies", ROOT / "config/layer3-audio-operation-policies.json"]
     spark = [PY, ROOT / "tools/development/clip_e2e_spark.py"]
     common = ["--locale", locale, "--stage", run.stage_dir, "--code", code]
-    raw, compacted = f"{locale}-raw", f"{locale}-c"
+    suffix = run.spec["layer3"].get("remoteSuffix", "")
+    raw, compacted = f"{locale}-raw{suffix}", f"{locale}-c{suffix}"
     lag = str(run.spec["layer3"]["maxEndLagSeconds"])
     if not (l3 / "dispatch.result.json").exists():
         # The renderer exits 1 when its own unit screening flags units; the ASR screen below decides.
