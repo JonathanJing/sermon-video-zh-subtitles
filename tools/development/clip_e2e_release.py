@@ -22,7 +22,7 @@ import json
 from pathlib import Path
 import sys
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
@@ -60,7 +60,7 @@ def prepare(out: Path, *, page_id: str, date: str, locales: list[str], source_pa
     from tongxing_production.review import release_basis as basis
     from tongxing_production.delivery import unified_stage as delivery
     from tongxing_production.delivery import study_artifacts
-    from scripts.build_dev_180s_simulated_inputs import read, save, ref
+    from tools.development.build_dev_180s_simulated_inputs import read, save, ref
     from tongxing_production.delivery.contract import sha as json_sha
     require(page_id.startswith(("mockup-", "dev-")), "clip E2E pages must use an isolated mockup-/dev- page ID")
     require(isinstance(default_pass, str) and "not a human review" in default_pass,

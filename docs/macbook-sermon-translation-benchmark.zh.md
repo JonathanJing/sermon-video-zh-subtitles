@@ -122,7 +122,7 @@ uv run --quiet --with sacrebleu==2.5.1 python scripts/score_sermon_text_benchmar
 资源采样器接受一个或多个已核实 PID，并自动包含其子进程：
 
 ```bash
-python3 scripts/sample_macbook_resources.py \
+python3 tools/benchmarks/sample_macbook_resources.py \
   --pid <verified-server-pid> \
   --duration-seconds <run-duration> \
   --output data/benchmarks/live-sermon-translation-v1/runs/macbook-text-baselines/<run-id>/resource-samples.jsonl

@@ -7,12 +7,11 @@ import json
 from pathlib import Path
 import tempfile
 
-try:
-    from scripts import backend_four_layer_dry_run as dry
-    from scripts.firebase_dev_weekly_dry_run import checked_backend_run
-except ImportError:
-    import backend_four_layer_dry_run as dry
-    from firebase_dev_weekly_dry_run import checked_backend_run
+if __package__ in (None, ""):  # run directly: reach the repository root
+    import sys
+    sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+from tools.ops import backend_four_layer_dry_run as dry  # noqa: E402
+from tools.ops.firebase_dev_weekly_dry_run import checked_backend_run  # noqa: E402
 
 
 FAILURE_POINTS = ("layer1", "layer2:ko:unit-0:sol", "layer3:es", "layer4")

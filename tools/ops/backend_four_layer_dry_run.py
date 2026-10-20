@@ -23,24 +23,19 @@ import wave
 
 from jsonschema import Draft202012Validator, FormatChecker
 
-try:
-    from scripts import tongxing_host  # noqa: F401  binds the production package ports
-    from tongxing_production.source import sentence_interpretation_shadow as layer1
-    from scripts import prepare_multilingual_weekly_plan as planner
-    from tongxing_production.audio import renderer as layer3
-    from tongxing_production.text import models as layer2_runner
-    from tongxing_production.text import candidate as layer2_producer
-    from tongxing_production.delivery.asset_io import copy_bound_asset
-except ImportError:
-    from tongxing_production.source import sentence_interpretation_shadow as layer1
-    import prepare_multilingual_weekly_plan as planner
-    from tongxing_production.text import models as layer2_runner
-    from tongxing_production.text import candidate as layer2_producer
-    from tongxing_production.delivery.asset_io import copy_bound_asset
-    from tongxing_production.audio import renderer as layer3
+if __package__ in (None, ""):  # run directly: reach the repository root
+    import sys
+    sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+from scripts import tongxing_host  # noqa: E402,F401  binds the production package ports
+from tongxing_production.source import sentence_interpretation_shadow as layer1  # noqa: E402
+from tongxing_production.delivery import prepare_multilingual_weekly_plan as planner  # noqa: E402
+from tongxing_production.audio import renderer as layer3  # noqa: E402
+from tongxing_production.text import models as layer2_runner  # noqa: E402
+from tongxing_production.text import candidate as layer2_producer  # noqa: E402
+from tongxing_production.delivery.asset_io import copy_bound_asset  # noqa: E402
 
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 SCHEMA = "sermon-backend-four-layer-dry-run-v2"
 FIXTURE_SCHEMA = "sermon-backend-four-layer-dry-run-fixture-v1"
 LOCALES = ("zh-Hans", "ko", "es")

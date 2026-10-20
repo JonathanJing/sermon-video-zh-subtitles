@@ -5,7 +5,7 @@ import unittest
 from argparse import Namespace
 from pathlib import Path
 
-import scripts.write_production_go_live_sequence as mod
+import tools.ops.write_production_go_live_sequence as mod
 
 
 class WriteProductionGoLiveSequenceTest(unittest.TestCase):

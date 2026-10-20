@@ -276,7 +276,7 @@ def build_commands(args: argparse.Namespace, paths: dict[str, Path]) -> dict[str
         ],
         "modelAccessRecoveryPlan": [
             sys.executable,
-            "scripts/write_model_access_recovery_plan.py",
+            "tools/ops/write_model_access_recovery_plan.py",
             "--sunday",
             args.sunday,
             "--required-model",
@@ -320,7 +320,7 @@ def build_commands(args: argparse.Namespace, paths: dict[str, Path]) -> dict[str
         ],
         "offlineWorkerPlan": [
             sys.executable,
-            "scripts/write_worker_caption_first_plan.py",
+            "tools/ops/write_worker_caption_first_plan.py",
             "--out",
             str(paths["offlineWorkerPlan"]),
         ],
@@ -476,7 +476,7 @@ def goal_audit_command(paths: dict[str, Path]) -> list[str]:
 def production_unblock_plan_command(paths: dict[str, Path]) -> list[str]:
     return [
         sys.executable,
-        "scripts/write_production_unblock_plan.py",
+        "tools/ops/write_production_unblock_plan.py",
         "--evidence-matrix",
         str(paths["productionMatrix"]),
         "--gcs-manifest-publish-plan",
@@ -491,7 +491,7 @@ def production_unblock_plan_command(paths: dict[str, Path]) -> list[str]:
 def operator_approval_bundle_command(args: argparse.Namespace, paths: dict[str, Path]) -> list[str]:
     return [
         sys.executable,
-        "scripts/write_operator_approval_bundle.py",
+        "tools/ops/write_operator_approval_bundle.py",
         "--sunday",
         args.sunday,
         "--unblock-plan",
@@ -512,7 +512,7 @@ def operator_approval_bundle_command(args: argparse.Namespace, paths: dict[str, 
 def production_go_live_sequence_command(args: argparse.Namespace, paths: dict[str, Path]) -> list[str]:
     return [
         sys.executable,
-        "scripts/write_production_go_live_sequence.py",
+        "tools/ops/write_production_go_live_sequence.py",
         "--sunday",
         args.sunday,
         "--preflight-refresh",

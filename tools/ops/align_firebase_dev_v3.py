@@ -22,7 +22,7 @@ from jsonschema import Draft202012Validator, FormatChecker
 
 if __package__ in (None, ""):  # run directly: reach the repository root
     import sys
-    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+    sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 from scripts import tongxing_host  # noqa: E402,F401  binds the production package ports
 from tongxing_production.adapters.legacy import multilingual_dev_preview as old_dev  # noqa: E402
 from tongxing_production.adapters.legacy import verify_multilingual_hosting as http  # noqa: E402
@@ -30,7 +30,7 @@ from tongxing_production.adapters.legacy import assemble_multilingual_v3_update 
 from tongxing_production.adapters.legacy import verify_v3_bucket_video as bucket_http  # noqa: E402
 
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 ORIGIN = old_dev.DEV_ORIGIN
 SITE = old_dev.DEV_SITE
 RUNTIME_REPLACEMENTS = {

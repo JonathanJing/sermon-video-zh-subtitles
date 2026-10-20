@@ -6,7 +6,7 @@ import {mkdtempSync, rmSync} from 'node:fs';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import {fingerprint} from './fingerprint-core.mjs';
-import {assertBenchmarkPlan, assertCompatibleIndex, assertIndependentTruth, assertPositiveRecordingSpan, assertVariantParity, failingGates, fingerprintVariant, nearestRank, scoreNegatives, scorePositive} from '../../scripts/field_venue_fingerprint_benchmark.mjs';
+import {assertBenchmarkPlan, assertCompatibleIndex, assertIndependentTruth, assertPositiveRecordingSpan, assertVariantParity, failingGates, fingerprintVariant, nearestRank, scoreNegatives, scorePositive} from '../../tools/benchmarks/field_venue_fingerprint_benchmark.mjs';
 
 function speechLike(seconds, seed = 7) {
   let s = seed; const rand = () => ((s = (s * 1103515245 + 12345) >>> 0) / 2 ** 32) - .5;
@@ -57,7 +57,7 @@ test('benchmark rejects incompatible indexes before counting comparisons', () =>
 test('negative-window step must advance and be finite', () => {
   const index = {schemaVersion: 'sermon-landmark-index-v1', algorithmVersion: 'spectral-landmarks-v1', sampleRate: 8000, hopSize: 256, durationSeconds: 60, postings: {0: [0]}};
   for (const step of [0, -1, Infinity, NaN]) assert.throws(() => scoreNegatives([], [['target', index]], null, step), /invalid_neg_step/);
-  const cli = new URL('../../scripts/field_venue_fingerprint_benchmark.mjs', import.meta.url);
+  const cli = new URL('../../tools/benchmarks/field_venue_fingerprint_benchmark.mjs', import.meta.url);
   const r = spawnSync(process.execPath, [cli.pathname, 'missing.json', '--out', 'unused', '--neg-step', '0'], {encoding: 'utf8'});
   assert.equal(r.status, 1);
   assert.match(r.stderr, /invalid_neg_step/);
@@ -123,14 +123,14 @@ test('independent truth binds the source and recording before scoring', () => {
 });
 
 test('variant selection rejects inherited property names', () => {
-  const cli = new URL('../../scripts/field_venue_fingerprint_benchmark.mjs', import.meta.url);
+  const cli = new URL('../../tools/benchmarks/field_venue_fingerprint_benchmark.mjs', import.meta.url);
   const r = spawnSync(process.execPath, [cli.pathname, 'missing.json', '--out', 'unused', '--variants', '__proto__'], {encoding: 'utf8'});
   assert.equal(r.status, 1);
   assert.match(r.stderr, /unknown variant __proto__/);
 });
 
 test('filesystem errors do not reveal private paths', () => {
-  const cli = new URL('../../scripts/field_venue_fingerprint_benchmark.mjs', import.meta.url);
+  const cli = new URL('../../tools/benchmarks/field_venue_fingerprint_benchmark.mjs', import.meta.url);
   const work = mkdtempSync(join(tmpdir(), 'field-benchmark-'));
   try {
     const privateManifest = join(work, 'private-user-recordings', 'manifest.json');

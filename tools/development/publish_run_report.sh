@@ -2,7 +2,7 @@
 # Open a docs-only PR that adds one redacted run report for cloud review.
 #
 # Usage (repo root):
-#   scripts/publish_run_report.sh artifacts/run-reports/<YYYYMMDD-label> [--base dev]
+#   tools/development/publish_run_report.sh artifacts/run-reports/<YYYYMMDD-label> [--base dev]
 #
 # The report comes from scripts/export_run_digest.py. This script re-checks its
 # redaction, then commits it as docs/reports/runs/<name>/ on a new branch
