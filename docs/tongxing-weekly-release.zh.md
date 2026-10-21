@@ -24,6 +24,8 @@
 
 这类周更必须从当场取得的完整 production baseline 构造原子候选：同一 Hosting 版本更新受信任 reader runtime、缺失的视频精确 302、v5/v4/v3 三份目录及 seal report；edition 的 release、content、字幕、音轨、学习产物和 sidecar 字节保持不变。部署前比较 live version 与三份目录基线，部署后按本次 Firebase version 回读三份目录。任何 target 的 edition/source/media/video 交叉不一致都停止发布。
 
+Dev 验证同一流程时，从 Dev 的完整实时 baseline 起步；缺少已公开的 edition 文件可由 `prepare_mixed_source_catalog_overlay.py --environment dev --asset-source <已封存候选>` 按 release 哈希与来源 seal 逐项导入。候选中的视频 `storageUrl` 必须指向 Dev 媒体桶，先核对对象大小、校验和与 Range，再用生成的 `publish-config.json` 走受保护的 Hosting 发布。Dev 原有页面和文件不可用 Production 整站快照替换；私人生产数据不进入 Dev。
+
 
 ### v3 周更发布清单与验收
 

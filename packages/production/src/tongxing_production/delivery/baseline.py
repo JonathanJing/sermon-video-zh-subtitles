@@ -504,7 +504,8 @@ def machine_checked_overlay(baseline_path, overlay_public, catalog_path, out):
     return {'status': 'prepared_not_deployed', 'publishConfig': str(out / 'publish-config.json'), 'pageId': added[0]['id']}
 
 
-def mixed_source_catalog_overlay(baseline_path, catalog_path, release_plan_path, out, *, environment='production'):
+def mixed_source_catalog_overlay(baseline_path, catalog_path, release_plan_path, out, *,
+                                 environment='production', asset_source=None):
     """Atomically stage mixed catalogs, trusted runtime and edition video redirects."""
     base, catalog_path, plan_path, out = map(Path, (baseline_path, catalog_path, release_plan_path, out))
     base, catalog_path, plan_path, out = (path.resolve() for path in (base, catalog_path, plan_path, out))
@@ -516,13 +517,26 @@ def mixed_source_catalog_overlay(baseline_path, catalog_path, release_plan_path,
                      and candidate['pages'][0]['sourceMode'] == 'per_target',
                      'Mixed-source overlay needs one per-target family page')
     plan = read(plan_path)
+    source = Path(asset_source).resolve() if asset_source is not None else None
+    if source is not None:
+        contract.require(source != base and source != out, 'Asset source must be separate from the live baseline')
+        source_catalog = contract.validate_catalog_schema(read(source / 'public/multilingual-v5.json'))
+        source_page = next((page for page in source_catalog['pages']
+                            if page['id'] == candidate['pages'][0]['id']), None)
+        contract.require(source_page is not None, 'Asset source family page is missing')
+        expected = copy.deepcopy(source_page)
+        for locale, target in expected['targets'].items():
+            contract.require(locale in candidate['pages'][0]['targets'], 'Asset source locale differs')
+            target['videoDelivery']['storageUrl'] = candidate['pages'][0]['targets'][locale]['videoDelivery']['storageUrl']
+        contract.require(expected == candidate['pages'][0], 'Asset source family identity differs')
     current = contract.snapshot_catalog_v5(base)
     merged = contract.merge_catalog(current, candidate, plan)
     v4 = contract.project_legacy_catalog_v4(merged)
     v3 = contract.project_human_catalog(v4)
     out.mkdir(parents=True)
     try:
-        return _stage_mixed_source_overlay(base, out, candidate, current, merged, v4, v3, environment)
+        return _stage_mixed_source_overlay(base, out, candidate, current, merged, v4, v3,
+                                           environment, source)
     except BaseException:
         # out did not exist before this call; leave no partial candidate behind, so a
         # retry with the same path works and nothing half-built looks immutable.
@@ -530,11 +544,62 @@ def mixed_source_catalog_overlay(baseline_path, catalog_path, release_plan_path,
         raise
 
 
-def _stage_mixed_source_overlay(base, out, candidate, current, merged, v4, v3, environment):
+def _mixed_source_asset_paths(source, candidate):
+    public = source / 'public'
+    source_rows = {safe_relative(row['path']): row for row in read(source / 'seal-report.json')['files']}
+    contract.require(len(source_rows) == len(read(source / 'seal-report.json')['files']),
+                     'Duplicate asset source seal path')
+    paths = set()
+    for locale, target in candidate['pages'][0]['targets'].items():
+        release_path = safe_relative(target['releasePackageUrl'])
+        release_file = public / release_path
+        contract.require(release_file.is_file() and digest(release_file) == target['releasePackageJsonSha256'],
+                         'Asset source release differs: ' + locale)
+        paths.add(release_path)
+        release = read(release_file)
+        for asset in release['assets']:
+            path = safe_relative(asset['path'])
+            contract.require((public / path).is_file() and digest(public / path) == asset['sha256'],
+                             'Asset source release asset differs: ' + str(path))
+            paths.add(path)
+        fingerprint = target.get('audioFingerprint')
+        if fingerprint:
+            path = safe_relative(fingerprint['indexUrl'])
+            contract.require((public / path).is_file()
+                             and digest(public / path) == fingerprint['indexSha256'],
+                             'Asset source fingerprint differs: ' + locale)
+            paths.add(path)
+        edition = target['editionId']
+        for prefix in ('alignment', 'english-reference'):
+            path = Path(prefix) / (edition + '.json')
+            if (public / path).is_file():
+                paths.add(path)
+    for path in paths:
+        row = source_rows.get(path)
+        contract.require(row is not None and (public / path).is_file()
+                         and digest(public / path) == row['sha256']
+                         and (public / path).stat().st_size == row['bytes'],
+                         'Asset source seal differs: ' + str(path))
+    return sorted(paths)
+
+
+def _stage_mixed_source_overlay(base, out, candidate, current, merged, v4, v3,
+                                environment, asset_source=None):
     shutil.copytree(base / 'public', out / 'public')
     shutil.copyfile(base / 'baseline-receipt.json', out / 'baseline-receipt.json')
     public = out / 'public'
     changed = []
+    imported = []
+    if asset_source is not None:
+        for path in _mixed_source_asset_paths(asset_source, candidate):
+            source_file, target_file = asset_source / 'public' / path, public / path
+            contract.require(not target_file.exists() or digest(target_file) == digest(source_file),
+                             'Existing edition asset collision: ' + str(path))
+            if not target_file.exists():
+                target_file.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copyfile(source_file, target_file)
+                imported.append('/' + str(path))
+        changed.extend(imported)
     runtime_root = _builder().runtime_web_root()
     runtime_files = _builder().runtime_web_files(runtime_root)
     for name in runtime_files:
@@ -586,7 +651,8 @@ def _stage_mixed_source_overlay(base, out, candidate, current, merged, v4, v3, e
         'catalogV5Sha256': report['catalogV5Sha256'],
         'catalogV4Sha256': report['catalogV4Sha256'], 'catalogSha256': report['catalogSha256'],
         'changedPaths': sorted(changed + ['/multilingual-v5.json', '/multilingual-v4.json', '/multilingual-v3.json']),
-        'editionAssetsChanged': False, 'preservedEditionAssetsSha256': contract.sha(base_public),
+        'editionAssetsChanged': bool(imported), 'importedEditionAssets': imported,
+        'preservedEditionAssetsSha256': contract.sha(base_public),
         'runtimeFiles': sorted(runtime_files), 'firebaseConfigSha256': digest(out / 'firebase.json'),
         'publication': 'not_started'})
     return {'status': 'prepared_not_deployed', 'publishConfig': str(out / 'publish-config.json'),
