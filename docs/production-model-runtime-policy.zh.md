@@ -8,6 +8,10 @@
 | Layer 2 独立审核 | `gpt-6.1-sol` | `medium` | 批准的 tier（目前 `default`）；无授权 standalone `fast` 发送前拒绝 | OpenAI API |
 | dev 与正式生产 Supervisor | `gpt-6-luna` | `medium` | `fast` | ChatGPT-authenticated Codex CLI |
 
+## Layer 1 英文机器裁判：OpenAI API 或 Claude CLI（Opus 5.5）
+
+2026-10-21 用户决定第 1 层的逐句机器裁判也可以切换后端，在[统一 Source 准备](unified-source-preparation.zh.md)的 v3 配置里用 `judge.backend` 选择：`openai_api` 用 `gpt-6.1-sol`（推理强度 high），`claude_cli_opus` 用 `claude-opus-5-5`（high），经本机订阅登录的 Claude CLI 调用，不用 API key。裁判只产生机器证据，英文人工审核不变。来源 ASR 仍走 OpenAI。v1、v2 配置保持 OpenAI，不迁移；还没有 Claude 第 1 层裁判的真实运行证据。
+
 ## Layer 2 后端：OpenAI API 或 Claude CLI（Opus 5.5）
 
 新 dev 与正式 canonical Layer 2 默认是 `openai_api`：初译 `gpt-6.1-sol` high，独立复核 Sol medium。

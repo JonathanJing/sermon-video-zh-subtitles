@@ -26,7 +26,8 @@ CLI 等价入口：
 - `budgetAuthorization`：独立预算授权文件。
 - `mfa`：backend、allowSparkFallback、localOptions、sparkOptions；仅接受现有 MFA adapter 的固定字段。
 - `anchorPolicy`：maxUnitSeconds 和 boundaryOverrides。已有人工边界覆盖原样传入，不按时长强拆。
-- `judge`：固定 gpt-6-astra、reasoningEffort、batchSize、workers。此 source recipe 为保守共享预算使用 workers=1；独立 L1 judge 入口仍支持 1–8 workers。
+- `judge`：reasoningEffort、batchSize、workers 和模型。v1 只允许 workers=1；v2 允许 1–8 workers。v1、v2 的模型为 `gpt-6-astra` 或 `gpt-6.1-sol`，走 OpenAI API。
+  **v3（`sermon-unified-source-preparation-v3`，2026-10-21 用户决定）** 在 v2 字段上要求 `judge.backend`，后端决定模型：`openai_api` 只能用 `gpt-6.1-sol`；`claude_cli_opus` 只能用 `claude-opus-5-5`，经本机订阅登录的 Claude CLI 调用（`compute/transports/claude_source_judge.py`），不用 API key，单次调用的超时等于预算的单请求墙钟上限。ASR 仍走 OpenAI，所以 v3 的 Claude 后端仍需要 OpenAI 启动器和预算。后端写在配置里，进入配置摘要和预算绑定；换后端等于新配置，需要重新批准预算。v1、v2 配置不迁移。
 
 窗口检查直接复用 `sermon_unified_reviews.validate_window` 与 Supervisor validator，不建立新的窗口批准体系。Supervisor 收据的旧短 URL hash 通过实际 URL 校验；正式 Source package 使用完整 URL SHA-256，原批准文件不改写。
 
@@ -42,6 +43,8 @@ CLI 等价入口：
 - 独立 `sermon-source-budget-approval-v1` 收据的 binding 为上述 binding 加 globalBounds/requestLimits，须保存人类决定、操作者证据和审核时间；hash 引用不等于授权。
 
 ASR 用既有 `sermon_transcription_request` 构造每块最多 180 秒的 PCM 请求；原始返回按块不可变保存。输入音频时长按已有冻结价格假设预留，不宣称实际账单。Judge 的实际 payload 在缓存身份计算前加入输入、输出 token 与墙钟限制；预留仍按冻结价格上界，`invoiceVerified=false`。
+
+Claude 后端的裁判调用同样先在这本账里预留、返回后结算：预留按 Opus 5.5 的冻结列价最坏情况（`strict-claude-list-worst-case-2026-10-08-v1`）计入 `costMicrousd`，结算的 `priceBasis` 记为 `claude_subscription_list_price_equivalent`。这只是列价等价，不是订阅的实际扣费；批准预算时这部分会占用美元上限，比实际支出保守。
 
 每次 provider 请求前持久化 reservation。网络未知、缺失返回、owner 崩溃不能通过新 operation ID、改名输出目录或盲重试清除。已返回块逐块恢复，失败点之前的块不重付。
 

@@ -158,6 +158,16 @@ D5_MOVE_MIGRATION = 'd5-window-diagnostic-package-move-v13'
 D5_MOVE_CHANGED = ['scripts/sermon_diagnostic_context.py', 'scripts/sermon_fresh_diagnostic_source.py']
 
 
+# The Source builder admits one more machine judge identity, claude-opus-5-5 high from the
+# subscription Claude CLI (unified source v3 claude_cli_opus). Nothing else in it changed,
+# so an original Source judged by an OpenAI model inspects exactly as before. The checkout
+# before was exactly the v13 current table.
+JUDGE_IDENTITY_HISTORICAL_SHA256 = D5_MOVE_SOURCE_SHA256
+JUDGE_IDENTITY_SOURCE_SHA256 = {**D5_MOVE_SOURCE_SHA256,
+    'scripts/build_english_source_package.py': '6f541a7ea942a55c0c9d9463b2046382b71f0e17a3e666600e59adbf4240820e'}
+JUDGE_IDENTITY_MIGRATION = 'l1-source-builder-claude-judge-identity-v14'
+JUDGE_IDENTITY_CHANGED = ['scripts/build_english_source_package.py']
+
 def verify(historical,current,planned,binding):
     _require(type(historical) is dict and type(current) is dict and type(planned) is dict
         and set(historical)==set(current)==set(HISTORICAL_SOURCE_SHA256)
@@ -178,6 +188,7 @@ def verify(historical,current,planned,binding):
     facade_removal = historical==FACADE_REMOVAL_HISTORICAL_SHA256 and current==FACADE_REMOVAL_SOURCE_SHA256
     c_facade_removal = historical==C_FACADE_REMOVAL_HISTORICAL_SHA256 and current==C_FACADE_REMOVAL_SOURCE_SHA256
     d5_move = historical==D5_MOVE_HISTORICAL_SHA256 and current==D5_MOVE_SOURCE_SHA256
+    judge_identity = historical==JUDGE_IDENTITY_HISTORICAL_SHA256 and current==JUDGE_IDENTITY_SOURCE_SHA256
     package_move = (move or producer_move or transport_move or contracts_split or storage_move or measure_move
                     or jobs_split or facade_removal or c_facade_removal or d5_move)
     changed = (CHANGED if original else MOVE_CHANGED if move else PRODUCER_MOVE_CHANGED if producer_move
@@ -185,8 +196,9 @@ def verify(historical,current,planned,binding):
         else STORAGE_MOVE_CHANGED if storage_move else MEASURE_MOVE_CHANGED if measure_move
         else JOBS_SPLIT_CHANGED if jobs_split else FACADE_REMOVAL_CHANGED if facade_removal
         else C_FACADE_REMOVAL_CHANGED if c_facade_removal else D5_MOVE_CHANGED if d5_move
+        else JUDGE_IDENTITY_CHANGED if judge_identity
         else ['scripts/sermon_fresh_diagnostic_source.py'])
-    _require((original or followup or extraction or package_move) and {path for path in current if current[path]!=historical[path]}==set(changed),
+    _require((original or followup or extraction or package_move or judge_identity) and {path for path in current if current[path]!=historical[path]}==set(changed),
         'source_producer_compatibility_unknown_revision')
     _require(not contracts_split or all(recorded(planned,path)==sha
         for path,sha in CONTRACTS_SPLIT_MEMBER_SHA256.items()),
@@ -206,12 +218,14 @@ def verify(historical,current,planned,binding):
         else STORAGE_MOVE_MIGRATION if storage_move else MEASURE_MOVE_MIGRATION if measure_move
         else JOBS_SPLIT_MIGRATION if jobs_split else FACADE_REMOVAL_MIGRATION if facade_removal
         else C_FACADE_REMOVAL_MIGRATION if c_facade_removal else D5_MOVE_MIGRATION if d5_move
+        else JUDGE_IDENTITY_MIGRATION if judge_identity
         else EXTRACTION_MIGRATION if extraction else FOLLOWUP_MIGRATION)
     return {'schemaVersion':SCHEMA,'migrationId':migration,'binding':binding,
         'historicalProducerSha256':historical,'currentInspectorProducerSha256':current,
         'changedModules':changed,'migrationCodeSha256':_source.current().code.module_sha256(sys.modules[__name__]),
         'acceptedScope':('original_deadline_and_typed_failures_only_no_source_semantic_change' if original else
             'read_only_original_source_under_package_move_no_new_inference' if package_move else
+            'read_only_original_source_under_judge_identity_allowlist_extension_no_new_inference' if judge_identity else
             'read_only_original_source_under_fixed_stage_extraction_no_new_inference' if extraction else
             'read_only_original_source_under_typed_completion_and_identity_inspector_no_new_inference'),
         'sourceExecution':'historical_receipts_reused_current_deterministic_inspection',

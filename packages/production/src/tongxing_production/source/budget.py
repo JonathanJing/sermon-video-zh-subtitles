@@ -29,6 +29,11 @@ class _Jobs:
 jobs = _Jobs()
 
 JUDGE_LIMITS = ContextVar('source_judge_request_limits', default=None)
+# Source judge models by backend. openai_api dispatches to the Chat Completions endpoint;
+# claude_cli_opus runs through the subscription Claude CLI (list-price equivalent reservations).
+OPENAI_JUDGE_MODELS = ('gpt-6-astra', 'gpt-6.1-sol')
+CLAUDE_JUDGE_MODELS = ('claude-opus-5-5',)
+CLAUDE_CLI_ENDPOINT = 'claude-cli://source-judge'
 METRICS = ('requests', 'wallTimeMs', 'costMicrousd')
 
 
@@ -66,7 +71,10 @@ def settlement(identity, response, elapsed):
     model = identity.get('model') if isinstance(identity, dict) else None
     result = {'costStatus': 'unknown', 'costMicrousd': None, 'usage': None, 'reasonCode': None,
               'requestedModel': model, 'providerModel': response.get('model') if isinstance(response, dict) else None,
-              'elapsedSeconds': elapsed, 'priceBasis': 'requested_model_frozen_worst_case_rate', 'invoiceVerified': False}
+              'elapsedSeconds': elapsed, 'invoiceVerified': False,
+              # Subscription Claude CLI usage is priced at list rates as an equivalent, never as a charge.
+              'priceBasis': ('claude_subscription_list_price_equivalent' if model in CLAUDE_JUDGE_MODELS
+                             else 'requested_model_frozen_worst_case_rate')}
     if not isinstance(usage, dict):
         return dict(result, reasonCode='missing_provider_usage')
     inputs = usage.get('prompt_tokens', usage.get('input_tokens'))
@@ -121,7 +129,7 @@ def bounded_source_judge_payload(payload, limits):
     text_limits.validate_request_limits(limits)
     expected_format = {'type': 'json_schema', 'json_schema': {
         'name': 'english_source_machine_judge', 'strict': True, 'schema': judge._response_schema()}}
-    require(type(payload) is dict and payload.get('model') in ('gpt-6-astra', 'gpt-6.1-sol')
+    require(type(payload) is dict and payload.get('model') in OPENAI_JUDGE_MODELS + CLAUDE_JUDGE_MODELS
             and payload.get('response_format') == expected_format,
             'unsupported_source_judge_payload')
     # Reuse the shared text/message/model/cap validator with its own supported
@@ -133,7 +141,7 @@ def bounded_source_judge_payload(payload, limits):
 
 class SourceBudget:
     def __init__(self, root, authority, *, verify, transport=None, max_concurrent=1, resource_policy=None,
-                 reuse_roots=()):
+                 reuse_roots=(), claude_transport=None):
         self.root, self.authority, self.verify = Path(root), authority, verify
         # Earlier budget roots of the same run whose returned responses this root may reuse,
         # as named by its approval. Their ledgers/responses are read-only;
@@ -142,6 +150,8 @@ class SourceBudget:
         require(all(root_.resolve() != self.root.resolve() for root_ in self.reuse_roots)
                 and len({root_.resolve() for root_ in self.reuse_roots}) == len(self.reuse_roots), 'invalid_source_reuse_roots')
         self.transport = transport
+        # Subscription Claude CLI judge transport; the only route for a Claude judge payload.
+        self.claude_transport = claude_transport
         require(type(max_concurrent) is int and 1 <= max_concurrent <= 16, 'invalid_source_concurrency')
         self.max_concurrent = max_concurrent
         self.resource_policy = None
@@ -443,7 +453,7 @@ class SourceBudget:
                                                  'responseSha256': jobs._digest(saved), 'settlement': saved['settlement']}
                 jobs._persist(path, ledger)
                 return saved['response']
-            require(self.transport is not None or (isinstance(api_key, str) and bool(api_key)
+            require(endpoint == CLAUDE_CLI_ENDPOINT or self.transport is not None or (isinstance(api_key, str) and bool(api_key)
                     and '\n' not in api_key and '\r' not in api_key), 'OPENAI_API_KEY_is_not_configured')
             # Unknown outcomes stop the source lane; they do not buy a fresh
             # operation ID or allow later work to conceal a missing chunk.
@@ -483,6 +493,11 @@ class SourceBudget:
                 row.pop('dispatchOwner', None)
                 jobs._persist(path, ledger)
                 self._release_resource(row)
+        if endpoint == CLAUDE_CLI_ENDPOINT:
+            start = time.monotonic()
+            response = self.claude_transport(None, identity)
+            returned(response, elapsed=time.monotonic() - start)
+            return response
         if self.transport is not None:
             start = time.monotonic()
             response = self.transport(endpoint, request, content_type, api_key)
@@ -613,6 +628,15 @@ class SourceBudget:
         require(inputs <= limits['maxInputTokens'], 'source_judge_input_bound_exceeded')
         bounds = {'requests': 1, 'wallTimeMs': limits['wallTimeMs'],
                   'costMicrousd': text_limits._cost(payload['model'], inputs, limits['maxCompletionTokens'])}
+        if payload['model'] in CLAUDE_JUDGE_MODELS:
+            # Subscription CLI: the reservation is the model's frozen list-price worst case, not a charge.
+            transport = self.claude_transport
+            require(transport is not None and transport.model == payload['model']
+                    and transport.effort == payload['reasoning_effort'], 'source_judge_claude_transport_required')
+            return self.call(operation='judge.' + jobs._digest(payload), identity=payload, bounds=bounds,
+                             request=b'', api_key=None, content_type='application/json',
+                             endpoint=CLAUDE_CLI_ENDPOINT)
+        require(payload['model'] in OPENAI_JUDGE_MODELS, 'unsupported_source_judge_payload')
         return self.call(operation='judge.' + jobs._digest(payload), identity=payload, bounds=bounds,
                          request=json.dumps(payload, ensure_ascii=False).encode(), api_key=api_key,
                          content_type='application/json', endpoint='https://api.openai.com/v1/chat/completions')
