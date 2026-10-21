@@ -74,6 +74,11 @@ class AlignmentTest(unittest.TestCase):
         self.assertGreater(number['start'], result[0]['end'])
         self.assertEqual(result[0]['timingQuality'], 'mfa_word_aligned')
 
+    def test_sentence_split_keeps_abbreviation_years_together(self):
+        text = 'The scroll is about A.D. 70 and the temple. Then he left.'
+        self.assertEqual(list(mfa._sentences(text)),
+                         ['The scroll is about A.D. 70 and the temple.', 'Then he left.'])
+
     def test_align_widens_beam_beyond_mfa_stock_for_long_reference_blocks(self):
         with patch.object(mfa.subprocess, 'run', side_effect=self.fake_run):
             self.align()

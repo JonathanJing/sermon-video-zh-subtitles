@@ -22,6 +22,13 @@ SCHEMA_VERSION = 1
 # still used; this only widens the search. Both values are part of the identity.
 ALIGN_BEAM = 100
 ALIGN_RETRY_BEAM = 400
+# Multi-dot abbreviations whose final period is not a sentence end. Titles and
+# single-letter initials are handled by pattern in `_sentences`.
+ABBREVIATIONS = frozenset((
+    'a.d.', 'b.c.', 'b.c.e.', 'c.e.', 'u.s.', 'u.k.', 'u.n.', 'e.g.', 'i.e.',
+    'vs.', 'etc.', 'a.m.', 'p.m.', 'ph.d.', 'jr.', 'sr.', 'dr.', 'mr.', 'mrs.',
+    'ms.', 'st.', 'rev.', 'prof.', 'cf.',
+))
 
 
 class MFADeadlineReached(TimeoutError):
@@ -127,7 +134,12 @@ def _reference(text, spoken_forms=None):
 
 
 def _sentences(text):
-    """Split reference punctuation while protecting titles and name initials."""
+    """Split reference punctuation while protecting titles, initials and abbreviations.
+
+    A period inside a known abbreviation is not a sentence end. Without this the
+    2026-10-18 episode split "in A.D. 70" into "in A.D." plus a bare "70", and
+    the machine judge rejected both halves as untranslatable.
+    """
     start = 0
     for boundary in re.finditer(r'(?<=[.!?])\s+', text):
         preceding = text[:boundary.start()]
@@ -135,6 +147,8 @@ def _sentences(text):
         if re.fullmatch(r'(?:Dr|Mr|Mrs|Ms|St|Rev|Prof|Jr|Sr)\.', token, re.I):
             continue
         if re.fullmatch(r'[A-Z]\.', token):
+            continue
+        if token.lower() in ABBREVIATIONS:
             continue
         yield text[start:boundary.start()]
         start = boundary.end()

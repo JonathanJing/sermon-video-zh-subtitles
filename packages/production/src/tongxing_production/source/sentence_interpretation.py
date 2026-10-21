@@ -221,6 +221,17 @@ def _split_long_sentence(words: list[dict[str, Any]], *, max_seconds: float,
     """
     if words[-1]["end"] - words[0]["start"] <= max_seconds:
         return [words], False
+    # A comma inside an open quotation or with no audible pause is a weak
+    # boundary: the 2026-10-18 episode produced units like
+    # 'that's the most antiquated,' / 'outdated—' (0.09 s pause inside a quoted
+    # list) and 'yes,' / 'I am not a firm ...' (a denial split from its clause).
+    # Prefer audible pauses and strong punctuation; fall back to the old choice
+    # only when the long span has no better candidate.
+    quotes = [0]
+    for word in words:
+        text = str(word["text"])
+        delta = text.count('"') + text.count("\u201c") + text.count("\u201d")
+        quotes.append(quotes[-1] + delta)
     parts: list[list[dict[str, Any]]] = []
     cursor = 0
     unresolved = False
@@ -234,13 +245,23 @@ def _split_long_sentence(words: list[dict[str, Any]], *, max_seconds: float,
             gap = words[index + 1]["start"] - words[index]["end"]
             if duration < min_unit_seconds:
                 continue
-            if gap >= pause_seconds or BREAK_PUNCTUATION.search(words[index]["text"]):
-                candidates.append((index + 1, duration, gap))
-        within = [candidate for candidate in candidates if candidate[1] <= max_seconds]
-        if within:
-            split_at = within[-1][0]
+            punctuation = BREAK_PUNCTUATION.search(words[index]["text"])
+            audible = gap >= pause_seconds
+            if not (audible or punctuation):
+                continue
+            candidates.append({"index": index + 1, "duration": duration,
+                               "audible": audible,
+                               "strong": bool(re.search(r"[;:\u2014]", words[index]["text"])),
+                               "insideQuote": quotes[index + 1] % 2 == 1})
+        within = [candidate for candidate in candidates if candidate["duration"] <= max_seconds]
+        safe_within = [candidate for candidate in within
+                       if (candidate["audible"] or candidate["strong"]) and not candidate["insideQuote"]]
+        if safe_within:
+            split_at = safe_within[-1]["index"]
+        elif within:
+            split_at = within[-1]["index"]
         elif candidates:
-            split_at = candidates[0][0]
+            split_at = candidates[0]["index"]
         else:
             parts.append(words[cursor:])
             unresolved = True
