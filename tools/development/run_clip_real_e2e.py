@@ -265,7 +265,7 @@ class Run:
                 evidence + (f" Profile {profile} approved for this clip's group count." if profile else ""),
                 *[arg for stage in stages for arg in ("--stage", stage)], *extra]
         if profile:
-            argv[3:3] = ["--profile", profile]
+            argv = [*argv[:3], "--profile", profile, *argv[3:]]
         self.sh("plan-" + out.name, argv, launcher=True)
 
     def check(self, label, *extra):
