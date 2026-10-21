@@ -16,6 +16,10 @@ FIXTURES = ROOT/'tests/fixtures/rqc'
 
 
 def load(name): return json.loads((FIXTURES/(name+'.json')).read_text())
+# The synthetic legacy policy is frozen against the 2026-09-12 series table; committed
+# policies follow the live table.
+LEGACY_SERIES_TABLE=FIXTURES/'series-terminology-2026-09-12.zh.md'
+CURRENT_SERIES_TABLE=policy._series_table()
 def seal(row): row['receiptSha256'] = c.receipt_sha256(row); return row
 
 
@@ -176,6 +180,10 @@ class ReviewContractTests(unittest.TestCase):
             with self.subTest(value=value),self.assertRaises(c.ContractError):c.validate_candidate_artifact(manifest,data)
 
 class StrictPolicyTests(unittest.TestCase):
+    def setUp(self):
+        patcher=patch.object(policy,'_series_table',return_value=LEGACY_SERIES_TABLE)
+        patcher.start();self.addCleanup(patcher.stop)
+
     def strict(self):
         draft=load('legacy-policy-v2');draft.pop('componentSha256');draft['schemaVersion']=policy.POLICY_V3
         draft['reviewMode']='strict_verifier';draft['translator']['promptVersion']='astra-strict-generator-v1';draft['reviewer']['promptVersion']='sol-strict-verifier-v1'
@@ -213,7 +221,7 @@ class StrictPolicyTests(unittest.TestCase):
         for name in ('es.json', 'ko.json', 'zh-Hans.json'):
             data=(ROOT/'config/target-language-policies'/name).read_bytes()
             parsed=json.loads(data);before=c.canonical_bytes(parsed)
-            policy.validate_policy(parsed)
+            policy.validate_policy(parsed,series_table=CURRENT_SERIES_TABLE)
             self.assertEqual(parsed['translator']['model'], 'gpt-6.1-sol')
             self.assertEqual(parsed['reviewer']['model'], 'gpt-6.1-sol')
             self.assertEqual(before,c.canonical_bytes(parsed))
