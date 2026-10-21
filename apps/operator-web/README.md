@@ -6,9 +6,9 @@ repository.
 The primary repository workflow today is the stable post-live operator flow
 documented in:
 
-- [../README.md](../README.md)
-- [../docs/stable-post-live-reading-pdf-workflow.md](../docs/stable-post-live-reading-pdf-workflow.md)
-- [../docs/stable-post-live-reading-pdf-workflow.zh.md](../docs/stable-post-live-reading-pdf-workflow.zh.md)
+- [README.md](../../README.md)
+- [docs/stable-post-live-reading-pdf-workflow.md](../../docs/stable-post-live-reading-pdf-workflow.md)
+- [docs/stable-post-live-reading-pdf-workflow.zh.md](../../docs/stable-post-live-reading-pdf-workflow.zh.md)
 
 That primary flow is:
 

@@ -8,12 +8,14 @@
 
 ## 语言文件
 
-- `web/i18n.mjs`：语言注册、浏览器偏好、插值、缺键回退和变更通知。
-- `web/locales-interface.mjs`：导航、按钮、弹窗和无障碍标签。
-- `web/locales-app.mjs`：播放、恢复位置、音色等动态提示。
-- `web/locales-feedback.mjs`：反馈、匿名统计和声音定位状态。
-- `web/locales-ko.mjs`：韩语 POC 覆盖；以完整英文词典作低频 fallback，避免缺键时静默显示中文。
-- `web/content-locales.mjs`：当前八期标题、摘要、大纲、反思及来源说明的英文呈现，使用精确原文字串匹配。英文摘要等明确标为 AI 译文；不改变 canonical ID、音轨、时间轴、审核状态或原英文 transcript。
+以下文件随网页源码迁到 [`apps/listening-web/`](../../apps/listening-web/)（原 `web/`）。
+
+- `apps/listening-web/i18n.mjs`：语言注册、浏览器偏好、插值、缺键回退和变更通知。
+- `apps/listening-web/locales-interface.mjs`：导航、按钮、弹窗和无障碍标签。
+- `apps/listening-web/locales-app.mjs`：播放、恢复位置、音色等动态提示。
+- `apps/listening-web/locales-feedback.mjs`：反馈、匿名统计和声音定位状态。
+- `apps/listening-web/locales-ko.mjs`：韩语 POC 覆盖；以完整英文词典作低频 fallback，避免缺键时静默显示中文。
+- `apps/listening-web/content-locales.mjs`：当前八期标题、摘要、大纲、反思及来源说明的英文呈现，使用精确原文字串匹配。英文摘要等明确标为 AI 译文；不改变 canonical ID、音轨、时间轴、审核状态或原英文 transcript。
 
 新增语言时，注册稳定 key、明确界面 fallback，并补齐内容 sidecar。缺少内容译文时保留中文原文，并记录 `contentLocalization.fallbackPaths`。配音语言、界面语言、字幕对照是独立能力；新增界面语言不会自动生成该语言音频。
 
