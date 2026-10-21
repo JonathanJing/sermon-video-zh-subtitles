@@ -86,7 +86,8 @@ def load_spec(path: Path) -> dict:
     resolve = lambda value: str((base / value).resolve())
     require(spec.get("schemaVersion") == SPEC_SCHEMA, "unsupported run specification")
     require(set(spec) <= {"schemaVersion", "name", "clipSpec", "locales", "openai", "authorization", "budget",
-                          "layer2", "layer3", "qc", "spark", "page", "notes"}, "unknown run specification field")
+                          "layer2", "layer3", "qc", "spark", "page", "notes", "budgetProfile"},
+                     "unknown run specification field")
     require(isinstance(spec.get("name"), str) and spec["name"].replace("-", "").isalnum() and len(spec["name"]) <= 60,
             "name must be a short [A-Za-z0-9-] label")
     locales = spec.get("locales")
@@ -254,11 +255,17 @@ class Run:
             return
         settled = self.settled() + (self.open_qc_caps() if include_open_qc else 0)
         auth = self.spec["authorization"]
+        # A run spec may name an explicitly approved profile when the default clip bounds do not fit
+        # its group count; plan_run_budgets never inflates authority implicitly, so the choice is stated.
+        profile = self.spec.get("budgetProfile")
+        evidence = auth["evidence"] + f" Run {self.spec['name']}; settled and open caps {round(settled, 3)} USD."
         argv = [PY, ROOT / "scripts/plan_run_budgets.py", "--out", out, "--scale", "clip", "--locales", ",".join(locales),
                 "--total-usd", self.spec["budget"]["totalUsd"], "--settled-usd", round(settled, 6),
-                "--approved-by", auth["approvedBy"],
-                "--evidence", auth["evidence"] + f" Run {self.spec['name']}; settled and open caps {round(settled, 3)} USD.",
+                "--approved-by", auth["approvedBy"], "--evidence",
+                evidence + (f" Profile {profile} approved for this clip's group count." if profile else ""),
                 *[arg for stage in stages for arg in ("--stage", stage)], *extra]
+        if profile:
+            argv[3:3] = ["--profile", profile]
         self.sh("plan-" + out.name, argv, launcher=True)
 
     def check(self, label, *extra):
