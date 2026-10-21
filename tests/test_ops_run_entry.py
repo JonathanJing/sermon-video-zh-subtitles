@@ -131,6 +131,24 @@ def test_spawned_children_bind_the_host_before_unpickling(tmp_path):
     assert len(result.stdout.strip()) == 64
 
 
+def test_a_third_party_tools_package_does_not_shadow_the_checkout(tmp_path):
+    """The Spark images ship a regular ``tools`` package in site-packages. The renderer's load-time
+    voice-demo tool (tools.ops.render_multilingual_voice_demos) must still come from the checkout."""
+    shadow = tmp_path / "site-packages" / "tools"
+    shadow.mkdir(parents=True)
+    (shadow / "__init__.py").write_text("# a third-party tools package\n")
+    probe = ("import runpy, sys; g = runpy.run_path(sys.argv[1], run_name='probe'); g['bind_host'](); "
+             "sys.path.append(sys.argv[2]); "
+             "from tongxing_production.audio import renderer; "
+             "from tongxing_production.observability import accounting; accounting.execution_identity(); "
+             "import tools.ops.render_multilingual_voice_demos as demos; print(demos.__file__)")
+    env = {**os.environ, "PYTHONPATH": ""}
+    result = subprocess.run([sys.executable, "-c", probe, str(ENTRY), str(shadow.parent)], cwd=tmp_path, env=env,
+                            capture_output=True, text=True, timeout=120)
+    assert result.returncode == 0, result.stderr[-2000:]
+    assert result.stdout.strip().endswith("tools/ops/render_multilingual_voice_demos.py")
+
+
 def test_orchestration_modules_get_the_unified_backend(tmp_path):
     """A prepared-workflow command needs the orchestration Backend its scripts/ facade used to bind."""
     probe = ("import runpy, sys; sys.argv = [sys.argv[1]]; g = runpy.run_path(sys.argv[0], run_name='probe'); "
