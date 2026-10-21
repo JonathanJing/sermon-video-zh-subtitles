@@ -121,6 +121,31 @@ def reader(url, *, timeout=120):
         return response.status, response.read()
 
 
+def settle_overlay_baseline(final, first, timeout=180):
+    """Let our own asset deployment become the live version before the catalog overlay.
+
+    The asset deploy can finish after ``refresh_baseline`` read the previous live
+    version. Waiting keeps the overlay bound to what is actually live; accepting the
+    version recorded by this run's own asset attempt is the only allowed change.
+    """
+    config_path = final / 'publish-config.json'
+    config = preparation.read(config_path)
+    first_receipt = preparation.read(first / 'deployment-attempt-v2.json')
+    request = publisher.authenticated_transport()
+    deadline = time.time() + timeout
+    while True:
+        live = publisher.live_version(request, preparation.SITE)
+        if live == config['baseline_version']:
+            return
+        if live == first_receipt.get('newVersion'):
+            config['baseline_version'] = live
+            preparation.write(config_path, config)
+            return
+        if time.time() >= deadline:
+            raise ValueError('Live Hosting version did not settle for the overlay baseline')
+        time.sleep(3)
+
+
 def publish_once(snapshot):
     receipt_path = snapshot / 'deployment-attempt-v2.json'
     if receipt_path.exists():
@@ -255,6 +280,7 @@ def _run(args):
         else (lambda: preparation.overlay(live, sealed / 'public', sealed / 'public/multilingual-v3.json', final))
     journal.stage('prepare_overlay', overlay,
                   [final / 'seal-report.json', final / 'publish-config.json'], lambda: contract.validate_catalog_snapshot(final))
+    settle_overlay_baseline(final, first)
     journal.stage('publish_catalog', lambda: publish_once(final), [final / 'deployment-attempt-v2.json'])
     # Always rerun external verification on resume: cached HTTP evidence is historical.
     readback = root / ('live-readback-' + str(time.time_ns()) + '.json')
