@@ -41,7 +41,8 @@ def test_short_units_do_not_consume_truncation_quota():
 
 def test_all_short_preflight_has_no_truncation_but_other_kinds_are_available():
     from tongxing_production.review import qc_audio_run as driver
-    coverage = driver.audio_coverage({"units": units(["一", "二"])}, "zh-Hans")
+    # Short units whose numbers are in a numeric context, so only truncation lacks trials.
+    coverage = driver.audio_coverage({"units": units(["第一。", "三十。"])}, "zh-Hans")
     assert coverage["untestableKinds"] == ["truncated"]
     assert coverage["truncationEligibleTrials"] == 0
     coverage = driver.audio_coverage({"units": units(["一"] * driver.MAX_TRIALS + [LONG_ZH])}, "zh-Hans")
