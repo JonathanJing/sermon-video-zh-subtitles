@@ -137,6 +137,18 @@ class ClauseStableSplittingTests(unittest.TestCase):
         texts, unresolved = self.split(spec)
         self.assertFalse(any(text.endswith('concrete,') for text in texts), texts)
 
+    def test_negated_disjunction_is_not_cut_before_or_and_main_clause_opens_after_the_appositive(self):
+        spec = [('So', 0, .2), ('even', 0, .3), ('if', 0, .1), ('an', 0, .1), ('amillennialist', 0, .8), ('does', 0, .2),
+                ('not', 0, .2), ('affirm', 0, .4), ('a', 0, .1), ('future', 0, .4), ('seven-year', 0, .6), ('exact', 0, .4),
+                ('tribulation,', 0, .7), ('or', .8, .2), ('an', 0, .1), ('exact', 0, .4), ('one', 0, .2), ('individual', 0, .6),
+                ('beast,', 0, .5), ('Antichrist,', .1, .9), ('in', .77, .1), ('the', 0, .1), ('end', 0, .3), ('there', 0, .2),
+                ('could', 0, .2), ('be', 0, .1), ('some', 0, .2), ('kind', 0, .2), ('of', 0, .1), ('real,', 0, .5),
+                ('concrete,', .1, .6), ('intensified', .4, .8), ('period', 0, .4), ('of', 0, .1), ('time', 0, .4),
+                ('where', .2, .2), ('an', 0, .1), ('entity', 0, .5), ('opposes', 0, .5), ('God.', 0, .4)]
+        texts, unresolved = self.split(spec)
+        self.assertFalse(any(text.endswith('tribulation,') or text.endswith('concrete,') for text in texts), texts)
+        self.assertTrue(texts[0].endswith('Antichrist,'), texts)
+
     def test_function_word_before_a_pause_cannot_end_a_unit(self):
         spec = [('We', 0, .4)] + [(f'w{i}', 0, .5) for i in range(12)] + [('by', 0, .3)] + \
                [(f'v{i}', .5 if i == 0 else 0, .5) for i in range(8)] + [('end.', 0, .4)]

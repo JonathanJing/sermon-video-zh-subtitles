@@ -314,8 +314,10 @@ COPULAS = frozenset("is are was were be been being am".split())
 CLAUSE_STARTERS = frozenset("""
 and but or so yet because then which who that there whether if when while as though although even
 where what how why whose unless until since
+in at after before now finally ultimately eventually today
 i you he she we they it this these those my your his her our their
 """.split())
+NEGATIONS = frozenset("not never no nor n't".split())
 
 
 def _boundary_word(text: str) -> str:
@@ -344,6 +346,13 @@ def _dependent_clause_boundary(words: list[dict[str, Any]], index: int) -> bool:
         # the judge rejected this cut). A filler closing a parenthetical ("friends, again, | the
         # lens") is not a series member.
         following = _boundary_word(words[index + 1]["text"])
+        # "does not affirm a future tribulation, | or an exact individual beast": the disjunction is
+        # still inside the negation's scope, so the second object cannot be read on its own
+        # (2026-10-21 E2b, judge finding on chunk-0010-s002).
+        if following == "or" and any(
+                _boundary_word(w["text"]) in NEGATIONS or _boundary_word(w["text"]).endswith("n't")
+                for w in words[max(0, index - 8):index + 1]):
+            return True
         if (punctuated and boundary_word not in FILLER_WORDS and following not in FILLER_WORDS
                 and following not in CLAUSE_STARTERS
                 and (str(words[index - 1]["text"]).endswith(",") or str(words[index + 1]["text"]).endswith(","))):
