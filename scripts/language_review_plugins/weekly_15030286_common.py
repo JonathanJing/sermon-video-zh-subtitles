@@ -33,6 +33,10 @@ except ImportError:
 
 
 SOURCE_SHA256 = "137fed8486da0ec4ea22258035a230f30172be43a016faa4c382b410f830e3a9"
+# A clip declares this scope kind in its policy and names the week it was cut from; only that
+# path may compare against another English package. See review_15030286_group.
+CLIP_SCOPE_KIND = "same-source-clip-v1"
+SOURCE_ID = "resi-weekend-live-15030286-351f-4afb-ba9d-96fbe127032b-20261017-1730"
 AMOUNT_LEAD = ("chunk-0000-u024", "And in fact, reports said that Calendly, they spent $1.")
 AMOUNT_TAIL = ("chunk-0000-u025", "5 million on an external firm to design that logo.")
 SEEK_THE_GOOD = {
@@ -203,7 +207,19 @@ def _correction(locale: str, unit_id: str, english: str, target: str):
 
 def review_15030286_group(policy: dict, english_units: list[dict], group: dict, *,
                           locale: str, forbidden_register: str) -> list[dict[str, str]]:
-    if group.get("englishSourcePackageJsonSha256") != SOURCE_SHA256:
+    # The frozen week protects the exact English package its corrections were approved against.
+    # A clip cut from that sermon has its own package, so the comparison is made against the
+    # clip's declared scope: clipping keeps every unit's own English and the same source id, so
+    # a unit-matched rule can still fire and an unrelated package is still refused.
+    scope = (policy.get("sourceScope") or {}) if isinstance(policy, dict) else {}
+    expected = SOURCE_SHA256
+    if scope.get("sourceScopeKind") == CLIP_SCOPE_KIND:
+        if scope.get("parentSourcePackageJsonSha256") != SOURCE_SHA256 or scope.get("parentSourceId") != SOURCE_ID:
+            raise ValueError("15030286 plugin clip scope belongs to another week")
+        expected = scope.get("englishSourcePackageJsonSha256")
+        if not isinstance(expected, str) or not re.fullmatch(r"[0-9a-f]{64}", expected):
+            raise ValueError("15030286 plugin clip scope has no English package binding")
+    if group.get("englishSourcePackageJsonSha256") != expected:
         raise ValueError("15030286 plugin source package differs")
     reviews = review_auto_group(
         policy, english_units, group, locale=locale, forbidden_register=forbidden_register)

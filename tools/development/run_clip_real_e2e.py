@@ -330,7 +330,13 @@ def freeze_clip_policy(template: Path, source: dict, anchor: dict, *, reviewed_b
         draft["languageReview"]["pluginImplementationSha256"] = producer.plugin_implementation_sha256(Path(plugin))
     draft["terminology"]["properNames"] = [t for t in draft["terminology"]["properNames"] if t["source"] in used]
     scope = draft["sourceScope"]
+    # Declare that these checks guard a clip of the week's own sermon. The source-bound plugins
+    # refuse a package they were not approved against; the declaration lets them compare against
+    # this clip's package while still refusing anything cut from another source.
+    parent, parent_id = frozen["sourceScope"]["englishSourcePackageJsonSha256"], source["source"]["sourceId"]
     scope.update(englishSourcePackageJsonSha256=tp.canonical_sha256(source), anchorManifestSha256=tp.canonical_sha256(anchor),
+                 sourceScopeKind="same-source-clip-v1", parentSourcePackageJsonSha256=parent,
+                 parentSourceId=parent_id,
                  usedSeriesNames=[], usedProperNames=used, ordinaryPhraseExclusions=exclusions, termApprovalEvidence=[])
     receipt = scope["termApprovalReceipt"]
     targets = {t["source"]: t["target"] for t in receipt["approvedTerms"]}

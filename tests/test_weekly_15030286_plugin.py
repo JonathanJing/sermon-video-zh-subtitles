@@ -65,6 +65,39 @@ class Weekly15030286PluginTests(unittest.TestCase):
             plugin.review_group(policy(), [{"sourceUnitId": unit_id, "english": english}],
                                 group(unit_id, "gastó 1,5 millones de dólares", source="f" * 64))
 
+    def clip_policy(self, clip_source, **scope):
+        bound = policy()
+        bound["sourceScope"] = {"sourceScopeKind": common.CLIP_SCOPE_KIND,
+                                "parentSourcePackageJsonSha256": common.SOURCE_SHA256,
+                                "parentSourceId": common.SOURCE_ID,
+                                "englishSourcePackageJsonSha256": clip_source, **scope}
+        return bound
+
+    def test_a_declared_clip_scope_reviews_against_the_clips_own_package(self):
+        # A clip of the same sermon keeps every unit's English and its source id, so the
+        # operator-approved rules still apply instead of throwing after a paid call.
+        unit_id, english = common.AMOUNT_LEAD
+        clip_source = "a" * 64
+        rows = [{"sourceUnitId": unit_id, "english": english}]
+        reviewed = plugin.review_group(self.clip_policy(clip_source), rows,
+                                       group(unit_id, "gastó 1,5 millones de dólares", source=clip_source))
+        self.assertEqual(status(reviewed, "numbers"), "pass")
+
+    def test_a_clip_scope_needs_a_well_formed_package_hash(self):
+        unit_id, english = common.AMOUNT_LEAD
+        with self.assertRaisesRegex(ValueError, "no English package binding"):
+            plugin.review_group(self.clip_policy("not-a-hash"), [{"sourceUnitId": unit_id, "english": english}],
+                                group(unit_id, "gastó 1,5 millones", source="not-a-hash"))
+
+    def test_without_a_clip_scope_the_week_binding_is_unchanged(self):
+        # Any other sourceScope shape, including the week's own, keeps the exact-package rule.
+        unit_id, english = common.AMOUNT_LEAD
+        bound = policy()
+        bound["sourceScope"] = {"englishSourcePackageJsonSha256": "a" * 64}
+        with self.assertRaisesRegex(ValueError, "source package differs"):
+            plugin.review_group(bound, [{"sourceUnitId": unit_id, "english": english}],
+                                group(unit_id, "gastó 1,5 millones", source="a" * 64))
+
     def test_plugin_hash_closes_over_both_shared_rule_modules(self):
         root = Path(__file__).resolve().parents[1] / "scripts/language_review_plugins"
         sources = candidate.plugin_implementation_sources(root / "es_weekly_15030286.py")
