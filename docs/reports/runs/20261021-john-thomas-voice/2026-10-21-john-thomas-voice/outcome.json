@@ -1,6 +1,6 @@
 {
   "schemaVersion": "voice-training-run-outcome-v1",
-  "status": "succeeded_pending_human_review",
+  "status": "succeeded",
   "deliveryType": "test (speaker voice training smoke)",
   "startedAt": "2026-10-21T04:26:10+00:00",
   "computeEndedAt": "2026-10-21T04:37:47+00:00",
@@ -9,9 +9,11 @@
   "speakerKey": "john_thomas",
   "checkpointSha256": "3f722b17b8e204e60d376fc08ef631b9d55a6a1eb02c106d612bf12b5d855c8c",
   "productionEligible": false,
-  "humanApproval": false,
-  "humanListeningStatus": "pending",
-  "registryChange": "none",
+  "humanApproval": true,
+  "humanListeningStatus": "approved_zh-Hans_ko_es",
+  "registryChange": "john_thomas added in a separate PR (zh-Hans/ko/es human_reviewed)",
   "paidModelCalls": 0,
-  "sparkServicesTouched": "none (llama-server left running; isolated containers only)"
+  "sparkServicesTouched": "none (llama-server left running; isolated containers only)",
+  "humanApprovalScope": "voice capability of checkpoint 3f722b17 for zh-Hans, ko, es; not any episode audio",
+  "reviewedAt": "2026-10-21T04:49:58Z"
 }

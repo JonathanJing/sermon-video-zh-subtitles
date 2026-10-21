@@ -30,27 +30,27 @@
       "run": "2026-10-21-john-thomas-voice",
       "path": "decisions.ndjson",
       "kind": "whole",
-      "bytes": 1102,
+      "bytes": 1949,
       "truncated": false,
-      "sha256": "8308e22da3ab075f8325b50c1d82a380882005aaf6abf2b03d1696b4de633f49",
+      "sha256": "09bf63ed375c84b62eb98f112e3fbc5cfc8e714176082b2f5f7c29a6e70116d2",
       "redactions": {}
     },
     {
       "run": "2026-10-21-john-thomas-voice",
       "path": "journal.ndjson",
       "kind": "whole",
-      "bytes": 1489,
+      "bytes": 1684,
       "truncated": false,
-      "sha256": "8e5da1b88e49cf5d8bce0d6c39527cbbe3e9431dba75fa0825232674841c213c",
+      "sha256": "b14c23af44e43c55cb4552a26e3362434a97c6c5e80015672b3bb4ea78f24a3d",
       "redactions": {}
     },
     {
       "run": "2026-10-21-john-thomas-voice",
       "path": "outcome.json",
       "kind": "whole",
-      "bytes": 687,
+      "bytes": 890,
       "truncated": false,
-      "sha256": "56f54830727ff448485d656ca733c6bbac67c3c3d0756a3b981c6f7c7640611a",
+      "sha256": "411906c195aeb3b734bd81fe2c0f347b3dc43af4b594a0dc8bc87f0976d58094",
       "redactions": {}
     },
     {

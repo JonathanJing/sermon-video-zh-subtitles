@@ -1,12 +1,12 @@
 # Run digest 20261021-john-thomas-voice
 
-Generated 2026-10-21T04:40:05+00:00. Redacted copies only; source hashes are in manifest.json.
+Generated 2026-10-21T05:10:25+00:00. Redacted copies only; source hashes are in manifest.json.
 
 ## 2026-10-21-john-thomas-voice
 
 Source: `~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.claude/worktrees/magical-lalande-5c5a8c/artifacts/sermon-dubbing/2026-10-21-john-thomas-voice`
 
-- outcome `outcome.json`: **succeeded_pending_human_review** exit ? (2026-10-21T04:26:10+00:00 → ?)
+- outcome `outcome.json`: **succeeded** exit ? (2026-10-21T04:26:10+00:00 → ?)
 
 Error-like log lines (first 5 per log):
 

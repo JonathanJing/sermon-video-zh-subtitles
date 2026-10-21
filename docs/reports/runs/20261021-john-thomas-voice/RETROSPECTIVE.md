@@ -6,10 +6,10 @@
 
 测试运行：在 DGX Spark（GB10）上为讲员 John Thomas 训练 Qwen3-TTS 单讲员音色（speaker key `john_thomas`），属于**训练工程 smoke**。素材只有一期 Mariners 播客《If I Had More Time | Jesus sends and resurrects His own》（两人对谈，40 分 12 秒），不能证明泛化。
 
-- 结束状态：`succeeded_pending_human_review`（`outcome.json`）。训练、权重更新检查、试听生成和机器回转写都完成；用户听审尚未完成。
+- 结束状态：`succeeded`（`outcome.json`）。训练、权重更新检查、试听生成和机器回转写都完成。2026-10-21 04:50 UTC 用户听审后答复“中文可以，韩语西语也可以，用于正式配音”，记入 `decisions.ndjson`，绑定试听清单和 locale 认可记录。
 - checkpoint SHA-256：`3f722b17b8e204e60d376fc08ef631b9d55a6a1eb02c106d612bf12b5d855c8c`，在 Spark 的本轮结果目录 `checkpoints/checkpoint-epoch-0/`，从原始 Base 训练，没有覆盖已有 checkpoint。
-- 证据边界：`productionEligible=false`，`humanApproval=false`。逐段讲员身份只来自 diarization 加用户确认的编号映射，没有逐段人工听审。`config/speaker-voice-registry.json` 未改动；用户听审确认后再另开 PR 新增条目。
-- 授权：用户在主会话的原话“需要训练一个新的音色”“你需要并行去 Spark 里面单独训练一个John的音色。”，记为 `voice_training` 与 `voice_audition`，见 `decisions.ndjson`。正式配音的用途与适用语言等试听时确认。
+- 证据边界：人工认可的范围是这个 checkpoint 在 zh-Hans、ko、es 三种语言的声音能力，不覆盖任何一期节目的整轨配音。逐段讲员身份只来自 diarization 加用户确认的编号映射，没有逐段人工听审。Registry 条目在另一个 PR #1232 新增（三种语言 `human_reviewed`，不登记 `vi`）。
+- 授权：用户在主会话的原话“需要训练一个新的音色”“你需要并行去 Spark 里面单独训练一个John的音色。”，记为 `voice_training` 与 `voice_audition`。用户听过试听后，把用途扩展为 zh-Hans、ko、es 的正式配音（`chinese_dubbing`、`multilingual_dubbing`）。三项决定都在 `decisions.ndjson`。
 
 ## 总时间
 
@@ -17,7 +17,7 @@
 
 - `2026-10-21-john-thomas-voice`（journal）：墙钟 12m51s；计算 12m51s，等待 0m00s，返工 0m00s（0 次重跑）；未结束阶段 audition.human-review
 
-核对：04:26:10 开始暂存输入，04:37:47 回转写结束，04:40 把试听发给用户，约 14 分钟。journal 中 `train.sft` 与 `probe.generate-and-screen` 的结束行是事后补记（`note` 写了 Spark 文件的实际时间），所以自动拆分把 04:34–04:39 的空档也算进了训练阶段。两次中途停止（见“错误”）各重跑了一次准备和生成，共约 2 分钟。之后的用户听审时间不算在内。
+核对：04:26:10 开始暂存输入，04:37:47 回转写结束，04:40 把试听发给用户，约 14 分钟。04:50 用户回复听审结果，等待人工约 10 分钟。journal 中 `train.sft` 与 `probe.generate-and-screen` 的结束行是事后补记（`note` 写了 Spark 文件的实际时间），所以自动拆分把 04:34–04:39 的空档也算进了训练阶段。两次中途停止（见“错误”）各重跑了一次准备和生成，共约 2 分钟。之后的用户听审时间不算在内。
 
 对比 2026-09-05 Steve Bang Lee 音色（54 段、414.0 秒）：编码 27.9 秒，训练 126.7 秒；本轮 34 段、270.5 秒：编码 17.8 秒，训练 78.9 秒，按片段时长成比例。
 
@@ -66,7 +66,7 @@
 
 - Spark：`dgx-spark-benchmark/results/john-thomas-voice-20261021/` 存放 checkpoint（3.8 GB）、片段、清单、日志和试听 WAV，文件属主为 root（容器写入）。没有遗留的容器或 job hold。
 - Mac：试听 MP3、原声对照、授权记录和完整收据在本轮 worktree 被忽略的 `artifacts/sermon-dubbing/2026-10-21-john-thomas-voice/`。
-- Registry：未改动。等用户听审结果再决定。
+- Registry：PR #1232 新增 `john_thomas`，同时把三个 Steve adapter 改绑新 Registry 哈希。
 - 本报告 `tooling/train_john.py` 与实际运行的版本相比，只把变量名 `authorization` 改成 `permission`（以免触发导出脱敏规则），文件名字符串保持不变。实际运行版本 SHA-256 为 `c7696643…`，其余三个脚本与运行版本逐字节相同。
 
 ## 外部可见的变化

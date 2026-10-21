@@ -7,3 +7,4 @@
 {"at": "2026-10-21T04:39:01+00:00", "stage": "train.sft", "event": "finished", "hostId": "host-e8b10061bf9a", "pid": 83203, "note": "late append; training-report.json written 04:34:34 UTC on Spark (training 78.9 s)"}
 {"at": "2026-10-21T04:39:01+00:00", "stage": "probe.generate-and-screen", "event": "started", "hostId": "host-e8b10061bf9a", "pid": 83207, "note": "late append; actually started ~04:35 UTC"}
 {"at": "2026-10-21T04:39:01+00:00", "stage": "probe.generate-and-screen", "event": "finished", "hostId": "host-e8b10061bf9a", "pid": 83210, "note": "late append; probe report 04:36:59, ASR screen 04:37:47 UTC (Spark mtimes)"}
+{"at": "2026-10-21T05:09:23+00:00", "stage": "audition.human-review", "event": "finished", "hostId": "host-e8b10061bf9a", "pid": 2662, "note": "user approved zh-Hans, ko, es for formal dubbing"}
