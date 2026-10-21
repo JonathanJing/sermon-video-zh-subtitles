@@ -55,6 +55,10 @@ def work_lock(work):
 
 SCHEMA = 'sermon-unified-source-preparation-v1'
 SCHEMA_V2 = 'sermon-unified-source-preparation-v2'
+# v3 = v2 plus an explicit judge backend (2026-10-21 user decision): openai_api runs gpt-6.1-sol,
+# claude_cli_opus runs claude-opus-5-5 through the subscription Claude CLI. v1/v2 stay OpenAI.
+SCHEMA_V3 = 'sermon-unified-source-preparation-v3'
+JUDGE_BACKEND_MODELS = {'openai_api': 'gpt-6.1-sol', 'claude_cli_opus': 'claude-opus-5-5'}
 FIELDS = {'schemaVersion', 'productionRunId', 'sourceId', 'sourceUrlHash', 'serviceDate',
           'media', 'mediaSha256', 'sourceDurationSeconds', 'window', 'windowApproval', 'windowApprovalSha256',
           'timelineReport', 'timelineReportSha256', 'sourceDescriptor', 'sourceDescriptorSha256',
@@ -145,14 +149,36 @@ class Configuration:
     authorization_hash: str
 
 
+def _validate_judge_backend(value):
+    """A v3 judge names its backend, and the backend fixes the model; earlier versions stay OpenAI."""
+    if value['schemaVersion'] == SCHEMA_V3:
+        require(isinstance(value['judge'], dict) and value['judge'].get('backend') in JUDGE_BACKEND_MODELS,
+                'invalid_source_judge_backend')
+
+
+def judge_backend(value):
+    return value['judge'].get('backend', 'openai_api') if value['schemaVersion'] == SCHEMA_V3 else 'openai_api'
+
+
+def claude_judge_transport(value, receipts_dir, request_limits):
+    """The subscription Claude CLI judge transport for a claude_cli_opus configuration, else None."""
+    if judge_backend(value) != 'claude_cli_opus':
+        return None
+    from ..compute.transports.claude_source_judge import ClaudeSourceJudgeTransport
+    # The CLI call gets the same per-request wall-time bound the budget reserves.
+    return ClaudeSourceJudgeTransport(model=value['judge']['model'], effort=value['judge']['reasoningEffort'],
+                                      receipts_dir=receipts_dir,
+                                      timeout_seconds=request_limits['wallTimeMs'] / 1000)
+
+
 def load_configuration(path):
     path = _safe_path(Path(path).absolute())
     value = _load(path)
-    require(isinstance(value, dict) and value.get('schemaVersion') in (SCHEMA, SCHEMA_V2)
+    require(isinstance(value, dict) and value.get('schemaVersion') in (SCHEMA, SCHEMA_V2, SCHEMA_V3)
             and (set(value) == FIELDS if value['schemaVersion'] == SCHEMA else
                  set(value) in (FIELDS | {'asrWorkers'}, FIELDS | {'asrWorkers'} | TEXT_REVIEW_FIELDS)),
             'invalid_source_preparation_configuration')
-    if value['schemaVersion'] == SCHEMA_V2:
+    if value['schemaVersion'] in (SCHEMA_V2, SCHEMA_V3):
         require(type(value['asrWorkers']) is int and 1 <= value['asrWorkers'] <= 4,
                 'invalid_source_asr_concurrency')
     require(all(isinstance(value[k], str) and english.SHA256.fullmatch(value[k]) for k in
@@ -198,8 +224,12 @@ def load_configuration(path):
             and type(policy['maxUnitSeconds']) in (int, float) and 1 <= policy['maxUnitSeconds'] <= 120
             and (policy['boundaryOverrides'] is None or isinstance(policy['boundaryOverrides'], dict)),
             'invalid_source_anchor_policy')
-    require(isinstance(value['judge'], dict) and set(value['judge']) == {'model', 'reasoningEffort', 'batchSize', 'workers'}
-            and value['judge']['model'] in ('gpt-6-astra', 'gpt-6.1-sol')
+    _validate_judge_backend(value)
+    judge_fields = {'model', 'reasoningEffort', 'batchSize', 'workers'} | (
+        {'backend'} if value['schemaVersion'] == SCHEMA_V3 else set())
+    require(isinstance(value['judge'], dict) and set(value['judge']) == judge_fields
+            and value['judge']['model'] in (('gpt-6-astra', 'gpt-6.1-sol') if value['schemaVersion'] != SCHEMA_V3
+                                            else (JUDGE_BACKEND_MODELS[value['judge']['backend']],))
             and value['judge']['reasoningEffort'] in budget.text_limits.SUPPORTED_REASONING_EFFORTS
             and type(value['judge']['batchSize']) is int and 1 <= value['judge']['batchSize'] <= 15
             and type(value['judge']['workers']) is int
@@ -347,7 +377,7 @@ def _reference_rows(response, index, start, end):
              'speakerId': None, 'speakerIdentityStatus': 'unavailable'}]
 
 
-def execute(config_path, *, api_key=None, transport=None, aligner=None, mfa_preflight=None):
+def execute(config_path, *, api_key=None, transport=None, aligner=None, mfa_preflight=None, claude_transport=None):
     """Execute a fixed candidate recipe. Injection seams are offline tests only."""
     config = load_configuration(config_path)
     def fresh():
@@ -359,12 +389,12 @@ def execute(config_path, *, api_key=None, transport=None, aligner=None, mfa_pref
         config.output.mkdir(parents=True, exist_ok=True)
         with _source.current().accounting.session(config.output / 'accounting', 'unified_source_preparation',
                 {'productionRunId': config.value['productionRunId']}, evidence_directory=config.output):
-            return _execute(config, fresh, api_key=api_key, transport=transport,
+            return _execute(config, fresh, api_key=api_key, transport=transport, claude_transport=claude_transport,
                             aligner=aligner or mfa_backend.align_reference_chunks,
                             mfa_preflight=mfa_preflight or mfa_backend.preflight)
 
 
-def _execute(config, fresh, *, api_key, transport, aligner, mfa_preflight):
+def _execute(config, fresh, *, api_key, transport, aligner, mfa_preflight, claude_transport=None):
     out, value = config.output, config.value
     _freeze(out / 'source-run.json', {'configurationSha256': config.identity,
                                      'codeIdentitySha256': config.code_identity,
@@ -380,8 +410,11 @@ def _execute(config, fresh, *, api_key, transport, aligner, mfa_preflight):
         runtime = mfa_preflight(**_mfa_options(config))
         _freeze(out / 'mfa-preflight.json', runtime)
     clip = _audio(config, out / 'source-clip.wav', window['startSeconds'], duration)
+    if claude_transport is None:
+        claude_transport = claude_judge_transport(value, out / 'judge-requests' / 'claude-cli-calls',
+                                                  config.authority['requestLimits'])
     caller = budget.SourceBudget(config.budget_root, config.authority, verify=fresh, transport=transport,
-        max_concurrent=max(value.get('asrWorkers', 1), value['judge']['workers']))
+        max_concurrent=max(value.get('asrWorkers', 1), value['judge']['workers']), claude_transport=claude_transport)
     if api_key is None:
         api_key = os.environ.get('OPENAI_API_KEY', '')
     def transcribe_chunk(index):
@@ -494,7 +527,7 @@ REBUILD_OVERRIDES_SCHEMA = 'sermon-anchor-boundary-overrides-v3'
 
 
 def rebuild(config_path, base_output, out_dir, overrides_path, authorization_path, *, api_key=None, transport=None,
-            operator_acceptance=None):
+            operator_acceptance=None, claude_transport=None):
     """Rebuild anchors, judge and candidate from a run's frozen alignment; no ASR or MFA.
 
     The base run's aligned segments, summary and window approval are reused by hash. Boundary
@@ -503,7 +536,8 @@ def rebuild(config_path, base_output, out_dir, overrides_path, authorization_pat
     """
     config_path = _safe_path(Path(config_path).absolute())
     value = _load(config_path)
-    require(value.get('schemaVersion') in (SCHEMA, SCHEMA_V2), 'invalid_source_preparation_configuration')
+    require(value.get('schemaVersion') in (SCHEMA, SCHEMA_V2, SCHEMA_V3), 'invalid_source_preparation_configuration')
+    _validate_judge_backend(value)
     base_identity = jobs._digest({k: v for k, v in value.items() if k != 'budgetAuthorization'})
     base, out = _safe_path(Path(base_output).absolute()), _safe_path(Path(out_dir).absolute())
     aligned_path = base / 'aligned-segments.json'
@@ -543,8 +577,11 @@ def rebuild(config_path, base_output, out_dir, overrides_path, authorization_pat
     manifest_path = out / 'anchor-manifest.json'
     _freeze(manifest_path, manifest)
     _freeze(out / 'summary.json', _load(base / 'summary.json'))
+    if claude_transport is None:
+        claude_transport = claude_judge_transport(value, out / 'judge-requests' / 'claude-cli-calls',
+                                                  authority['requestLimits'])
     caller = budget.SourceBudget(budget_root, authority, verify=lambda: None, transport=transport,
-                                 max_concurrent=value['judge']['workers'])
+                                 max_concurrent=value['judge']['workers'], claude_transport=claude_transport)
     with budget.judge_limits(authority['requestLimits']):
         judged = judge.run(aligned_path=aligned_path, manifest_path=manifest_path, out=out / 'machine-judge.json',
             api_key=api_key if api_key is not None else os.environ.get('OPENAI_API_KEY', ''),

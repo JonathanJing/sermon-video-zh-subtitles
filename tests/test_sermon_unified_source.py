@@ -153,6 +153,96 @@ class UnifiedSourceTests(unittest.TestCase):
         authorization['authority']['approvalSha256'] = subject._sha(approval_path)
         authorization_path.write_text(json.dumps(authorization))
 
+    def claude_judge(self, model='claude-opus-5-5', effort='high'):
+        test = self
+
+        class FakeClaudeJudge:
+            def __init__(self):
+                self.model, self.effort, self.payloads = model, effort, []
+
+            def __call__(self, api_key, payload):
+                test.assertIsNone(api_key)
+                self.payloads.append(payload)
+                envelope = test.transport('claude-cli', json.dumps(payload).encode(), 'application/json', '')
+                return dict(envelope, model=model, usage={'prompt_tokens': 1000, 'completion_tokens': 200,
+                                                          'total_tokens': 1200})
+        return FakeClaudeJudge()
+
+    def test_v3_judge_backend_fixes_the_model(self):
+        self.config.update(schemaVersion=subject.SCHEMA_V3, asrWorkers=1)
+        for judge_config, ok in [
+                ({'backend': 'openai_api', 'model': 'gpt-6.1-sol'}, True),
+                ({'backend': 'claude_cli_opus', 'model': 'claude-opus-5-5'}, True),
+                ({'backend': 'openai_api', 'model': 'gpt-6-astra'}, False),
+                ({'backend': 'openai_api', 'model': 'claude-opus-5-5'}, False),
+                ({'backend': 'claude_cli_opus', 'model': 'gpt-6.1-sol'}, False),
+                ({'backend': 'gemini', 'model': 'gpt-6.1-sol'}, False),
+                ({'model': 'gpt-6.1-sol'}, False)]:
+            with self.subTest(judge=judge_config):
+                self.config['judge'] = {'reasoningEffort': 'high', 'batchSize': 5, 'workers': 2, **judge_config}
+                self.rebind_budget()
+                if ok:
+                    self.assertEqual(subject.load_configuration(self.path).value['judge'], self.config['judge'])
+                else:
+                    with self.assertRaises(ValueError):
+                        subject.load_configuration(self.path)
+
+    def test_v1_and_v2_stay_openai_and_reject_a_backend_or_claude_model(self):
+        for version, extra in [(subject.SCHEMA, {}), (subject.SCHEMA_V2, {'asrWorkers': 1})]:
+            for judge_config in ({'backend': 'openai_api', 'model': 'gpt-6.1-sol'}, {'model': 'claude-opus-5-5'}):
+                with self.subTest(version=version, judge=judge_config):
+                    self.config = {k: v for k, v in self.config.items() if k != 'asrWorkers'}
+                    self.config.update(schemaVersion=version, **extra)
+                    self.config['judge'] = {'reasoningEffort': 'high', 'batchSize': 5, 'workers': 1, **judge_config}
+                    self.rebind_budget()
+                    with self.assertRaises(ValueError):
+                        subject.load_configuration(self.path)
+
+    def test_claude_judge_runs_through_the_cli_and_settles_as_list_price_equivalent(self):
+        self.config.update(schemaVersion=subject.SCHEMA_V3, asrWorkers=1)
+        self.config['judge'] = {'backend': 'claude_cli_opus', 'model': 'claude-opus-5-5',
+                                'reasoningEffort': 'high', 'batchSize': 5, 'workers': 1}
+        self.rebind_budget()
+        fake = self.claude_judge()
+        result = subject.execute(self.path, api_key='', transport=self.transport, aligner=self.align,
+                                 mfa_preflight=self.preflight, claude_transport=fake)
+        self.assertEqual(result['status'], 'succeeded')
+        self.assertFalse(result['productionEligible'])
+        # ASR still uses the OpenAI audio endpoint; no judge request reaches Chat Completions.
+        self.assertNotIn('https://api.openai.com/v1/chat/completions', self.calls)
+        self.assertEqual(len(fake.payloads), 1)
+        self.assertEqual(fake.payloads[0]['model'], 'claude-opus-5-5')
+        self.assertEqual(fake.payloads[0]['max_completion_tokens'], 4096)
+        ledger = jobs._read(self.root / '.jobs.source-budget' / 'source-budget.json')
+        judged = [row for operation, row in ledger['requests'].items() if operation.startswith('judge.')]
+        self.assertEqual(len(judged), 1)
+        self.assertEqual(judged[0]['status'], 'returned')
+        receipt = json.loads((self.root / 'source' / 'machine-judge.json').read_text())
+        self.assertEqual(receipt['model'], 'claude-opus-5-5')
+        saved = [jobs._read(path) for path in (self.root / '.jobs.source-budget').rglob('*.json')
+                 if path.name != 'source-budget.json' and 'settlement' in jobs._read(path)]
+        claude_rows = [row for row in saved if row['requestIdentity'].get('model') == 'claude-opus-5-5']
+        self.assertEqual([row['settlement']['priceBasis'] for row in claude_rows],
+                         ['claude_subscription_list_price_equivalent'])
+        # A mismatched transport is refused before any reservation.
+        self.assertIsNone(budget.SourceBudget(self.root / 'other', subject.load_configuration(self.path).authority,
+                                              verify=lambda: None).claude_transport)
+
+    def test_claude_judge_payload_without_matching_transport_is_refused(self):
+        from tongxing_production.compute import provider_limits as limits
+        authority = subject.load_configuration(self.path).authority
+        caller = budget.SourceBudget(self.root / 'claude-budget', authority, verify=lambda: None,
+                                     claude_transport=self.claude_judge(effort='medium'))
+        request = {'model': 'claude-opus-5-5', 'reasoning_effort': 'high',
+                   'messages': [{'role': 'system', 'content': 'Judge.'}, {'role': 'user', 'content': 'source'}],
+                   'response_format': {'type': 'json_schema', 'json_schema': {
+                       'name': 'english_source_machine_judge', 'strict': True, 'schema': judge._response_schema()}}}
+        bounded = budget.bounded_source_judge_payload(request, limits.DEFAULT_REQUEST_LIMITS)
+        with self.assertRaisesRegex(ValueError, 'claude_transport_required'):
+            caller.judge('', bounded)
+        self.assertFalse((self.root / 'claude-budget' / 'source-budget.json').exists()
+                         and jobs._read(self.root / 'claude-budget' / 'source-budget.json')['requests'])
+
     def test_operator_reviewed_text_stops_before_mfa_then_applies_without_new_asr(self):
         from tongxing_production.source import text_review as review_module
         self.config.update(schemaVersion=subject.SCHEMA_V2, asrWorkers=1, sourceTextReview='review.json')
