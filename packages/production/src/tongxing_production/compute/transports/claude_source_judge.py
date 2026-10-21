@@ -19,6 +19,9 @@ from .codex_layer2 import _hash, _write, _write_bytes
 from .claude_layer2 import GUARD, SCHEMA, ClaudeLayer2Transport, chat_envelope, normalize_usage
 
 ROLE = 'source_judge'
+# Largest output a model other than the requested one may report in a call; a side call of the
+# CLI, never a judgment.
+AUXILIARY_OUTPUT_TOKEN_LIMIT = 64
 
 
 def payload_schema(payload):
@@ -39,6 +42,10 @@ class ClaudeSourceJudgeTransport(ClaudeLayer2Transport):
                          receipts_dir=receipts_dir)
         identity = dict(self.execution_identity)
         identity.pop('outputSchemaSha256')
+        # The Layer 2 adapter already drops CLAUDE_CODE_* and the parent session's PID; the Agent
+        # SDK version marker a Claude Code host exports would still make the CLI treat the judge as
+        # an embedded session (2026-10-21: an extra Haiku side call appeared in every judge result).
+        self.env = {key: value for key, value in self.env.items() if key != 'CLAUDE_AGENT_SDK_VERSION'}
         self.execution_identity = dict(
             identity, schemaVersion='claude-source-judge-transport-identity-v1', role=ROLE,
             promptAdapterVersion='source-judge-no-tools-v1', outputSchemaSource='payload.response_format',
@@ -101,18 +108,35 @@ class ClaudeSourceJudgeTransport(ClaudeLayer2Transport):
             if process.returncode or result.get('is_error') is not False or result.get('subtype') != 'success' \
                     or result.get('permission_denials') or content is None:
                 raise RuntimeError('claude_language_terminal_failure_inspect_receipt')
-            if type(result.get('num_turns')) is not int or not 1 <= result['num_turns'] <= 2:
+            # The CLI counts its own structured-output repair turn: with
+            # MAX_STRUCTURED_OUTPUT_RETRIES=1 one schema violation adds a turn,
+            # so a valid answer can report 3. Observed 2026-10-21 (1 batch in
+            # 109): turns=3, is_error=false, schema-valid structured output.
+            # No tools are allowed and the answer is still schema-validated,
+            # so this only tolerates the documented repair turn.
+            if type(result.get('num_turns')) is not int or not 1 <= result['num_turns'] <= 3:
                 raise RuntimeError('claude_language_unexpected_turn_count')
-            if set(model_usage) != {self.model}:
+            # The requested model must be the one that answered. The CLI may also report a small
+            # auxiliary call (2026-10-21, inside a Claude Code host: `claude-haiku-4-5` with 14
+            # output tokens next to the 2,616-token Opus answer); it is recorded, never allowed to
+            # be the answer, and anything larger than a side call is refused.
+            if self.model not in model_usage:
                 raise RuntimeError('claude_language_model_identity_missing')
+            auxiliary = {name: usage for name, usage in model_usage.items() if name != self.model}
+            answer_output = int((model_usage[self.model] or {}).get('outputTokens') or 0)
+            for name, usage in auxiliary.items():
+                output = int((usage or {}).get('outputTokens') or 0)
+                if output > AUXILIARY_OUTPUT_TOKEN_LIMIT or output >= answer_output:
+                    raise RuntimeError('claude_language_unexpected_model_usage')
             jsonschema.validate(content, schema)
             response = {'schemaVersion': SCHEMA, 'id': 'claude:' + str(result.get('session_id')),
                         'sessionId': result.get('session_id'), 'requestedModel': self.model,
-                        'reportedModels': sorted(model_usage), 'requestedEffort': self.effort,
+                        'reportedModels': [self.model], 'requestedEffort': self.effort,
                         'serviceTier': (result.get('usage') or {}).get('service_tier'),
                         'completed': True, 'exitCode': process.returncode,
                         'content': json.dumps(content, ensure_ascii=False), 'usage': usage,
-                        'rawUsage': result.get('usage'), 'modelUsage': model_usage,
+                        'rawUsage': result.get('usage'), 'modelUsage': {self.model: model_usage[self.model]},
+                        'auxiliaryModelUsage': auxiliary,
                         'listPriceUsd': result.get('total_cost_usd'), 'numTurns': result.get('num_turns'),
                         'elapsedSeconds': elapsed, 'apiDurationMs': result.get('duration_api_ms'),
                         'enabledTools': []}
@@ -120,4 +144,5 @@ class ClaudeSourceJudgeTransport(ClaudeLayer2Transport):
                 _write(call_directory / 'response.json', response)
         envelope = chat_envelope(response, self.model)
         envelope['claudeCli']['executionIdentity'] = self.execution_identity
+        envelope['claudeCli']['auxiliaryModelUsage'] = auxiliary
         return envelope

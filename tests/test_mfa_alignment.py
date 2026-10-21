@@ -74,6 +74,25 @@ class AlignmentTest(unittest.TestCase):
         self.assertGreater(number['start'], result[0]['end'])
         self.assertEqual(result[0]['timingQuality'], 'mfa_word_aligned')
 
+    def test_sentence_split_keeps_abbreviation_years_together(self):
+        text = 'The scroll is about A.D. 70 and the temple. Then he left.'
+        self.assertEqual(list(mfa._sentences(text)),
+                         ['The scroll is about A.D. 70 and the temple.', 'Then he left.'])
+
+    def test_align_widens_beam_beyond_mfa_stock_for_long_reference_blocks(self):
+        with patch.object(mfa.subprocess, 'run', side_effect=self.fake_run):
+            self.align()
+        command = [call for call in self.calls if call[1] == 'align'][0]
+        self.assertEqual(command[command.index('--beam') + 1], str(mfa.ALIGN_BEAM))
+        self.assertEqual(command[command.index('--retry_beam') + 1], str(mfa.ALIGN_RETRY_BEAM))
+        # Positional arguments must keep their slots: the remote adapter indexes them.
+        self.assertEqual(Path(command[0]).resolve(), Path(self.exe).resolve())
+        self.assertEqual(command[1], 'align')
+        self.assertTrue(command[2].endswith('corpus'))
+        self.assertEqual(Path(command[3]).name, 'dictionary.dict')
+        self.assertEqual(Path(command[4]).resolve(), Path(self.acoustic).resolve())
+        self.assertTrue(command[5].endswith('aligned'))
+
     def test_rejects_missing_changed_and_unknown_alignment(self):
         for corruption in ('missing', 'wrong', 'unknown'):
             with self.subTest(corruption=corruption):

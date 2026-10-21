@@ -276,10 +276,18 @@ def _response_schema() -> dict[str, Any]:
     }
 
 
-def _payload(batch: list[dict[str, Any]], *, manifest_hash: str,
-             anchor_policy: dict[str, Any], model: str, effort: str) -> dict[str, Any]:
+# One cache entry per batch, keyed by the batch's own content (sentences, units, neighbors,
+# policy, model, effort and prompt), never by the manifest it came from: a rebuild that moves one
+# boundary re-judges the batches that changed and replays the rest from a shared cache root.
+CACHE_STAGE = "english-source-judge"
+
+
+def _payload(batch: list[dict[str, Any]], *, anchor_policy: dict[str, Any], model: str,
+             effort: str, manifest_hash: str | None = None) -> dict[str, Any]:
+    # `manifest_hash` only reproduces a historical request (the decision-API experiment replays
+    # frozen caches that carried it); production requests leave it out so a batch's identity is its content.
     user = {
-        "anchorManifestJsonSha256": manifest_hash,
+        **({"anchorManifestJsonSha256": manifest_hash} if manifest_hash is not None else {}),
         "evaluationScope": "text_and_timing_metadata_only",
         "anchorPolicy": anchor_policy,
         "sentences": batch,
@@ -418,38 +426,58 @@ def run(*, aligned_path: Path, manifest_path: Path, out: Path, model: str = "gpt
     if deterministic["status"] == "pass":
         def review_batch(indexed_batch):
             index, batch = indexed_batch
-            result, receipt = cached_call(
-                out=cache_root,
-                stage=f"english-source-judge-{index:03d}",
-                payload=_payload(
-                    batch,
-                    manifest_hash=layer1.json_sha256(manifest),
-                    anchor_policy=manifest.get("policy", {}),
-                    model=model,
-                    effort=effort,
-                ),
-                api_key=api_key,
-                requested_model=model,
-                caller=caller,
-            )
-            return _checked_batch(result, batch), receipt
+
+            def review(part, suffix):
+                try:
+                    result, receipt = cached_call(
+                        out=cache_root,
+                        stage=CACHE_STAGE,
+                        payload=_payload(
+                            part,
+                            # Operator overrides are already expressed in the units; naming them
+                            # here would make every batch of a rebuild look new.
+                            anchor_policy={key: value for key, value in manifest.get("policy", {}).items()
+                                           if key != "boundaryOverrides"},
+                            model=model,
+                            effort=effort,
+                        ),
+                        api_key=api_key,
+                        requested_model=model,
+                        caller=caller,
+                    )
+                    return _checked_batch(result, part), [receipt]
+                except ValueError as exc:
+                    # The frozen request cap is a hard bound and every attempt
+                    # re-runs ASR, so sentence length drifts between runs: a
+                    # batch size measured safe on one manifest can exceed the
+                    # cap on the next. Split only the oversized batch instead of
+                    # guessing a size that survives drift.
+                    if str(exc) != "source_judge_input_bound_exceeded" or len(part) < 2:
+                        raise
+                    middle = len(part) // 2
+                    left_rows, left_receipts = review(part[:middle], suffix + "a")
+                    right_rows, right_receipts = review(part[middle:], suffix + "b")
+                    return left_rows + right_rows, left_receipts + right_receipts
+
+            return review(batch, "")
 
         # Bounded dispatch preserves source order and stops admitting later
         # groups after a failed/unknown sibling. Context-bound request caps are
         # copied into each worker rather than silently lost across threads.
         from .unified_stage import ordered_bounded_map  # the stage entry imports this module
         batches_reviewed = ordered_bounded_map(enumerate(_batches(sentences, batch_size)), review_batch, workers)
-        for rows, receipt in batches_reviewed:
+        for rows, receipts in batches_reviewed:
             reviewed.extend(rows)
-            request_receipts.append(receipt)
-            if isinstance(receipt.get("responseId"), str) and receipt["responseId"]:
-                request_ids.append(receipt["responseId"])
-            if isinstance(receipt.get("model"), str) and receipt["model"]:
-                response_models.append(receipt["model"])
-            cache_payload = _load(Path(receipt["path"]), "machine judge cache receipt")
-            created = cache_payload.get("response", {}).get("created")
-            if isinstance(created, int) and created >= 0:
-                created_times.append(created)
+            for receipt in receipts:
+                request_receipts.append(receipt)
+                if isinstance(receipt.get("responseId"), str) and receipt["responseId"]:
+                    request_ids.append(receipt["responseId"])
+                if isinstance(receipt.get("model"), str) and receipt["model"]:
+                    response_models.append(receipt["model"])
+                cache_payload = _load(Path(receipt["path"]), "machine judge cache receipt")
+                created = cache_payload.get("response", {}).get("created")
+                if isinstance(created, int) and created >= 0:
+                    created_times.append(created)
 
     expected_sentence_ids = [item["sourceSentenceId"] for item in sentences]
     reviewed_sentence_ids = [item["sourceSentenceId"] for item in reviewed]

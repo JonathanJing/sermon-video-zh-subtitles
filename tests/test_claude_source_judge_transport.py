@@ -23,7 +23,8 @@ if args == ['--version']:
     print('9.9.9 (Claude Code)'); sys.exit(0)
 with open(os.environ['FAKE_CLAUDE_LOG'], 'a') as log:
     log.write(json.dumps({'args': args, 'stdin': sys.stdin.read(),
-                          'apiKey': os.environ.get('ANTHROPIC_API_KEY')}) + '\n')
+                          'apiKey': os.environ.get('ANTHROPIC_API_KEY'),
+                          'sdk': os.environ.get('CLAUDE_AGENT_SDK_VERSION')}) + '\n')
 print(json.dumps(state['result'])); sys.exit(0)
 '''
 
@@ -64,7 +65,8 @@ class ClaudeSourceJudgeTransportTests(unittest.TestCase):
         self.state, self.log = self.root / 'state.json', self.root / 'log.jsonl'
         self.set_state(result())
         patcher = patch.dict(os.environ, {'FAKE_CLAUDE_STATE': str(self.state), 'FAKE_CLAUDE_LOG': str(self.log),
-                                          'ANTHROPIC_API_KEY': 'sk-must-not-leak'})
+                                          'ANTHROPIC_API_KEY': 'sk-must-not-leak',
+                                          'CLAUDE_AGENT_SDK_VERSION': '9.9.9'})
         patcher.start()
         self.addCleanup(patcher.stop)
 
@@ -107,6 +109,35 @@ class ClaudeSourceJudgeTransportTests(unittest.TestCase):
             with self.subTest(message=message), self.assertRaisesRegex(ValueError, message):
                 transport(key, value)
         self.assertFalse(self.log.exists())
+
+    def test_structured_output_repair_turn_is_tolerated_and_runaway_turns_are_not(self):
+        self.set_state(result(num_turns=3))
+        envelope = self.transport()('', payload())
+        self.assertEqual(json.loads(envelope['choices'][0]['message']['content']), ANSWER)
+        for turns in (0, 4):
+            with self.subTest(turns=turns):
+                self.set_state(result(num_turns=turns))
+                with self.assertRaisesRegex(RuntimeError, 'unexpected_turn_count'):
+                    self.transport()('', payload())
+
+    def test_auxiliary_model_usage_is_recorded_and_a_foreign_answer_is_refused(self):
+        aside = {'claude-haiku-4-5-20251001': {'inputTokens': 3697, 'outputTokens': 14}}
+        self.set_state(result(modelUsage={'claude-opus-5-5': {'inputTokens': 2, 'outputTokens': 2616}, **aside}))
+        envelope = self.transport()('', payload())
+        self.assertEqual(json.loads(envelope['choices'][0]['message']['content']), ANSWER)
+        response = json.loads(next((self.root / 'calls').glob('*/response.json')).read_text())
+        self.assertEqual(response['auxiliaryModelUsage'], aside)
+        self.assertEqual(response['reportedModels'], ['claude-opus-5-5'])
+        self.assertEqual(envelope['claudeCli']['auxiliaryModelUsage'], aside)
+        logged = json.loads(self.log.read_text().splitlines()[-1])
+        self.assertIsNone(logged['sdk'])
+        for usage in ({'claude-haiku-4-5-20251001': {'inputTokens': 10, 'outputTokens': 300}},
+                      {'claude-opus-5-5': {'inputTokens': 2, 'outputTokens': 20},
+                       'claude-haiku-4-5-20251001': {'inputTokens': 10, 'outputTokens': 30}}):
+            with self.subTest(usage=usage):
+                self.set_state(result(modelUsage=usage))
+                with self.assertRaisesRegex(RuntimeError, 'model_identity_missing|unexpected_model_usage'):
+                    self.transport()('', payload())
 
     def test_answer_outside_the_payload_schema_fails(self):
         self.set_state(result(structured_output={'schemaVersion': judge.BATCH_SCHEMA}))

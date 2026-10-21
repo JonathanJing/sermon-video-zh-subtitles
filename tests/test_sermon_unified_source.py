@@ -312,6 +312,23 @@ class UnifiedSourceTests(unittest.TestCase):
         self.assertTrue((out / 'english-source-candidate.json').is_file())
         self.assertFalse(json.loads((out / 'rebuild-receipt.json').read_text())['asrOrMfaRerun'])
 
+    def test_shared_judge_cache_root_replays_an_unchanged_rebuild_without_judge_calls(self):
+        self.config.update(schemaVersion=subject.SCHEMA_V2, asrWorkers=1, judgeCacheRoot='judge-cache')
+        self.rebind_budget()
+        self.execute()
+        self.assertTrue(any(not c.endswith('/transcriptions') for c in self.calls))
+        self.assertTrue(list((self.root / 'judge-cache' / 'cache').glob('english-source-judge-*.json')))
+        base = self.root / 'source'
+        self.assertFalse((base / 'judge-requests' / 'cache').exists())
+        aligned_sha = json.loads((base / 'alignment-receipt.json').read_text())['alignedSha256']
+        overrides, out, authorization = self.rebuild_inputs(aligned_sha)
+        self.calls.clear()
+        result = subject.rebuild(self.path, base, out, overrides, authorization, api_key='', transport=self.transport)
+        # Same sentences, units and policy: every batch replays from the shared cache, nothing is paid.
+        self.assertEqual(self.calls, [])
+        self.assertEqual(result['machineJudgeStatus'], 'approved_for_layer2_shadow')
+        self.assertTrue((out / 'english-source-candidate.json').is_file())
+
     def test_rebuild_rejects_overrides_for_another_alignment(self):
         self.execute()
         overrides, out, authorization = self.rebuild_inputs('b' * 64)

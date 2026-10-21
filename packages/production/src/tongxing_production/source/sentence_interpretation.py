@@ -221,6 +221,17 @@ def _split_long_sentence(words: list[dict[str, Any]], *, max_seconds: float,
     """
     if words[-1]["end"] - words[0]["start"] <= max_seconds:
         return [words], False
+    # A comma inside an open quotation or with no audible pause is a weak
+    # boundary: the 2026-10-18 episode produced units like
+    # 'that's the most antiquated,' / 'outdated—' (0.09 s pause inside a quoted
+    # list) and 'yes,' / 'I am not a firm ...' (a denial split from its clause).
+    # Prefer audible pauses and strong punctuation; fall back to the old choice
+    # only when the long span has no better candidate.
+    quotes = [0]
+    for word in words:
+        text = str(word["text"])
+        delta = text.count('"') + text.count("\u201c") + text.count("\u201d")
+        quotes.append(quotes[-1] + delta)
     parts: list[list[dict[str, Any]]] = []
     cursor = 0
     unresolved = False
@@ -234,13 +245,23 @@ def _split_long_sentence(words: list[dict[str, Any]], *, max_seconds: float,
             gap = words[index + 1]["start"] - words[index]["end"]
             if duration < min_unit_seconds:
                 continue
-            if gap >= pause_seconds or BREAK_PUNCTUATION.search(words[index]["text"]):
-                candidates.append((index + 1, duration, gap))
-        within = [candidate for candidate in candidates if candidate[1] <= max_seconds]
-        if within:
-            split_at = within[-1][0]
+            punctuation = BREAK_PUNCTUATION.search(words[index]["text"])
+            audible = gap >= pause_seconds
+            if not (audible or punctuation):
+                continue
+            candidates.append({"index": index + 1, "duration": duration,
+                               "audible": audible,
+                               "strong": bool(re.search(r"[;:\u2014]", words[index]["text"])),
+                               "insideQuote": quotes[index + 1] % 2 == 1})
+        within = [candidate for candidate in candidates if candidate["duration"] <= max_seconds]
+        safe_within = [candidate for candidate in within
+                       if (candidate["audible"] or candidate["strong"]) and not candidate["insideQuote"]]
+        if safe_within:
+            split_at = safe_within[-1]["index"]
+        elif within:
+            split_at = within[-1]["index"]
         elif candidates:
-            split_at = candidates[0][0]
+            split_at = candidates[0]["index"]
         else:
             parts.append(words[cursor:])
             unresolved = True
@@ -271,10 +292,53 @@ def _clause_boundary_evidence(words: list[dict[str, Any]], index: int,
     }
 
 
+# Closed-class words that cannot end a translatable unit. A pause after one of them is
+# hesitation, not a clause boundary: the 2026-10-18 episode paused after "attacked by" and
+# after "confident that", and cutting there leaves the next unit without its head.
+UNIT_FINAL_FUNCTION_WORDS = frozenset("""
+a an the this these those my your his her its our their
+of to in for with by from at on into onto about as than through under over between among
+and or but nor yet because if when while although though whether that which who whom whose
+is are was were be been being am do does did have has had will would can could should shall may might must
+not i we they he she
+""".split())
+UNIT_FINAL_CONTRACTION = re.compile(r"^(?:who|that|which|there|here|it|he|she|they|we|you|i)['\u2019](?:s|re|ll|ve|d|m)$")
+# A comma after a filler, with nothing audible separating it from the clause, is not a boundary
+# ("I am not a firm, like, yes, | I'm 100% confident ..." turned a denial into a claim).
+FILLER_WORDS = frozenset({"yes", "yeah", "like", "well", "okay", "ok", "so", "um", "uh", "mean", "know", "right",
+                          "again", "actually", "really", "basically", "honestly"})
+DETERMINERS = frozenset("a an the this these those my your his her its our their some any each every".split())
+COPULAS = frozenset("is are was were be been being am".split())
+# Words that open a clause: a comma without a pause is admissible before one of them, never
+# in the middle of a noun list ("by Nero, | the Roman Empire" changed who attacked whom).
+CLAUSE_STARTERS = frozenset("""
+and but or so yet because then which who that there whether if when while as though although even
+where what how why whose unless until since
+i you he she we they it this these those my your his her our their
+""".split())
+
+
+def _boundary_word(text: str) -> str:
+    return re.sub(r"[^a-z'\u2019]+$", "", re.sub(r"^[^a-z]+", "", str(text).lower()))
+
+
 def _dependent_clause_boundary(words: list[dict[str, Any]], index: int) -> bool:
     """Reject pauses that leave a short grammatical dependency unresolved."""
     previous = re.sub(r"[^a-z]+$", "", str(words[index]["text"]).lower())
     next_word = re.sub(r"^[^a-z]+", "", str(words[index + 1]["text"]).lower())
+    boundary_word = _boundary_word(words[index]["text"])
+    if boundary_word in UNIT_FINAL_FUNCTION_WORDS or UNIT_FINAL_CONTRACTION.match(boundary_word):
+        return True
+    if index > 0:
+        # "the whole | sort of inter-advent age", "the different | images": a modifier cut from its
+        # head; "and, again, | put forth": a parenthetical filler inside a dependency.
+        before = _boundary_word(words[index - 1]["text"])
+        if before in DETERMINERS or (boundary_word in FILLER_WORDS and before in UNIT_FINAL_FUNCTION_WORDS):
+            return True
+        # "is primarily, | if not exclusively actually, future": a hedging adverb right after the
+        # copula still awaits its complement (2026-10-21 v13, the one sentence the judge rejected).
+        if before in COPULAS and boundary_word.endswith("ly"):
+            return True
     if previous in {"on", "be"}:
         return True
     if previous == "there" and next_word in {"is", "are", "was", "were"}:
@@ -359,11 +423,18 @@ def _split_clause_stable(words: list[dict[str, Any]], *, max_seconds: float,
             if duration < min_unit_seconds or duration > max_seconds + 0.5:
                 raise ValueError(f"Boundary override lacks a safe clause split: {forced_ids}")
         for index in indexes:
+            word_id = words[index]["wordId"]
+            if word_id in accepted_dependencies:
+                # The operator named this boundary in acceptDependentBoundaryAfter,
+                # so it may be used even without punctuation or an audible pause.
+                # 2026-10-21: the only legal-looking boundary in
+                # chunk-0010-s002 cut "real, concrete" from its head; the clean
+                # one ("...period of time" | "where ...") had no pause at all.
+                continue
             gap = float(words[index + 1]["start"]) - float(words[index]["end"])
             if (not (gap >= pause_seconds or BREAK_PUNCTUATION.search(str(words[index]["text"])))
-                    or (_dependent_clause_boundary(words, index)
-                        and words[index]["wordId"] not in accepted_dependencies)):
-                raise ValueError(f"Boundary override lacks a safe clause split: {words[index]['wordId']}")
+                    or _dependent_clause_boundary(words, index)):
+                raise ValueError(f"Boundary override lacks a safe clause split: {word_id}")
         parts = [(words[start:end + 1], {**_clause_boundary_evidence(words, end, pause_seconds, max_seconds),
                   **({"operatorAcceptedDependency": True} if words[end]["wordId"] in accepted_dependencies else {})})
                  for start, end in zip(starts[:-1], ends[:-1])]
@@ -392,21 +463,49 @@ def _split_clause_stable(words: list[dict[str, Any]], *, max_seconds: float,
             }))
             break
 
+        # Candidate tiers, best first: punctuation with an audible pause or strong punctuation;
+        # a comma the speaker did not pause at, admitted only before a clause opener and never
+        # after a filler; last an audible pause with no punctuation, which is usually hesitation
+        # (2026-10-18: 52 of the 55 comma-only cuts passed the judge). Within the target the latest candidate of the
+        # best tier wins; beyond it the earliest, so a unit overruns the target by as little as
+        # possible. A span with no candidate stays whole and is reported for operator review
+        # rather than cut at a comma that only punctuation supports.
         safe_candidates: list[tuple[int, dict[str, Any]]] = []
+        tiers: list[tuple[int, int, bool, int]] = []  # (tier, index + 1, within target, candidate number)
         semantic_window_seconds = max_seconds * 1.5
+        long_pause_seconds = pause_seconds * 3
         for index in range(cursor, len(words) - 1):
             duration = float(words[index]["end"]) - float(words[cursor]["start"])
-            if duration < min_unit_seconds or duration > semantic_window_seconds:
+            text = str(words[index]["text"])
+            gap = float(words[index + 1]["start"]) - float(words[index]["end"])
+            punctuation = bool(BREAK_PUNCTUATION.search(text))
+            audible = gap >= pause_seconds
+            if duration > semantic_window_seconds or not (audible or punctuation):
+                continue
+            # A long pause after punctuation is a boundary even when the first unit is short
+            # ("Yeah, the timestamps, again, | you would say ..." paused 1.7 s after "again,").
+            if duration < min_unit_seconds and not (
+                    punctuation and gap >= long_pause_seconds
+                    and sum(_boundary_word(w["text"]) not in FILLER_WORDS for w in words[cursor:index + 1]) >= 2):
                 continue
             remaining_after_split = float(words[-1]["end"]) - float(words[index + 1]["start"])
-            if remaining_after_split < min_unit_seconds:
+            if remaining_after_split < min_unit_seconds or _dependent_clause_boundary(words, index):
                 continue
-            gap = float(words[index + 1]["start"]) - float(words[index]["end"])
-            if ((gap >= pause_seconds or BREAK_PUNCTUATION.search(str(words[index]["text"])))
-                    and not _dependent_clause_boundary(words, index)):
-                safe_candidates.append((index + 1, _clause_boundary_evidence(
-                    words[cursor:], index - cursor, pause_seconds, max_seconds,
-                )))
+            if (punctuation and audible) or re.search(r"[;:\u2014]", text):
+                tier = 0
+            elif punctuation:
+                if (_boundary_word(text) in FILLER_WORDS
+                        or _boundary_word(words[index + 1]["text"]) not in CLAUSE_STARTERS):
+                    continue
+                tier = 1
+            elif _boundary_word(words[index + 1]["text"]) in FILLER_WORDS:
+                continue  # a hesitation before a filler ("they view | really the first ...")
+            else:
+                tier = 2
+            tiers.append((tier, index + 1, duration <= max_seconds, len(safe_candidates)))
+            safe_candidates.append((index + 1, _clause_boundary_evidence(
+                words[cursor:], index - cursor, pause_seconds, max_seconds,
+            )))
         if not safe_candidates:
             parts.append((words[cursor:], {
                 "kind": "source_sentence_end",
@@ -417,13 +516,19 @@ def _split_clause_stable(words: list[dict[str, Any]], *, max_seconds: float,
             }))
             unresolved = True
             break
-        punctuation_candidates = [candidate for candidate in safe_candidates
-                                  if candidate[1]["punctuation"] is not None]
-        punctuation_within_target = [candidate for candidate in punctuation_candidates
-                                     if candidate[1]["withinTargetSeconds"]]
-        split_at, evidence = (
-            punctuation_within_target or punctuation_candidates or safe_candidates
-        )[-1]
+        chosen = None
+        for tier in (0, 1, 2):
+            within = [item for item in tiers if item[0] == tier and item[2]]
+            if within:
+                chosen = within[-1][3]
+                break
+        if chosen is None:
+            for tier in (0, 1, 2):
+                beyond = [item for item in tiers if item[0] == tier and not item[2]]
+                if beyond:
+                    chosen = beyond[0][3]
+                    break
+        split_at, evidence = safe_candidates[chosen]
         parts.append((words[cursor:split_at], evidence))
         cursor = split_at
     return parts, unresolved
