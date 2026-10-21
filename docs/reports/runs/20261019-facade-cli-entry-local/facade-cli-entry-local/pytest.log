@@ -1,0 +1,97 @@
+................................... [ 30%]
+....................................... [ 64%]
+..................................... [ 97%]
+...                                                                    [100%]
+=============================== warnings summary ===============================
+tests/test_run_unittest_ci.py::test_roots
+  ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.venv/lib/python3.13/site-packages/_pytest/python.py:171: PytestReturnNotNoneWarning: Test functions should return None, but tests/test_run_unittest_ci.py::test_roots returned <class 'list'>.
+  Did you mean to use `assert` instead of `return`?
+  See https://docs.pytest.org/en/stable/how-to/assert.html#return-not-none for more information.
+    warnings.warn(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+114 passed, 1 warning, 755 subtests passed in 35.06s
+........................................                            [100%]
+40 passed, 5 subtests passed in 0.37s
+== --help through the new entry
+0 | .venv/bin/python tools/ops/prepare_dev_simulated_publication.py | usage: prepare_dev_simulated_publication.py [-h]
+0 | .venv/bin/python tools/ops/run.py | usage: run.py <module> [arguments ...]    e.g. run.py text.candidate --help
+0 | .venv/bin/python tools/ops/run.py adapters.legacy.assemble_multilingual_hosting | usage: adapters.legacy.assemble_multilingual_hosting [-h]
+0 | .venv/bin/python tools/ops/run.py adapters.legacy.assemble_multilingual_v3_update | usage: adapters.legacy.assemble_multilingual_v3_update [-h]
+0 | .venv/bin/python tools/ops/run.py adapters.legacy.deploy_multilingual_hosting | usage: adapters.legacy.deploy_multilingual_hosting [-h] --candidate CANDIDATE
+0 | .venv/bin/python tools/ops/run.py adapters.legacy.inspect_multilingual_v3_release | usage: adapters.legacy.inspect_multilingual_v3_release [-h]
+0 | .venv/bin/python tools/ops/run.py adapters.legacy.refresh_multilingual_hosting_with_legacy | usage: adapters.legacy.refresh_multilingual_hosting_with_legacy
+0 | .venv/bin/python tools/ops/run.py adapters.legacy.seal_multilingual_dev_catalog | usage: adapters.legacy.seal_multilingual_dev_catalog [-h] [--public PUBLIC]
+0 | .venv/bin/python tools/ops/run.py adapters.legacy.verify_multilingual_hosting | usage: adapters.legacy.verify_multilingual_hosting [-h] --candidate CANDIDATE
+0 | .venv/bin/python tools/ops/run.py adapters.legacy.verify_v3_bucket_video | usage: adapters.legacy.verify_v3_bucket_video [-h] --origin ORIGIN
+0 | .venv/bin/python tools/ops/run.py audio.package | usage: audio.package [-h] --source SOURCE --anchor ANCHOR
+0 | .venv/bin/python tools/ops/run.py audio.recovery | usage: audio.recovery [-h] --audio-package AUDIO_PACKAGE
+0 | .venv/bin/python tools/ops/run.py audio.speech_job | usage: audio.speech_job [-h] --english-source-package ENGLISH_SOURCE_PACKAGE
+0 | .venv/bin/python tools/ops/run.py audio.unit_integrity | usage: audio.unit_integrity [-h] --job JOB [--strict-rubric STRICT_RUBRIC]
+0 | .venv/bin/python tools/ops/run.py compute.spark_exclusive_session | usage: compute.spark_exclusive_session [-h] [--host HOST] [--local]
+0 | .venv/bin/python tools/ops/run.py delivery.app_release | usage: delivery.app_release [-h] {prepare,verify,seal} ...
+0 | .venv/bin/python tools/ops/run.py delivery.posters.announcement_sidecar | usage: delivery.posters.announcement_sidecar [-h] --catalog CATALOG
+0 | .venv/bin/python tools/ops/run.py delivery.posters.build | usage: delivery.posters.build [-h] --release RELEASE --page-id PAGE_ID
+0 | .venv/bin/python tools/ops/run.py observability.accounting | usage: observability.accounting [-h] directory
+0 | .venv/bin/python tools/ops/run.py observability.measure | usage: observability.measure [-h] {run,audit} ...
+0 | .venv/bin/python tools/ops/run.py observability.progress | usage: observability.progress [-h]
+0 | .venv/bin/python tools/ops/run.py observability.projections.four_layer_tracker_snapshot | usage: observability.projections.four_layer_tracker_snapshot
+0 | .venv/bin/python tools/ops/run.py review.source_meaning | usage: review.source_meaning [-h] --media MEDIA --unit UNIT --out-dir OUT_DIR
+0 | .venv/bin/python tools/ops/run.py source.sentence_interpretation_models | usage: source.sentence_interpretation_models [-h]
+0 | .venv/bin/python tools/ops/run.py source.unified_stage | usage: source.unified_stage [-h] --config CONFIG [--base-output BASE_OUTPUT]
+0 | .venv/bin/python tools/ops/run.py text.cache_recovery | usage: text.cache_recovery [-h] --config CONFIG --locale {zh-Hans,ko,es}
+0 | .venv/bin/python tools/ops/run.py text.candidate | usage: text.candidate [-h] --english-source-package ENGLISH_SOURCE_PACKAGE
+0 | .venv/bin/python tools/ops/run.py text.cuv_translation | usage: text.cuv_translation [-h] {run,repair-timing,validate} ...
+0 | .venv/bin/python tools/ops/run.py text.human_review | usage: text.human_review [-h] --english-source-package ENGLISH_SOURCE_PACKAGE
+0 | .venv/bin/python tools/ops/run.py text.model_cache_migration | usage: text.model_cache_migration [-h] --old-source OLD_SOURCE --source SOURCE
+0 | .venv/bin/python tools/ops/run.py text.models | usage: text.models [-h] --english-source-package ENGLISH_SOURCE_PACKAGE
+0 | .venv/bin/python tools/ops/run.py text.reconciliation | usage: text.reconciliation [-h] --config CONFIG --locale {zh-Hans,ko,es}
+0 | .venv/bin/python tools/ops/run.py workflows.dual_pdf.codex_local | usage: workflows.dual_pdf.codex_local [-h] [--sunday SUNDAY]
+0 | .venv/bin/python tools/ops/run.py workflows.dual_pdf.local_post_live_download | usage: workflows.dual_pdf.local_post_live_download [-h] [--sunday SUNDAY]
+0 | .venv/bin/python tools/ops/run.py workflows.dual_pdf.mobile_pdf | usage: workflows.dual_pdf.mobile_pdf [-h] --input INPUT
+0 | .venv/bin/python tools/ops/run.py workflows.dual_pdf.pipeline | usage: workflows.dual_pdf.pipeline [-h] [--input INPUT]
+0 | .venv/bin/python tools/ops/run.py workflows.dual_pdf.post_live | usage: workflows.dual_pdf.post_live [-h] --sunday SUNDAY
+0 | python3 tools/development/backlog_ids.py | usage: backlog_ids.py [-h] [--prefixes] [--file FILE] [query]
+0 | python3 tools/development/check_tongxing_icon_alignment.py | PASS: 42 native symbols resolved by 48 SVG drawings (0 explicit legacy action ma
+0 | python3 tools/development/worktree_venv.py | usage: worktree_venv.py [-h] [--shared-venv SHARED_VENV] [--check]
+40 distinct commands; 0 failed
+== facade vs entry --help
+OK   0 0 scripts/assemble_multilingual_hosting.py -> adapters.legacy.assemble_multilingual_hosting 806
+OK   0 0 scripts/assemble_multilingual_v3_update.py -> adapters.legacy.assemble_multilingual_v3_update 1218
+OK   0 0 scripts/build_four_layer_tracker_snapshot.py -> observability.projections.four_layer_tracker_snapshot 1701
+OK   0 0 scripts/build_full_video_app_release.py -> delivery.app_release 1092
+OK   0 0 scripts/build_multilingual_sermon_posters.py -> delivery.posters.build 1125
+OK   0 0 scripts/build_target_language_audio_package.py -> audio.package 1906
+OK   0 0 scripts/build_weekly_announcement_sidecar.py -> delivery.posters.announcement_sidecar 1029
+OK   0 0 scripts/canonical_layer2_cache_recovery.py -> text.cache_recovery 548
+OK   0 0 scripts/canonical_layer2_reconciliation.py -> text.reconciliation 631
+OK   0 0 scripts/deploy_multilingual_hosting.py -> adapters.legacy.deploy_multilingual_hosting 677
+OK   0 0 scripts/four_layer_measure.py -> observability.measure 484
+OK   0 0 scripts/four_layer_progress.py -> observability.progress 856
+OK   0 0 scripts/inspect_multilingual_v3_release.py -> adapters.legacy.inspect_multilingual_v3_release 1180
+OK   0 0 scripts/migrate_target_language_model_cache.py -> text.model_cache_migration 970
+DIFF 0 2 scripts/prepare_dev_simulated_publication.py -> delivery.baseline 0 usage: run.py <module> [arguments ...]    e.g. run.py text.candidate --help
+run.py: tongxing_production.delivery.baseline has no main()
+OK   0 0 scripts/prepare_target_language_speech_job.py -> audio.speech_job 2059
+OK   0 0 scripts/produce_target_language_candidate.py -> text.candidate 1675
+OK   0 0 scripts/refresh_multilingual_hosting_with_legacy.py -> adapters.legacy.refresh_multilingual_hosting_with_legacy 567
+OK   0 0 scripts/render_mobile_pdf_from_srt.py -> workflows.dual_pdf.mobile_pdf 3872
+OK   0 0 scripts/review_target_language_candidate.py -> text.human_review 2089
+OK   0 0 scripts/run_codex_local_sermon_production.py -> workflows.dual_pdf.codex_local 3553
+OK   0 0 scripts/run_local_post_live_download.py -> workflows.dual_pdf.local_post_live_download 1947
+OK   0 0 scripts/run_post_live_subtitle_generation.py -> workflows.dual_pdf.post_live 10045
+OK   0 0 scripts/run_sentence_interpretation_models.py -> source.sentence_interpretation_models 1122
+OK   0 0 scripts/run_target_language_models.py -> text.models 2767
+OK   0 0 scripts/seal_multilingual_dev_catalog.py -> adapters.legacy.seal_multilingual_dev_catalog 306
+OK   0 0 scripts/sermon_accounting.py -> observability.accounting 363
+OK   0 0 scripts/sermon_cuv_translation.py -> text.cuv_translation 523
+OK   0 0 scripts/sermon_pipeline.py -> workflows.dual_pdf.pipeline 6229
+OK   0 0 scripts/sermon_unified_source.py -> source.unified_stage 1011
+OK   0 0 scripts/source_meaning_machine_adjudication.py -> review.source_meaning 4034
+OK   0 0 scripts/spark_exclusive_session.py -> compute.spark_exclusive_session 813
+OK   0 0 scripts/target_audio_recovery.py -> audio.recovery 732
+OK   0 0 scripts/validate_target_language_audio_unit.py -> audio.unit_integrity 608
+OK   0 0 scripts/verify_multilingual_hosting.py -> adapters.legacy.verify_multilingual_hosting 765
+OK   0 0 scripts/verify_v3_bucket_video.py -> adapters.legacy.verify_v3_bucket_video 414
+36 modules; 1 differ
+exit 0 0 0

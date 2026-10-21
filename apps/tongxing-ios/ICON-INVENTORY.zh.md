@@ -107,4 +107,4 @@ App 图标的图层与外观配置见 [icon.json](App/AppIcon.icon/icon.json)；
 
 ## Firebase 网页对应
 
-2026-10-01 网页补充实现以本清单为参考，手工重绘共享 SVG 图形，保留 iOS 原生 SF Symbols。见 [网页图标说明](../../experiments/sermon-dubbing-poc/web/ICONS.zh.md)。网页与原生共享操作语义，网页发布状态单独记录。
+2026-10-01 网页补充实现以本清单为参考，手工重绘共享 SVG 图形，保留 iOS 原生 SF Symbols。见 [网页图标说明](../../apps/listening-web/ICONS.zh.md)。网页与原生共享操作语义，网页发布状态单独记录。

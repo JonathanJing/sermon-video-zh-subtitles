@@ -3,10 +3,10 @@ import json
 import unittest
 from unittest.mock import patch
 
-from scripts import produce_target_language_candidate as producer
-from scripts import run_target_language_models as runner
-from scripts import target_language_policy as policy_tools
-from scripts import target_language_rule_preflight as subject
+from tongxing_production.text import candidate as producer
+from tongxing_production.text import models as runner
+from tongxing_production.text import policy as policy_tools
+from tongxing_production.text import rule_preflight as subject
 from tests import test_run_target_language_models as fixture_module
 
 
@@ -398,8 +398,9 @@ class ControllerRulePreflightTests(unittest.TestCase):
         self.addCleanup(self.worker.doCleanups)
 
     def test_controller_bad_pinned_plugin_is_blocked_before_job_dispatch(self):
-        from scripts import canonical_layer2_controller as controller
-        from scripts import sermon_workflow_jobs as jobs
+        from scripts import tongxing_host  # noqa: F401  binds the production package ports
+        from tongxing_production.text import controller
+        from tongxing_production.orchestration import jobs
         f = self.worker.fixture.fixture
         f.plugin_path.write_text(f.plugin_path.read_text().replace('"zh-Hans-sermon-v1"', '"mismatched-id"'))
         policy = copy.deepcopy(f.policy)
@@ -415,7 +416,8 @@ class ControllerRulePreflightTests(unittest.TestCase):
         self.assertFalse(any(self.worker.output.glob("*.started.json")))
 
     def test_controller_passes_actual_frozen_receipt_to_plugin_and_candidate(self):
-        from scripts import canonical_layer2_controller as controller
+        from scripts import tongxing_host  # noqa: F401  binds the production package ports
+        from tongxing_production.text import controller
         plugin = controller.producer.run_language_plugin
         candidate = controller.producer.admit_evidence
         with self.worker.active() as (config, code, key, _), \

@@ -10,8 +10,10 @@ import threading
 import unittest
 from unittest.mock import patch
 
-from scripts import run_target_language_models as runner
-from scripts import sermon_workflow_jobs as jobs
+from tests.job_store_patches import patch_job_store  # G1: job store primitives live in two modules
+from tongxing_production.text import models as runner
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.orchestration import jobs
 
 
 class PaidModelCacheDurabilityTests(unittest.TestCase):
@@ -61,7 +63,7 @@ class PaidModelCacheDurabilityTests(unittest.TestCase):
             events.append(('caller', None))
             return self.response(key, payload)
 
-        with patch.object(os, 'fsync', side_effect=sync), patch.object(jobs, '_sync_directory', side_effect=directory), patch.object(Path, 'unlink', remove):
+        with patch.object(os, 'fsync', side_effect=sync), patch_job_store("_sync_directory", side_effect=directory), patch.object(Path, 'unlink', remove):
             self.call(respond)
         called = events.index(('caller', None))
         self.assertIn(('file', self.marker.name), events[:called])
@@ -174,7 +176,8 @@ class PaidModelCacheDurabilityTests(unittest.TestCase):
     def test_process_exit_after_admission_keeps_paid_attempt_unknown(self):
         script = '''import os, sys
 from pathlib import Path
-from scripts import run_target_language_models as runner
+from scripts import tongxing_host
+from tongxing_production.text import models as runner
 
 def responder(key, payload):
     os._exit(27)

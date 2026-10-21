@@ -5,8 +5,10 @@ from pathlib import Path
 import unittest
 from unittest.mock import patch
 
-from scripts import sermon_unified_continuation as subject
-from scripts import build_english_source_package as english
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from scripts import sermon_unified  # noqa: F401  binds the orchestration these stages compose
+from tongxing_production.workflows.prepared import continuation as subject
+from tongxing_production.source import english_source_package as english
 from scripts.sermon_unified import contracts as c, runtime
 from tests import test_sermon_unified_source as source_fixture
 from tests import test_sermon_unified_cli as cli_fixture
@@ -141,7 +143,7 @@ class ContinuationTests(unittest.TestCase):
         self.assertEqual(second['manifest']['source'],self.manifest['source'])
         self.assertEqual(c.read(second['receiptPath'])['modelDispatches'],0)
         self.assertFalse(c.read(second['receiptPath'])['humanApprovalCreated'])
-        from scripts import inspect_canonical_packages
+        from tongxing_production.delivery import inspect_canonical_packages
         checked = inspect_canonical_packages.inspect(Path(second['manifest']['bindings']['inspection']['path']))
         self.assertEqual(checked['nodes']['source']['status'], 'validated')
         self.assertEqual(checked['nodes']['text.zh-Hans']['reasonCode'], 'policy_not_validated')
@@ -341,7 +343,8 @@ class ContinuationTests(unittest.TestCase):
 
         # Conversely a one-locale manifest cannot reduce an authorization
         # bound to a controller registering three independently spendable lanes.
-        from scripts import canonical_layer2_controller as controller
+        from scripts import tongxing_host  # noqa: F401  binds the production package ports
+        from tongxing_production.text import controller
         for locale in ('ko', 'es'):
             f.base.fixture.config_data['locales'][locale] = {
                 'outputDirectory': 'outputs/' + locale,

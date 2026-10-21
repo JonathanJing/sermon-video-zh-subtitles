@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import test from 'node:test';
-import { loadDryRunWeeks } from '../firebase/dev/public/dry-run-app-weeks.mjs';
+import { loadDryRunWeeks } from '../apps/listening-web/reader/dry-run-app-weeks.mjs';
 
 const ID = 'dryrun-20260927-unit';
 const LANGUAGES = ['zh-Hans', 'ko', 'es'];

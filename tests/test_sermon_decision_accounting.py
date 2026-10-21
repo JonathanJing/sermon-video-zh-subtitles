@@ -5,10 +5,11 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-from scripts import sermon_accounting as accounting
-from scripts import sermon_decision_accounting as observations
-from scripts import sermon_decision_budget as budget_module
-from scripts import weekly_pipeline_report
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.observability import accounting
+from tongxing_production.orchestration.supervisor import decision_accounting as observations
+from tongxing_production.orchestration.supervisor import decision_budget as budget_module
+from tongxing_production.observability import weekly_projection as weekly_pipeline_report
 from tests.test_sermon_decision_budget import packet, response
 
 

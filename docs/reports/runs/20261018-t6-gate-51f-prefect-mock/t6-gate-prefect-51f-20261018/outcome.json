@@ -1,0 +1,11 @@
+{
+  "deliveryType": "test",
+  "status": "passed",
+  "exitCode": 0,
+  "headSha": "51f5dfc004ab15426885568a6101e3a222c2e61a",
+  "workflow": "Local Prefect pilot",
+  "runId": 39095455816,
+  "workflowConclusion": "success",
+  "publication": "not_run",
+  "realProduction": "not_run"
+}

@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261018-ko-source-bound-plugin",
+  "runs": [
+    {
+      "label": "20261018-ko-source-bound-plugin",
+      "source": "~/.codex/worktrees/layer2-source-bound-number-fixes/sermon-video-zh-subtitles/artifacts/test-runs/20261018-ko-source-bound-plugin",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "20261018-ko-source-bound-plugin",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 627,
+      "truncated": false,
+      "sha256": "7e203749206af156a0a1eb125c97ff1c7c38e4d17977603a0e32767c0136cdfb",
+      "redactions": {}
+    },
+    {
+      "run": "20261018-ko-source-bound-plugin",
+      "path": "targeted.log",
+      "kind": "log",
+      "bytes": 994,
+      "truncated": false,
+      "sha256": "21c34746edafeea440c09f303f739e78c1e2b38b7090e5602ec9669504d4b994",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

@@ -7,7 +7,7 @@ This module intentionally performs no media processing or model calls.
 
 RETIREMENT_MESSAGE = (
     "Automatic sermon boundary discovery has been retired. "
-    "Use scripts/run_post_live_timeline_job.py to prepare source media, then "
+    "Use tools/ops/run.py workflows.dual_pdf.timeline to prepare source media, then "
     "provide operator-confirmed start/end times following "
     "docs/codex-local-production-runbook.zh.md."
 )

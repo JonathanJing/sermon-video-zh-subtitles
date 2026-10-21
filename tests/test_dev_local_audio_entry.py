@@ -2,18 +2,39 @@
 import contextlib
 import io
 import json
+import os
 from pathlib import Path
+import subprocess
 import sys
+import tempfile
 from types import SimpleNamespace
 import unittest
 from unittest.mock import MagicMock, patch
 
-from scripts import dev_audio_test_profile as profiles
-from scripts import dev_audio_test_receipts as receipts
-from scripts import render_formal_target_language_speech as tts
-from scripts import screen_target_language_audio_units as asr
-from scripts import run_dev_local_audio_test as entry
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.audio import dev_profile as profiles
+from tongxing_production.audio import dev_receipts as receipts
+from tongxing_production.audio import renderer as tts
+from tongxing_production.audio import screening as asr
+from tools.development import run_dev_local_audio_test as entry
 from tests import test_formal_audio_batching as fixtures
+
+
+class StandaloneEntrypointTests(unittest.TestCase):
+    def test_moved_cli_finds_producer_from_other_directory(self):
+        root = Path(__file__).resolve().parents[1]
+        script = root / "tools/development/run_dev_local_audio_test.py"
+        with tempfile.TemporaryDirectory() as directory:
+            result = subprocess.run(
+                [sys.executable, str(script), "tts", "--help"],
+                cwd=directory,
+                env={key: value for key, value in os.environ.items() if key != "PYTHONPATH"},
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("usage:", result.stdout)
 
 
 class TtsDevEntryTests(unittest.TestCase):

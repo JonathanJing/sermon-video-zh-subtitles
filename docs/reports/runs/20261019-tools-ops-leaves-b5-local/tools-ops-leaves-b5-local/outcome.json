@@ -1,0 +1,8 @@
+{
+  "schemaVersion": "local-test-outcome-v1",
+  "status": "passed",
+  "exitCode": 0,
+  "startedAt": "2026-10-19T18:09:29.946530+00:00",
+  "endedAt": "2026-10-19T18:14:02.506530+00:00",
+  "scope": "把 13 个历史 Cloud Run 实时与周日证据运维工具从 scripts/ 移到 tools/ops/，并修正门面转发 (PR #1133); affected unit tests and package test; 7013 test IDs identical before/after; CLI/import equivalence vs origin/dev"
+}

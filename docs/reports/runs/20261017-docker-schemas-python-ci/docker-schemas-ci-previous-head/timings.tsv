@@ -1,0 +1,2 @@
+stage	status	seconds	result
+python_ci	pass		8 root shards and aggregator succeeded

@@ -1,0 +1,20 @@
+{
+  "schemaVersion": "local-exp-leaf-ci-observation-v1",
+  "status": "cancelled",
+  "exitCode": 1,
+  "deliveryType": "test",
+  "scope": "superseded exact-head Python CI",
+  "headSha": "9d6bceb4b135d10ac8118aed8600965eb7db5199",
+  "workflowRunId": 39094567313,
+  "reason": "superseded by fix for wildcard imports and function pickle P2 findings",
+  "jobs": {
+    "changes": "success",
+    "rootGroups": "cancelled (8)",
+    "unittest": "failure after cancellation",
+    "nativeContracts": "skipped"
+  },
+  "currentHead": "f5664cb8e28733f0971d5923fc81228e3fcf8491",
+  "realVenue": "not_run",
+  "spark": "not_run",
+  "paidCalls": 0
+}

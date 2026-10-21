@@ -1,0 +1,8 @@
+{
+  "status": "success",
+  "exitCode": 0,
+  "headSha": "8d71cbb2763859038ebb621b42a256cb1e74ffb3",
+  "workingTree": "clean",
+  "testCount": 29,
+  "wallSeconds": 4.681
+}

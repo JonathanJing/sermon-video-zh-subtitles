@@ -5,7 +5,7 @@ import unittest
 from argparse import Namespace
 from pathlib import Path
 
-import scripts.write_no_caption_asr_fallback_plan as mod
+from tools.ops import write_no_caption_asr_fallback_plan as mod
 
 
 class WriteNoCaptionAsrFallbackPlanTest(unittest.TestCase):
@@ -26,9 +26,9 @@ class WriteNoCaptionAsrFallbackPlanTest(unittest.TestCase):
         self.assertIn("validate_production_readiness.py", commands)
         self.assertIn("--input", commands)
         self.assertNotIn("--playback-js", " ".join(" ".join(command) for command in report["commands"][:4]))
-        translate_command = next(command for command in report["commands"] if "scripts/translate_playback_with_openai.py" in command)
+        translate_command = next(command for command in report["commands"] if "tools/ops/translate_playback_with_openai.py" in command)
         playback_js = "artifacts/evidence/2026-06-28-no-caption-asr-route/web/playback-simulation.generated.js"
-        prepare_command = next(command for command in report["commands"] if "scripts/prepare_live_link_playback.py" in command)
+        prepare_command = next(command for command in report["commands"] if "tools/ops/prepare_live_link_playback.py" in command)
         self.assertEqual(
             prepare_command[prepare_command.index("--out-dir") + 1],
             "artifacts/evidence/2026-06-28-no-caption-asr-route/artifacts",
@@ -42,13 +42,13 @@ class WriteNoCaptionAsrFallbackPlanTest(unittest.TestCase):
         self.assertIn("--gcs-dry-run", prepare_command)
         self.assertIn("--no-discover", prepare_command)
         self.assertIn("--sermon-start", prepare_command)
-        preflight_command = next(command for command in report["commands"] if "scripts/run_offline_archive_preflight.py" in command)
+        preflight_command = next(command for command in report["commands"] if "tools/ops/run_offline_archive_preflight.py" in command)
         self.assertIn("--no-discover", preflight_command)
         self.assertIn("--sermon-start", preflight_command)
         self.assertEqual(translate_command[translate_command.index("--input") + 1], playback_js)
         self.assertEqual(translate_command[translate_command.index("--out") + 1], playback_js)
         self.assertIn("--api-key-secret", translate_command)
-        export_command = next(command for command in report["commands"] if "scripts/export_playback_captions.py" in command)
+        export_command = next(command for command in report["commands"] if "tools/ops/export_playback_captions.py" in command)
         self.assertEqual(export_command[export_command.index("--input") + 1], playback_js)
         self.assertEqual(export_command[export_command.index("--stem") + 1], "sermon.zh.live-aligned")
         self.assertEqual(
@@ -68,7 +68,7 @@ class WriteNoCaptionAsrFallbackPlanTest(unittest.TestCase):
         )
         self.assertEqual(validate_command[validate_command.index("--expected-asr-model") + 1], "gpt-4o-transcribe")
         self.assertEqual(validate_command[validate_command.index("--expected-translation-model") + 1], "gpt-5.4-mini")
-        readiness_command = next(command for command in report["commands"] if "scripts/validate_production_readiness.py" in command)
+        readiness_command = next(command for command in report["commands"] if "tools/ops/validate_production_readiness.py" in command)
         self.assertIn("--allow-missing-realtime", readiness_command)
         self.assertIn("use_asr_fallback", " ".join(report["passCriteria"]))
         self.assertIn("no requested English caption track", " ".join(report["passCriteria"]))

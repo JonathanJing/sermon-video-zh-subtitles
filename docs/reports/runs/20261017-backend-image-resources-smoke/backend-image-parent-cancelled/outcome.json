@@ -1,0 +1,6 @@
+{
+  "status": "cancelled",
+  "exitCode": null,
+  "deliveryType": "test",
+  "result": "Parent schema-only image smoke cancelled after superseding combined image smoke passed"
+}

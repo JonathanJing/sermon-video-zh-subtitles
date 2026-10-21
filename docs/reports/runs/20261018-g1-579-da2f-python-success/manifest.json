@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261018-g1-579-da2f-python-success",
+  "runs": [
+    {
+      "label": "g1-579-da2f-python-success",
+      "source": "~/.codex/worktrees/g1-r3-review/sermon-video-zh-subtitles/artifacts/g1-579-da2f-python-success",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "g1-579-da2f-python-success",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 341,
+      "truncated": false,
+      "sha256": "f191496a2969028ca45ad0eae007939368add93a68878aae03acda22b0ec46e6",
+      "redactions": {}
+    },
+    {
+      "run": "g1-579-da2f-python-success",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 1456,
+      "truncated": false,
+      "sha256": "9096f15ed653064eadbd78b756e3c543137c70eb1d6492de089da02ee6484352",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

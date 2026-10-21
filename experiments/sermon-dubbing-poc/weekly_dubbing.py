@@ -51,7 +51,7 @@ def resolve_approved_timeline(run, approval, *, week, source_url):
     """
     from poc import ROOT
     sys.path.insert(0, str(ROOT))
-    from scripts.sermon_production_supervisor import json_digest, validate_window_approval
+    from tongxing_production.workflows.supervisor.production import json_digest, validate_window_approval
     digest = approval.get("timelineReportSha256") if isinstance(approval, dict) else None
     for relative in ("timeline/report.json", "timeline/agent-job-report.json"):
         path = Path(run) / relative
@@ -265,7 +265,7 @@ def normalize_mp3(raw, mp3, *, process_runner=None):
         from poc import ROOT
         sys.path.insert(0, str(ROOT))
         from functools import partial
-        from scripts.sermon_execution_harness import bounded_process
+        from tongxing_production.orchestration.execution_harness import bounded_process
         process_runner = partial(bounded_process, timeout=3600)
     if mp3.exists():
         raise ValueError("Preserve existing MP3; choose a new output")
@@ -373,7 +373,8 @@ def validate_review(work, *, write_receipt=True):
     # interpretation of its publication receipts.
     from poc import ROOT
     sys.path.insert(0, str(ROOT))
-    from scripts.run_codex_local_sermon_production import local_completion_artifacts
+    from scripts import tongxing_host  # noqa: F401  binds the production package ports
+    from tongxing_production.workflows.dual_pdf.codex_local import local_completion_artifacts
     run = Path(job["inputs"]["sourceContract" if job.get("sourceRoute") == "same_video" else "windowApproval"]["path"]).parent
     generation = read(run / "agent-generation-report.json")
     artifacts = generation.get("publication", {}).get("artifacts", [])
@@ -389,7 +390,7 @@ def validate_review(work, *, write_receipt=True):
         raise ValueError("Existing Saturday PDF / GCS completion check has not passed")
     if write_receipt:
         write_json(work / "saturday-completion.json", {"status": "completed", "sourceId": job["sourceId"], "jobSha256": sha256(work / "job.json"),
-            "checkedAt": datetime.now(timezone.utc).isoformat(), "validator": "scripts.run_codex_local_sermon_production.local_completion_artifacts"})
+            "checkedAt": datetime.now(timezone.utc).isoformat(), "validator": "tongxing_production.workflows.dual_pdf.codex_local.local_completion_artifacts"})
     return review
 
 

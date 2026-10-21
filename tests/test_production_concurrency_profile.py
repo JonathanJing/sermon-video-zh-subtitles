@@ -9,10 +9,11 @@ from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import patch
 
-from scripts.production_concurrency_profile import profile_v1, validate_profile
-from scripts import codex_layer2_resources as admission
-from scripts import canonical_layer2_controller as controller
-from scripts import run_target_language_models as runner
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.compute.concurrency_profile import profile_v1, validate_profile
+from tongxing_production.compute.transports import codex_resources as admission
+from tongxing_production.text import controller
+from tongxing_production.text import models as runner
 from scripts.sermon_unified import resources
 
 
@@ -109,7 +110,7 @@ class SharedPoolTests(unittest.TestCase):
             self.assertTrue(self.reserve(index))
         permit = admission.Admission(self.policy, call_id='busy', identity={'fixture': True},
             receipt_directory=self.root / 'busy', concurrency_profile=self.profile)
-        with patch('scripts.codex_layer2_resources.time.monotonic', side_effect=[0, 181]):
+        with patch('tongxing_production.compute.transports.codex_resources.time.monotonic', side_effect=[0, 181]):
             with self.assertRaisesRegex(Exception, 'resource_broker_busy'):
                 permit.reserve()
         self.assertFalse(permit.reserved)
@@ -146,7 +147,7 @@ class DiagnosticCapabilityTests(unittest.TestCase):
 
     def test_runner_busy_hook_never_records_started_or_dispatches(self):
         from tests.test_codex_layer2_diagnostic import DiagnosticChainTests
-        from scripts import codex_layer2_diagnostic as diagnostic
+        from tools.development import codex_layer2_diagnostic as diagnostic
         helper = DiagnosticChainTests()
         helper.setUp()
         self.addCleanup(helper.doCleanups)
@@ -155,14 +156,14 @@ class DiagnosticCapabilityTests(unittest.TestCase):
         transport = helper.transport()
         transport.execution_identity['concurrencyProfile'] = profile_v1()
         with patch.object(transport, 'admit_resource', side_effect=ValueError('resource_broker_busy')), \
-             patch('scripts.codex_layer2_transport.subprocess.run', side_effect=AssertionError('dispatch forbidden')):
+             patch('tongxing_production.compute.transports.codex_layer2.subprocess.run', side_effect=AssertionError('dispatch forbidden')):
             with self.assertRaisesRegex(ValueError, 'resource_broker_busy'):
                 diagnostic.run_chain(inputs, helper.out, transport)
         self.assertFalse(any(helper.out.rglob('*.started.json')))
 
     def test_explicit_profile_runs_actual_machine_chain_and_resumes_without_calls(self):
         from tests.test_codex_layer2_diagnostic import DiagnosticChainTests
-        from scripts import codex_layer2_diagnostic as diagnostic
+        from tools.development import codex_layer2_diagnostic as diagnostic
         helper = DiagnosticChainTests()
         helper.setUp()
         self.addCleanup(helper.doCleanups)

@@ -348,8 +348,8 @@
       "name": "page_feedback_routing",
       "baselineKind": "user_category_plus_human_routing",
       "sources": [
-        "experiments/sermon-dubbing-poc/feedback-api/core.mjs",
-        "experiments/sermon-dubbing-poc/feedback-api/admin.mjs"
+        "services/feedback/core.mjs",
+        "services/feedback/admin.mjs"
       ],
       "subtasks": [
         "primary_route",

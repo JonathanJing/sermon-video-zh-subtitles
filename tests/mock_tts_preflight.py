@@ -6,8 +6,9 @@ import sys
 import tempfile
 import time
 
-from scripts import sermon_log_profile as profile
-from scripts import sermon_mock_tts_worker as worker
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.observability import profile
+from tongxing_production.compute.mock_tts import worker
 
 SCHEMA = 'sermon-mock-worker-preflight-v1'
 SCOPE = 'native_isolated_startup_environment_only'
@@ -18,7 +19,7 @@ CODES = frozenset({'ready', 'mock_tts_environment_not_scrubbed',
 # only these two contract failures may leave the child as structured output.
 CHILD = '''import json, sys
 sys.path.insert(0, sys.argv[1])
-from scripts import sermon_mock_tts_worker as worker
+from tongxing_production.compute.mock_tts import worker
 code = "ready"
 try:
     worker.require_environment()
@@ -46,7 +47,7 @@ def native_worker_preflight():
                 environment = worker.environment(root/'launcher')
                 try:
                     result = subprocess.run([sys.executable, '-I', '-c', CHILD,
-                        str(Path(worker.__file__).resolve().parents[1])],
+                        str(Path(__file__).resolve().parents[1])],
                         env=environment, cwd=root, stdin=subprocess.DEVNULL,
                         stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
                         text=True, timeout=15)

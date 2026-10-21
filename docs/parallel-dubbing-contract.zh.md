@@ -17,7 +17,7 @@
 原声 landmark 可与 ASR 并发；它是确定性信号处理，不占模型槽。
 
 ```sh
-node experiments/sermon-dubbing-poc/build_fingerprint_index.mjs \
+node packages/fingerprint/bin/build_fingerprint_index.mjs \
   --mode precompute --source ORIGINAL --source-sha ORIGINAL_SHA256 \
   --start START_SECONDS --end END_SECONDS --out source-landmarks.json
 ```
@@ -25,7 +25,7 @@ node experiments/sermon-dubbing-poc/build_fingerprint_index.mjs \
 输出 `sermon-source-landmarks-v1`，只有原声 SHA 与窗口，没有中文音轨或页面绑定；控制台收据给出该缓存的 SHA。中文音轨确实完成后再绑定：
 
 ```sh
-node experiments/sermon-dubbing-poc/build_fingerprint_index.mjs \
+node packages/fingerprint/bin/build_fingerprint_index.mjs \
   --mode bind --precomputed source-landmarks.json --precomputed-sha CACHE_SHA256 \
   --source-sha ORIGINAL_SHA256 --start START_SECONDS --end END_SECONDS \
   --track ACTUAL_CHINESE_MP3 --page-id PAGE_ID --out fingerprint-index.json

@@ -1,0 +1,7 @@
+{
+  "schemaVersion": "test-run-outcome-v1",
+  "kind": "local-unittest",
+  "status": "pass",
+  "exitCode": 0,
+  "headBeforeCommit": "b6507b5ddffc9f0bfbe08044e0e47878f1b3f073"
+}

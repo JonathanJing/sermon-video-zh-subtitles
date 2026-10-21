@@ -8,12 +8,16 @@ import threading
 import time
 import unittest
 
-from scripts import run_target_language_models as runner
-from scripts import sermon_accounting as accounting
-from scripts import target_language_policy as policies
-from scripts import layer2_api_concurrency as api_concurrency
-from scripts import weekly_pipeline_report as weekly
-from scripts.experiments import layer2_concurrency as experiment
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.text import models as runner
+from tongxing_production.observability import accounting
+from tongxing_production.text import policy as policies
+from tongxing_production.compute import api_concurrency
+from tongxing_production.observability import weekly_projection as weekly
+from tests import experiment_modules
+experiment = experiment_modules.load("experiments/local-layer-latency/layer2_concurrency.py")
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.workflows.dual_pdf import pipeline as sermon_pipeline_module
 from tests import test_run_target_language_models as fixtures
 
 
@@ -242,7 +246,7 @@ class Layer2ConcurrencyTests(unittest.TestCase):
                 "--anchor", str(inputs / "anchor.json"), "--policy", str(inputs / "policy.json"),
                 "--plugin", str(self.f.plugin_path), "--group-plan", str(inputs / "plan.json"),
                 "--out-dir", str(self.out)]
-        with patch("sys.argv", argv), patch.object(runner.sermon_pipeline, "chat_json", side_effect=AssertionError("generator called API")):
+        with patch("sys.argv", argv), patch.object(sermon_pipeline_module, "chat_json", side_effect=AssertionError("generator called API")):
             experiment.main()
         manifest = runner.producer._load(self.out / "experiment.json")
         self.assertEqual(manifest["translationGroups"], 1)

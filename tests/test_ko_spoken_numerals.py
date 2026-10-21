@@ -109,7 +109,8 @@ def test_range_particles_do_not_expand_book_anchored_scope(text, spoken):
 @pytest.mark.parametrize("start, end", [(3, 4), (16, 27), (3, 17), (16, 3)])
 @pytest.mark.parametrize("template", ["요한복음 {start}{dash}{end}장", "요한복음 {start}장{dash}{end}장", "창세기 1장{start}절{dash}{end}절", "창세기 1장 {start}{dash}{end}절"])
 def test_citation_ranges_generate_fold_and_score(template, start, end, dash):
-    from scripts import screen_target_language_audio_units as screen
+    from scripts import tongxing_host  # noqa: F401  binds the production package ports
+    from tongxing_production.audio import screening as screen
     approved = template.format(start=start, end=end, dash=dash)
     spoken = subject.spoken_form(approved)
     assert spoken != approved
@@ -123,7 +124,8 @@ def test_citation_ranges_generate_fold_and_score(template, start, end, dash):
 @pytest.mark.parametrize("connector", ["부터", "에서"])
 @pytest.mark.parametrize("start, end", [(3, 4), (16, 27)])
 def test_particle_ranges_generate_fold_and_score(connector, start, end):
-    from scripts import screen_target_language_audio_units as screen
+    from scripts import tongxing_host  # noqa: F401  binds the production package ports
+    from tongxing_production.audio import screening as screen
     approved = f"창세기 1장 {start}절{connector} {end}절까지"
     spoken = subject.spoken_form(approved)
     assert screen.fold_transcript(spoken, "ko") == approved
@@ -132,7 +134,8 @@ def test_particle_ranges_generate_fold_and_score(connector, start, end):
 
 
 def test_range_folding_keeps_legacy_scoring_and_non_citations():
-    from scripts import screen_target_language_audio_units as screen
+    from scripts import tongxing_host  # noqa: F401  binds the production package ports
+    from tongxing_production.audio import screening as screen
     approved = "요한복음 3-4장"
     spoken = subject.spoken_form(approved)
     assert not screen.score(approved, spoken, "ko", 0.88, screen.SCORING_V4)[2]
@@ -151,7 +154,8 @@ def test_range_folding_keeps_legacy_scoring_and_non_citations():
     "시편 1-2편", "시편1편–2편", "시편 16편부터 27편까지",
 ])
 def test_adjacent_and_psalm_citations_generate_fold_and_score(approved):
-    from scripts import screen_target_language_audio_units as screen
+    from scripts import tongxing_host  # noqa: F401  binds the production package ports
+    from tongxing_production.audio import screening as screen
     spoken = subject.spoken_form(approved)
     assert spoken != approved
     assert not any(char.isdigit() for char in spoken)
@@ -183,7 +187,8 @@ def test_counter_prefix_words_are_not_scripture_references(text):
     ("시편 12-3편", "시편 일-이십삼편"),
 ])
 def test_v5_rejects_changed_numeric_segments_and_range_structure(approved, wrong):
-    from scripts import screen_target_language_audio_units as screen
+    from scripts import tongxing_host  # noqa: F401  binds the production package ports
+    from tongxing_production.audio import screening as screen
     assert not screen.score(approved, wrong, "ko", 0.88)[2]
     assert screen.score(approved, subject.spoken_form(approved), "ko", 0.88)[2]
 
@@ -195,7 +200,8 @@ def test_explicit_counter_particles_remain_supported(particle):
 
 
 def test_digit_segmentation_guard_does_not_rewrite_v4_receipts():
-    from scripts import screen_target_language_audio_units as screen
+    from scripts import tongxing_host  # noqa: F401  binds the production package ports
+    from tongxing_production.audio import screening as screen
     assert not screen.score("요한복음 12-3장", "요한복음 1-23장", "ko", 0.88)[2]
     assert screen.score("요한복음 12-3장", "요한복음 1-23장", "ko", 0.88, screen.SCORING_V4)[2]
     assert screen.score("요한복음 12-3장", "요한복음 1-23장", "ko", 0.88, screen.SCORING_V3)[2]
@@ -204,7 +210,8 @@ def test_digit_segmentation_guard_does_not_rewrite_v4_receipts():
 @pytest.mark.parametrize("connector", ["부터", "에서", "과", "와", "및"])
 @pytest.mark.parametrize("book,counter", [("요한복음", "장"), ("시편", "편")])
 def test_no_space_connector_chains_keep_digit_and_sino_boundaries_aligned(connector, book, counter):
-    from scripts import screen_target_language_audio_units as screen
+    from scripts import tongxing_host  # noqa: F401  binds the production package ports
+    from tongxing_production.audio import screening as screen
     approved = f"{book} 3{counter}{connector}4{counter}까지"
     spoken = subject.spoken_form(approved)
     assert not any(char.isdigit() for char in spoken)
@@ -215,13 +222,15 @@ def test_no_space_connector_chains_keep_digit_and_sino_boundaries_aligned(connec
 
 @pytest.mark.parametrize("approved, recognized", [("COVID-19", "COVID19"), ("사진 12장", "사진 1 2장"), ("영화 12편", "영화 1 2편")])
 def test_v5_structure_guard_does_not_change_non_citation_v4_behavior(approved, recognized):
-    from scripts import screen_target_language_audio_units as screen
+    from scripts import tongxing_host  # noqa: F401  binds the production package ports
+    from tongxing_production.audio import screening as screen
     assert screen.score(approved, recognized, "ko", 0.88) == screen.score(approved, recognized, "ko", 0.88, screen.SCORING_V4)
 
 
 @pytest.mark.parametrize("terminal", [" 까지", "까지는", "까지만", "까지도"])
 def test_terminal_range_marker_spacing_and_compounds_remain_protected(terminal):
-    from scripts import screen_target_language_audio_units as screen
+    from scripts import tongxing_host  # noqa: F401  binds the production package ports
+    from tongxing_production.audio import screening as screen
     prefix = "오늘 우리는 이 말씀을 자세히 함께 읽습니다. "
     approved = prefix + "요한복음 3장부터 4장" + terminal
     spoken = subject.spoken_form(approved)
@@ -233,7 +242,8 @@ def test_terminal_range_marker_spacing_and_compounds_remain_protected(terminal):
 
 @pytest.mark.parametrize("particle", ["이", "이라고"])
 def test_added_subject_and_quotation_particles_have_symmetric_asr_boundaries(particle):
-    from scripts import screen_target_language_audio_units as screen
+    from scripts import tongxing_host  # noqa: F401  binds the production package ports
+    from tongxing_production.audio import screening as screen
     approved = f"요한복음 3장{particle} 읽습니다."
     spoken = subject.spoken_form(approved)
     assert screen.fold_transcript(spoken, "ko") == approved
@@ -242,7 +252,8 @@ def test_added_subject_and_quotation_particles_have_symmetric_asr_boundaries(par
 
 @pytest.mark.parametrize("approved", ["요한복음 3장이나 4장", "요한복음 3장이나4장", "시편 3편이나 4편", "시편 3편이나4편"])
 def test_book_anchored_alternatives_generate_fold_and_score(approved):
-    from scripts import screen_target_language_audio_units as screen
+    from scripts import tongxing_host  # noqa: F401  binds the production package ports
+    from tongxing_production.audio import screening as screen
     spoken = subject.spoken_form(approved)
     assert not any(char.isdigit() for char in spoken)
     assert screen.fold_transcript(spoken, "ko") == approved
@@ -262,7 +273,8 @@ def test_alternative_connector_does_not_expand_ordinary_or_prose_scope(text, exp
 @pytest.mark.parametrize("connector", ["이나", "이든", "에서부터", "부터는", "부터만", "부터도"])
 @pytest.mark.parametrize("spacing", ["", " "])
 def test_shared_existing_alternative_and_range_connectors(connector, spacing):
-    from scripts import screen_target_language_audio_units as screen
+    from scripts import tongxing_host  # noqa: F401  binds the production package ports
+    from tongxing_production.audio import screening as screen
     approved = f"요한복음 3장{connector}{spacing}4장까지"
     spoken = subject.spoken_form(approved)
     assert spoken == f"요한복음 삼장{connector}{spacing}사장까지"
@@ -277,7 +289,8 @@ def test_shared_existing_alternative_and_range_connectors(connector, spacing):
 
 @pytest.mark.parametrize("connector", ["과", "와", "및", "이나", "이든", "부터", "에서", "에서부터", "부터는", "부터만", "부터도", "-", "~", "–"])
 def test_every_citation_connector_is_meaning_protected(connector):
-    from scripts import screen_target_language_audio_units as screen
+    from scripts import tongxing_host  # noqa: F401  binds the production package ports
+    from tongxing_production.audio import screening as screen
     approved = f"오늘 함께 읽는 말씀은 요한복음 3장{connector} 4장입니다."
     spoken = subject.spoken_form(approved)
     assert screen.score(approved, spoken, "ko", 0.88)[2]
@@ -296,7 +309,8 @@ def test_every_citation_connector_is_meaning_protected(connector):
     ("요한복음 12장이나 13장", "요한복음 십 이 장이나 십 삼 장"),
 ])
 def test_book_scoped_spaced_sino_numerals(approved, spoken):
-    from scripts import screen_target_language_audio_units as screen
+    from scripts import tongxing_host  # noqa: F401  binds the production package ports
+    from tongxing_production.audio import screening as screen
     assert screen.score(approved, spoken, "ko", 0.88)[2]
     assert not screen.score(approved, spoken.replace("십", "이십", 1), "ko", 0.88)[2]
 
@@ -313,20 +327,23 @@ def test_book_scoped_spaced_sino_numerals(approved, spoken):
     ("요한복음 12-3장", "요한복음 십 이 장 삼 장"),
 ])
 def test_spaced_sino_never_merges_or_changes_endpoints(approved, wrong):
-    from scripts import screen_target_language_audio_units as screen
+    from scripts import tongxing_host  # noqa: F401  binds the production package ports
+    from tongxing_production.audio import screening as screen
     assert not screen.score(approved, wrong, "ko", 0.88)[2]
 
 
 @pytest.mark.parametrize("connector", ["과", "와", "및", "이나", "이든", "부터", "에서", "에서부터", "부터는", "부터만", "부터도", "-", "~", "–"])
 def test_inserting_citation_connector_is_rejected(connector):
-    from scripts import screen_target_language_audio_units as screen
+    from scripts import tongxing_host  # noqa: F401  binds the production package ports
+    from tongxing_production.audio import screening as screen
     approved = "오늘 함께 읽는 말씀은 요한복음 3장 4장입니다."
     spoken = subject.spoken_form(approved).replace("삼장 ", "삼장" + connector + " ")
     assert not screen.score(approved, spoken, "ko", 0.88)[2]
 
 
 def test_citation_comma_pause_remains_reading_equivalent():
-    from scripts import screen_target_language_audio_units as screen
+    from scripts import tongxing_host  # noqa: F401  binds the production package ports
+    from tongxing_production.audio import screening as screen
     assert screen.score("요한복음 3장,4장", "요한복음 삼장사장", "ko", 0.88)[2]
     assert screen.score("요한복음 3장4장", "요한복음 삼장,사장", "ko", 0.88)[2]
     assert not screen.score("요한복음 3장과4장", "요한복음 삼장사장", "ko", 0.88)[2]
@@ -341,20 +358,23 @@ def test_citation_comma_pause_remains_reading_equivalent():
     ("시편 119-120편", "시 편 백 십 구-백 이 십 편"),
 ])
 def test_known_book_internal_asr_spaces_preserve_citation_scope(approved, spoken):
-    from scripts import screen_target_language_audio_units as screen
+    from scripts import tongxing_host  # noqa: F401  binds the production package ports
+    from tongxing_production.audio import screening as screen
     assert screen.score(approved, spoken, "ko", 0.88)[2]
     assert not screen.score(approved, spoken.replace("삼", "오", 1) if "삼" in spoken else spoken.replace("십", "이십", 1), "ko", 0.88)[2]
 
 
 @pytest.mark.parametrize("text", ["사진 삼-사장", "요한의 복음 삼-사장", "요한 복음서 삼-사장", "메요한 복음 삼-사장", "요한 복음 읽고 사진 삼-사장"])
 def test_asr_book_spaces_do_not_merge_ordinary_strings_into_citations(text):
-    from scripts import screen_target_language_audio_units as screen
+    from scripts import tongxing_host  # noqa: F401  binds the production package ports
+    from tongxing_production.audio import screening as screen
     assert "삼-" in screen.fold_transcript(text, "ko")
 
 
 @pytest.mark.parametrize("ending", ['이다', '이었다', '이었다고', '이었지만', '이었는데', '이었으나', '이었으면', '이었어요', '이었죠', '이었네요', '이었으므로', '이었으니까', '이었으며', '이겠다', '이겠습니다', '이겠지만', '이겠죠', '이겠네요', '이더라', '이더라도', '이라', '이니', '인가', '인가요', '인데요', '인지', '이냐', "인데", "이고", "이지만", "이라서", "이에요", "이죠", "이네요", "이어서", "이니까", "이므로", "이며", "이었고", "이었습니다", "이야", "이라고는"])
 def test_common_complete_copular_endings(ending):
-    from scripts import screen_target_language_audio_units as screen
+    from scripts import tongxing_host  # noqa: F401  binds the production package ports
+    from tongxing_production.audio import screening as screen
     approved = f"요한복음 3장{ending} 함께 읽습니다."
     spoken = subject.spoken_form(approved)
     assert spoken == approved.replace("3", "삼")
@@ -364,7 +384,8 @@ def test_common_complete_copular_endings(ending):
 
 @pytest.mark.parametrize("connector", ["에서부터", "부터는", "부터만", "부터도", "이나", "이든", "과", "와", "및", "부터", "에서"])
 def test_registered_connector_internal_asr_spaces(connector):
-    from scripts import screen_target_language_audio_units as screen
+    from scripts import tongxing_host  # noqa: F401  binds the production package ports
+    from tongxing_production.audio import screening as screen
     spaced = " ".join(connector)
     approved = f"요한복음 3장{connector}4장입니다."
     spoken = f"요한 복음 삼장{spaced}사장입니다."
@@ -375,13 +396,15 @@ def test_registered_connector_internal_asr_spaces(connector):
 
 @pytest.mark.parametrize("approved,spoken", [("요한복음 03장", "요한복음 삼장"), ("시편 001편", "시편 일편"), ("요한복음 03-04장", "요한복음 삼-사장"), ("요한복음 03장016절", "요한복음 삼장십육절")])
 def test_citation_digit_padding_is_reading_equivalent(approved, spoken):
-    from scripts import screen_target_language_audio_units as screen
+    from scripts import tongxing_host  # noqa: F401  binds the production package ports
+    from tongxing_production.audio import screening as screen
     assert screen.score(approved, spoken, "ko", 0.88)[2]
     assert not screen.score(approved, spoken.replace("삼", "오") if "삼" in spoken else spoken.replace("일", "이"), "ko", 0.88)[2]
 
 
 def test_padding_and_connector_space_changes_remain_citation_scoped():
-    from scripts import screen_target_language_audio_units as screen
+    from scripts import tongxing_host  # noqa: F401  binds the production package ports
+    from tongxing_production.audio import screening as screen
     assert screen.fold_transcript("사진 03장", "ko") == "사진 03장"
     assert screen.fold_transcript("사진 삼장부터 는 사장", "ko") == screen.fold_transcript("사진 삼장부터 는 사장", "ko", citation_ranges=False)
     for text in ["요한복음 3장면", "시편 2편지", "시편 2편의점"]:
@@ -390,7 +413,8 @@ def test_padding_and_connector_space_changes_remain_citation_scoped():
 
 @pytest.mark.parametrize("terminal", ["부터는", "부터만", "부터도", "에서는", "에서도", "까지는", "까지만", "까지도"])
 def test_terminal_compound_marker_asr_space(terminal):
-    from scripts import screen_target_language_audio_units as screen
+    from scripts import tongxing_host  # noqa: F401  binds the production package ports
+    from tongxing_production.audio import screening as screen
     approved = "요한복음 3장부터4장" + terminal
     spoken = "요한복음 삼장부터사장" + terminal[:-1] + " " + terminal[-1]
     assert screen.score(approved, spoken, "ko", 0.88)[2]
@@ -399,7 +423,8 @@ def test_terminal_compound_marker_asr_space(terminal):
 
 @pytest.mark.parametrize("ending", ["까지입니다", "까지였어요", "까지라고", "까지의", "까지를", "부터입니다", "에서였어요", "까지이다", "까지이었다", "까지이고", "까지인데", "까지이라서", "까지이니까"])
 def test_stacked_range_particle_endpoints(ending):
-    from scripts import screen_target_language_audio_units as screen
+    from scripts import tongxing_host  # noqa: F401  binds the production package ports
+    from tongxing_production.audio import screening as screen
     approved = "요한복음 3장부터4장" + ending
     spoken = subject.spoken_form(approved)
     assert spoken == "요한복음 삼장부터사장" + ending
@@ -412,7 +437,8 @@ def test_stacked_range_particle_endpoints(ending):
 @pytest.mark.parametrize("opening,closing", [("(", ")"), ("[", "]"), ("（", "）"), ("［", "］")])
 @pytest.mark.parametrize("reference", ["3장16절", "3-4장", "3장부터4장까지입니다"])
 def test_balanced_book_citation_delimiters(opening, closing, reference):
-    from scripts import screen_target_language_audio_units as screen
+    from scripts import tongxing_host  # noqa: F401  binds the production package ports
+    from tongxing_production.audio import screening as screen
     approved = "요한복음" + opening + reference + closing
     spoken = subject.spoken_form(approved)
     assert not any(c.isdigit() for c in spoken)
@@ -427,7 +453,8 @@ def test_balanced_book_citation_delimiters(opening, closing, reference):
 
 @pytest.mark.parametrize("ending", ["였습니다", "였습니까", "였다", "였다고", "였지만", "였는데", "였으나", "였으면", "였어요", "였죠", "였네요", "였으므로", "였으니까", "였으며", "였고"])
 def test_stacked_range_uses_complete_registered_past_copula_family(ending):
-    from scripts import screen_target_language_audio_units as screen
+    from scripts import tongxing_host  # noqa: F401  binds the production package ports
+    from tongxing_production.audio import screening as screen
     approved = "요한복음 3장부터4장까지" + ending
     spoken = subject.spoken_form(approved)
     assert spoken == "요한복음 삼장부터사장까지" + ending
@@ -452,7 +479,8 @@ def test_v3_counted_objects_and_bare_pieces_stay(text):
 
 
 def test_v3_screening_hears_the_sino_reading_and_still_flags_native_numerals():
-    from scripts import screen_target_language_audio_units as screen
+    from scripts import tongxing_host  # noqa: F401  binds the production package ports
+    from tongxing_production.audio import screening as screen
     approved = "8장의 맨 첫 절에 주목하십시오."
     assert screen.score(approved, subject.spoken_form(approved), "ko", 0.88)[2]
     assert not screen.score(approved, "여덟 장의 맨 첫 절에 주목하십시오.", "ko", 0.88)[2]

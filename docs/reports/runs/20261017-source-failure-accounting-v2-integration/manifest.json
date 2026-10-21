@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-source-failure-accounting-v2-integration",
+  "runs": [
+    {
+      "label": "20261017-source-failure-accounting-v2-integration-local",
+      "source": "~/.codex/worktrees/source-failure-move/sermon-video-zh-subtitles/artifacts/20261017-source-failure-accounting-v2-integration-local",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "20261017-source-failure-accounting-v2-integration-local",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 176,
+      "truncated": false,
+      "sha256": "ef9de70e694519bb892403ea67c8604e311ccc8da833aba4878cfd2be67095ee",
+      "redactions": {}
+    },
+    {
+      "run": "20261017-source-failure-accounting-v2-integration-local",
+      "path": "timings.tsv",
+      "kind": "whole",
+      "bytes": 38,
+      "truncated": false,
+      "sha256": "66e0f45095ee2e63f255f85ab403e24698bb1292cb84b5023df3b4771dd267b8",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "status": "passed",
+  "runId": 39069811515,
+  "workflow": "Python tests",
+  "trigger": "workflow_dispatch",
+  "headSha": "4baa3cf81ddc875e31fe78039af0eaec16284065",
+  "branch": "codex/dual-pdf-timeline-move",
+  "base": "dev",
+  "rootGroups": {
+    "root-0": "success",
+    "root-1": "success",
+    "root-2": "success",
+    "root-3": "success",
+    "root-4": "success",
+    "root-5": "success",
+    "root-6": "success",
+    "root-7": "success"
+  },
+  "aggregator": "success",
+  "nativeSharedContracts": "skipped",
+  "scope": "PR #607 timeline move after #602 merge",
+  "limitations": [
+    "synthetic CI and focused local tests only",
+    "no real source download, PDF publication, HTTP, device or venue acceptance"
+  ]
+}

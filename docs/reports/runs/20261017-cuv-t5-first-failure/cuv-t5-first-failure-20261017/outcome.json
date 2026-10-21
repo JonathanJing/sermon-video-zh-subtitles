@@ -1,0 +1,8 @@
+{
+  "schemaVersion": "cuv-t5-test-outcome-v1",
+  "deliveryType": "test",
+  "status": "failed",
+  "purpose": "CUV package move bare-import test",
+  "reason": "Test subprocess removed PYTHONPATH and loaded the original checkout editable install; first isolated worktree venv then lacked reportlab and requests",
+  "modelCalls": 0
+}

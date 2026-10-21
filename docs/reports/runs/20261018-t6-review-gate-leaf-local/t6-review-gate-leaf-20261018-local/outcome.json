@@ -1,0 +1,9 @@
+{
+  "deliveryType": "test",
+  "status": "passed",
+  "exitCode": 0,
+  "commit": "18f58aa0",
+  "workflow": "local T6 review gate migration verification",
+  "publication": "not_run",
+  "realProduction": "not_run"
+}

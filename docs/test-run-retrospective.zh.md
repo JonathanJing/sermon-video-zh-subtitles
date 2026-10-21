@@ -23,20 +23,20 @@
 2. **两步，分开生成和公开。** `export_run_digest.py` 只在被忽略的 `artifacts/run-reports/` 下生成报告，不碰 Git；`publish_run_report.sh` 先复查脱敏，再公开。生成可以无条件自动执行，公开是一个单独、可检查的动作。
 3. **报告单独走 PR。** 公开脚本从 `origin/dev` 切出 `run-report/<name>` 分支，在临时 worktree 里把报告加成 `docs/reports/runs/<name>/`，推送并开草稿 PR。当前检出和分支都不动。报告 PR 只含文档，走 CI 的文档快速路径；修复另开 PR，引用报告路径。这样报告不会被代码评审卡住，修复也不会混进证据。
 4. **公开仓库的保护。**
-   - 脱敏：去掉 API key、GitHub/Google token、Bearer、带 key/token/secret/password/cookie 名字的字段值、私钥、邮箱、内网 IP、`.ts.net`/`.local` 主机名、home 路径，以及当前环境里名字带 KEY/TOKEN/SECRET 的变量值。
+   - 脱敏：去掉 API key、GitHub/Google token、Bearer、带 key/token/secret/password/cookie 名字的字段值、私钥、邮箱、内网 IP、`.ts.net`/`.local` 主机名、私有网盘分享链接（Google Drive/Docs、Dropbox 文件和文件夹分享、OneDrive 个人版与组织版 `<tenant>-my.sharepoint.com`、SharePoint `/:x:/` 分享链接、iCloud Drive，替换为 `<private-drive-link>`，链接后紧跟的中文标点和正文保留；2026-10-18 广播版 `summary.json` 的 `sourceUrl` 曾漏出 Drive 文件夹链接）、home 路径，以及当前环境里名字带 KEY/TOKEN/SECRET 的变量值。
    - 复查：公开前再扫一遍，有残留就拒绝推送。
    - 大小：整份报告超过 2 MB 就拒绝生成。
    - 内容：媒体和模型输出一律不复制。
    - 规则匹配不能保证完全，合并报告 PR 前仍要看一眼 diff。
 5. **自动接入。** 下列入口退出时（成功或失败）自动生成报告，并打印公开命令：
-   - 三分钟 e2e：`scripts/run_dev_180s_beta_e2e.sh`
-   - 机器质检文字驱动：`scripts/run_machine_qc_clip_test.py`
-   - 机器质检音频驱动：`scripts/run_machine_qc_audio_test.py`
+   - 三分钟 e2e：`tools/development/run_dev_180s_beta_e2e.sh`
+   - 机器质检文字驱动：`tongxing_production.review.qc_text_run`
+   - 机器质检音频驱动：`tongxing_production.review.qc_audio_run`
 
    其他入口（每周正式生产、Spark 诊断等）由执行运行的 agent 在结束时手动导出，见 [AGENTS.md](../AGENTS.md) 和[本地生产 runbook](codex-local-production-runbook.zh.md#运行报告)。
 6. **云端怎么用。** 云端会话读报告 PR 的文件，填写或评审 `RETROSPECTIVE.md`，问题另开修复 PR。复盘填好后合并报告 PR；跨轮比较就读 `docs/reports/runs/` 下的历次 `INDEX.md`。
 
-7. **运行日志与决定记录（2026-10-11 复盘 D 项）。** 复盘不该靠翻派发日志重建时间线。每个驱动和派发器在起止处调用 `scripts/run_journal.py append --run-dir <运行目录> --stage <阶段> --event started|finished|failed|waiting|resumed`（`waiting` 必须带 `--waiting-on`，说明等的是人、服务还是凭据），`run_journal.py summary` 直接给出每阶段和整轮的计算／等待／返工时长与结算成本；返工只算重复轮次里扣掉等待后的计算时间。日志不写机器名，只写 `hostId`：用本轮随机盐（`.journal-host-salt`，不导出）算出的代号，同一轮里能区分 Mac 和 Spark。操作者的每个决定用 `scripts/record_decision.py --run-dir <运行目录> --question … --choice … --decided-by "Jony (chat)" --governs <决定所针对的文件> --evidence <原话或文件路径>` 记成一行，替代手写的 `*.evidence.txt`。`--governs` 的文件必须存在，按当时的 SHA-256 绑定，这一行是 `artifact_bound`，只对这些字节成立；`record_decision.py --run-dir <运行目录> --check` 列出每条决定 `applies`、`stale`（所绑文件已变或已删）还是 `unbound`。不带 `--governs` 的行是 `unbound_note`，只记录说过什么，不能当任何产物的批准。来源预算账本升为 `sermon-source-budget-ledger-v3`：每条已返回的请求带 `settlement`，即供应商报告的 token 数和按所请求模型冻结费率估算的 `costMicrousd`（`estimated_upper_bound`），缺用量或无价格时记 `unknown` 与原因，不再恒为 0；预留上限 `bounds.costMicrousd` 原样保留。崩溃后用 `reconcile_returned` 补记的请求也补上结算。新账本从 v4 开始（下述跨预算复用）；已有的 v2 账本保持 v2、不写结算，v3 账本保留 `estimated_upper_bound`／`unknown` 两种结算，冻结实现照常续跑；要补结算只能显式调用 `SourceBudget.migrate_to_v3()`，它从已保存的返回逐条结算，派发中或返回被改动时拒绝且不改账本。这三样都进摘要。
+7. **运行日志与决定记录（2026-10-11 复盘 D 项）。** 复盘不该靠翻派发日志重建时间线。每个驱动和派发器在起止处调用 `tools/development/run_journal.py append --run-dir <运行目录> --stage <阶段> --event started|finished|failed|waiting|resumed`（`waiting` 必须带 `--waiting-on`，说明等的是人、服务还是凭据），`run_journal.py summary` 直接给出每阶段和整轮的计算／等待／返工时长与结算成本；返工只算重复轮次里扣掉等待后的计算时间。日志不写机器名，只写 `hostId`：用本轮随机盐（`.journal-host-salt`，不导出）算出的代号，同一轮里能区分 Mac 和 Spark。操作者的每个决定用 `tools/ops/record_decision.py --run-dir <运行目录> --question … --choice … --decided-by "Jony (chat)" --governs <决定所针对的文件> --evidence <原话或文件路径>` 记成一行，替代手写的 `*.evidence.txt`。`--governs` 的文件必须存在，按当时的 SHA-256 绑定，这一行是 `artifact_bound`，只对这些字节成立；`record_decision.py --run-dir <运行目录> --check` 列出每条决定 `applies`、`stale`（所绑文件已变或已删）还是 `unbound`。不带 `--governs` 的行是 `unbound_note`，只记录说过什么，不能当任何产物的批准。来源预算账本升为 `sermon-source-budget-ledger-v3`：每条已返回的请求带 `settlement`，即供应商报告的 token 数和按所请求模型冻结费率估算的 `costMicrousd`（`estimated_upper_bound`），缺用量或无价格时记 `unknown` 与原因，不再恒为 0；预留上限 `bounds.costMicrousd` 原样保留。崩溃后用 `reconcile_returned` 补记的请求也补上结算。新账本从 v4 开始（下述跨预算复用）；已有的 v2 账本保持 v2、不写结算，v3 账本保留 `estimated_upper_bound`／`unknown` 两种结算，冻结实现照常续跑；要补结算只能显式调用 `SourceBudget.migrate_to_v3()`，它从已保存的返回逐条结算，派发中或返回被改动时拒绝且不改账本。这三样都进摘要。
 
 跨预算复用使用 `sermon-source-budget-ledger-v4`：顶层 `reuseBudgetRoots` 冻结批准的来源绝对路径；只有 v4 返回行可写 `settlement.costStatus=reused`、`costMicrousd=0`。v2／v3 不增加字段或枚举；旧目的账本要复用时显式调用 `SourceBudget.migrate_to_v4()`，原预留上限、已付费结算与未知结果保持，迁移不派发模型、不迁移来源账本，遇活跃派发或损坏返回则拒绝。来源账本和响应内容只读；协调时可创建／持有来源根的 `live-owners` operation 锁元数据，并按根路径排序获取全部来源与目的 operation 锁，持有到缓存判断、预留、派发及响应落盘结束，协调读取与来源派发；扫描全部批准来源，匹配的未知或损坏行仍拒绝；至少一个直接付费来源完整匹配时可复用，其他来源缺少该 operation 不妨碍复用。所有来源均缺少该 operation 或存在身份不匹配则拒绝，不能视为 cache miss 后新付费，避免锁释放后来源或另一目的根再派发而重买。新请求须另有不带复用来源的明确预算授权。只接受直接付费来源行，拒绝把中间 `reused` 行作为新的来源，须直接批准原付费根。匹配的未知派发阻止新付费；匹配的已返回行若文件缺失、不可读或摘要不符，须先对账，不能当 cache miss 重买。复用副本绑定原 operation／request digest、来源 response digest、authority digest／账本版本及原结算，目的根自身复用审批和运行环境也在调用前复核；已核实复用副本不占新的请求／时间／美元预留 cap。
 
@@ -46,10 +46,10 @@
 
 ```
 # 1. 生成（可以同时传多个运行目录，例如 L2 和音频两处）
-.venv/bin/python scripts/export_run_digest.py artifacts/<运行目录> [更多运行目录...] --name <YYYYMMDD-简称>
+.venv/bin/python tools/development/export_run_digest.py artifacts/<运行目录> [更多运行目录...] --name <YYYYMMDD-简称>
 
 # 2. 复查脱敏、开报告 PR（Mac 上有 gh 时直接开草稿 PR，否则打印 compare 链接）
-scripts/publish_run_report.sh artifacts/run-reports/<YYYYMMDD-简称>
+tools/development/publish_run_report.sh artifacts/run-reports/<YYYYMMDD-简称>
 ```
 
 不传 `--name` 时，默认用当天 UTC 日期加第一个运行目录名。只想检查一份已有报告时，用 `export_run_digest.py --verify <报告目录>`。

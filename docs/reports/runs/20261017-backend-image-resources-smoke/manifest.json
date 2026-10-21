@@ -1,0 +1,77 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-backend-image-resources-smoke",
+  "runs": [
+    {
+      "label": "backend-image-resource-smoke",
+      "source": "~/.codex/worktrees/docker-terminology/sermon-video-zh-subtitles/artifacts/backend-image-resource-smoke",
+      "skipped": {}
+    },
+    {
+      "label": "backend-image-parent-cancelled",
+      "source": "~/.codex/worktrees/docker-terminology/sermon-video-zh-subtitles/artifacts/backend-image-parent-cancelled",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "backend-image-resource-smoke",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 149,
+      "truncated": false,
+      "sha256": "113d7225b42b7b0eb7123723de737b5ce71f1c72268d1572ccb322d063173944",
+      "redactions": {}
+    },
+    {
+      "run": "backend-image-resource-smoke",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 326,
+      "truncated": false,
+      "sha256": "74016c008a6fd63ff86c65bc1a58c876202398380bc59d0092872072aef0c2bc",
+      "redactions": {}
+    },
+    {
+      "run": "backend-image-resource-smoke",
+      "path": "timings.tsv",
+      "kind": "whole",
+      "bytes": 95,
+      "truncated": false,
+      "sha256": "ff4ce8e597bbae2de04b1f8a7e829f22b586fc77b4fda02ac4aa96bffc0a8f48",
+      "redactions": {}
+    },
+    {
+      "run": "backend-image-parent-cancelled",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 159,
+      "truncated": false,
+      "sha256": "8cb73291193dddba818dba0ef564bd25daa440b987f2af7c54faad9082c987bb",
+      "redactions": {}
+    },
+    {
+      "run": "backend-image-parent-cancelled",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 275,
+      "truncated": false,
+      "sha256": "39d75dc50ca6205fd82c37f0147a6c2f0cf89ea2498acd8236397197700961e9",
+      "redactions": {}
+    },
+    {
+      "run": "backend-image-parent-cancelled",
+      "path": "timings.tsv",
+      "kind": "whole",
+      "bytes": 89,
+      "truncated": false,
+      "sha256": "afa2497f230e4be4fdc3049e9905e1cb7d0d6b440d2fcff448681f0b87e59010",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

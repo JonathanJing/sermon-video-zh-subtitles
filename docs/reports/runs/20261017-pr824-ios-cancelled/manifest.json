@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-pr824-ios-cancelled",
+  "runs": [
+    {
+      "label": "pr824-ios-cancelled-20261017",
+      "source": "/private/tmp/cuv-t5-package-move-20261017/artifacts/pr824-ios-cancelled-20261017",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "pr824-ios-cancelled-20261017",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 412,
+      "truncated": false,
+      "sha256": "4de43a54e8269809d2aa1c7f3ee233f110d0ee4981fae75b36eec4b4e031fe6c",
+      "redactions": {}
+    },
+    {
+      "run": "pr824-ios-cancelled-20261017",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 821,
+      "truncated": false,
+      "sha256": "fde31032941273ccfaa50a17c4dae0570e9b6b9708e18d0f165b235118631846",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

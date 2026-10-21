@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-pr846-backend-image-39078119971",
+  "runs": [
+    {
+      "label": "pr846-backend-image-resources-39078119971",
+      "source": "/private/tmp/sermon-ops-unified-preflight-20261017/artifacts/pr846-backend-image-resources-39078119971",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "pr846-backend-image-resources-39078119971",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 153,
+      "truncated": false,
+      "sha256": "1bb4cf5466df0e17409c051d45ac196700e76796f07d5bea88481cbd056b5fd3",
+      "redactions": {}
+    },
+    {
+      "run": "pr846-backend-image-resources-39078119971",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 962,
+      "truncated": false,
+      "sha256": "70635b28aab35b493c7e2c42aa10e9393fe9d9cf5a35e9a1083f07672b2a222c",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

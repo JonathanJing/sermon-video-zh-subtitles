@@ -6,12 +6,12 @@
 
 | 优先级 / 审计项 | 实际变更 |
 |---|---|
-| P1 同行范围与验收 | [prompt](../scripts/review_prompts.py)、[生成器](../scripts/generate_notes_with_openai.py)和[PDF QA](../scripts/render_sermon_interpretation_pdf.py)统一到 notes schema v3 / `sermon-companion-v3`。删除生成式讨论题、指南与祷告字段；取消可选内容最低配额，保留核心内容、来源与精确引文校验。 |
-| P2 提前结束 | [Supervisor](../scripts/run_sermon_production_supervisor_agent.py)为 SDK/API 提供各自真实字段契约。[API 提交工具](../scripts/sermon_agents_supervisor.py)重新检查并拒绝尚有未尝试可执行阶段的最终提交；host 同时阻断提前完成。失败已尝试阶段可恢复停止，每阶段一次、审批和 lease 不变。 |
+| P1 同行范围与验收 | [prompt](../packages/production/src/tongxing_production/source/review_prompts.py)、[生成器](../scripts/generate_notes_with_openai.py)和[PDF QA](../packages/production/src/tongxing_production/workflows/dual_pdf/interpretation_pdf.py)统一到 notes schema v3 / `sermon-companion-v3`。删除生成式讨论题、指南与祷告字段；取消可选内容最低配额，保留核心内容、来源与精确引文校验。 |
+| P2 提前结束 | [Supervisor](../packages/production/src/tongxing_production/workflows/supervisor/agent.py)为 SDK/API 提供各自真实字段契约。[API 提交工具](../packages/production/src/tongxing_production/workflows/supervisor/agents.py)重新检查并拒绝尚有未尝试可执行阶段的最终提交；host 同时阻断提前完成。失败已尝试阶段可恢复停止，每阶段一次、审批和 lease 不变。 |
 | P2 上下文冲突 | [content pack](../experiments/local-live-poc/backend/content_pack.py)只注入当前源文匹配的已审术语/经文，同词高相关项优先；保留 cursor 与参考片段顺序、来源信息及 A0。 |
 | P2 exact-only 文档冲突 | [POC AGENTS](../experiments/local-live-poc/AGENTS.md)按已有 DESIGN/README 明确受限 A2 参考例外：最多两条、分数至少 1.5、已审且只作另一版本参考；不代表现场验收。 |
 | P2 fallback 重提取 | [SKILL](../skills/live-caption-zh-fallback/SKILL.md)优先从已有报告构建预览；新来源使用独立目录。自动发现 VOD 也要核实同篇与偏移。已有文件单独上传，不为发布再次提取。 |
-| P2 部分字幕误报 ready | [翻译](../scripts/translate_playback_with_openai.py)与[稳定化](../scripts/stabilize_realtime_deltas_with_openai.py)校验重复/未知 ID 与非空文本。缺失 cue 保留部分产物，状态 `partial`，CLI 返回 3 且不自动发布。翻译续跑使用 raw cue ID，不使用展示层重分段 ID；模型不能改写输入经文/注释。 |
+| P2 部分字幕误报 ready | [翻译](../tools/ops/translate_playback_with_openai.py)与[稳定化](../tools/ops/stabilize_realtime_deltas_with_openai.py)校验重复/未知 ID 与非空文本。缺失 cue 保留部分产物，状态 `partial`，CLI 返回 3 且不自动发布。翻译续跑使用 raw cue ID，不使用展示层重分段 ID；模型不能改写输入经文/注释。 |
 | P2 单篇审校规则 | [旧审校工具](../scripts/review_sermon_subtitles_with_openai.py)移除固定讲员、经文表、按 ID 覆盖及固定 1545 秒偏移；保留原始英文。绝对时间导出须传已核实的 `--sermon-start-seconds`，省略则仅导出相对字幕。人名消歧限于明确身份上下文。缓存绑定完整请求内容，校验通过后才写入。 |
 | P2 过期定时说明 | [中文 Supervisor 文档](sermon-production-supervisor-agent.zh.md)区分 2026-09-11 初查与后续创建回执；判断当前健康须另读实时状态，不能按旧说明重复创建。 |
 | P3 文档测试范围 | [iOS AGENTS](../apps/tongxing-ios/AGENTS.md)拆开文档与 CLI 验证，纯文档不再触发 Xcode dry-run。 |

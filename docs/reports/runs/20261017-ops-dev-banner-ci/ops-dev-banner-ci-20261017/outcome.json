@@ -1,0 +1,23 @@
+{
+  "status": "passed",
+  "deliveryType": "test",
+  "runId": 39059310348,
+  "headCommit": "3e5284c3c6e99d3b3aad27e73b8b9b71e27ec121",
+  "createdAt": "2026-10-17T18:42:55Z",
+  "updatedAt": "2026-10-17T19:22:48Z",
+  "wallSecondsIncludingQueue": 2393,
+  "pythonTests": {
+    "rootShardsPassed": 8,
+    "rootShardsTotal": 8,
+    "aggregator": "success",
+    "nativeSharedContracts": "skipped_by_scope"
+  },
+  "tongxingIos": {
+    "changes": "success",
+    "nativeClient": "success",
+    "otherChecks": "skipped_by_scope"
+  },
+  "production": "not_run",
+  "publication": "not_run",
+  "device": "not_run"
+}

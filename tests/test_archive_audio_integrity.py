@@ -8,9 +8,11 @@ import wave
 from pathlib import Path
 from unittest import mock
 
-from scripts import run_post_live_subtitle_generation as generation
-from scripts import run_post_live_timeline_job as timeline
-from scripts import sermon_pipeline
+from tests.legacy_pipeline_patches import patch_both  # W3b: Layer 1 names live in two modules
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.workflows.dual_pdf import post_live as generation
+from tongxing_production.workflows.dual_pdf import timeline as timeline
+from tongxing_production.workflows.dual_pdf import pipeline as sermon_pipeline
 from tests.test_run_post_live_subtitle_generation import make_args as generation_args, write_state as generation_state
 from tests.test_run_post_live_timeline_job import make_args as timeline_args, write_state as timeline_state, make_handoff
 
@@ -103,7 +105,7 @@ class ArchiveAudioIntegrityTest(unittest.TestCase):
                 downloader = mock.Mock(side_effect=lambda *_: write_audio())
                 runner = mock.Mock(side_effect=fake_runner)
                 upload = mock.Mock()
-                with mock.patch.object(generation, "probe_archive_audio", return_value=audio_probe(2733.801)), mock.patch.object(sermon_pipeline, "chat_json", side_effect=AssertionError("Source verification must not classify")) as model, mock.patch.object(sermon_pipeline, "transcribe_openai_audio", side_effect=AssertionError("Source verification must not transcribe")) as asr, mock.patch("builtins.print"):
+                with mock.patch.object(generation, "probe_archive_audio", return_value=audio_probe(2733.801)), patch_both("chat_json", side_effect=AssertionError("Source verification must not classify")) as model, mock.patch.object(sermon_pipeline, "transcribe_openai_audio", side_effect=AssertionError("Source verification must not transcribe")) as asr, mock.patch("builtins.print"):
                     report = timeline.run_job(
                         args, metadata_loader=lambda _: {"live_status": "was_live", "duration": 4722},
                         runner=runner, uploader=upload, marker_reader=lambda _: None,

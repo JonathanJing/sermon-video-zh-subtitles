@@ -1,16 +1,28 @@
 import copy
 import json
+import os
 from pathlib import Path
 import subprocess
 import sys
 import tempfile
 import unittest
 
-from scripts.sermon_accounting import SCHEMA
-from scripts.weekly_pipeline_report import digest, markdown, project
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.observability.accounting import SCHEMA
+from tongxing_production.observability.weekly_projection import digest, markdown, project
 
 
 class WeeklyPipelineReportTests(unittest.TestCase):
+    def test_weekly_and_tracker_projection_imports_do_not_load_scripts(self):
+        root = Path(__file__).resolve().parents[1]
+        env = {**os.environ, 'PYTHONPATH': str(root / 'packages/production/src')}
+        command = [sys.executable, '-c',
+                   'import sys; import tongxing_production.observability.weekly_projection; '
+                   'import tongxing_production.observability.projections.tracker_dag_projection; '
+                   'assert not any(name == "scripts" or name.startswith("scripts.") for name in sys.modules)']
+        result = subprocess.run(command, cwd=self.root, env=env, capture_output=True, text=True)
+        self.assertEqual(result.returncode, 0, result.stderr)
+
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
         self.addCleanup(self.tmp.cleanup)
@@ -271,7 +283,7 @@ class WeeklyPipelineReportTests(unittest.TestCase):
     def test_cli_preserves_source_and_refuses_existing_output(self):
         self.result()
         original = (self.root / 'events.jsonl').read_bytes()
-        command = [sys.executable, '-m', 'scripts.weekly_pipeline_report', '--accounting-dir',
+        command = [sys.executable, '-m', 'tools.ops.weekly_pipeline_report', '--accounting-dir',
                    str(self.root), '--out-dir', str(self.root / 'report')]
         p = subprocess.run(command, capture_output=True)
         self.assertEqual(p.returncode, 0, p.stderr)

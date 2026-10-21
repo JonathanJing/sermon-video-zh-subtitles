@@ -1,0 +1,18 @@
+{
+  "schemaVersion": "local-exp-leaf-verification-v1",
+  "status": "passed",
+  "exitCode": 0,
+  "deliveryType": "test",
+  "scope": "mock-only legacy module assignment and CLI compatibility",
+  "headSha": "9d6bceb4b135d10ac8118aed8600965eb7db5199",
+  "nodeTests": {
+    "passed": 15,
+    "failed": 0
+  },
+  "legacyImportState": "np assignment and decode monkeypatch forwarded to implementation globals",
+  "cliMissingOut": "matches pre-move baseline",
+  "syntheticTruth": "facade matches direct implementation",
+  "realVenue": "not_run",
+  "spark": "not_run",
+  "paidCalls": 0
+}

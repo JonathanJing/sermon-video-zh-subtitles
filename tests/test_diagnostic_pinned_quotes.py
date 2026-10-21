@@ -8,11 +8,12 @@ import json
 import unittest
 from unittest.mock import patch
 
-from scripts import codex_layer2_diagnostic as diagnostic
+from tools.development import codex_layer2_diagnostic as diagnostic
 from scripts import cuv_scripture
-from scripts import scripture_adjudication as adjudication
-from scripts import target_language_policy as policies
-from scripts import target_language_rule_preflight as preflight
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.review import scripture as adjudication
+from tongxing_production.text import policy as policies
+from tongxing_production.text import rule_preflight as preflight
 from scripts.language_review_plugins import diagnostic_pinned_quotes as quotes
 from tests import test_codex_layer2_diagnostic as chain_tests
 
@@ -155,7 +156,7 @@ class PinnedQuoteTests(unittest.TestCase):
 
     def test_fixture_cli_accepts_receipt_json(self):
         h = self.helper
-        argv = [sys.executable, '-m', 'scripts.codex_layer2_diagnostic']
+        argv = [sys.executable, '-m', 'tools.development.codex_layer2_diagnostic']
         for name, value in [('source', h.source), ('anchor', h.anchor), ('policy', h.policy),
                             ('group-plan', h.plan), ('scripture-adjudication', self.receipt())]:
             path = h.root / (name + '-input.json')

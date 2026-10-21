@@ -2,7 +2,7 @@ import io
 import unittest
 from contextlib import redirect_stderr, redirect_stdout
 
-from scripts import backlog_ids as subject
+from tools.development import backlog_ids as subject
 
 SAMPLE = """# Backlog
 

@@ -245,7 +245,7 @@ policy 记录固定的请求模型身份；执行器核对 API 实际返回的�
 
 `languageReview.policySha256` 绑定 resolved policy 中 language-review 子树的 canonical JSON SHA-256；它不等同于整个 `translationPolicySha256`，二者用途要在 validator 中分别检查。
 
-首版 [目标语言策略校验器](../scripts/target_language_policy.py) 和 [schema](../schemas/sermon-target-language-policy-v1.schema.json) 已固定 `zh-Hans` 与 `ko` 两份快照。两份 policy 仍为开发起点：通用语言审核插件未实现，韩语系列译名、专名和经文译本／引用许可保持 `pending`；`productionPolicyReady=false`。改变任一子树、系列名称表或 prompt 后必须生成新快照，不能复用旧 candidate 审核。
+首版 [目标语言策略校验器](../packages/production/src/tongxing_production/text/policy.py) 和 [schema](../schemas/sermon-target-language-policy-v1.schema.json) 已固定 `zh-Hans` 与 `ko` 两份快照。两份 policy 仍为开发起点：通用语言审核插件未实现，韩语系列译名、专名和经文译本／引用许可保持 `pending`；`productionPolicyReady=false`。改变任一子树、系列名称表或 prompt 后必须生成新快照，不能复用旧 candidate 审核。
 
 冻结新的韩语／西语 v2–v4 policy 草稿时，若 `languageReview` 不写插件绑定（`pluginId`、`pluginImplementationSha256`、`implementationStatus`、`requiredChecks` 全部省略），`target_language_policy.py freeze` 绑定每周通用的机器质检插件 `ko-weekly-auto-v1` / `es-weekly-auto-v1`：实现 hash 按插件与共享规则（`common.py`、`auto_qc_text_common.py`）计算，`implementationStatus=verified`，`requiredChecks` 等于 `auto_qc_text_common.REQUIRED`。从带插件绑定的模板改用机器质检插件时，显式传 `--language-review machine_qc`。草稿自带插件绑定时原样保留；`zh-Hans` 沿用原插件，必须在草稿中写明。policy 格式不变，已冻结的 policy（含 `config/target-language-policies/*.json`）不重新绑定，字节与 hash 不变。
 
@@ -274,13 +274,13 @@ artifacts/target-language-text/<source-package-id>/<target-locale>/<job-id>/
 - `translation-draft.json`：translator-only 内部产物；
 - `independent-review.json`：reviewer 修订、语义 ledger 和 uncertainty；
 - `candidate.machine.json`：正式 v2 机器候选，永远 `releaseEligible=false`；
-- `human-review-receipt.json`：独立的人审决定，绑定待批准 v2 candidate 的完整 JSON hash、源包、anchor、policy 和每组决定；由[审核 CLI](../scripts/review_target_language_candidate.py) 根据人工填写的 worksheet 生成并校验，结构见[收据 schema](../schemas/sermon-target-language-human-review-receipt-v1.schema.json)；
+- `human-review-receipt.json`：独立的人审决定，绑定待批准 v2 candidate 的完整 JSON hash、源包、anchor、policy 和每组决定；由[审核 CLI](../packages/production/src/tongxing_production/text/human_review.py) 根据人工填写的 worksheet 生成并校验，结构见[收据 schema](../schemas/sermon-target-language-human-review-receipt-v1.schema.json)；
 - `candidate.approved.json`：新的 v2 revision；其完整 JSON hash 必须与人审收据一致才能进入 Layer 3，仍 `releaseEligible=false`；
 - `run-receipt.json`：job identity、实现 hash、模型调用数、重试、耗时、token／成本摘要和全部紧凑产物 hash。
 
 Git 只提交 schema、policy 模板、无私人内容的 fixture、实现与紧凑测试证据；真实证道文本、完整模型响应和运行目录继续 ignored。
 
-人工审核入口先运行 `.venv/bin/python scripts/review_target_language_candidate.py prepare --english-source-package <source.json> --anchor <anchor.json> --candidate <candidate.machine.json> --policy <resolved-policy.json> --out <new-worksheet.json>`。审核者对照英文来源检查全部组及经文、术语、coverage 和机器标记。全部通过时，可用同样四个输入运行 `approve-batch --worksheet <pending-worksheet.json> --reviewer <name> --reviewed-at <ISO-8601-with-timezone> --full-review-evidence <明确的全文审核说明> --out <new-directory>`；此命令只把**审核者已完成的全文决定**展开为每组同一说明和原有独立收据，省去逐行填写。任何一组待改或存疑都不能批量批准，应先修订候选，再用原 `approve` 的逐组工作表完成审核。两个入口都输出新的 `candidate.approved.json` 与 `human-review-receipt.json`；来源、policy、candidate、worksheet 展示内容变化时均拒绝旧决定。命令不调用模型，也不能代替实际人审。
+人工审核入口先运行 `.venv/bin/python tools/ops/run.py text.human_review prepare --english-source-package <source.json> --anchor <anchor.json> --candidate <candidate.machine.json> --policy <resolved-policy.json> --out <new-worksheet.json>`。审核者对照英文来源检查全部组及经文、术语、coverage 和机器标记。全部通过时，可用同样四个输入运行 `approve-batch --worksheet <pending-worksheet.json> --reviewer <name> --reviewed-at <ISO-8601-with-timezone> --full-review-evidence <明确的全文审核说明> --out <new-directory>`；此命令只把**审核者已完成的全文决定**展开为每组同一说明和原有独立收据，省去逐行填写。任何一组待改或存疑都不能批量批准，应先修订候选，再用原 `approve` 的逐组工作表完成审核。两个入口都输出新的 `candidate.approved.json` 与 `human-review-receipt.json`；来源、policy、candidate、worksheet 展示内容变化时均拒绝旧决定。命令不调用模型，也不能代替实际人审。
 
 分批审核时，`record-group` 可为已检查的单组写独立收据；`approve-groups` 只在当前候选全部组收据有效且获批时聚合成上述完整候选／人审收据。跨候选复用默认绑定整候选上下文；仅当审核者给出跨 block 独立性证据时可缩小到连通 block。Layer 3 的正式 speech job 仍等待整语言聚合，细节和下游影响见[层内局部审核设计](multilingual-intralayer-review-decoupling.zh.md)。
 

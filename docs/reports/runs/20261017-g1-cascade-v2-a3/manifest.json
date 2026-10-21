@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-g1-cascade-v2-a3",
+  "runs": [
+    {
+      "label": "g1-cascade-v2-a3-20261017",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/g1-cascade-v2-a3-20261017",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "g1-cascade-v2-a3-20261017",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 258,
+      "truncated": false,
+      "sha256": "c42b49e0e94e9676bce9e04eac83b6ef7e0240ead72ae9c3b5d2f502e0a9ad26",
+      "redactions": {}
+    },
+    {
+      "run": "g1-cascade-v2-a3-20261017",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 277,
+      "truncated": false,
+      "sha256": "cc3c0f804671f84985288c736dcac81782f3f74507668e2d9982c23f8737f8b4",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

@@ -45,10 +45,10 @@ Cloud Scheduler 不会把一个 HTTP target 的返回结果自动传给另一个
 
 ## 代码入口
 
-- Agent runner：`scripts/run_sermon_production_supervisor_agent.py`
-- 确定性工具与状态契约：`scripts/sermon_production_supervisor.py`
-- 来源媒体准备工具（保留历史文件名）：`scripts/run_post_live_timeline_job.py`
-- 阅读版生成工具：`scripts/run_post_live_subtitle_generation.py`
+- Agent runner：`packages/production/src/tongxing_production/workflows/supervisor/agent.py`
+- 确定性工具与状态契约：`packages/production/src/tongxing_production/workflows/supervisor/production.py`
+- 来源媒体准备工具（保留历史文件名）：`tools/ops/run.py workflows.dual_pdf.timeline`
+- 阅读版生成工具：`tools/ops/run.py workflows.dual_pdf.post_live`
 - API 入口：`POST /api/admin/sundays/<date>/production-supervisor`
 
 兼容回退路径仍保留以下 Python 依赖；它不是 Agents API 服务端控制循环：
@@ -78,7 +78,7 @@ Agent 不能：
 本地示例：
 
 ```bash
-.venv/bin/python scripts/run_sermon_production_supervisor_agent.py \
+.venv/bin/python tools/ops/run.py workflows.supervisor.agent \
   --sunday 2026-08-02 \
   --state-file artifacts/live-source-monitor/state.json \
   --work-root artifacts/post-live-runs \
@@ -102,18 +102,18 @@ Execute 模式另外暴露两个受限工具：
 
 ```bash
 # 新建受控 session；目录内保存 session 状态、工具请求与结果。
-.venv/bin/python scripts/run_codex_local_sermon_production.py \
+.venv/bin/python tools/ops/run.py workflows.dual_pdf.codex_local \
   --mode shadow --agent-backend agents-api \
   --agent-run-dir artifacts/sermon-production-supervisor/api-shadow
 
 # 恢复同一个 session，不重复创建或重跑已记录的阶段。
-.venv/bin/python scripts/run_codex_local_sermon_production.py \
+.venv/bin/python tools/ops/run.py workflows.dual_pdf.codex_local \
   --mode shadow --agent-backend agents-api \
   --agent-run-dir artifacts/sermon-production-supervisor/api-shadow \
   --resume-agent-session
 
 # 显式切回既有 SDK / Responses 控制层。
-.venv/bin/python scripts/run_codex_local_sermon_production.py \
+.venv/bin/python tools/ops/run.py workflows.dual_pdf.codex_local \
   --mode shadow --agent-backend sdk
 ```
 
@@ -124,14 +124,14 @@ Session 创建结果不明时停止自动创建，先核对持久记录；pendin
 本地生产入口会自动选择当前或下一个 Sunday，并把工作目录保存在仓库忽略的 `artifacts/` 下：
 
 ```bash
-.venv/bin/python scripts/run_codex_local_sermon_production.py --mode execute
+.venv/bin/python tools/ops/run.py workflows.dual_pdf.codex_local --mode execute
 ```
 
 公开 YouTube 回放默认不使用 cookies。只有出现下载授权问题时，operator 才应显式提供授权导出的 Netscape `cookies.txt`：
 
 ```bash
 SERMON_YOUTUBE_COOKIES_FILE=/absolute/path/youtube.cookies.txt \
-  .venv/bin/python scripts/run_codex_local_sermon_production.py --mode execute
+  .venv/bin/python tools/ops/run.py workflows.dual_pdf.codex_local --mode execute
 ```
 
 脚本不会把 cookie 内容或本地 cookie 路径写入公开报告。
@@ -139,7 +139,7 @@ SERMON_YOUTUBE_COOKIES_FILE=/absolute/path/youtube.cookies.txt \
 生产示例：
 
 ```bash
-.venv/bin/python scripts/run_sermon_production_supervisor_agent.py \
+.venv/bin/python tools/ops/run.py workflows.supervisor.agent \
   --sunday 2026-08-02 \
   --state-file 'gs://sermon-zh-artifacts-ai-for-god/sundays/live-source-monitor/backend-state.json' \
   --work-root /tmp/sermon-post-live-subtitles \
@@ -158,7 +158,7 @@ SERMON_YOUTUBE_COOKIES_FILE=/absolute/path/youtube.cookies.txt \
 operator 独立观看完整录像后，使用同一个 runner 写审批：
 
 ```bash
-.venv/bin/python scripts/run_sermon_production_supervisor_agent.py \
+.venv/bin/python tools/ops/run.py workflows.supervisor.agent \
   --sunday 2026-08-02 \
   --state-file 'gs://sermon-zh-artifacts-ai-for-god/sundays/live-source-monitor/backend-state.json' \
   --work-root /tmp/sermon-post-live-subtitles \
@@ -218,7 +218,7 @@ operator 独立观看完整录像后，使用同一个 runner 写审批：
 Scheduler 配置脚本支持 `production-supervisor`：
 
 ```bash
-python3 scripts/configure_live_source_scheduler.py \
+python3 tools/ops/configure_live_source_scheduler.py \
   --project ai-for-god \
   --location us-west1 \
   --service-url 'https://sermon-zh-caption-web-...' \
@@ -263,7 +263,7 @@ SERMON_SUPERVISOR_MODE=shadow
 
 ## 完成标准
 
-以 [确定性 Supervisor](../scripts/sermon_production_supervisor.py) 新读取的 `snapshot.recommendedAction.action == "complete"` 为准：generation completed、阅读质量及两个 PDF QA pass、source/timeline 绑定的人工审批有效，且配置发布时已有核验通过的 publication。实际部署交付要求见 [本地 runbook](./codex-local-production-runbook.zh.md#完成标准)。
+以 [确定性 Supervisor](../packages/production/src/tongxing_production/workflows/supervisor/production.py) 新读取的 `snapshot.recommendedAction.action == "complete"` 为准：generation completed、阅读质量及两个 PDF QA pass、source/timeline 绑定的人工审批有效，且配置发布时已有核验通过的 publication。实际部署交付要求见 [本地 runbook](./codex-local-production-runbook.zh.md#完成标准)。
 
 这个状态只建立 `workflowScope=dual_pdf` 以及显式配置的 legacy publication 步骤完成。规范的预制生产只有在同一来源下，对目标语言具备有效的 `English Source Package`、`Target-Language Candidate`、`Target-Language Audio Package`（纯文字发行也要显式记录 `audio_unavailable`）和 `Target-Language Release Package` 证据时，才可报告 `four_layer_release`。旧 PDF 或页面状态不得改名冒充四层完成。
 

@@ -1,0 +1,12 @@
+plan-qc-ko	pass	0
+check-aa-budget-ko	pass	0
+plan-qc-zh-Hans	pass	0
+check-aa-budget-zh-Hans	pass	0
+check-qc-ko-out	pass	0
+text-qc.ko.out	pass	62
+check-qc-zh-Hans-out	pass	0
+text-qc.zh-Hans.out	pass	67
+spark-begin-1	pass	3
+voice-auth.ko	pass	0
+speech-job.ko	fail(1)	0
+spark-finish	pass	7

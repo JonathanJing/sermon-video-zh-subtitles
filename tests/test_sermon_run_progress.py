@@ -9,9 +9,11 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-from scripts import four_layer_progress as tracker
-from scripts import sermon_run_progress as p
-from scripts.sermon_accounting import SCHEMA as ACCOUNTING_SCHEMA
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from scripts import tracker_projection_host  # noqa: F401  binds the timeline dependencies plan_from_tracker reads
+from tongxing_production.observability import progress as tracker
+from tongxing_production.observability import run_progress as p
+from tongxing_production.observability.accounting import SCHEMA as ACCOUNTING_SCHEMA
 
 AT = "2026-10-01T01:00:00+00:00"
 SHA = "a" * 64
@@ -390,7 +392,7 @@ class AdapterAndDurabilityTests(unittest.TestCase):
                       "samples": [sample(frozen["units"][0])], "resource-state": pools(scenario["capacity"], scenario["queueSeconds"])}
             for name, value in values.items():
                 (root / (name + ".json")).write_text(json.dumps(value))
-            command = [sys.executable, "scripts/sermon_run_progress.py", "project", "--at", AT,
+            command = [sys.executable, str(Path(__file__).resolve().parents[1] / "tools/ops/run.py"), "observability.run_progress", "project", "--at", AT,
                        "--output", str(root / "progress.json")]
             for name in values:
                 command += ["--" + name, str(root / (name + ".json"))]
@@ -490,7 +492,7 @@ class AdapterAndDurabilityTests(unittest.TestCase):
             for name, value in (("plan.json", frozen), ("receipts.json", [done(frozen, "a")])):
                 (root / name).write_text(json.dumps(value))
             before = {path: path.read_bytes() for path in root.iterdir()}
-            command = [sys.executable, "scripts/sermon_run_progress.py", "project", "--plan", str(root / "plan.json"),
+            command = [sys.executable, str(Path(__file__).resolve().parents[1] / "tools/ops/run.py"), "observability.run_progress", "project", "--plan", str(root / "plan.json"),
                        "--receipts", str(root / "receipts.json"), "--at", AT, "--output", str(root / "progress.json")]
             result = subprocess.run(command, text=True, capture_output=True)
             self.assertEqual(result.returncode, 0, result.stderr)
@@ -508,7 +510,7 @@ class AdapterAndDurabilityTests(unittest.TestCase):
             spec = dict(plan_id="fixture", version=1, run_id="run", units=[unit("a")],
                         resources={"api": {"capacity": 2, "resourceClass": "fixture-api"}}, dag_version="v1")
             (root / "spec.json").write_text(json.dumps(spec))
-            command = [sys.executable, "scripts/sermon_run_progress.py", "freeze", "--input", str(root / "spec.json"), "--output", str(root / "plan.json")]
+            command = [sys.executable, str(Path(__file__).resolve().parents[1] / "tools/ops/run.py"), "observability.run_progress", "freeze", "--input", str(root / "spec.json"), "--output", str(root / "plan.json")]
             self.assertEqual(subprocess.run(command, capture_output=True).returncode, 0)
             before = (root / "plan.json").read_bytes()
             self.assertEqual(subprocess.run(command, capture_output=True).returncode, 2)

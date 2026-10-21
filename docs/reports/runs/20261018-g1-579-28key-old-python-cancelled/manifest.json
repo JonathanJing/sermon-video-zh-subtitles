@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261018-g1-579-28key-old-python-cancelled",
+  "runs": [
+    {
+      "label": "g1-579-28key-old-python-cancelled-20261018",
+      "source": "~/.codex/worktrees/g1-r3-review/sermon-video-zh-subtitles/artifacts/g1-579-28key-old-python-cancelled-20261018",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "g1-579-28key-old-python-cancelled-20261018",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 349,
+      "truncated": false,
+      "sha256": "4a40833a995cb02b0b20bd281d21a77efd313c3d36821e1145ab40b53dc74e0f",
+      "redactions": {}
+    },
+    {
+      "run": "g1-579-28key-old-python-cancelled-20261018",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 1576,
+      "truncated": false,
+      "sha256": "9562b11a109195c7a5164ea15abadf81fe1266d4346703c05ee634811fe3d35d",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

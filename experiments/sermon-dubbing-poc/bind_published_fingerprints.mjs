@@ -48,7 +48,7 @@ for(const [locale,target] of Object.entries(page.targets)) {
 }
 require(variants.length>0&&variants.every(v=>v.duration===variants[0].duration),'Different source windows');
 const duration=variants[0].duration, temp=fs.mkdtempSync(path.join(os.tmpdir(),'published-alignment-'));
-const builder=fileURLToPath(new URL('./build_fingerprint_index.mjs',import.meta.url));
+const builder=fileURLToPath(new URL('../../packages/fingerprint/bin/build_fingerprint_index.mjs',import.meta.url));
 const run=flags=>{const r=spawnSync(process.execPath,[builder,...flags],{encoding:'utf8',timeout:1800000});require(r.status===0,r.stderr||'Fingerprint build failed');return JSON.parse(r.stdout);};
 try {
   const precomputed=path.join(temp,'source.json');

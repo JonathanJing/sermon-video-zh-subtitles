@@ -17,7 +17,10 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-from scripts import four_layer_measure, four_layer_progress, sermon_accounting
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.observability import accounting as sermon_accounting
+from tongxing_production.observability import measure as four_layer_measure
+from tongxing_production.observability import progress as four_layer_progress
 
 # These are measurement lanes within existing checkpoints, not new production
 # layers or approval gates. Prefixes match current accounting.stage names where

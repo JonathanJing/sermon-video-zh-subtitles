@@ -11,13 +11,14 @@ import subprocess
 
 import pytest
 
-from scripts import build_full_video_app_release as builder
-from scripts import delivery_contract as d
-from scripts import machine_quality_release_basis as basis
-from scripts import screen_target_language_audio_units as audio_screen
-from scripts import sermon_unified_delivery as delivery
-from scripts import study_artifacts
-from scripts.target_audio_auto_qc import THRESHOLDS
+from tongxing_production.delivery import app_release as builder
+from tongxing_production.delivery import contract as d
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.review import release_basis as basis
+from tongxing_production.audio import screening as audio_screen
+from tongxing_production.delivery import unified_stage as delivery
+from tongxing_production.delivery import study_artifacts
+from tongxing_production.review.audio_qc import THRESHOLDS
 from tests import auto_qc_fixtures as qc_fixtures
 from tests.test_machine_quality_release_basis import (IMPLEMENTATION, SECONDARY_ASR, calibration, issue_audio,
                                                     issue_text, text_qc, track_check)
@@ -263,6 +264,33 @@ def test_seal_over_human_baseline_publishes_v4_and_keeps_v3_human_only(prepared,
     (sealed / 'public/multilingual-v3.json').write_text(json.dumps(tampered))
     with pytest.raises(ValueError):
         d.validate_catalog_snapshot(sealed)
+
+
+def test_seal_over_v5_baseline_regenerates_v5_with_v4_v3_projections(prepared, machine):
+    from tongxing_production.delivery import baseline as baseline_tools
+    baseline = seal_fixture(prepared)
+    public = baseline / 'public'
+    baseline_tools.write(public / 'multilingual-v5.json', d.upgrade_catalog_v5(d.snapshot_catalog_v4(baseline)))
+    report_path = baseline / 'seal-report.json'
+    report = {**builder.read(report_path), **baseline_tools.catalog_report(public),
+              'files': baseline_tools.files_report(public)}
+    report_path.unlink(); baseline_tools.write(report_path, report)
+    baseline_v3 = d.validate_catalog_snapshot(baseline)
+    plan = save(machine['root'], 'plan.json', {
+        'schemaVersion': 'sermon-locale-release-plan-v1', 'pageId': PAGE, 'locales': [LOCALE], 'requiredLocales': [LOCALE],
+        'mode': 'incremental', 'baselineCatalogSha256': d.sha(baseline_v3), 'baselineVersion': 'sites/test-dev/versions/1',
+        'parentGeneration': 0})
+    prepared_dir = machine['root'] / 'work/prepared'
+    receipt = http_receipt(machine['root'], prepared_dir, machine['config']['intent']['origin'])
+    sealed = machine['root'] / 'sealed'
+    result = builder.seal(argparse.Namespace(prepared=prepared_dir, http_verification=receipt, out=sealed,
+                                             baseline=baseline, release_plan=plan))
+    v5 = builder.read(sealed / 'public/multilingual-v5.json')
+    assert result['catalogV5Sha256'] == builder.digest(sealed / 'public/multilingual-v5.json')
+    assert [page['id'] for page in v5['pages']] == [prepared['page'], PAGE]
+    assert {page['sourceMode'] for page in v5['pages']} == {'single_source'}
+    assert d.project_legacy_catalog_v4(v5) == builder.read(sealed / 'public/multilingual-v4.json')
+    d.validate_catalog_snapshot(sealed)
 
 
 def test_mixed_review_bases_set_each_status_independently(tmp_path):

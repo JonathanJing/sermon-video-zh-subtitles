@@ -27,9 +27,9 @@ TTS保留正式授权checkpoint `75d28ce6022b3df3a72df3dd6dbc01e53f584d685770d60
 ```sh
 PRODUCTION_PYTHON=/absolute/path/to/existing-production-env/bin/python
 # 现有正式TTS参数接在tts后面；默认自动读取profile选batch2。
-"$PRODUCTION_PYTHON" -m scripts.run_dev_local_audio_test tts --help
+"$PRODUCTION_PYTHON" tools/development/run_dev_local_audio_test.py tts --help
 # 现有正式筛查参数接在back-asr后面；默认自动选batch4。
-"$PRODUCTION_PYTHON" -m scripts.run_dev_local_audio_test back-asr --help
+"$PRODUCTION_PYTHON" tools/development/run_dev_local_audio_test.py back-asr --help
 # 同一WAV的batch8对照：在back-asr原参数中显式加 --batch-size 8。
 # baseline：在对应入口原参数中显式加 --batch-size 1。
 ```

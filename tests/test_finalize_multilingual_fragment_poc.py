@@ -8,7 +8,7 @@ import unittest
 
 ROOT = Path(__file__).parents[1]
 SPEC = importlib.util.spec_from_file_location(
-    "finalize_multilingual_fragment_poc", ROOT / "scripts/finalize_multilingual_fragment_poc.py"
+    "finalize_multilingual_fragment_poc", ROOT / "experiments/multilingual-fragment-poc/finalize_multilingual_fragment_poc.py"
 )
 subject = importlib.util.module_from_spec(SPEC)
 assert SPEC.loader is not None

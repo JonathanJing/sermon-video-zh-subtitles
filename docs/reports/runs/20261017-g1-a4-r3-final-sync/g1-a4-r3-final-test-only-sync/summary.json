@@ -1,0 +1,16 @@
+{
+  "suite": [
+    "tests.test_screen_transcript_folding"
+  ],
+  "durationSeconds": 0.457,
+  "result": "OK",
+  "parentDelta": "Only tests/test_screen_transcript_folding.py changed after the 71-test A4 run",
+  "additionalChecks": [
+    "three same-object aliases",
+    "audio stage mapping",
+    "waiver implementation sha256 6eeb52aa5d640df366ec9a623ae5b7998e353907528c019c53a388e2e73d6f89",
+    "23-key freeze closure",
+    "A4 diff still 12 files and diff --check clean",
+    "R4 tree-only simulated merge clean"
+  ]
+}

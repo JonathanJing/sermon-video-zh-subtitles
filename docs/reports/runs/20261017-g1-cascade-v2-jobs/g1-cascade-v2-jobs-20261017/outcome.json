@@ -1,0 +1,9 @@
+{
+  "schemaVersion": "local-code-test-outcome-v1",
+  "status": "passed",
+  "exitCode": 0,
+  "endedAt": "2026-10-17T16:31:41.338902+00:00",
+  "scope": "#569 cascade of #568 latest and #571 head 496df474",
+  "productionRun": "not_run",
+  "paidModelCalls": 0
+}

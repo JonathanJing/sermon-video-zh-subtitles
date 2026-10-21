@@ -5,7 +5,8 @@ import runpy
 import unittest
 
 from scripts.language_review_plugins import diagnostic_structural as plugin
-from scripts import sermon_diagnostic_context as diagnostic
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.workflows.diagnostic import context as diagnostic
 
 
 def context():

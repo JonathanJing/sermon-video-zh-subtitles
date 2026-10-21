@@ -6,7 +6,8 @@ from types import SimpleNamespace
 import unittest
 from unittest.mock import patch, Mock
 
-from scripts import sermon_release_workflow as flow
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.orchestration import release_workflow as flow
 
 
 class ReleaseWorkflowTests(unittest.TestCase):
@@ -137,8 +138,10 @@ class ReleaseWorkflowTests(unittest.TestCase):
             self.assertEqual(flow.snapshot(self.path, self.week)['status'], 'prepare_release')
             # Real composed/release snapshots and manifest validation: rebuilding
             # a valid candidate plus its receipt must invalidate page-ready.
-            from scripts import sermon_deterministic_controller as ctrl
-            from scripts.sermon_production_supervisor import SupervisorConfig
+            from scripts import tongxing_host  # noqa: F401  binds the production package ports
+            from tongxing_production.workflows.supervisor import deterministic_controller as ctrl
+            from scripts import tongxing_host  # noqa: F401  binds the production package ports
+            from tongxing_production.workflows.supervisor.production import SupervisorConfig
             supervisor = SupervisorConfig(self.week, 'fixture', work_root=self.root / 'controller',
                 release_workflow_config=self.path, gcs_bucket=None)
             controller = ctrl.Controller(supervisor, mode='deterministic_execute')
@@ -217,7 +220,7 @@ class ReleaseWorkflowTests(unittest.TestCase):
         work = self.root / 'review-fixture'
         work.mkdir()
         fixture.ReviewIntegrityTests().fixture(work)
-        with patch.dict('sys.modules', {'scripts.run_codex_local_sermon_production': production}):
+        with patch.dict('sys.modules', {'tongxing_production.workflows.dual_pdf.codex_local': production}):
             weekly.validate_review(work, write_receipt=False)
         production.local_completion_artifacts.assert_called_once()
         self.assertFalse((work / 'saturday-completion.json').exists())

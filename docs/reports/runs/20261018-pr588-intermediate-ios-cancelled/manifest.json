@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261018-pr588-intermediate-ios-cancelled",
+  "runs": [
+    {
+      "label": "pr588-ios-cancelled-39087127581",
+      "source": "~/.codex/worktrees/g1-a4-audio/sermon-video-zh-subtitles/artifacts/pr588-ios-cancelled-39087127581",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "pr588-ios-cancelled-39087127581",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 280,
+      "truncated": false,
+      "sha256": "cbd7eba04eb01d9720a604129ad3480ff3fb80e859d5edb45bb72a85a290a3b7",
+      "redactions": {}
+    },
+    {
+      "run": "pr588-ios-cancelled-39087127581",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 850,
+      "truncated": false,
+      "sha256": "65dcfbc596707134c2eefd845331f0719185deb06fbd3dc5ba05eb8c35be11d1",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

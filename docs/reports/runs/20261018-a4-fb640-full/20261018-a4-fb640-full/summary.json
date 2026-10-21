@@ -1,0 +1,7 @@
+{
+  "status": "success",
+  "testCount": 35,
+  "wallSeconds": 40.409,
+  "scope": "diagnostic worker and delivery preflight modules",
+  "modelCalls": 0
+}

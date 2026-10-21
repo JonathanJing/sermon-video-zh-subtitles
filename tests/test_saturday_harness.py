@@ -7,7 +7,8 @@ import tempfile
 import unittest
 from unittest.mock import Mock
 
-from scripts import run_saturday_harness as harness
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tools.ops import run_saturday_harness as harness
 
 
 class SaturdayHarnessTests(unittest.TestCase):
@@ -66,7 +67,7 @@ class SaturdayHarnessTests(unittest.TestCase):
     def test_execute_passes_bridge_config_to_producer_without_mutating_environment(self):
         before = os.environ.get("SERMON_DUBBING_CONFIG")
         def child(command, **kwargs):
-            if "run_codex_local_sermon_production.py" in command[1]:
+            if command[2:3] == ["workflows.dual_pdf.codex_local"]:
                 self.assertEqual(kwargs["env"]["SERMON_DUBBING_CONFIG"], str(self.config.resolve()))
                 self.write_pdf()
                 return subprocess.CompletedProcess(command, 2)
@@ -104,7 +105,7 @@ class SaturdayHarnessTests(unittest.TestCase):
                 return subprocess.CompletedProcess(command, 2)
             return subprocess.CompletedProcess(command, 0, stdout=json.dumps(self.bridge()))
         report = harness.run(harness.parse_args(self.argv + ["--mode", "execute"]), runner=runner)
-        self.assertIn("run_codex_local_sermon_production.py", calls[0][1])
+        self.assertEqual(calls[0][2], "workflows.dual_pdf.codex_local")
         self.assertIn("continue_saturday_dubbing.py", calls[1][1])
         self.assertEqual(report["stages"]["audioCandidate"]["selectedRoute"], "live_archive")
         self.assertEqual(report["stages"]["pdf"]["evidenceFreshness"], "current_supervisor_validation")

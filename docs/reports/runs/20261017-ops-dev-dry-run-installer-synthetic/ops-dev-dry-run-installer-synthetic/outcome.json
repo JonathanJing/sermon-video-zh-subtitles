@@ -1,0 +1,16 @@
+{
+  "status": "pass",
+  "deliveryType": "test",
+  "scope": "Firebase Dev dry-run App installer path migration synthetic only",
+  "exitCode": 0,
+  "checks": {
+    "pytest": {
+      "passed": 2,
+      "failed": 0
+    },
+    "diffCheck": "pass",
+    "remoteDevBase": "2828d601"
+  },
+  "productionRun": "not_run",
+  "publication": "not_run"
+}

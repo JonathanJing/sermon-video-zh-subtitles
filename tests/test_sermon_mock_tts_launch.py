@@ -7,11 +7,12 @@ import sys
 import unittest
 from unittest.mock import patch
 
-from scripts import sermon_accounting as accounting
-from scripts import sermon_log_contract as logs
-from scripts import sermon_mock_tts_control as control
-from scripts import sermon_mock_tts_worker as worker
-from scripts import sermon_review_contracts as c
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.observability import accounting
+from tongxing_production.observability import log_contract as logs
+from tongxing_production.compute.mock_tts import control
+from tongxing_production.compute.mock_tts import worker
+from tongxing_production.review import contracts as c
 from tests.test_sermon_mock_tts_worker import WorkerFixture
 
 
@@ -21,10 +22,10 @@ class MockTTSLaunchTests(WorkerFixture):
         # No job, task or provider is launched by this probe.
         env = worker.environment(self.scope/'probe')
         code = ('import sys; sys.path.insert(0, sys.argv[1]); '
-                'from scripts.sermon_mock_tts_worker import require_environment; '
+                'from tongxing_production.compute.mock_tts.worker import require_environment; '
                 'require_environment(); print("validated")')
         result = subprocess.run([sys.executable, '-I', '-c', code,
-            str(Path(worker.__file__).resolve().parents[1])], env=env,
+            str(Path(__file__).resolve().parents[1])], env=env,
             capture_output=True, text=True, timeout=10)
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertEqual(result.stdout.strip(), 'validated')
@@ -90,7 +91,7 @@ class MockTTSLaunchTests(WorkerFixture):
 
     def test_known_environment_rejection_logs_fixed_reason_without_retry_authority(self):
         result = subprocess.CompletedProcess([], 1, 'private-ambient',
-            'private-ambient\nscripts.sermon_review_contracts.ContractError: mock_tts_environment_not_scrubbed\n')
+            'private-ambient\ntongxing_production.contracts.canonical.ContractError: mock_tts_environment_not_scrubbed\n')
         self.check_unconfirmed(result=result, reason='mock_tts_environment_not_scrubbed', exit_code=1)
 
     def test_import_error_never_copies_module_name_or_stderr(self):
@@ -99,7 +100,7 @@ class MockTTSLaunchTests(WorkerFixture):
 
     def test_unrecognized_child_output_is_not_an_error_code(self):
         result = subprocess.CompletedProcess([], 2, 'private-ambient',
-            'scripts.sermon_review_contracts.ContractError: private-ambient\n')
+            'tongxing_production.contracts.canonical.ContractError: private-ambient\n')
         self.check_unconfirmed(result=result, reason='mock_tts_launcher_nonzero_exit', exit_code=2)
 
     def test_timeout_logs_no_command_output_or_exception_body(self):

@@ -17,7 +17,7 @@ import importlib.util
 import sys
 
 
-POC_SCRIPT = Path(__file__).with_name("offline_live_sermon_subtitles.py")
+POC_SCRIPT = Path(__file__).resolve().parents[1] / "tools" / "ops" / "offline_live_sermon_subtitles.py"
 SCRIPTURE_SCRIPT = Path(__file__).with_name("build_scripture_index.py")
 REPO_ROOT = Path(__file__).resolve().parents[1]
 SECRET_RESOURCE_RE = re.compile(
@@ -192,7 +192,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--out",
         type=Path,
-        default=Path("web/playback-simulation.generated.js"),
+        default=Path("apps/operator-web/playback-simulation.generated.js"),
         help="Generated JS file loaded by the web prototype.",
     )
     parser.add_argument(

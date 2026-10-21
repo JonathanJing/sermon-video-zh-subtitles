@@ -1,0 +1,7 @@
+{
+  "schemaVersion": "test-run-summary-v1",
+  "result": "1 passed; installed requirements.txt into worktree-bound editable venv and reran only failed case",
+  "environment": "worktree-bound editable package; initial run lacked openai-agents, repair installed pinned requirements.txt",
+  "paidDispatch": false,
+  "productionRun": false
+}

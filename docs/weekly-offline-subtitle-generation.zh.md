@@ -74,10 +74,10 @@ mariners_<youtube_video_id>
 
 ## 推荐 CLI
 
-线程里沉淀出的可复用 CLI 已迁移到当前 repo 的 `scripts/sermon_pipeline.py`。运行前确认 `.env` 或当前 shell 有 `OPENAI_API_KEY`。
+线程里沉淀出的可复用 CLI 已迁移到当前 repo 的 `tools/ops/run.py workflows.dual_pdf.pipeline`。运行前确认 `.env` 或当前 shell 有 `OPENAI_API_KEY`。
 
 ```bash
-python3 scripts/sermon_pipeline.py \
+.venv/bin/python tools/ops/run.py workflows.dual_pdf.pipeline \
   --input artifacts/<slug>/full_archive_<timestamp>/full_audio_139.m4a \
   --start-time 00:24:15.800 \
   --end-time 00:55:35.182 \
@@ -226,7 +226,7 @@ systematic translation offset: none
 当前 repo 已接入自动化脚本：
 
 ```bash
-python3 scripts/run_post_live_subtitle_generation.py \
+.venv/bin/python tools/ops/run.py workflows.dual_pdf.post_live \
   --sunday YYYY-MM-DD \
   --state-file 'gs://sermon-zh-artifacts-ai-for-god/sundays/live-source-monitor/backend-state.json' \
   --slug mariners_<youtube_video_id> \
@@ -234,12 +234,12 @@ python3 scripts/run_post_live_subtitle_generation.py \
   --end-time 00:55:36
 ```
 
-该脚本会从周六 `discover-source` 保存的 state 读取直播 URL，确认 YouTube metadata 已经是 `post_live` / `was_live`，再下载归档音频并调用 `scripts/sermon_pipeline.py`。如果还在直播或归档未稳定，它会返回 `waiting_for_post_live`，供 Scheduler 下次重试。
+该脚本会从周六 `discover-source` 保存的 state 读取直播 URL，确认 YouTube metadata 已经是 `post_live` / `was_live`，再下载归档音频并调用 `tools/ops/run.py workflows.dual_pdf.pipeline`。如果还在直播或归档未稳定，它会返回 `waiting_for_post_live`，供 Scheduler 下次重试。
 
-自动化会在 `scripts/sermon_pipeline.py` 完成后调用，先生成逐句版手机 PDF：
+自动化会在 `tools/ops/run.py workflows.dual_pdf.pipeline` 完成后调用，先生成逐句版手机 PDF：
 
 ```bash
-python3 scripts/render_mobile_pdf_from_srt.py \
+.venv/bin/python tools/ops/run.py workflows.dual_pdf.mobile_pdf \
   --input <pipeline_outdir>/sermon_zh_relative.srt \
   --secondary-input <pipeline_outdir>/sermon_en_relative.srt \
   --out <pipeline_outdir>/sermon_zh_mobile.pdf \
@@ -267,7 +267,7 @@ python3 scripts/render_mobile_pdf_from_srt.py \
 从 2026-07-26 起，这一步已经固化进 `run_post_live_subtitle_generation.py` 主流程：默认 provider 为 `openai`，默认模型为 `gpt-5.6-sol`，默认 `reasoning effort=high`。脚本会按完整英文句子建立语义段落，执行阅读编辑和独立双语校对，并生成 `reading_quality_report.json`。只有该报告为 `pass` 时，主流程才会继续生成最终阅读 PDF。
 
 ```bash
-.venv/bin/python scripts/render_mobile_pdf_from_srt.py \
+.venv/bin/python tools/ops/run.py workflows.dual_pdf.mobile_pdf \
   --layout reading \
   --input <pipeline_outdir>/reading-edition-v2/sermon_zh_reading_revised.srt \
   --secondary-input <pipeline_outdir>/reading-edition-v2/sermon_en_reading_revised.srt \

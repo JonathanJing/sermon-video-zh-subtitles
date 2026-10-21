@@ -6,11 +6,12 @@ import unittest
 from unittest.mock import patch
 
 from jsonschema import Draft202012Validator, FormatChecker
-from scripts import sermon_log_contract as contract
-from scripts import sermon_accounting as accounting
-from scripts import export_observability_trace as safe
-from scripts import export_sermon_trace as otlp
-from scripts import weekly_pipeline_report as weekly
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.observability import log_contract as contract
+from tongxing_production.observability import accounting
+from tongxing_production.observability import observability_trace as safe
+from tongxing_production.observability import trace_export as otlp
+from tongxing_production.observability import weekly_projection as weekly
 
 FIXTURES = Path(__file__).parent / 'fixtures/accounting_log_contract'
 
@@ -24,6 +25,46 @@ def ledger(directory, rows):
 
 
 class ContractTests(unittest.TestCase):
+    def test_non_string_version_is_invalid_without_raising_type_error(self):
+        for version in ([], {}):
+            row = fixture('stage-start')
+            row['contractVersion'] = version
+            with self.subTest(version=version):
+                self.assertFalse(contract.valid_event(row))
+                self.assertEqual(contract.replay_integrity([row])['status'], 'consistent')
+                self.assertEqual(accounting.profile_integrity([row])['status'], 'consistent')
+
+    def test_v1_ledger_and_v2_ledger_replay_without_rewriting_old_facts(self):
+        old = [fixture('stage-start'), fixture('stage-finish')]
+        current = [dict(row, contractVersion=contract.VERSION,
+                        runId='new-run', workflowId='new-workflow',
+                        spanId='new-span', attemptId='new-attempt',
+                        eventId=f'{index + 10:032x}', producerId='b' * 32)
+                   for index, row in enumerate(old)]
+        self.assertEqual(contract.LEGACY_VERSION, old[0]['contractVersion'])
+        self.assertFalse(contract.validator().is_valid(current[0]))
+        self.assertFalse(contract.validator(contract.VERSION).is_valid(old[0]))
+        with tempfile.TemporaryDirectory() as directory:
+            ledger(directory, [*old, *current])
+            before = (Path(directory) / 'events.jsonl').read_bytes()
+            events, damaged = accounting.read_events(directory)
+            self.assertFalse(damaged)
+            self.assertEqual([row['contractVersion'] for row in events],
+                             [contract.LEGACY_VERSION] * 2 + [contract.VERSION] * 2)
+            self.assertEqual(contract.replay_integrity(events)['status'], 'consistent')
+            self.assertEqual((Path(directory) / 'events.jsonl').read_bytes(), before)
+
+    def test_same_run_cannot_mix_readable_contract_versions(self):
+        old = fixture('stage-start')
+        current = dict(fixture('stage-finish'), contractVersion=contract.VERSION)
+        for rows in ([old, current], [current, old]):
+            with self.subTest(order=rows[0]['contractVersion']):
+                result = contract.replay_integrity(rows)
+                self.assertEqual(result['status'], 'partial')
+                self.assertIn('run_contract_version_conflict',
+                              [d['code'] for d in result['diagnostics']])
+                self.assertTrue({id(old), id(current)} <= result['_excluded'])
+
     def test_positive_fixtures_share_jsonschema_and_python_contract(self):
         validator = Draft202012Validator(json.loads(contract.SCHEMA_PATH.read_text()), format_checker=contract.format_checker())
         for name in ('stage-start', 'stage-finish', 'api-receipt'):

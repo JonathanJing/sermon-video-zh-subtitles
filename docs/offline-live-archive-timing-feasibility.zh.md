@@ -71,10 +71,10 @@
 
 这个窗口足以支持当前仓库已经拆开的离线步骤：
 
-- 从 live/archive URL 建立候选源：`scripts/prepare_live_link_playback.py`
-- 从直播归档或直播链接提取/对齐字幕：`scripts/offline_live_sermon_subtitles.py`
-- 缺少可用字幕时走 ASR fallback：`scripts/run_offline_asr_fallback_smoke.py`
-- 将英文时间轴翻译为中文：`scripts/translate_playback_with_openai.py`
+- 从 live/archive URL 建立候选源：`tools/ops/prepare_live_link_playback.py`
+- 从直播归档或直播链接提取/对齐字幕：`tools/ops/offline_live_sermon_subtitles.py`
+- 缺少可用字幕时走 ASR fallback：`tools/ops/run_offline_asr_fallback_smoke.py`
+- 将英文时间轴翻译为中文：`tools/ops/translate_playback_with_openai.py`
 - 验证输出链路和公开播放数据：`scripts/validate_offline_chain.py`
 
 因此，项目的合理策略是：

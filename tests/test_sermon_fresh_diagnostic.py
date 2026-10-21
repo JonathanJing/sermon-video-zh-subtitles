@@ -10,16 +10,18 @@ import textwrap
 import unittest
 from unittest.mock import patch
 
-from scripts import sermon_fresh_diagnostic_source as fresh
-from scripts import sermon_fresh_diagnostic as entry
-from scripts import sermon_review_contracts as c
-from scripts import sermon_review_budget as budget
-from scripts import sermon_diagnostic_provider as provider
-from scripts import sermon_log_profile as profile
-from scripts import sermon_strict_layer2 as immutable
-from scripts import sermon_accounting as accounting
-from scripts import sermon_bounded_business_callbacks as callbacks
-from scripts import sermon_public_snapshot as aggregate
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.workflows.diagnostic import fresh_source as fresh
+from tongxing_production.workflows.diagnostic import fresh as entry
+from tongxing_production.review import contracts as c
+from tongxing_production.review import review_budget as budget
+from tongxing_production.workflows.diagnostic import provider
+from tongxing_production.observability import profile
+from tongxing_production.text.strict import layer2 as immutable
+from tongxing_production.observability import accounting
+from tongxing_production.workflows.diagnostic import bounded_business_callbacks as callbacks
+from tongxing_production.storage import snapshot as aggregate
+from tongxing_production import path_aliases
 from tests.diagnostic_dag_fixture import DiagnosticDAGFixture
 
 
@@ -58,7 +60,7 @@ class FreshHistoricalPlumbingTests(unittest.TestCase):
     def test_real_closed_parent_resolver_is_frozen_and_forwarded_with_drift_rejected(self):
         from types import SimpleNamespace
         from tests.test_sermon_historical_layer2 import HistoricalLayer2Tests
-        from scripts import sermon_historical_layer2 as historical
+        from tongxing_production.workflows.diagnostic import historical_layer2 as historical
         fixture=HistoricalLayer2Tests();fixture.setUp();self.addCleanup(fixture.doCleanups)
         plan=fixture.build(failed=True);parent_before={path:path.read_bytes() for path in fixture.parent.rglob('*.json')}
         # Source and accounting validity have independent integration suites;
@@ -101,17 +103,17 @@ class FreshPreloadTests(unittest.TestCase):
             from pathlib import Path
             from unittest.mock import patch
             sys.path.insert(0, sys.argv[1])
-            from scripts import sermon_fresh_diagnostic as entry
-            from scripts import sermon_accounting as accounting
-            from scripts import sermon_strict_layer2 as strict
+            from scripts import tongxing_host; from tongxing_production.observability import accounting
+            from tongxing_production.workflows.diagnostic import fresh as entry
+            from tongxing_production.text.strict import layer2 as strict
             from tests.test_sermon_strict_layer2 import StrictAdapterTests
             fixture = StrictAdapterTests()
             fixture.setUp()
             try:
-                assert 'scripts.sermon_trace_artifacts' not in sys.modules
+                assert 'tongxing_production.observability.trace_artifacts' not in sys.modules
                 frozen = entry.preload_execution_modules([
                     Path(sys.argv[1]) / 'scripts/language_review_plugins/diagnostic_structural.py'])
-                assert 'scripts/sermon_trace_artifacts.py' in frozen['loadedProjectCodeSha256']
+                assert 'packages/production/src/tongxing_production/observability/trace_artifacts.py' in frozen['loadedProjectCodeSha256']
                 with patch('urllib.request.OpenerDirector.open', side_effect=AssertionError('network forbidden')) as network:
                     with fixture.session():
                         fixture.generate()
@@ -135,7 +137,7 @@ class FreshPreloadTests(unittest.TestCase):
         environment = {key: value for key, value in os.environ.items()
                        if not key.startswith('SERMON_ACCOUNTING_')}
         result = subprocess.run([sys.executable, '-I', '-B', '-c', child,
-                                 str(Path(entry.__file__).resolve().parents[1])], env=environment,
+                                 str(Path(__file__).resolve().parents[1])], env=environment,
                                 capture_output=True, text=True, timeout=60)
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertEqual(json.loads(result.stdout),
@@ -152,16 +154,17 @@ class FreshPreloadTests(unittest.TestCase):
             repository = Path(sys.argv[1])
             directory = Path(sys.argv[2])
             sys.path.insert(0, str(repository))
-            from scripts import sermon_fresh_diagnostic as entry
-            from scripts import sermon_accounting as accounting
-            from scripts import sermon_log_profile as profile
-            assert 'scripts.sermon_workflow_evidence' not in sys.modules
+            from scripts import tongxing_host; from tongxing_production.observability import accounting
+            from tongxing_production.workflows.diagnostic import fresh as entry
+            from tongxing_production.observability import profile
+            from tongxing_production.path_aliases import resolve
+            assert 'tongxing_production.observability.workflow_evidence' not in sys.modules
             with patch('urllib.request.OpenerDirector.open', side_effect=AssertionError('network forbidden')) as network:
                 frozen = entry.preload_execution_modules([
                     repository / 'scripts/language_review_plugins/diagnostic_structural.py'])
-                assert 'scripts/sermon_workflow_evidence.py' in frozen['loadedProjectCodeSha256']
+                assert resolve('scripts/sermon_workflow_evidence.py') in frozen['loadedProjectCodeSha256']
                 for module in ('sermon_model_call_report', 'sermon_model_call_observation', 'sermon_openai_runtime'):
-                    assert 'scripts/' + module + '.py' in frozen['loadedProjectCodeSha256'], module + ' not preloaded'
+                    assert resolve('scripts/' + module + '.py') in frozen['loadedProjectCodeSha256'], module + ' not preloaded'
                 with profile.session(directory, 'fresh-preload-regression',
                                      work_kind='engineering', evidence_mode='synthetic'):
                     assert accounting.execution_identity() == frozen, 'identity changed at session start'
@@ -178,7 +181,7 @@ class FreshPreloadTests(unittest.TestCase):
                        if not key.startswith('SERMON_ACCOUNTING_')}
         with tempfile.TemporaryDirectory() as directory:
             result = subprocess.run([sys.executable, '-I', '-B', '-c', child,
-                                     str(Path(entry.__file__).resolve().parents[1]),
+                                     str(Path(__file__).resolve().parents[1]),
                                      str(Path(directory) / 'logs')], env=environment,
                                     capture_output=True, text=True, timeout=60)
         self.assertEqual(result.returncode, 0, result.stderr)
@@ -187,7 +190,7 @@ class FreshPreloadTests(unittest.TestCase):
 
 class FreshSourceTests(unittest.TestCase):
     def setUp(self):
-        entry.preload_execution_modules([Path(entry.__file__).resolve().parent/'language_review_plugins/diagnostic_structural.py'])
+        entry.preload_execution_modules([tongxing_host.ROOT/'scripts/language_review_plugins/diagnostic_structural.py'])
         f=DiagnosticDAGFixture();f.setUp();self.addCleanup(f.doCleanups);self.f=f
         self.prior=f.root
         segments=deepcopy(f.aligned)
@@ -332,7 +335,7 @@ class FreshSourceTests(unittest.TestCase):
 
 class FreshDeliveryRoutingTests(unittest.TestCase):
     def test_fixed_fresh_override_passes_actual_bound_plan_context_evidence(self):
-        from scripts import sermon_diagnostic_delivery_preflight as delivery
+        from tongxing_production.workflows.diagnostic import delivery_preflight as delivery
         session = entry.FreshDiagnosticSession.__new__(entry.FreshDiagnosticSession)
         session.root = Path('/synthetic/frozen-root'); session.subject = object()
         session.context = {'bound': 'context'}; session.plan = {'bound': 'plan'}
@@ -350,13 +353,14 @@ class FreshDeliveryRoutingTests(unittest.TestCase):
 
     def test_new_fresh_validator_dependencies_are_eagerly_frozen(self):
         frozen = entry.preload_execution_modules()
-        for path in ('scripts/sermon_fresh_source_evidence.py', 'scripts/sermon_transcription_request.py'):
-            self.assertEqual(frozen['loadedProjectCodeSha256'][path], c.bytes_sha256((Path(entry.__file__).resolve().parents[1]/path).read_bytes()))
+        for key in ('scripts/sermon_fresh_source_evidence.py', 'scripts/sermon_transcription_request.py'):
+            path = path_aliases.resolve(key)
+            self.assertEqual(frozen['loadedProjectCodeSha256'][path], c.bytes_sha256((tongxing_host.ROOT/path).read_bytes()))
 
 
 class ActualFreshDeliverySessionTests(unittest.TestCase):
     def test_actual_check_source_profile_frozen_identity_and_delivery_without_late_import_or_dispatch(self):
-        from scripts import sermon_diagnostic_delivery_preflight as delivery
+        from tongxing_production.workflows.diagnostic import delivery_preflight as delivery
         f = FreshSourceTests(); f.setUp(); self.addCleanup(f.doCleanups)
         actual_identity = accounting.execution_identity
         def fixture_clean_identity():

@@ -4,11 +4,16 @@ import tempfile
 import unittest
 from unittest.mock import Mock, patch
 
-from scripts import production_spark_admission as admission
-from scripts import spark_exclusive_session as sessions
-from scripts import mfa_spark, render_formal_target_language_speech as speech
-from scripts import sermon_source_budget as budgets
-from scripts import run_codex_layer2_test as layer2
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.compute import legacy_openai  # C4: the remote-call group lives here
+from tests.legacy_pipeline_patches import patch_both  # W3b: Layer 1 names live in two modules
+from tongxing_production.compute import spark_admission as admission
+from tongxing_production.compute import spark_exclusive_session as sessions
+from tongxing_production.source import mfa_spark
+from tongxing_production.audio import renderer as speech
+from tongxing_production.source import budget as budgets
+from tongxing_production.compute import provider_http
+from tools.development import run_codex_layer2_test as layer2
 from tests import test_codex_layer2_diagnostic as fixtures
 
 
@@ -113,15 +118,16 @@ class ProductionSessionCallTests(unittest.TestCase):
         # neither check the exclusive session nor take a durable Spark job hold.
         from scripts import generate_notes_with_openai as notes
         from scripts import build_sermon_reading_edition_with_openai as reading
-        from scripts import sermon_pipeline as pipeline
+        from scripts import tongxing_host  # noqa: F401  binds the production package ports
+        from tongxing_production.workflows.dual_pdf import pipeline as pipeline
         spark = Mock(side_effect=AssertionError("API-only caller consulted Spark"))
         with tempfile.TemporaryDirectory() as directory, \
              patch.dict("os.environ", {"SERMON_ACCOUNTING_DIR": directory}), \
              patch.object(sessions.Client, "from_environment", spark), \
              patch.object(notes, "_request_openai_notes", return_value={"ok": 1}) as notes_api, \
              patch.object(reading, "_codex_json", return_value={"ok": 2}) as reading_cli, \
-             patch.object(pipeline, "_chat_json", return_value={"ok": 3}) as text, \
-             patch.object(pipeline, "multipart_request", return_value={"ok": 4}) as audio:
+             patch.object(legacy_openai, "_chat_json", return_value={"ok": 3}) as text, \
+             patch_both("multipart_request", return_value={"ok": 4}) as audio:
             Path(directory, "input").write_text("{}")
             Path(directory,"codex").write_text("#!/bin/sh\nexit 0\n");Path(directory,"codex").chmod(0o700)
             self.assertEqual(notes.request_openai_notes({"model": "test"}, "test-only"), {"ok": 1})
@@ -143,7 +149,9 @@ class ProductionSessionCallTests(unittest.TestCase):
 
     def test_qwen_constructors_deny_before_import_or_model_load(self):
         def denied():raise sessions.SessionError('session_not_ready')
-        from scripts.experiments.replay_fixed_clip_local_models import LocalASR
+        from tests import experiment_modules
+        LocalASR = experiment_modules.line_module(
+            "experiments/spark-diagnostic-audio/replay_fixed_clip_local_models.py").LocalASR
         for cls in (speech.QwenSynthesizer, speech.SparkQwenSynthesizer):
             with self.subTest(cls=cls.__name__):
                 with self.assertRaisesRegex(sessions.SessionError, 'session_not_ready'):
@@ -157,9 +165,9 @@ class ProductionSessionCallTests(unittest.TestCase):
             'requestLimits': dict(budgets.text_limits.DEFAULT_REQUEST_LIMITS)}
         with tempfile.TemporaryDirectory() as directory:
             store = budgets.SourceBudget(Path(directory), authority, verify=lambda: None)
-            with patch.object(budgets.spark_admission, 'require_session', side_effect=AssertionError('Spark consulted')), \
+            with patch.object(admission, 'require_session', side_effect=AssertionError('Spark consulted')), \
                  patch.object(sessions.Client, 'from_environment', side_effect=AssertionError('Spark consulted')), \
-                 patch.object(budgets.http, 'execute', side_effect=OSError('network refused in test')) as network:
+                 patch.object(provider_http, 'execute', side_effect=OSError('network refused in test')) as network:
                 with self.assertRaises(Exception) as caught:
                     store.call(operation='asr.0000', identity={'model':'gpt-transcribe'},
                         bounds={'requests':1,'wallTimeMs':1000,'costMicrousd':1000}, request=b'audio',
@@ -170,7 +178,7 @@ class ProductionSessionCallTests(unittest.TestCase):
     def test_mfa_alignment_denies_before_ssh_and_keeps_preflight_readonly(self):
         options = dict(host='user@spark', python='/env/bin/python', root='/jobs',
             mfa_executable='/env/bin/mfa', dictionary_path='/models/dict', acoustic_model='/models/acoustic')
-        with patch.object(mfa_spark.spark_admission, 'require_session', side_effect=sessions.SessionError('session_not_ready')), \
+        with patch.object(admission, 'require_session', side_effect=sessions.SessionError('session_not_ready')), \
              patch.object(mfa_spark.subprocess, 'run') as ssh:
             with self.assertRaisesRegex(sessions.SessionError, 'session_not_ready'):
                 mfa_spark._call('align', chunks=[{'text':'Source.'}], clip_path=Path('unread-file'), **options)
@@ -187,10 +195,11 @@ class ProductionSessionCallTests(unittest.TestCase):
 
 
 def test_normal_supervisor_default_cli_takes_no_spark_session(tmp_path):
-    from scripts import sermon_codex_supervisor as supervisor
-    from scripts import sermon_codex_transport as transport
+    from tongxing_production.workflows.supervisor import codex as supervisor
+    from scripts import tongxing_host  # noqa: F401  binds the production package ports
+    from tongxing_production.compute.transports import codex_cli as transport
     from tests import test_sermon_codex_supervisor as support
-    from scripts.run_sermon_production_supervisor_agent import SupervisorDecision, supervisor_instructions, verify_decision
+    from tongxing_production.workflows.supervisor.agent import SupervisorDecision, supervisor_instructions, verify_decision
     args, config = support.setup(tmp_path)
     with patch.object(supervisor.workflow, 'snapshot', return_value=support.state('request_window_approval', True)), \
          patch.object(supervisor.spark_admission, 'require_session', side_effect=AssertionError('Spark consulted')), \

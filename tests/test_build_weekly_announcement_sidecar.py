@@ -4,7 +4,7 @@ from pathlib import Path
 import struct
 import unittest
 
-spec = importlib.util.spec_from_file_location("weekly_announcements", Path(__file__).resolve().parents[1] / "scripts/build_weekly_announcement_sidecar.py")
+spec = importlib.util.spec_from_file_location("weekly_announcements", Path(__file__).resolve().parents[1] / "packages/production/src/tongxing_production/delivery/posters/announcement_sidecar.py")
 module = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(module)
 
@@ -28,6 +28,32 @@ class WeeklyAnnouncementProducerTests(unittest.TestCase):
         self.assertEqual(item["releaseSHA256"], catalog["pages"][0]["targets"]["zh-Hans"]["releasePackageJsonSha256"])
         self.assertEqual(item["poster"]["width"], 1080)
         self.assertFalse(evidence["metadataRebound"])
+
+    def test_v5_mixed_source_announcement_uses_edition_release_and_family_route(self):
+        catalog, release, receipt, poster = self.fixture()
+        source = 'c' * 64
+        catalog.update(schemaVersion='sermon-multilingual-catalog-v5')
+        page = catalog['pages'][0]
+        page['sourceMode'] = 'per_target'; del page['sourceIdentitySha256']
+        page['targets']['zh-Hans'].update(editionId='broadcast-edition', sourceIdentitySha256=source,
+                                        sourceMediaSha256='d' * 64,
+                                        videoDelivery=dict(schemaVersion='sermon-video-delivery-v1',
+                                            canonicalUrl='/pages/broadcast-edition/full-video-browser.mp4',
+                                            storageUrl='https://storage.googleapis.com/bucket/broadcast.mp4',
+                                            sha256='d' * 64, bytes=1234))
+        value = json.loads(release)
+        value.update(pageId='broadcast-edition', englishSourcePackageJsonSha256=source)
+        release = json.dumps(value).encode()
+        page['targets']['zh-Hans']['releasePackageJsonSha256'] = module.digest(release)
+        receipt['source'].update(editionId='broadcast-edition', sourceIdentitySha256=source,
+                                 releasePackageSha256=module.digest(release))
+        item, evidence = module.build(catalog, release, receipt, poster, 'zh-Hans', 'week-1')
+        self.assertEqual(item['pageID'], 'week-1')
+        self.assertEqual(item['sourceIdentitySHA256'], source)
+        self.assertEqual(evidence['pageID'], 'week-1')
+        receipt['source']['sourceIdentitySha256'] = 'e' * 64
+        with self.assertRaisesRegex(ValueError, 'source/page/language changed'):
+            module.build(catalog, release, receipt, poster, 'zh-Hans', 'week-1')
 
     def test_metadata_rebind_is_explicit_and_keeps_both_receipts(self):
         catalog, release, receipt, poster = self.fixture()

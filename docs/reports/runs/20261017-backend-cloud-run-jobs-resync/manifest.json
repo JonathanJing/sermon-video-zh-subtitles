@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-backend-cloud-run-jobs-resync",
+  "runs": [
+    {
+      "label": "backend-cloud-run-jobs-resync-20261017",
+      "source": "/private/tmp/backend-cloud-run-jobs-20261017/artifacts/backend-cloud-run-jobs-resync-20261017",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "backend-cloud-run-jobs-resync-20261017",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 239,
+      "truncated": false,
+      "sha256": "5ce0f4013f10d27548a9bf9556bfe8ef9d201463bf9616ad6079e2be0df44368",
+      "redactions": {}
+    },
+    {
+      "run": "backend-cloud-run-jobs-resync-20261017",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 814,
+      "truncated": false,
+      "sha256": "d0a5dacce12e69bb561a9bd00cf6daec1eaaead9735abcca6ffdddfc8096cf49",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

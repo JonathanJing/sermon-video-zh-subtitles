@@ -5,7 +5,7 @@ import unittest
 from argparse import Namespace
 from pathlib import Path
 
-import scripts.write_1130_live_realtime_run_plan as mod
+import tools.ops.write_1130_live_realtime_run_plan as mod
 
 
 class Write1130LiveRealtimeRunPlanTest(unittest.TestCase):
@@ -27,7 +27,7 @@ class Write1130LiveRealtimeRunPlanTest(unittest.TestCase):
         self.assertTrue(browser["default"])
         self.assertEqual(browser["expectedAudioSourceKind"], "ipad_mic")
         server_command = report["operatorChoices"][1]["command"]
-        self.assertIn("scripts/run_realtime_live_session.py", server_command)
+        self.assertIn("tools/ops/run_realtime_live_session.py", server_command)
         self.assertEqual(
             server_command[server_command.index("--realtime-model") + 1],
             "gpt-realtime-translate",
@@ -35,15 +35,15 @@ class Write1130LiveRealtimeRunPlanTest(unittest.TestCase):
         self.assertEqual(server_command[server_command.index("--stable-model") + 1], "gpt-5.4-mini")
         self.assertIn("--require-stable-correction", server_command)
         stabilizer_command = report["stabilizerFallbackCommand"]
-        self.assertIn("scripts/run_realtime_stabilizer_loop.py", stabilizer_command)
+        self.assertIn("tools/ops/run_realtime_stabilizer_loop.py", stabilizer_command)
         self.assertEqual(stabilizer_command[stabilizer_command.index("--model") + 1], "gpt-5.4-mini")
         live_validation_commands = json.dumps(report["liveValidationCommands"])
-        self.assertIn("scripts/run_realtime_public_sse_smoke.py", live_validation_commands)
+        self.assertIn("tools/ops/run_realtime_public_sse_smoke.py", live_validation_commands)
         self.assertIn("--web-realtime-contract-report", live_validation_commands)
         self.assertIn("artifacts/evidence/web-realtime-contract.json", live_validation_commands)
         offline_commands = json.dumps(report["postLiveOfflineHandoff"]["commands"])
         no_caption_runner = report["postLiveOfflineHandoff"]["noCaptionRunnerCommand"]
-        self.assertIn("scripts/run_no_caption_archive_asr_route.py", no_caption_runner)
+        self.assertIn("tools/ops/run_no_caption_archive_asr_route.py", no_caption_runner)
         self.assertEqual(no_caption_runner[no_caption_runner.index("--asr-model") + 1], "gpt-4o-transcribe")
         self.assertEqual(no_caption_runner[no_caption_runner.index("--translation-model") + 1], "gpt-5.4-mini")
         self.assertIn("scripts/validate_offline_chain.py", offline_commands)

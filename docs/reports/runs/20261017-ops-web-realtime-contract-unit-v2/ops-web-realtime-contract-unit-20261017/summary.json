@@ -1,0 +1,31 @@
+{
+  "schemaVersion": "local-code-check-summary-v1",
+  "baseCommit": "55d10a9e",
+  "scope": "Move scripts/validate_web_realtime_contract.py to tools/ops with a legacy facade",
+  "checks": [
+    {
+      "name": "targeted_unittest",
+      "command": "python3 -m unittest discover -s tests -p test_validate_web_realtime_contract.py -v",
+      "status": "passed",
+      "testsRun": 3,
+      "failures": 0,
+      "errors": 0,
+      "elapsedSecondsReportedByUnittest": 0.517
+    },
+    {
+      "name": "cli_and_import_parity",
+      "status": "passed",
+      "detail": "Legacy script, new script and python -m legacy script returned status ok with identical JSON fields except generatedAt; import paths resolved to one module object."
+    },
+    {
+      "name": "git_diff_check",
+      "status": "passed",
+      "detail": "Unstaged diff check passed after migration; staged move later exposed pre-existing trailing whitespace in the moved source, pending cleanup."
+    }
+  ],
+  "limits": [
+    "Node uses an in-memory simulated fetch in vm.runInNewContext.",
+    "No external service, browser device, production readback or deploy was exercised."
+  ],
+  "status": "passed"
+}

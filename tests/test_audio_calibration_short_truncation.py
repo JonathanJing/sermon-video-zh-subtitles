@@ -1,5 +1,6 @@
 """Very short Chinese sentences get no truncation trial; other kinds and locales are unchanged."""
-from scripts import auto_qc_seeded_errors as seeded
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.review import seeded_errors as seeded
 from tests import auto_qc_fixtures as fixtures
 
 
@@ -39,8 +40,9 @@ def test_short_units_do_not_consume_truncation_quota():
 
 
 def test_all_short_preflight_has_no_truncation_but_other_kinds_are_available():
-    from scripts import run_machine_qc_audio_test as driver
-    coverage = driver.audio_coverage({"units": units(["一", "二"])}, "zh-Hans")
+    from tongxing_production.review import qc_audio_run as driver
+    # Short units whose numbers are in a numeric context, so only truncation lacks trials.
+    coverage = driver.audio_coverage({"units": units(["第一。", "三十。"])}, "zh-Hans")
     assert coverage["untestableKinds"] == ["truncated"]
     assert coverage["truncationEligibleTrials"] == 0
     coverage = driver.audio_coverage({"units": units(["一"] * driver.MAX_TRIALS + [LONG_ZH])}, "zh-Hans")
@@ -48,7 +50,7 @@ def test_all_short_preflight_has_no_truncation_but_other_kinds_are_available():
 
 
 def test_calibration_schema_legacy_compatibility_exclusion_validation():
-    from scripts import machine_quality_waiver as waiver
+    from tongxing_production.review import waiver
     base = {"schemaVersion": waiver.LEGACY_CALIBRATION_SCHEMA, "locale": "zh-Hans",
             "implementationSha256": "frozen", "kinds": {"audio.truncated":
             {"trials": 2, "detected": 2, "rate": 1.0}}}
@@ -66,7 +68,7 @@ def test_calibration_schema_legacy_compatibility_exclusion_validation():
 
 
 def test_producer_persists_v3_and_zero_truncation_still_blocks_waiver():
-    from scripts import machine_quality_waiver as waiver
+    from tongxing_production.review import waiver
     receipt = seeded.calibrate("zh-Hans", fixtures.groups("zh-Hans"), units(["一", "二"]))
     assert receipt["schemaVersion"] == "sermon-auto-qc-calibration-v3"
     assert receipt["kinds"]["audio.truncated"]["excludedShortGroupIds"] == ["g0", "g1"]
@@ -75,8 +77,8 @@ def test_producer_persists_v3_and_zero_truncation_still_blocks_waiver():
 
 
 def test_release_consumer_accepts_unchanged_v2_and_current_v3_counts():
-    from scripts import machine_quality_release_basis as basis
-    from scripts import machine_quality_waiver as waiver
+    from tongxing_production.review import release_basis as basis
+    from tongxing_production.review import waiver
     from tests.test_machine_quality_release_basis import calibration, IMPLEMENTATION
     receipt = calibration()
     current = basis.calibration_summary(receipt, "ko", IMPLEMENTATION, require_audio=True)

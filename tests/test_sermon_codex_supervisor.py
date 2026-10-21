@@ -2,9 +2,10 @@ from argparse import Namespace
 from pathlib import Path
 from unittest.mock import patch
 
-from scripts import sermon_codex_supervisor as cli
-from scripts import sermon_production_supervisor as production
-from scripts.run_sermon_production_supervisor_agent import SupervisorDecision, supervisor_instructions, verify_decision
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.workflows.supervisor import codex as cli
+from tongxing_production.workflows.supervisor import production
+from tongxing_production.workflows.supervisor.agent import SupervisorDecision, supervisor_instructions, verify_decision
 
 
 def setup(tmp_path, **changes):

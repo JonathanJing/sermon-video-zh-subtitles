@@ -1,0 +1,32 @@
+............................................ [ 13%]
+................................................... [ 30%]
+................................................................. [ 50%]
+.....................s.................................... [ 69%]
+..s............................................................. [ 89%]
+.................................                                      [100%]
+=================================== FAILURES ===================================
+_ CIChangeScopeTests.test_native_suite_covers_every_current_shared_native_dependency (consumer='test_mixed_source_catalog_v5.py') _
+
+self = <test_ci_change_scope.CIChangeScopeTests testMethod=test_native_suite_covers_every_current_shared_native_dependency>
+
+    def test_native_suite_covers_every_current_shared_native_dependency(self):
+        # Guard additions to the cross-client fixtures from silently escaping the
+        # smaller suite. Names are discovered from consumers, not a frozen list.
+        text = WORKFLOW.read_text(encoding="utf-8")
+        start = text.index("  native_contracts:\n")
+        end = text.index("  test_group:\n", start)
+        native_job = text[start:end]
+        for path in (ROOT / "tests").glob("test_*.py"):
+            if path.name == Path(__file__).name:
+                continue
+            content = path.read_text(encoding="utf-8")
+            if "apps/tongxing-ios/" in content:
+                with self.subTest(consumer=path.name):
+>                   self.assertRegex(native_job, rf"\btests\.{re.escape(path.stem)}\b")
+E                   AssertionError: Regex didn't match: '\\btests\\.test_mixed_source_catalog_v5\\b' not found in '  native_contracts:\n    name: Native and shared client contracts\n    needs: changes\n    if: needs.changes.outputs.scope == \'native\'\n    runs-on: ubuntu-latest\n    timeout-minutes: 10\n    steps:\n      - name: Check out repository\n        uses: actions/checkout@v7\n\n      - name: Set up Python\n        uses: actions/setup-python@v7\n        with:\n          python-version: "3.12"\n          cache: pip\n\n      - name: Install contract dependency\n        run: python -m pip install \'jsonschema>=4.23,<5\'\n\n      - name: Check Python native and shared fixture contracts\n        run: >-\n          python -m unittest\n          tests.test_ci_change_scope\n          tests.test_docs_change_gate\n          tests.test_ios_ci_route\n          tests.test_xcode_cloud_archive_admission\n          tests.test_ios_testflight_release\n          tests.test_ios_apns_single_device\n          tests.test_tongxing_interface_locales\n          tests.test_shared_client_contract_fixtures\n          tests.test_shared_text_only_release_fixtures\n          tests.test_shared_machine_checked_fixtures\n          tests.test_shared_video_delivery_fixtures\n          tests.test_check_tongxing_icon_alignment\n          tests.test_pipeline_compatibility_gate\n\n      # A PR confined to apps/tongxing-ios/ never reaches the full suite, yet\n      # the SF Symbols it uses must still resolve to the shared web sprite.\n      - name: Check native symbols against the shared icon sprite\n        run: python tools/development/check_tongxing_icon_alignment.py\n\n      - name: Check Web consumers of shared native fixtures\n        run: >-\n          node --test\n          apps/listening-web/shared-catalog-targets.test.mjs\n          apps/listening-web/shared-catalog-pages.test.mjs\n          apps/listening-web/shared-release-contracts.test.mjs\n          apps/listening-web/shared-text-onl ...[line truncated]
+
+tests/test_ci_change_scope.py:166: AssertionError
+=========================== short test summary info ============================
+SUBFAILED(consumer='test_mixed_source_catalog_v5.py') tests/test_ci_change_scope.py::CIChangeScopeTests::test_native_suite_covers_every_current_shared_native_dependency
+1 failed, 313 passed, 2 skipped, 1015 subtests passed in 486.84s (0:08:06)
+exit=1

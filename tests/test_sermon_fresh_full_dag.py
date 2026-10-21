@@ -17,15 +17,16 @@ import time
 import unittest
 from unittest.mock import patch
 
-from scripts import sermon_accounting as accounting
-from scripts import sermon_completion as completion
-from scripts import sermon_fresh_full_dag as dag
-from scripts import sermon_fresh_source_prefect as source_engine
-from scripts import sermon_log_contract as logs
-from scripts import sermon_mock_tts_contract as mock_contract
-from scripts import sermon_public_snapshot as public
-from scripts import sermon_review_contracts as c
-from scripts import weekly_pipeline_report as weekly
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.observability import accounting
+from tongxing_production.observability import completion
+from tongxing_production.workflows.diagnostic import fresh_full_dag as dag
+from tongxing_production.workflows.diagnostic import fresh_source_prefect as source_engine
+from tongxing_production.observability import log_contract as logs
+from tongxing_production.compute.mock_tts import contract as mock_contract
+from tongxing_production.storage import snapshot as public
+from tongxing_production.review import contracts as c
+from tongxing_production.observability import weekly_projection as weekly
 from tests.fresh_full_dag_fixture import (
     FullFreshDAGFixture, LOCALE, SOURCE_NODES, UNITS,
     assert_provider_bounds_unchanged, immutable_files, wait_for_original_jobs, preserve_full_evidence,
@@ -268,7 +269,7 @@ class ActualFreshFullPrefectTests(unittest.TestCase):
             'run_clean_scenario(sys.argv[1], sys.argv[2])')
         environment = {key: value for key, value in os.environ.items() if not key.startswith('PREFECT_')}
         with tempfile.TemporaryDirectory() as directory:
-            result = subprocess.run([sys.executable, '-c', launch, str(Path(dag.__file__).resolve().parents[1]), scenario],
+            result = subprocess.run([sys.executable, '-c', launch, str(Path(__file__).resolve().parents[1]), scenario],
                 cwd=directory, env=environment, capture_output=True, text=True, timeout=1500)
         self.assertEqual(result.returncode, 0, result.stdout[-5000:]+result.stderr[-16000:])
         self.assertIn('actual-fresh-full-'+scenario+'-ok', result.stdout)

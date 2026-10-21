@@ -1,0 +1,12 @@
+{
+  "scope": "Isolated T6 strict review gate candidate from origin/dev 9a948e1a",
+  "results": {
+    "reviewGateAndPackage": "37 tests passed in 4.255 seconds",
+    "strictCallersAndRepair": "60 tests passed in 23.466 seconds",
+    "reviewGateAndPathAliases": "34 tests ran: 33 passed, 1 skipped, in 0.491 seconds",
+    "legacyCli": "python scripts/sermon_review_gate.py exited 0 with no output",
+    "implementation": "Moved body byte identical except contracts import; old/new module identity asserted",
+    "diffCheck": "git diff --cached --check passed"
+  },
+  "limits": "Local deterministic tests only; no active production, paid model, Spark, or public delivery. Merge gated by the frozen Layer 2 run."
+}

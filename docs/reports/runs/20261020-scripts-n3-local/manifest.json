@@ -1,0 +1,45 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261020-scripts-n3-local",
+  "runs": [
+    {
+      "label": "scripts-n3-local",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.claude/worktrees/vigorous-engelbart-aff50d/artifacts/scripts-n3-local",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "scripts-n3-local",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 1458,
+      "truncated": false,
+      "sha256": "5d1fb2325e2880a5daa50bbeca64b3f4af3bd4664802727592b9ad0da43888de",
+      "redactions": {}
+    },
+    {
+      "run": "scripts-n3-local",
+      "path": "pytest.log",
+      "kind": "log",
+      "bytes": 2514,
+      "truncated": false,
+      "sha256": "a2868a602e0545108657c7870fe41daea496f1bd819a46a7034e33d46b6ff452",
+      "redactions": {}
+    },
+    {
+      "run": "scripts-n3-local",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 2727,
+      "truncated": false,
+      "sha256": "830e1b421cae65a2c8f531430921e7eaf775609f81fdca924aa9c831ed473b8e",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

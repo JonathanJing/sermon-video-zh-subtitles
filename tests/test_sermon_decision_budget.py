@@ -7,9 +7,11 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-from scripts import sermon_bounded_decision as decision
-from scripts import sermon_decision_budget as subject
-from scripts import sermon_workflow_jobs as jobs
+from tests.job_store_patches import patch_job_store  # G1: job store primitives live in two modules
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.orchestration.supervisor import bounded_decision as decision
+from tongxing_production.orchestration.supervisor import decision_budget as subject
+from tongxing_production.orchestration import jobs
 
 
 def packet(remaining=2, revision='b' * 64):
@@ -67,7 +69,7 @@ class DecisionBudgetTests(unittest.TestCase):
     def test_process_death_after_reservation_never_reopens_budget(self):
         program = '''
 import json, os, sys
-from scripts.sermon_decision_budget import Budget
+from tongxing_production.orchestration.supervisor.decision_budget import Budget
 p=json.loads(sys.argv[2]); assert Budget(sys.argv[1],p['productionRunId']).reserve(p)
 os._exit(77)
 '''
@@ -83,7 +85,7 @@ os._exit(77)
         program = '''
 import json,sys,time
 from pathlib import Path
-from scripts.sermon_decision_budget import Budget
+from tongxing_production.orchestration.supervisor.decision_budget import Budget
 p=json.loads(sys.argv[2]); deadline=time.monotonic()+5
 while not Path(sys.argv[3]).exists():
     if time.monotonic()>deadline: raise RuntimeError('barrier timeout')
@@ -128,14 +130,14 @@ print(json.dumps(Budget(sys.argv[1],p['productionRunId']).reserve(p)))
         def persist(path, value):
             if value['attempts'][-1]['status'] == 'returned': raise OSError('disk full')
             return original(path, value)
-        with patch.object(jobs, '_persist', side_effect=persist):
+        with patch_job_store("_persist", side_effect=persist):
             result = self.propose(packet())
         self.assertEqual(result['reasonCode'], 'decision_return_not_durably_recorded')
         self.assertEqual(self.budget.remaining(), 0)
         self.assertFalse(result['dispatchEnabled'])
 
     def test_reservation_write_failure_happens_before_call_and_cannot_reset(self):
-        with patch.object(jobs, '_persist', side_effect=OSError('disk full')), \
+        with patch_job_store("_persist", side_effect=OSError('disk full')), \
              patch('tests.test_sermon_decision_budget.response') as respond:
             with self.assertRaises(OSError): self.propose(packet(), respond)
             respond.assert_not_called()
@@ -169,8 +171,8 @@ print(json.dumps(Budget(sys.argv[1],p['productionRunId']).reserve(p)))
             self.assertEqual(self.budget.remaining(), 0)
             events.append(('responder', None))
             return response(p)
-        with patch.object(jobs, '_sync_directory', side_effect=sync), \
-             patch.object(jobs, '_persist', side_effect=persist), \
+        with patch_job_store("_sync_directory", side_effect=sync), \
+             patch_job_store("_persist", side_effect=persist), \
              patch.object(os, 'fsync', side_effect=fsync):
             result = self.propose(packet(), respond)
         self.assertEqual(result['status'], 'proposal_requires_locked_admission')
@@ -191,7 +193,7 @@ print(json.dumps(Budget(sys.argv[1],p['productionRunId']).reserve(p)))
                               self.root.parent.parent.parent):
                 self.assertIn(directory, synced)
             return response(p)
-        with patch.object(jobs, '_sync_directory', side_effect=sync):
+        with patch_job_store("_sync_directory", side_effect=sync):
             result = self.propose(packet(), respond)
         self.assertEqual(result['status'], 'proposal_requires_locked_admission')
 
@@ -210,7 +212,7 @@ print(json.dumps(Budget(sys.argv[1],p['productionRunId']).reserve(p)))
                 def fsync(fd):
                     if boundary == 'lock': raise OSError('injected lock persistence failure')
                     original_fsync(fd)
-                with patch.object(jobs, '_sync_directory', side_effect=sync), \
+                with patch_job_store("_sync_directory", side_effect=sync), \
                      patch.object(os, 'fsync', side_effect=fsync), \
                      patch('tests.test_sermon_decision_budget.response') as respond:
                     with self.assertRaises(OSError): self.propose(packet(), respond)

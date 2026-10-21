@@ -1,0 +1,39 @@
+{
+  "status": "l3_clip_completed_machine_waiver",
+  "exitCode": 0,
+  "deliveryType": "test",
+  "purpose": "Full Spark Layer 3 on the 16-unit es clip: render, compact, screen, package, audio QC (machine waiver)",
+  "startedAt": "2026-10-20T18:52:00Z",
+  "endedAt": "2026-10-20T19:03:00Z",
+  "code": "dev merge of #1207; Spark code repo-402ae1ca",
+  "results": {
+    "units": 16,
+    "render": {
+      "exitCode": 1,
+      "status": "known_terminal_unit_flags",
+      "seconds": 94
+    },
+    "compact": {
+      "seconds": 17
+    },
+    "screen": {
+      "seconds": 36
+    },
+    "package": {
+      "seconds": 5,
+      "sha256": "9432253d8c21ee41c34176cac959e466f6ed413d7e14873b8da564cbaa41248a"
+    },
+    "audioQc": {
+      "status": "pass",
+      "seconds": 280,
+      "waiver": "machine_quality_waiver",
+      "waiverPath": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.agents/worktrees/codex/group-pipeline-orchestration/artifacts/clip-e2e-20261020-grp-es-full/aqc/es/es/audio-waiver-446ef9aa6192ea47.json"
+    },
+    "apiRequests": 239,
+    "settledUsd": 0.299,
+    "reservedUsd": 5.525,
+    "budgetTotalUsd": 6,
+    "humanApproval": false,
+    "releaseEligible": false
+  }
+}

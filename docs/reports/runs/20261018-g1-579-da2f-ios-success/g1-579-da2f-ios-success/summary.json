@@ -1,0 +1,39 @@
+{
+  "schemaVersion": "ci-run-summary-v1",
+  "runId": 39089637647,
+  "url": "https://github.com/JonathanJing/sermon-video-zh-subtitles/actions/runs/39089637647",
+  "headSha": "da2f6ffc6961839fda795f9fcaa02b7be2f672df",
+  "workflow": "Tongxing iOS",
+  "jobs": [
+    {
+      "name": "changes",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "ios-validation (remaining-listening)",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "ios-validation (app-system)",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "ios-validation (transcript-collapse)",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "contract-validation",
+      "status": "completed",
+      "conclusion": "skipped"
+    },
+    {
+      "name": "native-client",
+      "status": "completed",
+      "conclusion": "success"
+    }
+  ]
+}

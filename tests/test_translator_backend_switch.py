@@ -2,13 +2,14 @@ import copy
 import json
 import unittest
 
-from scripts import canonical_layer2_budget as budget
-from scripts import claude_layer2_transport as claude
-from scripts import run_target_language_models as models
-from scripts import sermon_provider_limits as limits
-from scripts import sermon_review_budget as ledger
-from scripts import sermon_workflow_jobs as jobs
-from scripts import target_language_policy as policy_tools
+from tongxing_production.text import budget
+from tongxing_production.compute.transports import claude_layer2 as claude
+from tongxing_production.text import models
+from tongxing_production.compute import provider_limits as limits
+from tongxing_production.review import review_budget as ledger
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.orchestration import jobs
+from tongxing_production.text import policy as policy_tools
 from tests import test_canonical_layer2_controller as fixtures
 
 
@@ -281,7 +282,7 @@ class ClaudeCliOpusBackendTests(unittest.TestCase):
     def test_controller_builds_one_subscription_transport_per_role(self):
         from pathlib import Path
         from unittest import mock
-        from scripts import canonical_layer2_controller as controller
+        from tongxing_production.text import controller
         built = []
 
         class Recording:
@@ -292,6 +293,21 @@ class ClaudeCliOpusBackendTests(unittest.TestCase):
         self.assertEqual(sorted(transports), ['reviewer', 'translator'])
         self.assertEqual(sorted(built), [(CLAUDE, 'high', Path('/lane/claude-calls')),
                                          (CLAUDE, 'medium', Path('/lane/claude-calls'))])
+
+    def test_claude_cache_identity_follows_transports_not_revision_budget(self):
+        from tongxing_production.text import controller
+        transports = self.transports()
+        for role, transport in transports.items():
+            transport.execution_identity = {'model': CLAUDE, 'role': role, 'effort': transport.effort}
+        first = controller.claude_model_transport_identity(transports)
+        # A QC revision has a new budget authorization; its unchanged groups must
+        # still prove the same model payload and transport fingerprint.
+        second = controller.claude_model_transport_identity(transports)
+        self.assertEqual(first, second)
+        self.assertNotIn('budgetAuthorizationSha256', first)
+        transports['reviewer'].execution_identity = {**transports['reviewer'].execution_identity,
+                                                     'effort': 'high'}
+        self.assertNotEqual(first, controller.claude_model_transport_identity(transports))
 
 
 class ClaudeCliOpusPlanTests(unittest.TestCase):

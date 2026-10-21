@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-sidecar-v2-report-schema-test",
+  "runs": [
+    {
+      "label": "sidecar-report-schema-test",
+      "source": "~/.codex/worktrees/sidecar-p1-integration/sermon-video-zh-subtitles/artifacts/sidecar-report-schema-test",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "sidecar-report-schema-test",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 166,
+      "truncated": false,
+      "sha256": "fd16eeff94088cd59209f62947156de84112f9721298fed2a760fbfef21b7c22",
+      "redactions": {}
+    },
+    {
+      "run": "sidecar-report-schema-test",
+      "path": "timings.tsv",
+      "kind": "whole",
+      "bytes": 45,
+      "truncated": false,
+      "sha256": "26414f6ff9d23562b49b87298294b8b3471108af40e3919ab41454f4e4c499e2",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

@@ -1,0 +1,58 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-dev-worktree-venv-tests",
+  "runs": [
+    {
+      "label": "dev-worktree-venv-tests-20261017",
+      "source": "~/.codex/worktrees/dev-worktree-venv/sermon-video-zh-subtitles/artifacts/dev-worktree-venv-tests-20261017",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "dev-worktree-venv-tests-20261017",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 645,
+      "truncated": false,
+      "sha256": "35fb1c667bf02bdeb7e8a209b8226c33ad689e5507e1c174e2078e7ef9f51692",
+      "redactions": {}
+    },
+    {
+      "run": "dev-worktree-venv-tests-20261017",
+      "path": "scripts-worktree_venv.py.log",
+      "kind": "log",
+      "bytes": 123,
+      "truncated": false,
+      "sha256": "85386c92a7d8252f064278a34319a31c4ed4090311923ea0ca9db7041e949dd9",
+      "redactions": {
+        "home_dir": 1
+      }
+    },
+    {
+      "run": "dev-worktree-venv-tests-20261017",
+      "path": "test.log",
+      "kind": "log",
+      "bytes": 100,
+      "truncated": false,
+      "sha256": "b91baab2427f9ba9bb3e196d4348af8cef3a51a20f12835ada411a182c451c81",
+      "redactions": {}
+    },
+    {
+      "run": "dev-worktree-venv-tests-20261017",
+      "path": "tools-development-worktree_venv.py.log",
+      "kind": "log",
+      "bytes": 123,
+      "truncated": false,
+      "sha256": "85386c92a7d8252f064278a34319a31c4ed4090311923ea0ca9db7041e949dd9",
+      "redactions": {
+        "home_dir": 1
+      }
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

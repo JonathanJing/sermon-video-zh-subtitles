@@ -1,0 +1,33 @@
+{
+  "status": "passed",
+  "codePr": 1165,
+  "facadesDeleted": 13,
+  "facadesCallersOnlyG1": 6,
+  "surveyAfter": {
+    "after": 152,
+    "total": 152
+  },
+  "unittestShards": {
+    "count": 10,
+    "tests": 5944,
+    "failuresFixedInBranch": 5,
+    "failuresPreexistingOnDev": 2,
+    "importErrorsVenvOnly": 2
+  },
+  "changedTests": {
+    "files": 110,
+    "failedPreexistingOnDev": 1
+  },
+  "testIds": {
+    "unittestBefore": 5943,
+    "unittestAfter": 5944,
+    "added": 1,
+    "removedPytestParams": 1
+  },
+  "l2CodeIdentity": {
+    "dev": "e04411e924de8d251f2d3975b2e897e8be0c1309e62f56ce7e8c5dac74279b7d",
+    "branch": "b45c428a294ead426df72a8abf4540a0654a137f169543552c968a1015c33e9c"
+  },
+  "g1IdentitiesChanged": false,
+  "producerCompatibility": "c-batch-facade-import-removal-v12"
+}

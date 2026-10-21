@@ -1,0 +1,70 @@
+{
+  "status": "passed",
+  "runId": 39073169165,
+  "workflow": "Python tests",
+  "headSha": "2c4d3747a11c1b6a0ec43525862f23ffa1d0fe9f",
+  "url": "https://github.com/JonathanJing/sermon-video-zh-subtitles/actions/runs/39073169165",
+  "jobs": {
+    "changes": {
+      "conclusion": "success",
+      "startedAt": "2026-10-17T21:59:06Z",
+      "completedAt": "2026-10-17T21:59:17Z"
+    },
+    "test-group (root-0)": {
+      "conclusion": "success",
+      "startedAt": "2026-10-17T22:01:59Z",
+      "completedAt": "2026-10-17T22:13:58Z"
+    },
+    "test-group (root-5)": {
+      "conclusion": "success",
+      "startedAt": "2026-10-17T22:05:09Z",
+      "completedAt": "2026-10-17T22:17:04Z"
+    },
+    "test-group (root-7)": {
+      "conclusion": "success",
+      "startedAt": "2026-10-17T22:02:20Z",
+      "completedAt": "2026-10-17T22:19:19Z"
+    },
+    "test-group (root-2)": {
+      "conclusion": "success",
+      "startedAt": "2026-10-17T22:07:18Z",
+      "completedAt": "2026-10-17T22:20:40Z"
+    },
+    "test-group (root-4)": {
+      "conclusion": "success",
+      "startedAt": "2026-10-17T22:07:49Z",
+      "completedAt": "2026-10-17T22:17:46Z"
+    },
+    "test-group (root-3)": {
+      "conclusion": "success",
+      "startedAt": "2026-10-17T22:14:09Z",
+      "completedAt": "2026-10-17T22:22:40Z"
+    },
+    "test-group (root-6)": {
+      "conclusion": "success",
+      "startedAt": "2026-10-17T22:11:16Z",
+      "completedAt": "2026-10-17T22:24:29Z"
+    },
+    "test-group (root-1)": {
+      "conclusion": "success",
+      "startedAt": "2026-10-17T22:14:55Z",
+      "completedAt": "2026-10-17T22:26:59Z"
+    },
+    "Native and shared client contracts": {
+      "conclusion": "skipped",
+      "startedAt": "2026-10-17T21:59:18Z",
+      "completedAt": "2026-10-17T21:59:17Z"
+    },
+    "unittest": {
+      "conclusion": "success",
+      "startedAt": "2026-10-17T22:27:02Z",
+      "completedAt": "2026-10-17T22:27:05Z"
+    }
+  },
+  "scope": "PR #828 Cloud Run realtime plan helper file move",
+  "limitations": [
+    "Code CI only; no Cloud Run update or remote readback",
+    "Native and shared client contracts skipped",
+    "No HTTP, publication, device or venue acceptance"
+  ]
+}

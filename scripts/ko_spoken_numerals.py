@@ -20,10 +20,14 @@ import re
 from pathlib import Path
 
 try:
-    from scripts import sermon_sentence_interpretation as identity
+    from scripts import tongxing_host  # noqa: F401  binds the production package ports
+    from tongxing_production.source import sentence_interpretation as identity
     from scripts.language_review_plugins.auto_qc_text_common import korean_sino, _KO_BOOK_CODES
 except ModuleNotFoundError:  # run as scripts/ko_spoken_numerals.py
-    import sermon_sentence_interpretation as identity
+    import sys
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+    from scripts import tongxing_host  # noqa: F401  binds the production package ports
+    from tongxing_production.source import sentence_interpretation as identity
     from language_review_plugins.auto_qc_text_common import korean_sino, _KO_BOOK_CODES
 
 RULE_V2 = "ko-sino-chapter-verse-numerals-v2"

@@ -1,0 +1,41 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "tongxing-production"
+version = "0.1.0"
+description = "Production Python package for the sermon four-layer pipeline; modules move here from scripts/ one at a time."
+requires-python = ">=3.12"
+# Base import must stay light: no torch, MLX, orchestration SDK or provider
+# client here. Hardware and engine adapters declare their own optional extras
+# when they move in.
+dependencies = [
+    "jsonschema>=4.23,<5",
+]
+
+[project.optional-dependencies]
+# The Hosting adapter (tongxing_production.storage.hosting, L4 D3) opens an ADC
+# session with AuthorizedSession; nothing else in the package imports google-auth.
+hosting = [
+    "google-auth[requests]>=2.35,<3",
+]
+# The mobile reading PDF renderer imports ReportLab only when that workflow is
+# selected; orchestration and text-only installs do not need the PDF library.
+pdf = [
+    "reportlab>=4.2,<5",
+]
+# The post-live timeline fetches source metadata through requests at import
+# time; text-only and PDF-only installs do not need the HTTP client.
+timeline = [
+    "requests>=2.32,<3",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+# Non-Python files a module locates through importlib.resources: the old-format
+# poster renderer beside its Python caller (L4 D7) and the weekly poster renderer (L4 D9).
+[tool.setuptools.package-data]
+"tongxing_production.adapters.legacy" = ["render_sermon_poster.swift"]
+"tongxing_production.delivery.posters" = ["*.swift"]

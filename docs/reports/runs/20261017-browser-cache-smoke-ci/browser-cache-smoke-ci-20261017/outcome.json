@@ -1,0 +1,18 @@
+{
+  "status": "passed",
+  "deliveryType": "test",
+  "runId": 39061346871,
+  "headCommit": "949bdfe2d34b82d57900d2e65e328cddc8a7fffd",
+  "createdAt": "2026-10-17T19:11:06Z",
+  "updatedAt": "2026-10-17T19:30:49Z",
+  "wallSecondsIncludingQueue": 1183,
+  "pythonTests": {
+    "rootShardsPassed": 8,
+    "rootShardsTotal": 8,
+    "aggregator": "success",
+    "nativeSharedContracts": "skipped_by_scope"
+  },
+  "production": "not_run",
+  "publication": "not_run",
+  "device": "not_run"
+}

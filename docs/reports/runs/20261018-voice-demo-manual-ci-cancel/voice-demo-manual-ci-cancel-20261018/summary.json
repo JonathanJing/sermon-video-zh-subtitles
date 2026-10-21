@@ -1,0 +1,15 @@
+{
+  "status": "cancelled",
+  "event": "workflow_dispatch",
+  "jobs": {
+    "changes": "cancelled",
+    "test-group": "cancelled",
+    "native-contracts": "cancelled",
+    "unittest": "failure"
+  },
+  "unittestFailure": "post-cancellation aggregate gate rejected CHANGE_RESULT=cancelled and TEST_GROUP_RESULT=cancelled; no concrete test-case failure observed in failed-job log",
+  "replacementEvidence": "automatic pull-request Python suite run 39094506316 targets the same head SHA and continues independently",
+  "testSuiteCompleted": false,
+  "modelCalls": 0,
+  "productionRun": false
+}

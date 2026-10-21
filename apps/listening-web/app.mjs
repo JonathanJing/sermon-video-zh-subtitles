@@ -1,0 +1,1046 @@
+import { fullReadingRows, findEnglishPositions, ReadingFollow } from '/reading-mode.mjs';
+import { registerOfflineReading, offlineReadingState } from '/offline.mjs';
+import { setIcon, setButtonLabel } from './icons.mjs';
+import { t, getLocale, setLocale, onLocaleChange, localizeDOM } from "/i18n.mjs";
+import { localizeWeek } from "/content-locales.mjs";
+import { messages as appMessages } from "/locales-app.mjs";
+import { boundedTime, formatTime, cueIndex } from "/timing.mjs";
+import { validateCatalog, chooseWeek, parseTimecode, downloadFilename, engagementWeek, buildCatalogNavigation, catalogNavigationEnvironment, bilingualCueRows, isFormalPlayback, isMachineChecked, diagnosticPresentation } from "/catalog.mjs";
+import { createFeedback } from "/feedback.mjs";
+import { createUsage } from "/usage.mjs";
+import { mountFingerprintUI, playAlignmentAudio } from "/fingerprint-ui.mjs";
+import { PlaybackMemory } from "/playback-memory.mjs";
+import { loadPublishedWeeks, renderMeditation } from "/published-weeks.mjs";
+import { createMediaSession } from "/media-session.mjs";
+
+const $ = id => document.getElementById(id);
+for (const id of ["week-select", "series", "title", "speaker", "scripture", "central-message", "current-text", "transcript-list", "outline-meta", "outline-summary", "outline-content", "reflection-questions"]) {
+  $(id).lang = "zh-Hans";
+}
+const audio = $("audio");
+let catalog, week, track, fineOffset = 0, lastCue = -2, generation = 0;
+let navigationGroups = [];
+const navigationEnvironment = catalogNavigationEnvironment(location.origin);
+let activeSource = null, pendingResume = null, positionTouched = false, undoPoint = null, scrubbing = false, lastSavedAt = 0;
+let metadataReady = false, playPending = false, playFailed = false, resumeOnMetadata = false, playAttempt = 0, startupTimer = null;
+let activeView = "tab-listen";
+let contentLocale = new URLSearchParams(location.search).get("contentLang") || "zh-Hans";
+let alignmentPlayAttempt = 0;
+let localPlaybackStorage; try { localPlaybackStorage = localStorage; } catch { localPlaybackStorage = null; }
+const playbackMemory = new PlaybackMemory({ storage: localPlaybackStorage });
+let bilingualDisplay = false, englishByCue = [], englishDetails = [], transcriptRows = [], voiceLabels = [];
+let lastStatus = null;
+const readingFollow = new ReadingFollow();
+let englishPositions = [], fullReadingElements = [], offlineState = null;
+try { bilingualDisplay = localPlaybackStorage?.getItem("sermon-audio-subtitles") === "bilingual"; } catch { /* Default to Chinese. */ }
+function updateLanguageControl() {
+  $("subtitle-toggle").hidden = Boolean(week?.contentVariants);
+  $("subtitle-label").textContent = bilingualDisplay ? t("app.subtitle.bilingual") : t("app.subtitle.chinese");
+  $("subtitle-toggle").setAttribute("aria-pressed", String(bilingualDisplay));
+  $("subtitle-toggle").setAttribute("aria-label", t(bilingualDisplay ? "app.subtitle.hide" : "app.subtitle.show"));
+  $("subtitle-toggle").title = t(bilingualDisplay ? "app.subtitle.hideTitle" : "app.subtitle.showTitle");
+}
+function updateCurrentEnglish(index) {
+  const english = englishByCue[index];
+  $("current-english").hidden = !track || (week?.contentVariants ? !english : !bilingualDisplay);
+  $("current-english-label").textContent = t("app.transcript.englishReference");
+  $("current-english-text").textContent = english || t("app.subtitle.missing");
+  $("current-english-text").lang = english ? "en" : "zh-Hans";
+}
+updateLanguageControl();
+$("subtitle-toggle").addEventListener("click", () => {
+  bilingualDisplay = !bilingualDisplay;
+  try { localPlaybackStorage?.setItem("sermon-audio-subtitles", bilingualDisplay ? "bilingual" : "chinese"); } catch { /* The current page still switches. */ }
+  updateLanguageControl();
+  englishDetails.forEach(details => { details.open = bilingualDisplay; });
+  updateCurrentEnglish(lastCue);
+});
+let feedback = { select() {}, count() {}, error() {}, statisticsEnabled: () => false };
+let usage = { setEnabled() {}, record() {}, recordAlignment() {} };
+const controls = [$("play"), $("back"), $("forward"), $("progress"), $("jump-time"), $("jump"), $("precision-open"), ...document.querySelectorAll("[data-nudge],[data-play-toggle]")];
+const tabs = [...document.querySelectorAll('[role="tab"],[data-view]')];
+const primaryTabs = tabs.filter(tab => tab.getAttribute("role") === "tab");
+const fieldAlignment = mountFingerprintUI({
+  context: () => ({ week, track, generation, ready: metadataReady && audioIsCurrent() }),
+  pause: () => { stopStartup(); audio.pause(); document.querySelectorAll(".voice-card audio").forEach(sample => sample.pause()); update(); },
+  position: () => audio.currentTime,
+  seek: (time, { correction = false } = {}) => setPosition(time, { offset: 0, alignment: true, undo: !correction }),
+  play: options => startAlignmentPlayback(options),
+  onAttempt: attempt => usage.recordAlignment?.(attempt),
+});
+const alignmentDiagnostics = $("fingerprint-diagnostics")?.closest?.("details");
+if (alignmentDiagnostics && typeof fieldAlignment.getDiagnostics !== "function") alignmentDiagnostics.hidden = true;
+const mediaSession = createMediaSession({
+  audio,
+  getSelection: () => activeView !== "tab-voices" && week && track ? { week, track, album: t(brandKey("app.brand")) } : null,
+  play: () => { if (audio.paused && !playPending) void togglePlay(); },
+  pause: () => { if (!audio.paused) audio.pause(); },
+  seek: time => setPosition(time),
+});
+function status(key, params) {
+  lastStatus = [key, params];
+  $("status").textContent = key.startsWith("app.") ? t(key, params) : appText(key);
+}
+function appText(value) {
+  for (const [key, source] of Object.entries(appMessages.zh)) {
+    if (value === source || value === appMessages.en[key]) return t(key);
+  }
+  return value;
+}
+// Content language follows the selected audio; interface language stays separate.
+function displayWeek() { return week?.contentVariants ? week : localizeWeek(week, "zh"); }
+// A machine-checked locale names its machine quality check, never a formal edition.
+function editionLabel() {
+  return isFormalPlayback(week) ? t("app.release.formal") : isMachineChecked(week) ? week.releaseLabel : t("app.release.preview");
+}
+function diagnosticNotice() {
+  const state = diagnosticPresentation(week);
+  return state ? `${t(state.statusKey)}${state.reasonCode ? ` · ${state.reasonCode}` : ''}` : null;
+}
+// The brand names the sermon language; Chinese keeps the original keys.
+const brandKey = key => ["ko", "es"].includes(contentLocale) ? `${key}.${contentLocale}` : key;
+function renderBrand() {
+  for (const [id, attribute, key] of [["brand-tagline", "data-i18n", "app.tagline"], ["footer-title", "data-i18n", "app.title"], ["brand-link", "data-i18n-aria-label", "app.home"]]) {
+    $(id).setAttribute(attribute, brandKey(key));
+    localizeDOM($(id));
+  }
+}
+// Native names stay readable whatever the page language is.
+const contentLanguages = [["zh-Hans", "中文"], ["ko", "한국어"], ["es", "Español"]];
+const pageLanguages = [["zh", "中", "中文", "zh-Hans"], ["en", "EN", "English", "en"], ["ko", "KO", "한국어", "ko"], ["es", "ES", "Español", "es"]];
+function renderContentLanguages() {
+  const available = week?.contentVariants || { "zh-Hans": week };
+  const picker = $("content-language");
+  picker.replaceChildren();
+  for (const [locale, label] of contentLanguages) {
+    const option = document.createElement("option");
+    option.value = locale; option.textContent = label;
+    option.disabled = !available[locale];
+    picker.append(option);
+  }
+  picker.value = contentLocale;
+  $("sermon-language-options").replaceChildren(...contentLanguages.filter(([locale]) => available[locale]).map(([locale, label]) => {
+    const button = document.createElement("button");
+    button.type = "button"; button.className = "sermon-language-option"; button.dataset.locale = locale;
+    button.setAttribute("aria-pressed", String(locale === contentLocale));
+    if (locale === contentLocale) { const check = document.createElement("span"); check.className = "sermon-language-check"; setIcon(check, "checkmark"); button.append(check); }
+    const name = document.createElement("span"); name.lang = locale; name.textContent = label; button.append(name);
+    // A text-only locale says so before the listener expects narration.
+    if (!available[locale].tracks?.length) { const note = document.createElement("small"); note.textContent = t("language.textOnly"); button.append(note); }
+    button.addEventListener("click", () => {
+      selectContentLocale(locale);
+      $("sermon-language-options").querySelector?.('[aria-pressed="true"]')?.focus();
+    });
+    return button;
+  }));
+  $("sermon-language").hidden = !week;
+  $("content-language-note").textContent = t(week?.contentVariants ? "app.content.available" : "app.content.legacy");
+  for (const id of ["series", "title", "speaker", "scripture", "central-message", "current-text", "next-text", "transcript-list", "outline-meta", "outline-summary", "outline-content", "reflection-questions"]) {
+    $(id).lang = contentLocale;
+  }
+  updateLanguageControl();
+}
+function renderWeekOptions() {
+  $("week-select").replaceChildren(); $("content-choices").replaceChildren();
+  const groupLabels = {
+    zh: ['本期与往期', '开发诊断', '开发演练'],
+    en: ['Sermons', 'Development diagnostics', 'Development rehearsals'],
+    ko: ['설교', '개발 진단', '개발 연습'],
+    es: ['Sermones', 'Diagnósticos de desarrollo', 'Ensayos de desarrollo'],
+  };
+  for (const group of navigationGroups) {
+    const options = document.createElement("optgroup");
+    options.label = (groupLabels[getLocale()] || groupLabels.zh)[['sermons', 'diagnostics', 'simulations'].indexOf(group.id)];
+    const section = document.createElement("section"), heading = document.createElement("h3");
+    heading.textContent = options.label; section.append(heading);
+    for (const { week: original, label } of group.items) {
+      const option = document.createElement("option");
+      option.value = original.id;
+      option.textContent = label;
+      options.append(option);
+      const choice = document.createElement("button"); choice.type = "button"; choice.className = "content-choice";
+      choice.setAttribute("aria-pressed", String(original.id === week?.id));
+      const title = document.createElement("strong"); title.textContent = original.title;
+      const meta = document.createElement("span"); meta.textContent = `${original.date} · ${original.speaker}`;
+      const category = document.createElement("small"); category.textContent = displayCategoryLabel(original) || label;
+      choice.append(title, meta, category);
+      choice.addEventListener("click", () => { selectWeek(original.id); $("content-browser").close(); $("choose-content").setAttribute("aria-expanded", "false"); });
+      section.append(choice);
+    }
+    $("week-select").append(options); $("content-choices").append(section);
+  }
+  if (week) $("week-select").value = week.id;
+}
+function renderWeekLabels() {
+  if (!week) return;
+  const view = displayWeek();
+  renderContentLanguages();
+  renderCategories();
+  $("title").textContent = view.title;
+  $("series").textContent = [view.series, view.sourceLabel].filter(Boolean).join(" · ");
+  $("speaker").textContent = view.speaker; $("scripture").textContent = view.scripture;
+  $("central-message").textContent = view.centralMessage;
+  $("audio-notice").textContent = diagnosticNotice() || view.audioNotice;
+  // The release's own-locale disclosure stays beside the review statement.
+  $("review").textContent = isMachineChecked(view) ? `${view.releaseLabel} · ${view.disclosure} ${t("app.content.disclosure")}` : t("app.content.disclosure");
+  $("edition-label").textContent = activeView === "tab-voices" ? t("app.release.preview") : editionLabel();
+  $("week-status").textContent = diagnosticPresentation(week) ? t(diagnosticPresentation(week).statusKey) : isFormalPlayback(week) ? t("app.week.published") : week.humanContentReview === "approved" || ["full_reviewed", "full_machine_checked"].includes(week.audioStatus) ? t("app.week.ready") : week.audioStatus === "full_candidate" ? t("app.week.review") : week.tracks.length ? t("app.week.sample") : t("app.week.outline");
+  $("audio-scope").textContent = isFormalPlayback(week) && track ? t("app.release.formal") : week.humanContentReview === "approved" && track ? t("app.release.full") : track?.scope === "full_candidate" ? t("app.release.review") : ["full_reviewed", "full_machine_checked"].includes(track?.scope) ? t("app.release.full") : track ? t("app.release.sample") : t("app.release.pending");
+  $("voice").textContent = track ? t("app.voice.active", { speaker: week.speaker }) : t("app.voice.pending");
+  setButtonLabel($("source-link"), view.sourceLabel ? t("app.source.link", { label: view.sourceLabel }) : t("app.source.open"));
+  for (const button of $("variants").children) button.textContent = isFormalPlayback(week) ? t("app.release.formal") : getLocale() !== "zh" ? t("app.voice.active", { speaker: week.speaker }) : week.tracks.find(item => item.id === button.dataset.id)?.label || "";
+  $("subtitle-note").textContent = t("app.subtitle.follow");
+  renderBrand();
+  document.title = `${activeView === "tab-voices" ? t("app.voices.title") : view.title} · ${t(brandKey("app.brand"))}`;
+}
+
+function displayCategoryLabel(item) {
+  const mediaType = item?.displayMediaType || item?.mediaType;
+  return mediaType === 'podcast' ? t('reader.podcastCategory')
+    : mediaType === 'video' ? t('reader.sermonCategory') : item?.sourceLabel || "";
+}
+function renderCategories() {
+  const label = displayCategoryLabel(week);
+  $("display-category").textContent = label; $("display-category").hidden = !label;
+  $("picker-category").textContent = label;
+}
+function renderReadingMode() {
+  $("reading-follow").setAttribute("aria-pressed", String(readingFollow.following));
+  $("reading-free").setAttribute("aria-pressed", String(!readingFollow.following));
+  $("reading-mode-hint").textContent = t(readingFollow.following ? "reader.followHint" : "reader.freeHint");
+  $("reading-current").disabled = !track;
+}
+function renderOfflineStatus() {
+  const state = offlineReadingState(offlineState);
+  $("offline-reading-status").textContent = t(!offlineState?.supported ? "reader.offlineUnsupported" : !offlineState.online ? (state === 'available' ? "reader.offlineNow" : "reader.offlineMissing") : state === 'available' ? "reader.offlineReady" : state === 'pending' ? "reader.offlinePending" : "reader.offlineUnavailable");
+}
+function renderDockLabels() {
+  const collapsed = $("field-controls").classList.contains("is-collapsed");
+  $("dock-collapse").textContent = t(collapsed ? "reader.expand" : "reader.collapse");
+  $("dock-collapse").setAttribute("aria-expanded", String(!collapsed));
+}
+function renderEnglishResults() {
+  $("english-results").replaceChildren();
+  const matches = findEnglishPositions(englishPositions, $("english-query").value);
+  for (const result of matches) {
+    const row = document.createElement("article"); row.className = "english-result";
+    const english = document.createElement("p"); english.lang = "en"; english.textContent = result.english;
+    const text = document.createElement("p"); text.lang = contentLocale; text.textContent = result.text;
+    const button = document.createElement("button"); button.type = "button";
+    button.textContent = t("reader.match", {time:formatTime(result.time)}); button.disabled = !metadataReady;
+    button.addEventListener("click", () => { if (setPosition(result.time)) $("english-locate-dialog").close(); });
+    row.append(english,text,button); $("english-results").append(row);
+  }
+  if (!matches.length) { const hint = document.createElement("p"); hint.className = "description"; hint.textContent = t($("english-query").value.trim() ? "reader.empty" : "reader.searchHint"); $("english-results").append(hint); }
+}
+$("choose-content").addEventListener("click", () => { renderWeekOptions(); $("content-browser").showModal(); $("choose-content").setAttribute("aria-expanded", "true"); });
+$("content-browser-close").addEventListener("click", () => $("content-browser").close());
+$("content-browser").addEventListener("close", () => $("choose-content").setAttribute("aria-expanded", "false"));
+$("dock-collapse").addEventListener("click", () => { $("field-controls").classList.toggle("is-collapsed"); renderDockLabels(); syncDockHeight(); });
+$("dock-locate").addEventListener("click", () => { const open = $("dock-tools").hidden; $("dock-tools").hidden = !open; $("dock-locate").setAttribute("aria-expanded", String(open)); syncDockHeight(); });
+$("english-locate-open").addEventListener("click", () => { $("english-query").value = ""; renderEnglishResults(); $("english-locate-dialog").showModal(); $("english-query").focus(); });
+$("english-query").addEventListener("input", renderEnglishResults);
+$("english-locate-close").addEventListener("click", () => $("english-locate-dialog").close());
+$("category-refresh").addEventListener("click", async () => {
+  $("category-refresh").disabled = true;
+  try {
+    const response = await fetch("/multilingual-v3.json", {cache:"no-cache"});
+    if (!response.ok) throw new Error("Unavailable catalog");
+    const value = await response.json();
+    if (value.schemaVersion !== "sermon-multilingual-catalog-v3" || !Array.isArray(value.pages)) throw new Error("Invalid catalog");
+    const categories = new Map(value.pages.filter(page => ['podcast','video'].includes(page.mediaType))
+      .map(page => [page.id,page.mediaType]));
+    for (const item of catalog.weeks) if (categories.has(item.id)) {
+      item.displayMediaType = categories.get(item.id);
+      for (const variant of Object.values(item.contentVariants || {})) variant.displayMediaType = item.displayMediaType;
+    }
+    if (categories.has(week.id)) week.displayMediaType = categories.get(week.id);
+    renderCategories(); renderWeekOptions();
+  } catch { $("offline-reading-status").textContent = t("app.load.failed"); }
+  finally { $("category-refresh").disabled = false; }
+});
+
+function ready(value) {
+  metadataReady = value;
+  controls.forEach(control => { control.disabled = !value; });
+  // A user gesture may be required before WebViews fetch any audio metadata.
+  [$("play"), ...document.querySelectorAll("[data-play-toggle]")].forEach(control => { control.disabled = !track; });
+  document.querySelectorAll(".cue-button").forEach(control => { control.disabled = !value || control.dataset.readingOnly === "true"; });
+  document.querySelectorAll("#english-results button").forEach(control => { control.disabled = !value; });
+  $("resume-position").disabled = !value;
+  $("restart-position").disabled = !track || (!value && !pendingResume);
+}
+function showResume() {
+  $("resume-card").hidden = !pendingResume || activeView === "tab-voices";
+  $("restart-position").disabled = !track || (!metadataReady && !pendingResume);
+  if (!pendingResume) return;
+  $("resume-message").textContent = t("app.resume.message", { time: formatTime(pendingResume.positionSeconds) });
+  setButtonLabel($("resume-position"), t("app.resume.button", { time: formatTime(pendingResume.positionSeconds) }));
+}
+function stopStartup() {
+  clearTimeout(startupTimer); startupTimer = null;
+  playPending = false; resumeOnMetadata = false; playAttempt += 1;
+}
+function audioIsCurrent() {
+  return track && audio.readyState >= 1 && audio.currentSrc === new URL(track.audioUrl, location.href).href;
+}
+function failStartup(message) {
+  stopStartup(); audio.pause(); playFailed = true;
+  ready(audioIsCurrent() && Number.isFinite(audio.duration));
+  status(message); update();
+}
+function currentDuration() { return Number.isFinite(audio.duration) ? audio.duration : track?.durationSeconds || 0; }
+function sourceTime(relativeTime) {
+  if (!Number.isFinite(week?.sourceStartSeconds) || week.sourceStartSeconds < 0) return null;
+  const seconds = Math.max(0, Math.floor(relativeTime + week.sourceStartSeconds));
+  if (seconds < 3600) return formatTime(seconds);
+  return `${Math.floor(seconds / 3600)}:${formatTime(seconds % 3600)}`;
+}
+function downloadUrl(value, extension) {
+  if (typeof value !== "string" || !value.trim()) return null;
+  const relative = value.trim();
+  if (/^(?:[a-z][a-z0-9+.-]*:|\/\/)/i.test(relative) || /[\\\u0000-\u001f\u007f]/.test(relative)) return null;
+  try {
+    const url = new URL(relative, location.href);
+    return url.origin === location.origin && url.pathname.toLowerCase().endsWith(extension) ? relative : null;
+  } catch { return null; }
+}
+function renderDownloads() {
+  const list = $("week-download-links");
+  list.replaceChildren();
+  for (const [key, label, extension] of [
+    ["readingPdf", t("app.download.reading"), ".pdf"],
+    ["companionPdf", t("app.download.companion"), ".pdf"],
+    ["fullVideoMp3", t("app.download.mp3"), ".mp3"],
+    ["fullVideoSrt", t("app.download.srt"), ".srt"],
+  ]) {
+    const url = downloadUrl(week?.downloads?.[key], extension);
+    if (!url) continue;
+    const link = document.createElement("a");
+    link.href = url; link.download = ""; setIcon(link, "arrow.down.circle");
+    const downloadLabel = document.createElement("span"); downloadLabel.textContent = label; link.append(downloadLabel);
+    list.append(link);
+  }
+  $("week-downloads").hidden = !list.children.length;
+}
+function update() {
+  const duration = track ? currentDuration() : 0;
+  const time = track ? audio.currentTime : 0;
+  $("progress").max = duration || 1;
+  if (!scrubbing) $("progress").value = time;
+  if (!scrubbing) $("progress").setAttribute("aria-valuetext", t("app.progress", { time: formatTime(time), duration: formatTime(duration) }));
+  $("elapsed").textContent = formatTime(time);
+  $("duration").textContent = formatTime(duration);
+  const sourceClock = track ? sourceTime(time) : null;
+  $("source-clock").hidden = sourceClock === null;
+  $("source-clock").textContent = sourceClock === null ? "" : t("app.source.clock", { time: sourceClock });
+  setIcon($("play-icon"), audio.paused ? "play.fill" : "pause.fill");
+  document.querySelectorAll("[data-play-icon]").forEach(node => setIcon(node, audio.paused ? "play.fill" : "pause.fill"));
+  const playLabel = !track ? diagnosticNotice() || t("app.audio.preparing") : playPending ? t("app.audio.cancel") : playFailed ? t("app.audio.retry") : pendingResume ? t("app.audio.continue") : audio.ended ? t("app.audio.replay") : audio.paused ? t("app.audio.play") : t("app.audio.pause");
+  $("play-label").textContent = playLabel;
+  document.querySelectorAll("[data-play-label]").forEach(label => { label.textContent = playLabel; });
+  document.querySelectorAll("[data-mini-time]").forEach(label => { label.textContent = `${formatTime(time)} / ${formatTime(duration)}`; });
+  mediaSession.update();
+  if (!track) return;
+  const index = cueIndex(track.cues, time);
+  const display = index < 0 ? Math.max(0, track.cues.findLastIndex(cue => cue.start <= time)) : index;
+  const cueChanged = display !== lastCue;
+  if (cueChanged) {
+    $("current-text").textContent = track.cues[display]?.text || "";
+    $("current-text").lang = contentLocale;
+    const next = track.cues[display + 1]?.text;
+    $("next-text").textContent = next ? t("app.next", { text: next.slice(0, 42) + (next.length > 42 ? "…" : "") }) : "";
+    $("cue-count").textContent = `${display + 1} / ${track.cues.length}`;
+    transcriptRows.forEach(({ row, button, start, end }) => {
+      const active = start <= display && display <= end;
+      row.setAttribute("aria-current", String(active)); button.setAttribute("aria-current", String(active));
+    });
+    updateCurrentEnglish(display);
+    fullReadingElements.forEach(({ row, audioCue }) => row.setAttribute("aria-current", String(Boolean(audioCue && audioCue.start <= time && time < audioCue.end))));
+    lastCue = display;
+  }
+  readingFollow.update({ active: activeView === "tab-transcript", playing: !audio.paused && !audio.ended, changed: cueChanged }, scrollToCurrent);
+}
+function selectTab(id, focus = false, scroll = false) {
+  fieldAlignment.invalidate();
+  if (activeView !== id) readingFollow.reset();
+  activeView = id;
+  renderReadingMode();
+  const voices = id === "tab-voices";
+  $("edition-label").textContent = voices ? t("app.release.preview") : editionLabel();
+  document.querySelector(".sermon-banner").hidden = voices;
+  document.querySelector(".content-layout").hidden = voices;
+  $("source-link").hidden = voices;
+  $("field-controls").hidden = voices;
+  $("resume-card").hidden = voices || !pendingResume;
+  if (voices) { stopStartup(); audio.pause(); update(); }
+  else {
+    document.querySelectorAll(".voice-card audio").forEach(item => item.pause());
+    mediaSession.update();
+  }
+  const url = new URL(location.href);
+  if (id === "tab-listen") url.searchParams.delete("tab");
+  else url.searchParams.set("tab", id.replace("tab-", ""));
+  history.replaceState(null, "", url);
+  if (week) document.title = `${voices ? t("app.voices.title") : displayWeek().title} · ${t(brandKey("app.brand"))}`;
+  for (const tab of tabs) {
+    const selected = tab.id === id;
+    if (tab.getAttribute("role") === "tab") {
+      tab.setAttribute("aria-selected", String(selected));
+      tab.tabIndex = selected ? 0 : -1;
+    } else tab.setAttribute("aria-pressed", String(selected));
+    $(tab.getAttribute("aria-controls")).hidden = !selected;
+    if (selected && focus && tab.getAttribute("role") === "tab") tab.focus();
+  }
+  if (!primaryTabs.some(tab => tab.getAttribute("aria-selected") === "true")) primaryTabs[0].tabIndex = 0;
+  setMore(false);
+  const panel = $(id.replace("tab-", "panel-"));
+  if (scroll && panel) { readingFollow.programmaticScroll(() => panel.scrollIntoView({ block: "start", behavior: "instant" }), readingScrollPosition); panel.focus({ preventScroll: true }); }
+  syncDockHeight();
+  if (id === "tab-transcript" && track && !audio.paused && !audio.ended) { const before = lastCue; update(); if (lastCue === before) scrollToCurrent(); }
+}
+function setMore(open) {
+  $("more-options").hidden = !open;
+  $("more-toggle").setAttribute("aria-expanded", String(open));
+}
+function syncDockHeight() {
+  document.documentElement.style.setProperty("--dock-height", `${$("field-controls").hidden ? 0 : $("field-controls").getBoundingClientRect().height}px`);
+}
+if (typeof ResizeObserver !== "undefined") new ResizeObserver(syncDockHeight).observe($("field-controls"));
+window.addEventListener("resize", syncDockHeight);
+function saveProgress(force = false) {
+  if (!activeSource || !track || !positionTouched || pendingResume || !Number.isFinite(audio.duration)) return;
+  if (!force && Date.now() - lastSavedAt < 4000) return;
+  playbackMemory.save(activeSource, { positionSeconds: audio.currentTime, fineOffset, durationSeconds: audio.duration });
+  lastSavedAt = Date.now();
+}
+function updateUndo() {
+  $("undo-row").hidden = !undoPoint;
+  $("undo-message").textContent = undoPoint ? t("app.undo", { time: formatTime(undoPoint.time) }) : "";
+  document.querySelectorAll("[data-seek-undo]").forEach(button => { button.hidden = !undoPoint; });
+}
+function setPosition(time, { fine = false, undo = true, offset, alignment = false } = {}) {
+  if (!alignment) fieldAlignment.invalidate();
+  if (!track || !metadataReady || !Number.isFinite(audio.duration)) return false;
+  const next = boundedTime(time, audio.duration), previous = audio.currentTime;
+  if (undo && (Math.abs(next - previous) > .01 || (offset !== undefined && offset !== fineOffset))) undoPoint = { time: previous, offset: fineOffset };
+  if (fine) { fineOffset += next - previous; feedback.count("nudges"); }
+  if (offset !== undefined) fineOffset = offset;
+  audio.currentTime = next;
+  positionTouched = true;
+  pendingResume = null;
+  resumeOnMetadata = false;
+  $("resume-card").hidden = true;
+  $("offset").textContent = t("app.offset", { value: `${fineOffset > 0 ? "+" : ""}${fineOffset.toFixed(2)}` });
+  $("jump-message").textContent = t("app.seek.position", { time: formatTime(next) });
+  $("seek-preview").textContent = "";
+  scrubbing = false;
+  updateUndo(); update(); saveProgress(true);
+  return true;
+}
+function restorePosition() {
+  if (!pendingResume) return false;
+  const saved = pendingResume;
+  if (!setPosition(saved.positionSeconds, { offset: saved.fineOffset })) return false;
+  status("app.resume.restored");
+  return true;
+}
+function restartPosition() {
+  if (!track) return;
+  if (metadataReady) {
+    if (!setPosition(0, { offset: 0 })) return;
+  } else {
+    if (!pendingResume) return;
+    // Discarding a bookmark needs no media seek or network response.
+    stopStartup(); audio.pause();
+    pendingResume = null; fineOffset = 0; positionTouched = true;
+    showResume(); update();
+  }
+  playbackMemory.clear(activeSource);
+  status("app.resume.restart");
+}
+function undoSeek() {
+  if (!undoPoint) return;
+  const point = undoPoint;
+  if (setPosition(point.time, { offset: point.offset, undo: false })) {
+    undoPoint = null; updateUndo(); status("app.seek.returned", { time: formatTime(point.time) });
+  }
+}
+function renderTranscript() {
+  $("transcript-list").replaceChildren();
+  englishByCue = []; englishDetails = []; transcriptRows = [];
+  englishPositions = []; fullReadingElements = []; $("full-reading-list").replaceChildren();
+  $("full-reading").hidden = !week?.fullTranscript?.length;
+  updateCurrentEnglish(-1);
+  if (!track) {
+    $("transcript-description").textContent = diagnosticNotice() || t("app.transcript.pending");
+    return;
+  }
+  const bilingual = bilingualCueRows(week, track);
+  // Reuse the validated block association, never infer English from cue timing.
+  const originals = new Map(bilingual.rows.filter(row => row.english != null).map(row => [String(row.cue.blockId), row.english]));
+  englishByCue = track.cues.map(cue => cue.blockId == null ? null : originals.get(String(cue.blockId)) || null);
+  const guidance = [t("app.transcript.guide")];
+  if (bilingual.hasEnglish) guidance.push(t("app.transcript.displayGuide"));
+  if (bilingual.missingEnglish && !week.contentVariants) guidance.push(bilingual.hasEnglish ? t("app.transcript.partial") : t("app.transcript.missing"));
+  $("transcript-description").textContent = week.contentVariants ? t(week.condensedDub ? "app.content.spokenHintCondensed" : week.spokenHint ? "app.content.spokenHintMachine" : "app.content.spokenHint") : guidance.join(" ");
+  if (week.fullTranscript?.length) {
+    const reading = document.createElement("details"); reading.className = "full-reading";
+    const title = document.createElement("summary"); title.textContent = t("app.content.fullText");
+    const hint = document.createElement("p"); hint.className = "description"; hint.textContent = t(week.condensedDub ? (week.fullTextHint ? "app.content.fullTextHintCondensedMachine" : "app.content.fullTextHintCondensed") : week.fullTextHint ? "app.content.fullTextHintMachine" : "app.content.fullTextHint");
+    reading.append(title, hint);
+    for (const { cue, audioCue } of fullReadingRows(week.fullTranscript, track.cues)) {
+      const row = document.createElement("article"); row.className = "cue-row";
+      const button = document.createElement("button"); button.className = "cue-button";
+      button.disabled = true; button.dataset.readingOnly = String(!audioCue);
+      button.textContent = formatTime(audioCue?.start ?? cue.start);
+      button.setAttribute("aria-label", t("reader.match", {time: button.textContent}));
+      if (audioCue) button.addEventListener("click", () => setPosition(audioCue.start));
+      const body = document.createElement("span"); body.textContent = cue.text; body.lang = contentLocale;
+      row.append(button, body);
+      if (cue.english) {
+        const reference = document.createElement("p"); reference.className = "full-reading-english";
+        reference.lang = "en"; reference.textContent = cue.english; row.append(reference);
+      }
+      reading.append(row);
+      fullReadingElements.push({row,audioCue});
+    }
+    $("full-reading-list").append(reading);
+  }
+  bilingual.rows.forEach(({ cue, english, index }) => {
+    const end = index;
+    const row = document.createElement("article"); row.className = "cue-row"; row.tabIndex = -1;
+    const button = document.createElement("button"); button.className = "cue-button"; button.disabled = true;
+    button.setAttribute("aria-label", t("app.seek.to", { time: formatTime(cue.start) }));
+    const time = document.createElement("time"); time.textContent = formatTime(cue.start);
+    const text = document.createElement("span"); text.textContent = cue.text;
+    const seekIcon = document.createElement("span"); setIcon(seekIcon, "arrow.right.to.line");
+    button.append(seekIcon, time);
+    const originalTime = Number.isFinite(week?.sourceStartSeconds) ? sourceTime(cue.start) : null;
+    if (originalTime !== null) {
+      const sourceLabel = document.createElement("small");
+      sourceLabel.className = "cue-source-time";
+      sourceLabel.textContent = t("app.source.clock", { time: originalTime });
+      button.append(sourceLabel);
+      button.setAttribute("aria-label", t("app.seek.source", { time: formatTime(cue.start), source: originalTime }));
+    }
+    row.append(button, text);
+    text.lang = week.targetLocale || "zh-Hans";
+    if (english != null) {
+      const details = document.createElement("details"); details.className = "english-reference";
+      const summary = document.createElement("summary"); summary.textContent = t("app.transcript.reference");
+      const original = document.createElement("p"); original.lang = "en"; original.textContent = english;
+      details.open = Boolean(week.contentVariants) || bilingualDisplay; englishDetails.push(details);
+      details.append(summary, original); row.append(details);
+    }
+    button.addEventListener("click", () => setPosition(cue.start));
+    transcriptRows.push({ row, button, start: index, end });
+    if (english) englishPositions.push({english, text:cue.text, time:cue.start});
+    $("transcript-list").append(row);
+  });
+}
+function selectTrack(id) {
+  const nextTrack = diagnosticPresentation(week)?.canPlay === false ? null : week.tracks.find(t => t.id === id) || null;
+  const nextSource = nextTrack ? { week: engagementWeek(week).id, trackId: nextTrack.id, audioSha256: nextTrack.sha256 } : null;
+  if (activeSource && nextSource && JSON.stringify(activeSource) === JSON.stringify(nextSource)) return;
+  saveProgress(true);
+  generation += 1;
+  stopStartup(); playFailed = false;
+  audio.pause();
+  track = nextTrack;
+  fieldAlignment.refresh();
+  ready(false);
+  activeSource = nextSource; pendingResume = null; positionTouched = false; undoPoint = null; scrubbing = false;
+  $("resume-card").hidden = true; updateUndo();
+  feedback.select(engagementWeek(week), track);
+  usage.select?.(engagementWeek(week), track);
+  fineOffset = 0;
+  lastCue = -2; readingFollow.reset(); renderReadingMode();
+  $("offset").textContent = t("app.offset", { value: "0.00" });
+  $("jump-time").value = "";
+  $("jump-message").textContent = "";
+  $("download").hidden = !track;
+  $("feedback-quick").disabled = !track;
+  $("audio-scope").textContent = isFormalPlayback(week) && track ? t("app.release.formal") : week.humanContentReview === "approved" && track ? t("app.release.full") : track?.scope === "full_candidate" ? t("app.release.review") : ["full_reviewed", "full_machine_checked"].includes(track?.scope) ? t("app.release.full") : track ? t("app.release.sample") : t("app.release.pending");
+  $("voice").textContent = track ? t("app.voice.active", { speaker: week.speaker }) : t("app.voice.pending");
+  renderTranscript();
+  for (const button of $("variants").children) button.setAttribute("aria-pressed", String(button.dataset.id === track?.id));
+  if (track) {
+    pendingResume = playbackMemory.read(activeSource, track.durationSeconds);
+    showResume();
+    status(pendingResume ? "app.resume.start" : "app.audio.start");
+    audio.src = track.audioUrl;
+    audio.load();
+    $("download").href = `${track.audioUrl}?download=1`;
+    $("download").download = downloadFilename(week, track);
+    $("download").title = $("download").download;
+    $("subtitle-note").textContent = t("app.subtitle.follow");
+  } else {
+    audio.removeAttribute("src");
+    audio.load();
+    const diagnostic = diagnosticPresentation(week);
+    status(diagnostic?.statusKey || "app.audio.weekPending");
+    $("current-text").textContent = diagnostic ? t(diagnostic.hasCandidate ? "app.diagnostic.textReady" : "app.diagnostic.textMissing") : t("app.content.pending");
+    $("next-text").textContent = diagnostic ? diagnosticNotice() : t("app.content.otherWeeks");
+    if (diagnostic) $("voice").textContent = t(diagnostic.statusKey);
+    $("cue-count").textContent = "";
+    $("subtitle-note").textContent = diagnostic ? t("app.diagnostic.reviewPending") : t("app.subtitle.pending");
+    $("download").removeAttribute("href");
+    $("download").removeAttribute("download");
+    $("download").removeAttribute("title");
+  }
+  update();
+}
+function renderOutline() {
+  const content = displayWeek();
+  $("outline-title").textContent = t("app.outline.title");
+  $("outline-meta").textContent = `${content.title} · ${week.date.replaceAll("-", ".")} · ${week.speaker} · ${content.scripture}`;
+  $("outline-summary").textContent = content.summary;
+  $("outline-content").replaceChildren();
+  for (const item of content.outline) {
+    const section = document.createElement("section");
+    section.className = "outline-section";
+    const h3 = document.createElement("h3");
+    h3.textContent = item.title;
+    const list = document.createElement("ul");
+    for (const point of item.points) { const li = document.createElement("li"); li.textContent = point; li.style.whiteSpace = 'pre-wrap'; list.append(li); }
+    section.append(h3, list);
+    $("outline-content").append(section);
+  }
+  let meditation = $("study-meditation");
+  if (!meditation) {
+    meditation = document.createElement("section");
+    meditation.id = "study-meditation";
+    $("outline-content").after(meditation);
+  }
+  renderMeditation(meditation, content.meditation || [], content.targetLocale);
+  $("study-outline-inline-content").replaceChildren();
+  $("study-outline-inline").hidden = !content.outline.length;
+  for (const item of content.outline) {
+    const section = document.createElement("section"); section.className = "outline-section";
+    const title = document.createElement("h3"); title.textContent = item.title; title.lang = contentLocale;
+    section.append(title);
+    for (const point of item.points) { const paragraph = document.createElement("p"); paragraph.textContent = point; paragraph.lang = contentLocale; section.append(paragraph); }
+    $("study-outline-inline-content").append(section);
+  }
+  $("study-meditation-inline").hidden = !content.meditation?.length;
+  renderMeditation($("study-meditation-inline-content"), content.meditation || [], content.targetLocale);
+  $("reflection-questions").replaceChildren();
+  for (const question of content.questions) { const li = document.createElement("li"); li.textContent = question; $("reflection-questions").append(li); }
+  document.querySelector(".reflection").hidden = !content.questions.length;
+  $("outline-review").textContent = `${content.contentReview}。${isMachineChecked(content) ? content.disclosure : ""}${week.audioStatus?.startsWith("full_") ? t("app.outline.full") : t("app.outline.sample")}`;
+}
+function renderProduction() {
+  const diagnostic = diagnosticPresentation(week);
+  const stages = diagnostic ? diagnostic.stages.map(row => ({ label:t(row.labelKey), status:row.status,
+    detail:`${t(row.detailKey)}${diagnostic.reasonCode && ['failed','blocked'].includes(row.status) ? ` · ${diagnostic.reasonCode}` : ''}` })) : week.productionStages || [
+    { label: "周六阅读稿与证道大纲", status: "pass", detail: "本周大纲已就绪" },
+    { label: "中文配音", status: week.tracks.length ? "review" : "pending", detail: week.tracks.length ? "当前提供片段试听" : "等待完整中文配音" },
+    { label: "试听与视频同步审核", status: "pending", detail: "核对整篇中文、讲员音色与同一份视频的时间" },
+    { label: "周日版本发布", status: "pending", detail: "审核通过后提供本周中文配音" },
+  ];
+  $("production-stages").replaceChildren();
+  for (const original of stages) {
+    let item = original;
+    if (isFormalPlayback(week)) {
+      if (original.label === "周日版本发布") item = { ...original, status: "pass", detail: "已按用户发布授权提供正式播放版。" };
+      else if (/视频同步|人工试听/.test(original.label)) item = { ...original, detail: "已完成机器时间轴检查与同步装配；人工试听和现场同视频验收尚未记录。" };
+      else if (original.label === "配音检查") item = { ...original, detail: original.detail };
+      else if (original.label === "中文配音" && week.tracks.length) item = { ...original, detail: "整篇中文配音已生成。" };
+    }
+    const li = document.createElement("li");
+    li.dataset.status = item.status;
+    const mark = document.createElement("span");
+    mark.className = "stage-mark";
+    setIcon(mark, item.status === "pass" ? "checkmark.circle.fill" : item.status === "review" ? "clock.arrow.circlepath" : "circle");
+    const body = document.createElement("div"), heading = document.createElement("h3"), detail = document.createElement("p"), state = document.createElement("small");
+    heading.textContent = appText(item.label);
+    detail.textContent = appText(item.detail);
+    state.textContent = t(item.status === "failed" || item.status === "blocked" ? `app.diagnostic.${item.status}` : item.status === "pass" ? "app.stage.complete" : item.status === "review" ? "app.stage.reviewPending" : "app.stage.pending");
+    body.append(heading, detail);
+    li.append(mark, body, state);
+    $("production-stages").append(li);
+  }
+}
+function renderVoiceBank() {
+  const bank = catalog.voiceBank;
+  voiceLabels = [];
+  const bankLabels = () => { $("voice-bank-notice").textContent = bank?.speakers?.length ? t("app.voices.notice") : t("app.voices.pending"); };
+  voiceLabels.push(bankLabels); bankLabels();
+  $("probe-text").textContent = bank?.probeText?.join("\n\n") || "";
+  $("probe-text").lang = "zh-Hans";
+  $("voice-grid").replaceChildren();
+  for (const speaker of bank?.speakers || []) {
+    const card = document.createElement("article");
+    card.className = "voice-card";
+    const heading = document.createElement("h3"), meta = document.createElement("p");
+    heading.textContent = speaker.name;
+    meta.className = "voice-card-meta";
+    const metaLabel = () => { meta.textContent = t("app.voices.meta", { english: formatTime(speaker.reference.durationSeconds), chinese: formatTime(speaker.chinese.durationSeconds) }); };
+    voiceLabels.push(metaLabel); metaLabel();
+    card.append(heading, meta);
+    for (const key of ["reference", "chinese"]) {
+      const label = document.createElement("p"), sample = document.createElement("audio");
+      label.className = "sample-label";
+      const sampleLabel = () => { label.textContent = t(key === "reference" ? "app.voices.english" : "app.voices.chinese"); sample.setAttribute("aria-label", `${speaker.name} ${label.textContent.slice(4)}`); };
+      voiceLabels.push(sampleLabel); sampleLabel();
+      sample.controls = true;
+      sample.preload = "metadata";
+      sample.src = speaker[key].audioUrl;
+      sample.setAttribute("aria-label", `${speaker.name} ${label.textContent.slice(4)}`);
+      sample.addEventListener("play", () => { fieldAlignment.invalidate(); document.querySelectorAll("audio").forEach(other => { if (other !== sample) other.pause(); }); });
+      for (const event of ["play", "pause"]) sample.addEventListener(event, () => usage.record(`voice_${key}_${event}`, { speakerId: speaker.id, trackId: null, positionSeconds: null }));
+      card.append(label, sample);
+    }
+    if (typeof speaker.referenceSourceUrl === "string" && speaker.referenceSourceUrl.startsWith("https://")) {
+      const sourceLink = document.createElement("a");
+      sourceLink.className = "voice-source-link"; sourceLink.href = speaker.referenceSourceUrl;
+      sourceLink.target = "_blank"; sourceLink.rel = "noopener noreferrer";
+      const sourceLabel = () => { sourceLink.textContent = t("app.voices.source"); };
+      voiceLabels.push(sourceLabel); sourceLabel(); card.append(sourceLink);
+    }
+    const note = document.createElement("p");
+    note.className = "voice-card-note";
+    const noteLabel = () => { note.textContent = t(speaker.humanListeningStatus === "accepted" ? "app.voices.accepted" : "app.voices.review"); };
+    voiceLabels.push(noteLabel); noteLabel();
+    card.append(note);
+    $("voice-grid").append(card);
+  }
+}
+function selectWeek(id) {
+  fieldAlignment.invalidate();
+  const original = chooseWeek(catalog, id);
+  const selectedLocale = original.contentVariants?.[contentLocale]
+    ? contentLocale : original.defaultTargetLocale || "zh-Hans";
+  const nextWeek = original.contentVariants
+    ? { ...original, ...original.contentVariants[selectedLocale], contentVariants: original.contentVariants }
+    : original;
+  contentLocale = selectedLocale;
+  if (week?.id === nextWeek.id && week?.targetLocale === nextWeek.targetLocale) return;
+  week = nextWeek;
+  $("week-select").value = week.id;
+  $("title").textContent = week.title;
+  $("series").textContent = [week.series, week.sourceLabel].filter(Boolean).join(" · ");
+  $("speaker").textContent = week.speaker;
+  $("scripture").textContent = week.scripture;
+  $("cover-number").textContent = week.number;
+  $("date").textContent = week.date.replaceAll("-", ".");
+  $("edition-label").textContent = editionLabel();
+  $("week-status").textContent = diagnosticPresentation(week) ? t(diagnosticPresentation(week).statusKey) : isFormalPlayback(week) ? t("app.week.published") : week.humanContentReview === "approved" ? t("app.week.ready") : week.audioStatus === "full_candidate" ? t("app.week.review") : ["full_reviewed", "full_machine_checked"].includes(week.audioStatus) ? t("app.week.ready") : week.tracks.length ? t("app.week.sample") : t("app.week.outline");
+  $("central-message").textContent = week.centralMessage;
+  $("audio-notice").textContent = diagnosticNotice() || week.audioNotice;
+  if (week.sourceUrl) $("source-link").href = week.sourceUrl;
+  else $("source-link").removeAttribute("href");
+  setButtonLabel($("source-link"), week.sourceLabel ? t("app.source.link", { label: week.sourceLabel }) : t("app.source.open"));
+  $("source-link").hidden = !week.sourceUrl;
+  $("variants").replaceChildren();
+  $("variants").hidden = !week.tracks.length || diagnosticPresentation(week)?.canPlay === false;
+  for (const item of diagnosticPresentation(week)?.canPlay === false ? [] : week.tracks) {
+    const button = document.createElement("button");
+    button.textContent = isFormalPlayback(week) ? t("app.release.formal") : item.label;
+    button.dataset.id = item.id;
+    button.addEventListener("click", () => selectTrack(item.id));
+    $("variants").append(button);
+  }
+  renderOutline();
+  renderProduction();
+  renderDownloads();
+  $("outline-open").disabled = diagnosticPresentation(week)?.hasCandidate === false;
+  $("outline-secondary").disabled = diagnosticPresentation(week)?.hasCandidate === false;
+  selectTrack(week.tracks[0]?.id);
+  if (activeView === "tab-voices") selectTab("tab-listen");
+  const url = new URL(location.href);
+  url.searchParams.set("week", week.id);
+  if (week.contentVariants) url.searchParams.set("contentLang", contentLocale);
+  else url.searchParams.delete("contentLang");
+  history.replaceState(null, "", url);
+  renderWeekLabels(); renderWeekOptions();
+}
+async function startAlignmentPlayback({ signal } = {}) {
+  if (signal?.aborted) throw new DOMException("Alignment cancelled", "AbortError");
+  stopStartup();
+  const token = generation, attempt = ++alignmentPlayAttempt;
+  playPending = true; playFailed = false; positionTouched = true;
+  document.querySelectorAll(".voice-card audio").forEach(sample => sample.pause());
+  status("app.align.start"); update();
+  try {
+    // Explicit play, never a toggle; preserve the helper's failure for the controller.
+    await playAlignmentAudio(audio, { signal });
+    if (!signal?.aborted && token === generation && attempt === alignmentPlayAttempt) {
+      stopStartup(); status("app.audio.playing"); update();
+    }
+  } catch (error) {
+    if (!signal?.aborted && token === generation && attempt === alignmentPlayAttempt) {
+      stopStartup(); audio.pause(); playFailed = true;
+      status("app.align.failed"); update();
+    }
+    throw error;
+  }
+}
+async function togglePlay(fromAlignment = false) {
+  if (fromAlignment !== true) fieldAlignment.invalidate();
+  if (!track || $("play").disabled) return;
+  if (playPending) { stopStartup(); audio.pause(); status("app.audio.cancelled"); update(); return; }
+  if (!audio.paused) { audio.pause(); return; }
+  const retry = playFailed || Boolean(audio.error);
+  if (retry) {
+    saveProgress(true);
+    pendingResume = playbackMemory.read(activeSource, currentDuration()) || pendingResume;
+    ready(false); audio.load(); showResume();
+  }
+  if (pendingResume) {
+    usage.record("position_restore");
+    if (metadataReady) restorePosition();
+    else resumeOnMetadata = true;
+  }
+  if (audio.ended) setPosition(0);
+  positionTouched = true;
+  document.querySelectorAll(".voice-card audio").forEach(sample => sample.pause());
+  const token = generation, attempt = ++playAttempt;
+  playPending = true; playFailed = false;
+  status("app.audio.connecting"); update();
+  startupTimer = setTimeout(() => {
+    if (token !== generation || attempt !== playAttempt) return;
+    failStartup("app.audio.slow");
+    feedback.error("audio_play");
+  }, 15000);
+  // Keep play() inside the original click; never await metadata/network first.
+  try {
+    await audio.play();
+    if (token === generation && attempt === playAttempt) { stopStartup(); update(); }
+  } catch {
+    if (token === generation && attempt === playAttempt) {
+      failStartup("app.audio.failed"); feedback.error("audio_play");
+    }
+  }
+}
+function seek(delta, fine = false) { setPosition(audio.currentTime + delta, { fine }); }
+audio.addEventListener("play", () => fieldAlignment.playbackStarted());
+$("week-select").addEventListener("change", event => selectWeek(event.target.value));
+function selectContentLocale(locale) {
+  if (!week?.contentVariants?.[locale] || locale === contentLocale) return;
+  contentLocale = locale;
+  selectWeek(week.id);
+}
+$("content-language").addEventListener("change", event => selectContentLocale(event.target.value));
+$("play").addEventListener("click", togglePlay);
+document.querySelectorAll("[data-play-toggle]").forEach(button => button.addEventListener("click", togglePlay));
+$("resume-position").addEventListener("click", restorePosition);
+$("restart-position").addEventListener("click", restartPosition);
+$("undo-seek").addEventListener("click", undoSeek);
+document.querySelectorAll("[data-seek-undo]").forEach(button => button.addEventListener("click", undoSeek));
+$("more-toggle").addEventListener("click", () => setMore($("more-options").hidden));
+$("precision-open").addEventListener("click", () => { $("precision-dialog").showModal(); $("precision-dialog").scrollTop = 0; update(); });
+$("precision-close").addEventListener("click", () => $("precision-dialog").close());
+$("feedback-quick").addEventListener("click", () => $("feedback-point").click());
+function scrollToCurrent() {
+  const row = document.querySelector('#transcript-list .cue-row[aria-current="true"]');
+  if (row) { readingFollow.programmaticScroll(() => row.scrollIntoView({ block: "center", behavior: "instant" }), readingScrollPosition); row.focus({ preventScroll: true }); }
+}
+function readingScrollPosition() { return [window.scrollX || 0, window.scrollY || 0]; }
+function returnToCurrent() {
+  if (activeView === "tab-transcript") readingFollow.returnToCurrent(scrollToCurrent);
+  else selectTab("tab-listen", false, true);
+  renderReadingMode();
+}
+$("transcript-current").addEventListener("click", returnToCurrent);
+$("reading-current").addEventListener("click", returnToCurrent);
+$("reading-follow").addEventListener("click", () => { readingFollow.returnToCurrent(scrollToCurrent); renderReadingMode(); });
+$("reading-free").addEventListener("click", () => { readingFollow.userScroll(); renderReadingMode(); });
+function userReadingScroll() {
+  if (activeView === "tab-transcript") { readingFollow.userScroll(); renderReadingMode(); }
+}
+window.addEventListener("wheel", userReadingScroll, {passive:true});
+window.addEventListener("scroll", event => {
+  if (activeView === "tab-transcript" && (event.target === document || event.target === window)) {
+    readingFollow.observeScroll(readingScrollPosition()); renderReadingMode();
+  }
+}, {passive:true, capture:true});
+let readingTouchY = null;
+window.addEventListener("touchstart", event => { readingTouchY = event.touches[0]?.clientY ?? null; }, {passive:true});
+window.addEventListener("touchmove", event => { if (readingTouchY !== null && Math.abs((event.touches[0]?.clientY ?? readingTouchY) - readingTouchY) > 12) userReadingScroll(); }, {passive:true});
+document.addEventListener("keydown", event => {
+  if (["PageDown","PageUp","Home","End","ArrowUp","ArrowDown"].includes(event.key) && !event.target.closest("button,input,select,textarea,dialog")) userReadingScroll();
+});
+$("back").addEventListener("click", () => seek(-5));
+$("forward").addEventListener("click", () => seek(5));
+document.querySelectorAll("[data-nudge]").forEach(button => button.addEventListener("click", () => seek(Number(button.dataset.nudge), true)));
+$("progress").addEventListener("input", event => {
+  scrubbing = true;
+  const preview = formatTime(Number(event.target.value));
+  event.target.setAttribute("aria-valuetext", t("app.seek.release", { time: preview }));
+  $("seek-preview").textContent = t("app.seek.preview", { time: preview });
+});
+$("progress").addEventListener("change", event => setPosition(Number(event.target.value)));
+$("progress").addEventListener("pointercancel", () => { scrubbing = false; $("seek-preview").textContent = ""; update(); });
+$("jump-form").addEventListener("submit", event => {
+  event.preventDefault();
+  const time = parseTimecode($("jump-time").value);
+  if (time === null) { $("jump-message").textContent = t("app.seek.invalid"); return; }
+  if (!track || !Number.isFinite(audio.duration)) return;
+  if (time > audio.duration) { $("jump-message").textContent = t("app.seek.range", { duration: formatTime(audio.duration) }); return; }
+  setPosition(time);
+});
+tabs.forEach(tab => { tab.addEventListener("click", () => selectTab(tab.id, false, true)); });
+primaryTabs.forEach((tab, i) => {
+  tab.addEventListener("keydown", event => {
+    const next = event.key === "ArrowRight" ? (i + 1) % primaryTabs.length : event.key === "ArrowLeft" ? (i + primaryTabs.length - 1) % primaryTabs.length : event.key === "Home" ? 0 : event.key === "End" ? primaryTabs.length - 1 : -1;
+    if (next >= 0) { event.preventDefault(); selectTab(primaryTabs[next].id, true); usage.record(primaryTabs[next].id.replace('tab-', 'tab_')); }
+  });
+});
+$("show-transcript").addEventListener("click", () => selectTab("tab-transcript", false, true));
+for (const id of ["outline-open", "outline-secondary"]) $(id).addEventListener("click", () => { $("outline-dialog").showModal(); $("outline-dialog").scrollTop = 0; feedback.count("outlineViews"); });
+$("download").addEventListener("click", () => feedback.count("downloadClicks"));
+$("outline-close").addEventListener("click", () => $("outline-dialog").close());
+$("outline-dialog").addEventListener("click", event => {
+  const rect = $("outline-dialog").getBoundingClientRect();
+  if (event.target === $("outline-dialog") && (event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom)) $("outline-dialog").close();
+});
+audio.addEventListener("loadedmetadata", () => {
+  if (!audioIsCurrent() || !Number.isFinite(audio.duration)) return;
+  ready(true);
+  if (pendingResume || !positionTouched) pendingResume = playbackMemory.read(activeSource, audio.duration);
+  if (resumeOnMetadata && pendingResume) restorePosition();
+  resumeOnMetadata = false;
+  showResume();
+  if (!playFailed) status(playPending ? "app.audio.connecting" : pendingResume ? "app.resume.found" : "app.audio.ready");
+  update();
+});
+for (const event of ["timeupdate", "durationchange", "seeked"]) audio.addEventListener(event, update);
+audio.addEventListener("timeupdate", () => saveProgress());
+audio.addEventListener("pause", () => saveProgress(true));
+window.addEventListener("pagehide", () => saveProgress(true));
+document.addEventListener("visibilitychange", () => { if (document.visibilityState === "hidden") saveProgress(true); });
+audio.addEventListener("play", () => { if (!playPending) status("app.audio.playing"); update(); });
+audio.addEventListener("pause", () => {
+  // A queued pause from a cancelled attempt can arrive after play() restarts.
+  if (!audio.paused) return;
+  if (playPending) stopStartup();
+  if (track && !playFailed) status(audio.ended ? "app.audio.finished" : "app.audio.paused");
+  update();
+});
+audio.addEventListener("ended", () => { status("app.audio.finished"); update(); });
+audio.addEventListener("waiting", () => { if (track) status("app.audio.buffering"); });
+audio.addEventListener("playing", () => {
+  readingFollow.update({active:activeView === "tab-transcript",playing:true,changed:true},scrollToCurrent); if (!audioIsCurrent()) return; stopStartup(); playFailed = false; status("app.audio.playing"); update(); });
+audio.addEventListener("error", () => { if (track && audio.error) { failStartup("app.audio.loadFailed"); ready(false); feedback.error("audio_load"); } });
+document.addEventListener("keydown", event => {
+  if (activeView === "tab-voices" || event.target.closest("audio") || $("outline-dialog").open || $("feedback-dialog").open || $("precision-dialog").open || $("fingerprint-dialog").open || $("english-locate-dialog").open || $("content-browser").open || event.target.matches("input,button,a,select,textarea") || !track || $("play").disabled) return;
+  if (event.code === "Space") { event.preventDefault(); usage.record(audio.paused ? 'play_click' : 'pause_click'); togglePlay(); }
+  if (event.code === "ArrowLeft" || event.code === "ArrowRight") {
+    event.preventDefault();
+    usage.record(event.shiftKey ? (event.code === 'ArrowRight' ? 'nudge_forward_quarter_click' : 'nudge_back_quarter_click') : (event.code === 'ArrowRight' ? 'forward_5_click' : 'back_5_click'));
+    seek((event.code === "ArrowRight" ? 1 : -1) * (event.shiftKey ? .25 : 5), event.shiftKey);
+  }
+});
+async function initializeEngagement() {
+  try {
+    const engagement = await fetch("/engagement.json");
+    if (engagement.ok) {
+      const config = await engagement.json();
+      usage = createUsage({ catalog, weekIdentity: engagementWeek, config, audio,
+        context: () => ({ week: engagementWeek(week), track, panel: activeView.replace('tab-', '') }),
+        onError: () => { if ($('statistics-opt-in').checked) feedback.usageDeliveryError?.(); },
+      });
+      feedback = createFeedback(audio, config, { usage });
+      // The listener may have switched sources while the optional request ran.
+      feedback.select(engagementWeek(week), track);
+      usage.select?.(engagementWeek(week), track);
+      $("feedback-quick").hidden = !config.enabled;
+      usage.setEnabled(feedback.statisticsEnabled());
+    }
+  } catch { /* Optional feedback must never prevent playback. */ }
+}
+function renderPageLanguages() {
+  const [, code, name] = pageLanguages.find(([locale]) => locale === getLocale()) || pageLanguages[0];
+  $("language-label").textContent = code;
+  $("language-toggle").setAttribute("aria-label", `${t("language.choose")} · ${name}`);
+  $("language-toggle").title = `${t("language.choose")} · ${name}`;
+  $("page-language-menu").replaceChildren(...pageLanguages.map(([locale, itemCode, itemName, lang]) => {
+    const item = document.createElement("button");
+    item.type = "button"; item.tabIndex = -1; item.dataset.locale = locale;
+    item.setAttribute("role", "menuitemradio");
+    item.setAttribute("aria-checked", String(locale === getLocale()));
+    const codeLabel = document.createElement("span"); codeLabel.className = "locale-code"; codeLabel.textContent = itemCode;
+    const nameLabel = document.createElement("span"); nameLabel.lang = lang; nameLabel.textContent = itemName;
+    const check = document.createElement("span"); check.className = "locale-check";
+    if (locale === getLocale()) setIcon(check, "checkmark");
+    item.append(codeLabel, nameLabel, check);
+    item.addEventListener("click", () => { setPageLanguageMenu(false); setLocale(locale); $("language-toggle").focus(); });
+    return item;
+  }));
+}
+function setPageLanguageMenu(open) {
+  $("page-language-popover").hidden = !open;
+  $("language-toggle").setAttribute("aria-expanded", String(open));
+  if (open) $("page-language-menu").querySelector?.('[aria-checked="true"]')?.focus();
+}
+$("language-toggle").addEventListener("click", () => setPageLanguageMenu($("language-toggle").getAttribute("aria-expanded") !== "true"));
+$("page-language-control").addEventListener("keydown", event => {
+  if ($("page-language-popover").hidden) return;
+  const items = [...$("page-language-menu").children];
+  const current = items.indexOf(document.activeElement);
+  if (event.key === "Escape") { event.preventDefault(); setPageLanguageMenu(false); $("language-toggle").focus(); return; }
+  if (!["ArrowDown", "ArrowUp", "Home", "End"].includes(event.key)) return;
+  event.preventDefault();
+  const next = event.key === "Home" ? 0 : event.key === "End" ? items.length - 1
+    : (current + (event.key === "ArrowDown" ? 1 : -1) + items.length) % items.length;
+  items[next].focus();
+});
+// Tabbing away closes the menu; a pointer press without a new focus target does not.
+$("page-language-control").addEventListener("focusout", event => {
+  if (event.relatedTarget && !$("page-language-control").contains(event.relatedTarget)) setPageLanguageMenu(false);
+});
+document.addEventListener("pointerdown", event => {
+  if (!$("page-language-popover").hidden && !event.target.closest?.("#page-language-control")) setPageLanguageMenu(false);
+});
+onLocaleChange(() => {
+  $("interface-language").value = getLocale();
+  renderPageLanguages();
+  // A shared link's page language follows the listener's later choice on reload.
+  const url = new URL(location.href);
+  if (url.searchParams.has("lang")) { url.searchParams.set("lang", getLocale()); history.replaceState(null, "", url); }
+  updateLanguageControl(); renderReadingMode(); renderOfflineStatus(); renderDockLabels();
+  if (!catalog || !week) return;
+  renderWeekOptions(); renderWeekLabels(); renderOutline(); renderProduction(); renderDownloads();
+  renderTranscript(); ready(metadataReady); showResume(); updateUndo();
+  voiceLabels.forEach(refresh => refresh());
+  $("offset").textContent = t("app.offset", { value: `${fineOffset > 0 ? "+" : ""}${fineOffset.toFixed(2)}` });
+  if (lastStatus) status(...lastStatus);
+  $("jump-message").textContent = ""; $("seek-preview").textContent = "";
+  lastCue = -2; update(); syncDockHeight();
+});
+$("interface-language").value = getLocale();
+$("interface-language").addEventListener("change", event => setLocale(event.target.value));
+renderPageLanguages();
+localizeDOM();
+void registerOfflineReading({onStatus: state => { offlineState = state; renderOfflineStatus(); }});
+try {
+  const response = await fetch("/weekly.json");
+  if (!response.ok) throw new Error("Catalog unavailable");
+  catalog = validateCatalog(await response.json());
+  const published = await loadPublishedWeeks(undefined, { allowDevCandidates: navigationEnvironment === "development" });
+  if (published.weeks.length) {
+    const ids = new Set(published.weeks.map(item => item.id));
+    catalog = validateCatalog({ ...catalog,
+      defaultWeekId: published.defaultWeekId || catalog.defaultWeekId,
+      weeks: [...published.weeks, ...catalog.weeks.filter(item => !ids.has(item.id))],
+    });
+  }
+  const navigation = buildCatalogNavigation(catalog, { environment: navigationEnvironment });
+  catalog = navigation.catalog;
+  navigationGroups = navigation.groups;
+  renderWeekOptions();
+  $("week-select").disabled = false;
+  renderVoiceBank();
+  selectWeek(new URLSearchParams(location.search).get("week"));
+  const initialTab = new URLSearchParams(location.search).get("tab");
+  if (["voices", "production", "transcript"].includes(initialTab)) selectTab(`tab-${initialTab}`);
+  syncDockHeight();
+  void initializeEngagement();
+} catch {
+  ready(false);
+  $("title").textContent = t("app.load.title");
+  status("app.load.failed");
+  $("current-text").textContent = t("app.load.content");
+}

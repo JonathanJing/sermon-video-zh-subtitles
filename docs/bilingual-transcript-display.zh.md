@@ -29,7 +29,7 @@
 
 [`build_weekly_app.py`](../experiments/sermon-dubbing-poc/build_weekly_app.py) 从已验证的冻结 `job.blocks` 导出原有中英文，按显式 `blockId` 关联音轨字幕。一个内容块可以有多句配音字幕；英文只显示一次。数据保存来源和已有审校状态，`reading_quality_pass` 只表示继承文字 QA，不代表人工逐字核对。没有对应记录时使用 `unspecified`。
 
-[`catalog.mjs`](../experiments/sermon-dubbing-poc/web/catalog.mjs) 与 [`BilingualTranscript.swift`](../apps/tongxing-ios/Core/Sources/TongxingCore/BilingualTranscript.swift) 使用一致的身份关联规则；拒绝重复或未知段落身份，兼容历史内容没有 `transcript` 或字幕没有 `blockId`。新构建的每个 weekly job 自动带出双语数据；仅保留旧目录条目的发布不会自动补写旧条目，旧内容需要从相应冻结 job 重新导出页面数据。无需重跑模型或音频合成。
+[`catalog.mjs`](../apps/listening-web/catalog.mjs) 与 [`BilingualTranscript.swift`](../apps/tongxing-ios/Core/Sources/TongxingCore/BilingualTranscript.swift) 使用一致的身份关联规则；拒绝重复或未知段落身份，兼容历史内容没有 `transcript` 或字幕没有 `blockId`。新构建的每个 weekly job 自动带出双语数据；仅保留旧目录条目的发布不会自动补写旧条目，旧内容需要从相应冻结 job 重新导出页面数据。无需重跑模型或音频合成。
 
 上线包含两部分：更新网页与目录数据；发布含折叠界面的新 iOS 构建。旧 iOS 若已支持该数据扩展，可读取新增英文，但仍按其旧界面直接展开显示。缓存目录需刷新才会得到新增英文。
 

@@ -4,7 +4,7 @@ import subprocess
 import tempfile
 import unittest
 
-from scripts.pipeline_compatibility_gate import evaluate
+from tools.development.pipeline_compatibility_gate import evaluate
 
 
 class CompatibilityGateTests(unittest.TestCase):
@@ -16,7 +16,8 @@ class CompatibilityGateTests(unittest.TestCase):
         self.git('config', 'user.name', 'Fixture')
         self.git('config', 'user.email', 'fixture@example.invalid')
         for name in ('apps/tongxing-ios/App.swift', 'schemas/catalog.json',
-                     'experiments/sermon-dubbing-poc/web/app.mjs', 'scripts/sermon_accounting.py'):
+                     'apps/listening-web/app.mjs', 'scripts/sermon_accounting.py',
+                     'tools/development/pipeline_compatibility_gate.py'):
             self.write(name, 'original')
         self.base = self.save()
 
@@ -42,6 +43,12 @@ class CompatibilityGateTests(unittest.TestCase):
         self.assertIs(result['ios_review_required'], False)
         self.assertEqual(result['compatibilitySignoff'], 'not_evaluated')
         self.assertEqual(result['baseSnapshot']['sha256'], result['headSnapshot']['sha256'])
+
+    def test_moved_policy_path_retains_audited_backend_classification(self):
+        self.write('tools/development/pipeline_compatibility_gate.py', 'new')
+        result = evaluate(self.root, self.base, self.save())
+        self.assertEqual(result['status'], 'backend_only_unchanged')
+        self.assertFalse(result['unclassifiedChanges'])
 
     def test_client_schema_privacy_and_unknown_changes_fail_closed(self):
         for name in ('apps/tongxing-ios/App.swift', 'schemas/catalog-v3.json',

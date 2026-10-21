@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261018-t6-gate-sync-87fafa3f",
+  "runs": [
+    {
+      "label": "t6-gate-sync-87fafa3f-local",
+      "source": "/private/tmp/t6-review-gate-leaf-20261017/artifacts/t6-gate-sync-87fafa3f-local",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "t6-gate-sync-87fafa3f-local",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 220,
+      "truncated": false,
+      "sha256": "a93b214441c4c0ec7365afcb71ac38226af98fc6e40ffdbaf44b9250e84ca2d6",
+      "redactions": {}
+    },
+    {
+      "run": "t6-gate-sync-87fafa3f-local",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 812,
+      "truncated": false,
+      "sha256": "814b3c15cc3197a9da59ac886d81e106ad50bd1df667f231df73810069178ddc",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

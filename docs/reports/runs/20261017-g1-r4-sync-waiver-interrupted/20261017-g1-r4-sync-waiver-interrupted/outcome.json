@@ -1,0 +1,8 @@
+{
+  "schemaVersion": "sermon-local-test-outcome-v1",
+  "status": "interrupted",
+  "exitCode": 130,
+  "testsRun": null,
+  "command": "PYTHONPATH=. .venv/bin/python -m unittest tests.test_sermon_unified_reviews tests.test_implementation_freeze tests.test_check_run_start_drain tests.test_tongxing_audio_ports tests.test_machine_quality_waiver -q",
+  "reason": "Operator interrupted after more than seven minutes in review/seeded_errors.py audio calibration encode_pcm16; aggregate test result unavailable."
+}

@@ -1,0 +1,12 @@
+{
+  "status": "passed",
+  "kind": "test",
+  "scope": "Weekly projection #615 after merging sidecar #571 at 249ae12a34d19baaaaf899e2e1e1ad0106cf1c9c",
+  "headSha": "25d41ade81abeddfcc8543a1f6ccc2e0440eacd1",
+  "command": "PYTHONPATH=$PWD/packages/production/src:$PWD ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.venv/bin/python -m pytest -q tests/test_weekly_pipeline_report.py",
+  "exitCode": 0,
+  "result": "17 passed, 9 subtests passed in 0.60s",
+  "diffCheck": "git diff --check origin/codex/dev-event-identity-sidecar-20261017...HEAD: passed",
+  "environment": "worktree source via PYTHONPATH; tongxing_production resolves inside weekly worktree",
+  "limitations": "No real weekly production run, provider call, deployment, or production readback."
+}

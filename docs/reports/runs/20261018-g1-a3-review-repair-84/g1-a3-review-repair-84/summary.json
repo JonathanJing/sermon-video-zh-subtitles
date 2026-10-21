@@ -1,0 +1,7 @@
+{
+  "schemaVersion": "local-test-summary-v1",
+  "command": ".venv/bin/python -m pytest -q tests/test_source_bound_diagnostic_audio.py tests/test_replay_fixed_clip_local_models.py tests/test_tongxing_audio_ports.py tests/test_decision_api_cases_rules.py tests/test_target_audio_rate_identity.py tests/test_screen_transcript_folding.py tests/test_implementation_freeze.py",
+  "result": "84 passed, 159 subtests passed",
+  "note": "Old diagnostic runs explicitly reject new worker; fresh run/resume and cold multithreaded decode pass.",
+  "scope": "targeted code tests; no model, paid request, calibration, waiver or release"
+}

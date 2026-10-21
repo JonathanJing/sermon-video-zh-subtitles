@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-pr824-python-ci",
+  "runs": [
+    {
+      "label": "pr824-python-ci-20261017",
+      "source": "/private/tmp/cuv-t5-package-move-20261017/artifacts/pr824-python-ci-20261017",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "pr824-python-ci-20261017",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 407,
+      "truncated": false,
+      "sha256": "8a4a9f7d3fba597fb5d8f1b8e38a1dfd533d6e57ad32fb3e684f7846f7057b3d",
+      "redactions": {}
+    },
+    {
+      "run": "pr824-python-ci-20261017",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 1577,
+      "truncated": false,
+      "sha256": "cb16b2323c4ea3d31544a55860aa7b6ff1417d671027510d457295e94790b4d9",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

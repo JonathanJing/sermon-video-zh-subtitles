@@ -5,12 +5,19 @@ from pathlib import Path
 import unittest
 from unittest.mock import Mock, patch
 
-from scripts import sermon_historical_layer2 as h, sermon_strict_layer2 as strict
-from scripts import run_bounded_diagnostic as bounded
-from scripts import sermon_strict_candidate_bridge as bridge, sermon_review_contracts as c
-from scripts import sermon_review_budget as budget, sermon_diagnostic_provider as provider
-from scripts import sermon_diagnostic_attempts as attempts, sermon_accounting as accounting, sermon_log_profile as profile
-from scripts import target_language_policy as policies, produce_target_language_candidate as producer
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.workflows.diagnostic import historical_layer2 as h
+from tongxing_production.text.strict import layer2 as strict
+from tongxing_production.workflows.diagnostic import bounded
+from tongxing_production.text.strict import candidate_bridge as bridge
+from tongxing_production.review import contracts as c
+from tongxing_production.workflows.diagnostic import provider
+from tongxing_production.review import review_budget as budget
+from tongxing_production.workflows.diagnostic import attempts
+from tongxing_production.observability import accounting
+from tongxing_production.observability import profile
+from tongxing_production.text import policy as policies
+from tongxing_production.text import candidate as producer
 from tests import test_sermon_diagnostic_provider as fixtures
 
 
@@ -27,7 +34,7 @@ class HistoricalLayer2Tests(unittest.TestCase):
         clone.write_bytes(Path(accounting.__file__).read_bytes())
         for args in (('init','-q'),('add','.'),('-c','user.name=Fixture','-c','user.email=fixture@example.invalid','commit','-qm','fixture')):
             subprocess.run(['git','--no-optional-locks','-C',str(git_root),*args],capture_output=True,check=True,timeout=5)
-        self.enterContext(patch.object(accounting,'__file__',str(clone)))
+        self.enterContext(patch.object(accounting,'checkout_root',lambda:git_root))
         self.identity=accounting.execution_identity()
         self.assertIs(self.identity['trackedWorkingTreeDirty'],False)
         self.f.provider=self.f.provider_for(codeSha256=c.canonical_sha256(self.identity))
@@ -61,8 +68,8 @@ def review_group(policy,english_units,group):
             draft['reviewContract']['rubricCanonicalJsonSha256']=c.canonical_sha256(rubric)
             policy=policies.freeze_strict_policy(draft,rubric)
             self.f.f.args[2:]=[strict.material_bytes(policy),strict.material_bytes(rubric)]
-            from scripts import run_target_language_models as models
-            from scripts import target_language_rule_preflight as rule_preflight
+            from tongxing_production.text import models
+            from tongxing_production.text import rule_preflight
             source, anchor = c.decode_json(self.f.f.args[0]), c.decode_json(self.f.f.args[1])
             request = producer.prepare_request(source, anchor, policy, strict_rubric=rubric)
             receipt = rule_preflight.preflight(request, policy, plugin, [self.group])
@@ -70,7 +77,7 @@ def review_group(policy,english_units,group):
                                            rule_preflight=receipt, rule_context={'pluginPath': str(plugin), 'groupPlan': [self.group]})
         if repair_steps:
             import json
-            from scripts import sermon_strict_controller as controller
+            from tongxing_production.text.strict import controller
             original=self.f.http;reviews=[]
             def semantic_failure(req,timeout,**kw):
                 response=original(req,timeout,**kw)

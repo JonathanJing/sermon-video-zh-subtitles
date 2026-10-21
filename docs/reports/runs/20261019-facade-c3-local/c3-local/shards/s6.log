@@ -1,0 +1,242 @@
+Estimating 213 unprofiled modules from measured per-case cost
+Shard 7/10: 607 tests from 370 modules
+...........................................Automatic merge went well; stopped before committing as requested
+......usage: run_unittest_ci.py [-h] {build,verdicts} ...
+run_unittest_ci.py: error: output directory already exists: /var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/tmpszkm1dbr/sheet
+usage: run_unittest_ci.py build [-h] --audio-package AUDIO_PACKAGE
+                                --candidate CANDIDATE --anchors ANCHORS
+                                --screening SCREENING [--audio-qc AUDIO_QC]
+                                [--sample-size SAMPLE_SIZE] [--seed SEED]
+                                --out OUT
+run_unittest_ci.py build: error: the following arguments are required: --screening
+.................................s....{"locale": "zh-Hans", "rows": 7, "flagged": 2, "sampled": 5, "sheet": "/var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/tmpszkm1dbr/sheet/listening-sample.md"}
+{"role": "translator", "model": "gpt-6.1-sol", "tier": "fast", "elapsedSeconds": 0.001, "usage": {"input_tokens": 100, "cached_input_tokens": 50, "output_tokens": 20}, "creditUsage": {"schemaVersion": "codex-credit-usage-v1", "status": "estimated", "estimatedCredits": 0.01525, "actualCredits": null, "actualQuotaUsage": null, "basis": "purchased_credit_equivalent", "model": "gpt-6.1-sol", "modelSource": "requested", "requestedServiceTier": "fast", "appliedServiceTier": "fast", "tierSource": "requested", "rateCardVersion": "codex-credits-2026-10-05", "rateCardSha256": "557d283646a6dd8ed49cc32a88e8459a165b72066339be99233ea75146c21edf", "verifiedAt": "2026-10-05", "sources": ["https://learn.chatgpt.com/docs/pricing", "https://learn.chatgpt.com/docs/agent-configuration/speed"], "ratesPerMillionTokens": {"input": 50, "cachedInput": 2.5, "output": 250}, "speedMultiplier": 2, "reason": "requested_identity_assumption"}}
+........................................Publish for cloud review: scripts/publish_run_report.sh artifacts/run-reports/20261019-204913-machine-qc-text
+Run report not written (no report written); export it by hand with scripts/export_run_digest.py
+.........................s....................................................................Digest: /var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/tmp5dx1qbxe/digests/20261007-e2e (4 files, 9 redactions)
+Zip:    /var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/tmp5dx1qbxe/digests/20261007-e2e.zip
+Digest: /var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/tmpo3_wnml0/digests/20261007-e2e (6 files, 9 redactions)
+Digest: /var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/tmp0nkhf6yq/artifacts/run-reports/20261019-204913-machine-qc-text (4 files, 8 redactions)
+gpt-transcribe reference chunk 2/2
+................................usage: run_unittest_ci.py [-h] --run-dir RUN_DIR [--check]
+                          [--question QUESTION] [--choice CHOICE]
+                          [--decided-by DECIDED_BY]
+                          [--channel {chat,voice,in_person,email,ticket}]
+                          [--applies-to APPLIES_TO] [--governs GOVERNS]
+                          [--evidence EVIDENCE]
+run_unittest_ci.py: error: recording a decision needs --choice, --decided-by
+................Prepared playback simulation: /var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/tmp15dkb2ys/web/test-asr.generated.js
+Open apps/operator-web/index.html and click 模拟播放.
+{"status": "prepared_adapter_validation_required", "targetLocale": "ko", "synthesisEligible": false, "job": "/private/var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/tmpdjsqs34w/timed-speech-job/job.json"}
+{"at": "2026-10-19T20:52:32+00:00", "question": "q", "choice": "c", "decidedBy": "Jony (chat)", "channel": "chat", "authority": "unbound_note", "governs": [], "evidence": [{"text": "said so"}], "appliesTo": "layer4"}
+[
+ {
+  "at": "2026-10-19T20:52:32+00:00",
+  "question": "q",
+  "choice": "c",
+  "status": "unbound",
+  "changed": []
+ }
+]
+... 65 lines omitted; 0 error-like lines, 0 kept below ...
+... end of omitted section ...
+    "reason": "fake judge: waiver built in memory, never saved",
+    "problems": [],
+    "calibration": {
+      "overallDetectionRate": 1.0,
+      "cleanFalsePositiveRate": 0.0,
+      "trials": 90,
+      "detected": 90
+    }
+  }
+}
+discover	pass	0.0
+.......{
+  "es": [
+    "no unique candidate; found 0: []"
+  ]
+}
+{"component": "post-live-timeline-job", "event": "post_live_timeline_job_checked", "liveSource": {"host": "www.youtube.com", "path": "/watch", "urlHash": "3dd1687429a3473c"}, "loggedAt": "2026-10-19T20:54:22.588221+00:00", "severity": "INFO", "status": "failed", "sunday": "2026-07-12"}
+.....s.........................s......translated zh 1/1
+translated zh 1/1
+.......................s...............................................................................................................................................................................v4.1 package verified; model loaded and warmup finished.
+......................................SERMON_LOGGING_WRITE_FAILED errorType=AccountingWriteError
+.......................................
+----------------------------------------------------------------------
+Ran 607 tests in 968.804s
+
+OK (skipped=5)
+{
+  "apiKeyMaterialIncluded": false,
+  "commands": [
+    [
+      "python3",
+      "scripts/run_offline_archive_preflight.py",
+      "--live-url",
+      "<NO_CAPTION_YOUTUBE_LIVE_ARCHIVE_URL>",
+      "--no-discover",
+      "--lang",
+      "en-orig",
+      "--lang",
+      "en",
+      "--sermon-start",
+      "<SERMON_START_TIMECODE_IF_KNOWN>",
+      "--asr-model",
+      "gpt-4o-transcribe",
+      "--out",
+      "artifacts/evidence/no-caption-archive-preflight.json"
+    ],
+    [
+      "python3",
+      "scripts/prepare_live_link_playback.py",
+      "--live-url",
+      "<NO_CAPTION_YOUTUBE_LIVE_ARCHIVE_URL>",
+      "--no-discover",
+      "--lang",
+      "en-orig",
+      "--lang",
+      "en",
+      "--sermon-start",
+      "<SERMON_START_TIMECODE_IF_KNOWN>",
+      "--asr-model",
+      "gpt-4o-transcribe",
+      "--api-key-secret",
+      "<OPENAI_API_KEY_SECRET_RESOURCE>",
+      "--out-dir",
+      "artifacts/evidence/2026-06-28-no-caption-asr-route/artifacts",
+      "--web-out",
+      "artifacts/evidence/2026-06-28-no-caption-asr-route/web/playback-simulation.generated.js",
+      "--gcs-bucket",
+      "sermon-zh-artifacts-ai-for-god",
+      "--gcs-prefix",
+      "sundays/2026-06-28/runs/no-caption-asr-route",
+      "--gcs-dry-run"
+    ],
+    [
+      "python3",
+      "scripts/translate_playback_with_openai.py",
+      "--input",
+      "artifacts/evidence/2026-06-28-no-caption-asr-route/web/playback-simulation.generated.js",
+      "--model",
+      "gpt-5.4-mini",
+      "--api-key-secret",
+      "<OPENAI_API_KEY_SECRET_RESOURCE>",
+      "--out",
+      "artifacts/evidence/2026-06-28-no-caption-asr-route/web/playback-simulation.generated.js",
+      "--out-dir",
+      "artifacts/evidence/2026-06-28-no-caption-asr-route/model-output"
+    ],
+    [
+      "python3",
+      "scripts/export_playback_captions.py",
+      "--input",
+      "artifacts/evidence/2026-06-28-no-caption-asr-route/web/playback-simulation.generated.js",
+      "--out-dir",
+      "artifacts/evidence/2026-06-28-no-caption-asr-route/artifacts",
+      "--stem",
+      "sermon.zh.live-aligned",
+      "--manifest",
+      "artifacts/evidence/2026-06-28-no-caption-asr-route/artifacts/cloud-manifest.json",
+      "--gcs-bucket",
+      "sermon-zh-artifacts-ai-for-god",
+      "--gcs-prefix",
+      "sundays/2026-06-28/runs/no-caption-asr-route",
+      "--gcs-dry-run"
+    ],
+    [
+      "python3",
+      "scripts/validate_offline_chain.py",
+      "--report",
+      "artifacts/evidence/2026-06-28-no-caption-asr-route/artifacts/report.json",
+      "--playback-js",
+      "artifacts/evidence/2026-06-28-no-caption-asr-route/web/playback-simulation.generated.js",
+      "--zh-vtt",
+      "artifacts/evidence/2026-06-28-no-caption-asr-route/artifacts/sermon.zh.live-aligned.vtt",
+      "--zh-srt",
+      "artifacts/evidence/2026-06-28-no-caption-asr-route/artifacts/sermon.zh.live-aligned.srt",
+      "--manifest",
+      "artifacts/evidence/2026-06-28-no-caption-asr-route/artifacts/cloud-manifest.json",
+      "--expected-asr-model",
+      "gpt-4o-transcribe",
+      "--expected-translation-model",
+      "gpt-5.4-mini",
+      "--out",
+      "artifacts/evidence/no-caption-offline-chain-validation.json"
+    ],
+    [
+      "python3",
+      "scripts/validate_production_readiness.py",
+      "--offline-report",
+      "artifacts/evidence/2026-06-28-no-caption-asr-route/artifacts/report.json",
+      "--playback-js",
+      "artifacts/evidence/2026-06-28-no-caption-asr-route/web/playback-simulation.generated.js",
+      "--zh-vtt",
+      "artifacts/evidence/2026-06-28-no-caption-asr-route/artifacts/sermon.zh.live-aligned.vtt",
+      "--zh-srt",
+      "artifacts/evidence/2026-06-28-no-caption-asr-route/artifacts/sermon.zh.live-aligned.srt",
+      "--sunday-manifest",
+      "artifacts/evidence/2026-06-28-no-caption-asr-route/artifacts/cloud-manifest.json",
+      "--allow-missing-realtime",
+      "--out",
+      "artifacts/evidence/asr-route-readiness.json"
+    ]
+  ],
+  "passCriteria": [
+    "run_offline_archive_preflight.py reports decision=use_asr_fallback.",
+    "prepare_live_link_playback.py runs offline_live_sermon_subtitles.py, builds playback JS, and writes a cloud-manifest.json dry-run manifest.",
+    "Prepared offline report has caption_source.kind=openai_asr.",
+    "validate_offline_chain.py confirms no requested English caption track exists before ASR fallback.",
+    "validate_offline_chain.py confirms the openai_asr output source_file is an extracted audio artifact.",
+    "ASR model is gpt-4o-transcribe.",
+    "Chinese translation model is gpt-5.4-mini.",
+    "validate_offline_chain.py status is ok and not_realtime_chain passes.",
+    "validate_production_readiness.py output records offlineRoute.decision=use_asr_fallback."
+  ],
+  "requiredModels": {
+    "forbiddenOfflineModel": "gpt-realtime-translate",
+    "offlineAsr": "gpt-4o-transcribe",
+    "offlineTranslation": "gpt-5.4-mini"
+  },
+  "requiredSource": {
+    "authorizationRequirement": "Use only a source we are authorized to process.",
+    "captionRequirement": "No requested English caption track is available.",
+    "kind": "youtube_live_archive",
+    "placeholderUrl": "<NO_CAPTION_YOUTUBE_LIVE_ARCHIVE_URL>"
+  },
+  "runnerCommand": [
+    "python3",
+    "scripts/run_no_caption_archive_asr_route.py",
+    "--live-url",
+    "<NO_CAPTION_YOUTUBE_LIVE_ARCHIVE_URL>",
+    "--api-key-secret",
+    "<OPENAI_API_KEY_SECRET_RESOURCE>",
+    "--sunday",
+    "2026-06-28",
+    "--session-id",
+    "no-caption-asr-route",
+    "--sermon-start",
+    "<SERMON_START_TIMECODE_IF_KNOWN>",
+    "--asr-model",
+    "gpt-4o-transcribe",
+    "--translation-model",
+    "gpt-5.4-mini",
+    "--out",
+    "artifacts/evidence/no-caption-asr-route-run.json"
+  ],
+  "schemaVersion": 1,
+  "secretResourceNamesIncluded": false,
+  "sessionId": "no-caption-asr-route",
+  "status": "needs_real_no_caption_archive",
+  "sunday": "2026-06-28"
+}
+ 144.47s     6  test_machine_quality_waiver
+ 136.20s     1  test_sermon_fresh_full_dag
+  94.46s     2  test_run_machine_qc_audio_test
+  36.49s     2  test_canonical_layer2_cache_recovery
+  33.76s     3  test_canonical_layer2_reconciliation
+  30.55s     3  test_sermon_historical_layer2
+  22.47s     4  test_sermon_strict_layer2
+  18.86s     6  test_sermon_delivery_intent_binding
+  18.05s     5  test_sermon_cuv_translation
+  16.53s     2  test_sermon_mock_tts_dag
+exit 0

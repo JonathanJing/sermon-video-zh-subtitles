@@ -1,9 +1,11 @@
 import hashlib
 import json
 import pytest
-from scripts import sermon_unified_reviews as reviews
-from scripts import delivery_contract as d
-from scripts.sermon_production_supervisor import stable_hash, json_digest
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.review import unified_reviews as reviews
+from tongxing_production.delivery import contract as d
+from tongxing_production.delivery import study_artifacts as study
+from tongxing_production.workflows.supervisor.production import stable_hash, json_digest
 
 
 def save(path, value):
@@ -67,3 +69,25 @@ def test_review_locale_must_match_job(tmp_path):
     path = tmp_path / 'review.json'; save(path, {'targetLocale': 'es'})
     with pytest.raises(ValueError, match='active job'):
         reviews.validate_review('translation', path, inputs={}, expected_locale='ko')
+
+
+@pytest.mark.parametrize('kind', ['outline', 'meditation'])
+def test_study_review_uses_bound_delivery_gate(kind, tmp_path):
+    source_hash = 'a' * 64
+    artifact = study.produce(kind, [{'title': 'Title', 'body': 'Body', 'sourceUnitIds': ['u1']}],
+                             page_id='p', locale='es', source_sha=source_hash,
+                             text_sha='b' * 64, producer_identity='test')
+    receipt = {'schemaVersion': 'sermon-study-review-v1',
+               **{key: artifact[key] for key in ('kind', 'pageId', 'locale', 'sourcePackageSha256', 'textCandidateSha256')},
+               'artifactSha256': d.sha(artifact), 'decision': 'approved', 'humanApproval': True,
+               'reviewedBy': 'operator', 'reviewedAt': '2026-10-04T20:00:00Z',
+               'checks': {'faithfulness': 'pass', 'scriptureIntegrity': 'pass', 'localeReadability': 'pass'}}
+    artifact_path = tmp_path / 'artifact.json'; save(artifact_path, artifact)
+    receipt_path = tmp_path / 'receipt.json'; save(receipt_path, receipt)
+    result = reviews.validate_review(kind, receipt_path, inputs={'artifact': artifact_path}, expected_locale='es')
+    assert result['status'] == 'validated'
+    assert result['receiptJsonSha256'] == d.sha(receipt)
+    receipt['artifactSha256'] = '0' * 64
+    save(receipt_path, receipt)
+    with pytest.raises(ValueError, match='bind artifact'):
+        reviews.validate_review(kind, receipt_path, inputs={'artifact': artifact_path})

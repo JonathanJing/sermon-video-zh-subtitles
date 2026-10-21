@@ -1,0 +1,10 @@
+{
+  "check": "CI-style root shard 2",
+  "successful": true,
+  "testsRun": 711,
+  "elapsedSeconds": 392.46,
+  "shardIndex": 2,
+  "shardCount": 8,
+  "checkoutCommit": "507706ab",
+  "note": "Cherry-picked sidecar fix into A3 parent; subsequent world-readable/conflicting-inline hardening in PR #571 is not part of this shard run."
+}

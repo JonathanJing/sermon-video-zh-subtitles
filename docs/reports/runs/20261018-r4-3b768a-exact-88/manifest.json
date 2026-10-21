@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261018-r4-3b768a-exact-88",
+  "runs": [
+    {
+      "label": "20261018-r4-3b768a-exact-88",
+      "source": "~/.codex/worktrees/g1-r4-review/sermon-video-zh-subtitles/artifacts/local-runs/20261018-r4-3b768a-exact-88",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "20261018-r4-3b768a-exact-88",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 170,
+      "truncated": false,
+      "sha256": "1224ae5541ec4f95e10b29fe7c04fe07e229939185658b8fa72eb523bb3f6232",
+      "redactions": {}
+    },
+    {
+      "run": "20261018-r4-3b768a-exact-88",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 211,
+      "truncated": false,
+      "sha256": "7453d3b6e781ced1a60622a640afbffc9b9375198f1cca2ec8b9fe04cb712765",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

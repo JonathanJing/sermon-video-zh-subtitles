@@ -1,0 +1,22 @@
+{
+  "status": "passed",
+  "deliveryType": "test",
+  "scope": "read-only host port refinement",
+  "checks": [
+    {
+      "name": "weekly report, decision accounting, sufficiency, actual trace",
+      "status": "passed",
+      "passed": 48,
+      "subtestsPassed": 23
+    },
+    {
+      "name": "old and new CLI output parity on synthetic ledger after port refinement",
+      "status": "passed",
+      "reportJsonSha256": "0cd99f25875f636e938003a03941f5e4c76bb39ff08f9b7b3c633c01035f67c1",
+      "reportMarkdownSha256": "569052a99678f6985ec2b93f3dbd5719677cd934fbe1cb68a5b95e21550f876b"
+    }
+  ],
+  "remoteCalls": 0,
+  "paidCalls": 0,
+  "publication": "not_run"
+}

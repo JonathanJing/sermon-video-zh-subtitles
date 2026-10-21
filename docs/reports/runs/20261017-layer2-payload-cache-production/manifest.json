@@ -1,0 +1,45 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-layer2-payload-cache-production",
+  "runs": [
+    {
+      "label": "20261017-layer2-payload-cache-production",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/test-runs/20261017-layer2-payload-cache-production",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "20261017-layer2-payload-cache-production",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 553,
+      "truncated": false,
+      "sha256": "acbeedc58f6a3461ead32c6bc354585161a4c00e42d0a334583261e15357d6ff",
+      "redactions": {}
+    },
+    {
+      "run": "20261017-layer2-payload-cache-production",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 782,
+      "truncated": false,
+      "sha256": "66f086164a139751d60eb0fba7dcd7eee0a3cd28d43b1ba117a20778eee4903d",
+      "redactions": {}
+    },
+    {
+      "run": "20261017-layer2-payload-cache-production",
+      "path": "targeted.log",
+      "kind": "log",
+      "bytes": 355,
+      "truncated": false,
+      "sha256": "5d89bea2c1c0c75e4e58a7e72da3cb8e495163e3c0e953d000323d29dcb35fe1",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

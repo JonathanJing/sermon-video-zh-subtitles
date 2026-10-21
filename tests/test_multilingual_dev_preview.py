@@ -6,7 +6,8 @@ from tempfile import TemporaryDirectory
 import unittest
 from unittest.mock import patch
 
-from scripts import multilingual_dev_preview as preview
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.adapters.legacy import multilingual_dev_preview as preview
 from tests.test_assemble_multilingual_hosting import fixture, write
 
 
@@ -161,7 +162,7 @@ class DevHttpVerificationTest(unittest.TestCase):
             demos = {"speakers": [{"original": asset, "samples": []}]}
             with patch.object(preview, "candidate_report", return_value=report), \
                  patch.object(preview.hosting, "load", return_value=catalog), \
-                 patch("scripts.stage_voice_demo_dev.public_catalog", return_value=demos), \
+                 patch("tools.ops.stage_voice_demo_dev.public_catalog", return_value=demos), \
                  patch.object(preview.verifier, "request_file", return_value=(
                      200, {"content-type": "audio/mpeg"}, len(payload), asset["sha256"])) as request:
                 receipt = preview.verify(candidate)
@@ -171,7 +172,7 @@ class DevHttpVerificationTest(unittest.TestCase):
                                             request_headers={"Range": "bytes=0-0"})
             with patch.object(preview, "candidate_report", return_value=report), \
                  patch.object(preview.hosting, "load", return_value=catalog), \
-                 patch("scripts.stage_voice_demo_dev.public_catalog", return_value=demos), \
+                 patch("tools.ops.stage_voice_demo_dev.public_catalog", return_value=demos), \
                  patch.object(preview.verifier, "request_file", return_value=(
                      206, {"content-range": f"bytes 0-0/{len(payload)}"}, 1,
                      hashlib.sha256(payload[:1]).hexdigest())):
@@ -179,7 +180,7 @@ class DevHttpVerificationTest(unittest.TestCase):
             self.assertEqual(receipt["results"][0]["range206"], True)
             with patch.object(preview, "candidate_report", return_value=report), \
                  patch.object(preview.hosting, "load", return_value=catalog), \
-                 patch("scripts.stage_voice_demo_dev.public_catalog", return_value=demos), \
+                 patch("tools.ops.stage_voice_demo_dev.public_catalog", return_value=demos), \
                  patch.object(preview.verifier, "request_file", return_value=(
                      200, {}, len(payload), "0" * 64)):
                 with self.assertRaisesRegex(ValueError, "Range/full-body check failed"):

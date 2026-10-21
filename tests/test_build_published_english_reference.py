@@ -1,13 +1,12 @@
 import hashlib
 import json
 from pathlib import Path
-import sys
 import tempfile
 import unittest
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'scripts'))
-from build_published_english_reference import build_reference, canonical_sha
-from delivery_contract import project_human_catalog
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.delivery.contract import project_human_catalog
+from tongxing_production.delivery.published_english_reference import build_reference, canonical_sha
 
 CHECKS = ('sourceIdentity', 'transcriptCompleteness', 'wordAlignment', 'sentenceAndPauseBoundaries')
 
@@ -43,6 +42,7 @@ class EnglishReferenceTests(unittest.TestCase):
         self.source_sha = canonical_sha(source)
         self.targets = {'ko': self.publish('ko', 'human_reviewed', 'human_reviewed')}
         self.page = dict(id='week', date='2026-10-04', sourceLocale='en', sourceIdentitySha256=self.source_sha,
+                         sourceMediaSha256='b' * 64,
                          defaultTargetLocale='ko', title='Week', targets=dict(self.targets))
         self.v3 = dict(schemaVersion='sermon-multilingual-catalog-v3', generatedAt='2026-10-04T00:00:00Z',
                        defaultPageId='week', pages=[self.page])
@@ -61,7 +61,7 @@ class EnglishReferenceTests(unittest.TestCase):
         path.write_bytes(data)
         return hashlib.sha256(data).hexdigest()
 
-    def publish(self, locale, content_status, audio_status, *, content_overrides=None):
+    def publish(self, locale, content_status, audio_status, *, content_overrides=None, release_schema=None):
         machine = 'machine_checked' in (content_status, audio_status)
         groups = [dict(textGroupId='g1', sourceUnitIds=['u1']), dict(textGroupId='g2', sourceUnitIds=['u2'])]
         content = dict(pageId='week', targetLocale=locale, status=content_status,
@@ -70,13 +70,15 @@ class EnglishReferenceTests(unittest.TestCase):
         content.update(content_overrides or {})
         content_sha = self.save(f'/content/week/{locale}.json', content)
         captions_sha = self.save(f'/captions/week/{locale}.json', dict(cues=[dict(textGroupId='g1'), dict(textGroupId='g2')]))
+        release_schema = release_schema or ('sermon-target-language-release-package-v4' if machine
+                                            else 'sermon-target-language-release-package-v3')
         release = dict(status='published_http_verified', contentStatus=content_status, audioStatus=audio_status,
                        pageId='week', targetLocale=locale, contentLocale=locale, targetLanguageCandidateJsonSha256='c' * 64,
-                       englishSourcePackageJsonSha256=self.source_sha,
-                       schemaVersion='sermon-target-language-release-package-v4' if machine
-                       else 'sermon-target-language-release-package-v3',
+                       schemaVersion=release_schema,
                        assets=[dict(role='content', path=f'/content/week/{locale}.json', sha256=content_sha),
                                dict(role='captions', path=f'/captions/week/{locale}.json', sha256=captions_sha)])
+        if release_schema != 'sermon-target-language-release-package-v2':
+            release['englishSourcePackageJsonSha256'] = self.source_sha
         url = f"/releases-{'v4' if machine else 'v2'}/week/{locale}.json"
         return dict(releasePackageUrl=url, releasePackageJsonSha256=self.save(url, release),
                     contentStatus=content_status, audioStatus=audio_status, capabilities=['text', 'captions', 'audio'])
@@ -112,6 +114,50 @@ class EnglishReferenceTests(unittest.TestCase):
         # reviewState covers the English source only; it never restates a locale's translation status.
         self.assertEqual(reference['reviewState'], 'human_approved')
         self.assertNotIn('human', json.dumps(es))
+
+    def test_v4_projection_accepts_human_v2_source_bound_by_content_bytes(self):
+        self.page['targets']['ko'] = self.publish(
+            'ko', 'human_reviewed', 'human_reviewed',
+            release_schema='sermon-target-language-release-package-v2')
+        v4 = dict(self.v3, schemaVersion='sermon-multilingual-catalog-v4')
+        self.save('/multilingual-v4.json', v4)
+        self.save('/multilingual-v3.json', project_human_catalog(v4))
+
+        reference = build_reference(self.public, 'week', self.source_path)
+
+        self.assertEqual(list(reference['targets']), ['ko'])
+        self.assertEqual(reference['targets']['ko']['contentSha256'],
+                         json.loads((self.public / 'releases-v2/week/ko.json').read_text())['assets'][0]['sha256'])
+
+    def test_human_v2_page_without_catalog_media_hash_is_bound_by_content(self):
+        del self.page['sourceMediaSha256']
+        self.page['targets']['ko'] = self.publish(
+            'ko', 'human_reviewed', 'human_reviewed',
+            release_schema='sermon-target-language-release-package-v2')
+        v4 = dict(self.v3, schemaVersion='sermon-multilingual-catalog-v4')
+        self.save('/multilingual-v4.json', v4)
+        self.save('/multilingual-v3.json', project_human_catalog(v4))
+        self.assertEqual(list(build_reference(self.public, 'week', self.source_path)['targets']), ['ko'])
+        self.page['targets']['ko'] = self.publish(
+            'ko', 'human_reviewed', 'human_reviewed', content_overrides={'sourceMediaSha256': 'e' * 64},
+            release_schema='sermon-target-language-release-package-v2')
+        v4 = dict(self.v3, schemaVersion='sermon-multilingual-catalog-v4')
+        self.save('/multilingual-v4.json', v4)
+        self.save('/multilingual-v3.json', project_human_catalog(v4))
+        with self.assertRaisesRegex(ValueError, 'Content source mismatch: ko'):
+            build_reference(self.public, 'week', self.source_path)
+
+    def test_v4_projection_rejects_human_v2_content_from_another_source(self):
+        self.page['targets']['ko'] = self.publish(
+            'ko', 'human_reviewed', 'human_reviewed',
+            content_overrides={'englishSourcePackageJsonSha256': 'd' * 64},
+            release_schema='sermon-target-language-release-package-v2')
+        v4 = dict(self.v3, schemaVersion='sermon-multilingual-catalog-v4')
+        self.save('/multilingual-v4.json', v4)
+        self.save('/multilingual-v3.json', project_human_catalog(v4))
+
+        with self.assertRaisesRegex(ValueError, 'Content source mismatch: ko'):
+            build_reference(self.public, 'week', self.source_path)
 
     def test_v4_snapshot_rejects_diverged_v3(self):
         self.seal_v4()

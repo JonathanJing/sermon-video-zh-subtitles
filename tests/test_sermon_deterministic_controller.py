@@ -5,8 +5,8 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-from scripts import sermon_deterministic_controller as ctrl
-from scripts.sermon_production_supervisor import SupervisorConfig
+from tongxing_production.workflows.supervisor import deterministic_controller as ctrl
+from tongxing_production.workflows.supervisor.production import SupervisorConfig
 
 
 def snapshot(action, human=False, **extra):
@@ -50,8 +50,9 @@ class ControllerTests(unittest.TestCase):
         dispatch.assert_not_called()
 
     def test_shadow_real_snapshot_preserves_abandoned_job_evidence(self):
-        from scripts import sermon_workflow_jobs as jobs
-        from scripts import sermon_release_workflow as release
+        from scripts import tongxing_host  # noqa: F401  binds the production package ports
+        from tongxing_production.orchestration import jobs
+        from tongxing_production.orchestration import release_workflow as release
         # Exercise the real composed snapshot and filesystem job inspection;
         # only upstream content inspection is inert (no media/models required).
         row = {key: str(self.root / key) for key in release.PATHS}
@@ -94,7 +95,8 @@ class ControllerTests(unittest.TestCase):
                     shutil.rmtree(folder)
 
     def test_peek_missing_and_live_job_does_not_create_or_reconcile(self):
-        from scripts import sermon_workflow_jobs as jobs
+        from scripts import tongxing_host  # noqa: F401  binds the production package ports
+        from tongxing_production.orchestration import jobs
         ident = 'a' * 64
         root = self.root / 'absent'
         with self.assertRaises(FileNotFoundError):
@@ -109,8 +111,9 @@ class ControllerTests(unittest.TestCase):
             self.assertFalse((folder / 'state.json').exists())
 
     def test_real_bridge_change_blocks_stale_dispatch_revision(self):
-        from scripts import sermon_release_workflow as release
-        from scripts import sermon_workflow_jobs as jobs
+        from tongxing_production.orchestration import release_workflow as release
+        from scripts import tongxing_host  # noqa: F401  binds the production package ports
+        from tongxing_production.orchestration import jobs
         fixture = release._module('test_saturday_bridge').SaturdayBridgeTests()
         fixture.week = self.config.sunday
         bridge_path, supervisor, bridge_config, run = fixture.fixture(self.root)

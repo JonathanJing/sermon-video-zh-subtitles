@@ -8,9 +8,11 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-from scripts import run_post_live_subtitle_generation as generation
-from scripts import sermon_production_supervisor as supervisor
-from scripts import sermon_pipeline
+from tests.legacy_pipeline_patches import patch_both  # W3b: Layer 1 names live in two modules
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.workflows.dual_pdf import post_live as generation
+from tongxing_production.workflows.supervisor import production as supervisor
+from tongxing_production.workflows.dual_pdf import pipeline as sermon_pipeline
 
 
 ARCHIVE_DURATION_SECONDS = 3600.0
@@ -60,12 +62,10 @@ def reading_manifest_fixture(reading, *, applied=False):
 
 class SourceTextReviewRoutingTests(unittest.TestCase):
     def setUp(self):
-        remote = patch('scripts.mfa_backend.preflight', return_value={'backend': 'dgx-spark-ssh', 'runtime': {'version': 'fixture'}})
+        remote = patch('tongxing_production.source.mfa_backend.preflight', return_value={'backend': 'dgx-spark-ssh', 'runtime': {'version': 'fixture'}})
         remote.start()
         self.addCleanup(remote.stop)
-        duration = patch.object(sermon_pipeline, "ffprobe_duration", return_value=5.0)
-        duration.start()
-        self.addCleanup(duration.stop)
+        self.enterContext(patch_both("ffprobe_duration", return_value=5.0))
         # These routing fixtures use opaque audio bytes. Mock only ffprobe's
         # media facts; retain validate_archive_audio's real completeness checks.
         archive_probe = patch.object(generation, "probe_archive_audio", return_value={
@@ -93,7 +93,7 @@ class SourceTextReviewRoutingTests(unittest.TestCase):
                 command = supervisor.build_generation_command(config, snapshot, approval)
             self.assertEqual(command.count("--source-text-review"), 1)
             self.assertEqual(command[command.index("--source-text-review") + 1], str(review))
-            with patch.object(generation.sys, "argv", command[1:]):
+            with patch.object(generation.sys, "argv", command[2:]):  # [module, *arguments], as tools/ops/run.py sets it
                 args = generation.parse_args()
             self.assertEqual(args.source_text_review, review)
             pipeline = generation.build_pipeline_command(args, root / "download", root / "pipeline", "https://example.invalid/sermon")
@@ -262,7 +262,7 @@ class SourceTextReviewRoutingTests(unittest.TestCase):
                         patch.object(generation, "run_command", side_effect=RuntimeError("pipeline sentinel")) as run:
                     with self.assertRaisesRegex(RuntimeError, "pipeline sentinel"):
                         generation.run_post_live_generation(args, metadata_loader=finished_archive_metadata)
-                    self.assertEqual(Path(run.call_args.args[0][1]).name, "sermon_pipeline.py")
+                    self.assertEqual(run.call_args.args[0][2], "workflows.dual_pdf.pipeline")
 
     def test_reading_manifest_routes_to_standard_builder_and_preserves_default_identity(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -274,7 +274,7 @@ class SourceTextReviewRoutingTests(unittest.TestCase):
             with patch.object(supervisor, "live_url_from_snapshot", return_value="https://example.invalid/sermon"):
                 command = supervisor.build_generation_command(config, snapshot, {"startTime": "00:29:00", "endTime": "00:58:30"})
             self.assertEqual(command[command.index("--reading-review-manifest") + 1], str(review))
-            with patch.object(generation.sys, "argv", command[1:]):
+            with patch.object(generation.sys, "argv", command[2:]):  # [module, *arguments], as tools/ops/run.py sets it
                 args = generation.parse_args()
             reading_command = generation.build_reading_edition_command(args, root / "pipeline")
             self.assertEqual(reading_command[reading_command.index("--review-manifest") + 1], str(review))

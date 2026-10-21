@@ -1,0 +1,42 @@
+{
+  "status": "passed",
+  "codePr": 1215,
+  "replaces": 432,
+  "branch": "claude/pr432-port-opus",
+  "head": "fc17ba48",
+  "ported": {
+    "7dda928f": "7024b12b",
+    "45b0f7ba": "46392c7b",
+    "564576a1+3cf70a4d": "782ef391"
+  },
+  "reviewThreadFixes": [
+    "fc17ba48 repair budget",
+    "5c1930ca smoke binding + journal output hashes",
+    "782ef391 digest completeness"
+  ],
+  "notPorted": {
+    "e28204ef": "review/seeded_errors.py is in the W closure; handed to the D-5 window"
+  },
+  "identities": {
+    "W": "1c28f4aa38c0 (unchanged)",
+    "T": "8ec15fe1556b (unchanged)",
+    "scoring": "9f2ff8077671 (unchanged)",
+    "rate": "8f50c233e07b (unchanged)",
+    "l2CodeIdentity": {
+      "dev@810349e2": "f3a81a3ced24dd7a4d23dcdd731c72cfaafb86b61960f66da78a7b98a28805ef",
+      "branch@fc17ba48": "3cc01278d503f3f3a5ec90e7d066e79fe2e1843c9f13e081c2a0e67d4e463d14"
+    }
+  },
+  "pytest": {
+    "files": 37,
+    "chunks": 4,
+    "passed": 638,
+    "failedSubtests": 2,
+    "preexistingOnDev": 2
+  },
+  "notRun": [
+    "real clip E2E",
+    "Dev publication",
+    "browser smoke"
+  ]
+}

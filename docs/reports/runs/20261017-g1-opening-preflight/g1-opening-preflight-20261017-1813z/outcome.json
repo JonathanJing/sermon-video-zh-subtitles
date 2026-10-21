@@ -1,0 +1,10 @@
+{
+  "schemaVersion": "local-readonly-preflight-v1",
+  "status": "failed",
+  "reason": "unreconciled_historical_call_outcomes",
+  "startedAt": "2026-10-17T18:12:53Z",
+  "endedAt": "2026-10-17T18:21:18Z",
+  "productionRun": "not_run",
+  "paidModelCalls": 0,
+  "mutations": 0
+}

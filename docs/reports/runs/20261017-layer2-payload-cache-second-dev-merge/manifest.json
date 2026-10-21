@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-layer2-payload-cache-second-dev-merge",
+  "runs": [
+    {
+      "label": "20261017-layer2-payload-cache-second-dev-merge",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/test-runs/20261017-layer2-payload-cache-second-dev-merge",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "20261017-layer2-payload-cache-second-dev-merge",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 337,
+      "truncated": false,
+      "sha256": "ab7ff09d65879dedd6a89de378b490cb97a4f082ebbb92c87992d94507734391",
+      "redactions": {}
+    },
+    {
+      "run": "20261017-layer2-payload-cache-second-dev-merge",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 295,
+      "truncated": false,
+      "sha256": "7417938336a71450b133b8a85cb6d4d0d294bba56ee3d0c1a693e227cf1a1617",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

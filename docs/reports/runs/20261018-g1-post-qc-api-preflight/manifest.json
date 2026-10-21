@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261018-g1-post-qc-api-preflight",
+  "runs": [
+    {
+      "label": "g1-post-qc-api-preflight",
+      "source": "/private/tmp/g1-baseline-20261017/artifacts/local-runs/g1-post-qc-api-preflight",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "g1-post-qc-api-preflight",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 134,
+      "truncated": false,
+      "sha256": "ed7d942784ce7c6b92054a06762bc65443881f3b37f0ff41fa1e88386479f7d2",
+      "redactions": {}
+    },
+    {
+      "run": "g1-post-qc-api-preflight",
+      "path": "preflight.json",
+      "kind": "whole",
+      "bytes": 1400,
+      "truncated": false,
+      "sha256": "6f393b9d84a2234b604a32bbb3fdef2c36e1b950392d461aa6e51f581ba7fd0f",
+      "redactions": {
+        "home_dir": 2
+      }
+    },
+    {
+      "run": "g1-post-qc-api-preflight",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 221,
+      "truncated": false,
+      "sha256": "1e6c1a64c6043cce46efe8792311db31a708a20c670715e9cacb4aacd18e9ea4",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

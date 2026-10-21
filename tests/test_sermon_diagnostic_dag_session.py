@@ -6,10 +6,11 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-from scripts import sermon_accounting as accounting
-from scripts import sermon_diagnostic_dag_session as session
-from scripts import sermon_review_budget as budget
-from scripts import sermon_review_contracts as c
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.observability import accounting
+from tongxing_production.workflows.diagnostic import dag_session as session
+from tongxing_production.review import review_budget as budget
+from tongxing_production.review import contracts as c
 from tests.diagnostic_dag_fixture import DiagnosticDAGFixture
 
 
@@ -49,13 +50,13 @@ class DiagnosticSessionTests(unittest.TestCase):
         self.assertFalse(candidate['releaseEligible'])
 
     def migration_config(self):
-        from scripts import sermon_diagnostic_prefect_flow as flow
+        from tongxing_production.workflows.diagnostic import prefect_flow as flow
         return {'schemaVersion': flow.SCHEMA, 'locales': {locale: {
             'localeSpec': self.f.locale_specs[locale],
             'previewSpec': self.f.preview_specs[locale]} for locale in self.f.locale_specs}}
 
     def legacy_plan(self, current, *, with_limits, change=None):
-        from scripts import sermon_diagnostic_prefect_flow as flow
+        from tongxing_production.workflows.diagnostic import prefect_flow as flow
         binding = deepcopy(flow.DiagnosticDAG(current, self.migration_config()).binding)
         binding['sessionBinding']['schemaVersion'] = 'sermon-diagnostic-dag-session-v1'
         binding['sessionBinding']['implementationSha256'] = 'a' * 64
@@ -65,13 +66,13 @@ class DiagnosticSessionTests(unittest.TestCase):
         if change is not None:
             change(binding)
         root = self.f.root / 'diagnostic-prefect' / c.canonical_sha256(binding)
-        from scripts import sermon_public_snapshot as public
+        from tongxing_production.storage import snapshot as public
         root.mkdir(parents=True, exist_ok=True)
         public.save_once(root / 'plan.json', binding)
         return root / 'plan.json'
 
     def test_rejected_limits_do_not_poison_legacy_snapshot(self):
-        from scripts import sermon_diagnostic_prefect_flow as flow
+        from tongxing_production.workflows.diagnostic import prefect_flow as flow
         current = self.make()
         path = self.legacy_plan(current, with_limits=True)
         limits_path = self.f.root/'continuation-request-limits.json'
@@ -91,7 +92,7 @@ class DiagnosticSessionTests(unittest.TestCase):
         self.assertEqual(c.read_snapshot(limits_path)[0], self.f.request_limits)
 
     def test_v1_migration_keeps_original_plan_directory_and_receipts(self):
-        from scripts import sermon_diagnostic_prefect_flow as flow
+        from tongxing_production.workflows.diagnostic import prefect_flow as flow
         current = self.make()
         self.assertEqual(current.binding['schemaVersion'], 'sermon-diagnostic-dag-session-v2')
         with self.f.session():
@@ -125,7 +126,7 @@ class DiagnosticSessionTests(unittest.TestCase):
                 self.assertEqual(len(self.f.transport.observations), calls)
 
     def test_cross_continuation_reuses_existing_preview_and_delivery_context(self):
-        from scripts import sermon_diagnostic_prefect_flow as flow
+        from tongxing_production.workflows.diagnostic import prefect_flow as flow
         legacy_authority = deepcopy(self.f.continuation)
         first = self.make()
         with self.f.session():
@@ -156,7 +157,7 @@ class DiagnosticSessionTests(unittest.TestCase):
         self.assertEqual(len(self.f.transport.observations),calls)
 
     def test_v1_migration_rejects_semantic_inputs_and_limits_changes(self):
-        from scripts import sermon_diagnostic_prefect_flow as flow
+        from tongxing_production.workflows.diagnostic import prefect_flow as flow
         current = self.make()
         changes = [lambda x: x['sessionBinding'].__setitem__('originalPlanSha256', 'c'*64),
                    lambda x: x['sessionBinding'].__setitem__('deadlineMonotonic', 1),
@@ -173,7 +174,7 @@ class DiagnosticSessionTests(unittest.TestCase):
         self.assertEqual(self.f.subject.snapshot(), before)
 
     def test_resume_plan_requires_legacy_version_and_original_hashed_path(self):
-        from scripts import sermon_diagnostic_prefect_flow as flow
+        from tongxing_production.workflows.diagnostic import prefect_flow as flow
         current = self.make()
         normal = flow.DiagnosticDAG(current, self.migration_config())
         normal.freeze()
@@ -190,7 +191,7 @@ class DiagnosticSessionTests(unittest.TestCase):
             flow.DiagnosticDAG(current, self.migration_config(), resume_plan=malformed)
 
     def test_v1_migration_is_frozen_and_does_not_weaken_code_guard(self):
-        from scripts import sermon_diagnostic_prefect_flow as flow
+        from tongxing_production.workflows.diagnostic import prefect_flow as flow
         current = self.make()
         path = self.legacy_plan(current, with_limits=False)
         dag = flow.DiagnosticDAG(current, self.migration_config(), resume_plan=path)
@@ -246,7 +247,7 @@ class DiagnosticSessionTests(unittest.TestCase):
         self.assertEqual(len(self.f.transport.observations), 2)
 
     def test_prefect_cli_forwards_explicit_resume_plan(self):
-        from scripts import sermon_diagnostic_prefect_flow as flow
+        from tongxing_production.workflows.diagnostic import prefect_flow as flow
         current = self.make()
         old = self.legacy_plan(current, with_limits=False)
         plan, _ = self.f.write('cli-plan.json', self.f.plan)
@@ -265,8 +266,8 @@ class DiagnosticSessionTests(unittest.TestCase):
         self.assertEqual(len(self.f.transport.observations), 2)
 
     def test_both_cli_resumes_load_limits_without_an_option(self):
-        from scripts import sermon_diagnostic_prefect_flow as flow
-        from scripts import sermon_mock_tts_dag as mock_tts
+        from tongxing_production.workflows.diagnostic import prefect_flow as flow
+        from tongxing_production.workflows.diagnostic import mock_tts_dag as mock_tts
         self.make()
         plan_path, _ = self.f.write('cli-plan.json', self.f.plan)
         spec_path, _ = self.f.write('cli-spec.json', {})
@@ -286,8 +287,8 @@ class DiagnosticSessionTests(unittest.TestCase):
         self.assertEqual(len(self.f.transport.observations), 2)
 
     def test_both_cli_initial_limits_option_freezes_the_selected_bound(self):
-        from scripts import sermon_diagnostic_prefect_flow as flow
-        from scripts import sermon_mock_tts_dag as mock_tts
+        from tongxing_production.workflows.diagnostic import prefect_flow as flow
+        from tongxing_production.workflows.diagnostic import mock_tts_dag as mock_tts
         plan_path, _ = self.f.write('cli-plan.json', self.f.plan)
         spec_path, _ = self.f.write('cli-spec.json', {})
         limits_path, _ = self.f.write('cli-limits.json', self.f.request_limits)
@@ -394,9 +395,10 @@ class CrossCommitMigrationTests(unittest.TestCase):
         with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as directory:
             repo = Path(directory)
             source = Path(__file__).resolve().parents[1]
-            for name in ('scripts','tests','schemas','config'):
+            # tools/: legacy scripts/ facades of moved tools load their implementation from there.
+            for name in ('scripts','tests','schemas','config','tools'):
                 shutil.copytree(source/name,repo/name,
-                    ignore=shutil.ignore_patterns('__pycache__','*.pyc'))
+                    ignore=shutil.ignore_patterns('__pycache__','*.pyc','node_modules'))
             (repo/'docs').mkdir()
             shutil.copy2(source/'docs/series-terminology.zh.md',repo/'docs/series-terminology.zh.md')
             def command(*args):
@@ -409,11 +411,11 @@ class CrossCommitMigrationTests(unittest.TestCase):
 from copy import deepcopy
 from pathlib import Path
 import subprocess
-from scripts import sermon_accounting as accounting
-from scripts import sermon_review_contracts as c
-from scripts import sermon_public_snapshot as public
-from scripts.sermon_diagnostic_dag_session import DiagnosticSession
-from scripts import sermon_diagnostic_prefect_flow as flow
+from scripts import tongxing_host; from tongxing_production.observability import accounting
+from tongxing_production.review import contracts as c
+from tongxing_production.storage import snapshot as public
+from tongxing_production.workflows.diagnostic.dag_session import DiagnosticSession
+from tongxing_production.workflows.diagnostic import prefect_flow as flow
 from tests.diagnostic_dag_fixture import DiagnosticDAGFixture
 f=DiagnosticDAGFixture();f.setUp()
 try:

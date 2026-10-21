@@ -1,0 +1,21 @@
+
+== 2026-10-15T00:04:01+00:00 ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.venv/bin/python ~/.codex/worktrees/opus-layer1-larger-clip/sermon-video-zh-subtitles/scripts/run_with_openai_environment.py --environment dev --env-file ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.env.openai -- ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.venv/bin/python ~/.codex/worktrees/opus-layer1-larger-clip/sermon-video-zh-subtitles/scripts/run_text_qc_budget_continuation.py --run-dir ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-aa-3lang/textqc-ko/run-out --out ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-aa-3lang/textqc-ko/out --state-dir ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-aa-3lang/textqc-ko/state --locales ko --text-backend api --api-budget-authorization ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-aa-3lang/plans/qc-ko/qc-ko/api-budget-authorization.json --workers 8 --expected-implementation 29a3fe552d16b1c58e167431c528eb38cc0540c6c998e81f7743f446af5c8ebb --human-acceptance ko=~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-aa-3lang/human-acceptance/ko.json --prior-budget-plan ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-z-3lang/plans/qc-ko
+discover	pass	0.0
+ko.calibration.prefetch	pass	43.1
+ko.calibration	pass	18.2
+ko.text-waiver	pass	0.0
+Publish for cloud review: scripts/publish_run_report.sh artifacts/run-reports/20261015-000503-machine-qc-text-budget-continuation
+{
+  "ko": {
+    "status": "text_waiver_issued",
+    "reason": null,
+    "problems": [],
+    "calibration": {
+      "overallDetectionRate": 0.990783,
+      "cleanFalsePositiveRate": 0.04,
+      "trials": 217,
+      "detected": 215
+    }
+  }
+}
+Digest: ~/.codex/worktrees/opus-layer1-larger-clip/sermon-video-zh-subtitles/artifacts/run-reports/20261015-000503-machine-qc-text-budget-continuation (3 files, 11 redactions)

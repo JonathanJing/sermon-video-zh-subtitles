@@ -2,7 +2,7 @@
 
 从一场已制作周次的讲道里截一段（约 16 句），用真实模型和真实配音走完 Layer 1–4，发布到 Firebase Dev 的隔离测试页。用来验证合并后的整条链路，以及新规则（读法、质检、预算、发布）在真实输出上的表现。
 
-入口是 [`scripts/run_clip_real_e2e.py`](../scripts/run_clip_real_e2e.py)。它只把现有的正式入口按顺序串起来，不另造规则：预算由 `plan_run_budgets.py` 规划，开工条件由 `check_run_start.py` 检查，Layer 2 走 canonical controller，质检、渲染和音频包也都用各自的正式脚本。
+入口是 [`tools/development/run_clip_real_e2e.py`](../tools/development/run_clip_real_e2e.py)。它只把现有的正式入口按顺序串起来，不另造规则：预算由 `plan_run_budgets.py` 规划，开工条件由 `check_run_start.py` 检查，Layer 2 走 canonical controller，质检、渲染和音频包也都用各自的正式脚本。
 
 零模型的模拟 E2E 见[固定三分钟 Dev 页面测试](dev-180s-page-test.zh.md)（`run_dev_180s_beta_e2e.sh`）。它不调用模型，也不占用 Spark，适合只验证发布链路的情况。
 
@@ -37,6 +37,7 @@
 | `authorization` | `approvedBy`、`evidence`（批准出处）、`defaultPass`（必须写明 "not a human review"） |
 | `budget` | `totalUsd` 是批准总额；`settledUsdBefore` 是此前已结算的花费，包括未标价转写的预留 |
 | `layer2.policyTemplates` / `plugins` | 每种语言：源周次冻结的政策，以及语言插件 |
+| `layer2.backend` | 可选，默认 `openai_api`；显式 `claude_cli_opus` 会把片段政策重新冻结为 Opus 5.5 high 初译及 medium 复核。Claude 订阅调用的列价等价金额单列，不计入 `budget.totalUsd`；文本和音频质检仍计入批准的美元总额。 |
 | `layer3.attestationTemplates` / `speakerRegistry` | 源周次的用户声音授权（会改绑到本片段的来源包）和说话人登记 |
 | `qc.maxRevisions` | 每种语言的文本质检最多打回 Layer 2 几次（0–3，默认 2） |
 | `page` | `pageId`（`mockup-…`）、三语展示文案（必须标明是测试）、可选的 Dev 基线缓存 |
@@ -44,7 +45,7 @@
 ## 命令
 
 ```bash
-.venv/bin/python scripts/run_clip_real_e2e.py run --spec artifacts/<run>/run-spec.json --run-dir artifacts/<run>
+.venv/bin/python tools/development/run_clip_real_e2e.py run --spec artifacts/<run>/run-spec.json --run-dir artifacts/<run>
 ```
 
 - **续跑：** 同一条命令。已完成的阶段跳过；运行目录绑定首次使用的规格，改过的规格会被拒绝。
@@ -60,7 +61,7 @@
 
 | 阶段 | 做什么 | 结果 |
 |---|---|---|
-| `inputs` | `build_dev_180s_simulated_inputs.py --clip-spec` 截出片段的英文来源、锚点和媒体；`clip_timeline_map.py` 生成片段时间轴映射 | 片段输入在 `artifacts/dev-180s-page-test-20261004/clip-e2e-<name>/inputs/`（输入构建器只写自己的测试根目录）；运行目录里有 `l2/src/` 的副本和 `l3/clip-timeline-map.json` |
+| `inputs` | `build_dev_180s_simulated_inputs.py --clip-spec` 截出片段的英文来源、锚点和媒体；`tools/ops/run.py audio.clip_timeline` 生成片段时间轴映射 | 片段输入在 `artifacts/dev-180s-page-test-20261004/clip-e2e-<name>/inputs/`（输入构建器只写自己的测试根目录）；运行目录里有 `l2/src/` 的副本和 `l3/clip-timeline-map.json` |
 | `layer2-setup` | 每种语言：把源周次的冻结政策收窄到本片段的来源范围和术语后重新冻结（片段里出现、但源周次回执没有译法的术语会被拒绝）；写 canonical 执行配置（v3）；在 launcher 里取得非秘密的 API 路由和凭据指纹，写入质检输入 | `l2/policy/`、`l2/execution.json`、`l2/qc-inputs.json` |
 | `layer2` | 规划 Layer 2 预算 → 开工检查 → 逐语言 tick controller，直到全部 `succeeded`；有语言 `blocked` 就停 | `l2/text/<语言>/candidate.json` |
 | `qc.<语言>` | 为该语言规划质检预算（文本质检、校准、音频质检共用一个根）→ 开工检查 → 文本质检。失败的组带着质检收据回到 Layer 2，开新修订（执行配置 v5，[gate 4](layer2-bounded-auto-repair.zh.md)），再质检新候选，最多 `maxRevisions` 次 | `textqc-<语言>/`；修订在 `l2-<语言>-r<N>/` |
@@ -79,6 +80,9 @@
 3. 质检账本里已标价的花费；
 4. 未标价的行（例如 `gpt-transcribe`），按它的预留金额计入；
 5. 本运行其他还没做完音频质检的语言，按其质检预算的完整上限计入。
+6. 音频质检失败的语言，其原质检授权和此前修复授权仍然有效：每份按上限减去其账本已预留的金额计入，所以 `repair-audio` 新开的授权不会与旧授权剩余额度叠加超出总额。
+
+Layer 2 选 `claude_cli_opus` 时，Layer 2 调用的列价等价金额单列为 `claudeListPriceEquivalentUsd`，不计入上面的“已结算”。
 
 所以同时开着的上限加上已结算，始终不超过批准总额。三语片段的质检上限是每语 5.525 美元（含二级 ASR），按语言依次开启，这是[周更运行配置](weekly-run-profile.zh.md)的规则。如果规划器判定放不下，就不写任何授权文件，这一阶段停下，等用户另行批准。
 

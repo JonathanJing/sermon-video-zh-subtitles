@@ -2,8 +2,9 @@
 from copy import deepcopy
 
 # Load this closure before the original continuation records its code identity.
-from scripts import sermon_mock_tts_dag as dag
-from scripts import sermon_mock_tts_control as control
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.workflows.diagnostic import mock_tts_dag as dag
+from tongxing_production.compute.mock_tts import control
 from tests.diagnostic_dag_fixture import DiagnosticDAGFixture
 
 
@@ -26,17 +27,19 @@ def resume_in_clean_process(payload_path):
     import importlib
     import json
     from pathlib import Path
-    from scripts import sermon_accounting as accounting
-    from scripts import sermon_bounded_business_callbacks as offline
-    from scripts import sermon_review_contracts as c
-    from scripts.sermon_diagnostic_dag_session import DiagnosticSession
+    from scripts import tongxing_host  # noqa: F401  binds the production package ports
+    from tongxing_production.observability import accounting
+    from tongxing_production.workflows.diagnostic import bounded_business_callbacks as offline
+    from scripts import tongxing_host  # noqa: F401  binds the production package ports
+    from tongxing_production.review import contracts as c
+    from tongxing_production.workflows.diagnostic.dag_session import DiagnosticSession
     value = json.loads(Path(payload_path).read_text())
     expected = value['continuation']['executionIdentity']
     for name, digest in expected['loadedProjectCodeSha256'].items():
-        assert name.startswith('scripts/') and name.endswith('.py')
+        module_name = accounting.code_module_name(name)
         path = dag.diagnostic.pilot.REPO/name
         assert c.bytes_sha256(path.read_bytes()) == digest
-        importlib.import_module(name[:-3].replace('/', '.'))
+        importlib.import_module(module_name)
     assert accounting.execution_identity() == expected, 'clean resume code identity must match exactly'
     replies = []
     def fixture_reply(request, timeout, *, deadline):

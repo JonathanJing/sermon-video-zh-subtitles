@@ -1,0 +1,5 @@
+{
+  "scope": "local unittest",
+  "command": "PYTHONPATH=. .venv/bin/python -m unittest tests.test_render_speculative_target_language_speech tests.test_sermon_diagnostic_preview_worker tests.test_sermon_diagnostic_delivery_preflight tests.test_tongxing_audio_ports -q",
+  "note": "Targeted module run; no model or remote production calls."
+}

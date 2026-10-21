@@ -1,0 +1,186 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { parseArgs, validateSnapshot } from '../publish.mjs';
+import { formatDuration, stepTimingSummary, timingCoverageNote } from '../../../../apps/tracker-web/src/timing.js';
+import { substageProgressLabel } from '../../../../apps/tracker-web/src/substage.js';
+
+test('publishing requires an explicit project, database and snapshot', () => {
+  assert.throws(() => parseArgs(['--project', 'example-project', '--database', 'sermon-tracker']), /snapshot/);
+  assert.throws(() => parseArgs(['--project', 'example-project', '--database', 'sermon-tracker',
+                                 '--watch-config', 'config.json', '--watch']), /execute/);
+  const args = parseArgs(['--project', 'example-project', '--database', 'sermon-tracker',
+                          '--snapshot', 'snapshot.json']);
+  assert.equal(args.execute, false);
+});
+
+test('snapshot validation rejects unsafe IDs and missing scope', () => {
+  const valid = { schemaVersion: 'sermon-public-tracker-snapshot-v1', pageId: 'week-2026-09-20',
+    target: 'dev', locales: [], steps: [], source: {}, progress: {}, readOnly: true };
+  assert.equal(validateSnapshot(valid).pageId, valid.pageId);
+  assert.throws(() => validateSnapshot({ ...valid, pageId: 'x/y' }), /invalid/);
+  assert.throws(() => validateSnapshot({ ...valid, target: 'live' }), /invalid/);
+  const secret = { ...valid, reason: 'private note', source: {
+    videoUrl: 'https://youtu.be/abcdefghijk', videoId: 'abcdefghijk',
+    inputPageUrl: 'https://evil.example/source', videoChange: 'first_seen',
+  }, locales: [{ locale: 'ko', delivery: { fingerprint: { trackSha256: 'a'.repeat(64), status: 'generated_local' } } }],
+  steps: [{ id: 'L3-05@ko', layer: 3, locale: 'ko', title: 'private title', reason: 'private reason', status: 'blocked' }] };
+  const publicData = JSON.stringify(validateSnapshot(secret));
+  for (const value of ['private note', 'private title', 'private reason', 'abcdefghijk', 'evil.example', 'trackSha256']) {
+    assert.equal(publicData.includes(value), false, value);
+  }
+});
+
+test('snapshot sanitizer preserves only approved aggregate substage metrics', () => {
+  const valid = { schemaVersion: 'sermon-public-tracker-snapshot-v2', pageId: 'week-2026-09-20',
+    target: 'dev', locales: [], source: {}, progress: {}, readOnly: true,
+    steps: [{ id: 'L2-02@ko', layer: 2, locale: 'ko', status: 'running',
+      timing: { subStages: [
+        { id: 'initial_translation', attempts: 3, failedAttempts: 1, completedUnits: 2,
+          totalUnits: 5, running: 1, executionSeconds: 42.5, openElapsedSeconds: 8.375 },
+        { id: 'schedule_sync', attempts: 1, failedAttempts: 0, completedUnits: 1,
+          totalUnits: null, running: 0, executionSeconds: 1.5, openElapsedSeconds: null,
+          audioSeconds: null, overLimitUnits: 2, clipDurationSeconds: 1800,
+          plannedDurationSeconds: 1840 },
+        { id: 'raw_error_text', reason: 'private content' },
+      ] } }] };
+  const publicSnapshot = validateSnapshot(valid);
+  assert.deepEqual(publicSnapshot.steps[0].timing.subStages, [{
+    id: 'initial_translation', attempts: 3, failedAttempts: 1, completedUnits: 2,
+    totalUnits: 5, running: 1, executionSeconds: 42.5, openElapsedSeconds: 8.375,
+    audioSeconds: null, overLimitUnits: null, clipDurationSeconds: null, plannedDurationSeconds: null,
+  }, {
+    id: 'schedule_sync', attempts: 1, failedAttempts: 0, completedUnits: 1,
+    totalUnits: null, running: 0, executionSeconds: 1.5, openElapsedSeconds: null,
+    audioSeconds: null, overLimitUnits: 2, clipDurationSeconds: 1800, plannedDurationSeconds: 1840,
+  }]);
+  assert.equal(JSON.stringify(publicSnapshot).includes('private content'), false);
+  const tooLong = { ...valid, steps: [{ ...valid.steps[0], timing: { subStages: [
+    { id: 'unit_synthesis', openElapsedSeconds: 366 * 24 * 60 * 60 + 1 },
+  ] } }] };
+  assert.equal(validateSnapshot(tooLong).steps[0].timing.subStages[0].openElapsedSeconds, null);
+});
+
+test('substage progress labels audio work as units and translation work as groups', () => {
+  assert.equal(substageProgressLabel('unit_synthesis', 12, 45), '12/45 单元');
+  assert.equal(substageProgressLabel('audio_validation', 11, 45, 'en'), '11/45 units');
+  assert.equal(substageProgressLabel('initial_translation', 18, 42), '18/42 组');
+  assert.equal(substageProgressLabel('independent_review', 14, 42, 'en'), '14/42 groups');
+});
+
+test('relative timeline projection keeps safe spans and strips private evidence', () => {
+  const base = { schemaVersion: 'sermon-public-tracker-snapshot-v2', pageId: 'week-2026-09-27',
+    target: 'dev', locales: [], source: {}, progress: {}, readOnly: true,
+    steps: [{ id: 'L2-02@ko', layer: 2, locale: 'ko', status: 'complete' }] };
+  assert.equal(validateSnapshot(base).timeline, null);
+  const input = { ...base, timeline: {
+    schemaVersion: 'sermon-tracker-relative-timeline-v1', axis: 'seconds_since_first_recorded_event',
+    durationSeconds: 120, privateStart: '2026-09-27T10:00:00Z', coverage: { measuredSteps: 1 },
+    rows: [{ id: 'L2-02@ko', sourceUrl: 'https://private.example/',
+      intervals: [{ startSeconds: 0, endSeconds: 60, kind: 'waiting_review', stage: 'private-stage' },
+        { startSeconds: -1, endSeconds: 100, kind: 'blocked' }],
+      attempts: [{ startSeconds: 60, endSeconds: 75, kind: 'measured', privatePath: '/private' }],
+      substeps: [{ code: 'reviewer', dependsOn: ['translator', 'secret'], observedCount: 1,
+        longestSeconds: 15, attempts: [{ startSeconds: 60, endSeconds: 75, kind: 'measured' }],
+        modelPrompt: 'private-prompt' }, { code: 'secret', observedCount: 1 }] },
+    { id: 'private-step', intervals: [{ startSeconds: 0, endSeconds: 10, kind: 'blocked' }] }],
+  } };
+  const publicData = validateSnapshot(input).timeline;
+  assert.equal(publicData.rows.length, 1);
+  assert.equal(publicData.rows[0].intervals.length, 1);
+  assert.deepEqual(publicData.rows[0].substeps[0].dependsOn, ['translator']);
+  assert.equal(publicData.coverage.measuredSubsteps, 1);
+  for (const secret of ['2026-09-27T10:00:00Z', 'private.example', 'private-stage',
+    '/private', 'private-prompt', 'private-step', 'secret']) {
+    assert.equal(JSON.stringify(publicData).includes(secret), false, secret);
+  }
+});
+
+test('withdrawn delivery survives the public projection', () => {
+  const snapshot = { schemaVersion: 'sermon-public-tracker-snapshot-v1',
+    pageId: 'week-2026-09-20', target: 'dev', locales: [{ locale: 'ko', delivery: {
+      pageStatus: 'withdrawn', voiceStatus: 'withdrawn', voicePublished: false,
+      fingerprint: { status: 'withdrawn' },
+    } }], steps: [], source: {}, progress: {}, readOnly: true };
+  const delivery = validateSnapshot(snapshot).locales[0].delivery;
+  assert.equal(delivery.pageStatus, 'withdrawn');
+  assert.equal(delivery.voiceStatus, 'withdrawn');
+  assert.equal(delivery.fingerprint.status, 'withdrawn');
+  assert.equal(delivery.pageUrl, null);
+});
+
+test('public projection keeps bounded timing counters without private workload hashes', () => {
+  const snapshot = { schemaVersion: 'sermon-public-tracker-snapshot-v2',
+    pageId: 'week-2026-09-20', target: 'dev', locales: [], source: {}, progress: {},
+    timingCoverage: { measuredStepCount: 1, damagedAccountingRows: 0 }, readOnly: true,
+    steps: [{ id: 'L2-03@ko', layer: 2, locale: 'ko', status: 'pending',
+      timing: { executionAttempts: 2, failedExecutionAttempts: 1,
+        measuredExecutionSeconds: 12.5, lastExecutionStatus: 'failed',
+        lastExecutionAt: '2026-09-23T12:00:00Z', openExecution: true,
+        openExecutionElapsedSeconds: 95, statusElapsedSeconds: 480,
+        startedAt: 'private-start', policySha256: 'a'.repeat(64) } }] };
+  const publicData = validateSnapshot(snapshot);
+  assert.equal(publicData.steps[0].timing.executionAttempts, 2);
+  assert.equal(publicData.steps[0].timing.failedExecutionAttempts, 1);
+  assert.equal(publicData.steps[0].timing.measuredExecutionSeconds, 12.5);
+  assert.equal(publicData.steps[0].timing.openExecutionElapsedSeconds, 95);
+  assert.equal(publicData.steps[0].timing.statusElapsedSeconds, null);
+  assert.equal(publicData.timingCoverage.measuredStepCount, 1);
+  assert.equal(JSON.stringify(publicData).includes('policySha256'), false);
+  assert.equal(JSON.stringify(publicData).includes('private-start'), false);
+});
+
+test('running duration is kept only with matching public status and bounded seconds', () => {
+  const base = { schemaVersion: 'sermon-public-tracker-snapshot-v2', pageId: 'week-2026-09-20',
+    target: 'dev', locales: [], source: {}, progress: {}, readOnly: true };
+  const step = { id: 'L3-02@ko', layer: 3, locale: 'ko', status: 'running',
+    timing: { openExecution: true, openExecutionElapsedSeconds: 92, statusElapsedSeconds: 500 } };
+  assert.equal(validateSnapshot({ ...base, steps: [step] }).steps[0].timing.statusElapsedSeconds, 500);
+  assert.equal(validateSnapshot({ ...base, steps: [{ ...step, status: 'complete' }] })
+    .steps[0].timing.statusElapsedSeconds, null);
+  assert.equal(validateSnapshot({ ...base, steps: [{ ...step, timing: { ...step.timing,
+    openExecutionElapsedSeconds: Number.MAX_SAFE_INTEGER } }] })
+    .steps[0].timing.openExecutionElapsedSeconds, null);
+});
+
+test('v1 snapshots migrate without inventing active elapsed counters', () => {
+  const old = { schemaVersion: 'sermon-public-tracker-snapshot-v1', pageId: 'week-2026-09-20',
+    target: 'dev', locales: [], source: {}, progress: {}, readOnly: true,
+    steps: [{ id: 'L3-02@ko', layer: 3, locale: 'ko', status: 'running',
+      timing: { measuredExecutionSeconds: 12.5, openExecution: true,
+        openExecutionElapsedSeconds: 95, statusElapsedSeconds: 480 } }] };
+  const migrated = validateSnapshot(old);
+  assert.equal(migrated.schemaVersion, 'sermon-public-tracker-snapshot-v2');
+  assert.equal(migrated.steps[0].timing.measuredExecutionSeconds, 12.5);
+  assert.equal(migrated.steps[0].timing.openExecutionElapsedSeconds, null);
+  assert.equal(migrated.steps[0].timing.statusElapsedSeconds, null);
+  assert.throws(() => validateSnapshot({ ...old, schemaVersion: 'sermon-public-tracker-snapshot-v3' }), /invalid/);
+});
+
+test('step timing labels separate measured attempts from open and status time', () => {
+  assert.equal(formatDuration(3661), '1小时1分1秒');
+  const lines = stepTimingSummary({ status: 'running', timing: {
+    executionAttempts: 2, failedExecutionAttempts: 1, measuredExecutionSeconds: 45.5,
+    openExecution: true, openExecutionElapsedSeconds: 95, statusElapsedSeconds: 480,
+  } });
+  assert.match(lines[0], /执行实测累计 45.5秒 · 2 次，失败 1 次/);
+  assert.match(lines[1], /未结束执行计时 1分35秒（截至快照）/);
+  assert.match(lines[2], /进行中状态持续 8分0秒（截至快照，非执行耗时）/);
+  assert.match(stepTimingSummary({ status: 'complete' })[0], /执行耗时未记录/);
+});
+
+test('public timing projection and older snapshots expose completed unmeasured steps', () => {
+  const snapshot = { schemaVersion: 'sermon-public-tracker-snapshot-v1',
+    pageId: 'week-2026-09-20', target: 'dev', locales: [], source: {}, progress: {},
+    timingCoverage: { measuredStepCount: 0 }, readOnly: true,
+    steps: [{ id: 'L1-01', layer: 1, locale: null, status: 'complete' },
+      { id: 'L2-01@ko', layer: 2, locale: 'ko', status: 'complete',
+        timing: { measuredExecutionSeconds: 1.2 } },
+      { id: 'private/step', layer: 3, locale: 'ko', status: 'complete' }] };
+  const publicData = validateSnapshot(snapshot);
+  assert.equal(publicData.timingCoverage.completedWithoutMeasuredExecutionCount, 1);
+  assert.deepEqual(publicData.timingCoverage.completedWithoutMeasuredExecutionStepIds, ['L1-01']);
+  assert.match(timingCoverageNote(publicData.timingCoverage, publicData.steps), /1 个已记录步骤缺实测计时/);
+  assert.match(timingCoverageNote({}, snapshot.steps.slice(0, 1)), /1 个已记录步骤缺实测计时/);
+  assert.equal(formatDuration(0.3482), '0.348秒');
+  assert.equal(formatDuration(69.2), '1分9秒');
+});

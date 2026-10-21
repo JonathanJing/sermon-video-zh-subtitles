@@ -4,7 +4,7 @@ from pathlib import Path
 import tempfile
 import unittest
 
-from scripts import record_decision as decisions
+from tools.ops import record_decision as decisions
 
 
 class RecordDecisionTests(unittest.TestCase):

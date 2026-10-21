@@ -58,8 +58,9 @@ public struct WeeklyAnnouncement: Codable, Equatable, Sendable, Identifiable {
         try validate()
         guard let page = catalog.pages.first(where: { $0.id == pageID }),
               page.diagnosticOnly != true, page.simulationOnly != true,
-              page.sourceIdentitySha256 == sourceIdentitySHA256,
               let target = page.targets[locale], target.isPublishedContent,
+              let source = try? target.sourceBinding(in: page),
+              source.sourceIdentitySha256 == sourceIdentitySHA256,
               target.diagnosticOnly != true, target.simulationOnly != true,
               target.releasePackageJsonSha256 == releaseSHA256 else { throw WeeklyAnnouncementError.staleRelease }
         return page

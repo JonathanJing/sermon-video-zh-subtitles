@@ -2,7 +2,7 @@
 
 [中文说明](portable-media-recovery-audit.zh.md)
 
-The current [Layer 3 producer](../scripts/build_target_language_audio_package.py)
+The current [Layer 3 producer](../packages/production/src/tongxing_production/audio/package.py)
 records resolved host-absolute media paths. Editing those paths changes the
 approved package's JSON hash and invalidates its independent approval receipt.
 This additive tool verifies a separately mapped private archive while preserving
@@ -72,7 +72,7 @@ package exactly. Set the following shell variables locally; they are not remote
 URLs or values the tool discovers:
 
 ```sh
-python3 scripts/audit_portable_media.py prepare \
+.venv/bin/python tools/ops/audit_portable_media.py prepare \
   --package "$ORIGINAL_PACKAGE" --approval "$ORIGINAL_APPROVAL" \
   --archive-root "$ARCHIVE_ROOT" --mapping "$PRIVATE_MAPPING" \
   --archive-id weekly-ko-r2 \
@@ -96,7 +96,7 @@ archive workflow. Select the destination root explicitly; unchanged package,
 approval and sidecar bytes are reused on the second machine:
 
 ```sh
-python3 scripts/audit_portable_media.py audit \
+.venv/bin/python tools/ops/audit_portable_media.py audit \
   --package "$ORIGINAL_PACKAGE" --approval "$ORIGINAL_APPROVAL" \
   --manifest "$PRIVATE_SIDECAR" --archive-root "$DESTINATION_ARCHIVE_ROOT" \
   --expected-source-sha256 "$EXPECTED_SOURCE_JSON_SHA256" \

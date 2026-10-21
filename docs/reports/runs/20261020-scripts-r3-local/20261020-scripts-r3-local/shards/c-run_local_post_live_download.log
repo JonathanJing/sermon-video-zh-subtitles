@@ -1,0 +1,14 @@
+============================= test session starts ==============================
+platform darwin -- Python 3.13.16, pytest-9.1.1, pluggy-1.6.0 -- ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.claude/worktrees/scripts-r3-3df8c4/.venv/bin/python
+rootdir: ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.claude/worktrees/scripts-r3-3df8c4
+plugins: anyio-4.14.2
+collecting ... collected 6 items
+
+tests/test_run_local_post_live_download.py::LocalPostLiveDownloadTest::test_complete_local_manifest_makes_retries_idempotent PASSED [ 16%]
+tests/test_run_local_post_live_download.py::LocalPostLiveDownloadTest::test_discovers_current_sunday_video_from_official_streams PASSED [ 33%]
+tests/test_run_local_post_live_download.py::LocalPostLiveDownloadTest::test_legacy_cli_help_and_missing_source_from_other_directory PASSED [ 50%]
+tests/test_run_local_post_live_download.py::LocalPostLiveDownloadTest::test_legacy_import_and_path_identity PASSED [ 66%]
+tests/test_run_local_post_live_download.py::LocalPostLiveDownloadTest::test_missing_source_is_a_successful_polling_noop PASSED [ 83%]
+tests/test_run_local_post_live_download.py::LocalPostLiveDownloadTest::test_uploads_audio_video_and_complete_handoff_manifest PASSED [100%]
+
+============================== 6 passed in 7.08s ===============================

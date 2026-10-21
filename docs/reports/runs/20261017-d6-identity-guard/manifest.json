@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-d6-identity-guard",
+  "runs": [
+    {
+      "label": "dual-pdf-d6-identity-guard-20261017",
+      "source": "~/.codex/worktrees/d6-published-alignment/sermon-video-zh-subtitles/artifacts/dual-pdf-d6-identity-guard-20261017",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "dual-pdf-d6-identity-guard-20261017",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 448,
+      "truncated": false,
+      "sha256": "1d5f742e54e274845d391c52a90387a247d6d675b45c6076018381846d356202",
+      "redactions": {}
+    },
+    {
+      "run": "dual-pdf-d6-identity-guard-20261017",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 419,
+      "truncated": false,
+      "sha256": "315c2875b1fc1cc9095a64a0529ded250f24ae450db85d115b687d0ba2e06235",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

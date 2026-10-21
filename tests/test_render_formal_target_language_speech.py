@@ -9,11 +9,12 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-from scripts import render_formal_target_language_speech as subject
-from scripts import four_layer_measure as measure
-from scripts import four_layer_progress as progress
-from scripts import sermon_accounting as accounting
-from scripts import weekly_pipeline_report as weekly
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.audio import renderer as subject
+from tongxing_production.observability import measure
+from tongxing_production.observability import progress
+from tongxing_production.observability import accounting
+from tongxing_production.observability import weekly_projection as weekly
 from tests import test_build_target_language_audio_package as fixture_module
 
 
@@ -536,7 +537,7 @@ class FormalRenderTests(unittest.TestCase):
             subject.unit_instructions(job, map_path)
 
     def test_tracked_layer3_adapters_bind_the_tracked_policies(self):
-        config = Path(subject.__file__).resolve().parents[1] / "config"
+        config = Path(__file__).resolve().parents[1] / "config"
         policies = subject.package.read_object(config / "layer3-audio-operation-policies.json")
         self.assertEqual(policies["normalization"], subject.SPOKEN_FORMS_NORMALIZATION_POLICY)
         for locale in ("zh-Hans", "ko", "es"):

@@ -1,13 +1,13 @@
 import hashlib
 import json
 from pathlib import Path
-import sys
 import tempfile
 import unittest
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'scripts'))
-from bind_published_alignment_catalog import bind_catalog, bind_catalogs, main
-from delivery_contract import project_human_catalog
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.delivery.published_alignment_catalog import bind_catalog, bind_catalogs, main
+from tongxing_production.delivery.contract import (project_human_catalog, project_legacy_catalog_v4,
+                                                   promote_page_to_per_target, upgrade_catalog_v5)
 from unittest import mock
 
 
@@ -53,6 +53,41 @@ class CatalogAlignmentTests(unittest.TestCase):
         path.write_bytes(data)
         return hashlib.sha256(data).hexdigest()
 
+    def window(self, start, end, **changes):
+        return dict(dict(schemaVersion='sermon-original-recording-window-v1', mediaSha256=self.media,
+                         startSeconds=start, endSeconds=end), **changes)
+
+    def set_human_window(self, start, end, *, content_duration=None, index_duration=None,
+                         source_window_media=None, window_block=True, window_schema=None):
+        """Rebind the human fixture after changing its approved source window."""
+        duration = end - start if content_duration is None else content_duration
+        self.binding.update(sourceStartSeconds=start, sourceEndSeconds=end)
+        index = dict(self.binding, schemaVersion='sermon-landmark-index-v1',
+                     durationSeconds=(end - start if index_duration is None else index_duration))
+        index.pop('indexSha256')
+        index.pop('indexUrl')
+        index_sha = self.save('/index-window.json', index)
+        self.binding.update(indexSha256=index_sha,
+                            indexUrl=f'/fingerprints/{index_sha[:16]}-landmarks.json')
+        self.save(self.binding['indexUrl'], index)
+
+        content = self.read('content/week/ko.json')
+        content['durationSeconds'] = duration
+        content.pop('sourceWindow', None)
+        if window_block:
+            content['sourceWindow'] = self.window(start, end, mediaSha256=source_window_media or self.media,
+                                                  schemaVersion=window_schema or 'sermon-original-recording-window-v1')
+        content_sha = self.save('/content/week/ko.json', content)
+        release = self.read('releases-v2/week/ko.json')
+        next(asset for asset in release['assets'] if asset['role'] == 'content')['sha256'] = content_sha
+        release_sha = self.save('/releases-v2/week/ko.json', release)
+        self.target['releasePackageJsonSha256'] = release_sha
+        self.catalog['pages'][0]['targets']['ko'] = self.target
+        self.sidecar['targets']['ko'] = dict(
+            releasePackageJsonSha256=release_sha, audioFingerprint=self.binding)
+        self.save('/multilingual-v3.json', self.catalog)
+        self.save('/alignment/week.json', self.sidecar)
+
     def test_binding_preserves_prior_pages_and_release_identity(self):
         before = {p.relative_to(self.public): p.read_bytes() for p in self.public.rglob('*') if p.is_file()}
         result = bind_catalog(self.public, 'week')
@@ -66,11 +101,13 @@ class CatalogAlignmentTests(unittest.TestCase):
         self.save('/multilingual-v3.json', result)
         self.assertEqual(bind_catalog(self.public, 'week'), result)
 
-    def add_machine_locale(self, catalog_page, *, audio_duration=30, release_status='machine_checked'):
+    def add_machine_locale(self, catalog_page, *, audio_duration=30, release_status='machine_checked',
+                           window=(0, 30)):
         """Publish a machine-checked es locale beside the human ko locale, as the four-layer seal does."""
+        start, end = window
         track = self.save('/media/week/es.mp3', b'es-audio')
-        binding = dict(self.binding, trackSha256=track)
-        index = dict(binding, schemaVersion='sermon-landmark-index-v1', durationSeconds=30)
+        binding = dict(self.binding, trackSha256=track, sourceStartSeconds=start, sourceEndSeconds=end)
+        index = dict(binding, schemaVersion='sermon-landmark-index-v1', durationSeconds=end - start)
         for key in ('indexSha256', 'indexUrl'):
             index.pop(key)
         index_sha = self.save('/index-es.json', index)
@@ -78,7 +115,7 @@ class CatalogAlignmentTests(unittest.TestCase):
         self.save(binding['indexUrl'], index)
         content_sha = self.save('/content/week/es.json', dict(sourceMediaSha256=self.media,
             englishSourcePackageJsonSha256=self.source, pageId='week', targetLocale='es', status='machine_checked',
-            durationSeconds=30, audioDurationSeconds=audio_duration))
+            durationSeconds=end - start, audioDurationSeconds=audio_duration, sourceWindow=self.window(start, end)))
         release = dict(schemaVersion='sermon-target-language-release-package-v4', status='published_http_verified',
                        contentStatus='machine_checked', audioStatus=release_status, pageId='week',
                        targetLocale='es', audioLocale='es', contentLocale='es', englishSourcePackageJsonSha256=self.source,
@@ -157,6 +194,61 @@ class CatalogAlignmentTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'source clock'):
             bind_catalogs(self.public, 'week')
 
+    def seal_v5(self, *, per_target):
+        v4, binding = self.seal_v4()
+        if per_target:
+            # The edition page keeps id 'week'; the v5 family page that presents it is 'family'.
+            v4['pages'][0]['sourceMediaSha256'] = self.media
+            v4['pages'][0]['videoDelivery'] = dict(
+                schemaVersion='sermon-video-delivery-v1', canonicalUrl='/pages/week/full-video-browser.mp4',
+                storageUrl=f'https://storage.googleapis.com/ai-for-god-sermon-media-prod/weekly/week/{self.media}.mp4',
+                sha256=self.media, bytes=100)
+        v5 = upgrade_catalog_v5(v4)
+        if per_target:
+            v5['pages'][0] = dict(promote_page_to_per_target(v5['pages'][0]), id='family', title='Family')
+            v5['defaultPageId'] = 'family'
+        v4 = project_legacy_catalog_v4(v5)
+        self.save('/multilingual-v5.json', v5)
+        self.save('/multilingual-v4.json', v4)
+        self.save('/multilingual-v3.json', project_human_catalog(v4))
+        return v5, binding
+
+    def test_v5_binds_edition_targets_and_keeps_v4_v3_as_projections(self):
+        for per_target in (False, True):
+            with self.subTest(per_target=per_target):
+                self.setUp()
+                v5, es_binding = self.seal_v5(per_target=per_target)
+                with mock.patch('sys.argv', ['bind', '--public', str(self.public), '--page-id', 'week']), \
+                        mock.patch('builtins.print') as printed:
+                    main()
+                bound_v5, bound_v4 = self.read('multilingual-v5.json'), self.read('multilingual-v4.json')
+                self.assertEqual(project_legacy_catalog_v4(bound_v5), bound_v4)
+                self.assertEqual(project_human_catalog(bound_v4), self.read('multilingual-v3.json'))
+                page = bound_v5['pages'][0]
+                self.assertEqual(page['id'], 'family' if per_target else 'week')
+                self.assertEqual(page['targets']['es']['audioFingerprint'], es_binding)
+                self.assertEqual(page['targets']['ko']['audioFingerprint'], self.binding)
+                self.assertIn('alignment', page['targets']['ko']['capabilities'])
+                if not per_target:
+                    self.assertEqual(page['sourceMediaSha256'], self.media)
+                self.assertEqual(bound_v5['pages'][1], v5['pages'][1])
+                rows = json.loads(printed.call_args.args[0])['catalogs']
+                self.assertEqual([sorted(row['locales']) for row in rows], [['ko'], ['es', 'ko'], ['es', 'ko']])
+                # Idempotent, and a rerun after v3 and v4 were written but v5 was not is accepted.
+                catalogs = bind_catalogs(self.public, 'week')
+                self.assertEqual(catalogs['multilingual-v5.json'], bound_v5)
+                self.save('/multilingual-v5.json', v5)
+                self.assertEqual(bind_catalogs(self.public, 'week'), catalogs)
+
+    def test_v5_refuses_v4_that_is_not_its_projection(self):
+        self.seal_v5(per_target=True)
+        v4 = self.read('multilingual-v4.json')
+        v4['pages'][0]['title'] = 'Edited outside the seal'
+        self.save('/multilingual-v4.json', v4)
+        self.save('/multilingual-v3.json', project_human_catalog(v4))
+        with self.assertRaisesRegex(ValueError, 'edition projection'):
+            bind_catalogs(self.public, 'week')
+
     def test_v3_snapshot_keeps_single_catalog_output(self):
         expected = bind_catalog(self.public, 'week')
         with mock.patch('sys.argv', ['bind', '--public', str(self.public), '--page-id', 'week']), \
@@ -190,6 +282,51 @@ class CatalogAlignmentTests(unittest.TestCase):
         self.save('/alignment/week.json', self.sidecar)
         with self.assertRaisesRegex(ValueError, 'source/window mismatch'):
             bind_catalog(self.public, 'week')
+
+    def test_accepts_nonzero_source_window_bound_to_content_and_index(self):
+        self.set_human_window(.1, 1986)
+        target = bind_catalog(self.public, 'week')['pages'][0]['targets']['ko']
+        self.assertEqual(target['audioFingerprint']['sourceStartSeconds'], .1)
+        self.assertEqual(target['audioFingerprint']['sourceEndSeconds'], 1986)
+
+    def test_rejects_source_window_media_mismatch(self):
+        self.set_human_window(.1, 30.1, source_window_media='c' * 64)
+        with self.assertRaisesRegex(ValueError, 'source/window mismatch'):
+            bind_catalog(self.public, 'week')
+
+    def test_rejects_content_duration_different_from_source_window(self):
+        self.set_human_window(.1, 30.1, content_duration=31)
+        with self.assertRaisesRegex(ValueError, 'source/window mismatch'):
+            bind_catalog(self.public, 'week')
+
+    def test_rejects_index_duration_different_from_source_window(self):
+        self.set_human_window(.1, 30.1, index_duration=31)
+        with self.assertRaisesRegex(ValueError, 'Index identity mismatch'):
+            bind_catalog(self.public, 'week')
+
+    def test_content_duration_uses_the_published_reader_tolerance(self):
+        self.set_human_window(.1, 30.1, content_duration=29.9999)
+        bind_catalog(self.public, 'week')
+        self.set_human_window(.1, 30.1, content_duration=29.998)
+        with self.assertRaisesRegex(ValueError, 'source/window mismatch'):
+            bind_catalog(self.public, 'week')
+
+    def test_rejects_window_block_without_its_schema(self):
+        self.set_human_window(.1, 30.1, window_schema='sermon-original-recording-window-v0')
+        with self.assertRaisesRegex(ValueError, 'source/window mismatch'):
+            bind_catalog(self.public, 'week')
+
+    def test_historical_content_without_window_keeps_zero_origin(self):
+        self.set_human_window(0, 30, window_block=False)
+        bind_catalog(self.public, 'week')
+        self.set_human_window(.1, 30.1, window_block=False)
+        with self.assertRaisesRegex(ValueError, 'source/window mismatch'):
+            bind_catalog(self.public, 'week')
+
+    def test_v4_refuses_locales_with_different_windows(self):
+        self.seal_v4(window=(.1, 30.1))
+        with self.assertRaisesRegex(ValueError, 'Locales have different source windows'):
+            bind_catalogs(self.public, 'week')
 
 
 if __name__ == '__main__':

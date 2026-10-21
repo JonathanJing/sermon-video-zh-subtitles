@@ -1,0 +1,29 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261019-grp002-assembly-15030286",
+  "runs": [
+    {
+      "label": "20261019-grp002-assembly-15030286",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/local-runs/20261019-grp002-assembly-15030286",
+      "skipped": {
+        ".json": 6036
+      }
+    }
+  ],
+  "files": [
+    {
+      "run": "20261019-grp002-assembly-15030286",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 1435,
+      "truncated": false,
+      "sha256": "9e64340829de373f5d29be872593c06783b09890d2a2a80dff8fa8cf5c8e6fb2",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "status": "passed",
+  "tests": 154,
+  "skipped": 0,
+  "subtests": 760,
+  "newEntryTests": 19,
+  "changedDocCommands": 84,
+  "changedDocFiles": 37,
+  "distinctCommandPrefixesHelpChecked": 40,
+  "distinctCommandPrefixesHelpFailed": 0,
+  "packageModulesHelpEqualToFacade": 35,
+  "expectedRejection": "delivery.baseline (no main(); its command stays tools/ops/prepare_dev_simulated_publication.py)",
+  "facadesDeleted": 0,
+  "surveyBase": "dev@cb99733c",
+  "facades": 250,
+  "nonStayFacadesWithDocCommandsAfter": 0,
+  "providerCalls": 0,
+  "modelCalls": 0,
+  "networkCalls": 0,
+  "productionWrites": 0
+}

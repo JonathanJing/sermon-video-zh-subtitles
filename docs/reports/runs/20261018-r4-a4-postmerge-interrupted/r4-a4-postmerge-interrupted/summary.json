@@ -1,0 +1,5 @@
+{
+  "scope": "local unittest",
+  "command": "PYTHONPATH=. .venv/bin/python -m unittest tests.test_review_leaves tests.test_render_speculative_target_language_speech tests.test_sermon_diagnostic_preview_worker tests.test_sermon_diagnostic_delivery_preflight tests.test_implementation_freeze tests.test_check_run_start_drain tests.test_tongxing_audio_ports -q",
+  "note": "The first R4 attempt was interrupted by task turn reset; no terminal result was captured."
+}

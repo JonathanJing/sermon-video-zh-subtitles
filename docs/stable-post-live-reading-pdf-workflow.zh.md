@@ -45,7 +45,7 @@
 尽量直接使用 canonical YouTube watch URL。
 
 ```bash
-python3 scripts/live_source_monitor.py \
+.venv/bin/python tools/ops/run.py workflows.dual_pdf.live_source_monitor \
   --sunday 2026-07-26 \
   --manual-url 'https://www.youtube.com/watch?v=VIDEO_ID' \
   --out artifacts/live-source-monitor/report.json \
@@ -70,7 +70,7 @@ python3 scripts/live_source_monitor.py \
 运行前确保环境里已经有 `OPENAI_API_KEY`，或者显式传 `--api-key-secret`。
 
 ```bash
-python3 scripts/run_post_live_subtitle_generation.py \
+.venv/bin/python tools/ops/run.py workflows.dual_pdf.post_live \
   --sunday 2026-07-26 \
   --state-file artifacts/live-source-monitor/state.json \
   --work-root artifacts/post-live-runs \
@@ -124,18 +124,19 @@ Supervisor 路径以新读取的确定性 `recommendedAction.action == "complete
 
 这条稳定工作流主要由下面几个脚本实现：
 
-- [../scripts/live_source_monitor.py](../scripts/live_source_monitor.py)
-- [../scripts/run_post_live_subtitle_generation.py](../scripts/run_post_live_subtitle_generation.py)
-- [../scripts/sermon_pipeline.py](../scripts/sermon_pipeline.py)
-- [../scripts/render_mobile_pdf_from_srt.py](../scripts/render_mobile_pdf_from_srt.py)
+- [../packages/production/src/tongxing_production/workflows/dual_pdf/live_source_monitor.py](../packages/production/src/tongxing_production/workflows/dual_pdf/live_source_monitor.py)
+- [../packages/production/src/tongxing_production/workflows/dual_pdf/post_live.py](../packages/production/src/tongxing_production/workflows/dual_pdf/post_live.py)
+- [../packages/production/src/tongxing_production/workflows/dual_pdf/pipeline.py](../packages/production/src/tongxing_production/workflows/dual_pdf/pipeline.py)
+- [../packages/production/src/tongxing_production/workflows/dual_pdf/mobile_pdf.py](../packages/production/src/tongxing_production/workflows/dual_pdf/mobile_pdf.py)
 - [../scripts/generate_notes_with_openai.py](../scripts/generate_notes_with_openai.py)
-- [../scripts/render_sermon_interpretation_pdf.py](../scripts/render_sermon_interpretation_pdf.py)
+- [../packages/production/src/tongxing_production/workflows/dual_pdf/interpretation_pdf.py](../packages/production/src/tongxing_production/workflows/dual_pdf/interpretation_pdf.py)
 
 ## 已 working 但非主流程的路径
 
 下面这些部分已经 working，但当前不应该作为 repo 首页的主入口：
 
+- [../packages/production/src/tongxing_production/workflows/dual_pdf/content_json_pdf.py](../packages/production/src/tongxing_production/workflows/dual_pdf/content_json_pdf.py)：从已发布的 `/content/<pageId>/zh-Hans.json` 全文（content v2／v3）本地导出中英对照阅读 PDF，命令 `.venv/bin/python tools/ops/run.py workflows.dual_pdf.content_json_pdf --page-id <pageId>`。读正式站中文全文，英文按 `textGroupId` 取自同页 `/english-reference/<pageId>.json` 并校验内容哈希；`--content <文件>` 读本地文件，`--no-english` 只出中文。不重新翻译、不上传，机器质检文稿的披露文字保留在页脚
 - [../backend/README.md](../backend/README.md)：backend worker 和 Cloud Run orchestration
-- [../web/README.md](../web/README.md)：frontend/admin 与播放原型
+- [../apps/operator-web/README.md](../apps/operator-web/README.md)：frontend/admin 与播放原型
 
 它们应该作为支持路径来写，而不是当前最稳定主流程本身。

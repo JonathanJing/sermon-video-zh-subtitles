@@ -13,7 +13,7 @@ result = drive(execution_config, target_locale, budget_authorization=authorizati
 
 没有 `budget_authorization` 时拒绝派发。Legacy `Controller` 不带新参数时保留原作用域，不能据此宣称 legacy 请求也有预算保护。
 
-授权 JSON 的 schema 标识为 `sermon-canonical-layer2-budget-authorization-v1`，字段由 `scripts/canonical_layer2_budget.py::load_authorization` 严格校验：
+授权 JSON 的 schema 标识为 `sermon-canonical-layer2-budget-authorization-v1`，字段由 `packages/production/src/tongxing_production/text/budget.py::load_authorization` 严格校验：
 
 - `productionRunId`、`configurationSha256`、`codeIdentitySha256` 绑定执行对象。
 - `requestLimits` 使用已有 `sermon-openai-chat-request-limits-v1`，限制完整输入、`max_completion_tokens`、service tier 和墙钟时间。
@@ -41,7 +41,7 @@ result = drive(execution_config, target_locale, budget_authorization=authorizati
 ## 跨版本缓存迁移
 
 ```sh
-python scripts/migrate_target_language_model_cache.py \
+.venv/bin/python tools/ops/run.py text.model_cache_migration \
   --old-source /absolute/old-source.json --source /absolute/source.json \
   --anchor /absolute/anchor.json \
   --old-policy /absolute/old-policy.json --policy /absolute/policy.json \
@@ -76,7 +76,7 @@ python scripts/migrate_target_language_model_cache.py \
 在原显式环境启动器中生成恢复计划（输入、旧 out/state 和批准代码必须保持一致）：
 
 ```sh
-python scripts/run_with_openai_environment.py --environment dev -- \
+python tools/ops/run_with_openai_environment.py --environment dev -- \
   python scripts/plan_run_budgets.py --out artifacts/resume-plan --scale clip --locales ko \
   --stage qc.ko --qc-inputs artifacts/original-inputs.json --total-usd 10 \
   --approved-by '<实际操作者>' --evidence '<原运行继续执行的批准证据>' \
@@ -86,8 +86,8 @@ python scripts/run_with_openai_environment.py --environment dev -- \
 实际恢复仍把同一原授权交给原 QC 入口，不改 root：
 
 ```sh
-python scripts/run_with_openai_environment.py --environment dev -- \
-  python scripts/run_machine_qc_clip_test.py --run-dir artifacts/original-run \
+python tools/ops/run_with_openai_environment.py --environment dev -- \
+  .venv/bin/python tools/ops/run.py review.qc_text_run --run-dir artifacts/original-run \
   --out artifacts/original-text-qc --state-dir artifacts/original-state --locales ko --text-backend api \
   --api-budget-authorization artifacts/original-plan/qc-ko/api-budget-authorization.json
 ```

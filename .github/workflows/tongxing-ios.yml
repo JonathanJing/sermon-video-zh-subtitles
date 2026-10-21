@@ -58,20 +58,18 @@ jobs:
                   "schemas/sermon-multilingual-catalog-",
                   "schemas/sermon-target-language-release-package-",
                   "schemas/sermon-weekly-catalog-",
+                  # Where the L4 release and catalog producers move (batches D1-D7).
+                  "packages/production/src/tongxing_production/delivery/",
+                  "packages/production/src/tongxing_production/adapters/legacy/",
               )
+              # The implementations sit under the delivery/ and adapters/legacy/
+              # prefixes above; the D-5 closure window removed their scripts/ facades.
               shared_contracts = {
-                  "scripts/build_multilingual_catalog.py",
-                  "scripts/stage_formal_multilingual_dev.py",
-                  "scripts/build_formal_dev_release_assets.py",
-                  "scripts/build_full_video_app_release.py",
-                  "scripts/assemble_multilingual_hosting.py",
-                  "scripts/assemble_multilingual_v3_update.py",
-                  "scripts/bind_published_alignment_catalog.py",
-                  "scripts/refresh_multilingual_hosting_with_legacy.py",
-                  "scripts/seal_multilingual_dev_catalog.py",
-                  "experiments/sermon-dubbing-poc/web/catalog.mjs",
-                  "experiments/sermon-dubbing-poc/web/published-weeks.mjs",
-                  "firebase/dev/public/formal-dev-adapter.mjs",
+                  # The audio screening release gate, moved out of the formal stage (L4 D2a).
+                  "packages/production/src/tongxing_production/review/audio_screening.py",
+                  "apps/listening-web/catalog.mjs",
+                  "apps/listening-web/published-weeks.mjs",
+                  "apps/listening-web/reader/formal-dev-adapter.mjs",
               }
               # Only named non-native surfaces can skip native checks. Unknown
               # roots, file types and workflow inputs conservatively run the
@@ -82,9 +80,12 @@ jobs:
               }
               non_native_roots = {
                   "backend": {".py", ".md"},
+                  "packages": {".py", ".toml", ".md", ".mjs", ".js", ".json"},
+                  "services": {".mjs", ".js", ".json", ".md", ".rules"},
+                  "tools": {".mjs", ".js", ".json", ".md"},
+                  "infra": {".json", ".rules", ".md"},
                   "scripts": {".py", ".sh", ".mjs", ".md"},
                   "tests": {".py", ".json", ".md"},
-                  "web": {".html", ".css", ".js", ".mjs", ".md"},
               }
               experiment_suffixes = {".py", ".sh", ".mjs", ".js", ".json", ".html", ".css", ".md"}
               def shared(path):
@@ -99,8 +100,11 @@ jobs:
                       return item.suffix in non_native_roots[item.parts[0]]
                   if path.startswith(("experiments/sermon-dubbing-poc/", "experiments/local-live-poc/")):
                       return item.suffix in experiment_suffixes
+                  # Web clients live beside the iOS app but are not native code.
+                  if path.startswith(("apps/listening-web/", "apps/tracker-web/", "apps/support-web/", "apps/operator-web/")):
+                      return item.suffix in {".mjs", ".js", ".html", ".css", ".svg", ".png", ".json", ".md", ".webmanifest"}
                   return False
-              if not paths or any(p.startswith(("apps/", ".github/")) or
+              if not paths or any((p.startswith(("apps/", ".github/")) and not p.startswith(("apps/listening-web/", "apps/tracker-web/", "apps/support-web/", "apps/operator-web/"))) or
                                   (not shared(p) and not known_non_native(p)) for p in paths):
                   scope = "native"
               elif any(shared(p) for p in paths):

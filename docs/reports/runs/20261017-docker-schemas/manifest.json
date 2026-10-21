@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-docker-schemas",
+  "runs": [
+    {
+      "label": "docker-schemas-20261017",
+      "source": "~/.codex/worktrees/docker-schemas/sermon-video-zh-subtitles/artifacts/docker-schemas-20261017",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "docker-schemas-20261017",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 313,
+      "truncated": false,
+      "sha256": "748f19cf238535bc52fe9bac4623d7482085805c35be1e9cbc548721e7f6df62",
+      "redactions": {}
+    },
+    {
+      "run": "docker-schemas-20261017",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 273,
+      "truncated": false,
+      "sha256": "499c0c2e08104309baba627fbf6895e2937e26667ae1c1dd18ad78d8852bc5ca",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

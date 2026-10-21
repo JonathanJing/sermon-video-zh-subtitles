@@ -2,8 +2,9 @@ import copy
 import tempfile
 from pathlib import Path
 import unittest
-from scripts import sermon_bounded_decision as d
-from scripts import sermon_workflow_jobs as jobs
+from tongxing_production.orchestration.supervisor import bounded_decision as d
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.orchestration import jobs
 
 
 class BoundedDecisionTests(unittest.TestCase):

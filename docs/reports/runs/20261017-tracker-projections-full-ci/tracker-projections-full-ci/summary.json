@@ -1,0 +1,9 @@
+{
+  "status": "passed",
+  "run": "https://github.com/JonathanJing/sermon-video-zh-subtitles/actions/runs/39041740894",
+  "head": "2af33cefb5effd2fe6b76b248086d1dd6166a1be",
+  "rootShardsSucceeded": 8,
+  "aggregator": "success",
+  "nativeClient": "skipped",
+  "base": "codex/dev-event-identity-sidecar-20261017"
+}

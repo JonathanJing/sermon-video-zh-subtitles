@@ -1,0 +1,7 @@
+{
+  "status": "completed",
+  "deliveryType": "test",
+  "result": "57 focused projection tests passed after binding sidecar snapshot support",
+  "commit": "2af33cef",
+  "productionRun": false
+}

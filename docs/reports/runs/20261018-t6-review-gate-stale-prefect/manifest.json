@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261018-t6-review-gate-stale-prefect",
+  "runs": [
+    {
+      "label": "t6-review-gate-stale-prefect-20261018",
+      "source": "/private/tmp/t6-review-gate-leaf-20261017/artifacts/t6-review-gate-stale-prefect-20261018",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "t6-review-gate-stale-prefect-20261018",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 313,
+      "truncated": false,
+      "sha256": "4ddcbea27013daba509129bb3de8ea11c1ed253a38da5996359215f3595fe044",
+      "redactions": {}
+    },
+    {
+      "run": "t6-review-gate-stale-prefect-20261018",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 487,
+      "truncated": false,
+      "sha256": "bd17e24bf2e74209939c1035b4a0baad248be1041b266787ba45414cfd7e8ead",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

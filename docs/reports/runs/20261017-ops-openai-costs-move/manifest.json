@@ -1,0 +1,45 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-ops-openai-costs-move",
+  "runs": [
+    {
+      "label": "ops-import-openai-costs-check-20261017",
+      "source": "~/.codex/worktrees/ops-import-openai-costs/sermon-video-zh-subtitles/artifacts/ops-import-openai-costs-check-20261017",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "ops-import-openai-costs-check-20261017",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 209,
+      "truncated": false,
+      "sha256": "b8d3c6e149796304691461c1f1190d1c673ee3b514a232180d5ad2479e764433",
+      "redactions": {}
+    },
+    {
+      "run": "ops-import-openai-costs-check-20261017",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 1229,
+      "truncated": false,
+      "sha256": "64e087e099a2135a8d69840fb6918e69940056f163cf11e983fb696a7d8d8dc6",
+      "redactions": {}
+    },
+    {
+      "run": "ops-import-openai-costs-check-20261017",
+      "path": "timings.tsv",
+      "kind": "whole",
+      "bytes": 88,
+      "truncated": false,
+      "sha256": "13a2502018d7530406030732c4c82ad7a672a2a514be8abaa97b269a615c433a",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

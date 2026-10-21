@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-sidecar-final-ci-496df474-v3",
+  "runs": [
+    {
+      "label": "sidecar-final-ci-496df474",
+      "source": "~/.codex/worktrees/sidecar-p1-integration/sermon-video-zh-subtitles/artifacts/sidecar-final-ci-496df474",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "sidecar-final-ci-496df474",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 2078,
+      "truncated": false,
+      "sha256": "21b8daab83bec6bcba749c53f5965d329a04ce62e644963989db5bd9b209763b",
+      "redactions": {}
+    },
+    {
+      "run": "sidecar-final-ci-496df474",
+      "path": "timings.tsv",
+      "kind": "whole",
+      "bytes": 307,
+      "truncated": false,
+      "sha256": "f0adfe5895172f3e0fde6895b709bd61714042ff7bb5e19a12de9b783067f985",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

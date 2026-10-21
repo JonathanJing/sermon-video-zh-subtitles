@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import {
   audioAvailabilityMessage, bindDubPlayback, dubOutputFromVideo,
   validateAudioExtension, validateSpokenCaptions
-} from "../firebase/dev/public/sep27-page-audio-extension.mjs";
+} from "../apps/listening-web/reader/sep27-page-audio-extension.mjs";
 
 const page = { pageId: "2026-09-27-weekend-sermon-drive-530",
   sourceSha256: "1".repeat(64), duration: 1891.677333 };

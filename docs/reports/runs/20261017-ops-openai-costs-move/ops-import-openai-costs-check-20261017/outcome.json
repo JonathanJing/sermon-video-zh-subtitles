@@ -1,0 +1,6 @@
+{
+  "schemaVersion": "local-code-check-v1",
+  "status": "passed_after_environment_setup",
+  "exitCode": 0,
+  "scope": "Local synthetic importer migration checks only; no provider request or production data"
+}

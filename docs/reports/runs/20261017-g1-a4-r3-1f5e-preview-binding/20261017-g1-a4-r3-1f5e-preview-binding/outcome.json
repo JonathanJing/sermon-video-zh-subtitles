@@ -1,0 +1,18 @@
+{
+  "schemaVersion": "sermon-local-test-outcome-v1",
+  "status": "passed",
+  "exitCode": 0,
+  "testsRun": 87,
+  "elapsedSeconds": 46.112,
+  "baseHead": "1f5e9923b7b485bbbfb64ab0a8048989b913c041",
+  "head": "3c22a7a3",
+  "command": "PYTHONPATH=. .venv/bin/python -m unittest tests.test_render_speculative_target_language_speech tests.test_sermon_unified_audio tests.test_inspect_canonical_audio tests.test_tongxing_audio_ports tests.test_tongxing_text_ports tests.test_source_bound_diagnostic_audio tests.test_target_audio_rate_identity -q",
+  "aliasResolvedToPackage": true,
+  "identityPreview": {
+    "W": "38cf46dd200ccd5178bd62b3bb94c13e37a13478e16babb257b5ebbf656a4dc9",
+    "T": "d32c3865b5d3915778f8de3366d1c64d1abd700824f5d705ac5e033c2c17b4fa",
+    "scoring": "c7d8c5ab67a3a1457ef86cacb2a5b46a9dc61893eac88b1aa148cff38f45e8e9",
+    "rate": "7106472406f392719bdac118c30bb0f43016059bec4d13ed5138638274bf68ff",
+    "waiverFileKeys": 28
+  }
+}

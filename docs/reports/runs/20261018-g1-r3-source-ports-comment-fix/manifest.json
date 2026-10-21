@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261018-g1-r3-source-ports-comment-fix",
+  "runs": [
+    {
+      "label": "g1-r3-source-ports-comment-fix",
+      "source": "~/.codex/worktrees/g1-r3-review/sermon-video-zh-subtitles/artifacts/g1-r3-source-ports-comment-fix",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "g1-r3-source-ports-comment-fix",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 176,
+      "truncated": false,
+      "sha256": "144fec4815b03c5b4bbdf773df1da70b75555f6f85d03ac0dc42e4bd7b5c5006",
+      "redactions": {}
+    },
+    {
+      "run": "g1-r3-source-ports-comment-fix",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 370,
+      "truncated": false,
+      "sha256": "526b36af174963084ff6c3651369322f2dfb48ba828727b995767e166b5451ba",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

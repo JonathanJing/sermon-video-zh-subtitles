@@ -2,8 +2,9 @@ import json
 
 import pytest
 
-from scripts.openai_layer2_diagnostic_transport import OpenAILayer2DiagnosticTransport, _digest
-from scripts import sermon_provider_limits
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.workflows.diagnostic.openai_layer2_transport import OpenAILayer2DiagnosticTransport, _digest
+from tongxing_production.compute import provider_limits as sermon_provider_limits
 
 
 def test_reuse_requires_exact_completed_prior_receipt(tmp_path, monkeypatch):
@@ -20,7 +21,7 @@ def test_reuse_requires_exact_completed_prior_receipt(tmp_path, monkeypatch):
         'executionIdentity': transport.execution_identity}))
     (source / 'response.json').write_text(json.dumps({'payloadSha256': _digest(payload),
         'response': response}))
-    monkeypatch.setattr('scripts.openai_layer2_diagnostic_transport.models.completed_response_content',
+    monkeypatch.setattr('tongxing_production.workflows.diagnostic.openai_layer2_transport.models.completed_response_content',
                         lambda result, model, role: '{}')
     assert transport._reused_response(fingerprint, payload) == response
     (source / 'response.json').unlink()

@@ -1,0 +1,8 @@
+{"at": "2026-10-20T14:51:01+00:00", "stage": "move", "event": "started", "hostId": "host-4c073da0e904", "pid": 66005}
+{"at": "2026-10-20T14:51:01+00:00", "stage": "move", "event": "finished", "hostId": "host-4c073da0e904", "pid": 66006}
+{"at": "2026-10-20T14:51:02+00:00", "stage": "wiring", "event": "started", "hostId": "host-4c073da0e904", "pid": 66010}
+{"at": "2026-10-20T14:51:02+00:00", "stage": "wiring", "event": "finished", "hostId": "host-4c073da0e904", "pid": 66012}
+{"at": "2026-10-20T14:51:02+00:00", "stage": "tests", "event": "started", "hostId": "host-4c073da0e904", "pid": 66014}
+{"at": "2026-10-20T15:32:51+00:00", "stage": "tests", "event": "finished", "hostId": "host-4c073da0e904", "pid": 95165}
+{"at": "2026-10-20T15:32:51+00:00", "stage": "merge-dev", "event": "started", "hostId": "host-4c073da0e904", "pid": 95166}
+{"at": "2026-10-20T15:32:51+00:00", "stage": "merge-dev", "event": "finished", "hostId": "host-4c073da0e904", "pid": 95167}

@@ -231,7 +231,7 @@ struct SharedMachineCheckedContractTests {
             "schemaVersion": schemaVersion, "pageId": page.id, "targetLocale": package.targetLocale,
             "sourceLocale": "en", "status": status, "durationSeconds": 10, "audioDurationSeconds": 9.5,
             "reviewMode": "formal", "title": "Synthetic machine-checked title",
-            "englishSourcePackageJsonSha256": page.sourceIdentitySha256,
+            "englishSourcePackageJsonSha256": try #require(page.sourceIdentitySha256),
             "targetLanguageCandidateJsonSha256": package.targetLanguageCandidateJsonSha256,
             "sourceMediaSha256": sourceMedia,
             "summary": "Synthetic summary", "questions": ["Synthetic question"],

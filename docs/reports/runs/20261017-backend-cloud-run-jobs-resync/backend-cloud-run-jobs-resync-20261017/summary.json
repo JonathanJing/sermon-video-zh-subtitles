@@ -1,0 +1,24 @@
+{
+  "baseDevCommit": "9c07f8478fba3fec1679f59decac3baa0d5d26fb",
+  "checks": [
+    {
+      "name": "test_cloud_run_jobs plus test_backend_app",
+      "result": "44 passed",
+      "environment": "worktree paths via PYTHONPATH, configured local Python environment"
+    },
+    {
+      "name": "service package build",
+      "result": "sdist and wheel built with uv after dev merge"
+    },
+    {
+      "name": "installed wheel old/new import from outside repository",
+      "result": "same module object, module loaded from site-packages"
+    },
+    {
+      "name": "Docker image build",
+      "result": "not_run",
+      "reason": "Docker and Podman executables unavailable locally"
+    }
+  ],
+  "limits": "Fake HTTP session and import/build checks only; no Cloud Run dispatch, deployed image or service acceptance"
+}

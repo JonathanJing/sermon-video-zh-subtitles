@@ -1,0 +1,15 @@
+{
+  "status": "success",
+  "exitCode": 0,
+  "deliveryType": "test",
+  "source": "local focused unittest after dev merge",
+  "headCommitSha": "f1eaddb40312f9b4d98b85e09161a9d87eea8958",
+  "baseCommit": "188807ef39ecedfbfd60c8c66f432ca91c93a32b",
+  "command": "PYTHONPATH=packages/production/src:. .venv/bin/python -m unittest tests.test_cuv_preflight tests.test_sermon_review_diagnostics tests.test_tongxing_production_package",
+  "testsRun": 23,
+  "testsPassed": 23,
+  "testsFailed": 0,
+  "modulePathVerified": true,
+  "diffCheck": "pass",
+  "recordedAt": "2026-10-17T19:09:36.938585+00:00"
+}

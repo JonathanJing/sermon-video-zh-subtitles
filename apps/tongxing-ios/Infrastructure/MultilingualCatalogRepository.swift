@@ -10,6 +10,8 @@ public struct MultilingualCatalogLoadResult: Sendable {
     /// Set when /multilingual-v4.json existed but failed to fetch or validate and
     /// this result is the human-only v3/v2 fallback (machine-checked locales hidden).
     public var machineCheckedCatalogError: String? = nil
+    /// Set when v5 failed and this result came from the still-valid v4/v3/v2 chain.
+    public var mixedSourceCatalogError: String? = nil
 }
 
 public struct VerifiedLanguagePage: Sendable {
@@ -19,10 +21,23 @@ public struct VerifiedLanguagePage: Sendable {
 
 public struct VerifiedLanguageAudio: Sendable {
     public let localURL: URL
+    /// Stable family identity used by selection and playback history.
     public let pageID: String
+    /// Resource page identity carried by the selected target/release.
+    public let editionID: String
     public let locale: String
     public let sourceIdentitySha256: String
     public let sha256: String
+
+    public init(localURL: URL, pageID: String, editionID: String? = nil, locale: String,
+                sourceIdentitySha256: String, sha256: String) {
+        self.localURL = localURL
+        self.pageID = pageID
+        self.editionID = editionID ?? pageID
+        self.locale = locale
+        self.sourceIdentitySha256 = sourceIdentitySha256
+        self.sha256 = sha256
+    }
 }
 
 public actor MultilingualCatalogRepository {
@@ -55,16 +70,32 @@ public actor MultilingualCatalogRepository {
     public func loadCatalog() async throws -> MultilingualCatalogLoadResult {
         try FileManager.default.createDirectory(at: cacheDirectory, withIntermediateDirectories: true)
         do {
-            return try await loadNetworkCatalog(named: "multilingual-v4.json",
-                                                schemaVersion: MultilingualCatalog.machineCheckedSchemaVersion)
+            return try await loadNetworkCatalog(named: "multilingual-v5.json",
+                                                schemaVersion: MultilingualCatalog.mixedSourceSchemaVersion)
         } catch ContentStorageError.httpStatus(404) {
-            // A missing v4 catalog keeps the human-only v3/v2 protocol exactly as before.
-            return try await loadHumanOnlyCatalog(machineCheckedError: nil)
+            return try await loadMachineCheckedCatalog(mixedSourceError: nil)
         } catch {
             if Task.isCancelled || error is CancellationError { throw CancellationError() }
-            // A v4 catalog that cannot be fetched or validated must not lose the
-            // week: fall back to its human-only v3 projection and record why.
-            return try await loadHumanOnlyCatalog(machineCheckedError: error)
+            return try await loadMachineCheckedCatalog(mixedSourceError: error)
+        }
+    }
+
+    private func loadMachineCheckedCatalog(mixedSourceError: Error?) async throws -> MultilingualCatalogLoadResult {
+        let recorded = mixedSourceError.map { String(describing: $0) }
+        do {
+            var result = try await loadNetworkCatalog(named: "multilingual-v4.json",
+                                                      schemaVersion: MultilingualCatalog.machineCheckedSchemaVersion)
+            result.mixedSourceCatalogError = recorded
+            return result
+        } catch ContentStorageError.httpStatus(404) {
+            var result = try await loadHumanOnlyCatalog(machineCheckedError: nil)
+            result.mixedSourceCatalogError = recorded
+            return result
+        } catch {
+            if Task.isCancelled || error is CancellationError { throw CancellationError() }
+            var result = try await loadHumanOnlyCatalog(machineCheckedError: error)
+            result.mixedSourceCatalogError = recorded
+            return result
         }
     }
 
@@ -92,7 +123,7 @@ public actor MultilingualCatalogRepository {
             // Only a v4 catalog the network could not answer for (not a 404) may
             // reuse its previously verified cache ahead of the human-only caches.
             let preferred = machineCheckedError == nil ? ["multilingual-v3.json", "multilingual-v2.json"]
-                : ["multilingual-v4.json", "multilingual-v3.json", "multilingual-v2.json"]
+                : ["multilingual-v5.json", "multilingual-v4.json", "multilingual-v3.json", "multilingual-v2.json"]
             return try await loadCachedCatalog(preferredNames: preferred, originalError: error)
         }
     }
@@ -120,6 +151,7 @@ public actor MultilingualCatalogRepository {
                 let catalog = try MultilingualCatalog.decode(data, allowDevCandidates: allowDevCandidate)
                 let expected: String
                 switch name {
+                case "multilingual-v5.json": expected = MultilingualCatalog.mixedSourceSchemaVersion
                 case "multilingual-v4.json": expected = MultilingualCatalog.machineCheckedSchemaVersion
                 case "multilingual-v3.json": expected = MultilingualCatalog.dualScriptSchemaVersion
                 default: expected = MultilingualCatalog.supportedSchemaVersion
@@ -200,8 +232,10 @@ public actor MultilingualCatalogRepository {
     }
 
     private func cachedPackage(page: MultilingualPage, locale: String) throws -> TargetLanguageReleasePackage {
-        guard let target = page.targets[locale] else { throw ContentStorageError.invalidDownloadReference }
-        let bytes = try readBounded(packageCacheURL(pageID: page.id, locale: locale), maximumBytes: maximumPackageBytes)
+        guard let target = page.targets[locale], let source = try? target.sourceBinding(in: page) else {
+            throw ContentStorageError.invalidDownloadReference
+        }
+        let bytes = try readBounded(packageCacheURL(pageID: source.editionId, locale: locale), maximumBytes: maximumPackageBytes)
         guard SHA256.hash(data: bytes).map({ String(format: "%02x", $0) }).joined() == target.releasePackageJsonSha256 else {
             throw ContentStorageError.checksumMismatch
         }
@@ -211,8 +245,10 @@ public actor MultilingualCatalogRepository {
     // A valid immutable candidate cache is a negative admission result. Reuse
     // its hash-bound status without fetching the same rejected bytes repeatedly.
     private func cachedReleaseVisibility(page: MultilingualPage, locale: String) throws -> Bool {
-        guard let target = page.targets[locale] else { throw ContentStorageError.invalidDownloadReference }
-        let bytes = try readBounded(packageCacheURL(pageID: page.id, locale: locale), maximumBytes: maximumPackageBytes)
+        guard let target = page.targets[locale], let source = try? target.sourceBinding(in: page) else {
+            throw ContentStorageError.invalidDownloadReference
+        }
+        let bytes = try readBounded(packageCacheURL(pageID: source.editionId, locale: locale), maximumBytes: maximumPackageBytes)
         guard SHA256.hash(data: bytes).map({ String(format: "%02x", $0) }).joined() == target.releasePackageJsonSha256 else {
             throw ContentStorageError.checksumMismatch
         }
@@ -223,12 +259,14 @@ public actor MultilingualCatalogRepository {
 
     private func isBoundCandidate(_ bytes: Data, page: MultilingualPage, locale: String) -> Bool {
         guard let package = try? TargetLanguageReleasePackage.decode(bytes, allowDevCandidate: true),
-              package.status == "candidate", package.pageId == page.id, package.targetLocale == locale,
-              let target = page.targets[locale], package.contentStatus == target.contentStatus,
+              package.status == "candidate", let target = page.targets[locale],
+              let source = try? target.sourceBinding(in: page),
+              package.pageId == source.editionId, package.targetLocale == locale,
+              package.contentStatus == target.contentStatus,
               package.audioStatus == target.audioStatus else { return false }
         return Self.releaseSchemas(for: target).contains(package.schemaVersion) &&
-            (package.fourProducts == nil || (package.englishSourcePackageJsonSha256 == page.sourceIdentitySha256 &&
-                package.sourceIdentity?.mediaSha256 == page.sourceMediaSha256))
+            (package.fourProducts == nil || (package.englishSourcePackageJsonSha256 == source.sourceIdentitySha256 &&
+                package.sourceIdentity?.mediaSha256 == source.sourceMediaSha256))
     }
 
     /// The release directory fixes which package versions a target may bind:
@@ -244,7 +282,10 @@ public actor MultilingualCatalogRepository {
     }
 
     /// The catalog version whose target rules apply to this release directory.
-    private static func catalogSchema(for target: PageTarget) -> String {
+    private static func catalogSchema(for target: PageTarget, page: MultilingualPage? = nil) -> String {
+        if page?.sourceMode != nil { return MultilingualCatalog.mixedSourceSchemaVersion }
+        if target.editionId != nil || target.sourceIdentitySha256 != nil || target.sourceMediaSha256 != nil
+            || target.videoDelivery != nil { return MultilingualCatalog.mixedSourceSchemaVersion }
         if target.releasePackageUrl.hasPrefix("/releases-v4/") { return MultilingualCatalog.machineCheckedSchemaVersion }
         if target.releasePackageUrl.hasPrefix("/releases-v2/") { return MultilingualCatalog.dualScriptSchemaVersion }
         return MultilingualCatalog.supportedSchemaVersion
@@ -256,10 +297,12 @@ public actor MultilingualCatalogRepository {
               allowDevCandidate || (target.isPublishedContent && target.diagnosticOnly != true && target.simulationOnly != true)
         else { throw ContentStorageError.invalidDownloadReference }
         try target.validate(pageID: page.id, locale: locale,
-            catalogSchemaVersion: Self.catalogSchema(for: target),
+            catalogSchemaVersion: Self.catalogSchema(for: target, page: page), sourceMode: page.sourceMode,
             allowDevCandidates: allowDevCandidate)
+        let sourceBinding = try target.sourceBinding(in: page,
+            catalogSchemaVersion: Self.catalogSchema(for: target, page: page))
         let url = try target.packageURL(relativeTo: origin)
-        let cacheURL = packageCacheURL(pageID: page.id, locale: locale)
+        let cacheURL = packageCacheURL(pageID: sourceBinding.editionId, locale: locale)
         do {
             let (data, receivedHash) = try await download(url: url, maximumBytes: maximumPackageBytes)
             guard receivedHash == target.releasePackageJsonSha256 else { throw ContentStorageError.checksumMismatch }
@@ -417,9 +460,11 @@ public actor MultilingualCatalogRepository {
         guard allowDevCandidate || (page.diagnosticOnly != true && page.simulationOnly != true) else {
             throw ContentStorageError.invalidDownloadReference
         }
-        guard package.pageId == page.id, package.hasPublishedAudio,
+        guard let target = page.targets[package.targetLocale],
+              let sourceBinding = try? target.sourceBinding(in: page),
+              package.pageId == sourceBinding.editionId, package.hasPublishedAudio,
               package.audioLocale == package.targetLocale,
-              let target = page.targets[package.targetLocale], target.hasPublishedAudio,
+              target.hasPublishedAudio,
               target.contentStatus == package.contentStatus, target.audioStatus == package.audioStatus,
               allowDevCandidate || (target.isPublishedContent && target.diagnosticOnly != true && target.simulationOnly != true) else {
             throw ContentStorageError.invalidDownloadReference
@@ -427,7 +472,7 @@ public actor MultilingualCatalogRepository {
         let assets = package.assets.filter { $0.role == .audio }
         guard assets.count == 1, let asset = assets.first else { throw ContentStorageError.invalidDownloadReference }
         let filename = String(asset.path.dropFirst("/media/".count))
-        let expectedPrefix = "\(page.id)/\(package.targetLocale)."
+        let expectedPrefix = "\(sourceBinding.editionId)/\(package.targetLocale)."
         guard asset.path.hasPrefix("/media/"), filename.hasPrefix(expectedPrefix),
               ["wav", "mp3", "m4a"].contains(String(filename.dropFirst(expectedPrefix.count))),
               let source = URL(string: asset.path, relativeTo: origin)?.absoluteURL,
@@ -441,8 +486,9 @@ public actor MultilingualCatalogRepository {
         try audioCacheDirectory.setResourceValues(backupValues)
         if FileManager.default.fileExists(atPath: cache.path),
            (try? verifyAudioFile(cache, sha256: asset.sha256)) != nil {
-            return .init(localURL: cache, pageID: page.id, locale: package.targetLocale,
-                         sourceIdentitySha256: page.sourceIdentitySha256, sha256: asset.sha256)
+            return .init(localURL: cache, pageID: page.id, editionID: sourceBinding.editionId,
+                         locale: package.targetLocale,
+                         sourceIdentitySha256: sourceBinding.sourceIdentitySha256, sha256: asset.sha256)
         }
         let temporary = cacheDirectory.appendingPathComponent("Audio/\(UUID().uuidString).part")
         defer { try? FileManager.default.removeItem(at: temporary) }
@@ -457,8 +503,9 @@ public actor MultilingualCatalogRepository {
             try FileManager.default.moveItem(at: temporary, to: cache)
         }
         try verifyAudioFile(cache, sha256: asset.sha256)
-        return .init(localURL: cache, pageID: page.id, locale: package.targetLocale,
-                     sourceIdentitySha256: page.sourceIdentitySha256, sha256: asset.sha256)
+        return .init(localURL: cache, pageID: page.id, editionID: sourceBinding.editionId,
+                     locale: package.targetLocale,
+                     sourceIdentitySha256: sourceBinding.sourceIdentitySha256, sha256: asset.sha256)
     }
 
     /// Load both approved scripts without turning full reading text into spoken
@@ -474,12 +521,16 @@ public actor MultilingualCatalogRepository {
         }
         let contentData = try await loadTranscriptAsset(content)
         let captionData = try await loadTranscriptAsset(captions)
-        let referenceURL = origin.appendingPathComponent("english-reference/\(page.id).json")
+        guard let target = page.targets[package.targetLocale],
+              let sourceBinding = try? target.sourceBinding(in: page) else {
+            throw ContentStorageError.invalidDownloadReference
+        }
+        let referenceURL = origin.appendingPathComponent("english-reference/\(sourceBinding.editionId).json")
         // The sidecar has no catalog asset hash. Store it only after Core joins
         // every approved block, and keep the entire release/source binding in
         // the cache identity. Offline reads repeat both byte and Core checks.
-        let binding = [origin.absoluteString, page.id, package.targetLocale,
-                       page.sourceIdentitySha256, page.sourceMediaSha256 ?? "",
+        let binding = [origin.absoluteString, page.id, sourceBinding.editionId, package.targetLocale,
+                       sourceBinding.sourceIdentitySha256, sourceBinding.sourceMediaSha256 ?? "",
                        page.targets[package.targetLocale]?.releasePackageJsonSha256 ?? "",
                        content.sha256, captions.sha256]
             .map { "\($0.utf8.count):\($0)" }.joined()
@@ -601,16 +652,16 @@ public actor MultilingualCatalogRepository {
 
     private func validatedPackage(_ data: Data, page: MultilingualPage, locale: String) throws -> TargetLanguageReleasePackage {
         let package = try TargetLanguageReleasePackage.decode(data, allowDevCandidate: allowDevCandidate)
-        guard package.pageId == page.id, package.targetLocale == locale,
-              let target = page.targets[locale],
+        guard let target = page.targets[locale], let source = try? target.sourceBinding(in: page),
+              package.pageId == source.editionId, package.targetLocale == locale,
               package.contentStatus == target.contentStatus, package.audioStatus == target.audioStatus
         else { throw ContentStorageError.invalidDownloadReference }
         guard Self.releaseSchemas(for: target).contains(package.schemaVersion) else {
             throw ContentStorageError.invalidDownloadReference
         }
         if package.fourProducts != nil {
-            guard package.englishSourcePackageJsonSha256 == page.sourceIdentitySha256,
-                  package.sourceIdentity?.mediaSha256 == page.sourceMediaSha256 else {
+            guard package.englishSourcePackageJsonSha256 == source.sourceIdentitySha256,
+                  package.sourceIdentity?.mediaSha256 == source.sourceMediaSha256 else {
                 throw ContentStorageError.invalidDownloadReference
             }
         }

@@ -1,0 +1,102 @@
+Traceback (most recent call last):
+  File "<frozen runpy>", line 203, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/opt/homebrew/Cellar/<email>/3.14.6/Frameworks/Python.framework/Versions/3.14/lib/python3.14/unittest/__main__.py", line 18, in <module>
+    main(module=None)
+    ~~~~^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/<email>/3.14.6/Frameworks/Python.framework/Versions/3.14/lib/python3.14/unittest/main.py", line 104, in __init__
+    self.runTests()
+    ~~~~~~~~~~~~~^^
+  File "/opt/homebrew/Cellar/<email>/3.14.6/Frameworks/Python.framework/Versions/3.14/lib/python3.14/unittest/main.py", line 270, in runTests
+    self.result = testRunner.run(self.test)
+                  ~~~~~~~~~~~~~~^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/<email>/3.14.6/Frameworks/Python.framework/Versions/3.14/lib/python3.14/unittest/runner.py", line 257, in run
+    test(result)
+    ~~~~^^^^^^^^
+  File "/opt/homebrew/Cellar/<email>/3.14.6/Frameworks/Python.framework/Versions/3.14/lib/python3.14/unittest/suite.py", line 84, in __call__
+    return self.run(*args, **kwds)
+           ~~~~~~~~^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/<email>/3.14.6/Frameworks/Python.framework/Versions/3.14/lib/python3.14/unittest/suite.py", line 122, in run
+    test(result)
+    ~~~~^^^^^^^^
+  File "/opt/homebrew/Cellar/<email>/3.14.6/Frameworks/Python.framework/Versions/3.14/lib/python3.14/unittest/suite.py", line 84, in __call__
+    return self.run(*args, **kwds)
+           ~~~~~~~~^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/<email>/3.14.6/Frameworks/Python.framework/Versions/3.14/lib/python3.14/unittest/suite.py", line 122, in run
+    test(result)
+    ~~~~^^^^^^^^
+  File "/opt/homebrew/Cellar/<email>/3.14.6/Frameworks/Python.framework/Versions/3.14/lib/python3.14/unittest/suite.py", line 84, in __call__
+    return self.run(*args, **kwds)
+           ~~~~~~~~^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/<email>/3.14.6/Frameworks/Python.framework/Versions/3.14/lib/python3.14/unittest/suite.py", line 122, in run
+    test(result)
+    ~~~~^^^^^^^^
+  File "/opt/homebrew/Cellar/<email>/3.14.6/Frameworks/Python.framework/Versions/3.14/lib/python3.14/unittest/case.py", line 725, in __call__
+    return self.run(*args, **kwds)
+           ~~~~~~~~^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/<email>/3.14.6/Frameworks/Python.framework/Versions/3.14/lib/python3.14/unittest/case.py", line 669, in run
+    self._callTestMethod(testMethod)
+    ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/<email>/3.14.6/Frameworks/Python.framework/Versions/3.14/lib/python3.14/unittest/case.py", line 615, in _callTestMethod
+    result = method()
+  File "~/Documents/Codex/verify-pr582-g1-20261017/tests/test_machine_quality_waiver.py", line 727, in test_waiver_requires_semantic_calibration
+    waived = self.waive("ko", receipts, self.calibration("ko"))
+                                        ~~~~~~~~~~~~~~~~^^^^^^
+  File "~/Documents/Codex/verify-pr582-g1-20261017/tests/test_machine_quality_waiver.py", line 601, in calibration
+    return seeded.calibrate(locale, fixtures.groups(locale), fixtures.units(locale),
+           ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                            policy=fixtures.policy(locale), call=call,
+                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                            identity=fixtures.SEMANTIC_IDENTITY if semantic else None,
+                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                            **(self.transports(locale) if asr else {}))
+                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "~/Documents/Codex/verify-pr582-g1-20261017/packages/production/src/tongxing_production/review/seeded_errors.py", line 585, in calibrate
+    audio = calibrate_audio(units, locale, asr=asr, render=render, max_trials=max_trials,
+            ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                            normalization_policy_sha256=(render_identity or {}).get("synthesis", {}).get(
+                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                                "normalizationPolicySha256")) if units else None
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "~/Documents/Codex/verify-pr582-g1-20261017/packages/production/src/tongxing_production/review/seeded_errors.py", line 506, in calibrate_audio
+    dropped = drop_key_word(units[index]["text"], locale)
+  File "~/Documents/Codex/verify-pr582-g1-20261017/packages/production/src/tongxing_production/review/seeded_errors.py", line 442, in drop_key_word
+    spans += korean_number_spans(unicodedata.normalize("NFC", text))[:1]
+             ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "~/Documents/Codex/verify-pr582-g1-20261017/scripts/tongxing_host.py", line 675, in call
+    return getattr(_module(module)(), name)(*args, **kwargs)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "~/Documents/Codex/verify-pr582-g1-20261017/packages/production/src/tongxing_production/audio/screening.py", line 176, in korean_number_spans
+    sino = _korean_spans(text, {rules.korean_sino(number) for number in range(1, 1000)}, sino=True)
+  File "~/Documents/Codex/verify-pr582-g1-20261017/packages/production/src/tongxing_production/audio/screening.py", line 150, in _korean_spans
+    found = sorted((match.start(), -len(form)) for form in forms
+                   for match in re.finditer(rules._ko_pattern(form, sino=sino), text))
+  File "~/Documents/Codex/verify-pr582-g1-20261017/packages/production/src/tongxing_production/audio/screening.py", line 151, in <genexpr>
+    for match in re.finditer(rules._ko_pattern(form, sino=sino), text))
+                 ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/<email>/3.14.6/Frameworks/Python.framework/Versions/3.14/lib/python3.14/re/__init__.py", line 285, in finditer
+    return _compile(pattern, flags).finditer(string)
+           ~~~~~~~~^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/<email>/3.14.6/Frameworks/Python.framework/Versions/3.14/lib/python3.14/re/__init__.py", line 350, in _compile
+    p = _compiler.compile(pattern, flags)
+  File "/opt/homebrew/Cellar/<email>/3.14.6/Frameworks/Python.framework/Versions/3.14/lib/python3.14/re/_compiler.py", line 766, in compile
+    code = _code(p, flags)
+  File "/opt/homebrew/Cellar/<email>/3.14.6/Frameworks/Python.framework/Versions/3.14/lib/python3.14/re/_compiler.py", line 599, in _code
+    _compile(code, p.data, flags)
+    ~~~~~~~~^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/<email>/3.14.6/Frameworks/Python.framework/Versions/3.14/lib/python3.14/re/_compiler.py", line 162, in _compile
+    _compile(code, av[1], flags)
+    ~~~~~~~~^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/<email>/3.14.6/Frameworks/Python.framework/Versions/3.14/lib/python3.14/re/_compiler.py", line 181, in _compile
+    _compile(code, av, flags)
+    ~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/<email>/3.14.6/Frameworks/Python.framework/Versions/3.14/lib/python3.14/re/_compiler.py", line 162, in _compile
+    _compile(code, av[1], flags)
+    ~~~~~~~~^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/<email>/3.14.6/Frameworks/Python.framework/Versions/3.14/lib/python3.14/re/_compiler.py", line 88, in _compile
+    charset, hascased = _optimize_charset(av, iscased, tolower, fixes)
+                        ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/<email>/3.14.6/Frameworks/Python.framework/Versions/3.14/lib/python3.14/re/_compiler.py", line 284, in _optimize_charset
+    charmap[i] = 1
+    ~~~~~~~^^^
+KeyboardInterrupt

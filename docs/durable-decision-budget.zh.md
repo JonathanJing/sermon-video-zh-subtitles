@@ -1,6 +1,6 @@
 # Bounded Decision durable budget
 
-`scripts/sermon_decision_budget.py` 为既有 bounded proposal 接口提供持久化预约，
+`packages/production/src/tongxing_production/orchestration/supervisor/decision_budget.py` 为既有 bounded proposal 接口提供持久化预约，
 复用 `sermon_workflow_jobs` 的文件锁、原子写入和 fsync；它不是另一个 worker
 或 queue。模块没有 SDK、凭证、shell action、模型选择或生产 dispatch。
 

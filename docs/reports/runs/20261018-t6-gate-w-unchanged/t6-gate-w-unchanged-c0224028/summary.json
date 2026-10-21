@@ -1,0 +1,11 @@
+{
+  "scope": "PR 1036 alias removal and G1 W preservation",
+  "results": {
+    "pathAliases": "No diff versus origin/dev for path_aliases.py",
+    "W": "df299eca0e9f11689e7a88654b7b2616df1e10bd8cd60a9847e3561d5db41b10 equals final G1 record",
+    "closure": "Neither strict gate facade nor moved package file is in W physical file list",
+    "tests": "35 ran; 34 passed, 1 skipped in 0.658 seconds",
+    "diffCheck": "git diff --cached --check passed"
+  },
+  "limits": "No paid re-QC, Spark, real production, publication, or device acceptance."
+}

@@ -3,7 +3,8 @@ import collections
 import json
 from pathlib import Path
 import unittest
-from scripts import weekly_pipeline_report as weekly
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.observability import weekly_projection as weekly
 
 ROOT=Path(__file__).resolve().parents[1]/'docs/reports/20260930-observability'
 RERUN=ROOT/'timing-rerun'

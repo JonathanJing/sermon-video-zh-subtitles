@@ -18,6 +18,13 @@
 
 按 [机器质检豁免](machine-quality-waiver.zh.md) 自动发布的语言走四层封存（`build_full_video_app_release.py seal` 与托管发布），不走下面的 v3 组装器。封存写出 `/releases-v4/<pageId>/<locale>.json`、`/multilingual-v4.json`，并把 `/multilingual-v3.json` 写成 v4 去掉机器质检语言后的投影：旧版 iOS 看到的目录与上周相同，新版网页和 iOS 先读 v4，显示“机器质检”标签和披露文案。两份目录一起比较交换、一起回读；只会改 v3 的旧组装器遇到带 v4 的基线会拒绝。字段见 [四产物公开交付](layer4-four-product-public-delivery.zh.md#机器质检发布release-v4--catalog-v4)。
 
+### 同一讲道、不同视频来源：v5 family 页面
+
+中文与西语／韩语等 target 若绑定不同 L1 或视频，使用 `multilingual-v5.json` 的 `per_target` family；用户在一个 `page.id` 中切换语言，各 target 继续引用自己的 `editionId`、release/content、来源哈希、视频和定位。网页与新版 iOS 先读 v5；v4 兼容投影仍按 edition 显示为两个来源页面，v3 仍只含人工审核 target。海报二维码编码 target edition 以兼容 v4 fallback，v5 reader 会把这个 edition 深链映射回 family；App announcement 的 `pageID` 仍指向 family，收据与实际资源校验仍绑定 target edition。具体身份和晋升限制见[四产物公开交付的跨来源单页](layer4-four-product-public-delivery.zh.md#跨来源单页catalog-v5)。
+
+这类周更必须从当场取得的完整 production baseline 构造原子候选：同一 Hosting 版本更新受信任 reader runtime、缺失的视频精确 302、v5/v4/v3 三份目录及 seal report；edition 的 release、content、字幕、音轨、学习产物和 sidecar 字节保持不变。部署前比较 live version 与三份目录基线，部署后按本次 Firebase version 回读三份目录。任何 target 的 edition/source/media/video 交叉不一致都停止发布。
+
+
 ### v3 周更发布清单与验收
 
 这一清单优先于下文仅适用于 `weekly.json` 的 legacy 命令。当前仓库的 `assemble_multilingual_hosting.py`、`deploy_multilingual_hosting.py`、`verify_multilingual_hosting.py` 仍只处理 v2 Catalog／v1 Release；在 v3 入口实现并通过定向测试前，不得用这些命令部署新周后宣称两端已经刷新可用。
@@ -45,7 +52,7 @@
 旧 `sermon-multilingual-v3-stage-manifest-v1` 候选只需保留原始文件与审核证据，按实际选择的配置重新生成清单；组装器不自动迁移或替旧清单补齐文件。输出状态固定为 `validated_not_deployed`，不能直接作为上线收据。bucket 配置还须传 `--video-file`；入口如下：
 
 ```bash
-.venv/bin/python scripts/assemble_multilingual_v3_update.py \
+.venv/bin/python tools/ops/run.py adapters.legacy.assemble_multilingual_v3_update \
   --base-public artifacts/<已核对的完整正式站快照>/public \
   --stage-public artifacts/<本周已审公开资产>/public \
   --stage-manifest artifacts/<本周已审公开资产>/stage-manifest.json \
@@ -57,7 +64,7 @@
 上例用于 bucket 配置；旧 Hosting 视频配置不传 `--video-file` 和 `--base-firebase-json`。bucket 配置的候选同时输出带精确 302 与视频 CSP 的 `firebase.json`，但组装器不上传对象、不部署站点。发布后以如下命令单独取得视频的线上收据；它会完整读回一次 MP4 核对 SHA，并检查旧同源 URL 的 302、首尾 206／Range 和 CORS，因此会产生一次视频大小的下载流量：
 
 ```bash
-.venv/bin/python scripts/verify_v3_bucket_video.py \
+.venv/bin/python tools/ops/run.py adapters.legacy.verify_v3_bucket_video \
   --origin https://ai-for-god-sermon-audio.web.app \
   --catalog artifacts/<本周已发布候选>/public/multilingual-v3.json \
   --page-id <本周pageId> \
@@ -67,7 +74,7 @@
 组装后的本地候选可再独立运行只读检查，先固定当前干净代码 commit 和 `build-report.json` 的文件 SHA-256：
 
 ```bash
-.venv/bin/python scripts/inspect_multilingual_v3_release.py \
+.venv/bin/python tools/ops/run.py adapters.legacy.inspect_multilingual_v3_release \
   --candidate artifacts/<本周-v3-候选> \
   --baseline artifacts/<原始完整正式站快照>/public \
   --expected-commit <40位代码commit> \
@@ -144,7 +151,7 @@ python3 experiments/sermon-dubbing-poc/weekly_release.py prepare \
 **Production 站点已有 `multilingual-v2.json` 时，不直接部署这个 legacy-only 包。** 旧发行器不会把多语言目录和正式资源纳入它的严格清单；`deploy_firebase.py --execute` 会先读取 Production v2 catalog 并默认拒绝覆盖。将这份已准备的 legacy release 与当前已通过 Production HTTP 核验的完整多语言候选合成一个新候选：
 
 ```bash
-.venv/bin/python scripts/refresh_multilingual_hosting_with_legacy.py \
+.venv/bin/python tools/ops/run.py adapters.legacy.refresh_multilingual_hosting_with_legacy \
   --base-candidate /absolute/path/to/current-production-multilingual-candidate \
   --legacy-release /absolute/path/to/prepared-legacy-release \
   --prior-http-verification /absolute/path/to/previous-production-http-verification.json \
@@ -157,7 +164,7 @@ python3 experiments/sermon-dubbing-poc/weekly_release.py prepare \
 
 ## 发布与核验
 
-使用既有发布程序及对应站点的已有授权。若启用反馈功能，须按既有反馈部署流程同步新包中的 `feedback-catalog.json`；四层 v4 周次用 `scripts/build_language_listening_catalog.py` 生成来源目录并按线上参数重新部署反馈函数（见[Layer 4 发布入口](layer4-four-product-public-delivery.zh.md#封存发布与端点)），不同步则该周的反馈和收听统计都返回 400。本模块不自动修改反馈服务、发布 Hosting 或授权消息推送。发布后还要跑一次浏览器冒烟 `scripts/smoke_published_page.py`：三语页面都要对上各自发布包的音频、标题和字幕，没有脚本错误和必需资源加载失败，页面自己的反馈会话全部返回 200，才算页面可见。
+使用既有发布程序及对应站点的已有授权。若启用反馈功能，须按既有反馈部署流程同步新包中的 `feedback-catalog.json`；四层 v4 周次用 `tools/ops/build_language_listening_catalog.py` 生成来源目录并按线上参数重新部署反馈函数（见[Layer 4 发布入口](layer4-four-product-public-delivery.zh.md#封存发布与端点)），不同步则该周的反馈和收听统计都返回 400。本模块不自动修改反馈服务、发布 Hosting 或授权消息推送。发布后还要跑一次浏览器冒烟 `tools/ops/smoke_published_page.py`：三语页面都要对上各自发布包的音频、标题和字幕，没有脚本错误和必需资源加载失败，页面自己的反馈会话全部返回 200，才算页面可见。
 
 发布后立即执行：
 
@@ -181,7 +188,7 @@ python3 experiments/sermon-dubbing-poc/weekly_release.py record-published \
 
 ## 每周海报交付
 
-今后所有每周、临时（ad hoc）、历史周次重做及单语补图，统一采用用户已确认的[单行标题格式规范](tongxing-weekly-poster-format.zh.md)：2:3 竖版、按完整标题宽度缩放的书卷风格单行标题、系统字体正文、两个独立二维码和完整免责声明。唯一的新海报入口是 `scripts/build_multilingual_sermon_posters.py`；只做一种语言也使用 `--locales`。`build_sermon_poster.py`／`render_sermon_poster.swift` 仅用于复现既有 `weekly.json` 旧格式，不再作为任何新交付或临时打样的备选入口。
+今后所有每周、临时（ad hoc）、历史周次重做及单语补图，统一采用用户已确认的[单行标题格式规范](tongxing-weekly-poster-format.zh.md)：2:3 竖版、按完整标题宽度缩放的书卷风格单行标题、系统字体正文、两个独立二维码和完整免责声明。唯一的新海报入口是 `tools/ops/run.py delivery.posters.build`；只做一种语言也使用 `--locales`。`build_sermon_poster.py`／`render_sermon_poster.swift` 仅用于复现既有 `weekly.json` 旧格式，不再作为任何新交付或临时打样的备选入口。
 
 海报生成是 Layer 4 页面发布后的收尾步骤，默认先完成发行计划内各语言的页面与逐语言 HTTP 核验，再制作对应语言海报；详细顺序见 [Layer 4 收尾](multilingual-production-interfaces.zh.md#layer-4-收尾先三语页面再三语海报)。页面的设备／现场验收独立记录。每周海报默认交付，无需重复提出；图片不自动上传站点或向外部渠道发送。
 
@@ -191,18 +198,18 @@ python3 experiments/sermon-dubbing-poc/weekly_release.py record-published \
 
 ### 多语言已发布页面海报（周更与临时制作的统一入口）
 
-对于 v3 或 v4 目录中的多语言正式页面，使用 `scripts/build_multilingual_sermon_posters.py`，从同一发布目录中按 page ID 读取每个 locale 的已发布包和完整文稿，沿用发布包里的标题、系列、日期、讲员与经文。发布目录有 `multilingual-v4.json` 时读 v4；机器质检的语言仍须有同语言的发布包披露文案；海报保留完整的 AI 内容及独立项目免责声明，不显示单独的审核状态横幅；机器质检语言在信息区显示本地化的质检／未经人工审核说明。完整披露继续在正式页面及发布包中呈现。中文、韩语和西班牙语各交付 1200 × 1800 PNG、600 × 900 预览及收据，复用同一 ImageGen 主视觉。新渲染器使用书卷风格标题与系统字体正文、官方语言徽章、正式 App Store 下载码和本周网页码，最终两尺寸各验证两个码。传入绑定原始来源和中文文稿的 `--english-reference` 时，同时自动排版英语参考海报；它的 `targetLocale` 保持 zh-Hans，manifest 标为不适用 App announcement。该适配器不改变旧中文周次的海报路径。
+对于 v3 或 v4 目录中的多语言正式页面，使用 `tools/ops/run.py delivery.posters.build`，从同一发布目录中按 page ID 读取每个 locale 的已发布包和完整文稿，沿用发布包里的标题、系列、日期、讲员与经文。发布目录有 `multilingual-v4.json` 时读 v4；机器质检的语言仍须有同语言的发布包披露文案；海报保留完整的 AI 内容及独立项目免责声明，不显示单独的审核状态横幅；机器质检语言在信息区显示本地化的质检／未经人工审核说明。完整披露继续在正式页面及发布包中呈现。中文、韩语和西班牙语各交付 1200 × 1800 PNG、600 × 900 预览及收据，复用同一 ImageGen 主视觉。新渲染器使用书卷风格标题与系统字体正文、官方语言徽章、正式 App Store 下载码和本周网页码，最终两尺寸各验证两个码。传入绑定原始来源和中文文稿的 `--english-reference` 时，同时自动排版英语参考海报；它的 `targetLocale` 保持 zh-Hans，manifest 标为不适用 App announcement。该适配器不改变旧中文周次的海报路径。
 
 ```bash
 # 页面先发布并 HTTP 验证；不传 art 时准备来源绑定的各语言 brief。
-python3 scripts/build_multilingual_sermon_posters.py \
+.venv/bin/python tools/ops/run.py delivery.posters.build \
   --release artifacts/weekly-release/new-release \
   --page-id '<本周完整 pageId>' \
   --origin https://ai-for-god-sermon-audio.web.app \
   --out artifacts/sermon-poster/YYYY-MM-DD/multilingual
 
 # ImageGen 主视觉完成后：自动合成三语；加入英语参考 JSON 则合成四语。
-python3 scripts/build_multilingual_sermon_posters.py \
+.venv/bin/python tools/ops/run.py delivery.posters.build \
   --release artifacts/weekly-release/new-release \
   --page-id '<本周完整 pageId>' \
   --origin https://ai-for-god-sermon-audio.web.app \
@@ -225,12 +232,12 @@ python3 scripts/build_multilingual_sermon_posters.py \
 临时制作、历史周次重做或仅补某一种语言：复用该周已验证的 v3／v4 发布目录，明确 `--page-id`，用 `--locales zh-Hans`（或实际所需语言）限定范围。下例以中文单语补图为例；三次调用的来源、页面、语言、origin 和输出目录相同，渲染与目视记录共用同一主视觉及 prompt：
 
 ```bash
-python3 scripts/build_multilingual_sermon_posters.py --release /path/to/verified-release \
+.venv/bin/python tools/ops/run.py delivery.posters.build --release /path/to/verified-release \
   --page-id '<精确 pageId>' --locales zh-Hans \
   --origin https://ai-for-god-sermon-audio.web.app \
   --out artifacts/sermon-poster/YYYY-MM-DD/ad-hoc-zh-v1
 # 按来源 brief 完成无文字主视觉及实际 prompt 后：
-python3 scripts/build_multilingual_sermon_posters.py --release /path/to/verified-release \
+.venv/bin/python tools/ops/run.py delivery.posters.build --release /path/to/verified-release \
   --page-id '<精确 pageId>' --locales zh-Hans \
   --origin https://ai-for-god-sermon-audio.web.app \
   --art /path/to/shared-art.png --art-prompt /path/to/actual-imagegen-prompt.txt \

@@ -1,7 +1,7 @@
 # Canonical 产物与 durable job 联合检查
 
 ```sh
-python scripts/canonical_durable_jobs.py \
+python tools/ops/run.py orchestration.canonical_durable_jobs \
   --config /absolute/inspection.json \
   --job-root /absolute/production-run/jobs \
   --production-run-id <64位sha256>

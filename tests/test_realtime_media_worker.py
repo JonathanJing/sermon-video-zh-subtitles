@@ -7,7 +7,7 @@ from pathlib import Path
 from types import SimpleNamespace
 
 
-SCRIPT_PATH = Path(__file__).resolve().parents[1] / "scripts" / "realtime_media_worker.py"
+SCRIPT_PATH = Path(__file__).resolve().parents[1] / "tools" / "ops" / "realtime_media_worker.py"
 SPEC = importlib.util.spec_from_file_location("realtime_media_worker", SCRIPT_PATH)
 mod = importlib.util.module_from_spec(SPEC)
 assert SPEC.loader is not None

@@ -19,14 +19,14 @@
 先查看最近一次执行，命令不会重写文件、调用模型或读取远端：
 
 ```bash
-.venv/bin/python scripts/sermon_logs.py artifacts/post-live-runs/YYYY-MM-DD/accounting
+.venv/bin/python tools/ops/run.py observability.logs artifacts/post-live-runs/YYYY-MM-DD/accounting
 
 # 只看警告和错误；--run-id 也可传具体 runId 或 all
-.venv/bin/python scripts/sermon_logs.py artifacts/post-live-runs/YYYY-MM-DD/accounting \
+.venv/bin/python tools/ops/run.py observability.logs artifacts/post-live-runs/YYYY-MM-DD/accounting \
   --run-id latest --level WARNING --tail 30
 
 # 给脚本读取的诊断结果
-.venv/bin/python scripts/sermon_logs.py artifacts/post-live-runs/YYYY-MM-DD/accounting --json --check
+.venv/bin/python tools/ops/run.py observability.logs artifacts/post-live-runs/YYYY-MM-DD/accounting --json --check
 ```
 
 `--check` 退出码：0 表示所选执行没有检测到错误／未结束记录；2 表示错误、未结束阶段／调用或账本损坏；3 表示账本不可读或找不到所选运行。API 重试中的失败也会保留并触发 2。`interrupted_or_running` 无法区分仍在运行与已被终止；它不是进程探活。账本完整性按整个文件检查，即使只筛选最近一次运行，旧损坏也不会被隐藏。这些检查均不代表业务 QA、人工批准或发布验收通过。
@@ -34,7 +34,7 @@
 每次执行退出时自动汇总；进程被强制终止后，可只读事件、重新生成汇总：
 
 ```bash
-.venv/bin/python scripts/sermon_accounting.py artifacts/post-live-runs/YYYY-MM-DD/accounting
+.venv/bin/python tools/ops/run.py observability.accounting artifacts/post-live-runs/YYYY-MM-DD/accounting
 ```
 
 若中断留下不完整的 JSONL 行，汇总保留其余有效事件，`ledgerIntegrity` 明确标记损坏行号、字节数、hash 和无法归属的未知费用，不抄录损坏正文。原始字节保留；下次追加先隔开未结束行，避免损坏后续运行记录。
@@ -50,7 +50,8 @@
 `accounting_session` 管理运行身份，`stage` 管理阶段与父子 span，`record_log` 用固定事件 code 记录业务状态。新字段仍属于 v2 的可选扩展，既有 v1/v2 字节不改写。事件携带 UTC 时间、进程／线程 ID、运行／流程／阶段 ID；独立线程会话使用各自上下文，主线程启动的子进程通过环境变量继承关联。若从 worker 线程启动子进程，需要显式传递该 worker 的会话环境，不能假设主线程环境属于该 worker。
 
 ```python
-from scripts.sermon_accounting import accounting_session, stage, record_log
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.observability.accounting import accounting_session, stage, record_log
 
 with accounting_session(work / "accounting", "weekly_task", {"sunday": sunday}):
     with stage("validate_inputs"):
@@ -127,7 +128,7 @@ v1/v2 无扩展字段仍可读取，不补造依赖或时间；所有导入事�
 
 ### 依赖图与 Weekly Pipeline Report（E1 初始实现）
 
-运行 `python3 -m scripts.weekly_pipeline_report --accounting-dir PATH --out-dir NEW_DIRECTORY`，产生只读 `report.json` 与由该 JSON 投影的 `report.md`。输出目录必须不存在；不修改源账本，不调用网络或模型。返回 0 表示投影可计算，1 表示证据不完整；这不是生产或人工验收。
+运行 `python3 -m tools.ops.weekly_pipeline_report --accounting-dir PATH --out-dir NEW_DIRECTORY`，产生只读 `report.json` 与由该 JSON 投影的 `report.md`。输出目录必须不存在；不修改源账本，不调用网络或模型。返回 0 表示投影可计算，1 表示证据不完整；这不是生产或人工验收。
 
 `with stage("source") as source_span:` 返回本次 attempt 的 span ID。下游 `depends_on=[source_span]` 绑定同一 run 中的准确 attempt；不能使用含糊 stage 名称，也不把 parent containment 当成执行依赖。每个 root 显式记录空 dependsOn；未传 depends_on 的旧调用写 null，不能冒充无依赖 root。汇合节点引用全部必需前置；重试引用实际前一 attempt。
 
@@ -137,7 +138,7 @@ v1/v2 无扩展字段仍可读取，不补造依赖或时间；所有导入事�
 
 ### backend-only 兼容性快照（E6 初始实现）
 
-运行 `python3 -m scripts.pipeline_compatibility_gate --base BASE_SHA --head HEAD_SHA --out NEW_RECEIPT.json`。收据绑定两个完整 commit tree，冻结 Web/iOS、schemas、Firebase、客户端生产入口和 bundle 输入的 Git object/mode 快照。只有这些表面完全未变，且其他改动全部属于已审计 accounting 文件、docs/tests，才给出 `ios_review_required=false`。客户端变化、未分类生产代码或缺失表面返回 1 与 review_required；不会把“不知道”写成不需审查。
+运行 `python3 tools/development/pipeline_compatibility_gate.py --base BASE_SHA --head HEAD_SHA --out NEW_RECEIPT.json`。收据绑定两个完整 commit tree，冻结 Web/iOS、schemas、Firebase、客户端生产入口和 bundle 输入的 Git object/mode 快照。只有这些表面完全未变，且其他改动全部属于已审计 accounting 文件、docs/tests，才给出 `ios_review_required=false`。客户端变化、未分类生产代码或缺失表面返回 1 与 review_required；不会把“不知道”写成不需审查。
 
 该收据只覆盖已跟踪源码/合同/bundle 输入；未证明已部署 binary、真机播放、合同改变后的语义兼容性或人工 Compatibility sign-off。Stage 1–3 必须按最终 SHA 重跑并补适用 decoder/fixture 与人工证据；任何新 controller/producer 要先评估才可进入 backend-only allowlist。
 

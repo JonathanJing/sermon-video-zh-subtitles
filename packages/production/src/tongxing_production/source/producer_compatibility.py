@@ -1,0 +1,219 @@
+"""Exact reviewed source-producer migrations; no generic old-code waiver.
+
+Only these exact old/new bytes are eligible. Inspect immutable historical Source
+with zero new ASR/MFA; this does not claim re-execution under the new producer.
+"""
+import sys
+from ..contracts.canonical import require as _require
+from . import backend as _source
+
+
+# Legacy identity keys stay the keys of every table and closure below; a moved
+# file is reached through its alias in the shared table. These names stay here
+# for the callers that already resolve through this module.
+from ..path_aliases import PATH_ALIASES, recorded, resolve  # noqa: E402,F401
+
+
+SCHEMA='sermon-source-producer-compatibility-v1'
+MIGRATION='mfa-original-deadline-and-source-failure-classification-v1'
+HISTORICAL_SOURCE_SHA256= {'scripts/build_english_source_package.py': '65024b7cf518a90f800a8042e6a3206cbb83bde6a424258c850aa47e1e0ef740', 'scripts/four_layer_measure.py': '7f628c8c79b9cab65b25c23cc5b4df9a5154b0129726607fa3a2f56aa9f9c2fd', 'scripts/mfa_alignment.py': '6183298a18704f32336bd543a157fc7dbdfd83776baa2cf1155cc71ff872ddc3', 'scripts/mfa_backend.py': '4cd8c6606b65f686bfa6bea9af82f3e15e0be02740e82124ef7ea6312788e246', 'scripts/mfa_spark.py': '0d659a2361b67ccfe2892cc80deaca03c9aea7e3771a5033df7b3de743689a8b', 'scripts/sermon_diagnostic_context.py': '212d95511bd0b4536f574fb538f5cd599f80b5a203615a3ba88618a5f72630bb', 'scripts/sermon_fresh_diagnostic_source.py': 'c70ef5edea80ee2d7c7e0639d253fe52e57e6383673563c93c80b677ed99c1db', 'scripts/sermon_public_snapshot.py': '824d43f2ff64e473277e1a26447a8d4c435b5d5b5a93498be29320a6225c6af8', 'scripts/sermon_review_contracts.py': '17cf677ee068cd898b90310c2ff489b9bce01b9333bc59c0a5c23a6d3a115466', 'scripts/sermon_sentence_interpretation.py': '028b9123c53d9509a965f6c49fa3116f129a9b444202cecab9b3ce71b0aced45'}
+CURRENT_SOURCE_SHA256= {'scripts/build_english_source_package.py': '65024b7cf518a90f800a8042e6a3206cbb83bde6a424258c850aa47e1e0ef740', 'scripts/four_layer_measure.py': '7f628c8c79b9cab65b25c23cc5b4df9a5154b0129726607fa3a2f56aa9f9c2fd', 'scripts/mfa_alignment.py': '8394fec4c556303146b87b1c53144c7ac3c27397f5da523f8ee9fe30b5cf9123', 'scripts/mfa_backend.py': '343220c9aeceeb7fdb1f1e35d81083134d8928db812d7c67fa8bbe28595feb43', 'scripts/mfa_spark.py': '0d659a2361b67ccfe2892cc80deaca03c9aea7e3771a5033df7b3de743689a8b', 'scripts/sermon_diagnostic_context.py': '212d95511bd0b4536f574fb538f5cd599f80b5a203615a3ba88618a5f72630bb', 'scripts/sermon_fresh_diagnostic_source.py': 'b233d6a03ae66961220c13f1a67a5aefa1e821ad117a4249dedb53d5a9b9663d', 'scripts/sermon_public_snapshot.py': '824d43f2ff64e473277e1a26447a8d4c435b5d5b5a93498be29320a6225c6af8', 'scripts/sermon_review_contracts.py': '17cf677ee068cd898b90310c2ff489b9bce01b9333bc59c0a5c23a6d3a115466', 'scripts/sermon_sentence_interpretation.py': '028b9123c53d9509a965f6c49fa3116f129a9b444202cecab9b3ce71b0aced45'}
+CHANGED= ['scripts/mfa_alignment.py', 'scripts/mfa_backend.py', 'scripts/sermon_fresh_diagnostic_source.py']
+
+# Exact reviewed dev producer -> typed-completion/identity-inspection adapter.
+# Only read-only reuse of its unchanged Source artifact is admitted.
+FOLLOWUP_SOURCE_SHA256 = {**CURRENT_SOURCE_SHA256,
+    'scripts/sermon_fresh_diagnostic_source.py': 'd0d2f0dcdbbb98a126a4f83820c2791a2116b5be085221bfa9dd23dd42846be6'}
+FOLLOWUP_MIGRATION = 'fresh-source-typed-leaves-and-mfa-identity-v2'
+
+# Preserve both earlier exact transitions; this independently reviewed refactor
+# only changes fixed stage composition and read-only original result adoption.
+EXTRACTION_SOURCE_SHA256 = {**FOLLOWUP_SOURCE_SHA256,
+    'scripts/sermon_fresh_diagnostic_source.py': 'cfb2677efea593c9d680435de5582f5df1cfda83bd76899dcaae9ba5c706aed0'}
+EXTRACTION_MIGRATION = 'fresh-source-fixed-stage-extraction-v3'
+
+# The Layer 1 leaves moved into tongxing_production.source byte for byte. The two
+# producers that located them as sibling files (anchor generator hash, Spark
+# adapter bundle) now ask the code port; nothing else about Source changed.
+MOVE_SOURCE_SHA256 = {**EXTRACTION_SOURCE_SHA256,
+    'scripts/build_english_source_package.py': '2923477bf106c3eeade71aab3d3116cc853c4a94623cb16c481c9697a3925a0b',
+    'scripts/mfa_spark.py': '76e68f26a781a67d25f4f07049a7ba341b8dfdc8f78ac136cb01c722345d869a'}
+MOVE_MIGRATION = 'l1-source-package-move-v4'
+MOVE_CHANGED = ['scripts/build_english_source_package.py', 'scripts/mfa_spark.py']
+
+# The builder itself moved into the package; only its imports and the way it
+# locates the judge, the anchor generator and itself changed.
+PRODUCER_MOVE_SOURCE_SHA256 = {**MOVE_SOURCE_SHA256,
+    'scripts/build_english_source_package.py': '51a2e2a00a6a6720f47067807c6cb5922c9094ec57111b8b47f628bdfe8fd250'}
+PRODUCER_MOVE_MIGRATION = 'l1-source-producers-package-move-v5'
+PRODUCER_MOVE_CHANGED = ['scripts/build_english_source_package.py']
+
+# The MFA backend and Spark transport moved into the package. Their imports
+# changed; the backend takes MFA options and the adapter path from the ports.
+# The adapter they ship and hash (mfa_alignment) is byte-identical.
+TRANSPORT_MOVE_SOURCE_SHA256 = {**PRODUCER_MOVE_SOURCE_SHA256,
+    'scripts/mfa_backend.py': 'f535d1a8338a0914ba58148f364421a1b30822c9aa6197cfecbb9b9e9a94d982',
+    'scripts/mfa_spark.py': 'ee5272d62fa81b2576279f9e92ba44fb8f87d539aac3760ed5e4829164ddbee1'}
+TRANSPORT_MOVE_MIGRATION = 'l1-source-mfa-transport-package-move-v6'
+TRANSPORT_MOVE_CHANGED = ['scripts/mfa_backend.py', 'scripts/mfa_spark.py']
+
+# Infrastructure I1 split sermon_review_contracts: its review half moved into
+# review/contracts.py and imports canonical JSON, error codes and schema checks
+# from contracts/, with the same output bytes. The checkout before I1 had already
+# drifted from the v6 table in four files (no reviewed generation covers that
+# drift), so the historical side is the exact dev checkout I1 started from.
+CONTRACTS_SPLIT_HISTORICAL_SHA256 = {**TRANSPORT_MOVE_SOURCE_SHA256,
+    'scripts/mfa_alignment.py': 'e1dd12f3fc5bff6d99bd89d28e9ac764c2662b54222bcef1f911772e5adac8bd',
+    'scripts/sermon_diagnostic_context.py': '6af31378cfa0cf353f3a5e4aff519085bd6252a8f86e73570614709cfb890383',
+    'scripts/sermon_review_contracts.py': '71e7fa802fad3cac9788b1163907da3b908d4410777552333d46034754db89f2',
+    'scripts/sermon_sentence_interpretation.py': '5aa19b0580febb3652f9b694cf2ac9f1cbba1c241320c02396a99f0a63a439c1'}
+CONTRACTS_SPLIT_SOURCE_SHA256 = {**CONTRACTS_SPLIT_HISTORICAL_SHA256,
+    'scripts/sermon_review_contracts.py': '663e7da5d1d2f26fb7191d7146f2693242ae5318d7188b17ab1fafcfef4de17d'}
+# The generic halves of the split module are separate identity entries, so bind
+# their exact reviewed bytes alongside the legacy review-module migration.
+CONTRACTS_SPLIT_MEMBER_SHA256 = {
+    'packages/production/src/tongxing_production/contracts/canonical.py':
+        '6aa3890f13321fdb4ef38943f186d7b63400e349c83b1cd2a25cdd3c37bfedf5',
+    'packages/production/src/tongxing_production/contracts/schemas.py':
+        'd03ad1e063fbd4651508c0268c74172e09111f59f0f646b5b8eb819850f00777',
+}
+CONTRACTS_SPLIT_MIGRATION = 'i1-review-contracts-split-package-move-v7'
+CONTRACTS_SPLIT_CHANGED = ['scripts/sermon_review_contracts.py']
+
+# Infrastructure I2 moved sermon_public_snapshot into storage/snapshot.py: it imports the
+# canonical JSON checks from contracts/ and the path constraint from storage/paths.py,
+# and reaches the job store's directory primitives through the host, with the same
+# output bytes. The checkout before I2 was exactly the v7 current table.
+STORAGE_MOVE_HISTORICAL_SHA256 = CONTRACTS_SPLIT_SOURCE_SHA256
+STORAGE_MOVE_SOURCE_SHA256 = {**CONTRACTS_SPLIT_SOURCE_SHA256,
+    'scripts/sermon_public_snapshot.py': 'e45d32b62825410cb9ad886fa0d07aac2957f3c37d9a1ad84e522dcb5a287fa0'}
+# Package files the moved module now imports are separate identity entries; bind their
+# exact reviewed bytes alongside this migration.
+STORAGE_MOVE_MEMBER_SHA256 = {
+    'packages/production/src/tongxing_production/storage/paths.py':
+        '3e37a06bb90967aca96bcfaf08ed2bba8d1cb05bfff8b3180fd1d7bb6140b9fd',
+    'packages/production/src/tongxing_production/contracts/canonical.py':
+        '6aa3890f13321fdb4ef38943f186d7b63400e349c83b1cd2a25cdd3c37bfedf5',
+}
+STORAGE_MOVE_MIGRATION = 'i2-public-snapshot-storage-package-move-v8'
+STORAGE_MOVE_CHANGED = ['scripts/sermon_public_snapshot.py']
+
+# Infrastructure I4 moved four_layer_measure into observability/measure.py: it drops its
+# checkout sys.path setup and imports progress and accounting from the package, with the
+# same timing-audit output. The checkout before I4 was exactly the v8 current table.
+MEASURE_MOVE_HISTORICAL_SHA256 = STORAGE_MOVE_SOURCE_SHA256
+MEASURE_MOVE_SOURCE_SHA256 = {**STORAGE_MOVE_SOURCE_SHA256,
+    'scripts/four_layer_measure.py': 'ba38ac8c68dad9cdd7f1198d2022e0bea478b0a0a977d1076efeb42c9e31141e'}
+MEASURE_MOVE_MIGRATION = 'i4-four-layer-measure-observability-package-move-v9'
+MEASURE_MOVE_CHANGED = ['scripts/four_layer_measure.py']
+
+# Closure window G1 split the job store's file primitives into storage/files.py and
+# retired the temporary JobFiles port: sermon_public_snapshot imports the two primitives
+# it uses from storage/files.py instead, with the same output bytes. The checkout before
+# was exactly the v9 current table.
+JOBS_SPLIT_HISTORICAL_SHA256 = MEASURE_MOVE_SOURCE_SHA256
+JOBS_SPLIT_SOURCE_SHA256 = {**MEASURE_MOVE_SOURCE_SHA256,
+    'scripts/sermon_public_snapshot.py': 'b242a3da1fda9c005e747eae9e60e50b72e2374f7b7f910c4083682311a7747a'}
+JOBS_SPLIT_MEMBER_SHA256 = {
+    'packages/production/src/tongxing_production/storage/files.py':
+        'c497b0a81bd7e5787cb34df6536ce9d3e7c1269b59c584b59fc078cbf674ea80',
+    'packages/production/src/tongxing_production/storage/paths.py':
+        '3e37a06bb90967aca96bcfaf08ed2bba8d1cb05bfff8b3180fd1d7bb6140b9fd',
+    'packages/production/src/tongxing_production/contracts/canonical.py':
+        '6aa3890f13321fdb4ef38943f186d7b63400e349c83b1cd2a25cdd3c37bfedf5',
+}
+JOBS_SPLIT_MIGRATION = 'g1-job-store-file-primitives-split-v10'
+JOBS_SPLIT_CHANGED = ['scripts/sermon_public_snapshot.py']
+
+# Closure window D removed the scripts/ facades of the G1 closures: the two diagnostic
+# Source producers import the anchor generator as tongxing_production.source.
+# sentence_interpretation instead of through its removed facade (the same module object),
+# with the same output bytes. The checkout before was exactly the v10 current table.
+FACADE_REMOVAL_HISTORICAL_SHA256 = JOBS_SPLIT_SOURCE_SHA256
+FACADE_REMOVAL_SOURCE_SHA256 = {**JOBS_SPLIT_SOURCE_SHA256,
+    'scripts/sermon_diagnostic_context.py': '63d3a4d3e672fde090b9c0d44d368c3e974553a3adb453269d29f9482414aeb1',
+    'scripts/sermon_fresh_diagnostic_source.py': '5fc2c07ce59fa65aec5fb423250d139d654aa69d6f3a84d35b929045279e2c18'}
+FACADE_REMOVAL_MIGRATION = 'd-window-closure-facade-removal-v11'
+FACADE_REMOVAL_CHANGED = ['scripts/sermon_diagnostic_context.py', 'scripts/sermon_fresh_diagnostic_source.py']
+
+# C-batch facade removal: the same two producers import every package module directly
+# instead of through its scripts/ facade (the same module objects) and bind the host
+# themselves, with the same output bytes. The checkout before was exactly the v11 current table.
+C_FACADE_REMOVAL_HISTORICAL_SHA256 = FACADE_REMOVAL_SOURCE_SHA256
+C_FACADE_REMOVAL_SOURCE_SHA256 = {**FACADE_REMOVAL_SOURCE_SHA256,
+    'scripts/sermon_diagnostic_context.py': '1cac2a769d82a922d116e5d9c5f281c3a68230731c3f0d2052ebce22938ac81d',
+    'scripts/sermon_fresh_diagnostic_source.py': '4806b661ca10217b22d75024bc0ce7be7f8510c3bcf0097dfc458e6f713137e6'}
+C_FACADE_REMOVAL_MIGRATION = 'c-batch-facade-import-removal-v12'
+C_FACADE_REMOVAL_CHANGED = ['scripts/sermon_diagnostic_context.py', 'scripts/sermon_fresh_diagnostic_source.py']
+
+# Closure window D-5: the same two producers moved into workflows/diagnostic/ (context.py,
+# fresh_source.py). They import the moved strict chain and diagnostic modules by package
+# name, take the checkout root from the host and no longer import the host themselves,
+# with the same output bytes. The checkout before was exactly the v12 current table.
+D5_MOVE_HISTORICAL_SHA256 = C_FACADE_REMOVAL_SOURCE_SHA256
+D5_MOVE_SOURCE_SHA256 = {**C_FACADE_REMOVAL_SOURCE_SHA256,
+    'scripts/sermon_diagnostic_context.py': '1e122cf32911504c5e0cce742c29d67654e1adbfc8e7c0135f8ac10433f84a91',
+    'scripts/sermon_fresh_diagnostic_source.py': '58eb9afbe0983f99248b3b1ccace5eeb6e348850aab3cc3797ff0555ee894109'}
+D5_MOVE_MIGRATION = 'd5-window-diagnostic-package-move-v13'
+D5_MOVE_CHANGED = ['scripts/sermon_diagnostic_context.py', 'scripts/sermon_fresh_diagnostic_source.py']
+
+
+def verify(historical,current,planned,binding):
+    _require(type(historical) is dict and type(current) is dict and type(planned) is dict
+        and set(historical)==set(current)==set(HISTORICAL_SOURCE_SHA256)
+        and all(recorded(planned,path)==sha for path,sha in current.items()),
+        'source_producer_compatibility_new_identity_changed')
+    if historical==current:
+        return None
+    original = historical==HISTORICAL_SOURCE_SHA256 and current==CURRENT_SOURCE_SHA256
+    followup = historical==CURRENT_SOURCE_SHA256 and current==FOLLOWUP_SOURCE_SHA256
+    extraction = historical==FOLLOWUP_SOURCE_SHA256 and current==EXTRACTION_SOURCE_SHA256
+    move = historical==EXTRACTION_SOURCE_SHA256 and current==MOVE_SOURCE_SHA256
+    producer_move = historical==MOVE_SOURCE_SHA256 and current==PRODUCER_MOVE_SOURCE_SHA256
+    transport_move = historical==PRODUCER_MOVE_SOURCE_SHA256 and current==TRANSPORT_MOVE_SOURCE_SHA256
+    contracts_split = historical==CONTRACTS_SPLIT_HISTORICAL_SHA256 and current==CONTRACTS_SPLIT_SOURCE_SHA256
+    storage_move = historical==STORAGE_MOVE_HISTORICAL_SHA256 and current==STORAGE_MOVE_SOURCE_SHA256
+    measure_move = historical==MEASURE_MOVE_HISTORICAL_SHA256 and current==MEASURE_MOVE_SOURCE_SHA256
+    jobs_split = historical==JOBS_SPLIT_HISTORICAL_SHA256 and current==JOBS_SPLIT_SOURCE_SHA256
+    facade_removal = historical==FACADE_REMOVAL_HISTORICAL_SHA256 and current==FACADE_REMOVAL_SOURCE_SHA256
+    c_facade_removal = historical==C_FACADE_REMOVAL_HISTORICAL_SHA256 and current==C_FACADE_REMOVAL_SOURCE_SHA256
+    d5_move = historical==D5_MOVE_HISTORICAL_SHA256 and current==D5_MOVE_SOURCE_SHA256
+    package_move = (move or producer_move or transport_move or contracts_split or storage_move or measure_move
+                    or jobs_split or facade_removal or c_facade_removal or d5_move)
+    changed = (CHANGED if original else MOVE_CHANGED if move else PRODUCER_MOVE_CHANGED if producer_move
+        else TRANSPORT_MOVE_CHANGED if transport_move else CONTRACTS_SPLIT_CHANGED if contracts_split
+        else STORAGE_MOVE_CHANGED if storage_move else MEASURE_MOVE_CHANGED if measure_move
+        else JOBS_SPLIT_CHANGED if jobs_split else FACADE_REMOVAL_CHANGED if facade_removal
+        else C_FACADE_REMOVAL_CHANGED if c_facade_removal else D5_MOVE_CHANGED if d5_move
+        else ['scripts/sermon_fresh_diagnostic_source.py'])
+    _require((original or followup or extraction or package_move) and {path for path in current if current[path]!=historical[path]}==set(changed),
+        'source_producer_compatibility_unknown_revision')
+    _require(not contracts_split or all(recorded(planned,path)==sha
+        for path,sha in CONTRACTS_SPLIT_MEMBER_SHA256.items()),
+        'source_producer_compatibility_split_dependency_changed')
+    _require(not storage_move or all(recorded(planned,path)==sha
+        for path,sha in STORAGE_MOVE_MEMBER_SHA256.items()),
+        'source_producer_compatibility_split_dependency_changed')
+    _require(not jobs_split or all(recorded(planned,path)==sha
+        for path,sha in JOBS_SPLIT_MEMBER_SHA256.items()),
+        'source_producer_compatibility_split_dependency_changed')
+    _require(type(binding) is dict and set(binding)=={'parentPlanSha256','newPlanSha256',
+        'sourceCanonicalSha256','anchorCanonicalSha256','alignmentBytesSha256','asrReceiptSha256','sourceCheckReceiptSha256'}
+        and all(type(value) is str and len(value)==64 and all(ch in '0123456789abcdef' for ch in value)
+                for value in binding.values()),'source_producer_compatibility_binding_required')
+    migration = (MIGRATION if original else MOVE_MIGRATION if move else PRODUCER_MOVE_MIGRATION if producer_move
+        else TRANSPORT_MOVE_MIGRATION if transport_move else CONTRACTS_SPLIT_MIGRATION if contracts_split
+        else STORAGE_MOVE_MIGRATION if storage_move else MEASURE_MOVE_MIGRATION if measure_move
+        else JOBS_SPLIT_MIGRATION if jobs_split else FACADE_REMOVAL_MIGRATION if facade_removal
+        else C_FACADE_REMOVAL_MIGRATION if c_facade_removal else D5_MOVE_MIGRATION if d5_move
+        else EXTRACTION_MIGRATION if extraction else FOLLOWUP_MIGRATION)
+    return {'schemaVersion':SCHEMA,'migrationId':migration,'binding':binding,
+        'historicalProducerSha256':historical,'currentInspectorProducerSha256':current,
+        'changedModules':changed,'migrationCodeSha256':_source.current().code.module_sha256(sys.modules[__name__]),
+        'acceptedScope':('original_deadline_and_typed_failures_only_no_source_semantic_change' if original else
+            'read_only_original_source_under_package_move_no_new_inference' if package_move else
+            'read_only_original_source_under_fixed_stage_extraction_no_new_inference' if extraction else
+            'read_only_original_source_under_typed_completion_and_identity_inspector_no_new_inference'),
+        'sourceExecution':'historical_receipts_reused_current_deterministic_inspection',
+        'historicalSourcePreserved':True,'newASRCalls':0,'newSourceCheckCalls':0,'newMFACalls':0,
+        'productionEligible':False,'humanAcceptance':'pending','executionAuthority':'none'}

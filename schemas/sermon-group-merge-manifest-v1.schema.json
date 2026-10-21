@@ -1,0 +1,178 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.invalid/schemas/sermon-group-merge-manifest-v1.schema.json",
+  "title": "Per-group merge manifest: one locale's Layer 2 merge and its pending Layer 3 steps",
+  "description": "Written by tongxing_production.orchestration.group_pipeline.merge after candidate assembly and whole-text checks. It is intermediate evidence: it names the records each group contributed, the assembled candidate hash, and the Layer 3 steps that are still pending. It is never release material and never human approval.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "targetLocale",
+    "layer1",
+    "translationPolicySha256",
+    "groupCount",
+    "assembly",
+    "completedSteps",
+    "pendingSteps",
+    "pendingReason",
+    "textLengthOutliers",
+    "candidateSha256",
+    "l3Handoff",
+    "releaseEligible",
+    "humanApproval"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": "sermon-group-merge-manifest-v1"
+    },
+    "targetLocale": {
+      "type": "string",
+      "pattern": "^[A-Za-z]{2,3}(-[A-Za-z0-9]{2,8})*$"
+    },
+    "layer1": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "englishSourcePackageJsonSha256",
+        "anchorManifestSha256"
+      ],
+      "properties": {
+        "englishSourcePackageJsonSha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "anchorManifestSha256": {
+          "$ref": "#/$defs/sha256"
+        }
+      }
+    },
+    "translationPolicySha256": {
+      "$ref": "#/$defs/sha256"
+    },
+    "groupCount": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "assembly": {
+      "type": "object",
+      "required": [
+        "schemaVersion",
+        "groups",
+        "evidenceSha256",
+        "languageReviewSha256",
+        "candidateSha256",
+        "releaseEligible",
+        "humanApproval"
+      ],
+      "properties": {
+        "equivalenceCheck": {
+          "const": false
+        },
+        "releaseEligible": {
+          "const": false
+        },
+        "humanApproval": {
+          "const": false
+        }
+      }
+    },
+    "completedSteps": {
+      "type": "array",
+      "items": {
+        "enum": [
+          "readiness",
+          "candidate_assembly",
+          "whole_text_checks"
+        ]
+      },
+      "minItems": 1,
+      "uniqueItems": true
+    },
+    "pendingSteps": {
+      "type": "array",
+      "items": {
+        "enum": [
+          "calibration",
+          "text_release_basis",
+          "speech_job_v3",
+          "formal_render",
+          "schedule_and_subtitles",
+          "track_package",
+          "screening_and_audio_qc",
+          "listening_waiver"
+        ]
+      },
+      "uniqueItems": true
+    },
+    "pendingReason": {
+      "type": "string",
+      "minLength": 1
+    },
+    "textLengthOutliers": {
+      "type": "array",
+      "maxItems": 0
+    },
+    "candidateSha256": {
+      "$ref": "#/$defs/sha256"
+    },
+    "l3Handoff": {
+      "type": "string",
+      "minLength": 1
+    },
+    "releaseEligible": {
+      "const": false
+    },
+    "humanApproval": {
+      "const": false
+    },
+    "changedGroupIds": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "uniqueItems": true
+    },
+    "affectedGroupIds": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "uniqueItems": true
+    },
+    "layer3Preflight": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "candidateShape",
+        "textApproval",
+        "speechJob",
+        "admissible",
+        "note"
+      ],
+      "properties": {
+        "candidateShape": {
+          "const": "pass"
+        },
+        "textApproval": {
+          "type": "string"
+        },
+        "speechJob": {
+          "type": "string"
+        },
+        "admissible": {
+          "const": false
+        },
+        "note": {
+          "type": "string"
+        }
+      }
+    }
+  },
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    }
+  }
+}

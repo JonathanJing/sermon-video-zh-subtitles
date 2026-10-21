@@ -14,12 +14,13 @@ import unittest
 from unittest.mock import Mock, patch
 import urllib.request
 
-from scripts import run_bounded_diagnostic as run
-from scripts import sermon_diagnostic_provider as provider
-from scripts import sermon_review_contracts as c
-from scripts import sermon_accounting as accounting
-from scripts import sermon_strict_layer2 as strict
-from scripts import sermon_transcription_request as audio
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.workflows.diagnostic import bounded as run
+from tongxing_production.workflows.diagnostic import provider
+from tongxing_production.review import contracts as c
+from tongxing_production.observability import accounting
+from tongxing_production.text.strict import layer2 as strict
+from tongxing_production.compute import transcription_request as audio
 from tests import test_sermon_diagnostic_provider as provider_fixtures
 config = provider_fixtures.config
 from tests.test_sermon_transcription_request import wav, riff_size
@@ -90,7 +91,7 @@ class BoundedRunTests(unittest.TestCase):
                       and row['spanId']==source_receipt['spanId']]
         self.assertEqual(len(source_spans),1)
         self.assertGreaterEqual(source_spans[0]['elapsedSeconds'],source_receipt['elapsedSeconds'])
-        from scripts.weekly_pipeline_report import project
+        from tongxing_production.observability.weekly_projection import project
         report=project(self.f.root/'logs')
         self.assertEqual(report['observedProviderCalls']['directReceiptCount'],len(self.calls))
         self.assertEqual(report['reportGenerationNetworkCalls'],0)
@@ -103,7 +104,7 @@ class BoundedRunTests(unittest.TestCase):
         self.assertTrue(checks)
 
     def test_default_input_cap_still_blocks_expanded_review_before_dispatch(self):
-        from scripts import sermon_provider_limits as limits
+        from tongxing_production.compute import provider_limits as limits
         self.subject = provider.DiagnosticProvider(self.fixture.store, self.subject.config,
             request_limits=limits.DEFAULT_REQUEST_LIMITS, executor=self.capture,
             monotonic=lambda:100., domain=lambda:'7'*64)
@@ -143,7 +144,7 @@ class BoundedRunTests(unittest.TestCase):
         self.assertEqual(self.calls,[])
 
     def test_optional_historical_resolver_is_forwarded_without_new_provider_calls(self):
-        from scripts import sermon_historical_layer2 as historical
+        from tongxing_production.workflows.diagnostic import historical_layer2 as historical
         resolver=object.__new__(historical.HistoricalLayer2Reuse)
         with patch.object(historical.HistoricalLayer2Reuse,'bind_current') as bind, patch.object(run.locale,'run_locale',return_value={'status':'fixture_boundary'}) as dispatch:
             self.runner.run_locale(*self.f.args,graph=self.graph,plugin_path=self.f.f.plugin_path,
@@ -161,7 +162,7 @@ class BoundedRunTests(unittest.TestCase):
         self.assertEqual(self.calls,[])
 
     def test_simulated_human_context_keeps_one_bounded_provider_and_real_review(self):
-        from scripts import sermon_diagnostic_context as diagnostic
+        from tongxing_production.workflows.diagnostic import context as diagnostic
         from tests.test_sermon_diagnostic_context import reidentify
         source,anchor,policy,rubric=map(c.decode_json,self.f.args)
         source.update(status='blocked',translationEligible=False,candidateTranslationEligible=False)

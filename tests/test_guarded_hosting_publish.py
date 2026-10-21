@@ -3,7 +3,9 @@ import json
 from pathlib import Path
 import pytest
 import time
-from scripts import guarded_hosting_publish as p
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.delivery import publication as p
+from tongxing_production.storage import hosting
 
 
 def write_deploy_result(kwargs, version='sites/site/versions/new'):
@@ -51,6 +53,23 @@ def test_remote_lease_success_and_repeat_refusal(tmp_path):
     assert receipt['status'] == 'deployed' and remote.deleted
     with pytest.raises(ValueError, match='Existing attempt'):
         p.publish(tmp_path, **args)
+
+
+def test_default_runner_is_the_host_firebase_cli_with_the_recorded_argv(tmp_path, monkeypatch):
+    # D3: without an injected run, publish uses the Hosting adapter's runner,
+    # which calls subprocess.run with the same argv and options as before the move.
+    import subprocess
+    intent, data, sha = setup(tmp_path); remote = Remote(); calls = []
+    def deploy(argv, **kwargs):
+        calls.append((argv, {k: v for k, v in kwargs.items() if k not in ('stdout', 'stderr')}))
+        remote.version = 'new'; write_deploy_result(kwargs)
+    monkeypatch.setattr(subprocess, 'run', deploy)
+    receipt = p.publish(tmp_path, intent=intent, routes={'dev': intent}, baseline_version='sites/site/versions/old',
+                        baseline_catalog_sha=sha, lease_bucket='bucket', request=remote, reader=v3_only(data))
+    assert receipt['status'] == 'deployed'
+    assert calls == [(['firebase', 'deploy', '--only', 'hosting', '--project', 'project', '--config',
+                       str((tmp_path / 'firebase-bound.json').resolve()), '--non-interactive', '--json'],
+                      {'cwd': tmp_path, 'check': True, 'timeout': 3600})]
 
 
 def test_concurrent_version_change_rebuilds_without_deployment(tmp_path):
@@ -172,7 +191,8 @@ def test_process_crash_releases_local_lock_but_needs_explicit_remote_reconciliat
                   lease_bucket='bucket', request=remote, reader=v3_only(data), run=interrupted)
     # A separate live owner prevents reconciliation, even with confirmed remote bytes.
     child = subprocess.Popen([sys.executable, '-c',
-                              "from scripts.guarded_hosting_publish import publisher_lock\n"
+                              "from scripts import tongxing_host\n"
+                              "from tongxing_production.delivery.publication import publisher_lock\n"
                               "import sys, time\n"
                               "with publisher_lock(sys.argv[1]):\n"
                               "    print('locked', flush=True)\n"
@@ -226,6 +246,34 @@ def test_v4_catalog_is_compare_and_swapped_alongside_v3(tmp_path, monkeypatch):
     with pytest.raises(ValueError, match='Live v4 catalog changed'):
         p.publish(tmp_path, intent=intent, routes={'dev': intent}, baseline_version='sites/site/versions/old',
                   baseline_catalog_sha=sha, lease_bucket='bucket', request=remote, reader=reader, run=stale)
+
+
+def test_v5_catalog_is_compare_and_swapped_alongside_legacy_catalogs(tmp_path, monkeypatch):
+    monkeypatch.setattr(p.contract, 'validate_catalog_snapshot', lambda snapshot: None)
+    intent, data, sha = setup(tmp_path); remote = Remote()
+    v5 = b'{"schemaVersion": "sermon-multilingual-catalog-v5"}'
+    report = json.loads((tmp_path / 'seal-report.json').read_text())
+    report['catalogV5Sha256'] = hashlib.sha256(v5).hexdigest()
+    (tmp_path / 'seal-report.json').write_text(json.dumps(report))
+    live = {'v5': None}
+    def reader(url):
+        if url.endswith('/multilingual-v5.json'):
+            return (404, b'') if live['v5'] is None else (200, live['v5'])
+        if url.endswith('/multilingual-v4.json'):
+            return 404, b''
+        return 200, data
+    live['v5'] = b'{"other": true}'
+    with pytest.raises(ValueError, match='Live v5 catalog changed'):
+        p.publish(tmp_path, intent=intent, routes={'dev': intent}, baseline_version='sites/site/versions/old',
+                  baseline_catalog_sha=sha, lease_bucket='bucket', request=remote, reader=reader,
+                  run=lambda *a, **k: pytest.fail('stale v5 must block deploy'))
+    (tmp_path / 'deployment-attempt-v2.json').unlink()
+    live['v5'] = None
+    def deploy(*args, **kwargs):
+        remote.version = 'new'; write_deploy_result(kwargs); live['v5'] = v5
+    receipt = p.publish(tmp_path, intent=intent, routes={'dev': intent}, baseline_version='sites/site/versions/old',
+                        baseline_catalog_sha=sha, lease_bucket='bucket', request=remote, reader=reader, run=deploy)
+    assert receipt['status'] == 'deployed'
 
 
 def test_published_v4_readback_must_match_the_sealed_catalog(tmp_path, monkeypatch):
@@ -580,12 +628,12 @@ def test_deployed_receipt_directory_is_synced_before_lease_release(tmp_path, mon
     else:
         intent, data, sha = setup(tmp_path); remote = Remote()
     monkeypatch.setattr(p, '_persist_attempt', persist)
-    original_release = p.RemoteLease.release
+    original_release = hosting.RemoteLease.release
     def release(lease):
         assert persisted[-1] == 'deployed'
         assert json.loads((tmp_path / 'deployment-attempt-v2.json').read_text())['status'] == 'deployed'
         original_release(lease)
-    monkeypatch.setattr(p.RemoteLease, 'release', release)
+    monkeypatch.setattr(hosting.RemoteLease, 'release', release)
     if recovery:
         p.reconcile(tmp_path, request=remote, reader=v3_only(data), confirmed_version='sites/site/versions/new')
     else:

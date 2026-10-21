@@ -22,10 +22,10 @@ import sys
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE.parents[1]))
 
-from scripts.sermon_accounting import accounting_session, record_workload, stage as accounting_stage, subprocess_environment
-from scripts.sermon_execution_harness import (Execution, ExecutionTerminated, RemoteOutcomeUnknown, WorkAlreadyRunning,
-    atomic_json, bounded_process as process_run, utc_now, work_lock)
-from scripts.sermon_model_resources import local_model_slot
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.observability.accounting import accounting_session, record_workload, stage as accounting_stage, subprocess_environment
+from tongxing_production.orchestration.execution_harness import Execution, ExecutionTerminated, RemoteOutcomeUnknown, WorkAlreadyRunning, atomic_json, bounded_process as process_run, utc_now, work_lock
+from tongxing_production.orchestration.prefect.model_resources import local_model_slot
 from poc import sha256, write_json
 from weekly_dubbing import read, validate_frozen, assemble
 from render_weekly_audio import render_identity

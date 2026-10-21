@@ -1,14 +1,16 @@
 """Read-only source and preview evidence checks; all fixtures are synthetic."""
 import copy
+import io
 import json
 from pathlib import Path
 import unittest
 from unittest.mock import patch
 
-from scripts import sermon_diagnostic_delivery_preflight as subject
-from scripts import sermon_diagnostic_provider as provider
-from scripts import sermon_review_budget as budget
-from scripts import sermon_review_contracts as c
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.workflows.diagnostic import delivery_preflight as subject
+from tongxing_production.workflows.diagnostic import provider
+from tongxing_production.review import review_budget as budget
+from tongxing_production.review import contracts as c
 from tests import test_render_speculative_target_language_speech as previews
 from tests import test_sermon_diagnostic_source_evidence as sources
 from tests.test_sermon_diagnostic_provider import authority
@@ -76,6 +78,49 @@ class PreviewInspectionTests(unittest.TestCase):
         self.assertEqual(calls, len(previews.FakeSynth.calls))
         self.assertNotIn(str(self.root), json.dumps(first))
         self.assertNotIn(self.f.candidate['groups'][0]['targetText'], json.dumps(first))
+
+    def test_scoped_binding_required_in_manifest_and_unit(self):
+        manifest_path = self.out / 'manifest.json'
+        manifest = json.loads(manifest_path.read_text())
+        self.assertEqual(manifest['previewExecutionBindingSha256'],
+            subject.preview.formal.preview_execution_binding_sha256())
+        old_manifest = dict(manifest)
+        old_manifest.pop('previewExecutionBindingSha256')
+        old_manifest['schemaVersion'] = 'sermon-speculative-target-speech-v2'
+        manifest_path.write_text(json.dumps(old_manifest))
+        self.receipt['artifacts'] = [self.ref(row['path']) for row in self.receipt['artifacts']]
+        self.save_receipt()
+        with self.assertRaisesRegex(ValueError, 'diagnostic_delivery_preview_manifest_changed'):
+            self.inspect()
+        manifest_path.write_text(json.dumps(manifest))
+        unit_path = self.out / 'receipts/unit-0000.json'
+        unit = json.loads(unit_path.read_text())
+        for value in (None, '0' * 64):
+            broken = dict(unit)
+            if value is None: broken.pop('previewExecutionBindingSha256')
+            else: broken['previewExecutionBindingSha256'] = value
+            unit_path.write_text(json.dumps(broken))
+            self.receipt['artifacts'] = [self.ref(row['path']) for row in self.receipt['artifacts']]
+            self.save_receipt()
+            with self.subTest(value=value), self.assertRaisesRegex(ValueError, 'diagnostic_delivery_preview_unit_changed'):
+                self.inspect()
+        unit_path.write_text(json.dumps(unit))
+        self.receipt['artifacts'] = [self.ref(row['path']) for row in self.receipt['artifacts']]
+        self.save_receipt()
+        facade = subject.preview.formal._audio.current().code.physical_path(
+            'packages/production/src/tongxing_production/audio/speculative.py')
+        original_open = Path.open
+
+        def changed_open(path, *args, **kwargs):
+            mode = args[0] if args else kwargs.get('mode', 'r')
+            if path == facade and mode == 'rb':
+                with original_open(path, 'rb') as stream:
+                    return io.BytesIO(stream.read() + b'\n# changed facade\n')
+            return original_open(path, *args, **kwargs)
+
+        with patch.object(Path, 'open', changed_open):
+            with self.assertRaisesRegex(ValueError, 'diagnostic_delivery_preview_manifest_changed'):
+                self.inspect()
 
     def test_changed_original_voice_and_checkpoint_fail_closed(self):
         path = self.f.f.registry_path
@@ -219,7 +264,7 @@ class FreshDeliveryInspectionTests(unittest.TestCase):
             native.assert_not_called()
 
     def test_expired_closed_inspection_repeats_without_dispatch_deadline_reset_or_original_result_write(self):
-        from scripts import sermon_diagnostic_attempts as attempts
+        from tongxing_production.workflows.diagnostic import attempts
         from tests.test_sermon_fresh_source_evidence import existing_bytes
         # Time can pass while inspecting complete evidence; it cannot authorize
         # another execution. Real worker deadline/native proofs remain tested

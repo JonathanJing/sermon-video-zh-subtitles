@@ -1,5 +1,5 @@
 import copy
-import importlib.util
+import importlib
 import json
 import subprocess
 import sys
@@ -11,10 +11,8 @@ from pathlib import Path
 from jsonschema import Draft202012Validator
 
 ROOT = Path(__file__).resolve().parents[1]
-SCRIPT = ROOT / "scripts/update_catalog_display_categories.py"
-SPEC = importlib.util.spec_from_file_location("category_updates", SCRIPT)
-MODULE = importlib.util.module_from_spec(SPEC)
-SPEC.loader.exec_module(MODULE)
+SCRIPT = ROOT / "tools/ops/update_catalog_display_categories.py"
+MODULE = IMPLEMENTATION = importlib.import_module("tools.ops.update_catalog_display_categories")
 
 
 def category(label="正式播放版"):
@@ -137,7 +135,7 @@ class CategoryUpdateTests(unittest.TestCase):
                 result["unexpected"] = value
                 args = [str(SCRIPT), "--catalog", str(source), "--updates", str(updates), "--output", str(output)]
                 with self.subTest(value=value), mock.patch.object(sys, "argv", args), mock.patch.object(
-                        MODULE, "update_categories", return_value=result), mock.patch("sys.stderr"):
+                        IMPLEMENTATION, "update_categories", return_value=result), mock.patch("sys.stderr"):
                     with self.assertRaises(SystemExit) as error:
                         MODULE.main()
                     self.assertEqual(error.exception.code, 1)

@@ -1,0 +1,11 @@
+{
+  "schemaVersion": "local-offline-test-outcome-v1",
+  "status": "passed",
+  "purpose": "project_credit_usage_move",
+  "startedAt": "2026-10-17T22:51:30.033277+00:00",
+  "endedAt": "2026-10-17T22:51:32.829836+00:00",
+  "exitCode": 0,
+  "testCommand": ".venv/bin/python -m unittest tests.test_project_codex_credit_usage -v",
+  "remoteCalls": 0,
+  "paidCalls": 0
+}

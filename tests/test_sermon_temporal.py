@@ -121,7 +121,8 @@ class TemporalBackendBindingTests(unittest.TestCase):
         return Request(**json.loads(json.dumps(asdict(request))))
 
     def backend_command(self, request, default):
-        from scripts import run_saturday_harness as harness
+        from scripts import tongxing_host  # noqa: F401  binds the production package ports
+        from tools.ops import run_saturday_harness as harness
         original_parser = harness.parse_args
         # Change the parser's implicit backend while retaining real argv parsing.
         def changed_parser(argv):

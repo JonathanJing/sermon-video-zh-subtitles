@@ -9,10 +9,11 @@ import subprocess
 import sys
 from unittest.mock import patch
 
-from scripts import sermon_accounting as accounting
-from scripts import sermon_dispatch_observation as dispatch
-from scripts import sermon_log_profile as profile
-from scripts import weekly_pipeline_report as report
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.observability import accounting
+from tongxing_production.observability import profile
+from tongxing_production.observability import weekly_projection as report
+from tongxing_production.observability import dispatch_observation as dispatch
 from tests.test_weekly_pipeline_report import WeeklyPipelineReportTests
 from tests.test_sermon_clock_handshake import ClockHandshakeTests
 
@@ -25,7 +26,9 @@ class DispatchObservationTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
             tracked = subprocess.check_output(['git', '-C', str(repository), 'ls-files',
-                'scripts', 'schemas'], text=True).splitlines()
+                'scripts', 'schemas', 'packages/production/src',
+                # The renderer's load-time voice-demo tool (host ENTRY_LOAD_TIME_IMPORTS).
+                'tools/ops/render_multilingual_voice_demos.py'], text=True).splitlines()
             for name in tracked:
                 source = repository/name
                 if source.is_file():
@@ -35,25 +38,26 @@ class DispatchObservationTests(unittest.TestCase):
             for source in (overlay/'scripts').glob('*.py'):
                 if source.name != '__init__.py':
                     shutil.copy2(source, root/'scripts'/source.name)
-            # Root/PD currently own uncommitted Source helper additions. Include
-            # them as local code, but this probe never executes Source or a model.
-            for name in ('sermon_source_failure.py', 'sermon_source_producer_compatibility.py'):
-                if (repository/'scripts'/name).is_file():
-                    shutil.copy2(repository/'scripts'/name, root/'scripts'/name)
             (root/'scripts/__init__.py').write_text('')
             code = '''
 import sys,json,socket
 from pathlib import Path
 sys.path.insert(0,sys.argv[1])
+# The copied package, so moved modules are recorded under this root.
+sys.path.insert(0,str(Path(sys.argv[1])/'packages/production/src'))
 def denied(*a,**k):raise AssertionError('network forbidden')
 socket.socket.connect=denied
 socket.create_connection=denied
-from scripts import sermon_fresh_diagnostic as entry,sermon_accounting as accounting,sermon_log_profile as profile
+from scripts import tongxing_host
+from tongxing_production.workflows.diagnostic import fresh as entry
+from tongxing_production.observability import accounting, profile
 entry.preload_execution_modules()
 before=accounting.execution_identity()
-assert 'scripts/sermon_dispatch_observation.py' in before['loadedProjectCodeSha256']
+from tongxing_production.path_aliases import resolve
+assert resolve('scripts/sermon_dispatch_observation.py') in before['loadedProjectCodeSha256']
+from tongxing_production.path_aliases import resolve
 for module in ('sermon_model_call_report', 'sermon_model_call_observation', 'sermon_openai_runtime'):
-    assert 'scripts/'+module+'.py' in before['loadedProjectCodeSha256'], module+' not preloaded'
+    assert resolve('scripts/'+module+'.py') in before['loadedProjectCodeSha256'], module+' not preloaded'
 with profile.session(Path(sys.argv[1])/'actual-profile','cold.zero.call',work_kind='production',evidence_mode='synthetic'):
     with accounting.stage('cold.actual.leaf',depends_on=[]):sum(range(100))
 after=accounting.execution_identity()
@@ -100,7 +104,7 @@ print(json.dumps({'codeIdentityUnchanged':True,'providerCalls':0,'models':0,'dis
             expected = []
             for file, line, function in captured[0]:
                 try:
-                    relative = file.relative_to(Path(accounting.__file__).resolve().parents[1])
+                    relative = file.relative_to(accounting.checkout_root())
                 except ValueError:
                     continue
                 item = {'file': str(relative), 'line': line, 'function': function}

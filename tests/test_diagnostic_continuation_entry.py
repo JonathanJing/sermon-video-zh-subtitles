@@ -3,12 +3,13 @@ import copy
 import json
 import unittest
 from unittest.mock import patch
-from scripts import run_bounded_diagnostic_continuation as entry
-from scripts import sermon_accounting as accounting
-from scripts import sermon_diagnostic_provider as provider
-from scripts import sermon_review_contracts as c
-from scripts import sermon_strict_layer2 as strict
-from scripts import sermon_review_budget as budget
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.workflows.diagnostic import bounded_continuation as entry
+from tongxing_production.observability import accounting
+from tongxing_production.workflows.diagnostic import provider
+from tongxing_production.review import contracts as c
+from tongxing_production.text.strict import layer2 as strict
+from tongxing_production.review import review_budget as budget
 from tests import test_run_bounded_diagnostic as fixtures
 
 class ContinuationTests(unittest.TestCase):

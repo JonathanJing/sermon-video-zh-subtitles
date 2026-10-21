@@ -42,10 +42,11 @@ def load_baseline(filename):
 
 
 def prepare(saved, operation):
-    from scripts import sermon_accounting as accounting
-    from scripts import sermon_completion as completion
-    from scripts import sermon_log_contract as contract
-    from scripts import sermon_logs
+    from scripts import tongxing_host  # noqa: F401  binds the production package ports
+    from tongxing_production.observability import accounting
+    from tongxing_production.observability import completion
+    from tongxing_production.observability import log_contract as contract
+    from tongxing_production.observability import logs as sermon_logs
 
     baseline, baseline_sha = load_baseline('sermon_completion')
 
@@ -117,7 +118,7 @@ def prepare(saved, operation):
 
 
 def prepare_reports(saved, directory, events, operation):
-    from scripts import sermon_fresh_full_dag as current
+    from tongxing_production.workflows.diagnostic import fresh_full_dag as current
     old_accounting, accounting_sha = load_baseline('sermon_accounting')
     old_logs, logs_sha = load_baseline('sermon_logs')
     old_dag, dag_sha = load_baseline('sermon_fresh_full_dag')

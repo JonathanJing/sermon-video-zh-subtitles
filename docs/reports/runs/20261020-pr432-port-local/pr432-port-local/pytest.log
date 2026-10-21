@@ -1,0 +1,66 @@
+### chunk 0: tests/test_canonical_layer2_budget.py tests/test_canonical_layer2_reconciliation.py tests/test_infrastructure_compute_leaves.py tests/test_layer2_partial_recovery_parallel.py tests/test_review_leaves.py tests/test_run_start_tools.py tests/test_sermon_unified_preflight.py tests/test_target_language_rule_preflight.py tests/test_tongxing_text_ports.py
+........................................................ [ 59%]
+......................................                    [100%]
+94 passed, 175 subtests passed in 129.02s (0:02:09)
+exit=0
+### chunk 1: tests/test_agent_api_trials.py tests/test_canonical_layer2_cache_recovery.py tests/test_canonical_layer2_runtime_authorization.py tests/test_layer2_binding_stat_memo.py tests/test_machine_qc_runtime_budget.py tests/test_run_budget_input_feasibility.py tests/test_scripts_layout_guard.py tests/test_shadow_candidate_mode.py tests/test_tongxing_production_package.py tests/test_translator_backend_switch.py
+..................................................................................................... [ 36%]
+............................................... [ 54%]
+.................................................. [ 72%]
+............................................................................                 [100%]
+274 passed, 790 subtests passed in 211.79s (0:03:31)
+exit=0
+### chunk 2: tests/test_api_cli_outcomes.py tests/test_canonical_layer2_controller.py tests/test_clip_real_e2e.py tests/test_layer2_group_revision.py tests/test_ops_run_entry.py tests/test_run_journal.py tests/test_sermon_job_liveness.py tests/test_smoke_published_page.py tests/test_tongxing_review_ports.py
+....................................... [ 25%]
+.......................................... [ 53%]
+.......................................................................                                                     [100%]
+=================================== FAILURES ===================================
+_ LivenessTests.test_real_monitor_cancels_stalls_and_never_restarts_unknown_work (mode='no_heartbeat') _
+
+self = <test_sermon_job_liveness.LivenessTests testMethod=test_real_monitor_cancels_stalls_and_never_restarts_unknown_work>
+
+    def test_real_monitor_cancels_stalls_and_never_restarts_unknown_work(self):
+        for mode, reason in (('no_start','liveness_start_timeout'),
+                             ('no_progress','liveness_no_progress_timeout'),
+                             ('no_heartbeat','liveness_heartbeat_timeout'),
+                             ('invalid','liveness_invalid_receipt')):
+            with self.subTest(mode=mode):
+                state, late = self.run_job(mode)
+                self.assertEqual(state['status'], 'uncertain')
+>               self.assertEqual(state['reason'], reason)
+E               AssertionError: 'liveness_start_timeout' != 'liveness_heartbeat_timeout'
+E               - liveness_start_timeout
+E               ?          ^^
+E               + liveness_heartbeat_timeout
+E               ?          ^^  ++++
+
+tests/test_sermon_job_liveness.py:229: AssertionError
+_ LivenessTests.test_real_monitor_cancels_stalls_and_never_restarts_unknown_work (mode='invalid') _
+
+self = <test_sermon_job_liveness.LivenessTests testMethod=test_real_monitor_cancels_stalls_and_never_restarts_unknown_work>
+
+    def test_real_monitor_cancels_stalls_and_never_restarts_unknown_work(self):
+        for mode, reason in (('no_start','liveness_start_timeout'),
+                             ('no_progress','liveness_no_progress_timeout'),
+                             ('no_heartbeat','liveness_heartbeat_timeout'),
+                             ('invalid','liveness_invalid_receipt')):
+            with self.subTest(mode=mode):
+                state, late = self.run_job(mode)
+                self.assertEqual(state['status'], 'uncertain')
+>               self.assertEqual(state['reason'], reason)
+E               AssertionError: 'liveness_start_timeout' != 'liveness_invalid_receipt'
+E               - liveness_start_timeout
+E               + liveness_invalid_receipt
+
+tests/test_sermon_job_liveness.py:229: AssertionError
+=========================== short test summary info ============================
+SUBFAILED(mode='no_heartbeat') tests/test_sermon_job_liveness.py::LivenessTests::test_real_monitor_cancels_stalls_and_never_restarts_unknown_work
+SUBFAILED(mode='invalid') tests/test_sermon_job_liveness.py::LivenessTests::test_real_monitor_cancels_stalls_and_never_restarts_unknown_work
+2 failed, 152 passed, 154 subtests passed in 173.06s (0:02:53)
+exit=1
+### chunk 3: tests/test_canonical_layer2_auto_repair.py tests/test_canonical_layer2_controller_payload_cache.py tests/test_export_run_digest.py tests/test_layer2_large_fan_in.py tests/test_production_concurrency_profile.py tests/test_run_start_pending_call_and_spark.py tests/test_sermon_unified_continuation.py tests/test_source_meaning_machine_adjudication.py tests/test_tongxing_source_ports.py
+........................................................... [ 50%]
+.................................................. [ 92%]
+.........                                                           [100%]
+118 passed, 40 subtests passed in 181.37s (0:03:01)
+exit=0

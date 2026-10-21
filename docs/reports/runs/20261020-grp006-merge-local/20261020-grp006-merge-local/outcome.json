@@ -1,0 +1,28 @@
+{
+  "status": "tests_passed",
+  "exitCode": 0,
+  "deliveryType": "test",
+  "purpose": "DEV-GRP-002 per-group T/R/P worker, DEV-GRP-006 merge steps 1-3, DEV-GRP-007 group_tasks status/run/merge",
+  "startedAt": "2026-10-20T17:05:00Z",
+  "endedAt": "2026-10-20T18:15:00Z",
+  "code": "codex/group-pipeline-orchestration e5ced530",
+  "results": {
+    "unit": {
+      "groupWorker": "5 passed",
+      "groupPipeline": "5 passed",
+      "relatedLayer2Regression": "206 passed, 50 subtests",
+      "ciShard0": "passed",
+      "ciShard1": "739 tests OK (728.879s)"
+    },
+    "offline15030286": {
+      "locale": "ko",
+      "groups": 402,
+      "readyToMerge": false,
+      "stageSummary": "T/R/P/Q/S/A/U missing 402; C not_applicable 402",
+      "modelCalls": 0,
+      "recordsWritten": 0
+    },
+    "paidCalls": 0,
+    "deployments": 0
+  }
+}

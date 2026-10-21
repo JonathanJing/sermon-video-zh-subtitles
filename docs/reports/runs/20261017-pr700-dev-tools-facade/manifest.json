@@ -1,0 +1,27 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-pr700-dev-tools-facade",
+  "runs": [
+    {
+      "label": "pr700-dev-tools-facade-20261017",
+      "source": "~/.codex/worktrees/dev-compatibility-gate/sermon-video-zh-subtitles/artifacts/pr700-dev-tools-facade-20261017",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "pr700-dev-tools-facade-20261017",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 272,
+      "truncated": false,
+      "sha256": "96f55cfcfd3143f0c5756c078a2698bb81ebde60d3c1c56d662fc35a76c0d859",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

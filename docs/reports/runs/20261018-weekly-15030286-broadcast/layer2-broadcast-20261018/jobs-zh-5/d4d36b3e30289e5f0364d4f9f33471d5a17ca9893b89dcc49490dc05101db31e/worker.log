@@ -1,0 +1,92 @@
+Traceback (most recent call last):
+  File "/private/tmp/claude-501/-Users-jonathan-jing-SynologyDrive-GitHub-Active-sermon-video-zh-subtitles/57e9ca3b-01b2-495e-be2f-1ae3a8d903d6/scratchpad/wt-l2fresh/packages/production/src/tongxing_production/text/budget.py", line 487, in _guard_no_paid_reuse_miss
+    store, _, ledger = self._store_snapshot(root, max_bytes)
+                       ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/private/tmp/claude-501/-Users-jonathan-jing-SynologyDrive-GitHub-Active-sermon-video-zh-subtitles/57e9ca3b-01b2-495e-be2f-1ae3a8d903d6/scratchpad/wt-l2fresh/packages/production/src/tongxing_production/text/budget.py", line 311, in _store_snapshot
+    ledger, _ = budget.read_snapshot(folder / 'state.json', max_bytes=max_bytes)
+                ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/private/tmp/claude-501/-Users-jonathan-jing-SynologyDrive-GitHub-Active-sermon-video-zh-subtitles/57e9ca3b-01b2-495e-be2f-1ae3a8d903d6/scratchpad/wt-l2fresh/packages/production/src/tongxing_production/contracts/canonical.py", line 64, in read_snapshot
+    fd = os.open(path, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK)
+FileNotFoundError: [Errno 2] No such file or directory: '~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/weekend-live/layer2-broadcast-20261018/.jobs-zh-5.layer2-budget/0e6824d3e330788b5459de780ce7a55cf906ff1ddb0cd8daf4e5ff67ce694e43/state.json'
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/private/tmp/claude-501/-Users-jonathan-jing-SynologyDrive-GitHub-Active-sermon-video-zh-subtitles/57e9ca3b-01b2-495e-be2f-1ae3a8d903d6/scratchpad/wt-l2fresh/scripts/canonical_layer2_controller.py", line 18, in <module>
+    raise SystemExit(_implementation.main())
+                     ~~~~~~~~~~~~~~~~~~~~^^
+  File "/private/tmp/claude-501/-Users-jonathan-jing-SynologyDrive-GitHub-Active-sermon-video-zh-subtitles/57e9ca3b-01b2-495e-be2f-1ae3a8d903d6/scratchpad/wt-l2fresh/packages/production/src/tongxing_production/text/controller.py", line 1189, in main
+    result = execute(args.config, args.locale, args.expected_configuration, args.expected_code, args.expected_job,
+                     budget_authorization=<redacted>, expected_budget=args.expected_budget,
+                     expected_payload_cache=args.expected_payload_cache,
+                     expected_partial_recovery=args.expected_partial_recovery)
+  File "/private/tmp/claude-501/-Users-jonathan-jing-SynologyDrive-GitHub-Active-sermon-video-zh-subtitles/57e9ca3b-01b2-495e-be2f-1ae3a8d903d6/scratchpad/wt-l2fresh/packages/production/src/tongxing_production/text/controller.py", line 894, in execute
+    evidence, model_output = _run_auto_repair(
+                             ~~~~~~~~~~~~~~~~^
+        config, lane, source, anchor, policy, api_key, bound_call, progress.progress,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        admission_span, model_completion,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        qc_digest=current['packageIdentities'].get('backTranslationQc.' + locale))
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/private/tmp/claude-501/-Users-jonathan-jing-SynologyDrive-GitHub-Active-sermon-video-zh-subtitles/57e9ca3b-01b2-495e-be2f-1ae3a8d903d6/scratchpad/wt-l2fresh/packages/production/src/tongxing_production/text/controller.py", line 1007, in _run_auto_repair
+    receipt = auto_repair.drive(request, total_groups, run_round, rounds_root, repair_ledger_root(config),
+                                group_workers=config.auto_repair['groupWorkers'], meaning_notes=notes,
+                                meaning_notes_sha256=notes_artifact_sha256, back_translation_qc=qc_receipt)
+  File "/private/tmp/claude-501/-Users-jonathan-jing-SynologyDrive-GitHub-Active-sermon-video-zh-subtitles/57e9ca3b-01b2-495e-be2f-1ae3a8d903d6/scratchpad/wt-l2fresh/packages/production/src/tongxing_production/text/auto_repair.py", line 889, in drive
+    evidence = run_round(out, reuse_from, brief, collector)
+  File "/private/tmp/claude-501/-Users-jonathan-jing-SynologyDrive-GitHub-Active-sermon-video-zh-subtitles/57e9ca3b-01b2-495e-be2f-1ae3a8d903d6/scratchpad/wt-l2fresh/packages/production/src/tongxing_production/text/controller.py", line 979, in run_round
+    return models.run_accounted(source, anchor, policy, out, api_key, call, None, lane['plugin'],
+           ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                                None, reuse_from, partial_repair_brief=brief,
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<8 lines>...
+                                emit_payload_cache_success=payload_cache_enabled,
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                                payload_cache_required=payload_cache_required if reuse_from is None else False)
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/private/tmp/claude-501/-Users-jonathan-jing-SynologyDrive-GitHub-Active-sermon-video-zh-subtitles/57e9ca3b-01b2-495e-be2f-1ae3a8d903d6/scratchpad/wt-l2fresh/packages/production/src/tongxing_production/text/models.py", line 1930, in run_accounted
+    evidence = _run_prepared_groups(
+        request, anchor, policy, out_dir, api_key, call, plan, plugin,
+    ...<5 lines>...
+        progress_callback=progress_callback, completion_spans=completion_spans,
+        failure_collector=failure_collector)
+  File "/private/tmp/claude-501/-Users-jonathan-jing-SynologyDrive-GitHub-Active-sermon-video-zh-subtitles/57e9ca3b-01b2-495e-be2f-1ae3a8d903d6/scratchpad/wt-l2fresh/packages/production/src/tongxing_production/text/models.py", line 1859, in _run_prepared_groups
+    ordered_group_results(list(enumerate(plan, 1)), process_group, workers))
+    ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/private/tmp/claude-501/-Users-jonathan-jing-SynologyDrive-GitHub-Active-sermon-video-zh-subtitles/57e9ca3b-01b2-495e-be2f-1ae3a8d903d6/scratchpad/wt-l2fresh/packages/production/src/tongxing_production/text/models.py", line 1123, in ordered_group_results
+    results[index] = future.result()
+                     ~~~~~~~~~~~~~^^
+  File "/opt/homebrew/Cellar/<email>/3.13.15/Frameworks/Python.framework/Versions/3.13/lib/python3.13/concurrent/futures/_base.py", line 453, in result
+    return self.__get_result()
+           ~~~~~~~~~~~~~~~~~^^
+  File "/opt/homebrew/Cellar/<email>/3.13.15/Frameworks/Python.framework/Versions/3.13/lib/python3.13/concurrent/futures/_base.py", line 402, in __get_result
+    raise self._exception
+  File "/opt/homebrew/Cellar/<email>/3.13.15/Frameworks/Python.framework/Versions/3.13/lib/python3.13/concurrent/futures/thread.py", line 59, in run
+    result = self.fn(*self.args, **self.kwargs)
+  File "/private/tmp/claude-501/-Users-jonathan-jing-SynologyDrive-GitHub-Active-sermon-video-zh-subtitles/57e9ca3b-01b2-495e-be2f-1ae3a8d903d6/scratchpad/wt-l2fresh/packages/production/src/tongxing_production/text/models.py", line 1856, in process_group
+    return _process_group(item)
+  File "/private/tmp/claude-501/-Users-jonathan-jing-SynologyDrive-GitHub-Active-sermon-video-zh-subtitles/57e9ca3b-01b2-495e-be2f-1ae3a8d903d6/scratchpad/wt-l2fresh/packages/production/src/tongxing_production/text/models.py", line 1676, in _process_group
+    translated = _model_call("translator", translate_prompt, policy,
+                             astra_path, api_key, caller,
+    ...<6 lines>...
+                             cache_only=cache_only or backfill_payload_cache_success,
+                             rule_receipt=rule_receipt)
+  File "/private/tmp/claude-501/-Users-jonathan-jing-SynologyDrive-GitHub-Active-sermon-video-zh-subtitles/57e9ca3b-01b2-495e-be2f-1ae3a8d903d6/scratchpad/wt-l2fresh/packages/production/src/tongxing_production/text/models.py", line 732, in _model_call
+    response = caller(api_key, payload)
+  File "/private/tmp/claude-501/-Users-jonathan-jing-SynologyDrive-GitHub-Active-sermon-video-zh-subtitles/57e9ca3b-01b2-495e-be2f-1ae3a8d903d6/scratchpad/wt-l2fresh/packages/production/src/tongxing_production/text/controller.py", line 866, in bound_call
+    return caller(key, payload)
+  File "/private/tmp/claude-501/-Users-jonathan-jing-SynologyDrive-GitHub-Active-sermon-video-zh-subtitles/57e9ca3b-01b2-495e-be2f-1ae3a8d903d6/scratchpad/wt-l2fresh/packages/production/src/tongxing_production/compute/spark_admission.py", line 107, in __call__
+    return api_cli_outcomes.call(self.caller, args, kwargs, purpose=self.purpose,
+           ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        directory=self.outcome_directory, guarded=self.outcome_guarded)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/private/tmp/claude-501/-Users-jonathan-jing-SynologyDrive-GitHub-Active-sermon-video-zh-subtitles/57e9ca3b-01b2-495e-be2f-1ae3a8d903d6/scratchpad/wt-l2fresh/packages/production/src/tongxing_production/compute/outcomes.py", line 324, in call
+    try: return caller(*args, **kwargs)
+                ~~~~~~^^^^^^^^^^^^^^^^^
+  File "/private/tmp/claude-501/-Users-jonathan-jing-SynologyDrive-GitHub-Active-sermon-video-zh-subtitles/57e9ca3b-01b2-495e-be2f-1ae3a8d903d6/scratchpad/wt-l2fresh/packages/production/src/tongxing_production/text/budget.py", line 514, in __call__
+    self._guard_no_paid_reuse_miss(request, fingerprint)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^
+  File "/private/tmp/claude-501/-Users-jonathan-jing-SynologyDrive-GitHub-Active-sermon-video-zh-subtitles/57e9ca3b-01b2-495e-be2f-1ae3a8d903d6/scratchpad/wt-l2fresh/packages/production/src/tongxing_production/text/budget.py", line 504, in _guard_no_paid_reuse_miss
+    raise ValueError('layer2_reuse_response_reconciliation_required') from error
+ValueError: layer2_reuse_response_reconciliation_required

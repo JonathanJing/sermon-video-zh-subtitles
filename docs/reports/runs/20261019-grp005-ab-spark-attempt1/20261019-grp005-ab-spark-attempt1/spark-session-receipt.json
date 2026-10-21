@@ -1,0 +1,35 @@
+{
+  "sessionId": "grp005-batch-ab-20261019",
+  "owner": "claude-grp005-ab",
+  "begin": {
+    "exclusiveReadyAt": "2026-10-19T15:54:59Z",
+    "stoppedUnits": [
+      "job-reasoning-review.timer",
+      "spark-api.service",
+      "spark-agent.service",
+      "llama-performance-collector.service",
+      "llama-server.service"
+    ],
+    "memAvailableGiBAfterStop": 117.3
+  },
+  "jobs": [
+    {
+      "jobId": "a4638f8a251946ada7196cd5cab8ff7d",
+      "purpose": "grp005-ab-preview.ko",
+      "startedAt": "2026-10-19T15:55:20.005203+00:00",
+      "commandSha256": "1d16f0de1571bd8d84ac70962b12f967ad61eaa05dd7e964dd856a25a64c7b07",
+      "exitCode": 1,
+      "outcome": "known_terminal",
+      "status": "terminal"
+    }
+  ],
+  "finish": {
+    "closedAt": "2026-10-19T15:56:38Z",
+    "restoredUnits": "all five started and read back; model_health_restored"
+  },
+  "postInspect": {
+    "llamaServer": "running, healthy, Qwen3.8-27B",
+    "containers": 0,
+    "queueOutstanding": 0
+  }
+}

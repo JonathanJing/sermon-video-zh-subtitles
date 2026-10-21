@@ -90,7 +90,7 @@
 
 **新页面自动听音定位（2026-09-19）：** 同步中文音轨进入 `build_weekly_app.py` 后，固定生成原声指纹、绑定来源／人工范围／页面／音轨，并纳入发行校验。自然语速未同步试听候选明确标记不可用；新同步页面不能漏掉指纹后继续发行。用户主动授权麦克风，本地匹配同一录制并自动定位播放；真实设备与现场效果单独验收。详见[每周发行流程](../tongxing-weekly-release.zh.md#新页面固定包含自动听音定位)及[双语制作流程页](../tongxing-video-to-page.html)。
 
-**每周与临时海报交付：** 内容页发行并完成 HTTP 核验后，由 Codex 继续完成 ImageGen 主视觉、目录文字与真实二维码合成，以及最终 PNG／缩略图解码和目视 QA；每周无需用户重复要求。临时制作、历史重做和单语补图同样使用[单行标题海报模板](../tongxing-weekly-poster-format.zh.md)及 `build_multilingual_sermon_posters.py`，单语以 `--locales` 限定。主题、日期、经文、讲员取精确 `pageId` 的 catalog，网页二维码绑定 `?week=<pageId>&contentLang=<locale>&lang=<interfaceLang>`。这不代表 Supervisor 自动调用图像工具、付费 API 或自动发送／上传；海报不能提升页面的发布或人工验收状态。命令与证据要求见[每周海报交付](../tongxing-weekly-release.zh.md#每周海报交付)。
+**每周与临时海报交付：** 内容页发行并完成 HTTP 核验后，由 Codex 继续完成 ImageGen 主视觉、目录文字与真实二维码合成，以及最终 PNG／缩略图解码和目视 QA；每周无需用户重复要求。临时制作、历史重做和单语补图同样使用[单行标题海报模板](../tongxing-weekly-poster-format.zh.md)及 `tools/ops/run.py delivery.posters.build`，单语以 `--locales` 限定。主题、日期、经文、讲员取精确 `pageId` 的 catalog，网页二维码绑定 `?week=<pageId>&contentLang=<locale>&lang=<interfaceLang>`。这不代表 Supervisor 自动调用图像工具、付费 API 或自动发送／上传；海报不能提升页面的发布或人工验收状态。命令与证据要求见[每周海报交付](../tongxing-weekly-release.zh.md#每周海报交付)。
 
 **CUV 引用与恢复：** 正文翻译前，区分直接读经、重述、混合引述和未决来源，冻结精确范围与真实证据；图像和共享经节要进入审校请求。新 run 默认本地预检并按块聚合选择失败，全篇独立审校通过后冻结引用预检产物再翻译；结构分类不是语义裁定，也不保证同块问题一次穷尽。增量复用不得改写旧收据，旧新策略迁移首次可能重算，最终保留全篇审核；本周成品通过后，还须将通用临时修复和回归测试收回主线。详见[CUV 流程](../sermon-cuv-production.zh.md)与[本周复盘](../cuv-retrospective-2026-09-20.zh.md)。
 

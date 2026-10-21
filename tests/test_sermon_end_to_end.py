@@ -5,10 +5,10 @@ from pathlib import Path
 from dataclasses import replace
 from unittest.mock import patch, Mock
 
-from scripts import sermon_end_to_end as flow
-from scripts import sermon_agents_supervisor as agent
-from scripts import run_sermon_production_supervisor_agent as entry
-from scripts.sermon_production_supervisor import SupervisorConfig
+from tongxing_production.workflows.supervisor import end_to_end as flow
+from tongxing_production.workflows.supervisor import agents as agent
+from tongxing_production.workflows.supervisor import agent as entry
+from tongxing_production.workflows.supervisor.production import SupervisorConfig
 
 
 def state(action='complete', **extra):
@@ -35,8 +35,8 @@ class EndToEndTests(unittest.TestCase):
 
     def test_pdf_complete_is_not_page_complete(self):
         with patch.object(flow.production, 'production_snapshot', return_value=state()), \
-             patch('scripts.sermon_release_workflow.load_config'), \
-             patch('scripts.sermon_release_workflow.snapshot', return_value=state('build_page')):
+             patch('tongxing_production.orchestration.release_workflow.load_config'), \
+             patch('tongxing_production.orchestration.release_workflow.snapshot', return_value=state('build_page')):
             observed = flow.snapshot(self.config)
         self.assertFalse(observed['workflowComplete'])
         self.assertEqual(observed['recommendedAction']['action'], 'build_page')
@@ -46,8 +46,8 @@ class EndToEndTests(unittest.TestCase):
 
     def test_upstream_gate_still_blocks_downstream(self):
         with patch.object(flow.production, 'production_snapshot', return_value=state('request_window_approval')), \
-             patch('scripts.sermon_release_workflow.load_config'), \
-             patch('scripts.sermon_release_workflow.snapshot') as downstream:
+             patch('tongxing_production.orchestration.release_workflow.load_config'), \
+             patch('tongxing_production.orchestration.release_workflow.snapshot') as downstream:
             observed = flow.snapshot(self.config)
         downstream.assert_not_called()
         self.assertFalse(observed['workflowComplete'])
@@ -59,9 +59,9 @@ class EndToEndTests(unittest.TestCase):
         for status, action in [('running', 'wait_for_workflow_job'), ('uncertain', 'inspect_workflow_job_failure'),
                                ('failed', 'inspect_workflow_job_failure')]:
             with self.subTest(status=status), patch.object(flow.production, 'production_snapshot', return_value=state()), \
-                 patch('scripts.sermon_release_workflow.load_config'), \
-                 patch('scripts.sermon_release_workflow.snapshot', return_value=state()), \
-                 patch('scripts.sermon_workflow_jobs.inspect_job', return_value={'jobId': 'abc', 'status': status}):
+                 patch('tongxing_production.orchestration.release_workflow.load_config'), \
+                 patch('tongxing_production.orchestration.release_workflow.snapshot', return_value=state()), \
+                 patch('tongxing_production.orchestration.jobs.inspect_job', return_value={'jobId': 'abc', 'status': status}):
                 observed = flow.snapshot(self.config)
             self.assertEqual(observed['recommendedAction']['action'], action)
             self.assertFalse(observed['workflowComplete'])
@@ -70,15 +70,15 @@ class EndToEndTests(unittest.TestCase):
         root=flow.job_root(self.config,self.path);root.mkdir(parents=True)
         (root/'active.json').write_text(json.dumps({'jobId':'abc','action':'build_page'}))
         with patch.object(flow.production,'production_snapshot',return_value=state()), \
-             patch('scripts.sermon_release_workflow.load_config'), \
-             patch('scripts.sermon_release_workflow.snapshot',return_value=state('build_page')), \
-             patch('scripts.sermon_workflow_jobs.inspect_job',return_value={'jobId':'abc','status':'succeeded'}):
+             patch('tongxing_production.orchestration.release_workflow.load_config'), \
+             patch('tongxing_production.orchestration.release_workflow.snapshot',return_value=state('build_page')), \
+             patch('tongxing_production.orchestration.jobs.inspect_job',return_value={'jobId':'abc','status':'succeeded'}):
             observed=flow.snapshot(self.config)
         self.assertEqual(observed['recommendedAction']['action'],'inspect_workflow_evidence')
 
     def test_fixed_job_command_and_configuration_binding(self):
         with patch.object(flow,'snapshot',return_value=state('build_page',locations={'runRoot':str(self.root/'source')})), \
-             patch('scripts.sermon_workflow_jobs.start_job',return_value={'jobId':'abc','status':'queued'}) as start:
+             patch('tongxing_production.orchestration.jobs.start_job',return_value={'jobId':'abc','status':'queued'}) as start:
             flow.job_root(self.config,self.path).mkdir(parents=True)
             observed=flow.start_action(self.config,'build_page')
         command=start.call_args.args[2]
@@ -89,7 +89,7 @@ class EndToEndTests(unittest.TestCase):
 
     def test_controller_timeout_reaches_existing_worker_and_invalid_values_stop(self):
         with patch.object(flow, 'snapshot', return_value=state('build_page', locations={'runRoot': str(self.root/'source')})), \
-             patch('scripts.sermon_workflow_jobs.start_job', return_value={'jobId': 'abc', 'status': 'queued'}) as start:
+             patch('tongxing_production.orchestration.jobs.start_job', return_value={'jobId': 'abc', 'status': 'queued'}) as start:
             flow.start_action(self.config, 'build_page', timeout_seconds=600)
             self.assertEqual(start.call_args.kwargs['timeout_seconds'], 600)
         for timeout in (0, -1, 21601, True, float('nan')):
@@ -100,11 +100,11 @@ class EndToEndTests(unittest.TestCase):
         current = state('build_page', locations={'runRoot': str(self.root/'source')})
         for expected in ({'expected_config_sha': '0'*64}, {'expected_state_revision': '0'*64}):
             with patch.object(flow, 'snapshot', return_value=current), \
-                 patch('scripts.sermon_workflow_jobs.start_job') as start:
+                 patch('tongxing_production.orchestration.jobs.start_job') as start:
                 self.assertEqual(flow.start_action(self.config, 'build_page', **expected)['status'], 'blocked')
                 start.assert_not_called()
         with patch.object(flow, 'snapshot', return_value=current), \
-             patch('scripts.sermon_workflow_jobs.start_job', return_value={'status': 'queued'}) as start:
+             patch('tongxing_production.orchestration.jobs.start_job', return_value={'status': 'queued'}) as start:
             flow.start_action(self.config, 'build_page', expected_config_sha=flow.config_hash(self.path),
                               expected_state_revision=flow.state_revision(current))
             start.assert_called_once()
@@ -131,13 +131,13 @@ class EndToEndTests(unittest.TestCase):
     def test_source_change_cannot_advance_an_unrelated_same_week_job(self):
         downstream = state('build_page', evidence={'sourceRunRoot': str(self.root/'other-source')})
         with patch.object(flow.production, 'production_snapshot', return_value=state(locations={'runRoot': str(self.root/'source')})), \
-             patch('scripts.sermon_release_workflow.load_config'), \
-             patch('scripts.sermon_release_workflow.snapshot', return_value=downstream):
+             patch('tongxing_production.orchestration.release_workflow.load_config'), \
+             patch('tongxing_production.orchestration.release_workflow.snapshot', return_value=downstream):
             with self.assertRaisesRegex(ValueError, 'does not match'):
                 flow.snapshot(self.config)
 
     def test_config_edit_invalidates_existing_agent_tool_session(self):
-        from scripts.sermon_agents_api import AgentsAPIError
+        from tongxing_production.orchestration.supervisor.agents_api import AgentsAPIError
         folder=self.root/'session';folder.mkdir()
         tools=agent.ProductionTools(self.config,True,folder,entry.SupervisorDecision)
         self.path.write_text('{"changed":true}')
@@ -149,9 +149,9 @@ class EndToEndTests(unittest.TestCase):
         (old/'active.json').write_text(json.dumps({'jobId':'old','action':'build_page'}))
         self.path.write_text('{"new":true}')
         with patch.object(flow.production,'production_snapshot',return_value=state()), \
-             patch('scripts.sermon_release_workflow.load_config'), \
-             patch('scripts.sermon_release_workflow.snapshot',return_value=state('build_page')), \
-             patch('scripts.sermon_workflow_jobs.inspect_job',return_value={'jobId':'old','status':'running'}):
+             patch('tongxing_production.orchestration.release_workflow.load_config'), \
+             patch('tongxing_production.orchestration.release_workflow.snapshot',return_value=state('build_page')), \
+             patch('tongxing_production.orchestration.jobs.inspect_job',return_value={'jobId':'old','status':'running'}):
             observed=flow.snapshot(self.config)
         self.assertEqual(observed['recommendedAction']['action'],'inspect_workflow_job_failure')
         self.assertFalse(observed['workflowComplete'])
@@ -171,7 +171,8 @@ class EndToEndTests(unittest.TestCase):
         self.assertEqual(agent.bound_configuration(config),legacy)
 
     def test_orphan_job_is_discovered_without_active_pointer(self):
-        from scripts import sermon_workflow_jobs as jobs
+        from scripts import tongxing_host  # noqa: F401  binds the production package ports
+        from tongxing_production.orchestration import jobs
         original = self.path.read_text()
         root = flow.job_root(self.config, self.path)
         job_id = jobs._digest({'orphan': True})
@@ -187,8 +188,8 @@ class EndToEndTests(unittest.TestCase):
                 self.path.write_text('{"changed":true}' if changed else original)
                 with self.subTest(changed=changed, upstream=upstream), \
                      patch.object(flow.production, 'production_snapshot', return_value=state(upstream)), \
-                     patch('scripts.sermon_release_workflow.load_config'), \
-                     patch('scripts.sermon_release_workflow.snapshot', return_value=state('build_page')), \
+                     patch('tongxing_production.orchestration.release_workflow.load_config'), \
+                     patch('tongxing_production.orchestration.release_workflow.snapshot', return_value=state('build_page')), \
                      patch.object(jobs, 'start_job') as start:
                     observed = flow.snapshot(self.config)
                     self.assertEqual(observed['recommendedAction']['action'], expected)
@@ -197,10 +198,11 @@ class EndToEndTests(unittest.TestCase):
             self.assertFalse((root/'active.json').exists())
 
     def test_launch_failure_leaves_intent_that_blocks_retry(self):
-        from scripts import sermon_workflow_jobs as jobs
+        from scripts import tongxing_host  # noqa: F401  binds the production package ports
+        from tongxing_production.orchestration import jobs
         with patch.object(flow.production, 'production_snapshot', return_value=state(locations={'runRoot': str(self.root/'source')})), \
-             patch('scripts.sermon_release_workflow.load_config'), \
-             patch('scripts.sermon_release_workflow.snapshot', return_value=state('build_page')), \
+             patch('tongxing_production.orchestration.release_workflow.load_config'), \
+             patch('tongxing_production.orchestration.release_workflow.snapshot', return_value=state('build_page')), \
              patch.object(jobs, 'start_job', side_effect=RuntimeError('interrupted before launch')) as start:
             with self.assertRaisesRegex(RuntimeError, 'interrupted'):
                 flow.start_action(self.config, 'build_page')
@@ -211,7 +213,8 @@ class EndToEndTests(unittest.TestCase):
             self.assertEqual(start.call_count, 1)
 
     def test_failed_intent_write_never_launches_worker(self):
-        from scripts import sermon_workflow_jobs as jobs
+        from scripts import tongxing_host  # noqa: F401  binds the production package ports
+        from tongxing_production.orchestration import jobs
         with patch.object(flow, 'snapshot', return_value=state('build_page', locations={'runRoot': str(self.root/'source')})), \
              patch.object(jobs, '_persist', side_effect=OSError('disk full')), \
              patch.object(jobs, 'start_job') as start:
@@ -220,7 +223,8 @@ class EndToEndTests(unittest.TestCase):
             start.assert_not_called()
 
     def test_week_admission_lock_is_shared_across_configuration_changes(self):
-        from scripts import sermon_workflow_jobs as jobs
+        from scripts import tongxing_host  # noqa: F401  binds the production package ports
+        from tongxing_production.orchestration import jobs
         week = flow.job_root(self.config, self.path).parent
         with jobs._lock(week, jobs._digest({'purpose': 'release-admission'})) as (_, _, held):
             self.assertTrue(held)

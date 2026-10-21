@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url';
 import { dirname, resolve } from 'node:path';
 import {
   fetchVerified, sameOriginAsset, validateDemoCatalog, validateDemoContent, validateDemoRelease
-} from '../firebase/dev/public/dev-integrity.mjs';
+} from '../apps/listening-web/reader/dev-integrity.mjs';
 
 const publicDir = resolve(dirname(fileURLToPath(import.meta.url)), '../firebase/dev/public');
 const origin = 'https://ai-for-god-sermon-audio-dev.web.app';

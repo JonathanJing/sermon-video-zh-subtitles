@@ -1,0 +1,13 @@
+{
+  "name": "sermon-tracker-publisher",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "publisher": "node publisher-control.mjs",
+    "test": "node --test tests/*.test.mjs"
+  },
+  "dependencies": {
+    "firebase-admin": "14.3.0"
+  }
+}

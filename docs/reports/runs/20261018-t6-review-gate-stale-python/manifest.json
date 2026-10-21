@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261018-t6-review-gate-stale-python",
+  "runs": [
+    {
+      "label": "t6-review-gate-stale-python-20261018",
+      "source": "/private/tmp/t6-review-gate-leaf-20261017/artifacts/t6-review-gate-stale-python-20261018",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "t6-review-gate-stale-python-20261018",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 306,
+      "truncated": false,
+      "sha256": "8b766eac035166c50b56ea783dcc42f3216f9bebf94f4287c6538d97ca06fdec",
+      "redactions": {}
+    },
+    {
+      "run": "t6-review-gate-stale-python-20261018",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 516,
+      "truncated": false,
+      "sha256": "4112da944080dc7f618e1e1c07e6734d31abdc40f1668b264325adeb034d6b65",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

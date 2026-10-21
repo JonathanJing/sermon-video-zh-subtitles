@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-strict-l2-clock-probe-tests",
+  "runs": [
+    {
+      "label": "strict-l2-clock-probe-tests",
+      "source": "~/.codex/worktrees/sidecar-p1-integration/sermon-video-zh-subtitles/artifacts/strict-l2-clock-probe-tests",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "strict-l2-clock-probe-tests",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 322,
+      "truncated": false,
+      "sha256": "3139043e5e60a10b8771386b5e4e2c6f0ff7811fa42c21562f2ce2fd4fd7b2c8",
+      "redactions": {}
+    },
+    {
+      "run": "strict-l2-clock-probe-tests",
+      "path": "timings.tsv",
+      "kind": "whole",
+      "bytes": 53,
+      "truncated": false,
+      "sha256": "b029fd998f85d45be5cd29c13a23550ae25a018241cc4e42b29327cb0d52256f",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

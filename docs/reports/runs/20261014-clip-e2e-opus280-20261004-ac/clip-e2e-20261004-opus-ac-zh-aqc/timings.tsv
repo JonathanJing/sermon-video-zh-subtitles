@@ -1,0 +1,6 @@
+plan-qc-zh-Hans	pass	0
+check-ac-preflight	pass	0
+spark-begin-1	pass	4
+check-gpu-zh-Hans	pass	2
+audio-qc.zh-Hans	fail(1)	310
+spark-finish	pass	7

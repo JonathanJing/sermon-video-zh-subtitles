@@ -1,6 +1,6 @@
 # Offline run progress and ETA
 
-`scripts/sermon_run_progress.py` projects a frozen business plan and validated local observations. It makes no model, media, TTS, network, dispatch, budget, or publication calls. It writes only a separate progress projection. This implements the offline component of [the progress/ETA and Prefect pilot requirements](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/182); controller/Prefect integration and real-run calibration remain with their owners.
+`packages/production/src/tongxing_production/observability/run_progress.py` projects a frozen business plan and validated local observations. It makes no model, media, TTS, network, dispatch, budget, or publication calls. It writes only a separate progress projection. This implements the offline component of [the progress/ETA and Prefect pilot requirements](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/182); controller/Prefect integration and real-run calibration remain with their owners.
 
 ## Stable local API v1
 
@@ -104,7 +104,7 @@ For active work, supply monitor-derived `activeElapsedSeconds`, `heartbeatStatus
 ## Reusing existing evidence
 
 - `plan_from_tracker(ledger, plan_id, version, run_id, unit_specs, resources, **freeze_kwargs)` reuses [the existing formal checkpoint dependencies](../scripts/build_four_layer_timeline.py). Every checkpoint needs an explicit unit specification. Tracker completion and estimates are never imported as execution/review proof.
-- `samples_from_accounting(plan, events, bindings)` reuses [the existing weekly leaf-span projector](../scripts/weekly_pipeline_report.py), including its interval/monotonic checks and parent-child exclusion. Binding is `spanId -> {accountingRunId, accountingWorkUnitId, unitId, identitySha256, stage, model, locale, lengthBucket, cacheClass, resourceClass}`. Stage/model/native work-unit must match, and cache/length/resource comparability must be independently verified. Unbound, ambiguous, unfinished or failed spans supply no sample. Returned `statusReceipts` is always empty: process exit and heartbeat do not establish content/admission.
+- `samples_from_accounting(plan, events, bindings)` reuses [the existing weekly leaf-span projector](../tools/ops/weekly_pipeline_report.py), including its interval/monotonic checks and parent-child exclusion. Binding is `spanId -> {accountingRunId, accountingWorkUnitId, unitId, identitySha256, stage, model, locale, lengthBucket, cacheClass, resourceClass}`. Stage/model/native work-unit must match, and cache/length/resource comparability must be independently verified. Unbound, ambiguous, unfinished or failed spans supply no sample. Returned `statusReceipts` is always empty: process exit and heartbeat do not establish content/admission.
 - Read native logs through `sermon_accounting.read_event_snapshot(directory)`, which locks and hashes the same bytes without rewriting the ledger. Pass damaged/conflicting/unresolved evidence reason codes through `input_issues`. No accounting summary generation is needed.
 - `PilotNodeObservation`/Prefect state is supplementary observation. Map it to full snapshots only after reading and validating the original business receipts; flow/task completion, task counts and framework cache hits supply no business denominator or human gate.
 
@@ -115,8 +115,8 @@ The module is local/private. Publishing to an existing public Tracker or exporti
 `freeze` takes a JSON object with the `freeze_plan` keyword arguments and exclusively creates the plan. `project` reads a frozen plan, a JSON list/JSONL of full status snapshots, optional sample list and resource state, then writes a separate JSON projection:
 
 ```sh
-python scripts/sermon_run_progress.py freeze --input plan-spec.json --output new-plan.json
-python scripts/sermon_run_progress.py project --plan new-plan.json --receipts status-snapshots.jsonl \
+python tools/ops/run.py observability.run_progress freeze --input plan-spec.json --output new-plan.json
+python tools/ops/run.py observability.run_progress project --plan new-plan.json --receipts status-snapshots.jsonl \
   --samples timing-samples.json --resource-state observed-resources.json \
   --reconciliations validated-reconciliations.json --output run-progress.json
 ```

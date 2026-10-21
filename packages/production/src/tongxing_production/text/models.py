@@ -1,0 +1,2296 @@
+#!/usr/bin/env python3
+"""Run source-bound Layer 2 Astra translation and Sol independent group review.
+
+Outputs are recoverable machine evidence. Human approval remains a separate gate.
+An unfinished request marker deliberately blocks automatic paid retries.
+"""
+from __future__ import annotations
+
+import argparse
+from concurrent.futures import FIRST_COMPLETED, ThreadPoolExecutor, wait
+from contextvars import ContextVar, copy_context
+import copy
+import hashlib
+import json
+import os
+from pathlib import Path
+import re
+import shutil
+from typing import Any, Callable
+
+from ..contracts import canonical as _contracts
+from . import backend as _text
+from . import candidate as producer
+from . import policy as policy_tools
+from . import policy_preview
+from . import rule_preflight
+from .model_cache_migration import migration_cache
+
+
+class _HostCollaborator:
+    """A host collaborator looked up at each call, so the package imports without a host."""
+    def __init__(self, get):
+        self._get = get
+
+    def __getattr__(self, name):
+        return getattr(self._get(), name)
+
+
+jobs = _HostCollaborator(lambda: _text.current().core.jobs)
+measure = _HostCollaborator(lambda: _text.current().measure)
+
+
+class _Accounting:
+    """The run's accounting through the Layer 2 port, under the names this module used."""
+    def __getattr__(self, name):
+        port = _text.current().accounting
+        return {"accounting_session": port.session, "_finalize": port.finalize}.get(name) or getattr(port, name)
+
+
+accounting = _Accounting()
+
+
+def _session_bound_caller():
+    return _text.current().compute.session_bound_caller
+
+
+# Timing-only edits do not change the model request or group admission rules.
+# Use the direct dev parent's runner hash for existing in-place paid runs.
+RUNNER_PRODUCTION_IDENTITY_SHA256 = "1922f23b881363ac4f1a32a99de7184fecd1ae445befde5f2282d400bd762e40"
+COMPATIBLE_RUNNER_IDENTITIES = {
+    # Existing run directories created after the W40 merge or on its release side.
+    "8bcd568926f2062919268c185a6d67bf2be4113158e28cd8ca1b6e6e1d7071f3",
+}
+
+
+MODEL_ROLES = {"translator": "gpt-6.1-sol", "reviewer": "gpt-6.1-sol"}
+MODEL_EFFORTS = {"translator": "high", "reviewer": "medium"}
+# Per-run translator choice, frozen in the translation policy (single source: target_language_policy).
+TRANSLATOR_BACKENDS = policy_tools.TRANSLATOR_BACKENDS
+HISTORICAL_MODEL_ROLES = {"translator": "gpt-6-astra", "reviewer": "gpt-6-sol"}
+SEMANTIC_CHECKS = ("completeMeaning", "negationsNumbersNames", "quotationAttribution", "noAddedMeaning")
+REVISION_BRIEF_SCHEMA = "sermon-target-language-group-revision-brief-v1"
+PAYLOAD_CACHE_SUCCESS_SCHEMA = "sermon-target-language-payload-cache-success-v2"
+ROUND_RUNNER_IDENTITY_SCHEMA = "sermon-layer2-round-runner-identity-v1"
+# Prototype implementation identity.  This is intentionally independent of the
+# legacy runner compatibility constant: any change to the cross-top-level-round
+# admission, receipt, or copying rules must mint a new value before reuse.
+PAYLOAD_CACHE_IMPLEMENTATION_SHA256 = "19b26224cf9c006aa208b1658b3c642f11d0e278f3f6dec5af6a50c1a423eed9"
+MAX_STANDALONE_GROUP_WORKERS = 3
+# Set while a partial recovery processes the groups whose translator and reviewer
+# both returned in the failed round: those groups never need a paid call, and a
+# paid dispatch there fails before its started marker (see _run_partial_recovery_groups).
+_RECOVERY_PAID_DISPATCH_CLOSED = ContextVar("layer2_recovery_paid_dispatch_closed", default=False)
+
+
+def revision_boundary_instruction(target_locale: str, *, revising: bool) -> str:
+    if not revising or target_locale != "ko":
+        return ""
+    return ("For Korean spoken units, a complete polite predicate may end with a "
+            "period even when the next English unit begins with 'because'. The next "
+            "Korean unit may state that reason as its own sentence. Do not force a "
+            "trailing comma merely to mirror the English clause boundary. ")
+PARTIAL_REPAIR_SCHEMA = "sermon-target-language-partial-repair-brief-v1"
+# v2 adds gate 4: a row may carry the back-translation QC finding that rejected the reviewer's
+# text (layer2_auto_repair). Sol passed that text, so its cache is not failure evidence by itself;
+# the row binds the QC receipt and the exact rejected text, which is checked against the cache.
+PARTIAL_REPAIR_SCHEMA_V2 = "sermon-target-language-partial-repair-brief-v2"
+PARTIAL_REPAIR_ROW_KEYS = frozenset({"translationGroupId", "sourceUnitIds", "failedRole",
+                                     "failedCacheSha256", "failureReason", "instruction"})
+BACK_TRANSLATION_QC_KEYS = frozenset({"receiptSha256", "targetTextSha256", "failureCodes"})
+
+
+def _repair_row_keys_valid(row: Any, *, allow_qc: bool) -> bool:
+    if not isinstance(row, dict):
+        return False
+    keys = set(row)
+    if keys == PARTIAL_REPAIR_ROW_KEYS:
+        return True
+    return allow_qc and keys == PARTIAL_REPAIR_ROW_KEYS | {"backTranslationQc"} and _qc_evidence_valid(row)
+
+
+def _qc_evidence_valid(row: dict[str, Any]) -> bool:
+    qc = row["backTranslationQc"]
+    return (isinstance(qc, dict) and set(qc) == BACK_TRANSLATION_QC_KEYS
+            and all(isinstance(qc[key], str) and re.fullmatch(r"[a-f0-9]{64}", qc[key]) is not None
+                    for key in ("receiptSha256", "targetTextSha256"))
+            and isinstance(qc["failureCodes"], list) and bool(qc["failureCodes"])
+            and all(isinstance(code, str) and code for code in qc["failureCodes"])
+            and row["failedRole"] == "reviewer")
+
+
+def scripture_prompt_instruction(policy: dict[str, Any], *, frozen_rules=False) -> str:
+    """Put the frozen scripture rule at system priority for both model roles."""
+    scripture = policy["scripture"]
+    if scripture["quoteCheckPolicy"] == "references_only":
+        return (("For Bible passages, preserve only the references actually spoken, "
+                 if frozen_rules else "For Bible passages, cite the book, chapter, and verse when known, ") +
+                "and paraphrase the speaker's meaning in the target language. "
+                "Do not present the text as an exact quotation from any Bible edition. ")
+    if scripture["quoteCheckPolicy"] == "source_bound_exact_quote":
+        return ("For a direct Bible quotation, use only the reviewed source-bound "
+                "wording from the pinned edition. Flag uncertainty if the quote "
+                "boundary or exact wording is unavailable; never invent it. ")
+    raise ValueError("Scripture quotation policy is unresolved")
+
+
+def surrounding_context(request: dict[str, Any], plan: list[dict[str, Any]],
+                        group_index: int) -> dict[str, list[dict[str, str]]]:
+    """Give short, source-bound context on both sides of one translation group."""
+    start = sum(len(group["sourceUnitIds"]) for group in plan[:group_index])
+    end = start + len(plan[group_index]["sourceUnitIds"])
+    rows = request["sourceUnits"]
+    return {
+        "before": copy.deepcopy(rows[max(0, start - 3):start]),
+        "after": copy.deepcopy(rows[end:end + 2]),
+    }
+
+
+def register_prompt_instruction(policy: dict[str, Any]) -> str:
+    return ("Follow the locale's public-sermon register consistently: "
+            + "; ".join(policy["languageReview"]["registerRules"]) + ". ")
+
+
+def require(condition: bool, message: str) -> None:
+    if not condition:
+        raise ValueError(message)
+
+
+def translator_backend(policy: dict[str, Any]) -> str:
+    """Name the translator backend frozen in this policy; anything else is refused."""
+    translator = policy["translator"]
+    for name, (model, effort) in TRANSLATOR_BACKENDS.items():
+        if translator["model"] == model:
+            require(translator["reasoningEffort"] == effort, "translator_backend_effort_changed")
+            return name
+    raise ValueError("unsupported_translator_backend")
+
+
+def production_backend(policy: dict[str, Any]) -> str:
+    """The frozen Layer 2 backend a new dispatch may use: openai_api or claude_cli_opus.
+
+    A translator-only Claude policy (Opus beside the Sol reviewer) stays an experiment that
+    replays cache-only; it is never a production backend."""
+    backend = policy_tools.layer2_backend(policy)
+    if backend is None:
+        # A Sol translator with any other reviewer is the OpenAI backend with a changed role;
+        # the per-role checks name the role that differs.
+        require(translator_backend(policy) == "openai_api", "claude_translator_is_experimental_only")
+        return "openai_api"
+    return backend
+
+
+def production_models(policy: dict[str, Any]) -> dict[str, str]:
+    """Expected formal model per role for this policy's frozen Layer 2 backend."""
+    return {role: model for role, (model, _) in policy_tools.LAYER2_BACKENDS[production_backend(policy)].items()}
+
+
+def production_efforts(policy: dict[str, Any]) -> dict[str, str]:
+    """Expected reasoning effort per role for this policy's frozen Layer 2 backend."""
+    return {role: effort for role, (_, effort) in policy_tools.LAYER2_BACKENDS[production_backend(policy)].items()}
+
+
+def historical_models(policy: dict[str, Any], *, cache_only: bool) -> dict[str, str]:
+    """Validate frozen identities without enabling a new provider dispatch."""
+    for role in MODEL_ROLES:
+        allowed = {MODEL_ROLES[role], HISTORICAL_MODEL_ROLES[role]}
+        if cache_only and role == "translator":
+            allowed.add("claude-opus-5-5")
+        require(policy[role]["model"] in allowed, "unsupported_historical_model_policy")
+    return {role: policy[role]["model"] for role in MODEL_ROLES}
+
+
+def save_new(path: Path, value: object, *, private=False) -> None:
+    # Exclusive creation arbitrates concurrent callers. Sync the file and every
+    # containing entry before returning: the started marker must survive a host
+    # crash before a paid request, even when its parent directories are new.
+    path.parent.mkdir(parents=True, exist_ok=True)
+    opener = (lambda name, flags: os.open(name, flags, 0o600)) if private else None
+    with open(path, "x", encoding="utf-8", opener=opener) as stream:
+        json.dump(value, stream, ensure_ascii=False, indent=2)
+        stream.write("\n")
+        stream.flush()
+        os.fsync(stream.fileno())
+    jobs._sync_directory_ancestry(path.parent)
+
+
+def group_plan(request: dict[str, Any], anchor: dict[str, Any],
+               custom: list[dict[str, Any]] | None = None, *, allow_subset: bool = False) -> list[dict[str, Any]]:
+    """The translation groups in source order.
+
+    ``allow_subset`` is for the per-group worker (DEV-GRP-002): it accepts an ordered
+    subset of the Layer 1 groups, because one group is one task. It never accepts a
+    group boundary other than Layer 1's, a reordering or a duplicate; candidate
+    admission still requires every source unit exactly once.
+    """
+    expected = [unit["sourceUnitId"] for unit in request["sourceUnits"]]
+    anchor_plan = anchor.get("translationRequests")
+    base = ([{"translationGroupId": row["translationGroupId"],
+              "sourceUnitIds": row["sourceUnitIds"]} for row in anchor_plan]
+            if isinstance(anchor_plan, list) and anchor_plan else
+            [{"translationGroupId": f"translation-{unit_id}",
+              "sourceUnitIds": [unit_id]} for unit_id in expected])
+    if custom is None:
+        plan = base
+    else:
+        if allow_subset:
+            require(all(row in base for row in custom), "Group subset must name Layer 1 groups")
+        plan = custom
+    require(isinstance(plan, list) and bool(plan), "Group plan must be a nonempty array")
+    require(all(isinstance(row, dict)
+                and set(row) == {"translationGroupId", "sourceUnitIds"}
+                and isinstance(row["translationGroupId"], str) and row["translationGroupId"]
+                and isinstance(row["sourceUnitIds"], list) and row["sourceUnitIds"]
+                for row in plan), "Invalid group plan")
+    ids = [row["translationGroupId"] for row in plan]
+    assigned = [unit_id for row in plan for unit_id in row["sourceUnitIds"]]
+    if allow_subset:
+        require(len(set(ids)) == len(ids) and assigned == [unit for unit in expected if unit in set(assigned)],
+                "Group subset must keep Layer 1 groups in source order without duplicates")
+    else:
+        require(len(set(ids)) == len(ids) and assigned == expected,
+                "Group plan must cover source units exactly once and in order")
+    return plan
+
+
+def require_plugin_identity(plugin_path, expected):
+    actual = producer.plugin_implementation_sha256(plugin_path)
+    try:
+        require(actual == expected, "Language plugin implementation differs from frozen policy")
+    except ValueError as exc:
+        def observe():
+            accounting.record_workload("layer2.plugin_binding", {
+                "expectedPluginSha256": expected, "actualPluginSha256": actual})
+            accounting.record_log("layer2_admission_rejected", fields={
+                "status": "blocked", "reasonCode": "plugin_implementation_mismatch"})
+        accounting._finalize(observe, exc)
+        raise
+
+
+def completed_response_content(response, model, role):
+    """Validate the same terminal envelope for fresh and strict cached calls."""
+    require(isinstance(response, dict) and isinstance(response.get("id"), str)
+            and response["id"] and response.get("model") == model,
+            f"{role} response lacks exact model and request identity")
+    choices = response.get("choices")
+    require(isinstance(choices, list) and len(choices) == 1
+            and isinstance(choices[0], dict) and choices[0].get("finish_reason") == "stop",
+            f"{role} response is incomplete")
+    message = choices[0].get("message")
+    require(isinstance(message, dict) and isinstance(message.get("content"), str),
+            f"{role} response has no JSON content")
+    return message["content"]
+
+
+def model_payload(role, prompt, policy, request_limits=None):
+    if request_limits is None:
+        from .budget import CURRENT_LIMITS  # the budget imports this module
+        request_limits = CURRENT_LIMITS.get()
+    model = policy[role]["model"]
+    payload = {"model": model, "reasoning_effort": policy[role]["reasoningEffort"],
+               "messages": [{"role": "system", "content": prompt["instruction"]},
+                            {"role": "user", "content": json.dumps(prompt["input"], ensure_ascii=False)}],
+               "response_format": {"type": "json_object"}}
+    if model == "gpt-6.1-sol" and request_limits is None:
+        payload["service_tier"] = "fast"
+    if policy.get("simulationModelConfiguration") is not None:
+        payload["service_tier"] = policy["simulationModelConfiguration"][role]["serviceTier"]
+    if request_limits is not None:
+        from ..compute.provider_limits import bounded_payload
+        payload = bounded_payload(payload, request_limits)
+    return payload
+
+
+def validate_api_marker(marker,caller,api_key,payload,fingerprint,role):
+    if marker.exists() and isinstance(caller,_session_bound_caller()) and not caller.requires_spark and not caller.outcome_guarded:
+        outcomes = _text.current().provider.outcomes
+        saved=producer._load(marker)
+        if 'apiCliRequestSha256' in saved:
+            require(saved.get('payloadSha256')==fingerprint and saved.get('role')==role
+                    and saved['apiCliRequestSha256']==outcomes.request_identity(caller.caller,(api_key,payload),{},caller.purpose),
+                    'Standalone API outcome marker request binding changed')
+
+
+def _model_fingerprint(payload: dict[str, Any], caller, api_key: str) -> str:
+    """Hash the exact bounded provider payload and its effective transport."""
+    transport_identity = getattr(caller, "execution_identity", None)
+    fingerprint_input = ({"payload": payload, "modelTransportIdentity": transport_identity}
+                         if transport_identity is not None else payload)
+    if isinstance(caller, _session_bound_caller()) and not caller.requires_spark and not caller.outcome_guarded:
+        outcomes = _text.current().provider.outcomes
+        fingerprint_input = {'request': fingerprint_input,
+                             'apiCliRequestSha256': outcomes.request_identity(
+                                 caller.caller, (api_key, payload), {}, caller.purpose)}
+    return policy_tools.canonical_sha256(fingerprint_input)
+
+
+def _payload_cache_key(role: str, payload_sha256: str) -> str:
+    return policy_tools.canonical_sha256({
+        "schemaVersion": PAYLOAD_CACHE_SUCCESS_SCHEMA,
+        "role": role,
+        "payloadSha256": payload_sha256,
+        "runnerImplementationSha256": RUNNER_PRODUCTION_IDENTITY_SHA256,
+        "payloadCacheImplementationSha256": PAYLOAD_CACHE_IMPLEMENTATION_SHA256,
+    })
+
+
+def _request_cache_binding(request: dict[str, Any]) -> dict[str, Any]:
+    return {key: request[key] for key in (
+        "targetLocale", "englishSourcePackageJsonSha256", "anchorManifestSha256",
+        "translationPolicySha256")}
+
+
+def _file_sha256(path: Path) -> str:
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def _require_payload_cache_response_not_refused(response: dict[str, Any], role: str) -> None:
+    choices = response.get("choices") if isinstance(response, dict) else None
+    message = choices[0].get("message") if isinstance(choices, list) and len(choices) == 1 \
+        and isinstance(choices[0], dict) else None
+    require(isinstance(message, dict) and not message.get("refusal"),
+            f"Payload cache success cannot bind a refused {role} response")
+
+
+def _successful_payload_cache(prior_root: Path | None, stem: str, role: str,
+                              payload_sha256: str, request: dict[str, Any],
+                              group: dict[str, Any], *,
+                              allow_policy_binding_miss: bool = False) -> dict[str, Any] | None:
+    """Return a new-format, group-success-bound exact-payload cache.
+
+    Merely having a parsed or raw response is not success evidence.  Older roots
+    without this receipt are deliberately a miss.  Once a v1 receipt exists,
+    every byte it binds is fail-closed before a provider can be called.
+    """
+    if prior_root is None:
+        return None
+    require(not prior_root.is_symlink(),
+            f"Payload cache source root must not be a symlink: {prior_root}")
+    receipt_path = prior_root / f"{stem}-payload-cache-success.json"
+    if not receipt_path.is_file():
+        return None
+    require(not receipt_path.is_symlink(),
+            f"Payload cache success receipt must not be a symlink: {receipt_path}")
+    try:
+        receipt = producer._load(receipt_path)
+    except (OSError, ValueError, TypeError, json.JSONDecodeError) as exc:
+        raise ValueError(f"Prior payload cache success receipt is corrupt: {receipt_path}") from exc
+    request_binding = receipt.get("requestBinding") if isinstance(receipt, dict) else None
+    current_binding = _request_cache_binding(request)
+    stable_binding_keys = ("targetLocale", "englishSourcePackageJsonSha256", "anchorManifestSha256")
+    policy_binding_matches = (isinstance(request_binding, dict)
+                              and request_binding.get("translationPolicySha256")
+                              == current_binding["translationPolicySha256"])
+    require(isinstance(receipt, dict)
+            and set(receipt) == {"schemaVersion", "runnerImplementationSha256",
+                                 "payloadCacheImplementationSha256", "requestBinding",
+                                 "translationGroupId", "sourceUnitIds", "semanticReview", "roles",
+                                 "humanApproval"}
+            and receipt.get("schemaVersion") == PAYLOAD_CACHE_SUCCESS_SCHEMA
+            and receipt.get("runnerImplementationSha256") == RUNNER_PRODUCTION_IDENTITY_SHA256
+            and receipt.get("payloadCacheImplementationSha256")
+                == PAYLOAD_CACHE_IMPLEMENTATION_SHA256
+            and isinstance(request_binding, dict)
+            and set(request_binding) == set(current_binding)
+            and all(request_binding.get(key) == current_binding[key] for key in stable_binding_keys)
+            and (policy_binding_matches or allow_policy_binding_miss)
+            and receipt.get("translationGroupId") == group["translationGroupId"]
+            and receipt.get("sourceUnitIds") == group["sourceUnitIds"]
+            and receipt.get("humanApproval") is False,
+            f"Prior payload cache success identity changed: {receipt_path}")
+    semantic = receipt.get("semanticReview")
+    require(isinstance(semantic, dict) and semantic.get("status") == "pass"
+            and isinstance(semantic.get("checks"), dict)
+            and set(semantic["checks"]) == set(SEMANTIC_CHECKS)
+            and all(value == "pass" for value in semantic["checks"].values())
+            and semantic.get("uncertainty") == [] and semantic.get("issues") == [],
+            f"Prior payload cache group did not pass semantic review: {receipt_path}")
+    roles = receipt.get("roles")
+    require(isinstance(roles, dict) and set(roles) == set(MODEL_ROLES),
+            f"Prior payload cache roles changed: {receipt_path}")
+    cached_results = {}
+    frozen_payloads = {}
+    for expected_role, suffix in (("translator", "astra"), ("reviewer", "sol")):
+        row = roles.get(expected_role)
+        cache = prior_root / f"{stem}-{suffix}.json"
+        raw = cache.with_suffix(".raw.json")
+        preview = cache.with_suffix(".policy-preview.json")
+        require(isinstance(row, dict) and set(row) == {
+                    "payloadSha256", "cacheKeySha256", "model", "requestId",
+                    "cacheSha256", "rawSha256", "previewSha256", "paidProvenance"}
+                and cache.is_file() and raw.is_file() and preview.is_file()
+                and not cache.is_symlink() and not raw.is_symlink() and not preview.is_symlink()
+                and row.get("cacheSha256") == _file_sha256(cache)
+                and row.get("rawSha256") == _file_sha256(raw)
+                and row.get("previewSha256") == _file_sha256(preview),
+                f"Prior payload cache files changed: {cache}")
+        cached = producer._load(cache)
+        raw_record = producer._load(raw)
+        frozen = producer._load(preview)
+        require(cached.get("payloadSha256") == row.get("payloadSha256")
+                and cached.get("model") == row.get("model")
+                and cached.get("requestId") == row.get("requestId")
+                and isinstance(cached.get("result"), dict)
+                and cached["result"].get("translationGroupId") == group["translationGroupId"]
+                and cached["result"].get("sourceUnitIds") == group["sourceUnitIds"]
+                and raw_record.get("payloadSha256") == row.get("payloadSha256")
+                and isinstance(raw_record.get("response"), dict)
+                and raw_record["response"].get("id") == row.get("requestId")
+                and frozen.get("role") == expected_role
+                and frozen.get("policySha256") == policy_tools.canonical_sha256(frozen.get("policy"))
+                and frozen.get("payload", {}).get("model") == row.get("model")
+                and frozen.get("payloadSha256") == policy_tools.canonical_sha256(frozen.get("payload"))
+                and row.get("cacheKeySha256") == _payload_cache_key(
+                    expected_role, row.get("payloadSha256"))
+                and (row.get("paidProvenance") is None
+                     or isinstance(row.get("paidProvenance"), dict)),
+                f"Prior payload cache evidence changed: {cache}")
+        try:
+            _require_payload_cache_response_not_refused(raw_record["response"], expected_role)
+            returned_result = json.loads(completed_response_content(
+                raw_record["response"], row["model"], expected_role))
+        except (ValueError, TypeError, json.JSONDecodeError) as exc:
+            raise ValueError(f"Prior payload cache raw response is invalid: {raw}") from exc
+        require(returned_result == cached["result"],
+                f"Prior payload cache parsed result differs from raw response: {cache}")
+        cached_results[expected_role] = cached["result"]
+        frozen_payloads[expected_role] = frozen["payload"]
+        if expected_role == "reviewer":
+            require(normalize_semantic_review(cached["result"].get("semanticReview")) == semantic,
+                    f"Prior payload cache semantic result changed: {cache}")
+    try:
+        reviewer_input = json.loads(frozen_payloads["reviewer"]["messages"][1]["content"])
+    except (KeyError, IndexError, TypeError, json.JSONDecodeError) as exc:
+        raise ValueError(f"Prior payload cache reviewer payload is invalid: {receipt_path}") from exc
+    require(reviewer_input.get("astraDraft") == cached_results["translator"],
+            f"Prior payload cache reviewer is not bound to its translator draft: {receipt_path}")
+    # This old-policy success receipt cannot authorize a new policy. A v7
+    # partial recovery may still use the independently proved direct-paid
+    # response path below after this receipt and every bound byte validated.
+    if not policy_binding_matches:
+        return None
+    selected = roles[role]
+    if selected["cacheKeySha256"] != _payload_cache_key(role, payload_sha256):
+        return None
+    suffix = 'astra' if role == 'translator' else 'sol'
+    raw_record = producer._load((prior_root / f"{stem}-{suffix}.json").with_suffix('.raw.json'))
+    return {"path": prior_root / f"{stem}-{suffix}.json",
+            "paidProvenance": copy.deepcopy(selected["paidProvenance"]),
+            "response": copy.deepcopy(raw_record["response"]),
+            "binding": copy.deepcopy(selected)}
+
+
+def _require_partial_recovery_source(root: Path, budget_root: Path, caller, api_key: str,
+                                     plan: list[dict[str, Any]], policy: dict[str, Any]) -> list[int]:
+    """Fail closed before dispatch when the failed round has an incomplete call.
+
+    A started marker without the parsed response, raw provider response and
+    frozen bounded payload is still an unknown outcome.  A recovery run may
+    reuse complete returned calls and may pay only for groups that were never
+    dispatched by the failed predecessor.  Returns the indices of the groups
+    whose translator and reviewer both returned: they run first with paid
+    dispatch closed (_run_partial_recovery_groups).  Every other returned role
+    (a translator whose reviewer never ran) is checked here against its files
+    and direct-paid ledger row, so damaged evidence anywhere in the round stops
+    the run before any group pays.
+    """
+    require(root.is_dir() and not root.is_symlink(),
+            f"Partial recovery source root is invalid: {root}")
+    for marker in sorted(root.glob("group-*.started.json")):
+        require(not marker.is_symlink(),
+                f"Partial recovery marker must not be a symlink: {marker}")
+        stem = marker.name.removesuffix(".started.json")
+        files = (root / f"{stem}.json", root / f"{stem}.raw.json",
+                 root / f"{stem}.policy-preview.json")
+        require(all(path.is_file() and not path.is_symlink() for path in files),
+                f"partial recovery response is incomplete: {marker}")
+    validator = getattr(caller, "validate_recovery_source", None)
+    require(callable(validator), "Partial recovery requires a reuse-aware budget caller")
+    validator(api_key, budget_root)
+    present: dict[int, set[str]] = {}
+    for entry in root.iterdir():
+        named = re.fullmatch(r"group-([0-9]{4})-(astra|sol)(?:\.raw|\.policy-preview)?\.json", entry.name)
+        if named is not None:
+            index = int(named.group(1))
+            require(1 <= index <= len(plan), f"Partial recovery response is outside the group plan: {entry}")
+            present.setdefault(index, set()).add(named.group(2))
+    complete = []
+    for index, suffixes in sorted(present.items()):
+        stem = f"group-{index:04d}"
+        if all((root / f"{stem}-{suffix}{tail}").is_file() for suffix in ("astra", "sol")
+               for tail in (".json", ".raw.json", ".policy-preview.json")):
+            complete.append(index)
+            continue
+        for suffix in sorted(suffixes):
+            _returned_role_evidence(root, stem, "translator" if suffix == "astra" else "reviewer",
+                                    plan[index - 1], policy, caller, api_key, budget_root)
+    return complete
+
+
+def _returned_role_evidence(prior_root: Path, stem: str, role: str, group: dict[str, Any],
+                            policy: dict[str, Any], caller, api_key: str,
+                            budget_root: Path) -> dict[str, Any] | None:
+    """Check one returned role of a failed round independently of the current payload."""
+    suffix = "astra" if role == "translator" else "sol"
+    cache = prior_root / f"{stem}-{suffix}.json"
+    raw = cache.with_suffix(".raw.json")
+    preview = cache.with_suffix(".policy-preview.json")
+    marker = prior_root / f"{stem}-{suffix}.started.json"
+    present = [path.exists() for path in (cache, raw, preview)]
+    if not any(present):
+        return None
+    require(all(present) and all(path.is_file() and not path.is_symlink()
+                                 for path in (cache, raw, preview))
+            and (not marker.exists() or marker.is_file() and not marker.is_symlink()),
+            f"partial recovery response is incomplete: {marker}")
+    try:
+        cached = producer._load(cache)
+        raw_record = producer._load(raw)
+        preview_record = producer._load(preview)
+    except (OSError, ValueError, TypeError, json.JSONDecodeError) as exc:
+        raise ValueError(f"Partial recovery response is corrupt: {cache}") from exc
+    response = raw_record.get("response")
+    require(isinstance(cached.get("payloadSha256"), str)
+            and raw_record.get("payloadSha256") == cached.get("payloadSha256")
+            and cached.get("model") == preview_record.get("payload", {}).get("model")
+            and isinstance(cached.get("requestId"), str)
+            and isinstance(response, dict)
+            and response.get("id") == cached.get("requestId")
+            and preview_record.get("role") == role
+            and preview_record.get("policySha256")
+                == policy_tools.canonical_sha256(preview_record.get("policy"))
+            and preview_record.get("payloadSha256")
+                == policy_tools.canonical_sha256(preview_record.get("payload"))
+            and isinstance(cached.get("result"), dict)
+            and cached["result"].get("translationGroupId") == group["translationGroupId"]
+            and cached["result"].get("sourceUnitIds") == group["sourceUnitIds"],
+            f"Partial recovery payload identity changed: {cache}")
+    try:
+        _require_payload_cache_response_not_refused(response, role)
+        returned = json.loads(completed_response_content(response, cached["model"], role))
+    except (ValueError, TypeError, json.JSONDecodeError) as exc:
+        raise ValueError(f"Partial recovery raw response is invalid: {raw}") from exc
+    require(returned == cached["result"],
+            f"Partial recovery parsed result differs from raw response: {cache}")
+    provenance_reader = getattr(caller, "recover_returned_response", None)
+    require(callable(provenance_reader),
+            "Partial recovery requires direct-paid response provenance")
+    # A plugin-only successor policy may recover this paid call under its prior
+    # policy identity; the caller rechecks that proof before using it.
+    migration = {
+        "before": copy.deepcopy(preview_record),
+        "after": policy_preview.payload_preview(role, preview_record["payload"], policy),
+    }
+    provenance = provenance_reader(
+        api_key, preview_record["payload"], response, budget_root,
+        policy_migration=migration)
+    return {"cache": cache, "raw": raw, "preview": preview, "cached": cached,
+            "response": response, "paidProvenance": provenance}
+
+
+def _returned_payload_cache(prior_root: Path | None, stem: str, role: str,
+                            payload_sha256: str, request: dict[str, Any],
+                            group: dict[str, Any], policy: dict[str, Any], caller, api_key: str,
+                            budget_root: Path) -> dict[str, Any] | None:
+    """Recover one complete returned role that lacks a group-success sidecar.
+
+    This is deliberately weaker than success-cache admission: it proves only
+    that the exact provider call returned and was paid once.  The normal group
+    loop still parses the response and reruns semantic and language-plugin
+    checks before it may emit a new success sidecar.
+    """
+    if prior_root is None:
+        return None
+    returned = _returned_role_evidence(prior_root, stem, role, group, policy, caller, api_key, budget_root)
+    if returned is None:
+        return None
+    cached, cache = returned["cached"], returned["cache"]
+    require(cached["payloadSha256"] == payload_sha256,
+            f"Partial recovery payload identity changed: {cache}")
+    binding = {
+        "payloadSha256": payload_sha256,
+        "cacheKeySha256": _payload_cache_key(role, payload_sha256),
+        "model": cached["model"], "requestId": cached["requestId"],
+        "cacheSha256": _file_sha256(cache), "rawSha256": _file_sha256(returned["raw"]),
+        "previewSha256": _file_sha256(returned["preview"]),
+        "paidProvenance": returned["paidProvenance"],
+    }
+    return {"path": cache, "paidProvenance": returned["paidProvenance"],
+            "response": copy.deepcopy(returned["response"]), "binding": binding}
+
+
+def _require_replayed_payload_cache(output: Path, selected: dict[str, Any], role: str,
+                                    saved: dict[str, Any]) -> None:
+    """Recheck destination bytes after copying verified prior evidence.
+
+    The prior root is intentionally read-only but not locked by this runner. A
+    writer racing between admission and copy must therefore be detected before
+    the parsed result can enter draft/review/evidence assembly.
+    """
+    raw = output.with_suffix('.raw.json')
+    preview = output.with_suffix('.policy-preview.json')
+    origin_preview = selected['path'].with_suffix('.policy-preview.json')
+    binding = selected['binding']
+    # A v7 partial recovery may deliberately run a repaired deterministic
+    # plugin under a newly frozen policy. The provider payload and returned
+    # response remain byte-identical, while the destination preview correctly
+    # records the new plugin implementation hash. Accept that one preview-only
+    # difference only when the policy comparator proves a plugin-only migration.
+    preview_matches = _file_sha256(preview) == binding['previewSha256']
+    if not preview_matches:
+        require(origin_preview.is_file() and not origin_preview.is_symlink()
+                and _file_sha256(origin_preview) == binding['previewSha256'],
+                f"Replayed payload cache source preview changed: {origin_preview}")
+        change = policy_preview.compare_previews(
+            producer._load(origin_preview), producer._load(preview), prior_outcome='succeeded')
+        require(change['classification'] == 'plugin_only_migration'
+                and change['modelPayloadUnchanged'] is True
+                and change['blockedByPriorOutcome'] is False,
+                f"Replayed payload cache policy changed beyond the plugin: {preview}")
+    require(_file_sha256(output) == binding['cacheSha256']
+            and _file_sha256(raw) == binding['rawSha256'],
+            f"Replayed payload cache bytes changed: {output}")
+    cached = producer._load(output)
+    raw_record = producer._load(raw)
+    require(cached == saved and raw_record.get('response') == selected['response'],
+            f"Replayed payload cache evidence changed: {output}")
+    _require_payload_cache_response_not_refused(raw_record['response'], role)
+    try:
+        returned = json.loads(completed_response_content(
+            raw_record['response'], cached['model'], role))
+    except (ValueError, TypeError, json.JSONDecodeError) as exc:
+        raise ValueError(f"Replayed payload cache response is invalid: {raw}") from exc
+    require(returned == cached['result'],
+            f"Replayed payload cache parsed result differs from raw response: {output}")
+
+
+def _save_payload_cache_success(out: Path, stem: str, request: dict[str, Any],
+                                group: dict[str, Any], semantic: dict[str, Any], *,
+                                caller=None, api_key: str = "",
+                                reused_provenance: dict[str, dict | None] | None = None) -> None:
+    roles = {}
+    reused_provenance = reused_provenance or {}
+    for role, suffix in (("translator", "astra"), ("reviewer", "sol")):
+        cache = out / f"{stem}-{suffix}.json"
+        raw = cache.with_suffix(".raw.json")
+        preview = cache.with_suffix(".policy-preview.json")
+        require(cache.is_file() and raw.is_file() and preview.is_file(),
+                f"Successful group lacks complete {role} cache evidence: {cache}")
+        cached = producer._load(cache)
+        raw_record = producer._load(raw)
+        preview_record = producer._load(preview)
+        _require_payload_cache_response_not_refused(raw_record.get("response"), role)
+        provenance = copy.deepcopy(reused_provenance.get(role))
+        provenance_reader = getattr(caller, "paid_response_provenance", None)
+        if provenance is None and provenance_reader is not None:
+            provenance = provenance_reader(api_key, preview_record["payload"], raw_record["response"])
+        roles[role] = {
+            "payloadSha256": cached["payloadSha256"],
+            "cacheKeySha256": _payload_cache_key(role, cached["payloadSha256"]),
+            "model": cached["model"], "requestId": cached["requestId"],
+            "cacheSha256": _file_sha256(cache), "rawSha256": _file_sha256(raw),
+            "previewSha256": _file_sha256(preview),
+            "paidProvenance": provenance,
+        }
+    receipt = {
+        "schemaVersion": PAYLOAD_CACHE_SUCCESS_SCHEMA,
+        "runnerImplementationSha256": RUNNER_PRODUCTION_IDENTITY_SHA256,
+        "payloadCacheImplementationSha256": PAYLOAD_CACHE_IMPLEMENTATION_SHA256,
+        "requestBinding": _request_cache_binding(request),
+        "translationGroupId": group["translationGroupId"],
+        "sourceUnitIds": group["sourceUnitIds"],
+        "semanticReview": copy.deepcopy(semantic), "roles": roles,
+        "humanApproval": False,
+    }
+    path = out / f"{stem}-payload-cache-success.json"
+    if path.exists():
+        require(producer._load(path) == receipt, f"Payload cache success receipt changed: {path}")
+    else:
+        save_new(path, receipt, private=True)
+
+
+def _model_call(role: str, prompt: dict[str, Any], policy: dict[str, Any],
+                output: Path, api_key: str,
+                caller: Callable[[str, dict[str, Any]], dict[str, Any]],
+                reuse_from: Path | None = None, *, cache_only: bool = False,
+                response_observer=None, request_limits=None, rule_receipt=None) -> dict[str, Any]:
+    verifier = getattr(caller, 'verify_execution', None)
+    if verifier is not None:
+        verifier(api_key)  # Includes cache hits: changed route/key cannot consume old results.
+    if rule_receipt is not None:
+        rule_preflight.verify_model_prompt(role, prompt, rule_receipt, policy)
+    model = policy[role]["model"]
+    save_options = {"private": True} if response_observer is not None or getattr(caller, "execution_identity", None) is not None else {}
+    payload = model_payload(role, prompt, policy, request_limits)
+    policy_preview.freeze_payload_preview(
+        role, payload, policy, output.with_suffix(".policy-preview.json"))
+    fingerprint = _model_fingerprint(payload, caller, api_key)
+    migrated_from = migration_cache(role, payload)
+    if migrated_from is not None:
+        require(cache_only and reuse_from is None, "Explicit migration must be cache-only and isolated")
+        reuse_from = migrated_from
+    if reuse_from is not None and not output.exists():
+        validate_api_marker(reuse_from.with_suffix('.started.json'),caller,api_key,payload,fingerprint,role)
+        previous_raw = reuse_from.with_suffix('.raw.json')
+        require(reuse_from.is_file() or previous_raw.is_file(), f"Missing reusable {role} response: {reuse_from}")
+        if previous_raw.is_file():
+            raw = producer._load(previous_raw)
+            require(raw.get('payloadSha256') == fingerprint and isinstance(raw.get('response'),dict),
+                    f"Reusable {role} raw response belongs to different inputs: {previous_raw}")
+            destination_raw=output.with_suffix('.raw.json')
+            if destination_raw.exists():
+                require(producer._load(destination_raw)==raw,'Reusable destination raw response changed')
+            else:
+                save_new(destination_raw,raw,private=True)
+        if reuse_from.is_file():
+            cached=producer._load(reuse_from)
+            require(cached.get('payloadSha256')==fingerprint and cached.get('model')==model
+                    and isinstance(cached.get('requestId'),str) and cached['requestId']
+                    and isinstance(cached.get('result'),dict),
+                    f"Reusable {role} cache belongs to different inputs: {reuse_from}")
+            save_new(output,cached)
+    if output.exists():
+        saved = producer._load(output)
+        require(saved.get("payloadSha256") == fingerprint
+                and saved.get("model") == model
+                and isinstance(saved.get("requestId"), str) and saved["requestId"]
+                and isinstance(saved.get("result"), dict),
+                f"Cached {role} response belongs to different inputs: {output}")
+        _text.current().unmoved.record_cache_observation(role, saved, output, mode="validated_cache", origin=reuse_from)
+        return saved
+    marker = output.with_suffix(".started.json")
+    raw_path = output.with_suffix(".raw.json")
+    validate_api_marker(marker,caller,api_key,payload,fingerprint,role)
+    if marker.exists() and not raw_path.exists():
+        recover_api_outcome(marker, raw_path, caller=caller,
+                            allowed_prior_roots=[reuse_from.parent] if reuse_from is not None else [])
+    recovered_raw = raw_path.exists()
+    if recovered_raw:
+        raw = producer._load(raw_path)
+        require(raw.get("payloadSha256") == fingerprint
+                and isinstance(raw.get("response"), dict),
+                f"Saved raw {role} response belongs to different inputs: {raw_path}")
+        response = raw["response"]
+    else:
+        require(not cache_only, f"Cache-only recovery has no returned {role} response: {output}")
+        require(not marker.exists(), f"Uncertain paid {role} call; inspect before retry: {marker}")
+        require(not _RECOVERY_PAID_DISPATCH_CLOSED.get(),
+                f"Partial recovery reached a paid {role} call before its returned groups were verified: {output}")
+        # Capacity denial is a proven no-dispatch outcome. Reserve before the
+        # unknown-call marker; once reserved, a crash remains held in the broker.
+        resource_admission = getattr(caller, "admit_resource", None)
+        if resource_admission is not None:
+            resource_admission(payload)
+        outcome_binding = {}
+        if isinstance(caller, _session_bound_caller()) and not caller.requires_spark and not caller.outcome_guarded:
+            outcomes = _text.current().provider.outcomes
+            outcome_binding = {"apiCliOutcomeRoot":str(outcomes.receipt_root(caller.outcome_directory).resolve()),
+                "apiCliRequestSha256":outcomes.request_identity(caller.caller, (api_key, payload), {}, caller.purpose),
+                "apiCliPurpose":caller.purpose}
+        save_new(marker, {"role": role, "payloadSha256": fingerprint,
+                          "status": "started_response_unconfirmed", **outcome_binding}, **save_options)
+        if response_observer is None:
+            response = caller(api_key, payload)
+        else:
+            response = caller(api_key, payload, response_observer=response_observer)
+        # Persist the actual completed API response before any identity, finish, or
+        # JSON checks; an invalid paid response must remain inspectable and reusable.
+        if response_observer is not None:
+            require(raw_path.is_file(), "Strict transport did not persist its returned response")
+            observed = producer._load(raw_path)
+            require(observed.get("payloadSha256") == fingerprint and observed.get("response") == response,
+                    "Strict persisted response differs from transport return")
+        else:
+            save_new(raw_path, {"payloadSha256": fingerprint, "response": response}, **save_options)
+    decoder = getattr(caller, "completed_content", completed_response_content)
+    content = decoder(response, model, role)
+    if response_observer is not None:
+        parsed = _contracts.decode_json(content.encode("utf-8"))
+    else:
+        parsed = json.loads(content)
+    require(isinstance(parsed, dict), f"{role} response must be a JSON object")
+    saved = {"payloadSha256": fingerprint, "requestId": response["id"],
+             "model": model, "result": parsed}
+    save_new(output, saved, **save_options)
+    # Both the raw response and validated cache are durable before retiring the
+    # uncertainty marker. A failed sync propagates and leaves it for recovery.
+    marker.unlink(missing_ok=True)
+    if recovered_raw:
+        _text.current().unmoved.record_cache_observation(role, saved, output, mode="raw_response_recovery")
+    return saved
+
+
+def _utterances(value: object, source_unit_ids: list[str] | None = None) -> list[str]:
+    # Some replies wrap each utterance with its unit ID under "targetText" or "text".
+    def wrapped(row, unit_id):
+        if not (isinstance(row, dict) and row.get('sourceUnitIds') == [unit_id]):
+            return None
+        texts = [row[key] for key in ('targetText', 'text') if isinstance(row.get(key), str) and row[key].strip()]
+        return texts[0] if len(texts) == 1 or (len(texts) == 2 and texts[0] == texts[1]) else None
+    if source_unit_ids is not None and isinstance(value, list) and len(value) == len(source_unit_ids) \
+            and all(wrapped(row, unit_id) is not None for row, unit_id in zip(value, source_unit_ids)):
+        value = [wrapped(row, unit_id) for row, unit_id in zip(value, source_unit_ids)]
+    require(isinstance(value, list) and bool(value)
+            and all(isinstance(item, str) and item.strip() for item in value),
+            "Model must return nonempty targetUtterances")
+    return [item.strip() for item in value]
+
+
+def _coverage_substring(covered: str, target: str) -> bool:
+    """Allow only whitespace differences at model utterance boundaries."""
+    compact = lambda value: re.sub(r"\s+", "", value)
+    return bool(covered.strip()) and compact(covered) in compact(target)
+
+
+def normalize_semantic_review(value: object) -> object:
+    """Adapt common JSON type variants while keeping saved model responses raw.
+
+    Only explicit boolean checks map to pass/fail. A nonempty uncertainty or
+    issue remains a blocking item; an unknown shape still fails validation.
+    """
+    if not isinstance(value, dict):
+        return value
+    semantic = copy.deepcopy(value)
+    checks = semantic.get("checks")
+    if isinstance(checks, dict):
+        semantic["checks"] = {
+            name: ("pass" if result is True else "fail" if result is False else result)
+            for name, result in checks.items()
+        }
+    evidence = semantic.get("evidence")
+    if isinstance(evidence, list) and evidence and all(isinstance(item, str) and item.strip() for item in evidence):
+        semantic["evidence"] = "\n".join(item.strip() for item in evidence)
+    for field in ("uncertainty", "issues"):
+        item = semantic.get(field)
+        if item is None or item is False or item == "":
+            semantic[field] = []
+        elif item is True:
+            semantic[field] = [f"model_reported_{field}"]
+        elif isinstance(item, str):
+            semantic[field] = [item]
+    return semantic
+
+
+def validate_revision_brief(brief: dict[str, Any] | None,
+                            request: dict[str, Any],
+                            plan: list[dict[str, Any]],
+                            prior_evidence: dict[str, Any] | None) -> dict[str, dict[str, Any]]:
+    if brief is None:
+        return {}
+    require(isinstance(prior_evidence, dict),
+            "Group revision brief requires prior complete evidence")
+    require(isinstance(brief, dict)
+            and set(brief) == {"schemaVersion", "targetLocale",
+                               "englishSourcePackageJsonSha256", "anchorManifestSha256",
+                               "translationPolicySha256", "groups"}
+            and brief["schemaVersion"] == REVISION_BRIEF_SCHEMA,
+            "Invalid group revision brief")
+    for key in ("targetLocale", "englishSourcePackageJsonSha256",
+                "anchorManifestSha256", "translationPolicySha256"):
+        require(brief[key] == request[key] and prior_evidence.get(key) == request[key],
+                f"Group revision source or policy changed: {key}")
+    require(prior_evidence.get("sourceUnits") == request["sourceUnits"],
+            "Prior translation evidence belongs to different English units")
+    prior_groups = prior_evidence.get("groups")
+    require(isinstance(prior_groups, list)
+            and [(row.get("translationGroupId"), row.get("sourceUnitIds"))
+                 for row in prior_groups] ==
+                [(row["translationGroupId"], row["sourceUnitIds"]) for row in plan],
+            "Prior translation group plan changed")
+    entries = brief["groups"]
+    require(isinstance(entries, list) and entries, "Revision brief needs changed groups")
+    prior_by_id = {row["translationGroupId"]: row for row in prior_groups}
+    plan_by_id = {row["translationGroupId"]: row for row in plan}
+    result: dict[str, dict[str, Any]] = {}
+    for row in entries:
+        require(isinstance(row, dict) and set(row) == {
+            "translationGroupId", "sourceUnitIds", "priorTargetTextSha256",
+            "proposedTargetText"}, "Invalid group revision row")
+        group_id = row["translationGroupId"]
+        require(group_id in plan_by_id and group_id not in result
+                and row["sourceUnitIds"] == plan_by_id[group_id]["sourceUnitIds"],
+                f"Unknown, duplicate, or changed revision group: {group_id}")
+        old = "".join(prior_by_id[group_id]["targetUtterances"])
+        proposal = row["proposedTargetText"]
+        require(row["priorTargetTextSha256"] == hashlib.sha256(old.encode()).hexdigest()
+                and isinstance(proposal, str) and proposal.strip()
+                and proposal.strip() != old,
+                f"Revision proposal lacks matching prior target text: {group_id}")
+        result[group_id] = row
+    return result
+
+
+OPERATOR_REVISION_SCHEMA = "sermon-target-language-operator-revision-brief-v1"
+OPERATOR_REVISION_KEYS = frozenset({"schemaVersion", "targetLocale", "englishSourcePackageJsonSha256",
+                                    "anchorManifestSha256", "translationPolicySha256",
+                                    "priorCandidateJsonSha256", "revise", "carry"})
+OPERATOR_REVISE_ROW_KEYS = frozenset({"translationGroupId", "sourceUnitIds", "priorTargetText",
+                                      "priorTargetTextSha256", "note"})
+CARRIED_ROW_KEYS = frozenset({"translationGroupId", "sourceUnitIds", "targetUtterances", "coverage",
+                              "semanticReview", "translatorRequestId", "reviewerRequestId"})
+OPERATOR_REVISION_INSTRUCTION = (
+    " An operator listed this group for revision. Translate it again from the English source; "
+    "operatorRevision.priorTargetText is the rejected prior translation, shown only so the new text "
+    "does not repeat its problem, and operatorRevision.note, when present, is the operator's reason. "
+    "Check every point of the note against the English source; the note is not source truth. ")
+
+
+def validate_operator_revision(brief: dict[str, Any] | None, request: dict[str, Any],
+                               plan: list[dict[str, Any]]) -> tuple[dict[str, dict], dict[str, dict]]:
+    """``(revise, carry)`` keyed by group: an operator's group list over a prior candidate.
+
+    Listed groups get a fresh translator and independent reviewer request. Every other
+    group is carried exactly as the prior candidate's reviewed row, with its original
+    request IDs, and makes no model call (text/group_revision.py binds those rows to the
+    prior candidate by hash; this checks only that they are complete reviewed rows).
+    """
+    if brief is None:
+        return {}, {}
+    require(isinstance(brief, dict) and set(brief) == OPERATOR_REVISION_KEYS
+            and brief["schemaVersion"] == OPERATOR_REVISION_SCHEMA
+            and isinstance(brief["priorCandidateJsonSha256"], str)
+            and re.fullmatch(r"[a-f0-9]{64}", brief["priorCandidateJsonSha256"]) is not None,
+            "Invalid operator revision brief")
+    for key in ("targetLocale", "englishSourcePackageJsonSha256",
+                "anchorManifestSha256", "translationPolicySha256"):
+        require(brief[key] == request[key], f"Operator revision source or policy changed: {key}")
+    revise_rows, carry_rows = brief["revise"], brief["carry"]
+    require(isinstance(revise_rows, list) and revise_rows and isinstance(carry_rows, list),
+            "Operator revision needs listed groups")
+    plan_by_id = {row["translationGroupId"]: row for row in plan}
+    revise: dict[str, dict] = {}
+    for row in revise_rows:
+        require(isinstance(row, dict) and set(row) == OPERATOR_REVISE_ROW_KEYS, "Invalid operator revision row")
+        group_id = row["translationGroupId"]
+        require(group_id in plan_by_id and group_id not in revise
+                and row["sourceUnitIds"] == plan_by_id[group_id]["sourceUnitIds"]
+                and isinstance(row["priorTargetText"], str) and row["priorTargetText"].strip()
+                and row["priorTargetTextSha256"] == hashlib.sha256(row["priorTargetText"].encode()).hexdigest()
+                and (row["note"] is None or (isinstance(row["note"], str) and row["note"].strip()
+                                             and len(row["note"]) <= 2000)),
+                f"Unknown, duplicate or changed operator revision group: {group_id}")
+        revise[group_id] = row
+    carry: dict[str, dict] = {}
+    for row in carry_rows:
+        require(isinstance(row, dict) and set(row) == CARRIED_ROW_KEYS, "Invalid carried group row")
+        group_id = row["translationGroupId"]
+        semantic = row["semanticReview"]
+        require(group_id in plan_by_id and group_id not in carry and group_id not in revise
+                and row["sourceUnitIds"] == plan_by_id[group_id]["sourceUnitIds"]
+                and isinstance(row["translatorRequestId"], str) and row["translatorRequestId"]
+                and isinstance(row["reviewerRequestId"], str) and row["reviewerRequestId"]
+                and row["translatorRequestId"] != row["reviewerRequestId"]
+                and isinstance(semantic, dict) and semantic.get("status") == "pass"
+                and set(semantic.get("checks") or {}) == set(SEMANTIC_CHECKS)
+                and all(value == "pass" for value in semantic["checks"].values())
+                and not semantic.get("uncertainty") and not semantic.get("issues"),
+                f"Carried group is not a complete passing reviewed row: {group_id}")
+        _utterances(row["targetUtterances"], row["sourceUnitIds"])
+        carry[group_id] = row
+    require(set(revise) | set(carry) == set(plan_by_id),
+            "Operator revision must list or carry every group exactly once")
+    return revise, carry
+
+
+def validate_partial_repair_brief(brief: dict[str, Any] | None,
+                                  request: dict[str, Any],
+                                  plan: list[dict[str, Any]],
+                                  reuse_from: Path | None,
+                                  expected_models: dict[str, str] | None = None) -> dict[str, dict[str, Any]]:
+    """Bind a new revision to a failed cache in an incomplete prior run.
+
+    The old model response remains untouched. A changed group gets a fresh
+    Astra request and an independent Sol request; all other matching caches
+    can be copied from the prior run, even when it has no evidence.json yet.
+    """
+    if brief is None:
+        return {}
+    require(reuse_from is not None and (reuse_from / "request.json").is_file(),
+            "Partial repair requires a prior run request")
+    require(producer._load(reuse_from / "request.json") == request,
+            "Partial repair prior request belongs to another source or policy")
+    require(isinstance(brief, dict)
+            and set(brief) == {"schemaVersion", "targetLocale",
+                               "englishSourcePackageJsonSha256", "anchorManifestSha256",
+                               "translationPolicySha256", "groups"}
+            and brief["schemaVersion"] in (PARTIAL_REPAIR_SCHEMA, PARTIAL_REPAIR_SCHEMA_V2),
+            "Invalid partial repair brief")
+    allow_qc = brief["schemaVersion"] == PARTIAL_REPAIR_SCHEMA_V2
+    for key in ("targetLocale", "englishSourcePackageJsonSha256",
+                "anchorManifestSha256", "translationPolicySha256"):
+        require(brief[key] == request[key], f"Partial repair source or policy changed: {key}")
+    entries = brief["groups"]
+    require(isinstance(entries, list) and entries, "Partial repair needs failed groups")
+    plan_by_id = {row["translationGroupId"]: (index, row)
+                  for index, row in enumerate(plan, 1)}
+    model_roles = expected_models or MODEL_ROLES
+    result: dict[str, dict[str, Any]] = {}
+    for row in entries:
+        require(_repair_row_keys_valid(row, allow_qc=allow_qc), "Invalid partial repair row")
+        group_id = row["translationGroupId"]
+        require(group_id in plan_by_id and group_id not in result,
+                f"Unknown or duplicate partial repair group: {group_id}")
+        index, group = plan_by_id[group_id]
+        require(row["sourceUnitIds"] == group["sourceUnitIds"]
+                and row["failedRole"] in {"translator", "reviewer"}
+                and isinstance(row["failureReason"], str) and row["failureReason"].strip()
+                and isinstance(row["instruction"], str) and row["instruction"].strip()
+                and len(row["instruction"]) <= 2000,
+                f"Invalid partial repair source, role, or instruction: {group_id}")
+        suffix = "astra" if row["failedRole"] == "translator" else "sol"
+        failed_cache = reuse_from / f"group-{index:04d}-{suffix}.json"
+        require(failed_cache.is_file()
+                and row["failedCacheSha256"] == hashlib.sha256(failed_cache.read_bytes()).hexdigest(),
+                f"Partial repair failed cache is missing or changed: {group_id}")
+        saved = producer._load(failed_cache)
+        prior_result = saved.get("result")
+        require(saved.get("model") == model_roles[row["failedRole"]]
+                and isinstance(saved.get("payloadSha256"), str)
+                and isinstance(prior_result, dict)
+                and prior_result.get("translationGroupId") == group_id
+                and prior_result.get("sourceUnitIds") == group["sourceUnitIds"],
+                f"Partial repair failed cache has different group identity: {group_id}")
+        if "backTranslationQc" in row:
+            # The QC rejected exactly the text this reviewer cache holds, not some other revision.
+            _require_rejected_reviewer_text(failed_cache, row["backTranslationQc"]["targetTextSha256"],
+                                            group["sourceUnitIds"],
+                                            "back-translation QC finding does not match the reviewer text")
+        result[group_id] = row
+    return result
+
+
+def partial_repair_brief_for_plugin_stop(reuse_from: Path, request: dict[str, Any],
+                                         plan: list[dict[str, Any]],
+                                         instruction: str) -> dict[str, Any]:
+    """Bind a new revision to the reviewer cache a language plugin rejected.
+
+    The instruction is supplied by the caller. This does not dispatch a model
+    or rewrite the stopped run.
+    """
+    stop = producer._load(reuse_from / "plugin-group-stop.json")
+    require(isinstance(stop, dict)
+            and stop.get("schemaVersion") == "sermon-layer2-plugin-group-stop-v1"
+            and stop.get("status") == "blocked"
+            and stop.get("reasonCode") == "language_plugin_group_blocked"
+            and stop.get("stopsLaterDispatch") is True
+            and stop.get("humanApproval") is False
+            and isinstance(stop.get("translationGroupId"), str)
+            and isinstance(stop.get("sourceUnitIds"), list),
+            "plugin group stop is not a blocked machine review")
+    review = stop.get("groupReview")
+    require(isinstance(review, dict) and review.get("status") == "fail"
+            and isinstance(review.get("checks"), list)
+            and isinstance(review.get("targetTextSha256"), str)
+            and re.fullmatch(r"[a-f0-9]{64}", review["targetTextSha256"]) is not None,
+            "plugin group stop has no failing review")
+    failed = [check for check in review["checks"]
+              if isinstance(check, dict) and check.get("status") == "fail"
+              and isinstance(check.get("checkId"), str) and isinstance(check.get("evidence"), str)]
+    require(failed, "plugin group stop has no failing check")
+    reason = (failed[0]["checkId"] + ": " + failed[0]["evidence"].strip())[:500]
+    require(isinstance(instruction, str) and instruction.strip() and len(instruction.strip()) <= 2000,
+            "plugin group stop repair needs a source-bound instruction")
+    group_id = stop["translationGroupId"]
+    plan_by_id = {row["translationGroupId"]: (index, row) for index, row in enumerate(plan, 1)}
+    require(group_id in plan_by_id and plan_by_id[group_id][1]["sourceUnitIds"] == stop["sourceUnitIds"],
+            "plugin group stop does not match this group plan")
+    index, _group = plan_by_id[group_id]
+    cache = reuse_from / f"group-{index:04d}-sol.json"
+    require(cache.is_file(), "plugin group stop lacks the rejected reviewer cache")
+    _require_rejected_reviewer_text(cache, review["targetTextSha256"], stop["sourceUnitIds"])
+    return {"schemaVersion": PARTIAL_REPAIR_SCHEMA,
+            "targetLocale": request["targetLocale"],
+            "englishSourcePackageJsonSha256": request["englishSourcePackageJsonSha256"],
+            "anchorManifestSha256": request["anchorManifestSha256"],
+            "translationPolicySha256": request["translationPolicySha256"],
+            "groups": [{"translationGroupId": group_id,
+                        "sourceUnitIds": stop["sourceUnitIds"],
+                        "failedRole": "reviewer",
+                        "failedCacheSha256": hashlib.sha256(cache.read_bytes()).hexdigest(),
+                        "failureReason": reason,
+                        "instruction": instruction.strip()}]}
+
+
+def _require_rejected_reviewer_text(cache: Path, expected_sha256: str,
+                                    source_unit_ids: list[str],
+                                    message: str = "plugin group stop does not match the rejected reviewer text") -> None:
+    saved = producer._load(cache)
+    result = saved.get("result") if isinstance(saved, dict) else None
+    utterances = result.get("targetUtterances") if isinstance(result, dict) else None
+    utterances = _utterances(utterances, source_unit_ids)
+    actual = hashlib.sha256("".join(utterances).encode("utf-8")).hexdigest()
+    require(actual == expected_sha256, message)
+
+
+def carried_repairs(reuse_from: Path | None, request: dict[str, Any], plan: list[dict[str, Any]],
+                    repairs: dict[str, dict[str, Any]]) -> dict[str, dict[str, Any]]:
+    """Repair rows of earlier revisions whose caches this run reuses unchanged.
+
+    A prior run records every repair it prompted with (its own brief plus what it
+    carried) in effective-repairs.json. Groups not repaired again keep that
+    prompt, so their verified responses reuse without a new paid call.
+    """
+    if reuse_from is None or not (reuse_from / "effective-repairs.json").is_file():
+        return {}
+    prior = producer._load(reuse_from / "effective-repairs.json")
+    plan_by_id = {row["translationGroupId"]: row for row in plan}
+    require(isinstance(prior, dict) and all(
+        _repair_row_keys_valid(row, allow_qc=True)
+        and row["translationGroupId"] == group_id and group_id in plan_by_id
+        and row["sourceUnitIds"] == plan_by_id[group_id]["sourceUnitIds"]
+        for group_id, row in prior.items()), "Prior effective repairs do not match this group plan")
+    return {group_id: row for group_id, row in prior.items() if group_id not in repairs}
+
+
+def require_plugin_stop_repair(reuse_from: Path | None, repairs: dict[str, dict[str, Any]],
+                               plugin_path: Path | None) -> None:
+    """A stopped run cannot be reused until its blocked group is repaired."""
+    if reuse_from is None or not (reuse_from / "plugin-group-stop.json").is_file():
+        return
+    stop = producer._load(reuse_from / "plugin-group-stop.json")
+    require(isinstance(stop, dict) and stop.get("reasonCode") == "language_plugin_group_blocked",
+            "plugin group stop is not a blocked machine review")
+    repair = repairs.get(stop.get("translationGroupId"))
+    require(plugin_path is not None and repair is not None
+            and repair.get("sourceUnitIds") == stop.get("sourceUnitIds")
+            and repair.get("failedRole") == "reviewer",
+            "plugin group stop requires a reviewer partial repair of the blocked group")
+    review = stop.get("groupReview") if isinstance(stop.get("groupReview"), dict) else {}
+    expected = review.get("targetTextSha256")
+    require(isinstance(expected, str) and re.fullmatch(r"[a-f0-9]{64}", expected) is not None,
+            "plugin group stop lacks the rejected target text")
+    matched = [path for path in sorted(reuse_from.glob("group-*-sol.json"))
+               if hashlib.sha256(path.read_bytes()).hexdigest() == repair.get("failedCacheSha256")]
+    require(len(matched) == 1, "plugin group stop lacks the rejected reviewer cache")
+    _require_rejected_reviewer_text(matched[0], expected, stop["sourceUnitIds"])
+
+
+def reusable_cache(prior_run: Path | None, stem: str, role: str) -> Path | None:
+    """Return a complete old cache, but never retry an uncertain old request."""
+    if prior_run is None:
+        return None
+    path = prior_run / f"{stem}-{role}.json"
+    if path.is_file() or path.with_suffix(".raw.json").is_file():
+        return path
+    require(not path.with_suffix(".started.json").exists()
+            and not path.with_suffix(".raw.json").exists(),
+            f"Prior {role} request needs inspection before retry: {path}")
+    return None
+
+
+def _carry_source(reuse_from: Path | None) -> dict[str, Any] | None:
+    """The reuse source a round may carry groups from, and the runner that source recorded."""
+    if reuse_from is None:
+        return None
+    source = Path(reuse_from) / "runner-identity.json"
+    recorded = producer._load(source) if source.is_file() else {}
+    runner = (recorded.get("runnerImplementationSha256")
+              if recorded.get("schemaVersion") == ROUND_RUNNER_IDENTITY_SCHEMA else None)
+    return {"root": str(Path(reuse_from).resolve()), "runnerImplementationSha256": runner}
+
+
+def carry_forward_group(prior_run: Path, out: Path, index: int,
+                        group: dict[str, Any], prior_row: dict[str, Any],
+                        policy: dict[str, Any]) -> dict[str, Any]:
+    """Preserve a completed group's exact paid responses and reviewed text."""
+    require(prior_row.get("translationGroupId") == group["translationGroupId"]
+            and prior_row.get("sourceUnitIds") == group["sourceUnitIds"]
+            and prior_row.get("semanticReview", {}).get("status") == "pass"
+            and not prior_row["semanticReview"].get("uncertainty")
+            and not prior_row["semanticReview"].get("issues")
+            and all(value == "pass" for value in
+                    prior_row["semanticReview"].get("checks", {}).values()),
+            f"Prior complete evidence has an unresolved group: {group['translationGroupId']}")
+    for role, suffix, request_key in (("translator", "astra", "translatorRequestId"),
+                                      ("reviewer", "sol", "reviewerRequestId")):
+        source = prior_run / f"group-{index:04d}-{suffix}.json"
+        require(source.is_file(), f"Prior complete evidence lacks {role} cache: {source}")
+        cached = producer._load(source)
+        require(cached.get("model") == policy[role]["model"]
+                and cached.get("requestId") == prior_row.get(request_key)
+                and isinstance(cached.get("payloadSha256"), str)
+                and isinstance(cached.get("result"), dict)
+                and cached["result"].get("translationGroupId") == group["translationGroupId"]
+                and cached["result"].get("sourceUnitIds") == group["sourceUnitIds"],
+                f"Prior complete evidence/cache identity differs: {source}")
+        raw = source.with_suffix(".raw.json")
+        if raw.is_file():
+            raw_record = producer._load(raw)
+            require(raw_record.get("payloadSha256") == cached["payloadSha256"]
+                    and isinstance(raw_record.get("response"), dict)
+                    and raw_record["response"].get("id") == cached["requestId"],
+                    f"Prior complete raw response differs: {raw}")
+        target = out / source.name
+        if target.exists():
+            require(target.read_bytes() == source.read_bytes(),
+                    f"Carried-forward cache changed: {target}")
+        else:
+            target.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copyfile(source, target)
+        if raw.is_file():
+            target_raw = out / raw.name
+            if target_raw.exists():
+                require(target_raw.read_bytes() == raw.read_bytes(),
+                        f"Carried-forward raw response changed: {target_raw}")
+            else:
+                shutil.copyfile(raw, target_raw)
+        preview = source.with_suffix(".policy-preview.json")
+        if preview.is_file():
+            target_preview = out / preview.name
+            if target_preview.exists():
+                require(target_preview.read_bytes() == preview.read_bytes(),
+                        f"Carried-forward model preview changed: {target_preview}")
+            else:
+                shutil.copyfile(preview, target_preview)
+        _text.current().unmoved.record_cache_observation(role, cached, target, mode="carried_forward_group", origin=source)
+    return copy.deepcopy(prior_row)
+
+def ordered_group_results(items: list, worker, workers: int, *, maximum_workers=16) -> list:
+    """Keep only a bounded set of paid groups in flight and merge in source order."""
+    require(maximum_workers in (16, 23) and type(workers) is int and 1 <= workers <= maximum_workers,
+            "Group workers exceed versioned capacity")
+    if workers == 1 or len(items) < 2:
+        return [worker(item) for item in items]
+    results = {}
+    with ThreadPoolExecutor(max_workers=workers) as pool:
+        source = iter(enumerate(items))
+        pending = {}
+        for _ in range(min(workers, len(items))):
+            index, item = next(source)
+            pending[pool.submit(copy_context().run, worker, item)] = index
+        while pending:
+            done, _ = wait(pending, return_when=FIRST_COMPLETED)
+            completed_count = 0
+            for future in sorted(done, key=lambda item: pending[item]):
+                index = pending.pop(future)
+                try:
+                    results[index] = future.result()
+                except BaseException:
+                    for remaining in pending:
+                        remaining.cancel()
+                    raise
+                completed_count += 1
+            for _ in range(completed_count):
+                next_item = next(source, None)
+                if next_item is not None:
+                    next_index, item = next_item
+                    pending[pool.submit(copy_context().run, worker, item)] = next_index
+    return [results[index] for index in range(len(items))]
+
+
+def _run_partial_recovery_groups(plan: list, recovered: list[int], run_groups) -> list:
+    """Run a partial recovery's returned groups first, then the rest, merged in source order.
+
+    Groups whose translator and reviewer both returned in the failed round make
+    no paid call; they run with paid dispatch closed, so every returned call's
+    payload is matched against the current one before any group may pay. The
+    remaining groups then run with the same group workers. Paid calls are the
+    never-dispatched roles in both orders, and evidence merges in source order,
+    so a run with any worker count ends with the same result as a serial run.
+    """
+    returned = set(recovered)
+    items = list(enumerate(plan, 1))
+    first = [item for item in items if item[0] in returned]
+    rest = [item for item in items if item[0] not in returned]
+    token = _RECOVERY_PAID_DISPATCH_CLOSED.set(True)
+    try:
+        head = run_groups(first)
+    finally:
+        _RECOVERY_PAID_DISPATCH_CLOSED.reset(token)
+    tail = run_groups(rest)
+    merged = dict(zip([index for index, _ in first], head))
+    merged.update(zip([index for index, _ in rest], tail))
+    return [merged[index] for index, _ in items]
+
+
+def validate_standalone_worker_budget(policy: dict) -> None:
+    workers = policy["batching"].get("workers")
+    require(policy["batching"].get("batchSize") == 1
+            and type(workers) is int and 1 <= workers <= MAX_STANDALONE_GROUP_WORKERS,
+            "Standalone production runner requires batchSize=1 and workers=1..3")
+
+
+def recover_api_outcome(marker, raw_path, *, caller, allowed_prior_roots=()):
+    """Recover only a bound durable return; this path cannot dispatch anything."""
+    if not isinstance(caller, _session_bound_caller()) or caller.requires_spark or caller.outcome_guarded:
+        return
+    outcomes = _text.current().provider.outcomes
+    saved = producer._load(marker)
+    identity = saved.get("apiCliRequestSha256")
+    if identity is None: return  # Older markers remain uncertain, never redispatch.
+    allowed = {outcomes.receipt_root(caller.outcome_directory).resolve()}
+    for prior in allowed_prior_roots:
+        if prior is not None:
+            allowed.update({(Path(prior)/'accounting'/'api-cli-outcomes').resolve(),
+                            (Path(prior)/'api-cli-outcomes').resolve()})
+    recorded = Path(saved.get('apiCliOutcomeRoot','')).resolve()
+    require(recorded in allowed and saved.get("apiCliPurpose") == caller.purpose,
+            "Standalone API outcome marker binding changed")
+    response = outcomes.recover(recorded, identity, caller.purpose)
+    save_new(raw_path, {"payloadSha256":saved["payloadSha256"], "response":response}, private=True)
+
+
+def require_reconciled_requests(*directories: Path | None, caller=None, allowed_prior_roots=()) -> None:
+    """Block the whole dispatch before any group can replay an unknown call.
+
+    Returned raw responses and validated caches remain recoverable. A marker
+    without either is an unknown outcome, including in a prior repair attempt;
+    inspection/reconciliation must precede any further paid work in this batch.
+    Never remove markers here or infer a failed request from a transport error.
+    """
+    for directory in directories:
+        if directory is None or not directory.exists():
+            continue
+        for marker in sorted(directory.glob("group-*.started.json")):
+            stem = marker.name.removesuffix(".started.json")
+            role = {"astra": "translator", "sol": "reviewer"}.get(stem.rsplit("-", 1)[-1], "model")
+            raw_path = directory / f"{stem}.raw.json"
+            if not (directory / f"{stem}.json").is_file() and not raw_path.is_file():
+                recover_api_outcome(marker, raw_path, caller=caller,allowed_prior_roots=allowed_prior_roots)
+            require((directory / f"{stem}.json").is_file()
+                    or (directory / f"{stem}.raw.json").is_file(),
+                    f"Uncertain paid {role} call; inspect before retry or dispatch: {marker}")
+
+
+def _plugin_group_review(policy, request, plugin_path, reviewed_row, *, diagnostic_context=None):
+    evaluated = producer.evaluate_plugin_groups(
+        policy, request, plugin_path, policy["languageReview"]["pluginImplementationSha256"],
+        [reviewed_row], diagnostic_context=diagnostic_context)
+    return evaluated["groupReviews"][0]
+
+
+def _stop_after_plugin_group_failure(policy, request, plugin_path, reviewed_row, plan, index, out, *, diagnostic_context=None):
+    """After this group's review, block later dispatch when the pinned plugin fails.
+
+    Groups already submitted stay on disk. This check itself makes no model call.
+    """
+    review = _plugin_group_review(policy, request, plugin_path, reviewed_row,
+                                  diagnostic_context=diagnostic_context)
+    if review["status"] == "pass":
+        return
+    stop = {"schemaVersion": "sermon-layer2-plugin-group-stop-v1", "status": "blocked",
+            "reasonCode": "language_plugin_group_blocked",
+            "translationGroupId": reviewed_row["translationGroupId"],
+            "sourceUnitIds": reviewed_row["sourceUnitIds"],
+            "groupReview": review,
+            "completedBefore": [row["translationGroupId"] for row in plan[:index - 1]],
+            "notDispatchedAfter": [row["translationGroupId"] for row in plan[index:]],
+            "stopsLaterDispatch": True, "humanApproval": False}
+    path = out / "plugin-group-stop.json"
+    if path.exists():
+        require(producer._load(path) == stop, "plugin group stop changed")
+    else:
+        try:
+            save_new(path, stop, private=True)
+        except FileExistsError:
+            require(producer._load(path) == stop, "plugin group stop changed")
+    raise ValueError("language_plugin_group_blocked")
+
+
+def run(source: dict[str, Any], anchor: dict[str, Any], policy: dict[str, Any],
+        out: Path, api_key: str,
+        caller: Callable[[str, dict[str, Any]], dict[str, Any]],
+        custom_plan: list[dict[str, Any]] | None = None,
+        plugin_path: Path | None = None,
+        revision_brief: dict[str, Any] | None = None,
+        reuse_from: Path | None = None,
+        partial_repair_brief: dict[str, Any] | None = None,
+        resume_cache_from: Path | None = None,
+        payload_cache_from: Path | None = None,
+        partial_recovery_from: Path | None = None,
+        partial_recovery_budget_root: Path | None = None,
+        emit_payload_cache_success: bool = False,
+        payload_cache_required: bool = False,
+        backfill_payload_cache_success: bool = False,
+        *, failure_collector=None) -> dict[str, Any]:
+    require(plugin_path is not None,
+            "Formal Layer 2 requires the frozen language plugin before dispatch")
+    with accounting.stage(f"layer2.source_admission.{policy['targetLocale']}",
+                          depends_on=[], executor_type="deterministic_program",
+                          work_unit_id=f"l2.{policy['targetLocale']}.source_admission") as source_span:
+        request = producer.prepare_request(source, anchor, policy)
+    return _run_prepared_groups(
+        request, anchor, policy, out, api_key, caller, custom_plan, plugin_path,
+        revision_brief, reuse_from, partial_repair_brief, resume_cache_from,
+        payload_cache_from, partial_recovery_from, partial_recovery_budget_root,
+        emit_payload_cache_success, payload_cache_required,
+        backfill_payload_cache_success,
+        source_admission_span=source_span, failure_collector=failure_collector)
+
+
+def _run_prepared_groups(request: dict[str, Any], anchor: dict[str, Any],
+                         policy: dict[str, Any], out: Path, api_key: str,
+                         caller: Callable[[str, dict[str, Any]], dict[str, Any]],
+                         custom_plan: list[dict[str, Any]] | None = None,
+                         plugin_path: Path | None = None,
+                         revision_brief: dict[str, Any] | None = None,
+                         reuse_from: Path | None = None,
+                         partial_repair_brief: dict[str, Any] | None = None,
+                         resume_cache_from: Path | None = None,
+                         payload_cache_from: Path | None = None,
+                         partial_recovery_from: Path | None = None,
+                         partial_recovery_budget_root: Path | None = None,
+                         emit_payload_cache_success: bool = False,
+                         payload_cache_required: bool = False,
+                         backfill_payload_cache_success: bool = False,
+                         *, simulation_only: bool = False, cache_only: bool = False,
+                         progress_callback=None,
+                         source_admission_span: str | None = None,
+                         completion_spans: list[str] | None = None,
+                         diagnostic_context=None,
+                         failure_collector=None,
+                         operator_revision: dict[str, Any] | None = None,
+                         allow_subset: bool = False,
+                         context_plan: list[dict[str, Any]] | None = None,
+                         operator_notes: dict[str, dict[str, Any]] | None = None) -> dict[str, Any]:
+    """Shared group loop; the formal entry above still enforces Layer 1 approval.
+
+    Simulated requests carry an extra marker that prevents formal candidate
+    admission, and cannot reuse or repair a production response cache.
+
+    By default the first Sol or plugin failure stops the run. A failure
+    collector instead records each failed group, keeps dispatching until it
+    reports a systemic stop, and ends the run with a failure report rather than
+    evidence. It never writes a plugin group stop.
+
+    An operator revision (text/group_revision.py) lists the groups to translate
+    again; every other group is carried from the prior candidate with no model
+    call. It always runs under a failure collector, so listed groups run in
+    parallel and a failed one goes to the bounded repair loop.
+    """
+    require(request.get("candidateMode", "production") == "production",
+            "Shadow execution is not implemented: complete shadow admission is required")
+    with accounting.stage(f"layer2.run_admission.{request['targetLocale']}",
+                          depends_on=[source_admission_span] if source_admission_span else [],
+                          executor_type="deterministic_program",
+                          work_unit_id=f"l2.{request['targetLocale']}.run_admission") as admission_span:
+        if diagnostic_context is not None:
+            validate_context = _text.current().diagnostic.validate_context
+            context = validate_context(diagnostic_context)
+            diagnostic_api_repair = (getattr(caller, "execution_identity", {}).get("backend") == "openai_api"
+                                     and reuse_from is not None and partial_repair_brief is not None
+                                     and resume_cache_from is None and revision_brief is None)
+            require(simulation_only and not api_key and (reuse_from is None or diagnostic_api_repair)
+                    and resume_cache_from is None and revision_brief is None
+                    and (partial_repair_brief is None or diagnostic_api_repair) and plugin_path is not None
+                    and request.get('schemaVersion') == producer.REQUEST_SCHEMA
+                    and 'simulationOnly' not in request
+                    and request['englishSourcePackageJsonSha256'] == context['sourceCanonicalSha256']
+                    and request['anchorManifestSha256'] == context['anchorCanonicalSha256']
+                    and context['anchorCanonicalSha256'] == policy_tools.canonical_sha256(anchor),
+                    'Diagnostic group loop requires isolated source-bound inputs')
+            policy_tools.validate_diagnostic_policy(policy, context)
+        elif simulation_only:
+            require(request.get("simulationOnly") is True
+                    and request.get("schemaVersion") == "sermon-dry-run-layer2-request-v1"
+                    and reuse_from is None and resume_cache_from is None
+                    and revision_brief is None and partial_repair_brief is None
+                    and plugin_path is None,
+                    "Simulated group loop requires an isolated request and new output")
+        else:
+            require("simulationOnly" not in request,
+                    "Formal group loop cannot consume a simulated request")
+        historical_replay = cache_only or getattr(caller, "execution_identity", {}).get("backend") == "fixture_replay"
+        expected_models = (historical_models(policy, cache_only=cache_only)
+                           if historical_replay else production_models(policy))
+        simulation_configuration = policy.get("simulationModelConfiguration")
+        if simulation_configuration is not None:
+            validate_test_configuration = _text.current().transports.validate_codex_test_configuration
+            require(simulation_only and not api_key,
+                    "Simulation model configuration cannot enter formal production")
+            validate_test_configuration(simulation_configuration)
+            require((diagnostic_context is not None or request.get("simulationModelConfiguration") == simulation_configuration)
+                    and request.get("translationPolicySha256") == policy_tools.canonical_sha256(policy)
+                    and getattr(caller, "execution_identity", {}).get("simulationModelConfiguration") == simulation_configuration,
+                    "Simulation model configuration requires matching request and CLI transport identity")
+            for role in MODEL_ROLES:
+                require(policy[role]["model"] == simulation_configuration[role]["model"]
+                        and policy[role]["reasoningEffort"] == simulation_configuration[role]["reasoningEffort"]
+                        and policy["componentSha256"][role] == policy_tools.canonical_sha256(policy[role]),
+                        "Simulation role configuration changed")
+            expected_models = {role: simulation_configuration[role]["model"] for role in MODEL_ROLES}
+        else:
+            require("simulationModelConfiguration" not in request,
+                    "Simulation request configuration lacks a bound effective policy")
+        expected_efforts = (production_efforts(policy) if not historical_replay and simulation_configuration is None
+                            else MODEL_EFFORTS)
+        for role, expected in expected_models.items():
+            if expected in {"gpt-6.1-sol", "claude-opus-5-5"}:
+                require(policy[role]["reasoningEffort"] == expected_efforts[role], "production_role_effort_changed")
+            require(policy[role]["model"] == expected,
+                    f"Production {role} model must be {expected}; freeze a new policy")
+        if not historical_replay and simulation_configuration is None:
+            # An OpenAI or Codex caller must never serve a Claude policy, and vice versa: the caller
+            # names the Layer 2 backend it dispatches through.
+            identity = getattr(caller, "execution_identity", {})
+            require(identity.get("layer2Backend", identity.get("translatorBackend", "openai_api"))
+                    == production_backend(policy), "translator_backend_caller_mismatch")
+        workers = policy["batching"].get("workers")
+        capacity_profile = getattr(caller, 'execution_identity', {}).get('concurrencyProfile')
+        maximum_workers = 16
+        if capacity_profile is not None:
+            validate_profile = _text.current().compute.validate_profile
+            capacity_profile = validate_profile(capacity_profile)
+            maximum_workers = capacity_profile['layer2GroupWorkers']
+            workers = maximum_workers  # explicit runtime capability; frozen legacy policy schema stays intact
+        require(policy["batching"].get("batchSize") == 1
+                and type(workers) is int and 1 <= workers <= maximum_workers,
+                "Per-group production runner requires batchSize=1 and workers=1..16")
+        if plugin_path is not None:
+            require_plugin_identity(plugin_path, policy["languageReview"]["pluginImplementationSha256"])
+        plan = group_plan(request, anchor, custom_plan, allow_subset=allow_subset)
+        # A subset run still gives its group the surrounding English context of the full
+        # Layer 1 plan (DEV-GRP-002); otherwise a one-group plan would shift every context.
+        context_plan = group_plan(request, anchor) if context_plan is None else context_plan
+        rule_receipt = (rule_preflight.preflight(request, policy, plugin_path, plan)
+                        if plugin_path is not None else None)
+        accounting.record_workload("layer2.rule_preflight", {
+            "status": "inputs_frozen_not_execution_evidence" if rule_receipt else
+                      "not_run_legacy_simulation" if simulation_only else "not_run_plugin_not_supplied",
+            "ruleBundleSha256": rule_receipt["ruleBundleSha256"] if rule_receipt else None,
+            "inspectionScope": rule_receipt["inspectionScope"] if rule_receipt else None,
+            "humanApproval": False})
+        if rule_receipt is not None:
+            for prior_directory in (reuse_from, resume_cache_from):
+                if prior_directory is not None:
+                    rule_preflight.verify_prior_model_inputs(
+                        prior_directory, request, policy, plan, rule_receipt,
+                        transport_identity=getattr(caller, "execution_identity", None))
+        require(revision_brief is None or partial_repair_brief is None,
+                "Use one changed-group revision mechanism at a time")
+        require(payload_cache_from is None or (not simulation_only and not cache_only),
+                "Cross-round payload cache reuse is formal production only")
+        require((partial_recovery_from is None) == (partial_recovery_budget_root is None)
+                and (partial_recovery_from is None or
+                (not simulation_only and not cache_only and emit_payload_cache_success
+                 and payload_cache_from is not None
+                 and partial_recovery_from.resolve() == payload_cache_from.resolve()
+                 and reuse_from is None and resume_cache_from is None
+                 and revision_brief is None and partial_repair_brief is None)),
+                "Partial recovery requires one failed first-round payload root")
+        recovered_groups = None
+        if partial_recovery_from is not None:
+            recovered_groups = _require_partial_recovery_source(
+                partial_recovery_from, partial_recovery_budget_root, caller, api_key, plan, policy)
+        require(type(emit_payload_cache_success) is bool,
+                "Payload cache success emission flag must be boolean")
+        require(type(payload_cache_required) is bool
+                and (not payload_cache_required or payload_cache_from is not None),
+                "Required payload cache needs an explicit prior root")
+        require(type(backfill_payload_cache_success) is bool
+                and (not backfill_payload_cache_success or
+                     (emit_payload_cache_success and reuse_from is not None
+                      and payload_cache_from is None and revision_brief is None
+                      and partial_repair_brief is None and resume_cache_from is None)),
+                "Payload cache backfill requires one complete prior run and explicit emission")
+        require(payload_cache_from is None or all(item is None for item in (
+                    reuse_from, resume_cache_from, revision_brief, partial_repair_brief)),
+                "Cross-round payload cache source cannot be combined with revision resume inputs")
+        prior_evidence = (producer._load(reuse_from / "evidence.json")
+                          if reuse_from and (reuse_from / "evidence.json").is_file() else None)
+        if prior_evidence is not None:
+            for key in ("schemaVersion", "sourceLocale", "targetLocale",
+                        "englishSourcePackageJsonSha256", "anchorManifestSha256",
+                        "translationPolicySha256", "sourceUnits"):
+                require(prior_evidence.get(key) == request[key],
+                        f"Prior complete evidence source or policy changed: {key}")
+            prior_groups = prior_evidence.get("groups")
+            require(isinstance(prior_groups, list)
+                    and [(row.get("translationGroupId"), row.get("sourceUnitIds"))
+                         for row in prior_groups] ==
+                    [(row["translationGroupId"], row["sourceUnitIds"]) for row in plan],
+                    "Prior complete evidence group plan changed")
+        briefs = validate_revision_brief(revision_brief, request, plan, prior_evidence)
+        repairs = validate_partial_repair_brief(partial_repair_brief, request, plan,
+                                                 reuse_from, expected_models=expected_models)
+        operator_revise, operator_carry = validate_operator_revision(operator_revision, request, plan)
+        require(operator_revision is None or (
+                    failure_collector is not None and not simulation_only and not cache_only
+                    and diagnostic_context is None and revision_brief is None
+                    and resume_cache_from is None and payload_cache_from is None
+                    and partial_recovery_from is None and not emit_payload_cache_success
+                    and not backfill_payload_cache_success),
+                "Operator revision runs only as a formal collected round without other cache sources")
+        carried = carried_repairs(reuse_from, request, plan, repairs)
+        require_plugin_stop_repair(reuse_from, repairs, plugin_path)
+        require_plugin_stop_repair(resume_cache_from, repairs, plugin_path)
+        if reuse_from is not None:
+            require(reuse_from.resolve() != out.resolve(), "Reuse source and output must differ")
+        if resume_cache_from is not None:
+            require(reuse_from is not None and resume_cache_from.resolve() != out.resolve()
+                    and resume_cache_from.resolve() != reuse_from.resolve()
+                    and (resume_cache_from / "request.json").is_file()
+                    and producer._load(resume_cache_from / "request.json") == request,
+                    "Resume cache must be a separate attempt for this source and policy")
+        if payload_cache_from is not None:
+            payload_cache_from = Path(payload_cache_from)
+            require(payload_cache_from.is_dir()
+                    and not payload_cache_from.is_symlink()
+                    and payload_cache_from.resolve() != out.resolve(),
+                    "Payload cache source must be a separate existing prior root")
+        payload_cache_enabled = emit_payload_cache_success or payload_cache_from is not None
+        if payload_cache_enabled:
+            transport_identity = getattr(caller, "execution_identity", None)
+            require(isinstance(transport_identity, dict)
+                    and transport_identity.get("backend") == "openai_api",
+                    "Cross-round payload cache prototype requires openai_api transport identity")
+        identity = {"request": request, "groupPlan": plan,
+                    "runnerImplementationSha256": RUNNER_PRODUCTION_IDENTITY_SHA256}
+        if diagnostic_context is not None:
+            identity['diagnosticContextSha256'] = policy_tools.canonical_sha256(diagnostic_context)
+        if rule_receipt is not None:
+            identity["rulePreflightSha256"] = policy_tools.canonical_sha256(rule_receipt)
+        transport_identity = getattr(caller, "execution_identity", None)
+        if transport_identity is not None:
+            identity["modelTransportIdentity"] = transport_identity
+            # A bound API repair round may reuse an earlier round of the same job:
+            # every cache fingerprint includes this transport identity, and the
+            # prior-input check above rejects any cache made under another one.
+            require(resume_cache_from is None
+                    and (reuse_from is None or (partial_repair_brief is not None
+                                                and transport_identity.get("backend") == "openai_api")
+                        or backfill_payload_cache_success),
+                    "CLI transport supports same-run resume only; cross-run cache reuse is not enabled")
+        if revision_brief is not None:
+            identity["revisionBriefSha256"] = policy_tools.canonical_sha256(revision_brief)
+        if partial_repair_brief is not None:
+            identity["partialRepairBriefSha256"] = policy_tools.canonical_sha256(
+                partial_repair_brief)
+        if resume_cache_from is not None:
+            identity["resumeCacheFrom"] = str(resume_cache_from.resolve())
+        if carried:
+            identity["carriedRepairsSha256"] = policy_tools.canonical_sha256(carried)
+        if operator_revision is not None:
+            identity["operatorRevisionSha256"] = policy_tools.canonical_sha256(operator_revision)
+        if payload_cache_enabled:
+            identity["payloadCacheSuccess"] = {
+                "schemaVersion": PAYLOAD_CACHE_SUCCESS_SCHEMA,
+                "implementationSha256": PAYLOAD_CACHE_IMPLEMENTATION_SHA256,
+                "emit": True,
+                "priorRoot": str(payload_cache_from.resolve()) if payload_cache_from is not None else None,
+                "backfillFrom": str(reuse_from.resolve()) if backfill_payload_cache_success else None,
+            }
+        if failure_collector is not None:
+            require(not simulation_only and diagnostic_context is None and plugin_path is not None,
+                    "Failure collection is for formal plugin-gated runs")
+            require(failure_collector.total_groups == len(plan), "Failure collection group count differs from plan")
+            identity["failureCollection"] = failure_collector.identity
+        identity_hash = policy_tools.canonical_sha256(identity)
+        manifest = out / "run-identity.json"
+        round_runner, round_identity = RUNNER_PRODUCTION_IDENTITY_SHA256, identity_hash
+        if manifest.exists():
+            accepted_hashes = {implementation_hash: policy_tools.canonical_sha256({
+                **identity, "runnerImplementationSha256": implementation_hash})
+                for implementation_hash in
+                {RUNNER_PRODUCTION_IDENTITY_SHA256, *COMPATIBLE_RUNNER_IDENTITIES}}
+            saved_identity = producer._load(manifest)
+            require(saved_identity in
+                    [{"sha256": accepted_hash} for accepted_hash in accepted_hashes.values()],
+                    "Output directory belongs to another source, policy, or group plan")
+            # The runner version that opened this round, not necessarily this code's.
+            round_runner = next(implementation_hash for implementation_hash, accepted_hash
+                                in sorted(accepted_hashes.items()) if saved_identity == {"sha256": accepted_hash})
+            round_identity = saved_identity["sha256"]
+        else:
+            require(not out.exists() or all(entry.name == "accounting" and entry.is_dir()
+                                            for entry in out.iterdir()),
+                    "Output directory is not empty")
+            save_new(manifest, {"sha256": identity_hash})
+        # run-identity.json keeps only a hash; this records which runner the round ran
+        # under, so per-group reuse can compare it later. The payload-cache implementation
+        # is part of the matched identity only when the round uses the payload cache.
+        runner_path = out / "runner-identity.json"
+        runner_record = {"schemaVersion": ROUND_RUNNER_IDENTITY_SCHEMA,
+                         "runnerImplementationSha256": round_runner,
+                         "payloadCacheImplementationSha256": (PAYLOAD_CACHE_IMPLEMENTATION_SHA256
+                                                              if payload_cache_enabled else None),
+                         "runIdentitySha256": round_identity,
+                         # Groups carried forward keep their source round's caches byte for
+                         # byte; that round's runner (None when it recorded none) produced them.
+                         "carrySource": _carry_source(reuse_from)}
+        if runner_path.exists():
+            require(producer._load(runner_path) == runner_record, "Round runner identity changed")
+        else:
+            save_new(runner_path, runner_record)
+        request_path = out / "request.json"
+        if not request_path.exists():
+            save_new(request_path, request)
+        else:
+            require(producer._load(request_path) == request, "Cached request changed")
+        if rule_receipt is not None:
+            receipt_path = out / "rule-preflight.json"
+            if receipt_path.exists():
+                require(producer._load(receipt_path) == rule_receipt, "Frozen rule preflight changed")
+            else:
+                save_new(receipt_path, rule_receipt, private=True)
+        require_reconciled_requests(out, reuse_from, resume_cache_from, payload_cache_from,
+                                    caller=caller,
+                                    allowed_prior_roots=[reuse_from, resume_cache_from,
+                                                         payload_cache_from])
+        if repairs or carried:
+            effective_path = out / "effective-repairs.json"
+            effective = {**carried, **repairs}
+            if effective_path.exists():
+                require(producer._load(effective_path) == effective, "Effective repairs changed")
+            else:
+                save_new(effective_path, effective)
+        requested_workers = workers
+        if payload_cache_required:
+            # A required all-hit replay must stop at the first miss before any
+            # other group can race ahead and dispatch a paid request.
+            workers = 1
+        if failure_collector is not None:
+            # Collection never writes a plugin stop receipt: a plugin rejection is
+            # recorded and the round goes on, so groups may run concurrently. A
+            # systemic stop only prevents later dispatch; groups in flight finish.
+            workers = failure_collector.group_workers
+            require(type(workers) is int and 1 <= workers <= 16,
+                    "Failure collection group workers must be 1..16")
+            maximum_workers = 16
+        elif plugin_path is not None and not simulation_only:
+            # A plugin stop receipt promises no later dispatch. Serialize the full
+            # translate/review/plugin chain so that promise reflects actual work.
+            workers = 1
+        accounting.record_workload("layer2.concurrency", {
+            "requestedWorkers": requested_workers,
+            "workers": workers, "maxInFlightGroups": workers,
+            "translationGroups": len(plan), "aggregationOrder": "source"})
+        units = {row["sourceUnitId"]: row["english"] for row in request["sourceUnits"]}
+    def _process_group(item):
+        index, group = item
+        with accounting.stage(f"layer2.prepare.{request['targetLocale']}.group-{index:04d}",
+                              cache_hit=prior_evidence is not None and group['translationGroupId'] not in briefs
+                                        and group['translationGroupId'] not in repairs,
+                              depends_on=[admission_span], executor_type="deterministic_program",
+                              work_unit_id=f"l2.{request['targetLocale']}.group-{index:04d}.prepare") as prepare_span:
+            if group["translationGroupId"] in operator_carry:
+                # Not listed by the operator: the prior candidate's reviewed row, unchanged and unpaid.
+                return copy.deepcopy(operator_carry[group["translationGroupId"]]), prepare_span
+            operator_row = operator_revise.get(group["translationGroupId"])
+            brief = briefs.get(group["translationGroupId"])
+            repair = repairs.get(group["translationGroupId"])
+            # A group repaired in an earlier revision keeps that revision's
+            # instruction in its prompt, so its verified cache reuses exactly.
+            prior_repair = carried.get(group["translationGroupId"]) if repair is None else None
+            if (prior_evidence is not None and brief is None and repair is None
+                    and not backfill_payload_cache_success and not payload_cache_enabled):
+                return carry_forward_group(reuse_from, out, index, group,
+                                           prior_evidence["groups"][index - 1], policy), prepare_span
+            source_rows = [{"sourceUnitId": unit_id, "english": units[unit_id]}
+                           for unit_id in group["sourceUnitIds"]]
+            context_index = next((position for position, item in enumerate(context_plan)
+                                  if item["translationGroupId"] == group["translationGroupId"]), index - 1)
+            context = surrounding_context(request, context_plan, context_index)
+            korean_boundary = revision_boundary_instruction(
+                request["targetLocale"], revising=brief is not None)
+            common = {"translationGroupId": group["translationGroupId"],
+                      "sourceUnitIds": group["sourceUnitIds"], "englishUnits": source_rows,
+                      "context": context, "targetLocale": request["targetLocale"],
+                      "terminology": policy["terminology"], "scripture": policy["scripture"],
+                      "formatting": policy["formatting"]}
+            if rule_receipt is not None:
+                common["modelRules"] = rule_preflight.group_rules(rule_receipt, group["sourceUnitIds"])
+            if brief is not None:
+                common["revisionBrief"] = {
+                    "instruction": ("This is a shorter spoken adaptation for a fixed video cue. "
+                                    "Use proposedTargetText as the wording and length target, "
+                                    "not as verified source truth. Keep it when it conveys the "
+                                    "source's facts and rhetorical purpose. Repair only a specific "
+                                    "missing or changed fact, name, number, negation, quotation, "
+                                    "theological distinction, or necessary rhetorical beat. "
+                                    "Prefer a concise repair over restoring the prior full "
+                                    "translation. Do not restore conversational filler or expand "
+                                    "for style. Do not add parenthetical verse citations or "
+                                    "editorial references that are absent from the spoken English. "
+                                    "Keep references at the speaker's spoken specificity: if "
+                                    "English only says 'verse 5', do not add a book or chapter "
+                                    "name even when context identifies it. "
+                                    "Preserve an unfinished source clause when the next source "
+                                    "unit completes it; do not finish or repeat that continuation "
+                                    "inside this group. " + korean_boundary +
+                                    "If the essential meaning cannot fit, report the "
+                                    "conflict in independent review."),
+                    "priorTargetTextSha256": brief["priorTargetTextSha256"],
+                    "proposedTargetText": brief["proposedTargetText"],
+                }
+            operator_note = (operator_notes or {}).get(group["translationGroupId"])
+            if operator_row is not None or operator_note is not None:
+                row = operator_row if operator_row is not None else operator_note
+                common["operatorRevision"] = {
+                    "priorTargetText": row["priorTargetText"],
+                    "priorTargetTextSha256": row["priorTargetTextSha256"],
+                    **({"note": row["note"]} if row.get("note") is not None else {}),
+                }
+            operator_instruction = (OPERATOR_REVISION_INSTRUCTION
+                                    if operator_row is not None or operator_note is not None else "")
+            prompt_repair = repair if repair is not None else prior_repair
+            if prompt_repair is not None:
+                common["partialRepair"] = {
+                    "priorFailedRole": prompt_repair["failedRole"],
+                    "priorFailedCacheSha256": prompt_repair["failedCacheSha256"],
+                    "failureReason": prompt_repair["failureReason"],
+                    "instruction": prompt_repair["instruction"],
+                }
+            repair_instruction = (
+                " This group is a new revision after a prior machine failure. "
+                "Follow the source-bound repair instruction while independently "
+                "checking the English source; do not assume the prior answer was correct. "
+                + prompt_repair["instruction"] + " " if prompt_repair is not None else "")
+            translate_prompt = {
+                "instruction": (("Revise the proposed shorter spoken text against the English "
+                                "sermon group. Stay close to the proposal's length and wording; "
+                                "change it only to repair a specific essential meaning error. "
+                                "Preserve the source's facts, negations, numbers, names, quotations, "
+                                "theological distinctions and rhetorical purpose. "
+                                "Do not add parenthetical verse citations or editorial references "
+                                "absent from the spoken English. "
+                                "If English only says a relative verse number, do not add an "
+                                "unspoken book or chapter name. "
+                                "Keep unfinished clauses open for the next source unit instead "
+                                "of completing or repeating the next unit's words. "
+                                if brief is not None else
+                                "Translate the English sermon group into the target locale. Preserve every "
+                                "meaning, negation, number, name, quotation and theological distinction. ") +
+                                korean_boundary +
+                                (rule_preflight.INSTRUCTION if rule_receipt else "") +
+                                scripture_prompt_instruction(policy, frozen_rules=rule_receipt is not None) +
+                                register_prompt_instruction(policy) +
+                                operator_instruction +
+                                repair_instruction +
+                                "Resolve pronouns and elliptical repetitions using the surrounding "
+                                "source units; translate only the requested English units. "
+                                "Use context only for interpretation. Return JSON with exactly "
+                                "translationGroupId, sourceUnitIds, targetUtterances and coverage. "
+                                "Coverage has one sourceUnitId and exact targetText substring per source unit. "
+                                "Do not claim human approval. Prompt version: " + policy["translator"]["promptVersion"]),
+                "input": common}
+            stem = f"group-{index:04d}"
+            astra_path = out / f"{stem}-astra.json"
+            prior_cache_root = resume_cache_from if resume_cache_from is not None else reuse_from if brief is None and repair is None else None
+            translator_payload = model_payload("translator", translate_prompt, policy)
+            payload_translator_cache = _successful_payload_cache(
+                payload_cache_from, stem, "translator",
+                _model_fingerprint(translator_payload, caller, api_key), request, group,
+                allow_policy_binding_miss=partial_recovery_from is not None)
+            if payload_translator_cache is None and partial_recovery_from is not None:
+                payload_translator_cache = _returned_payload_cache(
+                    partial_recovery_from, stem, "translator",
+                    _model_fingerprint(translator_payload, caller, api_key), request, group,
+                    policy, caller, api_key, partial_recovery_budget_root)
+            if (payload_translator_cache is None and payload_cache_enabled
+                    and prior_cache_root is not None):
+                # A later auto-repair round carries the original direct-paid
+                # provenance from the preceding round's success receipt. The
+                # destination ledger's reused row is never promoted to a source.
+                payload_translator_cache = _successful_payload_cache(
+                    prior_cache_root, stem, "translator",
+                    _model_fingerprint(translator_payload, caller, api_key), request, group)
+            if payload_cache_required:
+                require(payload_translator_cache is not None,
+                        f"Required payload cache missed translator: {stem}")
+            if payload_translator_cache is not None and hasattr(caller, "record_reuse"):
+                caller.record_reuse(api_key, translator_payload,
+                    payload_translator_cache["response"], payload_translator_cache["paidProvenance"])
+            translator_cached = (astra_path.exists() or astra_path.with_suffix(".raw.json").exists()
+                                 or (prior_cache_root is not None and (prior_cache_root / f"{stem}-astra.json").is_file())
+                                 or payload_translator_cache is not None)
+            if failure_collector is not None and failure_collector.stopped() and not translator_cached:
+                failure_collector.record_not_dispatched(index, group)
+                return None, prepare_span
+        with measure.producer_substage("initial_translation",
+                                       billing="local" if getattr(caller, "billing", None) == "local" or simulation_only or cache_only else "api"):
+            with accounting.stage(f"layer2.translator.{request['targetLocale']}.{stem}",
+                                  cache_hit=translator_cached, billing="local" if getattr(caller, "billing", None) == "local" or simulation_only or cache_only or translator_cached else "api",
+                                  work_unit_id=f"l2.{request['targetLocale']}.{stem}.translator",
+                                  depends_on=[prepare_span],
+                                  executor_type="deterministic_program" if simulation_only or cache_only or translator_cached else "production_model") as translator_span:
+                translated = _model_call("translator", translate_prompt, policy,
+                                         astra_path, api_key, caller,
+                                         reusable_cache(resume_cache_from, stem, "astra")
+                                         if resume_cache_from is not None else
+                                         reusable_cache(reuse_from, stem, "astra")
+                                         if reuse_from is not None and brief is None and repair is None else
+                                         payload_translator_cache["path"]
+                                         if payload_translator_cache is not None else None,
+                                         cache_only=cache_only or backfill_payload_cache_success,
+                                         rule_receipt=rule_receipt)
+                if payload_translator_cache is not None:
+                    _require_replayed_payload_cache(
+                        astra_path, payload_translator_cache, "translator", translated)
+                if progress_callback is not None:
+                    progress_callback('translator_response_saved')
+        with accounting.stage(f"layer2.draft_validation.{request['targetLocale']}.{stem}",
+                              depends_on=[translator_span], executor_type="deterministic_program",
+                              work_unit_id=f"l2.{request['targetLocale']}.{stem}.draft_validation") as draft_span:
+            draft = translated["result"]
+            require(draft.get("translationGroupId") == group["translationGroupId"]
+                    and draft.get("sourceUnitIds") == group["sourceUnitIds"],
+                    f"Astra group identity changed: {stem}")
+            try:
+                draft_text = "".join(_utterances(draft.get("targetUtterances"), group["sourceUnitIds"]))
+                require(isinstance(draft.get("coverage"), list)
+                        and [row.get("sourceUnitId") for row in draft["coverage"]] == group["sourceUnitIds"]
+                        and all(isinstance(row.get("targetText"), str)
+                                and _coverage_substring(row["targetText"], draft_text)
+                                for row in draft["coverage"]),
+                        f"Astra source coverage is incomplete: {stem}")
+            except ValueError as exc:
+                if failure_collector is None:
+                    raise
+                failure_collector.record_malformed_output(index, group, "translator", astra_path, str(exc))
+                return None, draft_span
+            review_prompt = {
+                "instruction": ("Independently compare the English source and Astra draft, one group at a time. "
+                                + ("This is a shorter spoken adaptation: keep the final text close "
+                                   "to proposedTargetText in wording and length. Expand only to fix "
+                                   "a specific essential error; do not restore filler or stylistic "
+                                   "detail from the prior full translation. Explain any necessary "
+                                   "expansion in semanticReview.evidence. Do not restore "
+                                   "parenthetical verse citations or editorial references "
+                                   "absent from the spoken English. Keep a relative verse "
+                                   "reference relative; do not add an unspoken book or chapter "
+                                   "name. Check adjacent source units: preserve an unfinished "
+                                   "clause and do not duplicate its completion in this group. "
+                                   if brief is not None else "")
+                                + korean_boundary
+                                + (rule_preflight.INSTRUCTION if rule_receipt else "")
+                                + scripture_prompt_instruction(policy, frozen_rules=rule_receipt is not None) +
+                                register_prompt_instruction(policy) +
+                                operator_instruction +
+                                repair_instruction +
+                                "Check that pronouns and elliptical repetitions retain the intended "
+                                "referent and predicate from surrounding source units. "
+                                "Correct any error in final targetUtterances and coverage. Check every English "
+                                "unit for omitted or added meaning, negations, numbers, names, and quotation "
+                                "attribution. If uncertain or unresolved, mark fail. Return JSON with exactly "
+                                "translationGroupId, sourceUnitIds, targetUtterances, coverage, semanticReview. "
+                                "semanticReview has status, checks (completeMeaning, negationsNumbersNames, "
+                                "quotationAttribution, noAddedMeaning), evidence, uncertainty, issues. "
+                                "Each check value must be the string pass or fail. uncertainty and issues "
+                                "must be arrays of unresolved concerns only; if you correct an Astra draft "
+                                "issue in the final text, describe that correction in evidence and leave "
+                                "issues empty. Mark status fail for any unresolved concern. "
+                                "Do not claim human approval. Prompt version: " + policy["reviewer"]["promptVersion"]),
+                "input": {**common, "astraDraft": draft}}
+            sol_path = out / f"{stem}-sol.json"
+            reviewer_payload = model_payload("reviewer", review_prompt, policy)
+            payload_reviewer_cache = _successful_payload_cache(
+                payload_cache_from, stem, "reviewer",
+                _model_fingerprint(reviewer_payload, caller, api_key), request, group,
+                allow_policy_binding_miss=partial_recovery_from is not None)
+            if payload_reviewer_cache is None and partial_recovery_from is not None:
+                payload_reviewer_cache = _returned_payload_cache(
+                    partial_recovery_from, stem, "reviewer",
+                    _model_fingerprint(reviewer_payload, caller, api_key), request, group,
+                    policy, caller, api_key, partial_recovery_budget_root)
+            if (payload_reviewer_cache is None and payload_cache_enabled
+                    and prior_cache_root is not None):
+                payload_reviewer_cache = _successful_payload_cache(
+                    prior_cache_root, stem, "reviewer",
+                    _model_fingerprint(reviewer_payload, caller, api_key), request, group)
+            if payload_cache_required:
+                require(payload_reviewer_cache is not None,
+                        f"Required payload cache missed reviewer: {stem}")
+            if payload_reviewer_cache is not None and hasattr(caller, "record_reuse"):
+                caller.record_reuse(api_key, reviewer_payload,
+                    payload_reviewer_cache["response"], payload_reviewer_cache["paidProvenance"])
+            reviewer_cached = (sol_path.exists() or sol_path.with_suffix(".raw.json").exists()
+                               or (prior_cache_root is not None and (prior_cache_root / f"{stem}-sol.json").is_file())
+                               or payload_reviewer_cache is not None)
+            if failure_collector is not None and failure_collector.stopped() and not reviewer_cached:
+                failure_collector.record_not_dispatched(index, group)
+                return None, translator_span
+        with measure.producer_substage("independent_review",
+                                       billing="local" if getattr(caller, "billing", None) == "local" or simulation_only or cache_only else "api"):
+            with accounting.stage(f"layer2.reviewer.{request['targetLocale']}.{stem}",
+                                  cache_hit=reviewer_cached, billing="local" if getattr(caller, "billing", None) == "local" or simulation_only or cache_only or reviewer_cached else "api",
+                                  work_unit_id=f"l2.{request['targetLocale']}.{stem}.reviewer",
+                                  depends_on=[draft_span],
+                                  executor_type="deterministic_program" if simulation_only or cache_only or reviewer_cached else "production_model") as reviewer_span:
+                reviewed_response = _model_call("reviewer", review_prompt, policy,
+                                                sol_path, api_key, caller,
+                                                reusable_cache(resume_cache_from, stem, "sol")
+                                                if resume_cache_from is not None else
+                                                reusable_cache(reuse_from, stem, "sol")
+                                                if reuse_from is not None and brief is None and repair is None else
+                                                payload_reviewer_cache["path"]
+                                                if payload_reviewer_cache is not None else None,
+                                                cache_only=cache_only or backfill_payload_cache_success,
+                                                rule_receipt=rule_receipt)
+                if payload_reviewer_cache is not None:
+                    _require_replayed_payload_cache(
+                        sol_path, payload_reviewer_cache, "reviewer", reviewed_response)
+                if progress_callback is not None:
+                    progress_callback('reviewer_response_saved')
+        with accounting.stage(f"layer2.review_validation.{request['targetLocale']}.{stem}",
+                              depends_on=[reviewer_span], executor_type="deterministic_program",
+                              work_unit_id=f"l2.{request['targetLocale']}.{stem}.review_validation") as validation_span:
+            result = reviewed_response["result"]
+            require(result.get("translationGroupId") == group["translationGroupId"]
+                    and result.get("sourceUnitIds") == group["sourceUnitIds"],
+                    f"Sol group identity changed: {stem}")
+            try:
+                utterances = _utterances(result.get("targetUtterances"), group["sourceUnitIds"])
+                final_text = "".join(utterances)
+                coverage = result.get("coverage")
+                require(isinstance(coverage, list)
+                        and [row.get("sourceUnitId") for row in coverage] == group["sourceUnitIds"]
+                        and all(isinstance(row.get("targetText"), str)
+                                and _coverage_substring(row["targetText"], final_text)
+                                for row in coverage),
+                        f"Sol source coverage is incomplete: {stem}")
+            except ValueError as exc:
+                if failure_collector is None:
+                    raise
+                failure_collector.record_malformed_output(index, group, "reviewer", sol_path, str(exc))
+                return None, validation_span
+            semantic = normalize_semantic_review(result.get("semanticReview"))
+            require(isinstance(semantic, dict) and semantic.get("status") in {"pass", "fail"}
+                    and isinstance(semantic.get("checks"), dict)
+                    and set(semantic["checks"]) == set(SEMANTIC_CHECKS)
+                    and all(value in {"pass", "fail"} for value in semantic["checks"].values())
+                    and isinstance(semantic.get("evidence"), str) and semantic["evidence"].strip()
+                    and isinstance(semantic.get("uncertainty"), list)
+                    and isinstance(semantic.get("issues"), list),
+                    f"Sol semantic review is incomplete: {stem}")
+            reviewed_row = {**copy.deepcopy(group), "targetUtterances": utterances,
+                            "coverage": coverage, "semanticReview": semantic,
+                            "translatorRequestId": translated["requestId"],
+                            "reviewerRequestId": reviewed_response["requestId"]}
+            if semantic["status"] != "pass" or any(value != "pass" for value in semantic["checks"].values()) \
+                    or semantic["uncertainty"] or semantic["issues"]:
+                if failure_collector is not None:
+                    failure_collector.record_review_failure(index, group, semantic, sol_path)
+                    return None, validation_span
+                raise ValueError(f"Sol flagged group {stem}; inspect saved response before admission")
+            if plugin_path is not None and not simulation_only:
+                if failure_collector is not None:
+                    review = _plugin_group_review(policy, request, plugin_path, reviewed_row)
+                    if review["status"] != "pass":
+                        failure_collector.record_plugin_failure(index, group, review, sol_path)
+                        return None, validation_span
+                else:
+                    _stop_after_plugin_group_failure(policy, request, plugin_path, reviewed_row, plan, index, out,
+                                                     diagnostic_context=diagnostic_context)
+                if payload_cache_enabled:
+                    _save_payload_cache_success(out, stem, request, group, semantic,
+                        caller=caller, api_key=api_key,
+                        reused_provenance={
+                            "translator": payload_translator_cache["paidProvenance"]
+                                if payload_translator_cache is not None else None,
+                            "reviewer": payload_reviewer_cache["paidProvenance"]
+                                if payload_reviewer_cache is not None else None})
+            return reviewed_row, validation_span
+    def process_group(item):
+        index, _ = item
+        with accounting.stage(f"layer2.group.{request['targetLocale']}.{index:04d}",
+                              billing="orchestrator"):
+            return _process_group(item)
+    def run_groups(items):
+        return (ordered_group_results(items, process_group, workers,
+                                      maximum_workers=maximum_workers) if maximum_workers != 16 else
+                ordered_group_results(items, process_group, workers))
+    results = (run_groups(list(enumerate(plan, 1))) if recovered_groups is None else
+               _run_partial_recovery_groups(plan, recovered_groups, run_groups))
+    if failure_collector is not None and failure_collector.has_failures():
+        failure_collector.finish(out, request, plan)
+    dependencies = accounting.bounded_dependencies(
+        f"layer2.evidence_join.{request['targetLocale']}", [span for _, span in results],
+        work_unit_id=f"l2.{request['targetLocale']}.evidence_join")
+    with accounting.stage(f"layer2.evidence_assembly.{request['targetLocale']}",
+                          depends_on=dependencies, executor_type="deterministic_program",
+                          work_unit_id=f"l2.{request['targetLocale']}.evidence_assembly") as assembly_span:
+        reviewed = [row for row, _ in results]
+        translator_ids = list(dict.fromkeys(row["translatorRequestId"] for row in reviewed))
+        reviewer_ids = list(dict.fromkeys(row["reviewerRequestId"] for row in reviewed))
+        require(len(translator_ids) == len(reviewed) and len(reviewer_ids) == len(reviewed)
+                and not set(translator_ids).intersection(reviewer_ids),
+                "Model response IDs must be distinct across groups and roles")
+        evidence = copy.deepcopy(request)
+        evidence["generation"] = {role: {"model": policy[role]["model"],
+                                         "promptVersion": policy[role]["promptVersion"],
+                                         "requestIds": ids}
+                                  for role, ids in (("translator", translator_ids),
+                                                    ("reviewer", reviewer_ids))}
+        evidence["groups"] = reviewed
+        evidence_path = out / "evidence.json"
+        if evidence_path.exists():
+            require(producer._load(evidence_path) == evidence, "Cached evidence changed")
+        else:
+            save_new(evidence_path, evidence)
+        accounting.record_workload("layer2.evidence_identity", {"evidenceSha256": policy_tools.canonical_sha256(evidence)})
+    # Export only after the completion event is durable. Trace identity never
+    # enters the canonical evidence payload or its hashes.
+    if completion_spans is not None:
+        completion_spans.append(assembly_span)
+    return evidence
+
+
+def run_accounted(source: dict, anchor: dict, policy: dict, out_dir: Path,
+                  api_key: str, call, group_plan_data, plugin: Path,
+                  revision_brief: dict | None, reuse_from: Path | None,
+                  *, partial_repair_brief: dict | None = None,
+                  resume_cache_from: Path | None = None,
+                  payload_cache_from: Path | None = None,
+                  partial_recovery_from: Path | None = None,
+                  partial_recovery_budget_root: Path | None = None,
+                  emit_payload_cache_success: bool = False,
+                  payload_cache_required: bool = False,
+                  backfill_payload_cache_success: bool = False,
+                  progress_ledger: Path | None = None,
+                  cache_only: bool = False, progress_callback=None,
+                  predecessor_spans=(), completion_spans: list[str] | None = None,
+                  failure_collector=None, candidate_mode: str = "production",
+                  operator_revision: dict | None = None, allow_subset: bool = False,
+                  context_plan: list[dict[str, Any]] | None = None,
+                  operator_notes: dict[str, dict[str, Any]] | None = None) -> dict:
+    require(operator_revision is None or operator_notes is None,
+            "Use one operator revision mechanism at a time")
+    require(candidate_mode == "production",
+            "Shadow execution is not implemented: candidate schema, plugin admission and human receipt are required")
+    require(plugin is not None,
+            "Formal Layer 2 requires the frozen language plugin before dispatch")
+    locale = policy["targetLocale"]
+    with measure.producer_step(progress_ledger, f"L2-02@{locale}", locale=locale) as metrics:
+        with accounting.accounting_session(out_dir / "accounting", "layer2_models",
+                                           {"targetLocale": locale},
+                                           evidence_directory=out_dir):
+            with accounting.stage(f"layer2.source_admission.{locale}", depends_on=list(predecessor_spans),
+                                  executor_type="deterministic_program",
+                                  work_unit_id=f"l2.{locale}.source_admission") as source_span:
+                request = producer.prepare_request(source, anchor, policy, candidate_mode=candidate_mode)
+                plan = group_plan(request, anchor, group_plan_data, allow_subset=allow_subset)
+                window = source["source"]["approvedWindow"]
+                accounting.record_workload("layer2.source_identity", {
+                    **{k: request[k] for k in ("englishSourcePackageJsonSha256", "anchorManifestSha256", "translationPolicySha256")},
+                    "sourceDurationSeconds": window["endSeconds"] - window["startSeconds"],
+                    "sourceMediaSha256": source["source"]["media"]["sha256"],
+                    "translationGroups": len(plan), "sourceUnits": len(request["sourceUnits"])})
+            metrics.update(translationGroups=len(plan), sourceUnits=len(request["sourceUnits"]))
+            evidence = _run_prepared_groups(
+                request, anchor, policy, out_dir, api_key, call, plan, plugin,
+                revision_brief, reuse_from, partial_repair_brief, resume_cache_from,
+                payload_cache_from, partial_recovery_from, partial_recovery_budget_root,
+                emit_payload_cache_success, payload_cache_required,
+                backfill_payload_cache_success,
+                source_admission_span=source_span, cache_only=cache_only,
+                progress_callback=progress_callback, completion_spans=completion_spans,
+                failure_collector=failure_collector, operator_revision=operator_revision,
+                allow_subset=allow_subset, context_plan=context_plan,
+                operator_notes=operator_notes)
+        metrics["doneUnits"] = len(evidence["groups"])
+    return evidence
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--english-source-package", type=Path, required=True)
+    parser.add_argument("--anchor", type=Path, required=True)
+    parser.add_argument("--policy", type=Path, required=True)
+    parser.add_argument("--plugin", type=Path, required=True)
+    parser.add_argument("--group-plan", type=Path)
+    parser.add_argument("--revision-brief", type=Path,
+                        help="Source-bound changed-group proposal; requires --reuse-from")
+    parser.add_argument("--reuse-from", type=Path,
+                        help="Prior model run; unchanged requests reuse verified caches")
+    parser.add_argument("--partial-repair-brief", type=Path,
+                        help="Source-bound failed-group repair; accepts an incomplete prior run")
+    parser.add_argument("--resume-cache-from", type=Path,
+                        help="Reuse verified paid responses from an incomplete attempt of this revision")
+    parser.add_argument("--payload-cache-from", type=Path,
+                        help="Explicit prior root with v1 successful-group exact-payload receipts")
+    parser.add_argument("--emit-payload-cache-success", action="store_true",
+                        help="Emit OpenAI-API-only v1 successful-group payload cache receipts")
+    parser.add_argument("--progress-ledger", type=Path,
+                        help="Record checkpoint and per-group substage timing in the four-layer ledger")
+    parser.add_argument("--model-backend", choices=("codex-cli", "openai-api"), default="openai-api",
+                        help="New translation/review runs use OpenAI API; CLI requires explicit selection")
+    parser.add_argument("--budget-config", type=Path,
+                        help="Dispatch the registered locale through its canonical execution configuration")
+    parser.add_argument("--budget-authorization", type=Path,
+                        help="Existing human-approved canonical budget authorization; requires --budget-config")
+    parser.add_argument("--out-dir", type=Path, required=True)
+    args = parser.parse_args()
+    require((args.budget_config is None) == (args.budget_authorization is None),
+            "--budget-config and --budget-authorization must be supplied together")
+    require(args.revision_brief is None or args.reuse_from is not None,
+            "--revision-brief requires --reuse-from")
+    require(args.partial_repair_brief is None or args.reuse_from is not None,
+            "--partial-repair-brief requires --reuse-from")
+    require(args.revision_brief is None or args.partial_repair_brief is None,
+            "Choose either --revision-brief or --partial-repair-brief")
+    require(args.resume_cache_from is None or args.partial_repair_brief is not None,
+            "--resume-cache-from requires --partial-repair-brief")
+    require(args.payload_cache_from is None or all(item is None for item in (
+                args.reuse_from, args.revision_brief, args.partial_repair_brief,
+                args.resume_cache_from)),
+            "--payload-cache-from cannot be combined with revision resume inputs")
+    require(not (args.payload_cache_from is not None or args.emit_payload_cache_success)
+            or args.model_backend == "openai-api",
+            "Cross-round payload cache prototype requires --model-backend openai-api")
+    source, anchor, policy = (producer._load(path) for path in
+                              (args.english_source_package, args.anchor, args.policy))
+    # Validate all policy/source/plan conditions before requiring a secret or making a paid call.
+    # A bound canonical configuration declares whether this is a non-production shadow candidate.
+    candidate_mode = "production"
+    if args.budget_config is not None:
+        from . import controller  # the controller imports this module
+        candidate_mode = controller.load_configuration(args.budget_config).candidate_mode
+    request = producer.prepare_request(source, anchor, policy, candidate_mode=candidate_mode)
+    if args.budget_config is None:
+        validate_standalone_worker_budget(policy)
+    plan = group_plan(request, anchor, json.loads(args.group_plan.read_text(encoding="utf-8"))
+                      if args.group_plan else None)
+    require_plugin_identity(args.plugin, policy["languageReview"]["pluginImplementationSha256"])
+    rule_preflight.preflight(request, policy, args.plugin, plan)
+    # Translation and review call a remote API or the local Codex CLI: no Spark session.
+    if args.budget_config is not None:
+        require(args.model_backend == "openai-api" and args.group_plan is None
+                and args.revision_brief is None and args.reuse_from is None
+                and args.partial_repair_brief is None and args.resume_cache_from is None
+                and args.payload_cache_from is None
+                and not args.emit_payload_cache_success
+                and args.progress_ledger is None,
+                "Bound canonical dispatch does not accept standalone execution overrides")
+        from . import controller  # the controller imports this module
+        config = controller.load_configuration(args.budget_config)
+        locale = policy["targetLocale"]
+        require(locale in config.lanes, "locale_not_registered")
+        lane = config.lanes[locale]
+        for supplied, registered in (
+                (args.english_source_package, config.inspection_root / config.inspection["source"]),
+                (args.anchor, config.inspection_root / config.inspection["anchor"]),
+                (args.policy, lane["policy"]), (args.plugin, lane["plugin"]),
+                (args.out_dir, lane["output"])):
+            require(supplied.resolve() == registered.resolve(), "standalone_budget_inputs_not_registered")
+        print(json.dumps(controller.drive(config.path, locale,
+                         budget_authorization=args.budget_authorization), sort_keys=True))
+        return
+    if args.model_backend == "openai-api":
+        transport = _text.current().transports.caller("openai-api")
+        api_key = transport.key
+    else:
+        transport = _text.current().transports.caller("codex-cli", receipts_dir=args.out_dir / "_cli_calls")
+        api_key = ""
+    caller = _session_bound_caller()(transport, requires_spark=False)
+    evidence = run_accounted(
+        source, anchor, policy, args.out_dir, api_key,
+        caller,
+        plan, args.plugin,
+        producer._load(args.revision_brief) if args.revision_brief else None,
+        args.reuse_from,
+        partial_repair_brief=producer._load(args.partial_repair_brief)
+        if args.partial_repair_brief else None,
+        resume_cache_from=args.resume_cache_from,
+        payload_cache_from=args.payload_cache_from,
+        emit_payload_cache_success=args.emit_payload_cache_success,
+        payload_cache_required=False,
+        backfill_payload_cache_success=False,
+        progress_ledger=args.progress_ledger)
+    print(json.dumps({"status": "independent_model_review_pass",
+                      "groups": len(evidence["groups"]),
+                      "evidence": str((args.out_dir / "evidence.json").resolve())}))
+
+
+if __name__ == "__main__":
+    main()

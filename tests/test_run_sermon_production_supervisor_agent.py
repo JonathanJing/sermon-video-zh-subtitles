@@ -6,8 +6,9 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-from scripts import run_sermon_production_supervisor_agent as mod
-from scripts import sermon_production_supervisor
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.workflows.supervisor import agent as mod
+from tongxing_production.workflows.supervisor import production as sermon_production_supervisor
 
 
 class RunSermonProductionSupervisorAgentTest(unittest.TestCase):
@@ -88,7 +89,7 @@ class RunSermonProductionSupervisorAgentTest(unittest.TestCase):
                     gcs_bucket=None, api_key_secret=None, release_workflow_config=release_config,
                 )
                 with patch.object(mod, "make_config", return_value=config), patch(
-                    "scripts.sermon_agents_supervisor.session_report", return_value={}
+                    "tongxing_production.workflows.supervisor.agents.session_report", return_value={}
                 ) as report:
                     asyncio.run(mod.run_agent(args))
                 instructions = report.call_args.args[2]

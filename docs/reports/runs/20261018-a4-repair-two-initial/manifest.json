@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261018-a4-repair-two-initial",
+  "runs": [
+    {
+      "label": "20261018-a4-repair-two-initial",
+      "source": "~/.codex/worktrees/g1-a4-audio/sermon-video-zh-subtitles/artifacts/local-runs/20261018-a4-repair-two-initial",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "20261018-a4-repair-two-initial",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 171,
+      "truncated": false,
+      "sha256": "2d844381b8cc8019442c7e5ce20d528292e12e2c8a34348be6e4f13513b298fd",
+      "redactions": {}
+    },
+    {
+      "run": "20261018-a4-repair-two-initial",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 134,
+      "truncated": false,
+      "sha256": "726ba05c21048117e336fd9e6d9032a288867e7d7bd5a6cebb9032a68b9b23d6",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

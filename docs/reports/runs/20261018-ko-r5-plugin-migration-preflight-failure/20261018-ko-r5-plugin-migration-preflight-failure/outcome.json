@@ -1,0 +1,28 @@
+{
+  "schemaVersion": "sermon-production-run-outcome-v1",
+  "deliveryType": "four_layer_release",
+  "scope": "layer2_ko_plugin_only_successor",
+  "status": "failed_before_provider_reservation",
+  "startedAt": "2026-10-18T06:34:47+00:00",
+  "completedAt": "2026-10-18T06:34:50.908149+00:00",
+  "productionRunId": "3370b601442d73e6a379dc73ff265b04cee0e58f4247afea1a4ab6f7d0f9ae80",
+  "jobId": "84bee966aff95d8d22ac9ce99e55201552cea0352d6f8ef5b483bc4137b3bddf",
+  "targetLocale": "ko",
+  "integrationCommit": "163dfcc9b6e809fc1e66823b6a3c9468db06eb60",
+  "sourcePackageSha256": "137fed8486da0ec4ea22258035a230f30172be43a016faa4c382b410f830e3a9",
+  "anchorSha256": "2587ffdd446ea3c1feee26980fc2bb6f22da3bfea12c614bbf45f036ffb1d1fb",
+  "translationPolicySha256": "122cab7dee3f40fc2b7e2b2a2561cea783aff26b8c15360198fb51448f8a36ef",
+  "terminalError": "layer2_reuse_operation_missing",
+  "budget": {
+    "rootCreated": true,
+    "reservations": 0,
+    "unknown": 0,
+    "newEstimatedCostUsd": 0.0,
+    "authorizedCapUsd": 60.0,
+    "wholePlanWorstCaseUsd": 66.614604
+  },
+  "providerCalls": 0,
+  "candidateGenerated": false,
+  "humanApproval": false,
+  "layer3Started": false
+}

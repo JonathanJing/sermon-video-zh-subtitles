@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261018-t6-review-gate-schema-binding",
+  "runs": [
+    {
+      "label": "t6-review-gate-51f5dfc0-schema-binding-local",
+      "source": "/private/tmp/t6-review-gate-leaf-20261017/artifacts/t6-review-gate-51f5dfc0-schema-binding-local",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "t6-review-gate-51f5dfc0-schema-binding-local",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 209,
+      "truncated": false,
+      "sha256": "d30a10ef8f79ba6e9c5bfb3fbfe04547f65280dab50cec1e43e367eba11059ca",
+      "redactions": {}
+    },
+    {
+      "run": "t6-review-gate-51f5dfc0-schema-binding-local",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 553,
+      "truncated": false,
+      "sha256": "9462fcfd93858a47b9025649871e773cfdeec64b6ddcc21a7fdc177c40c9ca71",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

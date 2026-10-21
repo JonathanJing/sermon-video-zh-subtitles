@@ -1,0 +1,9 @@
+{
+  "schemaVersion": "local-test-outcome-v1",
+  "status": "passed",
+  "exitCode": 0,
+  "startedAt": "2026-10-18T10:31:04.473146+00:00",
+  "endedAt": "2026-10-18T10:31:05.523312+00:00",
+  "headRevision": "b759ca300e61d9520236653ff6f9da2e1c79296a",
+  "scope": "post-merge MiLMMT legacy facade and production-package bare-import smoke"
+}

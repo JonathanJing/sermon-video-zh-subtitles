@@ -4,8 +4,9 @@ import sys
 from tempfile import TemporaryDirectory
 import unittest
 
-from scripts import assemble_multilingual_hosting as hosting
-from scripts import refresh_multilingual_hosting_with_legacy as refresh
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.adapters.legacy import assemble_multilingual_hosting as hosting
+from tongxing_production.adapters.legacy import refresh_multilingual_hosting_with_legacy as refresh
 from tests.test_assemble_multilingual_hosting import fixture, write
 
 

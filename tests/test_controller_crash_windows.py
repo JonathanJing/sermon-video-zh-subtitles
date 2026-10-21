@@ -8,9 +8,10 @@ import time
 import unittest
 from unittest.mock import patch
 
-from scripts import sermon_deterministic_controller as ctrl
-from scripts import sermon_workflow_jobs as jobs
-from scripts.sermon_production_supervisor import SupervisorConfig
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.workflows.supervisor import deterministic_controller as ctrl
+from tongxing_production.orchestration import jobs
+from tongxing_production.workflows.supervisor.production import SupervisorConfig
 
 
 class CrashWindowTests(unittest.TestCase):
@@ -27,7 +28,8 @@ class CrashWindowTests(unittest.TestCase):
         program = '''
 import json, os, sys
 from pathlib import Path
-from scripts import sermon_workflow_jobs as j
+from scripts import tongxing_host
+from tongxing_production.orchestration import jobs as j
 root, phase, command = Path(sys.argv[1]), sys.argv[2], json.loads(sys.argv[3])
 identity = {'stage': phase}
 job_id = j._digest(identity)

@@ -1,0 +1,9 @@
+{
+  "scope": "Full tests/ run (excluding test_backend_app and test_cloud_run_jobs, which need tongxing_api) on a local merge of origin/dev 9cfb3083 with the four reworked experiment leaf branches",
+  "results": {
+    "fullSuite": "6949 passed, 1 failed, 38 skipped, 2 xfailed, 6390 subtests passed in 5404 s",
+    "failure": "tests/test_codex_shared_pool_transport.py::test_busy_before_started_is_proven_no_dispatch: AttributeError, codex_resources has no attribute contracts; fails 3/3 when run alone; the branches change no packages/ file and not this test",
+    "invalidatedRun": "an earlier full run was stopped because the worktree switched branches during it"
+  },
+  "limits": "Local deterministic tests only; no production, paid model, Spark, or public delivery. CI workflows disabled by user decision 2026-10-19."
+}

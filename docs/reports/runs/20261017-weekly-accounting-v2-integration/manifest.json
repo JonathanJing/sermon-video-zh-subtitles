@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-weekly-accounting-v2-integration",
+  "runs": [
+    {
+      "label": "20261017-weekly-accounting-v2-integration-local",
+      "source": "~/.codex/worktrees/weekly-report-projection/sermon-video-zh-subtitles/artifacts/20261017-weekly-accounting-v2-integration-local",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "20261017-weekly-accounting-v2-integration-local",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 169,
+      "truncated": false,
+      "sha256": "629131a47184e99e60cacd8298dfbbe6bb9046e137a2b0dc28396933ec8ebf81",
+      "redactions": {}
+    },
+    {
+      "run": "20261017-weekly-accounting-v2-integration-local",
+      "path": "timings.tsv",
+      "kind": "whole",
+      "bytes": 37,
+      "truncated": false,
+      "sha256": "092a957ff6df244abdf3e3585159cf20b8509f0c8933623d75fe65a91c059156",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

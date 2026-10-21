@@ -1,0 +1,53 @@
+{
+  "status": "passed",
+  "facadesDeleted": 9,
+  "surveyBefore": {
+    "after": 157,
+    "checkout": "C3 head 880bf24c"
+  },
+  "surveyAfter": {
+    "after": 148
+  },
+  "facadesKept": {
+    "G1 closure (tongxing_host.py, policy-frozen plugins)": [
+      "layer2_human_ruling",
+      "produce_target_language_candidate",
+      "target_language_policy"
+    ]
+  },
+  "unittestShards": {
+    "count": 10,
+    "tests": 5985,
+    "failures": 0,
+    "errors": 0,
+    "note": "PYTHONPATH=services/api/src so backend/services tests import"
+  },
+  "pytestStyle": {
+    "passed": 1111,
+    "failed": 1,
+    "failedPreexistingOnDev": 1
+  },
+  "testIdsBefore": {
+    "unittest": 5943
+  },
+  "testIdsAfter": {
+    "unittest": 5943
+  },
+  "renamedTests": 3,
+  "identities": {
+    "L2code": {
+      "dev@5eb39da3": "e04411e924de8d251f2d3975b2e897e8be0c1309e62f56ce7e8c5dac74279b7d",
+      "c3": "5064ae2cfb865004b339bc46161939a40a19647bc1f82f3729517a319694eb8e",
+      "c3+c4": "7587708ce102bc74ef8f83b7f929b42754b0e6e127574fdd870a731295065d12"
+    },
+    "W": "1c28f4aa38c0 (unchanged)",
+    "T": "8ec15fe1556b (unchanged)",
+    "scoring": "9f2ff8077671 (unchanged)",
+    "rate": "8f50c233e07b (unchanged)",
+    "preview": "794bb5f1c7ac (unchanged)"
+  },
+  "providerCalls": 0,
+  "modelCalls": 0,
+  "networkCalls": 0,
+  "productionWrites": 0
+}

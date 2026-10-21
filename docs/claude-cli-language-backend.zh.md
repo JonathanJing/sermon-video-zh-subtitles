@@ -1,6 +1,6 @@
 # Claude CLI 语言调用后端（候选）
 
-2026-10-08。`scripts/claude_layer2_transport.py` 用本机 Claude Code CLI 的订阅登录做 Layer 2 语言调用，接口与 `CodexLayer2Transport` 相同（`transport('', payload)` 返回带 `content`、`usage`、`elapsedSeconds` 的响应）。这是实验候选：正式翻译策略仍是 Sol 6.1 high 翻译 + Sol medium 复核，canonical runner 不接受 Claude 模型。
+2026-10-08。`compute/transports/claude_layer2.py` 用本机 Claude Code CLI 的订阅登录做 Layer 2 语言调用，接口与 `CodexLayer2Transport` 相同（`transport('', payload)` 返回带 `content`、`usage`、`elapsedSeconds` 的响应）。这是实验候选：正式翻译策略仍是 Sol 6.1 high 翻译 + Sol medium 复核，canonical runner 不接受 Claude 模型。
 
 ## 当前实现边界（2026-10-10）
 
@@ -44,14 +44,14 @@ claude -p --model claude-opus-5-5 --effort high --output-format json \
 - **两臂**：
   - Sol：`gpt-6.1-sol` high fast，经 ChatGPT 登录的 Codex CLI（`CodexLayer2Transport`），即 10/5 用户指定的实验基线。
   - Opus：`claude-opus-5-5` high，经订阅登录的 Claude CLI（`ClaudeLayer2Transport`）。
-- **执行**：`scripts/experiments/claude_translation_ab.py` 逐组串行（workers=1），两臂在同一组内紧挨着跑，偶数组 Sol 先、奇数组 Opus 先，减少服务负载随时间变化的影响。两臂都不带 API key，不重试，不回退。共 26 次新调用。
+- **执行**：`experiments/layer2-translation-ab/claude_translation_ab.py` 逐组串行（workers=1），两臂在同一组内紧挨着跑，偶数组 Sol 先、奇数组 Opus 先，减少服务负载随时间变化的影响。两臂都不带 API key，不重试，不回退。共 26 次新调用。
 - **校验**：每个结果都要过 schema、组和单元身份、coverage 子串检查；Opus 的模型身份以 CLI 返回的 `modelUsage` 为准，Sol 只有请求身份。
 - **盲评**：`blind.json` 每组给出 X/Y 两版，位置按组轮换；由一个只读 `blind.json` 的独立 Agent 逐组评，标出遗漏、否定、数字、人名、增译和明显不自然的口语，并按轻/中/重分级；评完才打开 `blind-key.json` 映射。
 
 运行（Mac）：
 
 ```
-python3 -m scripts.experiments.claude_translation_ab \
+python3 experiments/layer2-translation-ab/claude_translation_ab.py \
   --baseline artifacts/codex-cli-layer2-180s-20261005 \
   --out artifacts/claude-opus55-vs-sol61-ab-20261008
 ```
@@ -80,7 +80,7 @@ Jony 在 Mac 上跑完，摘要见 PR #299 的评论：13 组 Opus 全部更快�
 
 ```
 for locale in zh-Hans ko es; do
-  python3 -m scripts.experiments.claude_translation_ab --review \
+  python3 experiments/layer2-translation-ab/claude_translation_ab.py --review \
     --baseline <该语言的 605 秒 Layer 2 输出目录> \
     --out artifacts/claude-opus55-vs-sol61-ab-605s-$locale
 done

@@ -1,0 +1,9 @@
+{
+  "deliveryType": "test",
+  "status": "failed",
+  "exitCode": 1,
+  "commit": "910b30d4",
+  "workflow": "local experiment leaf move verification (standalone experiments)",
+  "publication": "not_run",
+  "realProduction": "not_run"
+}

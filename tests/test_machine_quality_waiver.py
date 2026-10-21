@@ -11,13 +11,14 @@ import unittest
 from unittest import mock
 import wave
 
-from scripts import auto_qc_seeded_errors as seeded
-from scripts import machine_quality_waiver as waiver
-from scripts import machine_repair_ledger as ledger
-from scripts import produce_target_language_candidate as producer
-from scripts import target_audio_auto_qc as audio_qc
-from scripts import target_audio_predicted_schedule as predicted
-from scripts import target_text_auto_qc as text_qc
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.review import seeded_errors as seeded
+from tongxing_production.review import waiver
+from tongxing_production.review import repair_ledger as ledger
+from tongxing_production.text import candidate as producer
+from tongxing_production.review import audio_qc
+from tongxing_production.audio import predicted_schedule as predicted
+from tongxing_production.review import text_qc
 from scripts.language_review_plugins import auto_qc_text_common as rules
 from scripts.language_review_plugins import es_weekly_auto, ko_weekly_auto
 from tests import auto_qc_fixtures as fixtures
@@ -289,7 +290,7 @@ class AudioQcTests(unittest.TestCase):
         self.assertEqual(result["repairGroupIds"], [])
 
     def test_a_dropped_negation_or_number_is_not_passed_on_the_ratio(self):
-        from scripts.screen_target_language_audio_units import score
+        from tongxing_production.audio.screening import score
         for locale, text in (("es", "Jesús no nos deja solos en nuestros fracasos ni en nuestras dudas."),
                              ("zh-Hans", "耶稣不会在我们失败的时候丢下我们，也不会离开我们。"),
                              ("ko", "예수님은 우리가 실패할 때 우리를 홀로 두지 않으십니다."),
@@ -316,6 +317,17 @@ class AudioQcTests(unittest.TestCase):
         # Other small differences still pass on the ratio.
         text = "Jesús no nos deja solos en nuestros fracasos ni en nuestras dudas."
         self.assertTrue(score(text, text.replace("nuestras", "las"), "es", 0.88)[2])
+
+    def test_lexical_chinese_numerals_are_not_dropped_key_word_trials(self):
+        # 一 in 一起, 合一, 统一 is an ordinary word that TTS and ASR may normalise away (PR #432).
+        for text in ("静默和神的圣洁常常是连在一起的。", "我们在基督里合一。", "他们要统一。"):
+            with self.subTest(text=text):
+                self.assertIsNone(seeded.drop_key_word(text, "zh-Hans"))
+        # A number after 第, before a classifier, or sentence-final with a place value still is.
+        for text, heard in (("请看第八章。", "请看第章。"), ("请翻到启示录3章4节。", "请翻到启示录章4节。"),
+                            ("有三个人来了。", "有个人来了。"), ("那年他三十。", "那年他。")):
+            with self.subTest(text=text):
+                self.assertEqual(seeded.drop_key_word(text, "zh-Hans"), heard)
 
     def test_two_level_asr(self):
         self.assertEqual(audio_qc.asr_decision(True, None), "pass")
@@ -464,7 +476,7 @@ class TrackCheckTests(unittest.TestCase):
         self.assertEqual(result["targetLanguageAudioPackageJsonSha256"], waiver.json_sha256(package))
         self.assertEqual(result["unitAudioSha256s"], [unit["audio"]["sha256"] for unit in package["units"]])
         self.assertEqual(result["implementationSha256"], waiver.implementation_sha256())
-        from scripts import machine_quality_release_basis as basis
+        from tongxing_production.review import release_basis as basis
         self.assertEqual(basis.track_check_problems(package, result, waiver.implementation_sha256()), [])
 
     def test_omitted_or_reordered_units_fail(self):
@@ -494,7 +506,7 @@ class TrackCheckTests(unittest.TestCase):
         package = self.package(mp3=encode)
         result = audio_qc.check_track(package)
         self.assertEqual((result["status"], result["method"]["compressed"]), ("pass", "decoded_waveform"))
-        from scripts import machine_quality_release_basis as basis
+        from tongxing_production.review import release_basis as basis
         self.assertEqual(basis.track_check_problems(package, result, waiver.implementation_sha256()), [])
         self.assertLessEqual(result["envelope"]["deviantWindows"], 0.02 * result["envelope"]["windows"])
         # An MP3 of silence beside a correct master is not what listeners should hear.

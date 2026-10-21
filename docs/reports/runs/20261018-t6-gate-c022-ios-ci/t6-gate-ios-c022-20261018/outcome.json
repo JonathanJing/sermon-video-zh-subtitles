@@ -1,0 +1,11 @@
+{
+  "deliveryType": "test",
+  "status": "passed",
+  "exitCode": 0,
+  "headSha": "c0224028f1ae054b73fb86dd5984f5503578617e",
+  "workflow": "Tongxing iOS",
+  "runId": 39096320257,
+  "workflowConclusion": "success",
+  "publication": "not_run",
+  "realProduction": "not_run"
+}

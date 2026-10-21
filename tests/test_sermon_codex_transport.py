@@ -10,7 +10,8 @@ import unittest
 from unittest.mock import patch
 
 import jsonschema
-from scripts import sermon_codex_transport as mod
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.compute.transports import codex_cli as mod
 
 
 @contextmanager
@@ -71,7 +72,9 @@ class ProductionCodexTransportTests(unittest.TestCase):
         self.assertIn('--ephemeral', command)
         self.assertIn('--ignore-user-config', command)
         self.assertFalse(any(name.upper().startswith('OPENAI_') or name.upper() == 'CODEX_API_KEY' for name in kwargs['env']))
-        self.assertNotEqual(Path(kwargs['cwd']), mod.ROOT)
+        # The private work directory is never the checkout (the root the host binds).
+        from scripts import tongxing_host
+        self.assertNotEqual(Path(kwargs['cwd']), tongxing_host.ROOT)
         self.assertFalse(Path(kwargs['cwd']).exists())
         self.assertIsNone(result['serverModel'])
         self.assertEqual(result['requestedReasoningEffort'], 'high')

@@ -1,0 +1,145 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-layer2-payload-cache-live-canary",
+  "runs": [
+    {
+      "label": "live-round-a",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/test-runs/20261017-layer2-payload-cache-canary/live-round-a",
+      "skipped": {
+        ".lock": 6,
+        ".json": 192,
+        ".jsonl": 1,
+        ".csv": 3
+      }
+    },
+    {
+      "label": "live-round-b",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/test-runs/20261017-layer2-payload-cache-canary/live-round-b",
+      "skipped": {
+        ".lock": 5,
+        ".json": 160,
+        ".jsonl": 1,
+        ".csv": 3
+      }
+    }
+  ],
+  "files": [
+    {
+      "run": "live-round-a",
+      "path": "jobs/a30a9e133752bb017572939ccb25fd8ed984e66e9dbf801200a670154782930d/worker.log",
+      "kind": "log",
+      "bytes": 172,
+      "truncated": false,
+      "sha256": "58c418a72914b7bebc9a4783d16a8fb9432d0350638ff945e237daebf7bd0b9a",
+      "redactions": {}
+    },
+    {
+      "run": "live-round-a",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 359,
+      "truncated": false,
+      "sha256": "83ff2795ff0cc7a385fb348ac360d270f76b5b7d0556c98cd7619202974c86c6",
+      "redactions": {}
+    },
+    {
+      "run": "live-round-a",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 447,
+      "truncated": false,
+      "sha256": "44805c214d215b1fcb9306104ffafbe97305aaceaeb09b5bfb16d04fcf388007",
+      "redactions": {}
+    },
+    {
+      "run": "live-round-a",
+      "path": "text/zh-Hans/accounting/operations.log",
+      "kind": "log",
+      "bytes": 101000,
+      "truncated": true,
+      "sha256": "66c23201671d14051e232fb6b28978902005ad7ceea00a0c25cdb81d65cc6dc5",
+      "redactions": {}
+    },
+    {
+      "run": "live-round-a",
+      "path": "text/zh-Hans/accounting/summary.json",
+      "kind": "whole",
+      "bytes": 287207,
+      "truncated": false,
+      "sha256": "7de0dda54b39d51b9a088dd8a5c2a752aeaece566e7df6f60e5e07b5525afe07",
+      "omitted": "over_size_cap"
+    },
+    {
+      "run": "live-round-a",
+      "path": "text/zh-Hans/repair-rounds/auto-repair-receipt-001.json",
+      "kind": "whole",
+      "bytes": 1415,
+      "truncated": false,
+      "sha256": "e0d72267571b3b2737e5678c0e8cfe82e8a9b9cc64071d36734cdfdeeeb9a457",
+      "redactions": {
+        "home_dir": 2
+      }
+    },
+    {
+      "run": "live-round-b",
+      "path": "jobs/865d689585046c202df092588bbbb8db61aeec332a051795c081cb28a0bdf4b5/worker.log",
+      "kind": "log",
+      "bytes": 172,
+      "truncated": false,
+      "sha256": "58c418a72914b7bebc9a4783d16a8fb9432d0350638ff945e237daebf7bd0b9a",
+      "redactions": {}
+    },
+    {
+      "run": "live-round-b",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 387,
+      "truncated": false,
+      "sha256": "fda0219f3e9c701d953cf1e58b93ca735ee524eb2a3db0bd07459d64a90998b2",
+      "redactions": {}
+    },
+    {
+      "run": "live-round-b",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 517,
+      "truncated": false,
+      "sha256": "6cc45729c626410d58ab4f37355e49eaf3ae8cc0a68a91fc1ba8bc2031d6d99c",
+      "redactions": {}
+    },
+    {
+      "run": "live-round-b",
+      "path": "text/zh-Hans/accounting/operations.log",
+      "kind": "log",
+      "bytes": 90346,
+      "truncated": true,
+      "sha256": "7587b06076b9f658cd2239b1366551f138f14b935ff9814f3c0f54ad3476a6d0",
+      "redactions": {}
+    },
+    {
+      "run": "live-round-b",
+      "path": "text/zh-Hans/accounting/summary.json",
+      "kind": "whole",
+      "bytes": 233426,
+      "truncated": false,
+      "sha256": "5f26168d62f1be7788c5cf70c21dd4b496d23841f0fbba8061f183337574e32d",
+      "redactions": {}
+    },
+    {
+      "run": "live-round-b",
+      "path": "text/zh-Hans/repair-rounds/auto-repair-receipt-001.json",
+      "kind": "whole",
+      "bytes": 1415,
+      "truncated": false,
+      "sha256": "d01cc3661e7183af2f57e14381cb43ff96ee5f2bf4b998edb9ab315b37a5ee0f",
+      "redactions": {
+        "home_dir": 2
+      }
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

@@ -1,0 +1,43 @@
+{
+  "status": "passed",
+  "tests": {
+    "passed": 1537,
+    "failed": 0,
+    "chunks": 8
+  },
+  "prs": {
+    "565": {
+      "branch": "claude/project-thread-mkpjnu",
+      "head": "a1ef5f90",
+      "realPath": "resi-20261018-broadcast exported to a 35-page PDF, QA pass"
+    },
+    "1080": {
+      "branch": "codex/broadcast-alignment-window-20261018",
+      "head": "16621b1a",
+      "deliveryTests": "620 passed"
+    },
+    "1092": {
+      "branch": "claude/redact-private-drive-links",
+      "head": "b4db4c93",
+      "verifyExistingReports": "627 of 629 pass; 20261018-weekly-15030286 passes after redaction; 20261011-weekly-fixtures fails on dev too"
+    },
+    "1095": {
+      "branch": "codex/production-path-sim-20261019",
+      "head": "c2a581c1",
+      "calibratedFirstPageMinutes": 158.4
+    },
+    "1137": {
+      "branch": "docs/local-full-test-20261019",
+      "head": "120bd877",
+      "reExported": true
+    }
+  },
+  "notRun": [
+    "full suite",
+    "Node/JS",
+    "iOS",
+    "Spark",
+    "paid model calls",
+    "deploy"
+  ]
+}

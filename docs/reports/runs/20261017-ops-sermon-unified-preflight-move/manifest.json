@@ -1,0 +1,39 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-ops-sermon-unified-preflight-move",
+  "runs": [
+    {
+      "label": "sermon-unified-preflight-move",
+      "source": "/private/tmp/sermon-ops-unified-preflight-20261017/artifacts/sermon-unified-preflight-move",
+      "skipped": {
+        ".json": 2,
+        ".py": 1
+      }
+    }
+  ],
+  "files": [
+    {
+      "run": "sermon-unified-preflight-move",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 95,
+      "truncated": false,
+      "sha256": "f83c4f7314a50061912ff1f9e656ba68a91e77f724984f6c1d270ffb542bd993",
+      "redactions": {}
+    },
+    {
+      "run": "sermon-unified-preflight-move",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 1192,
+      "truncated": false,
+      "sha256": "af0fe65c528a4e475e4de7569a3313751aee4635dc908c8905c2d077784ebc8c",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

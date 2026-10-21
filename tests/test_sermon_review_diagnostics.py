@@ -1,15 +1,26 @@
 """Bounded structural reasons, using the actual model-facing contract."""
 import copy
 import json
+from pathlib import Path
 import unittest
 
-from scripts import sermon_review_contracts as c
-from scripts import sermon_review_diagnostics as d
-from scripts import sermon_strict_layer2 as s
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.review import contracts as c
+from tongxing_production.text import review_diagnostics as d
+from tongxing_production.text.strict import layer2 as s
 from tests import test_sermon_strict_layer2 as strict_fixtures
+from tongxing_production import path_aliases
+from tongxing_production.text import review_diagnostics as implementation
 
 
 class ReviewDiagnosticsTests(unittest.TestCase):
+    def test_legacy_identity_key_resolves_to_package_implementation(self):
+        key = 'scripts/sermon_review_diagnostics.py'
+        self.assertEqual(path_aliases.resolve(key),
+                         'packages/production/src/tongxing_production/text/review_diagnostics.py')
+        self.assertEqual(Path(implementation.__file__).resolve(),
+                         (Path(__file__).resolve().parents[1] / path_aliases.resolve(key)).resolve())
+
     def setUp(self):
         f=strict_fixtures.StrictAdapterTests();f.setUp();self.addCleanup(f.doCleanups)
         self.ids=f.group['sourceUnitIds'];self.hash='a'*64

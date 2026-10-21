@@ -1,0 +1,13 @@
+{
+  "schemaVersion": "local-test-summary-v1",
+  "capabilities": [
+    "group_tasks stages executed the real audio.package producer with a frozen command",
+    "rebuilt package equals the run's original package under canonical JSON",
+    "stage-report.json records command SHA-256, exit code and timing"
+  ],
+  "limits": [
+    "No TTS synthesis, ASR screening, audio QC, deployment or publication was run.",
+    "The 15030286 zh-Hans text waiver is not consumable by current code (QC implementation drift); the es clip waiver from 2026-10-19 is.",
+    "A full clip audio run needs a held Spark session and a fresh QC budget authorization."
+  ]
+}

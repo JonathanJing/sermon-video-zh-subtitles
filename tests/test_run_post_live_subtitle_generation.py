@@ -9,12 +9,10 @@ from pathlib import Path
 from unittest import mock
 
 
-SCRIPT_PATH = Path(__file__).resolve().parents[1] / "scripts" / "run_post_live_subtitle_generation.py"
-SPEC = importlib.util.spec_from_file_location("run_post_live_subtitle_generation", SCRIPT_PATH)
-mod = importlib.util.module_from_spec(SPEC)
-assert SPEC.loader is not None
-sys.modules[SPEC.name] = mod
-SPEC.loader.exec_module(mod)
+# The implementation moved to tongxing_production.workflows.dual_pdf.post_live (W3c);
+# the scripts/ path is a facade naming the same module object.
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.workflows.dual_pdf import post_live as mod  # noqa: E402
 
 
 def make_args(**overrides):
@@ -92,7 +90,7 @@ def write_state(path: Path, *, sunday: str = "2026-06-28", url: str = "https://w
 
 class PostLiveSubtitleGenerationTest(unittest.TestCase):
     def setUp(self):
-        remote = mock.patch('scripts.mfa_backend.preflight', return_value={'backend': 'dgx-spark-ssh', 'runtime': {'modelSha256': 'original'}})
+        remote = mock.patch('tongxing_production.source.mfa_backend.preflight', return_value={'backend': 'dgx-spark-ssh', 'runtime': {'modelSha256': 'original'}})
         self.spark_preflight = remote.start()
         self.addCleanup(remote.stop)
 
@@ -203,7 +201,7 @@ class PostLiveSubtitleGenerationTest(unittest.TestCase):
 
         self.assertEqual(report["status"], "planned")
         command = report["pipelineCommand"]
-        self.assertIn("scripts/sermon_pipeline.py", command[1])
+        self.assertEqual(command[2], "workflows.dual_pdf.pipeline")
         self.assertIn("--zh-model", command)
         self.assertEqual(command[command.index("--zh-model") + 1], "gpt-5.6")
         self.assertEqual(command[command.index("--en-correction-model") + 1], "gpt-5.6")
@@ -218,7 +216,7 @@ class PostLiveSubtitleGenerationTest(unittest.TestCase):
         self.assertTrue(any("reading-edition-v2" in item for item in report["readingEditionCommand"]))
         self.assertEqual(report["readingEditionCommand"].count("--hard-english-chars"), 1)
         self.assertIsNone(report["mobilePdfCommand"])
-        self.assertIn("render_mobile_pdf_from_srt.py", report["readingPdfCommand"][1])
+        self.assertEqual(report["readingPdfCommand"][2], "workflows.dual_pdf.mobile_pdf")
         self.assertEqual(
             report["readingPdfCommand"][report["readingPdfCommand"].index("--title") + 1],
             "A Bronze Snake and God's Love",
@@ -280,7 +278,7 @@ class PostLiveSubtitleGenerationTest(unittest.TestCase):
                 template = Path(command[command.index("-o") + 1])
                 template.parent.mkdir(parents=True, exist_ok=True)
                 (template.parent / "source_audio.m4a").write_text("audio", encoding="utf-8")
-            elif "sermon_pipeline.py" in command[1]:
+            elif command[2:3] == ["workflows.dual_pdf.pipeline"]:
                 outdir = Path(command[command.index("--outdir") + 1])
                 outdir.mkdir(parents=True, exist_ok=True)
                 (outdir / "segments_timed_en_corrected.json").write_text(
@@ -310,7 +308,7 @@ class PostLiveSubtitleGenerationTest(unittest.TestCase):
                 (outdir / "reading_quality_report.json").write_text(
                     json.dumps({"status": "pass", "failures": []}), encoding="utf-8"
                 )
-            elif "render_mobile_pdf_from_srt.py" in command[1]:
+            elif command[2:3] == ["workflows.dual_pdf.mobile_pdf"]:
                 pdf_path = Path(command[command.index("--out") + 1])
                 pdf_path.parent.mkdir(parents=True, exist_ok=True)
                 pdf_path.write_bytes(b"%PDF-1.4\n")
@@ -357,11 +355,13 @@ class PostLiveSubtitleGenerationTest(unittest.TestCase):
         self.assertEqual(len(report["sundayContext"]["paths"]), 6)
         self.assertTrue(any(path.endswith("sunday-context/pack-readiness.json") for path in report["outputs"]))
         self.assertEqual(calls[0][0], "yt-dlp")
-        self.assertIn("sermon_pipeline.py", calls[1][1])
+        self.assertEqual(calls[1][2], "workflows.dual_pdf.pipeline")
         self.assertIn("build_sermon_reading_edition_with_openai.py", calls[2][1])
         # Independent PDF branches may start in either order after the reviewed edition.
-        pdf_calls = {Path(command[1]).name: command for command in calls[3:5]}
-        reading_call = pdf_calls["render_mobile_pdf_from_srt.py"]
+        # A package command is [python, tools/ops/run.py, <module>, ...]; a scripts/ one is [python, <file>, ...].
+        pdf_calls = {command[2] if Path(command[1]).name == "run.py" else Path(command[1]).name: command
+                     for command in calls[3:5]}
+        reading_call = pdf_calls["workflows.dual_pdf.mobile_pdf"]
         self.assertEqual(reading_call[reading_call.index("--layout") + 1], "reading")
         self.assertIn("generate_notes_with_openai.py", pdf_calls)
         self.assertTrue(any("reading-edition-v2" in item for item in report["readingEditionCommand"]))
@@ -490,6 +490,26 @@ class PostLiveSubtitleGenerationTest(unittest.TestCase):
             changed_glossary = mod.stable_payload_hash(mod.build_pipeline_input_identity(base_args, audio))
 
         self.assertEqual(len({base, changed_window, changed_model, changed_audio, changed_glossary}), 5)
+
+    def test_pipeline_resume_fingerprint_covers_extracted_legacy_openai_transport(self):
+        with tempfile.TemporaryDirectory() as tempdir:
+            audio = Path(tempdir) / "source_audio.m4a"
+            audio.write_bytes(b"audio")
+            args = make_args(output_mode="subtitles")
+            original_identity = mod.file_content_identity
+            transport_digest = "a" * 64
+
+            def identity_with_transport_revision(path):
+                if path is not None and Path(path) == mod.LEGACY_OPENAI_SCRIPT:
+                    return {"exists": True, "sizeBytes": 1, "sha256": transport_digest}
+                return original_identity(path)
+
+            with mock.patch.object(mod, "file_content_identity", side_effect=identity_with_transport_revision):
+                first = mod.stable_payload_hash(mod.build_pipeline_input_identity(args, audio))
+                transport_digest = "b" * 64
+                second = mod.stable_payload_hash(mod.build_pipeline_input_identity(args, audio))
+
+        self.assertNotEqual(first, second)
 
     def test_pipeline_summary_requires_expected_input_fingerprint(self):
         with tempfile.TemporaryDirectory() as tempdir:
@@ -716,6 +736,36 @@ class PostLiveSubtitleGenerationTest(unittest.TestCase):
         self.assertEqual(report["status"], "planned")
         self.assertEqual(report["liveSource"]["urlHash"], mod.stable_hash(locked_url))
 
+
+
+class LoadedCodeIdentityTests(unittest.TestCase):
+    """W3c: the entry reaches its host modules through proxies; execution_identity must
+    still record the modules importing the entry used to load (review finding on #556)."""
+
+    def run_identity(self, imports):
+        code = (imports + "; from scripts import tongxing_host; from tongxing_production.observability import accounting as sermon_accounting; import json; "
+                "print(json.dumps(sorted(sermon_accounting.execution_identity()['loadedProjectCodeSha256'])))")
+        result = subprocess.run([sys.executable, "-c", code], cwd=Path(__file__).resolve().parents[1],
+                                capture_output=True, text=True, timeout=120)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        return set(json.loads(result.stdout.strip().splitlines()[-1]))
+
+    def test_entry_load_time_imports_are_in_the_identity(self):
+        loaded = self.run_identity("from scripts import tongxing_host; "
+                                   "from tongxing_production.workflows.dual_pdf import post_live")
+        for path in ("backend/cloud.py", "backend/observability.py", "packages/production/src/tongxing_production/workflows/dual_pdf/live_source_monitor.py",
+                     "packages/production/src/tongxing_production/workflows/dual_pdf/run_status.py", "scripts/series_terminology.py",
+                     "packages/production/src/tongxing_production/workflows/dual_pdf/post_live.py"):
+            self.assertIn(path, loaded)
+
+    def test_codex_local_load_time_imports_and_the_post_live_entry_are_in_the_identity(self):
+        loaded = self.run_identity("from scripts import tongxing_host; "
+                                   "from tongxing_production.workflows.dual_pdf import codex_local")
+        for path in ("backend/config.py", "backend/cloud.py", "backend/leases.py",
+                     "packages/production/src/tongxing_production/workflows/supervisor/production.py",
+                     "packages/production/src/tongxing_production/workflows/supervisor/agent.py", "backend/observability.py",
+                     "packages/production/src/tongxing_production/workflows/dual_pdf/run_status.py"):
+            self.assertIn(path, loaded)
 
 if __name__ == "__main__":
     unittest.main()

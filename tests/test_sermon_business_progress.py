@@ -1,7 +1,8 @@
 import json
 import unittest
-from scripts import sermon_business_prefect_flow as flow
-from scripts import sermon_business_progress as projection
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.workflows.diagnostic import business_prefect_flow as flow
+from tongxing_production.workflows.diagnostic import business_progress as projection
 from tests import test_sermon_business_prefect_flow as fixtures
 
 

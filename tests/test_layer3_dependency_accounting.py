@@ -4,11 +4,12 @@ import time
 import unittest
 from unittest.mock import patch
 
-from scripts import render_formal_target_language_speech as renderer
-from scripts import sermon_accounting as accounting
-from scripts import weekly_pipeline_report as weekly
-from scripts import four_layer_progress as progress
-from scripts import four_layer_measure as measure
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.audio import renderer
+from tongxing_production.observability import accounting
+from tongxing_production.observability import weekly_projection as weekly
+from tongxing_production.observability import progress
+from tongxing_production.observability import measure
 from tests import test_render_formal_target_language_speech as fixtures
 
 

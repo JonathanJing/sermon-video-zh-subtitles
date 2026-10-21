@@ -1,0 +1,45 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261020-pr1065-rebase-local",
+  "runs": [
+    {
+      "label": "pr1065-rebase-local",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.claude/worktrees/jolly-galileo-b7ba98/artifacts/pr1065-rebase-local",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "pr1065-rebase-local",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 838,
+      "truncated": false,
+      "sha256": "98d294263cbce9aba4bb8b2a78cacfb3305298cedc357e61f3c4286044274f8a",
+      "redactions": {}
+    },
+    {
+      "run": "pr1065-rebase-local",
+      "path": "pytest.log",
+      "kind": "log",
+      "bytes": 7716,
+      "truncated": false,
+      "sha256": "856e5893f3187a1b88b2078163c215b5f632dbfa68cee5c359d6bda9721d5fea",
+      "redactions": {}
+    },
+    {
+      "run": "pr1065-rebase-local",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 1008,
+      "truncated": false,
+      "sha256": "128006714d983cfc67304a0dd8dcecdc42b859a0cc6089406adb871ea729909e",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

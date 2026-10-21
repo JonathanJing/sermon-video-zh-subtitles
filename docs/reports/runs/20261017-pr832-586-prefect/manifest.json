@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-pr832-586-prefect",
+  "runs": [
+    {
+      "label": "pr832-586-prefect-39076056512",
+      "source": "/private/tmp/cuv-t5-package-move-20261017/artifacts/pr832-586-prefect-39076056512",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "pr832-586-prefect-39076056512",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 294,
+      "truncated": false,
+      "sha256": "54c3b9262cce6f59fd2524e581d9699327b5cff697e97656f8b227e66902d752",
+      "redactions": {}
+    },
+    {
+      "run": "pr832-586-prefect-39076056512",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 1356,
+      "truncated": false,
+      "sha256": "4246a796899cbbea63e273ae896093e74bfc2b96d46f49447e57d153f0cbeb79",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

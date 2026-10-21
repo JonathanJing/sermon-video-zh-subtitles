@@ -1,0 +1,27 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-pr571-log-profile-regression",
+  "runs": [
+    {
+      "label": "pr571-log-profile-regression-tests",
+      "source": "~/.codex/worktrees/pr571-version-replay-fix/sermon-video-zh-subtitles/artifacts/pr571-log-profile-regression-tests",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "pr571-log-profile-regression-tests",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 337,
+      "truncated": false,
+      "sha256": "3a2c046821bbb4d24ba18a55cbfe46cb41081b35f0cdeb39f7bb9b4b5c474d03",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

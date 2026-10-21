@@ -1,0 +1,65 @@
+{
+  "schemaVersion": "ci-run-summary-v1",
+  "runId": 39084567362,
+  "url": "https://github.com/JonathanJing/sermon-video-zh-subtitles/actions/runs/39084567362",
+  "headSha": "9b099abab1b0b14292960475d8b6be60b504060b",
+  "workflow": "Python tests",
+  "cancelReason": "Superseded by confirmed P1 test-path repair on #570; new top head requires CI",
+  "jobs": [
+    {
+      "name": "changes",
+      "conclusion": "success",
+      "status": "completed"
+    },
+    {
+      "name": "test-group (root-5)",
+      "conclusion": "cancelled",
+      "status": "completed"
+    },
+    {
+      "name": "test-group (root-0)",
+      "conclusion": "cancelled",
+      "status": "completed"
+    },
+    {
+      "name": "test-group (root-4)",
+      "conclusion": "cancelled",
+      "status": "completed"
+    },
+    {
+      "name": "test-group (root-6)",
+      "conclusion": "cancelled",
+      "status": "completed"
+    },
+    {
+      "name": "test-group (root-3)",
+      "conclusion": "cancelled",
+      "status": "completed"
+    },
+    {
+      "name": "test-group (root-7)",
+      "conclusion": "cancelled",
+      "status": "completed"
+    },
+    {
+      "name": "test-group (root-2)",
+      "conclusion": "cancelled",
+      "status": "completed"
+    },
+    {
+      "name": "test-group (root-1)",
+      "conclusion": "cancelled",
+      "status": "completed"
+    },
+    {
+      "name": "Native and shared client contracts",
+      "conclusion": "skipped",
+      "status": "completed"
+    },
+    {
+      "name": "unittest",
+      "conclusion": "failure",
+      "status": "completed"
+    }
+  ]
+}

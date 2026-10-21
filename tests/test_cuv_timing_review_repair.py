@@ -3,7 +3,7 @@ from pathlib import Path
 import tempfile
 import unittest
 from unittest import mock
-from scripts import sermon_cuv_translation as m
+from tongxing_production.text import cuv_translation as m
 
 
 class TimingReviewRepairTests(unittest.TestCase):

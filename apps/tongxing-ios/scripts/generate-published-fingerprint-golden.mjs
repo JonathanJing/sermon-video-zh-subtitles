@@ -5,7 +5,7 @@
 import {readFileSync, writeFileSync} from 'node:fs';
 import {createHash} from 'node:crypto';
 import {pathToFileURL} from 'node:url';
-import {fingerprint, matchFingerprint} from '../../../experiments/sermon-dubbing-poc/web/fingerprint-core.mjs';
+import {fingerprint, matchFingerprint} from '../../../packages/fingerprint/src/fingerprint-core.mjs';
 
 function signal(rate, variant = 0) {
   return Float32Array.from({length: rate * 10}, (_, i) => {
@@ -71,7 +71,7 @@ export function checkGolden(fixture = defaultFixture) {
     schemaVersion: 'sermon-fingerprint-contract-baseline-v1',
     status: comparison.mismatchCount ? 'failed' : 'synthetic_contract_passed',
     fixtureSha256: sha(bytes),
-    algorithmSha256: sha(readFileSync(new URL('../../../experiments/sermon-dubbing-poc/web/fingerprint-core.mjs', import.meta.url))),
+    algorithmSha256: sha(readFileSync(new URL('../../../packages/fingerprint/src/fingerprint-core.mjs', import.meta.url))),
     generatorSha256: sha(readFileSync(new URL(import.meta.url))),
     algorithmVersion: 'spectral-landmarks-v1', indexSchemaVersion: 'sermon-landmark-index-v1',
     evidenceScope: 'deterministic_synthetic_browser_contract',

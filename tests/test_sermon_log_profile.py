@@ -1,6 +1,7 @@
 """Opt-in writer failure drills; all model facts are synthetic, no transport."""
 import copy
 from concurrent.futures import ThreadPoolExecutor
+import hashlib
 import json
 import os
 from pathlib import Path
@@ -10,23 +11,45 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-from scripts import sermon_accounting as accounting
-from scripts import sermon_log_contract as contract
-from scripts import sermon_log_outbox as outbox
-from scripts import sermon_log_profile as profile
-from scripts import sermon_review_observation as review
-from scripts import weekly_pipeline_report as weekly
-from scripts import export_sermon_trace as otlp
-from scripts import export_observability_trace as safe
-from scripts import sermon_logs as logs
+from tongxing_production.observability import accounting
+from tongxing_production.observability import log_contract as contract
+from tongxing_production.observability import outbox
+from tongxing_production.observability import profile
+from tongxing_production.observability import review_observation as review
+from tongxing_production.observability import weekly_projection as weekly
+from tongxing_production.observability import trace_export as otlp
+from tongxing_production.observability import observability_trace as safe
+from tongxing_production.observability import logs
 from tests.test_accounting_log_contract import fixture
 from tests.test_sermon_review_contracts import load
 
 
+def writer_fixture(name):
+    return dict(fixture(name), contractVersion=contract.VERSION)
+
+
 class ProfileWriterTests(unittest.TestCase):
+    def test_v1_write_requires_existing_run_binding_and_recovery_preserves_version(self):
+        old = fixture('stage-start')
+        with tempfile.TemporaryDirectory() as tmp:
+            with self.assertRaisesRegex(ValueError, 'legacy_version_new_write_rejected'):
+                outbox.deliver(tmp, old)
+            self.assertEqual(accounting.read_events(tmp)[0], [])
+            binding = Path(tmp) / '.run-profiles'
+            binding.mkdir(exist_ok=True)
+            marker = binding / (hashlib.sha256(old['runId'].encode()).hexdigest() + '.json')
+            outbox.jobs._persist(marker, {'runId': old['runId'], 'contractVersion': contract.LEGACY_VERSION})
+            with patch.object(outbox, '_append', side_effect=OSError('fault')):
+                with self.assertRaises(OSError):
+                    outbox.deliver(tmp, old)
+            self.assertEqual(outbox.replay_pending(tmp)['replayedEvents'], 1)
+            self.assertEqual(accounting.read_events(tmp)[0], [old])
+            with self.assertRaisesRegex(ValueError, 'run_contract_version_mismatch'):
+                outbox.deliver(tmp, writer_fixture('stage-start'))
+
     def test_prepare_freezes_identity_without_reserving_invalid_sequence(self):
         with tempfile.TemporaryDirectory() as tmp:
-            def build(e,p,s):return dict(fixture('stage-start'),eventId=e,producerId=p,sequence=s)
+            def build(e,p,s):return dict(writer_fixture('stage-start'),eventId=e,producerId=p,sequence=s)
             first=outbox.prepare(tmp,build)
             with self.assertRaises(contract.ContractError):outbox.prepare(tmp,lambda e,p,s:{**build(e,p,s),'prompt':'no'})
             second=outbox.prepare(tmp,build)
@@ -36,7 +59,7 @@ class ProfileWriterTests(unittest.TestCase):
 
     def test_preappend_failure_replays_same_event_without_external_work(self):
         with tempfile.TemporaryDirectory() as tmp:
-            event=fixture('stage-start')
+            event=writer_fixture('stage-start')
             with patch.object(outbox,'_append',side_effect=OSError('fault')),self.assertRaises(OSError):outbox.deliver(tmp,event)
             self.assertEqual(accounting.read_events(tmp)[0],[])
             result=outbox.replay_pending(tmp)
@@ -46,7 +69,7 @@ class ProfileWriterTests(unittest.TestCase):
 
     def test_postappend_preack_crash_duplicates_same_facts_and_replay_dedups(self):
         with tempfile.TemporaryDirectory() as tmp:
-            event=fixture('stage-start');original=Path.unlink
+            event=writer_fixture('stage-start');original=Path.unlink
             def fail(path,*args,**kwargs):
                 if path.parent.name=='.pending-events':raise OSError('fault')
                 return original(path,*args,**kwargs)
@@ -94,7 +117,7 @@ class ProfileWriterTests(unittest.TestCase):
     def test_legacy_append_rechecks_profile_after_competing_writer(self):
         import threading
         with tempfile.TemporaryDirectory() as tmp:
-            event=fixture('stage-start');checked=threading.Event();written=threading.Event()
+            event=writer_fixture('stage-start');checked=threading.Event();written=threading.Event()
             original=profile.reject_downgrade;checks=[];errors=[]
             def blocked(directory,run_id):
                 original(directory,run_id);checks.append(True)
@@ -140,12 +163,12 @@ class ProfileWriterTests(unittest.TestCase):
             def persisted(path,value):persist(path,value);timeline.append('intent' if path.parent.name=='.pending-events' else 'profile')
             def appended(fd,event):append(fd,event);timeline.append('append')
             with patch.object(outbox.jobs,'_sync_directory_ancestry',synced),patch.object(outbox.jobs,'_persist',persisted),patch.object(outbox,'_append',appended):
-                outbox.deliver(Path(tmp)/'new'/'ledger',fixture('stage-start'))
+                outbox.deliver(Path(tmp)/'new'/'ledger',writer_fixture('stage-start'))
             self.assertEqual(timeline,['ancestry','profile','intent','append'])
             responder=[]
             with patch.object(outbox.jobs,'_sync_directory_ancestry',side_effect=OSError('fault')):
                 with self.assertRaises(OSError):
-                    outbox.deliver(Path(tmp)/'failed',fixture('stage-start'));responder.append('called')
+                    outbox.deliver(Path(tmp)/'failed',writer_fixture('stage-start'));responder.append('called')
             self.assertFalse(responder)
 
     def test_transient_ledger_creation_race_retries_only_open(self):
@@ -155,7 +178,7 @@ class ProfileWriterTests(unittest.TestCase):
                 if path=='events.jsonl' and not failures:
                     failures.append(True);raise FileNotFoundError('darwin_creation_race')
                 return opened(path,*args,**kwargs)
-            with patch.object(outbox.os,'open',side_effect=once):outbox.deliver(tmp,fixture('stage-start'))
+            with patch.object(outbox.os,'open',side_effect=once):outbox.deliver(tmp,writer_fixture('stage-start'))
             self.assertEqual(len(accounting.read_events(tmp)[0]),1)
             self.assertEqual(len(failures),1)
 
@@ -164,25 +187,26 @@ class ProfileWriterTests(unittest.TestCase):
             root=Path(tmp);outside=root/'outside';outside.mkdir();(outside/'events.jsonl').write_text('sentinel')
             (root/'link').symlink_to(outside,target_is_directory=True)
             for folder in (root/'link',):
-                with self.assertRaises((ValueError,OSError)):outbox.deliver(folder,fixture('stage-start'))
+                with self.assertRaises((ValueError,OSError)):outbox.deliver(folder,writer_fixture('stage-start'))
             ledger=root/'ledger';ledger.mkdir();(ledger/'events.jsonl').symlink_to(outside/'events.jsonl')
-            with self.assertRaises((ValueError,OSError)):outbox.deliver(ledger,fixture('stage-start'))
+            with self.assertRaises((ValueError,OSError)):outbox.deliver(ledger,writer_fixture('stage-start'))
             self.assertEqual((outside/'events.jsonl').read_text(),'sentinel')
-            event=dict(fixture('stage-start'),extra='x'*contract.MAX_EVENT_BYTES)
+            event=dict(writer_fixture('stage-start'),extra='x'*contract.MAX_EVENT_BYTES)
             with self.assertRaisesRegex(contract.ContractError,'event_size_limit'):outbox.deliver(root/'oversize',event)
             self.assertFalse((root/'oversize').exists())
 
     def test_thread_and_process_append_have_no_loss_and_separate_producers(self):
         with tempfile.TemporaryDirectory() as tmp:
             def deliver(i):
-                event=outbox.prepare(tmp,lambda e,p,s:dict(fixture('stage-start'),eventId=e,producerId=p,sequence=s,spanId=f'span-{i}'))
+                event=outbox.prepare(tmp,lambda e,p,s:dict(writer_fixture('stage-start'),eventId=e,producerId=p,sequence=s,spanId=f'span-{i}'))
                 outbox.deliver(tmp,event)
             with ThreadPoolExecutor(max_workers=4) as pool:list(pool.map(deliver,range(12)))
-            code="""from scripts import sermon_log_outbox as o
+            code="""from tongxing_production.observability import outbox as o
 from tests.test_accounting_log_contract import fixture
 import sys
+from tongxing_production.observability import log_contract as c
 for i in range(3):
- e=o.prepare(sys.argv[1],lambda e,p,s:dict(fixture('stage-start'),eventId=e,producerId=p,sequence=s,spanId='child-'+str(i)))
+ e=o.prepare(sys.argv[1],lambda e,p,s:dict(fixture('stage-start'),contractVersion=c.VERSION,eventId=e,producerId=p,sequence=s,spanId='child-'+str(i)))
  o.deliver(sys.argv[1],e)
 """
             subprocess.run([sys.executable,'-c',code,tmp],check=True,capture_output=True)
@@ -199,7 +223,7 @@ for i in range(3):
             with profile.session(tmp,'synthetic',work_kind='production',evidence_mode='synthetic'):
                 with accounting.stage('parent',work_unit_id='l2.zh-Hans.group.001',depends_on=[]) as parent:
                     env=accounting.subprocess_environment()
-                    code="from scripts import sermon_accounting as a\nwith a.stage('child',depends_on=[]):a.record_workload('child',{'segmentCount':1})"
+                    code="from scripts import tongxing_host; from tongxing_production.observability import accounting as a\nwith a.stage('child',depends_on=[]):a.record_workload('child',{'segmentCount':1})"
                     subprocess.run([sys.executable,'-c',code],env=env,check=True,capture_output=True)
                     broken=dict(env);broken.pop(profile.PROFILE_ENV);broken.pop(profile.CONTEXT_ENV)
                     result=subprocess.run([sys.executable,'-c',code],env=broken,capture_output=True)
@@ -297,7 +321,7 @@ for i in range(3):
             with accounting.accounting_session(tmp,'legacy'):
                 with accounting.stage('old'):pass
             rows,_=accounting.read_events(tmp);self.assertTrue(all('contractVersion' not in r for r in rows))
-            event=fixture('stage-start');event['runId']=rows[0]['runId']
+            event=writer_fixture('stage-start');event['runId']=rows[0]['runId']
             with self.assertRaisesRegex(ValueError,'run_contract_version_mismatch'):outbox.deliver(tmp,event)
             self.assertEqual(accounting.read_events(tmp)[0],rows)
 
@@ -308,10 +332,11 @@ if __name__=='__main__':unittest.main()
 class DurableProfileContextTests(unittest.TestCase):
     def test_detached_job_restores_private_bounded_context_and_runs_once(self):
         import time
-        from scripts import sermon_workflow_jobs as jobs
+        from scripts import tongxing_host  # noqa: F401  binds the production package ports
+        from tongxing_production.orchestration import jobs
         with tempfile.TemporaryDirectory() as tmp:
             root=Path(tmp);ledger=root/'accounting';jobroot=root/'jobs'
-            code="from scripts import sermon_accounting as a\nwith a.stage('worker',depends_on=[]):a.record_workload('worker',{'segmentCount':1})"
+            code="from scripts import tongxing_host; from tongxing_production.observability import accounting as a\nwith a.stage('worker',depends_on=[]):a.record_workload('worker',{'segmentCount':1})"
             command=[sys.executable,'-c',code]
             with profile.session(ledger,'synthetic',work_kind='production',evidence_mode='synthetic'):
                 with accounting.stage('dispatch',work_unit_id='l2.zh-Hans.group.001',depends_on=[]) as dispatch:
@@ -336,7 +361,8 @@ class DurableProfileContextTests(unittest.TestCase):
             self.assertEqual(contract.replay_integrity(rows)['status'],'consistent')
 
     def test_changed_context_before_worker_never_executes(self):
-        from scripts import sermon_workflow_jobs as jobs
+        from scripts import tongxing_host  # noqa: F401  binds the production package ports
+        from tongxing_production.orchestration import jobs
         with tempfile.TemporaryDirectory() as tmp:
             root=Path(tmp);jobroot=root/'jobs';identity={'stage':'context-tamper'};key=jobs._digest(identity)
             with profile.session(root/'ledger','synthetic',work_kind='production',evidence_mode='synthetic'):
@@ -352,7 +378,7 @@ class DurableProfileContextTests(unittest.TestCase):
 class AtomicTraceArtifactTests(unittest.TestCase):
     def test_failed_replace_preserves_old_report_and_bound_ledger_digest(self):
         import hashlib
-        from scripts import sermon_trace_artifacts as artifacts
+        from tongxing_production.observability import trace_artifacts as artifacts
         with tempfile.TemporaryDirectory() as tmp:
             directory=Path(tmp)/'output';artifacts.new_directory(directory)
             path=directory/'report.json';artifacts.write(path,'old')

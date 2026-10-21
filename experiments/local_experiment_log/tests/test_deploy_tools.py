@@ -1,4 +1,5 @@
 import io
+import importlib.util
 import json
 from pathlib import Path
 import tarfile
@@ -6,6 +7,7 @@ import tempfile
 import unittest
 
 from experiments.local_experiment_log import deploy_tools as deploy
+from tongxing_production.path_aliases import resolve
 
 
 class DeploymentTests(unittest.TestCase):
@@ -17,8 +19,10 @@ class DeploymentTests(unittest.TestCase):
         for name, data in {
             'experiments/local_experiment_log/deploy_tools.py': Path(deploy.__file__).read_bytes(),
             'experiments/local_experiment_log/tool.py': b'print("one")\n',
-            'scripts/sermon_log_contract.py': b'# validator\n',
+            # The validator is read where the legacy path names it today (infrastructure I3).
+            resolve('scripts/sermon_log_contract.py'): b'# validator\n',
             'schemas/sermon-accounting-log-contract-v1.schema.json': b'{}\n',
+            'schemas/sermon-accounting-log-contract-v2.schema.json': b'{}\n',
         }.items():
             path = self.source/name
             path.parent.mkdir(parents=True, exist_ok=True)
@@ -45,6 +49,30 @@ class DeploymentTests(unittest.TestCase):
         deploy.rollback(receipt)
         self.assertFalse((self.root/'current').exists())
         self.assertTrue((self.root/receipt['current_target']).is_dir())
+
+    def test_installed_validator_reads_both_contract_versions(self):
+        from scripts import tongxing_host  # noqa: F401  binds the production package ports
+        from tongxing_production.observability import log_contract as contract
+        from tests.test_accounting_log_contract import fixture
+        repository = Path(__file__).resolve().parents[3]
+        implementation = repository / resolve('scripts/sermon_log_contract.py')
+        (self.source / resolve('scripts/sermon_log_contract.py')).write_bytes(implementation.read_bytes())
+        for version in (contract.LEGACY_VERSION, contract.VERSION):
+            name = f'schemas/{version}.schema.json'
+            (self.source / name).write_bytes((repository / name).read_bytes())
+        deploy.build(self.source, self.bundle, 'a' * 40)
+        receipt = deploy.install(self.bundle, self.root)
+        installed = self.root / receipt['current_target']
+        spec = importlib.util.spec_from_file_location('bundled_sermon_log_contract',
+                                                  installed / 'scripts/sermon_log_contract.py')
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        old = fixture('stage-start')
+        current = {**old, 'contractVersion': module.VERSION}
+        self.assertIs(module.validate_event(old), old)
+        self.assertIs(module.validate_event(current), current)
+        self.assertTrue((installed / 'schemas' / f'{module.LEGACY_VERSION}.schema.json').is_file())
+        self.assertTrue((installed / 'schemas' / f'{module.VERSION}.schema.json').is_file())
 
     def test_upgrade_rollback_restores_previous_release(self):
         first = deploy.install(self.bundle, self.root)

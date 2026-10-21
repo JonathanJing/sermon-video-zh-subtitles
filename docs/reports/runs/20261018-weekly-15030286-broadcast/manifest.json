@@ -1,0 +1,477 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261018-weekly-15030286-broadcast",
+  "runs": [
+    {
+      "label": "layer2-broadcast-20261018",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/weekend-live/layer2-broadcast-20261018",
+      "skipped": {
+        ".lock": 125,
+        ".json": 12387,
+        ".md": 4,
+        ".py": 5,
+        ".pyc": 1,
+        ".jsonl": 6,
+        ".csv": 12,
+        ".txt": 48
+      }
+    },
+    {
+      "label": "layer3-broadcast-20261018",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/weekend-live/layer3-broadcast-20261018",
+      "skipped": {
+        ".out": 1,
+        ".sh": 2,
+        ".json": 9296,
+        ".py": 4,
+        ".md": 1,
+        ".lock": 2,
+        ".jsonl": 1,
+        ".csv": 3,
+        ".sha256": 1489,
+        ".wav": 2323,
+        ".mp3": 2
+      }
+    }
+  ],
+  "files": [
+    {
+      "run": "layer2-broadcast-20261018",
+      "path": "decisions.ndjson",
+      "kind": "whole",
+      "bytes": 2372,
+      "truncated": false,
+      "sha256": "e9834aeb448ff37252e29088719dea717df61efc149cb717238b4bd2eadc2b31",
+      "redactions": {
+        "home_dir": 3
+      }
+    },
+    {
+      "run": "layer2-broadcast-20261018",
+      "path": "jobs-zh/87ccf9e134c2e7b0c94a6271bf053af25f65a6d314a8b7985eefb808876ff43e/worker.log",
+      "kind": "log",
+      "bytes": 8646,
+      "truncated": false,
+      "sha256": "350f9b9d98302809c022fc63e4ac7a0a4ee164a9a702b0c62b7c50bc4239327e",
+      "redactions": {
+        "secret_field": 1,
+        "email": 3
+      }
+    },
+    {
+      "run": "layer2-broadcast-20261018",
+      "path": "jobs-zh-2/8aa2f3559404cc108ad60134f91342df3efdb78cb82ce7afcef0424e6118fa0b/worker.log",
+      "kind": "log",
+      "bytes": 8646,
+      "truncated": false,
+      "sha256": "350f9b9d98302809c022fc63e4ac7a0a4ee164a9a702b0c62b7c50bc4239327e",
+      "redactions": {
+        "secret_field": 1,
+        "email": 3
+      }
+    },
+    {
+      "run": "layer2-broadcast-20261018",
+      "path": "jobs-zh-3/74d0bfef1f89a152b0410d192a8c6b2d0180033e85ce734fec943e186add0dab/worker.log",
+      "kind": "log",
+      "bytes": 8646,
+      "truncated": false,
+      "sha256": "c1337064045bb430a567420013947cc69e56da54fbf300707d6ee94a388cae0c",
+      "redactions": {
+        "secret_field": 1,
+        "email": 3
+      }
+    },
+    {
+      "run": "layer2-broadcast-20261018",
+      "path": "jobs-zh-5/69382aede0a85d81682d0110419e9136d964546beab13116a408df9c61a9cefa/worker.log",
+      "kind": "log",
+      "bytes": 2494,
+      "truncated": false,
+      "sha256": "d835d9a0af98393fd173937b59808298d335345e39e94a6713ea2ce2ab1dbe38",
+      "redactions": {
+        "secret_field": 1
+      }
+    },
+    {
+      "run": "layer2-broadcast-20261018",
+      "path": "jobs-zh-5/d4d36b3e30289e5f0364d4f9f33471d5a17ca9893b89dcc49490dc05101db31e/worker.log",
+      "kind": "log",
+      "bytes": 10118,
+      "truncated": false,
+      "sha256": "f938d78693568a0ff6eeac2152f1b37a15377e39bfc0bf1ca71b627b94e52689",
+      "redactions": {
+        "secret_field": 1,
+        "email": 3,
+        "home_dir": 1
+      }
+    },
+    {
+      "run": "layer2-broadcast-20261018",
+      "path": "jobs-zh-6/18787d6ccd8813b8e9ec289f9a0fa0f17f151c11121f62aa7a7b462a2bd5b526/worker.log",
+      "kind": "log",
+      "bytes": 0,
+      "truncated": false,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "redactions": {}
+    },
+    {
+      "run": "layer2-broadcast-20261018",
+      "path": "jobs-zh-7/8b0bc4293be744c25be0e8d500c8c923c27125716a7b3845f5d6233deed99399/worker.log",
+      "kind": "log",
+      "bytes": 0,
+      "truncated": false,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "redactions": {}
+    },
+    {
+      "run": "layer2-broadcast-20261018",
+      "path": "run-zh-2.log",
+      "kind": "log",
+      "bytes": 920,
+      "truncated": false,
+      "sha256": "4300c6a9b4f8fc523a124b5785ba0d7d1cbc14141b53fadffe325c9c90a70872",
+      "redactions": {}
+    },
+    {
+      "run": "layer2-broadcast-20261018",
+      "path": "run-zh-3.log",
+      "kind": "log",
+      "bytes": 920,
+      "truncated": false,
+      "sha256": "b9dd69d6985e34624a29bc476c9991dff84b161ea0a44edbb269d2a8fe9a2e02",
+      "redactions": {}
+    },
+    {
+      "run": "layer2-broadcast-20261018",
+      "path": "run-zh-5.log",
+      "kind": "log",
+      "bytes": 920,
+      "truncated": false,
+      "sha256": "3025b08d4f59525361d2de177f9d1bb108ba778af126c19a2a8d8a14ded161bc",
+      "redactions": {}
+    },
+    {
+      "run": "layer2-broadcast-20261018",
+      "path": "run-zh-5b.log",
+      "kind": "log",
+      "bytes": 920,
+      "truncated": false,
+      "sha256": "4aab1bc55654c8090889cb2927b79fe92d7a74e98991c842aa45483492b531c7",
+      "redactions": {}
+    },
+    {
+      "run": "layer2-broadcast-20261018",
+      "path": "run-zh-6.log",
+      "kind": "log",
+      "bytes": 920,
+      "truncated": false,
+      "sha256": "5872eb87ea6c80175b0c5f0d1f475c599cd81e94921a61be58f3e9deb77d967d",
+      "redactions": {}
+    },
+    {
+      "run": "layer2-broadcast-20261018",
+      "path": "run-zh-7.log",
+      "kind": "log",
+      "bytes": 920,
+      "truncated": false,
+      "sha256": "1c8d3f8026315bba9d7ae941883113811197a9159fa4d2fa6ee017cb07edf829",
+      "redactions": {}
+    },
+    {
+      "run": "layer2-broadcast-20261018",
+      "path": "run-zh.badsha.log",
+      "kind": "log",
+      "bytes": 1596,
+      "truncated": false,
+      "sha256": "18bf0d33465e88b21b48e7704d17640bdefc66fa194826443985e98066bff4f2",
+      "redactions": {}
+    },
+    {
+      "run": "layer2-broadcast-20261018",
+      "path": "run-zh.log",
+      "kind": "log",
+      "bytes": 920,
+      "truncated": false,
+      "sha256": "726d3be59498869a03517a28e04e1eaa4c7552b63e0a2802dbb566fe14274206",
+      "redactions": {}
+    },
+    {
+      "run": "layer2-broadcast-20261018",
+      "path": "run-zh.nolauncher.log",
+      "kind": "log",
+      "bytes": 2746,
+      "truncated": false,
+      "sha256": "b2bda304a8f573f4bd7310afa294d34265a12ca87b8c3e055a84227296d3fb60",
+      "redactions": {
+        "secret_field": 2
+      }
+    },
+    {
+      "run": "layer2-broadcast-20261018",
+      "path": "text-review/approved/human-review-receipt.json",
+      "kind": "whole",
+      "bytes": 148729,
+      "truncated": false,
+      "sha256": "76183a19cd9967d5dc1e293dc8ddba218547cfe92eae42da7a0625f65fb9075c",
+      "redactions": {}
+    },
+    {
+      "run": "layer2-broadcast-20261018",
+      "path": "text-zh/zh-Hans/accounting/operations.log",
+      "kind": "log",
+      "bytes": 50400,
+      "truncated": false,
+      "sha256": "b8d3f052630d0ba0fdc0a0c4980a05e480fea773139f51483af8fa67e4d2f613",
+      "redactions": {}
+    },
+    {
+      "run": "layer2-broadcast-20261018",
+      "path": "text-zh/zh-Hans/accounting/summary.json",
+      "kind": "whole",
+      "bytes": 184672,
+      "truncated": false,
+      "sha256": "7ed01af084d41887b6584164c0a2366a41d30ee2f2cba3b6d5815b9731030ca1",
+      "redactions": {}
+    },
+    {
+      "run": "layer2-broadcast-20261018",
+      "path": "text-zh-2/zh-Hans/accounting/operations.log",
+      "kind": "log",
+      "bytes": 50400,
+      "truncated": false,
+      "sha256": "7534e29abbb2a2046a707f5ffe69d4b08fa5b0c2cd84166e9392d3b500be4396",
+      "redactions": {}
+    },
+    {
+      "run": "layer2-broadcast-20261018",
+      "path": "text-zh-2/zh-Hans/accounting/summary.json",
+      "kind": "whole",
+      "bytes": 184651,
+      "truncated": false,
+      "sha256": "a64d21474f503516d82365b073ba2ce1fdf07e94768c7b4a390cd5bdf08ec1c0",
+      "redactions": {}
+    },
+    {
+      "run": "layer2-broadcast-20261018",
+      "path": "text-zh-3/zh-Hans/accounting/operations.log",
+      "kind": "log",
+      "bytes": 50401,
+      "truncated": false,
+      "sha256": "bd11f51fd1987efd97e5b8db8a6b692b985233ea1d1f3ecb37c349c8705aeed9",
+      "redactions": {}
+    },
+    {
+      "run": "layer2-broadcast-20261018",
+      "path": "text-zh-3/zh-Hans/accounting/summary.json",
+      "kind": "whole",
+      "bytes": 184673,
+      "truncated": false,
+      "sha256": "c8f2c8dbab9899fabaaaf080ec9363362d945b8ab21b41fce091351bbf4fdbb6",
+      "redactions": {}
+    },
+    {
+      "run": "layer2-broadcast-20261018",
+      "path": "text-zh-5/zh-Hans/accounting/operations.log",
+      "kind": "log",
+      "bytes": 6950892,
+      "truncated": true,
+      "sha256": "daed7c84683115e3c924be72f6ba77c201518010ff237049764d4e8ebdb1580c",
+      "redactions": {}
+    },
+    {
+      "run": "layer2-broadcast-20261018",
+      "path": "text-zh-5/zh-Hans/accounting/summary.json",
+      "kind": "whole",
+      "bytes": 9198632,
+      "truncated": false,
+      "sha256": "e70a6d5e4a7cebc7d2f6b7156bbfbd2c0a4113128f807f543220cc7f3a771e36",
+      "omitted": "over_size_cap"
+    },
+    {
+      "run": "layer2-broadcast-20261018",
+      "path": "text-zh-5/zh-Hans/repair-rounds/auto-repair-receipt-003.json",
+      "kind": "whole",
+      "bytes": 2673,
+      "truncated": false,
+      "sha256": "9204a5476e50808a05acb031fd5c4dfea6e4841144bd88e0ae2167675d7d7364",
+      "redactions": {
+        "home_dir": 5
+      }
+    },
+    {
+      "run": "layer3-broadcast-20261018",
+      "path": "decisions.ndjson",
+      "kind": "whole",
+      "bytes": 2918,
+      "truncated": false,
+      "sha256": "aed44ac90eec94791048dfe3bf31480f48b1cacc839bfd00448cdda9ccf0036d",
+      "redactions": {}
+    },
+    {
+      "run": "layer3-broadcast-20261018",
+      "path": "zh-Hans/compact.log",
+      "kind": "log",
+      "bytes": 57,
+      "truncated": false,
+      "sha256": "1ed2a7a64bb04ba9d9789ff6f76c6a851520379b66fda692f89bf20acb34a58d",
+      "redactions": {}
+    },
+    {
+      "run": "layer3-broadcast-20261018",
+      "path": "zh-Hans/failed-attempt-user-scope-correction-1539/render.log",
+      "kind": "log",
+      "bytes": 1864,
+      "truncated": false,
+      "sha256": "cd6e911653fe37911ea15ce74c7b09ff1bad8289df0007c245360e6e3d108d64",
+      "redactions": {
+        "email": 5,
+        "home_dir": 2
+      }
+    },
+    {
+      "run": "layer3-broadcast-20261018",
+      "path": "zh-Hans/human-reviewed-v2/audio-human-review-receipt.json",
+      "kind": "whole",
+      "bytes": 21958,
+      "truncated": false,
+      "sha256": "c0e2fb757efe35dfd204b9a49a38f270a8df9f9db5ef7fb21316325e33c8b68f",
+      "redactions": {}
+    },
+    {
+      "run": "layer3-broadcast-20261018",
+      "path": "zh-Hans/invalidated-inference-1600/human-reviewed/audio-human-review-receipt.json",
+      "kind": "whole",
+      "bytes": 20394,
+      "truncated": false,
+      "sha256": "766ce85bdba2353e4c0570c9713f66cd76ab9560e77516ad67b6e9fce144a8ca",
+      "redactions": {}
+    },
+    {
+      "run": "layer3-broadcast-20261018",
+      "path": "zh-Hans/package.log",
+      "kind": "log",
+      "bytes": 219,
+      "truncated": false,
+      "sha256": "aa659b93324b2f6430736b52c28924876f60b74b0379b1911034b14a45079f9f",
+      "redactions": {
+        "home_dir": 1
+      }
+    },
+    {
+      "run": "layer3-broadcast-20261018",
+      "path": "zh-Hans/render.log",
+      "kind": "log",
+      "bytes": 133,
+      "truncated": false,
+      "sha256": "9756c49817fb15e3b32a009d1ffdd6d5398dfabba134e2e34aeb60cc321b9294",
+      "redactions": {}
+    },
+    {
+      "run": "layer3-broadcast-20261018",
+      "path": "zh-Hans/screen.log",
+      "kind": "log",
+      "bytes": 60,
+      "truncated": false,
+      "sha256": "31c1bdc2652bfcbedfc830eb6525ff005d5f255ea2b7a1436336051717d81376",
+      "redactions": {}
+    },
+    {
+      "run": "layer3-broadcast-20261018",
+      "path": "zh-Hans/spark-output/compact.log",
+      "kind": "log",
+      "bytes": 200,
+      "truncated": false,
+      "sha256": "27a21ed52952116141d346644de91a30492e36820dea48c20bb4bf5c2371b963",
+      "redactions": {}
+    },
+    {
+      "run": "layer3-broadcast-20261018",
+      "path": "zh-Hans/spark-output/render.log",
+      "kind": "log",
+      "bytes": 6298,
+      "truncated": false,
+      "sha256": "ee70578d1200d5b5f1dedb9eb8f532b5b6d5343083ad283551251d2be2503ee0",
+      "redactions": {}
+    },
+    {
+      "run": "layer3-broadcast-20261018",
+      "path": "zh-Hans/spark-output/screen-c1.log",
+      "kind": "log",
+      "bytes": 8803,
+      "truncated": false,
+      "sha256": "93289ad90b50595d1f9955fc70dc5c319f18bdd234938d07fdb4b0bcd83ec777",
+      "redactions": {}
+    },
+    {
+      "run": "layer3-broadcast-20261018",
+      "path": "zh-Hans/spark-output/speech-job/accounting/operations.log",
+      "kind": "log",
+      "bytes": 1957076,
+      "truncated": true,
+      "sha256": "0f0ce0d274699ad4c4aee06944a73e2312e38ce37fa056ed18490943b7024336",
+      "redactions": {}
+    },
+    {
+      "run": "layer3-broadcast-20261018",
+      "path": "zh-Hans/spark-output/speech-job/accounting/summary.json",
+      "kind": "whole",
+      "bytes": 4589055,
+      "truncated": false,
+      "sha256": "0d7d17426d5bc4d5441e81cbcd1e115cbc9bc16ce8d5c9716de94d2d4ceb9b5c",
+      "omitted": "over_size_cap"
+    },
+    {
+      "run": "layer3-broadcast-20261018",
+      "path": "zh-Hans/spark-output/speech-job/asr-screening-receipt-c1.json",
+      "kind": "whole",
+      "bytes": 225734,
+      "truncated": false,
+      "sha256": "c7af8c69f0354d7cb55b37d7cd7b05e5673d45227deb200e1c0afa46d3bafc42",
+      "redactions": {}
+    },
+    {
+      "run": "layer3-broadcast-20261018",
+      "path": "zh-Hans/spark-zh-Hans-bc-c1/compact.log",
+      "kind": "log",
+      "bytes": 200,
+      "truncated": false,
+      "sha256": "27a21ed52952116141d346644de91a30492e36820dea48c20bb4bf5c2371b963",
+      "redactions": {}
+    },
+    {
+      "run": "layer3-broadcast-20261018",
+      "path": "zh-Hans/spark-zh-Hans-bc-c1/screen-c1.log",
+      "kind": "log",
+      "bytes": 8803,
+      "truncated": false,
+      "sha256": "93289ad90b50595d1f9955fc70dc5c319f18bdd234938d07fdb4b0bcd83ec777",
+      "redactions": {}
+    },
+    {
+      "run": "layer3-broadcast-20261018",
+      "path": "zh-Hans/spark-zh-Hans-bc-c1/speech-job/asr-screening-receipt-c1.json",
+      "kind": "whole",
+      "bytes": 225734,
+      "truncated": false,
+      "sha256": "c7af8c69f0354d7cb55b37d7cd7b05e5673d45227deb200e1c0afa46d3bafc42",
+      "redactions": {}
+    },
+    {
+      "run": "layer3-broadcast-20261018",
+      "path": "zh-Hans/speech-job.log",
+      "kind": "log",
+      "bytes": 266,
+      "truncated": false,
+      "sha256": "47cd6a238348bb59f790751fdbd17f3c8c0bf98c00b05a593056dbff99da7484",
+      "redactions": {
+        "home_dir": 1
+      }
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

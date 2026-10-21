@@ -20,7 +20,7 @@ This Supervisor currently owns the `dual_pdf` scope. Its `complete` decision is 
 
 ## Current operator entry
 
-Use [the local production runbook](./codex-local-production-runbook.zh.md) and `scripts/run_codex_local_sermon_production.py`. Resume from current durable state and reuse valid approval. This document details the state/tool contract; the older Scheduler-to-Cloud-Run topology below is a rollback reference, not the default local execution path.
+Use [the local production runbook](./codex-local-production-runbook.zh.md) and `tools/ops/run.py workflows.dual_pdf.codex_local`. Resume from current durable state and reuse valid approval. This document details the state/tool contract; the older Scheduler-to-Cloud-Run topology below is a rollback reference, not the default local execution path.
 
 ## Architecture
 
@@ -50,10 +50,10 @@ The polling interval determined when the next handoff could be observed, in addi
 
 ## Entrypoints
 
-- Agent runner: `scripts/run_sermon_production_supervisor_agent.py`
-- Deterministic state/tool contract: `scripts/sermon_production_supervisor.py`
-- Source-media preparation (legacy filename): `scripts/run_post_live_timeline_job.py`
-- Reading-PDF tool: `scripts/run_post_live_subtitle_generation.py`
+- Agent runner: `packages/production/src/tongxing_production/workflows/supervisor/agent.py`
+- Deterministic state/tool contract: `packages/production/src/tongxing_production/workflows/supervisor/production.py`
+- Source-media preparation (legacy filename): `tools/ops/run.py workflows.dual_pdf.timeline`
+- Reading-PDF tool: `tools/ops/run.py workflows.dual_pdf.post_live`
 - API: `POST /api/admin/sundays/<date>/production-supervisor`
 
 The SDK rollback path retains this bounded Python dependency; it does not implement the Agents API server-side loop:
@@ -76,7 +76,7 @@ Both mutation tools validate durable state before execution. Together with inspe
 Local shadow example:
 
 ```bash
-.venv/bin/python scripts/run_sermon_production_supervisor_agent.py \
+.venv/bin/python tools/ops/run.py workflows.supervisor.agent \
   --sunday 2026-08-02 \
   --state-file artifacts/live-source-monitor/state.json \
   --work-root artifacts/post-live-runs \
@@ -90,18 +90,18 @@ The following parameters are integrated in the local runner. Check the verificat
 
 ```bash
 # Create a controlled session and persist its state and tool results.
-.venv/bin/python scripts/run_codex_local_sermon_production.py \
+.venv/bin/python tools/ops/run.py workflows.dual_pdf.codex_local \
   --mode shadow --agent-backend agents-api \
   --agent-run-dir artifacts/sermon-production-supervisor/api-shadow
 
 # Resume that same session.
-.venv/bin/python scripts/run_codex_local_sermon_production.py \
+.venv/bin/python tools/ops/run.py workflows.dual_pdf.codex_local \
   --mode shadow --agent-backend agents-api \
   --agent-run-dir artifacts/sermon-production-supervisor/api-shadow \
   --resume-agent-session
 
 # Explicit SDK / Responses rollback.
-.venv/bin/python scripts/run_codex_local_sermon_production.py \
+.venv/bin/python tools/ops/run.py workflows.dual_pdf.codex_local \
   --mode shadow --agent-backend sdk
 ```
 
@@ -120,7 +120,7 @@ Existing tool/action names, lease keys and approval report-hash fields remain fo
 After independently reviewing the completed livestream:
 
 ```bash
-.venv/bin/python scripts/run_sermon_production_supervisor_agent.py \
+.venv/bin/python tools/ops/run.py workflows.supervisor.agent \
   --sunday 2026-08-02 \
   --state-file 'gs://sermon-zh-artifacts-ai-for-god/sundays/live-source-monitor/backend-state.json' \
   --work-root /tmp/sermon-post-live-subtitles \
@@ -141,7 +141,7 @@ The approval binds the Sunday, source URL hash, approved times, approver, and cu
 These older API/Scheduler parameters do not demonstrate an Agents API integration on this path. The referenced post-live Job is retired; any recovery would first rebuild and verify a suitable Job, then select the SDK backend explicitly. Configure a rebuilt API trigger in shadow mode first:
 
 ```bash
-python3 scripts/configure_live_source_scheduler.py \
+python3 tools/ops/configure_live_source_scheduler.py \
   --project ai-for-god \
   --location us-west1 \
   --service-url 'https://sermon-zh-caption-web-...' \
@@ -170,7 +170,7 @@ If Scheduler calls the endpoint without a configured Job and inline execution is
 
 ## Completion rule
 
-Use a fresh `snapshot.recommendedAction.action == "complete"` from [the deterministic supervisor](../scripts/sermon_production_supervisor.py). It requires completed generation, passing reading quality and both PDF QA reports, a valid source/timeline-bound human approval, and verified publication when configured. The [local runbook](./codex-local-production-runbook.zh.md#完成标准) describes the deployed delivery contract.
+Use a fresh `snapshot.recommendedAction.action == "complete"` from [the deterministic supervisor](../packages/production/src/tongxing_production/workflows/supervisor/production.py). It requires completed generation, passing reading quality and both PDF QA reports, a valid source/timeline-bound human approval, and verified publication when configured. The [local runbook](./codex-local-production-runbook.zh.md#完成标准) describes the deployed delivery contract.
 
 That state establishes completion only for `workflowScope=dual_pdf` and any explicitly configured legacy publication step. Canonical prepared production is complete only when the same source has valid `English Source Package`, `Target-Language Candidate`, `Target-Language Audio Package` (including explicit `audio_unavailable` for text-only release), and `Target-Language Release Package` evidence for the target locale. A legacy PDF or page status must not be relabeled as `four_layer_release`.
 
@@ -212,7 +212,7 @@ URLs, internal paths, configuration, hashes, sermon text, logs, identities, and 
 
 ## Opt-in deterministic page-release adapter (E2 initial implementation)
 
-`scripts/sermon_deterministic_controller.py` adds a versioned action registry and deterministic inspect/admit/dispatch/wait/stop entry for the existing **legacy page_release** adapter. It does not implement canonical four-layer multilingual production, source acquisition, or PDF generation. The existing agent entry and production models remain unchanged.
+`packages/production/src/tongxing_production/workflows/supervisor/deterministic_controller.py` adds a versioned action registry and deterministic inspect/admit/dispatch/wait/stop entry for the existing **legacy page_release** adapter. It does not implement canonical four-layer multilingual production, source acquisition, or PDF generation. The existing agent entry and production models remain unchanged.
 
 Use `--sunday`, `--state-file`, `--work-root`, and `--release-config` with the existing operator-owned source/release configuration. `--mode deterministic_shadow` is the default: it reads existing snapshots, outputs a bounded decision with a state hash, and creates no controller/job state. `--mode legacy_agent` returns a handoff indication without starting a new agent. `--mode deterministic_execute` is explicitly opt-in and may invoke the existing costly/external activities only when the normal authorizations and gates admit them. No real execution is part of this implementation's fixture evidence.
 

@@ -1,14 +1,13 @@
-import importlib.util
 import tempfile
 import unittest
 from pathlib import Path
 from unittest.mock import patch
 
 
+from tools.development import docs_change_gate as gate
+
+
 ROOT = Path(__file__).resolve().parents[1]
-SPEC = importlib.util.spec_from_file_location("docs_change_gate", ROOT / "scripts/docs_change_gate.py")
-gate = importlib.util.module_from_spec(SPEC)
-SPEC.loader.exec_module(gate)
 
 
 class DocsChangeGateTests(unittest.TestCase):
@@ -29,7 +28,7 @@ class DocsChangeGateTests(unittest.TestCase):
         )
         rejected = (
             "apps/tongxing-ios/Assets.xcassets/icon.png",
-            "experiments/sermon-dubbing-poc/web/README.md",
+            "apps/listening-web/README.md",
             "docs/diagrams/render_diagrams.py",
             "docs/schema.json",
             "docs/reports/20261005-receipt.json",

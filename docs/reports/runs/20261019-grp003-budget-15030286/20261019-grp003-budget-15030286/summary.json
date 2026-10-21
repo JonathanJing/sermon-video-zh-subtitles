@@ -1,0 +1,329 @@
+{
+  "schemaVersion": "sermon-group-budget-dry-run-summary-v1",
+  "backlogId": "DEV-GRP-003",
+  "source": "15030286",
+  "mode": "read_only",
+  "dispatched": false,
+  "modelCalls": 0,
+  "productsWritten": 0,
+  "humanApproval": false,
+  "codeBranch": "claude/dev-grp-003-group-budget",
+  "runProfile": "config/weekly-run-profile.json (week)",
+  "allLocales": {
+    "wallSeconds": 9.59,
+    "budgets": {
+      "zh-Hans": {
+        "perTry": {
+          "translation": {
+            "system": "layer2",
+            "requests": 2,
+            "costMicrousd": 122880
+          },
+          "textQc": {
+            "system": "qc",
+            "requests": 2,
+            "costMicrousd": 92160
+          },
+          "condensation": {
+            "system": "qc",
+            "requests": 2,
+            "costMicrousd": 92160
+          },
+          "secondaryAsr": {
+            "system": "secondaryAsr",
+            "requests": 1,
+            "costMicrousd": 13500
+          }
+        },
+        "priceAssumptions": {
+          "gpt-6.1-sol": "strict-chat-worst-case-2026-10-05-v2"
+        },
+        "totals": {
+          "capMicrousd": {
+            "layer2": 5000000,
+            "qc": 30000000,
+            "secondaryAsr": 20250000
+          },
+          "remainingMicrousd": {
+            "layer2": 5000000,
+            "qc": 48000,
+            "secondaryAsr": 15862500
+          },
+          "reservedMicrousd": {
+            "layer2": 0,
+            "qc": 29952000,
+            "secondaryAsr": 4387500
+          },
+          "reservedRequests": {
+            "layer2": 0,
+            "qc": 650,
+            "secondaryAsr": 325
+          },
+          "counts": {
+            "reserved": 325,
+            "repair_spend_cap": 77,
+            "repair_limit_reached": 0
+          }
+        },
+        "reusedGroupCount": 0,
+        "runProfile": {
+          "schemaVersion": "sermon-weekly-run-profile-v3",
+          "scale": "week",
+          "sha256": "4bdf5a127d6213e96e837c7bce4bdc6cc3284ff7007f88086430111b93749f88"
+        }
+      },
+      "es": {
+        "perTry": {
+          "translation": {
+            "system": "layer2",
+            "requests": 2,
+            "costMicrousd": 122880
+          },
+          "textQc": {
+            "system": "qc",
+            "requests": 2,
+            "costMicrousd": 92160
+          },
+          "condensation": {
+            "system": "qc",
+            "requests": 2,
+            "costMicrousd": 92160
+          },
+          "secondaryAsr": {
+            "system": "secondaryAsr",
+            "requests": 1,
+            "costMicrousd": 13500
+          }
+        },
+        "priceAssumptions": {
+          "gpt-6.1-sol": "strict-chat-worst-case-2026-10-05-v2"
+        },
+        "totals": {
+          "capMicrousd": {
+            "layer2": 5000000,
+            "qc": 30000000,
+            "secondaryAsr": 20250000
+          },
+          "remainingMicrousd": {
+            "layer2": 5000000,
+            "qc": 48000,
+            "secondaryAsr": 20250000
+          },
+          "reservedMicrousd": {
+            "layer2": 0,
+            "qc": 29952000,
+            "secondaryAsr": 0
+          },
+          "reservedRequests": {
+            "layer2": 0,
+            "qc": 650,
+            "secondaryAsr": 0
+          },
+          "counts": {
+            "reserved": 325,
+            "repair_spend_cap": 77,
+            "repair_limit_reached": 0
+          }
+        },
+        "reusedGroupCount": 0,
+        "runProfile": {
+          "schemaVersion": "sermon-weekly-run-profile-v3",
+          "scale": "week",
+          "sha256": "4bdf5a127d6213e96e837c7bce4bdc6cc3284ff7007f88086430111b93749f88"
+        }
+      },
+      "ko": {
+        "perTry": {
+          "translation": {
+            "system": "layer2",
+            "requests": 2,
+            "costMicrousd": 122880
+          },
+          "textQc": {
+            "system": "qc",
+            "requests": 2,
+            "costMicrousd": 92160
+          },
+          "condensation": {
+            "system": "qc",
+            "requests": 2,
+            "costMicrousd": 92160
+          },
+          "secondaryAsr": {
+            "system": "secondaryAsr",
+            "requests": 1,
+            "costMicrousd": 13500
+          }
+        },
+        "priceAssumptions": {
+          "gpt-6.1-sol": "strict-chat-worst-case-2026-10-05-v2"
+        },
+        "totals": {
+          "capMicrousd": {
+            "layer2": 5000000,
+            "qc": 30000000,
+            "secondaryAsr": 20250000
+          },
+          "remainingMicrousd": {
+            "layer2": 5000000,
+            "qc": 48000,
+            "secondaryAsr": 20250000
+          },
+          "reservedMicrousd": {
+            "layer2": 0,
+            "qc": 29952000,
+            "secondaryAsr": 0
+          },
+          "reservedRequests": {
+            "layer2": 0,
+            "qc": 650,
+            "secondaryAsr": 0
+          },
+          "counts": {
+            "reserved": 325,
+            "repair_spend_cap": 77,
+            "repair_limit_reached": 0
+          }
+        },
+        "reusedGroupCount": 0,
+        "runProfile": {
+          "schemaVersion": "sermon-weekly-run-profile-v3",
+          "scale": "week",
+          "sha256": "4bdf5a127d6213e96e837c7bce4bdc6cc3284ff7007f88086430111b93749f88"
+        }
+      }
+    }
+  },
+  "koRedo3": {
+    "wallSeconds": 3.14,
+    "budgets": {
+      "ko": {
+        "perTry": {
+          "translation": {
+            "system": "layer2",
+            "requests": 2,
+            "costMicrousd": 122880
+          },
+          "textQc": {
+            "system": "qc",
+            "requests": 2,
+            "costMicrousd": 92160
+          },
+          "condensation": {
+            "system": "qc",
+            "requests": 2,
+            "costMicrousd": 92160
+          },
+          "secondaryAsr": {
+            "system": "secondaryAsr",
+            "requests": 1,
+            "costMicrousd": 13500
+          }
+        },
+        "priceAssumptions": {
+          "gpt-6.1-sol": "strict-chat-worst-case-2026-10-05-v2"
+        },
+        "totals": {
+          "capMicrousd": {
+            "layer2": 5000000,
+            "qc": 30000000,
+            "secondaryAsr": 20250000
+          },
+          "remainingMicrousd": {
+            "layer2": 3525440,
+            "qc": 48000,
+            "secondaryAsr": 20088000
+          },
+          "reservedMicrousd": {
+            "layer2": 1474560,
+            "qc": 29952000,
+            "secondaryAsr": 162000
+          },
+          "reservedRequests": {
+            "layer2": 24,
+            "qc": 650,
+            "secondaryAsr": 12
+          },
+          "counts": {
+            "reserved": 316,
+            "repair_spend_cap": 86,
+            "repair_limit_reached": 0
+          }
+        },
+        "reusedGroupCount": 0,
+        "runProfile": {
+          "schemaVersion": "sermon-weekly-run-profile-v3",
+          "scale": "week",
+          "sha256": "4bdf5a127d6213e96e837c7bce4bdc6cc3284ff7007f88086430111b93749f88"
+        }
+      }
+    },
+    "namedGroups": [
+      {
+        "translationGroupId": "translation-chunk-0001-u028",
+        "basis": "operator_directive",
+        "tries": 4,
+        "status": "reserved",
+        "reserve": {
+          "layer2": {
+            "requests": 8,
+            "costMicrousd": 491520
+          },
+          "qc": {
+            "requests": 8,
+            "costMicrousd": 368640
+          },
+          "secondaryAsr": {
+            "requests": 4,
+            "costMicrousd": 54000
+          }
+        }
+      },
+      {
+        "translationGroupId": "translation-chunk-0003-u015",
+        "basis": "operator_directive",
+        "tries": 4,
+        "status": "reserved",
+        "reserve": {
+          "layer2": {
+            "requests": 8,
+            "costMicrousd": 491520
+          },
+          "qc": {
+            "requests": 8,
+            "costMicrousd": 368640
+          },
+          "secondaryAsr": {
+            "requests": 4,
+            "costMicrousd": 54000
+          }
+        }
+      },
+      {
+        "translationGroupId": "translation-chunk-0005-u032",
+        "basis": "operator_directive",
+        "tries": 4,
+        "status": "reserved",
+        "reserve": {
+          "layer2": {
+            "requests": 8,
+            "costMicrousd": 491520
+          },
+          "qc": {
+            "requests": 8,
+            "costMicrousd": 368640
+          },
+          "secondaryAsr": {
+            "requests": 4,
+            "costMicrousd": 54000
+          }
+        }
+      }
+    ]
+  },
+  "findings": [
+    "Per try: translator+reviewer pair 122880 microusd (equals the v8 revision receipt worstCasePairCostMicrousd); back-translation+comparison 92160 microusd.",
+    "Text QC is stale for all groups (QC closure changed); at worst-case request bounds a whole-locale text QC rerun needs about $37.05 against the $30 week QC cap, so 77 groups per locale are repair_spend_cap.",
+    "A ko redo naming 3 groups reserves 4 tries each for those groups first (layer2 $1.47)."
+  ]
+}

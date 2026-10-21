@@ -1,0 +1,22 @@
+{
+  "checks": [
+    {
+      "name": "git merge origin/dev in temporary detached worktree",
+      "result": "success without conflict"
+    },
+    {
+      "name": "tests.test_cloud_run_jobs plus tests.test_backend_app",
+      "result": "44 passed with fake sessions"
+    },
+    {
+      "name": "git diff --check origin/dev...HEAD",
+      "result": "passed"
+    }
+  ],
+  "changedInNewDev": [
+    "scripts/audit_portable_media.py",
+    "tests/test_audit_portable_media.py",
+    "tools/ops/audit_portable_media.py"
+  ],
+  "limits": "No full suite repeat, real Cloud Run API, deployed image or service acceptance"
+}

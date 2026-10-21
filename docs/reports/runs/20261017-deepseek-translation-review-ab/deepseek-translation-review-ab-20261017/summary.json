@@ -1,0 +1,224 @@
+{
+  "schemaVersion": "deepseek-translation-review-ab-summary-v1",
+  "status": "completed",
+  "experimentOnly": true,
+  "productionEligible": false,
+  "humanApproval": false,
+  "startedAt": "2026-10-17T21:38:31+00:00",
+  "completedAt": "2026-10-17T21:43:28.679056+00:00",
+  "source": {
+    "path": "data/benchmarks/live-sermon-translation-v1/reference/qvImKpmvgaM/segments.en.reference.jsonl",
+    "sha256": "aeec58d6e74d124511f427ef1290b4885a01693f1147faed8f32b817c2247ee2",
+    "segmentIds": [
+      "qvImKpmvgaM_seg_0001",
+      "qvImKpmvgaM_seg_0002",
+      "qvImKpmvgaM_seg_0003",
+      "qvImKpmvgaM_seg_0004",
+      "qvImKpmvgaM_seg_0005",
+      "qvImKpmvgaM_seg_0006"
+    ]
+  },
+  "reference": {
+    "path": "data/benchmarks/live-sermon-translation-v1/reference/qvImKpmvgaM/segments.codex.final.jsonl",
+    "sha256": "22033c87dceca91b0ff9452abedbc2a646e3bca734a8a103edb40c409f26c1d3",
+    "status": "sol_reviewed_audio_audited_not_human_gold",
+    "bias": "Automatic metrics favor a Sol-reviewed reference and are secondary to the source-blind comparison."
+  },
+  "order": [
+    "deepseek",
+    "sol"
+  ],
+  "arms": {
+    "deepseek": {
+      "model": "deepseek/deepseek-v4.1-flash-1017",
+      "translation": {
+        "metrics": {
+          "bleuZh": 57.3385,
+          "chrf2": 49.3199,
+          "strictAnnotatedTermHits": 20,
+          "strictAnnotatedTermCount": 21,
+          "strictAnnotatedTermRecallPercent": 95.2381
+        },
+        "receipt": {
+          "schemaVersion": "deepseek-translation-review-ab-call-v1",
+          "stage": "deepseek-translate",
+          "requestedModel": "deepseek/deepseek-v4.1-flash-1017",
+          "reasoningEffort": "high",
+          "requestedServiceTier": "default",
+          "elapsedSeconds": 24.284491,
+          "usage": {
+            "input_tokens": 11868,
+            "cached_input_tokens": 3712,
+            "cache_write_input_tokens": 0,
+            "output_tokens": 2370,
+            "reasoning_output_tokens": 1549
+          },
+          "outputTokensPerSecond": 97.5932,
+          "exitCode": 0,
+          "toolCalls": 0,
+          "resultSha256": "f29efce61979ddd4bcdba2fb2d5241fa88cd9f16dfd69162b87c04106f8a95e6",
+          "schemaConformant": false,
+          "normalization": "wrapped top-level array and renamed translated `english` field to `zh`",
+          "normalizedResultSha256": "ede4ff64a52d78cd8a3a212db2dc802da3b039b9d160a754587184e225cf431e"
+        }
+      },
+      "review": {
+        "metrics": {
+          "bleuZh": 57.1119,
+          "chrf2": 49.7843,
+          "strictAnnotatedTermHits": 20,
+          "strictAnnotatedTermCount": 21,
+          "strictAnnotatedTermRecallPercent": 95.2381
+        },
+        "receipt": {
+          "schemaVersion": "deepseek-translation-review-ab-call-v1",
+          "stage": "deepseek-review",
+          "requestedModel": "deepseek/deepseek-v4.1-flash-1017",
+          "reasoningEffort": "high",
+          "requestedServiceTier": "default",
+          "elapsedSeconds": 167.036143,
+          "usage": {
+            "input_tokens": 18128,
+            "cached_input_tokens": 3712,
+            "cache_write_input_tokens": 0,
+            "output_tokens": 16815,
+            "reasoning_output_tokens": 15731
+          },
+          "outputTokensPerSecond": 100.6668,
+          "exitCode": 0,
+          "toolCalls": 0,
+          "resultSha256": "c3608b1e00afcb189527403ca98c32c07a18bc67cf5e6574256324b45a30dace",
+          "schemaConformant": false,
+          "normalization": "wrapped top-level review array",
+          "normalizedResultSha256": "bdb2e6bcd93a1300126481edd90507dc9bec2a11634f470dc6b8a9df3a8c51a7"
+        },
+        "changedSegments": 5
+      },
+      "combinedSeconds": 191.320634,
+      "combinedOutputTokens": 19185
+    },
+    "sol": {
+      "model": "gpt-6.1-sol",
+      "translation": {
+        "metrics": {
+          "bleuZh": 56.6531,
+          "chrf2": 54.5644,
+          "strictAnnotatedTermHits": 18,
+          "strictAnnotatedTermCount": 21,
+          "strictAnnotatedTermRecallPercent": 85.7143
+        },
+        "receipt": {
+          "schemaVersion": "deepseek-translation-review-ab-call-v1",
+          "stage": "sol-translate",
+          "requestedModel": "gpt-6.1-sol",
+          "reasoningEffort": "high",
+          "requestedServiceTier": "default",
+          "elapsedSeconds": 52.276202,
+          "usage": {
+            "input_tokens": 13068,
+            "cached_input_tokens": 0,
+            "cache_write_input_tokens": 13065,
+            "output_tokens": 2007,
+            "reasoning_output_tokens": 961
+          },
+          "outputTokensPerSecond": 38.3922,
+          "exitCode": 0,
+          "toolCalls": 0,
+          "resultSha256": "cbb9e7cd8d538326fd502f8240927ba980470a289a74d5c55f358255f9bdbec9",
+          "schemaConformant": true,
+          "normalization": null
+        }
+      },
+      "review": {
+        "metrics": {
+          "bleuZh": 57.4514,
+          "chrf2": 54.8715,
+          "strictAnnotatedTermHits": 18,
+          "strictAnnotatedTermCount": 21,
+          "strictAnnotatedTermRecallPercent": 85.7143
+        },
+        "receipt": {
+          "schemaVersion": "deepseek-translation-review-ab-call-v1",
+          "stage": "sol-review",
+          "requestedModel": "gpt-6.1-sol",
+          "reasoningEffort": "medium",
+          "requestedServiceTier": "default",
+          "elapsedSeconds": 22.825828,
+          "usage": {
+            "input_tokens": 14048,
+            "cached_input_tokens": 0,
+            "cache_write_input_tokens": 14045,
+            "output_tokens": 1455,
+            "reasoning_output_tokens": 265
+          },
+          "outputTokensPerSecond": 63.7436,
+          "exitCode": 0,
+          "toolCalls": 0,
+          "resultSha256": "1eee81d78ba24fb2e666798e066ca1cb9e469b7b88085ee5c5913a835d05bb3a",
+          "schemaConformant": true,
+          "normalization": null
+        },
+        "changedSegments": 2
+      },
+      "combinedSeconds": 75.10203,
+      "combinedOutputTokens": 3462
+    }
+  },
+  "blindJudge": {
+    "requestedModel": "gpt-6-astra",
+    "mapping": {
+      "X": "sol",
+      "Y": "deepseek"
+    },
+    "result": {
+      "winner": "X",
+      "confidence": "medium",
+      "scores": {
+        "X": {
+          "fidelity": 5,
+          "completeness": 5,
+          "terminology": 5,
+          "readability": 5
+        },
+        "Y": {
+          "fidelity": 5,
+          "completeness": 5,
+          "terminology": 4,
+          "readability": 4
+        }
+      },
+      "criticalIssues": {
+        "X": [],
+        "Y": []
+      },
+      "rationale": "两版均完整保留主要信息、幽默、因果关系及救恩表述，无实质语义错误。X整体更适合会众听读，“自有永有者”采用通行圣经译法；Y的“那位‘我是’”虽贴近原文字面，却较难理解，“我的祷告都是，希望……”和“情感上我感觉一点都不好”等表达也较生硬。X略胜。"
+    },
+    "receipt": {
+      "schemaVersion": "deepseek-translation-review-ab-call-v1",
+      "stage": "blind-judge",
+      "requestedModel": "gpt-6-astra",
+      "reasoningEffort": "medium",
+      "requestedServiceTier": "default",
+      "elapsedSeconds": 9.267313,
+      "usage": {
+        "input_tokens": 15584,
+        "cached_input_tokens": 0,
+        "cache_write_input_tokens": 15581,
+        "output_tokens": 373,
+        "reasoning_output_tokens": 134
+      },
+      "outputTokensPerSecond": 40.249,
+      "exitCode": 0,
+      "toolCalls": 0,
+      "resultSha256": "7cfcbae120647e79b2589fe9dd97bdc7c6ab0fe0d062d61ddb11d4cc2558388f",
+      "schemaConformant": true,
+      "normalization": null
+    }
+  },
+  "limits": [
+    "One six-segment batch; no repeated randomized latency trials.",
+    "Provider load was uncontrolled and calls were sequential.",
+    "DeepSeek review used high because the host catalog does not advertise medium.",
+    "No human bilingual adjudication; model review and judge output are not human approval."
+  ]
+}

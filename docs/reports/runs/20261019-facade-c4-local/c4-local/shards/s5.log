@@ -1,0 +1,244 @@
+Estimating 212 unprofiled modules from measured per-case cost
+Shard 6/10: 611 tests from 369 modules
+..................................{"component": "api", "event": "sermon_production_supervisor_triggered", "inlineWorker": true, "loggedAt": "2026-10-19T21:54:53.456492+00:00", "mode": "execute", "severity": "INFO", "sunday": "2026-08-02", "triggerSource": "internal-task"}
+.{"audioSourceKind": "ipad_mic", "component": "api", "event": "realtime_session_created", "loggedAt": "2026-10-19T21:54:53.456657+00:00", "model": "gpt-realtime-translate", "sessionId": "rt_HDP5rJUCqogZc4E3", "severity": "INFO", "sunday": "2026-06-28", "targetLanguage": "zh", "triggerSource": "local-realtime-session"}
+.{"component": "api", "event": "realtime_caption_event", "eventType": "input_transcript_delta", "loggedAt": "2026-10-19T21:54:53.456750+00:00", "segmentId": "resp_delta_1", "sessionId": "rt_ll2-YR-BJ6pcm3-H", "severity": "INFO"}
+...................................................{"pageId": "page-2026-09-20", "source": "first_seen", "complete": 0, "total": 46, "out": "/var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/tmpfo1587s6/public-snapshot.json"}
+{"locale": "zh-Hans", "rows": 7, "flagged": 2, "sampled": 5, "sheet": "/var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/tmplazjzize/sheet/listening-sample.md"}
+{"group": "group-0001", "solSeconds": 2.0, "opusSeconds": 1.0, "solReviewPassed": true, "opusReviewPassed": true}
+{"group": "group-0002", "solSeconds": 2.0, "opusSeconds": 1.0, "solReviewPassed": true, "opusReviewPassed": false}
+{"freshCalls": {"sol": 2, "opus": 2, "review": 4}, "groups": 2, "targetLocale": "ko"}
+{"group": "group-0001", "solSeconds": 2.0, "opusSeconds": 1.0, "solReviewPassed": true, "opusReviewPassed": true}
+{"group": "group-0002", "solSeconds": 2.0, "opusSeconds": 1.0, "solReviewPassed": true, "opusReviewPassed": false}
+{"freshCalls": {"sol": 0, "opus": 0, "review": 0}, "groups": 2, "targetLocale": "ko"}
+..s...............reviewed 0-0
+{
+  "status": "reviewed-needs-operator-approval",
+  "promptVersion": "sermon-source-bound-review-v3",
+  "model": "gpt-6.1-sol",
+  "segmentCount": 1,
+  "inputSha256": {
+    "english": "9e04e4bf2d59856f9035477c66da5df4f25caf221a0e0ab1c5e413f7a2f101b5",
+    "chinese": "601718c859e818e731932b05887e3e4843671e87df2f381984459920b650abf8"
+  },
+  "archiveOffsetSeconds": null,
+  "remainingEllipsisSegmentIds": [],
+  "qa": {
+    "segmentCount": 1,
+    "emptyEnglish": [],
+    "emptyChinese": [],
+    "overlaps": [],
+    "durationViolations": [],
+    "englishLineLengthViolations": [],
+    "chineseLineLengthViolations": [],
+    "chineseCpsWarnings": [],
+    "glossaryTermsNotObserved": [],
+    "latinBibleTermWarnings": [],
+    "suspiciousAsrWarnings": [],
+    "translationIdMismatchCount": 0,
+    "hardFailures": {
+      "emptyEnglish": 0,
+... 13 lines omitted; 2 error-like lines, 2 kept below ...
+[line 52] progress: error: ledger already exists; refusing to overwrite
+[line 53] ...........................................SERMON_LOGGING_WRITE_FAILED errorType=AccountingWriteError
+... end of omitted section ...
+..{
+  "status": "reviewed-needs-operator-approval",
+  "promptVersion": "sermon-source-bound-review-v3",
+  "model": "gpt-6.1-sol",
+  "segmentCount": 1,
+  "inputSha256": {
+    "english": "9e04e4bf2d59856f9035477c66da5df4f25caf221a0e0ab1c5e413f7a2f101b5",
+    "chinese": "601718c859e818e731932b05887e3e4843671e87df2f381984459920b650abf8"
+  },
+  "archiveOffsetSeconds": null,
+  "remainingEllipsisSegmentIds": [],
+  "qa": {
+    "segmentCount": 1,
+    "emptyEnglish": [],
+    "emptyChinese": [],
+    "overlaps": [],
+    "durationViolations": [],
+    "englishLineLengthViolations": [],
+    "chineseLineLengthViolations": [],
+    "chineseCpsWarnings": [],
+    "glossaryTermsNotObserved": [],
+    "latinBibleTermWarnings": [],
+    "suspiciousAsrWarnings": [],
+    "translationIdMismatchCount": 0,
+    "hardFailures": {
+      "emptyEnglish": 0,
+      "emptyChinese": 0,
+      "overlaps": 0,
+      "translationIdMismatchCount": 0
+    }
+  },
+  "notes": []
+}
+Digest: /var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/tmp9w47uoos/digests/20261007-e2e (6 files, 9 redactions)
+Digest: /var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/tmp88jug_3d/digests/20261007-e2e (5 files, 9 redactions)
+Tidied whitespace: /var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/tmp88jug_3d/digests/20261007-e2e/INDEX.md
+No unredacted values found.
+{"status": "deployed_http_verification_pending", "out": "/var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/tmpmrji91v3/new/receipt.json"}
+test-page · dev · 检查点 0/32
+层 / 语言       完成       剩余串行工时
+L1 shared        0/4 (0%)  未知
+L2 ko            0/4 (0%)  未知
+L2 es            0/4 (0%)  未知
+L3 ko            0/6 (0%)  未知
+L3 es            0/6 (0%)  未知
+L4 ko            0/4 (0%)  未知
+L4 es            0/4 (0%)  未知
+ETA（连续串行、无审核等待）: 未知
+缺估时 32 项: L1-01, L1-02, L1-03, L1-04, L2-01@ko, L2-02@ko …
+独立验收 ko: 设备=not_run，现场=not_run
+独立验收 es: 设备=not_run，现场=not_run
+注意：进度账本不授予 Layer 门禁、发布或验收状态。
+.....................................SERMON_LOGGING_WRITE_FAILED errorType=AccountingWriteError
+.......................$ upload_file_to_gcs.py --source /var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/tmp92lss4rw/artifacts/report.json --destination gs://sermon-zh-poc/runs/2026-06-22/artifacts/report.json
+corrected 1/1
+corrected 1/1
+corrected 1/1
+corrected 1/1
+translated zh 1/1
+translated zh 1/1
+translated zh 1/1
+translated zh 1/1
+............................{"stage": "tts", "batchIndex": 0, "completedGroups": 2}
+{"stage": "tts", "batchIndex": 1, "completedGroups": 4}
+{"stage": "tts", "batchIndex": 2, "completedGroups": 6}
+{"stage": "tts", "batchIndex": 3, "completedGroups": 8}
+{"stage": "tts", "batchIndex": 4, "completedGroups": 10}
+{"stage": "tts", "batchIndex": 5, "completedGroups": 12}
+{"stage": "tts", "batchIndex": 6, "completedGroups": 13}
+.............{
+  "decision": {
+    "action": "already_complete"
+  },
+  "schemaVersion": 1,
+  "status": "complete"
+}
+discover	pass	0.0
+ko.text-qc.prefetch	pass	0.0
+ko.text-qc	pass	0.0
+ko.calibration.prefetch	pass	0.1
+ko.calibration	pass	0.2
+ko.text-waiver	pass	0.0
+usage: run_unittest_ci.py [-h] [--run-dir RUN_DIR] --out OUT
+                          [--state-dir STATE_DIR] [--locales LOCALES]
+                          [--audio-package LOCALE=PATH]
+                          [--backend {real,fake}]
+                          [--asr-model-path ASR_MODEL_PATH]
+                          [--tts-checkpoint-map TTS_CHECKPOINT_MAP]
+                          [--tts-seed TTS_SEED] [--tts-device TTS_DEVICE]
+                          [--tts-dtype {bfloat16,float32}]
+                          [--tts-attention TTS_ATTENTION]
+                          [--tts-instruct TTS_INSTRUCT]
+                          [--max-api-calls MAX_API_CALLS] [--workers WORKERS]
+                          [--preflight-only] [--human-acceptance LOCALE=PATH]
+                          [--text-backend {codex,api}]
+                          [--api-budget-authorization API_BUDGET_AUTHORIZATION]
+                          [--expected-implementation SHA256]
+run_unittest_ci.py: error: the secondary ASR uses the OpenAI API: start under scripts/run_with_openai_environment.py --environment dev (prod for formal content)
+usage: run_unittest_ci.py [-h] [--run-dir RUN_DIR] --out OUT
+                          [--state-dir STATE_DIR] [--locales LOCALES]
+                          [--audio-package LOCALE=PATH]
+                          [--backend {real,fake}]
+                          [--asr-model-path ASR_MODEL_PATH]
+                          [--tts-checkpoint-map TTS_CHECKPOINT_MAP]
+                          [--tts-seed TTS_SEED] [--tts-device TTS_DEVICE]
+                          [--tts-dtype {bfloat16,float32}]
+                          [--tts-attention TTS_ATTENTION]
+                          [--tts-instruct TTS_INSTRUCT]
+                          [--max-api-calls MAX_API_CALLS] [--workers WORKERS]
+                          [--preflight-only] [--human-acceptance LOCALE=PATH]
+                          [--text-backend {codex,api}]
+                          [--api-budget-authorization API_BUDGET_AUTHORIZATION]
+                          [--expected-implementation SHA256]
+run_unittest_ci.py: error: real audio runs require --api-budget-authorization (planned per-locale QC authorization v4), including --text-backend codex for the secondary ASR budget
+.{
+  "ko": {
+    "status": "text_waiver_issued",
+    "reason": null,
+    "problems": [],
+    "calibration": {
+      "overallDetectionRate": 1.0,
+      "cleanFalsePositiveRate": 0.0,
+      "trials": 90,
+      "detected": 90
+    }
+  }
+}
+discover	pass	0.0
+ko.text-qc.prefetch	pass	0.0
+ko.text-qc	pass	0.0
+discover	pass	0.0
+ko.calibration.prefetch	pass	0.3
+ko.calibration	pass	0.2
+ko.text-waiver	pass	0.0
+..{
+  "ko": {
+    "status": "text_waiver_issued",
+    "reason": null,
+    "problems": [],
+    "calibration": {
+      "overallDetectionRate": 1.0,
+      "cleanFalsePositiveRate": 0.0,
+      "trials": 90,
+      "detected": 90
+    }
+  }
+}
+discover	pass	0.0
+...{
+  "ko": [
+    "candidate schemaVersion is 'sermon-target-language-candidate-v1', not 'sermon-target-language-candidate-v2'",
+    "Layer 3 would refuse this candidate: Unsupported target-language candidate"
+  ]
+}
+{"component": "post-live-subtitles", "event": "post_live_subtitle_generation_checked", "liveSource": {"host": "www.youtube.com", "path": "/watch", "urlHash": "160163dd612c1ecf"}, "loggedAt": "2026-10-19T22:04:37.352578+00:00", "severity": "INFO", "status": "waiting_for_post_live", "sunday": "2026-06-28"}
+.......translated sentence batches 1/1
+reviewed sentence batches 1/1
+translated sentence batches 1/1
+reviewed sentence batches 1/1
+.......................................................................SERMON_LOGGING_WRITE_FAILED errorType=AccountingWriteError
+...........................................s.................................s..................................................................................Model initialization failed: ValueError: test initialization failure
+v4.1 package verified; model loaded and warmup finished.
+..............................................................................
+----------------------------------------------------------------------
+Ran 611 tests in 894.888s
+
+OK (skipped=4)
+{
+  "apiKeyMaterialIncluded": false,
+  "commandCount": 8,
+  "notesIncluded": false,
+  "prefix": "sundays/2026-06-28/runs/caption-first-plan",
+  "promoteBeforeNotes": true,
+  "schemaVersion": 1,
+  "secretResourceNamesIncluded": false,
+  "sessionId": "caption-first-plan",
+  "stages": [
+    "model-access",
+    "prepare",
+    "translate",
+    "export-captions",
+    "validate-offline",
+    "upload-playback",
+    "upload-manifest",
+    "promote"
+  ],
+  "status": "ok",
+  "translationMode": "fresh_model_call"
+}
+ 383.79s     7  test_machine_quality_waiver
+  51.43s     2  test_run_machine_qc_audio_test
+  47.24s     1  test_sermon_mock_tts_dag
+  30.22s     6  test_sermon_cuv_translation
+  22.22s     3  test_sermon_fresh_diagnostic
+  18.29s     2  test_canonical_layer2_cache_recovery
+  16.61s     2  test_canonical_layer2_reconciliation
+  16.50s     1  test_canonical_layer2_auto_repair
+  14.54s     3  test_sermon_diagnostic_preview_worker
+  14.17s     3  test_sermon_app_delivery_workflow
+exit 0

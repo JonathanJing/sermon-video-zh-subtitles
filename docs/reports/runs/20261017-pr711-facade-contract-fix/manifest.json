@@ -1,0 +1,27 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-pr711-facade-contract-fix",
+  "runs": [
+    {
+      "label": "pr711-facade-contract-fix-20261017",
+      "source": "~/.codex/worktrees/ci-scope-move/sermon-video-zh-subtitles/artifacts/pr711-facade-contract-fix-20261017",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "pr711-facade-contract-fix-20261017",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 496,
+      "truncated": false,
+      "sha256": "5775104f35c2363e7bbb17a7f130dd2510c5de83d1edbbcb41de1bbe1632bc62",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

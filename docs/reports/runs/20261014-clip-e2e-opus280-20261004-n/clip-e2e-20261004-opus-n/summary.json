@@ -1,0 +1,21 @@
+{
+  "run": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/clip-e2e-20261004-opus-n",
+  "stages": {
+    "inputs": {
+      "status": "done",
+      "at": "2026-10-14T21:13:19+00:00",
+      "units": 50,
+      "inputs": "~/.codex/worktrees/opus-layer1-larger-clip/sermon-video-zh-subtitles/artifacts/dev-180s-page-test-20261004/clip-e2e-opus280-20261004-n/inputs",
+      "layer1Backend": "claude_cli_opus"
+    },
+    "layer2-setup": {
+      "status": "done",
+      "at": "2026-10-14T21:13:19+00:00"
+    }
+  },
+  "stopped": [
+    "layer2: Layer 2 blocked {\"ko\": {\"status\": \"blocked\", \"reason\": \"failed_durable_job\", \"dispatched\": false}, \"es\": {\"status\": \"blocked\", \"reason\": \"failed_durable_job\", \"dispatched\": false}, \"zh-Hans\": {\"status\": \"blocked\", \"reason\": \"failed_durable_job\", \"dispatched\": false}}"
+  ],
+  "settledUsd": 10.422771,
+  "claudeListPriceEquivalentUsd": 7.713712
+}

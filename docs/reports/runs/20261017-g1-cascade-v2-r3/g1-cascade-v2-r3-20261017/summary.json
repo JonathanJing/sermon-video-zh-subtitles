@@ -1,0 +1,12 @@
+{
+  "status": "passed",
+  "head": "47f5bc6e8e22e8b95031a0b35f8d256f6d8a660d",
+  "targetPr": 579,
+  "upstreamHead": "9de96d1b",
+  "executed": 48,
+  "passed": 48,
+  "testScope": "accounting contract/observability and review ports/leaves/audio screening",
+  "diffCheck": "passed",
+  "externalCalls": 0,
+  "note": "An initial command used a nonexistent test module; corrected invocation passed."
+}

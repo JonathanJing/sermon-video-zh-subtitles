@@ -1,0 +1,5 @@
+stage	status	seconds
+unit.group_worker	pass	1.2
+unit.group_pipeline	pass	2.4
+regression.layer2_group	pass	70.2
+ci.shard1	pass	728.9

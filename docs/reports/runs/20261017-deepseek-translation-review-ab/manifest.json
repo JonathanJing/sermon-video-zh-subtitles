@@ -1,0 +1,96 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261017-deepseek-translation-review-ab",
+  "runs": [
+    {
+      "label": "deepseek-translation-review-ab-20261017",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/deepseek-translation-review-ab-20261017",
+      "skipped": {
+        ".pyc": 1,
+        ".jsonl": 5,
+        ".json": 13,
+        ".txt": 5,
+        ".py": 1
+      }
+    }
+  ],
+  "files": [
+    {
+      "run": "deepseek-translation-review-ab-20261017",
+      "path": "blind-judge/receipt.json",
+      "kind": "whole",
+      "bytes": 607,
+      "truncated": false,
+      "sha256": "b7164f8c618555278b3fd21c5ce19c44f238d74399b5bd583c9a12fea0bb9f37",
+      "redactions": {}
+    },
+    {
+      "run": "deepseek-translation-review-ab-20261017",
+      "path": "deepseek-review/receipt.json",
+      "kind": "whole",
+      "bytes": 763,
+      "truncated": false,
+      "sha256": "e4c1e56b340dd7a0300c8b1061d05b0ae0278111f092f7e7c37bc55c276853af",
+      "redactions": {}
+    },
+    {
+      "run": "deepseek-translation-review-ab-20261017",
+      "path": "deepseek-translate/receipt.json",
+      "kind": "whole",
+      "bytes": 802,
+      "truncated": false,
+      "sha256": "8016e5b696b81d8773f98c70c472e34de88eed72f52b4e766fed59efdd0ccdc0",
+      "redactions": {}
+    },
+    {
+      "run": "deepseek-translation-review-ab-20261017",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 346,
+      "truncated": false,
+      "sha256": "8c5dd87559ac3a947af416e79508cb40742d79743e93b35b72e5d1491ea49cea",
+      "redactions": {}
+    },
+    {
+      "run": "deepseek-translation-review-ab-20261017",
+      "path": "sol-review/receipt.json",
+      "kind": "whole",
+      "bytes": 609,
+      "truncated": false,
+      "sha256": "c1248da80f5730fa92949412dcc4c045c7554d44c4a69fb298688cdbf71670c0",
+      "redactions": {}
+    },
+    {
+      "run": "deepseek-translation-review-ab-20261017",
+      "path": "sol-translate/receipt.json",
+      "kind": "whole",
+      "bytes": 610,
+      "truncated": false,
+      "sha256": "b813b42075a23c83dbdb139de0eb1772731d0fa664ea946c14d2202fd263ed4e",
+      "redactions": {}
+    },
+    {
+      "run": "deepseek-translation-review-ab-20261017",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 7977,
+      "truncated": false,
+      "sha256": "ae6e73c7c1119a240ffb1176f5d2bd45bdd3fc8d2944a399cc41c6930ce6b9eb",
+      "redactions": {}
+    },
+    {
+      "run": "deepseek-translation-review-ab-20261017",
+      "path": "timings.tsv",
+      "kind": "whole",
+      "bytes": 168,
+      "truncated": false,
+      "sha256": "d46c907b9ab2bc6c4cf8afa2a4281c0fe30de6f3a9124d9e8444a4bf981302bf",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

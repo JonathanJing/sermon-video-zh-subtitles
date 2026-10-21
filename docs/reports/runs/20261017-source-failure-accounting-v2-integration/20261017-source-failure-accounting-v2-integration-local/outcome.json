@@ -1,0 +1,9 @@
+{
+  "status": "passed",
+  "deliveryType": "test",
+  "testCount": 81,
+  "skipped": 1,
+  "failed": 0,
+  "scope": "source deadline, leaf accounting, telemetry",
+  "exitCode": 0
+}

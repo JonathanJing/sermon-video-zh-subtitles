@@ -5,11 +5,17 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-from scripts import sermon_accounting as accounting, sermon_cached_fresh_diagnostic_source as cache
-from scripts import sermon_diagnostic_attempts as attempts, sermon_diagnostic_provider as provider
-from scripts import sermon_fresh_diagnostic as entry, sermon_log_profile as profile
-from scripts import sermon_public_snapshot as public, sermon_review_budget as budget, sermon_review_contracts as c
-from scripts import sermon_strict_layer2 as strict
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.workflows.diagnostic import cached_fresh_source as cache
+from tongxing_production.observability import accounting
+from tongxing_production.workflows.diagnostic import attempts
+from tongxing_production.workflows.diagnostic import provider
+from tongxing_production.workflows.diagnostic import fresh as entry
+from tongxing_production.observability import profile
+from tongxing_production.storage import snapshot as public
+from tongxing_production.review import review_budget as budget
+from tongxing_production.review import contracts as c
+from tongxing_production.text.strict import layer2 as strict
 from tests import test_sermon_fresh_diagnostic as source_fixtures
 
 
@@ -191,7 +197,7 @@ class FreshPreviewPreflightTests(unittest.TestCase):
             root=Path(directory);config=config_fixture(root,locales=('zh-Hans',))
             previews={locale:lane['previewSpec'] for locale,lane in config['locales'].items()}
             previews['zh-Hans']['paths']['source']=str(root/'future-source.json')
-            from scripts import sermon_native_preview_runtime as native
+            from tongxing_production.workflows.diagnostic import native_preview_runtime as native
             with patch.object(native,'validate',side_effect=AssertionError('fixture must not inspect native')):
                 entry._preflight_preview_specs(previews,{'zh-Hans':{}},offline_fixture=True)
                 previews['zh-Hans']['runtime_manifest_path']=str(root/'untrusted-runtime.json')
@@ -223,7 +229,7 @@ class FreshPreviewPreflightTests(unittest.TestCase):
     def test_real_checkpoint_tree_and_declaration_checked_before_provider_initialization(self):
         from tests.test_sermon_preview_checkpoint_manifest import CheckpointManifestTests
         from tests.test_sermon_diagnostic_prefect_flow import config_fixture
-        from scripts import sermon_native_preview_runtime as native
+        from tongxing_production.workflows.diagnostic import native_preview_runtime as native
         fixture=CheckpointManifestTests();fixture.setUp();self.addCleanup(fixture.doCleanups)
         bindings={'previewCheckpointManifest':fixture.binding['checkpointManifest']['fileBytesSha256'],
                   'previewCheckpointTree':fixture.binding['treeSha256']}

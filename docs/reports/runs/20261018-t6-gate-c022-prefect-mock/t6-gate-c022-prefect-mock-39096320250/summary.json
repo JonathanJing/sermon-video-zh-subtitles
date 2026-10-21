@@ -1,0 +1,6 @@
+{
+  "scope": "PR 1036 current-head Local Prefect pilot mock workflow",
+  "sourceUrl": "https://github.com/JonathanJing/sermon-video-zh-subtitles/actions/runs/39096320250",
+  "result": "Five mock jobs successful; current head c0224028.",
+  "limits": "Mock-only CI. No actual Spark exclusive session, provider model, paid API, media processing, publication, or venue acceptance."
+}

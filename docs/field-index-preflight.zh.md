@@ -16,7 +16,7 @@
 复现：
 
 ```sh
-node --test experiments/sermon-dubbing-poc/web/*.test.mjs
+node --test apps/listening-web/*.test.mjs
 python -m unittest discover -s experiments/sermon-dubbing-poc -p 'test_build_weekly_app.py'
 python -m unittest discover -s experiments/sermon-dubbing-poc -p 'test_deploy_firebase_guard.py'
 ```
@@ -40,7 +40,7 @@ python -m unittest discover -s experiments/sermon-dubbing-poc -p 'test_deploy_fi
 新增 7 个 Worker 回归（旧实现失败 6 个）覆盖新 Worker 断网复用、坏 bytes、伪造 header/不匹配绑定、切换索引、配额/存储不可用、声明/流式超限和并发固定容量。另有可重复的真实 Chrome 检查：
 
 ```sh
-python scripts/verify_fingerprint_browser_cache.py \
+python tools/development/verify_fingerprint_browser_cache.py \
   --browser '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome' \
   --out /tmp/fingerprint-cache-report.json
 ```

@@ -1,5 +1,5 @@
-import importlib.util
 import json
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -7,14 +7,35 @@ from pathlib import Path
 
 
 SCRIPT_PATH = Path(__file__).resolve().parents[1] / "scripts" / "render_sermon_interpretation_pdf.py"
-SPEC = importlib.util.spec_from_file_location("render_sermon_interpretation_pdf", SCRIPT_PATH)
-mod = importlib.util.module_from_spec(SPEC)
-assert SPEC.loader is not None
-sys.modules[SPEC.name] = mod
-SPEC.loader.exec_module(mod)
+from scripts import render_sermon_interpretation_pdf as mod
+from tongxing_production.workflows.dual_pdf import interpretation_pdf as implementation
 
 
 class RenderSermonInterpretationPdfTest(unittest.TestCase):
+    def test_legacy_import_identity(self):
+        from scripts import tongxing_host  # noqa: F401  binds the production package ports
+        from tongxing_production.observability import accounting as sermon_accounting
+        from tongxing_production import path_aliases
+
+        self.assertIs(mod, implementation)
+        self.assertIs(sys.modules["scripts.render_sermon_interpretation_pdf"], implementation)
+        key = path_aliases.resolve("scripts/render_sermon_interpretation_pdf.py")
+        self.assertEqual(key, "packages/production/src/tongxing_production/workflows/dual_pdf/interpretation_pdf.py")
+        self.assertIn(key, sermon_accounting.execution_identity()["loadedProjectCodeSha256"])
+
+    def test_legacy_cli_renders_from_other_directory(self):
+        with tempfile.TemporaryDirectory() as tempdir:
+            folder = Path(tempdir)
+            source = folder / "insights.json"
+            output = folder / "interpretation.pdf"
+            source.write_text(json.dumps(self.complete_insights(), ensure_ascii=False), encoding="utf-8")
+            result = subprocess.run([sys.executable, str(SCRIPT_PATH), "--input", str(source),
+                                     "--out", str(output)], cwd=folder,
+                                    capture_output=True, text=True, timeout=60)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertTrue(output.read_bytes().startswith(b"%PDF"))
+            self.assertEqual(json.loads(output.with_suffix(".qa.json").read_text(encoding="utf-8"))["status"], "pass")
+
     def complete_insights(self):
         slices = [
             {

@@ -1,0 +1,13 @@
+{
+  "status": "passed",
+  "checks": [
+    "legacy import and rejection tests",
+    "old and new direct CLI from external CWD on synthetic WAV and registry",
+    "module CLI help from external CWD",
+    "git diff --check"
+  ],
+  "testCount": 3,
+  "modelCalls": 0,
+  "networkCalls": 0,
+  "realMediaUsed": false
+}

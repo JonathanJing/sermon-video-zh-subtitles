@@ -1,0 +1,14 @@
+{
+  "name": "@tongxing/tracker-contract",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Closed public projection contract for the four-layer Tracker: the snapshot and DAG sanitizers shared by the publisher and the browser.",
+  "type": "module",
+  "exports": {
+    "./sanitize": "./src/sanitize.mjs",
+    "./dag-contract": "./src/dag-contract.js"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
