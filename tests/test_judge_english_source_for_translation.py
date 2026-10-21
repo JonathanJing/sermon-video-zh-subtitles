@@ -2,6 +2,7 @@ import json
 from pathlib import Path
 import tempfile
 import unittest
+from unittest.mock import patch
 
 from jsonschema import Draft202012Validator, FormatChecker
 
@@ -87,6 +88,49 @@ class EnglishSourceMachineJudgeTests(unittest.TestCase):
                 })},
             }],
         }
+
+    def test_oversized_judge_batch_is_split_until_each_request_fits_the_cap(self):
+        # Two sentences, forced into one batch, with the payload builder refusing
+        # anything larger than one sentence: the judge must split, not fail.
+        words = ["Your", "sin", "faced", "death."]
+        second = ["He", "rose", "on", "day", "three."]
+        segments = []
+        cursor = 0.0
+        for index, text in enumerate((" ".join(words), " ".join(second))):
+            timed = []
+            for word in text.split():
+                timed.append({"text": word, "start": cursor, "end": cursor + 0.4})
+                cursor += 0.5
+            segments.append({"id": index, "referenceChunkId": "block-00", "text": text,
+                             "start": timed[0]["start"], "end": timed[-1]["end"],
+                             "sentenceBoundarySource": "frozen_reference_punctuation",
+                             "wordTimes": timed})
+        aligned_path = self.root / "split-segments.json"
+        write_json(aligned_path, segments)
+        manifest = anchors.build_anchor_manifest(
+            segments, source_path=aligned_path, unit_policy=anchors.UNIT_POLICY_V2,
+            max_unit_seconds=4.0)
+        manifest_path = self.root / "split-manifest.json"
+        write_json(manifest_path, manifest)
+
+        original_payload = subject._payload
+        calls = []
+        def payload_or_refuse(batch, **kwargs):
+            calls.append(len(batch))
+            if len(batch) > 1:
+                raise ValueError("source_judge_input_bound_exceeded")
+            return original_payload(batch, **kwargs)
+        def one_batch(sentences, _size):
+            return [sentences]
+        with patch.object(subject, "_payload", side_effect=payload_or_refuse), \
+                patch.object(subject, "_batches", side_effect=one_batch):
+            result = subject.run(aligned_path=aligned_path, manifest_path=manifest_path,
+                                 out=self.root / "split-judge.json",
+                                 cache_root=self.root / "split-cache", api_key="",
+                                 caller=self.fake_caller)
+        self.assertEqual(calls[0], 2)
+        self.assertEqual(sorted(calls[1:]), [1, 1])
+        self.assertEqual(len(result["sentences"]), 2)
 
     def test_prewarm_and_final_share_canonical_cache_across_output_directories(self):
         calls = []
