@@ -1,0 +1,11 @@
+{
+  "schemaVersion": "diarization-model-trial-outcome-v1",
+  "status": "succeeded",
+  "exitCode": 0,
+  "startedAt": "2026-10-21T03:01:41+00:00",
+  "endedAt": "2026-10-21T03:43:00+00:00",
+  "productionRun": "not_run",
+  "paidModelCalls": 0,
+  "productionEligible": false,
+  "humanApproval": false
+}

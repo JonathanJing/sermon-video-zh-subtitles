@@ -1,0 +1,118 @@
+{
+  "schemaVersion": "diarization-model-trial-receipt-v1",
+  "deliveryType": "test",
+  "purpose": "Speaker-attributed ASR trial: VibeVoice-ASR MLX 8bit on MacBook vs original BF16 on DGX Spark",
+  "productionEligible": false,
+  "humanApproval": false,
+  "review": "not_reviewed",
+  "source": {
+    "title": "If I Had More Time | Jesus sends and resurrects His own",
+    "container": "mkv (AV1 video + AAC stereo 44.1 kHz, eng)",
+    "mediaSha256": "145a2e99cd53eda9aac58ceecd56bd2d2329be993fad2de8201dba703f957fbe",
+    "durationSeconds": 2412.065,
+    "derivedAudio": {
+      "audio_24k_mono.wav": "23f08c5ccc5800e1319e8eb800e2dd186e9dadcaafaf18218215d75baf833a0d",
+      "audio_16k_mono.wav": "26f2ee7bf229cd4723d0537a350dc2e1edcd505e9e80fa03410c5cbc4fb1d4b3"
+    },
+    "conversion": "ffmpeg -map 0:a:0 -ac 1 -ar {24000,16000} pcm_s16le; no denoise/normalisation"
+  },
+  "code": {
+    "vibevoiceCommit": "16fb2cb1217c9934a886e1948ffb06120caa2df5",
+    "mlxAudio": "0.6.1",
+    "mlx": "0.32.4",
+    "transformersCuda": "4.57.6"
+  },
+  "settings": {
+    "decoding": "greedy",
+    "maxNewTokens": 32768,
+    "hotwords": null,
+    "repetitionGuard": "stop when last 400 tokens repeat with period <=100"
+  },
+  "runs": {
+    "macbook-mlx-8bit": {
+      "host": "MacBook Pro M1 Max 64 GB",
+      "model": "mlx-community/VibeVoice-ASR-8bit",
+      "precision": "8bit (MLX)",
+      "audio_seconds": 2412.07,
+      "prompt_tokens": 18156,
+      "generation_tokens": 16196,
+      "stop_reason": "eos_or_max",
+      "load_s": 14.0,
+      "encode_s": 129.4,
+      "prefill_s": 115.9,
+      "generate_s": 1063.4,
+      "decode_tok_per_s": 17.09,
+      "total_s": 1206.8,
+      "peak_memory_gb": 32.25,
+      "segments": 236,
+      "speakers": [
+        "0",
+        "1",
+        "None"
+      ],
+      "realtimeFactor": 2.0
+    },
+    "spark-cuda-bf16": {
+      "host": "DGX Spark GB10 (llama-server Qwen3.8-27B resident, not stopped)",
+      "image": "sermon-pytorch-ffmpeg:20260927",
+      "model": "microsoft/VibeVoice-ASR",
+      "precision": "bf16",
+      "device": "NVIDIA GB10",
+      "torch": "2.13.0a0+8145d630e8.nv26.06",
+      "attn": "sdpa",
+      "dtype": "bfloat16",
+      "audio_seconds": 2412.07,
+      "prompt_tokens": 18153,
+      "generation_tokens": 16338,
+      "stop_reason": "eos_or_max",
+      "load_s": 106.5,
+      "preprocess_s": 1.8,
+      "encode_and_prefill_s": 90.8,
+      "generate_s": 1726.4,
+      "decode_tok_per_s": 9.99,
+      "total_s": 1834.7,
+      "peak_memory_gb": 24.62,
+      "peak_reserved_gb": 30.14,
+      "segments": 241,
+      "speakers": [
+        "0",
+        "1",
+        "None"
+      ],
+      "realtimeFactor": 1.31
+    }
+  },
+  "comparison": {
+    "reference": "spark-cuda-bf16",
+    "speakerLabelMap": {
+      "0": "0",
+      "1": "1"
+    },
+    "speakerAgreementPct": 99.66,
+    "speechSecondsBoth": 2389.6,
+    "oneSideOnlySpeechSeconds": 2,
+    "disagreementRunsOver1s": 1,
+    "approxWordDiffPct": 0.85,
+    "wordsReference": 7882,
+    "wordsCandidate": 7867,
+    "speakerSeconds": {
+      "reference": {
+        "0": 1115,
+        "1": 1275
+      },
+      "candidate": {
+        "0": 1115,
+        "1": 1277
+      }
+    },
+    "segments": {
+      "reference": 241,
+      "candidate": 236
+    }
+  },
+  "notes": [
+    "Speaker identities (names) not verified; opening lines' attribution looks inconsistent and needs a human listen.",
+    "Spark GPU was shared with a resident llama-server; its decode speed is not an isolated benchmark.",
+    "Transcript text and media are not part of this receipt."
+  ]
+}

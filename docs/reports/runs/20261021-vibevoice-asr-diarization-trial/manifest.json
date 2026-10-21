@@ -1,0 +1,45 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261021-vibevoice-asr-diarization-trial",
+  "runs": [
+    {
+      "label": "run-evidence",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/tmp/diarization/if-i-had-more-time/run-evidence",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "run-evidence",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 288,
+      "truncated": false,
+      "sha256": "3ee717ed6d9cf84c23f3c31377d04345b8dc91f7d91d6b98f4641f62c3daec36",
+      "redactions": {}
+    },
+    {
+      "run": "run-evidence",
+      "path": "timings.tsv",
+      "kind": "whole",
+      "bytes": 369,
+      "truncated": false,
+      "sha256": "6c4640b689916677eb74ab79458a54889c691283b5f4110fde2e562dd0590eec",
+      "redactions": {}
+    },
+    {
+      "run": "run-evidence",
+      "path": "vibevoice-trial-receipt.json",
+      "kind": "whole",
+      "bytes": 3267,
+      "truncated": false,
+      "sha256": "7a1643ee3508caed3da19a9bafcf0517b4e0b42153032dc5b2ec920f138668af",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}
