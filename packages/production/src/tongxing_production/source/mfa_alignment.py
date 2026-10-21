@@ -14,6 +14,14 @@ import subprocess
 import time
 
 SCHEMA_VERSION = 1
+# MFA's stock beam (10) / retry beam (40) fails with NoAlignmentsError on the
+# long, dense 180 s reference blocks this adapter feeds it (2026-10-21 episode:
+# a 506-word block had no successful path). MFA documents a larger beam as the
+# remedy; 100/400 aligned that block locally in 21.7 s with unchanged model,
+# dictionary and reference text. Advisory values from the acoustic model are
+# still used; this only widens the search. Both values are part of the identity.
+ALIGN_BEAM = 100
+ALIGN_RETRY_BEAM = 400
 
 
 class MFADeadlineReached(TimeoutError):
@@ -338,7 +346,8 @@ def align_reference_chunks(chunks, clip_path, outdir, *, mfa_executable,
                 'dictionarySha256': _sha(dictionary), 'acousticSha256': _sha(acoustic),
                 'g2pSha256': _sha(g2p) if g2p else None,
                 'spokenFormsSha256': _sha(spoken_path) if spoken_path else None,
-                'options': ['single_speaker', 'no_textgrid_cleanup', 'json', 'mono_16000_pcm16'],
+                'options': ['single_speaker', 'no_textgrid_cleanup', 'json', 'mono_16000_pcm16',
+                            f'beam_{ALIGN_BEAM}', f'retry_beam_{ALIGN_RETRY_BEAM}'],
                 'chunks': [{'id': c.get('id'), 'start': c['start'], 'end': c['end'],
                             'text': t, 'spokenWords': s, 'mapping': m} for c, t, s, m in prepared]}
     key = hashlib.sha256(json.dumps(identity, sort_keys=True).encode()).hexdigest()
@@ -393,7 +402,8 @@ def align_reference_chunks(chunks, clip_path, outdir, *, mfa_executable,
         total_duration = sum(float(c['end']) - float(c['start']) for c, _, _, _ in prepared)
         _run([executable, 'align', corpus.parent, lexicon, acoustic, run / 'aligned',
               '--output_format', 'json', '--num_jobs', '2', '--single_speaker',
-              '--no_textgrid_cleanup', '--clean', '--overwrite'], env=env,
+              '--no_textgrid_cleanup', '--clean', '--overwrite',
+              '--beam', str(ALIGN_BEAM), '--retry_beam', str(ALIGN_RETRY_BEAM)], env=env,
              log=run / 'align.log', timeout=max(600, min(14400, int(total_duration * 6 + 300))),
              deadline_monotonic=deadline_monotonic)
     segments = []
