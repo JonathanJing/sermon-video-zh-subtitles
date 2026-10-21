@@ -5,6 +5,7 @@ import unittest
 
 
 ROOT = Path(__file__).parents[1]
+DEMO_SPEAKERS = {"eric_geiger", "jared_kirkwood", "christine_caine", "doug_fields", "kenton_beshore", "steve_bang_lee"}
 SPEC = importlib.util.spec_from_file_location(
     "render_vietnamese_voice_demos", ROOT / "experiments/sermon-dubbing-poc/render_vietnamese_voice_demos.py"
 )
@@ -25,7 +26,8 @@ class VietnameseVoiceDemoTest(unittest.TestCase):
         )
 
     def test_vietnamese_adapter_has_one_task_per_speaker(self):
-        tasks = subject.prepare_tasks(self.registry, self.script, self.references)
+        tasks = subject.prepare_tasks(self.registry, self.script, self.references,
+                                      selected_speakers=sorted(DEMO_SPEAKERS))
         self.assertEqual(len(tasks), 6)
         self.assertEqual({task["adapter"] for task in tasks}, {"gwen_tts_zero_shot_reference"})
         self.assertEqual({task["revision"] for task in tasks}, {"a83e1f08656d48217a83f0ad422d1610d5b5c963"})

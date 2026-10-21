@@ -204,6 +204,30 @@
         {"targetLocale": "es", "modelLanguage": "Spanish", "status": "human_reviewed", "demoStatus": "human_reviewed", "reviewEvidence": ["experiments/sermon-dubbing-poc/reviews/speaker-voice-acceptance-2026-10-11-steve-bang-lee-ko-es.json"]},
         {"targetLocale": "vi", "modelLanguage": "Vietnamese", "status": "unverified_poc", "demoStatus": "machine_screened", "adapterOverride": {"adapter": "gwen_tts_zero_shot_reference", "model": "g-group-ai-lab/gwen-tts-0.6B", "revision": "a83e1f08656d48217a83f0ad422d1610d5b5c963", "conditioningRef": "speaker-reference://steve_bang_lee/0661d53954b41e34ac96255c9cb67c73e80a06297f19a0b2976854c81eae3950"}, "reviewEvidence": []}
       ]
+    },
+    {
+      "speakerId": "john_thomas",
+      "displayName": "John Thomas",
+      "speakerKey": "john_thomas",
+      "checkpoint": {
+        "checkpointRef": "speaker-voice://qwen3-tts-12hz-1.7b-base/john_thomas/3f722b17b8e204e60d376fc08ef631b9d55a6a1eb02c106d612bf12b5d855c8c",
+        "checkpointSha256": "3f722b17b8e204e60d376fc08ef631b9d55a6a1eb02c106d612bf12b5d855c8c",
+        "trainingStatus": "training_smoke_completed",
+        "trainingReceipt": "docs/reports/runs/20261021-john-thomas-voice/2026-10-21-john-thomas-voice/training-receipt.json"
+      },
+      "authorization": {
+        "status": "authorized",
+        "purposes": ["chinese_dubbing", "multilingual_dubbing"],
+        "evidence": [
+          "experiments/sermon-dubbing-poc/reviews/speaker-voice-acceptance-2026-10-21-john-thomas.json",
+          "docs/reports/runs/20261021-john-thomas-voice/2026-10-21-john-thomas-voice/decisions.ndjson"
+        ]
+      },
+      "localeCapabilities": [
+        {"targetLocale": "zh-Hans", "modelLanguage": "Chinese", "status": "human_reviewed", "demoStatus": "human_reviewed", "reviewEvidence": ["experiments/sermon-dubbing-poc/reviews/speaker-voice-acceptance-2026-10-21-john-thomas.json"]},
+        {"targetLocale": "ko", "modelLanguage": "Korean", "status": "human_reviewed", "demoStatus": "human_reviewed", "reviewEvidence": ["experiments/sermon-dubbing-poc/reviews/speaker-voice-acceptance-2026-10-21-john-thomas.json"]},
+        {"targetLocale": "es", "modelLanguage": "Spanish", "status": "human_reviewed", "demoStatus": "human_reviewed", "reviewEvidence": ["experiments/sermon-dubbing-poc/reviews/speaker-voice-acceptance-2026-10-21-john-thomas.json"]}
+      ]
     }
   ]
 }

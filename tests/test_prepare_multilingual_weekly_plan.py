@@ -37,7 +37,7 @@ class MultilingualWeeklyPlanTest(unittest.TestCase):
     def test_committed_registry_is_schema_valid_and_unique(self):
         self.assertEqual(self.validate("sermon-speaker-voice-registry-v1.schema.json", self.registry), [])
         subject.validate_registry(self.registry)
-        self.assertEqual(len(self.registry["speakers"]), 6)
+        self.assertEqual(len(self.registry["speakers"]), 7)
         self.assertEqual(self.registry["supportedTargetLocales"], ["zh-Hans", "ko", "es", "vi"])
 
     def test_shadow_plan_fans_out_without_locale_barrier(self):
