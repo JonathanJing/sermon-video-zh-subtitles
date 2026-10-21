@@ -59,6 +59,8 @@ SCHEMA_V2 = 'sermon-unified-source-preparation-v2'
 # claude_cli_opus runs claude-opus-5-5 through the subscription Claude CLI. v1/v2 stay OpenAI.
 SCHEMA_V3 = 'sermon-unified-source-preparation-v3'
 JUDGE_BACKEND_MODELS = {'openai_api': 'gpt-6.1-sol', 'claude_cli_opus': 'claude-opus-5-5'}
+MAX_ASR_WORKERS = 16
+PCM_START_SHORTFALL_SAMPLES = 160  # 10 ms at 16 kHz
 FIELDS = {'schemaVersion', 'productionRunId', 'sourceId', 'sourceUrlHash', 'serviceDate',
           'media', 'mediaSha256', 'sourceDurationSeconds', 'window', 'windowApproval', 'windowApprovalSha256',
           'timelineReport', 'timelineReportSha256', 'sourceDescriptor', 'sourceDescriptorSha256',
@@ -97,6 +99,43 @@ def _freeze(path, value):
         require(_load(path) == value, 'source_immutable_artifact_changed:' + path.name)
     else:
         immutable._atomic(path, value)
+
+
+def _record_attempt(path, value):
+    """Keep the latest observation at `path` and every earlier distinct one in a history file.
+
+    A preflight is a runtime observation, not an input: fixing the Spark environment between
+    attempts must not stop the next attempt (2026-10-18 broadcast E26 did, on a frozen
+    mfa-preflight.json). The alignment receipt binds the runtime that actually aligned.
+    """
+    if path.exists():
+        previous = _load(path)
+        if previous == value:
+            return
+        with (path.with_name(path.stem + '-history.ndjson')).open('a', encoding='utf-8') as history:
+            history.write(json.dumps(previous, ensure_ascii=False, sort_keys=True) + '\n')
+    path.write_text(json.dumps(value, ensure_ascii=False, sort_keys=True, indent=1) + '\n', encoding='utf-8')
+
+
+def numeric_references(references, spoken_forms_path):
+    """Tokens the frozen ASR text leaves without an exact spoken form, per reference chunk.
+
+    MFA refuses them, so they are reported right after ASR, in the same stop as the text review,
+    instead of one attempt later (2026-10-17 Resi v1, 2026-10-18 broadcast E26, 2026-10-21 podcast v1
+    each lost an attempt this way).
+    """
+    import re as _re
+    forms = mfa_backend.local._spoken_forms(spoken_forms_path)
+    ambiguous = []
+    for row in references:
+        for token in _re.findall(r'\S+', ' '.join(str(row.get('text', '')).split())):
+            if token in forms:
+                continue
+            if _re.search(r'\d[.,:/-]\d|\d(?:st|nd|rd|th)\b|[$€£%]', token, _re.I) \
+                    or any(len(part) > 1 and part.startswith('0')
+                           for part in mfa_backend.local.WORD_RE.findall(token) if part.isdecimal()):
+                ambiguous.append({'referenceChunkId': row.get('id'), 'token': token})
+    return ambiguous
 
 
 def _positive(value):
@@ -185,7 +224,10 @@ def load_configuration(path):
                  FIELDS | {'asrWorkers'} <= set(value) <= FIELDS | {'asrWorkers'} | OPTIONAL_FIELDS),
             'invalid_source_preparation_configuration')
     if value['schemaVersion'] in (SCHEMA_V2, SCHEMA_V3):
-        require(type(value['asrWorkers']) is int and 1 <= value['asrWorkers'] <= 4,
+        # One worker per 180 s chunk lets a 40-minute source transcribe in one round
+        # (2026-10-21: 14 chunks at 4 workers took 32 s; the provider has no stated
+        # concurrency limit this low, and each request is still ledgered before dispatch).
+        require(type(value['asrWorkers']) is int and 1 <= value['asrWorkers'] <= MAX_ASR_WORKERS,
                 'invalid_source_asr_concurrency')
     require(all(isinstance(value[k], str) and english.SHA256.fullmatch(value[k]) for k in
                 ('productionRunId', 'sourceUrlHash', 'mediaSha256', 'windowApprovalSha256',
@@ -326,7 +368,11 @@ def _validate_pcm(path, duration):
                 and decoded.getframerate() == 16000 and decoded.getcomptype() == 'NONE',
                 'source_extracted_audio_format_changed')
         frames = decoded.getnframes()
-        require(abs(frames - expected_samples) <= 1, 'source_extracted_audio_duration_changed')
+        # A stream whose first packet starts a few milliseconds after 0 decodes that many samples
+        # short of the window (2026-10-18 broadcast: 64 samples at start 0); that is not truncation.
+        # Any overrun, or more than 10 ms missing, still is.
+        require(-PCM_START_SHORTFALL_SAMPLES <= frames - expected_samples <= 1,
+                'source_extracted_audio_duration_changed')
         remaining = frames
         while remaining:
             count = min(remaining, 65536)
@@ -423,7 +469,7 @@ def _execute(config, fresh, *, api_key, transport, aligner, mfa_preflight, claud
     if not aligned_path.exists():
         require(not (out / 'mfa-started.json').exists(), 'source_mfa_outcome_unknown_reconciliation_required')
         runtime = mfa_preflight(**_mfa_options(config))
-        _freeze(out / 'mfa-preflight.json', runtime)
+        _record_attempt(out / 'mfa-preflight.json', runtime)
     clip = _audio(config, out / 'source-clip.wav', window['startSeconds'], duration)
     if claude_transport is None:
         claude_transport = claude_judge_transport(value, out / 'judge-requests' / 'claude-cli-calls',
@@ -458,6 +504,15 @@ def _execute(config, fresh, *, api_key, transport, aligner, mfa_preflight, claud
     _freeze(out / 'speaker-turns.json', {'schemaVersion': 'sermon-source-anonymous-turns-v1',
         'identityMapping': 'not_performed', 'crossChunkIdentity': 'unknown',
         'turns': [{k: row[k] for k in ('id', 'start', 'end', 'speakerId', 'speakerIdentityStatus')} for row in references]})
+    # Everything the operator must supply before MFA is reported in this one stop: spoken forms
+    # for ambiguous numerals and, when configured, the text review of this run's ASR.
+    spoken_forms_path = (value['mfa']['localOptions'].get('spoken_forms_path')
+                         or value['mfa']['sparkOptions'].get('spoken_forms_path'))
+    ambiguous = numeric_references(references, spoken_forms_path)
+    _record_attempt(out / 'numeric-references.json', {
+        'schemaVersion': 'sermon-source-numeric-references-v1', 'spokenFormsPath': spoken_forms_path,
+        'spokenFormsSha256': _sha(spoken_forms_path) if spoken_forms_path else None,
+        'ambiguousTokens': ambiguous, 'status': 'ambiguous_tokens_need_spoken_forms' if ambiguous else 'clear'})
     if 'sourceTextReview' in value:
         # Apply the bound review to the reference text only; asr_reference*.json keep the raw ASR.
         from .text_review import apply_review
@@ -469,6 +524,9 @@ def _execute(config, fresh, *, api_key, transport, aligner, mfa_preflight, claud
         provenance = {k: v for k, v in provenance.items() if k != 'reviewPath'}
         _freeze(out / 'source-text-review-provenance.json', provenance)
         references = [{**row, 'text': segment['text']} for row, segment in zip(references, reviewed)]
+    # The review may have rewritten a numeral; check the text MFA will actually see.
+    require(not numeric_references(references, spoken_forms_path),
+            'source_ambiguous_numeric_reference_configure_spoken_forms')
     alignment_marker = out / 'mfa-started.json'
     if aligned_path.exists():
         aligned = _load(aligned_path)

@@ -329,6 +329,62 @@ class UnifiedSourceTests(unittest.TestCase):
         self.assertEqual(result['machineJudgeStatus'], 'approved_for_layer2_shadow')
         self.assertTrue((out / 'english-source-candidate.json').is_file())
 
+    def test_asr_concurrency_allows_one_worker_per_chunk(self):
+        self.config.update(schemaVersion=subject.SCHEMA_V2, asrWorkers=14)
+        self.rebind_budget()
+        self.assertEqual(subject.load_configuration(self.path).value['asrWorkers'], 14)
+        self.config['asrWorkers'] = subject.MAX_ASR_WORKERS + 1
+        self.rebind_budget()
+        with self.assertRaisesRegex(ValueError, 'invalid_source_asr_concurrency'):
+            subject.load_configuration(self.path)
+
+    def test_ambiguous_numeral_is_reported_right_after_asr_and_stops_before_mfa(self):
+        def transport(endpoint, body, content_type, key):
+            if endpoint.endswith('/transcriptions'):
+                self.calls.append(endpoint)
+                return {'text': 'It cost $1.5 million in 2nd place.'}
+            return self.transport(endpoint, body, content_type, key)
+        aligned = []
+        def align(references, clip, out, **kwargs):
+            aligned.append(references)
+            return self.align(references, clip, out, **kwargs)
+        with self.assertRaisesRegex(ValueError, 'source_ambiguous_numeric_reference_configure_spoken_forms'):
+            subject.execute(self.path, api_key='', transport=transport, aligner=align, mfa_preflight=self.preflight)
+        report = json.loads((self.root / 'source' / 'numeric-references.json').read_text())
+        # Two 180 s chunks transcribe the same fixture text, so each token is reported per chunk.
+        self.assertEqual([row['token'] for row in report['ambiguousTokens']], ['$1.5', '2nd'] * 2)
+        self.assertEqual(len({row['referenceChunkId'] for row in report['ambiguousTokens']}), 2)
+        self.assertEqual(report['status'], 'ambiguous_tokens_need_spoken_forms')
+        self.assertEqual(aligned, [])
+        self.assertFalse((self.root / 'source' / 'mfa-started.json').exists())
+        # ASR was paid once and is not repeated by the stop.
+        self.assertEqual(len(self.calls), 2)
+
+    def test_preflight_drift_between_attempts_is_recorded_not_fatal(self):
+        out = self.root / 'source'
+        out.mkdir()
+        (out / 'mfa-preflight.json').write_text(json.dumps({'schemaVersion': 1, 'backend': 'macbook-local',
+                                                              'runtime': {'testOnly': True, 'stale': 'environment'}}))
+        result = self.execute()
+        self.assertEqual(result['reason'], 'human_source_review_required')
+        self.assertEqual(json.loads((out / 'mfa-preflight.json').read_text()), self.preflight())
+        history = (out / 'mfa-preflight-history.ndjson').read_text().splitlines()
+        self.assertEqual(len(history), 1)
+        self.assertIn('stale', history[0])
+
+    def test_pcm_start_shortfall_within_ten_milliseconds_is_tolerated(self):
+        for frames, ok in ((16000 - 64, True), (16000 - 160, True), (16000 - 161, False), (16000 + 2, False)):
+            with self.subTest(frames=frames):
+                output = self.root / f'pcm-{frames}.wav'
+                with wave.open(str(output), 'wb') as stream:
+                    stream.setnchannels(1); stream.setsampwidth(2); stream.setframerate(16000)
+                    stream.writeframes(b'\0\0' * frames)
+                if ok:
+                    subject._validate_pcm(output, 1)
+                else:
+                    with self.assertRaisesRegex(ValueError, 'duration_changed'):
+                        subject._validate_pcm(output, 1)
+
     def test_rebuild_rejects_overrides_for_another_alignment(self):
         self.execute()
         overrides, out, authorization = self.rebuild_inputs('b' * 64)
