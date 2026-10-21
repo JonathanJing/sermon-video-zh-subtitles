@@ -1,0 +1,9 @@
+{"at": "2026-10-21T04:26:10+00:00", "stage": "prep.stage-inputs", "event": "started", "hostId": "host-e8b10061bf9a", "pid": 77335}
+{"at": "2026-10-21T04:28:45+00:00", "stage": "prep.stage-inputs", "event": "finished", "hostId": "host-e8b10061bf9a", "pid": 78287}
+{"at": "2026-10-21T04:28:45+00:00", "stage": "prep.asr-align-select", "event": "started", "hostId": "host-e8b10061bf9a", "pid": 78288}
+{"at": "2026-10-21T04:32:53+00:00", "stage": "prep.asr-align-select", "event": "finished", "hostId": "host-e8b10061bf9a", "pid": 79545}
+{"at": "2026-10-21T04:32:53+00:00", "stage": "train.sft", "event": "started", "hostId": "host-e8b10061bf9a", "pid": 79546}
+{"at": "2026-10-21T04:38:48+00:00", "stage": "audition.human-review", "event": "waiting", "hostId": "host-e8b10061bf9a", "pid": 82948, "waitingOn": "user listening review of John Thomas auditions"}
+{"at": "2026-10-21T04:39:01+00:00", "stage": "train.sft", "event": "finished", "hostId": "host-e8b10061bf9a", "pid": 83203, "note": "late append; training-report.json written 04:34:34 UTC on Spark (training 78.9 s)"}
+{"at": "2026-10-21T04:39:01+00:00", "stage": "probe.generate-and-screen", "event": "started", "hostId": "host-e8b10061bf9a", "pid": 83207, "note": "late append; actually started ~04:35 UTC"}
+{"at": "2026-10-21T04:39:01+00:00", "stage": "probe.generate-and-screen", "event": "finished", "hostId": "host-e8b10061bf9a", "pid": 83210, "note": "late append; probe report 04:36:59, ASR screen 04:37:47 UTC (Spark mtimes)"}

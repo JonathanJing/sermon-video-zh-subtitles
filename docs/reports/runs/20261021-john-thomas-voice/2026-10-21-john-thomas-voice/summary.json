@@ -1,0 +1,65 @@
+{
+  "run": "20261021-john-thomas-voice",
+  "source": "Mariners podcast 'If I Had More Time | Jesus sends and resurrects His own' (single episode, two speakers, 40:12)",
+  "speakerSelection": "VibeVoice-ASR BF16 speaker_id 1 (user-confirmed mapping), cross-checked against MLX 8-bit diarization and YouTube auto-caption >> markers",
+  "johnTurnSeconds": 1275.01,
+  "train": {
+    "clips": 34,
+    "seconds": 270.48
+  },
+  "validationHeldOut": {
+    "rule": "John turns starting at or after 2000 s",
+    "clips": 9,
+    "seconds": 82.2,
+    "usedInTraining": false
+  },
+  "reference": {
+    "seconds": 11.96,
+    "split": "train",
+    "sha256": "1630dff7349798f512f7801bba59fe3c103ee2516b118039fdfb4a535d50873b",
+    "asrRecheck": "exact"
+  },
+  "training": {
+    "base": "Qwen/Qwen3-TTS-12Hz-1.7B-Base@fd4b2543",
+    "initializedFrom": "original_base",
+    "batch": 1,
+    "gradAccum": 4,
+    "lr": 2e-06,
+    "epochs": 1,
+    "dtype": "bf16",
+    "attention": "sdpa",
+    "seed": 42,
+    "container": "nvcr.io/nvidia/pytorch:26.06-py3, 32 GiB, 6 CPU, no network",
+    "tokenizerEncodeSeconds": 17.8,
+    "trainingSeconds": 78.9,
+    "steps": 34,
+    "firstLoss": 13.6602,
+    "lastLoss": 11.316,
+    "weightCheck": "12/12 attention projections (layers 0/13/27 q,k,v,o) changed; max abs delta 3.43e-5"
+  },
+  "auditions": {
+    "zh-Hans": {
+      "seconds": 13.92,
+      "asrCer": 0.0299,
+      "note": "only 祂/他 homophone"
+    },
+    "ko": {
+      "seconds": 14.88,
+      "asrCer": 0.0
+    },
+    "es": {
+      "seconds": 15.04,
+      "asrWer": 0.0
+    },
+    "en-heldout": {
+      "seconds": 13.52,
+      "asrWer": 0.0
+    }
+  },
+  "limits": [
+    "single episode: engineering smoke, no generalization claim",
+    "machine screening is not human listening",
+    "no clip-level human speaker review",
+    "registry unchanged until user review"
+  ]
+}

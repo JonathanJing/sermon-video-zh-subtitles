@@ -1,0 +1,17 @@
+{
+  "schemaVersion": "voice-training-run-outcome-v1",
+  "status": "succeeded_pending_human_review",
+  "deliveryType": "test (speaker voice training smoke)",
+  "startedAt": "2026-10-21T04:26:10+00:00",
+  "computeEndedAt": "2026-10-21T04:37:47+00:00",
+  "auditionDeliveredAt": "2026-10-21T04:40:00+00:00",
+  "speaker": "John Thomas",
+  "speakerKey": "john_thomas",
+  "checkpointSha256": "3f722b17b8e204e60d376fc08ef631b9d55a6a1eb02c106d612bf12b5d855c8c",
+  "productionEligible": false,
+  "humanApproval": false,
+  "humanListeningStatus": "pending",
+  "registryChange": "none",
+  "paidModelCalls": 0,
+  "sparkServicesTouched": "none (llama-server left running; isolated containers only)"
+}

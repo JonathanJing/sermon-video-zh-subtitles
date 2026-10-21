@@ -1,0 +1,38 @@
+W1021 04:33:16.117000 169 torch/utils/_pytree.py:630] <enum 'KernelPreference'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
+W1021 04:33:16.141000 169 torch/utils/_pytree.py:630] <enum 'ScaleCalculationMode'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
+[0;93m2026-10-21 04:33:16.275311002 [W:onnxruntime:Default, device_discovery.cc:164 DiscoverDevicesForPlatform] GPU device discovery failed: device_discovery.cc:89 ReadFileContents Failed to open file: "/sys/class/drm/card0/device/vendor"[m
+`torch_dtype` is deprecated! Use `dtype` instead!
+Epoch 0 | Step 0 | Loss: 13.6602
+Epoch 0 | Step 1 | Loss: 13.4854
+Epoch 0 | Step 2 | Loss: 13.9975
+Epoch 0 | Step 3 | Loss: 13.4031
+Epoch 0 | Step 4 | Loss: 12.4798
+Epoch 0 | Step 5 | Loss: 12.9574
+Epoch 0 | Step 6 | Loss: 13.5730
+Epoch 0 | Step 7 | Loss: 12.9140
+Epoch 0 | Step 8 | Loss: 12.2570
+Epoch 0 | Step 9 | Loss: 12.5540
+Epoch 0 | Step 10 | Loss: 11.3351
+Epoch 0 | Step 11 | Loss: 13.1507
+Epoch 0 | Step 12 | Loss: 11.6090
+Epoch 0 | Step 13 | Loss: 11.6858
+Epoch 0 | Step 14 | Loss: 11.8920
+Epoch 0 | Step 15 | Loss: 11.4272
+Epoch 0 | Step 16 | Loss: 12.9975
+Epoch 0 | Step 17 | Loss: 10.8488
+Epoch 0 | Step 18 | Loss: 11.5857
+Epoch 0 | Step 19 | Loss: 12.2244
+Epoch 0 | Step 20 | Loss: 10.9904
+Epoch 0 | Step 21 | Loss: 11.6451
+Epoch 0 | Step 22 | Loss: 11.4990
+Epoch 0 | Step 23 | Loss: 11.2234
+Epoch 0 | Step 24 | Loss: 11.9236
+Epoch 0 | Step 25 | Loss: 12.0521
+Epoch 0 | Step 26 | Loss: 10.8110
+Epoch 0 | Step 27 | Loss: 11.6730
+Epoch 0 | Step 28 | Loss: 11.4399
+Epoch 0 | Step 29 | Loss: 11.0300
+Epoch 0 | Step 30 | Loss: 11.9593
+Epoch 0 | Step 31 | Loss: 12.2281
+Epoch 0 | Step 32 | Loss: 10.9612
+Epoch 0 | Step 33 | Loss: 11.3160

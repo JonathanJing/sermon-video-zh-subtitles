@@ -1,0 +1,134 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261021-john-thomas-voice",
+  "runs": [
+    {
+      "label": "2026-10-21-john-thomas-voice",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.claude/worktrees/magical-lalande-5c5a8c/artifacts/sermon-dubbing/2026-10-21-john-thomas-voice",
+      "skipped": {
+        "(none)": 1,
+        ".json": 8,
+        ".mp3": 6,
+        ".wav": 6,
+        ".jsonl": 2,
+        ".txt": 2,
+        ".py": 5
+      }
+    }
+  ],
+  "files": [
+    {
+      "run": "2026-10-21-john-thomas-voice",
+      "path": "audition-receipt.json",
+      "kind": "whole",
+      "bytes": 4058,
+      "truncated": false,
+      "sha256": "5777d12f87c1c870bd4b06dd58917f4862f1c0b3a331e3a153a3714e7229cfe4",
+      "redactions": {}
+    },
+    {
+      "run": "2026-10-21-john-thomas-voice",
+      "path": "decisions.ndjson",
+      "kind": "whole",
+      "bytes": 1102,
+      "truncated": false,
+      "sha256": "8308e22da3ab075f8325b50c1d82a380882005aaf6abf2b03d1696b4de633f49",
+      "redactions": {}
+    },
+    {
+      "run": "2026-10-21-john-thomas-voice",
+      "path": "journal.ndjson",
+      "kind": "whole",
+      "bytes": 1489,
+      "truncated": false,
+      "sha256": "8e5da1b88e49cf5d8bce0d6c39527cbbe3e9431dba75fa0825232674841c213c",
+      "redactions": {}
+    },
+    {
+      "run": "2026-10-21-john-thomas-voice",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 687,
+      "truncated": false,
+      "sha256": "56f54830727ff448485d656ca733c6bbac67c3c3d0756a3b981c6f7c7640611a",
+      "redactions": {}
+    },
+    {
+      "run": "2026-10-21-john-thomas-voice",
+      "path": "prep-receipt.json",
+      "kind": "whole",
+      "bytes": 2683,
+      "truncated": false,
+      "sha256": "06ed14928e4f03c87c1ac4354ffa8f2bb0168dfbb6a093bb06c38df42307d9b3",
+      "redactions": {}
+    },
+    {
+      "run": "2026-10-21-john-thomas-voice",
+      "path": "spark/prep.attempt1.log",
+      "kind": "log",
+      "bytes": 7051,
+      "truncated": false,
+      "sha256": "e48345cce3dadaf8a4122e5d2ad52b6da66654a9eba1d05e4fc59e36840cb096",
+      "redactions": {}
+    },
+    {
+      "run": "2026-10-21-john-thomas-voice",
+      "path": "spark/prep.log",
+      "kind": "log",
+      "bytes": 1598,
+      "truncated": false,
+      "sha256": "9bfd7b97c0eb5e40fa97f9d8af77a30574dcacfa9b0608236ffad74c3cc70c35",
+      "redactions": {}
+    },
+    {
+      "run": "2026-10-21-john-thomas-voice",
+      "path": "spark/probe.attempt1.log",
+      "kind": "log",
+      "bytes": 236,
+      "truncated": false,
+      "sha256": "aaf72ef36524c0727239e0456c0278a554756788019b923ebcf0d2aa0620497f",
+      "redactions": {}
+    },
+    {
+      "run": "2026-10-21-john-thomas-voice",
+      "path": "spark/runner.log",
+      "kind": "log",
+      "bytes": 4891,
+      "truncated": false,
+      "sha256": "52982703ed34ca100c317b3095be764a545fc72a27970ecc3beb8730226f2044",
+      "redactions": {}
+    },
+    {
+      "run": "2026-10-21-john-thomas-voice",
+      "path": "spark/training.log",
+      "kind": "log",
+      "bytes": 1993,
+      "truncated": false,
+      "sha256": "70f3a56b4b006139e6ddc3bcb86ddbdfc6ef674982f199bb9eeead49a412548b",
+      "redactions": {}
+    },
+    {
+      "run": "2026-10-21-john-thomas-voice",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 1645,
+      "truncated": false,
+      "sha256": "edc0d5cd22d0aa9ad03109344e21253f4b810fd14252044c9385ad8c5d7ebf0f",
+      "redactions": {}
+    },
+    {
+      "run": "2026-10-21-john-thomas-voice",
+      "path": "training-receipt.json",
+      "kind": "whole",
+      "bytes": 4778,
+      "truncated": false,
+      "sha256": "143c45a9f1784a1f2780774ea3a3537647022e06fffa65ac609463053630f9a1",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

@@ -1,0 +1,125 @@
+{
+  "schemaVersion": "john-thomas-voice-audition-receipt-v1",
+  "checkpointSha256": "3f722b17b8e204e60d376fc08ef631b9d55a6a1eb02c106d612bf12b5d855c8c",
+  "generation": {
+    "seed": 42,
+    "temperature": 0.7,
+    "repetitionPenalty": 1.05,
+    "maxNewTokens": 768,
+    "ratePolicy": "natural_no_time_stretch",
+    "scriptJsonSha256": "cbd03468c2f5ce120e1f9b297ab3429d7bf7b8e0d44be1ae90717d72bdcb4c38"
+  },
+  "asr": [
+    "Qwen/Qwen3-ASR-0.6B",
+    "5eb144179a02acc5e5ba31e748d22b0cf3e303b0"
+  ],
+  "tracks": [
+    {
+      "targetLocale": "zh-Hans",
+      "modelLanguage": "Chinese",
+      "textSha256": "3508394e8d73bdd46b3b0e8b1373ff26d632fb440942f24200526f9e20256a41",
+      "audioSha256": "064a5ea47be04aa6776a472234740e6526f34305519dc46cc70733aad6c9a0af",
+      "durationSeconds": 13.92,
+      "generationSeconds": 11.735,
+      "signalCheck": "pass"
+    },
+    {
+      "targetLocale": "ko",
+      "modelLanguage": "Korean",
+      "textSha256": "b557e07b4dfad38f238880ddfaf2ebf5a8f71eacc36a2ab546e8aad96fe4d84a",
+      "audioSha256": "a4480052523b1735ba3a2eee033b02439c8569c2cc09c0c99b1baa6907fb2ec7",
+      "durationSeconds": 14.88,
+      "generationSeconds": 10.7,
+      "signalCheck": "pass"
+    },
+    {
+      "targetLocale": "es",
+      "modelLanguage": "Spanish",
+      "textSha256": "202e4983eeb10eac52887f141ed392be112d899e71ded6446d310b2c9904c858",
+      "audioSha256": "b064415f3fab0cb191261fcc78a4f2dae3bc43ccf5ad7705df43d4d4783d3fe5",
+      "durationSeconds": 15.04,
+      "generationSeconds": 10.841,
+      "signalCheck": "pass"
+    },
+    {
+      "targetLocale": "en-heldout",
+      "modelLanguage": "English",
+      "textSha256": "4ac038465fb0cf86f78401af389096f3c683f7351db8c75e06f3cd35c280fdee",
+      "audioSha256": "bd8d1e7633753ed6916edbeaad9862b0e23829e9023b41e9c932f2b6e4213c23",
+      "durationSeconds": 13.52,
+      "generationSeconds": 9.681,
+      "signalCheck": "pass"
+    }
+  ],
+  "screen": [
+    {
+      "targetLocale": "zh-Hans",
+      "metric": "cer",
+      "errorRate": 0.0299,
+      "referenceUnits": 67,
+      "hypothesisUnits": 67
+    },
+    {
+      "targetLocale": "ko",
+      "metric": "cer",
+      "errorRate": 0.0,
+      "referenceUnits": 92,
+      "hypothesisUnits": 92
+    },
+    {
+      "targetLocale": "es",
+      "metric": "wer",
+      "errorRate": 0.0,
+      "referenceUnits": 41,
+      "hypothesisUnits": 41
+    },
+    {
+      "targetLocale": "en-heldout",
+      "metric": "wer",
+      "errorRate": 0.0,
+      "referenceUnits": 48,
+      "hypothesisUnits": 48
+    }
+  ],
+  "mp3": [
+    {
+      "file": "john_thomas-zh-Hans.mp3",
+      "sha256": "688be1734c6f43eb1a7be92027853df236b1c94a39a9dbdb8e4330046adbb7e2",
+      "kind": "trained_voice_audition",
+      "durationSeconds": 13.92
+    },
+    {
+      "file": "john_thomas-ko.mp3",
+      "sha256": "f2a3a75b1b65fc5abe15e8d1d3a265066c84256faab5518657b52f07a34477d6",
+      "kind": "trained_voice_audition",
+      "durationSeconds": 14.88
+    },
+    {
+      "file": "john_thomas-es.mp3",
+      "sha256": "e43d554810907924a2193aa7c8dc37c2b6280dae0722f4d6b95074d2d9cfb945",
+      "kind": "trained_voice_audition",
+      "durationSeconds": 15.04
+    },
+    {
+      "file": "john_thomas-en-heldout-generated.mp3",
+      "sha256": "06f4dd0761bcbda5e8ba39e0f947bf984c3498e569c90b9b1ad506ccc1a55151",
+      "kind": "trained_voice_heldout_english_line",
+      "durationSeconds": 13.52
+    },
+    {
+      "file": "john_thomas-en-heldout-original.mp3",
+      "sha256": "20731bbed6bde926452b3adcae921e06a4049abb29ce72b99a4e81b581518fab",
+      "kind": "authorized_source_original_heldout",
+      "durationSeconds": 14.04
+    },
+    {
+      "file": "john_thomas-en-reference-original.mp3",
+      "sha256": "18bce4c4c6c9df14b2eb9d0fee1a2b516f14f663367053a9d35de6f72d925554",
+      "kind": "authorized_source_reference_train_split",
+      "durationSeconds": 11.96
+    }
+  ],
+  "loudness": "measured -18.2 to -18.4 LUFS integrated, sample peak <= -1.7 dBFS; full decode pass",
+  "humanListeningStatus": "pending",
+  "deliveredToUser": "2026-10-21T04:40Z via SendUserFile"
+}
