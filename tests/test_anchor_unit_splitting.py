@@ -116,6 +116,19 @@ class ClauseStableSplittingTests(unittest.TestCase):
         self.assertEqual(len(texts), 2)
         self.assertTrue(texts[0].endswith('said,'))
 
+    def test_hedging_adverb_after_a_copula_cannot_end_a_unit(self):
+        spec = [('Now', 0, .2), ('for', 0, .1), ('our', 0, .1), ('next,', 0, .4), ('our', 0, .1),
+                ('brothers', 0, .4), ('and', 0, .1), ('sisters,', 0, .5), ('our', 0, .1),
+                ('dispensational', 0, .7), ('premillennial', 0, .6), ('friends,', 0, .5), ('again,', .42, .3),
+                ('the', .35, .1), ('lens', 0, .3), ('that', 0, .1), ('they', 0, .1), ('would', 0, .1),
+                ('see', 0, .2), ('the', 0, .1), ('book', 0, .2), ('of', 0, .1), ('Revelation', 0, .6),
+                ('is', 0, .2), ('primarily,', 0, .6), ('if', 0, .1), ('not', 0, .2), ('exclusively', 0, .7),
+                ('actually,', 0, .5), ('future.', .43, .6)]
+        texts, unresolved = self.split(spec)
+        self.assertFalse(unresolved)
+        self.assertEqual(texts[0], 'Now for our next, our brothers and sisters, our dispensational premillennial friends, again,')
+        self.assertFalse(any(text.endswith('primarily,') for text in texts))
+
     def test_function_word_before_a_pause_cannot_end_a_unit(self):
         spec = [('We', 0, .4)] + [(f'w{i}', 0, .5) for i in range(12)] + [('by', 0, .3)] + \
                [(f'v{i}', .5 if i == 0 else 0, .5) for i in range(8)] + [('end.', 0, .4)]

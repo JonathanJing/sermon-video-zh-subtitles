@@ -308,6 +308,7 @@ UNIT_FINAL_CONTRACTION = re.compile(r"^(?:who|that|which|there|here|it|he|she|th
 FILLER_WORDS = frozenset({"yes", "yeah", "like", "well", "okay", "ok", "so", "um", "uh", "mean", "know", "right",
                           "again", "actually", "really", "basically", "honestly"})
 DETERMINERS = frozenset("a an the this these those my your his her its our their some any each every".split())
+COPULAS = frozenset("is are was were be been being am".split())
 # Words that open a clause: a comma without a pause is admissible before one of them, never
 # in the middle of a noun list ("by Nero, | the Roman Empire" changed who attacked whom).
 CLAUSE_STARTERS = frozenset("""
@@ -333,6 +334,10 @@ def _dependent_clause_boundary(words: list[dict[str, Any]], index: int) -> bool:
         # head; "and, again, | put forth": a parenthetical filler inside a dependency.
         before = _boundary_word(words[index - 1]["text"])
         if before in DETERMINERS or (boundary_word in FILLER_WORDS and before in UNIT_FINAL_FUNCTION_WORDS):
+            return True
+        # "is primarily, | if not exclusively actually, future": a hedging adverb right after the
+        # copula still awaits its complement (2026-10-21 v13, the one sentence the judge rejected).
+        if before in COPULAS and boundary_word.endswith("ly"):
             return True
     if previous in {"on", "be"}:
         return True
