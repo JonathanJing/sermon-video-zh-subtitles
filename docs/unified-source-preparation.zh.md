@@ -27,6 +27,7 @@ CLI 等价入口：
 - `mfa`：backend、allowSparkFallback、localOptions、sparkOptions；仅接受现有 MFA adapter 的固定字段。
 - `anchorPolicy`：maxUnitSeconds 和 boundaryOverrides。已有人工边界覆盖原样传入，不按时长强拆。
 - `judgeCacheRoot`（可选，v2/v3）：相对配置文件的目录，存放机器裁判按内容寻址的请求缓存。缓存键是该批句子、单元、前后文、锚点策略、模型、推理强度和提示词，不含 manifest 哈希；同一来源的每次 `execute` 或 `rebuild` 写同一目录时，只有改动过的批次会再付费，其余按缓存回放（2026-10-21 起；单元 ID 按块内顺序编号，一句多拆一个单元仍会让该块后面句子的单元 ID 顺延并重判）。不写时每个输出目录各自缓存在 `judge-requests/`。
+- `asrWorkers`（v2/v3）：ASR 并发，1 到 16；每块 180 秒，一块一个 worker 时 40 分钟来源一轮返回（2026-10-21 起上限从 4 放宽到 16，每个请求仍先入账再派发）。
 - `judge`：reasoningEffort、batchSize、workers 和模型。v1 只允许 workers=1；v2 允许 1–8 workers。v1、v2 的模型为 `gpt-6-astra` 或 `gpt-6.1-sol`，走 OpenAI API。
   **v3（`sermon-unified-source-preparation-v3`，2026-10-21 用户决定）** 在 v2 字段上要求 `judge.backend`，后端决定模型：`openai_api` 只能用 `gpt-6.1-sol`；`claude_cli_opus` 只能用 `claude-opus-5-5`，经本机订阅登录的 Claude CLI 调用（`compute/transports/claude_source_judge.py`），不用 API key，单次调用的超时等于预算的单请求墙钟上限。ASR 仍走 OpenAI，所以 v3 的 Claude 后端仍需要 OpenAI 启动器和预算。后端写在配置里，进入配置摘要和预算绑定；换后端等于新配置，需要重新批准预算。v1、v2 配置不迁移。
 
@@ -42,6 +43,8 @@ CLI 等价入口：
 - 预算根固定为 jobRoot 同级的 `.<jobRoot.name>.source-budget`。
 - `authority` 含 `approvalSha256`、`globalBounds`、`requestLimits`。globalBounds 只有 requests、wallTimeMs、costMicrousd；音频 token 没有数值时不补零。
 - 独立 `sermon-source-budget-approval-v1` 收据的 binding 为上述 binding 加 globalBounds/requestLimits，须保存人类决定、操作者证据和审核时间；hash 引用不等于授权。
+
+ASR 返回后、进入 MFA 前，`execute` 把操作者必须补的输入一次报全：`numeric-references.json` 列出冻结文本里没有精确读法的数字 token（`$1.5`、`2nd`、`73:16` 这类）及其所在块；配置了 `sourceTextReview` 而审核文件还不存在时，同一停点报 `source_text_review_required`；读法仍缺时报 `source_ambiguous_numeric_reference_configure_spoken_forms`。两者都不再等到 MFA 派发前才发现。`mfa-preflight.json` 保存最近一次预检观测，和上次不同时把旧值追加到 `mfa-preflight-history.ndjson` 而不是阻止运行；实际对齐用的运行时仍由 `alignment-receipt.json` 绑定。窗口音频解码允许比期望少至多 10 ms（流首包不从 0 开始的情况），多出或缺更多仍按时长改变拒绝。
 
 ASR 用既有 `sermon_transcription_request` 构造每块最多 180 秒的 PCM 请求；原始返回按块不可变保存。输入音频时长按已有冻结价格假设预留，不宣称实际账单。Judge 的实际 payload 在缓存身份计算前加入输入、输出 token 与墙钟限制；预留仍按冻结价格上界，`invoiceVerified=false`。
 
