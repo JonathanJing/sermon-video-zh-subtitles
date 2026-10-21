@@ -76,7 +76,10 @@ TEXT_REVIEW_FIELDS = {'sourceTextReview'}
 # directory replays batches whose sentences, units, neighbors and policy are unchanged, so a
 # boundary rebuild pays only for the batches it moved. Absent, each output keeps its own cache.
 JUDGE_CACHE_FIELDS = {'judgeCacheRoot'}
-OPTIONAL_FIELDS = TEXT_REVIEW_FIELDS | JUDGE_CACHE_FIELDS
+# Optional v2/v3 field: the MacBook per-chunk MFA raw alignment cache (relative to the configuration).
+# Spark keeps its own under its job root, so Spark runs reuse chunks without this field.
+MFA_CHUNK_CACHE_FIELDS = {'mfaChunkCacheRoot'}
+OPTIONAL_FIELDS = TEXT_REVIEW_FIELDS | JUDGE_CACHE_FIELDS | MFA_CHUNK_CACHE_FIELDS
 
 
 def require(ok, code):
@@ -248,6 +251,8 @@ def load_configuration(path):
         resolve('sourceTextReview')
     if 'judgeCacheRoot' in value:
         resolve('judgeCacheRoot')
+    if 'mfaChunkCacheRoot' in value:
+        resolve('mfaChunkCacheRoot')
     require(media.is_file() and _sha(media) == value['mediaSha256'], 'source_media_identity_changed')
     require(not any(output == p or output in p.parents for p in (media, path, receipt_path, job_root))
             and not (job_root == output or job_root in output.parents), 'source_paths_overlap')
@@ -347,10 +352,13 @@ def judge_cache_root(value, config_path, out):
     return out / 'judge-requests'
 
 
-def _mfa_options(config):
+def _mfa_options(config, *, alignment=False):
     value = config.value['mfa']
-    return {'backend': value['backend'], 'allow_spark_fallback': value['allowSparkFallback'],
-            'local_options': value['localOptions'], 'spark_options': value['sparkOptions']}
+    options = {'backend': value['backend'], 'allow_spark_fallback': value['allowSparkFallback'],
+               'local_options': value['localOptions'], 'spark_options': value['sparkOptions']}
+    if alignment and 'mfaChunkCacheRoot' in config.value:
+        options['chunk_cache_dir'] = _safe_path(config.path.parent / config.value['mfaChunkCacheRoot'])
+    return options
 
 
 def _probe(path):
@@ -538,7 +546,7 @@ def _execute(config, fresh, *, api_key, transport, aligner, mfa_preflight, claud
         require(not alignment_marker.exists(), 'source_mfa_outcome_unknown_reconciliation_required')
         _freeze(alignment_marker, {'referenceSha256': jobs._digest(references), 'clipSha256': _sha(clip),
                                    'configurationSha256': config.identity})
-        aligned = aligner(references, clip, out / 'mfa', **_mfa_options(config))
+        aligned = aligner(references, clip, out / 'mfa', **_mfa_options(config, alignment=True))
         # Preserve evidence-backed anonymous turns separately and on each aligned
         # row. No diarization label is mapped to a real person or across chunks.
         by_chunk = {str(row['id']): row for row in references}

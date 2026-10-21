@@ -170,7 +170,9 @@ def _alignment_runtime_failure(exc):
     return False
 
 
-def align_reference_chunks(chunks, clip_path, outdir, *, local_options, spark_options, allow_spark_fallback=True, backend='auto', deadline_monotonic=None):
+def align_reference_chunks(chunks, clip_path, outdir, *, local_options, spark_options, allow_spark_fallback=True, backend='auto',
+                           deadline_monotonic=None, chunk_cache_dir=None):
+    # `chunk_cache_dir` names the MacBook per-chunk raw alignment cache; Spark keeps its own under its job root.
     local.deadline_timeout(60, deadline_monotonic)
     # Pin inputs before dispatch; failover cannot quietly consume modified text,
     # audio or spoken forms.
@@ -209,11 +211,13 @@ def align_reference_chunks(chunks, clip_path, outdir, *, local_options, spark_op
                                           'detail':type(exc.__cause__ or exc).__name__}
             runtime_key = hashlib.sha256(json.dumps(selected['runtime'], sort_keys=True).encode()).hexdigest()
             segments = local.align_reference_chunks(frozen, clip_path, Path(outdir)/runtime_key, **local_options,
-                **({'deadline_monotonic':deadline_monotonic} if deadline_monotonic is not None else {}))
+                **({'deadline_monotonic':deadline_monotonic} if deadline_monotonic is not None else {}),
+                **({'chunk_cache_dir': Path(chunk_cache_dir)/runtime_key} if chunk_cache_dir else {}))
     else:
         runtime_key = hashlib.sha256(json.dumps(selected['runtime'], sort_keys=True).encode()).hexdigest()
         segments = local.align_reference_chunks(frozen, clip_path, Path(outdir)/runtime_key, **local_options,
-            **({'deadline_monotonic':deadline_monotonic} if deadline_monotonic is not None else {}))
+            **({'deadline_monotonic':deadline_monotonic} if deadline_monotonic is not None else {}),
+            **({'chunk_cache_dir': Path(chunk_cache_dir)/runtime_key} if chunk_cache_dir else {}))
     if local._sha(clip_path) != audio_sha or (local._sha(forms) if forms else None) != forms_sha:
         raise ValueError('MFA inputs changed during alignment')
     if selected['backend'] == 'dgx-spark-ssh':

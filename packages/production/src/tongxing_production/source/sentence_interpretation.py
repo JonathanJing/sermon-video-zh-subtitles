@@ -331,9 +331,13 @@ def _dependent_clause_boundary(words: list[dict[str, Any]], index: int) -> bool:
         return True
     if index > 0:
         # "the whole | sort of inter-advent age", "the different | images": a modifier cut from its
-        # head; "and, again, | put forth": a parenthetical filler inside a dependency.
+        # head at a pause the transcript did not punctuate. With a comma after the word ("the
+        # occult, | whether it's aliens") the word closes its phrase and the boundary stands.
+        # "and, again, | put forth": a parenthetical filler inside a dependency.
         before = _boundary_word(words[index - 1]["text"])
-        if before in DETERMINERS or (boundary_word in FILLER_WORDS and before in UNIT_FINAL_FUNCTION_WORDS):
+        punctuated = bool(BREAK_PUNCTUATION.search(str(words[index]["text"])))
+        if (before in DETERMINERS and not punctuated) or (
+                boundary_word in FILLER_WORDS and before in UNIT_FINAL_FUNCTION_WORDS):
             return True
         # "is primarily, | if not exclusively actually, future": a hedging adverb right after the
         # copula still awaits its complement (2026-10-21 v13, the one sentence the judge rejected).

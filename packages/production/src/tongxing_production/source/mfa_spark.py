@@ -103,7 +103,9 @@ if request['action'] == 'align':
     if adapter._sha(run/'audio') != request['audioSha256']:
         raise ValueError('Audio transfer hash mismatch')
     runtime_key = hashlib.sha256(json.dumps(identity, sort_keys=True).encode()).hexdigest()
-    segments = adapter.align_reference_chunks(request['chunks'], run/'audio', run/'output'/runtime_key, **options)
+    extra = ({'chunk_cache_dir': str(root/'chunk-cache'/runtime_key)}
+             if 'chunk_cache_dir' in adapter.align_reference_chunks.__code__.co_varnames else {})
+    segments = adapter.align_reference_chunks(request['chunks'], run/'audio', run/'output'/runtime_key, **options, **extra)
     manifest = json.loads(pathlib.Path(segments[0]['mfaManifest']).read_text())
     result.update(segments=segments, manifest=manifest, audioSha256=request['audioSha256'],
                   requestSha256=key)
