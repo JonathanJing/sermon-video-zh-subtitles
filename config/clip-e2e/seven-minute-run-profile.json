@@ -50,7 +50,8 @@
   "ledgerScope": {
    "clip": "locale",
    "week": "locale"
-  }
+  },
+  "systemicMinimumGroups": 8
  },
  "qc": {
   "comment": "One root per locale shared by text QC, calibration and audio QC; its ledger is the judge response cache.",
@@ -86,6 +87,6 @@
  "derivedFrom": {
   "profile": "config/weekly-run-profile.json",
   "sha256": "4bdf5a127d6213e96e837c7bce4bdc6cc3284ff7007f88086430111b93749f88",
-  "rule": "boundsPerLocale.clip request/token/wallTime counts multiplied by 88/16 = 5.5; model, tier, requestLimits, QC rules and price basis unchanged. layer2.capUsdPerLocale.clip raised 2.00 -> 11.00 per locale so it covers the 88-group initial reservation of 10.813 USD per locale (176 calls at the profile's max input 16384 / output 2048 for gpt-6.1-sol high+medium); week-scale cap, requestLimits, service tier and QC caps unchanged.. layer2.ledgerScope={clip: locale} shards the Layer 2 budget ledger per locale for a longer clip: a shared run ledger is capped at 256 KiB and the 88-group clip reached 261,828 B before its reservations completed, while a week has always been sharded at 8 MiB per locale. No bound, cap or limit changes with this setting."
+  "rule": "boundsPerLocale.clip request/token/wallTime counts multiplied by 88/16 = 5.5; model, tier, requestLimits, QC rules and price basis unchanged. layer2.capUsdPerLocale.clip raised 2.00 -> 11.00 per locale so it covers the 88-group initial reservation of 10.813 USD per locale (176 calls at the profile's max input 16384 / output 2048 for gpt-6.1-sol high+medium); week-scale cap, requestLimits, service tier and QC caps unchanged.. layer2.ledgerScope={clip: locale} shards the Layer 2 budget ledger per locale for a longer clip: a shared run ledger is capped at 256 KiB and the 88-group clip reached 261,828 B before its reservations completed, while a week has always been sharded at 8 MiB per locale. No bound, cap or limit changes with this setting.. layer2.systemicMinimumGroups=8 lets a clip repair a cluster of one known defect: a week stops dispatch after 3 adjacent groups fail with one code, which on this clip are several sentences sharing a register error. Raise-only; the week default stays 3. Corrections, approved wording and repair instructions are unchanged."
  }
 }

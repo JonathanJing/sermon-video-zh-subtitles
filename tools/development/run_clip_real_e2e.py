@@ -383,13 +383,18 @@ def stage_layer2_setup(run: Run):
         from scripts import tongxing_host  # noqa: F401  binds the production package ports
         from tongxing_production.text import controller
         from tongxing_production.text import auto_repair
+        profile_repair = read(Path(spec["budgetProfile"])).get("layer2", {}) if spec.get("budgetProfile") else {}
         run_id = hashlib.sha256(("clip-real-e2e " + spec["name"] + " " + ",".join(spec["locales"])).encode()).hexdigest()
         write(l2 / "execution.json", {
             "schemaVersion": controller.AUTO_REPAIR_SCHEMA, "productionRunId": run_id, "inspectionConfig": "inspection.json",
             "jobRoot": "layer2-jobs",
             "locales": {k: {"outputDirectory": f"text/{k}", "plugin": spec["layer2"]["plugins"][k]} for k in spec["locales"]},
             "layer2AutoRepair": {"routingVersion": auto_repair.ROUTING_VERSION, "groupWorkers": 8,
-                                 "maxActiveLocales": len(spec["locales"])}})
+                                 "maxActiveLocales": len(spec["locales"]),
+                                 # The approved profile may allow a longer run of adjacent same-code
+                                 # failures to be repaired instead of stopping the locale.
+                                 **({"systemicMinimumGroups": profile_repair["systemicMinimumGroups"]}
+                                    if profile_repair.get("systemicMinimumGroups") else {})}})
     if not (l2 / "qc-inputs.json").exists():
         run.sh("route-probe", [PY, Path(__file__).resolve(), "_route", "--out", run.dir / "logs/route.json"], launcher=True)
         route = read(run.dir / "logs/route.json")

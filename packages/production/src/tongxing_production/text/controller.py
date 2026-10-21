@@ -103,7 +103,12 @@ _BINDING_DIGESTS = {}  # see _binding_digest
 def _auto_repair_binding(value, *, allow_qc=False):
     required = {'routingVersion', 'groupWorkers', 'maxActiveLocales'}
     qc = value.get('backTranslationQc', {}) if isinstance(value, dict) else None
-    optional = {'sourceMeaningNotes', 'backTranslationQc'} if allow_qc else {'sourceMeaningNotes'}
+    optional = ({'sourceMeaningNotes', 'backTranslationQc', 'systemicMinimumGroups'} if allow_qc
+                else {'sourceMeaningNotes', 'systemicMinimumGroups'})
+    # Optional: how many adjacent groups may share one failure code before dispatch stops. A week
+    # keeps the default (3); an operator-reviewed clip may raise it so a cluster of one known
+    # defect is repaired instead. It never lowers the threshold below the default.
+    minimum = value.get('systemicMinimumGroups', auto_repair.SYSTEMIC_MINIMUM_GROUPS) if isinstance(value, dict) else None
     require(isinstance(value, dict) and required <= set(value) <= required | optional
             and value['routingVersion'] == auto_repair.ROUTING_VERSION
             # Optional: the Layer 1 machine audio adjudication notes (meaning-notes.json beside its receipt)
@@ -116,7 +121,9 @@ def _auto_repair_binding(value, *, allow_qc=False):
             and type(value['groupWorkers']) is int
             and 1 <= value['groupWorkers'] <= api_concurrency.MAX_GROUP_WORKERS_PER_LOCALE
             and type(value['maxActiveLocales']) is int
-            and 1 <= value['maxActiveLocales'] <= MAX_AUTO_REPAIR_LOCALES, 'invalid_execution_configuration')
+            and 1 <= value['maxActiveLocales'] <= MAX_AUTO_REPAIR_LOCALES
+            and type(minimum) is int and auto_repair.SYSTEMIC_MINIMUM_GROUPS <= minimum <= 32,
+            'invalid_execution_configuration')
     return dict(value)
 MODES = ('deterministic_shadow', 'deterministic_execute')
 ADMISSION_LOCK = jobs._digest({'purpose': 'canonical-layer2-admission-v1'})
@@ -1161,6 +1168,11 @@ def execute(config_path, locale, expected_configuration, expected_code, expected
                        if revision_receipt is not None else {})}
 
 
+def _systemic_minimum(config):
+    """Consecutive same-code failures allowed before dispatch stops (default for a week)."""
+    return (config.auto_repair or {}).get('systemicMinimumGroups', auto_repair.SYSTEMIC_MINIMUM_GROUPS)
+
+
 def _run_auto_repair(config, lane, source, anchor, policy, api_key, call, progress, admission_span,
                      completion_spans, *, qc_digest=None):
     """Run repair rounds inside this durable job, its budget and its lease.
@@ -1210,7 +1222,8 @@ def _run_auto_repair(config, lane, source, anchor, policy, api_key, call, progre
         require(qc_digest is not None and jobs._digest(qc_receipt) == qc_digest, 'back_translation_qc_changed_after_admission')
     receipt = auto_repair.drive(request, total_groups, run_round, rounds_root, repair_ledger_root(config),
                                 group_workers=config.auto_repair['groupWorkers'], meaning_notes=notes,
-                                meaning_notes_sha256=notes_artifact_sha256, back_translation_qc=qc_receipt)
+                                meaning_notes_sha256=notes_artifact_sha256, back_translation_qc=qc_receipt,
+                                systemic_minimum_groups=_systemic_minimum(config))
     require(receipt['status'] == 'all_groups_passed', 'layer2_auto_repair_stopped')
     final = Path(receipt['finalRunDirectory'])
     require(_overlap(rounds_root.resolve(), final.resolve()) and final.resolve() != rounds_root.resolve(),
@@ -1257,7 +1270,8 @@ def _run_group_revision(config, lane, source, anchor, policy, api_key, call, pro
 
     repair_receipt = auto_repair.drive(request, len(plan), run_round, rounds_root, repair_ledger_root(config),
                                        group_workers=config.auto_repair['groupWorkers'],
-                                       lineage_extra=prepared['lineageExtra'], repair_allowance=allowance)
+                                       lineage_extra=prepared['lineageExtra'], repair_allowance=allowance,
+                                       systemic_minimum_groups=_systemic_minimum(config))
     require(repair_receipt['status'] == 'all_groups_passed', 'layer2_group_revision_stopped')
     final = Path(repair_receipt['finalRunDirectory'])
     require(_overlap(rounds_root.resolve(), final.resolve()) and final.resolve() != rounds_root.resolve(),
