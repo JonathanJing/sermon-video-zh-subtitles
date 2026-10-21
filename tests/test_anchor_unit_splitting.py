@@ -124,5 +124,33 @@ class ClauseStableSplittingTests(unittest.TestCase):
         self.assertEqual(len(texts), 1)
 
 
+    def test_operator_accepted_boundary_may_omit_punctuation_and_pause(self):
+        spec = [('they', 0.0), ('walked', 0.1), ('the', 0.1), ('whole', 0.1),
+                ('sort', 0.1), ('of', 0.1), ('age', 0.1),
+                ('where', 0.1), ('he', 0.1), ('left', 0.1), ('today', 0.1)]
+        words_list = words(spec)
+        segments = [{'id': 0, 'referenceChunkId': 'block-00',
+                     'text': 'they walked the whole sort of age where he left today',
+                     'start': 0.0, 'end': words_list[-1]['end'],
+                     'sentenceBoundarySource': 'frozen_reference_punctuation',
+                     'wordTimes': [{'text': w['text'], 'start': w['start'], 'end': w['end']}
+                                   for w in words_list]}]
+        accepted = [w['text'] for w in words_list]
+        word_id = 'block-00-w0007'  # after "age"
+        overrides = {'block-00-s001': {'splitAfter': [word_id],
+                                       'acceptDependentBoundaryAfter': [word_id]}}
+        manifest = anchors.build_anchor_manifest(
+            segments, source_path=self._source(segments), unit_policy=anchors.UNIT_POLICY_V2,
+            max_unit_seconds=3.0, boundary_overrides=overrides)
+        parts = [u['english'] for u in manifest['sourceUnits']]
+        self.assertEqual(parts[0], 'they walked the whole sort of age')
+
+    def _source(self, segments):
+        import json, tempfile, pathlib
+        path = pathlib.Path(tempfile.mkdtemp())/'segments.json'
+        path.write_text(json.dumps(segments))
+        self._source_path = path
+        return path
+
 if __name__ == '__main__':
     unittest.main()

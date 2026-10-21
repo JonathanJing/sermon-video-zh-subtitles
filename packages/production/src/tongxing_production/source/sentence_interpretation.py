@@ -418,11 +418,18 @@ def _split_clause_stable(words: list[dict[str, Any]], *, max_seconds: float,
             if duration < min_unit_seconds or duration > max_seconds + 0.5:
                 raise ValueError(f"Boundary override lacks a safe clause split: {forced_ids}")
         for index in indexes:
+            word_id = words[index]["wordId"]
+            if word_id in accepted_dependencies:
+                # The operator named this boundary in acceptDependentBoundaryAfter,
+                # so it may be used even without punctuation or an audible pause.
+                # 2026-10-21: the only legal-looking boundary in
+                # chunk-0010-s002 cut "real, concrete" from its head; the clean
+                # one ("...period of time" | "where ...") had no pause at all.
+                continue
             gap = float(words[index + 1]["start"]) - float(words[index]["end"])
             if (not (gap >= pause_seconds or BREAK_PUNCTUATION.search(str(words[index]["text"])))
-                    or (_dependent_clause_boundary(words, index)
-                        and words[index]["wordId"] not in accepted_dependencies)):
-                raise ValueError(f"Boundary override lacks a safe clause split: {words[index]['wordId']}")
+                    or _dependent_clause_boundary(words, index)):
+                raise ValueError(f"Boundary override lacks a safe clause split: {word_id}")
         parts = [(words[start:end + 1], {**_clause_boundary_evidence(words, end, pause_seconds, max_seconds),
                   **({"operatorAcceptedDependency": True} if words[end]["wordId"] in accepted_dependencies else {})})
                  for start, end in zip(starts[:-1], ends[:-1])]
