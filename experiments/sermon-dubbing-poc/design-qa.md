@@ -16,7 +16,7 @@
 | [手机深色](../../artifacts/sermon-dubbing/2026-09-05-weekly-app-v12-brand/mobile-dark.jpg) | 390 × 844 | 手机页头、深色图标及文字关系 |
 | [窄屏浅色最终截图](../../artifacts/sermon-dubbing/2026-09-05-weekly-app-v12-brand/mobile-light-320-stable.jpg) | 320 × 667 | 窄屏品牌与右侧操作的空间关系 |
 | [桌面浅色](../../artifacts/sermon-dubbing/2026-09-05-weekly-app-v12-brand/desktop-light.jpg) | 1024 × 768 | 居中内容区与浅色页头 |
-| [集成图标](web/brand-icon.png) | PNG，1254 × 1254 | 应用实际使用的方形图标资产 |
+| [集成图标](../../apps/listening-web/brand-icon.png) | PNG，1254 × 1254 | 应用实际使用的方形图标资产 |
 
 证据修订：初次窄屏文件 `mobile-light-320.png` 是 308 × 667 的旧捕获过渡帧，仅保留调试，不纳入最终验收。主 Agent 重新读取 `innerWidth/clientWidth/scrollWidth = 320`、`innerHeight = 667`、`devicePixelRatio = 1` 后刷新捕获了上表的 320 × 667 最终图；审核者已再次在同一次图像查看调用中打开参考及三张最终图。手机深色与桌面浅色图片内容未变，仅将扩展名修正为其实际 JPEG 编码的 `.jpg`。不推测旧帧尺寸差异的技术原因。
 

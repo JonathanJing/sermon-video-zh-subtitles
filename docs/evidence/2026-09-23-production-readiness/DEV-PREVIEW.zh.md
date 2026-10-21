@@ -4,7 +4,7 @@
 
 ## 构建合同
 
-`scripts/multilingual_dev_preview.py` 接受两个完整快照：
+[`adapters/legacy/multilingual_dev_preview.py`](../../../packages/production/src/tongxing_production/adapters/legacy/multilingual_dev_preview.py)（预演时为 `scripts/multilingual_dev_preview.py`，布局迁移后删除；下面的命令已改为当前入口）接受两个完整快照：
 
 1. `assemble_multilingual_hosting.py --production-reader --promote-home` 生成的已验证 Production 布局候选；样片 stage、v2 catalog、三语 release、资源及 Firebase 配置 SHA 都由上游冻结。这里先复核该候选的 `firebase.json`／`.firebaserc` 哈希和目标站点，再读取它的公开目录，不调用 Production deploy。
 2. 上一次完整 Dev Hosting 发布的 `public` 目录。构建器要求旧正式样片 catalog 与候选逐字节相同；所有同名文件仅允许 `index.html`、`app.js`、`formal-dev-adapter.mjs`、`weekly.json` 四处不同。旧 POC 的 18 条音频及其他文件逐个保留；四个冲突文件存为 `dev-poc.*` 别名，独立 `/dev-poc.html` 保留机器 POC 标签与六句默认页。
@@ -16,21 +16,21 @@
 使用受控的完整归档路径代入绝对路径，不从干净 Git checkout 假设媒体存在：
 
 ```bash
-.venv/bin/python scripts/multilingual_dev_preview.py build \
+.venv/bin/python tools/ops/run.py adapters.legacy.multilingual_dev_preview build \
   --production-candidate /absolute/path/to/reviewed-production-layout-candidate \
   --dev-base-public /absolute/path/to/complete-current-dev-public \
   --out /absolute/path/to/new-dev-preview-candidate
 
-.venv/bin/python scripts/multilingual_dev_preview.py preflight \
+.venv/bin/python tools/ops/run.py adapters.legacy.multilingual_dev_preview preflight \
   --candidate /absolute/path/to/new-dev-preview-candidate \
   --out /absolute/path/to/dev-preflight.json
 
-.venv/bin/python scripts/multilingual_dev_preview.py deploy \
+.venv/bin/python tools/ops/run.py adapters.legacy.multilingual_dev_preview deploy \
   --candidate /absolute/path/to/new-dev-preview-candidate \
   --preflight /absolute/path/to/dev-preflight.json \
   --out /absolute/path/to/deployment.json --execute
 
-.venv/bin/python scripts/multilingual_dev_preview.py verify \
+.venv/bin/python tools/ops/run.py adapters.legacy.multilingual_dev_preview verify \
   --candidate /absolute/path/to/new-dev-preview-candidate \
   --out /absolute/path/to/http-verification.json
 ```
@@ -56,7 +56,7 @@
 首次预演的 `build` 只适用于旧六句 Dev POC 与同一 9 月 20 日已审样片的合并，不能直接拿它重新叠加新的周次。后续从**当前完整 Dev 候选**及新周次已审 Layer 4 stage 追加页面：
 
 ```bash
-.venv/bin/python scripts/multilingual_dev_preview.py build-update \
+.venv/bin/python tools/ops/run.py adapters.legacy.multilingual_dev_preview build-update \
   --dev-base-candidate /absolute/path/to/current-complete-dev-candidate \
   --staged /absolute/path/to/new-reviewed-layer4-stage \
   --out /absolute/path/to/next-dev-candidate

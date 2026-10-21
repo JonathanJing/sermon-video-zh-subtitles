@@ -15,6 +15,8 @@ This repository started with feasibility analysis. The current product goal is t
 
 ## Proposed Modules
 
+These are proposals. An entry with no file at the named path was never implemented (`services/realtime_session_api`, `services/realtime_caption_worker`, `services/offline_job_worker`, `scripts/detect_video_availability.py`, `scripts/analyze_channel_publish_history.py`, `scripts/run_sunday_sla_watch.py`); `scripts/` takes no new files, so new code goes where the [target layout](design/repository-layout-proposal.md) §2 says.
+
 - `packages/production/src/tongxing_production/workflows/dual_pdf/live_source_monitor.py`
   - Start every Sunday at 08:20 PT for the 8:30 service.
   - Check Mariners Online, YouTube streams, and manually configured fallback URLs.

@@ -60,7 +60,7 @@
 
 ## 人工术语审阅收据 producer
 
-拟新增 `scripts/review_shadow_terminology_candidate.py`：先输出源单元、待定术语、候选译文和问题的 worksheet；人工填写决定后，独立 `approve` 子命令验证 worksheet/candidate/source/policy 哈希及覆盖，再产生新版本收据。该命令尚不存在。
+拟新增人工术语审阅命令（设计时暂名 `scripts/review_shadow_terminology_candidate.py`；`scripts/` 已不再接收新文件，落地时按[目标布局](design/repository-layout-proposal.zh.md) §2 放进生产包的对应层目录）：先输出源单元、待定术语、候选译文和问题的 worksheet；人工填写决定后，独立 `approve` 子命令验证 worksheet/candidate/source/policy 哈希及覆盖，再产生新版本收据。该命令尚不存在。
 
 收据须至少包含 schema version、候选 canonical JSON 哈希、源包/锚点/冻结策略哈希、targetLocale、reviewer、reviewedAt、`reviewedSourceUnitIds`、逐术语审阅决定、`decision: approved`、`humanApproval: true`、`formalLayer2Admitted: false`。批准必须由真实人工输入产生，模型结果或 worksheet 生成不能自动批准。
 

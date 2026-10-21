@@ -2,7 +2,7 @@
 
 本目录只交付 **manifest + 本地离线测量 runner**。默认示例是合成信号，用于验证工具合同；没有真实录音成绩，也没有远场、Safari、iOS、最低设备或现场通过声明。报告永远 `promotionAllowed: false`。
 
-背景：[冻结数值合同](../../docs/field-fingerprint-contract-baseline.zh.md) 与 [FIELD-09 待验收项](../../docs/field-fingerprint-alignment-backlog.zh.md)。已有 12 个 JS/Swift golden 是确定性数值合同，不能算本基准的独立声学样本。本工具只读复用 [production DSP](../sermon-dubbing-poc/web/fingerprint-core.mjs)，不改 matcher、阈值、麦克风、控制器或 golden。
+背景：[冻结数值合同](../../docs/field-fingerprint-contract-baseline.zh.md) 与 [FIELD-09 待验收项](../../docs/field-fingerprint-alignment-backlog.zh.md)。已有 12 个 JS/Swift golden 是确定性数值合同，不能算本基准的独立声学样本。本工具只读复用 [production DSP](../../packages/fingerprint/src/fingerprint-core.mjs)，不改 matcher、阈值、麦克风、控制器或 golden。
 
 ## 1. 无素材、无网络的工具自检
 
