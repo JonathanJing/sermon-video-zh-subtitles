@@ -35,6 +35,10 @@ def build(source_plugin_dir: Path, out: Path, *, expected_week_sha256: str, clip
         raise SystemExit("clip source hash must be a lowercase 64-character hex digest")
     pinned = out / "plugins"
     pinned.mkdir(parents=True, exist_ok=True)
+    # The plugins import their shared rules via ``scripts.language_review_plugins.<module>``,
+    # which resolves to the week's file rather than to this directory, so the clip binding would
+    # never run. A package marker here lets the variant's own copies win the import.
+    (pinned / "__init__.py").write_text("")
     for name in FILES:
         if not (source_plugin_dir / name).is_file():
             raise SystemExit(f"missing source plugin {name}")
@@ -51,6 +55,42 @@ def build(source_plugin_dir: Path, out: Path, *, expected_week_sha256: str, clip
             "files": list(FILES), "difference": added[0][1:].strip(), "diffFromWeek": diff}
 
 
+def activate(pinned_dir: Path) -> None:
+    """Make the variant's copies win ``scripts.language_review_plugins`` imports in this process.
+
+    ``scripts`` is a namespace package, so each subpackage has a single ``__path__``; putting the
+    variant first is what lets its shared-rules module and own modules be the ones that run."""
+    import importlib
+    import scripts.language_review_plugins as package
+    target = pinned_dir.resolve()
+    if hasattr(package, "__path__") and str(target) not in package.__path__:
+        package.__path__.insert(0, str(target))
+        for name in [n for n in FILES if n != "weekly_15030286_common.py"]:
+            module = "scripts.language_review_plugins." + name[:-3]
+            importlib.invalidate_caches()
+            sys.modules.pop(module, None)
+    sys.modules.pop("scripts.language_review_plugins.weekly_15030286_common", None)
+
+
+def checked_import(pinned_dir: Path, clip_source_sha256: str) -> dict:
+    """Prove that running a variant plugin loads the variant's shared rules, not the week's.
+
+    Loading a plugin by path makes Python resolve its ``from ... import`` statements through the
+    package name, so a plain copy silently keeps executing the week's rules (which is how the
+    clip binding appeared to be ignored). This raises instead of returning a false pass."""
+    import runpy
+    activate(pinned_dir)
+    runpy.run_path(str(pinned_dir / "zh_hans_weekly_15030286.py"))
+    from scripts.language_review_plugins import weekly_15030286_common as loaded
+    resolved = Path(getattr(loaded, "__file__", "")).resolve()
+    expected = (pinned_dir / "weekly_15030286_common.py").resolve()
+    if resolved != expected:
+        raise SystemExit(f"the variant's shared rules did not win the import: {resolved} != {expected}")
+    if getattr(loaded, "SOURCE_SHA256", None) != clip_source_sha256:
+        raise SystemExit("the loaded shared rules still carry the week's source binding")
+    return {"module": str(resolved), "SOURCE_SHA256": loaded.SOURCE_SHA256}
+
+
 def main(argv=None) -> int:
     import json
     argv = list(sys.argv[1:] if argv is None else argv)
@@ -65,6 +105,8 @@ def main(argv=None) -> int:
     receipt["pluginImplementationSha256"] = {
         name: producer.plugin_implementation_sha256(Path(out).resolve() / "plugins" / name)
         for name in ("zh_hans_weekly_15030286.py", "ko_weekly_15030286.py", "es_weekly_15030286.py")}
+    resolved = checked_import(Path(out).resolve() / "plugins", clip)
+    receipt["resolvedSharedRules"] = resolved
     (Path(out) / "plugin-variant-receipt.json").write_text(json.dumps(receipt, indent=1) + "\n")
     print(json.dumps(receipt["pluginImplementationSha256"], indent=1))
     return 0

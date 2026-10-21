@@ -932,8 +932,22 @@ def _route(out: Path):
     write(out, {"openaiRoute": route, "credentialSha256": auth.credential_fingerprint(os.environ["OPENAI_API_KEY"])})
 
 
+def _activate_plugin_variant(execution: dict) -> None:
+    """Put a clip-scoped plugin directory ahead of the repo's plugins for this process.
+
+    A spec may wire plugins from outside scripts/language_review_plugins; those modules import
+    their shared rules by package name, which would otherwise run the repo's week copy."""
+    from tools.development import build_clip_plugin_variant as variant
+    roots = {str(Path(lane["plugin"]).resolve().parent) for lane in execution.get("locales", {}).values()
+             if lane.get("plugin")}
+    repo = (ROOT / "scripts/language_review_plugins").resolve()
+    for root in sorted(roots - {str(repo)}):
+        variant.activate(Path(root))
+
+
 def _drive(execution: Path, authorization: Path, locales: list[str], out: Path):
     from scripts import tongxing_host  # noqa: F401  binds the production package ports
+    _activate_plugin_variant(read(execution))
     from tongxing_production.text.controller import drive
     results = {}
     for locale in locales:
