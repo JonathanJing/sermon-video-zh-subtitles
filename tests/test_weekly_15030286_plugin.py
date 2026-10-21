@@ -65,6 +65,78 @@ class Weekly15030286PluginTests(unittest.TestCase):
             plugin.review_group(policy(), [{"sourceUnitId": unit_id, "english": english}],
                                 group(unit_id, "gastó 1,5 millones de dólares", source="f" * 64))
 
+    def test_usted_is_exempt_only_for_the_unit_the_operator_named(self):
+        # 2026-10-20: the operator accepted "usted" for this sentence only.
+        unit_id, english = ("chunk-0005-u012",
+                            "Because the same God who rescued us on mission is the same God who is inviting you and I to be on mission.")
+        bound = common.REGISTER_EXEMPT[("es", unit_id)]
+        self.assertEqual(bound, english)
+        self.assertTrue(common.register_is_exempt("es", [{"sourceUnitId": unit_id, "english": english}]))
+        # Same id, different English: not exempt, because a repair may rewrite the English.
+        self.assertFalse(common.register_is_exempt("es", [{"sourceUnitId": unit_id, "english": english + " " }]))
+        # A different unit is never exempt.
+        self.assertFalse(common.register_is_exempt("es", [{"sourceUnitId": "chunk-0005-u025",
+                                                           "english": "When you go eat at an amazing restaurant, afterwards,"}]))
+        self.assertFalse(common.register_is_exempt("ko", [{"sourceUnitId": unit_id, "english": english}]))
+
+    def test_the_exempt_unit_still_fails_every_other_register_form(self):
+        unit_id, english = ("chunk-0005-u012",
+                            "Because the same God who rescued us on mission is the same God who is inviting you and I to be on mission.")
+        rows = [{"sourceUnitId": unit_id, "english": english}]
+        allowed = plugin.review_group(policy(), rows,
+                                      group(unit_id, "Porque el mismo Dios nos invita a usted y a mí.", source=common.SOURCE_SHA256))
+        self.assertEqual(status(allowed, "register"), "pass")
+        rejected = plugin.review_group(policy(), rows,
+                                       group(unit_id, "Porque el mismo Dios os invita a ustedes.", source=common.SOURCE_SHA256))
+        self.assertEqual(status(rejected, "register"), "fail")
+
+    def test_a_non_exempt_unit_still_rejects_usted(self):
+        unit_id = "chunk-0005-u025"
+        english = "When you go eat at an amazing restaurant, afterwards,"
+        rows = [{"sourceUnitId": unit_id, "english": english}]
+        reviewed = plugin.review_group(policy(), rows,
+                                       group(unit_id, "Cuando usted va a comer a un restaurante increíble, después,",
+                                             source=common.SOURCE_SHA256))
+        self.assertEqual(status(reviewed, "register"), "fail")
+
+    def clip_policy(self, clip_source, *, parent=None, source_id=None, declare=True):
+        bound = policy()
+        line = (common.CLIP_SCOPE_PREFIX + f"parent={parent or common.SOURCE_SHA256} "
+                f"sourceId={source_id or common.SOURCE_ID}")
+        bound["sourceScope"] = {"englishSourcePackageJsonSha256": clip_source,
+                                "termApprovalReceipt": {"userStatement": "approved in chat\n" + (line if declare else "x")}}
+        return bound
+
+    def test_a_declared_clip_scope_reviews_against_the_clips_own_package(self):
+        # A clip of the same sermon keeps every unit's English and its source id, so the
+        # operator-approved rules still apply instead of throwing after a paid call.
+        unit_id, english = common.AMOUNT_LEAD
+        clip_source = "a" * 64
+        reviewed = plugin.review_group(self.clip_policy(clip_source), [{"sourceUnitId": unit_id, "english": english}],
+                                       group(unit_id, "gastó 1,5 millones de dólares", source=clip_source))
+        self.assertEqual(status(reviewed, "numbers"), "pass")
+
+    def test_a_clip_scope_needs_a_well_formed_package_hash(self):
+        unit_id, english = common.AMOUNT_LEAD
+        with self.assertRaisesRegex(ValueError, "no English package binding"):
+            plugin.review_group(self.clip_policy("not-a-hash"), [{"sourceUnitId": unit_id, "english": english}],
+                                group(unit_id, "gastó 1,5 millones", source="not-a-hash"))
+
+    def test_without_a_declared_clip_scope_the_week_binding_is_unchanged(self):
+        unit_id, english = common.AMOUNT_LEAD
+        with self.assertRaisesRegex(ValueError, "source package differs"):
+            plugin.review_group(self.clip_policy("a" * 64, declare=False),
+                                [{"sourceUnitId": unit_id, "english": english}],
+                                group(unit_id, "gastó 1,5 millones", source="a" * 64))
+
+    def test_a_clip_scope_still_refuses_a_declaration_from_another_week(self):
+        unit_id, english = common.AMOUNT_LEAD
+        for kwargs in ({"parent": "c" * 64}, {"source_id": "some-other-sermon"}):
+            with self.subTest(**kwargs), self.assertRaisesRegex(ValueError, "another week"):
+                plugin.review_group(self.clip_policy("a" * 64, **kwargs),
+                                    [{"sourceUnitId": unit_id, "english": english}],
+                                    group(unit_id, "gastó 1,5 millones", source="a" * 64))
+
     def test_plugin_hash_closes_over_both_shared_rule_modules(self):
         root = Path(__file__).resolve().parents[1] / "scripts/language_review_plugins"
         sources = candidate.plugin_implementation_sources(root / "es_weekly_15030286.py")

@@ -204,7 +204,10 @@ def layer2_files(out, execution, locales, profile, scale, *, approved_by, eviden
     config, per_locale, sizing = prepared or layer2_spec(execution, locales, profile, scale)
     layer2 = profile["layer2"]
     runtime_identity = budget_tools.selected_runtime_identity()
-    sharded = scale == "week"
+    # A week always shards (one ledger per locale, 8 MiB each). A clip scoped a run-wide ledger,
+    # which a longer clip exhausts before its reservations finish; a profile may opt into the
+    # same per-locale sharding explicitly. Verify that what the profile asks for is in force.
+    sharded = scale == "week" or (layer2.get("ledgerScope") or {}).get(scale) == "locale"
     bounds = per_locale if sharded else {k: v * len(locales) for k, v in per_locale.items()}
     limits, rules = layer2["requestLimits"], layer2["limits"]
     root = budget_tools.budget_root(config)

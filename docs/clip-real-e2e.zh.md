@@ -36,6 +36,7 @@
 | `openai` | `environment`（dev/prod）和 launcher 读取的 env 文件 |
 | `authorization` | `approvedBy`、`evidence`（批准出处）、`defaultPass`（必须写明 "not a human review"） |
 | `budget` | `totalUsd` 是批准总额；`settledUsdBefore` 是此前已结算的花费，包括未标价转写的预留 |
+| `budgetProfile` | 可选，预算规划用的 profile 路径。默认 `clip` 档按约 16 组校准；片段更长时（例如 7 分钟、88 组）每语 `capUsdPerLocale.clip` 盖不住初始预留，规划器会拒绝写授权。此时显式指向一份经批准的 profile 并在规格里写明依据；规划器不会隐式放大授权。示例见 `config/clip-e2e/seven-minute-run-profile.json`：只放大请求、令牌、墙钟计数和每语 cap，模型、tier、`requestLimits`、质检规则与其他 cap 不变。 |
 | `layer2.policyTemplates` / `plugins` | 每种语言：源周次冻结的政策，以及语言插件 |
 | `layer2.backend` | 可选，默认 `openai_api`；显式 `claude_cli_opus` 会把片段政策重新冻结为 Opus 5.5 high 初译及 medium 复核。Claude 订阅调用的列价等价金额单列，不计入 `budget.totalUsd`；文本和音频质检仍计入批准的美元总额。 |
 | `layer3.attestationTemplates` / `speakerRegistry` | 源周次的用户声音授权（会改绑到本片段的来源包）和说话人登记 |

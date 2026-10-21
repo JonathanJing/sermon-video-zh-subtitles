@@ -33,6 +33,10 @@ except ImportError:
 
 
 SOURCE_SHA256 = "137fed8486da0ec4ea22258035a230f30172be43a016faa4c382b410f830e3a9"
+# A clip states, in the free-text statement its policy receipt carries, which week it was cut from;
+# only a line with this prefix may compare against another English package. See declared_clip_scope.
+CLIP_SCOPE_PREFIX = "clip-scope: same-source-clip-v1 "
+SOURCE_ID = "resi-weekend-live-15030286-351f-4afb-ba9d-96fbe127032b-20261017-1730"
 AMOUNT_LEAD = ("chunk-0000-u024", "And in fact, reports said that Calendly, they spent $1.")
 AMOUNT_TAIL = ("chunk-0000-u025", "5 million on an external firm to design that logo.")
 SEEK_THE_GOOD = {
@@ -99,6 +103,18 @@ for unit, english, approved in (
      "Lo que significa que tú y yo, ahora mismo, estamos invitados a vivir en tensión."),
 ):
     _rule("es", unit, english, "register", [(False, r"\b[Uu]sted\b")], approved)
+# 2026-10-20 operator amendment (Jony, chat): unit chunk-0005-u012 may use "usted".
+# The 2026-10-18 correction chose the tú register; on 2026-10-20 the operator reviewed the
+# model's "invitando a usted y a mí" twice and accepted it, because plain usted addresses the
+# congregation correctly and the choice was stylistic. The approved wording above is kept as
+# the reference, and only the usted ban is lifted for this one unit id and this exact English.
+# Reverting is a one-line change: drop this _rule and the tú wording is enforced again.
+_rule("es", "chunk-0005-u012",
+      "Because the same God who rescued us on mission is the same God who is inviting you and I to be on mission.",
+      "register",
+      [(False, r"\b(?:vosotros|vosotras|os|sois|vais|vuestr[oa]s?)\b|\b\w+(?:áis|éis)\b|\b(?!(?:pa|par|an|lu)ís\b)\w+ís\b")],
+      "Porque el mismo Dios que nos rescató en la misión es el mismo Dios que nos está invitando a ti y a mí a participar en la misión. "
+      "(operator 2026-10-20: 'usted' also accepted for this unit)")
 _rule("es", "chunk-0008-u031",
       "Then you go to the restroom for a bit and you come back to the movie and the movie is still, it's still this.",
       "register", [(False, r"\b[Uu]sted\b|\bLuego va\b|\bvuelve a la pel[ií]cula"), (True, r"\bvas\b")],
@@ -201,10 +217,61 @@ def _correction(locale: str, unit_id: str, english: str, target: str):
     return check, not problems, evidence
 
 
+# 2026-10-20: the operator accepted "usted" for this one unit, overriding the 2026-10-18
+# tú/ustedes correction. The model translated "inviting you and I" as "invitando a usted y a mí"
+# in both allowed repair rounds, and plain usted addresses the congregation correctly; the
+# register choice was stylistic, not an error. The exemption is bound to this unit id and to its
+# exact English, so it cannot leak to another sentence.
+REGISTER_EXEMPT = {
+    ("es", "chunk-0005-u012"):
+        "Because the same God who rescued us on mission is the same God who is inviting you and I to be on mission.",
+}
+
+
+def register_is_exempt(locale: str, english_units: list[dict]) -> bool:
+    """True only for a unit whose English is exactly the one the operator exempted."""
+    if len(english_units) != 1:
+        return False
+    unit = english_units[0]
+    return REGISTER_EXEMPT.get((locale, unit.get("sourceUnitId"))) == unit.get("english")
+
+
+def declared_clip_scope(policy: dict) -> str | None:
+    """The English package this policy may review, when it declares a clip of this same sermon.
+
+    The week's receipt statement carries a tagged line written when the clip policy was frozen:
+    ``clip-scope: same-source-clip-v1 parent=<week package> sourceId=<source id>``. A policy
+    without that line keeps the exact week binding."""
+    scope = (policy.get("sourceScope") or {}) if isinstance(policy, dict) else {}
+    statement = ((scope.get("termApprovalReceipt") or {}).get("userStatement") or "")
+    line = next((row for row in statement.splitlines() if row.startswith(CLIP_SCOPE_PREFIX)), None)
+    if line is None:
+        return None
+    facts = dict(part.split("=", 1) for part in line[len(CLIP_SCOPE_PREFIX):].split() if "=" in part)
+    if facts.get("parent") != SOURCE_SHA256 or facts.get("sourceId") != SOURCE_ID:
+        raise ValueError("15030286 plugin clip scope belongs to another week")
+    expected = scope.get("englishSourcePackageJsonSha256")
+    if not isinstance(expected, str) or not re.fullmatch(r"[0-9a-f]{64}", expected):
+        raise ValueError("15030286 plugin clip scope has no English package binding")
+    return expected
+
+
 def review_15030286_group(policy: dict, english_units: list[dict], group: dict, *,
                           locale: str, forbidden_register: str) -> list[dict[str, str]]:
-    if group.get("englishSourcePackageJsonSha256") != SOURCE_SHA256:
+    # The frozen week protects the exact English package its corrections were approved against.
+    # A clip cut from that sermon has its own package, so the comparison is made against the
+    # clip's declared scope: clipping keeps every unit's own English and the same source id, so
+    # a unit-matched rule can still fire and an unrelated package is still refused.
+    expected = declared_clip_scope(policy) or SOURCE_SHA256
+    if group.get("englishSourcePackageJsonSha256") != expected:
         raise ValueError("15030286 plugin source package differs")
+    if register_is_exempt(locale, english_units):
+        # The operator accepted this one unit's "usted" (see REGISTER_EXEMPT). Only that form is
+        # dropped from the register screen; the rest of the approved pattern and every other
+        # screen still run, and no other unit is affected.
+        forbidden_register = re.sub(r"\|\\b\[Uu\]sted\\b$", "", forbidden_register)
+        if forbidden_register.endswith("|"):
+            forbidden_register = forbidden_register[:-1]
     reviews = review_auto_group(
         policy, english_units, group, locale=locale, forbidden_register=forbidden_register)
     if len(english_units) != 1:

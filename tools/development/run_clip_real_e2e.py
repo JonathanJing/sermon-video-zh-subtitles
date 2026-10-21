@@ -86,7 +86,8 @@ def load_spec(path: Path) -> dict:
     resolve = lambda value: str((base / value).resolve())
     require(spec.get("schemaVersion") == SPEC_SCHEMA, "unsupported run specification")
     require(set(spec) <= {"schemaVersion", "name", "clipSpec", "locales", "openai", "authorization", "budget",
-                          "layer2", "layer3", "qc", "spark", "page", "notes"}, "unknown run specification field")
+                          "layer2", "layer3", "qc", "spark", "page", "notes", "budgetProfile"},
+                     "unknown run specification field")
     require(isinstance(spec.get("name"), str) and spec["name"].replace("-", "").isalnum() and len(spec["name"]) <= 60,
             "name must be a short [A-Za-z0-9-] label")
     locales = spec.get("locales")
@@ -110,6 +111,9 @@ def load_spec(path: Path) -> dict:
     layer3["speakerRegistry"] = resolve(layer3["speakerRegistry"])
     layer3.setdefault("maxEndLagSeconds", 120.0)
     spec["clipSpec"] = resolve(spec["clipSpec"])
+    if spec.get("budgetProfile"):
+        require(isinstance(spec["budgetProfile"], str), "budgetProfile must be a path")
+        spec["budgetProfile"] = resolve(spec["budgetProfile"])
     openai = spec.setdefault("openai", {})
     openai.setdefault("environment", "dev")
     require(openai["environment"] in ("dev", "prod"), "openai.environment must be dev or prod")
@@ -254,11 +258,18 @@ class Run:
             return
         settled = self.settled() + (self.open_qc_caps() if include_open_qc else 0)
         auth = self.spec["authorization"]
+        # A run spec may name an explicitly approved profile when the default clip bounds do not fit
+        # its group count; plan_run_budgets never inflates authority implicitly, so the choice is stated.
+        profile = self.spec.get("budgetProfile")
+        evidence = auth["evidence"] + f" Run {self.spec['name']}; settled and open caps {round(settled, 3)} USD."
         argv = [PY, ROOT / "scripts/plan_run_budgets.py", "--out", out, "--scale", "clip", "--locales", ",".join(locales),
                 "--total-usd", self.spec["budget"]["totalUsd"], "--settled-usd", round(settled, 6),
-                "--approved-by", auth["approvedBy"],
-                "--evidence", auth["evidence"] + f" Run {self.spec['name']}; settled and open caps {round(settled, 3)} USD.",
+                "--approved-by", auth["approvedBy"], "--evidence",
+                evidence + (f" Profile {profile} approved for this clip's group count." if profile else ""),
                 *[arg for stage in stages for arg in ("--stage", stage)], *extra]
+        if profile:
+            # argv[0] is the interpreter and argv[1] the planner script; the flag pair goes right after it.
+            argv = [*argv[:2], "--profile", profile, *argv[2:]]
         self.sh("plan-" + out.name, argv, launcher=True)
 
     def check(self, label, *extra):
@@ -298,10 +309,23 @@ def stage_inputs(run: Run):
     run.mark("inputs", "done", units=len(anchor["sourceUnits"]), inputs=str(inputs))
 
 
+CLIP_SCOPE_PREFIX = "clip-scope: same-source-clip-v1 "
+
+
+def clip_scope_declaration(parent_source_package: str, parent_source_id: str) -> str:
+    """The tagged line a clipped policy carries so source-bound plugins can recognise the cut."""
+    return f"{CLIP_SCOPE_PREFIX}parent={parent_source_package} sourceId={parent_source_id}"
+
+
 def freeze_clip_policy(template: Path, source: dict, anchor: dict, *, reviewed_by: str, statement: str,
-                       backend: str = "openai_api") -> dict:
-    """The source week's frozen policy narrowed to this clip's source scope and terms, frozen again."""
+                       backend: str = "openai_api", plugin: Path | None = None) -> dict:
+    """The source week's frozen policy narrowed to this clip's source scope and terms, frozen again.
+
+    ``plugin`` rebinds the language-review checks to the plugin actually wired into the execution
+    configuration (a run spec may point at a clip-scoped copy); without it the template's own
+    binding is kept and enforced against the plugin file."""
     from tongxing_production.text import policy as tp
+    from tongxing_production.text import candidate as producer
     rows = anchor["sourceUnits"]
     observed = tp.source_scoped_proper_names(rows, set())
     frozen = read(template)
@@ -310,8 +334,14 @@ def freeze_clip_policy(template: Path, source: dict, anchor: dict, *, reviewed_b
     draft = copy.deepcopy(frozen)
     draft.pop("componentSha256")
     draft = tp.apply_layer2_backend(draft, backend)
+    if plugin is not None:
+        draft["languageReview"]["pluginImplementationSha256"] = producer.plugin_implementation_sha256(Path(plugin))
     draft["terminology"]["properNames"] = [t for t in draft["terminology"]["properNames"] if t["source"] in used]
     scope = draft["sourceScope"]
+    # Declare that these checks guard a clip of the week's own sermon. The source-bound plugins
+    # refuse a package they were not approved against; the declaration lets them compare against
+    # this clip's package while still refusing anything cut from another source.
+    parent, parent_id = frozen["sourceScope"]["englishSourcePackageJsonSha256"], source["source"]["sourceId"]
     scope.update(englishSourcePackageJsonSha256=tp.canonical_sha256(source), anchorManifestSha256=tp.canonical_sha256(anchor),
                  usedSeriesNames=[], usedProperNames=used, ordinaryPhraseExclusions=exclusions, termApprovalEvidence=[])
     receipt = scope["termApprovalReceipt"]
@@ -324,7 +354,11 @@ def freeze_clip_policy(template: Path, source: dict, anchor: dict, *, reviewed_b
                    approvedTerms=[{"source": n, "target": targets[n], "sourceUnitId": unit_with(n)} for n in used],
                    excludedScannerPhrases=[p for p in receipt.get("excludedScannerPhrases", [])
                                            if (p if isinstance(p, str) else p.get("source")) in exclusions],
-                   reviewedBy=reviewed_by, reviewedAt=now(), userStatement=statement)
+                   reviewedBy=reviewed_by, reviewedAt=now(),
+                   # The policy schema has no field for a clip declaration, and the receipt's statement is
+                   # free text, so the scope this receipt approves travels as a tagged line the source-bound
+                   # plugins read back. Only these two facts are added; the approved terms travel unchanged.
+                   userStatement=statement + "\n" + clip_scope_declaration(parent, parent_id))
     policy = tp.freeze_policy(draft, series_table=tp.SERIES_TABLE, language_review="draft")
     tp.validate_source_scope(policy, source, anchor)
     require(tp.validate_policy(policy, series_table=tp.SERIES_TABLE)["productionPolicyReady"], "clip policy not ready")
@@ -340,7 +374,8 @@ def stage_layer2_setup(run: Run):
         if not path.exists():
             write(path, freeze_clip_policy(Path(spec["layer2"]["policyTemplates"][locale]), source, anchor,
                                            reviewed_by=auth["defaultPass"] + "; targets carried from the source week's receipt",
-                                           statement=auth["evidence"], backend=spec["layer2"]["backend"]))
+                                           statement=auth["evidence"], backend=spec["layer2"]["backend"],
+                                           plugin=(Path(spec["layer2"]["plugins"][locale]) if locale in spec["layer2"]["plugins"] else None)))
     if not (l2 / "execution.json").exists():
         write(l2 / "inspection.json", {"schemaVersion": "sermon-canonical-package-inspection-config-v1",
                                        "source": "src/source.json", "anchor": "src/anchor.json",
@@ -348,13 +383,18 @@ def stage_layer2_setup(run: Run):
         from scripts import tongxing_host  # noqa: F401  binds the production package ports
         from tongxing_production.text import controller
         from tongxing_production.text import auto_repair
+        profile_repair = read(Path(spec["budgetProfile"])).get("layer2", {}) if spec.get("budgetProfile") else {}
         run_id = hashlib.sha256(("clip-real-e2e " + spec["name"] + " " + ",".join(spec["locales"])).encode()).hexdigest()
         write(l2 / "execution.json", {
             "schemaVersion": controller.AUTO_REPAIR_SCHEMA, "productionRunId": run_id, "inspectionConfig": "inspection.json",
             "jobRoot": "layer2-jobs",
             "locales": {k: {"outputDirectory": f"text/{k}", "plugin": spec["layer2"]["plugins"][k]} for k in spec["locales"]},
             "layer2AutoRepair": {"routingVersion": auto_repair.ROUTING_VERSION, "groupWorkers": 8,
-                                 "maxActiveLocales": len(spec["locales"])}})
+                                 "maxActiveLocales": len(spec["locales"]),
+                                 # The approved profile may allow a longer run of adjacent same-code
+                                 # failures to be repaired instead of stopping the locale.
+                                 **({"systemicMinimumGroups": profile_repair["systemicMinimumGroups"]}
+                                    if profile_repair.get("systemicMinimumGroups") else {})}})
     if not (l2 / "qc-inputs.json").exists():
         run.sh("route-probe", [PY, Path(__file__).resolve(), "_route", "--out", run.dir / "logs/route.json"], launcher=True)
         route = read(run.dir / "logs/route.json")
@@ -915,8 +955,22 @@ def _route(out: Path):
     write(out, {"openaiRoute": route, "credentialSha256": auth.credential_fingerprint(os.environ["OPENAI_API_KEY"])})
 
 
+def _activate_plugin_variant(execution: dict) -> None:
+    """Put a clip-scoped plugin directory ahead of the repo's plugins for this process.
+
+    A spec may wire plugins from outside scripts/language_review_plugins; those modules import
+    their shared rules by package name, which would otherwise run the repo's week copy."""
+    from tools.development import build_clip_plugin_variant as variant
+    roots = {str(Path(lane["plugin"]).resolve().parent) for lane in execution.get("locales", {}).values()
+             if lane.get("plugin")}
+    repo = (ROOT / "scripts/language_review_plugins").resolve()
+    for root in sorted(roots - {str(repo)}):
+        variant.activate(Path(root))
+
+
 def _drive(execution: Path, authorization: Path, locales: list[str], out: Path):
     from scripts import tongxing_host  # noqa: F401  binds the production package ports
+    _activate_plugin_variant(read(execution))
     from tongxing_production.text.controller import drive
     results = {}
     for locale in locales:
