@@ -1,0 +1,11 @@
+{
+  "status": "blocked",
+  "kind": "english_source_candidate",
+  "reason": "source_machine_judge_rejected",
+  "review": "human_pending",
+  "productionEligible": false,
+  "humanApprovalCreated": false,
+  "candidatePath": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/podcasts/if-i-had-more-time-jesus-sends-and-resurrects-his-own/layer1/output-v13/english-source-candidate.json",
+  "candidateSha256": "1c6386bf390eac6222619b8c82aeff989a07ec0d1a207020ac44b9a45c72cfa9",
+  "machineJudgeStatus": "rejected_for_layer2_shadow"
+}
