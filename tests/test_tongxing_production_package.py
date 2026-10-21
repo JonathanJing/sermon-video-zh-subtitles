@@ -37,6 +37,7 @@ READS_LOADED_MODULE_FILES = {"observability/accounting.py",
                              # never to locate the checkout (workflows design section 4.1).
                              "compute/transports/claude_layer2.py", "compute/transports/codex_layer2.py",
                              "compute/transports/openai_layer2.py", "compute/transports/codex_cli.py",
+                             "compute/transports/claude_source_judge.py",
                              # Diagnostic identity witnesses bind their own bytes (helperSha256), never the checkout.
                              "workflows/diagnostic/historical_identity.py",
                              # Checkpoint manifests bind the validator's own bytes (validatorCode, checkpointCode).
