@@ -246,6 +246,12 @@ job evidence。正式 CLI 只在实际生产 gate 后读取既有 `OPENAI_API_KE
 一般 canonical planner 仍 `dispatchEnabled=false`；只有该显式 opt-in 固定 L2 adapter 获得
 上述有限执行路径。三层架构与所有质量/批准 gate 不变。
 
+## 只重跑缺失组（不要整轮重来）
+
+execution v3 的 `layer2AutoRepair` 修复轮只对失败组重新调用模型：实测 2026-10-21 播客一轮 round-001 用 1471 次调用，round-002 只用 20 次。因此单组内容或格式失败应交给修复轮，而不是新建 `jobRoot` 整轮重跑。
+
+当前 canonical bound 派发（`--budget-config`）不接受 `--resume-cache-from` / `--reuse-from` 这类续跑参数，身份变化后的新运行默认从第一组开始；这与"只付缺失组"的目标冲突。规则、预检清单与待实现项见[Layer 2：只重跑缺失组](layer2-targeted-repair-and-resume.zh.md)。
+
 ## 已有候选的显式恢复
 
 若 owner 已退出但当前候选完整且通过原 validator，可用 [固定 L2 产物对账](canonical-layer2-reconciliation.zh.md) 显式绑定当前 stateRevision。它保留命令原始失败/未知状态并新增独立不可变收据，不自动重试，不消除缺失产物或未知付费调用的门槛。没有有效候选的失败仍阻塞；跨版本与 group repair 继续未完成。
