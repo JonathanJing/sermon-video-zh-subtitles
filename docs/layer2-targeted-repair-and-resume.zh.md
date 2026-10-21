@@ -14,7 +14,7 @@
 |---|---|---|
 | `layer2AutoRepair`（execution v3）round-002 | 已生效 | 是（实测 20/1471） |
 | `text.models --reuse-from` / `--resume-cache-from` | 存在于独立 CLI | 是 |
-| canonical bound 派发（`--budget-config`） | **明确拒绝**上述续跑参数（`Bound canonical dispatch does not accept standalone execution overrides`） | **否** |
+| canonical bound 派发（`--budget-config`） | 2026-10-21 起支持配置级续跑：执行配置写 `layer2Resume` | 是（见下） |
 | `text.controller reopen-repair` | 只用于 meaning notes 触发的停止组 | 是 |
 
 因此当前 canonical 路径下，一旦 job 失败且不能由自动修复轮继续，只能新开身份——这正是整轮重跑的来源。
@@ -59,9 +59,33 @@
 3. 新身份派发前跑 R4 预检，并记录本轮将重付的组数。
 4. 只有 R2 列出的情况才接受整轮费用，并把原因写进运行报告。
 
+## 跨运行续跑的使用方式
+
+在执行配置里加一个字段（v1 与 v3 都接受）：
+
+```json
+{
+  "schemaVersion": "sermon-canonical-layer2-execution-v3",
+  "productionRunId": "…",
+  "inspectionConfig": "inspection.json",
+  "jobRoot": "jobs-r2",
+  "locales": {"zh-Hans": {"outputDirectory": "out-r2", "plugin": "…"}},
+  "layer2AutoRepair": {"routingVersion": "layer2-auto-repair-routing-v1", "groupWorkers": 4, "maxActiveLocales": 1},
+  "layer2Resume": {"priorRunRoot": "out-r1"}
+}
+```
+
+- 只接受这一个键；根目录必须存在、不能与输出/job 根重叠，不能与 `layer2PayloadCache` 或 `layer2GroupRevision` 同时使用。
+- 该路径进入配置摘要，因此预算授权和 durable job 身份都会覆盖它；改了续跑来源就要重新规划预算。
+- worker 把它作为 `resume_cache_from` 传给 runner：单次路径与自动修复的第一轮生效；runner 仍会核对来源、锚点、policy、插件与传输身份，不匹配就失败而不是静默复用。
+- 只有缺失组产生付费调用。
+
+## 输出上限下限
+
+`plan_run_budgets` 对 high effort 角色要求 `maxCompletionTokens >= 2048`（`MIN_COMPLETION_TOKENS`）。reasoning token 计入 completion 上限：1024 曾把一次翻译响应截断在 746 组中的第 564 组，代价 \$13.21。
+
 ## 待实现（按优先级）
 
-1. `rule_preflight` 增加 R4 的四项检查。
-2. canonical bound 路径放开 `--resume-cache-from`，或在 `text.controller` 增加 `resume` 子命令：读取停止 job 的 round 缓存，生成只含缺失组的 job。
-3. `malformed_model_output` 的有界重试（1 次）。
-4. 运行级 `requestLimits` 由实测载荷推导，替代手填的固定上限。
+1. `rule_preflight` 的术语覆盖与输出上限估算（插件 pin 校验已实现）。
+2. `malformed_model_output` 的有界重试（1 次）；当前响应在校验前已入缓存，需要调整缓存顺序或重试标记。
+3. 运行级 `requestLimits` 由实测载荷推导，替代手填的固定上限。
