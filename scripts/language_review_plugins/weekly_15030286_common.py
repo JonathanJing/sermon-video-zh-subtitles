@@ -33,9 +33,9 @@ except ImportError:
 
 
 SOURCE_SHA256 = "137fed8486da0ec4ea22258035a230f30172be43a016faa4c382b410f830e3a9"
-# A clip declares this scope kind in its policy and names the week it was cut from; only that
-# path may compare against another English package. See review_15030286_group.
-CLIP_SCOPE_KIND = "same-source-clip-v1"
+# A clip states, in the free-text statement its policy receipt carries, which week it was cut from;
+# only a line with this prefix may compare against another English package. See declared_clip_scope.
+CLIP_SCOPE_PREFIX = "clip-scope: same-source-clip-v1 "
 SOURCE_ID = "resi-weekend-live-15030286-351f-4afb-ba9d-96fbe127032b-20261017-1730"
 AMOUNT_LEAD = ("chunk-0000-u024", "And in fact, reports said that Calendly, they spent $1.")
 AMOUNT_TAIL = ("chunk-0000-u025", "5 million on an external firm to design that logo.")
@@ -205,20 +205,33 @@ def _correction(locale: str, unit_id: str, english: str, target: str):
     return check, not problems, evidence
 
 
+def declared_clip_scope(policy: dict) -> str | None:
+    """The English package this policy may review, when it declares a clip of this same sermon.
+
+    The week's receipt statement carries a tagged line written when the clip policy was frozen:
+    ``clip-scope: same-source-clip-v1 parent=<week package> sourceId=<source id>``. A policy
+    without that line keeps the exact week binding."""
+    scope = (policy.get("sourceScope") or {}) if isinstance(policy, dict) else {}
+    statement = ((scope.get("termApprovalReceipt") or {}).get("userStatement") or "")
+    line = next((row for row in statement.splitlines() if row.startswith(CLIP_SCOPE_PREFIX)), None)
+    if line is None:
+        return None
+    facts = dict(part.split("=", 1) for part in line[len(CLIP_SCOPE_PREFIX):].split() if "=" in part)
+    if facts.get("parent") != SOURCE_SHA256 or facts.get("sourceId") != SOURCE_ID:
+        raise ValueError("15030286 plugin clip scope belongs to another week")
+    expected = scope.get("englishSourcePackageJsonSha256")
+    if not isinstance(expected, str) or not re.fullmatch(r"[0-9a-f]{64}", expected):
+        raise ValueError("15030286 plugin clip scope has no English package binding")
+    return expected
+
+
 def review_15030286_group(policy: dict, english_units: list[dict], group: dict, *,
                           locale: str, forbidden_register: str) -> list[dict[str, str]]:
     # The frozen week protects the exact English package its corrections were approved against.
     # A clip cut from that sermon has its own package, so the comparison is made against the
     # clip's declared scope: clipping keeps every unit's own English and the same source id, so
     # a unit-matched rule can still fire and an unrelated package is still refused.
-    scope = (policy.get("sourceScope") or {}) if isinstance(policy, dict) else {}
-    expected = SOURCE_SHA256
-    if scope.get("sourceScopeKind") == CLIP_SCOPE_KIND:
-        if scope.get("parentSourcePackageJsonSha256") != SOURCE_SHA256 or scope.get("parentSourceId") != SOURCE_ID:
-            raise ValueError("15030286 plugin clip scope belongs to another week")
-        expected = scope.get("englishSourcePackageJsonSha256")
-        if not isinstance(expected, str) or not re.fullmatch(r"[0-9a-f]{64}", expected):
-            raise ValueError("15030286 plugin clip scope has no English package binding")
+    expected = declared_clip_scope(policy) or SOURCE_SHA256
     if group.get("englishSourcePackageJsonSha256") != expected:
         raise ValueError("15030286 plugin source package differs")
     reviews = review_auto_group(

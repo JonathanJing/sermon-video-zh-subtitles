@@ -65,12 +65,12 @@ class Weekly15030286PluginTests(unittest.TestCase):
             plugin.review_group(policy(), [{"sourceUnitId": unit_id, "english": english}],
                                 group(unit_id, "gastó 1,5 millones de dólares", source="f" * 64))
 
-    def clip_policy(self, clip_source, **scope):
+    def clip_policy(self, clip_source, *, parent=None, source_id=None, declare=True):
         bound = policy()
-        bound["sourceScope"] = {"sourceScopeKind": common.CLIP_SCOPE_KIND,
-                                "parentSourcePackageJsonSha256": common.SOURCE_SHA256,
-                                "parentSourceId": common.SOURCE_ID,
-                                "englishSourcePackageJsonSha256": clip_source, **scope}
+        line = (common.CLIP_SCOPE_PREFIX + f"parent={parent or common.SOURCE_SHA256} "
+                f"sourceId={source_id or common.SOURCE_ID}")
+        bound["sourceScope"] = {"englishSourcePackageJsonSha256": clip_source,
+                                "termApprovalReceipt": {"userStatement": "approved in chat\n" + (line if declare else "x")}}
         return bound
 
     def test_a_declared_clip_scope_reviews_against_the_clips_own_package(self):
@@ -78,8 +78,7 @@ class Weekly15030286PluginTests(unittest.TestCase):
         # operator-approved rules still apply instead of throwing after a paid call.
         unit_id, english = common.AMOUNT_LEAD
         clip_source = "a" * 64
-        rows = [{"sourceUnitId": unit_id, "english": english}]
-        reviewed = plugin.review_group(self.clip_policy(clip_source), rows,
+        reviewed = plugin.review_group(self.clip_policy(clip_source), [{"sourceUnitId": unit_id, "english": english}],
                                        group(unit_id, "gastó 1,5 millones de dólares", source=clip_source))
         self.assertEqual(status(reviewed, "numbers"), "pass")
 
@@ -89,14 +88,20 @@ class Weekly15030286PluginTests(unittest.TestCase):
             plugin.review_group(self.clip_policy("not-a-hash"), [{"sourceUnitId": unit_id, "english": english}],
                                 group(unit_id, "gastó 1,5 millones", source="not-a-hash"))
 
-    def test_without_a_clip_scope_the_week_binding_is_unchanged(self):
-        # Any other sourceScope shape, including the week's own, keeps the exact-package rule.
+    def test_without_a_declared_clip_scope_the_week_binding_is_unchanged(self):
         unit_id, english = common.AMOUNT_LEAD
-        bound = policy()
-        bound["sourceScope"] = {"englishSourcePackageJsonSha256": "a" * 64}
         with self.assertRaisesRegex(ValueError, "source package differs"):
-            plugin.review_group(bound, [{"sourceUnitId": unit_id, "english": english}],
+            plugin.review_group(self.clip_policy("a" * 64, declare=False),
+                                [{"sourceUnitId": unit_id, "english": english}],
                                 group(unit_id, "gastó 1,5 millones", source="a" * 64))
+
+    def test_a_clip_scope_still_refuses_a_declaration_from_another_week(self):
+        unit_id, english = common.AMOUNT_LEAD
+        for kwargs in ({"parent": "c" * 64}, {"source_id": "some-other-sermon"}):
+            with self.subTest(**kwargs), self.assertRaisesRegex(ValueError, "another week"):
+                plugin.review_group(self.clip_policy("a" * 64, **kwargs),
+                                    [{"sourceUnitId": unit_id, "english": english}],
+                                    group(unit_id, "gastó 1,5 millones", source="a" * 64))
 
     def test_plugin_hash_closes_over_both_shared_rule_modules(self):
         root = Path(__file__).resolve().parents[1] / "scripts/language_review_plugins"

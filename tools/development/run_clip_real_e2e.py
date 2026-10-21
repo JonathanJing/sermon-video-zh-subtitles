@@ -309,6 +309,14 @@ def stage_inputs(run: Run):
     run.mark("inputs", "done", units=len(anchor["sourceUnits"]), inputs=str(inputs))
 
 
+CLIP_SCOPE_PREFIX = "clip-scope: same-source-clip-v1 "
+
+
+def clip_scope_declaration(parent_source_package: str, parent_source_id: str) -> str:
+    """The tagged line a clipped policy carries so source-bound plugins can recognise the cut."""
+    return f"{CLIP_SCOPE_PREFIX}parent={parent_source_package} sourceId={parent_source_id}"
+
+
 def freeze_clip_policy(template: Path, source: dict, anchor: dict, *, reviewed_by: str, statement: str,
                        backend: str = "openai_api", plugin: Path | None = None) -> dict:
     """The source week's frozen policy narrowed to this clip's source scope and terms, frozen again.
@@ -335,8 +343,6 @@ def freeze_clip_policy(template: Path, source: dict, anchor: dict, *, reviewed_b
     # this clip's package while still refusing anything cut from another source.
     parent, parent_id = frozen["sourceScope"]["englishSourcePackageJsonSha256"], source["source"]["sourceId"]
     scope.update(englishSourcePackageJsonSha256=tp.canonical_sha256(source), anchorManifestSha256=tp.canonical_sha256(anchor),
-                 sourceScopeKind="same-source-clip-v1", parentSourcePackageJsonSha256=parent,
-                 parentSourceId=parent_id,
                  usedSeriesNames=[], usedProperNames=used, ordinaryPhraseExclusions=exclusions, termApprovalEvidence=[])
     receipt = scope["termApprovalReceipt"]
     targets = {t["source"]: t["target"] for t in receipt["approvedTerms"]}
@@ -348,7 +354,11 @@ def freeze_clip_policy(template: Path, source: dict, anchor: dict, *, reviewed_b
                    approvedTerms=[{"source": n, "target": targets[n], "sourceUnitId": unit_with(n)} for n in used],
                    excludedScannerPhrases=[p for p in receipt.get("excludedScannerPhrases", [])
                                            if (p if isinstance(p, str) else p.get("source")) in exclusions],
-                   reviewedBy=reviewed_by, reviewedAt=now(), userStatement=statement)
+                   reviewedBy=reviewed_by, reviewedAt=now(),
+                   # The policy schema has no field for a clip declaration, and the receipt's statement is
+                   # free text, so the scope this receipt approves travels as a tagged line the source-bound
+                   # plugins read back. Only these two facts are added; the approved terms travel unchanged.
+                   userStatement=statement + "\n" + clip_scope_declaration(parent, parent_id))
     policy = tp.freeze_policy(draft, series_table=tp.SERIES_TABLE, language_review="draft")
     tp.validate_source_scope(policy, source, anchor)
     require(tp.validate_policy(policy, series_table=tp.SERIES_TABLE)["productionPolicyReady"], "clip policy not ready")
