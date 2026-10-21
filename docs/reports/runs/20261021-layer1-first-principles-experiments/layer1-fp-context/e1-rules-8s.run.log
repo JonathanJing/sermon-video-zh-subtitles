@@ -1,0 +1,13 @@
+19:54:22 e1-rules-8s_rebuild_start
+{
+  "status": "succeeded",
+  "kind": "english_source_candidate",
+  "reason": "human_source_review_required",
+  "review": "human_pending",
+  "productionEligible": false,
+  "humanApprovalCreated": false,
+  "candidatePath": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/podcasts/if-i-had-more-time-jesus-sends-and-resurrects-his-own/layer1-fp/e1-rules-8s.output/english-source-candidate.json",
+  "candidateSha256": "6c81fe301e9f94390a0e08f9936c63f79ad830b32f12e26bfe4fb1715287ab5f",
+  "machineJudgeStatus": "approved_for_layer2_shadow"
+}
+20:00:49 e1-rules-8s_rebuild_exit=0

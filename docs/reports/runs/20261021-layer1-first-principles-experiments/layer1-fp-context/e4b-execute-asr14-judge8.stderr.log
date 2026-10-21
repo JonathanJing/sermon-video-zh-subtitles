@@ -1,0 +1,70 @@
+Traceback (most recent call last):
+  File "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.claude/worktrees/l1-first-principles/tools/ops/run.py", line 91, in <module>
+    raise SystemExit(main())
+                     ~~~~^^
+  File "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.claude/worktrees/l1-first-principles/tools/ops/run.py", line 87, in main
+    return entry()
+  File "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.claude/worktrees/l1-first-principles/packages/production/src/tongxing_production/source/unified_stage.py", line 706, in main
+    result = inspect(args.config) if args.command == 'inspect' else execute(args.config)
+                                                                    ~~~~~~~^^^^^^^^^^^^^
+  File "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.claude/worktrees/l1-first-principles/packages/production/src/tongxing_production/source/unified_stage.py", line 461, in execute
+    return _execute(config, fresh, api_key=<redacted>, transport=transport, claude_transport=claude_transport,
+                    aligner=aligner or mfa_backend.align_reference_chunks,
+                    mfa_preflight=mfa_preflight or mfa_backend.preflight)
+  File "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.claude/worktrees/l1-first-principles/packages/production/src/tongxing_production/source/unified_stage.py", line 585, in _execute
+    judged = judge.run(aligned_path=aligned_path, manifest_path=manifest_path, out=out / 'machine-judge.json',
+        api_key=<redacted> or '', caller=caller.judge, cache_root=judge_cache_root(value, config.path, out),
+        model=value['judge']['model'], effort=value['judge']['reasoningEffort'],
+        batch_size=value['judge']['batchSize'], workers=value['judge']['workers'])
+  File "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.claude/worktrees/l1-first-principles/packages/production/src/tongxing_production/source/english_source_judge.py", line 468, in run
+    batches_reviewed = ordered_bounded_map(enumerate(_batches(sentences, batch_size)), review_batch, workers)
+  File "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.claude/worktrees/l1-first-principles/packages/production/src/tongxing_production/source/unified_stage.py", line 171, in ordered_bounded_map
+    results[index] = future.result()
+                     ~~~~~~~~~~~~~^^
+  File "/opt/homebrew/Cellar/<email>/3.13.16/Frameworks/Python.framework/Versions/3.13/lib/python3.13/concurrent/futures/_base.py", line 453, in result
+    return self.__get_result()
+           ~~~~~~~~~~~~~~~~~^^
+  File "/opt/homebrew/Cellar/<email>/3.13.16/Frameworks/Python.framework/Versions/3.13/lib/python3.13/concurrent/futures/_base.py", line 402, in __get_result
+    raise self._exception
+  File "/opt/homebrew/Cellar/<email>/3.13.16/Frameworks/Python.framework/Versions/3.13/lib/python3.13/concurrent/futures/thread.py", line 59, in run
+    result = self.fn(*self.args, **self.kwargs)
+  File "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.claude/worktrees/l1-first-principles/packages/production/src/tongxing_production/source/english_source_judge.py", line 462, in review_batch
+    return review(batch, "")
+  File "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.claude/worktrees/l1-first-principles/packages/production/src/tongxing_production/source/english_source_judge.py", line 432, in review
+    result, receipt = cached_call(
+                      ~~~~~~~~~~~^
+        out=cache_root,
+        ^^^^^^^^^^^^^^^
+    ...<12 lines>...
+        caller=caller,
+        ^^^^^^^^^^^^^^
+    )
+    ^
+  File "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.claude/worktrees/l1-first-principles/packages/production/src/tongxing_production/source/english_source_judge_cache.py", line 88, in cached_call
+    response = caller(api_key, payload)
+  File "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.claude/worktrees/l1-first-principles/packages/production/src/tongxing_production/source/budget.py", line 636, in judge
+    return self.call(operation='judge.' + jobs._digest(payload), identity=payload, bounds=bounds,
+           ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                     request=b'', api_key=<redacted>, content_type='application/json',
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                     endpoint=CLAUDE_CLI_ENDPOINT)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.claude/worktrees/l1-first-principles/packages/production/src/tongxing_production/source/budget.py", line 393, in call
+    return self._call(operation=operation, identity=identity, bounds=bounds, request=request,
+           ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        api_key=<redacted>, content_type=content_type, endpoint=endpoint, owner=owner)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.claude/worktrees/l1-first-principles/packages/production/src/tongxing_production/source/budget.py", line 499, in _call
+    returned(response, elapsed=time.monotonic() - start)
+    ~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.claude/worktrees/l1-first-principles/packages/production/src/tongxing_production/source/budget.py", line 486, in returned
+    self.verify()
+    ~~~~~~~~~~~^^
+  File "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.claude/worktrees/l1-first-principles/packages/production/src/tongxing_production/source/unified_stage.py", line 453, in fresh
+    current = load_configuration(config.path)
+  File "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.claude/worktrees/l1-first-principles/packages/production/src/tongxing_production/source/unified_stage.py", line 302, in load_configuration
+    require(auth['binding'] == expected, 'source_budget_execution_binding_changed')
+    ~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.claude/worktrees/l1-first-principles/packages/production/src/tongxing_production/source/unified_stage.py", line 87, in require
+    raise ValueError(code)
+ValueError: source_budget_execution_binding_changed

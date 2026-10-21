@@ -1,0 +1,45 @@
+Traceback (most recent call last):
+  File "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.claude/worktrees/l1-first-principles/tools/ops/run.py", line 91, in <module>
+    raise SystemExit(main())
+                     ~~~~^^
+  File "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.claude/worktrees/l1-first-principles/tools/ops/run.py", line 87, in main
+    return entry()
+  File "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.claude/worktrees/l1-first-principles/packages/production/src/tongxing_production/source/unified_stage.py", line 706, in main
+    result = inspect(args.config) if args.command == 'inspect' else execute(args.config)
+                                                                    ~~~~~~~^^^^^^^^^^^^^
+  File "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.claude/worktrees/l1-first-principles/packages/production/src/tongxing_production/source/unified_stage.py", line 461, in execute
+    return _execute(config, fresh, api_key=<redacted>, transport=transport, claude_transport=claude_transport,
+                    aligner=aligner or mfa_backend.align_reference_chunks,
+                    mfa_preflight=mfa_preflight or mfa_backend.preflight)
+  File "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.claude/worktrees/l1-first-principles/packages/production/src/tongxing_production/source/unified_stage.py", line 585, in _execute
+    judged = judge.run(aligned_path=aligned_path, manifest_path=manifest_path, out=out / 'machine-judge.json',
+        api_key=<redacted> or '', caller=caller.judge, cache_root=judge_cache_root(value, config.path, out),
+        model=value['judge']['model'], effort=value['judge']['reasoningEffort'],
+        batch_size=value['judge']['batchSize'], workers=value['judge']['workers'])
+  File "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.claude/worktrees/l1-first-principles/packages/production/src/tongxing_production/source/english_source_judge.py", line 468, in run
+    batches_reviewed = ordered_bounded_map(enumerate(_batches(sentences, batch_size)), review_batch, workers)
+  File "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.claude/worktrees/l1-first-principles/packages/production/src/tongxing_production/source/unified_stage.py", line 171, in ordered_bounded_map
+    results[index] = future.result()
+                     ~~~~~~~~~~~~~^^
+  File "/opt/homebrew/Cellar/<email>/3.13.16/Frameworks/Python.framework/Versions/3.13/lib/python3.13/concurrent/futures/_base.py", line 453, in result
+    return self.__get_result()
+           ~~~~~~~~~~~~~~~~~^^
+  File "/opt/homebrew/Cellar/<email>/3.13.16/Frameworks/Python.framework/Versions/3.13/lib/python3.13/concurrent/futures/_base.py", line 402, in __get_result
+    raise self._exception
+  File "/opt/homebrew/Cellar/<email>/3.13.16/Frameworks/Python.framework/Versions/3.13/lib/python3.13/concurrent/futures/thread.py", line 59, in run
+    result = self.fn(*self.args, **self.kwargs)
+  File "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.claude/worktrees/l1-first-principles/packages/production/src/tongxing_production/source/english_source_judge.py", line 462, in review_batch
+    return review(batch, "")
+  File "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.claude/worktrees/l1-first-principles/packages/production/src/tongxing_production/source/english_source_judge.py", line 432, in review
+    result, receipt = cached_call(
+                      ~~~~~~~~~~~^
+        out=cache_root,
+        ^^^^^^^^^^^^^^^
+    ...<12 lines>...
+        caller=caller,
+        ^^^^^^^^^^^^^^
+    )
+    ^
+  File "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.claude/worktrees/l1-first-principles/packages/production/src/tongxing_production/source/english_source_judge_cache.py", line 71, in cached_call
+    raise ValueError(f'Unknown L1 request outcome; reconcile original response before retry: {marker}')
+ValueError: Unknown L1 request outcome; reconcile original response before retry: ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/podcasts/if-i-had-more-time-jesus-sends-and-resurrects-his-own/layer1-fp/judge-cache/cache/english-source-judge-b7407f8b265a7b0fb2f6be298a7effd2b57d6657fdf4b35aa7fee8aff148126a.started.json

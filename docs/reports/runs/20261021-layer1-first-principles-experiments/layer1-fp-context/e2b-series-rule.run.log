@@ -1,0 +1,13 @@
+20:10:09 e2b-series-rule_rebuild_start
+{
+  "status": "blocked",
+  "kind": "english_source_candidate",
+  "reason": "source_machine_judge_rejected",
+  "review": "human_pending",
+  "productionEligible": false,
+  "humanApprovalCreated": false,
+  "candidatePath": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/podcasts/if-i-had-more-time-jesus-sends-and-resurrects-his-own/layer1-fp/e2b-series-rule.output/english-source-candidate.json",
+  "candidateSha256": "bf9f8c5597e2afa38032957ea9442b9a447139eb78b07de3e20db441bde0604d",
+  "machineJudgeStatus": "rejected_for_layer2_shadow"
+}
+20:10:49 e2b-series-rule_rebuild_exit=0
