@@ -3,7 +3,7 @@
 ## 现状
 
 - 策略 `batching.workers` 为 16，控制器允许最多 16 个组并行，同一 job root 下 API 在途上限为 24。
-- 但 `scripts/run_target_language_models.py` 在传入语言审核插件（`--plugin`）且不是模拟运行时，强制 `workers = 1`（约第 961–963 行）。
+- 但 [`text/models.py`](../packages/production/src/tongxing_production/text/models.py)（原 `scripts/run_target_language_models.py`）在传入语言审核插件（`--plugin`）、未启用 failure_collector 且不是模拟运行时，强制 `workers = 1`（`plugin_path is not None and not simulation_only` 分支）。
 - 原因写在代码注释里：插件拒绝后会写入"停止后续派发"的收据，串行化是为了让这个承诺与实际执行一致。
 - 结果：默认 v1/v2 带插件路径整轮串行；已采用 failure_collector 的 v3 正式路径不受此限制。2026-10-10 的 clip 影子运行记录为 `requestedWorkers: 16, workers: 1`。
 

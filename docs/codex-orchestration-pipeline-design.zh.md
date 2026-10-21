@@ -1209,7 +1209,7 @@ Stage 2 前冻结候选 SLO，而不是测试后挑指标：
 ### Epic 1 — Accounting / Trace foundation
 
 **E1.1 Schema extension**
-- 文件目标：`scripts/sermon_accounting.py`、`scripts/export_sermon_trace.py`、对应 tests。
+- 文件目标：[`observability/accounting.py`](../packages/production/src/tongxing_production/observability/accounting.py)、[`observability/trace_export.py`](../packages/production/src/tongxing_production/observability/trace_export.py)（原 `scripts/sermon_accounting.py`、`scripts/export_sermon_trace.py`）、对应 tests。
 - 增加 executor/dependency/queue/decision/work-unit 字段。
 - 兼容读取 v1/v2；历史事件不改写。
 

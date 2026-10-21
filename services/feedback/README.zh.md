@@ -52,7 +52,7 @@ HTTP 区间格式为 `[[start,end]]`；Firestore 记录格式为 `[{start,end}]`
 
 ### 操作时间线 `/api/usage`
 
-此新增路由保持已有反馈/收听 HTTP v1 合同兼容。详情见[行为采集与私有报表](../../../docs/sermon-app-usage.zh.md)。每个页面日期及同意阶段使用独立内存凭据，可复用公开目录中首个有效音轨作为凭据来源；事件自身记录当前周次/页面，因此查看音色或无配音周次也能记录。
+此新增路由保持已有反馈/收听 HTTP v1 合同兼容。详情见[行为采集与私有报表](../../docs/sermon-app-usage.zh.md)。每个页面日期及同意阶段使用独立内存凭据，可复用公开目录中首个有效音轨作为凭据来源；事件自身记录当前周次/页面，因此查看音色或无配音周次也能记录。
 
 追加请求为共同字段加 `{action:"append",seq:1,day:"YYYY-MM-DD",browserId:"UUIDv4或null",events:[],droppedEvents:0}`。`browserId` 实际为 JSON 字符串或 `null`；每天轮换，只存 SHA-256(day + 分隔符 + UUID)。每个事件必须准确包含 `{at:epochMilliseconds,action,panel,week,trackId,positionSeconds,speakerId}`；后三类位置/身份字段无对应值时填 `null`。`at` 到秒，服务端另存 `receivedAt`。允许动作/页面分别由 `usage-core.mjs` 的 `USAGE_ACTIONS`（46 项）与 `USAGE_PANELS`（6 项）定义，不接受任意文字。
 

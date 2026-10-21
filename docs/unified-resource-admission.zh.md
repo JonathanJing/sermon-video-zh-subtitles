@@ -39,7 +39,7 @@
 
 ## 持久化与恢复
 
-[资源模块](../scripts/sermon_unified/resources.py)复用durable jobs的非阻塞flock和原子写入。broker账本固定策略身份，记录operation、owner、resource、units及held/released终态。held的units之和用于容量准入，不把running和unknown重复相加。容量漂移拒绝；尚无在线改容量／broker迁移工具。
+[资源模块](../packages/production/src/tongxing_production/orchestration/unified/resources.py)复用durable jobs的非阻塞flock和原子写入。broker账本固定策略身份，记录operation、owner、resource、units及held/released终态。held的units之和用于容量准入，不把running和unknown重复相加。容量漂移拒绝；尚无在线改容量／broker迁移工具。
 
 reserve不是重复dispatch许可：同operation已预留或已终结均拒绝再次预留。进程退出、取消请求、flock释放不会移除持久held。只有runtime确认且保存匹配终态响应后才release；释放幂等，已用费用账本不回退。
 

@@ -21,7 +21,7 @@
 先查看当前输入和真实 durable job 状态：
 
 ```sh
-python -m scripts.sermon_app_delivery_workflow inspect \
+python tools/ops/run.py delivery.app_workflow inspect \
   --config artifacts/app-delivery/2026-10-04/workflow.json
 ```
 
@@ -52,7 +52,7 @@ JSON 依赖按声明的 JSON hash 或严格解析的内容递归收集，不依�
 独立消费已复制包：
 
 ```sh
-python -m scripts.sermon_app_delivery_workflow inspect-bundle \
+python tools/ops/run.py delivery.app_workflow inspect-bundle \
   --bundle artifacts/app-delivery/2026-10-04/bundles/JOB_ID
 ```
 
@@ -61,7 +61,7 @@ python -m scripts.sermon_app_delivery_workflow inspect-bundle \
 失败或未知任务的修复必须显式指定原 job ID：
 
 ```sh
-python -m scripts.sermon_app_delivery_workflow recover \
+python tools/ops/run.py delivery.app_workflow recover \
   --config artifacts/app-delivery/2026-10-04/workflow.json \
   --expected-job JOB_ID
 ```
