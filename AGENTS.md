@@ -26,6 +26,7 @@ Purpose: help attendees follow English sermons in their own language, on time an
 | Task | Open |
 |---|---|
 | Prepared multilingual text, audio or weekly page | [Four-layer contract](docs/multilingual-production-interfaces.zh.md), then the affected layer's producer or runbook |
+| Two-speaker podcast | [Dual-speaker podcast production](docs/podcast-dual-speaker-production.zh.md), on top of the four-layer contract |
 | Layer 2 translation and review: models, budget, tier | [Runtime model policy](docs/production-model-runtime-policy.zh.md); [controller](docs/canonical-layer2-controller.zh.md) for concurrency and recovery |
 | Compute host for local model work | [Compute policy](docs/local-production-compute-policy.zh.md) |
 | OpenAI keys and projects | [Environment launcher](docs/openai-minimal-project-setup.zh.md) |
