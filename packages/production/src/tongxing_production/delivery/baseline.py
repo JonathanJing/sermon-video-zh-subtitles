@@ -335,7 +335,9 @@ def bound_release_plan(baseline_path, prepared_path):
     contract.require(isinstance(page_id, str) and re.fullmatch(r'(?:mockup|dryrun|dev)-[A-Za-z0-9][A-Za-z0-9_-]{0,139}', page_id), 'Isolated test page required')
     contract.require(page_id not in {page['id'] for page in catalog['pages']}, 'Simulation page ID already exists; use a new run ID')
     locales = sorted(manifest['releases'])
-    contract.require(set(locales) == {'zh-Hans', 'ko', 'es'}, 'Three locale test coverage required')
+    # This plan is only built for an isolated diagnostic page; production plans
+    # keep their three-locale coverage requirement elsewhere.
+    contract.require(locales and set(locales) <= {'zh-Hans', 'ko', 'es'}, 'At least one known locale required')
     config = publication_config(base, base)
     plan = {'schemaVersion': 'sermon-locale-release-plan-v1',
             'baselineCatalogSha256': contract.sha(catalog),
@@ -372,7 +374,12 @@ def asset_first(baseline_path, prepared, out, source_video=None):
     contract.require(not out.exists() and not out.is_relative_to(base) and not out.is_relative_to(prepared), 'Unsafe asset-first output')
     contract.validate_catalog_snapshot(base)
     manifest, assets = builder.verified_assets(prepared)
-    contract.require(set(manifest['releases']) == {'zh-Hans', 'ko', 'es'}, 'Three locales required')
+    locales = set(manifest['releases'])
+    if str(manifest.get('pageId', '')).startswith(('mockup-', 'dryrun-', 'dev-')):
+        # A diagnostic page may carry one locale; production pages stay three-locale.
+        contract.require(locales and locales <= {'zh-Hans', 'ko', 'es'}, 'At least one known locale required')
+    else:
+        contract.require(locales == {'zh-Hans', 'ko', 'es'}, 'Three locales required')
     receipt = read(base / 'baseline-receipt.json')
     contract.require(receipt['project'] == PROJECT and receipt['site'] == SITE and receipt['origin'] == ORIGIN, 'Dev target only')
     out.mkdir(parents=True)
@@ -446,9 +453,11 @@ def machine_checked_overlay(baseline_path, overlay_public, catalog_path, out):
     contract.require(len(new_pages) == len(catalog['pages']) and set(old_pages) <= set(new_pages), 'Missing or duplicate sibling pages')
     added = [p for p in catalog['pages'] if p['id'] not in old_pages]
     contract.require(len(added) == 1 and added[0]['id'].startswith(('mockup-', 'dryrun-', 'dev-')), 'Exactly one isolated test page is required')
-    contract.require(set(added[0]['targets']) == {'zh-Hans', 'ko', 'es'}
+    targets = set(added[0]['targets'])
+    contract.require(targets and targets <= {'zh-Hans', 'ko', 'es'}
                      and all(t.get('contentStatus') == t.get('audioStatus') == contract.MACHINE_CHECKED
-                             for t in added[0]['targets'].values()), 'Three machine-checked locale targets required')
+                             for t in added[0]['targets'].values()),
+                     'At least one machine-checked locale target required')
     # Real (formal) content is diagnostic, never a simulation: readers refuse formal content on a
     # simulationOnly page, and a diagnostic page is never the default.
     added[0].update(diagnosticOnly=True)
