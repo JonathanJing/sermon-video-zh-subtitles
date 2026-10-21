@@ -87,6 +87,27 @@ class RunTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "another specification"):
             subject.Run(other, self.run_dir, publish=False)
 
+    def test_budget_plan_keeps_the_default_profile_unless_the_spec_names_one(self):
+        captured = []
+        with mock.patch.object(subject.Run, "sh", lambda _run, label, argv, **kw: captured.append(argv)):
+            self.run.plan(self.run_dir / "plans/default", ["layer2"], ["ko", "es"], include_open_qc=False)
+        self.assertNotIn("--profile", captured[0])
+        self.assertEqual(captured[0][captured[0].index("--out") + 1], self.run_dir / "plans/default")
+
+    def test_budget_plan_passes_an_explicit_profile_without_shifting_the_planner_arguments(self):
+        run_dir = Path(tempfile.mkdtemp(prefix="test-clip-e2e-profile-", dir=ROOT / "artifacts"))
+        self.addCleanup(shutil.rmtree, run_dir, True)
+        run = subject.Run(spec_files(self.base, budgetProfile="profile.json"), run_dir, publish=False)
+        captured = []
+        with mock.patch.object(subject.Run, "sh", lambda _run, label, argv, **kw: captured.append(argv)):
+            run.plan(run_dir / "plans/explicit", ["layer2"], ["ko", "es"], include_open_qc=False)
+        argv = captured[0]
+        self.assertEqual(argv[0], subject.PY)
+        self.assertTrue(str(argv[1]).endswith("plan_run_budgets.py"))
+        self.assertEqual(argv[2:4], ["--profile", str((self.base / "profile.json").resolve())])
+        self.assertEqual(argv[argv.index("--out") + 1], run_dir / "plans/explicit")
+        self.assertEqual(argv[argv.index("--scale") + 1], "clip")
+
     def test_audio_qc_mirror_creates_remote_parent_before_rsync(self):
         calls=[]
         with mock.patch.object(subject.subprocess, "run", side_effect=lambda args, **kwargs: calls.append(args)):

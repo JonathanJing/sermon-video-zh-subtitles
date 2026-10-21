@@ -111,6 +111,9 @@ def load_spec(path: Path) -> dict:
     layer3["speakerRegistry"] = resolve(layer3["speakerRegistry"])
     layer3.setdefault("maxEndLagSeconds", 120.0)
     spec["clipSpec"] = resolve(spec["clipSpec"])
+    if spec.get("budgetProfile"):
+        require(isinstance(spec["budgetProfile"], str), "budgetProfile must be a path")
+        spec["budgetProfile"] = resolve(spec["budgetProfile"])
     openai = spec.setdefault("openai", {})
     openai.setdefault("environment", "dev")
     require(openai["environment"] in ("dev", "prod"), "openai.environment must be dev or prod")
@@ -265,7 +268,8 @@ class Run:
                 evidence + (f" Profile {profile} approved for this clip's group count." if profile else ""),
                 *[arg for stage in stages for arg in ("--stage", stage)], *extra]
         if profile:
-            argv = [*argv[:3], "--profile", profile, *argv[3:]]
+            # argv[0] is the interpreter and argv[1] the planner script; the flag pair goes right after it.
+            argv = [*argv[:2], "--profile", profile, *argv[2:]]
         self.sh("plan-" + out.name, argv, launcher=True)
 
     def check(self, label, *extra):
