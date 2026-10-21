@@ -1,4 +1,4 @@
+2 failed, 1112 passed, 27 subtests passed in 277.15s (0:04:37)
+FAILED tests/test_audio_calibration_short_truncation.py::test_all_short_preflight_has_no_truncation_but_other_kinds_are_available
 FAILED tests/test_codex_shared_pool_transport.py::test_busy_before_started_is_proven_no_dispatch
-1 failed, 1113 passed, 27 subtests passed in 288.08s (0:04:48)
-exit 1
-FAILED tests/test_codex_shared_pool_transport.py::test_busy_before_started_is_proven_no_dispatch
+after ba6dc8a2 (fixture fix): tests/test_audio_calibration_short_truncation.py 7 passed

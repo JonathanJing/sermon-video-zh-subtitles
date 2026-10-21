@@ -3,8 +3,8 @@
   "status": "passed",
   "exitCode": 0,
   "startedAt": "2026-10-20T20:35:00+00:00",
-  "endedAt": "2026-10-20T23:49:57+00:00",
-  "scope": "D-5 closure window draft (PR #1221) on dev@5ba8c87c: 39 host-named facades deleted, 65 files moved out of scripts/ (workflows/diagnostic, text/strict, workflows/supervisor, orchestration, compute/mock_tts, observability, tools), 18 more facades deleted, ports.Diagnostic.validate_runtime and dual_pdf ports.Leases, path_aliases D5_WINDOW, L1 compatibility v13. Final full run on 609facf7: 10 unittest shards (6125 cases) plus 38 pytest-style files.",
+  "endedAt": "2026-10-21T01:04:36+00:00",
+  "scope": "D-5 closure window draft (PR #1221) on dev@5ba8c87c: 39 host-named facades deleted, 65 files moved out of scripts/ (workflows/diagnostic, text/strict, workflows/supervisor, orchestration, compute/mock_tts, observability, tools), 18 more facades deleted, ports.Diagnostic.validate_runtime and dual_pdf ports.Leases, path_aliases D5_WINDOW, L1 compatibility v13, and the #432 zh-Hans calibration fix in review/seeded_errors.py. Final full run on a03f8f4b: 10 unittest shards (6126 cases) plus 38 pytest-style files.",
   "knownPreexistingFailures": [
     "tests/test_codex_shared_pool_transport.py::test_busy_before_started_is_proven_no_dispatch",
     "tests/test_sermon_unified_parallel.py::ParallelOwnerTests::test_100_transitions_with_persistent_intents"

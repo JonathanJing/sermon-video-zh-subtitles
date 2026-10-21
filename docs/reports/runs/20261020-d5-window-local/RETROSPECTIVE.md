@@ -9,14 +9,15 @@
 - 删除宿主点名的 39 个门面，把 65 个文件移出 `scripts/`，再删除 18 个调用方已随窗口迁走的门面；
 - 新增 `ports.Diagnostic.validate_runtime` 和 dual_pdf 的 `ports.Leases`；
 - `path_aliases` 新增 `D5_WINDOW` 一节；
-- 新增 L1 producer compatibility v13。
+- 新增 L1 producer compatibility v13；
+- 按用户 2026-10-20 的决定，并入 #432 的中文数字注错修复（`review/seeded_errors.py`，在 W 里）。
 
 最终一轮在合入 `dev@5ba8c87c` 后的提交上运行：
 
-- unittest 10 个分片共 6125 个用例，失败 1 个；
-- pytest 风格 38 个文件，1113 个通过、1 个失败。
+- unittest 10 个分片共 6126 个用例，失败 1 个；
+- pytest 风格 38 个文件，1112 个通过、2 个失败。
 
-这两个失败在干净的 dev 上同样失败，与本窗口无关（见“错误”）。身份新旧值见[生成记录](../../../reports/20261020-d5-window-implementation-generation.zh.md)。
+其中两个失败在干净的 dev 上同样失败，与本窗口无关；另一个是 #432 修复后过时的测试夹具，已在 `ba6dc8a2` 修好，该模块重跑 7 个全部通过（见“错误”）。身份新旧值见[生成记录](../../../reports/20261020-d5-window-implementation-generation.zh.md)。
 
 证据边界：只有本地代码和测试。没有调用模型，也没有网络、Spark、发布或收件人活动。三语付费复验尚未运行，要等用户批准预算。CI 按用户 2026-10-19 的决定停用，所以没有 CI 证据。
 
@@ -26,7 +27,8 @@
 
 - 第一轮发现约 60 个失败：测试里的旧路径、子进程先导入包模块再绑定宿主、插件依赖路径。全部修好。
 - 第二轮在提交接线之后跑，又发现 4 处，下一提交修好。
-- 期间 `dev` 合入 15 个 PR，所以合并后又完整跑了第三轮，即上面的最终结果。
+- 期间 `dev` 合入 15 个 PR，所以合并后又完整跑了第三轮。
+- 并入 #432 修复后跑了第四轮，即上面的最终结果。
 
 ## 各层模型、耗时与速度
 
@@ -42,6 +44,7 @@
 | 测试 | `test_sermon_unified_parallel::…test_100_transitions_with_persistent_intents` 的 p95 为 3.2–4.2 秒，上限 2 秒 | 计时断言，在高负载下 dev 也失败（N4、C 批记录） | 每轮 | 未修 | 不适用 | 本报告 |
 | 测试 | 第一轮约 60 个失败：插件依赖 `sermon_diagnostic_context.py` 找不到、`fresh_diagnostic_plugin_scope_invalid`、`ports.Unbound` 等 | `text/candidate.py` 按 `scripts/` 路径找诊断插件的依赖；测试从被迁模块的 `__file__` 推算仓库根；包内模块不再自己绑定宿主，测试和子进程要先导入宿主 | 第一轮全量 | 依赖改经 `implementation_path` 别名读取；测试改用仓库根和 `tools/ops/run.py`，先绑定宿主 | 原测试 | #1221 的 `e5e26138`、`26cb6880` |
 | 身份 | 第一轮的模拟 TTS DAG 报 `mock_dag_code_identity_changed` | 测试运行期间我在改包内文件，DAG 冻结后重新哈希时字节已变 | 第一轮 | 不再在测试运行时改工作树；后两轮没有复现 | 原测试 | 无 |
+| 测试 | `test_audio_calibration_short_truncation::test_all_short_preflight…` 第四轮失败 | 夹具用裸的 一、二 代表短单元；#432 修复后它们不算漏读试验，`dropped_key_word` 也变成不可测 | 第四轮 | 夹具改为数字语境的短单元（第一。、三十。） | 原测试，重跑通过 | #1221 的 `ba6dc8a2` |
 | 测试 | `test_production_concurrency_profile::test_23_worker_executor…` 第二轮失败一次 | 并发度断言，受负载影响 | 第二轮 | 单独重跑通过，第三轮通过 | 原测试 | 无 |
 
 `test_telemetry_008::…preserves_code_identity` 在 dev 上一直失败，因为临时副本缺少 `tools/ops/render_multilingual_voice_demos.py`。本窗口把这个文件加进副本，现在通过。
@@ -59,7 +62,7 @@
 只覆盖代码与本地测试：
 
 - 10 个 unittest 分片和 38 个 pytest 风格文件；
-- §5.5 测试 ID 清单：`dev@5ba8c87c` 6124 个，分支 6125 个，只新增 v13 测试；
+- §5.5 测试 ID 清单：`dev@5ba8c87c` 6124 个，分支 6126 个，只新增 v13 测试与 #432 回归测试；
 - 附录 A：门面 73 → 18 个，宿主不再点名门面；
 - 17 个迁入包的命令经 `tools/ops/run.py` 跑 `--help` 都通过；
 - `git diff --check`。

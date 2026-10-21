@@ -31,27 +31,27 @@
       "run": "d5-window-local",
       "path": "outcome.json",
       "kind": "whole",
-      "bytes": 1191,
+      "bytes": 1264,
       "truncated": false,
-      "sha256": "3f375f10c106ef8502dc8968c900452eb5b14bfad0389f4334459043be99413a",
+      "sha256": "9363cbd3ac7db02fc841967b97f6ba283fa465efe7e96536a5efea62aaef1b9d",
       "redactions": {}
     },
     {
       "run": "d5-window-local",
       "path": "pytest.log",
       "kind": "log",
-      "bytes": 264,
+      "bytes": 378,
       "truncated": false,
-      "sha256": "9921cb8eadea608c044c415aae43048b3bba02a53f60840ebbb2dde622c891dc",
+      "sha256": "201b3f8bd14cabf988af24158ef21e5f83b90a3464755dff0373a524ed3a6989",
       "redactions": {}
     },
     {
       "run": "d5-window-local",
       "path": "summary.json",
       "kind": "whole",
-      "bytes": 863,
+      "bytes": 1407,
       "truncated": false,
-      "sha256": "1d9b512b359e47e15fdc31ea17b099da8e0f14bbef2e18d08096121fce38fa1d",
+      "sha256": "e16863e7fe3017e97ec3da724fbee33728ae837c96f09d8692582e71e782e2f2",
       "redactions": {}
     },
     {
@@ -78,7 +78,7 @@
       "kind": "log",
       "bytes": 889,
       "truncated": false,
-      "sha256": "40e9b1a2f7cb285c847e29397048bf5f833c58d925f64dc3156a433cda7feb64",
+      "sha256": "b82e10c2655a79c88f301385015af8e4e4a96e7a7d5b6b87cfc532bd104b4ba2",
       "redactions": {}
     }
   ],
