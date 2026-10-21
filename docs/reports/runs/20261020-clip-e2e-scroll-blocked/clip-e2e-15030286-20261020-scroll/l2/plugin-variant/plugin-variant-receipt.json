@@ -1,0 +1,21 @@
+{
+  "weekSourceSha256": "137fed8486da0ec4ea22258035a230f30172be43a016faa4c382b410f830e3a9",
+  "clipSourceSha256": "fe44efb009aa7516a1433665179115d713bb44579d9e451318bd5b6495612434",
+  "files": [
+    "weekly_15030286_common.py",
+    "zh_hans_weekly_15030286.py",
+    "ko_weekly_15030286.py",
+    "es_weekly_15030286.py"
+  ],
+  "difference": "SOURCE_SHA256 = \"137fed8486da0ec4ea22258035a230f30172be43a016faa4c382b410f830e3a9\"",
+  "diffFromWeek": "--- ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.agents/worktrees/codex/clip-e2e-15030286-7min-20261020/artifacts/clip-e2e-15030286-20261020-scroll/l2/plugin-variant/plugins/weekly_15030286_common.py\t2026-10-20 21:15:54\n+++ ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.agents/worktrees/codex/clip-e2e-15030286-7min-20261020/scripts/language_review_plugins/weekly_15030286_common.py\t2026-10-20 19:55:34\n@@ -32,7 +32,7 @@\n     )\n \n \n-SOURCE_SHA256 = \"fe44efb009aa7516a1433665179115d713bb44579d9e451318bd5b6495612434\"\n+SOURCE_SHA256 = \"137fed8486da0ec4ea22258035a230f30172be43a016faa4c382b410f830e3a9\"\n AMOUNT_LEAD = (\"chunk-0000-u024\", \"And in fact, reports said that Calendly, they spent $1.\")\n AMOUNT_TAIL = (\"chunk-0000-u025\", \"5 million on an external firm to design that logo.\")\n SEEK_THE_GOOD = {\n",
+  "pluginImplementationSha256": {
+    "zh_hans_weekly_15030286.py": "60131a118e3a4ffdb0662893f7a054d55cfc992846b7fe51d3101c832bb55dd9",
+    "ko_weekly_15030286.py": "b119ec14e56e8376897400be89d82f8c79f64402219eebab2fe8d496c4c84ab5",
+    "es_weekly_15030286.py": "99ea8916aa2c1baccb1bb4ded86847f2733b9d5a1bc1647a9f27f1c9f1378809"
+  },
+  "resolvedSharedRules": {
+    "module": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.agents/worktrees/codex/clip-e2e-15030286-7min-20261020/artifacts/clip-e2e-15030286-20261020-scroll/l2/plugin-variant/plugins/weekly_15030286_common.py",
+    "SOURCE_SHA256": "fe44efb009aa7516a1433665179115d713bb44579d9e451318bd5b6495612434"
+  }
+}

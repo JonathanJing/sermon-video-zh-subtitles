@@ -1,0 +1,20 @@
+{
+  "run": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.agents/worktrees/codex/clip-e2e-15030286-7min-20261020/artifacts/clip-e2e-15030286-20261020-scroll-b",
+  "stages": {
+    "inputs": {
+      "status": "done",
+      "at": "2026-10-21T04:26:38+00:00",
+      "units": 88,
+      "inputs": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.agents/worktrees/codex/clip-e2e-15030286-7min-20261020/artifacts/dev-180s-page-test-20261004/clip-e2e-scroll-20261020-b/inputs"
+    },
+    "layer2-setup": {
+      "status": "done",
+      "at": "2026-10-21T04:26:38+00:00"
+    }
+  },
+  "stopped": [
+    "start check layer2 failed: [[\"code\", [\"1 tracked file(s) modified\"]], [\"budget\", [\"Invalid budget plan: Symlink configuration/output paths are not supported\"]], [\"outputs\", [\"~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.agents/worktrees/codex/clip-e2e-15030286-7min-20261020/artifacts/clip-e2e-15030286-20261020-scroll-b/l2/text is not new or empty\"]], [\"environment_binding\", [\"Selected launcher route or credential differs from QC approval, or binding cannot be verified\"]]]"
+  ],
+  "settledUsd": 0.645419,
+  "claudeListPriceEquivalentUsd": 0.0
+}

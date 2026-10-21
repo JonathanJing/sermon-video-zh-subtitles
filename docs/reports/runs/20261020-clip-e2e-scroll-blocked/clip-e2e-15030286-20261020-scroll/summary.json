@@ -1,0 +1,20 @@
+{
+  "run": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.agents/worktrees/codex/clip-e2e-15030286-7min-20261020/artifacts/clip-e2e-15030286-20261020-scroll",
+  "stages": {
+    "inputs": {
+      "status": "done",
+      "at": "2026-10-21T03:07:10+00:00",
+      "units": 88,
+      "inputs": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.agents/worktrees/codex/clip-e2e-15030286-7min-20261020/artifacts/dev-180s-page-test-20261004/clip-e2e-scroll-20261020-a/inputs"
+    },
+    "layer2-setup": {
+      "status": "done",
+      "at": "2026-10-21T04:12:37+00:00"
+    }
+  },
+  "stopped": [
+    "start check layer2 failed: [[\"budget\", [\"Invalid budget plan: Layer 2 budget identity changed\"]]]"
+  ],
+  "settledUsd": 0.429491,
+  "claudeListPriceEquivalentUsd": 0.0
+}
