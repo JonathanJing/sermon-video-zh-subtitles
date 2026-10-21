@@ -151,7 +151,7 @@ def ordered_bounded_map(items, worker, workers):
     Already running leaves finish their immutable receipts before returning the
     exception. No automatic retries or loss of successful sibling work.
     """
-    require(type(workers) is int and 1 <= workers <= 8, 'invalid_source_concurrency')
+    require(type(workers) is int and 1 <= workers <= MAX_ASR_WORKERS, 'invalid_source_concurrency')
     items = list(items)
     if workers == 1:
         return [worker(item) for item in items]

@@ -339,6 +339,15 @@ def _dependent_clause_boundary(words: list[dict[str, Any]], index: int) -> bool:
         if (before in DETERMINERS and not punctuated) or (
                 boundary_word in FILLER_WORDS and before in UNIT_FINAL_FUNCTION_WORDS):
             return True
+        # "some kind of real, concrete, | intensified period of time": a comma series of modifiers
+        # or list items continues past the pause unless a clause opener follows (2026-10-21 E2:
+        # the judge rejected this cut). A filler closing a parenthetical ("friends, again, | the
+        # lens") is not a series member.
+        following = _boundary_word(words[index + 1]["text"])
+        if (punctuated and boundary_word not in FILLER_WORDS and following not in FILLER_WORDS
+                and following not in CLAUSE_STARTERS
+                and (str(words[index - 1]["text"]).endswith(",") or str(words[index + 1]["text"]).endswith(","))):
+            return True
         # "is primarily, | if not exclusively actually, future": a hedging adverb right after the
         # copula still awaits its complement (2026-10-21 v13, the one sentence the judge rejected).
         if before in COPULAS and boundary_word.endswith("ly"):

@@ -129,6 +129,14 @@ class ClauseStableSplittingTests(unittest.TestCase):
         self.assertEqual(texts[0], 'Now for our next, our brothers and sisters, our dispensational premillennial friends, again,')
         self.assertFalse(any(text.endswith('primarily,') for text in texts))
 
+    def test_comma_series_of_modifiers_is_not_cut_before_its_head(self):
+        spec = [('And', 0, .2), ('that', 0, .2), ('was', 0, .2), ('some', 0, .3), ('kind', 0, .2), ('of', 0, .1),
+                ('real,', 0, .5), ('concrete,', .1, .6), ('intensified', .45, .8), ('period', 0, .4), ('of', 0, .1),
+                ('time', 0, .4), ('where', .2, .2), ('God', 0, .3), ('acts', 0, .4), ('in', 0, .1), ('history', 0, .5),
+                ('and', .1, .2), ('people', 0, .4), ('see', 0, .3), ('it', 0, .2), ('plainly', 0, .5), ('today.', 0, .5)]
+        texts, unresolved = self.split(spec)
+        self.assertFalse(any(text.endswith('concrete,') for text in texts), texts)
+
     def test_function_word_before_a_pause_cannot_end_a_unit(self):
         spec = [('We', 0, .4)] + [(f'w{i}', 0, .5) for i in range(12)] + [('by', 0, .3)] + \
                [(f'v{i}', .5 if i == 0 else 0, .5) for i in range(8)] + [('end.', 0, .4)]
