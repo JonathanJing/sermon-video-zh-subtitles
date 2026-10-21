@@ -26,6 +26,7 @@ CLI 等价入口：
 - `budgetAuthorization`：独立预算授权文件。
 - `mfa`：backend、allowSparkFallback、localOptions、sparkOptions；仅接受现有 MFA adapter 的固定字段。
 - `anchorPolicy`：maxUnitSeconds 和 boundaryOverrides。已有人工边界覆盖原样传入，不按时长强拆。
+- `judgeCacheRoot`（可选，v2/v3）：相对配置文件的目录，存放机器裁判按内容寻址的请求缓存。缓存键是该批句子、单元、前后文、锚点策略、模型、推理强度和提示词，不含 manifest 哈希；同一来源的每次 `execute` 或 `rebuild` 写同一目录时，只有改动过的批次会再付费，其余按缓存回放（2026-10-21 起；单元 ID 按块内顺序编号，一句多拆一个单元仍会让该块后面句子的单元 ID 顺延并重判）。不写时每个输出目录各自缓存在 `judge-requests/`。
 - `judge`：reasoningEffort、batchSize、workers 和模型。v1 只允许 workers=1；v2 允许 1–8 workers。v1、v2 的模型为 `gpt-6-astra` 或 `gpt-6.1-sol`，走 OpenAI API。
   **v3（`sermon-unified-source-preparation-v3`，2026-10-21 用户决定）** 在 v2 字段上要求 `judge.backend`，后端决定模型：`openai_api` 只能用 `gpt-6.1-sol`；`claude_cli_opus` 只能用 `claude-opus-5-5`，经本机订阅登录的 Claude CLI 调用（`compute/transports/claude_source_judge.py`），不用 API key，单次调用的超时等于预算的单请求墙钟上限。ASR 仍走 OpenAI，所以 v3 的 Claude 后端仍需要 OpenAI 启动器和预算。后端写在配置里，进入配置摘要和预算绑定；换后端等于新配置，需要重新批准预算。v1、v2 配置不迁移。
 
