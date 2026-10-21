@@ -1,0 +1,45 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261021-firebase-dev-v5-mixed",
+  "runs": [
+    {
+      "label": "run-report",
+      "source": "~/.codex/worktrees/firebase-dev-v5/sermon-video-zh-subtitles/artifacts/firebase-dev-v5-20261021/run-report",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "run-report",
+      "path": "deployment-receipt.json",
+      "kind": "whole",
+      "bytes": 480,
+      "truncated": false,
+      "sha256": "78353ee5ba11145ec3088a488a903081c87fa7957502e41d90429dfd74e6861a",
+      "redactions": {}
+    },
+    {
+      "run": "run-report",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 300,
+      "truncated": false,
+      "sha256": "836436ce2ca114ef504b272420e9eee6e1e69dabfa9eb1c9ba122e41548e645f",
+      "redactions": {}
+    },
+    {
+      "run": "run-report",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 1064,
+      "truncated": false,
+      "sha256": "416dd64e0039873d9f7418995583bb6c789f2206240864516e68022faa102f74",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}
