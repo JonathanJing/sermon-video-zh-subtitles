@@ -412,8 +412,11 @@ def align_reference_chunks(chunks, clip_path, outdir, *, mfa_executable,
         env['MFA_ROOT_DIR'] = str(run / 'runtime')
         lexicon = run / 'dictionary.dict'
         lexicon.write_bytes(dictionary.read_bytes())
+        # A chunk's key carries its own words and mapping, not the spoken-forms file hash: a new
+        # mapping for a token in one block must not evict the other thirteen (2026-10-21 E3 measured
+        # 14 misses for a one-token change before this).
         shared = {k: identity[k] for k in ('schemaVersion', 'audioSha256', 'mfa', 'dictionarySha256',
-                                          'acousticSha256', 'g2pSha256', 'spokenFormsSha256', 'options')}
+                                          'acousticSha256', 'g2pSha256', 'options')}
         cache_entries = {}
         pending = []
         for i, (chunk, text, spoken, mapping) in enumerate(prepared):

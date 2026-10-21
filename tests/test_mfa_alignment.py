@@ -143,6 +143,23 @@ class AlignmentTest(unittest.TestCase):
         self.assertEqual([seg['text'] for seg in second][-1], 'But I can’t.')
         self.assertEqual(len(list(cache.glob('*.json'))), 3)
 
+    def test_spoken_form_for_one_block_realigns_that_block_only(self):
+        cache = self.root / 'chunk-cache'
+        self.chunks = [{'id': 1, 'start': 0., 'end': 3., 'text': 'No. But I.'},
+                       {'id': 2, 'start': 5., 'end': 8., 'text': 'No. But I can’t 73.'}]
+        forms = self.root / 'forms.json'
+        def align(spoken):
+            return mfa.align_reference_chunks(self.chunks, self.clip, self.root / 'out', mfa_executable=self.exe,
+                                             dictionary_path=self.dictionary, acoustic_model=self.acoustic,
+                                             spoken_forms_path=spoken, chunk_cache_dir=cache)
+        with patch.object(mfa.subprocess, 'run', side_effect=self.fake_run):
+            align(None)
+            forms.write_text(json.dumps({'73.': ['seventy', 'three']}))
+            second = align(forms)
+        manifest = json.loads(Path(second[0]['mfaManifest']).read_text())
+        self.assertEqual([row['id'] for row in manifest['chunkCache']['hits']], [1])
+        self.assertEqual([row['id'] for row in manifest['chunkCache']['misses']], [2])
+
     def test_chunk_cache_entry_is_bound_to_models_and_audio_and_rejects_tampering(self):
         cache = self.root / 'chunk-cache'
         kwargs = dict(mfa_executable=self.exe, dictionary_path=self.dictionary, acoustic_model=self.acoustic,
