@@ -42,7 +42,12 @@
 3. **输出上限**：用最长单元 + 模板估算输入/输出 token；接近 `maxCompletionTokens` 时先提高上限，避免长单元截断。
 4. **插件实现身份**：`plugin_implementation_sha256` 与 policy 记录一致；不一致直接失败（当前在 worker 准入才发现）。
 
-### R5 内容决定放在 policy，不放插件
+### R5 运行期间不要动代码工作区
+绑定运行的身份指纹包含源码文件的 mtime/size。运行期间在主工作区切换分支或编辑文件，会让 worker 在下一阶段判定 `worker_configuration_or_code_changed_during_models` 并中止整轮——2026-10-21 的 r12 因此在 56/746 处中止。
+
+规则：**有绑定运行在跑时，主工作区保持只读。** 代码改动放到独立 git worktree（`create_worktree`），测试也在那里跑；需要切分支就先等工作结束或先停运行。文档修改同理，用 worktree 完成后再推。
+
+### R6 内容决定放在 policy，不放插件
 人工批准的译文（例如 `现在是 Rooted 的第九周。`）与"保留英文/固定形式"的术语决定，必须进入 policy 的术语批准或 register rule 并留下决策记录；插件只保留机械检查的实现。这样下一位操作者不必读插件常量才知道内容约定。
 
 ## 操作清单
