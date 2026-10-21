@@ -245,6 +245,18 @@ candidate execution. Callers can validate independently collected bindings.
     if "REQUIRED" in facts:
         require(facts["REQUIRED"] == policy["languageReview"]["requiredChecks"],
                 "plugin required checks differ from policy")
+    # A source-bound plugin may pin the exact source it was authored for. Without this
+    # check a plugin copied from an earlier episode passes policy binding and only fails
+    # on the first paid group (2026-10-21: two full Layer 2 restarts for exactly that).
+    if isinstance(facts.get("SOURCE_PACKAGE_SHA"), str):
+        require(facts["SOURCE_PACKAGE_SHA"] == request["englishSourcePackageJsonSha256"],
+                "plugin source package hash differs from request")
+    if isinstance(facts.get("ANCHOR_SHA"), str):
+        require(facts["ANCHOR_SHA"] == request["anchorManifestSha256"],
+                "plugin anchor hash differs from request")
+    if isinstance(facts.get("QUOTE_UNIT"), str) and facts["QUOTE_UNIT"]:
+        source_units = {unit_id for group in plan for unit_id in group["sourceUnitIds"]}
+        require(facts["QUOTE_UNIT"] in source_units, "plugin quote unit is not in this source")
     if "EXPECTED_EDITION" in facts:
         require(policy["scripture"]["editionId"] == facts["EXPECTED_EDITION"],
                 "plugin scripture edition differs from policy")

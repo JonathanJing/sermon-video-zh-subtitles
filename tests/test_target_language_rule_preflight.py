@@ -54,6 +54,35 @@ class TargetLanguageRulePreflightTests(unittest.TestCase):
                    "fixture-key", self.worker.fake_call, plugin_path=self.plugin)
         self.assertEqual([], self.worker.calls)
 
+    def test_source_bound_plugin_must_name_this_source(self):
+        text = self.plugin.read_text()
+        self.plugin.write_text(text + '\nSOURCE_PACKAGE_SHA="' + 'a' * 64 + '"\nANCHOR_SHA="' + 'b' * 64 + '"\n')
+        self.repin()
+        with self.assertRaisesRegex(ValueError, "plugin source package hash"):
+            self.receipt()
+
+    def test_plugin_anchor_pin_must_match_the_request(self):
+        text = self.plugin.read_text()
+        self.plugin.write_text(text + '\nSOURCE_PACKAGE_SHA="' + self.request["englishSourcePackageJsonSha256"]
+                               + '"\nANCHOR_SHA="' + 'b' * 64 + '"\n')
+        self.repin()
+        with self.assertRaisesRegex(ValueError, "plugin anchor hash"):
+            self.receipt()
+
+    def test_plugin_quote_unit_must_exist_in_this_source(self):
+        text = self.plugin.read_text()
+        self.plugin.write_text(text + '\nQUOTE_UNIT="missing-unit-999"\n')
+        self.repin()
+        with self.assertRaisesRegex(ValueError, "quote unit is not in this source"):
+            self.receipt()
+
+    def test_matching_pins_pass_preflight(self):
+        text = self.plugin.read_text()
+        self.plugin.write_text(text + '\nSOURCE_PACKAGE_SHA="' + self.request["englishSourcePackageJsonSha256"]
+                               + '"\nANCHOR_SHA="' + self.request["anchorManifestSha256"] + '"\n')
+        self.repin()
+        self.assertEqual("inputs_frozen_not_execution_evidence", self.receipt()["status"])
+
     def assert_blocked_without_dispatch(self, message):
         with self.assertRaisesRegex(ValueError, message):
             runner.run(self.fixture.source, self.fixture.anchor, self.policy,
