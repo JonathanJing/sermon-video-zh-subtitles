@@ -175,6 +175,7 @@ def _chunk_cache_subdir(selected):
     block's own mapping is already in the block key."""
     runtime = dict(selected['runtime'])
     runtime['files'] = {k: v for k, v in (runtime.get('files') or {}).items() if k != 'spoken_forms_path'}
+    runtime.pop('adapterSha256', None)
     return hashlib.sha256(json.dumps(runtime, sort_keys=True).encode()).hexdigest()
 
 
