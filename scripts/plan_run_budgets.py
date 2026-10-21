@@ -158,8 +158,15 @@ def layer2_spec(execution, locales, profile, scale):
     layer2 = profile["layer2"]
     bounds = dict(layer2["boundsPerLocale"][scale])
     bounds["costMicrousd"] = micro(layer2_cap_per_locale(profile, scale, layer2_backend_of(execution))[0])
-    anchor = controller._json(controller._path(config.inspection_root, config.inspection["anchor"]))
-    source = controller._json(controller._path(config.inspection_root, config.inspection["source"]))
+    # Source/anchor are package artifacts, not configuration files: the 1 MiB config cap
+    # must not reject a full anchor manifest (the 2026-10-18 podcast manifest is 1.6 MiB).
+    def _package_json(path):
+        path = controller._safe_path(path)
+        if not path.is_file() or path.stat().st_size > 32 * 1024 * 1024:
+            raise ValueError("invalid_package_artifact")
+        return json.loads(path.read_text(encoding="utf-8"))
+    anchor = _package_json(controller._path(config.inspection_root, config.inspection["anchor"]))
+    source = _package_json(controller._path(config.inspection_root, config.inspection["source"]))
     # The canonical group plan, not a historical calls-per-week estimate.
     sizing = {}
     for locale, lane in config.lanes.items():
