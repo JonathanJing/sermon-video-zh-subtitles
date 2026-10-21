@@ -416,9 +416,11 @@ def machine_checked_overlay(baseline_path, overlay_public, catalog_path, out):
     contract.require(len(new_pages) == len(catalog['pages']) and set(old_pages) <= set(new_pages), 'Missing or duplicate sibling pages')
     added = [p for p in catalog['pages'] if p['id'] not in old_pages]
     contract.require(len(added) == 1 and added[0]['id'].startswith(('mockup-', 'dryrun-', 'dev-')), 'Exactly one isolated test page is required')
-    contract.require(set(added[0]['targets']) == {'zh-Hans', 'ko', 'es'}
+    targets = set(added[0]['targets'])
+    contract.require(targets and targets <= {'zh-Hans', 'ko', 'es'}
                      and all(t.get('contentStatus') == t.get('audioStatus') == contract.MACHINE_CHECKED
-                             for t in added[0]['targets'].values()), 'Three machine-checked locale targets required')
+                             for t in added[0]['targets'].values()),
+                     'At least one machine-checked locale target required')
     # Real (formal) content is diagnostic, never a simulation: readers refuse formal content on a
     # simulationOnly page, and a diagnostic page is never the default.
     added[0].update(diagnosticOnly=True)
