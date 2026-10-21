@@ -10,11 +10,11 @@ from types import SimpleNamespace
 import unittest
 from unittest.mock import Mock, patch
 from jsonschema import Draft202012Validator, ValidationError
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.compute import legacy_openai  # C4: the remote-call group lives here
-from scripts import sermon_strict_layer2 as s
+from tongxing_production.text.strict import layer2 as s
 from tongxing_production.review import contracts as c
 from tongxing_production.observability import accounting
-from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.observability import profile
 from tongxing_production.text import policy as policies
 from tests import test_produce_target_language_candidate as legacy_fixtures
@@ -236,7 +236,7 @@ class StrictAdapterTests(unittest.TestCase):
 
     def test_structural_failure_preserves_d5_actual_usage_and_reservation_bounds(self):
         from tongxing_production.review import review_budget as budget
-        from scripts import sermon_strict_budget_adapter as adapter
+        from tongxing_production.text.strict import budget_adapter as adapter
         from tests.test_sermon_strict_budget_adapter import authority,bounds,measured
         store=budget.BudgetStore(self.root/'shared-budget',authority());subject=adapter.StrictBudgetAdapter(store)
         root=self.root/'revision'
@@ -277,7 +277,7 @@ class StrictAdapterTests(unittest.TestCase):
         from unittest.mock import Mock
         from scripts import tongxing_host  # noqa: F401  binds the production package ports
         from tongxing_production.workflows.dual_pdf import pipeline as pipeline
-        from scripts import sermon_strict_budget_adapter as adapter
+        from tongxing_production.text.strict import budget_adapter as adapter
         from tests import test_sermon_strict_budget_adapter as fixtures
         runtime=fixtures.StrictBudgetTests();self.addCleanup(runtime.doCleanups); runtime.setUp()
         executor=Mock(side_effect=AssertionError('closed run must not dispatch'))
@@ -427,7 +427,7 @@ class StrictAdapterTests(unittest.TestCase):
             self.assertEqual((self.root/'revision/generator.raw.json').stat().st_mode&0o777,0o600)
 
     def test_measured_role_calls_dependencies_and_missing_cache_tokens(self):
-        from scripts import weekly_pipeline_report as weekly
+        from tongxing_production.observability import weekly_projection as weekly
         generated=[];reviewed=[]
         with self.session():
             s.generate(self.prepared,self.root/'revision','candidate','r1','fixture',self.transport,

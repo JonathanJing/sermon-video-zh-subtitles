@@ -5,7 +5,7 @@ The shared repo-root .venv installs ``tongxing_production`` in editable mode,
 and its ``__editable__`` .pth points at the main checkout's
 ``packages/production/src``. A test run from a worktree therefore imports the
 main checkout's package. ``PYTHONPATH`` only fixes the parent process: workers
-started with ``python -I`` (for example ``scripts/sermon_mock_tts_control.py``)
+started with ``python -I`` (for example the mock TTS worker ``compute/mock_tts/control.py`` launches)
 ignore it.
 
 This creates ``<worktree>/.venv`` from the shared venv's interpreter, without

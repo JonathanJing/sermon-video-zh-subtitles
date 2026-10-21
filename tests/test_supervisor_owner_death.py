@@ -10,7 +10,8 @@ import time
 import unittest
 
 from backend.leases import LeaseGuard, acquire_lease
-from scripts.sermon_production_supervisor import _SUBPROCESS_RUN, run_guarded_command
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.workflows.supervisor.production import _SUBPROCESS_RUN, run_guarded_command
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -75,7 +76,7 @@ class SupervisorOwnerDeathTests(unittest.TestCase):
         child = self.folder / "child.py"
         child.write_text("import os,subprocess,sys,time\nfrom pathlib import Path\np=Path(sys.argv[1]); (p/'group.pid').write_text(str(os.getpgrp())); (p/'child.pid').write_text(str(os.getpid()))\nsubprocess.Popen([sys.executable,str(p/'grand.py'),str(p)])\ntime.sleep(60)\n")
         owner = self.folder / "owner.py"
-        owner.write_text("import sys\nfrom pathlib import Path\nfrom backend.leases import acquire_lease,LeaseGuard\nfrom scripts.sermon_production_supervisor import _SUBPROCESS_RUN,run_guarded_command\np=Path(sys.argv[1]); lease=acquire_lease(str(p/'lease.json'),ttl_seconds=60)\nwith LeaseGuard(lease,ttl_seconds=60) as guard:\n run_guarded_command([sys.executable,str(p/'child.py'),str(p)],runner=_SUBPROCESS_RUN,guard=guard)\n")
+        owner.write_text("import sys\nfrom pathlib import Path\nfrom backend.leases import acquire_lease,LeaseGuard\nfrom tongxing_production.workflows.supervisor.production import _SUBPROCESS_RUN,run_guarded_command\np=Path(sys.argv[1]); lease=acquire_lease(str(p/'lease.json'),ttl_seconds=60)\nwith LeaseGuard(lease,ttl_seconds=60) as guard:\n run_guarded_command([sys.executable,str(p/'child.py'),str(p)],runner=_SUBPROCESS_RUN,guard=guard)\n")
         self.owner = subprocess.Popen([sys.executable, str(owner), str(self.folder)],
                                       env=dict(os.environ, PYTHONPATH=str(ROOT)),
                                       stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)

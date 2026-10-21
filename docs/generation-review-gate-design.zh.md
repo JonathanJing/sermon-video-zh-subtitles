@@ -19,7 +19,7 @@
 | [Layer 2 runner](../packages/production/src/tongxing_production/text/models.py) | Astra 初译、draft validation、Sol 审校、review validation；独立请求 ID；逐组缓存和 span；有界 group workers | strict-verifier 的只读输出合同、角色级恢复、精确 reviewed hash、完整失败 verdict |
 | [Layer 2 runbook](target-language-astra-sol-production.zh.md) | 四项语义硬检查、语言插件、候选准入、独立人工批准 | 新模式迁移与兼容 adapter；不覆盖当前运行方式 |
 | `validate_partial_repair_brief` / `validate_revision_brief` | 绑定旧失败响应、原来源与规则，在新目录修订；复用未变化组 | 从可信问题代码产生修复计划，接入 controller；不是另造缓存系统 |
-| [durable jobs](../packages/production/src/tongxing_production/orchestration/jobs.py)、[end-to-end adapter](../scripts/sermon_end_to_end.py) | intent、锁、任务身份、等待、未知结果核对 | 生成/审核活动的独立准入与去重；legacy adapter 不等于 canonical 全链已闭合 |
+| [durable jobs](../packages/production/src/tongxing_production/orchestration/jobs.py)、[end-to-end adapter](../packages/production/src/tongxing_production/workflows/supervisor/end_to_end.py) | intent、锁、任务身份、等待、未知结果核对 | 生成/审核活动的独立准入与去重；legacy adapter 不等于 canonical 全链已闭合 |
 | [accounting](../packages/production/src/tongxing_production/observability/accounting.py)、[七项合同](workflow-accounting-log-contract.zh.md) | 执行器/依赖/用量、事件重放、时钟、脱敏；部分能力仍待接通 | 在同一 envelope 中加入 review/gate/repair payload，保留三种状态与完整返工链 |
 | [实施矩阵](accounting-contract-implementation-matrix.zh.md) | 已实现与缺失项逐项分开 | 不因设计入库把 LOGC-01—07 或真实 Stage 1 标为完成 |
 

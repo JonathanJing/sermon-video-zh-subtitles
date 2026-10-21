@@ -43,15 +43,15 @@
 
 ## 唯一诊断入口与复核修复
 
-`python -m scripts.run_bounded_diagnostic` 是本轮 ASR、source check 和严格 L2 的入口。每个阶段使用同一份私有 `run-plan.json`：固定 `runDirectory`、`sourceClipPath`、provider config、批准依据、D5 authority 与实际 execution identity；共享目录内的 `budget/`、`logs/` 和 `results/`。不得通过复制目录或新建 run ID 重置本轮额度。计划中的哈希是审批引用，不能自行授予权限。
+`python tools/ops/run.py workflows.diagnostic.bounded` 是本轮 ASR、source check 和严格 L2 的入口。每个阶段使用同一份私有 `run-plan.json`：固定 `runDirectory`、`sourceClipPath`、provider config、批准依据、D5 authority 与实际 execution identity；共享目录内的 `budget/`、`logs/` 和 `results/`。不得通过复制目录或新建 run ID 重置本轮额度。计划中的哈希是审批引用，不能自行授予权限。
 
 从复核通过、合入后固定的干净 dev 执行以下命令形状；`RUN_PLAN`、`ASR_WAV` 和 `LOCALE_SPEC` 是本轮私有路径。`--key-fd 3` 由获授权的凭证复用启动器提供私有继承 FD；命令本身不寻找、创建或打印 key。这些命令在文档中不代表已执行：
 
 ```sh
-python -m scripts.run_bounded_diagnostic --plan "$RUN_PLAN" --phase preflight
-python -m scripts.run_bounded_diagnostic --plan "$RUN_PLAN" --phase transcribe --input "$ASR_WAV" --key-fd 3
-python -m scripts.run_bounded_diagnostic --plan "$RUN_PLAN" --phase source-check --key-fd 3
-python -m scripts.run_bounded_diagnostic --plan "$RUN_PLAN" --phase locale --input "$LOCALE_SPEC" --key-fd 3
+python tools/ops/run.py workflows.diagnostic.bounded --plan "$RUN_PLAN" --phase preflight
+python tools/ops/run.py workflows.diagnostic.bounded --plan "$RUN_PLAN" --phase transcribe --input "$ASR_WAV" --key-fd 3
+python tools/ops/run.py workflows.diagnostic.bounded --plan "$RUN_PLAN" --phase source-check --key-fd 3
+python tools/ops/run.py workflows.diagnostic.bounded --plan "$RUN_PLAN" --phase locale --input "$LOCALE_SPEC" --key-fd 3
 ```
 
 source check 只接受本轮哈希绑定音频的已验证 ASR 回执，由固定模板生成请求；不能注入任意其他讲道或提示词。L2 校验 Source Package 的原媒体哈希及批准时间窗，并逐个登记真实 generator/reviewer 请求哈希；未预检的直接请求拒绝。locale spec 包含 `source/anchor/policy/rubric` 私有路径、`graph`、`pluginPath/pluginSha256` 和 `groupPlan`。源稿准备、MFA、人工 source review 仍须提供真实证据；入口不伪造这些材料，也不把 source check 当成人审。

@@ -6,8 +6,9 @@ import unittest
 from unittest.mock import patch
 
 from jsonschema import Draft202012Validator
-from scripts import sermon_agent_diagnostics as adapter
-from scripts import sermon_agent_diagnostics_contracts as contract
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.workflows.diagnostic import agent_diagnostics as adapter
+from tongxing_production.workflows.diagnostic import agent_contracts as contract
 
 FIXTURES = Path(__file__).parent / "fixtures" / "sermon_agent_diagnostics"
 

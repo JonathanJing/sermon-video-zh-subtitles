@@ -128,13 +128,13 @@ git merge-base --is-ancestor 2a04804a <运行时的提交> && git merge-base --i
 账本完整性与错误。退出码 2 表示账本里有失败或未结束的尝试（重试很常见）；先用 `--level WARNING` 看是哪次 `runId`，下面的耗时只拿成功完成的那次比较：
 
 ```bash
-.venv/bin/python scripts/sermon_logs.py <lane 输出目录>/accounting --json --check
+.venv/bin/python tools/ops/run.py observability.logs <lane 输出目录>/accounting --json --check
 ```
 
 周投影的诊断与按执行者分的耗时，看 `report.json` 里 `runs[].diagnostics` 与 `runs[].leafElapsedByExecutor`：
 
 ```bash
-.venv/bin/python scripts/weekly_pipeline_report.py --accounting-dir <lane 输出目录>/accounting --out-dir <临时目录>
+.venv/bin/python tools/ops/weekly_pipeline_report.py --accounting-dir <lane 输出目录>/accounting --out-dir <临时目录>
 ```
 
 每组耗时（只读 `stage-attempts.csv`，与上面基线同一口径；第二个参数可选，只统计该 `runId`，不给则统计账本里的全部尝试）：

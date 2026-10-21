@@ -6,6 +6,6 @@ from tongxing_production.observability.projections import backend
 
 backend.configure(backend.TrackerProjectionBackend(
     timeline=lambda: import_module("scripts.build_four_layer_timeline"),
-    run_progress=lambda: import_module("scripts.sermon_run_progress"),
-    weekly_report=lambda: import_module("scripts.weekly_pipeline_report"),
+    run_progress=lambda: import_module("tongxing_production.observability.run_progress"),
+    weekly_report=lambda: import_module("tongxing_production.observability.weekly_projection"),
 ))

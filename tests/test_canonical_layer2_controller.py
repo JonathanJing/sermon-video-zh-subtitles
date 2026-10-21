@@ -12,11 +12,11 @@ from unittest.mock import patch
 
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.text import controller as subject
-from scripts import canonical_durable_jobs as durable
+from tongxing_production.orchestration import canonical_durable_jobs as durable
 from tongxing_production.observability import accounting
-from scripts import weekly_pipeline_report as weekly
+from tongxing_production.observability import weekly_projection as weekly
 from tongxing_production.orchestration import jobs
-from scripts import sermon_execution_harness as harness
+from tongxing_production.orchestration import execution_harness as harness
 from tongxing_production.text import policy as policies
 from tests import test_inspect_canonical_packages as fixtures
 from tests import tree_paths

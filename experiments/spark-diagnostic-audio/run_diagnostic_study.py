@@ -10,14 +10,14 @@ if __package__ in (None,''):
     sys.path.insert(0,str(Path(__file__).resolve().parents[2]))
 if str(Path(__file__).resolve().parent) not in sys.path:  # sibling modules of this experiment line
     sys.path.append(str(Path(__file__).resolve().parent))
-from scripts import codex_layer2_diagnostic as diagnostic
+from tools.development import codex_layer2_diagnostic as diagnostic
 from tongxing_production.compute.transports import codex_cli as codex
 from tongxing_production.observability import accounting
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
-from scripts import study_artifacts
+from tongxing_production.delivery import study_artifacts
 from tongxing_production.workflows.prepared import study_generation as generation
 import diagnostic_audio_inputs as admission
-from scripts.sermon_execution_harness import work_lock
+from tongxing_production.orchestration.execution_harness import work_lock
 from scripts.sermon_unified import resources
 from tongxing_production.compute.concurrency_profile import load_profile
 from tongxing_production.compute import spark_admission

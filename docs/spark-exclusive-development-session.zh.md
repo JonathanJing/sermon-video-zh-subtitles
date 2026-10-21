@@ -22,7 +22,7 @@ Spark Agent 工作目录为 `/home/achillesjing/spark-agent-current`，存在 `r
 
 在 Spark 上设主机级固定路径的账本和 owner 锁，例如 `/home/achillesjing/.local/state/tongxing-spark-exclusive`。同一 developmentSessionId 绑定多次 runId，不按 run 各建独占目录。begin 在事务锁内持久化 active session；后续命令逐次核验 sessionId、owner 和 revision，不依赖 SSH 连接持续打开。运行级 GPU 锁仍保留。
 
-已实现 [scripts/spark_exclusive_session.py](../packages/production/src/tongxing_production/compute/spark_exclusive_session.py) 的 inspect、begin、status、require、job-start／bind／end、finish、reconcile 和 resume-begin。主机状态固定存储，SSH 传输按代码 hash 部署 stdlib 模块，无推理或运行时安装。控制目标为当前四个受管 unit，以及抢占开始时冻结的全部运行容器；不可恢复的 AutoRemove 容器会在停止前拒绝。
+已实现 [compute/spark_exclusive_session.py](../packages/production/src/tongxing_production/compute/spark_exclusive_session.py)（命令 `tools/ops/run.py compute.spark_exclusive_session`） 的 inspect、begin、status、require、job-start／bind／end、finish、reconcile 和 resume-begin。主机状态固定存储，SSH 传输按代码 hash 部署 stdlib 模块，无推理或运行时安装。控制目标为当前四个受管 unit，以及抢占开始时冻结的全部运行容器；不可恢复的 AutoRemove 容器会在停止前拒绝。
 
 | 阶段 | 行为及验收 |
 |---|---|

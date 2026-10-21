@@ -7,7 +7,8 @@ import tempfile
 import unittest
 from unittest.mock import Mock
 
-from scripts import run_saturday_harness as harness
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tools.ops import run_saturday_harness as harness
 
 
 class SaturdayHarnessTests(unittest.TestCase):

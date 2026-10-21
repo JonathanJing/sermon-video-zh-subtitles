@@ -33,7 +33,7 @@ import sys
 
 from poc import ROOT, probe, sha256, write_json
 sys.path.insert(0, str(ROOT))
-from scripts.sermon_execution_harness import WorkAlreadyRunning, bounded_process, work_lock
+from tongxing_production.orchestration.execution_harness import WorkAlreadyRunning, bounded_process, work_lock
 from weekly_dubbing import PDF_PACKAGE_KEYS, prepare, read, resolve_approved_timeline, timecode, validate_frozen, source_id_from_run, deferred_package
 from sentence_synthesis_policy import SENTENCE_SYNTHESIS_POLICY
 
@@ -132,7 +132,7 @@ def inspect_same_route(config, config_path, week, settings, supervisor_report, *
         result.update(status="waiting_same_video_intake", nextActions=[{"action": "initialize_same_video_source", "route": "same_video", "commands": [adapter + ["--initialize"]]}])
         return result, None
     contract, _ = validate_archive(run, source, root=root, media_probe=media_probe)
-    from scripts.sermon_production_supervisor import lease_active
+    from tongxing_production.workflows.supervisor.production import lease_active
     if any((run / "leases" / (stage + ".json")).exists() and lease_active(read(run / "leases" / (stage + ".json"))) for stage in ("timeline", "generation")):
         return waiting("same_video", "waiting_saturday_run", "This same-video source still holds a production lease.", "wait_for_same_video_production", run=str(run)), None
     if not (run / HANDOFF_NAME).is_file():
@@ -185,7 +185,7 @@ def resolve_run(week, settings, supervisor_report, *, root=ROOT):
 def validate_live_inputs(run, week, *, root=ROOT, media_probe=probe, defer_pdfs=False, reviewed_handoff=None):
     """Preflight the same inputs that prepare() validates again before mutation."""
     sys.path.insert(0, str(ROOT))
-    from scripts.sermon_production_supervisor import lease_active
+    from tongxing_production.workflows.supervisor.production import lease_active
     if reviewed_handoff is not None:
         if not defer_pdfs or reviewed_handoff.get("schemaVersion") != "sermon-producer-reading-handoff-v1" or reviewed_handoff.get("week") != week or reviewed_handoff.get("run") != str(run.resolve()):
             raise ValueError("Invalid producer reading handoff")

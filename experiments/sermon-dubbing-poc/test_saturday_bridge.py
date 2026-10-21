@@ -31,7 +31,8 @@ class SaturdayBridgeTests(unittest.TestCase):
         timeline = {"status": "requires_operator_review", "input": "frozen source timeline"}
         write_json(paths["timeline"], timeline)
         # Use the production canonical digest rather than a raw-file hash.
-        from scripts.sermon_production_supervisor import json_digest, stable_hash
+        from scripts import tongxing_host  # noqa: F401  binds the production package ports
+        from tongxing_production.workflows.supervisor.production import json_digest, stable_hash
         approval = {"schemaVersion": 2, "status": "approved", "humanApproval": True,
             "sunday": self.week, "sourceUrlHash": stable_hash("https://www.youtube.com/watch?v=" + self.source),
             "timelineReportSha256": json_digest(timeline), "approvedBy": "fixture human", "approvedAt": "2026-09-05T00:00:00Z",
@@ -113,7 +114,8 @@ class SaturdayBridgeTests(unittest.TestCase):
             self.assertEqual(job["synthesisPolicy"], SENTENCE_SYNTHESIS_POLICY)
 
     def test_supervisor_v2_manual_source_report_is_selected_prepared_and_reused_without_reapproval(self):
-        from scripts.sermon_production_supervisor import json_digest
+        from scripts import tongxing_host  # noqa: F401  binds the production package ports
+        from tongxing_production.workflows.supervisor.production import json_digest
         for raw_report in ("different", "missing", "malformed"):
             with self.subTest(raw_report=raw_report), tempfile.TemporaryDirectory() as tmp:
                 root = Path(tmp)

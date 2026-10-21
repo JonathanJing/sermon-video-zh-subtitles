@@ -9,15 +9,15 @@ import time
 import unittest
 from unittest.mock import patch
 
-from scripts import sermon_diagnostic_preview_worker as subject
-from scripts import sermon_diagnostic_provider as provider
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.workflows.diagnostic import preview_worker as subject
+from tongxing_production.workflows.diagnostic import provider
 from tongxing_production.observability import profile
 from tongxing_production.review import review_budget as budget
 from tongxing_production.review import contracts as c
-from scripts import sermon_preview_checkpoint_manifest as checkpoint
+from tongxing_production.workflows.diagnostic import preview_checkpoint_manifest as checkpoint
 from tongxing_production.storage import snapshot as public
-from scripts import sermon_diagnostic_delivery_preflight as delivery
+from tongxing_production.workflows.diagnostic import delivery_preflight as delivery
 from tests import test_render_speculative_target_language_speech as fixtures
 from tests import test_sermon_diagnostic_provider as provider_fixtures
 

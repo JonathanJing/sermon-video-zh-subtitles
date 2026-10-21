@@ -7,8 +7,9 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.delivery import intent
-from scripts import sermon_delivery_intent_binding as subject
+from tongxing_production.workflows.diagnostic import delivery_intent_binding as subject
 from tests import test_inspect_canonical_packages as inspection_fixtures
 
 
@@ -383,7 +384,7 @@ class StrictDeliveryBindingTests(DeliveryBindingTests):
 
     def test_strict_wrong_locale_or_mixed_authority_is_rejected(self):
         from dataclasses import replace
-        from scripts import sermon_strict_gate_admission as admission
+        from tongxing_production.text.strict import gate_admission as admission
         original = self.strict_admissions['zh-Hans']
         self.strict_admissions['ko'] = original
         with self.assertRaisesRegex(ValueError, 'trusted_delivery_admission_boundary_required'): self.freeze()
@@ -438,9 +439,9 @@ class FormalStrictDeliveryTests(unittest.TestCase):
         from scripts import tongxing_host  # noqa: F401  binds the production package ports
         from tongxing_production.review import contracts as c
         from tongxing_production.text import policy as policies
-        from scripts import sermon_strict_layer2 as strict
-        from scripts import sermon_strict_candidate_bridge as bridge
-        from scripts import sermon_strict_gate_admission as admission
+        from tongxing_production.text.strict import layer2 as strict
+        from tongxing_production.text.strict import candidate_bridge as bridge
+        from tongxing_production.text.strict import gate_admission as admission
         from tongxing_production.text import human_review as human
         from tongxing_production.delivery import formal_assets as builder
         from tests import test_sermon_strict_budget_adapter as budget_fixtures

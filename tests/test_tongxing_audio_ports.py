@@ -20,10 +20,10 @@ from tongxing_production.observability import measure as four_layer_measure
 from tongxing_production.review import release_basis as machine_basis
 from tongxing_production.review import waiver
 from tongxing_production.audio import renderer
-from scripts import render_multilingual_voice_demos as demos
+from tools.ops import render_multilingual_voice_demos as demos
 from tongxing_production.audio import human_review as audio_review
 from tongxing_production.audio import screening
-from scripts import sermon_local_model_observation
+from tongxing_production.observability import local_model_observation as sermon_local_model_observation
 from tongxing_production.observability import accounting as sermon_accounting
 from tongxing_production.orchestration import jobs as sermon_workflow_jobs
 from tongxing_production.compute import spark_tts_replica_pool
@@ -208,6 +208,8 @@ class AudioPortsTests(unittest.TestCase):
         names += [path_aliases.resolve(f'scripts/{name}.py').removeprefix('packages/production/src/')
                   .removesuffix('.py').replace('/', '.') for name in LAZY_AT_HOST_LOAD
                   if path_aliases.resolve(f'scripts/{name}.py').startswith('packages/')]
+        # Moved without an alias key: the voice demo tool and the local model observation.
+        names += ['tools.ops.render_multilingual_voice_demos', 'tongxing_production.observability.local_model_observation']
         code = ("import sys; from scripts import tongxing_host; "
                 f"print([m for m in {names!r} if m in sys.modules])")
         result = subprocess.run([sys.executable, '-c', code], cwd=host.ROOT, capture_output=True, text=True, timeout=60)

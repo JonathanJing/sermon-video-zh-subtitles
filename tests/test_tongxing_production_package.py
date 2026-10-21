@@ -40,7 +40,17 @@ READS_LOADED_MODULE_FILES = {"observability/accounting.py",
                              # Diagnostic identity witnesses bind their own bytes (helperSha256), never the checkout.
                              "workflows/diagnostic/historical_identity.py",
                              # Checkpoint manifests bind the validator's own bytes (validatorCode, checkpointCode).
-                             "workflows/diagnostic/preview_checkpoint_manifest.py"}
+                             "workflows/diagnostic/preview_checkpoint_manifest.py",
+                             # D-5 window: diagnostic receipts bind their own bytes (codeSha256,
+                             # implementationSha256, workerCodeSha256, inspectorCode, builderCodeSha256) or
+                             # the loaded modules they ran (previewRendererSha256, helperRef, the frozen
+                             # Source consumers, the HTTP worker argv); the checkout root comes from the host.
+                             "workflows/diagnostic/bounded.py", "workflows/diagnostic/business_prefect_flow.py",
+                             "workflows/diagnostic/dag_session.py", "workflows/diagnostic/delivery_preflight.py",
+                             "workflows/diagnostic/fresh.py", "workflows/diagnostic/fresh_source.py",
+                             "workflows/diagnostic/historical_native_seed.py",
+                             "workflows/diagnostic/native_preview_runtime.py", "workflows/diagnostic/prefect_flow.py",
+                             "workflows/diagnostic/preview_worker.py"}
 
 
 def imports_of(path):
@@ -155,11 +165,12 @@ class ProductionPackageTests(unittest.TestCase):
         self.assertIs(backend.current().stage, stages.load)
 
     def test_scripts_facade_is_the_package_module(self):
-        from scripts import sermon_provider_limits as facade
-        from tongxing_production.compute import provider_limits as implementation
+        # One of the facades the dual_pdf identity still pins (facade plan section 7 (c)).
+        from scripts import sermon_pipeline as facade
+        from tongxing_production.workflows.dual_pdf import pipeline as implementation
         self.assertIs(facade, implementation)
-        self.assertIs(sys.modules["scripts.sermon_provider_limits"], implementation)
-        self.assertEqual(implementation.SCHEMA, "sermon-openai-chat-request-limits-v1")
+        self.assertIs(sys.modules["scripts.sermon_pipeline"], implementation)
+        self.assertTrue(callable(implementation.chat_json))
 
     def test_layer2_models_alias_and_editable_path_use_this_checkout(self):
         from tongxing_production import path_aliases

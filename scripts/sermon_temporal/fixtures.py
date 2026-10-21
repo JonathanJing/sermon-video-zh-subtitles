@@ -4,9 +4,8 @@ from __future__ import annotations
 import hashlib
 from pathlib import Path
 
-from scripts.sermon_execution_harness import atomic_json
 from .contracts import digest
-from .local_io import TEMPORAL_ROOT, file_sha, private_directory, read_json
+from .local_io import TEMPORAL_ROOT, atomic_json, file_sha, private_directory, read_json
 
 
 def fixture_root(path: Path) -> Path:

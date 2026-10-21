@@ -50,7 +50,8 @@
 `accounting_session` 管理运行身份，`stage` 管理阶段与父子 span，`record_log` 用固定事件 code 记录业务状态。新字段仍属于 v2 的可选扩展，既有 v1/v2 字节不改写。事件携带 UTC 时间、进程／线程 ID、运行／流程／阶段 ID；独立线程会话使用各自上下文，主线程启动的子进程通过环境变量继承关联。若从 worker 线程启动子进程，需要显式传递该 worker 的会话环境，不能假设主线程环境属于该 worker。
 
 ```python
-from scripts.sermon_accounting import accounting_session, stage, record_log
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.observability.accounting import accounting_session, stage, record_log
 
 with accounting_session(work / "accounting", "weekly_task", {"sunday": sunday}):
     with stage("validate_inputs"):
@@ -127,7 +128,7 @@ v1/v2 无扩展字段仍可读取，不补造依赖或时间；所有导入事�
 
 ### 依赖图与 Weekly Pipeline Report（E1 初始实现）
 
-运行 `python3 -m scripts.weekly_pipeline_report --accounting-dir PATH --out-dir NEW_DIRECTORY`，产生只读 `report.json` 与由该 JSON 投影的 `report.md`。输出目录必须不存在；不修改源账本，不调用网络或模型。返回 0 表示投影可计算，1 表示证据不完整；这不是生产或人工验收。
+运行 `python3 -m tools.ops.weekly_pipeline_report --accounting-dir PATH --out-dir NEW_DIRECTORY`，产生只读 `report.json` 与由该 JSON 投影的 `report.md`。输出目录必须不存在；不修改源账本，不调用网络或模型。返回 0 表示投影可计算，1 表示证据不完整；这不是生产或人工验收。
 
 `with stage("source") as source_span:` 返回本次 attempt 的 span ID。下游 `depends_on=[source_span]` 绑定同一 run 中的准确 attempt；不能使用含糊 stage 名称，也不把 parent containment 当成执行依赖。每个 root 显式记录空 dependsOn；未传 depends_on 的旧调用写 null，不能冒充无依赖 root。汇合节点引用全部必需前置；重试引用实际前一 attempt。
 

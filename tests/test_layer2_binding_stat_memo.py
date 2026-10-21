@@ -14,7 +14,7 @@ import unittest
 from unittest.mock import patch
 
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
-from scripts import inspect_canonical_packages as inspection
+from tongxing_production.delivery import inspect_canonical_packages as inspection
 from tongxing_production.contracts import schemas as contract_schemas
 from tongxing_production.text import backend as text_backend
 from tongxing_production.text import controller as layer2

@@ -14,15 +14,15 @@ import unittest
 from unittest.mock import Mock, patch
 import urllib.error
 
-from tongxing_production.compute import legacy_openai  # C4: the remote-call group lives here
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.compute import legacy_openai  # C4: the remote-call group lives here
 from tongxing_production.observability import accounting
 from tongxing_production.workflows.dual_pdf import pipeline as pipeline
 from tongxing_production.review import review_budget as budget
 from tongxing_production.review import contracts
 from tongxing_production.orchestration.supervisor import repair_planning as planning
-from scripts import sermon_strict_budget_adapter as adapter
-from scripts import sermon_strict_layer2 as strict
+from tongxing_production.text.strict import budget_adapter as adapter
+from tongxing_production.text.strict import layer2 as strict
 from tests import test_sermon_strict_layer2 as strict_fixtures
 
 
@@ -528,7 +528,7 @@ class StrictBudgetTests(unittest.TestCase):
         self.assertEqual(calls, [1])
 
     def repair_context(self, parent, review, root, *, prior_revisions=(), prior_repairs=(), fingerprints=()):
-        from scripts.sermon_strict_repair_planner import RepairPlanner
+        from tongxing_production.text.strict.repair_planner import RepairPlanner
         result = RepairPlanner(self.store, self.f.root / 'jobs', '7'*64).plan_group(
             self.f.prepared, root,
             [dict(workUnitId=self.f.prepared['workUnitId'],layer=2,targetLocale='zh-Hans',dependsOn=[])],
@@ -706,10 +706,10 @@ class StrictBudgetTests(unittest.TestCase):
     def test_actual_process_exit_preserves_reservation_and_forbids_restart_dispatch(self):
         code = '''import json,os,sys
 from pathlib import Path
-from scripts import sermon_strict_layer2 as strict
+from tongxing_production.text.strict import layer2 as strict
 from tongxing_production.observability import accounting, profile
 from scripts import tongxing_host; from tongxing_production.review.review_budget import BudgetStore
-from scripts.sermon_strict_budget_adapter import StrictBudgetAdapter
+from tongxing_production.text.strict.budget_adapter import StrictBudgetAdapter
 from tests.test_sermon_strict_budget_adapter import authority,bounds
 value=json.load(sys.stdin)
 prepared=strict.prepare(*[text.encode() for text in value['args']],value['group'],rule_preflight=value['rulePreflight'],rule_context=value['ruleContext'])

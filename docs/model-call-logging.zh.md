@@ -1,6 +1,6 @@
 # 模型调用、Token 与速度复盘
 
-统一日志以 `accounting/events.jsonl` 为事实来源。执行 `scripts/sermon_accounting.py <accounting-dir>` 后，`summary.json.modelCallReport` 和 `model-calls.csv` 给出本地模型、API、监督模型的逐次记录与按模型/后端/角色的汇总。Codex 调用另保存 `creditUsage`；这是估算，不会加到原 API 美元费用账本中。
+统一日志以 `accounting/events.jsonl` 为事实来源。执行 `tools/ops/run.py observability.accounting <accounting-dir>` 后，`summary.json.modelCallReport` 和 `model-calls.csv` 给出本地模型、API、监督模型的逐次记录与按模型/后端/角色的汇总。Codex 调用另保存 `creditUsage`；这是估算，不会加到原 API 美元费用账本中。
 
 每条调用保留 run/call/span 身份、配置/返回模型、backend、provider、role、开始/结束 UTC 时间、耗时、输入/输出/缓存/推理/总 token、可观测的首 token/生成时间以及不同口径的速度。记录缺失值为 `null`，真实零值为 `0`；失败、中断和冲突不变成成功或免费调用。模型用量保留提供方定义，不把 reasoning token 再加到 output token。
 

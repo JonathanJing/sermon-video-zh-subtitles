@@ -10,13 +10,13 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-from tongxing_production.observability import profile
-from scripts import sermon_dag_contract as contract
-from scripts import sermon_prefect_dag as pilot
-from tongxing_production.review import review_budget as budget
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.observability import profile
+from tongxing_production.orchestration.prefect import contract
+from tongxing_production.orchestration.prefect import dag as pilot
+from tongxing_production.review import review_budget as budget
 from tongxing_production.orchestration import jobs
-from scripts.sermon_execution_harness import work_lock, WorkAlreadyRunning
+from tongxing_production.orchestration.execution_harness import work_lock, WorkAlreadyRunning
 
 
 class PilotTests(unittest.TestCase):

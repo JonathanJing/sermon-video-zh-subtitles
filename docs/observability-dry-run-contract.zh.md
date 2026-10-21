@@ -14,8 +14,8 @@
 ## 可复核导出
 
 ```sh
-python scripts/export_observability_trace.py --accounting-dir /path/to/accounting --out-dir /new/export
-python scripts/weekly_pipeline_report.py --accounting-dir /new/export --out-dir /new/reprojected-report
+python tools/ops/run.py observability.observability_trace --accounting-dir /path/to/accounting --out-dir /new/export
+python tools/ops/weekly_pipeline_report.py --accounting-dir /new/export --out-dir /new/reprojected-report
 ```
 
 导出只保留白名单身份、时间、计量与安全 hash，排除主机路径、进程/线程标识、原文、模型正文和错误消息。`export.json` 保留原/导出 ledger hash、事件计数和转换范围。provider response ID 转为 SHA；它不等于可直接查询的原 ID。导出不是独立执行证明，须与单独保存的输入输出/传输计数器对账。格式错误或改变 receipt reconciliation 结论的导出会失败。

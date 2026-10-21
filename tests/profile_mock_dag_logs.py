@@ -54,10 +54,10 @@ def prepare(saved, operation):
     from tongxing_production.observability import completion
     from tongxing_production.observability import durable
     from tongxing_production.observability import log_contract as contract
-    from scripts import sermon_logs
+    from tongxing_production.observability import logs as sermon_logs
     from scripts import tongxing_host  # noqa: F401  binds the production package ports
     from tongxing_production.review import contracts as c
-    from scripts import weekly_pipeline_report as weekly
+    from tongxing_production.observability import weekly_projection as weekly
     from tests.mock_tts_sdk_diagnostics import status_diagnostics
 
     if read(saved/'EVIDENCE_ONLY.json').get('auditOnly') is not True:

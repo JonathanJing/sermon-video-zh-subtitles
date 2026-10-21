@@ -5,11 +5,11 @@ from pathlib import Path
 import unittest
 from unittest.mock import patch
 
-from scripts import sermon_strict_locale as subject
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.text.strict import locale as subject
 from tongxing_production.review import review_budget as budget
 from tongxing_production.review import contracts as c
-from scripts import sermon_strict_layer2 as strict
+from tongxing_production.text.strict import layer2 as strict
 from tongxing_production.text import candidate as producer
 from tests import test_sermon_strict_layer2 as fixtures
 from tests import test_sermon_strict_budget_adapter as budget_fixtures
@@ -203,7 +203,7 @@ class LocaleTests(unittest.TestCase):
 
     def test_locale_outputs_feed_real_gate_with_separate_synthetic_human_receipt(self):
         from tongxing_production.text import human_review as human
-        from scripts import sermon_strict_gate_admission as admission
+        from tongxing_production.text.strict import gate_admission as admission
         with self.f.session():
             result = self.run_locale()
         source, anchor, policy, rubric = map(c.decode_json, self.f.args)

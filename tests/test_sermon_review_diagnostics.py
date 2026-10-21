@@ -7,7 +7,7 @@ import unittest
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.review import contracts as c
 from tongxing_production.text import review_diagnostics as d
-from scripts import sermon_strict_layer2 as s
+from tongxing_production.text.strict import layer2 as s
 from tests import test_sermon_strict_layer2 as strict_fixtures
 from tongxing_production import path_aliases
 from tongxing_production.text import review_diagnostics as implementation

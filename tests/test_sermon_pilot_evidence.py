@@ -9,12 +9,12 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-from scripts import sermon_pilot_evidence as evidence
-from scripts import sermon_prefect_dag as pilot
-from scripts import sermon_dag_contract as contract
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.workflows.diagnostic import pilot_evidence as evidence
+from tongxing_production.orchestration.prefect import dag as pilot
+from tongxing_production.orchestration.prefect import contract
 from tongxing_production.observability import profile
-from scripts.sermon_execution_harness import work_lock
+from tongxing_production.orchestration.execution_harness import work_lock
 
 
 class PilotEvidenceTests(unittest.TestCase):
@@ -185,7 +185,7 @@ class PilotEngineEvidenceTests(unittest.TestCase):
                 plan = contract.make_plan(run_id=('3' if name=='complete' else '5')*64,
                     input_identity_sha256='4'*64, scenarios=scenarios, delay_seconds=.4)
                 plan_path = base/(name+'.json');plan_path.write_text(json.dumps(plan))
-                argv = [sys.executable, str(pilot.REPO/'scripts/run_sermon_prefect_dag.py'),
+                argv = [sys.executable, str(pilot.REPO/'tools/ops/run.py'), 'orchestration.prefect.run',
                         'mock', '--root', str(root), '--plan', str(plan_path)]
                 first = subprocess.run(argv, cwd=temp, capture_output=True, text=True, timeout=120)
                 self.assertEqual(first.returncode, 0 if name=='complete' else 2, (first.stdout[-4000:], first.stderr[-4000:]))

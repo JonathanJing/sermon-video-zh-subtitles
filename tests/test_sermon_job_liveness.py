@@ -9,8 +9,8 @@ import time
 import unittest
 from unittest.mock import patch
 
-from scripts import sermon_job_liveness as subject
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.orchestration import job_liveness as subject
 from tongxing_production.orchestration import jobs
 from tests import test_canonical_layer2_controller as fixtures
 
@@ -180,7 +180,7 @@ class LivenessTests(unittest.TestCase):
 import sys,time
 from pathlib import Path
 from tongxing_production.orchestration import jobs
-from scripts import sermon_job_liveness as liveness
+from tongxing_production.orchestration import job_liveness as liveness
 folder,mode,late=Path(sys.argv[1]),sys.argv[2],Path(sys.argv[3])
 if mode == 'no_start':
     time.sleep(5)
@@ -190,7 +190,7 @@ elif mode == 'no_finish':
 else:
     with liveness.report(folder,jobs._read(folder/'request.json')) as reporter:
         if mode == 'no_progress':
-            from scripts.sermon_execution_harness import bounded_process
+            from tongxing_production.orchestration.execution_harness import bounded_process
             bounded_process([sys.executable,'-c',
                 'import sys,time;from pathlib import Path;time.sleep(2);Path(sys.argv[1]).write_text("escaped")',
                 str(late)], timeout=4)

@@ -16,8 +16,8 @@ from tongxing_production.observability import progress as tracker
 from tongxing_production.observability import accounting
 from tongxing_production.observability import log_contract as contract
 from tongxing_production.observability import profile
-from scripts import sermon_run_progress as progress
-from scripts import weekly_pipeline_report as weekly
+from tongxing_production.observability import run_progress as progress
+from tongxing_production.observability import weekly_projection as weekly
 
 AT = "2026-09-30T00:00:10+00:00"
 SHA = "a" * 64

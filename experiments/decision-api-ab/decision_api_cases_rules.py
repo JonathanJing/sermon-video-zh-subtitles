@@ -421,7 +421,7 @@ def run_rule_a(case):
         return {'labels':{'formalScheduleStatus':result['formalScheduleStatus'],
                           'unchangedAudioCannotFitSerialTimeline':str(result['unchangedAudioCannotFitSerialTimeline']).lower()}}
     if adapter=='supervisor_recommend_action':
-        from scripts.sermon_production_supervisor import recommend_action
+        from tongxing_production.workflows.supervisor.production import recommend_action
         result=recommend_action(**evidence['stateInputs'])
         return {'labels':{'action':result['action'],'humanActionRequired':str(result['humanActionRequired']).lower()}}
     raise ValueError('unsupported_rule_adapter')

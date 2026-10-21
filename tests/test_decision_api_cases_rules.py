@@ -53,7 +53,7 @@ class RuleCasesTests(unittest.TestCase):
         for adapter,target,value in [
             ('plan_repair','scripts.sermon_repair_planning.plan_repair',{'action':'sentinel','status':'sentinel','reasonCode':'sentinel'}),
             ('provider_error','tongxing_production.compute.sermon_provider_error.diagnostic',{'reasonCode':'sentinel'}),
-            ('supervisor_recommend_action','scripts.sermon_production_supervisor.recommend_action',{'action':'sentinel','humanActionRequired':False})]:
+            ('supervisor_recommend_action','tongxing_production.workflows.supervisor.production.recommend_action',{'action':'sentinel','humanActionRequired':False})]:
             case=next(c for c in cases if c['a']['adapter']==adapter)
             with patch(target,return_value=value) as called:
                 result=rules.run_rule_a(case)

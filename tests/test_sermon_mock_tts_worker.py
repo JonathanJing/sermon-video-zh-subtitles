@@ -10,16 +10,16 @@ import time
 import unittest
 from unittest.mock import patch
 
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.observability import accounting
 from tongxing_production.observability import completion
 from tongxing_production.observability import durable
 from tongxing_production.observability import log_contract as logs
 from tongxing_production.observability import profile
-from scripts import sermon_mock_tts_contract as contract
-from scripts import sermon_mock_tts_worker as worker
+from tongxing_production.compute.mock_tts import contract
+from tongxing_production.compute.mock_tts import worker
 from tongxing_production.storage import snapshot as public
 from tongxing_production.review import contracts as c
-from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.orchestration import jobs
 
 
@@ -81,8 +81,7 @@ class WorkerFixture(unittest.TestCase):
                 'HTTP_PROXY': 'synthetic-do-not-inherit', 'UNAPPROVED_VARIABLE': 'synthetic'}):
             env = worker.environment(self.scope/'launcher')
         self.assertFalse({'OPENAI_API_KEY', 'HTTP_PROXY', 'UNAPPROVED_VARIABLE'} & set(env))
-        result = subprocess.run([sys.executable, '-I', worker.__file__, 'submit', '--request', str(path),
-            '--request-sha256', c.canonical_sha256(public.read_snapshot(path)[0])],
+        result = subprocess.run(worker.launcher('submit', path, c.canonical_sha256(public.read_snapshot(path)[0])),
             env=env, capture_output=True, text=True, timeout=15)
         self.assertEqual(result.returncode, 0, result.stderr)
         return json.loads(result.stdout)

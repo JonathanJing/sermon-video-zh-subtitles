@@ -8,10 +8,10 @@ import time
 import unittest
 from unittest.mock import patch
 
-from scripts import sermon_deterministic_controller as ctrl
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.workflows.supervisor import deterministic_controller as ctrl
 from tongxing_production.orchestration import jobs
-from scripts.sermon_production_supervisor import SupervisorConfig
+from tongxing_production.workflows.supervisor.production import SupervisorConfig
 
 
 class CrashWindowTests(unittest.TestCase):

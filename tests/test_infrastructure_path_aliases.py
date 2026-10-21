@@ -8,8 +8,9 @@ import unittest
 from unittest.mock import patch
 
 from experiments.local_experiment_log import deploy_tools
-from scripts import sermon_mock_tts_contract as mock_tts
-from scripts import sermon_prefect_dag as prefect
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.compute.mock_tts import contract as mock_tts
+from tongxing_production.orchestration.prefect import dag as prefect
 from tongxing_production import path_aliases
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -33,7 +34,7 @@ class InfrastructureAliasTests(unittest.TestCase):
 
     def test_closures_follow_a_byte_identical_move(self):
         before = prefect.code_identity(), mock_tts.implementation_sha256()
-        with self.aliased((ROOT/MEMBER).read_bytes()):
+        with self.aliased((ROOT/path_aliases.resolve(MEMBER)).read_bytes()):
             self.assertEqual((prefect.code_identity(), mock_tts.implementation_sha256()), before)
 
     def test_closures_hash_the_moved_bytes_not_the_legacy_file(self):
@@ -71,7 +72,7 @@ class InfrastructureAliasTests(unittest.TestCase):
         key = 'scripts/sermon_execution_harness.py'
         self.assertEqual(integration_check.dependency_path(key), ROOT/path_aliases.resolve(key))
         self.assertEqual(hashlib.sha256(integration_check.dependency_path(key).read_bytes()).hexdigest(),
-                         hashlib.sha256((ROOT/key).read_bytes()).hexdigest())
+                         hashlib.sha256((ROOT/path_aliases.resolve(key)).read_bytes()).hexdigest())
 
 
 if __name__ == '__main__':

@@ -318,6 +318,17 @@ class AudioQcTests(unittest.TestCase):
         text = "Jesús no nos deja solos en nuestros fracasos ni en nuestras dudas."
         self.assertTrue(score(text, text.replace("nuestras", "las"), "es", 0.88)[2])
 
+    def test_lexical_chinese_numerals_are_not_dropped_key_word_trials(self):
+        # 一 in 一起, 合一, 统一 is an ordinary word that TTS and ASR may normalise away (PR #432).
+        for text in ("静默和神的圣洁常常是连在一起的。", "我们在基督里合一。", "他们要统一。"):
+            with self.subTest(text=text):
+                self.assertIsNone(seeded.drop_key_word(text, "zh-Hans"))
+        # A number after 第, before a classifier, or sentence-final with a place value still is.
+        for text, heard in (("请看第八章。", "请看第章。"), ("请翻到启示录3章4节。", "请翻到启示录章4节。"),
+                            ("有三个人来了。", "有个人来了。"), ("那年他三十。", "那年他。")):
+            with self.subTest(text=text):
+                self.assertEqual(seeded.drop_key_word(text, "zh-Hans"), heard)
+
     def test_two_level_asr(self):
         self.assertEqual(audio_qc.asr_decision(True, None), "pass")
         self.assertEqual(audio_qc.asr_decision(False, None), "needs_secondary_asr")

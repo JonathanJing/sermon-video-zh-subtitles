@@ -177,6 +177,8 @@ jobs:
           packages/production/src/tongxing_production/workflows/dual_pdf/post_live.py
           scripts/run_sermon_production_supervisor_agent.py
           scripts/sermon_production_supervisor.py
+          packages/production/src/tongxing_production/workflows/supervisor/agent.py
+          packages/production/src/tongxing_production/workflows/supervisor/production.py
 
       - name: Evaluate simulated backend Layer 1-4 flow
         if: matrix.shard_index == 1

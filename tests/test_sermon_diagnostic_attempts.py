@@ -4,11 +4,12 @@ from pathlib import Path
 import tempfile
 import unittest
 
-from scripts import sermon_diagnostic_attempts as attempts, sermon_diagnostic_provider as provider
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.workflows.diagnostic import attempts
+from tongxing_production.workflows.diagnostic import provider
 from tongxing_production.review import review_budget as budget
 from tongxing_production.review import contracts as c
-from scripts import sermon_strict_layer2 as strict
+from tongxing_production.text.strict import layer2 as strict
 from tests import test_run_bounded_diagnostic as fixtures
 
 

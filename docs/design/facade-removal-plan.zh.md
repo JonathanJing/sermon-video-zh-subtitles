@@ -333,6 +333,10 @@ C1–C8 与 E 批合并后（C1 #1155、C2 #1165、C3 #1160、C4 #1170、C5 #115
 
 做这几组时的两点经验：附录 A 不统计把 `scripts/` 放进 `sys.path` 的测试里的裸 `from <门面> import`，删除前要另外 grep；删门面前要读门面自身的导入，门面可能顺带绑定了别的宿主（E 批的 `sermon_unified_capabilities` 绑定了编排 Backend，`tools/ops/run.py` 因此为 `orchestration.*`、`workflows.prepared.*` 增加了这项绑定）。
 
+### 7.1 D-5 闭包窗口（2026-10-20，草稿）
+
+在 `dev@810349e2` 上重跑附录 A：73 个门面，宿主点名 48 个（上表 39 个加 R2、R3、N2、N3 新留的 9 个）。窗口改宿主后删掉其中只属 (a) 组的 39 个；(a)+(b) 的 2 个、(a)+(c) 的 `sermon_pipeline` 和 Cloud Run 用的 `live_source_monitor`、`upload_file_to_gcs` 只是不再被宿主点名，门面保留。(d) 组随诊断链迁移出 v13 L1 兼容代后删掉 4 个，连同只属 (d) 的 `mfa_backend`。窗口后共有 18 个门面，留下的原因见 [scripts/ 迁移计划](scripts-remaining-migration-plan.zh.md) §11，身份变化见[生成记录](../reports/20261020-d5-window-implementation-generation.zh.md)。
+
 ## 附录 A 调用方普查脚本
 
 脚本不作为仓库文件提交：`tools/` 与 `scripts/` 都在统一 CLI 执行准入闭包里（§2），新增文件会改变该身份。先从本文抽到临时目录，再在仓库根目录用 worktree 的 `.venv` 运行（只读；会导入 `scripts.tongxing_host` 和四个闭包模块以读出物理闭包，不调用模型或远端）。`--table` 打印上表与分类合计，`--json` 打印每个门面的全部调用方文件。

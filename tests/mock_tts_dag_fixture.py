@@ -2,8 +2,9 @@
 from copy import deepcopy
 
 # Load this closure before the original continuation records its code identity.
-from scripts import sermon_mock_tts_dag as dag
-from scripts import sermon_mock_tts_control as control
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.workflows.diagnostic import mock_tts_dag as dag
+from tongxing_production.compute.mock_tts import control
 from tests.diagnostic_dag_fixture import DiagnosticDAGFixture
 
 
@@ -28,10 +29,10 @@ def resume_in_clean_process(payload_path):
     from pathlib import Path
     from scripts import tongxing_host  # noqa: F401  binds the production package ports
     from tongxing_production.observability import accounting
-    from scripts import sermon_bounded_business_callbacks as offline
+    from tongxing_production.workflows.diagnostic import bounded_business_callbacks as offline
     from scripts import tongxing_host  # noqa: F401  binds the production package ports
     from tongxing_production.review import contracts as c
-    from scripts.sermon_diagnostic_dag_session import DiagnosticSession
+    from tongxing_production.workflows.diagnostic.dag_session import DiagnosticSession
     value = json.loads(Path(payload_path).read_text())
     expected = value['continuation']['executionIdentity']
     for name, digest in expected['loadedProjectCodeSha256'].items():

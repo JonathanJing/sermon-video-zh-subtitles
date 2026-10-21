@@ -7,9 +7,9 @@ import sys
 import tempfile
 import unittest
 
-from scripts import sermon_business_prefect_flow as flow
-from scripts import sermon_bounded_business_callbacks as callbacks
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.workflows.diagnostic import business_prefect_flow as flow
+from tongxing_production.workflows.diagnostic import bounded_business_callbacks as callbacks
 from tongxing_production.review import contracts as c
 from tests import test_run_bounded_diagnostic as fixtures
 
@@ -85,9 +85,9 @@ class BusinessFlowTests(unittest.TestCase):
         self.assertTrue(all(row['productionEligible'] is False for row in result.values()))
 
     def test_actual_same_store_human_admission_and_speech_preparation_stop_at_voice(self):
-        from scripts import sermon_strict_gate_admission as admission
+        from tongxing_production.text.strict import gate_admission as admission
         from tongxing_production.text import human_review as human
-        from scripts import sermon_local_business_callbacks as local
+        from tongxing_production.workflows.diagnostic import local_business_callbacks as local
         from tests import test_prepare_target_language_speech_job as voice_fixtures
         from unittest.mock import patch
         scope_directory = str(Path(self.enterContext(tempfile.TemporaryDirectory())).resolve())
@@ -206,7 +206,7 @@ class BusinessFlowTests(unittest.TestCase):
         dag = flow.BusinessDAG(self.root, self.callbacks, self.nodes)
         self.root.rename(self.root.with_name('original-orchestration'))
         self.root.symlink_to(outside, target_is_directory=True)
-        from scripts import sermon_business_progress as progress
+        from tongxing_production.workflows.diagnostic import business_progress as progress
         with self.f.f.session(), self.assertRaises(ValueError): progress.update(dag)
         self.assertEqual(list(outside.iterdir()), [])
 
@@ -254,7 +254,7 @@ class BusinessFlowTests(unittest.TestCase):
     def test_admission_direct_paths_reject_external_cwd_and_absolute_escape_before_reads(self):
         from dataclasses import replace
         from unittest.mock import patch
-        from scripts import sermon_strict_gate_admission as admission
+        from tongxing_production.text.strict import gate_admission as admission
         root = self.callbacks.root
         config = admission.Configuration(self.callbacks.subject.config['runId'], 'zh-Hans',
             root / 'jobs', root / 'revisions', (root / 'revisions' / 'r1',),
@@ -287,7 +287,7 @@ class BusinessFlowTests(unittest.TestCase):
     def test_mutated_admission_paths_are_rechecked_before_frozen_input_reads(self):
         from dataclasses import replace
         from unittest.mock import patch
-        from scripts import sermon_strict_gate_admission as admission
+        from tongxing_production.text.strict import gate_admission as admission
         root = self.callbacks.root
         config = admission.Configuration(self.callbacks.subject.config['runId'], 'zh-Hans',
             root / 'jobs', root / 'revisions', (root / 'revisions' / 'r1',),
@@ -323,7 +323,7 @@ import json, sys, unittest
 from pathlib import Path
 sys.path.insert(0, sys.argv[1])
 from tests.test_sermon_business_prefect_flow import setup_business
-from scripts import sermon_business_prefect_flow as flow
+from tongxing_production.workflows.diagnostic import business_prefect_flow as flow
 owner=unittest.TestCase()
 f, transport, subject, nodes=setup_business(owner)
 try:

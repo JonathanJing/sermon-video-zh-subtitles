@@ -8,11 +8,11 @@ import json
 from pathlib import Path
 import unittest
 
-from tongxing_production.observability import accounting
-from scripts import sermon_bounded_business_callbacks as callbacks
-from scripts import sermon_diagnostic_provider as provider
-from scripts import sermon_diagnostic_source_evidence as evidence
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.observability import accounting
+from tongxing_production.workflows.diagnostic import bounded_business_callbacks as callbacks
+from tongxing_production.workflows.diagnostic import provider
+from tongxing_production.workflows.diagnostic import source_evidence as evidence
 from tongxing_production.observability import profile
 from tongxing_production.review import review_budget as budget
 from tongxing_production.review import contracts as c
@@ -42,9 +42,10 @@ class DiagnosticDAGFixture(unittest.TestCase):
 
     def setUp(self):
         # Import the continuation closure before freezing loaded-module hashes.
-        from scripts import sermon_diagnostic_dag_session, sermon_diagnostic_prefect_flow
-        from scripts import sermon_diagnostic_preview_worker
-        from scripts import sermon_diagnostic_delivery_preflight
+        from tongxing_production.workflows.diagnostic import dag_session as sermon_diagnostic_dag_session
+        from tongxing_production.workflows.diagnostic import prefect_flow as sermon_diagnostic_prefect_flow
+        from tongxing_production.workflows.diagnostic import preview_worker as sermon_diagnostic_preview_worker
+        from tongxing_production.workflows.diagnostic import delivery_preflight as sermon_diagnostic_delivery_preflight
         self.original = bounded_fixture.BoundedRunTests()
         self.original.setUp(); self.addCleanup(self.original.doCleanups)
         self.root = self.original.f.root.resolve()

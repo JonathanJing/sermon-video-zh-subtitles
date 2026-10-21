@@ -7,7 +7,8 @@ import hashlib
 import json
 from pathlib import Path
 
-from scripts import codex_layer2_diagnostic as diagnostic
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tools.development import codex_layer2_diagnostic as diagnostic
 
 
 def digest(value):

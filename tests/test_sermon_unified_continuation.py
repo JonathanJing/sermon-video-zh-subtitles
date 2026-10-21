@@ -143,7 +143,7 @@ class ContinuationTests(unittest.TestCase):
         self.assertEqual(second['manifest']['source'],self.manifest['source'])
         self.assertEqual(c.read(second['receiptPath'])['modelDispatches'],0)
         self.assertFalse(c.read(second['receiptPath'])['humanApprovalCreated'])
-        from scripts import inspect_canonical_packages
+        from tongxing_production.delivery import inspect_canonical_packages
         checked = inspect_canonical_packages.inspect(Path(second['manifest']['bindings']['inspection']['path']))
         self.assertEqual(checked['nodes']['source']['status'], 'validated')
         self.assertEqual(checked['nodes']['text.zh-Hans']['reasonCode'], 'policy_not_validated')

@@ -15,8 +15,8 @@ import time
 import unittest
 from unittest.mock import patch
 
-from scripts import canonical_durable_jobs as durable
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.orchestration import canonical_durable_jobs as durable
 from tongxing_production.compute import api_concurrency
 from tongxing_production.orchestration import jobs
 from tongxing_production.text import controller as subject

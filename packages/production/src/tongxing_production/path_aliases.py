@@ -230,6 +230,85 @@ OBSERVABILITY = {   # tongxing_production.observability, batches I3-I4
     'scripts/four_layer_progress.py': PRODUCTION + 'observability/progress.py',
 }
 
+# Closure window D-5: the files the host, the Prefect and mock TTS closures, Temporal's
+# dependencySha256 and the L1 compatibility table named, moved with one recalibration.
+D5_WINDOW = {
+    # the harness, guarded command, job liveness, release workflow and canonical durable jobs
+    'scripts/canonical_durable_jobs.py': PRODUCTION + 'orchestration/canonical_durable_jobs.py',
+    'scripts/sermon_execution_harness.py': PRODUCTION + 'orchestration/execution_harness.py',
+    'scripts/sermon_guarded_command.py': PRODUCTION + 'orchestration/guarded_command.py',
+    'scripts/sermon_job_liveness.py': PRODUCTION + 'orchestration/job_liveness.py',
+    'scripts/sermon_release_workflow.py': PRODUCTION + 'orchestration/release_workflow.py',
+    # the mock-only Prefect pilot (its code_identity() keys)
+    'scripts/run_sermon_prefect_dag.py': PRODUCTION + 'orchestration/prefect/run.py',
+    'scripts/sermon_dag_contract.py': PRODUCTION + 'orchestration/prefect/contract.py',
+    'scripts/sermon_model_resources.py': PRODUCTION + 'orchestration/prefect/model_resources.py',
+    'scripts/sermon_prefect_dag.py': PRODUCTION + 'orchestration/prefect/dag.py',
+    # the decision budget and the Gemini snapshot transport
+    'scripts/sermon_decision_budget.py': PRODUCTION + 'orchestration/supervisor/decision_budget.py',
+    'scripts/sermon_gemini_supervisor.py': PRODUCTION + 'orchestration/supervisor/gemini.py',
+    # the synthetic TTS job (its implementation_sha256() keys)
+    'scripts/sermon_mock_tts_contract.py': PRODUCTION + 'compute/mock_tts/contract.py',
+    'scripts/sermon_mock_tts_control.py': PRODUCTION + 'compute/mock_tts/control.py',
+    'scripts/sermon_mock_tts_worker.py': PRODUCTION + 'compute/mock_tts/worker.py',
+    # the trace export and run progress
+    'scripts/export_observability_trace.py': PRODUCTION + 'observability/observability_trace.py',
+    'scripts/sermon_run_progress.py': PRODUCTION + 'observability/run_progress.py',
+    # the strict Layer 2 chain
+    'scripts/sermon_strict_budget_adapter.py': PRODUCTION + 'text/strict/budget_adapter.py',
+    'scripts/sermon_strict_candidate_bridge.py': PRODUCTION + 'text/strict/candidate_bridge.py',
+    'scripts/sermon_strict_controller.py': PRODUCTION + 'text/strict/controller.py',
+    'scripts/sermon_strict_gate_admission.py': PRODUCTION + 'text/strict/gate_admission.py',
+    'scripts/sermon_strict_layer2.py': PRODUCTION + 'text/strict/layer2.py',
+    'scripts/sermon_strict_locale.py': PRODUCTION + 'text/strict/locale.py',
+    'scripts/sermon_strict_repair_planner.py': PRODUCTION + 'text/strict/repair_planner.py',
+    # the production supervisor and its agents (Temporal dependencySha256 names it)
+    'scripts/run_sermon_production_supervisor_agent.py': PRODUCTION + 'workflows/supervisor/agent.py',
+    'scripts/sermon_agents_supervisor.py': PRODUCTION + 'workflows/supervisor/agents.py',
+    'scripts/sermon_codex_supervisor.py': PRODUCTION + 'workflows/supervisor/codex.py',
+    'scripts/sermon_deterministic_controller.py': PRODUCTION + 'workflows/supervisor/deterministic_controller.py',
+    'scripts/sermon_end_to_end.py': PRODUCTION + 'workflows/supervisor/end_to_end.py',
+    'scripts/sermon_production_supervisor.py': PRODUCTION + 'workflows/supervisor/production.py',
+    # the diagnostic chain (decision D-4) and the agent diagnostic contracts moved in N4
+    'scripts/inspect_sermon_prefect_pilot.py': PRODUCTION + 'workflows/diagnostic/inspect_prefect_pilot.py',
+    'scripts/run_bounded_diagnostic.py': PRODUCTION + 'workflows/diagnostic/bounded.py',
+    'scripts/run_bounded_diagnostic_continuation.py': PRODUCTION + 'workflows/diagnostic/bounded_continuation.py',
+    'scripts/run_diagnostic_new_attempt.py': PRODUCTION + 'workflows/diagnostic/new_attempt.py',
+    'scripts/sermon_agent_diagnostics.py': PRODUCTION + 'workflows/diagnostic/agent_diagnostics.py',
+    'scripts/sermon_agent_diagnostics_contracts.py': PRODUCTION + 'workflows/diagnostic/agent_contracts.py',
+    'scripts/sermon_agent_diagnostics_live.py': PRODUCTION + 'workflows/diagnostic/agent_diagnostics_live.py',
+    'scripts/sermon_bounded_business_callbacks.py': PRODUCTION + 'workflows/diagnostic/bounded_business_callbacks.py',
+    'scripts/sermon_business_prefect_flow.py': PRODUCTION + 'workflows/diagnostic/business_prefect_flow.py',
+    'scripts/sermon_business_progress.py': PRODUCTION + 'workflows/diagnostic/business_progress.py',
+    'scripts/sermon_cached_fresh_diagnostic_source.py': PRODUCTION + 'workflows/diagnostic/cached_fresh_source.py',
+    'scripts/sermon_delivery_intent_binding.py': PRODUCTION + 'workflows/diagnostic/delivery_intent_binding.py',
+    'scripts/sermon_dev_diagnostic_snapshot.py': PRODUCTION + 'workflows/diagnostic/dev_snapshot.py',
+    'scripts/sermon_diagnostic_attempts.py': PRODUCTION + 'workflows/diagnostic/attempts.py',
+    'scripts/sermon_diagnostic_context.py': PRODUCTION + 'workflows/diagnostic/context.py',
+    'scripts/sermon_diagnostic_dag_session.py': PRODUCTION + 'workflows/diagnostic/dag_session.py',
+    'scripts/sermon_diagnostic_delivery_preflight.py': PRODUCTION + 'workflows/diagnostic/delivery_preflight.py',
+    'scripts/sermon_diagnostic_prefect_flow.py': PRODUCTION + 'workflows/diagnostic/prefect_flow.py',
+    'scripts/sermon_diagnostic_preview_worker.py': PRODUCTION + 'workflows/diagnostic/preview_worker.py',
+    'scripts/sermon_diagnostic_provider.py': PRODUCTION + 'workflows/diagnostic/provider.py',
+    'scripts/sermon_diagnostic_source_evidence.py': PRODUCTION + 'workflows/diagnostic/source_evidence.py',
+    'scripts/sermon_fresh_diagnostic.py': PRODUCTION + 'workflows/diagnostic/fresh.py',
+    'scripts/sermon_fresh_diagnostic_source.py': PRODUCTION + 'workflows/diagnostic/fresh_source.py',
+    'scripts/sermon_fresh_full_dag.py': PRODUCTION + 'workflows/diagnostic/fresh_full_dag.py',
+    'scripts/sermon_fresh_source_evidence.py': PRODUCTION + 'workflows/diagnostic/fresh_source_evidence.py',
+    'scripts/sermon_fresh_source_prefect.py': PRODUCTION + 'workflows/diagnostic/fresh_source_prefect.py',
+    'scripts/sermon_fresh_source_stages.py': PRODUCTION + 'workflows/diagnostic/fresh_source_stages.py',
+    'scripts/sermon_historical_layer2.py': PRODUCTION + 'workflows/diagnostic/historical_layer2.py',
+    'scripts/sermon_historical_native_seed.py': PRODUCTION + 'workflows/diagnostic/historical_native_seed.py',
+    'scripts/sermon_local_business_callbacks.py': PRODUCTION + 'workflows/diagnostic/local_business_callbacks.py',
+    'scripts/sermon_mock_tts_dag.py': PRODUCTION + 'workflows/diagnostic/mock_tts_dag.py',
+    'scripts/sermon_native_preview_runtime.py': PRODUCTION + 'workflows/diagnostic/native_preview_runtime.py',
+    'scripts/sermon_pilot_evidence.py': PRODUCTION + 'workflows/diagnostic/pilot_evidence.py',
+    # operator and development tools outside the package (Temporal dependencySha256 names the Saturday harness)
+    'scripts/codex_layer2_diagnostic.py': 'tools/development/codex_layer2_diagnostic.py',
+    'scripts/run_codex_layer2_test.py': 'tools/development/run_codex_layer2_test.py',
+    'scripts/run_saturday_harness.py': 'tools/ops/run_saturday_harness.py',
+}
+
 # I1 moved generic portions of the legacy review module to contracts; include them
 # in closures that still identify the combined legacy module.
 # Package files that took over part of a split legacy file; closures that listed
@@ -247,7 +326,7 @@ SPLIT_MEMBERS = {
 }
 
 PATH_ALIASES = {**COMPUTE, **CONTRACTS, **STORAGE, **OBSERVABILITY, **LAYER1, **LAYER2, **LAYER3, **LAYER4,
-                **REVIEW, **WORKFLOWS}
+                **REVIEW, **WORKFLOWS, **D5_WINDOW}
 
 
 def resolve(key):

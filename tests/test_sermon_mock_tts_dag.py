@@ -16,15 +16,15 @@ import time
 import unittest
 from unittest.mock import patch
 
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.observability import accounting
 from tongxing_production.observability import completion
 from tongxing_production.observability import log_contract as logs
 from tongxing_production.observability import profile
-from scripts import sermon_mock_tts_dag as dag
+from tongxing_production.workflows.diagnostic import mock_tts_dag as dag
 from tongxing_production.review import contracts as c
-from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.orchestration import jobs
-from scripts.sermon_diagnostic_dag_session import DiagnosticSession
+from tongxing_production.workflows.diagnostic.dag_session import DiagnosticSession
 from tests.mock_tts_dag_fixture import MockTTSDAGFixture
 
 
@@ -282,9 +282,9 @@ class ActualMockTTSPrefectTests(unittest.TestCase):
 import json, os, subprocess, sys, time
 from pathlib import Path
 sys.path.insert(0, sys.argv[1])
-from scripts import sermon_mock_tts_dag as dag
+from tongxing_production.workflows.diagnostic import mock_tts_dag as dag
 from tongxing_production.orchestration import jobs
-from scripts.sermon_diagnostic_dag_session import DiagnosticSession
+from tongxing_production.workflows.diagnostic.dag_session import DiagnosticSession
 from tests.mock_tts_dag_fixture import MockTTSDAGFixture
 from tests.mock_tts_sdk_diagnostics import result_summary, preserve_evidence
 f=MockTTSDAGFixture(); f.setUp()

@@ -5,12 +5,12 @@ from pathlib import Path
 import tempfile
 import unittest
 
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.observability import accounting
-from scripts import sermon_diagnostic_source_evidence as evidence
+from tongxing_production.workflows.diagnostic import source_evidence as evidence
 from tongxing_production.compute import provider_limits as limits
 from tongxing_production.review import review_budget as budget
 from tongxing_production.review import contracts as c
-from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.compute import transcription_request as transcription
 from tests import test_sermon_diagnostic_context as source_fixtures
 from tests.test_sermon_diagnostic_provider import config

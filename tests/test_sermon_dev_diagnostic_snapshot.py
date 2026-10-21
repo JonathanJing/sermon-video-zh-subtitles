@@ -12,13 +12,13 @@ import unittest
 import xml.etree.ElementTree as ET
 from unittest.mock import patch
 
-from scripts import sermon_dev_diagnostic_snapshot as dev
-from scripts import sermon_diagnostic_dag_session as sessions
-from tongxing_production.observability import accounting
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.workflows.diagnostic import dev_snapshot as dev
+from tongxing_production.workflows.diagnostic import dag_session as sessions
+from tongxing_production.observability import accounting
 from tongxing_production.observability import profile
 from tongxing_production.review import contracts as c
-from scripts import sermon_strict_layer2 as immutable
+from tongxing_production.text.strict import layer2 as immutable
 from tests.diagnostic_dag_fixture import DiagnosticDAGFixture
 
 
@@ -185,7 +185,7 @@ class DevSnapshotTests(unittest.TestCase):
         self.no_network.assert_not_called()
 
     def test_exact_pre_provider_identity_reason_survives_snapshot_without_private_fields(self):
-        from scripts import sermon_historical_identity as identity
+        from tongxing_production.workflows.diagnostic import historical_identity as identity
         reason='historical_current_code_changed'
         nodes={'text.es':dict(nodeId='text.es',executionStatus='blocked',processed=False,
             readyForDownstream=False,reason=reason,failurePhase='before_locale_provider_dispatch',
@@ -213,7 +213,7 @@ class DevSnapshotTests(unittest.TestCase):
         self.assertEqual(dev.stage_presentation(node,candidate=False,preview=False),('blocked','unclassified_failure'))
 
     def test_identity_reason_catalog_is_exact_no_prefix_or_message_projection(self):
-        from scripts import sermon_historical_identity as identity
+        from tongxing_production.workflows.diagnostic import historical_identity as identity
         for reason in identity.PRE_PROVIDER_CODES:
             with self.subTest(reason=reason):
                 node=dict(reason=reason,executionStatus='blocked',readyForDownstream=False)

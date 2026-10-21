@@ -6,12 +6,12 @@ from pathlib import Path
 import tempfile
 import unittest
 from unittest import mock
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production import path_aliases
 from tongxing_production.observability import accounting
-from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.observability import cache_observation as cache
 from tongxing_production.observability import workflow_evidence as evidence
-from scripts import weekly_pipeline_report as weekly
+from tongxing_production.observability import weekly_projection as weekly
 from tests import test_weekly_pipeline_report as weekly_tests
 from tests import test_accounting_receipt_conflicts as receipt_tests
 
@@ -175,7 +175,7 @@ class ObservabilitySufficiencyTests(unittest.TestCase):
         self.assertEqual(t.calls, [])
 
     def test_safe_export_reprojects_without_paths_or_error_text(self):
-        from scripts import export_observability_trace as exporter
+        from tongxing_production.observability import observability_trace as exporter
         t = self.fixture(weekly_tests.WeeklyPipelineReportTests)
         for row in t.rows:
             row.update(pid=123, thread='private-thread', error={'message': 'SECRET CONTENT'})
@@ -203,7 +203,7 @@ class ObservabilitySufficiencyTests(unittest.TestCase):
         self.assertEqual(run['status'], 'partial')
 
     def test_local_model_identity_keeps_provider_usage_not_applicable(self):
-        from scripts import sermon_local_model_observation as local
+        from tongxing_production.observability import local_model_observation as local
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             with accounting.accounting_session(root, 'local-test'):
@@ -232,8 +232,8 @@ class ObservabilitySufficiencyTests(unittest.TestCase):
                     runner.require_plugin_identity(Path('unused'), 'a'*64)
 
     def test_same_event_identity_conflicting_receipts_never_select_first_usage(self):
-        from scripts import export_observability_trace as exporter
-        from scripts import sermon_logs
+        from tongxing_production.observability import observability_trace as exporter
+        from tongxing_production.observability import logs as sermon_logs
         t = self.fixture(receipt_tests.ReceiptConflictTests)
         for changes in ({'usage': {**t.api['usage'], 'inputTokens': 200}},
                         {'model': 'gpt-6-sol'}, {'cost': {**t.api['cost'], 'estimatedUsd': 999}}):
@@ -265,8 +265,8 @@ class ObservabilitySufficiencyTests(unittest.TestCase):
             self.assertEqual(report['receiptIntegrity']['status'], 'conflicted')
 
     def test_same_event_identity_sdk_conflict_survives_export(self):
-        from scripts import export_observability_trace as exporter
-        from scripts import sermon_logs
+        from tongxing_production.observability import observability_trace as exporter
+        from tongxing_production.observability import logs as sermon_logs
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             with accounting.accounting_session(root, 'sdk-test'):
@@ -288,7 +288,7 @@ class ObservabilitySufficiencyTests(unittest.TestCase):
                 self.assertEqual(weekly.project(root/str(i))['receiptIntegrity']['status'], 'conflicted')
 
     def test_export_preserves_safe_execution_request_and_parent_identities(self):
-        from scripts import export_observability_trace as exporter
+        from tongxing_production.observability import observability_trace as exporter
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             with accounting.accounting_session(root, 'parent'):
@@ -312,7 +312,7 @@ class ObservabilitySufficiencyTests(unittest.TestCase):
             self.assertNotIn('SECRET', (root/'export/events.jsonl').read_text())
 
     def test_export_hash_and_events_share_locked_snapshot_despite_later_append(self):
-        from scripts import export_observability_trace as exporter
+        from tongxing_production.observability import observability_trace as exporter
         import fcntl
         import threading
         t = self.fixture(weekly_tests.WeeklyPipelineReportTests); t.result()

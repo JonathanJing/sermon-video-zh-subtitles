@@ -7,11 +7,11 @@ import sys
 import unittest
 from unittest.mock import patch
 
-from tongxing_production.observability import accounting
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.observability import accounting
 from tongxing_production.observability import log_contract as logs
-from scripts import sermon_mock_tts_control as control
-from scripts import sermon_mock_tts_worker as worker
+from tongxing_production.compute.mock_tts import control
+from tongxing_production.compute.mock_tts import worker
 from tongxing_production.review import contracts as c
 from tests.test_sermon_mock_tts_worker import WorkerFixture
 
@@ -22,10 +22,10 @@ class MockTTSLaunchTests(WorkerFixture):
         # No job, task or provider is launched by this probe.
         env = worker.environment(self.scope/'probe')
         code = ('import sys; sys.path.insert(0, sys.argv[1]); '
-                'from scripts.sermon_mock_tts_worker import require_environment; '
+                'from tongxing_production.compute.mock_tts.worker import require_environment; '
                 'require_environment(); print("validated")')
         result = subprocess.run([sys.executable, '-I', '-c', code,
-            str(Path(worker.__file__).resolve().parents[1])], env=env,
+            str(Path(__file__).resolve().parents[1])], env=env,
             capture_output=True, text=True, timeout=10)
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertEqual(result.stdout.strip(), 'validated')

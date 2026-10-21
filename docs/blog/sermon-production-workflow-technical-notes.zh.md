@@ -64,7 +64,7 @@ Layer 1 身份变化影响全部语言；Layer 2/3 修订只使对应语言的�
 
 | 职责 | 当前代码和约束 | 已有验证与边界 |
 |---|---|---|
-| 固定流程推进 | [legacy controller](../../scripts/sermon_deterministic_controller.py) 的 `recommend`/`Controller`；固定 action registry，派发或等待后 tick 返回，绑定定义、状态与授权 | `legacy_page_release` adapter，不能冒充 canonical 四层；无 LLM 的夹具行为不能换算真实整周 token 收益 |
+| 固定流程推进 | [legacy controller](../../packages/production/src/tongxing_production/workflows/supervisor/deterministic_controller.py) 的 `recommend`/`Controller`；固定 action registry，派发或等待后 tick 返回，绑定定义、状态与授权 | `legacy_page_release` adapter，不能冒充 canonical 四层；无 LLM 的夹具行为不能换算真实整周 token 收益 |
 | Canonical 业务依赖 | [DAG 定义](../../packages/production/src/tongxing_production/contracts/pipeline_definition.py) 按语言建立 Source→Text→Audio→Page，身份变化使对应后继失效 | 一般 planner `dispatchEnabled=false`，依赖可投影不等于全链可执行 |
 | 固定 Layer 2 dispatch | [Layer 2 controller](../../packages/production/src/tongxing_production/text/controller.py) 接入实际 producer、锁、durable jobs 和缓存 | 默认只读，显式 execute 才可派发；同 run 最多一个 active locale job，组内按冻结 policy 1–3 workers；验证仍以固定模型响应为主，停在人审 |
 | 有界歧义判断 | [bounded decision](../../packages/production/src/tongxing_production/orchestration/supervisor/bounded_decision.py) 的 `build_packet`/`propose`/`validate_decision` | 32 KiB、16 个 evidence refs、一次 propose 最多一轮，允许预算为 1–2 attempts；先预约再调用注入 responder，不创建 live SDK，不自动执行建议 |
@@ -85,7 +85,7 @@ Agents API Supervisor 的受限工具、原 session 恢复和本地持久结果�
 | 人审／等待 | 材料就绪、发起审核、批准的实际时间，版本变动及再次审核范围 | 分批提供清晰材料；不能用模型样本外推人工响应时间 |
 | 编排／诊断／工程 | tick、inspect、packet、decision、工具等待；工程任务单列 | 减少正常路径 Agent turn，限定输入和终点；新错误修成稳定规则 |
 
-当前没有完整真实周产的依赖、队列、跨进程与全部 usage 覆盖，因此上表是测量优先级，不是瓶颈排名。[weekly_pipeline_report.py](../../scripts/weekly_pipeline_report.py)按 leaf spans、时间域与依赖投影；证据不完整时 critical path 保持不可用。不能从任务百分比或文件 mtime 补造时间。
+当前没有完整真实周产的依赖、队列、跨进程与全部 usage 覆盖，因此上表是测量优先级，不是瓶颈排名。[weekly_pipeline_report.py](../../tools/ops/weekly_pipeline_report.py)按 leaf spans、时间域与依赖投影；证据不完整时 critical path 保持不可用。不能从任务百分比或文件 mtime 补造时间。
 
 9 月 28 日 178 秒同源三语实验每臂 135 组：Astra→Sol 完整组调用时间 p50 为 8.80 秒，Sol→Sol 为 9.71 秒；后者估算 token 费用低约 51%，不代表更快。Luna→Sol 的 10 个结构失败也必须计入选择。这里仅比较完整组初译加复核，未包含失败恢复、人审、TTS、发布或完整周次；正式政策未因这个实验改变。[实验报告](../reports/20260928-model-production-ab-results.zh.md)保留费用快照、失败与盲评缺口。
 

@@ -8,7 +8,7 @@ from pathlib import Path
 import sys
 if __package__ in (None,''):
     sys.path.insert(0,str(Path(__file__).resolve().parents[2]))
-from scripts import codex_layer2_diagnostic as diagnostic
+from tools.development import codex_layer2_diagnostic as diagnostic
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.text import policy as policies
 from scripts.language_review_plugins import diagnostic_pinned_quotes as quotes

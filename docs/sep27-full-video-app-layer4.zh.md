@@ -10,7 +10,7 @@
 
 ## 命令与输出
 
-`scripts/build_full_video_app_release.py` 有三个子命令，均使用仓库 Python 环境：
+`tools/ops/run.py delivery.app_release`（实现 `delivery/app_release.py`）有三个子命令，均使用仓库 Python 环境：
 
 1. `prepare` 输入同一 `ready_for_translation` 英文包，以及每个发布 locale 的完整候选与人审收据、短口播候选与人审收据、音频包与整轨人审／ASR 收据、已批准完整文稿 JSON。`--locales` 可指定非空且无重复的 `zh-Hans`、`ko`、`es` 子集；每种 `--full-candidate`、`--full-review-receipt`、`--spoken-candidate`、`--spoken-review-receipt`、`--audio-package`、`--audio-review-receipt`、`--audio-screening-receipt`、`--full-content` 都只传所选语言的 `LOCALE=PATH`。metadata approval v1 继续只接受三语全批；v2 按提案 SHA、page/date 和显式 `approvedLocales` 绑定恰好同一子集。中文日期标签模式仍仅支持中文。另传 `--source`、`--metadata-approval`、`--metadata-proposal`、`--page-id`、`--date`、`--out`。页面显示字段须与原提案和批准记录完全一致。输出目录必须不存在。实际参数见 `prepare --help`。
 2. `prepare --out PREPARED` 每种语言生成一张静态完整阅读页、原样复制的完整文稿 JSON、规范路径 MP3、短口播字幕 JSON，以及一份 `candidate` Release Package。`PREPARED/preparation-manifest.json` 记录所选语言的 4 项用户资产 SHA。静态阅读页按内容包的 `durationSeconds` 显示时长，不依赖脚本；音轨不覆盖网页原有 hashed 路径。此时所有 HTTP、设备、现场状态都是 `not_run`。

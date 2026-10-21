@@ -13,7 +13,7 @@ from unittest.mock import AsyncMock, patch
 
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.workflows.dual_pdf import codex_local as local
-from scripts import run_sermon_production_supervisor_agent as supervisor
+from tongxing_production.workflows.supervisor import agent as supervisor
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.observability import accounting
 

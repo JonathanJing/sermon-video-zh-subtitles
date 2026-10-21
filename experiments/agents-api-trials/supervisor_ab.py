@@ -25,12 +25,11 @@ ROOT = Path(__file__).resolve().parents[2]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from scripts import sermon_agents_supervisor as supervisor  # noqa: E402
-from scripts.run_sermon_production_supervisor_agent import (  # noqa: E402
-    SupervisorDecision, supervisor_instructions, verify_decision,
-)
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.workflows.supervisor import agents as supervisor  # noqa: E402
+from tongxing_production.workflows.supervisor.agent import SupervisorDecision, supervisor_instructions, verify_decision
 from scripts.sermon_agents_api import AgentsAPIClient, run_agent_session  # noqa: E402
-from scripts.sermon_production_supervisor import SupervisorConfig  # noqa: E402
+from tongxing_production.workflows.supervisor.production import SupervisorConfig  # noqa: E402
 
 MODELS = ("gpt-6-sol", "gpt-6-luna")
 FIXTURES = Path(__file__).with_name("supervisor_ab_fixtures.json")

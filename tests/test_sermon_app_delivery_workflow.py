@@ -17,14 +17,14 @@ import unittest
 from unittest.mock import patch
 
 from tests.job_store_patches import patch_job_store  # G1: job store primitives live in two modules
-from tongxing_production.delivery import app_delivery as app
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.delivery import app_delivery as app
 from tongxing_production.delivery import app_workflow as workflow
-from scripts import sermon_end_to_end as end_to_end
-from scripts import sermon_production_supervisor as supervisor
+from tongxing_production.workflows.supervisor import end_to_end
+from tongxing_production.workflows.supervisor import production as supervisor
 from tongxing_production.orchestration import jobs
 from tongxing_production.workflows.dual_pdf import codex_local as local
-from scripts import run_sermon_production_supervisor_agent as agent
+from tongxing_production.workflows.supervisor import agent
 from tests import test_sermon_app_delivery as fixtures
 from tests import test_run_codex_local_sermon_production as local_fixtures
 

@@ -146,6 +146,17 @@ C_FACADE_REMOVAL_SOURCE_SHA256 = {**FACADE_REMOVAL_SOURCE_SHA256,
 C_FACADE_REMOVAL_MIGRATION = 'c-batch-facade-import-removal-v12'
 C_FACADE_REMOVAL_CHANGED = ['scripts/sermon_diagnostic_context.py', 'scripts/sermon_fresh_diagnostic_source.py']
 
+# Closure window D-5: the same two producers moved into workflows/diagnostic/ (context.py,
+# fresh_source.py). They import the moved strict chain and diagnostic modules by package
+# name, take the checkout root from the host and no longer import the host themselves,
+# with the same output bytes. The checkout before was exactly the v12 current table.
+D5_MOVE_HISTORICAL_SHA256 = C_FACADE_REMOVAL_SOURCE_SHA256
+D5_MOVE_SOURCE_SHA256 = {**C_FACADE_REMOVAL_SOURCE_SHA256,
+    'scripts/sermon_diagnostic_context.py': '1e122cf32911504c5e0cce742c29d67654e1adbfc8e7c0135f8ac10433f84a91',
+    'scripts/sermon_fresh_diagnostic_source.py': '58eb9afbe0983f99248b3b1ccace5eeb6e348850aab3cc3797ff0555ee894109'}
+D5_MOVE_MIGRATION = 'd5-window-diagnostic-package-move-v13'
+D5_MOVE_CHANGED = ['scripts/sermon_diagnostic_context.py', 'scripts/sermon_fresh_diagnostic_source.py']
+
 
 def verify(historical,current,planned,binding):
     _require(type(historical) is dict and type(current) is dict and type(planned) is dict
@@ -166,13 +177,15 @@ def verify(historical,current,planned,binding):
     jobs_split = historical==JOBS_SPLIT_HISTORICAL_SHA256 and current==JOBS_SPLIT_SOURCE_SHA256
     facade_removal = historical==FACADE_REMOVAL_HISTORICAL_SHA256 and current==FACADE_REMOVAL_SOURCE_SHA256
     c_facade_removal = historical==C_FACADE_REMOVAL_HISTORICAL_SHA256 and current==C_FACADE_REMOVAL_SOURCE_SHA256
+    d5_move = historical==D5_MOVE_HISTORICAL_SHA256 and current==D5_MOVE_SOURCE_SHA256
     package_move = (move or producer_move or transport_move or contracts_split or storage_move or measure_move
-                    or jobs_split or facade_removal or c_facade_removal)
+                    or jobs_split or facade_removal or c_facade_removal or d5_move)
     changed = (CHANGED if original else MOVE_CHANGED if move else PRODUCER_MOVE_CHANGED if producer_move
         else TRANSPORT_MOVE_CHANGED if transport_move else CONTRACTS_SPLIT_CHANGED if contracts_split
         else STORAGE_MOVE_CHANGED if storage_move else MEASURE_MOVE_CHANGED if measure_move
         else JOBS_SPLIT_CHANGED if jobs_split else FACADE_REMOVAL_CHANGED if facade_removal
-        else C_FACADE_REMOVAL_CHANGED if c_facade_removal else ['scripts/sermon_fresh_diagnostic_source.py'])
+        else C_FACADE_REMOVAL_CHANGED if c_facade_removal else D5_MOVE_CHANGED if d5_move
+        else ['scripts/sermon_fresh_diagnostic_source.py'])
     _require((original or followup or extraction or package_move) and {path for path in current if current[path]!=historical[path]}==set(changed),
         'source_producer_compatibility_unknown_revision')
     _require(not contracts_split or all(recorded(planned,path)==sha
@@ -192,7 +205,8 @@ def verify(historical,current,planned,binding):
         else TRANSPORT_MOVE_MIGRATION if transport_move else CONTRACTS_SPLIT_MIGRATION if contracts_split
         else STORAGE_MOVE_MIGRATION if storage_move else MEASURE_MOVE_MIGRATION if measure_move
         else JOBS_SPLIT_MIGRATION if jobs_split else FACADE_REMOVAL_MIGRATION if facade_removal
-        else C_FACADE_REMOVAL_MIGRATION if c_facade_removal else EXTRACTION_MIGRATION if extraction else FOLLOWUP_MIGRATION)
+        else C_FACADE_REMOVAL_MIGRATION if c_facade_removal else D5_MOVE_MIGRATION if d5_move
+        else EXTRACTION_MIGRATION if extraction else FOLLOWUP_MIGRATION)
     return {'schemaVersion':SCHEMA,'migrationId':migration,'binding':binding,
         'historicalProducerSha256':historical,'currentInspectorProducerSha256':current,
         'changedModules':changed,'migrationCodeSha256':_source.current().code.module_sha256(sys.modules[__name__]),

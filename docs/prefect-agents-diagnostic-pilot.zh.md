@@ -24,7 +24,7 @@
 |---|---|---|---|
 | Prefect | 在不改变业务效果的条件下，是否能让依赖执行、等待与崩溃恢复更容易操作和核对？ | [canonical DAG](../packages/production/src/tongxing_production/contracts/pipeline_definition.py)、[durable jobs](../packages/production/src/tongxing_production/orchestration/jobs.py)、[本地执行环境](execution-environment-design.zh.md) | 本地优先，薄包装现有 node/job；保留生产脚本、锁、receipt、budget、gate；不重写 producer，不迁移生产云环境 |
 | 进度与 ETA | 能否从同一运行证据得到不混淆完成／审核的工作量和剩余排程？ | [进度合同与夹具](backlog.zh.md#progress-eta-followup)、[日志合同](workflow-accounting-log-contract.zh.md)、[RQC profile](rqc-accounting-profile.zh.md) | 只读投影，冻结计划／权重／分母；Prefect 状态只作观测补充，不另造工作量事实 |
-| Agents API 诊断 | 对固定的脱敏失败包，诊断是否提供可追溯且有用的原因／假设和修复建议？ | [已有 Supervisor](sermon-production-supervisor-agent.md)、[API client](../packages/production/src/tongxing_production/orchestration/supervisor/agents_api.py)、[现有远端快照边界](../scripts/sermon_agents_supervisor.py)、[三层设计](codex-orchestration-pipeline-design.zh.md) | 新的窄只读角色；不继承 Supervisor execute 工具，不把旧 dual-PDF 集成证据当作本试点已通过 |
+| Agents API 诊断 | 对固定的脱敏失败包，诊断是否提供可追溯且有用的原因／假设和修复建议？ | [已有 Supervisor](sermon-production-supervisor-agent.md)、[API client](../packages/production/src/tongxing_production/orchestration/supervisor/agents_api.py)、[现有远端快照边界](../packages/production/src/tongxing_production/workflows/supervisor/agents.py)、[三层设计](codex-orchestration-pipeline-design.zh.md) | 新的窄只读角色；不继承 Supervisor execute 工具，不把旧 dual-PDF 集成证据当作本试点已通过 |
 
 现有 [RQC 私有合同](rqc-private-contracts.zh.md)、[strict adapter](rqc-strict-adapters.zh.md)、[预算 store](../packages/production/src/tongxing_production/review/review_budget.py) 与 [固定 gate](../packages/production/src/tongxing_production/text/strict_review_gate.py) 继续定义候选／审核／准入语义。每个 locale 必须经过 L3 Audio Package，包括允许纯文字交付时显式 `audio_unavailable`；不得增加 L2→L4 捷径。zh-Hans／ko／es 仍为独立分支，按约定交付点汇合。
 
@@ -100,6 +100,6 @@
 
 ## 7. 交付与退出条件
 
-交付沿既有 [Weekly Pipeline Report](../scripts/weekly_pipeline_report.py)、[日志合同](workflow-accounting-log-contract.zh.md) 与 Tracker 输出，不建设另一套监控平台。试点报告绑定 code SHA、库／协议版本、配置、冻结 DAG/plan、fixture IDs、flow/task/job/receipt 映射、资源容量及预算范围；分列实现、mock、真实调用、真实／模拟人工证据。指标记录恢复是否正确、重复副作用数、排队与恢复耗时、人工操作步骤、诊断证据有效性／拒绝率、样本数和实际费用缺口；未测量项为 unknown，不声称收益百分比。
+交付沿既有 [Weekly Pipeline Report](../tools/ops/weekly_pipeline_report.py)、[日志合同](workflow-accounting-log-contract.zh.md) 与 Tracker 输出，不建设另一套监控平台。试点报告绑定 code SHA、库／协议版本、配置、冻结 DAG/plan、fixture IDs、flow/task/job/receipt 映射、资源容量及预算范围；分列实现、mock、真实调用、真实／模拟人工证据。指标记录恢复是否正确、重复副作用数、排队与恢复耗时、人工操作步骤、诊断证据有效性／拒绝率、样本数和实际费用缺口；未测量项为 unknown，不声称收益百分比。
 
 本地交付要求上表安全不变量全部满足，未受影响单元新增付费／重复合成为 0，诊断越权业务动作、错误放行和重复发布为 0；报告剩余故障与操作复杂度后决定保留、修订或撤回包装。真实诊断效果仍需另行批准的小样本评估，不能由 mock 推断。试点未证明明显收益可保留既有确定性路径；通过试点也不自动进入生产 rollout、扩大模型预算或变更正式路由。真实 180 秒续跑的恢复决定由主线程按第 1 节核实，本文无当前 ETA 或完成声明。

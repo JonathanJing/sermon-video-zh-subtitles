@@ -9,8 +9,7 @@ import signal
 import subprocess
 import time
 
-from scripts.sermon_execution_harness import atomic_json, utc_now
-from .local_io import ROOT, TEMPORAL_ROOT, process_identity, read_json, receipt_process_alive
+from .local_io import ROOT, TEMPORAL_ROOT, atomic_json, process_identity, read_json, receipt_process_alive, utc_now
 from .server import manager_lock
 
 RECEIPT = TEMPORAL_ROOT / "production-worker.json"

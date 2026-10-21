@@ -216,6 +216,7 @@ class Diagnostic:
     validate_source: Callable[..., Any]        # (source, anchor, context)
     validate_context: Callable[[Any], Any]
     require_policy_ready: Callable[..., Any]   # (identity, context=None)
+    validate_runtime: Callable[..., Any]       # (context, *, run_id, store_sha256) -> the validated context
 
 
 @dataclass(frozen=True)
@@ -423,3 +424,15 @@ class Observability:
     log_event: Callable[..., None]             # (event, **fields)
     stable_hash: Callable[[str], str]
     url_summary: Callable[[Any], Any]          # (url) -> redacted summary or None
+
+
+@dataclass(frozen=True)
+class Leases:
+    """Temporary dual_pdf port for the supervisor's stage leases (``backend/leases.py``).
+
+    The lease file or GCS object is the fence; these callables only reach it. Classes are
+    returned at call time, so ``isinstance`` and test patches on the host module still apply."""
+    acquire: Callable[..., Any]                # (location, *, owner, ttl_seconds, ...) -> handle or None
+    release: Callable[[Any], None]             # (handle)
+    guard: Callable[[], type]                  # () -> LeaseGuard, the renewing context manager
+    handle: Callable[[], type]                 # () -> LeaseHandle

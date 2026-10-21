@@ -51,7 +51,7 @@ def resolve_approved_timeline(run, approval, *, week, source_url):
     """
     from poc import ROOT
     sys.path.insert(0, str(ROOT))
-    from scripts.sermon_production_supervisor import json_digest, validate_window_approval
+    from tongxing_production.workflows.supervisor.production import json_digest, validate_window_approval
     digest = approval.get("timelineReportSha256") if isinstance(approval, dict) else None
     for relative in ("timeline/report.json", "timeline/agent-job-report.json"):
         path = Path(run) / relative
@@ -265,7 +265,7 @@ def normalize_mp3(raw, mp3, *, process_runner=None):
         from poc import ROOT
         sys.path.insert(0, str(ROOT))
         from functools import partial
-        from scripts.sermon_execution_harness import bounded_process
+        from tongxing_production.orchestration.execution_harness import bounded_process
         process_runner = partial(bounded_process, timeout=3600)
     if mp3.exists():
         raise ValueError("Preserve existing MP3; choose a new output")

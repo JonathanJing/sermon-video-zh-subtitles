@@ -7,7 +7,7 @@ Package or grant human approval. The original paused real run is unchanged.
 
 ## Entry and boundaries
 
-`scripts.sermon_diagnostic_prefect_flow` accepts an immutable original plan,
+`tongxing_production.workflows.diagnostic.prefect_flow` accepts an immutable original plan,
 separate continuation identity, locale/preview specifications, and a static
 request-hash response fixture for offline checks. The fixture marker must
 already match the existing provider/store. Live execution is a separate explicit
@@ -24,7 +24,7 @@ is rejected before dispatch and cannot silently reset an existing run to the
 default input bound. The command below assumes the snapshot already exists.
 
 ```sh
-python -m scripts.sermon_diagnostic_prefect_flow \
+python tools/ops/run.py workflows.diagnostic.prefect_flow \
   --plan /absolute/fixture/run-plan.json \
   --continuation /absolute/fixture/continuation.json \
   --spec /absolute/fixture/flow-spec.json \

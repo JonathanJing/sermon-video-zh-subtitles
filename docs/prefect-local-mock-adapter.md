@@ -23,11 +23,11 @@ a lazy settings reload or the ephemeral server.
 python - <<'PY'
 import json
 from pathlib import Path
-from scripts.sermon_dag_contract import make_plan
+from tongxing_production.orchestration.prefect.contract import make_plan
 plan = make_plan(run_id='1'*64, input_identity_sha256='2'*64)
 Path('/tmp/sermon-mock-plan.json').write_text(json.dumps(plan))
 PY
-python scripts/run_sermon_prefect_dag.py mock \
+python tools/ops/run.py orchestration.prefect.run mock \
   --root artifacts/prefect-mock-demo --plan /tmp/sermon-mock-plan.json
 ```
 

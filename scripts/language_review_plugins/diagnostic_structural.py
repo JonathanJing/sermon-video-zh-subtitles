@@ -18,7 +18,8 @@ import re
 import unicodedata
 
 try:
-    from scripts import sermon_diagnostic_context as diagnostic
+    from scripts import tongxing_host  # noqa: F401  binds the production package ports
+    from tongxing_production.workflows.diagnostic import context as diagnostic
     from scripts.language_review_plugins.common import result
 except ImportError:
     import sermon_diagnostic_context as diagnostic

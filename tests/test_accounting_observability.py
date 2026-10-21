@@ -5,12 +5,12 @@ from pathlib import Path
 import tempfile
 import unittest
 from unittest.mock import patch
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production import path_aliases
 from tongxing_production.observability import accounting as accounting_impl
 from tongxing_production.observability import accounting
-from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.observability import profile as log_profile
-from scripts import export_observability_trace as safe_export
+from tongxing_production.observability import observability_trace as safe_export
 
 
 class ObservabilityTests(unittest.TestCase):
@@ -150,7 +150,7 @@ class ObservabilityTests(unittest.TestCase):
             internal = {e['stage'] for e in events if e['event'] == 'workload'
                         and e['stage'] in accounting.INTERNAL_TIMING_WORKLOADS}
             self.assertEqual(internal, accounting.INTERNAL_TIMING_WORKLOADS)
-            from scripts import weekly_pipeline_report as weekly
+            from tongxing_production.observability import weekly_projection as weekly
             projection = weekly.project(work/'accounting')['runs'][0]
             self.assertEqual([e['stage'] for e in projection['workloadEvidence']], ['render'])
             self.assertEqual(projection['workloadEvidence'][0]['metrics']['inputUnits'], 119)

@@ -23,7 +23,7 @@ from scripts import tongxing_host  # noqa: F401  binds the production package po
 from tongxing_production.text import candidate as producer
 from tongxing_production.text import models as runner
 from tongxing_production.text import policy as policies
-from scripts import weekly_pipeline_report as weekly
+from tongxing_production.observability import weekly_projection as weekly
 
 SCHEMA = "sermon-layer2-concurrency-experiment-v1"
 

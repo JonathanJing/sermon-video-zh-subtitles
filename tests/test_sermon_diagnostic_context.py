@@ -3,13 +3,13 @@ from copy import deepcopy
 import json
 from pathlib import Path
 import unittest
-from scripts import sermon_diagnostic_context as diagnostic
-from tongxing_production.review import contracts as c
-from scripts import sermon_strict_layer2 as strict
-from scripts import sermon_strict_locale as locale
-from scripts import sermon_strict_candidate_bridge as bridge
-from tongxing_production.audio import speech_job as speech
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.workflows.diagnostic import context as diagnostic
+from tongxing_production.review import contracts as c
+from tongxing_production.text.strict import layer2 as strict
+from tongxing_production.text.strict import locale
+from tongxing_production.text.strict import candidate_bridge as bridge
+from tongxing_production.audio import speech_job as speech
 from tongxing_production.source import english_source_package as english
 from tongxing_production.text import candidate as producer
 from tongxing_production.text import policy as policies

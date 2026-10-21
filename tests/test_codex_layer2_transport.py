@@ -8,10 +8,10 @@ import unittest
 from unittest.mock import patch
 from jsonschema import ValidationError
 
-from tongxing_production.text import models as runner
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
+from tongxing_production.text import models as runner
 from tongxing_production.compute.transports.codex_layer2 import CodexLayer2Transport, output_schema
-from scripts import run_codex_layer2_test as command
+from tools.development import run_codex_layer2_test as command
 
 
 class CodexPreDispatchBindingTests(unittest.TestCase):
@@ -63,13 +63,13 @@ class CodexTestCommandGateTests(unittest.TestCase):
         self.anchor = {"sourceUnits": [{"sourceUnitId": f"u{index}", "english": "Source."}
                                        for index in range(39)]}
         self.policy = {"targetLocale": "zh-Hans", "batching": {"batchSize": 1, "workers": 1}}
-        self.out = Path(command.__file__).resolve().parents[1] / "artifacts" / "never-dispatched-gate-fixture"
+        self.out = Path(command.__file__).resolve().parents[2] / "artifacts" / "never-dispatched-gate-fixture"
 
     def invoke_rejected(self, reason, out=None):
         for name, value in (("simulation-scope-report.json", self.scope), ("source.json", self.source),
                             ("anchor.json", self.anchor), ("policy.json", self.policy)):
             (self.fixture / name).write_text(json.dumps(value))
-        with patch("scripts.run_codex_layer2_test.CodexLayer2Transport") as transport:
+        with patch("tools.development.run_codex_layer2_test.CodexLayer2Transport") as transport:
             with self.assertRaisesRegex(ValueError, reason):
                 command.run_test(self.fixture, self.fixture / "policy.json", out or self.out,
                                  cli_path=Path("unused-codex"))

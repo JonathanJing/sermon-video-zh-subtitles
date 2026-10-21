@@ -9,9 +9,9 @@ from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import patch
 
+from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.compute.concurrency_profile import profile_v1, validate_profile
 from tongxing_production.compute.transports import codex_resources as admission
-from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.text import controller
 from tongxing_production.text import models as runner
 from scripts.sermon_unified import resources
@@ -147,7 +147,7 @@ class DiagnosticCapabilityTests(unittest.TestCase):
 
     def test_runner_busy_hook_never_records_started_or_dispatches(self):
         from tests.test_codex_layer2_diagnostic import DiagnosticChainTests
-        from scripts import codex_layer2_diagnostic as diagnostic
+        from tools.development import codex_layer2_diagnostic as diagnostic
         helper = DiagnosticChainTests()
         helper.setUp()
         self.addCleanup(helper.doCleanups)
@@ -163,7 +163,7 @@ class DiagnosticCapabilityTests(unittest.TestCase):
 
     def test_explicit_profile_runs_actual_machine_chain_and_resumes_without_calls(self):
         from tests.test_codex_layer2_diagnostic import DiagnosticChainTests
-        from scripts import codex_layer2_diagnostic as diagnostic
+        from tools.development import codex_layer2_diagnostic as diagnostic
         helper = DiagnosticChainTests()
         helper.setUp()
         self.addCleanup(helper.doCleanups)

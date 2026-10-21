@@ -31,7 +31,7 @@ if __package__ in (None, ''):
 if str(Path(__file__).resolve().parent) not in sys.path:  # sibling modules of this experiment line
     sys.path.append(str(Path(__file__).resolve().parent))
 import diagnostic_audio_inputs as inputs
-from scripts import codex_layer2_diagnostic as diagnostic
+from tools.development import codex_layer2_diagnostic as diagnostic
 
 HOST = 'achillesjing@192.168.1.152'
 CHECKPOINT = '/home/achillesjing/dgx-spark-benchmark/results/sermon-voice-poc-20260905/checkpoints/checkpoint-epoch-0'
@@ -257,7 +257,7 @@ def verify_outputs(root, proof):
 REMOTE_RUNNER = '''import fcntl,json,pathlib,subprocess,sys,time,os
 c=json.loads(sys.argv[1]);sys.path[:0]=[c['codeRoot'],c['codeRoot']+'/experiments/spark-diagnostic-audio',c['codeRoot']+'/packages/production/src']
 os.environ.update(c['sessionEnvironment']);os.environ['SPARK_EXCLUSIVE_REMOTE_LOCAL']='1'
-from scripts.spark_exclusive_session import Client
+from tongxing_production.compute.spark_exclusive_session import Client
 from run_spark_diagnostic_audio import AdmissionGateway
 session=Client.from_environment();session.require_ready();session.bind_job(c['sparkHold'],pid=os.getpid())
 broker=pathlib.Path(c['broker']);broker.mkdir(parents=True,exist_ok=True)
