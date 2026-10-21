@@ -11,6 +11,7 @@
 | revelation-comfort-and-hope | Revelation: The Comfort and Hope Jesus Brings | 启示录：耶稣带来的安慰与盼望 | 启示录系列 | 用户指定英文名并接受本项目译名；[官方系列页](https://www.marinerschurch.org/series/revelation/)核对英文名称 | 2026-09-12 |
 | when-life-doesnt-make-sense | When Life Doesn’t Make Sense | 当生活令人费解 | 当生活令人费解 | 用户指定英文名并接受沿用项目现有译名 | 2026-09-12 |
 | a-study-of-the-book-of-numbers | A Study of the Book of Numbers | 民数记研读 | 民数记系列 | 用户指定英文系列名；本次登记采用此中文译名 | 2026-09-12 |
+| if-i-had-more-time | If I Had More Time | 如果我有更多时间 | 如果我有更多时间 | 节目开场原话 “Welcome to the If I Had More Time podcast” 与视频标题前缀 “If I Had More Time” 核对英文名；用户 2026-10-21 指定中文名，并要求页面系列名下方标注“播客系列”；2026-10-02 已发布页 `if-i-had-more-time-jesus-is-worthy` 用同一中文名 | 2026-10-21 |
 
 ## 使用阶段与语境
 

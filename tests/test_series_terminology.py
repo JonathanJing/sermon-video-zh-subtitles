@@ -23,7 +23,10 @@ class SeriesTerminologyTests(unittest.TestCase):
         self.environment.stop()
 
     def test_registry_contains_all_three_names_and_normalizes_title_aliases(self):
-        self.assertEqual(len(names.context()["entries"]), 3)
+        ids = {entry["id"] for entry in names.context()["entries"]}
+        self.assertLessEqual({"revelation-comfort-and-hope", "when-life-doesnt-make-sense",
+                              "a-study-of-the-book-of-numbers"}, ids)
+        self.assertEqual(names.canonical_series("If I Had More Time"), "如果我有更多时间")
         self.assertEqual(names.canonical_series("  WHEN LIFE DOESN'T MAKE SENSE "), "当生活令人费解")
         self.assertEqual(names.canonical_series("a-study-of-the-book-of-numbers"), "民数记研读")
         self.assertEqual(names.canonical_series("启示录系列"), "启示录：耶稣带来的安慰与盼望")

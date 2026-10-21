@@ -7,7 +7,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.review import contracts as c
@@ -15,6 +15,20 @@ from tongxing_production.text import strict_review_gate as g
 from tongxing_production.text import policy
 
 FIXTURES = Path(__file__).resolve().parent / 'fixtures/rqc'
+# The synthetic legacy policy is frozen against the 2026-09-12 series table. Pin that
+# snapshot so adding a series to the live table does not change these fixtures.
+LEGACY_SERIES_TABLE = FIXTURES / 'series-terminology-2026-09-12.zh.md'
+
+
+_LEGACY_TABLE_PATCH = patch.object(policy, '_series_table', return_value=LEGACY_SERIES_TABLE)
+
+
+def setUpModule():
+    _LEGACY_TABLE_PATCH.start()
+
+
+def tearDownModule():
+    _LEGACY_TABLE_PATCH.stop()
 NOW = '2026-09-30T00:00:00Z'
 
 
