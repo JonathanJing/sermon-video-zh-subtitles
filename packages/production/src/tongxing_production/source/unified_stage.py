@@ -69,6 +69,12 @@ SPARK_MFA_FIELDS = LOCAL_MFA_FIELDS | {'host', 'proxy_jump', 'relay_host', 'rela
 # ASR reference text before MFA. The review binds this run's own ASR and clip hashes, so it can only be
 # written after ASR; its hash is therefore frozen in the run's provenance, not in the configuration.
 TEXT_REVIEW_FIELDS = {'sourceTextReview'}
+# Optional v2/v3 field: a directory, relative to the configuration, that holds the machine judge's
+# content-addressed request cache. Every execute and rebuild of this source that names the same
+# directory replays batches whose sentences, units, neighbors and policy are unchanged, so a
+# boundary rebuild pays only for the batches it moved. Absent, each output keeps its own cache.
+JUDGE_CACHE_FIELDS = {'judgeCacheRoot'}
+OPTIONAL_FIELDS = TEXT_REVIEW_FIELDS | JUDGE_CACHE_FIELDS
 
 
 def require(ok, code):
@@ -176,7 +182,7 @@ def load_configuration(path):
     value = _load(path)
     require(isinstance(value, dict) and value.get('schemaVersion') in (SCHEMA, SCHEMA_V2, SCHEMA_V3)
             and (set(value) == FIELDS if value['schemaVersion'] == SCHEMA else
-                 set(value) in (FIELDS | {'asrWorkers'}, FIELDS | {'asrWorkers'} | TEXT_REVIEW_FIELDS)),
+                 FIELDS | {'asrWorkers'} <= set(value) <= FIELDS | {'asrWorkers'} | OPTIONAL_FIELDS),
             'invalid_source_preparation_configuration')
     if value['schemaVersion'] in (SCHEMA_V2, SCHEMA_V3):
         require(type(value['asrWorkers']) is int and 1 <= value['asrWorkers'] <= 4,
@@ -198,6 +204,8 @@ def load_configuration(path):
         ('media', 'outputDirectory', 'jobRoot', 'windowApproval'))
     if 'sourceTextReview' in value:
         resolve('sourceTextReview')
+    if 'judgeCacheRoot' in value:
+        resolve('judgeCacheRoot')
     require(media.is_file() and _sha(media) == value['mediaSha256'], 'source_media_identity_changed')
     require(not any(output == p or output in p.parents for p in (media, path, receipt_path, job_root))
             and not (job_root == output or job_root in output.parents), 'source_paths_overlap')
@@ -288,6 +296,13 @@ def inspect(config_path):
             'globalBounds': config.authority['globalBounds'], 'chunkCount': count, 'chunkMaxSeconds': 180,
             'mfaBackend': config.value['mfa']['backend'], 'mfaRuntimeVerified': False,
             'humanSourceReview': 'pending', 'productionTranslationEligible': False}
+
+
+def judge_cache_root(value, config_path, out):
+    """The shared content-addressed judge cache a configuration names, else this output's own."""
+    if 'judgeCacheRoot' in value:
+        return _safe_path(Path(config_path).parent / value['judgeCacheRoot'])
+    return out / 'judge-requests'
 
 
 def _mfa_options(config):
@@ -502,7 +517,7 @@ def _execute(config, fresh, *, api_key, transport, aligner, mfa_preflight, claud
     _freeze(out / 'summary.json', summary)
     with budget.judge_limits(config.authority['requestLimits']):
         judged = judge.run(aligned_path=aligned_path, manifest_path=manifest_path, out=out / 'machine-judge.json',
-            api_key=api_key or '', caller=caller.judge, cache_root=out / 'judge-requests',
+            api_key=api_key or '', caller=caller.judge, cache_root=judge_cache_root(value, config.path, out),
             model=value['judge']['model'], effort=value['judge']['reasoningEffort'],
             batch_size=value['judge']['batchSize'], workers=value['judge']['workers'])
     package = english.build_package(aligned_path, manifest_path, summary_path=out / 'summary.json',
@@ -585,7 +600,7 @@ def rebuild(config_path, base_output, out_dir, overrides_path, authorization_pat
     with budget.judge_limits(authority['requestLimits']):
         judged = judge.run(aligned_path=aligned_path, manifest_path=manifest_path, out=out / 'machine-judge.json',
             api_key=api_key if api_key is not None else os.environ.get('OPENAI_API_KEY', ''),
-            caller=caller.judge, cache_root=out / 'judge-requests',
+            caller=caller.judge, cache_root=judge_cache_root(value, config_path, out),
             model=value['judge']['model'], effort=value['judge']['reasoningEffort'],
             batch_size=value['judge']['batchSize'], workers=value['judge']['workers'],
             operator_acceptance=acceptance_path)

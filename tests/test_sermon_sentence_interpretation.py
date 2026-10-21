@@ -214,9 +214,10 @@ class SentenceInterpretationTests(unittest.TestCase):
         self.assertEqual(manifest["issues"], [])
 
     def test_clause_stable_v2_prefers_later_semantic_boundary_over_duration_target(self):
+        # A comma the speaker did not pause at counts only before a clause opener.
         long = segment(
-            "One two three, four five.",
-            ["One", "two", "three,", "four", "five."],
+            "One two three, and four five.",
+            ["One", "two", "three,", "and", "four", "five."],
         )
         self.source.write_text(json.dumps([long]), encoding="utf-8")
         manifest = subject.build_anchor_manifest(

@@ -132,6 +132,49 @@ class EnglishSourceMachineJudgeTests(unittest.TestCase):
         self.assertEqual(sorted(calls[1:]), [1, 1])
         self.assertEqual(len(result["sentences"]), 2)
 
+    def test_shared_cache_root_replays_unchanged_batches_after_a_boundary_rebuild(self):
+        # Three one-sentence batches; the rebuild adds a boundary in the middle sentence. The
+        # first batch replays from the shared cache. The last is paid again only because unit IDs
+        # are numbered in chunk order, so the extra unit renumbers every later unit in the chunk;
+        # its text and context are unchanged.
+        def segments_for(middle_words):
+            out, cursor = [], 0.0
+            for index, text in enumerate(("Your sin faced death.", middle_words, "He rose on day three.")):
+                timed = []
+                for word in text.split():
+                    timed.append({"text": word, "start": cursor, "end": cursor + 0.4})
+                    cursor += 0.5
+                out.append({"id": index, "referenceChunkId": "block-00", "text": text,
+                            "start": timed[0]["start"], "end": timed[-1]["end"],
+                            "sentenceBoundarySource": "frozen_reference_punctuation", "wordTimes": timed})
+            return out
+        calls = []
+        def caller(key, payload):
+            calls.append([row["sourceSentenceId"] for row in json.loads(payload["messages"][1]["content"])["sentences"]])
+            return self.fake_caller(key, payload)
+        shared = self.root / "shared-cache"
+        results = []
+        for label, overrides in (("first", None), ("second", {"block-00-s002": ["block-00-w0008", "block-00-w0012"]})):
+            aligned_path = self.root / f"{label}-segments.json"
+            segments = segments_for("He spoke so slowly, and then he left, but the end was near today.")
+            write_json(aligned_path, segments)
+            manifest = anchors.build_anchor_manifest(
+                segments, source_path=aligned_path, unit_policy=anchors.UNIT_POLICY_V2,
+                max_unit_seconds=4.0, boundary_overrides=overrides)
+            manifest_path = self.root / f"{label}-manifest.json"
+            write_json(manifest_path, manifest)
+            results.append(subject.run(aligned_path=aligned_path, manifest_path=manifest_path,
+                                       out=self.root / label / "judge.json", cache_root=shared,
+                                       api_key="", caller=caller, batch_size=1))
+        first_units = [row["sourceUnitIds"] for row in results[0]["sentences"]]
+        second_units = [row["sourceUnitIds"] for row in results[1]["sentences"]]
+        self.assertNotEqual(first_units[1], second_units[1])
+        self.assertEqual(calls[:3], [["block-00-s001"], ["block-00-s002"], ["block-00-s003"]])
+        self.assertEqual(calls[3:], [["block-00-s002"], ["block-00-s003"]])
+        receipts = [path for path in shared.glob("cache/english-source-judge-*.json")
+                    if not path.name.endswith(".started.json")]
+        self.assertEqual(len(receipts), 5)
+
     def test_prewarm_and_final_share_canonical_cache_across_output_directories(self):
         calls = []
         def caller(key, payload):

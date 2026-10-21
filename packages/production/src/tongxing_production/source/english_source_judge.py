@@ -276,10 +276,18 @@ def _response_schema() -> dict[str, Any]:
     }
 
 
-def _payload(batch: list[dict[str, Any]], *, manifest_hash: str,
-             anchor_policy: dict[str, Any], model: str, effort: str) -> dict[str, Any]:
+# One cache entry per batch, keyed by the batch's own content (sentences, units, neighbors,
+# policy, model, effort and prompt), never by the manifest it came from: a rebuild that moves one
+# boundary re-judges the batches that changed and replays the rest from a shared cache root.
+CACHE_STAGE = "english-source-judge"
+
+
+def _payload(batch: list[dict[str, Any]], *, anchor_policy: dict[str, Any], model: str,
+             effort: str, manifest_hash: str | None = None) -> dict[str, Any]:
+    # `manifest_hash` only reproduces a historical request (the decision-API experiment replays
+    # frozen caches that carried it); production requests leave it out so a batch's identity is its content.
     user = {
-        "anchorManifestJsonSha256": manifest_hash,
+        **({"anchorManifestJsonSha256": manifest_hash} if manifest_hash is not None else {}),
         "evaluationScope": "text_and_timing_metadata_only",
         "anchorPolicy": anchor_policy,
         "sentences": batch,
@@ -423,11 +431,13 @@ def run(*, aligned_path: Path, manifest_path: Path, out: Path, model: str = "gpt
                 try:
                     result, receipt = cached_call(
                         out=cache_root,
-                        stage=f"english-source-judge-{index:03d}{suffix}",
+                        stage=CACHE_STAGE,
                         payload=_payload(
                             part,
-                            manifest_hash=layer1.json_sha256(manifest),
-                            anchor_policy=manifest.get("policy", {}),
+                            # Operator overrides are already expressed in the units; naming them
+                            # here would make every batch of a rebuild look new.
+                            anchor_policy={key: value for key, value in manifest.get("policy", {}).items()
+                                           if key != "boundaryOverrides"},
                             model=model,
                             effort=effort,
                         ),
