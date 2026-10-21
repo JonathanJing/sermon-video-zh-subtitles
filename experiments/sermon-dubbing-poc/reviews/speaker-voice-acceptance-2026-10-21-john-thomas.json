@@ -1,0 +1,103 @@
+{
+  "schemaVersion": "sermon-speaker-voice-locale-acceptance-v1",
+  "speakerId": "john_thomas",
+  "checkpointSha256": "3f722b17b8e204e60d376fc08ef631b9d55a6a1eb02c106d612bf12b5d855c8c",
+  "decidedBy": "Jony",
+  "decidedAt": "2026-10-21T04:49:58Z",
+  "userStatement": "中文可以，韩语西语也可以，用于正式配音",
+  "decision": {
+    "zh-Hans": "human_reviewed",
+    "ko": "human_reviewed",
+    "es": "human_reviewed"
+  },
+  "purposesGranted": [
+    "chinese_dubbing",
+    "multilingual_dubbing"
+  ],
+  "purposeBasis": "Training authorized in the main session on 2026-10-21 ('需要训练一个新的音色'; '你需要并行去 Spark 里面单独训练一个John的音色。'). After listening to the auditions the user approved Chinese, Korean and Spanish for formal dubbing.",
+  "speakerIdentityBasis": "VibeVoice-ASR speaker_id 1 mapped to John Thomas by the user ('说话人 0是steve, 说话人 1是John').",
+  "demoScript": {
+    "path": "experiments/sermon-dubbing-poc/multilingual-voice-demo-script-v1.json",
+    "fileSha256": "cbd03468c2f5ce120e1f9b297ab3429d7bf7b8e0d44be1ae90717d72bdcb4c38"
+  },
+  "generation": {
+    "seed": 42,
+    "temperature": 0.7,
+    "repetitionPenalty": 1.05,
+    "maxNewTokens": 768,
+    "ratePolicy": "natural_no_time_stretch"
+  },
+  "boundDemoTracks": {
+    "zh-Hans": {
+      "wav": {
+        "path": "probe/zh-Hans.wav",
+        "sha256": "064a5ea47be04aa6776a472234740e6526f34305519dc46cc70733aad6c9a0af",
+        "durationSeconds": 13.92
+      },
+      "mp3": {
+        "path": "audition/john_thomas-zh-Hans.mp3",
+        "sha256": "688be1734c6f43eb1a7be92027853df236b1c94a39a9dbdb8e4330046adbb7e2",
+        "durationSeconds": 13.92,
+        "codec": "mp3",
+        "sampleRate": 48000,
+        "channels": 1,
+        "bitrate": "192k",
+        "fullDecode": "pass"
+      },
+      "textSha256": "3508394e8d73bdd46b3b0e8b1373ff26d632fb440942f24200526f9e20256a41",
+      "asr": {
+        "metric": "cer",
+        "errorRate": 0.0299
+      }
+    },
+    "ko": {
+      "wav": {
+        "path": "probe/ko.wav",
+        "sha256": "a4480052523b1735ba3a2eee033b02439c8569c2cc09c0c99b1baa6907fb2ec7",
+        "durationSeconds": 14.88
+      },
+      "mp3": {
+        "path": "audition/john_thomas-ko.mp3",
+        "sha256": "f2a3a75b1b65fc5abe15e8d1d3a265066c84256faab5518657b52f07a34477d6",
+        "durationSeconds": 14.88,
+        "codec": "mp3",
+        "sampleRate": 48000,
+        "channels": 1,
+        "bitrate": "192k",
+        "fullDecode": "pass"
+      },
+      "textSha256": "b557e07b4dfad38f238880ddfaf2ebf5a8f71eacc36a2ab546e8aad96fe4d84a",
+      "asr": {
+        "metric": "cer",
+        "errorRate": 0.0
+      }
+    },
+    "es": {
+      "wav": {
+        "path": "probe/es.wav",
+        "sha256": "b064415f3fab0cb191261fcc78a4f2dae3bc43ccf5ad7705df43d4d4783d3fe5",
+        "durationSeconds": 15.04
+      },
+      "mp3": {
+        "path": "audition/john_thomas-es.mp3",
+        "sha256": "e43d554810907924a2193aa7c8dc37c2b6280dae0722f4d6b95074d2d9cfb945",
+        "durationSeconds": 15.04,
+        "codec": "mp3",
+        "sampleRate": 48000,
+        "channels": 1,
+        "bitrate": "192k",
+        "fullDecode": "pass"
+      },
+      "textSha256": "202e4983eeb10eac52887f141ed392be112d899e71ded6446d310b2c9904c858",
+      "asr": {
+        "metric": "wer",
+        "errorRate": 0.0
+      }
+    }
+  },
+  "runReport": "docs/reports/runs/20261021-john-thomas-voice/",
+  "notReviewed": [
+    "vi"
+  ],
+  "limits": "Voice capability for this checkpoint and these three locales only. Trained on one podcast episode (34 clips, 270.48 s), so generalization is unproven. It does not review any episode's full translated audio; per-run audio QC, waiver or listening review still applies."
+}

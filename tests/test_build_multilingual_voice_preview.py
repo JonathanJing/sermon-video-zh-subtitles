@@ -11,6 +11,7 @@ from tools.ops import build_multilingual_voice_preview as preview
 
 
 REPO = Path(__file__).resolve().parents[1]
+DEMO_SPEAKERS = {"eric_geiger", "jared_kirkwood", "christine_caine", "doug_fields", "kenton_beshore", "steve_bang_lee"}
 
 
 class VoicePreviewTests(unittest.TestCase):
@@ -18,8 +19,13 @@ class VoicePreviewTests(unittest.TestCase):
         self.temporary = tempfile.TemporaryDirectory()
         self.addCleanup(self.temporary.cleanup)
         self.root = Path(self.temporary.name)
-        self.registry_path = REPO / "config/speaker-voice-registry.json"
-        self.registry = preview.read_json(self.registry_path)
+        # A delivery carries its own registry snapshot. The 2026-09-21 matrix covers the
+        # six speakers registered then; later speakers have their own audition runs.
+        self.registry = preview.read_json(REPO / "config/speaker-voice-registry.json")
+        self.registry["speakers"] = [row for row in self.registry["speakers"]
+                                     if row["speakerId"] in DEMO_SPEAKERS]
+        self.registry_path = self.root / "registry.json"
+        self.registry_path.write_text(json.dumps(self.registry), encoding="utf-8")
         self.script = preview.read_json(
             REPO / "experiments/sermon-dubbing-poc/multilingual-voice-demo-script-v1.json")
         locale_text = {row["targetLocale"]: row["text"] for row in self.script["locales"]}
