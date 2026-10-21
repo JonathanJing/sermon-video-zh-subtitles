@@ -46,7 +46,11 @@
    "clip": 8.0,
    "week": 200.0
   },
-  "claudeCliComment": "claude_cli_opus Layer 2 runs on the Claude subscription: the ledger reserves and settles each call at list-price worst case (strict-claude-list-worst-case-2026-10-08-v1) up to this cap per locale, but list-price equivalents are not money and do not count toward an approved USD total (user decision 2026-10-14)."
+  "claudeCliComment": "claude_cli_opus Layer 2 runs on the Claude subscription: the ledger reserves and settles each call at list-price worst case (strict-claude-list-worst-case-2026-10-08-v1) up to this cap per locale, but list-price equivalents are not money and do not count toward an approved USD total (user decision 2026-10-14).",
+  "ledgerScope": {
+   "clip": "locale",
+   "week": "locale"
+  }
  },
  "qc": {
   "comment": "One root per locale shared by text QC, calibration and audio QC; its ledger is the judge response cache.",
@@ -82,6 +86,6 @@
  "derivedFrom": {
   "profile": "config/weekly-run-profile.json",
   "sha256": "4bdf5a127d6213e96e837c7bce4bdc6cc3284ff7007f88086430111b93749f88",
-  "rule": "boundsPerLocale.clip request/token/wallTime counts multiplied by 88/16 = 5.5; model, tier, requestLimits, QC rules and price basis unchanged. layer2.capUsdPerLocale.clip raised 2.00 -> 11.00 per locale so it covers the 88-group initial reservation of 10.813 USD per locale (176 calls at the profile's max input 16384 / output 2048 for gpt-6.1-sol high+medium); week-scale cap, requestLimits, service tier and QC caps unchanged."
+  "rule": "boundsPerLocale.clip request/token/wallTime counts multiplied by 88/16 = 5.5; model, tier, requestLimits, QC rules and price basis unchanged. layer2.capUsdPerLocale.clip raised 2.00 -> 11.00 per locale so it covers the 88-group initial reservation of 10.813 USD per locale (176 calls at the profile's max input 16384 / output 2048 for gpt-6.1-sol high+medium); week-scale cap, requestLimits, service tier and QC caps unchanged.. layer2.ledgerScope={clip: locale} shards the Layer 2 budget ledger per locale for a longer clip: a shared run ledger is capped at 256 KiB and the 88-group clip reached 261,828 B before its reservations completed, while a week has always been sharded at 8 MiB per locale. No bound, cap or limit changes with this setting."
  }
 }
