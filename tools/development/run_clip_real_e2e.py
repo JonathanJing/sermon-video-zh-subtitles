@@ -310,9 +310,14 @@ def stage_inputs(run: Run):
 
 
 def freeze_clip_policy(template: Path, source: dict, anchor: dict, *, reviewed_by: str, statement: str,
-                       backend: str = "openai_api") -> dict:
-    """The source week's frozen policy narrowed to this clip's source scope and terms, frozen again."""
+                       backend: str = "openai_api", plugin: Path | None = None) -> dict:
+    """The source week's frozen policy narrowed to this clip's source scope and terms, frozen again.
+
+    ``plugin`` rebinds the language-review checks to the plugin actually wired into the execution
+    configuration (a run spec may point at a clip-scoped copy); without it the template's own
+    binding is kept and enforced against the plugin file."""
     from tongxing_production.text import policy as tp
+    from tongxing_production.text import candidate as producer
     rows = anchor["sourceUnits"]
     observed = tp.source_scoped_proper_names(rows, set())
     frozen = read(template)
@@ -321,6 +326,8 @@ def freeze_clip_policy(template: Path, source: dict, anchor: dict, *, reviewed_b
     draft = copy.deepcopy(frozen)
     draft.pop("componentSha256")
     draft = tp.apply_layer2_backend(draft, backend)
+    if plugin is not None:
+        draft["languageReview"]["pluginImplementationSha256"] = producer.plugin_implementation_sha256(Path(plugin))
     draft["terminology"]["properNames"] = [t for t in draft["terminology"]["properNames"] if t["source"] in used]
     scope = draft["sourceScope"]
     scope.update(englishSourcePackageJsonSha256=tp.canonical_sha256(source), anchorManifestSha256=tp.canonical_sha256(anchor),
@@ -351,7 +358,8 @@ def stage_layer2_setup(run: Run):
         if not path.exists():
             write(path, freeze_clip_policy(Path(spec["layer2"]["policyTemplates"][locale]), source, anchor,
                                            reviewed_by=auth["defaultPass"] + "; targets carried from the source week's receipt",
-                                           statement=auth["evidence"], backend=spec["layer2"]["backend"]))
+                                           statement=auth["evidence"], backend=spec["layer2"]["backend"],
+                                           plugin=(Path(spec["layer2"]["plugins"][locale]) if locale in spec["layer2"]["plugins"] else None)))
     if not (l2 / "execution.json").exists():
         write(l2 / "inspection.json", {"schemaVersion": "sermon-canonical-package-inspection-config-v1",
                                        "source": "src/source.json", "anchor": "src/anchor.json",
