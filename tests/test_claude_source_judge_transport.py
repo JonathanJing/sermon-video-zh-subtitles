@@ -108,6 +108,16 @@ class ClaudeSourceJudgeTransportTests(unittest.TestCase):
                 transport(key, value)
         self.assertFalse(self.log.exists())
 
+    def test_structured_output_repair_turn_is_tolerated_and_runaway_turns_are_not(self):
+        self.set_state(result(num_turns=3))
+        envelope = self.transport()('', payload())
+        self.assertEqual(json.loads(envelope['choices'][0]['message']['content']), ANSWER)
+        for turns in (0, 4):
+            with self.subTest(turns=turns):
+                self.set_state(result(num_turns=turns))
+                with self.assertRaisesRegex(RuntimeError, 'unexpected_turn_count'):
+                    self.transport()('', payload())
+
     def test_answer_outside_the_payload_schema_fails(self):
         self.set_state(result(structured_output={'schemaVersion': judge.BATCH_SCHEMA}))
         with self.assertRaises(Exception):

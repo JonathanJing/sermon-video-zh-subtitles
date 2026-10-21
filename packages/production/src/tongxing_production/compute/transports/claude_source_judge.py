@@ -101,7 +101,13 @@ class ClaudeSourceJudgeTransport(ClaudeLayer2Transport):
             if process.returncode or result.get('is_error') is not False or result.get('subtype') != 'success' \
                     or result.get('permission_denials') or content is None:
                 raise RuntimeError('claude_language_terminal_failure_inspect_receipt')
-            if type(result.get('num_turns')) is not int or not 1 <= result['num_turns'] <= 2:
+            # The CLI counts its own structured-output repair turn: with
+            # MAX_STRUCTURED_OUTPUT_RETRIES=1 one schema violation adds a turn,
+            # so a valid answer can report 3. Observed 2026-10-21 (1 batch in
+            # 109): turns=3, is_error=false, schema-valid structured output.
+            # No tools are allowed and the answer is still schema-validated,
+            # so this only tolerates the documented repair turn.
+            if type(result.get('num_turns')) is not int or not 1 <= result['num_turns'] <= 3:
                 raise RuntimeError('claude_language_unexpected_turn_count')
             if set(model_usage) != {self.model}:
                 raise RuntimeError('claude_language_model_identity_missing')
