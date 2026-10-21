@@ -134,9 +134,11 @@ class EnglishSourceMachineJudgeTests(unittest.TestCase):
 
     def test_shared_cache_root_replays_unchanged_batches_after_a_boundary_rebuild(self):
         # Three one-sentence batches; the rebuild adds a boundary in the middle sentence. The
-        # first batch replays from the shared cache. The last is paid again only because unit IDs
-        # are numbered in chunk order, so the extra unit renumbers every later unit in the chunk;
-        # its text and context are unchanged.
+        # first batch replays from the shared cache. Under clause_stable_v2 the last is paid again
+        # only because unit IDs were numbered in chunk order, so the extra unit renumbered every
+        # later unit in the chunk; under clause_stable_v3 a unit is numbered by its first word and
+        # the last batch replays too.
+        self.unit_policy = getattr(self, "unit_policy", anchors.UNIT_POLICY_V2)
         def segments_for(middle_words):
             out, cursor = [], 0.0
             for index, text in enumerate(("Your sin faced death.", middle_words, "He rose on day three.")):
@@ -159,7 +161,7 @@ class EnglishSourceMachineJudgeTests(unittest.TestCase):
             segments = segments_for("He spoke so slowly, and then he left, but the end was near today.")
             write_json(aligned_path, segments)
             manifest = anchors.build_anchor_manifest(
-                segments, source_path=aligned_path, unit_policy=anchors.UNIT_POLICY_V2,
+                segments, source_path=aligned_path, unit_policy=self.unit_policy,
                 max_unit_seconds=4.0, boundary_overrides=overrides)
             manifest_path = self.root / f"{label}-manifest.json"
             write_json(manifest_path, manifest)
@@ -170,10 +172,16 @@ class EnglishSourceMachineJudgeTests(unittest.TestCase):
         second_units = [row["sourceUnitIds"] for row in results[1]["sentences"]]
         self.assertNotEqual(first_units[1], second_units[1])
         self.assertEqual(calls[:3], [["block-00-s001"], ["block-00-s002"], ["block-00-s003"]])
-        self.assertEqual(calls[3:], [["block-00-s002"], ["block-00-s003"]])
+        expected = ([["block-00-s002"], ["block-00-s003"]] if self.unit_policy == anchors.UNIT_POLICY_V2
+                    else [["block-00-s002"]])
+        self.assertEqual(calls[3:], expected)
         receipts = [path for path in shared.glob("cache/english-source-judge-*.json")
                     if not path.name.endswith(".started.json")]
-        self.assertEqual(len(receipts), 5)
+        self.assertEqual(len(receipts), 3 + len(expected))
+
+    def test_shared_cache_root_with_v3_numbering_replays_every_untouched_sentence(self):
+        self.unit_policy = anchors.UNIT_POLICY_V3
+        self.test_shared_cache_root_replays_unchanged_batches_after_a_boundary_rebuild()
 
     def test_prewarm_and_final_share_canonical_cache_across_output_directories(self):
         calls = []

@@ -185,5 +185,48 @@ class ClauseStableSplittingTests(unittest.TestCase):
         self._source_path = path
         return path
 
+class StableUnitNumberingTests(unittest.TestCase):
+    """clause_stable_v3 numbers a unit by its first word; v2 numbered units in chunk order."""
+
+    def manifests(self, policy, overrides=None):
+        import json, tempfile
+        from pathlib import Path
+        segments, cursor = [], 0.0
+        for index, text in enumerate(("He spoke so slowly, and then he left, but the end was near today.",
+                                      "He rose on day three.")):
+            timed = []
+            for word in text.split():
+                timed.append({'text': word, 'start': cursor, 'end': cursor + 0.4})
+                cursor += 0.5
+            segments.append({'id': index, 'referenceChunkId': 'block-00', 'text': text, 'start': timed[0]['start'],
+                             'end': timed[-1]['end'], 'sentenceBoundarySource': 'frozen_reference_punctuation',
+                             'wordTimes': timed})
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / 'segments.json'
+            path.write_text(json.dumps(segments))
+            return anchors.build_anchor_manifest(segments, source_path=path, unit_policy=policy,
+                                                 max_unit_seconds=4.0, boundary_overrides=overrides)
+
+    def unit_ids(self, manifest, sentence):
+        return [u['sourceUnitId'] for u in manifest['sourceUnits'] if u['sourceSentenceId'] == sentence]
+
+    def test_v3_keeps_later_units_when_an_earlier_sentence_gains_a_split(self):
+        override = {'block-00-s001': ['block-00-w0004', 'block-00-w0008']}
+        before = self.manifests(anchors.UNIT_POLICY_V3)
+        after = self.manifests(anchors.UNIT_POLICY_V3, override)
+        self.assertEqual(self.unit_ids(before, 'block-00-s002'), ['block-00-u0015'])
+        self.assertEqual(self.unit_ids(after, 'block-00-s002'), ['block-00-u0015'])
+        self.assertEqual(self.unit_ids(after, 'block-00-s001'), ['block-00-u0001', 'block-00-u0005', 'block-00-u0009'])
+        self.assertEqual(after['policy']['unitPolicy'], anchors.UNIT_POLICY_V3)
+        self.assertEqual(after['schemaVersion'], anchors.ANCHOR_SCHEMA_V2)
+
+    def test_v2_renumbers_later_units_which_is_why_v3_exists(self):
+        override = {'block-00-s001': ['block-00-w0004', 'block-00-w0008']}
+        before = self.manifests(anchors.UNIT_POLICY_V2)
+        after = self.manifests(anchors.UNIT_POLICY_V2, override)
+        self.assertEqual(self.unit_ids(before, 'block-00-s002'), ['block-00-u003'])
+        self.assertEqual(self.unit_ids(after, 'block-00-s002'), ['block-00-u004'])
+
+
 if __name__ == '__main__':
     unittest.main()

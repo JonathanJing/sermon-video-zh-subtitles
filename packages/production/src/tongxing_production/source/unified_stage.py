@@ -562,7 +562,7 @@ def _execute(config, fresh, *, api_key, transport, aligner, mfa_preflight, claud
             'referenceSha256': jobs._digest(references), 'clipSha256': _sha(clip),
             'runtime': _load(out / 'mfa' / 'backend.json')})
     manifest = anchors.build_anchor_manifest(aligned, source_path=aligned_path,
-        unit_policy=anchors.UNIT_POLICY_V2, max_unit_seconds=value['anchorPolicy']['maxUnitSeconds'],
+        unit_policy=anchors.UNIT_POLICY_V3, max_unit_seconds=value['anchorPolicy']['maxUnitSeconds'],
         boundary_overrides=value['anchorPolicy']['boundaryOverrides'])
     _freeze(manifest_path, manifest)
     descriptor = _load(config.path.parent / value['sourceDescriptor'])
@@ -653,7 +653,7 @@ def rebuild(config_path, base_output, out_dir, overrides_path, authorization_pat
             'source_budget_approval_not_bound')
     out.mkdir(parents=True, exist_ok=True)
     manifest = anchors.build_anchor_manifest(aligned, source_path=aligned_path,
-        unit_policy=anchors.UNIT_POLICY_V2, max_unit_seconds=value['anchorPolicy']['maxUnitSeconds'],
+        unit_policy=anchors.UNIT_POLICY_V3, max_unit_seconds=value['anchorPolicy']['maxUnitSeconds'],
         boundary_overrides=overrides['overrides'])
     manifest_path = out / 'anchor-manifest.json'
     _freeze(manifest_path, manifest)
