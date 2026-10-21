@@ -103,7 +103,11 @@ if request['action'] == 'align':
     if adapter._sha(run/'audio') != request['audioSha256']:
         raise ValueError('Audio transfer hash mismatch')
     runtime_key = hashlib.sha256(json.dumps(identity, sort_keys=True).encode()).hexdigest()
-    extra = ({'chunk_cache_dir': str(root/'chunk-cache'/runtime_key)}
+    # The chunk cache is shared by every run of this runtime (models, executable, packages); the
+    # spoken-forms file is left out of its key because each block's own mapping is in the block key.
+    cache_identity = dict(identity, files={k: v for k, v in identity['files'].items() if k != 'spoken_forms_path'})
+    cache_key = hashlib.sha256(json.dumps(cache_identity, sort_keys=True).encode()).hexdigest()
+    extra = ({'chunk_cache_dir': str(root/'chunk-cache'/cache_key)}
              if 'chunk_cache_dir' in adapter.align_reference_chunks.__code__.co_varnames else {})
     segments = adapter.align_reference_chunks(request['chunks'], run/'audio', run/'output'/runtime_key, **options, **extra)
     manifest = json.loads(pathlib.Path(segments[0]['mfaManifest']).read_text())
