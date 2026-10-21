@@ -147,6 +147,12 @@ def layer2_cap_per_locale(profile, scale, backend):
     return layer2["capUsdPerLocale"][scale], True
 
 
+# A high-effort Layer 2 role spends part of its completion budget on reasoning tokens.
+# 1024 truncated a translator response mid-run (2026-10-21); 2048 completed the same
+# 746-group run. The planner refuses a smaller cap before any paid dispatch.
+MIN_COMPLETION_TOKENS = 2048
+
+
 def layer2_spec(execution, locales, profile, scale):
     from scripts import tongxing_host  # noqa: F401  binds the production package ports
     from tongxing_production.text import controller
@@ -181,6 +187,15 @@ def layer2_spec(execution, locales, profile, scale):
         # input ceiling rather than assuming zero inputs or guessing bytes from
         # completion tokens. Oversize payloads still fail the runner's gate.
         selected = limits.validate_request_limits(layer2["requestLimits"])
+        # Reasoning tokens count against the completion cap. A 1024-token cap truncated a
+        # high-effort translator response at group 564 of 746 on 2026-10-21 and cost
+        # USD 13.21 before the run stopped; refuse such a plan instead of discovering it
+        # mid-run.
+        if any(policy[role].get("reasoningEffort") == "high" for role in ("translator", "reviewer")):
+            if selected["maxCompletionTokens"] < MIN_COMPLETION_TOKENS:
+                raise ValueError(
+                    f"Layer 2 {locale} maxCompletionTokens {selected['maxCompletionTokens']} is below "
+                    f"{MIN_COMPLETION_TOKENS}; high-effort reasoning counts against the completion cap")
         initial = {"requests": 2 * groups,
                    "inputTokens": 2 * groups * selected["maxInputTokens"],
                    "outputTokens": 2 * groups * selected["maxCompletionTokens"],

@@ -40,6 +40,15 @@ class RunBudgetInputFeasibilityTests(unittest.TestCase):
             result = plan.main(args)
         return result, out
 
+    def test_high_effort_completion_cap_below_the_floor_is_refused(self):
+        profile = copy.deepcopy(self.profile)
+        profile['layer2']['requestLimits']['maxCompletionTokens'] = plan.MIN_COMPLETION_TOKENS - 1
+        with self.assertRaisesRegex(ValueError, 'maxCompletionTokens'):
+            self.spec(profile)
+        profile['layer2']['requestLimits']['maxCompletionTokens'] = plan.MIN_COMPLETION_TOKENS
+        _, _, sizing = self.spec(profile)
+        self.assertGreater(sizing['zh-Hans']['groups'], 0)
+
     def test_initial_reservation_covers_both_roles_and_unknown_maximum_reviewer_draft(self):
         _, _, sizing = self.spec()
         value = sizing['zh-Hans']; initial = value['initialReservation']
