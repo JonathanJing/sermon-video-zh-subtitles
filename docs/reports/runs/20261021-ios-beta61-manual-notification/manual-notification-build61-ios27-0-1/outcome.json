@@ -1,0 +1,14 @@
+{
+  "schemaVersion": "tongxing-manual-test-receipt-v1",
+  "build": "1.26.20 (61)",
+  "appleBuildId": "8d552fff-34e4-44da-8da9-18da4e92151f",
+  "platform": "iPhone",
+  "osVersion": "27.0.1",
+  "source": "owner_reported_in_chat",
+  "verifiedByAgent": false,
+  "localNotificationVisible": "reported_pass",
+  "tapOpened20261018Page": "reported_pass",
+  "posterVerified": "not_run_for_local_notification",
+  "realMicAlignment": "not_run",
+  "remoteAPNs": "separate_run"
+}
