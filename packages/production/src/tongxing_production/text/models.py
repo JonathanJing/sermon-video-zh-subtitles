@@ -196,6 +196,8 @@ def historical_models(policy: dict[str, Any], *, cache_only: bool) -> dict[str, 
         allowed = {MODEL_ROLES[role], HISTORICAL_MODEL_ROLES[role]}
         if cache_only and role == "translator":
             allowed.add("claude-opus-5-5")
+        if cache_only:
+            allowed.add("deepseek-flash")
         require(policy[role]["model"] in allowed, "unsupported_historical_model_policy")
     return {role: policy[role]["model"] for role in MODEL_ROLES}
 
