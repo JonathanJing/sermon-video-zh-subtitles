@@ -337,10 +337,13 @@ def ios_cue_check(cues, duration, requires_units):
         previous = cue["end"]
 
 
-def cmd_fix_content(assets: Path, out: Path) -> dict:
-    """2026-10-22 fix: content durationSeconds was the window length (2400.5) while its cues run on media
-    time up to the window end (2406.0); iOS rejects cues past durationSeconds. New content files at new
-    paths, so the published bytes are never overwritten; the releases are re-bound to them."""
+def cmd_fix_content(assets: Path, out: Path, version: int) -> dict:
+    """Correct published content in place. The readers admit a v2 content asset only at
+    /content/<pageId>/<locale>.json (2026-10-22: a re-bound <locale>-r2.json path hid the whole page in
+    the production app), so the corrected bytes go back to the same path and only the release's content
+    hash changes. Today's correction: durationSeconds is the window-end media time (the cues run on media
+    time; iOS rejects cues past durationSeconds). Stage with stage-fixed-content, verify, then
+    stage-fix-release."""
     contract.require(not out.exists(), "Use a new fix directory")
     result = {}
     for loc in LOCALES:
@@ -352,21 +355,27 @@ def cmd_fix_content(assets: Path, out: Path) -> dict:
         contract.require(len(content["cues"]) == len(captions["cues"])
                          and {c["textGroupId"] for c in content["cues"]} == {c["textGroupId"] for c in captions["cues"]},
                          "content and captions groups differ")
-        rel = f"content/{PAGE_ID}/{loc}-r2.json"
+        rel = f"content/{PAGE_ID}/{loc}.json"
         write_json(out / "public" / rel, content)
         release = json.loads((assets / f"releases/{loc}.json").read_text())
-        for asset in release["assets"]:
-            if asset["role"] == "content":
-                asset.update(path="/" + rel, sha256=sha_file(out / "public" / rel))
-        release["packageId"] = f"{PAGE_ID}-{loc}-production-v2"
+        next(a for a in release["assets"] if a["role"] == "content")["sha256"] = sha_file(out / "public" / rel)
+        release["packageId"] = f"{PAGE_ID}-{loc}-production-v{version}"
         contract.validate_release_schema(release)
+        contract.validate_v2_asset_paths(release, PAGE_ID, loc)
         write_json(out / f"releases/{loc}.json", release)
         result[loc] = {"durationSeconds": content["durationSeconds"], "lastCueEnd": content["cues"][-1]["end"], "path": "/" + rel}
     return result
 
 
-def cmd_stage_fix_release(base: Path, fix: Path, evidence_path: Path, out: Path) -> dict:
-    """Replace the three releases (re-bound to the fixed content) and update only their hashes in the catalogs."""
+ARCHIVE_CATEGORY = {"schemaVersion": "sermon-page-display-category-v1",
+                    "labels": {"zh-Hans": "正式播放版", "en": "Archive edition"}}
+
+
+def cmd_stage_fix_release(base: Path, fix: Path, evidence_path: Path, out: Path,
+                          archive_pages: tuple[str, ...] = ()) -> dict:
+    """Replace the three releases (re-bound to the fixed content) and update only their hashes in the catalogs.
+    ``archive_pages`` (user-approved 2026-10-22) also gives those v5 pages the 正式播放版 category, which
+    the projection carries to their v4/v3 editions; nothing else on other pages may change."""
     evidence = json.loads(evidence_path.read_text())
     contract.require(evidence["status"] == "pass", "HTTP verification did not pass")
     contract.require(json.loads((base / "deployment-attempt-v2.json").read_text()).get("status") == "deployed", "Base is not deployed")
@@ -385,11 +394,20 @@ def cmd_stage_fix_release(base: Path, fix: Path, evidence_path: Path, out: Path)
     page = next(p for p in v5["pages"] if p["id"] == PAGE_ID)
     for loc in LOCALES:
         page["targets"][loc]["releasePackageJsonSha256"] = hashes[loc]
+    for page_id in archive_pages:
+        archive = next(p for p in v5["pages"] if p["id"] == page_id)
+        contract.require("displayCategory" not in archive, page_id + " already has a category")
+        archive["displayCategory"] = copy.deepcopy(ARCHIVE_CATEGORY)
     v4 = contract.project_legacy_catalog_v4(contract.validate_catalog_schema(v5))
     v3 = contract.project_human_catalog(v4)
-    for name, new in ((contract.CATALOG_V4, v4), (contract.CATALOG_V3, v3)):
-        strip = lambda c: {**c, "pages": [p for p in c["pages"] if p["id"] != PAGE_ID]}
-        contract.require(strip(new) == strip(old[name]), name + ": other pages changed")
+    categorized = []
+    for name, new in ((contract.CATALOG_V5, v5), (contract.CATALOG_V4, v4), (contract.CATALOG_V3, v3)):
+        added = [p["id"] for p in new["pages"] if p["id"] != PAGE_ID and p.get("displayCategory") == ARCHIVE_CATEGORY
+                 and "displayCategory" not in next((q for q in old[name]["pages"] if q["id"] == p["id"]), {})]
+        categorized.append({"catalog": name, "pages": added})
+        strip = lambda c: {**c, "pages": [{k: v for k, v in p.items() if not (k == "displayCategory" and p["id"] in added)}
+                                          for p in c["pages"] if p["id"] != PAGE_ID]}
+        contract.require(strip(new) == strip(old[name]), name + ": other pages changed beyond the approved categories")
     for loc in LOCALES:
         release = json.loads(files[f"releases-v2/{PAGE_ID}/{loc}.json"])
         contract.validate_v2_release_target(release, page, loc)
@@ -398,7 +416,10 @@ def cmd_stage_fix_release(base: Path, fix: Path, evidence_path: Path, out: Path)
     for name, value in ((contract.CATALOG_V5, v5), (contract.CATALOG_V4, v4), (contract.CATALOG_V3, v3)):
         files[contract.CATALOG_FILES[name]] = (json.dumps(value, ensure_ascii=False, indent=2, sort_keys=True) + "\n").encode()
     stage(base, out, None, files, replace=frozenset(f"releases-v2/{PAGE_ID}/{loc}.json" for loc in LOCALES))
-    return {"staged": str(out), "changed": sorted(files)}
+    if archive_pages:
+        write_json(out / "category-addition.json", {"category": ARCHIVE_CATEGORY, "approvedBy": "user (chat, 2026-10-22)",
+                                                    "added": categorized})
+    return {"staged": str(out), "changed": sorted(files), "categoryAdded": categorized}
 
 
 def cmd_readback(stage2: Path) -> dict:
@@ -425,18 +446,23 @@ def main() -> int:
     s2.add_argument("--evidence", type=Path, required=True); s2.add_argument("--out", type=Path, required=True)
     rb = sub.add_parser("readback"); rb.add_argument("--stage2", type=Path, required=True)
     fc = sub.add_parser("fix-content"); fc.add_argument("--assets", type=Path, required=True); fc.add_argument("--out", type=Path, required=True)
-    fa = sub.add_parser("stage-fix-assets"); fa.add_argument("--base", type=Path, required=True)
-    fa.add_argument("--fix", type=Path, required=True); fa.add_argument("--out", type=Path, required=True)
+    fc.add_argument("--version", type=int, required=True, help="release packageId version, higher than the live one")
     fr = sub.add_parser("stage-fix-release"); fr.add_argument("--base", type=Path, required=True); fr.add_argument("--fix", type=Path, required=True)
     fr.add_argument("--evidence", type=Path, required=True); fr.add_argument("--out", type=Path, required=True)
+    fr.add_argument("--archive-page", action="append", default=[], help="v5 page id to label 正式播放版 / Archive edition")
+    sf = sub.add_parser("stage-fixed-content"); sf.add_argument("--base", type=Path, required=True)
+    sf.add_argument("--fix", type=Path, required=True); sf.add_argument("--out", type=Path, required=True)
     args = p.parse_args()
+    if args.cmd == "stage-fixed-content":
+        # Rewrite the corrected content at its fixed path; never publish it under a new path.
+        paths = [f"content/{PAGE_ID}/{loc}.json" for loc in LOCALES]
+        stage(args.base, args.out, None, {rel: (args.fix / "public" / rel).read_bytes() for rel in paths}, replace=frozenset(paths))
+        print(json.dumps({"staged": str(args.out), "replaced": paths})); return 0
     if args.cmd == "fix-content":
-        print(json.dumps(cmd_fix_content(args.assets, args.out), ensure_ascii=False)); return 0
-    if args.cmd == "stage-fix-assets":
-        stage(args.base, args.out, args.fix / "public")
-        print(json.dumps({"staged": str(args.out)})); return 0
+        print(json.dumps(cmd_fix_content(args.assets, args.out, args.version), ensure_ascii=False)); return 0
     if args.cmd == "stage-fix-release":
-        print(json.dumps(cmd_stage_fix_release(args.base, args.fix, args.evidence, args.out), ensure_ascii=False)); return 0
+        print(json.dumps(cmd_stage_fix_release(args.base, args.fix, args.evidence, args.out, tuple(args.archive_page)),
+                         ensure_ascii=False)); return 0
     if args.cmd == "assets":
         result = cmd_assets(args.out)
     elif args.cmd == "baseline":

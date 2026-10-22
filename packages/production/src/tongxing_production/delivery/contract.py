@@ -138,6 +138,19 @@ def validate_v2_release_target(release, page, locale):
             and release['status'] == 'published_http_verified' and release['httpVerification']['status'] == 'pass'
             and not release['issues'],
             'Release differs from target edition/locale/status')
+    return validate_v2_asset_paths(release, edition, locale)
+
+
+def validate_v2_asset_paths(release, edition, locale):
+    """The readers admit only these fixed paths for a v2 page, content and captions
+    (iOS TargetLanguageReleasePackage.validate); any other path hides the locale in
+    the production app. To correct a published file, rewrite it at the same path.
+    """
+    for role, path in (('page', f'/pages/{edition}/{locale}/index.html'),
+                       ('content', f'/content/{edition}/{locale}.json'),
+                       ('captions', f'/captions/{edition}/{locale}.json')):
+        require([a['path'] for a in release['assets'] if a['role'] == role] == [path],
+                'Release ' + role + ' asset must be ' + path)
     return release
 
 
@@ -740,6 +753,8 @@ def validate_catalog_snapshot(snapshot, *, allow_default_locale_drift=False):
                 require(len(content_rows) == 1, 'Mixed-source release needs one content asset')
                 validate_content_target(json.loads((public / content_rows[0]['path'].lstrip('/')).read_text()),
                                         page, locale)
+            elif release.get('schemaVersion') == 'sermon-target-language-release-package-v2':
+                validate_v2_asset_paths(release, target_source_identity(page, target)[0], locale)
             for asset in release['assets']:
                 name = asset['path'].lstrip('/')
                 require(name in files and files[name]['sha256'] == asset['sha256'], 'Missing baseline release asset')
