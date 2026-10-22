@@ -157,12 +157,16 @@ def cmd_assets(out: Path) -> dict:
                    "sourceLocale": "en", "status": "human_reviewed", "contentStatus": "human_reviewed",
                    "audioStatus": "human_reviewed", "reviewMode": "formal", "date": DATE, "title": m["title"],
                    "series": m["series"], "scripture": m["scripture"], "speaker": SPEAKERS,
-                   "durationSeconds": round(WINDOW_END - WINDOW_START, 3), "audioDurationSeconds": audio_seconds,
+                   # Cues run on media time, so the duration is the media time of the window end, not the
+                   # window length (2026-10-22: 2400.5 made iOS reject the whole transcript).
+                   "durationSeconds": WINDOW_END, "audioDurationSeconds": audio_seconds,
                    "englishSourcePackageJsonSha256": esp_sha, "sourceMediaSha256": media,
                    "targetLanguageCandidateJsonSha256": candidate_sha, "targetLanguageAudioPackageJsonSha256": audio_sha,
                    "cues": [{"start": round(WINDOW_START + s["start"], 3), "end": round(WINDOW_START + s["end"], 3),
                              "sourceUnitIds": [s["sourceUnitId"]], "text": tr[s["id"]]["target"],
                              "textGroupId": "translation-" + s["sourceUnitId"]} for s in sent]}
+        ios_cue_check(content["cues"], content["durationSeconds"], True)
+        ios_cue_check(captions["cues"], audio_seconds, False)
         write_json(out / f"public/content/{PAGE_ID}/{loc}.json", content)
         body = "".join(f"<p>{html.escape(tr[s['id']]['target'])}</p>" for s in sent)
         page = (f'<!doctype html><html lang="{loc}"><head><meta charset="utf-8">'
