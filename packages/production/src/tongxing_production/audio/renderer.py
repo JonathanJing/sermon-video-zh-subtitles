@@ -32,6 +32,7 @@ from ..compute import spark_tts_window_scheduler as _window_scheduler
 from ..compute.bounded_audio_cpu import BoundedAudioCPU
 from ..compute.spark_tts_window_scheduler import ParallelBatchEngine
 from ..source import sentence_interpretation as identity
+from ..text import human_override
 from . import anomaly, dev_profile, dev_receipts, recovery
 from . import backend as _audio
 from . import package
@@ -208,8 +209,14 @@ def materialize_path_map(job_path: Path, path_map_path: Path) -> None:
         ref = pending.pop(0)
         original = ref["path"]
         if original in seen:
-            require(seen[original] == ref, f"Conflicting mapped evidence: {original}")
-            continue
+            # One file may be cited with different metadata (bytes, or a JSON hash only some
+            # citers record); only a different hash for the same path is a conflict.
+            prior = seen[original]
+            require(prior["sha256"] == ref["sha256"]
+                    and prior.get("jsonSha256", ref.get("jsonSha256")) == ref.get("jsonSha256", prior.get("jsonSha256")),
+                    f"Conflicting mapped evidence: {original}")
+            if "jsonSha256" in prior or "jsonSha256" not in ref:
+                continue
         seen[original] = ref
         original = Path(ref["path"])
         staged = Path(aliases.get(str(original), str(original)))
@@ -228,6 +235,7 @@ def materialize_path_map(job_path: Path, path_map_path: Path) -> None:
         references.append(ref)
     # Only after all hash checks pass may aliases be made visible to legacy
     # validators that dereference absolute paths from the unchanged job JSON.
+    created = []
     for ref in references:
         original = Path(ref["path"])
         staged = Path(aliases.get(str(original), str(original)))
@@ -238,6 +246,9 @@ def materialize_path_map(job_path: Path, path_map_path: Path) -> None:
         require(str(original) in aliases, f"No path-map entry for inaccessible job path: {original}")
         original.parent.mkdir(parents=True, exist_ok=True)
         original.symlink_to(staged)
+        created.append(original)
+    # Human-override receipts refuse symlinked evidence; admit exactly the links made here.
+    human_override.admit_mapped_aliases(created)
 
 
 def checkpoint_directories(job_path, checkpoint_map_path, *, assembly_only=False):

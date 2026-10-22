@@ -11,6 +11,7 @@ import copy
 import csv
 import hashlib
 import json
+import os
 from pathlib import Path
 from typing import Any
 
@@ -68,15 +69,30 @@ def _findings(group: dict[str, Any]) -> list[dict[str, str]]:
     return findings
 
 
+# Absolute paths a deployment path map linked to hash-verified staged files inside an isolated
+# container (audio.renderer.materialize_path_map). Only these may be symlinks; any other
+# symlinked evidence is still refused.
+_MAPPED_ALIASES: set[str] = set()
+
+
+def admit_mapped_aliases(paths) -> None:
+    _MAPPED_ALIASES.update(str(path) for path in paths)
+
+
+def _regular_file(path: Path) -> bool:
+    return path.is_file() and (not path.is_symlink() or str(path) in _MAPPED_ALIASES)
+
+
 def _review_sheet_cache_path(sheet_path: Path, csv_value: str) -> Path:
     path = Path(csv_value)
     if not path.is_absolute():
         path = sheet_path.parent.parent / path
-    return path.resolve()
+    # Normalize without following symlinks: a path-mapped cache must keep its original path.
+    return Path(os.path.abspath(path))
 
 
 def _cached_response_identity(path: Path, expected_group_id: str) -> str:
-    _require(path.is_file() and not path.is_symlink(),
+    _require(_regular_file(path),
              f"Selected model response cache is missing or symlinked: {path}")
     cached = json.loads(path.read_text(encoding="utf-8"))
     response = cached.get("response") if isinstance(cached, dict) else None
@@ -274,13 +290,13 @@ def validate_override_receipt(source: dict[str, Any], anchor: dict[str, Any],
 
     sheet_ref = receipt["reviewSheet"]
     sheet_path = Path(sheet_ref["path"])
-    _require(sheet_path.is_file() and not sheet_path.is_symlink()
+    _require(_regular_file(sheet_path)
              and sheet_path.stat().st_size == sheet_ref["bytes"]
              and interpretation.sha256(sheet_path) == sheet_ref["sha256"],
              "Human override review-sheet bytes changed")
     decision_ref = receipt["reviewDecision"]
     decision_path = Path(decision_ref["path"])
-    _require(decision_path.is_file() and not decision_path.is_symlink()
+    _require(_regular_file(decision_path)
              and interpretation.sha256(decision_path) == decision_ref["sha256"],
              "Human override user-decision file bytes changed")
     decision = json.loads(decision_path.read_text(encoding="utf-8"))
@@ -318,7 +334,7 @@ def validate_override_receipt(source: dict[str, Any], anchor: dict[str, Any],
                      and entry.get("role") == lane
                      and entry.get("translationGroupId") == row["translationGroupId"]
                      and entry.get("path") == str(cache_path)
-                     and cache_path.is_file() and not cache_path.is_symlink()
+                     and _regular_file(cache_path)
                      and entry.get("sha256") == interpretation.sha256(cache_path)
                      and entry.get("responseId") == _cached_response_identity(
                          cache_path, row["translationGroupId"]),
