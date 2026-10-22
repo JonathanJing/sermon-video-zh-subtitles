@@ -16,6 +16,31 @@ CLI 等价入口：
 
 它不下载来源、不翻译、不发布。结果始终保留 `productionEligible=false`；机器检查通过后返回准备阶段 `succeeded`、`kind=english_source_candidate`、`review=human_pending` 与候选路径，后续原有英文全文/对齐/整句人审仍独立等待；不能把准备阶段成功提升为 `ready_for_translation`。机器检查失败则返回 blocked。
 
+## 新运行默认：v4 配置（2026-10-22 起）
+
+新的 Layer 1 运行用 `sermon-unified-source-preparation-v4`。所有改进仍是配置字段，但**默认打开**：字段不写就取下表的默认值；配置摘要按文件原文计算，每次尝试把实际生效的值写进 `source-run-attempts.ndjson`，`inspect` 也报告 `effective`。v1–v3 的已有运行保持原行为。
+
+| 字段 | v4 默认 | 作用 |
+|---|---|---|
+| `asrWorkers` | 每 180 秒块一个 worker，最多 16 | ASR 一轮返回 |
+| `judge.workers` / `judge.batchSize` | 8 / 6 | 裁判并发 |
+| `judgeCacheRoot` | `.source-judge-cache`（配置所在目录） | 同一来源的所有运行共享按内容寻址的裁判缓存 |
+| `mfaChunkCacheRoot` | `.source-mfa-chunk-cache` | MacBook 端按块 MFA 缓存；Spark 端自带 |
+| `reviewConfirmation` | `<配置文件名>.review-confirmation.json` | 一次确认的汇总单：v4 总是先投机跑并写汇总单 |
+| `reuseBudgetRoots` | `[]`（由准备工具自动填写） | 零成本回放同媒体同窗口已付费的 ASR |
+| `crossCheckTranscripts` | 不设 | 有第二份转写时填 |
+
+v4 必须配授权 v2（`sermon-source-budget-authorization-v2`），不接受 `sourceTextReview`（文字修正走汇总单），judge 必须写 `backend`。生产 continuation 工作流（`workflows/prepared/continuation.py`）同样接受授权 v2：绑定 run、配置摘要、预算根与上限，不核对代码身份。
+
+准备一次新运行（不调用模型、不花钱）：
+
+```sh
+.venv/bin/python tools/ops/prepare_source_run.py draft --from <同来源的上一份配置> --name <运行名> --usd <上限>
+.venv/bin/python tools/ops/prepare_source_run.py approve --authorization <运行名>.authorization.json --reviewed-by "<人> (chat)" --evidence "<原话>"
+```
+
+`draft` 写出开关全部写明的 v4 配置、授权 v2 和未签的审批；`reuseBudgetRoots` 自动列出同目录里同媒体、同窗口、ASR 全部直接付费返回的预算根。审批签署前 stage 拒绝运行；`approve` 只记录人的决定。
+
 ## 输入身份和原有批准
 
 配置标识为 `sermon-unified-source-preparation-v1`，精确字段见模块的 `FIELDS`。包括 productionRunId、来源 ID/URL 全 SHA-256、日期、media 路径/哈希/完整时长、精确 window、jobRoot、outputDirectory，以及以下绑定：

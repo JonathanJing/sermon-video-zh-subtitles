@@ -114,6 +114,10 @@ python tools/ops/group_tasks.py verify --manifest <整篇产物清单> --locale 
 
 OpenAI 云端转写与语言 API 保持不变。legacy 每周 TTS 和配音质检的新任务也默认 Spark 优先、MacBook fallback；已存在的任务继续其核验后的原后端。canonical TTS 的 CUDA 默认与完整跨机 dispatch/fallback 是不同能力，接入边界见[计算策略](local-production-compute-policy.zh.md)。MacBook MPS 已有真实短样本合成证据；短样本成功不代表整篇吞吐、音质或人工听审获准。媒体处理、排版和校验可保留在调度端；无模型声音指纹匹配继续在听众浏览器内执行。提速和云端资源调研见 [GCP 评估](gcp-production-feasibility-20261001.zh.md)。
 
+### Layer 1：默认用 v4 配置和一次确认
+
+2026-10-22 起新的 Layer 1 运行先用 `tools/ops/prepare_source_run.py draft` 从同来源的上一份配置写出 v4 配置（ASR 每块一个 worker、裁判 8 并发、共享裁判缓存、按块 MFA 缓存、汇总单、ASR 零成本回放全部打开），用户批准预算后 `approve` 记录原话，再 `source.unified_stage execute`。第一次 execute 返回 `awaiting_confirmation` 并写出 `review-sheet.md`；用户确认后再 execute 一次，只重算受影响的块和批。细节见[统一 CLI 的正式 Source 候选准备](unified-source-preparation.zh.md#新运行默认v4-配置2026-10-22-起)。
+
 ### Layer 1：英文事实与锚点 shadow
 
 已有完整本地礼拜录像、且不应重新下载时，可先用 `sermon_pipeline.py` 的 `--english-source-only` 从原文件和已批准的绝对窗口生成英文 ASR、MFA 词时间与 `summary.json`。该模式要求 reading/MFA，写入 `status=english_source_candidate`，不调用中文翻译，也不授予 Layer 2 正式资格。`summary.json` 将原媒体 SHA-256 绑定到 `pipelineInputIdentity.sourceAudio`；仍须用同一媒体哈希、来源 URL hash 和窗口另存人工范围收据，再生成锚点、机器裁判和英文人工审核收据。没有可用的本机或 Spark MFA 时，默认按预检要求停在付费转写之前。若操作员明确授权这份媒体的外部转写，可单独选择 `--english-transcript-only`：它保存原始英文 ASR 和 `transcript-only-summary.json`，不运行 MFA、翻译或正式 Layer 1 放行；MFA 恢复后以同一 `--outdir` 运行 `--english-source-only`，按输入身份复用仍有效的 ASR 缓存。

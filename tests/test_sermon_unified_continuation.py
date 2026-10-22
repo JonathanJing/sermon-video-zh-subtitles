@@ -407,6 +407,40 @@ class ContinuationTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError,'immutable_output_changed'):
             subject.prepare_next_revision(self.state,self.recipe_path,self.root)
 
+    def test_source_budget_authorization_v2_is_admitted_without_binding_the_code(self):
+        root = self.root / 'source-v2'
+        root.mkdir(parents=True)
+        bounds = {'requests': 10, 'wallTimeMs': 600000, 'costMicrousd': 500000}
+        limits = {'schemaVersion': 'sermon-openai-chat-request-limits-v1', 'maxInputTokens': 16384,
+                  'maxCompletionTokens': 4096, 'wallTimeMs': 300000, 'serviceTier': 'default'}
+        binding = {'productionRunId': 'r' * 64, 'configurationSha256': 'a' * 64, 'budgetRoot': str(root / '.jobs.source-budget')}
+        approval = root / 'approval.json'
+        approval.write_text(json.dumps({'schemaVersion': 'sermon-source-budget-approval-v2',
+            'binding': {**binding, 'globalBounds': bounds, 'requestLimits': limits}, 'humanApproval': True,
+            'decision': 'approved', 'reviewedBy': 'fixture', 'reviewedAt': '2026-10-22T00:00:00+00:00',
+            'operatorEvidence': 'synthetic'}))
+        authorization = {'schemaVersion': 'sermon-source-budget-authorization-v2', 'binding': binding,
+                         'authority': {'approvalSha256': c.file_sha(approval), 'globalBounds': bounds, 'requestLimits': limits},
+                         'approvalReceipt': approval.name, 'evidence': {'codeIdentitySha256AtApproval': 'e' * 64}}
+        path = root / 'authorization.json'
+        path.write_text(json.dumps(authorization))
+        state = {'manifest': {'productionRunId': 'r' * 64, 'budget': {'limitMicroUsd': 1000000}}}
+        slot = {'binding': 'sourceBudget', 'kind': 'budget_authorization'}
+        actual = subject.validate_evidence_slot(state, slot, {'path': str(path), 'sha256': c.file_sha(path)},
+                                                inputs={}, references={})
+        self.assertEqual(actual['sha256'], c.file_sha(path))
+        for change, error in ((lambda a: a.pop('evidence'), 'budget_schema_invalid'),
+                              (lambda a: a['binding'].update(codeIdentitySha256='d' * 64), 'budget_schema_invalid'),
+                              (lambda a: a['binding'].update(productionRunId='x' * 64), 'budget_run_changed')):
+            with self.subTest(error=error):
+                altered = json.loads(json.dumps(authorization))
+                change(altered)
+                other = root / 'altered.json'
+                other.write_text(json.dumps(altered))
+                with self.assertRaisesRegex(ValueError, error):
+                    subject.validate_evidence_slot(state, slot, {'path': str(other), 'sha256': c.file_sha(other)},
+                                                   inputs={}, references={})
+
     def test_study_budget_slot_checks_receipt_code_root_cap_and_full_prepare(self):
         from tests import test_sermon_study_generation as study_fixture
         f=study_fixture.GenerationTests('test_generation_resume_human_pending_and_verify')
