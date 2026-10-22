@@ -2,7 +2,7 @@
 
 [README](../README.md) · [App 设计](app-system-design.zh.md) · [执行环境](execution-environment-design.zh.md) · [实验方向](experiment-directions.zh.md) · [文档索引](README.zh.md)
 
-核查日期 / Evidence date: **2026-09-30**。代码基线为 `dev@fc3e2fbc60b0fd2c5b59c64fcd515c465efc6b0b`。本文是当前架构导览；包字段、批准和失效规则仍以[四层接口](multilingual-production-interfaces.zh.md)为准，不建立第二套 schema 或排期。
+当前核查 / Evidence refresh: **2026-10-22**，代码基线 `feat/deepseek-flash-layer2@21b83a97`。原始设计日期 2026-09-30、原基线 `dev@fc3e2fbc60b0fd2c5b59c64fcd515c465efc6b0b` 保留为历史来源。本文是当前架构导览；包字段、批准和失效规则仍以[四层接口](multilingual-production-interfaces.zh.md)为准，不建立第二套 schema 或排期。
 
 **已实现 / Implemented** 指此基线有代码及所链接的验证范围；**合同 / Contract** 指必须遵守的边界，未必已有通用执行器；**计划 / Planned** 指尚未落地的目标；**实验 / Experiment** 不能自动取得生产资格。部署、人工听审、设备与现场状态分别记录。
 
@@ -44,19 +44,19 @@ flowchart TB
 | 层 / Layer | 已有路径与职责 / Existing code | 当前边界 / Boundary |
 |---|---|---|
 | L1 | [English Source builder](../packages/production/src/tongxing_production/source/english_source_package.py)、[MFA 生产合同](mfa-production.zh.md)、[source judge](../packages/production/src/tongxing_production/source/english_source_judge.py) | 包和声学证据工具已实现；机器 judge 是 shadow，不能写人工批准；canonical L1 自动 dispatch 未完成 |
-| L2 | [Astra → Sol runner](../packages/production/src/tongxing_production/text/models.py)、[候选 producer](../packages/production/src/tongxing_production/text/candidate.py)、[语言插件](../scripts/language_review_plugins/)、[人审入口](../packages/production/src/tongxing_production/text/human_review.py) | 独立模型请求、缓存与人审已存在；当前 Sol 是可编辑候选的 reviewer-editor，不是下图只读 strict-verifier |
-| L3 | [speech job](../packages/production/src/tongxing_production/audio/speech_job.py)、[正式 renderer](../packages/production/src/tongxing_production/audio/renderer.py)、[package builder](../packages/production/src/tongxing_production/audio/package.py)、[听审入口](../packages/production/src/tongxing_production/audio/human_review.py) | 正式语音需要文字人审、授权音色与同 hash 收据；ASR 只是机器筛查；通用无音频包生成仍非此 builder 职责 |
-| L4 | [catalog builder](../packages/production/src/tongxing_production/adapters/legacy/build_multilingual_catalog.py)、[完整视频发布包](../packages/production/src/tongxing_production/delivery/app_release.py)、[CD 入口](../tools/ops/run_multilingual_cd.py) | 版本化发布工具已实现；v1/v2 Release、v2/v3 catalog 不可混写；完整视频三语路径仍要求音轨，不代表所有入口支持 text-only |
-| 控制 / Control | [固定 L2 adapter](canonical-layer2-controller.zh.md)、[durable jobs](../packages/production/src/tongxing_production/orchestration/jobs.py)、[cache recovery](canonical-layer2-cache-recovery.zh.md)、[reconciliation](canonical-layer2-reconciliation.zh.md) | 显式 opt-in 可派发 L2，停在文字人审；当前每 run 最多一个 active locale job，组内按 policy 有界并发；业务独立不等于三语已并行调度 |
+| L2 | [Layer 2 runner：DeepSeek 默认，Sol / Opus 显式回退](../packages/production/src/tongxing_production/text/models.py)、[候选 producer](../packages/production/src/tongxing_production/text/candidate.py)、[语言插件](../scripts/language_review_plugins/)、[人审入口](../packages/production/src/tongxing_production/text/human_review.py) | 独立模型请求、缓存与人审已存在；默认 runner 的复核角色仍可编辑候选（reviewer-editor），不是下图只读 strict-verifier；默认模型与旧运行冻结规则见[运行时策略](production-model-runtime-policy.zh.md) |
+| L3 | [speech job](../packages/production/src/tongxing_production/audio/speech_job.py)、[正式 renderer](../packages/production/src/tongxing_production/audio/renderer.py)、[package builder](../packages/production/src/tongxing_production/audio/package.py)、[听审入口](../packages/production/src/tongxing_production/audio/human_review.py) | 正式语音需要文字人审或受支持路径的有效文字豁免、授权音色与同 hash 收据；ASR 只是机器筛查；通用无音频包生成仍非此 builder 职责 |
+| L4 | [catalog builder](../packages/production/src/tongxing_production/adapters/legacy/build_multilingual_catalog.py)、[完整视频发布包](../packages/production/src/tongxing_production/delivery/app_release.py)、[CD 入口](../tools/ops/run_multilingual_cd.py) | 版本化发布工具已实现；catalog v5 / v4 / v3 与 release v4 / v3 / v2 分版本读取；v3 release 继续使用 `/releases-v2/` 兼容路由，v5 family 逐语言绑定 edition；完整视频三语路径仍要求音轨，不代表所有入口支持 text-only |
+| 控制 / Control | [固定 L2 adapter](canonical-layer2-controller.zh.md)、[durable jobs](../packages/production/src/tongxing_production/orchestration/jobs.py)、[cache recovery](canonical-layer2-cache-recovery.zh.md)、[reconciliation](canonical-layer2-reconciliation.zh.md) | 显式 opt-in 可派发 L2，停在文字人审；v1 每 run 一个 active locale；v3 / v7 配置支持 `maxActiveLocales=1–3`、`groupWorkers=1–16`，实际值取冻结配置；代码支持并发不等于本轮已实测三语吞吐 |
+| 按组执行 / Per-group | [group pipeline](../packages/production/src/tongxing_production/orchestration/group_pipeline.py)、[worker](../packages/production/src/tongxing_production/orchestration/group_worker.py)、[operator CLI](../tools/ops/group_tasks.py) | `plan` / `status` 不派发；`run` 执行缺失或失效组的 T/R/P，付费派发须先核对预算和未知结果；`merge` 保留有效结果、组装机器候选，后续 QC / L3 不由此入口自动完成 |
+| 人工例外 / Human override | [override 实现](../packages/production/src/tongxing_production/text/human_override.py)、[操作合同](layer2-human-override.zh.md) | 绑定精确源与候选，逐项记录 `accepted_as_is` / `deferred`；保留机器失败证据，不单独放行 Layer 3 |
 | 观察 / Observation | [accounting 实施矩阵](accounting-contract-implementation-matrix.zh.md)、[Tracker](four-layer-production-tracker.zh.md)、[Stage 0 证据](canonical-stage0-evidence.zh.md) | 已有组件验证与待完成项分开；日志或 Tracker 投影不能签发批准，不能以 synthetic 通过宣称生产全链完成 |
 
 Text-only 的现状须分入口看：[catalog builder](../packages/production/src/tongxing_production/adapters/legacy/build_multilingual_catalog.py)默认要求匹配的 `audio_unavailable` L3 包；显式 legacy 兼容选项保留迁移范围，不能据此声称 canonical 四层已完成。[Web 合同测试](../apps/listening-web/shared-text-only-releases.test.mjs)验证读取边界；schema 可表达、reader 可读取，不等于当前完整视频 producer 已支持通用纯文字发布。旧公开 `/packages/layer3/` 与正式音频私有包的版本链差异见[现有 Backlog 的发布包边界](backlog.zh.md)。
 
 ## 生成、独立审核、门禁与新修订 / Generation, review, gate and new revisions
 
-**计划 / Planned，尚非当前 runner 行为。** [PR164 设计快照](https://github.com/JonathanJing/sermon-video-zh-subtitles/blob/fb0da4903717be3844e8114a44c7fcb46d5c9f35/docs/generation-review-gate-design.zh.md)与[对应任务拆分](https://github.com/JonathanJing/sermon-video-zh-subtitles/blob/fb0da4903717be3844e8114a44c7fcb46d5c9f35/docs/generation-review-gate-backlog.zh.md)定义 strict-verifier、review receipt、deterministic gate 与自动修复接线。核查时 PR 仍 open；其他实现分支的进展须以合并后的代码和证据重新校准。本图不修改该 PR 的设计或 backlog。
-
-**进行中 / In flight:** [PR165](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/165) 在 `f731e98863761366836787bab56a5d61a77c281d` 新增 [D1 私有合同与兼容边界](https://github.com/JonathanJing/sermon-video-zh-subtitles/blob/f731e98863761366836787bab56a5d61a77c281d/docs/rqc-private-contracts.zh.md)：schema、只读快照/binding validator 与显式 strict policy 解析已有实现分支；尚未合入上述 dev 基线，不实现模型调用、固定 Gate 准入或人工批准。D2 日志、D3 strict runner、D4 Gate 和 D5 修复/预算须分别跟随后续 PR 证据；本文不编辑它们的合同或实施矩阵。
+**默认生产集成 / Default rollout 仍待验证；受控入口已有代码。** 原 2026-09-30 [PR164 设计快照](https://github.com/JonathanJing/sermon-video-zh-subtitles/blob/fb0da4903717be3844e8114a44c7fcb46d5c9f35/docs/generation-review-gate-design.zh.md)及当时 PR165 的 D1 分支记录是历史，不再作为“只有 D1”的当前状态。当前 D1–D5 已有 [strict 模块](../packages/production/src/tongxing_production/text/strict/)、[review gate](../packages/production/src/tongxing_production/text/strict_review_gate.py)及[显式受控组／locale 入口](rqc-explicit-pipeline-entry.zh.md)，可组合真实 producer / validator；默认 canonical dispatcher 尚未切换，真实校准和 A/B 证据仍待完成。图中 PLANNED 指这部分默认集成与验收边界，不能把代码存在等同正式自动生产或人工批准。
 
 以下展开单个 locale/work unit 的修订节点。每次 Generator 写新候选，Reviewer 只读该候选与实际英文，Gate 核对候选 hash、policy、rubric、完整覆盖和批准。The graph is acyclic: repair creates a new revision, never an edge back to an old generation or review node.
 
@@ -97,9 +97,9 @@ flowchart TB
 
 </details>
 
-图中最多两次内容修订（r1 加 r2/r3）是 PR164 的**建议实验上限**，不是现有 runner 已具备的硬预算。修复计划也须核对依赖闭包、预算和 fresh state；无新证据的相同失败可提前停止。审核调用执行失败与内容失败不同：保留候选，按受限新 attempt 恢复审核；结果未知先对账；inconclusive 等待真实证据或人工裁决，不进入 pass 路径。为了可读，图只展开内容返工主路，完整错误路由以 PR164 为准。
+图中最多两次内容修订（r1 加 r2/r3）是 PR164 的**建议实验上限**，不能代替当前受控入口的冻结 limits 与已授权共享预算。修复计划也须核对依赖闭包、预算和 fresh state；无新证据的相同失败可提前停止。审核调用执行失败与内容失败不同：保留候选，按受限新 attempt 恢复审核；结果未知先对账；inconclusive 等待真实证据或人工裁决，不进入 pass 路径。为了可读，图只展开内容返工主路，完整错误路由以[当前设计](generation-review-gate-design.zh.md)与[受控入口边界](rqc-explicit-pipeline-entry.zh.md)为准。
 
-当前 reviewer-editor 的独立调用不代表修改后的文本又经另一个只读请求验证。历史收据保持原语义，不能重标 strict-verifier。API 执行成功、机器审核通过、业务准入是三种状态；机器通过缺人审仍等待。已知修复由固定程序决定；有歧义才使用预算内 Decision proposal；未知程序错误进入独立工程分支，不让工程 Agent 成为每组生产的常规依赖。
+默认 runner 的 reviewer-editor 独立调用不代表修改后的文本又经另一个只读请求验证。历史收据保持原语义，不能重标 strict-verifier。API 执行成功、机器审核通过、业务准入是三种状态；机器通过缺人审仍等待。已知修复由固定程序决定；有歧义才使用预算内 Decision proposal；未知程序错误进入独立工程分支，不让工程 Agent 成为每组生产的常规依赖。
 
 ## 其他业务范围与维护 / Other scopes and maintenance
 

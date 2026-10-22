@@ -173,7 +173,7 @@ class SVG:
         self.text(86, live_y + 33, '独立旁路：Sunday live / live_session', 18, '#8B6429', 700)
         self.text(86, live_y + 62, '现场不生成四个包；录音若会后持久化，重新从 Layer 1 开始。', 16, '#5D665E')
         self.rect(816, live_y, 720, 92, '#F0EDF5', '#C5B9D7', rx=16, stroke_width=1.1)
-        self.text(838, live_y + 33, '跨层编排：GPT-6 Astra Supervisor + 受限确定性工具', 18, '#655184', 700)
+        self.text(838, live_y + 33, '跨层编排：gpt-6-luna Supervisor + 受限确定性工具', 18, '#655184', 700)
         self.text(838, live_y + 62, 'Agent 只编排和重读证据；不能自授人工批准，也不能把 legacy complete 升级。', 16, '#5D665E')
     def render(self):
         p=self.spec

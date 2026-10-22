@@ -10,7 +10,7 @@ Current architecture map: [App](app-system-design.zh.md) · [Backend DAG](backen
 
 This page routes readers to the maintained contracts; it does not redefine them. Current project claims require the root [README](../README.md), the [workflow source of truth](workflows/README.zh.md), the relevant runbook, code, and bound run receipts. A design, test, or historical report alone cannot promote production status.
 
-Calibrated on **2026-09-20**. Re-read the actual commit, remote deployment, venue evidence, and physical-device acceptance independently; the document date establishes none of them.
+Navigation updated on **2026-10-22**; this records a routing check only. Re-read the actual commit, remote deployment, venue evidence, and physical-device acceptance independently; the document date establishes none of them.
 
 ## Start with the task
 
@@ -18,9 +18,9 @@ Calibrated on **2026-09-20**. Re-read the actual commit, remote deployment, venu
 |---|---|---|
 | Run future prepared multilingual production | [four-layer contract (Chinese)](multilingual-production-interfaces.zh.md) → [local production runbook (Chinese)](codex-local-production-runbook.zh.md) | Layer 1–4 require separate evidence; legacy completion is not four-layer completion |
 | Understand the three product paths and completion gates | [Workflow overview (Chinese)](workflows/README.zh.md) | Current top-level source of truth |
-| Produce the Saturday dual PDFs | [Local production runbook (Chinese)](codex-local-production-runbook.zh.md) → [stable workflow](stable-post-live-reading-pdf-workflow.md) | Current operator path |
+| Produce the Saturday dual PDFs | [Local production runbook (Chinese)](codex-local-production-runbook.zh.md) → [stable workflow](stable-post-live-reading-pdf-workflow.md) | Separate `dual_pdf` delivery path |
 | Inspect or resume the production Supervisor | [Supervisor contract](sermon-production-supervisor-agent.md) | Local evidence still controls state |
-| Turn an English video into Chinese audio and a Tongxing page | [Dubbing runbook (Chinese)](../experiments/sermon-dubbing-poc/SATURDAY_AUDIO_RUNBOOK.zh.md) → [system design](sermon-dubbing-system-design.zh.md) | Current weekly-content path |
+| Turn an English video into Chinese audio and a Tongxing page | [Dubbing runbook (Chinese)](../experiments/sermon-dubbing-poc/SATURDAY_AUDIO_RUNBOOK.zh.md) → [system design](sermon-dubbing-system-design.zh.md) | Legacy Chinese dubbing path; current multilingual weekly production follows the four-layer contract |
 | Review CUV quotations and spoken Chinese | [CUV production contract](sermon-cuv-production.zh.md) → [fixed Scripture library](cuv-scripture-library.zh.md) | Translation, captions, and TTS share the locked text |
 | Release the Tongxing page and poster | [Weekly release contract](tongxing-weekly-release.zh.md) | Publication, HTTP verification, app acceptance, and poster QA stay separate |
 | Prepare Sunday live captions | [Agent entry](sunday-live-agent-runbook.zh.md) → [operations whitepaper](sunday-live-operations-whitepaper.zh.md) | Prepare mode does not start recording |

@@ -4,15 +4,19 @@
 
 本目录仍属开发验证范围。编译、桌面运行和网络下载测试不能代替 iPhone 锁屏、耳机、中断恢复或现场听感验收。
 
-本轮已实现灵动岛扩展、短时麦克风指纹对齐、界面语言切换与双语全文；实测边界及剩余发布步骤见 [发布清单](RELEASE-READINESS.zh.md)。需求与验收见 [iOS 产品 Backlog](BACKLOG.zh.md)：灵动岛、点击后短时麦克风自动对齐、多语言（英文优先）和双语字幕全文。
+截至 2026-10-22，源码已实现灵动岛扩展、短时麦克风指纹对齐、界面语言切换、双语全文、原生完整视频入口、周更卡片与海报；实测边界及剩余发布步骤见 [发布清单](RELEASE-READINESS.zh.md)。需求与验收见 [iOS 产品 Backlog](BACKLOG.zh.md)：灵动岛、点击后短时麦克风自动对齐、多语言（英文优先）和双语字幕全文。
 
 Dev Debug 与正式版沿用同一原生收听界面、播放器、下载、字幕和现场对齐流程。顶部的短语言标记或“更多 → 界面语言”可选择跟随系统、简体中文、English、한국어、Español、Tiếng Việt；切换只更新 App 的按钮与提示，不改变证道内容、音轨、进度或对齐状态。Debug 读取 Firebase Dev，Release 读取正式站点；Dev POC 目录不符合人工审核的 v2 发布条件时，继续显示原生中文版本，不以演示页替换播放器。
 
 “更多选项 → 多语种音色试听 · Demo”与 Firebase 共用 `speaker-clips-v2/catalog.json`：六位讲员各有一段英文原声、相同区间的视频、英文机器转写参考及中／韩／西三语合成音频和译文。每次只显示所选语言的一条合成音频，文稿可展开对照；音频按钮切换播放／暂停且续播不归零。Beta 与正式共用同片段契约，分别读取各自配置的同源目录；缺失、无效或跨环境重定向时显示不可用并提供重试，不再回退到旧版独立样音。正式晋升前须在正式来源发布人工核对过的同一份 V2 目录与媒体包；本轮仅开发 Beta 候选，不部署正式内容。播放前核对同源、字节数与 SHA-256；新样片仍待人工听审，不改变正式 Layer 3 审核状态。内容准备、双端候选及验收见 [同片段试听](VOICE-DEMO.zh.md)。
 
-2026-10-03 的独立 Beta 开发候选新增[现场对齐灵动岛状态](BETA-ALIGNMENT.zh.md)及[单设备本机通知实验](BETA-NOTIFICATIONS.zh.md)。对齐状态仅在 Beta channel 显示；通知默认关闭、与界面语言分开订阅，并校验点击的内容版本。本轮不连接 APNs sender、不更新正式 App；模拟器与真机验收分别记录。设计检查见 [Beta 50 设计检查](BETA-DESIGN-REVIEW.zh.md)，本轮实际归档、TestFlight 状态与真机验收缺口见 [Beta 1.26.10 (51) 分发记录](BETA-RELEASE-1.26.10.zh.md)；上一版记录为 [1.26.9 (50)](BETA-RELEASE-1.26.9.zh.md)。
+2026-10-03 的独立 Beta 开发候选新增[现场对齐灵动岛状态](BETA-ALIGNMENT.zh.md)及[单设备本机通知实验](BETA-NOTIFICATIONS.zh.md)。对齐状态仅在 Beta channel 显示；通知默认关闭、与界面语言分开订阅，并校验点击的内容版本。该次候选未连接 APNs sender、未更新正式 App；模拟器与真机验收分别记录。设计检查见 [Beta 50 设计检查](BETA-DESIGN-REVIEW.zh.md)，该次实际归档、TestFlight 状态与真机验收缺口见 [Beta 1.26.10 (51) 分发记录](BETA-RELEASE-1.26.10.zh.md)；上一版记录为 [1.26.9 (50)](BETA-RELEASE-1.26.9.zh.md)。
 
 2026-10-04，全文定位与自动跟随候选已作为独立 Beta `1.26.11 (52)` 上传并在 Rooted 内部组确认可用；API Key 认证和分发已验证，真机安装／验收仍待核对。准确源码、签名路径、重试与 Apple 读回见 [Beta 1.26.11 分发记录](BETA-RELEASE-1.26.11.zh.md)。
+
+当前最新 tracked Beta 发行记录为 [1.26.20 (61)](BETA-RELEASE-1.26.20.zh.md)：2026-10-21 归档，Apple 读回 `VALID`、`IN_BETA_TESTING` 并关联 Rooted 内部组；Dev v5 默认页是 10 月 18 日三语 family。用户已报告实体 iPhone／iOS 27.0.1 的本机通知及一次本人设备 APNs 显示和点击跳转成功；Agent 未独立观察设备。iOS 27.1 模拟器通知权限用例仍失败，韩／西语真机海报、真实麦克风与现场声学效果仍待验收，正式重建、Production 来源验收与 App Store 提交未执行。上述 10 月 3／4 日记录保留为历史，不能当作当前候选号。
+
+通知入口当前分为 [Beta 本机测试](BETA-NOTIFICATIONS.zh.md)、[本人设备远端 APNs](APNS-SINGLE-DEVICE-TEST.zh.md)和周更卡片／海报。Beta 测试默认关闭，内容语言与界面语言分别选择；正式通知也必须先说明用途，由用户主动 opt-in 后再请求系统权限，不能把 Beta 开关或单设备发送器当作正式群体推送已交付。
 
 界面按用户选定的 **iOS 27 设计语言** 实施：系统导航与 Sheet、26 pt 起的动态字幕、单层 Liquid Glass 悬浮播放栏、深色语义配色，以及窄屏、横屏和大字布局。具体规则与 Apple 官方来源见 [设计约定](DESIGN.zh.md)。
 
@@ -26,7 +30,7 @@ Beta 的 App Store Connect API Key 本机配置及 fastlane 上传／内部组�
 
 ## 打开与运行
 
-后续 App 版本统一用点分隔的 `1.26.N`，本次正式候选由用户指定为 `1.26.7`，下一新候选从 `1.26.8` 开始；Beta 验收后转正式保留同一数字版本，后台 Build 独立递增。跨年、重试与实际归档要求见 [版本号约定](VERSIONING.zh.md)。
+后续 App 版本统一用点分隔的 `1.26.N`；`1.26.7` 与从 `1.26.8` 开始的约定属于当时发行记录。最新已分配 Beta 为 `1.26.20 (61)`，准备下一分发候选前核对最新发行记录和 Apple 状态，不复用已分配号码；Beta 验收后转正式保留同一数字版本，后台 Build 独立递增。跨年、重试与实际归档要求见 [版本号约定](VERSIONING.zh.md)。
 
 正式版与可共存的测试版共用源码：`Tongxing` 使用原 App 标识，`TongxingBeta` 使用独立的 `com.jonathanjing.tongxing.beta`，手机名称为「同行-beta」。BetaDebug/BetaRelease 默认连接 Firebase Dev；灵动岛返回链接与本机存储随 App 身份隔离。开发测试使用 `./scripts/ios.sh test --scheme TongxingBeta`。测试版到正式版的源码冻结、归档记录与发布验证见 [Beta 晋升流程](BETA-PROMOTION.zh.md)。
 
@@ -50,6 +54,8 @@ xcodegen generate
 ## 第一阶段功能
 
 - 读取本周/历史周次目录，切换已发布音频版本；保留来源、审核声明和同步候选标记。
+- 原生 `FullVideoSheet` 提供完整视频入口；各发行版本的实际分发与真机完整播放／拖动证据另记。
+- 周更卡片和海报消费发布侧车；Beta 本机通知及单设备 APNs 保留独立开关、绑定与验证边界。
 - 当前大字字幕与全文阅读；只有时间按钮触发定位，提供大纲、±1秒、±5秒、±0.25秒和跳转撤销。
 - 单一 AVPlayer 管理播放；接入音频 session、后台音频、锁屏信息、远程播放/暂停与微调。
 - 下载完成前不标记为离线可用；完整 SHA-256 校验后原子保存音频。目录原始 JSON 同时缓存，以支持离线字幕和大纲。
@@ -62,7 +68,7 @@ xcodegen generate
 
 ## 数据与模块
 
-Release build 读取 `https://ai-for-god-sermon-audio.web.app/weekly.json` 与同源 `/media/*.mp3`；Debug build 使用隔离的 `https://ai-for-god-sermon-audio-dev.web.app`。legacy 契约为 `sermon-weekly-catalog-v1`。正式站多语言目录现读取 `/multilingual-v3.json` 和 immutable `/releases-v2/<page>/<locale>.json`；Dev POC 继续读取 v2 目录及 v1 发布包。正式来源只接受 `published_http_verified` 的静态页面包；Firebase Dev 的不可变 `candidate` 包仅在明确的 Dev 来源开放，校验其内容 JSON 哈希后生成无脚本的 App 阅读页。客户端选择内容语言时先校验发布包与页面 SHA-256，再在 App 内显示已验证页面；离线缓存每次打开都重新校验。页面预览限制脚本、外部资源和导航，避免显示未验证的网络内容。原生中文播放器与现场对齐保持正式版实现，不重生成、不重新审核文字与音频。
+Release build 读取 `https://ai-for-god-sermon-audio.web.app/weekly.json` 与同源 `/media/*.mp3`；Debug build 使用隔离的 `https://ai-for-god-sermon-audio-dev.web.app`。legacy 契约为 `sermon-weekly-catalog-v1`。多语言目录优先读取 `/multilingual-v5.json` → `/multilingual-v4.json` → `/multilingual-v3.json`，旧站保留 v2／v1 发布包兼容。v3 是人工审核基数，v4 增加机器质检及披露，v5 family 将同篇不同来源 target 汇聚到一个页面，各 target 仍绑定自己的 edition/source/video。immutable Release schema 支持 v4/v3/v2，兼容 v1：`/releases-v4/<page>/<locale>.json` 只对应 v4，`/releases-v2/` 对应 v2 或 v3，旧 `/releases/` 对应 v1。正式来源只接受 `published_http_verified` 的静态页面包；Firebase Dev 的不可变 `candidate` 包仅在明确的 Dev 来源开放，校验其内容 JSON 哈希后生成无脚本的 App 阅读页。客户端选择内容语言时先校验发布包与页面 SHA-256，再在 App 内显示已验证页面；离线缓存每次打开都重新校验。页面预览限制脚本、外部资源和导航，避免显示未验证的网络内容。原生中文播放器与现场对齐保持正式版实现，不重生成、不重新审核文字与音频。
 
 | 路径 | 职责 |
 |---|---|
@@ -70,7 +76,9 @@ Release build 读取 `https://ai-for-god-sermon-audio.web.app/weekly.json` 与�
 | `Infrastructure/` | HTTPS获取、原始目录缓存、取消和音频完整性验证 |
 | `App/PlaybackController.swift` | 唯一播放器、系统音频、来源切换与位置提交 |
 | `App/AppModel.swift` | 内容选择与下载状态；拒绝过期异步结果 |
-| `App/ContentView.swift` | 听众界面、全文、大纲、精调与恢复 |
+| `App/ContentView.swift` | 听众界面、全文、大纲、精调、恢复与原生 `FullVideoSheet` |
+| `App/WeeklyUpdates.swift` | 本周更新卡片、公告侧车与海报展示 |
+| `App/BetaNotifications.swift`、`App/BetaRemotePush.swift` | 默认关闭的 Beta 本机通知、本人设备 APNs 登记与内容绑定；不代表正式群体推送 |
 | `App/PlaybackDock.swift` | 悬浮播放控制、横屏与大字布局 |
 | `App/DesignSystem.swift` | 语义颜色、单层玻璃、滚动边缘与旧系统回退 |
 

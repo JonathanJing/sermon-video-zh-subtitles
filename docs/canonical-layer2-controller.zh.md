@@ -6,7 +6,7 @@
 `machine_review_pass_human_review_pending`、`releaseEligible=false` 的候选；不会创建人工
 批准、启动 TTS、构建/发布页面、提交 App Store，或调用 bounded decision agent。
 
-新任务按[当前模型及调用策略](production-model-runtime-policy.zh.md)使用 Sol 6.1 high 初译 → Sol 6.1 medium 独立复核，默认通过 OpenAI API；旧任务保留冻结的 policy、后端和缓存身份。
+新任务按[当前模型及调用策略](production-model-runtime-policy.zh.md)默认使用 DeepSeek Flash low 初译 → high 独立复核；Sol 6.1 high／medium（OpenAI API）、Opus 5.5 high／medium（Claude CLI）须显式选择，不自动回退；旧任务保留冻结的 policy、后端和缓存身份。
 
 默认配置 `sermon-canonical-layer2-execution-v1` 只接受以下字段：
 
@@ -38,8 +38,8 @@ inspectionConfig 而不列入本批执行 lanes。每个 lane 输出、输入及
   --config /absolute/execution.json --mode deterministic_execute
 ```
 
-一个 tick 至多派发一个固定 worker 然后返回。第一版同一 production run 至多一个 active
-locale job；uncertain owner 继续占用该名额直到 reconciliation。当前 controller 代码允许冻结 policy 的 1–16 个组 workers，共享 job-root 对应的 API 槽位最多 24 个；独立 `run_target_language_models.py` CLI 仍限制 1–3 workers。API 槽位不等于 Codex CLI 账号并发额度，也不是跨所有 job-root 的全局 API/TTS 资源调度器。见 [并发实现](../packages/production/src/tongxing_production/compute/api_concurrency.py) 与 [controller 准入](../packages/production/src/tongxing_production/text/controller.py)。
+一个 tick 至多派发一个固定 worker 然后返回。execution-v1 同一 production run 至多一个 active
+locale job；v3 及后续自动修复配置（含 v7）支持 `maxActiveLocales` 1–3，正式周更 profile 为 3。uncertain owner 继续占用容量并阻止该 run 的新派发，直到 reconciliation。当前 controller 代码允许冻结 policy 的 1–16 个组 workers，共享 job-root 对应的 API 槽位最多 24 个；独立 `run_target_language_models.py` CLI 仍限制 1–3 workers。API 槽位不等于 Codex CLI 账号并发额度，也不是跨所有 job-root 的全局 API/TTS 资源调度器。见 [并发实现](../packages/production/src/tongxing_production/compute/api_concurrency.py) 与 [controller 准入](../packages/production/src/tongxing_production/text/controller.py)。
 显式并发配置使用新的 `sermon-canonical-layer2-execution-v2`，在 v1 字段上增加 `concurrencyProfile` 和 `resourcePolicy` 两个文件路径；v1 不接受这两个新字段，也不会自动升档。迁移时创建新配置与运行身份，绑定文件内容 hash，勿修改旧 job 的容量／凭据／输出目录。当前 profile v1 将最多活动 locale 升到 3，CLI 业务池 23、监督专槽 1；uncertain 仍阻止整个 run 的新派发。正式预算／批准仍须各自通过，详见[本轮诊断准备](reports/20261005-next-concurrency-test-preparation.zh.md)。
 
 自动修复配置 `sermon-canonical-layer2-execution-v3` 在 v1 字段上增加 `layer2AutoRepair`（路由版本、每语言组并发 `groupWorkers` 1–16、同时活跃语言 `maxActiveLocales` 1–3），在 worker 的同一个持久 job 里跑[有界自动修复](layer2-bounded-auto-repair.zh.md)；它不接受 v2 profile，API 仍共用 24 个在途槽。
@@ -264,4 +264,4 @@ execution v3 的 `layer2AutoRepair` 修复轮只对失败组重新调用模型�
 
 ## 并发上限
 
-每个生产 run 默认只有一个活动 locale 作业；显式 execution-v2 搭配冻结的并发 profile 最多三个。owner 状态不确定时，整个 run 的新派发被阻塞，直到对账。已有作业的限额不得原地提高，新的上限要走[预算与迁移](canonical-layer2-budget-and-migration.zh.md)的新身份。
+execution-v1 同一生产 run 最多一个活动 locale 作业；显式 execution-v2 搭配冻结的并发 profile 最多三个。execution-v3 及后续自动修复配置（含 v6/v7）由 `maxActiveLocales` 选择 1–3、`groupWorkers` 选择每语言 1–16；[周更 profile](weekly-run-profile.zh.md#并发设置)默认正式 3 个 locale、每语言 8 个组，dev 1 个 locale。owner 状态不确定时，整个 run 的新派发被阻塞，直到对账。已有作业的限额不得原地提高，新的上限要走[预算与迁移](canonical-layer2-budget-and-migration.zh.md)的新身份。

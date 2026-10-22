@@ -55,10 +55,10 @@
       },
       {
         "id": "voice",
-        "title": "MacBook 本地中文配音",
+        "title": "DGX Spark 默认 / MacBook fallback",
         "lines": [
           "原声参考与来源身份绑定",
-          "9/20 用户听审已通过"
+          "9/20 MacBook 运行听审已通过"
         ],
         "role": "gate",
         "box": [
@@ -410,7 +410,7 @@
         "label": "C · 现场音频驱动的实时字幕"
       }
     ],
-    "calibratedAt": "2026-09-20"
+    "calibratedAt": "2026-10-22"
   },
   {
     "name": "solution-journey",
@@ -612,13 +612,13 @@
     "name": "saturday-chinese-voice-workflow",
     "title": "中文配音与每周发行",
     "english": "WEEKLY CHINESE VOICE",
-    "subtitle": "9/20 本地配音已听审及 App 验收；现场同步独立验证，海报纳入默认交付",
+    "subtitle": "Spark 默认、MacBook fallback；9/20 历史验收保留，现场同步独立验证",
     "nodes": [
       {
         "id": "samevideo",
         "title": "同版本完整录像 / 纯证道",
         "lines": [
-          "本周完整录像已核验",
+          "9/20 完整录像已核验",
           "人工窗口 29:49–1:02:09"
         ],
         "role": "input",
@@ -667,8 +667,8 @@
         "id": "script",
         "title": "中文口播审校",
         "lines": [
-          "gpt-6-astra / medium",
-          "保留原义与段落身份"
+          "legacy：gpt-6-astra / medium",
+          "9/20 冻结 job；保留原义与段落身份"
         ],
         "role": "agent",
         "box": [
@@ -684,7 +684,7 @@
         "title": "获准讲员原声参考",
         "lines": [
           "讲员、参考音频哈希绑定",
-          "本周使用 MLX 原声参考",
+          "9/20 使用 MLX 原声参考",
           "独立训练路线另行留证"
         ],
         "role": "gate",
@@ -698,9 +698,9 @@
       },
       {
         "id": "tts",
-        "title": "MacBook 本地配音",
+        "title": "Spark 默认 / MacBook fallback",
         "lines": [
-          "MLX Qwen3-TTS 已实际运行",
+          "9/20 历史运行：MacBook MLX",
           "可恢复单位与逐次修订证据"
         ],
         "role": "process",
@@ -767,7 +767,7 @@
         "title": "App 与现场分别验收",
         "lines": [
           "9/20 Firebase / iOS 已通过",
-          "本周用户听审已通过",
+          "9/20 用户听审已通过",
           "真实现场同步仍未证实"
         ],
         "role": "gate",
@@ -999,10 +999,10 @@
     ],
     "footer": [
       "发布后 HTTP / Range 核验 → 海报真实二维码 → 最终图片 QA；海报不提升内容及人工验收状态。",
-      "本周听审与 Firebase / iOS 验收已通过；实际现场效果仍独立验证。"
+      "9/20 听审与 Firebase / iOS 验收已通过；新运行与真实现场效果分别验证。"
     ],
     "height": 2030,
-    "calibratedAt": "2026-09-20"
+    "calibratedAt": "2026-10-22"
   },
   {
     "name": "saturday-post-live-workflow",
@@ -1080,7 +1080,7 @@
         "id": "review",
         "title": "中文翻译与两轮审核",
         "lines": [
-          "gpt-6-astra / medium",
+          "gpt-6.1-sol / high",
           "生成内容按授权送至模型"
         ],
         "role": "agent",
@@ -1212,7 +1212,8 @@
       "规范文件：sermon_zh_en_reading.pdf、sermon_interpretation_zh.pdf。",
       "包已导出不代表现场启用；独立同篇及能力预检通过才可选使用。会话完成不能替代业务完成。"
     ],
-    "height": 1350
+    "height": 1350,
+    "calibratedAt": "2026-10-22"
   },
   {
     "name": "sunday-live-workflow",
@@ -2429,9 +2430,9 @@
   },
   {
     "name": "supervisor-control-plane",
-    "title": "Agents API 与本地生产控制",
+    "title": "Codex CLI 与本地生产控制",
     "english": "SUPERVISOR CONTROL PLANE",
-    "subtitle": "默认代理会话负责受限决策，本机工具执行，确定性证据决定完成",
+    "subtitle": "默认 Codex CLI 负责受限决策，本机工具执行，确定性证据决定完成",
     "nodes": [
       {
         "id": "scheduler",
@@ -2502,11 +2503,11 @@
       },
       {
         "id": "agent",
-        "title": "Agents API 会话",
+        "title": "Codex CLI 会话",
         "lines": [
-          "Agents API",
-          "gpt-6-astra / medium",
-          "environment: none"
+          "Codex CLI",
+          "gpt-6-luna",
+          "medium / fast"
         ],
         "role": "agent",
         "box": [
@@ -2831,10 +2832,11 @@
       }
     ],
     "footer": [
-      "新会话须已确认远端终态且无未决工具；超时或取消回执均不足。SDK / Responses 仅显式回退。",
+      "默认 Codex CLI；Agents API 仅历史原会话恢复；未决工具与远端未知结果先对账。",
       "敏感来源及配置不发给代理；旧云端时间轴任务已退役。定时启用不代表未来运行或新文档生成已发生。"
     ],
-    "height": 1390
+    "height": 1390,
+    "calibratedAt": "2026-10-22"
   },
   {
     "name": "evidence-promotion-gates",
@@ -3264,7 +3266,8 @@
         "models": [
           "gpt-transcribe：英文 ASR",
           "MFA / Qwen3-ForcedAligner：词时轴",
-          "GPT-6 Astra：文字、标点与断句审核",
+          "gpt-6.1-sol / high：英文机器裁判",
+          "可选 Claude Opus 5.5 / high",
           "模型不得伪造声学时间戳"
         ],
         "output": [
@@ -3286,8 +3289,8 @@
           "检查否定、因果、经文、专名和数字"
         ],
         "models": [
-          "片段策略：Astra 初译 / Sol 逐组复核",
-          "ko / es 片段已审；正式周次待验",
+          "DeepSeek Flash：初译 low / 复核 high",
+          "默认后端；Sol / Opus 显式回退",
           "固定 CUV 库：确定性精确取文"
         ],
         "output": [
@@ -3309,10 +3312,10 @@
           "机器回转写筛查 + 全文人工听审"
         ],
         "models": [
-          "Qwen3-TTS：当前中文语音 adapter",
+          "Qwen3-TTS：按语言绑定声音",
           "Qwen3-ASR：回转写筛查，不是批准",
           "确定性 scheduler + FFmpeg",
-          "ko / es 配音：Dev 片段已听审"
+          "中 / 韩 / 西逐周发布证据另记"
         ],
         "output": [
           "Target-Language Audio Package",
@@ -3335,7 +3338,7 @@
         "models": [
           "内容发布不需要生成式模型",
           "Firebase + Web / iOS validators",
-          "GPT-6 Astra Supervisor 只负责编排",
+          "gpt-6-luna Supervisor 只负责编排",
           "ImageGen 仅用于可选海报主视觉"
         ],
         "output": [
@@ -3346,11 +3349,11 @@
       }
     ],
     "footer": [
-      "两段三语 Dev 片段已审；正式站仍九周中文。通用 Layer 2–4 producer 持续迁移，legacy complete 不等于四层发布。",
-      "模型是各层工具，不是事实或人工批准来源；来源、hash、覆盖率、语义、听审与播放证据分别留存。"
+      "2026-09-27 起已有三语正式内容，逐周证据另记；DeepSeek 默认尚无 canonical 真实运行证据。",
+      "模型不代替事实或人工批准；旧运行保留冻结身份，来源、hash、听审、播放与发布证据分别留存。"
     ],
     "height": 1580,
-    "calibratedAt": "2026-09-25",
+    "calibratedAt": "2026-10-22",
     "designReference": "built-in ImageGen 2026-09-20"
   },
   {
@@ -4529,12 +4532,12 @@
       }
     ],
     "footer": [
-      "PLANNED: strict read-only review, deterministic gates and bounded repair integration.",
-      "Two repair revisions are a proposed cap. Execution failures reconcile or retry review; human approval remains separate."
+      "D1–D5 (text/strict/*) and controlled entry exist; default dispatcher unchanged.",
+      "Two revisions shown; real A/B pending; reconcile unknowns first; human approval is separate."
     ],
     "height": 2400,
     "indexLabel": "EN",
-    "calibratedAt": "2026-09-30",
+    "calibratedAt": "2026-10-22",
     "designReference": "Repository source / no ImageGen",
     "arrowStroke": "#648A86"
   },
@@ -5110,12 +5113,12 @@
       }
     ],
     "footer": [
-      "计划中的 strict-verifier 与有界返工；D1 私有合同不代表 D3–D5 执行已完成。",
-      "两次修订为建议上限；执行失败恢复审核，结果未知先对账，人审仍独立。"
+      "D1–D5（text/strict/*）与受控入口已有代码；默认 dispatcher 尚未切换。",
+      "图示两次新修订；真实 A/B 待验，结果未知先对账，人工批准独立。"
     ],
     "height": 2400,
     "indexLabel": "ZH–EN",
-    "calibratedAt": "2026-09-30",
+    "calibratedAt": "2026-10-22",
     "designReference": "Repository source / no ImageGen",
     "arrowStroke": "#648A86"
   },
@@ -5440,7 +5443,8 @@
         "id": "SPARK",
         "title": "DGX Spark / CUDA runtimes",
         "lines": [
-          "声音训练、后备推理、隔离实验"
+          "默认预制模型计算",
+          "声音训练、隔离实验"
         ],
         "role": "agent",
         "label": "MODEL",
@@ -5786,7 +5790,7 @@
     ],
     "height": 2560,
     "indexLabel": "ENV",
-    "calibratedAt": "2026-09-30",
+    "calibratedAt": "2026-10-22",
     "designReference": "Repository source / no ImageGen",
     "arrowStroke": "#648A86"
   }

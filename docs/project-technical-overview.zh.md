@@ -2,9 +2,11 @@
 
 [Project introduction](../README.md) · [项目介绍](../README.zh.md) · [Other language](project-technical-overview.md)
 
-本页保留于 **2026-10-01** 从根 README 迁出的架构、实现说明、流程图和实验摘要，迁移基线为 `dev@d25d58d`。这是一份带日期的文档快照，没有重新核验部署或设备状态。下文日期、旧 PR 与模型状态保留历史范围；当前要求以[四层合同](multilingual-production-interfaces.zh.md)、[工作流总览](workflows/README.zh.md)、[后端设计](backend-workflow-system-design.zh-en.md)和[实验索引](experiment-directions.zh.md)为准。9 月 20 日记录还包含后续现场质量未通过的反馈；先前试听通过不能代表现场成功。
+本页保留于 **2026-10-01** 从根 README 迁出的架构、实现说明、流程图和实验摘要，迁移基线为 `dev@d25d58d`。这是一份带日期的文档快照，没有重新核验部署或设备状态。下文“当前”、日期、旧 PR 与模型状态均指截至 **2026-10-01** 的快照；不代表 2026-10-22 的默认或验收。模型历史数据不回写，现行默认另见[运行时模型策略](production-model-runtime-policy.zh.md)。当前要求以[四层合同](multilingual-production-interfaces.zh.md)、[工作流总览](workflows/README.zh.md)、[后端设计](backend-workflow-system-design.zh-en.md)和[实验索引](experiment-directions.zh.md)为准。9 月 20 日记录还包含后续现场质量未通过的反馈；先前试听通过不能代表现场成功。
 
 > **历史发布快照：2026-09-25。** [Firebase 听译 App](https://ai-for-god-sermon-audio.web.app/) 已更新界面：可独立选择中文、英文、韩文、西文界面；正式内容仍为九个已发布的中文周次，英／韩／西内容选项显示“未发布”且不可选。9 月 20 日两段已审核的三语 POC 仍只在 Dev，不在正式站。此次为界面更新，旧媒体保持原字节；发布后的逐文件 HTTP／SHA 和 MP3 Range 检查通过，设备与真实现场验收仍未运行。详见 [Firebase release 记录与 backlog](multilingual-firebase-release-backlog-2026-09-24.zh.md)。完整媒体、音频和 PDF 保存在 Git 之外。
+
+> 图稿链接指向持续维护的资源，可能已按新策略更新；本页文字与实测数据仍保留原日期。
 
 ## 架构与设计导航
 
@@ -27,11 +29,11 @@
 | 层 | 核心职责 | 模型与程序分工 | 交付物与验收门槛 |
 |---|---|---|---|
 | 1. 共享英文事实与锚点 | 锁定来源、证道范围和完整英文；把字词与原音时间轴对齐，再按句号、逗号、语义分句和停顿建立稳定锚点 | `gpt-transcribe` 或可信原稿提供文字；MFA、Qwen ForcedAligner 等候选负责声学字词定位；LLM 可校对文字、标点和断句，但不能凭语言判断伪造时间戳 | `English Source Package`：不可变英文锚点、字词时间、来源/hash、模型身份和覆盖率 |
-| 2. 目标语言文字 | 从英文锚点直接翻译，完整表达每句意思，并检查否定、因果、经文、专名、数字和术语 | 当前 Layer 2 policy 使用 Astra 初译和独立 Sol reviewer-editor 请求；语言插件与人审保持独立，计划中的只读 reviewer 尚不是现有 runner | `Target-Language Candidate`：每个译文单元关联英文锚点 ID，语义和语言审核独立留证 |
+| 2. 目标语言文字 | 从英文锚点直接翻译，完整表达每句意思，并检查否定、因果、经文、专名、数字和术语 | 截至 2026-10-01 的 Layer 2 policy 快照使用 Astra 初译和独立 Sol reviewer-editor 请求；语言插件与人审保持独立，计划中的只读 reviewer 尚不是现有 runner | `Target-Language Candidate`：每个译文单元关联英文锚点 ID，语义和语言审核独立留证 |
 | 3. 目标语言音频与同步 | 用已批准译文生成自然语速语音，测量真实时长，并利用英文停顿和分句安排滚动播放 | Qwen3-TTS 等语音模型负责合成；Qwen3-ASR 等回转写只做机器筛查；确定性调度器负责时长、间隔和时间轴，最终仍需人工完整听审 | `Target-Language Audio Package`：音频、字幕、调度时间轴、筛查和听审状态 |
 | 4. 多语言发布与播放 | 把正确的视频、文字、音频、字幕、页面和语言入口绑定在一起，完成部署、下载和端上播放 | 页面构建器、FFmpeg、Firebase、Web/iOS 客户端和验证程序负责交付；Supervisor/Agent 只编排状态，不能替代内容事实或人工验收 | `Target-Language Release Package`：按语言隔离的发布包、hash、HTTP/下载检查和播放器验证 |
 
-[9 月 25 日四层模型／处理概览（历史 SVG）](diagrams/four-layer-production-workflow.svg)；当前依赖与实施状态见[中英后端 DAG](backend-workflow-system-design.zh-en.md)。
+[维护中的四层模型／处理概览（SVG 已随现行策略更新）](diagrams/four-layer-production-workflow.svg)；当前依赖与实施状态见[中英后端 DAG](backend-workflow-system-design.zh-en.md)。
 
 下图把**内容审核、Git 晋升和 Firebase 发布**分开：Dev 上通过的片段不会自动进入正式站；代码合入 `main` 也不会自动发布新周次。正式内容须按发布计划单独构建、部署和验证。
 
@@ -132,9 +134,9 @@ _图片来自 2026-08-30 真实运行的第一页；两份 PDF 各自的 QA 都�
 
 ![周六 post-live 双 PDF 流程](diagrams/saturday-post-live-workflow.svg)
 
-每周 Supervisor 使用 Astra Medium 完成翻译、两轮阅读稿审核和证道同行，并在 PDF QA 后启用 Context Pack 导出。同篇身份初始为 `unknown`；自动导出不等于人工批准。
+截至 2026-10-01 的每周 Supervisor 快照使用 Astra Medium 完成翻译、两轮阅读稿审核和证道同行，并在 PDF QA 后启用 Context Pack 导出。同篇身份初始为 `unknown`；自动导出不等于人工批准。
 
-这是当前更成熟的 post-live 路径。只有 source、人工批准的时间窗、阅读稿 QA、两个 PDF 以及两个 PDF QA 都存在并通过，才算完成。
+这是截至 2026-10-01 快照中更成熟的 post-live 路径。只有 source、人工批准的时间窗、阅读稿 QA、两个 PDF 以及两个 PDF QA 都存在并通过，才算完成。
 
 关键文档：
 
@@ -214,7 +216,7 @@ v4.1 候选已可在本地 POC 中选择；独立运行时保留录音恢复，�
 | 实时 ASR 最长窗口，3 秒／6 秒 A/B | 90 秒同源回放中，6 秒减少部分碎片，却仍截断关键关系并出现增译；从音频段开始到首条字幕事件的 P95 从 `4.790s` 升至 `7.910s`。 | 保留 3 秒默认；字幕事件不是屏幕呈现，单一开发片段也不能证明总体准确率。 | [窗口 A/B](../experiments/local-live-poc/benchmarks/asr-window-ab-20260904.md) |
 | 翻译单元，原始 final／有界合并 A/B | 对 42 个发生变化的单元完成 126 次 MiLMMT 请求；合并修复部分断句，也在否定、因果和经文关系上产生严重退化。 | `legacy` 保持默认；少一次请求不等于端到端更快或语义更准。 | [单元 A/B](../experiments/local-live-poc/benchmarks/translation-unit-ab-20260904.md) |
 | Layer 1 英文词对齐，Qwen／MFA 同输入对照 | 同一 60 秒音频与 191 词上，两者都保留词序；Qwen 有 3 个零时长词，MFA 没有。 | MFA 只通过本轮结构门槛；无人工逐词 Gold，不能宣称其边界更准确。 | [对齐器对照](../experiments/english-word-timeline-poc/ALIGNER-COMPARISON-2026-09-20.zh.md) |
-| Layer 2 韩语，Astra／Sol 初译与复核 A/B，Gemini 裁判 | 14 单元小样本里，Astra 与 Sol reviewer 均检出 6/6 植入错误；扩至 45 单元／44 组时，Sol 的逐组发现促使 Gemini 定向裁决确认 2 处需修订，而 Gemini 全文扫描曾报告 0 问题。 | 当前生产选择 Astra 初译、Sol 逐组独立复核；实验支持逐组复核的作用，尚不能比较 Sol 与 Astra 的复核优劣，也不能证明单模型初译足够。仍须冻结 policy、语言插件与人工批准。模型会话缺成本／延迟收据，样本也非整篇证道。 | [A/B 证据摘要](reports/20260923-layer2-astra-sol-gemini-ab.zh.md) · [生产流程](target-language-astra-sol-production.zh.md) |
+| Layer 2 韩语，Astra／Sol 初译与复核 A/B，Gemini 裁判 | 14 单元小样本里，Astra 与 Sol reviewer 均检出 6/6 植入错误；扩至 45 单元／44 组时，Sol 的逐组发现促使 Gemini 定向裁决确认 2 处需修订，而 Gemini 全文扫描曾报告 0 问题。 | 截至 2026-10-01 的生产选择快照为 Astra 初译、Sol 逐组独立复核；实验支持逐组复核的作用，尚不能比较 Sol 与 Astra 的复核优劣，也不能证明单模型初译足够。仍须冻结 policy、语言插件与人工批准。模型会话缺成本／延迟收据，样本也非整篇证道。 | [A/B 证据摘要](reports/20260923-layer2-astra-sol-gemini-ab.zh.md) · [生产流程](target-language-astra-sol-production.zh.md) |
 | GPT-6 Supervisor 与三语 Layer 2 影子实验 | 12 个状态中 Sol／Luna 的下一步动作均为 12/12 正确，但完整状态仅 7/12／6/12 通过校验。178 秒同源片段的 135 组／臂中，Astra→Sol 与 Sol→Sol 均完成 135 组；后者估算 token 费用低约 51%，机器双检通过 127 组，对照为 128 组；Luna→Sol 有 10 组结构失败。 | 保留确定性 Supervisor 校验和正式 Astra→Sol 政策。Sol→Sol 先做母语盲评；机器通过不等于人工批准，单片段结果不能外推整篇。 | [实验结果](reports/20260928-model-production-ab-results.zh.md) · [冻结输入](reports/20260928-model-production-ab-inputs.json) · [盲评说明](reports/20260928-model-production-ab-blind-review.zh.md) |
 | Layer 2 中文初译提示词／模型 A/B，双机器裁判 | 首轮 8 条比较 A/B/C/D；第二轮 24 条比较现版 Astra medium 与改写版 Sol medium，两组结构均 24/24。Sol 组生成费用按公开未缓存费率估算低 71.8%，但 API 响应中位数慢 0.65 秒。 | 两裁判及反向顺序复判仅在 7/24 条形成稳定一致结论，不能证明质量非劣效；样本是未完成音频核对的文字诊断，且 A/C 同时改变提示词与模型。保留正式 Astra 初译 → Sol 复核策略。 | [首轮记录](../experiments/prompt-model-ab-20260928/README.zh.md) · [扩样与裁判结果](../experiments/prompt-model-ab-20260928/round2.zh.md) |
 | Layer 3 语速／停顿，整句、pace 指令与短语装配对照 | 六句英文窗口 `40.88s`；复制句间停顿的韩语音轨为 `35.83s`，同模型 pace 指令后为 `35.59s`。中文句内拼接版虽接近总时长，用户听后指出语速与接缝不自然。 | 总时长和完整解码不能替代局部同步、源语声学停顿证据或目标语人耳自然度；完整句自然语速对照仍非同步达标。 | [多语言韵律 POC](multilingual-prosody-poc.zh.md) |

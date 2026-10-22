@@ -1,6 +1,6 @@
 # Sermon Reading-PDF Production Supervisor Agent
 
-当前新 dev／正式任务以[2026-10-06 模型及调用策略](production-model-runtime-policy.zh.md)为准：Layer 2 初译使用 Sol 6.1 high、独立复核使用 Sol 6.1 medium，默认走 OpenAI API 与已批准的请求 tier；Supervisor 使用 Luna medium fast，走 ChatGPT 登录的 Codex CLI。下文旧 Agents API／Astra／Sol 参数只适用于历史证据与原身份对账，不用于新任务。
+当前新 dev／正式任务以[2026-10-21 模型及调用策略](production-model-runtime-policy.zh.md)为准：Layer 2 默认 DeepSeek Flash low 初译、high 独立复核；Sol 6.1 high／medium 和 Opus 5.5 high／medium 仅显式选择，不自动回退。Supervisor 使用 `gpt-6-luna`／medium／fast，走 ChatGPT 登录的 Codex CLI。已有运行保留冻结的后端、模型、凭据、预算与收据身份；下文带日期的 Agents API／Astra／Sol 记录保持原参数，不用于推定新任务状态。DeepSeek 默认已接线，canonical 真实运行验收仍见策略中的证据边界。
 
 Production code is installed and the default entry passed read-only and authorized execute validation on September 11. The cutover receipt recorded `waiting_for_matching_sunday` at that time; it is dated evidence, not a current production decision. Every run must re-read source, lease, approval, run-status, and QA state. See the [cutover receipt](agents-api-production-cutover-20260911.zh.md) and the later [September 20 production record](production-2026-09-20.zh.md).
 
@@ -27,7 +27,7 @@ Use [the local production runbook](./codex-local-production-runbook.zh.md) and `
 ```mermaid
 flowchart LR
     D[Cloud Scheduler discovery] --> G[GCS source and production evidence]
-    L[Local runner] <--> A[Agents API session / environment none]
+    L[Local runner] <--> A[Codex CLI / gpt-6-luna medium fast]
     A --> T[Bounded tool requests]
     T --> L
     L --> P[Deterministic media preparation / PDF tools]
@@ -35,7 +35,7 @@ flowchart LR
     G --> L
 ```
 
-The CLI Supervisor sees minimal structured state and returns a schema-bound operation. Local ProductionTools validate and execute each operation under the existing lease, approval and once-per-stage rules. The new default is **`gpt-6-luna` / medium / fast**; former Astra Medium text roles use **`gpt-6.1-sol` / high / fast**, independent Sol Medium reviewers use **`gpt-6.1-sol` / medium / fast**, all through Codex CLI. ASR remains `gpt-transcribe` and is the API-key workload. API session protocol details below describe legacy original-session recovery; unresolved old sessions must be reconciled before a new CLI run.
+The CLI Supervisor sees minimal structured state and returns a schema-bound operation. Local ProductionTools validate and execute each operation under the existing lease, approval and once-per-stage rules. The Supervisor default is **`gpt-6-luna` / medium / fast through Codex CLI**. Content generation is a separate calling surface: `workflows/dual_pdf/post_live.py` defaults the Chinese, English correction, reading-edition and companion models to `gpt-6.1-sol` with high reasoning. Its `--reading-edition-provider` defaults to `openai`; `codex` is an explicit CLI selection. ASR remains `gpt-transcribe`. The Supervisor backend therefore does not establish the provider of every content call, and API keys are not limited to ASR. Record each entrypoint's actual provider, tier and frozen run receipts. API session protocol details below describe legacy original-session recovery; unresolved old sessions must be reconciled before a new CLI run.
 
 The first scheduler inspection on September 11 did not find this production task; a later authorized step created and re-read the active `pdf-context-pack` Codex schedule. That is dated installation evidence, so current health and run history still require a fresh check. See the [local runbook](./codex-local-production-runbook.zh.md).
 
@@ -56,7 +56,7 @@ The polling interval determined when the next handoff could be observed, in addi
 - Reading-PDF tool: `tools/ops/run.py workflows.dual_pdf.post_live`
 - API: `POST /api/admin/sundays/<date>/production-supervisor`
 
-The SDK rollback path retains this bounded Python dependency; it does not implement the Agents API server-side loop:
+The historical SDK implementation retains this bounded Python dependency. New SDK sessions are disabled; the dependency does not establish an available fallback or implement the Agents API server-side loop:
 
 ```text
 openai-agents>=0.19.1,<0.20
@@ -86,28 +86,23 @@ Local shadow example:
 
 ## Backend selection and recovery
 
-The following parameters are integrated in the local runner. Check the verification receipts for account access and runtime prerequisites before use:
+The local runner defaults to Codex CLI. Use Agents API only to resume an existing original session:
 
 ```bash
-# Create a controlled session and persist its state and tool results.
+# Current entry for a new task; no Agents API session is created.
 .venv/bin/python tools/ops/run.py workflows.dual_pdf.codex_local \
-  --mode shadow --agent-backend agents-api \
-  --agent-run-dir artifacts/sermon-production-supervisor/api-shadow
+  --mode shadow --agent-backend codex-cli
 
-# Resume that same session.
+# Resume the existing legacy session from its original persistent directory.
 .venv/bin/python tools/ops/run.py workflows.dual_pdf.codex_local \
   --mode shadow --agent-backend agents-api \
   --agent-run-dir artifacts/sermon-production-supervisor/api-shadow \
   --resume-agent-session
-
-# Explicit SDK / Responses rollback.
-.venv/bin/python tools/ops/run.py workflows.dual_pdf.codex_local \
-  --mode shadow --agent-backend sdk
 ```
 
-`--agent-run-dir` is optional for a new session; resumption must use its original persistent directory. `--agent-timeout-seconds` defaults to `21600` and bounds the control loop, without forcibly killing an in-flight local tool. `--max-turns` limits tool calls for Agents API and retains the legacy turn limit for SDK.
+The default change does not authorize new Agents API sessions or replay of old tools. For legacy recovery, `--agent-run-dir` must identify the original directory. `--agent-timeout-seconds` defaults to `21600` and bounds the control loop without forcibly killing an in-flight local tool; `--max-turns` limits Agents API tool calls. The SDK has no durable-session resume adapter, so the current entry rejects `--agent-backend sdk`; reconcile its prior outcome before starting a new CLI run.
 
-If session creation has an unknown outcome, stop automatic creation and reconcile the durable record. Pending requests resume the same session. Automatic creation of another session requires a confirmed remote `completed`, `failed`, or `cancelled` state and no executing or unresolved tool call. A local timeout, budget stop, or cancellation ACK alone is insufficient and must not reset the stage-attempt ledger. Persist tool results before submitting them. A stage-attempt ledger prevents repeated production stages even if the model returns a new `call_id`. Timeout, submission failure, and interruption recovery retain source/approval checks, leases, and deterministic tool recovery.
+An unknown historical session-creation outcome requires reconciliation of the durable record. Pending requests stay with the same session. Persist tool results before submitting them; the stage-attempt ledger prevents repeated production stages even with a new `call_id`. A confirmed remote terminal state does not replace reconciliation of prior tool outcomes, source/approval checks, leases, or deterministic recovery rules. Local timeout, budget stop, or cancellation ACK alone cannot reset the ledger or authorize another backend.
 
 ## Manual boundaries and compatibility (2026-09-19)
 
@@ -138,7 +133,7 @@ The approval binds the Sunday, source URL hash, approved times, approver, and cu
 
 ## Legacy Scheduler / Cloud Run integration
 
-These older API/Scheduler parameters do not demonstrate an Agents API integration on this path. The referenced post-live Job is retired; any recovery would first rebuild and verify a suitable Job, then select the SDK backend explicitly. Configure a rebuilt API trigger in shadow mode first:
+These older API/Scheduler parameters do not demonstrate an Agents API integration on this path. The referenced post-live Job is retired; any recovery would first rebuild and verify a suitable Job and wire an appropriate backend. The current SDK entry cannot be used directly. Configure a rebuilt API trigger in shadow mode first:
 
 ```bash
 python3 tools/ops/configure_live_source_scheduler.py \
@@ -182,11 +177,13 @@ Partial output or a model's completion statement does not establish completion.
 
 The following local reports have been checked. Both synthetic cases call the real Agents API while using fixtures for all production state and operations.
 
+These historical report files are local ignored evidence at `artifacts/agents-api-production-development/<run>/report.json`; the run IDs below are provenance references, not repository download links.
+
 | Receipt | Verified scope | Result |
 |---|---|---|
-| [live-synthetic-01](../artifacts/agents-api-production-development/live-synthetic-01/report.json) | Fully simulated missing-approval state | Session completed; 2 tool calls; no generation call; 0 real production mutations; usage returned |
-| [live-synthetic-advance-01](../artifacts/agents-api-production-development/live-synthetic-advance-01/report.json) | Fully simulated approved generation path | Session completed; 4 tool calls; exactly 1 simulated generation call; 0 real production mutations |
-| [live-real-shadow-minimal-01](../artifacts/agents-api-production-development/live-real-shadow-minimal-01/report.json) | Read-only inspection of actual production GCS state | Session completed; 2 tool calls; target date `2026-09-13`; `recommendedAction=waiting_for_matching_sunday`; 0 real production mutations |
+| `live-synthetic-01` | Fully simulated missing-approval state | Session completed; 2 tool calls; no generation call; 0 real production mutations; usage returned |
+| `live-synthetic-advance-01` | Fully simulated approved generation path | Session completed; 4 tool calls; exactly 1 simulated generation call; 0 real production mutations |
+| `live-real-shadow-minimal-01` | Read-only inspection of actual production GCS state | Session completed; 2 tool calls; target date `2026-09-13`; `recommendedAction=waiting_for_matching_sunday`; 0 real production mutations |
 
 Session completion means that the control loop ended. The real-state report has production status `observed`, not completed PDF production. These receipts are ignored local artifacts and do not establish that the production entry or schedule has been installed. Production cutover and scheduling receipts remain separate in the [local runbook](./codex-local-production-runbook.zh.md).
 

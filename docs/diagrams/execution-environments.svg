@@ -140,7 +140,8 @@
 <text x="617.5" y="1171" font-size="16" font-weight="700" fill="#766594" text-anchor="middle" data-box="600,1151,35,28" >10</text>
 <text x="649" y="1171" font-size="15" font-weight="600" fill="#766594" text-anchor="start" data-box="644,1148,360,35" >MODEL</text>
 <text x="600" y="1212" font-size="25" font-weight="650" fill="#19343D" text-anchor="start" data-box="596,1185,408,152" >DGX Spark / CUDA runtimes</text>
-<text x="600" y="1252" font-size="21" font-weight="400" fill="#52676E" text-anchor="start" data-box="596,1185,408,152" >声音训练、后备推理、隔离实验</text>
+<text x="600" y="1252" font-size="21" font-weight="400" fill="#52676E" text-anchor="start" data-box="596,1185,408,152" >默认预制模型计算</text>
+<text x="600" y="1281" font-size="21" font-weight="400" fill="#52676E" text-anchor="start" data-box="596,1185,408,152" >声音训练、隔离实验</text>
 </g>
 <g id="node-GCS" data-node="GCS">
 <rect x="1088" y="1134" width="448" height="220" rx="18" fill="#E7E8E2" stroke="none" />
@@ -208,6 +209,6 @@
 <rect x="64" y="2431" width="1472" height="78" rx="16" fill="#E9EEE8" stroke="none" />
 <text x="84" y="2460" font-size="20" font-weight="400" fill="#4C635F" text-anchor="start" >Dev / Production 隔离；私有生产证据与获准公开媒体分开。</text>
 <text x="84" y="2489" font-size="20" font-weight="400" fill="#4C635F" text-anchor="start" >CI 只验证代码；内容 CD、iOS 分发、设备与现场验收各自留证。</text>
-<text x="64" y="2538" font-size="15" font-weight="400" fill="#7B8B88" text-anchor="start" >内容校准 2026-09-30 · 设计参考 Repository source / no ImageGen · 原生可编辑 SVG</text>
+<text x="64" y="2538" font-size="15" font-weight="400" fill="#7B8B88" text-anchor="start" >内容校准 2026-10-22 · 设计参考 Repository source / no ImageGen · 原生可编辑 SVG</text>
 <text x="1536" y="2538" font-size="15" font-weight="400" fill="#7B8B88" text-anchor="end" >实线：主路径   虚线：条件 / 实验 / 历史</text>
 </svg>

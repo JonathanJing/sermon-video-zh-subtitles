@@ -1,10 +1,26 @@
-# 仓库现状地图：顶层目录装什么、谁在用、对应提案的哪里
+# 仓库地图：历史盘点与当前路径导览
 
 [目录布局提案](repository-layout-proposal.zh.md) · [四层生产合同](../multilingual-production-interfaces.zh.md) · [文档索引](../README.zh.md)
 
-状态：**现状盘点，只读，不授权迁移**。盘点日期：2026-10-15。盘点基线：`dev@ecf49153236eefc0e517e5c1ba9f868836b586c0`，共 7,790 个受版本管理文件。文件数来自该提交的 Git tree，不含被忽略的 `artifacts/`、`tmp/`、`output/` 等产物目录。
+状态：**历史盘点，只读，不授权迁移**。原盘点日期：2026-10-15（保持不变）。盘点基线：`dev@ecf49153236eefc0e517e5c1ba9f868836b586c0`，共 7,790 个受版本管理文件。文件数来自该提交的 Git tree，不含被忽略的 `artifacts/`、`tmp/`、`output/` 等产物目录。
 
-[目录布局提案](repository-layout-proposal.zh.md)（#215，2026-10-11 合入 dev）描述的是**目标**状态；本文补上它缺的另一半：**今天**每个顶层目录装什么、谁消费它、它对应提案的哪个目标位置。两份文档一起读，才能看清项目现在有哪几部分、哪些名字和实际职责不符。本文不移动文件，不改变任何合同、入口、CI 或 backlog 状态；提案 §7 的两条实验线收口与用户重新确认仍是迁移前提，见 [backlog `DEV-GOV-001`](../backlog.zh.md)。
+[目录布局提案](repository-layout-proposal.zh.md)（#215，2026-10-11 合入 dev）描述的是**目标**状态；本文原盘点补上它缺的另一半：**基线提交当时**每个顶层目录装什么、谁消费它、它对应提案的哪个目标位置。两份文档一起读，才能看清基线时项目有哪几部分、哪些名字和实际职责不符。本文不移动文件，不改变任何合同、入口、CI 或 backlog 状态；提案 §7 的两条实验线收口与用户重新确认仍是迁移前提，见 [backlog `DEV-GOV-001`](../backlog.zh.md)。
+
+## 0 当前路径导览（2026-10-22）
+
+下方 §1–§5 原日期、计数、消费者和迁移判断均为 `dev@ecf4915` 的历史快照，不能当作当前目录或 CI 状态。以下仅按本次工作树已存在的路径更新路由，不重算或重标历史数据；当前布局约束见[目录布局提案](repository-layout-proposal.zh.md)与[包 CLI 入口](package-cli-entry.zh.md)。
+
+| 部分 | 当前路径与边界 |
+|---|---|
+| 四层生产库 | `packages/production/src/tongxing_production/`，按 `source/`、`text/`、`audio/`、`delivery/` 分层，另含 `review/`、`orchestration/`、`compute/`、`observability/`、`storage/`、`contracts/`、`adapters/`、`workflows/` |
+| 操作与开发入口 | `.venv/bin/python tools/ops/run.py <area.module>` 调用生产模块；`tools/ops/` 放操作、预检与 Tracker 发布工具，`tools/development/` 放仓库与测试辅助工具 |
+| 兼容与冻结入口 | `scripts/` 保留宿主、兼容门面和仍受冻结身份约束的遗留文件，不再是新增生产源码位置；`backend/` 仍保留 API/worker 外壳，不能据 `services/api/` 推断整个 Backend 已迁移 |
+| 客户端 | `apps/tongxing-ios/`、`apps/listening-web/`、`apps/operator-web/`、`apps/tracker-web/`、`apps/support-web/`；原 `web/`、`experiments/sermon-dubbing-poc/web/` 和 `tracker-admin/` 的客户端已分出 |
+| 服务 | `services/api/src/tongxing_api/` 已提取 API 模块；`services/feedback/` 接替原 `experiments/sermon-dubbing-poc/feedback-api/`；Backend 遗留入口另见[支持路径说明](../../backend/README.md) |
+| 基础设施与发布内容 | `infra/firebase/` 放已迁移的基础设施配置；`firebase/` 仍有 Hosting/部署兼容布局，`firebase/dev/public/` 保留内容，不再是共享 reader 源码位置 |
+| 合同、实验与产物 | `schemas/`、`config/` 保留合同及策略；`experiments/` 保留实验；运行产物在忽略的 `artifacts/`，脱敏报告在 `docs/reports/runs/` |
+
+当前源码位置不代表生产验收；远端 CI 开关与 required checks 也不能从历史表或 workflow 文件推断，见[执行环境设计](../execution-environment-design.zh.md)。
 
 ## 1 怎样读这张地图
 
@@ -17,7 +33,7 @@
 
 "提案之后出现"统一在 §3 单列，表内用 **（新）** 标记。
 
-## 2 当前的几个部分
+## 2 基线当时的几个部分
 
 ### 2.1 客户端
 
@@ -140,4 +156,4 @@ L1–L4 的全部业务代码都在这里，只能靠文件名前缀区分层。
 - 不授权移动任何文件；迁移前提见提案 §7–§8 与 backlog `DEV-GOV-001`。
 - 文件数是基线提交的 Git tree 计数，不是代码量、测试用例数或运行状态。
 - "谁消费"只列代码、CI 和部署里确认的调用方；没列出不等于没有调用方，迁移 PR 仍须逐文件列调用方。
-- 下次更新时重取最新 `dev`，更新基线提交与计数，并把新增目录补进 §3。
+- 本次保留原基线提交、日期与计数；后续若做新的数量盘点，应另列新基线，不能把 §1–§5 的历史数据改称当前。
