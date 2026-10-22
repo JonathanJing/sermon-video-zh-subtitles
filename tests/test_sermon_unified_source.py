@@ -487,6 +487,106 @@ class UnifiedSourceTests(unittest.TestCase):
             self.execute(transport=self.drifting_transport(flip_at=2))
         self.assertLess(len(self.calls), 3)
 
+    def review_flow_config(self):
+        second = self.root / 'second-transcript.txt'
+        second.write_text('Jesus is worthy. Jesus is mighty.')
+        self.config.update(schemaVersion=subject.SCHEMA_V2, asrWorkers=1, reviewConfirmation='confirmation.json',
+                           crossCheckTranscripts=[{'path': str(second), 'sha256': subject._sha(second), 'label': 'second'}])
+        self.rebind_budget()
+
+    def confirm(self, *, simulation, decision, checks='approved', sheet_sha=None):
+        from tongxing_production.source import review_sheet
+        sheet_path = self.root / 'source' / 'review-sheet.json'
+        sheet = json.loads(sheet_path.read_text())
+        value = review_sheet.confirmation_template(sheet, sheet_sha or subject._sha(sheet_path))
+        value.update(simulation=simulation, humanApproval=not simulation, confirmedBy='fixture operator',
+                     confirmedAt='2026-10-22T00:00:00+00:00', checks={k: checks for k in review_sheet.CHECKS})
+        text = [i for i in sheet['items'] if i['kind'] == 'text_correction']
+        value['decisions'][text[0]['id']] = decision
+        (self.root / 'confirmation.json').write_text(json.dumps(value))
+        return text[0]
+
+    def test_review_flow_writes_one_sheet_then_recomputes_only_the_confirmed_row(self):
+        self.review_flow_config()
+        first = self.execute()
+        self.assertEqual(first['status'], 'awaiting_confirmation')
+        self.assertEqual(first['counts']['textContent'], 1)
+        for name in ('review-sheet.json', 'review-sheet.md', 'review-confirmation.template.json'):
+            self.assertTrue((self.root / 'source' / name).is_file(), name)
+        speculative_judge = sum(not c.endswith('/transcriptions') for c in self.calls)
+        self.assertGreater(speculative_judge, 0)
+        item = self.confirm(simulation=False, decision={'action': 'take_alternative'})
+        self.assertEqual((item['asr'], item['alternative']), ('worthy.', 'mighty.'))
+        self.calls.clear()
+        final = self.execute()
+        self.assertEqual(final['status'], 'succeeded', final)
+        self.assertTrue(final['productionEligible'])
+        self.assertEqual(final['changedRows'], [item['row']])
+        # ASR replays from the ledger; only the changed row's judge batch is new.
+        self.assertEqual([c for c in self.calls if c.endswith('/transcriptions')], [])
+        self.assertEqual(len(self.calls), 1)
+        review = json.loads((self.root / 'source' / 'english-source-review.json').read_text())
+        self.assertTrue(review['humanApproval'])
+        self.assertEqual(review['reviewedBy'], 'fixture operator')
+        derivation = json.loads((self.root / 'source' / 'review-derivation.json').read_text())
+        self.assertTrue(derivation['check']['withinConfirmation'])
+        package = json.loads((self.root / 'source' / 'english-source-package.json').read_text())
+        self.assertEqual(package['status'], 'ready_for_translation')
+        provenance = json.loads((self.root / 'source' / 'source-text-review-provenance.json').read_text())
+        self.assertEqual(provenance['patchCount'], 1)
+
+    def test_simulated_confirmation_recomputes_but_writes_no_approval(self):
+        self.review_flow_config()
+        self.execute()
+        self.confirm(simulation=True, decision={'action': 'take_alternative'})
+        result = self.execute()
+        self.assertEqual((result['status'], result['reason']), ('blocked', 'simulated_confirmation_applied'))
+        self.assertFalse(result['humanApprovalCreated'])
+        self.assertFalse((self.root / 'source' / 'english-source-review.json').exists())
+        corrections = json.loads((self.root / 'source' / 'derived' / 'source-text-corrections.json').read_text())
+        self.assertFalse(corrections['humanApproval'])
+        derivation = json.loads((self.root / 'source' / 'review-derivation-simulated.json').read_text())
+        self.assertEqual((derivation['humanApproval'], derivation['englishReview']), (False, None))
+        # The same decisions, now confirmed by a person, complete in the same output directory.
+        self.confirm(simulation=False, decision={'action': 'take_alternative'})
+        self.calls.clear()
+        confirmed = self.execute()
+        self.assertEqual(confirmed['status'], 'succeeded', confirmed)
+        self.assertEqual(self.calls, [])
+
+    def test_confirmation_must_name_this_sheet_decide_every_item_and_every_check(self):
+        self.review_flow_config()
+        self.execute()
+        self.confirm(simulation=False, decision={'action': 'keep'}, sheet_sha='0' * 64)
+        with self.assertRaisesRegex(ValueError, 'for_another_sheet'):
+            self.execute()
+        self.confirm(simulation=False, decision={'action': 'keep'}, checks='pending')
+        with self.assertRaisesRegex(ValueError, 'checks_undecided'):
+            self.execute()
+        self.confirm(simulation=False, decision={'action': 'rewrite'})
+        with self.assertRaisesRegex(ValueError, 'decision_invalid'):
+            self.execute()
+        self.confirm(simulation=True, decision={'action': 'keep'})
+        value = json.loads((self.root / 'confirmation.json').read_text())
+        value['humanApproval'] = True
+        (self.root / 'confirmation.json').write_text(json.dumps(value))
+        with self.assertRaisesRegex(ValueError, 'label_invalid'):
+            self.execute()
+
+    def test_recomputation_outside_the_confirmed_rows_writes_no_approval(self):
+        from tongxing_production.source import review_sheet
+        self.review_flow_config()
+        self.execute()
+        self.confirm(simulation=False, decision={'action': 'take_alternative'})
+        original = review_sheet.derive
+        def narrowed(*args, **kwargs):
+            derived = original(*args, **kwargs)
+            return {**derived, 'rowsWithChangedText': []}
+        with patch.object(review_sheet, 'derive', side_effect=narrowed):
+            result = self.execute()
+        self.assertEqual(result['reason'], 'source_review_derivation_outside_confirmation')
+        self.assertFalse((self.root / 'source' / 'english-source-review.json').exists())
+
     def test_rebuild_rejects_overrides_for_another_alignment(self):
         self.execute()
         overrides, out, authorization = self.rebuild_inputs('b' * 64)
