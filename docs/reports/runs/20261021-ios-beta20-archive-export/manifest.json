@@ -1,0 +1,98 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261021-ios-beta20-archive-export",
+  "runs": [
+    {
+      "label": "beta-1.26.20-build61-r2",
+      "source": "~/.codex/worktrees/ios-next-beta-poster-push/sermon-video-zh-subtitles/artifacts/tongxing-ios/beta-1.26.20-build61-r2",
+      "skipped": {
+        ".plist": 18,
+        "(none)": 71,
+        ".yml": 4,
+        ".json": 24,
+        ".swiftdoc": 8,
+        ".swiftmodule": 8,
+        ".timestamp": 4,
+        ".h": 9,
+        ".modulemap": 4,
+        ".hmap": 12,
+        ".DependencyMetadataFileList": 4,
+        ".DependencyStaticMetadataFileList": 4,
+        ".xcent": 2,
+        ".der": 2,
+        ".stringsdata": 4,
+        ".o": 56,
+        ".dia": 8,
+        ".d": 4,
+        ".swiftconstvalues": 4,
+        ".LinkFileList": 4,
+        ".SwiftConstValuesFileList": 4,
+        ".SwiftFileList": 4,
+        ".swiftsourceinfo": 4,
+        ".dat": 4,
+        ".yaml": 1,
+        ".swift": 1,
+        ".dep": 1,
+        ".plist_thinned": 1,
+        ".png": 4,
+        ".car": 2,
+        ".strings": 12,
+        ".mobileprovision": 3,
+        ".msgpack": 2,
+        ".txt": 3,
+        ".db": 1,
+        ".v1": 3,
+        ".shared": 3,
+        ".xcactivitylog": 2,
+        ".pcm": 398,
+        ".modulevalidation": 1,
+        ".sdkstatcache": 1,
+        ".xcprivacy": 1,
+        ".ipa": 1
+      }
+    }
+  ],
+  "files": [
+    {
+      "run": "beta-1.26.20-build61-r2",
+      "path": "archive.log",
+      "kind": "log",
+      "bytes": 433064,
+      "truncated": true,
+      "sha256": "b224fcc5be915de8286480bafae007eba341faf4a3e836f18f4a09b4f9adb5ba",
+      "redactions": {
+        "email": 2,
+        "home_dir": 169
+      }
+    },
+    {
+      "run": "beta-1.26.20-build61-r2",
+      "path": "export/Packaging.log",
+      "kind": "log",
+      "bytes": 97868,
+      "truncated": true,
+      "sha256": "67f47b565f21998942137b0031398fd56833d325b5e9ef9f24f59b4a0cdca458",
+      "redactions": {
+        "secret_field": 1,
+        "email": 4,
+        "home_dir": 2
+      }
+    },
+    {
+      "run": "beta-1.26.20-build61-r2",
+      "path": "export.log",
+      "kind": "log",
+      "bytes": 453,
+      "truncated": false,
+      "sha256": "ae587bcf034a70e58079c5fe03c9611b376764d6e23744983a20288b2f3574fe",
+      "redactions": {
+        "home_dir": 1
+      }
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}
