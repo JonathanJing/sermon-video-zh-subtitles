@@ -177,11 +177,13 @@ Partial output or a model's completion statement does not establish completion.
 
 The following local reports have been checked. Both synthetic cases call the real Agents API while using fixtures for all production state and operations.
 
+These historical report files are local ignored evidence at `artifacts/agents-api-production-development/<run>/report.json`; the run IDs below are provenance references, not repository download links.
+
 | Receipt | Verified scope | Result |
 |---|---|---|
-| [live-synthetic-01](../artifacts/agents-api-production-development/live-synthetic-01/report.json) | Fully simulated missing-approval state | Session completed; 2 tool calls; no generation call; 0 real production mutations; usage returned |
-| [live-synthetic-advance-01](../artifacts/agents-api-production-development/live-synthetic-advance-01/report.json) | Fully simulated approved generation path | Session completed; 4 tool calls; exactly 1 simulated generation call; 0 real production mutations |
-| [live-real-shadow-minimal-01](../artifacts/agents-api-production-development/live-real-shadow-minimal-01/report.json) | Read-only inspection of actual production GCS state | Session completed; 2 tool calls; target date `2026-09-13`; `recommendedAction=waiting_for_matching_sunday`; 0 real production mutations |
+| `live-synthetic-01` | Fully simulated missing-approval state | Session completed; 2 tool calls; no generation call; 0 real production mutations; usage returned |
+| `live-synthetic-advance-01` | Fully simulated approved generation path | Session completed; 4 tool calls; exactly 1 simulated generation call; 0 real production mutations |
+| `live-real-shadow-minimal-01` | Read-only inspection of actual production GCS state | Session completed; 2 tool calls; target date `2026-09-13`; `recommendedAction=waiting_for_matching_sunday`; 0 real production mutations |
 
 Session completion means that the control loop ended. The real-state report has production status `observed`, not completed PDF production. These receipts are ignored local artifacts and do not establish that the production entry or schedule has been installed. Production cutover and scheduling receipts remain separate in the [local runbook](./codex-local-production-runbook.zh.md).
 

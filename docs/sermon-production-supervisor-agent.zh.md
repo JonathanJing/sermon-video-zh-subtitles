@@ -268,11 +268,13 @@ SERMON_SUPERVISOR_MODE=shadow
 
 以下本机报告已逐项核验；合成用例使用真实 Agents API，但生产状态与操作均为 fixture。
 
+以下历史报告仅在本机忽略目录 `artifacts/agents-api-production-development/<run>/report.json`；表内 run ID 是证据定位，不是仓库下载链接。
+
 | 回执 | 实际验证范围 | 结果 |
 |---|---|---|
-| [live-synthetic-01](../artifacts/agents-api-production-development/live-synthetic-01/report.json) | 全模拟缺审批状态 | Session completed，2 次工具调用，未调用生成，真实生产变更 0；返回 usage |
-| [live-synthetic-advance-01](../artifacts/agents-api-production-development/live-synthetic-advance-01/report.json) | 全模拟有效审批与生成推进 | Session completed，4 次工具调用，模拟 generation 恰好执行 1 次，真实生产变更 0 |
-| [live-real-shadow-minimal-01](../artifacts/agents-api-production-development/live-real-shadow-minimal-01/report.json) | 实际生产 GCS 状态的只读检查 | Session completed，2 次工具调用；目标日期 `2026-09-13`，`recommendedAction=waiting_for_matching_sunday`，真实生产变更 0 |
+| `live-synthetic-01` | 全模拟缺审批状态 | Session completed，2 次工具调用，未调用生成，真实生产变更 0；返回 usage |
+| `live-synthetic-advance-01` | 全模拟有效审批与生成推进 | Session completed，4 次工具调用，模拟 generation 恰好执行 1 次，真实生产变更 0 |
+| `live-real-shadow-minimal-01` | 实际生产 GCS 状态的只读检查 | Session completed，2 次工具调用；目标日期 `2026-09-13`，`recommendedAction=waiting_for_matching_sunday`，真实生产变更 0 |
 
 这里的 session completed 仅表示控制循环结束；第三项报告的生产状态为 `observed`，并非 PDF 生产完成。这些回执是仓库忽略的本机产物，不能单独证明生产入口或定时任务已安装。完整生产切换与调度回执仍由 [本地 runbook](./codex-local-production-runbook.zh.md) 单独记录。
 
