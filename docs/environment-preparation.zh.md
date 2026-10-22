@@ -215,7 +215,8 @@ shasum -a 256 /absolute/path/to/full-source.mp4 \
 
 **模型与运行方式**
 
-- 新 dev 与正式运行：`gpt-6.1-sol` high 初译，`gpt-6.1-sol` medium 独立复核，经 OpenAI API。
+- 新 dev 与正式 Layer 2 默认：`deepseek-flash` low 初译、high 独立复核，经 DeepSeek API；Sol 6.1 high／medium（OpenAI API）和 Opus 5.5 high／medium（订阅 Claude CLI）仅显式选择，不自动回退。旧运行保留冻结身份。
+- 显式环境 launcher 默认从 `~/.config/tongxing/deepseek.env` 注入 `DEEPSEEK_API_KEY`，也接受环境变量覆盖；见[凭据与启动器](openai-minimal-project-setup.zh.md)。不要输出 key 或将凭据文件提交 Git。
 - Supervisor：`gpt-6-luna` medium fast，经 ChatGPT 登录 Codex CLI。它与 OpenAI API key 是不同的认证面。
 - 使用对应 locale 的语言插件、共享术语表、canonical Layer 2 controller、预算 config/authorization、ledger、候选组装和准入检查。
 

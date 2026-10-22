@@ -12,7 +12,7 @@
 
 本页只负责路由，不重复定义流程。项目当前事实以根目录 [README](../README.zh.md)、[工作流总览](workflows/README.zh.md)、对应操作 Runbook、代码和绑定运行收据共同决定；单独一份设计稿、测试或历史报告不能升级生产状态。
 
-状态校准日期：**2026-09-24**。当前提交、远端部署、现场同步和实体设备验收须分别重新读取实际证据，不从文档日期推断。
+导航更新日期：**2026-10-22**，只表示本页路由已核对。当前提交、远端部署、现场同步和实体设备验收须分别重新读取实际证据，不从文档日期推断。
 
 ## 从任务进入
 
@@ -23,9 +23,9 @@
 | 查看或更新 Dev 开发优先级 | [Dev 统一 Backlog](backlog.zh.md) | 唯一顶层开发清单；专项 backlog 只展开细节，生产 Tracker 只记录单次运行 |
 | 执行未来预制多语言生产 | [四层接口合同](multilingual-production-interfaces.zh.md) → [本地生产 Runbook](codex-local-production-runbook.zh.md) | 必须按 Layer 1–4 逐层留证；legacy 完成不等于四层完成 |
 | 查看三条产品路径与完成标准 | [工作流总览](workflows/README.zh.md) | 当前总入口 |
-| 周六从完整礼拜／归档生成双 PDF | [本地生产 Runbook](codex-local-production-runbook.zh.md) → [稳定双 PDF 流程](stable-post-live-reading-pdf-workflow.zh.md) | 当前 operator 路径 |
-| 查看或恢复生产 Supervisor | [Supervisor 契约](sermon-production-supervisor-agent.zh.md) | Agents API 控制层；状态仍由本地证据决定 |
-| 从英文视频制作中文音轨与同行页面 | [配音操作 Runbook](../experiments/sermon-dubbing-poc/SATURDAY_AUDIO_RUNBOOK.zh.md) → [系统设计](sermon-dubbing-system-design.zh.md) | 当前每周内容路径 |
+| 周六从完整礼拜／归档生成双 PDF | [本地生产 Runbook](codex-local-production-runbook.zh.md) → [稳定双 PDF 流程](stable-post-live-reading-pdf-workflow.zh.md) | 独立的 `dual_pdf` 交付路径 |
+| 查看或恢复生产 Supervisor | [Supervisor 契约](sermon-production-supervisor-agent.zh.md) | 默认 Codex CLI / Luna；Agents API 仅历史原会话恢复，状态仍由本地证据决定 |
+| 从英文视频制作中文音轨与同行页面 | [配音操作 Runbook](../experiments/sermon-dubbing-poc/SATURDAY_AUDIO_RUNBOOK.zh.md) → [系统设计](sermon-dubbing-system-design.zh.md) | legacy 中文配音路径；当前多语言周更按四层合同 |
 | 审核 CUV 引文和口播中文 | [CUV 生产流程](sermon-cuv-production.zh.md) → [固定经文库](cuv-scripture-library.zh.md) | 翻译、字幕、TTS 共用同一锁定文本 |
 | 发行同行页面和海报 | [每周发行流程](tongxing-weekly-release.zh.md) | 发布、HTTP 核验、App 验收、海报分别留证 |
 | 准备周日实时字幕页面 | [Agent 执行入口](sunday-live-agent-runbook.zh.md) → [运行白皮书](sunday-live-operations-whitepaper.zh.md) | 准备模式不开始录音 |

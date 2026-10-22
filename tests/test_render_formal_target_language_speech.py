@@ -641,6 +641,71 @@ class FormalRenderTests(unittest.TestCase):
             subject.materialize_path_map(job, mapping)
             self.assertTrue((root / "original/segments.json").is_symlink())
 
+    def test_path_map_accepts_one_file_cited_with_different_metadata_but_not_different_hashes(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            staged = root / "staged"
+            staged.mkdir()
+            source = staged / "source.json"
+            source.write_text('{"value":1}\n')
+            source_ref = {"path": str(root / "original/source.json"), "sha256": subject.identity.sha256(source)}
+            # 2026-10-22 broadcast ko/es: a review decision cited the job's source with bytes, not a JSON hash.
+            decision = staged / "decision.json"
+            decision.write_text(json.dumps({"binding": {**source_ref, "bytes": source.stat().st_size}}))
+            job = root / "job.json"
+            inputs = {"englishSourcePackage": {**source_ref, "jsonSha256": subject.identity.json_sha256({"value": 1})},
+                      "reviewDecision": {"path": str(root / "original/decision.json"),
+                                         "sha256": subject.identity.sha256(decision),
+                                         "jsonSha256": subject.identity.json_sha256(json.loads(decision.read_text()))}}
+            job.write_text(json.dumps({"inputs": inputs}))
+            mapping = root / "path-map.json"
+            mapping.write_text(json.dumps({"schemaVersion": "sermon-deployment-path-map-v1",
+                "paths": {str(root / "original/source.json"): str(source),
+                          str(root / "original/decision.json"): str(decision)}}))
+            subject.materialize_path_map(job, mapping)
+            self.assertTrue((root / "original/source.json").is_symlink())
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            staged = root / "staged"
+            staged.mkdir()
+            source = staged / "source.json"
+            source.write_text('{"value":1}\n')
+            decision = staged / "decision.json"
+            decision.write_text(json.dumps({"binding": {"path": str(root / "original/source.json"), "sha256": "0" * 64}}))
+            job = root / "job.json"
+            job.write_text(json.dumps({"inputs": {
+                "englishSourcePackage": {"path": str(root / "original/source.json"), "sha256": subject.identity.sha256(source)},
+                "reviewDecision": {"path": str(root / "original/decision.json"), "sha256": subject.identity.sha256(decision),
+                                   "jsonSha256": subject.identity.json_sha256(json.loads(decision.read_text()))}}}))
+            mapping = root / "path-map.json"
+            mapping.write_text(json.dumps({"schemaVersion": "sermon-deployment-path-map-v1",
+                "paths": {str(root / "original/source.json"): str(source),
+                          str(root / "original/decision.json"): str(decision)}}))
+            with self.assertRaisesRegex(ValueError, "Conflicting mapped evidence"):
+                subject.materialize_path_map(job, mapping)
+
+    def test_path_map_links_are_the_only_symlinks_human_override_admits(self):
+        from tongxing_production.text import human_override
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            sheet = root / "staged/sheet.csv"
+            sheet.parent.mkdir()
+            sheet.write_text("translationGroupId,currentText\n")
+            job = root / "job.json"
+            job.write_text(json.dumps({"inputs": {"reviewSheet": {
+                "path": str(root / "original/sheet.csv"), "sha256": subject.identity.sha256(sheet)}}}))
+            mapping = root / "path-map.json"
+            mapping.write_text(json.dumps({"schemaVersion": "sermon-deployment-path-map-v1",
+                                           "paths": {str(root / "original/sheet.csv"): str(sheet)}}))
+            other = root / "other.csv"
+            other.symlink_to(sheet)
+            self.assertFalse(human_override._regular_file(root / "original/sheet.csv"))
+            subject.materialize_path_map(job, mapping)
+            self.assertTrue((root / "original/sheet.csv").is_symlink())
+            self.assertTrue(human_override._regular_file(root / "original/sheet.csv"))
+            self.assertFalse(human_override._regular_file(other))
+            self.assertTrue(human_override._regular_file(sheet))
+
     def test_path_map_follows_reused_capability_to_probe_audio(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

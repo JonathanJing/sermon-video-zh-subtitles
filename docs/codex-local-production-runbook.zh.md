@@ -1,6 +1,6 @@
 # Codex 本地周末生产 Runbook
 
-当前新 dev／正式任务以[2026-10-06 模型及调用策略](production-model-runtime-policy.zh.md)为准：Layer 2 初译使用 Sol 6.1 high、独立复核使用 Sol 6.1 medium，默认走 OpenAI API 与已批准的请求 tier；Supervisor 使用 Luna medium fast，走 ChatGPT 登录的 Codex CLI。下文旧 Agents API／Astra／Sol 参数只适用于历史证据与原身份对账，不用于新任务。
+当前新 dev／正式任务以[2026-10-21 模型及调用策略](production-model-runtime-policy.zh.md)为准：Layer 2 默认 DeepSeek Flash low 初译、high 独立复核；Sol 6.1 high／medium 和 Opus 5.5 high／medium 仅显式选择，不自动回退。Supervisor 使用 `gpt-6-luna`／medium／fast，走 ChatGPT 登录的 Codex CLI。已有运行保留冻结的后端、模型、凭据、预算与收据身份；下文带日期的 Agents API／Astra／Sol 记录保持原参数，不用于推定新任务状态。DeepSeek 默认已接线，canonical 真实运行验收仍见策略中的证据边界。
 
 并发、请求上限和新计划预算的当前规则见[周更运行配置](weekly-run-profile.zh.md)；既有运行保留冻结授权与缓存身份，API-only 阶段不占 Spark，GPU 阶段按原准入门执行。
 

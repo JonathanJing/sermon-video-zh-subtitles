@@ -1,8 +1,10 @@
 # 生成、独立审核、门禁与有界返工：完整设计
 
-更新：2026-09-30。核查基线：`dev@fc3e2fbc60b0fd2c5b59c64fcd515c465efc6b0b`，即 [PR #163](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/163) 的合并提交。本文落实此前评审中的 RQC-01—06，归属 [Dev 统一 Backlog](backlog.zh.md) 的 `DEV-SPD-006`、`DEV-L2-001` 与 `DEV-TRACK-001`；不建立另一套顶层排期。
+原设计日期：2026-09-30。原核查基线：`dev@fc3e2fbc60b0fd2c5b59c64fcd515c465efc6b0b`，即 [PR #163](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/163) 的合并提交。本文落实此前评审中的 RQC-01—06，归属 [Dev 统一 Backlog](backlog.zh.md) 的 `DEV-SPD-006`、`DEV-L2-001` 与 `DEV-TRACK-001`；不建立另一套顶层排期。
 
-**状态：设计与实施任务已定义；新增 strict-verifier、统一审核收据和自动返工闭环尚未实现或验收。** 本次仅修改文档，不调用模型、不修改已冻结的生产 policy、不部署、不签发人工批准。开发拆分与逐项完成条件见 [RQC 开发 Backlog](generation-review-gate-backlog.zh.md)。
+**实施状态复核：2026-10-22（`feat/deepseek-flash-layer2@21b83a97`）。** D1–D5 已有 [strict 模块](../packages/production/src/tongxing_production/text/strict/)与 [strict review gate](../packages/production/src/tongxing_production/text/strict_review_gate.py)，[显式受控组／locale 入口](rqc-explicit-pipeline-entry.zh.md)已组合真实 producer / validator。默认 canonical dispatcher 尚未切换，真实人工校准与 A/B 仍待证据；不能把“代码已存在”写成“正式流程已验收”，也不能笼统称“全部未接线”。开发与验收项见 [RQC Backlog](generation-review-gate-backlog.zh.md)。
+
+下文保留 2026-09-30 设计的角色、实验计划和建议阈值；它们不是当前运行的冻结参数。新 run 模型依[运行时策略](production-model-runtime-policy.zh.md)：DeepSeek Flash low / high 默认，Sol 6.1 high / medium 与 Opus 显式回退；历史运行与旧审校收据保持原身份。本次只同步文档，不运行模型、不修改冻结 policy、不部署或签发批准。
 
 ## 1. 决策摘要与范围
 
@@ -14,16 +16,16 @@
 
 ## 2. 已有实现与真实缺口
 
-| 核查入口 | 可复用能力 | 本轮新增范围 |
+| 核查入口 | 可复用能力 | 2026-09-30 设计新增范围 |
 |---|---|---|
-| [Layer 2 runner](../packages/production/src/tongxing_production/text/models.py) | Astra 初译、draft validation、Sol 审校、review validation；独立请求 ID；逐组缓存和 span；有界 group workers | strict-verifier 的只读输出合同、角色级恢复、精确 reviewed hash、完整失败 verdict |
+| [Layer 2 runner](../packages/production/src/tongxing_production/text/models.py) | 按冻结后端初译与审校（新 canonical 默认 DeepSeek，Sol / Opus 显式回退）、draft / review validation；独立请求 ID；逐组缓存和 span；有界 group workers | strict-verifier 的只读输出合同、角色级恢复、精确 reviewed hash、完整失败 verdict |
 | [Layer 2 runbook](target-language-astra-sol-production.zh.md) | 四项语义硬检查、语言插件、候选准入、独立人工批准 | 新模式迁移与兼容 adapter；不覆盖当前运行方式 |
 | `validate_partial_repair_brief` / `validate_revision_brief` | 绑定旧失败响应、原来源与规则，在新目录修订；复用未变化组 | 从可信问题代码产生修复计划，接入 controller；不是另造缓存系统 |
 | [durable jobs](../packages/production/src/tongxing_production/orchestration/jobs.py)、[end-to-end adapter](../packages/production/src/tongxing_production/workflows/supervisor/end_to_end.py) | intent、锁、任务身份、等待、未知结果核对 | 生成/审核活动的独立准入与去重；legacy adapter 不等于 canonical 全链已闭合 |
 | [accounting](../packages/production/src/tongxing_production/observability/accounting.py)、[七项合同](workflow-accounting-log-contract.zh.md) | 执行器/依赖/用量、事件重放、时钟、脱敏；部分能力仍待接通 | 在同一 envelope 中加入 review/gate/repair payload，保留三种状态与完整返工链 |
 | [实施矩阵](accounting-contract-implementation-matrix.zh.md) | 已实现与缺失项逐项分开 | 不因设计入库把 LOGC-01—07 或真实 Stage 1 标为完成 |
 
-重要差异：当前 Sol prompt 允许修改 `targetUtterances/coverage`，再返回 `semanticReview`，属于 **reviewer-editor**。它对修改后文本的自检不能描述成另一独立调用验证过修改结果。现有插件和人工门禁仍然有效；不追溯撤销历史合规产物，也不把旧审校收据重标成 strict-verifier。
+重要差异：默认 runner 的 reviewer-editor prompt 允许修改 `targetUtterances/coverage`，再返回 `semanticReview`，属于 **reviewer-editor**。它对修改后文本的自检不能描述成另一独立调用验证过修改结果。现有插件和人工门禁仍然有效；不追溯撤销历史合规产物，也不把旧审校收据重标成 strict-verifier。
 
 ## 3. 职责、输入和写权限
 
@@ -38,7 +40,7 @@
 
 同一进程也要通过接口与文件写入器限制权限。Reviewer 仅获得只读材料和专用收据输出通道；不能仅靠 prompt 声明“不要修改”。这不是在不可信代码之间建立完整操作系统安全沙箱，沙箱化需要另行设计。
 
-独立性指独立请求、上下文、权限和证据，不承诺模型错误统计独立。第一轮保持仓库既有 Astra/Sol 分工，不因本设计常规增加第三遍 Astra/Gemini 或自动轮换裁判。
+独立性指独立请求、上下文、权限和证据，不承诺模型错误统计独立。2026-09-30 原方案的第一轮保留当时 Astra/Sol 分工；后续受控实验须冻结实际模型，不因本设计常规增加第三轮模型或自动轮换裁判。
 
 ## 4. DAG、并行与等待
 
@@ -74,7 +76,7 @@ Controller dispatch 后等待持久化任务完成或外部批准，不让监管
 
 ## 5. 持久化合同
 
-以下是待实现的私有合同，不是现有 public catalog/Release 的新必填字段。RQC-02 必须提交闭合 JSON Schema、严格 Python validator、正反例 fixtures 与新旧 adapter；不能只有 Markdown 字段表。
+以下保留 2026-09-30 原设计对私有合同的要求，不是 public catalog/Release 的新必填字段。当前 D1–D5 已有 schema、validator 与受控入口；具体版本、正反例及兼容范围见[私有合同](rqc-private-contracts.zh.md)与[接线边界](rqc-explicit-pipeline-entry.zh.md)，不能仅凭此字段表推断验收。
 
 ### 5.1 Candidate Revision
 
@@ -139,7 +141,7 @@ API 成功、语义通过、业务准入三者是不同事实。生成器返回�
 
 幂等身份来自稳定的生产对象、action、work unit、revision 和输入/policy/rubric hash；恢复 invocation/attempt 不改变该逻辑身份。新 revision 是有意的新工作，必须有新身份。内部幂等 key 不等于外部 API 保证 exactly-once；每个 provider adapter 明确查询/恢复/幂等支持，未知结果不得自动重复付费。
 
-建议首轮受控实验默认上限：每个单元最多 2 次内容修订（加初版最多 3 版）；每版最多 2 次审核执行尝试（第二次仅用于执行失败恢复，不能对明确内容 fail 重抽）；每个单元整条修订链最多 1 次监管模型决策。上述是待配置实现的保守实验默认值，不是当前 runner 已具备的能力。共享 run 的总请求、input/output token、时间和金额预算须在真实运行前获授权并持久化预留；实际配置可更严格。限额不因重启、新 child task、新 issueId 或新目录重置。
+建议首轮受控实验默认上限：每个单元最多 2 次内容修订（加初版最多 3 版）；每版最多 2 次审核执行尝试（第二次仅用于执行失败恢复，不能对明确内容 fail 重抽）；每个单元整条修订链最多 1 次监管模型决策。上述是 2026-09-30 原方案的保守实验建议值，不代替受控入口当前 limits 配置与授权校验，也不证明默认生产 runner 已启用这组参数。共享 run 的总请求、input/output token、时间和金额预算须在真实运行前获授权并持久化预留；实际配置可更严格。限额不因重启、新 child task、新 issueId 或新目录重置。
 
 达到预算或无法证明继续安全时停止，不修改门禁。相同失败代码和相同候选内容再次出现且无新证据时，不做第三次“再试试看”。并发 worker 原子预留预算；结果未知的额度保留待核对。完整金钱上界无法核实时不声称已实现硬费用封顶；采用明确 token/请求上限及已核实计价/授权条件。
 
@@ -192,7 +194,7 @@ API 成功、语义通过、业务准入三者是不同事实。生成器返回�
 
 ## 10. Policy 迁移与旧产物兼容
 
-先提供 `legacy_editor` 与 `strict_verifier` 两个显式模式。现有 v2 policy、prompt、raw/cache、旧候选/批准和运行目录继续原样读取。`strict_verifier` 必须使用单独版本的 policy（实施目标为新 v3 policy）、review schema、prompt、rubric 与新输出目录；不存在的版本在旧 reader 中不得被默认为兼容。
+先提供 `legacy_editor` 与 `strict_verifier` 两个显式模式。现有 v2 policy、prompt、raw/cache、旧候选/批准和运行目录继续原样读取。`strict_verifier` 必须使用单独版本的 policy（原设计目标为新 v3；当前已有显式 v3 parser，默认 reader 仍不自动接受 strict policy）、review schema、prompt、rubric 与新输出目录；不存在的版本在旧 reader 中不得被默认为兼容。
 
 strict 分支的 adapter 使用 Generator 的冻结文本/coverage 与 Reviewer 的只读结果组装机器证据，保留原候选准入/插件/人审链。不得伪造 reviewer 改写了文本，或仅把 pass 字符串塞进旧格式绕过验证。是否能无损输出当前正式 Candidate schema，由 RQC-02/01 的合同测试证明；无法证明时不进入 L3，不以修改 public schema 作为本轮默认解决方案。
 
@@ -230,9 +232,9 @@ Reviewer 指标分 locale、错误类型和严重度报告：对人工错误集�
 
 ## 12. 开发推进与 Definition of Ready
 
-详细顺序在 [开发 Backlog](generation-review-gate-backlog.zh.md)。第一批是角色/收据 schema、legacy adapter 和日志 payload 注册表；不是马上改正式 Sol prompt。第二批接 strict worker、固定 gate、修复计划和恢复。之后才做人工校准、短片段→10 分钟→完整视频。
+详细顺序在 [开发 Backlog](generation-review-gate-backlog.zh.md)。原计划先实现角色/收据 schema、legacy adapter 和日志 payload 注册表，再接 strict worker、固定 gate、修复计划和恢复；D1–D5 与受控入口代码现已存在。剩余人工校准、短片段→10 分钟→完整视频须按各自准入与证据推进，不因此直接切换默认 runner。
 
-合同实现可开始：已确定角色、scope、持久化对象、失败分类、兼容路径、默认有界策略和测试入口。真实实验仍须冻结实际样本/预算/计价、可用模型/工具、具名审核者、rubric 与量化阈值；这些是 live-run 前置，不以“设计 ready”视为已经满足。现有 DEV-SPD-006 保持 in_progress；RQC 新增实现均 pending，不因写完方案改成 complete。
+代码实现与受控入口已有基础：角色、scope、持久化对象、失败分类、兼容路径和有界恢复已分模块。真实实验仍须冻结实际样本/预算/计价、可用模型/工具、具名审核者、rubric 与量化阈值；这些是 live-run 前置，不以“设计 ready”视为已经满足。实施与验收状态逐项以 RQC Backlog 为准；不继续把 D1–D5 全部写为 pending，也不因代码完成推断真实实验 complete。
 
 本轮保持 backend-only 的方法是把审核元数据放在私有 sidecar，不改变现有 public catalog/Release/URL/音轨字幕语义或 iOS 源码。每个实现 PR 重新核对差异；不能把此范围声明应用于 #163 中其他已经发生的客户端修改。需要客户端变更时拆到 DEV-IOS/DEV-CICD-004，不借后端优化规避对应客户端交付验证。
 
@@ -240,4 +242,4 @@ Reviewer 指标分 locale、错误类型和严重度报告：对人工错误集�
 
 [Anthropic evaluator–optimizer](https://www.anthropic.com/engineering/building-effective-agents) 描述独立生成和评估反馈循环，强调明确评价标准及可测改进；[OpenAI evaluation best practices](https://developers.openai.com/api/docs/guides/evaluation-best-practices) 强调任务特定评估、人工校准及模型裁判偏差。2026-09-30 读取；这里借鉴模式，不据此宣称本项目会省特定比例 token 或已达质量门槛。
 
-代码事实以本文冻结 SHA 为准；工具/审核模型升级仍需新版本与回归。本文新增的合同和数值是设计，不是已实现或实测结果。
+原设计的代码事实绑定 2026-09-30 冻结 SHA；当前实施状态按页首 2026-10-22 复核及受控入口文档读取。建议数值不是实测结果；代码实现、真实校准、默认 rollout 与生产交付分别留证，工具或审核模型升级仍需新身份和相应验证。

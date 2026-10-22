@@ -47,6 +47,19 @@ python3 tools/ops/run_with_openai_environment.py --environment prod --env-file ~
 
 派发到容器时把这个文件只读挂进去，在容器里经启动器选环境；不要另建只含 prod 的文件。旧路径 `~/.config/tongxing/openai-prod.env` 已废弃，10-11 运行目录里的音频质检派发脚本仍写着它，那是冻结证据，下一轮派发改读本文件。
 
+### DeepSeek Layer 2 的本地 key
+
+DeepSeek 默认后端用独立文件 `~/.config/tongxing/deepseek.env`，只含 `DEEPSEEK_API_KEY`；目录 700、文件 600，不进 Git。启动器 `tools/ops/run_with_openai_environment.py` 默认读取它并在启动子进程时注入；文件不存在时 OpenAI-only 运行不受影响。
+
+```
+install -d -m 700 ~/.config/tongxing
+printf 'DEEPSEEK_API_KEY=%s\n' '<key>' > ~/.config/tongxing/deepseek.env
+chmod 600 ~/.config/tongxing/deepseek.env
+python3 tools/ops/run_with_openai_environment.py --environment dev --check
+```
+
+不要把 key 发到聊天、写进命令行历史或提交到仓库。
+
 **轮换 key 时两处一起换。** Mac 的 `.env.openai` 和 Spark 的 `openai.env` 需同时更新（由操作者执行，本会话的拷贝会被权限检查拦下）：
 
 ```sh

@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1600" height="2030" viewBox="0 0 1600 2030" role="img" aria-labelledby="title description">
 <title id="title">中文配音与每周发行</title>
-<desc id="description">9/20 本地配音已听审及 App 验收；现场同步独立验证，海报纳入默认交付。发布后 HTTP / Range 核验 → 海报真实二维码 → 最终图片 QA；海报不提升内容及人工验收状态。；本周听审与 Firebase / iOS 验收已通过；实际现场效果仍独立验证。</desc>
+<desc id="description">Spark 默认、MacBook fallback；9/20 历史验收保留，现场同步独立验证。发布后 HTTP / Range 核验 → 海报真实二维码 → 最终图片 QA；海报不提升内容及人工验收状态。；9/20 听审与 Firebase / iOS 验收已通过；新运行与真实现场效果分别验证。</desc>
 <defs><linearGradient id="canvas" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f7faff"/><stop offset="1" stop-color="#edf5f6"/></linearGradient><filter id="card-shadow" x="-15%" y="-25%" width="130%" height="155%"><feDropShadow dx="0" dy="10" stdDeviation="12" flood-color="#173452" flood-opacity="0.10"/></filter><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0 L10 5 L0 10 Z" fill="#718da5"/></marker></defs>
 <style>text{font-family:-apple-system,BlinkMacSystemFont,'PingFang SC','Noto Sans CJK SC','Microsoft YaHei',sans-serif;font-variant-ligatures:none}</style>
 <rect x="0" y="0" width="1600" height="2030" rx="0" fill="url(#canvas)" stroke="none" />
@@ -8,7 +8,7 @@
 <circle cx="40" cy="2030" r="260" fill="#e2e9fa" opacity="0.45"/>
 <text x="64" y="65" font-size="18" font-weight="700" fill="#51749a" text-anchor="start" letter-spacing="2">SERMON WORKFLOWS  /  WEEKLY CHINESE VOICE</text>
 <text x="64" y="127" font-size="44" font-weight="750" fill="#17314e" text-anchor="start" >中文配音与每周发行</text>
-<text x="65" y="170" font-size="21" font-weight="400" fill="#5b748e" text-anchor="start" >9/20 本地配音已听审及 App 验收；现场同步独立验证，海报纳入默认交付</text>
+<text x="65" y="170" font-size="21" font-weight="400" fill="#5b748e" text-anchor="start" >Spark 默认、MacBook fallback；9/20 历史验收保留，现场同步独立验证</text>
 <rect x="1398" y="44" width="138" height="42" rx="21" fill="#ffffff" stroke="#d3e0eb" />
 <text x="1467" y="72" font-size="16" font-weight="650" fill="#6a8198" text-anchor="middle" >README 图</text>
 <path data-edge="samevideo:freeze" d="M420 475 L420 540 L290 540 L290 595" fill="none" stroke="#718da5" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="none" marker-end="url(#arrow)"/>
@@ -45,7 +45,7 @@
 <text x="164" y="303" font-size="16" font-weight="700" fill="#326fb4" text-anchor="start" >来源 / INPUT</text>
 <text x="104" y="346" font-size="26" font-weight="700" fill="#17314e" text-anchor="start" >同版本完整录像 / 纯证道</text>
 <path d="M104 366H736" stroke="#e6edf3"/>
-<text x="104" y="399" font-size="18" font-weight="400" fill="#5b748c" text-anchor="start" >本周完整录像已核验</text>
+<text x="104" y="399" font-size="18" font-weight="400" fill="#5b748c" text-anchor="start" >9/20 完整录像已核验</text>
 <text x="104" y="423" font-size="18" font-weight="400" fill="#5b748c" text-anchor="start" >人工窗口 29:49–1:02:09</text>
 </g>
 <g id="node-archive" data-node="archive">
@@ -79,8 +79,8 @@
 <text x="674" y="643" font-size="16" font-weight="700" fill="#7460b7" text-anchor="start" >模型 / REVIEW</text>
 <text x="614" y="686" font-size="26" font-weight="700" fill="#17314e" text-anchor="start" >中文口播审校</text>
 <path d="M614 706H986" stroke="#e6edf3"/>
-<text x="614" y="739" font-size="18" font-weight="400" fill="#5b748c" text-anchor="start" >gpt-6-astra / medium</text>
-<text x="614" y="763" font-size="18" font-weight="400" fill="#5b748c" text-anchor="start" >保留原义与段落身份</text>
+<text x="614" y="739" font-size="18" font-weight="400" fill="#5b748c" text-anchor="start" >legacy：gpt-6-astra / medium</text>
+<text x="614" y="763" font-size="18" font-weight="400" fill="#5b748c" text-anchor="start" >9/20 冻结 job；保留原义与段落身份</text>
 </g>
 <g id="node-speaker" data-node="speaker">
 <rect x="1100" y="595" width="420" height="230" rx="22" fill="#ffffff" stroke="#d4e0ea" filter="url(#card-shadow)"/>
@@ -91,7 +91,7 @@
 <text x="1124" y="686" font-size="26" font-weight="700" fill="#17314e" text-anchor="start" >获准讲员原声参考</text>
 <path d="M1124 706H1496" stroke="#e6edf3"/>
 <text x="1124" y="739" font-size="18" font-weight="400" fill="#5b748c" text-anchor="start" >讲员、参考音频哈希绑定</text>
-<text x="1124" y="763" font-size="18" font-weight="400" fill="#5b748c" text-anchor="start" >本周使用 MLX 原声参考</text>
+<text x="1124" y="763" font-size="18" font-weight="400" fill="#5b748c" text-anchor="start" >9/20 使用 MLX 原声参考</text>
 <text x="1124" y="787" font-size="18" font-weight="400" fill="#5b748c" text-anchor="start" >独立训练路线另行留证</text>
 </g>
 <g id="node-tts" data-node="tts">
@@ -100,10 +100,11 @@
 <rect x="1122" y="960" width="48" height="34" rx="12" fill="#e6f6f2" stroke="none" />
 <text x="1146" y="983" font-size="17" font-weight="750" fill="#18877c" text-anchor="middle" >06</text>
 <text x="1184" y="983" font-size="16" font-weight="700" fill="#18877c" text-anchor="start" >执行 / PROCESS</text>
-<text x="1124" y="1026" font-size="26" font-weight="700" fill="#17314e" text-anchor="start" >MacBook 本地配音</text>
-<path d="M1124 1046H1496" stroke="#e6edf3"/>
-<text x="1124" y="1079" font-size="18" font-weight="400" fill="#5b748c" text-anchor="start" >MLX Qwen3-TTS 已实际运行</text>
-<text x="1124" y="1103" font-size="18" font-weight="400" fill="#5b748c" text-anchor="start" >可恢复单位与逐次修订证据</text>
+<text x="1124" y="1026" font-size="24" font-weight="700" fill="#17314e" text-anchor="start" >Spark 默认 / MacBook</text>
+<text x="1124" y="1055" font-size="24" font-weight="700" fill="#17314e" text-anchor="start" >fallback</text>
+<path d="M1124 1073H1496" stroke="#e6edf3"/>
+<text x="1124" y="1106" font-size="18" font-weight="400" fill="#5b748c" text-anchor="start" >9/20 历史运行：MacBook MLX</text>
+<text x="1124" y="1130" font-size="18" font-weight="400" fill="#5b748c" text-anchor="start" >可恢复单位与逐次修订证据</text>
 </g>
 <g id="node-align" data-node="align">
 <rect x="590" y="935" width="420" height="230" rx="22" fill="#ffffff" stroke="#d4e0ea" filter="url(#card-shadow)"/>
@@ -149,7 +150,7 @@
 <text x="864" y="1366" font-size="26" font-weight="700" fill="#17314e" text-anchor="start" >App 与现场分别验收</text>
 <path d="M864 1386H1496" stroke="#e6edf3"/>
 <text x="864" y="1419" font-size="18" font-weight="400" fill="#5b748c" text-anchor="start" >9/20 Firebase / iOS 已通过</text>
-<text x="864" y="1443" font-size="18" font-weight="400" fill="#5b748c" text-anchor="start" >本周用户听审已通过</text>
+<text x="864" y="1443" font-size="18" font-weight="400" fill="#5b748c" text-anchor="start" >9/20 用户听审已通过</text>
 <text x="864" y="1467" font-size="18" font-weight="400" fill="#5b748c" text-anchor="start" >真实现场同步仍未证实</text>
 </g>
 <g id="node-poster" data-node="poster">
@@ -187,7 +188,7 @@
 </g>
 <rect x="64" y="1898" width="1472" height="96" rx="20" fill="#1d4061" stroke="none" />
 <text x="88" y="1929" font-size="18" font-weight="500" fill="#e7f1f8" text-anchor="start" >发布后 HTTP / Range 核验 → 海报真实二维码 → 最终图片 QA；海报不提升内容及人工验收状态。</text>
-<text x="88" y="1956" font-size="18" font-weight="500" fill="#e7f1f8" text-anchor="start" >本周听审与 Firebase / iOS 验收已通过；实际现场效果仍独立验证。</text>
-<text x="64" y="2018" font-size="14" font-weight="400" fill="#7890a2" text-anchor="start" >内容依据：2026-09-20 校准的图稿；本图仅表达职责和门槛</text>
+<text x="88" y="1956" font-size="18" font-weight="500" fill="#e7f1f8" text-anchor="start" >9/20 听审与 Firebase / iOS 验收已通过；新运行与真实现场效果分别验证。</text>
+<text x="64" y="2018" font-size="14" font-weight="400" fill="#7890a2" text-anchor="start" >内容依据：2026-10-22 校准的图稿；本图仅表达职责和门槛</text>
 <text x="1536" y="2018" font-size="14" font-weight="400" fill="#7890a2" text-anchor="end" >实线：主路径    虚线：条件 / 实验 / 返修</text>
 </svg>

@@ -30,7 +30,7 @@ python scripts/target_language_policy.py freeze --policy <draft.json> --out <pol
 要恢复 Sol 或选择 Opus，显式传入 `--layer2-backend openai_api` 或 `--layer2-backend claude_cli_opus`。
 
 - **模型分工：** 初译 `deepseek-flash` low，独立复核 `deepseek-flash` high。DeepSeek 官方 API 只提供 low/high/max，没有 medium；初译用 low 取最快首轮，复核用 high 保留独立检查的推理预算，同时两个角色仍能按 effort 区分。
-- **调用方式：** `compute/transports/deepseek_layer2.py` 直接调用 OpenAI 兼容端点 `https://api.deepseek.com/chat/completions`，一次请求、不重试、不回退。API key 只从 `DEEPSEEK_API_KEY` 读取；`DEEPSEEK_BASE_URL` 可覆盖端点。canonical 运行仍使用 OpenAI Project 启动器和预算授权来做运行时绑定；启动前在环境里 export `DEEPSEEK_API_KEY`，launcher 会原样传给子进程，不写入日志或仓库。DeepSeek key 是额外的一项凭据，不替代现有启动器。
+- **调用方式：** `compute/transports/deepseek_layer2.py` 直接调用 OpenAI 兼容端点 `https://api.deepseek.com/chat/completions`，一次请求、不重试、不回退。API key 只从 `DEEPSEEK_API_KEY` 读取；`DEEPSEEK_BASE_URL` 可覆盖端点。canonical 运行仍使用 OpenAI Project 启动器和预算授权来做运行时绑定。DeepSeek key 存在本机 `~/.config/tongxing/deepseek.env`（目录 700、文件 600，不进 Git），launcher 默认读取并注入子进程；文件不存在时 OpenAI-only 运行仍可用，DeepSeek 调用会明确失败。也可以用环境变量 `DEEPSEEK_API_KEY` 覆盖。DeepSeek key 是额外的一项凭据，不替代现有启动器。
 - **政策绑定：** 选择写入 translator/reviewer 角色和 effort，进入政策哈希；冻结只接受完整的 `deepseek_flash` 对，DeepSeek 初译配 Sol 复核会在写出前拒绝。
 - **预算：** 账本按 DeepSeek peak 列价最坏情况预留：cache-miss 输入 0.30 美元／百万 token，输出 1.20 美元／百万 token（off-peak 减半，但预留不用低价）。每次 16,384 输入＋2,048 输出约 0.00737 美元；同样上限下约为 Sol 的 12%。金额仍是规划上界，不是发票。
 - **证据：** 13 组 headless 速度测试中 low 初译中位 3.631 秒/组、high 初译 3.806 秒/组（两轮合并），见 [PR #1264](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/1264) 中的速度测试与 13 组翻译/审核 A/B 报告。速度测试里 low 初译中位 3.631 秒/组，high 审核中位 6.619 秒/组；这只是分阶段测量，不是 low 初译 + high 复核的整链实测。还没有 canonical `deepseek_flash` 的真实运行，不能声称已生产可用。
@@ -51,7 +51,7 @@ python scripts/target_language_policy.py freeze --policy <draft.json> --out <pol
 
 来源 ASR、OpenAI 音频、MFA、Spark Qwen TTS／回转写 ASR、ImageGen 继续使用各自入口。其他文字入口保留其实际接线范围；本次修复不证明所有旧 producer 已消费此策略。
 
-配音精简（`tools/ops/run_spoken_condensation.py`）沿用 Layer 2 初译的 `gpt-6.1-sol` `high`，与机器质检回译（`tongxing_production.review.qc_text_run`，`gpt-6.1-sol` `medium`）一样经 ChatGPT 登录的本机 Codex CLI（requested tier `fast`）调用，不用 API key；两者各用自己的缓存命名空间，按请求和 transport 身份（CLI 版本、CLI／二进制／适配器哈希）缓存。精简不是 Layer 2 翻译入口：它只产出精简记录和 revision brief，口播候选仍经 Layer 2 链按上表生成。
+配音精简（`tools/ops/run_spoken_condensation.py`）保持自身的 `gpt-6.1-sol` `high`，与机器质检回译（`tongxing_production.review.qc_text_run`，`gpt-6.1-sol` `medium`）一样经 ChatGPT 登录的本机 Codex CLI（requested tier `fast`）调用，不用 API key；两者各用自己的缓存命名空间，按请求和 transport 身份（CLI 版本、CLI／二进制／适配器哈希）缓存。精简不是 Layer 2 翻译入口：它只产出精简记录和 revision brief，口播候选仍经 Layer 2 链按上表生成。
 
 ## 执行与证据
 
@@ -65,7 +65,7 @@ Supervisor 默认与后端生成命令均选择 `codex-cli`。旧 Agents API 会
 
 ## Layer 2 角色与返修
 
-新 dev 和正式 run 的翻译（Sol 6.1 high）与独立复核（Sol 6.1 medium）在同一份冻结英文单元上按组运行，常规路径不增加 Astra 或 Gemini 第三轮门禁。Sol 标出失败、问题或不确定时，保留该证据并开新修订做返修，重跑该修订规定的译者、复核者、语言插件和候选准入链；模型复核仍只是机器证据，schema 里的人工译文批准独立存在。Gemini A/B 评审属实验，除非该次运行的政策明确要求。互相独立的组或 locale 在 producer 支持时可有界并行；Supervisor 的有状态转移和写入由 lease 保护。已有 run 保留其冻结政策，不按本节改写。
+新 dev 和正式 run 的翻译与独立复核在同一份冻结英文单元上按组运行：默认 DeepSeek Flash low／high；显式 OpenAI 回退为 Sol 6.1 high／medium，显式 Claude 后端为 Opus 5.5 high／medium。常规路径不增加 Astra 或 Gemini 第三轮门禁。复核者标出失败、问题或不确定时，保留该证据并开新修订做返修，重跑该修订规定的译者、复核者、语言插件和候选准入链；模型复核仍只是机器证据，schema 里的人工译文批准独立存在。Gemini A/B 评审属实验，除非该次运行的政策明确要求。互相独立的组或 locale 在 producer 支持时可有界并行；Supervisor 的有状态转移和写入由 lease 保护。已有 run 保留其冻结政策，不按本节改写。
 
 ## API key 与 fallback
 

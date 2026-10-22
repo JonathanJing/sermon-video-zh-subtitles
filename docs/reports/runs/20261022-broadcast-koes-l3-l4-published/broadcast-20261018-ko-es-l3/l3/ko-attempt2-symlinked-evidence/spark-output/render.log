@@ -1,0 +1,35 @@
+Traceback (most recent call last):
+  File "/work/repo-2196ee8f/tools/ops/run.py", line 91, in <module>
+    raise SystemExit(main())
+                     ^^^^^^
+  File "/work/repo-2196ee8f/tools/ops/run.py", line 87, in main
+    return entry()
+           ^^^^^^^
+  File "/work/repo-2196ee8f/packages/production/src/tongxing_production/audio/renderer.py", line 1695, in main
+    result = render_accounted(
+             ^^^^^^^^^^^^^^^^^
+  File "/work/repo-2196ee8f/packages/production/src/tongxing_production/audio/renderer.py", line 1600, in render_accounted
+    result = render(paths, checkpoint_map_path, operation_policies_path, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/work/repo-2196ee8f/packages/production/src/tongxing_production/audio/renderer.py", line 1587, in render
+    return _render(paths, checkpoint_map_path, operation_policies_path,
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/work/repo-2196ee8f/packages/production/src/tongxing_production/audio/renderer.py", line 1535, in _render
+    receipt_context = integrity.ValidatedJobContext(paths["job"], strict_rubric=strict_rubric,
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/work/repo-2196ee8f/packages/production/src/tongxing_production/audio/unit_integrity.py", line 141, in __init__
+    self.job = _load_job(self.path, strict_rubric=strict_rubric)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/work/repo-2196ee8f/packages/production/src/tongxing_production/audio/unit_integrity.py", line 54, in _load_job
+    release_identity = speech.validate_released_candidate(source, anchor, candidate, basis)
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/work/repo-2196ee8f/packages/production/src/tongxing_production/audio/speech_job.py", line 288, in validate_released_candidate
+    result = identity | {"textPolicy": validate_text_release_basis(
+                                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/work/repo-2196ee8f/packages/production/src/tongxing_production/audio/speech_job.py", line 274, in validate_text_release_basis
+    human_override.validate_override_receipt(source_package, anchor, candidate, receipt)
+  File "/work/repo-2196ee8f/packages/production/src/tongxing_production/text/human_override.py", line 277, in validate_override_receipt
+    _require(sheet_path.is_file() and not sheet_path.is_symlink()
+  File "/work/repo-2196ee8f/packages/production/src/tongxing_production/text/human_override.py", line 39, in _require
+    raise ValueError(message)
+ValueError: Human override review-sheet bytes changed

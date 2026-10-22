@@ -35,6 +35,8 @@ join = sha({source: sourcePackageSha256, products: {
 candidateSha256 = sha({products: join, metadataApproval: metadataApprovalSha256, contentSha256})
 ```
 
+全文稿或口播稿经[人工覆盖收据 v2](layer2-human-override.zh.md) 批准时（用户逐组批准了完整审核表的文字，机器复核仍有失败），release v3 另带可选的 `textReviewBasis`：`fullText`、`spokenText` 各记 `kind`（`human_review` 或 `human_override`）和收据 canonical SHA-256；`human_override` 另记 `machineReviewStatus` 与 `acceptedExceptions`（组 ID、源单元、原样机器发现）。正文与音频状态仍是 `human_reviewed`。没有覆盖收据时不写这个字段，旧 v3 release 不变；网页与 iOS 按字段读取，不受这个附加字段影响。
+
 PDF 不进入该身份。静态 HTML 包含 `study-outline` 和 `study-meditation` 两个 section，每条标题和完整正文进行 HTML 转义。Web App 从独立资源校验 hash 与身份后加载全文学习内容，独立大纲替换旧 metadata outline。正文保留换行，使用 textContent 渲染；切换 UI 语言不会改写已批准学习文本。
 
 ## 机器质检发布（release v4 / catalog v4）
