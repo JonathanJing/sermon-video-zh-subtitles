@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Select an explicit local OpenAI environment, without shell-sourcing secrets."""
+"""Select an explicit local OpenAI environment and optional DeepSeek key, without shell-sourcing secrets."""
 import argparse
 import os
 from pathlib import Path
@@ -51,15 +51,52 @@ def child_environment(path, environment, inherited=None):
     return env
 
 
+def deepseek_environment(path, inherited):
+    """Add the optional DeepSeek key from a separate 600-mode local file.
+
+    A missing file is allowed: OpenAI-only runs stay valid. An existing but
+    malformed file fails closed so a paid DeepSeek dispatch never starts with a
+    partial credential.
+    """
+    if not path.exists():
+        return dict(inherited)
+    if path.is_symlink() or not path.is_file():
+        raise ValueError("deepseek_credential_file_missing_or_symlink")
+    if path.stat().st_mode & 0o077:
+        raise ValueError("deepseek_credential_file_requires_mode_600")
+    value = None
+    for raw in path.read_text(encoding="utf-8").splitlines():
+        line = raw.strip()
+        if not line or line.startswith("#"):
+            continue
+        name, sep, candidate = line.partition("=")
+        name, candidate = name.strip(), candidate.strip()
+        if not sep or name != "DEEPSEEK_API_KEY" or value is not None:
+            raise ValueError("invalid_deepseek_credential_assignment")
+        if len(candidate) >= 2 and candidate[0] == candidate[-1] and candidate[0] in "\"'":
+            candidate = candidate[1:-1]
+        if any(c.isspace() for c in candidate) or any(c in candidate for c in "`$#"):
+            raise ValueError("invalid_deepseek_credential_value")
+        value = candidate
+    if not value:
+        raise ValueError("deepseek_credential_file_missing_key")
+    env = dict(inherited)
+    env["DEEPSEEK_API_KEY"] = value
+    return env
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--environment", required=True, choices=("dev", "prod"))
     parser.add_argument("--env-file", type=Path, default=ROOT / ".env.openai")
+    parser.add_argument("--deepseek-env-file", type=Path,
+                        default=Path.home() / ".config/tongxing/deepseek.env")
     parser.add_argument("--check", action="store_true", help="Check selected configuration without dispatch.")
     parser.add_argument("command", nargs=argparse.REMAINDER)
     args = parser.parse_args()
     try:
-        env = child_environment(args.env_file, args.environment)
+        env = deepseek_environment(args.deepseek_env_file,
+                                   child_environment(args.env_file, args.environment))
     except (ValueError, OSError, UnicodeError) as exc:
         print(str(exc) if type(exc) is ValueError else "credential_file_unreadable", file=sys.stderr)
         return 2

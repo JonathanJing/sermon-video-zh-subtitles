@@ -5,7 +5,7 @@ import sys
 import tempfile
 import unittest
 
-from tools.ops.run_with_openai_environment import child_environment, ROOT
+from tools.ops.run_with_openai_environment import child_environment, deepseek_environment, ROOT
 
 
 class RuntimeEnvironmentTests(unittest.TestCase):
@@ -68,6 +68,34 @@ class RuntimeEnvironmentTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, '^selected_environment_not_configured$'):
                 child_environment(self.path, 'dev', {})
         self.path.write_text(text)
+
+    def test_deepseek_key_is_loaded_from_a_separate_600_file(self):
+        deepseek = self.path.parent / 'deepseek.env'
+        deepseek.write_text('DEEPSEEK_API_KEY=fake-deepseek\n')
+        deepseek.chmod(0o600)
+        env = deepseek_environment(deepseek, {'PATH': '/bin', 'DEEPSEEK_API_KEY': 'stale'})
+        self.assertEqual(env['DEEPSEEK_API_KEY'], 'fake-deepseek')
+        self.assertEqual(env['PATH'], '/bin')
+        self.assertEqual(deepseek_environment(self.path.parent / 'missing.env', {'PATH': '/bin'})['PATH'], '/bin')
+        deepseek.chmod(0o644)
+        with self.assertRaisesRegex(ValueError, 'mode_600'):
+            deepseek_environment(deepseek, {})
+        deepseek.chmod(0o600)
+        for text in ('OTHER_KEY=x\n', 'DEEPSEEK_API_KEY=$(bad)\n', 'DEEPSEEK_API_KEY=a b\n'):
+            deepseek.write_text(text)
+            with self.assertRaisesRegex(ValueError, 'invalid_deepseek_credential'):
+                deepseek_environment(deepseek, {})
+
+    def test_child_process_receives_deepseek_key_without_echo(self):
+        deepseek = self.path.parent / 'deepseek.env'
+        deepseek.write_text('DEEPSEEK_API_KEY=fake-deepseek\n')
+        deepseek.chmod(0o600)
+        code = "import os; assert os.environ['DEEPSEEK_API_KEY']=='fake-deepseek'"
+        result = subprocess.run([sys.executable, str(ROOT / 'tools/ops/run_with_openai_environment.py'),
+            '--environment', 'dev', '--env-file', str(self.path), '--deepseek-env-file', str(deepseek),
+            '--', sys.executable, '-c', code], capture_output=True)
+        self.assertEqual(result.returncode, 0)
+        self.assertNotIn(b'fake-deepseek', result.stdout + result.stderr)
 
     def test_default_key_file_is_at_the_repository_root(self):
         self.assertTrue((ROOT / 'AGENTS.md').is_file())
