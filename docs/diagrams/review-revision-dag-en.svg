@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1600" height="2400" viewBox="0 0 1600 2400" role="img" aria-labelledby="title desc">
-<title id="title">Planned generation, review and repair</title><desc id="desc">Immutable r1 → new r2 → new r3; upward edges create new revisions, never cycles. PLANNED: strict read-only review, deterministic gates and bounded repair integration. Two repair revisions are a proposed cap. Execution failures reconcile or retry review; human approval remains separate.</desc>
+<title id="title">Planned generation, review and repair</title><desc id="desc">Immutable r1 → new r2 → new r3; upward edges create new revisions, never cycles. D1–D5 (text/strict/*) and controlled entry exist; default dispatcher unchanged. Two revisions shown; real A/B pending; reconcile unknowns first; human approval is separate.</desc>
 <style>text{font-family:"PingFang SC","Noto Sans CJK SC","Microsoft YaHei",Arial,sans-serif;} text{font-variant-ligatures:none}</style>
 <defs><marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto-start-reverse" markerUnits="userSpaceOnUse"><path d="M1 1 L7 4 L1 7" fill="none" stroke="#648A86" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></marker></defs>
 <rect x="0" y="0" width="1600" height="2400" rx="0" fill="#F5F4EF" stroke="none" />
@@ -241,8 +241,8 @@
 <text x="1112" y="2124" font-size="25" font-weight="650" fill="#19343D" text-anchor="start" data-box="1108,2065,408,112" >evidence</text>
 </g>
 <rect x="64" y="2271" width="1472" height="78" rx="16" fill="#E9EEE8" stroke="none" />
-<text x="84" y="2300" font-size="20" font-weight="400" fill="#4C635F" text-anchor="start" >PLANNED: strict read-only review, deterministic gates and bounded repair integration.</text>
-<text x="84" y="2329" font-size="20" font-weight="400" fill="#4C635F" text-anchor="start" >Two repair revisions are a proposed cap. Execution failures reconcile or retry review; human approval remains separate.</text>
-<text x="64" y="2378" font-size="15" font-weight="400" fill="#7B8B88" text-anchor="start" >内容校准 2026-09-30 · 设计参考 Repository source / no ImageGen · 原生可编辑 SVG</text>
+<text x="84" y="2300" font-size="20" font-weight="400" fill="#4C635F" text-anchor="start" >D1–D5 (text/strict/*) and controlled entry exist; default dispatcher unchanged.</text>
+<text x="84" y="2329" font-size="20" font-weight="400" fill="#4C635F" text-anchor="start" >Two revisions shown; real A/B pending; reconcile unknowns first; human approval is separate.</text>
+<text x="64" y="2378" font-size="15" font-weight="400" fill="#7B8B88" text-anchor="start" >内容校准 2026-10-22 · 设计参考 Repository source / no ImageGen · 原生可编辑 SVG</text>
 <text x="1536" y="2378" font-size="15" font-weight="400" fill="#7B8B88" text-anchor="end" >实线：主路径   虚线：条件 / 实验 / 历史</text>
 </svg>

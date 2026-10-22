@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1580" viewBox="0 0 1600 1580" role="img" aria-labelledby="title description">
 <title id="title">四层多语言生产</title>
-<desc id="description">英文事实只冻结一次；每种目标语言分别完成文字、音频与发布门禁。两段三语 Dev 片段已审；正式站仍九周中文。通用 Layer 2–4 producer 持续迁移，legacy complete 不等于四层发布。；模型是各层工具，不是事实或人工批准来源；来源、hash、覆盖率、语义、听审与播放证据分别留存。</desc>
+<desc id="description">英文事实只冻结一次；每种目标语言分别完成文字、音频与发布门禁。2026-09-27 起已有三语正式内容，逐周证据另记；DeepSeek 默认尚无 canonical 真实运行证据。；模型不代替事实或人工批准；旧运行保留冻结身份，来源、hash、听审、播放与发布证据分别留存。</desc>
 <defs><linearGradient id="canvas" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f7faff"/><stop offset="1" stop-color="#edf5f6"/></linearGradient><filter id="card-shadow" x="-15%" y="-25%" width="130%" height="155%"><feDropShadow dx="0" dy="10" stdDeviation="12" flood-color="#173452" flood-opacity="0.10"/></filter><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0 L10 5 L0 10 Z" fill="#718da5"/></marker></defs>
 <style>text{font-family:-apple-system,BlinkMacSystemFont,'PingFang SC','Noto Sans CJK SC','Microsoft YaHei',sans-serif;font-variant-ligatures:none}</style>
 <rect x="0" y="0" width="1600" height="1580" rx="0" fill="url(#canvas)" stroke="none" />
@@ -31,8 +31,9 @@
 <text x="94" y="754" font-size="14" font-weight="750" fill="#326fb4" text-anchor="start" >模型与工具 / MODELS + TOOLS</text>
 <text x="94" y="781" font-size="16" font-weight="400" fill="#35516a" text-anchor="start" >• gpt-transcribe：英文 ASR</text>
 <text x="94" y="804" font-size="16" font-weight="400" fill="#35516a" text-anchor="start" >• MFA / Qwen3-ForcedAligner：词时轴</text>
-<text x="94" y="827" font-size="16" font-weight="400" fill="#35516a" text-anchor="start" >• GPT-6 Astra：文字、标点与断句审核</text>
-<text x="94" y="850" font-size="16" font-weight="400" fill="#35516a" text-anchor="start" >• 模型不得伪造声学时间戳</text>
+<text x="94" y="827" font-size="16" font-weight="400" fill="#35516a" text-anchor="start" >• gpt-6.1-sol / high：英文机器裁判</text>
+<text x="94" y="850" font-size="16" font-weight="400" fill="#35516a" text-anchor="start" >• 可选 Claude Opus 5.5 / high</text>
+<text x="94" y="873" font-size="16" font-weight="400" fill="#35516a" text-anchor="start" >• 模型不得伪造声学时间戳</text>
 <rect x="80" y="934" width="318" height="155" rx="13" fill="#eaf2fc" stroke="none" />
 <text x="94" y="960" font-size="14" font-weight="750" fill="#326fb4" text-anchor="start" >输出与门槛 / OUTPUT + GATE</text>
 <text x="94" y="987" font-size="16" font-weight="400" fill="#35516a" text-anchor="start" >• English Source Package</text>
@@ -56,8 +57,8 @@
 <text x="468" y="625" font-size="16" font-weight="400" fill="#35516a" text-anchor="start" >• 检查否定、因果、经文、专名和数字</text>
 <rect x="454" y="728" width="318" height="194" rx="13" fill="#f0edfa" stroke="none" />
 <text x="468" y="754" font-size="14" font-weight="750" fill="#7460b7" text-anchor="start" >模型与工具 / MODELS + TOOLS</text>
-<text x="468" y="781" font-size="16" font-weight="400" fill="#35516a" text-anchor="start" >• 片段策略：Astra 初译 / Sol 逐组复核</text>
-<text x="468" y="804" font-size="16" font-weight="400" fill="#35516a" text-anchor="start" >• ko / es 片段已审；正式周次待验</text>
+<text x="468" y="781" font-size="16" font-weight="400" fill="#35516a" text-anchor="start" >• DeepSeek Flash：初译 low / 复核 high</text>
+<text x="468" y="804" font-size="16" font-weight="400" fill="#35516a" text-anchor="start" >• 默认后端；Sol / Opus 显式回退</text>
 <text x="468" y="827" font-size="16" font-weight="400" fill="#35516a" text-anchor="start" >• 固定 CUV 库：确定性精确取文</text>
 <rect x="454" y="934" width="318" height="155" rx="13" fill="#f0edfa" stroke="none" />
 <text x="468" y="960" font-size="14" font-weight="750" fill="#7460b7" text-anchor="start" >输出与门槛 / OUTPUT + GATE</text>
@@ -82,10 +83,10 @@
 <text x="842" y="625" font-size="16" font-weight="400" fill="#35516a" text-anchor="start" >• 机器回转写筛查 + 全文人工听审</text>
 <rect x="828" y="728" width="318" height="194" rx="13" fill="#fff3e4" stroke="none" />
 <text x="842" y="754" font-size="14" font-weight="750" fill="#c68224" text-anchor="start" >模型与工具 / MODELS + TOOLS</text>
-<text x="842" y="781" font-size="16" font-weight="400" fill="#35516a" text-anchor="start" >• Qwen3-TTS：当前中文语音 adapter</text>
+<text x="842" y="781" font-size="16" font-weight="400" fill="#35516a" text-anchor="start" >• Qwen3-TTS：按语言绑定声音</text>
 <text x="842" y="804" font-size="16" font-weight="400" fill="#35516a" text-anchor="start" >• Qwen3-ASR：回转写筛查，不是批准</text>
 <text x="842" y="827" font-size="16" font-weight="400" fill="#35516a" text-anchor="start" >• 确定性 scheduler + FFmpeg</text>
-<text x="842" y="850" font-size="16" font-weight="400" fill="#35516a" text-anchor="start" >• ko / es 配音：Dev 片段已听审</text>
+<text x="842" y="850" font-size="16" font-weight="400" fill="#35516a" text-anchor="start" >• 中 / 韩 / 西逐周发布证据另记</text>
 <rect x="828" y="934" width="318" height="155" rx="13" fill="#fff3e4" stroke="none" />
 <text x="842" y="960" font-size="14" font-weight="750" fill="#c68224" text-anchor="start" >输出与门槛 / OUTPUT + GATE</text>
 <text x="842" y="987" font-size="16" font-weight="400" fill="#35516a" text-anchor="start" >• Target-Language Audio Package</text>
@@ -111,7 +112,7 @@
 <text x="1216" y="754" font-size="14" font-weight="750" fill="#198665" text-anchor="start" >模型与工具 / MODELS + TOOLS</text>
 <text x="1216" y="781" font-size="16" font-weight="400" fill="#35516a" text-anchor="start" >• 内容发布不需要生成式模型</text>
 <text x="1216" y="804" font-size="16" font-weight="400" fill="#35516a" text-anchor="start" >• Firebase + Web / iOS validators</text>
-<text x="1216" y="827" font-size="16" font-weight="400" fill="#35516a" text-anchor="start" >• GPT-6 Astra Supervisor 只负责编排</text>
+<text x="1216" y="827" font-size="16" font-weight="400" fill="#35516a" text-anchor="start" >• gpt-6-luna Supervisor 只负责编排</text>
 <text x="1216" y="850" font-size="16" font-weight="400" fill="#35516a" text-anchor="start" >• ImageGen 仅用于可选海报主视觉</text>
 <rect x="1202" y="934" width="318" height="155" rx="13" fill="#e7f7ee" stroke="none" />
 <text x="1216" y="960" font-size="14" font-weight="750" fill="#198665" text-anchor="start" >输出与门槛 / OUTPUT + GATE</text>
@@ -137,8 +138,8 @@
 <text x="839" y="1331" font-size="19" font-weight="700" fill="#6d5aa9" text-anchor="start" >跨层编排：Supervisor + 确定性工具</text>
 <text x="839" y="1364" font-size="17" font-weight="400" fill="#697687" text-anchor="start" >Agent 不自授人工批准；legacy complete 不等于四层发布。</text>
 <rect x="64" y="1448" width="1472" height="96" rx="20" fill="#1d4061" stroke="none" />
-<text x="88" y="1479" font-size="18" font-weight="500" fill="#e7f1f8" text-anchor="start" >两段三语 Dev 片段已审；正式站仍九周中文。通用 Layer 2–4 producer 持续迁移，legacy complete 不等于四层发布。</text>
-<text x="88" y="1506" font-size="18" font-weight="500" fill="#e7f1f8" text-anchor="start" >模型是各层工具，不是事实或人工批准来源；来源、hash、覆盖率、语义、听审与播放证据分别留存。</text>
-<text x="64" y="1568" font-size="14" font-weight="400" fill="#7890a2" text-anchor="start" >内容依据：2026-09-25 校准的图稿；本图仅表达职责和门槛</text>
+<text x="88" y="1479" font-size="18" font-weight="500" fill="#e7f1f8" text-anchor="start" >2026-09-27 起已有三语正式内容，逐周证据另记；DeepSeek 默认尚无 canonical 真实运行证据。</text>
+<text x="88" y="1506" font-size="18" font-weight="500" fill="#e7f1f8" text-anchor="start" >模型不代替事实或人工批准；旧运行保留冻结身份，来源、hash、听审、播放与发布证据分别留存。</text>
+<text x="64" y="1568" font-size="14" font-weight="400" fill="#7890a2" text-anchor="start" >内容依据：2026-10-22 校准的图稿；本图仅表达职责和门槛</text>
 <text x="1536" y="1568" font-size="14" font-weight="400" fill="#7890a2" text-anchor="end" >实线：主路径    虚线：条件 / 实验 / 返修</text>
 </svg>

@@ -83,7 +83,7 @@
 <text x="674" y="643" font-size="16" font-weight="700" fill="#7460b7" text-anchor="start" >模型 / REVIEW</text>
 <text x="614" y="686" font-size="26" font-weight="700" fill="#17314e" text-anchor="start" >中文翻译与两轮审核</text>
 <path d="M614 706H986" stroke="#e6edf3"/>
-<text x="614" y="739" font-size="18" font-weight="400" fill="#5b748c" text-anchor="start" >gpt-6-astra / medium</text>
+<text x="614" y="739" font-size="18" font-weight="400" fill="#5b748c" text-anchor="start" >gpt-6.1-sol / high</text>
 <text x="614" y="763" font-size="18" font-weight="400" fill="#5b748c" text-anchor="start" >生成内容按授权送至模型</text>
 </g>
 <g id="node-pdf" data-node="pdf">
@@ -136,6 +136,6 @@
 <rect x="64" y="1218" width="1472" height="96" rx="20" fill="#1d4061" stroke="none" />
 <text x="88" y="1249" font-size="18" font-weight="500" fill="#e7f1f8" text-anchor="start" >规范文件：sermon_zh_en_reading.pdf、sermon_interpretation_zh.pdf。</text>
 <text x="88" y="1276" font-size="18" font-weight="500" fill="#e7f1f8" text-anchor="start" >包已导出不代表现场启用；独立同篇及能力预检通过才可选使用。会话完成不能替代业务完成。</text>
-<text x="64" y="1338" font-size="14" font-weight="400" fill="#7890a2" text-anchor="start" >内容依据：2026-09-11 校准的图稿；本图仅表达职责和门槛</text>
+<text x="64" y="1338" font-size="14" font-weight="400" fill="#7890a2" text-anchor="start" >内容依据：2026-10-22 校准的图稿；本图仅表达职责和门槛</text>
 <text x="1536" y="1338" font-size="14" font-weight="400" fill="#7890a2" text-anchor="end" >实线：主路径    虚线：条件 / 实验 / 返修</text>
 </svg>
