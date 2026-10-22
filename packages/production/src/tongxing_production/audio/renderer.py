@@ -32,6 +32,7 @@ from ..compute import spark_tts_window_scheduler as _window_scheduler
 from ..compute.bounded_audio_cpu import BoundedAudioCPU
 from ..compute.spark_tts_window_scheduler import ParallelBatchEngine
 from ..source import sentence_interpretation as identity
+from ..text import human_override
 from . import anomaly, dev_profile, dev_receipts, recovery
 from . import backend as _audio
 from . import package
@@ -234,6 +235,7 @@ def materialize_path_map(job_path: Path, path_map_path: Path) -> None:
         references.append(ref)
     # Only after all hash checks pass may aliases be made visible to legacy
     # validators that dereference absolute paths from the unchanged job JSON.
+    created = []
     for ref in references:
         original = Path(ref["path"])
         staged = Path(aliases.get(str(original), str(original)))
@@ -244,6 +246,9 @@ def materialize_path_map(job_path: Path, path_map_path: Path) -> None:
         require(str(original) in aliases, f"No path-map entry for inaccessible job path: {original}")
         original.parent.mkdir(parents=True, exist_ok=True)
         original.symlink_to(staged)
+        created.append(original)
+    # Human-override receipts refuse symlinked evidence; admit exactly the links made here.
+    human_override.admit_mapped_aliases(created)
 
 
 def checkpoint_directories(job_path, checkpoint_map_path, *, assembly_only=False):

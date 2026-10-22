@@ -684,6 +684,28 @@ class FormalRenderTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "Conflicting mapped evidence"):
                 subject.materialize_path_map(job, mapping)
 
+    def test_path_map_links_are_the_only_symlinks_human_override_admits(self):
+        from tongxing_production.text import human_override
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            sheet = root / "staged/sheet.csv"
+            sheet.parent.mkdir()
+            sheet.write_text("translationGroupId,currentText\n")
+            job = root / "job.json"
+            job.write_text(json.dumps({"inputs": {"reviewSheet": {
+                "path": str(root / "original/sheet.csv"), "sha256": subject.identity.sha256(sheet)}}}))
+            mapping = root / "path-map.json"
+            mapping.write_text(json.dumps({"schemaVersion": "sermon-deployment-path-map-v1",
+                                           "paths": {str(root / "original/sheet.csv"): str(sheet)}}))
+            other = root / "other.csv"
+            other.symlink_to(sheet)
+            self.assertFalse(human_override._regular_file(root / "original/sheet.csv"))
+            subject.materialize_path_map(job, mapping)
+            self.assertTrue((root / "original/sheet.csv").is_symlink())
+            self.assertTrue(human_override._regular_file(root / "original/sheet.csv"))
+            self.assertFalse(human_override._regular_file(other))
+            self.assertTrue(human_override._regular_file(sheet))
+
     def test_path_map_follows_reused_capability_to_probe_audio(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
