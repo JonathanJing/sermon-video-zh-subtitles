@@ -162,8 +162,7 @@ def validate_job(source: dict[str, Any], anchor: dict[str, Any], candidate: dict
                  paths: dict[str, Path], *,
                  source_voice_authorization: dict[str, Any] | None = None,
                  strict_rubric: dict[str, Any] | None = None) -> None:
-    machine = speech.machine_basis.is_text_waiver(human_receipt)
-    speech.validate_target_candidate(source, anchor, candidate, require_human_approval=not machine)
+    release_identity = speech.validate_released_candidate(source, anchor, candidate, human_receipt)
     anchor_exception = validate_anchor_exception(source, anchor, candidate, paths)
     review = source.get("review", {})
     window = source.get("source", {}).get("approvedWindow", {})
@@ -181,7 +180,7 @@ def validate_job(source: dict[str, Any], anchor: dict[str, Any], candidate: dict
                      and source.get("translationEligible") is True)),
             "English Source Package lacks source/window/anchor human gates")
     speech.validate_policy_binding(candidate, policy, strict_rubric=strict_rubric)
-    text_policy = speech.validate_text_release_basis(source, anchor, candidate, human_receipt)
+    text_policy = release_identity["textPolicy"]
     speech.validate_adapter(adapter, candidate["targetLocale"], registry,
                             clip_voice_authorization=clip_voice_authorization,
                             source_voice_authorization=source_voice_authorization,
@@ -191,6 +190,13 @@ def validate_job(source: dict[str, Any], anchor: dict[str, Any], candidate: dict
     speech.validate_speech_job_schema(job)
     require(speech.expected_text_policy(job) == text_policy,
             "Speech job version differs from the candidate's release basis")
+    if text_policy == speech.OVERRIDE_TEXT_POLICY:
+        require(job.get("humanOverrideDisclosure") == {
+            "status": "approved_with_exceptions",
+            "machineEvidenceStatus": "unchanged_not_passed_by_human_approval",
+            "topLevelModelReview": release_identity["topLevelModelReview"],
+            "exceptionGroups": release_identity["humanOverrideExceptions"],
+        }, "Speech job override disclosure differs from its receipt")
     require(job.get("schemaVersion") in speech.SPEECH_JOB_SCHEMAS
             and job.get("targetLocale") == candidate["targetLocale"]
             and job.get("status") == "prepared_for_target_language_speech"
@@ -614,7 +620,13 @@ def build_package(paths: dict[str, Path], render_manifest_path: Path, artifact_r
         "machineScreening": {key: screen.get(key) for key in ("status", "model", "coverage")},
         "humanReview": {"status": "pending", "humanApproval": False, "reviewedBy": None,
                         "reviewedAt": None, "fullPlayback": "pending"},
-        "issues": [],
+        "issues": ([{
+            "type": "human_override_machine_exceptions",
+            "status": "human_accepted_as_is_machine_findings_remain_unresolved",
+            "topLevelModelReview": job["humanOverrideDisclosure"]["topLevelModelReview"],
+            "exceptionGroups": job["humanOverrideDisclosure"]["exceptionGroups"],
+            "disclosure": "Human approval accepts the exact target text; it does not change or pass machine findings.",
+        }] if job.get("schemaVersion") == speech.OVERRIDE_SPEECH_JOB_SCHEMA else []),
     }
     package["downstreamInvalidationKey"] = json_sha256(package)
     schema_path = _audio.current().schemas.path("sermon-target-language-audio-package-v1.schema.json")
@@ -637,7 +649,8 @@ def main() -> None:
     parser.add_argument("--anchor-exception-receipt", type=Path,
                         help="Hash-bound human acceptance of the single complete scripture anchor")
     parser.add_argument("--strict-rubric", type=Path, help="Explicit frozen rubric for strict-v3 policy validation")
-    parser.add_argument("--human-review-receipt", dest="human_receipt", type=Path, required=True)
+    parser.add_argument("--human-review-receipt", "--human-override-receipt",
+                        dest="human_receipt", type=Path, required=True)
     parser.add_argument("--speaker-registry", dest="registry", type=Path, required=True)
     authorization = parser.add_mutually_exclusive_group(required=True)
     authorization.add_argument("--clip-voice-authorization", dest="clip_voice_authorization", type=Path)

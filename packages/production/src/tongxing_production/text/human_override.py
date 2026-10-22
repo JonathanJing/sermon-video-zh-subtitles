@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import argparse
 import copy
+import csv
 import hashlib
 import json
 from pathlib import Path
@@ -65,6 +66,32 @@ def _findings(group: dict[str, Any]) -> list[dict[str, str]]:
             findings.append({"gate": "languageReview", "checkId": str(check.get("checkId", "unknown")),
                              "machineStatus": str(check.get("status", "missing"))})
     return findings
+
+
+def _review_sheet_cache_path(sheet_path: Path, csv_value: str) -> Path:
+    path = Path(csv_value)
+    if not path.is_absolute():
+        path = sheet_path.parent.parent / path
+    return path.resolve()
+
+
+def _cached_response_identity(path: Path, expected_group_id: str) -> str:
+    _require(path.is_file() and not path.is_symlink(),
+             f"Selected model response cache is missing or symlinked: {path}")
+    cached = json.loads(path.read_text(encoding="utf-8"))
+    response = cached.get("response") if isinstance(cached, dict) else None
+    choices = response.get("choices") if isinstance(response, dict) else None
+    _require(isinstance(response, dict) and isinstance(response.get("id"), str)
+             and isinstance(choices, list) and choices
+             and isinstance(choices[0], dict)
+             and isinstance(choices[0].get("message"), dict)
+             and isinstance(choices[0]["message"].get("content"), str),
+             f"Selected response cache lacks raw response identity: {path}")
+    parsed = json.loads(choices[0]["message"]["content"])
+    _require(isinstance(parsed, dict)
+             and parsed.get("translationGroupId") == expected_group_id,
+             f"Selected response cache belongs to another group: {path}")
+    return response["id"]
 
 
 def _validate_candidate_binding(source: dict[str, Any], anchor: dict[str, Any],
@@ -204,6 +231,118 @@ def verify_receipt(source: dict[str, Any], anchor: dict[str, Any], candidate: di
     decision = ("approved_with_exceptions" if all(row["disposition"] == "accepted_as_is" for row in rows)
                 else "partially_deferred")
     _require(receipt.get("decision") == decision, "Human override receipt decision summary is inconsistent")
+
+
+def validate_override_receipt(source: dict[str, Any], anchor: dict[str, Any],
+                              candidate: dict[str, Any], receipt: dict[str, Any]) -> None:
+    """Validate the full-review v2 receipt consumed by formal Layer 3.
+
+    The review-sheet and decision artifacts prove the human-reviewed text and the
+    user's whole-candidate approval. Exception rows only explain which unchanged
+    machine failures the human accepted; they never rewrite group machine evidence.
+    """
+    _schema(receipt, "sermon-target-language-human-override-receipt-v2.schema.json")
+    groups = _validate_candidate_binding(source, anchor, candidate)
+    group_ids = [group["translationGroupId"] for group in groups]
+    human = candidate.get("humanReview") or {}
+    model_review = candidate.get("modelReview") or {}
+    source_hash = interpretation.json_sha256(source)
+    anchor_hash = interpretation.json_sha256(anchor)
+    _require(candidate.get("status") == "human_override_approved"
+             and human.get("translation") == "approved"
+             and isinstance(human.get("reviewer"), str) and human["reviewer"].strip()
+             and handoff._reviewed_at(human.get("reviewedAt"))
+             and human.get("reviewedGroupIds") == group_ids
+             and model_review.get("status") in {"pending", "pass", "fail"}
+             and model_review.get("reviewedGroupIds") == group_ids,
+             "Candidate lacks complete human approval for its override receipt")
+    _require(receipt.get("decision") == "approved_with_exceptions"
+             and receipt.get("targetLocale") == candidate["targetLocale"]
+             and receipt.get("englishSourcePackageJsonSha256") == source_hash
+             and receipt.get("anchorManifestJsonSha256") == anchor_hash
+             and receipt.get("translationPolicySha256") == candidate["translationPolicySha256"]
+             and receipt.get("candidateJsonSha256") == interpretation.json_sha256(candidate)
+             and receipt.get("reviewer") == human["reviewer"]
+             and receipt.get("reviewedAt") == human["reviewedAt"]
+             and receipt.get("reviewedGroupIds") == group_ids
+             and receipt.get("modelReview") == model_review
+             and receipt.get("modelReview", {}).get("reviewedGroupIds") == group_ids
+             and receipt.get("humanApproval") is True
+             and receipt.get("machineEvidenceChanged") is False
+             and receipt.get("releaseEligible") is False,
+             "Human override receipt differs from the approved candidate or source")
+
+    sheet_ref = receipt["reviewSheet"]
+    sheet_path = Path(sheet_ref["path"])
+    _require(sheet_path.is_file() and not sheet_path.is_symlink()
+             and sheet_path.stat().st_size == sheet_ref["bytes"]
+             and interpretation.sha256(sheet_path) == sheet_ref["sha256"],
+             "Human override review-sheet bytes changed")
+    decision_ref = receipt["reviewDecision"]
+    decision_path = Path(decision_ref["path"])
+    _require(decision_path.is_file() and not decision_path.is_symlink()
+             and interpretation.sha256(decision_path) == decision_ref["sha256"],
+             "Human override user-decision file bytes changed")
+    decision = json.loads(decision_path.read_text(encoding="utf-8"))
+    _require(interpretation.json_sha256(decision) == decision_ref["jsonSha256"]
+             and decision.get("schemaVersion") == "sermon-target-language-review-sheet-decision-v1"
+             and decision.get("decision") == "approved_as_presented"
+             and decision.get("userMessageItemId") == decision_ref["userMessageItemId"]
+             and decision.get("userStatement") == decision_ref["userStatement"]
+             and decision.get("binding", {}).get("frozenEnglishSourcePackageJsonSha256") == source_hash
+             and decision.get("binding", {}).get("frozenAnchorManifestSha256") == anchor_hash,
+             "Human override is not bound to the recorded user approval and frozen source")
+    locale_decision = decision.get("targetLocales", {}).get(candidate["targetLocale"], {})
+    _require(locale_decision.get("approvedTextUnitCount") == len(group_ids)
+             and locale_decision.get("approvedGroupIds") == group_ids
+             and locale_decision.get("reviewSheet", {}).get("sha256") == sheet_ref["sha256"],
+             "User approval does not cover the exact candidate group set")
+    with sheet_path.open(encoding="utf-8-sig", newline="") as handle:
+        rows = list(csv.DictReader(handle))
+    _require(len(rows) == len(groups), "Human review sheet has incomplete group coverage")
+    response_caches = receipt.get("responseCaches")
+    _require(isinstance(response_caches, list) and len(response_caches) == 2 * len(rows),
+             "Human override receipt does not bind every selected translator and reviewer cache")
+    for row, group in zip(rows, groups):
+        source_ids = [item.strip() for item in row["sourceUnitIds"].split(",") if item.strip()]
+        _require(row["translationGroupId"] == group["translationGroupId"]
+                 and source_ids == group["sourceUnitIds"]
+                 and row["currentText"] == group["targetText"],
+                 "Approved review-sheet text differs from candidate text")
+    for index, row in enumerate(rows):
+        for lane, csv_column in (("translator", "selectedModelOutputFile"),
+                                 ("reviewer", "selectedReviewFile")):
+            entry = response_caches[index * 2 + (lane == "reviewer")]
+            cache_path = _review_sheet_cache_path(sheet_path, row[csv_column])
+            _require(isinstance(entry, dict)
+                     and entry.get("role") == lane
+                     and entry.get("translationGroupId") == row["translationGroupId"]
+                     and entry.get("path") == str(cache_path)
+                     and cache_path.is_file() and not cache_path.is_symlink()
+                     and entry.get("sha256") == interpretation.sha256(cache_path)
+                     and entry.get("responseId") == _cached_response_identity(
+                         cache_path, row["translationGroupId"]),
+                     f"Selected {lane} cache identity changed for {row['translationGroupId']}")
+
+    expected_exceptions = []
+    for group in groups:
+        findings = _findings(group)
+        if findings:
+            expected_exceptions.append({
+                "translationGroupId": group["translationGroupId"],
+                "sourceUnitIds": list(group["sourceUnitIds"]),
+                "targetTextSha256": hashlib.sha256(group["targetText"].encode("utf-8")).hexdigest(),
+                "machineFindings": findings,
+                "disposition": "accepted_as_is",
+            })
+    actual = receipt.get("groupOverrides")
+    _require(bool(expected_exceptions) and isinstance(actual, list)
+             and len(actual) == len(expected_exceptions),
+             "Human override receipt does not enumerate every machine exception")
+    for row, expected in zip(actual, expected_exceptions):
+        _require(all(row.get(key) == value for key, value in expected.items())
+                 and isinstance(row.get("rationale"), str) and row["rationale"].strip(),
+                 "Human override does not match the exact failed checks or text")
 
 
 def main() -> None:

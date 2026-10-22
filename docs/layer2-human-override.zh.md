@@ -44,3 +44,22 @@
 ```
 
 所有输出使用新路径，不覆盖旧表、收据或候选。不要把这份收据当作 Layer 2 人工翻译批准、机器 waiver、音频审核或发布准入；候选原有失败状态保持不变。
+
+## 从已批准的完整 review sheet 构建 v2
+
+当用户已批准某个语言完整 review CSV 中的全部 `currentText` 后，可以用以下工具把该表中的文本与缓存的翻译／复核响应组成新的正式候选，并生成 `sermon-target-language-human-override-receipt-v2`。工具会核验批准决定中的 CSV 哈希、字节数、顺序组 ID 与数量，以及英文源和锚点身份；会读取 CSV 指向的缓存原始 API 响应，保留响应 ID、模型及语义复核发现，并对表格中的最终文本重新运行冻结 policy 指定的语言插件。不会发起 API 请求。
+
+```sh
+.venv/bin/python tools/ops/build_candidate_from_review_sheet.py \
+  --english-source-package <source-package.json> \
+  --anchor <anchor-manifest.json> \
+  --policy <frozen-policy.json> \
+  --review-sheet <locale-current-content.csv> \
+  --review-decision <review-sheet-approval-decision.json> \
+  --plugin <pinned-language-plugin.py> \
+  --reviewer <reviewer-id> \
+  --candidate-out <new-dir>/candidate.json \
+  --receipt-out <new-dir>/human-override-receipt-v2.json
+```
+
+`--reviewed-at` 可显式传入时区完整的 ISO 8601 时间；省略时使用已记录决定的 `recordedAt`。输出候选的 `humanReview` 绑定全部 416 个有序组。收据逐组记录仍失败的语义／插件发现和 `accepted_as_is` 决定；机器检查结果不会被改写，`releaseEligible` 保持 `false`。候选和收据必须写到尚不存在的新路径。该 v2 流程记录用户对完整表格文本的批准，不构成发布准入。
