@@ -146,7 +146,13 @@ def bounded_source_judge_payload(payload, limits):
 
 class SourceBudget:
     def __init__(self, root, authority, *, verify, transport=None, max_concurrent=1, resource_policy=None,
-                 reuse_roots=(), claude_transport=None):
+                 reuse_roots=(), claude_transport=None, reuse_operations=None, reuse_miss_pays=False):
+        # `reuse_operations` limits replay to operation-name prefixes (Layer 1: ('asr.',) so the
+        # judge always runs fresh); `reuse_miss_pays` lets an operation absent from every reuse
+        # root be paid here instead of failing, for roots of runs that stopped early. Both default
+        # to the QC contract: every operation must replay and reuse never buys a call.
+        self.reuse_operations = tuple(reuse_operations) if reuse_operations is not None else None
+        self.reuse_miss_pays = bool(reuse_miss_pays)
         self.root, self.authority, self.verify = Path(root), authority, verify
         # Earlier budget roots of the same run whose returned responses this root may reuse,
         # as named by its approval. Their ledgers/responses are read-only;
@@ -449,9 +455,15 @@ class SourceBudget:
                     return saved['response']
                 # failed_definitive: no content exists, so dispatch afresh under the
                 # same identity; the row is replaced with the new live_started one.
-            require(not self.reuse_roots or ledger['schemaVersion'] == LEDGER_V4,
+            require(not self.reuse_roots or ledger['schemaVersion'] in (LEDGER_V4, LEDGER_V5),
                     'source_budget_v4_explicit_migration_required')
-            reusable = self._reusable(operation, fingerprint) if self.reuse_roots else None
+            reusable = None
+            if self.reuse_roots and (self.reuse_operations is None or operation.startswith(self.reuse_operations)):
+                try:
+                    reusable = self._reusable(operation, fingerprint)
+                except ValueError as error:
+                    if not (self.reuse_miss_pays and str(error) == 'source_reuse_operation_missing'):
+                        raise
             if reusable is not None:
                 # Already paid under another approved root of this run: copy it here at no cost.
                 source_root, source_saved, source_row, source_ledger = reusable

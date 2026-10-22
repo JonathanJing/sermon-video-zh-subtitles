@@ -178,7 +178,7 @@ def deterministic_review(aligned_path: Path, manifest: dict[str, Any]) -> dict[s
         rebuilt = anchors.build_anchor_manifest(
             aligned,
             source_path=aligned_path,
-            unit_policy=anchors.UNIT_POLICY_V2,
+            unit_policy=policy.get("unitPolicy", anchors.UNIT_POLICY_V2),
             max_unit_seconds=policy.get("maxUnitSeconds"),
             min_unit_seconds=policy.get("minUnitSeconds", 1.5),
             internal_pause_seconds=policy.get("internalPauseSeconds", 0.35),

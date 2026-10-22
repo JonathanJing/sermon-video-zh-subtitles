@@ -29,6 +29,13 @@ ANCHOR_SCHEMA = ANCHOR_SCHEMA_V1
 SUPPORTED_ANCHOR_SCHEMAS = frozenset({ANCHOR_SCHEMA_V1, ANCHOR_SCHEMA_V2})
 UNIT_POLICY_V1 = "punctuation_then_pause_split_v1"
 UNIT_POLICY_V2 = "clause_stable_v2"
+# v3 splits exactly like v2; only the unit number changes. v2 numbered units in chunk order, so one
+# extra unit in a sentence renumbered every later unit in the chunk and, downstream, re-judged and
+# re-translated them (2026-10-21 E2: a 13-sentence change re-judged 43 of 119 batches). v3 numbers a
+# unit by its first word, which the frozen transcript fixes, so a unit's ID changes only when its
+# own span changes.
+UNIT_POLICY_V3 = "clause_stable_v3"
+CLAUSE_STABLE_POLICIES = frozenset({UNIT_POLICY_V2, UNIT_POLICY_V3})
 DRAFT_SCHEMA = "sermon-sentence-translation-draft-v1"
 REVIEW_SCHEMA = "sermon-sentence-translation-review-v1"
 CANDIDATE_SCHEMA = "sermon-sentence-interpretation-candidate-v1"
@@ -314,8 +321,10 @@ COPULAS = frozenset("is are was were be been being am".split())
 CLAUSE_STARTERS = frozenset("""
 and but or so yet because then which who that there whether if when while as though although even
 where what how why whose unless until since
+in at after before now finally ultimately eventually today
 i you he she we they it this these those my your his her our their
 """.split())
+NEGATIONS = frozenset("not never no nor n't".split())
 
 
 def _boundary_word(text: str) -> str:
@@ -331,9 +340,29 @@ def _dependent_clause_boundary(words: list[dict[str, Any]], index: int) -> bool:
         return True
     if index > 0:
         # "the whole | sort of inter-advent age", "the different | images": a modifier cut from its
-        # head; "and, again, | put forth": a parenthetical filler inside a dependency.
+        # head at a pause the transcript did not punctuate. With a comma after the word ("the
+        # occult, | whether it's aliens") the word closes its phrase and the boundary stands.
+        # "and, again, | put forth": a parenthetical filler inside a dependency.
         before = _boundary_word(words[index - 1]["text"])
-        if before in DETERMINERS or (boundary_word in FILLER_WORDS and before in UNIT_FINAL_FUNCTION_WORDS):
+        punctuated = bool(BREAK_PUNCTUATION.search(str(words[index]["text"])))
+        if (before in DETERMINERS and not punctuated) or (
+                boundary_word in FILLER_WORDS and before in UNIT_FINAL_FUNCTION_WORDS):
+            return True
+        # "some kind of real, concrete, | intensified period of time": a comma series of modifiers
+        # or list items continues past the pause unless a clause opener follows (2026-10-21 E2:
+        # the judge rejected this cut). A filler closing a parenthetical ("friends, again, | the
+        # lens") is not a series member.
+        following = _boundary_word(words[index + 1]["text"])
+        # "does not affirm a future tribulation, | or an exact individual beast": the disjunction is
+        # still inside the negation's scope, so the second object cannot be read on its own
+        # (2026-10-21 E2b, judge finding on chunk-0010-s002).
+        if following == "or" and any(
+                _boundary_word(w["text"]) in NEGATIONS or _boundary_word(w["text"]).endswith("n't")
+                for w in words[max(0, index - 8):index + 1]):
+            return True
+        if (punctuated and boundary_word not in FILLER_WORDS and following not in FILLER_WORDS
+                and following not in CLAUSE_STARTERS
+                and (str(words[index - 1]["text"]).endswith(",") or str(words[index + 1]["text"]).endswith(","))):
             return True
         # "is primarily, | if not exclusively actually, future": a hedging adverb right after the
         # copula still awaits its complement (2026-10-21 v13, the one sentence the judge rejected).
@@ -549,9 +578,9 @@ def build_anchor_manifest(segments: list[dict[str, Any]], *, source_path: Path,
     _require(source_path.is_file(), "MFA segment source file is missing")
     _require(json.loads(source_path.read_text(encoding="utf-8")) == segments,
              "MFA segment data differs from the bound source file")
-    _require(unit_policy in {UNIT_POLICY_V1, UNIT_POLICY_V2}, "Unsupported unit policy")
+    _require(unit_policy in {UNIT_POLICY_V1, *CLAUSE_STABLE_POLICIES}, "Unsupported unit policy")
     if max_unit_seconds is None:
-        max_unit_seconds = 8.0 if unit_policy == UNIT_POLICY_V2 else 12.0
+        max_unit_seconds = 8.0 if unit_policy in CLAUSE_STABLE_POLICIES else 12.0
     for name, value in (
         ("max_unit_seconds", max_unit_seconds),
         ("min_unit_seconds", min_unit_seconds),
@@ -572,8 +601,8 @@ def build_anchor_manifest(segments: list[dict[str, Any]], *, source_path: Path,
                  for chunk, values in offsets.items()), "Invalid stable identity offsets")
     _require(not allow_out_of_scope_overrides or identity_offsets is not None,
              "Out-of-scope boundary overrides require stable identity offsets")
-    _require(unit_policy == UNIT_POLICY_V2 or not overrides,
-             "Boundary overrides require clause_stable_v2")
+    _require(unit_policy in CLAUSE_STABLE_POLICIES or not overrides,
+             "Boundary overrides require a clause-stable unit policy")
     def _override_ids(value: Any) -> bool:
         return isinstance(value, list) and bool(value) and all(isinstance(item, str) and item for item in value)
     _require(all(isinstance(key, str) and key and (
@@ -620,7 +649,7 @@ def build_anchor_manifest(segments: list[dict[str, Any]], *, source_path: Path,
         if previous_word_end is not None and words[0]["start"] < previous_word_end - 0.001:
             issues.append({"type": "non_monotonic_segment_order", "sourceSentenceId": sentence_id})
         previous_word_end = words[-1]["end"]
-        if unit_policy == UNIT_POLICY_V2:
+        if unit_policy in CLAUSE_STABLE_POLICIES:
             for word in words:
                 word_duration = float(word["end"]) - float(word["start"])
                 if word_duration > word_duration_outlier_seconds:
@@ -654,7 +683,11 @@ def build_anchor_manifest(segments: list[dict[str, Any]], *, source_path: Path,
                      else "long_sentence_pause_clause")
             chunk_unit_counts[chunk_id] = chunk_unit_counts.get(
                 chunk_id, offsets.get(chunk_id, {}).get("unit", 0)) + 1
-            unit_id = f"{chunk_id}-u{chunk_unit_counts[chunk_id]:03d}"
+            if unit_policy == UNIT_POLICY_V3:
+                first_number = re.fullmatch(r".+-w(\d+)[ab]?", str(part[0]["wordId"])).group(1)
+                unit_id = f"{chunk_id}-u{int(first_number):04d}"
+            else:
+                unit_id = f"{chunk_id}-u{chunk_unit_counts[chunk_id]:03d}"
             boundary = {
                 "basis": basis,
                 "humanReview": "pending",
@@ -680,14 +713,14 @@ def build_anchor_manifest(segments: list[dict[str, Any]], *, source_path: Path,
             unresolved_part = parts_with_evidence[-1][0]
             issue = {
                 "type": ("clause_unit_exceeds_target_without_safe_boundary"
-                         if unit_policy == UNIT_POLICY_V2
+                         if unit_policy in CLAUSE_STABLE_POLICIES
                          else "long_sentence_without_safe_pause_split"),
                 "sourceSentenceId": sentence_id,
                 "durationSeconds": round(
                     float(unresolved_part[-1]["end"]) - float(unresolved_part[0]["start"]), 6,
                 ),
             }
-            if unit_policy == UNIT_POLICY_V2:
+            if unit_policy in CLAUSE_STABLE_POLICIES:
                 issue.update({
                     "maximumSeconds": max_unit_seconds,
                     "sourceWordIds": [word["wordId"] for word in unresolved_part],
@@ -713,7 +746,7 @@ def build_anchor_manifest(segments: list[dict[str, Any]], *, source_path: Path,
     for index, unit in enumerate(units):
         next_start = units[index + 1]["start"] if index + 1 < len(units) else unit["end"]
         unit["boundary"]["pauseAfterSeconds"] = round(max(0.0, next_start - unit["end"]), 6)
-        if (unit_policy == UNIT_POLICY_V2
+        if (unit_policy in CLAUSE_STABLE_POLICIES
                 and unit["boundary"]["splitEvidence"]["kind"] == "source_sentence_end"):
             unit["boundary"]["splitEvidence"]["pauseSeconds"] = unit["boundary"]["pauseAfterSeconds"]
 
@@ -730,7 +763,7 @@ def build_anchor_manifest(segments: list[dict[str, Any]], *, source_path: Path,
         })
 
     return {
-        "schemaVersion": ANCHOR_SCHEMA_V2 if unit_policy == UNIT_POLICY_V2 else ANCHOR_SCHEMA_V1,
+        "schemaVersion": ANCHOR_SCHEMA_V2 if unit_policy in CLAUSE_STABLE_POLICIES else ANCHOR_SCHEMA_V1,
         "status": "machine_anchor_candidate_requires_review" if units else "invalid_anchor_manifest",
         "releaseEligible": False,
         "input": {
@@ -745,7 +778,7 @@ def build_anchor_manifest(segments: list[dict[str, Any]], *, source_path: Path,
             "minUnitSeconds": min_unit_seconds,
             "internalPauseSeconds": internal_pause_seconds,
             **({"wordDurationOutlierSeconds": word_duration_outlier_seconds}
-               if unit_policy == UNIT_POLICY_V2 else {}),
+               if unit_policy in CLAUSE_STABLE_POLICIES else {}),
             **({"boundaryOverrides": dict(sorted(boundary_overrides.items()))}
                if boundary_overrides else {}),
             "interpretationSchedule": "rolling_interpreter_v1",
@@ -1095,7 +1128,7 @@ def main() -> int:
     prepare.add_argument("--inter-utterance-gap-seconds", type=float, default=0.12)
     prepare.add_argument("--max-end-lag-seconds", type=float, default=8.0)
     prepare.add_argument(
-        "--unit-policy", choices=(UNIT_POLICY_V1, UNIT_POLICY_V2), default=UNIT_POLICY_V1,
+        "--unit-policy", choices=(UNIT_POLICY_V1, UNIT_POLICY_V2, UNIT_POLICY_V3), default=UNIT_POLICY_V1,
     )
     prepare.add_argument("--word-duration-outlier-seconds", type=float, default=2.5)
     prepare_review = sub.add_parser("prepare-review", help="Bind a translation draft into an independent review request")

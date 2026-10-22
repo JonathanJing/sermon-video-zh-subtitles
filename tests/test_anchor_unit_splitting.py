@@ -129,6 +129,26 @@ class ClauseStableSplittingTests(unittest.TestCase):
         self.assertEqual(texts[0], 'Now for our next, our brothers and sisters, our dispensational premillennial friends, again,')
         self.assertFalse(any(text.endswith('primarily,') for text in texts))
 
+    def test_comma_series_of_modifiers_is_not_cut_before_its_head(self):
+        spec = [('And', 0, .2), ('that', 0, .2), ('was', 0, .2), ('some', 0, .3), ('kind', 0, .2), ('of', 0, .1),
+                ('real,', 0, .5), ('concrete,', .1, .6), ('intensified', .45, .8), ('period', 0, .4), ('of', 0, .1),
+                ('time', 0, .4), ('where', .2, .2), ('God', 0, .3), ('acts', 0, .4), ('in', 0, .1), ('history', 0, .5),
+                ('and', .1, .2), ('people', 0, .4), ('see', 0, .3), ('it', 0, .2), ('plainly', 0, .5), ('today.', 0, .5)]
+        texts, unresolved = self.split(spec)
+        self.assertFalse(any(text.endswith('concrete,') for text in texts), texts)
+
+    def test_negated_disjunction_is_not_cut_before_or_and_main_clause_opens_after_the_appositive(self):
+        spec = [('So', 0, .2), ('even', 0, .3), ('if', 0, .1), ('an', 0, .1), ('amillennialist', 0, .8), ('does', 0, .2),
+                ('not', 0, .2), ('affirm', 0, .4), ('a', 0, .1), ('future', 0, .4), ('seven-year', 0, .6), ('exact', 0, .4),
+                ('tribulation,', 0, .7), ('or', .8, .2), ('an', 0, .1), ('exact', 0, .4), ('one', 0, .2), ('individual', 0, .6),
+                ('beast,', 0, .5), ('Antichrist,', .1, .9), ('in', .77, .1), ('the', 0, .1), ('end', 0, .3), ('there', 0, .2),
+                ('could', 0, .2), ('be', 0, .1), ('some', 0, .2), ('kind', 0, .2), ('of', 0, .1), ('real,', 0, .5),
+                ('concrete,', .1, .6), ('intensified', .4, .8), ('period', 0, .4), ('of', 0, .1), ('time', 0, .4),
+                ('where', .2, .2), ('an', 0, .1), ('entity', 0, .5), ('opposes', 0, .5), ('God.', 0, .4)]
+        texts, unresolved = self.split(spec)
+        self.assertFalse(any(text.endswith('tribulation,') or text.endswith('concrete,') for text in texts), texts)
+        self.assertTrue(texts[0].endswith('Antichrist,'), texts)
+
     def test_function_word_before_a_pause_cannot_end_a_unit(self):
         spec = [('We', 0, .4)] + [(f'w{i}', 0, .5) for i in range(12)] + [('by', 0, .3)] + \
                [(f'v{i}', .5 if i == 0 else 0, .5) for i in range(8)] + [('end.', 0, .4)]
@@ -164,6 +184,49 @@ class ClauseStableSplittingTests(unittest.TestCase):
         path.write_text(json.dumps(segments))
         self._source_path = path
         return path
+
+class StableUnitNumberingTests(unittest.TestCase):
+    """clause_stable_v3 numbers a unit by its first word; v2 numbered units in chunk order."""
+
+    def manifests(self, policy, overrides=None):
+        import json, tempfile
+        from pathlib import Path
+        segments, cursor = [], 0.0
+        for index, text in enumerate(("He spoke so slowly, and then he left, but the end was near today.",
+                                      "He rose on day three.")):
+            timed = []
+            for word in text.split():
+                timed.append({'text': word, 'start': cursor, 'end': cursor + 0.4})
+                cursor += 0.5
+            segments.append({'id': index, 'referenceChunkId': 'block-00', 'text': text, 'start': timed[0]['start'],
+                             'end': timed[-1]['end'], 'sentenceBoundarySource': 'frozen_reference_punctuation',
+                             'wordTimes': timed})
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / 'segments.json'
+            path.write_text(json.dumps(segments))
+            return anchors.build_anchor_manifest(segments, source_path=path, unit_policy=policy,
+                                                 max_unit_seconds=4.0, boundary_overrides=overrides)
+
+    def unit_ids(self, manifest, sentence):
+        return [u['sourceUnitId'] for u in manifest['sourceUnits'] if u['sourceSentenceId'] == sentence]
+
+    def test_v3_keeps_later_units_when_an_earlier_sentence_gains_a_split(self):
+        override = {'block-00-s001': ['block-00-w0004', 'block-00-w0008']}
+        before = self.manifests(anchors.UNIT_POLICY_V3)
+        after = self.manifests(anchors.UNIT_POLICY_V3, override)
+        self.assertEqual(self.unit_ids(before, 'block-00-s002'), ['block-00-u0015'])
+        self.assertEqual(self.unit_ids(after, 'block-00-s002'), ['block-00-u0015'])
+        self.assertEqual(self.unit_ids(after, 'block-00-s001'), ['block-00-u0001', 'block-00-u0005', 'block-00-u0009'])
+        self.assertEqual(after['policy']['unitPolicy'], anchors.UNIT_POLICY_V3)
+        self.assertEqual(after['schemaVersion'], anchors.ANCHOR_SCHEMA_V2)
+
+    def test_v2_renumbers_later_units_which_is_why_v3_exists(self):
+        override = {'block-00-s001': ['block-00-w0004', 'block-00-w0008']}
+        before = self.manifests(anchors.UNIT_POLICY_V2)
+        after = self.manifests(anchors.UNIT_POLICY_V2, override)
+        self.assertEqual(self.unit_ids(before, 'block-00-s002'), ['block-00-u003'])
+        self.assertEqual(self.unit_ids(after, 'block-00-s002'), ['block-00-u004'])
+
 
 if __name__ == '__main__':
     unittest.main()
