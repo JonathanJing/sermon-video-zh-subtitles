@@ -1,0 +1,27 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261021-ios-prod-push-core-initial",
+  "runs": [
+    {
+      "label": "core-production-notification-initial",
+      "source": "~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-21/core-production-notification-initial",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "core-production-notification-initial",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 367,
+      "truncated": false,
+      "sha256": "4a9a1d4edf62cc14650a59ec386f85730a03dc3ae6bd4f8fd52a56d7d659e3fd",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

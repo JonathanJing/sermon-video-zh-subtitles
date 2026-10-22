@@ -1,0 +1,10 @@
+{
+  "schemaVersion": "tongxing-focused-test-v1",
+  "command": "swift test --package-path Core --filter ProductionNotificationTests",
+  "exitCode": 1,
+  "result": "failed",
+  "executed": 2,
+  "passed": 1,
+  "failed": 1,
+  "failure": "diagnostic test fixture was rejected during catalog decode before notification binding; fixture removed and targeted rerun pending"
+}
