@@ -37,8 +37,13 @@ def main() -> int:
     parser.add_argument("--dtype", choices=("bfloat16", "float32"), default="bfloat16")
     parser.add_argument("--seed", type=int, default=7)
     parser.add_argument("--max-new-tokens", type=int, default=768)
+    parser.add_argument("--only-speaker", help="synthesize only rows whose speaker key is this (one checkpoint per run)")
     args = parser.parse_args()
     rows = [json.loads(line) for line in args.speech.read_text(encoding="utf-8").splitlines() if line.strip()]
+    if args.only_speaker:
+        rows = [row for row in rows if row["speaker"] == args.only_speaker]
+        if not rows:
+            raise SystemExit(f"no rows with speaker {args.only_speaker!r}")
     args.out.mkdir(parents=True, exist_ok=True)
     pending = [row for row in rows if not (args.out / f"{row['id']}.wav").exists()]
     print(json.dumps({"sentences": len(rows), "pending": len(pending)}), flush=True)
