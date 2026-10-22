@@ -869,7 +869,12 @@ def _model_call(role: str, prompt: dict[str, Any], policy: dict[str, Any],
 def _utterances(value: object, source_unit_ids: list[str] | None = None) -> list[str]:
     # Some replies wrap each utterance with its unit ID under "targetText" or "text".
     def wrapped(row, unit_id):
-        if not (isinstance(row, dict) and row.get('sourceUnitIds') == [unit_id]):
+        # Providers sometimes echo {"sourceUnitId": ..., "targetText": ...} instead of
+        # a bare string, with either the singular or the plural key.
+        if not isinstance(row, dict) or not (
+                row.get('sourceUnitIds') == [unit_id]
+                or row.get('sourceUnitId') == unit_id
+                or row.get('sourceUnitIds') == unit_id):
             return None
         texts = [row[key] for key in ('targetText', 'text') if isinstance(row.get(key), str) and row[key].strip()]
         return texts[0] if len(texts) == 1 or (len(texts) == 2 and texts[0] == texts[1]) else None
