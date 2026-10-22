@@ -455,6 +455,9 @@ def _transport_caller(backend, **options):
     if backend == 'claude-cli':
         from tongxing_production.compute.transports.claude_layer2 import ClaudeLayer2Transport
         return ClaudeLayer2Transport(**options)
+    if backend == 'deepseek-api':
+        from tongxing_production.compute.transports.deepseek_layer2 import DeepSeekLayer2Transport
+        return DeepSeekLayer2Transport(**options)
     raise ValueError(f'unknown Layer 2 transport backend: {backend}')
 
 

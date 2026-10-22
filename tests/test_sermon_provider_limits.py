@@ -66,6 +66,22 @@ class ProviderLimitsTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, 'unsupported_bounded_reasoning_effort'):
                 limits.bounded_payload(dict(payload(model), reasoning_effort='ultra'), self.limits)
 
+    def test_deepseek_flash_is_bounded_priced_and_uses_its_own_effort_vocabulary(self):
+        self.assertIn('deepseek-flash', limits.BUDGET_MODELS)
+        self.assertEqual(limits.MODEL_REASONING_EFFORTS['deepseek-flash'], ('low', 'high', 'max'))
+        for effort in ('low', 'high', 'max'):
+            selected = limits.bounded_payload(dict(payload('deepseek-flash'), reasoning_effort=effort), self.limits)
+            self.assertEqual(selected['model'], 'deepseek-flash')
+            self.assertEqual(selected['reasoning_effort'], effort)
+        with self.assertRaisesRegex(ValueError, 'unsupported_bounded_reasoning_effort'):
+            limits.bounded_payload(dict(payload('deepseek-flash'), reasoning_effort='medium'), self.limits)
+        measured = limits.request_bounds(dict(payload('deepseek-flash'), reasoning_effort='high'), self.limits)
+        self.assertGreater(measured['costMicrousd'], 0)
+        evidence = limits.request_cost_evidence(dict(payload('deepseek-flash'), reasoning_effort='high'), self.limits)
+        self.assertEqual(evidence['priceAssumptionVersion'], 'strict-deepseek-peak-2026-10-21-v1')
+        self.assertEqual(evidence['priceSource'], limits.PRICE_SOURCES['deepseek-flash'])
+        self.assertFalse(evidence['invoiceVerified'])
+
     def test_models_and_policy_efforts_are_allowlisted_never_rewritten(self):
         for model in limits.SUPPORTED_MODELS:
             for effort in limits.MODEL_REASONING_EFFORTS[model]:

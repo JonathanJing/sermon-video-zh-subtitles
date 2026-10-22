@@ -167,7 +167,7 @@ def translator_backend(policy: dict[str, Any]) -> str:
 
 
 def production_backend(policy: dict[str, Any]) -> str:
-    """The frozen Layer 2 backend a new dispatch may use: openai_api or claude_cli_opus.
+    """The frozen Layer 2 backend a new dispatch may use: openai_api, claude_cli_opus or deepseek_flash.
 
     A translator-only Claude policy (Opus beside the Sol reviewer) stays an experiment that
     replays cache-only; it is never a production backend."""
@@ -196,6 +196,8 @@ def historical_models(policy: dict[str, Any], *, cache_only: bool) -> dict[str, 
         allowed = {MODEL_ROLES[role], HISTORICAL_MODEL_ROLES[role]}
         if cache_only and role == "translator":
             allowed.add("claude-opus-5-5")
+        if cache_only:
+            allowed.add("deepseek-flash")
         require(policy[role]["model"] in allowed, "unsupported_historical_model_policy")
     return {role: policy[role]["model"] for role in MODEL_ROLES}
 
@@ -1586,7 +1588,7 @@ def _run_prepared_groups(request: dict[str, Any], anchor: dict[str, Any],
         expected_efforts = (production_efforts(policy) if not historical_replay and simulation_configuration is None
                             else MODEL_EFFORTS)
         for role, expected in expected_models.items():
-            if expected in {"gpt-6.1-sol", "claude-opus-5-5"}:
+            if expected in {"gpt-6.1-sol", "claude-opus-5-5", "deepseek-flash"}:
                 require(policy[role]["reasoningEffort"] == expected_efforts[role], "production_role_effort_changed")
             require(policy[role]["model"] == expected,
                     f"Production {role} model must be {expected}; freeze a new policy")
