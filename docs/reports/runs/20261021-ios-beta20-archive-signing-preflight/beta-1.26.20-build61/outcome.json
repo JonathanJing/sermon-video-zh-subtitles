@@ -1,0 +1,10 @@
+{
+  "type": "ios_beta_archive",
+  "version": "1.26.20",
+  "build": 61,
+  "sourceCommit": "0699720fa3be8459d871944c04025d3dbb52022e",
+  "status": "failed",
+  "stage": "signing_preflight",
+  "reason": "Worktree lacked ignored Config/Local.xcconfig, so Xcode had no development team",
+  "resolution": "Copied the existing private local signing config into this worktree; archive will be retried in a new output directory"
+}
