@@ -184,7 +184,10 @@ def firebase_cli_gzip_hashes(path):
     return {value.hexdigest() for value in hashes}
 
 
-def baseline(out, *, cache_public=None, cache_receipt=None, environment='dev'):
+def baseline(out, *, cache_public=None, cache_receipt=None, environment='dev', allow_default_locale_drift=False):
+    """``allow_default_locale_drift`` admits live v4/v3 catalogs that differ from their
+    projections only in page default locales; the receipt records the drift, and any
+    candidate built on this baseline must publish the repaired catalogs."""
     out = Path(out).resolve()
     contract.require(not out.exists(), 'Use a new baseline output directory')
     deployment_target = hosting_target(environment)
@@ -275,7 +278,12 @@ def baseline(out, *, cache_public=None, cache_receipt=None, environment='dev'):
     contract.require(publisher.live_version(request, site) == version, 'Live version changed during baseline acquisition')
     report = {**catalog_report(public), 'files': files_report(public)}
     write(out / 'seal-report.json', report)
-    contract.validate_catalog_snapshot(out)
+    contract.validate_catalog_snapshot(out, allow_default_locale_drift=allow_default_locale_drift)
+    drift = []
+    if allow_default_locale_drift and (public / 'multilingual-v5.json').exists():
+        _, _, drift = contract.repair_projected_defaults(read(public / 'multilingual-v5.json'),
+                                                         read(public / 'multilingual-v4.json'),
+                                                         read(public / 'multilingual-v3.json'))
     receipt = {'schemaVersion': ('sermon-dev-simulated-baseline-v1' if environment == 'dev'
                                 else 'sermon-production-live-baseline-v1'), 'status': 'complete_verified_not_deployed',
                'checkedAt': datetime.now(timezone.utc).isoformat(),
