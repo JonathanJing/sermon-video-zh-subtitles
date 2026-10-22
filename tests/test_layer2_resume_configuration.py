@@ -13,16 +13,32 @@ class Layer2ResumeConfigurationTests(unittest.TestCase):
         self.fixture.setUp()
         self.addCleanup(self.fixture.doCleanups)
         self.prior = self.fixture.root / 'prior-run'
-        self.prior.mkdir()
+        self.round = self.prior / 'repair-rounds' / 'round-001'
+        self.round.mkdir(parents=True)
+        (self.round / 'rule-preflight.json').write_text('{}')
 
     def load(self):
         return subject.load_configuration(self.fixture.path)
 
-    def test_prior_root_is_bound_into_the_configuration(self):
+    def test_run_root_resolves_to_its_first_repair_round(self):
         self.fixture.config_data['layer2Resume'] = {'priorRunRoot': 'prior-run'}
         self.fixture.save_config()
         config = self.load()
-        self.assertEqual(config.resume['priorRunRoot'], self.prior.resolve())
+        self.assertEqual(config.resume['priorRunRoot'], self.round.resolve())
+
+    def test_round_directory_is_used_directly(self):
+        self.fixture.config_data['layer2Resume'] = {'priorRunRoot': 'prior-run/repair-rounds/round-001'}
+        self.fixture.save_config()
+        self.assertEqual(self.load().resume['priorRunRoot'], self.round.resolve())
+
+    def test_run_root_without_a_round_is_refused(self):
+        (self.round / 'rule-preflight.json').unlink()
+        self.round.rmdir()
+        self.round.parent.rmdir()
+        self.fixture.config_data['layer2Resume'] = {'priorRunRoot': 'prior-run'}
+        self.fixture.save_config()
+        with self.assertRaisesRegex(ValueError, 'invalid_layer2_resume'):
+            self.load()
 
     def test_missing_prior_root_is_refused_before_dispatch(self):
         self.fixture.config_data['layer2Resume'] = {'priorRunRoot': 'missing-run'}
@@ -46,7 +62,7 @@ class Layer2ResumeConfigurationTests(unittest.TestCase):
             layer2Resume={'priorRunRoot': 'prior-run'})
         self.fixture.save_config()
         config = self.load()
-        self.assertEqual(config.resume['priorRunRoot'], self.prior.resolve())
+        self.assertEqual(config.resume['priorRunRoot'], self.round.resolve())
 
     def test_resume_cannot_be_combined_with_payload_cache(self):
         self.fixture.config_data['layer2Resume'] = {'priorRunRoot': 'prior-run'}
