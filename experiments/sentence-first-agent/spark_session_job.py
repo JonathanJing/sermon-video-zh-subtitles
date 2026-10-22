@@ -47,9 +47,15 @@ def session(*args) -> dict:
     return value
 
 
-def ssh(command: str, *, timeout: int = 120) -> subprocess.CompletedProcess:
-    return subprocess.run(["ssh", "-o", "BatchMode=yes", "-o", "ConnectTimeout=10", HOST, command],
-                          capture_output=True, text=True, timeout=timeout)
+def ssh(command: str, *, timeout: int = 120, raise_timeout: bool = False) -> subprocess.CompletedProcess:
+    try:
+        return subprocess.run(["ssh", "-o", "BatchMode=yes", "-o", "ConnectTimeout=10", HOST, command],
+                              capture_output=True, text=True, timeout=timeout)
+    except subprocess.TimeoutExpired:
+        if raise_timeout:
+            raise
+        # A slow poll is not an outcome: report nothing and let the caller poll again.
+        return subprocess.CompletedProcess(command, 255, "", "ssh timed out")
 
 
 def option(args: list[str], name: str) -> str:
@@ -84,8 +90,13 @@ def main() -> int:
         command = " ".join(shlex.quote(a) for a in [
             "bash", f"{args.remote_tools}/spark_run.sh", *run_args,
             "--label-session", args.session, "--label-owner", args.owner, "--label-job", job_id, "--cid-prefix", prefix])
-        launched = ssh(f"mkdir -p {shlex.quote(work)}/.jobs && setsid {command} </dev/null >{shlex.quote(prefix)}.out 2>&1 & echo started")
-        if "started" not in launched.stdout:
+        try:
+            launched = ssh(f"mkdir -p {shlex.quote(work)}/.jobs && (setsid {command} </dev/null >{shlex.quote(prefix)}.out 2>&1 &) ; echo started", raise_timeout=True)
+            started = "started" in launched.stdout
+        except subprocess.TimeoutExpired:
+            # 2026-10-22: one launch call hung although the run had started; look for its container instead.
+            started, launched = True, None
+        if not started:
             session("job-end", *ids, "--job-id", job_id, "--outcome", "known_terminal", "--process-exited")
             raise SystemExit(f"launch failed: {launched.stderr[-400:]}")
         cid = ""
