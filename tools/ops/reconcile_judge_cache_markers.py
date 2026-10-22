@@ -10,6 +10,13 @@ unknown request by design. This tool matches each marker to the one returned cal
 exactly the marker's sentences for the marker's model, rebuilds the chat envelope the transport
 would have returned and binds it with ``reconcile_returned_response``. It never calls a model;
 a marker with no returned call, or more than one, stays unknown and is listed.
+
+``--release-terminal-failures`` handles the other known outcome: a call whose CLI result is a
+recorded terminal error with no answer (for example HTTP 429 "session limit"). Such a call left
+a marker but cannot be matched by content, because the error carries no sentences. The tool
+releases unmatched markers only when they were created inside the failing run's call window and
+their number does not exceed that run's terminal failures; each release is recorded next to the
+marker as ``<name>.released.json`` with the failure evidence, so the batch may be requested again.
 """
 from __future__ import annotations
 
@@ -38,6 +45,59 @@ def returned_calls(directories):
                 continue
             calls.append((Path(path), response, ids))
     return calls
+
+
+def terminal_failures(directories):
+    """Calls that ended in a recorded terminal error without an answer: (call dir, mtime, summary)."""
+    rows = []
+    for directory in directories:
+        for call in sorted(Path(directory).glob('*')):
+            if (call / 'response.json').exists() or not (call / 'result.json').exists():
+                continue
+            try:
+                result = json.loads((call / 'result.json').read_text(encoding='utf-8'))
+            except (OSError, json.JSONDecodeError):
+                continue
+            if result.get('is_error') is not True or result.get('structured_output') is not None:
+                continue
+            rows.append((call, call.stat().st_mtime, {'call': call.name, 'apiErrorStatus': result.get('api_error_status'),
+                                                      'terminalReason': result.get('terminal_reason'),
+                                                      'result': str(result.get('result'))[:200]}))
+    return rows
+
+
+def release_terminal_failures(cache_root, call_directories, *, window_seconds=600):
+    """Release unmatched markers that a run's recorded terminal failures account for."""
+    cache = Path(cache_root) / 'cache'
+    failures = terminal_failures(call_directories)
+    report = {'released': [], 'kept': [], 'terminalFailures': [row[2] for row in failures]}
+    if not failures:
+        return report
+    earliest = min(row[1] for row in failures) - window_seconds
+    latest = max(row[1] for row in failures) + window_seconds
+    candidates = []
+    for marker in sorted(cache.glob('*.started.json')):
+        receipt = marker.with_name(marker.name[:-len('.started.json')] + '.json')
+        if receipt.exists():
+            continue
+        created = marker.stat().st_mtime
+        if earliest <= created <= latest:
+            candidates.append(marker)
+        else:
+            report['kept'].append({'marker': marker.name, 'reason': 'outside_failure_window'})
+    if len(candidates) > len(failures):
+        report['kept'].extend({'marker': m.name, 'reason': 'more_markers_than_recorded_failures'} for m in candidates)
+        return report
+    for marker in candidates:
+        record = marker.with_name(marker.name[:-len('.started.json')] + '.released.json')
+        record.write_text(json.dumps({'schemaVersion': 'sermon-judge-cache-marker-release-v1',
+                                      'marker': json.loads(marker.read_text(encoding='utf-8')),
+                                      'releasedBecause': 'recorded_terminal_failure_without_answer',
+                                      'terminalFailures': report['terminalFailures']}, ensure_ascii=False, indent=1) + '\n',
+                          encoding='utf-8')
+        marker.unlink()
+        report['released'].append({'marker': marker.name, 'record': record.name})
+    return report
 
 
 def execution_identity(model, effort):
@@ -85,10 +145,14 @@ def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument('cache_root', help='judge cache root (the directory holding cache/)')
     parser.add_argument('call_directories', nargs='+', help='claude-cli-calls directories of the interrupted runs')
+    parser.add_argument('--release-terminal-failures', action='store_true',
+                        help='also release unmatched markers that recorded terminal failures account for')
     args = parser.parse_args(argv)
     report = reconcile(args.cache_root, args.call_directories)
+    if args.release_terminal_failures:
+        report['release'] = release_terminal_failures(args.cache_root, args.call_directories)
     print(json.dumps(report, ensure_ascii=False, indent=1))
-    return 0 if not report['unresolved'] else 3
+    return 0 if not report['unresolved'] or args.release_terminal_failures else 3
 
 
 if __name__ == '__main__':

@@ -78,6 +78,33 @@ class ReconcileJudgeCacheMarkersTests(unittest.TestCase):
         self.assertEqual(len(list((self.cache_root / "cache").glob("*.started.json"))), 1)
         self.assertEqual(len([p for p in (self.cache_root / "cache").glob("*.json") if not p.name.endswith(".started.json")]), 0)
 
+    def test_recorded_terminal_failures_release_their_markers_but_never_more(self):
+        import os, time
+        self.marker(["chunk-0000-s001"])
+        self.marker(["chunk-0000-s002"])
+        failed = self.calls / "f1"
+        failed.mkdir(parents=True)
+        (failed / "result.json").write_text(json.dumps({"is_error": True, "subtype": "success", "api_error_status": 429,
+                                                        "terminal_reason": "api_error", "result": "session limit"}))
+        report = tool.release_terminal_failures(self.cache_root, [self.calls])
+        # Two markers, one recorded failure: nothing is released.
+        self.assertEqual(report["released"], [])
+        self.assertEqual(len(report["kept"]), 2)
+        failed2 = self.calls / "f2"
+        failed2.mkdir()
+        (failed2 / "result.json").write_text(json.dumps({"is_error": True, "api_error_status": 429, "result": "session limit"}))
+        report = tool.release_terminal_failures(self.cache_root, [self.calls])
+        self.assertEqual(len(report["released"]), 2)
+        self.assertEqual(len(list((self.cache_root / "cache").glob("*.started.json"))), 0)
+        self.assertEqual(len(list((self.cache_root / "cache").glob("*.released.json"))), 2)
+        # A marker outside the failure window stays.
+        self.marker(["chunk-0000-s003"])
+        old = next((self.cache_root / "cache").glob("*.started.json"))
+        stale = time.time() - 7200
+        os.utime(old, (stale, stale))
+        report = tool.release_terminal_failures(self.cache_root, [self.calls])
+        self.assertEqual(report["kept"][0]["reason"], "outside_failure_window")
+
 
 if __name__ == "__main__":
     unittest.main()
