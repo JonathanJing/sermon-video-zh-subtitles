@@ -1,0 +1,54 @@
+{
+  "schemaVersion": "sermon-layer2-auto-repair-receipt-v1",
+  "routingVersion": "layer2-auto-repair-routing-v1",
+  "lineage": {
+    "targetLocale": "es",
+    "englishSourcePackageJsonSha256": "5dc7deb518491cef0d0c98c8c21b5c7f8aebc3730c13042afc6427b640f75e2c",
+    "anchorManifestSha256": "dc7777a2bfe7ea5f4e482f59ad36a5a4e5c081e931ec3cb3edfe9aba32d4b140",
+    "translationPolicySha256": "576fa2980e90be3bc327a09e6dab5967215ef58b425282b7f78b0d29ac26c412"
+  },
+  "status": "repair_stopped",
+  "rounds": 2,
+  "finalRunDirectory": "~/.codex/worktrees/broadcast-es-ko-shared-source/sermon-video-zh-subtitles/artifacts/weekend-live/broadcast-20261018-es-ko-20261022/text-retry1/es/repair-rounds/round-002",
+  "evidenceSha256": null,
+  "initialSpend": {
+    "calls": 832,
+    "tokens": 1836174,
+    "callsWithoutUsage": 0
+  },
+  "repairSpend": {
+    "calls": 8,
+    "tokens": 22649
+  },
+  "stoppedGroups": [
+    {
+      "translationGroupId": "translation-chunk-0007-u034",
+      "sourceUnitIds": [
+        "chunk-0007-u034"
+      ],
+      "failureCodes": [
+        "language_plugin_failed"
+      ],
+      "reasonCode": "repair_spend_cap",
+      "evidencePath": "~/.codex/worktrees/broadcast-es-ko-shared-source/sermon-video-zh-subtitles/artifacts/weekend-live/broadcast-20261018-es-ko-20261022/text-retry1/es/repair-rounds/round-002/group-failures.json"
+    },
+    {
+      "translationGroupId": "translation-chunk-0009-u036",
+      "sourceUnitIds": [
+        "chunk-0009-u036"
+      ],
+      "failureCodes": [
+        "meaning_omission",
+        "review_uncertainty"
+      ],
+      "reasonCode": "repair_spend_cap",
+      "evidencePath": "~/.codex/worktrees/broadcast-es-ko-shared-source/sermon-video-zh-subtitles/artifacts/weekend-live/broadcast-20261018-es-ko-20261022/text-retry1/es/repair-rounds/round-002/group-0375-sol.json"
+    }
+  ],
+  "gatesPassed": [],
+  "releaseAuthority": "none",
+  "ledgerRoot": "~/.codex/worktrees/broadcast-es-ko-shared-source/sermon-video-zh-subtitles/artifacts/weekend-live/broadcast-20261018-es-ko-20261022/.jobs-retry1.layer2-repair",
+  "ledgerHeadSha256": "0fc6bcc69e57f44495cf919359478e197b779e0d3ce0a0acf97ea07f14c66e66",
+  "humanApproval": false,
+  "reviewKind": "machine_review"
+}
