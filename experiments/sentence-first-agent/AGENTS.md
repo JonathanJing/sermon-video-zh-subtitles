@@ -1,8 +1,8 @@
 # 逐句优先、代理直做的配音实验
 
-状态：实验线，2026-10-21 建立。用户决定（2026-10-21）：**这条线不走现有流水线，不做哈希绑定校验，所有工作在代理会话里直接完成。** 它用来验证[逐句优先设计](../../docs/design/sentence-first-dubbing-path.zh.md)的路径本身成不成立，不产生发布物。要进 App 的内容仍走正式四层。
+状态：实验线，2026-10-21 建立。用户决定（2026-10-21）：**这条线不走现有流水线，不做哈希绑定校验，所有工作在代理会话里直接完成。** 它用来验证[逐句优先设计](../../docs/design/sentence-first-dubbing-path.zh.md)的路径本身成不成立，不产生发布物。要进 App 的内容仍走正式四层；正式播客翻译由另一个代理负责，本实验不读写它的目录（2026-10-22 用户说明）。
 
-读完本文即可开工；需要连 Spark 时读 `dgx-spark-connect` skill。不要为了这条线读 controller、speech job、豁免或 Registry 的文档。
+读完本文即可开工；需要连 Spark 时读 `dgx-spark-connect` skill。不要为了这条线读 controller、speech job、豁免或 Registry 的文档。首跑记录见[首跑报告](../../docs/reports/20261021-sentence-first-agent-first-clip.zh.md)。
 
 ## 边界（只有三条）
 
@@ -12,129 +12,106 @@
 
 其余一切（模型选择、分句粒度、提示词、重跑、改字）由当前会话的代理自行决定并写进 `run.md`。
 
+## 脚本
+
+都在本目录，每个 `--help` 可看参数。本机脚本只用标准库和 `ffmpeg`；Spark 上的两个脚本在固定镜像里跑。
+
+| 脚本 | 在哪跑 | 做什么 |
+|---|---|---|
+| `prepare_clip.py` | 本机 | 从锚点清单裁片段：clip.wav、clip.json、words.json、sentences.jsonl、原声切片、run.md 表头 |
+| `split_sentences.py` | 本机 | 没有锚点清单、只有词列表时拆句 |
+| `slice_sentences.py` | 本机 | 每句切原声，算 budgetSeconds（prepare_clip 会调用它） |
+| `build_speech.py` | 本机 | 套用代理的复核修订和口播读法，写 speech.jsonl |
+| `spark_run.sh` | Spark | 一个语言的逐句 TTS（batch 1）和回转写，可续跑，`--dry-run` 只打印命令 |
+| `tts_sentences.py`、`asr_check.py transcribe` | Spark 容器内 | 由 spark_run.sh 调用 |
+| `finish_run.py` | 本机 | 拉回、合并、打分、混回视频、出手机预览，打印落后与回转写摘要 |
+| `merge_track.py`、`asr_check.py score` | 本机 | 由 finish_run.py 调用，也可单独用 |
+
 ## 目录
 
 ```text
 artifacts/sentence-first-agent/<run>/
   run.md              代理的工作日志：来源、决定、改动、听感
-  clip.wav            窗口音频，16 kHz 单声道
-  words.json          词级时间（见第 2 步）
-  sentences.jsonl     每句一行：id, english, start, end, pauseAfter, words
-  slices/<id>.wav     每句原声切片
-  translations.jsonl  每句一行：id, target, locale, reviewNote
-  speech.jsonl        每句一行：id, spokenText, language, speaker, hint, budgetSeconds
-  tts/<id>.wav        每句配音
-  track.wav           合并音轨；schedule.json 记每句实际起点
-  dub.mp4             可选，音轨混回视频
+  clip.json           媒体路径、片段媒体起止、单元范围
+  clip.wav            片段音频，16 kHz 单声道
+  words.json          词级时间，相对 clip.wav
+  sentences.jsonl     每句一行：id, english, start, end, pauseAfter, words, sourceUnitId
+  slices/             每句原声切片；slices.json 记 budgetSeconds
+  translations.jsonl  每句一行：id, locale, target, reviewNote（代理写）
+  review.json         代理的复核修订、备注、口播读法（代理写）
+  speech.jsonl        每句一行：id, spokenText, language, speaker, hint, budgetSeconds, estimatedSeconds
+  tts/                每句配音；tts-log.jsonl 记时长和墙钟
+  asr.jsonl           回转写；asr-report.json 是打分结果
+  track.wav           合并音轨；schedule.json 记每句计划起点、实际起点、落后
+  dub.mp4             片段视频 + 配音；dub-preview-640.mp4 是手机预览
 ```
 
-辅助脚本都在本目录，只用标准库和 `ffmpeg`；`tts_sentences.py` 在 Spark 上跑，另需 `torch` 与 `qwen_tts`。每个脚本 `--help` 可看参数。
+第二种语言用同一片段时，另开一个 run 目录，用 `--share-from`／`--clip-from` 指向第一个目录，不重新裁片段。
 
 ## 步骤
 
-### 1 取窗口音频
+下面命令里的 `$EXP` 指 `experiments/sentence-first-agent`，`$RUN` 指本次的 run 目录。
 
-操作者给起止时间。代理直接跑：
+### 1 裁片段（本机）
+
+有锚点清单（`sermon-sentence-anchor-manifest-v2`，时间相对批准窗口）时一步到位：
 
 ```bash
-ffmpeg -nostdin -v error -i <video> -ss <start> -to <end> -map 0:a:0 -ac 1 -ar 16000 -c:a pcm_s16le artifacts/sentence-first-agent/<run>/clip.wav
+python3 $EXP/prepare_clip.py --anchor <anchor-manifest.json> --media <video> --window-start <窗口起点秒> --units <LO:HI> --run $RUN --title "<一行说明>"
 ```
 
-把来源文件名、起止时间写进 `run.md`。
+`--units` 是锚点单元的下标，两端都含。分句直接沿用锚点单元。没有锚点清单时，先按 `sermon-mfa-word-alignment` skill 拿到词时间，存成 `[{"text","start","end"}]`，再用 `split_sentences.py` 拆句、`slice_sentences.py` 切原声，并手写 clip.json。代理读一遍句表，觉得断得不对就直接改 `sentences.jsonl`，在 `run.md` 记一句为什么。
 
-### 2 词级时间
+### 2 逐句翻译与复核（代理自己做）
 
-有现成的 MFA 结果（anchor manifest v2 或任何含 `start`/`end` 的词列表）就直接用；没有就按 `sermon-mfa-word-alignment` skill 跑一次 MFA，拿到词时间。统一存成 `words.json`：
+不调用任何外部翻译 API：
+
+1. 读这一句英文、前 3 句后 2 句英文、[术语表](../../docs/series-terminology.zh.md)里本系列的条目。韩语、西语参照该周正式全篇译文的用词约定（如 하나님、에스겔；Dios、Ezequiel、ustedes）。
+2. 译出这一句。完整覆盖本句；经文出处、数字、人名、系列名按英文和术语表；不借邻句内容。
+3. 全部写完后做独立的第二遍复核（或开子代理，只给英文与译文），判漏译、增译、否定、数字、人名、经文、意思偏移。
+4. 译文写进 `translations.jsonl`，复核结论写进 `review.json`：
 
 ```json
-[{"text": "Grace", "start": 0.42, "end": 0.71}, ...]
+{"locale": "ko", "speaker": "steve_bang_lee",
+ "revisions": {"s0036": {"target": "이 메시지가 왜 달콤한지 아십니까?", "note": "revised: …"}},
+ "notes": {"s0084": "note: …"},
+ "spokenForms": {"19쪽": "십구 쪽", "12장 10절": "십이장 십절"}}
 ```
 
-时间相对 `clip.wav` 起点。只要词和时间，不要别的字段。
+`spokenForms` 把字幕写法换成 TTS 读法，字幕仍保留阿拉伯数字。`speaker` 是 checkpoint 里的 speaker key。
 
-### 3 拆句
+### 3 口播规格（本机）
 
 ```bash
-python3 experiments/sentence-first-agent/split_sentences.py --words words.json --out sentences.jsonl
+python3 $EXP/build_speech.py --run $RUN --review $RUN/review.json [--share-from <同片段的第一个 run>]
 ```
 
-默认在句末标点处断句，长于 `--max-seconds`（默认 12 秒）的句子再在最长可听停顿（默认 ≥ 0.45 秒）处断开。输入是 anchor manifest v2 时直接沿用它的 `sourceUnits`。代理读一遍结果：觉得断得不对就直接改 `sentences.jsonl`（合并、拆开、改时间都行），在 `run.md` 记一句为什么。
+它把修订写回 `translations.jsonl`，生成 `speech.jsonl`，并列出粗估超预算的句子和仍含数字的口播句。`spokenForms` 里有一项没对上任何句子就报错。仍含数字的句子要补读法。超预算的句子第一遍可以先不精简，等合并后看实际落后再决定；要精简时只删重复、填充、同义复述，不删论点、否定、数字、人名、经文出处。
 
-### 4 切原声
+### 4 Spark 配音与回转写
+
+先按 `dgx-spark-connect` 确认能连上，再看 GPU 有没有别人在用（`docker ps`、`nvidia-smi`）；另一个代理在用时等它。讲员 checkpoint 路径从 Spark 上的 `speaker-checkpoints.dgx.json` 查。
 
 ```bash
-python3 experiments/sentence-first-agent/slice_sentences.py --audio clip.wav --sentences sentences.jsonl --out slices
+ssh achillesjing@192.168.1.152 'mkdir -p ~/sentence-first-agent/tools ~/sentence-first-agent/<run>'
+scp $EXP/spark_run.sh $EXP/tts_sentences.py $EXP/asr_check.py achillesjing@192.168.1.152:sentence-first-agent/tools/
+scp $RUN/speech.jsonl achillesjing@192.168.1.152:sentence-first-agent/<run>/
+ssh achillesjing@192.168.1.152 'bash ~/sentence-first-agent/tools/spark_run.sh --work ~/sentence-first-agent/<run> --locale ko --checkpoint <checkpoint-dir>'
 ```
 
-每句一个 WAV，前后各留 `--pad`（默认 0.08 秒），不越过邻句。切片给第 5、6 步听，也给 `budgetSeconds`。
+逐句合成（batch 1，2026-10-21 用户决定），不拉伸、不变速。已完成的句子和回转写行会跳过，所以中断后原样再跑一次就是续跑。先加 `--dry-run` 看一眼命令。88 句约 5 分钟配音加 1 分钟回转写；要在后台等，就把整条 `ssh` 放进后台任务，不要在远端用 `nohup … &`（会把 SSH 会话挂住）。要停时只停自己的：按 `docker inspect` 的挂载找出挂了本实验目录的容器再停。
 
-### 5 逐句翻译与复核（代理自己做）
-
-代理按顺序对每句工作，不调用任何外部翻译 API：
-
-1. 读这一句英文、前 3 句后 2 句英文、[术语表](../../docs/series-terminology.zh.md)里本系列的条目。
-2. 译出目标语言的这一句。完整覆盖本句；经文出处、数字、人名、系列名按英文和术语表；不借邻句内容。
-3. 复核：换一个角度（或开一个子代理，只给英文与译文），判漏译、增译、否定、数字、人名、经文、意思偏移。有问题就改，在 `reviewNote` 写一句。
-4. 写一行到 `translations.jsonl`：
-
-```json
-{"id": "s0007", "locale": "zh-Hans", "target": "……", "reviewNote": "pass"}
-```
-
-一次写完一个 locale 再做下一个。中断后从最后一行续。
-
-### 6 口播规格（代理自己做）
-
-对每句，代理听或看它的原声切片时长，写 `speech.jsonl`：
-
-```json
-{"id": "s0007", "spokenText": "……", "language": "Chinese", "speaker": "<speakerKey>", "hint": "", "budgetSeconds": 3.41}
-```
-
-- `spokenText` 从 `target` 派生：经文章节、数字写成读法；中文韩文给停顿标点。意思不变。
-- `budgetSeconds` = 切片时长 + `pauseAfter`。译文念出来明显超预算时，代理精简口播：只删重复、填充、同义复述，不删论点、否定、数字、人名、经文出处。字幕仍用 `target`。
-- `language` 用 Qwen3-TTS 的语言名（`Chinese`、`Korean`、`Spanish`）；`speaker` 用 checkpoint 里的 speaker key。
-- `hint` 可选，一句自然语言的朗读提示，进 `instruct`。
-
-### 7 本地模型配音（Spark）
-
-按 `dgx-spark-connect` 连上 Spark，把 `speech.jsonl` 和脚本放到 Spark 的工作目录，在带 `qwen_tts` 的环境里跑：
+### 5 收尾（本机）
 
 ```bash
-python3 tts_sentences.py --speech speech.jsonl --checkpoint <checkpoint-dir> --out tts --device cuda:0 --seed 7
+python3 $EXP/finish_run.py --run $RUN --remote achillesjing@192.168.1.152:sentence-first-agent/<run> [--clip-from <同片段的第一个 run>]
 ```
 
-逐句合成（batch 1，2026-10-21 用户决定），已有的 `tts/<id>.wav` 跳过，所以可以断点续跑。合成完把 `tts/` 拉回本机。不拉伸、不变速。
+它拉回 `tts/` 和回转写，合并音轨（每句放在英文起点，放不下就接在上一句后 0.25 秒），打分，混回视频，出约 9 MB 的手机预览，并打印落后最多的句、超过 8 秒的句、配音与原声时长比、TTS 速度和回转写相似度低的句。
 
-实测（2026-10-21 首跑）：Spark 上没有 `qwen_tts` 的宿主 Python，要在 `nvcr.io/nvidia/pytorch:26.06-py3` 里跑，把 `/home/achillesjing/dgx-spark-benchmark/results/sermon-voice-poc-20260905/venv/lib/python3.12/site-packages` 只读挂进去并设 `PYTHONPATH`。讲员 checkpoint 路径从 Spark 上的 `speaker-checkpoints.dgx.json` 查。用 `nohup … &` 从 SSH 启动会把会话挂住；改为把等待放到后台，或直接前台跑（88 句约 5 分钟）。
+### 6 听一遍，记下来
 
-### 8 合并
-
-```bash
-python3 experiments/sentence-first-agent/merge_track.py --sentences sentences.jsonl --tts tts --out track.wav --schedule schedule.json
-```
-
-每句放在它英文起点；放不下就紧接上一句结束加 `--gap`（默认 0.25 秒）。`schedule.json` 记每句计划起点、实际起点、落后秒数。要听带画面的：
-
-```bash
-ffmpeg -nostdin -v error -i <video> -ss <start> -to <end> -i track.wav -map 0:v:0 -map 1:a:0 -c:v copy -c:a aac -shortest dub.mp4
-```
-
-### 9 听一遍，记下来
-
-代理先在 Spark 上回转写抽查（Qwen3-ASR 运行时在 `/home/achillesjing/sermon-speech-runtime`，挂到容器的 `/runtime`）：
-
-```bash
-python3 asr_check.py transcribe --speech speech.jsonl --tts tts --model <Qwen3-ASR-0.6B snapshot> --out asr.jsonl --locale zh-Hans
-```
-
-再在本机打分，低于 `--min`（默认 0.88）的句子列出来：
-
-```bash
-python3 experiments/sentence-first-agent/asr_check.py score --speech speech.jsonl --asr asr.jsonl --report asr-report.json
-```
-
-同音字差异（它/他、再/在）不算问题；人名、数字、否定词不一致要人听。分数只是提示，不是听审。把落后最多的句、读错的句、译得别扭的句写进 `run.md`，要改就改对应的一行，只重跑那一句的第 7、8 步。
+回转写的同音字差异（它/他、再/在）不算问题；人名、数字、否定词不一致要人听。分数只是提示，不是听审。把预览发给用户听，把落后最多的句、读错的句、译得别扭的句和用户结论写进 `run.md`。要改某句：改 `translations.jsonl` 或 `review.json` 里那一行，重跑第 3 步，删掉 Spark 上该句的 `tts/<id>.wav` 和 `asr.jsonl` 里那一行，再跑第 4、5 步，只会重做这一句。
 
 ## 完成的样子
 
