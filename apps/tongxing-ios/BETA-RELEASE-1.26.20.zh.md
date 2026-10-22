@@ -7,6 +7,7 @@
 - Firebase Dev Hosting 版本 `bbf84fd1e6451414` 已将 v5 默认页改为 10 月 18 日三语言家庭页 `resi-20261018-15030286`，v4 默认页改为同日中文广播版；公告侧车含三条对应海报。六个变更文件的公网 SHA-256 回读均通过，v3 原本已指向同日中文投影，未改字节。[Dev 脱敏报告 PR #1250](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/1250) 记录发布边界。
 - Beta 模拟器构建成功。iOS 27.1 上显式连接 Dev 的 UI 测试实际打开并校验了中文、韩文、西文海报；中文截图可见 `2026.10.18`。成功 `.xcresult` 在 `artifacts/tongxing-ios/2026-10-21/cli/20261021T171151-test-eb988ab1/`，脱敏报告见 [PR #1256](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/1256)。截图留在本机忽略目录 `artifacts/tongxing-ios/2026-10-21/live-poster-attachments/`。
 - iOS 26.2 模拟器的 Beta 本机通知测试实际看到系统通知，点击后打开绑定的页面与语言，退出码为 0；见 [PR #1254](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/1254)。iOS 27.1 的另一模拟器未进入通知权限已允许状态，该轮通知用例失败；不能把它写作 27.1 通知通过，失败见 [PR #1253](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/1253)。初次滚动断言失败与运行器启动 Busy 也分别保留在 [PR #1251](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/1251)、[PR #1255](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/1255)。
+- 单设备 APNs 发送器对当前 Dev v5 默认页进行了只读内容预检：中文、韩文、西文三条通知都绑定到 `resi-20261018-15030286`，各自 release 哈希与线上发布包一致；没有设备 token、私钥或 APNs 请求。见 [PR #1261](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/1261)。
 
 ## 签名、上传与 Apple 读回
 
