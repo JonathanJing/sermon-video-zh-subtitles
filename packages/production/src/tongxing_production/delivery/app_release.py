@@ -34,6 +34,7 @@ from pathlib import Path
 
 from jsonschema import Draft202012Validator, FormatChecker
 
+from ..text import human_override
 from . import backend as _delivery
 from . import contract as delivery_contract
 from . import formal_assets
@@ -152,8 +153,56 @@ def reviewed_candidate(path: Path, source_sha: str, locale: str) -> tuple[dict, 
     return candidate, stage.canonical_sha(candidate)
 
 
+OVERRIDE_RECEIPT_V2 = "sermon-target-language-human-override-receipt-v2"
+
+
+def override_admitted_text(candidate_path: Path, receipt: dict, source: dict, locale: str) -> tuple[dict, str, dict]:
+    """A candidate whose every group the user approved in a bound review sheet (human-override receipt v2).
+
+    The text is human reviewed; the machine review keeps its own failed status. The basis
+    records that status and each exception the human accepted, unchanged, so the release
+    can say so publicly (``textReviewBasis``).
+    """
+    candidate = stage.read_package(candidate_path, "sermon-target-language-candidate-v2.schema.json")
+    require(candidate["targetLocale"] == locale
+            and candidate["englishSourcePackageJsonSha256"] == stage.canonical_sha(source),
+            f"{locale}: candidate is not for this source")
+    ref = source["anchors"]["artifact"]
+    anchor_path = Path(ref["path"])
+    require(anchor_path.is_file() and hashlib.sha256(anchor_path.read_bytes()).hexdigest() == ref["sha256"],
+            f"{locale}: anchor manifest bound by the source package is missing or changed")
+    human_override.validate_override_receipt(source, read(anchor_path), candidate, receipt)
+    return candidate, stage.canonical_sha(candidate), {
+        "kind": "human_override", "receiptSha256": stage.canonical_sha(receipt),
+        "machineReviewStatus": receipt["modelReview"]["status"],
+        "acceptedExceptions": [{"translationGroupId": row["translationGroupId"],
+                                "sourceUnitIds": list(row["sourceUnitIds"]),
+                                "machineFindings": [dict(finding) for finding in row["machineFindings"]]}
+                               for row in receipt["groupOverrides"] if row["disposition"] == "accepted_as_is"]}
+
+
+def override_audio_issues(issues: list, spoken_basis: dict, spoken: dict) -> bool:
+    """A track rendered from a human-override speech job discloses the same exceptions as its only issue.
+
+    True only when the spoken script itself was admitted by a human-override receipt and the
+    disclosure carries exactly that receipt's machine status and accepted exceptions; any other
+    issue keeps the track out of a release.
+    """
+    if spoken_basis.get("kind") != "human_override" or len(issues) != 1:
+        return False
+    issue = issues[0]
+    expected = [(row["translationGroupId"], row["machineFindings"]) for row in spoken_basis["acceptedExceptions"]]
+    return (set(issue) == {"type", "status", "topLevelModelReview", "exceptionGroups", "disclosure"}
+            and issue["type"] == "human_override_machine_exceptions"
+            and issue["status"] == "human_accepted_as_is_machine_findings_remain_unresolved"
+            and issue["topLevelModelReview"].get("status") == spoken_basis["machineReviewStatus"]
+            and issue["topLevelModelReview"].get("reviewedGroupIds") == [g["translationGroupId"] for g in spoken["groups"]]
+            and [(row.get("translationGroupId"), row.get("machineFindings")) for row in issue["exceptionGroups"]] == expected
+            and all(row.get("disposition") == "accepted_as_is" for row in issue["exceptionGroups"]))
+
+
 def admitted_text(candidate_path: Path, receipt_path: Path, source_sha: str, locale: str, *,
-                  spoken: bool = False) -> tuple[dict, str, dict]:
+                  spoken: bool = False, source: dict | None = None) -> tuple[dict, str, dict]:
     """A candidate admitted by an exact human review or an exact machine quality waiver.
 
     Returns the candidate, its hash and its review basis. A waiver keeps the
@@ -161,6 +210,10 @@ def admitted_text(candidate_path: Path, receipt_path: Path, source_sha: str, loc
     A waiver for a script condensed for dubbing admits only the ``spoken`` role.
     """
     receipt = read(receipt_path)
+    if receipt.get("schemaVersion") == OVERRIDE_RECEIPT_V2:
+        require(source is not None and stage.canonical_sha(source) == source_sha,
+                f"{locale}: a human-override receipt is checked against the source package")
+        return override_admitted_text(candidate_path, receipt, source, locale)
     if not _delivery.current().waivers.is_text_waiver(receipt):
         candidate, candidate_sha = reviewed_candidate(candidate_path, source_sha, locale)
         checked_review(receipt_path, candidate, candidate_sha, locale)
@@ -396,10 +449,11 @@ def prepare(args: argparse.Namespace) -> dict:
         releases = {}
         for locale in locales:
             full, full_sha, full_basis = admitted_text(maps["full_candidate"][locale],
-                                                       maps["full_review_receipt"][locale], source_sha, locale)
+                                                       maps["full_review_receipt"][locale], source_sha, locale,
+                                                       source=source)
             spoken, spoken_sha, spoken_basis = admitted_text(maps["spoken_candidate"][locale],
                                                              maps["spoken_review_receipt"][locale], source_sha, locale,
-                                                             spoken=True)
+                                                             spoken=True, source=source)
             require([g["sourceUnitIds"] for g in full["groups"]]
                     == [g["sourceUnitIds"] for g in spoken["groups"]],
                     f"{locale}: full and spoken scripts cover different source units")
@@ -413,7 +467,8 @@ def prepare(args: argparse.Namespace) -> dict:
             require(audio["targetLocale"] == locale
                     and audio["englishSourcePackageJsonSha256"] == source_sha
                     and audio["targetLanguageCandidateJsonSha256"] == spoken_sha
-                    and not audio["issues"] and audio["track"] and audio["captions"]
+                    and (not audio["issues"] or override_audio_issues(audio["issues"], spoken_basis, spoken))
+                    and audio["track"] and audio["captions"]
                     and (audio_waived or (audio["status"] == "human_reviewed"
                                           and audio["humanReview"]["humanApproval"] is True
                                           and audio["humanReview"]["fullPlayback"] == "approved")),
@@ -585,6 +640,12 @@ def prepare(args: argparse.Namespace) -> dict:
                                      encoding='utf-8')
                 release['assets'][0] = asset(public, 'page', page_path)
                 delivery_contract.validate_public_study(release, reader=lambda url: (public / url.lstrip('/')).read_bytes())
+            text_bases = {"fullText": full_basis, "spokenText": spoken_basis}
+            if any(basis["kind"] == "human_override" for basis in text_bases.values()):
+                require(require_study and not machine,
+                        f"{locale}: human-override text is released only as a human-reviewed four-product release (v3)")
+                # Public record: the human approved every group; the machine review kept its failures.
+                release["textReviewBasis"] = text_bases
             delivery_contract.validate_release_schema(release)
             write(release_path, release)
             releases[locale] = {"releasePath": "/" + str(release_path.relative_to(public)),

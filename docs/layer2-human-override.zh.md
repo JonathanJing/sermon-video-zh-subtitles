@@ -62,4 +62,6 @@
   --receipt-out <new-dir>/human-override-receipt-v2.json
 ```
 
-`--reviewed-at` 可显式传入时区完整的 ISO 8601 时间；省略时使用已记录决定的 `recordedAt`。输出候选的 `humanReview` 绑定全部 416 个有序组。收据逐组记录仍失败的语义／插件发现和 `accepted_as_is` 决定；机器检查结果不会被改写，`releaseEligible` 保持 `false`。候选和收据必须写到尚不存在的新路径。该 v2 流程记录用户对完整表格文本的批准，不构成发布准入。
+`--reviewed-at` 可显式传入时区完整的 ISO 8601 时间；省略时使用已记录决定的 `recordedAt`。输出候选的 `humanReview` 绑定全部 416 个有序组。收据逐组记录仍失败的语义／插件发现和 `accepted_as_is` 决定；机器检查结果不会被改写，`releaseEligible` 保持 `false`。候选和收据必须写到尚不存在的新路径。该 v2 流程记录用户对完整表格文本的批准；收据本身仍标 `releaseEligible=false`，不单独构成发布准入。
+
+2026-10-22 起（用户决定），Layer 4 四产物发布（release v3）可以把 v2 收据当作全文稿、口播稿的文字依据：`delivery.app_release prepare` 用 `validate_override_receipt` 重新核对英文源、锚点、候选、审核表、用户决定和缓存后，正文记为 `human_reviewed`（用户逐组批准了全部文字），release 另写公开的 `textReviewBasis`：收据哈希、机器复核状态（如 `fail`）、每个被接受的例外组及其原样机器发现。这条路只用于全部人工的 v3 发布；v2（无学习产物）和机器质检的 v4 发布遇到这种收据会拒绝。v1 收据仍不进入发布。
