@@ -106,6 +106,8 @@ python3 tts_sentences.py --speech speech.jsonl --checkpoint <checkpoint-dir> --o
 
 逐句合成（batch 1，2026-10-21 用户决定），已有的 `tts/<id>.wav` 跳过，所以可以断点续跑。合成完把 `tts/` 拉回本机。不拉伸、不变速。
 
+实测（2026-10-21 首跑）：Spark 上没有 `qwen_tts` 的宿主 Python，要在 `nvcr.io/nvidia/pytorch:26.06-py3` 里跑，把 `/home/achillesjing/dgx-spark-benchmark/results/sermon-voice-poc-20260905/venv/lib/python3.12/site-packages` 只读挂进去并设 `PYTHONPATH`。讲员 checkpoint 路径从 Spark 上的 `speaker-checkpoints.dgx.json` 查。用 `nohup … &` 从 SSH 启动会把会话挂住；改为把等待放到后台，或直接前台跑（88 句约 5 分钟）。
+
 ### 8 合并
 
 ```bash
@@ -120,7 +122,19 @@ ffmpeg -nostdin -v error -i <video> -ss <start> -to <end> -i track.wav -map 0:v:
 
 ### 9 听一遍，记下来
 
-代理用 `sermon-dubbing-asr-sync-check` skill 回转写抽查，或直接听。把落后最多的句、读错的句、译得别扭的句写进 `run.md`，要改就改对应的一行，只重跑那一句的第 7、8 步。
+代理先在 Spark 上回转写抽查（Qwen3-ASR 运行时在 `/home/achillesjing/sermon-speech-runtime`，挂到容器的 `/runtime`）：
+
+```bash
+python3 asr_check.py transcribe --speech speech.jsonl --tts tts --model <Qwen3-ASR-0.6B snapshot> --out asr.jsonl --locale zh-Hans
+```
+
+再在本机打分，低于 `--min`（默认 0.88）的句子列出来：
+
+```bash
+python3 experiments/sentence-first-agent/asr_check.py score --speech speech.jsonl --asr asr.jsonl --report asr-report.json
+```
+
+同音字差异（它/他、再/在）不算问题；人名、数字、否定词不一致要人听。分数只是提示，不是听审。把落后最多的句、读错的句、译得别扭的句写进 `run.md`，要改就改对应的一行，只重跑那一句的第 7、8 步。
 
 ## 完成的样子
 
