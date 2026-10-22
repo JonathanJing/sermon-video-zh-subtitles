@@ -1,0 +1,26 @@
+Traceback (most recent call last):
+  File "~/.codex/worktrees/broadcast-es-ko-shared-source/sermon-video-zh-subtitles/tools/ops/run.py", line 91, in <module>
+    raise SystemExit(main())
+                     ~~~~^^
+  File "~/.codex/worktrees/broadcast-es-ko-shared-source/sermon-video-zh-subtitles/tools/ops/run.py", line 87, in main
+    return entry()
+  File "~/.codex/worktrees/broadcast-es-ko-shared-source/sermon-video-zh-subtitles/packages/production/src/tongxing_production/text/controller.py", line 1515, in main
+    result = execute(args.config, args.locale, args.expected_configuration, args.expected_code, args.expected_job,
+                     budget_authorization=<redacted>, expected_budget=args.expected_budget,
+                     expected_payload_cache=args.expected_payload_cache,
+                     expected_partial_recovery=args.expected_partial_recovery)
+  File "~/.codex/worktrees/broadcast-es-ko-shared-source/sermon-video-zh-subtitles/packages/production/src/tongxing_production/text/controller.py", line 1125, in execute
+    evidence, model_output = _run_auto_repair(
+                             ~~~~~~~~~~~~~~~~^
+        config, lane, source, anchor, policy, api_key, bound_call, progress.progress,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        admission_span, model_completion,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        qc_digest=current['packageIdentities'].get('backTranslationQc.' + locale))
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "~/.codex/worktrees/broadcast-es-ko-shared-source/sermon-video-zh-subtitles/packages/production/src/tongxing_production/text/controller.py", line 1270, in _run_auto_repair
+    require(receipt['status'] == 'all_groups_passed', 'layer2_auto_repair_stopped')
+    ~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "~/.codex/worktrees/broadcast-es-ko-shared-source/sermon-video-zh-subtitles/packages/production/src/tongxing_production/text/controller.py", line 158, in require
+    raise ValueError(reason)
+ValueError: layer2_auto_repair_stopped
