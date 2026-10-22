@@ -1,0 +1,27 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261021-ios-prod-privacy-validation",
+  "runs": [
+    {
+      "label": "privacy-validation",
+      "source": "~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/artifacts/ios-formal-push-validation/reports/privacy-validation",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "privacy-validation",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 274,
+      "truncated": false,
+      "sha256": "97a00d060c7899aff0d61b1a793e100ad09cfb4b2c17a4e17779a1d000d256d3",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}
