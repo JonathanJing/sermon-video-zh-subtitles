@@ -1,0 +1,14 @@
+{
+  "schemaVersion": "tongxing-owner-manual-acceptance-v1",
+  "build": "1.26.20 (61)",
+  "appleBuildId": "8d552fff-34e4-44da-8da9-18da4e92151f",
+  "source": "owner_reported_in_chat",
+  "device": "iPhone",
+  "osVersion": "27.0.1",
+  "koreanPoster": "reported_pass",
+  "spanishPoster": "reported_pass",
+  "realMicrophoneAlignment": "reported_pass",
+  "chinesePushPagePoster": "reported_pass_separate_report",
+  "agentObservedDevice": "not_run",
+  "venueAcceptance": "not_run"
+}
