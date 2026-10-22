@@ -765,8 +765,14 @@ def _model_call(role: str, prompt: dict[str, Any], policy: dict[str, Any],
         require(reuse_from.is_file() or previous_raw.is_file(), f"Missing reusable {role} response: {reuse_from}")
         if previous_raw.is_file():
             raw = producer._load(previous_raw)
-            require(raw.get('payloadSha256') == fingerprint and isinstance(raw.get('response'),dict),
+            legacy_raw = (raw.get('payloadSha256') != fingerprint
+                          and _legacy_cache_payload_matches(reuse_from, payload, raw, role, model))
+            require((raw.get('payloadSha256') == fingerprint or legacy_raw)
+                    and isinstance(raw.get('response'),dict),
                     f"Reusable {role} raw response belongs to different inputs: {previous_raw}")
+            if legacy_raw:
+                raw = {**raw, 'legacyFingerprintSha256': raw['payloadSha256'],
+                       'payloadSha256': fingerprint}
             destination_raw=output.with_suffix('.raw.json')
             if destination_raw.exists():
                 require(producer._load(destination_raw)==raw,'Reusable destination raw response changed')
