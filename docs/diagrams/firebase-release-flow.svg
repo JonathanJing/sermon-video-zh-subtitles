@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1100" viewBox="0 0 1600 1100" role="img" aria-labelledby="title description">
 <title id="title">从四层制作到 Firebase 正式发布</title>
-<desc id="description">内容批准、代码合并、正式部署和现场验收各有独立证据。Dev 两段三语片段不自动进入正式站；2026-09-25 正式站仅旧九周中文，未发布内容语言禁用。；合并 main 不等于发布；HTTP / SHA / Range、实体设备和真实现场分别记录状态。</desc>
+<desc id="description">内容批准、代码合并、正式部署和现场验收各有独立证据。2026-09-27 起正式站已有三语内容（10/11 页面复核）；其余未发布内容语言仍禁用。；合并 main 不等于发布；HTTP / SHA / Range、实体设备和真实现场分别记录状态。</desc>
 <defs><linearGradient id="canvas" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f7faff"/><stop offset="1" stop-color="#edf5f6"/></linearGradient><filter id="card-shadow" x="-15%" y="-25%" width="130%" height="155%"><feDropShadow dx="0" dy="10" stdDeviation="12" flood-color="#173452" flood-opacity="0.10"/></filter><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0 L10 5 L0 10 Z" fill="#718da5"/></marker></defs>
 <style>text{font-family:-apple-system,BlinkMacSystemFont,'PingFang SC','Noto Sans CJK SC','Microsoft YaHei',sans-serif;font-variant-ligatures:none}</style>
 <rect x="0" y="0" width="1600" height="1100" rx="0" fill="url(#canvas)" stroke="none" />
@@ -54,13 +54,13 @@
 <text x="1285" y="307" font-size="15" font-weight="750" fill="#326f8e" text-anchor="start" >DEV PREVIEW</text>
 <text x="1285" y="346" font-size="22" font-weight="700" fill="#17314e" text-anchor="start" >Firebase Dev</text>
 <path d="M1285 365 H1515" stroke="#e5edf3"/>
-<text x="1285" y="392" font-size="16" font-weight="400" fill="#617a92" text-anchor="start" >两段三语 POC 在此</text>
+<text x="1285" y="392" font-size="16" font-weight="400" fill="#617a92" text-anchor="start" >Dev 预览候选</text>
 <text x="1285" y="417" font-size="16" font-weight="400" fill="#617a92" text-anchor="start" >浏览器预览与验证</text>
 <text x="1285" y="442" font-size="16" font-weight="400" fill="#617a92" text-anchor="start" >不等于正式发布</text>
 <text x="64" y="537" font-size="19" font-weight="700" fill="#4e6f90" text-anchor="start" >B · 代码晋升</text>
 <rect x="64" y="557" width="706" height="126" rx="19" fill="#ffffff" stroke="#d4e0ea" filter="url(#card-shadow)"/>
 <rect x="64" y="557" width="706" height="8" rx="4" fill="#7460b7" stroke="none" />
-<text x="89" y="608" font-size="24" font-weight="700" fill="#17314e" text-anchor="start" >dev → PR / required checks → main</text>
+<text x="89" y="608" font-size="24" font-weight="700" fill="#17314e" text-anchor="start" >dev → PR / 分支规则 → main</text>
 <text x="89" y="650" font-size="18" font-weight="400" fill="#617a92" text-anchor="start" >main 合入后，再通过 sync PR 回同步 dev</text>
 <rect x="806" y="557" width="730" height="126" rx="19" fill="#f0edfa" stroke="#d2c8e8" />
 <text x="832" y="608" font-size="24" font-weight="700" fill="#6d5aa9" text-anchor="start" >代码合并 ≠ 内容发布</text>
@@ -72,10 +72,10 @@
 <rect x="64" y="750" width="340" height="180" rx="19" fill="#ffffff" stroke="#d4e0ea" filter="url(#card-shadow)"/>
 <rect x="64" y="750" width="340" height="8" rx="4" fill="#198665" stroke="none" />
 <text x="85" y="793" font-size="15" font-weight="750" fill="#198665" text-anchor="start" >RELEASE SCOPE</text>
-<text x="85" y="832" font-size="22" font-weight="700" fill="#17314e" text-anchor="start" >本次内容范围</text>
+<text x="85" y="832" font-size="22" font-weight="700" fill="#17314e" text-anchor="start" >正式内容范围</text>
 <path d="M85 851 H383" stroke="#e5edf3"/>
-<text x="85" y="878" font-size="16" font-weight="400" fill="#617a92" text-anchor="start" >旧九周中文保持发布</text>
-<text x="85" y="903" font-size="16" font-weight="400" fill="#617a92" text-anchor="start" >未发布内容语言禁用</text>
+<text x="85" y="878" font-size="16" font-weight="400" fill="#617a92" text-anchor="start" >9/27 起已有中 / 韩 / 西内容</text>
+<text x="85" y="903" font-size="16" font-weight="400" fill="#617a92" text-anchor="start" >其余未发布内容语言禁用</text>
 <rect x="440" y="750" width="340" height="180" rx="19" fill="#ffffff" stroke="#d4e0ea" filter="url(#card-shadow)"/>
 <rect x="440" y="750" width="340" height="8" rx="4" fill="#326fb4" stroke="none" />
 <text x="461" y="793" font-size="15" font-weight="750" fill="#326fb4" text-anchor="start" >PRODUCTION</text>
@@ -98,8 +98,8 @@
 <text x="1213" y="878" font-size="16" font-weight="400" fill="#617a92" text-anchor="start" >实体设备与真实现场</text>
 <text x="1213" y="903" font-size="16" font-weight="400" fill="#617a92" text-anchor="start" >当前仍需另行验收</text>
 <rect x="64" y="968" width="1472" height="96" rx="20" fill="#1d4061" stroke="none" />
-<text x="88" y="999" font-size="18" font-weight="500" fill="#e7f1f8" text-anchor="start" >Dev 两段三语片段不自动进入正式站；2026-09-25 正式站仅旧九周中文，未发布内容语言禁用。</text>
+<text x="88" y="999" font-size="18" font-weight="500" fill="#e7f1f8" text-anchor="start" >2026-09-27 起正式站已有三语内容（10/11 页面复核）；其余未发布内容语言仍禁用。</text>
 <text x="88" y="1026" font-size="18" font-weight="500" fill="#e7f1f8" text-anchor="start" >合并 main 不等于发布；HTTP / SHA / Range、实体设备和真实现场分别记录状态。</text>
-<text x="64" y="1088" font-size="14" font-weight="400" fill="#7890a2" text-anchor="start" >内容依据：2026-09-25 校准的图稿；本图仅表达职责和门槛</text>
+<text x="64" y="1088" font-size="14" font-weight="400" fill="#7890a2" text-anchor="start" >内容依据：2026-10-22 校准的图稿；本图仅表达职责和门槛</text>
 <text x="1536" y="1088" font-size="14" font-weight="400" fill="#7890a2" text-anchor="end" >实线：主路径    虚线：条件 / 实验 / 返修</text>
 </svg>

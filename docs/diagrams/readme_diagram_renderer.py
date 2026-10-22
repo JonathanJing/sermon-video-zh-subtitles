@@ -289,12 +289,12 @@ def render_firebase_release() -> str:
         "english": "RELEASE BOUNDARIES",
         "subtitle": "内容批准、代码合并、正式部署和现场验收各有独立证据",
         "footer": [
-            "Dev 两段三语片段不自动进入正式站；2026-09-25 正式站仅旧九周中文，未发布内容语言禁用。",
+            "2026-09-27 起正式站已有三语内容（10/11 页面复核）；其余未发布内容语言仍禁用。",
             "合并 main 不等于发布；HTTP / SHA / Range、实体设备和真实现场分别记录状态。",
         ],
         "height": 1100,
         "index": 0,
-        "calibratedAt": "2026-09-25",
+        "calibratedAt": "2026-10-22",
     }
     drawing = Drawing(spec)
     drawing.start()
@@ -325,7 +325,7 @@ def render_firebase_release() -> str:
         ('#7460b7', '#f0edfa', 'LAYER 2', '各语言文字', ['从英文直译与独立复核', '每语言独立批准', '保留 revision']),
         ('#c68224', '#fff3e4', 'LAYER 3', '音频与同步', ['授权声音与实测时长', '回转写仅作筛查', '完整听审另行留证']),
         ('#198665', '#e7f7ee', 'LAYER 4', '发布候选', ['页面资产按 locale 绑定', '下载、播放独立核验', '不自动进入正式站']),
-        ('#326f8e', '#e9f2f6', 'DEV PREVIEW', 'Firebase Dev', ['两段三语 POC 在此', '浏览器预览与验证', '不等于正式发布']),
+        ('#326f8e', '#e9f2f6', 'DEV PREVIEW', 'Firebase Dev', ['Dev 预览候选', '浏览器预览与验证', '不等于正式发布']),
     ]
     for index in range(4):
         arrow(first_row[index] + 272, first_row[index + 1] - 7, 359)
@@ -335,7 +335,7 @@ def render_firebase_release() -> str:
     drawing.text(64, 537, 'B · 代码晋升', size=19, color='#4e6f90', weight=700)
     drawing.rect(64, 557, 706, 126, stroke='#d4e0ea', radius=19, extra='filter="url(#card-shadow)"')
     drawing.rect(64, 557, 706, 8, fill='#7460b7', radius=4)
-    drawing.text(89, 608, 'dev → PR / required checks → main', size=24, weight=700)
+    drawing.text(89, 608, 'dev → PR / 分支规则 → main', size=24, weight=700)
     drawing.text(89, 650, 'main 合入后，再通过 sync PR 回同步 dev', size=18, color='#617a92')
     drawing.rect(806, 557, 730, 126, fill='#f0edfa', stroke='#d2c8e8', radius=19)
     drawing.text(832, 608, '代码合并 ≠ 内容发布', size=24, color='#6d5aa9', weight=700)
@@ -345,7 +345,7 @@ def render_firebase_release() -> str:
     last_row = [64, 440, 816, 1192]
     for index in range(3):
         arrow(last_row[index] + 340, last_row[index + 1] - 7, 839, dashed=index == 2)
-    card(64, 750, 340, 180, '#198665', '#e7f7ee', 'RELEASE SCOPE', '本次内容范围', ['旧九周中文保持发布', '未发布内容语言禁用'])
+    card(64, 750, 340, 180, '#198665', '#e7f7ee', 'RELEASE SCOPE', '正式内容范围', ['9/27 起已有中 / 韩 / 西内容', '其余未发布内容语言禁用'])
     card(440, 750, 340, 180, '#326fb4', '#eaf2fc', 'PRODUCTION', 'main 构建 + 发布计划', ['Firebase Production 部署', '保留原媒体与历史入口'])
     card(816, 750, 340, 180, '#198665', '#e7f7ee', 'ONLINE CHECKS', '线上文件核验', ['HTTP / SHA / MP3 Range', '目录、深链与下载检查'])
     card(1192, 750, 344, 180, '#ad751c', '#fff5e9', 'SEPARATE ACCEPTANCE', '设备与现场', ['实体设备与真实现场', '当前仍需另行验收'], dashed=True)

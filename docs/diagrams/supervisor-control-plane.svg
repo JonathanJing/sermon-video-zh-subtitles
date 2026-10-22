@@ -1,12 +1,12 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1390" viewBox="0 0 1600 1390" role="img" aria-labelledby="title desc">
-<title id="title">Agents API 与本地生产控制</title><desc id="desc">默认代理会话负责受限决策，本机工具执行，确定性证据决定完成 新会话须已确认远端终态且无未决工具；超时或取消回执均不足。SDK / Responses 仅显式回退。 敏感来源及配置不发给代理；旧云端时间轴任务已退役。定时启用不代表未来运行或新文档生成已发生。</desc>
+<title id="title">Codex CLI 与本地生产控制</title><desc id="desc">默认 Codex CLI 负责受限决策，本机工具执行，确定性证据决定完成 默认 Codex CLI；Agents API 仅历史原会话恢复；未决工具与远端未知结果先对账。 敏感来源及配置不发给代理；旧云端时间轴任务已退役。定时启用不代表未来运行或新文档生成已发生。</desc>
 <style>text{font-family:"PingFang SC","Noto Sans CJK SC","Microsoft YaHei",Arial,sans-serif;} text{font-variant-ligatures:none}</style>
 <defs><marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto-start-reverse" markerUnits="userSpaceOnUse"><path d="M1 1 L7 4 L1 7" fill="none" stroke="context-stroke" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></marker></defs>
 <rect x="0" y="0" width="1600" height="1390" rx="0" fill="#F5F4EF" stroke="none" />
 <rect x="64" y="57" width="44" height="5" rx="2" fill="#267D72" stroke="none" />
 <text x="124" y="69" font-size="17" font-weight="600" fill="#64787A" text-anchor="start" letter-spacing="2">SUPERVISOR CONTROL PLANE</text>
-<text x="64" y="127" font-size="44" font-weight="650" fill="#19343D" text-anchor="start" >Agents API 与本地生产控制</text>
-<text x="64" y="172" font-size="22" font-weight="400" fill="#60737A" text-anchor="start" >默认代理会话负责受限决策，本机工具执行，确定性证据决定完成</text>
+<text x="64" y="127" font-size="44" font-weight="650" fill="#19343D" text-anchor="start" >Codex CLI 与本地生产控制</text>
+<text x="64" y="172" font-size="22" font-weight="400" fill="#60737A" text-anchor="start" >默认 Codex CLI 负责受限决策，本机工具执行，确定性证据决定完成</text>
 <text x="1536" y="69" font-size="18" font-weight="500" fill="#82918F" text-anchor="end" >09 / 11</text>
 <path d="M64 197H1536" stroke="#D8DEDA" stroke-width="1.3"/>
 <path data-edge="scheduler:gcs" d="M500 370.0 L590 370.0" fill="none" stroke="#648A86" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="none" marker-end="url(#arrow)"/>
@@ -93,10 +93,10 @@
 <rect x="1124" y="636" width="35" height="28" rx="8" fill="#F0EDF5" stroke="none" />
 <text x="1141.5" y="656" font-size="16" font-weight="700" fill="#766594" text-anchor="middle" data-box="1124,636,35,28" >05</text>
 <text x="1173" y="656" font-size="15" font-weight="600" fill="#766594" text-anchor="start" data-box="1168,633,332,35" >模型 / CONTEXT</text>
-<text x="1124" y="697" font-size="25" font-weight="650" fill="#19343D" text-anchor="start" data-box="1120,670,380,162" >Agents API 会话</text>
-<text x="1124" y="737" font-size="21" font-weight="400" fill="#52676E" text-anchor="start" data-box="1120,670,380,162" >Agents API</text>
-<text x="1124" y="766" font-size="21" font-weight="400" fill="#52676E" text-anchor="start" data-box="1120,670,380,162" >gpt-6-astra / medium</text>
-<text x="1124" y="795" font-size="21" font-weight="400" fill="#52676E" text-anchor="start" data-box="1120,670,380,162" >environment: none</text>
+<text x="1124" y="697" font-size="25" font-weight="650" fill="#19343D" text-anchor="start" data-box="1120,670,380,162" >Codex CLI 会话</text>
+<text x="1124" y="737" font-size="21" font-weight="400" fill="#52676E" text-anchor="start" data-box="1120,670,380,162" >Codex CLI</text>
+<text x="1124" y="766" font-size="21" font-weight="400" fill="#52676E" text-anchor="start" data-box="1120,670,380,162" >gpt-6-luna</text>
+<text x="1124" y="795" font-size="21" font-weight="400" fill="#52676E" text-anchor="start" data-box="1120,670,380,162" >medium / fast</text>
 </g>
 <g id="node-tools" data-node="tools">
 <rect x="590" y="979" width="420" height="230" rx="18" fill="#E7E8E2" stroke="none" />
@@ -146,8 +146,8 @@
 <text x="104" y="1155" font-size="21" font-weight="400" fill="#52676E" text-anchor="start" data-box="100,1030,380,162" >会话完成不等于业务完成</text>
 </g>
 <rect x="64" y="1261" width="1472" height="78" rx="16" fill="#E9EEE8" stroke="none" />
-<text x="84" y="1290" font-size="20" font-weight="400" fill="#4C635F" text-anchor="start" >新会话须已确认远端终态且无未决工具；超时或取消回执均不足。SDK / Responses 仅显式回退。</text>
+<text x="84" y="1290" font-size="20" font-weight="400" fill="#4C635F" text-anchor="start" >默认 Codex CLI；Agents API 仅历史原会话恢复；未决工具与远端未知结果先对账。</text>
 <text x="84" y="1319" font-size="20" font-weight="400" fill="#4C635F" text-anchor="start" >敏感来源及配置不发给代理；旧云端时间轴任务已退役。定时启用不代表未来运行或新文档生成已发生。</text>
-<text x="64" y="1368" font-size="15" font-weight="400" fill="#7B8B88" text-anchor="start" >内容校准 2026-09-11 · 设计参考 GPT Image 2.5 Sunburst · 原生可编辑 SVG</text>
+<text x="64" y="1368" font-size="15" font-weight="400" fill="#7B8B88" text-anchor="start" >内容校准 2026-10-22 · 设计参考 GPT Image 2.5 Sunburst · 原生可编辑 SVG</text>
 <text x="1536" y="1368" font-size="15" font-weight="400" fill="#7B8B88" text-anchor="end" >实线：主路径   虚线：条件 / 实验 / 历史</text>
 </svg>
