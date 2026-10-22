@@ -109,6 +109,13 @@ def _resume_binding(value, path):
     require(isinstance(value, dict) and set(value) == {'priorRunRoot'}, 'invalid_layer2_resume')
     root = _path(path.parent, value['priorRunRoot'])
     require(root.is_dir() and not root.is_symlink(), 'invalid_layer2_resume')
+    # An auto-repair run keeps its group caches and frozen rule receipt inside
+    # repair-rounds/round-001, not at the run root. Accept either the run root or the
+    # round directory itself so a resume does not need the operator to know the layout.
+    if not (root / 'rule-preflight.json').is_file():
+        candidate = root / 'repair-rounds' / 'round-001'
+        require(candidate.is_dir() and not candidate.is_symlink(), 'invalid_layer2_resume')
+        root = candidate
     return {'priorRunRoot': root}
 
 
