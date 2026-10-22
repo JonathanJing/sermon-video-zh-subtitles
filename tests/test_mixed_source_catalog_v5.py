@@ -442,6 +442,13 @@ def test_mixed_source_v2_release_must_name_its_target_edition_locale_and_status(
             contract.validate_v2_release_target(dict(copy.deepcopy(good), **change), page, 'zh-Hans')
     with pytest.raises(Exception):
         contract.validate_v2_release_target({k: v for k, v in good.items() if k != 'packageId'}, page, 'zh-Hans')
+    # 2026-10-22: a re-bound content path (<locale>-r2.json) hid the whole page in the iOS app.
+    for role, path in (('content', f'/content/{edition}/zh-Hans-r2.json'), ('captions', f'/captions/{edition}/es.json'),
+                       ('page', f'/pages/{edition}/zh-Hans/v2.html')):
+        moved = copy.deepcopy(good)
+        next(a for a in moved['assets'] if a['role'] == role)['path'] = path
+        with pytest.raises(ValueError, match='Release ' + role + ' asset must be'):
+            contract.validate_v2_release_target(moved, page, 'zh-Hans')
 
 
 def test_single_source_carry_refuses_a_mixed_family_or_its_edition():
