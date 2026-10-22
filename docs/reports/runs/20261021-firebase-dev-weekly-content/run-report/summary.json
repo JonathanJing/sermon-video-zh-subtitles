@@ -1,0 +1,21 @@
+{
+  "schemaVersion": "sermon-dev-weekly-content-summary-v1",
+  "deliveryType": "four_layer_release_dev_content_update",
+  "status": "pass",
+  "modelCalls": 0,
+  "baselineVersion": "sites/ai-for-god-sermon-audio-dev/versions/57733139f42907d6",
+  "newVersion": "sites/ai-for-god-sermon-audio-dev/versions/bbf84fd1e6451414",
+  "pageId": "resi-20261018-15030286",
+  "defaultPageIdV5": "resi-20261018-15030286",
+  "defaultPageIdV4": "resi-20261018-broadcast",
+  "announcementsAdded": [
+    "resi-20261018-15030286-ko",
+    "resi-20261018-15030286-es",
+    "resi-20261018-15030286-zh-Hans"
+  ],
+  "httpChangedFilesVerified": 6,
+  "otherFilesPreserved": 911,
+  "v3CatalogUnchanged": true,
+  "browserStatus": "not_run",
+  "iosDeviceStatus": "not_run"
+}
