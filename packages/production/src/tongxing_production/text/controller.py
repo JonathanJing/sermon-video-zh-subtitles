@@ -1067,17 +1067,24 @@ def execute(config_path, locale, expected_configuration, expected_code, expected
                 # The policy's frozen Layer 2 backend picks the transport: the OpenAI API (Sol), or
                 # the subscription Claude CLI for both roles (claude_cli_opus).
                 backend = models.production_backend(policy)
-                transports = claude_transports(policy, lane) if backend == 'claude_cli_opus' else None
-                caller = budget_tools.BudgetedCaller(budget_binding, config, source, anchor, policy,
-                                                     claude_transports=transports)
-                budgeted = caller
-                if transports is not None:
+                if backend == 'claude_cli_opus':
+                    transports = claude_transports(policy, lane)
+                    caller = budget_tools.BudgetedCaller(budget_binding, config, source, anchor, policy,
+                                                         claude_transports=transports)
                     caller.execution_identity = claude_model_transport_identity(transports)
-                elif budget_binding.get('runtimeIdentity') is None:
-                    caller.execution_identity = {
-                        'schemaVersion': 'openai-layer2-budget-transport-identity-v1',
-                        'backend': 'openai_api', 'route': route,
-                        'budgetAuthorizationSha256': budget_binding['sha256']}
+                elif backend == 'deepseek_flash':
+                    transports = deepseek_transports(policy, lane)
+                    caller = budget_tools.BudgetedCaller(budget_binding, config, source, anchor, policy,
+                                                         deepseek_transports=transports)
+                    caller.execution_identity = deepseek_model_transport_identity(transports)
+                else:
+                    caller = budget_tools.BudgetedCaller(budget_binding, config, source, anchor, policy)
+                    if budget_binding.get('runtimeIdentity') is None:
+                        caller.execution_identity = {
+                            'schemaVersion': 'openai-layer2-budget-transport-identity-v1',
+                            'backend': 'openai_api', 'route': route,
+                            'budgetAuthorizationSha256': budget_binding['sha256']}
+                budgeted = caller
                 caller = _text.current().compute.session_bound_caller(caller, requires_spark=False, outcome_guarded=True)
             elif budget_binding is not None:
                 _text.current().compute.reject_cli_transport(caller)
@@ -1446,6 +1453,24 @@ def claude_model_transport_identity(transports):
     return {'schemaVersion': 'claude-layer2-model-transport-identity-v2',
             'backend': 'claude_cli', 'layer2Backend': 'claude_cli_opus',
             'transports': {role: t.execution_identity for role, t in sorted(transports.items())}}
+
+
+def deepseek_model_transport_identity(transports):
+    """Stable cache identity for the DeepSeek API calls, independent of budget approval."""
+    require(set(transports) == {'translator', 'reviewer'}, 'deepseek_transport_roles_incomplete')
+    return {'schemaVersion': 'deepseek-layer2-model-transport-identity-v1',
+            'backend': 'deepseek_api', 'layer2Backend': 'deepseek_flash',
+            'transports': {role: t.execution_identity for role, t in sorted(transports.items())}}
+
+
+def deepseek_transports(policy, lane):
+    """One DeepSeek API transport per role at the policy's frozen model and effort.
+
+    Both roles read the same DEEPSEEK_API_KEY from the launching environment; the
+    transport identity binds model, effort and base URL, not the secret value."""
+    caller = _text.current().transports.caller
+    return {role: caller('deepseek-api', model=policy[role]['model'], effort=policy[role]['reasoningEffort'])
+            for role in ('translator', 'reviewer')}
 
 
 def claude_transports(policy, lane):

@@ -58,9 +58,20 @@
 
 片段彩排三语一轮历史实际约 2 美元（2026-10-13 分开预算根时为 2.69）。当前 Layer 2 三语初始 cap 合计 6.00 美元；每语 QC 连二级 ASR cap 为 5.525 美元，三语为 16.575 美元，全部阶段同时批准共 22.575 美元，超过 10 美元。显式总额与开工门会拒绝不合适的并行组合；选阶段后仍须在后续余额不足时停止或取得新批准，不能保证 10 美元内所有阶段必完成，也不自动提高已有授权。
 
+### DeepSeek Flash 后端的 Layer 2（默认）
+
+Layer 2 政策冻结为 `deepseek_flash` 时（[运行时模型政策](production-model-runtime-policy.zh.md)），初译 `deepseek-flash` high、复核 max，走 `DEEPSEEK_API_KEY` 的官方 API。账本按 peak 列价最坏情况预留：16,384 输入 × 0.30 美元／百万 + 2,048 输出 × 1.20 美元／百万 ≈ 每次 0.00737 美元。
+
+| 规模 | 每语言首轮上界 | 说明 |
+|---|---|---|
+| 片段 | 16 组 × 2 次 ≈ 0.236 美元 | 仍受 `capUsdPerLocale.clip = 2.00` 约束 |
+| 全篇 | 按实际组数 × 2 次 | 仍受 `capUsdPerLocale.week = 5.00` 约束 |
+
+DeepSeek 的金额是真实 API 规划上界，`countsTowardTotal: true`，不像 Claude 订阅那样记为列价等价。
+
 ### Claude CLI（Opus 5.5）后端的 Layer 2
 
-Layer 2 政策冻结为 `claude_cli_opus` 时（[运行时模型政策](production-model-runtime-policy.zh.md#layer-2-后端openai-api-或-claude-cliopus-55)），走订阅额度。账本仍按 Claude 列价最坏情况逐次预留，每次约 0.172 美元等价（16,384 输入 × 8 美元／百万 + 2,048 输出 × 20 美元／百万）。
+Layer 2 政策冻结为 `claude_cli_opus` 时（[运行时模型政策](production-model-runtime-policy.zh.md)），走订阅额度。账本仍按 Claude 列价最坏情况逐次预留，每次约 0.172 美元等价（16,384 输入 × 8 美元／百万 + 2,048 输出 × 20 美元／百万）。
 
 | 规模 | 列价等价上限（每语言） | 首轮 |
 |---|---|---|
