@@ -10,8 +10,14 @@ The agent writes ``translations.jsonl`` itself (step 5) and a small review file:
     "revisions": {"s0036": {"target": "...", "note": "revised: ..."}},
     "notes": {"s0084": "note: ..."},            recorded as "pass; note: ..."
     "spokenForms": {"19쪽": "십구 쪽"},          subtitle form -> TTS reading
-    "charsPerSecond": 6.0                       optional; defaults from locale
+    "charsPerSecond": 6.0,                      optional; defaults from locale
+    "speakers": {"steve_bang_lee": "steve_bang_lee", "john_thomas": "john_thomas"}
+                                                optional, two-speaker runs: sentence speakerId
+                                                (from assign_speakers.py) -> TTS speaker key
   }
+
+With "speakers", every sentence must carry a speakerId listed there, and "speaker" is not
+needed; each speech row then also records speakerId so the TTS can run one checkpoint at a time.
 
 Every sentence without a revision or note gets reviewNote "pass". Each
 spokenForms key must occur in at least one sentence, so a typo fails loudly.
@@ -71,7 +77,10 @@ def main() -> int:
     language = review.get("language", language)
     pattern = review.get("countPattern", pattern)
     per_second = review.get("charsPerSecond", per_second)
-    speaker = review["speaker"]
+    speaker_map = review.get("speakers")
+    default_speaker = review.get("speaker")
+    if not speaker_map and not default_speaker:
+        raise SystemExit("review needs 'speaker' (one voice) or 'speakers' (speakerId -> speaker key)")
     revisions, notes, spoken_forms = review.get("revisions", {}), review.get("notes", {}), review.get("spokenForms", {})
 
     run = args.run
@@ -98,9 +107,17 @@ def main() -> int:
             out.write(json.dumps(t, ensure_ascii=False) + "\n")
 
     slices = {s["id"]: s for s in json.loads((run / "slices/slices.json").read_text(encoding="utf-8"))}
+    by_id = {s["id"]: s for s in sentences}
     unused, flagged, digits = set(spoken_forms), [], []
     with (run / "speech.jsonl").open("w", encoding="utf-8") as out:
         for t in translations:
+            speaker_id = by_id[t["id"]].get("speakerId")
+            if speaker_map:
+                if speaker_id not in speaker_map:
+                    raise SystemExit(f"{t['id']}: speakerId {speaker_id!r} is not in review 'speakers'")
+                speaker = speaker_map[speaker_id]
+            else:
+                speaker = default_speaker
             spoken = t["target"]
             for k, v in spoken_forms.items():
                 if k in spoken:
@@ -112,9 +129,11 @@ def main() -> int:
                 flagged.append(t["id"])
             if re.search(r"\d", spoken):
                 digits.append(t["id"])
-            out.write(json.dumps({"id": t["id"], "spokenText": spoken, "language": language, "speaker": speaker,
-                                  "hint": "", "budgetSeconds": budget, "estimatedSeconds": est},
-                                 ensure_ascii=False) + "\n")
+            row = {"id": t["id"], "spokenText": spoken, "language": language, "speaker": speaker,
+                   "hint": "", "budgetSeconds": budget, "estimatedSeconds": est}
+            if speaker_map:
+                row["speakerId"] = speaker_id
+            out.write(json.dumps(row, ensure_ascii=False) + "\n")
     if unused:
         raise SystemExit(f"spokenForms keys not found in any sentence: {sorted(unused)}")
     print(json.dumps({"locale": locale, "sentences": len(translations), "revised": sorted(revisions),
