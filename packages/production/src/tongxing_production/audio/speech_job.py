@@ -419,11 +419,14 @@ def prepare_source_voice_authorization(source_path: Path, candidate_path: Path,
     _require(not out.exists(), "Source voice authorization is immutable; choose a new path")
     for path in (source_path, candidate_path, adapter_path, attestation_path):
         _require(path.is_file(), f"Missing source voice authorization input: {path}")
-    source, candidate, adapter = (_load(path) for path in (source_path, candidate_path,
-                                                          adapter_path))
+    source, candidate, adapter, attestation = (_load(path) for path in (
+        source_path, candidate_path, adapter_path, attestation_path))
+    modern = attestation.get("schemaVersion") == "sermon-source-user-voice-attestation-v2"
     receipt = {
-        "schemaVersion": "sermon-source-voice-authorization-v1",
-        "scope": "source_bound_formal_audio_and_page_only",
+        "schemaVersion": ("sermon-source-voice-authorization-v2" if modern
+                           else "sermon-source-voice-authorization-v1"),
+        "scope": ("source_approved_window_formal_audio_only" if modern
+                  else "source_bound_formal_audio_and_page_only"),
         "englishSourcePackageJsonSha256": interpretation.json_sha256(source),
         "targetLanguageCandidateJsonSha256": interpretation.json_sha256(candidate),
         "targetLocale": candidate["targetLocale"],
@@ -435,6 +438,14 @@ def prepare_source_voice_authorization(source_path: Path, candidate_path: Path,
             "jsonSha256": interpretation.json_sha256(_load(attestation_path)),
         },
     }
+    if modern:
+        receipt.update({
+            "sourceId": attestation["sourceId"],
+            "sourceMediaSha256": attestation["sourceMediaSha256"],
+            "mediaDurationSeconds": attestation["mediaDurationSeconds"],
+            "approvedWindow": dict(attestation["approvedWindow"]),
+            "authorizedUses": list(attestation["authorizedUses"]),
+        })
     validate_source_voice_authorization(receipt, source, candidate, adapter)
     out.parent.mkdir(parents=True, exist_ok=True)
     interpretation.write_json(out, receipt)
