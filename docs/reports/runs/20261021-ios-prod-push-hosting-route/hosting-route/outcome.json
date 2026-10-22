@@ -1,0 +1,10 @@
+{
+  "schemaVersion": "tongxing-focused-test-v1",
+  "command": "pytest focused hosting route suite",
+  "exitCode": 0,
+  "result": "passed",
+  "executed": 84,
+  "passed": 84,
+  "failed": 0,
+  "scope": "hosting assembly/dev preview/config/publish route; final changed test subset 8 passed"
+}
