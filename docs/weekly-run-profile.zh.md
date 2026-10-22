@@ -15,6 +15,8 @@
 
 ## 并发设置
 
+Layer 1（2026-10-22 起，v4 配置默认）：ASR 每 180 秒块一个 worker（上限 16；播客实测 14 块 14 s），英文机器裁判 8 并发、每批 6 句（播客实测吞吐 2.2 s/次）。这些是 `sermon-unified-source-preparation-v4` 的默认值，见[统一 CLI 的正式 Source 候选准备](unified-source-preparation.zh.md#新运行默认v4-配置2026-10-22-起)。
+
 | 环节 | 设置 | 说明 |
 |---|---|---|
 | Layer 2 翻译与复核（OpenAI API） | execution-v3 及以上（含 v6 缓存续跑、v7 部分恢复）`layer2AutoRepair`：`groupWorkers: 8`；`maxActiveLocales`：正式周更 3，10 美元以内的 dev 测试 1 | 共享 job-root 的 API 槽位上限 24（[controller 合同](canonical-layer2-controller.zh.md#并发上限)）。三语同开时，三份预留同时占用预算 |

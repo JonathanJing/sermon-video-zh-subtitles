@@ -58,6 +58,13 @@ SCHEMA_V2 = 'sermon-unified-source-preparation-v2'
 # v3 = v2 plus an explicit judge backend (2026-10-21 user decision): openai_api runs gpt-6.1-sol,
 # claude_cli_opus runs claude-opus-5-5 through the subscription Claude CLI. v1/v2 stay OpenAI.
 SCHEMA_V3 = 'sermon-unified-source-preparation-v3'
+# v4 (2026-10-22 user decision, "默认把配置打开") turns the measured improvements on by default. Every
+# switch is still a configuration field; a field left out takes the default below, the digest binds
+# the file as written, and every attempt records the effective values. v4 always runs the one-
+# confirmation review sheet and requires budget authorization v2. v1-v3 keep their behaviour.
+SCHEMA_V4 = 'sermon-unified-source-preparation-v4'
+V4_DEFAULTS = {'judgeCacheRoot': '.source-judge-cache', 'mfaChunkCacheRoot': '.source-mfa-chunk-cache',
+               'judgeWorkers': 8, 'judgeBatchSize': 6}
 JUDGE_BACKEND_MODELS = {'openai_api': 'gpt-6.1-sol', 'claude_cli_opus': 'claude-opus-5-5'}
 MAX_ASR_WORKERS = 16
 # Budget authorization v1 bound the code identity: any commit, even one unrelated to the run,
@@ -105,6 +112,25 @@ REVIEW_FIELDS = {'reviewConfirmation', 'crossCheckTranscripts'}
 # cap, and a chunk no reuse root returned is paid here rather than failing the run.
 REUSE_OPERATIONS = ('asr.',)
 OPTIONAL_FIELDS = TEXT_REVIEW_FIELDS | JUDGE_CACHE_FIELDS | MFA_CHUNK_CACHE_FIELDS | REUSE_FIELDS | REVIEW_FIELDS
+V4_OPTIONAL_FIELDS = {'asrWorkers'} | JUDGE_CACHE_FIELDS | MFA_CHUNK_CACHE_FIELDS | REUSE_FIELDS | REVIEW_FIELDS
+
+
+def effective_configuration(raw, config_path):
+    """The configuration the stage runs: v4 fields left out take the defaults; earlier versions as written."""
+    if raw.get('schemaVersion') != SCHEMA_V4:
+        return raw
+    value = json.loads(json.dumps(raw))
+    window = value.get('window') or {}
+    chunks = math.ceil((window.get('endSeconds', 0) - window.get('startSeconds', 0)) / 180) if window else 1
+    value.setdefault('asrWorkers', max(1, min(MAX_ASR_WORKERS, chunks)))
+    value.setdefault('judgeCacheRoot', V4_DEFAULTS['judgeCacheRoot'])
+    value.setdefault('mfaChunkCacheRoot', V4_DEFAULTS['mfaChunkCacheRoot'])
+    value.setdefault('reuseBudgetRoots', [])
+    value.setdefault('reviewConfirmation', Path(config_path).stem + '.review-confirmation.json')
+    if isinstance(value.get('judge'), dict):
+        value['judge'].setdefault('workers', V4_DEFAULTS['judgeWorkers'])
+        value['judge'].setdefault('batchSize', V4_DEFAULTS['judgeBatchSize'])
+    return value
 
 
 def require(ok, code):
@@ -266,13 +292,13 @@ class Configuration:
 
 def _validate_judge_backend(value):
     """A v3 judge names its backend, and the backend fixes the model; earlier versions stay OpenAI."""
-    if value['schemaVersion'] == SCHEMA_V3:
+    if value['schemaVersion'] in (SCHEMA_V3, SCHEMA_V4):
         require(isinstance(value['judge'], dict) and value['judge'].get('backend') in JUDGE_BACKEND_MODELS,
                 'invalid_source_judge_backend')
 
 
 def judge_backend(value):
-    return value['judge'].get('backend', 'openai_api') if value['schemaVersion'] == SCHEMA_V3 else 'openai_api'
+    return value['judge'].get('backend', 'openai_api') if value['schemaVersion'] in (SCHEMA_V3, SCHEMA_V4) else 'openai_api'
 
 
 def claude_judge_transport(value, receipts_dir, request_limits):
@@ -288,12 +314,14 @@ def claude_judge_transport(value, receipts_dir, request_limits):
 
 def load_configuration(path):
     path = _safe_path(Path(path).absolute())
-    value = _load(path)
-    require(isinstance(value, dict) and value.get('schemaVersion') in (SCHEMA, SCHEMA_V2, SCHEMA_V3)
-            and (set(value) == FIELDS if value['schemaVersion'] == SCHEMA else
-                 FIELDS | {'asrWorkers'} <= set(value) <= FIELDS | {'asrWorkers'} | OPTIONAL_FIELDS),
+    raw = _load(path)
+    require(isinstance(raw, dict) and raw.get('schemaVersion') in (SCHEMA, SCHEMA_V2, SCHEMA_V3, SCHEMA_V4)
+            and (set(raw) == FIELDS if raw['schemaVersion'] == SCHEMA else
+                 FIELDS <= set(raw) <= FIELDS | V4_OPTIONAL_FIELDS if raw['schemaVersion'] == SCHEMA_V4 else
+                 FIELDS | {'asrWorkers'} <= set(raw) <= FIELDS | {'asrWorkers'} | OPTIONAL_FIELDS),
             'invalid_source_preparation_configuration')
-    if value['schemaVersion'] in (SCHEMA_V2, SCHEMA_V3):
+    value = effective_configuration(raw, path)
+    if value['schemaVersion'] in (SCHEMA_V2, SCHEMA_V3, SCHEMA_V4):
         # One worker per 180 s chunk lets a 40-minute source transcribe in one round
         # (2026-10-21: 14 chunks at 4 workers took 32 s; the provider has no stated
         # concurrency limit this low, and each request is still ledgered before dispatch).
@@ -354,16 +382,16 @@ def load_configuration(path):
             'invalid_source_anchor_policy')
     _validate_judge_backend(value)
     judge_fields = {'model', 'reasoningEffort', 'batchSize', 'workers'} | (
-        {'backend'} if value['schemaVersion'] == SCHEMA_V3 else set())
+        {'backend'} if value['schemaVersion'] in (SCHEMA_V3, SCHEMA_V4) else set())
     require(isinstance(value['judge'], dict) and set(value['judge']) == judge_fields
-            and value['judge']['model'] in (('gpt-6-astra', 'gpt-6.1-sol') if value['schemaVersion'] != SCHEMA_V3
+            and value['judge']['model'] in (('gpt-6-astra', 'gpt-6.1-sol') if value['schemaVersion'] not in (SCHEMA_V3, SCHEMA_V4)
                                             else (JUDGE_BACKEND_MODELS[value['judge']['backend']],))
             and value['judge']['reasoningEffort'] in budget.text_limits.SUPPORTED_REASONING_EFFORTS
             and type(value['judge']['batchSize']) is int and 1 <= value['judge']['batchSize'] <= 15
             and type(value['judge']['workers']) is int
             and 1 <= value['judge']['workers'] <= (1 if value['schemaVersion'] == SCHEMA else 8),
             'invalid_source_judge_configuration')
-    identity = jobs._digest({k: v for k, v in value.items() if k != 'budgetAuthorization'})
+    identity = jobs._digest({k: v for k, v in raw.items() if k != 'budgetAuthorization'})
     code_identity = code.code_identity()
     auth_path = resolve('budgetAuthorization')
     budget_root = job_root.parent / f'.{job_root.name}.source-budget'
@@ -371,6 +399,7 @@ def load_configuration(path):
     authority, approval_path, version = check_budget_authorization(
         auth_path, production_run_id=value['productionRunId'], configuration_sha256=identity,
         budget_root=budget_root, code_identity=code_identity)
+    require(value['schemaVersion'] != SCHEMA_V4 or version == AUTHORIZATION_V2, 'source_v4_requires_authorization_v2')
     budget.SourceBudget(budget_root, authority, verify=lambda: None, reuse_roots=reuse_roots,
         reuse_operations=REUSE_OPERATIONS, reuse_miss_pays=True,
         max_concurrent=max(value.get('asrWorkers', 1), value['judge']['workers']))
@@ -403,6 +432,9 @@ def inspect(config_path):
             'productionRunId': config.value['productionRunId'],
             'outputDirectory': str(config.output), 'budgetRoot': str(config.budget_root),
             'authorizationVersion': config.authorization_version,
+            'effective': {key: config.value.get(key) for key in ('asrWorkers', 'judgeCacheRoot', 'mfaChunkCacheRoot',
+                                                                  'reuseBudgetRoots', 'reviewConfirmation')}
+                         | {'judgeWorkers': config.value['judge']['workers']},
             'reuseBudgetRoots': [str(root) for root in reuse_budget_roots(config.value, config.path)],
             'globalBounds': config.authority['globalBounds'], 'chunkCount': count, 'chunkMaxSeconds': 180,
             'mfaBackend': config.value['mfa']['backend'], 'mfaRuntimeVerified': False,
@@ -575,7 +607,10 @@ def _execute(config, fresh, *, api_key, transport, aligner, mfa_preflight, claud
                              'authorizationVersion': config.authorization_version})
     record_attempt(out, 'attempt_started', configurationSha256=config.identity,
                    codeIdentitySha256=config.code_identity, authorizationSha256=config.authorization_hash,
-                   authorizationVersion=config.authorization_version)
+                   authorizationVersion=config.authorization_version,
+                   effective={key: value.get(key) for key in ('asrWorkers', 'judgeCacheRoot', 'mfaChunkCacheRoot',
+                                                              'reuseBudgetRoots', 'reviewConfirmation')}
+                             | {'judgeWorkers': value['judge']['workers'], 'judgeBatchSize': value['judge']['batchSize']})
     total_duration = _probe(config.media)
     window = value['window']
     require(abs(total_duration - value['sourceDurationSeconds']) <= .002, 'source_duration_identity_changed')
@@ -989,10 +1024,11 @@ def rebuild(config_path, base_output, out_dir, overrides_path, authorization_pat
     segments. The judge spends only under its own authorization and budget root.
     """
     config_path = _safe_path(Path(config_path).absolute())
-    value = _load(config_path)
-    require(value.get('schemaVersion') in (SCHEMA, SCHEMA_V2, SCHEMA_V3), 'invalid_source_preparation_configuration')
+    raw = _load(config_path)
+    require(raw.get('schemaVersion') in (SCHEMA, SCHEMA_V2, SCHEMA_V3, SCHEMA_V4), 'invalid_source_preparation_configuration')
+    value = effective_configuration(raw, config_path)
     _validate_judge_backend(value)
-    base_identity = jobs._digest({k: v for k, v in value.items() if k != 'budgetAuthorization'})
+    base_identity = jobs._digest({k: v for k, v in raw.items() if k != 'budgetAuthorization'})
     base, out = _safe_path(Path(base_output).absolute()), _safe_path(Path(out_dir).absolute())
     aligned_path = base / 'aligned-segments.json'
     receipt = _load(base / 'alignment-receipt.json')

@@ -587,6 +587,64 @@ class UnifiedSourceTests(unittest.TestCase):
         self.assertEqual(result['reason'], 'source_review_derivation_outside_confirmation')
         self.assertFalse((self.root / 'source' / 'english-source-review.json').exists())
 
+    def v4_config(self, **extra):
+        self.config = {k: v for k, v in self.config.items() if k != 'asrWorkers'}
+        self.config.update(schemaVersion=subject.SCHEMA_V4, **extra)
+        self.config['judge'] = {'backend': 'claude_cli_opus', 'model': 'claude-opus-5-5', 'reasoningEffort': 'high'}
+        self.rebind_budget()
+
+    def test_v4_turns_the_switches_on_when_the_fields_are_left_out(self):
+        self.v4_config()
+        self.use_v2_authorization()
+        config = subject.load_configuration(self.path)
+        self.assertEqual(config.value['asrWorkers'], 2)
+        self.assertEqual((config.value['judge']['workers'], config.value['judge']['batchSize']), (8, 6))
+        self.assertEqual(config.value['judgeCacheRoot'], subject.V4_DEFAULTS['judgeCacheRoot'])
+        self.assertEqual(config.value['mfaChunkCacheRoot'], subject.V4_DEFAULTS['mfaChunkCacheRoot'])
+        self.assertEqual(config.value['reviewConfirmation'], 'config.review-confirmation.json')
+        # The digest binds the file as written, not the filled-in defaults.
+        self.assertEqual(config.identity, jobs._digest({k: v for k, v in self.config.items() if k != 'budgetAuthorization'}))
+        self.assertEqual(subject.inspect(self.path)['effective']['judgeWorkers'], 8)
+
+    def test_v4_requires_budget_authorization_v2(self):
+        self.v4_config()
+        with self.assertRaisesRegex(ValueError, 'source_v4_requires_authorization_v2'):
+            subject.load_configuration(self.path)
+
+    def test_v4_rejects_the_legacy_text_review_field(self):
+        self.v4_config(sourceTextReview='review.json')
+        with self.assertRaisesRegex(ValueError, 'invalid_source_preparation_configuration'):
+            subject.load_configuration(self.path)
+
+    def test_prepare_tool_writes_v4_with_switches_on_and_replays_the_paid_asr(self):
+        from tests import experiment_modules
+        tool = experiment_modules.load('tools/ops/prepare_source_run.py')
+        self.config.update(schemaVersion=subject.SCHEMA_V2, asrWorkers=1)
+        self.rebind_budget()
+        self.execute()
+        self.assertEqual(sum(c.endswith('/transcriptions') for c in self.calls), 2)
+        drafted = tool.main(['draft', '--from', str(self.path), '--name', 'next', '--usd', '10'])
+        self.assertEqual(drafted, 0)
+        config_path = self.root / 'next.config.json'
+        written = json.loads(config_path.read_text())
+        self.assertEqual(written['schemaVersion'], subject.SCHEMA_V4)
+        self.assertEqual(written['reuseBudgetRoots'], ['.jobs.source-budget'])
+        self.assertEqual((written['asrWorkers'], written['judge']['workers']), (2, 8))
+        # Unsigned: the stage refuses the run until the person's decision is recorded.
+        with self.assertRaisesRegex(ValueError, 'source_budget_approval_not_bound'):
+            subject.load_configuration(config_path)
+        tool.main(['approve', '--authorization', str(self.root / 'next.authorization.json'),
+                   '--reviewed-by', 'fixture (chat)', '--evidence', 'synthetic approval for the test'])
+        self.assertEqual(subject.load_configuration(config_path).authorization_version, subject.AUTHORIZATION_V2)
+        self.calls.clear()
+        result = subject.execute(config_path, api_key='', transport=self.transport, aligner=self.align,
+                                 mfa_preflight=self.preflight)
+        self.assertEqual(result['status'], 'awaiting_confirmation')
+        self.assertEqual([c for c in self.calls if c.endswith('/transcriptions')], [])
+        # A second draft never overwrites the papers of the first.
+        with self.assertRaises(SystemExit):
+            tool.main(['draft', '--from', str(self.path), '--name', 'next', '--usd', '10'])
+
     def test_rebuild_rejects_overrides_for_another_alignment(self):
         self.execute()
         overrides, out, authorization = self.rebuild_inputs('b' * 64)
