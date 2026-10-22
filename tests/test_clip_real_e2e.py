@@ -388,6 +388,11 @@ class SparkTests(unittest.TestCase):
         self.assertEqual(command[command.index("--max-end-lag-seconds") + 1], "120.0")
         self.assertEqual(command[command.index("--seed") + 1], "42")
         self.assertNotIn("--unit-instructions", command)
+        self.assertNotIn("--reuse-from", command)
+        resumed = spark.render_command(runtime, "/stage", "repo-x", blob, "/work/output/ko-raw-r2/speech-job",
+                                       max_end_lag=120.0, unit_instructions=None,
+                                       reuse_from="/work/output/ko-raw-r1/speech-job")
+        self.assertEqual(resumed[resumed.index("--reuse-from") + 1], "/work/output/ko-raw-r1/speech-job")
 
     def test_render_and_compact_pass_exactly_one_voice_authorization_flag(self):
         common = ["--locale", "ko", "--stage", "/stage/run", "--code", "repo-x", "--job", "job.json"]

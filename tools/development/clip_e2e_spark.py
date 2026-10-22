@@ -204,7 +204,7 @@ RENDER_PREFIX = ["docker", "run", "--rm", "--gpus", "all", "--ipc", "host", "--n
 
 def render_command(runtime: dict, stage: str, code: str, blob, job_dir: str, *, max_end_lag: float,
                    unit_instructions: str | None, seed: int = 42,
-                   voice_flag: str = "--clip-voice-authorization") -> list[str]:
+                   voice_flag: str = "--clip-voice-authorization", reuse_from: str | None = None) -> list[str]:
     """The render container arguments after the docker prefix and the session labels."""
     command = ["--tmpfs", "/tmp:rw,exec,nosuid,size=2g,mode=1777", "--tmpfs", "/Users:rw,nosuid,size=64m,mode=1777",
                "--tmpfs", "/private:rw,nosuid,size=64m,mode=1777", "--tmpfs", "/home:rw,nosuid,size=64m,mode=1777",
@@ -227,6 +227,10 @@ def render_command(runtime: dict, stage: str, code: str, blob, job_dir: str, *, 
                "--track-format", "mp3", "--max-end-lag-seconds", str(max_end_lag), "--seed", str(seed)]
     if unit_instructions:
         command += ["--unit-instructions", unit_instructions]
+    if reuse_from:
+        # A partial root set aside after the replica pool's memory reserve stop; the renderer
+        # re-verifies every committed unit it reuses and synthesizes only the missing windows.
+        command += ["--reuse-from", reuse_from]
     return command
 
 
@@ -274,7 +278,8 @@ def render(args, runtime, spark, session) -> int:
     tail = render_command(runtime, stage, args.code, blobs.__getitem__, f"/work/output/{remote_name}/speech-job",
                           max_end_lag=args.max_end_lag_seconds,
                           unit_instructions=f"/work/blobs/{sha(extra[0])}" if extra else None,
-                          seed=args.seed, voice_flag=voice_flag)
+                          seed=args.seed, voice_flag=voice_flag,
+                          reuse_from=f"/work/output/{args.reuse_from_remote}/speech-job" if args.reuse_from_remote else None)
     command_for = lambda hold: [*RENDER_PREFIX, *session_labels(session, hold), *tail]
     returncode, outcome, hold = dispatch(spark, session, "render", loc, stage=stage, code=args.code, command_for=command_for,
                                          log=f"{remote_out}/render.log", marker=local_out / "dispatch.started.json",
@@ -517,6 +522,8 @@ def parser() -> argparse.ArgumentParser:
     sub.add_argument("--seed", type=int, default=42, help="Frozen TTS seed; a repair needs a fresh render root")
     sub.add_argument("--unit-instructions", type=Path, default=None)
     sub.add_argument("--remote-name", default=None, help="Spark output directory under output/ (a rebuilt job needs its own)")
+    sub.add_argument("--reuse-from-remote", default=None,
+                     help="Output directory name of an earlier partial render of this job whose committed units to reuse")
     sub = common("compact", "edge-silence compaction and track assembly (CPU)")
     sub.add_argument("--job", type=Path, required=True, help="The local job.json the raw render root holds")
     inputs(sub)
