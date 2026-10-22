@@ -14,6 +14,8 @@ Every generated artifact is bound to its inputs by hash, carries its review stat
 
 This is an independent personal open-source project with no affiliation, endorsement or operational relationship with Mariners Church. Use public or authorized media and keep the source and review status of generated translations, speech and explanations visible.
 
+**Listen:** [Two 60-second demos](https://ai-for-god-sermon-audio-dev.web.app/demos/) — Eric Geiger and Steve Bang Lee, English → Chinese → Korean → Spanish.
+
 ## What it looks like
 
 Browser captures of the Production page for the 2026-10-11 sermon. The page language and the sermon language are separate controls; the three sermon languages share one English source. Screenshots show rendering only, not device or venue acceptance.
@@ -30,6 +32,25 @@ The native iOS client reads the same release packages. iPhone 17 Pro simulator c
   <img src="docs/assets/readme/ios-listening-zh.png" width="300" alt="Tongxing iOS listening screen in the iPhone simulator" />
   <img src="docs/assets/readme/ios-transcript-zh.png" width="300" alt="Tongxing iOS full transcript screen in the iPhone simulator" />
 </p>
+
+## Two 60-second demos
+
+Two presentation reels play one continuous sermon clip while the audio switches English original → Chinese → Korean → Spanish, about 15 seconds per language. The English section has English subtitles only; the dubbed sections keep the English source above the target line. Both are Dev previews, not Production pages.
+
+| Eric Geiger | Steve Bang Lee |
+|---|---|
+| [![Eric Geiger 60-second demo](docs/assets/readme/demo-eric-poster.png)](https://ai-for-god-sermon-audio-dev.web.app/demos/) | [![Steve Bang Lee 60-second demo](docs/assets/readme/demo-steve-poster.png)](https://ai-for-god-sermon-audio-dev.web.app/demos/) |
+| Revelation 2–3 · 60.6 s · formal four-layer clip packages | Revelation 10:8–11 · 60 s · sentence-first agent route |
+
+[Watch both on one page](https://ai-for-god-sermon-audio-dev.web.app/demos/) · [full provenance and SHA-256](docs/demos.md)
+
+**What they show.** One English source becomes three target texts, synthetic speech in the speaker's own authorized voice, and captions that follow the dub. Two speakers and two production paths both work.
+
+**What they do not show.** They are not a full sermon, are not synchronized sentence by sentence, do not lip-sync, are not a new formal release, and have no device or venue acceptance. A 15-second cut can land mid-sentence, and the subtitles follow the dub rather than the original picture.
+
+**Review.** Eric's English, three target texts and audio packages are human-approved (2026-09-24); the 60-second edit is a presentation cut, not a new release. Steve's three dubs were listened to and approved by the user (2026-10-22); the text was reused from a machine-reviewed sentence candidate. Neither reel has device or venue acceptance.
+
+Source: Mariners Church weekend services, 2026-09-20 and 2026-10-18. This project is not affiliated with Mariners Church.
 
 ## Main modules
 
