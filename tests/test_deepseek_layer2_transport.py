@@ -53,10 +53,10 @@ class DeepSeekLayer2TransportTests(unittest.TestCase):
             def __init__(self, effort):
                 self.execution_identity = {'model': 'deepseek-flash', 'reasoningEffort': effort}
         identity = controller.deepseek_model_transport_identity(
-            {'translator': Fake('high'), 'reviewer': Fake('max')})
+            {'translator': Fake('low'), 'reviewer': Fake('high')})
         self.assertEqual(identity['backend'], 'deepseek_api')
         self.assertEqual(identity['layer2Backend'], 'deepseek_flash')
-        self.assertEqual(identity['transports']['reviewer']['reasoningEffort'], 'max')
+        self.assertEqual(identity['transports']['reviewer']['reasoningEffort'], 'high')
 
     def test_rejects_a_payload_for_another_model_or_effort(self):
         with patch.dict(os.environ, {'DEEPSEEK_API_KEY': 'synthetic-key'}, clear=True):

@@ -335,9 +335,9 @@ LAYER2_BACKENDS = {
     "openai_api": {"translator": ("gpt-6.1-sol", "high"), "reviewer": ("gpt-6.1-sol", "medium")},
     "claude_cli_opus": {"translator": ("claude-opus-5-5", "high"), "reviewer": ("claude-opus-5-5", "medium")},
     # DeepSeek V4.1 Flash (the API's `deepseek-flash`) exposes low/high/max, not medium.
-    # Translator high; reviewer max keeps the two roles distinguishable by effort and
-    # gives the independent pass the strongest available reasoning budget.
-    "deepseek_flash": {"translator": ("deepseek-flash", "high"), "reviewer": ("deepseek-flash", "max")},
+    # Translator low for the fastest first pass; reviewer high keeps the two roles
+    # distinguishable by effort and gives the independent pass the stronger budget.
+    "deepseek_flash": {"translator": ("deepseek-flash", "low"), "reviewer": ("deepseek-flash", "high")},
 }
 # New freezes default to DeepSeek unless the operator names another backend. The
 # draft's own translator/reviewer pair is no longer the silent default.
@@ -389,7 +389,7 @@ def freeze_policy(draft: dict[str, Any], *, series_table: Path | None = None,
     if any(str(draft.get(role, {}).get("model", "")) == "deepseek-flash"
            for role in ("translator", "reviewer")) and layer2_backend(draft) != "deepseek_flash":
         raise ValueError("A DeepSeek policy freezes only as the deepseek_flash Layer 2 backend "
-                         "(translator deepseek-flash high, reviewer deepseek-flash max)")
+                         "(translator deepseek-flash low, reviewer deepseek-flash high)")
     policy = dict(bind_language_review(draft, language_review))
     if policy.get("schemaVersion") == POLICY_V2 and policy["sourceScope"]["termApprovalEvidence"]:
         if shadow_candidate is None or content_approval is None:
@@ -476,7 +476,7 @@ def main() -> None:
                         help="Per-run translator for a new freeze; omit to keep the draft's translator "
                              "(openai_api = gpt-6.1-sol high; translator-only claude_cli stays refused)")
     parser.add_argument("--layer2-backend", choices=tuple(LAYER2_BACKENDS), default=None,
-                        help="Translator and reviewer together: deepseek_flash (DeepSeek V4.1 Flash high / max, "
+                        help="Translator and reviewer together: deepseek_flash (DeepSeek V4.1 Flash low / high, "
                              "default), openai_api (Sol high / Sol medium), or claude_cli_opus (Opus 5.5 high / "
                              "Opus 5.5 medium through the subscription Claude CLI)")
     args = parser.parse_args()

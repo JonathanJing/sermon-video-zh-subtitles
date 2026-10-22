@@ -58,14 +58,14 @@ class TargetLanguagePolicyTests(unittest.TestCase):
         selected = subject.apply_layer2_backend(draft, 'deepseek_flash')
         self.assertEqual({role: (selected[role]['model'], selected[role]['reasoningEffort'])
                           for role in ('translator', 'reviewer')},
-                         {'translator': ('deepseek-flash', 'high'), 'reviewer': ('deepseek-flash', 'max')})
+                         {'translator': ('deepseek-flash', 'low'), 'reviewer': ('deepseek-flash', 'high')})
         policy = subject.freeze_policy(selected)
         self.assertEqual(subject.layer2_backend(policy), 'deepseek_flash')
         from tongxing_production.text import models
         self.assertEqual(models.production_backend(policy), 'deepseek_flash')
         self.assertEqual(models.production_models(policy), {'translator': 'deepseek-flash', 'reviewer': 'deepseek-flash'})
-        self.assertEqual(models.production_efforts(policy), {'translator': 'high', 'reviewer': 'max'})
-        wrong = {**selected, 'reviewer': {**selected['reviewer'], 'reasoningEffort': 'high'}}
+        self.assertEqual(models.production_efforts(policy), {'translator': 'low', 'reviewer': 'high'})
+        wrong = {**selected, 'reviewer': {**selected['reviewer'], 'reasoningEffort': 'max'}}
         with self.assertRaisesRegex(ValueError, 'freezes only as the deepseek_flash'):
             subject.freeze_policy(wrong)
         with tempfile.TemporaryDirectory() as folder:

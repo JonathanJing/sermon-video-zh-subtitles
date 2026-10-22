@@ -4,8 +4,8 @@
 
 | 角色 | 模型 | Reasoning | Service tier | 调用方式 |
 |---|---|---|---|---|
-| Layer 2 初译（默认） | `deepseek-flash` | `high` | `default` | DeepSeek API `https://api.deepseek.com` |
-| Layer 2 独立审核（默认） | `deepseek-flash` | `max` | `default` | DeepSeek API `https://api.deepseek.com` |
+| Layer 2 初译（默认） | `deepseek-flash` | `low` | `default` | DeepSeek API `https://api.deepseek.com` |
+| Layer 2 独立审核（默认） | `deepseek-flash` | `high` | `default` | DeepSeek API `https://api.deepseek.com` |
 | Layer 2 回退（显式） | `gpt-6.1-sol` | `high` / `medium` | 批准的 tier（目前 `default`） | OpenAI API |
 | dev 与正式生产 Supervisor | `gpt-6-luna` | `medium` | `fast` | ChatGPT-authenticated Codex CLI |
 
@@ -15,7 +15,7 @@
 
 ## Layer 2 后端：DeepSeek Flash（默认）、OpenAI Sol 或 Claude CLI（Opus 5.5）
 
-2026-10-21 用户决定：新 dev 与正式 canonical Layer 2 的默认后端改为 `deepseek_flash`。初译 `deepseek-flash` high，独立复核 `deepseek-flash` max；`openai_api`（Sol high / Sol medium）保留为显式回退，`claude_cli_opus` 保留为另一选项。
+2026-10-21 用户决定：新 dev 与正式 canonical Layer 2 的默认后端改为 `deepseek_flash`。初译 `deepseek-flash` low，独立复核 `deepseek-flash` high；`openai_api`（Sol high / Sol medium）保留为显式回退，`claude_cli_opus` 保留为另一选项。
 
 这次默认变化基于速度和成本，不代表质量已经超过 Sol：13 组小样本 A/B 中 Sol 仍以微弱优势第一，DeepSeek 的 high 档也还没有重做 39 段质量排名；人工审核、机器质检和发布门禁都不变。已有运行和未决调用保留其冻结政策，不迁移、不重发。
 
@@ -29,11 +29,11 @@ python scripts/target_language_policy.py freeze --policy <draft.json> --out <pol
 
 要恢复 Sol 或选择 Opus，显式传入 `--layer2-backend openai_api` 或 `--layer2-backend claude_cli_opus`。
 
-- **模型分工：** 初译 `deepseek-flash` high，独立复核 `deepseek-flash` max。DeepSeek 官方 API 只提供 low/high/max，没有 medium；用 max 而不是 high 是为了让两个角色在 effort 上仍可区分，并给独立复核更强的推理预算。
+- **模型分工：** 初译 `deepseek-flash` low，独立复核 `deepseek-flash` high。DeepSeek 官方 API 只提供 low/high/max，没有 medium；初译用 low 取最快首轮，复核用 high 保留独立检查的推理预算，同时两个角色仍能按 effort 区分。
 - **调用方式：** `compute/transports/deepseek_layer2.py` 直接调用 OpenAI 兼容端点 `https://api.deepseek.com/chat/completions`，一次请求、不重试、不回退。API key 只从 `DEEPSEEK_API_KEY` 读取；`DEEPSEEK_BASE_URL` 可覆盖端点。canonical 运行仍使用 OpenAI Project 启动器和预算授权来做运行时绑定；启动前在环境里 export `DEEPSEEK_API_KEY`，launcher 会原样传给子进程，不写入日志或仓库。DeepSeek key 是额外的一项凭据，不替代现有启动器。
 - **政策绑定：** 选择写入 translator/reviewer 角色和 effort，进入政策哈希；冻结只接受完整的 `deepseek_flash` 对，DeepSeek 初译配 Sol 复核会在写出前拒绝。
 - **预算：** 账本按 DeepSeek peak 列价最坏情况预留：cache-miss 输入 0.30 美元／百万 token，输出 1.20 美元／百万 token（off-peak 减半，但预留不用低价）。每次 16,384 输入＋2,048 输出约 0.00737 美元；同样上限下约为 Sol 的 12%。金额仍是规划上界，不是发票。
-- **证据：** 13 组 headless 速度测试中位 3.81 秒／组（high 两轮合并），见 [PR #1264](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/1264) 中的速度测试与 13 组翻译/审核 A/B 报告。还没有 canonical `deepseek_flash` 的真实运行，不能声称已生产可用。
+- **证据：** 13 组 headless 速度测试中 low 初译中位 3.631 秒/组、high 初译 3.806 秒/组（两轮合并），见 [PR #1264](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/1264) 中的速度测试与 13 组翻译/审核 A/B 报告。速度测试里 low 初译中位 3.631 秒/组，high 审核中位 6.619 秒/组；这只是分阶段测量，不是 low 初译 + high 复核的整链实测。还没有 canonical `deepseek_flash` 的真实运行，不能声称已生产可用。
 - **回退：** 需要 Sol 时显式 `--layer2-backend openai_api`；需要 Opus 时显式 `--layer2-backend claude_cli_opus`。不自动 fallback。
 
 ### Claude CLI（Opus 5.5）后端 `claude_cli_opus`

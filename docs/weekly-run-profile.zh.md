@@ -60,7 +60,7 @@
 
 ### DeepSeek Flash 后端的 Layer 2（默认）
 
-Layer 2 政策冻结为 `deepseek_flash` 时（[运行时模型政策](production-model-runtime-policy.zh.md)），初译 `deepseek-flash` high、复核 max，走 `DEEPSEEK_API_KEY` 的官方 API。账本按 peak 列价最坏情况预留：16,384 输入 × 0.30 美元／百万 + 2,048 输出 × 1.20 美元／百万 ≈ 每次 0.00737 美元。
+Layer 2 政策冻结为 `deepseek_flash` 时（[运行时模型政策](production-model-runtime-policy.zh.md)），初译 `deepseek-flash` low、复核 `high`，走 `DEEPSEEK_API_KEY` 的官方 API。账本按 peak 列价最坏情况预留：16,384 输入 × 0.30 美元／百万 + 2,048 输出 × 1.20 美元／百万 ≈ 每次 0.00737 美元。
 
 | 规模 | 每语言首轮上界 | 说明 |
 |---|---|---|
