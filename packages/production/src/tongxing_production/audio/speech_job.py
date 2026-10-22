@@ -4,9 +4,8 @@
 This adapter intentionally performs no translation or synthesis. It binds one
 released target-language candidate to the shared English anchor and a
 locale-specific speech adapter, while keeping every output path inside that
-locale's directory. A candidate is released either by a human review receipt
-(speech job v2) or by a machine quality waiver (speech job v3), which never
-claims human approval.
+locale's directory. Human approval, human-approved machine exceptions, and
+machine quality waivers use separate versioned speech-job contracts.
 """
 from __future__ import annotations
 
@@ -20,6 +19,7 @@ from typing import Any
 from jsonschema import Draft202012Validator, FormatChecker
 
 from ..source import sentence_interpretation as interpretation
+from ..text import human_override
 from ..text import policy as policy_tools
 from . import backend as _audio
 from . import clip_timeline as timeline_map
@@ -38,9 +38,11 @@ CANDIDATE_SCHEMA = "sermon-target-language-candidate-v2"
 SOURCE_PACKAGE_SCHEMA = "sermon-english-source-package-v1"
 SPEECH_JOB_SCHEMA = "sermon-target-language-speech-job-v2"
 MACHINE_SPEECH_JOB_SCHEMA = "sermon-target-language-speech-job-v3"
-SPEECH_JOB_SCHEMAS = (SPEECH_JOB_SCHEMA, MACHINE_SPEECH_JOB_SCHEMA)
+OVERRIDE_SPEECH_JOB_SCHEMA = "sermon-target-language-speech-job-v4"
+SPEECH_JOB_SCHEMAS = (SPEECH_JOB_SCHEMA, MACHINE_SPEECH_JOB_SCHEMA, OVERRIDE_SPEECH_JOB_SCHEMA)
 HUMAN_TEXT_POLICY = "exact_human_approved_target_text"
 MACHINE_TEXT_POLICY = "exact_machine_waived_target_text"
+OVERRIDE_TEXT_POLICY = "human_override_approved_target_text"
 ADAPTER_SCHEMA = "sermon-target-language-speech-adapter-v1"
 HUMAN_REVIEW_RECEIPT_SCHEMA = "sermon-target-language-human-review-receipt-v1"
 SEMANTIC_CHECKS = (
@@ -74,7 +76,8 @@ def _reviewed_at(value: object) -> bool:
 
 
 def validate_target_candidate(source_package: dict[str, Any], anchor: dict[str, Any], candidate: dict[str, Any], *,
-                              require_human_approval: bool = True, diagnostic_context=None) -> dict[str, Any]:
+                              require_human_approval: bool = True, allow_human_override: bool = False,
+                              diagnostic_context=None) -> dict[str, Any]:
     """Fail closed on locale identity, source coverage and review boundaries."""
     _require(source_package.get("schemaVersion") == SOURCE_PACKAGE_SCHEMA,
              "Unsupported English Source Package")
@@ -131,33 +134,49 @@ def validate_target_candidate(source_package: dict[str, Any], anchor: dict[str, 
                  and [item.get("sourceUnitId") for item in coverage if isinstance(item, dict)] == source_ids
                  and all(isinstance(item.get("targetText"), str) and item["targetText"].strip()
                          for item in coverage), f"Invalid source coverage: {group_id}")
-        semantic = group.get("semanticReview", {})
-        _require(semantic.get("status") == "pass"
-                 and all(semantic.get("checks", {}).get(check) == "pass"
-                         for check in SEMANTIC_CHECKS)
-                 and not semantic.get("issues") and not semantic.get("uncertainty"),
-                 f"Semantic review is not pass: {group_id}")
-        language = group.get("languageReview", {})
-        language_checks = language.get("checks")
-        _require(language.get("status") == "pass"
-                 and isinstance(language.get("pluginId"), str) and language["pluginId"]
-                 and isinstance(language_checks, list) and language_checks
-                 and all(check.get("status") == "pass" for check in language_checks
-                         if isinstance(check, dict))
-                 and len(language_checks) == sum(isinstance(check, dict) for check in language_checks),
-                 f"Language review is not pass: {group_id}")
+        if not allow_human_override:
+            semantic = group.get("semanticReview", {})
+            _require(semantic.get("status") == "pass"
+                     and all(semantic.get("checks", {}).get(check) == "pass"
+                             for check in SEMANTIC_CHECKS)
+                     and not semantic.get("issues") and not semantic.get("uncertainty"),
+                     f"Semantic review is not pass: {group_id}")
+            language = group.get("languageReview", {})
+            language_checks = language.get("checks")
+            _require(language.get("status") == "pass"
+                     and isinstance(language.get("pluginId"), str) and language["pluginId"]
+                     and isinstance(language_checks, list) and language_checks
+                     and all(check.get("status") == "pass" for check in language_checks
+                             if isinstance(check, dict))
+                     and len(language_checks) == sum(isinstance(check, dict) for check in language_checks),
+                     f"Language review is not pass: {group_id}")
+        else:
+            semantic = group.get("semanticReview", {})
+            if semantic.get("status") != "pass":
+                _require(any(semantic.get("checks", {}).get(check) != "pass"
+                             for check in SEMANTIC_CHECKS)
+                         or bool(semantic.get("issues")) or bool(semantic.get("uncertainty")),
+                         f"Semantic failure has no receipt-covered finding: {group_id}")
         assigned_units.extend(source_ids)
         group_ids.append(group_id)
 
     _require(assigned_units == expected_units,
              "Target candidate must cover every source unit exactly once and in order")
     model_review = candidate.get("modelReview", {})
-    _require(model_review.get("status") == "pass"
-             and model_review.get("reviewedGroupIds") == group_ids,
-             "Independent model review is incomplete")
+    if allow_human_override:
+        expected_model_status = ("pass" if all(group.get("semanticReview", {}).get("status") == "pass"
+                                               for group in groups) else "fail")
+        _require(model_review.get("status") == expected_model_status
+                 and model_review.get("reviewedGroupIds") == group_ids,
+                 "Override candidate top-level model review does not match its unchanged group evidence")
+    else:
+        _require(model_review.get("status") == "pass"
+                 and model_review.get("reviewedGroupIds") == group_ids,
+                 "Independent model review is incomplete")
     human = candidate.get("humanReview", {})
     if require_human_approval:
-        _require(candidate.get("status") == "human_translation_approved"
+        expected_status = "human_override_approved" if allow_human_override else "human_translation_approved"
+        _require(candidate.get("status") == expected_status
                  and human.get("translation") == "approved"
                  and isinstance(human.get("reviewer"), str) and human["reviewer"].strip()
                  and _reviewed_at(human.get("reviewedAt"))
@@ -251,6 +270,9 @@ def validate_text_release_basis(source_package: dict[str, Any], anchor: dict[str
             receipt, candidate=candidate, source_sha=interpretation.json_sha256(source_package),
             anchor_sha=interpretation.json_sha256(anchor))
         return MACHINE_TEXT_POLICY
+    if receipt.get("schemaVersion") == "sermon-target-language-human-override-receipt-v2":
+        human_override.validate_override_receipt(source_package, anchor, candidate, receipt)
+        return OVERRIDE_TEXT_POLICY
     validate_human_review_receipt(source_package, anchor, candidate, receipt)
     return HUMAN_TEXT_POLICY
 
@@ -259,10 +281,21 @@ def validate_released_candidate(source_package: dict[str, Any], anchor: dict[str
                                 candidate: dict[str, Any], receipt: dict[str, Any]) -> dict[str, Any]:
     """Candidate checks plus its release basis: human approval, or a machine waiver."""
     machine = _audio.current().waivers.is_text_waiver(receipt)
+    override = receipt.get("schemaVersion") == "sermon-target-language-human-override-receipt-v2"
     identity = validate_target_candidate(source_package, anchor, candidate,
-                                         require_human_approval=not machine)
-    return identity | {"textPolicy": validate_text_release_basis(
+                                         require_human_approval=not machine,
+                                         allow_human_override=override)
+    result = identity | {"textPolicy": validate_text_release_basis(
         source_package, anchor, candidate, receipt)}
+    if override:
+        result["humanOverrideExceptions"] = [
+            {key: row[key] for key in ("translationGroupId", "machineFindings", "disposition")}
+            for row in receipt["groupOverrides"]]
+        result["topLevelModelReview"] = {
+            "status": candidate["modelReview"]["status"],
+            "reviewedGroupIds": list(candidate["modelReview"]["reviewedGroupIds"]),
+        }
+    return result
 
 
 def validate_speech_job_schema(job: dict[str, Any], label: str = "speech job") -> None:
@@ -273,11 +306,19 @@ def validate_speech_job_schema(job: dict[str, Any], label: str = "speech job") -
 
 def text_basis_input_key(job: dict[str, Any]) -> str:
     """The job input that binds the candidate's release receipt."""
-    return "textReleaseBasis" if job.get("schemaVersion") == MACHINE_SPEECH_JOB_SCHEMA else "humanReviewReceipt"
+    if job.get("schemaVersion") == MACHINE_SPEECH_JOB_SCHEMA:
+        return "textReleaseBasis"
+    if job.get("schemaVersion") == OVERRIDE_SPEECH_JOB_SCHEMA:
+        return "humanOverrideReceipt"
+    return "humanReviewReceipt"
 
 
 def expected_text_policy(job: dict[str, Any]) -> str:
-    return MACHINE_TEXT_POLICY if job.get("schemaVersion") == MACHINE_SPEECH_JOB_SCHEMA else HUMAN_TEXT_POLICY
+    if job.get("schemaVersion") == MACHINE_SPEECH_JOB_SCHEMA:
+        return MACHINE_TEXT_POLICY
+    if job.get("schemaVersion") == OVERRIDE_SPEECH_JOB_SCHEMA:
+        return OVERRIDE_TEXT_POLICY
+    return HUMAN_TEXT_POLICY
 
 
 def validate_clip_voice_authorization(receipt: dict[str, Any], source_package: dict[str, Any],
@@ -378,11 +419,14 @@ def prepare_source_voice_authorization(source_path: Path, candidate_path: Path,
     _require(not out.exists(), "Source voice authorization is immutable; choose a new path")
     for path in (source_path, candidate_path, adapter_path, attestation_path):
         _require(path.is_file(), f"Missing source voice authorization input: {path}")
-    source, candidate, adapter = (_load(path) for path in (source_path, candidate_path,
-                                                          adapter_path))
+    source, candidate, adapter, attestation = (_load(path) for path in (
+        source_path, candidate_path, adapter_path, attestation_path))
+    modern = attestation.get("schemaVersion") == "sermon-source-user-voice-attestation-v2"
     receipt = {
-        "schemaVersion": "sermon-source-voice-authorization-v1",
-        "scope": "source_bound_formal_audio_and_page_only",
+        "schemaVersion": ("sermon-source-voice-authorization-v2" if modern
+                           else "sermon-source-voice-authorization-v1"),
+        "scope": ("source_approved_window_formal_audio_only" if modern
+                  else "source_bound_formal_audio_and_page_only"),
         "englishSourcePackageJsonSha256": interpretation.json_sha256(source),
         "targetLanguageCandidateJsonSha256": interpretation.json_sha256(candidate),
         "targetLocale": candidate["targetLocale"],
@@ -394,6 +438,14 @@ def prepare_source_voice_authorization(source_path: Path, candidate_path: Path,
             "jsonSha256": interpretation.json_sha256(_load(attestation_path)),
         },
     }
+    if modern:
+        receipt.update({
+            "sourceId": attestation["sourceId"],
+            "sourceMediaSha256": attestation["sourceMediaSha256"],
+            "mediaDurationSeconds": attestation["mediaDurationSeconds"],
+            "approvedWindow": dict(attestation["approvedWindow"]),
+            "authorizedUses": list(attestation["authorizedUses"]),
+        })
     validate_source_voice_authorization(receipt, source, candidate, adapter)
     out.parent.mkdir(parents=True, exist_ok=True)
     interpretation.write_json(out, receipt)
@@ -610,6 +662,7 @@ def prepare_job(source_package_path: Path, anchor_path: Path, candidate_path: Pa
     identity = validate_released_candidate(source_package, anchor, candidate, human_review_receipt)
     locale = identity["targetLocale"]
     machine = identity["textPolicy"] == MACHINE_TEXT_POLICY
+    override = identity["textPolicy"] == OVERRIDE_TEXT_POLICY
     validate_policy_binding(candidate, policy, strict_rubric=strict_rubric)
     validate_adapter(adapter, locale, registry,
                      clip_voice_authorization=clip_voice_authorization,
@@ -621,7 +674,8 @@ def prepare_job(source_package_path: Path, anchor_path: Path, candidate_path: Pa
     language_root = f"languages/{locale}"
     verified = adapter["capabilityStatus"] == "verified"
     job = {
-        "schemaVersion": MACHINE_SPEECH_JOB_SCHEMA if machine else SPEECH_JOB_SCHEMA,
+        "schemaVersion": (MACHINE_SPEECH_JOB_SCHEMA if machine else
+                          OVERRIDE_SPEECH_JOB_SCHEMA if override else SPEECH_JOB_SCHEMA),
         "createdAt": datetime.now(timezone.utc).isoformat(),
         "status": ("prepared_for_target_language_speech" if verified
                    else "prepared_adapter_validation_required"),
@@ -645,7 +699,8 @@ def prepare_job(source_package_path: Path, anchor_path: Path, candidate_path: Pa
                 "sha256": interpretation.sha256(candidate_path),
                 "jsonSha256": interpretation.json_sha256(candidate),
             },
-            ("textReleaseBasis" if machine else "humanReviewReceipt"): {
+            ("textReleaseBasis" if machine else
+             "humanOverrideReceipt" if override else "humanReviewReceipt"): {
                 **({"kind": _audio.current().waivers.review_kind,
                     "schemaVersion": human_review_receipt["schemaVersion"]} if machine else {}),
                 "path": str(human_review_receipt_path.resolve()),
@@ -692,6 +747,13 @@ def prepare_job(source_package_path: Path, anchor_path: Path, candidate_path: Pa
             "synchronizationDirectory": f"{language_root}/synchronization",
         },
     }
+    if override:
+        job["humanOverrideDisclosure"] = {
+            "status": "approved_with_exceptions",
+            "machineEvidenceStatus": "unchanged_not_passed_by_human_approval",
+            "topLevelModelReview": identity["topLevelModelReview"],
+            "exceptionGroups": identity["humanOverrideExceptions"],
+        }
     if clip_voice_authorization_path is not None:
         job["inputs"]["clipVoiceAuthorization"] = {
             "path": str(clip_voice_authorization_path.resolve()),
@@ -730,9 +792,10 @@ def main() -> None:
     parser.add_argument("--candidate", type=Path, required=True)
     parser.add_argument("--policy", type=Path, required=True)
     parser.add_argument("--strict-rubric", type=Path, help="Explicit frozen rubric for strict-v3 policy validation")
-    parser.add_argument("--human-review-receipt", "--text-release-basis", dest="human_review_receipt",
+    parser.add_argument("--human-review-receipt", "--human-override-receipt", "--text-release-basis",
+                        dest="human_review_receipt",
                         type=Path, required=True,
-                        help="Human review receipt, or a machine text waiver (writes speech job v3)")
+                        help="Human review receipt, human override receipt, or machine text waiver")
     parser.add_argument("--adapter", type=Path, required=True)
     parser.add_argument("--speaker-registry", type=Path, required=True)
     parser.add_argument("--clip-voice-authorization", type=Path)

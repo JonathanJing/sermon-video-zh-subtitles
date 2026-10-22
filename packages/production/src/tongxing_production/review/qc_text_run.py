@@ -160,31 +160,42 @@ def find_candidate(run_dir: Path, locale: str, override: Path | None) -> tuple[P
     return None, [str(path) for path in matches]
 
 
-def candidate_problems(candidate: dict) -> list[str]:
+def candidate_problems(candidate: dict, *, accepted_as_is: set[str] | None = None,
+                       human_override_approved: bool = False) -> list[str]:
     """Why ``machine_pending_candidate`` refuses this candidate, in words."""
-    if basis.machine_pending_candidate(candidate):
+    if basis.machine_pending_candidate(candidate) and not human_override_approved:
         return []
     problems = []
-    if candidate.get("status") != basis.MACHINE_PENDING_CANDIDATE:
-        problems.append(f"status is {candidate.get('status')!r}, not {basis.MACHINE_PENDING_CANDIDATE!r}")
+    expected_status = "human_override_approved" if human_override_approved else basis.MACHINE_PENDING_CANDIDATE
+    if candidate.get("status") != expected_status:
+        problems.append(f"status is {candidate.get('status')!r}, not {expected_status!r}")
     if candidate.get("releaseEligible") is not False:
         problems.append("releaseEligible is not false")
-    if (candidate.get("humanReview") or {}).get("translation") != "pending":
-        problems.append("humanReview.translation is not pending")
+    expected_human_review = "approved" if human_override_approved else "pending"
+    if (candidate.get("humanReview") or {}).get("translation") != expected_human_review:
+        problems.append(f"humanReview.translation is not {expected_human_review}")
     model = candidate.get("modelReview") or {}
-    ids = [group.get("translationGroupId") for group in candidate.get("groups") or []]
-    if model.get("status") != "pass" or model.get("reviewedGroupIds") != ids:
-        problems.append("modelReview did not pass every group")
+    groups = candidate.get("groups") or []
+    ids = [group.get("translationGroupId") for group in groups]
+    expected_model_status = ("pass" if all(basis._semantic_pass(group.get("semanticReview"))
+                                             for group in groups) else "fail")
+    allowed_model_statuses = {expected_model_status} if human_override_approved else {"pass"}
+    if model.get("status") not in allowed_model_statuses or model.get("reviewedGroupIds") != ids:
+        problems.append("modelReview status does not match semantic findings or did not review every group")
     bad = [group.get("translationGroupId") for group in candidate.get("groups") or []
-           if not basis._semantic_pass(group.get("semanticReview"))]
+           if group.get("translationGroupId") not in (accepted_as_is or set())
+           and not basis._semantic_pass(group.get("semanticReview"))]
     if bad:
         problems.append(f"semanticReview not clean in {len(bad)} group(s): {bad[:5]}")
     language = [group.get("translationGroupId") for group in candidate.get("groups") or []
+                if group.get("translationGroupId") not in (accepted_as_is or set())
                 if (group.get("languageReview") or {}).get("status") != "pass"
                 or not all(check.get("status") == "pass" for check in (group.get("languageReview") or {}).get("checks") or [])]
     if language:
         problems.append(f"languageReview not passing in {len(language)} group(s): {language[:5]}")
-    return problems or ["candidate is not machine-review pending"]
+    if problems or human_override_approved:
+        return problems
+    return ["candidate is not machine-review pending"]
 
 
 def qc_groups(candidate: dict, anchor: dict) -> list[dict]:
@@ -255,8 +266,21 @@ def resolve_spoken(index: dict, binding_file: Path, override: Path | None,
     return paths, problems
 
 
+def _machine_findings(candidate: dict) -> list[dict]:
+    """Keep the candidate's semantic and language review evidence visible in preflight reports."""
+    return [{"translationGroupId": group.get("translationGroupId"),
+             "semanticReview": group.get("semanticReview"),
+             "languageReview": group.get("languageReview")}
+            for group in candidate.get("groups") or []
+            if not basis._semantic_pass(group.get("semanticReview"))
+            or (group.get("languageReview") or {}).get("status") != "pass"
+            or not all(check.get("status") == "pass"
+                       for check in (group.get("languageReview") or {}).get("checks") or [])]
+
+
 def resolve_locale(run_dir: Path, index: dict, locale: str, override: Path | None,
-                   spoken_binding: Path | None = None, allow_fake_condenser: bool = False) -> dict:
+                   spoken_binding: Path | None = None, allow_fake_condenser: bool = False,
+                   human_override_path: Path | None = None) -> dict:
     """Paths and blocking problems for one locale, without model calls."""
     spoken_paths: dict = {}
     if spoken_binding is not None:
@@ -271,7 +295,7 @@ def resolve_locale(run_dir: Path, index: dict, locale: str, override: Path | Non
         if path is None:
             return {"locale": locale, "problems": [f"no unique candidate; found {len(ambiguous)}: {ambiguous[:6]}"]}
     candidate = read(path)
-    problems = candidate_problems(candidate)
+    problems = []
     if candidate.get("schemaVersion") != CANDIDATE_SCHEMA:
         problems.append(f"candidate schemaVersion is {candidate.get('schemaVersion')!r}, not {CANDIDATE_SCHEMA!r}")
     else:
@@ -301,7 +325,32 @@ def resolve_locale(run_dir: Path, index: dict, locale: str, override: Path | Non
         covered = [unit_id for group in candidate["groups"] for unit_id in group.get("sourceUnitIds") or []]
         if covered != [unit["sourceUnitId"] for unit in anchor["sourceUnits"]]:
             problems.append("candidate groups do not cover every anchor unit once, in order")
-    if "source" in paths and "anchor" in paths:
+    accepted_as_is: set[str] = set()
+    override_summary = None
+    if human_override_path is not None:
+        paths["humanOverride"] = str(human_override_path)
+        if spoken_binding is not None:
+            problems.append("human override receipts are supported only for the full candidate, not spoken condensation")
+        elif "source" in paths and "anchor" in paths:
+            try:
+                from ..text import human_override
+                receipt = read(human_override_path)
+                human_override.validate_override_receipt(source, anchor, candidate, receipt)
+                accepted_as_is = {row["translationGroupId"] for row in receipt["groupOverrides"]
+                                  if row["disposition"] == "accepted_as_is"}
+                override_summary = {"receiptJsonSha256": json_sha256(receipt),
+                                    "decision": receipt["decision"],
+                                    "reviewer": receipt["reviewer"], "reviewedAt": receipt["reviewedAt"],
+                                    "acceptedAsIsGroupIds": sorted(accepted_as_is),
+                                    "modelReview": candidate.get("modelReview"),
+                                    "machineFindings": _machine_findings(candidate)}
+            except (OSError, ValueError, KeyError, TypeError) as error:
+                problems.append(f"human override receipt is invalid: {error}")
+    elif candidate.get("status") == "human_override_approved":
+        problems.append("human_override_approved candidate requires --human-override LOCALE=PATH")
+    problems += candidate_problems(candidate, accepted_as_is=accepted_as_is,
+                                   human_override_approved=override_summary is not None)
+    if "source" in paths and "anchor" in paths and override_summary is None:
         # The same source and anchor checks Layer 3 applies, before any paid call.
         try:
             _review.current().qc_runtime.validate_target_candidate(read(Path(paths["source"])), read(Path(paths["anchor"])),
@@ -320,7 +369,9 @@ def resolve_locale(run_dir: Path, index: dict, locale: str, override: Path | Non
             if rebound != read(spoken_binding):
                 problems.append("condensation binding differs from one recomputed by the current code; rebind")
     return {"locale": locale, **({"mode": "spoken"} if spoken_binding is not None else {}), "paths": paths,
-            "candidateJsonSha256": json_sha256(candidate), "problems": problems}
+            "candidateJsonSha256": json_sha256(candidate),
+            **({"humanOverride": override_summary} if override_summary is not None else {}),
+            "problems": problems}
 
 
 def binding_path(path: Path) -> Path:
@@ -838,6 +889,8 @@ def main(argv=None) -> int:
                         help="Use this candidate instead of searching the run")
     parser.add_argument("--spoken-binding", action="append", default=[], metavar="LOCALE=PATH",
                         help="Screen the condensed spoken script this spoken_condensation binding names")
+    parser.add_argument("--human-override", action="append", default=[], metavar="LOCALE=PATH",
+                        help="Validate a source-bound v2 human override receipt for this candidate")
     parser.add_argument("--text-backend", choices=("codex", "api", "fake"), default="codex")
     parser.add_argument("--workers", type=int, default=4, help="Parallel Codex CLI calls")
     parser.add_argument("--preflight-only", action="store_true", help="Stop before any model call")
@@ -877,6 +930,12 @@ def main(argv=None) -> int:
         if not path or locale not in locales or locale in bindings:
             parser.error(f"--spoken-binding {item!r}: use LOCALE=PATH once per requested locale ({', '.join(locales)})")
         bindings[locale] = Path(path).resolve()
+    human_overrides = {}
+    for item in args.human_override:
+        locale, _, path = item.partition("=")
+        if not path or locale not in locales or locale in human_overrides:
+            parser.error(f"--human-override {item!r}: use LOCALE=PATH once per requested locale ({', '.join(locales)})")
+        human_overrides[locale] = Path(path).resolve()
     # Fake runs write every receipt, and their own ledger, in a separate subtree,
     # so plumbing output never touches real evidence or repair attempts.
     out = args.out.resolve() / ("fake-plumbing" if args.text_backend == "fake" else "")
@@ -910,7 +969,7 @@ def main(argv=None) -> int:
     resolved = {}
     for locale in locales:
         found = resolve_locale(args.run_dir, index, locale, Path(overrides[locale]) if locale in overrides else None,
-                               bindings.get(locale), args.text_backend == "fake")
+                               bindings.get(locale), args.text_backend == "fake", human_overrides.get(locale))
         if not found["problems"]:
             groups, full_groups = screened_groups(found["paths"])
             policy = read(Path(found["paths"]["policy"]))
