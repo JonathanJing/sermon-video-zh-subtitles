@@ -202,9 +202,10 @@ class CanonicalLayer2ControllerTests(unittest.TestCase):
         self.assertFalse(result['releaseEligible'])
         self.assertEqual(decoded, [('gpt-6.1-sol', 'translator'), ('gpt-6.1-sol', 'reviewer')]*2)
         cached_hashes = {json.loads(path.read_text())["payloadSha256"] for path in self.output.glob("*-astra.json")}
-        expected_hashes = {subject.models.policy_tools.canonical_sha256({
-            "payload": payload, "modelTransportIdentity": CliCaller.execution_identity})
-            for payload in self.calls if payload["reasoning_effort"] == "high"}
+        # The cache key is content identity; the transport is recorded beside the
+        # response, not inside the key (docs/layer2-targeted-repair-and-resume.zh.md).
+        expected_hashes = {subject.models.policy_tools.canonical_sha256(payload)
+                           for payload in self.calls if payload["reasoning_effort"] == "high"}
         self.assertEqual(cached_hashes, expected_hashes)
 
     def test_plugin_failure_keeps_model_evidence_and_records_failed_dependency_leaf(self):

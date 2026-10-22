@@ -386,9 +386,10 @@ successful provider outcome or authorize copying a human approval.
             require(preview_path.is_file(), "prior cache lacks frozen model payload; explicit migration required")
             preview = producer._load(preview_path)
             payload = preview.get("payload")
-            fingerprint = policy_tools.canonical_sha256(
-                {"payload": payload, "modelTransportIdentity": transport_identity}
-                if transport_identity is not None else payload)
+            # Content identity only: the prior cache may have been carried by another
+            # budget authorization, project or route. The frozen preview proves the
+            # exact payload; the caller's transport is not part of what was asked.
+            fingerprint = policy_tools.canonical_sha256(payload)
             cached = producer._load(cache)
             require(isinstance(payload, dict)
                     and preview.get("role") == role

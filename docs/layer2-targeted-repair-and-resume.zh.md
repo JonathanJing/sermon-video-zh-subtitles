@@ -80,6 +80,14 @@
 - worker 把它作为 `resume_cache_from` 传给 runner：单次路径与自动修复的第一轮生效；runner 仍会核对来源、锚点、policy、插件与传输身份，不匹配就失败而不是静默复用。
 - 只有缺失组产生付费调用。
 
+## 缓存指纹与传输身份解耦（2026-10-21）
+
+缓存键现在是**内容身份**（模型、提示词、源、规则、payload），传输身份（项目、路由、预算授权）记录在响应旁边而不是键里。
+
+- 起因：预算授权哈希被算进缓存指纹，导致换一份预算授权后，即使 payload 完全相同也永远命中不了缓存，跨运行续跑因此不可能。
+- 旧缓存（本次改动前写入）仍带传输绑定指纹：续跑时用其冻结的 `policy-preview.json` 里的 payload 证明内容一致后接受，并把原指纹记录为 `legacyFingerprintSha256`，再改写为内容指纹。
+- 非 `openai_api` 传输仍拒绝跨运行复用（CLI 的请求身份由命令行调用决定）。
+
 ## 输出上限下限
 
 `plan_run_budgets` 对 high effort 角色要求 `maxCompletionTokens >= 2048`（`MIN_COMPLETION_TOKENS`）。reasoning token 计入 completion 上限：1024 曾把一次翻译响应截断在 746 组中的第 564 组，代价 \$13.21。
