@@ -2,7 +2,7 @@
 
 状态：**设计稿，2026-10-21。未实现、未运行。** 本页不改变任何现行门禁、豁免规则、schema 或模型政策，不授权付费调用、Spark 独占会话或发布。它回答一个问题：如果只从"视频里有一个人按顺序说了 N 句话"出发，不先假定现有流水线的任何组织方式，一条诚实、可绑定、可局部修复的多语言配音路径最少需要哪些步骤；然后对照现有仓库说明每一步今天用什么、缺什么。[四层合同](../multilingual-production-interfaces.zh.md)和 [AGENTS.md](../../AGENTS.md) 的七条不变式照旧成立；本页只是在这些边界内重新排列工作，不是另一套发布资格。
 
-**2026-10-21 用户决定：先以代理直做的实验验证路径，不接现有流程，不做哈希绑定校验，所有工作在代理会话里完成。** 实验线与可运行步骤在 [experiments/sentence-first-agent/AGENTS.md](../../experiments/sentence-first-agent/AGENTS.md)；第五节的 A–C 批（原声切片、逐句记录、口播规格的包内工具）相应推迟，等实验结论再决定要不要接回正式路径。本页其余内容描述的是接回正式路径时的样子。
+**2026-10-21 用户决定：先以代理直做的实验验证路径，不接现有流程，不做哈希绑定校验，所有工作在代理会话里完成。** 这条代理直做的路线已经跑通并发布过正式页面，现状见[路线文档](../sentence-first-agent-production.zh.md)，可运行步骤在 [experiments/sentence-first-agent/AGENTS.md](../../experiments/sentence-first-agent/AGENTS.md)；第五节的 A–C 批（原声切片、逐句记录、口播规格的包内工具）相应推迟，等实验结论再决定要不要接回正式路径。本页其余内容描述的是接回正式路径时的样子。
 
 相关设计：[逐组独立任务](per-group-independent-pipeline.zh.md)（组记录、合并步骤、失效规则）、[层内解耦与预生成](../multilingual-intralayer-review-decoupling.zh.md)（`preview_only` 单元配音）、[机器质检豁免](../machine-quality-waiver.zh.md)（校准、修复账本、降级规则）、[Speaker Voice Registry](../multilingual-speaker-voice-registry.zh.md)（声音身份与授权）。
 
