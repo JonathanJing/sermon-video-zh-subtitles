@@ -113,6 +113,24 @@ python3 $EXP/finish_run.py --run $RUN --remote achillesjing@192.168.1.152:senten
 
 回转写的同音字差异（它/他、再/在）不算问题；人名、数字、否定词不一致要人听。分数只是提示，不是听审。把预览发给用户听，把落后最多的句、读错的句、译得别扭的句和用户结论写进 `run.md`。要改某句：改 `translations.jsonl` 或 `review.json` 里那一行，重跑第 3 步，删掉 Spark 上该句的 `tts/<id>.wav` 和 `asr.jsonl` 里那一行，再跑第 4、5 步，只会重做这一句。
 
+## 双人播客
+
+2026-10-22 播客整期首跑见[报告](../../docs/reports/20261022-sentence-first-podcast-full-episode.zh.md)。和单讲员相比多三步：
+
+1. **说话人。** 拿到说话人区分结果和用户确认的标签映射后，在第 1 步之后跑
+
+   ```bash
+   python3 $EXP/assign_speakers.py --run $RUN --segments <segments.json> --mapping <speaker-label-mapping.json> --use-text
+   ```
+
+   每句写入 `speakerId`；`speakers.json` 列出一致度低于 0.8 的句子，要人看。`--use-text` 按转写逐词对齐投票，短附和不会落到对方名下。
+2. **两种声音。** `review.json` 用 `"speakers": {"<speakerId>": "<speaker key>", ...}` 代替单个 `speaker`。两位讲员都要在 Registry 里有授权和本语言能力。
+3. **按讲员分开渲染。** 每个讲员一个 checkpoint，一次只加载一个，所以 `spark_run.sh` 每次带 `--speaker <key>` 只跑一位，两位都跑完再跑一次 `--steps asr`。
+
+**独占会话。** Spark 处于另一个独占会话时，不要直接起容器：会话收尾会因 `unmanaged_running_container` 失败。用 `spark_session_job.py` 在自己的会话里把每一步登记成任务（开任务、带标签启动、绑定容器、等待、结束）。会话一次只接纳一个运行中的任务，语言之间排队。登记的容器不能用 `--rm`，会话关闭（`finish`）后再按标签删掉停止的容器。
+
+**时长。** 对谈几乎没有停顿，自然语速的整期配音比原片长约四分之一，落后会累积到十分钟以上。要跟视频同步，口播稿需要整体精简，或者不跟视频同步、作为独立音轨。
+
 ## 完成的样子
 
 `run.md` 能让另一个人复现：来源、窗口、模型与 checkpoint、每步的决定、哪些句改过、听感结论、这条路径哪里顺哪里卡。这就是实验的交付物；音频留在本机。
