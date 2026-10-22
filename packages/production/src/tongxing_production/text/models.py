@@ -714,6 +714,17 @@ def _save_payload_cache_success(out: Path, stem: str, request: dict[str, Any],
         save_new(path, receipt, private=True)
 
 
+def _reusable_cache_matches(cache: Path, payload: dict[str, Any], fingerprint: str,
+                            role: str, model: str) -> bool:
+    """A stored response answers this exact payload (legacy fingerprints tolerated)."""
+    stored = producer._load(cache)
+    if stored.get('payloadSha256') == fingerprint:
+        return True
+    if isinstance(stored.get('response'), dict):
+        return _legacy_cache_payload_matches(cache, payload, stored, role, model)
+    return _legacy_cache_payload_matches(cache, payload, stored, role, model)
+
+
 def _resume_request_file(directory: Path) -> Path | None:
     """The frozen request of the attempt a resume directory belongs to.
 
@@ -743,7 +754,8 @@ def _model_call(role: str, prompt: dict[str, Any], policy: dict[str, Any],
                 output: Path, api_key: str,
                 caller: Callable[[str, dict[str, Any]], dict[str, Any]],
                 reuse_from: Path | None = None, *, cache_only: bool = False,
-                response_observer=None, request_limits=None, rule_receipt=None) -> dict[str, Any]:
+                response_observer=None, request_limits=None, rule_receipt=None,
+                tolerate_mismatch: bool = False) -> dict[str, Any]:
     verifier = getattr(caller, 'verify_execution', None)
     if verifier is not None:
         verifier(api_key)  # Includes cache hits: changed route/key cannot consume old results.
@@ -759,6 +771,14 @@ def _model_call(role: str, prompt: dict[str, Any], policy: dict[str, Any],
     if migrated_from is not None:
         require(cache_only and reuse_from is None, "Explicit migration must be cache-only and isolated")
         reuse_from = migrated_from
+    if reuse_from is not None and not output.exists() and tolerate_mismatch:
+        # A resume source is advisory: a group whose prompt changed (for example one
+        # carrying a human ruling) must be translated again instead of aborting the run.
+        previous_raw = reuse_from.with_suffix('.raw.json')
+        if reuse_from.is_file() and not _reusable_cache_matches(reuse_from, payload, fingerprint, role, model):
+            reuse_from = None
+        elif previous_raw.is_file() and not _reusable_cache_matches(previous_raw, payload, fingerprint, role, model):
+            reuse_from = None
     if reuse_from is not None and not output.exists():
         validate_api_marker(reuse_from.with_suffix('.started.json'),caller,api_key,payload,fingerprint,role)
         previous_raw = reuse_from.with_suffix('.raw.json')
@@ -1967,7 +1987,8 @@ def _run_prepared_groups(request: dict[str, Any], anchor: dict[str, Any],
                                          payload_translator_cache["path"]
                                          if payload_translator_cache is not None else None,
                                          cache_only=cache_only or backfill_payload_cache_success,
-                                         rule_receipt=rule_receipt)
+                                         rule_receipt=rule_receipt,
+                                         tolerate_mismatch=resume_cache_from is not None)
                 if payload_translator_cache is not None:
                     _require_replayed_payload_cache(
                         astra_path, payload_translator_cache, "translator", translated)
@@ -2070,7 +2091,8 @@ def _run_prepared_groups(request: dict[str, Any], anchor: dict[str, Any],
                                                 payload_reviewer_cache["path"]
                                                 if payload_reviewer_cache is not None else None,
                                                 cache_only=cache_only or backfill_payload_cache_success,
-                                                rule_receipt=rule_receipt)
+                                                rule_receipt=rule_receipt,
+                                                tolerate_mismatch=resume_cache_from is not None)
                 if payload_reviewer_cache is not None:
                     _require_replayed_payload_cache(
                         sol_path, payload_reviewer_cache, "reviewer", reviewed_response)
