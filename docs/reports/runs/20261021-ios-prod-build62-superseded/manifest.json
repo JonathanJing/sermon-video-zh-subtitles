@@ -1,0 +1,27 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261021-ios-prod-build62-superseded",
+  "runs": [
+    {
+      "label": "build62-superseded",
+      "source": "~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/artifacts/ios-formal-push-validation/reports/build62-superseded",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "build62-superseded",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 412,
+      "truncated": false,
+      "sha256": "1077619f9ee9b7d3a542163447434f85898e3b08fd6d75ae92df281e7b957b54",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}
