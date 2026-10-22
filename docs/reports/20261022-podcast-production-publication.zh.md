@@ -24,6 +24,14 @@
 4. HTTP 核验 12 项：GET 与 SHA 全部一致，三条 MP3 均返回 206 与正确 Content-Range。
 5. 第二次部署：三语 release v2（绑定核验证据）+ v5/v4/v3 追加本页，版本 `f69a0a5f1e1af73a`。发布器回读 v3/v4/v5 一致；独立回读三份目录与三份 release 字节一致。默认页面不变（`resi-20261018-15030286`）。
 
+## 发布后修复：iOS 读不到文稿
+
+用户在 iPhone 上看到音频可播，但“文稿暂时无法读取”。原因：content 的 `durationSeconds` 写成批准窗口长度 2400.5 s，而全文 cue 用媒体时间，最后几句结束于 2406.0 s；iOS `validateCues` 要求每句结束不超过 `durationSeconds`，整份文稿被拒。浏览器 HTTP 核验和 schema 校验都发现不了这一点。
+
+修复：三语 content 改为 `durationSeconds=2406.0`，写到新路径 `content/<pageId>/<locale>-r2.json`（已发布的旧文件不覆盖、不再被引用）；发布前用与 iOS 相同的规则逐句检查。先部署新 content（`7da71006cba9b577`），12 项 HTTP 核验通过，再部署改绑后的三语 release 和三份目录（`1719a01b0c552a79`），回读一致；按 App 的读取路径从目录到 release 到 content 与字幕，三语逐句检查通过。
+
+列表里不显示“证道播客”小标题是已安装 App 版本的限制：它只认两个旧页面的固定类别，不读目录的 `displayCategory`；数据已正确，需新版 App。
+
 ## 外部可见的变化
 
 - 新页面一项，三语可选。

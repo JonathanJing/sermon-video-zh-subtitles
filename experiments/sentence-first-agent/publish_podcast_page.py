@@ -196,7 +196,8 @@ def cmd_assets(out: Path) -> dict:
     return summary
 
 
-def stage(base: Path, out: Path, add_public: Path | None, files: dict[str, bytes] | None = None) -> None:
+def stage(base: Path, out: Path, add_public: Path | None, files: dict[str, bytes] | None = None,
+          replace: frozenset[str] = frozenset()) -> None:
     contract.require(not out.exists(), "Use a new snapshot directory")
     out.mkdir(parents=True)
     shutil.copytree(base / "public", out / "public")
@@ -215,7 +216,8 @@ def stage(base: Path, out: Path, add_public: Path | None, files: dict[str, bytes
             added.append("/" + str(rel))
     for rel, data in (files or {}).items():
         target = out / "public" / rel
-        contract.require(not target.exists() or rel in contract.CATALOG_FILES.values(), "Refusing to overwrite: " + rel)
+        contract.require(not target.exists() or rel in contract.CATALOG_FILES.values() or rel in replace,
+                         "Refusing to overwrite: " + rel)
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_bytes(data)
         added.append("/" + rel)
@@ -318,6 +320,83 @@ def cmd_stage2(stage1: Path, assets: Path, evidence_path: Path, out: Path) -> di
     return {"staged": str(out), "changed": sorted(files), "defaultPageId": v3["defaultPageId"]}
 
 
+def ios_cue_check(cues, duration, requires_units):
+    """The iOS reader's validateCues (PublishedTranscript.swift), so a bad file never ships again."""
+    contract.require(0 < len(cues) <= 10_000, "cue count")
+    previous, ids = 0.0, set()
+    for cue in cues:
+        contract.require(cue["start"] >= previous and cue["start"] < cue["end"] and cue["end"] <= duration + 0.001
+                         and cue["text"].strip() and cue["textGroupId"] not in ids,
+                         f"iOS would reject cue {cue['textGroupId']} ({cue['start']}–{cue['end']} vs {duration})")
+        contract.require(not requires_units or bool(cue.get("sourceUnitIds")), "missing sourceUnitIds")
+        ids.add(cue["textGroupId"])
+        previous = cue["end"]
+
+
+def cmd_fix_content(assets: Path, out: Path) -> dict:
+    """2026-10-22 fix: content durationSeconds was the window length (2400.5) while its cues run on media
+    time up to the window end (2406.0); iOS rejects cues past durationSeconds. New content files at new
+    paths, so the published bytes are never overwritten; the releases are re-bound to them."""
+    contract.require(not out.exists(), "Use a new fix directory")
+    result = {}
+    for loc in LOCALES:
+        content = json.loads((assets / f"public/content/{PAGE_ID}/{loc}.json").read_text())
+        captions = json.loads((assets / f"public/captions/{PAGE_ID}/{loc}.json").read_text())
+        content["durationSeconds"] = WINDOW_END
+        ios_cue_check(content["cues"], content["durationSeconds"], True)
+        ios_cue_check(captions["cues"], content["audioDurationSeconds"], False)
+        contract.require(len(content["cues"]) == len(captions["cues"])
+                         and {c["textGroupId"] for c in content["cues"]} == {c["textGroupId"] for c in captions["cues"]},
+                         "content and captions groups differ")
+        rel = f"content/{PAGE_ID}/{loc}-r2.json"
+        write_json(out / "public" / rel, content)
+        release = json.loads((assets / f"releases/{loc}.json").read_text())
+        for asset in release["assets"]:
+            if asset["role"] == "content":
+                asset.update(path="/" + rel, sha256=sha_file(out / "public" / rel))
+        release["packageId"] = f"{PAGE_ID}-{loc}-production-v2"
+        contract.validate_release_schema(release)
+        write_json(out / f"releases/{loc}.json", release)
+        result[loc] = {"durationSeconds": content["durationSeconds"], "lastCueEnd": content["cues"][-1]["end"], "path": "/" + rel}
+    return result
+
+
+def cmd_stage_fix_release(base: Path, fix: Path, evidence_path: Path, out: Path) -> dict:
+    """Replace the three releases (re-bound to the fixed content) and update only their hashes in the catalogs."""
+    evidence = json.loads(evidence_path.read_text())
+    contract.require(evidence["status"] == "pass", "HTTP verification did not pass")
+    contract.require(json.loads((base / "deployment-attempt-v2.json").read_text()).get("status") == "deployed", "Base is not deployed")
+    evidence_sha = sha_file(evidence_path)
+    public = base / "public"
+    files, hashes = {}, {}
+    for loc in LOCALES:
+        release = json.loads((fix / f"releases/{loc}.json").read_text())
+        release.update(status="published_http_verified", httpVerification={"status": "pass", "evidenceSha256": evidence_sha})
+        contract.validate_release_schema(release)
+        data = (json.dumps(release, ensure_ascii=False, indent=1, sort_keys=True) + "\n").encode()
+        files[f"releases-v2/{PAGE_ID}/{loc}.json"] = data
+        hashes[loc] = hashlib.sha256(data).hexdigest()
+    old = {name: json.loads((public / contract.CATALOG_FILES[name]).read_text()) for name in contract.CATALOG_FILES}
+    v5 = copy.deepcopy(old[contract.CATALOG_V5])
+    page = next(p for p in v5["pages"] if p["id"] == PAGE_ID)
+    for loc in LOCALES:
+        page["targets"][loc]["releasePackageJsonSha256"] = hashes[loc]
+    v4 = contract.project_legacy_catalog_v4(contract.validate_catalog_schema(v5))
+    v3 = contract.project_human_catalog(v4)
+    for name, new in ((contract.CATALOG_V4, v4), (contract.CATALOG_V3, v3)):
+        strip = lambda c: {**c, "pages": [p for p in c["pages"] if p["id"] != PAGE_ID]}
+        contract.require(strip(new) == strip(old[name]), name + ": other pages changed")
+    for loc in LOCALES:
+        release = json.loads(files[f"releases-v2/{PAGE_ID}/{loc}.json"])
+        contract.validate_v2_release_target(release, page, loc)
+        content_path = next(a["path"] for a in release["assets"] if a["role"] == "content").lstrip("/")
+        contract.validate_content_target(json.loads((public / content_path).read_text()), page, loc)
+    for name, value in ((contract.CATALOG_V5, v5), (contract.CATALOG_V4, v4), (contract.CATALOG_V3, v3)):
+        files[contract.CATALOG_FILES[name]] = (json.dumps(value, ensure_ascii=False, indent=2, sort_keys=True) + "\n").encode()
+    stage(base, out, None, files, replace=frozenset(f"releases-v2/{PAGE_ID}/{loc}.json" for loc in LOCALES))
+    return {"staged": str(out), "changed": sorted(files)}
+
+
 def cmd_readback(stage2: Path) -> dict:
     results = {}
     for rel in [*contract.CATALOG_FILES.values(), *(f"releases-v2/{PAGE_ID}/{loc}.json" for loc in LOCALES)]:
@@ -341,7 +420,19 @@ def main() -> int:
     s2.add_argument("--stage1", type=Path, required=True); s2.add_argument("--assets", type=Path, required=True)
     s2.add_argument("--evidence", type=Path, required=True); s2.add_argument("--out", type=Path, required=True)
     rb = sub.add_parser("readback"); rb.add_argument("--stage2", type=Path, required=True)
+    fc = sub.add_parser("fix-content"); fc.add_argument("--assets", type=Path, required=True); fc.add_argument("--out", type=Path, required=True)
+    fa = sub.add_parser("stage-fix-assets"); fa.add_argument("--base", type=Path, required=True)
+    fa.add_argument("--fix", type=Path, required=True); fa.add_argument("--out", type=Path, required=True)
+    fr = sub.add_parser("stage-fix-release"); fr.add_argument("--base", type=Path, required=True); fr.add_argument("--fix", type=Path, required=True)
+    fr.add_argument("--evidence", type=Path, required=True); fr.add_argument("--out", type=Path, required=True)
     args = p.parse_args()
+    if args.cmd == "fix-content":
+        print(json.dumps(cmd_fix_content(args.assets, args.out), ensure_ascii=False)); return 0
+    if args.cmd == "stage-fix-assets":
+        stage(args.base, args.out, args.fix / "public")
+        print(json.dumps({"staged": str(args.out)})); return 0
+    if args.cmd == "stage-fix-release":
+        print(json.dumps(cmd_stage_fix_release(args.base, args.fix, args.evidence, args.out), ensure_ascii=False)); return 0
     if args.cmd == "assets":
         result = cmd_assets(args.out)
     elif args.cmd == "baseline":
