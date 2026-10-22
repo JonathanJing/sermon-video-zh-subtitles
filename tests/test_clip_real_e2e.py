@@ -389,6 +389,22 @@ class SparkTests(unittest.TestCase):
         self.assertEqual(command[command.index("--seed") + 1], "42")
         self.assertNotIn("--unit-instructions", command)
 
+    def test_render_and_compact_pass_exactly_one_voice_authorization_flag(self):
+        common = ["--locale", "ko", "--stage", "/stage/run", "--code", "repo-x", "--job", "job.json"]
+        files = [arg for name in spark.CLI_INPUTS for arg in ("--" + name, name + ".json")]
+        for flag in spark.VOICE_FLAGS:
+            args = spark.parser().parse_args(["render", *common, *files, "--" + flag, "voice.json"])
+            cli, voice_flag = spark.cli_inputs(args)
+            self.assertEqual((voice_flag, cli["voice-authorization"].name), ("--" + flag, "voice.json"))
+            tail = spark.render_command(spark.load_runtime(), "/stage", "repo-x", lambda name: name, "/work/j",
+                                        max_end_lag=8.0, unit_instructions=None, voice_flag=voice_flag)
+            self.assertEqual(tail[tail.index("--" + flag) + 1], "voice-authorization")
+            self.assertEqual(sum(tail.count("--" + f) for f in spark.VOICE_FLAGS), 1)
+        with self.assertRaises(SystemExit):
+            spark.parser().parse_args(["compact", *common, *files, "--raw-name", "r", "--remote-name", "c",
+                                       "--max-end-lag-seconds", "8", "--clip-voice-authorization", "a.json",
+                                       "--source-voice-authorization", "b.json"])
+
     def test_every_spark_launch_puts_the_production_package_on_the_path(self):
         runtime = spark.load_runtime()
         tail = spark.render_command(runtime, "/stage", "repo-x", lambda name: name, "/work/output/ko-raw/speech-job",
