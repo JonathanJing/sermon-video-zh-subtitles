@@ -13,7 +13,7 @@
 ## 构建与验证
 
 - Xcode 27.1 的 Release Archive、App Store Connect IPA 导出通过。IPA SHA-256：`4fb19ab820a3b371dedb0d2156f309e07a2fac65a47fe3c1fc0fbb5d7951605c`。实际 IPA 内 App／扩展为 `1.26.21 (64)`，正式内容源，严格代码签名通过；分发签名的 `aps-environment=production`、`get-task-allow=false`。
-- Core 推送测试 2/2、后端测试 6/6、Hosting 测试 84/84、目录兼容测试 36/36、Duo iOS 27.1 正式版设置 UI 测试 1/1、Duo 海报截图测试 2/2 通过。Cloud Function 为 `ACTIVE`，公网合成登记路径通过，合成记录已删除。只读运营计划显示零个有效订阅，未触发 APNs 群发。
+- Core 推送测试 2/2、后端测试 6/6、Hosting 测试 84/84、目录兼容测试 36/36、Duo iOS 27.1 正式版设置 UI 测试 1/1、Duo 海报截图测试 2/2 通过。Cloud Function 为 `ACTIVE`，公网合成登记及退出路径通过，合成记录 inactive；退出后的只读运营计划显示零个有效订阅，未触发 APNs 群发。
 - 中／英各两张 Duo 外屏截图已上传并读回 App Store Connect 的 `IPHONE_DUO_PROFILE`；其他原有截图位仍保留。Duo 截图与模拟器 UI 不代替真机通知、听感或现场验收。
 - App Store Connect 的 1.26.21 版本已关联构建 64，审核备注已写入并全文读回；版本仍为 `PREPARE_FOR_SUBMISSION`，发布方式 `MANUAL`。
 

@@ -32,6 +32,6 @@
 
 ## 部署与验收状态
 
-生产 Hosting 站在 Firebase 项目 `ai-for-god-caption-dev`。独立 Firestore Native 数据库 `sermon-push` 与运行身份 `sermon-push-runtime@ai-for-god-caption-dev.iam.gserviceaccount.com` 已建立；运行身份的数据库使用权限限定在该数据库。`sermonPushSubscription`（Functions v2，`us-west1`）已读回 `ACTIVE`，`sermon-push` 客户端规则拒绝直连。生产 Hosting 版本 `c2febd95227a047b` 在现有 `/api/**` 路由前加入 `/api/push/**`；部署前后公开资产哈希相同。公网合成删除请求通过，测试记录已清除。`server-config.example.json` 需复制为被忽略的 `server-config.json`；配置缺失或环境不符时函数启动失败。不要把本函数加入 Firebase Dev 的 Hosting 站。正式 App ID 的 Push Notifications capability 已启用；1.26.21（63）的 IPA 与真机登记、单设备 APNs 接收仍需分别核验。
+生产 Hosting 站在 Firebase 项目 `ai-for-god-caption-dev`。独立 Firestore Native 数据库 `sermon-push` 与运行身份 `sermon-push-runtime@ai-for-god-caption-dev.iam.gserviceaccount.com` 已建立；运行身份的数据库使用权限限定在该数据库。`sermonPushSubscription`（Functions v2，`us-west1`）已读回 `ACTIVE`，`sermon-push` 客户端规则拒绝直连。生产 Hosting 版本 `c2febd95227a047b` 在现有 `/api/**` 路由前加入 `/api/push/**`；部署前后公开资产哈希相同。公网合成登记与退出请求通过，测试记录现为 inactive，退出后只读运营计划为零个有效收件人。`server-config.example.json` 需复制为被忽略的 `server-config.json`；配置缺失或环境不符时函数启动失败。不要把本函数加入 Firebase Dev 的 Hosting 站。正式 App ID 的 Push Notifications capability 已启用；1.26.21（64）的 IPA 已核验生产 APNs 签名并进入 Rooted 内测，真机登记、单设备 APNs 接收仍需分别核验。
 
 本地定向验证：`npm ci --ignore-scripts && npm test`；`node --check index.mjs && node --check send.mjs`。真实生产目录的只读预检可调用 `verifiedPublication()`；它不会读取 Firestore 或发送 APNs。运营前复核 npm 锁文件、IAM、数据库 TTL（`pushSubscriptions.expiresAt`、`pushRateLimits.expiresAt`、`pushDispatches.expiresAt`）、Hosting rewrite、签名和私有配置。部署后的真实订阅登记、退出、单设备 APNs、计划全量投递分别留独立脱敏回执；测试通知或无订阅计划不构成群发验收。
