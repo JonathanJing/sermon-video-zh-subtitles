@@ -14,6 +14,8 @@
 
 这是独立的个人开源项目，与 Mariners Church 无隶属、背书或运营关系。使用公开或已获授权的媒体，并让生成的翻译、配音和说明保留来源与审核状态。
 
+**试听：** [两段 60 秒演示](https://ai-for-god-sermon-audio-dev.web.app/demos/) — Eric Geiger 与 Steve Bang Lee，英文 → 中文 → 韩文 → 西文。
+
 ## 界面截图
 
 以下是 2026-10-11 证道在正式站的浏览器截图。页面语言和证道语言是两个独立控件；三种证道语言共用同一份英文来源。截图只说明渲染结果，不代表设备或现场验收。
@@ -30,6 +32,25 @@
   <img src="docs/assets/readme/ios-listening-zh.png" width="300" alt="同行 iOS 收听界面（iPhone 模拟器）" />
   <img src="docs/assets/readme/ios-transcript-zh.png" width="300" alt="同行 iOS 全文界面（iPhone 模拟器）" />
 </p>
+
+## 两段 60 秒演示
+
+两段演示片用同一段证道画面连续播放，声音依次切换为英文原声、中文、韩语、西语，每种语言约 15 秒。英文段只显示英文字幕；三种配音段在译文上方保留英文原句。以下是 Dev 预览，不是正式站页面。
+
+| Eric Geiger | Steve Bang Lee |
+|---|---|
+| [![Eric Geiger 60 秒演示](docs/assets/readme/demo-eric-poster.png)](https://ai-for-god-sermon-audio-dev.web.app/demos/) | [![Steve Bang Lee 60 秒演示](docs/assets/readme/demo-steve-poster.png)](https://ai-for-god-sermon-audio-dev.web.app/demos/) |
+| 启示录 2–3 章 · 60.6 秒 · 正式四层片段包 | 启示录 10:8–11 · 60 秒 · 逐句优先代理路线 |
+
+[在同一页观看两段](https://ai-for-god-sermon-audio-dev.web.app/demos/) · [完整来源与 SHA-256](docs/demos.zh.md)
+
+**说明什么。** 一份英文来源可以生成三种语言的文字、讲员本人音色的合成配音和随声字幕；两个讲员、两条生产路径都能走通。
+
+**不说明什么。** 不是完整证道，不是逐句同步或口型同步，不是新的正式发布包，也没有设备或现场验收。15 秒切点可能落在句子中间，字幕跟随配音，不跟随原画面。
+
+**审核。** Eric 的英文、三语文字和音频包已人工批准（2026-09-24）；60 秒剪接是演示剪辑，不是新的发布包。Steve 的三种配音由用户听审并批准（2026-10-22）；文字复用机器复核的句表。两段都没有设备或现场验收。
+
+来源：Mariners Church 2026-09-20、2026-10-18 周末证道。本项目与 Mariners Church 无隶属关系。
 
 ## 主要模块
 
