@@ -21,11 +21,12 @@
     },
     "deepseek": {
       "reported": "deepseek-flash",
-      "effort": "high",
+      "effort": "low",
       "transport": "DSH session",
       "versionBound": false,
       "receiptAvailable": false,
-      "note": "The Codex retry with deepseek/deepseek-v4.1-flash-1017 returned HTTP 400 model not supported under the ChatGPT account."
+      "note": "Session persisted modelSelection.lastUsed.reasoningEffort=low; the report's DeepSeek arm is low-effort output. A high-effort translation rerun exists in 20261021-deepseek-speed-test.zh.md but was not quality-ranked. The Codex retry with deepseek/deepseek-v4.1-flash-1017 returned HTTP 400 model not supported under the ChatGPT account.",
+      "requestedEffort": "high"
     }
   },
   "source": {

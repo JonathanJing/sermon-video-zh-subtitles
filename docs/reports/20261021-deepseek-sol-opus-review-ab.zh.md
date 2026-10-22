@@ -2,17 +2,19 @@
 
 **状态：** `experimentOnly=true`、`productionEligible=false`、`humanApproval=false`。这是一次小样本质量评审，不是生产运行，也不是人工批准。
 
+> **2026-10-21 21:20 更正：** 本报告最初把 DeepSeek 臂记为 high；复核会话持久状态后，实际 `reasoningEffort=low`。下面的质量排名只对 low 档成立。high 档已于同日用 headless 重跑 13 组，速度与样例见 [DeepSeek 速度测试](20261021-deepseek-speed-test.zh.md)；high 档尚未重做 39 段质量排名。
+
 ## 结论先行
 
 | 项目 | Sol | Opus | DeepSeek |
 |---|---|---|---|
-| 模型与强度 | `gpt-6.1-sol` high | `claude-opus-5-5` high | 当前 DSH 会话 `deepseek-flash` high |
+| 模型与强度 | `gpt-6.1-sol` high | `claude-opus-5-5` high | 当前 DSH 会话 `deepseek-flash` **low（实际）** |
 | 13 组中第一名 | **6** | 1 | **6** |
 | 严重语义错误 | 0 | 0 | 0 |
 | 审核建议修改段数 | 6 / 39 | 10 / 39 | 5 / 39（自审） |
 | 术语一致性 | 中：1 处 `AI`、2 处“沙箱” | 低：3 处 `AI`、2 处书卷名缺《》 | 高：0 处 `AI`，“沙盒”与《启示录》一致 |
 | 会众可读性 | **最稳、最像讲道** | 口语最强，个别过俗或过强 | 高，但个别地方增义 |
-| 速度（沿用 20261008 收据） | 中位 14.48 秒/组 | **中位 5.72 秒/组，13/13 更快** | 本轮未测 |
+| 速度（不同口径，见[速度测试](20261021-deepseek-speed-test.zh.md)） | 中位 14.48 秒/组 | **中位 5.72 秒/组，13/13 更快** | 中位约 3.81 秒/组（headless，两轮合并） |
 
 **判定：Sol 以微弱优势第一，DeepSeek 第二，Opus 第三。**
 
@@ -33,7 +35,7 @@
 | 源文性质 | 一段关于人工智能与《启示录》的英文讲道节选；不是人工金标 |
 | 现有速度证据 | 20261008 `summary.json`：Sol 合计 187.698 秒，Opus 合计 81.524 秒，Opus 13/13 组更快 |
 
-用户指定的是 DeepSeek V4.1 Flash high。DeepSeek 臂在本会话内直接生成：当前会话运行时只报告 `deepseek-flash`，没有暴露可绑定的精确版本串、token 收据或供应商金额。因此它**不等同于**已冻结的 `deepseek/deepseek-v4.1-flash-1017` 生产身份。尝试用本机 Codex 以该模型 ID 复跑时，ChatGPT 账户返回 `400 model is not supported`，所以本轮没有走通带收据的 DeepSeek 调用；这一点必须在引用结论时保留。
+用户指定的是 DeepSeek V4.1 Flash high，但复核会话持久状态发现它实际以 `reasoningEffort=low` 运行；因此本报告的 DeepSeek 臂是 **low 档输出**。当前会话运行时只报告 `deepseek-flash`，没有暴露可绑定的精确版本串、token 收据或供应商金额。因此它**不等同于**已冻结的 `deepseek/deepseek-v4.1-flash-1017` 生产身份。尝试用本机 Codex 以该模型 ID 复跑时，ChatGPT 账户返回 `400 model is not supported`，所以本轮没有走通带收据的 DeepSeek 调用；这一点必须在引用结论时保留。
 
 ## 方法
 
@@ -148,14 +150,14 @@ DeepSeek 对 Sol 和 Opus 各审 39 段，结论都是 **0 严重语义错误**�
 | 更快组数 | 0 | **13 / 13** |
 | 计费口径 | 订阅额度 | 列表价折算 US$0.326，不是实际扣款 |
 
-DeepSeek 臂没有可比的墙钟或 token 收据，因此**不参与速度排名**。20261017 的六段实验曾记录 DeepSeek 初译 24.284 秒、审核 167.036 秒（high），但那是另一批文本、另一个调用路径，不能直接搬来与这 13 组比较。
+DeepSeek 臂在本报告中没有同批的墙钟或 token 收据，因此这里的质量排名不计速度；同日单独做的 headless 速度测试见[DeepSeek 速度测试](20261021-deepseek-speed-test.zh.md)，13 组初译中位约 3.81 秒/组（high 两轮合并），但那是另一套 harness 口径，不能与 Sol/Opus 的 CLI 收据视为严格同条件。20261017 的六段实验曾记录 DeepSeek 初译 24.284 秒、审核 167.036 秒（high），同样是另一批文本、另一个调用路径。
 
 ## 偏差与限制
 
 1. **同源评审偏差。** DeepSeek 既生成自己的译文，又评审三条臂。即使先看源文、再打分，仍可能对自己的措辞更宽容；DeepSeek 的 5 段自审应视为下限，不是独立结论。
 2. **单一评审、单一批次。** 13 组 39 段来自同一段讲道，不能代表多讲员、多系列或诗歌/引用密集的段落。
 3. **无人工金标。** “第一名”是审读判断，不是人工双语裁定；`humanApproval=false`。
-4. **DeepSeek 身份未绑定。** 会话运行时只报告 `deepseek-flash`，没有精确版本、token 和金额收据；与已冻结的 `deepseek/deepseek-v4.1-flash-1017` 不能画等号。
+4. **DeepSeek 身份与强度未绑定。** 会话实际 `reasoningEffort=low`，与用户要求的 high 不同；运行时只报告 `deepseek-flash`，没有精确版本、token 和金额收据，与已冻结的 `deepseek/deepseek-v4.1-flash-1017` 不能画等号。high 档 speed 重跑见[速度测试](20261021-deepseek-speed-test.zh.md)，但未重做质量排名。
 5. **没有 L3/L4 证据。** 未生成音频、未做回转写、未构建页面、未发布、未做浏览器/设备/场地验收。
 6. **Opus 的“王储”与 Sol 的“主”都带解释性。** 讲道语境下可接受，但严格字幕审读应把它们标成“解释性补充”，而不是原文直译。
 
