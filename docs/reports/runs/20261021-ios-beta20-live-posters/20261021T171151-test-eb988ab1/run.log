@@ -1,0 +1,242 @@
+
+$ /usr/bin/xcrun xcodebuild -project ~/.codex/worktrees/ios-next-beta-poster-push/sermon-video-zh-subtitles/apps/tongxing-ios/Tongxing.xcodeproj -list -json -disableAutomaticPackageResolution
+{
+  "project" : {
+    "configurations" : [
+      "BetaDebug",
+      "BetaRelease",
+      "Debug",
+      "Release"
+    ],
+    "name" : "Tongxing",
+    "schemes" : [
+      "ListeningActivityExtension",
+      "Tongxing",
+      "TongxingBeta",
+      "TongxingCore",
+      "TongxingInfrastructure",
+      "TongxingPreview",
+      "TongxingScreenshots"
+    ],
+    "targets" : [
+      "Tongxing",
+      "ListeningActivityExtension",
+      "TongxingTests",
+      "TongxingUITests"
+    ]
+  }
+}
+
+$ /usr/bin/xcrun simctl list devices available --json
+{
+  "devices" : {
+    "com.apple.CoreSimulator.SimRuntime.iOS-27-0" : [
+      {
+        "dataPath" : "\/Users\/jonathan_jing\/Library\/Developer\/CoreSimulator\/Devices\/A9ACB321-07F8-4540-AD3C-7FACBD384A1F\/data",
+        "dataPathSize" : 5439537152,
+        "logPath" : "\/Users\/jonathan_jing\/Library\/Logs\/CoreSimulator\/A9ACB321-07F8-4540-AD3C-7FACBD384A1F",
+        "udid" : "A9ACB321-07F8-4540-AD3C-7FACBD384A1F",
+        "lastUsedAt" : "2026-10-22T00:11:52Z",
+        "isAvailable" : true,
+... 380 lines omitted; 0 error-like lines, 0 kept below ...
+... end of omitted section ...
+
+ProcessInfoPlistFile ~/.codex/worktrees/ios-next-beta-poster-push/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-21/cli/DerivedData/Build/Products/BetaDebug-iphonesimulator/TongxingUITests-Runner.app/PlugIns/TongxingUITests.xctest/Info.plist ~/.codex/worktrees/ios-next-beta-poster-push/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-21/cli/DerivedData/Build/Intermediates.noindex/Tongxing.build/BetaDebug-iphonesimulator/TongxingUITests.build/empty-TongxingUITests.plist (in target 'TongxingUITests' from project 'Tongxing')
+    cd ~/.codex/worktrees/ios-next-beta-poster-push/sermon-video-zh-subtitles/apps/tongxing-ios
+    builtin-infoPlistUtility ~/.codex/worktrees/ios-next-beta-poster-push/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-21/cli/DerivedData/Build/Intermediates.noindex/Tongxing.build/BetaDebug-iphonesimulator/TongxingUITests.build/empty-TongxingUITests.plist -producttype com.apple.product-type.bundle.ui-testing -expandbuildsettings -format binary -platform iphonesimulator -additionalcontentfile ~/.codex/worktrees/ios-next-beta-poster-push/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-21/cli/DerivedData/Build/Intermediates.noindex/Tongxing.build/BetaDebug-iphonesimulator/TongxingUITests.build/ProductTypeInfoPlistAdditions.plist -o ~/.codex/worktrees/ios-next-beta-poster-push/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-21/cli/DerivedData/Build/Products/BetaDebug-iphonesimulator/TongxingUITests-Runner.app/PlugIns/TongxingUITests.xctest/Info.plist
+
+CopySwiftLibs ~/.codex/worktrees/ios-next-beta-poster-push/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-21/cli/DerivedData/Build/Products/BetaDebug-iphonesimulator/TongxingUITests-Runner.app/PlugIns/TongxingUITests.xctest (in target 'TongxingUITests' from project 'Tongxing')
+    cd ~/.codex/worktrees/ios-next-beta-poster-push/sermon-video-zh-subtitles/apps/tongxing-ios
+    builtin-swiftStdLibTool --copy --verbose --scan-executable ~/.codex/worktrees/ios-next-beta-poster-push/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-21/cli/DerivedData/Build/Products/BetaDebug-iphonesimulator/TongxingUITests-Runner.app/PlugIns/TongxingUITests.xctest/TongxingUITests --scan-folder ~/.codex/worktrees/ios-next-beta-poster-push/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-21/cli/DerivedData/Build/Products/BetaDebug-iphonesimulator/TongxingUITests-Runner.app/PlugIns/TongxingUITests.xctest/Frameworks --scan-folder ~/.codex/worktrees/ios-next-beta-poster-push/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-21/cli/DerivedData/Build/Products/BetaDebug-iphonesimulator/TongxingUITests-Runner.app/PlugIns/TongxingUITests.xctest/PlugIns --scan-folder ~/.codex/worktrees/ios-next-beta-poster-push/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-21/cli/DerivedData/Build/Products/BetaDebug-iphonesimulator/TongxingUITests-Runner.app/PlugIns/TongxingUITests.xctest/SystemExtensions --scan-folder ~/.codex/worktrees/ios-next-beta-poster-push/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-21/cli/DerivedData/Build/Products/BetaDebug-iphonesimulator/TongxingUITests-Runner.app/PlugIns/TongxingUITests.xctest/Extensions --platform iphonesimulator --toolchain /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain --destination ~/.codex/worktrees/ios-next-beta-poster-push/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-21/cli/DerivedData/Build/Products/BetaDebug-iphonesimulator/TongxingUITests-Runner.app/PlugIns/TongxingUITests.xctest/Frameworks --strip-bitcode --scan-executable /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/usr/lib/libXCTestSwiftSupport.dylib --strip-bitcode-tool /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDef ...[line truncated]
+Ignoring --strip-bitcode because --sign was not passed
+
+PruneExplicitPrecompiledModules ~/.codex/worktrees/ios-next-beta-poster-push/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-21/cli/DerivedData/Build/Intermediates.noindex/ExplicitPrecompiledModules
+
+PruneExplicitPrecompiledModules ~/.codex/worktrees/ios-next-beta-poster-push/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-21/cli/DerivedData/SDKExplicitPrecompiledModules
+
+PruneExplicitPrecompiledModules ~/.codex/worktrees/ios-next-beta-poster-push/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-21/cli/DerivedData/Build/Intermediates.noindex/SwiftExplicitPrecompiledModules
+
+2026-10-21 17:12:00.118 xcodebuild[78299:40564170] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+2026-10-21 17:12:00.118 xcodebuild[78299:40564170] [MT] IDESchemeActionDeviceRecord: versionAndBuild = 27.1 (24A94401), error = invalidDigitCount(94401).
+2026-10-21 17:12:27.722381-0700 TongxingUITests-Runner[78726:40566761] [Default] Running tests...
+    t =      nans Interface orientation changed to Portrait
+Test Suite 'Selected tests' started at 2026-10-21 17:12:29.182.
+Test Suite 'TongxingUITests.xctest' started at 2026-10-21 17:12:29.183.
+Test Suite 'WeeklyPosterPublishedUITests' started at 2026-10-21 17:12:29.183.
+Test Case '-[TongxingUITests.WeeklyPosterPublishedUITests testCapturePublishedPostersAcrossContentLanguages]' started.
+    t =     0.01s Start Test at 2026-10-21 17:12:29.188
+objc[78726]: Class UIAccessibilityLoaderWebShared is implemented in both /Library/Developer/CoreSimulator/Volumes/iOS_24A94401/Library/Developer/CoreSimulator/Profiles/Runtimes/iOS 27.1.simruntime/Contents/Resources/RuntimeRoot/System/Library/AccessibilityBundles/WebKit.axbundle/WebKit (0x107d74398) and /Library/Developer/CoreSimulator/Volumes/iOS_24A94401/Library/Developer/CoreSimulator/Profiles/Runtimes/iOS 27.1.simruntime/Contents/Resources/RuntimeRoot/System/Library/AccessibilityBundles/WebCore.axbundle/WebCore (0x107eb0310). This may cause spurious casting failures and mysterious crashes. One of the duplicates must be removed or renamed.
+    t =     0.16s Set Up
+    t =     0.17s Open com.jonathanjing.tongxing.beta
+    t =     0.17s     Launch com.jonathanjing.tongxing.beta
+2026-10-21 17:12:29.422 xcodebuild[78299:40564170] [MT] IDELaunchParametersSnapshot: debugger version lookup failed for path '<nil>': noURL
+2026-10-21 17:12:29.422 xcodebuild[78299:40564170] [MT] IDELaunchParametersSnapshot: no debugger version
+2026-10-21 17:12:29.462 xcodebuild[78299:40564170] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+2026-10-21 17:12:29.462 xcodebuild[78299:40564170] [MT] IDESchemeActionDeviceRecord: versionAndBuild = 27.1 (24A94401), error = invalidDigitCount(94401).
+    t =     1.47s         Setting up automation session
+    t =     4.59s         Wait for com.jonathanjing.tongxing.beta to idle
+    t =     6.51s Waiting 45.0s for "choose-content-language" Button to exist
+    t =     7.59s     Checking `Expect predicate `existsNoRetry == 1` for object "choose-content-language" Button`
+    t =     7.59s         Checking existence of `"choose-content-language" Button`
+    t =     7.71s Find the Target Application 'com.jonathanjing.tongxing.beta'
+    t =     7.86s Added attachment named 'weekly-poster-published-home'
+    t =     8.96s Checking existence of `"weekly-update-open" Button`
+    t =     9.03s Checking existence of `"weekly-update-open" Button`
+    t =     9.09s Find the "weekly-update-open" Button
+    t =     9.16s Find the "weekly-update-open" Button
+    t =     9.23s Find the "weekly-update-open" Button
+    t =     9.30s Find the "weekly-update-open" Button
+    t =     9.37s Find the "weekly-update-open" Button
+    t =     9.44s Tap "weekly-update-open" Button
+    t =     9.44s     Wait for com.jonathanjing.tongxing.beta to idle
+    t =     9.45s     Find the "weekly-update-open" Button
+    t =     9.51s     Check for interrupting elements affecting "weekly-update-open" Button
+    t =     9.58s         Wait for com.apple.springboard to idle
+    t =     9.69s     Synthesize event
+    t =    10.10s     Wait for com.jonathanjing.tongxing.beta to idle
+    t =    10.11s Waiting 10.0s for "weekly-update-title" StaticText to exist
+    t =    11.16s     Checking `Expect predicate `existsNoRetry == 1` for object "weekly-update-title" StaticText`
+    t =    11.16s         Checking existence of `"weekly-update-title" StaticText`
+    t =    12.26s Checking `Expect predicate `value == "本周海报"` for object "weekly-update-poster" Image`
+    t =    12.26s     Find the "weekly-update-poster" Image
+    t =    12.32s Find the Target Application 'com.jonathanjing.tongxing.beta'
+    t =    12.51s Added attachment named 'weekly-poster-published-zh-Hans'
+    t =    12.51s Tap "weekly-update-done" Button
+    t =    12.51s     Wait for com.jonathanjing.tongxing.beta to idle
+    t =    12.51s     Find the "weekly-update-done" Button
+    t =    12.58s     Check for interrupting elements affecting "weekly-update-done" Button
+    t =    12.64s         Wait for com.apple.springboard to idle
+    t =    12.68s     Synthesize event
+    t =    12.98s     Wait for com.jonathanjing.tongxing.beta to idle
+    t =    13.39s Find the "choose-content-language" Button
+    t =    13.46s Find the "choose-content-language" Button
+    t =    13.53s Find the "choose-content-language" Button
+    t =    13.61s Find the "choose-content-language" Button
+    t =    13.67s Find the "choose-content-language" Button
+    t =    13.73s Tap "choose-content-language" Button
+    t =    13.73s     Wait for com.jonathanjing.tongxing.beta to idle
+    t =    13.74s     Find the "choose-content-language" Button
+    t =    13.82s     Check for interrupting elements affecting "choose-content-language" Button
+    t =    13.91s         Wait for com.apple.springboard to idle
+    t =    13.95s     Synthesize event
+    t =    14.27s     Wait for com.jonathanjing.tongxing.beta to idle
+    t =    14.32s Waiting 10.0s for "content-language-ko" Button to exist
+    t =    15.40s     Checking `Expect predicate `existsNoRetry == 1` for object "content-language-ko" Button`
+    t =    15.40s         Checking existence of `"content-language-ko" Button`
+    t =    15.51s Tap "content-language-ko" Button
+    t =    15.51s     Wait for com.jonathanjing.tongxing.beta to idle
+    t =    15.51s     Find the "content-language-ko" Button
+    t =    15.59s     Check for interrupting elements affecting "content-language-ko" Button
+    t =    15.66s         Wait for com.apple.springboard to idle
+    t =    15.70s     Synthesize event
+    t =    16.00s     Wait for com.jonathanjing.tongxing.beta to idle
+    t =    17.54s Checking existence of `"weekly-update-open" Button`
+    t =    17.63s Checking existence of `"weekly-update-open" Button`
+    t =    17.71s Find the "weekly-update-open" Button
+    t =    17.80s Find the "weekly-update-open" Button
+    t =    17.89s Find the "weekly-update-open" Button
+    t =    17.98s Find the "weekly-update-open" Button
+    t =    18.07s Find the "weekly-update-open" Button
+    t =    18.16s Tap "weekly-update-open" Button
+    t =    18.16s     Wait for com.jonathanjing.tongxing.beta to idle
+    t =    18.17s     Find the "weekly-update-open" Button
+    t =    18.25s     Check for interrupting elements affecting "weekly-update-open" Button
+    t =    18.31s         Wait for com.apple.springboard to idle
+    t =    18.36s     Synthesize event
+    t =    18.66s     Wait for com.jonathanjing.tongxing.beta to idle
+    t =    19.06s Waiting 10.0s for "weekly-update-title" StaticText to exist
+    t =    20.14s     Checking `Expect predicate `existsNoRetry == 1` for object "weekly-update-title" StaticText`
+    t =    20.14s         Checking existence of `"weekly-update-title" StaticText`
+    t =    21.34s Checking `Expect predicate `value == "本周海报"` for object "weekly-update-poster" Image`
+    t =    21.34s     Find the "weekly-update-poster" Image
+    t =    21.45s Find the Target Application 'com.jonathanjing.tongxing.beta'
+    t =    21.65s Added attachment named 'weekly-poster-published-ko'
+    t =    21.65s Tap "weekly-update-done" Button
+    t =    21.65s     Wait for com.jonathanjing.tongxing.beta to idle
+    t =    21.65s     Find the "weekly-update-done" Button
+    t =    21.74s     Check for interrupting elements affecting "weekly-update-done" Button
+    t =    21.82s         Wait for com.apple.springboard to idle
+    t =    21.86s     Synthesize event
+    t =    22.16s     Wait for com.jonathanjing.tongxing.beta to idle
+    t =    22.54s Find the "choose-content-language" Button
+    t =    22.64s Find the "choose-content-language" Button
+    t =    22.74s Find the "choose-content-language" Button
+    t =    22.83s Find the "choose-content-language" Button
+    t =    22.92s Find the "choose-content-language" Button
+    t =    23.02s Tap "choose-content-language" Button
+    t =    23.02s     Wait for com.jonathanjing.tongxing.beta to idle
+    t =    23.02s     Find the "choose-content-language" Button
+    t =    23.10s     Check for interrupting elements affecting "choose-content-language" Button
+    t =    23.17s         Wait for com.apple.springboard to idle
+    t =    23.22s     Synthesize event
+    t =    23.53s     Wait for com.jonathanjing.tongxing.beta to idle
+    t =    23.96s Waiting 10.0s for "content-language-es" Button to exist
+    t =    25.03s     Checking `Expect predicate `existsNoRetry == 1` for object "content-language-es" Button`
+    t =    25.03s         Checking existence of `"content-language-es" Button`
+    t =    25.14s Tap "content-language-es" Button
+    t =    25.14s     Wait for com.jonathanjing.tongxing.beta to idle
+    t =    25.15s     Find the "content-language-es" Button
+    t =    25.24s     Check for interrupting elements affecting "content-language-es" Button
+    t =    25.33s         Wait for com.apple.springboard to idle
+    t =    25.37s     Synthesize event
+    t =    25.67s     Wait for com.jonathanjing.tongxing.beta to idle
+    t =    27.19s Checking existence of `"weekly-update-open" Button`
+    t =    27.30s Checking existence of `"weekly-update-open" Button`
+    t =    27.38s Find the "weekly-update-open" Button
+    t =    27.48s Find the "weekly-update-open" Button
+    t =    27.57s Find the "weekly-update-open" Button
+    t =    27.67s Find the "weekly-update-open" Button
+    t =    27.76s Find the "weekly-update-open" Button
+    t =    27.86s Tap "weekly-update-open" Button
+    t =    27.86s     Wait for com.jonathanjing.tongxing.beta to idle
+    t =    27.86s     Find the "weekly-update-open" Button
+    t =    27.94s     Check for interrupting elements affecting "weekly-update-open" Button
+    t =    28.01s         Wait for com.apple.springboard to idle
+    t =    28.05s     Synthesize event
+    t =    28.35s     Wait for com.jonathanjing.tongxing.beta to idle
+    t =    28.74s Waiting 10.0s for "weekly-update-title" StaticText to exist
+    t =    29.80s     Checking `Expect predicate `existsNoRetry == 1` for object "weekly-update-title" StaticText`
+    t =    29.80s         Checking existence of `"weekly-update-title" StaticText`
+    t =    30.94s Checking `Expect predicate `value == "本周海报"` for object "weekly-update-poster" Image`
+    t =    30.94s     Find the "weekly-update-poster" Image
+    t =    31.04s Find the Target Application 'com.jonathanjing.tongxing.beta'
+    t =    31.24s Added attachment named 'weekly-poster-published-es'
+    t =    31.25s Tap "weekly-update-done" Button
+    t =    31.25s     Wait for com.jonathanjing.tongxing.beta to idle
+    t =    31.25s     Find the "weekly-update-done" Button
+    t =    31.34s     Check for interrupting elements affecting "weekly-update-done" Button
+    t =    31.42s         Wait for com.apple.springboard to idle
+    t =    31.46s     Synthesize event
+    t =    31.77s     Wait for com.jonathanjing.tongxing.beta to idle
+    t =    32.16s Tear Down
+Test Case '-[TongxingUITests.WeeklyPosterPublishedUITests testCapturePublishedPostersAcrossContentLanguages]' passed (32.834 seconds).
+Test Suite 'WeeklyPosterPublishedUITests' passed at 2026-10-21 17:13:02.023.
+	 Executed 1 test, with 0 failures (0 unexpected) in 32.834 (32.840) seconds
+Test Suite 'TongxingUITests.xctest' passed at 2026-10-21 17:13:02.025.
+	 Executed 1 test, with 0 failures (0 unexpected) in 32.834 (32.842) seconds
+Test Suite 'Selected tests' passed at 2026-10-21 17:13:02.026.
+	 Executed 1 test, with 0 failures (0 unexpected) in 32.834 (32.844) seconds
+2026-10-21 17:13:02.069 xcodebuild[78299:40564170] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+2026-10-21 17:13:02.069 xcodebuild[78299:40564170] [MT] IDESchemeActionDeviceRecord: versionAndBuild = 27.1 (24A94401), error = invalidDigitCount(94401).
+2026-10-21 17:13:02.069 xcodebuild[78299:40564170] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+2026-10-21 17:13:02.069 xcodebuild[78299:40564170] [MT] IDESchemeActionDeviceRecord: versionAndBuild = 27.1 (24A94401), error = invalidDigitCount(94401).
+2026-10-21 17:13:02.070 xcodebuild[78299:40564170] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+2026-10-21 17:13:02.070 xcodebuild[78299:40564170] [MT] IDESchemeActionDeviceRecord: versionAndBuild = 27.1 (24A94401), error = invalidDigitCount(94401).
+2026-10-21 17:13:02.107 xcodebuild[78299:40564170] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+2026-10-21 17:13:02.107 xcodebuild[78299:40564170] [MT] IDESchemeActionDeviceRecord: versionAndBuild = 27.1 (24A94401), error = invalidDigitCount(94401).
+2026-10-21 17:13:02.107 xcodebuild[78299:40564170] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+2026-10-21 17:13:02.107 xcodebuild[78299:40564170] [MT] IDESchemeActionDeviceRecord: versionAndBuild = 27.1 (24A94401), error = invalidDigitCount(94401).
+2026-10-21 17:13:02.107 xcodebuild[78299:40564170] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+2026-10-21 17:13:02.107 xcodebuild[78299:40564170] [MT] IDESchemeActionDeviceRecord: versionAndBuild = 27.1 (24A94401), error = invalidDigitCount(94401).
+2026-10-21 17:13:02.376 xcodebuild[78299:40564170] [MT] IDETestOperationsObserverDebug: 64.454 elapsed -- Testing started completed.
+2026-10-21 17:13:02.376 xcodebuild[78299:40564170] [MT] IDETestOperationsObserverDebug: 0.000 sec, +0.000 sec -- start
+2026-10-21 17:13:02.376 xcodebuild[78299:40564170] [MT] IDETestOperationsObserverDebug: 64.454 sec, +64.454 sec -- end
+
+Test session results, code coverage, and logs:
+	~/.codex/worktrees/ios-next-beta-poster-push/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-21/cli/20261021T171151-test-eb988ab1/test.xcresult
+
+** TEST SUCCEEDED **
+
+Testing started
+
+Exit status: 0
