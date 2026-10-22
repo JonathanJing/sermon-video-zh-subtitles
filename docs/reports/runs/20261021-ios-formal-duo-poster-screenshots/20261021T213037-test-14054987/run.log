@@ -1,0 +1,266 @@
+
+$ /usr/bin/xcrun xcodebuild -project ~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/apps/tongxing-ios/Tongxing.xcodeproj -list -json -disableAutomaticPackageResolution
+{
+  "project" : {
+    "configurations" : [
+      "BetaDebug",
+      "BetaRelease",
+      "Debug",
+      "Release"
+    ],
+    "name" : "Tongxing",
+    "schemes" : [
+      "ListeningActivityExtension",
+      "Tongxing",
+      "TongxingBeta",
+      "TongxingCore",
+      "TongxingInfrastructure",
+      "TongxingPreview",
+      "TongxingScreenshots"
+    ],
+    "targets" : [
+      "Tongxing",
+      "ListeningActivityExtension",
+      "TongxingTests",
+      "TongxingUITests"
+    ]
+  }
+}
+
+$ /usr/bin/xcrun simctl list devices available --json
+{
+  "devices" : {
+    "com.apple.CoreSimulator.SimRuntime.iOS-27-0" : [
+      {
+        "dataPath" : "\/Users\/jonathan_jing\/Library\/Developer\/CoreSimulator\/Devices\/A9ACB321-07F8-4540-AD3C-7FACBD384A1F\/data",
+        "dataPathSize" : 5439537152,
+        "logPath" : "\/Users\/jonathan_jing\/Library\/Logs\/CoreSimulator\/A9ACB321-07F8-4540-AD3C-7FACBD384A1F",
+        "udid" : "A9ACB321-07F8-4540-AD3C-7FACBD384A1F",
+        "lastUsedAt" : "2026-10-22T04:30:38Z",
+        "isAvailable" : true,
+... 2358 lines omitted; 24 error-like lines, 24 kept below ...
+[line 1400] RegisterExecutionPolicyException ~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-21/cli/DerivedData/Build/Products/Release-iphonesimulator/ListeningActivityExtension.appex (in target 'ListeningActivityExtension' from project 'Tongxing')
+[line 1402]     builtin-RegisterExecutionPolicyException ~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-21/cli/DerivedData/Build/Products/Release-iphonesimulator/ListeningActivityExtension.appex
+[line 1876] ~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/apps/tongxing-ios/App/MicrophoneCapture.swift:259:92: warning: main actor-isolated static property 'startupSeconds' can not be referenced from a nonisolated context; this is an error in the Swift 6 language mode
+[line 1883]     |                                                                                            `- warning: main actor-isolated static property 'startupSeconds' can not be referenced from a nonisolated context; this is an error in the Swift 6 language mode
+[line 1908] ~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/apps/tongxing-ios/App/MicrophoneCapture.swift:259:92: warning: main actor-isolated static property 'startupSeconds' can not be referenced from a nonisolated context; this is an error in the Swift 6 language mode
+[line 1915]     |                                                                                            `- warning: main actor-isolated static property 'startupSeconds' can not be referenced from a nonisolated context; this is an error in the Swift 6 language mode
+[line 2068] RegisterExecutionPolicyException ~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-21/cli/DerivedData/Build/Products/Release-iphonesimulator/Tongxing.app (in target 'Tongxing' from project 'Tongxing')
+[line 2070]     builtin-RegisterExecutionPolicyException ~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-21/cli/DerivedData/Build/Products/Release-iphonesimulator/Tongxing.app
+[line 2195] RegisterExecutionPolicyException ~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-21/cli/DerivedData/Build/Products/Release-iphonesimulator/TongxingUITests-Runner.app/PlugIns/TongxingUITests.xctest (in target 'TongxingUITests' from project 'Tongxing')
+[line 2197]     builtin-RegisterExecutionPolicyException ~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-21/cli/DerivedData/Build/Products/Release-iphonesimulator/TongxingUITests-Runner.app/PlugIns/TongxingUITests.xctest
+[line 2209] 2026-10-21 21:31:53.581 xcodebuild[64620:41366121] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+[line 2210] 2026-10-21 21:31:53.581 xcodebuild[64620:41366121] [MT] IDESchemeActionDeviceRecord: versionAndBuild = 27.1 (24A94401), error = invalidDigitCount(94401).
+[line 2221] 2026-10-21 21:32:51.810 xcodebuild[64620:41366121] [MT] IDELaunchParametersSnapshot: debugger version lookup failed for path '<nil>': noURL
+[line 2224] 2026-10-21 21:32:51.860 xcodebuild[64620:41366121] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+[line 2225] 2026-10-21 21:32:51.860 xcodebuild[64620:41366121] [MT] IDESchemeActionDeviceRecord: versionAndBuild = 27.1 (24A94401), error = invalidDigitCount(94401).
+[line 2320] 2026-10-21 21:33:18.207 xcodebuild[64620:41366121] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+[line 2321] 2026-10-21 21:33:18.207 xcodebuild[64620:41366121] [MT] IDESchemeActionDeviceRecord: versionAndBuild = 27.1 (24A94401), error = invalidDigitCount(94401).
+[line 2322] 2026-10-21 21:33:18.207 xcodebuild[64620:41366121] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+[line 2323] 2026-10-21 21:33:18.208 xcodebuild[64620:41366121] [MT] IDESchemeActionDeviceRecord: versionAndBuild = 27.1 (24A94401), error = invalidDigitCount(94401).
+[line 2324] 2026-10-21 21:33:18.209 xcodebuild[64620:41366121] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+[line 2325] 2026-10-21 21:33:18.209 xcodebuild[64620:41366121] [MT] IDESchemeActionDeviceRecord: versionAndBuild = 27.1 (24A94401), error = invalidDigitCount(94401).
+[line 2333] 2026-10-21 21:33:19.707 xcodebuild[64620:41366121] [MT] IDELaunchParametersSnapshot: debugger version lookup failed for path '<nil>': noURL
+[line 2335] 2026-10-21 21:33:19.715 xcodebuild[64620:41366121] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+[line 2336] 2026-10-21 21:33:19.715 xcodebuild[64620:41366121] [MT] IDESchemeActionDeviceRecord: versionAndBuild = 27.1 (24A94401), error = invalidDigitCount(94401).
+... end of omitted section ...
+    t =    16.62s     Find the "content-language-zh-Hans" Button
+    t =    16.71s     Check for interrupting elements affecting "content-language-zh-Hans" Button
+    t =    16.78s         Wait for com.apple.springboard to idle
+    t =    16.83s     Synthesize event
+    t =    17.13s     Wait for com.jonathanjing.tongxing.dev to idle
+    t =    17.54s Waiting 45.0s for "weekly-update-open" Button to exist
+    t =    18.58s     Checking `Expect predicate `existsNoRetry == 1` for object "weekly-update-open" Button`
+    t =    18.58s         Checking existence of `"weekly-update-open" Button`
+    t =    18.65s         Capturing element debug description
+    t =    19.56s     Checking `Expect predicate `existsNoRetry == 1` for object "weekly-update-open" Button`
+    t =    19.56s         Checking existence of `"weekly-update-open" Button`
+    t =    19.62s         Capturing element debug description
+    t =    20.64s     Checking `Expect predicate `existsNoRetry == 1` for object "weekly-update-open" Button`
+    t =    20.64s         Checking existence of `"weekly-update-open" Button`
+    t =    20.70s         Capturing element debug description
+    t =    21.59s     Checking `Expect predicate `existsNoRetry == 1` for object "weekly-update-open" Button`
+    t =    21.59s         Checking existence of `"weekly-update-open" Button`
+    t =    21.65s         Capturing element debug description
+    t =    22.61s     Checking `Expect predicate `existsNoRetry == 1` for object "weekly-update-open" Button`
+    t =    22.61s         Checking existence of `"weekly-update-open" Button`
+    t =    22.67s         Capturing element debug description
+    t =    23.55s     Checking `Expect predicate `existsNoRetry == 1` for object "weekly-update-open" Button`
+    t =    23.55s         Checking existence of `"weekly-update-open" Button`
+    t =    23.61s         Capturing element debug description
+    t =    24.64s     Checking `Expect predicate `existsNoRetry == 1` for object "weekly-update-open" Button`
+    t =    24.64s         Checking existence of `"weekly-update-open" Button`
+    t =    24.70s         Capturing element debug description
+    t =    25.61s     Checking `Expect predicate `existsNoRetry == 1` for object "weekly-update-open" Button`
+    t =    25.61s         Checking existence of `"weekly-update-open" Button`
+    t =    25.68s         Capturing element debug description
+    t =    26.61s     Checking `Expect predicate `existsNoRetry == 1` for object "weekly-update-open" Button`
+    t =    26.61s         Checking existence of `"weekly-update-open" Button`
+    t =    26.67s         Capturing element debug description
+    t =    27.60s     Checking `Expect predicate `existsNoRetry == 1` for object "weekly-update-open" Button`
+    t =    27.60s         Checking existence of `"weekly-update-open" Button`
+    t =    27.66s         Capturing element debug description
+    t =    28.60s     Checking `Expect predicate `existsNoRetry == 1` for object "weekly-update-open" Button`
+    t =    28.60s         Checking existence of `"weekly-update-open" Button`
+    t =    28.67s         Capturing element debug description
+    t =    29.60s     Checking `Expect predicate `existsNoRetry == 1` for object "weekly-update-open" Button`
+    t =    29.60s         Checking existence of `"weekly-update-open" Button`
+    t =    29.66s         Capturing element debug description
+    t =    30.55s     Checking `Expect predicate `existsNoRetry == 1` for object "weekly-update-open" Button`
+    t =    30.55s         Checking existence of `"weekly-update-open" Button`
+    t =    30.63s         Capturing element debug description
+    t =    31.56s     Checking `Expect predicate `existsNoRetry == 1` for object "weekly-update-open" Button`
+    t =    31.56s         Checking existence of `"weekly-update-open" Button`
+    t =    31.63s         Capturing element debug description
+    t =    32.62s     Checking `Expect predicate `existsNoRetry == 1` for object "weekly-update-open" Button`
+    t =    32.62s         Checking existence of `"weekly-update-open" Button`
+    t =    32.71s         Capturing element debug description
+    t =    33.63s     Checking `Expect predicate `existsNoRetry == 1` for object "weekly-update-open" Button`
+    t =    33.64s         Checking existence of `"weekly-update-open" Button`
+    t =    33.70s         Capturing element debug description
+    t =    34.58s     Checking `Expect predicate `existsNoRetry == 1` for object "weekly-update-open" Button`
+    t =    34.58s         Checking existence of `"weekly-update-open" Button`
+    t =    34.65s         Capturing element debug description
+    t =    35.58s     Checking `Expect predicate `existsNoRetry == 1` for object "weekly-update-open" Button`
+    t =    35.59s         Checking existence of `"weekly-update-open" Button`
+    t =    35.65s         Capturing element debug description
+    t =    36.59s     Checking `Expect predicate `existsNoRetry == 1` for object "weekly-update-open" Button`
+    t =    36.59s         Checking existence of `"weekly-update-open" Button`
+    t =    36.66s         Capturing element debug description
+    t =    37.59s     Checking `Expect predicate `existsNoRetry == 1` for object "weekly-update-open" Button`
+    t =    37.59s         Checking existence of `"weekly-update-open" Button`
+    t =    37.67s         Capturing element debug description
+    t =    38.57s     Checking `Expect predicate `existsNoRetry == 1` for object "weekly-update-open" Button`
+    t =    38.57s         Checking existence of `"weekly-update-open" Button`
+    t =    38.63s         Capturing element debug description
+    t =    39.56s     Checking `Expect predicate `existsNoRetry == 1` for object "weekly-update-open" Button`
+    t =    39.56s         Checking existence of `"weekly-update-open" Button`
+    t =    39.63s         Capturing element debug description
+    t =    40.57s     Checking `Expect predicate `existsNoRetry == 1` for object "weekly-update-open" Button`
+    t =    40.57s         Checking existence of `"weekly-update-open" Button`
+    t =    40.63s         Capturing element debug description
+    t =    41.56s     Checking `Expect predicate `existsNoRetry == 1` for object "weekly-update-open" Button`
+    t =    41.56s         Checking existence of `"weekly-update-open" Button`
+    t =    41.62s         Capturing element debug description
+    t =    42.54s     Checking `Expect predicate `existsNoRetry == 1` for object "weekly-update-open" Button`
+    t =    42.55s         Checking existence of `"weekly-update-open" Button`
+    t =    42.60s         Capturing element debug description
+    t =    43.63s     Checking `Expect predicate `existsNoRetry == 1` for object "weekly-update-open" Button`
+    t =    43.63s         Checking existence of `"weekly-update-open" Button`
+    t =    43.68s         Capturing element debug description
+    t =    44.61s     Checking `Expect predicate `existsNoRetry == 1` for object "weekly-update-open" Button`
+    t =    44.61s         Checking existence of `"weekly-update-open" Button`
+    t =    44.68s         Capturing element debug description
+    t =    45.58s     Checking `Expect predicate `existsNoRetry == 1` for object "weekly-update-open" Button`
+    t =    45.58s         Checking existence of `"weekly-update-open" Button`
+    t =    45.64s         Capturing element debug description
+    t =    46.57s     Checking `Expect predicate `existsNoRetry == 1` for object "weekly-update-open" Button`
+    t =    46.57s         Checking existence of `"weekly-update-open" Button`
+    t =    46.64s         Capturing element debug description
+    t =    47.55s     Checking `Expect predicate `existsNoRetry == 1` for object "weekly-update-open" Button`
+    t =    47.55s         Checking existence of `"weekly-update-open" Button`
+    t =    47.62s         Capturing element debug description
+    t =    48.54s     Checking `Expect predicate `existsNoRetry == 1` for object "weekly-update-open" Button`
+    t =    48.54s         Checking existence of `"weekly-update-open" Button`
+    t =    48.62s         Capturing element debug description
+    t =    49.55s     Checking `Expect predicate `existsNoRetry == 1` for object "weekly-update-open" Button`
+    t =    49.55s         Checking existence of `"weekly-update-open" Button`
+    t =    49.62s         Capturing element debug description
+    t =    50.64s     Checking `Expect predicate `existsNoRetry == 1` for object "weekly-update-open" Button`
+    t =    50.64s         Checking existence of `"weekly-update-open" Button`
+    t =    50.70s         Capturing element debug description
+    t =    51.63s     Checking `Expect predicate `existsNoRetry == 1` for object "weekly-update-open" Button`
+    t =    51.63s         Checking existence of `"weekly-update-open" Button`
+    t =    51.69s         Capturing element debug description
+    t =    52.62s     Checking `Expect predicate `existsNoRetry == 1` for object "weekly-update-open" Button`
+    t =    52.62s         Checking existence of `"weekly-update-open" Button`
+    t =    52.69s         Capturing element debug description
+    t =    53.63s     Checking `Expect predicate `existsNoRetry == 1` for object "weekly-update-open" Button`
+    t =    53.63s         Checking existence of `"weekly-update-open" Button`
+    t =    53.69s         Capturing element debug description
+    t =    54.61s     Checking `Expect predicate `existsNoRetry == 1` for object "weekly-update-open" Button`
+    t =    54.61s         Checking existence of `"weekly-update-open" Button`
+    t =    54.67s         Capturing element debug description
+    t =    55.59s     Checking `Expect predicate `existsNoRetry == 1` for object "weekly-update-open" Button`
+    t =    55.59s         Checking existence of `"weekly-update-open" Button`
+    t =    55.65s         Capturing element debug description
+    t =    56.58s     Checking `Expect predicate `existsNoRetry == 1` for object "weekly-update-open" Button`
+    t =    56.58s         Checking existence of `"weekly-update-open" Button`
+    t =    56.64s         Capturing element debug description
+    t =    57.56s     Checking `Expect predicate `existsNoRetry == 1` for object "weekly-update-open" Button`
+    t =    57.56s         Checking existence of `"weekly-update-open" Button`
+    t =    57.62s         Capturing element debug description
+    t =    58.55s     Checking `Expect predicate `existsNoRetry == 1` for object "weekly-update-open" Button`
+    t =    58.55s         Checking existence of `"weekly-update-open" Button`
+    t =    58.62s         Capturing element debug description
+    t =    59.54s     Checking `Expect predicate `existsNoRetry == 1` for object "weekly-update-open" Button`
+    t =    59.55s         Checking existence of `"weekly-update-open" Button`
+    t =    59.63s         Capturing element debug description
+    t =    60.55s     Checking `Expect predicate `existsNoRetry == 1` for object "weekly-update-open" Button`
+    t =    60.55s         Checking existence of `"weekly-update-open" Button`
+    t =    60.62s         Capturing element debug description
+    t =    61.56s     Checking `Expect predicate `existsNoRetry == 1` for object "weekly-update-open" Button`
+    t =    61.56s         Checking existence of `"weekly-update-open" Button`
+    t =    61.63s         Capturing element debug description
+    t =    62.56s     Checking `Expect predicate `existsNoRetry == 1` for object "weekly-update-open" Button`
+    t =    62.56s         Checking existence of `"weekly-update-open" Button`
+    t =    62.61s         Capturing element debug description
+    t =    62.62s     Checking existence of `"weekly-update-open" Button`
+    t =    62.67s Collecting debug information to assist test failure triage
+    t =    62.67s     Requesting snapshot of accessibility hierarchy for app with pid 69058
+    t =    62.76s Waiting 10.0s for "weekly-update-reopen" Button to exist
+    t =    63.79s     Checking `Expect predicate `existsNoRetry == 1` for object "weekly-update-reopen" Button`
+    t =    63.79s         Checking existence of `"weekly-update-reopen" Button`
+    t =    63.86s Find the Target Application 'com.jonathanjing.tongxing.dev'
+    t =    64.04s Added attachment named 'store-weekly-poster-home-en'
+    t =    64.04s Tap "weekly-update-reopen" Button[0.50, 0.50]
+    t =    64.04s     Wait for com.jonathanjing.tongxing.dev to idle
+    t =    64.05s     Find the "weekly-update-reopen" Button
+    t =    64.12s     Check for interrupting elements affecting "weekly-update-reopen" Button
+    t =    64.18s         Wait for com.apple.springboard to idle
+    t =    64.23s     Synthesize event
+    t =    64.24s         Find the "weekly-update-reopen" Button
+    t =    64.31s         Find the "weekly-update-reopen" Button
+    t =    64.38s         Find the "weekly-update-reopen" Button
+    t =    64.74s     Wait for com.jonathanjing.tongxing.dev to idle
+    t =    65.19s Waiting 15.0s for "weekly-update-title" StaticText to exist
+    t =    66.23s     Checking `Expect predicate `existsNoRetry == 1` for object "weekly-update-title" StaticText`
+    t =    66.23s         Checking existence of `"weekly-update-title" StaticText`
+    t =    66.32s Waiting 15.0s for "weekly-update-poster" Image to exist
+    t =    67.36s     Checking `Expect predicate `existsNoRetry == 1` for object "weekly-update-poster" Image`
+    t =    67.36s         Checking existence of `"weekly-update-poster" Image`
+    t =    67.43s Find the Target Application 'com.jonathanjing.tongxing.dev'
+    t =    67.63s Added attachment named 'store-weekly-poster-detail-en'
+    t =    67.63s Terminate com.jonathanjing.tongxing.dev:69058
+2026-10-21 21:34:27.331 xcodebuild[64620:41366121] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+2026-10-21 21:34:27.331 xcodebuild[64620:41366121] [MT] IDESchemeActionDeviceRecord: versionAndBuild = 27.1 (24A94401), error = invalidDigitCount(94401).
+2026-10-21 21:34:27.332 xcodebuild[64620:41366121] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+2026-10-21 21:34:27.332 xcodebuild[64620:41366121] [MT] IDESchemeActionDeviceRecord: versionAndBuild = 27.1 (24A94401), error = invalidDigitCount(94401).
+2026-10-21 21:34:27.333 xcodebuild[64620:41366121] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+2026-10-21 21:34:27.334 xcodebuild[64620:41366121] [MT] IDESchemeActionDeviceRecord: versionAndBuild = 27.1 (24A94401), error = invalidDigitCount(94401).
+    t =    68.65s Tear Down
+Test Case '-[TongxingUITests.AppStoreScreenshotUITests testCaptureEnglishProductionWeeklyPoster]' passed (68.850 seconds).
+Test Suite 'AppStoreScreenshotUITests' passed at 2026-10-21 21:34:28.528.
+	 Executed 2 tests, with 0 failures (0 unexpected) in 97.042 (97.053) seconds
+Test Suite 'TongxingUITests.xctest' passed at 2026-10-21 21:34:28.528.
+	 Executed 2 tests, with 0 failures (0 unexpected) in 97.042 (97.054) seconds
+Test Suite 'Selected tests' passed at 2026-10-21 21:34:28.529.
+	 Executed 2 tests, with 0 failures (0 unexpected) in 97.042 (97.055) seconds
+2026-10-21 21:34:28.580 xcodebuild[64620:41366121] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+2026-10-21 21:34:28.580 xcodebuild[64620:41366121] [MT] IDESchemeActionDeviceRecord: versionAndBuild = 27.1 (24A94401), error = invalidDigitCount(94401).
+2026-10-21 21:34:28.581 xcodebuild[64620:41366121] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+2026-10-21 21:34:28.581 xcodebuild[64620:41366121] [MT] IDESchemeActionDeviceRecord: versionAndBuild = 27.1 (24A94401), error = invalidDigitCount(94401).
+2026-10-21 21:34:28.582 xcodebuild[64620:41366121] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+2026-10-21 21:34:28.582 xcodebuild[64620:41366121] [MT] IDESchemeActionDeviceRecord: versionAndBuild = 27.1 (24A94401), error = invalidDigitCount(94401).
+2026-10-21 21:34:28.843 xcodebuild[64620:41366121] [MT] IDETestOperationsObserverDebug: 161.475 elapsed -- Testing started completed.
+2026-10-21 21:34:28.843 xcodebuild[64620:41366121] [MT] IDETestOperationsObserverDebug: 0.000 sec, +0.000 sec -- start
+2026-10-21 21:34:28.843 xcodebuild[64620:41366121] [MT] IDETestOperationsObserverDebug: 161.475 sec, +161.475 sec -- end
+
+Test session results, code coverage, and logs:
+	~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-21/cli/20261021T213037-test-14054987/test.xcresult
+
+** TEST SUCCEEDED **
+
+Testing started
+
+Exit status: 0
