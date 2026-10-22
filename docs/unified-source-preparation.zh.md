@@ -40,7 +40,7 @@ CLI 等价入口：
 
 预算授权为 `sermon-source-budget-authorization-v1`，包含 `binding`、`authority`、`approvalReceipt`：
 
-- `binding` 精确绑定 productionRunId、配置摘要、codeIdentitySha256 和固定预算根。配置摘要取配置对象去掉 `budgetAuthorization` 字段后的 canonical JSON SHA-256，避免循环引用。
+- `binding` 精确绑定 productionRunId、配置摘要和固定预算根。**v1**（`sermon-source-budget-authorization-v1`）还绑定 codeIdentitySha256：任何提交都让授权失效，返回请求时的复核会中止正在跑的裁判（2026-10-21 E4b）。**v2**（`sermon-source-budget-authorization-v2`，2026-10-22 起新运行默认）不再绑定代码身份，改为 `evidence.codeIdentitySha256AtApproval` 作证据；每次尝试把它启动时的代码身份写进输出目录的 `source-run-attempts.ndjson`，运行中观测到磁盘代码变化只追加 `code_identity_drift_observed` 一行，不中止；`source-run.json` 记录第一次尝试，同一输出目录只接受同一配置摘要。产物自己的代码绑定不变：对齐身份含 adapter 哈希，裁判收据含实现哈希，确定性重建核对锚点。v1 授权照旧严格。配置摘要取配置对象去掉 `budgetAuthorization` 字段后的 canonical JSON SHA-256，避免循环引用。
 - 预算根固定为 jobRoot 同级的 `.<jobRoot.name>.source-budget`。
 - `authority` 含 `approvalSha256`、`globalBounds`、`requestLimits`。globalBounds 只有 requests、wallTimeMs、costMicrousd；音频 token 没有数值时不补零。
 - 独立 `sermon-source-budget-approval-v1` 收据的 binding 为上述 binding 加 globalBounds/requestLimits，须保存人类决定、操作者证据和审核时间；hash 引用不等于授权。

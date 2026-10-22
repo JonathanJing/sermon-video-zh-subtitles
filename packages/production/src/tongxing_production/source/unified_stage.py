@@ -60,6 +60,16 @@ SCHEMA_V2 = 'sermon-unified-source-preparation-v2'
 SCHEMA_V3 = 'sermon-unified-source-preparation-v3'
 JUDGE_BACKEND_MODELS = {'openai_api': 'gpt-6.1-sol', 'claude_cli_opus': 'claude-opus-5-5'}
 MAX_ASR_WORKERS = 16
+# Budget authorization v1 bound the code identity: any commit, even one unrelated to the run,
+# invalidated the authorization and a returned request's re-check aborted the judge mid-run
+# (2026-10-21 E4b). v2 binds what the human approves, the run, its configuration digest, its budget
+# root and bounds; the code identity at approval is kept as evidence, every attempt records the
+# code it started with, and drift observed during a run is logged, not fatal. Artifacts keep their
+# own code bindings (alignment identity, judge implementation hash, deterministic rebuild).
+AUTHORIZATION_V1 = 'sermon-source-budget-authorization-v1'
+AUTHORIZATION_V2 = 'sermon-source-budget-authorization-v2'
+APPROVAL_V1 = 'sermon-source-budget-approval-v1'
+APPROVAL_V2 = 'sermon-source-budget-approval-v2'
 PCM_START_SHORTFALL_SAMPLES = 160  # 10 ms at 16 kHz
 FIELDS = {'schemaVersion', 'productionRunId', 'sourceId', 'sourceUrlHash', 'serviceDate',
           'media', 'mediaSha256', 'sourceDurationSeconds', 'window', 'windowApproval', 'windowApprovalSha256',
@@ -150,6 +160,47 @@ def numeric_references(references, spoken_forms_path):
     return ambiguous
 
 
+def check_budget_authorization(auth_path, *, production_run_id, configuration_sha256, budget_root, code_identity):
+    """Validate a budget authorization and its human approval; return (authority, approval_path, version)."""
+    auth = _load(auth_path)
+    version = auth.get('schemaVersion') if isinstance(auth, dict) else None
+    fields = {'schemaVersion', 'binding', 'authority', 'approvalReceipt'} | ({'evidence'} if version == AUTHORIZATION_V2 else set())
+    require(isinstance(auth, dict) and version in (AUTHORIZATION_V1, AUTHORIZATION_V2) and set(auth) == fields,
+            'source_budget_authorization_required')
+    expected = {'productionRunId': production_run_id, 'configurationSha256': configuration_sha256,
+                'budgetRoot': str(budget_root)}
+    if version == AUTHORIZATION_V1:
+        expected['codeIdentitySha256'] = code_identity
+    require(auth['binding'] == expected, 'source_budget_execution_binding_changed')
+    if version == AUTHORIZATION_V2:
+        evidence = auth['evidence']
+        require(isinstance(evidence, dict) and set(evidence) == {'codeIdentitySha256AtApproval'}
+                and isinstance(evidence['codeIdentitySha256AtApproval'], str)
+                and english.SHA256.fullmatch(evidence['codeIdentitySha256AtApproval']),
+                'source_budget_authorization_evidence_invalid')
+    authority = auth['authority']
+    approval_path = _safe_path(Path(auth_path).parent / auth['approvalReceipt'])
+    approval = _load(approval_path)
+    require(_sha(approval_path) == authority['approvalSha256']
+            and approval.get('schemaVersion') == (APPROVAL_V1 if version == AUTHORIZATION_V1 else APPROVAL_V2)
+            and approval.get('binding') == {**expected, 'globalBounds': authority['globalBounds'],
+                                            'requestLimits': authority['requestLimits']}
+            and approval.get('humanApproval') is True and approval.get('decision') == 'approved'
+            and approval.get('operatorEvidence') and approval.get('reviewedBy') and approval.get('reviewedAt'),
+            'source_budget_approval_not_bound')
+    return authority, approval_path, version
+
+
+def record_attempt(out, event, **fields):
+    """Append one line to the output's attempts log: every start, and code drift seen during a run."""
+    import datetime
+    out.mkdir(parents=True, exist_ok=True)
+    row = {'at': datetime.datetime.now(datetime.timezone.utc).isoformat(timespec='seconds'), 'event': event, **fields}
+    with (out / 'source-run-attempts.ndjson').open('a', encoding='utf-8') as log:
+        log.write(json.dumps(row, ensure_ascii=False, sort_keys=True) + '\n')
+    return row
+
+
 def _positive(value):
     return type(value) in (int, float) and math.isfinite(value) and value >= 0
 
@@ -204,6 +255,7 @@ class Configuration:
     budget_root: Path
     approval_hash: str
     authorization_hash: str
+    authorization_version: str = AUTHORIZATION_V1
 
 
 def _validate_judge_backend(value):
@@ -303,29 +355,16 @@ def load_configuration(path):
     identity = jobs._digest({k: v for k, v in value.items() if k != 'budgetAuthorization'})
     code_identity = code.code_identity()
     auth_path = resolve('budgetAuthorization')
-    auth = _load(auth_path)
-    require(isinstance(auth, dict) and set(auth) == {'schemaVersion', 'binding', 'authority', 'approvalReceipt'}
-            and auth['schemaVersion'] == 'sermon-source-budget-authorization-v1', 'source_budget_authorization_required')
     budget_root = job_root.parent / f'.{job_root.name}.source-budget'
     require(budget_root.resolve() not in {root.resolve() for root in reuse_roots}, 'invalid_source_reuse_roots')
-    expected = {'productionRunId': value['productionRunId'], 'configurationSha256': identity,
-                'codeIdentitySha256': code_identity, 'budgetRoot': str(budget_root)}
-    require(auth['binding'] == expected, 'source_budget_execution_binding_changed')
-    authority = auth['authority']
+    authority, approval_path, version = check_budget_authorization(
+        auth_path, production_run_id=value['productionRunId'], configuration_sha256=identity,
+        budget_root=budget_root, code_identity=code_identity)
     budget.SourceBudget(budget_root, authority, verify=lambda: None, reuse_roots=reuse_roots,
         reuse_operations=REUSE_OPERATIONS, reuse_miss_pays=True,
         max_concurrent=max(value.get('asrWorkers', 1), value['judge']['workers']))
-    approval_path = _safe_path(auth_path.parent / auth['approvalReceipt'])
-    approval = _load(approval_path)
-    require(_sha(approval_path) == authority['approvalSha256']
-            and approval.get('schemaVersion') == 'sermon-source-budget-approval-v1'
-            and approval.get('binding') == {**expected, 'globalBounds': authority['globalBounds'],
-                                            'requestLimits': authority['requestLimits']}
-            and approval.get('humanApproval') is True and approval.get('decision') == 'approved'
-            and approval.get('operatorEvidence') and approval.get('reviewedBy') and approval.get('reviewedAt'),
-            'source_budget_approval_not_bound')
     return Configuration(path, value, media, output, job_root, receipt_path, identity,
-                         code_identity, authority, budget_root, _sha(approval_path), _sha(auth_path))
+                         code_identity, authority, budget_root, _sha(approval_path), _sha(auth_path), version)
 
 
 def inspect(config_path):
@@ -352,6 +391,7 @@ def inspect(config_path):
                 'budgetApproval': config.approval_hash}, 'snapshotBound': True,
             'productionRunId': config.value['productionRunId'],
             'outputDirectory': str(config.output), 'budgetRoot': str(config.budget_root),
+            'authorizationVersion': config.authorization_version,
             'reuseBudgetRoots': [str(root) for root in reuse_budget_roots(config.value, config.path)],
             'globalBounds': config.authority['globalBounds'], 'chunkCount': count, 'chunkMaxSeconds': 180,
             'mfaBackend': config.value['mfa']['backend'], 'mfaRuntimeVerified': False,
@@ -472,11 +512,19 @@ def _reference_rows(response, index, start, end):
 def execute(config_path, *, api_key=None, transport=None, aligner=None, mfa_preflight=None, claude_transport=None):
     """Execute a fixed candidate recipe. Injection seams are offline tests only."""
     config = load_configuration(config_path)
+    drift = []
     def fresh():
         current = load_configuration(config.path)
-        require((current.identity, current.code_identity, current.approval_hash, current.authorization_hash) ==
-                (config.identity, config.code_identity, config.approval_hash, config.authorization_hash),
+        require((current.identity, current.approval_hash, current.authorization_hash) ==
+                (config.identity, config.approval_hash, config.authorization_hash),
                 'source_execution_binding_changed')
+        if config.authorization_version == AUTHORIZATION_V1:
+            require(current.code_identity == config.code_identity, 'source_execution_binding_changed')
+        elif current.code_identity != config.code_identity and current.code_identity not in drift:
+            # The process keeps running the code it loaded; the files on disk changed underneath it.
+            drift.append(current.code_identity)
+            record_attempt(config.output, 'code_identity_drift_observed', startedWith=config.code_identity,
+                           onDisk=current.code_identity)
     with work_lock(config.output):
         config.output.mkdir(parents=True, exist_ok=True)
         with _source.current().accounting.session(config.output / 'accounting', 'unified_source_preparation',
@@ -488,9 +536,16 @@ def execute(config_path, *, api_key=None, transport=None, aligner=None, mfa_pref
 
 def _execute(config, fresh, *, api_key, transport, aligner, mfa_preflight, claude_transport=None):
     out, value = config.output, config.value
-    _freeze(out / 'source-run.json', {'configurationSha256': config.identity,
-                                     'codeIdentitySha256': config.code_identity,
-                                     'authorizationSha256': config.authorization_hash})
+    run_record = out / 'source-run.json'
+    if run_record.exists():
+        require(_load(run_record).get('configurationSha256') == config.identity, 'source_run_configuration_changed')
+    else:
+        _freeze(run_record, {'configurationSha256': config.identity, 'codeIdentitySha256': config.code_identity,
+                             'authorizationSha256': config.authorization_hash,
+                             'authorizationVersion': config.authorization_version})
+    record_attempt(out, 'attempt_started', configurationSha256=config.identity,
+                   codeIdentitySha256=config.code_identity, authorizationSha256=config.authorization_hash,
+                   authorizationVersion=config.authorization_version)
     total_duration = _probe(config.media)
     window = value['window']
     require(abs(total_duration - value['sourceDurationSeconds']) <= .002, 'source_duration_identity_changed')
@@ -660,22 +715,14 @@ def rebuild(config_path, base_output, out_dir, overrides_path, authorization_pat
                              'maxUnitSeconds': value['anchorPolicy']['maxUnitSeconds'],
                              **({'operatorAcceptanceSha256': _sha(acceptance_path)} if acceptance_path else {})})
     authorization_path = _safe_path(Path(authorization_path).absolute())
-    auth = _load(authorization_path)
     budget_root = out.parent / f'.{out.name}.judge-budget'
-    expected = {'productionRunId': value['productionRunId'], 'configurationSha256': identity,
-                'codeIdentitySha256': code.code_identity(), 'budgetRoot': str(budget_root)}
-    require(isinstance(auth, dict) and auth.get('schemaVersion') == 'sermon-source-budget-authorization-v1'
-            and auth.get('binding') == expected, 'source_budget_execution_binding_changed')
-    authority = auth['authority']
-    approval_path = _safe_path(authorization_path.parent / auth['approvalReceipt'])
-    approval = _load(approval_path)
-    require(_sha(approval_path) == authority['approvalSha256']
-            and approval.get('schemaVersion') == 'sermon-source-budget-approval-v1'
-            and approval.get('binding') == {**expected, 'globalBounds': authority['globalBounds'],
-                                            'requestLimits': authority['requestLimits']}
-            and approval.get('humanApproval') is True and approval.get('decision') == 'approved',
-            'source_budget_approval_not_bound')
+    code_identity = code.code_identity()
+    authority, approval_path, version = check_budget_authorization(
+        authorization_path, production_run_id=value['productionRunId'], configuration_sha256=identity,
+        budget_root=budget_root, code_identity=code_identity)
     out.mkdir(parents=True, exist_ok=True)
+    record_attempt(out, 'attempt_started', rebuildIdentity=identity, codeIdentitySha256=code_identity,
+                   authorizationSha256=_sha(authorization_path), authorizationVersion=version)
     manifest = anchors.build_anchor_manifest(aligned, source_path=aligned_path,
         unit_policy=anchors.UNIT_POLICY_V3, max_unit_seconds=value['anchorPolicy']['maxUnitSeconds'],
         boundary_overrides=overrides['overrides'])

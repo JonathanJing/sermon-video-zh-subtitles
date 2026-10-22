@@ -424,6 +424,69 @@ class UnifiedSourceTests(unittest.TestCase):
             self.execute()
         self.assertEqual([c for c in self.calls if c.endswith('/transcriptions')], [])
 
+    def use_v2_authorization(self):
+        """Rewrite the fixture's v1 authorization as v2: code identity becomes evidence, not binding."""
+        authorization_path = self.root / 'budget.json'
+        authorization = json.loads(authorization_path.read_text())
+        code_identity = authorization['binding'].pop('codeIdentitySha256')
+        authorization['schemaVersion'] = subject.AUTHORIZATION_V2
+        authorization['evidence'] = {'codeIdentitySha256AtApproval': code_identity}
+        approval_path = self.root / 'budget-approval.json'
+        approval = json.loads(approval_path.read_text())
+        approval['schemaVersion'] = subject.APPROVAL_V2
+        approval['binding'].pop('codeIdentitySha256')
+        approval_path.write_text(json.dumps(approval))
+        authorization['authority']['approvalSha256'] = subject._sha(approval_path)
+        authorization_path.write_text(json.dumps(authorization))
+
+    def attempts(self):
+        path = self.root / 'source' / 'source-run-attempts.ndjson'
+        return [json.loads(line) for line in path.read_text().splitlines()] if path.exists() else []
+
+    def test_v2_authorization_binds_run_and_bounds_and_keeps_code_identity_as_evidence(self):
+        self.use_v2_authorization()
+        config = subject.load_configuration(self.path)
+        self.assertEqual(config.authorization_version, subject.AUTHORIZATION_V2)
+        self.assertEqual(subject.inspect(self.path)['authorizationVersion'], subject.AUTHORIZATION_V2)
+        self.assertEqual(self.execute()['reason'], 'human_source_review_required')
+        self.assertEqual([row['event'] for row in self.attempts()], ['attempt_started'])
+        self.assertEqual(self.attempts()[0]['codeIdentitySha256'], 'c' * 64)
+        # A later attempt with other code resumes the same output under the same authorization.
+        self.patch.stop()
+        self.patch = patch.object(subject.code, 'code_identity', return_value='d' * 64)
+        self.patch.start()
+        self.calls.clear()
+        self.assertEqual(self.execute()['reason'], 'human_source_review_required')
+        self.assertEqual(self.calls, [])
+        self.assertEqual([row['codeIdentitySha256'] for row in self.attempts()], ['c' * 64, 'd' * 64])
+        self.assertEqual(json.loads((self.root / 'source' / 'source-run.json').read_text())['codeIdentitySha256'], 'c' * 64)
+
+    def drifting_transport(self, flip_at):
+        state = {'count': 0}
+        def transport(endpoint, body, content_type, key):
+            state['count'] += 1
+            if state['count'] == flip_at:
+                self.patch.stop()
+                self.patch = patch.object(subject.code, 'code_identity', return_value='e' * 64)
+                self.patch.start()
+            return self.transport(endpoint, body, content_type, key)
+        return transport
+
+    def test_code_drift_during_a_v2_run_is_recorded_and_the_judge_completes(self):
+        self.use_v2_authorization()
+        result = self.execute(transport=self.drifting_transport(flip_at=2))
+        self.assertEqual(result['reason'], 'human_source_review_required')
+        self.assertEqual(len(self.calls), 3)
+        events = [row['event'] for row in self.attempts()]
+        self.assertEqual(events, ['attempt_started', 'code_identity_drift_observed'])
+        drift = self.attempts()[1]
+        self.assertEqual((drift['startedWith'], drift['onDisk']), ('c' * 64, 'e' * 64))
+
+    def test_v1_authorization_still_aborts_on_code_drift_during_the_run(self):
+        with self.assertRaisesRegex(ValueError, 'binding_changed'):
+            self.execute(transport=self.drifting_transport(flip_at=2))
+        self.assertLess(len(self.calls), 3)
+
     def test_rebuild_rejects_overrides_for_another_alignment(self):
         self.execute()
         overrides, out, authorization = self.rebuild_inputs('b' * 64)
