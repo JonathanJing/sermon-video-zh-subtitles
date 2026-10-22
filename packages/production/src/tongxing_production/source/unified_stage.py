@@ -79,7 +79,16 @@ JUDGE_CACHE_FIELDS = {'judgeCacheRoot'}
 # Optional v2/v3 field: the MacBook per-chunk MFA raw alignment cache (relative to the configuration).
 # Spark keeps its own under its job root, so Spark runs reuse chunks without this field.
 MFA_CHUNK_CACHE_FIELDS = {'mfaChunkCacheRoot'}
-OPTIONAL_FIELDS = TEXT_REVIEW_FIELDS | JUDGE_CACHE_FIELDS | MFA_CHUNK_CACHE_FIELDS
+# Optional v2/v3 field: earlier budget roots of this source (relative to the configuration) whose
+# returned ASR this configuration may replay at no cost. The ledger matches a chunk by its
+# operation and audio identity, refuses a root whose same operation carries other audio, and
+# records every replay as `reused` with its provenance (2026-10-21: three executes of one
+# episode each paid the same 14 chunks again because the ledger is per jobRoot).
+REUSE_FIELDS = {'reuseBudgetRoots'}
+# Only transcription replays across roots; the machine judge always runs under this root's own
+# cap, and a chunk no reuse root returned is paid here rather than failing the run.
+REUSE_OPERATIONS = ('asr.',)
+OPTIONAL_FIELDS = TEXT_REVIEW_FIELDS | JUDGE_CACHE_FIELDS | MFA_CHUNK_CACHE_FIELDS | REUSE_FIELDS
 
 
 def require(ok, code):
@@ -253,6 +262,7 @@ def load_configuration(path):
         resolve('judgeCacheRoot')
     if 'mfaChunkCacheRoot' in value:
         resolve('mfaChunkCacheRoot')
+    reuse_roots = reuse_budget_roots(value, path)
     require(media.is_file() and _sha(media) == value['mediaSha256'], 'source_media_identity_changed')
     require(not any(output == p or output in p.parents for p in (media, path, receipt_path, job_root))
             and not (job_root == output or job_root in output.parents), 'source_paths_overlap')
@@ -297,11 +307,13 @@ def load_configuration(path):
     require(isinstance(auth, dict) and set(auth) == {'schemaVersion', 'binding', 'authority', 'approvalReceipt'}
             and auth['schemaVersion'] == 'sermon-source-budget-authorization-v1', 'source_budget_authorization_required')
     budget_root = job_root.parent / f'.{job_root.name}.source-budget'
+    require(budget_root.resolve() not in {root.resolve() for root in reuse_roots}, 'invalid_source_reuse_roots')
     expected = {'productionRunId': value['productionRunId'], 'configurationSha256': identity,
                 'codeIdentitySha256': code_identity, 'budgetRoot': str(budget_root)}
     require(auth['binding'] == expected, 'source_budget_execution_binding_changed')
     authority = auth['authority']
-    budget.SourceBudget(budget_root, authority, verify=lambda: None,
+    budget.SourceBudget(budget_root, authority, verify=lambda: None, reuse_roots=reuse_roots,
+        reuse_operations=REUSE_OPERATIONS, reuse_miss_pays=True,
         max_concurrent=max(value.get('asrWorkers', 1), value['judge']['workers']))
     approval_path = _safe_path(auth_path.parent / auth['approvalReceipt'])
     approval = _load(approval_path)
@@ -340,9 +352,20 @@ def inspect(config_path):
                 'budgetApproval': config.approval_hash}, 'snapshotBound': True,
             'productionRunId': config.value['productionRunId'],
             'outputDirectory': str(config.output), 'budgetRoot': str(config.budget_root),
+            'reuseBudgetRoots': [str(root) for root in reuse_budget_roots(config.value, config.path)],
             'globalBounds': config.authority['globalBounds'], 'chunkCount': count, 'chunkMaxSeconds': 180,
             'mfaBackend': config.value['mfa']['backend'], 'mfaRuntimeVerified': False,
             'humanSourceReview': 'pending', 'productionTranslationEligible': False}
+
+
+def reuse_budget_roots(value, config_path):
+    """Resolved earlier budget roots this configuration may replay returned ASR from."""
+    roots = value.get('reuseBudgetRoots', [])
+    require(isinstance(roots, list) and all(isinstance(root, str) and root.strip() for root in roots)
+            and len(set(roots)) == len(roots), 'invalid_source_reuse_roots')
+    resolved = [_safe_path(Path(config_path).parent / root) for root in roots]
+    require(all((root / 'source-budget.json').is_file() for root in resolved), 'source_reuse_root_missing')
+    return resolved
 
 
 def judge_cache_root(value, config_path, out):
@@ -483,7 +506,8 @@ def _execute(config, fresh, *, api_key, transport, aligner, mfa_preflight, claud
         claude_transport = claude_judge_transport(value, out / 'judge-requests' / 'claude-cli-calls',
                                                   config.authority['requestLimits'])
     caller = budget.SourceBudget(config.budget_root, config.authority, verify=fresh, transport=transport,
-        max_concurrent=max(value.get('asrWorkers', 1), value['judge']['workers']), claude_transport=claude_transport)
+        max_concurrent=max(value.get('asrWorkers', 1), value['judge']['workers']), claude_transport=claude_transport,
+        reuse_roots=reuse_budget_roots(value, config.path), reuse_operations=REUSE_OPERATIONS, reuse_miss_pays=True)
     if api_key is None:
         api_key = os.environ.get('OPENAI_API_KEY', '')
     def transcribe_chunk(index):

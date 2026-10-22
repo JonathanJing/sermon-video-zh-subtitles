@@ -140,12 +140,14 @@ class UnifiedSourceTests(unittest.TestCase):
         self.assertEqual(len(self.calls), 3)
         self.assertEqual(jobs._read(config.budget_root / 'source-budget.json')['maxConcurrent'], 8)
 
-    def rebind_budget(self):
+    def rebind_budget(self, budget_root=None):
         self.path.write_text(json.dumps(self.config))
         authorization_path = self.root / 'budget.json'
         authorization = json.loads(authorization_path.read_text())
         authorization['binding']['configurationSha256'] = jobs._digest(
             {k: v for k, v in self.config.items() if k != 'budgetAuthorization'})
+        if budget_root is not None:
+            authorization['binding']['budgetRoot'] = str(budget_root)
         approval_path = self.root / 'budget-approval.json'
         approval = json.loads(approval_path.read_text())
         approval['binding'].update(authorization['binding'])
@@ -384,6 +386,43 @@ class UnifiedSourceTests(unittest.TestCase):
                 else:
                     with self.assertRaisesRegex(ValueError, 'duration_changed'):
                         subject._validate_pcm(output, 1)
+
+    def test_reuse_budget_roots_replay_returned_asr_for_the_same_audio_and_refuse_other_audio(self):
+        self.config.update(schemaVersion=subject.SCHEMA_V2, asrWorkers=1)
+        self.rebind_budget()
+        self.execute()
+        paid_asr = sum(c.endswith('/transcriptions') for c in self.calls)
+        self.assertEqual(paid_asr, 2)
+        # A second configuration of the same source and window names the first root.
+        self.config.update(jobRoot=str(self.root / 'jobs-2'), outputDirectory=str(self.root / 'source-2'),
+                           reuseBudgetRoots=['.jobs.source-budget'])
+        self.rebind_budget(budget_root=self.root / '.jobs-2.source-budget')
+        inspection = subject.inspect(self.path)
+        self.assertEqual(inspection['reuseBudgetRoots'], [str(self.root / '.jobs.source-budget')])
+        self.calls.clear()
+        result = self.execute()
+        self.assertEqual(result['reason'], 'human_source_review_required')
+        self.assertEqual([c for c in self.calls if c.endswith('/transcriptions')], [])
+        # The judge is not replayed across roots: it ran again under this root's own cap.
+        self.assertTrue(any(not c.endswith('/transcriptions') for c in self.calls))
+        ledger = json.loads((self.root / '.jobs-2.source-budget' / 'source-budget.json').read_text())
+        asr_rows = {k: v for k, v in ledger['requests'].items() if k.startswith('asr.')}
+        judge_rows = {k: v for k, v in ledger['requests'].items() if k.startswith('judge.')}
+        self.assertEqual(len(asr_rows), 2)
+        self.assertTrue(all(row['settlement']['costStatus'] == 'reused' and row['settlement']['costMicrousd'] == 0
+                            for row in asr_rows.values()))
+        self.assertTrue(judge_rows and all(row['settlement']['costStatus'] != 'reused' for row in judge_rows.values()))
+        self.assertEqual(ledger['reuseBudgetRoots'], [str(self.root / '.jobs.source-budget')])
+        # A third configuration with another window has other audio behind the same operation: refused, not re-bought.
+        self.config.update(jobRoot=str(self.root / 'jobs-3'), outputDirectory=str(self.root / 'source-3'),
+                           window={'startSeconds': 0, 'endSeconds': 180.5})
+        self.approval.write_text(json.dumps({**json.loads(self.approval.read_text()), 'endTime': '00:03:00.500'}))
+        self.config['windowApprovalSha256'] = subject._sha(self.approval)
+        self.rebind_budget(budget_root=self.root / '.jobs-3.source-budget')
+        self.calls.clear()
+        with self.assertRaisesRegex(ValueError, 'source_reuse_identity_changed'):
+            self.execute()
+        self.assertEqual([c for c in self.calls if c.endswith('/transcriptions')], [])
 
     def test_rebuild_rejects_overrides_for_another_alignment(self):
         self.execute()
