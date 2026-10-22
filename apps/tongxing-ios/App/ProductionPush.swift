@@ -323,6 +323,9 @@ struct ProductionPushSettingsView: View {
             Section {
                 Text(localization.text("选择开启后，同行会按你选的内容语言发送每周新内容通知。默认关闭，可随时退出。"))
                     .font(.footnote)
+                Text(localization.text("开启时会上传 Apple 推送令牌、随机安装标识和所选语言。关闭时尝试撤回订阅；离线时会在下次联网后重试。有效登记最长 60 天，登记与发送记录最多保留 365 天。"))
+                    .font(.footnote)
+                    .accessibilityIdentifier("production-push-privacy")
                 Picker(localization.text("通知内容语言"), selection: Binding(get: { push.locale }, set: { value in Task { await push.setLocale(value) } })) {
                     Text("中文").tag("zh-Hans")
                     Text("English").tag("en")

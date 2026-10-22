@@ -17,6 +17,7 @@ final class ProductionPushUITests: XCTestCase {
         XCTAssertTrue(app.buttons["production-push-enable"].waitForExistence(timeout: 8))
         XCTAssertFalse(app.buttons["production-push-disable"].exists)
         XCTAssertTrue(app.buttons["production-push-locale"].exists)
+        XCTAssertTrue(app.staticTexts["production-push-privacy"].exists)
         let status = app.staticTexts["production-push-status"].label
         XCTAssertTrue(status.contains("默认关闭") || status.contains("off by default"))
 

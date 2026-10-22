@@ -109,5 +109,6 @@ test('accepted APNs response is recorded separately from device delivery', async
   const ledger = [...store.rows.entries()].find(([path]) => path.startsWith('pushDispatches/'))[1];
   assert.equal(ledger.status, 'accepted');
   assert.equal(ledger.httpStatus, 200);
+  assert.equal(ledger.expiresAt.toISOString(), '2027-10-22T05:00:00.000Z');
   assert.equal(Object.hasOwn(ledger, 'deviceDisplayed'), false);
 });

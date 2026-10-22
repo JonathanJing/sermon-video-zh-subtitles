@@ -3,6 +3,7 @@ import { createHash, randomUUID } from 'node:crypto';
 export const ORIGIN = 'https://ai-for-god-sermon-audio.web.app';
 export const TOPIC = 'com.jonathanjing.tongxing.dev';
 const LOCALES = ['zh-Hans', 'en', 'ko', 'es', 'vi'];
+const RECEIPT_RETENTION_MS = 365 * 24 * 60 * 60 * 1000;
 const SHA = /^[0-9a-f]{64}$/;
 const TOKEN = /^(?:[0-9a-f]{2}){16,256}$/;
 const IDENTIFIER = /^[A-Za-z0-9_-]+$/;
@@ -148,6 +149,7 @@ export async function dispatchOne({ store, subscription, notice, sendAPNs, now =
       locale: notice.locale, releaseSHA256: notice.releaseSHA256,
       installationId: subscription.installationId, tokenHash: subscription.tokenHash,
       claimedAt: now(), apnsID: attemptID,
+      expiresAt: new Date(now().getTime() + RECEIPT_RETENTION_MS),
     });
     return { claimed: true };
   });
