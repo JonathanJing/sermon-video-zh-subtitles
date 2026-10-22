@@ -208,8 +208,14 @@ def materialize_path_map(job_path: Path, path_map_path: Path) -> None:
         ref = pending.pop(0)
         original = ref["path"]
         if original in seen:
-            require(seen[original] == ref, f"Conflicting mapped evidence: {original}")
-            continue
+            # One file may be cited with different metadata (bytes, or a JSON hash only some
+            # citers record); only a different hash for the same path is a conflict.
+            prior = seen[original]
+            require(prior["sha256"] == ref["sha256"]
+                    and prior.get("jsonSha256", ref.get("jsonSha256")) == ref.get("jsonSha256", prior.get("jsonSha256")),
+                    f"Conflicting mapped evidence: {original}")
+            if "jsonSha256" in prior or "jsonSha256" not in ref:
+                continue
         seen[original] = ref
         original = Path(ref["path"])
         staged = Path(aliases.get(str(original), str(original)))
