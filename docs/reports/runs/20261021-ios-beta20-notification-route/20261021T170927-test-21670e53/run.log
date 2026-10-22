@@ -1,0 +1,242 @@
+
+$ /usr/bin/xcrun xcodebuild -project ~/.codex/worktrees/ios-next-beta-poster-push/sermon-video-zh-subtitles/apps/tongxing-ios/Tongxing.xcodeproj -list -json -disableAutomaticPackageResolution
+{
+  "project" : {
+    "configurations" : [
+      "BetaDebug",
+      "BetaRelease",
+      "Debug",
+      "Release"
+    ],
+    "name" : "Tongxing",
+    "schemes" : [
+      "ListeningActivityExtension",
+      "Tongxing",
+      "TongxingBeta",
+      "TongxingCore",
+      "TongxingInfrastructure",
+      "TongxingPreview",
+      "TongxingScreenshots"
+    ],
+    "targets" : [
+      "Tongxing",
+      "ListeningActivityExtension",
+      "TongxingTests",
+      "TongxingUITests"
+    ]
+  }
+}
+
+$ /usr/bin/xcrun simctl list devices available --json
+{
+  "devices" : {
+    "com.apple.CoreSimulator.SimRuntime.iOS-27-0" : [
+      {
+        "dataPath" : "\/Users\/jonathan_jing\/Library\/Developer\/CoreSimulator\/Devices\/A9ACB321-07F8-4540-AD3C-7FACBD384A1F\/data",
+        "dataPathSize" : 5439537152,
+        "logPath" : "\/Users\/jonathan_jing\/Library\/Logs\/CoreSimulator\/A9ACB321-07F8-4540-AD3C-7FACBD384A1F",
+        "udid" : "A9ACB321-07F8-4540-AD3C-7FACBD384A1F",
+        "lastUsedAt" : "2026-10-22T00:09:28Z",
+        "isAvailable" : true,
+... 385 lines omitted; 0 error-like lines, 0 kept below ...
+... end of omitted section ...
+CopySwiftLibs ~/.codex/worktrees/ios-next-beta-poster-push/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-21/cli/DerivedData/Build/Products/BetaDebug-iphonesimulator/TongxingUITests-Runner.app/PlugIns/TongxingUITests.xctest (in target 'TongxingUITests' from project 'Tongxing')
+    cd ~/.codex/worktrees/ios-next-beta-poster-push/sermon-video-zh-subtitles/apps/tongxing-ios
+    builtin-swiftStdLibTool --copy --verbose --scan-executable ~/.codex/worktrees/ios-next-beta-poster-push/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-21/cli/DerivedData/Build/Products/BetaDebug-iphonesimulator/TongxingUITests-Runner.app/PlugIns/TongxingUITests.xctest/TongxingUITests --scan-folder ~/.codex/worktrees/ios-next-beta-poster-push/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-21/cli/DerivedData/Build/Products/BetaDebug-iphonesimulator/TongxingUITests-Runner.app/PlugIns/TongxingUITests.xctest/Frameworks --scan-folder ~/.codex/worktrees/ios-next-beta-poster-push/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-21/cli/DerivedData/Build/Products/BetaDebug-iphonesimulator/TongxingUITests-Runner.app/PlugIns/TongxingUITests.xctest/PlugIns --scan-folder ~/.codex/worktrees/ios-next-beta-poster-push/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-21/cli/DerivedData/Build/Products/BetaDebug-iphonesimulator/TongxingUITests-Runner.app/PlugIns/TongxingUITests.xctest/SystemExtensions --scan-folder ~/.codex/worktrees/ios-next-beta-poster-push/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-21/cli/DerivedData/Build/Products/BetaDebug-iphonesimulator/TongxingUITests-Runner.app/PlugIns/TongxingUITests.xctest/Extensions --platform iphonesimulator --toolchain /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain --destination ~/.codex/worktrees/ios-next-beta-poster-push/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-21/cli/DerivedData/Build/Products/BetaDebug-iphonesimulator/TongxingUITests-Runner.app/PlugIns/TongxingUITests.xctest/Frameworks --strip-bitcode --scan-executable /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/usr/lib/libXCTestSwiftSupport.dylib --strip-bitcode-tool /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDef ...[line truncated]
+Ignoring --strip-bitcode because --sign was not passed
+
+PruneExplicitPrecompiledModules ~/.codex/worktrees/ios-next-beta-poster-push/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-21/cli/DerivedData/SDKExplicitPrecompiledModules
+
+PruneExplicitPrecompiledModules ~/.codex/worktrees/ios-next-beta-poster-push/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-21/cli/DerivedData/Build/Intermediates.noindex/SwiftExplicitPrecompiledModules
+
+PruneExplicitPrecompiledModules ~/.codex/worktrees/ios-next-beta-poster-push/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-21/cli/DerivedData/Build/Intermediates.noindex/ExplicitPrecompiledModules
+
+2026-10-21 17:09:37.913 xcodebuild[76785:40551660] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+2026-10-21 17:09:52.578232-0700 TongxingUITests-Runner[77064:40554163] [Default] Running tests...
+    t =      nans Interface orientation changed to Portrait
+Test Suite 'Selected tests' started at 2026-10-21 17:09:54.344.
+Test Suite 'TongxingUITests.xctest' started at 2026-10-21 17:09:54.345.
+Test Suite 'BetaNotificationUITests' started at 2026-10-21 17:09:54.345.
+Test Case '-[TongxingUITests.BetaNotificationUITests testLocalNotificationDisplaysAndRoutesVerifiedFixture]' started.
+    t =     0.00s Start Test at 2026-10-21 17:09:54.346
+    t =     0.16s Set Up
+    t =     0.16s Open com.jonathanjing.tongxing.beta
+    t =     0.17s     Launch com.jonathanjing.tongxing.beta
+2026-10-21 17:09:54.585 xcodebuild[76785:40551660] [MT] IDELaunchParametersSnapshot: debugger version lookup failed for path '<nil>': noURL
+2026-10-21 17:09:54.585 xcodebuild[76785:40551660] [MT] IDELaunchParametersSnapshot: no debugger version
+2026-10-21 17:09:54.627 xcodebuild[76785:40551660] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+    t =     2.47s         Setting up automation session
+    t =     3.24s         Wait for com.jonathanjing.tongxing.beta to idle
+    t =     5.05s Waiting 10.0s for "more-options" Button to exist
+    t =     6.13s     Checking `Expect predicate `existsNoRetry == 1` for object "more-options" Button`
+    t =     6.13s         Checking existence of `"more-options" Button`
+    t =     6.23s Tap "more-options" Button
+    t =     6.23s     Wait for com.jonathanjing.tongxing.beta to idle
+    t =     6.23s     Find the "more-options" Button
+    t =     6.28s     Check for interrupting elements affecting "more-options" Button
+    t =     6.32s     Synthesize event
+    t =     6.73s     Wait for com.jonathanjing.tongxing.beta to idle
+    t =     7.65s Tap "beta-notification-settings" Button
+    t =     7.65s     Wait for com.jonathanjing.tongxing.beta to idle
+    t =     7.66s     Find the "beta-notification-settings" Button
+    t =     7.77s     Check for interrupting elements affecting "beta-notification-settings" Button
+    t =     7.84s     Synthesize event
+    t =     8.13s     Wait for com.jonathanjing.tongxing.beta to idle
+    t =     9.09s Waiting 5.0s for "beta-notification-opt-in" Switch to exist
+    t =    10.14s     Checking `Expect predicate `existsNoRetry == 1` for object "beta-notification-opt-in" Switch`
+    t =    10.14s         Checking existence of `"beta-notification-opt-in" Switch`
+    t =    10.23s Tap "beta-notification-opt-in" Switch[0.92, 0.50]
+    t =    10.23s     Wait for com.jonathanjing.tongxing.beta to idle
+    t =    10.23s     Find the "beta-notification-opt-in" Switch
+    t =    10.31s     Check for interrupting elements affecting "beta-notification-opt-in" Switch
+    t =    10.38s     Synthesize event
+    t =    10.38s         Find the "beta-notification-opt-in" Switch
+    t =    10.46s         Find the "beta-notification-opt-in" Switch
+    t =    10.55s         Find the "beta-notification-opt-in" Switch
+    t =    10.91s     Wait for com.jonathanjing.tongxing.beta to idle
+    t =    12.21s Tap "beta-notification-permission" Button
+    t =    12.21s     Wait for com.jonathanjing.tongxing.beta to idle
+    t =    12.22s     Find the "beta-notification-permission" Button
+    t =    12.31s     Check for interrupting elements affecting "beta-notification-permission" Button
+    t =    12.38s     Synthesize event
+    t =    12.68s     Wait for com.jonathanjing.tongxing.beta to idle
+    t =    12.92s Checking existence of `"允许" Button`
+    t =    13.00s Waiting 3.0s for "Allow" Button to exist
+    t =    14.04s     Checking `Expect predicate `existsNoRetry == 1` for object "Allow" Button`
+    t =    14.04s         Checking existence of `"Allow" Button`
+    t =    14.07s         Capturing element debug description
+    t =    15.00s     Checking `Expect predicate `existsNoRetry == 1` for object "Allow" Button`
+    t =    15.00s         Checking existence of `"Allow" Button`
+    t =    15.04s         Capturing element debug description
+    t =    16.00s     Checking `Expect predicate `existsNoRetry == 1` for object "Allow" Button`
+    t =    16.00s         Checking existence of `"Allow" Button`
+    t =    16.03s         Capturing element debug description
+    t =    16.03s     Checking existence of `"Allow" Button`
+    t =    16.06s Collecting debug information to assist test failure triage
+    t =    16.06s     Requesting snapshot of accessibility hierarchy for app with pid 76819
+    t =    17.16s Checking `Expect predicate `label CONTAINS "系统通知已允许"` for object "beta-notification-permission-status" StaticText`
+    t =    17.16s     Find the "beta-notification-permission-status" StaticText
+    t =    17.27s Checking existence of `"beta-notification-preview" Button`
+    t =    17.35s Swipe up Target Application 'com.jonathanjing.tongxing.beta'
+    t =    17.35s     Wait for com.jonathanjing.tongxing.beta to idle
+    t =    17.36s     Find the Target Application 'com.jonathanjing.tongxing.beta'
+    t =    17.42s     Check for interrupting elements affecting "同行-beta" Application
+    t =    17.48s     Synthesize event
+    t =    17.90s     Wait for com.jonathanjing.tongxing.beta to idle
+    t =    18.65s Waiting 5.0s for "beta-notification-preview" Button to exist
+    t =    19.68s     Checking `Expect predicate `existsNoRetry == 1` for object "beta-notification-preview" Button`
+    t =    19.68s         Checking existence of `"beta-notification-preview" Button`
+    t =    19.77s Find the "beta-notification-preview" Button
+    t =    19.87s Tap "beta-notification-preview" Button
+    t =    19.87s     Wait for com.jonathanjing.tongxing.beta to idle
+    t =    19.90s     Find the "beta-notification-preview" Button
+    t =    19.99s     Check for interrupting elements affecting "beta-notification-preview" Button
+    t =    20.07s     Synthesize event
+    t =    20.36s     Wait for com.jonathanjing.tongxing.beta to idle
+    t =    21.67s Checking `Expect predicate `label CONTAINS "已安排本机测试通知"` for object "beta-notification-status" StaticText`
+    t =    21.67s     Find the "beta-notification-status" StaticText
+    t =    21.78s Pressing Home button
+    t =    22.25s Waiting 30.0s for "测试完整视频证道" StaticText to exist
+    t =    23.28s     Checking `Expect predicate `existsNoRetry == 1` for object "测试完整视频证道" StaticText`
+    t =    23.28s         Checking existence of `"测试完整视频证道" StaticText`
+    t =    23.36s         Capturing element debug description
+    t =    24.30s     Checking `Expect predicate `existsNoRetry == 1` for object "测试完整视频证道" StaticText`
+    t =    24.30s         Checking existence of `"测试完整视频证道" StaticText`
+    t =    24.37s         Capturing element debug description
+    t =    25.31s     Checking `Expect predicate `existsNoRetry == 1` for object "测试完整视频证道" StaticText`
+    t =    25.31s         Checking existence of `"测试完整视频证道" StaticText`
+    t =    25.38s         Capturing element debug description
+    t =    26.31s     Checking `Expect predicate `existsNoRetry == 1` for object "测试完整视频证道" StaticText`
+    t =    26.31s         Checking existence of `"测试完整视频证道" StaticText`
+    t =    26.36s         Capturing element debug description
+    t =    27.30s     Checking `Expect predicate `existsNoRetry == 1` for object "测试完整视频证道" StaticText`
+    t =    27.30s         Checking existence of `"测试完整视频证道" StaticText`
+    t =    27.38s         Capturing element debug description
+    t =    28.31s     Checking `Expect predicate `existsNoRetry == 1` for object "测试完整视频证道" StaticText`
+    t =    28.31s         Checking existence of `"测试完整视频证道" StaticText`
+    t =    28.39s         Capturing element debug description
+    t =    29.34s     Checking `Expect predicate `existsNoRetry == 1` for object "测试完整视频证道" StaticText`
+    t =    29.34s         Checking existence of `"测试完整视频证道" StaticText`
+    t =    29.41s         Capturing element debug description
+    t =    30.34s     Checking `Expect predicate `existsNoRetry == 1` for object "测试完整视频证道" StaticText`
+    t =    30.34s         Checking existence of `"测试完整视频证道" StaticText`
+    t =    30.40s         Capturing element debug description
+    t =    31.33s     Checking `Expect predicate `existsNoRetry == 1` for object "测试完整视频证道" StaticText`
+    t =    31.33s         Checking existence of `"测试完整视频证道" StaticText`
+    t =    31.41s         Capturing element debug description
+    t =    32.34s     Checking `Expect predicate `existsNoRetry == 1` for object "测试完整视频证道" StaticText`
+    t =    32.35s         Checking existence of `"测试完整视频证道" StaticText`
+    t =    32.42s         Capturing element debug description
+    t =    33.25s     Checking `Expect predicate `existsNoRetry == 1` for object "测试完整视频证道" StaticText`
+    t =    33.25s         Checking existence of `"测试完整视频证道" StaticText`
+    t =    33.31s         Capturing element debug description
+    t =    34.34s     Checking `Expect predicate `existsNoRetry == 1` for object "测试完整视频证道" StaticText`
+    t =    34.35s         Checking existence of `"测试完整视频证道" StaticText`
+    t =    34.42s         Capturing element debug description
+    t =    35.25s     Checking `Expect predicate `existsNoRetry == 1` for object "测试完整视频证道" StaticText`
+    t =    35.25s         Checking existence of `"测试完整视频证道" StaticText`
+    t =    35.32s         Capturing element debug description
+    t =    36.25s     Checking `Expect predicate `existsNoRetry == 1` for object "测试完整视频证道" StaticText`
+    t =    36.25s         Checking existence of `"测试完整视频证道" StaticText`
+    t =    37.33s Find the Application 'com.apple.springboard'
+    t =    37.56s Added attachment named 'beta-local-notification-visible'
+    t =    37.56s Tap "测试完整视频证道" StaticText
+    t =    37.56s     Wait for com.apple.springboard to idle
+    t =    37.56s     Find the "测试完整视频证道" StaticText
+    t =    37.63s     Check for interrupting elements affecting "NotificationTitle" StaticText
+    t =    37.69s     Synthesize event
+    t =    37.98s     Wait for com.apple.springboard to idle
+    t =    39.14s Waiting 10.0s for "more-options" Button to exist
+    t =    40.18s     Checking `Expect predicate `existsNoRetry == 1` for object "more-options" Button`
+    t =    40.18s         Checking existence of `"more-options" Button`
+    t =    40.22s Tap "more-options" Button
+    t =    40.22s     Wait for com.jonathanjing.tongxing.beta to idle
+    t =    40.23s     Find the "more-options" Button
+    t =    40.27s     Check for interrupting elements affecting "more-options" Button
+    t =    40.31s     Synthesize event
+    t =    40.62s     Wait for com.jonathanjing.tongxing.beta to idle
+    t =    41.39s Tap "beta-notification-settings" Button
+    t =    41.39s     Wait for com.jonathanjing.tongxing.beta to idle
+    t =    41.39s     Find the "beta-notification-settings" Button
+    t =    41.49s     Check for interrupting elements affecting "beta-notification-settings" Button
+    t =    41.56s     Synthesize event
+    t =    41.85s     Wait for com.jonathanjing.tongxing.beta to idle
+    t =    42.67s Waiting 5.0s for "beta-notification-last-opened" StaticText to exist
+    t =    43.71s     Checking `Expect predicate `existsNoRetry == 1` for object "beta-notification-last-opened" StaticText`
+    t =    43.71s         Checking existence of `"beta-notification-last-opened" StaticText`
+    t =    43.82s Find the "beta-notification-last-opened" StaticText
+    t =    43.89s Find the Target Application 'com.jonathanjing.tongxing.beta'
+    t =    44.05s Added attachment named 'beta-notification-verified-landing'
+    t =    44.05s Tap "beta-notification-opt-in" Switch[0.92, 0.50]
+    t =    44.05s     Wait for com.jonathanjing.tongxing.beta to idle
+    t =    44.06s     Find the "beta-notification-opt-in" Switch
+    t =    44.13s     Check for interrupting elements affecting "beta-notification-opt-in" Switch
+    t =    44.20s     Synthesize event
+    t =    44.20s         Find the "beta-notification-opt-in" Switch
+    t =    44.29s         Find the "beta-notification-opt-in" Switch
+    t =    44.37s         Find the "beta-notification-opt-in" Switch
+    t =    44.74s     Wait for com.jonathanjing.tongxing.beta to idle
+    t =    46.02s Tear Down
+Test Case '-[TongxingUITests.BetaNotificationUITests testLocalNotificationDisplaysAndRoutesVerifiedFixture]' passed (46.457 seconds).
+Test Suite 'BetaNotificationUITests' passed at 2026-10-21 17:10:40.803.
+	 Executed 1 test, with 0 failures (0 unexpected) in 46.457 (46.458) seconds
+Test Suite 'TongxingUITests.xctest' passed at 2026-10-21 17:10:40.804.
+	 Executed 1 test, with 0 failures (0 unexpected) in 46.457 (46.459) seconds
+Test Suite 'Selected tests' passed at 2026-10-21 17:10:40.804.
+	 Executed 1 test, with 0 failures (0 unexpected) in 46.457 (46.460) seconds
+2026-10-21 17:10:40.835 xcodebuild[76785:40551660] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+2026-10-21 17:10:40.836 xcodebuild[76785:40551660] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+2026-10-21 17:10:40.875 xcodebuild[76785:40551660] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+2026-10-21 17:10:40.877 xcodebuild[76785:40551660] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+2026-10-21 17:10:41.138 xcodebuild[76785:40551660] [MT] IDETestOperationsObserverDebug: 65.153 elapsed -- Testing started completed.
+2026-10-21 17:10:41.138 xcodebuild[76785:40551660] [MT] IDETestOperationsObserverDebug: 0.000 sec, +0.000 sec -- start
+2026-10-21 17:10:41.138 xcodebuild[76785:40551660] [MT] IDETestOperationsObserverDebug: 65.153 sec, +65.153 sec -- end
+
+Test session results, code coverage, and logs:
+	~/.codex/worktrees/ios-next-beta-poster-push/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-21/cli/20261021T170927-test-21670e53/test.xcresult
+
+** TEST SUCCEEDED **
+
+Testing started
+
+Exit status: 0
