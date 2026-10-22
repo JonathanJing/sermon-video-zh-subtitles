@@ -64,6 +64,12 @@ if [ -n "$SESSION_LABEL$OWNER_LABEL$JOB_LABEL" ]; then
     || { echo "--label-session, --label-owner, --label-job and --cid-prefix go together" >&2; exit 2; }
   case ",$STEPS," in *,tts,*,asr,*|*,asr,*,tts,*) echo "a labelled run takes one step (--steps tts or --steps asr)" >&2; exit 2 ;; esac
   rm -f "$CID_PREFIX".cid
+  # A bound container must still exist when the job ends: the session tool docker-inspects every
+  # bound id, and an auto-removed container makes every session call fail (2026-10-22). So no --rm
+  # here; spark_session_job.py removes the container after job-end.
+  KEEP=()
+  for arg in "${COMMON[@]}"; do [ "$arg" = "--rm" ] || KEEP+=("$arg"); done
+  COMMON=("${KEEP[@]}")
   COMMON+=(--label "tongxing.spark.session=$SESSION_LABEL" --label "tongxing.spark.owner=$OWNER_LABEL"
            --label "tongxing.spark.job=$JOB_LABEL" --cidfile "$CID_PREFIX.cid")
 fi

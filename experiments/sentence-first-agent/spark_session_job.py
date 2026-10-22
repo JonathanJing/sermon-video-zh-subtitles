@@ -115,6 +115,9 @@ def main() -> int:
         time.sleep(args.poll)
     session("job-end", *ids, "--job-id", job_id, "--outcome", "known_terminal", "--process-exited")
     status = exit_line.split()[3] if len(exit_line.split()) > 3 else "?"
+    # The container ran without --rm so the session tool could inspect it until job-end; the
+    # session keeps inspecting bound ids until it closes, so keep the stopped container until
+    # finish and remove it afterwards (docker rm $(docker ps -aq --filter label=tongxing.spark.session=<id>)).
     print(json.dumps({"job": job_id, "event": "ended", "stepExit": status, "log": exit_line}), flush=True)
     return 0 if status == "0" else 1
 
