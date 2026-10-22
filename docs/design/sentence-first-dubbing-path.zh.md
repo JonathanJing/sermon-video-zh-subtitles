@@ -107,10 +107,10 @@ Claude 在 S4 产出完整译文后，为每句再产出一份**口播规格**�
 
 - 输入：一个 locale 的 speech job（S5 合并产物）、Registry 与 checkpoint map、音频操作策略。
 - 执行：`sermon-layer3-dubbing` skill，Spark 上 docker 内的正式 renderer。逐单元一次自然语速合成，不拉伸、不在词组内拼接。
-- **批窗口与逐句修复的冲突**：2026-10-19 `DEV-GRP-005` 的盲听 A/B 未通过，batch 成员（含窗口位置）仍属声音身份；改一句要重合成它所在的批窗口。对逐句路径有两个选择，需用户决定：
+- **批窗口与逐句修复的冲突**：2026-10-19 `DEV-GRP-005` 的盲听 A/B 未通过，batch 成员（含窗口位置）仍属声音身份；改一句要重合成它所在的批窗口。对逐句路径有两个选择：
   - (a) 逐句路径一律 `--batch-size 1`：每句声音身份只含本句，改一句只重合成一句；代价是放弃 8×8 吞吐（速度基线见[运行模型政策](../production-model-runtime-policy.zh.md)）。
   - (b) 保留 8×8，接受修一句重合成 8 句，并在逐句记录里把批窗口成员哈希写进 S 步的输入键（[逐组设计](per-group-independent-pipeline.zh.md)第四节已这样规定）。
-  第一次片段验证建议用 (a)，先证明路径成立，再量吞吐。
+  **2026-10-21 用户决定：第一次片段 E2E 用 (a)，`--batch-size 1`；8×8 留给之后的吞吐对比（第五节 F）。** 这个决定只约束首次验证的 render 配置，不改 renderer、不改 `DEV-GRP-005` 的结论。
 - 输出：`render-manifest.json` 与逐单元收据，再由现有 `build_target_language_audio_package.py` 组包，状态最多 `candidate`。
 
 ### S7 逐句回查、整篇排程、放行（Layer 3 门禁，已有）
@@ -175,14 +175,14 @@ D 之前的 A–C 全是本地确定性代码，不需要 Spark 独占、不付�
 3. **S3**：确认 `anchor-manifest.json` 与 `english-source-package.json` 存在且哈希匹配；运行 `tools/ops/run.py source.sentence_slices`（待建）生成原声切片表。
 4. **S4**：对每句依次执行初译、独立复核（换请求／子代理）、确定性检查；每句一条记录 `append`。全部句子完成后 `validate` 覆盖与顺序，再 `assemble` 出 candidate v2（工具待建）。中途停下再续时，只对没有终态记录的句子工作。
 5. **S5**：运行 `tools/ops/run.py audio.sentence_speech_spec`（待建）生成逐句规格并合并为 speech job；核对 Registry 中讲员的本 locale 能力状态与授权用途，不满足则停，不换声音。
-6. **S6**：按 `sermon-layer3-dubbing` skill 在 Spark 渲染，首次验证 `--batch-size 1`，新建 render 根目录，不与旧缓存混。断线或超时先对账，不本地重跑。
+6. **S6**：按 `sermon-layer3-dubbing` skill 在 Spark 渲染，首次验证 `--batch-size 1`（2026-10-21 用户决定），新建 render 根目录，不与旧缓存混，不加 `--spark-production`。断线或超时先对账，不本地重跑。
 7. **S7**：按 `sermon-dubbing-asr-sync-check` skill 做逐句筛查与音频 QC；整篇排程与整轨核对；失败句只回它失败的那一步。放行按现行三选一，状态如实写 `candidate`／`waived`／`human_reviewed`。
 8. **S8**：只在本次 release plan 包含该 locale 时进入 Layer 4，按[Layer 4 公开交付](../layer4-four-product-public-delivery.zh.md)执行。
 9. 导出脱敏运行报告到 `docs/reports/runs/`，开 docs-only PR；报告写明：实际使用的主机与模型、逐句记录数与重做数、batch 设置、放行方式、未验证的部分。
 
 ## 七、需要用户决定的事项
 
-1. S6 的批次策略：首次验证用 batch 1（本页建议），还是直接 8×8 并接受修一句重合成一个窗口。
+1. ~~S6 的批次策略~~ 已决定（2026-10-21）：首次验证 batch 1，8×8 留作吞吐对比。
 2. 参照克隆 A/B（第五节 E）是否纳入本轮，以及先做哪个 locale。
 3. 片段 E2E（第五节 D）的来源、窗口、locale 与声音用途授权。
 4. 会话内 Claude 译审的记录是否需要进入现有 Layer 2 预算账本的只读投影，还是只在运行报告里按列价等价披露。
