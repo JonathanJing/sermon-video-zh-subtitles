@@ -1,0 +1,10 @@
+{
+  "schemaVersion": "tongxing-cloud-deployment-v1",
+  "result": "failed",
+  "function": "sermonPushSubscription",
+  "region": "us-west1",
+  "buildId": "b258a140-6019-4557-ae90-5a62ba3832c2",
+  "cause": "default_compute_build_identity_lacked_source_bucket_read_and_log_write",
+  "cloudFunctionStateAfter": "FAILED",
+  "hostingRoutePublishedAtFailure": false
+}
