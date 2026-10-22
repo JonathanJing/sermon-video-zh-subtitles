@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "tongxing-push-backend-check-v1",
+  "status": "pass",
+  "unitTests": {
+    "executed": 6,
+    "passed": 6,
+    "failed": 0
+  },
+  "syntax": [
+    "index.mjs",
+    "send.mjs",
+    "reconcile.mjs"
+  ],
+  "liveReadOnly": {
+    "status": "pass",
+    "pageID": "resi-20261018-15030286",
+    "locales": [
+      "zh-Hans",
+      "ko",
+      "es"
+    ],
+    "checks": [
+      "published release bytes SHA-256",
+      "sidecar binding",
+      "poster PNG bytes SHA-256"
+    ]
+  },
+  "deployment": "not_run",
+  "apnsSend": "not_run",
+  "deviceReception": "not_run",
+  "limitations": [
+    "Firestore emulator/real database transaction not run",
+    "Apple production App ID capability disabled",
+    "named database and runtime service account absent"
+  ]
+}
