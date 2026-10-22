@@ -4,9 +4,9 @@
 
 日常代码开发遵循 [`feature/*`／`codex/*` → `dev` → `main`](../development-branch-and-firebase-environments.zh.md) 的两级 PR 门禁；Firebase 听译 App 的 Dev 与 Production 环境必须使用独立 project，避免多语言候选影响当前生产 App。
 
-这份 README 是项目的 workflow source of truth。它描述三条相互独立但可共享证据的路径：预制中文音轨与同行页面、post-live 双 PDF、周日本地实时字幕。执行时先按 [AGENTS.md](../../AGENTS.md) 的任务路由读取对应入口，不必加载全部历史文档。
+这份 README 是项目的 workflow source of truth。它描述三条相互独立但可共享证据的路径：四层多语言预制内容与同行页面、post-live 双 PDF、周日本地实时字幕。执行时先按 [AGENTS.md](../../AGENTS.md) 的任务路由读取对应入口，不必加载全部历史文档。
 
-现状校准日期：**2026-09-20**。9 月 11 日 Agents API 切换、9 月 19 日人工范围与受限并发、9 月 20 日 CUV 证据修复及四层接口冻结均有 tracked 记录。当前提交、push、远端部署、实时服务健康、实体设备和现场验收仍须分别重新核对。
+正文校准日期：**2026-10-22**。模型默认以[运行时策略](../production-model-runtime-policy.zh.md)为准：新 Layer 2 默认 DeepSeek Flash low 初译／high 复核，Sol／Opus 为显式回退；策略切换不代表 canonical DeepSeek 真实生产已验收。历史运行、9 月现场反馈及回放数据保留原日期与冻结身份。当前提交、push、远端部署、实时服务健康、实体设备和现场验收仍须分别核对。
 
 状态定义：
 
@@ -20,11 +20,11 @@
 
 当前三条路径：
 
-1. **预制每周内容：** 绑定已批准的同录制来源，生成经审校中文、讲员音色音轨、同步字幕、大纲、页面和分享海报。
+1. **预制每周内容：** 绑定已批准来源与英文事实，按 locale 独立生成经审校文字、讲员音色音轨、同步字幕、学习产物、页面和分享海报；同篇不同来源通过 v5 family 汇聚，target 保留各自源身份。
 2. **周六双 PDF：** 从完整 post-live 媒体与人工范围生成中英阅读版和中文证道同行 PDF，并可导出受控的周日 Context Pack。
 3. **周日实时字幕：** 以当场麦克风和当下英文 ASR 为事实来源，本地生成中文字幕并保留独立恢复录音。
 
-**多语言生产合同：** 今后预制生产统一使用 Layer 1“共享英文事实与锚点”、Layer 2“目标语言文字”、Layer 3“目标语言音频与同步”、Layer 4“多语言发布与播放”。四个版本化接口见[多语言生产四层接口](../multilingual-production-interfaces.zh.md)，按 locale 的 DAG 调度与长期讲员 checkpoint 管理见[多语言每周调度与 Speaker Voice Registry](../multilingual-speaker-voice-registry.zh.md)。后续预制内容以 English Source Package 和 Canonical English Content 为共同主干，中文、韩语、西班牙语、越南语及其他语言作为独立同级分支；禁止以中文作为其他语言的默认翻译源。当前 Layer 1 已接入确定性 shadow，独立机器裁判可解锁 Layer 2 shadow 开发但不授予正式资格；韩语已有界面、`sourceLocale=en` 展示 sidecar、六句机器审核候选、片段 TTS/ASR 演示、Target-Language Candidate 合同和 Layer 2 → Layer 3 speech-job 准备器。韩语整篇人工翻译、完整音轨听审、真实同步及通用 Layer 2–4 正式 producer 尚未完成。因此现有 legacy 工具只能完成它们明确的 PDF、中文音频或页面范围；没有四个 canonical package 和各自门禁时，不得报告“四层生产完成”。迁移顺序见[英文源到多语言证道生产 POC](../english-to-multilingual-production-poc.zh.md)。
+**多语言生产合同：** 今后预制生产统一使用 Layer 1“共享英文事实与锚点”、Layer 2“目标语言文字”、Layer 3“目标语言音频与同步”、Layer 4“多语言发布与播放”。四个版本化接口见[多语言生产四层接口](../multilingual-production-interfaces.zh.md)，按 locale 的 DAG 调度与长期讲员 checkpoint 管理见[多语言每周调度与 Speaker Voice Registry](../multilingual-speaker-voice-registry.zh.md)。后续预制内容以 English Source Package 和 Canonical English Content 为共同主干，中文、韩语、西班牙语、越南语及其他语言作为独立同级分支；禁止以中文作为其他语言的默认翻译源。当前四层 producer、按语言恢复和 Layer 4 v3/v4/v5 发布合同见各层文档；2026-09-27 起已有三语正式内容，不能再以早期六句韩语演示概括全部实施状态。独立机器裁判不授予人工批准；每周仍须核对四个 canonical package、该语言人审或有效豁免、发布及 HTTP 证据。现有 legacy 工具只证明其明确的 PDF、中文音频或页面范围；设备、全篇听感与现场同步另记。迁移顺序见[英文源到多语言证道生产 POC](../english-to-multilingual-production-poc.zh.md)。
 环境首次准备与周更开工核对见[多语言证道生产环境准备](../environment-preparation.zh.md)，其中按四层列出凭据、工具、Codex Skills、Layer 4 发布及海报收尾。
 
 ![四层多语言生产：每层流程、模型、输出与门禁](../diagrams/four-layer-production-workflow.svg)
@@ -43,10 +43,10 @@
 
 当前入口是[配音操作 Runbook](../../experiments/sermon-dubbing-poc/SATURDAY_AUDIO_RUNBOOK.zh.md)、[CUV 生产合同](../sermon-cuv-production.zh.md)和[每周发行流程](../tongxing-weekly-release.zh.md)。早期的[原讲员音色方案草案](../saturday-to-sunday-chinese-voice-plan.zh.md)只保留设计历史，不再描述当前实现状态。
 
-截至 2026-09-20，当前代码已连接以下阶段：
+2026-09-20 的 legacy 中文链已连接以下阶段；下列模型与算力说明按当前策略校准，不改写该次运行身份：
 
 - 人工批准的完整礼拜窗口或核验后的 sermon-only 来源；不再用模型自动寻找证道边界。
-- `gpt-transcribe` 英文、MFA 阅读对齐、Astra Medium 中文／CUV 审核；2026-10-01 起，本地模型按 [Spark 默认、MacBook fallback](../local-production-compute-policy.zh.md) 路由，已存在任务保留原后端恢复身份。
+- `gpt-transcribe` 英文、MFA 阅读对齐；当前双 PDF／阅读稿使用 `gpt-6.1-sol / high`，旧 Astra 配音 job 保留其冻结模型与审核回执；2026-10-01 起，本地模型按 [Spark 默认、MacBook fallback](../local-production-compute-policy.zh.md) 路由，已存在任务保留原后端恢复身份。
 - 讲员检查点 TTS、中文回转写、原声锚点、同步组装、人工听审、页面构建、声音指纹绑定、发行和 HTTP 文件核验。
 - 页面发行后由 Codex 单独生成并检查本周二维码海报；现有定时 Supervisor 不自动调用 ImageGen，也不自动上传或发送海报。
 
@@ -78,7 +78,7 @@
 
 统一入口与持久化推进的开发说明见[统一 CLI 与持久化执行](../unified-cli-pipeline.zh.md)，流程、产物和命令的字段合同见[协议](../unified-cli-protocol.zh.md)。命令、owner 服务和验收目标仍是拟议能力，不代表正式生产已经打通或提速已经实测。
 
-**Layer 2 新生产模型流程：** 已审核的 `ready_for_translation` 英文包按[当前模型及调用策略](../production-model-runtime-policy.zh.md)执行：Sol 6.1 high 初译、Sol 6.1 medium 逐组独立复核，默认走 OpenAI API 与已批准的请求 tier，之后运行冻结语言插件和候选准入。正式后继门禁消费人工收据，或在已支持路径消费有效的[机器质检豁免](../machine-quality-waiver.zh.md)；机器豁免保持 `humanApproval=false`。单组失败的修复边界与预检清单见[Layer 2：只重跑缺失组](../layer2-targeted-repair-and-resume.zh.md)。旧运行保持其原 policy／收据身份；双 PDF 路径和 Layer 1 shadow 不会自动升级为 Layer 2 完成。
+**Layer 2 新生产模型流程：** 已审核的 `ready_for_translation` 英文包按[当前模型及调用策略](../production-model-runtime-policy.zh.md)执行：DeepSeek Flash low 初译、high 逐组独立复核为新 policy 默认，Sol 6.1 high／medium 和 Opus 为显式回退，按冻结后端与已批准的 tier、预算调用，之后运行冻结语言插件和候选准入。正式后继门禁消费人工收据，或在已支持路径消费有效的[机器质检豁免](../machine-quality-waiver.zh.md)；机器豁免保持 `humanApproval=false`。单组失败的修复边界与预检清单见[Layer 2：只重跑缺失组](../layer2-targeted-repair-and-resume.zh.md)。旧运行保持其原 policy／收据身份；双 PDF 路径和 Layer 1 shadow 不会自动升级为 Layer 2 完成。
 
 **当前控制层：** [Production Supervisor](../sermon-production-supervisor-agent.zh.md) 的新 dev／正式本地任务默认 `--agent-backend codex-cli`，使用 Luna medium fast。旧 Agents API 会话以显式 `--agent-backend agents-api` 按原身份恢复，新 SDK 会话禁用，自动后端 fallback 禁用。source、审批或适用的豁免、lease、恢复、QA 与发布继续由确定性层约束，完成状态须重新读取 production snapshot。
 
@@ -98,7 +98,7 @@
 
 ![周六 post-live 双 PDF 完整流程](../diagrams/saturday-post-live-workflow.svg)
 
-当前每周配置的翻译、两轮阅读稿审核和证道同行生成统一使用 **Astra Medium**。双 PDF QA 通过后，Supervisor 自动导出周日 Context Pack 与 readiness；导出的同篇身份初始为 `unknown`，不能自动获得 live 注入资格；操作细节见[每周生产配置](../codex-local-production-runbook.zh.md)。这项配置不重做历史周次，模型审核也不替代人工确认。
+当前双 PDF 的翻译、阅读稿审核和证道同行生成默认使用 **`gpt-6.1-sol / high`**；实际模型／provider 记录在各次 QA 与运行回执中。Supervisor 控制层默认 **Codex CLI／Luna medium fast**，不把控制层后端等同于内容模型调用后端。双 PDF QA 通过后，Supervisor 自动导出周日 Context Pack 与 readiness；导出的同篇身份初始为 `unknown`，不能自动获得 live 注入资格；操作细节见[每周生产配置](../codex-local-production-runbook.zh.md)。这项配置不重做历史周次，模型审核也不替代人工确认。
 
 ### Canonical 输入与产物
 

@@ -1,49 +1,26 @@
-# Web Prototype
+# Legacy Operator Web Support Path
 
-This web path is already working, but it is currently a secondary path in the
-repository.
+This browser UI supports the legacy source-discovery, caption and post-live
+reading-PDF path. The repository's current prepared-content path is four-layer
+multilingual weekly production:
 
-The primary repository workflow today is the stable post-live operator flow
-documented in:
+- [Root README](../../README.md)
+- [Four-layer contract](../../docs/multilingual-production-interfaces.zh.md)
+- [Local production runbook](../../docs/codex-local-production-runbook.zh.md)
 
-- [README.md](../../README.md)
-- [docs/stable-post-live-reading-pdf-workflow.md](../../docs/stable-post-live-reading-pdf-workflow.md)
-- [docs/stable-post-live-reading-pdf-workflow.zh.md](../../docs/stable-post-live-reading-pdf-workflow.zh.md)
+The separate reading-PDF delivery remains documented in the
+[stable post-live workflow](../../docs/stable-post-live-reading-pdf-workflow.md)
+and its [Chinese version](../../docs/stable-post-live-reading-pdf-workflow.zh.md).
+It requires the saved source, a human-confirmed sermon window, reading-text QA,
+both PDFs and their QA reports. That completion bar applies to `dual_pdf`,
+not to a four-layer release or a Sunday `live_session`.
 
-That primary flow is:
+## Supported scope
 
-1. save a sermon video URL into resumable state
-2. manually confirm the sermon start and end time
-3. run the post-live subtitle pipeline
-4. generate the Chinese-English reading PDF
-5. treat the run as complete only after PDF QA passes
-
-This README describes the browser-facing support path around that workflow. It
-is not the main operator entrypoint described in the root README.
-
-## Relationship To The Primary Workflow
-
-Use this web path when you need one or more of these:
-
-- a congregation-facing caption page
-- an admin/operator browser UI
-- playback simulation and public-page QA
-- review and observability controls around generated artifacts
-
-The web path can help operators monitor, inspect, simulate, and publish. But
-the repository's current stable completion bar is still the reading-PDF path:
-saved source, manually confirmed sermon window, generated
-`sermon_zh_en_reading.pdf`, passing PDF QA, and written run reports.
-
-## Current Role
-
-Today this web prototype is best understood as:
-
-- a working congregation and admin UI layer
-- a useful browser surface around generation and review
-- a support path around the stable post-live reading-PDF workflow
-
-It should be documented as working, but not as the repository's main workflow.
+Use this path for the legacy congregation caption page, admin/operator UI,
+playback simulation, public-page QA and review or observability controls around
+generated artifacts. The current multilingual reader lives in
+`apps/listening-web/`; this directory is a separate support surface.
 
 This directory was `web/` until 2026-10 (layout stage 2; audit: [operator-web-audit.zh.md](../../docs/design/operator-web-audit.zh.md)). Files, URLs and behavior are unchanged. `backend/app.py` serves it as static files from the Cloud Run service `sermon-zh-caption-web`: `/` is the public congregation entry and `/admin` is the operator entry. `index.html` and `admin.html` share one `app.js`, `styles.css` and `manifest.webmanifest`, so keep the public page free of operator controls (`tests/test_public_admin_boundary.py`). This is not the Sunday `live_session` public viewer, which is in `experiments/local-live-poc`.
 

@@ -2,9 +2,9 @@
 
 [README](../README.md) · [App 设计](app-system-design.zh.md) · [后端工作流 DAG](backend-workflow-system-design.zh-en.md) · [实验方向](experiment-directions.zh.md) · [文档索引](README.zh.md)
 
-核查日期：2026-09-30；代码基线 `dev@fc3e2fbc60b0fd2c5b59c64fcd515c465efc6b0b`。这是仓库代码、配置和既有运行记录支持的拓扑，不是在线资产盘点；本次没有连接 Spark、启动服务、调用模型或部署。部署身份与本机连接参数继续从既有受控配置取得，本文不复制私人主机、账号路径或密钥。
+当前核查：2026-10-22，代码基线 `feat/deepseek-flash-layer2@21b83a97`；原 2026-09-30 基线 `dev@fc3e2fbc60b0fd2c5b59c64fcd515c465efc6b0b` 为历史来源。这是仓库代码、配置和既有运行记录支持的拓扑，不是在线资产盘点；本次没有连接 Spark、启动服务、调用模型或部署。部署身份与本机连接参数继续从既有受控配置取得，本文不复制私人主机、账号路径或密钥。
 
-2026-10-01 路由决定：[预制本地制作默认 Spark、MacBook fallback](local-production-compute-policy.zh.md)。本页相应文字和 Mermaid 已更新；下方 SVG 保留 9 月 30 日拓扑快照。云端全流程资源、费用与接入缺口见 [GCP 评估](gcp-production-feasibility-20261001.zh.md)，尚未部署。
+2026-10-01 路由决定：[预制本地制作默认 Spark、MacBook fallback](local-production-compute-policy.zh.md)。本页文字、Mermaid 与 SVG 已按 2026-10-22 的代码和职责校准，历史实测仍保留原日期。云端全流程资源、费用与接入缺口见 [GCP 评估](gcp-production-feasibility-20261001.zh.md)，尚未部署。
 
 ## 拓扑 / Execution topology
 
@@ -48,13 +48,15 @@ flowchart TB
 | MacBook 制作工具 | [本地 runbook](codex-local-production-runbook.zh.md)、[固定 L2 controller](../packages/production/src/tongxing_production/text/controller.py)、[workflow jobs](../packages/production/src/tongxing_production/orchestration/jobs.py) | Python 调度下载、FFmpeg、包校验与生成；磁盘 job/lease/receipt 支持恢复。固定 L2 adapter 与 legacy PDF Supervisor 各有范围，尚非完整 canonical L1–4 自动生产 |
 | Apple Silicon 本地模型 | [语音运行合同](../experiments/sermon-dubbing-poc/SPEECH-RUNTIME.zh.md)、[speech backend](../experiments/sermon-dubbing-poc/speech_backend.py)、[正式 L3 renderer](formal-layer3-renderer.zh.md) | legacy weekly runner 的 MPS TTS 与 MLX ASR/ForcedAligner 作为 fallback；现有任务继续原后端恢复。正式多语言 renderer 有自己的授权音色/adapter 合同，尚无完整跨机自动 fallback。模型、revision、设备、精度与实际输入写入收据 |
 | DGX Spark | [Spark transport](../experiments/sermon-dubbing-poc/spark_transport.py)、[speech worker](../experiments/sermon-dubbing-poc/spark_speech_worker.py)、[训练说明](../experiments/sermon-dubbing-poc/TRAINING.zh.md) | 受控 SSH 传输、隔离 CUDA 环境、声音训练及预制本地模型计算默认路径；CPU 打包和正式 API 仍有独立执行边界。checkpoint 不匹配或语义失败不能靠换主机绕过 |
-| 云模型与控制会话 | [Layer 2 runner](../packages/production/src/tongxing_production/text/models.py)、[Supervisor](sermon-production-supervisor-agent.md) | L2 生产 policy 固定 Astra 初译、Sol 审校；文件转写与控制会话分别记录。现有 dual-PDF Agents API 的 `environment: none` 由本地执行受限工具，不是在云会话内托管完整后端 |
+| 云模型与控制会话 | [Layer 2 runner](../packages/production/src/tongxing_production/text/models.py)、[Supervisor](sermon-production-supervisor-agent.md) | 新 canonical L2 默认 DeepSeek Flash low 初译 / high 复核，Sol / Opus 显式回退；旧运行保留冻结身份。dual-PDF Supervisor 默认 Codex CLI / `gpt-6-luna medium fast`，由本地受限工具执行；Agents API 仅历史原会话恢复。内容模型调用与控制会话分别记录，代码默认不代表 DeepSeek canonical 真实运行已验收 |
 | 本地 Temporal | [Temporal 合同](sermon-temporal.zh.md)、[实现](../scripts/sermon_temporal/) | 已有单机 loopback + SQLite 路径，默认只读；显式执行仍受原 lease/approval 限制。不是 HA 集群；历史不替代媒体、job 和批准备份；不证明当前机器服务在线 |
 | 发现与旧云生产 | [Supervisor 历史边界](sermon-production-supervisor-agent.md)、[Cloud Run 历史设计](system-design.zh.md) | 文档记录 Cloud Scheduler 发现源和 GCS 状态；旧 post-live Cloud Run Job 已退役。现存源码不是正在运行的旧生产服务，调度健康须另查 |
 | 周日现场字幕 | [本地 POC 设计](../experiments/local-live-poc/DESIGN.zh.md)、[Gateway](../experiments/local-live-poc/backend/gateway.py)、[Firebase publisher](../experiments/local-live-poc/backend/firebase_publisher.py) | 浏览器麦克风、PCM/WebSocket、本地 ASR/Ollama 翻译与恢复录音；独立 LAN/SSE 和 Firebase 只读字幕路径。v4.1 是隔离试验，不因同在 MacBook 就取得分享或生产资格 |
 | Firebase 与 GCS | [环境隔离合同](development-branch-and-firebase-environments.zh.md)、[受控 CD](../tools/ops/run_multilingual_cd.py)、[视频迁移记录](reports/20260928-full-video-bucket-migration.zh.md) | Dev/Production 项目和站点分开。HTML、catalog、音轨、字幕、索引由 Hosting 提供；9 月 28 日记录完整视频在独立 bucket，Hosting 精确 302 指向按 SHA 命名的对象。公开视频对象与私有生产证据是不同访问范围 |
 | 反馈、统计与 Tracker | [feedback API](../services/feedback/README.zh.md)、[Tracker](../apps/tracker-web/README.zh.md)、[远端 review bridge](tracker-remote-review-bridge.zh.md) | API/Firestore 与静态媒体分开；Tracker 是脱敏投影，远端请求须由本地 bridge 校验并形成匹配收据，不能直接改本地生产真相。本文不推断每项功能都已部署 |
-| GitHub CI | [Python/docs workflow](../.github/workflows/python-tests.yml)、[iOS workflow](../.github/workflows/tongxing-ios.yml)、[promotion policy](../.github/workflows/branch-promotion.yml) | required `unittest`、`native-client`；进入 main 另有 promotion-policy。文档白名单走 links/格式快路径，native/shared contract 按差异运行。CI 不调用生产模型，不随 main push 自动发布每周内容 |
+| GitHub CI | [Python/docs workflow](../.github/workflows/python-tests.yml)、[iOS workflow](../.github/workflows/tongxing-ios.yml)、[promotion policy](../.github/workflows/branch-promotion.yml) | 2026-10-22 远端读取：Python tests / Tongxing iOS workflow 为 `disabled_manually`，Branch promotion 为 `active`。`main` 仍配置 required `unittest`、`native-client`、`promotion-policy`，`dev` 无 required status checks。文档快路径与 native/shared checks 是仓库能力，禁用的 workflow 不因配置存在就实际执行；CI 不自动发布每周内容 |
+
+远端核查为只读，未修改 Actions 或分支保护。复核命令：`gh api repos/JonathanJing/sermon-video-zh-subtitles/actions/permissions`（仓库 `enabled=true` 不等于所有 workflow 已启用）、`gh api repos/JonathanJing/sermon-video-zh-subtitles/actions/workflows`、`gh api repos/JonathanJing/sermon-video-zh-subtitles/branches/main/protection` 与同路径 `dev/protection`。这是 2026-10-22 快照；后续合并时须重读，不能据此宣称 CI 绿灯。
 
 ## 存储、网络与恢复
 
@@ -73,4 +75,4 @@ flowchart TB
 
 代码晋升、内容发行、iOS 签名分发是三个动作。[环境隔离合同](development-branch-and-firebase-environments.zh.md)要求正式 CD 使用干净且与远端一致的 `dev`/`main`、固定候选 hash、目标 project/site 与显式执行。当前 CD 由受控本地入口执行；仓库没有据此建立自动云端内容发布集群。
 
-多机容灾、全局模型资源调度、canonical L1/3/4 dispatch 与 PR164 strict-verifier 接线保持各自待完成状态，见[后端地图](backend-workflow-system-design.zh-en.md)、[Stage 0 阻塞项](canonical-stage0-evidence.zh.md)和[统一 Backlog](backlog.zh.md)。历史成功记录不替代新的部署、模型健康或现场验证。
+多机容灾、全局模型资源调度与 canonical L1/3/4 自动 dispatch 保持各自待完成状态。strict D1–D5 及[受控入口](rqc-explicit-pipeline-entry.zh.md)已有代码，默认 dispatcher 尚未切换，真实校准 / A-B 仍待证据，见[后端地图](backend-workflow-system-design.zh-en.md)、[Stage 0 阻塞项](canonical-stage0-evidence.zh.md)和[统一 Backlog](backlog.zh.md)。历史成功记录不替代新的部署、模型健康或现场验证。

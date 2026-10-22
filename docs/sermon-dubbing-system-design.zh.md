@@ -2,7 +2,7 @@
 
 这条分支把周六取得的英文证道，制作成可按原视频时间播放的中文音轨，并在按周组织的网页中提供中文字幕、证道同行大纲和讲员音色试听。目标是周日播放同一份视频时，中文听众可以跟随内容。它与现有双 PDF 生产共享已审文本和来源证据，与周日麦克风实时字幕保持独立。
 
-当前已有完整同步试播候选；每周全自动接入、整篇人耳试听和现场同步仍有未完成项。本文描述代码接口和设计理由；数字结果以 [2026-09-05 Astra 修订报告](sermon-dubbing-astra-review-2026-09-05.zh.md)为准，操作命令见[周六配音 Runbook](../experiments/sermon-dubbing-poc/SATURDAY_AUDIO_RUNBOOK.zh.md)。模型官方资料于 2026-09-05 核对。
+本文保留 2026-09-05 legacy 配音试播的设计与证据；正文策略核查于 2026-10-22，当前 canonical 多语言路径见[四层合同](multilingual-production-interfaces.zh.md)。历史试播的每周全自动接入、整篇人耳试听和现场同步状态以其原收据为准。本文描述代码接口和设计理由；数字结果以 [2026-09-05 Astra 修订报告](sermon-dubbing-astra-review-2026-09-05.zh.md)为准，操作命令见[周六配音 Runbook](../experiments/sermon-dubbing-poc/SATURDAY_AUDIO_RUNBOOK.zh.md)。模型官方资料于 2026-09-05 核对。
 
 本文描述现有中文实现模块；全项目正式的 Layer 1–4 名称、层间输入输出与完成条件以[多语言生产四层接口](multilingual-production-interfaces.zh.md)为准。下面的模块表不代表可以越过四层门禁。
 
@@ -35,7 +35,7 @@ fallback 继续要求既有周六人工窗口及双 PDF 证据。纯证道 [prep
 | 同步装配 | [check_weekly_timing.py](../experiments/sermon-dubbing-poc/check_weekly_timing.py) | 计算自然中文能否放入原声时槽，消费独立边界/播放编排审核，装配同步 MP3 与字幕。 |
 | 静态应用与发布 | [build_weekly_app.py](../experiments/sermon-dubbing-poc/build_weekly_app.py)、[deploy_firebase.py](../experiments/sermon-dubbing-poc/deploy_firebase.py) | 生成显式发布文件清单，区分待审候选和正式版本，部署独立 Firebase Hosting 站点。 |
 
-MacBook 负责来源资料、任务协调、本地 ASR/对齐和静态应用构建；DGX Spark 负责独立环境中的声音训练与每周 TTS 推理；OpenAI 负责英文文件转写和文本模型阶段。浏览器只消费已生成的音频与内容，不在听众设备上加载训练模型。完整原声、训练片段、检查点和本机审核材料留在忽略目录，不随网页发布。
+2026-10-01 起，预制本地模型计算默认由 DGX Spark 执行，MacBook 协调来源、任务、CPU 媒体处理与静态应用构建，并仅在明确基础设施故障且有匹配运行时／checkpoint 时作为受限 fallback。ASR、对齐、训练和 TTS 的实际接入范围见[计算策略](local-production-compute-policy.zh.md)；已存在 job 沿原后端恢复，远端结果未知先对账，内容／身份失败不得换机绕过。英文转写及文字 API 沿各运行冻结 policy，不因算力迁移更换。浏览器只消费已生成的音频与内容，不在听众设备上加载训练模型。完整原声、训练片段、检查点和本机审核材料留在忽略目录，不随网页发布。
 
 ## 3. 模型选择及其实际职责
 
@@ -47,9 +47,9 @@ MacBook 负责来源资料、任务协调、本地 ASR/对齐和静态应用构�
 
 有合适的现成英文字幕时仍可作为候选文本／时间来源，但正式配音前必须以批准的原声窗口冻结英文逐字稿，并完成词级时间轴与缺口审核。逐字稿保留可辨识口播、重复和修正；不可辨识、低置信、未覆盖或边界不连续处须显式标记，不得用阅读版估时或中文结果反推英文已经完整。缺失、否定关系、专名、数字或引文边界有疑点时，回到原声音频复查。已经确认的段落和转写缓存不因口播改稿而整篇重跑，但任何英文改动都必须使相关对齐和下游翻译映射失效。9 月 5 日复查第 32 段的 `to not shield`，用于纠正否定关系；它与合成中文后的本地回转写属于不同阶段。
 
-### GPT-6 Astra：语义修订和独立复核
+### 历史 GPT-6 Astra job：语义修订和独立复核
 
-周六阅读文本当前默认模型为 `gpt-6-astra`；实际运行模型与推理档位由 QA 回执保留，`job.inheritedReview` 继承这些字段。配音不把证道同行的摘要直接当讲稿，而是从已审双语阅读段落派生口播稿。
+本节描述的 legacy 配音 job 继承 `gpt-6-astra` 及当时的 QA 身份，`job.inheritedReview` 保留实际模型与推理档位，不追改历史。当前双 PDF／阅读稿默认 `gpt-6.1-sol / high`，Supervisor 控制层默认 Codex CLI／Luna medium fast；新 canonical Layer 2 则按[运行时策略](production-model-runtime-policy.zh.md)默认 DeepSeek Flash、Sol／Opus 显式回退，不能混称同一默认。配音不把证道同行的摘要直接当讲稿，而是从已审双语阅读段落派生口播稿。
 
 本轮在用户指定的 Codex 对话中使用 GPT-6 Astra 修订，并做独立复核和第二轮缩短。复核关注完整含义、否定/数字/专名、引文归属和自然口语；需要缩短时只能在保持逐句英文覆盖的前提下修改措辞并重新合成。若完整中文在自然语速下仍无法进入时槽，应停止该段发布并重新分段或改变播放方案，不能以删义、自动加速、拉伸或裁切通过预算。选择 Astra 的依据是它能结合完整英文、前后文和具体风险证据进行文字判断；本项目没有据此证明它优于所有其他模型，也不以更换模型代替听审。
 

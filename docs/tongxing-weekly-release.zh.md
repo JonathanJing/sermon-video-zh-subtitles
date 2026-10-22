@@ -2,11 +2,11 @@
 
 本流程接收既有生产脚本生成的单周候选包，保存完整历史目录，再核验发布后的公共资源。它不调用模型、不重新生成音频、不授予内容审核或现场同步批准，也不创建或替换现有定时任务。生产和配音仍按 [本地生产 runbook](codex-local-production-runbook.zh.md) 执行。
 
-当前 registry／`weekly.json` 流程是 Layer 4 的 legacy adapter。今后的 Production 多语言周更必须输入同一 `targetLocale` 已批准的 `Target-Language Candidate` 和 `Target-Language Audio Package`，生成逐语言 [Release Package v2](../schemas/sermon-target-language-release-package-v2.schema.json)，并以 [Catalog v3](../schemas/sermon-multilingual-catalog-v3.schema.json) 让 Firebase 与已安装 iOS App 刷新发现页面。纯文字发行也必须由同语言 Layer 3 显式记录 `audio_unavailable`，且先确认 Web/iOS 都支持该能力。旧 v1/v2 CLI 不能作为正式 v3 周更证据。`published_http_verified` 不反向提升翻译、音频或现场审核状态。
+正文核查日期：2026-10-22。当前 registry／`weekly.json` 流程是 Layer 4 的 legacy adapter。Production 多语言周更输入同一 `targetLocale` 的有效 `Target-Language Candidate` 和 `Target-Language Audio Package`，按各自人审或有效豁免生成逐语言 Release。当前目录以 [Catalog v3](../schemas/sermon-multilingual-catalog-v3.schema.json) 为人工审核基数、[v4](../schemas/sermon-multilingual-catalog-v4.schema.json) 增加机器质检、[v5](../schemas/sermon-multilingual-catalog-v5.schema.json) 汇聚跨来源 family；两端优先读取 v5→v4→v3。Release schema v3 提供四产物合同，v4 增加机器质检，历史 v2 继续可读；`/releases-v2/` 同时承载 v2/v3，`/releases-v4/` 承载 v4，旧 `/releases/` 保留 v1 兼容。纯文字发行也必须由同语言 Layer 3 显式记录 `audio_unavailable`，且先确认 Web/iOS 都支持该能力。旧 v1/v2 CLI 不能作为正式 v3 周更证据。`published_http_verified` 不反向提升翻译、音频或现场审核状态。
 
 ## 每周路径
 
-来源完整可用 → 现有流程生成候选 → 内容审阅与对应音轨收据 → 自动生成并绑定听音定位指纹 → 在正式站完整快照上追加 v2 Release／v3 Catalog 候选 → 检查历史文件与目录差异 → 资产先发、v3 目录最后发 → HTTP 文件核验 → Firebase App 和同版本 iOS App 刷新选页／播放验收 → 三语页面发布与 HTTP 核验阶段完成后，制作中／韩／西三语海报（分别验收）。每周只更新内容；客户端出现不支持的新 schema、语言或能力时才安排 App 版本更新。
+来源完整可用 → 现有流程生成候选 → 内容审阅与对应音轨收据 → 自动生成并绑定听音定位指纹 → 在正式站完整快照上追加对应 Release／Catalog 候选 → 检查历史文件与目录差异 → 资产先发、适用的 v5/v4/v3 目录最后原子更新 → HTTP 文件核验 → Firebase App 和同版本 iOS App 刷新选页／播放验收 → 三语页面发布与 HTTP 核验阶段完成后，制作中／韩／西三语海报（分别验收）。每周只更新内容；客户端出现不支持的新 schema、语言或能力时才安排 App 版本更新。
 
 对听众而言，每周目标是从 App 的“选择证道”进入本周内容，在原有界面中观看视频、切换已发布语言、收听配音和阅读文稿；单独的 `/pages/<pageId>/index.html` 只是资产地址与浏览器兼容入口。HTTP 核验可先记录 `published_http_verified`，但本周 App 交付须另外核对 Web App 根路径及原生 iOS 的目录展示、页内播放，并在实际安装版本上验收。未分发的新二进制不能视作用户手机已经拥有本周页面。
 
@@ -16,7 +16,7 @@
 
 ### 机器质检周次：v4 目录与 v3 投影
 
-按 [机器质检豁免](machine-quality-waiver.zh.md) 自动发布的语言走四层封存（`build_full_video_app_release.py seal` 与托管发布），不走下面的 v3 组装器。封存写出 `/releases-v4/<pageId>/<locale>.json`、`/multilingual-v4.json`，并把 `/multilingual-v3.json` 写成 v4 去掉机器质检语言后的投影：旧版 iOS 看到的目录与上周相同，新版网页和 iOS 先读 v4，显示“机器质检”标签和披露文案。两份目录一起比较交换、一起回读；只会改 v3 的旧组装器遇到带 v4 的基线会拒绝。字段见 [四产物公开交付](layer4-four-product-public-delivery.zh.md#机器质检发布release-v4--catalog-v4)。
+按 [机器质检豁免](machine-quality-waiver.zh.md) 自动发布的语言走四层封存（`build_full_video_app_release.py seal` 与托管发布），不走下面的 v3 组装器。封存写出 `/releases-v4/<pageId>/<locale>.json`、`/multilingual-v4.json`，并把 `/multilingual-v3.json` 写成 v4 去掉机器质检语言后的投影：旧版 iOS 看到的目录与上周相同，新版网页和 iOS 先读 v5，再回退 v4/v3，显示“机器质检”标签和披露文案。两份目录一起比较交换、一起回读；只会改 v3 的旧组装器遇到带 v4 的基线会拒绝。字段见 [四产物公开交付](layer4-four-product-public-delivery.zh.md#机器质检发布release-v4--catalog-v4)。
 
 ### 同一讲道、不同视频来源：v5 family 页面
 
@@ -25,9 +25,11 @@
 这类周更必须从当场取得的完整 production baseline 构造原子候选：同一 Hosting 版本更新受信任 reader runtime、缺失的视频精确 302、v5/v4/v3 三份目录及 seal report；edition 的 release、content、字幕、音轨、学习产物和 sidecar 字节保持不变。部署前比较 live version 与三份目录基线，部署后按本次 Firebase version 回读三份目录。任何 target 的 edition/source/media/video 交叉不一致都停止发布。
 
 
-### v3 周更发布清单与验收
+<a id="v3-周更发布清单与验收"></a>
 
-这一清单优先于下文仅适用于 `weekly.json` 的 legacy 命令。当前仓库的 `assemble_multilingual_hosting.py`、`deploy_multilingual_hosting.py`、`verify_multilingual_hosting.py` 仍只处理 v2 Catalog／v1 Release；在 v3 入口实现并通过定向测试前，不得用这些命令部署新周后宣称两端已经刷新可用。
+### legacy v3 周更发布清单与验收
+
+本节保留人工审核 v3 stage adapter 的文件数和操作合同，不覆盖上文的 v4 封存及 v5 family 路径。对这一 adapter，清单优先于下文仅适用于 `weekly.json` 的 legacy 命令。当前仓库的 `assemble_multilingual_hosting.py`、`deploy_multilingual_hosting.py`、`verify_multilingual_hosting.py` 仍只处理 v2 Catalog／v1 Release；在 v3 入口实现并通过定向测试前，不得用这些命令部署新周后宣称两端已经刷新可用。
 
 [9/27 专用 L4 adapter](sep27-full-video-app-layer4.zh.md#命令与输出) 的 `seal` 只生成单页 catalog，不能直接覆盖完整旧目录。它的 `published_http_verified` 包只绑定 12 项资产 GET／SHA 收据；最终包和合并后 catalog 的第二次部署核验、音频 Range 与 App 验收仍须分别完成。该专用输出不能替代下列完整周更 stage 合同。
 
@@ -47,7 +49,7 @@
 
 旧配置的 `stage-public`、manifest v2 和 21 文件校验保持可读。新配置的 `stage-public` **不包含 MP4**，manifest v3 使用 `profile=three_locale_bucket_video_v2`，列出恰好 20 个新 Hosting 文件及 `videoDelivery`（同源固定路径、bucket HTTPS URL、播放文件 SHA-256、字节数）。同一 `videoDelivery` 必须写入 v3 catalog 的本周 page；三语 content 的 `sourceVideoUrl` 仍是同源路径，`browserVideoSha256` 均等于视频对象 SHA。`--video-file` 指向暂存区外的已审完整 MP4，组装时实测字节数与 SHA；来源母版的 `sourceMediaSha256` 保持原身份，不能混用。组装器拒绝缺失／多余文件、对象不匹配及不安全 URL。新报告分别记录 `addedFileCount=20`、`catalogUpdateFileCount=1`、`weeklyFileCount=21`、`bucketObjectCount=1`、`weeklyFirebaseObjectCount=22`。
 
-发布顺序是：在与正式站分离的 Dev 项目用模拟视频和真实 bucket 完成端到端测试；正式发布时先上传并验证不可变对象的大小、哈希、`Content-Type: video/mp4`、公开 GET、首尾 206／`Content-Range`，再准备 Hosting 完整快照及精确 302、限定 `media-src` 的 CSP，最后更新 catalog。发布后的同源视频 URL 必须返回预期重定向并可在 Web 播放和拖动；未点视频时不应下载完整视频。当前独立页面使用 `preload="metadata"`，仍可能下载少量视频数据；若要零预取，须在新周页面生成时改为 `preload="none"` 并重算页面及 Release 哈希。回退保留上一版 catalog、Hosting 配置及旧视频文件，不能先删除旧资源。iOS 当前已安装版本只提供文稿／音频，没有原生原视频播放器；本合同不把 bucket 视频 HTTP 验证宣称为 iOS 视频验收。要让 iOS App 内看原视频须另行开发并发布一次客户端更新。
+发布顺序是：在与正式站分离的 Dev 项目用模拟视频和真实 bucket 完成端到端测试；正式发布时先上传并验证不可变对象的大小、哈希、`Content-Type: video/mp4`、公开 GET、首尾 206／`Content-Range`，再准备 Hosting 完整快照及精确 302、限定 `media-src` 的 CSP，最后更新 catalog。发布后的同源视频 URL 必须返回预期重定向并可在 Web 播放和拖动；未点视频时不应下载完整视频。当前独立页面使用 `preload="metadata"`，仍可能下载少量视频数据；若要零预取，须在新周页面生成时改为 `preload="none"` 并重算页面及 Release 哈希。回退保留上一版 catalog、Hosting 配置及旧视频文件，不能先删除旧资源。原生 iOS 的 `FullVideoSheet` 已在[当前源码](../apps/tongxing-ios/App/ContentView.swift)实现；不能据此推断任意已安装版本都有该功能。记录实际分发版本、来源、完整播放与拖动的真机证据；bucket 视频 HTTP 验证不代替 iOS 视频验收。2026-09-28 迁移记录中“无原生视频”的限制仍是该次历史状态。
 
 旧 `sermon-multilingual-v3-stage-manifest-v1` 候选只需保留原始文件与审核证据，按实际选择的配置重新生成清单；组装器不自动迁移或替旧清单补齐文件。输出状态固定为 `validated_not_deployed`，不能直接作为上线收据。bucket 配置还须传 `--video-file`；入口如下：
 
@@ -265,15 +267,15 @@ python3 -m unittest discover -s experiments/sermon-dubbing-poc -p 'test_build_we
 
 前两组测试使用合成文件与可控 HTTP 响应，覆盖历史保留、来源冲突、哈希/路径、验证失败、并发登记与恢复。真实网络验证、App 验收及生产发布分别记录。
 
-## Agents API 与费用边界
+## Supervisor 与费用边界
 
-发行清单与 HTTP 核验仍是普通程序，本身不增加模型调用。2026-09-11 上游生产 Supervisor 已实现 Agents API 默认后端；当前调度默认模型为 Sol Medium，以最小状态白名单选择现有确定性生产工具，保持人工审批、租约及发布校验。具体切换状态见 [生产 runbook](codex-local-production-runbook.zh.md) 与 [Supervisor 设计](sermon-production-supervisor-agent.zh.md)。配音候选审核及本章的 Firebase 发行流程仍需各自的有效收据，不能用 Agent 会话完成代替。
+发行清单与 HTTP 核验仍是普通程序，本身不增加模型调用。当前上游生产 Supervisor 默认 Codex CLI，使用 `gpt-6-luna / medium / fast`，以最小状态白名单选择现有确定性生产工具，保持人工审批、租约及发布校验。2026-09-11 接入的 Agents API 仅供历史原会话按冻结身份恢复，不是新任务默认后端。具体切换状态见 [生产 runbook](codex-local-production-runbook.zh.md) 与 [Supervisor 设计](sermon-production-supervisor-agent.zh.md)。配音候选审核及本章的 Firebase 发行流程仍需各自的有效收据，不能用 Agent 会话完成代替。
 
-此前在 Codex 对话中完成的上层处理，使用的是所选 Codex 登录/计费方式。脚本内部单独调用的转写、翻译等 API 仍有自己的费用。切换到 Agents API 后，上层 Agent 模型调用也按 API 计费，不能视为已经包含在 ChatGPT 订阅里。
+此前在 Codex 对话中完成的上层处理，使用的是所选 Codex 登录/计费方式。脚本内部单独调用的转写、翻译等 API 仍有自己的费用。历史 Agents API 会话的上层 Agent 模型调用也按 API 计费，不能视为已经包含在 ChatGPT 订阅里；当前 Codex CLI 费用按实际登录与计费方式记录，下游 API 仍单独计费。
 
 费用口径为全部模型调用的输入、缓存、输出（含 reasoning）之和，再加实际使用的工具、沙箱与第三方服务。多轮工具结果、子 Agent 和重试都会贡献用量；任务不是按“每篇页面”固定收费。使用 `environment: none` 和本机函数可避免托管沙箱这一项，但模型 token 与底层生产成本仍存在。
 
-以下是 2026-09-10 查得的 Astra 内容模型历史算例，不适用于当前 Sol Supervisor 计价：每百万 tokens 普通输入 $10、缓存读取 $1、缓存写入 $12.50、输出 $50。超过 272K 输入的单次请求有长上下文加价，其他运行模式也可能有不同价格。简单算例：累计 100K 普通输入与 10K 输出，在没有缓存写入、工具、沙箱和其他加价的条件下约 $1.50。这不是本项目每周实测费用或账单承诺。
+以下是 2026-09-10 查得的 Astra 内容模型历史算例，不适用于当前 Luna Supervisor 或内容生产计价：每百万 tokens 普通输入 $10、缓存读取 $1、缓存写入 $12.50、输出 $50。超过 272K 输入的单次请求有长上下文加价，其他运行模式也可能有不同价格。简单算例：累计 100K 普通输入与 10K 输出，在没有缓存写入、工具、沙箱和其他加价的条件下约 $1.50。这不是本项目每周实测费用或账单承诺。
 
 Agents API turn usage 为 best-effort，可为 null，且不单列 cache-write count；费用报告必须保留 unknown 并与 Platform 账单核对，不能把未知记为零。实测会话既出现已知 token 计数，也出现 null；最终费用须对账。
 
