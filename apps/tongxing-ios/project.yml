@@ -55,6 +55,9 @@ targets:
         Debug:
           TONGXING_CONTENT_ORIGIN: "https://ai-for-god-sermon-audio-dev.web.app"
         Release:
+          CODE_SIGN_ENTITLEMENTS: Config/ProductionPush.entitlements
+          MARKETING_VERSION: "1.26.21"
+          CURRENT_PROJECT_VERSION: "62"
           TONGXING_CONTENT_ORIGIN: "https://ai-for-god-sermon-audio.web.app"
         BetaDebug:
           CODE_SIGN_ENTITLEMENTS: Config/BetaPush.entitlements
@@ -109,6 +112,9 @@ targets:
         SUPPORTS_MACCATALYST: NO
         SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD: NO
       configs:
+        Release:
+          MARKETING_VERSION: "1.26.21"
+          CURRENT_PROJECT_VERSION: "62"
         BetaDebug:
           PRODUCT_BUNDLE_IDENTIFIER: com.jonathanjing.tongxing.beta.listening-activity
           TONGXING_ACTIVITY_DISPLAY_NAME: 同行-beta播放状态

@@ -676,7 +676,15 @@ def validate_catalog_snapshot(snapshot):
     if v5_path.exists() or report.get('catalogV5Sha256') is not None:
         require(v5_path.is_file() and report.get('catalogV5Sha256') == file_sha(v5_path), 'Baseline v5 catalog differs')
         v5 = validate_catalog_schema(json.loads(v5_path.read_text()))
-        require(project_legacy_catalog_v4(v5) == catalogs[-1], 'Baseline v4 is not the edition projection of v5')
+        projected_v4 = project_legacy_catalog_v4(v5)
+        # The already-published v4 catalog may retain a different preferred
+        # locale for a page. It is presentation state, not an edition binding;
+        # preserve both catalog bytes while comparing every other field.
+        if len(projected_v4['pages']) == len(catalogs[-1]['pages']):
+            for projected_page, existing_page in zip(projected_v4['pages'], catalogs[-1]['pages']):
+                if projected_page['id'] == existing_page['id']:
+                    projected_page['defaultTargetLocale'] = existing_page['defaultTargetLocale']
+        require(projected_v4 == catalogs[-1], 'Baseline v4 is not the edition projection of v5')
         catalogs.append(v5)
     files = {row['path'].lstrip('/'): row for row in report['files']}
     require(len(files) == len(report['files']), 'Duplicate baseline asset')

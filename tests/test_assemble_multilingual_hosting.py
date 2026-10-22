@@ -164,6 +164,12 @@ class AssembleHostingTest(unittest.TestCase):
         self.assertIn({"source": "/api/**", "function": {
             "functionId": "sermon-feedback-api", "region": "us-west1"}},
             config["hosting"]["rewrites"])
+        self.assertEqual(config["hosting"]["rewrites"][:2], [
+            {"source": "/api/push/**", "function": {
+                "functionId": "sermonPushSubscription", "region": "us-west1"}},
+            {"source": "/api/**", "function": {
+                "functionId": "sermon-feedback-api", "region": "us-west1"}},
+        ])
         self.assertIn({"source": "/pages/**", "destination": "/multilingual-reader.html"},
                       config["hosting"]["rewrites"])
 

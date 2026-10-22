@@ -62,7 +62,13 @@ def prepare(candidate: Path, preflight: Path) -> dict:
         raise ValueError("Firebase target or multilingual route changed")
     feedback_rewrite = {"source": "/api/**", "function": {
         "functionId": "sermon-feedback-api", "region": "us-west1"}}
-    if (feedback_rewrite in config["hosting"].get("rewrites", [])) != report["feedbackEnabled"]:
+    push_rewrite = {"source": "/api/push/**", "function": {
+        "functionId": "sermonPushSubscription", "region": "us-west1"}}
+    rewrites = config["hosting"].get("rewrites", [])
+    if push_rewrite not in rewrites or (feedback_rewrite in rewrites and
+                                       rewrites.index(push_rewrite) > rewrites.index(feedback_rewrite)):
+        raise ValueError("Firebase push route missing or shadowed by feedback route")
+    if (feedback_rewrite in rewrites) != report["feedbackEnabled"]:
         raise ValueError("Firebase feedback route differs from base snapshot")
     return {
         "schemaVersion": "sermon-multilingual-hosting-deployment-v1",
