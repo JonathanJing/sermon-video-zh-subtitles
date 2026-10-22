@@ -36,6 +36,7 @@ for entry in (str(WT), str(WT / "packages/production/src")):
         sys.path.insert(0, entry)
 from scripts import tongxing_host  # noqa: E402,F401  binds the production package ports
 from tongxing_production.delivery import baseline as bl, contract, publication as pub  # noqa: E402
+from tongxing_production.delivery import published_english_reference as english_reference  # noqa: E402
 
 PAGE_ID = "if-i-had-more-time-jesus-sends-and-resurrects-his-own"
 LOCALES = ("zh-Hans", "ko", "es")
@@ -422,6 +423,19 @@ def cmd_stage_fix_release(base: Path, fix: Path, evidence_path: Path, out: Path,
     return {"staged": str(out), "changed": sorted(files), "categoryAdded": categorized}
 
 
+def cmd_stage_english_reference(base: Path, out: Path) -> dict:
+    """Stage /english-reference/<pageId>.json, the English comparison the readers join to every cue.
+    It binds each locale's release, content and captions hashes, so build it from the live snapshot
+    after the releases are published, and rebuild it whenever a release changes (a stale file leaves
+    the app without English, silently)."""
+    reference = english_reference.build_reference(base / "public", PAGE_ID, PODCAST / "layer2/zh-Hans/english-source.json")
+    rel = f"english-reference/{PAGE_ID}.json"
+    data = (json.dumps(reference, ensure_ascii=False, indent=2) + "\n").encode()
+    stage(base, out, None, {rel: data}, replace=frozenset([rel]))
+    return {"staged": str(out), "path": "/" + rel, "sha256": hashlib.sha256(data).hexdigest(),
+            "blocks": {loc: len(t["blocks"]) for loc, t in reference["targets"].items()}}
+
+
 def cmd_readback(stage2: Path) -> dict:
     results = {}
     for rel in [*contract.CATALOG_FILES.values(), *(f"releases-v2/{PAGE_ID}/{loc}.json" for loc in LOCALES)]:
@@ -452,7 +466,11 @@ def main() -> int:
     fr.add_argument("--archive-page", action="append", default=[], help="v5 page id to label 正式播放版 / Archive edition")
     sf = sub.add_parser("stage-fixed-content"); sf.add_argument("--base", type=Path, required=True)
     sf.add_argument("--fix", type=Path, required=True); sf.add_argument("--out", type=Path, required=True)
+    se = sub.add_parser("stage-english-reference"); se.add_argument("--base", type=Path, required=True)
+    se.add_argument("--out", type=Path, required=True)
     args = p.parse_args()
+    if args.cmd == "stage-english-reference":
+        print(json.dumps(cmd_stage_english_reference(args.base, args.out), ensure_ascii=False)); return 0
     if args.cmd == "stage-fixed-content":
         # Rewrite the corrected content at its fixed path; never publish it under a new path.
         paths = [f"content/{PAGE_ID}/{loc}.json" for loc in LOCALES]
