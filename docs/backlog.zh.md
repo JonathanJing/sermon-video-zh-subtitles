@@ -179,7 +179,7 @@ English index: [backlog.md](./backlog.md)
 
 | 子任务／归属 | 优先级／状态 | 已有工作与下一验收 | 依赖 |
 |---|---|---|---|
-| `DEV-R242-025` 模型及调用后端迁移验收；`DEV-L1-001/L2-001/SPD-006` | P1 / `in_progress` | 截至2026-10-10，#248已合并；新 dev/formal Layer 2 为 Sol 6.1 high 初译→medium 独立审核，默认 OpenAI API及绑定预算，Supervisor 为 Luna medium fast Codex CLI。旧CLI迁移/487项测试保留历史身份。Luna API/CLI测速已有独立索引，不外推整链；其余文字producer按实际接线核对，Study迁移及新身份完整四层仍待验收。Claude独立实验归EXP-006，不作为生产可选后端 | [当前策略](production-model-runtime-policy.zh.md)、[测速索引](model-output-speed-index.zh.md)、R242-013/020/022 |
+| `DEV-R242-025` 模型及调用后端迁移验收；`DEV-L1-001/L2-001/SPD-006` | P1 / `in_progress` | 截至2026-10-10，#248已合并，彼时 Layer 2 默认 Sol 6.1 high 初译→medium 独立审核／OpenAI API。2026-10-21 默认更新为 DeepSeek Flash low／high，Sol 6.1 high／medium 与 Opus 5.5 high／medium 为显式后端，不自动回退；Supervisor 保持 Luna medium fast Codex CLI。旧CLI迁移/487项测试及旧运行保留历史身份。Luna API/CLI测速已有独立索引，不外推整链；其余文字producer按实际接线核对，Study迁移、新身份完整四层及 canonical DeepSeek 真实运行仍待验收，Claude 实验结果也不代替正式后端验收 | [当前策略](production-model-runtime-policy.zh.md)、[测速索引](model-output-speed-index.zh.md)、R242-013/020/022 |
 | `DEV-R242-026` CLI严格预算能力；`R242-011/012/022`、`DEV-COST-001` | P0 / `waiting_evidence` | 2026-10-05本地复盘后，standalone transport 与旧文字 Chat 也在 json_request 前拒绝无上限载荷。canonical／Study／来源机审仍须 default 档完成 token 上限。Codex CLI 不能充当带预算 worker。fast 档预算授权、笔记 Responses API 和真实 debit 仍缺，不标 complete | [验收](reports/20261005-p0-gate-acceptance.zh.md)、[严格预算](canonical-layer2-budget-and-migration.zh.md) |
 | `DEV-R242-027` Quota-gated API认证CLI fallback；`DEV-SPD-006`、`DEV-COST-001/002` | P1 / `pending` | f7afa0a5仅交付设计。剩真实额度拒绝分类、共享route/run准入、claim/fencing、授权费用/ASR预留、隔离认证、混合身份接续、额度恢复及小额真实验收；默认关闭，设计批准不授予金额 | 026和明确预算授权；[设计验收矩阵](codex-quota-api-fallback-design.zh.md#实现顺序与验收) |
 | `DEV-R242-028` Spark整轮独占及服务恢复；`R242-012/017/021`、`DEV-DIAG-018` | P0 / `waiting_evidence` | 2026-10-05只读验收：活动session.json为closed，controller SHA与当前spark_exclusive_session.py一致，四unit active，原模型健康，job均terminal且unknown=0。回归确认migration快照不是活动账本，closed后不能开工。下一次真实模型测试仍须新建exclusive_ready | [验收](reports/20261005-p0-gate-acceptance.zh.md)、[独占设计](spark-exclusive-development-session.zh.md) |
@@ -203,7 +203,7 @@ English index: [backlog.md](./backlog.md)
 
 以下来源按当前源码核对，是库实现的起始索引，不声称已经覆盖所有历史实验／临时脚本。`DEV-PROMPT-001` 完成前须对真正调用点做覆盖审计，新增调用没有库映射时在 dispatch 前拒绝；暂不纳管的历史入口单列，不能宣称受此门禁保护。
 
-新文字角色参数以[模型策略](production-model-runtime-policy.zh.md)为准：初译等原 Astra 角色 Sol 6.1 high fast，独立 Sol 复核角色 Sol 6.1 medium fast，Supervisor Luna medium fast，文字均走 Codex CLI。库同时记录 declared 与 observed 配置；源码旧默认、POC 分支与历史模板版本名不可冒充当前实际参数，不在本次登记中静默改动。
+新文字角色参数以[模型策略](production-model-runtime-policy.zh.md)及各入口实际接线为准：canonical Layer 2 默认 DeepSeek Flash low／high，Sol 6.1 high／medium 与 Opus 5.5 high／medium 显式选择；Supervisor 为 Luna medium fast Codex CLI。双 PDF 与配音精简等入口保留自身 Sol／CLI 设置，不据 Layer 2 默认变更迁移。库同时记录 declared 与 observed 配置；源码旧默认、POC 分支与历史模板版本名不可冒充当前实际参数，不在本次登记中静默改动。
 
 | 环节／库条目范围 | 当前模板及真实拼接入口 | Prompt review 重点 |
 |---|---|---|

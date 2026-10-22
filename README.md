@@ -35,12 +35,12 @@ The native iOS client reads the same release packages. iPhone 17 Pro simulator c
 
 | Module | What it does | Where it lives | Read next |
 |---|---|---|---|
-| Four-layer production backend | Freezes the English source, translates and reviews each language, renders and times speech, assembles per-locale release packages | `scripts/`, `schemas/`, `config/` | [Four-layer contract](docs/multilingual-production-interfaces.zh.md) · [Backend design](docs/backend-workflow-system-design.zh-en.md) |
+| Four-layer production backend | Freezes the English source, translates and reviews each language, renders and times speech, assembles per-locale release packages | `packages/production/src/tongxing_production/`, `tools/ops/run.py`, `schemas/`, `config/` | [Four-layer contract](docs/multilingual-production-interfaces.zh.md) · [Backend design](docs/backend-workflow-system-design.zh-en.md) |
 | Web reader (Firebase Hosting) | Weekly page with captions that follow the audio, full bilingual text, outline, language pickers and sound-based position alignment | `apps/listening-web/`, `firebase/` | [Layer 4 public delivery](docs/layer4-four-product-public-delivery.zh.md) · [Weekly release](docs/tongxing-weekly-release.zh.md) |
 | iOS client | SwiftUI + AVPlayer app with verified caching, background audio, lock-screen controls, Dynamic Island state, microphone alignment and a Beta channel | `apps/tongxing-ios/` | [iOS README](apps/tongxing-ios/README.zh.md) · [Design conventions](apps/tongxing-ios/DESIGN.zh.md) |
 | Sunday live captions | Local microphone to live Chinese captions with recording kept for recovery; a separate `live_session` delivery type | `experiments/local-live-poc/` | [Live POC](experiments/local-live-poc/README.md) · [Operations whitepaper](docs/sunday-live-operations-whitepaper.zh.md) |
-| Dual-PDF reading edition | Bilingual reading PDF and Chinese sermon companion from a confirmed recording | `scripts/` | [Stable post-live workflow](docs/stable-post-live-reading-pdf-workflow.md) |
-| Supervisor and run tooling | Run journal, budget planner, start checks, Spark session control, run reports | `scripts/`, `docs/reports/` | [Supervisor contract](docs/sermon-production-supervisor-agent.md) · [Run retrospective template](docs/test-run-retrospective.zh.md) |
+| Dual-PDF reading edition | Bilingual reading PDF and Chinese sermon companion from a confirmed recording | `packages/production/src/tongxing_production/workflows/dual_pdf/`, `tools/ops/run.py` | [Stable post-live workflow](docs/stable-post-live-reading-pdf-workflow.md) |
+| Supervisor and run tooling | Run journal, budget planner, start checks, Spark session control, run reports | `packages/production/src/tongxing_production/workflows/supervisor/`, `tools/ops/`, `docs/reports/` | [Supervisor contract](docs/sermon-production-supervisor-agent.md) · [Run retrospective template](docs/test-run-retrospective.zh.md) |
 | Experiments | Model trials, A/B comparisons, benchmarks, Decisions API studies | `experiments/`, `config/agent-trials/` | [Experiment directions](docs/experiment-directions.zh.md) · [Model output speed index](docs/model-output-speed-index.zh.md) |
 
 ## Architecture
@@ -76,7 +76,7 @@ More diagrams, their sources and the regeneration command are listed in the [dia
 
 ## Technical implementation
 
-**Backend.** Python 3 producers in `scripts/` with JSON schemas in `schemas/` and frozen policies in `config/`. Every package records canonical source ID and URL, media hash and duration, approved window, model and prompt identity and review receipts. Runs resume from verified artifacts; durable jobs, response caches and a budget ledger make paid model calls reusable across restarts. Human acceptance, machine waivers and budget approvals are separate receipts written by separate scripts, so a machine pass can never be mistaken for human approval.
+**Backend.** Python 3 producers in `packages/production/src/tongxing_production/`, invoked with `.venv/bin/python tools/ops/run.py <area.module>`. `scripts/` retains compatibility facades, hosts and frozen files. JSON schemas live in `schemas/` and frozen policies in `config/`. Every package records canonical source ID and URL, media hash and duration, approved window, model and prompt identity and review receipts. Runs resume from verified artifacts; durable jobs, response caches and a budget ledger make paid model calls reusable across restarts. Human acceptance, machine waivers and budget approvals are separate receipts written by separate scripts, so a machine pass can never be mistaken for human approval.
 
 **Models and compute.** Translation and independent review run through a frozen Layer 2 backend chosen per run; speech rendering, back-transcription and word alignment run on a local DGX Spark with a MacBook fallback. Model names, reasoning levels, tiers and budget caps live in the [runtime model policy](docs/production-model-runtime-policy.zh.md), the [compute policy](docs/local-production-compute-policy.zh.md) and the [weekly run profile](docs/weekly-run-profile.zh.md); the Layer 2 [controller](docs/canonical-layer2-controller.zh.md) covers concurrency and recovery. OpenAI projects are used only through the [environment launcher](docs/openai-minimal-project-setup.zh.md).
 
@@ -88,7 +88,7 @@ More diagrams, their sources and the regeneration command are listed in the [dia
 
 **Live captions.** A local gateway owns microphone capture, ASR and translation, keeps a recovery recording and renders operator and viewer pages. Live captions use what is being said in that session; a recording reused later for durable content starts again at Layer 1.
 
-**Testing and CI.** Python tests under `tests/`, Node tests beside the web modules, Swift package and simulator tests under `apps/tongxing-ios/`. GitHub Actions run a path-classified Python suite, an iOS contract or simulator job and a promotion policy for `main`. Policy, routing and sharding are documented in the [CI/CD backlog](docs/ci-cd-backlog.zh.md).
+**Testing and CI.** Python tests under `tests/`, Node tests beside the web modules, Swift package and simulator tests under `apps/tongxing-ios/`. The repository retains path-classified Python, iOS contract/simulator and promotion workflows. On 2026-10-22, several test workflows were `disabled_manually` while Branch promotion remained active. Workflow switches and branch protection are recorded separately in the [execution environment design](docs/execution-environment-design.zh.md); routing and sharding are documented in the [CI/CD backlog](docs/ci-cd-backlog.zh.md).
 
 ## Workflows
 
@@ -104,7 +104,7 @@ A short real-model rehearsal of the same path on a clip is the [clip E2E](docs/c
 
 ### Code and content release
 
-Feature branches merge into `dev` through required checks. A weekly `dev → main` promotion PR runs the full Python suite, the iOS simulator job and the promotion policy, is squash-merged, and is followed by a checked `sync/main-to-dev` PR. Firebase Production content deployment is a separate step with its own admission receipts. Details: [branch and Firebase environment policy](docs/development-branch-and-firebase-environments.zh.md).
+The designed code path merges feature branches into `dev`, then squash-merges a `dev → main` promotion PR and syncs back. The 2026-10-22 remote check found no required status checks on `dev`; `main` still required `unittest`, `native-client` and `promotion-policy`, while the test workflows were manually disabled. Configured checks therefore do not establish an executed test run. See the [execution environment design](docs/execution-environment-design.zh.md) for the remote-state record. Firebase Production content deployment is a separate step with its own admission receipts. Details: [branch and Firebase environment policy](docs/development-branch-and-firebase-environments.zh.md).
 
 ### Sunday live session
 
@@ -130,12 +130,17 @@ A simulator build is not TestFlight, physical-device or venue acceptance; each i
 
 | Path | Contents |
 |---|---|
-| `scripts/` | Production, QC, release, supervisor and experiment tooling |
+| `packages/production/` | Four-layer production, review, orchestration, compute, storage and Supervisor code |
+| `tools/ops/`, `tools/development/` | Operator entrypoint `run.py`, preflights, repository and test helpers |
+| `scripts/` | Compatibility facades, hosts and legacy files still bound to frozen identities |
 | `schemas/` | Versioned JSON schemas for every package and receipt |
 | `config/` | Frozen policies, run profiles, adapters and agent-trial fixtures |
 | `tests/` | Python test suite |
 | `apps/tongxing-ios/` | iOS app, Swift packages, UI tests and release records |
 | `apps/listening-web/` | Web reader modules and Node tests |
+| `apps/operator-web/`, `apps/tracker-web/` | Legacy operator UI and four-layer run Tracker client |
+| `services/api/`, `services/feedback/` | Extracted API modules, feedback and anonymous statistics; `backend/` retains the legacy API shell |
+| `infra/` | Firebase and other infrastructure configuration |
 | `firebase/` | Hosting configuration and Dev page adapters |
 | `experiments/local-live-poc/` | Sunday live caption runtime |
 | `docs/` | Contracts, runbooks, design documents, diagrams and dated reports |

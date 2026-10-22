@@ -35,12 +35,12 @@
 
 | 模块 | 作用 | 位置 | 进一步阅读 |
 |---|---|---|---|
-| 四层生产后端 | 冻结英文来源，逐语言翻译与复核，渲染并对齐配音，组装逐 locale 发布包 | `scripts/`、`schemas/`、`config/` | [四层生产合同](docs/multilingual-production-interfaces.zh.md) · [后端设计](docs/backend-workflow-system-design.zh-en.md) |
+| 四层生产后端 | 冻结英文来源，逐语言翻译与复核，渲染并对齐配音，组装逐 locale 发布包 | `packages/production/src/tongxing_production/`、`tools/ops/run.py`、`schemas/`、`config/` | [四层生产合同](docs/multilingual-production-interfaces.zh.md) · [后端设计](docs/backend-workflow-system-design.zh-en.md) |
 | Web 阅读器（Firebase Hosting） | 每周页面：随声字幕、双语全文、大纲、语言选择和听声定位 | `apps/listening-web/`、`firebase/` | [Layer 4 公开交付](docs/layer4-four-product-public-delivery.zh.md) · [每周发布](docs/tongxing-weekly-release.zh.md) |
 | iOS 客户端 | SwiftUI + AVPlayer，校验缓存、后台音频、锁屏控制、灵动岛状态、麦克风定位和 Beta 渠道 | `apps/tongxing-ios/` | [iOS README](apps/tongxing-ios/README.zh.md) · [设计约定](apps/tongxing-ios/DESIGN.zh.md) |
 | 主日实时字幕 | 本地麦克风到中文实时字幕，保留恢复录音；独立的 `live_session` 交付类型 | `experiments/local-live-poc/` | [实时字幕 POC](experiments/local-live-poc/README.md) · [周日字幕指南](docs/sunday-live-operations-whitepaper.zh.md) |
-| 双 PDF 阅读版 | 从确认过的录音生成中英阅读 PDF 与中文证道同行稿 | `scripts/` | [稳定 post-live 工作流](docs/stable-post-live-reading-pdf-workflow.zh.md) |
-| Supervisor 与运行工具 | 运行日志、预算规划、开工检查、Spark 会话控制、运行报告 | `scripts/`、`docs/reports/` | [Supervisor 契约](docs/sermon-production-supervisor-agent.zh.md) · [运行复盘模板](docs/test-run-retrospective.zh.md) |
+| 双 PDF 阅读版 | 从确认过的录音生成中英阅读 PDF 与中文证道同行稿 | `packages/production/src/tongxing_production/workflows/dual_pdf/`、`tools/ops/run.py` | [稳定 post-live 工作流](docs/stable-post-live-reading-pdf-workflow.zh.md) |
+| Supervisor 与运行工具 | 运行日志、预算规划、开工检查、Spark 会话控制、运行报告 | `packages/production/src/tongxing_production/workflows/supervisor/`、`tools/ops/`、`docs/reports/` | [Supervisor 契约](docs/sermon-production-supervisor-agent.zh.md) · [运行复盘模板](docs/test-run-retrospective.zh.md) |
 | 实验 | 模型试验、A/B 对比、基准、Decisions API 研究 | `experiments/`、`config/agent-trials/` | [实验方向](docs/experiment-directions.zh.md) · [模型输出速度索引](docs/model-output-speed-index.zh.md) |
 
 ## 架构
@@ -76,7 +76,7 @@
 
 ## 技术实现
 
-**后端。** `scripts/` 中的 Python 3 生产器，`schemas/` 中的 JSON schema，`config/` 中的冻结策略。每个包记录规范来源 ID 和 URL、媒体哈希与时长、批准窗口、模型与提示身份以及审核收据。运行从已验证产物恢复；durable jobs、响应缓存和预算账本让付费模型调用可以跨重启复用。人工验收、机器豁免和预算批准由不同脚本写成不同收据，机器通过永远不会被当作人工批准。
+**后端。** `packages/production/src/tongxing_production/` 中的 Python 3 生产器，经 `.venv/bin/python tools/ops/run.py <area.module>` 调用；`scripts/` 保留兼容门面、宿主和冻结文件。`schemas/` 中的 JSON schema，`config/` 中的冻结策略。每个包记录规范来源 ID 和 URL、媒体哈希与时长、批准窗口、模型与提示身份以及审核收据。运行从已验证产物恢复；durable jobs、响应缓存和预算账本让付费模型调用可以跨重启复用。人工验收、机器豁免和预算批准由不同脚本写成不同收据，机器通过永远不会被当作人工批准。
 
 **模型与算力。** 翻译和独立复核经每次运行冻结的 Layer 2 后端执行；语音渲染、回转写和词级对齐在本地 DGX Spark 运行，MacBook 作为后备。模型名称、推理强度、tier 和预算上限见[运行时模型策略](docs/production-model-runtime-policy.zh.md)、[算力策略](docs/local-production-compute-policy.zh.md)和[周更运行配置](docs/weekly-run-profile.zh.md)；并发与恢复见 Layer 2 [控制器](docs/canonical-layer2-controller.zh.md)。OpenAI 项目只通过[环境启动器](docs/openai-minimal-project-setup.zh.md)使用。
 
@@ -88,7 +88,7 @@
 
 **实时字幕。** 本地网关负责麦克风采集、ASR 和翻译，保留恢复录音，并渲染操作页与观看页。实时字幕依据本场正在说的话；会后复用录音做持久内容时，重新从 Layer 1 开始。
 
-**测试与 CI。** `tests/` 下的 Python 测试、Web 模块旁的 Node 测试、`apps/tongxing-ios/` 下的 Swift package 与模拟器测试。GitHub Actions 运行按路径分类的 Python 套件、iOS 合同或模拟器任务，以及 `main` 的晋升策略。策略、路由和分片见 [CI/CD backlog](docs/ci-cd-backlog.zh.md)。
+**测试与 CI。** `tests/` 下的 Python 测试、Web 模块旁的 Node 测试、`apps/tongxing-ios/` 下的 Swift package 与模拟器测试。仓库保留按路径分类的 Python、iOS 合同／模拟器及晋升 workflow；2026-10-22 远端核对时，多项测试 workflow 为 `disabled_manually`，Branch promotion 仍 active。远端开关与分支保护分别以[执行环境设计](docs/execution-environment-design.zh.md)的核对记录为准；路由和分片见 [CI/CD backlog](docs/ci-cd-backlog.zh.md)。
 
 ## 工作流
 
@@ -104,7 +104,7 @@
 
 ### 代码与内容发布
 
-功能分支通过 required checks 合入 `dev`。每周一次的 `dev → main` 晋升 PR 运行完整 Python 套件、iOS 模拟器任务和晋升策略，以 squash 合并，随后由受检查的 `sync/main-to-dev` PR 回同步。Firebase 正式内容部署是独立步骤，有自己的准入收据。详见[分支与 Firebase 环境策略](docs/development-branch-and-firebase-environments.zh.md)。
+设计中的代码路径是功能分支合入 `dev`，再经 `dev → main` 晋升 PR squash 合并并回同步。2026-10-22 远端核对时，`dev` 无 required status checks，`main` 仍要求 `unittest`、`native-client` 和 `promotion-policy`，但相关测试 workflow 已手动停用；不能将配置中的检查视为已执行。当前远端状态见[执行环境设计](docs/execution-environment-design.zh.md)。Firebase 正式内容部署是独立步骤，有自己的准入收据。详见[分支与 Firebase 环境策略](docs/development-branch-and-firebase-environments.zh.md)。
 
 ### 主日实时 session
 
@@ -130,12 +130,17 @@ App 采用 iOS 27 设计语言：系统导航与 Sheet、随 Dynamic Type 增长
 
 | 路径 | 内容 |
 |---|---|
-| `scripts/` | 生产、质检、发布、supervisor 与实验工具 |
+| `packages/production/` | 四层生产、复核、编排、算力、存储与 Supervisor 源码 |
+| `tools/ops/`、`tools/development/` | 操作入口 `run.py`、预检、仓库与测试辅助工具 |
+| `scripts/` | 兼容门面、宿主与仍受冻结身份约束的遗留文件 |
 | `schemas/` | 每个包和收据的版本化 JSON schema |
 | `config/` | 冻结策略、运行配置、adapter 与 agent-trial 夹具 |
 | `tests/` | Python 测试套件 |
 | `apps/tongxing-ios/` | iOS App、Swift package、UI 测试与发行记录 |
 | `apps/listening-web/` | Web 阅读器模块与 Node 测试 |
+| `apps/operator-web/`、`apps/tracker-web/` | 遗留操作页与四层运行 Tracker 客户端 |
+| `services/api/`、`services/feedback/` | 已提取的 API 模块、反馈与匿名统计服务；`backend/` 保留遗留 API 外壳 |
+| `infra/` | Firebase 等基础设施配置 |
 | `firebase/` | Hosting 配置与 Dev 页面 adapter |
 | `experiments/local-live-poc/` | 主日实时字幕运行时 |
 | `docs/` | 合同、runbook、设计文档、流程图与带日期的报告 |

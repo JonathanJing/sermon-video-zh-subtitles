@@ -4,7 +4,7 @@
 
 这是现有周六生产流程的可选扩展。现有证道范围确认、中文审校、双 PDF QA 和发布完成检查继续有效。配音候选可以提前生成供审核；周日版本另需声音和视频同步验收。它仍处于 Discovery，完整现场同步尚未验收。
 
-本页是当前中文 Layer 2／3 的 legacy adapter 操作说明，不是四层接口本身。今后的预制生产必须先消费 `ready_for_translation` 的 `English Source Package`；在通用 producer 尚未生成并校验 `Target-Language Candidate` 与 `Target-Language Audio Package` 前，只能报告 legacy 候选状态，不能宣称对应规范层已经完成。统一接口见[多语言生产四层接口](../../docs/multilingual-production-interfaces.zh.md)。
+正文策略核查于 2026-10-22；本页保留早期中文 Layer 2／3 的 legacy adapter 操作说明，不是四层接口本身。今后的预制生产必须先消费 `ready_for_translation` 的 `English Source Package`；没有生成并校验对应的 `Target-Language Candidate` 与 `Target-Language Audio Package` 时，只能报告 legacy 候选状态，不能宣称对应规范层已经完成。统一接口见[多语言生产四层接口](../../docs/multilingual-production-interfaces.zh.md)。
 
 ![从周六生产到中文配音、审核与周日播放](../../docs/diagrams/saturday-chinese-voice-workflow.svg)
 
@@ -17,7 +17,7 @@
 - **同版本纯证道视频主路（接入器已实现，待实际来源）**：`prepare_same_video.py` 校验周次、来源 ID／canonicalURL、文件 SHA-256、完整片长、音视频流和同版／纯证道确认依据；独立归档后使用 `0 → 完整片长`。该路记录 `humanWindow=not_applicable`，不生成旧式人工窗口批准。实际视频尚未收到，当前证据为软件测试和合成视频初始化，不能宣称真实来源全流程已通过。
 - **直播归档 fallback（当前可用，半自动）**：继续现有直播归档与 PDF 流程，复用已确认的证道窗口。当前 v1 只消费真实人工窗口；将来自动探测和审核边界要另建模型证据契约，不能写成 v1 人工批准。主路缺少来源不会阻挡 fallback。
 
-桥接器默认只读检查；`--execute` 会在来源和 QA 齐备后准备或恢复配音候选，使用按周、来源隔离的锁。文字修订和审核在本对话使用 GPT-6 Astra；桥接器本身不调用另一个文本审核服务。
+桥接器默认只读检查；`--execute` 会在来源和 QA 齐备后准备或恢复配音候选，使用按周、来源隔离的锁。本页历史 job 的对话文字修订和审核使用 GPT-6 Astra，恢复时保留冻结身份；新 canonical Layer 2 按[运行时策略](../../docs/production-model-runtime-policy.zh.md)默认 DeepSeek Flash、Sol／Opus 显式回退。桥接器本身不调用另一个文本审核服务。
 
 未来周运行只要配置了 `--dubbing-config`，主生产入口也会从冻结的 MFA 英文自动准备 clause-stable v2 Layer 1 shadow。它写入哈希隔离的 `anchor-manifest.json`、`english-source-package.json` 和 `receipt.json`；缺少英文人工审核时最多为 `candidate_ready_for_translation`，有对齐异常或没有安全分句点时 package 保持 `blocked`、receipt 指向 `waiting_anchor_review`，不调用 GPT/TTS，也不影响本页描述的现有配音候选或双 PDF。详见[句级锚定与滚动同传设计](../../docs/sentence-aligned-interpretation.zh.md#未来周生产接线)。
 
@@ -68,13 +68,15 @@
 | 节点 | 当前实现 | 产物与检查 |
 |---|---|---|
 | 授权来源、完整音频、证道窗口 | 当前周六流程、FFmpeg、GPT-Transcribe、人工 | 复用 `operator-window-approval.json`，调用现有 `validate_window_approval`，保留其 canonical JSON 哈希规则 |
-| 英文参考、中文翻译、两轮审校、双 PDF | 当前周六默认 `gpt-6-astra / medium`；英文沿用已有字幕或 GPT-Transcribe | 读取 `reading_blocks.final.json`、阅读 QA 和两份 PDF QA；证道同行只用于大纲，不作为配音稿 |
+| 英文参考、中文翻译、两轮审校、双 PDF | 当前双 PDF／阅读稿默认 `gpt-6.1-sol / high`；历史配音 job 保留 Astra 冻结身份；英文沿用已有字幕或 GPT-Transcribe | 读取 `reading_blocks.final.json`、阅读 QA 和两份 PDF QA；证道同行只用于大纲，不作为配音稿 |
 | 声音候选准备 | Qwen3-ASR 0.6B 8-bit + Qwen3-ForcedAligner 0.6B 8-bit | 原声音频、英文一致性、实际句子边界；按讲员、来源、train split 隔离 |
 | 讲员训练 | Qwen3-TTS 12Hz 1.7B Base，Spark BF16 / SDPA | 每人独立 SFT 检查点；本轮每人三篇证道、1 epoch、batch 1、lr 2e-6；音频候选不改称人工 Gold |
 | 每周中文生成 | 对应讲员的训练检查点，Chinese | 自然句群、段间停顿；显示文字与发音输入分开；WAV 分段缓存、MP3、实测字幕时间 |
 | 声音检查 | Qwen3-ASR 0.6B 8-bit 逐段回听转写 + FFmpeg + 人工 | 全段覆盖、漏读/重复候选、发音、响度、完整解码；ASR 差异可以是同音字，不能直接当 TTS 错误率 |
 | 视频同步 | Qwen3-ASR / ForcedAligner 提供声学定位，确定性时长检查 | 原声段落时间与中文时长分开测量；弱边界和超时段进入复核，禁止使用阅读排版时间戳 |
 | 发放与播放 | 独立 Firebase Hosting 站点 + 静态 App | 按周选择、主题/讲员、播放/暂停、时间轴、微调、中文字幕、大纲弹窗、讲员音色对照 |
+
+2026-10-01 起预制本地模型计算默认 Spark，MacBook 负责协调与 CPU 媒体处理；仅明确的连接、依赖、设备或内存等基础设施故障允许使用已配置且身份匹配的 MacBook fallback。ASR／对齐／TTS 的已接入 adapter 与尚需显式派发的 canonical 路径见[计算策略](../../docs/local-production-compute-policy.zh.md)。旧 render 沿原后端恢复；远端结果未知先对账，不能以换机规避内容、身份或质检失败。下文历史命令与 job 继续按其冻结运行时执行。
 
 Qwen 的[官方接口](https://github.com/QwenLM/Qwen3-TTS#custom-voice-generation)支持批量 `generate_custom_voice`。整篇渲染使用固定 4 段批次，记录批次、随机种子、检查点与脚本哈希；异常段使用单段重试并记录实际参数。数字（例如 `600`、`2025年`）和神称代词（`祢`、`祂`）只在口播输入中规范发音，字幕保留已审原文。
 

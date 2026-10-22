@@ -2,7 +2,7 @@
 
 The installable Python package for the sermon four-layer pipeline. It is the
 `packages/production/` target of the [repository layout proposal](../../docs/design/repository-layout-proposal.zh.md);
-the [current map](../../docs/design/repository-current-map.zh.md) records what still lives in `scripts/`.
+the [repository map](../../docs/design/repository-current-map.zh.md) separates the dated migration snapshot from current paths. `scripts/` retains hosts, compatibility facades and frozen legacy files.
 
 ## Install
 
@@ -51,12 +51,24 @@ The repository's `requirements.txt` already includes `requests` for this path.
   does not. Identity for a wheel installed outside the checkout is a later
   batch, together with `importlib.resources` loading.
 
-## Moved so far
+## Package areas and operator entrypoint
 
-| Module | Old path | Since |
-|---|---|---|
-| `tongxing_production.compute.provider_limits` | `scripts/sermon_provider_limits.py` (facade removed in the D-5 closure window) | 2026-10-15 |
-| `tongxing_production.orchestration.unified` (`contracts`, `adapters`, `resources`, `runtime`, `backend`) | `scripts/sermon_unified/` (facade kept: binds the `Backend` and aliases the four modules) | 2026-10-15 |
+The current source tree includes `source`, `text`, `audio`, `delivery`, `review`,
+`orchestration`, `compute`, `observability`, `storage`, `contracts`, `adapters`
+and `workflows`. This replaces the early two-module migration inventory;
+individual moves and facade closures retain their original dated records.
+See the [four-layer contract](../../docs/multilingual-production-interfaces.zh.md)
+and [facade plan](../../docs/design/facade-removal-plan.zh.md) for boundaries.
+
+Invoke a command module from the repository with the host bound:
+
+```bash
+.venv/bin/python tools/ops/run.py <area.module> [arguments ...]
+```
+
+For example, `text.candidate --help` selects
+`tongxing_production.text.candidate`. See the
+[package CLI guide](../../docs/design/package-cli-entry.zh.md).
 
 ## Injected collaborators
 
@@ -64,5 +76,6 @@ The repository's `requirements.txt` already includes `requests` for this path.
 implementations or the checkout. The host builds one
 `orchestration.unified.backend.Backend` and calls `configure()`; the package
 reads it at call time (`backend.current()`), so importing the package has no
-host dependency and a missing host fails with `BackendUnbound`. Today the only
-host is `scripts/sermon_unified/__init__.py`.
+host dependency and a missing host fails with `BackendUnbound`. The unified orchestration host is `scripts/sermon_unified/__init__.py`;
+`tools/ops/run.py` binds it for the command families that require it, after
+binding the shared production and Tracker hosts.

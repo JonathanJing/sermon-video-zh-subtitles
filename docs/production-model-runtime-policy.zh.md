@@ -51,7 +51,7 @@ python scripts/target_language_policy.py freeze --policy <draft.json> --out <pol
 
 来源 ASR、OpenAI 音频、MFA、Spark Qwen TTS／回转写 ASR、ImageGen 继续使用各自入口。其他文字入口保留其实际接线范围；本次修复不证明所有旧 producer 已消费此策略。
 
-配音精简（`tools/ops/run_spoken_condensation.py`）沿用 Layer 2 初译的 `gpt-6.1-sol` `high`，与机器质检回译（`tongxing_production.review.qc_text_run`，`gpt-6.1-sol` `medium`）一样经 ChatGPT 登录的本机 Codex CLI（requested tier `fast`）调用，不用 API key；两者各用自己的缓存命名空间，按请求和 transport 身份（CLI 版本、CLI／二进制／适配器哈希）缓存。精简不是 Layer 2 翻译入口：它只产出精简记录和 revision brief，口播候选仍经 Layer 2 链按上表生成。
+配音精简（`tools/ops/run_spoken_condensation.py`）保持自身的 `gpt-6.1-sol` `high`，与机器质检回译（`tongxing_production.review.qc_text_run`，`gpt-6.1-sol` `medium`）一样经 ChatGPT 登录的本机 Codex CLI（requested tier `fast`）调用，不用 API key；两者各用自己的缓存命名空间，按请求和 transport 身份（CLI 版本、CLI／二进制／适配器哈希）缓存。精简不是 Layer 2 翻译入口：它只产出精简记录和 revision brief，口播候选仍经 Layer 2 链按上表生成。
 
 ## 执行与证据
 
@@ -65,7 +65,7 @@ Supervisor 默认与后端生成命令均选择 `codex-cli`。旧 Agents API 会
 
 ## Layer 2 角色与返修
 
-新 dev 和正式 run 的翻译（Sol 6.1 high）与独立复核（Sol 6.1 medium）在同一份冻结英文单元上按组运行，常规路径不增加 Astra 或 Gemini 第三轮门禁。Sol 标出失败、问题或不确定时，保留该证据并开新修订做返修，重跑该修订规定的译者、复核者、语言插件和候选准入链；模型复核仍只是机器证据，schema 里的人工译文批准独立存在。Gemini A/B 评审属实验，除非该次运行的政策明确要求。互相独立的组或 locale 在 producer 支持时可有界并行；Supervisor 的有状态转移和写入由 lease 保护。已有 run 保留其冻结政策，不按本节改写。
+新 dev 和正式 run 的翻译与独立复核在同一份冻结英文单元上按组运行：默认 DeepSeek Flash low／high；显式 OpenAI 回退为 Sol 6.1 high／medium，显式 Claude 后端为 Opus 5.5 high／medium。常规路径不增加 Astra 或 Gemini 第三轮门禁。复核者标出失败、问题或不确定时，保留该证据并开新修订做返修，重跑该修订规定的译者、复核者、语言插件和候选准入链；模型复核仍只是机器证据，schema 里的人工译文批准独立存在。Gemini A/B 评审属实验，除非该次运行的政策明确要求。互相独立的组或 locale 在 producer 支持时可有界并行；Supervisor 的有状态转移和写入由 lease 保护。已有 run 保留其冻结政策，不按本节改写。
 
 ## API key 与 fallback
 

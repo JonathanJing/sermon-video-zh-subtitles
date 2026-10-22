@@ -1,6 +1,6 @@
 # 证道阅读版生产 Supervisor Agent
 
-当前新 dev／正式任务以[2026-10-06 模型及调用策略](production-model-runtime-policy.zh.md)为准：Layer 2 初译使用 Sol 6.1 high、独立复核使用 Sol 6.1 medium，默认走 OpenAI API 与已批准的请求 tier；Supervisor 使用 Luna medium fast，走 ChatGPT 登录的 Codex CLI。下文旧 Agents API／Astra／Sol 参数只适用于历史证据与原身份对账，不用于新任务。
+当前新 dev／正式任务以[2026-10-21 模型及调用策略](production-model-runtime-policy.zh.md)为准：Layer 2 默认 DeepSeek Flash low 初译、high 独立复核；Sol 6.1 high／medium 和 Opus 5.5 high／medium 仅显式选择，不自动回退。Supervisor 使用 `gpt-6-luna`／medium／fast，走 ChatGPT 登录的 Codex CLI。已有运行保留冻结的后端、模型、凭据、预算与收据身份；下文带日期的 Agents API／Astra／Sol 记录保持原参数，不用于推定新任务状态。DeepSeek 默认已接线，canonical 真实运行验收仍见策略中的证据边界。
 
 2026-09-11 的安装与验收状态见 [Agents API 生产切换记录](agents-api-production-cutover-20260911.zh.md)：当时代码已安装，正式入口 shadow/execute 验收通过，每周调度已启用，业务状态为等待匹配源。该值是带日期的切换收据，不是当前周次的永久状态；每次运行都须重新读取 source、lease、审批、run status 与 QA。后续完整内容制作证据见 [2026-09-20 制作记录](production-2026-09-20.zh.md)。
 
@@ -24,7 +24,7 @@ Agent 不直接下载、裁剪、转录、翻译或渲染 PDF。它只能调用�
 ```mermaid
 flowchart LR
     D[Cloud Scheduler 找源] --> G[GCS source 与生产证据]
-    L[本地 runner] <--> A[Agents API session / environment none]
+    L[本地 runner] <--> A[Codex CLI / gpt-6-luna medium fast]
     A --> T[受限工具请求]
     T --> L
     L --> P[确定性媒体准备 / PDF 工具]
@@ -32,7 +32,7 @@ flowchart LR
     G --> L
 ```
 
-CLI Supervisor 读取最小结构化状态，返回受 schema 约束的操作，本地 ProductionTools 在原审批、lease 与阶段去重门禁下执行。新默认为 **`gpt-6-luna`／medium／fast**；原 Astra Medium 文字角色改为 **`gpt-6.1-sol`／high／fast**，原 Sol Medium 独立复核改为 **`gpt-6.1-sol`／medium／fast**，统一使用 Codex CLI。ASR 保持 `gpt-transcribe`，API key 仅供转录。下文 API session 细节用于历史原会话恢复；未决旧会话先对账，不因默认值变化另开 CLI 任务。
+CLI Supervisor 读取最小结构化状态，返回受 schema 约束的操作，本地 ProductionTools 在原审批、lease 与阶段去重门禁下执行。Supervisor 新默认为 **`gpt-6-luna`／medium／fast，Codex CLI**。dual-PDF 内容生产是另一调用面：`workflows/dual_pdf/post_live.py` 的中文、英文校对、阅读版和证道同行模型默认为 `gpt-6.1-sol`，相应 reasoning 默认 high；阅读版 `--reading-edition-provider` 默认 `openai`，显式 `codex` 才选择 CLI。ASR 保持 `gpt-transcribe`。因此不能把 Supervisor 的 CLI 后端外推为所有内容模型都用 CLI，也不能说 API key 只用于 ASR；实际 provider、tier 与收据按各入口和本次冻结配置记录。下文 API session 细节用于历史原会话恢复；未决旧会话先对账，不因默认值变化另开 CLI 任务。
 
 Cloud Scheduler 不会把一个 HTTP target 的返回结果自动传给另一个 target。自动交接通过持久状态完成：
 
@@ -51,7 +51,7 @@ Cloud Scheduler 不会把一个 HTTP target 的返回结果自动传给另一个
 - 阅读版生成工具：`tools/ops/run.py workflows.dual_pdf.post_live`
 - API 入口：`POST /api/admin/sundays/<date>/production-supervisor`
 
-兼容回退路径仍保留以下 Python 依赖；它不是 Agents API 服务端控制循环：
+历史 SDK 实现仍保留以下 Python 依赖；当前新 SDK 会话禁用，此依赖不建立可用回退，也不是 Agents API 服务端控制循环：
 
 ```text
 openai-agents>=0.19.1,<0.20
@@ -98,28 +98,23 @@ Execute 模式另外暴露两个受限工具：
 
 ### 后端选择与恢复
 
-本地入口默认使用 Agents API。以下参数已接入 runner；执行前仍需按验证回执核对账户与运行条件：
+本地入口默认使用 Codex CLI。新任务和旧会话恢复分开：
 
 ```bash
-# 新建受控 session；目录内保存 session 状态、工具请求与结果。
+# 当前新任务默认；不会创建 Agents API session。
 .venv/bin/python tools/ops/run.py workflows.dual_pdf.codex_local \
-  --mode shadow --agent-backend agents-api \
-  --agent-run-dir artifacts/sermon-production-supervisor/api-shadow
+  --mode shadow --agent-backend codex-cli
 
-# 恢复同一个 session，不重复创建或重跑已记录的阶段。
+# 仅恢复已有 Agents API 原会话；目录必须指向原持久记录。
 .venv/bin/python tools/ops/run.py workflows.dual_pdf.codex_local \
   --mode shadow --agent-backend agents-api \
   --agent-run-dir artifacts/sermon-production-supervisor/api-shadow \
   --resume-agent-session
-
-# 显式切回既有 SDK / Responses 控制层。
-.venv/bin/python tools/ops/run.py workflows.dual_pdf.codex_local \
-  --mode shadow --agent-backend sdk
 ```
 
-`--agent-run-dir` 可省略，由 runner 选择本地持久目录；恢复时必须指向原会话目录。`--agent-timeout-seconds` 默认 `21600`，是控制循环的时间边界，不会强杀正在执行的本地工具。`--max-turns` 在 Agents API 后端约束工具调用次数，在 SDK 后端保留原有 turn 限制。
+Agents API 只用于历史原会话恢复，不能把默认变化用作新建会话或重发旧工具的授权。`--agent-run-dir` 必须指向原会话目录；`--agent-timeout-seconds` 默认 `21600`，约束控制循环，不强杀正在执行的本地工具。`--max-turns` 在 Agents API 后端约束工具调用次数。SDK 没有 durable session resume adapter，当前入口明确拒绝 `--agent-backend sdk`；需先对账旧结果再另建 CLI 运行。
 
-Session 创建结果不明时停止自动创建，先核对持久记录；pending 请求继续原 session。只有远端 `completed` / `failed` / `cancelled` 已被确认，且不存在 executing 或结果未确认的工具调用时，才能自动创建新会话。本地 timeout、预算停止或取消请求的 ACK 均不能单独满足这一条件，也不能重置阶段尝试记录。工具结果先持久化，再提交服务端；阶段尝试记录避免同一阶段因重试或新 `call_id` 重复运行。超时、结果提交失败或中断后的恢复不能绕过 source/approval 校验、lease 与工具自身恢复机制。
+历史 session 创建结果不明时先核对持久记录；pending 请求继续原 session。工具结果先持久化再提交服务端；阶段尝试记录防止相同阶段因新 `call_id` 重复执行。确认远端终态仍不能代替原工具结果对账、source/approval 校验、lease 与确定性工具的恢复条件。本地 timeout、预算停止或取消 ACK 不足以重置阶段记录或开启另一后端。
 
 本地生产入口会自动选择当前或下一个 Sunday，并把工作目录保存在仓库忽略的 `artifacts/` 下：
 
@@ -213,7 +208,7 @@ operator 独立观看完整录像后，使用同一个 runner 写审批：
 
 ## 旧 Cloud Scheduler / API 接入
 
-下面的 Cloud Run Supervisor 方式保留为历史恢复参考。所示旧 API/Scheduler 参数没有证明 Agents API 已接入该路径；恢复时须先重建并核验容器／Job，再显式选择 SDK 后端。
+下面的 Cloud Run Supervisor 方式保留为历史恢复参考。所示旧 API/Scheduler 参数没有证明 Agents API 已接入该路径；恢复时须先重建并核验容器／Job，再评估并接通相应后端；当前 SDK 入口不可直接恢复。
 
 Scheduler 配置脚本支持 `production-supervisor`：
 
