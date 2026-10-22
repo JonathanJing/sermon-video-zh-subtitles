@@ -1,0 +1,17 @@
+{
+  "schemaVersion": "tongxing-cloud-setup-v1",
+  "result": "created_and_verified",
+  "project": "ai-for-god-caption-dev",
+  "database": "sermon-push",
+  "region": "us-west1",
+  "deleteProtection": "enabled",
+  "runtimeServiceAccount": "<email>",
+  "iamRole": "roles/datastore.user",
+  "iamCondition": "resource.name==\"projects/ai-for-god-caption-dev/databases/sermon-push\"",
+  "rules": "deny_client_read_write_deployed",
+  "ttlCollections": [
+    "pushSubscriptions",
+    "pushRateLimits"
+  ],
+  "ttlStateAtLastRead": "CREATING"
+}
