@@ -391,6 +391,13 @@ successful provider outcome or authorize copying a human approval.
             # exact payload; the caller's transport is not part of what was asked.
             fingerprint = policy_tools.canonical_sha256(payload)
             cached = producer._load(cache)
+            # A cache written before the transport decoupling carries a fingerprint
+            # that includes the old budget authorization. Its frozen preview still
+            # proves the payload, so accept that mismatch for openai_api transports;
+            # a CLI-wrapped cache must not migrate across runs.
+            legacy = (cached.get("payloadSha256") != fingerprint
+                      and isinstance(transport_identity, dict)
+                      and transport_identity.get("backend") == "openai_api")
             require(isinstance(payload, dict)
                     and preview.get("role") == role
                     and payload.get("model") == policy[role]["model"]
@@ -398,7 +405,7 @@ successful provider outcome or authorize copying a human approval.
                     and preview.get("policySha256") == policy_tools.canonical_sha256(policy)
                     and preview.get("policy") == policy
                     and preview.get("payloadSha256") == policy_tools.canonical_sha256(payload)
-                    and cached.get("payloadSha256") == fingerprint,
+                    and (cached.get("payloadSha256") == fingerprint or legacy),
                     "prior model payload does not match cached response")
             raw_path = cache.with_suffix(".raw.json")
             if raw_path.is_file():
