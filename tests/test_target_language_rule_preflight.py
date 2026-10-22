@@ -54,6 +54,35 @@ class TargetLanguageRulePreflightTests(unittest.TestCase):
                    "fixture-key", self.worker.fake_call, plugin_path=self.plugin)
         self.assertEqual([], self.worker.calls)
 
+    def test_source_bound_plugin_must_name_this_source(self):
+        text = self.plugin.read_text()
+        self.plugin.write_text(text + '\nSOURCE_PACKAGE_SHA="' + 'a' * 64 + '"\nANCHOR_SHA="' + 'b' * 64 + '"\n')
+        self.repin()
+        with self.assertRaisesRegex(ValueError, "plugin source package hash"):
+            self.receipt()
+
+    def test_plugin_anchor_pin_must_match_the_request(self):
+        text = self.plugin.read_text()
+        self.plugin.write_text(text + '\nSOURCE_PACKAGE_SHA="' + self.request["englishSourcePackageJsonSha256"]
+                               + '"\nANCHOR_SHA="' + 'b' * 64 + '"\n')
+        self.repin()
+        with self.assertRaisesRegex(ValueError, "plugin anchor hash"):
+            self.receipt()
+
+    def test_plugin_quote_unit_must_exist_in_this_source(self):
+        text = self.plugin.read_text()
+        self.plugin.write_text(text + '\nQUOTE_UNIT="missing-unit-999"\n')
+        self.repin()
+        with self.assertRaisesRegex(ValueError, "quote unit is not in this source"):
+            self.receipt()
+
+    def test_matching_pins_pass_preflight(self):
+        text = self.plugin.read_text()
+        self.plugin.write_text(text + '\nSOURCE_PACKAGE_SHA="' + self.request["englishSourcePackageJsonSha256"]
+                               + '"\nANCHOR_SHA="' + self.request["anchorManifestSha256"] + '"\n')
+        self.repin()
+        self.assertEqual("inputs_frozen_not_execution_evidence", self.receipt()["status"])
+
     def assert_blocked_without_dispatch(self, message):
         with self.assertRaisesRegex(ValueError, message):
             runner.run(self.fixture.source, self.fixture.anchor, self.policy,
@@ -365,12 +394,26 @@ class TargetLanguageRulePreflightTests(unittest.TestCase):
                    self.identity_caller({"backend": "fixture_transport", "version": "a"}),
                    plugin_path=self.plugin)
         self.worker.calls.clear()
-        with self.assertRaisesRegex(ValueError, "prior model payload does not match cached response"):
+        with self.assertRaisesRegex(ValueError, "cross-run cache reuse requires openai_api"):
             runner.run(f.source, f.anchor, f.policy, self.worker.out, "fixture-key",
                        self.identity_caller({"backend": "fixture_transport", "version": "b"}),
                        plugin_path=self.plugin, reuse_from=original)
         self.assertEqual([], self.worker.calls)
         self.assertFalse(self.worker.out.exists())
+
+    def test_openai_api_reuse_survives_a_new_budget_authorization(self):
+        f = self.fixture
+        original = self.worker.out.parent / "budget-prior"
+        runner.run(f.source, f.anchor, f.policy, original, "fixture-key",
+                   self.identity_caller({"backend": "openai_api",
+                                         "budgetAuthorizationSha256": "a" * 64}),
+                   plugin_path=self.plugin)
+        self.worker.calls.clear()
+        runner.run(f.source, f.anchor, f.policy, self.worker.out, "fixture-key",
+                   self.identity_caller({"backend": "openai_api",
+                                         "budgetAuthorizationSha256": "b" * 64}),
+                   plugin_path=self.plugin, resume_cache_from=original)
+        self.assertEqual([], self.worker.calls)
 
     def test_raw_wrapped_fingerprint_mismatch_is_rejected_without_calls(self):
         f = self.fixture

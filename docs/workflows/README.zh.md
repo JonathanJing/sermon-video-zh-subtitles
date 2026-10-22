@@ -78,7 +78,7 @@
 
 统一入口与持久化推进的开发说明见[统一 CLI 与持久化执行](../unified-cli-pipeline.zh.md)，流程、产物和命令的字段合同见[协议](../unified-cli-protocol.zh.md)。命令、owner 服务和验收目标仍是拟议能力，不代表正式生产已经打通或提速已经实测。
 
-**Layer 2 新生产模型流程：** 已审核的 `ready_for_translation` 英文包按[当前模型及调用策略](../production-model-runtime-policy.zh.md)执行：Sol 6.1 high 初译、Sol 6.1 medium 逐组独立复核，默认走 OpenAI API 与已批准的请求 tier，之后运行冻结语言插件和候选准入。正式后继门禁消费人工收据，或在已支持路径消费有效的[机器质检豁免](../machine-quality-waiver.zh.md)；机器豁免保持 `humanApproval=false`。旧运行保持其原 policy／收据身份；双 PDF 路径和 Layer 1 shadow 不会自动升级为 Layer 2 完成。
+**Layer 2 新生产模型流程：** 已审核的 `ready_for_translation` 英文包按[当前模型及调用策略](../production-model-runtime-policy.zh.md)执行：Sol 6.1 high 初译、Sol 6.1 medium 逐组独立复核，默认走 OpenAI API 与已批准的请求 tier，之后运行冻结语言插件和候选准入。正式后继门禁消费人工收据，或在已支持路径消费有效的[机器质检豁免](../machine-quality-waiver.zh.md)；机器豁免保持 `humanApproval=false`。单组失败的修复边界与预检清单见[Layer 2：只重跑缺失组](../layer2-targeted-repair-and-resume.zh.md)。旧运行保持其原 policy／收据身份；双 PDF 路径和 Layer 1 shadow 不会自动升级为 Layer 2 完成。
 
 **当前控制层：** [Production Supervisor](../sermon-production-supervisor-agent.zh.md) 的新 dev／正式本地任务默认 `--agent-backend codex-cli`，使用 Luna medium fast。旧 Agents API 会话以显式 `--agent-backend agents-api` 按原身份恢复，新 SDK 会话禁用，自动后端 fallback 禁用。source、审批或适用的豁免、lease、恢复、QA 与发布继续由确定性层约束，完成状态须重新读取 production snapshot。
 

@@ -1,0 +1,17 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261020-es-zh-single-locale",
+  "runs": [
+    {
+      "label": "es-zh-full-l3",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.agents/worktrees/codex/group-pipeline-orchestration/artifacts/clip-e2e-20261020-grp-es-full",
+      "skipped": {}
+    },
+    {
+      "label": "es-single-locale",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.agents/worktrees/codex/group-pipeline-orchestration/artifacts/clip-e2e-20261020-es-solo-v2",
+      "skipped": {}
+    }
+  ],
+  "files": []
+}

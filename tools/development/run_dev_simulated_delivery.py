@@ -121,6 +121,31 @@ def reader(url, *, timeout=120):
         return response.status, response.read()
 
 
+def settle_overlay_baseline(final, first, timeout=180):
+    """Let our own asset deployment become the live version before the catalog overlay.
+
+    The asset deploy can finish after ``refresh_baseline`` read the previous live
+    version. Waiting keeps the overlay bound to what is actually live; accepting the
+    version recorded by this run's own asset attempt is the only allowed change.
+    """
+    config_path = final / 'publish-config.json'
+    config = preparation.read(config_path)
+    first_receipt = preparation.read(first / 'deployment-attempt-v2.json')
+    request = publisher.authenticated_transport()
+    deadline = time.time() + timeout
+    while True:
+        live = publisher.live_version(request, preparation.SITE)
+        if live == config['baseline_version']:
+            return
+        if live == first_receipt.get('newVersion'):
+            config['baseline_version'] = live
+            preparation.write(config_path, config)
+            return
+        if time.time() >= deadline:
+            raise ValueError('Live Hosting version did not settle for the overlay baseline')
+        time.sleep(3)
+
+
 def publish_once(snapshot):
     receipt_path = snapshot / 'deployment-attempt-v2.json'
     if receipt_path.exists():
@@ -192,7 +217,11 @@ def _run(args):
         baseline_catalog = contract.snapshot_catalog_v4(base)
     page_id = manifest['pageId']
     contract.require(page_id.startswith(('mockup-', 'dryrun-', 'dev-')), 'Diagnostic page ID required')
-    contract.require(set(manifest['releases']) == {'zh-Hans', 'ko', 'es'}, 'Three locales required')
+    locales = set(manifest['releases'])
+    diagnostic_page = str(page_id).startswith(('mockup-', 'dryrun-', 'dev-'))
+    contract.require(locales and locales <= {'zh-Hans', 'ko', 'es'}
+                     and (diagnostic_page or locales == {'zh-Hans', 'ko', 'es'}),
+                     'At least one known locale required' if diagnostic_page else 'Three locales required')
     contract.require(all(page['id'] != page_id for page in baseline_catalog['pages']),
                      'Test page already exists; build a new run-specific page ID')
     contents = [preparation.read(prepared / 'public' / preparation.safe_relative(row['path']))
@@ -200,13 +229,13 @@ def _run(args):
     if machine:
         # Real machine-checked content on an isolated test page: formal v3 content with its
         # disclosure, published without the source video (content v3 does not bind one).
-        contract.require(len(contents) == 3 and all(
+        contract.require(len(contents) == len(locales) and all(
             c.get('schemaVersion') == 'sermon-full-video-text-content-v3' and c.get('status') == contract.MACHINE_CHECKED
             and c.get('reviewMode') == 'formal' and c.get('disclosure') for c in contents),
             'Explicit machine-checked content required')
         contract.require(args.source_video is None, 'Machine-checked test pages publish no source video')
     else:
-        contract.require(len(contents) == 3 and all(c.get('reviewMode') == 'simulation' for c in contents),
+        contract.require(len(contents) == len(locales) and all(c.get('reviewMode') == 'simulation' for c in contents),
                          'Explicit simulated content required')
     for content in ([] if machine else contents):
         relative = preparation.safe_relative(content['sourceVideoUrl'])
@@ -251,6 +280,7 @@ def _run(args):
         else (lambda: preparation.overlay(live, sealed / 'public', sealed / 'public/multilingual-v3.json', final))
     journal.stage('prepare_overlay', overlay,
                   [final / 'seal-report.json', final / 'publish-config.json'], lambda: contract.validate_catalog_snapshot(final))
+    settle_overlay_baseline(final, first)
     journal.stage('publish_catalog', lambda: publish_once(final), [final / 'deployment-attempt-v2.json'])
     # Always rerun external verification on resume: cached HTTP evidence is historical.
     readback = root / ('live-readback-' + str(time.time_ns()) + '.json')

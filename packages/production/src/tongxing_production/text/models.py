@@ -312,10 +312,15 @@ def validate_api_marker(marker,caller,api_key,payload,fingerprint,role):
 
 
 def _model_fingerprint(payload: dict[str, Any], caller, api_key: str) -> str:
-    """Hash the exact bounded provider payload and its effective transport."""
-    transport_identity = getattr(caller, "execution_identity", None)
-    fingerprint_input = ({"payload": payload, "modelTransportIdentity": transport_identity}
-                         if transport_identity is not None else payload)
+    """Hash the exact bounded provider payload, not the transport that carried it.
+
+    The key is the content identity: model, prompts, source and rules. The effective
+    transport (project, route, budget authorization) is recorded beside the response
+    instead of inside the key. Before 2026-10-21 it was inside the key, so a resume
+    after a re-planned budget could never hit a prior cache even for identical
+    payloads; see docs/layer2-targeted-repair-and-resume.zh.md.
+    """
+    fingerprint_input = payload
     if isinstance(caller, _session_bound_caller()) and not caller.requires_spark and not caller.outcome_guarded:
         outcomes = _text.current().provider.outcomes
         fingerprint_input = {'request': fingerprint_input,
@@ -709,6 +714,19 @@ def _save_payload_cache_success(out: Path, stem: str, request: dict[str, Any],
         save_new(path, receipt, private=True)
 
 
+def _legacy_cache_payload_matches(cache: Path, payload: dict[str, Any], cached: dict[str, Any],
+                                   role: str, model: str) -> bool:
+    """Prove a pre-decoupling cache belongs to this exact payload."""
+    preview_path = cache.with_suffix('.policy-preview.json')
+    if not preview_path.is_file():
+        return False
+    preview = producer._load(preview_path)
+    return (preview.get('role') == role
+            and preview.get('payload') == payload
+            and preview.get('payloadSha256') == policy_tools.canonical_sha256(payload)
+            and cached.get('model') == model)
+
+
 def _model_call(role: str, prompt: dict[str, Any], policy: dict[str, Any],
                 output: Path, api_key: str,
                 caller: Callable[[str, dict[str, Any]], dict[str, Any]],
@@ -744,10 +762,20 @@ def _model_call(role: str, prompt: dict[str, Any], policy: dict[str, Any],
                 save_new(destination_raw,raw,private=True)
         if reuse_from.is_file():
             cached=producer._load(reuse_from)
-            require(cached.get('payloadSha256')==fingerprint and cached.get('model')==model
+            # Caches written before the transport decoupling carry a fingerprint made
+            # with the budget authorization inside it. Their frozen payload preview
+            # still proves the exact content, so accept them and record the original
+            # fingerprint before rewriting it to the content key.
+            legacy = (cached.get('payloadSha256') != fingerprint
+                      and _legacy_cache_payload_matches(reuse_from, payload, cached, role, model))
+            require((cached.get('payloadSha256')==fingerprint or legacy)
+                    and cached.get('model')==model
                     and isinstance(cached.get('requestId'),str) and cached['requestId']
                     and isinstance(cached.get('result'),dict),
                     f"Reusable {role} cache belongs to different inputs: {reuse_from}")
+            if legacy:
+                cached = {**cached, 'legacyFingerprintSha256': cached['payloadSha256'],
+                          'payloadSha256': fingerprint}
             save_new(output,cached)
     if output.exists():
         saved = producer._load(output)
@@ -1617,8 +1645,10 @@ def _run_prepared_groups(request: dict[str, Any], anchor: dict[str, Any],
         if reuse_from is not None:
             require(reuse_from.resolve() != out.resolve(), "Reuse source and output must differ")
         if resume_cache_from is not None:
-            require(reuse_from is not None and resume_cache_from.resolve() != out.resolve()
-                    and resume_cache_from.resolve() != reuse_from.resolve()
+            # A resume may stand alone: an auto-repair round has no reuse base, and the
+            # prior round's request is the proof that its cache belongs to this source.
+            require((reuse_from is None or resume_cache_from.resolve() != reuse_from.resolve())
+                    and resume_cache_from.resolve() != out.resolve()
                     and (resume_cache_from / "request.json").is_file()
                     and producer._load(resume_cache_from / "request.json") == request,
                     "Resume cache must be a separate attempt for this source and policy")
@@ -1646,11 +1676,11 @@ def _run_prepared_groups(request: dict[str, Any], anchor: dict[str, Any],
             # A bound API repair round may reuse an earlier round of the same job:
             # every cache fingerprint includes this transport identity, and the
             # prior-input check above rejects any cache made under another one.
-            require(resume_cache_from is None
+            require((resume_cache_from is None or transport_identity.get("backend") == "openai_api")
                     and (reuse_from is None or (partial_repair_brief is not None
                                                 and transport_identity.get("backend") == "openai_api")
                         or backfill_payload_cache_success),
-                    "CLI transport supports same-run resume only; cross-run cache reuse is not enabled")
+                    "CLI transport supports same-run resume only; cross-run cache reuse requires openai_api")
         if revision_brief is not None:
             identity["revisionBriefSha256"] = policy_tools.canonical_sha256(revision_brief)
         if partial_repair_brief is not None:
