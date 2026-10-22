@@ -1,0 +1,15 @@
+2026-10-22T19:19:06.561327+00:00 INFO run=39958aabc238499a81182489ee1f1718 run_started workflowId=f4ad739cdc094069b31cb40fd2d982f1
+2026-10-22T19:19:06.646799+00:00 INFO run=39958aabc238499a81182489ee1f1718 workflow_started workflowId=f4ad739cdc094069b31cb40fd2d982f1
+2026-10-22T19:19:06.654874+00:00 INFO run=39958aabc238499a81182489ee1f1718 workflow_evidence workflowId=f4ad739cdc094069b31cb40fd2d982f1
+2026-10-22T19:19:06.658308+00:00 INFO run=39958aabc238499a81182489ee1f1718 stage_started workflowId=f4ad739cdc094069b31cb40fd2d982f1 stage=layer3_formal_render spanId=f2bad561071b4d38a51368932fa47988 attemptId=576048dfbfe347469335b336df9701be
+2026-10-22T19:19:06.662377+00:00 INFO run=39958aabc238499a81182489ee1f1718 workload workflowId=f4ad739cdc094069b31cb40fd2d982f1 stage=timing.inline_dispatch_v1 spanId=f2bad561071b4d38a51368932fa47988
+2026-10-22T19:19:06.665651+00:00 INFO run=39958aabc238499a81182489ee1f1718 stage_started workflowId=f4ad739cdc094069b31cb40fd2d982f1 stage=layer3.materialize_inputs spanId=cf407b56d2604244ad110288111bddb8 attemptId=a0724029921249e28427c502b433fd8c
+2026-10-22T19:19:06.669486+00:00 INFO run=39958aabc238499a81182489ee1f1718 workload workflowId=f4ad739cdc094069b31cb40fd2d982f1 stage=timing.inline_dispatch_v1 spanId=cf407b56d2604244ad110288111bddb8
+2026-10-22T19:19:07.382732+00:00 INFO run=39958aabc238499a81182489ee1f1718 stage_finished workflowId=f4ad739cdc094069b31cb40fd2d982f1 stage=layer3.materialize_inputs spanId=cf407b56d2604244ad110288111bddb8 attemptId=a0724029921249e28427c502b433fd8c status=completed elapsedSeconds=0.717022
+2026-10-22T19:19:07.397350+00:00 INFO run=39958aabc238499a81182489ee1f1718 stage_started workflowId=f4ad739cdc094069b31cb40fd2d982f1 stage=layer3.validate_inputs spanId=058f6aaed4da471a8726742ed54a214a attemptId=9c36b42f994a4186913c71df4685436e
+2026-10-22T19:19:07.401673+00:00 INFO run=39958aabc238499a81182489ee1f1718 workload workflowId=f4ad739cdc094069b31cb40fd2d982f1 stage=timing.inline_dispatch_v1 spanId=058f6aaed4da471a8726742ed54a214a
+2026-10-22T19:19:10.059257+00:00 ERROR run=39958aabc238499a81182489ee1f1718 stage_finished workflowId=f4ad739cdc094069b31cb40fd2d982f1 stage=layer3.validate_inputs spanId=058f6aaed4da471a8726742ed54a214a attemptId=9c36b42f994a4186913c71df4685436e status=failed elapsedSeconds=2.661354 errorType=ValueError
+2026-10-22T19:19:10.074937+00:00 ERROR run=39958aabc238499a81182489ee1f1718 stage_finished workflowId=f4ad739cdc094069b31cb40fd2d982f1 stage=layer3_formal_render spanId=f2bad561071b4d38a51368932fa47988 attemptId=576048dfbfe347469335b336df9701be status=failed elapsedSeconds=3.415883 errorType=ValueError
+2026-10-22T19:19:10.080896+00:00 INFO run=39958aabc238499a81182489ee1f1718 workflow_evidence workflowId=f4ad739cdc094069b31cb40fd2d982f1
+2026-10-22T19:19:10.085763+00:00 ERROR run=39958aabc238499a81182489ee1f1718 workflow_finished workflowId=f4ad739cdc094069b31cb40fd2d982f1 status=failed
+2026-10-22T19:19:10.092089+00:00 ERROR run=39958aabc238499a81182489ee1f1718 run_finished workflowId=f4ad739cdc094069b31cb40fd2d982f1 status=failed

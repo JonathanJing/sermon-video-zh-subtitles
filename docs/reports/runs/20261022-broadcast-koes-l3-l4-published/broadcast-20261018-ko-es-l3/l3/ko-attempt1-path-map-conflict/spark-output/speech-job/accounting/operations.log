@@ -1,0 +1,12 @@
+2026-10-22T19:16:32.124447+00:00 INFO run=49d4b244098c4342ac2edf916a158744 run_started workflowId=2f2bb8bb65d84ecfad43b7a5ba4b76b5
+2026-10-22T19:16:32.199609+00:00 INFO run=49d4b244098c4342ac2edf916a158744 workflow_started workflowId=2f2bb8bb65d84ecfad43b7a5ba4b76b5
+2026-10-22T19:16:32.208863+00:00 INFO run=49d4b244098c4342ac2edf916a158744 workflow_evidence workflowId=2f2bb8bb65d84ecfad43b7a5ba4b76b5
+2026-10-22T19:16:32.214785+00:00 INFO run=49d4b244098c4342ac2edf916a158744 stage_started workflowId=2f2bb8bb65d84ecfad43b7a5ba4b76b5 stage=layer3_formal_render spanId=fbf774049cfd4cf6bcd909cd769dcedd attemptId=62a986bbb634464d987db282c8f21ea2
+2026-10-22T19:16:32.219580+00:00 INFO run=49d4b244098c4342ac2edf916a158744 workload workflowId=2f2bb8bb65d84ecfad43b7a5ba4b76b5 stage=timing.inline_dispatch_v1 spanId=fbf774049cfd4cf6bcd909cd769dcedd
+2026-10-22T19:16:32.225047+00:00 INFO run=49d4b244098c4342ac2edf916a158744 stage_started workflowId=2f2bb8bb65d84ecfad43b7a5ba4b76b5 stage=layer3.materialize_inputs spanId=a98a06a16f1b479ea5a37fb83e10b688 attemptId=cb79c9d7508440059602e4074a53e0fe
+2026-10-22T19:16:32.230478+00:00 INFO run=49d4b244098c4342ac2edf916a158744 workload workflowId=2f2bb8bb65d84ecfad43b7a5ba4b76b5 stage=timing.inline_dispatch_v1 spanId=a98a06a16f1b479ea5a37fb83e10b688
+2026-10-22T19:16:32.931088+00:00 ERROR run=49d4b244098c4342ac2edf916a158744 stage_finished workflowId=2f2bb8bb65d84ecfad43b7a5ba4b76b5 stage=layer3.materialize_inputs spanId=a98a06a16f1b479ea5a37fb83e10b688 attemptId=cb79c9d7508440059602e4074a53e0fe status=failed elapsedSeconds=0.705664 errorType=ValueError
+2026-10-22T19:16:32.947774+00:00 ERROR run=49d4b244098c4342ac2edf916a158744 stage_finished workflowId=2f2bb8bb65d84ecfad43b7a5ba4b76b5 stage=layer3_formal_render spanId=fbf774049cfd4cf6bcd909cd769dcedd attemptId=62a986bbb634464d987db282c8f21ea2 status=failed elapsedSeconds=0.732434 errorType=ValueError
+2026-10-22T19:16:32.954808+00:00 INFO run=49d4b244098c4342ac2edf916a158744 workflow_evidence workflowId=2f2bb8bb65d84ecfad43b7a5ba4b76b5
+2026-10-22T19:16:32.960159+00:00 ERROR run=49d4b244098c4342ac2edf916a158744 workflow_finished workflowId=2f2bb8bb65d84ecfad43b7a5ba4b76b5 status=failed
+2026-10-22T19:16:32.966301+00:00 ERROR run=49d4b244098c4342ac2edf916a158744 run_finished workflowId=2f2bb8bb65d84ecfad43b7a5ba4b76b5 status=failed

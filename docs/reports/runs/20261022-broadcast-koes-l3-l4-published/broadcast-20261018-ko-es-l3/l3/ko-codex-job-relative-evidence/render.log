@@ -1,0 +1,15 @@
+Traceback (most recent call last):
+  File "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.claude/worktrees/design-sentence-level-dubbing-path/tools/development/clip_e2e_spark.py", line 562, in <module>
+    raise SystemExit(main())
+                     ~~~~^^
+  File "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.claude/worktrees/design-sentence-level-dubbing-path/tools/development/clip_e2e_spark.py", line 558, in main
+    return handler(args, runtime, Spark(runtime["host"]), session)
+  File "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.claude/worktrees/design-sentence-level-dubbing-path/tools/development/clip_e2e_spark.py", line 240, in render
+    files, remote = evidence_closure(job, spark, runtime["remoteHome"])
+                    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.claude/worktrees/design-sentence-level-dubbing-path/tools/development/clip_e2e_spark.py", line 182, in evidence_closure
+    require(path.is_absolute(), f"evidence_relative:{path}")
+    ~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.claude/worktrees/design-sentence-level-dubbing-path/tools/development/clip_e2e_spark.py", line 70, in require
+    raise ValueError(message)
+ValueError: evidence_relative:artifacts/weekend-live/broadcast-20261018-es-ko-20261022/text-review/es-current-content.csv
