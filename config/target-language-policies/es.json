@@ -17,7 +17,7 @@
   },
   "targetLocale": "es",
   "terminology": {
-    "seriesTableSha256": "a76c75e531d5860fbc485d16f1debec2b78fa8b6fd08f1a8b0d194ed1cdbffb9",
+    "seriesTableSha256": "28f57696fe90582478d26537119c5386c0bfc1ba46c6b50278deac77fba437ae",
     "seriesNames": [
       {
         "source": "Revelation: The Comfort and Hope Jesus Brings",
@@ -31,6 +31,11 @@
       },
       {
         "source": "A Study of the Book of Numbers",
+        "target": null,
+        "reviewStatus": "pending"
+      },
+      {
+        "source": "If I Had More Time",
         "target": null,
         "reviewStatus": "pending"
       }
@@ -77,7 +82,7 @@
   "componentSha256": {
     "translator": "98b11da27ee3bb6f3e0feeb5a7e29a4fe999743f7c6994c19d0eb16cb5b00636",
     "reviewer": "6118712192ba071b10c909caccd3254eddc3e57b8f03ce7739aa6044f8f13522",
-    "terminology": "baffdeabe1751fa5880611b831669224c869e4107d76e38dddbab84464a7c2b0",
+    "terminology": "11d113e9b41d3dc5d0b066966064497c9fd32dbd53f627087165ffdd6d6c0e26",
     "scripture": "a170308dcc6aa17f60e971a8ae44b5976d69946224a227ef854de26891ab9786",
     "languageReview": "fb731971eafac6b92a31d95d818773a1f2dd1f27971dbcc46a75da9e27e6fd18",
     "formatting": "ef06da39058c88fd1eaab970773019c9f68c7732089f0e1e6b9bddead8524958",

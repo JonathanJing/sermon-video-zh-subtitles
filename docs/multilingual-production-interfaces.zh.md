@@ -78,7 +78,7 @@ Target-Language Candidate + Target-Language Audio Package
 
 1. 验证英文转写与 aligned segments 的内容 hash。
 2. 记录唯一 `alignment.provider`；MFA 和 Qwen ForcedAligner 可以做 A/B，但同一个正式包不能混合两条词时间轴。
-3. 生成 `clause_stable_v2` 父句／子锚；只在标点或可听停顿处分句。
+3. 生成 `clause_stable_v3` 父句／子锚（拆分规则同 v2，单元按首词词号编号，前面句子多拆不会让后面单元改号；已有运行保持 v2）；只在标点或可听停顿处分句。
 4. 绑定英文完整性、词级对齐、句界和停顿审核；任何来源改动产生新的失效 key。
 
 输出 schema：[English Source Package](../schemas/sermon-english-source-package-v1.schema.json)。人工批准输入 schema：[English Source Review](../schemas/sermon-english-source-review-v1.schema.json)。底层锚点继续使用 [clause-stable v2 anchor manifest](../schemas/sermon-sentence-anchor-manifest-v2.schema.json)。

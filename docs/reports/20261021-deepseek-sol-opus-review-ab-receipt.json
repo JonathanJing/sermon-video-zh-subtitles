@@ -1,0 +1,218 @@
+{
+  "schemaVersion": "deepseek-sol-opus-review-ab-evidence-v1",
+  "date": "2026-10-21",
+  "scope": "experiment_only",
+  "productionEligible": false,
+  "humanApproval": false,
+  "sourceArtifactRoot": "artifacts/claude-opus55-vs-sol61-ab-20261008-cli2.1.286",
+  "artifactRoot": "artifacts/deepseek-sol-opus-review-ab-20261021",
+  "models": {
+    "sol": {
+      "requested": "gpt-6.1-sol",
+      "effort": "high",
+      "transport": "Codex CLI",
+      "sourceRun": "20261008"
+    },
+    "opus": {
+      "requested": "claude-opus-5-5",
+      "effort": "high",
+      "transport": "Claude CLI",
+      "sourceRun": "20261008"
+    },
+    "deepseek": {
+      "reported": "deepseek-flash",
+      "effort": "low",
+      "transport": "DSH session",
+      "versionBound": false,
+      "receiptAvailable": false,
+      "note": "Session persisted modelSelection.lastUsed.reasoningEffort=low; the report's DeepSeek arm is low-effort output. A high-effort translation rerun exists in 20261021-deepseek-speed-test.zh.md but was not quality-ranked. The Codex retry with deepseek/deepseek-v4.1-flash-1017 returned HTTP 400 model not supported under the ChatGPT account.",
+      "requestedEffort": "high"
+    }
+  },
+  "source": {
+    "groups": 13,
+    "units": 39,
+    "sourceUnitRange": "fresh-diagnostic-u001..u039",
+    "goldReference": false
+  },
+  "timing": {
+    "remeasured": false,
+    "source": "20261008 summary.json",
+    "sol": {
+      "sumSeconds": 187.698381,
+      "medianSeconds": 14.480424,
+      "fasterPairs": 0
+    },
+    "opus": {
+      "sumSeconds": 81.524176,
+      "medianSeconds": 5.71737,
+      "fasterPairs": 13
+    },
+    "deepseek": null
+  },
+  "quality": {
+    "reviewType": "single_reviewer_same_model_as_deepseek_arm",
+    "reviewerSawModelKey": true,
+    "selfReviewBias": true,
+    "armWins": {
+      "sol": 6,
+      "deepseek": 6,
+      "opus": 1
+    },
+    "reviewCorrections": {
+      "sol": 6,
+      "opus": 10,
+      "deepseekSelf": 5
+    },
+    "criticalSemanticErrors": {
+      "sol": 0,
+      "opus": 0,
+      "deepseek": 0
+    },
+    "groups": [
+      {
+        "group": "fresh-g001",
+        "winner": "DeepSeek",
+        "order": [
+          "DeepSeek",
+          "Opus",
+          "Sol"
+        ],
+        "evidence": "Sol 用“沙箱”且“离开沙箱……离开了那里”重复；Opus 用“沙盒”但“跑出/进到”偏口语；DeepSeek 用“沙盒/访问”最稳。"
+      },
+      {
+        "group": "fresh-g002",
+        "winner": "DeepSeek",
+        "order": [
+          "DeepSeek",
+          "Sol",
+          "Opus"
+        ],
+        "evidence": "Opus“一些……都在说”把 some 说成全部，是唯一明确的语义过强；Sol“建立规范”轻微增义；DeepSeek 最贴。"
+      },
+      {
+        "group": "fresh-g003",
+        "winner": "Sol",
+        "order": [
+          "Sol",
+          "DeepSeek",
+          "Opus"
+        ],
+        "evidence": "Sol 与 DeepSeek 接近；Sol 的“替你们写”同样窄化 handle，但整段更顺；Opus 两处用“AI”，术语不统一。"
+      },
+      {
+        "group": "fresh-g004",
+        "winner": "DeepSeek",
+        "order": [
+          "DeepSeek",
+          "Sol",
+          "Opus"
+        ],
+        "evidence": "Opus 用“AI”并加“甚至”；Sol 也用了一次“AI”；DeepSeek 统一“人工智能”且不加戏。"
+      },
+      {
+        "group": "fresh-g005",
+        "winner": "Sol",
+        "order": [
+          "Sol",
+          "DeepSeek",
+          "Opus"
+        ],
+        "evidence": "三版几乎相同；Sol“如今，我们走到了这一步”最平实，Opus“可现在呢”偏口语。"
+      },
+      {
+        "group": "fresh-g006",
+        "winner": "DeepSeek",
+        "order": [
+          "DeepSeek",
+          "Opus",
+          "Sol"
+        ],
+        "evidence": "Sol 书名只留英文，未给中文名；Opus“这东西”语域偏贬；DeepSeek 给《超级绽放》（Super Bloom）。"
+      },
+      {
+        "group": "fresh-g007",
+        "winner": "Opus",
+        "order": [
+          "Opus",
+          "Sol",
+          "DeepSeek"
+        ],
+        "evidence": "Opus 保留“一切都会——”的自我修正，最贴原文；DeepSeek 改成“一切都会好起来”，丢了停顿；Sol 加“对于每一项”。"
+      },
+      {
+        "group": "fresh-g008",
+        "winner": "Sol",
+        "order": [
+          "Sol",
+          "DeepSeek",
+          "Opus"
+        ],
+        "evidence": "三版均无实质问题；Sol 的“就出现过这样的情况”最完整，DeepSeek“也是这样”更短。"
+      },
+      {
+        "group": "fresh-g009",
+        "winner": "DeepSeek",
+        "order": [
+          "DeepSeek",
+          "Opus",
+          "Sol"
+        ],
+        "evidence": "DeepSeek“王储”简洁；Opus“王储……就是那位将来要做……”稍冗但准确；Sol“法定继承人”不如“王储”口语。"
+      },
+      {
+        "group": "fresh-g010",
+        "winner": "DeepSeek",
+        "order": [
+          "DeepSeek",
+          "Sol",
+          "Opus"
+        ],
+        "evidence": "Opus“加快了……不满”搭配不成立；Sol“让我们对彼此的不满更快地加剧”也别扭；DeepSeek“加快不满的积累”最顺。"
+      },
+      {
+        "group": "fresh-g011",
+        "winner": "Sol",
+        "order": [
+          "Sol",
+          "DeepSeek",
+          "Opus"
+        ],
+        "evidence": "Opus 两处“启示录”缺书名号；DeepSeek 加“特别”属增义；Sol 最干净。"
+      },
+      {
+        "group": "fresh-g012",
+        "winner": "Sol",
+        "order": [
+          "Sol",
+          "DeepSeek",
+          "Opus"
+        ],
+        "evidence": "Opus“监管着万有”偏管控语气；Sol/DeepSeek“统管”更合宝座语境。"
+      },
+      {
+        "group": "fresh-g013",
+        "winner": "Sol",
+        "order": [
+          "Sol",
+          "DeepSeek",
+          "Opus"
+        ],
+        "evidence": "Sol 补出“主”属解释性增义，但整句最像讲道；DeepSeek“一位统管万有的”是残句；Opus 书名号缺失。"
+      }
+    ]
+  },
+  "hashes": {
+    "dataset.json": "2419cf3c3b24e9d00cffca8e57e4abfc6ddc0c1801a37d5a0a714b766a08ed2c",
+    "deepseek.json": "e9cfc50c81bf4104703c750cb37ffbece580ab6bf328d04f943b3b8a701bf722",
+    "review.json": "a8cb847e25683f3b736ae35b1e216bc9510083d9f83cefbfc22ab2a2e2dc7073",
+    "wins.json": "5e8ae8b1134f446da66cedad09e57e2d4139ccd8bf89b3f36f0efcdab473c5c6"
+  },
+  "limits": [
+    "One 39-unit sermon excerpt; no repeated randomized trial.",
+    "No human bilingual adjudication.",
+    "DeepSeek arm produced in-session without vendor token or cost receipts.",
+    "Automatic BLEU/chrF not used because no human gold reference exists for these segments.",
+    "No Layer 3 audio or Layer 4 publication evidence."
+  ]
+}

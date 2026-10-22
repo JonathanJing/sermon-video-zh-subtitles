@@ -31,15 +31,19 @@ SUPPORTED_MODELS = ('gpt-6-astra', 'gpt-6-sol', 'gpt-6.1-sol', 'gpt-6-luna')
 # Claude translation is a per-run option. Kept out of SUPPORTED_MODELS so OpenAI
 # diagnostics and adjudicators never iterate it; the bounded budget path accepts both.
 CLAUDE_MODELS = ('claude-opus-5-5',)
+# DeepSeek is a per-run Layer 2 option through the official OpenAI-compatible API.
+# Its published effort vocabulary is low/high/max; it has no medium tier.
+DEEPSEEK_MODELS = ('deepseek-flash',)
 SUPPORTED_REASONING_EFFORTS = ('low', 'medium', 'high', 'xhigh', 'max')
 MODEL_REASONING_EFFORTS = {
     'gpt-6-astra': SUPPORTED_REASONING_EFFORTS,
     'gpt-6-sol': ('low', 'medium', 'high', 'xhigh', 'max'),
     'gpt-6.1-sol': ('low', 'medium', 'high', 'xhigh', 'max'),
     'gpt-6-luna': ('none', 'low', 'medium', 'high', 'xhigh', 'max'),
+    'deepseek-flash': ('low', 'high', 'max'),
 }
 CLAUDE_REASONING_EFFORTS = {'claude-opus-5-5': ('low', 'medium', 'high', 'xhigh', 'max')}
-BUDGET_MODELS = SUPPORTED_MODELS + CLAUDE_MODELS
+BUDGET_MODELS = SUPPORTED_MODELS + CLAUDE_MODELS + DEEPSEEK_MODELS
 
 
 def reasoning_efforts(model):
@@ -52,6 +56,9 @@ PRICE_SOURCES = {
     'gpt-6-luna': 'https://developers.openai.com/api/docs/models/gpt-6-luna',
     # Anthropic list price, read from the first-party pricing page on 2026-10-08.
     'claude-opus-5-5': 'https://platform.claude.com/docs/en/about-claude/pricing',
+    # DeepSeek first-party pricing, read 2026-10-21. Peak rates are used for
+    # the worst-case reservation (off-peak is half).
+    'deepseek-flash': 'https://api-docs.deepseek.com/quick_start/pricing',
 }
 PRICE_ASSUMPTION_VERSION = 'strict-chat-worst-case-2026-10-05-v2'
 PRICE_VERIFIED_AT_BY_MODEL = {model: PRICE_VERIFIED_AT for model in SUPPORTED_MODELS}
@@ -60,6 +67,8 @@ PRICE_VERIFIED_AT_BY_MODEL['gpt-6-luna'] = '2026-10-08'
 PRICE_ASSUMPTION_VERSION_BY_MODEL['gpt-6-luna'] = 'strict-chat-luna-2026-10-08-v1'
 PRICE_VERIFIED_AT_BY_MODEL['claude-opus-5-5'] = '2026-10-08'
 PRICE_ASSUMPTION_VERSION_BY_MODEL['claude-opus-5-5'] = 'strict-claude-list-worst-case-2026-10-08-v1'
+PRICE_VERIFIED_AT_BY_MODEL['deepseek-flash'] = '2026-10-21'
+PRICE_ASSUMPTION_VERSION_BY_MODEL['deepseek-flash'] = 'strict-deepseek-peak-2026-10-21-v1'
 # USD per million tokens equals micro-USD per token. Exact decimal strings avoid
 # float under-reservation; these rates cannot be supplied by a model/caller.
 # Claude input uses the 1-hour cache-write rate ($8): the CLI may write prompt
@@ -70,6 +79,9 @@ PRICES_USD_PER_MILLION = {
     'gpt-6.1-sol': {'inputWorstCase': '2.5', 'output': '10'},
     'gpt-6-luna': {'inputWorstCase': '0.125', 'output': '0.5'},
     'claude-opus-5-5': {'inputWorstCase': '8', 'output': '20'},
+    # DeepSeek peak rates (USD per million): cache-miss input 0.30, output 1.20.
+    # The cache-hit rate is lower; the reservation deliberately uses cache-miss.
+    'deepseek-flash': {'inputWorstCase': '0.3', 'output': '1.2'},
 }
 MAX_METRIC = 10**15
 MAX_MESSAGES = 16
@@ -236,7 +248,7 @@ def _observation(observed):
     if type(observed) is not dict:
         return None, 'missing_provider_observation'
     model = observed.get('providerModel', observed.get('actualModel'))
-    if (type(model) is not str or model not in SUPPORTED_MODELS or
+    if (type(model) is not str or model not in SUPPORTED_MODELS + DEEPSEEK_MODELS or
             observed.get('requestedModel') != model or
             ('actualModel' in observed and observed['actualModel'] != model)):
         return None, 'missing_or_mismatched_actual_model'

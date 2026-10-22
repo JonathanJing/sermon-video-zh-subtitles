@@ -167,7 +167,7 @@ def translator_backend(policy: dict[str, Any]) -> str:
 
 
 def production_backend(policy: dict[str, Any]) -> str:
-    """The frozen Layer 2 backend a new dispatch may use: openai_api or claude_cli_opus.
+    """The frozen Layer 2 backend a new dispatch may use: openai_api, claude_cli_opus or deepseek_flash.
 
     A translator-only Claude policy (Opus beside the Sol reviewer) stays an experiment that
     replays cache-only; it is never a production backend."""
@@ -196,6 +196,8 @@ def historical_models(policy: dict[str, Any], *, cache_only: bool) -> dict[str, 
         allowed = {MODEL_ROLES[role], HISTORICAL_MODEL_ROLES[role]}
         if cache_only and role == "translator":
             allowed.add("claude-opus-5-5")
+        if cache_only:
+            allowed.add("deepseek-flash")
         require(policy[role]["model"] in allowed, "unsupported_historical_model_policy")
     return {role: policy[role]["model"] for role in MODEL_ROLES}
 
@@ -312,10 +314,15 @@ def validate_api_marker(marker,caller,api_key,payload,fingerprint,role):
 
 
 def _model_fingerprint(payload: dict[str, Any], caller, api_key: str) -> str:
-    """Hash the exact bounded provider payload and its effective transport."""
-    transport_identity = getattr(caller, "execution_identity", None)
-    fingerprint_input = ({"payload": payload, "modelTransportIdentity": transport_identity}
-                         if transport_identity is not None else payload)
+    """Hash the exact bounded provider payload, not the transport that carried it.
+
+    The key is the content identity: model, prompts, source and rules. The effective
+    transport (project, route, budget authorization) is recorded beside the response
+    instead of inside the key. Before 2026-10-21 it was inside the key, so a resume
+    after a re-planned budget could never hit a prior cache even for identical
+    payloads; see docs/layer2-targeted-repair-and-resume.zh.md.
+    """
+    fingerprint_input = payload
     if isinstance(caller, _session_bound_caller()) and not caller.requires_spark and not caller.outcome_guarded:
         outcomes = _text.current().provider.outcomes
         fingerprint_input = {'request': fingerprint_input,
@@ -709,11 +716,48 @@ def _save_payload_cache_success(out: Path, stem: str, request: dict[str, Any],
         save_new(path, receipt, private=True)
 
 
+def _reusable_cache_matches(cache: Path, payload: dict[str, Any], fingerprint: str,
+                            role: str, model: str) -> bool:
+    """A stored response answers this exact payload (legacy fingerprints tolerated)."""
+    stored = producer._load(cache)
+    if stored.get('payloadSha256') == fingerprint:
+        return True
+    if isinstance(stored.get('response'), dict):
+        return _legacy_cache_payload_matches(cache, payload, stored, role, model)
+    return _legacy_cache_payload_matches(cache, payload, stored, role, model)
+
+
+def _resume_request_file(directory: Path) -> Path | None:
+    """The frozen request of the attempt a resume directory belongs to.
+
+    A run root carries request.json itself; a repair round directory (round-001)
+    keeps it two levels up, at the run root.
+    """
+    for candidate in (directory / "request.json", directory.parent.parent / "request.json"):
+        if candidate.is_file():
+            return candidate
+    return None
+
+
+def _legacy_cache_payload_matches(cache: Path, payload: dict[str, Any], cached: dict[str, Any],
+                                   role: str, model: str) -> bool:
+    """Prove a pre-decoupling cache belongs to this exact payload."""
+    preview_path = cache.with_suffix('.policy-preview.json')
+    if not preview_path.is_file():
+        return False
+    preview = producer._load(preview_path)
+    return (preview.get('role') == role
+            and preview.get('payload') == payload
+            and preview.get('payloadSha256') == policy_tools.canonical_sha256(payload)
+            and cached.get('model') == model)
+
+
 def _model_call(role: str, prompt: dict[str, Any], policy: dict[str, Any],
                 output: Path, api_key: str,
                 caller: Callable[[str, dict[str, Any]], dict[str, Any]],
                 reuse_from: Path | None = None, *, cache_only: bool = False,
-                response_observer=None, request_limits=None, rule_receipt=None) -> dict[str, Any]:
+                response_observer=None, request_limits=None, rule_receipt=None,
+                tolerate_mismatch: bool = False) -> dict[str, Any]:
     verifier = getattr(caller, 'verify_execution', None)
     if verifier is not None:
         verifier(api_key)  # Includes cache hits: changed route/key cannot consume old results.
@@ -729,14 +773,28 @@ def _model_call(role: str, prompt: dict[str, Any], policy: dict[str, Any],
     if migrated_from is not None:
         require(cache_only and reuse_from is None, "Explicit migration must be cache-only and isolated")
         reuse_from = migrated_from
+    if reuse_from is not None and not output.exists() and tolerate_mismatch:
+        # A resume source is advisory: a group whose prompt changed (for example one
+        # carrying a human ruling) must be translated again instead of aborting the run.
+        previous_raw = reuse_from.with_suffix('.raw.json')
+        if reuse_from.is_file() and not _reusable_cache_matches(reuse_from, payload, fingerprint, role, model):
+            reuse_from = None
+        elif previous_raw.is_file() and not _reusable_cache_matches(previous_raw, payload, fingerprint, role, model):
+            reuse_from = None
     if reuse_from is not None and not output.exists():
         validate_api_marker(reuse_from.with_suffix('.started.json'),caller,api_key,payload,fingerprint,role)
         previous_raw = reuse_from.with_suffix('.raw.json')
         require(reuse_from.is_file() or previous_raw.is_file(), f"Missing reusable {role} response: {reuse_from}")
         if previous_raw.is_file():
             raw = producer._load(previous_raw)
-            require(raw.get('payloadSha256') == fingerprint and isinstance(raw.get('response'),dict),
+            legacy_raw = (raw.get('payloadSha256') != fingerprint
+                          and _legacy_cache_payload_matches(reuse_from, payload, raw, role, model))
+            require((raw.get('payloadSha256') == fingerprint or legacy_raw)
+                    and isinstance(raw.get('response'),dict),
                     f"Reusable {role} raw response belongs to different inputs: {previous_raw}")
+            if legacy_raw:
+                raw = {**raw, 'legacyFingerprintSha256': raw['payloadSha256'],
+                       'payloadSha256': fingerprint}
             destination_raw=output.with_suffix('.raw.json')
             if destination_raw.exists():
                 require(producer._load(destination_raw)==raw,'Reusable destination raw response changed')
@@ -744,10 +802,20 @@ def _model_call(role: str, prompt: dict[str, Any], policy: dict[str, Any],
                 save_new(destination_raw,raw,private=True)
         if reuse_from.is_file():
             cached=producer._load(reuse_from)
-            require(cached.get('payloadSha256')==fingerprint and cached.get('model')==model
+            # Caches written before the transport decoupling carry a fingerprint made
+            # with the budget authorization inside it. Their frozen payload preview
+            # still proves the exact content, so accept them and record the original
+            # fingerprint before rewriting it to the content key.
+            legacy = (cached.get('payloadSha256') != fingerprint
+                      and _legacy_cache_payload_matches(reuse_from, payload, cached, role, model))
+            require((cached.get('payloadSha256')==fingerprint or legacy)
+                    and cached.get('model')==model
                     and isinstance(cached.get('requestId'),str) and cached['requestId']
                     and isinstance(cached.get('result'),dict),
                     f"Reusable {role} cache belongs to different inputs: {reuse_from}")
+            if legacy:
+                cached = {**cached, 'legacyFingerprintSha256': cached['payloadSha256'],
+                          'payloadSha256': fingerprint}
             save_new(output,cached)
     if output.exists():
         saved = producer._load(output)
@@ -823,7 +891,12 @@ def _model_call(role: str, prompt: dict[str, Any], policy: dict[str, Any],
 def _utterances(value: object, source_unit_ids: list[str] | None = None) -> list[str]:
     # Some replies wrap each utterance with its unit ID under "targetText" or "text".
     def wrapped(row, unit_id):
-        if not (isinstance(row, dict) and row.get('sourceUnitIds') == [unit_id]):
+        # Providers sometimes echo {"sourceUnitId": ..., "targetText": ...} instead of
+        # a bare string, with either the singular or the plural key.
+        if not isinstance(row, dict) or not (
+                row.get('sourceUnitIds') == [unit_id]
+                or row.get('sourceUnitId') == unit_id
+                or row.get('sourceUnitIds') == unit_id):
             return None
         texts = [row[key] for key in ('targetText', 'text') if isinstance(row.get(key), str) and row[key].strip()]
         return texts[0] if len(texts) == 1 or (len(texts) == 2 and texts[0] == texts[1]) else None
@@ -1515,7 +1588,7 @@ def _run_prepared_groups(request: dict[str, Any], anchor: dict[str, Any],
         expected_efforts = (production_efforts(policy) if not historical_replay and simulation_configuration is None
                             else MODEL_EFFORTS)
         for role, expected in expected_models.items():
-            if expected in {"gpt-6.1-sol", "claude-opus-5-5"}:
+            if expected in {"gpt-6.1-sol", "claude-opus-5-5", "deepseek-flash"}:
                 require(policy[role]["reasoningEffort"] == expected_efforts[role], "production_role_effort_changed")
             require(policy[role]["model"] == expected,
                     f"Production {role} model must be {expected}; freeze a new policy")
@@ -1617,10 +1690,13 @@ def _run_prepared_groups(request: dict[str, Any], anchor: dict[str, Any],
         if reuse_from is not None:
             require(reuse_from.resolve() != out.resolve(), "Reuse source and output must differ")
         if resume_cache_from is not None:
-            require(reuse_from is not None and resume_cache_from.resolve() != out.resolve()
-                    and resume_cache_from.resolve() != reuse_from.resolve()
-                    and (resume_cache_from / "request.json").is_file()
-                    and producer._load(resume_cache_from / "request.json") == request,
+            # A resume may stand alone: an auto-repair round has no reuse base, and the
+            # prior round's request is the proof that its cache belongs to this source.
+            resume_request = _resume_request_file(resume_cache_from)
+            require((reuse_from is None or resume_cache_from.resolve() != reuse_from.resolve())
+                    and resume_cache_from.resolve() != out.resolve()
+                    and resume_request is not None
+                    and producer._load(resume_request) == request,
                     "Resume cache must be a separate attempt for this source and policy")
         if payload_cache_from is not None:
             payload_cache_from = Path(payload_cache_from)
@@ -1646,11 +1722,11 @@ def _run_prepared_groups(request: dict[str, Any], anchor: dict[str, Any],
             # A bound API repair round may reuse an earlier round of the same job:
             # every cache fingerprint includes this transport identity, and the
             # prior-input check above rejects any cache made under another one.
-            require(resume_cache_from is None
+            require((resume_cache_from is None or transport_identity.get("backend") == "openai_api")
                     and (reuse_from is None or (partial_repair_brief is not None
                                                 and transport_identity.get("backend") == "openai_api")
                         or backfill_payload_cache_success),
-                    "CLI transport supports same-run resume only; cross-run cache reuse is not enabled")
+                    "CLI transport supports same-run resume only; cross-run cache reuse requires openai_api")
         if revision_brief is not None:
             identity["revisionBriefSha256"] = policy_tools.canonical_sha256(revision_brief)
         if partial_repair_brief is not None:
@@ -1913,7 +1989,8 @@ def _run_prepared_groups(request: dict[str, Any], anchor: dict[str, Any],
                                          payload_translator_cache["path"]
                                          if payload_translator_cache is not None else None,
                                          cache_only=cache_only or backfill_payload_cache_success,
-                                         rule_receipt=rule_receipt)
+                                         rule_receipt=rule_receipt,
+                                         tolerate_mismatch=resume_cache_from is not None)
                 if payload_translator_cache is not None:
                     _require_replayed_payload_cache(
                         astra_path, payload_translator_cache, "translator", translated)
@@ -2016,7 +2093,8 @@ def _run_prepared_groups(request: dict[str, Any], anchor: dict[str, Any],
                                                 payload_reviewer_cache["path"]
                                                 if payload_reviewer_cache is not None else None,
                                                 cache_only=cache_only or backfill_payload_cache_success,
-                                                rule_receipt=rule_receipt)
+                                                rule_receipt=rule_receipt,
+                                                tolerate_mismatch=resume_cache_from is not None)
                 if payload_reviewer_cache is not None:
                     _require_replayed_payload_cache(
                         sol_path, payload_reviewer_cache, "reviewer", reviewed_response)

@@ -33,16 +33,16 @@ For a requested legacy playback preview, reuse the verified report and its exist
 ```bash
 python3 scripts/build_playback_simulation.py \
   --report 'artifacts/offline-live-sermon-poc/DATE-SOURCE_ID/report.json' \
-  --out web/playback-simulation.generated.js
+  --out apps/operator-web/playback-simulation.generated.js
 python3 tools/ops/translate_playback_with_openai.py \
-  --input web/playback-simulation.generated.js \
-  --out web/playback-simulation.generated.js \
+  --input apps/operator-web/playback-simulation.generated.js \
+  --out apps/operator-web/playback-simulation.generated.js \
   --api-key-secret projects/PROJECT_ID/secrets/SECRET_ID/versions/latest
 ```
 
 Use `prepare_live_link_playback.py` only when extraction is still needed: it re-extracts before building. Carry forward the verified URL, VOD, start/end and run directory. For separately completed ASR, use its actual timed output and compatible report; do not restart extraction to manufacture a report. Use the existing authorized provider/credential route; the secret reference is a template, not a request to create credentials. Check the overwrite target against existing work first. The playback data output is not automatically a Chinese VTT/SRT file: inspect or produce the requested timed subtitle artifact before claiming delivery. Translation exit code 3 / `partial` preserves incomplete work and is not ready for publication.
 
-Open the local page for requested UI/timing review. Preserve the public AI-assisted disclaimer and keep operator controls in `web/admin.html`.
+Open the local page for requested UI/timing review. Preserve the public AI-assisted disclaimer and keep operator controls in `apps/operator-web/admin.html`.
 
 ## Optional publication
 

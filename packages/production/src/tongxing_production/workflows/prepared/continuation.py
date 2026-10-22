@@ -247,7 +247,8 @@ def validate_evidence_slot(state, slot, ref, *, inputs, references):
                 expected_source=manifest['source'], expected_locale=slot.get('locale'))
     elif kind == 'budget_authorization':
         version = value.get('schemaVersion')
-        require(version in {'sermon-source-budget-authorization-v1', 'sermon-canonical-layer2-budget-authorization-v1',
+        require(version in {'sermon-source-budget-authorization-v1', 'sermon-source-budget-authorization-v2',
+                            'sermon-canonical-layer2-budget-authorization-v1',
                             'sermon-canonical-layer2-budget-authorization-v2', 'sermon-canonical-layer2-budget-authorization-v3',
                             'sermon-canonical-layer2-budget-authorization-v4',
                             'sermon-study-budget-authorization-v1'}, 'budget_schema_invalid')
@@ -264,6 +265,20 @@ def validate_evidence_slot(state, slot, ref, *, inputs, references):
             expected_binding = {**binding, 'globalBounds':value['authority']['globalBounds'],
                                 'requestLimits':value['authority']['requestLimits']}
             expected_code = source_producer.code.code_identity()
+        elif version == 'sermon-source-budget-authorization-v2':
+            # v2 binds the run, configuration, budget root and bounds; the code identity at approval
+            # is evidence only, so a later commit does not void the authorization (unified_stage).
+            from tongxing_production.source import budget as source_budget
+            require(set(value) == {'schemaVersion','binding','authority','approvalReceipt','evidence'}
+                    and set(binding) == {'productionRunId','configurationSha256','budgetRoot'}
+                    and isinstance(value['evidence'], dict)
+                    and set(value['evidence']) == {'codeIdentitySha256AtApproval'}
+                    and re.fullmatch('[a-f0-9]{64}', str(value['evidence']['codeIdentitySha256AtApproval'])),
+                    'budget_schema_invalid')
+            source_budget.SourceBudget(Path(binding['budgetRoot']), value['authority'], verify=lambda: None)
+            expected_binding = {**binding, 'globalBounds':value['authority']['globalBounds'],
+                                'requestLimits':value['authority']['requestLimits']}
+            expected_code = None
         elif version == 'sermon-study-budget-authorization-v1':
             from . import study_generation as generation
             c.validate(value, 'sermon-study-budget-authorization-v1')
@@ -314,7 +329,7 @@ def validate_evidence_slot(state, slot, ref, *, inputs, references):
             locale_count = len(configuration.lanes) if scoped else 1
         require(re.fullmatch('[a-f0-9]{64}', str(binding.get(
                     'executionSha256' if version == 'sermon-study-budget-authorization-v1' else 'configurationSha256','')))
-                and binding.get('codeIdentitySha256') == expected_code
+                and (version == 'sermon-source-budget-authorization-v2' or binding.get('codeIdentitySha256') == expected_code)
                 and value['authority']['globalBounds']['costMicrousd'] * locale_count <= manifest['budget']['limitMicroUsd'], 'budget_execution_binding_changed')
         # Layer 2 v1 and v2 share one approval schema; the scope lives in the binding.
         approval_schema = ('sermon-canonical-layer2-budget-approval-v3' if version == 'sermon-canonical-layer2-budget-authorization-v4'

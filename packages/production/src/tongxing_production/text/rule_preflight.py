@@ -245,6 +245,18 @@ candidate execution. Callers can validate independently collected bindings.
     if "REQUIRED" in facts:
         require(facts["REQUIRED"] == policy["languageReview"]["requiredChecks"],
                 "plugin required checks differ from policy")
+    # A source-bound plugin may pin the exact source it was authored for. Without this
+    # check a plugin copied from an earlier episode passes policy binding and only fails
+    # on the first paid group (2026-10-21: two full Layer 2 restarts for exactly that).
+    if isinstance(facts.get("SOURCE_PACKAGE_SHA"), str):
+        require(facts["SOURCE_PACKAGE_SHA"] == request["englishSourcePackageJsonSha256"],
+                "plugin source package hash differs from request")
+    if isinstance(facts.get("ANCHOR_SHA"), str):
+        require(facts["ANCHOR_SHA"] == request["anchorManifestSha256"],
+                "plugin anchor hash differs from request")
+    if isinstance(facts.get("QUOTE_UNIT"), str) and facts["QUOTE_UNIT"]:
+        source_units = {unit_id for group in plan for unit_id in group["sourceUnitIds"]}
+        require(facts["QUOTE_UNIT"] in source_units, "plugin quote unit is not in this source")
     if "EXPECTED_EDITION" in facts:
         require(policy["scripture"]["editionId"] == facts["EXPECTED_EDITION"],
                 "plugin scripture edition differs from policy")
@@ -374,10 +386,18 @@ successful provider outcome or authorize copying a human approval.
             require(preview_path.is_file(), "prior cache lacks frozen model payload; explicit migration required")
             preview = producer._load(preview_path)
             payload = preview.get("payload")
-            fingerprint = policy_tools.canonical_sha256(
-                {"payload": payload, "modelTransportIdentity": transport_identity}
-                if transport_identity is not None else payload)
+            # Content identity only: the prior cache may have been carried by another
+            # budget authorization, project or route. The frozen preview proves the
+            # exact payload; the caller's transport is not part of what was asked.
+            fingerprint = policy_tools.canonical_sha256(payload)
             cached = producer._load(cache)
+            # A cache written before the transport decoupling carries a fingerprint
+            # that includes the old budget authorization. Its frozen preview still
+            # proves the payload, so accept that mismatch for openai_api transports;
+            # a CLI-wrapped cache must not migrate across runs.
+            legacy = (cached.get("payloadSha256") != fingerprint
+                      and isinstance(transport_identity, dict)
+                      and transport_identity.get("backend") == "openai_api")
             require(isinstance(payload, dict)
                     and preview.get("role") == role
                     and payload.get("model") == policy[role]["model"]
@@ -385,12 +405,12 @@ successful provider outcome or authorize copying a human approval.
                     and preview.get("policySha256") == policy_tools.canonical_sha256(policy)
                     and preview.get("policy") == policy
                     and preview.get("payloadSha256") == policy_tools.canonical_sha256(payload)
-                    and cached.get("payloadSha256") == fingerprint,
+                    and (cached.get("payloadSha256") == fingerprint or legacy),
                     "prior model payload does not match cached response")
             raw_path = cache.with_suffix(".raw.json")
             if raw_path.is_file():
                 raw = producer._load(raw_path)
-                require(raw.get("payloadSha256") == fingerprint
+                require((raw.get("payloadSha256") == fingerprint or legacy)
                         and isinstance(raw.get("response"), dict)
                         and raw["response"].get("id") == cached.get("requestId"),
                         "prior raw response transport or request identity differs")

@@ -5,6 +5,7 @@ import unittest
 
 
 ROOT = Path(__file__).parents[1]
+DEMO_SPEAKERS = {"eric_geiger", "jared_kirkwood", "christine_caine", "doug_fields", "kenton_beshore", "steve_bang_lee"}
 SPEC = importlib.util.spec_from_file_location(
     "render_multilingual_voice_demos", ROOT / "tools/ops/render_multilingual_voice_demos.py"
 )
@@ -33,7 +34,9 @@ class MultilingualVoiceDemoTest(unittest.TestCase):
         }
 
     def test_qwen_sft_renderer_expands_only_its_three_supported_locales(self):
-        tasks = subject.prepare_tasks(self.registry, self.script, self.checkpoint_map)
+        # The 2026-09-21 demo matrix; later speakers render their own auditions.
+        tasks = subject.prepare_tasks(self.registry, self.script, self.checkpoint_map,
+                                      selected_speakers=sorted(DEMO_SPEAKERS))
         self.assertEqual(len(tasks), 18)
         self.assertEqual({task["targetLocale"] for task in tasks}, {"zh-Hans", "ko", "es"})
         self.assertEqual(len({task["speakerId"] for task in tasks}), 6)

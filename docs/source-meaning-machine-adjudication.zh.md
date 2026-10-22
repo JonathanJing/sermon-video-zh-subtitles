@@ -4,7 +4,7 @@
 
 ## 解决什么
 
-Sol 复核有时对一个冻结英文单元本身存疑（605 的 `0-u076` "You're filled in the middle of a trial"）：疑点在讲员说了什么，不在译文措辞，重译多少轮都修不好。PR #295 的有界自动修复循环（`scripts/layer2_auto_repair.py`）遇到这种情况会以 `request_source_review` 或 `request_human_review` 停下。过去这一步要人听音频。现在由机器听：
+Sol 复核有时对一个冻结英文单元本身存疑（605 的 `0-u076` "You're filled in the middle of a trial"）：疑点在讲员说了什么，不在译文措辞，重译多少轮都修不好。PR #295 的有界自动修复循环（[`text/auto_repair.py`](../packages/production/src/tongxing_production/text/auto_repair.py)，原 `scripts/layer2_auto_repair.py`）遇到这种情况会以 `request_source_review` 或 `request_human_review` 停下。过去这一步要人听音频。现在由机器听：
 
 1. 先校验 `anchor.json` 就是 `source.json` 指名的锚点（规范哈希等于 `anchors.artifact.jsonSha256`，且锚点建立在同一份转写上），再从绑定媒体切出该单元和前后各一个单元的音频（媒体哈希、批准窗口、词时间就是绑定；单元时间相对批准窗口，切片位置是窗口起点加单元时间）；
 2. 独立复听：`gpt-transcribe`（走 OpenAI API，不给冻结文本和提示词里的任何原句）和 Spark 上的 Qwen3-ASR（`--listener qwen`，身份包含权重、模型元数据、包版本和推理设置），各自转写这段音频。Qwen 权重只在绑定的 Spark 独占会话内加载（`require_bound_model_session`，收据记会话和作业号），所以带 `--listener qwen` 的命令要在 Spark 上、会话内跑，媒体也要在 Spark 上；在 Mac 上选它会以 `qwen_requires_bound_spark_exclusive_session` 拒绝，没有跨主机适配器，缓存里的复听可以不在会话内复用：缓存条目记下生成它的会话，续跑进程没有会话时从条目恢复，收据的 `listeners[].session` 不会变成 null，`sessions` 列出本次用到的全部会话（缓存的和现场的）；

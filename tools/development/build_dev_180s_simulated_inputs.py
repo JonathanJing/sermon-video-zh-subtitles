@@ -325,8 +325,11 @@ def weekly_clip(spec, clip_dir):
         locales[locale] = {'candidate': candidate, 'wavs': wavs, 'track': track}
     title = spec.get('title', '本周片段')
     return {'media': media, 'segments': segments, 'anchor': anchor, 'locales': locales,
-            'source_url': 'https://simulation-test-only.invalid/weekly-clip/' + spec.get('pageId', 'unknown'),
-            'source_id': 'simulation-test-only-weekly-clip', 'service_date': spec['serviceDate'],
+            'source_url': spec.get('sourceUrl') or ('https://simulation-test-only.invalid/weekly-clip/'
+                                                    + spec.get('pageId', 'unknown')),
+            # A clip of a real week keeps that week's canonical source id, so source-bound checks
+            # can confirm it is the same sermon; without one the fixture id stays as before.
+            'source_id': spec.get('sourceId') or 'simulation-test-only-weekly-clip', 'service_date': spec['serviceDate'],
             'label': '本周片段', 'proposal_title': '本周片段 %d 句' % len(selected), 'title': title,
             'scripture': spec.get('scripture', '片段经文未单独标注'), 'outline': spec.get('outline', title),
             'summary': '沿用本周已发布的译文和单句音频', 'meditation': CLIP_MEDITATION_PROMPT,

@@ -1,0 +1,56 @@
+{
+  "schemaVersion": "sermon-voice-authorization-v1",
+  "authorizationId": "user-confirmation-20261022-john_thomas-dubbing",
+  "recordedAt": "2026-10-22T05:08:00+00:00",
+  "status": "confirmed_by_user",
+  "speaker": "John Thomas",
+  "speakerId": "john_thomas",
+  "speakerKey": "john_thomas",
+  "statements": [
+    {
+      "quote": "John的声音已授权，写进去。",
+      "channel": "Claude Code session chat (zh)",
+      "date": "2026-10-22"
+    },
+    {
+      "quote": "John声音，人工已听过审核过",
+      "channel": "Claude Code session chat (zh)",
+      "date": "2026-10-22"
+    },
+    {
+      "quote": "需要训练一个新的音色",
+      "channel": "main session chat (zh)",
+      "date": "2026-10-21"
+    }
+  ],
+  "purposes": [
+    "chinese_dubbing",
+    "multilingual_voice_demo",
+    "multilingual_dubbing"
+  ],
+  "supersedes": {
+    "authorizationId": "user-confirmation-20261021-john_thomas",
+    "location": "Spark: dgx-spark-benchmark/results/john-thomas-voice-20261021/authorization.json",
+    "change": "That record covered voice_training and voice_audition and listed formal_dubbing as not yet authorized; the 2026-10-22 statement authorizes dubbing."
+  },
+  "checkpoint": {
+    "location": "Spark: dgx-spark-benchmark/results/john-thomas-voice-20261021/checkpoints/checkpoint-epoch-0",
+    "modelSafetensorsSha256": "3f722b17b8e204e60d376fc08ef631b9d55a6a1eb02c106d612bf12b5d855c8c",
+    "training": "single-episode Qwen3-TTS-12Hz-1.7B-Base SFT, 1 epoch, 2026-10-21 (training-report.json beside the checkpoint)"
+  },
+  "capabilityEvidence": {
+    "probe": "Spark: john-thomas-voice-20261021/probe/asr-screening.json",
+    "status": "human_reviewed",
+    "humanListeningStatus": "human_reviewed",
+    "humanListening": "User stated on 2026-10-22 that John's voice was listened to and reviewed by a person; applies to zh-Hans, ko and es voice capability, not to any specific dub."
+  },
+  "sources": [
+    {
+      "sourceId": "if-i-had-more-time-jesus-sends-and-resurrects-his-own",
+      "kind": "mariners_podcast_episode",
+      "originalMediaSha256": "145a2e99cd53eda9aac58ceecd56bd2d2329be993fad2de8201dba703f957fbe"
+    }
+  ],
+  "notes": "Capability review covers the voice per locale; every dub still needs its own listening or waiver.",
+  "affiliation": "Personal project; not affiliated with Mariners Church."
+}

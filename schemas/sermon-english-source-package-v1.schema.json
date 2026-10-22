@@ -96,7 +96,7 @@
       "properties": {
         "artifact": { "$ref": "#/$defs/jsonArtifact" },
         "schemaVersion": { "const": "sermon-sentence-anchor-manifest-v2" },
-        "unitPolicy": { "const": "clause_stable_v2" },
+        "unitPolicy": { "enum": ["clause_stable_v2", "clause_stable_v3"] },
         "sourceSentenceCount": { "type": "integer", "minimum": 1 },
         "sourceUnitCount": { "type": "integer", "minimum": 1 },
         "sourceWordCount": { "type": "integer", "minimum": 1 },

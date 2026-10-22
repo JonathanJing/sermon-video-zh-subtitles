@@ -160,8 +160,13 @@ UMBRELLA_CODES = frozenset({"negation_number_name_error", "review_issue_open", "
 MAX_REPAIRS_PER_SOURCE_UNIT = 4
 
 
-def systemic_threshold(total_groups: int) -> int:
-    return max(SYSTEMIC_MINIMUM_GROUPS, math.ceil(total_groups * SYSTEMIC_FRACTION))
+def systemic_threshold(total_groups: int, minimum_groups: int = SYSTEMIC_MINIMUM_GROUPS) -> int:
+    """Consecutive same-code failures that stop dispatch.
+
+    A default of three suits a full week, where adjacent failures mean a batch-wide rule gap.
+    An operator-reviewed clip may raise it so a cluster of the same known defect (for example
+    several sentences sharing one register error) is repaired instead of stopping the locale."""
+    return max(minimum_groups, math.ceil(total_groups * SYSTEMIC_FRACTION))
 
 
 def _clip(text: str) -> str:
@@ -173,7 +178,8 @@ class FailureCollector:
     """Runner hook: record failed groups and stop dispatch on a systemic failure."""
 
     def __init__(self, total_groups: int, counted_group_ids=None, known_fingerprints=None,
-                 lineage_value: dict | None = None, group_workers: int = 1, scattered_systemic: bool = True):
+                 lineage_value: dict | None = None, group_workers: int = 1, scattered_systemic: bool = True,
+                 systemic_minimum_groups: int = SYSTEMIC_MINIMUM_GROUPS):
         """The systemic judgement counts only new evidence: ``counted_group_ids``
         limits it to groups dispatched this round (a repair round reuses the other
         failures unchanged), and a failure whose fingerprint is already in
@@ -184,9 +190,12 @@ class FailureCollector:
         the end of a round is not evidence of a batch-wide rule gap."""
         _require(type(total_groups) is int and total_groups > 0, "Failure collection needs the group count")
         _require(type(group_workers) is int and 1 <= group_workers <= 16, "Group workers must be 1..16")
+        _require(type(systemic_minimum_groups) is int and 1 <= systemic_minimum_groups <= 32,
+                 "Systemic minimum groups must be 1..32")
         self.group_workers = group_workers
         self.total_groups = total_groups
-        self.threshold = systemic_threshold(total_groups)
+        self.systemic_minimum_groups = systemic_minimum_groups
+        self.threshold = systemic_threshold(total_groups, systemic_minimum_groups)
         self.counted = None if counted_group_ids is None else frozenset(counted_group_ids)
         self.known = frozenset(known_fingerprints or ())
         self.lineage_value = lineage_value
@@ -839,7 +848,8 @@ def _reopen_for_notes(request: dict, total_groups: int, entries: list[dict], val
 def drive(request: dict, total_groups: int, run_round: RoundRunner, out_root: Path,
           ledger_root: Path, *, group_workers: int = 1, meaning_notes: dict | None = None,
           meaning_notes_sha256: str | None = None, back_translation_qc: dict | None = None,
-          lineage_extra: dict | None = None, repair_allowance: dict | None = None) -> dict:
+          lineage_extra: dict | None = None, repair_allowance: dict | None = None,
+          systemic_minimum_groups: int = SYSTEMIC_MINIMUM_GROUPS) -> dict:
     """Run rounds until every group passes or repair stops; write and return a receipt.
 
     ``run_round(out, reuse_from, brief, collector)`` returns evidence when every
@@ -911,7 +921,8 @@ def drive(request: dict, total_groups: int, run_round: RoundRunner, out_root: Pa
         collector = FailureCollector(
             total_groups, [row["translationGroupId"] for row in brief["groups"]] if brief else None,
             {item for entry in entries for row in entry["groups"] for item in [row["fingerprint"]] if item},
-            value, group_workers, scattered_systemic=lineage_extra is None)
+            value, group_workers, scattered_systemic=lineage_extra is None,
+            systemic_minimum_groups=systemic_minimum_groups)
         if (out / "group-failures.json").exists():
             # A saved report is the round's result. Replay after a crash never
             # re-dispatches its groups, even if the scheduler would now differ.

@@ -29,6 +29,11 @@ class _Jobs:
 jobs = _Jobs()
 
 JUDGE_LIMITS = ContextVar('source_judge_request_limits', default=None)
+# Source judge models by backend. openai_api dispatches to the Chat Completions endpoint;
+# claude_cli_opus runs through the subscription Claude CLI (list-price equivalent reservations).
+OPENAI_JUDGE_MODELS = ('gpt-6-astra', 'gpt-6.1-sol')
+CLAUDE_JUDGE_MODELS = ('claude-opus-5-5',)
+CLAUDE_CLI_ENDPOINT = 'claude-cli://source-judge'
 METRICS = ('requests', 'wallTimeMs', 'costMicrousd')
 
 
@@ -40,8 +45,13 @@ LEDGER_V2 = 'sermon-source-budget-ledger-v2'
 # and only migrate_to_v3() upgrades one. New ledgers start at v4.
 LEDGER_V3 = 'sermon-source-budget-ledger-v3'
 LEDGER_V4 = 'sermon-source-budget-ledger-v4'
-CONCURRENT_LEDGERS = (LEDGER_V2, LEDGER_V3, LEDGER_V4)
-SETTLED_LEDGERS = (LEDGER_V3, LEDGER_V4)
+# v5 adds one terminal non-charged outcome: ``failed_definitive`` for a provider
+# response that proves the call failed before returning content (HTTP 5xx/4xx).
+# It releases the reservation, never stores a response and never blocks a retry.
+LEDGER_V5 = 'sermon-source-budget-ledger-v5'
+CONCURRENT_LEDGERS = (LEDGER_V2, LEDGER_V3, LEDGER_V4, LEDGER_V5)
+SETTLED_LEDGERS = (LEDGER_V3, LEDGER_V4, LEDGER_V5)
+DEFINITIVE_FAILURE_STATUSES = {'failed_definitive'}
 # 'reused': a response another approved budget root already paid for; it costs nothing here.
 SETTLEMENT_STATUSES_V3 = {'estimated_upper_bound', 'unknown'}
 SETTLEMENT_STATUSES = SETTLEMENT_STATUSES_V3 | {'reused'}
@@ -66,7 +76,10 @@ def settlement(identity, response, elapsed):
     model = identity.get('model') if isinstance(identity, dict) else None
     result = {'costStatus': 'unknown', 'costMicrousd': None, 'usage': None, 'reasonCode': None,
               'requestedModel': model, 'providerModel': response.get('model') if isinstance(response, dict) else None,
-              'elapsedSeconds': elapsed, 'priceBasis': 'requested_model_frozen_worst_case_rate', 'invoiceVerified': False}
+              'elapsedSeconds': elapsed, 'invoiceVerified': False,
+              # Subscription Claude CLI usage is priced at list rates as an equivalent, never as a charge.
+              'priceBasis': ('claude_subscription_list_price_equivalent' if model in CLAUDE_JUDGE_MODELS
+                             else 'requested_model_frozen_worst_case_rate')}
     if not isinstance(usage, dict):
         return dict(result, reasonCode='missing_provider_usage')
     inputs = usage.get('prompt_tokens', usage.get('input_tokens'))
@@ -121,7 +134,7 @@ def bounded_source_judge_payload(payload, limits):
     text_limits.validate_request_limits(limits)
     expected_format = {'type': 'json_schema', 'json_schema': {
         'name': 'english_source_machine_judge', 'strict': True, 'schema': judge._response_schema()}}
-    require(type(payload) is dict and payload.get('model') in ('gpt-6-astra', 'gpt-6.1-sol')
+    require(type(payload) is dict and payload.get('model') in OPENAI_JUDGE_MODELS + CLAUDE_JUDGE_MODELS
             and payload.get('response_format') == expected_format,
             'unsupported_source_judge_payload')
     # Reuse the shared text/message/model/cap validator with its own supported
@@ -133,7 +146,13 @@ def bounded_source_judge_payload(payload, limits):
 
 class SourceBudget:
     def __init__(self, root, authority, *, verify, transport=None, max_concurrent=1, resource_policy=None,
-                 reuse_roots=()):
+                 reuse_roots=(), claude_transport=None, reuse_operations=None, reuse_miss_pays=False):
+        # `reuse_operations` limits replay to operation-name prefixes (Layer 1: ('asr.',) so the
+        # judge always runs fresh); `reuse_miss_pays` lets an operation absent from every reuse
+        # root be paid here instead of failing, for roots of runs that stopped early. Both default
+        # to the QC contract: every operation must replay and reuse never buys a call.
+        self.reuse_operations = tuple(reuse_operations) if reuse_operations is not None else None
+        self.reuse_miss_pays = bool(reuse_miss_pays)
         self.root, self.authority, self.verify = Path(root), authority, verify
         # Earlier budget roots of the same run whose returned responses this root may reuse,
         # as named by its approval. Their ledgers/responses are read-only;
@@ -142,6 +161,8 @@ class SourceBudget:
         require(all(root_.resolve() != self.root.resolve() for root_ in self.reuse_roots)
                 and len({root_.resolve() for root_ in self.reuse_roots}) == len(self.reuse_roots), 'invalid_source_reuse_roots')
         self.transport = transport
+        # Subscription Claude CLI judge transport; the only route for a Claude judge payload.
+        self.claude_transport = claude_transport
         require(type(max_concurrent) is int and 1 <= max_concurrent <= 16, 'invalid_source_concurrency')
         self.max_concurrent = max_concurrent
         self.resource_policy = None
@@ -169,23 +190,30 @@ class SourceBudget:
                                 and isinstance(ledger.get('requests'), dict)
                                 and set(ledger) == ({'schemaVersion', 'authority', 'requests'} if version not in CONCURRENT_LEDGERS
                                     else {'schemaVersion', 'authority', 'requests', 'maxConcurrent', 'resourcePolicySha256'}
-                                        | ({'reuseBudgetRoots'} if version == LEDGER_V4 else set()))
-                                and (version != LEDGER_V4 or ledger['reuseBudgetRoots'] == [str(root) for root in self.reuse_roots])
+                                        | ({'reuseBudgetRoots'} if version in (LEDGER_V4, LEDGER_V5) else set()))
+                                and (version not in (LEDGER_V4, LEDGER_V5) or ledger['reuseBudgetRoots'] == [str(root) for root in self.reuse_roots])
                                 and (version not in CONCURRENT_LEDGERS or (ledger['maxConcurrent'] == self.max_concurrent
                                     and ledger['resourcePolicySha256'] == self._resource_identity())), 'source_budget_identity_changed')
                         for operation, row in ledger['requests'].items():
                             require(isinstance(operation, str) and re.fullmatch(r'(asr\.[0-9]{4}|judge\.[a-f0-9]{64})', operation)
-                                    and isinstance(row, dict) and row.get('status') in {'returned', 'started_response_unconfirmed', 'live_started'}
+                                    and isinstance(row, dict) and row.get('status') in {'returned', 'started_response_unconfirmed', 'live_started', 'failed_definitive'}
                                     and set(row) - {'resourceBinding'} == ({'identitySha256', 'bounds', 'status', 'responseSha256'}
                                         | ({'settlement'} if version in SETTLED_LEDGERS else set())
                                         if row.get('status') == 'returned' else {'identitySha256', 'bounds', 'status', 'dispatchOwner'}
                                         if row.get('status') == 'live_started' and version in CONCURRENT_LEDGERS
+                                        else {'identitySha256', 'bounds', 'status', 'httpStatus', 'errorType'}
+                                        if row.get('status') == 'failed_definitive'
                                         else {'identitySha256', 'bounds', 'status'})
                                     and isinstance(row.get('identitySha256'), str)
                                     and re.fullmatch('[a-f0-9]{64}', row['identitySha256'])
                                     and isinstance(row.get('bounds'), dict) and set(row['bounds']) == set(METRICS)
                                     and row['bounds']['requests'] == 1
                                     and all(type(v) is int and 0 < v <= 10**15 for v in row['bounds'].values()),
+                                    'source_budget_ledger_corrupt')
+                            if row['status'] == 'failed_definitive':
+                                require(version == LEDGER_V5
+                                    and type(row.get('httpStatus')) is int and 100 <= row['httpStatus'] <= 599
+                                    and isinstance(row.get('errorType'), str) and row['errorType'],
                                     'source_budget_ledger_corrupt')
                             if row['status'] == 'returned':
                                 require(isinstance(row.get('responseSha256'), str)
@@ -382,12 +410,19 @@ class SourceBudget:
             try:
                 return self._call(operation=operation, identity=identity, bounds=bounds, request=request,
                     api_key=api_key, content_type=content_type, endpoint=endpoint, owner=owner)
-            except BaseException:
+            except BaseException as error:
                 with self._locked() as (ledger, path):
                     row = ledger['requests'].get(operation)
                     if row is not None and row.get('dispatchOwner') == owner:
-                        row.update(status='started_response_unconfirmed')
                         row.pop('dispatchOwner')
+                        status = getattr(error, 'code', None)
+                        if type(status) is int and 100 <= status <= 599:
+                            # The provider answered with an error status: no content was
+                            # returned, so this is a known non-charged failure.
+                            row.update(status='failed_definitive', httpStatus=status,
+                                       errorType=type(error).__name__)
+                        else:
+                            row.update(status='started_response_unconfirmed')
                         jobs._persist(path, ledger)
                 raise
 
@@ -409,16 +444,26 @@ class SourceBudget:
                     previous['status'] = 'started_response_unconfirmed'
                     previous.pop('dispatchOwner')
                     jobs._persist(path, ledger)
-                require(previous['status'] == 'returned', 'source_provider_outcome_unknown')
-                saved = jobs._read(response_path)
-                require(saved.get('identitySha256') == fingerprint
-                        and jobs._digest(saved.get('requestIdentity')) == fingerprint
-                        and jobs._digest(saved) == previous['responseSha256'], 'source_response_identity_changed')
-                self._release_resource(previous)
-                return saved['response']
-            require(not self.reuse_roots or ledger['schemaVersion'] == LEDGER_V4,
+                require(previous['status'] in {'returned', 'failed_definitive'},
+                        'source_provider_outcome_unknown')
+                if previous['status'] == 'returned':
+                    saved = jobs._read(response_path)
+                    require(saved.get('identitySha256') == fingerprint
+                            and jobs._digest(saved.get('requestIdentity')) == fingerprint
+                            and jobs._digest(saved) == previous['responseSha256'], 'source_response_identity_changed')
+                    self._release_resource(previous)
+                    return saved['response']
+                # failed_definitive: no content exists, so dispatch afresh under the
+                # same identity; the row is replaced with the new live_started one.
+            require(not self.reuse_roots or ledger['schemaVersion'] in (LEDGER_V4, LEDGER_V5),
                     'source_budget_v4_explicit_migration_required')
-            reusable = self._reusable(operation, fingerprint) if self.reuse_roots else None
+            reusable = None
+            if self.reuse_roots and (self.reuse_operations is None or operation.startswith(self.reuse_operations)):
+                try:
+                    reusable = self._reusable(operation, fingerprint)
+                except ValueError as error:
+                    if not (self.reuse_miss_pays and str(error) == 'source_reuse_operation_missing'):
+                        raise
             if reusable is not None:
                 # Already paid under another approved root of this run: copy it here at no cost.
                 source_root, source_saved, source_row, source_ledger = reusable
@@ -443,7 +488,7 @@ class SourceBudget:
                                                  'responseSha256': jobs._digest(saved), 'settlement': saved['settlement']}
                 jobs._persist(path, ledger)
                 return saved['response']
-            require(self.transport is not None or (isinstance(api_key, str) and bool(api_key)
+            require(endpoint == CLAUDE_CLI_ENDPOINT or self.transport is not None or (isinstance(api_key, str) and bool(api_key)
                     and '\n' not in api_key and '\r' not in api_key), 'OPENAI_API_KEY_is_not_configured')
             # Unknown outcomes stop the source lane; they do not buy a fresh
             # operation ID or allow later work to conceal a missing chunk.
@@ -483,6 +528,11 @@ class SourceBudget:
                 row.pop('dispatchOwner', None)
                 jobs._persist(path, ledger)
                 self._release_resource(row)
+        if endpoint == CLAUDE_CLI_ENDPOINT:
+            start = time.monotonic()
+            response = self.claude_transport(None, identity)
+            returned(response, elapsed=time.monotonic() - start)
+            return response
         if self.transport is not None:
             start = time.monotonic()
             response = self.transport(endpoint, request, content_type, api_key)
@@ -528,6 +578,53 @@ class SourceBudget:
             self._release_resource(row)
         return {'status': 'returned_response_reconciled', 'operation': operation,
                 'modelCalls': 0, 'humanApproval': False, 'reservationReleased': False}
+
+    def migrate_to_v5(self):
+        """Upgrade a v4 ledger so ``failed_definitive`` rows are legal; changes no row."""
+        self.verify()
+        with self._locked() as (ledger, path):
+            if ledger['schemaVersion'] == LEDGER_V5:
+                return {'status': 'already_v5', 'modelCalls': 0, 'humanApproval': False}
+            require(ledger['schemaVersion'] == LEDGER_V4, 'source_budget_v5_migration_requires_v4')
+            ledger['schemaVersion'] = LEDGER_V5
+            jobs._persist(path, ledger)
+        self.verify()
+        return {'status': 'migrated_to_v5', 'modelCalls': 0, 'humanApproval': False}
+
+    def reconcile_definitive_failure(self, operation, expected_identity_sha256, *, http_status, error_type,
+                                     evidence):
+        """Record a provider error status as a known, non-charged failure.
+
+        Only for a call that never returned content (no saved response) and that the
+        ledger left ``started_response_unconfirmed``. Writes an auditable sidecar and
+        releases the reservation. Never invokes a provider and never fabricates a response.
+        """
+        self.verify()
+        require(type(http_status) is int and 100 <= http_status <= 599, 'invalid_http_status')
+        require(isinstance(error_type, str) and error_type and isinstance(evidence, dict), 'invalid_failure_evidence')
+        receipt_dir = self.root / 'reconciliations'
+        receipt_dir.mkdir(parents=True, exist_ok=True, mode=0o700)
+        receipt_path = receipt_dir / f'{operation}.json'
+        with self._locked() as (ledger, path):
+            row = ledger['requests'].get(operation)
+            require(row is not None and row.get('status') == 'started_response_unconfirmed'
+                    and row.get('identitySha256') == expected_identity_sha256,
+                    'source_reconciliation_binding_changed')
+            require(not self._response_path(operation, expected_identity_sha256).is_file(),
+                    'source_returned_response_required')
+            require(ledger['schemaVersion'] == LEDGER_V5, 'source_budget_v5_migration_required')
+            receipt = {'schemaVersion': 'sermon-source-budget-definitive-failure-v1',
+                       'operation': operation, 'identitySha256': expected_identity_sha256,
+                       'httpStatus': http_status, 'errorType': error_type,
+                       'bounds': row['bounds'], 'evidence': evidence,
+                       'humanApproval': False, 'releaseEligible': False}
+            immutable._atomic(receipt_path, receipt)
+            row.update(status='failed_definitive', httpStatus=http_status, errorType=error_type)
+            jobs._persist(path, ledger)
+            self._release_resource(row)
+        self.verify()
+        return {'status': 'definitive_failure_reconciled', 'operation': operation,
+                'receipt': str(receipt_path), 'modelCalls': 0, 'humanApproval': False}
 
     def migrate_to_v3(self):
         """Explicitly upgrade a v2 ledger to v3, settling every returned row from its saved response.
@@ -613,6 +710,15 @@ class SourceBudget:
         require(inputs <= limits['maxInputTokens'], 'source_judge_input_bound_exceeded')
         bounds = {'requests': 1, 'wallTimeMs': limits['wallTimeMs'],
                   'costMicrousd': text_limits._cost(payload['model'], inputs, limits['maxCompletionTokens'])}
+        if payload['model'] in CLAUDE_JUDGE_MODELS:
+            # Subscription CLI: the reservation is the model's frozen list-price worst case, not a charge.
+            transport = self.claude_transport
+            require(transport is not None and transport.model == payload['model']
+                    and transport.effort == payload['reasoning_effort'], 'source_judge_claude_transport_required')
+            return self.call(operation='judge.' + jobs._digest(payload), identity=payload, bounds=bounds,
+                             request=b'', api_key=None, content_type='application/json',
+                             endpoint=CLAUDE_CLI_ENDPOINT)
+        require(payload['model'] in OPENAI_JUDGE_MODELS, 'unsupported_source_judge_payload')
         return self.call(operation='judge.' + jobs._digest(payload), identity=payload, bounds=bounds,
                          request=json.dumps(payload, ensure_ascii=False).encode(), api_key=api_key,
                          content_type='application/json', endpoint='https://api.openai.com/v1/chat/completions')

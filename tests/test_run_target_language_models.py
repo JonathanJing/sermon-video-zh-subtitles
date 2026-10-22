@@ -1195,3 +1195,15 @@ class RunTargetLanguageModelsTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class WrappedUtteranceParsingTests(unittest.TestCase):
+    def test_singular_wrapped_utterance_rows_are_accepted(self):
+        from tongxing_production.text import models
+        self.assertEqual(['甲', '乙'], models._utterances(
+            [{'sourceUnitId': 'u1', 'targetText': '甲'},
+             {'sourceUnitId': 'u2', 'targetText': '乙'}], ['u1', 'u2']))
+        self.assertEqual(['甲', '乙'], models._utterances(
+            [{'sourceUnitIds': ['u1'], 'targetText': '甲'},
+             {'sourceUnitIds': ['u2'], 'targetText': '乙'}], ['u1', 'u2']))
+        self.assertEqual(['甲', '乙'], models._utterances(['甲', '乙'], ['u1', 'u2']))

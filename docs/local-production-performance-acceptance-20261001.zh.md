@@ -94,7 +94,7 @@ Mac音频28/28在三种ASR批次和重复中均通过机器相似度门槛。Spa
 
 ## 复现与边界
 
-新增五个实验入口：`benchmark_speech_residency.py`、`benchmark_formal_tts.py`、`benchmark_back_asr.py`、`benchmark_cpu_overlap.py`、`benchmark_layer2_bounded.py`，均位于 `scripts/experiments/`。使用新输出目录和固定输入，保留模型/脚本/音频身份；`--help` 给出参数。前两项分别复用未改动的 production speech worker 与正式 `QwenSynthesizer`，CPU 项调用实际 legacy renderer，回转写复用正式文本归一规则，文字项捕获正式分组prompt但隔离部分覆盖结果。没有创建批准或发布包。
+新增五个实验入口：`benchmark_speech_residency.py`、`benchmark_formal_tts.py`、`benchmark_back_asr.py`、`benchmark_cpu_overlap.py`、`benchmark_layer2_bounded.py`，当时位于 `scripts/experiments/`；布局迁移后前三个在 `tools/benchmarks/`，`benchmark_cpu_overlap.py` 在 `experiments/local-layer-latency/`，`benchmark_layer2_bounded.py` 在 `experiments/layer2-translation-ab/`。使用新输出目录和固定输入，保留模型/脚本/音频身份；`--help` 给出参数。前两项分别复用未改动的 production speech worker 与正式 `QwenSynthesizer`，CPU 项调用实际 legacy renderer，回转写复用正式文本归一规则，文字项捕获正式分组prompt但隔离部分覆盖结果。没有创建批准或发布包。
 
 ```sh
 PRODUCTION_PYTHON=/absolute/path/to/existing-production-env/bin/python

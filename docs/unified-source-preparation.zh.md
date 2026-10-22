@@ -16,6 +16,31 @@ CLI 等价入口：
 
 它不下载来源、不翻译、不发布。结果始终保留 `productionEligible=false`；机器检查通过后返回准备阶段 `succeeded`、`kind=english_source_candidate`、`review=human_pending` 与候选路径，后续原有英文全文/对齐/整句人审仍独立等待；不能把准备阶段成功提升为 `ready_for_translation`。机器检查失败则返回 blocked。
 
+## 新运行默认：v4 配置（2026-10-22 起）
+
+新的 Layer 1 运行用 `sermon-unified-source-preparation-v4`。所有改进仍是配置字段，但**默认打开**：字段不写就取下表的默认值；配置摘要按文件原文计算，每次尝试把实际生效的值写进 `source-run-attempts.ndjson`，`inspect` 也报告 `effective`。v1–v3 的已有运行保持原行为。
+
+| 字段 | v4 默认 | 作用 |
+|---|---|---|
+| `asrWorkers` | 每 180 秒块一个 worker，最多 16 | ASR 一轮返回 |
+| `judge.workers` / `judge.batchSize` | 8 / 6 | 裁判并发 |
+| `judgeCacheRoot` | `.source-judge-cache`（配置所在目录） | 同一来源的所有运行共享按内容寻址的裁判缓存 |
+| `mfaChunkCacheRoot` | `.source-mfa-chunk-cache` | MacBook 端按块 MFA 缓存；Spark 端自带 |
+| `reviewConfirmation` | `<配置文件名>.review-confirmation.json` | 一次确认的汇总单：v4 总是先投机跑并写汇总单 |
+| `reuseBudgetRoots` | `[]`（由准备工具自动填写） | 零成本回放同媒体同窗口已付费的 ASR |
+| `crossCheckTranscripts` | 不设 | 有第二份转写时填 |
+
+v4 必须配授权 v2（`sermon-source-budget-authorization-v2`），不接受 `sourceTextReview`（文字修正走汇总单），judge 必须写 `backend`。生产 continuation 工作流（`workflows/prepared/continuation.py`）同样接受授权 v2：绑定 run、配置摘要、预算根与上限，不核对代码身份。
+
+准备一次新运行（不调用模型、不花钱）：
+
+```sh
+.venv/bin/python tools/ops/prepare_source_run.py draft --from <同来源的上一份配置> --name <运行名> --usd <上限>
+.venv/bin/python tools/ops/prepare_source_run.py approve --authorization <运行名>.authorization.json --reviewed-by "<人> (chat)" --evidence "<原话>"
+```
+
+`draft` 写出开关全部写明的 v4 配置、授权 v2 和未签的审批；`reuseBudgetRoots` 自动列出同目录里同媒体、同窗口、ASR 全部直接付费返回的预算根。审批签署前 stage 拒绝运行；`approve` 只记录人的决定。
+
 ## 输入身份和原有批准
 
 配置标识为 `sermon-unified-source-preparation-v1`，精确字段见模块的 `FIELDS`。包括 productionRunId、来源 ID/URL 全 SHA-256、日期、media 路径/哈希/完整时长、精确 window、jobRoot、outputDirectory，以及以下绑定：
@@ -26,7 +51,12 @@ CLI 等价入口：
 - `budgetAuthorization`：独立预算授权文件。
 - `mfa`：backend、allowSparkFallback、localOptions、sparkOptions；仅接受现有 MFA adapter 的固定字段。
 - `anchorPolicy`：maxUnitSeconds 和 boundaryOverrides。已有人工边界覆盖原样传入，不按时长强拆。
-- `judge`：固定 gpt-6-astra、reasoningEffort、batchSize、workers。此 source recipe 为保守共享预算使用 workers=1；独立 L1 judge 入口仍支持 1–8 workers。
+- `judgeCacheRoot`（可选，v2/v3）：相对配置文件的目录，存放机器裁判按内容寻址的请求缓存。缓存键是该批句子、单元、前后文、锚点策略、模型、推理强度和提示词，不含 manifest 哈希；同一来源的每次 `execute` 或 `rebuild` 写同一目录时，只有改动过的批次会再付费，其余按缓存回放（2026-10-21 起；单元 ID 按块内顺序编号，一句多拆一个单元仍会让该块后面句子的单元 ID 顺延并重判）。不写时每个输出目录各自缓存在 `judge-requests/`。
+- `asrWorkers`（v2/v3）：ASR 并发，1 到 16；每块 180 秒，一块一个 worker 时 40 分钟来源一轮返回（2026-10-21 起上限从 4 放宽到 16，每个请求仍先入账再派发）。
+- `reuseBudgetRoots`（可选，v2/v3）：相对配置文件的若干个更早的预算根目录，本配置可以零成本回放它们已返回的 ASR。账本按"操作名 + 音频身份"匹配：同一分块、同一音频哈希才回放，并以 `reused`（费用 0）连同来源根、原结算一起记进本账本；同一操作名下音频不同（窗口变了）直接拒绝 `source_reuse_identity_changed`，不会悄悄重买；来源根里未知或未结算的行也拒绝。只有直接付费的收据可以作为来源，回放再回放不算。字段进入配置摘要，因此换来源根等于新配置、要重新批准预算（2026-10-21 起）。
+- `reviewConfirmation`、`crossCheckTranscripts`（可选，v2/v3，2026-10-22 起）：一次确认的汇总单。配置 `reviewConfirmation`（确认文件路径，与 `sourceTextReview` 互斥）后，确认文件不存在时 `execute` 在 ASR 后投机跑 MFA、锚点和裁判，写出 `review-sheet.json`、给人读的 `review-sheet.md` 和预填默认决定的 `review-confirmation.template.json`，返回 `awaiting_confirmation`。汇总单列出：按规则提议的数字读法（无法安全提议的必须人填）、与 `crossCheckTranscripts`（同窗口的其他转写，按哈希绑定）的文字分歧（内容与仅填充词分组，带音频时间）、裁判未通过的句子及可选切点、没有安全切点的长句、四项检查的机器证据。确认文件存在时做最终一遍：ASR 从账本回放，MFA 只重对齐文字或读法变了的块（按块缓存），裁判只重判内容变了的批（按内容寻址），再核对决定之外没有句子变化；通过才写英文审核（`english-source-review.json`）、`review-derivation.json` 和 `ready_for_translation` 的源包，否则停下列出差异、不写批准。确认文件的 `simulation: true`（同时 `humanApproval: false`）用于试跑：全部重算，但不写任何批准；之后同样决定的人工确认可以在同一输出目录完成。一个输出目录对应一组决定，改主意要新输出目录。
+- `judge`：reasoningEffort、batchSize、workers 和模型。v1 只允许 workers=1；v2 允许 1–8 workers。v1、v2 的模型为 `gpt-6-astra` 或 `gpt-6.1-sol`，走 OpenAI API。
+  **v3（`sermon-unified-source-preparation-v3`，2026-10-21 用户决定）** 在 v2 字段上要求 `judge.backend`，后端决定模型：`openai_api` 只能用 `gpt-6.1-sol`；`claude_cli_opus` 只能用 `claude-opus-5-5`，经本机订阅登录的 Claude CLI 调用（`compute/transports/claude_source_judge.py`），不用 API key，单次调用的超时等于预算的单请求墙钟上限。ASR 仍走 OpenAI，所以 v3 的 Claude 后端仍需要 OpenAI 启动器和预算。后端写在配置里，进入配置摘要和预算绑定；换后端等于新配置，需要重新批准预算。v1、v2 配置不迁移。
 
 窗口检查直接复用 `sermon_unified_reviews.validate_window` 与 Supervisor validator，不建立新的窗口批准体系。Supervisor 收据的旧短 URL hash 通过实际 URL 校验；正式 Source package 使用完整 URL SHA-256，原批准文件不改写。
 
@@ -36,12 +66,16 @@ CLI 等价入口：
 
 预算授权为 `sermon-source-budget-authorization-v1`，包含 `binding`、`authority`、`approvalReceipt`：
 
-- `binding` 精确绑定 productionRunId、配置摘要、codeIdentitySha256 和固定预算根。配置摘要取配置对象去掉 `budgetAuthorization` 字段后的 canonical JSON SHA-256，避免循环引用。
+- `binding` 精确绑定 productionRunId、配置摘要和固定预算根。**v1**（`sermon-source-budget-authorization-v1`）还绑定 codeIdentitySha256：任何提交都让授权失效，返回请求时的复核会中止正在跑的裁判（2026-10-21 E4b）。**v2**（`sermon-source-budget-authorization-v2`，2026-10-22 起新运行默认）不再绑定代码身份，改为 `evidence.codeIdentitySha256AtApproval` 作证据；每次尝试把它启动时的代码身份写进输出目录的 `source-run-attempts.ndjson`，运行中观测到磁盘代码变化只追加 `code_identity_drift_observed` 一行，不中止；`source-run.json` 记录第一次尝试，同一输出目录只接受同一配置摘要。产物自己的代码绑定不变：对齐身份含 adapter 哈希，裁判收据含实现哈希，确定性重建核对锚点。v1 授权照旧严格。配置摘要取配置对象去掉 `budgetAuthorization` 字段后的 canonical JSON SHA-256，避免循环引用。
 - 预算根固定为 jobRoot 同级的 `.<jobRoot.name>.source-budget`。
 - `authority` 含 `approvalSha256`、`globalBounds`、`requestLimits`。globalBounds 只有 requests、wallTimeMs、costMicrousd；音频 token 没有数值时不补零。
 - 独立 `sermon-source-budget-approval-v1` 收据的 binding 为上述 binding 加 globalBounds/requestLimits，须保存人类决定、操作者证据和审核时间；hash 引用不等于授权。
 
+ASR 返回后、进入 MFA 前，`execute` 把操作者必须补的输入一次报全：`numeric-references.json` 列出冻结文本里没有精确读法的数字 token（`$1.5`、`2nd`、`73:16` 这类）及其所在块；配置了 `sourceTextReview` 而审核文件还不存在时，同一停点报 `source_text_review_required`；读法仍缺时报 `source_ambiguous_numeric_reference_configure_spoken_forms`。两者都不再等到 MFA 派发前才发现。`mfa-preflight.json` 保存最近一次预检观测，和上次不同时把旧值追加到 `mfa-preflight-history.ndjson` 而不是阻止运行；实际对齐用的运行时仍由 `alignment-receipt.json` 绑定。窗口音频解码允许比期望少至多 10 ms（流首包不从 0 开始的情况），多出或缺更多仍按时长改变拒绝。
+
 ASR 用既有 `sermon_transcription_request` 构造每块最多 180 秒的 PCM 请求；原始返回按块不可变保存。输入音频时长按已有冻结价格假设预留，不宣称实际账单。Judge 的实际 payload 在缓存身份计算前加入输入、输出 token 与墙钟限制；预留仍按冻结价格上界，`invoiceVerified=false`。
+
+Claude 后端的裁判调用同样先在这本账里预留、返回后结算：预留按 Opus 5.5 的冻结列价最坏情况（`strict-claude-list-worst-case-2026-10-08-v1`）计入 `costMicrousd`，结算的 `priceBasis` 记为 `claude_subscription_list_price_equivalent`。这只是列价等价，不是订阅的实际扣费；批准预算时这部分会占用美元上限，比实际支出保守。
 
 每次 provider 请求前持久化 reservation。网络未知、缺失返回、owner 崩溃不能通过新 operation ID、改名输出目录或盲重试清除。已返回块逐块恢复，失败点之前的块不重付。
 
