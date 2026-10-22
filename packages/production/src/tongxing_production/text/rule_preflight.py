@@ -410,7 +410,7 @@ successful provider outcome or authorize copying a human approval.
             raw_path = cache.with_suffix(".raw.json")
             if raw_path.is_file():
                 raw = producer._load(raw_path)
-                require(raw.get("payloadSha256") == fingerprint
+                require((raw.get("payloadSha256") == fingerprint or legacy)
                         and isinstance(raw.get("response"), dict)
                         and raw["response"].get("id") == cached.get("requestId"),
                         "prior raw response transport or request identity differs")
