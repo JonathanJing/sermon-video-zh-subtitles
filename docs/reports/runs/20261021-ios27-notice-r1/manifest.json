@@ -1,0 +1,40 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261021-ios27-notice-r1",
+  "runs": [
+    {
+      "label": "20261021-ios27-notice-r1",
+      "source": "~/.codex/worktrees/ios-next-beta-poster-push/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-21/ios27-report-inputs/20261021-ios27-notice-r1",
+      "skipped": {
+        ".json": 1
+      }
+    }
+  ],
+  "files": [
+    {
+      "run": "20261021-ios27-notice-r1",
+      "path": "run.log",
+      "kind": "log",
+      "bytes": 61398,
+      "truncated": true,
+      "sha256": "8fdd595aa309c02bced0039301c60c27180aa69a502e415f25438f7d7bd77140",
+      "redactions": {
+        "home_dir": 5
+      }
+    },
+    {
+      "run": "20261021-ios27-notice-r1",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 2018,
+      "truncated": false,
+      "sha256": "7d2848c0aa324169be2d889442ee9cd95bb13a25010a57e4169645ea5fc5242c",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}
