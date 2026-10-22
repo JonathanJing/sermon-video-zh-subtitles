@@ -536,7 +536,7 @@ curl -sS -X POST \
   }'
 ```
 
-最终可以再收敛成一个 operator 命令，默认只做到待 review：
+最终可以再收敛成一个 operator 命令，默认只做到待 review。下面三段是拟议草图：`scripts/run_post_live_reviewed_sunday.py` 从未实现，不能运行；`scripts/` 已不再接收新文件，落地时按[目标布局](design/repository-layout-proposal.zh.md) §2 放进生产包，入口改为 `tools/ops/run.py <模块>`。
 
 ```bash
 python3 scripts/run_post_live_reviewed_sunday.py \

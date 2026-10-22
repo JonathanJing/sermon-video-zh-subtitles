@@ -147,6 +147,12 @@ def layer2_cap_per_locale(profile, scale, backend):
     return layer2["capUsdPerLocale"][scale], True
 
 
+# A high-effort Layer 2 role spends part of its completion budget on reasoning tokens.
+# 1024 truncated a translator response mid-run (2026-10-21); 2048 completed the same
+# 746-group run. The planner refuses a smaller cap before any paid dispatch.
+MIN_COMPLETION_TOKENS = 2048
+
+
 def layer2_spec(execution, locales, profile, scale):
     from scripts import tongxing_host  # noqa: F401  binds the production package ports
     from tongxing_production.text import controller
@@ -158,8 +164,15 @@ def layer2_spec(execution, locales, profile, scale):
     layer2 = profile["layer2"]
     bounds = dict(layer2["boundsPerLocale"][scale])
     bounds["costMicrousd"] = micro(layer2_cap_per_locale(profile, scale, layer2_backend_of(execution))[0])
-    anchor = controller._json(controller._path(config.inspection_root, config.inspection["anchor"]))
-    source = controller._json(controller._path(config.inspection_root, config.inspection["source"]))
+    # Source/anchor are package artifacts, not configuration files: the 1 MiB config cap
+    # must not reject a full anchor manifest (the 2026-10-18 podcast manifest is 1.6 MiB).
+    def _package_json(path):
+        path = controller._safe_path(path)
+        if not path.is_file() or path.stat().st_size > 32 * 1024 * 1024:
+            raise ValueError("invalid_package_artifact")
+        return json.loads(path.read_text(encoding="utf-8"))
+    anchor = _package_json(controller._path(config.inspection_root, config.inspection["anchor"]))
+    source = _package_json(controller._path(config.inspection_root, config.inspection["source"]))
     # The canonical group plan, not a historical calls-per-week estimate.
     sizing = {}
     for locale, lane in config.lanes.items():
@@ -174,6 +187,15 @@ def layer2_spec(execution, locales, profile, scale):
         # input ceiling rather than assuming zero inputs or guessing bytes from
         # completion tokens. Oversize payloads still fail the runner's gate.
         selected = limits.validate_request_limits(layer2["requestLimits"])
+        # Reasoning tokens count against the completion cap. A 1024-token cap truncated a
+        # high-effort translator response at group 564 of 746 on 2026-10-21 and cost
+        # USD 13.21 before the run stopped; refuse such a plan instead of discovering it
+        # mid-run.
+        if any(policy[role].get("reasoningEffort") == "high" for role in ("translator", "reviewer")):
+            if selected["maxCompletionTokens"] < MIN_COMPLETION_TOKENS:
+                raise ValueError(
+                    f"Layer 2 {locale} maxCompletionTokens {selected['maxCompletionTokens']} is below "
+                    f"{MIN_COMPLETION_TOKENS}; high-effort reasoning counts against the completion cap")
         initial = {"requests": 2 * groups,
                    "inputTokens": 2 * groups * selected["maxInputTokens"],
                    "outputTokens": 2 * groups * selected["maxCompletionTokens"],
@@ -204,7 +226,10 @@ def layer2_files(out, execution, locales, profile, scale, *, approved_by, eviden
     config, per_locale, sizing = prepared or layer2_spec(execution, locales, profile, scale)
     layer2 = profile["layer2"]
     runtime_identity = budget_tools.selected_runtime_identity()
-    sharded = scale == "week"
+    # A week always shards (one ledger per locale, 8 MiB each). A clip scoped a run-wide ledger,
+    # which a longer clip exhausts before its reservations finish; a profile may opt into the
+    # same per-locale sharding explicitly. Verify that what the profile asks for is in force.
+    sharded = scale == "week" or (layer2.get("ledgerScope") or {}).get(scale) == "locale"
     bounds = per_locale if sharded else {k: v * len(locales) for k, v in per_locale.items()}
     limits, rules = layer2["requestLimits"], layer2["limits"]
     root = budget_tools.budget_root(config)

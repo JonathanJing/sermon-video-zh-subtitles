@@ -1,6 +1,6 @@
 # 经文审核路径：设计与第一阶段实现
 
-状态（2026-10-08）：收据校验与付费前门、候选队列（`scripts/scripture_candidate_queue.py`，只列不判）、机器裁定（`scripts/scripture_machine_adjudication.py`，门禁用同一输入重跑才准入）、经文感知的诊断插件（`scripts/language_review_plugins/diagnostic_admitted_quotes.py`，由 `tools/ops/run_scripture_gated_round.py` 按已准入收据冻结）都已实现并有离线测试。还没有的是 `ko`、`es` 的已核验版本，以及用机器收据重新冻结 605 并跑真实轮次，见[后续](#后续)。本页不改变任何层的完成状态，不把机器结果称为人工批准。
+状态（2026-10-08）：收据校验与付费前门、候选队列（`scripts/scripture_candidate_queue.py`，只列不判）、机器裁定（[`review/scripture_machine.py`](../packages/production/src/tongxing_production/review/scripture_machine.py)，原 `scripts/scripture_machine_adjudication.py`；门禁用同一输入重跑才准入）、经文感知的诊断插件（`scripts/language_review_plugins/diagnostic_admitted_quotes.py`，由 `tools/ops/run_scripture_gated_round.py` 按已准入收据冻结）都已实现并有离线测试。还没有的是 `ko`、`es` 的已核验版本，以及用机器收据重新冻结 605 并跑真实轮次，见[后续](#后续)。本页不改变任何层的完成状态，不把机器结果称为人工批准。
 
 ## 为什么需要
 
@@ -20,7 +20,7 @@
 | 阶段 | 谁做 | 产物 | 状态 |
 |---|---|---|---|
 | 候选队列（穷举疑似引文，附前后文、信号、时间、哈希） | 机器（`scripts/scripture_candidate_queue.py`） | 待裁定清单 | 已实现，只列不判 |
-| 裁定 | 人，或机器（`scripts/scripture_machine_adjudication.py`，按明确出处和读经信号判整节引文；讲员只念片段时按原话翻译，不收录整节） | `scripture-adjudication.json` 收据 | 格式和校验已实现；机器收据是机器证据，不是人工批准 |
+| 裁定 | 人，或机器（`review/scripture_machine.py`，按明确出处和读经信号判整节引文；讲员只念片段时按原话翻译，不收录整节） | `scripture-adjudication.json` 收据 | 格式和校验已实现；机器收据是机器证据，不是人工批准 |
 | 付费前门 | 代码 | 通过或固定拒绝码 | 已实现（冻结和加载都检查） |
 | 经文感知的诊断插件 | 代码（`diagnostic_admitted_quotes`，`run_scripture_gated_round.py` 冻结） | 只接受已通过门的引文，逐句精确核对 | 已实现，仅诊断 |
 
@@ -31,7 +31,7 @@
 - `schemaVersion`：`sermon-scripture-adjudication-v1` 是人工收据的原合同，已冻结的运行保留它；`sermon-scripture-adjudication-v2` 字段相同，加上 `machine_adjudicator` 角色，并要求机器收据由生成器用绑定输入重跑才准入。人工收据在两个版本下都有效，不需要迁移文件；标成机器却写 v1 的收据拒绝（`machine_receipt_requires_v2`）。门的汇总记 `receiptSchemaVersion`。
 - `bindings`：`source.json`、`anchor.json`、`group-plan.json` 的规范哈希，必须与 fixture 冻结的内容一致。换了源稿、锚点或组计划，收据失效。
 - `decision` 必须是 `approved`。`pending`、`rejected` 都拒绝。
-- `decidedByRole` 是 `human_reviewer`（人工收据）或 `machine_adjudicator`（`scripts/scripture_machine_adjudication.py` 生成的机器收据），`decidedBy` 非空，`reviewedAt` 是有效的 ISO 时间。门的汇总记 `adjudicationKind`（`human` / `machine`）；机器收据的 `humanApproval` 为 `false`，只是机器证据，同一组 bindings 的人工收据覆盖它。
+- `decidedByRole` 是 `human_reviewer`（人工收据）或 `machine_adjudicator`（`review/scripture_machine.py` 生成的机器收据），`decidedBy` 非空，`reviewedAt` 是有效的 ISO 时间。门的汇总记 `adjudicationKind`（`human` / `machine`）；机器收据的 `humanApproval` 为 `false`，只是机器证据，同一组 bindings 的人工收据覆盖它。
 - `candidates`：每项包含 `candidateId`、`sourceUnitIds`、`classification`、`reference`、`editionId`、`exactSentence`。
   - `classification` 为 `direct_quote`（整节）或 `partial_direct_quote`（片段）时，`editionId` 必须是 `CUV`，`exactSentence` 必须是固定版本中的精确文本：整节引用必须等于整节原文，片段必须是原文中唯一出现的连续子串。
   - `speaker_paraphrase` 或 `reference_only` 表示人工认定不是直接引用，`editionId` 和 `exactSentence` 必须为空，不能附带版本声明。

@@ -100,10 +100,34 @@ _BINDING_MEMO = stat_memo.StatMemo()
 _BINDING_DIGESTS = {}  # see _binding_digest
 
 
+def _resume_binding(value, path):
+    """Prior complete run root whose unchanged groups may be reused.
+
+    A cross-run resume only pays for groups the prior run did not deliver; the runner
+    verifies the prior evidence against this run's source, anchor, policy and plugin.
+    """
+    require(isinstance(value, dict) and set(value) == {'priorRunRoot'}, 'invalid_layer2_resume')
+    root = _path(path.parent, value['priorRunRoot'])
+    require(root.is_dir() and not root.is_symlink(), 'invalid_layer2_resume')
+    # An auto-repair run keeps its group caches and frozen rule receipt inside
+    # repair-rounds/round-001, not at the run root. Accept either the run root or the
+    # round directory itself so a resume does not need the operator to know the layout.
+    if not (root / 'rule-preflight.json').is_file():
+        candidate = root / 'repair-rounds' / 'round-001'
+        require(candidate.is_dir() and not candidate.is_symlink(), 'invalid_layer2_resume')
+        root = candidate
+    return {'priorRunRoot': root}
+
+
 def _auto_repair_binding(value, *, allow_qc=False):
     required = {'routingVersion', 'groupWorkers', 'maxActiveLocales'}
     qc = value.get('backTranslationQc', {}) if isinstance(value, dict) else None
-    optional = {'sourceMeaningNotes', 'backTranslationQc'} if allow_qc else {'sourceMeaningNotes'}
+    optional = ({'sourceMeaningNotes', 'backTranslationQc', 'systemicMinimumGroups'} if allow_qc
+                else {'sourceMeaningNotes', 'systemicMinimumGroups'})
+    # Optional: how many adjacent groups may share one failure code before dispatch stops. A week
+    # keeps the default (3); an operator-reviewed clip may raise it so a cluster of one known
+    # defect is repaired instead. It never lowers the threshold below the default.
+    minimum = value.get('systemicMinimumGroups', auto_repair.SYSTEMIC_MINIMUM_GROUPS) if isinstance(value, dict) else None
     require(isinstance(value, dict) and required <= set(value) <= required | optional
             and value['routingVersion'] == auto_repair.ROUTING_VERSION
             # Optional: the Layer 1 machine audio adjudication notes (meaning-notes.json beside its receipt)
@@ -116,7 +140,9 @@ def _auto_repair_binding(value, *, allow_qc=False):
             and type(value['groupWorkers']) is int
             and 1 <= value['groupWorkers'] <= api_concurrency.MAX_GROUP_WORKERS_PER_LOCALE
             and type(value['maxActiveLocales']) is int
-            and 1 <= value['maxActiveLocales'] <= MAX_AUTO_REPAIR_LOCALES, 'invalid_execution_configuration')
+            and 1 <= value['maxActiveLocales'] <= MAX_AUTO_REPAIR_LOCALES
+            and type(minimum) is int and auto_repair.SYSTEMIC_MINIMUM_GROUPS <= minimum <= 32,
+            'invalid_execution_configuration')
     return dict(value)
 MODES = ('deterministic_shadow', 'deterministic_execute')
 ADMISSION_LOCK = jobs._digest({'purpose': 'canonical-layer2-admission-v1'})
@@ -166,6 +192,7 @@ class Configuration:
     payload_cache: dict | None = None
     partial_recovery: dict | None = None
     group_revision: dict | None = None
+    resume: dict | None = None
 
 
 def _file_digest(path):
@@ -391,6 +418,10 @@ def _load_configuration(path):
                  and value['schemaVersion'] == CONCURRENT_SCHEMA)
              or (set(value) == required_keys | {'layer2AutoRepair'}
                  and value['schemaVersion'] in {AUTO_REPAIR_SCHEMA, QC_REPAIR_SCHEMA})
+             or (set(value) == required_keys | {'layer2AutoRepair', 'layer2Resume'}
+                 and value['schemaVersion'] == AUTO_REPAIR_SCHEMA)
+             or (set(value) == required_keys | {'layer2Resume'}
+                 and value['schemaVersion'] == SCHEMA)
              or (set(value) == required_keys | {'layer2AutoRepair', 'layer2PayloadCache'}
                  and value['schemaVersion'] == PAYLOAD_CACHE_SCHEMA)
              or (set(value) == required_keys | {'layer2AutoRepair', 'layer2PayloadCache',
@@ -410,6 +441,10 @@ def _load_configuration(path):
                       if value['schemaVersion'] in {AUTO_REPAIR_SCHEMA, SHADOW_SCHEMA, QC_REPAIR_SCHEMA,
                                                     PAYLOAD_CACHE_SCHEMA, PARTIAL_RECOVERY_SCHEMA,
                                                     GROUP_REVISION_SCHEMA} else None)
+    resume = (_resume_binding(value['layer2Resume'], path) if 'layer2Resume' in value else None)
+    if resume is not None:
+        require('layer2GroupRevision' not in value and 'layer2PayloadCache' not in value,
+                'invalid_layer2_resume_combination')
     payload_cache = (_payload_cache_binding(value['layer2PayloadCache'], path, value['locales'])
                      if value['schemaVersion'] in {PAYLOAD_CACHE_SCHEMA, PARTIAL_RECOVERY_SCHEMA} else None)
     partial_recovery = (_partial_recovery_binding(
@@ -496,6 +531,11 @@ def _load_configuration(path):
                         for b in cache_roots[i + 1:])
             and not any(_overlap(a, b) for i, a in enumerate(outputs) for b in outputs[i + 1:]),
             'execution_paths_overlap')
+    if resume is not None:
+        require(not _overlap(resume['priorRunRoot'], job_root)
+                and not any(_overlap(resume['priorRunRoot'], output) for output in outputs),
+                'execution_paths_overlap')
+        input_paths.append(resume['priorRunRoot'])
     binding = {'execution': value, 'inspection': inspection, 'plugins': plugin_hashes}
     if payload_cache is not None:
         binding['payloadCacheSnapshots'] = {
@@ -508,7 +548,7 @@ def _load_configuration(path):
     sha = _binding_digest(binding)
     return Configuration(path, root, inspection, job_root, value['productionRunId'], lanes, sha,
                          concurrency_profile, resource_policy, repair_binding,
-                         candidate_mode, payload_cache, partial_recovery, revisions)
+                         candidate_mode, payload_cache, partial_recovery, revisions, resume)
 
 
 def repair_ledger_root(config):
@@ -1027,17 +1067,24 @@ def execute(config_path, locale, expected_configuration, expected_code, expected
                 # The policy's frozen Layer 2 backend picks the transport: the OpenAI API (Sol), or
                 # the subscription Claude CLI for both roles (claude_cli_opus).
                 backend = models.production_backend(policy)
-                transports = claude_transports(policy, lane) if backend == 'claude_cli_opus' else None
-                caller = budget_tools.BudgetedCaller(budget_binding, config, source, anchor, policy,
-                                                     claude_transports=transports)
-                budgeted = caller
-                if transports is not None:
+                if backend == 'claude_cli_opus':
+                    transports = claude_transports(policy, lane)
+                    caller = budget_tools.BudgetedCaller(budget_binding, config, source, anchor, policy,
+                                                         claude_transports=transports)
                     caller.execution_identity = claude_model_transport_identity(transports)
-                elif budget_binding.get('runtimeIdentity') is None:
-                    caller.execution_identity = {
-                        'schemaVersion': 'openai-layer2-budget-transport-identity-v1',
-                        'backend': 'openai_api', 'route': route,
-                        'budgetAuthorizationSha256': budget_binding['sha256']}
+                elif backend == 'deepseek_flash':
+                    transports = deepseek_transports(policy, lane)
+                    caller = budget_tools.BudgetedCaller(budget_binding, config, source, anchor, policy,
+                                                         deepseek_transports=transports)
+                    caller.execution_identity = deepseek_model_transport_identity(transports)
+                else:
+                    caller = budget_tools.BudgetedCaller(budget_binding, config, source, anchor, policy)
+                    if budget_binding.get('runtimeIdentity') is None:
+                        caller.execution_identity = {
+                            'schemaVersion': 'openai-layer2-budget-transport-identity-v1',
+                            'backend': 'openai_api', 'route': route,
+                            'budgetAuthorizationSha256': budget_binding['sha256']}
+                budgeted = caller
                 caller = _text.current().compute.session_bound_caller(caller, requires_spark=False, outcome_guarded=True)
             elif budget_binding is not None:
                 _text.current().compute.reject_cli_transport(caller)
@@ -1088,11 +1135,13 @@ def execute(config_path, locale, expected_configuration, expected_code, expected
                         qc_digest=current['packageIdentities'].get('backTranslationQc.' + locale))
                 else:
                     model_output = lane['output']
+                    resume_root = (config.resume or {}).get('priorRunRoot')
                     evidence = models.run_accounted(source, anchor, policy, model_output, api_key,
                                                  bound_call, None, lane['plugin'], None, None,
                                                  progress_callback=progress.progress, predecessor_spans=[admission_span],
                                                  completion_spans=model_completion, candidate_mode=config.candidate_mode,
-                                                 payload_cache_from=payload_cache_root,
+                                                 payload_cache_from=None if resume_root else payload_cache_root,
+                                                 resume_cache_from=resume_root,
                                                  emit_payload_cache_success=payload_cache_enabled,
                                                  payload_cache_required=payload_cache_required)
             # Paid results remain recoverable if approval/source/config/code drifted
@@ -1161,6 +1210,11 @@ def execute(config_path, locale, expected_configuration, expected_code, expected
                        if revision_receipt is not None else {})}
 
 
+def _systemic_minimum(config):
+    """Consecutive same-code failures allowed before dispatch stops (default for a week)."""
+    return (config.auto_repair or {}).get('systemicMinimumGroups', auto_repair.SYSTEMIC_MINIMUM_GROUPS)
+
+
 def _run_auto_repair(config, lane, source, anchor, policy, api_key, call, progress, admission_span,
                      completion_spans, *, qc_digest=None):
     """Run repair rounds inside this durable job, its budget and its lease.
@@ -1175,17 +1229,25 @@ def _run_auto_repair(config, lane, source, anchor, policy, api_key, call, progre
     total_groups = len(models.group_plan(request, anchor))
     rounds_root = lane['output'] / 'repair-rounds'
 
+    resume_root = (config.resume or {}).get('priorRunRoot')
+    resume_pending = {'first': True}
+
     def run_round(out, reuse_from, brief, collector):
         progress('repair_round')
         payload_cache_root, payload_cache_enabled, _, payload_cache_required = _payload_cache_for(
             config, policy['targetLocale'])
         partial = _partial_recovery_for(config, policy['targetLocale'])
+        first_round = resume_pending['first'] and reuse_from is None
+        resume = resume_root if first_round else None
+        resume_pending['first'] = False
         return models.run_accounted(source, anchor, policy, out, api_key, call, None, lane['plugin'],
                                     None, reuse_from, partial_repair_brief=brief,
                                     progress_callback=progress, predecessor_spans=[admission_span],
                                     completion_spans=completion_spans, failure_collector=collector,
                                     candidate_mode=config.candidate_mode,
-                                    payload_cache_from=payload_cache_root if reuse_from is None else None,
+                                    resume_cache_from=resume,
+                                    payload_cache_from=(None if resume else
+                                                        payload_cache_root if reuse_from is None else None),
                                     partial_recovery_from=(partial['roundRoot']
                                                            if partial is not None and reuse_from is None else None),
                                     partial_recovery_budget_root=(partial['budgetRoot']
@@ -1210,7 +1272,8 @@ def _run_auto_repair(config, lane, source, anchor, policy, api_key, call, progre
         require(qc_digest is not None and jobs._digest(qc_receipt) == qc_digest, 'back_translation_qc_changed_after_admission')
     receipt = auto_repair.drive(request, total_groups, run_round, rounds_root, repair_ledger_root(config),
                                 group_workers=config.auto_repair['groupWorkers'], meaning_notes=notes,
-                                meaning_notes_sha256=notes_artifact_sha256, back_translation_qc=qc_receipt)
+                                meaning_notes_sha256=notes_artifact_sha256, back_translation_qc=qc_receipt,
+                                systemic_minimum_groups=_systemic_minimum(config))
     require(receipt['status'] == 'all_groups_passed', 'layer2_auto_repair_stopped')
     final = Path(receipt['finalRunDirectory'])
     require(_overlap(rounds_root.resolve(), final.resolve()) and final.resolve() != rounds_root.resolve(),
@@ -1257,7 +1320,8 @@ def _run_group_revision(config, lane, source, anchor, policy, api_key, call, pro
 
     repair_receipt = auto_repair.drive(request, len(plan), run_round, rounds_root, repair_ledger_root(config),
                                        group_workers=config.auto_repair['groupWorkers'],
-                                       lineage_extra=prepared['lineageExtra'], repair_allowance=allowance)
+                                       lineage_extra=prepared['lineageExtra'], repair_allowance=allowance,
+                                       systemic_minimum_groups=_systemic_minimum(config))
     require(repair_receipt['status'] == 'all_groups_passed', 'layer2_group_revision_stopped')
     final = Path(repair_receipt['finalRunDirectory'])
     require(_overlap(rounds_root.resolve(), final.resolve()) and final.resolve() != rounds_root.resolve(),
@@ -1389,6 +1453,24 @@ def claude_model_transport_identity(transports):
     return {'schemaVersion': 'claude-layer2-model-transport-identity-v2',
             'backend': 'claude_cli', 'layer2Backend': 'claude_cli_opus',
             'transports': {role: t.execution_identity for role, t in sorted(transports.items())}}
+
+
+def deepseek_model_transport_identity(transports):
+    """Stable cache identity for the DeepSeek API calls, independent of budget approval."""
+    require(set(transports) == {'translator', 'reviewer'}, 'deepseek_transport_roles_incomplete')
+    return {'schemaVersion': 'deepseek-layer2-model-transport-identity-v1',
+            'backend': 'deepseek_api', 'layer2Backend': 'deepseek_flash',
+            'transports': {role: t.execution_identity for role, t in sorted(transports.items())}}
+
+
+def deepseek_transports(policy, lane):
+    """One DeepSeek API transport per role at the policy's frozen model and effort.
+
+    Both roles read the same DEEPSEEK_API_KEY from the launching environment; the
+    transport identity binds model, effort and base URL, not the secret value."""
+    caller = _text.current().transports.caller
+    return {role: caller('deepseek-api', model=policy[role]['model'], effort=policy[role]['reasoningEffort'])
+            for role in ('translator', 'reviewer')}
 
 
 def claude_transports(policy, lane):

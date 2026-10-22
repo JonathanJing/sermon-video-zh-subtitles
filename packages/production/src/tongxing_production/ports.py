@@ -195,7 +195,7 @@ class Plugins:
 @dataclass(frozen=True)
 class Transports:
     """Layer 2 model transports, owned by compute/. Each hashes its own file as adapterSha256."""
-    caller: Callable[..., Any]                 # (backend, **options): 'openai-api' | 'codex-cli' | 'claude-cli'
+    caller: Callable[..., Any]                 # (backend, **options): 'openai-api' | 'codex-cli' | 'claude-cli' | 'deepseek-api'
     claude_chat_envelope: Callable[[Any, str], dict]   # (response, model)
     validate_codex_test_configuration: Callable[[Any], Any]
     audio_qc: Callable[[], ModuleType]         # machine_qc_audio_transports (compute/): primary/secondary ASR, TTS, fakes,

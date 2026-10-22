@@ -14,6 +14,21 @@ import subprocess
 import time
 
 SCHEMA_VERSION = 1
+# MFA's stock beam (10) / retry beam (40) fails with NoAlignmentsError on the
+# long, dense 180 s reference blocks this adapter feeds it (2026-10-21 episode:
+# a 506-word block had no successful path). MFA documents a larger beam as the
+# remedy; 100/400 aligned that block locally in 21.7 s with unchanged model,
+# dictionary and reference text. Advisory values from the acoustic model are
+# still used; this only widens the search. Both values are part of the identity.
+ALIGN_BEAM = 100
+ALIGN_RETRY_BEAM = 400
+# Multi-dot abbreviations whose final period is not a sentence end. Titles and
+# single-letter initials are handled by pattern in `_sentences`.
+ABBREVIATIONS = frozenset((
+    'a.d.', 'b.c.', 'b.c.e.', 'c.e.', 'u.s.', 'u.k.', 'u.n.', 'e.g.', 'i.e.',
+    'vs.', 'etc.', 'a.m.', 'p.m.', 'ph.d.', 'jr.', 'sr.', 'dr.', 'mr.', 'mrs.',
+    'ms.', 'st.', 'rev.', 'prof.', 'cf.',
+))
 
 
 class MFADeadlineReached(TimeoutError):
@@ -119,7 +134,12 @@ def _reference(text, spoken_forms=None):
 
 
 def _sentences(text):
-    """Split reference punctuation while protecting titles and name initials."""
+    """Split reference punctuation while protecting titles, initials and abbreviations.
+
+    A period inside a known abbreviation is not a sentence end. Without this the
+    2026-10-18 episode split "in A.D. 70" into "in A.D." plus a bare "70", and
+    the machine judge rejected both halves as untranslatable.
+    """
     start = 0
     for boundary in re.finditer(r'(?<=[.!?])\s+', text):
         preceding = text[:boundary.start()]
@@ -127,6 +147,8 @@ def _sentences(text):
         if re.fullmatch(r'(?:Dr|Mr|Mrs|Ms|St|Rev|Prof|Jr|Sr)\.', token, re.I):
             continue
         if re.fullmatch(r'[A-Z]\.', token):
+            continue
+        if token.lower() in ABBREVIATIONS:
             continue
         yield text[start:boundary.start()]
         start = boundary.end()
@@ -286,14 +308,37 @@ def preflight(mfa_executable, dictionary_path, acoustic_model, g2p_model=None, s
             'g2p_model': str(_local_file(g2p_model, 'MFA G2P model')) if g2p_model else None}
 
 
+# `--single_speaker` disables speaker adaptation, so MFA aligns every chunk on its own: a
+# chunk's raw output depends only on its audio span, reference words and models, never on
+# the other chunks in the corpus. That makes a per-chunk cache exact: a text correction in
+# one 180 s block re-aligns that block alone (2026-10-18 broadcast: five corrections, full
+# re-alignment each time). Jobs scale with the blocks actually aligned.
+MFA_MAX_JOBS = 8
+
+
+def _chunk_cache_entry(directory, identity):
+    key = hashlib.sha256(json.dumps(identity, sort_keys=True).encode()).hexdigest()
+    path = Path(directory) / f'{key}.json'
+    if not path.is_file():
+        return key, path, None
+    saved = json.loads(path.read_text())
+    if saved.get('identity') != identity or saved.get('rawSha256') != hashlib.sha256(
+            json.dumps(saved.get('raw'), sort_keys=True).encode()).hexdigest():
+        raise ValueError('MFA chunk cache entry identity or output changed')
+    return key, path, saved['raw']
+
+
 def align_reference_chunks(chunks, clip_path, outdir, *, mfa_executable,
-                           dictionary_path, acoustic_model, g2p_model=None, spoken_forms_path=None, deadline_monotonic=None):
+                           dictionary_path, acoustic_model, g2p_model=None, spoken_forms_path=None,
+                           deadline_monotonic=None, chunk_cache_dir=None):
     """Return original-punctuation sentences with absolute clip-relative MFA times.
 
     Models and dictionaries must be local files. Cache reuse requires exact source,
     text, config, executable/version and output hashes. Changed inputs use a fresh
     content-addressed run; corrupted cached outputs fail instead of being accepted.
-    Integer expansion is recorded as an unverified spoken-form assumption.
+    Integer expansion is recorded as an unverified spoken-form assumption. With a
+    `chunk_cache_dir`, blocks whose audio span, words and models already have a raw
+    alignment there are not sent to MFA again; the run's manifest records which.
     """
     deadline_timeout(60,deadline_monotonic)
     clip = _local_file(clip_path, 'Audio')
@@ -338,7 +383,8 @@ def align_reference_chunks(chunks, clip_path, outdir, *, mfa_executable,
                 'dictionarySha256': _sha(dictionary), 'acousticSha256': _sha(acoustic),
                 'g2pSha256': _sha(g2p) if g2p else None,
                 'spokenFormsSha256': _sha(spoken_path) if spoken_path else None,
-                'options': ['single_speaker', 'no_textgrid_cleanup', 'json', 'mono_16000_pcm16'],
+                'options': ['single_speaker', 'no_textgrid_cleanup', 'json', 'mono_16000_pcm16',
+                            f'beam_{ALIGN_BEAM}', f'retry_beam_{ALIGN_RETRY_BEAM}'],
                 'chunks': [{'id': c.get('id'), 'start': c['start'], 'end': c['end'],
                             'text': t, 'spokenWords': s, 'mapping': m} for c, t, s, m in prepared]}
     key = hashlib.sha256(json.dumps(identity, sort_keys=True).encode()).hexdigest()
@@ -356,14 +402,40 @@ def align_reference_chunks(chunks, clip_path, outdir, *, mfa_executable,
         for path in raw_paths:
             if not path.is_file() or manifest.get('outputHashes', {}).get(str(path.relative_to(run))) != _sha(path):
                 raise ValueError('MFA cached alignment output missing or changed')
-    else:
+    chunk_cache = {'directory': str(Path(chunk_cache_dir).resolve()) if chunk_cache_dir else None,
+                   'hits': [], 'misses': []}
+    if not manifest:
         # Failed/interrupted attempts are retained in logs but never treated as a cache hit.
         corpus = run / 'corpus' / 'speaker'
         corpus.mkdir(parents=True, exist_ok=True)
+        (run / 'aligned' / 'speaker').mkdir(parents=True, exist_ok=True)
         env['MFA_ROOT_DIR'] = str(run / 'runtime')
         lexicon = run / 'dictionary.dict'
         lexicon.write_bytes(dictionary.read_bytes())
-        vocabulary = {w for _, _, spoken, _ in prepared for w in spoken}
+        # A chunk's key carries its own words and mapping, not the spoken-forms file hash: a new
+        # mapping for a token in one block must not evict the other thirteen (2026-10-21 E3 measured
+        # 14 misses for a one-token change before this).
+        shared = {k: identity[k] for k in ('schemaVersion', 'audioSha256', 'mfa', 'dictionarySha256',
+                                          'acousticSha256', 'g2pSha256', 'options')}
+        cache_entries = {}
+        pending = []
+        for i, (chunk, text, spoken, mapping) in enumerate(prepared):
+            if chunk_cache_dir is None:
+                pending.append(i)
+                continue
+            chunk_identity = {**shared, 'start': chunk['start'], 'end': chunk['end'], 'text': text,
+                              'spokenWords': spoken, 'mapping': mapping}
+            key, path, raw = _chunk_cache_entry(chunk_cache_dir, chunk_identity)
+            cache_entries[i] = (key, path, chunk_identity)
+            if raw is None:
+                pending.append(i)
+            else:
+                raw_paths[i].write_text(json.dumps(raw, ensure_ascii=False))
+                chunk_cache['hits'].append({'id': chunk.get('id'), 'key': key})
+        for i in pending:
+            chunk_cache['misses'].append({'id': prepared[i][0].get('id'),
+                                          'key': cache_entries[i][0] if i in cache_entries else None})
+        vocabulary = {w for i in pending for w in prepared[i][2]}
         missing = sorted(vocabulary - _dictionary_words(lexicon))
         if missing:
             if not g2p:
@@ -377,7 +449,8 @@ def align_reference_chunks(chunks, clip_path, outdir, *, mfa_executable,
                 raise ValueError('G2P did not produce pronunciations for every missing word')
             with lexicon.open('a') as stream:
                 stream.write('\n' + candidate.read_text())
-        for i, (chunk, text, spoken, mapping) in enumerate(prepared):
+        for i in pending:
+            chunk, text, spoken, mapping = prepared[i]
             stem = corpus / f'chunk_{i:04d}'
             stem.with_suffix('.lab').write_text(' '.join(spoken) + '\n')
             duration = float(chunk['end']) - float(chunk['start'])
@@ -390,12 +463,22 @@ def align_reference_chunks(chunks, clip_path, outdir, *, mfa_executable,
                 actual = wav.getnframes() / wav.getframerate()
                 if abs(actual - duration) > .05 or wav.getnchannels() != 1 or wav.getframerate() != 16000:
                     raise ValueError('Decoded MFA audio is truncated or incompatible with requested chunk')
-        total_duration = sum(float(c['end']) - float(c['start']) for c, _, _, _ in prepared)
-        _run([executable, 'align', corpus.parent, lexicon, acoustic, run / 'aligned',
-              '--output_format', 'json', '--num_jobs', '2', '--single_speaker',
-              '--no_textgrid_cleanup', '--clean', '--overwrite'], env=env,
-             log=run / 'align.log', timeout=max(600, min(14400, int(total_duration * 6 + 300))),
-             deadline_monotonic=deadline_monotonic)
+        if pending:
+            total_duration = sum(float(prepared[i][0]['end']) - float(prepared[i][0]['start']) for i in pending)
+            _run([executable, 'align', corpus.parent, lexicon, acoustic, run / 'aligned',
+                  '--output_format', 'json', '--num_jobs', str(min(len(pending), MFA_MAX_JOBS)), '--single_speaker',
+                  '--no_textgrid_cleanup', '--clean', '--overwrite',
+                  '--beam', str(ALIGN_BEAM), '--retry_beam', str(ALIGN_RETRY_BEAM)], env=env,
+                 log=run / 'align.log', timeout=max(600, min(14400, int(total_duration * 6 + 300))),
+                 deadline_monotonic=deadline_monotonic)
+            for i in pending:
+                if i not in cache_entries or not raw_paths[i].is_file():
+                    continue
+                key, path, chunk_identity = cache_entries[i]
+                raw = json.loads(raw_paths[i].read_text())
+                path.parent.mkdir(parents=True, exist_ok=True)
+                _write(path, {'schemaVersion': SCHEMA_VERSION, 'identity': chunk_identity, 'raw': raw,
+                              'rawSha256': hashlib.sha256(json.dumps(raw, sort_keys=True).encode()).hexdigest()})
     segments = []
     normalization_events = []
     for path, (chunk, text, spoken, mapping) in zip(raw_paths, prepared):
@@ -413,6 +496,7 @@ def align_reference_chunks(chunks, clip_path, outdir, *, mfa_executable,
         _write(manifest_path, {'schemaVersion': SCHEMA_VERSION, 'identity': identity,
                               'outputHashes': {str(p.relative_to(run)): _sha(p) for p in raw_paths},
                               'dictionaryUsedSha256': _sha(run / 'dictionary.dict'),
+                              'chunkCache': chunk_cache,
                               'normalizationEvents': normalization_events,
                               'requires_operator_review': True,
                               'limitations': ['Times are forced-alignment estimates, not human verified.',

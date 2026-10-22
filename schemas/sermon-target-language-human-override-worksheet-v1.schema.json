@@ -1,0 +1,45 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.invalid/schemas/sermon-target-language-human-override-worksheet-v1.schema.json",
+  "title": "Source-bound human override worksheet for machine-rejected Layer 2 groups",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "decision", "targetLocale", "englishSourcePackageJsonSha256", "anchorManifestJsonSha256", "translationPolicySha256", "candidateJsonSha256", "groupOverrides", "disclosure"],
+  "properties": {
+    "schemaVersion": { "const": "sermon-target-language-human-override-worksheet-v1" },
+    "decision": { "const": "pending" },
+    "targetLocale": { "$ref": "#/$defs/targetLocale" },
+    "englishSourcePackageJsonSha256": { "$ref": "#/$defs/sha256" },
+    "anchorManifestJsonSha256": { "$ref": "#/$defs/sha256" },
+    "translationPolicySha256": { "$ref": "#/$defs/sha256" },
+    "candidateJsonSha256": { "$ref": "#/$defs/sha256" },
+    "groupOverrides": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/groupOverride" } },
+    "disclosure": { "const": "Human override records an exception; machine findings remain unchanged." }
+  },
+  "$defs": {
+    "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "targetLocale": { "type": "string", "pattern": "^(?!en(?:-|$))[a-z]{2,3}(?:-[A-Za-z0-9]{2,8})*$" },
+    "finding": {
+      "type": "object", "additionalProperties": false,
+      "required": ["gate", "checkId", "machineStatus"],
+      "properties": {
+        "gate": { "enum": ["semanticReview", "languageReview"] },
+        "checkId": { "type": "string", "minLength": 1 },
+        "machineStatus": { "type": "string", "minLength": 1 }
+      }
+    },
+    "groupOverride": {
+      "type": "object", "additionalProperties": false,
+      "required": ["translationGroupId", "sourceUnitIds", "targetText", "targetTextSha256", "machineFindings", "disposition", "rationale"],
+      "properties": {
+        "translationGroupId": { "type": "string", "minLength": 1 },
+        "sourceUnitIds": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 }, "uniqueItems": true },
+        "targetText": { "type": "string", "minLength": 1 },
+        "targetTextSha256": { "$ref": "#/$defs/sha256" },
+        "machineFindings": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/finding" } },
+        "disposition": { "enum": ["pending", "accepted_as_is", "deferred"] },
+        "rationale": { "type": ["string", "null"], "maxLength": 2000 }
+      }
+    }
+  }
+}

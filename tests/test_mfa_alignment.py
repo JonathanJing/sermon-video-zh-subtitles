@@ -74,6 +74,25 @@ class AlignmentTest(unittest.TestCase):
         self.assertGreater(number['start'], result[0]['end'])
         self.assertEqual(result[0]['timingQuality'], 'mfa_word_aligned')
 
+    def test_sentence_split_keeps_abbreviation_years_together(self):
+        text = 'The scroll is about A.D. 70 and the temple. Then he left.'
+        self.assertEqual(list(mfa._sentences(text)),
+                         ['The scroll is about A.D. 70 and the temple.', 'Then he left.'])
+
+    def test_align_widens_beam_beyond_mfa_stock_for_long_reference_blocks(self):
+        with patch.object(mfa.subprocess, 'run', side_effect=self.fake_run):
+            self.align()
+        command = [call for call in self.calls if call[1] == 'align'][0]
+        self.assertEqual(command[command.index('--beam') + 1], str(mfa.ALIGN_BEAM))
+        self.assertEqual(command[command.index('--retry_beam') + 1], str(mfa.ALIGN_RETRY_BEAM))
+        # Positional arguments must keep their slots: the remote adapter indexes them.
+        self.assertEqual(Path(command[0]).resolve(), Path(self.exe).resolve())
+        self.assertEqual(command[1], 'align')
+        self.assertTrue(command[2].endswith('corpus'))
+        self.assertEqual(Path(command[3]).name, 'dictionary.dict')
+        self.assertEqual(Path(command[4]).resolve(), Path(self.acoustic).resolve())
+        self.assertTrue(command[5].endswith('aligned'))
+
     def test_rejects_missing_changed_and_unknown_alignment(self):
         for corruption in ('missing', 'wrong', 'unknown'):
             with self.subTest(corruption=corruption):
@@ -96,6 +115,68 @@ class AlignmentTest(unittest.TestCase):
             self.acoustic.write_bytes(b'model')
             with self.assertRaisesRegex(ValueError, 'missing or changed'):
                 self.align()
+
+    def test_chunk_cache_realigns_only_the_changed_block(self):
+        cache = self.root / 'chunk-cache'
+        self.chunks = [{'id': 1, 'start': 0., 'end': 3., 'text': 'No. But I.'},
+                       {'id': 2, 'start': 5., 'end': 8., 'text': 'No. But I can’t 73.'}]
+        def align():
+            return mfa.align_reference_chunks(self.chunks, self.clip, self.root / 'out', mfa_executable=self.exe,
+                                             dictionary_path=self.dictionary, acoustic_model=self.acoustic,
+                                             chunk_cache_dir=cache)
+        with patch.object(mfa.subprocess, 'run', side_effect=self.fake_run):
+            first = align()
+            manifest = json.loads(Path(first[0]['mfaManifest']).read_text())
+            self.assertEqual([row['id'] for row in manifest['chunkCache']['misses']], [1, 2])
+            self.assertEqual(len(list(cache.glob('*.json'))), 2)
+            self.chunks[1]['text'] = 'No. But I can’t.'
+            second = align()
+        aligns = [c for c in self.calls if c[1] == 'align']
+        self.assertEqual(len(aligns), 2)
+        # The second MFA run received one block and one job; the first block replayed from the cache.
+        labs = sorted(Path(aligns[1][2]).rglob('*.lab'))
+        self.assertEqual([lab.name for lab in labs], ['chunk_0001.lab'])
+        self.assertEqual(aligns[1][aligns[1].index('--num_jobs') + 1], '1')
+        manifest = json.loads(Path(second[0]['mfaManifest']).read_text())
+        self.assertEqual([row['id'] for row in manifest['chunkCache']['hits']], [1])
+        self.assertEqual([row['id'] for row in manifest['chunkCache']['misses']], [2])
+        self.assertEqual([seg['text'] for seg in second][-1], 'But I can’t.')
+        self.assertEqual(len(list(cache.glob('*.json'))), 3)
+
+    def test_spoken_form_for_one_block_realigns_that_block_only(self):
+        cache = self.root / 'chunk-cache'
+        self.chunks = [{'id': 1, 'start': 0., 'end': 3., 'text': 'No. But I.'},
+                       {'id': 2, 'start': 5., 'end': 8., 'text': 'No. But I can’t 73.'}]
+        forms = self.root / 'forms.json'
+        def align(spoken):
+            return mfa.align_reference_chunks(self.chunks, self.clip, self.root / 'out', mfa_executable=self.exe,
+                                             dictionary_path=self.dictionary, acoustic_model=self.acoustic,
+                                             spoken_forms_path=spoken, chunk_cache_dir=cache)
+        with patch.object(mfa.subprocess, 'run', side_effect=self.fake_run):
+            align(None)
+            forms.write_text(json.dumps({'73.': ['seventy', 'three']}))
+            second = align(forms)
+        manifest = json.loads(Path(second[0]['mfaManifest']).read_text())
+        self.assertEqual([row['id'] for row in manifest['chunkCache']['hits']], [1])
+        self.assertEqual([row['id'] for row in manifest['chunkCache']['misses']], [2])
+
+    def test_chunk_cache_entry_is_bound_to_models_and_audio_and_rejects_tampering(self):
+        cache = self.root / 'chunk-cache'
+        kwargs = dict(mfa_executable=self.exe, dictionary_path=self.dictionary, acoustic_model=self.acoustic,
+                      chunk_cache_dir=cache)
+        with patch.object(mfa.subprocess, 'run', side_effect=self.fake_run):
+            mfa.align_reference_chunks(self.chunks, self.clip, self.root / 'out', **kwargs)
+            self.acoustic.write_bytes(b'different model')
+            mfa.align_reference_chunks(self.chunks, self.clip, self.root / 'out', **kwargs)
+            self.assertEqual(sum(c[1] == 'align' for c in self.calls), 2)
+            self.assertEqual(len(list(cache.glob('*.json'))), 2)
+            for entry in cache.glob('*.json'):
+                saved = json.loads(entry.read_text())
+                saved['raw']['tiers']['words']['entries'][0][2] = 'yes'
+                entry.write_text(json.dumps(saved))
+            self.acoustic.write_bytes(b'model')
+            with self.assertRaisesRegex(ValueError, 'chunk cache entry'):
+                mfa.align_reference_chunks(self.chunks, self.clip, self.root / 'out-2', **kwargs)
 
     def test_changed_reference_cannot_reuse_previous_alignment(self):
         with patch.object(mfa.subprocess, 'run', side_effect=self.fake_run):

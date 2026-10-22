@@ -29,6 +29,13 @@ ANCHOR_SCHEMA = ANCHOR_SCHEMA_V1
 SUPPORTED_ANCHOR_SCHEMAS = frozenset({ANCHOR_SCHEMA_V1, ANCHOR_SCHEMA_V2})
 UNIT_POLICY_V1 = "punctuation_then_pause_split_v1"
 UNIT_POLICY_V2 = "clause_stable_v2"
+# v3 splits exactly like v2; only the unit number changes. v2 numbered units in chunk order, so one
+# extra unit in a sentence renumbered every later unit in the chunk and, downstream, re-judged and
+# re-translated them (2026-10-21 E2: a 13-sentence change re-judged 43 of 119 batches). v3 numbers a
+# unit by its first word, which the frozen transcript fixes, so a unit's ID changes only when its
+# own span changes.
+UNIT_POLICY_V3 = "clause_stable_v3"
+CLAUSE_STABLE_POLICIES = frozenset({UNIT_POLICY_V2, UNIT_POLICY_V3})
 DRAFT_SCHEMA = "sermon-sentence-translation-draft-v1"
 REVIEW_SCHEMA = "sermon-sentence-translation-review-v1"
 CANDIDATE_SCHEMA = "sermon-sentence-interpretation-candidate-v1"
@@ -221,6 +228,17 @@ def _split_long_sentence(words: list[dict[str, Any]], *, max_seconds: float,
     """
     if words[-1]["end"] - words[0]["start"] <= max_seconds:
         return [words], False
+    # A comma inside an open quotation or with no audible pause is a weak
+    # boundary: the 2026-10-18 episode produced units like
+    # 'that's the most antiquated,' / 'outdated—' (0.09 s pause inside a quoted
+    # list) and 'yes,' / 'I am not a firm ...' (a denial split from its clause).
+    # Prefer audible pauses and strong punctuation; fall back to the old choice
+    # only when the long span has no better candidate.
+    quotes = [0]
+    for word in words:
+        text = str(word["text"])
+        delta = text.count('"') + text.count("\u201c") + text.count("\u201d")
+        quotes.append(quotes[-1] + delta)
     parts: list[list[dict[str, Any]]] = []
     cursor = 0
     unresolved = False
@@ -234,13 +252,23 @@ def _split_long_sentence(words: list[dict[str, Any]], *, max_seconds: float,
             gap = words[index + 1]["start"] - words[index]["end"]
             if duration < min_unit_seconds:
                 continue
-            if gap >= pause_seconds or BREAK_PUNCTUATION.search(words[index]["text"]):
-                candidates.append((index + 1, duration, gap))
-        within = [candidate for candidate in candidates if candidate[1] <= max_seconds]
-        if within:
-            split_at = within[-1][0]
+            punctuation = BREAK_PUNCTUATION.search(words[index]["text"])
+            audible = gap >= pause_seconds
+            if not (audible or punctuation):
+                continue
+            candidates.append({"index": index + 1, "duration": duration,
+                               "audible": audible,
+                               "strong": bool(re.search(r"[;:\u2014]", words[index]["text"])),
+                               "insideQuote": quotes[index + 1] % 2 == 1})
+        within = [candidate for candidate in candidates if candidate["duration"] <= max_seconds]
+        safe_within = [candidate for candidate in within
+                       if (candidate["audible"] or candidate["strong"]) and not candidate["insideQuote"]]
+        if safe_within:
+            split_at = safe_within[-1]["index"]
+        elif within:
+            split_at = within[-1]["index"]
         elif candidates:
-            split_at = candidates[0][0]
+            split_at = candidates[0]["index"]
         else:
             parts.append(words[cursor:])
             unresolved = True
@@ -271,10 +299,75 @@ def _clause_boundary_evidence(words: list[dict[str, Any]], index: int,
     }
 
 
+# Closed-class words that cannot end a translatable unit. A pause after one of them is
+# hesitation, not a clause boundary: the 2026-10-18 episode paused after "attacked by" and
+# after "confident that", and cutting there leaves the next unit without its head.
+UNIT_FINAL_FUNCTION_WORDS = frozenset("""
+a an the this these those my your his her its our their
+of to in for with by from at on into onto about as than through under over between among
+and or but nor yet because if when while although though whether that which who whom whose
+is are was were be been being am do does did have has had will would can could should shall may might must
+not i we they he she
+""".split())
+UNIT_FINAL_CONTRACTION = re.compile(r"^(?:who|that|which|there|here|it|he|she|they|we|you|i)['\u2019](?:s|re|ll|ve|d|m)$")
+# A comma after a filler, with nothing audible separating it from the clause, is not a boundary
+# ("I am not a firm, like, yes, | I'm 100% confident ..." turned a denial into a claim).
+FILLER_WORDS = frozenset({"yes", "yeah", "like", "well", "okay", "ok", "so", "um", "uh", "mean", "know", "right",
+                          "again", "actually", "really", "basically", "honestly"})
+DETERMINERS = frozenset("a an the this these those my your his her its our their some any each every".split())
+COPULAS = frozenset("is are was were be been being am".split())
+# Words that open a clause: a comma without a pause is admissible before one of them, never
+# in the middle of a noun list ("by Nero, | the Roman Empire" changed who attacked whom).
+CLAUSE_STARTERS = frozenset("""
+and but or so yet because then which who that there whether if when while as though although even
+where what how why whose unless until since
+in at after before now finally ultimately eventually today
+i you he she we they it this these those my your his her our their
+""".split())
+NEGATIONS = frozenset("not never no nor n't".split())
+
+
+def _boundary_word(text: str) -> str:
+    return re.sub(r"[^a-z'\u2019]+$", "", re.sub(r"^[^a-z]+", "", str(text).lower()))
+
+
 def _dependent_clause_boundary(words: list[dict[str, Any]], index: int) -> bool:
     """Reject pauses that leave a short grammatical dependency unresolved."""
     previous = re.sub(r"[^a-z]+$", "", str(words[index]["text"]).lower())
     next_word = re.sub(r"^[^a-z]+", "", str(words[index + 1]["text"]).lower())
+    boundary_word = _boundary_word(words[index]["text"])
+    if boundary_word in UNIT_FINAL_FUNCTION_WORDS or UNIT_FINAL_CONTRACTION.match(boundary_word):
+        return True
+    if index > 0:
+        # "the whole | sort of inter-advent age", "the different | images": a modifier cut from its
+        # head at a pause the transcript did not punctuate. With a comma after the word ("the
+        # occult, | whether it's aliens") the word closes its phrase and the boundary stands.
+        # "and, again, | put forth": a parenthetical filler inside a dependency.
+        before = _boundary_word(words[index - 1]["text"])
+        punctuated = bool(BREAK_PUNCTUATION.search(str(words[index]["text"])))
+        if (before in DETERMINERS and not punctuated) or (
+                boundary_word in FILLER_WORDS and before in UNIT_FINAL_FUNCTION_WORDS):
+            return True
+        # "some kind of real, concrete, | intensified period of time": a comma series of modifiers
+        # or list items continues past the pause unless a clause opener follows (2026-10-21 E2:
+        # the judge rejected this cut). A filler closing a parenthetical ("friends, again, | the
+        # lens") is not a series member.
+        following = _boundary_word(words[index + 1]["text"])
+        # "does not affirm a future tribulation, | or an exact individual beast": the disjunction is
+        # still inside the negation's scope, so the second object cannot be read on its own
+        # (2026-10-21 E2b, judge finding on chunk-0010-s002).
+        if following == "or" and any(
+                _boundary_word(w["text"]) in NEGATIONS or _boundary_word(w["text"]).endswith("n't")
+                for w in words[max(0, index - 8):index + 1]):
+            return True
+        if (punctuated and boundary_word not in FILLER_WORDS and following not in FILLER_WORDS
+                and following not in CLAUSE_STARTERS
+                and (str(words[index - 1]["text"]).endswith(",") or str(words[index + 1]["text"]).endswith(","))):
+            return True
+        # "is primarily, | if not exclusively actually, future": a hedging adverb right after the
+        # copula still awaits its complement (2026-10-21 v13, the one sentence the judge rejected).
+        if before in COPULAS and boundary_word.endswith("ly"):
+            return True
     if previous in {"on", "be"}:
         return True
     if previous == "there" and next_word in {"is", "are", "was", "were"}:
@@ -359,11 +452,18 @@ def _split_clause_stable(words: list[dict[str, Any]], *, max_seconds: float,
             if duration < min_unit_seconds or duration > max_seconds + 0.5:
                 raise ValueError(f"Boundary override lacks a safe clause split: {forced_ids}")
         for index in indexes:
+            word_id = words[index]["wordId"]
+            if word_id in accepted_dependencies:
+                # The operator named this boundary in acceptDependentBoundaryAfter,
+                # so it may be used even without punctuation or an audible pause.
+                # 2026-10-21: the only legal-looking boundary in
+                # chunk-0010-s002 cut "real, concrete" from its head; the clean
+                # one ("...period of time" | "where ...") had no pause at all.
+                continue
             gap = float(words[index + 1]["start"]) - float(words[index]["end"])
             if (not (gap >= pause_seconds or BREAK_PUNCTUATION.search(str(words[index]["text"])))
-                    or (_dependent_clause_boundary(words, index)
-                        and words[index]["wordId"] not in accepted_dependencies)):
-                raise ValueError(f"Boundary override lacks a safe clause split: {words[index]['wordId']}")
+                    or _dependent_clause_boundary(words, index)):
+                raise ValueError(f"Boundary override lacks a safe clause split: {word_id}")
         parts = [(words[start:end + 1], {**_clause_boundary_evidence(words, end, pause_seconds, max_seconds),
                   **({"operatorAcceptedDependency": True} if words[end]["wordId"] in accepted_dependencies else {})})
                  for start, end in zip(starts[:-1], ends[:-1])]
@@ -392,21 +492,49 @@ def _split_clause_stable(words: list[dict[str, Any]], *, max_seconds: float,
             }))
             break
 
+        # Candidate tiers, best first: punctuation with an audible pause or strong punctuation;
+        # a comma the speaker did not pause at, admitted only before a clause opener and never
+        # after a filler; last an audible pause with no punctuation, which is usually hesitation
+        # (2026-10-18: 52 of the 55 comma-only cuts passed the judge). Within the target the latest candidate of the
+        # best tier wins; beyond it the earliest, so a unit overruns the target by as little as
+        # possible. A span with no candidate stays whole and is reported for operator review
+        # rather than cut at a comma that only punctuation supports.
         safe_candidates: list[tuple[int, dict[str, Any]]] = []
+        tiers: list[tuple[int, int, bool, int]] = []  # (tier, index + 1, within target, candidate number)
         semantic_window_seconds = max_seconds * 1.5
+        long_pause_seconds = pause_seconds * 3
         for index in range(cursor, len(words) - 1):
             duration = float(words[index]["end"]) - float(words[cursor]["start"])
-            if duration < min_unit_seconds or duration > semantic_window_seconds:
+            text = str(words[index]["text"])
+            gap = float(words[index + 1]["start"]) - float(words[index]["end"])
+            punctuation = bool(BREAK_PUNCTUATION.search(text))
+            audible = gap >= pause_seconds
+            if duration > semantic_window_seconds or not (audible or punctuation):
+                continue
+            # A long pause after punctuation is a boundary even when the first unit is short
+            # ("Yeah, the timestamps, again, | you would say ..." paused 1.7 s after "again,").
+            if duration < min_unit_seconds and not (
+                    punctuation and gap >= long_pause_seconds
+                    and sum(_boundary_word(w["text"]) not in FILLER_WORDS for w in words[cursor:index + 1]) >= 2):
                 continue
             remaining_after_split = float(words[-1]["end"]) - float(words[index + 1]["start"])
-            if remaining_after_split < min_unit_seconds:
+            if remaining_after_split < min_unit_seconds or _dependent_clause_boundary(words, index):
                 continue
-            gap = float(words[index + 1]["start"]) - float(words[index]["end"])
-            if ((gap >= pause_seconds or BREAK_PUNCTUATION.search(str(words[index]["text"])))
-                    and not _dependent_clause_boundary(words, index)):
-                safe_candidates.append((index + 1, _clause_boundary_evidence(
-                    words[cursor:], index - cursor, pause_seconds, max_seconds,
-                )))
+            if (punctuation and audible) or re.search(r"[;:\u2014]", text):
+                tier = 0
+            elif punctuation:
+                if (_boundary_word(text) in FILLER_WORDS
+                        or _boundary_word(words[index + 1]["text"]) not in CLAUSE_STARTERS):
+                    continue
+                tier = 1
+            elif _boundary_word(words[index + 1]["text"]) in FILLER_WORDS:
+                continue  # a hesitation before a filler ("they view | really the first ...")
+            else:
+                tier = 2
+            tiers.append((tier, index + 1, duration <= max_seconds, len(safe_candidates)))
+            safe_candidates.append((index + 1, _clause_boundary_evidence(
+                words[cursor:], index - cursor, pause_seconds, max_seconds,
+            )))
         if not safe_candidates:
             parts.append((words[cursor:], {
                 "kind": "source_sentence_end",
@@ -417,13 +545,19 @@ def _split_clause_stable(words: list[dict[str, Any]], *, max_seconds: float,
             }))
             unresolved = True
             break
-        punctuation_candidates = [candidate for candidate in safe_candidates
-                                  if candidate[1]["punctuation"] is not None]
-        punctuation_within_target = [candidate for candidate in punctuation_candidates
-                                     if candidate[1]["withinTargetSeconds"]]
-        split_at, evidence = (
-            punctuation_within_target or punctuation_candidates or safe_candidates
-        )[-1]
+        chosen = None
+        for tier in (0, 1, 2):
+            within = [item for item in tiers if item[0] == tier and item[2]]
+            if within:
+                chosen = within[-1][3]
+                break
+        if chosen is None:
+            for tier in (0, 1, 2):
+                beyond = [item for item in tiers if item[0] == tier and not item[2]]
+                if beyond:
+                    chosen = beyond[0][3]
+                    break
+        split_at, evidence = safe_candidates[chosen]
         parts.append((words[cursor:split_at], evidence))
         cursor = split_at
     return parts, unresolved
@@ -444,9 +578,9 @@ def build_anchor_manifest(segments: list[dict[str, Any]], *, source_path: Path,
     _require(source_path.is_file(), "MFA segment source file is missing")
     _require(json.loads(source_path.read_text(encoding="utf-8")) == segments,
              "MFA segment data differs from the bound source file")
-    _require(unit_policy in {UNIT_POLICY_V1, UNIT_POLICY_V2}, "Unsupported unit policy")
+    _require(unit_policy in {UNIT_POLICY_V1, *CLAUSE_STABLE_POLICIES}, "Unsupported unit policy")
     if max_unit_seconds is None:
-        max_unit_seconds = 8.0 if unit_policy == UNIT_POLICY_V2 else 12.0
+        max_unit_seconds = 8.0 if unit_policy in CLAUSE_STABLE_POLICIES else 12.0
     for name, value in (
         ("max_unit_seconds", max_unit_seconds),
         ("min_unit_seconds", min_unit_seconds),
@@ -467,8 +601,8 @@ def build_anchor_manifest(segments: list[dict[str, Any]], *, source_path: Path,
                  for chunk, values in offsets.items()), "Invalid stable identity offsets")
     _require(not allow_out_of_scope_overrides or identity_offsets is not None,
              "Out-of-scope boundary overrides require stable identity offsets")
-    _require(unit_policy == UNIT_POLICY_V2 or not overrides,
-             "Boundary overrides require clause_stable_v2")
+    _require(unit_policy in CLAUSE_STABLE_POLICIES or not overrides,
+             "Boundary overrides require a clause-stable unit policy")
     def _override_ids(value: Any) -> bool:
         return isinstance(value, list) and bool(value) and all(isinstance(item, str) and item for item in value)
     _require(all(isinstance(key, str) and key and (
@@ -515,7 +649,7 @@ def build_anchor_manifest(segments: list[dict[str, Any]], *, source_path: Path,
         if previous_word_end is not None and words[0]["start"] < previous_word_end - 0.001:
             issues.append({"type": "non_monotonic_segment_order", "sourceSentenceId": sentence_id})
         previous_word_end = words[-1]["end"]
-        if unit_policy == UNIT_POLICY_V2:
+        if unit_policy in CLAUSE_STABLE_POLICIES:
             for word in words:
                 word_duration = float(word["end"]) - float(word["start"])
                 if word_duration > word_duration_outlier_seconds:
@@ -549,7 +683,11 @@ def build_anchor_manifest(segments: list[dict[str, Any]], *, source_path: Path,
                      else "long_sentence_pause_clause")
             chunk_unit_counts[chunk_id] = chunk_unit_counts.get(
                 chunk_id, offsets.get(chunk_id, {}).get("unit", 0)) + 1
-            unit_id = f"{chunk_id}-u{chunk_unit_counts[chunk_id]:03d}"
+            if unit_policy == UNIT_POLICY_V3:
+                first_number = re.fullmatch(r".+-w(\d+)[ab]?", str(part[0]["wordId"])).group(1)
+                unit_id = f"{chunk_id}-u{int(first_number):04d}"
+            else:
+                unit_id = f"{chunk_id}-u{chunk_unit_counts[chunk_id]:03d}"
             boundary = {
                 "basis": basis,
                 "humanReview": "pending",
@@ -575,14 +713,14 @@ def build_anchor_manifest(segments: list[dict[str, Any]], *, source_path: Path,
             unresolved_part = parts_with_evidence[-1][0]
             issue = {
                 "type": ("clause_unit_exceeds_target_without_safe_boundary"
-                         if unit_policy == UNIT_POLICY_V2
+                         if unit_policy in CLAUSE_STABLE_POLICIES
                          else "long_sentence_without_safe_pause_split"),
                 "sourceSentenceId": sentence_id,
                 "durationSeconds": round(
                     float(unresolved_part[-1]["end"]) - float(unresolved_part[0]["start"]), 6,
                 ),
             }
-            if unit_policy == UNIT_POLICY_V2:
+            if unit_policy in CLAUSE_STABLE_POLICIES:
                 issue.update({
                     "maximumSeconds": max_unit_seconds,
                     "sourceWordIds": [word["wordId"] for word in unresolved_part],
@@ -608,7 +746,7 @@ def build_anchor_manifest(segments: list[dict[str, Any]], *, source_path: Path,
     for index, unit in enumerate(units):
         next_start = units[index + 1]["start"] if index + 1 < len(units) else unit["end"]
         unit["boundary"]["pauseAfterSeconds"] = round(max(0.0, next_start - unit["end"]), 6)
-        if (unit_policy == UNIT_POLICY_V2
+        if (unit_policy in CLAUSE_STABLE_POLICIES
                 and unit["boundary"]["splitEvidence"]["kind"] == "source_sentence_end"):
             unit["boundary"]["splitEvidence"]["pauseSeconds"] = unit["boundary"]["pauseAfterSeconds"]
 
@@ -625,7 +763,7 @@ def build_anchor_manifest(segments: list[dict[str, Any]], *, source_path: Path,
         })
 
     return {
-        "schemaVersion": ANCHOR_SCHEMA_V2 if unit_policy == UNIT_POLICY_V2 else ANCHOR_SCHEMA_V1,
+        "schemaVersion": ANCHOR_SCHEMA_V2 if unit_policy in CLAUSE_STABLE_POLICIES else ANCHOR_SCHEMA_V1,
         "status": "machine_anchor_candidate_requires_review" if units else "invalid_anchor_manifest",
         "releaseEligible": False,
         "input": {
@@ -640,7 +778,7 @@ def build_anchor_manifest(segments: list[dict[str, Any]], *, source_path: Path,
             "minUnitSeconds": min_unit_seconds,
             "internalPauseSeconds": internal_pause_seconds,
             **({"wordDurationOutlierSeconds": word_duration_outlier_seconds}
-               if unit_policy == UNIT_POLICY_V2 else {}),
+               if unit_policy in CLAUSE_STABLE_POLICIES else {}),
             **({"boundaryOverrides": dict(sorted(boundary_overrides.items()))}
                if boundary_overrides else {}),
             "interpretationSchedule": "rolling_interpreter_v1",
@@ -990,7 +1128,7 @@ def main() -> int:
     prepare.add_argument("--inter-utterance-gap-seconds", type=float, default=0.12)
     prepare.add_argument("--max-end-lag-seconds", type=float, default=8.0)
     prepare.add_argument(
-        "--unit-policy", choices=(UNIT_POLICY_V1, UNIT_POLICY_V2), default=UNIT_POLICY_V1,
+        "--unit-policy", choices=(UNIT_POLICY_V1, UNIT_POLICY_V2, UNIT_POLICY_V3), default=UNIT_POLICY_V1,
     )
     prepare.add_argument("--word-duration-outlier-seconds", type=float, default=2.5)
     prepare_review = sub.add_parser("prepare-review", help="Bind a translation draft into an independent review request")

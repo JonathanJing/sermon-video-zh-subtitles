@@ -27,7 +27,10 @@ final class BetaNotificationUITests: XCTestCase {
         XCTAssertTrue(app.buttons["beta-notification-permission"].isEnabled)
         toggle.coordinate(withNormalizedOffset: CGVector(dx: 0.92, dy: 0.5)).tap()
         XCTAssertFalse(app.buttons["beta-notification-permission"].isEnabled)
-        XCTAssertTrue(app.staticTexts["beta-notification-status"].label.contains("已退出"))
+        let status = app.staticTexts["beta-notification-status"]
+        if !status.exists { app.swipeUp() }
+        XCTAssertTrue(status.waitForExistence(timeout: 5))
+        XCTAssertTrue(status.label.contains("已退出"))
         let shot = XCTAttachment(screenshot: app.screenshot())
         shot.name = "beta-notifications-opt-out"
         shot.lifetime = .keepAlways
@@ -82,6 +85,7 @@ final class BetaNotificationUITests: XCTestCase {
         expectation(for: authorized, evaluatedWith: permissionStatus)
         waitForExpectations(timeout: 8)
         let preview = app.buttons["beta-notification-preview"]
+        if !preview.exists { app.swipeUp() }
         XCTAssertTrue(preview.waitForExistence(timeout: 5))
         if !preview.isHittable { app.swipeUp() }
         preview.tap()

@@ -213,20 +213,20 @@
         "checkpointRef": "speaker-voice://qwen3-tts-12hz-1.7b-base/john_thomas/3f722b17b8e204e60d376fc08ef631b9d55a6a1eb02c106d612bf12b5d855c8c",
         "checkpointSha256": "3f722b17b8e204e60d376fc08ef631b9d55a6a1eb02c106d612bf12b5d855c8c",
         "trainingStatus": "training_smoke_completed",
-        "trainingReceipt": "artifacts/dgx-spark/john-thomas-voice-20261021/training-report.json"
+        "trainingReceipt": "docs/reports/runs/20261021-john-thomas-voice/2026-10-21-john-thomas-voice/training-receipt.json"
       },
       "authorization": {
         "status": "authorized",
-        "purposes": ["chinese_dubbing", "multilingual_voice_demo", "multilingual_dubbing"],
+        "purposes": ["chinese_dubbing", "multilingual_dubbing"],
         "evidence": [
-          "experiments/sermon-dubbing-poc/reviews/voice-authorization-2026-10-22-john-thomas.json"
+          "experiments/sermon-dubbing-poc/reviews/speaker-voice-acceptance-2026-10-21-john-thomas.json",
+          "docs/reports/runs/20261021-john-thomas-voice/2026-10-21-john-thomas-voice/decisions.ndjson"
         ]
       },
       "localeCapabilities": [
-        {"targetLocale": "zh-Hans", "modelLanguage": "Chinese", "status": "human_reviewed", "demoStatus": "human_reviewed", "reviewEvidence": ["experiments/sermon-dubbing-poc/reviews/voice-authorization-2026-10-22-john-thomas.json", "artifacts/dgx-spark/john-thomas-voice-20261021/probe/asr-screening.json"]},
-        {"targetLocale": "ko", "modelLanguage": "Korean", "status": "human_reviewed", "demoStatus": "human_reviewed", "reviewEvidence": ["experiments/sermon-dubbing-poc/reviews/voice-authorization-2026-10-22-john-thomas.json", "artifacts/dgx-spark/john-thomas-voice-20261021/probe/asr-screening.json"]},
-        {"targetLocale": "es", "modelLanguage": "Spanish", "status": "human_reviewed", "demoStatus": "human_reviewed", "reviewEvidence": ["experiments/sermon-dubbing-poc/reviews/voice-authorization-2026-10-22-john-thomas.json", "artifacts/dgx-spark/john-thomas-voice-20261021/probe/asr-screening.json"]},
-        {"targetLocale": "vi", "modelLanguage": "Vietnamese", "status": "unsupported", "demoStatus": "not_generated", "reviewEvidence": []}
+        {"targetLocale": "zh-Hans", "modelLanguage": "Chinese", "status": "human_reviewed", "demoStatus": "human_reviewed", "reviewEvidence": ["experiments/sermon-dubbing-poc/reviews/speaker-voice-acceptance-2026-10-21-john-thomas.json"]},
+        {"targetLocale": "ko", "modelLanguage": "Korean", "status": "human_reviewed", "demoStatus": "human_reviewed", "reviewEvidence": ["experiments/sermon-dubbing-poc/reviews/speaker-voice-acceptance-2026-10-21-john-thomas.json"]},
+        {"targetLocale": "es", "modelLanguage": "Spanish", "status": "human_reviewed", "demoStatus": "human_reviewed", "reviewEvidence": ["experiments/sermon-dubbing-poc/reviews/speaker-voice-acceptance-2026-10-21-john-thomas.json"]}
       ]
     }
   ]

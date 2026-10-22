@@ -20,7 +20,8 @@
       "enum": [
         "translation_draft",
         "machine_review_pass_human_review_pending",
-        "human_translation_approved"
+        "human_translation_approved",
+        "human_override_approved"
       ]
     },
     "releaseEligible": { "const": false },

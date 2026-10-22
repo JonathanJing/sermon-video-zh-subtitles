@@ -1,0 +1,48 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.invalid/schemas/sermon-target-language-human-override-receipt-v1.schema.json",
+  "title": "Versioned source-bound human override receipt for Layer 2",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "decision", "targetLocale", "englishSourcePackageJsonSha256", "anchorManifestJsonSha256", "translationPolicySha256", "candidateJsonSha256", "reviewer", "reviewedAt", "groupOverrides", "machineEvidenceChanged", "releaseEligible", "disclosure"],
+  "properties": {
+    "schemaVersion": { "const": "sermon-target-language-human-override-receipt-v1" },
+    "decision": { "enum": ["approved_with_exceptions", "partially_deferred"] },
+    "targetLocale": { "$ref": "#/$defs/targetLocale" },
+    "englishSourcePackageJsonSha256": { "$ref": "#/$defs/sha256" },
+    "anchorManifestJsonSha256": { "$ref": "#/$defs/sha256" },
+    "translationPolicySha256": { "$ref": "#/$defs/sha256" },
+    "candidateJsonSha256": { "$ref": "#/$defs/sha256" },
+    "reviewer": { "type": "string", "minLength": 1 },
+    "reviewedAt": { "type": "string", "format": "date-time" },
+    "groupOverrides": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/groupOverride" } },
+    "machineEvidenceChanged": { "const": false },
+    "releaseEligible": { "const": false },
+    "disclosure": { "const": "This receipt does not turn a machine failure into a pass or authorize Layer 3." }
+  },
+  "$defs": {
+    "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "targetLocale": { "type": "string", "pattern": "^(?!en(?:-|$))[a-z]{2,3}(?:-[A-Za-z0-9]{2,8})*$" },
+    "finding": {
+      "type": "object", "additionalProperties": false,
+      "required": ["gate", "checkId", "machineStatus"],
+      "properties": {
+        "gate": { "enum": ["semanticReview", "languageReview"] },
+        "checkId": { "type": "string", "minLength": 1 },
+        "machineStatus": { "type": "string", "minLength": 1 }
+      }
+    },
+    "groupOverride": {
+      "type": "object", "additionalProperties": false,
+      "required": ["translationGroupId", "sourceUnitIds", "targetTextSha256", "machineFindings", "disposition", "rationale"],
+      "properties": {
+        "translationGroupId": { "type": "string", "minLength": 1 },
+        "sourceUnitIds": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 }, "uniqueItems": true },
+        "targetTextSha256": { "$ref": "#/$defs/sha256" },
+        "machineFindings": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/finding" } },
+        "disposition": { "enum": ["accepted_as_is", "deferred"] },
+        "rationale": { "type": "string", "minLength": 1, "maxLength": 2000 }
+      }
+    }
+  }
+}

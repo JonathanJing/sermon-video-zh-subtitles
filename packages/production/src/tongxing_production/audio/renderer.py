@@ -1601,7 +1601,8 @@ def main(argv=None) -> None:
     for name in ("source", "anchor", "candidate", "job", "adapter", "policy"):
         parser.add_argument(f"--{name}", type=Path, required=True)
     parser.add_argument("--strict-rubric", type=Path, help="Explicit frozen rubric for strict-v3 policy validation")
-    parser.add_argument("--human-review-receipt", dest="human_receipt", type=Path, required=True)
+    parser.add_argument("--human-review-receipt", "--human-override-receipt",
+                        dest="human_receipt", type=Path, required=True)
     parser.add_argument("--speaker-registry", dest="registry", type=Path, required=True)
     authorization = parser.add_mutually_exclusive_group(required=True)
     authorization.add_argument("--clip-voice-authorization", dest="clip_voice_authorization", type=Path)

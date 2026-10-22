@@ -22,7 +22,7 @@
       "type": "object",
       "required": ["unitPolicy", "maxUnitSeconds", "minUnitSeconds", "internalPauseSeconds", "wordDurationOutlierSeconds", "interpretationSchedule", "reactionLagSeconds", "interUtteranceGapSeconds", "maxEndLagSeconds", "audioRatePolicy"],
       "properties": {
-        "unitPolicy": { "const": "clause_stable_v2" },
+        "unitPolicy": { "enum": ["clause_stable_v2", "clause_stable_v3"] },
         "maxUnitSeconds": { "type": "number", "exclusiveMinimum": 0 },
         "minUnitSeconds": { "type": "number", "exclusiveMinimum": 0 },
         "internalPauseSeconds": { "type": "number", "minimum": 0 },
