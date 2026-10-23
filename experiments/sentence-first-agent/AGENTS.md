@@ -32,6 +32,10 @@
 | `merge_track.py`、`asr_check.py score` | 本机 | 由 finish_run.py 调用 |
 | `review_sheets.py` | 本机 | 每种语言一张人工审核表（CSV），标出要重点听的句子 |
 | `publish_podcast_page.py` | 本机 | 正式页面发布驱动；页面信息是文件顶部的常量 |
+| `srt_normalize.py` | 本机 | 没有锚点清单时从滚动 SRT 建句表；去重、内插、清洗已核实名称、强制单调不重叠，写验证报告 |
+| `preflight.py` | 本机 | 开工/发布前检查 run、`speakerId→speakerKey`、Registry 用途/能力、英文包证据路径、Spark、Firebase |
+| `review_player.py` | 本机 | 逐句听审 HTML：按句播放、标记、跳转、逐句结论导出 |
+| `repair_sentence.py` | 本机 + Spark | 按 `tts/tts-batches.jsonl` 重配一句所在的 batch 窗口；`--single` 用 batch 1 |
 
 ## 目录
 
@@ -48,7 +52,7 @@ artifacts/sentence-first-agent/<run>/
   translations.jsonl  每句一行：id, locale, target, reviewNote
   review.json         复核修订、备注、口播读法、讲员声音
   speech.jsonl        每句一行：id, spokenText, language, speaker, hint, budgetSeconds, estimatedSeconds
-  tts/                每句配音；tts-log.jsonl 记时长和墙钟
+  tts/                每句配音；tts-log.jsonl 记时长和墙钟，tts-batches.jsonl 记每个批窗口的 ids/seed
   asr.jsonl           回转写；asr-report.json 是打分结果
   track.wav           合并音轨；schedule.json 记每句计划起点、实际起点、落后
   dub.mp4             视频 + 配音；dub-preview-640.mp4 是手机预览
@@ -68,6 +72,8 @@ artifacts/sentence-first-agent/<run>/
 2. **跟不跟视频同步。** 不同步：独立音轨，自然语速，不精简。要同步：第 5 步按 `budgetSeconds` 精简口播稿，并请用户认可精简后的稿子（对谈通常要删约四分之一）。
 3. **发不发正式页面。** 要发就是 `human_reviewed`：用户要听完每条整轨（时长约为原片的 1.25–1.3 倍）并审译文，先把这个工作量告诉用户。页面标题、类别小标题、讲员栏一起问。发布的页面都带英文对照（字幕和全文下的英文），不需要问；先确认正式 Layer 1 的英文来源包已经人工批准，没批准就先补英文审核，否则第 10 步的英文对照会被拒。
 
+开工前先跑一次 `preflight.py --run $RUN`（有英文包时加 `--english-package <layer1-srt/english-source.json>`）：它检查 run 文件、`speakerId→speakerKey`、Registry 用途与语言能力、英文包证据是否能解析。退出码非 0 先修，不要带着失败进 TTS 或发布。
+
 ### 1 开自己的 Spark 独占会话
 
 1. 用会话工具（`packages/production/src/tongxing_production/compute/spark_exclusive_session.py`，`--help` 看参数）的 `status` 看有没有别人的会话；有就问用户，不要收尾别人的会话。
@@ -79,7 +85,13 @@ artifacts/sentence-first-agent/<run>/
 python3 $EXP/prepare_clip.py --anchor <anchor-manifest.json> --media <video> --window-start <窗口起点秒> --units <LO:HI> --run $RUN --title "<一行说明>"
 ```
 
-锚点清单（`sermon-sentence-anchor-manifest-v2`，时间相对批准窗口）取正式 Layer 1 已有的那一份。`--units` 是锚点单元下标，两端都含；整期就是全部单元。分句沿用锚点单元。没有锚点清单时，按 `sermon-mfa-word-alignment` skill 拿词时间，存成 `[{"text","start","end"}]`，再用 `split_sentences.py`、`slice_sentences.py`，并手写 clip.json。代理读一遍句表，断得不对就改 `sentences.jsonl`，在 `run.md` 记原因。改句界时，每个锚点单元仍要按原顺序恰好出现一次（`sourceUnitId`），不改单元里的英文：App 的英文对照逐单元取自正式英文来源包，覆盖不全就整页没有英文。
+锚点清单（`sermon-sentence-anchor-manifest-v2`，时间相对批准窗口）取正式 Layer 1 已有的那一份。`--units` 是锚点单元下标，两端都含；整期就是全部单元。分句沿用锚点单元。没有锚点清单时，按 `sermon-mfa-word-alignment` skill 拿词时间，存成 `[{"text","start","end"}]`，再用 `split_sentences.py`、`slice_sentences.py`，并手写 clip.json。只有滚动 SRT、没有锚点清单时，也可以先用 `srt_normalize.py`：
+
+```bash
+python3 $EXP/srt_normalize.py --srt <episode.srt> --out <layer1-srt> --media <video> --source-url <url> --date <date>
+```
+
+它去重、按 cue 内插、清洗已核实的名字、强制单调不重叠，写 `srt-normalization-report.json` 和 `anchor-manifest.json`；先看 `rawIssues` 与 `issues` 都为 0 再继续。它仍是时间近似，不是 MFA，英文仍要人审。代理读一遍句表，断得不对就改 `sentences.jsonl`，在 `run.md` 记原因。改句界时，每个锚点单元仍要按原顺序恰好出现一次（`sourceUnitId`），不改单元里的英文：App 的英文对照逐单元取自正式英文来源包，覆盖不全就整页没有英文。
 
 ### 3 双人：定讲员，用户确认后再往下
 
@@ -142,10 +154,10 @@ scp $RUN/speech.jsonl SPARK:sentence-first-agent/<run>/
 会话一次只接纳一个运行中的任务，所以所有语言、所有讲员排成一条队列，作为本机后台任务运行（不要在远端用 `nohup … &`）：
 
 ```bash
-python3 $EXP/spark_queue.py --session <session> --owner sentence-first-agent --remote-tools /home/achillesjing/sentence-first-agent/tools --locale zh-Hans=<Spark 上的 zh run> --locale ko=<Spark 上的 ko run> --voice <speaker key>=<checkpoint> [--voice <第二位讲员>=<checkpoint>]
+python3 $EXP/spark_queue.py --session <session> --owner sentence-first-agent --remote-tools /home/achillesjing/sentence-first-agent/tools --locale zh-Hans=<Spark 上的 zh run> --locale ko=<Spark 上的 ko run> --voice <speaker key>=<checkpoint> [--voice <第二位讲员>=<checkpoint>] --batch-size 8
 ```
 
-每种语言每位讲员一个 TTS 任务，然后一个回转写任务。逐句合成（batch 1），不拉伸、不变速，约 1.35 倍实时；改批量要先问用户。中途失败时队列停下并打印怎么续跑；已完成的句子和回转写行会跳过，重跑队列只补缺的。登记的容器不带 `--rm`，会话结束后再删。
+每种语言每位讲员一个 TTS 任务，然后一个回转写任务。整期合成用 batch 8（2026-10-23 实测 es 整体 2.68×、batch 段 3.87×），不拉伸、不变速；batch>1 的批次成员共享声音身份，改一句按第 9 步重配它的窗口。改批量要先问用户。中途失败时队列停下并打印怎么续跑；已完成的句子和回转写行会跳过，重跑队列只补缺的。登记的容器不带 `--rm`，会话结束后再删。
 
 ### 7 每种语言完成就收尾（本机）
 
@@ -163,15 +175,31 @@ python3 $EXP/finish_run.py --run $RUN --remote SPARK:sentence-first-agent/<run> 
 python3 $EXP/review_sheets.py --out <审核目录> --window-start <窗口起点秒> --run <locale>=$RUN [--doubt doubts.json]
 ```
 
-一种语言收尾后就把整轨和审核表发给用户，用户听这一条时下一种语言还在配。`--doubt` 传翻译时发现的可疑英文源句（`{"s0043": "原因"}`）。回转写的同音字差异（它/他、再/在）不算问题；人名、数字、否定词不一致要人听；分数只是提示，不是听审。用户的结论写成审核收据，放在审核目录，并记进 `run.md`。
+一种语言收尾后就把整轨和审核表发给用户，并生成逐句播放器（音频放在审核目录）：
+
+```bash
+python3 $EXP/review_player.py --run $RUN --audio <审核目录>/<locale>.mp3 --out <审核目录>/review-player.html
+python3 -m http.server -d <审核目录> 8765
+```
+
+播放器按句播放合并音轨，标出 ASR <0.85、讲员存疑、复核修订和备注；逐句写结论，导出的 JSON 可作为审核收据附件。整轨 MP3 仍是给用户完整听一遍的版本。
+
+用户听这一条时下一种语言还在配。`--doubt` 传翻译时发现的可疑英文源句（`{"s0043": "原因"}`）。回转写的同音字差异（它/他、再/在）不算问题；人名、数字、否定词不一致要人听；分数只是提示，不是听审。用户的结论写成审核收据，放在审核目录，并记进 `run.md`。
 
 ### 9 改句
 
-改 `translations.jsonl` 或 `review.json` 里那一行，重跑第 5 步，删掉 Spark 上该句的 `tts/<id>.wav` 和 `asr.jsonl` 里那一行，再跑第 6、7 步，只重做这几句。改过的句子请用户再听。
+改 `translations.jsonl` 或 `review.json` 里那一行，重跑第 5 步，再按批窗口重配：
+
+```bash
+python3 $EXP/repair_sentence.py --run $RUN --id s0123 --remote SPARK:<run> --session <session> --locale <locale> \
+  --voice <speaker key>=<checkpoint> [--voice <第二位讲员>=<checkpoint>] [--single] --apply
+```
+
+它从 `tts/tts-batches.jsonl` 找到该句所在的窗口（默认 8 句），删掉窗口的 wav、上传当前 speech 与 ids，用 `spark_session_job.py` 重配整个窗口；`--single` 只重配这一句（batch 1，接受声音身份例外）。之后跑第 7、8 步（`finish_run.py` 与 `review_player.py`），把窗口/这一句请用户再听。没有 `tts-batches.jsonl` 时先 `finish_run.py` 拉回 tts 目录。
 
 ### 10 发布到正式页面
 
-只在用户审核通过并要求发布时做。复制一份 `publish_podcast_page.py`，改顶部常量（pageId、语言、run 目录、窗口、标题、类别、讲员、来源、日期），不要改已发布页面那一份的常量。顺序固定，每步一个子命令：
+只在用户审核通过并要求发布时做。先跑 `preflight.py --run $RUN --english-package <layer1-srt/english-source.json> --firebase`：英文包证据路径必须能解析（相对路径按仓库根解析），否则第 7 步的英文对照会失败。复制一份 `publish_podcast_page.py`，改顶部常量（pageId、语言、run 目录、窗口、标题、类别、讲员、来源、日期），不要改已发布页面那一份的常量。顺序固定，每步一个子命令：
 
 1. `assets`：生成每种语言的页面、文稿、字幕、MP3 和 release 模板；要求审核收据为 `approved`。文稿 `durationSeconds` 取窗口终点的媒体时间，并逐句跑与 iOS `validateCues` 相同的检查。
 2. `baseline`：取线上完整快照。线上 v4/v3 和 v5 的投影只在页面默认语言上不同时，`stage1` 按 v5 重新投影并记下改了哪几页；其他差异一律拒绝。
@@ -193,4 +221,4 @@ python3 $EXP/review_sheets.py --out <审核目录> --window-start <窗口起点�
 
 ## 完成的样子
 
-每种语言的 `run.md` 能让另一个人复现：来源、窗口、模型与 checkpoint、每步的决定、改过哪些句、用户结论、每步用时。审核收据在审核目录；音频留在本机；发布了的话，报告里写明线上版本号和哪些检查没做。发布的页面要同时满足：每种语言在正式版 App 的解码规则下都能显示（固定路径、文稿时间），英文对照已上线且每一句都有英文。缺英文对照不算发布完成。
+每种语言的 `run.md` 能让另一个人复现：来源、窗口、模型与 checkpoint、每步的决定、改过哪些句、用户结论、每步用时。审核收据在审核目录；音频留在本机；发布了的话，报告里写明线上版本号和哪些检查没做。发布的页面要同时满足：每种语言在正式版 App 的解码规则下都能显示（固定路径、文稿时间），英文对照已上线且每一句都有英文。缺英文对照不算发布完成。整期用 batch 8；改句按窗口重配；开工与发布前 `preflight.py` 通过；审核用 `review_player.py`。

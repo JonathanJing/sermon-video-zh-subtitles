@@ -25,7 +25,7 @@ SPEECH_RUNTIME=${SPEECH_RUNTIME:-/home/achillesjing/sermon-speech-runtime}
 ASR_SNAPSHOT=${ASR_SNAPSHOT:-model-cache/hub/models--Qwen--Qwen3-ASR-0.6B/snapshots/5eb144179a02acc5e5ba31e748d22b0cf3e303b0}
 TOOLS=$(cd "$(dirname "$0")" && pwd)
 
-WORK="" LOCALE="" CHECKPOINT="" STEPS="tts,asr" SEED=7 DRY=0 SPEAKER="" BATCH=1
+WORK="" LOCALE="" CHECKPOINT="" STEPS="tts,asr" SEED=7 DRY=0 SPEAKER="" BATCH=1 IDS=""
 SESSION_LABEL="" OWNER_LABEL="" JOB_LABEL="" CID_PREFIX=""
 while [ $# -gt 0 ]; do
   case "$1" in
@@ -41,6 +41,7 @@ while [ $# -gt 0 ]; do
     --steps) STEPS=$2; shift 2 ;;
     --seed) SEED=$2; shift 2 ;;
     --batch-size) BATCH=$2; shift 2 ;;
+    --only-ids-file) IDS=$2; shift 2 ;;
     --dry-run) DRY=1; shift ;;
     -h|--help) sed -n '2,17p' "$0"; exit 0 ;;
     *) echo "unknown argument: $1" >&2; exit 2 ;;
@@ -93,11 +94,13 @@ if [[ ",$STEPS," == *",tts,"* ]]; then
   [ "$DRY" = 1 ] || mkdir -p "$WORK/tts"
   ONLY=()
   [ -n "$SPEAKER" ] && ONLY=(--only-speaker "$SPEAKER")
+  IDS_ARGS=()
+  [ -n "$IDS" ] && IDS_ARGS=(--only-ids-file "$IDS")
   step tts "$WORK/tts-run.log" "${COMMON[@]}" \
     -v "$CHECKPOINT":/checkpoint:ro -v "$VOICE_PACKAGES":/voice-packages:ro \
     -e PYTHONPATH=/voice-packages -e HF_HOME=/tmp/hf --entrypoint python "$IMAGE" \
     /tools/tts_sentences.py --speech /work/speech.jsonl --checkpoint /checkpoint --out /work/tts \
-    --device cuda:0 --dtype bfloat16 --seed "$SEED" --batch-size "$BATCH" "${ONLY[@]}"
+    --device cuda:0 --dtype bfloat16 --seed "$SEED" --batch-size "$BATCH" "${ONLY[@]}" "${IDS_ARGS[@]}"
 fi
 
 if [[ ",$STEPS," == *",asr,"* ]]; then
