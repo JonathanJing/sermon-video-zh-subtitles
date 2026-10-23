@@ -1,0 +1,26 @@
+Traceback (most recent call last):
+  File "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/tools/ops/run.py", line 91, in <module>
+    raise SystemExit(main())
+                     ~~~~^^
+  File "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/tools/ops/run.py", line 87, in main
+    return entry()
+  File "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/packages/production/src/tongxing_production/source/unified_stage.py", line 622, in main
+    result = rebuild(args.config, args.base_output, args.out, args.boundary_overrides, args.budget_authorization,
+                     operator_acceptance=args.operator_acceptance)
+  File "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/packages/production/src/tongxing_production/source/unified_stage.py", line 574, in rebuild
+    manifest = anchors.build_anchor_manifest(aligned, source_path=aligned_path,
+        unit_policy=anchors.UNIT_POLICY_V2, max_unit_seconds=value['anchorPolicy']['maxUnitSeconds'],
+        boundary_overrides=overrides['overrides'])
+  File "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/packages/production/src/tongxing_production/source/sentence_interpretation.py", line 552, in build_anchor_manifest
+    clause_parts, unresolved = _split_clause_stable(
+                               ~~~~~~~~~~~~~~~~~~~~^
+        words,
+        ^^^^^^
+    ...<3 lines>...
+        forced_after_word_id=overrides.pop(sentence_id, None),
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/packages/production/src/tongxing_production/source/sentence_interpretation.py", line 367, in _split_clause_stable
+    raise ValueError("Boundary override is unnecessary for a sentence within the duration target")
+ValueError: Boundary override is unnecessary for a sentence within the duration target

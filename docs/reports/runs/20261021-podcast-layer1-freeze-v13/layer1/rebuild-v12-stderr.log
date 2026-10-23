@@ -1,0 +1,58 @@
+Traceback (most recent call last):
+  File "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/tools/ops/run.py", line 91, in <module>
+    raise SystemExit(main())
+                     ~~~~^^
+  File "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/tools/ops/run.py", line 87, in main
+    return entry()
+  File "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/packages/production/src/tongxing_production/source/unified_stage.py", line 637, in main
+    result = rebuild(args.config, args.base_output, args.out, args.boundary_overrides, args.budget_authorization,
+                     operator_acceptance=args.operator_acceptance)
+  File "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/packages/production/src/tongxing_production/source/unified_stage.py", line 601, in rebuild
+    judged = judge.run(aligned_path=aligned_path, manifest_path=manifest_path, out=out / 'machine-judge.json',
+        api_key=<redacted> if api_key is not None else os.environ.get('OPENAI_API_KEY', ''),
+    ...<2 lines>...
+        batch_size=value['judge']['batchSize'], workers=value['judge']['workers'],
+        operator_acceptance=acceptance_path)
+  File "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/packages/production/src/tongxing_production/source/english_source_judge.py", line 468, in run
+    batches_reviewed = ordered_bounded_map(enumerate(_batches(sentences, batch_size)), review_batch, workers)
+  File "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/packages/production/src/tongxing_production/source/unified_stage.py", line 129, in ordered_bounded_map
+    results[index] = future.result()
+                     ~~~~~~~~~~~~~^^
+  File "/opt/homebrew/Cellar/<email>/3.13.16/Frameworks/Python.framework/Versions/3.13/lib/python3.13/concurrent/futures/_base.py", line 453, in result
+    return self.__get_result()
+           ~~~~~~~~~~~~~~~~~^^
+  File "/opt/homebrew/Cellar/<email>/3.13.16/Frameworks/Python.framework/Versions/3.13/lib/python3.13/concurrent/futures/_base.py", line 402, in __get_result
+    raise self._exception
+  File "/opt/homebrew/Cellar/<email>/3.13.16/Frameworks/Python.framework/Versions/3.13/lib/python3.13/concurrent/futures/thread.py", line 59, in run
+    result = self.fn(*self.args, **self.kwargs)
+  File "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/packages/production/src/tongxing_production/source/english_source_judge.py", line 462, in review_batch
+    return review(batch, "")
+  File "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/packages/production/src/tongxing_production/source/english_source_judge.py", line 432, in review
+    result, receipt = cached_call(
+                      ~~~~~~~~~~~^
+        out=cache_root,
+        ^^^^^^^^^^^^^^^
+    ...<12 lines>...
+        caller=caller,
+        ^^^^^^^^^^^^^^
+    )
+    ^
+  File "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/packages/production/src/tongxing_production/source/english_source_judge_cache.py", line 88, in cached_call
+    response = caller(api_key, payload)
+  File "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/packages/production/src/tongxing_production/source/budget.py", line 636, in judge
+    return self.call(operation='judge.' + jobs._digest(payload), identity=payload, bounds=bounds,
+           ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                     request=b'', api_key=<redacted>, content_type='application/json',
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                     endpoint=CLAUDE_CLI_ENDPOINT)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/packages/production/src/tongxing_production/source/budget.py", line 393, in call
+    return self._call(operation=operation, identity=identity, bounds=bounds, request=request,
+           ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        api_key=<redacted>, content_type=content_type, endpoint=endpoint, owner=owner)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/packages/production/src/tongxing_production/source/budget.py", line 498, in _call
+    response = self.claude_transport(None, identity)
+  File "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/packages/production/src/tongxing_production/compute/transports/claude_source_judge.py", line 113, in __call__
+    raise RuntimeError('claude_language_model_identity_missing')
+RuntimeError: claude_language_model_identity_missing
