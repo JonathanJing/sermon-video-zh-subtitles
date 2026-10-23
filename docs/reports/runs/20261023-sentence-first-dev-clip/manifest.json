@@ -1,0 +1,71 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261023-sentence-first-dev-clip",
+  "runs": [
+    {
+      "label": "20261023-clip-u179-365-zh",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/sentence-first-agent/20261023-clip-u179-365-zh",
+      "skipped": {
+        ".json": 7,
+        ".jsonl": 5,
+        ".wav": 376,
+        ".mp4": 2,
+        ".md": 1
+      }
+    },
+    {
+      "label": "20261023-clip-u179-365-ko",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/sentence-first-agent/20261023-clip-u179-365-ko",
+      "skipped": {
+        ".json": 7,
+        ".jsonl": 11,
+        ".mp4": 2,
+        ".md": 1,
+        ".wav": 375
+      }
+    }
+  ],
+  "files": [
+    {
+      "run": "20261023-clip-u179-365-zh",
+      "path": "asr-run.log",
+      "kind": "log",
+      "bytes": 2873,
+      "truncated": false,
+      "sha256": "9f5f63bbdad3c64f7ba29975860a5d3f7b7c7fa2df135ec810fb0015b79ada65",
+      "redactions": {}
+    },
+    {
+      "run": "20261023-clip-u179-365-zh",
+      "path": "tts-run.log",
+      "kind": "log",
+      "bytes": 27374,
+      "truncated": true,
+      "sha256": "399498df26ad49ee8da2cd167e4462a1c28bd2c08fad828bf73c3557ae77b13b",
+      "redactions": {}
+    },
+    {
+      "run": "20261023-clip-u179-365-ko",
+      "path": "asr-run.log",
+      "kind": "log",
+      "bytes": 2863,
+      "truncated": false,
+      "sha256": "005a111c06efecd2fd2459f492442f2dadc1f814c39cddb3ff2708bed987ee6b",
+      "redactions": {}
+    },
+    {
+      "run": "20261023-clip-u179-365-ko",
+      "path": "tts-run.log",
+      "kind": "log",
+      "bytes": 27353,
+      "truncated": true,
+      "sha256": "13da5b0a895cf13551effa6ffc71ed03b1427101ae87c4c1d3f49c9d39cca7a4",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}
