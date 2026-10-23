@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
-"""Synthesize one WAV per sentence with Qwen3-TTS, batch 1 (experiment only).
+"""Synthesize one WAV per sentence with Qwen3-TTS (experiment only).
+
+``--batch-size`` defaults to 1; batch>1 sends several sentences per model call
+(the formal renderer's batch API). Batch>1 changes the sound identity of the
+members, so a later single-sentence repair re-synthesizes its batch window.
 
 Runs on the machine that holds the checkpoint and ``qwen_tts`` (normally DGX
 Spark). Reads ``speech.jsonl`` rows: id, spokenText, language, speaker, hint.
@@ -38,6 +42,7 @@ def main() -> int:
     parser.add_argument("--seed", type=int, default=7)
     parser.add_argument("--max-new-tokens", type=int, default=768)
     parser.add_argument("--only-speaker", help="synthesize only rows whose speaker key is this (one checkpoint per run)")
+    parser.add_argument("--batch-size", type=int, default=1, help="sentences per model call (batch>1 changes sound identity)")
     args = parser.parse_args()
     rows = [json.loads(line) for line in args.speech.read_text(encoding="utf-8").splitlines() if line.strip()]
     if args.only_speaker:
@@ -55,27 +60,35 @@ def main() -> int:
         str(args.checkpoint), device_map=args.device,
         dtype=torch.bfloat16 if args.dtype == "bfloat16" else torch.float32)
     log = (args.out / "tts-log.jsonl").open("a", encoding="utf-8")
-    for row in pending:
+    batch_size = max(1, args.batch_size)
+    for start in range(0, len(pending), batch_size):
+        batch = pending[start:start + batch_size]
         torch.manual_seed(args.seed)
         if torch.cuda.is_available():
             torch.cuda.manual_seed_all(args.seed)
-        kwargs = {"text": row["spokenText"], "language": row["language"], "speaker": row["speaker"],
+        kwargs = {"text": [row["spokenText"] for row in batch],
+                  "language": [row["language"] for row in batch],
+                  "speaker": [row["speaker"] for row in batch],
                   "temperature": 0.7, "repetition_penalty": 1.05, "max_new_tokens": args.max_new_tokens}
-        if row.get("hint"):
-            kwargs["instruct"] = row["hint"]
+        hints = [row.get("hint") or "" for row in batch]
+        if any(hints):
+            kwargs["instruct"] = hints
         started = time.monotonic()
         wavs, rate = model.generate_custom_voice(**kwargs)
-        if len(wavs) != 1:
-            raise SystemExit(f"{row['id']}: TTS returned {len(wavs)} outputs")
-        target = args.out / f"{row['id']}.wav"
-        write_wav(target, wavs[0], rate)
-        with wave.open(str(target), "rb") as handle:
-            seconds = handle.getnframes() / handle.getframerate()
-        entry = {"id": row["id"], "seconds": round(seconds, 3),
-                 "wallSeconds": round(time.monotonic() - started, 3), "seed": args.seed}
-        log.write(json.dumps(entry, ensure_ascii=False) + "\n")
-        log.flush()
-        print(json.dumps(entry), flush=True)
+        wall = time.monotonic() - started
+        if len(wavs) != len(batch):
+            raise SystemExit(f"batch {batch[0]['id']}: TTS returned {len(wavs)} outputs for {len(batch)} rows")
+        per_row = wall / len(batch)
+        for row, wav in zip(batch, wavs):
+            target = args.out / f"{row['id']}.wav"
+            write_wav(target, wav, rate)
+            with wave.open(str(target), "rb") as handle:
+                seconds = handle.getnframes() / handle.getframerate()
+            entry = {"id": row["id"], "seconds": round(seconds, 3),
+                     "wallSeconds": round(per_row, 3), "seed": args.seed, "batchSize": len(batch)}
+            log.write(json.dumps(entry, ensure_ascii=False) + "\n")
+            log.flush()
+            print(json.dumps(entry), flush=True)
     return 0
 
 
