@@ -1,0 +1,11 @@
+{
+  "result": "passed",
+  "backendTestsPassed": 6,
+  "backendTestsFailed": 0,
+  "DuoSettingsUITestsPassed": 1,
+  "DuoSettingsUITestsFailed": 0,
+  "privacyManifestLint": "pass",
+  "supportPublicHashReadback": "4/4",
+  "supportDeploy": "passed",
+  "dispatchTTL": "CREATING"
+}
