@@ -298,7 +298,7 @@ def cmd_verify(assets: Path, out: Path) -> dict:
     return {"status": evidence["status"], "checks": len(checks), "failed": [c["path"] for c in checks if not c["pass"]]}
 
 
-def cmd_stage2(stage1: Path, assets: Path, evidence_path: Path, out: Path) -> dict:
+def cmd_stage2(stage1: Path, assets: Path, evidence_path: Path, out: Path, with_english: bool = False) -> dict:
     evidence = json.loads(evidence_path.read_text())
     contract.require(evidence["status"] == "pass", "HTTP verification did not pass")
     attempt = json.loads((stage1 / "deployment-attempt-v2.json").read_text())
@@ -338,7 +338,15 @@ def cmd_stage2(stage1: Path, assets: Path, evidence_path: Path, out: Path) -> di
     for name, value in ((contract.CATALOG_V5, v5), (contract.CATALOG_V4, v4), (contract.CATALOG_V3, v3)):
         files[contract.CATALOG_FILES[name]] = (json.dumps(value, ensure_ascii=False, indent=2, sort_keys=True) + "\n").encode()
     stage(stage1, out, None, files)
-    return {"staged": str(out), "changed": sorted(files), "defaultPageId": v3["defaultPageId"]}
+    result = {"staged": str(out), "changed": sorted(files), "defaultPageId": v3["defaultPageId"]}
+    if with_english:
+        reference = english_reference.build_reference(out / "public", PAGE_ID, PODCAST / "layer1-srt/english-source.json")
+        target = out / "public" / "english-reference" / f"{PAGE_ID}.json"
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text(json.dumps(reference, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
+        result["englishReference"] = {"path": f"/english-reference/{PAGE_ID}.json", "sha256": sha_file(target),
+                                      "blocks": {loc: len(reference["targets"][loc]["blocks"]) for loc in LOCALES}}
+    return result
 
 
 def build_clip_reference(public: Path, page_id: str, source_path: Path) -> dict:
@@ -445,6 +453,10 @@ def cmd_readback(stage2: Path) -> dict:
     for rel in [*contract.CATALOG_FILES.values(), *(f"releases-v2/{PAGE_ID}/{loc}.json" for loc in LOCALES)]:
         status, data = reader(origin + "/" + rel)
         results[rel] = status == 200 and hashlib.sha256(data).hexdigest() == sha_file(stage2 / "public" / rel)
+    extra = stage2 / "public" / "english-reference" / f"{PAGE_ID}.json"
+    if extra.exists():
+        status, data = reader(origin + f"/english-reference/{PAGE_ID}.json")
+        results[f"english-reference/{PAGE_ID}.json"] = status == 200 and hashlib.sha256(data).hexdigest() == sha_file(extra)
     return {"pass": all(results.values()), "checks": results}
 
 
@@ -462,6 +474,7 @@ def main() -> int:
     s2 = sub.add_parser("stage2")
     s2.add_argument("--stage1", type=Path, required=True); s2.add_argument("--assets", type=Path, required=True)
     s2.add_argument("--evidence", type=Path, required=True); s2.add_argument("--out", type=Path, required=True)
+    s2.add_argument("--with-english", action="store_true", help="build and stage the English reference in this same deploy (two-deploy path)")
     rb = sub.add_parser("readback"); rb.add_argument("--stage2", type=Path, required=True)
     se = sub.add_parser("stage-english-reference"); se.add_argument("--base", type=Path, required=True)
     se.add_argument("--out", type=Path, required=True)
@@ -480,7 +493,7 @@ def main() -> int:
     elif args.cmd == "verify":
         result = cmd_verify(args.assets, args.out)
     elif args.cmd == "stage2":
-        result = cmd_stage2(args.stage1, args.assets, args.evidence, args.out)
+        result = cmd_stage2(args.stage1, args.assets, args.evidence, args.out, args.with_english)
     else:
         result = cmd_readback(args.stage2)
     print(json.dumps(result, ensure_ascii=False))

@@ -259,6 +259,9 @@ def main(argv=None) -> int:
     p.add_argument("--out", type=Path)
     a = p.parse_args(argv)
     report = Report()
+    journal = a.run.exists()
+    if journal:
+        _mark(a.run, "l1.preflight", "started")
     ctx = check_run(a.run, a.locale, a.registry, report)
     if a.english_package:
         check_english_package(a.english_package, ctx, report, a.repo_root, a.source_url)
@@ -269,6 +272,8 @@ def main(argv=None) -> int:
     if a.firebase:
         check_firebase(report)
     result = report.result()
+    if journal:
+        _mark(a.run, "l1.preflight", "finished" if result["status"] == "pass" else "failed")
     print(json.dumps(result, ensure_ascii=False, indent=1))
     if a.out:
         a.out.write_text(json.dumps(result, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
@@ -277,3 +282,12 @@ def main(argv=None) -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
+
+def _mark(run, stage: str, event: str) -> None:
+    try:
+        from runlog import mark
+    except ImportError:
+        import sys as _sys
+        _sys.path.insert(0, str(Path(__file__).resolve().parent))
+        from runlog import mark
+    mark(run, stage, event)

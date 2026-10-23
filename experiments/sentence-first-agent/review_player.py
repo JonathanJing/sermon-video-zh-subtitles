@@ -22,7 +22,11 @@ import argparse
 import html
 import json
 import os
+import sys
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from asr_triage import classify as asr_classify  # noqa: E402
 
 DEFAULT_NAMES = {"steve_bang_lee": "Steve", "eric_geiger": "Eric"}
 
@@ -52,8 +56,12 @@ def build_rows(run: Path, names: dict[str, str]) -> list[dict]:
         target = (revisions.get(sid) or {}).get("target") or (translations.get(sid) or {}).get("target", "")
         flags = []
         similarity = (asr.get(sid) or {}).get("similarity")
+        asr_class = None
         if similarity is not None and similarity < 0.85:
-            flags.append("asr")
+            asr_class = asr_classify((asr.get(sid) or {}).get("expected", ""),
+                                     (asr.get(sid) or {}).get("recognized", ""),
+                                     (review.get("locale") or ""))
+            flags.append("asr_variant" if asr_class in ("identical", "variant", "number_form", "homophone") else "asr_content")
         if s.get("speakerReview") == "check":
             flags.append("speaker")
         if sid in revisions:
@@ -64,6 +72,7 @@ def build_rows(run: Path, names: dict[str, str]) -> list[dict]:
                      "start": round(float(start), 3), "end": round(float(start) + float(dur), 3),
                      "english": s.get("english", ""), "target": target,
                      "asr": None if similarity is None else round(float(similarity), 3),
+                     "asrClass": asr_class,
                      "flags": flags,
                      "note": notes.get(sid, ""),
                      "recognized": (asr.get(sid) or {}).get("recognized", "") if similarity is not None and similarity < 0.85 else ""})
@@ -99,7 +108,8 @@ main {{ max-width:980px; margin:0 auto; padding:14px 14px 80px; }}
 .head .time {{ font-variant-numeric:tabular-nums; }}
 .head .sp {{ margin-left:auto; }}
 .flag {{ font-size:12px; padding:1px 7px; border-radius:999px; background:#f1efe8; color:var(--muted); }}
-.flag.asr {{ background:#fef3c7; color:#92400e; }}
+.flag.asr_variant {{ background:#fef3c7; color:#92400e; }}
+.flag.asr_content {{ background:#fee2e2; color:#991b1b; }}
 .flag.speaker {{ background:#e0e7ff; color:#3730a3; }}
 .flag.revised {{ background:#dcfce7; color:#166534; }}
 .flag.note {{ background:#fce7f3; color:#9d174d; }}
@@ -122,7 +132,8 @@ main {{ max-width:980px; margin:0 auto; padding:14px 14px 80px; }}
     <select id="filter">
       <option value="all">全部（<span id="c-all"></span>）</option>
       <option value="flagged">只看标记</option>
-      <option value="asr">回转写 &lt; 0.85</option>
+      <option value="asr_variant">回转写：同音/数字/变体</option>
+      <option value="asr_content">回转写：内容差异</option>
       <option value="speaker">讲员存疑</option>
       <option value="revised">复核修订</option>
       <option value="note">有备注</option>
@@ -142,7 +153,7 @@ const store = JSON.parse(localStorage.getItem(KEY) || '{{}}');
 const audio = document.getElementById('audio');
 const list = document.getElementById('list');
 let current = null, timer = null;
-const flagText = {{asr:'ASR 低分', speaker:'讲员存疑', revised:'复核修订', note:'备注'}};
+const flagText = {{asr_variant:'ASR 同音/数字', asr_content:'ASR 内容差异', speaker:'讲员存疑', revised:'复核修订', note:'备注'}};
 function save() {{ localStorage.setItem(KEY, JSON.stringify(store)); }}
 function verdictOf(id) {{ return (store[id] && store[id].verdict) || 'pending'; }}
 function noteOf(id) {{ return (store[id] && store[id].note) || ''; }}
@@ -160,7 +171,7 @@ function visible() {{
   const q = document.getElementById('search').value.trim().toLowerCase();
   return ROWS.filter(r => {{
     if (f === 'flagged' && r.flags.length === 0) return false;
-    if (['asr','speaker','revised','note'].includes(f) && !r.flags.includes(f)) return false;
+    if (['asr_variant','asr_content','speaker','revised','note'].includes(f) && !r.flags.includes(f)) return false;
     if (f === 'pending' && verdictOf(r.id) !== 'pending') return false;
     if (q && !(r.id + ' ' + r.english + ' ' + r.target).toLowerCase().includes(q)) return false;
     return true;
@@ -176,7 +187,7 @@ function render() {{
       + r.flags.map(f => `<span class="flag ${{f}}">${{flagText[f]}}</span>`).join('')
       + `<span class="sp">${{r.speaker}}</span></div>`
       + `<div class="en">${{escapeHtml(r.english)}}</div><div class="zh">${{escapeHtml(r.target)}}</div>`
-      + (r.recognized ? `<div class="rec">ASR: ${{escapeHtml(r.recognized)}}（${{r.asr}}）</div>` : '')
+      + (r.recognized ? `<div class="rec">ASR: ${{escapeHtml(r.recognized)}}（${{r.asr}}，${{r.asrClass}}）</div>` : '')
       + `<div class="controls"><button data-play="${{r.id}}">播放</button>`
       + `<select data-verdict="${{r.id}}">${{['pending','pass','issue'].map(v => `<option value="${{v}}" ${{verdictOf(r.id)===v?'selected':''}}>${{v==='pending'?'未定':v==='pass'?'通过':'问题'}}</option>`).join('')}}</select>`
       + `<textarea data-note="${{r.id}}" placeholder="备注（可选）">${{escapeHtml(noteOf(r.id))}}</textarea></div>`;
