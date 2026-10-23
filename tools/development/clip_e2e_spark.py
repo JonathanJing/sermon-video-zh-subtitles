@@ -384,7 +384,9 @@ def screen(args, runtime, spark, session) -> int:
     require(runtime["asrRevision"].split(":")[-1] in probe, "asr_weights_differ")
     require("runtime" in probe, "asr_runtime_missing")
     containers = [p for p in probe[probe.index("runtime") + 2:] if p]
-    require(not containers, f"spark_busy:{containers}")
+    # Under group_tasks.py lanes another locale's CPU compaction may be running; the lanes
+    # gate already keeps GPU stages apart, so the operator passes --allow-busy there.
+    require(args.allow_busy or not containers, f"spark_busy:{containers}")
     code = f"/work/{args.code}"
     work = f"/work/output/{remote_name}/speech-job"
     command_for = lambda hold: [
@@ -539,6 +541,8 @@ def parser() -> argparse.ArgumentParser:
     sub.add_argument("--remote-name", default=None)
     sub.add_argument("--batch-size", default="1", choices=["1", "2", "4", "8"])
     sub.add_argument("--tag", default="v1")
+    sub.add_argument("--allow-busy", action="store_true",
+                     help="Run while another container (a CPU compaction of another locale) is up")
     sub = common("audio-qc", "machine listening-waiver driver (GPU + secondary ASR API)")
     sub.add_argument("--audio-package", required=True)
     sub.add_argument("--state-dir", required=True, help="The locale's text QC state dir (shared repair ledgers)")

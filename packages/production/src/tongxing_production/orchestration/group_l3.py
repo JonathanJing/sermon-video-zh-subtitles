@@ -9,9 +9,15 @@ a model prompt, edits a receipt or treats an exit code as content approval.
 A stage is skipped only when its ``produces`` file already exists: that is resume, not
 reuse authority. The stage command is bound by SHA-256 in the report; the report is run
 evidence, never release material.
+
+Each stage names the ``resource`` it occupies: ``gpu`` (the default, so an unlabeled plan
+keeps today's fully serialized behaviour) or ``cpu``. A caller may pass a ``gate`` that
+holds a stage's resource for its duration; group_l3_lanes uses it to run several locales
+with one GPU lane while their CPU stages overlap.
 """
 from __future__ import annotations
 
+from contextlib import contextmanager
 import hashlib
 import json
 import os
@@ -28,6 +34,8 @@ REPORT_SCHEMA = "sermon-group-l3-stages-report-v1"
 # stage directory, extra receipts) may be declared and interpolated too.
 REQUIRED_PATHS = ("speechJob", "source", "anchor", "candidate", "policy", "adapter", "registry")
 STAGE_NAME = re.compile(r"[a-z][a-z0-9_]{0,63}")
+STAGE_RESOURCES = ("gpu", "cpu")
+DEFAULT_STAGE_RESOURCE = "gpu"
 REQUIRED_STAGES = ("formal_render", "compact", "screen", "package", "audio_qc")
 
 
@@ -68,7 +76,8 @@ def load_configuration(path: Path) -> dict:
     for stage in stages:
         _require(isinstance(stage, dict)
                  and {"name", "command", "produces"} <= set(stage)
-                 <= {"name", "command", "produces", "failures", "note"}
+                 <= {"name", "command", "produces", "failures", "note", "resource"}
+                 and stage.get("resource", DEFAULT_STAGE_RESOURCE) in STAGE_RESOURCES
                  and isinstance(stage["name"], str) and STAGE_NAME.fullmatch(stage["name"])
                  and stage["name"] not in seen
                  and isinstance(stage["command"], list) and stage["command"]
@@ -93,8 +102,15 @@ def _substitute(value: str, paths: dict) -> str:
     return re.sub(r"\{([A-Za-z][A-Za-z0-9_]*)\}", replace, value)
 
 
-def run_stages(config: dict, out: Path, *, dry_run: bool = False) -> dict:
-    """Execute the configured stages in order; stop at the first failure."""
+def stage_resource(stage: dict) -> str:
+    return stage.get("resource", DEFAULT_STAGE_RESOURCE)
+
+
+def run_stages(config: dict, out: Path, *, dry_run: bool = False, gate=None) -> dict:
+    """Execute the configured stages in order; stop at the first failure.
+
+    ``gate(stage_name, resource)`` returns a context manager held for the whole stage; it
+    yields a dict whose ``waitSeconds`` is recorded in the stage entry."""
     out = Path(out)
     paths = {**config.get("variables", {}), **config["paths"], "out": out}
     for name in REQUIRED_PATHS:
@@ -112,19 +128,22 @@ def run_stages(config: dict, out: Path, *, dry_run: bool = False) -> dict:
         command = [_substitute(part, paths) for part in stage["command"]]
         _require(not any(re.search(r"\{[A-Za-z][A-Za-z0-9_]*\}", part) for part in command),
                  f"unresolved_placeholder:{name}")
-        entry = {"name": name, "commandSha256": _command_sha256(command), "command": command,
-                 "startedAt": _now()}
+        resource = stage_resource(stage)
+        entry = {"name": name, "resource": resource, "commandSha256": _command_sha256(command),
+                 "command": command}
         if dry_run:
-            entry["status"] = "planned"
+            entry.update(status="planned", startedAt=_now())
             report["stages"].append(entry)
             continue
-        started = time.monotonic()
         workdir = Path(config.get("variables", {}).get("repoRoot") or config["path"].parent)
-        completed = subprocess.run(command, cwd=str(workdir), text=True,
-                                   stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        entry.update(endedAt=_now(), seconds=round(time.monotonic() - started, 3),
-                     exitCode=completed.returncode,
-                     stdoutTail=_tail(completed.stdout), stderrTail=_tail(completed.stderr))
+        with (gate(name, resource) if gate is not None else _no_gate()) as held:
+            entry.update(startedAt=_now(), waitSeconds=round(float(held.get("waitSeconds", 0.0)), 3))
+            started = time.monotonic()
+            completed = subprocess.run(command, cwd=str(workdir), text=True,
+                                       stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            entry.update(endedAt=_now(), seconds=round(time.monotonic() - started, 3),
+                         exitCode=completed.returncode,
+                         stdoutTail=_tail(completed.stdout), stderrTail=_tail(completed.stderr))
         if completed.returncode != 0:
             group_ids = _failed_groups(out, stage, paths)
             entry.update(status="failed", failedGroupIds=group_ids)
@@ -151,6 +170,11 @@ def run_stages(config: dict, out: Path, *, dry_run: bool = False) -> dict:
         # A latest-status pointer beside the candidate; the full evidence stays in out.
         _write_latest(Path(merge_dir) / "l3-stages.json", report)
     return report
+
+
+@contextmanager
+def _no_gate():
+    yield {"waitSeconds": 0.0}
 
 
 def _failed_groups(out: Path, stage: dict, paths: dict) -> list[str]:

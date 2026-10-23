@@ -81,7 +81,7 @@
 
 选择证据和 419 段预算见[单讲员 Spark 测量报告](reports/20261003-spark-production-8x8.zh.md)。8×8 的 64 句重复实测中位数 56.81 秒，最低可用内存 38.43 GiB；16×4 两次触发 24 GiB 保护，没有有效速度结果。419 句的约 6.2 分钟热 TTS／7.1 分钟加 cold load 为组件外推，不代表整篇实际完成或语言质量通过。
 
-`screen_target_language_audio_units.py` 同样新增 `--batch-size 1|2|4|8`（默认 1），CLI 只加载一次 ASR 模型；可用 `--unit-cache <artifact-root 内的新缓存目录>` 保存逐单元不可覆盖的识别回执，续跑只转写缺失单元。cache 绑定 job、locale、文字、音频 hash、模型 revision 和 batch 设置，错身份或错映射直接停止。Qwen 高层接口返回值不暴露 EOS/finish-reason；这里只验证函数返回、数量、身份、可解码音频和全单元覆盖，实际截断风险仍需回转写及人工听审。性能／质量验收见[提速 backlog](local-production-speed-backlog.zh.md)。
+`screen_target_language_audio_units.py` 同样新增 `--batch-size 1|2|4|8`（默认 1），CLI 只加载一次 ASR 模型；ASR 在 renderer 的 24 GiB 保留内运行，加载前只按自身 6 GiB 预算做宿主内存准入（`--memory-budget-gib`；2026-10-23 实测宿主占用 3.9 GiB、CUDA 峰值 1.8 GiB），不叠加保留，收据旁的 `*.memory.json` 记录加载前后的 `MemAvailable` 与 CUDA 峰值供校准，与 renderer 的预算准入同一形状；可用 `--unit-cache <artifact-root 内的新缓存目录>` 保存逐单元不可覆盖的识别回执，续跑只转写缺失单元。cache 绑定 job、locale、文字、音频 hash、模型 revision 和 batch 设置，错身份或错映射直接停止。Qwen 高层接口返回值不暴露 EOS/finish-reason；这里只验证函数返回、数量、身份、可解码音频和全单元覆盖，实际截断风险仍需回转写及人工听审。性能／质量验收见[提速 backlog](local-production-speed-backlog.zh.md)。
 
 若 Layer 2 的独立机器复核已通过而文字人审仍待定，可先在独立目录用 `tongxing_production.audio.speculative` 按组生成 `preview_only` WAV。它不创建正式 speech job 或 Audio Package。文字获批并准备好完整正式 job 后，给本 renderer 增加 `--speculative-from <预生成目录>`；正式来源、人审、音色能力与授权先过门禁，随后只复制候选快照、单元文字、来源、参数和音频 hash 全部匹配且可完整解码的 WAV，并重新签发正式单元收据。改文单元重新合成，整轨排程、ASR 和全文听审重新执行。具体命令与失效范围见[层内解耦设计](multilingual-intralayer-review-decoupling.zh.md)。
 
