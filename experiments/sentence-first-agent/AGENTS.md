@@ -60,6 +60,14 @@ artifacts/sentence-first-agent/<run>/
 
 命令里的 `$EXP` 指 `experiments/sentence-first-agent`，`$RUN` 指本语言的 run 目录，`SPARK` 指 `achillesjing@192.168.1.152`。
 
+### 0.5 环境预检（本机，开工前几分钟）
+
+1. 确认代码与脚本齐：`git fetch origin`，`git rev-list --left-right --count origin/main...HEAD`。落后很多时（2026-10-23：落后 2759 个提交，实验目录缺 11 个脚本），在 `artifacts/worktrees/sfa-main` 建 origin/main worktree，不要改当前分支。
+2. 确认导入的是 worktree 的包：主 checkout 的 `.venv` 是 editable 安装，指向旧包；运行发布驱动时用 `PYTHONPATH="packages/production/src:."` 把 worktree 放最前，并 `python -c "import tongxing_production; print(tongxing_production.__file__)"` 核对。
+3. 确认 run 目录位置：`slices/slices.json` 存仓库相对路径（`artifacts/sentence-first-agent/<run>/slices/...`），所以 run 放在主 checkout 的 `artifacts/sentence-first-agent/`，所有本机步骤从仓库根运行；不要放 worktree。
+4. 要发布时确认 Firebase 与 ADC：`XDG_CONFIG_HOME=<可写 configstore 副本> firebase login:list` 和 ADC token 各一次；沙箱下 `~/.config/configstore` 不可写会让 firebase 报 “credentials no longer valid”。
+5. 确认 Spark 会话空闲、checkpoint 路径存在；有别人的会话先问用户。
+
 ### 0 开工前向用户问清
 
 写进第一个 run 的 `run.md`：
@@ -88,6 +96,8 @@ python3 $EXP/assign_speakers.py --run $RUN --segments <segments.json> --mapping 
 ```
 
 说话人区分结果和用户确认过的标签映射取正式生产已有的那一份，不重跑区分模型。每句写入 `speakerId`；`--use-text` 按转写逐词对齐投票，短附和不会落到对方名下。`speakers.json` 里一致度低于 0.8 的句子交给用户确认，确认后再翻译、再配音。
+
+没有正式 segments/mapping 时（例如 artifacts 已清理），不要重跑区分模型或换声音：按上一期已人工审核并发布的整期 `speech.jsonl` 逐单元复用讲员。先核对 `id ↔ sourceUnitId` 的偏移与英文/译文对齐，再写入 `speakerId`；`speakers.json` 记明“未重算置信度”，整轨听审时核对声音归属。这条回退不替代新句的独立审核。
 
 ### 4 逐句翻译与复核
 
@@ -131,7 +141,7 @@ python3 $EXP/build_speech.py --run $RUN --review $RUN/review.json [--share-from 
 
 ### 6 Spark 配音与回转写：一条队列
 
-讲员 checkpoint 路径从 Spark 上的 `speaker-checkpoints.dgx.json` 查。上传脚本和每种语言的口播规格：
+讲员 checkpoint 路径从 Registry（`config/speaker-voice-registry.json`）的 checkpointRef/hash 与 Spark 上的实际目录核对；Spark 上没有 `speaker-checkpoints.dgx.json`（2026-10-23 核实）。当前两位讲员：Steve `~/dgx-spark-benchmark/results/sermon-speaker-bank-20260905/steve_bang_lee/checkpoints/checkpoint-epoch-0`（sha256 `b480bc6a…`）；John `~/dgx-spark-benchmark/results/john-thomas-voice-20261021/checkpoints/checkpoint-epoch-0`（root 所有，本机不能重算 hash；Registry 记 `3f722b17…`）。路径或 hash 对不上就停。上传脚本和每种语言的口播规格：
 
 ```bash
 ssh SPARK 'mkdir -p ~/sentence-first-agent/tools ~/sentence-first-agent/<run>'
@@ -183,6 +193,10 @@ python3 $EXP/review_sheets.py --out <审核目录> --window-start <窗口起点�
 
 每次 `publish` 都要用户在对话里授权；权限检查拒绝时不要绕过，把命令交给用户。发布后按 App 的读取路径（目录 → release → 文稿与字幕）再查一遍线上文件，然后请用户在手机上刷新确认。
 
+**发布到 Dev（实验页）**：目标是 `ai-for-god-sermon-audio-dev` / `https://ai-for-god-sermon-audio-dev.web.app`，channel `dev`。`publish_podcast_page.py` 写死 production（`stage()`、`baseline()` 的 environment、`ORIGIN`、句数、run 目录名、verdict 路径），复制后必须改成 dev 并参数化这些值，不能只改顶部常量（2026-10-23 实测）。Dev 目录有 25 页，v4 还有 v5 没有的 edition fan-out（26 页）；`baseline` 用 `allow_default_locale_drift=True`，`stage1` 修默认语言漂移。
+
+**片段页的英文对照**：规范 `build_reference` 要求页面覆盖英文来源包的全部单元，10 分钟片段只有连续子集，会被拒绝（2026-10-23 在本地合成快照验证）。用 dev 驱动里的 `build_clip_reference`：沿用同样的审批/哈希检查，只把覆盖改成连续有序子集；先在本地合成快照上验证每种语言的 `blocks` 等于本页句数（例如 187），不是整期 746。以后给规范 builder 加子集模式时，保留“整期页必须全覆盖”的检查。
+
 页面、文稿、字幕的路径是固定的：`/pages/<pageId>/<locale>/index.html`、`/content/<pageId>/<locale>.json`、`/captions/<pageId>/<locale>.json`。正式版 App 遇到别的路径会把这种语言、乃至整页隐藏（开发版不做这项检查，所以开发版里看得到不代表正式版看得到）。要修已发布的文稿或字幕，就在原路径写入修正后的字节，先部署、HTTP 核验，再部署改了哈希的 release 和目录；不要换新路径。发布合同 `validate_v2_release_target` 会拒绝不在固定路径上的 release。
 
 列表里的小标题只来自目录页面的 `displayCategory`（两个早期页面在 App 里写死为“正式播放版”）；新页面要显示小标题，就在 v5 页面上写这个字段，投影会带到 v4/v3。
@@ -190,6 +204,8 @@ python3 $EXP/review_sheets.py --out <审核目录> --window-start <窗口起点�
 ### 11 结束
 
 `finish` 关闭会话，再按会话标签删掉停止的容器（`docker rm $(docker ps -aq --filter label=tongxing.spark.session=<session>)`）。按[运行报告](../../docs/test-run-retrospective.zh.md)导出本次报告。
+
+发布后保留小文本表（`sentences.jsonl`、`translations.jsonl`、`speech.jsonl`、`speakers.json`、`review.json`、`schedule.json`、`run.md`、审核表），只删 `tts/`、`slices/`、`clip.wav`、`track.wav`、`dub*.mp4`；否则下一轮无法 resume 或复用讲员分配/已批准译文（2026-10-23 实测：上一期 run 目录被清理，只能从 Spark 拉回 `speech.jsonl`）。
 
 ## 完成的样子
 
