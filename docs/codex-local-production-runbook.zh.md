@@ -100,7 +100,7 @@ python tools/ops/group_tasks.py verify --manifest <整篇产物清单> --locale 
 - `stages` 的 `paths` 必须给 7 个输入文件；`variables` 可声明 `locale`、`code`、`stageDir` 等字符串，在命令里用 `{变量名}` 引用；命令的工作目录是 `variables.repoRoot`（缺省为配置目录），所以仓库相对命令要设它。`produces` 必须写 producer 真正会生成的文件，否则按失败处理。
 - `stages` 按配置顺序执行第 7–9 步的现有 producer 命令（渲染、压缩/筛查、打包、音频 QC），每个 stage 绑定命令 SHA-256 并写 `stage-report.json`；非零退出或“成功但没产出 `produces`”都停止后续 stage。命令仍含未解析 `{placeholder}` 时在派发前拒绝。`--dry-run` 只计划。stage 可声明 `failures` 指向 producer 自己的汇总 JSON；失败时从 `failedGroups`/`failedGroupIds` 读出组 ID，写进 `stage-report.json` 的 `failedGroupIds` 与 `nextActions`，用于 `redo`。
 - `stages` 的每个 stage 可声明 `resource`：`gpu`（缺省，不标就按今天的方式串行）或 `cpu`。`lanes` 读 [`config/group-l3-lanes.draft.json`](../config/group-l3-lanes.draft.json) 形状的多语言计划：每条 lane 是一种语言的 `stages` 计划和各自的输出目录；`gpu` stage 在所有语言间轮流占用唯一的 GPU 槽（8×8 渲染已把 GPU 用满，两语同渲不会更快，内存准入也不允许），等待时序号低的 lane 先拿到；`cpu` stage（压缩、打包、拷回）可以在另一语渲染时进行。一条 lane 失败只停这一种语言。`lanes-report.json` 记录每个 stage 的起止、等待时间和实际发生的重叠，是运行证据，不是放行材料。
-- ASR 筛查（`audio.screening`）加载模型前做宿主内存准入：`MemAvailable` 须不低于 24 GiB 保留加 12 GiB 预算（`--memory-budget-gib` 可改）。12 GiB 是暂定值，尚无实测；筛查会在收据旁写 `*.memory.json`，记录加载前后与结束时的 `MemAvailable` 和 CUDA 分配器峰值，用它校准预算。
+- ASR 筛查（`audio.screening`）加载模型前做宿主内存准入：筛查在 renderer 的 24 GiB 保留内运行，不再叠加保留，只要求 `MemAvailable` 不低于自身 12 GiB 暂定预算（`--memory-budget-gib` 可改）。12 GiB 尚无实测；筛查会在收据旁写 `*.memory.json`，记录加载前后与结束时的 `MemAvailable` 和 CUDA 分配器峰值，用它校准预算。
 - 逐组记录、指令和合并产物都是中间证据，不能当发布批准。
 
 ### 本周中文配音策略（2026-09-27 起的新 job）

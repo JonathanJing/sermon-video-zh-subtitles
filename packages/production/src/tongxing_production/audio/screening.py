@@ -73,12 +73,12 @@ def require(ok: bool, message: str) -> None:
 
 
 # Host memory admission for the resident Qwen3-ASR model, in the same shape as the TTS
-# replica pool: MemAvailable must cover the reserve plus this stage's budget before the model
-# loads. The 24 GiB reserve is the renderer's. The 12 GiB budget is provisional: no screening
-# run has reported its peak yet, so the sidecar receipt records before/after-load/after-run
-# MemAvailable and the CUDA allocator peaks to calibrate it. It admits screening beside a
-# stable 8x8 render (about 52 GiB free at that render's minimum).
-ASR_MEMORY_RESERVE_GIB = 24
+# replica pool. The screener runs inside the renderer's 24 GiB reserve (user decision
+# 2026-10-23): that reserve is sized to hold it, so admission does not stack another reserve
+# on top and only requires MemAvailable to cover this stage's own footprint. The 12 GiB
+# budget is provisional: no screening run has reported its peak yet, so the sidecar receipt
+# records before/after-load/after-run MemAvailable and the CUDA allocator peaks to calibrate it.
+ASR_MEMORY_RESERVE_GIB = 0
 ASR_MEMORY_BUDGET_GIB = 12
 ASR_MEMORY_BUDGET_STATUS = "provisional_until_measured"
 
@@ -828,8 +828,8 @@ def main(argv=None) -> None:
     parser.add_argument("--out-receipt", type=Path, required=True)
     parser.add_argument("--out-manifest", type=Path, required=True)
     parser.add_argument("--memory-budget-gib", type=float, default=ASR_MEMORY_BUDGET_GIB,
-                        help=f"Host memory this stage may take beyond the {ASR_MEMORY_RESERVE_GIB} GiB "
-                             f"reserve; default {ASR_MEMORY_BUDGET_GIB} ({ASR_MEMORY_BUDGET_STATUS})")
+                        help=f"Host memory this stage needs free before the model loads; it runs inside "
+                             f"the renderer's reserve. Default {ASR_MEMORY_BUDGET_GIB} ({ASR_MEMORY_BUDGET_STATUS})")
     args = parser.parse_args(argv)
     dev_settings = dev_profile.resolve("back-asr", enabled=args.dev_test,
         profile_path=args.dev_test_profile, batch_size=args.batch_size)
