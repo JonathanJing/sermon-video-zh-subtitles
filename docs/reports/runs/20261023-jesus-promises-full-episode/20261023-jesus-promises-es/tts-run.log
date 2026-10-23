@@ -1,0 +1,248 @@
+tts start es 2026-10-23T21:46:08Z
+{"sentences": 282, "pending": 282}
+W1023 21:46:11.748000 1 torch/utils/_pytree.py:630] <enum 'KernelPreference'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
+W1023 21:46:11.762000 1 torch/utils/_pytree.py:630] <enum 'ScaleCalculationMode'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
+[0;93m2026-10-23 21:46:12.315499774 [W:onnxruntime:Default, device_discovery.cc:164 DiscoverDevicesForPlatform] GPU device discovery failed: device_discovery.cc:89 ReadFileContents Failed to open file: "/sys/class/drm/card0/device/vendor"[m
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+{"id": "s0019", "seconds": 1.84, "wallSeconds": 3.074, "seed": 7}
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+{"id": "s0022", "seconds": 3.44, "wallSeconds": 2.615, "seed": 7}
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+{"id": "s0023", "seconds": 5.04, "wallSeconds": 3.721, "seed": 7}
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+{"id": "s0038", "seconds": 1.76, "wallSeconds": 1.328, "seed": 7}
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+{"id": "s0039", "seconds": 0.88, "wallSeconds": 0.773, "seed": 7}
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+{"id": "s0040", "seconds": 6.16, "wallSeconds": 4.69, "seed": 7}
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+{"id": "s0041", "seconds": 7.84, "wallSeconds": 5.787, "seed": 7}
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+{"id": "s0042", "seconds": 1.52, "wallSeconds": 1.156, "seed": 7}
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+{"id": "s0043", "seconds": 2.16, "wallSeconds": 1.618, "seed": 7}
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+{"id": "s0044", "seconds": 4.32, "wallSeconds": 3.193, "seed": 7}
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+{"id": "s0060", "seconds": 4.0, "wallSeconds": 2.964, "seed": 7}
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+{"id": "s0064", "seconds": 2.24, "wallSeconds": 1.676, "seed": 7}
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+{"id": "s0065", "seconds": 3.04, "wallSeconds": 2.268, "seed": 7}
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+{"id": "s0066", "seconds": 1.36, "wallSeconds": 1.039, "seed": 7}
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+{"id": "s0067", "seconds": 0.88, "wallSeconds": 0.674, "seed": 7}
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+{"id": "s0068", "seconds": 4.24, "wallSeconds": 3.126, "seed": 7}
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+{"id": "s0069", "seconds": 3.84, "wallSeconds": 2.889, "seed": 7}
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+... 1040 lines omitted; 6 error-like lines, 6 kept below ...
+[line 458] W1023 21:59:29.650000 1 torch/utils/_pytree.py:630] <enum 'KernelPreference'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
+[line 459] W1023 21:59:29.663000 1 torch/utils/_pytree.py:630] <enum 'ScaleCalculationMode'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
+[line 460] [0;93m2026-10-23 21:59:30.213705554 [W:onnxruntime:Default, device_discovery.cc:164 DiscoverDevicesForPlatform] GPU device discovery failed: device_discovery.cc:89 ReadFileContents Failed to open file: "/sys/class/drm/card0/device/vendor"[m
+[line 530] W1023 22:01:08.834000 1 torch/utils/_pytree.py:630] <enum 'KernelPreference'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
+[line 531] W1023 22:01:08.848000 1 torch/utils/_pytree.py:630] <enum 'ScaleCalculationMode'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
+[line 532] [0;93m2026-10-23 22:01:09.381429794 [W:onnxruntime:Default, device_discovery.cc:164 DiscoverDevicesForPlatform] GPU device discovery failed: device_discovery.cc:89 ReadFileContents Failed to open file: "/sys/class/drm/card0/device/vendor"[m
+... end of omitted section ...
+{"id": "s0718", "seconds": 4.48, "wallSeconds": 0.703, "seed": 7, "batchSize": 8}
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+{"id": "s0719", "seconds": 7.04, "wallSeconds": 0.72, "seed": 7, "batchSize": 8}
+{"id": "s0720", "seconds": 2.4, "wallSeconds": 0.72, "seed": 7, "batchSize": 8}
+{"id": "s0721", "seconds": 4.64, "wallSeconds": 0.72, "seed": 7, "batchSize": 8}
+{"id": "s0722", "seconds": 4.48, "wallSeconds": 0.72, "seed": 7, "batchSize": 8}
+{"id": "s0723", "seconds": 1.2, "wallSeconds": 0.72, "seed": 7, "batchSize": 8}
+{"id": "s0724", "seconds": 1.2, "wallSeconds": 0.72, "seed": 7, "batchSize": 8}
+{"id": "s0725", "seconds": 5.12, "wallSeconds": 0.72, "seed": 7, "batchSize": 8}
+{"id": "s0726", "seconds": 6.0, "wallSeconds": 0.72, "seed": 7, "batchSize": 8}
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+{"id": "s0727", "seconds": 0.88, "wallSeconds": 1.062, "seed": 7, "batchSize": 8}
+{"id": "s0728", "seconds": 7.36, "wallSeconds": 1.062, "seed": 7, "batchSize": 8}
+{"id": "s0733", "seconds": 4.48, "wallSeconds": 1.062, "seed": 7, "batchSize": 8}
+{"id": "s0734", "seconds": 2.8, "wallSeconds": 1.062, "seed": 7, "batchSize": 8}
+{"id": "s0735", "seconds": 10.24, "wallSeconds": 1.062, "seed": 7, "batchSize": 8}
+{"id": "s0736", "seconds": 4.08, "wallSeconds": 1.062, "seed": 7, "batchSize": 8}
+{"id": "s0737", "seconds": 0.96, "wallSeconds": 1.062, "seed": 7, "batchSize": 8}
+{"id": "s0738", "seconds": 2.0, "wallSeconds": 1.062, "seed": 7, "batchSize": 8}
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+{"id": "s0739", "seconds": 0.88, "wallSeconds": 0.678, "seed": 7, "batchSize": 8}
+{"id": "s0740", "seconds": 3.28, "wallSeconds": 0.678, "seed": 7, "batchSize": 8}
+{"id": "s0741", "seconds": 0.88, "wallSeconds": 0.678, "seed": 7, "batchSize": 8}
+{"id": "s0742", "seconds": 3.36, "wallSeconds": 0.678, "seed": 7, "batchSize": 8}
+{"id": "s0743", "seconds": 0.88, "wallSeconds": 0.678, "seed": 7, "batchSize": 8}
+{"id": "s0744", "seconds": 5.2, "wallSeconds": 0.678, "seed": 7, "batchSize": 8}
+{"id": "s0745", "seconds": 6.64, "wallSeconds": 0.678, "seed": 7, "batchSize": 8}
+{"id": "s0749", "seconds": 0.64, "wallSeconds": 0.678, "seed": 7, "batchSize": 8}
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+{"id": "s0750", "seconds": 1.44, "wallSeconds": 1.29, "seed": 7, "batchSize": 8}
+{"id": "s0751", "seconds": 11.84, "wallSeconds": 1.29, "seed": 7, "batchSize": 8}
+{"id": "s0752", "seconds": 12.24, "wallSeconds": 1.29, "seed": 7, "batchSize": 8}
+{"id": "s0753", "seconds": 2.0, "wallSeconds": 1.29, "seed": 7, "batchSize": 8}
+{"id": "s0754", "seconds": 0.96, "wallSeconds": 1.29, "seed": 7, "batchSize": 8}
+{"id": "s0755", "seconds": 9.44, "wallSeconds": 1.29, "seed": 7, "batchSize": 8}
+{"id": "s0756", "seconds": 3.2, "wallSeconds": 1.29, "seed": 7, "batchSize": 8}
+{"id": "s0757", "seconds": 2.0, "wallSeconds": 1.29, "seed": 7, "batchSize": 8}
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+{"id": "s0758", "seconds": 1.12, "wallSeconds": 1.207, "seed": 7, "batchSize": 8}
+{"id": "s0759", "seconds": 2.64, "wallSeconds": 1.207, "seed": 7, "batchSize": 8}
+{"id": "s0760", "seconds": 1.84, "wallSeconds": 1.207, "seed": 7, "batchSize": 8}
+{"id": "s0761", "seconds": 1.04, "wallSeconds": 1.207, "seed": 7, "batchSize": 8}
+{"id": "s0762", "seconds": 11.6, "wallSeconds": 1.207, "seed": 7, "batchSize": 8}
+{"id": "s0763", "seconds": 1.04, "wallSeconds": 1.207, "seed": 7, "batchSize": 8}
+{"id": "s0764", "seconds": 6.16, "wallSeconds": 1.207, "seed": 7, "batchSize": 8}
+{"id": "s0765", "seconds": 1.12, "wallSeconds": 1.207, "seed": 7, "batchSize": 8}
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+{"id": "s0766", "seconds": 0.88, "wallSeconds": 1.084, "seed": 7, "batchSize": 8}
+{"id": "s0767", "seconds": 0.96, "wallSeconds": 1.084, "seed": 7, "batchSize": 8}
+{"id": "s0768", "seconds": 2.0, "wallSeconds": 1.084, "seed": 7, "batchSize": 8}
+{"id": "s0769", "seconds": 1.44, "wallSeconds": 1.084, "seed": 7, "batchSize": 8}
+{"id": "s0770", "seconds": 10.48, "wallSeconds": 1.084, "seed": 7, "batchSize": 8}
+{"id": "s0771", "seconds": 0.96, "wallSeconds": 1.084, "seed": 7, "batchSize": 8}
+{"id": "s0772", "seconds": 1.2, "wallSeconds": 1.084, "seed": 7, "batchSize": 8}
+{"id": "s0773", "seconds": 6.08, "wallSeconds": 1.084, "seed": 7, "batchSize": 8}
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+{"id": "s0774", "seconds": 0.8, "wallSeconds": 0.605, "seed": 7, "batchSize": 8}
+{"id": "s0775", "seconds": 3.04, "wallSeconds": 0.605, "seed": 7, "batchSize": 8}
+{"id": "s0776", "seconds": 4.72, "wallSeconds": 0.605, "seed": 7, "batchSize": 8}
+{"id": "s0777", "seconds": 1.68, "wallSeconds": 0.605, "seed": 7, "batchSize": 8}
+{"id": "s0778", "seconds": 0.96, "wallSeconds": 0.605, "seed": 7, "batchSize": 8}
+{"id": "s0779", "seconds": 4.96, "wallSeconds": 0.605, "seed": 7, "batchSize": 8}
+{"id": "s0788", "seconds": 0.96, "wallSeconds": 0.605, "seed": 7, "batchSize": 8}
+{"id": "s0789", "seconds": 5.92, "wallSeconds": 0.605, "seed": 7, "batchSize": 8}
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+{"id": "s0790", "seconds": 3.12, "wallSeconds": 1.108, "seed": 7, "batchSize": 8}
+{"id": "s0791", "seconds": 10.72, "wallSeconds": 1.108, "seed": 7, "batchSize": 8}
+{"id": "s0792", "seconds": 4.0, "wallSeconds": 1.108, "seed": 7, "batchSize": 8}
+{"id": "s0793", "seconds": 1.2, "wallSeconds": 1.108, "seed": 7, "batchSize": 8}
+{"id": "s0794", "seconds": 2.48, "wallSeconds": 1.108, "seed": 7, "batchSize": 8}
+{"id": "s0795", "seconds": 0.96, "wallSeconds": 1.108, "seed": 7, "batchSize": 8}
+{"id": "s0796", "seconds": 2.0, "wallSeconds": 1.108, "seed": 7, "batchSize": 8}
+{"id": "s0797", "seconds": 3.68, "wallSeconds": 1.108, "seed": 7, "batchSize": 8}
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+{"id": "s0798", "seconds": 3.52, "wallSeconds": 0.604, "seed": 7, "batchSize": 8}
+{"id": "s0799", "seconds": 5.92, "wallSeconds": 0.604, "seed": 7, "batchSize": 8}
+{"id": "s0800", "seconds": 4.56, "wallSeconds": 0.604, "seed": 7, "batchSize": 8}
+{"id": "s0801", "seconds": 4.16, "wallSeconds": 0.604, "seed": 7, "batchSize": 8}
+{"id": "s0802", "seconds": 0.96, "wallSeconds": 0.604, "seed": 7, "batchSize": 8}
+{"id": "s0806", "seconds": 2.0, "wallSeconds": 0.604, "seed": 7, "batchSize": 8}
+{"id": "s0820", "seconds": 0.8, "wallSeconds": 0.604, "seed": 7, "batchSize": 8}
+{"id": "s0821", "seconds": 0.64, "wallSeconds": 0.604, "seed": 7, "batchSize": 8}
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+{"id": "s0822", "seconds": 4.32, "wallSeconds": 1.377, "seed": 7, "batchSize": 8}
+{"id": "s0826", "seconds": 3.76, "wallSeconds": 1.377, "seed": 7, "batchSize": 8}
+{"id": "s0835", "seconds": 3.52, "wallSeconds": 1.377, "seed": 7, "batchSize": 8}
+{"id": "s0836", "seconds": 0.56, "wallSeconds": 1.377, "seed": 7, "batchSize": 8}
+{"id": "s0837", "seconds": 13.2, "wallSeconds": 1.377, "seed": 7, "batchSize": 8}
+{"id": "s0838", "seconds": 0.96, "wallSeconds": 1.377, "seed": 7, "batchSize": 8}
+{"id": "s0839", "seconds": 4.56, "wallSeconds": 1.377, "seed": 7, "batchSize": 8}
+{"id": "s0840", "seconds": 12.24, "wallSeconds": 1.377, "seed": 7, "batchSize": 8}
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+{"id": "s0841", "seconds": 9.36, "wallSeconds": 1.03, "seed": 7, "batchSize": 8}
+{"id": "s0842", "seconds": 0.96, "wallSeconds": 1.03, "seed": 7, "batchSize": 8}
+{"id": "s0843", "seconds": 9.92, "wallSeconds": 1.03, "seed": 7, "batchSize": 8}
+{"id": "s0844", "seconds": 6.8, "wallSeconds": 1.03, "seed": 7, "batchSize": 8}
+{"id": "s0845", "seconds": 1.44, "wallSeconds": 1.03, "seed": 7, "batchSize": 8}
+{"id": "s0846", "seconds": 8.64, "wallSeconds": 1.03, "seed": 7, "batchSize": 8}
+{"id": "s0847", "seconds": 1.44, "wallSeconds": 1.03, "seed": 7, "batchSize": 8}
+{"id": "s0849", "seconds": 1.44, "wallSeconds": 1.03, "seed": 7, "batchSize": 8}
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+{"id": "s0850", "seconds": 0.88, "wallSeconds": 2.619, "seed": 7, "batchSize": 8}
+{"id": "s0851", "seconds": 7.68, "wallSeconds": 2.619, "seed": 7, "batchSize": 8}
+{"id": "s0852", "seconds": 6.0, "wallSeconds": 2.619, "seed": 7, "batchSize": 8}
+{"id": "s0853", "seconds": 2.72, "wallSeconds": 2.619, "seed": 7, "batchSize": 8}
+{"id": "s0854", "seconds": 6.08, "wallSeconds": 2.619, "seed": 7, "batchSize": 8}
+{"id": "s0860", "seconds": 1.36, "wallSeconds": 2.619, "seed": 7, "batchSize": 8}
+{"id": "s0864", "seconds": 24.0, "wallSeconds": 2.619, "seed": 7, "batchSize": 8}
+{"id": "s0865", "seconds": 14.32, "wallSeconds": 2.619, "seed": 7, "batchSize": 8}
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+{"id": "s0866", "seconds": 6.72, "wallSeconds": 0.712, "seed": 7, "batchSize": 8}
+{"id": "s0867", "seconds": 2.32, "wallSeconds": 0.712, "seed": 7, "batchSize": 8}
+{"id": "s0868", "seconds": 2.32, "wallSeconds": 0.712, "seed": 7, "batchSize": 8}
+{"id": "s0869", "seconds": 3.44, "wallSeconds": 0.712, "seed": 7, "batchSize": 8}
+{"id": "s0870", "seconds": 6.32, "wallSeconds": 0.712, "seed": 7, "batchSize": 8}
+{"id": "s0871", "seconds": 6.96, "wallSeconds": 0.712, "seed": 7, "batchSize": 8}
+{"id": "s0872", "seconds": 1.6, "wallSeconds": 0.712, "seed": 7, "batchSize": 8}
+{"id": "s0873", "seconds": 2.88, "wallSeconds": 0.712, "seed": 7, "batchSize": 8}
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+{"id": "s0874", "seconds": 2.56, "wallSeconds": 0.795, "seed": 7, "batchSize": 8}
+{"id": "s0875", "seconds": 4.16, "wallSeconds": 0.795, "seed": 7, "batchSize": 8}
+{"id": "s0876", "seconds": 7.76, "wallSeconds": 0.795, "seed": 7, "batchSize": 8}
+{"id": "s0877", "seconds": 6.88, "wallSeconds": 0.795, "seed": 7, "batchSize": 8}
+{"id": "s0878", "seconds": 4.56, "wallSeconds": 0.795, "seed": 7, "batchSize": 8}
+{"id": "s0879", "seconds": 4.32, "wallSeconds": 0.795, "seed": 7, "batchSize": 8}
+{"id": "s0880", "seconds": 5.44, "wallSeconds": 0.795, "seed": 7, "batchSize": 8}
+{"id": "s0881", "seconds": 7.36, "wallSeconds": 0.795, "seed": 7, "batchSize": 8}
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+{"id": "s0882", "seconds": 5.12, "wallSeconds": 0.532, "seed": 7, "batchSize": 8}
+{"id": "s0883", "seconds": 3.28, "wallSeconds": 0.532, "seed": 7, "batchSize": 8}
+{"id": "s0884", "seconds": 3.04, "wallSeconds": 0.532, "seed": 7, "batchSize": 8}
+{"id": "s0885", "seconds": 3.04, "wallSeconds": 0.532, "seed": 7, "batchSize": 8}
+{"id": "s0886", "seconds": 4.32, "wallSeconds": 0.532, "seed": 7, "batchSize": 8}
+{"id": "s0887", "seconds": 2.4, "wallSeconds": 0.532, "seed": 7, "batchSize": 8}
+{"id": "s0888", "seconds": 4.0, "wallSeconds": 0.532, "seed": 7, "batchSize": 8}
+{"id": "s0889", "seconds": 2.4, "wallSeconds": 0.532, "seed": 7, "batchSize": 8}
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+{"id": "s0890", "seconds": 2.0, "wallSeconds": 0.597, "seed": 7, "batchSize": 8}
+{"id": "s0891", "seconds": 5.84, "wallSeconds": 0.597, "seed": 7, "batchSize": 8}
+{"id": "s0892", "seconds": 3.84, "wallSeconds": 0.597, "seed": 7, "batchSize": 8}
+{"id": "s0893", "seconds": 5.68, "wallSeconds": 0.597, "seed": 7, "batchSize": 8}
+{"id": "s0894", "seconds": 3.2, "wallSeconds": 0.597, "seed": 7, "batchSize": 8}
+{"id": "s0895", "seconds": 3.2, "wallSeconds": 0.597, "seed": 7, "batchSize": 8}
+{"id": "s0896", "seconds": 3.92, "wallSeconds": 0.597, "seed": 7, "batchSize": 8}
+{"id": "s0897", "seconds": 5.04, "wallSeconds": 0.597, "seed": 7, "batchSize": 8}
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+{"id": "s0898", "seconds": 2.4, "wallSeconds": 1.435, "seed": 7, "batchSize": 8}
+{"id": "s0899", "seconds": 7.44, "wallSeconds": 1.435, "seed": 7, "batchSize": 8}
+{"id": "s0900", "seconds": 13.6, "wallSeconds": 1.435, "seed": 7, "batchSize": 8}
+{"id": "s0901", "seconds": 7.76, "wallSeconds": 1.435, "seed": 7, "batchSize": 8}
+{"id": "s0902", "seconds": 3.12, "wallSeconds": 1.435, "seed": 7, "batchSize": 8}
+{"id": "s0903", "seconds": 5.36, "wallSeconds": 1.435, "seed": 7, "batchSize": 8}
+{"id": "s0904", "seconds": 2.64, "wallSeconds": 1.435, "seed": 7, "batchSize": 8}
+{"id": "s0905", "seconds": 8.88, "wallSeconds": 1.435, "seed": 7, "batchSize": 8}
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+{"id": "s0906", "seconds": 4.48, "wallSeconds": 0.755, "seed": 7, "batchSize": 8}
+{"id": "s0907", "seconds": 1.68, "wallSeconds": 0.755, "seed": 7, "batchSize": 8}
+{"id": "s0908", "seconds": 3.76, "wallSeconds": 0.755, "seed": 7, "batchSize": 8}
+{"id": "s0909", "seconds": 4.32, "wallSeconds": 0.755, "seed": 7, "batchSize": 8}
+{"id": "s0910", "seconds": 6.32, "wallSeconds": 0.755, "seed": 7, "batchSize": 8}
+{"id": "s0911", "seconds": 7.36, "wallSeconds": 0.755, "seed": 7, "batchSize": 8}
+{"id": "s0912", "seconds": 2.16, "wallSeconds": 0.755, "seed": 7, "batchSize": 8}
+{"id": "s0913", "seconds": 2.8, "wallSeconds": 0.755, "seed": 7, "batchSize": 8}
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+{"id": "s0914", "seconds": 2.96, "wallSeconds": 0.964, "seed": 7, "batchSize": 8}
+{"id": "s0915", "seconds": 1.68, "wallSeconds": 0.964, "seed": 7, "batchSize": 8}
+{"id": "s0916", "seconds": 2.48, "wallSeconds": 0.964, "seed": 7, "batchSize": 8}
+{"id": "s0917", "seconds": 1.44, "wallSeconds": 0.964, "seed": 7, "batchSize": 8}
+{"id": "s0918", "seconds": 4.16, "wallSeconds": 0.964, "seed": 7, "batchSize": 8}
+{"id": "s0919", "seconds": 1.92, "wallSeconds": 0.964, "seed": 7, "batchSize": 8}
+{"id": "s0920", "seconds": 9.36, "wallSeconds": 0.964, "seed": 7, "batchSize": 8}
+{"id": "s0921", "seconds": 8.72, "wallSeconds": 0.964, "seed": 7, "batchSize": 8}
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+{"id": "s0922", "seconds": 2.08, "wallSeconds": 0.729, "seed": 7, "batchSize": 8}
+{"id": "s0923", "seconds": 7.12, "wallSeconds": 0.729, "seed": 7, "batchSize": 8}
+{"id": "s0924", "seconds": 3.12, "wallSeconds": 0.729, "seed": 7, "batchSize": 8}
+{"id": "s0925", "seconds": 0.56, "wallSeconds": 0.729, "seed": 7, "batchSize": 8}
+{"id": "s0926", "seconds": 4.16, "wallSeconds": 0.729, "seed": 7, "batchSize": 8}
+{"id": "s0927", "seconds": 6.48, "wallSeconds": 0.729, "seed": 7, "batchSize": 8}
+{"id": "s0928", "seconds": 1.28, "wallSeconds": 0.729, "seed": 7, "batchSize": 8}
+{"id": "s0929", "seconds": 2.88, "wallSeconds": 0.729, "seed": 7, "batchSize": 8}
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+{"id": "s0930", "seconds": 0.88, "wallSeconds": 0.4, "seed": 7, "batchSize": 8}
+{"id": "s0931", "seconds": 2.96, "wallSeconds": 0.4, "seed": 7, "batchSize": 8}
+{"id": "s0932", "seconds": 2.08, "wallSeconds": 0.4, "seed": 7, "batchSize": 8}
+{"id": "s0933", "seconds": 1.84, "wallSeconds": 0.4, "seed": 7, "batchSize": 8}
+{"id": "s0934", "seconds": 2.88, "wallSeconds": 0.4, "seed": 7, "batchSize": 8}
+{"id": "s0935", "seconds": 2.0, "wallSeconds": 0.4, "seed": 7, "batchSize": 8}
+{"id": "s0936", "seconds": 3.92, "wallSeconds": 0.4, "seed": 7, "batchSize": 8}
+{"id": "s0937", "seconds": 0.96, "wallSeconds": 0.4, "seed": 7, "batchSize": 8}
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+{"id": "s0938", "seconds": 2.72, "wallSeconds": 0.522, "seed": 7, "batchSize": 8}
+{"id": "s0940", "seconds": 1.04, "wallSeconds": 0.522, "seed": 7, "batchSize": 8}
+{"id": "s0941", "seconds": 0.96, "wallSeconds": 0.522, "seed": 7, "batchSize": 8}
+{"id": "s0942", "seconds": 3.76, "wallSeconds": 0.522, "seed": 7, "batchSize": 8}
+{"id": "s0943", "seconds": 5.12, "wallSeconds": 0.522, "seed": 7, "batchSize": 8}
+{"id": "s0944", "seconds": 5.12, "wallSeconds": 0.522, "seed": 7, "batchSize": 8}
+{"id": "s0945", "seconds": 4.08, "wallSeconds": 0.522, "seed": 7, "batchSize": 8}
+{"id": "s0946", "seconds": 2.0, "wallSeconds": 0.522, "seed": 7, "batchSize": 8}
+tts exit es 0 2026-10-23T22:12:28Z
