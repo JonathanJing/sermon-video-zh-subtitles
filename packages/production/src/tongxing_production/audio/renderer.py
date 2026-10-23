@@ -132,7 +132,20 @@ COMPATIBLE_BATCH_REPAIR_IMPLEMENTATION_SHA256 = {
     "085f8d21ab1263b96a32a0361582470dc8a1a6bab71b22383796fe90180d32b2",
     # Direct parent: lossless diagnostic snapshots do not change model inputs,
     # sampling, ordered full-window replay, or sound identity.
-    "bf7fee0c5f9f4abcc24dfc5334fe0d95d9aba60db0a0de0a08b3d8a00d5d0a42"
+    "bf7fee0c5f9f4abcc24dfc5334fe0d95d9aba60db0a0de0a08b3d8a00d5d0a42",
+    # Direct parent (2026-10-23): only the replica-pool telemetry compatibility
+    # list below changed; synthesis inputs, sampling and window replay are unchanged.
+    "7ab4613e14802e890440b472c9196e00256cc71f4450107fdc9af8bded31fcb8"
+}
+
+# Replica pool revisions that changed only memory telemetry metadata, never the
+# window order, inputs, seeds or model calls. The pool's cache-release option is
+# off unless a caller sets it, and this renderer never sets it.
+COMPATIBLE_TELEMETRY_ONLY_REPLICA_IMPLEMENTATION_SHA256 = {
+    # Reserve-failure snapshot only.
+    "fcbfe1c288a0d525e172edc47eff957305fbe0c65085d12617870bfa5b12fdfc",
+    # Per-event MemAvailable, parent RSS and worker CUDA allocator counters (2026-10-23).
+    "7c8aa181f0940dbc7cfd3eeaa26034ef5f88d6a3bff7251bef1564ffff70966d",
 }
 
 
@@ -570,8 +583,8 @@ def _same_compatible_batch_repair_intent(actual: dict[str, Any],
     new = dict(expected)
     old.pop("batchImplementationSha256", None)
     new.pop("batchImplementationSha256", None)
-    # The prior pool differs only in reserve-failure telemetry.
-    if old.get("replicaImplementationSha256") == "fcbfe1c288a0d525e172edc47eff957305fbe0c65085d12617870bfa5b12fdfc":
+    # Prior pools that differ only in telemetry made the same model calls.
+    if old.get("replicaImplementationSha256") in COMPATIBLE_TELEMETRY_ONLY_REPLICA_IMPLEMENTATION_SHA256:
         old["replicaImplementationSha256"] = new.get("replicaImplementationSha256")
     if old.get("batchSeedPolicy") == LEGACY_BATCH_SEED_POLICY:
         old["batchSeedPolicy"] = new.get("batchSeedPolicy")
