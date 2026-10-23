@@ -43,12 +43,23 @@ def main() -> int:
     parser.add_argument("--max-new-tokens", type=int, default=768)
     parser.add_argument("--only-speaker", help="synthesize only rows whose speaker key is this (one checkpoint per run)")
     parser.add_argument("--batch-size", type=int, default=1, help="sentences per model call (batch>1 changes sound identity)")
+    parser.add_argument("--only-ids-file", type=Path, help="process only these ids in speech order (repair a batch window)")
     args = parser.parse_args()
     rows = [json.loads(line) for line in args.speech.read_text(encoding="utf-8").splitlines() if line.strip()]
     if args.only_speaker:
         rows = [row for row in rows if row["speaker"] == args.only_speaker]
         if not rows:
             raise SystemExit(f"no rows with speaker {args.only_speaker!r}")
+    if args.only_ids_file:
+        wanted = json.loads(args.only_ids_file.read_text(encoding="utf-8"))
+        if not isinstance(wanted, list) or not all(isinstance(x, str) for x in wanted):
+            raise SystemExit("--only-ids-file must be a JSON list of ids")
+        unknown = sorted(set(wanted) - {row["id"] for row in rows})
+        if unknown:
+            raise SystemExit(f"unknown ids in --only-ids-file: {unknown[:10]}")
+        rows = [row for row in rows if row["id"] in set(wanted)]
+        if not rows:
+            raise SystemExit("--only-ids-file selected no rows")
     args.out.mkdir(parents=True, exist_ok=True)
     pending = [row for row in rows if not (args.out / f"{row['id']}.wav").exists()]
     print(json.dumps({"sentences": len(rows), "pending": len(pending)}), flush=True)
@@ -60,6 +71,7 @@ def main() -> int:
         str(args.checkpoint), device_map=args.device,
         dtype=torch.bfloat16 if args.dtype == "bfloat16" else torch.float32)
     log = (args.out / "tts-log.jsonl").open("a", encoding="utf-8")
+    batch_log = (args.out / "tts-batches.jsonl").open("a", encoding="utf-8")
     batch_size = max(1, args.batch_size)
     for start in range(0, len(pending), batch_size):
         batch = pending[start:start + batch_size]
@@ -79,16 +91,24 @@ def main() -> int:
         if len(wavs) != len(batch):
             raise SystemExit(f"batch {batch[0]['id']}: TTS returned {len(wavs)} outputs for {len(batch)} rows")
         per_row = wall / len(batch)
+        batch_seconds = 0.0
         for row, wav in zip(batch, wavs):
             target = args.out / f"{row['id']}.wav"
             write_wav(target, wav, rate)
             with wave.open(str(target), "rb") as handle:
                 seconds = handle.getnframes() / handle.getframerate()
+            batch_seconds += seconds
             entry = {"id": row["id"], "seconds": round(seconds, 3),
                      "wallSeconds": round(per_row, 3), "seed": args.seed, "batchSize": len(batch)}
             log.write(json.dumps(entry, ensure_ascii=False) + "\n")
             log.flush()
             print(json.dumps(entry), flush=True)
+        batch_entry = {"batchIndex": start // batch_size, "ids": [row["id"] for row in batch],
+                       "seed": args.seed, "batchSize": len(batch),
+                       "wallSeconds": round(wall, 3), "audioSeconds": round(batch_seconds, 3)}
+        batch_log.write(json.dumps(batch_entry, ensure_ascii=False) + "\n")
+        batch_log.flush()
+        print(json.dumps(batch_entry), flush=True)
     return 0
 
 
