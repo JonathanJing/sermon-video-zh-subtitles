@@ -1,0 +1,12 @@
+{
+  "name": "tongxing-push-subscriptions",
+  "private": true,
+  "type": "module",
+  "main": "index.mjs",
+  "engines": { "node": "22" },
+  "scripts": { "test": "node --test test/*.test.mjs" },
+  "dependencies": {
+    "@google-cloud/firestore": "9.0.1",
+    "firebase-functions": "7.3.2"
+  }
+}

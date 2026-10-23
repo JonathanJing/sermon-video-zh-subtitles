@@ -249,7 +249,7 @@ def prepare(production_candidate: Path, dev_base: Path, out: Path) -> dict:
         config["hosting"].pop("target", None)
         config["hosting"]["site"] = DEV_SITE
         config["hosting"]["rewrites"] = [rule for rule in config["hosting"]["rewrites"]
-                                         if rule.get("source") != "/api/**"]
+                                         if rule.get("source") not in ("/api/**", "/api/push/**")]
         config["hosting"]["headers"].append({"source": "**", "headers": [
             {"key": "X-Robots-Tag", "value": "noindex, nofollow"}]})
         (temporary / "firebase.json").write_text(
@@ -257,7 +257,7 @@ def prepare(production_candidate: Path, dev_base: Path, out: Path) -> dict:
         require(config["hosting"]["rewrites"] == [{"source": "/pages/**",
                                                     "destination": "/index.html"}],
                 "Dev preview has unexpected rewrites")
-        require(all(rule.get("source") != "/api/**"
+        require(all(rule.get("source") not in ("/api/**", "/api/push/**")
                     for rule in config["hosting"]["rewrites"]), "Dev API rewrite is unsafe")
         require(hosting.digest(public / "multilingual-v2.json")
                 == production_report["newCatalogSha256"], "Formal catalog changed")
