@@ -107,13 +107,17 @@ TTS 可能 ±15 分钟；每条就绪我发链接和“先听这 5–10 句”�
 audio(语言) ≈ Σ build_speech 的 estimatedSeconds
               （或用原声讲话秒数 × 语言系数：zh 0.95、ko 1.06、es 1.07）
 TTS 墙钟 = audio / 速度 + 约 1 分钟模型加载
-可审 = TTS 开始 + TTS 墙钟 + 4–6 分钟（ASR、合并、拉回）
+可审 = TTS 开始 + TTS 墙钟 + 约 1 分钟加载 + 4–6 分钟（ASR 对齐、合并、review MP3/播放器、拉回）
 下一条语言 TTS 开始 = 上一条可审（队列串行）
 速度：batch 8 取 2.5×（2026-10-23 实测整体 2.68×、batch 段 3.87×）；batch 1 取 1.35×
 TTS 开始 = max(讲员映射确认, 翻译 + 口播规格)
 ```
 
 本次校准（2026-10-23）：英文表 12:27、映射 13:20、中文可审 13:59、韩语 14:47、西语 15:16、页面 15:50；TTS 46/51/29 分钟；整轨 60.5/66.5/67.3 分钟；用户实际 21/17/15 分钟/条（偏标记）。计划里整轨和标记两种时间都写，由用户选；不要用标记时间承诺整轨。
+
+50 分钟单人的参考（原始断句、batch 8、三语）：19:00 开工 → 19:10 英文表 → 19:25 TTS → 19:50/20:17/20:44 可审 → 21:15 页面。音频对齐（ASR/合并/review MP3/播放器）已计入每条可审；不跑 MFA。若改用正式 MFA 锚点，Layer 1 机器段 +10–15 分钟、英文/句界审核 +10–20 分钟。
+
+**海报与推送（独立交付）**：海报由用户的独立 agent 制作/上传，不占主生产线关键路径；开工时冻结标题/日期/讲员/类别，把 pageId 的固定页面 URL 交给海报 agent；页面发布后海报随 iOS 推送一起发。主生产线只给交接包（pageId、三语 URL、英文对照 URL、标题/日期/讲员/来源、部署版本），不生成、不发送海报；推送由 App 侧或用户触发，代理只准备标题/正文/深链。
 
 **听审要准备的环节**
 
@@ -228,7 +232,7 @@ python3 $EXP/spark_queue.py --session <session> --owner sentence-first-agent --r
 python3 $EXP/finish_run.py --run $RUN --remote SPARK:sentence-first-agent/<run> [--clip-from <第一种语言的 run>]
 ```
 
-它拉回 `tts/` 和回转写，合并音轨（每句放在英文起点，放不下就接在上一句后 0.25 秒），打分，混回视频，出手机预览，并打印落后最多的句、配音与原声时长比、TTS 速度和回转写相似度低的句。
+它拉回 `tts/` 和回转写，合并音轨（每句放在英文起点，放不下就接在上一句后 0.25 秒），打分，生成 `review.mp3`（96 kbps）和 `review-player.html`（逐句播放器），打印落后最多的句、配音与原声时长比、TTS 速度和回转写相似度低的句。**音频对齐（ASR 回转写、`schedule.json`）、review MP3 和播放器在这一步一并生成，不等发布。**
 
 ### 8 人工审核：边配边审
 
@@ -238,10 +242,13 @@ python3 $EXP/review_sheets.py --out <审核目录> --window-start <窗口起点�
 
 一种语言收尾后就把整轨和审核表发给用户，并生成逐句播放器（音频放在审核目录）：
 
+`finish_run.py` 已生成 `$RUN/review.mp3` 和 `$RUN/review-player.html`；直接：
+
 ```bash
-python3 $EXP/review_player.py --run $RUN --audio <审核目录>/<locale>.mp3 --out <审核目录>/review-player.html
-python3 -m http.server -d <审核目录> 8765
+python3 -m http.server -d $RUN 8765
 ```
+
+需要把播放器/音频另存到审核目录时再跑 `review_player.py --run $RUN --audio ... --out ...`。
 
 播放器按句播放合并音轨，标出 ASR <0.85、讲员存疑、复核修订和备注；逐句写结论，导出的 JSON 可作为审核收据附件。整轨 MP3 仍是给用户完整听一遍的版本。
 
@@ -288,4 +295,4 @@ python3 $EXP/repair_sentence.py --run $RUN --id s0123 --remote SPARK:<run> --ses
 
 ## 完成的样子
 
-每种语言的 `run.md` 能让另一个人复现：来源、窗口、模型与 checkpoint、每步的决定、改过哪些句、用户结论、每步用时。审核收据在审核目录；音频留在本机；发布了的话，报告里写明线上版本号和哪些检查没做。发布的页面要同时满足：每种语言在正式版 App 的解码规则下都能显示（固定路径、文稿时间），英文对照已上线且每一句都有英文。缺英文对照不算发布完成。整期用 batch 8；改句按窗口重配；开工与发布前 `preflight.py` 通过；审核用 `review_player.py`；合并后跑 `consistency_check.py`；ASR 用 `asr_triage.py` 分诊；双讲员可用 `--pool-replicas 8`。
+每种语言的 `run.md` 能让另一个人复现：来源、窗口、模型与 checkpoint、每步的决定、改过哪些句、用户结论、每步用时。审核收据在审核目录；音频留在本机；发布了的话，报告里写明线上版本号和哪些检查没做。发布的页面要同时满足：每种语言在正式版 App 的解码规则下都能显示（固定路径、文稿时间），英文对照已上线且每一句都有英文。缺英文对照不算发布完成。整期用 batch 8；每条可审前 `finish_run.py` 一并生成 `review.mp3`/`review-player.html`；改句按窗口重配；开工与发布前 `preflight.py` 通过；审核用 `review_player.py`；合并后跑 `consistency_check.py`；ASR 用 `asr_triage.py` 分诊；双讲员可用 `--pool-replicas 8`。

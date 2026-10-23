@@ -109,13 +109,28 @@ def main() -> int:
     if log.exists():
         entries = [json.loads(l) for l in log.read_text(encoding="utf-8").splitlines() if l.strip()]
         tts_wall = round(sum(e["wallSeconds"] for e in entries), 1)
+    review_mp3 = run / "review.mp3"
+    if not review_mp3.exists() or review_mp3.stat().st_mtime < (run / "track.wav").stat().st_mtime:
+        subprocess.run(["ffmpeg", "-nostdin", "-v", "error", "-y", "-i", str(run / "track.wav"),
+                        "-c:a", "libmp3lame", "-b:a", "96k", str(review_mp3)], check=True)
+    review_player = None
+    try:
+        from review_player import build_player
+        player_info = build_player(run, run / "review-player.html", audio=review_mp3,
+                                   title=f"{run.name} 逐句听审")
+        review_player = {"html": str(run / "review-player.html"), "rows": player_info["rows"]}
+        print(json.dumps({"reviewMp3MB": round(review_mp3.stat().st_size / 1e6, 1),
+                          "reviewPlayer": player_info}, ensure_ascii=False))
+    except Exception as exc:
+        print("review player skipped:", exc)
     mark(run, "l3.finish", "finished")
     write_outcome(run, status="track_ready_for_review", delivery="four_layer_release", locale=locale,
                   trackSeconds=track_seconds, ttsWallSeconds=tts_wall,
                   realtime=round(track_seconds / tts_wall, 2) if tts_wall else None,
                   asrMean=asr_mean, startedAt=started_at,
                   endedAt=datetime.now(timezone.utc).isoformat(timespec="seconds"), published=False,
-                  note="track merged and scored; human review and publication are separate stages")
+                  reviewMp3=str(review_mp3), reviewPlayer=review_player,
+                  note="track merged and scored; audio alignment and review materials done in the same pass")
     write_timings(run)
     return 0
 
