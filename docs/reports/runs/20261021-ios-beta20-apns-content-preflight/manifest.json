@@ -1,0 +1,27 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261021-ios-beta20-apns-content-preflight",
+  "runs": [
+    {
+      "label": "apns-preflight-20261021",
+      "source": "~/.codex/worktrees/ios-next-beta-poster-push/sermon-video-zh-subtitles/artifacts/tongxing-ios/apns-preflight-20261021",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "apns-preflight-20261021",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 760,
+      "truncated": false,
+      "sha256": "9a567ff8bc20f1f70e2db3ad09238678bf3af0e4fccdd2d6605c9472be203f0a",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

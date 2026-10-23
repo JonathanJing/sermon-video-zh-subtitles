@@ -1,0 +1,25 @@
+{
+  "type": "ios_beta_apns_content_preflight",
+  "status": "passed",
+  "catalogSchema": "sermon-multilingual-catalog-v5",
+  "defaultPageId": "resi-20261018-15030286",
+  "verifiedNotices": [
+    {
+      "locale": "zh-Hans",
+      "pageID": "resi-20261018-15030286",
+      "releaseSHA256": "3b0fbbfcd668b5379f837155080e6125e1ae3fb07d6b5bf4e3c46bee7861a4b5"
+    },
+    {
+      "locale": "ko",
+      "pageID": "resi-20261018-15030286",
+      "releaseSHA256": "b969f6b2553680cce37fba5560ae554947abd5ea2bb0885e6e59bba67a0f937c"
+    },
+    {
+      "locale": "es",
+      "pageID": "resi-20261018-15030286",
+      "releaseSHA256": "6cd190a2c461beb5e6e1748cfe6b856ab813179b35ff40691bc2f721462a603a"
+    }
+  ],
+  "apnsDispatch": "not_run",
+  "deviceReceipt": "not_run"
+}
