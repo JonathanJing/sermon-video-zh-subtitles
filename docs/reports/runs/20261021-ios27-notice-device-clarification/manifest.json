@@ -1,0 +1,40 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261021-ios27-notice-device-clarification",
+  "runs": [
+    {
+      "label": "20261021-ios27-notice-device-clarification",
+      "source": "~/.codex/worktrees/ios-next-beta-poster-push/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-21/ios27-report-inputs/20261021-ios27-notice-device-clarification",
+      "skipped": {
+        ".json": 1
+      }
+    }
+  ],
+  "files": [
+    {
+      "run": "20261021-ios27-notice-device-clarification",
+      "path": "run.log",
+      "kind": "log",
+      "bytes": 146542,
+      "truncated": true,
+      "sha256": "9c417501b317e6159253476ff68b737f447f9aab12415e406c5ebf7231373dc4",
+      "redactions": {
+        "home_dir": 3
+      }
+    },
+    {
+      "run": "20261021-ios27-notice-device-clarification",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 368,
+      "truncated": false,
+      "sha256": "ab673491eda7ae4ebfb6ff27339ce0664c4f8658d190f2264370691cdea8f0a0",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}
