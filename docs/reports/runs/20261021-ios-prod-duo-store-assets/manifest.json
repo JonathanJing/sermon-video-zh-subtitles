@@ -1,0 +1,27 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261021-ios-prod-duo-store-assets",
+  "runs": [
+    {
+      "label": "duo-store-assets",
+      "source": "~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/artifacts/ios-formal-push-validation/reports/duo-store-assets",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "duo-store-assets",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 313,
+      "truncated": false,
+      "sha256": "348a39302d4890537b55dbed531cc3a0ae2570b646bf8f30ba768bb1fe8de7a6",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}
