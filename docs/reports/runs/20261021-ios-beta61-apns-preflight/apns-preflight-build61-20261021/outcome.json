@@ -1,0 +1,15 @@
+{
+  "schemaVersion": "tongxing-apns-preflight-receipt-v1",
+  "deviceReceiptSha256": "d0ebf329061a10e52e3977bc193e8dc9302641443b6052f6783d7eef347be4ca",
+  "deviceReceiptMode": "0600",
+  "environment": "production",
+  "bundleID": "com.jonathanjing.tongxing.beta",
+  "locale": "zh-Hans",
+  "pageID": "resi-20261018-15030286",
+  "releaseSHA256": "3b0fbbfcd668b5379f837155080e6125e1ae3fb07d6b5bf4e3c46bee7861a4b5",
+  "providerTokenSignable": true,
+  "dryRun": "pass",
+  "systemPythonAttempt": "ImportError; no request sent",
+  "projectVenvAttempt": "pass; no request sent",
+  "apnsRequest": "not_run"
+}
