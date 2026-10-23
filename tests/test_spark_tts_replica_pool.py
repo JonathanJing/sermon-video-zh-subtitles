@@ -24,7 +24,8 @@ class FakeEngine:
             raise RuntimeError("fake inference error")
         return [{"identity": row["identity"], "wave": [seed], "sampleRate": 24000,
                  "pid": os.getpid(), "checkpoint": self.checkpoint,
-                 "kwargs": self.kwargs} for row in requests]
+                 "kwargs": self.kwargs,
+                 "allocConf": os.environ.get("PYTORCH_CUDA_ALLOC_CONF")} for row in requests]
 
 
 def requests(index, **settings):
@@ -232,8 +233,8 @@ class ReplicaMemoryTelemetryTests(unittest.TestCase):
             pool.submit(0, requests(0), seed=42)
             pool.result(0)
         kinds = [event["kind"] for event in events]
-        self.assertEqual(kinds, ["ready", "pool_ready", "submitted", "result", "pool_closed"])
-        ready, pool_ready, submitted, result = events[:4]
+        self.assertEqual(kinds, ["admission", "ready", "pool_ready", "submitted", "result", "pool_closed"])
+        ready, pool_ready, submitted, result = events[1:5]
         for event in (ready, pool_ready, submitted, result):
             self.assertEqual(event["memAvailableBytes"], enough_memory())
         self.assertIn("parentRssBytes", result)
@@ -271,3 +272,60 @@ class ReplicaMemoryTelemetryTests(unittest.TestCase):
         self.assertIn("parentRssBytes", snapshot)
         self.assertEqual(set(snapshot["workers"][0]), {"pid", "rssBytes", "lastReported"})
         self.assertEqual(set(snapshot["workers"][0]["lastReported"]), {"rssBytes", "cuda"})
+
+
+class ReplicaAdmissionTests(unittest.TestCase):
+    """Budget admission and the allocator setting happen before any worker process exists."""
+    GIB = 1024**3
+
+    def pool(self, **kwargs):
+        defaults = dict(replicas=2, memory_reader=enough_memory, startup_timeout=10,
+                        generation_timeout=5, poll_interval=0.02)
+        defaults.update(kwargs)
+        return ReplicaPool("checkpoint", FakeEngine, {"device": "cuda:0"}, **defaults)
+
+    def test_budget_below_reserve_plus_replicas_rejects_before_spawn(self):
+        events = []
+        pool = self.pool(memory_reader=lambda: 40 * self.GIB, admission_gib_per_replica=10,
+                         telemetry=events.append)
+        with self.assertRaisesRegex(ReplicaPoolError, "admission budget"):
+            pool.start()
+        self.assertEqual(pool.processes, [])
+        rejected = next(event for event in events if event["kind"] == "admission")
+        self.assertEqual(rejected["status"], "rejected")
+        self.assertEqual(rejected["requiredBytes"], (24 + 2 * 10) * self.GIB)
+        self.assertEqual(rejected["memAvailableBytes"], 40 * self.GIB)
+
+    def test_budget_met_is_recorded_and_zero_budget_keeps_the_reserve_only(self):
+        for budget, available in ((10, 50 * self.GIB), (0, 25 * self.GIB)):
+            with self.subTest(budget=budget):
+                events = []
+                with self.pool(memory_reader=lambda: available, admission_gib_per_replica=budget,
+                               telemetry=events.append) as pool:
+                    pool.start()
+                admitted = next(event for event in events if event["kind"] == "admission")
+                self.assertEqual(admitted["status"], "admitted")
+                self.assertEqual(admitted["admissionBytesPerReplica"], budget * self.GIB)
+        with self.assertRaisesRegex(ValueError, "admission_gib_per_replica"):
+            self.pool(admission_gib_per_replica=True)
+
+    def test_allocator_setting_reaches_workers_and_conflicts_fail_closed(self):
+        from unittest.mock import patch
+        with patch.dict(os.environ):
+            os.environ.pop("PYTORCH_CUDA_ALLOC_CONF", None)
+            events = []
+            with self.pool(cuda_alloc_conf="expandable_segments:True", telemetry=events.append) as pool:
+                pool.start()
+                pool.submit(0, requests(0), seed=42)
+                rows = pool.result(0)
+            self.assertEqual(rows[0]["allocConf"], "expandable_segments:True")
+            ready = next(event for event in events if event["kind"] == "pool_ready")
+            self.assertEqual(ready["cudaAllocConf"], "expandable_segments:True")
+        with patch.dict(os.environ, {"PYTORCH_CUDA_ALLOC_CONF": "max_split_size_mb:128"}):
+            pool = self.pool(cuda_alloc_conf="expandable_segments:True")
+            with self.assertRaisesRegex(ReplicaPoolError, "allocator setting"):
+                pool.start()
+            self.assertEqual(pool.processes, [])
+            self.assertEqual(os.environ["PYTORCH_CUDA_ALLOC_CONF"], "max_split_size_mb:128")
+        with self.assertRaisesRegex(ValueError, "cuda_alloc_conf"):
+            self.pool(cuda_alloc_conf=" ")

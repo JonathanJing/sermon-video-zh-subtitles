@@ -116,6 +116,18 @@ BATCH_SEED_POLICY = "base_plus_fixed_window_start_ordered_full_window_v2"
 BATCH_CACHED_UNIT_POLICY = "replay_full_bound_window_when_units_are_missing_v1"
 LEGACY_BATCH_SEED_POLICY = "base_plus_fixed_window_start_ordered_missing_units_v1"
 LEGACY_BATCH_CACHED_UNIT_POLICY = "exclude_committed_or_admitted_reuse"
+# Spark production (8 replicas x batch 8) memory policy, measured 2026-10-23 on the
+# 64-sentence sample over 48 windows (data/benchmarks/spark-tts-memory-ab/2026-10-23):
+# without it each worker's CUDA caching allocator keeps ~1 GiB more reserved per window
+# and every full sermon trips the reserve; with it MemAvailable stays flat, every WAV is
+# byte-identical and matched-window generation time is unchanged within 1%.
+SPARK_REPLICA_MEMORY_POLICY = "release_cuda_cache_expandable_segments_v1"
+SPARK_CUDA_ALLOC_CONF = "expandable_segments:True"
+SPARK_REPLICA_RESERVE_GIB = 24
+# Measured peak host memory per replica from before load to the run minimum: 8.1 GiB
+# (3.9 weights, up to 3.0 transient, 2.3 RSS). Admission needs reserve + replicas x this
+# before any worker process exists; 9.0 leaves a margin over the measurement.
+SPARK_REPLICA_ADMISSION_GIB = 9.0
 COMPATIBLE_BATCH_REPAIR_IMPLEMENTATION_SHA256 = {
     # Direct parent (L3 A3, closure window G1): the package move changed only imports
     # and resource lookup; synthesis inputs, sampling, window replay and PCM are unchanged.
@@ -134,8 +146,10 @@ COMPATIBLE_BATCH_REPAIR_IMPLEMENTATION_SHA256 = {
     # Direct parent: lossless diagnostic snapshots do not change model inputs,
     # sampling, ordered full-window replay, or sound identity.
     "bf7fee0c5f9f4abcc24dfc5334fe0d95d9aba60db0a0de0a08b3d8a00d5d0a42",
-    # Direct parent (2026-10-23): only the replica-pool telemetry compatibility
-    # list below changed; synthesis inputs, sampling and window replay are unchanged.
+    # Direct dev parent (human-override path-map admission, 2026-10-22): synthesis
+    # inputs, sampling and window replay are unchanged.
+    "5f932a0e49785b02281d0beddf4d26c94410c6a60cf3c841b5ec240c5631e51a",
+    # feat/deepseek-flash-layer2 parent of the same lineage without the path-map edits.
     "7ab4613e14802e890440b472c9196e00256cc71f4450107fdc9af8bded31fcb8"
 }
 
@@ -445,7 +459,8 @@ def _intent(context: dict[str, Any], paths: dict[str, Path], index: int, *, seed
                       replicaPolicy="spark_single_speaker_fixed_windows_v1",
                       replicaImplementationSha256=identity.json_sha256({
                           "pool": _module_file_sha256(replica_pool),
-                          "scheduler": _module_file_sha256(_window_scheduler)}))
+                          "scheduler": _module_file_sha256(_window_scheduler)}),
+                      replicaMemoryPolicy=SPARK_REPLICA_MEMORY_POLICY)
     return result
 
 
@@ -601,6 +616,10 @@ def _same_compatible_batch_repair_intent(actual: dict[str, Any],
         old["batchSeedPolicy"] = new.get("batchSeedPolicy")
     if old.get("batchCachedUnitPolicy") == LEGACY_BATCH_CACHED_UNIT_POLICY:
         old["batchCachedUnitPolicy"] = new.get("batchCachedUnitPolicy")
+    # Intents before the memory policy came from the same model calls: the 2026-10-23
+    # measurement showed byte-identical WAVs with and without it.
+    if "replicaMemoryPolicy" not in old and new.get("replicaMemoryPolicy") == SPARK_REPLICA_MEMORY_POLICY:
+        old["replicaMemoryPolicy"] = new["replicaMemoryPolicy"]
     return old == new
 
 
@@ -1105,7 +1124,9 @@ def _render_units(context: dict[str, Any], paths: dict[str, Path], root: Path,
                 runtime_path = root / "replica-runtime.json"
                 runtime = {"schemaVersion": "sermon-spark-tts-replica-runtime-v1",
                     "status": "running", "replicas": replicas, "batchSize": batch_size,
-                    "jobSha256": frozen, "reserveGiB": 24,
+                    "jobSha256": frozen, "reserveGiB": SPARK_REPLICA_RESERVE_GIB,
+                    "memoryPolicy": SPARK_REPLICA_MEMORY_POLICY, "cudaAllocConf": SPARK_CUDA_ALLOC_CONF,
+                    "releaseCudaCache": True, "admissionGiBPerReplica": SPARK_REPLICA_ADMISSION_GIB,
                     "rendererSha256": _renderer_sha256(),
                     "poolSha256": _module_file_sha256(replica_pool), "events": []}
                 def event(row):
@@ -1117,7 +1138,9 @@ def _render_units(context: dict[str, Any], paths: dict[str, Path], root: Path,
                 model_resources.callback(finish_runtime)
                 worker_factory = SparkQwenSynthesizer if original_factory is QwenSynthesizer else original_factory
                 pool = replica_pool.ReplicaPool(args[0], factory=worker_factory,
-                    engine_kwargs=kwargs, replicas=replicas, telemetry=event)
+                    engine_kwargs=kwargs, replicas=replicas, telemetry=event,
+                    release_cuda_cache=True, cuda_alloc_conf=SPARK_CUDA_ALLOC_CONF,
+                    admission_gib_per_replica=SPARK_REPLICA_ADMISSION_GIB)
                 model_resources.callback(pool.close)
                 engine = ParallelBatchEngine(pool, windows, seed=seed, frozen_check=frozen_check)
             return _BatchedUnitSynthesizer(engine, requests,

@@ -7,6 +7,9 @@ Telemetry carries memory metadata only: host MemAvailable and parent RSS at each
 event, and each worker's RSS and CUDA caching-allocator counters after load and
 after every window. ``release_cuda_cache`` makes a worker return its cached, unused
 allocator blocks after each window; it is off unless the caller asks for it.
+``cuda_alloc_conf`` is exported as PYTORCH_CUDA_ALLOC_CONF before any worker spawns,
+and ``admission_gib_per_replica`` makes ``start`` require reserve plus that budget per
+replica before the first process exists, so a run that cannot fit never loads a model.
 """
 from __future__ import annotations
 
@@ -124,11 +127,18 @@ class SparkTTSReplicaPool(AbstractContextManager):
                  memory_reader: Callable[[], int] = linux_mem_available,
                  telemetry: Callable[[dict], None] | None = None,
                  startup_timeout: float = 600, generation_timeout: float = 600,
-                 poll_interval: float = 0.2, release_cuda_cache: bool = False):
+                 poll_interval: float = 0.2, release_cuda_cache: bool = False,
+                 cuda_alloc_conf: str | None = None, admission_gib_per_replica: float = 0):
         if type(replicas) is not int or not 1 <= replicas <= 32:
             raise ValueError("Replica count must be 1..32")
         if type(release_cuda_cache) is not bool:
             raise ValueError("release_cuda_cache must be a bool")
+        if cuda_alloc_conf is not None and (type(cuda_alloc_conf) is not str or not cuda_alloc_conf
+                                            or cuda_alloc_conf != cuda_alloc_conf.strip()):
+            raise ValueError("cuda_alloc_conf must be None or a non-empty setting string")
+        if (type(admission_gib_per_replica) not in (int, float) or isinstance(admission_gib_per_replica, bool)
+                or not math.isfinite(admission_gib_per_replica) or not 0 <= admission_gib_per_replica <= 1024):
+            raise ValueError("admission_gib_per_replica must be a finite GiB value in 0..1024")
         if (not all(math.isfinite(value) for value in
                     (min_available_gib, startup_timeout, generation_timeout, poll_interval))
                 or not 0 <= min_available_gib <= 1024
@@ -142,6 +152,8 @@ class SparkTTSReplicaPool(AbstractContextManager):
         self.startup_timeout, self.generation_timeout = startup_timeout, generation_timeout
         self.poll_interval = poll_interval
         self.release_cuda_cache = release_cuda_cache
+        self.cuda_alloc_conf = cuda_alloc_conf
+        self.admission_bytes_per_replica = int(admission_gib_per_replica * 1024**3)
         self.processes, self.connections = [], []
         self._ready, self._busy, self._pending, self._outputs = set(), {}, {}, {}
         # Latest memory metadata each worker reported, for the reserve-failure snapshot.
@@ -250,12 +262,37 @@ class SparkTTSReplicaPool(AbstractContextManager):
             self._event(event | {"memAvailableBytes": available, "parentRssBytes": parent_rss})
         return available
 
+    def _configure_allocator(self):
+        """Workers inherit the allocator setting through the spawn environment."""
+        if self.cuda_alloc_conf is None:
+            return
+        present = os.environ.get("PYTORCH_CUDA_ALLOC_CONF")
+        if present not in (None, self.cuda_alloc_conf):
+            self._event({"kind": "allocator_conflict", "timestamp": time.time(),
+                         "required": self.cuda_alloc_conf, "present": present})
+            raise ReplicaPoolError("PYTORCH_CUDA_ALLOC_CONF differs from the pool's allocator setting")
+        os.environ["PYTORCH_CUDA_ALLOC_CONF"] = self.cuda_alloc_conf
+
+    def _admit(self):
+        """Whole-pool budget before any process exists: the reserve plus each replica's peak."""
+        available = self._guard()
+        required = self.reserve_bytes + self.replicas * self.admission_bytes_per_replica
+        event = {"kind": "admission", "timestamp": time.time(), "memAvailableBytes": available,
+                 "requiredBytes": required, "reserveBytes": self.reserve_bytes,
+                 "admissionBytesPerReplica": self.admission_bytes_per_replica, "replicas": self.replicas}
+        if self.admission_bytes_per_replica and available < required:
+            self._event(event | {"status": "rejected"})
+            raise ReplicaPoolError("MemAvailable is below the TTS replica admission budget")
+        self._event(event | {"status": "admitted"})
+
     def start(self):
         if self._closed or self._started:
             raise ReplicaPoolError("TTS replica pool cannot be restarted")
         self._started = True
         deadline = time.monotonic() + self.startup_timeout
         try:
+            self._configure_allocator()
+            self._admit()
             context = mp.get_context("spawn")
             for worker in range(self.replicas):
                 self._guard()
