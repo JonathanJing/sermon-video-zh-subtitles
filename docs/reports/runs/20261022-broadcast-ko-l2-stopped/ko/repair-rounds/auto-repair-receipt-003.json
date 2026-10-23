@@ -1,0 +1,55 @@
+{
+  "schemaVersion": "sermon-layer2-auto-repair-receipt-v1",
+  "routingVersion": "layer2-auto-repair-routing-v1",
+  "lineage": {
+    "targetLocale": "ko",
+    "englishSourcePackageJsonSha256": "5dc7deb518491cef0d0c98c8c21b5c7f8aebc3730c13042afc6427b640f75e2c",
+    "anchorManifestSha256": "dc7777a2bfe7ea5f4e482f59ad36a5a4e5c081e931ec3cb3edfe9aba32d4b140",
+    "translationPolicySha256": "0ff7d2f43adb6426cf65d56801eb18ec89095a73a3f5a00aa9cc0c98cefed3cc"
+  },
+  "status": "repair_stopped",
+  "rounds": 3,
+  "finalRunDirectory": "~/.codex/worktrees/broadcast-es-ko-shared-source/sermon-video-zh-subtitles/artifacts/weekend-live/broadcast-20261018-es-ko-20261022/text-retry1/ko/repair-rounds/round-003",
+  "evidenceSha256": null,
+  "initialSpend": {
+    "calls": 832,
+    "tokens": 1904116,
+    "callsWithoutUsage": 0
+  },
+  "repairSpend": {
+    "calls": 12,
+    "tokens": 36178
+  },
+  "stoppedGroups": [
+    {
+      "translationGroupId": "translation-chunk-0001-u015",
+      "sourceUnitIds": [
+        "chunk-0001-u015"
+      ],
+      "failureCodes": [
+        "meaning_omission",
+        "review_uncertainty"
+      ],
+      "reasonCode": "request_human_review",
+      "evidencePath": "~/.codex/worktrees/broadcast-es-ko-shared-source/sermon-video-zh-subtitles/artifacts/weekend-live/broadcast-20261018-es-ko-20261022/text-retry1/ko/repair-rounds/round-003/group-0051-sol.json"
+    },
+    {
+      "translationGroupId": "translation-chunk-0009-u036",
+      "sourceUnitIds": [
+        "chunk-0009-u036"
+      ],
+      "failureCodes": [
+        "meaning_omission",
+        "review_uncertainty"
+      ],
+      "reasonCode": "request_human_review",
+      "evidencePath": "~/.codex/worktrees/broadcast-es-ko-shared-source/sermon-video-zh-subtitles/artifacts/weekend-live/broadcast-20261018-es-ko-20261022/text-retry1/ko/repair-rounds/round-003/group-0375-sol.json"
+    }
+  ],
+  "gatesPassed": [],
+  "releaseAuthority": "none",
+  "ledgerRoot": "~/.codex/worktrees/broadcast-es-ko-shared-source/sermon-video-zh-subtitles/artifacts/weekend-live/broadcast-20261018-es-ko-20261022/.jobs-retry1.layer2-repair",
+  "ledgerHeadSha256": "5a849dc979c947dce7e63f0077d95e8d14c2522b6dab12d1b7fc2b3a7a8bf05c",
+  "humanApproval": false,
+  "reviewKind": "machine_review"
+}
