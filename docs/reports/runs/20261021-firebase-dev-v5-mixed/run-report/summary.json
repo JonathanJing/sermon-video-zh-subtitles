@@ -1,0 +1,27 @@
+{
+  "schemaVersion": "sermon-dev-v5-deploy-summary-v1",
+  "pageId": "resi-20261018-15030286",
+  "baselineVersion": "sites/ai-for-god-sermon-audio-dev/versions/3e7730eee21bda6a",
+  "deployedVersion": "sites/ai-for-god-sermon-audio-dev/versions/57733139f42907d6",
+  "catalogV5Sha256": "3041ecc2095cfdba90fe47d3998552677da52ce6b035e31e3e4bb0cbaadcc7d4",
+  "catalogV4Sha256": "f041b50674ee27bff2cf61360fe8d39b3bec05437916ab836a27eed00d36ff6a",
+  "catalogV3Sha256": "ac5bcda60542dff810f8898e0c9f5def3598323d01e4c6a11a84ad8fc77e5987",
+  "importedEditionAssets": 28,
+  "changedAssetsHttpChecked": 35,
+  "changedAssetsHttpStatus": "pass",
+  "browserLocales": {
+    "zh-Hans": "pass",
+    "ko": "pass",
+    "es": "pass"
+  },
+  "strictBrowserSessionCheck": "failed_expected_dev_telemetry_disabled",
+  "optionalWarningsPerLocale": {
+    "zh-Hans": 40,
+    "ko": 40,
+    "es": 40
+  },
+  "videoRedirectRange": "two_routes_302_then_206_1024_bytes",
+  "deviceAcceptance": "not_run",
+  "venueAcceptance": "not_run",
+  "codeCommitSha": "3153803320329620088764657add598f3a5d876a"
+}
