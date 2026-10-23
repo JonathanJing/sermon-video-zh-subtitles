@@ -220,6 +220,7 @@ def main(argv=None) -> int:
         print("refusing to write units with validation issues", file=sys.stderr)
         return 1
     a.out.mkdir(parents=True, exist_ok=True)
+    _mark(a.out, "l1.srt", "started")
     manifest = {
         "schemaVersion": "sermon-sentence-anchor-manifest-v2",
         "status": "machine_anchor_candidate_requires_review", "releaseEligible": False,
@@ -239,8 +240,18 @@ def main(argv=None) -> int:
         w = csv.DictWriter(f, fieldnames=["id", "sourceUnitId", "start", "end", "english", "flags"])
         w.writeheader()
         w.writerows(rows)
+    _mark(a.out, "l1.srt", "finished")
     return 0
 
 
 if __name__ == "__main__":
     raise SystemExit(main())
+
+def _mark(run, stage: str, event: str) -> None:
+    try:
+        from runlog import mark
+    except ImportError:
+        import sys as _sys
+        _sys.path.insert(0, str(Path(__file__).resolve().parent))
+        from runlog import mark
+    mark(run, stage, event)

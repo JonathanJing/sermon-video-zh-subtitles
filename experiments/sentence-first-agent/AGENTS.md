@@ -36,6 +36,10 @@
 | `preflight.py` | 本机 | 开工/发布前检查 run、`speakerId→speakerKey`、Registry 用途/能力、英文包证据路径、Spark、Firebase |
 | `review_player.py` | 本机 | 逐句听审 HTML：按句播放、标记、跳转、逐句结论导出 |
 | `repair_sentence.py` | 本机 + Spark | 按 `tts/tts-batches.jsonl` 重配一句所在的 batch 窗口；`--single` 用 batch 1 |
+| `tts_pool.py` | Spark 容器内 | 同语言两讲员共用 N 个模型副本（8 → 4+4），每副本 batch 8 |
+| `consistency_check.py` | 本机 | 合并后检查称呼、术语、数字一致性 |
+| `asr_triage.py` | 本机 | 把 ASR 差异分成同音/数字/变体与内容差异 |
+| `runlog.py` | 本机 | journal/outcome/timings 包装；导出器自动读 |
 
 ## 目录
 
@@ -131,7 +135,7 @@ python3 $EXP/translate_parts.py merge --run $RUN --locale <locale>
  "spokenForms": {"19쪽": "십구 쪽", "12장 10절": "십이장 십절"}}
 ```
 
-单讲员用 `"speaker": "<speaker key>"` 代替 `speakers`。`spokenForms` 把字幕写法换成 TTS 读法，字幕仍保留阿拉伯数字。
+单讲员用 `"speaker": "<speaker key>"` 代替 `speakers`。合并后跑 `consistency_check.py --run $RUN --rules <episode-glossary.json>`；按报告改称呼/术语/数字，再进第 5 步。`--rules` 的 `terms` 是本期术语的 wrong→right 变体。`spokenForms` 把字幕写法换成 TTS 读法，字幕仍保留阿拉伯数字。
 
 ### 5 口播规格（本机）
 
@@ -157,7 +161,7 @@ scp $RUN/speech.jsonl SPARK:sentence-first-agent/<run>/
 python3 $EXP/spark_queue.py --session <session> --owner sentence-first-agent --remote-tools /home/achillesjing/sentence-first-agent/tools --locale zh-Hans=<Spark 上的 zh run> --locale ko=<Spark 上的 ko run> --voice <speaker key>=<checkpoint> [--voice <第二位讲员>=<checkpoint>] --batch-size 8
 ```
 
-每种语言每位讲员一个 TTS 任务，然后一个回转写任务。整期合成用 batch 8（2026-10-23 实测 es 整体 2.68×、batch 段 3.87×），不拉伸、不变速；batch>1 的批次成员共享声音身份，改一句按第 9 步重配它的窗口。改批量要先问用户。中途失败时队列停下并打印怎么续跑；已完成的句子和回转写行会跳过，重跑队列只补缺的。登记的容器不带 `--rm`，会话结束后再删。
+每种语言每位讲员一个 TTS 任务，然后一个回转写任务。整期合成用 batch 8（2026-10-23 实测 es 整体 2.68×、batch 段 3.87×），不拉伸、不变速；batch>1 的批次成员共享声音身份，改一句按第 9 步重配它的窗口。改批量要先问用户。双讲员要共用 8 副本时，队列加 `--pool-replicas 8`（`tts_pool.py`，4+4，每副本 batch 8）；正式 8×8 仍只支持单讲员，逐句线用这个池，先小样本测 GPU 内存与吞吐。中途失败时队列停下并打印怎么续跑；已完成的句子和回转写行会跳过，重跑队列只补缺的。登记的容器不带 `--rm`，会话结束后再删。
 
 ### 7 每种语言完成就收尾（本机）
 
@@ -184,7 +188,7 @@ python3 -m http.server -d <审核目录> 8765
 
 播放器按句播放合并音轨，标出 ASR <0.85、讲员存疑、复核修订和备注；逐句写结论，导出的 JSON 可作为审核收据附件。整轨 MP3 仍是给用户完整听一遍的版本。
 
-用户听这一条时下一种语言还在配。`--doubt` 传翻译时发现的可疑英文源句（`{"s0043": "原因"}`）。回转写的同音字差异（它/他、再/在）不算问题；人名、数字、否定词不一致要人听；分数只是提示，不是听审。用户的结论写成审核收据，放在审核目录，并记进 `run.md`。
+用户听这一条时下一种语言还在配。收尾后跑 `asr_triage.py --run $RUN`；播放器的 `asr_variant` / `asr_content` 用同一分类，先听 `asr_content`。`--doubt` 传翻译时发现的可疑英文源句（`{"s0043": "原因"}`）。回转写的同音字差异（它/他、再/在）不算问题；人名、数字、否定词不一致要人听；分数只是提示，不是听审。用户的结论写成审核收据，放在审核目录，并记进 `run.md`。
 
 ### 9 改句
 
@@ -199,7 +203,7 @@ python3 $EXP/repair_sentence.py --run $RUN --id s0123 --remote SPARK:<run> --ses
 
 ### 10 发布到正式页面
 
-只在用户审核通过并要求发布时做。先跑 `preflight.py --run $RUN --english-package <layer1-srt/english-source.json> --firebase`：英文包证据路径必须能解析（相对路径按仓库根解析），否则第 7 步的英文对照会失败。复制一份 `publish_podcast_page.py`，改顶部常量（pageId、语言、run 目录、窗口、标题、类别、讲员、来源、日期），不要改已发布页面那一份的常量。顺序固定，每步一个子命令：
+只在用户审核通过并要求发布时做。`stage2` 可加 `--with-english`：在 stage2 快照上生成英文对照、随第二次部署上线，省第三次部署；仍要 readback/HTTP 核验。未在 Dev 验证合同前保留第三次部署的路径。先跑 `preflight.py --run $RUN --english-package <layer1-srt/english-source.json> --firebase`：英文包证据路径必须能解析（相对路径按仓库根解析），否则第 7 步的英文对照会失败。复制一份 `publish_podcast_page.py`，改顶部常量（pageId、语言、run 目录、窗口、标题、类别、讲员、来源、日期），不要改已发布页面那一份的常量。顺序固定，每步一个子命令：
 
 1. `assets`：生成每种语言的页面、文稿、字幕、MP3 和 release 模板；要求审核收据为 `approved`。文稿 `durationSeconds` 取窗口终点的媒体时间，并逐句跑与 iOS `validateCues` 相同的检查。
 2. `baseline`：取线上完整快照。线上 v4/v3 和 v5 的投影只在页面默认语言上不同时，`stage1` 按 v5 重新投影并记下改了哪几页；其他差异一律拒绝。
@@ -217,8 +221,8 @@ python3 $EXP/repair_sentence.py --run $RUN --id s0123 --remote SPARK:<run> --ses
 
 ### 11 结束
 
-`finish` 关闭会话，再按会话标签删掉停止的容器（`docker rm $(docker ps -aq --filter label=tongxing.spark.session=<session>)`）。按[运行报告](../../docs/test-run-retrospective.zh.md)导出本次报告。
+`finish` 关闭会话，再按会话标签删掉停止的容器（`docker rm $(docker ps -aq --filter label=tongxing.spark.session=<session>)`）。按[运行报告](../../docs/test-run-retrospective.zh.md)导出本次报告。各脚本经 `runlog.py` 写 `journal.ndjson`、`outcome.json`、`timings.tsv`；导出器自动出墙钟/计算/等待/返工。人工听审由代理在发出和收到结论时补 `waiting`/`resumed`。
 
 ## 完成的样子
 
-每种语言的 `run.md` 能让另一个人复现：来源、窗口、模型与 checkpoint、每步的决定、改过哪些句、用户结论、每步用时。审核收据在审核目录；音频留在本机；发布了的话，报告里写明线上版本号和哪些检查没做。发布的页面要同时满足：每种语言在正式版 App 的解码规则下都能显示（固定路径、文稿时间），英文对照已上线且每一句都有英文。缺英文对照不算发布完成。整期用 batch 8；改句按窗口重配；开工与发布前 `preflight.py` 通过；审核用 `review_player.py`。
+每种语言的 `run.md` 能让另一个人复现：来源、窗口、模型与 checkpoint、每步的决定、改过哪些句、用户结论、每步用时。审核收据在审核目录；音频留在本机；发布了的话，报告里写明线上版本号和哪些检查没做。发布的页面要同时满足：每种语言在正式版 App 的解码规则下都能显示（固定路径、文稿时间），英文对照已上线且每一句都有英文。缺英文对照不算发布完成。整期用 batch 8；改句按窗口重配；开工与发布前 `preflight.py` 通过；审核用 `review_player.py`；合并后跑 `consistency_check.py`；ASR 用 `asr_triage.py` 分诊；双讲员可用 `--pool-replicas 8`。

@@ -25,7 +25,8 @@ SPEECH_RUNTIME=${SPEECH_RUNTIME:-/home/achillesjing/sermon-speech-runtime}
 ASR_SNAPSHOT=${ASR_SNAPSHOT:-model-cache/hub/models--Qwen--Qwen3-ASR-0.6B/snapshots/5eb144179a02acc5e5ba31e748d22b0cf3e303b0}
 TOOLS=$(cd "$(dirname "$0")" && pwd)
 
-WORK="" LOCALE="" CHECKPOINT="" STEPS="tts,asr" SEED=7 DRY=0 SPEAKER="" BATCH=1 IDS=""
+WORK="" LOCALE="" CHECKPOINT="" STEPS="tts,asr" SEED=7 DRY=0 SPEAKER="" BATCH=1 IDS="" REPLICAS=8
+VOICES=()
 SESSION_LABEL="" OWNER_LABEL="" JOB_LABEL="" CID_PREFIX=""
 while [ $# -gt 0 ]; do
   case "$1" in
@@ -41,6 +42,8 @@ while [ $# -gt 0 ]; do
     --steps) STEPS=$2; shift 2 ;;
     --seed) SEED=$2; shift 2 ;;
     --batch-size) BATCH=$2; shift 2 ;;
+    --voice) VOICES+=("$2"); shift 2 ;;
+    --replicas) REPLICAS=$2; shift 2 ;;
     --only-ids-file) IDS=$2; shift 2 ;;
     --dry-run) DRY=1; shift ;;
     -h|--help) sed -n '2,17p' "$0"; exit 0 ;;
@@ -48,11 +51,11 @@ while [ $# -gt 0 ]; do
   esac
 done
 case "$LOCALE" in zh-Hans|ko|es) ;; *) echo "--locale must be zh-Hans, ko or es" >&2; exit 2 ;; esac
-case ",$STEPS," in *,tts,*|*,asr,*) ;; *) echo "--steps must name tts, asr or both" >&2; exit 2 ;; esac
+case ",$STEPS," in *,tts,*|*,asr,*|*,tts-pool,*) ;; *) echo "--steps must name tts, asr or both" >&2; exit 2 ;; esac
 [ -n "$WORK" ] || { echo "--work is required" >&2; exit 2; }
 WORK=$(cd "$WORK" 2>/dev/null && pwd) || { echo "work directory not found" >&2; exit 2; }
 [ -f "$WORK/speech.jsonl" ] || { echo "$WORK/speech.jsonl is missing" >&2; exit 2; }
-for f in tts_sentences.py asr_check.py; do
+for f in tts_sentences.py tts_pool.py asr_check.py; do
   [ -f "$TOOLS/$f" ] || { echo "$TOOLS/$f is missing; copy it next to this script" >&2; exit 2; }
 done
 
@@ -101,6 +104,19 @@ if [[ ",$STEPS," == *",tts,"* ]]; then
     -e PYTHONPATH=/voice-packages -e HF_HOME=/tmp/hf --entrypoint python "$IMAGE" \
     /tools/tts_sentences.py --speech /work/speech.jsonl --checkpoint /checkpoint --out /work/tts \
     --device cuda:0 --dtype bfloat16 --seed "$SEED" --batch-size "$BATCH" "${ONLY[@]}" "${IDS_ARGS[@]}"
+fi
+
+if [[ ",$STEPS," == *",tts-pool,"* ]]; then
+  VOICE_VOLS=(); VOICE_ARGS=()
+  for pair in "${VOICES[@]}"; do
+    key=${pair%%=*}; path=${pair#*=}
+    [ -f "$path/model.safetensors" ] || { echo "--voice checkpoint missing: $path" >&2; exit 2; }
+    VOICE_VOLS+=(-v "$path:/checkpoint-$key:ro"); VOICE_ARGS+=(--voice "$key=/checkpoint-$key")
+  done
+  [ ${#VOICE_ARGS[@]} -gt 0 ] || { echo "--steps tts-pool needs --voice key=checkpoint" >&2; exit 2; }
+  step tts-pool "$WORK/tts-pool.log" "${COMMON[@]}" "${VOICE_VOLS[@]}" -v "$VOICE_PACKAGES":/voice-packages:ro \
+    -e PYTHONPATH=/voice-packages -e HF_HOME=/tmp/hf --entrypoint python "$IMAGE" \
+    /tools/tts_pool.py --speech /work/speech.jsonl --out /work/tts --replicas "$REPLICAS" --batch-size "$BATCH" "${VOICE_ARGS[@]}"
 fi
 
 if [[ ",$STEPS," == *",asr,"* ]]; then
