@@ -1,0 +1,27 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261021-ios-prod-push-ui-initial",
+  "runs": [
+    {
+      "label": "ui-initial",
+      "source": "~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/artifacts/ios-formal-push-validation/reports/ui-initial",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "ui-initial",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 265,
+      "truncated": false,
+      "sha256": "c7943c2743a27898db170de35eacecf2fbafd07c57f34f3be542faa815a7992f",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}
