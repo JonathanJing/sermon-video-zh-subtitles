@@ -1,0 +1,16 @@
+{
+  "result": "submitted",
+  "version": "1.26.21",
+  "build": "64",
+  "submissionID": "2fee0f60-d38c-48ca-b5b5-c535fd33e9c1",
+  "submissionState": "WAITING_FOR_REVIEW",
+  "versionState": "WAITING_FOR_REVIEW",
+  "releaseType": "MANUAL",
+  "submittedDate": "2026-10-22T13:59:54.091Z",
+  "buildID": "05994228-f140-4a29-9090-70afa4217005",
+  "deviceFeedback": "user_reported_normal",
+  "physicalAPNs": "not_verified",
+  "activeSubscribersAtReadback": 0,
+  "appStoreApproval": "not_run",
+  "storeAvailability": "not_run"
+}

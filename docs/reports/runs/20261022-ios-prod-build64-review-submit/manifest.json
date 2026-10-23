@@ -1,0 +1,27 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261022-ios-prod-build64-review-submit",
+  "runs": [
+    {
+      "label": "build64-review-submit",
+      "source": "~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/artifacts/ios-formal-push-validation/reports/build64-review-submit",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "build64-review-submit",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 518,
+      "truncated": false,
+      "sha256": "b45a2f2b8bf876367f49b7250094be6f8845f27c0b243438029ef2eb3d603125",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}
