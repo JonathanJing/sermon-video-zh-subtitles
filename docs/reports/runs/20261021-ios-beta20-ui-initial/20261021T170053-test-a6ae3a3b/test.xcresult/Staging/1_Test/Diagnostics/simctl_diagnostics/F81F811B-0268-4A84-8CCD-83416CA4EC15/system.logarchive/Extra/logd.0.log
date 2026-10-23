@@ -1,0 +1,292 @@
+2026-09-06 08:46:53-0700 logd[87734]: libtrace_kic=0
+2026-09-06 08:46:53-0700 logd[87734]: _read_kernel_uuid calling _logd_uuiddb_harvest_kernel for 85577EC6-EB92-3DB5-A35D-4390B55B6536
+2026-09-06 08:46:53-0700 logd[87734]: assertion failed: 26A5425a 23C54: logd + 81756 [3607D13C-2E7C-390D-BEB5-E1058B12FCDE]: 0x2
+2026-09-06 08:46:53-0700 logd[87734]: assertion failed: 26A5425a 23C54: logd + 81756 [3607D13C-2E7C-390D-BEB5-E1058B12FCDE]: 0x2
+2026-09-06 08:46:53-0700 logd[87734]: assertion failed: 26A5425a 23C54: logd + 81756 [3607D13C-2E7C-390D-BEB5-E1058B12FCDE]: 0x2
+2026-09-06 08:46:53-0700 logd[87734]: starting realtime listener
+2026-09-06 08:46:53-0700 logd[87734]: realtime listener: started
+2026-09-06 08:47:19-0700 logd[87734]: #DECODE failed to resolve UUID: [pc:0x2459d250c ns:0x02 type:0x01 flags:0x0008 main:83279CA1-2528-382D-AC30-2D3FCF26BAF9 pid:87860]
+2026-09-06 08:47:19-0700 logd[87734]: #DECODE failed to resolve UUID: [pc:0x2459d250c ns:0x02 type:0x01 flags:0x0008 main:83279CA1-2528-382D-AC30-2D3FCF26BAF9 pid:87860]
+2026-09-06 08:47:19-0700 logd[87734]: #DECODE failed to resolve UUID: [pc:0x2459d250c ns:0x02 type:0x01 flags:0x0219 main:83279CA1-2528-382D-AC30-2D3FCF26BAF9 pid:87860]
+2026-09-06 08:47:20-0700 logd[87734]: #DECODE failed to resolve UUID: [pc:0x2459d250c ns:0x02 type:0x01 flags:0x0219 main:83279CA1-2528-382D-AC30-2D3FCF26BAF9 pid:87860]
+2026-09-06 08:47:20-0700 logd[87734]: #DECODE failed to resolve UUID: [pc:0x2459d250c ns:0x02 type:0x01 flags:0x0219 main:83279CA1-2528-382D-AC30-2D3FCF26BAF9 pid:87860]
+2026-09-06 08:47:20-0700 logd[87734]: #DECODE failed to resolve UUID: [pc:0x2459d250c ns:0x02 type:0x01 flags:0x0219 main:83279CA1-2528-382D-AC30-2D3FCF26BAF9 pid:87860]
+2026-09-06 08:47:20-0700 logd[87734]: #DECODE failed to resolve UUID: [pc:0x2459d250c ns:0x02 type:0x01 flags:0x0219 main:83279CA1-2528-382D-AC30-2D3FCF26BAF9 pid:87860]
+2026-09-06 08:47:20-0700 logd[87734]: #DECODE failed to resolve UUID: [pc:0x2459d250c ns:0x02 type:0x01 flags:0x0219 main:83279CA1-2528-382D-AC30-2D3FCF26BAF9 pid:87860]
+2026-09-06 08:47:27-0700 logd[87734]: #DECODE failed to resolve UUID: [pc:0x2459d250c ns:0x02 type:0x01 flags:0x0219 main:83279CA1-2528-382D-AC30-2D3FCF26BAF9 pid:87860]
+2026-09-06 08:47:27-0700 logd[87734]: #DECODE failed to resolve UUID: [pc:0x2459d250c ns:0x02 type:0x01 flags:0x0219 main:83279CA1-2528-382D-AC30-2D3FCF26BAF9 pid:87860]
+2026-09-06 08:49:07-0700 logd[87734]: #DECODE failed to resolve UUID: [pc:0x2459d250c ns:0x02 type:0x01 flags:0x0219 main:83279CA1-2528-382D-AC30-2D3FCF26BAF9 pid:87860]
+2026-09-06 08:50:01-0700 logd[87734]: #DECODE failed to resolve UUID: [pc:0x2459d250c ns:0x02 type:0x01 flags:0x0008 main:83279CA1-2528-382D-AC30-2D3FCF26BAF9 pid:87860]
+2026-09-06 08:53:31-0700 logd[87734]: #DECODE failed to resolve UUID: [pc:0x2459d250c ns:0x02 type:0x01 flags:0x0008 main:83279CA1-2528-382D-AC30-2D3FCF26BAF9 pid:87860]
+2026-09-06 09:03:08-0700 logd[87734]: #DECODE failed to resolve UUID: [pc:0x2459d250c ns:0x02 type:0x01 flags:0x0008 main:83279CA1-2528-382D-AC30-2D3FCF26BAF9 pid:87860]
+2026-09-06 09:03:08-0700 logd[87734]: #DECODE failed to resolve UUID: [pc:0x2459d250c ns:0x02 type:0x01 flags:0x0008 main:83279CA1-2528-382D-AC30-2D3FCF26BAF9 pid:87860]
+2026-09-06 09:03:08-0700 logd[87734]: #DECODE failed to resolve UUID: [pc:0x2459d250c ns:0x02 type:0x01 flags:0x0008 main:83279CA1-2528-382D-AC30-2D3FCF26BAF9 pid:87860]
+2026-09-06 09:03:08-0700 logd[87734]: #DECODE failed to resolve UUID: [pc:0x2459d250c ns:0x02 type:0x01 flags:0x0008 main:83279CA1-2528-382D-AC30-2D3FCF26BAF9 pid:87860]
+2026-09-06 09:03:08-0700 logd[87734]: #DECODE failed to resolve UUID: [pc:0x2459d250c ns:0x02 type:0x01 flags:0x0219 main:83279CA1-2528-382D-AC30-2D3FCF26BAF9 pid:87860]
+2026-09-06 09:03:08-0700 logd[87734]: #DECODE failed to resolve UUID: [pc:0x2459d250c ns:0x02 type:0x01 flags:0x0219 main:83279CA1-2528-382D-AC30-2D3FCF26BAF9 pid:87860]
+2026-09-06 09:03:08-0700 logd[87734]: #DECODE failed to resolve UUID: [pc:0x2459d250c ns:0x02 type:0x01 flags:0x0219 main:83279CA1-2528-382D-AC30-2D3FCF26BAF9 pid:87860]
+2026-09-06 09:03:08-0700 logd[87734]: #DECODE failed to resolve UUID: [pc:0x2459d250c ns:0x02 type:0x01 flags:0x0219 main:83279CA1-2528-382D-AC30-2D3FCF26BAF9 pid:87860]
+2026-09-06 09:03:08-0700 logd[87734]: #DECODE failed to resolve UUID: [pc:0x2459d250c ns:0x02 type:0x01 flags:0x0219 main:83279CA1-2528-382D-AC30-2D3FCF26BAF9 pid:87860]
+2026-09-06 09:03:08-0700 logd[87734]: #DECODE failed to resolve UUID: [pc:0x2459d250c ns:0x02 type:0x01 flags:0x0219 main:83279CA1-2528-382D-AC30-2D3FCF26BAF9 pid:87860]
+2026-09-06 09:03:08-0700 logd[87734]: #DECODE failed to resolve UUID: [pc:0x2459d250c ns:0x02 type:0x01 flags:0x0219 main:83279CA1-2528-382D-AC30-2D3FCF26BAF9 pid:87860]
+2026-09-06 09:03:08-0700 logd[87734]: #DECODE failed to resolve UUID: [pc:0x2459d250c ns:0x02 type:0x01 flags:0x0008 main:83279CA1-2528-382D-AC30-2D3FCF26BAF9 pid:87860]
+2026-09-06 09:03:08-0700 logd[87734]: #DECODE failed to resolve UUID: [pc:0x2459d250c ns:0x02 type:0x01 flags:0x0008 main:83279CA1-2528-382D-AC30-2D3FCF26BAF9 pid:87860]
+2026-09-06 09:03:08-0700 logd[87734]: #DECODE failed to resolve UUID: [pc:0x2459d250c ns:0x02 type:0x01 flags:0x0008 main:83279CA1-2528-382D-AC30-2D3FCF26BAF9 pid:87860]
+2026-09-06 09:03:08-0700 logd[87734]: #DECODE failed to resolve UUID: [pc:0x2459d250c ns:0x02 type:0x01 flags:0x0008 main:83279CA1-2528-382D-AC30-2D3FCF26BAF9 pid:87860]
+2026-09-06 09:03:08-0700 logd[87734]: #DECODE failed to resolve UUID: [pc:0x2459d250c ns:0x02 type:0x01 flags:0x0008 main:83279CA1-2528-382D-AC30-2D3FCF26BAF9 pid:87860]
+2026-09-06 09:03:08-0700 logd[87734]: #DECODE failed to resolve UUID: [pc:0x2459d250c ns:0x02 type:0x01 flags:0x0008 main:83279CA1-2528-382D-AC30-2D3FCF26BAF9 pid:87860]
+2026-09-06 09:03:08-0700 logd[87734]: #DECODE failed to resolve UUID: [pc:0x2459d250c ns:0x02 type:0x01 flags:0x0008 main:83279CA1-2528-382D-AC30-2D3FCF26BAF9 pid:87860]
+2026-09-06 09:03:08-0700 logd[87734]: #DECODE failed to resolve UUID: [pc:0x2459d250c ns:0x02 type:0x01 flags:0x0008 main:83279CA1-2528-382D-AC30-2D3FCF26BAF9 pid:87860]
+2026-09-06 09:03:08-0700 logd[87734]: #DECODE failed to resolve UUID: [pc:0x2459d250c ns:0x02 type:0x01 flags:0x0008 main:83279CA1-2528-382D-AC30-2D3FCF26BAF9 pid:87860]
+... 3850 lines omitted; 3794 error-like lines, 50 kept below ...
+[line 41] 2026-09-06 09:03:08-0700 logd[87734]: #DECODE failed to resolve UUID: [pc:0x2459d250c ns:0x02 type:0x01 flags:0x0008 main:83279CA1-2528-382D-AC30-2D3FCF26BAF9 pid:87860]
+[line 42] 2026-09-06 09:03:08-0700 logd[87734]: #DECODE failed to resolve UUID: [pc:0x2459d250c ns:0x02 type:0x01 flags:0x0008 main:83279CA1-2528-382D-AC30-2D3FCF26BAF9 pid:87860]
+[line 43] 2026-09-06 09:03:08-0700 logd[87734]: #DECODE failed to resolve UUID: [pc:0x2459d250c ns:0x02 type:0x01 flags:0x0008 main:83279CA1-2528-382D-AC30-2D3FCF26BAF9 pid:87860]
+[line 44] 2026-09-06 09:03:08-0700 logd[87734]: #DECODE failed to resolve UUID: [pc:0x2459d250c ns:0x02 type:0x01 flags:0x0008 main:83279CA1-2528-382D-AC30-2D3FCF26BAF9 pid:87860]
+[line 45] 2026-09-06 09:03:08-0700 logd[87734]: #DECODE failed to resolve UUID: [pc:0x2459d250c ns:0x02 type:0x01 flags:0x0008 main:83279CA1-2528-382D-AC30-2D3FCF26BAF9 pid:87860]
+[line 46] 2026-09-06 09:03:08-0700 logd[87734]: #DECODE failed to resolve UUID: [pc:0x2459d250c ns:0x02 type:0x01 flags:0x0008 main:83279CA1-2528-382D-AC30-2D3FCF26BAF9 pid:87860]
+[line 47] 2026-09-06 09:03:08-0700 logd[87734]: #DECODE failed to resolve UUID: [pc:0x2459d250c ns:0x02 type:0x01 flags:0x0008 main:83279CA1-2528-382D-AC30-2D3FCF26BAF9 pid:87860]
+[line 48] 2026-09-06 09:03:08-0700 logd[87734]: #DECODE failed to resolve UUID: [pc:0x2459d250c ns:0x02 type:0x01 flags:0x0008 main:83279CA1-2528-382D-AC30-2D3FCF26BAF9 pid:87860]
+[line 49] 2026-09-06 09:03:08-0700 logd[87734]: #DECODE failed to resolve UUID: [pc:0x2459d250c ns:0x02 type:0x01 flags:0x0008 main:83279CA1-2528-382D-AC30-2D3FCF26BAF9 pid:87860]
+[line 50] 2026-09-06 09:03:08-0700 logd[87734]: #DECODE failed to resolve UUID: [pc:0x2459d250c ns:0x02 type:0x01 flags:0x0008 main:83279CA1-2528-382D-AC30-2D3FCF26BAF9 pid:87860]
+[line 51] 2026-09-06 09:03:08-0700 logd[87734]: #DECODE failed to resolve UUID: [pc:0x2459d250c ns:0x02 type:0x01 flags:0x0008 main:83279CA1-2528-382D-AC30-2D3FCF26BAF9 pid:87860]
+[line 52] 2026-09-06 09:03:08-0700 logd[87734]: #DECODE failed to resolve UUID: [pc:0x2459d250c ns:0x02 type:0x01 flags:0x0008 main:83279CA1-2528-382D-AC30-2D3FCF26BAF9 pid:87860]
+[line 53] 2026-09-06 09:03:08-0700 logd[87734]: #DECODE failed to resolve UUID: [pc:0x2459d250c ns:0x02 type:0x01 flags:0x0008 main:83279CA1-2528-382D-AC30-2D3FCF26BAF9 pid:87860]
+[line 54] 2026-09-06 09:03:08-0700 logd[87734]: #DECODE failed to resolve UUID: [pc:0x2459d250c ns:0x02 type:0x01 flags:0x0008 main:83279CA1-2528-382D-AC30-2D3FCF26BAF9 pid:87860]
+[line 55] 2026-09-06 09:03:08-0700 logd[87734]: #DECODE failed to resolve UUID: [pc:0x2459d250c ns:0x02 type:0x01 flags:0x0008 main:83279CA1-2528-382D-AC30-2D3FCF26BAF9 pid:87860]
+[line 56] 2026-09-06 09:03:08-0700 logd[87734]: #DECODE failed to resolve UUID: [pc:0x2459d250c ns:0x02 type:0x01 flags:0x0008 main:83279CA1-2528-382D-AC30-2D3FCF26BAF9 pid:87860]
+[line 57] 2026-09-06 09:03:08-0700 logd[87734]: #DECODE failed to resolve UUID: [pc:0x2459d250c ns:0x02 type:0x01 flags:0x0008 main:83279CA1-2528-382D-AC30-2D3FCF26BAF9 pid:87860]
+[line 58] 2026-09-06 09:03:08-0700 logd[87734]: #DECODE failed to resolve UUID: [pc:0x2459d250c ns:0x02 type:0x01 flags:0x0008 main:83279CA1-2528-382D-AC30-2D3FCF26BAF9 pid:87860]
+[line 59] 2026-09-06 09:03:08-0700 logd[87734]: #DECODE failed to resolve UUID: [pc:0x2459d250c ns:0x02 type:0x01 flags:0x0008 main:83279CA1-2528-382D-AC30-2D3FCF26BAF9 pid:87860]
+[line 60] 2026-09-06 09:03:08-0700 logd[87734]: #DECODE failed to resolve UUID: [pc:0x2459d250c ns:0x02 type:0x01 flags:0x0008 main:83279CA1-2528-382D-AC30-2D3FCF26BAF9 pid:87860]
+[line 61] 2026-09-06 09:03:08-0700 logd[87734]: #DECODE failed to resolve UUID: [pc:0x2459d250c ns:0x02 type:0x01 flags:0x0008 main:83279CA1-2528-382D-AC30-2D3FCF26BAF9 pid:87860]
+[line 62] 2026-09-06 09:03:08-0700 logd[87734]: #DECODE failed to resolve UUID: [pc:0x2459d250c ns:0x02 type:0x01 flags:0x0008 main:83279CA1-2528-382D-AC30-2D3FCF26BAF9 pid:87860]
+[line 63] 2026-09-06 09:03:08-0700 logd[87734]: #DECODE failed to resolve UUID: [pc:0x2459d250c ns:0x02 type:0x01 flags:0x0008 main:83279CA1-2528-382D-AC30-2D3FCF26BAF9 pid:87860]
+[line 64] 2026-09-06 09:03:08-0700 logd[87734]: #DECODE failed to resolve UUID: [pc:0x2459d250c ns:0x02 type:0x01 flags:0x0008 main:83279CA1-2528-382D-AC30-2D3FCF26BAF9 pid:87860]
+[line 65] 2026-09-06 09:03:08-0700 logd[87734]: #DECODE failed to resolve UUID: [pc:0x2459d250c ns:0x02 type:0x01 flags:0x0008 main:83279CA1-2528-382D-AC30-2D3FCF26BAF9 pid:87860]
+[line 66] 2026-09-06 09:03:08-0700 logd[87734]: #DECODE failed to resolve UUID: [pc:0x2459d250c ns:0x02 type:0x01 flags:0x0008 main:83279CA1-2528-382D-AC30-2D3FCF26BAF9 pid:87860]
+[line 67] 2026-09-06 09:03:08-0700 logd[87734]: #DECODE failed to resolve UUID: [pc:0x2459d250c ns:0x02 type:0x01 flags:0x0008 main:83279CA1-2528-382D-AC30-2D3FCF26BAF9 pid:87860]
+[line 68] 2026-09-06 09:03:08-0700 logd[87734]: #DECODE failed to resolve UUID: [pc:0x2459d250c ns:0x02 type:0x01 flags:0x0008 main:83279CA1-2528-382D-AC30-2D3FCF26BAF9 pid:87860]
+[line 69] 2026-09-06 09:03:09-0700 logd[87734]: #DECODE failed to resolve UUID: [pc:0x2459d250c ns:0x02 type:0x01 flags:0x0008 main:83279CA1-2528-382D-AC30-2D3FCF26BAF9 pid:87860]
+[line 70] 2026-09-06 09:03:09-0700 logd[87734]: #DECODE failed to resolve UUID: [pc:0x2459d250c ns:0x02 type:0x01 flags:0x0008 main:83279CA1-2528-382D-AC30-2D3FCF26BAF9 pid:87860]
+[line 71] 2026-09-06 09:03:09-0700 logd[87734]: #DECODE failed to resolve UUID: [pc:0x2459d250c ns:0x02 type:0x01 flags:0x0008 main:83279CA1-2528-382D-AC30-2D3FCF26BAF9 pid:87860]
+[line 72] 2026-09-06 09:03:09-0700 logd[87734]: #DECODE failed to resolve UUID: [pc:0x2459d250c ns:0x02 type:0x01 flags:0x0008 main:83279CA1-2528-382D-AC30-2D3FCF26BAF9 pid:87860]
+[line 73] 2026-09-06 09:03:09-0700 logd[87734]: #DECODE failed to resolve UUID: [pc:0x2459d250c ns:0x02 type:0x01 flags:0x0008 main:83279CA1-2528-382D-AC30-2D3FCF26BAF9 pid:87860]
+[line 74] 2026-09-06 09:03:09-0700 logd[87734]: #DECODE failed to resolve UUID: [pc:0x2459d250c ns:0x02 type:0x01 flags:0x0008 main:83279CA1-2528-382D-AC30-2D3FCF26BAF9 pid:87860]
+[line 75] 2026-09-06 09:03:09-0700 logd[87734]: #DECODE failed to resolve UUID: [pc:0x2459d250c ns:0x02 type:0x01 flags:0x0008 main:83279CA1-2528-382D-AC30-2D3FCF26BAF9 pid:87860]
+[line 76] 2026-09-06 09:03:09-0700 logd[87734]: #DECODE failed to resolve UUID: [pc:0x2459d250c ns:0x02 type:0x01 flags:0x0008 main:83279CA1-2528-382D-AC30-2D3FCF26BAF9 pid:87860]
+[line 77] 2026-09-06 09:03:09-0700 logd[87734]: #DECODE failed to resolve UUID: [pc:0x2459d250c ns:0x02 type:0x01 flags:0x0008 main:83279CA1-2528-382D-AC30-2D3FCF26BAF9 pid:87860]
+[line 78] 2026-09-06 09:03:09-0700 logd[87734]: #DECODE failed to resolve UUID: [pc:0x2459d250c ns:0x02 type:0x01 flags:0x0008 main:83279CA1-2528-382D-AC30-2D3FCF26BAF9 pid:87860]
+[line 79] 2026-09-06 09:03:09-0700 logd[87734]: #DECODE failed to resolve UUID: [pc:0x2459d250c ns:0x02 type:0x01 flags:0x0008 main:83279CA1-2528-382D-AC30-2D3FCF26BAF9 pid:87860]
+[line 80] 2026-09-06 09:03:09-0700 logd[87734]: #DECODE failed to resolve UUID: [pc:0x2459d250c ns:0x02 type:0x01 flags:0x0008 main:83279CA1-2528-382D-AC30-2D3FCF26BAF9 pid:87860]
+[line 81] 2026-09-06 09:03:09-0700 logd[87734]: #DECODE failed to resolve UUID: [pc:0x2459d250c ns:0x02 type:0x01 flags:0x0008 main:83279CA1-2528-382D-AC30-2D3FCF26BAF9 pid:87860]
+[line 82] 2026-09-06 09:03:09-0700 logd[87734]: #DECODE failed to resolve UUID: [pc:0x2459d250c ns:0x02 type:0x01 flags:0x0008 main:83279CA1-2528-382D-AC30-2D3FCF26BAF9 pid:87860]
+[line 83] 2026-09-06 09:03:09-0700 logd[87734]: #DECODE failed to resolve UUID: [pc:0x2459d250c ns:0x02 type:0x01 flags:0x0008 main:83279CA1-2528-382D-AC30-2D3FCF26BAF9 pid:87860]
+[line 84] 2026-09-06 09:03:09-0700 logd[87734]: #DECODE failed to resolve UUID: [pc:0x2459d250c ns:0x02 type:0x01 flags:0x0008 main:83279CA1-2528-382D-AC30-2D3FCF26BAF9 pid:87860]
+[line 85] 2026-09-06 09:03:09-0700 logd[87734]: #DECODE failed to resolve UUID: [pc:0x2459d250c ns:0x02 type:0x01 flags:0x0008 main:83279CA1-2528-382D-AC30-2D3FCF26BAF9 pid:87860]
+[line 86] 2026-09-06 09:03:09-0700 logd[87734]: #DECODE failed to resolve UUID: [pc:0x2459d250c ns:0x02 type:0x01 flags:0x0008 main:83279CA1-2528-382D-AC30-2D3FCF26BAF9 pid:87860]
+[line 87] 2026-09-06 09:03:09-0700 logd[87734]: #DECODE failed to resolve UUID: [pc:0x2459d250c ns:0x02 type:0x01 flags:0x0008 main:83279CA1-2528-382D-AC30-2D3FCF26BAF9 pid:87860]
+[line 88] 2026-09-06 09:03:09-0700 logd[87734]: #DECODE failed to resolve UUID: [pc:0x2459d250c ns:0x02 type:0x01 flags:0x0008 main:83279CA1-2528-382D-AC30-2D3FCF26BAF9 pid:87860]
+[line 89] 2026-09-06 09:03:09-0700 logd[87734]: #DECODE failed to resolve UUID: [pc:0x2459d250c ns:0x02 type:0x01 flags:0x0008 main:83279CA1-2528-382D-AC30-2D3FCF26BAF9 pid:87860]
+[line 90] 2026-09-06 09:03:09-0700 logd[87734]: #DECODE failed to resolve UUID: [pc:0x2459d250c ns:0x02 type:0x01 flags:0x0008 main:83279CA1-2528-382D-AC30-2D3FCF26BAF9 pid:87860]
+... end of omitted section ...
+2026-10-17 21:39:49-0700 logd[46262]: Error connecting to logd_helper: Connection invalid
+2026-10-17 21:39:49-0700 logd[46262]: Error connecting to logd_helper: Connection invalid
+2026-10-17 21:39:49-0700 logd[46262]: Error connecting to logd_helper: Connection invalid
+2026-10-17 21:39:49-0700 logd[46262]: Error connecting to logd_helper: Connection invalid
+2026-10-17 21:39:49-0700 logd[46262]: Error connecting to logd_helper: Connection invalid
+2026-10-17 21:39:49-0700 logd[46262]: Error connecting to logd_helper: Connection invalid
+2026-10-17 21:39:49-0700 logd[46262]: Error connecting to logd_helper: Connection invalid
+2026-10-17 21:39:49-0700 logd[46262]: Error connecting to logd_helper: Connection invalid
+2026-10-17 21:39:49-0700 logd[46262]: Error connecting to logd_helper: Connection invalid
+2026-10-17 21:39:49-0700 logd[46262]: Error connecting to logd_helper: Connection invalid
+2026-10-17 21:39:49-0700 logd[46262]: Error connecting to logd_helper: Connection invalid
+2026-10-17 21:39:49-0700 logd[46262]: Error connecting to logd_helper: Connection invalid
+2026-10-17 21:39:49-0700 logd[46262]: Error connecting to logd_helper: Connection invalid
+2026-10-17 21:39:49-0700 logd[46262]: Error connecting to logd_helper: Connection invalid
+2026-10-17 21:39:49-0700 logd[46262]: Error connecting to logd_helper: Connection invalid
+2026-10-17 21:39:49-0700 logd[46262]: Error connecting to logd_helper: Connection invalid
+2026-10-17 21:39:49-0700 logd[46262]: Error connecting to logd_helper: Connection invalid
+2026-10-17 21:39:49-0700 logd[46262]: Error connecting to logd_helper: Connection invalid
+2026-10-17 21:39:49-0700 logd[46262]: Error connecting to logd_helper: Connection invalid
+2026-10-17 21:39:49-0700 logd[46262]: Error connecting to logd_helper: Connection invalid
+2026-10-17 21:39:49-0700 logd[46262]: Error connecting to logd_helper: Connection invalid
+2026-10-17 21:39:49-0700 logd[46262]: Error connecting to logd_helper: Connection invalid
+2026-10-17 21:39:49-0700 logd[46262]: Error connecting to logd_helper: Connection invalid
+2026-10-17 21:39:49-0700 logd[46262]: Error connecting to logd_helper: Connection invalid
+2026-10-17 21:39:49-0700 logd[46262]: Error connecting to logd_helper: Connection invalid
+2026-10-17 21:39:49-0700 logd[46262]: Error connecting to logd_helper: Connection invalid
+2026-10-17 21:39:49-0700 logd[46262]: Error connecting to logd_helper: Connection invalid
+2026-10-17 21:39:49-0700 logd[46262]: Error connecting to logd_helper: Connection invalid
+2026-10-17 21:39:49-0700 logd[46262]: Error connecting to logd_helper: Connection invalid
+2026-10-17 21:39:49-0700 logd[46262]: Error connecting to logd_helper: Connection invalid
+2026-10-17 21:39:49-0700 logd[46262]: Error connecting to logd_helper: Connection invalid
+2026-10-17 21:39:49-0700 logd[46262]: Error connecting to logd_helper: Connection invalid
+2026-10-17 21:39:49-0700 logd[46262]: Error connecting to logd_helper: Connection invalid
+2026-10-17 21:39:49-0700 logd[46262]: Error connecting to logd_helper: Connection invalid
+2026-10-17 21:39:49-0700 logd[46262]: Error connecting to logd_helper: Connection invalid
+2026-10-17 21:39:49-0700 logd[46262]: Error connecting to logd_helper: Connection invalid
+2026-10-17 21:39:49-0700 logd[46262]: Error connecting to logd_helper: Connection invalid
+2026-10-17 21:39:49-0700 logd[46262]: Error connecting to logd_helper: Connection invalid
+2026-10-17 21:39:49-0700 logd[46262]: Error connecting to logd_helper: Connection invalid
+2026-10-17 21:39:49-0700 logd[46262]: Error connecting to logd_helper: Connection invalid
+2026-10-17 21:39:49-0700 logd[46262]: Error connecting to logd_helper: Connection invalid
+2026-10-17 21:39:49-0700 logd[46262]: Error connecting to logd_helper: Connection invalid
+2026-10-17 21:39:49-0700 logd[46262]: Error connecting to logd_helper: Connection invalid
+2026-10-17 21:39:49-0700 logd[46262]: Error connecting to logd_helper: Connection invalid
+2026-10-17 21:39:49-0700 logd[46262]: Error connecting to logd_helper: Connection invalid
+2026-10-17 21:39:49-0700 logd[46262]: Error connecting to logd_helper: Connection invalid
+2026-10-17 21:39:49-0700 logd[46262]: Error connecting to logd_helper: Connection invalid
+2026-10-17 21:39:49-0700 logd[46262]: Error connecting to logd_helper: Connection invalid
+2026-10-17 21:39:49-0700 logd[46262]: Error connecting to logd_helper: Connection invalid
+2026-10-17 21:39:49-0700 logd[46262]: Error connecting to logd_helper: Connection invalid
+2026-10-17 21:39:49-0700 logd[46262]: Error connecting to logd_helper: Connection invalid
+2026-10-17 21:39:49-0700 logd[46262]: Error connecting to logd_helper: Connection invalid
+2026-10-17 21:39:49-0700 logd[46262]: Error connecting to logd_helper: Connection invalid
+2026-10-17 21:39:49-0700 logd[46262]: Error connecting to logd_helper: Connection invalid
+2026-10-17 21:39:49-0700 logd[46262]: Error connecting to logd_helper: Connection invalid
+2026-10-17 21:39:49-0700 logd[46262]: Error connecting to logd_helper: Connection invalid
+2026-10-17 21:39:49-0700 logd[46262]: Error connecting to logd_helper: Connection invalid
+2026-10-17 21:39:49-0700 logd[46262]: Error connecting to logd_helper: Connection invalid
+2026-10-17 21:39:49-0700 logd[46262]: Error connecting to logd_helper: Connection invalid
+2026-10-17 21:39:49-0700 logd[46262]: Error connecting to logd_helper: Connection invalid
+2026-10-17 21:39:49-0700 logd[46262]: Error connecting to logd_helper: Connection invalid
+2026-10-17 21:39:49-0700 logd[46262]: Error connecting to logd_helper: Connection invalid
+2026-10-17 21:39:49-0700 logd[46262]: Error connecting to logd_helper: Connection invalid
+2026-10-17 21:39:49-0700 logd[46262]: Error connecting to logd_helper: Connection invalid
+2026-10-17 21:39:49-0700 logd[46262]: Error connecting to logd_helper: Connection invalid
+2026-10-17 21:39:49-0700 logd[46262]: Error connecting to logd_helper: Connection invalid
+2026-10-17 21:39:49-0700 logd[46262]: Error connecting to logd_helper: Connection invalid
+2026-10-17 21:39:49-0700 logd[46262]: Error connecting to logd_helper: Connection invalid
+2026-10-17 21:39:49-0700 logd[46262]: Error connecting to logd_helper: Connection invalid
+2026-10-17 21:39:49-0700 logd[46262]: Error connecting to logd_helper: Connection invalid
+2026-10-17 21:39:49-0700 logd[46262]: Error connecting to logd_helper: Connection invalid
+2026-10-17 21:39:49-0700 logd[46262]: Error connecting to logd_helper: Connection invalid
+2026-10-17 21:39:49-0700 logd[46262]: Error connecting to logd_helper: Connection invalid
+2026-10-17 21:39:49-0700 logd[46262]: Error connecting to logd_helper: Connection invalid
+2026-10-17 21:39:49-0700 logd[46262]: Error connecting to logd_helper: Connection invalid
+2026-10-17 21:39:49-0700 logd[46262]: Error connecting to logd_helper: Connection invalid
+2026-10-17 21:39:49-0700 logd[46262]: Error connecting to logd_helper: Connection invalid
+2026-10-17 21:39:49-0700 logd[46262]: Error connecting to logd_helper: Connection invalid
+2026-10-17 21:39:49-0700 logd[46262]: Error connecting to logd_helper: Connection invalid
+2026-10-17 21:39:49-0700 logd[46262]: Error connecting to logd_helper: Connection invalid
+2026-10-17 21:39:49-0700 logd[46262]: Error connecting to logd_helper: Connection invalid
+2026-10-17 21:39:49-0700 logd[46262]: Error connecting to logd_helper: Connection invalid
+2026-10-17 21:39:49-0700 logd[46262]: Error connecting to logd_helper: Connection invalid
+2026-10-17 21:39:49-0700 logd[46262]: Error connecting to logd_helper: Connection invalid
+2026-10-17 21:39:49-0700 logd[46262]: Error connecting to logd_helper: Connection invalid
+2026-10-17 21:39:49-0700 logd[46262]: Error connecting to logd_helper: Connection invalid
+2026-10-17 21:39:49-0700 logd[46262]: Error connecting to logd_helper: Connection invalid
+2026-10-17 21:39:49-0700 logd[46262]: Error connecting to logd_helper: Connection invalid
+2026-10-17 21:39:49-0700 logd[46262]: Error connecting to logd_helper: Connection invalid
+2026-10-17 21:39:49-0700 logd[46262]: Error connecting to logd_helper: Connection invalid
+2026-10-17 21:39:49-0700 logd[46262]: Error connecting to logd_helper: Connection invalid
+2026-10-17 21:39:49-0700 logd[46262]: Error connecting to logd_helper: Connection invalid
+2026-10-17 21:39:49-0700 logd[46262]: Error connecting to logd_helper: Connection invalid
+2026-10-17 21:39:49-0700 logd[46262]: Error connecting to logd_helper: Connection invalid
+2026-10-17 21:39:49-0700 logd[46262]: Error connecting to logd_helper: Connection invalid
+2026-10-17 21:39:49-0700 logd[46262]: Error connecting to logd_helper: Connection invalid
+2026-10-17 21:39:49-0700 logd[46262]: Error connecting to logd_helper: Connection invalid
+2026-10-17 21:39:49-0700 logd[46262]: Error connecting to logd_helper: Connection invalid
+2026-10-17 21:39:49-0700 logd[46262]: Error connecting to logd_helper: Connection invalid
+2026-10-17 21:39:49-0700 logd[46262]: Error connecting to logd_helper: Connection invalid
+2026-10-17 21:39:49-0700 logd[46262]: Error connecting to logd_helper: Connection invalid
+2026-10-17 21:39:49-0700 logd[46262]: Error connecting to logd_helper: Connection invalid
+2026-10-17 21:39:49-0700 logd[46262]: Error connecting to logd_helper: Connection invalid
+2026-10-17 21:39:49-0700 logd[46262]: Error connecting to logd_helper: Connection invalid
+2026-10-17 21:39:49-0700 logd[46262]: Error connecting to logd_helper: Connection invalid
+2026-10-17 21:39:49-0700 logd[46262]: Error connecting to logd_helper: Connection invalid
+2026-10-17 21:39:49-0700 logd[46262]: Error connecting to logd_helper: Connection invalid
+2026-10-17 21:39:49-0700 logd[46262]: Error connecting to logd_helper: Connection invalid
+2026-10-17 21:39:49-0700 logd[46262]: Error connecting to logd_helper: Connection invalid
+2026-10-17 21:39:49-0700 logd[46262]: Error connecting to logd_helper: Connection invalid
+2026-10-17 21:39:49-0700 logd[46262]: Error connecting to logd_helper: Connection invalid
+2026-10-17 21:39:49-0700 logd[46262]: Error connecting to logd_helper: Connection invalid
+2026-10-17 21:39:49-0700 logd[46262]: Error connecting to logd_helper: Connection invalid
+2026-10-17 21:39:49-0700 logd[46262]: Error connecting to logd_helper: Connection invalid
+2026-10-17 21:39:49-0700 logd[46262]: Error connecting to logd_helper: Connection invalid
+2026-10-17 21:39:49-0700 logd[46262]: Error connecting to logd_helper: Connection invalid
+2026-10-17 21:39:49-0700 logd[46262]: Error connecting to logd_helper: Connection invalid
+2026-10-17 21:39:49-0700 logd[46262]: Error connecting to logd_helper: Connection invalid
+2026-10-17 21:39:49-0700 logd[46262]: Error connecting to logd_helper: Connection invalid
+2026-10-17 21:39:49-0700 logd[46262]: Error connecting to logd_helper: Connection invalid
+2026-10-17 21:39:49-0700 logd[46262]: Error connecting to logd_helper: Connection invalid
+2026-10-17 21:39:49-0700 logd[46262]: Error connecting to logd_helper: Connection invalid
+2026-10-17 21:39:49-0700 logd[46262]: Error connecting to logd_helper: Connection invalid
+2026-10-17 21:39:49-0700 logd[46262]: Error connecting to logd_helper: Connection invalid
+2026-10-17 21:39:49-0700 logd[46262]: Error connecting to logd_helper: Connection invalid
+2026-10-17 21:39:49-0700 logd[46262]: Error connecting to logd_helper: Connection invalid
+2026-10-17 21:39:49-0700 logd[46262]: Error connecting to logd_helper: Connection invalid
+2026-10-17 21:39:49-0700 logd[46262]: Error connecting to logd_helper: Connection invalid
+2026-10-17 21:39:49-0700 logd[46262]: Error connecting to logd_helper: Connection invalid
+2026-10-17 21:39:49-0700 logd[46262]: Error connecting to logd_helper: Connection invalid
+2026-10-17 21:39:49-0700 logd[46262]: Error connecting to logd_helper: Connection invalid
+2026-10-17 21:39:49-0700 logd[46262]: Error connecting to logd_helper: Connection invalid
+2026-10-17 21:39:49-0700 logd[46262]: Error connecting to logd_helper: Connection invalid
+2026-10-17 21:39:49-0700 logd[46262]: Error connecting to logd_helper: Connection invalid
+2026-10-17 21:39:49-0700 logd[46262]: Error connecting to logd_helper: Connection invalid
+2026-10-17 21:39:49-0700 logd[46262]: Error connecting to logd_helper: Connection invalid
+2026-10-17 21:39:49-0700 logd[46262]: Error connecting to logd_helper: Connection invalid
+2026-10-17 21:39:49-0700 logd[46262]: Error connecting to logd_helper: Connection invalid
+2026-10-17 21:39:49-0700 logd[46262]: Error connecting to logd_helper: Connection invalid
+2026-10-17 21:39:49-0700 logd[46262]: Error connecting to logd_helper: Connection invalid
+2026-10-17 21:39:49-0700 logd[46262]: Error connecting to logd_helper: Connection invalid
+2026-10-17 21:39:49-0700 logd[46262]: Error connecting to logd_helper: Connection invalid
+2026-10-17 21:39:49-0700 logd[46262]: Error connecting to logd_helper: Connection invalid
+2026-10-17 21:39:49-0700 logd[46262]: Error connecting to logd_helper: Connection invalid
+2026-10-17 21:39:49-0700 logd[46262]: Error connecting to logd_helper: Connection invalid
+2026-10-17 21:39:49-0700 logd[46262]: Error connecting to logd_helper: Connection invalid
+2026-10-17 21:39:49-0700 logd[46262]: Error connecting to logd_helper: Connection invalid
+2026-10-17 21:39:49-0700 logd[46262]: Error connecting to logd_helper: Connection invalid
+2026-10-17 21:39:49-0700 logd[46262]: Error connecting to logd_helper: Connection invalid
+2026-10-17 21:39:49-0700 logd[46262]: Error connecting to logd_helper: Connection invalid
+2026-10-17 21:39:49-0700 logd[46262]: Error connecting to logd_helper: Connection invalid
+2026-10-17 21:39:49-0700 logd[46262]: Error connecting to logd_helper: Connection invalid
+2026-10-17 21:39:49-0700 logd[46262]: Error connecting to logd_helper: Connection invalid
+2026-10-17 21:39:49-0700 logd[46262]: Error connecting to logd_helper: Connection invalid
+2026-10-17 21:39:49-0700 logd[46262]: Error connecting to logd_helper: Connection invalid
+2026-10-17 21:39:49-0700 logd[46262]: Error connecting to logd_helper: Connection invalid
+2026-10-17 21:39:49-0700 logd[46262]: Error connecting to logd_helper: Connection invalid
+2026-10-17 21:39:49-0700 logd[46262]: Error connecting to logd_helper: Connection invalid
+2026-10-17 21:39:49-0700 logd[46262]: No userlevel firehose clients left
+2026-10-17 21:39:49-0700 logd[46262]: Error connecting to logd_helper: Connection invalid
+2026-10-17 21:39:49-0700 logd[46262]: Error connecting to logd_helper: Connection invalid
+2026-10-17 21:39:49-0700 logd[46262]: Error connecting to logd_helper: Connection invalid
+2026-10-17 21:39:49-0700 logd[46262]: Error connecting to logd_helper: Connection invalid
+2026-10-17 21:39:49-0700 logd[46262]: Error connecting to logd_helper: Connection invalid
+2026-10-17 21:39:49-0700 logd[46262]: Error connecting to logd_helper: Connection invalid
+2026-10-17 21:39:49-0700 logd[46262]: Error connecting to logd_helper: Connection invalid
+2026-10-21 17:01:05-0700 logd[69759]: libtrace_kic=0
+2026-10-21 17:01:05-0700 logd[69759]: _read_kernel_uuid calling _logd_uuiddb_harvest_kernel for F6099B05-7F31-32B0-9B76-13E13A524ECB
+2026-10-21 17:01:05-0700 logd[69759]: assertion failed: 26A434 23C54: logd + 81756 [3607D13C-2E7C-390D-BEB5-E1058B12FCDE]: 0x2
+2026-10-21 17:01:05-0700 logd[69759]: assertion failed: 26A434 23C54: logd + 81756 [3607D13C-2E7C-390D-BEB5-E1058B12FCDE]: 0x2
+2026-10-21 17:01:05-0700 logd[69759]: assertion failed: 26A434 23C54: logd + 81756 [3607D13C-2E7C-390D-BEB5-E1058B12FCDE]: 0x2
+2026-10-21 17:01:05-0700 logd[69759]: starting realtime listener
+2026-10-21 17:01:05-0700 logd[69759]: realtime listener: started
+2026-10-21 17:01:22-0700 logd[69759]: #DECODE failed to resolve UUID: [pc:0x2459d250c ns:0x02 type:0x01 flags:0x0008 main:83279CA1-2528-382D-AC30-2D3FCF26BAF9 pid:69926]
+2026-10-21 17:01:22-0700 logd[69759]: #DECODE failed to resolve UUID: [pc:0x2459d250c ns:0x02 type:0x01 flags:0x0008 main:83279CA1-2528-382D-AC30-2D3FCF26BAF9 pid:69926]
+2026-10-21 17:01:22-0700 logd[69759]: #DECODE failed to resolve UUID: [pc:0x2459d250c ns:0x02 type:0x01 flags:0x0219 main:83279CA1-2528-382D-AC30-2D3FCF26BAF9 pid:69926]
+2026-10-21 17:01:22-0700 logd[69759]: #DECODE failed to resolve UUID: [pc:0x2459d250c ns:0x02 type:0x01 flags:0x0219 main:83279CA1-2528-382D-AC30-2D3FCF26BAF9 pid:69926]
+2026-10-21 17:01:22-0700 logd[69759]: #DECODE failed to resolve UUID: [pc:0x2459d250c ns:0x02 type:0x01 flags:0x0219 main:83279CA1-2528-382D-AC30-2D3FCF26BAF9 pid:69926]
+2026-10-21 17:01:22-0700 logd[69759]: #DECODE failed to resolve UUID: [pc:0x2459d250c ns:0x02 type:0x01 flags:0x0219 main:83279CA1-2528-382D-AC30-2D3FCF26BAF9 pid:69926]
+2026-10-21 17:01:22-0700 logd[69759]: #DECODE failed to resolve UUID: [pc:0x2459d250c ns:0x02 type:0x01 flags:0x0219 main:83279CA1-2528-382D-AC30-2D3FCF26BAF9 pid:69926]
+2026-10-21 17:01:22-0700 logd[69759]: #DECODE failed to resolve UUID: [pc:0x2459d250c ns:0x02 type:0x01 flags:0x0219 main:83279CA1-2528-382D-AC30-2D3FCF26BAF9 pid:69926]
+2026-10-21 17:01:39-0700 logd[69759]: #DECODE failed to resolve UUID: [pc:0x2459d250c ns:0x02 type:0x01 flags:0x0219 main:83279CA1-2528-382D-AC30-2D3FCF26BAF9 pid:69926]
+2026-10-21 17:01:39-0700 logd[69759]: #DECODE failed to resolve UUID: [pc:0x2459d250c ns:0x02 type:0x01 flags:0x0219 main:83279CA1-2528-382D-AC30-2D3FCF26BAF9 pid:69926]
+2026-10-21 17:01:44-0700 logd[69759]: #DECODE failed to resolve UUID: [pc:0x2459d250c ns:0x02 type:0x01 flags:0x0219 main:83279CA1-2528-382D-AC30-2D3FCF26BAF9 pid:69926]
+2026-10-21 17:02:52-0700 logd[69759]: #DECODE failed to resolve UUID: [pc:0x2459d250c ns:0x02 type:0x01 flags:0x0008 main:83279CA1-2528-382D-AC30-2D3FCF26BAF9 pid:69926]
+2026-10-21 17:02:59-0700 logd[69759]: #DECODE failed to resolve UUID: [pc:0x2459d250c ns:0x02 type:0x01 flags:0x0008 main:83279CA1-2528-382D-AC30-2D3FCF26BAF9 pid:69926]
+2026-10-21 17:02:59-0700 logd[69759]: #DECODE failed to resolve UUID: [pc:0x2459d250c ns:0x02 type:0x01 flags:0x0008 main:83279CA1-2528-382D-AC30-2D3FCF26BAF9 pid:69926]
+2026-10-21 17:02:59-0700 logd[69759]: #DECODE failed to resolve UUID: [pc:0x2459d250c ns:0x02 type:0x01 flags:0x0008 main:83279CA1-2528-382D-AC30-2D3FCF26BAF9 pid:69926]
+2026-10-21 17:02:59-0700 logd[69759]: #DECODE failed to resolve UUID: [pc:0x2459d250c ns:0x02 type:0x01 flags:0x0008 main:83279CA1-2528-382D-AC30-2D3FCF26BAF9 pid:69926]
+2026-10-21 17:03:07-0700 logd[69759]: #DECODE failed to resolve UUID: [pc:0x2459d250c ns:0x02 type:0x01 flags:0x0008 main:83279CA1-2528-382D-AC30-2D3FCF26BAF9 pid:70641]
+2026-10-21 17:03:07-0700 logd[69759]: #DECODE failed to resolve UUID: [pc:0x2459d250c ns:0x02 type:0x01 flags:0x0008 main:83279CA1-2528-382D-AC30-2D3FCF26BAF9 pid:70641]
+2026-10-21 17:03:07-0700 logd[69759]: #DECODE failed to resolve UUID: [pc:0x2459d250c ns:0x02 type:0x01 flags:0x0219 main:83279CA1-2528-382D-AC30-2D3FCF26BAF9 pid:70641]
+2026-10-21 17:03:07-0700 logd[69759]: #DECODE failed to resolve UUID: [pc:0x2459d250c ns:0x02 type:0x01 flags:0x0219 main:83279CA1-2528-382D-AC30-2D3FCF26BAF9 pid:70641]
+2026-10-21 17:03:07-0700 logd[69759]: #DECODE failed to resolve UUID: [pc:0x2459d250c ns:0x02 type:0x01 flags:0x0219 main:83279CA1-2528-382D-AC30-2D3FCF26BAF9 pid:70641]
+2026-10-21 17:03:07-0700 logd[69759]: #DECODE failed to resolve UUID: [pc:0x2459d250c ns:0x02 type:0x01 flags:0x0219 main:83279CA1-2528-382D-AC30-2D3FCF26BAF9 pid:70641]
+2026-10-21 17:03:07-0700 logd[69759]: #DECODE failed to resolve UUID: [pc:0x2459d250c ns:0x02 type:0x01 flags:0x0219 main:83279CA1-2528-382D-AC30-2D3FCF26BAF9 pid:70641]
+2026-10-21 17:03:07-0700 logd[69759]: #DECODE failed to resolve UUID: [pc:0x2459d250c ns:0x02 type:0x01 flags:0x0219 main:83279CA1-2528-382D-AC30-2D3FCF26BAF9 pid:70641]
+2026-10-21 17:03:08-0700 logd[69759]: #DECODE failed to resolve UUID: [pc:0x2459d250c ns:0x02 type:0x01 flags:0x0219 main:83279CA1-2528-382D-AC30-2D3FCF26BAF9 pid:70641]
+2026-10-21 17:03:08-0700 logd[69759]: #DECODE failed to resolve UUID: [pc:0x2459d250c ns:0x02 type:0x01 flags:0x0008 main:83279CA1-2528-382D-AC30-2D3FCF26BAF9 pid:70641]
+2026-10-21 17:03:09-0700 logd[69759]: #DECODE failed to resolve UUID: [pc:0x2459d250c ns:0x02 type:0x01 flags:0x0008 main:83279CA1-2528-382D-AC30-2D3FCF26BAF9 pid:70641]
