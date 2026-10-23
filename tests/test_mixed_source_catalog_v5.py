@@ -344,6 +344,32 @@ def test_video_bucket_must_match_publication_environment():
         baseline_tools.require_video_environment(prod, 'dev')
 
 
+def test_mixed_source_asset_import_uses_release_hashes_and_source_seal(tmp_path):
+    source = tmp_path / 'source'
+    public = source / 'public'
+    candidate = catalog()
+    expected = set()
+    for locale, target_value in candidate['pages'][0]['targets'].items():
+        edition = target_value['editionId']
+        asset = public / 'content' / edition / f'{locale}.json'
+        asset.parent.mkdir(parents=True, exist_ok=True)
+        asset.write_bytes(f'{locale} content'.encode())
+        release = public / target_value['releasePackageUrl'].lstrip('/')
+        release.parent.mkdir(parents=True, exist_ok=True)
+        baseline_tools.write(release, {'assets': [{'path': '/' + str(asset.relative_to(public)),
+                                                   'sha256': baseline_tools.digest(asset)}]})
+        target_value['releasePackageJsonSha256'] = baseline_tools.digest(release)
+        expected.update({asset.relative_to(public), release.relative_to(public)})
+    alignment = public / 'alignment/family-page.json'
+    baseline_tools.write(alignment, {'status': 'test'})
+    expected.add(alignment.relative_to(public))
+    baseline_tools.write(source / 'seal-report.json', {'files': baseline_tools.files_report(public)})
+    assert set(baseline_tools._mixed_source_asset_paths(source, candidate)) == expected
+    alignment.write_text('changed after seal')
+    with pytest.raises(ValueError, match='Asset source seal differs'):
+        baseline_tools._mixed_source_asset_paths(source, candidate)
+
+
 def test_endpoint_readback_admits_target_bound_v2_beside_v4_and_rejects_cross_source(tmp_path):
     public = tmp_path / 'public'; public.mkdir()
     value = catalog(('zh-Hans', 'es'))

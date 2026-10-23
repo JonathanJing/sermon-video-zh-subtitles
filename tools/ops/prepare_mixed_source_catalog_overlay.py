@@ -30,9 +30,12 @@ def main(argv=None):
     parser.add_argument('--out', required=True, type=Path,
                         help='New immutable Hosting candidate directory')
     parser.add_argument('--environment', choices=('production', 'dev'), default='production')
+    parser.add_argument('--asset-source', type=Path,
+                        help='Verified complete snapshot supplying missing edition assets')
     args = parser.parse_args(argv)
     result = baseline.mixed_source_catalog_overlay(
-        args.baseline, args.catalog, args.release_plan, args.out, environment=args.environment)
+        args.baseline, args.catalog, args.release_plan, args.out,
+        environment=args.environment, asset_source=args.asset_source)
     print(json.dumps(result, ensure_ascii=False, sort_keys=True))
     return 0
 
