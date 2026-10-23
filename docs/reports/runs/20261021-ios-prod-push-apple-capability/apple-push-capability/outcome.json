@@ -1,0 +1,11 @@
+{
+  "schemaVersion": "tongxing-apple-capability-v1",
+  "result": "enabled_and_readback",
+  "bundleId": "com.jonathanjing.tongxing.dev",
+  "bundleResourceId": "88593H5R4H",
+  "capability": "PUSH_NOTIFICATIONS",
+  "createHTTPStatus": 201,
+  "readbackHTTPStatus": 200,
+  "profileRegenerated": false,
+  "archiveSigned": false
+}
