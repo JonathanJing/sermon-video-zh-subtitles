@@ -1,0 +1,200 @@
+{
+ "schemaVersion": "sermon-l3-lanes-diagnostic-run-v1",
+ "scope": "diagnostic_only",
+ "releaseEligible": false,
+ "humanApproval": false,
+ "date": "2026-10-23",
+ "spark": "spark-38f8, exclusive session l3-lanes-diag-20261023",
+ "codeTree": "test/l3-lanes-spark-20261023 @ 56c053a5 = dev + PR #1331 + PR #1332 + the 2026-10-18 series terminology table (diagnostic only, never merged); staged as repo-56c053a5",
+ "why": "Every existing speech job binds a policy frozen before the 2026-10-20 terminology-table change, so the current table refuses them; the diagnostic tree restores only that table.",
+ "inputs": "10-18 weekend (resi 15030286) ko and es human-reviewed speech jobs, 402 units each, speaker steve_bang_lee; render (8x8 --spark-production) -> compact (CPU) -> ASR screen (Qwen3-ASR-0.6B, batch 1); no package, audio QC or publication",
+ "lanes": {
+  "status": "completed",
+  "gpuSlots": 1,
+  "locales": [
+   "ko",
+   "es"
+  ],
+  "wallSeconds": 1262.5,
+  "sumOfStageDurationsSeconds": 1514.6,
+  "savedByOverlapSeconds": 252.1,
+  "gpuStageBusySeconds": 1262.4,
+  "gpuBusyFraction": 1.0,
+  "overlaps": [
+   {
+    "cpuStage": {
+     "locale": "ko",
+     "stage": "compact"
+    },
+    "gpuStage": {
+     "locale": "es",
+     "stage": "formal_render"
+    }
+   },
+   {
+    "cpuStage": {
+     "locale": "es",
+     "stage": "compact"
+    },
+    "gpuStage": {
+     "locale": "ko",
+     "stage": "screen"
+    }
+   }
+  ],
+  "timeline": [
+   {
+    "locale": "ko",
+    "stage": "formal_render",
+    "resource": "gpu",
+    "startSeconds": 0.0,
+    "endSeconds": 495.1,
+    "durationSeconds": 495.1,
+    "gpuWaitSeconds": 0.0
+   },
+   {
+    "locale": "ko",
+    "stage": "compact",
+    "resource": "cpu",
+    "startSeconds": 495.1,
+    "endSeconds": 619.0,
+    "durationSeconds": 123.9,
+    "gpuWaitSeconds": 0.0
+   },
+   {
+    "locale": "es",
+    "stage": "formal_render",
+    "resource": "gpu",
+    "startSeconds": 495.1,
+    "endSeconds": 955.1,
+    "durationSeconds": 459.9,
+    "gpuWaitSeconds": 495.124
+   },
+   {
+    "locale": "ko",
+    "stage": "screen",
+    "resource": "gpu",
+    "startSeconds": 955.1,
+    "endSeconds": 1122.4,
+    "durationSeconds": 167.3,
+    "gpuWaitSeconds": 336.08
+   },
+   {
+    "locale": "es",
+    "stage": "compact",
+    "resource": "cpu",
+    "startSeconds": 955.1,
+    "endSeconds": 1083.4,
+    "durationSeconds": 128.3,
+    "gpuWaitSeconds": 0.0
+   },
+   {
+    "locale": "es",
+    "stage": "screen",
+    "resource": "gpu",
+    "startSeconds": 1122.4,
+    "endSeconds": 1262.5,
+    "durationSeconds": 140.1,
+    "gpuWaitSeconds": 39.025
+   }
+  ]
+ },
+ "renders": {
+  "es": {
+   "units": 402,
+   "windows": 51,
+   "reserveTripped": false,
+   "memoryPolicy": "release_cuda_cache_expandable_segments_v1",
+   "cudaAllocConf": "expandable_segments:True",
+   "admissionGiBPerReplica": 9.0,
+   "admission": {
+    "status": "admitted",
+    "requiredGiB": 96.0,
+    "memAvailableGiB": 116.5
+   },
+   "memAvailableGiB": {
+    "poolReady": 75.7,
+    "firstResult": 64.9,
+    "lastResult": 66.8,
+    "minimum": 53.0
+   },
+   "workerReservedGiBMax": 3.92,
+   "windowGenerationSeconds": {
+    "median": 49.0,
+    "max": 67.5
+   },
+   "releaseSecondsMedian": 0.084,
+   "modelLoadSecondsMax": 46.7
+  },
+  "ko": {
+   "units": 402,
+   "windows": 51,
+   "reserveTripped": false,
+   "memoryPolicy": "release_cuda_cache_expandable_segments_v1",
+   "cudaAllocConf": "expandable_segments:True",
+   "admissionGiBPerReplica": 9.0,
+   "admission": {
+    "status": "admitted",
+    "requiredGiB": 96.0,
+    "memAvailableGiB": 116.2
+   },
+   "memAvailableGiB": {
+    "poolReady": 75.7,
+    "firstResult": 66.9,
+    "lastResult": 66.7,
+    "minimum": 53.1
+   },
+   "workerReservedGiBMax": 3.92,
+   "windowGenerationSeconds": {
+    "median": 52.8,
+    "max": 70.0
+   },
+   "releaseSecondsMedian": 0.088,
+   "modelLoadSecondsMax": 50.7
+  }
+ },
+ "asrScreens": {
+  "es": {
+   "batchSize": 1,
+   "budgetStatus": "provisional_until_measured",
+   "admission": {
+    "status": "admitted",
+    "requiredGiB": 12.0,
+    "memAvailableGiB": 116.5
+   },
+   "memAvailableGiB": {
+    "beforeLoad": 116.5,
+    "afterLoad": 113.6,
+    "afterRun": 112.5
+   },
+   "hostFootprintGiB": 3.99,
+   "cudaPeaksGiB": {
+    "maxAllocatedBytes": 1.75,
+    "maxReservedBytes": 1.78
+   }
+  },
+  "ko": {
+   "batchSize": 1,
+   "budgetStatus": "provisional_until_measured",
+   "admission": {
+    "status": "admitted",
+    "requiredGiB": 12.0,
+    "memAvailableGiB": 116.3
+   },
+   "memAvailableGiB": {
+    "beforeLoad": 116.3,
+    "afterLoad": 113.6,
+    "afterRun": 112.5
+   },
+   "hostFootprintGiB": 3.88,
+   "cudaPeaksGiB": {
+    "maxAllocatedBytes": 1.75,
+    "maxReservedBytes": 1.79
+   }
+  }
+ },
+ "firstAttempts": {
+  "r1": "three locales with the 10-18 text waivers: refused at render admission, waiver issued under an older QC implementation",
+  "r2": "ko/es human jobs on the unmodified tree: refused at render admission, series terminology source changed"
+ }
+}

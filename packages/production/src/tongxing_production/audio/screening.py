@@ -75,12 +75,13 @@ def require(ok: bool, message: str) -> None:
 # Host memory admission for the resident Qwen3-ASR model, in the same shape as the TTS
 # replica pool. The screener runs inside the renderer's 24 GiB reserve (user decision
 # 2026-10-23): that reserve is sized to hold it, so admission does not stack another reserve
-# on top and only requires MemAvailable to cover this stage's own footprint. The 12 GiB
-# budget is provisional: no screening run has reported its peak yet, so the sidecar receipt
-# records before/after-load/after-run MemAvailable and the CUDA allocator peaks to calibrate it.
+# on top and only requires MemAvailable to cover this stage's own footprint. Measured
+# 2026-10-23 on two 402-unit screens (batch 1): host footprint 3.9 GiB from before load to the
+# end of the run, CUDA peak 1.8 GiB reserved (data/benchmarks/l3-lanes/2026-10-23). 6 GiB
+# leaves a margin; the sidecar receipt keeps recording the same numbers on every run.
 ASR_MEMORY_RESERVE_GIB = 0
-ASR_MEMORY_BUDGET_GIB = 12
-ASR_MEMORY_BUDGET_STATUS = "provisional_until_measured"
+ASR_MEMORY_BUDGET_GIB = 6
+ASR_MEMORY_BUDGET_STATUS = "measured_2026-10-23_batch1"
 
 
 def load(path: Path) -> dict:
