@@ -1,0 +1,27 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261021-ios-prod-push-endpoint-smoke",
+  "runs": [
+    {
+      "label": "endpoint-smoke",
+      "source": "~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/artifacts/ios-formal-push-validation/reports/endpoint-smoke",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "endpoint-smoke",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 248,
+      "truncated": false,
+      "sha256": "22c5ee0349f52ab53784bd16dc6cd7bec6ff0792883083447ef14a6c430e7c21",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}
