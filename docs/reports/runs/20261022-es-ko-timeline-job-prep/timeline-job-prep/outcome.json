@@ -1,0 +1,13 @@
+{
+  "status": "passed",
+  "stage": "L3-01-timeline-bound-speech-job-preparation",
+  "scope": "es and ko current source-bound approved candidate handoffs; 416 groups per locale",
+  "notCompleted": [
+    "Spark synthesis",
+    "audio screening and QC",
+    "human audio playback",
+    "Layer 4 build or publication",
+    "video playback acceptance"
+  ],
+  "sparkAdmission": "not attempted in this prep stage; live API returned 502 and direct read-only status found service inactive"
+}
