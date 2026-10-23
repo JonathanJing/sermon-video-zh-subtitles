@@ -1,0 +1,54 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261021-ios-alignment-beta60",
+  "runs": [
+    {
+      "label": "beta60-report-input",
+      "source": "~/.codex/worktrees/ios-alignment-beta/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-21/beta60-report-input",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "beta60-report-input",
+      "path": "distribution-receipt.json",
+      "kind": "whole",
+      "bytes": 478,
+      "truncated": false,
+      "sha256": "546c6364c1f07690c0a8a962ed067f129e94437221872795fdd6e96a8aa56c7e",
+      "redactions": {}
+    },
+    {
+      "run": "beta60-report-input",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 178,
+      "truncated": false,
+      "sha256": "2bee0a350cc03748e1bf2f93fdaa58eb87e2d470e1ccd04450c9d6d35723b95d",
+      "redactions": {}
+    },
+    {
+      "run": "beta60-report-input",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 843,
+      "truncated": false,
+      "sha256": "f478d7ee3f8b1fd43d663e7436c015cc96192ee4f6cdbb25b0b55e0fc9de0de1",
+      "redactions": {}
+    },
+    {
+      "run": "beta60-report-input",
+      "path": "test-receipt.json",
+      "kind": "whole",
+      "bytes": 398,
+      "truncated": false,
+      "sha256": "de6caa7f5c4fc9983ce31a90cd3cf5cd051c684a4b336d7c01bc5e22bfa6b8db",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

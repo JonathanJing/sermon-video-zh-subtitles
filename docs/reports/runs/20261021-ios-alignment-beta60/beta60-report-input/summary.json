@@ -1,0 +1,32 @@
+{
+  "status": "internal_testing",
+  "type": "ios_beta_alignment_build",
+  "sourceCommit": "8282d3cb915b6ed4261e3d2dcf03fceeab7dc72f",
+  "version": "1.26.19",
+  "build": "60",
+  "ipaSHA256": "fc3b1cfd5f4b68a0fe45ec0ced09351f3f7b629407feeef8d9746a627c4e7549",
+  "archiveManifestSHA256": "b1614cecd3caa0d3f9c25140b7d5bac06a0a45022494d1015d57ea36f8244e07",
+  "xctest": {
+    "passed": 41,
+    "skipped": 2,
+    "failed": 0,
+    "device": "iPhone Duo simulator iOS 27.1"
+  },
+  "swiftCore": {
+    "passed": 9,
+    "skipped": 2,
+    "failed": 0
+  },
+  "apple": {
+    "processingState": "VALID",
+    "internalBuildState": "IN_BETA_TESTING",
+    "checkedAt": "2026-10-21T23:12:12Z",
+    "internalGroupContainsBuild": true
+  },
+  "firebase": {
+    "coreMatchedBothSites": true,
+    "devV5Status": 404
+  },
+  "device": "not_run",
+  "venue": "not_run"
+}
