@@ -3,6 +3,8 @@
 import json, sys, statistics
 GIB = 1024**3
 events = json.load(open(sys.argv[1]))
+if isinstance(events, dict):
+    events = events["events"]
 ready = [e for e in events if e["kind"] == "pool_ready"]
 results = [e for e in events if e["kind"] == "result"]
 trip = [e for e in events if e["kind"] == "reserve_failure"]
