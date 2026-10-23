@@ -1,0 +1,30 @@
+{
+ "schemaVersion": "sentence-first-speaker-acceptance-v1",
+ "speakerId": "eric_geiger",
+ "speakerKey": "eric_pilot",
+ "checkpointSha256": "75d28ce6022b3df3a72df3dd6dbc01e53f584d685770d60ea04b341920968c9a",
+ "locales": [
+  "ko",
+  "es"
+ ],
+ "authorizedBy": "Jony",
+ "reviewedAt": "2026-10-23T22:32:06.969844+00:00",
+ "evidence": {
+  "authorization": "experiments/sentence-first-agent/reviews/20261023-eric-ko-es.md",
+  "koVerdict": {
+   "trackWavSha256": "7aa82096b3d6f44e38901bfc0a4ee797bf07392c6dc052ed34e371aaa1122fd6",
+   "trackSeconds": 3990.21,
+   "reviewSheetSha256": "3cd1510395ff819593e9829a85ef91a81b3ad26ac5577febf62d534e360a5977",
+   "reviewMp3Sha256": "24c669b0e44db11846776d2bcfa2ed110006b95d092114e7f3d832b246cfb311",
+   "verdictReceiptSha256": "549b0425a24bd51d1a86cbee0e18be50510fe42d6f55fdb8005dff13d3187eec"
+  },
+  "esVerdict": {
+   "trackWavSha256": "abd7eacb1a79415993bd2e4357e898bf5eea562ca7576ad10715667d1840a453",
+   "trackSeconds": 4036.85,
+   "reviewSheetSha256": "2bce7edad5a2d9ad179c056a2b7add53f4e6b9853fffe59f23fc430a2c9898d4",
+   "reviewMp3Sha256": "4c5cb1b2aa3f08b4bfac8b1be041daf271d68d91d866ee59aff6ddc1bd23ac7f",
+   "verdictReceiptSha256": "53c93e099f7a26052d59f4269196ee1465c1570867fe20a927deffed8cdcab14"
+  }
+ },
+ "note": "User authorized Eric ko/es and approved both full tracks on 2026-10-23; this is a track-review acceptance, not a new voice training."
+}
