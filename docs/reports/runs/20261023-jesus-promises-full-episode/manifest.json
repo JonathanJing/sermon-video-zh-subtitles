@@ -1,0 +1,97 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261023-jesus-promises-full-episode",
+  "runs": [
+    {
+      "label": "20261023-jesus-promises-zh",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/sentence-first-agent/20261023-jesus-promises-zh",
+      "skipped": {
+        ".json": 7,
+        ".jsonl": 13,
+        ".wav": 1894,
+        ".md": 2
+      }
+    },
+    {
+      "label": "20261023-jesus-promises-ko",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/sentence-first-agent/20261023-jesus-promises-ko",
+      "skipped": {
+        ".md": 3,
+        ".json": 6,
+        ".jsonl": 13,
+        ".wav": 947
+      }
+    },
+    {
+      "label": "20261023-jesus-promises-es",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/sentence-first-agent/20261023-jesus-promises-es",
+      "skipped": {
+        ".md": 3,
+        ".json": 6,
+        ".jsonl": 13,
+        ".wav": 947
+      }
+    }
+  ],
+  "files": [
+    {
+      "run": "20261023-jesus-promises-zh",
+      "path": "asr-run.log",
+      "kind": "log",
+      "bytes": 11138,
+      "truncated": true,
+      "sha256": "7475ad07075ce6c6a8587afecf5de699efeb7587dd1acdc6bd7daa9fdd09e837",
+      "redactions": {}
+    },
+    {
+      "run": "20261023-jesus-promises-zh",
+      "path": "tts-run.log",
+      "kind": "log",
+      "bytes": 133090,
+      "truncated": true,
+      "sha256": "38dbf9e821c0966a1311cd58d9e5b0f37f97f02fd2b24ca4e515552fb9b66f00",
+      "redactions": {}
+    },
+    {
+      "run": "20261023-jesus-promises-ko",
+      "path": "asr-run.log",
+      "kind": "log",
+      "bytes": 11128,
+      "truncated": true,
+      "sha256": "3d3226d79e316c0a8d3e220bb671b0ed732ea03b80a48830e5e30c0f670f3368",
+      "redactions": {}
+    },
+    {
+      "run": "20261023-jesus-promises-ko",
+      "path": "tts-run.log",
+      "kind": "log",
+      "bytes": 131230,
+      "truncated": true,
+      "sha256": "a73fbdcf2146c317703b7b5b98127ed9b835fc365847404b567a9c611bc0d75f",
+      "redactions": {}
+    },
+    {
+      "run": "20261023-jesus-promises-es",
+      "path": "asr-run.log",
+      "kind": "log",
+      "bytes": 11128,
+      "truncated": true,
+      "sha256": "f4cc0c79b995d84949ed08945181a8a6aea3b58b84725b3c053a0643305df067",
+      "redactions": {}
+    },
+    {
+      "run": "20261023-jesus-promises-es",
+      "path": "tts-run.log",
+      "kind": "log",
+      "bytes": 98857,
+      "truncated": true,
+      "sha256": "4eec2e69d7297553003506a9d998659133f27ad2e6327f5b1978ba0ea08138b1",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}
