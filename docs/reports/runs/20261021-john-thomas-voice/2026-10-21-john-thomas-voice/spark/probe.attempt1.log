@@ -1,0 +1,6 @@
+Traceback (most recent call last):
+  File "/work/tooling/probe_john.py", line 73, in <module>
+    main()
+  File "/work/tooling/probe_john.py", line 37, in main
+    raise ValueError("Demo script changed")
+ValueError: Demo script changed
