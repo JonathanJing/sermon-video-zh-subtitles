@@ -1,0 +1,58 @@
+16:44:03 awaiting_claude_auth
+16:44:15 claude_auth_ok after 1 probes
+16:44:15 awaiting_spark_admission
+16:44:16 poll=1 queue_score=0
+16:44:19 session_exclusive_ready
+16:44:19 execute_start
+Traceback (most recent call last):
+  File "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/tools/ops/run.py", line 91, in <module>
+    raise SystemExit(main())
+                     ~~~~^^
+  File "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/tools/ops/run.py", line 87, in main
+    return entry()
+  File "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/packages/production/src/tongxing_production/source/unified_stage.py", line 625, in main
+    result = inspect(args.config) if args.command == 'inspect' else execute(args.config)
+                                                                    ~~~~~~~^^^^^^^^^^^^^
+  File "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/packages/production/src/tongxing_production/source/unified_stage.py", line 392, in execute
+    return _execute(config, fresh, api_key=<redacted>, transport=transport, claude_transport=claude_transport,
+                    aligner=aligner or mfa_backend.align_reference_chunks,
+                    mfa_preflight=mfa_preflight or mfa_backend.preflight)
+  File "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/packages/production/src/tongxing_production/source/unified_stage.py", line 504, in _execute
+    judged = judge.run(aligned_path=aligned_path, manifest_path=manifest_path, out=out / 'machine-judge.json',
+        api_key=<redacted> or '', caller=caller.judge, cache_root=out / 'judge-requests',
+        model=value['judge']['model'], effort=value['judge']['reasoningEffort'],
+        batch_size=value['judge']['batchSize'], workers=value['judge']['workers'])
+  File "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/packages/production/src/tongxing_production/source/english_source_judge.py", line 441, in run
+    batches_reviewed = ordered_bounded_map(enumerate(_batches(sentences, batch_size)), review_batch, workers)
+  File "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/packages/production/src/tongxing_production/source/unified_stage.py", line 123, in ordered_bounded_map
+    results[index] = future.result()
+                     ~~~~~~~~~~~~~^^
+  File "/opt/homebrew/Cellar/<email>/3.13.16/Frameworks/Python.framework/Versions/3.13/lib/python3.13/concurrent/futures/_base.py", line 453, in result
+    return self.__get_result()
+           ~~~~~~~~~~~~~~~~~^^
+  File "/opt/homebrew/Cellar/<email>/3.13.16/Frameworks/Python.framework/Versions/3.13/lib/python3.13/concurrent/futures/_base.py", line 402, in __get_result
+    raise self._exception
+  File "/opt/homebrew/Cellar/<email>/3.13.16/Frameworks/Python.framework/Versions/3.13/lib/python3.13/concurrent/futures/thread.py", line 59, in run
+    result = self.fn(*self.args, **self.kwargs)
+  File "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/packages/production/src/tongxing_production/source/english_source_judge.py", line 424, in review_batch
+    payload=_payload(
+            ~~~~~~~~^
+        batch,
+        ^^^^^^
+    ...<3 lines>...
+        effort=effort,
+        ^^^^^^^^^^^^^^
+    ),
+    ^
+  File "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/packages/production/src/tongxing_production/source/english_source_judge.py", line 310, in _payload
+    return bound_judge_payload(payload)
+  File "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/packages/production/src/tongxing_production/source/budget.py", line 123, in bound_judge_payload
+    return bounded_source_judge_payload(payload, limits)
+  File "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/packages/production/src/tongxing_production/source/budget.py", line 138, in bounded_source_judge_payload
+    require(text_limits._input_upper_bound(payload) <= limits['maxInputTokens'], 'source_judge_input_bound_exceeded')
+    ~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/packages/production/src/tongxing_production/source/budget.py", line 57, in require
+    raise ValueError(code)
+ValueError: source_judge_input_bound_exceeded
+16:48:28 execute_exit=1
+16:48:35 finish_exit=0
