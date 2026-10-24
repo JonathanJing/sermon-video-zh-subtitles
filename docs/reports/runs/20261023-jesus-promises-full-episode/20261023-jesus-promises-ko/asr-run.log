@@ -1,0 +1,242 @@
+asr start ko 2026-10-23T21:43:29Z
+W1023 21:43:32.184000 1 torch/utils/_pytree.py:630] <enum 'KernelPreference'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
+W1023 21:43:32.196000 1 torch/utils/_pytree.py:630] <enum 'ScaleCalculationMode'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
+{"sentences": 946, "pending": 946}
+The following generation flags are not valid and may be ignored: ['temperature']. Set `TRANSFORMERS_VERBOSITY=info` for more details.
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 8}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 16}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 24}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 32}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 40}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 48}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 56}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 64}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 72}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 80}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 88}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 96}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 104}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 112}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 120}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 128}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 136}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+... 4 lines omitted; 0 error-like lines, 0 kept below ...
+... end of omitted section ...
+{"done": 160}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 168}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 176}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 184}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 192}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 200}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 208}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 216}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 224}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 232}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 240}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 248}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 256}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 264}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 272}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 280}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 288}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 296}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 304}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 312}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 320}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 328}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 336}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 344}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 352}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 360}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 368}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 376}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 384}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 392}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 400}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 408}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 416}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 424}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 432}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 440}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 448}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 456}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 464}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 472}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 480}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 488}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 496}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 504}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 512}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 520}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 528}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 536}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 544}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 552}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 560}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 568}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 576}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 584}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 592}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 600}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 608}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 616}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 624}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 632}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 640}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 648}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 656}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 664}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 672}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 680}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 688}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 696}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 704}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 712}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 720}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 728}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 736}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 744}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 752}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 760}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 768}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 776}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 784}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 792}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 800}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 808}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 816}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 824}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 832}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 840}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 848}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 856}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 864}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 872}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 880}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 888}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 896}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 904}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 912}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 920}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 928}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 936}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 944}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 946}
+asr exit ko 0 2026-10-23T21:46:04Z

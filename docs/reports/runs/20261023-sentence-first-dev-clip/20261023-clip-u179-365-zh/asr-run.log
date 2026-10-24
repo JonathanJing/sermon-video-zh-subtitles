@@ -1,0 +1,54 @@
+asr start zh-Hans 2026-10-23T17:09:56Z
+W1023 17:10:00.458000 1 torch/utils/_pytree.py:630] <enum 'KernelPreference'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
+W1023 17:10:00.471000 1 torch/utils/_pytree.py:630] <enum 'ScaleCalculationMode'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
+{"sentences": 187, "pending": 187}
+The following generation flags are not valid and may be ignored: ['temperature']. Set `TRANSFORMERS_VERBOSITY=info` for more details.
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 8}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 16}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 24}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 32}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 40}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 48}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 56}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 64}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 72}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 80}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 88}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 96}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 104}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 112}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 120}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 128}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 136}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 144}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 152}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 160}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 168}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 176}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 184}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 187}
+asr exit zh-Hans 0 2026-10-23T17:10:34Z
