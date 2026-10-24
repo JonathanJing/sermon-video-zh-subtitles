@@ -125,7 +125,7 @@ A short real-model rehearsal of the same path on a clip is the [clip E2E](docs/c
 
 ### Code and content release
 
-The designed code path merges feature branches into `dev`, then squash-merges a `dev → main` promotion PR and syncs back. The 2026-10-22 remote check found no required status checks on `dev`; `main` still required `unittest`, `native-client` and `promotion-policy`, while the test workflows were manually disabled. Configured checks therefore do not establish an executed test run. See the [execution environment design](docs/execution-environment-design.zh.md) for the remote-state record. Firebase Production content deployment is a separate step with its own admission receipts. Details: [branch and Firebase environment policy](docs/development-branch-and-firebase-environments.zh.md).
+The designed code path merges feature branches into `dev`, then merges a `dev → main` promotion PR with a merge commit (squash promotion ended 2026-10-24) and syncs back. The 2026-10-22 remote check found no required status checks on `dev`; `main` still required `unittest`, `native-client` and `promotion-policy`, while the test workflows were manually disabled. Configured checks therefore do not establish an executed test run. See the [execution environment design](docs/execution-environment-design.zh.md) for the remote-state record. Firebase Production content deployment is a separate step with its own admission receipts. Details: [branch and Firebase environment policy](docs/development-branch-and-firebase-environments.zh.md).
 
 ### Sunday live session
 
