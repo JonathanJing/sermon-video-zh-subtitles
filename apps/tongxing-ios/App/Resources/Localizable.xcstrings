@@ -8928,6 +8928,146 @@
           }
         }
       }
+    },
+    "帮助改进同行？": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Help improve Tongxing?"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "동행 개선에 도움을 주시겠어요?"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "¿Nos ayudas a mejorar Tongxing?"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Giúp cải thiện Tongxing?"
+          }
+        }
+      }
+    },
+    "开启匿名使用统计后，我们能知道哪些语言和讲道有人在听。只上传界面语言、收听语言和收听时长；不含姓名、邮箱或广告标识，不跨日追踪。可随时在“隐私与支持”中关闭。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "With anonymous usage statistics on, we can see which languages and sermons people listen to. Only the interface language, listening language and listening time are sent — no name, email or advertising identifier, and no tracking across days. You can turn it off anytime in “Privacy & Support”."
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "익명 사용 통계를 켜면 어떤 언어와 설교를 듣는지 알 수 있습니다. 화면 언어, 청취 언어, 청취 시간만 전송하며 이름, 이메일, 광고 식별자는 포함하지 않고 날짜를 넘어 추적하지 않습니다. “개인정보 및 지원”에서 언제든지 끌 수 있습니다."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Con las estadísticas anónimas activadas, sabremos qué idiomas y sermones se escuchan. Solo se envían el idioma de la interfaz, el idioma de escucha y el tiempo escuchado; sin nombre, correo ni identificador publicitario, y sin seguimiento entre días. Puedes desactivarlas cuando quieras en “Privacidad y asistencia”."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Khi bật thống kê sử dụng ẩn danh, chúng tôi biết được ngôn ngữ và bài giảng nào đang được nghe. Chỉ gửi ngôn ngữ giao diện, ngôn ngữ nghe và thời gian nghe; không có tên, email hay mã quảng cáo, không theo dõi qua các ngày. Bạn có thể tắt bất cứ lúc nào trong “Quyền riêng tư và hỗ trợ”."
+          }
+        }
+      }
+    },
+    "开启统计": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Turn on"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "통계 켜기"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Activar"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bật thống kê"
+          }
+        }
+      }
+    },
+    "暂不": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Not now"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "나중에"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ahora no"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Để sau"
+          }
+        }
+      }
+    },
+    "首次收听满 3 分钟后，App 会在收听页询问一次是否开启；选择任一项后不再询问。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "After your first 3 minutes of listening, the app asks once on the listening page whether to turn this on. After you choose either option, it won’t ask again."
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "처음 3분 동안 들은 뒤 앱이 청취 화면에서 켤지 한 번 묻습니다. 어느 쪽을 선택하든 다시 묻지 않습니다."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tras tus primeros 3 minutos de escucha, la app pregunta una vez en la página de escucha si deseas activarlo. Después de elegir cualquiera de las opciones, no volverá a preguntar."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sau 3 phút nghe đầu tiên, ứng dụng sẽ hỏi một lần trên trang nghe có muốn bật hay không. Sau khi bạn chọn, ứng dụng sẽ không hỏi lại."
+          }
+        }
+      }
     }
   },
   "version": "1.0"

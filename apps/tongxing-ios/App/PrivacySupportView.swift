@@ -21,6 +21,8 @@ struct PrivacySupportView: View {
                     .accessibilityIdentifier("anonymous-statistics-toggle")
                 Text(localization.text("默认关闭。开启后上传界面语言访问、内容与音频语言、收听时长和播放覆盖范围；只使用每日更新的随机标识，不含姓名、邮箱或广告标识，不跨日追踪。设备数不等于人数。"))
                     .font(.footnote)
+                Text(localization.text("首次收听满 3 分钟后，App 会在收听页询问一次是否开启；选择任一项后不再询问。"))
+                    .font(.footnote)
                 Text(localization.text("关闭后立即停止，并尝试撤回本次 App 运行中已上传的统计；断网时无法保证撤回。没有离线上传队列，未联网期间的使用可能不计入。"))
                     .font(.footnote)
             }
