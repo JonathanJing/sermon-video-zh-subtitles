@@ -173,7 +173,7 @@
 - [x] 为 adapter config 增加正式 schema，并在 speech job 准备阶段校验。
 - [ ] provider、model revision、conditioning SHA、voice authorization 和 locale capability 已与 Speaker Voice Registry 逐项核对；文本规范化、ASR 筛查和字幕策略目前只绑定配置中的 hash，仍需验证实际策略文件内容。
 - [x] 区分 `unverified_poc`、`candidate`、`verified`；未验证 adapter 只能准备 `synthesisEligible=false` 的 job，`verified` 还需注册表中同 locale 的人工审核能力和正式配音用途授权。
-- [ ] 当前注册表中的 `ko` 仍为 `unverified_poc`；正式用途授权已于 2026-10-24 对所有讲员补齐（`multilingual_dubbing`），真实韩语能力仍需人审证据，不从中文样片推断。
+- [x] 2026-10-24 起注册表中所有讲员的 `ko`／`es` 均为 `human_reviewed`，正式用途授权（`multilingual_dubbing`）也已补齐；各自绑定试听或整轨听审证据，不从中文样片推断。越南语仍为 `unverified_poc`。
 
 验收：adapter locale、授权、checkpoint 或任一策略不匹配时，在调用模型前失败。
 

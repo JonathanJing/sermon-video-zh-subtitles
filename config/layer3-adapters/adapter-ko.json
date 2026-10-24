@@ -11,7 +11,7 @@
   "speakerKey": "steve_bang_lee",
   "conditioningRef": "speaker-voice://qwen3-tts-12hz-1.7b-base/steve_bang_lee/b480bc6ab05863ccf1971bb7d968d99b31f64c5570d21d9cb7d10d4c993953a9",
   "conditioningSha256": "b480bc6ab05863ccf1971bb7d968d99b31f64c5570d21d9cb7d10d4c993953a9",
-  "registryJsonSha256": "4dba404b8e67f779f32aa865f82a1ac9caa4478c612ac2208c67a0239eefb069",
+  "registryJsonSha256": "f6375d845315c36dc6af9516496d57c4525ca862320b09d4e98971e917acee17",
   "authorizationPurpose": "multilingual_dubbing",
   "authorizationEvidenceSha256": "06c475271c1bf34f82434e9c65e9bf69f6d4998686625bb6546c1fa3c49d9a0c",
   "capabilityEvidenceSha256": "51bf2c2bfb2be129083277f7073d19fce871c9d76c784369cbaa16dd6f3f4609",

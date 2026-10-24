@@ -57,13 +57,21 @@ class MultilingualWeeklyPlanTest(unittest.TestCase):
             self.assertEqual(lane["layer3"]["status"], "waiting_for_layer2_gate")
 
     def test_non_chinese_production_is_fail_closed_until_authorized_and_reviewed(self):
-        # Every speaker is authorized for dubbing; ko capability is still unreviewed.
+        # Every speaker is authorized and reviewed for ko/es dubbing; vi is still unreviewed.
+        plan = subject.prepare_plan(
+            self.source("ready_for_translation"),
+            self.registry,
+            speaker_id="jared_kirkwood",
+            target_locales=["ko"],
+            mode="production",
+        )
+        self.assertEqual(plan["lanes"][0]["voice"]["capability"], "human_reviewed")
         with self.assertRaisesRegex(ValueError, "Production voice capability is not human reviewed"):
             subject.prepare_plan(
                 self.source("ready_for_translation"),
                 self.registry,
                 speaker_id="jared_kirkwood",
-                target_locales=["ko"],
+                target_locales=["vi"],
                 mode="production",
             )
         registry = copy.deepcopy(self.registry)

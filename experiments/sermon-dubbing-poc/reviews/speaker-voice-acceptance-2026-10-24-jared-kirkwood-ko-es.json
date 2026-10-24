@@ -1,0 +1,52 @@
+{
+  "schemaVersion": "sermon-speaker-voice-locale-acceptance-v1",
+  "speakerId": "jared_kirkwood",
+  "checkpointSha256": "a99381477fa7cc1b0ee5de688a68ce896a5f8dd6c60fa80fdf309e7d03ccf588",
+  "decidedBy": "Jony",
+  "decidedAt": "2026-10-24T00:00:00Z",
+  "userStatement": "所有讲员的配音，都已经获得授权；声音也都人工审过",
+  "decision": {
+    "ko": "human_reviewed",
+    "es": "human_reviewed"
+  },
+  "purposeAdded": "multilingual_dubbing",
+  "purposeBasis": "User confirmation 2026-10-24 that every speaker is authorized for dubbing (voice-authorization-2026-10-24-all-speakers.json).",
+  "boundDemoTracks": {
+    "ko": {
+      "wav": {
+        "path": "jared_kirkwood/ko.wav",
+        "sha256": "5ecfe3b10eecaf42fd10b4cce7c3c1a1247d18d28ca5e266a984a5877af4e2d9"
+      },
+      "mp3": {
+        "path": "mp3/jared_kirkwood/ko.mp3",
+        "sha256": "aa17eafeeb43b59735dc10aa04bf42a0bba91181b941331ba8f74f62c4a22819",
+        "durationSeconds": 14.08,
+        "codec": "mp3",
+        "sampleRate": 44100,
+        "channels": 1,
+        "bitrate": "128k",
+        "fullDecode": "pass"
+      },
+      "asrSimilarity": 1.0
+    },
+    "es": {
+      "wav": {
+        "path": "jared_kirkwood/es.wav",
+        "sha256": "7daa728b9ddaff9382649b8bc2ff4fa13e9bcb7380109a1fafcde51bd01bc9ff"
+      },
+      "mp3": {
+        "path": "mp3/jared_kirkwood/es.mp3",
+        "sha256": "0cf737da42e264a7e56aa76f7d415ed5a9361f4f80ebba2f7f2077bc1515e613",
+        "durationSeconds": 13.76,
+        "codec": "mp3",
+        "sampleRate": 44100,
+        "channels": 1,
+        "bitrate": "128k",
+        "fullDecode": "pass"
+      },
+      "asrSimilarity": 1.0
+    }
+  },
+  "demoDeliveryManifest": "artifacts/sermon-dubbing/2026-09-21-multilingual-voice-demos-v2/delivery-manifest.json",
+  "limits": "Voice capability for this checkpoint and locale only. It does not review any sermon's full translated audio; per-run audio QC, waiver or listening review still applies. Vietnamese is not covered."
+}

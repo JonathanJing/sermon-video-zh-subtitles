@@ -1,0 +1,52 @@
+{
+  "schemaVersion": "sermon-speaker-voice-locale-acceptance-v1",
+  "speakerId": "christine_caine",
+  "checkpointSha256": "480bc27ec6d23708c4e1a202d9c377145f02ca50bf508e9f4cf63de00f1aeac5",
+  "decidedBy": "Jony",
+  "decidedAt": "2026-10-24T00:00:00Z",
+  "userStatement": "所有讲员的配音，都已经获得授权；声音也都人工审过",
+  "decision": {
+    "ko": "human_reviewed",
+    "es": "human_reviewed"
+  },
+  "purposeAdded": "multilingual_dubbing",
+  "purposeBasis": "User confirmation 2026-10-24 that every speaker is authorized for dubbing (voice-authorization-2026-10-24-all-speakers.json).",
+  "boundDemoTracks": {
+    "ko": {
+      "wav": {
+        "path": "christine_caine/ko.wav",
+        "sha256": "3fa23f0f6f2396aafeee054df1a9491c7f1ca85ccdfb373203689f2842c01b16"
+      },
+      "mp3": {
+        "path": "mp3/christine_caine/ko.mp3",
+        "sha256": "685830e7c8afc7e4917448b742c07a92536cfbf49bd0be22534ccc7894285eee",
+        "durationSeconds": 14.72,
+        "codec": "mp3",
+        "sampleRate": 44100,
+        "channels": 1,
+        "bitrate": "128k",
+        "fullDecode": "pass"
+      },
+      "asrSimilarity": 1.0
+    },
+    "es": {
+      "wav": {
+        "path": "christine_caine/es.wav",
+        "sha256": "11e1e2eaaf43a5ed452151aaf6c007e94cfe71bf7a39bfb388a158a2533fe2fd"
+      },
+      "mp3": {
+        "path": "mp3/christine_caine/es.mp3",
+        "sha256": "fb84701435afa32187ba02c207be9ee24c0687b4f63a798ae8d5512d1aa1045c",
+        "durationSeconds": 14.64,
+        "codec": "mp3",
+        "sampleRate": 44100,
+        "channels": 1,
+        "bitrate": "128k",
+        "fullDecode": "pass"
+      },
+      "asrSimilarity": 1.0
+    }
+  },
+  "demoDeliveryManifest": "artifacts/sermon-dubbing/2026-09-21-multilingual-voice-demos-v2/delivery-manifest.json",
+  "limits": "Voice capability for this checkpoint and locale only. It does not review any sermon's full translated audio; per-run audio QC, waiver or listening review still applies. Vietnamese is not covered."
+}
