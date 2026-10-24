@@ -1,0 +1,46 @@
+{
+  "schemaVersion": "sermon-l3-timeline-bound-preparation-summary-v1",
+  "sharedTimelineMapJsonSha256": "b96ae5f2188d93f73966aa4eb46d7aa991489d89613197ea9b304394ed27c99f",
+  "sharedTimelineMapSchema": "sermon-clip-timeline-map-v4",
+  "sharedTimelineMapStatus": "clip_timebase_bound",
+  "approvedWindowSeconds": 1985.9,
+  "anchorOffsetSeconds": 0,
+  "locales": {
+    "es": {
+      "status": "prepared_for_target_language_speech",
+      "synthesisEligible": true,
+      "speechJobJsonSha256": "4c852564f9cc0608ce1c692a4c48955df284c1abe573fb13c56da5f73d4bea20",
+      "candidateJsonSha256": "f451b595716488683c7f4c031eaae8104b420761b228756c68df191068883e7f",
+      "humanOverrideReceiptSha256": "e5e0daa3d04339acee860f8491859539bf3859337ba289bcd32d49fcf7157658",
+      "timelineMapJsonSha256": "b96ae5f2188d93f73966aa4eb46d7aa991489d89613197ea9b304394ed27c99f",
+      "candidateModelReviewStatus": "fail",
+      "candidateReviewedGroupCount": 416,
+      "humanAcceptedExceptionGroupCount": 2,
+      "machineEvidenceChanged": false,
+      "releaseEligible": false
+    },
+    "ko": {
+      "status": "prepared_for_target_language_speech",
+      "synthesisEligible": true,
+      "speechJobJsonSha256": "abb447e650112982a024ef049bf5aabea5752b7623aa18d87662d8008332e9e7",
+      "candidateJsonSha256": "50dfc152f626777d6b5f763363626e64c861534525b6acc13d68e0e1950871b0",
+      "humanOverrideReceiptSha256": "03c58cec6b9f5e408a811c3ea7ef643d47f1ff37969135f5e3ce5b0afafc96b4",
+      "timelineMapJsonSha256": "b96ae5f2188d93f73966aa4eb46d7aa991489d89613197ea9b304394ed27c99f",
+      "candidateModelReviewStatus": "fail",
+      "candidateReviewedGroupCount": 416,
+      "humanAcceptedExceptionGroupCount": 2,
+      "machineEvidenceChanged": false,
+      "releaseEligible": false
+    }
+  },
+  "modelCalls": 0,
+  "gpuJobsSubmitted": 0,
+  "notRun": [
+    "TTS",
+    "ASR",
+    "audio QC",
+    "listening review",
+    "L4 release",
+    "playback acceptance"
+  ]
+}

@@ -37,14 +37,25 @@ def main() -> int:
     parser.add_argument("--remote-tools", required=True)
     parser.add_argument("--locale", action="append", required=True, metavar="LOCALE=SPARK_WORK_DIR")
     parser.add_argument("--voice", action="append", required=True, metavar="SPEAKER_KEY=CHECKPOINT_DIR")
+    parser.add_argument("--batch-size", type=int, default=1, help="sentences per TTS model call (batch>1 changes sound identity)")
+    parser.add_argument("--pool-replicas", type=int, default=0, help="one two-speaker TTS pool per locale with this many model replicas (0 = one job per speaker)")
     parser.add_argument("--skip-asr", action="store_true")
     args = parser.parse_args()
     base = [sys.executable, str(JOB), "--session", args.session, "--owner", args.owner, "--remote-tools", args.remote_tools]
     print(f"start {now()}", flush=True)
     for item in args.locale:
         locale, work = item.split("=", 1)
-        steps = [(f"sentence-tts-{key}-{locale}", ["--steps", "tts", "--speaker", key, "--checkpoint", checkpoint])
-                 for key, checkpoint in (v.split("=", 1) for v in args.voice)]
+        voices = [v.split("=", 1) for v in args.voice]
+        if args.pool_replicas:
+            pool = ["--steps", "tts-pool"]
+            for key, checkpoint in voices:
+                pool += ["--voice", f"{key}={checkpoint}"]
+            pool += ["--replicas", str(args.pool_replicas), "--batch-size", str(args.batch_size)]
+            steps = [(f"sentence-tts-pool-{locale}", pool)]
+        else:
+            steps = [(f"sentence-tts-{key}-{locale}", ["--steps", "tts", "--speaker", key, "--checkpoint", checkpoint,
+                                                       "--batch-size", str(args.batch_size)])
+                     for key, checkpoint in voices]
         if not args.skip_asr:
             steps.append((f"sentence-asr-{locale}", ["--steps", "asr"]))
         for purpose, step in steps:

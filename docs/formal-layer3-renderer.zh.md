@@ -73,7 +73,7 @@
 
 八个独立 spawn 进程各加载同一授权 checkpoint，全部 ready 后按 job 原始索引的固定八句窗口分配，seed 为基础值加窗口起始索引；419 句分为 53 个窗口，末批 3 句。最多八个未消费窗口，加上父进程正在处理的当前窗口，返回音频最多驻留九个窗口。模型副本跨窗口驻留；不让八个完整 renderer 同时操作同一目录。主进程按原顺序校验数量、身份、有限波形和采样率，保存、完整解码、hash、commit、receipt，再执行原排程与整轨组装。artifact root 的非阻塞文件锁覆盖正式输入校验、单元写入及组装，重复执行直接拒绝。
 
-模型加载前、等待结果期间及每次派发／取出结果时检查 Linux `/proc/meminfo` 的 `MemAvailable`，低于 **24 GiB** 即停止本次拥有的子进程；默认加载和单窗口生成超时均为 600 秒。等待轮询为 0.2 秒，但单批 IPC 反序列化和父进程媒体验证期间不是连续内存采样。保护基于宿主统一内存，不能把 CUDA、cgroup 与宿主数值相加；此路径要求 Spark/Linux，未自动退回 MacBook。
+模型加载前先做整池预算准入：`MemAvailable` 须不低于 24 GiB 保留线加每副本 9 GiB（2026-10-23 实测每副本从加载前到运行最低点峰值 8.1 GiB，见 [内存对照](../data/benchmarks/spark-tts-memory-ab/2026-10-23/comparison.json)），8 副本即 96 GiB，不够则在任何子进程创建前拒绝并写 `admission` 事件。pool 在 spawn 前导出 `PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True`（环境里已有不同值则拒绝），每个 worker 在每窗口后 `torch.cuda.empty_cache()`；这两项合为 intent 的 `replicaMemoryPolicy=release_cuda_cache_expandable_segments_v1`。同日对照中基线每窗口多保留约 1 GiB 且第 41 窗触发保护，三个启用臂 48 窗全部完成、可用内存持平、WAV 字节一致、匹配窗口生成时间差异 1% 以内，因此没有该字段的旧 intent 按兼容规则视为同一声音。运行中仍在等待结果期间及每次派发／取出结果时检查 `MemAvailable`，低于 **24 GiB** 即停止本次拥有的子进程；每个事件记录 `MemAvailable`、父进程 RSS 和各 worker 的 RSS 与 CUDA 分配器计数；默认加载和单窗口生成超时均为 600 秒。等待轮询为 0.2 秒，但单批 IPC 反序列化和父进程媒体验证期间不是连续内存采样。保护基于宿主统一内存，不能把 CUDA、cgroup 与宿主数值相加；此路径要求 Spark/Linux，未自动退回 MacBook。
 
 失败后保留已写的 SHA commit 和正式收据，只清理当前 pool 拥有的进程；续跑重新准入整个 job，只合成包含缺失单元的固定窗口，完整重放该窗口的全部成员，已提交的邻居字节不变。全部音频可复用时不创建模型进程。任意未来单元身份或音频 hash 不符会在加载前失败。`replica-runtime.json` 记录 worker PID、加载／生成耗时、窗口索引及采样到的最低可用内存，不记录证道正文；`closed` 仅表示 pool 关闭。成功依然以完整 manifest／单元收据为准，ASR 与人耳听审仍独立待完成。原逐单元 accounting 计量父进程的有序写入和等待，真实重叠计算耗时见 replica runtime，不把等待时间相加作为 GPU 墙钟。
 
@@ -81,7 +81,7 @@
 
 选择证据和 419 段预算见[单讲员 Spark 测量报告](reports/20261003-spark-production-8x8.zh.md)。8×8 的 64 句重复实测中位数 56.81 秒，最低可用内存 38.43 GiB；16×4 两次触发 24 GiB 保护，没有有效速度结果。419 句的约 6.2 分钟热 TTS／7.1 分钟加 cold load 为组件外推，不代表整篇实际完成或语言质量通过。
 
-`screen_target_language_audio_units.py` 同样新增 `--batch-size 1|2|4|8`（默认 1），CLI 只加载一次 ASR 模型；可用 `--unit-cache <artifact-root 内的新缓存目录>` 保存逐单元不可覆盖的识别回执，续跑只转写缺失单元。cache 绑定 job、locale、文字、音频 hash、模型 revision 和 batch 设置，错身份或错映射直接停止。Qwen 高层接口返回值不暴露 EOS/finish-reason；这里只验证函数返回、数量、身份、可解码音频和全单元覆盖，实际截断风险仍需回转写及人工听审。性能／质量验收见[提速 backlog](local-production-speed-backlog.zh.md)。
+`screen_target_language_audio_units.py` 同样新增 `--batch-size 1|2|4|8`（默认 1），CLI 只加载一次 ASR 模型；ASR 在 renderer 的 24 GiB 保留内运行，加载前只按自身 6 GiB 预算做宿主内存准入（`--memory-budget-gib`；2026-10-23 实测宿主占用 3.9 GiB、CUDA 峰值 1.8 GiB），不叠加保留，收据旁的 `*.memory.json` 记录加载前后的 `MemAvailable` 与 CUDA 峰值供校准，与 renderer 的预算准入同一形状；可用 `--unit-cache <artifact-root 内的新缓存目录>` 保存逐单元不可覆盖的识别回执，续跑只转写缺失单元。cache 绑定 job、locale、文字、音频 hash、模型 revision 和 batch 设置，错身份或错映射直接停止。Qwen 高层接口返回值不暴露 EOS/finish-reason；这里只验证函数返回、数量、身份、可解码音频和全单元覆盖，实际截断风险仍需回转写及人工听审。性能／质量验收见[提速 backlog](local-production-speed-backlog.zh.md)。
 
 若 Layer 2 的独立机器复核已通过而文字人审仍待定，可先在独立目录用 `tongxing_production.audio.speculative` 按组生成 `preview_only` WAV。它不创建正式 speech job 或 Audio Package。文字获批并准备好完整正式 job 后，给本 renderer 增加 `--speculative-from <预生成目录>`；正式来源、人审、音色能力与授权先过门禁，随后只复制候选快照、单元文字、来源、参数和音频 hash 全部匹配且可完整解码的 WAV，并重新签发正式单元收据。改文单元重新合成，整轨排程、ASR 和全文听审重新执行。具体命令与失效范围见[层内解耦设计](multilingual-intralayer-review-decoupling.zh.md)。
 

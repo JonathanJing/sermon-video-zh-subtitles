@@ -1,0 +1,27 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261021-ios-prod-build63-archive-export",
+  "runs": [
+    {
+      "label": "build63-archive-export",
+      "source": "~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/artifacts/ios-formal-push-validation/reports/build63-archive-export",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "build63-archive-export",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 406,
+      "truncated": false,
+      "sha256": "ce2f0f919f55e2805cd1eb12d5ec54987a78b0ae55318cb6af11990516a01585",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

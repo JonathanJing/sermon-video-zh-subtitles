@@ -1,0 +1,27 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261021-ios-prod-push-function-initial",
+  "runs": [
+    {
+      "label": "function-initial-failed",
+      "source": "~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/artifacts/ios-formal-push-validation/reports/function-initial-failed",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "function-initial-failed",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 360,
+      "truncated": false,
+      "sha256": "44407a062e18517bc55ff2e78f776122f7a68bbe990d199c997480f28f7a3e92",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

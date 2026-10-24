@@ -1,0 +1,17 @@
+Traceback (most recent call last):
+  File "~/.codex/worktrees/broadcast-es-ko-shared-source/sermon-video-zh-subtitles/tools/ops/run.py", line 91, in <module>
+    raise SystemExit(main())
+                     ~~~~^^
+  File "~/.codex/worktrees/broadcast-es-ko-shared-source/sermon-video-zh-subtitles/tools/ops/run.py", line 87, in main
+    return entry()
+  File "~/.codex/worktrees/broadcast-es-ko-shared-source/sermon-video-zh-subtitles/packages/production/src/tongxing_production/text/controller.py", line 1515, in main
+    result = execute(args.config, args.locale, args.expected_configuration, args.expected_code, args.expected_job,
+                     budget_authorization=<redacted>, expected_budget=args.expected_budget,
+                     expected_payload_cache=args.expected_payload_cache,
+                     expected_partial_recovery=args.expected_partial_recovery)
+  File "~/.codex/worktrees/broadcast-es-ko-shared-source/sermon-video-zh-subtitles/packages/production/src/tongxing_production/text/controller.py", line 1062, in execute
+    require(budget_binding is not None, 'bound_budget_authorization_required')
+    ~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "~/.codex/worktrees/broadcast-es-ko-shared-source/sermon-video-zh-subtitles/packages/production/src/tongxing_production/text/controller.py", line 158, in require
+    raise ValueError(reason)
+ValueError: bound_budget_authorization_required

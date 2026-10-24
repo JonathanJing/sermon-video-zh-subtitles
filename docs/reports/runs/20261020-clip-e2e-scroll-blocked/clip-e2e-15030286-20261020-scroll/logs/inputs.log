@@ -1,0 +1,58 @@
+
+== 2026-10-21T02:56:07+00:00 ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.agents/worktrees/codex/clip-e2e-15030286-7min-20261020/.venv/bin/python ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.agents/worktrees/codex/clip-e2e-15030286-7min-20261020/tools/development/build_dev_180s_simulated_inputs.py --clip-spec ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.agents/worktrees/codex/clip-e2e-15030286-7min-20261020/artifacts/clip-e2e-15030286-20261020-scroll/clip-spec-u127-215.json --run-id clip-e2e-scroll-20261020-a --out ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.agents/worktrees/codex/clip-e2e-15030286-7min-20261020/artifacts/dev-180s-page-test-20261004/clip-e2e-scroll-20261020-a/inputs
+Traceback (most recent call last):
+  File "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.agents/worktrees/codex/clip-e2e-15030286-7min-20261020/tools/development/build_dev_180s_simulated_inputs.py", line 534, in <module>
+    build(args.out, run_id=args.run_id, page_id=args.page_id, clip_spec=args.clip_spec)
+    ~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.agents/worktrees/codex/clip-e2e-15030286-7min-20261020/tools/development/build_dev_180s_simulated_inputs.py", line 116, in build
+    return assemble(out, run_id, page_id, **weekly_clip(read(clip_spec), out / 'clip'))
+                                            ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.agents/worktrees/codex/clip-e2e-15030286-7min-20261020/tools/development/build_dev_180s_simulated_inputs.py", line 305, in weekly_clip
+    contract.require(contract.sha(candidate) == package['targetLanguageCandidateJsonSha256'],
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                     locale + ': the audio package was not rendered from this candidate')
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.agents/worktrees/codex/clip-e2e-15030286-7min-20261020/packages/production/src/tongxing_production/delivery/contract.py", line 20, in require
+    raise ValueError(message)
+ValueError: zh-Hans: the audio package was not rendered from this candidate
+
+== 2026-10-21T02:59:29+00:00 ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.agents/worktrees/codex/clip-e2e-15030286-7min-20261020/.venv/bin/python ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.agents/worktrees/codex/clip-e2e-15030286-7min-20261020/tools/development/build_dev_180s_simulated_inputs.py --clip-spec ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.agents/worktrees/codex/clip-e2e-15030286-7min-20261020/artifacts/clip-e2e-15030286-20261020-scroll/clip-spec-u127-215.json --run-id clip-e2e-scroll-20261020-a --out ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.agents/worktrees/codex/clip-e2e-15030286-7min-20261020/artifacts/dev-180s-page-test-20261004/clip-e2e-scroll-20261020-a/inputs
+Traceback (most recent call last):
+  File "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.agents/worktrees/codex/clip-e2e-15030286-7min-20261020/tools/development/build_dev_180s_simulated_inputs.py", line 534, in <module>
+    build(args.out, run_id=args.run_id, page_id=args.page_id, clip_spec=args.clip_spec)
+    ~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.agents/worktrees/codex/clip-e2e-15030286-7min-20261020/tools/development/build_dev_180s_simulated_inputs.py", line 114, in build
+    out = fixture_output(out, run_id)
+  File "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.agents/worktrees/codex/clip-e2e-15030286-7min-20261020/tools/development/build_dev_180s_simulated_inputs.py", line 107, in fixture_output
+    contract.require(not out.exists(), 'Use a new simulated input output directory')
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.agents/worktrees/codex/clip-e2e-15030286-7min-20261020/packages/production/src/tongxing_production/delivery/contract.py", line 20, in require
+    raise ValueError(message)
+ValueError: Use a new simulated input output directory
+
+== 2026-10-21T02:59:38+00:00 ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.agents/worktrees/codex/clip-e2e-15030286-7min-20261020/.venv/bin/python ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.agents/worktrees/codex/clip-e2e-15030286-7min-20261020/tools/development/build_dev_180s_simulated_inputs.py --clip-spec ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.agents/worktrees/codex/clip-e2e-15030286-7min-20261020/artifacts/clip-e2e-15030286-20261020-scroll/clip-spec-u127-215.json --run-id clip-e2e-scroll-20261020-a --out ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.agents/worktrees/codex/clip-e2e-15030286-7min-20261020/artifacts/dev-180s-page-test-20261004/clip-e2e-scroll-20261020-a/inputs
+Traceback (most recent call last):
+  File "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.agents/worktrees/codex/clip-e2e-15030286-7min-20261020/tools/development/build_dev_180s_simulated_inputs.py", line 534, in <module>
+    build(args.out, run_id=args.run_id, page_id=args.page_id, clip_spec=args.clip_spec)
+    ~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.agents/worktrees/codex/clip-e2e-15030286-7min-20261020/tools/development/build_dev_180s_simulated_inputs.py", line 116, in build
+    return assemble(out, run_id, page_id, **weekly_clip(read(clip_spec), out / 'clip'))
+  File "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.agents/worktrees/codex/clip-e2e-15030286-7min-20261020/tools/development/build_dev_180s_simulated_inputs.py", line 391, in assemble
+    config = copy.deepcopy(read(template / 'config.json'))
+                           ~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.agents/worktrees/codex/clip-e2e-15030286-7min-20261020/tools/development/build_dev_180s_simulated_inputs.py", line 60, in read
+    return json.loads(Path(path).read_text())
+                      ~~~~~~~~~~~~~~~~~~~~^^
+  File "/opt/homebrew/Cellar/<email>/3.13.16/Frameworks/Python.framework/Versions/3.13/lib/python3.13/pathlib/_local.py", line 546, in read_text
+    return PathBase.read_text(self, encoding, errors, newline)
+           ~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/<email>/3.13.16/Frameworks/Python.framework/Versions/3.13/lib/python3.13/pathlib/_abc.py", line 632, in read_text
+    with self.open(mode='r', encoding=encoding, errors=errors, newline=newline) as f:
+         ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/<email>/3.13.16/Frameworks/Python.framework/Versions/3.13/lib/python3.13/pathlib/_local.py", line 537, in open
+    return io.open(self, mode, buffering, encoding, errors, newline)
+           ~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+FileNotFoundError: [Errno 2] No such file or directory: '~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.agents/worktrees/codex/clip-e2e-15030286-7min-20261020/artifacts/unified-cli-acceptance/native-four-product-fixture-v2/config.json'
+
+== 2026-10-21T03:03:12+00:00 ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.agents/worktrees/codex/clip-e2e-15030286-7min-20261020/.venv/bin/python ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.agents/worktrees/codex/clip-e2e-15030286-7min-20261020/tools/development/build_dev_180s_simulated_inputs.py --clip-spec ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.agents/worktrees/codex/clip-e2e-15030286-7min-20261020/artifacts/clip-e2e-15030286-20261020-scroll/clip-spec-u127-215.json --run-id clip-e2e-scroll-20261020-a --out ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.agents/worktrees/codex/clip-e2e-15030286-7min-20261020/artifacts/dev-180s-page-test-20261004/clip-e2e-scroll-20261020-a/inputs
+{"config": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.agents/worktrees/codex/clip-e2e-15030286-7min-20261020/artifacts/dev-180s-page-test-20261004/clip-e2e-scroll-20261020-a/inputs/delivery.json", "status": "succeeded", "runId": "clip-e2e-scroll-20261020-a", "pageId": "mockup-dev-clip-clip-e2e-scroll-20261020-a", "fourProducts": "validated", "productionEligible": false, "sourceVideo": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.agents/worktrees/codex/clip-e2e-15030286-7min-20261020/artifacts/dev-180s-page-test-20261004/clip-e2e-scroll-20261020-a/inputs/clip/source.mp4", "scopeReport": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.agents/worktrees/codex/clip-e2e-15030286-7min-20261020/artifacts/dev-180s-page-test-20261004/clip-e2e-scroll-20261020-a/inputs/simulation-scope-report.json"}

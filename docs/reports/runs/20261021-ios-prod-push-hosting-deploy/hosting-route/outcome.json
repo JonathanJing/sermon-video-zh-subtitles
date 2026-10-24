@@ -1,0 +1,17 @@
+{
+  "schemaVersion": "tongxing-cloud-deployment-v1",
+  "result": "deployed",
+  "site": "ai-for-god-sermon-audio",
+  "baselineVersion": "457567bed866aec7",
+  "newVersion": "c2febd95227a047b",
+  "deploymentAttemptId": "43756828-0cdf-4bb0-9f28-9bec410fcb75",
+  "catalogSha256": "e49b8d973649388d8e0d99fbcb7722d602890c472ecea54ea6b1339fe1c2a60f",
+  "assetsSha256": "e944ce0e10fa0b6c18b7f01b0126cf981bdb3308cffdf1e13992a7657ea45d1a",
+  "publicRouteMalformedRequest": "400_invalid_request_no_store",
+  "publishedLocales": [
+    "zh-Hans",
+    "ko",
+    "es"
+  ],
+  "pageId": "resi-20261018-15030286"
+}

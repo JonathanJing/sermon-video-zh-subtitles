@@ -21,11 +21,18 @@ ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT / 'artifacts' / 'next-concurrency-605s-20261005-r3' / 'zh-Hans' / 'fixture'
 BASELINE = ROOT / 'artifacts' / 'next-iteration-repair-20261005' / 'baseline-605s-policy.json'
 HAVE = SOURCE.is_dir() and BASELINE.is_file()
+# The local baseline policy is frozen against the 2026-09-12 series table; pin that snapshot
+# so adding a series to the live table does not break this historical fixture.
+LEGACY_SERIES_TABLE = ROOT / 'tests' / 'fixtures' / 'rqc' / 'series-terminology-2026-09-12.zh.md'
 
 
 @unittest.skipUnless(HAVE, '605 zh-Hans fixture or baseline policy not present')
 class GatedRoundTests(unittest.TestCase):
     def setUp(self):
+        from tongxing_production.text import policy
+        patcher = patch.object(policy, '_series_table', return_value=LEGACY_SERIES_TABLE)
+        patcher.start()
+        self.addCleanup(patcher.stop)
         self.work = Path(tempfile.mkdtemp(dir=ROOT / 'artifacts', prefix='test-gated-round-'))
         self.addCleanup(shutil.rmtree, self.work, ignore_errors=True)
         manifest = json.loads((SOURCE / 'fixture-manifest.json').read_text(encoding='utf-8'))

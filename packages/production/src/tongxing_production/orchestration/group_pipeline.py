@@ -728,6 +728,10 @@ def main(argv=None) -> int:
     stages_command.add_argument("--out", type=Path, required=True)
     stages_command.add_argument("--dry-run", action="store_true")
     stages_command.add_argument("--output", type=Path)
+    lanes_command = sub.add_parser("lanes", help="run several locales' Layer 3 stage plans sharing one GPU slot")
+    lanes_command.add_argument("--config", type=Path, required=True, help="sermon-group-l3-lanes-v1 plan")
+    lanes_command.add_argument("--out", type=Path, required=True, help="directory for lanes-report.json")
+    lanes_command.add_argument("--dry-run", action="store_true")
     prepare_command = sub.add_parser("prepare-l3", help="prepare the Layer 3 speech job for the current merge")
     prepare_command.add_argument("--config", type=Path, required=True)
     prepare_command.add_argument("--text-release-basis", type=Path, required=True)
@@ -771,6 +775,10 @@ def main(argv=None) -> int:
             _write_report(args.output, report)
         print(json.dumps({"status": report["status"], "stages": len(report["stages"])}))
         return 0
+    if args.command == "lanes":
+        from . import group_l3_lanes
+        return group_l3_lanes.main(["--config", str(args.config), "--out", str(args.out)]
+                                   + (["--dry-run"] if args.dry_run else []))
     config = group_worker.load_configuration(args.config)
     if args.command == "status":
         report = status(config)

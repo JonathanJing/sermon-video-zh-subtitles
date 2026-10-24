@@ -1,0 +1,79 @@
+{
+  "schemaVersion": "john-thomas-voice-prep-v1",
+  "config": {
+    "validationSplitStartSeconds": 2000.0,
+    "mergeGapSeconds": 0.3,
+    "minTurnSeconds": 4.5,
+    "dropTurnBoundarySentences": true,
+    "turnEdgeMarginSeconds": 0.4,
+    "episodeEdgeExclusionSeconds": 10.0,
+    "clipPadSeconds": 0.06,
+    "budgetSeconds": [
+      4.0,
+      15.0
+    ],
+    "groupSoftSeconds": 6.0,
+    "groupMaxSeconds": 12.0,
+    "minVibeVoiceTokenCoverage": 0.95,
+    "minYoutubeTokenCoverage": 0.85,
+    "youtubeSpeakerMarkerToleranceSeconds": 0.5,
+    "mlxOtherSpeakerToleranceSeconds": 0.2,
+    "maxPeak": 0.999,
+    "minRmsDbfs": -40.0,
+    "silenceFloorDbfs": -45.0,
+    "maxInternalSilenceSeconds": 1.5,
+    "referenceSecondsRange": [
+      10.0,
+      15.0
+    ]
+  },
+  "asr": [
+    "Qwen/Qwen3-ASR-0.6B",
+    "5eb144179a02acc5e5ba31e748d22b0cf3e303b0"
+  ],
+  "aligner": [
+    "Qwen/Qwen3-ForcedAligner-0.6B",
+    "c7cbfc2048c462b0d63a45797104fc9db3ad62b7"
+  ],
+  "sourceHashes": {
+    "audio_24k_mono.wav": "23f08c5ccc5800e1319e8eb800e2dd186e9dadcaafaf18218215d75baf833a0d",
+    "audio_16k_mono.wav": "26f2ee7bf229cd4723d0537a350dc2e1edcd505e9e80fa03410c5cbc4fb1d4b3",
+    "segments.bf16.json": "cc130af715330dd1aabd44e92e02877c17195f1f96393c033bfae501ba02fc6e",
+    "segments.mlx8bit.json": "0c234f522589c2e78d3101f6418781e2d6673181c1be5f39667dd82541e778dc",
+    "youtube-auto.srt": "1c2e172a6161a4f3d4e35d820a3c3d533e098500dc6927ed4b1bcc1cbc30c909"
+  },
+  "johnTurns": 94,
+  "johnTurnSeconds": 1275.01,
+  "turnsTranscribed": 52,
+  "train": {
+    "count": 34,
+    "seconds": 270.48
+  },
+  "validation": {
+    "count": 9,
+    "seconds": 82.2
+  },
+  "exclusionReasonCounts": {
+    "turn_shorter_than_min": 41,
+    "crosses_validation_split": 1,
+    "turn_boundary_sentence": 103,
+    "vibevoice_text_disagreement": 27,
+    "youtube_speaker_change_marker": 30,
+    "outside_4_to_15_second_budget": 31,
+    "youtube_caption_disagreement": 9,
+    "within_turn_edge_margin": 7
+  },
+  "trainingAdmittedCount": 0,
+  "limitations": [
+    "Single podcast episode: engineering smoke only, no generalization claim",
+    "Speaker identity is diarization plus a user-confirmed label mapping, not per-clip human review",
+    "Machine alignment and caption agreement are not human audio review",
+    "Overlapping backchannels are screened only through MLX diarization and YouTube >> markers"
+  ],
+  "reference": {
+    "sha256": "1630dff7349798f512f7801bba59fe3c103ee2516b118039fdfb4a535d50873b",
+    "durationSeconds": 11.96,
+    "sourceStartSeconds": 442.15
+  },
+  "note": "Clip texts, transcripts and exclusion texts stay in the ignored run directory; this receipt carries counts and hashes only."
+}

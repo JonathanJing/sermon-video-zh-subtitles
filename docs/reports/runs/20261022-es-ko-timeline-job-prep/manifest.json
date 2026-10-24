@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261022-es-ko-timeline-job-prep",
+  "runs": [
+    {
+      "label": "timeline-job-prep",
+      "source": "~/.codex/worktrees/broadcast-es-ko-shared-source/sermon-video-zh-subtitles/artifacts/weekend-live/broadcast-20261018-es-ko-20261022/l3/timeline-job-prep",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "timeline-job-prep",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 483,
+      "truncated": false,
+      "sha256": "0e6c6d19aba6b6e96880e85849b34ca90ca2ce0974039060b2edd26dce376fd7",
+      "redactions": {}
+    },
+    {
+      "run": "timeline-job-prep",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 1947,
+      "truncated": false,
+      "sha256": "d03105570fd07db83f7e2bd595e882aeeb27ca98b7d3f8800202762a965d8a67",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

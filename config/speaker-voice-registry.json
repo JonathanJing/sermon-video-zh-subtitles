@@ -27,11 +27,13 @@
         "status": "authorized",
         "purposes": [
           "chinese_dubbing",
+          "multilingual_dubbing",
           "multilingual_voice_demo"
         ],
         "evidence": [
           "experiments/sermon-dubbing-poc/AUTHORIZED_VOICE_REPORT_20260905.zh.md",
-          "docs/multilingual-speaker-voice-registry.zh.md#本轮-demo-授权与限制"
+          "docs/multilingual-speaker-voice-registry.zh.md#本轮-demo-授权与限制",
+          "experiments/sentence-first-agent/reviews/20261023-eric-ko-es.md"
         ]
       },
       "localeCapabilities": [
@@ -47,16 +49,20 @@
         {
           "targetLocale": "ko",
           "modelLanguage": "Korean",
-          "status": "unverified_poc",
-          "demoStatus": "machine_screened",
-          "reviewEvidence": []
+          "status": "human_reviewed",
+          "demoStatus": "human_reviewed",
+          "reviewEvidence": [
+            "experiments/sentence-first-agent/reviews/20261023-eric-ko-es-acceptance.json"
+          ]
         },
         {
           "targetLocale": "es",
           "modelLanguage": "Spanish",
-          "status": "unverified_poc",
-          "demoStatus": "machine_screened",
-          "reviewEvidence": []
+          "status": "human_reviewed",
+          "demoStatus": "human_reviewed",
+          "reviewEvidence": [
+            "experiments/sentence-first-agent/reviews/20261023-eric-ko-es-acceptance.json"
+          ]
         },
         {
           "targetLocale": "vi",
@@ -85,10 +91,15 @@
       },
       "authorization": {
         "status": "authorized",
-        "purposes": ["chinese_dubbing", "multilingual_voice_demo"],
+        "purposes": [
+          "chinese_dubbing",
+          "multilingual_voice_demo",
+          "multilingual_dubbing"
+        ],
         "evidence": [
           "artifacts/sermon-dubbing/2026-09-05-speaker-bank/jared_kirkwood/authorization.json",
-          "docs/multilingual-speaker-voice-registry.zh.md#本轮-demo-授权与限制"
+          "docs/multilingual-speaker-voice-registry.zh.md#本轮-demo-授权与限制",
+          "experiments/sermon-dubbing-poc/reviews/voice-authorization-2026-10-24-all-speakers.json"
         ]
       },
       "localeCapabilities": [
@@ -97,11 +108,41 @@
           "modelLanguage": "Chinese",
           "status": "human_reviewed",
           "demoStatus": "human_reviewed",
-          "reviewEvidence": ["experiments/sermon-dubbing-poc/reviews/speaker-voice-acceptance-2026-09-05.json"]
+          "reviewEvidence": [
+            "experiments/sermon-dubbing-poc/reviews/speaker-voice-acceptance-2026-09-05.json"
+          ]
         },
-        {"targetLocale": "ko", "modelLanguage": "Korean", "status": "unverified_poc", "demoStatus": "machine_screened", "reviewEvidence": []},
-        {"targetLocale": "es", "modelLanguage": "Spanish", "status": "unverified_poc", "demoStatus": "machine_screened", "reviewEvidence": []},
-        {"targetLocale": "vi", "modelLanguage": "Vietnamese", "status": "unverified_poc", "demoStatus": "machine_screened", "adapterOverride": {"adapter": "gwen_tts_zero_shot_reference", "model": "g-group-ai-lab/gwen-tts-0.6B", "revision": "a83e1f08656d48217a83f0ad422d1610d5b5c963", "conditioningRef": "speaker-reference://jared_kirkwood/926e37b4f92c5c9c33c841886f4e22f54d6b214b1c1a1c3c1be2f22b61987e17"}, "reviewEvidence": []}
+        {
+          "targetLocale": "ko",
+          "modelLanguage": "Korean",
+          "status": "human_reviewed",
+          "demoStatus": "human_reviewed",
+          "reviewEvidence": [
+            "experiments/sermon-dubbing-poc/reviews/speaker-voice-acceptance-2026-10-24-jared-kirkwood-ko-es.json"
+          ]
+        },
+        {
+          "targetLocale": "es",
+          "modelLanguage": "Spanish",
+          "status": "human_reviewed",
+          "demoStatus": "human_reviewed",
+          "reviewEvidence": [
+            "experiments/sermon-dubbing-poc/reviews/speaker-voice-acceptance-2026-10-24-jared-kirkwood-ko-es.json"
+          ]
+        },
+        {
+          "targetLocale": "vi",
+          "modelLanguage": "Vietnamese",
+          "status": "unverified_poc",
+          "demoStatus": "machine_screened",
+          "adapterOverride": {
+            "adapter": "gwen_tts_zero_shot_reference",
+            "model": "g-group-ai-lab/gwen-tts-0.6B",
+            "revision": "a83e1f08656d48217a83f0ad422d1610d5b5c963",
+            "conditioningRef": "speaker-reference://jared_kirkwood/926e37b4f92c5c9c33c841886f4e22f54d6b214b1c1a1c3c1be2f22b61987e17"
+          },
+          "reviewEvidence": []
+        }
       ]
     },
     {
@@ -116,17 +157,58 @@
       },
       "authorization": {
         "status": "authorized",
-        "purposes": ["chinese_dubbing", "multilingual_voice_demo"],
+        "purposes": [
+          "chinese_dubbing",
+          "multilingual_voice_demo",
+          "multilingual_dubbing"
+        ],
         "evidence": [
           "artifacts/sermon-dubbing/2026-09-05-speaker-bank/christine_caine/authorization.json",
-          "docs/multilingual-speaker-voice-registry.zh.md#本轮-demo-授权与限制"
+          "docs/multilingual-speaker-voice-registry.zh.md#本轮-demo-授权与限制",
+          "experiments/sermon-dubbing-poc/reviews/voice-authorization-2026-10-24-all-speakers.json"
         ]
       },
       "localeCapabilities": [
-        {"targetLocale": "zh-Hans", "modelLanguage": "Chinese", "status": "human_reviewed", "demoStatus": "human_reviewed", "reviewEvidence": ["experiments/sermon-dubbing-poc/reviews/speaker-voice-acceptance-2026-09-05.json"]},
-        {"targetLocale": "ko", "modelLanguage": "Korean", "status": "unverified_poc", "demoStatus": "machine_screened", "reviewEvidence": []},
-        {"targetLocale": "es", "modelLanguage": "Spanish", "status": "unverified_poc", "demoStatus": "machine_screened", "reviewEvidence": []},
-        {"targetLocale": "vi", "modelLanguage": "Vietnamese", "status": "unverified_poc", "demoStatus": "machine_screened", "adapterOverride": {"adapter": "gwen_tts_zero_shot_reference", "model": "g-group-ai-lab/gwen-tts-0.6B", "revision": "a83e1f08656d48217a83f0ad422d1610d5b5c963", "conditioningRef": "speaker-reference://christine_caine/a96bdd6abf2b94197c56a3d76f94504145e88f79b14372ec53328216c34c2f81"}, "reviewEvidence": []}
+        {
+          "targetLocale": "zh-Hans",
+          "modelLanguage": "Chinese",
+          "status": "human_reviewed",
+          "demoStatus": "human_reviewed",
+          "reviewEvidence": [
+            "experiments/sermon-dubbing-poc/reviews/speaker-voice-acceptance-2026-09-05.json"
+          ]
+        },
+        {
+          "targetLocale": "ko",
+          "modelLanguage": "Korean",
+          "status": "human_reviewed",
+          "demoStatus": "human_reviewed",
+          "reviewEvidence": [
+            "experiments/sermon-dubbing-poc/reviews/speaker-voice-acceptance-2026-10-24-christine-caine-ko-es.json"
+          ]
+        },
+        {
+          "targetLocale": "es",
+          "modelLanguage": "Spanish",
+          "status": "human_reviewed",
+          "demoStatus": "human_reviewed",
+          "reviewEvidence": [
+            "experiments/sermon-dubbing-poc/reviews/speaker-voice-acceptance-2026-10-24-christine-caine-ko-es.json"
+          ]
+        },
+        {
+          "targetLocale": "vi",
+          "modelLanguage": "Vietnamese",
+          "status": "unverified_poc",
+          "demoStatus": "machine_screened",
+          "adapterOverride": {
+            "adapter": "gwen_tts_zero_shot_reference",
+            "model": "g-group-ai-lab/gwen-tts-0.6B",
+            "revision": "a83e1f08656d48217a83f0ad422d1610d5b5c963",
+            "conditioningRef": "speaker-reference://christine_caine/a96bdd6abf2b94197c56a3d76f94504145e88f79b14372ec53328216c34c2f81"
+          },
+          "reviewEvidence": []
+        }
       ]
     },
     {
@@ -141,17 +223,58 @@
       },
       "authorization": {
         "status": "authorized",
-        "purposes": ["chinese_dubbing", "multilingual_voice_demo"],
+        "purposes": [
+          "chinese_dubbing",
+          "multilingual_voice_demo",
+          "multilingual_dubbing"
+        ],
         "evidence": [
           "artifacts/sermon-dubbing/2026-09-05-speaker-bank/doug_fields/authorization.json",
-          "docs/multilingual-speaker-voice-registry.zh.md#本轮-demo-授权与限制"
+          "docs/multilingual-speaker-voice-registry.zh.md#本轮-demo-授权与限制",
+          "experiments/sermon-dubbing-poc/reviews/voice-authorization-2026-10-24-all-speakers.json"
         ]
       },
       "localeCapabilities": [
-        {"targetLocale": "zh-Hans", "modelLanguage": "Chinese", "status": "human_reviewed", "demoStatus": "human_reviewed", "reviewEvidence": ["experiments/sermon-dubbing-poc/reviews/speaker-voice-acceptance-2026-09-05.json"]},
-        {"targetLocale": "ko", "modelLanguage": "Korean", "status": "unverified_poc", "demoStatus": "machine_screened", "reviewEvidence": []},
-        {"targetLocale": "es", "modelLanguage": "Spanish", "status": "unverified_poc", "demoStatus": "machine_screened", "reviewEvidence": []},
-        {"targetLocale": "vi", "modelLanguage": "Vietnamese", "status": "unverified_poc", "demoStatus": "machine_screened", "adapterOverride": {"adapter": "gwen_tts_zero_shot_reference", "model": "g-group-ai-lab/gwen-tts-0.6B", "revision": "a83e1f08656d48217a83f0ad422d1610d5b5c963", "conditioningRef": "speaker-reference://doug_fields/95fb563d94990e64012cd0463d75313eefe08cfe785ef306ddccaf5001423440"}, "reviewEvidence": []}
+        {
+          "targetLocale": "zh-Hans",
+          "modelLanguage": "Chinese",
+          "status": "human_reviewed",
+          "demoStatus": "human_reviewed",
+          "reviewEvidence": [
+            "experiments/sermon-dubbing-poc/reviews/speaker-voice-acceptance-2026-09-05.json"
+          ]
+        },
+        {
+          "targetLocale": "ko",
+          "modelLanguage": "Korean",
+          "status": "human_reviewed",
+          "demoStatus": "human_reviewed",
+          "reviewEvidence": [
+            "experiments/sermon-dubbing-poc/reviews/speaker-voice-acceptance-2026-10-24-doug-fields-ko-es.json"
+          ]
+        },
+        {
+          "targetLocale": "es",
+          "modelLanguage": "Spanish",
+          "status": "human_reviewed",
+          "demoStatus": "human_reviewed",
+          "reviewEvidence": [
+            "experiments/sermon-dubbing-poc/reviews/speaker-voice-acceptance-2026-10-24-doug-fields-ko-es.json"
+          ]
+        },
+        {
+          "targetLocale": "vi",
+          "modelLanguage": "Vietnamese",
+          "status": "unverified_poc",
+          "demoStatus": "machine_screened",
+          "adapterOverride": {
+            "adapter": "gwen_tts_zero_shot_reference",
+            "model": "g-group-ai-lab/gwen-tts-0.6B",
+            "revision": "a83e1f08656d48217a83f0ad422d1610d5b5c963",
+            "conditioningRef": "speaker-reference://doug_fields/95fb563d94990e64012cd0463d75313eefe08cfe785ef306ddccaf5001423440"
+          },
+          "reviewEvidence": []
+        }
       ]
     },
     {
@@ -166,17 +289,58 @@
       },
       "authorization": {
         "status": "authorized",
-        "purposes": ["chinese_dubbing", "multilingual_voice_demo"],
+        "purposes": [
+          "chinese_dubbing",
+          "multilingual_voice_demo",
+          "multilingual_dubbing"
+        ],
         "evidence": [
           "artifacts/sermon-dubbing/2026-09-05-speaker-bank/kenton_beshore/authorization.json",
-          "docs/multilingual-speaker-voice-registry.zh.md#本轮-demo-授权与限制"
+          "docs/multilingual-speaker-voice-registry.zh.md#本轮-demo-授权与限制",
+          "experiments/sermon-dubbing-poc/reviews/voice-authorization-2026-10-24-all-speakers.json"
         ]
       },
       "localeCapabilities": [
-        {"targetLocale": "zh-Hans", "modelLanguage": "Chinese", "status": "human_reviewed", "demoStatus": "human_reviewed", "reviewEvidence": ["experiments/sermon-dubbing-poc/reviews/speaker-voice-acceptance-2026-09-05.json"]},
-        {"targetLocale": "ko", "modelLanguage": "Korean", "status": "unverified_poc", "demoStatus": "machine_screened", "reviewEvidence": []},
-        {"targetLocale": "es", "modelLanguage": "Spanish", "status": "unverified_poc", "demoStatus": "machine_screened", "reviewEvidence": []},
-        {"targetLocale": "vi", "modelLanguage": "Vietnamese", "status": "unverified_poc", "demoStatus": "machine_screened", "adapterOverride": {"adapter": "gwen_tts_zero_shot_reference", "model": "g-group-ai-lab/gwen-tts-0.6B", "revision": "a83e1f08656d48217a83f0ad422d1610d5b5c963", "conditioningRef": "speaker-reference://kenton_beshore/394552afddac93e08f3049b40ecb52fb62c382205418910e721520e4786d7ab3"}, "reviewEvidence": []}
+        {
+          "targetLocale": "zh-Hans",
+          "modelLanguage": "Chinese",
+          "status": "human_reviewed",
+          "demoStatus": "human_reviewed",
+          "reviewEvidence": [
+            "experiments/sermon-dubbing-poc/reviews/speaker-voice-acceptance-2026-09-05.json"
+          ]
+        },
+        {
+          "targetLocale": "ko",
+          "modelLanguage": "Korean",
+          "status": "human_reviewed",
+          "demoStatus": "human_reviewed",
+          "reviewEvidence": [
+            "experiments/sermon-dubbing-poc/reviews/speaker-voice-acceptance-2026-10-24-kenton-beshore-ko-es.json"
+          ]
+        },
+        {
+          "targetLocale": "es",
+          "modelLanguage": "Spanish",
+          "status": "human_reviewed",
+          "demoStatus": "human_reviewed",
+          "reviewEvidence": [
+            "experiments/sermon-dubbing-poc/reviews/speaker-voice-acceptance-2026-10-24-kenton-beshore-ko-es.json"
+          ]
+        },
+        {
+          "targetLocale": "vi",
+          "modelLanguage": "Vietnamese",
+          "status": "unverified_poc",
+          "demoStatus": "machine_screened",
+          "adapterOverride": {
+            "adapter": "gwen_tts_zero_shot_reference",
+            "model": "g-group-ai-lab/gwen-tts-0.6B",
+            "revision": "a83e1f08656d48217a83f0ad422d1610d5b5c963",
+            "conditioningRef": "speaker-reference://kenton_beshore/394552afddac93e08f3049b40ecb52fb62c382205418910e721520e4786d7ab3"
+          },
+          "reviewEvidence": []
+        }
       ]
     },
     {
@@ -191,7 +355,11 @@
       },
       "authorization": {
         "status": "authorized",
-        "purposes": ["chinese_dubbing", "multilingual_voice_demo", "multilingual_dubbing"],
+        "purposes": [
+          "chinese_dubbing",
+          "multilingual_voice_demo",
+          "multilingual_dubbing"
+        ],
         "evidence": [
           "artifacts/sermon-dubbing/2026-09-05-speaker-bank/steve_bang_lee/authorization.json",
           "docs/multilingual-speaker-voice-registry.zh.md#本轮-demo-授权与限制",
@@ -199,10 +367,46 @@
         ]
       },
       "localeCapabilities": [
-        {"targetLocale": "zh-Hans", "modelLanguage": "Chinese", "status": "human_reviewed", "demoStatus": "human_reviewed", "reviewEvidence": ["experiments/sermon-dubbing-poc/reviews/speaker-voice-acceptance-2026-09-05.json"]},
-        {"targetLocale": "ko", "modelLanguage": "Korean", "status": "human_reviewed", "demoStatus": "human_reviewed", "reviewEvidence": ["experiments/sermon-dubbing-poc/reviews/speaker-voice-acceptance-2026-10-11-steve-bang-lee-ko-es.json"]},
-        {"targetLocale": "es", "modelLanguage": "Spanish", "status": "human_reviewed", "demoStatus": "human_reviewed", "reviewEvidence": ["experiments/sermon-dubbing-poc/reviews/speaker-voice-acceptance-2026-10-11-steve-bang-lee-ko-es.json"]},
-        {"targetLocale": "vi", "modelLanguage": "Vietnamese", "status": "unverified_poc", "demoStatus": "machine_screened", "adapterOverride": {"adapter": "gwen_tts_zero_shot_reference", "model": "g-group-ai-lab/gwen-tts-0.6B", "revision": "a83e1f08656d48217a83f0ad422d1610d5b5c963", "conditioningRef": "speaker-reference://steve_bang_lee/0661d53954b41e34ac96255c9cb67c73e80a06297f19a0b2976854c81eae3950"}, "reviewEvidence": []}
+        {
+          "targetLocale": "zh-Hans",
+          "modelLanguage": "Chinese",
+          "status": "human_reviewed",
+          "demoStatus": "human_reviewed",
+          "reviewEvidence": [
+            "experiments/sermon-dubbing-poc/reviews/speaker-voice-acceptance-2026-09-05.json"
+          ]
+        },
+        {
+          "targetLocale": "ko",
+          "modelLanguage": "Korean",
+          "status": "human_reviewed",
+          "demoStatus": "human_reviewed",
+          "reviewEvidence": [
+            "experiments/sermon-dubbing-poc/reviews/speaker-voice-acceptance-2026-10-11-steve-bang-lee-ko-es.json"
+          ]
+        },
+        {
+          "targetLocale": "es",
+          "modelLanguage": "Spanish",
+          "status": "human_reviewed",
+          "demoStatus": "human_reviewed",
+          "reviewEvidence": [
+            "experiments/sermon-dubbing-poc/reviews/speaker-voice-acceptance-2026-10-11-steve-bang-lee-ko-es.json"
+          ]
+        },
+        {
+          "targetLocale": "vi",
+          "modelLanguage": "Vietnamese",
+          "status": "unverified_poc",
+          "demoStatus": "machine_screened",
+          "adapterOverride": {
+            "adapter": "gwen_tts_zero_shot_reference",
+            "model": "g-group-ai-lab/gwen-tts-0.6B",
+            "revision": "a83e1f08656d48217a83f0ad422d1610d5b5c963",
+            "conditioningRef": "speaker-reference://steve_bang_lee/0661d53954b41e34ac96255c9cb67c73e80a06297f19a0b2976854c81eae3950"
+          },
+          "reviewEvidence": []
+        }
       ]
     },
     {
@@ -217,16 +421,43 @@
       },
       "authorization": {
         "status": "authorized",
-        "purposes": ["chinese_dubbing", "multilingual_dubbing"],
+        "purposes": [
+          "chinese_dubbing",
+          "multilingual_dubbing"
+        ],
         "evidence": [
           "experiments/sermon-dubbing-poc/reviews/speaker-voice-acceptance-2026-10-21-john-thomas.json",
           "docs/reports/runs/20261021-john-thomas-voice/2026-10-21-john-thomas-voice/decisions.ndjson"
         ]
       },
       "localeCapabilities": [
-        {"targetLocale": "zh-Hans", "modelLanguage": "Chinese", "status": "human_reviewed", "demoStatus": "human_reviewed", "reviewEvidence": ["experiments/sermon-dubbing-poc/reviews/speaker-voice-acceptance-2026-10-21-john-thomas.json"]},
-        {"targetLocale": "ko", "modelLanguage": "Korean", "status": "human_reviewed", "demoStatus": "human_reviewed", "reviewEvidence": ["experiments/sermon-dubbing-poc/reviews/speaker-voice-acceptance-2026-10-21-john-thomas.json"]},
-        {"targetLocale": "es", "modelLanguage": "Spanish", "status": "human_reviewed", "demoStatus": "human_reviewed", "reviewEvidence": ["experiments/sermon-dubbing-poc/reviews/speaker-voice-acceptance-2026-10-21-john-thomas.json"]}
+        {
+          "targetLocale": "zh-Hans",
+          "modelLanguage": "Chinese",
+          "status": "human_reviewed",
+          "demoStatus": "human_reviewed",
+          "reviewEvidence": [
+            "experiments/sermon-dubbing-poc/reviews/speaker-voice-acceptance-2026-10-21-john-thomas.json"
+          ]
+        },
+        {
+          "targetLocale": "ko",
+          "modelLanguage": "Korean",
+          "status": "human_reviewed",
+          "demoStatus": "human_reviewed",
+          "reviewEvidence": [
+            "experiments/sermon-dubbing-poc/reviews/speaker-voice-acceptance-2026-10-21-john-thomas.json"
+          ]
+        },
+        {
+          "targetLocale": "es",
+          "modelLanguage": "Spanish",
+          "status": "human_reviewed",
+          "demoStatus": "human_reviewed",
+          "reviewEvidence": [
+            "experiments/sermon-dubbing-poc/reviews/speaker-voice-acceptance-2026-10-21-john-thomas.json"
+          ]
+        }
       ]
     }
   ]

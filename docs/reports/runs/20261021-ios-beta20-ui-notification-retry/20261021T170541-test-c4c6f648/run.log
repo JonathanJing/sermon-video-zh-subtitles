@@ -1,0 +1,265 @@
+
+$ /usr/bin/xcrun xcodebuild -project ~/.codex/worktrees/ios-next-beta-poster-push/sermon-video-zh-subtitles/apps/tongxing-ios/Tongxing.xcodeproj -list -json -disableAutomaticPackageResolution
+{
+  "project" : {
+    "configurations" : [
+      "BetaDebug",
+      "BetaRelease",
+      "Debug",
+      "Release"
+    ],
+    "name" : "Tongxing",
+    "schemes" : [
+      "ListeningActivityExtension",
+      "Tongxing",
+      "TongxingBeta",
+      "TongxingCore",
+      "TongxingInfrastructure",
+      "TongxingPreview",
+      "TongxingScreenshots"
+    ],
+    "targets" : [
+      "Tongxing",
+      "ListeningActivityExtension",
+      "TongxingTests",
+      "TongxingUITests"
+    ]
+  }
+}
+
+$ /usr/bin/xcrun simctl list devices available --json
+{
+  "devices" : {
+    "com.apple.CoreSimulator.SimRuntime.iOS-27-0" : [
+      {
+        "dataPath" : "\/Users\/jonathan_jing\/Library\/Developer\/CoreSimulator\/Devices\/A9ACB321-07F8-4540-AD3C-7FACBD384A1F\/data",
+        "dataPathSize" : 5439537152,
+        "logPath" : "\/Users\/jonathan_jing\/Library\/Logs\/CoreSimulator\/A9ACB321-07F8-4540-AD3C-7FACBD384A1F",
+        "udid" : "A9ACB321-07F8-4540-AD3C-7FACBD384A1F",
+        "lastUsedAt" : "2026-10-22T00:05:42Z",
+        "isAvailable" : true,
+... 702 lines omitted; 23 error-like lines, 23 kept below ...
+[line 495] 2026-10-21 17:05:57.255 xcodebuild[71518:40529870] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+[line 496] 2026-10-21 17:05:57.255 xcodebuild[71518:40529870] [MT] IDESchemeActionDeviceRecord: versionAndBuild = 27.1 (24A94401), error = invalidDigitCount(94401).
+[line 507] 2026-10-21 17:06:41.390 xcodebuild[71518:40529870] [MT] IDELaunchParametersSnapshot: debugger version lookup failed for path '<nil>': noURL
+[line 510] 2026-10-21 17:06:41.431 xcodebuild[71518:40529870] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+[line 511] 2026-10-21 17:06:41.431 xcodebuild[71518:40529870] [MT] IDESchemeActionDeviceRecord: versionAndBuild = 27.1 (24A94401), error = invalidDigitCount(94401).
+[line 584] 2026-10-21 17:07:02.922 xcodebuild[71518:40529870] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+[line 585] 2026-10-21 17:07:02.923 xcodebuild[71518:40529870] [MT] IDESchemeActionDeviceRecord: versionAndBuild = 27.1 (24A94401), error = invalidDigitCount(94401).
+[line 586] 2026-10-21 17:07:02.923 xcodebuild[71518:40529870] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+[line 587] 2026-10-21 17:07:02.923 xcodebuild[71518:40529870] [MT] IDESchemeActionDeviceRecord: versionAndBuild = 27.1 (24A94401), error = invalidDigitCount(94401).
+[line 588] 2026-10-21 17:07:02.923 xcodebuild[71518:40529870] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+[line 589] 2026-10-21 17:07:02.923 xcodebuild[71518:40529870] [MT] IDESchemeActionDeviceRecord: versionAndBuild = 27.1 (24A94401), error = invalidDigitCount(94401).
+[line 590] 2026-10-21 17:07:03.969 xcodebuild[71518:40529870] [MT] IDELaunchParametersSnapshot: debugger version lookup failed for path '<nil>': noURL
+[line 592] 2026-10-21 17:07:03.978 xcodebuild[71518:40529870] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+[line 593] 2026-10-21 17:07:03.978 xcodebuild[71518:40529870] [MT] IDESchemeActionDeviceRecord: versionAndBuild = 27.1 (24A94401), error = invalidDigitCount(94401).
+[line 633] 2026-10-21 17:07:16.301 xcodebuild[71518:40529870] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+[line 634] 2026-10-21 17:07:16.301 xcodebuild[71518:40529870] [MT] IDESchemeActionDeviceRecord: versionAndBuild = 27.1 (24A94401), error = invalidDigitCount(94401).
+[line 635] 2026-10-21 17:07:16.301 xcodebuild[71518:40529870] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+[line 636] 2026-10-21 17:07:16.301 xcodebuild[71518:40529870] [MT] IDESchemeActionDeviceRecord: versionAndBuild = 27.1 (24A94401), error = invalidDigitCount(94401).
+[line 637] 2026-10-21 17:07:16.301 xcodebuild[71518:40529870] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+[line 638] 2026-10-21 17:07:16.301 xcodebuild[71518:40529870] [MT] IDESchemeActionDeviceRecord: versionAndBuild = 27.1 (24A94401), error = invalidDigitCount(94401).
+[line 639] 2026-10-21 17:07:17.323 xcodebuild[71518:40529870] [MT] IDELaunchParametersSnapshot: debugger version lookup failed for path '<nil>': noURL
+[line 641] 2026-10-21 17:07:17.328 xcodebuild[71518:40529870] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+[line 642] 2026-10-21 17:07:17.328 xcodebuild[71518:40529870] [MT] IDESchemeActionDeviceRecord: versionAndBuild = 27.1 (24A94401), error = invalidDigitCount(94401).
+... end of omitted section ...
+    t =    23.68s     Capturing element debug description
+    t =    23.88s         Requesting snapshot of accessibility hierarchy for app with pid 72608
+    t =    23.99s         Find: Descendants matching type StaticText
+    t =    23.99s         Find: Elements matching predicate '"beta-notification-permission-status" IN identifiers'
+    t =    24.00s         Requesting snapshot of accessibility hierarchy for app with pid 72608
+    t =    24.12s         Find: Descendants matching type StaticText
+    t =    24.12s         Requesting snapshot of accessibility hierarchy for app with pid 72608
+    t =    24.55s Checking `Expect predicate `label CONTAINS "系统通知已允许"` for object "beta-notification-permission-status" StaticText`
+    t =    24.55s     Find the "beta-notification-permission-status" StaticText
+    t =    24.64s     Capturing element debug description
+    t =    24.83s         Requesting snapshot of accessibility hierarchy for app with pid 72608
+    t =    24.95s         Find: Descendants matching type StaticText
+    t =    24.95s         Find: Elements matching predicate '"beta-notification-permission-status" IN identifiers'
+    t =    24.95s         Requesting snapshot of accessibility hierarchy for app with pid 72608
+    t =    25.07s         Find: Descendants matching type StaticText
+    t =    25.08s         Requesting snapshot of accessibility hierarchy for app with pid 72608
+    t =    25.55s Checking `Expect predicate `label CONTAINS "系统通知已允许"` for object "beta-notification-permission-status" StaticText`
+    t =    25.55s     Find the "beta-notification-permission-status" StaticText
+    t =    25.65s     Capturing element debug description
+    t =    25.81s         Requesting snapshot of accessibility hierarchy for app with pid 72608
+    t =    25.81s         Requesting snapshot of accessibility hierarchy for app with pid 72608
+    t =    25.81s         Requesting snapshot of accessibility hierarchy for app with pid 72608
+~/.codex/worktrees/ios-next-beta-poster-push/sermon-video-zh-subtitles/apps/tongxing-ios/UITests/BetaNotificationUITests.swift:86: error: -[TongxingUITests.BetaNotificationUITests testLocalNotificationDisplaysAndRoutesVerifiedFixture] : Asynchronous wait failed: Exceeded timeout of 8 seconds, with unfulfilled expectations: "Expect predicate `label CONTAINS "系统通知已允许"` for object "beta-notification-permission-status" StaticText".
+    t =    26.18s Checking existence of `"beta-notification-preview" Button`
+    t =    26.28s Swipe up Target Application 'com.jonathanjing.tongxing.beta'
+    t =    26.28s     Wait for com.jonathanjing.tongxing.beta to idle
+    t =    26.37s     Find the Target Application 'com.jonathanjing.tongxing.beta'
+    t =    26.45s     Check for interrupting elements affecting "同行-beta" Application
+    t =    26.54s         Wait for com.apple.springboard to idle
+    t =    26.59s     Synthesize event
+    t =    27.02s     Wait for com.jonathanjing.tongxing.beta to idle
+    t =    27.90s Waiting 5.0s for "beta-notification-preview" Button to exist
+    t =    28.93s     Checking `Expect predicate `existsNoRetry == 1` for object "beta-notification-preview" Button`
+    t =    28.93s         Checking existence of `"beta-notification-preview" Button`
+    t =    29.03s Find the "beta-notification-preview" Button
+    t =    29.14s Tap "beta-notification-preview" Button
+    t =    29.14s     Wait for com.jonathanjing.tongxing.beta to idle
+    t =    29.16s     Find the "beta-notification-preview" Button
+    t =    29.26s     Check for interrupting elements affecting "beta-notification-preview" Button
+    t =    29.34s         Wait for com.apple.springboard to idle
+    t =    29.39s     Synthesize event
+    t =    29.69s     Wait for com.jonathanjing.tongxing.beta to idle
+    t =    30.72s Checking `Expect predicate `label CONTAINS "已安排本机测试通知"` for object "beta-notification-status" StaticText`
+    t =    30.72s     Find the "beta-notification-status" StaticText
+    t =    30.82s     Capturing element debug description
+    t =    31.75s Checking `Expect predicate `label CONTAINS "已安排本机测试通知"` for object "beta-notification-status" StaticText`
+    t =    31.75s     Find the "beta-notification-status" StaticText
+    t =    31.85s     Capturing element debug description
+    t =    32.79s Checking `Expect predicate `label CONTAINS "已安排本机测试通知"` for object "beta-notification-status" StaticText`
+    t =    32.79s     Find the "beta-notification-status" StaticText
+    t =    32.89s     Capturing element debug description
+    t =    33.72s Checking `Expect predicate `label CONTAINS "已安排本机测试通知"` for object "beta-notification-status" StaticText`
+    t =    33.72s     Find the "beta-notification-status" StaticText
+    t =    33.82s     Capturing element debug description
+    t =    34.70s Checking `Expect predicate `label CONTAINS "已安排本机测试通知"` for object "beta-notification-status" StaticText`
+    t =    34.70s     Find the "beta-notification-status" StaticText
+    t =    34.80s     Capturing element debug description
+~/.codex/worktrees/ios-next-beta-poster-push/sermon-video-zh-subtitles/apps/tongxing-ios/UITests/BetaNotificationUITests.swift:94: error: -[TongxingUITests.BetaNotificationUITests testLocalNotificationDisplaysAndRoutesVerifiedFixture] : Asynchronous wait failed: Exceeded timeout of 5 seconds, with unfulfilled expectations: "Expect predicate `label CONTAINS "已安排本机测试通知"` for object "beta-notification-status" StaticText".
+    t =    34.80s Pressing Home button
+    t =    40.28s Waiting 30.0s for "测试完整视频证道" StaticText to exist
+    t =    41.32s     Checking `Expect predicate `existsNoRetry == 1` for object "测试完整视频证道" StaticText`
+    t =    41.32s         Checking existence of `"测试完整视频证道" StaticText`
+    t =    41.42s         Capturing element debug description
+    t =    42.33s     Checking `Expect predicate `existsNoRetry == 1` for object "测试完整视频证道" StaticText`
+    t =    42.33s         Checking existence of `"测试完整视频证道" StaticText`
+    t =    42.41s         Capturing element debug description
+    t =    43.34s     Checking `Expect predicate `existsNoRetry == 1` for object "测试完整视频证道" StaticText`
+    t =    43.34s         Checking existence of `"测试完整视频证道" StaticText`
+    t =    43.43s         Capturing element debug description
+    t =    44.35s     Checking `Expect predicate `existsNoRetry == 1` for object "测试完整视频证道" StaticText`
+    t =    44.35s         Checking existence of `"测试完整视频证道" StaticText`
+    t =    44.42s         Capturing element debug description
+    t =    45.35s     Checking `Expect predicate `existsNoRetry == 1` for object "测试完整视频证道" StaticText`
+    t =    45.35s         Checking existence of `"测试完整视频证道" StaticText`
+    t =    45.44s         Capturing element debug description
+    t =    46.36s     Checking `Expect predicate `existsNoRetry == 1` for object "测试完整视频证道" StaticText`
+    t =    46.37s         Checking existence of `"测试完整视频证道" StaticText`
+    t =    46.45s         Capturing element debug description
+    t =    47.36s     Checking `Expect predicate `existsNoRetry == 1` for object "测试完整视频证道" StaticText`
+    t =    47.36s         Checking existence of `"测试完整视频证道" StaticText`
+    t =    47.44s         Capturing element debug description
+    t =    48.37s     Checking `Expect predicate `existsNoRetry == 1` for object "测试完整视频证道" StaticText`
+    t =    48.37s         Checking existence of `"测试完整视频证道" StaticText`
+    t =    48.45s         Capturing element debug description
+    t =    49.36s     Checking `Expect predicate `existsNoRetry == 1` for object "测试完整视频证道" StaticText`
+    t =    49.36s         Checking existence of `"测试完整视频证道" StaticText`
+    t =    49.45s         Capturing element debug description
+    t =    50.38s     Checking `Expect predicate `existsNoRetry == 1` for object "测试完整视频证道" StaticText`
+    t =    50.38s         Checking existence of `"测试完整视频证道" StaticText`
+    t =    50.46s         Capturing element debug description
+    t =    51.38s     Checking `Expect predicate `existsNoRetry == 1` for object "测试完整视频证道" StaticText`
+    t =    51.39s         Checking existence of `"测试完整视频证道" StaticText`
+    t =    51.50s         Capturing element debug description
+    t =    52.33s     Checking `Expect predicate `existsNoRetry == 1` for object "测试完整视频证道" StaticText`
+    t =    52.33s         Checking existence of `"测试完整视频证道" StaticText`
+    t =    52.43s         Capturing element debug description
+    t =    53.34s     Checking `Expect predicate `existsNoRetry == 1` for object "测试完整视频证道" StaticText`
+    t =    53.34s         Checking existence of `"测试完整视频证道" StaticText`
+    t =    53.43s         Capturing element debug description
+    t =    54.34s     Checking `Expect predicate `existsNoRetry == 1` for object "测试完整视频证道" StaticText`
+    t =    54.34s         Checking existence of `"测试完整视频证道" StaticText`
+    t =    54.44s         Capturing element debug description
+    t =    55.34s     Checking `Expect predicate `existsNoRetry == 1` for object "测试完整视频证道" StaticText`
+    t =    55.34s         Checking existence of `"测试完整视频证道" StaticText`
+    t =    55.44s         Capturing element debug description
+    t =    56.36s     Checking `Expect predicate `existsNoRetry == 1` for object "测试完整视频证道" StaticText`
+    t =    56.36s         Checking existence of `"测试完整视频证道" StaticText`
+    t =    56.46s         Capturing element debug description
+    t =    57.38s     Checking `Expect predicate `existsNoRetry == 1` for object "测试完整视频证道" StaticText`
+    t =    57.38s         Checking existence of `"测试完整视频证道" StaticText`
+    t =    57.47s         Capturing element debug description
+    t =    58.29s     Checking `Expect predicate `existsNoRetry == 1` for object "测试完整视频证道" StaticText`
+    t =    58.30s         Checking existence of `"测试完整视频证道" StaticText`
+    t =    58.38s         Capturing element debug description
+    t =    59.32s     Checking `Expect predicate `existsNoRetry == 1` for object "测试完整视频证道" StaticText`
+    t =    59.32s         Checking existence of `"测试完整视频证道" StaticText`
+    t =    59.40s         Capturing element debug description
+    t =    60.31s     Checking `Expect predicate `existsNoRetry == 1` for object "测试完整视频证道" StaticText`
+    t =    60.31s         Checking existence of `"测试完整视频证道" StaticText`
+    t =    60.41s         Capturing element debug description
+    t =    61.33s     Checking `Expect predicate `existsNoRetry == 1` for object "测试完整视频证道" StaticText`
+    t =    61.33s         Checking existence of `"测试完整视频证道" StaticText`
+    t =    61.42s         Capturing element debug description
+    t =    62.34s     Checking `Expect predicate `existsNoRetry == 1` for object "测试完整视频证道" StaticText`
+    t =    62.34s         Checking existence of `"测试完整视频证道" StaticText`
+    t =    62.42s         Capturing element debug description
+    t =    63.35s     Checking `Expect predicate `existsNoRetry == 1` for object "测试完整视频证道" StaticText`
+    t =    63.35s         Checking existence of `"测试完整视频证道" StaticText`
+    t =    63.44s         Capturing element debug description
+    t =    64.36s     Checking `Expect predicate `existsNoRetry == 1` for object "测试完整视频证道" StaticText`
+    t =    64.36s         Checking existence of `"测试完整视频证道" StaticText`
+    t =    64.44s         Capturing element debug description
+    t =    65.36s     Checking `Expect predicate `existsNoRetry == 1` for object "测试完整视频证道" StaticText`
+    t =    65.36s         Checking existence of `"测试完整视频证道" StaticText`
+    t =    65.44s         Capturing element debug description
+    t =    66.37s     Checking `Expect predicate `existsNoRetry == 1` for object "测试完整视频证道" StaticText`
+    t =    66.37s         Checking existence of `"测试完整视频证道" StaticText`
+    t =    66.47s         Capturing element debug description
+    t =    67.30s     Checking `Expect predicate `existsNoRetry == 1` for object "测试完整视频证道" StaticText`
+    t =    67.30s         Checking existence of `"测试完整视频证道" StaticText`
+    t =    67.38s         Capturing element debug description
+    t =    68.31s     Checking `Expect predicate `existsNoRetry == 1` for object "测试完整视频证道" StaticText`
+    t =    68.31s         Checking existence of `"测试完整视频证道" StaticText`
+    t =    68.39s         Capturing element debug description
+    t =    69.32s     Checking `Expect predicate `existsNoRetry == 1` for object "测试完整视频证道" StaticText`
+    t =    69.33s         Checking existence of `"测试完整视频证道" StaticText`
+    t =    69.40s         Capturing element debug description
+    t =    70.29s     Checking `Expect predicate `existsNoRetry == 1` for object "测试完整视频证道" StaticText`
+    t =    70.30s         Checking existence of `"测试完整视频证道" StaticText`
+    t =    70.37s         Capturing element debug description
+    t =    70.37s     Checking existence of `"测试完整视频证道" StaticText`
+    t =    70.45s Collecting debug information to assist test failure triage
+    t =    70.45s     Requesting snapshot of accessibility hierarchy for app with pid 71609
+~/.codex/worktrees/ios-next-beta-poster-push/sermon-video-zh-subtitles/apps/tongxing-ios/UITests/BetaNotificationUITests.swift:101: error: -[TongxingUITests.BetaNotificationUITests testLocalNotificationDisplaysAndRoutesVerifiedFixture] : failed - 必须实际看到系统通知，不能只检查 schedule 返回值
+    t =    70.54s Tear Down
+Test Case '-[TongxingUITests.BetaNotificationUITests testLocalNotificationDisplaysAndRoutesVerifiedFixture]' failed (70.887 seconds).
+Test Suite 'BetaNotificationUITests' failed at 2026-10-21 17:08:27.116.
+	 Executed 3 tests, with 3 failures (0 unexpected) in 106.000 (106.012) seconds
+Test Suite 'WeeklyPosterPublishedUITests' started at 2026-10-21 17:08:27.117.
+Test Case '-[TongxingUITests.WeeklyPosterPublishedUITests testCapturePublishedPostersAcrossContentLanguages]' started.
+    t =     0.00s Start Test at 2026-10-21 17:08:27.117
+    t =     0.03s Set Up
+~/.codex/worktrees/ios-next-beta-poster-push/sermon-video-zh-subtitles/apps/tongxing-ios/UITests/WeeklyPosterPublishedUITests.swift:6: -[TongxingUITests.WeeklyPosterPublishedUITests testCapturePublishedPostersAcrossContentLanguages] : Test skipped - Explicit live Dev media smoke only
+    t =     0.05s Tear Down
+Test Case '-[TongxingUITests.WeeklyPosterPublishedUITests testCapturePublishedPostersAcrossContentLanguages]' skipped (0.087 seconds).
+Test Suite 'WeeklyPosterPublishedUITests' passed at 2026-10-21 17:08:27.204.
+	 Executed 1 test, with 1 test skipped and 0 failures (0 unexpected) in 0.087 (0.087) seconds
+Test Suite 'TongxingUITests.xctest' failed at 2026-10-21 17:08:27.205.
+	 Executed 4 tests, with 1 test skipped and 3 failures (0 unexpected) in 106.086 (106.101) seconds
+Test Suite 'Selected tests' failed at 2026-10-21 17:08:27.206.
+	 Executed 4 tests, with 1 test skipped and 3 failures (0 unexpected) in 106.086 (106.102) seconds
+2026-10-21 17:08:27.240 xcodebuild[71518:40529870] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+2026-10-21 17:08:27.240 xcodebuild[71518:40529870] [MT] IDESchemeActionDeviceRecord: versionAndBuild = 27.1 (24A94401), error = invalidDigitCount(94401).
+2026-10-21 17:08:27.240 xcodebuild[71518:40529870] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+2026-10-21 17:08:27.240 xcodebuild[71518:40529870] [MT] IDESchemeActionDeviceRecord: versionAndBuild = 27.1 (24A94401), error = invalidDigitCount(94401).
+2026-10-21 17:08:27.241 xcodebuild[71518:40529870] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+2026-10-21 17:08:27.241 xcodebuild[71518:40529870] [MT] IDESchemeActionDeviceRecord: versionAndBuild = 27.1 (24A94401), error = invalidDigitCount(94401).
+2026-10-21 17:08:27.263 xcodebuild[71518:40529870] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+2026-10-21 17:08:27.263 xcodebuild[71518:40529870] [MT] IDESchemeActionDeviceRecord: versionAndBuild = 27.1 (24A94401), error = invalidDigitCount(94401).
+2026-10-21 17:08:27.263 xcodebuild[71518:40529870] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+2026-10-21 17:08:27.263 xcodebuild[71518:40529870] [MT] IDESchemeActionDeviceRecord: versionAndBuild = 27.1 (24A94401), error = invalidDigitCount(94401).
+2026-10-21 17:08:27.264 xcodebuild[71518:40529870] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+2026-10-21 17:08:27.264 xcodebuild[71518:40529870] [MT] IDESchemeActionDeviceRecord: versionAndBuild = 27.1 (24A94401), error = invalidDigitCount(94401).
+2026-10-21 17:08:40.822 xcodebuild[71518:40529870] [MT] IDETestOperationsObserverDebug: 169.202 elapsed -- Testing started completed.
+2026-10-21 17:08:40.822 xcodebuild[71518:40529870] [MT] IDETestOperationsObserverDebug: 0.000 sec, +0.000 sec -- start
+2026-10-21 17:08:40.822 xcodebuild[71518:40529870] [MT] IDETestOperationsObserverDebug: 169.202 sec, +169.202 sec -- end
+
+Test session results, code coverage, and logs:
+	~/.codex/worktrees/ios-next-beta-poster-push/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-21/cli/20261021T170541-test-c4c6f648/test.xcresult
+
+Failing tests:
+	BetaNotificationUITests.testLocalNotificationDisplaysAndRoutesVerifiedFixture()
+	BetaNotificationUITests.testLocalNotificationDisplaysAndRoutesVerifiedFixture()
+	BetaNotificationUITests.testLocalNotificationDisplaysAndRoutesVerifiedFixture()
+
+** TEST FAILED **
+
+Testing started
+
+Exit status: 65

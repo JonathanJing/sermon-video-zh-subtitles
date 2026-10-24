@@ -1,0 +1,63 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261022-es-ko-override-l3-prep",
+  "runs": [
+    {
+      "label": "speech-job-current",
+      "source": "~/.codex/worktrees/broadcast-es-ko-shared-source/sermon-video-zh-subtitles/artifacts/weekend-live/broadcast-20261018-es-ko-20261022/l3/es/speech-job-current",
+      "skipped": {
+        ".json": 1
+      }
+    },
+    {
+      "label": "speech-job-current_",
+      "source": "~/.codex/worktrees/broadcast-es-ko-shared-source/sermon-video-zh-subtitles/artifacts/weekend-live/broadcast-20261018-es-ko-20261022/l3/ko/speech-job-current",
+      "skipped": {
+        ".json": 1
+      }
+    }
+  ],
+  "files": [
+    {
+      "run": "speech-job-current",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 278,
+      "truncated": false,
+      "sha256": "3345cd5d50723f0a1fe2e31b3aa519c5875272c3aba8ad2b1c8f881e6d75b9ac",
+      "redactions": {}
+    },
+    {
+      "run": "speech-job-current",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 1446,
+      "truncated": false,
+      "sha256": "e913091ba83ace54e783d62a79f72abd852481407509ad59a519c6ca6513afb5",
+      "redactions": {}
+    },
+    {
+      "run": "speech-job-current_",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 278,
+      "truncated": false,
+      "sha256": "0f0ccaa85e7186f89908108acbff08cedc8a49754823b3bdb79fc9a8cae9558f",
+      "redactions": {}
+    },
+    {
+      "run": "speech-job-current_",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 1446,
+      "truncated": false,
+      "sha256": "73dd2a3374c1315746e3ab5bcee14d707c64d352ea83de7262300a000fef164b",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

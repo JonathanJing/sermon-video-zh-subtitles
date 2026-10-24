@@ -1,0 +1,8 @@
+{
+  "result": "passed",
+  "scope": "Production subscription endpoint via Hosting route",
+  "malformedRequest": "400 invalid_request",
+  "syntheticDelete": "200 accepted active=false",
+  "realDeviceTokenUsed": false,
+  "syntheticDocDeleted": true
+}

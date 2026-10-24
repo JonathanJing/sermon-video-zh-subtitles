@@ -1,0 +1,21 @@
+Traceback (most recent call last):
+  File "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.claude/worktrees/l1-first-principles/tools/ops/run.py", line 91, in <module>
+    raise SystemExit(main())
+                     ~~~~^^
+  File "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.claude/worktrees/l1-first-principles/tools/ops/run.py", line 87, in main
+    return entry()
+  File "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.claude/worktrees/l1-first-principles/packages/production/src/tongxing_production/source/unified_stage.py", line 706, in main
+    result = inspect(args.config) if args.command == 'inspect' else execute(args.config)
+                                                                    ~~~~~~~^^^^^^^^^^^^^
+  File "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.claude/worktrees/l1-first-principles/packages/production/src/tongxing_production/source/unified_stage.py", line 461, in execute
+    return _execute(config, fresh, api_key=<redacted>, transport=transport, claude_transport=claude_transport,
+                    aligner=aligner or mfa_backend.align_reference_chunks,
+                    mfa_preflight=mfa_preflight or mfa_backend.preflight)
+  File "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.claude/worktrees/l1-first-principles/packages/production/src/tongxing_production/source/unified_stage.py", line 506, in _execute
+    chunks = ordered_bounded_map(range(math.ceil(duration / 180)), transcribe_chunk, value.get('asrWorkers', 1))
+  File "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.claude/worktrees/l1-first-principles/packages/production/src/tongxing_production/source/unified_stage.py", line 154, in ordered_bounded_map
+    require(type(workers) is int and 1 <= workers <= 8, 'invalid_source_concurrency')
+    ~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.claude/worktrees/l1-first-principles/packages/production/src/tongxing_production/source/unified_stage.py", line 87, in require
+    raise ValueError(code)
+ValueError: invalid_source_concurrency

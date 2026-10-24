@@ -1,0 +1,10 @@
+{
+  "schemaVersion": "tongxing-focused-test-v1",
+  "command": "swift test --package-path Core --filter ProductionNotificationTests",
+  "exitCode": 0,
+  "result": "passed",
+  "executed": 2,
+  "passed": 2,
+  "failed": 0,
+  "scope": "production notification release and locale binding"
+}

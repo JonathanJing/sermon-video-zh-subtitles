@@ -25,19 +25,19 @@ feature/* 或 codex/*
 
 检查文档专用 PR 时，以 `changes=pass`、两个 `test-group` 为 `skipped`、固定的 `unittest=pass` 为快路径实际生效的证据；只看到 `unittest=pass` 不足以判断耗时测试有没有运行。若变更包含非允许路径，两个分片必须执行并通过。
 - `main` 额外要求 `promotion-policy`。它只接收同仓库 `dev` 或 `release/YYYY-Www`；release 分支须包含当前 main，且相对 main 的每个代码补丁已进入 dev。需修复候选时先把变更并入 dev，再带入 release 分支；不得直接在 release 分支加入未审补丁。短发布窗口可继续使用 `dev → main`，不要长期打开一个随 dev 每次提交更新的晋升 PR。
-- `main` 要求线性历史并使用 squash merge。`dev` 不要求线性历史：普通功能 PR 仍使用 squash／rebase，但每次生产晋升后必须通过一个从最新 `dev` 建立的临时 `sync/*` 分支合并 `main`，再用受检查的 `sync/* → dev` PR 把新的 `main` tip 纳入 `dev` 祖先链。
-- 当前仓库为单维护者流程，因此 PR 本身是强制门禁，但批准人数为 0；CI、对话解决和 `main` 线性历史仍是硬条件。增加第二位维护者后，应把批准人数提升为 1。
+- 晋升 PR（`dev → main` 或 `release/YYYY-Www → main`）使用 merge commit，`main` 不再要求线性历史（2026-10-24 起）。merge commit 让被晋升的 `dev` tip 成为 `main` 的祖先，GitHub 的领先／落后计数因此反映真实未晋升的提交；squash 晋升会让 dev 上已晋升的原始提交永远显示为“领先”。普通功能 PR 进入 `dev` 仍使用 squash／rebase。每次晋升后仍须通过一个从最新 `dev` 建立的临时 `sync/*` 分支合并 `main`，再用受检查的 `sync/* → dev` PR 把新的 `main` tip 纳入 `dev` 祖先链。
+- 当前仓库为单维护者流程，因此 PR 本身是强制门禁，但批准人数为 0；CI 和对话解决仍是硬条件。增加第二位维护者后，应把批准人数提升为 1。
 - 合并到 `main` 只证明代码门禁通过；每周内容无需为了换 catalog 而制造 Git 提交或重新构建 iOS。Firebase HTTP、iOS/TestFlight、设备和现场验收继续分别留证。
 
 ### 晋升后的回同步
 
-1. 三项 required checks 通过后，将 `dev → main` 或 `release/YYYY-Www → main` PR squash merge。release 分支冻结后 dev 可继续下一周开发；若 release 有问题，先在 dev 修复再更新候选。
+1. 三项 required checks 通过后，将 `dev → main` 或 `release/YYYY-Www → main` PR 以 merge commit 合并，不 squash、不 rebase。release 分支冻结后 dev 可继续下一周开发；若 release 有问题，先在 dev 修复再更新候选。
 2. 从最新 `dev` 创建临时 `sync/main-to-dev-<date>` 分支，在该临时分支 merge 最新 `main`；禁止直接把 `main` 作为回同步 PR 的 head，因为 strict/up-to-date 要求 head 已包含当前 `dev` tip。
 3. 创建 `sync/main-to-dev-<date> → dev` PR；它仍须通过 `unittest` 和 `native-client`。
 4. 这条回同步 PR 使用 merge commit，不能 squash。merge commit 只用于把 production tip 纳入 `dev`，不承载新的功能修改；完成后删除临时 sync 分支。
 5. 回同步完成后再从最新 `dev` 创建新的功能分支。
 
-这一步解决长期分支的祖先关系：若 `main` squash 后不回同步，`main` 和 `dev` 会拥有内容等价但 SHA 不同的提交；下一轮在 strict/up-to-date 门禁下将需要 force-reset `dev`。本流程明确禁止这种重写历史的恢复方式。
+这一步解决长期分支的祖先关系：`main` 的晋升 merge commit 不在 `dev` 上，若不回同步，下一轮在 strict/up-to-date 门禁下晋升 PR 的 head 不含当前 `main` tip。回同步的 merge 没有文件差异。2026-10-24 之前的 squash 晋升（最后一次为 #1327）留下的旧计数在第一次 merge commit 晋升后归零；禁止为清理计数而 force-reset `dev` 或重写历史。
 
 ## Firebase 必须分 Dev 与 Production
 

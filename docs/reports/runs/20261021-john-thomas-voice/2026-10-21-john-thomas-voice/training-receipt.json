@@ -1,0 +1,142 @@
+{
+  "status": "training_smoke_completed",
+  "speaker": "John Thomas",
+  "speakerKey": "john_thomas",
+  "productionReady": false,
+  "humanReviewStatus": "pending",
+  "independentValidation": "time_held_out_same_episode_only",
+  "sourceCount": 1,
+  "sourceKind": "single_podcast_episode_two_speakers",
+  "inputManifestSha256": "328194722287e7113e7be19164fa6c44451ffb494f143f31ee871e81805437ae",
+  "sampleCount": 34,
+  "sampleSeconds": 270.48,
+  "validationCount": 9,
+  "validationSeconds": 82.2,
+  "validationUsedInTraining": false,
+  "epochs": 1,
+  "batchSize": 1,
+  "gradientAccumulation": 4,
+  "learningRate": 2e-06,
+  "seed": 42,
+  "dtype": "bf16",
+  "attention": "sdpa",
+  "baseModel": "Qwen/Qwen3-TTS-12Hz-1.7B-Base",
+  "baseRevision": "fd4b254389122332181a7c3db7f27e918eec64e3",
+  "tokenizer": "Qwen/Qwen3-TTS-Tokenizer-12Hz",
+  "tokenizerRevision": "7dd38ad4e9bad454aae9cd937d0cd577604fe229",
+  "initializedFrom": "original_base",
+  "upstreamCommit": "022e286b98fbec7e1e916cb940cdf532cd9f488e",
+  "upstreamHashes": {
+    "sft_12hz.py": "74d4359bff1ac5eddaca99f0cb5a8b76a55ffbd94af0ab50bffd49aee0e5c473",
+    "prepare_data.py": "d5ed3611e85aadae0ade2b2ab4fa921bb0fdcd8dad8f62c518b75497fcb02b9c",
+    "dataset.py": "fd15ee9e71822d9fc1cdf8eb6d6f042836d186e95de5920087d80828cf98a1cb"
+  },
+  "modifiedScriptSha256": "09ff806335a5bd015fbd5b98874a4f11bcb2e799a430b424615247ad31fd0b6f",
+  "changesFromUpstream": [
+    "SDPA attention",
+    "stdout logs instead of unconfigured TensorBoard",
+    "log every batch",
+    "seed 42",
+    "reject nonfinite loss"
+  ],
+  "preprocessSeconds": 17.765941655263305,
+  "trainingSeconds": 78.87484572455287,
+  "steps": 34,
+  "firstLoss": 13.6602,
+  "lastLoss": 11.316,
+  "allLossesFinite": true,
+  "checkpoint": "<spark>/dgx-spark-benchmark/results/john-thomas-voice-20261021/checkpoints/checkpoint-epoch-0",
+  "checkpointSha256": "3f722b17b8e204e60d376fc08ef631b9d55a6a1eb02c106d612bf12b5d855c8c",
+  "learnedWeightCheck": [
+    {
+      "key": "talker.model.layers.0.self_attn.q_proj.weight",
+      "elements": 4194304,
+      "changedElements": 201999,
+      "maxAbsDelta": 3.0517578125e-05,
+      "meanAbsDelta": 2.7067929408985947e-07
+    },
+    {
+      "key": "talker.model.layers.0.self_attn.k_proj.weight",
+      "elements": 2097152,
+      "changedElements": 111239,
+      "maxAbsDelta": 3.0517578125e-05,
+      "meanAbsDelta": 3.1439313374903577e-07
+    },
+    {
+      "key": "talker.model.layers.0.self_attn.v_proj.weight",
+      "elements": 2097152,
+      "changedElements": 129835,
+      "maxAbsDelta": 3.4332275390625e-05,
+      "meanAbsDelta": 3.899926923622843e-07
+    },
+    {
+      "key": "talker.model.layers.0.self_attn.o_proj.weight",
+      "elements": 4194304,
+      "changedElements": 290248,
+      "maxAbsDelta": 3.4332275390625e-05,
+      "meanAbsDelta": 4.3855868625541916e-07
+    },
+    {
+      "key": "talker.model.layers.13.self_attn.q_proj.weight",
+      "elements": 4194304,
+      "changedElements": 190432,
+      "maxAbsDelta": 3.4332275390625e-05,
+      "meanAbsDelta": 3.4061523024320195e-07
+    },
+    {
+      "key": "talker.model.layers.13.self_attn.k_proj.weight",
+      "elements": 2097152,
+      "changedElements": 102197,
+      "maxAbsDelta": 3.4332275390625e-05,
+      "meanAbsDelta": 3.715372827173269e-07
+    },
+    {
+      "key": "talker.model.layers.13.self_attn.v_proj.weight",
+      "elements": 2097152,
+      "changedElements": 109630,
+      "maxAbsDelta": 3.4332275390625e-05,
+      "meanAbsDelta": 4.986011958862946e-07
+    },
+    {
+      "key": "talker.model.layers.13.self_attn.o_proj.weight",
+      "elements": 4194304,
+      "changedElements": 221286,
+      "maxAbsDelta": 3.4332275390625e-05,
+      "meanAbsDelta": 5.152023732080124e-07
+    },
+    {
+      "key": "talker.model.layers.27.self_attn.q_proj.weight",
+      "elements": 4194304,
+      "changedElements": 183451,
+      "maxAbsDelta": 3.4332275390625e-05,
+      "meanAbsDelta": 3.6030803585163085e-07
+    },
+    {
+      "key": "talker.model.layers.27.self_attn.k_proj.weight",
+      "elements": 2097152,
+      "changedElements": 106730,
+      "maxAbsDelta": 3.4332275390625e-05,
+      "meanAbsDelta": 4.134517155307549e-07
+    },
+    {
+      "key": "talker.model.layers.27.self_attn.v_proj.weight",
+      "elements": 2097152,
+      "changedElements": 124990,
+      "maxAbsDelta": 3.4332275390625e-05,
+      "meanAbsDelta": 6.716767870784679e-07
+    },
+    {
+      "key": "talker.model.layers.27.self_attn.o_proj.weight",
+      "elements": 4194304,
+      "changedElements": 228551,
+      "maxAbsDelta": 3.4332275390625e-05,
+      "meanAbsDelta": 5.851310334037407e-07
+    }
+  ],
+  "packages": {
+    "torch": "2.13.0a0+8145d630e8.nv26.6.54250401",
+    "transformers": "4.57.3",
+    "accelerate": "1.12.0",
+    "qwen-tts": "0.1.1"
+  }
+}

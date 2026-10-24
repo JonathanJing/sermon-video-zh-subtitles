@@ -1,0 +1,35 @@
+{
+  "schemaVersion": "sermon-l3-preparation-summary-v1",
+  "locale": "es",
+  "status": "prepared_for_target_language_speech",
+  "synthesisEligible": true,
+  "speechJobJsonSha256": "d1b5123fd4e3db6a092926d28552d004c6ce0dfa567fd17a4a92e65cb753b6bd",
+  "candidateJsonSha256": "f451b595716488683c7f4c031eaae8104b420761b228756c68df191068883e7f",
+  "humanOverrideReceiptSha256": "e5e0daa3d04339acee860f8491859539bf3859337ba289bcd32d49fcf7157658",
+  "sourceVoiceAuthorizationSha256": "5c670e848f71d63309cdd3c74a621a0b5f6f6070fa784d47c8aa58572406834f",
+  "textPolicy": "human_override_approved_target_text",
+  "candidateModelReviewStatus": "fail",
+  "candidateReviewedGroupCount": 416,
+  "humanAcceptedExceptionGroups": [
+    "translation-chunk-0007-u034",
+    "translation-chunk-0009-u036"
+  ],
+  "machineEvidenceChanged": false,
+  "releaseEligible": false,
+  "textQcPreflight": {
+    "status": "ready",
+    "blockingProblems": 0,
+    "modelCalls": 0,
+    "summarySha256": "5caab6eb2e54cd734833f63c9da0990b4885b1a90c735120ae3c8a036d526954"
+  },
+  "failedPreparationAttempts": [
+    "Initial speech-job invocation rejected the user attestation where a candidate-bound authorization receipt was required.",
+    "Initial authorization helper emitted v1 for a v2 attestation; v2 authorization support was added and revalidated."
+  ],
+  "notRun": [
+    "Spark synthesis",
+    "audio screening and QC",
+    "human audio playback",
+    "Layer 4 release"
+  ]
+}

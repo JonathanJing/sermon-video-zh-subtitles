@@ -1,0 +1,52 @@
+{
+  "schemaVersion": "sermon-speaker-voice-locale-acceptance-v1",
+  "speakerId": "doug_fields",
+  "checkpointSha256": "010b54bc4a305a62292cb3eb37492f161957cdb66128a61843a1be268841c95b",
+  "decidedBy": "Jony",
+  "decidedAt": "2026-10-24T00:00:00Z",
+  "userStatement": "所有讲员的配音，都已经获得授权；声音也都人工审过",
+  "decision": {
+    "ko": "human_reviewed",
+    "es": "human_reviewed"
+  },
+  "purposeAdded": "multilingual_dubbing",
+  "purposeBasis": "User confirmation 2026-10-24 that every speaker is authorized for dubbing (voice-authorization-2026-10-24-all-speakers.json).",
+  "boundDemoTracks": {
+    "ko": {
+      "wav": {
+        "path": "doug_fields/ko.wav",
+        "sha256": "82925ff7510ab9270feccdb634a4f8e76337c8c0b28dfbab3db787bf9a66e54b"
+      },
+      "mp3": {
+        "path": "mp3/doug_fields/ko.mp3",
+        "sha256": "eeb6314b9eda4fdae57ae287a4ef9663cc269b81e8e201a62258201952dd7572",
+        "durationSeconds": 16.8,
+        "codec": "mp3",
+        "sampleRate": 44100,
+        "channels": 1,
+        "bitrate": "128k",
+        "fullDecode": "pass"
+      },
+      "asrSimilarity": 1.0
+    },
+    "es": {
+      "wav": {
+        "path": "doug_fields/es.wav",
+        "sha256": "427fcc5ead1f7272b8951673574ab332563ab926609457faa4854f11e1937514"
+      },
+      "mp3": {
+        "path": "mp3/doug_fields/es.mp3",
+        "sha256": "00ae97eb6bbf4531492d5bdf11138c9ee3ca1fca552bc3b4b213294847a04759",
+        "durationSeconds": 14.08,
+        "codec": "mp3",
+        "sampleRate": 44100,
+        "channels": 1,
+        "bitrate": "128k",
+        "fullDecode": "pass"
+      },
+      "asrSimilarity": 1.0
+    }
+  },
+  "demoDeliveryManifest": "artifacts/sermon-dubbing/2026-09-21-multilingual-voice-demos-v2/delivery-manifest.json",
+  "limits": "Voice capability for this checkpoint and locale only. It does not review any sermon's full translated audio; per-run audio QC, waiver or listening review still applies. Vietnamese is not covered."
+}

@@ -1,0 +1,27 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261021-ios-beta61-manual-notification",
+  "runs": [
+    {
+      "label": "manual-notification-build61-ios27-0-1",
+      "source": "~/.codex/worktrees/ios-next-beta-poster-push/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-21/manual-notification-build61-ios27-0-1",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "manual-notification-build61-ios27-0-1",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 467,
+      "truncated": false,
+      "sha256": "e5273fdadf5c3beaca3206e8606dccc0d51f74ab1f130d7784a4a1fb056d6487",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "result": "passed",
+  "scope": "ProductionPushUITests on iPhone Duo iOS 27.1",
+  "runDir": "20261021T214514-test-471518be",
+  "testsPassed": 1,
+  "testsFailed": 0,
+  "codeChange": "reconcile race handling included"
+}

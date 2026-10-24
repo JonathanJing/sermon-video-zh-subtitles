@@ -1,0 +1,22 @@
+Traceback (most recent call last):
+  File "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/tools/ops/run.py", line 91, in <module>
+    raise SystemExit(main())
+                     ~~~~^^
+  File "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/tools/ops/run.py", line 87, in main
+    return entry()
+  File "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/packages/production/src/tongxing_production/source/unified_stage.py", line 625, in main
+    result = inspect(args.config) if args.command == 'inspect' else execute(args.config)
+                                                                    ~~~~~~~^^^^^^^^^^^^^
+  File "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/packages/production/src/tongxing_production/source/unified_stage.py", line 392, in execute
+    return _execute(config, fresh, api_key=<redacted>, transport=transport, claude_transport=claude_transport,
+                    aligner=aligner or mfa_backend.align_reference_chunks,
+                    mfa_preflight=mfa_preflight or mfa_backend.preflight)
+  File "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/packages/production/src/tongxing_production/source/unified_stage.py", line 468, in _execute
+    aligned = aligner(references, clip, out / 'mfa', **_mfa_options(config))
+  File "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/packages/production/src/tongxing_production/source/mfa_backend.py", line 188, in align_reference_chunks
+    local._reference(chunk['text'], spoken_forms)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/packages/production/src/tongxing_production/source/mfa_alignment.py", line 102, in _reference
+    raise ValueError('Ambiguous numeric reference: configure its exact token in spoken forms before MFA')
+ValueError: Ambiguous numeric reference: configure its exact token in spoken forms before MFA
+exit 1

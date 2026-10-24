@@ -1,0 +1,15 @@
+{
+  "schemaVersion": "tongxing-cloud-deployment-v1",
+  "result": "deployed",
+  "function": "sermonPushSubscription",
+  "region": "us-west1",
+  "runtime": "nodejs22",
+  "runtimeServiceAccount": "<email>",
+  "cloudFunctionState": "ACTIVE",
+  "serviceURI": "https://sermonpushsubscription-sq5hlpqdca-uw.a.run.app",
+  "sourceTreeSha256": "d1c3bae2859d4678aaba07f8415f4fd50db1f51d3155a5243e49238ed2c9b0c2",
+  "sourceFileCount": 14,
+  "readbackGET": "404_not_found_from_push_function",
+  "buildRepair": "source_bucket_object_viewer_artifact_repository_writer_log_writer",
+  "artifactCleanupDays": 7
+}

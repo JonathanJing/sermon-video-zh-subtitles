@@ -1,0 +1,12 @@
+{
+  "result": "passed",
+  "appStoreVersion": "1.26.21",
+  "appStoreState": "PREPARE_FOR_SUBMISSION",
+  "build": "64",
+  "buildAssociationReadback": true,
+  "reviewNotesReadback": true,
+  "notesSHA256": "00a0649558946028e32219547d5b9cfb7707bf00e966226f6f4f7fa7bb04593f",
+  "duoScreenshots": "4_complete_from_prior_receipt",
+  "submission": "not_run",
+  "physicalDeviceAcceptance": "not_run"
+}

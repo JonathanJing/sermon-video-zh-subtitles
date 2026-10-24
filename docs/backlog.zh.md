@@ -1076,7 +1076,7 @@ CI环境还暴露工具下载占用原job期限：18ae2f0的root-0已通过1609 
 |---|---|---|---|
 | `DEV-L4-006` | P1 / `in_progress` | 新增四产物准入及显式 App 交付包 producer，接入 Supervisor、end_to_end 和 local production 的独立 completion scope；无 PDF、失败／恢复、重启去重、旧批准拒绝、活／未知 owner 和自包含包消费通过离线集成。完成仅 prepared_not_published，默认 dual_pdf 保留。详见[入口](pr229-local-development.zh.md)及[producer](app-delivery-workflow.zh.md)。模型生成、双端 publisher／回退、通知及真实双端批准／设备验收仍待完成；软件测试不关闭实际交付。 | `DEV-L4-001/003/004/005`、`DEV-E2E-001`；语言及声音决策分别归 `DEV-L2-002` / `DEV-L3-003` |
 
-用户已确定产品目标和 PDF 按需定位；语言覆盖、跨语言声音授权和实际执行窗口仍按运行计划确认。后续本地实现新增独立 schema／检查入口和客户端能力门禁，保留旧协议／历史收据；没有改正式发布器、PDF 生产配置或新增客户端产品功能，没有启动生成／部署。
+用户已确定产品目标和 PDF 按需定位；语言覆盖和实际执行窗口仍按运行计划确认；跨语言声音授权已于 2026-10-24 对所有讲员确认。后续本地实现新增独立 schema／检查入口和客户端能力门禁，保留旧协议／历史收据；没有改正式发布器、PDF 生产配置或新增客户端产品功能，没有启动生成／部署。
 
 
 ### 内容页面必需发布顺序（用户 2026-10-03 决策）
@@ -1149,7 +1149,7 @@ CI环境还暴露工具下载占用原job期限：18ae2f0的root-0已通过1609 
 | `DEV-STE-002` | P1 / `pending` | check_unresolved_concerns离线原语及runtime返回非空issues/uncertainty阻断已有；新版reviewer prompt尚未接。当前修正一个draft issue后清空issues措辞仍需review，剩部分修复保留他项的真实paired/人工真值验收 | `DEV-L2-001`；候选批准、新版本／独立缓存及回归预算 |
 | `DEV-STE-006` | P2 / `in_progress` | STE候选/hash/批准/预算/盲评软件准入已合并，不dispatch；API输出cap/microUSD契约尚未适配新CLI。剩有批准计划/预算的prompt-only runner、人工质量阈值及回滚证据；A冻结，未决B不执行 | `DEV-STE-001/002`；样本、费用硬上限、阈值及窗口待签字；未决 B 不执行 |
 | `DEV-L2-002` | P1 / `waiting_evidence` | 将 ES／KO 待定模板补为可批准的 source-bound 语言策略，冻结模型、机器筛查、术语、经文、register 及全文／口播规则；逐项绑定实际 run、决策与责任。豁免依据／范围和批准状态独立保存。付费前拒绝模板、缺字段、错误来源及未批准输入；旧片段或 fixture 不替代真实全文批准。 | `DEV-L2-001`；实际 run／截图身份、策略与独立豁免／批准 |
-| `DEV-L3-003` | P1 / `waiting_evidence` | 先确认 ES／KO 配音范围，再明确 locale、声音选择、跨语言用途授权、参考音频、adapter／checkpoint／policy 与获批口播／speech job 的身份绑定。核验语言能力与音质并独立批准；未知或不匹配仅阻断受影响 locale。中文声音授权不外推其他语言，不自动选声或用生成替代批准。 | `DEV-L2-002`、`DEV-L3-001`；语言覆盖、声音及真实测试授权 |
+| `DEV-L3-003` | P1 / `waiting_evidence` | 先确认 ES／KO 配音范围，再明确 locale、声音选择、参考音频、adapter／checkpoint／policy 与获批口播／speech job 的身份绑定；所有讲员的跨语言配音授权已于 2026-10-24 确认并登记在 Registry。核验语言能力与音质并独立批准；未知或不匹配仅阻断受影响 locale。中文能力认可不外推其他语言，不自动选声或用生成替代批准。 | `DEV-L2-002`、`DEV-L3-001`；语言覆盖、声音能力及真实测试授权 |
 | `DEV-L3-004` | P1 / `waiting_evidence` | 冻结获批输入和受控运行环境，核对资源门禁、双副本实际路由与各自声音／checkpoint；在明确样本与预算后验证完整链路、缓存恢复、失败和 unknown 处理。截图中 batch／API／GPU 状态只属于当时观察，不证明双副本或跨语言运行已通过，不自动启动服务。 | `DEV-L3-003`；运行范围、授权、资源及 checkpoint 绑定 |
 | `DEV-COST-002` | P1 / `in_progress` | 现有tongxing-dev/prod及两运行key launcher已配置，本轮两环境--check均exit0（只证明本地有效，未请求provider）。复用既有两项目/两运行key；Transcribe API与订阅CLI分账。剩真实归属/权限/hard limit/429传播/账单，不重新建用途专属多key | DEV-COST-001、STE-006及R242-026/027；任何新增账号/额度操作仍按明确安全授权 |
 | `DEV-NOTIFY-001` | P1 / `in_progress` | Beta本机纯文字通知的语言/订阅/去重/点击绑定与模拟器显示已由#232合并。APNs/FCM sender、富媒体海报、真实单设备收件及正式通知仍待；正式发送保留双端批准和发布门禁，不扩大收件人 | `DEV-L4-006`、`DEV-IOS-001`、海报流程；APNs／FCM、sender／安全配置、单设备身份与权限 |
@@ -1159,7 +1159,7 @@ CI环境还暴露工具下载占用原job期限：18ae2f0的root-0已通过1609 
 
 - DEV-STE-001 / 002 / 006：提示词行为修复及有预算、有阈值的 A/B。
 - DEV-L2-002：ES/KO 策略模板补齐、独立豁免/批准与输入绑定。
-- DEV-L3-003 / 004：跨语言声音授权绑定、资源门禁及双副本真实链路。
+- DEV-L3-003 / 004：跨语言声音能力绑定、资源门禁及双副本真实链路。
 - DEV-COST-002：实际账号/key/额度配置，需安全授权和云端环境。
 - DEV-NOTIFY-001：多语言通知/海报实现、单设备 Beta 验收。
 - DEV-IOS-003：现场对齐灵动岛新能力及真机验收。

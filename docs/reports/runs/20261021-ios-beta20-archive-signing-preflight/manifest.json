@@ -1,0 +1,45 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261021-ios-beta20-archive-signing-preflight",
+  "runs": [
+    {
+      "label": "beta-1.26.20-build61",
+      "source": "~/.codex/worktrees/ios-next-beta-poster-push/sermon-video-zh-subtitles/artifacts/tongxing-ios/beta-1.26.20-build61",
+      "skipped": {
+        "(none)": 50,
+        ".json": 3,
+        ".msgpack": 2,
+        ".txt": 3,
+        ".xcactivitylog": 2,
+        ".plist": 4
+      }
+    }
+  ],
+  "files": [
+    {
+      "run": "beta-1.26.20-build61",
+      "path": "archive.log",
+      "kind": "log",
+      "bytes": 5237,
+      "truncated": false,
+      "sha256": "779a2a59925b5ae4071c1189f85705db22531ab5fbb4c107ae0836f5438791f8",
+      "redactions": {
+        "home_dir": 12
+      }
+    },
+    {
+      "run": "beta-1.26.20-build61",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 421,
+      "truncated": false,
+      "sha256": "c2a5009e63b2932f67303d848accde3cbecfaa24452cf861efce7f92746664a6",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

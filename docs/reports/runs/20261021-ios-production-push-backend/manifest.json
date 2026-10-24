@@ -1,0 +1,27 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261021-ios-production-push-backend",
+  "runs": [
+    {
+      "label": "push-backend-20261021",
+      "source": "~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/artifacts/push-backend-20261021",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "push-backend-20261021",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 769,
+      "truncated": false,
+      "sha256": "363e1a436f1d261b3927a852ed4961c0069a20e10aa20ca8bfd401466a644690",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

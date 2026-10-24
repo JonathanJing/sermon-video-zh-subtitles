@@ -1,0 +1,27 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261021-ios-prod-push-contract-final",
+  "runs": [
+    {
+      "label": "contract-final",
+      "source": "~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/artifacts/ios-formal-push-validation/reports/contract-final",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "contract-final",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 176,
+      "truncated": false,
+      "sha256": "625e35123f68643de3908ac96329ee8885df87bf2f727316181396410fa5e12d",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261021-ios-prod-push-apple-capability",
+  "runs": [
+    {
+      "label": "apple-push-capability",
+      "source": "~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/artifacts/ios-formal-push-validation/reports/apple-push-capability",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "apple-push-capability",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 324,
+      "truncated": false,
+      "sha256": "e2479e7ba7f8f19ec3970eb4a2fdfdc6b0e05ca3b0ecb3d6ed9d5cb168a51efe",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

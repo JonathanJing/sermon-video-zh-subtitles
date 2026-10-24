@@ -1,0 +1,144 @@
+
+== 2026-10-21T04:26:45+00:00 ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.agents/worktrees/codex/clip-e2e-15030286-7min-20261020/.venv/bin/python ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.agents/worktrees/codex/clip-e2e-15030286-7min-20261020/scripts/check_run_start.py --expected-commit fde95b9b12840619cdcc486cc68c172e96892212 --expected-implementation 1bb748bcb1178f124bc250bcd2da72e42a885077770906a6b75890b61bdc36d3 --openai-environment dev --env-file ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.env.openai --budget-plan ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.agents/worktrees/codex/clip-e2e-15030286-7min-20261020/artifacts/clip-e2e-15030286-20261020-scroll-b/plans/layer2 --spark --fresh-dir ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.agents/worktrees/codex/clip-e2e-15030286-7min-20261020/artifacts/clip-e2e-15030286-20261020-scroll-b/l2/text --page-id mockup-dev-clip-20261018-scroll-b-20261020 --origin https://ai-for-god-sermon-audio-dev.web.app --out ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.agents/worktrees/codex/clip-e2e-15030286-7min-20261020/artifacts/clip-e2e-15030286-20261020-scroll-b/start-check-layer2.json
+{
+ "schemaVersion": "sermon-run-start-check-v1",
+ "status": "pass",
+ "failed": [],
+ "checks": [
+  {
+   "check": "code",
+   "status": "pass",
+   "head": "fde95b9b12840619cdcc486cc68c172e96892212",
+   "qcImplementationSha256": "1bb748bcb1178f124bc250bcd2da72e42a885077770906a6b75890b61bdc36d3",
+   "problems": []
+  },
+  {
+   "check": "openai",
+   "status": "pass",
+   "environment": "dev",
+   "exitCode": 0
+  },
+  {
+   "check": "budget",
+   "status": "pass",
+   "plan": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.agents/worktrees/codex/clip-e2e-15030286-7min-20261020/artifacts/clip-e2e-15030286-20261020-scroll-b/plans/layer2/plan.json",
+   "schedule": {
+    "mode": "all_stages_may_run_together",
+    "worstCaseUsd": 33.429491,
+    "fits": true
+   },
+   "stages": [
+    [
+     "layer2",
+     33.0
+    ]
+   ],
+   "problems": []
+  },
+  {
+   "check": "spark",
+   "status": "pass",
+   "problems": [],
+   "host": "<email>",
+   "session": "not_required_api_only"
+  },
+  {
+   "check": "outputs",
+   "status": "pass",
+   "fresh": [
+    "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.agents/worktrees/codex/clip-e2e-15030286-7min-20261020/artifacts/clip-e2e-15030286-20261020-scroll-b/l2/text"
+   ],
+   "problems": []
+  },
+  {
+   "check": "drain",
+   "status": "skip"
+  },
+  {
+   "check": "page",
+   "status": "pass",
+   "pageId": "mockup-dev-clip-20261018-scroll-b-20261020",
+   "origin": "https://ai-for-god-sermon-audio-dev.web.app",
+   "problems": []
+  },
+  {
+   "check": "environment_binding",
+   "status": "pass",
+   "qcStages": 0,
+   "layer2Stages": 1,
+   "problems": []
+  }
+ ]
+}
+
+== 2026-10-21T04:31:10+00:00 ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.agents/worktrees/codex/clip-e2e-15030286-7min-20261020/.venv/bin/python ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.agents/worktrees/codex/clip-e2e-15030286-7min-20261020/scripts/check_run_start.py --expected-commit fde95b9b12840619cdcc486cc68c172e96892212 --expected-implementation 1bb748bcb1178f124bc250bcd2da72e42a885077770906a6b75890b61bdc36d3 --openai-environment dev --env-file ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.env.openai --budget-plan ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.agents/worktrees/codex/clip-e2e-15030286-7min-20261020/artifacts/clip-e2e-15030286-20261020-scroll-b/plans/layer2 --spark --fresh-dir ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.agents/worktrees/codex/clip-e2e-15030286-7min-20261020/artifacts/clip-e2e-15030286-20261020-scroll-b/l2/text --page-id mockup-dev-clip-20261018-scroll-b-20261020 --origin https://ai-for-god-sermon-audio-dev.web.app --out ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.agents/worktrees/codex/clip-e2e-15030286-7min-20261020/artifacts/clip-e2e-15030286-20261020-scroll-b/start-check-layer2.json
+{
+ "schemaVersion": "sermon-run-start-check-v1",
+ "status": "fail",
+ "failed": [
+  "code",
+  "budget",
+  "outputs",
+  "environment_binding"
+ ],
+ "checks": [
+  {
+   "check": "code",
+   "status": "fail",
+   "head": "fde95b9b12840619cdcc486cc68c172e96892212",
+   "qcImplementationSha256": "1bb748bcb1178f124bc250bcd2da72e42a885077770906a6b75890b61bdc36d3",
+   "problems": [
+    "1 tracked file(s) modified"
+   ]
+  },
+  {
+   "check": "openai",
+   "status": "pass",
+   "environment": "dev",
+   "exitCode": 0
+  },
+  {
+   "check": "budget",
+   "status": "fail",
+   "plan": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.agents/worktrees/codex/clip-e2e-15030286-7min-20261020/artifacts/clip-e2e-15030286-20261020-scroll-b/plans/layer2/plan.json",
+   "problems": [
+    "Invalid budget plan: Symlink configuration/output paths are not supported"
+   ]
+  },
+  {
+   "check": "spark",
+   "status": "pass",
+   "problems": [],
+   "host": "<email>",
+   "session": "not_required_api_only"
+  },
+  {
+   "check": "outputs",
+   "status": "fail",
+   "fresh": [
+    "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.agents/worktrees/codex/clip-e2e-15030286-7min-20261020/artifacts/clip-e2e-15030286-20261020-scroll-b/l2/text"
+   ],
+   "problems": [
+    "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.agents/worktrees/codex/clip-e2e-15030286-7min-20261020/artifacts/clip-e2e-15030286-20261020-scroll-b/l2/text is not new or empty"
+   ]
+  },
+  {
+   "check": "drain",
+   "status": "skip"
+  },
+  {
+   "check": "page",
+   "status": "pass",
+   "pageId": "mockup-dev-clip-20261018-scroll-b-20261020",
+   "origin": "https://ai-for-god-sermon-audio-dev.web.app",
+   "problems": []
+  },
+  {
+   "check": "environment_binding",
+   "status": "fail",
+   "problems": [
+    "Selected launcher route or credential differs from QC approval, or binding cannot be verified"
+   ]
+  }
+ ]
+}

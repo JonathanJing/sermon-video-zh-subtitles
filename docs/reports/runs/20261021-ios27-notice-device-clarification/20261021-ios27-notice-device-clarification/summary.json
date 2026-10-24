@@ -1,0 +1,6 @@
+{
+  "originalRunDirectory": "artifacts/tongxing-ios/2026-10-21/cli/20261021T210935-test-bbabf3e8",
+  "originalStatusSha256": "1c9593782cd265f82ee410c99920dfbdbbf88cbf720ac244088a318474dfaca0",
+  "result": "stopped before XCTest cases because user clarified notification permission was granted on a physical TestFlight iPhone, not this simulator",
+  "exitStatus": 75
+}

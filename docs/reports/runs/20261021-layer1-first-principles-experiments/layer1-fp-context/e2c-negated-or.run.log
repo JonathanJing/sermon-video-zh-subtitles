@@ -1,0 +1,13 @@
+20:12:46 e2c-negated-or_rebuild_start
+{
+  "status": "succeeded",
+  "kind": "english_source_candidate",
+  "reason": "human_source_review_required",
+  "review": "human_pending",
+  "productionEligible": false,
+  "humanApprovalCreated": false,
+  "candidatePath": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/podcasts/if-i-had-more-time-jesus-sends-and-resurrects-his-own/layer1-fp/e2c-negated-or.output/english-source-candidate.json",
+  "candidateSha256": "71e00c67561ee45dd2f62206a7002ed1e90a9c20ff60c0ce7e2dd8a3efe51128",
+  "machineJudgeStatus": "approved_for_layer2_shadow"
+}
+20:13:13 e2c-negated-or_rebuild_exit=0

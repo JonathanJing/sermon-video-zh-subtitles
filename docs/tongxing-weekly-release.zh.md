@@ -12,7 +12,7 @@
 
 周次、source route 和 source ID 共同决定内容项。同一周的直播归档与独立 YouTube 视频分别保留。已存在的源身份不能借同一个 page ID 改写。音频与审核声明沿用各页原始数据，不因进入发行清单而升级。
 
-正式多语言目录的页面名称采用默认内容语言已批准的「系列名 · 本篇标题」，例如「启示录：耶稣带来的安慰与盼望 · 耶稣配得」。`multilingual-v3.json` 的 `pages[].title` 供 iOS 选页列表和本周页头直接读取；只改目录元数据即可让已安装的 App 在刷新目录后显示新名称。每周发布前用同语言 `content/<pageId>/<locale>.json` 的 `series`、`title` 校验该字段，不能只写简称或从未审核文字另造系列名。
+正式多语言目录的页面名称采用默认内容语言已批准的「系列名 · 本篇标题」，例如「启示录：耶稣带来的安慰与盼望 · 耶稣配得」。`multilingual-v3.json` 的 `pages[].title` 供 iOS 选页列表和本周页头直接读取；只改目录元数据即可让已安装的 App 在刷新目录后显示新名称。每周发布前用同语言 `content/<pageId>/<locale>.json` 的 `series`、`title` 校验该字段，不能只写简称或从未审核文字另造系列名。本篇标题已在[系列各篇标题表](series-sermon-titles.zh.md)登记且英文标题与来源一致时，直接采用表中三语标题，不再单独批准标题。
 
 ### 机器质检周次：v4 目录与 v3 投影
 
@@ -23,6 +23,8 @@
 中文与西语／韩语等 target 若绑定不同 L1 或视频，使用 `multilingual-v5.json` 的 `per_target` family；用户在一个 `page.id` 中切换语言，各 target 继续引用自己的 `editionId`、release/content、来源哈希、视频和定位。网页与新版 iOS 先读 v5；v4 兼容投影仍按 edition 显示为两个来源页面，v3 仍只含人工审核 target。海报二维码编码 target edition 以兼容 v4 fallback，v5 reader 会把这个 edition 深链映射回 family；App announcement 的 `pageID` 仍指向 family，收据与实际资源校验仍绑定 target edition。具体身份和晋升限制见[四产物公开交付的跨来源单页](layer4-four-product-public-delivery.zh.md#跨来源单页catalog-v5)。
 
 这类周更必须从当场取得的完整 production baseline 构造原子候选：同一 Hosting 版本更新受信任 reader runtime、缺失的视频精确 302、v5/v4/v3 三份目录及 seal report；edition 的 release、content、字幕、音轨、学习产物和 sidecar 字节保持不变。部署前比较 live version 与三份目录基线，部署后按本次 Firebase version 回读三份目录。任何 target 的 edition/source/media/video 交叉不一致都停止发布。
+
+Dev 验证同一流程时，从 Dev 的完整实时 baseline 起步；缺少已公开的 edition 文件可由 `prepare_mixed_source_catalog_overlay.py --environment dev --asset-source <已封存候选>` 按 release 哈希与来源 seal 逐项导入。候选中的视频 `storageUrl` 必须指向 Dev 媒体桶，先核对对象大小、校验和与 Range，再用生成的 `publish-config.json` 走受保护的 Hosting 发布。Dev 原有页面和文件不可用 Production 整站快照替换；私人生产数据不进入 Dev。
 
 
 <a id="v3-周更发布清单与验收"></a>

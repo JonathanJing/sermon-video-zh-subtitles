@@ -125,7 +125,7 @@
 
 ### 代码与内容发布
 
-设计中的代码路径是功能分支合入 `dev`，再经 `dev → main` 晋升 PR squash 合并并回同步。2026-10-22 远端核对时，`dev` 无 required status checks，`main` 仍要求 `unittest`、`native-client` 和 `promotion-policy`，但相关测试 workflow 已手动停用；不能将配置中的检查视为已执行。当前远端状态见[执行环境设计](docs/execution-environment-design.zh.md)。Firebase 正式内容部署是独立步骤，有自己的准入收据。详见[分支与 Firebase 环境策略](docs/development-branch-and-firebase-environments.zh.md)。
+设计中的代码路径是功能分支合入 `dev`，再经 `dev → main` 晋升 PR 以 merge commit 合并（2026-10-24 起不再 squash）并回同步。2026-10-22 远端核对时，`dev` 无 required status checks，`main` 仍要求 `unittest`、`native-client` 和 `promotion-policy`，但相关测试 workflow 已手动停用；不能将配置中的检查视为已执行。当前远端状态见[执行环境设计](docs/execution-environment-design.zh.md)。Firebase 正式内容部署是独立步骤，有自己的准入收据。详见[分支与 Firebase 环境策略](docs/development-branch-and-firebase-environments.zh.md)。
 
 ### 主日实时 session
 

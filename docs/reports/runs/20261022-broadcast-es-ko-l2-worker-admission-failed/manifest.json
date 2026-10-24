@@ -1,0 +1,59 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261022-broadcast-es-ko-l2-worker-admission-failed",
+  "runs": [
+    {
+      "label": "a7131092cf4d5be8edbbdc31a3251100f59ccaa4393b5921fde8a8b457b17fea",
+      "source": "~/.codex/worktrees/broadcast-es-ko-shared-source/sermon-video-zh-subtitles/artifacts/weekend-live/broadcast-20261018-es-ko-20261022/jobs/a7131092cf4d5be8edbbdc31a3251100f59ccaa4393b5921fde8a8b457b17fea",
+      "skipped": {
+        ".json": 3
+      }
+    },
+    {
+      "label": "es",
+      "source": "~/.codex/worktrees/broadcast-es-ko-shared-source/sermon-video-zh-subtitles/artifacts/weekend-live/broadcast-20261018-es-ko-20261022/text/es",
+      "skipped": {
+        ".lock": 1,
+        ".jsonl": 1,
+        ".csv": 3
+      }
+    }
+  ],
+  "files": [
+    {
+      "run": "a7131092cf4d5be8edbbdc31a3251100f59ccaa4393b5921fde8a8b457b17fea",
+      "path": "worker.log",
+      "kind": "log",
+      "bytes": 1563,
+      "truncated": false,
+      "sha256": "262c1c253a9ed5944d87ff17a3b4a0cd2f1b51d3d013eb7d6767176912944caf",
+      "redactions": {
+        "secret_field": 1,
+        "home_dir": 5
+      }
+    },
+    {
+      "run": "es",
+      "path": "accounting/operations.log",
+      "kind": "log",
+      "bytes": 2333,
+      "truncated": false,
+      "sha256": "8ece1ea2c23ace6b4503c19b8ea2698ae55806a94fbe65579a619d37a9402bf3",
+      "redactions": {}
+    },
+    {
+      "run": "es",
+      "path": "accounting/summary.json",
+      "kind": "whole",
+      "bytes": 26927,
+      "truncated": false,
+      "sha256": "4a319af2e2aaf3b917ed4a8868a10c2ab9bda80a8d183b3b08d94c0f5e9071b1",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

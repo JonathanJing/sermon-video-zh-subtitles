@@ -18,10 +18,14 @@ from __future__ import annotations
 
 import argparse
 import json
+from datetime import datetime, timezone
 from pathlib import Path
 import shutil
 import subprocess
 import sys
+import wave
+
+from runlog import mark, write_outcome, write_timings
 
 HERE = Path(__file__).resolve().parent
 
@@ -40,6 +44,8 @@ def main() -> int:
     parser.add_argument("--show-below", type=float, default=0.97)
     args = parser.parse_args()
     run = args.run
+    started_at = datetime.now(timezone.utc).isoformat(timespec="seconds")
+    mark(run, "l3.finish", "started")
 
     if args.clip_from and not (run / "clip.json").exists():
         shutil.copy2(args.clip_from / "clip.json", run / "clip.json")
@@ -87,12 +93,45 @@ def main() -> int:
         wall = sum(e["wallSeconds"] for e in entries)
         line += f"; tts wall {wall:.1f}s for {len(entries)} sentences ({total_dub / wall:.2f}x realtime, no model load)"
     print(line)
+    asr_mean = None
     if (run / "asr-report.json").exists():
         report = json.loads((run / "asr-report.json").read_text(encoding="utf-8"))
+        scores = [x["similarity"] for x in report["sentences"]]
+        asr_mean = round(sum(scores) / len(scores), 3) if scores else None
         low = [x for x in report["sentences"] if x["similarity"] < args.show_below]
         print(f"ASR below {args.show_below}: {len(low)}")
         for x in sorted(low, key=lambda x: x["similarity"]):
             print(f'  {x["id"]} {x["similarity"]:.3f}\n    want: {x["expected"]}\n    got:  {x["recognized"]}')
+    with wave.open(str(run / "track.wav"), "rb") as handle:
+        track_seconds = round(handle.getnframes() / handle.getframerate(), 2)
+    locale = json.loads((run / "review.json").read_text(encoding="utf-8")).get("locale") if (run / "review.json").exists() else None
+    tts_wall = None
+    if log.exists():
+        entries = [json.loads(l) for l in log.read_text(encoding="utf-8").splitlines() if l.strip()]
+        tts_wall = round(sum(e["wallSeconds"] for e in entries), 1)
+    review_mp3 = run / "review.mp3"
+    if not review_mp3.exists() or review_mp3.stat().st_mtime < (run / "track.wav").stat().st_mtime:
+        subprocess.run(["ffmpeg", "-nostdin", "-v", "error", "-y", "-i", str(run / "track.wav"),
+                        "-c:a", "libmp3lame", "-b:a", "96k", str(review_mp3)], check=True)
+    review_player = None
+    try:
+        from review_player import build_player
+        player_info = build_player(run, run / "review-player.html", audio=review_mp3,
+                                   title=f"{run.name} 逐句听审")
+        review_player = {"html": str(run / "review-player.html"), "rows": player_info["rows"]}
+        print(json.dumps({"reviewMp3MB": round(review_mp3.stat().st_size / 1e6, 1),
+                          "reviewPlayer": player_info}, ensure_ascii=False))
+    except Exception as exc:
+        print("review player skipped:", exc)
+    mark(run, "l3.finish", "finished")
+    write_outcome(run, status="track_ready_for_review", delivery="four_layer_release", locale=locale,
+                  trackSeconds=track_seconds, ttsWallSeconds=tts_wall,
+                  realtime=round(track_seconds / tts_wall, 2) if tts_wall else None,
+                  asrMean=asr_mean, startedAt=started_at,
+                  endedAt=datetime.now(timezone.utc).isoformat(timespec="seconds"), published=False,
+                  reviewMp3=str(review_mp3), reviewPlayer=review_player,
+                  note="track merged and scored; audio alignment and review materials done in the same pass")
+    write_timings(run)
     return 0
 
 

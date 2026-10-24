@@ -1,0 +1,27 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261021-ios-prod-build64-testflight",
+  "runs": [
+    {
+      "label": "build64-apple-testflight",
+      "source": "~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/artifacts/ios-formal-push-validation/reports/build64-apple-testflight",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "build64-apple-testflight",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 600,
+      "truncated": false,
+      "sha256": "7b5d74bdd844836983203409ccb1e07866d637dd65401c3768d4c2cf659cdb74",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}
