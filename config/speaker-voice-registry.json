@@ -93,11 +93,13 @@
         "status": "authorized",
         "purposes": [
           "chinese_dubbing",
-          "multilingual_voice_demo"
+          "multilingual_voice_demo",
+          "multilingual_dubbing"
         ],
         "evidence": [
           "artifacts/sermon-dubbing/2026-09-05-speaker-bank/jared_kirkwood/authorization.json",
-          "docs/multilingual-speaker-voice-registry.zh.md#本轮-demo-授权与限制"
+          "docs/multilingual-speaker-voice-registry.zh.md#本轮-demo-授权与限制",
+          "experiments/sermon-dubbing-poc/reviews/voice-authorization-2026-10-24-all-speakers.json"
         ]
       },
       "localeCapabilities": [
@@ -113,16 +115,20 @@
         {
           "targetLocale": "ko",
           "modelLanguage": "Korean",
-          "status": "unverified_poc",
-          "demoStatus": "machine_screened",
-          "reviewEvidence": []
+          "status": "human_reviewed",
+          "demoStatus": "human_reviewed",
+          "reviewEvidence": [
+            "experiments/sermon-dubbing-poc/reviews/speaker-voice-acceptance-2026-10-24-jared-kirkwood-ko-es.json"
+          ]
         },
         {
           "targetLocale": "es",
           "modelLanguage": "Spanish",
-          "status": "unverified_poc",
-          "demoStatus": "machine_screened",
-          "reviewEvidence": []
+          "status": "human_reviewed",
+          "demoStatus": "human_reviewed",
+          "reviewEvidence": [
+            "experiments/sermon-dubbing-poc/reviews/speaker-voice-acceptance-2026-10-24-jared-kirkwood-ko-es.json"
+          ]
         },
         {
           "targetLocale": "vi",
@@ -153,11 +159,13 @@
         "status": "authorized",
         "purposes": [
           "chinese_dubbing",
-          "multilingual_voice_demo"
+          "multilingual_voice_demo",
+          "multilingual_dubbing"
         ],
         "evidence": [
           "artifacts/sermon-dubbing/2026-09-05-speaker-bank/christine_caine/authorization.json",
-          "docs/multilingual-speaker-voice-registry.zh.md#本轮-demo-授权与限制"
+          "docs/multilingual-speaker-voice-registry.zh.md#本轮-demo-授权与限制",
+          "experiments/sermon-dubbing-poc/reviews/voice-authorization-2026-10-24-all-speakers.json"
         ]
       },
       "localeCapabilities": [
@@ -173,16 +181,20 @@
         {
           "targetLocale": "ko",
           "modelLanguage": "Korean",
-          "status": "unverified_poc",
-          "demoStatus": "machine_screened",
-          "reviewEvidence": []
+          "status": "human_reviewed",
+          "demoStatus": "human_reviewed",
+          "reviewEvidence": [
+            "experiments/sermon-dubbing-poc/reviews/speaker-voice-acceptance-2026-10-24-christine-caine-ko-es.json"
+          ]
         },
         {
           "targetLocale": "es",
           "modelLanguage": "Spanish",
-          "status": "unverified_poc",
-          "demoStatus": "machine_screened",
-          "reviewEvidence": []
+          "status": "human_reviewed",
+          "demoStatus": "human_reviewed",
+          "reviewEvidence": [
+            "experiments/sermon-dubbing-poc/reviews/speaker-voice-acceptance-2026-10-24-christine-caine-ko-es.json"
+          ]
         },
         {
           "targetLocale": "vi",
@@ -213,11 +225,13 @@
         "status": "authorized",
         "purposes": [
           "chinese_dubbing",
-          "multilingual_voice_demo"
+          "multilingual_voice_demo",
+          "multilingual_dubbing"
         ],
         "evidence": [
           "artifacts/sermon-dubbing/2026-09-05-speaker-bank/doug_fields/authorization.json",
-          "docs/multilingual-speaker-voice-registry.zh.md#本轮-demo-授权与限制"
+          "docs/multilingual-speaker-voice-registry.zh.md#本轮-demo-授权与限制",
+          "experiments/sermon-dubbing-poc/reviews/voice-authorization-2026-10-24-all-speakers.json"
         ]
       },
       "localeCapabilities": [
@@ -233,16 +247,20 @@
         {
           "targetLocale": "ko",
           "modelLanguage": "Korean",
-          "status": "unverified_poc",
-          "demoStatus": "machine_screened",
-          "reviewEvidence": []
+          "status": "human_reviewed",
+          "demoStatus": "human_reviewed",
+          "reviewEvidence": [
+            "experiments/sermon-dubbing-poc/reviews/speaker-voice-acceptance-2026-10-24-doug-fields-ko-es.json"
+          ]
         },
         {
           "targetLocale": "es",
           "modelLanguage": "Spanish",
-          "status": "unverified_poc",
-          "demoStatus": "machine_screened",
-          "reviewEvidence": []
+          "status": "human_reviewed",
+          "demoStatus": "human_reviewed",
+          "reviewEvidence": [
+            "experiments/sermon-dubbing-poc/reviews/speaker-voice-acceptance-2026-10-24-doug-fields-ko-es.json"
+          ]
         },
         {
           "targetLocale": "vi",
@@ -273,11 +291,13 @@
         "status": "authorized",
         "purposes": [
           "chinese_dubbing",
-          "multilingual_voice_demo"
+          "multilingual_voice_demo",
+          "multilingual_dubbing"
         ],
         "evidence": [
           "artifacts/sermon-dubbing/2026-09-05-speaker-bank/kenton_beshore/authorization.json",
-          "docs/multilingual-speaker-voice-registry.zh.md#本轮-demo-授权与限制"
+          "docs/multilingual-speaker-voice-registry.zh.md#本轮-demo-授权与限制",
+          "experiments/sermon-dubbing-poc/reviews/voice-authorization-2026-10-24-all-speakers.json"
         ]
       },
       "localeCapabilities": [
@@ -293,16 +313,20 @@
         {
           "targetLocale": "ko",
           "modelLanguage": "Korean",
-          "status": "unverified_poc",
-          "demoStatus": "machine_screened",
-          "reviewEvidence": []
+          "status": "human_reviewed",
+          "demoStatus": "human_reviewed",
+          "reviewEvidence": [
+            "experiments/sermon-dubbing-poc/reviews/speaker-voice-acceptance-2026-10-24-kenton-beshore-ko-es.json"
+          ]
         },
         {
           "targetLocale": "es",
           "modelLanguage": "Spanish",
-          "status": "unverified_poc",
-          "demoStatus": "machine_screened",
-          "reviewEvidence": []
+          "status": "human_reviewed",
+          "demoStatus": "human_reviewed",
+          "reviewEvidence": [
+            "experiments/sermon-dubbing-poc/reviews/speaker-voice-acceptance-2026-10-24-kenton-beshore-ko-es.json"
+          ]
         },
         {
           "targetLocale": "vi",
