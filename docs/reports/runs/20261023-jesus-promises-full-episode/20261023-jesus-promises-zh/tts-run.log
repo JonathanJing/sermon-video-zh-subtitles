@@ -1,0 +1,251 @@
+tts start zh-Hans 2026-10-23T20:09:14Z
+{"sentences": 282, "pending": 282}
+W1023 20:09:20.712000 1 torch/utils/_pytree.py:630] <enum 'KernelPreference'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
+W1023 20:09:20.741000 1 torch/utils/_pytree.py:630] <enum 'ScaleCalculationMode'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
+[0;93m2026-10-23 20:09:21.437958012 [W:onnxruntime:Default, device_discovery.cc:164 DiscoverDevicesForPlatform] GPU device discovery failed: device_discovery.cc:89 ReadFileContents Failed to open file: "/sys/class/drm/card0/device/vendor"[m
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+{"id": "s0019", "seconds": 1.28, "wallSeconds": 4.368, "seed": 7}
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+{"id": "s0022", "seconds": 3.12, "wallSeconds": 2.432, "seed": 7}
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+{"id": "s0023", "seconds": 4.32, "wallSeconds": 3.167, "seed": 7}
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+{"id": "s0038", "seconds": 1.6, "wallSeconds": 1.259, "seed": 7}
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+{"id": "s0039", "seconds": 0.88, "wallSeconds": 0.743, "seed": 7}
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+{"id": "s0040", "seconds": 5.2, "wallSeconds": 3.867, "seed": 7}
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+{"id": "s0041", "seconds": 5.6, "wallSeconds": 4.067, "seed": 7}
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+{"id": "s0042", "seconds": 1.84, "wallSeconds": 1.38, "seed": 7}
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+{"id": "s0043", "seconds": 1.92, "wallSeconds": 1.433, "seed": 7}
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+{"id": "s0044", "seconds": 4.08, "wallSeconds": 2.976, "seed": 7}
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+{"id": "s0060", "seconds": 3.36, "wallSeconds": 2.459, "seed": 7}
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+{"id": "s0064", "seconds": 3.28, "wallSeconds": 2.401, "seed": 7}
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+{"id": "s0065", "seconds": 2.88, "wallSeconds": 2.115, "seed": 7}
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+{"id": "s0066", "seconds": 1.68, "wallSeconds": 1.291, "seed": 7}
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+{"id": "s0067", "seconds": 0.88, "wallSeconds": 0.668, "seed": 7}
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+{"id": "s0068", "seconds": 3.76, "wallSeconds": 2.754, "seed": 7}
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+{"id": "s0069", "seconds": 2.8, "wallSeconds": 2.056, "seed": 7}
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+... 1688 lines omitted; 9 error-like lines, 9 kept below ...
+[line 573] W1023 20:22:36.522000 1 torch/utils/_pytree.py:630] <enum 'KernelPreference'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
+[line 574] W1023 20:22:36.536000 1 torch/utils/_pytree.py:630] <enum 'ScaleCalculationMode'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
+[line 575] [0;93m2026-10-23 20:22:37.071742239 [W:onnxruntime:Default, device_discovery.cc:164 DiscoverDevicesForPlatform] GPU device discovery failed: device_discovery.cc:89 ReadFileContents Failed to open file: "/sys/class/drm/card0/device/vendor"[m
+[line 576] Traceback (most recent call last):
+[line 589]     raise ValueError(f"Unsupported speakers: {bad}. Supported: {sorted(supported)}")
+[line 590] ValueError: Unsupported speakers: ['eric_geiger']. Supported: ['eric_pilot']
+[line 597] W1023 20:23:55.108000 1 torch/utils/_pytree.py:630] <enum 'KernelPreference'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
+[line 598] W1023 20:23:55.123000 1 torch/utils/_pytree.py:630] <enum 'ScaleCalculationMode'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
+[line 599] [0;93m2026-10-23 20:23:55.656156131 [W:onnxruntime:Default, device_discovery.cc:164 DiscoverDevicesForPlatform] GPU device discovery failed: device_discovery.cc:89 ReadFileContents Failed to open file: "/sys/class/drm/card0/device/vendor"[m
+... end of omitted section ...
+{"id": "s0837", "seconds": 11.68, "wallSeconds": 8.47, "seed": 7}
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+{"id": "s0838", "seconds": 0.72, "wallSeconds": 0.554, "seed": 7}
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+{"id": "s0839", "seconds": 3.52, "wallSeconds": 2.565, "seed": 7}
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+{"id": "s0840", "seconds": 9.12, "wallSeconds": 6.624, "seed": 7}
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+{"id": "s0841", "seconds": 8.08, "wallSeconds": 5.87, "seed": 7}
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+{"id": "s0842", "seconds": 0.72, "wallSeconds": 0.553, "seed": 7}
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+{"id": "s0843", "seconds": 9.44, "wallSeconds": 6.857, "seed": 7}
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+{"id": "s0844", "seconds": 7.44, "wallSeconds": 5.403, "seed": 7}
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+{"id": "s0845", "seconds": 1.44, "wallSeconds": 1.072, "seed": 7}
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+{"id": "s0846", "seconds": 7.2, "wallSeconds": 5.231, "seed": 7}
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+{"id": "s0847", "seconds": 1.44, "wallSeconds": 1.074, "seed": 7}
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+{"id": "s0849", "seconds": 1.68, "wallSeconds": 1.243, "seed": 7}
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+{"id": "s0850", "seconds": 0.72, "wallSeconds": 0.554, "seed": 7}
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+{"id": "s0851", "seconds": 6.08, "wallSeconds": 4.416, "seed": 7}
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+{"id": "s0852", "seconds": 5.52, "wallSeconds": 4.118, "seed": 7}
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+{"id": "s0853", "seconds": 2.08, "wallSeconds": 1.532, "seed": 7}
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+{"id": "s0854", "seconds": 5.84, "wallSeconds": 4.249, "seed": 7}
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+{"id": "s0860", "seconds": 1.12, "wallSeconds": 0.841, "seed": 7}
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+{"id": "s0864", "seconds": 21.6, "wallSeconds": 15.707, "seed": 7}
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+{"id": "s0865", "seconds": 12.64, "wallSeconds": 9.172, "seed": 7}
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+{"id": "s0866", "seconds": 4.8, "wallSeconds": 3.494, "seed": 7}
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+{"id": "s0867", "seconds": 2.56, "wallSeconds": 1.88, "seed": 7}
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+{"id": "s0868", "seconds": 1.76, "wallSeconds": 1.3, "seed": 7}
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+{"id": "s0869", "seconds": 4.16, "wallSeconds": 3.03, "seed": 7}
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+{"id": "s0870", "seconds": 6.0, "wallSeconds": 4.364, "seed": 7}
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+{"id": "s0871", "seconds": 6.08, "wallSeconds": 4.419, "seed": 7}
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+{"id": "s0872", "seconds": 2.08, "wallSeconds": 1.532, "seed": 7}
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+{"id": "s0873", "seconds": 3.12, "wallSeconds": 2.278, "seed": 7}
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+{"id": "s0874", "seconds": 2.16, "wallSeconds": 1.588, "seed": 7}
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+{"id": "s0875", "seconds": 3.52, "wallSeconds": 2.571, "seed": 7}
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+{"id": "s0876", "seconds": 8.16, "wallSeconds": 5.924, "seed": 7}
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+{"id": "s0877", "seconds": 4.96, "wallSeconds": 3.614, "seed": 7}
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+{"id": "s0878", "seconds": 4.32, "wallSeconds": 3.143, "seed": 7}
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+{"id": "s0879", "seconds": 4.24, "wallSeconds": 3.088, "seed": 7}
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+{"id": "s0880", "seconds": 6.8, "wallSeconds": 4.94, "seed": 7}
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+{"id": "s0881", "seconds": 4.24, "wallSeconds": 3.087, "seed": 7}
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+{"id": "s0882", "seconds": 4.8, "wallSeconds": 3.501, "seed": 7}
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+{"id": "s0883", "seconds": 2.24, "wallSeconds": 1.648, "seed": 7}
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+{"id": "s0884", "seconds": 1.92, "wallSeconds": 1.418, "seed": 7}
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+{"id": "s0885", "seconds": 3.28, "wallSeconds": 2.393, "seed": 7}
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+{"id": "s0886", "seconds": 2.8, "wallSeconds": 2.047, "seed": 7}
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+{"id": "s0887", "seconds": 1.76, "wallSeconds": 1.301, "seed": 7}
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+{"id": "s0888", "seconds": 3.28, "wallSeconds": 2.401, "seed": 7}
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+{"id": "s0889", "seconds": 1.92, "wallSeconds": 1.418, "seed": 7}
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+{"id": "s0890", "seconds": 1.44, "wallSeconds": 1.073, "seed": 7}
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+{"id": "s0891", "seconds": 5.76, "wallSeconds": 4.184, "seed": 7}
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+{"id": "s0892", "seconds": 3.2, "wallSeconds": 2.336, "seed": 7}
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+{"id": "s0893", "seconds": 3.76, "wallSeconds": 2.741, "seed": 7}
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+{"id": "s0894", "seconds": 2.56, "wallSeconds": 1.878, "seed": 7}
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+{"id": "s0895", "seconds": 3.12, "wallSeconds": 2.278, "seed": 7}
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+{"id": "s0896", "seconds": 2.96, "wallSeconds": 2.164, "seed": 7}
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+{"id": "s0897", "seconds": 6.24, "wallSeconds": 4.53, "seed": 7}
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+{"id": "s0898", "seconds": 1.52, "wallSeconds": 1.129, "seed": 7}
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+{"id": "s0899", "seconds": 4.0, "wallSeconds": 2.913, "seed": 7}
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+{"id": "s0900", "seconds": 10.64, "wallSeconds": 7.713, "seed": 7}
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+{"id": "s0901", "seconds": 7.84, "wallSeconds": 5.689, "seed": 7}
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+{"id": "s0902", "seconds": 2.8, "wallSeconds": 2.048, "seed": 7}
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+{"id": "s0903", "seconds": 5.04, "wallSeconds": 3.669, "seed": 7}
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+{"id": "s0904", "seconds": 3.2, "wallSeconds": 2.344, "seed": 7}
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+{"id": "s0905", "seconds": 7.52, "wallSeconds": 5.456, "seed": 7}
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+{"id": "s0906", "seconds": 3.84, "wallSeconds": 2.8, "seed": 7}
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+{"id": "s0907", "seconds": 1.36, "wallSeconds": 1.014, "seed": 7}
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+{"id": "s0908", "seconds": 2.24, "wallSeconds": 1.646, "seed": 7}
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+{"id": "s0909", "seconds": 2.88, "wallSeconds": 2.11, "seed": 7}
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+{"id": "s0910", "seconds": 5.68, "wallSeconds": 4.127, "seed": 7}
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+{"id": "s0911", "seconds": 7.2, "wallSeconds": 5.226, "seed": 7}
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+{"id": "s0912", "seconds": 1.68, "wallSeconds": 1.247, "seed": 7}
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+{"id": "s0913", "seconds": 2.0, "wallSeconds": 1.472, "seed": 7}
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+{"id": "s0914", "seconds": 1.84, "wallSeconds": 1.358, "seed": 7}
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+{"id": "s0915", "seconds": 1.36, "wallSeconds": 1.012, "seed": 7}
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+{"id": "s0916", "seconds": 1.6, "wallSeconds": 1.182, "seed": 7}
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+{"id": "s0917", "seconds": 1.76, "wallSeconds": 1.298, "seed": 7}
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+{"id": "s0918", "seconds": 2.96, "wallSeconds": 2.164, "seed": 7}
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+{"id": "s0919", "seconds": 1.68, "wallSeconds": 1.246, "seed": 7}
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+{"id": "s0920", "seconds": 9.76, "wallSeconds": 7.081, "seed": 7}
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+{"id": "s0921", "seconds": 7.44, "wallSeconds": 5.408, "seed": 7}
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+{"id": "s0922", "seconds": 1.68, "wallSeconds": 1.243, "seed": 7}
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+{"id": "s0923", "seconds": 5.84, "wallSeconds": 4.243, "seed": 7}
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+{"id": "s0924", "seconds": 3.04, "wallSeconds": 2.222, "seed": 7}
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+{"id": "s0925", "seconds": 0.72, "wallSeconds": 0.554, "seed": 7}
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+{"id": "s0926", "seconds": 3.76, "wallSeconds": 2.736, "seed": 7}
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+{"id": "s0927", "seconds": 6.56, "wallSeconds": 4.77, "seed": 7}
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+{"id": "s0928", "seconds": 1.52, "wallSeconds": 1.13, "seed": 7}
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+{"id": "s0929", "seconds": 3.12, "wallSeconds": 2.28, "seed": 7}
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+{"id": "s0930", "seconds": 0.72, "wallSeconds": 0.553, "seed": 7}
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+{"id": "s0931", "seconds": 1.76, "wallSeconds": 1.297, "seed": 7}
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+{"id": "s0932", "seconds": 1.12, "wallSeconds": 0.839, "seed": 7}
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+{"id": "s0933", "seconds": 1.76, "wallSeconds": 1.3, "seed": 7}
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+{"id": "s0934", "seconds": 2.24, "wallSeconds": 1.644, "seed": 7}
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+{"id": "s0935", "seconds": 2.48, "wallSeconds": 1.817, "seed": 7}
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+{"id": "s0936", "seconds": 3.28, "wallSeconds": 2.397, "seed": 7}
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+{"id": "s0937", "seconds": 0.64, "wallSeconds": 0.497, "seed": 7}
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+{"id": "s0938", "seconds": 2.08, "wallSeconds": 1.529, "seed": 7}
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+{"id": "s0940", "seconds": 0.72, "wallSeconds": 0.553, "seed": 7}
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+{"id": "s0941", "seconds": 0.8, "wallSeconds": 0.61, "seed": 7}
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+{"id": "s0942", "seconds": 3.52, "wallSeconds": 2.565, "seed": 7}
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+{"id": "s0943", "seconds": 4.4, "wallSeconds": 3.203, "seed": 7}
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+{"id": "s0944", "seconds": 4.8, "wallSeconds": 3.493, "seed": 7}
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+{"id": "s0945", "seconds": 3.12, "wallSeconds": 2.281, "seed": 7}
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+{"id": "s0946", "seconds": 1.84, "wallSeconds": 1.359, "seed": 7}
+tts exit zh-Hans 0 2026-10-23T20:53:10Z
