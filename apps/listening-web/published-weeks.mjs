@@ -498,8 +498,14 @@ async function loadVariant(fetchImpl, page, locale, timeoutMs, pageSignal, allow
   // Machine-checked text repeats the release disclosure it was published under.
   required(content.status !== 'machine_checked' || ['locale', 'text', 'english'].every(key => content.disclosure[key] === release.disclosure[key]),
     'Content disclosure differs from its release');
-  required(['title', 'speaker', 'series', 'scripture', 'summary'].every(key => text(content[key]))
-    && Array.isArray(content.outline) && content.outline.every(item => legacyCandidate
+  // A published podcast may omit summary and outline, as the iOS client allows;
+  // when present they are still checked. Videos and Dev candidates require both.
+  const optionalStudy = podcast && !legacyCandidate;
+  const summary = optionalStudy && content.summary === undefined ? '' : content.summary;
+  const outline = optionalStudy && content.outline === undefined ? [] : content.outline;
+  required(['title', 'speaker', 'series', 'scripture'].every(key => text(content[key]))
+    && (text(summary) || (optionalStudy && content.summary === undefined))
+    && Array.isArray(outline) && outline.every(item => legacyCandidate
       ? text(item?.title) && text(item?.body)
       : text(item) || (podcast && text(item?.title) && text(item?.body)))
     && Number.isFinite(content.durationSeconds) && content.durationSeconds > 0, 'Invalid published content metadata');
@@ -608,8 +614,8 @@ async function loadVariant(fetchImpl, page, locale, timeoutMs, pageSignal, allow
     ...reviewPresentation(labels, release),
     ...(page.diagnosticOnly === true || target.diagnosticOnly === true ? { diagnosticOnly: true } : {}),
     ...(page.simulationOnly === true || target.simulationOnly === true ? { simulationOnly: true } : {}),
-    centralMessage: content.summary, summary: content.summary,
-    outline: study ? study.outline.sections.map(section => ({ title: section.title, points: [section.body], sourceUnitIds: section.sourceUnitIds })) : content.outline.map(item => typeof item === 'string' ? { title: item, points: [] } : { title: item.title, points: [item.body] }),
+    centralMessage: summary, summary,
+    outline: study ? study.outline.sections.map(section => ({ title: section.title, points: [section.body], sourceUnitIds: section.sourceUnitIds })) : outline.map(item => typeof item === 'string' ? { title: item, points: [] } : { title: item.title, points: [item.body] }),
     meditation: study?.meditation.sections || [], studyArtifacts: study ? {outline:release.fourProducts.outlineArtifactSha256,meditation:release.fourProducts.meditationArtifactSha256} : null,
     fourProducts: study ? release.fourProducts : null, studyStatus: study ? 'human_reviewed' : 'unavailable',
     ...(candidate ? {devCandidate:true,releaseStatus:'candidate',contentReview:'人工审核候选；尚未发布验收。',productionStages:[{label:'发布与验收',detail:'candidate · not_run',status:'review'}]} : {}),
