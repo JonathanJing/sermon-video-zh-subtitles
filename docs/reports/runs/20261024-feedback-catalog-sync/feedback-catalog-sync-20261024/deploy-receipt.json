@@ -1,0 +1,26 @@
+{
+  "schemaVersion": "sermon-feedback-function-deploy-receipt-v1",
+  "status": "active",
+  "project": "ai-for-god-caption-dev",
+  "region": "us-west1",
+  "function": "sermon-feedback-api",
+  "revision": "sermon-feedback-api-00018-nux",
+  "previousRevision": "sermon-feedback-api-00017-mev",
+  "runtime": "nodejs22",
+  "entryPoint": "sermonFeedback",
+  "sourceGeneration": "1792867102022843",
+  "previousCatalogSha256": "31725ca910e07bfd3e0a995a042495bb2e3d34962290638801419448938cc970",
+  "catalogSha256": "948f93d2cfb1ea02f6684207cba8624b315176af7f51c97719e92ff9beed4b41",
+  "sourceCount": 34,
+  "previousSourceCount": 26,
+  "addedSourceCount": 8,
+  "changedExistingSources": 0,
+  "runtimeCodeChanged": false,
+  "publicSnapshotMultilingualV5Sha256": "4fbd50a251e787711d27f5061252691460276c125969c130bedd50b922826985",
+  "smoke": {
+    "endpoint": "POST /api/session",
+    "track": "if-i-had-more-time-jesus-promises-zh-Hans-18a558c52000",
+    "status": 200
+  },
+  "deployedAt": "2026-10-24T18:39:32.951007692Z"
+}

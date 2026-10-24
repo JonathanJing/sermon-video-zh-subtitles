@@ -113,6 +113,33 @@ final class PlaybackController: ObservableObject {
         statisticsEnabled = enabled
         statisticsDefaults.set(enabled, forKey: ListeningStatistics.preferenceKey)
         Task { await statistics?.setEnabled(enabled) }
+        // Any explicit choice, including the Privacy switch, answers the one-time request.
+        answerStatisticsPrompt()
+    }
+
+    /// One-time opt-in request, offered only after real listening in this run.
+    /// Either answer is stored and the request never returns; the default stays off.
+    static let statisticsPromptAnsweredKey = "tongxing-anonymous-statistics-prompt-answered-v1"
+    var statisticsPromptListeningSeconds = 180.0
+    @Published private(set) var statisticsPromptVisible = false
+    private var statisticsPromptListened = 0.0
+    private var statisticsPromptLastUptime: Double?
+
+    func declineStatisticsPrompt() { answerStatisticsPrompt() }
+
+    private func answerStatisticsPrompt() {
+        statisticsDefaults.set(true, forKey: Self.statisticsPromptAnsweredKey)
+        statisticsPromptVisible = false
+    }
+
+    private func advanceStatisticsPrompt() {
+        let now = ProcessInfo.processInfo.systemUptime
+        let playing = player.timeControlStatus == .playing && pendingSeek == nil && !isPreview
+        defer { statisticsPromptLastUptime = playing ? now : nil }
+        guard playing, let last = statisticsPromptLastUptime, statistics != nil, !statisticsPromptVisible,
+              !statisticsEnabled, !statisticsDefaults.bool(forKey: Self.statisticsPromptAnsweredKey) else { return }
+        statisticsPromptListened += min(max(0, now - last), 1)
+        if statisticsPromptListened >= statisticsPromptListeningSeconds { statisticsPromptVisible = true }
     }
 
     func statisticsInterfaceVisit(source: ListeningSource? = nil) {
@@ -721,6 +748,7 @@ final class PlaybackController: ObservableObject {
         position = currentPosition()
         sampleStatistics()
         statisticsInterfaceVisit()
+        advanceStatisticsPrompt()
         publishLiveActivity()
         if positionTouched, Date().timeIntervalSince(lastSave) >= 4 { saveProgress() }
     }
