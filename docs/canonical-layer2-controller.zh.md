@@ -185,6 +185,10 @@ ctime 的文件系统）；上级目录只记 kind，所以属主或 ACL 改动�
 在新代码上恢复会按原规则报 `worker_configuration_or_code_changed`；只有新准入的 job 使用它。没有
 schema、配置字段或迁移变化。
 
+### 代码身份的范围：点名闭包
+
+`code_identity()` 自 2026-10-24（backlog `DEV-GOV-002`，[设计稿 §3.1](design/codebase-complexity-and-identity-scope.zh.md)）起只摘要[`config/layer2-code-closure.json`](../config/layer2-code-closure.json) 列出的文件：从 L2 入口（`text.candidate`、`text.controller`、逐组 `orchestration.group_worker` 与 `group_pipeline`、语言插件目录、`tools/ops/run.py`、统一预检）静态追出的导入图、`scripts/tongxing_host.py` 中绑定文本层端口的函数所到达的模块、这些模块以字面量点名的 `schemas/*.schema.json`、术语表，以及清单文件本身；摘要仍是逐文件 SHA-256 的字典摘要（`code_identity_files()` 给出逐文件值）。清单由 `tools/development/layer2_code_closure.py --write` 生成，`tests/test_layer2_code_closure.py` 要求清单与导入图相等、每个文件存在且受 Git 跟踪：入口新增的依赖先在这里失败，评审后才进闭包。不在清单内的文件（`delivery/`、`observability/`、`apps/`、`experiments/`、大部分 `tools/ops` 与 `scripts/` 门面）的改动不再改变 L2 身份，也不再要求等进行中的 run 结束才能合并；改清单内文件仍与以前一样产生新一代身份。统一 CLI 的 `required_modules()` 同样按清单纳入 `scripts/` 与 `schemas/`，不再整目录枚举。已按旧身份冻结的 run 保留旧值，只读复验；新 run 用新清单。
+
 ## 按组号修订（execution v8）
 
 操作者看完候选、只想改几组时用这条路径（2026-10-18 周产出的教训：改动只能写进插件、policy 哈希一变，v6 缓存重放拒收旧成功收据，v7 只能单组串行、修复上限按“重放调用为 0”只剩约 4 组，最后整篇重新付费）。唯一必需的输入是**已有候选 + 每个语言的组号列表**，每组可附一句备注；怎么改由译者模型和独立复核决定，列表外的一切不动。

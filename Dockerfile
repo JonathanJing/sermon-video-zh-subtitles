@@ -15,6 +15,9 @@ COPY backend/ /app/backend/
 COPY scripts/ /app/scripts/
 COPY tools/ops/sermon_unified_preflight.py /app/tools/ops/sermon_unified_preflight.py
 COPY tools/ops/run.py /app/tools/ops/run.py
+COPY tools/__init__.py /app/tools/__init__.py
+COPY tools/ops/render_multilingual_voice_demos.py /app/tools/ops/render_multilingual_voice_demos.py
+COPY config/layer2-code-closure.json /app/config/layer2-code-closure.json
 COPY tools/ops/run_openai_model_access_preflight.py /app/tools/ops/run_openai_model_access_preflight.py
 COPY tools/ops/upload_file_to_gcs.py /app/tools/ops/upload_file_to_gcs.py
 COPY tools/ops/export_playback_captions.py /app/tools/ops/export_playback_captions.py

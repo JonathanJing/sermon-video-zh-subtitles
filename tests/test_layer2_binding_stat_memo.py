@@ -17,6 +17,7 @@ from scripts import tongxing_host  # noqa: F401  binds the production package po
 from tongxing_production.delivery import inspect_canonical_packages as inspection
 from tongxing_production.contracts import schemas as contract_schemas
 from tongxing_production.text import backend as text_backend
+from tongxing_production.text import code_closure
 from tongxing_production.text import controller as layer2
 from tongxing_production.text import controller as subject
 from tongxing_production.text import policy as policy_tools
@@ -272,6 +273,10 @@ class ControllerBindingMemoTests(unittest.TestCase):
 
 
 class CodeIdentityMemoTests(unittest.TestCase):
+    """code_identity() over a fixture checkout whose manifest lists six files and leaves one out."""
+    LISTED = ('scripts/deep/inner.py', 'packages/production/src/pkg/mod.py', 'schemas/s.schema.json',
+              'docs/series-terminology.zh.md', 'tools/ops/sermon_unified_preflight.py', 'tools/ops/run.py')
+
     def setUp(self):
         temporary = tempfile.TemporaryDirectory()
         self.addCleanup(temporary.cleanup)
@@ -283,6 +288,7 @@ class CodeIdentityMemoTests(unittest.TestCase):
             path = self.root / name
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_text(text)
+        self.write_manifest(self.LISTED)
         current = text_backend.current()
         bound = dataclasses.replace(current, core=dataclasses.replace(current.core, repo_root=self.root))
         self.compute = Counting(layer2._code_identity_of)
@@ -293,17 +299,24 @@ class CodeIdentityMemoTests(unittest.TestCase):
             self.addCleanup(patcher.stop)
         self.baseline = layer2.code_identity()
 
+    def write_manifest(self, names):
+        path = self.root / code_closure.MANIFEST
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(json.dumps({'schemaVersion': code_closure.SCHEMA, 'files': list(names)}))
+
     def test_unchanged_code_is_hashed_once(self):
         self.assertEqual([layer2.code_identity() for _ in range(3)], [self.baseline] * 3)
         self.assertEqual(self.compute.calls, 1)
+        self.assertEqual(sorted(layer2.code_identity_files(self.root)), sorted((*self.LISTED, code_closure.MANIFEST)))
 
-    def test_every_code_edit_changes_the_identity(self):
+    def test_every_closure_edit_changes_the_identity(self):
         edits = (lambda: rewrite_same_size(self.root / 'scripts/deep/inner.py', b'2', b'9'),
                  lambda: rewrite_same_size(self.root / 'packages/production/src/pkg/mod.py', b'3', b'8'),
                  lambda: (self.root / 'schemas/s.schema.json').write_text('{"x": 1}'),
                  lambda: rewrite_same_size(self.root / 'tools/ops/run.py', b'1', b'2'),
                  lambda: rewrite_same_size(self.root / 'docs/series-terminology.zh.md', b'terms', b'TERMS'),
-                 lambda: (self.root / 'packages/production/src/pkg/new.py').write_text(''))
+                 # Listing another file is itself a change of the manifest, which the closure contains.
+                 lambda: self.write_manifest((*self.LISTED, 'scripts/tool.py')))
         seen = {self.baseline}
         for edit in edits:
             edit()
@@ -314,12 +327,24 @@ class CodeIdentityMemoTests(unittest.TestCase):
         with patch.object(layer2, '_BINDING_MEMO', stat_memo.StatMemo()):
             self.assertEqual(layer2.code_identity(), identity)
 
-    def test_removed_file_changes_the_identity(self):
-        (self.root / 'scripts/tool.py').unlink()
-        self.assertNotEqual(layer2.code_identity(), self.baseline)
+    def test_files_outside_the_manifest_leave_the_identity(self):
+        rewrite_same_size(self.root / 'scripts/tool.py', b'1', b'7')
+        (self.root / 'packages/production/src/pkg/new.py').write_text('')
+        (self.root / 'schemas/other.schema.json').write_text('{}')
+        self.assertEqual(layer2.code_identity(), self.baseline)
+        self.assertEqual(self.compute.calls, 1)
+        with patch.object(layer2, '_BINDING_MEMO', stat_memo.StatMemo()):
+            self.assertEqual(layer2.code_identity(), self.baseline)
+
+    def test_removed_closure_file_is_an_error_not_a_new_identity(self):
+        (self.root / 'scripts/deep/inner.py').unlink()
+        with self.assertRaises(FileNotFoundError):
+            layer2.code_identity()
+        (self.root / 'scripts/deep/inner.py').write_text('B = 2\n')
+        self.assertEqual(layer2.code_identity(), self.baseline)
 
     def test_single_file_ancestor_swapped_for_a_symlink_is_not_memoized(self):
-        for directory in ('docs', 'tools/ops'):
+        for directory in ('docs', 'tools/ops', 'config'):
             with self.subTest(directory=directory):
                 original, moved = self.root / directory, self.root / (directory + '-moved')
                 original.rename(moved)

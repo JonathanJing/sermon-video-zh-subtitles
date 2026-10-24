@@ -20,6 +20,7 @@ from tongxing_production.orchestration import execution_harness as harness
 from tongxing_production.text import policy as policies
 from tests import test_inspect_canonical_packages as fixtures
 from tests import tree_paths
+from tongxing_production.text import code_closure
 from tongxing_production.text import controller as layer2
 from tongxing_production.text import stat_memo
 
@@ -492,7 +493,7 @@ class CodeIdentityClosureTests(unittest.TestCase):
 
     def test_moved_package_code_changes_the_code_identity(self):
         moved = (subject.ROOT / 'packages/production/src/tongxing_production/source/sentence_interpretation.py').resolve()
-        # Its scripts/ facade is gone (D closure window); a scripts/ file still counts.
+        # Its scripts/ facade is gone (D closure window); the host that binds the text layer counts.
         self.assertFalse((subject.ROOT / 'scripts/sermon_sentence_interpretation.py').exists())
         host = (subject.ROOT / 'scripts/tongxing_host.py').resolve()
         self.assertTrue(moved.is_file() and host.is_file())
@@ -503,6 +504,18 @@ class CodeIdentityClosureTests(unittest.TestCase):
                     patch.object(Path, 'read_bytes', lambda path: original(path) + (b'#' if path == edited else b'')):
                 self.assertNotEqual(subject.code_identity(), baseline)
         self.assertEqual(subject.code_identity(), baseline)
+
+    def test_code_outside_the_closure_leaves_the_code_identity(self):
+        # DEV-GOV-002: only the files config/layer2-code-closure.json names are bound; an edit to a
+        # delivery module no longer makes a running job stop with configuration_or_code_changed.
+        outside = (subject.ROOT / 'packages/production/src/tongxing_production/delivery/publication.py').resolve()
+        self.assertTrue(outside.is_file())
+        self.assertNotIn(str(outside.relative_to(subject.ROOT)), code_closure.files(subject.ROOT))
+        baseline = subject.code_identity()
+        original = Path.read_bytes
+        with self.unmemoized(), \
+                patch.object(Path, 'read_bytes', lambda path: original(path) + (b'#' if path == outside else b'')):
+            self.assertEqual(subject.code_identity(), baseline)
 
     def test_package_command_entry_changes_the_code_identity(self):
         # Layer 2 commands also run through tools/ops/run.py; an edited dispatcher must not

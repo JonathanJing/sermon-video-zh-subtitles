@@ -258,7 +258,7 @@ Supervisor 的 generation 命令显式传入 Sol 6.1、high、阅读稿 provider
 
 ### 运行前冻结与等待（2026-10-11 复盘 C 项）
 
-- **代码身份冻结。** 运行开始时在运行计划里记下 `machine_quality_waiver.implementation_sha256()`（`python3 -c "from scripts import machine_quality_waiver as w; print(w.implementation_sha256())"`），之后每次调用 `run_machine_qc_clip_test.py`／`run_machine_qc_audio_test.py` 都带 `--expected-implementation <该值>`；代码不一致时驱动在任何模型调用之前以退出码 2 拒绝并打印各哈希文件的当前哈希。运行期间不改哈希文件集里的代码；要改就开新运行计划。2026-10-11 两次未察觉的改动让已签发的豁免失效，重签了两轮。
+- **代码身份冻结。** 运行开始时在运行计划里记下 `machine_quality_waiver.implementation_sha256()`（`python3 -c "from scripts import machine_quality_waiver as w; print(w.implementation_sha256())"`），之后每次调用 `run_machine_qc_clip_test.py`／`run_machine_qc_audio_test.py` 都带 `--expected-implementation <该值>`；代码不一致时驱动在任何模型调用之前以退出码 2 拒绝并打印各哈希文件的当前哈希。运行期间不改哈希文件集里的代码；要改就开新运行计划。2026-10-11 两次未察觉的改动让已签发的豁免失效，重签了两轮。`plan_run_budgets.py` 的 `plan.json` 同时记下逐文件哈希 `expectedImplementationFiles`；`check_run_start.py --budget-plan` 和两个驱动（`--expected-implementation-files <plan.json>`）据此在拒绝时列出 `changedFiles`，回答“变的是不是我关心的文件”。
 - **一周一份预算授权。** `api-budget-authorization-<ISO 周>.json` 只写一份，筛查、校准、重签都复用它和同一账本（账本本就支持跨轮复用）；请求上限按三语 × 一次筛查 + 一次校准估，本周账本 27,292 次请求里 Layer 2 只占约 220 次，其余是哈希翻转导致的重签。超限即停并通知，不自动续。
 - **Spark 独占会话冻结定时器，派发前等待。** `spark_exclusive_session.py begin` 现在把 `job-reasoning-review.timer` 一起停掉、结束时最后恢复（主机上没有该定时器时记为 `not-found`）。派发链在每次派发前运行 `.venv/bin/python tools/ops/spark_wait_ready.py --poll-seconds 30 --max-minutes 30`：只对 `competing_service_active:*`、`competing_launcher_active`、`insufficient_available_memory` 等会自行消退的状态轮询，其他错误立即返回；退出码 0 就绪、3 超时、1 需要人处理。
 

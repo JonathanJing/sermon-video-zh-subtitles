@@ -900,12 +900,12 @@ def main(argv=None) -> int:
                         help="Bound budget for --text-backend api (sermon-machine-qc-api-budget-authorization-v1 or reuse-only v2)")
     freeze.add_argument(parser)
     args = parser.parse_args(argv)
-    if args.expected_implementation:
-        # The run plan froze the QC implementation; refuse other code before any model call.
-        changed = freeze.mismatch(args.expected_implementation)
-        if changed:
-            print(json.dumps(changed, ensure_ascii=False), file=sys.stderr)
-            return freeze.EXIT_CODE
+    # The run plan froze the QC implementation; refuse other code before any model call,
+    # naming the changed files when the plan's per-file hashes are given.
+    changed = freeze.check(args)
+    if changed:
+        print(json.dumps(changed, ensure_ascii=False), file=sys.stderr)
+        return freeze.EXIT_CODE
     locales = [locale for locale in args.locales.split(",") if locale]
     if not locales or set(locales) - set(LOCALES):
         parser.error(f"--locales must name one or more of {', '.join(LOCALES)}")
