@@ -187,7 +187,7 @@ class SpeculativeRenderTests(unittest.TestCase):
 
     def test_a_locale_dubbing_voice_renders_a_preview_only_unit(self):
         # The registry authorizes the voice for production dubbing; the preview stays preview_only.
-        self.fixture.registry["speakers"][0]["authorization"]["purposes"].append("multilingual_dubbing")
+        self.assertIn("multilingual_dubbing", self.fixture.registry["speakers"][0]["authorization"]["purposes"])
         speech_fixture.write_json(self.fixture.registry_path, self.fixture.registry)
         self.fixture.adapter["registryJsonSha256"] = subject.identity.json_sha256(self.fixture.registry)
         self.fixture.adapter["authorizationPurpose"] = "multilingual_dubbing"

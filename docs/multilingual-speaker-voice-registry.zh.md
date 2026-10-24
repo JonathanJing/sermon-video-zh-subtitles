@@ -40,7 +40,7 @@ Speaker Voice Registry（长期缓存依赖）───────────�
 
 周更按实际讲员的 `speakerId` 解析固定的 `speakerKey`、adapter、模型 revision 和 checkpoint；同一讲员的中、韩、西语不在每周重新选声或训练。9 月 20 日片段已使用 Eric 的同一 Qwen SFT checkpoint，韩／西语短样、长句探针及正式片段音轨均有当次人工听审结果。只要这些声音身份和适用授权范围不变，周更不重复要求短样／长句能力试听。新片段可用 `sermon-voice-capability-reuse-v1` 收据绑定当前 English Source Package、旧 Source Package 和原始人工探针收据；校验仍逐项核对音频、讲员、语言与 checkpoint。此收据不延伸旧片段的配音授权，也不代替新译文的整轨发音、完整性和同步听审。
 
-**固定选用**与**跨周生产资格**分别记录。当前提交的 Registry 对 Eric 韩／西语仍为 `unverified_poc`，用途为 `multilingual_voice_demo`；现有正式放行凭证明确限于 9 月 20 日片段。准备后续整篇正式 Layer 3 时，需先把跨周用途与能力证据按真实授权范围登记并绑定同一 checkpoint，不能靠“音色已选定”或复用片段收据自动改写状态。待审译文的 `preview_only` 单元配音可先使用已登记的试听用途，不等待该正式资格登记。
+**固定选用**与**跨周生产资格**分别记录。2026-10-24 起所有讲员的授权用途都含 `multilingual_dubbing`（见下文），授权不再是跨周正式配音的缺口；能力仍按讲员、按语言单独登记。Eric 韩／西语已于 2026-10-23 凭整轨听审登记为 `human_reviewed`（[决定](../experiments/sentence-first-agent/reviews/20261023-eric-ko-es.md)）；其余讲员仍为 `unverified_poc` 的语言，准备整篇正式 Layer 3 前需先把该语言的能力证据登记为 `human_reviewed` 并绑定同一 checkpoint，不能靠“音色已选定”或复用片段收据自动改写状态。待审译文的 `preview_only` 单元配音可先使用已登记的试听用途，不等待该正式资格登记。
 
 同一个按讲员 SFT checkpoint 可以作为中文、韩语和西班牙语的候选，但能力状态不能跨语言继承。Qwen3-TTS 官方与本地 runtime 支持的十种语言不包含越南语，因此越南语不得伪装成同一 adapter 已支持；本轮 Registry 为 `vi` 显式选择基于 Qwen3-TTS 0.6B 的 Gwen-TTS 零样本 reference-clone adapter，并固定模型 revision。中文样片已认可只证明绑定的中文样片；韩语、西班牙语、越南语从 `unverified_poc` 开始，各自经过完整解码、ASR 机器筛查和母语人耳审核后才可晋升。[Qwen3-TTS 官方语言列表](https://github.com/QwenLM/Qwen3-TTS#released-models-description-and-download)、[Gwen-TTS 官方用法](https://github.com/ggroup-ai-lab/gwen-tts#quick-start)
 
@@ -85,6 +85,8 @@ python experiments/sermon-dubbing-poc/render_vietnamese_voice_demos.py \
 2026-10-11，Jony 将 Steve Bang Lee 的韩语、西语声音标为 verified：Registry 中这两个 locale 改为 `human_reviewed`，授权用途增加 `multilingual_dubbing`（原授权声明“声音可以用于训练和配音”）。决定记录 [speaker-voice-acceptance-2026-10-11-steve-bang-lee-ko-es.json](../experiments/sermon-dubbing-poc/reviews/speaker-voice-acceptance-2026-10-11-steve-bang-lee-ko-es.json) 绑定该 checkpoint 及 2026-09-21 的 ko/es 样音哈希。它只确认声音能力，不审核任何一篇证道的整轨配音；每次运行的音频 QC、豁免或听审照常。其他讲员的韩语、西语仍为 `unverified_poc`。越南语 POC 当前是 reference clone，不等于已经完成与中文相同的 per-speaker SFT；是否为 Gwen-TTS 建立长期训练 checkpoint 要在试听和母语发音审核后另行决定。
 
 2026-10-21，为双人播客《If I Had More Time》新增 John Thomas（`john_thomas`）。用户先授权训练，听过中文、韩语、西语试听后，确认三种语言都可以用于正式配音：Registry 中这三个 locale 为 `human_reviewed`，授权用途为 `chinese_dubbing` 和 `multilingual_dubbing`。决定记录 [speaker-voice-acceptance-2026-10-21-john-thomas.json](../experiments/sermon-dubbing-poc/reviews/speaker-voice-acceptance-2026-10-21-john-thomas.json) 绑定 checkpoint `3f722b17…` 与三条试听的 WAV／MP3 哈希；训练过程见[运行报告](reports/runs/20261021-john-thomas-voice/RETROSPECTIVE.md)。训练素材只有这一期播客（34 段、270.48 秒，另按时间留出 82.2 秒验证），属于训练工程 smoke，泛化未经证明。没有越南语试听和参考 adapter，所以 Registry 不登记 `vi`，越南语不能为他配音。新增讲员改变了 Registry 哈希，`config/layer3-adapters/` 的三个 adapter 已改绑新哈希，Steve 条目本身不变。
+
+2026-10-24，用户确认所有讲员的配音都已获得授权。Jared Kirkwood、Christine Caine、Doug Fields、Kenton Beshore 的授权用途因此增加 `multilingual_dubbing`；Eric Geiger（2026-10-23）、Steve Bang Lee 与 John Thomas 已有此用途，条目不变。决定记录 [voice-authorization-2026-10-24-all-speakers.json](../experiments/sermon-dubbing-poc/reviews/voice-authorization-2026-10-24-all-speakers.json)。这只补齐授权：各语言能力状态照旧，`unverified_poc` 的语言仍须先完成该语言的人工声音审核才能正式配音，每次运行的音频 QC、豁免或听审也照常。Registry 哈希随之改变，`config/layer3-adapters/` 的三个 adapter 已改绑新哈希（同时补上 2026-10-23 Eric 条目改动后漏掉的改绑）。
 
 本轮实跑已生成 6 位讲员 × 4 个 locale 共 24 条 WAV，并编码为 24 条 MP3；源 WAV 与交付 MP3 均完成全文件解码。Qwen3-ASR 完整覆盖筛查中，韩语和西班牙语为 1.00，中文约为 0.97；6 条越南语全部低于 0.85，已标为人工复核优先项。这个结果只证明文件可解码并给出文本一致性风险信号：所有新语言仍等待母语人耳审核，越南语不得进入正式生产。
 

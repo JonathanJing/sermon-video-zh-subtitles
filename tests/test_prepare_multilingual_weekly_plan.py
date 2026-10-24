@@ -1,3 +1,4 @@
+import copy
 import importlib.util
 import json
 from pathlib import Path
@@ -56,10 +57,22 @@ class MultilingualWeeklyPlanTest(unittest.TestCase):
             self.assertEqual(lane["layer3"]["status"], "waiting_for_layer2_gate")
 
     def test_non_chinese_production_is_fail_closed_until_authorized_and_reviewed(self):
-        with self.assertRaisesRegex(ValueError, "Production voice authorization is missing"):
+        # Every speaker is authorized for dubbing; ko capability is still unreviewed.
+        with self.assertRaisesRegex(ValueError, "Production voice capability is not human reviewed"):
             subject.prepare_plan(
                 self.source("ready_for_translation"),
                 self.registry,
+                speaker_id="jared_kirkwood",
+                target_locales=["ko"],
+                mode="production",
+            )
+        registry = copy.deepcopy(self.registry)
+        speaker = next(row for row in registry["speakers"] if row["speakerId"] == "jared_kirkwood")
+        speaker["authorization"]["purposes"].remove("multilingual_dubbing")
+        with self.assertRaisesRegex(ValueError, "Production voice authorization is missing"):
+            subject.prepare_plan(
+                self.source("ready_for_translation"),
+                registry,
                 speaker_id="jared_kirkwood",
                 target_locales=["ko"],
                 mode="production",

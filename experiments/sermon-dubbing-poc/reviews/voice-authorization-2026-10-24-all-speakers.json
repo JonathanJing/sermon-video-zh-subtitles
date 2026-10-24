@@ -1,0 +1,34 @@
+{
+  "schemaVersion": "sermon-voice-authorization-v1",
+  "authorizationId": "user-confirmation-20261024-all-speakers-dubbing",
+  "recordedAt": "2026-10-24T00:00:00+00:00",
+  "status": "confirmed_by_user",
+  "statements": [
+    {
+      "quote": "所有讲员的配音，都已经获得授权，检查repo，改正相关的地方",
+      "channel": "Claude Code session chat (zh)",
+      "date": "2026-10-24"
+    }
+  ],
+  "purposes": [
+    "chinese_dubbing",
+    "multilingual_voice_demo",
+    "multilingual_dubbing"
+  ],
+  "speakerIds": [
+    "eric_geiger",
+    "jared_kirkwood",
+    "christine_caine",
+    "doug_fields",
+    "kenton_beshore",
+    "steve_bang_lee",
+    "john_thomas"
+  ],
+  "registryChange": "Adds multilingual_dubbing to jared_kirkwood, christine_caine, doug_fields and kenton_beshore. eric_geiger (2026-10-23), steve_bang_lee (2026-10-11) and john_thomas (2026-10-22) already carried it and are left unchanged.",
+  "supersedes": {
+    "location": "artifacts/sermon-dubbing/2026-09-05-speaker-bank/<speakerId>/authorization.json",
+    "change": "Those 2026-09-05 records listed voice_training and chinese_dubbing; this statement extends dubbing to every target language."
+  },
+  "notes": "Authorization only. Locale capability stays as registered: a locale that is unverified_poc still needs its own human voice review before formal dubbing, and every dub still needs its own listening or waiver.",
+  "affiliation": "Personal project; not affiliated with Mariners Church."
+}
