@@ -53,7 +53,7 @@ English index: [backlog.md](./backlog.md)
 
 | ID | 优先级／状态 | 内容与完成条件 |
 |---|---|---|
-| `DEV-GOV-002` | P0 / `pending` | Layer 2 代码身份 C→B（设计稿 §3.1）：从 L2 入口静态求导入图生成点名闭包清单进 Git，`code_identity()` 与统一 CLI `required_modules()` 只哈希清单文件，run plan 默认记录逐文件 SHA。完成条件：清单测试（文件存在、导入图新增模块必须入清单）通过；改一个不在清单内的文件（如 `delivery/`、`observability/`、`apps/`）不改变 `code_identity()`；`implementation_freeze.mismatch` 能列出变化文件；按设计稿 §3.5 在无进行中 L2 run 时合并，PR 记新旧身份值。解锁 `DEV-GOV-001` 剩余的 23 个"必须保留"门面中不在 L2 导入图内的部分 |
+| `DEV-GOV-002` | P0 / `in_progress` | 2026-10-24 实现于 PR #1349（清单 `config/layer2-code-closure.json`，251 个文件；新旧 `code_identity()` 记在 PR 里；待无进行中 L2 run、无冻结未终结统一 CLI 运行时由用户合并）。Layer 2 代码身份 C→B（设计稿 §3.1）：从 L2 入口静态求导入图生成点名闭包清单进 Git，`code_identity()` 与统一 CLI `required_modules()` 只哈希清单文件，run plan 默认记录逐文件 SHA。完成条件：清单测试（文件存在、导入图新增模块必须入清单）通过；改一个不在清单内的文件（如 `delivery/`、`observability/`、`apps/`）不改变 `code_identity()`；`implementation_freeze.mismatch` 能列出变化文件；按设计稿 §3.5 在无进行中 L2 run 时合并，PR 记新旧身份值。解锁 `DEV-GOV-001` 剩余的 23 个"必须保留"门面中不在 L2 导入图内的部分 |
 | `DEV-GOV-003` | P1 / `pending` | 热点拆分与依赖方向（设计稿 §4.1–§4.4、§5 第 3–4 步）：`text/models.py` 拆为 cache／briefs／group_runner 并把 `_run_prepared_groups` 拆为状态机；`observability` 四个投影函数改事件分派表、`accounting.py` 拆写入与汇总；`audio/renderer.py` 拆出容器命令、显存准入、lanes；断 `text→workflows`、`observability→orchestration`、`delivery↔orchestration`，类型抽到 `contracts/`。完成条件：现有测试与产物字节不变；跨子包导入图无双向对；在 `DEV-GOV-002` 之后进行 |
 | `DEV-GOV-004` | P1 / `pending` | 文档与 agent 入口瘦身（设计稿 §4.8）：`docs/reports/runs` 正文移出 Git 只留索引、生成 `docs/STATUS.zh.md` 与 `tools/ops` 索引并由测试守一致。完成条件：仓库内 `docs/reports` 体积下降一个量级；运行报告导出义务与 PR 流程不变；索引测试通过 |
 

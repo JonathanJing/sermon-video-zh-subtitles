@@ -441,14 +441,17 @@ def main(argv=None):
                 args.out, locale, profile, args.scale, reuse=reuse[locale], context=contexts[locale],
                 reuse_sources=reuse_sources[locale], **common))
     from scripts import tongxing_host  # noqa: F401  binds the production package ports
-    from tongxing_production.review import waiver
+    from tongxing_production.review import implementation_freeze, waiver
     plan = {"schemaVersion": PLAN_SCHEMA, "createdAt": now, "scale": args.scale, "locales": locales,
             "profileSha256": file_sha256(args.profile), "profile": str(args.profile.resolve()),
             "totalUsd": args.total_usd, "settledUsd": args.settled_usd, "approvedBy": args.approved_by,
             "evidence": args.evidence, "stages": stages, "schedule": schedule(stages, total=args.total_usd, settled=args.settled_usd),
             "qcInputs": {"path": str(args.qc_inputs.resolve()), "sha256": file_sha256(args.qc_inputs)} if qc_locales else None,
             "expectedCommit": __import__('subprocess').check_output(['git', '-C', str(ROOT), 'rev-parse', 'HEAD'], text=True).strip(),
-            "expectedImplementation": waiver.implementation_sha256()}
+            "expectedImplementation": waiver.implementation_sha256(),
+            # Each hashed file's own hash, so a later mismatch names the files that changed
+            # (implementation_freeze.mismatch changedFiles; check_run_start.py and the QC drivers read it).
+            "expectedImplementationFiles": implementation_freeze.file_hashes()}
     approval = write_new(args.out / "plan-approval.json", {
         "schemaVersion": "sermon-run-budget-plan-approval-v1", "binding": plan,
         "humanApproval": True, "decision": "approved", "reviewedBy": args.approved_by,

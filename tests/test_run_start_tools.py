@@ -60,6 +60,13 @@ class PlanTests(unittest.TestCase):
     def load(self, name='run'):
         return json.loads((self.base/name/'plan.json').read_text())
 
+    def test_plan_records_each_implementation_file_hash(self):
+        # implementation_freeze.mismatch names changedFiles only from these recorded hashes.
+        from tongxing_production.review import implementation_freeze as freeze
+        run_plan(*self.args());plan=self.load()
+        self.assertEqual(plan['expectedImplementationFiles'],freeze.file_hashes())
+        self.assertEqual(freeze.recorded_files(self.base/'run'/'plan.json'),plan['expectedImplementationFiles'])
+
     def test_planned_approval_is_consumed_only_under_its_approved_project(self):
         from tongxing_production.review import qc_text_run as driver
         from tests.test_run_machine_qc_audio_test import OPENAI_ENV
