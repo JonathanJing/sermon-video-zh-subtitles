@@ -16,11 +16,13 @@ import json
 import os
 from pathlib import Path
 import re
+import sys
 import unicodedata
 import tempfile
 from typing import Callable
 
 from .. import path_aliases
+from ..compute import memory_admission
 from ..source import sentence_interpretation as identity
 from . import backend as _audio
 from . import dev_profile, dev_receipts
@@ -68,6 +70,18 @@ def write_atomic(path: Path, value: dict) -> None:
 def require(ok: bool, message: str) -> None:
     if not ok:
         raise ValueError(message)
+
+
+# Host memory admission for the resident Qwen3-ASR model, in the same shape as the TTS
+# replica pool. The screener runs inside the renderer's 24 GiB reserve (user decision
+# 2026-10-23): that reserve is sized to hold it, so admission does not stack another reserve
+# on top and only requires MemAvailable to cover this stage's own footprint. Measured
+# 2026-10-23 on two 402-unit screens (batch 1): host footprint 3.9 GiB from before load to the
+# end of the run, CUDA peak 1.8 GiB reserved (data/benchmarks/l3-lanes/2026-10-23). 6 GiB
+# leaves a margin; the sidecar receipt keeps recording the same numbers on every run.
+ASR_MEMORY_RESERVE_GIB = 0
+ASR_MEMORY_BUDGET_GIB = 6
+ASR_MEMORY_BUDGET_STATUS = "measured_2026-10-23_batch1"
 
 
 def load(path: Path) -> dict:
@@ -814,6 +828,9 @@ def main(argv=None) -> None:
                         help="Immutable per-unit ASR cache within the artifact root")
     parser.add_argument("--out-receipt", type=Path, required=True)
     parser.add_argument("--out-manifest", type=Path, required=True)
+    parser.add_argument("--memory-budget-gib", type=float, default=ASR_MEMORY_BUDGET_GIB,
+                        help=f"Host memory this stage needs free before the model loads; it runs inside "
+                             f"the renderer's reserve. Default {ASR_MEMORY_BUDGET_GIB} ({ASR_MEMORY_BUDGET_STATUS})")
     args = parser.parse_args(argv)
     dev_settings = dev_profile.resolve("back-asr", enabled=args.dev_test,
         profile_path=args.dev_test_profile, batch_size=args.batch_size)
@@ -829,6 +846,22 @@ def main(argv=None) -> None:
     require(weights.is_file()
             and args.model_revision == f"model.safetensors:sha256:{file_sha(weights)}",
             "ASR model revision differs from deployed weights")
+    # Admission happens on the host before torch or the model exist; a Linux host without a
+    # measurement, or without room, stops here. Non-Linux hosts never run this CUDA path for real.
+    memory_receipt_path = args.out_receipt.with_suffix(".memory.json")
+    require(not memory_receipt_path.exists(), "ASR memory admission receipt is immutable")
+    memory_receipt = {"schemaVersion": "sermon-asr-screen-memory-receipt-v1", "stage": "asr_screen",
+                      "budgetStatus": ASR_MEMORY_BUDGET_STATUS, "batchSize": args.batch_size}
+    if sys.platform.startswith("linux"):
+        try:
+            memory_receipt["admission"] = memory_admission.admit(
+                stage="asr_screen", reserve_gib=ASR_MEMORY_RESERVE_GIB, budget_gib=args.memory_budget_gib)
+        except memory_admission.MemoryAdmissionError as error:
+            memory_receipt["admission"] = error.receipt
+            write_atomic(memory_receipt_path, memory_receipt)
+            raise
+    else:
+        memory_receipt["admission"] = {"status": "not_measured", "reason": "non_linux_host"}
     import soundfile as sf
     import torch
     from qwen_asr import Qwen3ASRModel
@@ -855,6 +888,8 @@ def main(argv=None) -> None:
             model = Qwen3ASRModel.from_pretrained(
                 str(args.model_path.resolve()), dtype=torch.bfloat16,
                 device_map="cuda:0", max_inference_batch_size=args.batch_size, max_new_tokens=2048)
+            if sys.platform.startswith("linux"):
+                memory_receipt["memAvailableBytesAfterLoad"] = memory_admission.sample()
         return model
 
     def transcribe(path: Path, locale: str) -> str:
@@ -888,6 +923,11 @@ def main(argv=None) -> None:
     }
     args.out_manifest.parent.mkdir(parents=True, exist_ok=True)
     args.out_manifest.write_text(json.dumps(screened, ensure_ascii=False, indent=2) + "\n")
+    if sys.platform.startswith("linux"):
+        memory_receipt["memAvailableBytesAfterRun"] = memory_admission.sample()
+    memory_receipt["modelLoaded"] = model is not None
+    memory_receipt["cudaPeaks"] = memory_admission.cuda_peaks(torch) if model is not None else None
+    write_atomic(memory_receipt_path, memory_receipt)
     if dev_settings["profile"] is not None:
         dev_receipts.write(dev_settings, args.out_receipt, dev_receipt_path)
     print(json.dumps({"status": receipt["status"], "groups": len(receipt["results"]),
