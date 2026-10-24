@@ -44,6 +44,7 @@
 		9A00442EA947A8B5939AB68B /* AppIdentityTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 502E58B32BA9CB649A03DB11 /* AppIdentityTests.swift */; };
 		9D37A5E9084A59C6C69B0EEA /* ListeningLiveActivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD504056359930D928DD8069 /* ListeningLiveActivity.swift */; };
 		A442F0B6EE2D16D0DAE46A00 /* SwiftUIPreviewTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6163F70382A5001D532DC114 /* SwiftUIPreviewTests.swift */; };
+		A55D82ACF53BFD530F2D7889 /* StatisticsPromptCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = D8C86CA5674CE86CFD433769 /* StatisticsPromptCard.swift */; };
 		A62A77ABFD144A65E44B48B9 /* WeeklyPosterPublishedUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8EB7754D60DA3B7C6FAA6231 /* WeeklyPosterPublishedUITests.swift */; };
 		AAE50D4E51C22893F01DEAFD /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = E8CDE0AD081CB32BAE3CD0CB /* PrivacyInfo.xcprivacy */; };
 		B23482E21D63D7D5A3E4F670 /* TongxingCore in Frameworks */ = {isa = PBXBuildFile; productRef = C194255167B8AD9FCB74BBA5 /* TongxingCore */; };
@@ -148,6 +149,7 @@
 		BDD37841E68B061E39E91375 /* Localization.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Localization.swift; sourceTree = "<group>"; };
 		D76315F9ECA722C00FEE69F2 /* TongxingUITests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = TongxingUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		D870632D5A2996F9F1FF55C8 /* BetaRemotePush.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BetaRemotePush.swift; sourceTree = "<group>"; };
+		D8C86CA5674CE86CFD433769 /* StatisticsPromptCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatisticsPromptCard.swift; sourceTree = "<group>"; };
 		DE351B05886BDF3AF8AB9ECE /* ListeningActivityStateTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ListeningActivityStateTests.swift; sourceTree = "<group>"; };
 		E1C23DB6967DA535C2F9C6DD /* WeeklyUpdates.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeeklyUpdates.swift; sourceTree = "<group>"; };
 		E5859794C1B0B7852C183B63 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/InfoPlist.strings; sourceTree = "<group>"; };
@@ -242,6 +244,7 @@
 				AE5FADDF09C04B640EEDA7F0 /* PlaybackPanelLayout.swift */,
 				E8CDE0AD081CB32BAE3CD0CB /* PrivacyInfo.xcprivacy */,
 				3E53066E0326AFD8370B5145 /* PrivacySupportView.swift */,
+				D8C86CA5674CE86CFD433769 /* StatisticsPromptCard.swift */,
 				61FE1B88425139B2F592ED0A /* TongxingApp.swift */,
 				BD0FEA1F83F4300CB78A0935 /* UITestLaunch.swift */,
 				01D4A798172E895D46CF48E4 /* VoiceDemoCatalog.swift */,
@@ -535,6 +538,7 @@
 				318C506CF300A57522C9F2F9 /* PlaybackDock.swift in Sources */,
 				3937DE5EED2CA2CD45C0307B /* PlaybackPanelLayout.swift in Sources */,
 				23FBE0C19259FFC619DE3B8B /* PrivacySupportView.swift in Sources */,
+				A55D82ACF53BFD530F2D7889 /* StatisticsPromptCard.swift in Sources */,
 				272F205288C38B205D9DE540 /* TongxingApp.swift in Sources */,
 				B415795B942C6189370AAE61 /* UITestLaunch.swift in Sources */,
 				042AC6D42BFDE10152C60248 /* VoiceDemoCatalog.swift in Sources */,
