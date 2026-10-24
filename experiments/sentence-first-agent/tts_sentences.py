@@ -9,6 +9,14 @@ Runs on the machine that holds the checkpoint and ``qwen_tts`` (normally DGX
 Spark). Reads ``speech.jsonl`` rows: id, spokenText, language, speaker, hint.
 Existing ``<out>/<id>.wav`` files are skipped, so a stopped run resumes. No
 time stretching, no identity binding, no cache beyond the files themselves.
+
+After every model call the worker returns its unused CUDA allocator blocks
+(``torch.cuda.empty_cache``): measured 2026-10-23 on the formal 8x8 renderer,
+without it the caching allocator keeps about 1 GiB more reserved per batch and a
+full sermon runs the host out of memory; with it MemAvailable stays flat, the
+WAVs are byte-identical and the release costs about 0.1 s per batch. Each
+``tts-log.jsonl`` row records host MemAvailable and this process's CUDA
+allocator counters so a run's memory curve can be read back.
 """
 from __future__ import annotations
 
@@ -17,6 +25,43 @@ import json
 from pathlib import Path
 import time
 import wave
+
+
+def mem_available_bytes() -> int | None:
+    """Host MemAvailable from /proc/meminfo, or None where Linux does not provide it."""
+    try:
+        for line in Path("/proc/meminfo").read_text().splitlines():
+            if line.startswith("MemAvailable:"):
+                return int(line.split()[1]) * 1024
+    except (OSError, ValueError):
+        pass
+    return None
+
+
+def memory_fields(torch_module) -> dict:
+    """Metadata for a log row: host MemAvailable and this process's CUDA allocator state."""
+    fields = {"memAvailableBytes": mem_available_bytes(), "cudaAllocatedBytes": None,
+              "cudaReservedBytes": None, "cudaMaxReservedBytes": None}
+    cuda = getattr(torch_module, "cuda", None)
+    try:
+        if cuda is not None and cuda.is_available():
+            fields.update(cudaAllocatedBytes=int(cuda.memory_allocated()),
+                          cudaReservedBytes=int(cuda.memory_reserved()),
+                          cudaMaxReservedBytes=int(cuda.max_memory_reserved()))
+    except Exception:
+        pass
+    return fields
+
+
+def release_cuda_cache(torch_module) -> float | None:
+    """Return unused allocator blocks to the device; seconds taken, or None without CUDA."""
+    cuda = getattr(torch_module, "cuda", None)
+    if cuda is None or not cuda.is_available():
+        return None
+    started = time.monotonic()
+    cuda.synchronize()
+    cuda.empty_cache()
+    return round(time.monotonic() - started, 3)
 
 
 def write_wav(path: Path, samples, rate: int) -> None:
@@ -90,6 +135,10 @@ def main() -> int:
         wall = time.monotonic() - started
         if len(wavs) != len(batch):
             raise SystemExit(f"batch {batch[0]['id']}: TTS returned {len(wavs)} outputs for {len(batch)} rows")
+        reserved_before_release = memory_fields(torch)["cudaReservedBytes"]
+        release_seconds = release_cuda_cache(torch)
+        memory = memory_fields(torch) | {"cudaReservedBeforeReleaseBytes": reserved_before_release,
+                                         "releaseSeconds": release_seconds}
         per_row = wall / len(batch)
         batch_seconds = 0.0
         for row, wav in zip(batch, wavs):
@@ -99,13 +148,13 @@ def main() -> int:
                 seconds = handle.getnframes() / handle.getframerate()
             batch_seconds += seconds
             entry = {"id": row["id"], "seconds": round(seconds, 3),
-                     "wallSeconds": round(per_row, 3), "seed": args.seed, "batchSize": len(batch)}
+                     "wallSeconds": round(per_row, 3), "seed": args.seed, "batchSize": len(batch), **memory}
             log.write(json.dumps(entry, ensure_ascii=False) + "\n")
             log.flush()
             print(json.dumps(entry), flush=True)
         batch_entry = {"batchIndex": start // batch_size, "ids": [row["id"] for row in batch],
                        "seed": args.seed, "batchSize": len(batch),
-                       "wallSeconds": round(wall, 3), "audioSeconds": round(batch_seconds, 3)}
+                       "wallSeconds": round(wall, 3), "audioSeconds": round(batch_seconds, 3), **memory}
         batch_log.write(json.dumps(batch_entry, ensure_ascii=False) + "\n")
         batch_log.flush()
         print(json.dumps(batch_entry), flush=True)
