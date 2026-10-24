@@ -4,6 +4,7 @@ Two guards: every listed file exists (and is tracked), and the manifest equals t
 statically traced import graph, so a new dependency of a Layer 2 entry fails here until
 it is reviewed into the closure with ``python3 tools/development/layer2_code_closure.py --write``.
 """
+import ast
 from pathlib import Path
 import subprocess
 import unittest
@@ -113,6 +114,29 @@ class CodeIdentityTests(unittest.TestCase):
                                  - set(code_closure.files(ROOT)))
         self.assertTrue(outside_schemas)
         self.assertNotIn(outside_schemas[0], modules)
+
+
+class RendererIdentityTests(unittest.TestCase):
+    """group_plan reads the frozen renderer sound identity from audio/identity.py, so the
+    TTS renderer stack stays out of the Layer 2 closure; renderer.py keeps its own copy
+    because it sits inside the waiver's frozen closure."""
+
+    def test_identity_module_matches_the_renderer_and_has_no_imports(self):
+        from tongxing_production.audio import identity as audio_identity
+        from tongxing_production.audio import renderer
+        self.assertEqual(audio_identity.RENDERER_SOUND_IDENTITY_SHA256, renderer.RENDERER_SOUND_IDENTITY_SHA256)
+        tree = ast.parse((ROOT / tracer.PACKAGE / 'audio/identity.py').read_text())
+        imports = [node for node in ast.walk(tree) if isinstance(node, (ast.Import, ast.ImportFrom))]
+        self.assertEqual([getattr(node, 'module', None) for node in imports], ['__future__'])
+
+    def test_renderer_stack_is_outside_the_closure(self):
+        files = set(code_closure.files(ROOT))
+        self.assertIn(tracer.PACKAGE + 'audio/identity.py', files)
+        for name in ('audio/renderer.py', 'audio/anomaly.py', 'audio/recovery.py',
+                     'compute/spark_tts_replica_pool.py', 'compute/spark_tts_window_scheduler.py',
+                     'compute/bounded_audio_cpu.py'):
+            self.assertNotIn(tracer.PACKAGE + name, files)
+        self.assertNotIn('tools/ops/render_multilingual_voice_demos.py', files)
 
 
 if __name__ == '__main__':

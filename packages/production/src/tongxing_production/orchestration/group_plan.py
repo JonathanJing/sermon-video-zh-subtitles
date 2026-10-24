@@ -80,7 +80,8 @@ def current_identities(manifest: dict, base: Path) -> dict:
     """
     from ..text import candidate, models
     from ..text import policy as policy_tools
-    from ..audio import renderer, screening
+    from ..audio import identity as audio_identity
+    from ..audio import screening
     from ..review import audio_qc, waiver
     locales = {}
     for locale, entry in manifest["locales"].items():
@@ -96,7 +97,7 @@ def current_identities(manifest: dict, base: Path) -> dict:
         }
     return {"runnerImplementationSha256": models.RUNNER_PRODUCTION_IDENTITY_SHA256,
             "machineQcImplementationSha256": waiver.implementation_sha256(),
-            "rendererSoundIdentitySha256": renderer.RENDERER_SOUND_IDENTITY_SHA256,
+            "rendererSoundIdentitySha256": audio_identity.RENDERER_SOUND_IDENTITY_SHA256,
             "asrImplementationSha256": screening.implementation_sha256(),
             "audioQcThresholdsSha256": records.json_sha256(audio_qc.THRESHOLDS),
             "locales": locales}
