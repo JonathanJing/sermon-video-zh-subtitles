@@ -73,7 +73,7 @@
 
 八个独立 spawn 进程各加载同一授权 checkpoint，全部 ready 后按 job 原始索引的固定八句窗口分配，seed 为基础值加窗口起始索引；419 句分为 53 个窗口，末批 3 句。最多八个未消费窗口，加上父进程正在处理的当前窗口，返回音频最多驻留九个窗口。模型副本跨窗口驻留；不让八个完整 renderer 同时操作同一目录。主进程按原顺序校验数量、身份、有限波形和采样率，保存、完整解码、hash、commit、receipt，再执行原排程与整轨组装。artifact root 的非阻塞文件锁覆盖正式输入校验、单元写入及组装，重复执行直接拒绝。
 
-模型加载前、等待结果期间及每次派发／取出结果时检查 Linux `/proc/meminfo` 的 `MemAvailable`，低于 **24 GiB** 即停止本次拥有的子进程；默认加载和单窗口生成超时均为 600 秒。等待轮询为 0.2 秒，但单批 IPC 反序列化和父进程媒体验证期间不是连续内存采样。保护基于宿主统一内存，不能把 CUDA、cgroup 与宿主数值相加；此路径要求 Spark/Linux，未自动退回 MacBook。
+模型加载前先做整池预算准入：`MemAvailable` 须不低于 24 GiB 保留线加每副本 9 GiB（2026-10-23 实测每副本从加载前到运行最低点峰值 8.1 GiB，见 [内存对照](../data/benchmarks/spark-tts-memory-ab/2026-10-23/comparison.json)），8 副本即 96 GiB，不够则在任何子进程创建前拒绝并写 `admission` 事件。pool 在 spawn 前导出 `PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True`（环境里已有不同值则拒绝），每个 worker 在每窗口后 `torch.cuda.empty_cache()`；这两项合为 intent 的 `replicaMemoryPolicy=release_cuda_cache_expandable_segments_v1`。同日对照中基线每窗口多保留约 1 GiB 且第 41 窗触发保护，三个启用臂 48 窗全部完成、可用内存持平、WAV 字节一致、匹配窗口生成时间差异 1% 以内，因此没有该字段的旧 intent 按兼容规则视为同一声音。运行中仍在等待结果期间及每次派发／取出结果时检查 `MemAvailable`，低于 **24 GiB** 即停止本次拥有的子进程；每个事件记录 `MemAvailable`、父进程 RSS 和各 worker 的 RSS 与 CUDA 分配器计数；默认加载和单窗口生成超时均为 600 秒。等待轮询为 0.2 秒，但单批 IPC 反序列化和父进程媒体验证期间不是连续内存采样。保护基于宿主统一内存，不能把 CUDA、cgroup 与宿主数值相加；此路径要求 Spark/Linux，未自动退回 MacBook。
 
 失败后保留已写的 SHA commit 和正式收据，只清理当前 pool 拥有的进程；续跑重新准入整个 job，只合成包含缺失单元的固定窗口，完整重放该窗口的全部成员，已提交的邻居字节不变。全部音频可复用时不创建模型进程。任意未来单元身份或音频 hash 不符会在加载前失败。`replica-runtime.json` 记录 worker PID、加载／生成耗时、窗口索引及采样到的最低可用内存，不记录证道正文；`closed` 仅表示 pool 关闭。成功依然以完整 manifest／单元收据为准，ASR 与人耳听审仍独立待完成。原逐单元 accounting 计量父进程的有序写入和等待，真实重叠计算耗时见 replica runtime，不把等待时间相加作为 GPU 墙钟。
 
