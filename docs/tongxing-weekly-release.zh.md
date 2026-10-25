@@ -198,6 +198,8 @@ python3 experiments/sermon-dubbing-poc/weekly_release.py record-published \
 
 从精确 `pageId` 的 v3／v4 catalog、已发布内容与发行包读取标题、系列、日期、讲员、经文和审核状态；不能按“最新一周”或文件夹名猜测。先按[内容 brief 流程](tongxing-weekly-poster-content-brief.zh.md)核对本篇画面依据，由内置 ImageGen 生成无文字主视觉，并保存实际 prompt。渲染器负责单行标题、正文、官方 App Store 徽章与双二维码，不让图像模型绘制文字或二维码。正式网页码完整绑定 `?week=<pageId>&contentLang=<locale>&lang=<interfaceLang>`；App 下载码使用正式商店身份。
 
+用户明确要求主标题只写讲题、而发布包 `title` 又以 ` · <scripture>` 重复经文时，使用 `--title-without-repeated-scripture`；只改变海报显示标题，经文栏及发布包原题保留。后缀必须与同语言正式经文字段完全一致，否则入口失败。使用新输出目录保留前版收据；重做上传时保留旧图片，只把本周公告指向新图。
+
 最终逐语言检查 `poster.png` 与 `poster-preview.png` 中两个二维码的完整 URL、标题不裁切、元数据、免责声明、徽章与留白；浏览器核对对应页面、语言和音轨。目视通过后用同参数追加 `--visual-reviewed`，只记录 Codex 的机器目视 QA，`humanApproval` 保持 `false`。交付每语言图片和 `poster-receipt.json`，分别报告页面发布、海报 QA、上传及真机结果。
 
 ### 多语言已发布页面海报（周更与临时制作的统一入口）

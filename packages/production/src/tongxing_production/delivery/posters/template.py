@@ -31,6 +31,14 @@ def title_lines(title, locale):
     return ' '.join(title.split())
 
 
+def title_without_repeated_scripture(title, scripture):
+    """Show the sermon name when a published title repeats its scripture field."""
+    name, separator, repeated = title.rpartition(' · ')
+    if not separator or not name.strip() or repeated.strip() != scripture.strip():
+        raise ValueError('poster title must end with the exact published scripture to shorten it')
+    return title_lines(name, '')
+
+
 def apply_template(bundle):
     brief = bundle['brief']
     locale = brief['locale']

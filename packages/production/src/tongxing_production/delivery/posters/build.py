@@ -14,7 +14,7 @@ from urllib.parse import urlencode, urlsplit
 from urllib.request import Request, urlopen
 
 from .files import digest, read, write
-from .template import apply_template, verify_outputs, prepare_badges, add_english_reference
+from .template import apply_template, verify_outputs, prepare_badges, add_english_reference, title_without_repeated_scripture
 
 COPY = {
     'zh-Hans': dict(lang='zh', brand='同行', eyebrow='本周证道 · 中文',
@@ -128,7 +128,8 @@ def target_source(page, target, catalog_version):
     return page['id'], page['sourceIdentitySha256'], page.get('sourceMediaSha256')
 
 
-def load_sources(release, page_id, origin, english_reference=None, locales=None):
+def load_sources(release, page_id, origin, english_reference=None, locales=None,
+                 title_without_scripture=False):
     public = release / 'public'
     # New clients read v4 first; v3 is its human-only projection and lacks machine-checked weeks.
     name, version = next((row for row in CATALOGS if (public / row[0]).is_file()), CATALOGS[-1])
@@ -195,6 +196,10 @@ def load_sources(release, page_id, origin, english_reference=None, locales=None)
         bundles[locale] = dict(brief=brief, source=source)
     for bundle in bundles.values():
         apply_template(bundle)
+        if title_without_scripture:
+            brief = bundle['brief']
+            brief['displayTitle'] = title_without_repeated_scripture(brief['title'], brief['scripture'])
+            bundle['source']['posterTitlePolicy'] = 'omit_exact_repeated_scripture_v1'
     if english_reference is not None:
         add_english_reference(bundles, english_reference)
     return bundles, checks
@@ -224,6 +229,8 @@ def run():
     parser.add_argument('--non-production-proof', action='store_true',
                         help='Allow a Beta/Dev origin; outputs are labeled as non-production proofs')
     parser.add_argument('--english-reference', help='Source-bound English title/series/scripture JSON; references Chinese content, not an English release')
+    parser.add_argument('--title-without-repeated-scripture', action='store_true',
+                        help='Show only the sermon name when each published title ends with its exact scripture field')
     parser.add_argument('--art')
     parser.add_argument('--art-prompt')
     parser.add_argument('--visual-reviewed', action='store_true')
@@ -235,12 +242,15 @@ def run():
     production = origin == PRODUCTION_ORIGIN
     bundles, checks = load_sources(release, args.page_id, origin,
                                    read(args.english_reference) if args.english_reference else None,
-                                   args.locales.split(',') if args.locales else None)
+                                   args.locales.split(',') if args.locales else None,
+                                   args.title_without_repeated_scripture)
     if bool(args.art) != bool(args.art_prompt) or (args.visual_reviewed and not args.art):
         raise ValueError('render/review requires both --art and --art-prompt')
     out.mkdir(parents=True, exist_ok=True)
     scope_path = out / 'poster-scope.json'
     scope = dict(pageId=args.page_id, locales=list(bundles), origin=origin, productionOrigin=production)
+    if args.title_without_repeated_scripture:
+        scope['posterTitlePolicy'] = 'omit_exact_repeated_scripture_v1'
     if scope_path.exists() and read(scope_path) != scope:
         raise ValueError('poster language scope changed; use a fresh output directory')
     write(scope_path, scope)

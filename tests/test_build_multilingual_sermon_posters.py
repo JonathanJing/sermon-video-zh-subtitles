@@ -57,6 +57,28 @@ class MultilingualPosterTests(unittest.TestCase):
             self.assertEqual(parse_qs(url.query), dict(week=['week-id'], contentLang=[locale], lang=[poster.COPY[locale]['lang']]))
             self.assertEqual(brief['title'], 'Title ' + locale)
 
+    def test_explicit_title_policy_omits_only_an_exact_repeated_scripture(self):
+        for locale, target in self.page['targets'].items():
+            package = poster.read(self.public / target['releasePackageUrl'].lstrip('/'))
+            content_path = next(asset['path'] for asset in package['assets'] if asset['role'] == 'content')
+            content = poster.read(self.public / content_path.lstrip('/'))
+            content['title'] = f'Sermon {locale} · {content["scripture"]}'
+            package['assets'][0]['sha256'] = self.save(content_path, content)
+            target['releasePackageJsonSha256'] = self.save(target['releasePackageUrl'], package)
+        self.save_catalog()
+        bundles, _ = poster.load_sources(self.release, 'week-id', 'https://example.web.app',
+                                         title_without_scripture=True)
+        for locale, bundle in bundles.items():
+            self.assertEqual(bundle['brief']['title'], f'Sermon {locale} · Revelation 4–5')
+            self.assertEqual(bundle['brief']['displayTitle'], f'Sermon {locale}')
+            self.assertEqual(bundle['source']['posterTitlePolicy'], 'omit_exact_repeated_scripture_v1')
+            self.assertEqual(bundle['brief']['scripture'], 'Revelation 4–5')
+
+    def test_title_policy_rejects_a_nonmatching_suffix(self):
+        with self.assertRaisesRegex(ValueError, 'exact published scripture'):
+            poster.load_sources(self.release, 'week-id', 'https://example.web.app',
+                                title_without_scripture=True)
+
     def make_mixed_source_v5(self):
         self.page['sourceMode'] = 'per_target'
         del self.page['sourceIdentitySha256']
