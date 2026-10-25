@@ -1,0 +1,62 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261024-sat400-prep",
+  "runs": [
+    {
+      "label": "sat400-prep",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/weekend-live/2026-10-25/sat400-prep",
+      "skipped": {
+        ".sha256": 1,
+        ".json": 5,
+        ".wav": 67,
+        ".txt": 1,
+        ".md": 1
+      }
+    }
+  ],
+  "files": [
+    {
+      "run": "sat400-prep",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 320,
+      "truncated": false,
+      "sha256": "29fb4c53d5b9a4aae95043c832f72e2baed037d7bf25abdc64d416e3478c0489",
+      "redactions": {}
+    },
+    {
+      "run": "sat400-prep",
+      "path": "preflight.json",
+      "kind": "whole",
+      "bytes": 1010,
+      "truncated": false,
+      "sha256": "ca33d900c8f2992c66798b1a1df6dcfa4bd5f88aeff34653a10a80f27d3c9729",
+      "redactions": {
+        "email": 1
+      }
+    },
+    {
+      "run": "sat400-prep",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 3227,
+      "truncated": false,
+      "sha256": "810342f75f6ddd6a3663141cecc2671432e8ce27f0c4a9207460f4e927371a3f",
+      "redactions": {}
+    },
+    {
+      "run": "sat400-prep",
+      "path": "timings.tsv",
+      "kind": "whole",
+      "bytes": 169,
+      "truncated": false,
+      "sha256": "d7fadcb0dd38a8c0bd4b3c65083741c9d69e3f5d77ff0c2673767379b7114b46",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}
