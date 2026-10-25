@@ -7,6 +7,13 @@ const RECEIPT_RETENTION_MS = 365 * 24 * 60 * 60 * 1000;
 const SHA = /^[0-9a-f]{64}$/;
 const TOKEN = /^(?:[0-9a-f]{2}){16,256}$/;
 const IDENTIFIER = /^[A-Za-z0-9_-]+$/;
+const BODIES = {
+  'zh-Hans': { audio: '打开同行查看海报、阅读并收听本周证道。', text: '打开同行查看海报并阅读本周证道。' },
+  en: { audio: 'Open Tongxing to view the poster, read and listen to this week’s sermon.', text: 'Open Tongxing to view the poster and read this week’s sermon.' },
+  ko: { audio: '동행에서 포스터를 보고 이번 주 설교를 읽고 들어보세요.', text: '동행에서 포스터를 보고 이번 주 설교를 읽어 보세요.' },
+  es: { audio: 'Abre Tongxing para ver el cartel, leer y escuchar el sermón de esta semana.', text: 'Abre Tongxing para ver el cartel y leer el sermón de esta semana.' },
+  vi: { audio: 'Mở Tongxing để xem áp phích, đọc và nghe bài giảng tuần này.', text: 'Mở Tongxing để xem áp phích và đọc bài giảng tuần này.' },
+};
 
 export function sha256(value) { return createHash('sha256').update(value).digest('hex'); }
 const asDate = (value) => value?.toDate ? value.toDate() : value;
@@ -41,7 +48,7 @@ async function boundedBytes(path, maxBytes = 5_000_000) {
   return Buffer.concat(chunks);
 }
 
-export async function verifiedPublication() {
+export async function verifiedPublication(requestedPageID = null) {
   let catalog;
   for (const version of ['v5', 'v4', 'v3']) {
     try {
@@ -55,7 +62,7 @@ export async function verifiedPublication() {
       if (error.message !== 'published_content_absent' || version === 'v3') throw error;
     }
   }
-  const pageID = catalog.defaultPageId ?? catalog.defaultPageID;
+  const pageID = requestedPageID ?? catalog.defaultPageId ?? catalog.defaultPageID;
   if (!IDENTIFIER.test(pageID ?? '')) throw new Error('invalid_default_page');
   const pages = catalog.pages.filter((page) => page.id === pageID);
   if (pages.length !== 1 || pages[0].simulationOnly || pages[0].diagnosticOnly) throw new Error('invalid_default_page');
@@ -65,6 +72,7 @@ export async function verifiedPublication() {
     throw new Error('announcement_schema_mismatch');
   }
   const byLocale = {};
+  const copy = {};
   for (const locale of LOCALES) {
     const target = page.targets?.[locale];
     if (!target || !['human_reviewed', 'machine_checked'].includes(target.contentStatus) ||
@@ -84,13 +92,18 @@ export async function verifiedPublication() {
         release.document.pageId !== edition || release.document.targetLocale !== locale ||
         release.document.contentStatus !== target.contentStatus ||
         release.document.audioStatus !== target.audioStatus) throw new Error('release_binding_mismatch');
+    const sourceIdentity = catalog.schemaVersion === 'sermon-multilingual-catalog-v5' && page.sourceMode === 'per_target'
+      ? target.sourceIdentitySha256 : page.sourceIdentitySha256;
+    if (!SHA.test(sourceIdentity ?? '')) throw new Error('source_binding_missing');
     const posters = sidecar.announcements.filter((item) => item.pageID === pageID && item.locale === locale &&
       item.releaseSHA256 === target.releasePackageJsonSha256 &&
-      item.sourceIdentitySHA256 === target.sourceIdentitySha256);
+      item.sourceIdentitySHA256 === sourceIdentity);
     if (posters.length !== 1 || !SHA.test(posters[0].poster?.sha256 ?? '') ||
         !/^\/posters\/[A-Za-z0-9_/-]+\.png$/.test(posters[0].poster.url)) {
       throw new Error('poster_binding_missing');
     }
+    if (typeof posters[0].title !== 'string' || !posters[0].title.trim() ||
+        posters[0].title.length > 100) throw new Error('announcement_title_invalid');
     // The notification carries no image attachment. A verified App poster is
     // required because its tap destination promises a same-language poster.
     const posterBytes = await boundedBytes(posters[0].poster.url);
@@ -101,9 +114,11 @@ export async function verifiedPublication() {
       schemaVersion: 'tongxing-production-notification-v1', environment: 'production',
       pageID, locale, releaseSHA256: target.releasePackageJsonSha256,
     };
+    copy[locale] = { title: posters[0].title,
+      body: BODIES[locale][target.audioStatus === 'audio_unavailable' ? 'text' : 'audio'] };
   }
   if (!Object.keys(byLocale).length) throw new Error('no_published_locales');
-  return { pageID, date: page.date, notices: byLocale };
+  return { pageID, date: page.date, notices: byLocale, copy };
 }
 
 export function eligibleSubscriptions(rows, publication, now = new Date()) {

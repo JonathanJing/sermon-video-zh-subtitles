@@ -3,7 +3,7 @@ import { randomBytes, randomUUID } from 'node:crypto';
 import test from 'node:test';
 import { PushApiError, createSourceLimiter, createSubscriptionService,
   parseSubscriptionRequest } from '../core.mjs';
-import { dispatchOne, eligibleSubscriptions, sha256 } from '../send-core.mjs';
+import { dispatchOne, eligibleSubscriptions, sha256, verifiedPublication } from '../send-core.mjs';
 
 class MemoryStore {
   rows = new Map();
@@ -26,6 +26,46 @@ const request = (seq = 1, extra = {}) => ({ schemaVersion: 1, action: 'upsert',
 const deleteRequest = (seq) => ({ schemaVersion: 1, action: 'delete', installationId, secret, seq });
 const expectCode = async (promise, status, code) => assert.rejects(promise,
   (error) => error instanceof PushApiError && error.status === status && error.code === code);
+
+test('explicit published page is verified even while catalog default remains old', async () => {
+  const pageID = 'new_week';
+  const locale = 'zh-Hans';
+  const releasePath = `/releases-v2/${pageID}/${locale}.json`;
+  const release = Buffer.from(JSON.stringify({ schemaVersion: 'sermon-target-language-release-package-v2',
+    status: 'published_http_verified', httpVerification: { status: 'pass' }, pageId: pageID,
+    targetLocale: locale, contentStatus: 'human_reviewed', audioStatus: 'human_reviewed' }));
+  const poster = Buffer.from('verified poster bytes');
+  const posterPath = `/posters/${pageID}/zh-Hans-poster.png`;
+  const sourceIdentitySha256 = 'a'.repeat(64);
+  const target = { contentStatus: 'human_reviewed', audioStatus: 'human_reviewed',
+    releasePackageUrl: releasePath, releasePackageJsonSha256: sha256(release), sourceIdentitySha256 };
+  const documents = new Map([
+    ['/multilingual-v5.json', Buffer.from(JSON.stringify({ schemaVersion: 'sermon-multilingual-catalog-v5',
+      defaultPageId: 'old_week', pages: [{ id: 'old_week', targets: {} },
+        { id: pageID, date: '2026-10-25', sourceIdentitySha256, targets: { [locale]: target } }] }))],
+    ['/weekly-announcements-v1.json', Buffer.from(JSON.stringify({ schemaVersion: 'tongxing-weekly-announcements-v1',
+      announcements: [{ pageID, locale, releaseSHA256: sha256(release), sourceIdentitySHA256: sourceIdentitySha256,
+        title: '耶稣得胜 · 启示录 12–13 章', poster: { url: posterPath, sha256: sha256(poster), bytes: poster.length } }] }))],
+    [releasePath, release], [posterPath, poster],
+  ]);
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async (url) => {
+    const bytes = documents.get(new URL(url).pathname);
+    const response = new Response(bytes ?? '', { status: bytes ? 200 : 404 });
+    Object.defineProperty(response, 'url', { value: url });
+    return response;
+  };
+  try {
+    const result = await verifiedPublication(pageID);
+    assert.equal(result.pageID, pageID);
+    assert.deepEqual(Object.keys(result.notices), [locale]);
+    assert.equal(result.copy[locale].title, '耶稣得胜 · 启示录 12–13 章');
+    assert.match(result.copy[locale].body, /查看海报/);
+    await assert.rejects(verifiedPublication(), /no_published_locales/);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
 
 test('strict request parsing rejects extra fields and malformed credential/token', () => {
   assert.equal(parseSubscriptionRequest(request()).deviceToken, deviceToken);

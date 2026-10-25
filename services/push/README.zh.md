@@ -1,6 +1,6 @@
 # 正式 App 订阅与 APNs 投递服务
 
-状态：订阅函数与生产 Hosting 路由已部署并完成合成请求核验；操作者只读计划查得零个有效订阅，**尚未群发，也未完成正式 App 真机订阅与接收验收**。本服务只负责已自愿开启通知的正式 App，固定 Bundle ID `com.jonathanjing.tongxing.dev`、生产 APNs 和 `https://ai-for-god-sermon-audio.web.app`。独立 Beta 的设备收据、token、密钥与 Dev 内容不接入此服务。
+状态：订阅函数与生产 Hosting 路由已部署并完成合成请求核验；2026-10-21 的操作者只读计划查得零个有效订阅，之后的实时数量须重新查询。**尚未群发，也未完成正式 App 真机订阅与接收验收**。本服务只负责已自愿开启通知的正式 App，固定 Bundle ID `com.jonathanjing.tongxing.dev`、生产 APNs 和 `https://ai-for-god-sermon-audio.web.app`。独立 Beta 的设备收据、token、密钥与 Dev 内容不接入此服务。
 
 ## 订阅合同
 
@@ -24,14 +24,14 @@
 
 ## 投递门禁与回执
 
-`send.mjs plan --out /private/path/plan.json` 只读**当前**生产 v5/v4/v3 目录：验证默认页、各语言发布包的公网原始字节 SHA、`published_http_verified`、对应公告与海报 PNG 字节 SHA，再快照活跃且未过 60 天的订阅。相同 APNs token 若出现多个安装记录，全部抑制并计数，避免语言不明确时发送。计划文件只含安装 ID、序号与 token 哈希，须在仓库外或忽略目录且权限 `0600`，15 分钟后失效。
+`send.mjs plan --page-id <精确已发布页面 ID> --out /private/path/plan.json` 只读**当前**生产 v5/v4/v3 目录：验证指定页、各语言发布包的公网原始字节 SHA、`published_http_verified`、对应公告与海报 PNG 字节 SHA，再快照活跃且未过 60 天的订阅。计划同时冻结各语言已发布公告标题与依据实际音频状态选择的正文，发送前重新核对。相同 APNs token 若出现多个安装记录，全部抑制并计数，避免语言不明确时发送。计划的收件人部分只含安装 ID、序号与 token 哈希，不含设备 token；文件须在仓库外或忽略目录且权限 `0600`，15 分钟后失效。
 
 `send.mjs send --plan /private/path/plan.json --key-config /private/path/apns-production.json` 才会逐个发送。私有 APNs 配置包含 `topic`, `environment`, `keyId`, `teamId`, `keyFile`，必须是**生产** topic、生产环境与独立私钥；配置和 `.p8` 均须 `0600`。Firebase Admin 凭据走操作者的 ADC/IAM，不写入仓库或命令参数。发送前在 `pushDispatches` 以 `安装 ID + 页面 + 语言 + release SHA` 原子认领，初态 `outcome_unknown`；APNs 明确返回 200 才写 `accepted`，明确错误写 `rejected`。网络错误、响应不明或回执更新失败保持未知，不自动重试；遇未知或拒绝即停止这一批，先核对 Firestore 账本与设备，再人工处理。Apple 200 是提供方接收，不等于设备显示、点击或海报验收。计划中的订阅若已退出、换 token 或语言，发送前会跳过。
 
-当前发送为**操作者受控批次**，没有自动每周群发定时器；一次执行覆盖该计划内所有有效订阅，而非仅本人设备。发布新内容后必须重新生成计划，避免用旧页面通知新收件人。内容页发布、APNs 回执、设备观察分别记录，不自动推断现场接收。
+当前发送为**操作者受控批次**，没有自动每周群发定时器；一次执行覆盖该计划内所有有效订阅，而非仅本人设备。计划必须显式绑定目标页面；发送时重新核对同一页面，不能随目录默认页变化而换页。发布新内容后必须重新生成计划。内容页发布、APNs 回执、设备观察分别记录，不自动推断现场接收。
 
 ## 部署与验收状态
 
-生产 Hosting 站在 Firebase 项目 `ai-for-god-caption-dev`。独立 Firestore Native 数据库 `sermon-push` 与运行身份 `sermon-push-runtime@ai-for-god-caption-dev.iam.gserviceaccount.com` 已建立；运行身份的数据库使用权限限定在该数据库。`sermonPushSubscription`（Functions v2，`us-west1`）已读回 `ACTIVE`，`sermon-push` 客户端规则拒绝直连。生产 Hosting 版本 `c2febd95227a047b` 在现有 `/api/**` 路由前加入 `/api/push/**`；部署前后公开资产哈希相同。公网合成登记与退出请求通过，测试记录现为 inactive，退出后只读运营计划为零个有效收件人。`server-config.example.json` 需复制为被忽略的 `server-config.json`；配置缺失或环境不符时函数启动失败。不要把本函数加入 Firebase Dev 的 Hosting 站。正式 App ID 的 Push Notifications capability 已启用；1.26.21（64）的 IPA 已核验生产 APNs 签名并进入 Rooted 内测，真机登记、单设备 APNs 接收仍需分别核验。
+生产 Hosting 站在 Firebase 项目 `ai-for-god-caption-dev`。独立 Firestore Native 数据库 `sermon-push` 与运行身份 `sermon-push-runtime@ai-for-god-caption-dev.iam.gserviceaccount.com` 已建立；运行身份的数据库使用权限限定在该数据库。`sermonPushSubscription`（Functions v2，`us-west1`）已读回 `ACTIVE`，`sermon-push` 客户端规则拒绝直连。生产 Hosting 版本 `c2febd95227a047b` 在现有 `/api/**` 路由前加入 `/api/push/**`；部署前后公开资产哈希相同。公网合成登记与退出请求通过，测试记录在 2026-10-21 退出后为 inactive；当时计划为零个有效收件人，后续以新的只读计划为准。`server-config.example.json` 需复制为被忽略的 `server-config.json`；配置缺失或环境不符时函数启动失败。不要把本函数加入 Firebase Dev 的 Hosting 站。正式 App ID 的 Push Notifications capability 已启用；1.26.21（64）的 IPA 已核验生产 APNs 签名并进入 Rooted 内测，真机登记、单设备 APNs 接收仍需分别核验。
 
-本地定向验证：`npm ci --ignore-scripts && npm test`；`node --check index.mjs && node --check send.mjs`。真实生产目录的只读预检可调用 `verifiedPublication()`；它不会读取 Firestore 或发送 APNs。运营前复核 npm 锁文件、IAM、数据库 TTL（`pushSubscriptions.expiresAt`、`pushRateLimits.expiresAt`、`pushDispatches.expiresAt`）、Hosting rewrite、签名和私有配置。部署后的真实订阅登记、退出、单设备 APNs、计划全量投递分别留独立脱敏回执；测试通知或无订阅计划不构成群发验收。
+本地定向验证：`npm ci --ignore-scripts && npm test`；`node --check index.mjs && node --check send.mjs`。真实生产目录的只读预检可调用 `verifiedPublication('<精确页面 ID>')`；它不会读取 Firestore 或发送 APNs。运营前复核 npm 锁文件、IAM、数据库 TTL（`pushSubscriptions.expiresAt`、`pushRateLimits.expiresAt`、`pushDispatches.expiresAt`）、Hosting rewrite、签名和私有配置。部署后的真实订阅登记、退出、单设备 APNs、计划全量投递分别留独立脱敏回执；测试通知或无订阅计划不构成群发验收。
