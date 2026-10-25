@@ -631,6 +631,20 @@ async function loadVariant(fetchImpl, page, locale, timeoutMs, pageSignal, allow
   };
 }
 
+// A video variant declares its source clock (full video or original-recording
+// window). A podcast has none, so its binding's own window is accepted when it
+// covers the reviewed track, as the iOS client does.
+function sourceClockMatches(m, variant) {
+  if (variant.sourceFingerprintWindow || variant.sourceDurationSeconds !== undefined) {
+    return m.sourceStartSeconds === (variant.sourceFingerprintWindow?.startSeconds ?? 0)
+      && m.sourceEndSeconds === (variant.sourceFingerprintWindow?.endSeconds ?? variant.sourceDurationSeconds);
+  }
+  return variant.sourceRoute === 'podcast'
+    && Number.isFinite(m.sourceStartSeconds) && m.sourceStartSeconds >= 0
+    && Number.isFinite(m.sourceEndSeconds) && m.sourceEndSeconds > m.sourceStartSeconds
+    && Math.abs(variant.tracks[0].durationSeconds - (m.sourceEndSeconds - m.sourceStartSeconds)) <= .1;
+}
+
 async function loadPage(fetchImpl, page, timeoutMs, pageSignal, allowDevCandidates, catalogVersion) {
   const errors = [];
   const variants = await Promise.all(LOCALES.filter(locale => page.targets[locale]).map(async locale => {
@@ -653,8 +667,7 @@ async function loadPage(fetchImpl, page, timeoutMs, pageSignal, allowDevCandidat
           && m.algorithmVersion === 'spectral-landmarks-v1' && m.pageId === editionId
           && HASH.test(m.sourceSha256) && m.sourceSha256 === variant.sourceSha256
           && m.trackSha256 === variant.tracks[0].sha256 && HASH.test(m.indexSha256)
-          && m.sourceStartSeconds === (variant.sourceFingerprintWindow?.startSeconds ?? 0)
-            && m.sourceEndSeconds === (variant.sourceFingerprintWindow?.endSeconds ?? variant.sourceDurationSeconds)
+          && sourceClockMatches(m, variant)
           && m.captureSeconds === 10
           && m.indexUrl === `/fingerprints/${m.indexSha256.slice(0, 16)}-landmarks.json`,
         'Invalid alignment track/source binding');
