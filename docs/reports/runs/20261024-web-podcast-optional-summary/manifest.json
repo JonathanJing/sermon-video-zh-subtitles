@@ -1,0 +1,77 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261024-web-podcast-optional-summary",
+  "runs": [
+    {
+      "label": "web-podcast-optional-summary-20261024",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/web-podcast-optional-summary-20261024",
+      "skipped": {
+        ".json": 414,
+        ".js": 16,
+        ".mjs": 99,
+        ".png": 78,
+        ".svg": 9,
+        ".srt": 6,
+        ".mp3": 180,
+        ".pdf": 12,
+        ".html": 75,
+        ".jpg": 3,
+        ".css": 9,
+        ".cache": 1,
+        ".lock": 1
+      }
+    }
+  ],
+  "files": [
+    {
+      "run": "web-podcast-optional-summary-20261024",
+      "path": "baseline/baseline-receipt.json",
+      "kind": "whole",
+      "bytes": 115213,
+      "truncated": false,
+      "sha256": "94625db3e1e0342c3f8f2b238fb6face230f8286aefa2a7623ec302a3ec9d8ef",
+      "redactions": {}
+    },
+    {
+      "run": "web-podcast-optional-summary-20261024",
+      "path": "candidate-from-pr/baseline-receipt.json",
+      "kind": "whole",
+      "bytes": 115213,
+      "truncated": false,
+      "sha256": "94625db3e1e0342c3f8f2b238fb6face230f8286aefa2a7623ec302a3ec9d8ef",
+      "redactions": {}
+    },
+    {
+      "run": "web-podcast-optional-summary-20261024",
+      "path": "candidate-main-e821690e/baseline-receipt.json",
+      "kind": "whole",
+      "bytes": 115213,
+      "truncated": false,
+      "sha256": "94625db3e1e0342c3f8f2b238fb6face230f8286aefa2a7623ec302a3ec9d8ef",
+      "redactions": {}
+    },
+    {
+      "run": "web-podcast-optional-summary-20261024",
+      "path": "candidate-main-e821690e/hosting-publish.log",
+      "kind": "log",
+      "bytes": 0,
+      "truncated": false,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "redactions": {}
+    },
+    {
+      "run": "web-podcast-optional-summary-20261024",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 1377,
+      "truncated": false,
+      "sha256": "f7edb0786704b59cc726457b903f92f7462564e6b08a24342302f2c3f6f11b30",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}
