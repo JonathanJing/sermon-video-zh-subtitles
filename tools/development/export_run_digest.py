@@ -528,7 +528,14 @@ def index_markdown(name: str, dest: Path, entries: list[dict], runs: list[dict])
             if rows:
                 out += ["", f"Timings `{entry['path']}`:", "", "| " + " | ".join(rows[0]) + " |",
                         "|" + "---|" * len(rows[0])] + ["| " + " | ".join(r) + " |" for r in rows[1:]]
-                failed = [r[0] for r in rows[1:] if len(r) > 1 and r[1] != "pass"]
+                header = [c.strip().lower() for c in rows[0]]
+                # Only a timings table that carries a status column can name failed stages; the
+                # sentence-first line writes stage/computeSeconds/waitingSeconds/reworkSeconds, and
+                # reading column 1 as a status flagged every stage (2026-10-24 run).
+                status_index = header.index("status") if "status" in header else None
+                failed = ([r[0] for r in rows[1:]
+                           if len(r) > status_index and r[status_index].strip().lower() not in ("pass", "ok", "completed", "finished")]
+                          if status_index is not None else [])
                 if failed:
                     out += ["", "Failed stages: " + ", ".join(f"`{s}`" for s in failed)]
         for entry in (e for e in entries if e["run"] == label and e["kind"] == "budget" and "omitted" not in e):
