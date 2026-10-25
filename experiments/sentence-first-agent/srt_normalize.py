@@ -244,9 +244,6 @@ def main(argv=None) -> int:
     return 0
 
 
-if __name__ == "__main__":
-    raise SystemExit(main())
-
 def _mark(run, stage: str, event: str) -> None:
     try:
         from runlog import mark
@@ -255,3 +252,7 @@ def _mark(run, stage: str, event: str) -> None:
         _sys.path.insert(0, str(Path(__file__).resolve().parent))
         from runlog import mark
     mark(run, stage, event)
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
