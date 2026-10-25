@@ -1,0 +1,72 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261025-feedback-catalog-sync",
+  "runs": [
+    {
+      "label": "feedback-catalog-sync-20261025",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/feedback-catalog-sync-20261025",
+      "skipped": {
+        ".json": 12,
+        ".sh": 1,
+        ".sha256": 2,
+        ".zip": 1,
+        "(none)": 1,
+        ".mjs": 5
+      }
+    }
+  ],
+  "files": [
+    {
+      "run": "feedback-catalog-sync-20261025",
+      "path": "deploy-receipt.json",
+      "kind": "whole",
+      "bytes": 2250,
+      "truncated": false,
+      "sha256": "aaceaff6cd989a6d18c0dfdc6045d517ac4a8ef93e2f012d5bf6cc0b19b980ee",
+      "redactions": {}
+    },
+    {
+      "run": "feedback-catalog-sync-20261025",
+      "path": "deploy.log",
+      "kind": "log",
+      "bytes": 2518,
+      "truncated": false,
+      "sha256": "3514c5dc9e7b7d6944d19ad84f1f5685812d590acdd5f17161194215e6d875cb",
+      "redactions": {
+        "email": 2
+      }
+    },
+    {
+      "run": "feedback-catalog-sync-20261025",
+      "path": "local-catalog-check.log",
+      "kind": "log",
+      "bytes": 599,
+      "truncated": false,
+      "sha256": "84b1c2d1293e584d137907c9090c10602bc8033c9ba7061d09e56f39d0adefe9",
+      "redactions": {}
+    },
+    {
+      "run": "feedback-catalog-sync-20261025",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 270,
+      "truncated": false,
+      "sha256": "e820bf69ad176464cca933b5a050c9dfed154c367b4683611d553ae585b4da8c",
+      "redactions": {}
+    },
+    {
+      "run": "feedback-catalog-sync-20261025",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 1407,
+      "truncated": false,
+      "sha256": "0fa85a4d74609affded50f4a233920eab8e4d110f1bd721cf3afec16387b629b",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

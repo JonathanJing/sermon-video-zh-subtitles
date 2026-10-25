@@ -1,0 +1,59 @@
+{
+  "schemaVersion": "sermon-feedback-catalog-sync-summary-v1",
+  "deliveryType": "four_layer_release",
+  "stage": "feedback_catalog_sync",
+  "pageId": "revelation-jesus-wins-20261025",
+  "revision": "sermon-feedback-api-00019-yik",
+  "previousRevision": "sermon-feedback-api-00018-nux",
+  "catalogSha256": "8da829642a10ced49abb7ca9ea26c8cc9e435072fa56b9e08416acc37f7668ed",
+  "sources": {
+    "previous": 34,
+    "unchangedExisting": 34,
+    "changedExisting": 0,
+    "removed": 0,
+    "added": 3,
+    "total": 37
+  },
+  "runtimeCodeChanged": false,
+  "deployedSourceMatchesLocal": true,
+  "apiSessionBeforeDeploy": {
+    "es": 400,
+    "ko": 400,
+    "zh-Hans": 400
+  },
+  "apiSessionAfterDeploy": {
+    "es": 200,
+    "ko": 200,
+    "zh-Hans": 200
+  },
+  "browserSmoke": {
+    "schemaVersion": "sermon-published-page-browser-smoke-v3",
+    "status": "pass",
+    "checkedAt": "2026-10-25T03:10:54.669067+00:00",
+    "locales": {
+      "zh-Hans": {
+        "status": "pass",
+        "problems": [],
+        "warnings": 5,
+        "elapsedMs": 5251
+      },
+      "ko": {
+        "status": "pass",
+        "problems": [],
+        "warnings": 5,
+        "elapsedMs": 5110
+      },
+      "es": {
+        "status": "pass",
+        "problems": [],
+        "warnings": 5,
+        "elapsedMs": 5320
+      }
+    }
+  },
+  "notRun": [
+    "device playback",
+    "iOS listening readback",
+    "venue acceptance"
+  ]
+}
