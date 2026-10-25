@@ -51,6 +51,12 @@
 - 另一会话的 `artifacts/weekend-live/live-capture-20261024-4pm/` 与硬链接 `artifacts/broadcast-20261024/` 未动；后者目录名像正式来源，但内容是 4 点场直播。
 - 没有 Spark job hold；Spark 上 llama-server 照常运行，未停。
 
+## 补充：P5 决定与 P9 彩排（同晚 18:20–19:00）
+
+- **P5：** 用户在对话中说“按照预热包里的来”。决定文件按语言插件的逐字检查做了归一：西语去冠词、韩文锁词干、Eric Geiger 改为仅审核参考（全名不出现，单独的 Eric 会误中 America），补上扫描器要求的 Adolf Hitler、World War、Nazi Germany。归一由 Claude 完成，用户未逐条复核；决定记录绑定预热包与决定文件的哈希，状态 `applies`。
+- **P9 工具：** `text.term_scope`（PR #1357）。在 4 点场转写（按预热包改正英文后切成 372 句，非 Layer 1 锚点）上，以上周三语草稿为底稿：三语都出草稿，31 条术语全部能指到单元，没有未覆盖的扫描名，试冻结通过。
+- **发现：** 上周 ko/es 草稿所钉插件哈希已过期，用 `text.policy freeze --language-review machine_qc` 冻结后重钉为当前哈希；上周 zh-Hans 草稿所钉的 `zh-Hans-weekly-auto-v1` 在当前代码里不存在，本周 zh-Hans 插件需要另选（候选 `zh-Hans-weekly-cuv-v1`，本篇有 4 处和合本直接引用）。
+
 ## 外部可见的变化
 
 无。没有 Dev 或 Production 发布，没有 TestFlight，没有推送受保护分支；只有本报告的文档 PR。
