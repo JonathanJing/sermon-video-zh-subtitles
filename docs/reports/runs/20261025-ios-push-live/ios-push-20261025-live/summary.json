@@ -1,0 +1,20 @@
+{
+  "status": "apns_accepted",
+  "scope": "formal App opt-in push for the published October 25 poster",
+  "pageID": "revelation-jesus-wins-20261025",
+  "codeCommit": "a2d63ada73f2d064a71ef8ebbdbd7f21b69b4031",
+  "planSha256": "c2b9e75e114afac178c03c5eb1ed8bd88577e8ec8bbee7e79e425455bcba1ec7",
+  "targetLocale": "zh-Hans",
+  "verifiedPublishedLocales": [
+    "zh-Hans",
+    "ko",
+    "es"
+  ],
+  "suppressedDuplicateTokens": 0,
+  "apnsAccepted": 1,
+  "apnsHttpStatus": 200,
+  "firestoreDispatchReadback": "accepted",
+  "deviceDisplay": "not_verified",
+  "tapToPoster": "not_verified",
+  "note": "The previously published App poster and release hashes were rechecked by the sender before dispatch. APNs 200 confirms provider acceptance only."
+}
