@@ -32,7 +32,7 @@ English index: [backlog.md](./backlog.md)
 |---|---|---|
 | `DEV-PREP-001` | P0 / `pending` | 验证 H1：一个周六抓取 4 点场链接、本地 ASR、与正式来源转写做对齐 diff，比较时长，导出运行报告并给出判定。完成条件：报告含相同段落比例、差异位置、时长比较与明确判定，零付费调用；连续三周重复后才把 H1 写成默认假设（设计第七节） |
 | `DEV-PREP-002` | P1 / `pending` | 术语覆盖预检：英文单元与 policy `seriesNames`/`properNames` 比对，列出出现但未批准的条目并生成 register rule 候选，作为 `rule_preflight` 的零付费步骤；即[Layer 2 定向修复](layer2-targeted-repair-and-resume.zh.md) R4 第 2 项。完成条件：在 `15030286` 来源包上离线运行，列出条目与当时人工补入的 `properNames` 一致；预检失败时无模型调用 |
-| `DEV-PREP-003` | P1 / `pending` | 预备产物合同：`artifacts/weekend-live/<sunday>/sat400-prep/` 目录与标签字段（`kind=rehearsal`、`service=sat400`、`humanApproval=false`），consumer 预检拒绝 rehearsal 转写（归 `DEV-R242-001`），P5 写 policy `properNames` 的流程，P9 对真实来源重签 policy v4 `termApprovalReceipt`。完成条件：拒绝规则测试通过；一次真实周更里术语收据在正式来源到达后 10 分钟内重签完成 |
+| `DEV-PREP-003` | P1 / `in_progress` | 预备产物合同：`artifacts/weekend-live/<sunday>/sat400-prep/` 目录与标签字段（`kind=rehearsal`、`service=sat400`、`humanApproval=false`），consumer 预检拒绝 rehearsal 转写（归 `DEV-R242-001`），P5 写 policy `properNames` 的流程，P9 对真实来源重签 policy v4 `termApprovalReceipt`。完成条件：拒绝规则测试通过；一次真实周更里术语收据在正式来源到达后 10 分钟内重签完成。2026-10-24 已实施 P9：`text/term_scope.py`（`tools/ops/run.py text.term_scope`），从决定文件和正式来源包／锚点生成三语 v4 草稿与术语收据，列出未覆盖的扫描名，试冻结并核对插件钉；`tests/test_term_scope.py` 7 项通过；在 4 点场 rehearsal 上三语试冻结通过，ko/es 插件钉过期、zh 所钉插件已不存在（运行报告 `20261024-sat400-prep`）。剩余：rehearsal 拒绝规则、真实周更计时 |
 | `DEV-PREP-004` | P1 / `pending` | 审核预热包（4 点场英文转写、术语与经文清单，封面标注 rehearsal）与差异报告生成器（4 点场 vs 正式来源）。完成条件：一次真实周更里审核者在正式来源到达前拿到预热包，全文审核时长与 10-18 周比较并记入运行报告 |
 | `DEV-PREP-005` | P2 / `pending` | 开工检查彩排作为周六 17:00 的只读定时步骤：用本周真实输入跑开工检查与预算规划，不派发付费请求。完成条件：连续两周彩排发现的问题在正式开工前修复；任务只读、无付费、无发布 |
 

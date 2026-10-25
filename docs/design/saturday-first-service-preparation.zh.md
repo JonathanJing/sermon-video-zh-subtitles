@@ -1,6 +1,6 @@
 # 周六 4 点场直播的预备用途：术语、经文、审核预热与链路彩排
 
-状态：**设计稿；未实现、未运行**。backlog 前缀 `DEV-PREP`（见第九节）。本页不改变任何现行门限、schema、豁免规则或发布流程；不授权付费、Spark 独占会话或发布。校准日期：2026-10-24。
+状态：**设计稿；P9 工具 `text.term_scope` 已实现（2026-10-24），其余未实现；2026-10-24 做了第一次 rehearsal（运行报告 `20261024-sat400-prep`）**。backlog 前缀 `DEV-PREP`（见第九节）。本页不改变任何现行门限、schema、豁免规则或发布流程；不授权付费、Spark 独占会话或发布。校准日期：2026-10-24。
 
 ## 一、背景与观察
 
@@ -68,6 +68,22 @@ H1 还没有被任何运行验证。它成立与否决定本页的价值上限�
 - **P7 开工检查彩排。** 用真实的本周输入跑现有的开工检查和预算规划，不派发任何付费请求。失败项在正式来源到达前修好。
 - **P8 差异报告。** 正式来源的英文转写出来后，与 4 点场转写做对齐 diff，输出：时长差、相同段落比例、正式版新增与删除的段落。它同时是 H1 的验证证据和审核者的"本场与预读稿有何不同"清单。
 - **P9 重签与冻结。** 用正式来源包哈希重签 `termApprovalReceipt`，冻结策略，按现有 runbook 派发。术语决定没有变化时，重签是分钟级动作。
+
+  P9 的工具是 `text.term_scope`（2026-10-24，`DEV-PREP-003`）。输入 P5 的决定文件（`sat400-prep-term-decisions-v1`，见第五节）、正式 English Source Package 与 anchor manifest，每个 locale 输出一份 v4 policy 草稿和一份报告：
+
+  ```bash
+  .venv/bin/python tools/ops/run.py text.term_scope --decisions <p5-decisions/term-decisions.json> \
+    --source-package <english-source-package.json> --anchor-manifest <anchor-manifest.json> \
+    --base zh-Hans=<本周 zh 草稿底稿> --base ko=<ko 底稿> --base es=<es 底稿> \
+    --reviewed-by <审核者> --reviewed-at <决定时间> --user-statement "<用户原话>" --out-dir <输出目录>
+  ```
+
+  - 决定里的词只要在正式英文的某个单元出现，就写进 `properNames` 和 `termApprovalReceipt`，收据行记下那个 `sourceUnitId`；没出现的列为 `decisionsAbsentFromSource`，不写入。
+  - 扫描器（`policy.source_scoped_proper_names`）找出的名字，既不在决定里也不在预测排除里的，列为 `uncoveredScannerNames`（带单元 ID），该 locale 不出草稿，等人决定。预测排除只保留扫描器真的产出的那些。
+  - 用到的系列名取决定里的目标，没有就沿用底稿；中文必须与系列名称表一致。
+  - 每份草稿在内存里试冻结一次（`freeze_policy` 加 `validate_source_scope`），并核对所钉插件与当前代码：`current`、`stale`、`missing` 或 `unbound`。冻结本身仍由操作者用 `text.policy freeze` 选择后端；ko/es 插件过期时加 `--language-review machine_qc` 重钉。
+  - 退出码：0 全部可冻结且插件为当前；2 缺决定或试冻结被拒；3 可冻结但有插件要先重钉。
+  - 收据上的人工批准来自操作者传入的 `--reviewed-by` 与 `--user-statement`，工具不推断批准。
 
 ## 五、预备产物的目录、标签与边界
 
