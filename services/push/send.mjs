@@ -15,14 +15,14 @@ function privateJSON(path) {
   return JSON.parse(readFileSync(file, 'utf8'));
 }
 function parseArgs(args) {
-  if (!['plan', 'send'].includes(args[0])) throw new Error('usage: node send.mjs plan --out PRIVATE_FILE | send --plan PRIVATE_FILE --key-config PRIVATE_FILE');
+  if (!['plan', 'send'].includes(args[0])) throw new Error('usage: node send.mjs plan --page-id PAGE_ID --out PRIVATE_FILE | send --plan PRIVATE_FILE --key-config PRIVATE_FILE');
   const options = { action: args[0] };
   for (let i = 1; i < args.length; i += 2) {
-    if (!['--out', '--plan', '--key-config'].includes(args[i]) || !args[i + 1]) throw new Error('invalid_arguments');
+    if (!['--out', '--plan', '--key-config', '--page-id'].includes(args[i]) || !args[i + 1]) throw new Error('invalid_arguments');
     options[args[i].slice(2).replace('-', '_')] = args[i + 1];
   }
-  if (options.action === 'plan' && (!options.out || options.plan || options.key_config)) throw new Error('invalid_arguments');
-  if (options.action === 'send' && (!options.plan || !options.key_config || options.out)) throw new Error('invalid_arguments');
+  if (options.action === 'plan' && (!options.out || !options.page_id || options.plan || options.key_config)) throw new Error('invalid_arguments');
+  if (options.action === 'send' && (!options.plan || !options.key_config || options.out || options.page_id)) throw new Error('invalid_arguments');
   return options;
 }
 function jwt(key, keyID, teamID) {
@@ -32,12 +32,7 @@ function jwt(key, keyID, teamID) {
   const signature = sign('sha256', Buffer.from(message), { key, dsaEncoding: 'ieee-p1363' }).toString('base64url');
   return message + '.' + signature;
 }
-const TITLES = {
-  'zh-Hans': '本周证道已更新', en: 'This week’s sermon is ready',
-  ko: '이번 주 설교가 준비되었습니다', es: 'El sermón de esta semana está listo',
-  vi: 'Bài giảng tuần này đã sẵn sàng',
-};
-function sendAPNsFactory(config, date) {
+function sendAPNsFactory(config, publication) {
   if (config.topic !== TOPIC || config.environment !== 'production' ||
       !/^[A-Z0-9]{10}$/.test(config.keyId ?? '') || !/^[A-Z0-9]{10}$/.test(config.teamId ?? '')) {
     throw new Error('production_apns_config_required');
@@ -50,7 +45,7 @@ function sendAPNsFactory(config, date) {
   }
   return async ({ deviceToken, notice, apnsID }) => {
     const payload = JSON.stringify({
-      aps: { alert: { title: TITLES[notice.locale], body: date }, sound: 'default' },
+      aps: { alert: publication.copy[notice.locale], sound: 'default' },
       tongxing: notice,
     });
     if (Buffer.byteLength(payload) > 4000) throw new Error('apns_payload_too_large');
@@ -88,7 +83,7 @@ function sendAPNsFactory(config, date) {
 }
 
 function planDigest(publication) {
-  return sha256(JSON.stringify([publication.pageID, publication.date, publication.notices]));
+  return sha256(JSON.stringify([publication.pageID, publication.date, publication.notices, publication.copy]));
 }
 async function subscriptions(db) {
   const snapshot = await db.collection('pushSubscriptions').where('active', '==', true).limit(5000).get();
@@ -98,12 +93,13 @@ async function subscriptions(db) {
 
 async function main() {
   const options = parseArgs(process.argv.slice(2));
+  const plan = options.action === 'send' ? privateJSON(options.plan) : null;
   const runtime = privateJSON(new URL('./server-config.json', import.meta.url).pathname);
   if (runtime.projectId !== 'ai-for-god-caption-dev' || runtime.databaseId !== 'sermon-push') {
     throw new Error('production_push_database_required');
   }
   const db = new Firestore({ projectId: runtime.projectId, databaseId: runtime.databaseId });
-  const publication = await verifiedPublication();
+  const publication = await verifiedPublication(options.action === 'plan' ? options.page_id : plan.pageID);
   const { eligible, suppressedDuplicates } = eligibleSubscriptions(await subscriptions(db), publication);
   const recipients = eligible.map((row) => ({ installationId: row.installationId, seq: row.seq,
     tokenHash: row.tokenHash, locale: row.locale }));
@@ -114,23 +110,23 @@ async function main() {
       throw new Error('private_plan_location_required');
     }
     const plan = { schemaVersion: 1, origin: ORIGIN, topic: TOPIC, environment: 'production',
-      pageID: publication.pageID, publicationDigest: planDigest(publication),
+      pageID: publication.pageID, publicationDigest: planDigest(publication), copy: publication.copy,
       createdAt: new Date().toISOString(), suppressedDuplicates, recipients };
     const fd = openSync(file, 'wx', 0o600);
     try { writeFileSync(fd, JSON.stringify(plan, null, 2) + '\n'); } finally { closeSync(fd); }
-    console.log(JSON.stringify({ dryRun: true, pageID: plan.pageID,
+    console.log(JSON.stringify({ dryRun: true, pageID: plan.pageID, copy: plan.copy,
       recipients: recipients.length, suppressedDuplicates, plan: file }));
     return;
   }
-  const plan = privateJSON(options.plan);
   if (plan.schemaVersion !== 1 || plan.origin !== ORIGIN || plan.topic !== TOPIC ||
       plan.environment !== 'production' || plan.pageID !== publication.pageID ||
       plan.publicationDigest !== planDigest(publication) ||
+      JSON.stringify(plan.copy) !== JSON.stringify(publication.copy) ||
       Date.now() - Date.parse(plan.createdAt) > 15 * 60 * 1000 ||
       Date.now() < Date.parse(plan.createdAt)) throw new Error('stale_or_changed_plan');
   const current = new Map(eligible.map((row) => [row.installationId, row]));
   const keyConfig = privateJSON(options.key_config);
-  const sendAPNs = sendAPNsFactory(keyConfig, publication.date);
+  const sendAPNs = sendAPNsFactory(keyConfig, publication);
   const store = firestoreStore(db);
   let accepted = 0, skipped = 0, rejected = 0, unknown = 0;
   for (const recipient of plan.recipients) {
