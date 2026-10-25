@@ -1,0 +1,40 @@
+{
+  "schemaVersion": "sermon-multilingual-poster-v1",
+  "source": {
+    "pageId": "revelation-jesus-wins-20261025",
+    "targetLocale": "es",
+    "sourceIdentitySha256": "880da5121ed5367a6c521f30fefcc46c93bb8beb34896917836c2b068fd0bc3d",
+    "catalogSha256": "cc4891e4516c338f129f0de152812a2f342df4975d014076e88dc88f46204c37",
+    "releasePackageSha256": "45771ef3782d9c3884a0fcdc96942678ec3294899dc2fd67589931ce81d36b6c",
+    "contentSha256": "3698605a78555f1b71008fa98c00f50ec974e5bfbef8647dcc52e489392c84fe",
+    "brief": {
+      "locale": "es",
+      "date": "2026-10-25",
+      "origin": "https://ai-for-god-sermon-audio.web.app",
+      "title": "Jesús es vencedor · Apocalipsis 12–13",
+      "series": "Apocalipsis: El consuelo y la esperanza que Jesús trae",
+      "scripture": "Apocalipsis 12–13",
+      "speaker": "Eric Geiger",
+      "tagline": "Escuchamos y caminamos juntos.",
+      "reviewLabel": "Traducción y audio revisados",
+      "labels": {
+        "brand": "Tongxing",
+        "eyebrow": "SERMÓN SEMANAL · ESPAÑOL",
+        "cta": "Lee y escucha el sermón de esta semana",
+        "serviceLine": "Audio en español · Texto en inglés · Transcripción completa",
+        "qrCaption": "Esta semana, en español",
+        "disclaimer": "Proyecto personal independiente, sin afiliación ni respaldo de Mariners Church. El audio en español sintetizado por IA y el texto preparado por IA son para consulta personal.",
+        "header": "Tongxing   ───   SERMÓN SEMANAL",
+        "web": "Versión web",
+        "caption": "Escanea para leer y escuchar",
+        "storeHeading": "Descargar Tongxing",
+        "webHeading": "Abrir sermón semanal",
+        "showReview": "false"
+      },
+      "qrURL": "https://ai-for-god-sermon-audio.web.app/?week=revelation-jesus-wins-20261025&contentLang=es&lang=es",
+      "displayTitle": "Jesús es vencedor · Apocalipsis 12–13",
+      "storeURL": "https://apps.apple.com/app/id6809255441"
+    }
+  },
+  "status": "awaiting_image_generation"
+}
