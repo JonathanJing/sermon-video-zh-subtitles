@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261025-ios-apns-credential",
+  "runs": [
+    {
+      "label": "ios-apns-credential-20261025-preflight",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/ios-apns-credential-20261025-preflight",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "ios-apns-credential-20261025-preflight",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 122,
+      "truncated": false,
+      "sha256": "0f9832b6387be9874a3a6a31303e1a011e74e9b3a8251e2abedb010ae64f4359",
+      "redactions": {}
+    },
+    {
+      "run": "ios-apns-credential-20261025-preflight",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 468,
+      "truncated": false,
+      "sha256": "f4d7a0abc62f256637fc2346015deed852ace08a4e585b130b634cf294bb175a",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}
