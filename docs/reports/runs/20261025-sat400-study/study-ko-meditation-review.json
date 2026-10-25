@@ -1,0 +1,18 @@
+{
+ "artifactSha256": "6a03a6d3b06d2286b46c40631ac7a7b901ee6411c565c7e95f20d23fcb4a9e52",
+ "checks": {
+  "faithfulness": "pass",
+  "localeReadability": "pass",
+  "scriptureIntegrity": "pass"
+ },
+ "decision": "approved",
+ "humanApproval": true,
+ "kind": "meditation",
+ "locale": "ko",
+ "pageId": "revelation-jesus-wins-20261025",
+ "reviewedAt": "2026-10-25T15:16:39Z",
+ "reviewedBy": "Jony",
+ "schemaVersion": "sermon-study-review-v1",
+ "sourcePackageSha256": "199e4b86e58c6456c462b41e359e72f3ccc61ad59bd78e296e8e8a8717504d35",
+ "textCandidateSha256": "232433d1e2eceed114c13fc475d90c44c6b1447995c340bbf88049541831a152"
+}
