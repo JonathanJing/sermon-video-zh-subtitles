@@ -1,0 +1,13 @@
+{
+  "action": "upload",
+  "status": "command_succeeded",
+  "candidate": {
+    "bundleID": "com.jonathanjing.tongxing.beta",
+    "version": "1.26.21",
+    "build": "62",
+    "sourceCommit": "dedb2bc027a53ebf48cf7cac4773ae6653ebee8c",
+    "archiveManifestSHA256": "ef22d0f4a7333dfe657614ad4ab9bbccdb3d3ca513cf795526e23f6a386a37b1"
+  },
+  "checkedAt": "2026-10-25T23:07:38Z",
+  "ipaSHA256": "4bcfa7937a6af5d5ac20d8271ce63d8a7d2a2ad2a19487eb5ca80861def810da"
+}
