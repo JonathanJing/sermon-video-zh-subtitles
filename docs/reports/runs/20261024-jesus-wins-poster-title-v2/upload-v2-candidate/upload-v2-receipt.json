@@ -1,0 +1,108 @@
+{
+  "status": "published_http_verified",
+  "pageId": "revelation-jesus-wins-20261025",
+  "origin": "https://ai-for-god-sermon-audio.web.app",
+  "version": "sites/ai-for-god-sermon-audio/versions/4b355314e1fb5dbb",
+  "fullInventory": {
+    "publicFiles": 324,
+    "allBytesMatch": true,
+    "firebaseConfigSemanticsMatch": true,
+    "firebaseConfigBytesMatch": false
+  },
+  "httpChecks": [
+    {
+      "path": "/posters/revelation-jesus-wins-20261025/zh-Hans-086ece7bffd14656ab369d4a3c850034342826e7597befdf5074ce1d40259359.png",
+      "status": 200,
+      "sha256": "086ece7bffd14656ab369d4a3c850034342826e7597befdf5074ce1d40259359",
+      "bytes": 2399695,
+      "pass": true
+    },
+    {
+      "path": "/posters/revelation-jesus-wins-20261025/zh-Hans-preview-ef584e63ec97f3c4d2ac00a8c35172a4b29cbe648b7ca38ffe3695deef9b3da0.png",
+      "status": 200,
+      "sha256": "ef584e63ec97f3c4d2ac00a8c35172a4b29cbe648b7ca38ffe3695deef9b3da0",
+      "bytes": 686150,
+      "pass": true
+    },
+    {
+      "path": "/posters/revelation-jesus-wins-20261025/ko-875fa22420cd9cf245a5857ce3e45935b5196a4c8041aae5d1a369704a83f0d2.png",
+      "status": 200,
+      "sha256": "875fa22420cd9cf245a5857ce3e45935b5196a4c8041aae5d1a369704a83f0d2",
+      "bytes": 2407626,
+      "pass": true
+    },
+    {
+      "path": "/posters/revelation-jesus-wins-20261025/ko-preview-f2d01f95214b1f03b6d736996824a9f9b66195e13a8a3b1ee0dcb2e90fe12f8b.png",
+      "status": 200,
+      "sha256": "f2d01f95214b1f03b6d736996824a9f9b66195e13a8a3b1ee0dcb2e90fe12f8b",
+      "bytes": 688658,
+      "pass": true
+    },
+    {
+      "path": "/posters/revelation-jesus-wins-20261025/es-23b0a0e8fe7acd7a6dfcb18b4f87ad8bca2d92ff4d582218c76a97f1c81c3db3.png",
+      "status": 200,
+      "sha256": "23b0a0e8fe7acd7a6dfcb18b4f87ad8bca2d92ff4d582218c76a97f1c81c3db3",
+      "bytes": 2399664,
+      "pass": true
+    },
+    {
+      "path": "/posters/revelation-jesus-wins-20261025/es-preview-a49f23be019423c04eab28e2d955e4913087507e32dcf8dcfff172f01b7c9595.png",
+      "status": 200,
+      "sha256": "a49f23be019423c04eab28e2d955e4913087507e32dcf8dcfff172f01b7c9595",
+      "bytes": 689570,
+      "pass": true
+    },
+    {
+      "path": "/posters/revelation-jesus-wins-20261025/en-ab3ffe099739354582b606b5504eddf8c2d457b27065809baede6e45c7c6ba48.png",
+      "status": 200,
+      "sha256": "ab3ffe099739354582b606b5504eddf8c2d457b27065809baede6e45c7c6ba48",
+      "bytes": 2403158,
+      "pass": true
+    },
+    {
+      "path": "/posters/revelation-jesus-wins-20261025/en-preview-7f649d325aa8630aa7c513cbc43b8415dc8c5398a462b6472203e9c19a4a1cd2.png",
+      "status": 200,
+      "sha256": "7f649d325aa8630aa7c513cbc43b8415dc8c5398a462b6472203e9c19a4a1cd2",
+      "bytes": 688917,
+      "pass": true
+    },
+    {
+      "path": "/weekly-announcements-v1.json",
+      "status": 200,
+      "sha256": "f27ff10ca90571c5b46de17383a5787473eef4a3930aff33a55bbb0f38ee1ce0",
+      "bytes": 8756,
+      "pass": true
+    },
+    {
+      "path": "/multilingual-v5.json",
+      "status": 200,
+      "sha256": "cc4891e4516c338f129f0de152812a2f342df4975d014076e88dc88f46204c37",
+      "bytes": 26465,
+      "pass": true
+    },
+    {
+      "path": "/multilingual-v4.json",
+      "status": 200,
+      "sha256": "570048a17e1834f17aeb89fe04c848bea1e9f611c16323b77b72ff5cd798bbab",
+      "bytes": 24596,
+      "pass": true
+    },
+    {
+      "path": "/multilingual-v3.json",
+      "status": 200,
+      "sha256": "6ebb442db5f045fdb30d3b712c1af98ae6f2574533fa4baf6f89e25576c5d83a",
+      "bytes": 20124,
+      "pass": true
+    }
+  ],
+  "announcementLocales": [
+    "zh-Hans",
+    "ko",
+    "es"
+  ],
+  "englishArtworkHasNoAnnouncement": true,
+  "nativeDeviceDisplay": "not_run",
+  "physicalScan": "not_run",
+  "printing": "not_run",
+  "externalNotification": "not_sent"
+}

@@ -1,0 +1,38 @@
+{
+  "schemaVersion": "tongxing-poster-title-correction-summary-v1",
+  "pageId": "revelation-jesus-wins-20261025",
+  "posterTitlePolicy": "omit_exact_repeated_scripture_v1",
+  "displayTitles": {
+    "zh-Hans": "耶稣得胜",
+    "ko": "예수는 승리자이시다",
+    "es": "Jesús es vencedor",
+    "en": "Jesus Wins"
+  },
+  "publishedContentAndRelease": "unchanged",
+  "artSha256": "ab0fe9fb05526f503e797026d6c3d5957447574c4bea99e5b6685cb565b7deaa",
+  "renderedLocales": [
+    "zh-Hans",
+    "ko",
+    "es",
+    "en"
+  ],
+  "renderedFormats": [
+    "1200x1800",
+    "600x900"
+  ],
+  "sourceBoundQRCodeVerification": "pass_both_sizes_each_locale",
+  "machineVisualReview": "pass",
+  "humanPosterApproval": false,
+  "productionHostingStatus": "published_http_verified",
+  "productionHostingVersion": "sites/ai-for-god-sermon-audio/versions/4b355314e1fb5dbb",
+  "newImageFiles": 6,
+  "reusedImageFiles": 2,
+  "fullInventoryPublicFiles": 324,
+  "httpChecks": 12,
+  "browserCorePageStatus": "previously_passed_unchanged_qr_target",
+  "browserSessionStatus": "previously_failed_api_session_400_not_retested",
+  "nativeDeviceDisplay": "not_run",
+  "physicalScan": "not_run",
+  "printing": "not_run",
+  "externalNotification": "not_sent"
+}

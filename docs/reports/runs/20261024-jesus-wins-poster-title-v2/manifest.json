@@ -1,0 +1,123 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261024-jesus-wins-poster-title-v2",
+  "runs": [
+    {
+      "label": "four-locale-title-only-v2",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/sermon-poster/2026-10-25/four-locale-title-only-v2",
+      "skipped": {
+        ".txt": 4,
+        ".png": 12,
+        ".json": 11,
+        ".svg": 4
+      }
+    },
+    {
+      "label": "upload-v2-candidate",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/sermon-poster/2026-10-25/upload-v2-candidate",
+      "skipped": {
+        ".cache": 1,
+        ".json": 149,
+        ".lock": 1,
+        ".mjs": 33,
+        ".png": 40,
+        ".svg": 3,
+        ".js": 5,
+        ".srt": 2,
+        ".mp3": 63,
+        ".pdf": 4,
+        ".html": 28,
+        ".jpg": 1,
+        ".css": 3
+      }
+    }
+  ],
+  "files": [
+    {
+      "run": "four-locale-title-only-v2",
+      "path": "en/poster-receipt.json",
+      "kind": "whole",
+      "bytes": 5300,
+      "truncated": false,
+      "sha256": "f08d8b8901fa4c5601dc1877289199301225527ace502e9146ec124b116f7641",
+      "redactions": {}
+    },
+    {
+      "run": "four-locale-title-only-v2",
+      "path": "es/poster-receipt.json",
+      "kind": "whole",
+      "bytes": 4854,
+      "truncated": false,
+      "sha256": "a7c43d477484f4b467fc7c2e3728013a53932fb5726ef9905152c1a81fb0b85f",
+      "redactions": {}
+    },
+    {
+      "run": "four-locale-title-only-v2",
+      "path": "ko/poster-receipt.json",
+      "kind": "whole",
+      "bytes": 4926,
+      "truncated": false,
+      "sha256": "3971be4f63f5c6f3793bdc477ebf5caacd2ca309249fb5224ceab9dba5044e36",
+      "redactions": {}
+    },
+    {
+      "run": "four-locale-title-only-v2",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 1237,
+      "truncated": false,
+      "sha256": "6da8bcc6245e41e40c97bf0b0549e733146ab905617368100c9f35e15254e24b",
+      "redactions": {}
+    },
+    {
+      "run": "four-locale-title-only-v2",
+      "path": "zh-Hans/poster-receipt.json",
+      "kind": "whole",
+      "bytes": 4746,
+      "truncated": false,
+      "sha256": "858f886c97160fc58324f9bc55384893de2d5275878708256ffbee8750d91d84",
+      "redactions": {}
+    },
+    {
+      "run": "upload-v2-candidate",
+      "path": "baseline-receipt.json",
+      "kind": "whole",
+      "bytes": 124802,
+      "truncated": false,
+      "sha256": "40e3193d1710159aada33b175a094e814c1e95899a20c81cb467004a7c1afabc",
+      "redactions": {}
+    },
+    {
+      "run": "upload-v2-candidate",
+      "path": "hosting-publish.log",
+      "kind": "log",
+      "bytes": 0,
+      "truncated": false,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "redactions": {}
+    },
+    {
+      "run": "upload-v2-candidate",
+      "path": "preparation-receipt.json",
+      "kind": "whole",
+      "bytes": 4461,
+      "truncated": false,
+      "sha256": "95f59c9ee0864a6ae8f61393ec88bc7abfc712200fad72ae35f2789112ec97df",
+      "redactions": {}
+    },
+    {
+      "run": "upload-v2-candidate",
+      "path": "upload-v2-receipt.json",
+      "kind": "whole",
+      "bytes": 3788,
+      "truncated": false,
+      "sha256": "8ae7489a0bc0111a3549069366a7a8fdb5ff4de3083b6efac9e47ec6b058b41b",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}
