@@ -1,0 +1,350 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261024-sat400-official-rebuild",
+  "runs": [
+    {
+      "label": "20261024-sat400-v2-zh",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/sentence-first-agent/20261024-sat400-v2-zh",
+      "skipped": {
+        "(none)": 1,
+        ".json": 7,
+        ".jsonl": 14,
+        ".wav": 896,
+        ".mp4": 2,
+        ".html": 1,
+        ".mp3": 1,
+        ".md": 2
+      }
+    },
+    {
+      "label": "20261024-sat400-v2-ko",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/sentence-first-agent/20261024-sat400-v2-ko",
+      "skipped": {
+        "(none)": 1,
+        ".json": 5,
+        ".jsonl": 14,
+        ".mp4": 2,
+        ".html": 1,
+        ".mp3": 1,
+        ".md": 2,
+        ".wav": 895
+      }
+    },
+    {
+      "label": "20261024-sat400-v2-es",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/sentence-first-agent/20261024-sat400-v2-es",
+      "skipped": {
+        "(none)": 1,
+        ".json": 5,
+        ".jsonl": 14,
+        ".mp4": 2,
+        ".html": 1,
+        ".mp3": 1,
+        ".md": 2,
+        ".wav": 895
+      }
+    },
+    {
+      "label": "20261024-sat400-v2-publish",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/sentence-first-agent/20261024-sat400-v2-publish",
+      "skipped": {
+        ".json": 1358,
+        ".mp3": 567,
+        ".html": 249,
+        ".js": 49,
+        ".mjs": 297,
+        ".png": 360,
+        ".svg": 27,
+        ".srt": 18,
+        ".pdf": 36,
+        ".jpg": 9,
+        ".css": 27,
+        ".wav": 3,
+        ".cache": 5,
+        ".lock": 5
+      }
+    },
+    {
+      "label": "20261024-sat400-v2-english",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/sentence-first-agent/20261024-sat400-v2-english",
+      "skipped": {
+        ".json": 4
+      }
+    },
+    {
+      "label": "20261024-sat400-v2-review",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/sentence-first-agent/20261024-sat400-v2-review",
+      "skipped": {
+        ".json": 3
+      }
+    }
+  ],
+  "files": [
+    {
+      "run": "20261024-sat400-v2-zh",
+      "path": "asr-run.log",
+      "kind": "log",
+      "bytes": 5734,
+      "truncated": false,
+      "sha256": "8c071377e5840aac75c1986545cc5a80095e319fb2a2a19c2cdc3ed9513cae94",
+      "redactions": {}
+    },
+    {
+      "run": "20261024-sat400-v2-zh",
+      "path": "journal.ndjson",
+      "kind": "whole",
+      "bytes": 247,
+      "truncated": false,
+      "sha256": "8126ff5cf9c2115c54a294dfe7294f7aa7198b5ba20de1278d96acca9618b67c",
+      "redactions": {}
+    },
+    {
+      "run": "20261024-sat400-v2-zh",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 674,
+      "truncated": false,
+      "sha256": "ebadfe7376aa6b1cfcdfb4fee6178f85457f3e639487b5755ba54f28fe461321",
+      "redactions": {}
+    },
+    {
+      "run": "20261024-sat400-v2-zh",
+      "path": "timings.tsv",
+      "kind": "whole",
+      "bytes": 92,
+      "truncated": false,
+      "sha256": "feae916aae742ade240f6a0d5bb2c2ef7241e784a58e97f92ca6dc0110deae8b",
+      "redactions": {}
+    },
+    {
+      "run": "20261024-sat400-v2-zh",
+      "path": "tts-run.log",
+      "kind": "log",
+      "bytes": 156181,
+      "truncated": true,
+      "sha256": "bfcddcbedd7b747616f642b4baba0bcd725bb41a64c10b5f8841989ea37d4bae",
+      "redactions": {}
+    },
+    {
+      "run": "20261024-sat400-v2-ko",
+      "path": "asr-run.log",
+      "kind": "log",
+      "bytes": 5719,
+      "truncated": false,
+      "sha256": "22acedb1ee641ebf5f2f506b95b417fd1b70d9e9f45b58e75ec162649df0e645",
+      "redactions": {}
+    },
+    {
+      "run": "20261024-sat400-v2-ko",
+      "path": "journal.ndjson",
+      "kind": "whole",
+      "bytes": 494,
+      "truncated": false,
+      "sha256": "2252d3fe57ff3d15b91c24983464cc43938ddd48806ce88a807531c256c01abe",
+      "redactions": {}
+    },
+    {
+      "run": "20261024-sat400-v2-ko",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 669,
+      "truncated": false,
+      "sha256": "7e65de0697c68d8da2e96a6356cd644c4408807ca650411edfcbc2c482150b8f",
+      "redactions": {}
+    },
+    {
+      "run": "20261024-sat400-v2-ko",
+      "path": "timings.tsv",
+      "kind": "whole",
+      "bytes": 96,
+      "truncated": false,
+      "sha256": "8b497c8677948c67f599adedd38517a0c780c15fd4998b99f0dbbba0632278ae",
+      "redactions": {}
+    },
+    {
+      "run": "20261024-sat400-v2-ko",
+      "path": "tts-run.log",
+      "kind": "log",
+      "bytes": 156383,
+      "truncated": true,
+      "sha256": "cd70dbe55699ea7ec13351a0c468e1e5a69585f0473c7b441160e81002573c95",
+      "redactions": {}
+    },
+    {
+      "run": "20261024-sat400-v2-es",
+      "path": "asr-run.log",
+      "kind": "log",
+      "bytes": 5719,
+      "truncated": false,
+      "sha256": "ed5ea7b45cdb8c31146fdf1fc7a908ad34d504cfa6bf2c720fa20ba3156efcda",
+      "redactions": {}
+    },
+    {
+      "run": "20261024-sat400-v2-es",
+      "path": "journal.ndjson",
+      "kind": "whole",
+      "bytes": 494,
+      "truncated": false,
+      "sha256": "e278e400a268f261c35316c51929cdae852cf042eea139274786298c5c866ca3",
+      "redactions": {}
+    },
+    {
+      "run": "20261024-sat400-v2-es",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 669,
+      "truncated": false,
+      "sha256": "e088674192cc6676985a9ddc163614bb3d8ec5339b21dd2986491839db75136f",
+      "redactions": {}
+    },
+    {
+      "run": "20261024-sat400-v2-es",
+      "path": "timings.tsv",
+      "kind": "whole",
+      "bytes": 96,
+      "truncated": false,
+      "sha256": "2f8ebae2243e43a2e226f8149b1af766444eebe214dabf0209e652fb7875d823",
+      "redactions": {}
+    },
+    {
+      "run": "20261024-sat400-v2-es",
+      "path": "tts-run.log",
+      "kind": "log",
+      "bytes": 156504,
+      "truncated": true,
+      "sha256": "aaf3e6989aecba5e8f276c20a7fa98b1a47bf46443fa11ca1b16348ec3eac231",
+      "redactions": {}
+    },
+    {
+      "run": "20261024-sat400-v2-publish",
+      "path": "baseline-4/baseline-receipt.json",
+      "kind": "whole",
+      "bytes": 122981,
+      "truncated": false,
+      "sha256": "6d8b1ae2c302e51961a23397b7b1e875dd05d73d63426efb753fb3dc5a5f168f",
+      "redactions": {}
+    },
+    {
+      "run": "20261024-sat400-v2-publish",
+      "path": "baseline-5/baseline-receipt.json",
+      "kind": "whole",
+      "bytes": 117180,
+      "truncated": false,
+      "sha256": "a329e43860f9187a3a01412bf1746ed603d882bf4998a6075620b654cd0a732d",
+      "redactions": {}
+    },
+    {
+      "run": "20261024-sat400-v2-publish",
+      "path": "baseline-6/baseline-receipt.json",
+      "kind": "whole",
+      "bytes": 124048,
+      "truncated": false,
+      "sha256": "ecf257e34c6f39f971698951a8290d2189963df117efb6d01400f97329f3b789",
+      "redactions": {}
+    },
+    {
+      "run": "20261024-sat400-v2-publish",
+      "path": "baseline-7/baseline-receipt.json",
+      "kind": "whole",
+      "bytes": 124048,
+      "truncated": false,
+      "sha256": "d5f6379f5d21ca6fcc7f15e7109c9edd8c032bd361b1e85892de133056a167d9",
+      "redactions": {}
+    },
+    {
+      "run": "20261024-sat400-v2-publish",
+      "path": "stage-assets/baseline-receipt.json",
+      "kind": "whole",
+      "bytes": 117180,
+      "truncated": false,
+      "sha256": "a329e43860f9187a3a01412bf1746ed603d882bf4998a6075620b654cd0a732d",
+      "redactions": {}
+    },
+    {
+      "run": "20261024-sat400-v2-publish",
+      "path": "stage-assets/hosting-publish.log",
+      "kind": "log",
+      "bytes": 0,
+      "truncated": false,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "redactions": {}
+    },
+    {
+      "run": "20261024-sat400-v2-publish",
+      "path": "stage-bind/baseline-receipt.json",
+      "kind": "whole",
+      "bytes": 124048,
+      "truncated": false,
+      "sha256": "ecf257e34c6f39f971698951a8290d2189963df117efb6d01400f97329f3b789",
+      "redactions": {}
+    },
+    {
+      "run": "20261024-sat400-v2-publish",
+      "path": "stage-bind/hosting-publish.log",
+      "kind": "log",
+      "bytes": 0,
+      "truncated": false,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "redactions": {}
+    },
+    {
+      "run": "20261024-sat400-v2-publish",
+      "path": "stage-english/baseline-receipt.json",
+      "kind": "whole",
+      "bytes": 124048,
+      "truncated": false,
+      "sha256": "d5f6379f5d21ca6fcc7f15e7109c9edd8c032bd361b1e85892de133056a167d9",
+      "redactions": {}
+    },
+    {
+      "run": "20261024-sat400-v2-publish",
+      "path": "stage-english/hosting-publish.log",
+      "kind": "log",
+      "bytes": 0,
+      "truncated": false,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "redactions": {}
+    },
+    {
+      "run": "20261024-sat400-v2-publish",
+      "path": "stage-release/baseline-receipt.json",
+      "kind": "whole",
+      "bytes": 117180,
+      "truncated": false,
+      "sha256": "a329e43860f9187a3a01412bf1746ed603d882bf4998a6075620b654cd0a732d",
+      "redactions": {}
+    },
+    {
+      "run": "20261024-sat400-v2-publish",
+      "path": "stage-release/hosting-publish.log",
+      "kind": "log",
+      "bytes": 0,
+      "truncated": false,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "redactions": {}
+    },
+    {
+      "run": "20261024-sat400-v2-publish",
+      "path": "stage-retract/baseline-receipt.json",
+      "kind": "whole",
+      "bytes": 122981,
+      "truncated": false,
+      "sha256": "6d8b1ae2c302e51961a23397b7b1e875dd05d73d63426efb753fb3dc5a5f168f",
+      "redactions": {}
+    },
+    {
+      "run": "20261024-sat400-v2-publish",
+      "path": "stage-retract/hosting-publish.log",
+      "kind": "log",
+      "bytes": 0,
+      "truncated": false,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

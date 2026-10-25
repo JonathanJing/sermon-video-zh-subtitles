@@ -1,0 +1,20 @@
+{
+  "schemaVersion": "sentence-first-outcome-v1",
+  "at": "2026-10-25T04:13:03+00:00",
+  "status": "track_ready_for_review",
+  "delivery": "four_layer_release",
+  "locale": "ko",
+  "trackSeconds": 1853.01,
+  "ttsWallSeconds": 327.9,
+  "realtime": 5.65,
+  "asrMean": 0.971,
+  "startedAt": "2026-10-25T04:12:46+00:00",
+  "endedAt": "2026-10-25T04:13:03+00:00",
+  "published": false,
+  "reviewMp3": "artifacts/sentence-first-agent/20261024-sat400-v2-ko/review.mp3",
+  "reviewPlayer": {
+    "html": "artifacts/sentence-first-agent/20261024-sat400-v2-ko/review-player.html",
+    "rows": 447
+  },
+  "note": "track merged and scored; audio alignment and review materials done in the same pass"
+}
