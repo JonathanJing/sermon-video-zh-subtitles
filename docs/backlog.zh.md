@@ -22,6 +22,20 @@ English index: [backlog.md](./backlog.md)
 
 状态枚举：`verified_baseline`、`in_progress`、`pending`、`waiting_evidence`、`blocked`、`complete`。`verified_baseline` 只说明列出的基线已验证，不代表该项所有未来周次完成；只有满足本页第 2 条维护规则和该项验收定义后才能标记 `complete`。
 
+<a id="backlog-sat400-prep-20261024"></a>
+
+## 2026-10-24：周六 4 点场直播的预备用途
+
+每周六有 4:00 和 5:30 两场直播，周日正式播放版来自其中一场。10-17 的 Broadcast Message 文件 18:47 已上传完成，5:30 场当时尚未结束，所以正式版很可能来自 4:00 场（假设 H1，未验证）。[设计文档](design/saturday-first-service-preparation.zh.md)给出结论：按四层合同，4 点场的来源包、锚点、译文缓存和术语收据都绑定媒体哈希或来源包哈希，不能作为正式产物复用；它的价值是把术语／专名／经文决定、审核预热和开工检查彩排挪到正式来源到达之前，针对的是 10-11 周 12.5 小时里约 11 小时的返工与等待，不是算力。本节登记工程事项；全部未实现、未运行，不授权付费或发布。
+
+| ID | 优先级／状态 | 内容与完成条件 |
+|---|---|---|
+| `DEV-PREP-001` | P0 / `pending` | 验证 H1：一个周六抓取 4 点场链接、本地 ASR、与正式来源转写做对齐 diff，比较时长，导出运行报告并给出判定。完成条件：报告含相同段落比例、差异位置、时长比较与明确判定，零付费调用；连续三周重复后才把 H1 写成默认假设（设计第七节） |
+| `DEV-PREP-002` | P1 / `pending` | 术语覆盖预检：英文单元与 policy `seriesNames`/`properNames` 比对，列出出现但未批准的条目并生成 register rule 候选，作为 `rule_preflight` 的零付费步骤；即[Layer 2 定向修复](layer2-targeted-repair-and-resume.zh.md) R4 第 2 项。完成条件：在 `15030286` 来源包上离线运行，列出条目与当时人工补入的 `properNames` 一致；预检失败时无模型调用 |
+| `DEV-PREP-003` | P1 / `pending` | 预备产物合同：`artifacts/weekend-live/<sunday>/sat400-prep/` 目录与标签字段（`kind=rehearsal`、`service=sat400`、`humanApproval=false`），consumer 预检拒绝 rehearsal 转写（归 `DEV-R242-001`），P5 写 policy `properNames` 的流程，P9 对真实来源重签 policy v4 `termApprovalReceipt`。完成条件：拒绝规则测试通过；一次真实周更里术语收据在正式来源到达后 10 分钟内重签完成 |
+| `DEV-PREP-004` | P1 / `pending` | 审核预热包（4 点场英文转写、术语与经文清单，封面标注 rehearsal）与差异报告生成器（4 点场 vs 正式来源）。完成条件：一次真实周更里审核者在正式来源到达前拿到预热包，全文审核时长与 10-18 周比较并记入运行报告 |
+| `DEV-PREP-005` | P2 / `pending` | 开工检查彩排作为周六 17:00 的只读定时步骤：用本周真实输入跑开工检查与预算规划，不派发付费请求。完成条件：连续两周彩排发现的问题在正式开工前修复；任务只读、无付费、无发布 |
+
 <a id="backlog-evidence-audit-20261024"></a>
 
 ## 2026-10-24：运行报告证据核对与 pending 处置
