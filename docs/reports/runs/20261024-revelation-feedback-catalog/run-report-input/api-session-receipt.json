@@ -1,0 +1,28 @@
+{
+  "checkedAt": "2026-10-25T05:29:57.598015+00:00",
+  "endpoint": "https://ai-for-god-sermon-audio.web.app/api/session",
+  "status": "pass",
+  "requests": [
+    {
+      "locale": "es",
+      "trackId": "revelation-jesus-wins-20261025-es-5c9f11058ad7",
+      "status": 200,
+      "tokenPresent": true,
+      "sessionIdPresent": true
+    },
+    {
+      "locale": "ko",
+      "trackId": "revelation-jesus-wins-20261025-ko-c38ea7bf05d0",
+      "status": 200,
+      "tokenPresent": true,
+      "sessionIdPresent": true
+    },
+    {
+      "locale": "zh-Hans",
+      "trackId": "revelation-jesus-wins-20261025-zh-Hans-f886ea4477f8",
+      "status": 200,
+      "tokenPresent": true,
+      "sessionIdPresent": true
+    }
+  ]
+}
