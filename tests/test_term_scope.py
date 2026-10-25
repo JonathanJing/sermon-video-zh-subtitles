@@ -107,7 +107,7 @@ class TermScopeTests(unittest.TestCase):
         self.assertEqual(subject.plugin_pin_check(draft)["status"], "current")
         draft["languageReview"]["pluginImplementationSha256"] = "0" * 64
         self.assertEqual(subject.plugin_pin_check(draft)["status"], "stale")
-        draft["languageReview"]["pluginId"] = "zh-Hans-weekly-auto-v1"
+        draft["languageReview"]["pluginId"] = "zh-Hans-no-such-plugin-v0"
         self.assertEqual(subject.plugin_pin_check(draft)["status"], "missing")
         plugin = subject._plugin_ids()["ko-weekly-auto-v1"]
         draft["languageReview"]["pluginImplementationSha256"] = policy.machine_qc_language_review("ko")[
