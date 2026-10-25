@@ -14,7 +14,7 @@ Dev Debug 与正式版沿用同一原生收听界面、播放器、下载、字�
 
 2026-10-04，全文定位与自动跟随候选已作为独立 Beta `1.26.11 (52)` 上传并在 Rooted 内部组确认可用；API Key 认证和分发已验证，真机安装／验收仍待核对。准确源码、签名路径、重试与 Apple 读回见 [Beta 1.26.11 分发记录](BETA-RELEASE-1.26.11.zh.md)。
 
-当前最新 tracked Beta 发行记录为 [1.26.20 (61)](BETA-RELEASE-1.26.20.zh.md)：2026-10-21 归档，Apple 读回 `VALID`、`IN_BETA_TESTING` 并关联 Rooted 内部组；Dev v5 默认页是 10 月 18 日三语 family。用户已报告实体 iPhone／iOS 27.0.1 的本机通知及一次本人设备 APNs 显示和点击跳转成功；Agent 未独立观察设备。iOS 27.1 模拟器通知权限用例仍失败，韩／西语真机海报、真实麦克风与现场声学效果仍待验收，正式重建、Production 来源验收与 App Store 提交未执行。上述 10 月 3／4 日记录保留为历史，不能当作当前候选号。
+当前最新 tracked Beta 发行记录为 [1.26.21 (62)](BETA-RELEASE-1.26.21.zh.md)：2026-10-25 的字幕全文长按复制候选已上传并关联 Rooted 内部组，Apple 读回 `VALID`、`IN_BETA_TESTING`。iOS 26.2／27.0 模拟器的目标 UI 用例各 1/1 通过；真机、iPad／横屏及 VoiceOver 实机验收仍待进行。正式版未重建或提交 App Store。
 
 通知入口当前分为 [Beta 本机测试](BETA-NOTIFICATIONS.zh.md)、[本人设备远端 APNs](APNS-SINGLE-DEVICE-TEST.zh.md)和周更卡片／海报。Beta 测试默认关闭，内容语言与界面语言分别选择；正式通知也必须先说明用途，由用户主动 opt-in 后再请求系统权限，不能把 Beta 开关或单设备发送器当作正式群体推送已交付。
 
