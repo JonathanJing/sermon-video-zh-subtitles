@@ -122,6 +122,38 @@ def test_finish_republishes_the_release_and_validates_strictly(tmp_path):
     assert json.loads((final / 'staged-changes.json').read_text())['pendingReplacements'] == []
 
 
+def test_replace_assets_can_add_page_local_study_files(tmp_path):
+    live = write_snapshot(tmp_path)
+    staged = tmp_path / 'stage-a'
+    result = replace_assets(live, staged, PAGE, {f'pages/{PAGE}/{LOCALE}/index.html': b'<html>study</html>'},
+                            extra_paths={f'study/{PAGE}/{LOCALE}/outline.json': b'{"sections": []}'})
+    assert result['added'] == [f'/study/{PAGE}/{LOCALE}/outline.json']
+    assert (staged / 'public' / f'study/{PAGE}/{LOCALE}/outline.json').read_bytes() == b'{"sections": []}'
+    with pytest.raises(ValueError, match='study tree'):
+        replace_assets(live, tmp_path / 'stage-b', PAGE, {f'content/{PAGE}/{LOCALE}.json': b'{}'},
+                       extra_paths={f'pages/other/{LOCALE}/index.html': b'x'})
+
+
+def test_finish_rewrites_the_alignment_sidecar(tmp_path):
+    live = write_snapshot(tmp_path)
+    (live / 'public' / 'alignment').mkdir(exist_ok=True)
+    (live / 'public' / f'alignment/{PAGE}.json').write_text('{"targets": {}}')
+    report = {**bl.catalog_report(live / 'public'), 'files': bl.files_report(live / 'public')}
+    (live / 'seal-report.json').write_text(json.dumps(report))
+    staged = tmp_path / 'stage-a'
+    changed = b'{"pageId":"week","targetLocale":"ko","text":"corrected"}'
+    replace_assets(live, staged, PAGE, {f'content/{PAGE}/{LOCALE}.json': changed})
+    evidence = tmp_path / 'verify.json'
+    evidence.write_text(json.dumps({'status': 'pass', 'checks': []}))
+    evidence_sha = hashlib.sha256(evidence.read_bytes()).hexdigest()
+    release_bytes = replacement_release(live, changed, evidence_sha)
+    final = tmp_path / 'stage-b'
+    finish_replace(staged, final, PAGE, {LOCALE: release_bytes}, evidence_sha,
+                   extra_paths={f'alignment/{PAGE}.json': b'{"targets": {"ko": {}}}'})
+    assert (final / 'public' / f'alignment/{PAGE}.json').read_bytes() == b'{"targets": {"ko": {}}}'
+    contract.validate_catalog_snapshot(final)
+
+
 def test_replace_assets_refuses_new_paths_and_unknown_pages(tmp_path):
     live = write_snapshot(tmp_path)
     with pytest.raises(ValueError, match='existing published file'):

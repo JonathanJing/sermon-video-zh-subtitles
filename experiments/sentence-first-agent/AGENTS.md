@@ -33,6 +33,8 @@
 | `merge_track.py`、`asr_check.py score` | 本机 | 由 finish_run.py 调用 |
 | `review_sheets.py` | 本机 | 每种语言一张人工审核表（CSV），标出要重点听的句子 |
 | `publish_podcast_page.py` | 本机 | 正式页面发布驱动；页面信息是文件顶部的常量 |
+| `build_study.py` | 本机 | 生成大纲与默想的 `sermon-study-artifact-v1`、审核收据、元数据/窗口批准与四产品清单 |
+| `publish_study.py` | 本机 | 把大纲与默想以 release v3 发布：页面学习段、`/study/<pageId>/<locale>/`、三语 release 与目录 |
 | `srt_normalize.py` | 本机 | 没有锚点清单时从滚动 SRT 建句表；去重、内插、清洗已核实名称、强制单调不重叠，写验证报告 |
 | `preflight.py` | 本机 | 开工/发布前检查 run、`speakerId→speakerKey`、Registry 用途/能力、英文包证据路径、Spark、Firebase |
 | `review_player.py` | 本机 | 逐句听审 HTML：按句播放、标记、跳转、逐句结论导出 |
@@ -313,6 +315,29 @@ python3 $EXP/repair_sentence.py --run $RUN --id s0123 --remote SPARK:<run> --ses
 页面、文稿、字幕的路径是固定的：`/pages/<pageId>/<locale>/index.html`、`/content/<pageId>/<locale>.json`、`/captions/<pageId>/<locale>.json`。正式版 App 遇到别的路径会把这种语言、乃至整页隐藏（开发版不做这项检查，所以开发版里看得到不代表正式版看得到）。要修已发布的文稿或字幕，就在原路径写入修正后的字节，先部署、HTTP 核验，再部署改了哈希的 release 和目录；不要换新路径。发布合同 `validate_v2_release_target` 会拒绝不在固定路径上的 release。
 
 列表里的小标题只来自目录页面的 `displayCategory`（两个早期页面在 App 里写死为“正式播放版”）；新页面要显示小标题，就在 v5 页面上写这个字段，投影会带到 v4/v3。
+
+### 10.5 大纲与默想（学习内容）
+
+每个正式页面都带本语言的**大纲**和**默想**（App 的四产品之一）。规则：
+
+1. **来源**：从已批准的英文全文和当周已定稿译文写，不改经文、不加原文没有的论点；每节给出 `sourceUnitIds`（本页 `sentences.jsonl` 的 `sourceUnitId`），经文出处写清。术语用[共享术语表](../../docs/series-terminology.zh.md)的本系列条目。
+2. **审核是人的**：`sermon-study-review-v1` 的 `humanApproval: true` 只能来自用户对这份文本的批准；代理草稿、代理自查都不算。未经用户批准就不发布，页面保持没有学习内容。
+3. **冻结与发布**：
+
+```bash
+python3 $EXP/build_study.py --out artifacts/sentence-first-agent/<run>-study     # 文本、artifact、review、元数据/窗口批准、products.json、哈希
+python3 $EXP/publish_study.py build                                              # 学习页 HTML + v3 release 草稿
+python3 $EXP/publish_study.py assets                                             # 快照 A：页面学习段 + /study 文件（pending 替换）
+.venv/bin/python experiments/sentence-first-agent/publish_sat400_v2.py publish --snapshot <A>
+python3 $EXP/publish_study.py verify                                             # GET/SHA 核验页面、文稿、大纲、默想、products
+python3 $EXP/publish_study.py finish                                             # 快照 B：v3 release（四产品）+ 目录 + 对齐 sidecar
+.venv/bin/python experiments/sentence-first-agent/publish_sat400_v2.py publish --snapshot <B>
+# 重新生成并部署 /english-reference/<pageId>.json（release 哈希变了）
+```
+
+4. **合同**：release v3 恰好七个资产（page/content/audio/captions/outline/meditation/product_manifest），`fourProducts` 十个哈希；`contract.validate_public_study` 会核对 artifact、review、manifest、content 与 candidate 哈希。`products.json` 的 `contentSha256` 是文稿文件哈希，`candidateSha256` 由 `products+metadataApproval+content` 推导。
+5. **改内容**：改 `build_study.py` 里的文本 → 重建 artifact 与 review → `publish_study.py build/assets → publish → verify → finish → publish` → 重新生成英文对照。只改字节不改身份时也可以直接用 `published_page_replace`（页面本地新增只允许 `/study/<pageId>/`）。
+6. **状态**：`outcome` 只代表文本就绪；发布以部署版本、`validate_public_study` 线上核验和英文对照重新上线为准。设备、现场、推送仍是各自的 `not_run`。
 
 ### 11 结束
 
