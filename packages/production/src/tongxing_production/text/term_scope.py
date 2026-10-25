@@ -112,7 +112,8 @@ def _series_entries(base: dict[str, Any], locale: str, catalog: list[dict[str, A
 
 def scope_locale(decisions: dict[str, Any], source: dict[str, Any], anchor: dict[str, Any],
                  locale: str, base: dict[str, Any], *, series_table: Path, reviewed_by: str,
-                 reviewed_at: str, user_statement: str) -> tuple[dict[str, Any] | None, dict[str, Any]]:
+                 reviewed_at: str, user_statement: str,
+                 plugin_path: Path | None = None) -> tuple[dict[str, Any] | None, dict[str, Any]]:
     """Return (draft or None, report) for one locale."""
     validate_decisions(decisions)
     if base.get("targetLocale") != locale:
@@ -180,7 +181,7 @@ def scope_locale(decisions: dict[str, Any], source: dict[str, Any], anchor: dict
     }
     report["status"] = "draft_ready"
     report["freezeCheck"] = trial_freeze(draft, source, anchor, series_table)
-    report["pluginPin"] = plugin_pin_check(draft)
+    report["pluginPin"] = plugin_pin_check(draft, plugin_path)
     return draft, report
 
 
@@ -197,18 +198,25 @@ def _plugin_ids() -> dict[str, Path]:
     return found
 
 
-def plugin_pin_check(draft: dict[str, Any]) -> dict[str, Any]:
-    """Compare the draft's pinned plugin with the checkout; the freeze does not, dispatch does."""
+def plugin_pin_check(draft: dict[str, Any], plugin_path: Path | None = None) -> dict[str, Any]:
+    """Compare the draft's pinned plugin with the checkout, or with the run's plugin file.
+
+    The freeze does not check the pin; dispatch does. ``plugin_path`` is the file the
+    execution configuration names when the run uses a plugin outside the checkout.
+    A current pin only says the bytes match: a source-bound plugin can still reject
+    every group of another source.
+    """
     from . import candidate as producer  # the candidate imports policy, not this module
     review = draft.get("languageReview", {})
     plugin_id, pinned = review.get("pluginId"), review.get("pluginImplementationSha256")
     if plugin_id is None:
         return {"status": "unbound", "remedy": "freeze ko/es with --language-review machine_qc; "
                                                 "zh-Hans needs a pluginId and its hash"}
-    path = _plugin_ids().get(plugin_id)
+    path = plugin_path if plugin_path is not None else _plugin_ids().get(plugin_id)
     if path is None:
         return {"status": "missing", "pluginId": plugin_id,
-                "remedy": "the pinned plugin is not in this checkout; choose a current plugin"}
+                "remedy": "the pinned plugin is not in this checkout; pass the run's file with --plugin "
+                          "or choose a current plugin"}
     current = producer.plugin_implementation_sha256(path)
     return {"status": "current" if current == pinned else "stale", "pluginId": plugin_id,
             "pinned": pinned, "current": current, "plugin": path.name,
@@ -248,18 +256,21 @@ def main(argv: list[str] | None = None) -> int:
                         help="Repeat per locale; default zh-Hans, ko and es")
     parser.add_argument("--base", action="append", default=[], metavar="LOCALE=PATH",
                         help="Base policy draft per locale (default config/target-language-policies/<locale>.json)")
+    parser.add_argument("--plugin", action="append", default=[], metavar="LOCALE=PATH",
+                        help="Plugin file the run's execution configuration names, when outside the checkout")
     parser.add_argument("--series-terminology", type=Path)
     parser.add_argument("--reviewed-by", required=True)
     parser.add_argument("--reviewed-at", required=True)
     parser.add_argument("--user-statement", required=True)
     parser.add_argument("--out-dir", type=Path, required=True)
     args = parser.parse_args(argv)
-    bases = {}
-    for item in args.base:
-        locale, sep, path = item.partition("=")
-        if not sep or locale not in LOCALES:
-            parser.error(f"--base needs LOCALE=PATH with LOCALE in {LOCALES}")
-        bases[locale] = Path(path)
+    bases, plugins = {}, {}
+    for flag, items, into in (("--base", args.base, bases), ("--plugin", args.plugin, plugins)):
+        for item in items:
+            locale, sep, path = item.partition("=")
+            if not sep or locale not in LOCALES:
+                parser.error(f"{flag} needs LOCALE=PATH with LOCALE in {LOCALES}")
+            into[locale] = Path(path)
     for value in (args.reviewed_by, args.reviewed_at, args.user_statement):
         if not value.strip():
             parser.error("--reviewed-by, --reviewed-at and --user-statement must not be empty")
@@ -271,7 +282,7 @@ def main(argv: list[str] | None = None) -> int:
         base = _read(bases.get(locale, default_base_policy(locale)))
         draft, report = scope_locale(decisions, source, anchor, locale, base, series_table=series_table,
                                      reviewed_by=args.reviewed_by, reviewed_at=args.reviewed_at,
-                                     user_statement=args.user_statement)
+                                     user_statement=args.user_statement, plugin_path=plugins.get(locale))
         report["decisionsSha256"] = summary["decisionsSha256"]
         _write_new(args.out_dir / f"{locale}-term-scope-report.json", report)
         if draft is not None:

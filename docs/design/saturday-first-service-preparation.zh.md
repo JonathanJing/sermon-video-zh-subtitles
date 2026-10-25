@@ -81,7 +81,7 @@ H1 还没有被任何运行验证。它成立与否决定本页的价值上限�
   - 决定里的词只要在正式英文的某个单元出现，就写进 `properNames` 和 `termApprovalReceipt`，收据行记下那个 `sourceUnitId`；没出现的列为 `decisionsAbsentFromSource`，不写入。
   - 扫描器（`policy.source_scoped_proper_names`）找出的名字，既不在决定里也不在预测排除里的，列为 `uncoveredScannerNames`（带单元 ID），该 locale 不出草稿，等人决定。预测排除只保留扫描器真的产出的那些。
   - 用到的系列名取决定里的目标，没有就沿用底稿；中文必须与系列名称表一致。
-  - 每份草稿在内存里试冻结一次（`freeze_policy` 加 `validate_source_scope`），并核对所钉插件与当前代码：`current`、`stale`、`missing` 或 `unbound`。冻结本身仍由操作者用 `text.policy freeze` 选择后端；ko/es 插件过期时加 `--language-review machine_qc` 重钉。
+  - 每份草稿在内存里试冻结一次（`freeze_policy` 加 `validate_source_scope`），并核对所钉插件与当前代码：`current`、`stale`、`missing` 或 `unbound`。冻结本身仍由操作者用 `text.policy freeze` 选择后端；ko/es 插件过期时加 `--language-review machine_qc` 重钉。运行用仓库外的插件文件时用 `--plugin LOCALE=PATH` 指给它。`current` 只说明字节一致：按来源绑定的插件（例如 `zh-Hans-weekly-cuv-v1` 内嵌 9-27 讲道的经文边界收据）换了来源会拒绝每一组，2026-10-24 rehearsal 已实测。
   - 退出码：0 全部可冻结且插件为当前；2 缺决定或试冻结被拒；3 可冻结但有插件要先重钉。
   - 收据上的人工批准来自操作者传入的 `--reviewed-by` 与 `--user-statement`，工具不推断批准。
 
