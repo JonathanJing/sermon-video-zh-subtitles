@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261025-default-week-poster-fix",
+  "runs": [
+    {
+      "label": "default-week-poster-fix-20261025",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/default-week-poster-fix-20261025",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "default-week-poster-fix-20261025",
+      "path": "deployment-receipt.json",
+      "kind": "whole",
+      "bytes": 341,
+      "truncated": false,
+      "sha256": "08db5b3ef2dbcd51f4c982bc738fba2adf38d152505e46801af1473adb294578",
+      "redactions": {}
+    },
+    {
+      "run": "default-week-poster-fix-20261025",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 1138,
+      "truncated": false,
+      "sha256": "760278b705a4e4ee61f31277f80728c49e8687c55b5c5106281ecf6d47ccccc9",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}
