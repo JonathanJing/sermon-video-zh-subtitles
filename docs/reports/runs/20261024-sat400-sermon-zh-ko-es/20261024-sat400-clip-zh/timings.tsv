@@ -1,0 +1,6 @@
+stage	computeSeconds	waitingSeconds	reworkSeconds
+l1.preflight	0.0	0.0	0.0
+l2.consistency	0.0	0.0	0.0
+l3.finish	231.0	0.0	150.0
+l3.asr-triage	0.0	0.0	0.0
+total	231.0	0.0	150.0
