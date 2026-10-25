@@ -1,0 +1,27 @@
+{
+  "checkedAt": "2026-10-25T05:04:07.746631+00:00",
+  "origin": "https://ai-for-god-sermon-audio.web.app",
+  "deployedVersion": "sites/ai-for-god-sermon-audio/versions/833eda14595b165d",
+  "observedVersion": "sites/ai-for-god-sermon-audio/versions/833eda14595b165d",
+  "status": "pass",
+  "files": [
+    {
+      "path": "/fingerprint-ui.mjs",
+      "status": 200,
+      "bytes": 29638,
+      "sha256": "3c5d8b2293be77676a2cfa61b5dd6d98abf018661cf77239aeb810af2fb8a53e",
+      "expectedSha256": "3c5d8b2293be77676a2cfa61b5dd6d98abf018661cf77239aeb810af2fb8a53e",
+      "etag": "\"3e95ce32de1bb452d86e88802141ed944eca10339795b463ed5d729e17edccbe\"",
+      "matched": true
+    },
+    {
+      "path": "/published-weeks.mjs",
+      "status": 200,
+      "bytes": 62968,
+      "sha256": "7a5282a0d47bd35d5459099fe82db5bafb4e69c3eda22a0afbc7ed0c69609991",
+      "expectedSha256": "7a5282a0d47bd35d5459099fe82db5bafb4e69c3eda22a0afbc7ed0c69609991",
+      "etag": "\"608b843b47b4942eaf1f4c5a3bca50e5429146720803a17c132887a363418e34\"",
+      "matched": true
+    }
+  ]
+}

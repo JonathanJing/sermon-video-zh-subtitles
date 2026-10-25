@@ -1,0 +1,63 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261024-prod-web-13ad004",
+  "runs": [
+    {
+      "label": "run-report-input",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/web-podcast-fingerprint-fix-20261024/run-report-input",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "run-report-input",
+      "path": "browser-smoke-receipt.json",
+      "kind": "whole",
+      "bytes": 4820,
+      "truncated": false,
+      "sha256": "b94028f93652829d425e36212c6a1d7ff161e533e37735fee682fa786515febf",
+      "redactions": {}
+    },
+    {
+      "run": "run-report-input",
+      "path": "deployment-receipt.json",
+      "kind": "whole",
+      "bytes": 436,
+      "truncated": false,
+      "sha256": "fc0f2e749742f7ef1bcd14b2cf48afaa0bd2dea890e57c37d4596d77f22eb5a1",
+      "redactions": {}
+    },
+    {
+      "run": "run-report-input",
+      "path": "http-receipt.json",
+      "kind": "whole",
+      "bytes": 1061,
+      "truncated": false,
+      "sha256": "7878d401d2c9de2a880aeb6c9373a4547ac5d92a28f503f9aaf29ba728751e86",
+      "redactions": {}
+    },
+    {
+      "run": "run-report-input",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 410,
+      "truncated": false,
+      "sha256": "cccc3e5a6b217960fdbab04a3a717612e397126b5e35fe71729ca7527d6a76a6",
+      "redactions": {}
+    },
+    {
+      "run": "run-report-input",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 461,
+      "truncated": false,
+      "sha256": "b569d6f6fc988c158e5ac4b7a54c88f91a8dd35fa46d9b8460e1dd530b7f1a59",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}
