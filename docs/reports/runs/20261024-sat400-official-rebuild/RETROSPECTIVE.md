@@ -12,8 +12,6 @@
   - 英文来源包仍是本地 ASR（mlx-whisper large-v3-turbo），`notMfa=true`；**本轮没有单独的人工英文表审阅**，只用了同一篇讲道已批准的术语。
   - 三条线上 MP3 是补尾到 1853.056 s（页面唯一对齐窗口）的 192 kbps 版本；用户 22:22 确认三语整轨已人工听审，收据同时绑定审听用 `review.mp3` 与线上 MP3 的哈希。
   - 未做：MFA、独立英文机器评审、`preflight.py`/`consistency_check.py`、iOS 真机/TestFlight、浏览器播放、现场验收、海报重渲染（沿用已上传版本）。
-  - **上线早于听审约 84 分钟**：release 与目录在 20:58:05 PDT（`8c68ee3c391dd58d`）以 `human_reviewed` 上线，英文对照 21:01:53 上线；用户 22:22 才确认三语整轨听审。中间这段时间页面对外标的是 `human_reviewed`，实际还没有人工听审；当时三个 `run.md` 写的是「新录音的三条音轨未逐条听审」。这违反逐句优先线 runbook 边界第 3 条和仓库不变量 1（诚实标签）。
-  - **发布包绑定的收据已被覆盖**：20:51 生成的三语 `*-candidate.json` 与 `*-audio-package.json` 记录 `humanReview.verdictSha256 = e0285487…`，线上 release 通过这两个包的哈希间接绑定它。22:23 写入的终版 `human-review-verdict.json`（`6d93b6fb…`）覆盖了同一路径，原文件没有副本，`artifacts/` 里找不到哈希为 `e0285487…` 的文件。线上 release 绑定的审核收据因此无法复核；终版收据内容（听审结论、`review.mp3` 与线上 MP3 哈希）正确，但它不是发布包绑定的那一份。
 
 ## 总时间
 
