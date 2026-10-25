@@ -56,6 +56,8 @@
 - **P5：** 用户在对话中说“按照预热包里的来”。决定文件按语言插件的逐字检查做了归一：西语去冠词、韩文锁词干、Eric Geiger 改为仅审核参考（全名不出现，单独的 Eric 会误中 America），补上扫描器要求的 Adolf Hitler、World War、Nazi Germany。归一由 Claude 完成，用户未逐条复核；决定记录绑定预热包与决定文件的哈希，状态 `applies`。
 - **P9 工具：** `text.term_scope`（PR #1357）。在 4 点场转写（按预热包改正英文后切成 372 句，非 Layer 1 锚点）上，以上周三语草稿为底稿：三语都出草稿，31 条术语全部能指到单元，没有未覆盖的扫描名，试冻结通过。
 - **发现：** 上周 ko/es 草稿所钉插件哈希已过期，用 `text.policy freeze --language-review machine_qc` 冻结后重钉为当前哈希；上周 zh-Hans 草稿所钉的 `zh-Hans-weekly-auto-v1` 在当前代码里不存在，本周 zh-Hans 插件需要另选（候选 `zh-Hans-weekly-cuv-v1`，本篇有 4 处和合本直接引用）。
+- **zh-Hans 插件试钉 `zh-Hans-weekly-cuv-v1`（用户指定）：** 以上周 zh 草稿为底稿，改钉该插件当前哈希 `a7826dc2…`，经文政策改为 `cmn-cu89s`／`source_bound_exact_quote`。term_scope 出草稿、试冻结通过、插件钉为 current、`productionPolicyReady=true`。但直接调用插件的 `review_group`：一句普通讲述和一处 12:14 和合本原文引用，`cuv_exact_quote` 都失败（“Human boundary receipt belongs to another source”）。该插件内嵌 9-27 讲道的经文边界收据，换来源后每一组都会被拒，本周不能用。试冻结和插件钉检查都看不出这一点。
+- **上周 zh 插件：** `zh-Hans-weekly-auto-v1` 是运行目录里的 16 行文件（`layer2-broadcast-20261018/plugins/zh_hans_weekly_auto.py`），只调共享的机器质检规则，不按来源绑定，从未进仓库。用新加的 `--plugin` 指给它，钉仍为 current；但仓库外插件的哈希只算这一个文件，不含它引用的共享规则，而共享规则在 ko/es 那边已变。
 
 ## 外部可见的变化
 
