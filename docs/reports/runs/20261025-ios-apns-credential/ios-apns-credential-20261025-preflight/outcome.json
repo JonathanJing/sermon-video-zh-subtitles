@@ -1,0 +1,7 @@
+{
+  "schemaVersion": "tongxing-run-outcome-v1",
+  "status": "preflight_pass",
+  "exitCode": 0,
+  "deliveryType": "test",
+  "apnsSent": false
+}
