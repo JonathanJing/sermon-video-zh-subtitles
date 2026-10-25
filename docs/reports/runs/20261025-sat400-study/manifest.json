@@ -1,0 +1,112 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261025-sat400-study",
+  "runs": [
+    {
+      "label": "20261024-sat400-v2-study",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/sentence-first-agent/20261024-sat400-v2-study",
+      "skipped": {
+        ".md": 1,
+        ".json": 21
+      }
+    },
+    {
+      "label": "20261024-sat400-v2-study-publish",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/sentence-first-agent/20261024-sat400-v2-study-publish",
+      "skipped": {
+        ".json": 819,
+        ".mp3": 318,
+        ".html": 143,
+        ".js": 27,
+        ".mjs": 165,
+        ".png": 200,
+        ".svg": 15,
+        ".srt": 10,
+        ".pdf": 20,
+        ".jpg": 5,
+        ".css": 15,
+        ".cache": 3,
+        ".lock": 3
+      }
+    }
+  ],
+  "files": [
+    {
+      "run": "20261024-sat400-v2-study-publish",
+      "path": "baseline-8/baseline-receipt.json",
+      "kind": "whole",
+      "bytes": 124415,
+      "truncated": false,
+      "sha256": "fc76d72b9afd1aa070a8c8897f99515252eb9d90858933788ac72e40bfbc0be4",
+      "redactions": {}
+    },
+    {
+      "run": "20261024-sat400-v2-study-publish",
+      "path": "baseline-9/baseline-receipt.json",
+      "kind": "whole",
+      "bytes": 127721,
+      "truncated": false,
+      "sha256": "d5eaca8c80ab90e9d4383d479f548f9aa6d5360f7dd269261d6566210ef0c420",
+      "redactions": {}
+    },
+    {
+      "run": "20261024-sat400-v2-study-publish",
+      "path": "stage-assets/baseline-receipt.json",
+      "kind": "whole",
+      "bytes": 124415,
+      "truncated": false,
+      "sha256": "fc76d72b9afd1aa070a8c8897f99515252eb9d90858933788ac72e40bfbc0be4",
+      "redactions": {}
+    },
+    {
+      "run": "20261024-sat400-v2-study-publish",
+      "path": "stage-assets/hosting-publish.log",
+      "kind": "log",
+      "bytes": 0,
+      "truncated": false,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "redactions": {}
+    },
+    {
+      "run": "20261024-sat400-v2-study-publish",
+      "path": "stage-english/baseline-receipt.json",
+      "kind": "whole",
+      "bytes": 127721,
+      "truncated": false,
+      "sha256": "d5eaca8c80ab90e9d4383d479f548f9aa6d5360f7dd269261d6566210ef0c420",
+      "redactions": {}
+    },
+    {
+      "run": "20261024-sat400-v2-study-publish",
+      "path": "stage-english/hosting-publish.log",
+      "kind": "log",
+      "bytes": 0,
+      "truncated": false,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "redactions": {}
+    },
+    {
+      "run": "20261024-sat400-v2-study-publish",
+      "path": "stage-release/baseline-receipt.json",
+      "kind": "whole",
+      "bytes": 124415,
+      "truncated": false,
+      "sha256": "fc76d72b9afd1aa070a8c8897f99515252eb9d90858933788ac72e40bfbc0be4",
+      "redactions": {}
+    },
+    {
+      "run": "20261024-sat400-v2-study-publish",
+      "path": "stage-release/hosting-publish.log",
+      "kind": "log",
+      "bytes": 0,
+      "truncated": false,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}
