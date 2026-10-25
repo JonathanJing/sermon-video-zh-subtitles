@@ -1,0 +1,14 @@
+{
+  "version": "1.26.19",
+  "build": "60",
+  "ipaSHA256": "fc3b1cfd5f4b68a0fe45ec0ced09351f3f7b629407feeef8d9746a627c4e7549",
+  "appleBuildID": "05c41d08-1801-4af2-a696-bdb540079ec6",
+  "processingState": "VALID",
+  "internalBuildState": "IN_BETA_TESTING",
+  "checkedAt": "2026-10-21T23:12:12Z",
+  "group": "Rooted",
+  "groupContainsBuild": true,
+  "notesSHA256": "e14e21d5697cbe6d17815fb6e8be529cb9703b983cc475fa4510661078381c99",
+  "device": "not_run",
+  "venue": "not_run"
+}

@@ -1,0 +1,12 @@
+{
+  "result": "passed",
+  "path": "/api/push/subscription",
+  "upsertHTTP": 200,
+  "upsertActive": true,
+  "deleteHTTP": 200,
+  "deleteActive": false,
+  "installationIDHashPrefix": "95f1579c45073613",
+  "deviceToken": "<redacted>",
+  "noAPNsSend": true,
+  "postDeleteEligibleRecipients": 0
+}

@@ -394,12 +394,26 @@ class TargetLanguageRulePreflightTests(unittest.TestCase):
                    self.identity_caller({"backend": "fixture_transport", "version": "a"}),
                    plugin_path=self.plugin)
         self.worker.calls.clear()
-        with self.assertRaisesRegex(ValueError, "prior model payload does not match cached response"):
+        with self.assertRaisesRegex(ValueError, "cross-run cache reuse requires openai_api"):
             runner.run(f.source, f.anchor, f.policy, self.worker.out, "fixture-key",
                        self.identity_caller({"backend": "fixture_transport", "version": "b"}),
                        plugin_path=self.plugin, reuse_from=original)
         self.assertEqual([], self.worker.calls)
         self.assertFalse(self.worker.out.exists())
+
+    def test_openai_api_reuse_survives_a_new_budget_authorization(self):
+        f = self.fixture
+        original = self.worker.out.parent / "budget-prior"
+        runner.run(f.source, f.anchor, f.policy, original, "fixture-key",
+                   self.identity_caller({"backend": "openai_api",
+                                         "budgetAuthorizationSha256": "a" * 64}),
+                   plugin_path=self.plugin)
+        self.worker.calls.clear()
+        runner.run(f.source, f.anchor, f.policy, self.worker.out, "fixture-key",
+                   self.identity_caller({"backend": "openai_api",
+                                         "budgetAuthorizationSha256": "b" * 64}),
+                   plugin_path=self.plugin, resume_cache_from=original)
+        self.assertEqual([], self.worker.calls)
 
     def test_raw_wrapped_fingerprint_mismatch_is_rejected_without_calls(self):
         f = self.fixture

@@ -413,6 +413,13 @@ class FormalASRBatchTests(unittest.TestCase):
         self.assertEqual(model_type.from_pretrained.call_args.kwargs['max_inference_batch_size'], 4)
         self.assertEqual([len(call.kwargs['audio']) for call in engine.transcribe.call_args_list], [4, 1])
         self.assertEqual(asr.load(self.root / 'screening.json')['humanListeningStatus'], 'pending')
+        memory = asr.load(self.root / 'screening.memory.json')
+        self.assertEqual((memory['stage'], memory['budgetStatus'], memory['modelLoaded']),
+                         ('asr_screen', asr.ASR_MEMORY_BUDGET_STATUS, True))
+        if sys.platform.startswith('linux'):
+            self.assertEqual(memory['admission']['status'], 'admitted')
+        else:
+            self.assertEqual(memory['admission'], {'status': 'not_measured', 'reason': 'non_linux_host'})
 
 
 if __name__ == '__main__':

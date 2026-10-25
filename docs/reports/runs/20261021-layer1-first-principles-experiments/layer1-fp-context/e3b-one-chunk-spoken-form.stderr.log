@@ -1,0 +1,79 @@
+Traceback (most recent call last):
+  File "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.claude/worktrees/l1-first-principles/packages/production/src/tongxing_production/source/budget.py", line 393, in call
+    return self._call(operation=operation, identity=identity, bounds=bounds, request=request,
+           ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        api_key=<redacted>, content_type=content_type, endpoint=endpoint, owner=owner)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.claude/worktrees/l1-first-principles/packages/production/src/tongxing_production/source/budget.py", line 410, in _call
+    with self._locked() as (ledger, path):
+         ~~~~~~~~~~~~^^
+  File "/opt/homebrew/Cellar/<email>/3.13.16/Frameworks/Python.framework/Versions/3.13/lib/python3.13/contextlib.py", line 141, in __enter__
+    return next(self.gen)
+  File "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.claude/worktrees/l1-first-principles/packages/production/src/tongxing_production/source/budget.py", line 177, in _locked
+    require(version in ('sermon-source-budget-ledger-v1', *CONCURRENT_LEDGERS)
+    ~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            and ledger.get('authority') == self.authority
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<5 lines>...
+            and (version not in CONCURRENT_LEDGERS or (ledger['maxConcurrent'] == self.max_concurrent
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                and ledger['resourcePolicySha256'] == self._resource_identity())), 'source_budget_identity_changed')
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.claude/worktrees/l1-first-principles/packages/production/src/tongxing_production/source/budget.py", line 57, in require
+    raise ValueError(code)
+ValueError: source_budget_identity_changed
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.claude/worktrees/l1-first-principles/tools/ops/run.py", line 91, in <module>
+    raise SystemExit(main())
+                     ~~~~^^
+  File "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.claude/worktrees/l1-first-principles/tools/ops/run.py", line 87, in main
+    return entry()
+  File "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.claude/worktrees/l1-first-principles/packages/production/src/tongxing_production/source/unified_stage.py", line 706, in main
+    result = inspect(args.config) if args.command == 'inspect' else execute(args.config)
+                                                                    ~~~~~~~^^^^^^^^^^^^^
+  File "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.claude/worktrees/l1-first-principles/packages/production/src/tongxing_production/source/unified_stage.py", line 461, in execute
+    return _execute(config, fresh, api_key=<redacted>, transport=transport, claude_transport=claude_transport,
+                    aligner=aligner or mfa_backend.align_reference_chunks,
+                    mfa_preflight=mfa_preflight or mfa_backend.preflight)
+  File "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.claude/worktrees/l1-first-principles/packages/production/src/tongxing_production/source/unified_stage.py", line 506, in _execute
+    chunks = ordered_bounded_map(range(math.ceil(duration / 180)), transcribe_chunk, value.get('asrWorkers', 1))
+  File "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.claude/worktrees/l1-first-principles/packages/production/src/tongxing_production/source/unified_stage.py", line 171, in ordered_bounded_map
+    results[index] = future.result()
+                     ~~~~~~~~~~~~~^^
+  File "/opt/homebrew/Cellar/<email>/3.13.16/Frameworks/Python.framework/Versions/3.13/lib/python3.13/concurrent/futures/_base.py", line 453, in result
+    return self.__get_result()
+           ~~~~~~~~~~~~~~~~~^^
+  File "/opt/homebrew/Cellar/<email>/3.13.16/Frameworks/Python.framework/Versions/3.13/lib/python3.13/concurrent/futures/_base.py", line 402, in __get_result
+    raise self._exception
+  File "/opt/homebrew/Cellar/<email>/3.13.16/Frameworks/Python.framework/Versions/3.13/lib/python3.13/concurrent/futures/thread.py", line 59, in run
+    result = self.fn(*self.args, **self.kwargs)
+  File "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.claude/worktrees/l1-first-principles/packages/production/src/tongxing_production/source/unified_stage.py", line 499, in transcribe_chunk
+    response = caller.transcribe(f'asr.{index:04d}', audio.read_bytes(), _sha(audio), api_key or '')
+  File "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.claude/worktrees/l1-first-principles/packages/production/src/tongxing_production/source/budget.py", line 619, in transcribe
+    return self.call(operation=operation, identity=prepared['identity'], bounds=prepared['budgetBounds'],
+           ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                     request=prepared['body'], api_key=<redacted>, content_type=prepared['contentType'],
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                     endpoint='https://api.openai.com/v1/audio/transcriptions')
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.claude/worktrees/l1-first-principles/packages/production/src/tongxing_production/source/budget.py", line 396, in call
+    with self._locked() as (ledger, path):
+         ~~~~~~~~~~~~^^
+  File "/opt/homebrew/Cellar/<email>/3.13.16/Frameworks/Python.framework/Versions/3.13/lib/python3.13/contextlib.py", line 141, in __enter__
+    return next(self.gen)
+  File "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.claude/worktrees/l1-first-principles/packages/production/src/tongxing_production/source/budget.py", line 177, in _locked
+    require(version in ('sermon-source-budget-ledger-v1', *CONCURRENT_LEDGERS)
+    ~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            and ledger.get('authority') == self.authority
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<5 lines>...
+            and (version not in CONCURRENT_LEDGERS or (ledger['maxConcurrent'] == self.max_concurrent
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                and ledger['resourcePolicySha256'] == self._resource_identity())), 'source_budget_identity_changed')
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.claude/worktrees/l1-first-principles/packages/production/src/tongxing_production/source/budget.py", line 57, in require
+    raise ValueError(code)
+ValueError: source_budget_identity_changed

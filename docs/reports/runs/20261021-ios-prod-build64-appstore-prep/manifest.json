@@ -1,0 +1,27 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261021-ios-prod-build64-appstore-prep",
+  "runs": [
+    {
+      "label": "build64-appstore-prep",
+      "source": "~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/artifacts/ios-formal-push-validation/reports/build64-appstore-prep",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "build64-appstore-prep",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 392,
+      "truncated": false,
+      "sha256": "592e2fc13d5723214c462b746ea2315046cbfcb66891da07434941958be43ad2",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

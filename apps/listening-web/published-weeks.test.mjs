@@ -148,6 +148,30 @@ test('podcast compatibility still rejects malformed outline bodies, unsafe sourc
   assert.equal(rejectedVideo.errors.length, 3);
 });
 
+test('published podcast without summary or outline stays listed, as on iOS; present fields are still checked', async () => {
+  const f = publishedPodcastFixture(({content}) => { delete content.summary; delete content.outline; });
+  const result = await loadPublishedWeeks(f.fetchImpl);
+  assert.deepEqual(result.errors, []);
+  assert.deepEqual(Object.keys(result.weeks[0].contentVariants), ['zh-Hans', 'ko', 'es']);
+  for (const variant of Object.values(result.weeks[0].contentVariants)) {
+    assert.equal(variant.summary, '');
+    assert.equal(variant.centralMessage, '');
+    assert.deepEqual(variant.outline, []);
+  }
+  for (const rejected of [
+    publishedPodcastFixture(({content}) => { content.summary = ''; }),
+    publishedPodcastFixture(({content}) => { content.outline = null; }),
+  ]) {
+    const result = await loadPublishedWeeks(rejected.fetchImpl);
+    assert.deepEqual(result.weeks, []);
+    assert.equal(result.errors.length, 3);
+  }
+  const video = fixture(({content}) => { delete content.summary; delete content.outline; });
+  const rejectedVideo = await loadPublishedWeeks(video.fetchImpl);
+  assert.deepEqual(rejectedVideo.weeks, []);
+  assert.match(rejectedVideo.errors[0], /Invalid published content metadata/);
+});
+
 test('release hashes are verified before their content is read', async () => {
   const f = fixture();
   f.files.set(`/releases-v2/${pageId}/es.json`, '{}');
@@ -384,6 +408,20 @@ test('published listening alignment binds each locale to its reviewed source and
     assert.equal(v.audioFingerprint.sourceSha256,v.sourceSha256);
     assert.equal(v.automaticAudioAlignment.status,'ready');
   }
+});
+test('published podcast alignment binds the window that covers each reviewed track, as on iOS', async () => {
+  const f=publishedPodcastFixture(); addAlignment(f, s=>Object.values(s.targets).forEach(t=>{t.audioFingerprint.sourceEndSeconds=9;}));
+  const result=await loadPublishedWeeks(f.fetchImpl);
+  assert.deepEqual(result.errors,[]);
+  for (const v of Object.values(result.weeks[0].contentVariants)) {
+    assert.equal(v.audioFingerprint.sourceEndSeconds,9);
+    assert.equal(v.automaticAudioAlignment.status,'ready');
+    assert.equal(Object.hasOwn(v,'sourceStartSeconds'),false);
+  }
+  const stale=publishedPodcastFixture(); addAlignment(stale);
+  const rejected=await loadPublishedWeeks(stale.fetchImpl);
+  assert.ok(Object.values(rejected.weeks[0].contentVariants).every(v=>v.audioFingerprint===undefined && v.tracks.length===1));
+  assert.equal(rejected.errors.length,3);
 });
 test('stale track, source, release and window bindings disable alignment without losing playback', async () => {
   for (const change of [m=>m.trackSha256='f'.repeat(64),m=>m.sourceSha256='f'.repeat(64),m=>m.sourceEndSeconds=11,m=>m.indexUrl='/wrong.json']) {

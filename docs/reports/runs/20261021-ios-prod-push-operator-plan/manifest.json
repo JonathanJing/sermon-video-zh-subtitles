@@ -1,0 +1,27 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261021-ios-prod-push-operator-plan",
+  "runs": [
+    {
+      "label": "operator-plan",
+      "source": "~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/artifacts/ios-formal-push-validation/reports/operator-plan",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "operator-plan",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 253,
+      "truncated": false,
+      "sha256": "19b149adc26231a5d194c55fcd928b33839b67b739d944a4894d1cd0313c502d",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

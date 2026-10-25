@@ -1,49 +1,33 @@
-# Backend API / Worker Scaffold
+# Legacy Backend API / Worker Support Path
 
-This backend path is already working, but it is currently a secondary path in
-the repository.
+This API and worker supports the legacy source-discovery, caption and post-live
+reading-PDF path. The repository's current prepared-content path is four-layer
+multilingual weekly production:
 
-The primary repository workflow today is the stable post-live operator flow
-documented in:
+- [Root README](../README.md)
+- [Four-layer contract](../docs/multilingual-production-interfaces.zh.md)
+- [Local production runbook](../docs/codex-local-production-runbook.zh.md)
 
-- [../README.md](../README.md)
-- [../docs/stable-post-live-reading-pdf-workflow.md](../docs/stable-post-live-reading-pdf-workflow.md)
-- [../docs/stable-post-live-reading-pdf-workflow.zh.md](../docs/stable-post-live-reading-pdf-workflow.zh.md)
+The separate reading-PDF delivery remains documented in the
+[stable post-live workflow](../docs/stable-post-live-reading-pdf-workflow.md)
+and its [Chinese version](../docs/stable-post-live-reading-pdf-workflow.zh.md).
+It requires the saved source, a human-confirmed sermon window, reading-text QA,
+both PDFs and their QA reports. That completion bar applies to `dual_pdf`,
+not to a four-layer release or a Sunday `live_session`.
 
-That primary flow is:
+## Supported scope
 
-1. save a sermon video URL into resumable state
-2. manually confirm the sermon start and end time
-3. run the post-live subtitle pipeline
-4. generate the Chinese-English reading PDF
-5. treat the run as complete only after PDF QA passes
+Use this path for Cloud Run-compatible API endpoints, scheduler-driven
+source discovery or generation handoff, admin progress polling, shared run-state
+reads and public Sunday artifacts served from promoted manifests. The sections
+below preserve this legacy path's configuration and model routing; they do not
+define the defaults of the current Layer 2 runner. Backend job success alone
+does not establish artifact, publication, device or venue acceptance.
 
-This backend README describes the supporting API and worker path around that
-workflow. It is not the main operator entrypoint described in the root README.
-
-## Relationship To The Primary Workflow
-
-Use this backend path when you need one or more of these:
-
-- Cloud Run-compatible API endpoints
-- scheduler-driven source discovery or generation handoff
-- admin progress polling and shared run-state reads
-- public Sunday artifact serving from promoted manifests
-
-Do not treat backend job success alone as workflow success. The repository's
-current stable completion bar is still the reading-PDF path: saved source,
-manually confirmed sermon window, generated `sermon_zh_en_reading.pdf`, passing
-PDF QA, and written run reports.
-
-## Current Role
-
-Today this backend is best understood as:
-
-- a working orchestration and serving layer
-- a path for Cloud Run and scheduler integration
-- a support system around the stable post-live reading-PDF workflow
-
-It is not the repository's primary documentation narrative.
+`backend/` still holds the API/worker shell; extracted API modules live in
+`services/api/src/tongxing_api/`, while reusable production logic lives in
+`packages/production/src/tongxing_production/`. New operator commands use
+`.venv/bin/python tools/ops/run.py <area.module>`.
 
 ## Public Read Path
 

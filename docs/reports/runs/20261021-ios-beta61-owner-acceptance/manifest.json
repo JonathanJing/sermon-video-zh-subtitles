@@ -1,0 +1,27 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261021-ios-beta61-owner-acceptance",
+  "runs": [
+    {
+      "label": "manual-beta61-completion-ios27-0-1",
+      "source": "~/.codex/worktrees/ios-next-beta-poster-push/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-21/manual-beta61-completion-ios27-0-1",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "manual-beta61-completion-ios27-0-1",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 476,
+      "truncated": false,
+      "sha256": "3e5d9152a4bd1ce31f72d5e1ea5a4bef44748281af50c634657eadb8fb64eb8f",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

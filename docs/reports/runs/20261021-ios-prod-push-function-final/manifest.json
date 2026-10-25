@@ -1,0 +1,29 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261021-ios-prod-push-function-final",
+  "runs": [
+    {
+      "label": "function-final",
+      "source": "~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/artifacts/ios-formal-push-validation/reports/function-final",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "function-final",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 654,
+      "truncated": false,
+      "sha256": "731e7f2fd20af5897a9579e4fce7be2ad49b1b8045ab433ff2ea66cc4a903f23",
+      "redactions": {
+        "email": 1
+      }
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

@@ -1,0 +1,16 @@
+2026-09-06 08:46:54-0700 diagnosticd[87779]: diagnosticd starting
+2026-09-06 08:46:54-0700 diagnosticd[87779]: System mode client started - diagnosticd (87779) - mode: 0x9, filter: "<empty>"
+2026-09-06 16:16:45-0700 diagnosticd[28343]: diagnosticd starting
+2026-09-06 16:16:45-0700 diagnosticd[28343]: System mode client started - diagnosticd (28343) - mode: 0x9, filter: "<empty>"
+2026-09-22 21:34:58-0700 diagnosticd[22474]: diagnosticd starting
+2026-09-22 21:34:58-0700 diagnosticd[22474]: System mode client started - diagnosticd (22474) - mode: 0x9, filter: "<empty>"
+2026-10-15 09:22:48-0700 diagnosticd[46316]: diagnosticd starting
+2026-10-15 09:22:48-0700 diagnosticd[46316]: System mode client started - diagnosticd (46316) - mode: 0x9, filter: "<empty>"
+2026-10-15 09:23:01-0700 diagnosticd[46316]: System mode client started - log (46572) - mode: 0x8, filter: "{
+    process =     {
+        backboardd = 0;
+    };
+}"
+2026-10-17 21:39:45-0700 diagnosticd[46316]: System mode client stopped - log (46572) - clearing mode: 0x0, still active: 0x9
+2026-10-21 17:01:06-0700 diagnosticd[69800]: diagnosticd starting
+2026-10-21 17:01:06-0700 diagnosticd[69800]: System mode client started - diagnosticd (69800) - mode: 0x9, filter: "<empty>"

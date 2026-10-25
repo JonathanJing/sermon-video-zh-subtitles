@@ -1,0 +1,25 @@
+{
+  "schemaVersion": "tongxing-poster-run-summary-v1",
+  "deliveryType": "four_layer_release_poster_followup",
+  "pageId": "revelation-jesus-wins-20261025",
+  "locales": [
+    "zh-Hans",
+    "ko",
+    "es",
+    "en-reference"
+  ],
+  "posterStatus": "complete_visual_reviewed",
+  "hostingStatus": "published_http_verified",
+  "hostingVersion": "sites/ai-for-god-sermon-audio/versions/16c9c15a1dbdbf91",
+  "httpChecks": 12,
+  "fullLiveInventoryFiles": 318,
+  "fullLiveInventoryBytesMatch": true,
+  "browserCorePageStatus": "pass",
+  "browserSessionStatus": "fail",
+  "browserSessionFailure": "Three locales had /api/session 400 responses; browser smoke passes with --no-session.",
+  "deviceDisplay": "not_run",
+  "physicalScan": "not_run",
+  "printing": "not_run",
+  "externalNotification": "not_sent",
+  "humanPosterApproval": false
+}

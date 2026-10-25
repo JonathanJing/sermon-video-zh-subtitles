@@ -77,10 +77,11 @@
 <rect x="612" y="620" width="48" height="34" rx="12" fill="#fff3de" stroke="none" />
 <text x="636" y="643" font-size="17" font-weight="750" fill="#ad751c" text-anchor="middle" >04</text>
 <text x="674" y="643" font-size="16" font-weight="700" fill="#ad751c" text-anchor="start" >门槛 / GATE</text>
-<text x="614" y="686" font-size="26" font-weight="700" fill="#17314e" text-anchor="start" >MacBook 本地中文配音</text>
-<path d="M614 706H986" stroke="#e6edf3"/>
-<text x="614" y="739" font-size="18" font-weight="400" fill="#5b748c" text-anchor="start" >原声参考与来源身份绑定</text>
-<text x="614" y="763" font-size="18" font-weight="400" fill="#5b748c" text-anchor="start" >9/20 用户听审已通过</text>
+<text x="614" y="686" font-size="24" font-weight="700" fill="#17314e" text-anchor="start" >DGX Spark 默认 / MacBook</text>
+<text x="614" y="715" font-size="24" font-weight="700" fill="#17314e" text-anchor="start" >fallback</text>
+<path d="M614 733H986" stroke="#e6edf3"/>
+<text x="614" y="766" font-size="18" font-weight="400" fill="#5b748c" text-anchor="start" >原声参考与来源身份绑定</text>
+<text x="614" y="790" font-size="18" font-weight="400" fill="#5b748c" text-anchor="start" >9/20 MacBook 运行听审已通过</text>
 </g>
 <g id="node-app" data-node="app">
 <rect x="1100" y="595" width="420" height="230" rx="22" fill="#ffffff" stroke="#d4e0ea" filter="url(#card-shadow)"/>
@@ -174,6 +175,6 @@
 <rect x="64" y="1558" width="1472" height="96" rx="20" fill="#1d4061" stroke="none" />
 <text x="88" y="1589" font-size="18" font-weight="500" fill="#e7f1f8" text-anchor="start" >发布 HTTP 核验后默认交付海报；文档、声音、App、图像及真实现场分别验收。</text>
 <text x="88" y="1616" font-size="18" font-weight="500" fill="#e7f1f8" text-anchor="start" >9/20 Firebase / iOS 与用户听审已通过；现场同步仍未证实，海报不替代任何内容门槛。</text>
-<text x="64" y="1678" font-size="14" font-weight="400" fill="#7890a2" text-anchor="start" >内容依据：2026-09-20 校准的图稿；本图仅表达职责和门槛</text>
+<text x="64" y="1678" font-size="14" font-weight="400" fill="#7890a2" text-anchor="start" >内容依据：2026-10-22 校准的图稿；本图仅表达职责和门槛</text>
 <text x="1536" y="1678" font-size="14" font-weight="400" fill="#7890a2" text-anchor="end" >实线：主路径    虚线：条件 / 实验 / 返修</text>
 </svg>

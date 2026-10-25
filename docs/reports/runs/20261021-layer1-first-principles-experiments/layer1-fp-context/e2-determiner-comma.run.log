@@ -1,0 +1,13 @@
+20:04:13 e2-determiner-comma_rebuild_start
+{
+  "status": "blocked",
+  "kind": "english_source_candidate",
+  "reason": "source_machine_judge_rejected",
+  "review": "human_pending",
+  "productionEligible": false,
+  "humanApprovalCreated": false,
+  "candidatePath": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/podcasts/if-i-had-more-time-jesus-sends-and-resurrects-his-own/layer1-fp/e2-determiner-comma.output/english-source-candidate.json",
+  "candidateSha256": "2282f41e473b63f5a4bf6f929c8bd82902c56ee0a55d8661f6001437a8238c1f",
+  "machineJudgeStatus": "rejected_for_layer2_shadow"
+}
+20:06:44 e2-determiner-comma_rebuild_exit=0

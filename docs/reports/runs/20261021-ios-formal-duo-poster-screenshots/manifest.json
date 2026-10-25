@@ -1,0 +1,54 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261021-ios-formal-duo-poster-screenshots",
+  "runs": [
+    {
+      "label": "20261021T213037-test-14054987",
+      "source": "~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-21/cli/20261021T213037-test-14054987",
+      "skipped": {
+        ".json": 1,
+        ".0~-hjfHxGYkJmn_QUlcyLllFZVvGgE4t9FjV9SolX5fqJ-VsC9mJLVAH-3sP1IVY3y9S9m8CIImAnAhGG6qCCBug==": 2,
+        ".0~0CTFAEZjFCJ7AeB65pUZawFAag_m7IVsdvxhXESs5fMkNw0YVdqb9oHZEkdQ36hVA9bu45jROOnuXbhbOzEQpg==": 2,
+        ".0~33BxoDV9W1c14bAAP6fGLO0SdfABREbjjhOo6ELHdLcsOsKknJdvO1jDtAiO5sw4dCnHpGim-hDDT-UXZIhDcQ==": 2,
+        ".0~4VqMqsI5lOfxRppnud6-VDWcNsU8J7VgFCJfW2dXPwOcAkvU-I8Um5yp9n0Zv6nr3VmcxYggaVMDFfR0U_vjKw==": 2,
+        ".0~53aGNfjSVfrOvbA-Vz19yc1ByakOdTY7GaVNyMwmoI7hrE6btkjnaHs7fR3AfHXUids-cCknyb9SOgEJGQ5tcA==": 2,
+        ".0~DblcuXcVGplGspVisqi---H7pNwWqzn4u6FEXaCmlrNQ9dKs9RQw3Xj0lpneE2J8emDTFHD2EBYEkerR068xhA==": 2,
+        ".0~DpMYa5CVzKRimr_CylBjTxQRUt5k6BEwE-zbs2JU5hjKevYxjnv7qcgoPtLy8kXfWlUruZ4yQra5qMq7x7VgPQ==": 2,
+        ".0~HtM0Gwz6294eWXQLbkf3w0LaSwLygsbJ4LyYE4VZ9gl55QGSLoObLxs6bgoPYyWfb21jLg-c6r35v83JDNnztw==": 2,
+        ".0~Pt_lS3M6epQX-s1tb7cAbZ36Hf0c2qvsNfwrOtcbyPq19BZ3Lovm7u1oBVau9DBsw6jbUljA0TFbsv0dclc66A==": 2,
+        ".0~XPlhzpj6NAW_xL8hIY3YpKp8rpE2SUCsGtE5rgzMZmSk4O1HhB3VX69mBnoAhmv-BYuBP4dYkRm-dG18WS57tw==": 2,
+        ".0~dkytliL54vtMm5y3cu0TZqVRveZFVB4ndY1_mRvjJ76WzfuUZeu0Nq1_ucqrkbIw4r1JT5J0Dh0Fm6zPB98XHA==": 2,
+        ".0~i6IhTlP6WBAdcMln4LjM4SI68Q2GCKoQiN6tKlml9vPCIrNTv513w1oDsSwMSySysGY33Yc51w9xw-JdP9XiOw==": 2,
+        ".0~kgJCV5NPNjVL9LHGO2sStVLX6Im4rZ3kWzrCCTe0CWsr8V6sVKxy8sw0r_bRYIWf0vfWeJCM-zXkSDAWdpNdGA==": 2,
+        ".0~khonKanMGAX6R9emV94FGMBxKRgijU94LOwVRJjs64YcAvQ698WVS9Kgg-YMhgTybys9yM-KNuiAE-vfwB5aCA==": 2,
+        ".0~lGqTyp2KB7iekjmR2q0Rz4iq6F-OCo98zvU66z4qxE6-MbtxQ2Qw-j2IsQwmuKq5_ELcLi5Sncmk9koZV78S6g==": 2,
+        ".0~lxZvIlOvtm-I_D1jT-QF9q4_UFTOCKvVfgY0jqi5QvB0HcgItfsEwL3H27nraquiMl0xj4vnAKER7lJ8Pdt24A==": 2,
+        ".0~p6dm2oAmeJjc7FETXm7Tp-WCQ3a-OALhS3jvsgyrAyijpK_uO108-sOe14KwvqNJxuqyVOY3Krpay81NkFN1vw==": 2,
+        ".0~pr76qbbLXzK8uKk-P73xeAUyW7acvBG0EMTkQSX1KOErXGJkt6o4DZiQy7yas1h86ZbKJXNUo5ufPnDcLqPU1Q==": 2,
+        ".0~rm5bYdNDqlk8AvRwaVAhQZdwrf9VUQXShYdtkSS5mPjx7V4Wm6UXYVOEw2IdNjWnLA1NaGE_TwyZyur_Hhptjw==": 2,
+        ".0~wMmA15BT4XVGz5GZP4xQSvXhstntgVWyq0mUz0Ng4UCjrLaBTINEPhpIl-Jwye4Kgh3k1qetpm0Su9u_bKPdKQ==": 2,
+        ".0~wXtcYN3HoRL2YFCeVONlXI9CYAQgZuSsQi1-KdCKlRZnKUAU18xsnRS_-rgsZ52lho9DeKEUTAaUdHuYrKJrww==": 2,
+        ".plist": 1,
+        ".sqlite3": 1
+      }
+    }
+  ],
+  "files": [
+    {
+      "run": "20261021T213037-test-14054987",
+      "path": "run.log",
+      "kind": "log",
+      "bytes": 832369,
+      "truncated": true,
+      "sha256": "0562078a0a5c8df27b6e200ad4a9f46930b76823b94cdbfda61085901d6ea3b5",
+      "redactions": {
+        "home_dir": 10
+      }
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

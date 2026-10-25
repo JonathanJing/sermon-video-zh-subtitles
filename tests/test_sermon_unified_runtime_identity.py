@@ -17,3 +17,10 @@ class RuntimeClosureTests(unittest.TestCase):
                      'packages/production/src/tongxing_production/orchestration/unified/runtime.py'):
             self.assertIn(name,modules)
         self.assertFalse(any('/node_modules/' in name for name in modules))
+        # DEV-GOV-002: scripts/ and schemas/ enter through the Layer 2 code closure manifest, not wholesale.
+        for name in ('config/layer2-code-closure.json', 'scripts/tongxing_host.py',
+                     'scripts/language_review_plugins/common.py', 'docs/series-terminology.zh.md',
+                     'schemas/sermon-target-language-candidate-v2.schema.json'):
+            self.assertIn(name, modules)
+        for name in ('scripts/check_run_start.py', 'scripts/plan_run_budgets.py'):
+            self.assertNotIn(name, modules)

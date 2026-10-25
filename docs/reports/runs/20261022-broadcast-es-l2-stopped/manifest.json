@@ -1,0 +1,71 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261022-broadcast-es-l2-stopped",
+  "runs": [
+    {
+      "label": "b5a200b1405dc343174e9157051a287bc262445da71b11443e5820d9e88b80f3",
+      "source": "~/.codex/worktrees/broadcast-es-ko-shared-source/sermon-video-zh-subtitles/artifacts/weekend-live/broadcast-20261018-es-ko-20261022/jobs-retry1/b5a200b1405dc343174e9157051a287bc262445da71b11443e5820d9e88b80f3",
+      "skipped": {
+        ".json": 3
+      }
+    },
+    {
+      "label": "es",
+      "source": "~/.codex/worktrees/broadcast-es-ko-shared-source/sermon-video-zh-subtitles/artifacts/weekend-live/broadcast-20261018-es-ko-20261022/text-retry1/es",
+      "skipped": {
+        ".lock": 1,
+        ".jsonl": 1,
+        ".csv": 3,
+        ".json": 5003
+      }
+    }
+  ],
+  "files": [
+    {
+      "run": "b5a200b1405dc343174e9157051a287bc262445da71b11443e5820d9e88b80f3",
+      "path": "worker.log",
+      "kind": "log",
+      "bytes": 2278,
+      "truncated": false,
+      "sha256": "97f8599cf713aceff6e29b1ee3264a51e6dbd0767cbcadf5ed29e69406abfa63",
+      "redactions": {
+        "secret_field": 1,
+        "home_dir": 6
+      }
+    },
+    {
+      "run": "es",
+      "path": "accounting/operations.log",
+      "kind": "log",
+      "bytes": 4435924,
+      "truncated": true,
+      "sha256": "72290c903f782f4979a0df70354511d3c62b8dae380d28256fb3e358cd069e94",
+      "redactions": {}
+    },
+    {
+      "run": "es",
+      "path": "accounting/summary.json",
+      "kind": "whole",
+      "bytes": 7089140,
+      "truncated": false,
+      "sha256": "61370c7b86d05fcc010acf81fef22986665dcb34474a0908ddc69959a4cc130d",
+      "omitted": "over_size_cap"
+    },
+    {
+      "run": "es",
+      "path": "repair-rounds/auto-repair-receipt-002.json",
+      "kind": "whole",
+      "bytes": 2292,
+      "truncated": false,
+      "sha256": "734c92144c9d23d47d0b4ee7ec97b9d188a6bc96d02b57d3daaaa18229c21bb5",
+      "redactions": {
+        "home_dir": 4
+      }
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

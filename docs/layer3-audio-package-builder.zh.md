@@ -28,6 +28,8 @@
 
 `sermon-source-voice-authorization-v2` 与 `sermon-source-user-voice-attestation-v2` 用于母版中已人工批准的证道窗口，仅授权该源、该窗口及指定语言的正式音频生产。`sermon-clip-timeline-map-v3` 同时绑定母版、窗口批准、抽取收据与实际片段；v1/v2 历史文件不改写，新输入须重新绑定其文件与规范 JSON hash。
 
+用 `.venv/bin/python tools/ops/prepare_source_voice_authorization.py` 将用户 attestation 按 locale 和当前候选绑定成正式授权收据。v2 attestation 会生成 `sermon-source-voice-authorization-v2`，并保留它批准的源、媒体 SHA、窗口及 `formal_audio_generation` 用途；v1 输入继续生成历史授权合同。
+
 `--anchor-exception-receipt` 接收独立的 `sermon-human-anchor-exception-receipt-v1`。它仅允许本次中文、唯一 `0-s202` 的完整经文 9.199951 秒锚点，在源文件和锚点 hashes 均未改变且用户明确授权时继续构包。原问题、上游包及其 hashes 保留；输出包旁的 `.anchor-exception.json` 绑定最终音频包与人工例外，不将问题改写为机器通过。
 
 `tools/ops/run.py audio.human_review approve --publication-exception <receipt>` 保留 v3 中文例外合同，并新增 v4 多语言例外合同。v3 仍只接受精确绑定的中文音轨；v4 每张收据只绑定一个 `zh-Hans`、`ko` 或 `es` locale，以及该 locale 的源包、候选译文、审核音频包和音轨 hash。两者都要求用户明确接受先发布且视频同步尚未单独验收，输出 `videoSync1x=not_run`、`checks.synchronization=not_run`，保留完整播放、人审及全部 ASR 复核项决定。没有例外收据时仍按 v2 合同要求 1 倍速视频同步批准。发布例外不证明设备、视频同步或现场验收。

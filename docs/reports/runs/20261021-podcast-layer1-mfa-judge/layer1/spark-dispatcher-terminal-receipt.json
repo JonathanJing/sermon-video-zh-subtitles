@@ -1,0 +1,21 @@
+{
+  "receipt": {
+    "schemaVersion": "spark-dispatcher-terminal-observation-v1",
+    "jobId": "bfe220adf96d4aab94153d3b27a62505",
+    "dispatcher": {
+      "host": "MacBookPro.localdomain",
+      "pid": 69580
+    },
+    "dispatcherProcessExited": true,
+    "modelChildProcessesExited": true,
+    "evidenceScope": "local_process_census",
+    "observedAt": "2026-10-21T14:59:38.399981+00:00",
+    "processCensusSha256": "6351b48c812308d64355de8f107952ad0cb048105175fa8063cce0440a3ffc24"
+  },
+  "remoteProcessCensusSha256": "ef91d166a91b68c51447ae3ca261e684b61604bfbec1cd262f2a476d1ed98e50",
+  "remoteMfaProcesses": 0,
+  "localMfaOrStageProcesses": 0,
+  "knownOutcome": "remote mfa_alignment raised ValueError: MFA did not align required chunk: chunk_0010.json (execute-v2-resume-stderr.log)",
+  "authorization": "<redacted>",
+  "recordedAt": "2026-10-21T14:59:38+00:00"
+}

@@ -1,0 +1,5 @@
+stage	computeSeconds	waitingSeconds	reworkSeconds
+l1.preflight	0.0	0.0	0.0
+l2.consistency	0.0	0.0	0.0
+l3.finish	160.0	0.0	75.0
+total	160.0	0.0	75.0

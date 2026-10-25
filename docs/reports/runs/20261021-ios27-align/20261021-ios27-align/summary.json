@@ -1,0 +1,42 @@
+{
+  "originalRunDirectory": "artifacts/tongxing-ios/2026-10-21/cli/20261021T185419-test-232d0f9f",
+  "originalStatusSha256": "9b1bdc815e5fd3dd4acb5c53595cb05640fecd7d52d6c18546dcc6235030310c",
+  "originalRunLogSha256": "7c0cd8699f80c96f4c6742ae16a9b4e48d3d024488ac9efe1ff9e15e61933db1",
+  "xcresultSummary": {
+    "devicesAndConfigurations": [
+      {
+        "device": {
+          "architecture": "arm64",
+          "deviceId": "1752B68F-919A-404A-93CB-FCA3A5886971",
+          "deviceName": "iPhone Duo",
+          "modelName": "iPhone",
+          "osBuildNumber": "24A94401",
+          "osVersion": "27.1",
+          "platform": "iOS Simulator"
+        },
+        "expectedFailures": 0,
+        "failedTests": 0,
+        "passedTests": 7,
+        "skippedTests": 0,
+        "testPlanConfiguration": {
+          "configurationId": "1",
+          "configurationName": "Test Scheme Action"
+        }
+      }
+    ],
+    "environmentDescription": "TongxingBeta · Built with macOS 27.0.1",
+    "expectedFailures": 0,
+    "failedTests": 0,
+    "finishTime": 1792634109.871,
+    "passedTests": 7,
+    "result": "Passed",
+    "runtimeWarnings": [],
+    "skippedTests": 0,
+    "startTime": 1792634062.987,
+    "statistics": [],
+    "testFailures": [],
+    "title": "Test - TongxingBeta",
+    "topInsights": [],
+    "totalTestCount": 7
+  }
+}

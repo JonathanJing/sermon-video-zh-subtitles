@@ -1,0 +1,292 @@
+system = {
+	type = system
+	handle = 0
+	active count = 280
+	service count = 6
+	active service count = 5
+	maximum allowed shutdown time = 30 s
+	service stats = {
+	}
+	trial factors reloads = 0
+	trial factors memory = 0/0
+	trial factors = {
+	}
+	creator = launchd_sim[69755]
+	creator euid = 501
+	session = System
+	security context = {
+		uid unset
+		session uid = -101
+	}
+
+	bringup time = 157 ms
+	death port = 0x2d03
+	subdomains = {
+		pid/71033
+		pid/70296
+		pid/70997
+		pid/70312
+		pid/70753
+		pid/70995
+		pid/70994
+		pid/70993
+		pid/70991
+		pid/70962
+		pid/70308
+		pid/70702
+		pid/70289
+		pid/70012
+		pid/70303
+		pid/70639
+... 158594 lines omitted; 622 error-like lines, 50 kept below ...
+[line 241] 	exit timeout = 3
+[line 340] 	exit timeout = 3
+[line 441] 	exit timeout = 3
+[line 591] 	exit timeout = 3
+[line 693] 	exit timeout = 3
+[line 799] 	exit timeout = 3
+[line 8449] 	exit timeout = 3
+[line 8547] 	exit timeout = 3
+[line 8622] 	exit timeout = 3
+[line 8720] 	exit timeout = 3
+[line 8795] 	exit timeout = 3
+[line 8870] 	exit timeout = 3
+[line 8945] 	exit timeout = 3
+[line 9020] 	exit timeout = 3
+[line 9118] 	exit timeout = 3
+[line 9216] 	exit timeout = 3
+[line 9314] 	exit timeout = 3
+[line 9412] 	exit timeout = 3
+[line 14745] 	exit timeout = 3
+[line 14843] 	exit timeout = 3
+[line 18993] 	exit timeout = 3
+[line 18994] 	voluntary exit timeout = 5
+[line 18995] 	launch watchdog timeout = (globally disabled)
+[line 19110] 	exit timeout = 3
+[line 19111] 	voluntary exit timeout = 5
+[line 19112] 	launch watchdog timeout = (globally disabled)
+[line 38973] 	exit timeout = 3
+[line 38974] 	voluntary exit timeout = 5
+[line 38975] 	launch watchdog timeout = (globally disabled)
+[line 39100] 	exit timeout = 3
+[line 39101] 	voluntary exit timeout = 5
+[line 39102] 	launch watchdog timeout = (globally disabled)
+[line 39213] 	exit timeout = 3
+[line 43260] 	exit timeout = 3
+[line 43261] 	voluntary exit timeout = 5
+[line 43262] 	launch watchdog timeout = (globally disabled)
+[line 43384] 	exit timeout = 3
+[line 43385] 	voluntary exit timeout = 5
+[line 43386] 	launch watchdog timeout = (globally disabled)
+[line 43508] 	exit timeout = 3
+[line 43509] 	voluntary exit timeout = 5
+[line 43510] 	launch watchdog timeout = (globally disabled)
+[line 43632] 	exit timeout = 3
+[line 43633] 	voluntary exit timeout = 5
+[line 43634] 	launch watchdog timeout = (globally disabled)
+[line 45320] 	exit timeout = 3
+[line 49641] 	exit timeout = 3
+[line 51066] 	exit timeout = 3
+[line 51067] 	voluntary exit timeout = 5
+[line 51068] 	launch watchdog timeout = (globally disabled)
+... end of omitted section ...
+		SIMULATOR_MEMORY_WARNINGS => ~/Library/Developer/CoreSimulator/Devices/F81F811B-0268-4A84-8CCD-83416CA4EC15/data/var/run/memory_warning_simulation
+		SIMULATOR_AUDIO_DEVICES_PLIST_PATH => ~/Library/Developer/CoreSimulator/Devices/F81F811B-0268-4A84-8CCD-83416CA4EC15/data/var/run/com.apple.coresimulator.audio.plist
+		SIMULATOR_LOG_ROOT => ~/Library/Logs/CoreSimulator/F81F811B-0268-4A84-8CCD-83416CA4EC15
+		SIMULATOR_RUNTIME_BUILD_VERSION => 23C54
+		DYLD_ROOT_PATH => /Library/Developer/CoreSimulator/Volumes/iOS_23C54/Library/Developer/CoreSimulator/Profiles/Runtimes/iOS 26.2.simruntime/Contents/Resources/RuntimeRoot
+		PATH => /Library/Developer/CoreSimulator/Volumes/iOS_23C54/Library/Developer/CoreSimulator/Profiles/Runtimes/iOS 26.2.simruntime/Contents/Resources/RuntimeRoot/usr/bin:/Library/Developer/CoreSimulator/Volumes/iOS_23C54/Library/Developer/CoreSimulator/Profiles/Runtimes/iOS 26.2.simruntime/Contents/Resources/RuntimeRoot/bin:/Library/Developer/CoreSimulator/Volumes/iOS_23C54/Library/Developer/CoreSimulator/Profiles/Runtimes/iOS 26.2.simruntime/Contents/Resources/RuntimeRoot/usr/sbin:/Library/Developer/CoreSimulator/Volumes/iOS_23C54/Library/Developer/CoreSimulator/Profiles/Runtimes/iOS 26.2.simruntime/Contents/Resources/RuntimeRoot/sbin:/Library/Developer/CoreSimulator/Volumes/iOS_23C54/Library/Developer/CoreSimulator/Profiles/Runtimes/iOS 26.2.simruntime/Contents/Resources/RuntimeRoot/usr/local/bin
+		SIMULATOR_HOST_HOME => ~
+		SIMULATOR_ROOT => /Library/Developer/CoreSimulator/Volumes/iOS_23C54/Library/Developer/CoreSimulator/Profiles/Runtimes/iOS 26.2.simruntime/Contents/Resources/RuntimeRoot
+		IPHONE_SHARED_RESOURCES_DIRECTORY => ~/Library/Developer/CoreSimulator/Devices/F81F811B-0268-4A84-8CCD-83416CA4EC15/data
+		IPHONE_TVOUT_EXTENDED_PROPERTIES => ~/Library/Developer/CoreSimulator/Devices/F81F811B-0268-4A84-8CCD-83416CA4EC15/data/Library/Application Support/Simulator/extended_display.plist
+		SIMULATOR_BOOT_TIME => 1792627263
+		SIMULATOR_CAPABILITIES => /Library/Developer/CoreSimulator/Profiles/DeviceTypes/iPhone 17 Pro.simdevicetype/Contents/Resources/capabilities.plist
+		SIMULATOR_FRAMEBUFFER_FRAMEWORK => /Library/Developer/PrivateFrameworks/CoreSimulator.framework/Resources/Platforms/iphoneos/Library/PrivateFrameworks/SimFramebuffer.framework/SimFramebuffer
+		SIMULATOR_LEGACY_ASSET_SUFFIX => iphone
+		SIMULATOR_MAINSCREEN_PITCH => 460.000000
+		SIMULATOR_MAINSCREEN_WIDTH => 1206
+		SIMULATOR_MODEL_IDENTIFIER => iPhone18,1
+		SIMULATOR_PRODUCT_CLASS => V53
+		SIMULATOR_RUNTIME_VERSION => 26.2
+		SIMULATOR_ARCHS => arm64
+		SIMULATOR_AUDIO_SETTINGS_PATH => ~/Library/Developer/CoreSimulator/Devices/F81F811B-0268-4A84-8CCD-83416CA4EC15/data/var/run/simulatoraudio/audiosettings.plist
+		SIMULATOR_DEVICE_NAME => iPhone 17 Pro
+		SIMULATOR_EXTENDED_DISPLAY_PROPERTIES => ~/Library/Developer/CoreSimulator/Devices/F81F811B-0268-4A84-8CCD-83416CA4EC15/data/Library/Application Support/Simulator/extended_display.plist
+		SIMULATOR_MAINSCREEN_SCALE => 3.000000
+		SIMULATOR_UDID => F81F811B-0268-4A84-8CCD-83416CA4EC15
+		SIMULATOR_VERSION_INFO => CoreSimulator 1174.9.2 - Device: iPhone 17 Pro (F81F811B-0268-4A84-8CCD-83416CA4EC15) - Runtime: iOS 26.2 (23C54) - DeviceType: iPhone 17 Pro
+	}
+
+	inherited environment = {
+		TESTMANAGERD_REMOTE_AUTOMATION_SIM_SOCK => /private/tmp/com.apple.launchd.eSyKMFDaGF/com.apple.testmanagerd.remote-automation.unix-domain.socket
+		TESTMANAGERD_SIM_SOCK => /private/tmp/com.apple.launchd.eAKNbSqMH9/com.apple.testmanagerd.unix-domain.socket
+		RWI_LISTEN_SOCKET => /private/tmp/com.apple.launchd.Qkne1uqfaf/com.apple.webinspectord_sim.socket
+	}
+
+	default environment = {
+		DYLD_FALLBACK_FRAMEWORK_PATH => /Library/Developer/CoreSimulator/Volumes/iOS_23C54/Library/Developer/CoreSimulator/Profiles/Runtimes/iOS 26.2.simruntime/Contents/Resources/RuntimeRoot/System/Library/Frameworks
+		CFFIXED_USER_HOME => ~/Library/Developer/CoreSimulator/Devices/F81F811B-0268-4A84-8CCD-83416CA4EC15/data
+		DYLD_FALLBACK_LIBRARY_PATH => /Library/Developer/CoreSimulator/Volumes/iOS_23C54/Library/Developer/CoreSimulator/Profiles/Runtimes/iOS 26.2.simruntime/Contents/Resources/RuntimeRoot/usr/lib
+		HOME => ~/Library/Developer/CoreSimulator/Devices/F81F811B-0268-4A84-8CCD-83416CA4EC15/data
+		TMPDIR => ~/Library/Developer/CoreSimulator/Devices/F81F811B-0268-4A84-8CCD-83416CA4EC15/data/tmp/
+	}
+
+	environment = {
+		XPC_SERVICE_NAME => com.apple.relatived
+	}
+
+	domain = user/501
+	minimum runtime = 10
+	base minimum runtime = 10
+	exit timeout = 3
+	runs = 0
+	last exit code = (never exited)
+
+	endpoints = {
+		"com.apple.relatived.status" = {
+			port = 0x0
+			active = 0
+			managed = 1
+			reset = 0
+			hide = 0
+			watching = 1
+			host-side = 0
+		}
+		"com.apple.relatived.tempest" = {
+			port = 0x0
+			active = 0
+			managed = 1
+			reset = 0
+			hide = 0
+			watching = 1
+			host-side = 0
+		}
+		"<host>" = {
+			port = 0x0
+			active = 0
+			managed = 1
+			reset = 0
+			hide = 0
+			watching = 1
+			host-side = 0
+		}
+		"com.apple.relatived.public" = {
+			port = 0x0
+			active = 0
+			managed = 1
+			reset = 0
+			hide = 0
+			watching = 1
+			host-side = 0
+		}
+	}
+
+	spawn type = adaptive (6)
+	binary order preference = {
+		arm64
+		x86_64
+	}
+
+	cpumon = default
+	exponential throttling grace limit = 10
+
+	properties = supports transactions | supports pressured exit | inferred program | exponential throttling | tle system
+}
+user/501/com.apple.icloudsubscriptionoptimizerd = {
+	active count = 0
+	path = /Library/Developer/CoreSimulator/Volumes/iOS_23C54/Library/Developer/CoreSimulator/Profiles/Runtimes/iOS 26.2.simruntime/Contents/Resources/RuntimeRoot/System/Library/LaunchDaemons/com.apple.icloudsubscriptionoptimizerd.plist
+	type = LaunchDaemon
+	state = not running
+
+	program = /Library/Developer/CoreSimulator/Volumes/iOS_23C54/Library/Developer/CoreSimulator/Profiles/Runtimes/iOS 26.2.simruntime/Contents/Resources/RuntimeRoot/System/Library/PrivateFrameworks/iCloudSubscriptionOptimizerDaemon.framework/icloudsubscriptionoptimizerd/icloudsubscriptionoptimizerd
+	arguments = {
+		/Library/Developer/CoreSimulator/Volumes/iOS_23C54/Library/Developer/CoreSimulator/Profiles/Runtimes/iOS 26.2.simruntime/Contents/Resources/RuntimeRoot/System/Library/PrivateFrameworks/iCloudSubscriptionOptimizerDaemon.framework/icloudsubscriptionoptimizerd/icloudsubscriptionoptimizerd
+	}
+
+	global environment = {
+		IOS_SIMULATOR_SYSLOG_SOCKET => /private/var/tmp/com.apple.CoreSimulator.SimDevice.F81F811B-0268-4A84-8CCD-83416CA4EC15/syslogsock
+		SIMULATOR_SHARED_RESOURCES_DIRECTORY => ~/Library/Developer/CoreSimulator/Devices/F81F811B-0268-4A84-8CCD-83416CA4EC15/data
+		XPC_SIMULATOR_LAUNCHD_NAME => com.apple.CoreSimulator.SimDevice.F81F811B-0268-4A84-8CCD-83416CA4EC15
+		DYLD_SHARED_CACHE_DIR => /Library/Developer/CoreSimulator/Caches/dyld/26A434/com.apple.CoreSimulator.SimRuntime.iOS-26-2.23C54/
+		IPHONE_SIMULATOR_ROOT => /Library/Developer/CoreSimulator/Volumes/iOS_23C54/Library/Developer/CoreSimulator/Profiles/Runtimes/iOS 26.2.simruntime/Contents/Resources/RuntimeRoot
+		LS_ENABLE_BUNDLE_LOCALIZATION_CACHING => 1
+		SIMULATOR_HID_SYSTEM_MANAGER => /Library/Developer/PrivateFrameworks/CoreSimulator.framework/Resources/Platforms/iphoneos/Library/Frameworks/SimulatorHID.framework
+		SIMULATOR_MAINSCREEN_HEIGHT => 2622
+		SIMULATOR_MEMORY_WARNINGS => ~/Library/Developer/CoreSimulator/Devices/F81F811B-0268-4A84-8CCD-83416CA4EC15/data/var/run/memory_warning_simulation
+		SIMULATOR_AUDIO_DEVICES_PLIST_PATH => ~/Library/Developer/CoreSimulator/Devices/F81F811B-0268-4A84-8CCD-83416CA4EC15/data/var/run/com.apple.coresimulator.audio.plist
+		SIMULATOR_LOG_ROOT => ~/Library/Logs/CoreSimulator/F81F811B-0268-4A84-8CCD-83416CA4EC15
+		SIMULATOR_RUNTIME_BUILD_VERSION => 23C54
+		DYLD_ROOT_PATH => /Library/Developer/CoreSimulator/Volumes/iOS_23C54/Library/Developer/CoreSimulator/Profiles/Runtimes/iOS 26.2.simruntime/Contents/Resources/RuntimeRoot
+		PATH => /Library/Developer/CoreSimulator/Volumes/iOS_23C54/Library/Developer/CoreSimulator/Profiles/Runtimes/iOS 26.2.simruntime/Contents/Resources/RuntimeRoot/usr/bin:/Library/Developer/CoreSimulator/Volumes/iOS_23C54/Library/Developer/CoreSimulator/Profiles/Runtimes/iOS 26.2.simruntime/Contents/Resources/RuntimeRoot/bin:/Library/Developer/CoreSimulator/Volumes/iOS_23C54/Library/Developer/CoreSimulator/Profiles/Runtimes/iOS 26.2.simruntime/Contents/Resources/RuntimeRoot/usr/sbin:/Library/Developer/CoreSimulator/Volumes/iOS_23C54/Library/Developer/CoreSimulator/Profiles/Runtimes/iOS 26.2.simruntime/Contents/Resources/RuntimeRoot/sbin:/Library/Developer/CoreSimulator/Volumes/iOS_23C54/Library/Developer/CoreSimulator/Profiles/Runtimes/iOS 26.2.simruntime/Contents/Resources/RuntimeRoot/usr/local/bin
+		SIMULATOR_HOST_HOME => ~
+		SIMULATOR_ROOT => /Library/Developer/CoreSimulator/Volumes/iOS_23C54/Library/Developer/CoreSimulator/Profiles/Runtimes/iOS 26.2.simruntime/Contents/Resources/RuntimeRoot
+		IPHONE_SHARED_RESOURCES_DIRECTORY => ~/Library/Developer/CoreSimulator/Devices/F81F811B-0268-4A84-8CCD-83416CA4EC15/data
+		IPHONE_TVOUT_EXTENDED_PROPERTIES => ~/Library/Developer/CoreSimulator/Devices/F81F811B-0268-4A84-8CCD-83416CA4EC15/data/Library/Application Support/Simulator/extended_display.plist
+		SIMULATOR_BOOT_TIME => 1792627263
+		SIMULATOR_CAPABILITIES => /Library/Developer/CoreSimulator/Profiles/DeviceTypes/iPhone 17 Pro.simdevicetype/Contents/Resources/capabilities.plist
+		SIMULATOR_FRAMEBUFFER_FRAMEWORK => /Library/Developer/PrivateFrameworks/CoreSimulator.framework/Resources/Platforms/iphoneos/Library/PrivateFrameworks/SimFramebuffer.framework/SimFramebuffer
+		SIMULATOR_LEGACY_ASSET_SUFFIX => iphone
+		SIMULATOR_MAINSCREEN_PITCH => 460.000000
+		SIMULATOR_MAINSCREEN_WIDTH => 1206
+		SIMULATOR_MODEL_IDENTIFIER => iPhone18,1
+		SIMULATOR_PRODUCT_CLASS => V53
+		SIMULATOR_RUNTIME_VERSION => 26.2
+		SIMULATOR_ARCHS => arm64
+		SIMULATOR_AUDIO_SETTINGS_PATH => ~/Library/Developer/CoreSimulator/Devices/F81F811B-0268-4A84-8CCD-83416CA4EC15/data/var/run/simulatoraudio/audiosettings.plist
+		SIMULATOR_DEVICE_NAME => iPhone 17 Pro
+		SIMULATOR_EXTENDED_DISPLAY_PROPERTIES => ~/Library/Developer/CoreSimulator/Devices/F81F811B-0268-4A84-8CCD-83416CA4EC15/data/Library/Application Support/Simulator/extended_display.plist
+		SIMULATOR_MAINSCREEN_SCALE => 3.000000
+		SIMULATOR_UDID => F81F811B-0268-4A84-8CCD-83416CA4EC15
+		SIMULATOR_VERSION_INFO => CoreSimulator 1174.9.2 - Device: iPhone 17 Pro (F81F811B-0268-4A84-8CCD-83416CA4EC15) - Runtime: iOS 26.2 (23C54) - DeviceType: iPhone 17 Pro
+	}
+
+	inherited environment = {
+		TESTMANAGERD_REMOTE_AUTOMATION_SIM_SOCK => /private/tmp/com.apple.launchd.eSyKMFDaGF/com.apple.testmanagerd.remote-automation.unix-domain.socket
+		TESTMANAGERD_SIM_SOCK => /private/tmp/com.apple.launchd.eAKNbSqMH9/com.apple.testmanagerd.unix-domain.socket
+		RWI_LISTEN_SOCKET => /private/tmp/com.apple.launchd.Qkne1uqfaf/com.apple.webinspectord_sim.socket
+	}
+
+	default environment = {
+		DYLD_FALLBACK_FRAMEWORK_PATH => /Library/Developer/CoreSimulator/Volumes/iOS_23C54/Library/Developer/CoreSimulator/Profiles/Runtimes/iOS 26.2.simruntime/Contents/Resources/RuntimeRoot/System/Library/Frameworks
+		CFFIXED_USER_HOME => ~/Library/Developer/CoreSimulator/Devices/F81F811B-0268-4A84-8CCD-83416CA4EC15/data
+		DYLD_FALLBACK_LIBRARY_PATH => /Library/Developer/CoreSimulator/Volumes/iOS_23C54/Library/Developer/CoreSimulator/Profiles/Runtimes/iOS 26.2.simruntime/Contents/Resources/RuntimeRoot/usr/lib
+		HOME => ~/Library/Developer/CoreSimulator/Devices/F81F811B-0268-4A84-8CCD-83416CA4EC15/data
+		TMPDIR => ~/Library/Developer/CoreSimulator/Devices/F81F811B-0268-4A84-8CCD-83416CA4EC15/data/tmp/
+	}
+
+	environment = {
+		XPC_SERVICE_NAME => com.apple.icloudsubscriptionoptimizerd
+	}
+
+	domain = user/501
+	minimum runtime = 10
+	base minimum runtime = 10
+	exit timeout = 3
+	runs = 0
+	last exit code = (never exited)
+
+	endpoints = {
+		"com.apple.icloudsubscriptionoptimizerd.xpc.client" = {
+			port = 0x0
+			active = 0
+			managed = 1
+			reset = 0
+			hide = 0
+			watching = 1
+			host-side = 0
+		}
+	}
+
+	spawn type = adaptive (6)
+	binary order preference = {
+		arm64
+		x86_64
+	}
+
+	cpumon = default
+	run interval = 10800 seconds
+	exponential throttling grace limit = 10
+
+	properties = supports transactions | supports pressured exit | inferred program | exponential throttling | tle system
+}

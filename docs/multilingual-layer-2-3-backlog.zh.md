@@ -173,7 +173,7 @@
 - [x] 为 adapter config 增加正式 schema，并在 speech job 准备阶段校验。
 - [ ] provider、model revision、conditioning SHA、voice authorization 和 locale capability 已与 Speaker Voice Registry 逐项核对；文本规范化、ASR 筛查和字幕策略目前只绑定配置中的 hash，仍需验证实际策略文件内容。
 - [x] 区分 `unverified_poc`、`candidate`、`verified`；未验证 adapter 只能准备 `synthesisEligible=false` 的 job，`verified` 还需注册表中同 locale 的人工审核能力和正式配音用途授权。
-- [ ] 当前注册表中的 `ko` 仍为 `unverified_poc`，且只有 demo 用途授权；真实韩语能力和正式用途授权仍需人审证据，不从中文样片推断。
+- [x] 2026-10-24 起注册表中所有讲员的 `ko`／`es` 均为 `human_reviewed`，正式用途授权（`multilingual_dubbing`）也已补齐；各自绑定试听或整轨听审证据，不从中文样片推断。越南语仍为 `unverified_poc`。
 
 验收：adapter locale、授权、checkpoint 或任一策略不匹配时，在调用模型前失败。
 
@@ -359,7 +359,7 @@ Layer 2 的 P0 全部通过后才能开始正式 Layer 3 韩语合成。Layer 3 
 - [ ] 稳定 Layer 1 包的逻辑身份：外层脚本代码变动不应仅因输出目录绝对路径变化而强制三语重跑；先设计兼容迁移与可追溯的 producer 身份。
 - [x] 三语均生成正式 `candidate` Audio Package 和完整 ASR 机器筛查收据；音轨 SHA、各组 SHA、speech job 及新版韩／西 Layer 2 hash 绑定核对完成。
 - [x] 三语音频人审后生成 `human_reviewed` Audio Package，再构建 Release Package；用户要求三语音频全完成后再发布 Dev 已满足。HTTP 和浏览器播放通过，iOS 真机与现场状态仍分别待验。
-- [x] Eric 韩／西语短样音及四单元长句探针均获用户听审批准；片段范围能力收据已绑定原音频、脚本、manifest、L1 和 checkpoint。全局 Registry 仍是 `multilingual_voice_demo`、韩／西语 `unverified_poc`；本片段收据只放行本片段 speech job，不升级全局能力。
+- [x] Eric 韩／西语短样音及四单元长句探针均获用户听审批准；片段范围能力收据已绑定原音频、脚本、manifest、L1 和 checkpoint。当时全局 Registry 仍是 `multilingual_voice_demo`、韩／西语 `unverified_poc`（2026-10-24 起授权用途已含 `multilingual_dubbing`，能力状态不变）；本片段收据只放行本片段 speech job，不升级全局能力。
 - [x] 新增显式片段时间映射：已审英文锚点 320.16–498.32 秒映到视频 0–178.16 秒。修复 Layer 3 排程误以英文单元终点为配音起点的问题；按每组首个英文单元起点加反应延迟排程，以最后英文单元终点计算尾延迟，并拒绝 1 倍速片段终点溢出。三语完整候选实测均已排入 178.178 秒；自然度和同步仍待人耳验收。
 - [x] 中文直接引文边界建议已由固定 CUV 库取出启示录 2:4、3:4 的精确短句，并绑定本片段英文单元；用户批准两处边界与改文，重复解释句暂按讲员重述处理。批准收据绑定提案 JSON 哈希与正式 Layer 1 哈希，范围仅限经文边界；提案本身保留原始 `humanBoundaryReview=pending` 作为不可变历史，正式中文候选仍须按新文本重建并审核，不得自动改写已审 shadow 候选。
 - [x] Dev Web POC 的 pageId 路由、周次切换与无音轨播放器状态已在本地修正；HTTP 浏览器 fixture 验证了第二页切换、URL／标题更新、播放器隐藏和纯文字提示。fixture 使用占位内容，未证明本片段已发布。

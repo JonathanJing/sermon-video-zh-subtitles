@@ -1,0 +1,100 @@
+{
+  "schemaVersion": "deepseek-speed-test-evidence-v1",
+  "date": "2026-10-21",
+  "scope": "experiment_only",
+  "productionEligible": false,
+  "humanApproval": false,
+  "provider": "deepseek-official",
+  "model": "deepseek-flash",
+  "transport": "dsh --profile headless --patch agent-default-model",
+  "dataset": {
+    "source": "artifacts/deepseek-sol-opus-review-ab-20261021/dataset.json",
+    "groups": 13,
+    "units": 39,
+    "sha256": "2419cf3c3b24e9d00cffca8e57e4abfc6ddc0c1801a37d5a0a714b766a08ed2c"
+  },
+  "translation": {
+    "highA": {
+      "calls": 13,
+      "errors": 0,
+      "sumSeconds": 54.985,
+      "medianSeconds": 3.765,
+      "minSeconds": 2.371,
+      "maxSeconds": 7.74
+    },
+    "highB": {
+      "calls": 13,
+      "errors": 0,
+      "sumSeconds": 56.276,
+      "medianSeconds": 3.867,
+      "minSeconds": 2.424,
+      "maxSeconds": 6.675,
+      "usage": {
+        "inputTokens": 2906,
+        "outputTokens": 7175,
+        "cacheReadTokens": 103168,
+        "cacheWriteTokens": 0
+      },
+      "outputTokensPerSecond": 127.497
+    },
+    "low": {
+      "calls": 13,
+      "errors": 0,
+      "sumSeconds": 53.905,
+      "medianSeconds": 3.631,
+      "minSeconds": 2.414,
+      "maxSeconds": 6.084
+    }
+  },
+  "comparison": {
+    "sol": {
+      "date": "2026-10-08",
+      "sumSeconds": 187.698381,
+      "medianSeconds": 14.480424,
+      "source": "20261008 summary.json"
+    },
+    "opus": {
+      "date": "2026-10-08",
+      "sumSeconds": 81.524176,
+      "medianSeconds": 5.71737,
+      "source": "20261008 summary.json"
+    },
+    "deepseekHighVsSol": {
+      "sumRatio": 3.41,
+      "medianRatio": 3.85
+    },
+    "deepseekHighVsOpus": {
+      "sumRatio": 1.48,
+      "medianRatio": 1.52
+    },
+    "deepseekHighVsLow": {
+      "sumRatio": 1.02,
+      "medianRatio": 1.04
+    }
+  },
+  "review": {
+    "calls": 5,
+    "errors": 0,
+    "sumSeconds": 43.669,
+    "medianSeconds": 6.619,
+    "minSeconds": 2.802,
+    "maxSeconds": 16.4,
+    "qualityNote": "All five Sol drafts passed, including known 沙箱/AI issues; shallow review, not a quality gate."
+  },
+  "limits": [
+    "End-to-end DSH headless timing includes process boot and agent setup; not vendor raw latency.",
+    "Different harnesses and prompts from the 20261008 Sol/Opus runs.",
+    "Single sequential batch; provider load uncontrolled.",
+    "Review sample is five groups and shallow.",
+    "Token counts come from DSH events, not a vendor invoice; no cost receipt."
+  ],
+  "hashes": {
+    "timings.json": "f32458777715",
+    "timings-json.json": "44f719e00d78",
+    "timings-low.json": "4b841374671b",
+    "review-timings.json": "9cce44c1ffe0",
+    "speed-summary.json": "7931cf8bf912",
+    "speed-summary-json.json": "135a4561d6af",
+    "review-speed-summary.json": "7391879e06eb"
+  }
+}

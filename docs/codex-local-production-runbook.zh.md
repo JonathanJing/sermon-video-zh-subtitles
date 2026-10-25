@@ -1,6 +1,6 @@
 # Codex 本地周末生产 Runbook
 
-当前新 dev／正式任务以[2026-10-06 模型及调用策略](production-model-runtime-policy.zh.md)为准：Layer 2 初译使用 Sol 6.1 high、独立复核使用 Sol 6.1 medium，默认走 OpenAI API 与已批准的请求 tier；Supervisor 使用 Luna medium fast，走 ChatGPT 登录的 Codex CLI。下文旧 Agents API／Astra／Sol 参数只适用于历史证据与原身份对账，不用于新任务。
+当前新 dev／正式任务以[2026-10-21 模型及调用策略](production-model-runtime-policy.zh.md)为准：Layer 2 默认 DeepSeek Flash low 初译、high 独立复核；Sol 6.1 high／medium 和 Opus 5.5 high／medium 仅显式选择，不自动回退。Supervisor 使用 `gpt-6-luna`／medium／fast，走 ChatGPT 登录的 Codex CLI。已有运行保留冻结的后端、模型、凭据、预算与收据身份；下文带日期的 Agents API／Astra／Sol 记录保持原参数，不用于推定新任务状态。DeepSeek 默认已接线，canonical 真实运行验收仍见策略中的证据边界。
 
 并发、请求上限和新计划预算的当前规则见[周更运行配置](weekly-run-profile.zh.md)；既有运行保留冻结授权与缓存身份，API-only 阶段不占 Spark，GPU 阶段按原准入门执行。
 
@@ -83,6 +83,7 @@ python tools/ops/group_tasks.py release-basis --config run.json --receipt <文�
 python tools/ops/group_tasks.py prepare-l3 --config run.json --text-release-basis <收据> \
   --adapter <adapter.json> --speaker-registry <registry.json> [--voice-authorization <收据>] --out <新目录>
 python tools/ops/group_tasks.py stages --config l3-stages.json --out <L3 输出目录> [--dry-run]
+python tools/ops/group_tasks.py lanes --config l3-lanes.json --out <lanes 报告目录> [--dry-run]   # 多语言共用一个 GPU 槽
 python tools/ops/group_tasks.py plan --manifest <整篇产物清单> [--locale ko]   # 只读规划
 python tools/ops/group_tasks.py verify --manifest <整篇产物清单> --locale ko   # 只读：候选与逐组记录/插件收据一致
 ```
@@ -98,6 +99,8 @@ python tools/ops/group_tasks.py verify --manifest <整篇产物清单> --locale 
 - `stages` 的 `paths` 必须给 7 个输入文件；可选 `mergeDir` 指向当前合并目录时，运行后会在那里写一份最新 `l3-stages.json`（完整证据仍在 `--out`）。
 - `stages` 的 `paths` 必须给 7 个输入文件；`variables` 可声明 `locale`、`code`、`stageDir` 等字符串，在命令里用 `{变量名}` 引用；命令的工作目录是 `variables.repoRoot`（缺省为配置目录），所以仓库相对命令要设它。`produces` 必须写 producer 真正会生成的文件，否则按失败处理。
 - `stages` 按配置顺序执行第 7–9 步的现有 producer 命令（渲染、压缩/筛查、打包、音频 QC），每个 stage 绑定命令 SHA-256 并写 `stage-report.json`；非零退出或“成功但没产出 `produces`”都停止后续 stage。命令仍含未解析 `{placeholder}` 时在派发前拒绝。`--dry-run` 只计划。stage 可声明 `failures` 指向 producer 自己的汇总 JSON；失败时从 `failedGroups`/`failedGroupIds` 读出组 ID，写进 `stage-report.json` 的 `failedGroupIds` 与 `nextActions`，用于 `redo`。
+- `stages` 的每个 stage 可声明 `resource`：`gpu`（缺省，不标就按今天的方式串行）或 `cpu`。`lanes` 读 [`config/group-l3-lanes.draft.json`](../config/group-l3-lanes.draft.json) 形状的多语言计划：每条 lane 是一种语言的 `stages` 计划和各自的输出目录；`gpu` stage 在所有语言间轮流占用唯一的 GPU 槽（8×8 渲染已把 GPU 用满，两语同渲不会更快，内存准入也不允许），等待时序号低的 lane 先拿到；`cpu` stage（压缩、打包、拷回）可以在另一语渲染时进行。一条 lane 失败只停这一种语言。`lanes-report.json` 记录每个 stage 的起止、等待时间和实际发生的重叠，是运行证据，不是放行材料。
+- ASR 筛查（`audio.screening`）加载模型前做宿主内存准入：筛查在 renderer 的 24 GiB 保留内运行，不再叠加保留，只要求 `MemAvailable` 不低于自身 6 GiB 预算（`--memory-budget-gib` 可改）。2026-10-23 两次 402 句 batch 1 筛查实测宿主占用 3.9 GiB、CUDA 峰值 1.8 GiB（[诊断记录](../data/benchmarks/l3-lanes/2026-10-23/lanes-diagnostic-run.json)）；筛查会在收据旁写 `*.memory.json`，记录加载前后与结束时的 `MemAvailable` 和 CUDA 分配器峰值。
 - 逐组记录、指令和合并产物都是中间证据，不能当发布批准。
 
 ### 本周中文配音策略（2026-09-27 起的新 job）
@@ -113,6 +116,10 @@ python tools/ops/group_tasks.py verify --manifest <整篇产物清单> --locale 
 备用仅处理运行环境或推理可用性故障；文字错误、未知音素、损坏对齐与待审核状态仍停止，不能通过切换机器绕过。MFA 时间仍为模型估计，句界来自冻结英文标点；源窗口审批与人工审核要求保持不变。代码路由不代表两端部署、真实推理或某周产物已验收。
 
 OpenAI 云端转写与语言 API 保持不变。legacy 每周 TTS 和配音质检的新任务也默认 Spark 优先、MacBook fallback；已存在的任务继续其核验后的原后端。canonical TTS 的 CUDA 默认与完整跨机 dispatch/fallback 是不同能力，接入边界见[计算策略](local-production-compute-policy.zh.md)。MacBook MPS 已有真实短样本合成证据；短样本成功不代表整篇吞吐、音质或人工听审获准。媒体处理、排版和校验可保留在调度端；无模型声音指纹匹配继续在听众浏览器内执行。提速和云端资源调研见 [GCP 评估](gcp-production-feasibility-20261001.zh.md)。
+
+### Layer 1：默认用 v4 配置和一次确认
+
+2026-10-22 起新的 Layer 1 运行先用 `tools/ops/prepare_source_run.py draft` 从同来源的上一份配置写出 v4 配置（ASR 每块一个 worker、裁判 8 并发、共享裁判缓存、按块 MFA 缓存、汇总单、ASR 零成本回放全部打开），用户批准预算后 `approve` 记录原话，再 `source.unified_stage execute`。第一次 execute 返回 `awaiting_confirmation` 并写出 `review-sheet.md`；用户确认后再 execute 一次，只重算受影响的块和批。细节见[统一 CLI 的正式 Source 候选准备](unified-source-preparation.zh.md#新运行默认v4-配置2026-10-22-起)。
 
 ### Layer 1：英文事实与锚点 shadow
 
@@ -251,7 +258,7 @@ Supervisor 的 generation 命令显式传入 Sol 6.1、high、阅读稿 provider
 
 ### 运行前冻结与等待（2026-10-11 复盘 C 项）
 
-- **代码身份冻结。** 运行开始时在运行计划里记下 `machine_quality_waiver.implementation_sha256()`（`python3 -c "from scripts import machine_quality_waiver as w; print(w.implementation_sha256())"`），之后每次调用 `run_machine_qc_clip_test.py`／`run_machine_qc_audio_test.py` 都带 `--expected-implementation <该值>`；代码不一致时驱动在任何模型调用之前以退出码 2 拒绝并打印各哈希文件的当前哈希。运行期间不改哈希文件集里的代码；要改就开新运行计划。2026-10-11 两次未察觉的改动让已签发的豁免失效，重签了两轮。
+- **代码身份冻结。** 运行开始时在运行计划里记下 `machine_quality_waiver.implementation_sha256()`（`python3 -c "from scripts import machine_quality_waiver as w; print(w.implementation_sha256())"`），之后每次调用 `run_machine_qc_clip_test.py`／`run_machine_qc_audio_test.py` 都带 `--expected-implementation <该值>`；代码不一致时驱动在任何模型调用之前以退出码 2 拒绝并打印各哈希文件的当前哈希。运行期间不改哈希文件集里的代码；要改就开新运行计划。2026-10-11 两次未察觉的改动让已签发的豁免失效，重签了两轮。`plan_run_budgets.py` 的 `plan.json` 同时记下逐文件哈希 `expectedImplementationFiles`；`check_run_start.py --budget-plan` 和两个驱动（`--expected-implementation-files <plan.json>`）据此在拒绝时列出 `changedFiles`，回答“变的是不是我关心的文件”。
 - **一周一份预算授权。** `api-budget-authorization-<ISO 周>.json` 只写一份，筛查、校准、重签都复用它和同一账本（账本本就支持跨轮复用）；请求上限按三语 × 一次筛查 + 一次校准估，本周账本 27,292 次请求里 Layer 2 只占约 220 次，其余是哈希翻转导致的重签。超限即停并通知，不自动续。
 - **Spark 独占会话冻结定时器，派发前等待。** `spark_exclusive_session.py begin` 现在把 `job-reasoning-review.timer` 一起停掉、结束时最后恢复（主机上没有该定时器时记为 `not-found`）。派发链在每次派发前运行 `.venv/bin/python tools/ops/spark_wait_ready.py --poll-seconds 30 --max-minutes 30`：只对 `competing_service_active:*`、`competing_launcher_active`、`insufficient_available_memory` 等会自行消退的状态轮询，其他错误立即返回；退出码 0 就绪、3 超时、1 需要人处理。
 

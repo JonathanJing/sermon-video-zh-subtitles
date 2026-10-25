@@ -1,0 +1,7 @@
+{
+  "result": "passed",
+  "scope": "delivery contract test suite",
+  "testsPassed": 36,
+  "testsFailed": 0,
+  "reason": "v4 projection correctly uses v4 defaultTargetLocale"
+}

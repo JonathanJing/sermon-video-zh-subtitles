@@ -51,12 +51,18 @@ def _load_job(path: Path, *, strict_rubric: dict[str, Any] | None = None) -> dic
     policy = inputs["targetLanguagePolicy"]
     speech._validate_schema(candidate, "sermon-target-language-candidate-v2.schema.json", "target candidate")
     basis = inputs[speech.text_basis_input_key(job)]
-    speech.validate_target_candidate(source, anchor, candidate,
-                                     require_human_approval=not speech.machine_basis.is_text_waiver(basis))
+    release_identity = speech.validate_released_candidate(source, anchor, candidate, basis)
     speech.validate_policy_binding(candidate, policy, strict_rubric=strict_rubric)
-    _require(speech.validate_text_release_basis(source, anchor, candidate, basis)
+    _require(release_identity["textPolicy"]
              == speech.expected_text_policy(job) == job["renderContract"]["textPolicy"],
              "Speech job version differs from the candidate's release basis")
+    if release_identity["textPolicy"] == speech.OVERRIDE_TEXT_POLICY:
+        _require(job.get("humanOverrideDisclosure") == {
+            "status": "approved_with_exceptions",
+            "machineEvidenceStatus": "unchanged_not_passed_by_human_approval",
+            "topLevelModelReview": release_identity["topLevelModelReview"],
+            "exceptionGroups": release_identity["humanOverrideExceptions"],
+        }, "Speech job override disclosure differs from its receipt")
     adapter = {"schemaVersion": speech.ADAPTER_SCHEMA, "targetLocale": job["targetLocale"]} | {
         key: value for key, value in job["adapter"].items() if key != "configSha256"
     }

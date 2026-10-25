@@ -1,0 +1,21 @@
+{
+  "schemaVersion": "sermon-group-l3-lanes-v1",
+  "note": "Draft only. One lane per locale: each `config` is that locale's checked sermon-group-l3-stages-v1 plan and `out` its own stage output directory (must differ per lane). gpu stages take turns on one GPU slot, lowest lane first; cpu stages overlap. Dry-run with: group_tasks.py lanes --config <copy> --out <dir> --dry-run.",
+  "lanes": [
+    {
+      "locale": "zh-Hans",
+      "config": "zh-Hans/l3-stages.json",
+      "out": "zh-Hans/run"
+    },
+    {
+      "locale": "ko",
+      "config": "ko/l3-stages.json",
+      "out": "ko/run"
+    },
+    {
+      "locale": "es",
+      "config": "es/l3-stages.json",
+      "out": "es/run"
+    }
+  ]
+}

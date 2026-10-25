@@ -21,6 +21,7 @@ from . import auto_repair
 from . import backend as _text
 from . import budget as budget_tools
 from . import candidate as producer
+from . import code_closure
 from . import group_revision
 from . import models
 from . import rule_preflight
@@ -581,29 +582,31 @@ def _binding_digest(binding):
 
 
 def code_identity():
-    # Pin the runtime source/schema closure, not a branch name or stale commit
-    # label. The worker rechecks it before any paid call and candidate admission.
-    # Code that moved into the production package runs from there; scripts/
-    # keeps only its import facade, so the package source is part of the closure. Package commands
-    # also run through tools/ops/run.py, which binds the host and picks the module, so it is hashed too.
+    # Pin the named Layer 2 code closure (config/layer2-code-closure.json: every file a Layer 2 run
+    # can execute, traced from its entries by tools/development/layer2_code_closure.py and read by
+    # text/code_closure.py), not a branch name, a stale commit label or the whole checkout. The
+    # worker rechecks it before any paid call and candidate admission. Package commands run through
+    # tools/ops/run.py, which binds the host and picks the module, so it is in the closure too.
     root = _safe_path(_text.current().core.repo_root)
-    single = (root / 'docs/series-terminology.zh.md', root / 'tools/ops/sermon_unified_preflight.py',
-              root / 'tools/ops/run.py')
+    files = code_closure.paths(root)
     return _BINDING_MEMO.get(
         ('code', str(root)),
-        lambda: (stat_memo.tree(root / 'scripts', ('.py',)) + stat_memo.tree(root / 'packages/production/src', ('.py',))
-                 + stat_memo.tree(root / 'schemas', ('.json',)) + stat_memo.files(*single)
-                 # _safe_path rejects a symlinked ancestor; a directory swapped for a symlink to
-                 # itself keeps every leaf's lstat identity, so the ancestors' kind is fingerprinted too.
-                 + stat_memo.ancestors(*single, root / 'scripts', root / 'packages/production/src',
-                                       root / 'schemas')),
-        lambda: _code_identity_of(root, single))
+        # The manifest is one of the files, so a changed list re-fingerprints. _safe_path rejects a
+        # symlinked ancestor; a directory swapped for a symlink to itself keeps every leaf's lstat
+        # identity, so the ancestors' kind is fingerprinted too.
+        lambda: stat_memo.files(*files) + stat_memo.ancestors(*files),
+        lambda: _code_identity_of(root, files))
 
 
-def _code_identity_of(root, single):
-    files = sorted([*root.joinpath('scripts').rglob('*.py'), *root.joinpath('packages/production/src').rglob('*.py'),
-                    *root.joinpath('schemas').rglob('*.json'), *single])
-    return jobs._digest({str(p.relative_to(root)): hashlib.sha256(_safe_path(p).read_bytes()).hexdigest() for p in files})
+def _code_identity_of(root, files):
+    return jobs._digest(code_identity_files(root, files))
+
+
+def code_identity_files(root=None, files=None):
+    """Each closure file's own SHA-256 by repository-relative path: what code_identity() digests."""
+    root = _safe_path(root if root is not None else _text.current().core.repo_root)
+    files = code_closure.paths(root) if files is None else files
+    return {str(p.relative_to(root)): hashlib.sha256(_safe_path(p).read_bytes()).hexdigest() for p in sorted(files)}
 
 
 def package_view(config):
@@ -1067,17 +1070,24 @@ def execute(config_path, locale, expected_configuration, expected_code, expected
                 # The policy's frozen Layer 2 backend picks the transport: the OpenAI API (Sol), or
                 # the subscription Claude CLI for both roles (claude_cli_opus).
                 backend = models.production_backend(policy)
-                transports = claude_transports(policy, lane) if backend == 'claude_cli_opus' else None
-                caller = budget_tools.BudgetedCaller(budget_binding, config, source, anchor, policy,
-                                                     claude_transports=transports)
-                budgeted = caller
-                if transports is not None:
+                if backend == 'claude_cli_opus':
+                    transports = claude_transports(policy, lane)
+                    caller = budget_tools.BudgetedCaller(budget_binding, config, source, anchor, policy,
+                                                         claude_transports=transports)
                     caller.execution_identity = claude_model_transport_identity(transports)
-                elif budget_binding.get('runtimeIdentity') is None:
-                    caller.execution_identity = {
-                        'schemaVersion': 'openai-layer2-budget-transport-identity-v1',
-                        'backend': 'openai_api', 'route': route,
-                        'budgetAuthorizationSha256': budget_binding['sha256']}
+                elif backend == 'deepseek_flash':
+                    transports = deepseek_transports(policy, lane)
+                    caller = budget_tools.BudgetedCaller(budget_binding, config, source, anchor, policy,
+                                                         deepseek_transports=transports)
+                    caller.execution_identity = deepseek_model_transport_identity(transports)
+                else:
+                    caller = budget_tools.BudgetedCaller(budget_binding, config, source, anchor, policy)
+                    if budget_binding.get('runtimeIdentity') is None:
+                        caller.execution_identity = {
+                            'schemaVersion': 'openai-layer2-budget-transport-identity-v1',
+                            'backend': 'openai_api', 'route': route,
+                            'budgetAuthorizationSha256': budget_binding['sha256']}
+                budgeted = caller
                 caller = _text.current().compute.session_bound_caller(caller, requires_spark=False, outcome_guarded=True)
             elif budget_binding is not None:
                 _text.current().compute.reject_cli_transport(caller)
@@ -1446,6 +1456,24 @@ def claude_model_transport_identity(transports):
     return {'schemaVersion': 'claude-layer2-model-transport-identity-v2',
             'backend': 'claude_cli', 'layer2Backend': 'claude_cli_opus',
             'transports': {role: t.execution_identity for role, t in sorted(transports.items())}}
+
+
+def deepseek_model_transport_identity(transports):
+    """Stable cache identity for the DeepSeek API calls, independent of budget approval."""
+    require(set(transports) == {'translator', 'reviewer'}, 'deepseek_transport_roles_incomplete')
+    return {'schemaVersion': 'deepseek-layer2-model-transport-identity-v1',
+            'backend': 'deepseek_api', 'layer2Backend': 'deepseek_flash',
+            'transports': {role: t.execution_identity for role, t in sorted(transports.items())}}
+
+
+def deepseek_transports(policy, lane):
+    """One DeepSeek API transport per role at the policy's frozen model and effort.
+
+    Both roles read the same DEEPSEEK_API_KEY from the launching environment; the
+    transport identity binds model, effort and base URL, not the secret value."""
+    caller = _text.current().transports.caller
+    return {role: caller('deepseek-api', model=policy[role]['model'], effort=policy[role]['reasoningEffort'])
+            for role in ('translator', 'reviewer')}
 
 
 def claude_transports(policy, lane):

@@ -1,0 +1,27 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261021-ios-prod-push-hosting-deploy",
+  "runs": [
+    {
+      "label": "hosting-route",
+      "source": "~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/artifacts/ios-formal-push-validation/reports/hosting-route",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "hosting-route",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 596,
+      "truncated": false,
+      "sha256": "684e2dc6ea504a1e3f73dc0b512ff8210e86c70c16e30ae07c5c086d951d463b",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

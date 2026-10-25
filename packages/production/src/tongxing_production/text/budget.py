@@ -219,7 +219,7 @@ def request_limits(selected):
 
 class BudgetedCaller:
     def __init__(self, authorization, config, source, anchor, policy, *, transport=None, claude_transport=None,
-                 claude_transports=None):
+                 claude_transports=None, deepseek_transports=None):
         self.auth, self.config, self.policy = authorization, config, policy
         verify_runtime(authorization)
         if authorization.get('runtimeIdentity') is not None:
@@ -253,6 +253,10 @@ class BudgetedCaller:
         require('reviewer' not in self.claude_transports or policies.layer2_backend(policy) == 'claude_cli_opus',
                 'claude_reviewer_requires_claude_cli_opus_policy')
         self.claude_transport = self.claude_transports.get('translator')
+        self.deepseek_transports = dict(deepseek_transports or {})
+        require('reviewer' not in self.deepseek_transports
+                or policies.layer2_backend(policy) == 'deepseek_flash',
+                'deepseek_reviewer_requires_deepseek_flash_policy')
         self._plugin_policy_migrations = {}
 
     def remaining_cost_microusd(self):
@@ -530,6 +534,11 @@ class BudgetedCaller:
             require(self.transport is None and selected_transport is not None
                     and payload['model'] == selected_transport.model
                     and payload['reasoning_effort'] == selected_transport.effort, 'claude_transport_required')
+        if payload['model'] in limits.DEEPSEEK_MODELS:
+            selected_transport = self.deepseek_transports.get(role)
+            require(self.transport is None and selected_transport is not None
+                    and payload['model'] == selected_transport.model
+                    and payload['reasoning_effort'] == selected_transport.effort, 'deepseek_transport_required')
         # Separate immutable request chains prevent content revisions from
         # resetting one shared global ledger. Each exact payload is one operation.
         reservation = self._ledger(lambda: self.store.reserve(identity, operation_id='model.' + fingerprint,
@@ -554,6 +563,10 @@ class BudgetedCaller:
             # Claude is reachable only through its subscription CLI, as the role the policy froze.
             chat_envelope = _text.current().transports.claude_chat_envelope
             response = chat_envelope(self.claude_transports[role]('', payload, role=role), payload['model'])
+        elif payload['model'] in limits.DEEPSEEK_MODELS:
+            # DeepSeek reaches the official OpenAI-compatible API directly; the transport
+            # reads DEEPSEEK_API_KEY and rejects any caller-supplied credential override.
+            response = self.deepseek_transports[role]('', payload)
         elif self.transport is None:
             request = urllib.request.Request('https://api.openai.com/v1/chat/completions',
                 data=json.dumps(payload).encode(), method='POST',

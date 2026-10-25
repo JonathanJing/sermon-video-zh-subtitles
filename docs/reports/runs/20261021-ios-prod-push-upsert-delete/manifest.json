@@ -1,0 +1,29 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261021-ios-prod-push-upsert-delete",
+  "runs": [
+    {
+      "label": "endpoint-upsert-delete",
+      "source": "~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/artifacts/ios-formal-push-validation/reports/endpoint-upsert-delete",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "endpoint-upsert-delete",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 308,
+      "truncated": false,
+      "sha256": "da1572ecfb66e2e6ecce8f16fd7bd4e9c2264bf1c44b08b536dce617ebc875f5",
+      "redactions": {
+        "secret_field": 1
+      }
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

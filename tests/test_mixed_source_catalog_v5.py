@@ -344,6 +344,32 @@ def test_video_bucket_must_match_publication_environment():
         baseline_tools.require_video_environment(prod, 'dev')
 
 
+def test_mixed_source_asset_import_uses_release_hashes_and_source_seal(tmp_path):
+    source = tmp_path / 'source'
+    public = source / 'public'
+    candidate = catalog()
+    expected = set()
+    for locale, target_value in candidate['pages'][0]['targets'].items():
+        edition = target_value['editionId']
+        asset = public / 'content' / edition / f'{locale}.json'
+        asset.parent.mkdir(parents=True, exist_ok=True)
+        asset.write_bytes(f'{locale} content'.encode())
+        release = public / target_value['releasePackageUrl'].lstrip('/')
+        release.parent.mkdir(parents=True, exist_ok=True)
+        baseline_tools.write(release, {'assets': [{'path': '/' + str(asset.relative_to(public)),
+                                                   'sha256': baseline_tools.digest(asset)}]})
+        target_value['releasePackageJsonSha256'] = baseline_tools.digest(release)
+        expected.update({asset.relative_to(public), release.relative_to(public)})
+    alignment = public / 'alignment/family-page.json'
+    baseline_tools.write(alignment, {'status': 'test'})
+    expected.add(alignment.relative_to(public))
+    baseline_tools.write(source / 'seal-report.json', {'files': baseline_tools.files_report(public)})
+    assert set(baseline_tools._mixed_source_asset_paths(source, candidate)) == expected
+    alignment.write_text('changed after seal')
+    with pytest.raises(ValueError, match='Asset source seal differs'):
+        baseline_tools._mixed_source_asset_paths(source, candidate)
+
+
 def test_endpoint_readback_admits_target_bound_v2_beside_v4_and_rejects_cross_source(tmp_path):
     public = tmp_path / 'public'; public.mkdir()
     value = catalog(('zh-Hans', 'es'))
@@ -442,6 +468,13 @@ def test_mixed_source_v2_release_must_name_its_target_edition_locale_and_status(
             contract.validate_v2_release_target(dict(copy.deepcopy(good), **change), page, 'zh-Hans')
     with pytest.raises(Exception):
         contract.validate_v2_release_target({k: v for k, v in good.items() if k != 'packageId'}, page, 'zh-Hans')
+    # 2026-10-22: a re-bound content path (<locale>-r2.json) hid the whole page in the iOS app.
+    for role, path in (('content', f'/content/{edition}/zh-Hans-r2.json'), ('captions', f'/captions/{edition}/es.json'),
+                       ('page', f'/pages/{edition}/zh-Hans/v2.html')):
+        moved = copy.deepcopy(good)
+        next(a for a in moved['assets'] if a['role'] == role)['path'] = path
+        with pytest.raises(ValueError, match='Release ' + role + ' asset must be'):
+            contract.validate_v2_release_target(moved, page, 'zh-Hans')
 
 
 def test_single_source_carry_refuses_a_mixed_family_or_its_edition():
@@ -452,3 +485,52 @@ def test_single_source_carry_refuses_a_mixed_family_or_its_edition():
             contract.carry_single_source_into_v5(family, legacy, page_id)
     upgraded = contract.upgrade_catalog_v5(legacy)
     assert contract.carry_single_source_into_v5(upgraded, legacy, 'broadcast-edition')['pages'] == upgraded['pages']
+
+
+def human_single_source_v5():
+    def human_target(page_id, locale):
+        return {'releasePackageUrl': f'/releases-v2/{page_id}/{locale}.json',
+                'releasePackageJsonSha256': ('4' if locale == 'zh-Hans' else '5' if locale == 'es' else '6') * 64,
+                'contentStatus': 'human_reviewed', 'audioStatus': 'human_reviewed',
+                'capabilities': ['text', 'captions', 'audio']}
+    pages = [{'id': page_id, 'date': date, 'title': page_id, 'sourceLocale': 'en', 'sourceMode': 'single_source',
+              'sourceIdentitySha256': source, 'defaultTargetLocale': 'zh-Hans',
+              'targets': {locale: human_target(page_id, locale) for locale in ('es', 'ko', 'zh-Hans')}}
+             for page_id, date, source in (('old-page', '2026-10-04', SOURCE_A), ('new-page', '2026-10-11', SOURCE_B))]
+    return {'schemaVersion': contract.CATALOG_V5, 'generatedAt': NOW, 'defaultPageId': 'new-page', 'pages': pages}
+
+
+def test_repair_reprojects_v4_and_v3_defaults_written_by_the_old_target_order_rule():
+    v5 = contract.validate_catalog_schema(human_single_source_v5())
+    v4 = contract.project_legacy_catalog_v4(v5)
+    v3 = contract.project_human_catalog(v4)
+    # Before 8b703903 a sorted write made every edition default the first key, 'es'.
+    drifted_v4, drifted_v3 = copy.deepcopy(v4), copy.deepcopy(v3)
+    for value in (drifted_v4, drifted_v3):
+        for page in value['pages']:
+            page['defaultTargetLocale'] = 'es'
+    assert contract.default_locale_only_difference(v4, drifted_v4)
+    repaired_v4, repaired_v3, changes = contract.repair_projected_defaults(v5, drifted_v4, drifted_v3)
+    assert repaired_v4 == v4 and repaired_v3 == v3
+    assert {(c['catalog'], c['pageId'], c['from'], c['to']) for c in changes} == {
+        (catalog_name, page_id, 'es', 'zh-Hans')
+        for catalog_name in (contract.CATALOG_V4, contract.CATALOG_V3) for page_id in ('old-page', 'new-page')}
+    # Already consistent catalogs need no change.
+    assert contract.repair_projected_defaults(v5, v4, v3)[2] == []
+
+
+def test_repair_refuses_any_difference_other_than_page_default_locales():
+    v5 = contract.validate_catalog_schema(human_single_source_v5())
+    v4 = contract.project_legacy_catalog_v4(v5)
+    v3 = contract.project_human_catalog(v4)
+    retitled = copy.deepcopy(v4)
+    retitled['pages'][0]['title'] = 'changed'
+    reordered = copy.deepcopy(v4)
+    reordered['pages'].reverse()
+    moved_default = copy.deepcopy(v3)
+    moved_default['defaultPageId'] = 'old-page'
+    for bad_v4, bad_v3 in ((retitled, v3), (reordered, v3), (v4, moved_default)):
+        assert not (contract.default_locale_only_difference(v4, bad_v4)
+                    and contract.default_locale_only_difference(v3, bad_v3))
+        with pytest.raises(ValueError, match='beyond page default locales'):
+            contract.repair_projected_defaults(v5, bad_v4, bad_v3)

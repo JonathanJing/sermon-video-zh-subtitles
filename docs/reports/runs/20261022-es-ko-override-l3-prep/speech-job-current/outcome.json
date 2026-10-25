@@ -1,0 +1,11 @@
+{
+  "status": "passed",
+  "stage": "L3-01-speech-job-preparation",
+  "scope": "es 416-group source-bound candidate and voice-authorization handoff",
+  "notCompleted": [
+    "Spark synthesis",
+    "audio screening and QC",
+    "human audio playback",
+    "Layer 4 release"
+  ]
+}

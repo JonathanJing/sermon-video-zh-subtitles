@@ -16,6 +16,11 @@ test('bind only exact source, track, window, page, metadata schema',()=>{
  const h=harness();assert.ok(fingerprintBinding(h.context));
  for(const mutation of [c=>delete c.week.audioFingerprint,c=>c.track.sha256=sha,c=>c.week.id='other',c=>c.week.sourceStartSeconds=0,c=>c.week.sourceEndSeconds=4000,c=>c.week.audioFingerprint.indexUrl='https://elsewhere/a.json',c=>c.week.audioFingerprint.captureSeconds=20]){let c=structuredClone(h.context);mutation(c);assert.equal(fingerprintBinding(c),null);}
 });
+test('podcast without a source clock binds its own window only when it covers the track',()=>{
+ const podcast={week:{id:'week',sourceRoute:'podcast',audioFingerprint:{...metadata,sourceStartSeconds:0,sourceEndSeconds:2240}},track:{id:'podcast',sha256:trackSha,durationSeconds:2240},generation:1,ready:true};
+ assert.ok(fingerprintBinding(podcast));
+ for(const mutation of [c=>c.track.durationSeconds=2200,c=>c.week.sourceRoute='full_video',c=>c.track.sha256=sha]){const c=structuredClone(podcast);mutation(c);assert.equal(fingerprintBinding(c),null);}
+});
 test('start pauses but never seeks; apply adds PCM duration and monotonic latency once in gesture',async()=>{
  const h=harness();await listen(h.controller);assert.equal(h.pauseCalls,1);assert.equal(h.playCalls,0);assert.equal(h.seekCalls.length,0);assert.equal(h.controller.getState().sourceTimeSeconds,1903);h.setClock(12500);assert.equal(h.controller.apply(),true);assert.deepEqual(h.seekCalls,[112.5]);assert.equal(h.playCalls,1);assert.equal(h.controller.apply(),false);
 });

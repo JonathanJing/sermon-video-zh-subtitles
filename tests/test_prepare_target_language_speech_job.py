@@ -68,6 +68,8 @@ class TargetLanguageSpeechJobTests(unittest.TestCase):
         self.registry = json.loads((Path(__file__).parents[1] / "config/speaker-voice-registry.json").read_text(encoding="utf-8"))
         speaker = self.registry["speakers"][0]
         capability = next(row for row in speaker["localeCapabilities"] if row["targetLocale"] == "ko")
+        # The fixture voice starts with an unreviewed ko capability; tests promote it as needed.
+        capability.update(status="unverified_poc", demoStatus="machine_screened", reviewEvidence=[])
         self.adapter = {
             "schemaVersion": subject.ADAPTER_SCHEMA,
             "targetLocale": "ko", "adapterId": "qwen3_tts_sft", "adapterVersion": "v1",
@@ -318,7 +320,6 @@ class TargetLanguageSpeechJobTests(unittest.TestCase):
 
     def make_verified_speech_job(self):
         speaker = self.registry["speakers"][0]
-        speaker["authorization"]["purposes"].append("multilingual_dubbing")
         capability = next(row for row in speaker["localeCapabilities"] if row["targetLocale"] == "ko")
         capability["status"] = "human_reviewed"
         capability["reviewEvidence"] = ["synthetic-test-review-evidence"]
@@ -440,7 +441,6 @@ class TargetLanguageSpeechJobTests(unittest.TestCase):
     def test_verified_override_requires_registered_provider(self):
         registry = copy.deepcopy(self.registry)
         speaker = registry["speakers"][0]
-        speaker["authorization"]["purposes"].append("multilingual_dubbing")
         capability = next(row for row in speaker["localeCapabilities"] if row["targetLocale"] == "ko")
         reference = next(row for row in speaker["localeCapabilities"] if row["targetLocale"] == "vi")
         capability["adapterOverride"] = copy.deepcopy(reference["adapterOverride"])

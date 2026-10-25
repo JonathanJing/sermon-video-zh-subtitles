@@ -1,0 +1,149 @@
+{
+  "schemaVersion": "sermon-published-page-browser-smoke-v3",
+  "status": "fail",
+  "pageId": "revelation-jesus-wins-20261025",
+  "catalogVersion": "sermon-multilingual-catalog-v5",
+  "locales": [
+    {
+      "locale": "zh-Hans",
+      "status": "fail",
+      "browserStatus": "ok",
+      "problems": [
+        "/api/session answered 400, 200, 400, 200"
+      ],
+      "releasePackageJsonSha256": "b9926e9cf7694e71396b13b1f94ee34a63a5b3036a7d54085c1bdd4deac4c746",
+      "sessionRequests": [
+        {
+          "method": "POST",
+          "status": 400,
+          "source": {
+            "week": "2026-10-25",
+            "trackId": "revelation-jesus-wins-20261025-zh-Hans-f886ea4477f8",
+            "audioSha256": "f886ea4477f838e4a7237110d041d2d8774cb9b5348b48780c1e3e7bc10e3bdb"
+          }
+        },
+        {
+          "method": "POST",
+          "status": 200,
+          "source": {
+            "week": "2026-10-18",
+            "trackId": "resi-20261018-15030286-zh-Hans-a614af1126ae",
+            "audioSha256": "a614af1126ae466adab79b7db674ef1ea5ec1fefa5b73eaa177b5ead1e1088d5"
+          }
+        },
+        {
+          "method": "POST",
+          "status": 400,
+          "source": {
+            "week": "2026-10-25",
+            "trackId": "revelation-jesus-wins-20261025-zh-Hans-f886ea4477f8",
+            "audioSha256": "f886ea4477f838e4a7237110d041d2d8774cb9b5348b48780c1e3e7bc10e3bdb"
+          }
+        },
+        {
+          "method": "POST",
+          "status": 200,
+          "source": {
+            "week": "2026-10-18",
+            "trackId": "resi-20261018-15030286-zh-Hans-a614af1126ae",
+            "audioSha256": "a614af1126ae466adab79b7db674ef1ea5ec1fefa5b73eaa177b5ead1e1088d5"
+          }
+        }
+      ]
+    },
+    {
+      "locale": "ko",
+      "status": "fail",
+      "browserStatus": "ok",
+      "problems": [
+        "/api/session answered 400, 200, 400, 200"
+      ],
+      "releasePackageJsonSha256": "4122f136574f4ff7b8dda65da1ad418cedee3ea521ba8046fb2e5f61f5b17555",
+      "sessionRequests": [
+        {
+          "method": "POST",
+          "status": 400,
+          "source": {
+            "week": "2026-10-25",
+            "trackId": "revelation-jesus-wins-20261025-ko-c38ea7bf05d0",
+            "audioSha256": "c38ea7bf05d0abe57d4d93b68515d40a8e22f6c215bc5fb25d4128be8e3ded18"
+          }
+        },
+        {
+          "method": "POST",
+          "status": 200,
+          "source": {
+            "week": "2026-10-18",
+            "trackId": "resi-20261018-15030286-zh-Hans-a614af1126ae",
+            "audioSha256": "a614af1126ae466adab79b7db674ef1ea5ec1fefa5b73eaa177b5ead1e1088d5"
+          }
+        },
+        {
+          "method": "POST",
+          "status": 400,
+          "source": {
+            "week": "2026-10-25",
+            "trackId": "revelation-jesus-wins-20261025-ko-c38ea7bf05d0",
+            "audioSha256": "c38ea7bf05d0abe57d4d93b68515d40a8e22f6c215bc5fb25d4128be8e3ded18"
+          }
+        },
+        {
+          "method": "POST",
+          "status": 200,
+          "source": {
+            "week": "2026-10-18",
+            "trackId": "resi-20261018-15030286-zh-Hans-a614af1126ae",
+            "audioSha256": "a614af1126ae466adab79b7db674ef1ea5ec1fefa5b73eaa177b5ead1e1088d5"
+          }
+        }
+      ]
+    },
+    {
+      "locale": "es",
+      "status": "fail",
+      "browserStatus": "ok",
+      "problems": [
+        "/api/session answered 400, 200, 400, 200"
+      ],
+      "releasePackageJsonSha256": "a7d7a14fbcd8c01f2a8f82992bb0c2d313e5dd8337f7c8d19622e22aec3b68d3",
+      "sessionRequests": [
+        {
+          "method": "POST",
+          "status": 400,
+          "source": {
+            "week": "2026-10-25",
+            "trackId": "revelation-jesus-wins-20261025-es-5c9f11058ad7",
+            "audioSha256": "5c9f11058ad797a636c4b1d017e868f347211024e81008ba49c18205f6426430"
+          }
+        },
+        {
+          "method": "POST",
+          "status": 200,
+          "source": {
+            "week": "2026-10-18",
+            "trackId": "resi-20261018-15030286-zh-Hans-a614af1126ae",
+            "audioSha256": "a614af1126ae466adab79b7db674ef1ea5ec1fefa5b73eaa177b5ead1e1088d5"
+          }
+        },
+        {
+          "method": "POST",
+          "status": 400,
+          "source": {
+            "week": "2026-10-25",
+            "trackId": "revelation-jesus-wins-20261025-es-5c9f11058ad7",
+            "audioSha256": "5c9f11058ad797a636c4b1d017e868f347211024e81008ba49c18205f6426430"
+          }
+        },
+        {
+          "method": "POST",
+          "status": 200,
+          "source": {
+            "week": "2026-10-18",
+            "trackId": "resi-20261018-15030286-zh-Hans-a614af1126ae",
+            "audioSha256": "a614af1126ae466adab79b7db674ef1ea5ec1fefa5b73eaa177b5ead1e1088d5"
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,52 @@
+{
+  "schemaVersion": "sermon-run-start-check-v1",
+  "status": "fail",
+  "failed": [
+    "code"
+  ],
+  "checks": [
+    {
+      "check": "code",
+      "status": "fail",
+      "head": "3578abaa001a80f3d3ae1132819b4bef4127946a",
+      "qcImplementationSha256": "3ba3f692a85b1f817303c13a7b6fabb3fbcb646ff7a729bf9e8419de06950c55",
+      "problems": [
+        "HEAD 3578abaa001a is not d76ca6e2cca651bfde7f906c24a3eda1119ee13b",
+        "QC implementation hash differs: existing waivers would not apply"
+      ]
+    },
+    {
+      "check": "openai",
+      "status": "pass",
+      "environment": "dev",
+      "exitCode": 0
+    },
+    {
+      "check": "budget",
+      "status": "skip"
+    },
+    {
+      "check": "spark",
+      "status": "pass",
+      "problems": [],
+      "host": "<email>",
+      "session": "not_required_api_only"
+    },
+    {
+      "check": "outputs",
+      "status": "pass",
+      "fresh": [
+        "artifacts/weekend-live/2026-10-25/formal"
+      ],
+      "problems": []
+    },
+    {
+      "check": "drain",
+      "status": "skip"
+    },
+    {
+      "check": "page",
+      "status": "skip"
+    }
+  ]
+}

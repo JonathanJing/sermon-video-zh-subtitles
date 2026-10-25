@@ -1,0 +1,372 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261021-layer1-first-principles-experiments",
+  "runs": [
+    {
+      "label": "e1-rules-8s.output",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/podcasts/if-i-had-more-time-jesus-sends-and-resurrects-his-own/layer1-fp/e1-rules-8s.output",
+      "skipped": {
+        ".json": 479,
+        ".txt": 119,
+        ".lock": 1
+      }
+    },
+    {
+      "label": "e2c-negated-or.output",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/podcasts/if-i-had-more-time-jesus-sends-and-resurrects-his-own/layer1-fp/e2c-negated-or.output",
+      "skipped": {
+        ".json": 27,
+        ".txt": 6,
+        ".lock": 1
+      }
+    },
+    {
+      "label": "e4c-execute-asr14-judge8.output",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/podcasts/if-i-had-more-time-jesus-sends-and-resurrects-his-own/layer1-fp/e4c-execute-asr14-judge8.output",
+      "skipped": {
+        ".lock": 2,
+        ".jsonl": 1,
+        ".csv": 3,
+        ".json": 364,
+        ".wav": 15,
+        ".txt": 80
+      }
+    },
+    {
+      "label": "layer1-fp-context",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/podcasts/if-i-had-more-time-jesus-sends-and-resurrects-his-own/layer1-fp-context",
+      "skipped": {
+        ".json": 20
+      }
+    }
+  ],
+  "files": [
+    {
+      "run": "e1-rules-8s.output",
+      "path": "rebuild-receipt.json",
+      "kind": "whole",
+      "bytes": 753,
+      "truncated": false,
+      "sha256": "dcafc20dc76d1e3374f242476096d56ac3d17ff0c5d48dd5794b7f9b844ff23d",
+      "redactions": {
+        "home_dir": 1
+      }
+    },
+    {
+      "run": "e1-rules-8s.output",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 24922,
+      "truncated": false,
+      "sha256": "c55524f7889766950a7edbd587c73718ac1049826a4acdd088f4c3d63575a737",
+      "redactions": {
+        "private_ip": 1,
+        "home_dir": 10
+      }
+    },
+    {
+      "run": "e2c-negated-or.output",
+      "path": "rebuild-receipt.json",
+      "kind": "whole",
+      "bytes": 753,
+      "truncated": false,
+      "sha256": "7896e3590785da661fe0c3aba4e5921dadeab4930488c7c467a1e3c0f9ec3879",
+      "redactions": {
+        "home_dir": 1
+      }
+    },
+    {
+      "run": "e2c-negated-or.output",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 24922,
+      "truncated": false,
+      "sha256": "c55524f7889766950a7edbd587c73718ac1049826a4acdd088f4c3d63575a737",
+      "redactions": {
+        "private_ip": 1,
+        "home_dir": 10
+      }
+    },
+    {
+      "run": "e4c-execute-asr14-judge8.output",
+      "path": "accounting/operations.log",
+      "kind": "log",
+      "bytes": 48086,
+      "truncated": false,
+      "sha256": "3efb22379a179f04cd5464bb9116e871dcb3c1ea4cccfee59b09d9966c0794f8",
+      "redactions": {}
+    },
+    {
+      "run": "e4c-execute-asr14-judge8.output",
+      "path": "accounting/summary.json",
+      "kind": "whole",
+      "bytes": 186863,
+      "truncated": false,
+      "sha256": "cca00071ef77ea09ec544b25337dc9760645f521d5b088cc6a8c68d0a57fbe0f",
+      "redactions": {}
+    },
+    {
+      "run": "e4c-execute-asr14-judge8.output",
+      "path": "alignment-receipt.json",
+      "kind": "whole",
+      "bytes": 23044,
+      "truncated": false,
+      "sha256": "d3c0d815a3d02976209ce93eb5c4504c297ee426d29c8ce24c843b70d99bdc4a",
+      "redactions": {
+        "private_ip": 1,
+        "home_dir": 5
+      }
+    },
+    {
+      "run": "e4c-execute-asr14-judge8.output",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 25018,
+      "truncated": false,
+      "sha256": "af11bdfc80e6f6018fe2a13d119725bc9fd42c37065cc3ce7b4229fc0ac36200",
+      "redactions": {
+        "private_ip": 1,
+        "home_dir": 10
+      }
+    },
+    {
+      "run": "layer1-fp-context",
+      "path": "decisions.ndjson",
+      "kind": "whole",
+      "bytes": 8738,
+      "truncated": false,
+      "sha256": "9bea158f87c29e1ef8a4d0ed965b7753f31eb903ed66c2d27065f08da96ead0d",
+      "redactions": {
+        "home_dir": 16
+      }
+    },
+    {
+      "run": "layer1-fp-context",
+      "path": "e1-rules-8s.run.log",
+      "kind": "log",
+      "bytes": 646,
+      "truncated": false,
+      "sha256": "a792eae9a2d32d5dcb2cdceb326da5390fe16e5f579c9dea1bc90081ed5077dc",
+      "redactions": {
+        "home_dir": 1
+      }
+    },
+    {
+      "run": "layer1-fp-context",
+      "path": "e1-rules-8s.stderr.log",
+      "kind": "log",
+      "bytes": 0,
+      "truncated": false,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "redactions": {}
+    },
+    {
+      "run": "layer1-fp-context",
+      "path": "e2-determiner-comma.run.log",
+      "kind": "log",
+      "bytes": 669,
+      "truncated": false,
+      "sha256": "cbc4f2b782eac2d656bfeda72279652dbf07879fb625cdea153393a8d8cbbdde",
+      "redactions": {
+        "home_dir": 1
+      }
+    },
+    {
+      "run": "layer1-fp-context",
+      "path": "e2-determiner-comma.stderr.log",
+      "kind": "log",
+      "bytes": 0,
+      "truncated": false,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "redactions": {}
+    },
+    {
+      "run": "layer1-fp-context",
+      "path": "e2b-series-rule.run.log",
+      "kind": "log",
+      "bytes": 657,
+      "truncated": false,
+      "sha256": "2da873b78e5002c25a9d3028cd6d5e4e15f3a6e1a62868e45985902199fe5254",
+      "redactions": {
+        "home_dir": 1
+      }
+    },
+    {
+      "run": "layer1-fp-context",
+      "path": "e2b-series-rule.stderr.log",
+      "kind": "log",
+      "bytes": 0,
+      "truncated": false,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "redactions": {}
+    },
+    {
+      "run": "layer1-fp-context",
+      "path": "e2c-negated-or.run.log",
+      "kind": "log",
+      "bytes": 655,
+      "truncated": false,
+      "sha256": "45a1c930f2e33fd9c1580c98c5f0a90f51f7ee6c376c23454ef03777289730c8",
+      "redactions": {
+        "home_dir": 1
+      }
+    },
+    {
+      "run": "layer1-fp-context",
+      "path": "e2c-negated-or.stderr.log",
+      "kind": "log",
+      "bytes": 0,
+      "truncated": false,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "redactions": {}
+    },
+    {
+      "run": "layer1-fp-context",
+      "path": "e3-mfa.run.log",
+      "kind": "log",
+      "bytes": 461,
+      "truncated": false,
+      "sha256": "4a93765b23d9badd4ecf2e3bd906fed4a7894d6bade86f1bc47f50721e987bdd",
+      "redactions": {}
+    },
+    {
+      "run": "layer1-fp-context",
+      "path": "e3-mfa.stderr.log",
+      "kind": "log",
+      "bytes": 0,
+      "truncated": false,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "redactions": {}
+    },
+    {
+      "run": "layer1-fp-context",
+      "path": "e3b-one-chunk-spoken-form.run.log",
+      "kind": "log",
+      "bytes": 145,
+      "truncated": false,
+      "sha256": "8efd24441a70558a92f2a61bfeb14754ddb487d03f03cc392c7afd51d55bd5b6",
+      "redactions": {}
+    },
+    {
+      "run": "layer1-fp-context",
+      "path": "e3b-one-chunk-spoken-form.stderr.log",
+      "kind": "log",
+      "bytes": 7588,
+      "truncated": false,
+      "sha256": "c976c3160883db693acc945e4a409cbd63471a143959f9714fee5225b19be181",
+      "redactions": {
+        "secret_field": 3,
+        "email": 5,
+        "home_dir": 15
+      }
+    },
+    {
+      "run": "layer1-fp-context",
+      "path": "e3b-skip.run.log",
+      "kind": "log",
+      "bytes": 61,
+      "truncated": false,
+      "sha256": "0fa4356e22b89b0b257f2adfbacc1d0fa5fc24398f0788df842e84925c33bd3a",
+      "redactions": {}
+    },
+    {
+      "run": "layer1-fp-context",
+      "path": "e3b-skip.stderr.log",
+      "kind": "log",
+      "bytes": 0,
+      "truncated": false,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "redactions": {}
+    },
+    {
+      "run": "layer1-fp-context",
+      "path": "e4-execute-asr14-judge8.run.log",
+      "kind": "log",
+      "bytes": 139,
+      "truncated": false,
+      "sha256": "895f49bc72622c86a1729f40476c13d4d14b808b1693fb3ed454707791ad1227",
+      "redactions": {}
+    },
+    {
+      "run": "layer1-fp-context",
+      "path": "e4-execute-asr14-judge8.stderr.log",
+      "kind": "log",
+      "bytes": 2284,
+      "truncated": false,
+      "sha256": "ab6d5897c0deef6dae310066e6a50406c418d6feb05be58affa3e398f77e63c2",
+      "redactions": {
+        "secret_field": 1,
+        "home_dir": 7
+      }
+    },
+    {
+      "run": "layer1-fp-context",
+      "path": "e4b-execute-asr14-judge8.run.log",
+      "kind": "log",
+      "bytes": 142,
+      "truncated": false,
+      "sha256": "c2914e8fd4ccd88579ee1dd5b31cd4ef1515cdc530b1e9ff50dfa9fcfe583b28",
+      "redactions": {}
+    },
+    {
+      "run": "layer1-fp-context",
+      "path": "e4b-execute-asr14-judge8.stderr.log",
+      "kind": "log",
+      "bytes": 6762,
+      "truncated": false,
+      "sha256": "ae7cb822370a5cd7d0918429903d4271952b662fd620b810912e824a07e37bb5",
+      "redactions": {
+        "secret_field": 4,
+        "email": 3,
+        "home_dir": 17
+      }
+    },
+    {
+      "run": "layer1-fp-context",
+      "path": "e4c-execute-asr14-judge8.resume1.log",
+      "kind": "log",
+      "bytes": 898,
+      "truncated": false,
+      "sha256": "87c90b3de3f549b6a2e529497a7a49964433de80f61d179d56aabd636414d5f4",
+      "redactions": {
+        "home_dir": 1
+      }
+    },
+    {
+      "run": "layer1-fp-context",
+      "path": "e4c-execute-asr14-judge8.resume1.stderr.log",
+      "kind": "log",
+      "bytes": 0,
+      "truncated": false,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "redactions": {}
+    },
+    {
+      "run": "layer1-fp-context",
+      "path": "e4c-execute-asr14-judge8.run.log",
+      "kind": "log",
+      "bytes": 142,
+      "truncated": false,
+      "sha256": "74a13369b4d678d358aad29699e96109a5b995f2fff939b4cdfdf5751f21d34e",
+      "redactions": {}
+    },
+    {
+      "run": "layer1-fp-context",
+      "path": "e4c-execute-asr14-judge8.stderr.log",
+      "kind": "log",
+      "bytes": 4466,
+      "truncated": false,
+      "sha256": "87fd3b2d2d7d9cb4065ec470d94da486b68b409b8c3045608f3150ef2da7a550",
+      "redactions": {
+        "secret_field": 2,
+        "email": 3,
+        "home_dir": 11
+      }
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

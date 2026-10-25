@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1600" height="2400" viewBox="0 0 1600 2400" role="img" aria-labelledby="title desc">
-<title id="title">计划：生成、独立审核、门禁与新修订</title><desc id="desc">Planned r1 → r2 → r3；返工边通向新版本，不回到旧节点。 计划中的 strict-verifier 与有界返工；D1 私有合同不代表 D3–D5 执行已完成。 两次修订为建议上限；执行失败恢复审核，结果未知先对账，人审仍独立。</desc>
+<title id="title">计划：生成、独立审核、门禁与新修订</title><desc id="desc">Planned r1 → r2 → r3；返工边通向新版本，不回到旧节点。 D1–D5（text/strict/*）与受控入口已有代码；默认 dispatcher 尚未切换。 图示两次新修订；真实 A/B 待验，结果未知先对账，人工批准独立。</desc>
 <style>text{font-family:"PingFang SC","Noto Sans CJK SC","Microsoft YaHei",Arial,sans-serif;} text{font-variant-ligatures:none}</style>
 <defs><marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto-start-reverse" markerUnits="userSpaceOnUse"><path d="M1 1 L7 4 L1 7" fill="none" stroke="#648A86" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></marker></defs>
 <rect x="0" y="0" width="1600" height="2400" rx="0" fill="#F5F4EF" stroke="none" />
@@ -250,8 +250,8 @@
 <text x="1112" y="2124" font-size="25" font-weight="650" fill="#19343D" text-anchor="start" data-box="1108,2065,408,112" >escalate</text>
 </g>
 <rect x="64" y="2271" width="1472" height="78" rx="16" fill="#E9EEE8" stroke="none" />
-<text x="84" y="2300" font-size="20" font-weight="400" fill="#4C635F" text-anchor="start" >计划中的 strict-verifier 与有界返工；D1 私有合同不代表 D3–D5 执行已完成。</text>
-<text x="84" y="2329" font-size="20" font-weight="400" fill="#4C635F" text-anchor="start" >两次修订为建议上限；执行失败恢复审核，结果未知先对账，人审仍独立。</text>
-<text x="64" y="2378" font-size="15" font-weight="400" fill="#7B8B88" text-anchor="start" >内容校准 2026-09-30 · 设计参考 Repository source / no ImageGen · 原生可编辑 SVG</text>
+<text x="84" y="2300" font-size="20" font-weight="400" fill="#4C635F" text-anchor="start" >D1–D5（text/strict/*）与受控入口已有代码；默认 dispatcher 尚未切换。</text>
+<text x="84" y="2329" font-size="20" font-weight="400" fill="#4C635F" text-anchor="start" >图示两次新修订；真实 A/B 待验，结果未知先对账，人工批准独立。</text>
+<text x="64" y="2378" font-size="15" font-weight="400" fill="#7B8B88" text-anchor="start" >内容校准 2026-10-22 · 设计参考 Repository source / no ImageGen · 原生可编辑 SVG</text>
 <text x="1536" y="2378" font-size="15" font-weight="400" fill="#7B8B88" text-anchor="end" >实线：主路径   虚线：条件 / 实验 / 历史</text>
 </svg>

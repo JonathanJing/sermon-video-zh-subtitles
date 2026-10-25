@@ -1,0 +1,27 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261021-ios-beta61-apns-delivery",
+  "runs": [
+    {
+      "label": "apns-send-build61-owner-20261021",
+      "source": "~/.codex/worktrees/ios-next-beta-poster-push/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-21/apns-send-build61-owner-20261021",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "apns-send-build61-owner-20261021",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 758,
+      "truncated": false,
+      "sha256": "95b2074ff5b12b54ee1a555e55301a36801a831b6d32e1c78444a33550c81c67",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

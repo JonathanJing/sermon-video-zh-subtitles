@@ -1,0 +1,29 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261021-ios-prod-push-firestore-setup",
+  "runs": [
+    {
+      "label": "firestore-setup",
+      "source": "~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/artifacts/ios-formal-push-validation/reports/firestore-setup",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "firestore-setup",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 593,
+      "truncated": false,
+      "sha256": "ded588626711b262fe5921b94f9476e4d7e2130f03696e1b225a50eaea816211",
+      "redactions": {
+        "email": 1
+      }
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

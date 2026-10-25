@@ -1,0 +1,11 @@
+{
+  "alignedSha256": "1adb9a9041168b919d851095b3e9d9ddbc48356ed6c2a2e1f8b417b3fce740d0",
+  "asrOrMfaRerun": false,
+  "baseConfigurationSha256": "51f94d1fc466e49f22334f96b2edb2f5f75fcbcb83a9965c7630f5ce8f26ca96",
+  "baseOutput": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/podcasts/if-i-had-more-time-jesus-sends-and-resurrects-his-own/layer1/output-v10",
+  "boundaryOverridesSha256": "2e42132b14f8b3d703cb26a3921714af660080e93a10f988690dd34a326c0bb8",
+  "budgetAuthorizationSha256": "9f181afa15267912f91aa659b5caa65c488247432b30ba672850ac3e96cf4c31",
+  "operatorAcceptanceSha256": null,
+  "rebuildIdentity": "bbf8bd9fe56d09ad69217d75af5ad15ca0b6eff7c779b0fd03478e528f5273f6",
+  "schemaVersion": "sermon-source-anchor-rebuild-v1"
+}

@@ -1,0 +1,1232 @@
+{
+ "schemaVersion": "spark-tts-memory-ab-comparison-v1",
+ "scope": "diagnostic_only",
+ "releaseEligible": false,
+ "sample": "2026-10-03 single-speaker 64-sentence sample (sunday-production-8x8), repeated rounds",
+ "arms": {
+  "baseline": {
+   "arm": "baseline",
+   "status": "reserve_tripped",
+   "cudaAllocConf": null,
+   "releaseCudaCache": false,
+   "replicas": 8,
+   "batchSize": 8,
+   "rounds": 6,
+   "units": 328,
+   "windows": 41,
+   "torchVersion": null,
+   "modelLoadBarrierSeconds": 49.3,
+   "totalWallSeconds": 309.4,
+   "windowGenerationSeconds": {
+    "median": 51.6,
+    "max": 70.4,
+    "sum": 2082.1
+   },
+   "releaseSeconds": {
+    "n": 0,
+    "median": null,
+    "max": null
+   },
+   "memAvailableGiB": {
+    "beforeLoad": NaN,
+    "afterLoad": 75.78,
+    "minimum": 23.92,
+    "afterClose": NaN
+   },
+   "memAvailableGiBPerResult": [
+    63.7,
+    60.7,
+    57.5,
+    50.6,
+    46.9,
+    46.8,
+    43.1,
+    38.9,
+    38.8,
+    37.6,
+    37.5,
+    37.5,
+    36.4,
+    36.3,
+    36.3,
+    35.0,
+    35.0,
+    33.3,
+    31.4,
+    31.3,
+    31.3,
+    30.1,
+    30.1,
+    30.1,
+    30.1,
+    30.2,
+    27.5,
+    27.3,
+    27.2,
+    26.1,
+    25.1,
+    25.1,
+    25.1,
+    25.0,
+    25.0,
+    24.9,
+    24.9,
+    24.9,
+    24.9,
+    24.9,
+    24.9
+   ],
+   "memDrainGiBFirstToLastResult": 38.76,
+   "workers": {
+    "0": {
+     "windows": 5,
+     "reservedGiB": [
+      7.02,
+      8.14,
+      8.14,
+      10.31,
+      10.31
+     ],
+     "allocatedGiB": [
+      3.9,
+      3.9,
+      3.9,
+      3.9,
+      3.9
+     ],
+     "maxReservedGiB": 10.31,
+     "rssGiB": [
+      2.33,
+      2.33,
+      2.33,
+      2.33,
+      2.32
+     ]
+    },
+    "1": {
+     "windows": 6,
+     "reservedGiB": [
+      6.72,
+      6.72,
+      6.72,
+      7.79,
+      8.46,
+      8.46
+     ],
+     "allocatedGiB": [
+      3.9,
+      3.9,
+      3.9,
+      3.9,
+      3.9,
+      3.9
+     ],
+     "maxReservedGiB": 8.46,
+     "rssGiB": [
+      2.33,
+      2.33,
+      2.33,
+      2.34,
+      2.32,
+      2.33
+     ]
+    },
+    "2": {
+     "windows": 5,
+     "reservedGiB": [
+      7.42,
+      7.42,
+      8.66,
+      8.66,
+      9.29
+     ],
+     "allocatedGiB": [
+      3.9,
+      3.9,
+      3.9,
+      3.9,
+      3.9
+     ],
+     "maxReservedGiB": 9.29,
+     "rssGiB": [
+      2.32,
+      2.33,
+      2.34,
+      2.34,
+      2.32
+     ]
+    },
+    "3": {
+     "windows": 5,
+     "reservedGiB": [
+      9.01,
+      10.73,
+      10.73,
+      10.73,
+      10.73
+     ],
+     "allocatedGiB": [
+      3.9,
+      3.9,
+      3.9,
+      3.9,
+      3.9
+     ],
+     "maxReservedGiB": 10.73,
+     "rssGiB": [
+      2.32,
+      2.33,
+      2.34,
+      2.32,
+      2.32
+     ]
+    },
+    "4": {
+     "windows": 5,
+     "reservedGiB": [
+      7.51,
+      8.69,
+      9.38,
+      9.39,
+      9.39
+     ],
+     "allocatedGiB": [
+      3.9,
+      3.9,
+      3.9,
+      3.9,
+      3.9
+     ],
+     "maxReservedGiB": 9.39,
+     "rssGiB": [
+      2.32,
+      2.33,
+      2.34,
+      2.34,
+      2.32
+     ]
+    },
+    "5": {
+     "windows": 5,
+     "reservedGiB": [
+      7.79,
+      7.79,
+      7.79,
+      7.79,
+      7.79
+     ],
+     "allocatedGiB": [
+      3.9,
+      3.9,
+      3.9,
+      3.9,
+      3.9
+     ],
+     "maxReservedGiB": 7.79,
+     "rssGiB": [
+      2.32,
+      2.34,
+      2.34,
+      2.32,
+      2.33
+     ]
+    },
+    "6": {
+     "windows": 5,
+     "reservedGiB": [
+      7.65,
+      8.93,
+      8.93,
+      8.98,
+      8.98
+     ],
+     "allocatedGiB": [
+      3.9,
+      3.9,
+      3.9,
+      3.9,
+      3.9
+     ],
+     "maxReservedGiB": 8.98,
+     "rssGiB": [
+      2.32,
+      2.33,
+      2.34,
+      2.33,
+      2.32
+     ]
+    },
+    "7": {
+     "windows": 5,
+     "reservedGiB": [
+      7.14,
+      7.14,
+      7.19,
+      8.42,
+      8.42
+     ],
+     "allocatedGiB": [
+      3.9,
+      3.9,
+      3.9,
+      3.9,
+      3.9
+     ],
+     "maxReservedGiB": 8.42,
+     "rssGiB": [
+      2.32,
+      2.33,
+      2.33,
+      2.31,
+      2.32
+     ]
+    }
+   }
+  },
+  "both": {
+   "arm": "both",
+   "status": "complete_diagnostic",
+   "cudaAllocConf": "expandable_segments:True",
+   "releaseCudaCache": true,
+   "replicas": 8,
+   "batchSize": 8,
+   "rounds": 6,
+   "units": 384,
+   "windows": 48,
+   "torchVersion": "2.10.0+cu130",
+   "modelLoadBarrierSeconds": 47.8,
+   "totalWallSeconds": 395.2,
+   "windowGenerationSeconds": {
+    "median": 50.2,
+    "max": 66.9,
+    "sum": 2340.7
+   },
+   "releaseSeconds": {
+    "n": 48,
+    "median": 0.078,
+    "max": 0.161
+   },
+   "memAvailableGiB": {
+    "beforeLoad": 116.27,
+    "afterLoad": 75.69,
+    "minimum": 52.92,
+    "afterClose": 116.27
+   },
+   "memAvailableGiBPerResult": [
+    66.9,
+    66.9,
+    66.6,
+    64.6,
+    64.5,
+    66.7,
+    66.8,
+    66.6,
+    65.9,
+    65.9,
+    65.7,
+    65.3,
+    65.6,
+    65.8,
+    63.9,
+    66.3,
+    66.5,
+    66.9,
+    66.4,
+    65.5,
+    65.6,
+    63.8,
+    66.1,
+    64.3,
+    65.9,
+    66.9,
+    67.3,
+    65.2,
+    65.4,
+    58.1,
+    59.2,
+    61.9,
+    64.3,
+    66.8,
+    67.1,
+    65.1,
+    61.6,
+    63.7,
+    65.9,
+    66.0,
+    66.4,
+    66.7,
+    67.0,
+    63.9,
+    66.1,
+    66.3,
+    66.6,
+    67.0
+   ],
+   "memDrainGiBFirstToLastResult": -0.08,
+   "workers": {
+    "0": {
+     "windows": 7,
+     "reservedGiB": [
+      3.92,
+      3.92,
+      3.92,
+      3.92,
+      3.92,
+      3.92,
+      3.92
+     ],
+     "allocatedGiB": [
+      3.9,
+      3.9,
+      3.9,
+      3.9,
+      3.9,
+      3.9,
+      3.9
+     ],
+     "maxReservedGiB": 7.45,
+     "rssGiB": [
+      2.31,
+      2.32,
+      2.33,
+      2.33,
+      2.33,
+      2.33,
+      2.34
+     ]
+    },
+    "1": {
+     "windows": 7,
+     "reservedGiB": [
+      3.92,
+      3.92,
+      3.92,
+      3.92,
+      3.92,
+      3.92,
+      3.92
+     ],
+     "allocatedGiB": [
+      3.9,
+      3.9,
+      3.9,
+      3.9,
+      3.9,
+      3.9,
+      3.9
+     ],
+     "maxReservedGiB": 6.53,
+     "rssGiB": [
+      2.31,
+      2.32,
+      2.32,
+      2.33,
+      2.33,
+      2.34,
+      2.34
+     ]
+    },
+    "2": {
+     "windows": 7,
+     "reservedGiB": [
+      3.92,
+      3.92,
+      3.92,
+      3.92,
+      3.92,
+      3.92,
+      3.92
+     ],
+     "allocatedGiB": [
+      3.9,
+      3.9,
+      3.9,
+      3.9,
+      3.9,
+      3.9,
+      3.9
+     ],
+     "maxReservedGiB": 6.47,
+     "rssGiB": [
+      2.31,
+      2.32,
+      2.33,
+      2.33,
+      2.33,
+      2.33,
+      2.34
+     ]
+    },
+    "3": {
+     "windows": 6,
+     "reservedGiB": [
+      3.92,
+      3.92,
+      3.92,
+      3.92,
+      3.92,
+      3.92
+     ],
+     "allocatedGiB": [
+      3.9,
+      3.9,
+      3.9,
+      3.9,
+      3.9,
+      3.9
+     ],
+     "maxReservedGiB": 7.29,
+     "rssGiB": [
+      2.31,
+      2.33,
+      2.33,
+      2.33,
+      2.33,
+      2.34
+     ]
+    },
+    "4": {
+     "windows": 6,
+     "reservedGiB": [
+      3.92,
+      3.92,
+      3.92,
+      3.92,
+      3.92,
+      3.92
+     ],
+     "allocatedGiB": [
+      3.9,
+      3.9,
+      3.9,
+      3.9,
+      3.9,
+      3.9
+     ],
+     "maxReservedGiB": 6.63,
+     "rssGiB": [
+      2.31,
+      2.33,
+      2.33,
+      2.33,
+      2.33,
+      2.33
+     ]
+    },
+    "5": {
+     "windows": 5,
+     "reservedGiB": [
+      3.92,
+      3.92,
+      3.92,
+      3.92,
+      3.92
+     ],
+     "allocatedGiB": [
+      3.9,
+      3.9,
+      3.9,
+      3.9,
+      3.9
+     ],
+     "maxReservedGiB": 6.33,
+     "rssGiB": [
+      2.31,
+      2.33,
+      2.33,
+      2.33,
+      2.34
+     ]
+    },
+    "6": {
+     "windows": 5,
+     "reservedGiB": [
+      3.92,
+      3.92,
+      3.92,
+      3.92,
+      3.92
+     ],
+     "allocatedGiB": [
+      3.9,
+      3.9,
+      3.9,
+      3.9,
+      3.9
+     ],
+     "maxReservedGiB": 6.33,
+     "rssGiB": [
+      2.31,
+      2.32,
+      2.33,
+      2.33,
+      2.33
+     ]
+    },
+    "7": {
+     "windows": 5,
+     "reservedGiB": [
+      3.92,
+      3.92,
+      3.92,
+      3.92,
+      3.92
+     ],
+     "allocatedGiB": [
+      3.9,
+      3.9,
+      3.9,
+      3.9,
+      3.9
+     ],
+     "maxReservedGiB": 6.33,
+     "rssGiB": [
+      2.31,
+      2.32,
+      2.32,
+      2.33,
+      2.33
+     ]
+    }
+   }
+  },
+  "expandable": {
+   "arm": "expandable",
+   "status": "complete_diagnostic",
+   "cudaAllocConf": "expandable_segments:True",
+   "releaseCudaCache": false,
+   "replicas": 8,
+   "batchSize": 8,
+   "rounds": 6,
+   "units": 384,
+   "windows": 48,
+   "torchVersion": "2.10.0+cu130",
+   "modelLoadBarrierSeconds": 51.8,
+   "totalWallSeconds": 397.9,
+   "windowGenerationSeconds": {
+    "median": 50.8,
+    "max": 66.8,
+    "sum": 2351.0
+   },
+   "releaseSeconds": {
+    "n": 0,
+    "median": null,
+    "max": null
+   },
+   "memAvailableGiB": {
+    "beforeLoad": 116.3,
+    "afterLoad": 75.74,
+    "minimum": 44.3,
+    "afterClose": 116.25
+   },
+   "memAvailableGiBPerResult": [
+    65.0,
+    63.0,
+    60.9,
+    54.1,
+    54.1,
+    54.1,
+    51.7,
+    48.5,
+    48.4,
+    48.2,
+    48.2,
+    48.2,
+    48.1,
+    48.0,
+    48.0,
+    48.0,
+    48.0,
+    47.8,
+    47.8,
+    47.9,
+    47.8,
+    47.4,
+    47.4,
+    47.3,
+    47.3,
+    46.8,
+    45.6,
+    45.5,
+    45.5,
+    44.8,
+    44.8,
+    44.8,
+    44.8,
+    44.8,
+    44.8,
+    44.7,
+    44.7,
+    44.7,
+    44.7,
+    44.7,
+    44.5,
+    44.5,
+    44.5,
+    44.5,
+    44.5,
+    44.5,
+    44.5,
+    44.3
+   ],
+   "memDrainGiBFirstToLastResult": 20.69,
+   "workers": {
+    "0": {
+     "windows": 7,
+     "reservedGiB": [
+      5.84,
+      6.11,
+      6.11,
+      7.31,
+      7.31,
+      7.31,
+      7.45
+     ],
+     "allocatedGiB": [
+      3.9,
+      3.9,
+      3.9,
+      3.9,
+      3.9,
+      3.9,
+      3.9
+     ],
+     "maxReservedGiB": 7.45,
+     "rssGiB": [
+      2.31,
+      2.32,
+      2.32,
+      2.33,
+      2.33,
+      2.33,
+      2.34
+     ]
+    },
+    "1": {
+     "windows": 7,
+     "reservedGiB": [
+      5.77,
+      5.77,
+      5.77,
+      6.24,
+      6.57,
+      6.57,
+      6.57
+     ],
+     "allocatedGiB": [
+      3.9,
+      3.9,
+      3.9,
+      3.9,
+      3.9,
+      3.9,
+      3.9
+     ],
+     "maxReservedGiB": 6.57,
+     "rssGiB": [
+      2.31,
+      2.32,
+      2.32,
+      2.32,
+      2.33,
+      2.33,
+      2.33
+     ]
+    },
+    "2": {
+     "windows": 7,
+     "reservedGiB": [
+      6.21,
+      6.21,
+      6.33,
+      6.33,
+      6.33,
+      6.45,
+      6.47
+     ],
+     "allocatedGiB": [
+      3.9,
+      3.9,
+      3.9,
+      3.9,
+      3.9,
+      3.9,
+      3.9
+     ],
+     "maxReservedGiB": 6.47,
+     "rssGiB": [
+      2.31,
+      2.32,
+      2.33,
+      2.33,
+      2.33,
+      2.33,
+      2.34
+     ]
+    },
+    "3": {
+     "windows": 6,
+     "reservedGiB": [
+      7.15,
+      7.29,
+      7.29,
+      7.29,
+      7.29,
+      7.29
+     ],
+     "allocatedGiB": [
+      3.9,
+      3.9,
+      3.9,
+      3.9,
+      3.9,
+      3.9
+     ],
+     "maxReservedGiB": 7.29,
+     "rssGiB": [
+      2.31,
+      2.32,
+      2.33,
+      2.33,
+      2.33,
+      2.33
+     ]
+    },
+    "4": {
+     "windows": 6,
+     "reservedGiB": [
+      6.15,
+      6.17,
+      6.63,
+      6.63,
+      6.63,
+      6.63
+     ],
+     "allocatedGiB": [
+      3.9,
+      3.9,
+      3.9,
+      3.9,
+      3.9,
+      3.9
+     ],
+     "maxReservedGiB": 6.63,
+     "rssGiB": [
+      2.31,
+      2.33,
+      2.33,
+      2.33,
+      2.33,
+      2.33
+     ]
+    },
+    "5": {
+     "windows": 5,
+     "reservedGiB": [
+      6.33,
+      6.33,
+      6.33,
+      6.33,
+      6.33
+     ],
+     "allocatedGiB": [
+      3.9,
+      3.9,
+      3.9,
+      3.9,
+      3.9
+     ],
+     "maxReservedGiB": 6.33,
+     "rssGiB": [
+      2.31,
+      2.33,
+      2.33,
+      2.33,
+      2.33
+     ]
+    },
+    "6": {
+     "windows": 5,
+     "reservedGiB": [
+      6.23,
+      6.33,
+      6.33,
+      6.37,
+      6.37
+     ],
+     "allocatedGiB": [
+      3.9,
+      3.9,
+      3.9,
+      3.9,
+      3.9
+     ],
+     "maxReservedGiB": 6.37,
+     "rssGiB": [
+      2.31,
+      2.32,
+      2.32,
+      2.33,
+      2.33
+     ]
+    },
+    "7": {
+     "windows": 5,
+     "reservedGiB": [
+      6.0,
+      6.0,
+      6.04,
+      6.37,
+      6.37
+     ],
+     "allocatedGiB": [
+      3.9,
+      3.9,
+      3.9,
+      3.9,
+      3.9
+     ],
+     "maxReservedGiB": 6.37,
+     "rssGiB": [
+      2.31,
+      2.32,
+      2.32,
+      2.32,
+      2.33
+     ]
+    }
+   }
+  },
+  "release": {
+   "arm": "release",
+   "status": "complete_diagnostic",
+   "cudaAllocConf": null,
+   "releaseCudaCache": true,
+   "replicas": 8,
+   "batchSize": 8,
+   "rounds": 6,
+   "units": 384,
+   "windows": 48,
+   "torchVersion": "2.10.0+cu130",
+   "modelLoadBarrierSeconds": 47.3,
+   "totalWallSeconds": 394.5,
+   "windowGenerationSeconds": {
+    "median": 50.7,
+    "max": 67.3,
+    "sum": 2343.0
+   },
+   "releaseSeconds": {
+    "n": 48,
+    "median": 0.106,
+    "max": 0.504
+   },
+   "memAvailableGiB": {
+    "beforeLoad": 116.29,
+    "afterLoad": 75.41,
+    "minimum": 51.3,
+    "afterClose": 116.27
+   },
+   "memAvailableGiBPerResult": [
+    66.5,
+    66.6,
+    66.4,
+    62.8,
+    62.7,
+    66.2,
+    66.2,
+    66.2,
+    65.6,
+    65.6,
+    65.4,
+    65.1,
+    61.8,
+    65.5,
+    62.0,
+    65.9,
+    66.1,
+    66.3,
+    66.0,
+    65.3,
+    65.4,
+    62.3,
+    65.8,
+    63.7,
+    66.2,
+    66.4,
+    66.6,
+    65.1,
+    65.2,
+    53.4,
+    54.8,
+    58.5,
+    62.4,
+    66.2,
+    66.5,
+    64.9,
+    58.9,
+    62.3,
+    65.5,
+    62.3,
+    62.2,
+    66.2,
+    66.4,
+    62.3,
+    65.7,
+    65.9,
+    66.1,
+    66.3
+   ],
+   "memDrainGiBFirstToLastResult": 0.11,
+   "workers": {
+    "0": {
+     "windows": 7,
+     "reservedGiB": [
+      4.02,
+      4.02,
+      4.02,
+      4.02,
+      4.02,
+      4.02,
+      4.02
+     ],
+     "allocatedGiB": [
+      3.9,
+      3.9,
+      3.9,
+      3.9,
+      3.9,
+      3.9,
+      3.9
+     ],
+     "maxReservedGiB": 9.43,
+     "rssGiB": [
+      2.31,
+      2.32,
+      2.32,
+      2.33,
+      2.33,
+      2.33,
+      2.33
+     ]
+    },
+    "1": {
+     "windows": 7,
+     "reservedGiB": [
+      4.02,
+      4.02,
+      4.02,
+      4.02,
+      4.02,
+      4.02,
+      4.02
+     ],
+     "allocatedGiB": [
+      3.9,
+      3.9,
+      3.9,
+      3.9,
+      3.9,
+      3.9,
+      3.9
+     ],
+     "maxReservedGiB": 7.81,
+     "rssGiB": [
+      2.31,
+      2.32,
+      2.32,
+      2.32,
+      2.33,
+      2.33,
+      2.33
+     ]
+    },
+    "2": {
+     "windows": 7,
+     "reservedGiB": [
+      4.02,
+      4.02,
+      4.02,
+      4.02,
+      4.02,
+      4.02,
+      4.02
+     ],
+     "allocatedGiB": [
+      3.9,
+      3.9,
+      3.9,
+      3.9,
+      3.9,
+      3.9,
+      3.9
+     ],
+     "maxReservedGiB": 7.91,
+     "rssGiB": [
+      2.31,
+      2.32,
+      2.33,
+      2.33,
+      2.33,
+      2.33,
+      2.33
+     ]
+    },
+    "3": {
+     "windows": 6,
+     "reservedGiB": [
+      4.02,
+      4.02,
+      4.02,
+      4.02,
+      4.02,
+      4.02
+     ],
+     "allocatedGiB": [
+      3.9,
+      3.9,
+      3.9,
+      3.9,
+      3.9,
+      3.9
+     ],
+     "maxReservedGiB": 9.17,
+     "rssGiB": [
+      2.31,
+      2.32,
+      2.33,
+      2.33,
+      2.33,
+      2.33
+     ]
+    },
+    "4": {
+     "windows": 6,
+     "reservedGiB": [
+      4.02,
+      4.02,
+      4.02,
+      4.02,
+      4.02,
+      4.02
+     ],
+     "allocatedGiB": [
+      3.9,
+      3.9,
+      3.9,
+      3.9,
+      3.9,
+      3.9
+     ],
+     "maxReservedGiB": 8.07,
+     "rssGiB": [
+      2.31,
+      2.33,
+      2.33,
+      2.33,
+      2.33,
+      2.33
+     ]
+    },
+    "5": {
+     "windows": 5,
+     "reservedGiB": [
+      4.02,
+      4.02,
+      4.02,
+      4.02,
+      4.02
+     ],
+     "allocatedGiB": [
+      3.9,
+      3.9,
+      3.9,
+      3.9,
+      3.9
+     ],
+     "maxReservedGiB": 7.79,
+     "rssGiB": [
+      2.31,
+      2.32,
+      2.33,
+      2.33,
+      2.33
+     ]
+    },
+    "6": {
+     "windows": 5,
+     "reservedGiB": [
+      4.02,
+      4.02,
+      4.02,
+      4.02,
+      4.02
+     ],
+     "allocatedGiB": [
+      3.9,
+      3.9,
+      3.9,
+      3.9,
+      3.9
+     ],
+     "maxReservedGiB": 7.83,
+     "rssGiB": [
+      2.31,
+      2.32,
+      2.33,
+      2.33,
+      2.33
+     ]
+    },
+    "7": {
+     "windows": 5,
+     "reservedGiB": [
+      4.02,
+      4.02,
+      4.02,
+      4.02,
+      4.02
+     ],
+     "allocatedGiB": [
+      3.9,
+      3.9,
+      3.9,
+      3.9,
+      3.9
+     ],
+     "maxReservedGiB": 7.67,
+     "rssGiB": [
+      2.31,
+      2.32,
+      2.32,
+      2.33,
+      2.33
+     ]
+    }
+   }
+  }
+ },
+ "wavSha256IdenticalToBaseline": {
+  "note": "baseline stopped at the reserve after 41 windows; its 280 committed WAVs (35 consumed windows) were hashed on Spark",
+  "expandable": {
+   "identical": 280,
+   "total": 280
+  },
+  "pairwiseCompletedArms": {
+   "expandable_vs_release": "384/384",
+   "expandable_vs_both": "384/384",
+   "release_vs_both": "384/384"
+  }
+ },
+ "matchedWindowGeneration": {
+  "commonWindows": 41,
+  "sumSecondsRatioVsBaseline": {
+   "expandable": 0.998,
+   "release": 0.994,
+   "both": 0.993
+  }
+ },
+ "codeCommit": "b335f7a5",
+ "sparkStage": "results/spark-tts-memory-ab-20261023 (repo-b335f7a5)",
+ "image": "sermon-qwen-tts:podcast-dual-20261002 (torch 2.10.0+cu130)",
+ "session": "tts-mem-ab-20261023, begun after the sentence-first agent's session sfa-clip-20261023 closed"
+}

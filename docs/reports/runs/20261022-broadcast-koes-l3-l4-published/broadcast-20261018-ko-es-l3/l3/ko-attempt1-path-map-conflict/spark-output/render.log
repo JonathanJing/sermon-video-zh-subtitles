@@ -1,0 +1,23 @@
+Traceback (most recent call last):
+  File "/work/repo-72f03e0b/tools/ops/run.py", line 91, in <module>
+    raise SystemExit(main())
+                     ^^^^^^
+  File "/work/repo-72f03e0b/tools/ops/run.py", line 87, in main
+    return entry()
+           ^^^^^^^
+  File "/work/repo-72f03e0b/packages/production/src/tongxing_production/audio/renderer.py", line 1689, in main
+    result = render_accounted(
+             ^^^^^^^^^^^^^^^^^
+  File "/work/repo-72f03e0b/packages/production/src/tongxing_production/audio/renderer.py", line 1594, in render_accounted
+    result = render(paths, checkpoint_map_path, operation_policies_path, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/work/repo-72f03e0b/packages/production/src/tongxing_production/audio/renderer.py", line 1581, in render
+    return _render(paths, checkpoint_map_path, operation_policies_path,
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/work/repo-72f03e0b/packages/production/src/tongxing_production/audio/renderer.py", line 1524, in _render
+    materialize_path_map(paths["job"], path_map_path)
+  File "/work/repo-72f03e0b/packages/production/src/tongxing_production/audio/renderer.py", line 211, in materialize_path_map
+    require(seen[original] == ref, f"Conflicting mapped evidence: {original}")
+  File "/work/repo-72f03e0b/packages/production/src/tongxing_production/audio/renderer.py", line 141, in require
+    raise ValueError(message)
+ValueError: Conflicting mapped evidence: ~/.codex/worktrees/broadcast-es-ko-shared-source/sermon-video-zh-subtitles/artifacts/weekend-live/broadcast-20261018-es-ko-20261022/inputs/source/english-source-package.json

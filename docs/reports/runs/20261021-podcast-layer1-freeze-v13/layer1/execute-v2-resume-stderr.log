@@ -1,0 +1,41 @@
+Traceback (most recent call last):
+  File "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/packages/production/src/tongxing_production/source/mfa_spark.py", line 165, in _call
+    completed = execute(command, stdin=payload, capture_output=True, check=True,
+                               timeout=14460 if action == 'align' else 180)
+  File "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/packages/production/src/tongxing_production/compute/spark_admission.py", line 124, in __call__
+    result = self.caller(*args, **kwargs)
+  File "/opt/homebrew/Cellar/<email>/3.13.16/Frameworks/Python.framework/Versions/3.13/lib/python3.13/subprocess.py", line 578, in run
+    raise CalledProcessError(retcode, process.args,
+                             output=stdout, stderr=stderr)
+subprocess.CalledProcessError: Command '['ssh', '-o', 'BatchMode=yes', '-o', 'ConnectTimeout=15', '-o', 'HostKeyAlias=<host>', '<email>', 'ssh -o BatchMode=yes -o ConnectTimeout=15 <email> \'~/sermon-mfa-runtime/env/bin/python -c \'"\'"\'\nimport hashlib, json, os, pathlib, sys, tarfile\nroot = pathlib.Path(sys.argv[1])\nroot.mkdir(parents=True, exist_ok=True)\nwith tarfile.open(fileobj=sys.stdin.buffer, mode=\'"\'"\'"\'"\'"\'"\'"\'"\'r|\'"\'"\'"\'"\'"\'"\'"\'"\') as bundle:\n    first = bundle.next()\n    if first.name != \'"\'"\'"\'"\'"\'"\'"\'"\'request.json\'"\'"\'"\'"\'"\'"\'"\'"\': raise ValueError(\'"\'"\'"\'"\'"\'"\'"\'"\'Missing request\'"\'"\'"\'"\'"\'"\'"\'"\')\n    request = json.load(bundle.extractfile(first))\n    key = hashlib.sha256(json.dumps(request, sort_keys=True).encode()).hexdigest()\n    run = root / key\n    run.mkdir(exist_ok=True)\n    import fcntl\n    lock = (run/\'"\'"\'"\'"\'"\'"\'"\'"\'job.lock\'"\'"\'"\'"\'"\'"\'"\'"\').open(\'"\'"\'"\'"\'"\'"\'"\'"\'a\'"\'"\'"\'"\'"\'"\'"\'"\')\n    fcntl.flock(lock.fileno(), fcntl.LOCK_EX)\n    while True:\n        item = bundle.next()\n        if item is None: break\n        if item.name not in (\'"\'"\'"\'"\'"\'"\'"\'"\'mfa_alignment.py\'"\'"\'"\'"\'"\'"\'"\'"\', \'"\'"\'"\'"\'"\'"\'"\'"\'audio\'"\'"\'"\'"\'"\'"\'"\'"\', \'"\'"\'"\'"\'"\'"\'"\'"\'spoken.json\'"\'"\'"\'"\'"\'"\'"\'"\') or not item.isfile():\n            raise ValueError(\'"\'"\'"\'"\'"\'"\'"\'"\'Unexpected transport member\'"\'"\'"\'"\'"\'"\'"\'"\')\n        target = run / item.name\n        temporary = target.with_suffix(\'"\'"\'"\'"\'"\'"\'"\'"\'.upload\'"\'"\'"\'"\'"\'"\'"\'"\')\n        with bundle.extractfile(item) as source, temporary.open(\'"\'"\'"\'"\'"\'"\'"\'"\'wb\'"\'"\'"\'"\'"\'"\'"\'"\') as dest:\n            import shutil\n            shutil.copyfileobj(source, dest)\n        temporary.replace(target)\nsys.path.insert(0, str(run))\nimport mfa_alignme ...[line truncated]
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/tools/ops/run.py", line 91, in <module>
+    raise SystemExit(main())
+                     ~~~~^^
+  File "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/tools/ops/run.py", line 87, in main
+    return entry()
+  File "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/packages/production/src/tongxing_production/source/unified_stage.py", line 625, in main
+    result = inspect(args.config) if args.command == 'inspect' else execute(args.config)
+                                                                    ~~~~~~~^^^^^^^^^^^^^
+  File "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/packages/production/src/tongxing_production/source/unified_stage.py", line 392, in execute
+    return _execute(config, fresh, api_key=<redacted>, transport=transport, claude_transport=claude_transport,
+                    aligner=aligner or mfa_backend.align_reference_chunks,
+                    mfa_preflight=mfa_preflight or mfa_backend.preflight)
+  File "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/packages/production/src/tongxing_production/source/unified_stage.py", line 468, in _execute
+    aligned = aligner(references, clip, out / 'mfa', **_mfa_options(config))
+  File "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/packages/production/src/tongxing_production/source/mfa_backend.py", line 201, in align_reference_chunks
+    segments = spark.align_reference_chunks(frozen, clip_path, outdir, **spark_options)
+  File "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/packages/production/src/tongxing_production/source/mfa_spark.py", line 183, in align_reference_chunks
+    result = _call('align', chunks=chunks, clip_path=clip_path, **options)
+  File "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/packages/production/src/tongxing_production/source/mfa_spark.py", line 169, in _call
+    raise RuntimeError('DGX Spark MFA failed; no local fallback. ' + detail) from exc
+RuntimeError: DGX Spark MFA failed; no local fallback. Traceback (most recent call last):
+  File "<string>", line 69, in <module>
+  File "~/sermon-mfa-runtime/jobs/4c92b565c6344d4ea86cf93bc8cf4918939f1b060a8272352b4220eb66e701c1/mfa_alignment.py", line 403, in align_reference_chunks
+    raise ValueError(f'MFA did not align required chunk: {path.name}')
+ValueError: MFA did not align required chunk: chunk_0010.json
+
+exit 1

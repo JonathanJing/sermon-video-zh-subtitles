@@ -1,0 +1,161 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261024-jesus-wins-poster",
+  "runs": [
+    {
+      "label": "2026-10-25",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/sermon-poster/2026-10-25",
+      "skipped": {
+        ".json": 461,
+        ".md": 1,
+        ".txt": 5,
+        ".png": 107,
+        ".svg": 13,
+        ".py": 2,
+        ".js": 17,
+        ".mjs": 99,
+        ".srt": 6,
+        ".mp3": 189,
+        ".pdf": 12,
+        ".html": 84,
+        ".jpg": 3,
+        ".css": 9,
+        ".cache": 1,
+        ".lock": 1
+      }
+    }
+  ],
+  "files": [
+    {
+      "run": "2026-10-25",
+      "path": "four-locale/en/poster-receipt.json",
+      "kind": "whole",
+      "bytes": 5239,
+      "truncated": false,
+      "sha256": "8f8f0244fd0abdfa4ed477403f3895063da1550c6b24e8931b6e32fbc32b8027",
+      "redactions": {}
+    },
+    {
+      "run": "2026-10-25",
+      "path": "four-locale/es/poster-receipt.json",
+      "kind": "whole",
+      "bytes": 4816,
+      "truncated": false,
+      "sha256": "f87681bb13c8a563247eeaff862ae0ee54b9f3cf991e050890065c770293508c",
+      "redactions": {}
+    },
+    {
+      "run": "2026-10-25",
+      "path": "four-locale/ko/poster-receipt.json",
+      "kind": "whole",
+      "bytes": 4895,
+      "truncated": false,
+      "sha256": "f03678c2b40e634c036f425d1f4b19be9bc9b931320388cfb12355f0ff2d8b86",
+      "redactions": {}
+    },
+    {
+      "run": "2026-10-25",
+      "path": "four-locale/zh-Hans/poster-receipt.json",
+      "kind": "whole",
+      "bytes": 4710,
+      "truncated": false,
+      "sha256": "8b3378381092d1d6cfeb241f9df667f123debcb5becb81ab05320087e8a70b77",
+      "redactions": {}
+    },
+    {
+      "run": "2026-10-25",
+      "path": "prepare/es/poster-receipt.json",
+      "kind": "whole",
+      "bytes": 2019,
+      "truncated": false,
+      "sha256": "378cdcaa19a1db6aa8147754c76a7a460298d0ea3ba8d5338462619f3c0c6240",
+      "redactions": {}
+    },
+    {
+      "run": "2026-10-25",
+      "path": "prepare/ko/poster-receipt.json",
+      "kind": "whole",
+      "bytes": 2098,
+      "truncated": false,
+      "sha256": "e5dbaa39982d1a8bfaca8dc859225c9e4a70c386771cd2f5db601a6c31ad5c79",
+      "redactions": {}
+    },
+    {
+      "run": "2026-10-25",
+      "path": "prepare/zh-Hans/poster-receipt.json",
+      "kind": "whole",
+      "bytes": 1913,
+      "truncated": false,
+      "sha256": "8a1e53e7eead82e1d83bfeb920f705f319627da86eee13cdfc164be995850782",
+      "redactions": {}
+    },
+    {
+      "run": "2026-10-25",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 834,
+      "truncated": false,
+      "sha256": "06200329d7868bdeb83552cd0282841ce1a6a47125fa7dc6dcd78ab8967ed311",
+      "redactions": {}
+    },
+    {
+      "run": "2026-10-25",
+      "path": "upload-baseline/baseline-receipt.json",
+      "kind": "whole",
+      "bytes": 121238,
+      "truncated": false,
+      "sha256": "890dface2dcbd9be0679fdee6312f7f9fe9bd6bffdfc750388eda47c5c07575b",
+      "redactions": {}
+    },
+    {
+      "run": "2026-10-25",
+      "path": "upload-candidate/baseline-receipt.json",
+      "kind": "whole",
+      "bytes": 121238,
+      "truncated": false,
+      "sha256": "890dface2dcbd9be0679fdee6312f7f9fe9bd6bffdfc750388eda47c5c07575b",
+      "redactions": {}
+    },
+    {
+      "run": "2026-10-25",
+      "path": "upload-candidate/hosting-publish.log",
+      "kind": "log",
+      "bytes": 0,
+      "truncated": false,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "redactions": {}
+    },
+    {
+      "run": "2026-10-25",
+      "path": "upload-candidate/preparation-receipt.json",
+      "kind": "whole",
+      "bytes": 4052,
+      "truncated": false,
+      "sha256": "ee21dcac109262d5d32f2ffa431bf8c160fd681620476131b7397670888e422d",
+      "redactions": {}
+    },
+    {
+      "run": "2026-10-25",
+      "path": "upload-readback/baseline-receipt.json",
+      "kind": "whole",
+      "bytes": 124676,
+      "truncated": false,
+      "sha256": "9c4d480ace26e7a3533c544370859bb16f17e343a6c3a8a8bdc7698807206946",
+      "redactions": {}
+    },
+    {
+      "run": "2026-10-25",
+      "path": "upload-receipt.json",
+      "kind": "whole",
+      "bytes": 3788,
+      "truncated": false,
+      "sha256": "1b6cb9614d0c5608f36befd2fdad72aaf41623e206f430b38b9d2d87a22ae7a8",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

@@ -1,0 +1,40 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261021-ios27-align",
+  "runs": [
+    {
+      "label": "20261021-ios27-align",
+      "source": "~/.codex/worktrees/ios-next-beta-poster-push/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-21/ios27-report-inputs/20261021-ios27-align",
+      "skipped": {
+        ".json": 1
+      }
+    }
+  ],
+  "files": [
+    {
+      "run": "20261021-ios27-align",
+      "path": "run.log",
+      "kind": "log",
+      "bytes": 42925,
+      "truncated": true,
+      "sha256": "7c0cd8699f80c96f4c6742ae16a9b4e48d3d024488ac9efe1ff9e15e61933db1",
+      "redactions": {
+        "home_dir": 71
+      }
+    },
+    {
+      "run": "20261021-ios27-align",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 1335,
+      "truncated": false,
+      "sha256": "ac9ff1051035b7913449635343743e2ebadeaffccdd44a676c1eb3a017f2646d",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

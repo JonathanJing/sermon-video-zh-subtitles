@@ -1,0 +1,14 @@
+{
+  "schemaVersion": "tongxing-push-plan-v1",
+  "result": "dry_run",
+  "pageId": "resi-20261018-15030286",
+  "eligibleLocales": [
+    "zh-Hans",
+    "ko",
+    "es"
+  ],
+  "recipients": 0,
+  "suppressedDuplicates": 0,
+  "planMode": "0600",
+  "sent": 0
+}

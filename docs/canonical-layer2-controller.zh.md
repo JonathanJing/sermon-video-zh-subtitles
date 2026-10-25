@@ -6,7 +6,7 @@
 `machine_review_pass_human_review_pending`、`releaseEligible=false` 的候选；不会创建人工
 批准、启动 TTS、构建/发布页面、提交 App Store，或调用 bounded decision agent。
 
-新任务按[当前模型及调用策略](production-model-runtime-policy.zh.md)使用 Sol 6.1 high 初译 → Sol 6.1 medium 独立复核，默认通过 OpenAI API；旧任务保留冻结的 policy、后端和缓存身份。
+新任务按[当前模型及调用策略](production-model-runtime-policy.zh.md)默认使用 DeepSeek Flash low 初译 → high 独立复核；Sol 6.1 high／medium（OpenAI API）、Opus 5.5 high／medium（Claude CLI）须显式选择，不自动回退；旧任务保留冻结的 policy、后端和缓存身份。
 
 默认配置 `sermon-canonical-layer2-execution-v1` 只接受以下字段：
 
@@ -38,8 +38,8 @@ inspectionConfig 而不列入本批执行 lanes。每个 lane 输出、输入及
   --config /absolute/execution.json --mode deterministic_execute
 ```
 
-一个 tick 至多派发一个固定 worker 然后返回。第一版同一 production run 至多一个 active
-locale job；uncertain owner 继续占用该名额直到 reconciliation。当前 controller 代码允许冻结 policy 的 1–16 个组 workers，共享 job-root 对应的 API 槽位最多 24 个；独立 `run_target_language_models.py` CLI 仍限制 1–3 workers。API 槽位不等于 Codex CLI 账号并发额度，也不是跨所有 job-root 的全局 API/TTS 资源调度器。见 [并发实现](../packages/production/src/tongxing_production/compute/api_concurrency.py) 与 [controller 准入](../packages/production/src/tongxing_production/text/controller.py)。
+一个 tick 至多派发一个固定 worker 然后返回。execution-v1 同一 production run 至多一个 active
+locale job；v3 及后续自动修复配置（含 v7）支持 `maxActiveLocales` 1–3，正式周更 profile 为 3。uncertain owner 继续占用容量并阻止该 run 的新派发，直到 reconciliation。当前 controller 代码允许冻结 policy 的 1–16 个组 workers，共享 job-root 对应的 API 槽位最多 24 个；独立 `run_target_language_models.py` CLI 仍限制 1–3 workers。API 槽位不等于 Codex CLI 账号并发额度，也不是跨所有 job-root 的全局 API/TTS 资源调度器。见 [并发实现](../packages/production/src/tongxing_production/compute/api_concurrency.py) 与 [controller 准入](../packages/production/src/tongxing_production/text/controller.py)。
 显式并发配置使用新的 `sermon-canonical-layer2-execution-v2`，在 v1 字段上增加 `concurrencyProfile` 和 `resourcePolicy` 两个文件路径；v1 不接受这两个新字段，也不会自动升档。迁移时创建新配置与运行身份，绑定文件内容 hash，勿修改旧 job 的容量／凭据／输出目录。当前 profile v1 将最多活动 locale 升到 3，CLI 业务池 23、监督专槽 1；uncertain 仍阻止整个 run 的新派发。正式预算／批准仍须各自通过，详见[本轮诊断准备](reports/20261005-next-concurrency-test-preparation.zh.md)。
 
 自动修复配置 `sermon-canonical-layer2-execution-v3` 在 v1 字段上增加 `layer2AutoRepair`（路由版本、每语言组并发 `groupWorkers` 1–16、同时活跃语言 `maxActiveLocales` 1–3），在 worker 的同一个持久 job 里跑[有界自动修复](layer2-bounded-auto-repair.zh.md)；它不接受 v2 profile，API 仍共用 24 个在途槽。
@@ -185,6 +185,10 @@ ctime 的文件系统）；上级目录只记 kind，所以属主或 ACL 改动�
 在新代码上恢复会按原规则报 `worker_configuration_or_code_changed`；只有新准入的 job 使用它。没有
 schema、配置字段或迁移变化。
 
+### 代码身份的范围：点名闭包
+
+`code_identity()` 自 2026-10-24（backlog `DEV-GOV-002`，[设计稿 §3.1](design/codebase-complexity-and-identity-scope.zh.md)）起只摘要[`config/layer2-code-closure.json`](../config/layer2-code-closure.json) 列出的文件：从 L2 入口（`text.candidate`、`text.controller`、逐组 `orchestration.group_worker` 与 `group_pipeline`、语言插件目录、`tools/ops/run.py`、统一预检）静态追出的导入图、`scripts/tongxing_host.py` 中绑定文本层端口的函数所到达的模块、这些模块以字面量点名的 `schemas/*.schema.json`、术语表，以及清单文件本身；摘要仍是逐文件 SHA-256 的字典摘要（`code_identity_files()` 给出逐文件值）。清单由 `tools/development/layer2_code_closure.py --write` 生成，`tests/test_layer2_code_closure.py` 要求清单与导入图相等、每个文件存在且受 Git 跟踪：入口新增的依赖先在这里失败，评审后才进闭包。不在清单内的文件（`delivery/`、`observability/`、`apps/`、`experiments/`、大部分 `tools/ops` 与 `scripts/` 门面）的改动不再改变 L2 身份，也不再要求等进行中的 run 结束才能合并；改清单内文件仍与以前一样产生新一代身份。统一 CLI 的 `required_modules()` 同样按清单纳入 `scripts/` 与 `schemas/`，不再整目录枚举。已按旧身份冻结的 run 保留旧值，只读复验；新 run 用新清单。
+
 ## 按组号修订（execution v8）
 
 操作者看完候选、只想改几组时用这条路径（2026-10-18 周产出的教训：改动只能写进插件、policy 哈希一变，v6 缓存重放拒收旧成功收据，v7 只能单组串行、修复上限按“重放调用为 0”只剩约 4 组，最后整篇重新付费）。唯一必需的输入是**已有候选 + 每个语言的组号列表**，每组可附一句备注；怎么改由译者模型和独立复核决定，列表外的一切不动。
@@ -264,4 +268,4 @@ execution v3 的 `layer2AutoRepair` 修复轮只对失败组重新调用模型�
 
 ## 并发上限
 
-每个生产 run 默认只有一个活动 locale 作业；显式 execution-v2 搭配冻结的并发 profile 最多三个。owner 状态不确定时，整个 run 的新派发被阻塞，直到对账。已有作业的限额不得原地提高，新的上限要走[预算与迁移](canonical-layer2-budget-and-migration.zh.md)的新身份。
+execution-v1 同一生产 run 最多一个活动 locale 作业；显式 execution-v2 搭配冻结的并发 profile 最多三个。execution-v3 及后续自动修复配置（含 v6/v7）由 `maxActiveLocales` 选择 1–3、`groupWorkers` 选择每语言 1–16；[周更 profile](weekly-run-profile.zh.md#并发设置)默认正式 3 个 locale、每语言 8 个组，dev 1 个 locale。owner 状态不确定时，整个 run 的新派发被阻塞，直到对账。已有作业的限额不得原地提高，新的上限要走[预算与迁移](canonical-layer2-budget-and-migration.zh.md)的新身份。

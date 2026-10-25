@@ -1,6 +1,6 @@
 # 本地制作计算策略：Spark 默认，MacBook fallback
 
-决定日期：2026-10-01。今后的预制本地制作默认由 **DGX Spark 执行模型计算，MacBook 作为 fallback**。MacBook 仍可协调任务、取得媒体、保存收据、执行 CPU 媒体处理和提供人工审阅入口。此策略覆盖预制制作，不改周日独立 live_session 的现场设备要求，也不把当前 Astra/Sol API 改成本地模型。
+决定日期：2026-10-01。今后的预制本地制作默认由 **DGX Spark 执行模型计算，MacBook 作为 fallback**。MacBook 仍可协调任务、取得媒体、保存收据、执行 CPU 媒体处理和提供人工审阅入口。此策略覆盖预制制作，不改周日独立 live_session 的现场设备要求，也不把当前 Layer 2 API／CLI 后端（DeepSeek／Sol／Opus）改成本地模型。
 
 ## 默认与恢复
 

@@ -1,0 +1,114 @@
+W1021 04:28:50.945000 1 torch/utils/_pytree.py:630] <enum 'KernelPreference'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
+W1021 04:28:50.974000 1 torch/utils/_pytree.py:630] <enum 'ScaleCalculationMode'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
+The following generation flags are not valid and may be ignored: ['temperature']. Set `TRANSFORMERS_VERBOSITY=info` for more details.
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"asr": "turn-004", "done": 1, "of": 52}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"asr": "turn-006", "done": 2, "of": 52}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"asr": "turn-007", "done": 3, "of": 52}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"asr": "turn-009", "done": 4, "of": 52}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"asr": "turn-011", "done": 5, "of": 52}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"asr": "turn-012", "done": 6, "of": 52}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"asr": "turn-013", "done": 7, "of": 52}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"asr": "turn-015", "done": 8, "of": 52}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"asr": "turn-016", "done": 9, "of": 52}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"asr": "turn-017", "done": 10, "of": 52}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"asr": "turn-018", "done": 11, "of": 52}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"asr": "turn-019", "done": 12, "of": 52}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"asr": "turn-020", "done": 13, "of": 52}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"asr": "turn-022", "done": 14, "of": 52}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"asr": "turn-023", "done": 15, "of": 52}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"asr": "turn-024", "done": 16, "of": 52}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"asr": "turn-025", "done": 17, "of": 52}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"asr": "turn-026", "done": 18, "of": 52}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"asr": "turn-027", "done": 19, "of": 52}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"asr": "turn-028", "done": 20, "of": 52}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"asr": "turn-030", "done": 21, "of": 52}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"asr": "turn-031", "done": 22, "of": 52}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"asr": "turn-033", "done": 23, "of": 52}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"asr": "turn-035", "done": 24, "of": 52}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"asr": "turn-036", "done": 25, "of": 52}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"asr": "turn-037", "done": 26, "of": 52}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"asr": "turn-039", "done": 27, "of": 52}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"asr": "turn-041", "done": 28, "of": 52}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"asr": "turn-042", "done": 29, "of": 52}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"asr": "turn-043", "done": 30, "of": 52}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"asr": "turn-048", "done": 31, "of": 52}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"asr": "turn-050", "done": 32, "of": 52}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"asr": "turn-051", "done": 33, "of": 52}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"asr": "turn-056", "done": 34, "of": 52}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"asr": "turn-057", "done": 35, "of": 52}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"asr": "turn-059", "done": 36, "of": 52}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"asr": "turn-062", "done": 37, "of": 52}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"asr": "turn-068", "done": 38, "of": 52}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"asr": "turn-070", "done": 39, "of": 52}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"asr": "turn-072", "done": 40, "of": 52}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"asr": "turn-073", "done": 41, "of": 52}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"asr": "turn-075", "done": 42, "of": 52}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"asr": "turn-076", "done": 43, "of": 52}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"asr": "turn-077", "done": 44, "of": 52}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"asr": "turn-078", "done": 45, "of": 52}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"asr": "turn-080", "done": 46, "of": 52}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"asr": "turn-085", "done": 47, "of": 52}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"asr": "turn-086", "done": 48, "of": 52}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"asr": "turn-087", "done": 49, "of": 52}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"asr": "turn-088", "done": 50, "of": 52}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"asr": "turn-091", "done": 51, "of": 52}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"asr": "turn-093", "done": 52, "of": 52}
+Traceback (most recent call last):
+  File "/work/tooling/prep_candidates.py", line 329, in <module>
+    main()
+  File "/work/tooling/prep_candidates.py", line 253, in main
+    other = [s for s in mlx if s.get("speaker_id") != JOHN and s["end_time"] > start - mtol and s["start_time"] < end + mtol]
+                                                               ~^^^^^^^^^^^^
+KeyError: 'end_time'

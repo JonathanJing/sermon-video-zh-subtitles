@@ -42,7 +42,10 @@ from tongxing_production.source import sentence_interpretation as identity  # no
 RUNTIME = ROOT / "config/clip-e2e/spark-runtime.json"
 RUNTIME_SCHEMA = "sermon-clip-e2e-spark-runtime-v1"
 CLI_INPUTS = ("source", "anchor", "candidate", "policy", "human-review-receipt", "speaker-registry", "adapter",
-              "clip-voice-authorization", "clip-timeline-map", "audio-operation-policies")
+              "clip-timeline-map", "audio-operation-policies")
+# A clip job binds a clip voice authorization; a full-sermon job prepared from the source binds a
+# source voice authorization. The renderer and compaction take exactly one of the two.
+VOICE_FLAGS = ("clip-voice-authorization", "source-voice-authorization")
 TERMINAL_EXIT_CODES = (0, 1, 2)
 PACKAGE_SRC = "packages/production/src"
 
@@ -126,6 +129,14 @@ def session_labels(session, hold) -> list[str]:
             "-v", f"/tmp/tongxing-spark-gateway/{hold['jobId']}:/spark-session-gateway:ro"]
 
 
+def cli_inputs(args) -> tuple[dict[str, Path], str]:
+    """The resolved CLI input files keyed by name (the voice authorization as ``voice-authorization``) and its flag."""
+    cli = {name: getattr(args, name.replace("-", "_")).resolve() for name in CLI_INPUTS}
+    flag = next(name for name in VOICE_FLAGS if getattr(args, name.replace("-", "_")) is not None)
+    cli["voice-authorization"] = getattr(args, flag.replace("-", "_")).resolve()
+    return cli, "--" + flag
+
+
 def checkpoint_map(runtime: dict) -> dict:
     return {"schemaVersion": "sermon-speaker-checkpoint-map-v1", "checkpoints": [
         {"speakerId": runtime["speaker"]["id"], "checkpointRef": runtime["speaker"]["checkpointRef"], "path": "/checkpoint"}]}
@@ -192,7 +203,8 @@ RENDER_PREFIX = ["docker", "run", "--rm", "--gpus", "all", "--ipc", "host", "--n
 
 
 def render_command(runtime: dict, stage: str, code: str, blob, job_dir: str, *, max_end_lag: float,
-                   unit_instructions: str | None, seed: int = 42) -> list[str]:
+                   unit_instructions: str | None, seed: int = 42,
+                   voice_flag: str = "--clip-voice-authorization", reuse_from: str | None = None) -> list[str]:
     """The render container arguments after the docker prefix and the session labels."""
     command = ["--tmpfs", "/tmp:rw,exec,nosuid,size=2g,mode=1777", "--tmpfs", "/Users:rw,nosuid,size=64m,mode=1777",
                "--tmpfs", "/private:rw,nosuid,size=64m,mode=1777", "--tmpfs", "/home:rw,nosuid,size=64m,mode=1777",
@@ -207,7 +219,7 @@ def render_command(runtime: dict, stage: str, code: str, blob, job_dir: str, *, 
                "--candidate", blob("candidate"), "--policy", blob("policy"),
                "--human-review-receipt", blob("human-review-receipt"),
                "--speaker-registry", blob("speaker-registry"), "--adapter", blob("adapter"),
-               "--clip-voice-authorization", blob("clip-voice-authorization"),
+               voice_flag, blob("voice-authorization"),
                "--clip-timeline-map", blob("clip-timeline-map"),
                "--job", job_dir + "/job.json", "--checkpoint-map", blob("checkpoint-map"),
                "--audio-operation-policies", blob("audio-operation-policies"),
@@ -215,6 +227,10 @@ def render_command(runtime: dict, stage: str, code: str, blob, job_dir: str, *, 
                "--track-format", "mp3", "--max-end-lag-seconds", str(max_end_lag), "--seed", str(seed)]
     if unit_instructions:
         command += ["--unit-instructions", unit_instructions]
+    if reuse_from:
+        # A partial root set aside after the replica pool's memory reserve stop; the renderer
+        # re-verifies every committed unit it reuses and synthesizes only the missing windows.
+        command += ["--reuse-from", reuse_from]
     return command
 
 
@@ -226,7 +242,7 @@ def render(args, runtime, spark, session) -> int:
     require(not (local_out / "dispatch.started.json").exists(), "unknown_spark_dispatch_requires_reconciliation")
     job = json.loads(args.job.read_text())
     files, remote = evidence_closure(job, spark, runtime["remoteHome"])
-    cli = {name: getattr(args, name.replace("-", "_")).resolve() for name in CLI_INPUTS}
+    cli, voice_flag = cli_inputs(args)
     extra = [args.unit_instructions.resolve()] if args.unit_instructions else []
     for path in [*cli.values(), args.job.resolve(), *extra]:
         files.setdefault(str(path), sha(path))
@@ -262,7 +278,8 @@ def render(args, runtime, spark, session) -> int:
     tail = render_command(runtime, stage, args.code, blobs.__getitem__, f"/work/output/{remote_name}/speech-job",
                           max_end_lag=args.max_end_lag_seconds,
                           unit_instructions=f"/work/blobs/{sha(extra[0])}" if extra else None,
-                          seed=args.seed)
+                          seed=args.seed, voice_flag=voice_flag,
+                          reuse_from=f"/work/output/{args.reuse_from_remote}/speech-job" if args.reuse_from_remote else None)
     command_for = lambda hold: [*RENDER_PREFIX, *session_labels(session, hold), *tail]
     returncode, outcome, hold = dispatch(spark, session, "render", loc, stage=stage, code=args.code, command_for=command_for,
                                          log=f"{remote_out}/render.log", marker=local_out / "dispatch.started.json",
@@ -282,7 +299,7 @@ def compact(args, runtime, spark, session) -> int:
     path_map, cmap = local_out / "path-map.json", local_out / "checkpoint-map.container.json"
     require(path_map.is_file() and cmap.is_file(), "raw render dispatch files missing (path-map, checkpoint-map)")
     mapped = json.loads(path_map.read_text())["paths"]
-    cli = {name: getattr(args, name.replace("-", "_")).resolve() for name in CLI_INPUTS}
+    cli, voice_flag = cli_inputs(args)
     for path in cli.values():
         require(str(path) in mapped and mapped[str(path)].endswith(sha(path)), f"input not in the raw render's path map: {path}")
     job_sha = sha(args.job)
@@ -315,7 +332,7 @@ def compact(args, runtime, spark, session) -> int:
                    "--candidate", blob("candidate"), "--policy", blob("policy"),
                    "--human-review-receipt", blob("human-review-receipt"), "--adapter", blob("adapter"),
                    "--speaker-registry", blob("speaker-registry"),
-                   "--clip-voice-authorization", blob("clip-voice-authorization"),
+                   voice_flag, blob("voice-authorization"),
                    "--clip-timeline-map", blob("clip-timeline-map"),
                    "--source-job", f"/work/output/{args.raw_name}/speech-job/job.json",
                    "--destination-root", f"/work/output/{args.remote_name}/speech-job",
@@ -367,7 +384,9 @@ def screen(args, runtime, spark, session) -> int:
     require(runtime["asrRevision"].split(":")[-1] in probe, "asr_weights_differ")
     require("runtime" in probe, "asr_runtime_missing")
     containers = [p for p in probe[probe.index("runtime") + 2:] if p]
-    require(not containers, f"spark_busy:{containers}")
+    # Under group_tasks.py lanes another locale's CPU compaction may be running; the lanes
+    # gate already keeps GPU stages apart, so the operator passes --allow-busy there.
+    require(args.allow_busy or not containers, f"spark_busy:{containers}")
     code = f"/work/{args.code}"
     work = f"/work/output/{remote_name}/speech-job"
     command_for = lambda hold: [
@@ -491,18 +510,25 @@ def parser() -> argparse.ArgumentParser:
         sub.add_argument("--code", required=True, help="Staged code directory under the stage, e.g. repo-1a2b3c4d")
         return sub
 
+    def inputs(sub):
+        for name in CLI_INPUTS:
+            sub.add_argument("--" + name, type=Path, required=True)
+        voice = sub.add_mutually_exclusive_group(required=True)
+        for name in VOICE_FLAGS:
+            voice.add_argument("--" + name, type=Path)
+
     sub = common("render", "formal Layer 3 render (GPU)")
     sub.add_argument("--job", type=Path, required=True)
-    for name in CLI_INPUTS:
-        sub.add_argument("--" + name, type=Path, required=True)
+    inputs(sub)
     sub.add_argument("--max-end-lag-seconds", type=float, default=8.0)
     sub.add_argument("--seed", type=int, default=42, help="Frozen TTS seed; a repair needs a fresh render root")
     sub.add_argument("--unit-instructions", type=Path, default=None)
     sub.add_argument("--remote-name", default=None, help="Spark output directory under output/ (a rebuilt job needs its own)")
+    sub.add_argument("--reuse-from-remote", default=None,
+                     help="Output directory name of an earlier partial render of this job whose committed units to reuse")
     sub = common("compact", "edge-silence compaction and track assembly (CPU)")
     sub.add_argument("--job", type=Path, required=True, help="The local job.json the raw render root holds")
-    for name in CLI_INPUTS:
-        sub.add_argument("--" + name, type=Path, required=True)
+    inputs(sub)
     sub.add_argument("--raw-name", required=True)
     sub.add_argument("--remote-name", required=True)
     sub.add_argument("--max-end-lag-seconds", type=float, required=True)
@@ -515,6 +541,8 @@ def parser() -> argparse.ArgumentParser:
     sub.add_argument("--remote-name", default=None)
     sub.add_argument("--batch-size", default="1", choices=["1", "2", "4", "8"])
     sub.add_argument("--tag", default="v1")
+    sub.add_argument("--allow-busy", action="store_true",
+                     help="Run while another container (a CPU compaction of another locale) is up")
     sub = common("audio-qc", "machine listening-waiver driver (GPU + secondary ASR API)")
     sub.add_argument("--audio-package", required=True)
     sub.add_argument("--state-dir", required=True, help="The locale's text QC state dir (shared repair ledgers)")

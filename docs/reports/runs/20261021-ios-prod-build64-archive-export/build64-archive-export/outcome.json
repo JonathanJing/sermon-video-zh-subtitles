@@ -1,0 +1,16 @@
+{
+  "result": "passed",
+  "sourceCommit": "d33eb086e267f6b563cbbf8c678124f94f48e51e",
+  "version": "1.26.21",
+  "build": "64",
+  "archive": "passed",
+  "export": "passed",
+  "ipaSha256": "4fb19ab820a3b371dedb0d2156f309e07a2fac65a47fe3c1fc0fbb5d7951605c",
+  "contentOrigin": "https://ai-for-god-sermon-audio.web.app",
+  "privacyManifestAligned": true,
+  "apsEnvironment": "production",
+  "getTaskAllow": false,
+  "codeSign": "strict_pass",
+  "device": "not_run",
+  "appStoreReview": "not_run"
+}

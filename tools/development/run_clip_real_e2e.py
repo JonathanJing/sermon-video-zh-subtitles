@@ -102,8 +102,8 @@ def load_spec(path: Path) -> dict:
             and budget["settledUsdBefore"] < budget["totalUsd"], "budget needs totalUsd > settledUsdBefore >= 0")
     layer2, layer3 = spec.get("layer2") or {}, spec.get("layer3") or {}
     layer2.setdefault("backend", "openai_api")
-    require(layer2["backend"] in ("openai_api", "claude_cli_opus"),
-            "layer2.backend must be openai_api or claude_cli_opus")
+    require(layer2["backend"] in ("openai_api", "claude_cli_opus", "deepseek_flash"),
+            "layer2.backend must be openai_api, claude_cli_opus or deepseek_flash")
     for field, table in (("policyTemplates", layer2), ("plugins", layer2), ("attestationTemplates", layer3)):
         require(isinstance(table.get(field), dict) and set(locales) <= set(table[field]), f"{field} missing a locale")
         table[field] = {k: resolve(v) for k, v in table[field].items() if k in locales}

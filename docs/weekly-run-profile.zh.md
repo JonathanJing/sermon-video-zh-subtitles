@@ -15,9 +15,11 @@
 
 ## 并发设置
 
+Layer 1（2026-10-22 起，v4 配置默认）：ASR 每 180 秒块一个 worker（上限 16；播客实测 14 块 14 s），英文机器裁判 8 并发、每批 6 句（播客实测吞吐 2.2 s/次）。这些是 `sermon-unified-source-preparation-v4` 的默认值，见[统一 CLI 的正式 Source 候选准备](unified-source-preparation.zh.md#新运行默认v4-配置2026-10-22-起)。
+
 | 环节 | 设置 | 说明 |
 |---|---|---|
-| Layer 2 翻译与复核（OpenAI API） | execution-v3 及以上（含 v6 缓存续跑、v7 部分恢复）`layer2AutoRepair`：`groupWorkers: 8`；`maxActiveLocales`：正式周更 3，10 美元以内的 dev 测试 1 | 共享 job-root 的 API 槽位上限 24（[controller 合同](canonical-layer2-controller.zh.md#并发上限)）。三语同开时，三份预留同时占用预算 |
+| Layer 2 翻译与复核（按冻结后端：DeepSeek／OpenAI／Claude CLI） | execution-v3 及以上（含 v6 缓存续跑、v7 部分恢复）`layer2AutoRepair`：`groupWorkers: 8`；`maxActiveLocales`：正式周更 3，10 美元以内的 dev 测试 1 | 共享 job-root 的 API 槽位上限 24（[controller 合同](canonical-layer2-controller.zh.md#并发上限)）。三语同开时，三份预留同时占用预算 |
 | 文本质检与校准（OpenAI API） | `run_machine_qc_clip_test.py --workers 8`；预算账本 `maxConcurrent` 16 | 只在 Mac 上调 API，不占 Spark，可以与另一语言的 Spark 环节重叠 |
 | 配音渲染（Spark） | `--spark-production`：8 个常驻副本、每批 8 句、CUDA/BF16/SDPA | 全篇约 6–8 分钟／语言 |
 | 静音压缩（Spark CPU） | 单任务 | 约 15 秒／片段 |
@@ -30,7 +32,7 @@
 1. 三语 Layer 2 同时开（正式周更）。
 2. 每种语言的候选一出来，就在 Mac 上跑该语言的文本质检，不必等其他语言。
 3. Spark 按语言依次做渲染 → 压缩 → 初筛 → 打包 → 音频质检。
-4. 文本质检和 Layer 2 都只调 API，可以与另一语言的 Spark 环节重叠。
+4. 文本质检走自身已绑定的评判入口；Layer 2 按冻结后端调用 API 或 Claude CLI，都不占 Spark GPU，可以与另一语言的 Spark 环节重叠。
 
 这样能省掉三语文本质检的串行时间，全篇约 10–20 分钟，但前提是所有开着的预算加起来仍在批准范围内。
 
@@ -49,7 +51,7 @@
 
 规则：**已结算花费 + 当前所有开着的预算上限 ≤ 批准总额**。上限按下表"预留"列设定，再留 20–30% 余量；一个预算结束后，只计它的实际结算。测试预算很小时，把花钱的环节一个接一个跑，每次只开一个预算。
 
-历史 Layer 2 运行每次按实际输入的保守字节界与输出上限预留，约 0.038 美元（片段）／0.043 美元（全篇）；下表的调用、预留及实际列都是该次历史数据。当前规划准入还须覆盖完整 requestLimits 输入上界：Sol 每次最多 16,384 输入＋2,048 输出，冻结费率下为 0.06144 美元；16 组翻译＋复核共 32 次为每语 1.96608 美元，新片段 profile cap 为每语 2.00 美元。此数值是初始轮次保守上界，不是实测或账单，也不保证额外修复有足够预算。质检历史每次约 0.011–0.0125 美元。
+历史 Layer 2 运行每次按实际输入的保守字节界与输出上限预留，约 0.038 美元（片段）／0.043 美元（全篇）；下表的调用、预留及实际列都是该次历史数据。当前规划准入还须按冻结后端覆盖完整 requestLimits 输入上界（16,384 输入＋2,048 输出）：默认 DeepSeek 每次约 0.00737 美元，16 组翻译＋复核共 32 次约每语 0.236 美元，详见下方 DeepSeek 表。Sol 显式回退的冻结费率为每次 0.06144 美元、32 次每语 1.96608 美元；新片段 profile cap 仍为每语 2.00 美元。此数值是初始轮次保守上界，不是实测或账单，也不保证额外修复有足够预算。质检历史每次约 0.011–0.0125 美元。
 
 | 环节（每种语言） | 历史片段 16 句：调用 / 预留 / 实际 | 历史全篇 461 句：调用 / 预留 / 实际 | 当前新计划上限 |
 |---|---|---|---|
@@ -58,9 +60,20 @@
 
 片段彩排三语一轮历史实际约 2 美元（2026-10-13 分开预算根时为 2.69）。当前 Layer 2 三语初始 cap 合计 6.00 美元；每语 QC 连二级 ASR cap 为 5.525 美元，三语为 16.575 美元，全部阶段同时批准共 22.575 美元，超过 10 美元。显式总额与开工门会拒绝不合适的并行组合；选阶段后仍须在后续余额不足时停止或取得新批准，不能保证 10 美元内所有阶段必完成，也不自动提高已有授权。
 
+### DeepSeek Flash 后端的 Layer 2（默认）
+
+Layer 2 政策冻结为 `deepseek_flash` 时（[运行时模型政策](production-model-runtime-policy.zh.md)），初译 `deepseek-flash` low、复核 `high`，走 `DEEPSEEK_API_KEY` 的官方 API。账本按 peak 列价最坏情况预留：16,384 输入 × 0.30 美元／百万 + 2,048 输出 × 1.20 美元／百万 ≈ 每次 0.00737 美元。
+
+| 规模 | 每语言首轮上界 | 说明 |
+|---|---|---|
+| 片段 | 16 组 × 2 次 ≈ 0.236 美元 | 仍受 `capUsdPerLocale.clip = 2.00` 约束 |
+| 全篇 | 按实际组数 × 2 次 | 仍受 `capUsdPerLocale.week = 5.00` 约束 |
+
+DeepSeek 的金额是真实 API 规划上界，`countsTowardTotal: true`，不像 Claude 订阅那样记为列价等价。
+
 ### Claude CLI（Opus 5.5）后端的 Layer 2
 
-Layer 2 政策冻结为 `claude_cli_opus` 时（[运行时模型政策](production-model-runtime-policy.zh.md#layer-2-后端openai-api-或-claude-cliopus-55)），走订阅额度。账本仍按 Claude 列价最坏情况逐次预留，每次约 0.172 美元等价（16,384 输入 × 8 美元／百万 + 2,048 输出 × 20 美元／百万）。
+Layer 2 政策冻结为 `claude_cli_opus` 时（[运行时模型政策](production-model-runtime-policy.zh.md)），走订阅额度。账本仍按 Claude 列价最坏情况逐次预留，每次约 0.172 美元等价（16,384 输入 × 8 美元／百万 + 2,048 输出 × 20 美元／百万）。
 
 | 规模 | 列价等价上限（每语言） | 首轮 |
 |---|---|---|
@@ -195,4 +208,4 @@ Layer 2 计划中的 `sizing.<locale>.initialReservation` 是按当前分组、�
 
 新 Layer 2 授权 v3 必须在显式 `run_with_openai_environment.py` launcher 内离线生成，绑定完整 `openaiRoute` 和实际凭据指纹。控制器启动、缓存读取及派发前均核验；跨环境、项目或 key 不能沿用原批准或响应。旧 Layer 2 授权 v1/v2 保持原冻结合同，不自动补字段。规划器 `--reuse-from` 仅对 QC 的明确批准预算根只读重放已有响应，不补付缺失操作、不隐式迁移 Layer 2 缓存；部分 QC 使用互斥的 `--resume-qc-authorization` 继续原 v4 授权、原根和原额度，见[恢复合同](canonical-layer2-budget-and-migration.zh.md#qc-部分运行继续原授权与跨根只读重放分开)。
 
-新片段 cap 2.00 仅用于此后明确批准的新计划；已有预算文件、批准和历史报告保持原值。全篇 cap 5.00 未变，逐句 461 组按完整输入上界至少预留 56.64768 美元／语（922 次），会在写授权前拒绝默认周 profile；需明确批准的新 profile 或更小范围，不能用历史约 75 次调用的花费代替当前容量门。
+新片段 cap 2.00 仅用于此后明确批准的新计划；已有预算文件、批准和历史报告保持原值。全篇 cap 5.00 未变，逐句 461 组（922 次）按完整输入上界，默认 DeepSeek 约预留 6.79772 美元／语，Sol 显式回退为 56.64768 美元／语，两者都会在写授权前拒绝默认周 profile；需明确批准的新 profile 或更小范围，不能用历史约 75 次调用的花费代替当前容量门。

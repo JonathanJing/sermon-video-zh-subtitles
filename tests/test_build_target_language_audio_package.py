@@ -127,7 +127,7 @@ class AudioPackageTests(unittest.TestCase):
             "attestedAt": "2026-09-23T10:00:00Z",
         }
         write_json(self.asset_root / authorization_rel, self.authorization)
-        # Production purpose stays absent from the global registry. The new
+        # Remove the production purpose the global registry now carries, so the
         # job is verified only for this source, candidate and locale.
         self.registry["speakers"][0]["authorization"]["purposes"].remove("multilingual_dubbing")
         ko_capability = next(row for row in self.registry["speakers"][0]["localeCapabilities"]
@@ -312,6 +312,10 @@ class AudioPackageTests(unittest.TestCase):
         package = self.build()
         checked_in_registry = json.loads(
             (Path(__file__).parents[1] / "config/speaker-voice-registry.json").read_text(encoding="utf-8"))
+        checked_in_speaker = checked_in_registry["speakers"][0]
+        checked_in_speaker["authorization"]["purposes"].remove("multilingual_dubbing")
+        next(row for row in checked_in_speaker["localeCapabilities"] if row["targetLocale"] == "ko").update(
+            status="unverified_poc", demoStatus="machine_screened", reviewEvidence=[])
         self.assertEqual(self.registry, checked_in_registry)
         self.assertEqual(self.job["schemaVersion"], "sermon-target-language-speech-job-v2")
         self.assertIn("clipVoiceAuthorization", self.job["inputs"])

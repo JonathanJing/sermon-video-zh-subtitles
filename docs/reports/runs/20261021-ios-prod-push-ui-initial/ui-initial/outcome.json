@@ -1,0 +1,6 @@
+{
+  "result": "failed",
+  "scope": "ProductionPushUITests on iPhone Duo iOS 27.1",
+  "runDir": "20261021T214135-test-362fab57",
+  "reason": "Test assertion assumed Chinese text while simulator persisted English language; app displayed correct English opt-in UI."
+}

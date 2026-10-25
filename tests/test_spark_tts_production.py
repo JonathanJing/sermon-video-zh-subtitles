@@ -12,8 +12,9 @@ BatchEngine = batch_fixtures.BatchEngine
 class FixturePool:
     instances = []
 
-    def __init__(self, checkpoint, factory, engine_kwargs, *, replicas, telemetry):
+    def __init__(self, checkpoint, factory, engine_kwargs, *, replicas, telemetry, **options):
         self.replicas = replicas
+        self.options = options
         self.engine = factory(checkpoint, **engine_kwargs)
         self.telemetry = telemetry
         self.outputs = {}
@@ -75,6 +76,26 @@ class SparkProductionTests(unittest.TestCase):
         intent = tts.package.read_object(self.root / 'receipts/unit-0073.intent.json')
         self.assertEqual(intent['replicaCount'], 8)
         self.assertEqual(len(intent['replicaImplementationSha256']), 64)
+        self.assertEqual(intent['replicaMemoryPolicy'], tts.SPARK_REPLICA_MEMORY_POLICY)
+        self.assertEqual(FixturePool.instances[0].options,
+                         {'release_cuda_cache': True, 'cuda_alloc_conf': tts.SPARK_CUDA_ALLOC_CONF,
+                          'admission_gib_per_replica': tts.SPARK_REPLICA_ADMISSION_GIB})
+        runtime = tts.package.read_object(self.root / 'replica-runtime.json')
+        self.assertEqual((runtime['memoryPolicy'], runtime['cudaAllocConf'], runtime['releaseCudaCache'],
+                          runtime['admissionGiBPerReplica'], runtime['reserveGiB']),
+                         (tts.SPARK_REPLICA_MEMORY_POLICY, tts.SPARK_CUDA_ALLOC_CONF, True,
+                          tts.SPARK_REPLICA_ADMISSION_GIB, 24))
+
+    def test_prior_intent_without_memory_policy_is_the_same_sound(self):
+        self.setup_units(9)
+        self.render()
+        actual = tts.package.read_object(self.root / 'receipts/unit-0000.intent.json')
+        prior = {key: value for key, value in actual.items() if key != 'replicaMemoryPolicy'}
+        prior['batchImplementationSha256'] = '5f932a0e49785b02281d0beddf4d26c94410c6a60cf3c841b5ec240c5631e51a'
+        prior['replicaImplementationSha256'] = '7c8aa181f0940dbc7cfd3eeaa26034ef5f88d6a3bff7251bef1564ffff70966d'
+        self.assertTrue(tts._same_compatible_batch_repair_intent(prior, actual))
+        self.assertFalse(tts._same_compatible_batch_repair_intent(dict(prior, replicaMemoryPolicy='other'), actual))
+        self.assertFalse(tts._same_compatible_batch_repair_intent(dict(prior, seed=actual['seed'] + 1), actual))
 
     def test_future_bad_identity_fails_before_pool_creation(self):
         self.setup_units(9)

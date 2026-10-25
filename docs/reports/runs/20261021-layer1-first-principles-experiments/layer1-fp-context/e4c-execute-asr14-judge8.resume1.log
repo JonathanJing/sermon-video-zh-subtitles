@@ -1,0 +1,18 @@
+20:17:44 e4c-execute-asr14-judge8_resume1_start
+{
+  "status": "succeeded",
+  "kind": "english_source_candidate",
+  "reason": "human_source_review_required",
+  "artifact": "verified",
+  "review": "human_pending",
+  "productionEligible": false,
+  "humanApprovalCreated": false,
+  "candidatePath": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/podcasts/if-i-had-more-time-jesus-sends-and-resurrects-his-own/layer1-fp/e4c-execute-asr14-judge8.output/english-source-candidate.json",
+  "candidateSha256": "e0ad8ce6b87609e6aff127ba59e30ced06125d663f0e6a346db63d38b105d303",
+  "sourceMediaSha256": "145a2e99cd53eda9aac58ceecd56bd2d2329be993fad2de8201dba703f957fbe",
+  "chunkCount": 14,
+  "speakerIdentityMapping": "not_performed",
+  "speakerReview": "required",
+  "machineJudgeStatus": "approved_for_layer2_shadow"
+}
+20:20:40 e4c-execute-asr14-judge8_resume1_exit=0

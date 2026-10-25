@@ -1,0 +1,252 @@
+
+$ /usr/bin/xcrun xcodebuild -project ~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/apps/tongxing-ios/Tongxing.xcodeproj -list -json -disableAutomaticPackageResolution
+{
+  "project" : {
+    "configurations" : [
+      "BetaDebug",
+      "BetaRelease",
+      "Debug",
+      "Release"
+    ],
+    "name" : "Tongxing",
+    "schemes" : [
+      "ListeningActivityExtension",
+      "Tongxing",
+      "TongxingBeta",
+      "TongxingCore",
+      "TongxingInfrastructure",
+      "TongxingPreview",
+      "TongxingScreenshots"
+    ],
+    "targets" : [
+      "Tongxing",
+      "ListeningActivityExtension",
+      "TongxingTests",
+      "TongxingUITests"
+    ]
+  }
+}
+
+$ /usr/bin/xcrun xcodebuild -project ~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/apps/tongxing-ios/Tongxing.xcodeproj -scheme Tongxing -configuration Debug -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' -derivedDataPath ~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-21/cli/DerivedData -disableAutomaticPackageResolution CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO -resultBundlePath ~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-21/cli/20261021T212528-build-105c9a8f/build.xcresult build
+Command line invocation:
+    /Applications/Xcode.app/Contents/Developer/usr/bin/xcodebuild -project ~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/apps/tongxing-ios/Tongxing.xcodeproj -scheme Tongxing -configuration Debug -sdk iphonesimulator -destination "generic/platform=iOS Simulator" -derivedDataPath ~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-21/cli/DerivedData -disableAutomaticPackageResolution CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO -resultBundlePath ~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-21/cli/20261021T212528-build-105c9a8f/build.xcresult build
+
+Build settings from command line:
+    CODE_SIGNING_ALLOWED = NO
+    CODE_SIGNING_REQUIRED = NO
+    SDKROOT = iphonesimulator27.1
+
+Resolve Package Graph
+
+... 2336 lines omitted; 10 error-like lines, 10 kept below ...
+[line 1813] RegisterExecutionPolicyException ~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-21/cli/DerivedData/Build/Products/Debug-iphonesimulator/ListeningActivityExtension.appex (in target 'ListeningActivityExtension' from project 'Tongxing')
+[line 1815]     builtin-RegisterExecutionPolicyException ~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-21/cli/DerivedData/Build/Products/Debug-iphonesimulator/ListeningActivityExtension.appex
+[line 2057] ~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/apps/tongxing-ios/App/MicrophoneCapture.swift:259:92: warning: main actor-isolated static property 'startupSeconds' can not be referenced from a nonisolated context; this is an error in the Swift 6 language mode
+[line 2064]     |                                                                                            `- warning: main actor-isolated static property 'startupSeconds' can not be referenced from a nonisolated context; this is an error in the Swift 6 language mode
+[line 2193] ~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/apps/tongxing-ios/App/MicrophoneCapture.swift:259:92: warning: main actor-isolated static property 'startupSeconds' can not be referenced from a nonisolated context; this is an error in the Swift 6 language mode
+[line 2200]     |                                                                                            `- warning: main actor-isolated static property 'startupSeconds' can not be referenced from a nonisolated context; this is an error in the Swift 6 language mode
+[line 2252] ~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/apps/tongxing-ios/App/MicrophoneCapture.swift:259:92: warning: main actor-isolated static property 'startupSeconds' can not be referenced from a nonisolated context; this is an error in the Swift 6 language mode
+[line 2259]     |                                                                                            `- warning: main actor-isolated static property 'startupSeconds' can not be referenced from a nonisolated context; this is an error in the Swift 6 language mode
+[line 2294] ~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/apps/tongxing-ios/App/MicrophoneCapture.swift:259:92: warning: main actor-isolated static property 'startupSeconds' can not be referenced from a nonisolated context; this is an error in the Swift 6 language mode
+[line 2301]     |                                                                                            `- warning: main actor-isolated static property 'startupSeconds' can not be referenced from a nonisolated context; this is an error in the Swift 6 language mode
+... end of omitted section ...
+    builtin-SwiftPerFileCompile EnglishLocateSheet.swift
+
+SwiftCompile normal arm64 ~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/apps/tongxing-ios/Shared/ListeningActivityAttributes.swift (in target 'Tongxing' from project 'Tongxing')
+    cd ~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/apps/tongxing-ios
+    builtin-SwiftPerFileCompile ListeningActivityAttributes.swift
+
+SwiftMergeGeneratedHeaders ~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-21/cli/DerivedData/Build/Intermediates.noindex/Tongxing.build/Debug-iphonesimulator/Tongxing.build/DerivedSources/Tongxing-Swift.h ~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-21/cli/DerivedData/Build/Intermediates.noindex/Tongxing.build/Debug-iphonesimulator/Tongxing.build/Objects-normal/arm64/Tongxing-Swift.h ~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-21/cli/DerivedData/Build/Intermediates.noindex/Tongxing.build/Debug-iphonesimulator/Tongxing.build/Objects-normal/x86_64/Tongxing-Swift.h (in target 'Tongxing' from project 'Tongxing')
+    cd ~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/apps/tongxing-ios
+    builtin-swiftHeaderTool -arch arm64 ~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-21/cli/DerivedData/Build/Intermediates.noindex/Tongxing.build/Debug-iphonesimulator/Tongxing.build/Objects-normal/arm64/Tongxing-Swift.h -arch x86_64 ~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-21/cli/DerivedData/Build/Intermediates.noindex/Tongxing.build/Debug-iphonesimulator/Tongxing.build/Objects-normal/x86_64/Tongxing-Swift.h -o ~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-21/cli/DerivedData/Build/Intermediates.noindex/Tongxing.build/Debug-iphonesimulator/Tongxing.build/DerivedSources/Tongxing-Swift.h
+
+SwiftDriverJobDiscovery normal x86_64 Compiling PlaybackDock.swift, PlaybackPanelLayout.swift (in target 'Tongxing' from project 'Tongxing')
+
+Copy ~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-21/cli/DerivedData/Build/Products/Debug-iphonesimulator/Tongxing.swiftmodule/arm64-apple-ios-simulator.swiftmodule ~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-21/cli/DerivedData/Build/Intermediates.noindex/Tongxing.build/Debug-iphonesimulator/Tongxing.build/Objects-normal/arm64/Tongxing.swiftmodule (in target 'Tongxing' from project 'Tongxing')
+    cd ~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/apps/tongxing-ios
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -resolve-src-symlinks -rename ~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-21/cli/DerivedData/Build/Intermediates.noindex/Tongxing.build/Debug-iphonesimulator/Tongxing.build/Objects-normal/arm64/Tongxing.swiftmodule ~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-21/cli/DerivedData/Build/Products/Debug-iphonesimulator/Tongxing.swiftmodule/arm64-apple-ios-simulator.swiftmodule
+
+Copy ~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-21/cli/DerivedData/Build/Products/Debug-iphonesimulator/Tongxing.swiftmodule/arm64-apple-ios-simulator.swiftdoc ~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-21/cli/DerivedData/Build/Intermediates.noindex/Tongxing.build/Debug-iphonesimulator/Tongxing.build/Objects-normal/arm64/Tongxing.swiftdoc (in target 'Tongxing' from project 'Tongxing')
+    cd ~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/apps/tongxing-ios
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -resolve-src-symlinks -rename ~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-21/cli/DerivedData/Build/Intermediates.noindex/Tongxing.build/Debug-iphonesimulator/Tongxing.build/Objects-normal/arm64/Tongxing.swiftdoc ~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-21/cli/DerivedData/Build/Products/Debug-iphonesimulator/Tongxing.swiftmodule/arm64-apple-ios-simulator.swiftdoc
+
+Copy ~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-21/cli/DerivedData/Build/Products/Debug-iphonesimulator/Tongxing.swiftmodule/arm64-apple-ios-simulator.abi.json ~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-21/cli/DerivedData/Build/Intermediates.noindex/Tongxing.build/Debug-iphonesimulator/Tongxing.build/Objects-normal/arm64/Tongxing.abi.json (in target 'Tongxing' from project 'Tongxing')
+    cd ~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/apps/tongxing-ios
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -resolve-src-symlinks -rename ~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-21/cli/DerivedData/Build/Intermediates.noindex/Tongxing.build/Debug-iphonesimulator/Tongxing.build/Objects-normal/arm64/Tongxing.abi.json ~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-21/cli/DerivedData/Build/Products/Debug-iphonesimulator/Tongxing.swiftmodule/arm64-apple-ios-simulator.abi.json
+
+Copy ~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-21/cli/DerivedData/Build/Products/Debug-iphonesimulator/Tongxing.swiftmodule/Project/arm64-apple-ios-simulator.swiftsourceinfo ~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-21/cli/DerivedData/Build/Intermediates.noindex/Tongxing.build/Debug-iphonesimulator/Tongxing.build/Objects-normal/arm64/Tongxing.swiftsourceinfo (in target 'Tongxing' from project 'Tongxing')
+    cd ~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/apps/tongxing-ios
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -resolve-src-symlinks -rename ~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-21/cli/DerivedData/Build/Intermediates.noindex/Tongxing.build/Debug-iphonesimulator/Tongxing.build/Objects-normal/arm64/Tongxing.swiftsourceinfo ~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-21/cli/DerivedData/Build/Products/Debug-iphonesimulator/Tongxing.swiftmodule/Project/arm64-apple-ios-simulator.swiftsourceinfo
+
+SwiftCompile normal arm64 Compiling\ TongxingApp.swift,\ UITestLaunch.swift ~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/apps/tongxing-ios/App/TongxingApp.swift ~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/apps/tongxing-ios/App/UITestLaunch.swift (in target 'Tongxing' from project 'Tongxing')
+
+SwiftCompile normal arm64 ~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/apps/tongxing-ios/App/TongxingApp.swift (in target 'Tongxing' from project 'Tongxing')
+    cd ~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/apps/tongxing-ios
+    builtin-SwiftPerFileCompile TongxingApp.swift
+
+SwiftCompile normal arm64 ~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/apps/tongxing-ios/App/UITestLaunch.swift (in target 'Tongxing' from project 'Tongxing')
+    cd ~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/apps/tongxing-ios
+    builtin-SwiftPerFileCompile UITestLaunch.swift
+
+SwiftDriverJobDiscovery normal arm64 Compiling PrivacySupportView.swift, ProductionPush.swift (in target 'Tongxing' from project 'Tongxing')
+
+SwiftCompile normal arm64 Compiling\ AppModel.swift,\ AudioAlignmentController.swift,\ BetaNotifications.swift ~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/apps/tongxing-ios/App/AppModel.swift ~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/apps/tongxing-ios/App/AudioAlignmentController.swift ~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/apps/tongxing-ios/App/BetaNotifications.swift (in target 'Tongxing' from project 'Tongxing')
+
+SwiftCompile normal arm64 ~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/apps/tongxing-ios/App/AppModel.swift (in target 'Tongxing' from project 'Tongxing')
+    cd ~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/apps/tongxing-ios
+    builtin-SwiftPerFileCompile AppModel.swift
+
+SwiftCompile normal arm64 ~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/apps/tongxing-ios/App/AudioAlignmentController.swift (in target 'Tongxing' from project 'Tongxing')
+    cd ~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/apps/tongxing-ios
+    builtin-SwiftPerFileCompile AudioAlignmentController.swift
+
+SwiftCompile normal arm64 ~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/apps/tongxing-ios/App/BetaNotifications.swift (in target 'Tongxing' from project 'Tongxing')
+    cd ~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/apps/tongxing-ios
+    builtin-SwiftPerFileCompile BetaNotifications.swift
+
+SwiftCompile normal arm64 Compiling\ WeeklyUpdates.swift,\ GeneratedAssetSymbols.swift ~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/apps/tongxing-ios/App/WeeklyUpdates.swift ~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-21/cli/DerivedData/Build/Intermediates.noindex/Tongxing.build/Debug-iphonesimulator/Tongxing.build/DerivedSources/GeneratedAssetSymbols.swift (in target 'Tongxing' from project 'Tongxing')
+
+SwiftCompile normal arm64 ~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/apps/tongxing-ios/App/WeeklyUpdates.swift (in target 'Tongxing' from project 'Tongxing')
+    cd ~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/apps/tongxing-ios
+    builtin-SwiftPerFileCompile WeeklyUpdates.swift
+
+SwiftCompile normal arm64 ~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-21/cli/DerivedData/Build/Intermediates.noindex/Tongxing.build/Debug-iphonesimulator/Tongxing.build/DerivedSources/GeneratedAssetSymbols.swift (in target 'Tongxing' from project 'Tongxing')
+    cd ~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/apps/tongxing-ios
+    builtin-SwiftPerFileCompile GeneratedAssetSymbols.swift
+
+SwiftDriverJobDiscovery normal x86_64 Compiling AppModel.swift, AudioAlignmentController.swift, BetaNotifications.swift (in target 'Tongxing' from project 'Tongxing')
+
+SwiftCompile normal arm64 Compiling\ ListeningActivityCard.swift,\ ListeningActivityIslandContent.swift,\ ListeningLiveActivity.swift ~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/apps/tongxing-ios/Shared/ListeningActivityCard.swift ~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/apps/tongxing-ios/Shared/ListeningActivityIslandContent.swift ~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/apps/tongxing-ios/App/ListeningLiveActivity.swift (in target 'Tongxing' from project 'Tongxing')
+
+SwiftCompile normal arm64 ~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/apps/tongxing-ios/Shared/ListeningActivityCard.swift (in target 'Tongxing' from project 'Tongxing')
+    cd ~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/apps/tongxing-ios
+    builtin-SwiftPerFileCompile ListeningActivityCard.swift
+
+SwiftCompile normal arm64 ~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/apps/tongxing-ios/Shared/ListeningActivityIslandContent.swift (in target 'Tongxing' from project 'Tongxing')
+    cd ~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/apps/tongxing-ios
+    builtin-SwiftPerFileCompile ListeningActivityIslandContent.swift
+
+SwiftCompile normal arm64 ~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/apps/tongxing-ios/App/ListeningLiveActivity.swift (in target 'Tongxing' from project 'Tongxing')
+    cd ~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/apps/tongxing-ios
+    builtin-SwiftPerFileCompile ListeningLiveActivity.swift
+
+SwiftDriverJobDiscovery normal x86_64 Compiling Localization.swift, MicrophoneCapture.swift, PlaybackController.swift (in target 'Tongxing' from project 'Tongxing')
+
+SwiftDriverJobDiscovery normal arm64 Compiling VoiceDemoCatalog.swift, VoiceDemoSection.swift (in target 'Tongxing' from project 'Tongxing')
+
+SwiftDriverJobDiscovery normal arm64 Compiling Localization.swift, MicrophoneCapture.swift, PlaybackController.swift (in target 'Tongxing' from project 'Tongxing')
+
+SwiftDriverJobDiscovery normal arm64 Compiling WeeklyUpdates.swift, GeneratedAssetSymbols.swift (in target 'Tongxing' from project 'Tongxing')
+
+SwiftDriverJobDiscovery normal arm64 Compiling DownloadBackgroundAssertion.swift, EnglishLocateSheet.swift, ListeningActivityAttributes.swift (in target 'Tongxing' from project 'Tongxing')
+
+SwiftDriverJobDiscovery normal arm64 Compiling TongxingApp.swift, UITestLaunch.swift (in target 'Tongxing' from project 'Tongxing')
+
+SwiftDriverJobDiscovery normal arm64 Compiling ListeningActivityCard.swift, ListeningActivityIslandContent.swift, ListeningLiveActivity.swift (in target 'Tongxing' from project 'Tongxing')
+
+SwiftDriverJobDiscovery normal arm64 Compiling PlaybackDock.swift, PlaybackPanelLayout.swift (in target 'Tongxing' from project 'Tongxing')
+
+SwiftDriverJobDiscovery normal arm64 Compiling AppModel.swift, AudioAlignmentController.swift, BetaNotifications.swift (in target 'Tongxing' from project 'Tongxing')
+
+SwiftDriverJobDiscovery normal x86_64 Compiling BetaRemotePush.swift, ContentView.swift, DesignSystem.swift (in target 'Tongxing' from project 'Tongxing')
+
+SwiftDriver\ Compilation Tongxing normal x86_64 com.apple.xcode.tools.swift.compiler (in target 'Tongxing' from project 'Tongxing')
+    cd ~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/apps/tongxing-ios
+    builtin-Swift-Compilation -- /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc -module-name Tongxing -Onone @~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-21/cli/DerivedData/Build/Intermediates.noindex/Tongxing.build/Debug-iphonesimulator/Tongxing.build/Objects-normal/x86_64/Tongxing.SwiftFileList -DDEBUG -enable-bare-slash-regex -enable-experimental-feature DebugDescriptionMacro -sdk /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator27.1.sdk -target x86_64-apple-ios17.0-simulator -g -module-cache-path ~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-21/cli/DerivedData/ModuleCache.noindex -Xfrontend -serialize-debugging-options -profile-coverage-mapping -profile-generate -enable-testing -index-store-path ~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-21/cli/DerivedData/Index.noindex/DataStore -Xcc -D_LIBCPP_HARDENING_MODE\=_LIBCPP_HARDENING_MODE_DEBUG -swift-version 5 -I ~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-21/cli/DerivedData/Build/Products/Debug-iphonesimulator -F ~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-21/cli/DerivedData/Build/Products/Debug-iphonesimulator/PackageFrameworks -F ~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-21/cli/DerivedData/Build/Products/Debug-iphonesimulator -c -j10 -enable-batch-mode -incremental -Xcc -ivfsstatcache -Xcc ~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-21/cli/DerivedData/SDKStatCaches.noindex/iphonesimulator27.1-24A94232-35d3147121984ba087c28d91365 ...[line truncated]
+
+Ld ~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-21/cli/DerivedData/Build/Intermediates.noindex/Tongxing.build/Debug-iphonesimulator/Tongxing.build/Objects-normal/x86_64/Binary/Tongxing.debug.dylib normal x86_64 (in target 'Tongxing' from project 'Tongxing')
+    cd ~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/apps/tongxing-ios
+    /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -Xlinker -reproducible -target x86_64-apple-ios17.0-simulator -dynamiclib -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator27.1.sdk -O0 -Xlinker -no_warn_duplicate_libraries -L~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-21/cli/DerivedData/Build/Intermediates.noindex/EagerLinkingTBDs/Debug-iphonesimulator -L~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-21/cli/DerivedData/Build/Products/Debug-iphonesimulator -F~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-21/cli/DerivedData/Build/Intermediates.noindex/EagerLinkingTBDs/Debug-iphonesimulator -F~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-21/cli/DerivedData/Build/Products/Debug-iphonesimulator/PackageFrameworks -F~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-21/cli/DerivedData/Build/Products/Debug-iphonesimulator -filelist ~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-21/cli/DerivedData/Build/Intermediates.noindex/Tongxing.build/Debug-iphonesimulator/Tongxing.build/Objects-normal/x86_64/Tongxing.LinkFileList -install_name @rpath/Tongxing.debug.dylib -Xlinker -rpath -Xlinker /usr/lib/swift -Xlinker -rpath -Xlinker @loader_path -Xlinker -rpath -Xlinker ~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-21/cli/DerivedData/Build/Products/Debug-iphonesimulator/PackageFrameworks -Xlinker -rpath -Xlinker @executable_path/Frameworks -Xlinker -dead_strip -Xlinker -object_path_lto -Xlinker ~ ...[line truncated]
+
+ConstructStubExecutorLinkFileList ~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-21/cli/DerivedData/Build/Intermediates.noindex/Tongxing.build/Debug-iphonesimulator/Tongxing.build/Tongxing-ExecutorLinkFileList-normal-x86_64.txt (in target 'Tongxing' from project 'Tongxing')
+    cd ~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/apps/tongxing-ios
+    construct-stub-executor-link-file-list ~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-21/cli/DerivedData/Build/Intermediates.noindex/Tongxing.build/Debug-iphonesimulator/Tongxing.build/Objects-normal/x86_64/Binary/Tongxing.debug.dylib /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/usr/lib/libPreviewsJITStubExecutor_no_swift_entry_point.a /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/usr/lib/libPreviewsJITStubExecutor.a --output ~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-21/cli/DerivedData/Build/Intermediates.noindex/Tongxing.build/Debug-iphonesimulator/Tongxing.build/Tongxing-ExecutorLinkFileList-normal-x86_64.txt
+note: Using stub executor library with Swift entry point. (in target 'Tongxing' from project 'Tongxing')
+
+SwiftDriverJobDiscovery normal arm64 Compiling BetaRemotePush.swift, ContentView.swift, DesignSystem.swift (in target 'Tongxing' from project 'Tongxing')
+
+SwiftDriver\ Compilation Tongxing normal arm64 com.apple.xcode.tools.swift.compiler (in target 'Tongxing' from project 'Tongxing')
+    cd ~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/apps/tongxing-ios
+    builtin-Swift-Compilation -- /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc -module-name Tongxing -Onone @~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-21/cli/DerivedData/Build/Intermediates.noindex/Tongxing.build/Debug-iphonesimulator/Tongxing.build/Objects-normal/arm64/Tongxing.SwiftFileList -DDEBUG -enable-bare-slash-regex -enable-experimental-feature DebugDescriptionMacro -sdk /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator27.1.sdk -target arm64-apple-ios17.0-simulator -g -module-cache-path ~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-21/cli/DerivedData/ModuleCache.noindex -Xfrontend -serialize-debugging-options -profile-coverage-mapping -profile-generate -enable-testing -index-store-path ~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-21/cli/DerivedData/Index.noindex/DataStore -Xcc -D_LIBCPP_HARDENING_MODE\=_LIBCPP_HARDENING_MODE_DEBUG -swift-version 5 -I ~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-21/cli/DerivedData/Build/Products/Debug-iphonesimulator -F ~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-21/cli/DerivedData/Build/Products/Debug-iphonesimulator/PackageFrameworks -F ~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-21/cli/DerivedData/Build/Products/Debug-iphonesimulator -c -j10 -enable-batch-mode -incremental -Xcc -ivfsstatcache -Xcc ~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-21/cli/DerivedData/SDKStatCaches.noindex/iphonesimulator27.1-24A94232-35d3147121984ba087c28d913653d ...[line truncated]
+
+Ld ~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-21/cli/DerivedData/Build/Intermediates.noindex/Tongxing.build/Debug-iphonesimulator/Tongxing.build/Objects-normal/arm64/Binary/Tongxing.debug.dylib normal arm64 (in target 'Tongxing' from project 'Tongxing')
+    cd ~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/apps/tongxing-ios
+    /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -Xlinker -reproducible -target arm64-apple-ios17.0-simulator -dynamiclib -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator27.1.sdk -O0 -Xlinker -no_warn_duplicate_libraries -L~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-21/cli/DerivedData/Build/Intermediates.noindex/EagerLinkingTBDs/Debug-iphonesimulator -L~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-21/cli/DerivedData/Build/Products/Debug-iphonesimulator -F~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-21/cli/DerivedData/Build/Intermediates.noindex/EagerLinkingTBDs/Debug-iphonesimulator -F~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-21/cli/DerivedData/Build/Products/Debug-iphonesimulator/PackageFrameworks -F~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-21/cli/DerivedData/Build/Products/Debug-iphonesimulator -filelist ~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-21/cli/DerivedData/Build/Intermediates.noindex/Tongxing.build/Debug-iphonesimulator/Tongxing.build/Objects-normal/arm64/Tongxing.LinkFileList -install_name @rpath/Tongxing.debug.dylib -Xlinker -rpath -Xlinker /usr/lib/swift -Xlinker -rpath -Xlinker @loader_path -Xlinker -rpath -Xlinker ~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-21/cli/DerivedData/Build/Products/Debug-iphonesimulator/PackageFrameworks -Xlinker -rpath -Xlinker @executable_path/Frameworks -Xlinker -dead_strip -Xlinker -object_path_lto -Xlinker ~ ...[line truncated]
+
+CreateUniversalBinary ~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-21/cli/DerivedData/Build/Products/Debug-iphonesimulator/Tongxing.app/Tongxing.debug.dylib normal arm64\ x86_64 (in target 'Tongxing' from project 'Tongxing')
+    cd ~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/apps/tongxing-ios
+    /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/lipo -create ~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-21/cli/DerivedData/Build/Intermediates.noindex/Tongxing.build/Debug-iphonesimulator/Tongxing.build/Objects-normal/arm64/Binary/Tongxing.debug.dylib ~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-21/cli/DerivedData/Build/Intermediates.noindex/Tongxing.build/Debug-iphonesimulator/Tongxing.build/Objects-normal/x86_64/Binary/Tongxing.debug.dylib -output ~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-21/cli/DerivedData/Build/Products/Debug-iphonesimulator/Tongxing.app/Tongxing.debug.dylib
+
+ConstructStubExecutorLinkFileList ~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-21/cli/DerivedData/Build/Intermediates.noindex/Tongxing.build/Debug-iphonesimulator/Tongxing.build/Tongxing-ExecutorLinkFileList-normal-arm64.txt (in target 'Tongxing' from project 'Tongxing')
+    cd ~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/apps/tongxing-ios
+    construct-stub-executor-link-file-list ~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-21/cli/DerivedData/Build/Intermediates.noindex/Tongxing.build/Debug-iphonesimulator/Tongxing.build/Objects-normal/arm64/Binary/Tongxing.debug.dylib /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/usr/lib/libPreviewsJITStubExecutor_no_swift_entry_point.a /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/usr/lib/libPreviewsJITStubExecutor.a --output ~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-21/cli/DerivedData/Build/Intermediates.noindex/Tongxing.build/Debug-iphonesimulator/Tongxing.build/Tongxing-ExecutorLinkFileList-normal-arm64.txt
+note: Using stub executor library with Swift entry point. (in target 'Tongxing' from project 'Tongxing')
+
+Ld ~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-21/cli/DerivedData/Build/Intermediates.noindex/Tongxing.build/Debug-iphonesimulator/Tongxing.build/Objects-normal/x86_64/Binary/Tongxing normal x86_64 (in target 'Tongxing' from project 'Tongxing')
+    cd ~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/apps/tongxing-ios
+    /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -Xlinker -reproducible -target x86_64-apple-ios17.0-simulator -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator27.1.sdk -O0 -Xlinker -no_warn_duplicate_libraries -L~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-21/cli/DerivedData/Build/Products/Debug-iphonesimulator -F~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-21/cli/DerivedData/Build/Products/Debug-iphonesimulator/PackageFrameworks -F~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-21/cli/DerivedData/Build/Products/Debug-iphonesimulator -Xlinker -rpath -Xlinker @executable_path -Xlinker -rpath -Xlinker @loader_path -Xlinker -rpath -Xlinker ~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-21/cli/DerivedData/Build/Products/Debug-iphonesimulator/PackageFrameworks -Xlinker -rpath -Xlinker @executable_path/Frameworks -rdynamic -Xlinker -no_deduplicate -Xlinker -objc_abi_version -Xlinker 2 -Xlinker -debug_variant -e ___debug_blank_executor_main -Xlinker -sectcreate -Xlinker __TEXT -Xlinker __debug_dylib -Xlinker ~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-21/cli/DerivedData/Build/Intermediates.noindex/Tongxing.build/Debug-iphonesimulator/Tongxing.build/Tongxing-DebugDylibPath-normal-x86_64.txt -Xlinker -sectcreate -Xlinker __TEXT -Xlinker __debug_instlnm -Xlinker ~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-21/cli/DerivedData/Build/Intermediates.noindex/Tongxing.build/Debug-iphonesimulator/Tongxing.build/Tongxing-DebugDylibInstallName-normal-x86_64.txt -Xlink ...[line truncated]
+
+Ld ~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-21/cli/DerivedData/Build/Intermediates.noindex/Tongxing.build/Debug-iphonesimulator/Tongxing.build/Objects-normal/arm64/Binary/Tongxing normal arm64 (in target 'Tongxing' from project 'Tongxing')
+    cd ~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/apps/tongxing-ios
+    /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -Xlinker -reproducible -target arm64-apple-ios17.0-simulator -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator27.1.sdk -O0 -Xlinker -no_warn_duplicate_libraries -L~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-21/cli/DerivedData/Build/Products/Debug-iphonesimulator -F~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-21/cli/DerivedData/Build/Products/Debug-iphonesimulator/PackageFrameworks -F~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-21/cli/DerivedData/Build/Products/Debug-iphonesimulator -Xlinker -rpath -Xlinker @executable_path -Xlinker -rpath -Xlinker @loader_path -Xlinker -rpath -Xlinker ~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-21/cli/DerivedData/Build/Products/Debug-iphonesimulator/PackageFrameworks -Xlinker -rpath -Xlinker @executable_path/Frameworks -rdynamic -Xlinker -no_deduplicate -Xlinker -objc_abi_version -Xlinker 2 -Xlinker -debug_variant -e ___debug_blank_executor_main -Xlinker -sectcreate -Xlinker __TEXT -Xlinker __debug_dylib -Xlinker ~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-21/cli/DerivedData/Build/Intermediates.noindex/Tongxing.build/Debug-iphonesimulator/Tongxing.build/Tongxing-DebugDylibPath-normal-arm64.txt -Xlinker -sectcreate -Xlinker __TEXT -Xlinker __debug_instlnm -Xlinker ~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-21/cli/DerivedData/Build/Intermediates.noindex/Tongxing.build/Debug-iphonesimulator/Tongxing.build/Tongxing-DebugDylibInstallName-normal-arm64.txt -Xlinker  ...[line truncated]
+
+CreateUniversalBinary ~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-21/cli/DerivedData/Build/Products/Debug-iphonesimulator/Tongxing.app/Tongxing normal arm64\ x86_64 (in target 'Tongxing' from project 'Tongxing')
+    cd ~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/apps/tongxing-ios
+    /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/lipo -create ~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-21/cli/DerivedData/Build/Intermediates.noindex/Tongxing.build/Debug-iphonesimulator/Tongxing.build/Objects-normal/arm64/Binary/Tongxing ~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-21/cli/DerivedData/Build/Intermediates.noindex/Tongxing.build/Debug-iphonesimulator/Tongxing.build/Objects-normal/x86_64/Binary/Tongxing -output ~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-21/cli/DerivedData/Build/Products/Debug-iphonesimulator/Tongxing.app/Tongxing
+
+Copy ~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-21/cli/DerivedData/Build/Products/Debug-iphonesimulator/Tongxing.app/PlugIns/ListeningActivityExtension.appex ~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-21/cli/DerivedData/Build/Products/Debug-iphonesimulator/ListeningActivityExtension.appex (in target 'Tongxing' from project 'Tongxing')
+    cd ~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/apps/tongxing-ios
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -exclude Headers -exclude PrivateHeaders -exclude Modules -exclude \*.tbd -resolve-src-symlinks -remove-static-executable ~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-21/cli/DerivedData/Build/Products/Debug-iphonesimulator/ListeningActivityExtension.appex ~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-21/cli/DerivedData/Build/Products/Debug-iphonesimulator/Tongxing.app/PlugIns
+
+ProcessInfoPlistFile ~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-21/cli/DerivedData/Build/Products/Debug-iphonesimulator/Tongxing.app/Info.plist ~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/apps/tongxing-ios/App/Info.plist (in target 'Tongxing' from project 'Tongxing')
+    cd ~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/apps/tongxing-ios
+    builtin-infoPlistUtility ~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/apps/tongxing-ios/App/Info.plist -producttype com.apple.product-type.application -genpkginfo ~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-21/cli/DerivedData/Build/Products/Debug-iphonesimulator/Tongxing.app/PkgInfo -expandbuildsettings -format binary -platform iphonesimulator -additionalcontentfile ~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-21/cli/DerivedData/Build/Intermediates.noindex/Tongxing.build/Debug-iphonesimulator/Tongxing.build/assetcatalog_generated_info.plist -scanforprivacyfile ~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-21/cli/DerivedData/Build/Products/Debug-iphonesimulator/Tongxing.app/PlugIns/ListeningActivityExtension.appex -o ~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-21/cli/DerivedData/Build/Products/Debug-iphonesimulator/Tongxing.app/Info.plist
+
+CopySwiftLibs ~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-21/cli/DerivedData/Build/Products/Debug-iphonesimulator/Tongxing.app (in target 'Tongxing' from project 'Tongxing')
+    cd ~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/apps/tongxing-ios
+    builtin-swiftStdLibTool --copy --verbose --scan-executable ~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-21/cli/DerivedData/Build/Products/Debug-iphonesimulator/Tongxing.app/Tongxing.debug.dylib --scan-folder ~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-21/cli/DerivedData/Build/Products/Debug-iphonesimulator/Tongxing.app/Frameworks --scan-folder ~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-21/cli/DerivedData/Build/Products/Debug-iphonesimulator/Tongxing.app/PlugIns --scan-folder ~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-21/cli/DerivedData/Build/Products/Debug-iphonesimulator/Tongxing.app/SystemExtensions --scan-folder ~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-21/cli/DerivedData/Build/Products/Debug-iphonesimulator/Tongxing.app/Extensions --platform iphonesimulator --toolchain /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain --destination ~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-21/cli/DerivedData/Build/Products/Debug-iphonesimulator/Tongxing.app/Frameworks --strip-bitcode --strip-bitcode-tool /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/bitcode_strip --emit-dependency-info ~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-21/cli/DerivedData/Build/Intermediates.noindex/Tongxing.build/Debug-iphonesimulator/Tongxing.build/SwiftStdLibToolInputDependencies.dep --filter-for-swift-os --back-deploy-swift-span
+Ignoring --strip-bitcode because --sign was not passed
+
+ExtractAppIntentsMetadata (in target 'Tongxing' from project 'Tongxing')
+    cd ~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/apps/tongxing-ios
+    /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/appintentsmetadataprocessor --toolchain-dir /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain --module-name Tongxing --sdk-root /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator27.1.sdk --xcode-version 27A9275 --platform-family iOS --deployment-target 17.0 --bundle-identifier com.jonathanjing.tongxing.dev --output ~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-21/cli/DerivedData/Build/Products/Debug-iphonesimulator/Tongxing.app --target-triple arm64-apple-ios17.0-simulator --target-triple x86_64-apple-ios17.0-simulator --binary-file ~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-21/cli/DerivedData/Build/Products/Debug-iphonesimulator/Tongxing.app/Tongxing --dependency-file ~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-21/cli/DerivedData/Build/Intermediates.noindex/Tongxing.build/Debug-iphonesimulator/Tongxing.build/Objects-normal/arm64/Tongxing_dependency_info.dat --dependency-file ~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-21/cli/DerivedData/Build/Intermediates.noindex/Tongxing.build/Debug-iphonesimulator/Tongxing.build/Objects-normal/x86_64/Tongxing_dependency_info.dat --stringsdata-file ~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-21/cli/DerivedData/Build/Intermediates.noindex/Tongxing.build/Debug-iphonesimulator/Tongxing.build/Objects-normal/arm64/ExtractedAppShortcutsMetadata.stringsdata --stringsdata-file ~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-21/cli/DerivedData/Build/Interme ...[line truncated]
+2026-10-21 21:26:03.485 appintentsmetadataprocessor[58714:41328281] Starting appintentsmetadataprocessor export
+2026-10-21 21:26:03.487 appintentsmetadataprocessor[58714:41328281] warning: Metadata extraction skipped, no AppIntents.framework dependency found
+
+ValidateEmbeddedBinary ~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-21/cli/DerivedData/Build/Products/Debug-iphonesimulator/Tongxing.app/PlugIns/ListeningActivityExtension.appex (in target 'Tongxing' from project 'Tongxing')
+    cd ~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/apps/tongxing-ios
+    /Applications/Xcode.app/Contents/Developer/usr/bin/embeddedBinaryValidationUtility ~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-21/cli/DerivedData/Build/Products/Debug-iphonesimulator/Tongxing.app/PlugIns/ListeningActivityExtension.appex -info-plist-path ~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-21/cli/DerivedData/Build/Products/Debug-iphonesimulator/Tongxing.app/Info.plist
+
+AppIntentsSSUTraining (in target 'Tongxing' from project 'Tongxing')
+    cd ~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/apps/tongxing-ios
+    /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/appintentsnltrainingprocessor --infoplist-path ~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-21/cli/DerivedData/Build/Products/Debug-iphonesimulator/Tongxing.app/Info.plist --temp-dir-path ~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-21/cli/DerivedData/Build/Intermediates.noindex/Tongxing.build/Debug-iphonesimulator/Tongxing.build/ssu --bundle-id com.jonathanjing.tongxing.dev --product-path ~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-21/cli/DerivedData/Build/Products/Debug-iphonesimulator/Tongxing.app --extracted-metadata-path ~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-21/cli/DerivedData/Build/Products/Debug-iphonesimulator/Tongxing.app/Metadata.appintents --metadata-file-list ~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-21/cli/DerivedData/Build/Intermediates.noindex/Tongxing.build/Debug-iphonesimulator/Tongxing.build/Tongxing.DependencyMetadataFileList --source-file ~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-21/cli/DerivedData/Build/Products/Debug-iphonesimulator/Tongxing.app/Info.plist --archive-ssu-assets
+2026-10-21 21:26:03.518 appintentsnltrainingprocessor[58716:41328283] Parsing options for appintentsnltrainingprocessor
+2026-10-21 21:26:03.518 appintentsnltrainingprocessor[58716:41328283] Starting AppIntents SSU YAML Generation
+2026-10-21 21:26:03.519 appintentsnltrainingprocessor[58716:41328283] No AppShortcuts found - Skipping.
+
+RegisterExecutionPolicyException ~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-21/cli/DerivedData/Build/Products/Debug-iphonesimulator/Tongxing.app (in target 'Tongxing' from project 'Tongxing')
+    cd ~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/apps/tongxing-ios
+    builtin-RegisterExecutionPolicyException ~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-21/cli/DerivedData/Build/Products/Debug-iphonesimulator/Tongxing.app
+
+Validate ~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-21/cli/DerivedData/Build/Products/Debug-iphonesimulator/Tongxing.app (in target 'Tongxing' from project 'Tongxing')
+    cd ~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/apps/tongxing-ios
+    builtin-validationUtility ~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-21/cli/DerivedData/Build/Products/Debug-iphonesimulator/Tongxing.app -shallow-bundle -infoplist-subpath Info.plist
+
+Touch ~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-21/cli/DerivedData/Build/Products/Debug-iphonesimulator/Tongxing.app (in target 'Tongxing' from project 'Tongxing')
+    cd ~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/apps/tongxing-ios
+    /usr/bin/touch -c ~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-21/cli/DerivedData/Build/Products/Debug-iphonesimulator/Tongxing.app
+
+PruneExplicitPrecompiledModules ~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-21/cli/DerivedData/Build/Intermediates.noindex/ExplicitPrecompiledModules
+
+PruneExplicitPrecompiledModules ~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-21/cli/DerivedData/Build/Intermediates.noindex/SwiftExplicitPrecompiledModules
+
+PruneExplicitPrecompiledModules ~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-21/cli/DerivedData/SDKExplicitPrecompiledModules
+
+
+Result bundle written to path:
+	~/.codex/worktrees/ios-formal-1-26-20/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-21/cli/20261021T212528-build-105c9a8f/build.xcresult
+
+** BUILD SUCCEEDED **
+
+
+Exit status: 0

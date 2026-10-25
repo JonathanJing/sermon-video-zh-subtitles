@@ -1,0 +1,52 @@
+{
+  "schemaVersion": "sermon-speaker-voice-locale-acceptance-v1",
+  "speakerId": "kenton_beshore",
+  "checkpointSha256": "d9949de39b2141dc0a0113a86f648eae1782b94b147331dfe3253dd1b11611e1",
+  "decidedBy": "Jony",
+  "decidedAt": "2026-10-24T00:00:00Z",
+  "userStatement": "所有讲员的配音，都已经获得授权；声音也都人工审过",
+  "decision": {
+    "ko": "human_reviewed",
+    "es": "human_reviewed"
+  },
+  "purposeAdded": "multilingual_dubbing",
+  "purposeBasis": "User confirmation 2026-10-24 that every speaker is authorized for dubbing (voice-authorization-2026-10-24-all-speakers.json).",
+  "boundDemoTracks": {
+    "ko": {
+      "wav": {
+        "path": "kenton_beshore/ko.wav",
+        "sha256": "8b5a04e844598262dee27da622d9629154a9bc4101956b624c50240691c3e521"
+      },
+      "mp3": {
+        "path": "mp3/kenton_beshore/ko.mp3",
+        "sha256": "ca765d0dbb2b28a5ba63b49cb601075d79da1cffa5eaea39227bc2ff318f4d0a",
+        "durationSeconds": 17.2,
+        "codec": "mp3",
+        "sampleRate": 44100,
+        "channels": 1,
+        "bitrate": "128k",
+        "fullDecode": "pass"
+      },
+      "asrSimilarity": 1.0
+    },
+    "es": {
+      "wav": {
+        "path": "kenton_beshore/es.wav",
+        "sha256": "7a3b4c60c127cb3836383f8390cc481abcbd3937ad19bd9a5b8af7aa4d88ccac"
+      },
+      "mp3": {
+        "path": "mp3/kenton_beshore/es.mp3",
+        "sha256": "8292b3d5816a48f4a185edc522f76fd27bac488bc8ad90e1080380c0afc30e42",
+        "durationSeconds": 14.32,
+        "codec": "mp3",
+        "sampleRate": 44100,
+        "channels": 1,
+        "bitrate": "128k",
+        "fullDecode": "pass"
+      },
+      "asrSimilarity": 1.0
+    }
+  },
+  "demoDeliveryManifest": "artifacts/sermon-dubbing/2026-09-21-multilingual-voice-demos-v2/delivery-manifest.json",
+  "limits": "Voice capability for this checkpoint and locale only. It does not review any sermon's full translated audio; per-run audio QC, waiver or listening review still applies. Vietnamese is not covered."
+}

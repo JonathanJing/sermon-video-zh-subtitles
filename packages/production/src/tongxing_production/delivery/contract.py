@@ -138,6 +138,19 @@ def validate_v2_release_target(release, page, locale):
             and release['status'] == 'published_http_verified' and release['httpVerification']['status'] == 'pass'
             and not release['issues'],
             'Release differs from target edition/locale/status')
+    return validate_v2_asset_paths(release, edition, locale)
+
+
+def validate_v2_asset_paths(release, edition, locale):
+    """The readers admit only these fixed paths for a v2 page, content and captions
+    (iOS TargetLanguageReleasePackage.validate); any other path hides the locale in
+    the production app. To correct a published file, rewrite it at the same path.
+    """
+    for role, path in (('page', f'/pages/{edition}/{locale}/index.html'),
+                       ('content', f'/content/{edition}/{locale}.json'),
+                       ('captions', f'/captions/{edition}/{locale}.json')):
+        require([a['path'] for a in release['assets'] if a['role'] == role] == [path],
+                'Release ' + role + ' asset must be ' + path)
     return release
 
 
@@ -245,6 +258,36 @@ def project_legacy_catalog_v4(catalog):
         page['defaultTargetLocale'] = declared_default.get(page['id']) or next(
             (locale for locale in ('zh-Hans', 'ko', 'es') if locale in page['targets']), sorted(page['targets'])[0])
     return validate_catalog_schema(result)
+
+
+def default_locale_only_difference(expected, actual):
+    """True when two catalogs are identical except for pages' ``defaultTargetLocale``.
+
+    Pages must be the same ids in the same order; every other field, including the
+    catalog default page, must be equal.
+    """
+    strip = lambda catalog: {**catalog, 'pages': [{key: value for key, value in page.items() if key != 'defaultTargetLocale'}
+                                                  for page in catalog['pages']]}
+    return strip(expected) == strip(actual)
+
+
+def repair_projected_defaults(v5, v4, v3):
+    """Re-project v4 and v3 from v5 when they drift only in page default locales.
+
+    Catalogs written before 8b703903 (2026-10-20) took a v4 edition page's default from
+    the targets' key order, so a sorted write made it ``es``; the current projection
+    follows the v5 page default. Returns the re-projected (v4, v3) and the changed
+    fields; refuses any other difference.
+    """
+    projected_v4 = project_legacy_catalog_v4(validate_catalog_schema(copy.deepcopy(v5)))
+    projected_v3 = project_human_catalog(projected_v4)
+    require(default_locale_only_difference(projected_v4, v4) and default_locale_only_difference(projected_v3, v3),
+            'Live catalogs differ from the v5 projection beyond page default locales')
+    changes = [{'catalog': name, 'pageId': new['id'], 'from': old['defaultTargetLocale'], 'to': new['defaultTargetLocale']}
+               for name, live, projected in ((CATALOG_V4, v4, projected_v4), (CATALOG_V3, v3, projected_v3))
+               for old, new in zip(live['pages'], projected['pages'])
+               if old['defaultTargetLocale'] != new['defaultTargetLocale']]
+    return projected_v4, projected_v3, changes
 
 
 def carry_single_source_into_v5(baseline_v5, merged_v4, page_id):
@@ -652,11 +695,22 @@ def snapshot_catalog_v5(snapshot):
     return json.loads(path.read_text()) if path.exists() else upgrade_catalog_v5(snapshot_catalog_v4(snapshot))
 
 
-def validate_catalog_snapshot(snapshot):
+def validate_catalog_snapshot(snapshot, *, allow_default_locale_drift=False,
+                              allow_pending_replacements=frozenset()):
     """Validate a complete immutable local Hosting snapshot before an overlay.
 
     Returns the v3 catalog. When the snapshot also has a v4 catalog, the v3 file
     must be exactly its human-only projection, and every v4 target is checked too.
+    ``allow_default_locale_drift`` admits a live baseline whose v4/v3 differ from the
+    projections only in page default locales (see ``repair_projected_defaults``); a
+    candidate built from it must carry the repaired catalogs and is validated strictly.
+
+    ``allow_pending_replacements`` names page ids whose published asset bytes are being
+    replaced in place (see ``published_page_replace``). Those pages keep their previous
+    release and catalog entries in this snapshot, so the release/assets hash equality is
+    intentionally skipped for them and only catalog/release identity is checked; the
+    replacement release, with HTTP evidence, is published in the following deploy. Every
+    other page is still validated strictly and the set is empty by default.
     """
     root = Path(snapshot)
     public = (root / 'public').resolve()
@@ -671,7 +725,9 @@ def validate_catalog_snapshot(snapshot):
     if v4_path.exists() or report.get('catalogV4Sha256') is not None:
         require(v4_path.is_file() and report.get('catalogV4Sha256') == file_sha(v4_path), 'Baseline v4 catalog differs')
         v4 = validate_catalog_schema(json.loads(v4_path.read_text()))
-        require(project_human_catalog(v4) == catalog, 'Baseline v3 catalog is not the human-only projection of v4')
+        human = project_human_catalog(v4)
+        require(human == catalog or (allow_default_locale_drift and default_locale_only_difference(human, catalog)),
+                'Baseline v3 catalog is not the human-only projection of v4')
         catalogs.append(v4)
     if v5_path.exists() or report.get('catalogV5Sha256') is not None:
         require(v5_path.is_file() and report.get('catalogV5Sha256') == file_sha(v5_path), 'Baseline v5 catalog differs')
@@ -684,7 +740,9 @@ def validate_catalog_snapshot(snapshot):
             for projected_page, existing_page in zip(projected_v4['pages'], catalogs[-1]['pages']):
                 if projected_page['id'] == existing_page['id']:
                     projected_page['defaultTargetLocale'] = existing_page['defaultTargetLocale']
-        require(projected_v4 == catalogs[-1], 'Baseline v4 is not the edition projection of v5')
+        require(projected_v4 == catalogs[-1]
+                or (allow_default_locale_drift and default_locale_only_difference(projected_v4, catalogs[-1])),
+                'Baseline v4 is not the edition projection of v5')
         catalogs.append(v5)
     files = {row['path'].lstrip('/'): row for row in report['files']}
     require(len(files) == len(report['files']), 'Duplicate baseline asset')
@@ -695,10 +753,17 @@ def validate_catalog_snapshot(snapshot):
         require(not path.is_symlink() and path.resolve().is_relative_to(public), 'Unsafe baseline path')
         require(file_sha(path) == row['sha256'] and path.stat().st_size == row['bytes'], 'Baseline asset differs')
     for page in (page for value in catalogs for page in value['pages']):
+        pending = page['id'] in allow_pending_replacements
         for locale, target in page['targets'].items():
             name = target['releasePackageUrl'].lstrip('/')
             require(name in files and files[name]['sha256'] == target['releasePackageJsonSha256'], 'Missing baseline release')
             release = json.loads((public / name).read_text())
+            if pending:
+                # The live release still describes the previous bytes; the replacement release
+                # is verified and published in the next deploy. Keep only identity checks here.
+                require(release.get('pageId') in (None, page['id']), 'Pending replacement release page mismatch')
+                require(len(release.get('assets') or []) > 0, 'Pending replacement release has no assets')
+                continue
             if release.get('schemaVersion') in FOUR_PRODUCT_RELEASES:
                 validate_release_target(release, page, locale)
                 require(release['targetLocale'] == locale and target['releasePackageUrl'] == release_path(release)
@@ -711,6 +776,8 @@ def validate_catalog_snapshot(snapshot):
                 require(len(content_rows) == 1, 'Mixed-source release needs one content asset')
                 validate_content_target(json.loads((public / content_rows[0]['path'].lstrip('/')).read_text()),
                                         page, locale)
+            elif release.get('schemaVersion') == 'sermon-target-language-release-package-v2':
+                validate_v2_asset_paths(release, target_source_identity(page, target)[0], locale)
             for asset in release['assets']:
                 name = asset['path'].lstrip('/')
                 require(name in files and files[name]['sha256'] == asset['sha256'], 'Missing baseline release asset')

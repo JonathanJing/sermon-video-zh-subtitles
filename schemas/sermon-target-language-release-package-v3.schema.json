@@ -359,6 +359,47 @@
           "pattern": "^[a-f0-9]{64}$"
         }
       }
+    },
+    "textReviewBasis": {
+      "description": "Optional. Present only when a text was approved through a human-override receipt (v2): the user approved every group, while the machine review kept its failures and the accepted exceptions.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "fullText",
+        "spokenText"
+      ],
+      "properties": {
+        "fullText": {
+          "$ref": "#/$defs/textBasis"
+        },
+        "spokenText": {
+          "$ref": "#/$defs/textBasis"
+        }
+      },
+      "anyOf": [
+        {
+          "properties": {
+            "fullText": {
+              "properties": {
+                "kind": {
+                  "const": "human_override"
+                }
+              }
+            }
+          }
+        },
+        {
+          "properties": {
+            "spokenText": {
+              "properties": {
+                "kind": {
+                  "const": "human_override"
+                }
+              }
+            }
+          }
+        }
+      ]
     }
   },
   "$defs": {
@@ -392,6 +433,114 @@
             },
             {
               "type": "null"
+            }
+          ]
+        }
+      }
+    },
+    "textBasis": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "receiptSha256"
+      ],
+      "properties": {
+        "kind": {
+          "enum": [
+            "human_review",
+            "human_override"
+          ]
+        },
+        "receiptSha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "machineReviewStatus": {
+          "enum": [
+            "pending",
+            "pass",
+            "fail"
+          ]
+        },
+        "acceptedExceptions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "translationGroupId",
+              "sourceUnitIds",
+              "machineFindings"
+            ],
+            "properties": {
+              "translationGroupId": {
+                "type": "string",
+                "minLength": 1
+              },
+              "sourceUnitIds": {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "machineFindings": {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "gate",
+                    "checkId",
+                    "machineStatus"
+                  ],
+                  "properties": {
+                    "gate": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "checkId": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "machineStatus": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "if": {
+        "properties": {
+          "kind": {
+            "const": "human_override"
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "machineReviewStatus",
+          "acceptedExceptions"
+        ]
+      },
+      "else": {
+        "not": {
+          "anyOf": [
+            {
+              "required": [
+                "machineReviewStatus"
+              ]
+            },
+            {
+              "required": [
+                "acceptedExceptions"
+              ]
             }
           ]
         }

@@ -1,0 +1,8 @@
+{
+  "originalRunDirectory": "artifacts/tongxing-ios/2026-10-21/cli/20261021T185028-test-87e4cbe8",
+  "originalStatusSha256": "ed87f9b7b97ae047666c7af21a8f32002de20586ad06738c308a0b0173a23966",
+  "originalRunLogSha256": "a9cd34813d2d5d3814031b52b1fcb91f68fcaf1fc8951c64146451934244eb1e",
+  "xcresultStatus": "incomplete after runner hang; test case failure and exit are in run.log/status.json",
+  "innerDisplayScreenshotSha256": "14be494045c7cd37b6724a2898b293be3914ef8ba011c35ddfcbabc8d2af5c33",
+  "outerDisplayScreenshotSha256": "fcff7a2e8fa497896c052294baebf0359f7c3055768d0b8b60dd8b7749f9ad0e"
+}

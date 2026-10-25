@@ -217,6 +217,7 @@ struct ContentView: View {
                 ScrollView {
                     VStack(alignment: .leading, spacing: verticalSizeClass == .compact ? 12 : 16) {
                         WeeklyUpdateCard(updates: weeklyUpdates) { showingNotificationPoster = false; sheet = .weeklyUpdate }
+                        StatisticsPromptCard(playback: playback)
                         if weeklyUpdates.announcement != nil && !weeklyUpdates.isNew {
                             Button(localization.text("本周海报"), systemImage: "doc.richtext") { showingNotificationPoster = false; sheet = .weeklyUpdate }
                                 .font(.footnote).accessibilityIdentifier("weekly-update-reopen")

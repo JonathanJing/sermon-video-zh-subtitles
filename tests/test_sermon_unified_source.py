@@ -140,12 +140,14 @@ class UnifiedSourceTests(unittest.TestCase):
         self.assertEqual(len(self.calls), 3)
         self.assertEqual(jobs._read(config.budget_root / 'source-budget.json')['maxConcurrent'], 8)
 
-    def rebind_budget(self):
+    def rebind_budget(self, budget_root=None):
         self.path.write_text(json.dumps(self.config))
         authorization_path = self.root / 'budget.json'
         authorization = json.loads(authorization_path.read_text())
         authorization['binding']['configurationSha256'] = jobs._digest(
             {k: v for k, v in self.config.items() if k != 'budgetAuthorization'})
+        if budget_root is not None:
+            authorization['binding']['budgetRoot'] = str(budget_root)
         approval_path = self.root / 'budget-approval.json'
         approval = json.loads(approval_path.read_text())
         approval['binding'].update(authorization['binding'])
@@ -328,6 +330,320 @@ class UnifiedSourceTests(unittest.TestCase):
         self.assertEqual(self.calls, [])
         self.assertEqual(result['machineJudgeStatus'], 'approved_for_layer2_shadow')
         self.assertTrue((out / 'english-source-candidate.json').is_file())
+
+    def test_asr_concurrency_allows_one_worker_per_chunk(self):
+        self.config.update(schemaVersion=subject.SCHEMA_V2, asrWorkers=14)
+        self.rebind_budget()
+        self.assertEqual(subject.load_configuration(self.path).value['asrWorkers'], 14)
+        self.config['asrWorkers'] = subject.MAX_ASR_WORKERS + 1
+        self.rebind_budget()
+        with self.assertRaisesRegex(ValueError, 'invalid_source_asr_concurrency'):
+            subject.load_configuration(self.path)
+
+    def test_ambiguous_numeral_is_reported_right_after_asr_and_stops_before_mfa(self):
+        def transport(endpoint, body, content_type, key):
+            if endpoint.endswith('/transcriptions'):
+                self.calls.append(endpoint)
+                return {'text': 'It cost $1.5 million in 2nd place.'}
+            return self.transport(endpoint, body, content_type, key)
+        aligned = []
+        def align(references, clip, out, **kwargs):
+            aligned.append(references)
+            return self.align(references, clip, out, **kwargs)
+        with self.assertRaisesRegex(ValueError, 'source_ambiguous_numeric_reference_configure_spoken_forms'):
+            subject.execute(self.path, api_key='', transport=transport, aligner=align, mfa_preflight=self.preflight)
+        report = json.loads((self.root / 'source' / 'numeric-references.json').read_text())
+        # Two 180 s chunks transcribe the same fixture text, so each token is reported per chunk.
+        self.assertEqual([row['token'] for row in report['ambiguousTokens']], ['$1.5', '2nd'] * 2)
+        self.assertEqual(len({row['referenceChunkId'] for row in report['ambiguousTokens']}), 2)
+        self.assertEqual(report['status'], 'ambiguous_tokens_need_spoken_forms')
+        self.assertEqual(aligned, [])
+        self.assertFalse((self.root / 'source' / 'mfa-started.json').exists())
+        # ASR was paid once and is not repeated by the stop.
+        self.assertEqual(len(self.calls), 2)
+
+    def test_preflight_drift_between_attempts_is_recorded_not_fatal(self):
+        out = self.root / 'source'
+        out.mkdir()
+        (out / 'mfa-preflight.json').write_text(json.dumps({'schemaVersion': 1, 'backend': 'macbook-local',
+                                                              'runtime': {'testOnly': True, 'stale': 'environment'}}))
+        result = self.execute()
+        self.assertEqual(result['reason'], 'human_source_review_required')
+        self.assertEqual(json.loads((out / 'mfa-preflight.json').read_text()), self.preflight())
+        history = (out / 'mfa-preflight-history.ndjson').read_text().splitlines()
+        self.assertEqual(len(history), 1)
+        self.assertIn('stale', history[0])
+
+    def test_pcm_start_shortfall_within_ten_milliseconds_is_tolerated(self):
+        for frames, ok in ((16000 - 64, True), (16000 - 160, True), (16000 - 161, False), (16000 + 2, False)):
+            with self.subTest(frames=frames):
+                output = self.root / f'pcm-{frames}.wav'
+                with wave.open(str(output), 'wb') as stream:
+                    stream.setnchannels(1); stream.setsampwidth(2); stream.setframerate(16000)
+                    stream.writeframes(b'\0\0' * frames)
+                if ok:
+                    subject._validate_pcm(output, 1)
+                else:
+                    with self.assertRaisesRegex(ValueError, 'duration_changed'):
+                        subject._validate_pcm(output, 1)
+
+    def test_reuse_budget_roots_replay_returned_asr_for_the_same_audio_and_refuse_other_audio(self):
+        self.config.update(schemaVersion=subject.SCHEMA_V2, asrWorkers=1)
+        self.rebind_budget()
+        self.execute()
+        paid_asr = sum(c.endswith('/transcriptions') for c in self.calls)
+        self.assertEqual(paid_asr, 2)
+        # A second configuration of the same source and window names the first root.
+        self.config.update(jobRoot=str(self.root / 'jobs-2'), outputDirectory=str(self.root / 'source-2'),
+                           reuseBudgetRoots=['.jobs.source-budget'])
+        self.rebind_budget(budget_root=self.root / '.jobs-2.source-budget')
+        inspection = subject.inspect(self.path)
+        self.assertEqual(inspection['reuseBudgetRoots'], [str(self.root / '.jobs.source-budget')])
+        self.calls.clear()
+        result = self.execute()
+        self.assertEqual(result['reason'], 'human_source_review_required')
+        self.assertEqual([c for c in self.calls if c.endswith('/transcriptions')], [])
+        # The judge is not replayed across roots: it ran again under this root's own cap.
+        self.assertTrue(any(not c.endswith('/transcriptions') for c in self.calls))
+        ledger = json.loads((self.root / '.jobs-2.source-budget' / 'source-budget.json').read_text())
+        asr_rows = {k: v for k, v in ledger['requests'].items() if k.startswith('asr.')}
+        judge_rows = {k: v for k, v in ledger['requests'].items() if k.startswith('judge.')}
+        self.assertEqual(len(asr_rows), 2)
+        self.assertTrue(all(row['settlement']['costStatus'] == 'reused' and row['settlement']['costMicrousd'] == 0
+                            for row in asr_rows.values()))
+        self.assertTrue(judge_rows and all(row['settlement']['costStatus'] != 'reused' for row in judge_rows.values()))
+        self.assertEqual(ledger['reuseBudgetRoots'], [str(self.root / '.jobs.source-budget')])
+        # A third configuration with another window has other audio behind the same operation: refused, not re-bought.
+        self.config.update(jobRoot=str(self.root / 'jobs-3'), outputDirectory=str(self.root / 'source-3'),
+                           window={'startSeconds': 0, 'endSeconds': 180.5})
+        self.approval.write_text(json.dumps({**json.loads(self.approval.read_text()), 'endTime': '00:03:00.500'}))
+        self.config['windowApprovalSha256'] = subject._sha(self.approval)
+        self.rebind_budget(budget_root=self.root / '.jobs-3.source-budget')
+        self.calls.clear()
+        with self.assertRaisesRegex(ValueError, 'source_reuse_identity_changed'):
+            self.execute()
+        self.assertEqual([c for c in self.calls if c.endswith('/transcriptions')], [])
+
+    def use_v2_authorization(self):
+        """Rewrite the fixture's v1 authorization as v2: code identity becomes evidence, not binding."""
+        authorization_path = self.root / 'budget.json'
+        authorization = json.loads(authorization_path.read_text())
+        code_identity = authorization['binding'].pop('codeIdentitySha256')
+        authorization['schemaVersion'] = subject.AUTHORIZATION_V2
+        authorization['evidence'] = {'codeIdentitySha256AtApproval': code_identity}
+        approval_path = self.root / 'budget-approval.json'
+        approval = json.loads(approval_path.read_text())
+        approval['schemaVersion'] = subject.APPROVAL_V2
+        approval['binding'].pop('codeIdentitySha256')
+        approval_path.write_text(json.dumps(approval))
+        authorization['authority']['approvalSha256'] = subject._sha(approval_path)
+        authorization_path.write_text(json.dumps(authorization))
+
+    def attempts(self):
+        path = self.root / 'source' / 'source-run-attempts.ndjson'
+        return [json.loads(line) for line in path.read_text().splitlines()] if path.exists() else []
+
+    def test_v2_authorization_binds_run_and_bounds_and_keeps_code_identity_as_evidence(self):
+        self.use_v2_authorization()
+        config = subject.load_configuration(self.path)
+        self.assertEqual(config.authorization_version, subject.AUTHORIZATION_V2)
+        self.assertEqual(subject.inspect(self.path)['authorizationVersion'], subject.AUTHORIZATION_V2)
+        self.assertEqual(self.execute()['reason'], 'human_source_review_required')
+        self.assertEqual([row['event'] for row in self.attempts()], ['attempt_started'])
+        self.assertEqual(self.attempts()[0]['codeIdentitySha256'], 'c' * 64)
+        # A later attempt with other code resumes the same output under the same authorization.
+        self.patch.stop()
+        self.patch = patch.object(subject.code, 'code_identity', return_value='d' * 64)
+        self.patch.start()
+        self.calls.clear()
+        self.assertEqual(self.execute()['reason'], 'human_source_review_required')
+        self.assertEqual(self.calls, [])
+        self.assertEqual([row['codeIdentitySha256'] for row in self.attempts()], ['c' * 64, 'd' * 64])
+        self.assertEqual(json.loads((self.root / 'source' / 'source-run.json').read_text())['codeIdentitySha256'], 'c' * 64)
+
+    def drifting_transport(self, flip_at):
+        state = {'count': 0}
+        def transport(endpoint, body, content_type, key):
+            state['count'] += 1
+            if state['count'] == flip_at:
+                self.patch.stop()
+                self.patch = patch.object(subject.code, 'code_identity', return_value='e' * 64)
+                self.patch.start()
+            return self.transport(endpoint, body, content_type, key)
+        return transport
+
+    def test_code_drift_during_a_v2_run_is_recorded_and_the_judge_completes(self):
+        self.use_v2_authorization()
+        result = self.execute(transport=self.drifting_transport(flip_at=2))
+        self.assertEqual(result['reason'], 'human_source_review_required')
+        self.assertEqual(len(self.calls), 3)
+        events = [row['event'] for row in self.attempts()]
+        self.assertEqual(events, ['attempt_started', 'code_identity_drift_observed'])
+        drift = self.attempts()[1]
+        self.assertEqual((drift['startedWith'], drift['onDisk']), ('c' * 64, 'e' * 64))
+
+    def test_v1_authorization_still_aborts_on_code_drift_during_the_run(self):
+        with self.assertRaisesRegex(ValueError, 'binding_changed'):
+            self.execute(transport=self.drifting_transport(flip_at=2))
+        self.assertLess(len(self.calls), 3)
+
+    def review_flow_config(self):
+        second = self.root / 'second-transcript.txt'
+        second.write_text('Jesus is worthy. Jesus is mighty.')
+        self.config.update(schemaVersion=subject.SCHEMA_V2, asrWorkers=1, reviewConfirmation='confirmation.json',
+                           crossCheckTranscripts=[{'path': str(second), 'sha256': subject._sha(second), 'label': 'second'}])
+        self.rebind_budget()
+
+    def confirm(self, *, simulation, decision, checks='approved', sheet_sha=None):
+        from tongxing_production.source import review_sheet
+        sheet_path = self.root / 'source' / 'review-sheet.json'
+        sheet = json.loads(sheet_path.read_text())
+        value = review_sheet.confirmation_template(sheet, sheet_sha or subject._sha(sheet_path))
+        value.update(simulation=simulation, humanApproval=not simulation, confirmedBy='fixture operator',
+                     confirmedAt='2026-10-22T00:00:00+00:00', checks={k: checks for k in review_sheet.CHECKS})
+        text = [i for i in sheet['items'] if i['kind'] == 'text_correction']
+        value['decisions'][text[0]['id']] = decision
+        (self.root / 'confirmation.json').write_text(json.dumps(value))
+        return text[0]
+
+    def test_review_flow_writes_one_sheet_then_recomputes_only_the_confirmed_row(self):
+        self.review_flow_config()
+        first = self.execute()
+        self.assertEqual(first['status'], 'awaiting_confirmation')
+        self.assertEqual(first['counts']['textContent'], 1)
+        for name in ('review-sheet.json', 'review-sheet.md', 'review-confirmation.template.json'):
+            self.assertTrue((self.root / 'source' / name).is_file(), name)
+        speculative_judge = sum(not c.endswith('/transcriptions') for c in self.calls)
+        self.assertGreater(speculative_judge, 0)
+        item = self.confirm(simulation=False, decision={'action': 'take_alternative'})
+        self.assertEqual((item['asr'], item['alternative']), ('worthy.', 'mighty.'))
+        self.calls.clear()
+        final = self.execute()
+        self.assertEqual(final['status'], 'succeeded', final)
+        self.assertTrue(final['productionEligible'])
+        self.assertEqual(final['changedRows'], [item['row']])
+        # ASR replays from the ledger; only the changed row's judge batch is new.
+        self.assertEqual([c for c in self.calls if c.endswith('/transcriptions')], [])
+        self.assertEqual(len(self.calls), 1)
+        review = json.loads((self.root / 'source' / 'english-source-review.json').read_text())
+        self.assertTrue(review['humanApproval'])
+        self.assertEqual(review['reviewedBy'], 'fixture operator')
+        derivation = json.loads((self.root / 'source' / 'review-derivation.json').read_text())
+        self.assertTrue(derivation['check']['withinConfirmation'])
+        package = json.loads((self.root / 'source' / 'english-source-package.json').read_text())
+        self.assertEqual(package['status'], 'ready_for_translation')
+        provenance = json.loads((self.root / 'source' / 'source-text-review-provenance.json').read_text())
+        self.assertEqual(provenance['patchCount'], 1)
+
+    def test_simulated_confirmation_recomputes_but_writes_no_approval(self):
+        self.review_flow_config()
+        self.execute()
+        self.confirm(simulation=True, decision={'action': 'take_alternative'})
+        result = self.execute()
+        self.assertEqual((result['status'], result['reason']), ('blocked', 'simulated_confirmation_applied'))
+        self.assertFalse(result['humanApprovalCreated'])
+        self.assertFalse((self.root / 'source' / 'english-source-review.json').exists())
+        corrections = json.loads((self.root / 'source' / 'derived' / 'source-text-corrections.json').read_text())
+        self.assertFalse(corrections['humanApproval'])
+        derivation = json.loads((self.root / 'source' / 'review-derivation-simulated.json').read_text())
+        self.assertEqual((derivation['humanApproval'], derivation['englishReview']), (False, None))
+        # The same decisions, now confirmed by a person, complete in the same output directory.
+        self.confirm(simulation=False, decision={'action': 'take_alternative'})
+        self.calls.clear()
+        confirmed = self.execute()
+        self.assertEqual(confirmed['status'], 'succeeded', confirmed)
+        self.assertEqual(self.calls, [])
+
+    def test_confirmation_must_name_this_sheet_decide_every_item_and_every_check(self):
+        self.review_flow_config()
+        self.execute()
+        self.confirm(simulation=False, decision={'action': 'keep'}, sheet_sha='0' * 64)
+        with self.assertRaisesRegex(ValueError, 'for_another_sheet'):
+            self.execute()
+        self.confirm(simulation=False, decision={'action': 'keep'}, checks='pending')
+        with self.assertRaisesRegex(ValueError, 'checks_undecided'):
+            self.execute()
+        self.confirm(simulation=False, decision={'action': 'rewrite'})
+        with self.assertRaisesRegex(ValueError, 'decision_invalid'):
+            self.execute()
+        self.confirm(simulation=True, decision={'action': 'keep'})
+        value = json.loads((self.root / 'confirmation.json').read_text())
+        value['humanApproval'] = True
+        (self.root / 'confirmation.json').write_text(json.dumps(value))
+        with self.assertRaisesRegex(ValueError, 'label_invalid'):
+            self.execute()
+
+    def test_recomputation_outside_the_confirmed_rows_writes_no_approval(self):
+        from tongxing_production.source import review_sheet
+        self.review_flow_config()
+        self.execute()
+        self.confirm(simulation=False, decision={'action': 'take_alternative'})
+        original = review_sheet.derive
+        def narrowed(*args, **kwargs):
+            derived = original(*args, **kwargs)
+            return {**derived, 'rowsWithChangedText': []}
+        with patch.object(review_sheet, 'derive', side_effect=narrowed):
+            result = self.execute()
+        self.assertEqual(result['reason'], 'source_review_derivation_outside_confirmation')
+        self.assertFalse((self.root / 'source' / 'english-source-review.json').exists())
+
+    def v4_config(self, **extra):
+        self.config = {k: v for k, v in self.config.items() if k != 'asrWorkers'}
+        self.config.update(schemaVersion=subject.SCHEMA_V4, **extra)
+        self.config['judge'] = {'backend': 'claude_cli_opus', 'model': 'claude-opus-5-5', 'reasoningEffort': 'high'}
+        self.rebind_budget()
+
+    def test_v4_turns_the_switches_on_when_the_fields_are_left_out(self):
+        self.v4_config()
+        self.use_v2_authorization()
+        config = subject.load_configuration(self.path)
+        self.assertEqual(config.value['asrWorkers'], 2)
+        self.assertEqual((config.value['judge']['workers'], config.value['judge']['batchSize']), (8, 6))
+        self.assertEqual(config.value['judgeCacheRoot'], subject.V4_DEFAULTS['judgeCacheRoot'])
+        self.assertEqual(config.value['mfaChunkCacheRoot'], subject.V4_DEFAULTS['mfaChunkCacheRoot'])
+        self.assertEqual(config.value['reviewConfirmation'], 'config.review-confirmation.json')
+        # The digest binds the file as written, not the filled-in defaults.
+        self.assertEqual(config.identity, jobs._digest({k: v for k, v in self.config.items() if k != 'budgetAuthorization'}))
+        self.assertEqual(subject.inspect(self.path)['effective']['judgeWorkers'], 8)
+
+    def test_v4_requires_budget_authorization_v2(self):
+        self.v4_config()
+        with self.assertRaisesRegex(ValueError, 'source_v4_requires_authorization_v2'):
+            subject.load_configuration(self.path)
+
+    def test_v4_rejects_the_legacy_text_review_field(self):
+        self.v4_config(sourceTextReview='review.json')
+        with self.assertRaisesRegex(ValueError, 'invalid_source_preparation_configuration'):
+            subject.load_configuration(self.path)
+
+    def test_prepare_tool_writes_v4_with_switches_on_and_replays_the_paid_asr(self):
+        from tests import experiment_modules
+        tool = experiment_modules.load('tools/ops/prepare_source_run.py')
+        self.config.update(schemaVersion=subject.SCHEMA_V2, asrWorkers=1)
+        self.rebind_budget()
+        self.execute()
+        self.assertEqual(sum(c.endswith('/transcriptions') for c in self.calls), 2)
+        drafted = tool.main(['draft', '--from', str(self.path), '--name', 'next', '--usd', '10'])
+        self.assertEqual(drafted, 0)
+        config_path = self.root / 'next.config.json'
+        written = json.loads(config_path.read_text())
+        self.assertEqual(written['schemaVersion'], subject.SCHEMA_V4)
+        self.assertEqual(written['reuseBudgetRoots'], ['.jobs.source-budget'])
+        self.assertEqual((written['asrWorkers'], written['judge']['workers']), (2, 8))
+        # Unsigned: the stage refuses the run until the person's decision is recorded.
+        with self.assertRaisesRegex(ValueError, 'source_budget_approval_not_bound'):
+            subject.load_configuration(config_path)
+        tool.main(['approve', '--authorization', str(self.root / 'next.authorization.json'),
+                   '--reviewed-by', 'fixture (chat)', '--evidence', 'synthetic approval for the test'])
+        self.assertEqual(subject.load_configuration(config_path).authorization_version, subject.AUTHORIZATION_V2)
+        self.calls.clear()
+        result = subject.execute(config_path, api_key='', transport=self.transport, aligner=self.align,
+                                 mfa_preflight=self.preflight)
+        self.assertEqual(result['status'], 'awaiting_confirmation')
+        self.assertEqual([c for c in self.calls if c.endswith('/transcriptions')], [])
+        # A second draft never overwrites the papers of the first.
+        with self.assertRaises(SystemExit):
+            tool.main(['draft', '--from', str(self.path), '--name', 'next', '--usd', '10'])
 
     def test_rebuild_rejects_overrides_for_another_alignment(self):
         self.execute()

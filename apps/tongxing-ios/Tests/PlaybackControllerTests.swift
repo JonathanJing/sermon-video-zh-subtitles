@@ -280,6 +280,57 @@ final class PlaybackControllerTests: XCTestCase {
         XCTAssertFalse(fixture.player.isPlaying)
     }
 
+    func testStatisticsPromptAppearsOnceAfterListeningAndDeclineIsRemembered() async throws {
+        let suite = "StatisticsPrompt-\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let fixture = try Fixture()
+        defer { fixture.dispose() }
+        fixture.player.configureStatistics(origin: URL(string: "https://statistics.invalid")!, defaults: defaults)
+        fixture.player.statisticsPromptListeningSeconds = 1
+        try await fixture.load()
+        XCTAssertFalse(fixture.player.statisticsPromptVisible)
+        fixture.player.play()
+        try await eventually("prompt after listening") { fixture.player.statisticsPromptVisible }
+        fixture.player.declineStatisticsPrompt()
+        XCTAssertFalse(fixture.player.statisticsPromptVisible)
+        XCTAssertFalse(fixture.player.statisticsEnabled)
+        XCTAssertTrue(defaults.bool(forKey: PlaybackController.statisticsPromptAnsweredKey))
+        try await Task.sleep(nanoseconds: 1_500_000_000)
+        XCTAssertFalse(fixture.player.statisticsPromptVisible, "declined request must not return")
+    }
+
+    func testStatisticsPromptStaysHiddenWhileAudioIsNotPlaying() async throws {
+        let suite = "StatisticsPromptIdle-\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let fixture = try Fixture()
+        defer { fixture.dispose() }
+        fixture.player.configureStatistics(origin: URL(string: "https://statistics.invalid")!, defaults: defaults)
+        fixture.player.statisticsPromptListeningSeconds = 0.5
+        try await fixture.load()
+        try await Task.sleep(nanoseconds: 1_000_000_000)
+        XCTAssertFalse(fixture.player.statisticsPromptVisible)
+    }
+
+    func testPrivacySwitchAnswersStatisticsPrompt() async throws {
+        let suite = "StatisticsPromptSwitch-\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let fixture = try Fixture()
+        defer { fixture.dispose() }
+        fixture.player.configureStatistics(origin: URL(string: "https://statistics.invalid")!, defaults: defaults)
+        fixture.player.setStatisticsEnabled(true)
+        fixture.player.setStatisticsEnabled(false)
+        XCTAssertTrue(defaults.bool(forKey: PlaybackController.statisticsPromptAnsweredKey))
+        fixture.player.statisticsPromptListeningSeconds = 0.5
+        try await fixture.load()
+        fixture.player.play()
+        try await eventually("fixture playing") { fixture.player.isPlaying }
+        try await Task.sleep(nanoseconds: 1_000_000_000)
+        XCTAssertFalse(fixture.player.statisticsPromptVisible)
+    }
+
     func testPublishedLanguageTransferKeepsPlayingIntentThroughTextOnlyLocale() async throws {
         let fixture = try Fixture()
         defer { fixture.dispose() }

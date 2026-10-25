@@ -1,0 +1,147 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261021-podcast-layer1-v12-rebuild",
+  "runs": [
+    {
+      "label": "output-v10",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/podcasts/if-i-had-more-time-jesus-sends-and-resurrects-his-own/layer1/output-v10",
+      "skipped": {
+        ".lock": 121,
+        ".jsonl": 1,
+        ".csv": 3,
+        ".json": 757,
+        ".wav": 15,
+        ".txt": 119
+      }
+    },
+    {
+      "label": "output-v12",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/podcasts/if-i-had-more-time-jesus-sends-and-resurrects-his-own/layer1/output-v12",
+      "skipped": {
+        ".json": 19,
+        ".txt": 6
+      }
+    },
+    {
+      "label": "layer1-context-v10-v12",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/podcasts/if-i-had-more-time-jesus-sends-and-resurrects-his-own/layer1-context-v10-v12",
+      "skipped": {
+        ".json": 2
+      }
+    }
+  ],
+  "files": [
+    {
+      "run": "output-v10",
+      "path": "accounting/operations.log",
+      "kind": "log",
+      "bytes": 64504,
+      "truncated": true,
+      "sha256": "2ce1ad7bd1d919837a9f1c4e5512ae4fe1f155297d131a9dd85fef8c7c7a010b",
+      "redactions": {}
+    },
+    {
+      "run": "output-v10",
+      "path": "accounting/summary.json",
+      "kind": "whole",
+      "bytes": 209598,
+      "truncated": false,
+      "sha256": "a2c36f59f494625c50fd62dd3e1bcadfdc12a918ff95a68342a0bf0e78d75e21",
+      "redactions": {}
+    },
+    {
+      "run": "output-v10",
+      "path": "alignment-receipt.json",
+      "kind": "whole",
+      "bytes": 23044,
+      "truncated": false,
+      "sha256": "b63ec7ca30831964456ac21bd2ce1eafec404057a98cd7390ffb9715fa4f2d54",
+      "redactions": {
+        "private_ip": 1,
+        "home_dir": 5
+      }
+    },
+    {
+      "run": "output-v10",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 24922,
+      "truncated": false,
+      "sha256": "c55524f7889766950a7edbd587c73718ac1049826a4acdd088f4c3d63575a737",
+      "redactions": {
+        "private_ip": 1,
+        "home_dir": 10
+      }
+    },
+    {
+      "run": "output-v12",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 24922,
+      "truncated": false,
+      "sha256": "c55524f7889766950a7edbd587c73718ac1049826a4acdd088f4c3d63575a737",
+      "redactions": {
+        "private_ip": 1,
+        "home_dir": 10
+      }
+    },
+    {
+      "run": "layer1-context-v10-v12",
+      "path": "decisions.ndjson",
+      "kind": "whole",
+      "bytes": 2539,
+      "truncated": false,
+      "sha256": "8ed48b8a659fe0b81e7e3bac859bfdaf131697c05195ac9ac91c6fdfed7f0e6c",
+      "redactions": {}
+    },
+    {
+      "run": "layer1-context-v10-v12",
+      "path": "rebuild-v11.log",
+      "kind": "log",
+      "bytes": 1970,
+      "truncated": false,
+      "sha256": "35966a1e6ba9de8a3fdcd4b76a991abf619854e2d03ed90658e8e733e2518feb",
+      "redactions": {
+        "home_dir": 6
+      }
+    },
+    {
+      "run": "layer1-context-v10-v12",
+      "path": "rebuild-v12-stderr.log",
+      "kind": "log",
+      "bytes": 4878,
+      "truncated": false,
+      "sha256": "35346f080e4f302b183f4ebf7cc7b0152185ee0d827706c84575a1aecc54c4dd",
+      "redactions": {
+        "secret_field": 3,
+        "email": 3,
+        "home_dir": 13
+      }
+    },
+    {
+      "run": "layer1-context-v10-v12",
+      "path": "run-v10.log",
+      "kind": "log",
+      "bytes": 1022,
+      "truncated": false,
+      "sha256": "e55c0f5dafac3feb2a164e97a5bbf50212d05648b05becc558232f0d2c5b061b",
+      "redactions": {
+        "home_dir": 1
+      }
+    },
+    {
+      "run": "layer1-context-v10-v12",
+      "path": "run-v12.log",
+      "kind": "log",
+      "bytes": 65,
+      "truncated": false,
+      "sha256": "8d0d66738b19ea5850de332ab4f93e47d56518f87ad6653602a9aff942cbbde3",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

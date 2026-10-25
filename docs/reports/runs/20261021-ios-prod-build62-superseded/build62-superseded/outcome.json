@@ -1,0 +1,13 @@
+{
+  "result": "superseded",
+  "sourceCommit": "37af28eac431e9e4d15eed5c1a7d8495671b5849",
+  "version": "1.26.21",
+  "build": "62",
+  "archive": "passed",
+  "export": "passed",
+  "ipaSha256": "c821796eadfa66b5eb4c4462a988a5e86dd67df618c6535d7a7f38ee8eddf7df",
+  "AppleUpload": "returned_success",
+  "AppleBuildID": "61981a4f-c993-4910-9a3f-58c522ed98bc",
+  "AppleProcessing": "VALID",
+  "finalCandidate": false
+}
