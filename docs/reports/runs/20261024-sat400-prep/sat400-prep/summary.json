@@ -1,0 +1,101 @@
+{
+  "schemaVersion": "sat400-prep-summary-v1",
+  "kind": "rehearsal",
+  "service": "sat400",
+  "humanApproval": false,
+  "sunday": "2026-10-25",
+  "design": "docs/design/saturday-first-service-preparation.zh.md",
+  "source": {
+    "attribution": "Mariners Church, Saturday 4:00 pm online worship service (public YouTube live stream)",
+    "youtubeId": "4gcPgvARNaM",
+    "url": "https://www.youtube.com/watch?v=4gcPgvARNaM",
+    "mediaUsed": "user-provided recording (h264/aac), user-authorized",
+    "mediaSha256": "89fe948a1c940c01e76412affd1ec8640e2cfe159d113aeabd5d886abc29b6da",
+    "durationSeconds": 4512.217687,
+    "otherCapture": {
+      "by": "separate session, yt-dlp av1",
+      "sha256": "7f3d8e92e1e2f89ef363473da75c7da9844f8b8c0d1c784d968148eb774c1ebb",
+      "durationSeconds": 4512.217687,
+      "note": "same duration, different encoding and hash"
+    },
+    "sermonWindow": {
+      "start": "00:28:36",
+      "end": "00:59:37",
+      "seconds": 1861,
+      "decidedBy": "user (chat), for rehearsal only; not a formal window approval"
+    },
+    "windowAudioSha256": "d211d5be5d8dd239582cb6ffce50dba87b90c00efa52a23956597c9ab8a5bebc"
+  },
+  "asr": {
+    "backend": "spark",
+    "model": [
+      "Qwen/Qwen3-ASR-0.6B",
+      "5eb144179a02acc5e5ba31e748d22b0cf3e303b0"
+    ],
+    "executionHost": "dgx-spark",
+    "device": "cuda",
+    "fallbackReason": null,
+    "chunks": 66,
+    "chunking": "silence cuts near 28 s (-30 dB, 0.15 s); 3 of 66 cuts without silence",
+    "wallSeconds": 281.6,
+    "words": 5449,
+    "realtimeFactor": 0.151,
+    "paidCalls": 0
+  },
+  "identification": {
+    "seriesGuideWeek": 7,
+    "title": "Jesus wins",
+    "scripture": "Revelation 12-13",
+    "speaker": "Eric (Geiger), self-introduced",
+    "messageNotesMatch": "three points identical to series guide p.102-103"
+  },
+  "terms": {
+    "total": 34,
+    "byKind": {
+      "bookReference": 1,
+      "number": 1,
+      "phrase": 4,
+      "properName": 16,
+      "seriesName": 2,
+      "theologicalTerm": 10
+    },
+    "pendingDecisions": 34,
+    "asrMisrecognitions": [
+      "Corrie ten Boom (5 forms)",
+      "Betsie -> Betsy",
+      "D. A. Carson -> De Carson",
+      "waiver wire -> Waverwyer",
+      "nourishes -> Nurishes",
+      "victor -> victory at 31:26"
+    ],
+    "policyState": {
+      "zh-Hans": "properNames empty; series names established",
+      "ko": "series names pending; Eric Geiger pending",
+      "es": "series names pending; Eric Geiger pending"
+    }
+  },
+  "scripture": {
+    "directQuotes": 4,
+    "summaries": 5,
+    "allusions": 7,
+    "cuvLookups": "4/4 direct quotes found in pinned cmn-cu89s",
+    "koEsEditionPolicy": "pending (references only)"
+  },
+  "startCheck": {
+    "status": "fail",
+    "failed": [
+      "code"
+    ],
+    "findings": [
+      "HEAD of main checkout is the merged design branch, not dev d76ca6e2: formal run must start from a dev worktree",
+      "no artifact binds the current QC implementation hash 3ba3f692...: machine-waiver route needs a new calibration this week (paid)",
+      "OpenAI dev launcher pass; Spark reachable (llama-server holding ~35 GB, 71 GB available); fresh output dir pass"
+    ]
+  },
+  "notDone": [
+    "P5 human term decisions (waiting on user)",
+    "P6 machine draft translation (paid, not authorized)",
+    "P8 diff vs formal broadcast source (broadcast file not yet uploaded at run time)",
+    "P9 receipt re-signing (needs formal source)"
+  ]
+}
