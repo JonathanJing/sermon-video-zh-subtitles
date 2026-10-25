@@ -110,18 +110,10 @@ struct ContentView: View {
         .environment(\.locale, localization.locale)
         #if os(iOS)
         .onReceive(NotificationCenter.default.publisher(for: .betaNotificationOpened)) { _ in
-            sheet = nil
-            showingPlaybackMore = false
-            Task {
-                if let catalog = model.multilingualCatalog {
-                    await model.notificationWeeklyUpdates.load(catalog: catalog, locale: model.selectedContentLocale, pageID: model.selectedPageID)
-                    if let item = model.notificationWeeklyUpdates.announcement {
-                        showingNotificationPoster = true
-                        weeklyUpdates.markSeen(item.deduplicationKey)
-                        sheet = .weeklyUpdate
-                    }
-                }
-            }
+            openNotificationPoster()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .productionNotificationOpened)) { _ in
+            openNotificationPoster()
         }
         #endif
         .task(id: model.weeklyUpdateIdentity) {
@@ -176,6 +168,23 @@ struct ContentView: View {
             updateAlignmentFailurePresentation()
         }
     }
+
+    #if os(iOS)
+    private func openNotificationPoster() {
+        sheet = nil
+        showingPlaybackMore = false
+        Task {
+            if let catalog = model.multilingualCatalog {
+                await model.notificationWeeklyUpdates.load(catalog: catalog, locale: model.selectedContentLocale, pageID: model.selectedPageID)
+                if let item = model.notificationWeeklyUpdates.announcement {
+                    showingNotificationPoster = true
+                    weeklyUpdates.markSeen(item.deduplicationKey)
+                    sheet = .weeklyUpdate
+                }
+            }
+        }
+    }
+    #endif
 
     private func alignmentFeedbackBar(_ phase: ListeningAlignmentPhase) -> some View {
         HStack(spacing: 10) {
@@ -1697,6 +1706,10 @@ private struct AboutSheet: View {
                         NavigationLink { BetaNotificationSettingsView(model: model) } label: {
                             Label(localization.text("Beta 通知测试"), systemImage: "bell.badge")
                         }.accessibilityIdentifier("beta-notification-settings")
+                    } else if ProductionPush.isProduction {
+                        NavigationLink { ProductionPushSettingsView() } label: {
+                            Label(localization.text("每周通知"), systemImage: "bell.badge")
+                        }.accessibilityIdentifier("production-push-settings")
                     }
                     #endif
                 }

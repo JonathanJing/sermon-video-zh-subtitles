@@ -402,7 +402,8 @@ def assemble(base_public: Path, staged: Path, out: Path,
                     if rewrite.get("source") == "/pages/**":
                         rewrite["destination"] = "/index.html"
             if feedback_enabled:
-                config["hosting"]["rewrites"].insert(0, {
+                # The narrow push route must precede the existing /api/** feedback route.
+                config["hosting"]["rewrites"].insert(1, {
                     "source": "/api/**",
                     "function": {"functionId": "sermon-feedback-api", "region": "us-west1"},
                 })
