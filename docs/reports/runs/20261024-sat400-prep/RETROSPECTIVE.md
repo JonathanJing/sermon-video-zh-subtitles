@@ -58,6 +58,7 @@
 - **发现：** 上周 ko/es 草稿所钉插件哈希已过期，用 `text.policy freeze --language-review machine_qc` 冻结后重钉为当前哈希；上周 zh-Hans 草稿所钉的 `zh-Hans-weekly-auto-v1` 在当前代码里不存在，本周 zh-Hans 插件需要另选（候选 `zh-Hans-weekly-cuv-v1`，本篇有 4 处和合本直接引用）。
 - **zh-Hans 插件试钉 `zh-Hans-weekly-cuv-v1`（用户指定）：** 以上周 zh 草稿为底稿，改钉该插件当前哈希 `a7826dc2…`，经文政策改为 `cmn-cu89s`／`source_bound_exact_quote`。term_scope 出草稿、试冻结通过、插件钉为 current、`productionPolicyReady=true`。但直接调用插件的 `review_group`：一句普通讲述和一处 12:14 和合本原文引用，`cuv_exact_quote` 都失败（“Human boundary receipt belongs to another source”）。该插件内嵌 9-27 讲道的经文边界收据，换来源后每一组都会被拒，本周不能用。试冻结和插件钉检查都看不出这一点。
 - **上周 zh 插件：** `zh-Hans-weekly-auto-v1` 是运行目录里的 16 行文件（`layer2-broadcast-20261018/plugins/zh_hans_weekly_auto.py`），只调共享的机器质检规则，不按来源绑定，从未进仓库。用新加的 `--plugin` 指给它，钉仍为 current；但仓库外插件的哈希只算这一个文件，不含它引用的共享规则，而共享规则在 ko/es 那边已变。
+- **zh-Hans 插件定为 `zh-Hans-weekly-auto-v1`（用户决定，只核经文出处，同 10-18）：** 10-18 的运行目录插件原样进仓库（`scripts/language_review_plugins/zh_hans_weekly_auto.py`，字节相同），加入与 ko/es 相同的哈希集合，插件钉从只算单个文件的 `db550763…` 变为含共享规则的 `d210645a…`（单独 PR，改 Layer 2 代码身份，不改 QC 实现文件列表；放进 `scripts/` 需要布局白名单的一行例外，单列一个提交）。在合并了两条分支的临时检出里重跑 zh-Hans：出草稿、试冻结通过、插件钉 current、31 条术语、无未覆盖名。直接调用插件：普通句与 12:14 和合本原文都 7 项全过；漏写“马丁·路德”或同句里的“撒但”时 `proper_names` 失败，说明逐字术语检查在起作用。4 处和合本直接引用由人工审核核对。
 
 ## 外部可见的变化
 
