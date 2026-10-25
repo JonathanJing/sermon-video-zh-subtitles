@@ -56,6 +56,8 @@
 
 两个子命令都会写出 `publish-config.json`；部署仍走受保护的发布器，每次部署都需要用户授权。
 
+页面本地新增只允许 `/study/<pageId>/` 下的文件（四产品的大纲、默想与 `products.json`），`finish` 允许重写 `/alignment/<pageId>.json`。部署待替换快照时，发布器按 `publish-config.json` 里的 `allowPendingReplacements` 只对点名的页面放宽；其他调用方不传就是严格校验。
+
 ## 约束与证据
 
 - 只接受**已存在**的路径；新增页面或语言会被拒绝（`Replacement must overwrite an existing published file`）。
