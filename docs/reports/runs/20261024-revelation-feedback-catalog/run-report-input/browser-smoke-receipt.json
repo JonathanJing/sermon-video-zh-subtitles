@@ -1,0 +1,62 @@
+{
+  "schemaVersion": "sermon-published-page-browser-smoke-v3",
+  "status": "pass",
+  "pageId": "revelation-jesus-wins-20261025",
+  "catalogVersion": "sermon-multilingual-catalog-v5",
+  "locales": [
+    {
+      "locale": "zh-Hans",
+      "status": "pass",
+      "browserStatus": "ok",
+      "problems": [],
+      "sessionStatuses": [
+        200,
+        200,
+        200,
+        200
+      ],
+      "warnings": [
+        "optional resource failed: /alignment/if-i-had-more-time-jesus-promises.json: Failed to load resource: the server responded with a status of 404 ()",
+        "optional resource failed: /alignment/if-i-had-more-time-jesus-sends-and-resurrects-his-own.json: Failed to load resource: the server responded with a status of 404 ()",
+        "optional resource failed: /alignment/if-i-had-more-time-jesus-is-worthy.json: Failed to load resource: the server responded with a status of 404 ()",
+        "optional resource failed: /voice-demos/speaker-clips-v2/catalog.json: Failed to load resource: the server responded with a status of 404 ()"
+      ]
+    },
+    {
+      "locale": "ko",
+      "status": "pass",
+      "browserStatus": "ok",
+      "problems": [],
+      "sessionStatuses": [
+        200,
+        200,
+        200,
+        200
+      ],
+      "warnings": [
+        "optional resource failed: /alignment/if-i-had-more-time-jesus-promises.json: Failed to load resource: the server responded with a status of 404 ()",
+        "optional resource failed: /alignment/if-i-had-more-time-jesus-sends-and-resurrects-his-own.json: Failed to load resource: the server responded with a status of 404 ()",
+        "optional resource failed: /alignment/if-i-had-more-time-jesus-is-worthy.json: Failed to load resource: the server responded with a status of 404 ()",
+        "optional resource failed: /voice-demos/speaker-clips-v2/catalog.json: Failed to load resource: the server responded with a status of 404 ()"
+      ]
+    },
+    {
+      "locale": "es",
+      "status": "pass",
+      "browserStatus": "ok",
+      "problems": [],
+      "sessionStatuses": [
+        200,
+        200,
+        200,
+        200
+      ],
+      "warnings": [
+        "optional resource failed: /alignment/if-i-had-more-time-jesus-sends-and-resurrects-his-own.json: Failed to load resource: the server responded with a status of 404 ()",
+        "optional resource failed: /alignment/if-i-had-more-time-jesus-promises.json: Failed to load resource: the server responded with a status of 404 ()",
+        "optional resource failed: /alignment/if-i-had-more-time-jesus-is-worthy.json: Failed to load resource: the server responded with a status of 404 ()",
+        "optional resource failed: /voice-demos/speaker-clips-v2/catalog.json: Failed to load resource: the server responded with a status of 404 ()"
+      ]
+    }
+  ]
+}

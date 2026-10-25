@@ -1,0 +1,33 @@
+{
+  "schemaVersion": "sermon-feedback-catalog-compare-v1",
+  "oldSourceCount": 34,
+  "newSourceCount": 37,
+  "oldSourcesUnchanged": 34,
+  "addedSources": [
+    {
+      "week": "2026-10-25",
+      "trackId": "revelation-jesus-wins-20261025-es-5c9f11058ad7",
+      "audioSha256": "5c9f11058ad797a636c4b1d017e868f347211024e81008ba49c18205f6426430",
+      "pageId": "revelation-jesus-wins-20261025",
+      "audioLocale": "es"
+    },
+    {
+      "week": "2026-10-25",
+      "trackId": "revelation-jesus-wins-20261025-ko-c38ea7bf05d0",
+      "audioSha256": "c38ea7bf05d0abe57d4d93b68515d40a8e22f6c215bc5fb25d4128be8e3ded18",
+      "pageId": "revelation-jesus-wins-20261025",
+      "audioLocale": "ko"
+    },
+    {
+      "week": "2026-10-25",
+      "trackId": "revelation-jesus-wins-20261025-zh-Hans-f886ea4477f8",
+      "audioSha256": "f886ea4477f838e4a7237110d041d2d8774cb9b5348b48780c1e3e7bc10e3bdb",
+      "pageId": "revelation-jesus-wins-20261025",
+      "audioLocale": "zh-Hans"
+    }
+  ],
+  "changedSourceFiles": [
+    "catalog.json"
+  ],
+  "previousActiveRevisionContainedStalePageTracks": true
+}

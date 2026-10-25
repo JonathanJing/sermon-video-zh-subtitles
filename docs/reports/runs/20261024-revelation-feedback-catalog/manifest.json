@@ -1,0 +1,72 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261024-revelation-feedback-catalog",
+  "runs": [
+    {
+      "label": "run-report-input",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/feedback-catalog-revelation-20261024/run-report-input",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "run-report-input",
+      "path": "api-session-receipt.json",
+      "kind": "whole",
+      "bytes": 719,
+      "truncated": false,
+      "sha256": "6819a5bcb5b90588a31a322e6d314c3bc5b4bd07209b3316a7ba3fee4c6c0c9c",
+      "redactions": {}
+    },
+    {
+      "run": "run-report-input",
+      "path": "browser-smoke-receipt.json",
+      "kind": "whole",
+      "bytes": 2818,
+      "truncated": false,
+      "sha256": "dd9683206bd859b2893728a94bfce36d86625d3ef2e75aa34b9d9a41debe00b0",
+      "redactions": {}
+    },
+    {
+      "run": "run-report-input",
+      "path": "catalog-receipt.json",
+      "kind": "whole",
+      "bytes": 1098,
+      "truncated": false,
+      "sha256": "db8edffa713da557879f0d5237b8471e9b89b23d074e037ed52c6db257f0c204",
+      "redactions": {}
+    },
+    {
+      "run": "run-report-input",
+      "path": "deploy-receipt.json",
+      "kind": "whole",
+      "bytes": 924,
+      "truncated": false,
+      "sha256": "43460310eaf66ee5c3bd33f063b53d98cab84127efee79a5d9e90824bd542bbf",
+      "redactions": {}
+    },
+    {
+      "run": "run-report-input",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 335,
+      "truncated": false,
+      "sha256": "01c730cfe6b9061279ce9540453782948ddd07d85af540554e998d4b0517f923",
+      "redactions": {}
+    },
+    {
+      "run": "run-report-input",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 727,
+      "truncated": false,
+      "sha256": "77d1f2d73a2e12538eca15576363d80add21b99252ace5cce720821e9e01a551",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}
