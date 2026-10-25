@@ -240,6 +240,7 @@
     "scripts/language_review_plugins/zh_hans_laodicea.py",
     "scripts/language_review_plugins/zh_hans_sermon.py",
     "scripts/language_review_plugins/zh_hans_weekly_15030286.py",
+    "scripts/language_review_plugins/zh_hans_weekly_auto.py",
     "scripts/language_review_plugins/zh_hans_weekly_cuv.py",
     "scripts/produce_target_language_candidate.py",
     "scripts/scripture_adjudication.py",
