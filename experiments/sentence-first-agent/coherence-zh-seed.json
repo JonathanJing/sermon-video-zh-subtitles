@@ -1,0 +1,34 @@
+{
+  "schemaVersion": "sentence-first-glossary-v1",
+  "people": [
+    {"source": "Corrie ten Boom", "target": "彭柯丽", "note": "讲员讲述的主人公；沿用项目既有译名"},
+    {"source": "Corrie", "target": "彭柯丽", "note": "Corrie ten Boom 的简称"},
+    {"source": "Betsy", "target": "贝茜", "note": "彭柯丽的姐姐"},
+    {"source": "D.A. Carson", "target": "D·A·卡森", "note": "学者"},
+    {"source": "Carson", "target": "卡森", "note": "D.A. Carson 的简称"},
+    {"source": "Eric Geiger", "target": "埃里克·盖格", "note": "讲员"},
+    {"source": "Jesus", "target": "耶稣", "note": ""},
+    {"source": "God", "target": "神", "note": ""},
+    {"source": "Satan", "target": "撒但", "note": ""},
+    {"source": "the dragon", "target": "龙", "note": ""},
+    {"source": "the beast", "target": "兽", "note": ""}
+  ],
+  "relations": [
+    {"source": "sister", "target": "姐姐", "note": "指贝茜与彭柯丽的关系"}
+  ],
+  "recurringPhrases": [
+    {"source": "Jesus is victor", "target": "耶稣是得胜者", "note": ""},
+    {"source": "the accuser", "target": "控告者", "note": ""},
+    {"source": "the Lamb", "target": "羔羊", "note": ""},
+    {"source": "a time, times and half a time", "target": "一载、二载、半载", "note": ""},
+    {"source": "Passover", "target": "逾越节", "note": ""},
+    {"source": "Mariners Church", "target": "马林纳斯教会", "note": "讲员所在教会"},
+    {"source": "the small 'g' god", "target": "小写的 g 神", "note": ""}
+  ],
+  "culturalReferences": [],
+  "scripture": [
+    {"reference": "Revelation 12", "target": "启示录 12 章", "note": ""},
+    {"reference": "Revelation 13", "target": "启示录 13 章", "note": ""}
+  ],
+  "pronouns": {"jesus": "祂", "god": "祂", "holy_spirit": "祂"}
+}
