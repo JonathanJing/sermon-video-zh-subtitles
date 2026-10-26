@@ -1,0 +1,606 @@
+{
+  "schemaVersion": "sermon-target-glossary-v1",
+  "people": [
+    {
+      "source": "Corrie ten Boom",
+      "target": "彭柯丽",
+      "note": "荷兰基督徒，二战时藏匿犹太人，著有《密室》；晚年住在橙县，葬于圣安娜。"
+    },
+    {
+      "source": "Betsy (Betsie ten Boom)",
+      "target": "贝茜",
+      "note": "ASR 写作 Betsy，应为 Betsie；她是彭柯丽的姐姐，死于拉文斯布吕克集中营。u0011 的“Corrie, Corrie's sister”是口误或 ASR 错误，应译为“柯丽的姐姐贝茜”。"
+    },
+    {
+      "source": "Corrie's father",
+      "target": "彭柯丽的父亲",
+      "note": "即 Casper ten Boom，被捕后不久死于狱中；原文没有说出名字，译文也不必加名字。"
+    },
+    {
+      "source": "Eric",
+      "target": "埃里克",
+      "note": "讲员，Mariners 教会的主任牧师。"
+    },
+    {
+      "source": "Mariners",
+      "target": "Mariners 教会",
+      "note": "教会名称，保留英文，后面加“教会”。"
+    },
+    {
+      "source": "John",
+      "target": "约翰",
+      "note": "启示录作者，耶稣的门徒。"
+    },
+    {
+      "source": "Martin Luther",
+      "target": "马丁·路德",
+      "note": "宗教改革家。"
+    },
+    {
+      "source": "D. A. Carson",
+      "target": "卡森",
+      "note": "新约学者；ASR 断成“D .A. / Carson”两段，可译为“学者卡森”。"
+    },
+    {
+      "source": "Moses",
+      "target": "摩西",
+      "note": ""
+    },
+    {
+      "source": "David",
+      "target": "大卫",
+      "note": ""
+    },
+    {
+      "source": "Abraham",
+      "target": "亚伯拉罕",
+      "note": ""
+    },
+    {
+      "source": "Daniel (book)",
+      "target": "但以理书",
+      "note": ""
+    },
+    {
+      "source": "Adolf Hitler",
+      "target": "希特勒",
+      "note": "第一次出现时可用全名“阿道夫·希特勒”。"
+    },
+    {
+      "source": "Roscoe",
+      "target": "罗斯科",
+      "note": "讲员养的小型金毛贵宾犬。"
+    }
+  ],
+  "relations": [
+    {
+      "source": "Betsie ten Boom → Corrie ten Boom",
+      "target": "姐姐",
+      "evidence": "史实：Betsie 生于1885年，Corrie 生于1892年；见 u0009、u0011、u0308、u0311。"
+    },
+    {
+      "source": "Corrie's father → Corrie",
+      "target": "父亲",
+      "evidence": "u0008、u0020。"
+    },
+    {
+      "source": "two sons in Carson's illustration",
+      "target": "兄弟俩（哥哥、弟弟未指明，译“一个……另一个……”）",
+      "evidence": "u0258–u0283。"
+    }
+  ],
+  "pronouns": {
+    "jesus": "祂",
+    "god": "祂",
+    "satan": "他",
+    "beasts": "它"
+  },
+  "recurringPhrases": [
+    {
+      "source": "Jesus is victor",
+      "target": "耶稣是得胜者",
+      "unitIds": [
+        "asr-u0017",
+        "asr-u0025",
+        "asr-u0027",
+        "asr-u0029",
+        "asr-u0034",
+        "asr-u0036",
+        "asr-u0064",
+        "asr-u0074",
+        "asr-u0079",
+        "asr-u0098",
+        "asr-u0190",
+        "asr-u0194",
+        "asr-u0198",
+        "asr-u0290",
+        "asr-u0350",
+        "asr-u0412",
+        "asr-u0413"
+      ]
+    },
+    {
+      "source": "Jesus silences the accuser",
+      "target": "耶稣使控告者闭口",
+      "unitIds": [
+        "asr-u0202",
+        "asr-u0225",
+        "asr-u0227",
+        "asr-u0292"
+      ]
+    },
+    {
+      "source": "Jesus sustains his people / nourishes",
+      "target": "耶稣养活祂的子民",
+      "unitIds": [
+        "asr-u0293",
+        "asr-u0121",
+        "asr-u0321",
+        "asr-u0325",
+        "asr-u0417"
+      ]
+    },
+    {
+      "source": "Jesus sets the limits of evil",
+      "target": "耶稣为邪恶设定界限",
+      "unitIds": [
+        "asr-u0348",
+        "asr-u0387"
+      ]
+    },
+    {
+      "source": "the accuser",
+      "target": "控告者",
+      "unitIds": [
+        "asr-u0090",
+        "asr-u0092",
+        "asr-u0094",
+        "asr-u0097",
+        "asr-u0204",
+        "asr-u0205",
+        "asr-u0209"
+      ]
+    },
+    {
+      "source": "the blood of the lamb",
+      "target": "羔羊的血",
+      "unitIds": [
+        "asr-u0091",
+        "asr-u0235",
+        "asr-u0236",
+        "asr-u0238",
+        "asr-u0239",
+        "asr-u0254",
+        "asr-u0285",
+        "asr-u0434"
+      ]
+    },
+    {
+      "source": "a time, times and half a time",
+      "target": "一载二载半载",
+      "unitIds": [
+        "asr-u0295",
+        "asr-u0296",
+        "asr-u0326",
+        "asr-u0341"
+      ]
+    },
+    {
+      "source": "speaks a better word",
+      "target": "说出更美的话",
+      "unitIds": [
+        "asr-u0226",
+        "asr-u0291",
+        "asr-u0434",
+        "asr-u0435"
+      ]
+    },
+    {
+      "source": "the wilderness",
+      "target": "旷野",
+      "unitIds": [
+        "asr-u0116",
+        "asr-u0117",
+        "asr-u0119",
+        "asr-u0120",
+        "asr-u0121",
+        "asr-u0297",
+        "asr-u0298",
+        "asr-u0300",
+        "asr-u0302",
+        "asr-u0305",
+        "asr-u0306",
+        "asr-u0325",
+        "asr-u0336",
+        "asr-u0414",
+        "asr-u0416"
+      ]
+    },
+    {
+      "source": "his time is short",
+      "target": "他的时候不多了",
+      "unitIds": [
+        "asr-u0110",
+        "asr-u0114",
+        "asr-u0195"
+      ]
+    },
+    {
+      "source": "bring / wreak havoc",
+      "target": "大肆搞破坏",
+      "unitIds": [
+        "asr-u0122",
+        "asr-u0146",
+        "asr-u0168",
+        "asr-u0172",
+        "asr-u0177",
+        "asr-u0183",
+        "asr-u0195",
+        "asr-u0406"
+      ]
+    },
+    {
+      "source": "has no chance of winning",
+      "target": "根本赢不了",
+      "unitIds": [
+        "asr-u0161",
+        "asr-u0164",
+        "asr-u0167",
+        "asr-u0171",
+        "asr-u0175",
+        "asr-u0179",
+        "asr-u0183",
+        "asr-u0185"
+      ]
+    },
+    {
+      "source": "defeated enemy / already won",
+      "target": "已经被打败的仇敌 / 祂已经得胜",
+      "unitIds": [
+        "asr-u0147",
+        "asr-u0148",
+        "asr-u0176",
+        "asr-u0191",
+        "asr-u0192",
+        "asr-u0406"
+      ]
+    },
+    {
+      "source": "allowed / permitted",
+      "target": "被允许 / 任凭",
+      "unitIds": [
+        "asr-u0352",
+        "asr-u0355",
+        "asr-u0356",
+        "asr-u0357",
+        "asr-u0358",
+        "asr-u0367",
+        "asr-u0370",
+        "asr-u0371",
+        "asr-u0372"
+      ]
+    },
+    {
+      "source": "ultimately in charge",
+      "target": "最终掌权",
+      "unitIds": [
+        "asr-u0349",
+        "asr-u0358",
+        "asr-u0360",
+        "asr-u0389"
+      ]
+    },
+    {
+      "source": "the wilderness doesn't last longer than the nourishment",
+      "target": "旷野不会比神的供养更长久",
+      "unitIds": [
+        "asr-u0338",
+        "asr-u0339",
+        "asr-u0343",
+        "asr-u0344",
+        "asr-u0345",
+        "asr-u0346"
+      ]
+    },
+    {
+      "source": "the accusations don't stick",
+      "target": "控告粘不到你身上",
+      "unitIds": [
+        "asr-u0224",
+        "asr-u0225",
+        "asr-u0421"
+      ]
+    },
+    {
+      "source": "Don't be that guy",
+      "target": "千万别当那种人",
+      "unitIds": [
+        "asr-u0165",
+        "asr-u0173",
+        "asr-u0174"
+      ]
+    },
+    {
+      "source": "on a leash",
+      "target": "被拴着绳子",
+      "unitIds": [
+        "asr-u0395",
+        "asr-u0400",
+        "asr-u0405"
+      ]
+    },
+    {
+      "source": "the son (ASR “sun”)",
+      "target": "那男孩子 / 圣子",
+      "unitIds": [
+        "asr-u0060",
+        "asr-u0061",
+        "asr-u0063",
+        "asr-u0104",
+        "asr-u0109"
+      ]
+    }
+  ],
+  "culturalReferences": [
+    {
+      "source": "Right when I wanted out, they pulled me back in",
+      "meaning": "化用电影《教父3》的台词，自嘲刚想退出又被拉回去。",
+      "suggestedTarget": "我刚想金盆洗手，他们又把我拉回来了",
+      "unitIds": [
+        "asr-u0154",
+        "asr-u0155"
+      ]
+    },
+    {
+      "source": "fantasy football pastor championship league",
+      "meaning": "梦幻橄榄球：各人挑选真实的 NFL 球员组成虚拟球队，按球员的真实表现计分对战；这里是牧师们自己办的联赛。",
+      "suggestedTarget": "牧师之间的梦幻橄榄球联赛（一种线上组队比赛的游戏）",
+      "unitIds": [
+        "asr-u0149",
+        "asr-u0158",
+        "asr-u0159"
+      ]
+    },
+    {
+      "source": "go out on top",
+      "meaning": "在最风光的时候退出。",
+      "suggestedTarget": "见好就收",
+      "unitIds": [
+        "asr-u0152"
+      ]
+    },
+    {
+      "source": "talking smack",
+      "meaning": "嘲讽、挑衅。",
+      "suggestedTarget": "冲我放狠话、激我",
+      "unitIds": [
+        "asr-u0153"
+      ]
+    },
+    {
+      "source": "two and 12 / week 15",
+      "meaning": "战绩是2胜12负，赛季已经接近尾声。",
+      "suggestedTarget": "两胜十二负，都打到第十五周了",
+      "unitIds": [
+        "asr-u0160",
+        "asr-u0162",
+        "asr-u0163"
+      ]
+    },
+    {
+      "source": "dumps all his players into the waiver wire",
+      "meaning": "把自己队里的球员全部放进公共自由球员池，打乱整个联赛。",
+      "suggestedTarget": "把手下球员全扔出去，搅乱整个联赛",
+      "unitIds": [
+        "asr-u0166"
+      ]
+    },
+    {
+      "source": "lopsided trade",
+      "meaning": "明显不公平的交易，故意帮一方去打另一方。",
+      "suggestedTarget": "一边倒的交易",
+      "unitIds": [
+        "asr-u0170"
+      ]
+    },
+    {
+      "source": "Battle of the Bulge",
+      "meaning": "1944年底纳粹在阿登地区发动的最后一次大反攻。",
+      "suggestedTarget": "突出部战役（二战末纳粹的最后反扑）",
+      "unitIds": [
+        "asr-u0178",
+        "asr-u0182"
+      ]
+    },
+    {
+      "source": "last ditch effort",
+      "meaning": "败局已定时的最后挣扎。",
+      "suggestedTarget": "垂死挣扎",
+      "unitIds": [
+        "asr-u0183"
+      ]
+    },
+    {
+      "source": "the Reich would last for a thousand years",
+      "meaning": "希特勒宣传的“千年帝国”，实际只存在了12年（1933–1945）。",
+      "suggestedTarget": "希特勒夸口第三帝国要存在一千年，结果只撑了十二年",
+      "unitIds": [
+        "asr-u0362",
+        "asr-u0363"
+      ]
+    },
+    {
+      "source": "wringing our hands on the sideline",
+      "meaning": "在场边焦急观战，不知道谁会赢。",
+      "suggestedTarget": "在场边干着急，等着看谁赢",
+      "unitIds": [
+        "asr-u0189"
+      ]
+    },
+    {
+      "source": "co-equals",
+      "meaning": "地位对等的两方。",
+      "suggestedTarget": "平起平坐",
+      "unitIds": [
+        "asr-u0187"
+      ]
+    },
+    {
+      "source": "the little G God of this world",
+      "meaning": "英文里用小写 g 的 god 指撒但，区别于真神，出自林后4:4“这世界的神”。中文没有大小写之分，要用说法区分。",
+      "suggestedTarget": "那个所谓“这世界的神”——撒但",
+      "unitIds": [
+        "asr-u0195"
+      ]
+    },
+    {
+      "source": "page 96 / page 102 in your magazines",
+      "meaning": "教会印发的查经刊物上的页码。",
+      "suggestedTarget": "教会刊物第96页 / 第102页",
+      "unitIds": [
+        "asr-u0050",
+        "asr-u0132",
+        "asr-u0200"
+      ]
+    },
+    {
+      "source": "If I had more time, times and half a time podcast",
+      "meaning": "教会播客名《如果我有更多时间》，讲员把节目名和经文“一载二载半载”连在一起说，玩了个谐音梗。",
+      "suggestedTarget": "我们的播客《如果我有更多时间》——这一集正好讲“一载二载半载”",
+      "unitIds": [
+        "asr-u0341"
+      ]
+    },
+    {
+      "source": "Orange County / Santa Ana",
+      "meaning": "加州橙县，圣安娜市离教会不远。",
+      "suggestedTarget": "橙县 / 圣安娜",
+      "unitIds": [
+        "asr-u0014"
+      ]
+    },
+    {
+      "source": "golden doodle",
+      "meaning": "金毛寻回犬与贵宾犬的混种狗。",
+      "suggestedTarget": "金毛贵宾犬",
+      "unitIds": [
+        "asr-u0390"
+      ]
+    },
+    {
+      "source": "How do you like me now?",
+      "meaning": "得意挑衅的口头语。",
+      "suggestedTarget": "怎么样，服不服？",
+      "unitIds": [
+        "asr-u0402"
+      ]
+    },
+    {
+      "source": "unmerited confidence",
+      "meaning": "不是靠自己本事挣来的底气，暗指恩典（unmerited favor）。",
+      "suggestedTarget": "白白得来的底气",
+      "unitIds": [
+        "asr-u0401",
+        "asr-u0404"
+      ]
+    },
+    {
+      "source": "mark of the beast",
+      "meaning": "启示录13章的兽的印记，美国听众很熟悉这个说法。",
+      "suggestedTarget": "兽的印记",
+      "unitIds": [
+        "asr-u0138"
+      ]
+    },
+    {
+      "source": "biblical math",
+      "meaning": "讲员的幽默说法，指圣经里的计算方式。",
+      "suggestedTarget": "按圣经的算法",
+      "unitIds": [
+        "asr-u0328"
+      ]
+    }
+  ],
+  "scripture": [
+    {
+      "reference": "启示录 12:5",
+      "cuvPhrase": "妇人生了一个男孩子……她的孩子被提到神宝座那里去了"
+    },
+    {
+      "reference": "启示录 12:9",
+      "cuvPhrase": "大龙就是那古蛇，名叫魔鬼，又叫撒但，是迷惑普天下的"
+    },
+    {
+      "reference": "启示录 12:10",
+      "cuvPhrase": "因为那在我们神面前昼夜控告我们弟兄的，已经被摔下去了"
+    },
+    {
+      "reference": "启示录 12:11",
+      "cuvPhrase": "弟兄胜过它，是因羔羊的血和自己所见证的道"
+    },
+    {
+      "reference": "启示录 12:12",
+      "cuvPhrase": "知道自己的时候不多，就气忿忿地下到你们那里去了"
+    },
+    {
+      "reference": "启示录 12:14",
+      "cuvPhrase": "于是有大鹰的两个翅膀赐给妇人，叫她能飞到旷野，到自己的地方，躲避那蛇；她在那里被养活一载二载半载"
+    },
+    {
+      "reference": "启示录 12:6",
+      "cuvPhrase": "一千二百六十天"
+    },
+    {
+      "reference": "启示录 13:5",
+      "cuvPhrase": "又有权柄赐给它，可以任意而行四十二个月"
+    },
+    {
+      "reference": "启示录 13:7",
+      "cuvPhrase": "又任凭它与圣徒争战，并且得胜"
+    },
+    {
+      "reference": "启示录 13:11",
+      "cuvPhrase": "有两角如同羊羔，说话好像龙"
+    },
+    {
+      "reference": "启示录 13:16-17",
+      "cuvPhrase": "除了那受印记、有了兽名或有兽名数目的，都不得作买卖"
+    },
+    {
+      "reference": "出埃及记 19:4",
+      "cuvPhrase": "我如鹰将你们背在翅膀上，带来归我"
+    },
+    {
+      "reference": "出埃及记 12:13",
+      "cuvPhrase": "我一见这血，就越过你们去"
+    },
+    {
+      "reference": "帖撒罗尼迦前书 5:18",
+      "cuvPhrase": "凡事谢恩"
+    },
+    {
+      "reference": "希伯来书 12:24",
+      "cuvPhrase": "这血所说的比亚伯的血所说的更美"
+    },
+    {
+      "reference": "罗马书 5:8",
+      "cuvPhrase": "基督在我们还作罪人的时候为我们死"
+    },
+    {
+      "reference": "哥林多后书 4:4",
+      "cuvPhrase": "被这世界的神弄瞎了心眼"
+    },
+    {
+      "reference": "腓立比书 2:9",
+      "cuvPhrase": "赐给他那超乎万名之上的名"
+    },
+    {
+      "reference": "马太福音 1:21",
+      "cuvPhrase": "你要给他起名叫耶稣，因他要将自己的百姓从罪恶里救出来"
+    },
+    {
+      "reference": "马丁·路德语录",
+      "cuvPhrase": "当撒但说我是罪人时，他反倒给了我莫大的安慰，因为基督正是为罪人死的"
+    }
+  ]
+}

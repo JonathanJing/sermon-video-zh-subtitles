@@ -1,0 +1,68 @@
+[
+  {
+    "id": "translation-asr-u0104",
+    "type": "pronoun",
+    "chinese": "他败给了那男孩子。",
+    "reason": "大龙就是撒但（启12:9），词表规定撒但用“他”。前面几条讲控告者时也用“他”，这里应保持一致。"
+  },
+  {
+    "id": "translation-asr-u0105",
+    "type": "pronoun",
+    "chinese": "于是他想要除灭那妇人，但妇人被大鹰的翅膀带走了，她受到保护，也被养活。",
+    "reason": "大龙即撒但，按词表改用“他”，与前文一致。"
+  },
+  {
+    "id": "translation-asr-u0107",
+    "type": "pronoun",
+    "chinese": "他要换一种方式去攻击妇人的后裔。",
+    "reason": "大龙即撒但，按词表改用“他”。“它”留给兽，免得和兽混淆。"
+  },
+  {
+    "id": "translation-asr-u0108",
+    "type": "pronoun",
+    "chinese": "他要从海里、从地里召出兽来。",
+    "reason": "召兽的是大龙（撒但），用“他”，和兽的“它”区分开。"
+  },
+  {
+    "id": "translation-asr-u0109",
+    "type": "pronoun",
+    "chinese": "大龙知道，他已经输给了那男孩子。",
+    "reason": "大龙即撒但，按词表改用“他”。"
+  },
+  {
+    "id": "translation-asr-u0110",
+    "type": "pronoun",
+    "chinese": "所以大龙重整旗鼓，因为他知道自己的时候不多了，就去追杀那妇人。",
+    "reason": "按词表，撒但用“他”。固定说法“他的时候不多了”也用“他”。"
+  },
+  {
+    "id": "translation-asr-u0114",
+    "type": "pronoun",
+    "chinese": "他知道自己的时候不多了，但请注意，那妇人被大鹰的翅膀带走了。",
+    "reason": "按词表，撒但用“他”，与固定说法“他的时候不多了”一致。"
+  },
+  {
+    "id": "translation-asr-u0126",
+    "type": "meaning",
+    "chinese": "关于这第一只兽，我们已经回头看过但以理书，看过那里关于兽的意象。",
+    "reason": "Here \"The first\" means the first beast, the one from the sea that the previous cues just introduced. It does not mean \"firstly\". \"首先\" would make listeners expect a numbered list of points, so the cue now names the first beast."
+  },
+  {
+    "id": "translation-asr-u0250",
+    "type": "drift",
+    "chinese": "但如果你家门框上有羔羊的血，死亡天使就会越过你的家，你就会得救。",
+    "reason": "This cue says 羊羔的血, but u0235–u0240 and the glossary use 羔羊的血. Using the same wording ties the Passover image to the recurring “blood of the lamb” phrase."
+  },
+  {
+    "id": "translation-asr-u0344",
+    "type": "drift",
+    "chinese": "旷野不会比神对祂子民的供养更长久。",
+    "reason": "The glossary sets this recurring line as “旷野不会比神的供养更长久” (u0338, u0343). This cue used “供应”, which made the repeated point sound like a different word. Changed it to “供养”."
+  },
+  {
+    "id": "translation-asr-u0345",
+    "type": "drift",
+    "chinese": "你现在正经历的试炼，不会比神在试炼中对你的供养更长久。",
+    "reason": "This cue belongs to the same recurring line as the glossary entry and repeats u0338–u0344. Changed “供应” to “供养” to match the glossary and keep the repetition consistent."
+  }
+]

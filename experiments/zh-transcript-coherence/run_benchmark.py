@@ -10,6 +10,8 @@ no API key), so arms differ only in method:
   baseline    one unit per request, 3 English units before / 2 after, production wording
   s1_glossary baseline + whole-sermon glossary                       (remedy 1)
   s2_prior    windows of consecutive units with the prior Chinese   (remedy 2)
+  s2b_two_pass s1, re-run with the baseline Chinese of the neighbouring units
+              (remedy 2 that keeps every group independent and parallel)
   s3_merge    s2 with continuation units translated in one group     (remedy 3)
   s5_review   s3 + passage review over windows of cues               (remedy 5)
   s4_reading  reading-edition paragraphs edited from s5              (remedy 4)
@@ -39,7 +41,7 @@ sys.path.insert(0, str(ROOT / "packages" / "production" / "src"))
 
 from tongxing_production.text import coherence as co  # noqa: E402
 
-ARMS = ("published", "baseline", "s1_glossary", "s2_prior", "s3_merge", "s5_review", "s4_reading")
+ARMS = ("published", "baseline", "s1_glossary", "s2_prior", "s2b_two_pass", "s3_merge", "s5_review", "s4_reading")
 POLICY = ROOT / "config" / "target-language-policies" / "zh-Hans.json"
 HERE = Path(__file__).resolve().parent
 _print_lock = threading.Lock()
@@ -131,8 +133,17 @@ def production_instruction(policy: dict, with_glossary: bool) -> str:
             "Do not claim human approval.")
 
 
-def per_unit_arm(claude: Claude, units, policy, glossary, workers) -> dict[str, str]:
+NEIGHBOR_RULE = ("neighborDraft holds a first-pass Chinese of the neighbouring units: keep "
+                 "recurring wording consistent with it and make this group connect naturally to "
+                 "what comes before and after, without translating the neighbours' content. ")
+
+
+def per_unit_arm(claude: Claude, units, policy, glossary, workers,
+                 neighbor_draft: dict[str, str] | None = None) -> dict[str, str]:
     instruction = production_instruction(policy, glossary is not None)
+    if neighbor_draft is not None:
+        instruction = instruction.replace("Use context only for interpretation. ",
+                                          "Use context only for interpretation. " + NEIGHBOR_RULE)
 
     def one(index):
         unit = units[index]
@@ -147,13 +158,21 @@ def per_unit_arm(claude: Claude, units, policy, glossary, workers) -> dict[str, 
                    "scripture": policy["scripture"], "formatting": policy["formatting"]}
         if glossary is not None:
             payload["sermonGlossary"] = glossary
+        if neighbor_draft is not None:
+            payload["neighborDraft"] = {
+                "before": [neighbor_draft[u["sourceUnitId"]] for u in units[max(0, index - 3):index]],
+                "after": [neighbor_draft[u["sourceUnitId"]] for u in units[index + 1:index + 3]]}
 
         def parse(text):
             value = co._json_object(text)
             utterances = value.get("targetUtterances")
             if isinstance(utterances, list):
-                utterances = "".join(str(item if isinstance(item, str) else item.get("text", "")) for item in utterances)
-            assert isinstance(utterances, str) and utterances.strip(), "empty translation"
+                utterances = "".join(item if isinstance(item, str) else next(
+                    (v for v in item.values() if isinstance(v, str) and v.strip() and not v.startswith("asr-")), "")
+                    for item in utterances)
+            if not (isinstance(utterances, str) and utterances.strip()):
+                utterances = "".join(row.get("targetText", "") for row in value.get("coverage") or [])
+            assert isinstance(utterances, str) and utterances.strip(), f"empty translation: {text[:300]}"
             return utterances.strip()
         return unit["sourceUnitId"], claude(instruction, json.dumps(payload, ensure_ascii=False), parse)
 
@@ -226,7 +245,12 @@ def reading_arm(claude: Claude, rows, glossary, *, workers: int) -> list[dict]:
         return claude(system, user, lambda text: co.parse_reading(text, chunk))
 
     with ThreadPoolExecutor(workers) as pool:
-        return list(pool.map(one, range(len(paragraphs))))
+        edited = list(pool.map(one, range(len(paragraphs))))
+    # Paragraph coverage names groups; the judge looks paragraphs up by source unit.
+    members = {row["id"]: row["sourceUnitIds"] for row in rows}
+    return [{"paragraph": item["paragraph"], "groups": item["sourceUnitIds"],
+             "sourceUnitIds": [unit for group in item["sourceUnitIds"] for unit in members[group]]}
+            for item in edited]
 
 
 # --- judging ---------------------------------------------------------------
@@ -270,6 +294,17 @@ def arm_view(arm_text, unit_ids):
 def judge_arm(judge: Claude, arm: str, units, arm_text: dict[str, str], *, workers: int,
               reading: list[dict] | None = None) -> dict:
     windows = judge_windows(units)
+    if reading is not None:
+        # Paragraph-aligned windows, so the English shown is exactly what the paragraphs cover.
+        by_id = {u["sourceUnitId"]: u for u in units}
+        windows, current = [], []
+        for paragraph in reading:
+            current += [by_id[unit_id] for unit_id in paragraph["sourceUnitIds"]]
+            if len(current) >= 25:
+                windows.append(current)
+                current = []
+        if current:
+            windows.append(current)
 
     def one(window):
         ids = [u["sourceUnitId"] for u in window]
@@ -384,6 +419,11 @@ def main() -> int:
     if "s1_glossary" in arms:
         texts["s1_glossary"] = per_unit_arm(translator, units, policy, glossary, args.workers)
         log("s1 ready")
+    if "s2b_two_pass" in arms:
+        draft = texts.get("baseline") or per_unit_arm(translator, units, policy, None, args.workers)
+        texts["s2b_two_pass"] = per_unit_arm(translator, units, policy, glossary, args.workers,
+                                             neighbor_draft=draft)
+        log("s2b ready")
     if "s2_prior" in arms:
         texts["s2_prior"] = expand(unit_groups, window_arm(translator, units, unit_groups, policy, glossary,
                                                            window=args.window, chunks=args.chunks,

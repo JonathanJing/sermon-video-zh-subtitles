@@ -1,0 +1,620 @@
+{
+ "pageId": "revelation-jesus-wins-20261025",
+ "units": 447,
+ "continuationGroups": 442,
+ "translatorModel": "opus (Claude CLI)",
+ "judges": {
+  "sonnet": {
+   "published": {
+    "comprehension": 6,
+    "naturalness": 6.11,
+    "fidelity": 5.78,
+    "issues": {
+     "fragment": 44,
+     "meaning": 84,
+     "pronoun": 17,
+     "unnatural": 46,
+     "drift": 14,
+     "reference": 4
+    },
+    "issueCount": 209,
+    "knownIssuesFixed": 0,
+    "knownIssuesTotal": 18,
+    "inconsistencies": [
+     "耶稣/神的代词（祂/他）",
+     "第四幕的经文范围（节号）",
+     "逾越节羊羔的日期与动作",
+     "彭柯丽的称呼"
+    ],
+    "knownIssuesFixedIds": []
+   },
+   "baseline": {
+    "comprehension": 7,
+    "naturalness": 6.83,
+    "fidelity": 6.56,
+    "issues": {
+     "drift": 29,
+     "meaning": 59,
+     "unnatural": 52,
+     "reference": 6,
+     "fragment": 16,
+     "pronoun": 15
+    },
+    "issueCount": 177,
+    "knownIssuesFixed": 7,
+    "knownIssuesTotal": 18,
+    "inconsistencies": [
+     "主人公柯丽的译名",
+     "柯丽姐姐的译名",
+     "讲员的小狗名字",
+     "耶稣/神的代词（祂/他）",
+     "逾越节羊羔的日期",
+     "死亡天使与羊羔血的叙述",
+     "“三年半”的不同表述",
+     "撒但的称呼与“小写的神”"
+    ],
+    "knownIssuesFixedIds": [
+     "K07",
+     "K08",
+     "K10",
+     "K14",
+     "K15",
+     "K16",
+     "K17"
+    ]
+   },
+   "s1_glossary": {
+    "comprehension": 7.11,
+    "naturalness": 6.94,
+    "fidelity": 6.89,
+    "issues": {
+     "meaning": 61,
+     "drift": 20,
+     "unnatural": 44,
+     "fragment": 24,
+     "pronoun": 14,
+     "reference": 4
+    },
+    "issueCount": 167,
+    "knownIssuesFixed": 8,
+    "knownIssuesTotal": 18,
+    "inconsistencies": [
+     "灭命的天使",
+     "逾越节羔羊的日期",
+     "对耶稣祷告时的第二人称",
+     "教会刊物页码",
+     "启示录经文章节范围"
+    ],
+    "knownIssuesFixedIds": [
+     "K01",
+     "K05",
+     "K06",
+     "K07",
+     "K10",
+     "K14",
+     "K15",
+     "K17"
+    ]
+   },
+   "s2_prior": {
+    "comprehension": 7.5,
+    "naturalness": 7.44,
+    "fidelity": 6.83,
+    "issues": {
+     "meaning": 68,
+     "reference": 7,
+     "unnatural": 34,
+     "fragment": 15,
+     "pronoun": 11,
+     "drift": 15
+    },
+    "issueCount": 150,
+    "knownIssuesFixed": 15,
+    "knownIssuesTotal": 18,
+    "inconsistencies": [
+     "撒但/龙/仇敌的代词",
+     "神对子民的“供养”",
+     "教会刊物页码",
+     "第四幕经文范围"
+    ],
+    "knownIssuesFixedIds": [
+     "K01",
+     "K02",
+     "K03",
+     "K05",
+     "K06",
+     "K07",
+     "K08",
+     "K09",
+     "K10",
+     "K11",
+     "K12",
+     "K14",
+     "K15",
+     "K16",
+     "K17"
+    ]
+   },
+   "s3_merge": {
+    "comprehension": 7.5,
+    "naturalness": 7.33,
+    "fidelity": 7.11,
+    "issues": {
+     "meaning": 62,
+     "reference": 6,
+     "unnatural": 33,
+     "fragment": 16,
+     "pronoun": 13,
+     "drift": 13
+    },
+    "issueCount": 143,
+    "knownIssuesFixed": 16,
+    "knownIssuesTotal": 18,
+    "inconsistencies": [
+     "逾越节前羊羔的日期",
+     "羔羊的血（用词）"
+    ],
+    "knownIssuesFixedIds": [
+     "K01",
+     "K02",
+     "K03",
+     "K05",
+     "K06",
+     "K07",
+     "K08",
+     "K09",
+     "K10",
+     "K11",
+     "K12",
+     "K13",
+     "K14",
+     "K15",
+     "K16",
+     "K17"
+    ]
+   },
+   "s5_review": {
+    "comprehension": 7.39,
+    "naturalness": 7.22,
+    "fidelity": 6.94,
+    "issues": {
+     "meaning": 64,
+     "reference": 7,
+     "unnatural": 34,
+     "fragment": 18,
+     "pronoun": 13,
+     "drift": 14
+    },
+    "issueCount": 150,
+    "knownIssuesFixed": 17,
+    "knownIssuesTotal": 18,
+    "inconsistencies": [
+     "逾越节羊羔的日期",
+     "龙/撒但的代词与称呼",
+     "第四幕的经文范围"
+    ],
+    "knownIssuesFixedIds": [
+     "K01",
+     "K02",
+     "K03",
+     "K05",
+     "K06",
+     "K07",
+     "K08",
+     "K09",
+     "K10",
+     "K11",
+     "K12",
+     "K13",
+     "K14",
+     "K15",
+     "K16",
+     "K17",
+     "K18"
+    ]
+   },
+   "s4_reading": {
+    "comprehension": 8,
+    "naturalness": 7.69,
+    "fidelity": 7.31,
+    "issues": {
+     "meaning": 56,
+     "unnatural": 34,
+     "drift": 8,
+     "pronoun": 9,
+     "fragment": 6,
+     "reference": 5
+    },
+    "issueCount": 118,
+    "knownIssuesFixed": 18,
+    "knownIssuesTotal": 18,
+    "inconsistencies": [
+     "第四幕（第一只兽）的经文范围"
+    ],
+    "knownIssuesFixedIds": [
+     "K01",
+     "K02",
+     "K03",
+     "K04",
+     "K05",
+     "K06",
+     "K07",
+     "K08",
+     "K09",
+     "K10",
+     "K11",
+     "K12",
+     "K13",
+     "K14",
+     "K15",
+     "K16",
+     "K17",
+     "K18"
+    ]
+   },
+   "s2b_two_pass": {
+    "comprehension": 7.33,
+    "naturalness": 7.28,
+    "fidelity": 6.94,
+    "issues": {
+     "meaning": 64,
+     "drift": 22,
+     "unnatural": 38,
+     "fragment": 19,
+     "reference": 6,
+     "pronoun": 13
+    },
+    "issueCount": 162,
+    "knownIssuesFixed": 14,
+    "knownIssuesTotal": 18,
+    "inconsistencies": [
+     "逾越节羊羔的日期"
+    ],
+    "knownIssuesFixedIds": [
+     "K01",
+     "K02",
+     "K05",
+     "K06",
+     "K07",
+     "K08",
+     "K10",
+     "K12",
+     "K13",
+     "K14",
+     "K15",
+     "K16",
+     "K17",
+     "K18"
+    ]
+   }
+  },
+  "opus": {
+   "published": {
+    "comprehension": 7.17,
+    "naturalness": 6.83,
+    "fidelity": 7.61,
+    "issues": {
+     "meaning": 33,
+     "drift": 10,
+     "fragment": 43,
+     "pronoun": 16,
+     "reference": 13,
+     "unnatural": 52
+    },
+    "issueCount": 167,
+    "knownIssuesFixed": 0,
+    "knownIssuesTotal": 18,
+    "inconsistencies": [
+     "耶稣的代词",
+     "神的代词",
+     "第一个应许（控告者被止住）",
+     "羔羊的血 / 羊羔的血",
+     "耶稣作为“儿子”的称谓",
+     "兽的代词",
+     "杂志页码",
+     "逾越节取羊羔的日期",
+     "妇人代表谁"
+    ],
+    "knownIssuesFixedIds": []
+   },
+   "baseline": {
+    "comprehension": 8.28,
+    "naturalness": 7.83,
+    "fidelity": 8.78,
+    "issues": {
+     "drift": 24,
+     "fragment": 11,
+     "unnatural": 47,
+     "meaning": 11,
+     "pronoun": 14,
+     "reference": 9
+    },
+    "issueCount": 116,
+    "knownIssuesFixed": 10,
+    "knownIssuesTotal": 18,
+    "inconsistencies": [
+     "主人公名字（彭柯丽）",
+     "柯丽姐姐的名字",
+     "柯丽姐姐的关系称谓",
+     "牧师的狗名",
+     "耶稣/神的代词",
+     "龙/兽的代词",
+     "羔羊/羊羔",
+     "第一个应许的表述",
+     "第二个应许的核心用词",
+     "逾越节取羊羔的日子",
+     "卡森故事中的得救对象",
+     "两个儿子的称谓",
+     "学者卡森的姓名",
+     "梦幻橄榄球的组织称谓",
+     "书名标注",
+     "第二只兽的来处表述"
+    ],
+    "knownIssuesFixedIds": [
+     "K04",
+     "K07",
+     "K08",
+     "K10",
+     "K13",
+     "K14",
+     "K15",
+     "K16",
+     "K17",
+     "K18"
+    ]
+   },
+   "s1_glossary": {
+    "comprehension": 8.44,
+    "naturalness": 7.89,
+    "fidelity": 8.83,
+    "issues": {
+     "drift": 14,
+     "reference": 5,
+     "unnatural": 52,
+     "meaning": 14,
+     "fragment": 12,
+     "pronoun": 12
+    },
+    "issueCount": 109,
+    "knownIssuesFixed": 11,
+    "knownIssuesTotal": 18,
+    "inconsistencies": [
+     "祷告中称呼耶稣的第二人称代词",
+     "逾越节第十灾中执行审判的天使",
+     "取羔羊的日子",
+     "第二个应许的核心口号（供养的长度）",
+     "核心口号“耶稣是得胜者”",
+     "妇人被带走所借的翅膀"
+    ],
+    "knownIssuesFixedIds": [
+     "K04",
+     "K05",
+     "K06",
+     "K07",
+     "K08",
+     "K10",
+     "K13",
+     "K14",
+     "K15",
+     "K17",
+     "K18"
+    ]
+   },
+   "s2_prior": {
+    "comprehension": 8.89,
+    "naturalness": 8.22,
+    "fidelity": 8.56,
+    "issues": {
+     "meaning": 21,
+     "fragment": 7,
+     "unnatural": 43,
+     "reference": 6,
+     "pronoun": 8,
+     "drift": 6
+    },
+    "issueCount": 91,
+    "knownIssuesFixed": 18,
+    "knownIssuesTotal": 18,
+    "inconsistencies": [
+     "启示录12–13章五个段落的称呼",
+     "逾越节羔羊的称呼",
+     "逾越节取羊的日期",
+     "第二点的核心句：旷野不会比神的供应更长久",
+     "撒但／仇敌的代词",
+     "撒但被摔下的地方",
+     "核心口号“耶稣是得胜者”"
+    ],
+    "knownIssuesFixedIds": [
+     "K01",
+     "K02",
+     "K03",
+     "K04",
+     "K05",
+     "K06",
+     "K07",
+     "K08",
+     "K09",
+     "K10",
+     "K11",
+     "K12",
+     "K13",
+     "K14",
+     "K15",
+     "K16",
+     "K17",
+     "K18"
+    ]
+   },
+   "s3_merge": {
+    "comprehension": 8.89,
+    "naturalness": 8.06,
+    "fidelity": 8.72,
+    "issues": {
+     "meaning": 22,
+     "fragment": 8,
+     "unnatural": 40,
+     "reference": 7,
+     "pronoun": 7,
+     "drift": 7
+    },
+    "issueCount": 91,
+    "knownIssuesFixed": 17,
+    "knownIssuesTotal": 18,
+    "inconsistencies": [
+     "逾越节羔羊的称呼（羔羊/羊羔）",
+     "逾越节羊羔的日期",
+     "第二点的核心口号：神对子民的供养/供应",
+     "经文段落的结构术语（场景/幕）"
+    ],
+    "knownIssuesFixedIds": [
+     "K01",
+     "K02",
+     "K03",
+     "K04",
+     "K05",
+     "K06",
+     "K07",
+     "K08",
+     "K09",
+     "K10",
+     "K11",
+     "K13",
+     "K14",
+     "K15",
+     "K16",
+     "K17",
+     "K18"
+    ]
+   },
+   "s5_review": {
+    "comprehension": 8.83,
+    "naturalness": 8.11,
+    "fidelity": 8.67,
+    "issues": {
+     "meaning": 24,
+     "fragment": 7,
+     "unnatural": 42,
+     "reference": 6,
+     "pronoun": 8,
+     "drift": 6
+    },
+    "issueCount": 93,
+    "knownIssuesFixed": 17,
+    "knownIssuesTotal": 18,
+    "inconsistencies": [
+     "逾越节选羊羔的日子",
+     "羔羊/羊羔用词",
+     "龙（撒但）的名称",
+     "龙（撒但）的代词",
+     "撒但被赶出的地方"
+    ],
+    "knownIssuesFixedIds": [
+     "K01",
+     "K02",
+     "K03",
+     "K04",
+     "K05",
+     "K06",
+     "K07",
+     "K08",
+     "K09",
+     "K10",
+     "K11",
+     "K13",
+     "K14",
+     "K15",
+     "K16",
+     "K17",
+     "K18"
+    ]
+   },
+   "s4_reading": {
+    "comprehension": 8.94,
+    "naturalness": 8.31,
+    "fidelity": 8.88,
+    "issues": {
+     "meaning": 19,
+     "unnatural": 38,
+     "pronoun": 7,
+     "reference": 6,
+     "drift": 3,
+     "fragment": 4
+    },
+    "issueCount": 77,
+    "knownIssuesFixed": 17,
+    "knownIssuesTotal": 18,
+    "inconsistencies": [
+     "龙（撒但）的代词",
+     "龙的称呼",
+     "五个场景的单位用语",
+     "逾越节的羊",
+     "第二个应许中养活子民的主体"
+    ],
+    "knownIssuesFixedIds": [
+     "K01",
+     "K02",
+     "K03",
+     "K04",
+     "K05",
+     "K06",
+     "K07",
+     "K08",
+     "K09",
+     "K10",
+     "K11",
+     "K13",
+     "K14",
+     "K15",
+     "K16",
+     "K17",
+     "K18"
+    ]
+   },
+   "s2b_two_pass": {
+    "comprehension": 8.39,
+    "naturalness": 7.94,
+    "fidelity": 8.67,
+    "issues": {
+     "fragment": 15,
+     "drift": 18,
+     "unnatural": 47,
+     "meaning": 18,
+     "pronoun": 7,
+     "reference": 6
+    },
+    "issueCount": 111,
+    "knownIssuesFixed": 14,
+    "knownIssuesTotal": 18,
+    "inconsistencies": [
+     "龙（撒但）的代词",
+     "逾越节取羊羔的日期",
+     "羔羊／羊羔用词",
+     "鹰的翅膀",
+     "神的子民称呼",
+     "幕／场景结构术语",
+     "第一幕与第二幕标题用词",
+     "第一个应许的表述",
+     "主题口号",
+     "从海／地上来的兽",
+     "教会刊物页码"
+    ],
+    "knownIssuesFixedIds": [
+     "K01",
+     "K02",
+     "K04",
+     "K05",
+     "K06",
+     "K07",
+     "K08",
+     "K10",
+     "K13",
+     "K14",
+     "K15",
+     "K16",
+     "K17",
+     "K18"
+    ]
+   }
+  }
+ }
+}
