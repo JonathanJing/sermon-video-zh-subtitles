@@ -1,0 +1,43 @@
+{
+  "schemaVersion": "laodicea-dev-relist-summary-v1",
+  "pageId": "2026-09-20-laodicea-clip",
+  "environment": "dev",
+  "origin": "https://ai-for-god-sermon-audio-dev.web.app",
+  "driver": "experiments/sentence-first-agent/publish_laodicea_clip_dev.py (branch experiment/laodicea-dev-relist, 323327d2)",
+  "titles": {
+    "zh-Hans": "耶稣的应许 · 启示录 2–3 章（片段）",
+    "ko": "예수님의 약속 · 요한계시록 2–3장 (발췌)",
+    "es": "Las promesas de Jesús · Apocalipsis 2–3 (fragmento)"
+  },
+  "officialSermon": {
+    "title": "Jesus promises",
+    "date": "2026-09-20",
+    "speaker": "Eric Geiger",
+    "scripture": "Revelation 2–3",
+    "source": "https://www.marinerschurch.org/series/revelation/"
+  },
+  "deploys": {
+    "candidate": "b447eeabcf7cd39a (superseded)",
+    "stage1": "b3931ac3f6860a06",
+    "stage2": "4c18773ac5711464"
+  },
+  "reviewStatus": {
+    "content": "human_reviewed (2026-09 approvals, cues unchanged)",
+    "audio": "human_reviewed (approved WAV, MP3 encode)",
+    "release": "published_http_verified (Dev)",
+    "device": "Dev beta simulator screenshots only; no device or venue acceptance"
+  },
+  "changes": [
+    "content v2 rewritten in place (legacy v2-catalog entry now stale)",
+    "MP3 added; WAV left in place",
+    "fingerprints/alignment omitted (bound to WAV)",
+    "English reference added"
+  ],
+  "findings": [
+    "iOS dev-candidate captions require the natural-rate timingBasis header; formal-clock clips must use the formal path",
+    "published v2 releases accept only /media/<page>/<locale>.mp3",
+    "rewriting content requires rebinding the live catalog's releases in the same deploy (validate_catalog_snapshot)",
+    "iPhone Duo: XCTest screenshots and screen-coordinate gestures fail after a Device Hub posture change; element-relative drags + simctl --display capture work",
+    "iPhone 18 Pro simulator shared with another project's app (remote-agent-watch) — use a separate simulator"
+  ]
+}
