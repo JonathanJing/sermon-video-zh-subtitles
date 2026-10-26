@@ -16,6 +16,8 @@ This is an independent personal open-source project with no affiliation, endorse
 
 **Listen:** [Two 60-second demos](https://ai-for-god-sermon-audio-dev.web.app/demos/) — Eric Geiger and Steve Bang Lee, English → Chinese → Korean → Spanish.
 
+**Watch:** [66-second intro film](https://storage.googleapis.com/ai-for-god-sermon-media-dev/demos/tongxing-intro-2026-10-25-duo-720p.mp4) — why the app exists and what it does in the room, on an unfolded iPhone Duo ([iPhone version](https://storage.googleapis.com/ai-for-god-sermon-media-dev/demos/tongxing-intro-2026-10-25-iphone-720p.mp4)).
+
 ## What it looks like
 
 Browser captures of the Production page for the 2026-10-11 sermon. The page language and the sermon language are separate controls; the three sermon languages share one English source. Screenshots show rendering only, not device or venue acceptance.
@@ -51,6 +53,21 @@ Two presentation reels play one continuous sermon clip while the audio switches 
 **Review.** Eric's English, three target texts and audio packages are human-approved (2026-09-24); the 60-second edit is a presentation cut, not a new release. Steve's three dubs were listened to and approved by the user (2026-10-22); the text was reused from a machine-reviewed sentence candidate. Neither reel has device or venue acceptance.
 
 Source: Mariners Church weekend services, 2026-09-20 and 2026-10-18. This project is not affiliated with Mariners Church.
+
+## 66-second intro film
+
+A short film for congregations: in one sanctuary, not everyone can follow the English sermon; with the app, each listener follows the same sentence in their own language. Stained-glass opening and close, the real 2026-09-20 sermon clip with Chinese, Korean and Spanish dubbing, and the Dev beta app beside the speaker. Chinese narration with English source lines on the app screens.
+
+| iPhone Duo (unfolded) | iPhone |
+|---|---|
+| [![Tongxing intro film, iPhone Duo version](docs/assets/readme/intro-film-duo-poster.png)](https://storage.googleapis.com/ai-for-god-sermon-media-dev/demos/tongxing-intro-2026-10-25-duo-720p.mp4) | [![Tongxing intro film, iPhone version](docs/assets/readme/intro-film-iphone-poster.png)](https://storage.googleapis.com/ai-for-god-sermon-media-dev/demos/tongxing-intro-2026-10-25-iphone-720p.mp4) |
+| 66 s · 1280×720 · −14 LUFS | 66 s · 1280×720 · −14 LUFS |
+
+**What it shows.** App screens are captures of the Dev beta app (`TongxingBeta`) in the iPhone Duo (unfolded) and iPhone 17 Pro simulators, paused on the sentences the speaker is saying: Chinese 01:28, Korean 01:50, Spanish 02:02 of the 2026-09-20 clip, re-listed on Dev as “耶稣的应许 · 启示录 2–3 章（片段）” (“Jesus promises”, excerpt; run report in [PR #1393](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/1393)). The stained-glass shots are rendered in code in the lemo-opuscar Stained Glass style; score and sound effects are synthesized.
+
+**What it does not show.** The fully lit window at the end, marked 效果示意 in the film, illustrates the goal: in-room live following has no venue acceptance. Screens are simulator captures, not device acceptance. Narration and dubbing are AI speech in Eric Geiger's authorized voice, labelled in the film; the dubbed texts and audio are the human-approved 2026-09-24 clip packages.
+
+SHA-256: Duo `cafef64bba4ed11d59b747880d70d865cdd510e05eccdcaef2f8cdcacfb7b2d1`, iPhone `f657ec85c84ff2d42f63f88657bd71d4436be649264b6fc13cfac988d0cb7251`. Source: Mariners Church weekend service, 2026-09-20. This project is not affiliated with Mariners Church.
 
 ## Main modules
 
