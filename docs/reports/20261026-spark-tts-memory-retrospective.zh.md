@@ -1,13 +1,14 @@
 # Spark TTS 配音内存占用：历次复盘汇总与估算
 
-2026-10-26。只读汇总，不跑 Spark，不改代码。来源是 dev @ `f1ef8b5f` 已入库的复盘、基准收据和提交说明。凡是“估算”都标明了推导方式，没有单独实测。
+2026-10-26。前半部分是只读汇总；同日晚补了一次整篇 zh + ko 的 Spark 实测（诊断，不发布），数字见[运行收据](../../data/benchmarks/spark-tts-memory-full-episode/2026-10-26/run-receipt.json)、[memory-curve.json](../../data/benchmarks/spark-tts-memory-full-episode/2026-10-26/memory-curve.json) 和下文“10/26 整篇实测”。汇总来源是 dev @ `f1ef8b5f` 已入库的复盘、基准收据和提交说明；凡是“估算”都标明了推导方式，实测部分单独标出。
 
 ## 结论
 
 1. **10/11 到 10/23 之前的内存中止，主因是 PyTorch 缓存分配器碎片，不是泄漏，也不只是外部服务。** 10/23 的四臂对照里，基线 8×8 每个 worker 的 CUDA allocated 每窗后都回到 3.90 GiB，但 reserved 从 4.0 涨到 7.8–10.7 GiB 且不回落，8 个合计 73 GiB；主机可用内存每窗平均下降约 1 GiB，第 41 窗跌破 24 GiB 保留线。整篇 419–461 句（53–58 窗）在旧配置下单独跑也必然触线。10/11 的 `llama-server`（约 34.9 GiB）和前一语言容器未释放是叠加因素。
 2. **#1331 以后的内存策略已经把曲线压平。** `expandable_segments:True` 加每窗 `empty_cache()` 后，8×8 跑满 48 窗，最低可用 52.9 GiB，worker reserved 每窗回到 3.9 GiB，生成耗时差 1% 以内，WAV 字节一致。10/23 lanes 实测 ko/es 各 402 句、51 窗，最低 53.0 / 53.1 GiB，首尾持平。
 3. **每副本估算：加载后约 5.1 GiB，运行峰值约 7.9–8.1 GiB**（主机统一内存口径）。现行准入按 24 GiB 保留 + 9 GiB × 副本数，8×8 要求 96 GiB。
-4. **GPU 显存峰值仍然没有直接数字。** GB10 的 `nvidia-smi` 显示 N/A，所有收据的 `gpuPeakBytes` 都是 null；能用的是每个 worker 的 PyTorch allocated/reserved 计数和宿主 `MemAvailable`，两者在 UMA 上不能相加。
+4. **10/26 补上了整篇 zh 的实测：474 句、60 窗，逐窗最低 62.20 GiB，首末 66.75 → 66.72，没有触线。** 同一轮 ko 402 句（51 窗）最低 61.21 GiB，首末 66.67 → 66.66；两种语言的宿主最低值 53.68 GiB 出现在 ko 加载与 zh 压缩重叠的约 1 分钟里，仍高于 24 GiB 保留线。生成期间两条线都基本持平（0.001 / 0.000 GiB／窗），和 10/23 的结论一致。这是诊断运行：代码树、两套 job 和 ko 组装失败都在下方实测小节和运行收据里写明，不能当作发布证据。
+5. **GPU 显存峰值仍然没有直接数字。** GB10 的 `nvidia-smi` 显示 N/A，所有收据的 `gpuPeakBytes` 都是 null；能用的是每个 worker 的 PyTorch allocated/reserved 计数和宿主 `MemAvailable`，两者在 UMA 上不能相加。
 
 ## 历次记录
 
@@ -22,6 +23,7 @@
 | 10/22–10/23 | 逐句线首期 | 单副本，batch 1 / batch 8 | 未记录 | 无内存问题记录 | [sentence-first 复盘](20261022-sentence-first-production-retrospective.zh.md)、[整期流程](20261023-sentence-first-full-episode-flow-review.zh.md) |
 | 10/23 | 内存 A/B，64 句 × 6 轮 | 8×8 四臂 | 见下表 | 基线 41 窗触线，其余三臂 48/48 | [comparison.json](../../data/benchmarks/spark-tts-memory-ab/2026-10-23/comparison.json)，提交 `daf64f29` |
 | 10/23 | lanes 诊断，ko/es 各 402 句 | 8×8 + 新策略 | ko 53.1 / es 53.0 GiB | 51 窗全完成，曲线持平 | [lanes-diagnostic-run.json](../../data/benchmarks/l3-lanes/2026-10-23/lanes-diagnostic-run.json)，提交 `7d3c2ce2` |
+| 10/26 | 整篇 lanes 诊断：zh 474 句、ko 402 句，先后渲染，zh 压缩与 ko 渲染重叠 | 8×8 + 现行策略 | 宿主 53.68；zh 逐窗 62.20、ko 61.21 | 两个池 60/60、51/51 窗，无触线；zh 渲染+压缩完成，ko 组装因超片长 4.55 秒被拒（非内存） | [run-receipt.json](../../data/benchmarks/spark-tts-memory-full-episode/2026-10-26/run-receipt.json)、[memory-curve.json](../../data/benchmarks/spark-tts-memory-full-episode/2026-10-26/memory-curve.json) |
 
 10/23 四臂对照（同一 checkpoint、种子和 64 句样本，8×8）：
 
@@ -34,7 +36,36 @@
 
 单位 GiB。四臂加载前都约 116.3 GiB，关闭后回到约 116.3 GiB。每个 worker RSS 稳定在 2.3 GiB。
 
-回转写 ASR（Qwen3-ASR-0.6B，batch 1）在 10/23 lanes 实测宿主占用 3.9 GiB、CUDA 峰值 1.8 GiB，准入预算从暂定 12 GiB 降到 6 GiB。
+回转写 ASR（Qwen3-ASR-0.6B，batch 1）在 10/23 lanes 实测宿主占用 3.9 GiB、CUDA 峰值 1.8 GiB，准入预算从暂定 12 GiB 降到 6 GiB。10/26 在渲染池关闭后单独跑 zh 筛查，宿主占用 1.2 GiB、CUDA reserved 峰值 1.78 GiB，准入仍按暂定 12 GiB；这是单独运行的数字，不能当成与 8×8 池并存的余量证据。
+
+## 10/26 整篇实测（诊断，不发布）
+
+目的：补“还缺的证据 1”。做法：Spark 独占会话里用 `group_tasks.py lanes` 跑 zh-Hans、ko 两条线，一个 GPU 槽、8×8；宿主采样器每秒记 `MemAvailable`，结束后用 `experiments/spark-tts-memory-full-episode/memory_curve_report.py` 汇总成 `memory-curve.json` 和 SVG。
+
+| 项 | zh-Hans | ko |
+|---|---|---|
+| 句数 / 窗数 | 474 / 60 | 402 / 51 |
+| job | 10/4 人工批准（`1491cea2…`，eric_geiger） | 10/18 人工批准（`33eb47dc…`，steve_bang_lee） |
+| 准入可用 | 116.05 GiB，要求 96 | 115.75 GiB，要求 96 |
+| 池就绪 | 75.57 | 75.66 |
+| 逐窗可用（首 / 最低 / 末） | 66.75 / 62.20 / 66.72 | 66.67 / 61.21 / 66.66 |
+| 每窗下降 | 0.001 | 0.000 |
+| worker reserved 最大 | 3.92 | 3.92 |
+| 触线 | 否 | 否 |
+| 渲染耗时 | 442.5 秒 | 491.9 秒 |
+
+宿主曲线：116.62 → 53.68 → 116.60 GiB，1232 秒，swap 只增 0.01 GiB，GPU 峰值利用率 96%。最低点 15:12:05Z 出现在 ko 池加载、zh 压缩容器同时在跑的时候；生成窗口内的最低值是 62.20 / 61.21，说明池本身没有旧配置那种每窗约 1 GiB 的下降。
+
+边界（读这张表前必须知道）：
+
+- 代码树是 `56c053a5`（dev + #1331 + #1332 + 2026-10-18 术语表），不是当天 dev。现有 job 都冻结在 10/20 术语表变更之前的策略上，现行表会拒绝它们；这个运行证明的是内存策略，不是当前术语表。
+- zh 用 10/4 的人工批准 job；10/18 的 zh job 是旧 QC 实现下签发的机器豁免，现已无法准入。ko 用 10/18 的人工批准 job。两条线不是同一篇讲道。
+- 渲染只到 wav：TTS 镜像里没有 ffmpeg，诊断工作树把 `--track-format` 改成 wav；MP3 封装没有验证。
+- zh 的 `screen` 阶段在 lanes 里因配置错误（把 render 的输入参数传给了不接受它们的 `screen`）0.2 秒失败；lanes 结束后手工用正确参数重跑，exit 0，ASR 收据已写入。
+- ko 的 402 句全部合成、池 51/51 窗正常关闭，但组装时第 368 句的计划终点 1899.55 秒超过片长 1895 秒（滞后 179.49 秒，阈值 240 秒），被渲染器拒绝。这是时间接受失败，不是内存失败；ko 的内存证据仍然完整。
+- 独占会话按 `--preempt --allow-interrupted-restart` 停了 `llama-server` 等五个受管单元，结束已恢复并核验健康；会话 `l3-mem-curve-20261026`。
+
+因此，“zh 整篇在现行内存策略下”的缺口已经补上；“当前 dev 树 + 当前术语表”的整篇 zh 仍没有跑过。
 
 ## 估算
 
@@ -57,7 +88,7 @@
 
 ## 还缺的证据
 
-1. **zh 整篇在新策略下的实测。** 现行策略只有 ko/es 402 句（51 窗）的整篇证据；zh 常见 419–461 句（53–58 窗），最长的一次还没跑过。下一次周产 zh 的 `replica-runtime.json` 和 pool 事件里已带每窗内存，读出最低值即可补上。
+1. **当前 dev/术语表下的整篇 zh。** 10/26 的实测用的是 10/23 诊断树（旧术语表），补上了 474 句的内存曲线，但没有走当前术语表的准入。下一次周产 zh 用当前树跑时，读出 `replica-runtime.json` 的每窗 `MemAvailable` 即可直接对照。
 2. **逐句线（tts_pool.py，两讲员 8×8）在 #1341 以后的内存曲线。** 每行 `tts-log.jsonl`／`tts-batches.jsonl` 已写 `memAvailableBytes`、`cudaReservedBytes` 等字段，但还没有入库的运行汇总。
 3. **触线瞬间快照。** 10/23 起 `_guard` 会写 `reserve_failure` 事件（MemAvailable、各 worker RSS 和最近一次 CUDA 计数），但策略生效后还没有触线记录，所以这一路径没有真实样本。
 4. **GPU 峰值。** GB10 不报显存；如需更接近“显存”的数字，可在 worker 结束时汇总 `max_memory_reserved` 合计，作为 UMA 上 CUDA 侧上界。

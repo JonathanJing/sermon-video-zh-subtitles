@@ -1,0 +1,908 @@
+{
+ "schemaVersion": "spark-tts-full-episode-memory-curve-v1",
+ "scope": "diagnostic_only",
+ "releaseEligible": false,
+ "host": {
+  "samples": 1197,
+  "seconds": 1232.1,
+  "memTotalGiB": 121.69,
+  "memAvailableGiB": {
+   "first": 116.62,
+   "minimum": 53.68,
+   "last": 116.6
+  },
+  "minimumAt": 1793027525.6934295,
+  "swapIncreaseGiB": 0.01,
+  "peakGpuUtilPercent": 96.0
+ },
+ "lanes": {
+  "status": "failed",
+  "stages": [
+   {
+    "locale": "zh-Hans",
+    "stage": "formal_render",
+    "resource": "gpu",
+    "startedAt": "2026-10-26T15:03:39.693Z",
+    "seconds": 442.5,
+    "minMemAvailableGiB": 54.47
+   },
+   {
+    "locale": "ko",
+    "stage": "formal_render",
+    "resource": "gpu",
+    "startedAt": "2026-10-26T15:11:02.144Z",
+    "seconds": 491.9,
+    "minMemAvailableGiB": 53.68
+   },
+   {
+    "locale": "zh-Hans",
+    "stage": "compact",
+    "resource": "cpu",
+    "startedAt": "2026-10-26T15:11:02.146Z",
+    "seconds": 135.8,
+    "minMemAvailableGiB": 53.68
+   },
+   {
+    "locale": "zh-Hans",
+    "stage": "screen",
+    "resource": "gpu",
+    "startedAt": "2026-10-26T15:19:14.050Z",
+    "seconds": 0.2,
+    "minMemAvailableGiB": null
+   }
+  ]
+ },
+ "renders": {
+  "zh-Hans": {
+   "status": "closed",
+   "replicas": 8,
+   "batchSize": 8,
+   "memoryPolicy": "release_cuda_cache_expandable_segments_v1",
+   "admission": {
+    "status": "admitted",
+    "memAvailableGiB": 116.05,
+    "requiredGiB": 96.0
+   },
+   "poolReadyMemAvailableGiB": 75.57,
+   "windows": 60,
+   "memAvailableGiB": {
+    "first": 66.75,
+    "minimum": 62.2,
+    "last": 66.72
+   },
+   "drainGiBPerWindow": 0.001,
+   "workerReservedGiBMax": 3.92,
+   "reserveTripped": false,
+   "reserveFailure": null,
+   "perWindow": [
+    {
+     "window": 24,
+     "worker": 3,
+     "timestamp": 1793027134.2813702,
+     "memAvailableGiB": 66.75,
+     "reservedGiB": 3.92
+    },
+    {
+     "window": 0,
+     "worker": 0,
+     "timestamp": 1793027140.737728,
+     "memAvailableGiB": 66.79,
+     "reservedGiB": 3.92
+    },
+    {
+     "window": 56,
+     "worker": 7,
+     "timestamp": 1793027150.0700994,
+     "memAvailableGiB": 62.2,
+     "reservedGiB": 3.92
+    },
+    {
+     "window": 48,
+     "worker": 6,
+     "timestamp": 1793027151.1687524,
+     "memAvailableGiB": 64.5,
+     "reservedGiB": 3.92
+    },
+    {
+     "window": 40,
+     "worker": 5,
+     "timestamp": 1793027151.531266,
+     "memAvailableGiB": 66.7,
+     "reservedGiB": 3.92
+    },
+    {
+     "window": 8,
+     "worker": 1,
+     "timestamp": 1793027153.5756562,
+     "memAvailableGiB": 66.7,
+     "reservedGiB": 3.92
+    },
+    {
+     "window": 16,
+     "worker": 2,
+     "timestamp": 1793027155.6262794,
+     "memAvailableGiB": 66.67,
+     "reservedGiB": 3.92
+    },
+    {
+     "window": 32,
+     "worker": 4,
+     "timestamp": 1793027160.8499672,
+     "memAvailableGiB": 66.48,
+     "reservedGiB": 3.92
+    },
+    {
+     "window": 64,
+     "worker": 0,
+     "timestamp": 1793027177.0820768,
+     "memAvailableGiB": 65.6,
+     "reservedGiB": 3.92
+    },
+    {
+     "window": 72,
+     "worker": 1,
+     "timestamp": 1793027188.5184174,
+     "memAvailableGiB": 65.45,
+     "reservedGiB": 3.92
+    },
+    {
+     "window": 88,
+     "worker": 3,
+     "timestamp": 1793027192.4320917,
+     "memAvailableGiB": 65.56,
+     "reservedGiB": 3.92
+    },
+    {
+     "window": 80,
+     "worker": 2,
+     "timestamp": 1793027199.6097639,
+     "memAvailableGiB": 65.58,
+     "reservedGiB": 3.92
+    },
+    {
+     "window": 112,
+     "worker": 6,
+     "timestamp": 1793027203.3648558,
+     "memAvailableGiB": 65.56,
+     "reservedGiB": 3.92
+    },
+    {
+     "window": 128,
+     "worker": 0,
+     "timestamp": 1793027210.221267,
+     "memAvailableGiB": 65.62,
+     "reservedGiB": 3.92
+    },
+    {
+     "window": 104,
+     "worker": 5,
+     "timestamp": 1793027212.571661,
+     "memAvailableGiB": 65.74,
+     "reservedGiB": 3.92
+    },
+    {
+     "window": 120,
+     "worker": 7,
+     "timestamp": 1793027215.9222338,
+     "memAvailableGiB": 63.47,
+     "reservedGiB": 3.92
+    },
+    {
+     "window": 96,
+     "worker": 4,
+     "timestamp": 1793027217.497143,
+     "memAvailableGiB": 66.22,
+     "reservedGiB": 3.92
+    },
+    {
+     "window": 136,
+     "worker": 1,
+     "timestamp": 1793027220.4280093,
+     "memAvailableGiB": 66.19,
+     "reservedGiB": 3.92
+    },
+    {
+     "window": 144,
+     "worker": 2,
+     "timestamp": 1793027238.7093866,
+     "memAvailableGiB": 63.78,
+     "reservedGiB": 3.92
+    },
+    {
+     "window": 152,
+     "worker": 3,
+     "timestamp": 1793027239.7602665,
+     "memAvailableGiB": 65.51,
+     "reservedGiB": 3.92
+    },
+    {
+     "window": 168,
+     "worker": 4,
+     "timestamp": 1793027256.1753206,
+     "memAvailableGiB": 62.7,
+     "reservedGiB": 3.92
+    },
+    {
+     "window": 192,
+     "worker": 6,
+     "timestamp": 1793027257.6119812,
+     "memAvailableGiB": 65.46,
+     "reservedGiB": 3.92
+    },
+    {
+     "window": 184,
+     "worker": 5,
+     "timestamp": 1793027257.6259859,
+     "memAvailableGiB": 65.72,
+     "reservedGiB": 3.92
+    },
+    {
+     "window": 176,
+     "worker": 1,
+     "timestamp": 1793027261.4594479,
+     "memAvailableGiB": 65.87,
+     "reservedGiB": 3.92
+    },
+    {
+     "window": 160,
+     "worker": 0,
+     "timestamp": 1793027263.655912,
+     "memAvailableGiB": 66.14,
+     "reservedGiB": 3.92
+    },
+    {
+     "window": 200,
+     "worker": 7,
+     "timestamp": 1793027269.5251007,
+     "memAvailableGiB": 64.46,
+     "reservedGiB": 3.92
+    },
+    {
+     "window": 208,
+     "worker": 2,
+     "timestamp": 1793027270.3150182,
+     "memAvailableGiB": 66.08,
+     "reservedGiB": 3.92
+    },
+    {
+     "window": 216,
+     "worker": 3,
+     "timestamp": 1793027275.1663046,
+     "memAvailableGiB": 66.04,
+     "reservedGiB": 3.92
+    },
+    {
+     "window": 256,
+     "worker": 6,
+     "timestamp": 1793027294.5318017,
+     "memAvailableGiB": 65.3,
+     "reservedGiB": 3.92
+    },
+    {
+     "window": 240,
+     "worker": 4,
+     "timestamp": 1793027302.8135526,
+     "memAvailableGiB": 65.43,
+     "reservedGiB": 3.92
+    },
+    {
+     "window": 232,
+     "worker": 1,
+     "timestamp": 1793027305.208971,
+     "memAvailableGiB": 65.66,
+     "reservedGiB": 3.92
+    },
+    {
+     "window": 264,
+     "worker": 2,
+     "timestamp": 1793027306.9611945,
+     "memAvailableGiB": 64.31,
+     "reservedGiB": 3.92
+    },
+    {
+     "window": 248,
+     "worker": 5,
+     "timestamp": 1793027307.0489094,
+     "memAvailableGiB": 66.12,
+     "reservedGiB": 3.92
+    },
+    {
+     "window": 272,
+     "worker": 7,
+     "timestamp": 1793027309.1812649,
+     "memAvailableGiB": 63.43,
+     "reservedGiB": 3.92
+    },
+    {
+     "window": 280,
+     "worker": 3,
+     "timestamp": 1793027309.7533789,
+     "memAvailableGiB": 64.5,
+     "reservedGiB": 3.92
+    },
+    {
+     "window": 224,
+     "worker": 0,
+     "timestamp": 1793027309.895859,
+     "memAvailableGiB": 66.91,
+     "reservedGiB": 3.92
+    },
+    {
+     "window": 288,
+     "worker": 0,
+     "timestamp": 1793027321.748342,
+     "memAvailableGiB": 65.97,
+     "reservedGiB": 3.92
+    },
+    {
+     "window": 296,
+     "worker": 1,
+     "timestamp": 1793027337.121054,
+     "memAvailableGiB": 65.52,
+     "reservedGiB": 3.92
+    },
+    {
+     "window": 344,
+     "worker": 7,
+     "timestamp": 1793027338.5720935,
+     "memAvailableGiB": 65.54,
+     "reservedGiB": 3.92
+    },
+    {
+     "window": 304,
+     "worker": 2,
+     "timestamp": 1793027350.1280432,
+     "memAvailableGiB": 63.93,
+     "reservedGiB": 3.92
+    },
+    {
+     "window": 312,
+     "worker": 3,
+     "timestamp": 1793027351.1792734,
+     "memAvailableGiB": 64.47,
+     "reservedGiB": 3.92
+    },
+    {
+     "window": 352,
+     "worker": 0,
+     "timestamp": 1793027351.9440804,
+     "memAvailableGiB": 64.17,
+     "reservedGiB": 3.92
+    },
+    {
+     "window": 320,
+     "worker": 4,
+     "timestamp": 1793027353.3525956,
+     "memAvailableGiB": 66.0,
+     "reservedGiB": 3.92
+    },
+    {
+     "window": 336,
+     "worker": 6,
+     "timestamp": 1793027359.754116,
+     "memAvailableGiB": 64.29,
+     "reservedGiB": 3.92
+    },
+    {
+     "window": 328,
+     "worker": 5,
+     "timestamp": 1793027360.0788248,
+     "memAvailableGiB": 66.25,
+     "reservedGiB": 3.92
+    },
+    {
+     "window": 360,
+     "worker": 1,
+     "timestamp": 1793027371.5427232,
+     "memAvailableGiB": 65.69,
+     "reservedGiB": 3.92
+    },
+    {
+     "window": 368,
+     "worker": 2,
+     "timestamp": 1793027373.9329362,
+     "memAvailableGiB": 65.76,
+     "reservedGiB": 3.92
+    },
+    {
+     "window": 384,
+     "worker": 0,
+     "timestamp": 1793027385.9581313,
+     "memAvailableGiB": 65.41,
+     "reservedGiB": 3.92
+    },
+    {
+     "window": 392,
+     "worker": 4,
+     "timestamp": 1793027387.6969783,
+     "memAvailableGiB": 64.0,
+     "reservedGiB": 3.92
+    },
+    {
+     "window": 376,
+     "worker": 3,
+     "timestamp": 1793027388.981737,
+     "memAvailableGiB": 64.63,
+     "reservedGiB": 3.92
+    },
+    {
+     "window": 400,
+     "worker": 5,
+     "timestamp": 1793027389.4138272,
+     "memAvailableGiB": 65.77,
+     "reservedGiB": 3.92
+    },
+    {
+     "window": 416,
+     "worker": 7,
+     "timestamp": 1793027401.3171468,
+     "memAvailableGiB": 64.27,
+     "reservedGiB": 3.92
+    },
+    {
+     "window": 424,
+     "worker": 1,
+     "timestamp": 1793027402.418498,
+     "memAvailableGiB": 65.63,
+     "reservedGiB": 3.92
+    },
+    {
+     "window": 408,
+     "worker": 6,
+     "timestamp": 1793027405.4360292,
+     "memAvailableGiB": 65.7,
+     "reservedGiB": 3.92
+    },
+    {
+     "window": 432,
+     "worker": 2,
+     "timestamp": 1793027412.7172956,
+     "memAvailableGiB": 65.81,
+     "reservedGiB": 3.92
+    },
+    {
+     "window": 440,
+     "worker": 0,
+     "timestamp": 1793027422.8089728,
+     "memAvailableGiB": 65.94,
+     "reservedGiB": 3.92
+    },
+    {
+     "window": 456,
+     "worker": 4,
+     "timestamp": 1793027425.7210994,
+     "memAvailableGiB": 66.18,
+     "reservedGiB": 3.92
+    },
+    {
+     "window": 448,
+     "worker": 3,
+     "timestamp": 1793027428.571678,
+     "memAvailableGiB": 66.4,
+     "reservedGiB": 3.92
+    },
+    {
+     "window": 472,
+     "worker": 1,
+     "timestamp": 1793027429.9034975,
+     "memAvailableGiB": 66.72,
+     "reservedGiB": 3.92
+    },
+    {
+     "window": 464,
+     "worker": 5,
+     "timestamp": 1793027429.6414485,
+     "memAvailableGiB": 66.72,
+     "reservedGiB": 3.92
+    }
+   ]
+  },
+  "ko": {
+   "status": "closed",
+   "replicas": 8,
+   "batchSize": 8,
+   "memoryPolicy": "release_cuda_cache_expandable_segments_v1",
+   "admission": {
+    "status": "admitted",
+    "memAvailableGiB": 115.75,
+    "requiredGiB": 96.0
+   },
+   "poolReadyMemAvailableGiB": 75.66,
+   "windows": 51,
+   "memAvailableGiB": {
+    "first": 66.67,
+    "minimum": 61.21,
+    "last": 66.66
+   },
+   "drainGiBPerWindow": 0.0,
+   "workerReservedGiBMax": 3.92,
+   "reserveTripped": false,
+   "reserveFailure": null,
+   "perWindow": [
+    {
+     "window": 16,
+     "worker": 2,
+     "timestamp": 1793027568.0644608,
+     "memAvailableGiB": 66.67,
+     "reservedGiB": 3.92
+    },
+    {
+     "window": 56,
+     "worker": 7,
+     "timestamp": 1793027577.4849737,
+     "memAvailableGiB": 66.53,
+     "reservedGiB": 3.92
+    },
+    {
+     "window": 32,
+     "worker": 4,
+     "timestamp": 1793027584.9644878,
+     "memAvailableGiB": 66.21,
+     "reservedGiB": 3.92
+    },
+    {
+     "window": 48,
+     "worker": 6,
+     "timestamp": 1793027588.9237645,
+     "memAvailableGiB": 63.54,
+     "reservedGiB": 3.92
+    },
+    {
+     "window": 8,
+     "worker": 1,
+     "timestamp": 1793027590.5996788,
+     "memAvailableGiB": 64.01,
+     "reservedGiB": 3.92
+    },
+    {
+     "window": 24,
+     "worker": 3,
+     "timestamp": 1793027590.7529156,
+     "memAvailableGiB": 66.52,
+     "reservedGiB": 3.92
+    },
+    {
+     "window": 40,
+     "worker": 5,
+     "timestamp": 1793027591.941246,
+     "memAvailableGiB": 66.67,
+     "reservedGiB": 3.92
+    },
+    {
+     "window": 0,
+     "worker": 0,
+     "timestamp": 1793027593.047613,
+     "memAvailableGiB": 66.84,
+     "reservedGiB": 3.92
+    },
+    {
+     "window": 64,
+     "worker": 0,
+     "timestamp": 1793027623.4254856,
+     "memAvailableGiB": 65.36,
+     "reservedGiB": 3.92
+    },
+    {
+     "window": 72,
+     "worker": 1,
+     "timestamp": 1793027637.8589501,
+     "memAvailableGiB": 65.17,
+     "reservedGiB": 3.92
+    },
+    {
+     "window": 96,
+     "worker": 4,
+     "timestamp": 1793027641.81154,
+     "memAvailableGiB": 63.67,
+     "reservedGiB": 3.92
+    },
+    {
+     "window": 104,
+     "worker": 5,
+     "timestamp": 1793027642.3449228,
+     "memAvailableGiB": 65.43,
+     "reservedGiB": 3.92
+    },
+    {
+     "window": 80,
+     "worker": 2,
+     "timestamp": 1793027653.8218024,
+     "memAvailableGiB": 65.4,
+     "reservedGiB": 3.92
+    },
+    {
+     "window": 120,
+     "worker": 7,
+     "timestamp": 1793027658.8876696,
+     "memAvailableGiB": 63.15,
+     "reservedGiB": 3.92
+    },
+    {
+     "window": 112,
+     "worker": 6,
+     "timestamp": 1793027660.8065627,
+     "memAvailableGiB": 65.76,
+     "reservedGiB": 3.92
+    },
+    {
+     "window": 88,
+     "worker": 3,
+     "timestamp": 1793027664.0761836,
+     "memAvailableGiB": 66.06,
+     "reservedGiB": 3.92
+    },
+    {
+     "window": 136,
+     "worker": 1,
+     "timestamp": 1793027671.6384332,
+     "memAvailableGiB": 65.44,
+     "reservedGiB": 3.92
+    },
+    {
+     "window": 128,
+     "worker": 0,
+     "timestamp": 1793027677.749839,
+     "memAvailableGiB": 65.7,
+     "reservedGiB": 3.92
+    },
+    {
+     "window": 144,
+     "worker": 2,
+     "timestamp": 1793027693.5154173,
+     "memAvailableGiB": 65.4,
+     "reservedGiB": 3.92
+    },
+    {
+     "window": 152,
+     "worker": 3,
+     "timestamp": 1793027714.355249,
+     "memAvailableGiB": 64.91,
+     "reservedGiB": 3.92
+    },
+    {
+     "window": 160,
+     "worker": 4,
+     "timestamp": 1793027719.2062104,
+     "memAvailableGiB": 64.98,
+     "reservedGiB": 3.92
+    },
+    {
+     "window": 176,
+     "worker": 6,
+     "timestamp": 1793027730.9103632,
+     "memAvailableGiB": 61.21,
+     "reservedGiB": 3.92
+    },
+    {
+     "window": 168,
+     "worker": 5,
+     "timestamp": 1793027731.5337324,
+     "memAvailableGiB": 62.84,
+     "reservedGiB": 3.92
+    },
+    {
+     "window": 184,
+     "worker": 7,
+     "timestamp": 1793027733.6656811,
+     "memAvailableGiB": 65.23,
+     "reservedGiB": 3.92
+    },
+    {
+     "window": 216,
+     "worker": 3,
+     "timestamp": 1793027745.953395,
+     "memAvailableGiB": 65.37,
+     "reservedGiB": 3.92
+    },
+    {
+     "window": 192,
+     "worker": 0,
+     "timestamp": 1793027745.9607022,
+     "memAvailableGiB": 65.34,
+     "reservedGiB": 3.92
+    },
+    {
+     "window": 200,
+     "worker": 1,
+     "timestamp": 1793027749.45813,
+     "memAvailableGiB": 63.41,
+     "reservedGiB": 3.92
+    },
+    {
+     "window": 208,
+     "worker": 2,
+     "timestamp": 1793027750.8322985,
+     "memAvailableGiB": 65.62,
+     "reservedGiB": 3.92
+    },
+    {
+     "window": 232,
+     "worker": 5,
+     "timestamp": 1793027780.0818126,
+     "memAvailableGiB": 64.85,
+     "reservedGiB": 3.92
+    },
+    {
+     "window": 248,
+     "worker": 7,
+     "timestamp": 1793027785.249237,
+     "memAvailableGiB": 65.04,
+     "reservedGiB": 3.92
+    },
+    {
+     "window": 280,
+     "worker": 3,
+     "timestamp": 1793027789.3971872,
+     "memAvailableGiB": 62.6,
+     "reservedGiB": 3.92
+    },
+    {
+     "window": 224,
+     "worker": 4,
+     "timestamp": 1793027791.3588364,
+     "memAvailableGiB": 63.33,
+     "reservedGiB": 3.92
+    },
+    {
+     "window": 240,
+     "worker": 6,
+     "timestamp": 1793027792.2934833,
+     "memAvailableGiB": 65.73,
+     "reservedGiB": 3.92
+    },
+    {
+     "window": 272,
+     "worker": 2,
+     "timestamp": 1793027808.6457481,
+     "memAvailableGiB": 62.76,
+     "reservedGiB": 3.92
+    },
+    {
+     "window": 264,
+     "worker": 1,
+     "timestamp": 1793027809.431245,
+     "memAvailableGiB": 65.51,
+     "reservedGiB": 3.92
+    },
+    {
+     "window": 256,
+     "worker": 0,
+     "timestamp": 1793027812.707814,
+     "memAvailableGiB": 65.84,
+     "reservedGiB": 3.92
+    },
+    {
+     "window": 304,
+     "worker": 5,
+     "timestamp": 1793027841.1861315,
+     "memAvailableGiB": 64.79,
+     "reservedGiB": 3.92
+    },
+    {
+     "window": 312,
+     "worker": 6,
+     "timestamp": 1793027847.9392154,
+     "memAvailableGiB": 62.55,
+     "reservedGiB": 3.92
+    },
+    {
+     "window": 288,
+     "worker": 3,
+     "timestamp": 1793027848.6590383,
+     "memAvailableGiB": 65.29,
+     "reservedGiB": 3.92
+    },
+    {
+     "window": 320,
+     "worker": 0,
+     "timestamp": 1793027859.1722941,
+     "memAvailableGiB": 62.44,
+     "reservedGiB": 3.92
+    },
+    {
+     "window": 296,
+     "worker": 4,
+     "timestamp": 1793027860.9889233,
+     "memAvailableGiB": 65.55,
+     "reservedGiB": 3.92
+    },
+    {
+     "window": 328,
+     "worker": 1,
+     "timestamp": 1793027869.7873802,
+     "memAvailableGiB": 65.01,
+     "reservedGiB": 3.92
+    },
+    {
+     "window": 344,
+     "worker": 7,
+     "timestamp": 1793027873.6976635,
+     "memAvailableGiB": 65.1,
+     "reservedGiB": 3.92
+    },
+    {
+     "window": 336,
+     "worker": 2,
+     "timestamp": 1793027884.7559514,
+     "memAvailableGiB": 65.3,
+     "reservedGiB": 3.92
+    },
+    {
+     "window": 352,
+     "worker": 3,
+     "timestamp": 1793027898.9497154,
+     "memAvailableGiB": 65.37,
+     "reservedGiB": 3.92
+    },
+    {
+     "window": 360,
+     "worker": 0,
+     "timestamp": 1793027901.8798223,
+     "memAvailableGiB": 65.59,
+     "reservedGiB": 3.92
+    },
+    {
+     "window": 400,
+     "worker": 2,
+     "timestamp": 1793027905.5918772,
+     "memAvailableGiB": 65.52,
+     "reservedGiB": 3.92
+    },
+    {
+     "window": 376,
+     "worker": 5,
+     "timestamp": 1793027909.4314568,
+     "memAvailableGiB": 65.68,
+     "reservedGiB": 3.92
+    },
+    {
+     "window": 384,
+     "worker": 6,
+     "timestamp": 1793027912.7757552,
+     "memAvailableGiB": 66.28,
+     "reservedGiB": 3.92
+    },
+    {
+     "window": 392,
+     "worker": 1,
+     "timestamp": 1793027912.7826295,
+     "memAvailableGiB": 66.32,
+     "reservedGiB": 3.92
+    },
+    {
+     "window": 368,
+     "worker": 4,
+     "timestamp": 1793027913.6952996,
+     "memAvailableGiB": 66.66,
+     "reservedGiB": 3.92
+    }
+   ]
+  }
+ },
+ "asrScreens": {
+  "zh-Hans": {
+   "schemaVersion": "sermon-asr-screen-memory-receipt-v1",
+   "stage": "asr_screen",
+   "budgetStatus": "provisional_until_measured",
+   "batchSize": 1,
+   "admission": {
+    "schemaVersion": "sermon-host-memory-admission-v1",
+    "stage": "asr_screen",
+    "memAvailableBytes": 125104238592,
+    "reserveBytes": 0,
+    "budgetBytes": 12884901888,
+    "requiredBytes": 12884901888,
+    "measuredAt": "2026-10-26T15:20:12Z",
+    "status": "admitted"
+   },
+   "memAvailableBytesAfterLoad": 121992601600,
+   "memAvailableBytesAfterRun": 120723869696,
+   "modelLoaded": true,
+   "cudaPeaks": {
+    "maxAllocatedBytes": 1876073984,
+    "maxReservedBytes": 1912602624
+   }
+  }
+ },
+ "note": "Host MemAvailable on GB10 unified memory; CUDA reserved is per worker and not additive to it. No GPU memory peak is available on GB10."
+}
