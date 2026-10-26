@@ -17,6 +17,7 @@ import sys
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 import coherence_core as C  # noqa: E402
+import spoken_forms  # noqa: E402
 
 PROMPT_VERSION = "sentence-first-audit-20261026-v1"
 CODES = {"omission", "addition", "meaning", "number", "name", "pronoun",
@@ -138,7 +139,8 @@ def main() -> int:
         "revisions": revisions,
         "rejectedRevisions": rejected,
         "notes": {},
-        "spokenForms": source_review.get("spokenForms", {}),
+        "spokenForms": spoken_forms.merge_spoken_forms(
+            source_review.get("spokenForms"), [row["target"] for row in translations]),
         "auditPromptVersion": PROMPT_VERSION,
         "humanApproval": False,
     }

@@ -8,6 +8,7 @@ sys.path.insert(0, str(HERE / "experiments" / "sentence-first-agent"))
 import audit_deepseek  # noqa: E402
 import coherence_check  # noqa: E402,F401
 import coherence_core as C  # noqa: E402
+import spoken_forms  # noqa: E402
 
 
 class ChainPlanTests(unittest.TestCase):
@@ -62,6 +63,17 @@ class ValidationTests(unittest.TestCase):
         self.assertEqual(C.number_tokens("Revelation 12 and 13"), ["12", "13"])
         self.assertTrue(C.target_has_number("启示录 12 章", "12"))
         self.assertTrue(C.target_has_number("十二章", "12"))
+
+
+class SpokenFormTests(unittest.TestCase):
+    def test_satan_only_when_present(self):
+        self.assertEqual(spoken_forms.merge_spoken_forms(None, ["耶稣是得胜者。"]), {})
+        self.assertEqual(spoken_forms.merge_spoken_forms(None, ["撒但被摔下去。"]),
+                         {"撒但": "魔鬼"})
+
+    def test_explicit_mapping_wins(self):
+        self.assertEqual(spoken_forms.merge_spoken_forms({"撒但": "撒旦"}, ["撒但"]),
+                         {"撒但": "撒旦"})
 
 
 class DiffGateTests(unittest.TestCase):
