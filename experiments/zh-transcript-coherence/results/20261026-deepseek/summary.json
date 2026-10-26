@@ -6,23 +6,23 @@
     "en": "2f4c08da62e50a4417e7160ca3cfe1810832605c3ce6224d0cc296f409ac49df",
     "policy": "8c744774b70e74493ebda45db92bb2de843d73c5fc46bbcc7e528e5f42e3ea9c"
   },
-  "runnerSha256": "937d2089a88e5b66c6ffcd843868a9fa5a793e04a54f485b68a271e0c4342688",
+  "runnerSha256": "58235ae0ee1e39bfcbb5d5bacb6496b4dbda130c03ec1aa5a6f5ad6177c23628",
   "translatorBackend": "deepseek",
   "translatorModel": "deepseek-flash",
   "translatorEffort": "low",
   "judgeBackend": "deepseek",
   "judgeModel": "deepseek-flash",
   "judgeEffort": "high",
-  "costUsd": 0.0,
-  "paidCalls": 0,
+  "costUsd": 1.06,
+  "paidCalls": 532,
   "cacheHits": 1630,
   "translatorTokens": {
-    "input": 0,
-    "output": 0
+    "input": 1945513,
+    "output": 313719
   },
   "judgeTokens": {
-    "input": 0,
-    "output": 0
+    "input": 45003,
+    "output": 70063
   },
   "arms": [
     {
@@ -1259,6 +1259,151 @@
           "id": "K18",
           "fixed": true,
           "note": "改用“祂”，指神清楚。"
+        }
+      ]
+    },
+    {
+      "arm": "p123_wired",
+      "windows": 18,
+      "comprehension": 8.72,
+      "naturalness": 8.06,
+      "fidelity": 8.78,
+      "issues": {
+        "pronoun": 6,
+        "unnatural": 41,
+        "meaning": 11,
+        "drift": 5,
+        "reference": 4,
+        "fragment": 6
+      },
+      "issueCount": 73,
+      "inconsistencies": [
+        {
+          "concept": "大龙败给的对象",
+          "variants": [
+            "太阳",
+            "羔羊",
+            "耶稣"
+          ],
+          "note": "大龙两次说败给‘太阳’，前文是羔羊/耶稣得胜"
+        },
+        {
+          "concept": "耶稣/神子的代词",
+          "variants": [
+            "他",
+            "祂"
+          ],
+          "note": "同一儿子/耶稣，前用‘他’，后用‘祂’"
+        },
+        {
+          "concept": "控告对象",
+          "variants": [
+            "弟兄",
+            "弟兄姐妹"
+          ],
+          "note": "同一控告经文，一处‘弟兄’，一处‘弟兄姐妹’"
+        },
+        {
+          "concept": "撒但称谓与神",
+          "variants": [
+            "小写的‘神’",
+            "神"
+          ],
+          "note": "把撒但称作小写‘神’，又说撒但是神所造的"
+        }
+      ],
+      "knownIssuesFixed": 11,
+      "knownIssuesTotal": 18,
+      "knownIssueResults": [
+        {
+          "id": "K01",
+          "fixed": true,
+          "note": "中文用破折号把“不该读……”与“带着对正在发生之事的恐惧”连成一句，残句问题已消除，读者能看出“恐惧”修饰的是“读”。"
+        },
+        {
+          "id": "K02",
+          "fixed": false,
+          "note": "“就是为了照顾你。”仍单独成句，前两句（“神什么都会用／哪怕你现在还看不完全”）与它之间仍缺连接，悬空感依旧。"
+        },
+        {
+          "id": "K03",
+          "fixed": true,
+          "note": "“一载，”后已加逗号，和“二载半载。”构成一句完整经文，不再是无标点的半截句。"
+        },
+        {
+          "id": "K04",
+          "fixed": false,
+          "note": "“你们听说过兽的印记”仍以破折号插在条件句中间，后面又重复“如果他们没有它的印记”，读起来仍有重复感。"
+        },
+        {
+          "id": "K05",
+          "fixed": true,
+          "note": "全篇统一作“使控告者闭口／使仇敌闭口／控告被止息”，核心要点译法一致，不再出现“哑口无言／沉默”并存。"
+        },
+        {
+          "id": "K06",
+          "fixed": true,
+          "note": "指耶稣处一律用“祂”，指撒但／大龙处用“他”，区分清楚，无混用。"
+        },
+        {
+          "id": "K07",
+          "fixed": false,
+          "note": "“比仇敌论到你所能说的任何话都更好”仍为生硬直译，语义不清。"
+        },
+        {
+          "id": "K08",
+          "fixed": true,
+          "note": "“这关于耶稣的启示。/ 这启示也是从耶稣来的。”已译成完整句，“关于耶稣”与“从耶稣来的”两层意思都在，不再是多余残片。"
+        },
+        {
+          "id": "K09",
+          "fixed": false,
+          "note": "“D.A.”仍单独成行，“卡森这位学者”另起一句，人名仍被切断。"
+        },
+        {
+          "id": "K10",
+          "fixed": true,
+          "note": "两处均作“姐姐贝茜”，亲属关系正确。"
+        },
+        {
+          "id": "K11",
+          "fixed": false,
+          "note": "“三个深刻而真实的词”仍保留，而下面“耶稣是得胜者”在中文里并非三个词，直译问题未处理。"
+        },
+        {
+          "id": "K12",
+          "fixed": false,
+          "note": "仍是“他们又把我拉回来了”重复两遍，没有任何提示让听众联想到《教父》台词，笑点未传达。"
+        },
+        {
+          "id": "K13",
+          "fixed": false,
+          "note": "“弃权名单”“极不对等的交易”仍是直译术语，未作解释或本地化，中文听众依旧难懂。"
+        },
+        {
+          "id": "K14",
+          "fixed": true,
+          "note": "译作“这世界那个小写的‘神’——撒但”，既避免了“小神”的误译，也保留了“little g”的原意。"
+        },
+        {
+          "id": "K15",
+          "fixed": true,
+          "note": "已补出“如果我们还没见过面”，并改作“马林纳斯教会的主任牧师”，两句问题均解决。"
+        },
+        {
+          "id": "K16",
+          "fixed": true,
+          "note": "改译为“我们正处在被拯救之后、最终归宿之前”，意思清楚，不再生硬。"
+        },
+        {
+          "id": "K17",
+          "fixed": true,
+          "note": "改为“我非常喜欢这句话”，主语和语域都合适。"
+        },
+        {
+          "id": "K18",
+          "fixed": true,
+          "note": "用“祂”指神，与前面“让你意外”的“你”区分开，指代清楚。"
         }
       ]
     }
