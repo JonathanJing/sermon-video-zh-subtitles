@@ -313,13 +313,25 @@ export SERMON_YOUTUBE_COOKIES_FILE=/absolute/path/youtube.cookies.txt
 
 周六晚间另有一份证道录像上传到公开 Google Drive 文件夹「Broadcast Message Files」：<https://drive.google.com/drive/folders/1PsAKaZhYCXsNfzYFkFBTng66N1tPw1sF>（文件夹 ID `1PsAKaZhYCXsNfzYFkFBTng66N1tPw1sF`，所有者在公开视图中隐藏）。首个观察样本是 `20261018 BROADCAST MESSAGE.mp4`（`video/mp4`，1,085,721,714 字节），页面内嵌的两个时间戳为洛杉矶时间 2026-10-17 18:47:54 与 18:50:01；未登录视图不标明哪个是创建、哪个是修改时间，上传落在这两分钟内。
 
-本机 Claude 定时任务 `sermon-drive-upload-watch`（「每周六 证道视频上传检查」）只检测上传，规则如下：
+2026-10-24 的文件名为 `Saturday_400pm_Live__1080.mp4`（903,783,961 字节，时间戳 19:37:03 与 19:46:10 PT），不带日期前缀；上周的文件已从文件夹移除，文件夹每周替换而不是累加。旧的 Claude 定时任务 `sermon-drive-upload-watch` 按日期前缀匹配，这一周漏报为 `missing_final`。
 
-- **时间。** cron `*/10 18-19 * * 6`（本机洛杉矶时间），实际检查窗口为周六 18:40–20:00；18:40 前的唤醒直接退出，最后一次约 19:50 加调度延迟。App 关闭时到点不跑，下次打开时补跑。
-- **读取方式。** 匿名 HTTP GET 文件夹页面，解析内嵌的 `_DRIVE_ivd` 文件列表（文件 ID、名称、MIME、大小、两个毫秒时间戳），不用浏览器、不登录 Google、不读 cookies。
-- **匹配规则。** 本周文件名须以即将到来的周日日期 `YYYYMMDD` 开头（周六运行即次日，例如 10/24 检查 `20261025`）。本周（上一个周日 00:00 后）上传但名称不符的文件单独列为 `otherRecentFiles`，提示可能改名，不算命中。
-- **结果与通知。** `found_new` 首次发现时发 macOS 通知并推送一行（文件名 · GB · 最早时间 PT），同一文件 ID 只通知一次；19:45 后仍无匹配为 `missing_final`，每周只通知一次并列出文件夹现有文件；连续两次读取失败（文件夹转私有或页面格式改变）通知 `error`，不静默跳过。通知状态记在任务目录的 `state.json`。
-- **位置。** 脚本与提示词只在本机 `~/.claude/scheduled-tasks/sermon-drive-upload-watch/`（`check_upload.py`、`SKILL.md`、`state.json`），不在仓库内；可用 `--now <ISO 时间> --no-notify` 模拟某一时刻、`--ignore-window` 跳过窗口检查。
+现在由 [`tools/ops/drive_upload_watch.py`](../tools/ops/drive_upload_watch.py) 检测上传，规则如下：
+
+- **时间。** LaunchAgent `org.sermonvideo.drive-upload-watch` 在周六 18:00（launchd `Weekday 6`）启动一个进程，每 60 秒加 0–5 秒抖动读一次，22:00 退出，一个窗口约 240 次请求。`RunAtLoad` 让登录或安装时补跑：窗口外立即退出；睡眠错过 18:00 时，launchd 在唤醒后补跑，窗口内照常轮询，22:00 后到当天午夜之间只读一次再发收尾消息。进程由 `caffeinate -i` 包住，窗口内不会闲置睡眠；合盖或断电仍会错过，需要时由用户执行 `sudo pmset repeat wakeorpoweron S 17:58:00`。
+- **读取方式。** 匿名 HTTP GET 文件夹页面，解析内嵌的 `_DRIVE_ivd` 文件列表（文件 ID、名称、MIME、大小、两个毫秒时间戳），不用浏览器、不登录 Google、不读 cookies，也不需要 API key。
+- **判定规则。** 没见过的文件 ID 即为新文件，名称只作标签（「名称含 / 不含 `YYYYMMDD`」）。最早时间戳早于本周日 00:00 的文件静默记为基线；之后上传的文件即使在窗口开始前或进程启动前出现也会通知，窗口前上传的另标「窗口前已上传」。同一文件 ID 只通知一次，重启、补跑都不重发。
+- **通知。** Bark `POST https://api.day.app/push`，发到钥匙串里服务 `org.sermonvideo.drive-upload-watch` 下的每个设备 key（账户 `bark-iphone`、`bark-mac`），key 只在请求体里，不进 URL、日志或仓库。每条重试 3 次；`bark-mac` 没有送达或未配置时，非静默消息改用本机 `terminal-notifier`（没有则 `osascript`）。所有消息 `group=sermon-upload`：
+
+  | 时机 | 标题 | Bark `level` |
+  |---|---|---|
+  | 进程开始 | 开始监控证道视频上传（含已配置的设备，缺 key 时注明） | `passive`，缺 key 时 `active` |
+  | 发现新文件 | 证道视频已上传：文件名 · GB · 最早时间 PT · 名称标签，点开为 Drive 文件页 | `timeSensitive` |
+  | 22:00 仍没有新文件 | 本周未见新证道视频，列出文件夹现有文件 | `active` |
+  | 连续 3 次读取失败 / 之后恢复 | 证道视频检查失败 / 已恢复 | `active` / `passive` |
+
+  所有渠道都没送达时不记为已通知，下一次读取重发。
+- **安装与检查。** 先存 key（会提示输入，不回显）：`security add-generic-password -s org.sermonvideo.drive-upload-watch -a bark-iphone -w`，Mac 再加 `-a bark-mac`。`python3 tools/ops/drive_upload_watch.py install` 把脚本复制到 `~/Library/Application Support/org.sermonvideo.drive-upload-watch/`（以 `/usr/bin/python3` 运行，不受本 checkout 切换分支影响）并加载 LaunchAgent；改代码后重新 `install`。`status` 显示加载状态、已存的 Bark 账户、下次窗口、日志末尾，以及已安装副本是否与当前文件一致；`check` 只读一次文件夹并打印 JSON；`test-push` 向每个 key 发一条测试；`uninstall` 卸载但保留状态。`run --now 2026-10-31T19:30 --no-push --state <临时路径>` 从指定时刻模拟窗口，只打印不推送。
+- **记录。** 同一目录下 `state.json`（已通知与基线文件、每个窗口的消息状态，版本 1）和 `observations.ndjson`（每个新文件的 ID、名称、大小、两个时间戳、首次看到时间与送达结果，以及每个窗口的收尾），供核对每周上传时间与 [H1](design/saturday-first-service-preparation.zh.md) 使用。旧 Claude 定时任务在新检查经过一个周六并行验证后停用。
 
 边界：该检查只读，不下载视频，不写 GCS state，不建立 Layer 1 来源身份，也不启动任何生产阶段。检测到文件不等于确认它与周六直播或周日讲道同篇，也不等于确认可用于生产；要把它作为来源，须另行核实使用授权与来源署名，并按[四层合同](multilingual-production-interfaces.zh.md)从 Layer 1 开始绑定 source ID、URL、媒体哈希与时长。
 
