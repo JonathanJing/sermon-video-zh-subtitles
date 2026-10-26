@@ -272,7 +272,8 @@ def _observe_owned_version(request, attempt, path, state):
 
 def publish(snapshot, *, intent, routes, baseline_version, baseline_catalog_sha,
             lease_bucket, request, reader, run=None, heartbeat_interval=5,
-            baseline_catalog_v4_sha=None, baseline_catalog_v5_sha=None):
+            baseline_catalog_v4_sha=None, baseline_catalog_v5_sha=None,
+            allow_pending_replacements=()):
     """``baseline_catalog_v4_sha`` is the live v4 catalog the snapshot was built on (None: none yet).
     ``run`` defaults to the host's firebase CLI runner."""
     contract.require(heartbeat_interval > 0, 'Heartbeat interval must be positive')
@@ -282,15 +283,16 @@ def publish(snapshot, *, intent, routes, baseline_version, baseline_catalog_sha,
                         baseline_catalog_sha=baseline_catalog_sha, lease_bucket=lease_bucket,
                         request=request, reader=reader, run=run, heartbeat_interval=heartbeat_interval,
                         baseline_catalog_v4_sha=baseline_catalog_v4_sha,
-                        baseline_catalog_v5_sha=baseline_catalog_v5_sha)
+                        baseline_catalog_v5_sha=baseline_catalog_v5_sha,
+                        allow_pending_replacements=tuple(allow_pending_replacements))
 
 
 def _publish(snapshot, *, intent, routes, baseline_version, baseline_catalog_sha,
              lease_bucket, request, reader, run, heartbeat_interval, baseline_catalog_v4_sha,
-             baseline_catalog_v5_sha):
+             baseline_catalog_v5_sha, allow_pending_replacements=()):
     snapshot = Path(snapshot)
     contract.validate_intent(intent, routes)
-    contract.validate_catalog_snapshot(snapshot)
+    contract.validate_catalog_snapshot(snapshot, allow_pending_replacements=frozenset(allow_pending_replacements))
     report = json.loads((snapshot / 'seal-report.json').read_text())
     receipt_path = snapshot / 'deployment-attempt-v2.json'
     contract.require(not receipt_path.exists(), 'Existing attempt requires reconciliation; never retry an unknown deployment')

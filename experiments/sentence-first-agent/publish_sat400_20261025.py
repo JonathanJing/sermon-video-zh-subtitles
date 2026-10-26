@@ -270,7 +270,9 @@ def cmd_publish(snapshot: Path) -> dict:
     config = bl.read(snapshot / "publish-config.json")
     contract.require(not (snapshot / "deployment-attempt-v2.json").exists(),
                      "This snapshot already has a deployment attempt; reconcile it, never retry")
-    result = pub.publish(**config, request=pub.authenticated_transport(), reader=reader)
+    pending = tuple(config.pop("allowPendingReplacements", ()))
+    result = pub.publish(**config, request=pub.authenticated_transport(), reader=reader,
+                         allow_pending_replacements=pending)
     return {k: result.get(k) for k in ("status", "newVersion", "baselineVersion", "catalogSha256")}
 
 
