@@ -1,0 +1,23 @@
+{
+  "schemaVersion": "sermon-asr-screen-memory-receipt-v1",
+  "stage": "asr_screen",
+  "budgetStatus": "provisional_until_measured",
+  "batchSize": 1,
+  "admission": {
+    "schemaVersion": "sermon-host-memory-admission-v1",
+    "stage": "asr_screen",
+    "memAvailableBytes": 125104238592,
+    "reserveBytes": 0,
+    "budgetBytes": 12884901888,
+    "requiredBytes": 12884901888,
+    "measuredAt": "2026-10-26T15:20:12Z",
+    "status": "admitted"
+  },
+  "memAvailableBytesAfterLoad": 121992601600,
+  "memAvailableBytesAfterRun": 120723869696,
+  "modelLoaded": true,
+  "cudaPeaks": {
+    "maxAllocatedBytes": 1876073984,
+    "maxReservedBytes": 1912602624
+  }
+}

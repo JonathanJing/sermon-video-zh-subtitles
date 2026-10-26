@@ -1,0 +1,150 @@
+{
+ "schemaVersion": "sermon-spark-tts-memory-full-episode-run-v1",
+ "date": "2026-10-26",
+ "scope": "diagnostic_only",
+ "releaseEligible": false,
+ "humanApproval": false,
+ "purpose": "Fill the report's missing full-length zh memory curve under the release_cuda_cache_expandable_segments_v1 policy; no package, audio QC or publication.",
+ "host": {
+  "name": "spark-38f8",
+  "bootId": "9c6e6dbc-103e-477a-a4db-ae6ef4eb09df",
+  "sessionId": "l3-mem-curve-20261026",
+  "owner": "jonathan-jing",
+  "preemptedUnits": [
+   "job-reasoning-review.timer",
+   "spark-api.service",
+   "spark-agent.service",
+   "llama-performance-collector.service",
+   "llama-server.service"
+  ],
+  "minimumAvailableGiB": 110,
+  "closedAt": "2026-10-26T15:23:12Z",
+  "servicesRestored": true
+ },
+ "codeTree": {
+  "commit": "56c053a5",
+  "description": "dev + PR #1331 (CUDA cache/expandable segments/admission) + PR #1332 (lanes) + the 2026-10-18 series terminology table, diagnostic only; the same tree the 10-23 lanes diagnosis staged.",
+  "stagedAs": "repo-56c053a5",
+  "why": "Every existing speech job binds a policy frozen before the 2026-10-20 terminology-table change; the current table refuses them. Restoring the 10-18 table is the established diagnostic workaround, so this run proves the memory policy and not the current table.",
+  "localToolingChange": "tools/development/clip_e2e_spark.py render now passes --track-format wav in the diagnostic worktree only, because the TTS image has no ffmpeg; MP3 packaging is not part of this memory diagnostic."
+ },
+ "jobs": {
+  "zh-Hans": {
+   "sha256": "1491cea2d3068ae1ee28728649263f6e9970a5e30f773ad868cb8e62dac61a73",
+   "units": 474,
+   "speaker": "eric_geiger",
+   "createdAt": "2026-10-04T13:12:15Z",
+   "source": "artifacts/post-live-runs/2026-10-04/resi-69ba7a66 zh-publication-v1 audio render job (human-approved target text)",
+   "why": "The 10-18 zh job's text release is a machine waiver issued under an older QC implementation and no longer validates; the 10-04 human-approved job still validates on the 10-18 table."
+  },
+  "ko": {
+   "sha256": "33eb47dcedc886e09e3856bb67f694478d5e3b624f6d4d252086212ae3d30ca4",
+   "units": 402,
+   "speaker": "steve_bang_lee",
+   "createdAt": "2026-10-18T15:55:50Z",
+   "source": "artifacts/weekend-live/layer2-15030286-20261017 human-text ko job (human-approved target text)",
+   "why": "Same job the 10-23 ko/es lanes diagnosis used."
+  }
+ },
+ "render": {
+  "replicas": 8,
+  "batchSize": 8,
+  "seed": 42,
+  "memoryPolicy": "release_cuda_cache_expandable_segments_v1",
+  "admissionGiBPerReplica": 9.0,
+  "reserveGiB": 24,
+  "trackFormat": "wav",
+  "maxEndLagSeconds": {
+   "zh-Hans": 62,
+   "ko": 240
+  },
+  "maxEndLagNote": "62 is the 10-04 zh job's own schedule policy; 240 is a diagnostic relaxation for ko (its 10-18 job bound 120). Neither is a release decision."
+ },
+ "lanes": {
+  "status": "failed",
+  "gpuSlots": 1,
+  "overlaps": [
+   {
+    "cpuStage": {
+     "locale": "zh-Hans",
+     "stage": "compact"
+    },
+    "gpuStage": {
+     "locale": "ko",
+     "stage": "formal_render"
+    }
+   }
+  ],
+  "stages": [
+   {
+    "locale": "zh-Hans",
+    "stage": "formal_render",
+    "resource": "gpu",
+    "seconds": 442.5,
+    "exitCode": 0
+   },
+   {
+    "locale": "ko",
+    "stage": "formal_render",
+    "resource": "gpu",
+    "seconds": 491.9,
+    "exitCode": 1
+   },
+   {
+    "locale": "zh-Hans",
+    "stage": "compact",
+    "resource": "cpu",
+    "seconds": 135.8,
+    "exitCode": 0
+   },
+   {
+    "locale": "zh-Hans",
+    "stage": "screen",
+    "resource": "gpu",
+    "seconds": 0.2,
+    "exitCode": 2,
+    "note": "stage command wrongly passed render CLI inputs, which screen does not accept; retried by hand after the lanes run with the correct arguments, exit 0, ASR receipt written."
+   }
+  ],
+  "koAssemblyRejection": {
+   "unitIndex": 368,
+   "textGroupId": "translation-chunk-0009-u019",
+   "plannedEnd": 1899.55,
+   "clipDuration": 1895.0,
+   "endLagSeconds": 179.49,
+   "maxEndLagSeconds": 240,
+   "explanation": "All 402 units were synthesized and the pool closed normally (51/51 windows); only the assembly step refused the track because the planned end passes the clip by 4.55 s. This is a timing-acceptance failure, not a memory failure."
+  }
+ },
+ "hostCurve": {
+  "samples": 1197,
+  "seconds": 1232.1,
+  "firstGiB": 116.62,
+  "minimumGiB": 53.68,
+  "minimumAt": "2026-10-26T15:12:05Z",
+  "lastGiB": 116.6,
+  "swapIncreaseGiB": 0.01,
+  "peakGpuUtilPercent": 96.0,
+  "minimumNote": "Caught during ko pool loading while the zh compaction container was resident; generation-window minima are 62.20 (zh) and 61.21 (ko)."
+ },
+ "asrScreen": {
+  "locale": "zh-Hans",
+  "batchSize": 1,
+  "budgetGiB": 12.0,
+  "admittedAtGiB": 116.51,
+  "afterLoadGiB": 113.61,
+  "afterRunGiB": 112.42,
+  "cudaPeakAllocatedGiB": 1.75,
+  "cudaPeakReservedGiB": 1.78,
+  "note": "Measured alone after the render pools closed, so it is the ASR-only footprint, not coexistence with an 8x8 pool."
+ },
+ "failuresBeforeThisRun": [
+  "attempt 1 (run1): zh and ko both rejected at assembly with the template's maxEndLagSeconds 8; the jobs' own policies are 62 and 120.",
+  "attempt 2 (run2): same jobs with 62/120; zh synthesized 474 units but the TTS image has no ffmpeg, so MP3 assembly failed; ko was rejected when unit 212 plannedEnd passed sourceEnd by 121.7 s with the 120 s threshold.",
+  "attempt 3 (run3, this run): zh render and compaction completed; ko render completed its pool but assembly rejected the clip overrun above."
+ ],
+ "curveFiles": {
+  "memory-curve.json": "cfb654365f05f92c43077e0f7a22f1ac6d7afbca4b66c026db90250c61495d62",
+  "memory-curve.svg": "1d5fbe590bcd478523c05467c1d21850acdf7b6881d5e352add8b58ba77ccbe6"
+ }
+}
