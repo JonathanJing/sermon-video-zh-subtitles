@@ -5,7 +5,7 @@
 ## 晋升绑定
 
 - validatedBetaCommit：`534ff94a796fbca78454d6ea69a63035e47b9df5`（Beta 1.26.22 (63) 的源码提交）
-- productionCommit：待提交
+- productionCommit：`9defc4c294f0fd99c0733ed76e13af61c4f45bad`
 - App Store Connect 正式 App：`com.jonathanjing.tongxing.dev`，App ID `6809255441`
 - App / 实时活动扩展版本与 Build：`1.26.22 (65)`
 - 正式内容源：`https://ai-for-god-sermon-audio.web.app`
@@ -22,7 +22,10 @@
 ## 构建、审核与发布
 
 - Beta 源码上的长按复制 UI 用例已在 iOS 27.0 BetaDebug 通过（1/1）。正式 Release 配置的 UI 测试目标编译失败：XCTest 无法导入优化后的 `Tongxing` / `TongxingInfrastructure` 模块；功能断言未运行。正式 Archive 将独立验证 Release App 产物。
-- 正式 Archive、IPA、签名、处理和 Build 关联：待验证
-- App Review 提交与 Apple 审核：待执行
+- 正式 Archive 成功：Xcode 27.1 / iOS SDK 27.1；Manifest SHA-256 `3137b9517d3d9a9df84638e667de691e01c4c7649c9733640a073f1378d35258`。
+- IPA SHA-256 `2eee01474634548467e16c95b4a4148b2ec1e7f4b8a039bf0698538a1d180a61`；App 与扩展签名、身份和 `1.26.22 (65)` 均核验通过。
+- Apple Build ID `6c5f4f1a-2d62-4d8d-a30d-3d67d99af3e7` 读回 `VALID`、未过期；What to Test 已保存并读回。
+- App Review 提交 `a5fb56c7-453b-41aa-b26f-82738c4ab2aa` 已接收；提交与版本均读回 `WAITING_FOR_REVIEW`。版本设为审核通过后自动发布（`AFTER_APPROVAL`）。
+- Apple 尚未批准或公开上架；审核结果待回读。
 - 真机与现场验收：待执行／未执行
-- 即使 Apple 审核通过，MANUAL 发布仍需单独发出版；以 Apple 实际状态回执更新本记录
+- 按 `AFTER_APPROVAL` 设置，Apple 批准后将自动发布；审核尚未批准时不能称为已上架
