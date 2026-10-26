@@ -1,0 +1,147 @@
+{
+  "schemaVersion": "terra-deepseek-opus-translation-ab-evidence-v1",
+  "date": "2026-10-26",
+  "scope": "experiment_only",
+  "productionEligible": false,
+  "humanApproval": false,
+  "artifactRoot": "artifacts/terra-ab-20261026/run",
+  "sourceArtifactRoot": "artifacts/codex-cli-layer2-180s-20261005",
+  "models": {
+    "deepseek-low": {
+      "requested": "deepseek-flash",
+      "effort": "low",
+      "transport": "DeepSeek official API (OpenAI-compatible)",
+      "endpoint": "https://api.deepseek.com",
+      "generated": "2026-10-26"
+    },
+    "deepseek-high": {
+      "requested": "deepseek-flash",
+      "effort": "high",
+      "transport": "DeepSeek official API (OpenAI-compatible)",
+      "endpoint": "https://api.deepseek.com",
+      "generated": "2026-10-26"
+    },
+    "opus-reused": {
+      "requested": "claude-opus-5-5",
+      "effort": "high",
+      "transport": "Claude CLI (subscription)",
+      "generated": "2026-10-08",
+      "reused": true,
+      "source": "artifacts/claude-opus55-vs-sol61-ab-20261008-cli2.1.286/pairs.json"
+    },
+    "terra-high": {
+      "requested": "gpt-6.1-terra",
+      "effort": "high",
+      "serviceTier": "fast",
+      "transport": "Codex CLI (ChatGPT login)",
+      "cliVersion": "0.164.0-alpha.11.1",
+      "catalogVerified": "2026-10-26",
+      "generated": "2026-10-26",
+      "serverModel": null,
+      "reasoningTokensReported": 0
+    }
+  },
+  "source": {
+    "groups": 13,
+    "units": 39,
+    "sourceUnitRange": "fresh-diagnostic-u001..u039",
+    "prompt": "frozen 20261005 group-*-astra.policy-preview.json, identical across arms",
+    "goldReference": false,
+    "directScriptureQuotes": false
+  },
+  "judge": {
+    "model": "gpt-6.1-sol",
+    "effort": "high",
+    "serviceTier": "fast",
+    "transport": "Codex CLI (ChatGPT login)",
+    "calls": 13,
+    "blind": true,
+    "groupLabelPermutationPerGroup": true,
+    "humanApproval": false
+  },
+  "adjudicator": {
+    "model": "gpt-6-astra",
+    "effort": "high",
+    "serviceTier": "fast",
+    "calls": 1,
+    "items": 6,
+    "verdicts": {
+      "terra-high": {
+        "fresh-g002/u005": "minor",
+        "fresh-g004/u011": "minor",
+        "fresh-g006/u016": "minor",
+        "fresh-g007/u020": "meaning_changing",
+        "fresh-g007/u021": "meaning_changing"
+      },
+      "opus-reused": {
+        "fresh-g007/u021": "meaning_changing"
+      }
+    }
+  },
+  "quality": {
+    "bordaRule": "4/3/2/1 per group, 4 = first",
+    "maxBorda": 52,
+    "arms": {
+      "deepseek-low": {"first": 5, "second": 4, "third": 3, "fourth": 1, "borda": 39, "medianRank": 2, "judgeSevere": 0, "confirmedMeaningChange": 0},
+      "deepseek-high": {"first": 6, "second": 2, "third": 3, "fourth": 2, "borda": 38, "medianRank": 2, "judgeSevere": 0, "confirmedMeaningChange": 0},
+      "opus-reused": {"first": 1, "second": 5, "third": 6, "fourth": 1, "borda": 32, "medianRank": 3, "judgeSevere": 1, "confirmedMeaningChange": 1},
+      "terra-high": {"first": 1, "second": 2, "third": 1, "fourth": 9, "borda": 21, "medianRank": 4, "judgeSevere": 5, "confirmedMeaningChange": 2}
+    },
+    "pairwiseWins": {
+      "deepseek-low": {"deepseek-high": 6, "opus-reused": 8, "terra-high": 11},
+      "deepseek-high": {"deepseek-low": 7, "opus-reused": 8, "terra-high": 11},
+      "opus-reused": {"deepseek-low": 5, "deepseek-high": 5, "terra-high": 9},
+      "terra-high": {"deepseek-low": 2, "deepseek-high": 2, "opus-reused": 4}
+    }
+  },
+  "timing": {
+    "deepseek-low": {"sumSeconds": 95.319, "medianSeconds": 6.211, "minSeconds": 3.306, "maxSeconds": 16.430},
+    "deepseek-high": {"sumSeconds": 69.574, "medianSeconds": 5.184, "minSeconds": 2.564, "maxSeconds": 9.881},
+    "opus-reused": {"sumSeconds": 81.524, "medianSeconds": 5.717, "minSeconds": 4.221, "maxSeconds": 9.387, "sourceRun": "2026-10-08"},
+    "terra-high": {"sumSeconds": 61.038, "medianSeconds": 4.166, "minSeconds": 3.075, "maxSeconds": 7.857},
+    "comparable": false,
+    "limit": "Different harnesses and dates: HTTP API vs Codex CLI process vs 2026-10-08 Claude CLI"
+  },
+  "usage": {
+    "deepseek-low": {"input": 10945, "cachedInput": 1406, "output": 17800, "reasoning": 14902},
+    "deepseek-high": {"input": 10945, "cachedInput": 1406, "output": 12559, "reasoning": 9427},
+    "opus-reused": {"input": 31591, "cachedInput": 12084, "output": 7332, "reasoning": 1351},
+    "terra-high": {"input": 276440, "cachedInput": 184320, "output": 2793, "reasoning": 0}
+  },
+  "cost": {
+    "deepseek": {
+      "estimateUsd": 0.043,
+      "basis": "peak list price input US$0.30/M, output US$1.20/M, cache discount ignored",
+      "invoiceVerified": false
+    },
+    "opus": {
+      "listPriceEquivalentUsd": 0.3262728,
+      "billing": "subscription quota, not a charge",
+      "sourceRun": "2026-10-08"
+    },
+    "terra": {
+      "usd": null,
+      "basis": "ChatGPT subscription; token usage recorded, no dollar receipt"
+    }
+  },
+  "hashes": {
+    "identity.json": "720dc3a191a4e8fc9a71b785d86fdb0b9e86bb1d70d044fa20640fad591b4130",
+    "translations.json": "51605249f809f01c4d0d2d73516ce402958ce8fecd64b9167fb3b947f01ea34c",
+    "summary.json": "d2c83e7c4a923aa88056fba3f23319a5528ba1855dbf10794ad14f37fd872ab4",
+    "blind.json": "0ed444993274230e014222cfb43dfc1bd7474db01a8072774f65f00c85198a67",
+    "blind-key.json": "a8d826c812dc5ae98016335894e4913f08dbe691bd2e6658107cfa8c747b91d8",
+    "rankings.json": "1d5f1570f89bc42de844fafccc7de17e696f6c65e90be7f2a4c2c427b33c3ee8",
+    "score.json": "a8d2927a6ceef4f6390b6dbc395ee6d417ea978af51f5ebece3f9a3416af32fe",
+    "judge-summary.json": "5d765aabd2b3d9776548f6fbb4cfe5d7b20fafa42116031a981d421ace06fb92",
+    "adjudication-result.json": "fe4e8e3424785e96788f1bfb3fe4b080e8abd750694ad28a91d053ae7ac28882"
+  },
+  "limits": [
+    "One 39-unit sermon excerpt; no repeated randomized trial.",
+    "Single machine judge (gpt-6.1-sol); no human bilingual adjudication.",
+    "Judge severity over-flags: 5 Terra flags reduced to 2 confirmed meaning changes plus 3 minor by an independent Astra adjudication.",
+    "Opus translations are reused from 2026-10-08, not generated in the same session.",
+    "Different call paths per arm; measures each vendor's end-to-end call, not pure model weights.",
+    "Terra server-side model identity and reasoning effort are not confirmed by the CLI.",
+    "No Layer 3 audio or Layer 4 publication evidence."
+  ]
+}
