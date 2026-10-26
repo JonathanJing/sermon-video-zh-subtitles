@@ -22,6 +22,7 @@ from . import backend as _text
 from . import budget as budget_tools
 from . import candidate as producer
 from . import code_closure
+from . import coherence
 from . import group_revision
 from . import models
 from . import rule_preflight
@@ -123,8 +124,8 @@ def _resume_binding(value, path):
 def _auto_repair_binding(value, *, allow_qc=False):
     required = {'routingVersion', 'groupWorkers', 'maxActiveLocales'}
     qc = value.get('backTranslationQc', {}) if isinstance(value, dict) else None
-    optional = ({'sourceMeaningNotes', 'backTranslationQc', 'systemicMinimumGroups'} if allow_qc
-                else {'sourceMeaningNotes', 'systemicMinimumGroups'})
+    optional = ({'sourceMeaningNotes', 'backTranslationQc', 'systemicMinimumGroups', 'coherence'} if allow_qc
+                else {'sourceMeaningNotes', 'systemicMinimumGroups', 'coherence'})
     # Optional: how many adjacent groups may share one failure code before dispatch stops. A week
     # keeps the default (3); an operator-reviewed clip may raise it so a cluster of one known
     # defect is repaired instead. It never lowers the threshold below the default.
@@ -144,7 +145,16 @@ def _auto_repair_binding(value, *, allow_qc=False):
             and 1 <= value['maxActiveLocales'] <= MAX_AUTO_REPAIR_LOCALES
             and type(minimum) is int and auto_repair.SYSTEMIC_MINIMUM_GROUPS <= minimum <= 32,
             'invalid_execution_configuration')
+    # Optional: whole-sermon glossary, preceding target text and continuation hints for the
+    # listed locales (text/coherence.py); the first round then translates in source-order chains.
+    if 'coherence' in value:
+        coherence.validate_layer2_options(value['coherence'])
     return dict(value)
+
+
+def _coherence(config, locale):
+    options = (getattr(config, 'auto_repair', None) or {}).get('coherence')
+    return options if options is not None and locale in options['locales'] else None
 MODES = ('deterministic_shadow', 'deterministic_execute')
 ADMISSION_LOCK = jobs._digest({'purpose': 'canonical-layer2-admission-v1'})
 MAX_CONFIG_BYTES = 1024 * 1024
@@ -1146,7 +1156,8 @@ def execute(config_path, locale, expected_configuration, expected_code, expected
                                                  payload_cache_from=None if resume_root else payload_cache_root,
                                                  resume_cache_from=resume_root,
                                                  emit_payload_cache_success=payload_cache_enabled,
-                                                 payload_cache_required=payload_cache_required)
+                                                 payload_cache_required=payload_cache_required,
+                                                 coherence=_coherence(config, locale))
             # Paid results remain recoverable if approval/source/config/code drifted
             # while a request was outstanding. Never turn those results into approval.
             with accounting.stage('layer2.post_model_binding.' + locale, depends_on=model_completion,
@@ -1256,7 +1267,8 @@ def _run_auto_repair(config, lane, source, anchor, policy, api_key, call, progre
                                     partial_recovery_budget_root=(partial['budgetRoot']
                                                                  if partial is not None and reuse_from is None else None),
                                     emit_payload_cache_success=payload_cache_enabled,
-                                    payload_cache_required=payload_cache_required if reuse_from is None else False)
+                                    payload_cache_required=payload_cache_required if reuse_from is None else False,
+                                    coherence=_coherence(config, policy['targetLocale']))
 
     notes = None
     notes_artifact_sha256 = None
@@ -1319,7 +1331,8 @@ def _run_group_revision(config, lane, source, anchor, policy, api_key, call, pro
                                     None, reuse_from, partial_repair_brief=brief,
                                     progress_callback=progress, predecessor_spans=[admission_span],
                                     completion_spans=completion_spans, failure_collector=collector,
-                                    candidate_mode=config.candidate_mode, operator_revision=prepared['brief'])
+                                    candidate_mode=config.candidate_mode, operator_revision=prepared['brief'],
+                                    coherence=_coherence(config, policy['targetLocale']))
 
     repair_receipt = auto_repair.drive(request, len(plan), run_round, rounds_root, repair_ledger_root(config),
                                        group_workers=config.auto_repair['groupWorkers'],

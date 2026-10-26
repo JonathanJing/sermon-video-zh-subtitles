@@ -298,3 +298,164 @@ def parse_reading(text: str, rows: list[dict[str, Any]]) -> dict[str, Any]:
     _require(isinstance(value.get("paragraph"), str) and value["paragraph"].strip(), "Empty paragraph")
     _require(value.get("sourceUnitIds") == [row["id"] for row in rows], "Paragraph coverage changed")
     return {"paragraph": value["paragraph"].strip(), "sourceUnitIds": value["sourceUnitIds"]}
+
+
+# --- Layer 2 production wiring (1 + 2 + 3) ----------------------------------
+# Jony chose on 2026-10-26 to wire remedies 1-3 into Layer 2. Layer 1 keeps one
+# source unit per translation request (english_source_judge checks it, and quote
+# groups must hold one unit), so remedy 3 rides as continuation hints on the
+# Layer 1 groups instead of merging them. Remedy 2 runs the first round in a few
+# contiguous chains: inside a chain each group sees the final text of the groups
+# before it. Repair rounds keep running groups in parallel and reuse the prior
+# target text each group saw, so a single-group repair stays a single-group repair.
+
+LAYER2_SCHEMA = "sermon-layer2-coherence-v1"
+RECEIPT_SCHEMA = "sermon-layer2-coherence-receipt-v1"
+MAX_PRIOR_GROUPS = 12
+MAX_CHAINS = 16
+
+TRANSLATOR_RULE = (
+    "Follow sermonGlossary for names, family relations, divine pronouns, recurring sermon "
+    "points and cultural references. priorTarget is the final target text the listener has "
+    "just heard for the preceding groups: continue naturally from it, keep its wording for "
+    "recurring points, and never repeat or translate it. When continuation.continuesPrevious "
+    "is true, this group only finishes the sentence the previous group began: render it so "
+    "it reads as the end of that sentence, not as a dangling fragment. When "
+    "continuation.continuedByNext is true, the next group finishes this sentence. ")
+REVIEWER_RULE = (
+    "Also check the final text against sermonGlossary and priorTarget: names, relations and "
+    "divine pronouns must follow the glossary, a recurring point keeps the earlier wording, "
+    "and the group must read naturally after priorTarget without repeating it. ")
+
+
+SUPPORTED_LOCALES = frozenset({"zh-Hans"})
+# The weekly profile bounds one message at 16384 characters (provider_limits checks
+# characters). A transcript slice plus the glossary so far stays well inside it.
+GLOSSARY_SLICE_CHARS = 4000
+MAX_GLOSSARY_CHARS = 6000
+GLOSSARY_LISTS = ("people", "relations", "recurringPhrases", "culturalReferences", "scripture")
+# Least useful first: what to drop when the glossary outgrows its share of a prompt.
+GLOSSARY_TRIM_ORDER = ("culturalReferences", "scripture", "recurringPhrases", "relations", "people")
+
+
+def validate_layer2_options(options: dict[str, Any]) -> dict[str, Any]:
+    _require(isinstance(options, dict)
+             and set(options) == {"schemaVersion", "locales", "priorTargetGroups", "chains"}
+             and options["schemaVersion"] == LAYER2_SCHEMA
+             and isinstance(options["locales"], list) and options["locales"]
+             and options["locales"] == sorted(set(options["locales"]))
+             and set(options["locales"]) <= SUPPORTED_LOCALES
+             and type(options["priorTargetGroups"]) is int
+             and 1 <= options["priorTargetGroups"] <= MAX_PRIOR_GROUPS
+             and type(options["chains"]) is int and 1 <= options["chains"] <= MAX_CHAINS,
+             "invalid_layer2_coherence_options")
+    return {**options, "locales": list(options["locales"])}
+
+
+def chain_plan(count: int, chains: int) -> list[list[int]]:
+    """Contiguous, near-equal chains of 1-based group indexes, in source order."""
+    _require(count >= 0 and chains >= 1, "Invalid chain plan")
+    chains = max(1, min(chains, count))
+    size, extra = divmod(count, chains)
+    out, start = [], 1
+    for number in range(chains):
+        length = size + (1 if number < extra else 0)
+        out.append(list(range(start, start + length)))
+        start += length
+    return [chain for chain in out if chain]
+
+
+def continuation_flags(units: list[dict[str, Any]]) -> dict[str, dict[str, bool]]:
+    """Per source unit: whether it finishes the previous unit's sentence, or is finished by the next."""
+    flags = {unit["sourceUnitId"]: {"continuesPrevious": False, "continuedByNext": False} for unit in units}
+    for previous, unit in zip(units, units[1:]):
+        if continues(previous, unit):
+            flags[unit["sourceUnitId"]]["continuesPrevious"] = True
+            flags[previous["sourceUnitId"]]["continuedByNext"] = True
+    return flags
+
+
+def group_continuation(flags: dict[str, dict[str, bool]], unit_ids: list[str]) -> dict[str, bool]:
+    return {"continuesPrevious": flags[unit_ids[0]]["continuesPrevious"],
+            "continuedByNext": flags[unit_ids[-1]]["continuedByNext"]}
+
+
+GLOSSARY_SLICE_RULE = (" You see one slice of the transcript (slice N of M) and knownGlossary, built "
+                      "from the earlier slices. Return only entries that knownGlossary lacks; never "
+                      "repeat or change a known entry. Fill a pronouns key only when knownGlossary "
+                      "has none for it. Return at most 12 new entries.")
+
+
+def glossary_slices(units: list[dict[str, Any]], max_chars: int = GLOSSARY_SLICE_CHARS) -> list[list[dict[str, Any]]]:
+    """Consecutive transcript slices, each at most max_chars of "id: english" lines."""
+    slices, current, size = [], [], 0
+    for row in units:
+        line = len(row["sourceUnitId"]) + len(row["english"]) + 3
+        if current and size + line > max_chars:
+            slices.append(current)
+            current, size = [], 0
+        current.append(row)
+        size += line
+    return slices + ([current] if current else [])
+
+
+def glossary_model_prompt(units: list[dict[str, Any]], terminology: dict[str, Any],
+                          known: dict[str, Any], slice_number: int, slice_count: int,
+                          prompt_version: str) -> dict[str, Any]:
+    """A Layer 2 model prompt (instruction + input) for one glossary slice."""
+    system, user = glossary_prompt(units, terminology)
+    return {"instruction": (system + GLOSSARY_SLICE_RULE + " Prompt version: " + prompt_version
+                            + "+" + PROMPT_VERSION + "-glossary"),
+            "input": {**json.loads(user), "knownGlossary": known,
+                      "slice": {"number": slice_number, "count": slice_count}}}
+
+
+def empty_glossary() -> dict[str, Any]:
+    return {"schemaVersion": GLOSSARY_SCHEMA, **{key: [] for key in GLOSSARY_LISTS}, "pronouns": {}}
+
+
+def _entry_key(name: str, entry: Any) -> str | None:
+    if not isinstance(entry, dict):
+        return None
+    value = entry.get("reference" if name == "scripture" else "source")
+    return value.strip().casefold() if isinstance(value, str) and value.strip() else None
+
+
+def merge_glossary(known: dict[str, Any], result: Any) -> dict[str, Any]:
+    """Add a slice's new entries; the first entry for a source term wins."""
+    added = glossary_from_result(result)
+    merged = json.loads(json.dumps(known, ensure_ascii=False))
+    for name in GLOSSARY_LISTS:
+        seen = {_entry_key(name, entry) for entry in merged[name]}
+        for entry in added[name]:
+            key = _entry_key(name, entry)
+            if key is not None and key not in seen:
+                merged[name].append(entry)
+                seen.add(key)
+    for name, value in added.get("pronouns", {}).items():
+        if isinstance(name, str) and isinstance(value, str) and value.strip():
+            merged["pronouns"].setdefault(name, value.strip())
+    return merged
+
+
+def bounded_glossary(glossary: dict[str, Any], max_chars: int = MAX_GLOSSARY_CHARS) -> tuple[dict[str, Any], int]:
+    """Drop trailing entries, least useful kind first, until the glossary fits; returns the drop count."""
+    bounded = json.loads(json.dumps(glossary, ensure_ascii=False))
+    dropped = 0
+    for name in GLOSSARY_TRIM_ORDER:
+        while bounded[name] and len(json.dumps(bounded, ensure_ascii=False)) > max_chars:
+            bounded[name].pop()
+            dropped += 1
+    _require(len(json.dumps(bounded, ensure_ascii=False)) <= max_chars, "Glossary pronouns exceed the bound")
+    return bounded, dropped
+
+
+def prior_target(rows: list[dict[str, Any]], limit: int) -> list[dict[str, str]]:
+    """The final target text of up to `limit` preceding reviewed groups, oldest first."""
+    return [{"translationGroupId": row["translationGroupId"], "targetText": "".join(row["targetUtterances"])}
+            for row in rows[-limit:]] if limit else []
+
+
+def glossary_from_result(result: Any) -> dict[str, Any]:
+    _require(isinstance(result, dict), "Glossary reply is not an object")
+    return parse_glossary(json.dumps(result, ensure_ascii=False))

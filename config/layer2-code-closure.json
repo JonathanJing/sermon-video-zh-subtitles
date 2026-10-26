@@ -130,6 +130,7 @@
     "packages/production/src/tongxing_production/text/budget.py",
     "packages/production/src/tongxing_production/text/candidate.py",
     "packages/production/src/tongxing_production/text/code_closure.py",
+    "packages/production/src/tongxing_production/text/coherence.py",
     "packages/production/src/tongxing_production/text/controller.py",
     "packages/production/src/tongxing_production/text/group_revision.py",
     "packages/production/src/tongxing_production/text/human_override.py",

@@ -21,6 +21,7 @@ from typing import Any, Callable
 from ..contracts import canonical as _contracts
 from . import backend as _text
 from . import candidate as producer
+from . import coherence as coherence_tools
 from . import policy as policy_tools
 from . import policy_preview
 from . import rule_preflight
@@ -1460,6 +1461,54 @@ def _stop_after_plugin_group_failure(policy, request, plugin_path, reviewed_row,
     raise ValueError("language_plugin_group_blocked")
 
 
+def _coherence_glossary(request, policy, directory, api_key, caller, prior_roots, *,
+                        cache_only, admission_span):
+    """Build the whole-sermon glossary slice by slice; each slice adds only new entries."""
+    locale = request["targetLocale"]
+    slices = coherence_tools.glossary_slices(request["sourceUnits"])
+    glossary = coherence_tools.empty_glossary()
+    for number, rows in enumerate(slices, 1):
+        stem = f"glossary-{number:02d}"
+        prompt = coherence_tools.glossary_model_prompt(
+            rows, policy["terminology"], coherence_tools.bounded_glossary(glossary)[0],
+            number, len(slices), policy["translator"]["promptVersion"])
+        prior = next((root for root in prior_roots if (root / f"{stem}-astra.json").is_file()), None)
+        cached = (directory / f"{stem}-astra.json").exists() or prior is not None
+        local = cache_only or cached or getattr(caller, "billing", None) == "local"
+        with accounting.stage(f"layer2.glossary.{locale}.{stem}", cache_hit=cached,
+                              billing="local" if local else "api",
+                              depends_on=[admission_span],
+                              executor_type="deterministic_program" if cache_only or cached else "production_model",
+                              work_unit_id=f"l2.{locale}.{stem}"):
+            directory.mkdir(parents=True, exist_ok=True)
+            response = _model_call("translator", prompt, policy, directory / f"{stem}-astra.json",
+                                   api_key, caller, reusable_cache(prior, stem, "astra"),
+                                   cache_only=cache_only)
+        glossary = coherence_tools.merge_glossary(glossary, response["result"])
+    return coherence_tools.bounded_glossary(glossary)
+
+
+def _save_coherence_receipt(directory, options, glossary, dropped, continuation, plan, chained):
+    sources: dict[str, int] = {}
+    for index in range(1, len(plan) + 1):
+        origin = producer._load(directory / f"group-{index:04d}.json")["priorTargetSource"]
+        sources[origin] = sources.get(origin, 0) + 1
+    receipt = {"schemaVersion": coherence_tools.RECEIPT_SCHEMA, "options": options,
+               "glossarySha256": policy_tools.canonical_sha256(glossary),
+               "glossaryEntriesDropped": dropped,
+               "dispatch": ({"mode": "chains", "chains": coherence_tools.chain_plan(len(plan), options["chains"])}
+                            if chained else {"mode": "independent_groups"}),
+               "priorTargetSources": dict(sorted(sources.items())),
+               "continuesPrevious": sum(flag["continuesPrevious"] for flag in continuation.values()),
+               "humanApproval": False}
+    for name, value in (("sermon-glossary.json", glossary), ("receipt.json", receipt)):
+        path = directory / name
+        if path.exists():
+            require(producer._load(path) == value, f"Coherence {name} changed")
+        else:
+            save_new(path, value)
+
+
 def run(source: dict[str, Any], anchor: dict[str, Any], policy: dict[str, Any],
         out: Path, api_key: str,
         caller: Callable[[str, dict[str, Any]], dict[str, Any]],
@@ -1475,7 +1524,8 @@ def run(source: dict[str, Any], anchor: dict[str, Any], policy: dict[str, Any],
         emit_payload_cache_success: bool = False,
         payload_cache_required: bool = False,
         backfill_payload_cache_success: bool = False,
-        *, failure_collector=None) -> dict[str, Any]:
+        *, failure_collector=None,
+        coherence: dict[str, Any] | None = None) -> dict[str, Any]:
     require(plugin_path is not None,
             "Formal Layer 2 requires the frozen language plugin before dispatch")
     with accounting.stage(f"layer2.source_admission.{policy['targetLocale']}",
@@ -1488,7 +1538,8 @@ def run(source: dict[str, Any], anchor: dict[str, Any], policy: dict[str, Any],
         payload_cache_from, partial_recovery_from, partial_recovery_budget_root,
         emit_payload_cache_success, payload_cache_required,
         backfill_payload_cache_success,
-        source_admission_span=source_span, failure_collector=failure_collector)
+        source_admission_span=source_span, failure_collector=failure_collector,
+        coherence=coherence)
 
 
 def _run_prepared_groups(request: dict[str, Any], anchor: dict[str, Any],
@@ -1515,7 +1566,8 @@ def _run_prepared_groups(request: dict[str, Any], anchor: dict[str, Any],
                          operator_revision: dict[str, Any] | None = None,
                          allow_subset: bool = False,
                          context_plan: list[dict[str, Any]] | None = None,
-                         operator_notes: dict[str, dict[str, Any]] | None = None) -> dict[str, Any]:
+                         operator_notes: dict[str, dict[str, Any]] | None = None,
+                         coherence: dict[str, Any] | None = None) -> dict[str, Any]:
     """Shared group loop; the formal entry above still enforces Layer 1 approval.
 
     Simulated requests carry an extra marker that prevents formal candidate
@@ -1530,6 +1582,12 @@ def _run_prepared_groups(request: dict[str, Any], anchor: dict[str, Any],
     again; every other group is carried from the prior candidate with no model
     call. It always runs under a failure collector, so listed groups run in
     parallel and a failed one goes to the bounded repair loop.
+
+    Coherence options (text/coherence.py) add a whole-sermon glossary, the
+    final target text of the preceding groups and continuation hints to each
+    group's prompts. A first round then runs in contiguous chains, one group
+    after another inside a chain; any later round reuses the preceding text
+    each group saw, so its groups stay independent.
     """
     require(request.get("candidateMode", "production") == "production",
             "Shadow execution is not implemented: complete shadow admission is required")
@@ -1738,6 +1796,12 @@ def _run_prepared_groups(request: dict[str, Any], anchor: dict[str, Any],
             identity["carriedRepairsSha256"] = policy_tools.canonical_sha256(carried)
         if operator_revision is not None:
             identity["operatorRevisionSha256"] = policy_tools.canonical_sha256(operator_revision)
+        if coherence is not None:
+            coherence = coherence_tools.validate_layer2_options(coherence)
+            require(request["targetLocale"] in coherence["locales"] and diagnostic_context is None
+                    and not simulation_only and custom_plan is None and not allow_subset,
+                    "Coherence options need a formal full-plan run of a listed locale")
+            identity["coherence"] = coherence
         if payload_cache_enabled:
             identity["payloadCacheSuccess"] = {
                 "schemaVersion": PAYLOAD_CACHE_SUCCESS_SCHEMA,
@@ -1832,6 +1896,46 @@ def _run_prepared_groups(request: dict[str, Any], anchor: dict[str, Any],
             "workers": workers, "maxInFlightGroups": workers,
             "translationGroups": len(plan), "aggregationOrder": "source"})
         units = {row["sourceUnitId"]: row["english"] for row in request["sourceUnits"]}
+    coherence_dir = out / "coherence"
+    # Where an earlier attempt or round recorded the preceding text each group saw.
+    coherence_priors = [root / "coherence" for root in
+                        (resume_cache_from, reuse_from, partial_recovery_from, payload_cache_from)
+                        if root is not None]
+    chained = (coherence is not None and reuse_from is None and recovered_groups is None
+               and revision_brief is None and operator_revision is None)
+    chain_priors: dict[int, list[dict[str, str]]] = {}
+    if coherence is not None:
+        glossary, glossary_dropped = _coherence_glossary(
+            request, policy, coherence_dir, api_key, caller, coherence_priors,
+            cache_only=cache_only, admission_span=admission_span)
+        continuation = coherence_tools.continuation_flags(
+            [row for row in anchor["sourceUnits"] if row["sourceUnitId"] in units])
+    def _coherence_input(index, group):
+        stem = f"group-{index:04d}"
+        path = coherence_dir / f"{stem}.json"
+        if path.exists():
+            record = producer._load(path)
+        else:
+            recorded = next((producer._load(root / f"{stem}.json") for root in coherence_priors
+                             if (root / f"{stem}.json").is_file()), None)
+            if recorded is not None:
+                prior, origin = recorded["priorTarget"], "recorded"
+            elif index in chain_priors:
+                prior, origin = chain_priors[index], "chain"
+            elif prior_evidence is not None:
+                prior = coherence_tools.prior_target(prior_evidence["groups"][:index - 1],
+                                                     coherence["priorTargetGroups"])
+                origin = "prior_evidence"
+            else:
+                prior, origin = [], "none"
+            record = {"schemaVersion": coherence_tools.RECEIPT_SCHEMA,
+                      "translationGroupId": group["translationGroupId"],
+                      "priorTarget": prior, "priorTargetSource": origin}
+            save_new(path, record)
+        require(record.get("translationGroupId") == group["translationGroupId"]
+                and isinstance(record.get("priorTarget"), list),
+                f"Coherence record belongs to another group: {stem}")
+        return record
     def _process_group(item):
         index, group = item
         with accounting.stage(f"layer2.prepare.{request['targetLocale']}.group-{index:04d}",
@@ -1839,6 +1943,8 @@ def _run_prepared_groups(request: dict[str, Any], anchor: dict[str, Any],
                                         and group['translationGroupId'] not in repairs,
                               depends_on=[admission_span], executor_type="deterministic_program",
                               work_unit_id=f"l2.{request['targetLocale']}.group-{index:04d}.prepare") as prepare_span:
+            # Recorded even for a carried group, so a later round can repair it with the same context.
+            coherence_record = _coherence_input(index, group) if coherence is not None else None
             if group["translationGroupId"] in operator_carry:
                 # Not listed by the operator: the prior candidate's reviewed row, unchanged and unpaid.
                 return copy.deepcopy(operator_carry[group["translationGroupId"]]), prepare_span
@@ -1866,6 +1972,13 @@ def _run_prepared_groups(request: dict[str, Any], anchor: dict[str, Any],
                       "formatting": policy["formatting"]}
             if rule_receipt is not None:
                 common["modelRules"] = rule_preflight.group_rules(rule_receipt, group["sourceUnitIds"])
+            if coherence_record is not None:
+                common["sermonGlossary"] = glossary
+                common["priorTarget"] = coherence_record["priorTarget"]
+                common["continuation"] = coherence_tools.group_continuation(
+                    continuation, group["sourceUnitIds"])
+            coherence_translator = coherence_tools.TRANSLATOR_RULE if coherence_record is not None else ""
+            coherence_reviewer = coherence_tools.REVIEWER_RULE if coherence_record is not None else ""
             if brief is not None:
                 common["revisionBrief"] = {
                     "instruction": ("This is a shorter spoken adaptation for a fixed video cue. "
@@ -1933,6 +2046,7 @@ def _run_prepared_groups(request: dict[str, Any], anchor: dict[str, Any],
                                 register_prompt_instruction(policy) +
                                 operator_instruction +
                                 repair_instruction +
+                                coherence_translator +
                                 "Resolve pronouns and elliptical repetitions using the surrounding "
                                 "source units; translate only the requested English units. "
                                 "Use context only for interpretation. Return JSON with exactly "
@@ -2035,6 +2149,7 @@ def _run_prepared_groups(request: dict[str, Any], anchor: dict[str, Any],
                                 register_prompt_instruction(policy) +
                                 operator_instruction +
                                 repair_instruction +
+                                coherence_reviewer +
                                 "Check that pronouns and elliptical repetitions retain the intended "
                                 "referent and predicate from surrounding source units. "
                                 "Correct any error in final targetUtterances and coverage. Check every English "
@@ -2168,8 +2283,28 @@ def _run_prepared_groups(request: dict[str, Any], anchor: dict[str, Any],
         return (ordered_group_results(items, process_group, workers,
                                       maximum_workers=maximum_workers) if maximum_workers != 16 else
                 ordered_group_results(items, process_group, workers))
-    results = (run_groups(list(enumerate(plan, 1))) if recovered_groups is None else
-               _run_partial_recovery_groups(plan, recovered_groups, run_groups))
+    def run_chain(chain):
+        # One group after another: each sees the final text of the chain's earlier groups.
+        done, rows = [], []
+        for item in chain:
+            chain_priors[item[0]] = coherence_tools.prior_target(rows, coherence["priorTargetGroups"])
+            result = process_group(item)
+            done.append(result)
+            if result[0] is not None:
+                rows.append(result[0])
+        return done
+    if chained:
+        items = list(enumerate(plan, 1))
+        chains = [[items[index - 1] for index in chain]
+                  for chain in coherence_tools.chain_plan(len(plan), coherence["chains"])]
+        chain_workers = min(workers, len(chains))
+        results = [result for chain in (
+            ordered_group_results(chains, run_chain, chain_workers, maximum_workers=maximum_workers)
+            if maximum_workers != 16 else ordered_group_results(chains, run_chain, chain_workers))
+            for result in chain]
+    else:
+        results = (run_groups(list(enumerate(plan, 1))) if recovered_groups is None else
+                   _run_partial_recovery_groups(plan, recovered_groups, run_groups))
     if failure_collector is not None and failure_collector.has_failures():
         failure_collector.finish(out, request, plan)
     dependencies = accounting.bounded_dependencies(
@@ -2191,6 +2326,9 @@ def _run_prepared_groups(request: dict[str, Any], anchor: dict[str, Any],
                                   for role, ids in (("translator", translator_ids),
                                                     ("reviewer", reviewer_ids))}
         evidence["groups"] = reviewed
+        if coherence is not None:
+            _save_coherence_receipt(coherence_dir, coherence, glossary, glossary_dropped, continuation,
+                                    plan, chained)
         evidence_path = out / "evidence.json"
         if evidence_path.exists():
             require(producer._load(evidence_path) == evidence, "Cached evidence changed")
@@ -2221,7 +2359,8 @@ def run_accounted(source: dict, anchor: dict, policy: dict, out_dir: Path,
                   failure_collector=None, candidate_mode: str = "production",
                   operator_revision: dict | None = None, allow_subset: bool = False,
                   context_plan: list[dict[str, Any]] | None = None,
-                  operator_notes: dict[str, dict[str, Any]] | None = None) -> dict:
+                  operator_notes: dict[str, dict[str, Any]] | None = None,
+                  coherence: dict[str, Any] | None = None) -> dict:
     require(operator_revision is None or operator_notes is None,
             "Use one operator revision mechanism at a time")
     require(candidate_mode == "production",
@@ -2255,7 +2394,7 @@ def run_accounted(source: dict, anchor: dict, policy: dict, out_dir: Path,
                 progress_callback=progress_callback, completion_spans=completion_spans,
                 failure_collector=failure_collector, operator_revision=operator_revision,
                 allow_subset=allow_subset, context_plan=context_plan,
-                operator_notes=operator_notes)
+                operator_notes=operator_notes, coherence=coherence)
         metrics["doneUnits"] = len(evidence["groups"])
     return evidence
 
