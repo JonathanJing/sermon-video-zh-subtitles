@@ -1,0 +1,51 @@
+{
+  "schemaVersion": "zh-transcript-coherence-local-rerun-v1",
+  "runId": "20261026-deepseek",
+  "date": "2026-10-26",
+  "host": "local MacBook",
+  "inputs": {
+    "zh": {
+      "url": "https://ai-for-god-sermon-audio.web.app/content/revelation-jesus-wins-20261025/zh-Hans.json",
+      "sha256": "024433bd20713c70f51155ec01f64687c6b3cb94d4814500c44840afaa435d06",
+      "units": 447
+    },
+    "en": {
+      "url": "https://ai-for-god-sermon-audio.web.app/english-reference/revelation-jesus-wins-20261025.json",
+      "sha256": "2f4c08da62e50a4417e7160ca3cfe1810832605c3ce6224d0cc296f409ac49df"
+    },
+    "policySha256": "8c744774b70e74493ebda45db92bb2de843d73c5fc46bbcc7e528e5f42e3ea9c"
+  },
+  "runnerSha256": "937d2089a88e5b66c6ffcd843868a9fa5a793e04a54f485b68a271e0c4342688",
+  "translator": {
+    "backend": "deepseek",
+    "model": "deepseek-flash",
+    "effort": "low",
+    "transport": "https://api.deepseek.com/chat/completions"
+  },
+  "judge": {
+    "backend": "deepseek",
+    "model": "deepseek-flash",
+    "effort": "high",
+    "count": 1,
+    "consistencyPromptCap": 20,
+    "note": "consistency prompt caps at 20 items because the uncapped high-effort call hit the output cap twice"
+  },
+  "invocations": 3,
+  "invocationNote": "25-unit smoke run, then full run attempt 1 stopped at the whole-transcript consistency call (8192 output cap), attempt 2 stopped at the same call (16384), attempt 3 completed with a capped consistency prompt. Translation and completed judge calls were reused from cache; no successful paid call was repeated.",
+  "paidCalls": 1695,
+  "cacheHitsInFinalInvocation": 1621,
+  "costUsdTotal": 3.3,
+  "costBasis": "DeepSeek peak cache-miss prices from compute/provider_limits.py (input 0.30 / output 1.20 USD per 1M tokens)",
+  "tokens": {
+    "input": 3663708,
+    "output": 1747243
+  },
+  "artifacts": "artifacts/zh-coherence/20261026-deepseek (ignored, not committed)",
+  "costUsdBreakdown": {
+    "cachedSuccessfulCalls": 3.2,
+    "truncatedRetriesApprox": 0.1
+  },
+  "summaryCostNote": "summary.json costUsd (0.19) covers only the completing invocation; cache hits from the two earlier invocations are not charged again.",
+  "paidCallsNote": "1695 successful cached calls across the 25-unit smoke run, the full run, and two resumed attempts; 1630 of them are the full 447-unit benchmark.",
+  "fullBenchmarkCalls": 1630
+}

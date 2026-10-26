@@ -5,7 +5,7 @@
 ## 做法
 
 - 输入：线上 `/content/revelation-jesus-wins-20261025/zh-Hans.json`（447 句，human_reviewed）和 `/english-reference/revelation-jesus-wins-20261025.json`。
-- 所有翻译组用同一个模型（Claude CLI `opus`，订阅登录，不用 API key），只有方法不同。`published` 是线上版本（生产模型 Sol + 人工审阅），只作参照。
+- 所有翻译组用同一个模型（Claude CLI `opus`，订阅登录，不用 API key），只有方法不同；本地 DeepSeek 复跑换了模型，见文末。`published` 是线上版本（生产模型 Sol + 人工审阅），只作参照。
 - 评委看不到组名，按每 25 句一个窗口打 1–10 分（可懂度、口语自然度、忠实度），列出问题；另做全篇不一致检查，并逐条核对人工评估找出的 18 个已知问题（`known_issues_20261025.json`）。评委跑了两遍：Sonnet 和 Opus。
 - 代码：可复用部分在 `packages/production/src/tongxing_production/text/coherence.py`，跑法见 `run_benchmark.py` 顶部说明。
 
@@ -50,3 +50,55 @@
 - 只有一篇证道、一个翻译模型；每个窗口只评一次，没有重复抽样，分差 0.2 以内视为噪声。
 - s2 是“每 12 句顺序翻译、4 段并行”，和 10/19 定下的“逐组独立任务”冲突，接入前需要决定。
 - 花费：翻译加两轮评审约 98 美元（Claude CLI 报告的 `total_cost_usd`）。
+
+## 2026-10-26 本地复跑：DeepSeek 翻译 + DeepSeek 评委
+
+目的：换一个模型族重跑同一 benchmark，检查五项改法的排序是否只在 Claude 上成立。输入、arm 定义、窗口大小（12 句 / 25 句窗口）和评委提示保持原样，只有两处必要差异：
+
+- 翻译用 `deepseek-flash` low（生产 Layer 2 默认初译档），评委用 `deepseek-flash` high（复核档），单评委；不再用 Claude CLI。
+- 全篇一致性评分加了“最多 20 条最严重、note ≤30 字”的上限。DeepSeek high 在前两次运行时把 8192 和 16384 token 输出打满（不一致列表无限膨胀），不加上限无法完成；8 个 arm 都用同一条上限提示，arm 之间仍可比。
+
+命令（key 来自 `~/.config/tongxing/deepseek.env`，不进 Git；`.venv` 在仓库根目录）：
+
+```
+. ~/.config/tongxing/deepseek.env
+.venv/bin/python experiments/zh-transcript-coherence/run_benchmark.py \
+  --zh artifacts/zh-coherence/20261026-deepseek/zh.json \
+  --en artifacts/zh-coherence/20261026-deepseek/en.json \
+  --out artifacts/zh-coherence/20261026-deepseek \
+  --translator-backend deepseek --judge-backend deepseek
+```
+
+输入是线上 `zh-Hans.json`（sha256 `024433bd…`）和 `english-reference`（`2f4c08da…`），447 句；正文与 10/25 那次逐句相同（英文块逐条一致，仅 JSON 排版／hash 不同）。前两次调用在评委阶段被截断，重跑只补缺失调用，翻译和已完成的评分全部命中缓存，没有重复付费。
+
+### 结果
+
+| 组 | 可懂度 | 自然度 | 忠实度 | 问题数 | 残句 | 全篇不一致(≤20) | 已知问题(DeepSeek) | 已知问题(Sonnet/Opus) |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| published | 8.11 | 7.56 | 8.17 | 104 | 30 | 11 | 1/18 | 0/18 · 0/18 |
+| baseline | 8.17 | 7.72 | 8.11 | 91 | 13 | 8 | 6/18 | 7/18 · 10/18 |
+| s1_glossary | 8.11 | 7.61 | 8.39 | 99 | 14 | 5 | 6/18 | 8/18 · 11/18 |
+| s2_prior | 9.11 | 8.17 | 8.89 | 74 | 9 | 5 | 14/18 | 15/18 · 18/18 |
+| s2b_two_pass | 8.44 | 7.89 | 8.50 | 88 | 17 | 3 | 11/18 | 14/18 · 14/18 |
+| s3_merge | 8.78 | 7.89 | 8.83 | 80 | 9 | 3 | 12/18 | 16/18 · 17/18 |
+| s5_review | 8.78 | 8.11 | 8.56 | 84 | 7 | 5 | 13/18 | 17/18 · 17/18 |
+| s4_reading | 9.00 | 7.94 | 8.88 | 58 | 1 | 2 | 13/18 | 18/18 · 17/18 |
+
+### 结论
+
+1. **第 2 项（带前文中文）仍是最大收益**：可懂度 8.17→9.11，已知问题 6→14/18，问题数 91→74，残句 13→9。和 PR 的两个 Claude 评委方向一致。
+2. **第 1 项（术语表）单独仍无收益**：可懂度 8.11（比 baseline 低 0.06，属噪声），已知问题持平 6/18。与 PR 一致。
+3. **第 3 项（合并接续）与 s2 基本持平**：可懂度 8.78 vs 9.11，问题数 80 vs 74，全篇不一致 3 vs 5，已知问题 12 vs 14；复现了“s3≈s2”，全篇不一致更少。
+4. **第 5 项（连读审核）在 s3 之上没有可测收益**：可懂度持平 8.78，问题数 84 vs 80，已知问题 13 vs 12，全篇不一致 5 vs 3；与 PR 的“暂不建议接入”一致。
+5. **阅读版（第 4 项）最好读，但不是已知问题修复最多**：问题数 58、残句 1、全篇不一致 2、可懂度 9.00，都是最好；已知问题 13/18，低于 s2 的 14/18。PR 里它是 18/17，这次只复现“最好读”，没有复现“修复最多”。
+6. **s2b 拿到部分收益**：已知问题 11/18（baseline 6），低于 s2 的 14/18，残句也没有减少（17，比 baseline 的 13 还多），和 PR 的“折中只拿到一部分”一致。
+
+### 限制
+
+- 评委和翻译同属 DeepSeek，存在同族偏好；单评委、每个窗口只评一次。DeepSeek 评分整体偏宽：baseline 可懂度 8.17，published 只有 8.11，而 PR 的两个 Claude 评委都把 baseline 显著高于 published。分差 0.3 以内按噪声处理，不能据此重排相近的 arm。
+- 已知问题核对有误判：published 被记为修复了 K09，但 published 里 `D·A·卡森` 仍是独立一句（`asr-u0256`）。
+- 全篇一致性用了 20 条上限，数值不能和 PR 的无上限计数直接比较。
+- 与 PR 的分数不可直接对比（评委不同）；可对比的是 arm 之间的方向和相对差距。
+- 花费：25 句冒烟 + 3 次全量进程合计 1695 次成功调用、约 3.3 美元（成功调用 3.20，被截断重试约 0.10；按 DeepSeek 峰价估算，输入 3.66M / 输出 1.75M tokens，评审推理 token 也计入），比 PR 的约 98 美元低两个数量级。
+
+翻译和评分明细在 `results/20261026-deepseek/summary.json`，运行身份、调用数和总花费在 `run-metadata.json`，术语表和连读审核改动在同目录。若之后恢复 Claude 登录，翻译已缓存，只补评委调用即可让同一批译文接受与 PR 相同的 Claude 评委。
