@@ -10,6 +10,7 @@ import json
 import os
 from pathlib import Path
 import re
+import subprocess
 import time
 import urllib.error
 import urllib.request
@@ -293,5 +294,71 @@ class DeepSeek:
 
     def ledger(self) -> dict:
         return {"model": self.model, "effort": self.effort, "calls": self.calls, "hits": self.hits,
+                "costUsd": round(self.cost, 4), "inputTokens": self.input_tokens,
+                "outputTokens": self.output_tokens, "maxRequestChars": self.max_chars}
+
+
+class ClaudeCLI:
+    """Cached Claude CLI calls for the first-pass translator (subscription login)."""
+
+    billing = "subscription"
+
+    def __init__(self, cache_dir: Path, model: str = "opus", execute: bool = False, timeout: int = 900):
+        self.cache_dir = cache_dir
+        self.cache_dir.mkdir(parents=True, exist_ok=True)
+        self.model = model
+        self.execute = execute
+        self.timeout = timeout
+        self.calls = 0
+        self.hits = 0
+        self.cost = 0.0
+        self.input_tokens = 0
+        self.output_tokens = 0
+        self.max_chars = 0
+
+    def __call__(self, system: str, user: dict) -> dict:
+        payload_user = json.dumps(user, ensure_ascii=False)
+        self.max_chars = max(self.max_chars, len(system) + len(payload_user))
+        if len(system) + len(payload_user) > 14000:
+            raise ValueError(f"request exceeds the 14000-character guard ({len(system) + len(payload_user)})")
+        key = hashlib.sha256(json.dumps(["claude", self.model, system, payload_user]).encode()).hexdigest()
+        path = self.cache_dir / f"{key}.json"
+        if path.is_file():
+            self.hits += 1
+            return json.loads(path.read_text())["result"]
+        if not self.execute:
+            raise SystemExit("Claude call required but --execute was not passed")
+        command = ["claude", "-p", "--model", self.model, "--no-session-persistence",
+                   "--tools", "", "--setting-sources", "", "--output-format", "json",
+                   "--system-prompt", system]
+        done = subprocess.run(command, input=payload_user, capture_output=True, text=True,
+                              timeout=self.timeout)
+        try:
+            reply = json.loads(done.stdout)
+        except json.JSONDecodeError as exc:
+            raise RuntimeError(f"Claude CLI returned non-JSON: {done.stdout[-300:]} {done.stderr[-300:]}") from exc
+        if reply.get("is_error"):
+            raise RuntimeError(f"Claude CLI failed: {reply.get('result')} status={reply.get('api_error_status')}")
+        content = reply["result"]
+        try:
+            result = json.loads(content)
+        except json.JSONDecodeError:
+            start, end = content.find("{"), content.rfind("}")
+            if start < 0 or end <= start:
+                raise
+            result = json.loads(content[start:end + 1])
+        if not isinstance(result, dict):
+            raise ValueError("Claude reply is not an object")
+        usage = reply.get("usage") or {}
+        self.calls += 1
+        self.input_tokens += int(usage.get("input_tokens") or 0)
+        self.output_tokens += int(usage.get("output_tokens") or 0)
+        self.cost += float(reply.get("total_cost_usd") or 0)
+        path.write_text(json.dumps({"result": result, "usage": usage,
+                                    "costUsd": reply.get("total_cost_usd")}, ensure_ascii=False))
+        return result
+
+    def ledger(self) -> dict:
+        return {"model": self.model, "effort": None, "calls": self.calls, "hits": self.hits,
                 "costUsd": round(self.cost, 4), "inputTokens": self.input_tokens,
                 "outputTokens": self.output_tokens, "maxRequestChars": self.max_chars}

@@ -146,6 +146,8 @@ def main() -> int:
     parser.add_argument("--prior", type=int, default=8)
     parser.add_argument("--no-glossary", action="store_true")
     parser.add_argument("--no-hints", action="store_true")
+    parser.add_argument("--translator", choices=("deepseek", "claude"), default="deepseek")
+    parser.add_argument("--claude-model", default="opus")
     parser.add_argument("--no-budget", action="store_true")
     parser.add_argument("--budget-cps", type=float, default=4.95)
     parser.add_argument("--seed", type=Path, default=HERE / "coherence-zh-seed.json")
@@ -163,18 +165,20 @@ def main() -> int:
     flags = C.continuation_flags(units)
     plan, boundaries = C.chain_plan(units, args.chains)
     args.out.mkdir(parents=True, exist_ok=True)
-    client = C.DeepSeek(args.out / "cache", execute=args.execute)
+    glossary_client = C.DeepSeek(args.out / "cache", execute=args.execute)
+    translator = (C.ClaudeCLI(args.out / "claude-cache", model=args.claude_model, execute=args.execute)
+                  if args.translator == "claude" else glossary_client)
     started = time.time()
     glossary = C.empty_glossary()
     if not args.no_glossary:
         seed = json.loads(args.seed.read_text()) if args.seed and args.seed.is_file() else None
-        glossary = build_glossary(client, units, root, args.out, seed)
+        glossary = build_glossary(glossary_client, units, root, args.out, seed)
     glossary_for_prompt = None if args.no_glossary else {k: v for k, v in glossary.items() if k != "entriesDropped"}
     flags_for_prompt = ({unit["id"]: {"continuesPrevious": False, "continuedByNext": False} for unit in units}
                         if args.no_hints else flags)
     results, failures = {}, []
     with ThreadPoolExecutor(min(args.chains, len(plan))) as pool:
-        futures = [pool.submit(run_chain, client, chain, units, glossary_for_prompt,
+        futures = [pool.submit(run_chain, translator, chain, units, glossary_for_prompt,
                                flags_for_prompt, window=args.window,
                                prior_limit=args.prior, tag=f"chain-{number:02d}", budgets=budgets)
                    for number, chain in enumerate(plan, 1)]
@@ -192,20 +196,24 @@ def main() -> int:
             running.append({"id": unit_id, "target": results[unit_id]["target"]})
     missing = [unit_id for unit_id in order if unit_id not in results]
     if missing:
-        fixed, repair_failures = repair(client, missing, units_by_id, glossary_for_prompt,
+        fixed, repair_failures = repair(translator, missing, units_by_id, glossary_for_prompt,
                                         flags_for_prompt, prior_by_id, args.window, "repair", budgets)
         results.update(fixed)
         failures.extend(repair_failures)
     missing = [unit_id for unit_id in order if unit_id not in results]
-    C.write_json(args.out / "cost.json", {**client.ledger(),
-                                          "wallSeconds": round(time.time() - started, 1),
-                                          "units": len(units), "failed": len(missing)})
+    total_usd = translator.cost + (glossary_client.cost if glossary_client is not translator else 0)
+    cost = {"translator": translator.ledger(),
+            "glossary": glossary_client.ledger() if glossary_client is not translator else None,
+            "totalUsd": round(total_usd, 4),
+            "wallSeconds": round(time.time() - started, 1),
+            "units": len(units), "failed": len(missing)}
+    C.write_json(args.out / "cost.json", cost)
     if missing:
         C.write_json(args.out / "failures.json", failures)
         C.write_jsonl(args.out / "repair_queue.jsonl",
                       [{"id": unit_id, "reason": "coverage/empty after retry and repair"}
                        for unit_id in missing])
-        print(json.dumps({"status": "failed", "missing": missing, "cost": client.ledger()},
+        print(json.dumps({"status": "failed", "missing": missing, "cost": cost},
                          ensure_ascii=False))
         return 1
     rows = [{"id": unit_id, "locale": "zh-Hans", "target": results[unit_id]["target"],
@@ -221,9 +229,9 @@ def main() -> int:
         "glossarySha256": hashlib.sha256(json.dumps(glossary_for_prompt, ensure_ascii=False,
                                                     sort_keys=True).encode()).hexdigest(),
         "continuationCount": sum(flag["continuesPrevious"] for flag in flags.values()),
-        "cost": client.ledger()})
-    print(json.dumps({"status": "ok", "units": len(units), "cost": client.ledger(),
-                      "maxChars": client.max_chars, "chains": len(plan)}, ensure_ascii=False))
+        "cost": cost})
+    print(json.dumps({"status": "ok", "units": len(units), "cost": cost,
+                      "maxChars": translator.max_chars, "chains": len(plan)}, ensure_ascii=False))
     return 0
 
 
