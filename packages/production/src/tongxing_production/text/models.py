@@ -1490,15 +1490,18 @@ def _coherence_glossary(request, policy, directory, api_key, caller, prior_roots
 
 def _save_coherence_receipt(directory, options, glossary, dropped, continuation, plan, chained):
     sources: dict[str, int] = {}
+    drafted = 0
     for index in range(1, len(plan) + 1):
-        origin = producer._load(directory / f"group-{index:04d}.json")["priorTargetSource"]
-        sources[origin] = sources.get(origin, 0) + 1
+        record = producer._load(directory / f"group-{index:04d}.json")
+        sources[record["priorTargetSource"]] = sources.get(record["priorTargetSource"], 0) + 1
+        drafted += record.get("windowDraft") is not None
     receipt = {"schemaVersion": coherence_tools.RECEIPT_SCHEMA, "options": options,
                "glossarySha256": policy_tools.canonical_sha256(glossary),
                "glossaryEntriesDropped": dropped,
                "dispatch": ({"mode": "chains", "chains": coherence_tools.chain_plan(len(plan), options["chains"])}
                             if chained else {"mode": "independent_groups"}),
                "priorTargetSources": dict(sorted(sources.items())),
+               "groupsWithWindowDraft": drafted,
                "continuesPrevious": sum(flag["continuesPrevious"] for flag in continuation.values()),
                "humanApproval": False}
     for name, value in (("sermon-glossary.json", glossary), ("receipt.json", receipt)):
@@ -1904,6 +1907,7 @@ def _run_prepared_groups(request: dict[str, Any], anchor: dict[str, Any],
     chained = (coherence is not None and reuse_from is None and recovered_groups is None
                and revision_brief is None and operator_revision is None)
     chain_priors: dict[int, list[dict[str, str]]] = {}
+    chain_drafts: dict[int, str | None] = {}
     if coherence is not None:
         glossary, glossary_dropped = _coherence_glossary(
             request, policy, coherence_dir, api_key, caller, coherence_priors,
@@ -1918,10 +1922,11 @@ def _run_prepared_groups(request: dict[str, Any], anchor: dict[str, Any],
         else:
             recorded = next((producer._load(root / f"{stem}.json") for root in coherence_priors
                              if (root / f"{stem}.json").is_file()), None)
+            draft = None
             if recorded is not None:
-                prior, origin = recorded["priorTarget"], "recorded"
+                prior, origin, draft = recorded["priorTarget"], "recorded", recorded.get("windowDraft")
             elif index in chain_priors:
-                prior, origin = chain_priors[index], "chain"
+                prior, origin, draft = chain_priors[index], "chain", chain_drafts.get(index)
             elif prior_evidence is not None:
                 prior = coherence_tools.prior_target(prior_evidence["groups"][:index - 1],
                                                      coherence["priorTargetGroups"])
@@ -1930,12 +1935,40 @@ def _run_prepared_groups(request: dict[str, Any], anchor: dict[str, Any],
                 prior, origin = [], "none"
             record = {"schemaVersion": coherence_tools.RECEIPT_SCHEMA,
                       "translationGroupId": group["translationGroupId"],
-                      "priorTarget": prior, "priorTargetSource": origin}
+                      "priorTarget": prior, "priorTargetSource": origin, "windowDraft": draft}
             save_new(path, record)
         require(record.get("translationGroupId") == group["translationGroupId"]
-                and isinstance(record.get("priorTarget"), list),
+                and isinstance(record.get("priorTarget"), list)
+                and (record.get("windowDraft") is None or isinstance(record["windowDraft"], str)),
                 f"Coherence record belongs to another group: {stem}")
         return record
+    def _window_drafts(window, prior):
+        # One call drafts a window of consecutive groups as a passage; each group is
+        # still translated, reviewed and checked on its own with its draft as input.
+        first, last = window[0][0], window[-1][0]
+        stem = f"window-{first:04d}"
+        source = next((root for root in coherence_priors if (root / f"{stem}-astra.json").is_file()), None)
+        cached = (coherence_dir / f"{stem}-astra.json").exists() or source is not None
+        if failure_collector is not None and failure_collector.stopped() and not cached:
+            return {}
+        groups = [group for _, group in window]
+        after = [{"sourceUnitId": unit_id, "english": units[unit_id]}
+                 for group in plan[last:last + 2] for unit_id in group["sourceUnitIds"]]
+        prompt = coherence_tools.window_draft_prompt(
+            groups, units, prior=prior, context_after=after, glossary=glossary, policy=policy,
+            prompt_version=policy["translator"]["promptVersion"])
+        local = cache_only or cached or getattr(caller, "billing", None) == "local"
+        with accounting.stage(f"layer2.window_draft.{request['targetLocale']}.{stem}", cache_hit=cached,
+                              billing="local" if local else "api", depends_on=[admission_span],
+                              executor_type="deterministic_program" if cache_only or cached else "production_model",
+                              work_unit_id=f"l2.{request['targetLocale']}.{stem}"):
+            try:
+                response = _model_call("translator", prompt, policy, coherence_dir / f"{stem}-astra.json",
+                                       api_key, caller, reusable_cache(source, stem, "astra"),
+                                       cache_only=cache_only)
+            except json.JSONDecodeError:
+                return {}  # the saved raw reply stays inspectable; these groups go without a draft
+        return coherence_tools.window_draft_texts(response["result"], groups)
     def _process_group(item):
         index, group = item
         with accounting.stage(f"layer2.prepare.{request['targetLocale']}.group-{index:04d}",
@@ -1977,6 +2010,8 @@ def _run_prepared_groups(request: dict[str, Any], anchor: dict[str, Any],
                 common["priorTarget"] = coherence_record["priorTarget"]
                 common["continuation"] = coherence_tools.group_continuation(
                     continuation, group["sourceUnitIds"])
+                if coherence_record.get("windowDraft") is not None:
+                    common["windowDraft"] = {"targetText": coherence_record["windowDraft"]}
             coherence_translator = coherence_tools.TRANSLATOR_RULE if coherence_record is not None else ""
             coherence_reviewer = coherence_tools.REVIEWER_RULE if coherence_record is not None else ""
             if brief is not None:
@@ -2286,12 +2321,17 @@ def _run_prepared_groups(request: dict[str, Any], anchor: dict[str, Any],
     def run_chain(chain):
         # One group after another: each sees the final text of the chain's earlier groups.
         done, rows = [], []
-        for item in chain:
-            chain_priors[item[0]] = coherence_tools.prior_target(rows, coherence["priorTargetGroups"])
-            result = process_group(item)
-            done.append(result)
-            if result[0] is not None:
-                rows.append(result[0])
+        size = coherence["windowGroups"]
+        for start in range(0, len(chain), size):
+            window = chain[start:start + size]
+            drafts = _window_drafts(window, coherence_tools.prior_target(rows, coherence["priorTargetGroups"]))
+            for item in window:
+                chain_drafts[item[0]] = drafts.get(item[1]["translationGroupId"])
+                chain_priors[item[0]] = coherence_tools.prior_target(rows, coherence["priorTargetGroups"])
+                result = process_group(item)
+                done.append(result)
+                if result[0] is not None:
+                    rows.append(result[0])
         return done
     if chained:
         items = list(enumerate(plan, 1))

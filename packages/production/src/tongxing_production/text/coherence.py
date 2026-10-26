@@ -313,6 +313,7 @@ LAYER2_SCHEMA = "sermon-layer2-coherence-v1"
 RECEIPT_SCHEMA = "sermon-layer2-coherence-receipt-v1"
 MAX_PRIOR_GROUPS = 12
 MAX_CHAINS = 16
+MAX_WINDOW_GROUPS = 16
 
 TRANSLATOR_RULE = (
     "Follow sermonGlossary for names, family relations, divine pronouns, recurring sermon "
@@ -321,11 +322,15 @@ TRANSLATOR_RULE = (
     "recurring points, and never repeat or translate it. When continuation.continuesPrevious "
     "is true, this group only finishes the sentence the previous group began: render it so "
     "it reads as the end of that sentence, not as a dangling fragment. When "
-    "continuation.continuedByNext is true, the next group finishes this sentence. ")
+    "continuation.continuedByNext is true, the next group finishes this sentence. "
+    "windowDraft, when present, is this group's text from a draft written with its neighbouring "
+    "groups as one passage: keep its wording and the way it divides a sentence across groups, "
+    "and change it only to repair a meaning, name, number, negation, register or glossary error. ")
 REVIEWER_RULE = (
     "Also check the final text against sermonGlossary and priorTarget: names, relations and "
     "divine pronouns must follow the glossary, a recurring point keeps the earlier wording, "
-    "and the group must read naturally after priorTarget without repeating it. ")
+    "and the group must read naturally after priorTarget without repeating it. A windowDraft "
+    "is a proposal, not verified truth: check it against the English like any draft. ")
 
 
 SUPPORTED_LOCALES = frozenset({"zh-Hans"})
@@ -340,14 +345,15 @@ GLOSSARY_TRIM_ORDER = ("culturalReferences", "scripture", "recurringPhrases", "r
 
 def validate_layer2_options(options: dict[str, Any]) -> dict[str, Any]:
     _require(isinstance(options, dict)
-             and set(options) == {"schemaVersion", "locales", "priorTargetGroups", "chains"}
+             and set(options) == {"schemaVersion", "locales", "priorTargetGroups", "chains", "windowGroups"}
              and options["schemaVersion"] == LAYER2_SCHEMA
              and isinstance(options["locales"], list) and options["locales"]
              and options["locales"] == sorted(set(options["locales"]))
              and set(options["locales"]) <= SUPPORTED_LOCALES
              and type(options["priorTargetGroups"]) is int
              and 1 <= options["priorTargetGroups"] <= MAX_PRIOR_GROUPS
-             and type(options["chains"]) is int and 1 <= options["chains"] <= MAX_CHAINS,
+             and type(options["chains"]) is int and 1 <= options["chains"] <= MAX_CHAINS
+             and type(options["windowGroups"]) is int and 1 <= options["windowGroups"] <= MAX_WINDOW_GROUPS,
              "invalid_layer2_coherence_options")
     return {**options, "locales": list(options["locales"])}
 
@@ -454,6 +460,39 @@ def prior_target(rows: list[dict[str, Any]], limit: int) -> list[dict[str, str]]
     """The final target text of up to `limit` preceding reviewed groups, oldest first."""
     return [{"translationGroupId": row["translationGroupId"], "targetText": "".join(row["targetUtterances"])}
             for row in rows[-limit:]] if limit else []
+
+
+WINDOW_DRAFT_INSTRUCTION = WINDOW_INSTRUCTION.split("Return JSON only:")[0] + """Return JSON only:
+{"schemaVersion": "sermon-window-draft-v1",
+ "groups": [{"translationGroupId": str, "chinese": str}]}
+Return every requested group once, in order. This is a draft: each group is checked and
+finalised separately afterwards, so give each group exactly the Chinese for its own units."""
+
+
+def window_draft_prompt(groups: list[dict[str, Any]], english: dict[str, str], *,
+                        prior: list[dict[str, str]], context_after: list[dict[str, str]],
+                        glossary: dict[str, Any], policy: dict[str, Any],
+                        prompt_version: str) -> dict[str, Any]:
+    """A Layer 2 model prompt for one window of consecutive groups, drafted as one passage."""
+    _, user = window_translation_prompt(groups, english, prior_chinese=[row["targetText"] for row in prior],
+                                        context_after=[row["english"] for row in context_after],
+                                        glossary=glossary, policy=policy)
+    return {"instruction": (WINDOW_DRAFT_INSTRUCTION + " Prompt version: " + prompt_version
+                            + "+" + PROMPT_VERSION + "-window-draft"),
+            "input": json.loads(user)}
+
+
+def window_draft_texts(result: Any, groups: list[dict[str, Any]]) -> dict[str, str]:
+    """The usable drafts of a window reply; a group the reply omits or garbles gets none."""
+    rows = result.get("groups") if isinstance(result, dict) else None
+    wanted = {group["translationGroupId"] for group in groups}
+    out = {}
+    for row in rows if isinstance(rows, list) else []:
+        if (isinstance(row, dict) and row.get("translationGroupId") in wanted
+                and row["translationGroupId"] not in out
+                and isinstance(row.get("chinese"), str) and row["chinese"].strip()):
+            out[row["translationGroupId"]] = row["chinese"].strip()
+    return out
 
 
 def glossary_from_result(result: Any) -> dict[str, Any]:

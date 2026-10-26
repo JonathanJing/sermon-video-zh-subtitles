@@ -15,9 +15,10 @@ no API key), so arms differ only in method:
   s3_merge    s2 with continuation units translated in one group     (remedy 3)
   s5_review   s3 + passage review over windows of cues               (remedy 5)
   s4_reading  reading-edition paragraphs edited from s5              (remedy 4)
-  p123_wired  1+2+3 as wired into Layer 2 (text/models.py): one unit per group, the
-              production translator prompt plus sermonGlossary (built slice by slice),
-              priorTarget from source-order chains and continuation hints
+  p123_wired  1+2+3 as wired into Layer 2 (text/models.py): source-order chains draft
+              windows of groups as one passage, then each group (one unit) is translated
+              with the production prompt plus sermonGlossary (built slice by slice), its
+              windowDraft, priorTarget and continuation hints (translator only)
 
 A separate judge model scores every arm on the same windows, blind to the arm, and
 checks the issues found by the 2026-10-26 manual review. Responses are cached by
@@ -213,7 +214,8 @@ def window_arm(claude: Claude, units, groups, policy, glossary, *, window: int, 
     return merged
 
 
-def wired_arm(claude: Claude, units, policy, *, chains: int, prior_groups: int, workers: int) -> dict[str, str]:
+def wired_arm(claude: Claude, units, policy, *, chains: int, prior_groups: int, window_groups: int,
+              workers: int) -> dict[str, str]:
     """Remedies 1+2+3 with the prompt text/models.py builds for a first-round group (translator only)."""
     glossary = co.empty_glossary()
     slices = co.glossary_slices(units)
@@ -227,7 +229,18 @@ def wired_arm(claude: Claude, units, policy, *, chains: int, prior_groups: int, 
     instruction = production_instruction(policy, False).replace(
         "Resolve pronouns", co.TRANSLATOR_RULE + "Resolve pronouns")
 
-    def translate(index, prior):
+    english = {u["sourceUnitId"]: u["english"] for u in units}
+
+    def draft(numbers, prior):
+        groups = [{"translationGroupId": f"translation-{units[n - 1]['sourceUnitId']}",
+                   "sourceUnitIds": [units[n - 1]["sourceUnitId"]]} for n in numbers]
+        after = [{"sourceUnitId": u["sourceUnitId"], "english": u["english"]} for u in units[numbers[-1]:numbers[-1] + 2]]
+        prompt = co.window_draft_prompt(groups, english, prior=prior, context_after=after, glossary=glossary,
+                                        policy=policy, prompt_version=policy["translator"]["promptVersion"])
+        return claude(prompt["instruction"], json.dumps(prompt["input"], ensure_ascii=False),
+                      lambda text: co.window_draft_texts(co._json_object(text), groups))
+
+    def translate(index, prior, window_draft):
         unit = units[index]
         payload = {"translationGroupId": f"translation-{unit['sourceUnitId']}",
                    "sourceUnitIds": [unit["sourceUnitId"]],
@@ -240,15 +253,21 @@ def wired_arm(claude: Claude, units, policy, *, chains: int, prior_groups: int, 
                    "scripture": policy["scripture"], "formatting": policy["formatting"],
                    "sermonGlossary": glossary, "priorTarget": prior,
                    "continuation": co.group_continuation(flags, [unit["sourceUnitId"]])}
+        if window_draft is not None:
+            payload["windowDraft"] = {"targetText": window_draft}
         return claude(instruction, json.dumps(payload, ensure_ascii=False), _utterance_text)
 
     def run_chain(chain):
         done = []
-        for number in chain:
-            unit = units[number - 1]
-            text = translate(number - 1, co.prior_target(done, prior_groups))
-            done.append({"translationGroupId": f"translation-{unit['sourceUnitId']}",
-                         "targetUtterances": [text], "sourceUnitId": unit["sourceUnitId"]})
+        for start in range(0, len(chain), window_groups):
+            numbers = chain[start:start + window_groups]
+            drafts = draft(numbers, co.prior_target(done, prior_groups))
+            for number in numbers:
+                unit = units[number - 1]
+                text = translate(number - 1, co.prior_target(done, prior_groups),
+                                 drafts.get(f"translation-{unit['sourceUnitId']}"))
+                done.append({"translationGroupId": f"translation-{unit['sourceUnitId']}",
+                             "targetUtterances": [text], "sourceUnitId": unit["sourceUnitId"]})
         return {row["sourceUnitId"]: row["targetUtterances"][0] for row in done}
 
     merged = {}
@@ -451,6 +470,7 @@ def main() -> int:
     parser.add_argument("--window", type=int, default=12)
     parser.add_argument("--chunks", type=int, default=4)
     parser.add_argument("--prior-groups", type=int, default=8, help="p123_wired: priorTargetGroups")
+    parser.add_argument("--window-groups", type=int, default=8, help="p123_wired: windowGroups")
     args = parser.parse_args()
     arms = [a for a in args.arms.split(",") if a]
     assert set(arms) <= set(ARMS), f"unknown arm in {arms}"
@@ -495,7 +515,8 @@ def main() -> int:
         log("s2 ready")
     if "p123_wired" in arms:
         texts["p123_wired"] = wired_arm(translator, units, policy, chains=args.chunks,
-                                        prior_groups=args.prior_groups, workers=args.workers)
+                                        prior_groups=args.prior_groups, window_groups=args.window_groups,
+                                        workers=args.workers)
         log("p123 ready")
     s3 = None
     if {"s3_merge", "s5_review", "s4_reading"} & set(arms):

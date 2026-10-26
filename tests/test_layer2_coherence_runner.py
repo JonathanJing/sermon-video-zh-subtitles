@@ -14,7 +14,7 @@ from tongxing_production.text import models as subject
 from tests import test_produce_target_language_candidate as fixture_module
 
 OPTIONS = {"schemaVersion": coherence.LAYER2_SCHEMA, "locales": ["zh-Hans"],
-           "priorTargetGroups": 4, "chains": 1}
+           "priorTargetGroups": 4, "chains": 1, "windowGroups": 8}
 
 
 class CoherenceRunnerTests(unittest.TestCase):
@@ -27,6 +27,7 @@ class CoherenceRunnerTests(unittest.TestCase):
         self.addCleanup(temp.cleanup)
         self.out = Path(temp.name) / "run"
         self.calls = []
+        self.window_reply = None
 
     def fake_call(self, api_key, payload):
         self.calls.append(payload)
@@ -34,6 +35,12 @@ class CoherenceRunnerTests(unittest.TestCase):
         if "knownGlossary" in prompt:
             result = {"people": [{"source": "Jesus", "target": "耶稣", "note": ""}],
                       "pronouns": {"jesus": "祂"}}
+        elif "priorChinese" in prompt:
+            if self.window_reply is not None:
+                return {"id": f"response-{len(self.calls)}", "model": payload["model"],
+                        "choices": [{"finish_reason": "stop", "message": {"content": self.window_reply}}]}
+            result = {"groups": [{"translationGroupId": row["translationGroupId"], "chinese": f"草稿{n}"}
+                                 for n, row in enumerate(prompt["groups"], 1)]}
         else:
             group = next(row for row in self.fixture.evidence["groups"]
                          if row["sourceUnitIds"] == prompt["sourceUnitIds"])
@@ -54,14 +61,14 @@ class CoherenceRunnerTests(unittest.TestCase):
         prompts = []
         for payload in self.calls:
             prompt = json.loads(payload["messages"][1]["content"])
-            if "knownGlossary" not in prompt:
+            if "knownGlossary" not in prompt and "priorChinese" not in prompt:
                 prompts.append((payload["messages"][0]["content"], prompt))
         return prompts
 
     def test_first_round_chain_passes_glossary_prior_text_and_hints(self):
         evidence = self.run_models(OPTIONS)
-        # One glossary slice, then translate and review for each of the two groups.
-        self.assertEqual(len(self.calls), 5)
+        # One glossary slice, one window draft, then translate and review for each of the two groups.
+        self.assertEqual(len(self.calls), 6)
         prompts = self.group_prompts()
         first_text = "".join(evidence["groups"][0]["targetUtterances"])
         for instruction, prompt in prompts:
@@ -73,9 +80,12 @@ class CoherenceRunnerTests(unittest.TestCase):
         prior = [{"translationGroupId": evidence["groups"][0]["translationGroupId"], "targetText": first_text}]
         # Translator and reviewer of group 1, then of group 2.
         self.assertEqual([prompt["priorTarget"] for _, prompt in prompts], [[], [], prior, prior])
+        self.assertEqual([prompt["windowDraft"] for _, prompt in prompts],
+                         [{"targetText": "草稿1"}] * 2 + [{"targetText": "草稿2"}] * 2)
         receipt = json.loads((self.out / "coherence" / "receipt.json").read_text(encoding="utf-8"))
         self.assertEqual(receipt["dispatch"], {"mode": "chains", "chains": [[1, 2]]})
         self.assertEqual(receipt["priorTargetSources"], {"chain": 2})
+        self.assertEqual(receipt["groupsWithWindowDraft"], 2)
         self.assertFalse(receipt["humanApproval"])
         self.assertEqual(set(evidence["generation"]), {"translator", "reviewer"})
         self.assertNotIn("coherence", evidence)
@@ -85,6 +95,16 @@ class CoherenceRunnerTests(unittest.TestCase):
         count = len(self.calls)
         self.assertEqual(self.run_models(OPTIONS), first)
         self.assertEqual(len(self.calls), count)
+
+    def test_unusable_window_reply_leaves_groups_without_a_draft(self):
+        self.window_reply = "not json"
+        evidence = self.run_models(OPTIONS)
+        self.assertEqual(len(evidence["groups"]), 2)
+        self.assertFalse(any("windowDraft" in prompt for _, prompt in self.group_prompts()))
+        self.window_reply = json.dumps({"groups": [{"translationGroupId": "unknown", "chinese": "x"}]})
+        self.calls, self.out = [], self.out.parent / "second"
+        self.run_models({**OPTIONS, "windowGroups": 1})
+        self.assertFalse(any("windowDraft" in prompt for _, prompt in self.group_prompts()))
 
     def test_separate_chains_do_not_see_each_others_text(self):
         self.run_models({**OPTIONS, "chains": 2})
@@ -142,6 +162,7 @@ class CoherenceRunnerTests(unittest.TestCase):
                                partial_repair_brief=brief, coherence=OPTIONS)
         # Only the failed group is translated and reviewed again; the glossary is reused.
         self.assertEqual(len(self.calls) - before, 2)
+        self.assertEqual(json.loads(self.calls[-1]["messages"][1]["content"])["windowDraft"], {"targetText": "草稿2"})
         del self.calls[:before]
         for _, prompt in self.group_prompts():
             self.assertEqual(prompt["translationGroupId"], failed_id)

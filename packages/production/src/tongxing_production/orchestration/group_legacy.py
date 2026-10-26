@@ -36,7 +36,7 @@ BASE_PROMPT_FIELDS = {"translationGroupId", "sourceUnitIds", "englishUnits", "co
                       "terminology", "scripture", "formatting", "modelRules", "astraDraft"}
 # Whole-sermon coherence inputs (text/coherence.py): the same for every round of a group, not a
 # revision. They stay in boundedPayloadSha256 and the request fingerprint.
-COHERENCE_PROMPT_FIELDS = {"sermonGlossary", "priorTarget", "continuation"}
+COHERENCE_PROMPT_FIELDS = {"sermonGlossary", "priorTarget", "continuation", "windowDraft"}
 # Renderer intent fields that are assembly or batch information, not sound identity
 # (design section 3; batch membership is open decision 1 and stays out of the key).
 INTENT_ASSEMBLY_FIELDS = {"unitIndex", "jobJsonSha256", "jobFileSha256", "sourceJsonSha256",
