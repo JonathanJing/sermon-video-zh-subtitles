@@ -1,0 +1,243 @@
+Command line invocation:
+    /Applications/Xcode.app/Contents/Developer/usr/bin/xcodebuild -project /private/tmp/tongxing-ios-beta-1.26.22-pr1383/apps/tongxing-ios/Tongxing.xcodeproj -scheme TongxingBeta -configuration BetaRelease -destination generic/platform=iOS -derivedDataPath /private/tmp/tongxing-ios-beta-1.26.22-pr1383/artifacts/tongxing-ios/beta-1.26.22-build63/DerivedData -archivePath /private/tmp/tongxing-ios-beta-1.26.22-pr1383/artifacts/tongxing-ios/beta-1.26.22-build63/Tongxing.xcarchive -allowProvisioningUpdates archive "TONGXING_CONTENT_ORIGIN=https://ai-for-god-sermon-audio-dev.web.app"
+
+Build settings from command line:
+    TONGXING_CONTENT_ORIGIN = https://ai-for-god-sermon-audio-dev.web.app
+
+Resolve Package Graph
+
+
+Resolved source packages:
+  TongxingIOS: /tmp/tongxing-ios-beta-1.26.22-pr1383/apps/tongxing-ios
+  TongxingCore: /tmp/tongxing-ios-beta-1.26.22-pr1383/apps/tongxing-ios/Core
+
+ComputePackagePrebuildTargetDependencyGraph
+
+Prepare packages
+
+CreateBuildRequest
+
+SendProjectDescription
+
+CreateBuildOperation
+
+ComputeTargetDependencyGraph
+note: Building targets in dependency order
+note: Target dependency graph (6 targets)
+    Target 'Tongxing' in project 'Tongxing'
+        ➜ Explicit dependency on target 'ListeningActivityExtension' in project 'Tongxing'
+        ➜ Explicit dependency on target 'TongxingCore-product' in project 'TongxingCore'
+        ➜ Explicit dependency on target 'TongxingInfrastructure-product' in project 'TongxingIOS'
+    Target 'TongxingInfrastructure-product' in project 'TongxingIOS'
+        ➜ Explicit dependency on target 'TongxingInfrastructure' in project 'TongxingIOS'
+        ➜ Explicit dependency on target 'TongxingCore-product' in project 'TongxingCore'
+    Target 'TongxingInfrastructure' in project 'TongxingIOS'
+        ➜ Explicit dependency on target 'TongxingCore-product' in project 'TongxingCore'
+    Target 'ListeningActivityExtension' in project 'Tongxing'
+        ➜ Explicit dependency on target 'TongxingCore-product' in project 'TongxingCore'
+    Target 'TongxingCore-product' in project 'TongxingCore'
+        ➜ Explicit dependency on target 'TongxingCore' in project 'TongxingCore'
+    Target 'TongxingCore' in project 'TongxingCore' (no dependencies)
+... 922 lines omitted; 2 error-like lines, 2 kept below ...
+[line 716] RegisterExecutionPolicyException /tmp/tongxing-ios-beta-1.26.22-pr1383/artifacts/tongxing-ios/beta-1.26.22-build63/DerivedData/Build/Intermediates.noindex/ArchiveIntermediates/TongxingBeta/IntermediateBuildFilesPath/UninstalledProducts/iphoneos/ListeningActivityExtension.appex (in target 'ListeningActivityExtension' from project 'Tongxing')
+[line 718]     builtin-RegisterExecutionPolicyException /tmp/tongxing-ios-beta-1.26.22-pr1383/artifacts/tongxing-ios/beta-1.26.22-build63/DerivedData/Build/Intermediates.noindex/ArchiveIntermediates/TongxingBeta/IntermediateBuildFilesPath/UninstalledProducts/iphoneos/ListeningActivityExtension.appex
+... end of omitted section ...
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/tongxing-ios-beta-1.26.22-pr1383/artifacts/tongxing-ios/beta-1.26.22-build63/DerivedData/SDKExplicitPrecompiledModules/CoreData-9I5HLO07XAI0H92LW25EW7P8Y.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/tongxing-ios-beta-1.26.22-pr1383/artifacts/tongxing-ios/beta-1.26.22-build63/DerivedData/SDKExplicitPrecompiledModules/UIUtilities-3QA8XXS3FHS1NDZEG23HVKEIK.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/tongxing-ios-beta-1.26.22-pr1383/artifacts/tongxing-ios/beta-1.26.22-build63/DerivedData/SDKExplicitPrecompiledModules/CoreMIDI-3IFGEFAFUIPHF4X1GFLQ61C4P.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/tongxing-ios-beta-1.26.22-pr1383/artifacts/tongxing-ios/beta-1.26.22-build63/DerivedData/SDKExplicitPrecompiledModules/CoreLocation-CXQ4I4MLORM10EIDQTR5ERP0F.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/tongxing-ios-beta-1.26.22-pr1383/artifacts/tongxing-ios/beta-1.26.22-build63/DerivedData/SDKExplicitPrecompiledModules/LocalAuthentication-3IG3U1DK75TLGP5VXKL523L5U.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/tongxing-ios-beta-1.26.22-pr1383/artifacts/tongxing-ios/beta-1.26.22-build63/DerivedData/SDKExplicitPrecompiledModules/IOSurface-BMFPNPCCXK62X2TZ0PWJ2AFDZ.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/tongxing-ios-beta-1.26.22-pr1383/artifacts/tongxing-ios/beta-1.26.22-build63/DerivedData/SDKExplicitPrecompiledModules/Symbols-BRO2VL1MWG0ADBTF5GIGSBKDZ.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/tongxing-ios-beta-1.26.22-pr1383/artifacts/tongxing-ios/beta-1.26.22-build63/DerivedData/SDKExplicitPrecompiledModules/UserNotifications-CYQ4DQQ5S5KLMSAH8QGTBPEQ1.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/tongxing-ios-beta-1.26.22-pr1383/artifacts/tongxing-ios/beta-1.26.22-build63/DerivedData/SDKExplicitPrecompiledModules/AVRouting-9UPF1CH8QE7G94ZIMEH206F30.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/tongxing-ios-beta-1.26.22-pr1383/artifacts/tongxing-ios/beta-1.26.22-build63/DerivedData/SDKExplicitPrecompiledModules/OpenGLES-2YXTAJJDQD54SPN2BQAQPC2PZ.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/tongxing-ios-beta-1.26.22-pr1383/artifacts/tongxing-ios/beta-1.26.22-build63/DerivedData/SDKExplicitPrecompiledModules/Metal-8YJ6F0SRZYAUTRESZ0OK4ZZ0E.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/tongxing-ios-beta-1.26.22-pr1383/artifacts/tongxing-ios/beta-1.26.22-build63/DerivedData/SDKExplicitPrecompiledModules/CoreMotion-C8H7HHG7T4AD9FAKYYFQH74U4.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/tongxing-ios-beta-1.26.22-pr1383/artifacts/tongxing-ios/beta-1.26.22-build63/DerivedData/SDKExplicitPrecompiledModules/AudioToolbox-8ECDEOZFHIGJMSNSHAOQ8BKOS.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/tongxing-ios-beta-1.26.22-pr1383/artifacts/tongxing-ios/beta-1.26.22-build63/DerivedData/SDKExplicitPrecompiledModules/CoreVideo-ED0K9PVTC8P6UMGJTDCPA6EVW.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/tongxing-ios-beta-1.26.22-pr1383/artifacts/tongxing-ios/beta-1.26.22-build63/DerivedData/SDKExplicitPrecompiledModules/QuartzCore-218GMWXYDIA589NLOVILGQ1W0.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/tongxing-ios-beta-1.26.22-pr1383/artifacts/tongxing-ios/beta-1.26.22-build63/DerivedData/SDKExplicitPrecompiledModules/CoreMedia-4TSDV5L0JHMTJFR0FWV0GYJ8H.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/tongxing-ios-beta-1.26.22-pr1383/artifacts/tongxing-ios/beta-1.26.22-build63/DerivedData/SDKExplicitPrecompiledModules/CoreImage-5VXE7U3ZIRZZPQETAD97FS9S7.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/tongxing-ios-beta-1.26.22-pr1383/artifacts/tongxing-ios/beta-1.26.22-build63/DerivedData/SDKExplicitPrecompiledModules/SwiftUICore-5DO9580SLABF6VRR1E3LN26HR.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/tongxing-ios-beta-1.26.22-pr1383/artifacts/tongxing-ios/beta-1.26.22-build63/DerivedData/SDKExplicitPrecompiledModules/VideoToolbox-4J02W56TXEFQN9J3VDCCX5E9T.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/tongxing-ios-beta-1.26.22-pr1383/artifacts/tongxing-ios/beta-1.26.22-build63/DerivedData/SDKExplicitPrecompiledModules/AVFAudio-9RFDH5T1KW62CBGZ7JB2M3VGH.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/tongxing-ios-beta-1.26.22-pr1383/artifacts/tongxing-ios/beta-1.26.22-build63/DerivedData/SDKExplicitPrecompiledModules/MediaToolbox-4WAD1KXFEI4CV0ZSXL9HDUEX4.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/tongxing-ios-beta-1.26.22-pr1383/artifacts/tongxing-ios/beta-1.26.22-build63/DerivedData/SDKExplicitPrecompiledModules/UIKit-DS8RCCDOBSY7CPTBU7EJ09GO2.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/tongxing-ios-beta-1.26.22-pr1383/artifacts/tongxing-ios/beta-1.26.22-build63/DerivedData/SDKExplicitPrecompiledModules/AVFoundation-EYDES0KL0EMWWPQBBPZ4CZIVW.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/tongxing-ios-beta-1.26.22-pr1383/artifacts/tongxing-ios/beta-1.26.22-build63/DerivedData/SDKExplicitPrecompiledModules/MediaPlayer-C0S6P9D4GX1AOZ8EFH6OGDE0I.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/tongxing-ios-beta-1.26.22-pr1383/artifacts/tongxing-ios/beta-1.26.22-build63/DerivedData/SDKExplicitPrecompiledModules/WebKit-75K9V6OZQR9H1R558AJO6XEA3.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/tongxing-ios-beta-1.26.22-pr1383/artifacts/tongxing-ios/beta-1.26.22-build63/DerivedData/SDKExplicitPrecompiledModules/SwiftUI-194DK7NOE5UHETWOYWQ7CY0JF.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/tongxing-ios-beta-1.26.22-pr1383/artifacts/tongxing-ios/beta-1.26.22-build63/DerivedData/SDKExplicitPrecompiledModules/AVKit-3X0WEH5D8C6VTXHBK20ORF5JW.pcm
+
+SwiftCompile normal arm64 Compiling\ AppModel.swift,\ AudioAlignmentController.swift,\ BetaNotifications.swift,\ BetaRemotePush.swift,\ ContentView.swift,\ DesignSystem.swift,\ DownloadBackgroundAssertion.swift,\ EnglishLocateSheet.swift,\ ListeningActivityAttributes.swift,\ ListeningActivityCard.swift,\ ListeningActivityIslandContent.swift,\ ListeningLiveActivity.swift,\ Localization.swift,\ MicrophoneCapture.swift,\ PlaybackController.swift,\ PlaybackDock.swift,\ PlaybackPanelLayout.swift,\ PrivacySupportView.swift,\ ProductionPush.swift,\ StatisticsPromptCard.swift,\ TongxingApp.swift,\ UITestLaunch.swift,\ VoiceDemoCatalog.swift,\ VoiceDemoSection.swift,\ WeeklyUpdates.swift,\ GeneratedAssetSymbols.swift /tmp/tongxing-ios-beta-1.26.22-pr1383/apps/tongxing-ios/App/AppModel.swift /tmp/tongxing-ios-beta-1.26.22-pr1383/apps/tongxing-ios/App/AudioAlignmentController.swift /tmp/tongxing-ios-beta-1.26.22-pr1383/apps/tongxing-ios/App/BetaNotifications.swift /tmp/tongxing-ios-beta-1.26.22-pr1383/apps/tongxing-ios/App/BetaRemotePush.swift /tmp/tongxing-ios-beta-1.26.22-pr1383/apps/tongxing-ios/App/ContentView.swift /tmp/tongxing-ios-beta-1.26.22-pr1383/apps/tongxing-ios/App/DesignSystem.swift /tmp/tongxing-ios-beta-1.26.22-pr1383/apps/tongxing-ios/App/DownloadBackgroundAssertion.swift /tmp/tongxing-ios-beta-1.26.22-pr1383/apps/tongxing-ios/App/EnglishLocateSheet.swift /tmp/tongxing-ios-beta-1.26.22-pr1383/apps/tongxing-ios/Shared/ListeningActivityAttributes.swift /tmp/tongxing-ios-beta-1.26.22-pr1383/apps/tongxing-ios/Shared/ListeningActivityCard.swift /tmp/tongxing-ios-beta-1.26.22-pr1383/apps/tongxing-ios/Shared/ListeningActivityIslandContent.swift /tmp/tongxing-ios-beta-1.26.22-pr1383/apps/tongxing-ios/App/ListeningLiveActivity.swift /tmp/tongxing-ios-beta-1.26.22-pr1383/apps/tongxing-ios/App/Localization.swift /tmp/tongxing-ios-beta-1.26.22-pr1383/apps/tongxing-ios/App/MicrophoneCapture.swift /tmp/tongxing-ios-beta-1.26.22-pr1383/apps/tongxing-ios/App/PlaybackControll ...[line truncated]
+
+SwiftCompile normal arm64 (in target 'Tongxing' from project 'Tongxing')
+    cd /tmp/tongxing-ios-beta-1.26.22-pr1383/apps/tongxing-ios
+
+
+/tmp/tongxing-ios-beta-1.26.22-pr1383/apps/tongxing-ios/App/DownloadBackgroundAssertion.swift:25:113: warning: passing non-Sendable parameter 'expiration' to function expecting a '@Sendable' closure
+22 |     static func system() -> DownloadBackgroundAssertion {
+23 |         #if os(iOS)
+24 |         DownloadBackgroundAssertion(begin: { expiration in
+   |                                              `- note: parameter 'expiration' is implicitly non-Sendable
+25 |             let id = UIApplication.shared.beginBackgroundTask(withName: "tongxing-download", expirationHandler: expiration)
+   |                                                                                                                 `- warning: passing non-Sendable parameter 'expiration' to function expecting a '@Sendable' closure
+26 |             return id == .invalid ? -1 : id.rawValue
+27 |         }, end: { UIApplication.shared.endBackgroundTask(UIBackgroundTaskIdentifier(rawValue: $0)) })
+
+/tmp/tongxing-ios-beta-1.26.22-pr1383/apps/tongxing-ios/App/MicrophoneCapture.swift:259:92: warning: main actor-isolated static property 'startupSeconds' can not be referenced from a nonisolated context; this is an error in the Swift 6 language mode
+255 |
+256 |     /// Engine startup allowance before the first buffer (matches Web's 5 s).
+257 |     static let startupSeconds: Double = 5
+    |                `- note: static property declared here
+258 |
+259 |     func startEngine(maxSeconds: Double, startupSeconds: Double = ContinuousCaptureSession.startupSeconds) throws {
+    |                                                                                            `- warning: main actor-isolated static property 'startupSeconds' can not be referenced from a nonisolated context; this is an error in the Swift 6 language mode
+260 |         // Freeze both monotonic deadlines before synchronous engine setup. PCM
+261 |         // length is capped by the accumulator from the first sample; these
+
+/tmp/tongxing-ios-beta-1.26.22-pr1383/apps/tongxing-ios/App/PlaybackController.swift:1014:92: warning: 'allowBluetooth' was deprecated in iOS 8.0: renamed to 'AVAudioSession.CategoryOptions.allowBluetoothHFP' [#DeprecatedDeclaration]
+1012 |                     // The legacy spelling also builds with the older CI SDK;
+1013 |                     // both names select the same Bluetooth HFP option (0x4).
+1014 |                     try session.setCategory(.playAndRecord, mode: .measurement, options: [.allowBluetooth, .defaultToSpeaker])
+     |                                                                                            |- warning: 'allowBluetooth' was deprecated in iOS 8.0: renamed to 'AVAudioSession.CategoryOptions.allowBluetoothHFP' [#DeprecatedDeclaration]
+     |                                                                                            `- note: use 'AVAudioSession.CategoryOptions.allowBluetoothHFP' instead
+1015 |                     try session.setActive(true)
+1016 |                     continuation.resume()
+
+[#DeprecatedDeclaration]: <https://docs.swift.org/compiler/documentation/diagnostics/deprecated-declaration>
+LinkAssetCatalog /tmp/tongxing-ios-beta-1.26.22-pr1383/apps/tongxing-ios/App/AppIcon.icon /tmp/tongxing-ios-beta-1.26.22-pr1383/apps/tongxing-ios/App/Assets.xcassets (in target 'Tongxing' from project 'Tongxing')
+    cd /tmp/tongxing-ios-beta-1.26.22-pr1383/apps/tongxing-ios
+    builtin-linkAssetCatalog --thinned /tmp/tongxing-ios-beta-1.26.22-pr1383/artifacts/tongxing-ios/beta-1.26.22-build63/DerivedData/Build/Intermediates.noindex/ArchiveIntermediates/TongxingBeta/IntermediateBuildFilesPath/Tongxing.build/BetaRelease-iphoneos/Tongxing.build/assetcatalog_output/thinned --thinned-dependencies /tmp/tongxing-ios-beta-1.26.22-pr1383/artifacts/tongxing-ios/beta-1.26.22-build63/DerivedData/Build/Intermediates.noindex/ArchiveIntermediates/TongxingBeta/IntermediateBuildFilesPath/Tongxing.build/BetaRelease-iphoneos/Tongxing.build/assetcatalog_dependencies_thinned --thinned-info-plist-content /tmp/tongxing-ios-beta-1.26.22-pr1383/artifacts/tongxing-ios/beta-1.26.22-build63/DerivedData/Build/Intermediates.noindex/ArchiveIntermediates/TongxingBeta/IntermediateBuildFilesPath/Tongxing.build/BetaRelease-iphoneos/Tongxing.build/assetcatalog_generated_info.plist_thinned --unthinned /tmp/tongxing-ios-beta-1.26.22-pr1383/artifacts/tongxing-ios/beta-1.26.22-build63/DerivedData/Build/Intermediates.noindex/ArchiveIntermediates/TongxingBeta/IntermediateBuildFilesPath/Tongxing.build/BetaRelease-iphoneos/Tongxing.build/assetcatalog_output/unthinned --unthinned-dependencies /tmp/tongxing-ios-beta-1.26.22-pr1383/artifacts/tongxing-ios/beta-1.26.22-build63/DerivedData/Build/Intermediates.noindex/ArchiveIntermediates/TongxingBeta/IntermediateBuildFilesPath/Tongxing.build/BetaRelease-iphoneos/Tongxing.build/assetcatalog_dependencies_unthinned --unthinned-info-plist-content /tmp/tongxing-ios-beta-1.26.22-pr1383/artifacts/tongxing-ios/beta-1.26.22-build63/DerivedData/Build/Intermediates.noindex/ArchiveIntermediates/TongxingBeta/IntermediateBuildFilesPath/Tongxing.build/BetaRelease-iphoneos/Tongxing.build/assetcatalog_generated_info.plist_unthinned --output /tmp/tongxing-ios-beta-1.26.22-pr1383/artifacts/tongxing-ios/beta-1.26.22-build63/DerivedData/Build/Intermediates.noindex/ArchiveIntermediates/TongxingBeta/InstallationBuildProductsLocation/Applications/Tongxing.ap ...[line truncated]
+note: Emplaced /tmp/tongxing-ios-beta-1.26.22-pr1383/artifacts/tongxing-ios/beta-1.26.22-build63/DerivedData/Build/Intermediates.noindex/ArchiveIntermediates/TongxingBeta/InstallationBuildProductsLocation/Applications/Tongxing.app/Assets.car (in target 'Tongxing' from project 'Tongxing')
+note: Emplaced /tmp/tongxing-ios-beta-1.26.22-pr1383/artifacts/tongxing-ios/beta-1.26.22-build63/DerivedData/Build/Intermediates.noindex/ArchiveIntermediates/TongxingBeta/InstallationBuildProductsLocation/Applications/Tongxing.app/AppIcon76x76@2x~ipad.png (in target 'Tongxing' from project 'Tongxing')
+note: Emplaced /tmp/tongxing-ios-beta-1.26.22-pr1383/artifacts/tongxing-ios/beta-1.26.22-build63/DerivedData/Build/Intermediates.noindex/ArchiveIntermediates/TongxingBeta/InstallationBuildProductsLocation/Applications/Tongxing.app/<email> (in target 'Tongxing' from project 'Tongxing')
+
+SwiftDriverJobDiscovery normal arm64 Compiling AppModel.swift, AudioAlignmentController.swift, BetaNotifications.swift, BetaRemotePush.swift, ContentView.swift, DesignSystem.swift, DownloadBackgroundAssertion.swift, EnglishLocateSheet.swift, ListeningActivityAttributes.swift, ListeningActivityCard.swift, ListeningActivityIslandContent.swift, ListeningLiveActivity.swift, Localization.swift, MicrophoneCapture.swift, PlaybackController.swift, PlaybackDock.swift, PlaybackPanelLayout.swift, PrivacySupportView.swift, ProductionPush.swift, StatisticsPromptCard.swift, TongxingApp.swift, UITestLaunch.swift, VoiceDemoCatalog.swift, VoiceDemoSection.swift, WeeklyUpdates.swift, GeneratedAssetSymbols.swift (in target 'Tongxing' from project 'Tongxing')
+
+SwiftDriver\ Compilation\ Requirements Tongxing normal arm64 com.apple.xcode.tools.swift.compiler (in target 'Tongxing' from project 'Tongxing')
+    cd /tmp/tongxing-ios-beta-1.26.22-pr1383/apps/tongxing-ios
+    builtin-Swift-Compilation-Requirements -- /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc -module-name Tongxing -O -whole-module-optimization @/tmp/tongxing-ios-beta-1.26.22-pr1383/artifacts/tongxing-ios/beta-1.26.22-build63/DerivedData/Build/Intermediates.noindex/ArchiveIntermediates/TongxingBeta/IntermediateBuildFilesPath/Tongxing.build/BetaRelease-iphoneos/Tongxing.build/Objects-normal/arm64/Tongxing.SwiftFileList -DTONGXING_APNS_PRODUCTION -enable-bare-slash-regex -enable-experimental-feature DebugDescriptionMacro -sdk /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS27.1.sdk -target arm64-apple-ios17.0 -g -module-cache-path /tmp/tongxing-ios-beta-1.26.22-pr1383/artifacts/tongxing-ios/beta-1.26.22-build63/DerivedData/ModuleCache.noindex -Xfrontend -serialize-debugging-options -swift-version 5 -I /tmp/tongxing-ios-beta-1.26.22-pr1383/artifacts/tongxing-ios/beta-1.26.22-build63/DerivedData/Build/Intermediates.noindex/ArchiveIntermediates/TongxingBeta/BuildProductsPath/BetaRelease-iphoneos -F /tmp/tongxing-ios-beta-1.26.22-pr1383/artifacts/tongxing-ios/beta-1.26.22-build63/DerivedData/Build/Intermediates.noindex/ArchiveIntermediates/TongxingBeta/BuildProductsPath/BetaRelease-iphoneos/PackageFrameworks -F /tmp/tongxing-ios-beta-1.26.22-pr1383/artifacts/tongxing-ios/beta-1.26.22-build63/DerivedData/Build/Intermediates.noindex/ArchiveIntermediates/TongxingBeta/BuildProductsPath/BetaRelease-iphoneos -c -num-threads 10 -Xcc -ivfsstatcache -Xcc /tmp/tongxing-ios-beta-1.26.22-pr1383/artifacts/tongxing-ios/beta-1.26.22-build63/DerivedData/SDKStatCaches.noindex/iphoneos27.1-24A94232-7568eff67e6f40c5a98ca4ef40d9005c.sdkstatcache -output-file-map /tmp/tongxing-ios-beta-1.26.22-pr1383/artifacts/tongxing-ios/beta-1.26.22-build63/DerivedData/Build/Intermediates.noindex/ArchiveIntermediates/TongxingBeta/IntermediateBuildFilesPath/Tongxing.build/BetaRelease-iphoneos/Tongxing.build/Object ...[line truncated]
+
+SwiftMergeGeneratedHeaders /tmp/tongxing-ios-beta-1.26.22-pr1383/artifacts/tongxing-ios/beta-1.26.22-build63/DerivedData/Build/Intermediates.noindex/ArchiveIntermediates/TongxingBeta/IntermediateBuildFilesPath/Tongxing.build/BetaRelease-iphoneos/Tongxing.build/DerivedSources/Tongxing-Swift.h /tmp/tongxing-ios-beta-1.26.22-pr1383/artifacts/tongxing-ios/beta-1.26.22-build63/DerivedData/Build/Intermediates.noindex/ArchiveIntermediates/TongxingBeta/IntermediateBuildFilesPath/Tongxing.build/BetaRelease-iphoneos/Tongxing.build/Objects-normal/arm64/Tongxing-Swift.h (in target 'Tongxing' from project 'Tongxing')
+    cd /tmp/tongxing-ios-beta-1.26.22-pr1383/apps/tongxing-ios
+    builtin-swiftHeaderTool -arch arm64 /tmp/tongxing-ios-beta-1.26.22-pr1383/artifacts/tongxing-ios/beta-1.26.22-build63/DerivedData/Build/Intermediates.noindex/ArchiveIntermediates/TongxingBeta/IntermediateBuildFilesPath/Tongxing.build/BetaRelease-iphoneos/Tongxing.build/Objects-normal/arm64/Tongxing-Swift.h -o /tmp/tongxing-ios-beta-1.26.22-pr1383/artifacts/tongxing-ios/beta-1.26.22-build63/DerivedData/Build/Intermediates.noindex/ArchiveIntermediates/TongxingBeta/IntermediateBuildFilesPath/Tongxing.build/BetaRelease-iphoneos/Tongxing.build/DerivedSources/Tongxing-Swift.h
+
+Copy /tmp/tongxing-ios-beta-1.26.22-pr1383/artifacts/tongxing-ios/beta-1.26.22-build63/DerivedData/Build/Intermediates.noindex/ArchiveIntermediates/TongxingBeta/BuildProductsPath/BetaRelease-iphoneos/Tongxing.swiftmodule/arm64-apple-ios.abi.json /tmp/tongxing-ios-beta-1.26.22-pr1383/artifacts/tongxing-ios/beta-1.26.22-build63/DerivedData/Build/Intermediates.noindex/ArchiveIntermediates/TongxingBeta/IntermediateBuildFilesPath/Tongxing.build/BetaRelease-iphoneos/Tongxing.build/Objects-normal/arm64/Tongxing.abi.json (in target 'Tongxing' from project 'Tongxing')
+    cd /tmp/tongxing-ios-beta-1.26.22-pr1383/apps/tongxing-ios
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -resolve-src-symlinks -rename /tmp/tongxing-ios-beta-1.26.22-pr1383/artifacts/tongxing-ios/beta-1.26.22-build63/DerivedData/Build/Intermediates.noindex/ArchiveIntermediates/TongxingBeta/IntermediateBuildFilesPath/Tongxing.build/BetaRelease-iphoneos/Tongxing.build/Objects-normal/arm64/Tongxing.abi.json /tmp/tongxing-ios-beta-1.26.22-pr1383/artifacts/tongxing-ios/beta-1.26.22-build63/DerivedData/Build/Intermediates.noindex/ArchiveIntermediates/TongxingBeta/BuildProductsPath/BetaRelease-iphoneos/Tongxing.swiftmodule/arm64-apple-ios.abi.json
+
+Copy /tmp/tongxing-ios-beta-1.26.22-pr1383/artifacts/tongxing-ios/beta-1.26.22-build63/DerivedData/Build/Intermediates.noindex/ArchiveIntermediates/TongxingBeta/BuildProductsPath/BetaRelease-iphoneos/Tongxing.swiftmodule/arm64-apple-ios.swiftdoc /tmp/tongxing-ios-beta-1.26.22-pr1383/artifacts/tongxing-ios/beta-1.26.22-build63/DerivedData/Build/Intermediates.noindex/ArchiveIntermediates/TongxingBeta/IntermediateBuildFilesPath/Tongxing.build/BetaRelease-iphoneos/Tongxing.build/Objects-normal/arm64/Tongxing.swiftdoc (in target 'Tongxing' from project 'Tongxing')
+    cd /tmp/tongxing-ios-beta-1.26.22-pr1383/apps/tongxing-ios
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -resolve-src-symlinks -rename /tmp/tongxing-ios-beta-1.26.22-pr1383/artifacts/tongxing-ios/beta-1.26.22-build63/DerivedData/Build/Intermediates.noindex/ArchiveIntermediates/TongxingBeta/IntermediateBuildFilesPath/Tongxing.build/BetaRelease-iphoneos/Tongxing.build/Objects-normal/arm64/Tongxing.swiftdoc /tmp/tongxing-ios-beta-1.26.22-pr1383/artifacts/tongxing-ios/beta-1.26.22-build63/DerivedData/Build/Intermediates.noindex/ArchiveIntermediates/TongxingBeta/BuildProductsPath/BetaRelease-iphoneos/Tongxing.swiftmodule/arm64-apple-ios.swiftdoc
+
+Copy /tmp/tongxing-ios-beta-1.26.22-pr1383/artifacts/tongxing-ios/beta-1.26.22-build63/DerivedData/Build/Intermediates.noindex/ArchiveIntermediates/TongxingBeta/BuildProductsPath/BetaRelease-iphoneos/Tongxing.swiftmodule/arm64-apple-ios.swiftmodule /tmp/tongxing-ios-beta-1.26.22-pr1383/artifacts/tongxing-ios/beta-1.26.22-build63/DerivedData/Build/Intermediates.noindex/ArchiveIntermediates/TongxingBeta/IntermediateBuildFilesPath/Tongxing.build/BetaRelease-iphoneos/Tongxing.build/Objects-normal/arm64/Tongxing.swiftmodule (in target 'Tongxing' from project 'Tongxing')
+    cd /tmp/tongxing-ios-beta-1.26.22-pr1383/apps/tongxing-ios
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -resolve-src-symlinks -rename /tmp/tongxing-ios-beta-1.26.22-pr1383/artifacts/tongxing-ios/beta-1.26.22-build63/DerivedData/Build/Intermediates.noindex/ArchiveIntermediates/TongxingBeta/IntermediateBuildFilesPath/Tongxing.build/BetaRelease-iphoneos/Tongxing.build/Objects-normal/arm64/Tongxing.swiftmodule /tmp/tongxing-ios-beta-1.26.22-pr1383/artifacts/tongxing-ios/beta-1.26.22-build63/DerivedData/Build/Intermediates.noindex/ArchiveIntermediates/TongxingBeta/BuildProductsPath/BetaRelease-iphoneos/Tongxing.swiftmodule/arm64-apple-ios.swiftmodule
+
+Ld /tmp/tongxing-ios-beta-1.26.22-pr1383/artifacts/tongxing-ios/beta-1.26.22-build63/DerivedData/Build/Intermediates.noindex/ArchiveIntermediates/TongxingBeta/InstallationBuildProductsLocation/Applications/Tongxing.app/Tongxing normal (in target 'Tongxing' from project 'Tongxing')
+    cd /tmp/tongxing-ios-beta-1.26.22-pr1383/apps/tongxing-ios
+    /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -Xlinker -reproducible -target arm64-apple-ios17.0 -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS27.1.sdk -Os -Xlinker -no_warn_duplicate_libraries -L/tmp/tongxing-ios-beta-1.26.22-pr1383/artifacts/tongxing-ios/beta-1.26.22-build63/DerivedData/Build/Intermediates.noindex/ArchiveIntermediates/TongxingBeta/IntermediateBuildFilesPath/EagerLinkingTBDs/BetaRelease-iphoneos -L/tmp/tongxing-ios-beta-1.26.22-pr1383/artifacts/tongxing-ios/beta-1.26.22-build63/DerivedData/Build/Intermediates.noindex/ArchiveIntermediates/TongxingBeta/BuildProductsPath/BetaRelease-iphoneos -F/tmp/tongxing-ios-beta-1.26.22-pr1383/artifacts/tongxing-ios/beta-1.26.22-build63/DerivedData/Build/Intermediates.noindex/ArchiveIntermediates/TongxingBeta/IntermediateBuildFilesPath/EagerLinkingTBDs/BetaRelease-iphoneos -F/tmp/tongxing-ios-beta-1.26.22-pr1383/artifacts/tongxing-ios/beta-1.26.22-build63/DerivedData/Build/Intermediates.noindex/ArchiveIntermediates/TongxingBeta/BuildProductsPath/BetaRelease-iphoneos/PackageFrameworks -F/tmp/tongxing-ios-beta-1.26.22-pr1383/artifacts/tongxing-ios/beta-1.26.22-build63/DerivedData/Build/Intermediates.noindex/ArchiveIntermediates/TongxingBeta/BuildProductsPath/BetaRelease-iphoneos -filelist /tmp/tongxing-ios-beta-1.26.22-pr1383/artifacts/tongxing-ios/beta-1.26.22-build63/DerivedData/Build/Intermediates.noindex/ArchiveIntermediates/TongxingBeta/IntermediateBuildFilesPath/Tongxing.build/BetaRelease-iphoneos/Tongxing.build/Objects-normal/arm64/Tongxing.LinkFileList -Xlinker -rpath -Xlinker /usr/lib/swift -Xlinker -rpath -Xlinker @executable_path/Frameworks -Xlinker -dead_strip -Xlinker -object_path_lto -Xlinker /tmp/tongxing-ios-beta-1.26.22-pr1383/artifacts/tongxing-ios/beta-1.26.22-build63/DerivedData/Build/Intermediates.noindex/ArchiveIntermediates/TongxingBeta/IntermediateBuildFilesPath/Tongxing.build/BetaRele ...[line truncated]
+
+Copy /tmp/tongxing-ios-beta-1.26.22-pr1383/artifacts/tongxing-ios/beta-1.26.22-build63/DerivedData/Build/Intermediates.noindex/ArchiveIntermediates/TongxingBeta/InstallationBuildProductsLocation/Applications/Tongxing.app/PlugIns/ListeningActivityExtension.appex /tmp/tongxing-ios-beta-1.26.22-pr1383/artifacts/tongxing-ios/beta-1.26.22-build63/DerivedData/Build/Intermediates.noindex/ArchiveIntermediates/TongxingBeta/BuildProductsPath/BetaRelease-iphoneos/ListeningActivityExtension.appex (in target 'Tongxing' from project 'Tongxing')
+    cd /tmp/tongxing-ios-beta-1.26.22-pr1383/apps/tongxing-ios
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -exclude Headers -exclude PrivateHeaders -exclude Modules -exclude \*.tbd -resolve-src-symlinks -remove-static-executable /tmp/tongxing-ios-beta-1.26.22-pr1383/artifacts/tongxing-ios/beta-1.26.22-build63/DerivedData/Build/Intermediates.noindex/ArchiveIntermediates/TongxingBeta/BuildProductsPath/BetaRelease-iphoneos/ListeningActivityExtension.appex /tmp/tongxing-ios-beta-1.26.22-pr1383/artifacts/tongxing-ios/beta-1.26.22-build63/DerivedData/Build/Intermediates.noindex/ArchiveIntermediates/TongxingBeta/InstallationBuildProductsLocation/Applications/Tongxing.app/PlugIns
+
+ProcessInfoPlistFile /tmp/tongxing-ios-beta-1.26.22-pr1383/artifacts/tongxing-ios/beta-1.26.22-build63/DerivedData/Build/Intermediates.noindex/ArchiveIntermediates/TongxingBeta/InstallationBuildProductsLocation/Applications/Tongxing.app/Info.plist /tmp/tongxing-ios-beta-1.26.22-pr1383/apps/tongxing-ios/App/Info.plist (in target 'Tongxing' from project 'Tongxing')
+    cd /tmp/tongxing-ios-beta-1.26.22-pr1383/apps/tongxing-ios
+    builtin-infoPlistUtility /tmp/tongxing-ios-beta-1.26.22-pr1383/apps/tongxing-ios/App/Info.plist -producttype com.apple.product-type.application -genpkginfo /tmp/tongxing-ios-beta-1.26.22-pr1383/artifacts/tongxing-ios/beta-1.26.22-build63/DerivedData/Build/Intermediates.noindex/ArchiveIntermediates/TongxingBeta/InstallationBuildProductsLocation/Applications/Tongxing.app/PkgInfo -expandbuildsettings -format binary -platform iphoneos -additionalcontentfile /tmp/tongxing-ios-beta-1.26.22-pr1383/artifacts/tongxing-ios/beta-1.26.22-build63/DerivedData/Build/Intermediates.noindex/ArchiveIntermediates/TongxingBeta/IntermediateBuildFilesPath/Tongxing.build/BetaRelease-iphoneos/Tongxing.build/assetcatalog_generated_info.plist -scanforprivacyfile /tmp/tongxing-ios-beta-1.26.22-pr1383/artifacts/tongxing-ios/beta-1.26.22-build63/DerivedData/Build/Intermediates.noindex/ArchiveIntermediates/TongxingBeta/InstallationBuildProductsLocation/Applications/Tongxing.app/PlugIns/ListeningActivityExtension.appex -requiredArchitecture arm64 -o /tmp/tongxing-ios-beta-1.26.22-pr1383/artifacts/tongxing-ios/beta-1.26.22-build63/DerivedData/Build/Intermediates.noindex/ArchiveIntermediates/TongxingBeta/InstallationBuildProductsLocation/Applications/Tongxing.app/Info.plist
+
+CopySwiftLibs /tmp/tongxing-ios-beta-1.26.22-pr1383/artifacts/tongxing-ios/beta-1.26.22-build63/DerivedData/Build/Intermediates.noindex/ArchiveIntermediates/TongxingBeta/InstallationBuildProductsLocation/Applications/Tongxing.app (in target 'Tongxing' from project 'Tongxing')
+    cd /tmp/tongxing-ios-beta-1.26.22-pr1383/apps/tongxing-ios
+    builtin-swiftStdLibTool --copy --verbose --sign 9284B270626ACAA91C2CEA3D5D9165CC51DE58D9 --scan-executable /tmp/tongxing-ios-beta-1.26.22-pr1383/artifacts/tongxing-ios/beta-1.26.22-build63/DerivedData/Build/Intermediates.noindex/ArchiveIntermediates/TongxingBeta/InstallationBuildProductsLocation/Applications/Tongxing.app/Tongxing --scan-folder /tmp/tongxing-ios-beta-1.26.22-pr1383/artifacts/tongxing-ios/beta-1.26.22-build63/DerivedData/Build/Intermediates.noindex/ArchiveIntermediates/TongxingBeta/InstallationBuildProductsLocation/Applications/Tongxing.app/Frameworks --scan-folder /tmp/tongxing-ios-beta-1.26.22-pr1383/artifacts/tongxing-ios/beta-1.26.22-build63/DerivedData/Build/Intermediates.noindex/ArchiveIntermediates/TongxingBeta/InstallationBuildProductsLocation/Applications/Tongxing.app/PlugIns --scan-folder /tmp/tongxing-ios-beta-1.26.22-pr1383/artifacts/tongxing-ios/beta-1.26.22-build63/DerivedData/Build/Intermediates.noindex/ArchiveIntermediates/TongxingBeta/InstallationBuildProductsLocation/Applications/Tongxing.app/SystemExtensions --scan-folder /tmp/tongxing-ios-beta-1.26.22-pr1383/artifacts/tongxing-ios/beta-1.26.22-build63/DerivedData/Build/Intermediates.noindex/ArchiveIntermediates/TongxingBeta/InstallationBuildProductsLocation/Applications/Tongxing.app/Extensions --platform iphoneos --toolchain /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain --destination /tmp/tongxing-ios-beta-1.26.22-pr1383/artifacts/tongxing-ios/beta-1.26.22-build63/DerivedData/Build/Intermediates.noindex/ArchiveIntermediates/TongxingBeta/InstallationBuildProductsLocation/Applications/Tongxing.app/Frameworks --unsigned-destination /tmp/tongxing-ios-beta-1.26.22-pr1383/artifacts/tongxing-ios/beta-1.26.22-build63/DerivedData/Build/Intermediates.noindex/ArchiveIntermediates/TongxingBeta/BuildProductsPath/SwiftSupport --strip-bitcode --strip-bitcode-tool /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/bitcode_str ...[line truncated]
+
+ExtractAppIntentsMetadata (in target 'Tongxing' from project 'Tongxing')
+    cd /tmp/tongxing-ios-beta-1.26.22-pr1383/apps/tongxing-ios
+    /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/appintentsmetadataprocessor --toolchain-dir /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain --module-name Tongxing --sdk-root /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS27.1.sdk --xcode-version 27A9275 --platform-family iOS --deployment-target 17.0 --bundle-identifier com.jonathanjing.tongxing.beta --output /tmp/tongxing-ios-beta-1.26.22-pr1383/artifacts/tongxing-ios/beta-1.26.22-build63/DerivedData/Build/Intermediates.noindex/ArchiveIntermediates/TongxingBeta/InstallationBuildProductsLocation/Applications/Tongxing.app --target-triple arm64-apple-ios17.0 --binary-file /tmp/tongxing-ios-beta-1.26.22-pr1383/artifacts/tongxing-ios/beta-1.26.22-build63/DerivedData/Build/Intermediates.noindex/ArchiveIntermediates/TongxingBeta/InstallationBuildProductsLocation/Applications/Tongxing.app/Tongxing --dependency-file /tmp/tongxing-ios-beta-1.26.22-pr1383/artifacts/tongxing-ios/beta-1.26.22-build63/DerivedData/Build/Intermediates.noindex/ArchiveIntermediates/TongxingBeta/IntermediateBuildFilesPath/Tongxing.build/BetaRelease-iphoneos/Tongxing.build/Objects-normal/arm64/Tongxing_dependency_info.dat --stringsdata-file /tmp/tongxing-ios-beta-1.26.22-pr1383/artifacts/tongxing-ios/beta-1.26.22-build63/DerivedData/Build/Intermediates.noindex/ArchiveIntermediates/TongxingBeta/IntermediateBuildFilesPath/Tongxing.build/BetaRelease-iphoneos/Tongxing.build/Objects-normal/arm64/ExtractedAppShortcutsMetadata.stringsdata --source-file-list /tmp/tongxing-ios-beta-1.26.22-pr1383/artifacts/tongxing-ios/beta-1.26.22-build63/DerivedData/Build/Intermediates.noindex/ArchiveIntermediates/TongxingBeta/IntermediateBuildFilesPath/Tongxing.build/BetaRelease-iphoneos/Tongxing.build/Objects-normal/arm64/Tongxing.SwiftFileList --metadata-file-list /tmp/tongxing-ios-beta-1.26.22-pr1383/artifacts/tongxing-ios/beta-1.26.22-build63/DerivedDa ...[line truncated]
+2026-10-25 18:41:05.875 appintentsmetadataprocessor[7165:55014474] Starting appintentsmetadataprocessor export
+2026-10-25 18:41:05.877 appintentsmetadataprocessor[7165:55014474] warning: Metadata extraction skipped, no AppIntents.framework dependency found
+
+GenerateDSYMFile /tmp/tongxing-ios-beta-1.26.22-pr1383/artifacts/tongxing-ios/beta-1.26.22-build63/DerivedData/Build/Intermediates.noindex/ArchiveIntermediates/TongxingBeta/BuildProductsPath/BetaRelease-iphoneos/Tongxing.app.dSYM /tmp/tongxing-ios-beta-1.26.22-pr1383/artifacts/tongxing-ios/beta-1.26.22-build63/DerivedData/Build/Intermediates.noindex/ArchiveIntermediates/TongxingBeta/InstallationBuildProductsLocation/Applications/Tongxing.app/Tongxing (in target 'Tongxing' from project 'Tongxing')
+    cd /tmp/tongxing-ios-beta-1.26.22-pr1383/apps/tongxing-ios
+    export PATH\=/Applications/Xcode.app/Contents/SharedFrameworks/SwiftBuild.framework/Versions/A/PlugIns/SWBBuildService.bundle/Contents/PlugIns/SWBUniversalPlatformPlugin.bundle/Contents/Frameworks/SWBUniversalPlatform.framework/Resources:/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin:/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/local/bin:/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/libexec:/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/usr/bin:/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/usr/local/bin:/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/usr/bin:/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/usr/local/bin:/Applications/Xcode.app/Contents/Developer/usr/bin:/Applications/Xcode.app/Contents/Developer/usr/local/bin:~/.local/bin:/opt/homebrew/opt/<email>/libexec/bin:/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin:/System/Cryptexes/App/usr/bin:/usr/bin:/bin:/usr/sbin:/sbin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/local/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/appleinternal/bin:/pkg/env/global/bin:/opt/X11/bin:/Library/Apple/usr/bin:/Library/TeX/texbin:/Applications/ChatGPT.app/Contents/Resources/codex-cli/codex-path:~/.codex/tmp/arg0-macos/codex-arg09UEd0s:~/.cache/codex-runtimes/codex-primary-runtime/dependencies/bin/override:/opt/homebrew/opt/openjdk@21/bin:~/.antigravity/antigravity/bin:~/.cargo/bin:~/.cache/codex-runtimes/codex-primary-runtime/dependencies/bin/fallback:/Applications/ChatGPT.app/Contents/Resources:/Applications/ChatGPT.app/Contents/Resources/codex-cli/CodexCLI.app/Contents/ ...[line truncated]
+    /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/dsymutil /tmp/tongxing-ios-beta-1.26.22-pr1383/artifacts/tongxing-ios/beta-1.26.22-build63/DerivedData/Build/Intermediates.noindex/ArchiveIntermediates/TongxingBeta/InstallationBuildProductsLocation/Applications/Tongxing.app/Tongxing -o /tmp/tongxing-ios-beta-1.26.22-pr1383/artifacts/tongxing-ios/beta-1.26.22-build63/DerivedData/Build/Intermediates.noindex/ArchiveIntermediates/TongxingBeta/BuildProductsPath/BetaRelease-iphoneos/Tongxing.app.dSYM
+
+AppIntentsSSUTraining (in target 'Tongxing' from project 'Tongxing')
+    cd /tmp/tongxing-ios-beta-1.26.22-pr1383/apps/tongxing-ios
+    /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/appintentsnltrainingprocessor --infoplist-path /tmp/tongxing-ios-beta-1.26.22-pr1383/artifacts/tongxing-ios/beta-1.26.22-build63/DerivedData/Build/Intermediates.noindex/ArchiveIntermediates/TongxingBeta/InstallationBuildProductsLocation/Applications/Tongxing.app/Info.plist --temp-dir-path /tmp/tongxing-ios-beta-1.26.22-pr1383/artifacts/tongxing-ios/beta-1.26.22-build63/DerivedData/Build/Intermediates.noindex/ArchiveIntermediates/TongxingBeta/IntermediateBuildFilesPath/Tongxing.build/BetaRelease-iphoneos/Tongxing.build/ssu --bundle-id com.jonathanjing.tongxing.beta --product-path /tmp/tongxing-ios-beta-1.26.22-pr1383/artifacts/tongxing-ios/beta-1.26.22-build63/DerivedData/Build/Intermediates.noindex/ArchiveIntermediates/TongxingBeta/InstallationBuildProductsLocation/Applications/Tongxing.app --extracted-metadata-path /tmp/tongxing-ios-beta-1.26.22-pr1383/artifacts/tongxing-ios/beta-1.26.22-build63/DerivedData/Build/Intermediates.noindex/ArchiveIntermediates/TongxingBeta/InstallationBuildProductsLocation/Applications/Tongxing.app/Metadata.appintents --deployment-postprocessing --metadata-file-list /tmp/tongxing-ios-beta-1.26.22-pr1383/artifacts/tongxing-ios/beta-1.26.22-build63/DerivedData/Build/Intermediates.noindex/ArchiveIntermediates/TongxingBeta/IntermediateBuildFilesPath/Tongxing.build/BetaRelease-iphoneos/Tongxing.build/Tongxing.DependencyMetadataFileList --source-file /tmp/tongxing-ios-beta-1.26.22-pr1383/artifacts/tongxing-ios/beta-1.26.22-build63/DerivedData/Build/Intermediates.noindex/ArchiveIntermediates/TongxingBeta/InstallationBuildProductsLocation/Applications/Tongxing.app/Info.plist --archive-ssu-assets
+2026-10-25 18:41:05.906 appintentsnltrainingprocessor[7167:55014476] Parsing options for appintentsnltrainingprocessor
+2026-10-25 18:41:05.907 appintentsnltrainingprocessor[7167:55014476] Starting AppIntents SSU YAML Generation
+2026-10-25 18:41:05.907 appintentsnltrainingprocessor[7167:55014476] No AppShortcuts found - Skipping.
+
+Strip /tmp/tongxing-ios-beta-1.26.22-pr1383/artifacts/tongxing-ios/beta-1.26.22-build63/DerivedData/Build/Intermediates.noindex/ArchiveIntermediates/TongxingBeta/InstallationBuildProductsLocation/Applications/Tongxing.app/Tongxing (in target 'Tongxing' from project 'Tongxing')
+    cd /tmp/tongxing-ios-beta-1.26.22-pr1383/apps/tongxing-ios
+    /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/strip -D /tmp/tongxing-ios-beta-1.26.22-pr1383/artifacts/tongxing-ios/beta-1.26.22-build63/DerivedData/Build/Intermediates.noindex/ArchiveIntermediates/TongxingBeta/InstallationBuildProductsLocation/Applications/Tongxing.app/Tongxing
+
+SetOwnerAndGroup jonathan_jing:staff /tmp/tongxing-ios-beta-1.26.22-pr1383/artifacts/tongxing-ios/beta-1.26.22-build63/DerivedData/Build/Intermediates.noindex/ArchiveIntermediates/TongxingBeta/InstallationBuildProductsLocation/Applications/Tongxing.app (in target 'Tongxing' from project 'Tongxing')
+    cd /tmp/tongxing-ios-beta-1.26.22-pr1383/apps/tongxing-ios
+    /usr/sbin/chown -RH jonathan_jing:staff /tmp/tongxing-ios-beta-1.26.22-pr1383/artifacts/tongxing-ios/beta-1.26.22-build63/DerivedData/Build/Intermediates.noindex/ArchiveIntermediates/TongxingBeta/InstallationBuildProductsLocation/Applications/Tongxing.app
+
+SetMode u+w,go-w,a+rX /tmp/tongxing-ios-beta-1.26.22-pr1383/artifacts/tongxing-ios/beta-1.26.22-build63/DerivedData/Build/Intermediates.noindex/ArchiveIntermediates/TongxingBeta/InstallationBuildProductsLocation/Applications/Tongxing.app (in target 'Tongxing' from project 'Tongxing')
+    cd /tmp/tongxing-ios-beta-1.26.22-pr1383/apps/tongxing-ios
+    /bin/chmod -RH u+w,go-w,a+rX /tmp/tongxing-ios-beta-1.26.22-pr1383/artifacts/tongxing-ios/beta-1.26.22-build63/DerivedData/Build/Intermediates.noindex/ArchiveIntermediates/TongxingBeta/InstallationBuildProductsLocation/Applications/Tongxing.app
+
+CodeSign /tmp/tongxing-ios-beta-1.26.22-pr1383/artifacts/tongxing-ios/beta-1.26.22-build63/DerivedData/Build/Intermediates.noindex/ArchiveIntermediates/TongxingBeta/InstallationBuildProductsLocation/Applications/Tongxing.app (in target 'Tongxing' from project 'Tongxing')
+    cd /tmp/tongxing-ios-beta-1.26.22-pr1383/apps/tongxing-ios
+
+    Signing Identity:     "Apple Development: Zheng Jing (394KUAQAH8)"
+    Provisioning Profile: "iOS Team Provisioning Profile: com.jonathanjing.tongxing.beta"
+                          (d23d983b-5cb7-4b01-81ff-53439ea0ff01)
+
+    /usr/bin/codesign --force --sign 9284B270626ACAA91C2CEA3D5D9165CC51DE58D9 --entitlements /tmp/tongxing-ios-beta-1.26.22-pr1383/artifacts/tongxing-ios/beta-1.26.22-build63/DerivedData/Build/Intermediates.noindex/ArchiveIntermediates/TongxingBeta/IntermediateBuildFilesPath/Tongxing.build/BetaRelease-iphoneos/Tongxing.build/Tongxing.app.xcent --generate-entitlement-der /tmp/tongxing-ios-beta-1.26.22-pr1383/artifacts/tongxing-ios/beta-1.26.22-build63/DerivedData/Build/Intermediates.noindex/ArchiveIntermediates/TongxingBeta/InstallationBuildProductsLocation/Applications/Tongxing.app
+
+ValidateEmbeddedBinary /tmp/tongxing-ios-beta-1.26.22-pr1383/artifacts/tongxing-ios/beta-1.26.22-build63/DerivedData/Build/Intermediates.noindex/ArchiveIntermediates/TongxingBeta/InstallationBuildProductsLocation/Applications/Tongxing.app/PlugIns/ListeningActivityExtension.appex (in target 'Tongxing' from project 'Tongxing')
+    cd /tmp/tongxing-ios-beta-1.26.22-pr1383/apps/tongxing-ios
+    /Applications/Xcode.app/Contents/Developer/usr/bin/embeddedBinaryValidationUtility /tmp/tongxing-ios-beta-1.26.22-pr1383/artifacts/tongxing-ios/beta-1.26.22-build63/DerivedData/Build/Intermediates.noindex/ArchiveIntermediates/TongxingBeta/InstallationBuildProductsLocation/Applications/Tongxing.app/PlugIns/ListeningActivityExtension.appex -signing-cert 9284B270626ACAA91C2CEA3D5D9165CC51DE58D9 -info-plist-path /tmp/tongxing-ios-beta-1.26.22-pr1383/artifacts/tongxing-ios/beta-1.26.22-build63/DerivedData/Build/Intermediates.noindex/ArchiveIntermediates/TongxingBeta/InstallationBuildProductsLocation/Applications/Tongxing.app/Info.plist
+
+RegisterExecutionPolicyException /tmp/tongxing-ios-beta-1.26.22-pr1383/artifacts/tongxing-ios/beta-1.26.22-build63/DerivedData/Build/Intermediates.noindex/ArchiveIntermediates/TongxingBeta/InstallationBuildProductsLocation/Applications/Tongxing.app (in target 'Tongxing' from project 'Tongxing')
+    cd /tmp/tongxing-ios-beta-1.26.22-pr1383/apps/tongxing-ios
+    builtin-RegisterExecutionPolicyException /tmp/tongxing-ios-beta-1.26.22-pr1383/artifacts/tongxing-ios/beta-1.26.22-build63/DerivedData/Build/Intermediates.noindex/ArchiveIntermediates/TongxingBeta/InstallationBuildProductsLocation/Applications/Tongxing.app
+
+Validate /tmp/tongxing-ios-beta-1.26.22-pr1383/artifacts/tongxing-ios/beta-1.26.22-build63/DerivedData/Build/Intermediates.noindex/ArchiveIntermediates/TongxingBeta/InstallationBuildProductsLocation/Applications/Tongxing.app (in target 'Tongxing' from project 'Tongxing')
+    cd /tmp/tongxing-ios-beta-1.26.22-pr1383/apps/tongxing-ios
+    builtin-validationUtility /tmp/tongxing-ios-beta-1.26.22-pr1383/artifacts/tongxing-ios/beta-1.26.22-build63/DerivedData/Build/Intermediates.noindex/ArchiveIntermediates/TongxingBeta/InstallationBuildProductsLocation/Applications/Tongxing.app -shallow-bundle -infoplist-subpath Info.plist
+
+Touch /tmp/tongxing-ios-beta-1.26.22-pr1383/artifacts/tongxing-ios/beta-1.26.22-build63/DerivedData/Build/Intermediates.noindex/ArchiveIntermediates/TongxingBeta/InstallationBuildProductsLocation/Applications/Tongxing.app (in target 'Tongxing' from project 'Tongxing')
+    cd /tmp/tongxing-ios-beta-1.26.22-pr1383/apps/tongxing-ios
+    /usr/bin/touch -c /tmp/tongxing-ios-beta-1.26.22-pr1383/artifacts/tongxing-ios/beta-1.26.22-build63/DerivedData/Build/Intermediates.noindex/ArchiveIntermediates/TongxingBeta/InstallationBuildProductsLocation/Applications/Tongxing.app
+
+PruneExplicitPrecompiledModules /tmp/tongxing-ios-beta-1.26.22-pr1383/artifacts/tongxing-ios/beta-1.26.22-build63/DerivedData/Build/Intermediates.noindex/ArchiveIntermediates/TongxingBeta/IntermediateBuildFilesPath/ExplicitPrecompiledModules
+
+PruneExplicitPrecompiledModules /tmp/tongxing-ios-beta-1.26.22-pr1383/artifacts/tongxing-ios/beta-1.26.22-build63/DerivedData/SDKExplicitPrecompiledModules
+
+PruneExplicitPrecompiledModules /tmp/tongxing-ios-beta-1.26.22-pr1383/artifacts/tongxing-ios/beta-1.26.22-build63/DerivedData/Build/Intermediates.noindex/ArchiveIntermediates/TongxingBeta/IntermediateBuildFilesPath/SwiftExplicitPrecompiledModules
+
+** ARCHIVE SUCCEEDED **

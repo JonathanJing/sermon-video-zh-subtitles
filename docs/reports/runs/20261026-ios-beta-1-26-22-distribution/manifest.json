@@ -1,0 +1,150 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261026-ios-beta-1-26-22-distribution",
+  "runs": [
+    {
+      "label": "beta-1.26.22-build63",
+      "source": "/private/tmp/tongxing-ios-beta-1.26.22-pr1383/artifacts/tongxing-ios/beta-1.26.22-build63",
+      "skipped": {
+        ".plist": 18,
+        "(none)": 71,
+        ".yml": 4,
+        ".json": 24,
+        ".swiftdoc": 8,
+        ".swiftmodule": 8,
+        ".timestamp": 4,
+        ".h": 9,
+        ".modulemap": 4,
+        ".hmap": 12,
+        ".DependencyMetadataFileList": 4,
+        ".DependencyStaticMetadataFileList": 4,
+        ".xcent": 2,
+        ".der": 2,
+        ".stringsdata": 4,
+        ".o": 59,
+        ".dia": 8,
+        ".d": 4,
+        ".swiftconstvalues": 4,
+        ".LinkFileList": 4,
+        ".SwiftConstValuesFileList": 4,
+        ".SwiftFileList": 4,
+        ".swiftsourceinfo": 4,
+        ".dat": 4,
+        ".yaml": 1,
+        ".swift": 1,
+        ".dep": 1,
+        ".plist_thinned": 1,
+        ".png": 4,
+        ".car": 2,
+        ".strings": 12,
+        ".mobileprovision": 3,
+        ".msgpack": 2,
+        ".txt": 3,
+        ".db": 1,
+        ".v1": 3,
+        ".shared": 3,
+        ".xcactivitylog": 2,
+        ".pcm": 398,
+        ".modulevalidation": 1,
+        ".sdkstatcache": 1,
+        ".xcprivacy": 1,
+        ".ipa": 1
+      }
+    },
+    {
+      "label": "20261026T014152Z-3a6a495f",
+      "source": "/private/tmp/tongxing-ios-beta-1.26.22-pr1383/artifacts/tongxing-ios/testflight/20261026T014152Z-3a6a495f",
+      "skipped": {
+        ".json": 3
+      }
+    },
+    {
+      "label": "20261026T014311Z-85d8d433",
+      "source": "/private/tmp/tongxing-ios-beta-1.26.22-pr1383/artifacts/tongxing-ios/testflight/20261026T014311Z-85d8d433",
+      "skipped": {
+        ".json": 2
+      }
+    },
+    {
+      "label": "20261026T014523Z-afe5dbb8",
+      "source": "/private/tmp/tongxing-ios-beta-1.26.22-pr1383/artifacts/tongxing-ios/testflight/20261026T014523Z-afe5dbb8",
+      "skipped": {
+        ".json": 2
+      }
+    },
+    {
+      "label": "20261026T014605Z-fefaf5fc",
+      "source": "/private/tmp/tongxing-ios-beta-1.26.22-pr1383/artifacts/tongxing-ios/testflight/20261026T014605Z-fefaf5fc",
+      "skipped": {
+        ".json": 2
+      }
+    }
+  ],
+  "files": [
+    {
+      "run": "beta-1.26.22-build63",
+      "path": "archive.log",
+      "kind": "log",
+      "bytes": 359953,
+      "truncated": true,
+      "sha256": "6596c203af63afd5b55ecf0540097ab79d5f1cf4db6e211bbaee71a53ebf450a",
+      "redactions": {
+        "email": 2,
+        "home_dir": 6
+      }
+    },
+    {
+      "run": "beta-1.26.22-build63",
+      "path": "export/Packaging.log",
+      "kind": "log",
+      "bytes": 96963,
+      "truncated": true,
+      "sha256": "2e4888778134dd97279170dd234f8952a97ce5d42f66facb3f94c5c016263663",
+      "redactions": {
+        "secret_field": 1,
+        "email": 4
+      }
+    },
+    {
+      "run": "20261026T014152Z-3a6a495f",
+      "path": "fastlane.log",
+      "kind": "log",
+      "bytes": 1767,
+      "truncated": false,
+      "sha256": "a96b92bc2eb9ddaeeeb46dc8e3c68ab61c35abb82ce8634495f9cd9bb34c4a2d",
+      "redactions": {}
+    },
+    {
+      "run": "20261026T014311Z-85d8d433",
+      "path": "fastlane.log",
+      "kind": "log",
+      "bytes": 825,
+      "truncated": false,
+      "sha256": "e5561b0d304a95011f79a222c014a4b320faf1caee69575599a0658c87f31f42",
+      "redactions": {}
+    },
+    {
+      "run": "20261026T014523Z-afe5dbb8",
+      "path": "fastlane.log",
+      "kind": "log",
+      "bytes": 831,
+      "truncated": false,
+      "sha256": "84df6a5cff36b736dee45b0a99c17b56705381147a956e4370ee0917476ca339",
+      "redactions": {}
+    },
+    {
+      "run": "20261026T014605Z-fefaf5fc",
+      "path": "fastlane.log",
+      "kind": "log",
+      "bytes": 827,
+      "truncated": false,
+      "sha256": "cd3067b0e9799657032eea307bbf87f219e21f3daaeb8396a68cb77ac1c34382",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}
