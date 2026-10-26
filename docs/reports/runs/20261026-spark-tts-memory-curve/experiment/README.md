@@ -20,7 +20,7 @@
 
 | 文件 | 内容 | 来源 / sha256 |
 |---|---|---|
-| `host-samples.jsonl` | 宿主采样器 1 秒一行（MemAvailable、MemTotal、swap、GPU 利用率），已裁剪到本次 lanes 窗口，1197 行 | Spark `memory/host.jsonl` 按 15:02:00Z–结束过滤；sha256 `c661429c…` |
+| `host-samples.jsonl` | 宿主采样器 1 秒一行（MemAvailable、MemTotal、swap、GPU 利用率），裁剪为 2026-10-26T15:02:00Z–15:22:33Z（lanes 前后，含 zh 手工筛查），1197 行 | Spark `memory/host.jsonl` 按 15:02:00Z–结束过滤；sha256 `c661429c…` |
 | `replica-runtime-zh-Hans.json` | zh 渲染池的 `replica-runtime.json`：准入、pool_ready、60 个窗口的 MemAvailable/worker reserved、pool_closed | Spark `output/zh-Hans-curve2/speech-job/`；sha256 `d41dcc60…` |
 | `replica-runtime-ko.json` | ko 渲染池的同一文件，51 个窗口 | Spark `output/ko-curve2/speech-job/`；sha256 `a7109a9a…` |
 | `memory-curve.json` | `memory_curve_report.py` 的汇总：宿主曲线、各 stage 最低值、逐窗摘要、ASR 收据 | 由上面三个文件和 `lanes-report.json` 生成；sha256 `cfb65436…` |
