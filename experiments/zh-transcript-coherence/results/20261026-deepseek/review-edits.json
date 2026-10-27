@@ -1,0 +1,110 @@
+[
+  {
+    "id": "translation-asr-u0002",
+    "type": "pronoun",
+    "chinese": "当纳粹开始逮捕和驱逐人的时候，彭柯丽一家就把自己的家变成了藏身之处。",
+    "reason": "“他们”紧接“纳粹”出现，容易被听成指纳粹；原文指的是彭柯丽一家，需明确指代。"
+  },
+  {
+    "id": "translation-asr-u0074",
+    "type": "fragment",
+    "chinese": "这是因为耶稣永远是得胜者。",
+    "reason": "原句以“因为”开头，作为独立提示时缺少主句；补出“这是因为”使该句独立成句，并保留与上文的因果连接。"
+  },
+  {
+    "id": "translation-asr-u0078",
+    "type": "meaning",
+    "chinese": "祂是借着自己为我们死，把你和我赢回祂身边。",
+    "reason": "英文有“for us”，中文原句省略了“为我们”，补上以保留十字架代赎的意思。"
+  },
+  {
+    "id": "translation-asr-u0091",
+    "type": "reference",
+    "chinese": "那定妇人和孩子罪、抵挡他们的，被摔下去了——照圣经的话说，是借着羔羊的血。",
+    "reason": "“quote unquote”直译成“用引号里的话说”在口头中文里不自然，听众也无法看见引号；改为“照圣经的话说”更清楚。"
+  },
+  {
+    "id": "translation-asr-u0104",
+    "type": "pronoun",
+    "chinese": "它已经败给了神的儿子。",
+    "reason": "“那儿子”指代不清；这里指神的儿子耶稣，应明确为“神的儿子”。"
+  },
+  {
+    "id": "translation-asr-u0109",
+    "type": "pronoun",
+    "chinese": "那龙知道自己已经败给了神的儿子。",
+    "reason": "“那儿子”指代不清；这里指神的儿子耶稣，应明确为“神的儿子”。"
+  },
+  {
+    "id": "translation-asr-u0149",
+    "type": "reference",
+    "chinese": "你们可能还记得，因为我讲过好几次了，去年我赢了梦幻橄榄球（线上组队、按真实比赛数据计分）牧师冠军联赛。",
+    "reason": "“fantasy football”是中文听众不熟悉的体育术语，需按术语表加注说明，否则后文“退役”等比喻会失去语境。"
+  },
+  {
+    "id": "translation-asr-u0194",
+    "type": "drift",
+    "chinese": "祂就是得胜者。",
+    "reason": "“victor”在本段和前文反复译为“得胜者”，此处“得胜的那一位”措辞不一致，改为与前文术语一致。"
+  },
+  {
+    "id": "translation-asr-u0240",
+    "type": "meaning",
+    "chinese": "还记得吗，当神的子民在埃及受奴役、后来被救出来时，神吩咐祂的子民把羊羔的血涂在门框上。",
+    "reason": "“被扣押”不符合出埃及记背景，也与“从埃及的奴役中被救出来”连用不通；改为受奴役后被救出，保留原意并使听众明白。"
+  },
+  {
+    "id": "translation-asr-u0252",
+    "type": "meaning",
+    "chinese": "他们在这个月初十取了一只羔羊。",
+    "reason": "上一句问的是初十大家做了什么，出埃及记12章也是初十取羊、十四日宰杀；原文“十四日”与上下文和经文事实冲突，数字应改为初十。"
+  },
+  {
+    "id": "translation-asr-u0283",
+    "type": "fragment",
+    "chinese": "两个都得救了。",
+    "reason": "“两个都得了”缺少宾语，作为独立字幕不完整；补足为“两个都得救了”。"
+  },
+  {
+    "id": "translation-asr-u0284",
+    "type": "fragment",
+    "chinese": "两个都是得救的。",
+    "reason": "“两个都是”是残句，补足为“两个都是得救的”才能独立成句。"
+  },
+  {
+    "id": "translation-asr-u0323",
+    "type": "fragment",
+    "chinese": "即使你现在还不能完全看明白，也没关系。",
+    "reason": "原句是悬空的让步从句，补足为可独立成立的句子，保留原意。"
+  },
+  {
+    "id": "translation-asr-u0324",
+    "type": "fragment",
+    "chinese": "祂这样做，是为了照顾你。",
+    "reason": "原句“来照顾你”是悬空的目的状语，补出主语和谓语，使其独立成句。"
+  },
+  {
+    "id": "translation-asr-u0331",
+    "type": "fragment",
+    "chinese": "有人认为这三年半是字面意义的，会在耶稣再来之前发生，会是极大患难和受苦的时期。",
+    "reason": "原句“是极大的患难和受苦”搭配不完整，补出“时期”使谓语和句子成立，意义不变。"
+  },
+  {
+    "id": "translation-asr-u0406",
+    "type": "pronoun",
+    "chinese": "他暂时还有些能力可以肆虐，但他已经输了。",
+    "reason": "英文 He 指仇敌/撒但，按术语表应使用“他”，不用“它”。"
+  },
+  {
+    "id": "translation-asr-u0423",
+    "type": "meaning",
+    "chinese": "但你要明白，你是在试图听一个早已被止息的声音。",
+    "reason": "“trying to listen”译为“试图听”更准确；原译“想听”变成“想要听”，且表达不顺。"
+  },
+  {
+    "id": "translation-asr-u0426",
+    "type": "meaning",
+    "chinese": "耶稣看着你。",
+    "reason": "英文“Jesus does”承接上一句“祂看着你”，不是“对你说话”；原译改变了意思。"
+  }
+]

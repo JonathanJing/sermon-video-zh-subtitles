@@ -5,7 +5,7 @@
 ## 做法
 
 - 输入：线上 `/content/revelation-jesus-wins-20261025/zh-Hans.json`（447 句，human_reviewed）和 `/english-reference/revelation-jesus-wins-20261025.json`。
-- 所有翻译组用同一个模型（Claude CLI `opus`，订阅登录，不用 API key），只有方法不同。`published` 是线上版本（生产模型 Sol + 人工审阅），只作参照。
+- 所有翻译组用同一个模型（Claude CLI `opus`，订阅登录，不用 API key），只有方法不同；本地 DeepSeek 复跑换了模型，见文末。`published` 是线上版本（生产模型 Sol + 人工审阅），只作参照。
 - 评委看不到组名，按每 25 句一个窗口打 1–10 分（可懂度、口语自然度、忠实度），列出问题；另做全篇不一致检查，并逐条核对人工评估找出的 18 个已知问题（`known_issues_20261025.json`）。评委跑了两遍：Sonnet 和 Opus。
 - 代码：可复用部分在 `packages/production/src/tongxing_production/text/coherence.py`，跑法见 `run_benchmark.py` 顶部说明。
 
@@ -54,3 +54,9 @@
 - 只有一篇证道、一个翻译模型；每个窗口只评一次，没有重复抽样，分差 0.2 以内视为噪声。
 - s2 是“每 12 句顺序翻译、4 段并行”，和 10/19 定下的“逐组独立任务”冲突，接入前需要决定。
 - 花费：翻译加两轮评审约 98 美元（Claude CLI 报告的 `total_cost_usd`）。
+
+## 2026-10-26 本地复跑：DeepSeek 翻译 + DeepSeek 评委
+
+同一 benchmark 在本机用 `deepseek-flash` 重跑：翻译 low、评委 high，单评委；#1397 接入 Layer 2 后补跑 `p123_wired`。完整内容、流程、逐 arm 明细、成本与限制见[复跑报告](rerun-20261026-deepseek.zh.md)。
+
+要点：带前文中文（s2）仍是最大收益；术语表单独无收益；s3≈s2；连读审核无可测收益；阅读版最好读；`p123_wired` 全面优于 baseline，但仍略低于 s2。排名与 #1397 的 Claude 评委高度一致（可懂度 ρ=0.87，已知问题 ρ=0.88/1.00），但 DeepSeek 评分整体偏宽，分数不能与 Claude 表直接比。
