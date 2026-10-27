@@ -1,0 +1,244 @@
+
+$ /usr/bin/xcrun xcodebuild -project ~/.codex/worktrees/weekly-study-guide-design/sermon-video-zh-subtitles/apps/tongxing-ios/Tongxing.xcodeproj -list -json -disableAutomaticPackageResolution
+{
+  "project" : {
+    "configurations" : [
+      "BetaDebug",
+      "BetaRelease",
+      "Debug",
+      "Release"
+    ],
+    "name" : "Tongxing",
+    "schemes" : [
+      "ListeningActivityExtension",
+      "Tongxing",
+      "TongxingBeta",
+      "TongxingCore",
+      "TongxingInfrastructure",
+      "TongxingPreview",
+      "TongxingScreenshots"
+    ],
+    "targets" : [
+      "Tongxing",
+      "ListeningActivityExtension",
+      "TongxingTests",
+      "TongxingUITests"
+    ]
+  }
+}
+
+$ /usr/bin/xcrun simctl list devices available --json
+{
+  "devices" : {
+    "com.apple.CoreSimulator.SimRuntime.iOS-27-0" : [
+      {
+        "dataPath" : "\/Users\/jonathan_jing\/Library\/Developer\/CoreSimulator\/Devices\/A9ACB321-07F8-4540-AD3C-7FACBD384A1F\/data",
+        "dataPathSize" : 5734416384,
+        "logPath" : "\/Users\/jonathan_jing\/Library\/Logs\/CoreSimulator\/A9ACB321-07F8-4540-AD3C-7FACBD384A1F",
+        "udid" : "A9ACB321-07F8-4540-AD3C-7FACBD384A1F",
+        "lastUsedAt" : "2026-10-27T05:14:25Z",
+        "isAvailable" : true,
+... 421 lines omitted; 2 error-like lines, 2 kept below ...
+[line 403] ~/.codex/worktrees/weekly-study-guide-design/sermon-video-zh-subtitles/apps/tongxing-ios/App/MicrophoneCapture.swift:259:92: warning: main actor-isolated static property 'startupSeconds' can not be referenced from a nonisolated context; this is an error in the Swift 6 language mode
+[line 410]     |                                                                                            `- warning: main actor-isolated static property 'startupSeconds' can not be referenced from a nonisolated context; this is an error in the Swift 6 language mode
+... end of omitted section ...
+    /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/appintentsmetadataprocessor --toolchain-dir /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain --module-name Tongxing --sdk-root /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator27.1.sdk --xcode-version 27A9275 --platform-family iOS --deployment-target 17.0 --bundle-identifier com.jonathanjing.tongxing.dev --output ~/.codex/worktrees/weekly-study-guide-design/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-26/cli/DerivedData/Build/Products/Debug-iphonesimulator/Tongxing.app --target-triple arm64-apple-ios17.0-simulator --binary-file ~/.codex/worktrees/weekly-study-guide-design/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-26/cli/DerivedData/Build/Products/Debug-iphonesimulator/Tongxing.app/Tongxing --dependency-file ~/.codex/worktrees/weekly-study-guide-design/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-26/cli/DerivedData/Build/Intermediates.noindex/Tongxing.build/Debug-iphonesimulator/Tongxing.build/Objects-normal/arm64/Tongxing_dependency_info.dat --stringsdata-file ~/.codex/worktrees/weekly-study-guide-design/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-26/cli/DerivedData/Build/Intermediates.noindex/Tongxing.build/Debug-iphonesimulator/Tongxing.build/Objects-normal/arm64/ExtractedAppShortcutsMetadata.stringsdata --source-file-list ~/.codex/worktrees/weekly-study-guide-design/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-26/cli/DerivedData/Build/Intermediates.noindex/Tongxing.build/Debug-iphonesimulator/Tongxing.build/Objects-normal/arm64/Tongxing.SwiftFileList --metadata-file-list ~/.codex/worktrees/weekly-study-guide-design/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-26/cli/DerivedData/Build/Intermediates.no ...[line truncated]
+2026-10-26 22:14:32.072 appintentsmetadataprocessor[55808:59483156] Starting appintentsmetadataprocessor export
+2026-10-26 22:14:32.073 appintentsmetadataprocessor[55808:59483156] warning: Metadata extraction skipped, no AppIntents.framework dependency found
+
+CopySwiftLibs ~/.codex/worktrees/weekly-study-guide-design/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-26/cli/DerivedData/Build/Products/Debug-iphonesimulator/Tongxing.app (in target 'Tongxing' from project 'Tongxing')
+    cd ~/.codex/worktrees/weekly-study-guide-design/sermon-video-zh-subtitles/apps/tongxing-ios
+    builtin-swiftStdLibTool --copy --verbose --scan-executable ~/.codex/worktrees/weekly-study-guide-design/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-26/cli/DerivedData/Build/Products/Debug-iphonesimulator/Tongxing.app/Tongxing.debug.dylib --scan-folder ~/.codex/worktrees/weekly-study-guide-design/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-26/cli/DerivedData/Build/Products/Debug-iphonesimulator/Tongxing.app/Frameworks --scan-folder ~/.codex/worktrees/weekly-study-guide-design/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-26/cli/DerivedData/Build/Products/Debug-iphonesimulator/Tongxing.app/PlugIns --scan-folder ~/.codex/worktrees/weekly-study-guide-design/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-26/cli/DerivedData/Build/Products/Debug-iphonesimulator/Tongxing.app/SystemExtensions --scan-folder ~/.codex/worktrees/weekly-study-guide-design/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-26/cli/DerivedData/Build/Products/Debug-iphonesimulator/Tongxing.app/Extensions --scan-folder ~/.codex/worktrees/weekly-study-guide-design/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-26/cli/DerivedData/Build/Products/Debug-iphonesimulator/PackageFrameworks/TongxingCore_-268EA610E369A1D_PackageProduct.framework --platform iphonesimulator --toolchain /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain --destination ~/.codex/worktrees/weekly-study-guide-design/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-26/cli/DerivedData/Build/Products/Debug-iphonesimulator/Tongxing.app/Frameworks --strip-bitcode --strip-bitcode-tool /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/bitcode_strip --emit-dependency-info ~/.codex/worktrees/weekly-study-guide-design/sermon-video-zh-subtitles/artifacts/tongx ...[line truncated]
+Ignoring --strip-bitcode because --sign was not passed
+
+Ld ~/.codex/worktrees/weekly-study-guide-design/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-26/cli/DerivedData/Build/Products/Debug-iphonesimulator/Tongxing.app/PlugIns/TongxingTests.xctest/TongxingTests normal (in target 'TongxingTests' from project 'Tongxing')
+    cd ~/.codex/worktrees/weekly-study-guide-design/sermon-video-zh-subtitles/apps/tongxing-ios
+    /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -Xlinker -reproducible -target arm64-apple-ios17.0-simulator -bundle -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator27.1.sdk -O0 -Xlinker -no_warn_duplicate_libraries -L~/.codex/worktrees/weekly-study-guide-design/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-26/cli/DerivedData/Build/Intermediates.noindex/EagerLinkingTBDs/Debug-iphonesimulator -L~/.codex/worktrees/weekly-study-guide-design/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-26/cli/DerivedData/Build/Products/Debug-iphonesimulator -L/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/usr/lib -F~/.codex/worktrees/weekly-study-guide-design/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-26/cli/DerivedData/Build/Intermediates.noindex/EagerLinkingTBDs/Debug-iphonesimulator -F~/.codex/worktrees/weekly-study-guide-design/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-26/cli/DerivedData/Build/Products/Debug-iphonesimulator/PackageFrameworks -F~/.codex/worktrees/weekly-study-guide-design/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-26/cli/DerivedData/Build/Products/Debug-iphonesimulator -iframework /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/Library/Frameworks -iframework /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator27.1.sdk/Developer/Library/Frameworks -filelist ~/.codex/worktrees/weekly-study-guide-design/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-26/cli/DerivedData/Build/Intermediates.noindex/Tongxing.build/Debug-iphonesimulator/TongxingTests.build/Objects-normal/arm64/TongxingTests.LinkFileList -Xlinker -rpath -Xlinker /usr/lib/ ...[line truncated]
+
+ExtractAppIntentsMetadata (in target 'TongxingTests' from project 'Tongxing')
+    cd ~/.codex/worktrees/weekly-study-guide-design/sermon-video-zh-subtitles/apps/tongxing-ios
+    /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/appintentsmetadataprocessor --toolchain-dir /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain --module-name TongxingTests --sdk-root /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator27.1.sdk --xcode-version 27A9275 --platform-family iOS --deployment-target 17.0 --bundle-identifier com.jonathanjing.tongxing.dev.tests --output ~/.codex/worktrees/weekly-study-guide-design/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-26/cli/DerivedData/Build/Products/Debug-iphonesimulator/Tongxing.app/PlugIns/TongxingTests.xctest --target-triple arm64-apple-ios17.0-simulator --binary-file ~/.codex/worktrees/weekly-study-guide-design/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-26/cli/DerivedData/Build/Products/Debug-iphonesimulator/Tongxing.app/PlugIns/TongxingTests.xctest/TongxingTests --dependency-file ~/.codex/worktrees/weekly-study-guide-design/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-26/cli/DerivedData/Build/Intermediates.noindex/Tongxing.build/Debug-iphonesimulator/TongxingTests.build/Objects-normal/arm64/TongxingTests_dependency_info.dat --stringsdata-file ~/.codex/worktrees/weekly-study-guide-design/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-26/cli/DerivedData/Build/Intermediates.noindex/Tongxing.build/Debug-iphonesimulator/TongxingTests.build/Objects-normal/arm64/ExtractedAppShortcutsMetadata.stringsdata --source-file-list ~/.codex/worktrees/weekly-study-guide-design/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-26/cli/DerivedData/Build/Intermediates.noindex/Tongxing.build/Debug-iphonesimulator/TongxingTests.build/Objects-normal/arm64/TongxingTests.SwiftFileList --metadata-file-list ~/.codex/worktrees/weekly-study-guide-design ...[line truncated]
+2026-10-26 22:14:32.340 appintentsmetadataprocessor[55811:59483171] Starting appintentsmetadataprocessor export
+2026-10-26 22:14:32.342 appintentsmetadataprocessor[55811:59483171] warning: Metadata extraction skipped, no AppIntents.framework dependency found
+
+SwiftDriver TongxingUITests normal arm64 com.apple.xcode.tools.swift.compiler (in target 'TongxingUITests' from project 'Tongxing')
+    cd ~/.codex/worktrees/weekly-study-guide-design/sermon-video-zh-subtitles/apps/tongxing-ios
+    builtin-SwiftDriver -- /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc -module-name TongxingUITests -Onone @~/.codex/worktrees/weekly-study-guide-design/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-26/cli/DerivedData/Build/Intermediates.noindex/Tongxing.build/Debug-iphonesimulator/TongxingUITests.build/Objects-normal/arm64/TongxingUITests.SwiftFileList -DDEBUG -module-alias Testing\=_Testing_Unavailable -plugin-path /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/plugins/testing -enable-bare-slash-regex -enable-experimental-feature DebugDescriptionMacro -sdk /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator27.1.sdk -target arm64-apple-ios17.0-simulator -g -module-cache-path ~/.codex/worktrees/weekly-study-guide-design/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-26/cli/DerivedData/ModuleCache.noindex -Xfrontend -serialize-debugging-options -profile-coverage-mapping -profile-generate -enable-testing -index-store-path ~/.codex/worktrees/weekly-study-guide-design/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-26/cli/DerivedData/Index.noindex/DataStore -Xcc -D_LIBCPP_HARDENING_MODE\=_LIBCPP_HARDENING_MODE_DEBUG -swift-version 5 -I ~/.codex/worktrees/weekly-study-guide-design/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-26/cli/DerivedData/Build/Products/Debug-iphonesimulator -Isystem /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/usr/lib -F ~/.codex/worktrees/weekly-study-guide-design/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-26/cli/DerivedData/Build/Products/Debug-iphonesimulator -F /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/Library/Frameworks -F /Applications/Xcode.app/Conten ...[line truncated]
+
+ProcessInfoPlistFile ~/.codex/worktrees/weekly-study-guide-design/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-26/cli/DerivedData/Build/Products/Debug-iphonesimulator/Tongxing.app/PlugIns/TongxingTests.xctest/Info.plist ~/.codex/worktrees/weekly-study-guide-design/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-26/cli/DerivedData/Build/Intermediates.noindex/Tongxing.build/Debug-iphonesimulator/TongxingTests.build/empty-TongxingTests.plist (in target 'TongxingTests' from project 'Tongxing')
+    cd ~/.codex/worktrees/weekly-study-guide-design/sermon-video-zh-subtitles/apps/tongxing-ios
+    builtin-infoPlistUtility ~/.codex/worktrees/weekly-study-guide-design/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-26/cli/DerivedData/Build/Intermediates.noindex/Tongxing.build/Debug-iphonesimulator/TongxingTests.build/empty-TongxingTests.plist -producttype com.apple.product-type.bundle.unit-test -expandbuildsettings -format binary -platform iphonesimulator -o ~/.codex/worktrees/weekly-study-guide-design/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-26/cli/DerivedData/Build/Products/Debug-iphonesimulator/Tongxing.app/PlugIns/TongxingTests.xctest/Info.plist
+
+CopySwiftLibs ~/.codex/worktrees/weekly-study-guide-design/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-26/cli/DerivedData/Build/Products/Debug-iphonesimulator/Tongxing.app/PlugIns/TongxingTests.xctest (in target 'TongxingTests' from project 'Tongxing')
+    cd ~/.codex/worktrees/weekly-study-guide-design/sermon-video-zh-subtitles/apps/tongxing-ios
+    builtin-swiftStdLibTool --copy --verbose --scan-executable ~/.codex/worktrees/weekly-study-guide-design/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-26/cli/DerivedData/Build/Products/Debug-iphonesimulator/Tongxing.app/PlugIns/TongxingTests.xctest/TongxingTests --scan-folder ~/.codex/worktrees/weekly-study-guide-design/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-26/cli/DerivedData/Build/Products/Debug-iphonesimulator/Tongxing.app/PlugIns/TongxingTests.xctest/Frameworks --scan-folder ~/.codex/worktrees/weekly-study-guide-design/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-26/cli/DerivedData/Build/Products/Debug-iphonesimulator/Tongxing.app/PlugIns/TongxingTests.xctest/PlugIns --scan-folder ~/.codex/worktrees/weekly-study-guide-design/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-26/cli/DerivedData/Build/Products/Debug-iphonesimulator/Tongxing.app/PlugIns/TongxingTests.xctest/SystemExtensions --scan-folder ~/.codex/worktrees/weekly-study-guide-design/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-26/cli/DerivedData/Build/Products/Debug-iphonesimulator/Tongxing.app/PlugIns/TongxingTests.xctest/Extensions --scan-folder ~/.codex/worktrees/weekly-study-guide-design/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-26/cli/DerivedData/Build/Products/Debug-iphonesimulator/PackageFrameworks/TongxingCore_-268EA610E369A1D_PackageProduct.framework --platform iphonesimulator --toolchain /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain --destination ~/.codex/worktrees/weekly-study-guide-design/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-26/cli/DerivedData/Build/Products/Debug-iphonesimulator/Tongxing.app/PlugIns/TongxingTests.xctest/Frameworks --strip-bitcode --scan-executable /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimula ...[line truncated]
+Ignoring --strip-bitcode because --sign was not passed
+
+Validate ~/.codex/worktrees/weekly-study-guide-design/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-26/cli/DerivedData/Build/Products/Debug-iphonesimulator/Tongxing.app (in target 'Tongxing' from project 'Tongxing')
+    cd ~/.codex/worktrees/weekly-study-guide-design/sermon-video-zh-subtitles/apps/tongxing-ios
+    builtin-validationUtility ~/.codex/worktrees/weekly-study-guide-design/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-26/cli/DerivedData/Build/Products/Debug-iphonesimulator/Tongxing.app -shallow-bundle -infoplist-subpath Info.plist
+
+ProcessInfoPlistFile ~/.codex/worktrees/weekly-study-guide-design/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-26/cli/DerivedData/Build/Products/Debug-iphonesimulator/TongxingUITests-Runner.app/PlugIns/TongxingUITests.xctest/Info.plist ~/.codex/worktrees/weekly-study-guide-design/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-26/cli/DerivedData/Build/Intermediates.noindex/Tongxing.build/Debug-iphonesimulator/TongxingUITests.build/empty-TongxingUITests.plist (in target 'TongxingUITests' from project 'Tongxing')
+    cd ~/.codex/worktrees/weekly-study-guide-design/sermon-video-zh-subtitles/apps/tongxing-ios
+    builtin-infoPlistUtility ~/.codex/worktrees/weekly-study-guide-design/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-26/cli/DerivedData/Build/Intermediates.noindex/Tongxing.build/Debug-iphonesimulator/TongxingUITests.build/empty-TongxingUITests.plist -producttype com.apple.product-type.bundle.ui-testing -expandbuildsettings -format binary -platform iphonesimulator -additionalcontentfile ~/.codex/worktrees/weekly-study-guide-design/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-26/cli/DerivedData/Build/Intermediates.noindex/Tongxing.build/Debug-iphonesimulator/TongxingUITests.build/ProductTypeInfoPlistAdditions.plist -o ~/.codex/worktrees/weekly-study-guide-design/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-26/cli/DerivedData/Build/Products/Debug-iphonesimulator/TongxingUITests-Runner.app/PlugIns/TongxingUITests.xctest/Info.plist
+
+SwiftEmitModule normal arm64 Emitting\ module\ for\ TongxingUITests (in target 'TongxingUITests' from project 'Tongxing')
+
+SwiftCompile normal arm64 (in target 'TongxingUITests' from project 'Tongxing')
+    cd ~/.codex/worktrees/weekly-study-guide-design/sermon-video-zh-subtitles/apps/tongxing-ios
+
+
+SwiftCompile normal arm64 Compiling\ WeeklyGuidePreviewUITests.swift ~/.codex/worktrees/weekly-study-guide-design/sermon-video-zh-subtitles/apps/tongxing-ios/UITests/WeeklyGuidePreviewUITests.swift (in target 'TongxingUITests' from project 'Tongxing')
+
+SwiftCompile normal arm64 ~/.codex/worktrees/weekly-study-guide-design/sermon-video-zh-subtitles/apps/tongxing-ios/UITests/WeeklyGuidePreviewUITests.swift (in target 'TongxingUITests' from project 'Tongxing')
+    cd ~/.codex/worktrees/weekly-study-guide-design/sermon-video-zh-subtitles/apps/tongxing-ios
+    builtin-SwiftPerFileCompile WeeklyGuidePreviewUITests.swift
+
+SwiftDriverJobDiscovery normal arm64 Compiling WeeklyGuidePreviewUITests.swift (in target 'TongxingUITests' from project 'Tongxing')
+
+SwiftDriverJobDiscovery normal arm64 Emitting module for TongxingUITests (in target 'TongxingUITests' from project 'Tongxing')
+
+SwiftDriver\ Compilation\ Requirements TongxingUITests normal arm64 com.apple.xcode.tools.swift.compiler (in target 'TongxingUITests' from project 'Tongxing')
+    cd ~/.codex/worktrees/weekly-study-guide-design/sermon-video-zh-subtitles/apps/tongxing-ios
+    builtin-Swift-Compilation-Requirements -- /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc -module-name TongxingUITests -Onone @~/.codex/worktrees/weekly-study-guide-design/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-26/cli/DerivedData/Build/Intermediates.noindex/Tongxing.build/Debug-iphonesimulator/TongxingUITests.build/Objects-normal/arm64/TongxingUITests.SwiftFileList -DDEBUG -module-alias Testing\=_Testing_Unavailable -plugin-path /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/plugins/testing -enable-bare-slash-regex -enable-experimental-feature DebugDescriptionMacro -sdk /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator27.1.sdk -target arm64-apple-ios17.0-simulator -g -module-cache-path ~/.codex/worktrees/weekly-study-guide-design/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-26/cli/DerivedData/ModuleCache.noindex -Xfrontend -serialize-debugging-options -profile-coverage-mapping -profile-generate -enable-testing -index-store-path ~/.codex/worktrees/weekly-study-guide-design/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-26/cli/DerivedData/Index.noindex/DataStore -Xcc -D_LIBCPP_HARDENING_MODE\=_LIBCPP_HARDENING_MODE_DEBUG -swift-version 5 -I ~/.codex/worktrees/weekly-study-guide-design/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-26/cli/DerivedData/Build/Products/Debug-iphonesimulator -Isystem /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/usr/lib -F ~/.codex/worktrees/weekly-study-guide-design/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-26/cli/DerivedData/Build/Products/Debug-iphonesimulator -F /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/Library/Frameworks -F /Applicatio ...[line truncated]
+
+SwiftDriver\ Compilation TongxingUITests normal arm64 com.apple.xcode.tools.swift.compiler (in target 'TongxingUITests' from project 'Tongxing')
+    cd ~/.codex/worktrees/weekly-study-guide-design/sermon-video-zh-subtitles/apps/tongxing-ios
+    builtin-Swift-Compilation -- /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc -module-name TongxingUITests -Onone @~/.codex/worktrees/weekly-study-guide-design/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-26/cli/DerivedData/Build/Intermediates.noindex/Tongxing.build/Debug-iphonesimulator/TongxingUITests.build/Objects-normal/arm64/TongxingUITests.SwiftFileList -DDEBUG -module-alias Testing\=_Testing_Unavailable -plugin-path /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/plugins/testing -enable-bare-slash-regex -enable-experimental-feature DebugDescriptionMacro -sdk /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator27.1.sdk -target arm64-apple-ios17.0-simulator -g -module-cache-path ~/.codex/worktrees/weekly-study-guide-design/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-26/cli/DerivedData/ModuleCache.noindex -Xfrontend -serialize-debugging-options -profile-coverage-mapping -profile-generate -enable-testing -index-store-path ~/.codex/worktrees/weekly-study-guide-design/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-26/cli/DerivedData/Index.noindex/DataStore -Xcc -D_LIBCPP_HARDENING_MODE\=_LIBCPP_HARDENING_MODE_DEBUG -swift-version 5 -I ~/.codex/worktrees/weekly-study-guide-design/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-26/cli/DerivedData/Build/Products/Debug-iphonesimulator -Isystem /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/usr/lib -F ~/.codex/worktrees/weekly-study-guide-design/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-26/cli/DerivedData/Build/Products/Debug-iphonesimulator -F /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/Library/Frameworks -F /Applications/Xcode.app/ ...[line truncated]
+
+Copy ~/.codex/worktrees/weekly-study-guide-design/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-26/cli/DerivedData/Build/Products/Debug-iphonesimulator/TongxingUITests.swiftmodule/Project/arm64-apple-ios-simulator.swiftsourceinfo ~/.codex/worktrees/weekly-study-guide-design/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-26/cli/DerivedData/Build/Intermediates.noindex/Tongxing.build/Debug-iphonesimulator/TongxingUITests.build/Objects-normal/arm64/TongxingUITests.swiftsourceinfo (in target 'TongxingUITests' from project 'Tongxing')
+    cd ~/.codex/worktrees/weekly-study-guide-design/sermon-video-zh-subtitles/apps/tongxing-ios
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -resolve-src-symlinks -rename ~/.codex/worktrees/weekly-study-guide-design/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-26/cli/DerivedData/Build/Intermediates.noindex/Tongxing.build/Debug-iphonesimulator/TongxingUITests.build/Objects-normal/arm64/TongxingUITests.swiftsourceinfo ~/.codex/worktrees/weekly-study-guide-design/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-26/cli/DerivedData/Build/Products/Debug-iphonesimulator/TongxingUITests.swiftmodule/Project/arm64-apple-ios-simulator.swiftsourceinfo
+
+Copy ~/.codex/worktrees/weekly-study-guide-design/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-26/cli/DerivedData/Build/Products/Debug-iphonesimulator/TongxingUITests.swiftmodule/arm64-apple-ios-simulator.abi.json ~/.codex/worktrees/weekly-study-guide-design/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-26/cli/DerivedData/Build/Intermediates.noindex/Tongxing.build/Debug-iphonesimulator/TongxingUITests.build/Objects-normal/arm64/TongxingUITests.abi.json (in target 'TongxingUITests' from project 'Tongxing')
+    cd ~/.codex/worktrees/weekly-study-guide-design/sermon-video-zh-subtitles/apps/tongxing-ios
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -resolve-src-symlinks -rename ~/.codex/worktrees/weekly-study-guide-design/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-26/cli/DerivedData/Build/Intermediates.noindex/Tongxing.build/Debug-iphonesimulator/TongxingUITests.build/Objects-normal/arm64/TongxingUITests.abi.json ~/.codex/worktrees/weekly-study-guide-design/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-26/cli/DerivedData/Build/Products/Debug-iphonesimulator/TongxingUITests.swiftmodule/arm64-apple-ios-simulator.abi.json
+
+Ld ~/.codex/worktrees/weekly-study-guide-design/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-26/cli/DerivedData/Build/Products/Debug-iphonesimulator/TongxingUITests-Runner.app/PlugIns/TongxingUITests.xctest/TongxingUITests normal (in target 'TongxingUITests' from project 'Tongxing')
+    cd ~/.codex/worktrees/weekly-study-guide-design/sermon-video-zh-subtitles/apps/tongxing-ios
+    /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -Xlinker -reproducible -target arm64-apple-ios17.0-simulator -bundle -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator27.1.sdk -O0 -Xlinker -no_warn_duplicate_libraries -L~/.codex/worktrees/weekly-study-guide-design/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-26/cli/DerivedData/Build/Intermediates.noindex/EagerLinkingTBDs/Debug-iphonesimulator -L~/.codex/worktrees/weekly-study-guide-design/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-26/cli/DerivedData/Build/Products/Debug-iphonesimulator -L/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/usr/lib -F~/.codex/worktrees/weekly-study-guide-design/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-26/cli/DerivedData/Build/Intermediates.noindex/EagerLinkingTBDs/Debug-iphonesimulator -F~/.codex/worktrees/weekly-study-guide-design/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-26/cli/DerivedData/Build/Products/Debug-iphonesimulator -iframework /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/Library/Frameworks -iframework /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator27.1.sdk/Developer/Library/Frameworks -filelist ~/.codex/worktrees/weekly-study-guide-design/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-26/cli/DerivedData/Build/Intermediates.noindex/Tongxing.build/Debug-iphonesimulator/TongxingUITests.build/Objects-normal/arm64/TongxingUITests.LinkFileList -Xlinker -rpath -Xlinker /usr/lib/swift -Xlinker -rpath -Xlinker @loader_path/Frameworks -Xlinker -rpath -Xlinker @executable_path/Frameworks -Xlinker -dead_strip -Xlinker -object_path_lto -Xlinker ~/.codex/w ...[line truncated]
+
+CopySwiftLibs ~/.codex/worktrees/weekly-study-guide-design/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-26/cli/DerivedData/Build/Products/Debug-iphonesimulator/TongxingUITests-Runner.app/PlugIns/TongxingUITests.xctest (in target 'TongxingUITests' from project 'Tongxing')
+    cd ~/.codex/worktrees/weekly-study-guide-design/sermon-video-zh-subtitles/apps/tongxing-ios
+    builtin-swiftStdLibTool --copy --verbose --scan-executable ~/.codex/worktrees/weekly-study-guide-design/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-26/cli/DerivedData/Build/Products/Debug-iphonesimulator/TongxingUITests-Runner.app/PlugIns/TongxingUITests.xctest/TongxingUITests --scan-folder ~/.codex/worktrees/weekly-study-guide-design/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-26/cli/DerivedData/Build/Products/Debug-iphonesimulator/TongxingUITests-Runner.app/PlugIns/TongxingUITests.xctest/Frameworks --scan-folder ~/.codex/worktrees/weekly-study-guide-design/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-26/cli/DerivedData/Build/Products/Debug-iphonesimulator/TongxingUITests-Runner.app/PlugIns/TongxingUITests.xctest/PlugIns --scan-folder ~/.codex/worktrees/weekly-study-guide-design/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-26/cli/DerivedData/Build/Products/Debug-iphonesimulator/TongxingUITests-Runner.app/PlugIns/TongxingUITests.xctest/SystemExtensions --scan-folder ~/.codex/worktrees/weekly-study-guide-design/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-26/cli/DerivedData/Build/Products/Debug-iphonesimulator/TongxingUITests-Runner.app/PlugIns/TongxingUITests.xctest/Extensions --platform iphonesimulator --toolchain /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain --destination ~/.codex/worktrees/weekly-study-guide-design/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-26/cli/DerivedData/Build/Products/Debug-iphonesimulator/TongxingUITests-Runner.app/PlugIns/TongxingUITests.xctest/Frameworks --strip-bitcode --scan-executable /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/usr/lib/libXCTestSwiftSupport.dylib --strip-bitcode-tool /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin ...[line truncated]
+Ignoring --strip-bitcode because --sign was not passed
+
+ExtractAppIntentsMetadata (in target 'TongxingUITests' from project 'Tongxing')
+    cd ~/.codex/worktrees/weekly-study-guide-design/sermon-video-zh-subtitles/apps/tongxing-ios
+    /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/appintentsmetadataprocessor --toolchain-dir /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain --module-name TongxingUITests --sdk-root /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator27.1.sdk --xcode-version 27A9275 --platform-family iOS --deployment-target 17.0 --bundle-identifier com.jonathanjing.tongxing.dev.uitests --output ~/.codex/worktrees/weekly-study-guide-design/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-26/cli/DerivedData/Build/Products/Debug-iphonesimulator/TongxingUITests-Runner.app/PlugIns/TongxingUITests.xctest --target-triple arm64-apple-ios17.0-simulator --binary-file ~/.codex/worktrees/weekly-study-guide-design/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-26/cli/DerivedData/Build/Products/Debug-iphonesimulator/TongxingUITests-Runner.app/PlugIns/TongxingUITests.xctest/TongxingUITests --dependency-file ~/.codex/worktrees/weekly-study-guide-design/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-26/cli/DerivedData/Build/Intermediates.noindex/Tongxing.build/Debug-iphonesimulator/TongxingUITests.build/Objects-normal/arm64/TongxingUITests_dependency_info.dat --stringsdata-file ~/.codex/worktrees/weekly-study-guide-design/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-26/cli/DerivedData/Build/Intermediates.noindex/Tongxing.build/Debug-iphonesimulator/TongxingUITests.build/Objects-normal/arm64/ExtractedAppShortcutsMetadata.stringsdata --source-file-list ~/.codex/worktrees/weekly-study-guide-design/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-26/cli/DerivedData/Build/Intermediates.noindex/Tongxing.build/Debug-iphonesimulator/TongxingUITests.build/Objects-normal/arm64/TongxingUITests.SwiftFileList --metadata-file-list ~ ...[line truncated]
+2026-10-26 22:14:32.859 appintentsmetadataprocessor[55816:59483213] Starting appintentsmetadataprocessor export
+2026-10-26 22:14:32.861 appintentsmetadataprocessor[55816:59483213] warning: Metadata extraction skipped, no AppIntents.framework dependency found
+
+PruneExplicitPrecompiledModules ~/.codex/worktrees/weekly-study-guide-design/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-26/cli/DerivedData/Build/Intermediates.noindex/ExplicitPrecompiledModules
+
+PruneExplicitPrecompiledModules ~/.codex/worktrees/weekly-study-guide-design/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-26/cli/DerivedData/Build/Intermediates.noindex/SwiftExplicitPrecompiledModules
+
+PruneExplicitPrecompiledModules ~/.codex/worktrees/weekly-study-guide-design/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-26/cli/DerivedData/SDKExplicitPrecompiledModules
+
+2026-10-26 22:14:34.965 xcodebuild[55771:59482696] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+2026-10-26 22:14:34.965 xcodebuild[55771:59482696] [MT] IDESchemeActionDeviceRecord: versionAndBuild = 27.1 (24A94401), error = invalidDigitCount(94401).
+2026-10-26 22:15:04.852424-0700 Tongxing[56010:59486409] [General] Failed to send CA Event for app launch measurements for ca_event_type: 0 event_name: com.apple.app_launch_measurement.FirstFramePresentationMetric
+2026-10-26 22:15:04.901208-0700 Tongxing[56010:59485153] [XPCErrors] non-launching port is incompatible with service identifier "com.apple.PointerUI.pointeruid.default-service"
+2026-10-26 22:15:05.214766-0700 Tongxing[56010:59486409] [General] Failed to send CA Event for app launch measurements for ca_event_type: 1 event_name: com.apple.app_launch_measurement.ExtendedLaunchMetrics
+Test Suite 'Selected tests' started at 2026-10-26 22:15:05.295.
+Test Suite 'TongxingTests.xctest' started at 2026-10-26 22:15:05.295.
+Test Suite 'SwiftUIPreviewTests' started at 2026-10-26 22:15:05.295.
+Test Case '-[TongxingTests.SwiftUIPreviewTests testRenderRequestedViews]' started.
+2026-10-26 22:15:05.394703-0700 Tongxing[56010:59485991] [Default] Task <521F8E20-4C61-48AB-9D80-C6764CAD78A4>.<2> finished with error [-1100] Error Domain=NSURLErrorDomain Code=-1100 "(null)" UserInfo={_NSURLErrorRelatedURLSessionTaskErrorKey=(
+    "LocalDataTask <521F8E20-4C61-48AB-9D80-C6764CAD78A4>.<2>"
+), _NSURLErrorFailingURLSessionTaskErrorKey=LocalDataTask <521F8E20-4C61-48AB-9D80-C6764CAD78A4>.<2>}
+2026-10-26 22:15:05.409110-0700 Tongxing[56010:59486411] [Default] Task <0BF630EA-5723-4B89-9BA0-BF9B4F051CEB>.<3> finished with error [-1100] Error Domain=NSURLErrorDomain Code=-1100 "(null)" UserInfo={_NSURLErrorRelatedURLSessionTaskErrorKey=(
+    "LocalDataTask <0BF630EA-5723-4B89-9BA0-BF9B4F051CEB>.<3>"
+), _NSURLErrorFailingURLSessionTaskErrorKey=LocalDataTask <0BF630EA-5723-4B89-9BA0-BF9B4F051CEB>.<3>}
+objc[56010]: Class UIAccessibilityLoaderWebShared is implemented in both /Library/Developer/CoreSimulator/Volumes/iOS_24A94401/Library/Developer/CoreSimulator/Profiles/Runtimes/iOS 27.1.simruntime/Contents/Resources/RuntimeRoot/System/Library/AccessibilityBundles/WebKit.axbundle/WebKit (0x106c50398) and /Library/Developer/CoreSimulator/Volumes/iOS_24A94401/Library/Developer/CoreSimulator/Profiles/Runtimes/iOS 27.1.simruntime/Contents/Resources/RuntimeRoot/System/Library/AccessibilityBundles/WebCore.axbundle/WebCore (0x111220310). This may cause spurious casting failures and mysterious crashes. One of the duplicates must be removed or renamed.
+2026-10-26 22:15:05.762250-0700 Tongxing[56010:59486409] [carc] Invalidation handler: Connection cannot be formed.
+2026-10-26 22:15:05.864973-0700 Tongxing[56010:59486409] [plugin] AddInstanceForFactory: No factory registered for id <CFUUID 0x11f5148e0> F8BB1C28-BAE8-11D6-9C31-00039315CD46
+2026-10-26 22:15:06.190335-0700 Tongxing[56010:59486409] [EnhanceDialogueProcessor] EnhanceDialogueProcessor.cpp:658   EnhanceDialogueProcessor has no tuning for unrecognized device type
+2026-10-26 22:15:06.192442-0700 Tongxing[56010:59486409] [EnhanceDialogueProcessor] EnhanceDialogueProcessor.cpp:268   EnhanceDialogueProcessor() - Product does not have valid tuning at ''
+2026-10-26 22:15:06.199920-0700 Tongxing[56010:59486409] [EnhanceDialogueProcessor] EnhanceDialogueProcessor.cpp:658   EnhanceDialogueProcessor has no tuning for unrecognized device type
+2026-10-26 22:15:06.200072-0700 Tongxing[56010:59486409] [EnhanceDialogueProcessor] EnhanceDialogueProcessor.cpp:268   EnhanceDialogueProcessor() - Product does not have valid tuning at ''
+2026-10-26 22:15:06.278801-0700 Tongxing[56010:59486481] [AQ]        LoudnessManager.mm:1767  ReadPListFile: unable to open stream for LoudnessManager plist
+2026-10-26 22:15:06.279015-0700 Tongxing[56010:59486481] [AQ]        LoudnessManager.mm:1268  GetHardwarePlatformKey: cannot get acoustic ID
+2026-10-26 22:15:06.279216-0700 Tongxing[56010:59486481] [AQ]        LoudnessManager.mm:1222  IsHardwareSupported: no plist loaded, returning false
+2026-10-26 22:15:06.279355-0700 Tongxing[56010:59486481] [AQ]        LoudnessManager.mm:1222  IsHardwareSupported: no plist loaded, returning false
+2026-10-26 22:15:06.283913-0700 Tongxing[56010:59486481] [player] <<<< FigFilePlayer >>>> signalled err=-12864 at <>:10684
+2026-10-26 22:15:06.285680-0700 Tongxing[56010:59486481] [player] <<<< FigFilePlayer >>>> signalled err=-12864 at <>:10684
+Test Case '-[TongxingTests.SwiftUIPreviewTests testRenderRequestedViews]' passed (2.696 seconds).
+Test Suite 'SwiftUIPreviewTests' passed at 2026-10-26 22:15:07.994.
+	 Executed 1 test, with 0 failures (0 unexpected) in 2.696 (2.699) seconds
+Test Suite 'TongxingTests.xctest' passed at 2026-10-26 22:15:07.995.
+	 Executed 1 test, with 0 failures (0 unexpected) in 2.696 (2.699) seconds
+Test Suite 'Selected tests' passed at 2026-10-26 22:15:07.995.
+	 Executed 1 test, with 0 failures (0 unexpected) in 2.696 (2.700) seconds
+2026-10-26 22:15:08.046 xcodebuild[55771:59482696] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+2026-10-26 22:15:08.046 xcodebuild[55771:59482696] [MT] IDESchemeActionDeviceRecord: versionAndBuild = 27.1 (24A94401), error = invalidDigitCount(94401).
+2026-10-26 22:15:08.046 xcodebuild[55771:59482696] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+2026-10-26 22:15:08.046 xcodebuild[55771:59482696] [MT] IDESchemeActionDeviceRecord: versionAndBuild = 27.1 (24A94401), error = invalidDigitCount(94401).
+2026-10-26 22:15:08.047 xcodebuild[55771:59482696] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+2026-10-26 22:15:08.047 xcodebuild[55771:59482696] [MT] IDESchemeActionDeviceRecord: versionAndBuild = 27.1 (24A94401), error = invalidDigitCount(94401).
+2026-10-26 22:15:08.323 xcodebuild[55771:59482696] [MT] IDETestOperationsObserverDebug: 35.451 elapsed -- Testing started completed.
+2026-10-26 22:15:08.323 xcodebuild[55771:59482696] [MT] IDETestOperationsObserverDebug: 0.000 sec, +0.000 sec -- start
+2026-10-26 22:15:08.323 xcodebuild[55771:59482696] [MT] IDETestOperationsObserverDebug: 35.451 sec, +35.451 sec -- end
+
+Test session results, code coverage, and logs:
+	~/.codex/worktrees/weekly-study-guide-design/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-26/preview/20261026T221424-0d4565a3/preview.xcresult
+
+** TEST SUCCEEDED **
+
+Testing started
+
+$ /usr/bin/xcrun xcresulttool get test-results summary --path ~/.codex/worktrees/weekly-study-guide-design/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-26/preview/20261026T221424-0d4565a3/preview.xcresult
+{
+  "devicesAndConfigurations" : [
+    {
+      "device" : {
+        "architecture" : "arm64",
+        "deviceId" : "1752B68F-919A-404A-93CB-FCA3A5886971",
+        "deviceName" : "iPhone Duo",
+        "modelName" : "iPhone",
+        "osBuildNumber" : "24A94401",
+        "osVersion" : "27.1",
+        "platform" : "iOS Simulator"
+      },
+      "expectedFailures" : 0,
+      "failedTests" : 0,
+      "passedTests" : 1,
+      "skippedTests" : 0,
+      "testPlanConfiguration" : {
+        "configurationId" : "1",
+        "configurationName" : "Test Scheme Action"
+      }
+    }
+  ],
+  "environmentDescription" : "Tongxing · Built with macOS 27.0.1",
+  "expectedFailures" : 0,
+  "failedTests" : 0,
+  "finishTime" : 1793078108.324,
+  "passedTests" : 1,
+  "result" : "Passed",
+  "runtimeWarnings" : [
+
+  ],
+  "skippedTests" : 0,
+  "startTime" : 1793078067.864,
+  "statistics" : [
+
+  ],
+  "testFailures" : [
+
+  ],
+  "title" : "Test - Tongxing",
+  "topInsights" : [
+
+  ],
+  "totalTestCount" : 1
+}
+
+$ /usr/bin/xcrun xcresulttool export attachments --path ~/.codex/worktrees/weekly-study-guide-design/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-26/preview/20261026T221424-0d4565a3/preview.xcresult --output-path ~/.codex/worktrees/weekly-study-guide-design/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-26/preview/20261026T221424-0d4565a3/attachments
+Exported 2 attachments for: SwiftUIPreviewTests/testRenderRequestedViews():
+File: 5AC6EC90-B546-448A-9E60-65A9A94F0970.png, suggested name: "preview-WeeklyGuidePreview-dark-large_0_C17B3A63-1BC2-42B2-85FB-775C0A658A0A.png"
+File: FD8368A3-3B64-442E-82C8-8F59986EA520.png, suggested name: "preview-WeeklyGuidePreview-light_0_23FB0C7C-7B2A-46D8-BFCB-3AD2AD8A3BD4.png"
+
+Generated manifest file with attachment details: ~/.codex/worktrees/weekly-study-guide-design/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-26/preview/20261026T221424-0d4565a3/attachments/manifest.json
+
+Exit status: 0
