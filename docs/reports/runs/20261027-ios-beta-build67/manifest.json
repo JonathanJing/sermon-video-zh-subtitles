@@ -4,7 +4,7 @@
   "runs": [
     {
       "label": "20261027-ios-beta-build67",
-      "source": "~/.codex/worktrees/ios-universal-link-routing/sermon-video-zh-subtitles/artifacts/run-report-inputs/20261027-ios-beta-build67",
+      "source": "/private/tmp/tongxing-build67-report-FX3IV9/20261027-ios-beta-build67",
       "skipped": {}
     }
   ],
@@ -13,9 +13,9 @@
       "run": "20261027-ios-beta-build67",
       "path": "summary.json",
       "kind": "whole",
-      "bytes": 2343,
+      "bytes": 2763,
       "truncated": false,
-      "sha256": "c146630abd8e1971109ea76da50f8fddbe4e95ee0422cf4c87418b8954abd74d",
+      "sha256": "2f78ad9adc6ae4395967ecc4d22fed5b016320576f19c3baf4bf03b6025a7359",
       "redactions": {}
     }
   ],

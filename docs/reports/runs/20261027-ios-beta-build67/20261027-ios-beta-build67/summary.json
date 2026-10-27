@@ -1,5 +1,5 @@
 {
-  "status": "apple_valid_device_pending",
+  "status": "apple_valid_device_reported_link_success",
   "scope": "iOS Beta 1.26.25 build 67 Universal Link routing fix archive, export, upload and Apple status readback",
   "candidate": {
     "bundleID": "com.jonathanjing.tongxing.beta",
@@ -29,8 +29,14 @@
     "buildInGroup": true
   },
   "device": {
-    "build67": "not_run; pending user installation and cold-start test",
-    "lastObservedBuild": "65",
+    "installedVersionReadback": {
+      "source": "Agent read-only devicectl device info apps",
+      "version": "1.26.25",
+      "build": "67",
+      "checkedAt": "2026-10-27T16:31Z"
+    },
+    "userReportedBehavior": "After updating to Build 67 and closing the app, the user opened the Dev test link from a chat and reported that it opened the intended page 耶稣审判并保守.",
+    "scope": "One user-reported link scenario on one iPhone; not evidence of every lifecycle, locale, device or link.",
     "venue": "not_run"
   },
   "evidenceHashes": {
@@ -43,5 +49,5 @@
     "waitCommandResult": "88a900360c1e10be7493855be6f042270e1907e8d839748b4f30db0ca157059b",
     "appleState": "196a084f7a22c42d7204dae63b865766d368083e8344080be43360c0c6cb526a"
   },
-  "limits": "Apple status is point-in-time; distribution and successful processing do not establish physical-device Universal Link delivery or destination correctness. Private logs and binaries remain local."
+  "limits": "Apple status and installed version are point-in-time readbacks. The link and destination behavior is user-reported, not an independently captured device trace. Private logs and binaries remain local."
 }
