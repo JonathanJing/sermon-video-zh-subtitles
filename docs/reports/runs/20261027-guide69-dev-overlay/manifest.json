@@ -1,0 +1,27 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261027-guide69-dev-overlay",
+  "runs": [
+    {
+      "label": "guide69-dev-overlay-summary",
+      "source": "~/.codex/worktrees/guide-dev-overlay/sermon-video-zh-subtitles/artifacts/tongxing-ios/guide69-dev-overlay-summary",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "guide69-dev-overlay-summary",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 943,
+      "truncated": false,
+      "sha256": "9c3c086637b7cbb6347a74f2d32026faea6d0e56863811f84c8814da90cb79f0",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "candidateCommit": "8e6aad8f71ba1b80d9c1c527d1293cd1520a02c3",
+  "environment": "dev",
+  "targetPageId": "revelation-jesus-wins-20261025",
+  "tests": {
+    "final": "23 passed",
+    "earlier": "fixture assertions and monkeypatches failed during development and were repaired",
+    "worktreeInvocation": "initial .venv path was absent; verified source tree via pytest conftest with configured shared interpreter"
+  },
+  "candidate": {
+    "status": "prepared_not_deployed",
+    "baselineVersion": "9867502f35782585",
+    "importedFiles": 29,
+    "existingNonCatalogFilesChanged": 0,
+    "existingPagesAndDefaults": "preserved",
+    "firebaseConfiguration": "unchanged",
+    "catalogContracts": "passed",
+    "independentByteComparison": "passed",
+    "englishReference": "group and source-unit IDs checked; text relies on original sealed and review evidence"
+  },
+  "deployment": "not run",
+  "readback": "not run",
+  "device": "not run"
+}
