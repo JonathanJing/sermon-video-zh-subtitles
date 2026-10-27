@@ -1,0 +1,325 @@
+{
+  "schemaVersion": "sermon-target-glossary-v1",
+  "people": [
+    {
+      "source": "Corrie ten Boom",
+      "target": "彭柯丽",
+      "note": "荷兰基督徒，二战时救助犹太人"
+    },
+    {
+      "source": "Betsy ten Boom",
+      "target": "贝茜",
+      "note": "彭柯丽的姐姐；常写作 Betsie"
+    },
+    {
+      "source": "Martin Luther",
+      "target": "马丁·路德",
+      "note": "宗教改革家"
+    },
+    {
+      "source": "John",
+      "target": "约翰",
+      "note": "耶稣的门徒，《启示录》作者"
+    },
+    {
+      "source": "Jesus",
+      "target": "耶稣",
+      "note": "神子、救主；用“祂”"
+    },
+    {
+      "source": "God",
+      "target": "神",
+      "note": "三一神；用“祂”"
+    },
+    {
+      "source": "Satan",
+      "target": "撒但",
+      "note": "魔鬼、控告者；用“他”"
+    },
+    {
+      "source": "Eric",
+      "target": "埃里克",
+      "note": "Mariners 教会主任牧师"
+    },
+    {
+      "source": "Adolf Hitler",
+      "target": "阿道夫·希特勒",
+      "note": "纳粹德国独裁者"
+    },
+    {
+      "source": "Moses",
+      "target": "摩西",
+      "note": "带领以色列人出埃及"
+    },
+    {
+      "source": "D. A. Carson",
+      "target": "D. A. 卡森",
+      "note": "学者"
+    },
+    {
+      "source": "Roscoe",
+      "target": "罗斯科",
+      "note": "讲员的黄金贵宾犬"
+    }
+  ],
+  "relations": [
+    {
+      "source": "Betsie ten Boom → Corrie ten Boom",
+      "target": "姐姐（贝茜是彭柯丽的姐姐）",
+      "evidence": "u0011 说“Corrie's sister”；历史记载贝茜为姐姐"
+    },
+    {
+      "source": "Corrie's father → Corrie ten Boom",
+      "target": "父亲",
+      "evidence": "u0008、u0020 说“Corrie's father died”"
+    }
+  ],
+  "pronouns": {
+    "jesus": "祂",
+    "god": "祂",
+    "satan": "他",
+    "beasts": "它"
+  },
+  "recurringPhrases": [
+    {
+      "source": "Jesus is victor",
+      "target": "耶稣是得胜者",
+      "unitIds": [
+        "u0017",
+        "u0025",
+        "u0029",
+        "u0034",
+        "u0036",
+        "u0064",
+        "u0079",
+        "u0098",
+        "u0190",
+        "u0198",
+        "u0350",
+        "u0412"
+      ]
+    },
+    {
+      "source": "the blood of the lamb",
+      "target": "羔羊的血",
+      "unitIds": [
+        "u0091",
+        "u0235",
+        "u0236",
+        "u0237",
+        "u0238",
+        "u0239",
+        "u0254",
+        "u0285",
+        "u0291",
+        "u0434"
+      ]
+    },
+    {
+      "source": "the accuser",
+      "target": "控告者",
+      "unitIds": [
+        "u0092",
+        "u0094",
+        "u0095",
+        "u0097",
+        "u0202",
+        "u0205",
+        "u0227",
+        "u0292"
+      ]
+    },
+    {
+      "source": "the wilderness",
+      "target": "旷野",
+      "unitIds": [
+        "u0116",
+        "u0117",
+        "u0119",
+        "u0121",
+        "u0295",
+        "u0297",
+        "u0298",
+        "u0300",
+        "u0302",
+        "u0305",
+        "u0306",
+        "u0336",
+        "u0338",
+        "u0339",
+        "u0344",
+        "u0414",
+        "u0416"
+      ]
+    },
+    {
+      "source": "Jesus silences the accuser",
+      "target": "耶稣使控告者闭口",
+      "unitIds": [
+        "u0202",
+        "u0227",
+        "u0292"
+      ]
+    },
+    {
+      "source": "Jesus sets the limits of evil",
+      "target": "耶稣限定邪恶的界限",
+      "unitIds": [
+        "u0348",
+        "u0387"
+      ]
+    },
+    {
+      "source": "He's already won",
+      "target": "祂已经得胜",
+      "unitIds": [
+        "u0191",
+        "u0192"
+      ]
+    },
+    {
+      "source": "Don't be that guy",
+      "target": "别做那种人",
+      "unitIds": [
+        "u0165",
+        "u0173"
+      ]
+    }
+  ],
+  "culturalReferences": [
+    {
+      "source": "fantasy football",
+      "meaning": "球迷线上挑选球员组队、按真实比赛数据计分的游戏",
+      "suggestedTarget": "梦幻橄榄球（线上组队、按真实数据计分）",
+      "unitIds": [
+        "u0149",
+        "u0153",
+        "u0159",
+        "u0166",
+        "u0174"
+      ]
+    },
+    {
+      "source": "waiver wire",
+      "meaning": "梦幻橄榄球中无人拥有的球员池；把球员丢进去等于放弃",
+      "suggestedTarget": "自由球员池（把球员全丢进去）",
+      "unitIds": [
+        "u0166"
+      ]
+    },
+    {
+      "source": "talking smack",
+      "meaning": "放话挑衅、嘲讽激将",
+      "suggestedTarget": "放话激我/说风凉话激将",
+      "unitIds": [
+        "u0153"
+      ]
+    },
+    {
+      "source": "go out on top",
+      "meaning": "在巅峰时退役",
+      "suggestedTarget": "在巅峰时退役",
+      "unitIds": [
+        "u0152"
+      ]
+    },
+    {
+      "source": "They pulled me back in",
+      "meaning": "借用电影《教父3》式台词：本想退出却被重新拉回",
+      "suggestedTarget": "我本想退出，他们又把我拉回来了",
+      "unitIds": [
+        "u0154",
+        "u0155"
+      ]
+    },
+    {
+      "source": "Battle of the Bulge",
+      "meaning": "二战末期德军最后反攻，即阿登战役",
+      "suggestedTarget": "阿登战役（突出部之役）",
+      "unitIds": [
+        "u0178",
+        "u0182"
+      ]
+    },
+    {
+      "source": "thousand-year Reich",
+      "meaning": "希特勒宣称纳粹“第三帝国”将延续千年",
+      "suggestedTarget": "千年帝国（纳粹第三帝国）",
+      "unitIds": [
+        "u0362",
+        "u0363"
+      ]
+    },
+    {
+      "source": "golden doodle",
+      "meaning": "金毛寻回犬与贵宾犬的混种犬",
+      "suggestedTarget": "金毛贵宾混血犬",
+      "unitIds": [
+        "u0390"
+      ]
+    },
+    {
+      "source": "on a leash",
+      "meaning": "被绳子拴住，引申为受限制、不能任意妄为",
+      "suggestedTarget": "被绳子拴着（受限制）",
+      "unitIds": [
+        "u0395",
+        "u0405"
+      ]
+    },
+    {
+      "source": "unmerited confidence",
+      "meaning": "不是自己挣来的底气；此处指狗因主人控制大狗而有的自信",
+      "suggestedTarget": "莫名有了底气/白白得来的底气",
+      "unitIds": [
+        "u0401",
+        "u0404"
+      ]
+    },
+    {
+      "source": "mark of the beast",
+      "meaning": "属于兽的印记，表示效忠敌基督体系，并影响人在社会中的买卖生活",
+      "suggestedTarget": "兽的印记",
+      "unitIds": [
+        "u0138",
+        "u0139"
+      ]
+    },
+    {
+      "source": "time, times and half a time",
+      "meaning": "启示文学说法，即一载、二载、半载，也就是三年半",
+      "suggestedTarget": "一载、二载、半载（三年半）",
+      "unitIds": [
+        "u0326",
+        "u0328",
+        "u0329"
+      ]
+    }
+  ],
+  "scripture": [
+    {
+      "reference": "Revelation 12:10",
+      "cuvPhrase": "那在我们神面前昼夜控告我们弟兄的，已经被摔下去了。"
+    },
+    {
+      "reference": "Revelation 12:11",
+      "cuvPhrase": "弟兄胜过它，是因羔羊的血和自己所见证的道。"
+    },
+    {
+      "reference": "Revelation 12:14",
+      "cuvPhrase": "于是有大鹰的两个翅膀赐给妇人，叫她能飞到旷野，到自己的地方，躲避那蛇；她在那里被养活一载二载半载。"
+    },
+    {
+      "reference": "Revelation 13:5",
+      "cuvPhrase": "可以任意而行四十二个月。"
+    },
+    {
+      "reference": "Revelation 13:7",
+      "cuvPhrase": "又任凭它与圣徒争战，并且得胜；也把权柄赐给它，制伏各族、各民、各方、各国。"
+    },
+    {
+      "reference": "Exodus 19:4",
+      "cuvPhrase": "我向埃及人所行的事，你们都看见了，且看见我如鹰将你们背在翅膀上，带来归我。"
+    }
+  ]
+}

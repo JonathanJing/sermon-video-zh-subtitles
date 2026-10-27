@@ -74,6 +74,12 @@ class AlignmentTest(unittest.TestCase):
         self.assertGreater(number['start'], result[0]['end'])
         self.assertEqual(result[0]['timingQuality'], 'mfa_word_aligned')
 
+    def test_sentence_split_keeps_spaced_initials_with_the_name(self):
+        for text in ('D .A. Carson, a scholar, imagines one home. Then he left.',
+                     'D.A. Carson, a scholar, imagines one home. Then he left.'):
+            self.assertEqual(list(mfa._sentences(text)),
+                             [text.split(' Then')[0], 'Then he left.'])
+
     def test_sentence_split_keeps_abbreviation_years_together(self):
         text = 'The scroll is about A.D. 70 and the temple. Then he left.'
         self.assertEqual(list(mfa._sentences(text)),

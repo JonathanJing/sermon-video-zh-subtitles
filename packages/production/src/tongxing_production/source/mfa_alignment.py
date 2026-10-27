@@ -146,7 +146,8 @@ def _sentences(text):
         token = preceding.split()[-1]
         if re.fullmatch(r'(?:Dr|Mr|Mrs|Ms|St|Rev|Prof|Jr|Sr)\.', token, re.I):
             continue
-        if re.fullmatch(r'[A-Z]\.', token):
+        # Initials, also when ASR spaced them ("D.A. Carson", "D .A. Carson"; 2026-10-25).
+        if re.fullmatch(r'\.?(?:[A-Z]\.)+', token):
             continue
         if token.lower() in ABBREVIATIONS:
             continue
