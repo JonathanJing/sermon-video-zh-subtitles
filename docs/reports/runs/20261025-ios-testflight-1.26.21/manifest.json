@@ -1,0 +1,45 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261025-ios-testflight-1.26.21",
+  "runs": [
+    {
+      "label": "testflight-1.26.21",
+      "source": "/private/tmp/tongxing-ios-beta-1.26.21-pr1383/artifacts/tongxing-ios/2026-10-25/testflight-1.26.21",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "testflight-1.26.21",
+      "path": "distribution-receipt.json",
+      "kind": "whole",
+      "bytes": 807,
+      "truncated": false,
+      "sha256": "7b3a522e709db708128cd809638b342a0141c7b105b72e4585268686d6503dd1",
+      "redactions": {}
+    },
+    {
+      "run": "testflight-1.26.21",
+      "path": "processing-receipt.json",
+      "kind": "whole",
+      "bytes": 583,
+      "truncated": false,
+      "sha256": "14dc12c1822d3891c83e89c24947fa1552885490c45e9f601486a318144e42c4",
+      "redactions": {}
+    },
+    {
+      "run": "testflight-1.26.21",
+      "path": "upload-receipt.json",
+      "kind": "whole",
+      "bytes": 457,
+      "truncated": false,
+      "sha256": "9d87e122c4c5b854c96f9b1d9dc8fb45c129c211c5662f43821ebce2688a1cdd",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}
