@@ -1,0 +1,292 @@
+Xcode version: 27.1 (27A9275)
+22:11:40.678 xcodebuild[54603:59469935] Beginning test session TongxingUITests-94443C65-4D7D-427F-8796-DE0C1FDABEA7 at 2026-10-26 22:11:40.677 on target <DVTiPhoneSimulator: 0x755d45e000> {
+		SimDevice: iPhone Duo (1752B68F-919A-404A-93CB-FCA3A5886971, iOS 27.1, Shutdown)
+} (27.1 (24A94401))
+22:11:40.678 xcodebuild[54603:59469935] 	/Applications/Xcode.app/Contents/Developer/usr/bin/xcodebuild
+-project
+~/.codex/worktrees/weekly-study-guide-design/sermon-video-zh-subtitles/apps/tongxing-ios/Tongxing.xcodeproj
+-scheme
+Tongxing
+-configuration
+Debug
+-sdk
+iphonesimulator
+-destination
+platform=iOS Simulator,id=1752B68F-919A-404A-93CB-FCA3A5886971
+-derivedDataPath
+~/.codex/worktrees/weekly-study-guide-design/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-26/cli/DerivedData
+-disableAutomaticPackageResolution
+CODE_SIGNING_ALLOWED=NO
+CODE_SIGNING_REQUIRED=NO
+-resultBundlePath
+~/.codex/worktrees/weekly-study-guide-design/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-26/cli/20261026T221136-test-e9b0df76/test.xcresult
+-parallel-testing-enabled
+NO
+-only-testing:TongxingUITests/WeeklyGuidePreviewUITests
+test
+22:11:40.678 xcodebuild[54603:59469935] Test standard output and standard error is at ~/.codex/worktrees/weekly-study-guide-design/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-26/cli/20261026T221136-test-e9b0df76/test.xcresult/Staging/1_Test/Diagnostics/TongxingUITests-78F671DC-90AF-4615-B190-CCACDA317F07-Configuration-Test Scheme Action-Iteration-1/TongxingUITests-6EF30EC8-49AC-4657-91D7-9E987B5B9D1D/StandardOutputAndStandardError.txt
+22:11:40.903 xcodebuild[54603:59469935] 1752B68F-919A-404A-93CB-FCA3A5886971: Received sim device notification: {
+    notification = "availableDevices_changed";
+}
+22:11:40.903 xcodebuild[54603:59469935] 1752B68F-919A-404A-93CB-FCA3A5886971: Received sim device notification: {
+    device = "iPhone Duo (1752B68F-919A-404A-93CB-FCA3A5886971, iOS 27.1, Booting)";
+    "last_used_at" = "2026-10-27 05:11:40 +0000";
+    "new_state" = 2;
+    notification = "device_state";
+    "prev_state" = 1;
+}
+22:11:40.904 xcodebuild[54603:59469948] ~/Library/Developer/CoreSimulator/Devices: Received sim device set notification: {
+    device = "iPhone Duo (1752B68F-919A-404A-93CB-FCA3A5886971, iOS 27.1, Booting)";
+    "last_used_at" = "2026-10-27 05:11:40 +0000";
+... 4432 lines omitted; 400 error-like lines, 50 kept below ...
+[line 388] 22:11:41.090 xcodebuild[54603:59469947] Calling -[SimDevice getenv:error:] for TESTMANAGERD_SIM_SOCK
+[line 411] 22:11:42.606 xcodebuild[54603:59469947] Got reply to session initiation request with identifier 94443C65-4D7D-427F-8796-DE0C1FDABEA7 (error: (null))
+[line 483] 22:12:10.337 TongxingUITests-Runner[54857:59472189] Creating future for 'requesting test configuration' with timeout 600.00
+[line 611] 	            testTimeoutsEnabled:NO
+[line 631]     "test timeout capability" = 1;
+[line 657] 22:12:10.402 TongxingUITests-Runner[54857:59472189] Creating future for 'enabling automation mode' with timeout 60.00
+[line 662] 22:12:10.405 TongxingUITests-Runner[54857:59472189] Creating future for 'loading Accessibility' with timeout 70.00
+[line 668] 22:12:10.427 TongxingUITests-Runner[54857:59472189] Creating future for 'enabling localized string gathering' with timeout 70.00
+[line 673] 22:12:10.428 TongxingUITests-Runner[54857:59472189] Creating future for 'setting AX timeout to 60.00s' with timeout 65.00
+[line 674] 22:12:10.428 TongxingUITests-Runner[54857:59472189] <XCTWaiter: 0x10a4d4210> entering wait loop for 65.00s with expectations: `setting AX timeout to 60.00s`
+[line 677] 22:12:10.430 TongxingUITests-Runner[54857:59472189] cleaning up setting AX timeout to 60.00s
+[line 678] 22:12:10.430 TongxingUITests-Runner[54857:59472189] Creating future for 'registering for kAXUserTestingNotification' with timeout 65.00
+[line 683] 22:12:10.431 TongxingUITests-Runner[54857:59472189] Creating future for 'registering for kAXAlertNotification' with timeout 65.00
+[line 688] 22:12:10.432 TongxingUITests-Runner[54857:59472189] Creating future for 'registering for kAXPidStatusChangedNotification' with timeout 65.00
+[line 693] 22:12:10.433 TongxingUITests-Runner[54857:59472189] Creating future for 'registering for AXNotification 3031' with timeout 65.00
+[line 698] 22:12:10.433 TongxingUITests-Runner[54857:59472189] Creating future for 'requesting background assertion for test process' with timeout 30.00
+[line 745] 22:12:10.526 TongxingUITests-Runner[54857:59472189] Creating future for 'requesting to start screen recording' with timeout 30.00
+[line 753] 22:12:10.691 TongxingUITests-Runner[54857:59472189] Creating future for 'getting screen identifiers' with timeout 30.00
+[line 759] 22:12:10.691 TongxingUITests-Runner[54857:59472189] Creating future for 'getting screen bounds' with timeout 30.00
+[line 764] 22:12:10.692 TongxingUITests-Runner[54857:59472189] Creating future for 'getting screen bounds' with timeout 30.00
+[line 769] 22:12:10.692 TongxingUITests-Runner[54857:59472189] Creating future for 'getting screen bounds' with timeout 30.00
+[line 774] 22:12:10.692 TongxingUITests-Runner[54857:59472189] Creating future for 'getting screen bounds' with timeout 30.00
+[line 779] 22:12:10.692 TongxingUITests-Runner[54857:59472189] Creating future for 'getting screen bounds' with timeout 30.00
+[line 843] 22:12:10.701 TongxingUITests-Runner[54857:59472189] Creating future for 'getting screen identifiers' with timeout 30.00
+[line 848] 22:12:10.702 TongxingUITests-Runner[54857:59472189] Creating future for 'getting screen bounds' with timeout 30.00
+[line 853] 22:12:10.702 TongxingUITests-Runner[54857:59472189] Creating future for 'getting screen bounds' with timeout 30.00
+[line 858] 22:12:10.703 TongxingUITests-Runner[54857:59472189] Creating future for 'getting screen bounds' with timeout 30.00
+[line 864] 22:12:10.703 TongxingUITests-Runner[54857:59472189] Creating future for 'getting screen bounds' with timeout 30.00
+[line 869] 22:12:10.703 TongxingUITests-Runner[54857:59472189] Creating future for 'getting screen bounds' with timeout 30.00
+[line 891] 22:12:10.704 TongxingUITests-Runner[54857:59472189] Creating future for 'launching application via Xcode' with timeout 60.00
+[line 913] 22:12:10.787 xcodebuild[54603:59469935] Launch session standard output and standard error is at ~/.codex/worktrees/weekly-study-guide-design/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-26/cli/20261026T221136-test-e9b0df76/test.xcresult/Staging/1_Test/Diagnostics/TongxingUITests-78F671DC-90AF-4615-B190-CCACDA317F07-Configuration-Test Scheme Action-Iteration-1/TongxingUITests-6EF30EC8-49AC-4657-91D7-9E987B5B9D1D/StandardOutputAndStandardError-com.jonathanjing.tongxing.dev.txt
+[line 919] 22:12:10.788 TongxingUITests-Runner[54857:59473234] Got launch request reply from Xcode, token/error: 1
+[line 920] 22:12:10.788 TongxingUITests-Runner[54857:59473234] Got launch request reply from Xcode, token 1, error (null)
+[line 926] 22:12:10.789 TongxingUITests-Runner[54857:59472189] Creating future for 'requesting launch progress' with timeout 60.00
+[line 931] 22:12:10.832 TongxingUITests-Runner[54857:59473236] Got status/error: 0 for token 1
+[line 951] 22:12:10.993 TongxingUITests-Runner[54857:59472189] Creating future for 'requesting launch progress' with timeout 60.00
+[line 955] 22:12:10.994 TongxingUITests-Runner[54857:59473234] Got status/error: 0 for token 1
+[line 964] 22:12:11.195 TongxingUITests-Runner[54857:59472189] Creating future for 'requesting launch progress' with timeout 60.00
+[line 968] 22:12:11.198 TongxingUITests-Runner[54857:59473239] Got status/error: 0 for token 1
+[line 1008] 22:12:11.403 TongxingUITests-Runner[54857:59472189] Creating future for 'requesting launch progress' with timeout 60.00
+[line 1012] 22:12:11.404 TongxingUITests-Runner[54857:59473236] Got status/error: 0 for token 1
+[line 1024] 22:12:11.605 TongxingUITests-Runner[54857:59472189] Creating future for 'requesting launch progress' with timeout 60.00
+[line 1028] 22:12:11.605 TongxingUITests-Runner[54857:59473234] Got status/error: 0 for token 1
+[line 1088] 22:12:11.813 TongxingUITests-Runner[54857:59472189] Creating future for 'requesting launch progress' with timeout 60.00
+[line 1096] 22:12:11.847 TongxingUITests-Runner[54857:59473234] Got status/error: 0 for token 1
+[line 1114] 22:12:12.023 TongxingUITests-Runner[54857:59472189] Creating future for 'requesting launch progress' with timeout 60.00
+[line 1118] 22:12:12.023 TongxingUITests-Runner[54857:59473234] Got status/error: 0 for token 1
+[line 1130] 22:12:12.232 TongxingUITests-Runner[54857:59472189] Creating future for 'requesting launch progress' with timeout 60.00
+[line 1134] 22:12:12.233 TongxingUITests-Runner[54857:59473233] Got status/error: 0 for token 1
+[line 1178] 22:12:12.435 TongxingUITests-Runner[54857:59472189] Creating future for 'requesting launch progress' with timeout 60.00
+... end of omitted section ...
+    "XC_kAXXCAttributeElementBaseType" = NSObject;
+    "XC_kAXXCAttributeElementType" = "SwiftUI.AccessibilityNode";
+    "XC_kAXXCAttributeTraits" = 8589934593;
+}
+See test report attachments for more detail.
+22:12:27.683 xcodebuild[54603:59469935] _XCT_testWithIdentifier:<XCTTestIdentifier leaf, method, swift ["WeeklyGuidePreviewUITests", "testGuidePreviewNavigationKeepsPlaybackAndUsesSyntheticContent"]> didRecordIssue:UI Automation Failure at WeeklyGuidePreviewUITests.swift:32: Failed to tap "guide-close" Button: No matches found for Elements matching predicate '"guide-close" IN identifiers' from input {(
+    Button, label: '表单控制柄', value: 已展开,
+    Button, identifier: 'app-language-menu', label: '界面语言', value: 中,
+    Button, identifier: 'choose-content-language', label: '选择证道语言', value: 简体中文，仅文字,
+    Button, identifier: 'open-sermon-study', label: '本周研读手册 · 测试',
+    Button, identifier: 'open-english-locate', label: '没跟上现场？按英文找位置',
+    Button, identifier: 'download-audio', label: '下载本篇',
+    Button, label: '来源与内容说明',
+    Button,
+    Button, label: '现场收听', Selected,
+    Button, label: '字幕全文',
+    Button, identifier: 'guide-section-scripture', label: '经文、阅读本周经文',
+    Button, identifier: 'guide-section-background', label: '理解本周、背景与图解',
+    Button, identifier: 'guide-section-notes', label: '讲道笔记、阅读手册中的讲道笔记',
+    Button, identifier: 'guide-section-group', label: '生活小组、一起阅读与讨论',
+    Button, identifier: 'choose-sermon', label: '选择证道周次',
+    Button, identifier: 'more-options', label: '更多选项',
+    Button, identifier: 'nudge-backward', label: '中文抢先，后退1秒', Disabled,
+    Button, identifier: 'playback-toggle', label: '开始播放', value: 00:00，总长 00:36。音频加..., Disabled,
+    Button, identifier: 'nudge-forward', label: '中文落后，前进1秒', Disabled,
+    Button, identifier: 'playback-more', label: '定位',
+    Button, identifier: 'nudge-backward', label: '中文抢先，后退1秒', Disabled,
+    Button, identifier: 'playback-toggle', label: '开始播放', value: 00:00，总长 00:36。音频加..., Disabled,
+    Button, identifier: 'nudge-forward', label: '中文落后，前进1秒', Disabled,
+    Button, identifier: 'playback-more', label: '定位'
+)}
+Possibly caused by runtime issues:
+Automation type mismatch: computed Button from legacy attributes vs PopUpButton from modern attribute. Input attributes and values: {
+    "XC_kAXXCAttributeAutomationType" = 14;
+    "XC_kAXXCAttributeElementBaseType" = NSObject;
+    "XC_kAXXCAttributeElementType" = "SwiftUI.AccessibilityNode";
+    "XC_kAXXCAttributeTraits" = 1108101562369;
+}
+Automation type mismatch: computed Button from legacy attributes vs DisclosureTriangle from modern attribute. Input attributes and values: {
+    "XC_kAXXCAttributeAutomationType" = 13;
+    "XC_kAXXCAttributeElementBaseType" = NSObject;
+    "XC_kAXXCAttributeElementType" = "SwiftUI.AccessibilityNode";
+    "XC_kAXXCAttributeTraits" = 8589934593;
+}
+See test report attachments for more detail.
+22:12:27.684 xcodebuild[54603:59469935] Nothing to delete
+22:12:27.683 TongxingUITests-Runner[54857:59472189] Preparing to throw exception to interrupt test (XCTShouldExitOnTestInterruption=(unset), isInvocationAsync=0, overridesAsyncSetUpOrTearDown=0)
+22:12:27.683 TongxingUITests-Runner[54857:59472189] Interrupting test execution
+22:12:27.684 TongxingUITests-Runner[54857:59472189] <XCTContext: 0x10a77c690> started activity <XCActivityRecord: 0x10a561960> 2026-10-27 05:12:27 +0000: Tear Down
+    t =    17.18s Tear Down
+22:12:27.685 xcodebuild[54603:59469935] Nothing to delete
+22:12:27.685 xcodebuild[54603:59469935] _XCT_testCaseWithIdentifier:<XCTTestIdentifier leaf, method, swift ["WeeklyGuidePreviewUITests", "testGuidePreviewNavigationKeepsPlaybackAndUsesSyntheticContent"]> willStartActivity:<XCActivityRecord: 0x7560baba30> 2026-10-27 05:12:27 +0000: Tear Down
+22:12:27.685 xcodebuild[54603:59469935] Nothing to delete
+22:12:27.684 TongxingUITests-Runner[54857:59472189] <XCTWaiter: 0x10a5b0930> entering indefinite wait loop for expectations: `failable invocation block completion`
+22:12:27.684 TongxingUITests-Runner[54857:59472189] Returning result XCTWaiterResultCompleted for synchronous waiter <XCTWaiter: 0x10a5b0930>
+22:12:27.684 TongxingUITests-Runner[54857:59472189] Wait <XCTWaiterWait: 0x113a88b80> completed after 0.000s
+22:12:27.685 TongxingUITests-Runner[54857:59472189] cleaning up failable invocation block completion
+22:12:27.685 TongxingUITests-Runner[54857:59472189] Creating future for 'requesting to stop screen recording' with timeout 30.00
+22:12:27.685 TongxingUITests-Runner[54857:59472189] Stopping diagnostic screen recording with UUID 782BDC81-A12E-4722-B02C-19AC37A86479.
+22:12:27.685 TongxingUITests-Runner[54857:59472189] <XCTWaiter: 0x10a5b06c0> entering wait loop for 30.00s with expectations: `requesting to stop screen recording`
+22:12:27.751 TongxingUITests-Runner[54857:59473234] Did stop diagnostic screen recording with UUID 782BDC81-A12E-4722-B02C-19AC37A86479.
+22:12:27.751 TongxingUITests-Runner[54857:59472189] Returning result XCTWaiterResultCompleted for synchronous waiter <XCTWaiter: 0x10a5b06c0>
+22:12:27.752 TongxingUITests-Runner[54857:59472189] Wait <XCTWaiterWait: 0x113a883c0> completed after 0.067s
+22:12:27.752 TongxingUITests-Runner[54857:59472189] cleaning up requesting to stop screen recording
+22:12:27.752 TongxingUITests-Runner[54857:59472189] <XCTContext: 0x10a77c690> finished activity <XCActivityRecord: 0x10a561960> 2026-10-27 05:12:27 +0000: Tear Down (0.067579s)
+22:12:27.752 xcodebuild[54603:59469935] _XCT_testCaseWithIdentifier:<XCTTestIdentifier leaf, method, swift ["WeeklyGuidePreviewUITests", "testGuidePreviewNavigationKeepsPlaybackAndUsesSyntheticContent"]> didFinishActivity:<XCActivityRecord: 0x755f375340> 2026-10-27 05:12:27 +0000: Tear Down (0.067579s)
+22:12:27.753 xcodebuild[54603:59469935] Nothing to delete
+22:12:27.752 TongxingUITests-Runner[54857:59472189] KVO change: checked status of Expect value of 'applicationState' of com.jonathanjing.tongxing.dev (pid:54997) to be '1': fulfill=NO
+22:12:27.752 TongxingUITests-Runner[54857:59473232] Monitor: termination is being tracked for com.jonathanjing.tongxing.dev (pid:54997)
+22:12:27.752 TongxingUITests-Runner[54857:59472189] KVO change: checked status of Expect value of 'applicationState' of com.jonathanjing.tongxing.dev (pid:54997) to be '1': fulfill=NO
+22:12:27.752 TongxingUITests-Runner[54857:59472189] Monitor: waiting for state changes to launched application(s): com.jonathanjing.tongxing.dev (pid:54997)
+22:12:27.752 TongxingUITests-Runner[54857:59472189] <XCTWaiter: 0x10a5b03c0> entering wait loop for 0.20s with expectations: `Expect change to state of com.jonathanjing.tongxing.dev (pid:54997)`
+22:12:27.757 xcodebuild[54603:59469935] Received AttachmentFutureMetadata(attachmentUUID: 782BDC81-A12E-4722-B02C-19AC37A86479, dataContainerRelativeAttachmentPath: tmp/Attachments/782BDC81-A12E-4722-B02C-19AC37A86479, dataContainerURLPrefix: file://~/Library/Developer/CoreSimulator/Devices/1752B68F-919A-404A-93CB-FCA3A5886971/data/Containers/Data/InternalDaemon/4C7651C0-9845-4383-8911-67D0D11EC16D/, hostLocalURLOfFinalizedAttachment: (null), uniformTypeIdentifierString: public.mpeg-4, finalizationState: .completed, userName: mobile, additionalMetadata: {
+    initialDeviceOrientation = 0;
+    initialInterfaceOrientation = 1;
+    scale = 3;
+}
+22:12:27.757 xcodebuild[54603:59469935] Nothing to delete
+22:12:27.955 TongxingUITests-Runner[54857:59472189] Returning result XCTWaiterResultCompleted for synchronous waiter <XCTWaiter: 0x10a5b03c0>
+22:12:27.955 TongxingUITests-Runner[54857:59472189] Wait <XCTWaiterWait: 0x113a8bbc0> completed after 0.203s
+22:12:27.955 TongxingUITests-Runner[54857:59472189] cleaning up Expect change to state of com.jonathanjing.tongxing.dev (pid:54997)
+22:12:27.955 TongxingUITests-Runner[54857:59472189] cleaning up Expect change to state of com.jonathanjing.tongxing.dev (pid:54997)
+22:12:27.955 TongxingUITests-Runner[54857:59472189] Monitor: done waiting for state changes to launched application(s)
+22:12:27.955 TongxingUITests-Runner[54857:59472189] Creating future for 'synchronizing with crash reporter' with timeout 300.00
+22:12:27.955 TongxingUITests-Runner[54857:59472189] <XCTWaiter: 0x10a5b05d0> entering wait loop for 300.00s with expectations: `synchronizing with crash reporter`
+22:12:27.969 TongxingUITests-Runner[54857:59472189] Returning result XCTWaiterResultCompleted for synchronous waiter <XCTWaiter: 0x10a5b05d0>
+22:12:27.969 TongxingUITests-Runner[54857:59472189] Wait <XCTWaiterWait: 0x113a8ad80> completed after 0.014s
+22:12:27.969 TongxingUITests-Runner[54857:59472189] cleaning up synchronizing with crash reporter
+22:12:27.969 TongxingUITests-Runner[54857:59472189] Finished crash reporter sync with error: nil
+Test Case '-[TongxingUITests.WeeklyGuidePreviewUITests testGuidePreviewNavigationKeepsPlaybackAndUsesSyntheticContent]' failed (17.445 seconds).
+22:12:27.970 TongxingUITests-Runner[54857:59472189] -[XCTRunnerIDESession(_XCTestObservationInternal) testCaseDidFinish:] TongxingUITests.WeeklyGuidePreviewUITests testGuidePreviewNavigationKeepsPlaybackAndUsesSyntheticContent
+22:12:27.971 xcodebuild[54603:59469935] _XCT_testCaseWithIdentifier:<XCTTestIdentifier leaf, method, swift ["WeeklyGuidePreviewUITests", "testGuidePreviewNavigationKeepsPlaybackAndUsesSyntheticContent"]> didFinishWithStatus:failed duration:17.4451619386673
+22:12:27.971 xcodebuild[54603:59469935] Test case (<XCTTestIdentifier leaf, method, swift ["WeeklyGuidePreviewUITests", "testGuidePreviewNavigationKeepsPlaybackAndUsesSyntheticContent"]>) finished - enqueuing console chunks to delegate.
+22:12:27.971 xcodebuild[54603:59469935] Transferring AttachmentFutureMetadata(attachmentUUID: 782BDC81-A12E-4722-B02C-19AC37A86479, dataContainerRelativeAttachmentPath: tmp/Attachments/782BDC81-A12E-4722-B02C-19AC37A86479, dataContainerURLPrefix: file://~/Library/Developer/CoreSimulator/Devices/1752B68F-919A-404A-93CB-FCA3A5886971/data/Containers/Data/InternalDaemon/4C7651C0-9845-4383-8911-67D0D11EC16D/, hostLocalURLOfFinalizedAttachment: (null), uniformTypeIdentifierString: public.mpeg-4, finalizationState: .completed, userName: mobile, additionalMetadata: {
+    initialDeviceOrientation = 0;
+    initialInterfaceOrientation = 1;
+    scale = 3;
+}
+22:12:27.977 xcodebuild[54603:59469935] Notifying delegate about updated attachment AttachmentFutureMetadata(attachmentUUID: 782BDC81-A12E-4722-B02C-19AC37A86479, dataContainerRelativeAttachmentPath: tmp/Attachments/782BDC81-A12E-4722-B02C-19AC37A86479, dataContainerURLPrefix: file://~/Library/Developer/CoreSimulator/Devices/1752B68F-919A-404A-93CB-FCA3A5886971/data/Containers/Data/InternalDaemon/4C7651C0-9845-4383-8911-67D0D11EC16D/, hostLocalURLOfFinalizedAttachment: file://~/.codex/worktrees/weekly-study-guide-design/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-26/cli/20261026T221136-test-e9b0df76/test.xcresult/Staging/782BDC81-A12E-4722-B02C-19AC37A86479, uniformTypeIdentifierString: public.mpeg-4, finalizationState: .completed, userName: mobile, additionalMetadata: {
+    initialDeviceOrientation = 0;
+    initialInterfaceOrientation = 1;
+    scale = 3;
+} for <XCTTestIdentifier leaf, method, swift ["WeeklyGuidePreviewUITests", "testGuidePreviewNavigationKeepsPlaybackAndUsesSyntheticContent"]>
+22:12:27.983 xcodebuild[54603:59469935] Nothing to delete
+22:12:27.983 xcodebuild[54603:59469935] Nothing to delete
+22:12:27.983 xcodebuild[54603:59469935] Nothing to delete
+22:12:27.983 xcodebuild[54603:59469935] Nothing to delete
+Test Suite 'WeeklyGuidePreviewUITests' failed at 2026-10-26 22:12:27.970.
+	 Executed 1 test, with 1 failure (0 unexpected) in 17.445 (17.470) seconds
+Test Suite 'TongxingUITests.xctest' failed at 2026-10-26 22:12:27.971.
+	 Executed 1 test, with 1 failure (0 unexpected) in 17.445 (17.470) seconds
+Test Suite 'Selected tests' failed at 2026-10-26 22:12:27.971.
+	 Executed 1 test, with 1 failure (0 unexpected) in 17.445 (17.471) seconds
+22:12:27.970 TongxingUITests-Runner[54857:59472189] -[XCTRunnerIDESession(_XCTestObservationInternal) testSuiteDidFinish:]
+22:12:27.983 xcodebuild[54603:59469935] _XCT_testSuiteWithIdentifier:<XCTTestIdentifier container, class ["WeeklyGuidePreviewUITests"]> didFinishAt:2026-10-27 05:12:27 +0000 runCount:1 skipCount:0 failureCount:1 expectedFailureCount:0 uncaughtExceptionCount:0 testDuration:17.4451619386673 totalDuration:17.46972095966339
+22:12:27.983 xcodebuild[54603:59469935] Nothing to delete
+22:12:27.984 xcodebuild[54603:59469935] Nothing to delete
+22:12:27.971 TongxingUITests-Runner[54857:59472189] Activity statistics for WeeklyGuidePreviewUITests:
+22:12:27.971 TongxingUITests-Runner[54857:59472189] 0.24s : Other
+22:12:27.971 TongxingUITests-Runner[54857:59472189] Total time in activities: 0.24s
+22:12:27.971 TongxingUITests-Runner[54857:59472189] -[XCTRunnerIDESession(_XCTestObservationInternal) testSuiteDidFinish:]
+22:12:27.984 xcodebuild[54603:59469935] _XCT_testSuiteWithIdentifier:<XCTTestIdentifier container []> didFinishAt:2026-10-27 05:12:27 +0000 runCount:1 skipCount:0 failureCount:1 expectedFailureCount:0 uncaughtExceptionCount:0 testDuration:17.4451619386673 totalDuration:17.47036004066467
+22:12:27.984 xcodebuild[54603:59469935] Nothing to delete
+22:12:27.984 xcodebuild[54603:59469935] Nothing to delete
+22:12:27.971 TongxingUITests-Runner[54857:59472189] Activity statistics for TongxingUITests.xctest:
+22:12:27.971 TongxingUITests-Runner[54857:59472189] 0.24s : Other
+22:12:27.971 TongxingUITests-Runner[54857:59472189] Total time in activities: 0.24s
+22:12:27.971 TongxingUITests-Runner[54857:59472189] -[XCTRunnerIDESession(_XCTestObservationInternal) testSuiteDidFinish:]
+22:12:27.984 xcodebuild[54603:59469935] _XCT_testSuiteWithIdentifier:<XCTTestIdentifier container ["Selected tests"]> didFinishAt:2026-10-27 05:12:27 +0000 runCount:1 skipCount:0 failureCount:1 expectedFailureCount:0 uncaughtExceptionCount:0 testDuration:17.4451619386673 totalDuration:17.47139692306519
+22:12:27.984 xcodebuild[54603:59469935] Nothing to delete
+22:12:27.984 xcodebuild[54603:59469935] Nothing to delete
+22:12:27.972 TongxingUITests-Runner[54857:59472189] Activity statistics for Selected tests:
+22:12:27.972 TongxingUITests-Runner[54857:59472189] 0.24s : Other
+22:12:27.972 TongxingUITests-Runner[54857:59472189] Total time in activities: 0.24s
+22:12:27.972 TongxingUITests-Runner[54857:59472189] Finished running suite.
+22:12:27.972 TongxingUITests-Runner[54857:59472189] Setting a new interop record handler: nil
+22:12:27.972 TongxingUITests-Runner[54857:59472189] <XCTWaiter: 0x10a4d5710> entering indefinite wait loop for expectations: `XCTAsyncEnumerateWithWaiter(<XCTest.SwiftTestingExecutionExtension: 0x107576800>)`
+22:12:27.972 TongxingUITests-Runner[54857:59473233] -[XCTRuntimeIssueDetectionManager runtimeIssueDetectionEnabled] runtimeIssueDetectionEnabled based on XCTDisableRuntimeIssues and runtime diagnostics policies: YES
+22:12:27.972 TongxingUITests-Runner[54857:59473233] -[XCTRuntimeIssueDetectionManager runtimeIssueDetectionEnabled] runtimeIssueDetectionEnabled based on XCTDisableRuntimeIssues and runtime diagnostics policies: YES
+22:12:27.984 xcodebuild[54603:59469935] Finishing test with new console chunk     t =    17.18s Tear Down
+Test Case '-[TongxingUITests.WeeklyGuidePreviewUITests testGuidePreviewNavigationKeepsPlaybackAndUsesSyntheticContent]' failed (17.445 seconds).
+
+22:12:27.985 xcodebuild[54603:59469935] Nothing to delete
+22:12:27.985 xcodebuild[54603:59469935] Nothing to delete
+22:12:27.985 xcodebuild[54603:59469935] Nothing to delete
+22:12:27.985 xcodebuild[54603:59469935] Nothing to delete
+22:12:27.985 xcodebuild[54603:59469935] Nothing to delete
+22:12:27.985 xcodebuild[54603:59469935] Nothing to delete
+22:12:27.994 TongxingUITests-Runner[54857:59473233] Setting a new interop record handler: Optional(XCTest.SwiftTestingInteropRecordHandler(interruptTestHandler: Optional((Function))))
+22:12:27.995 TongxingUITests-Runner[54857:59473234] Setting a new interop record handler: nil
+22:12:27.995 TongxingUITests-Runner[54857:59472189] Returning result XCTWaiterResultCompleted for synchronous waiter <XCTWaiter: 0x10a4d5710>
+22:12:27.995 TongxingUITests-Runner[54857:59472189] Wait <XCTWaiterWait: 0x113a8bbc0> completed after 0.023s
+22:12:27.995 TongxingUITests-Runner[54857:59472189] cleaning up XCTAsyncEnumerateWithWaiter(<XCTest.SwiftTestingExecutionExtension: 0x107576800>)
+22:12:27.995 TongxingUITests-Runner[54857:59472189] <XCTWaiter: 0x10a4d5710> entering indefinite wait loop for expectations: `XCTAsyncEnumerateWithWaiter(<XCTTestRunSession: 0x10a714040>)`
+22:12:27.996 TongxingUITests-Runner[54857:59472189] Returning result XCTWaiterResultCompleted for synchronous waiter <XCTWaiter: 0x10a4d5710>
+22:12:27.996 TongxingUITests-Runner[54857:59472189] Wait <XCTWaiterWait: 0x113a8b440> completed after 0.000s
+22:12:27.996 TongxingUITests-Runner[54857:59472189] cleaning up XCTAsyncEnumerateWithWaiter(<XCTTestRunSession: 0x10a714040>)
+22:12:27.996 TongxingUITests-Runner[54857:59472189] -[XCTRunnerIDESession(_XCTestObservationInternal) testBundleDidFinish:], Flushing connection to IDE...
+22:12:27.996 TongxingUITests-Runner[54857:59472189] Exited test execution event loop
+22:12:27.996 TongxingUITests-Runner[54857:59472189] Creating future for 'flushing telemetry' with timeout 10.00
+22:12:27.996 TongxingUITests-Runner[54857:59472189] <XCTWaiter: 0x10a5b2d90> entering wait loop for 10.00s with expectations: `flushing telemetry`
+22:12:27.996 TongxingUITests-Runner[54857:59472189] Returning result XCTWaiterResultCompleted for synchronous waiter <XCTWaiter: 0x10a5b2d90>
+22:12:27.996 TongxingUITests-Runner[54857:59472189] Wait <XCTWaiterWait: 0x113a8b400> completed after 0.000s
+22:12:27.996 TongxingUITests-Runner[54857:59472189] cleaning up flushing telemetry
+22:12:27.998 TongxingUITests-Runner[54857:59472189] Creating future for 'confirming end of session with the harness' with timeout 1800.00
+22:12:27.998 xcodebuild[54603:59469935] -[XCTTestRunnerSession _XCT_didFinishExecutingTestPlan]_block_invoke
+22:12:27.998 TongxingUITests-Runner[54857:59472189] <XCTWaiter: 0x10a5b2be0> entering wait loop for 1800.00s with expectations: `confirming end of session with the harness`
+22:12:27.999 TongxingUITests-Runner[54857:59473232] Automation session connection to pid 54997 interrupted
+22:12:28.014 xcodebuild[54603:59469935] 📱<DVTiPhoneSimulator (0x755d45e000), iPhone Duo, unknown class, 27.1 (24A94401), 1752B68F-919A-404A-93CB-FCA3A5886971> got death notice for pid 54997 (exit code: (null), signal: 15), removing from SimulatorSessionMap
+22:12:28.014 xcodebuild[54603:59469935] 📱<DVTiPhoneSimulator (0x755d45e000), iPhone Duo, unknown class, 27.1 (24A94401), 1752B68F-919A-404A-93CB-FCA3A5886971> checking to see if pid 54857 is valid: kill(pid, 0) = 0 (YES, it's still running)
+22:12:28.015 xcodebuild[54603:59469935] 📱<DVTiPhoneSimulator (0x755d45e000), iPhone Duo, unknown class, 27.1 (24A94401), 1752B68F-919A-404A-93CB-FCA3A5886971> claim LaunchSessionClaim_0x7560a3b600 on simulator was relinquished, 2 claims remain.
+22:12:28.015 xcodebuild[54603:59469935] 📱<DVTiPhoneSimulator (0x755d45e000), iPhone Duo, unknown class, 27.1 (24A94401), 1752B68F-919A-404A-93CB-FCA3A5886971> claim LaunchSessionClaim_0x7560a3b600 on simulator was relinquished, 2 claims remain.
+22:12:28.016 xcodebuild[54603:59469935] Observed termination of tracker for token 1 for launch of com.jonathanjing.tongxing.dev at ~/.codex/worktrees/weekly-study-guide-design/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-26/cli/DerivedData/Build/Products/Debug-iphonesimulator/Tongxing.app
+22:12:28.016 xcodebuild[54603:59469935] Nothing to delete
+22:12:28.016 TongxingUITests-Runner[54857:59473233] Stop tracking process with token 1
+22:12:28.016 TongxingUITests-Runner[54857:59473233] Monitor: set (null) for token 1
+22:12:28.016 TongxingUITests-Runner[54857:59473232] Creating future for 'flushing telemetry' with timeout 10.00
+22:12:28.016 TongxingUITests-Runner[54857:59473232] <XCTWaiter: 0x10a5b16b0> entering wait loop for 10.00s with expectations: `flushing telemetry`
+22:12:28.016 TongxingUITests-Runner[54857:59473232] Returning result XCTWaiterResultCompleted for synchronous waiter <XCTWaiter: 0x10a5b16b0>
+22:12:28.016 TongxingUITests-Runner[54857:59473232] Wait <XCTWaiterWait: 0x113a8a600> completed after 0.000s
+22:12:28.016 TongxingUITests-Runner[54857:59473232] cleaning up flushing telemetry
+22:12:28.017 TongxingUITests-Runner[54857:59472189] Returning result XCTWaiterResultCompleted for synchronous waiter <XCTWaiter: 0x10a5b2be0>
+22:12:28.017 TongxingUITests-Runner[54857:59472189] Wait <XCTWaiterWait: 0x113a89f40> completed after 0.019s
+22:12:28.017 TongxingUITests-Runner[54857:59472189] cleaning up confirming end of session with the harness
+22:12:28.042 xcodebuild[54603:59469937] Closing socket 32 to testmanagerd for Sim iPhone Duo
+22:12:28.042 xcodebuild[54603:59474420] <XCTTestRunnerSession: 0x756097f430> lost its connection.
+22:12:28.042 xcodebuild[54603:59469935] 📱<DVTiPhoneSimulator (0x755d45e000), iPhone Duo, unknown class, 27.1 (24A94401), 1752B68F-919A-404A-93CB-FCA3A5886971> got death notice for pid 54857 (exit code: 1, signal: (null)), removing from SimulatorSessionMap
+22:12:28.043 xcodebuild[54603:59469935] 📱<DVTiPhoneSimulator (0x755d45e000), iPhone Duo, unknown class, 27.1 (24A94401), 1752B68F-919A-404A-93CB-FCA3A5886971> claim LaunchSessionClaim_0x7560a3a880 on simulator was relinquished, 1 claims remain.
+22:12:28.043 xcodebuild[54603:59469935] 📱<DVTiPhoneSimulator (0x755d45e000), iPhone Duo, unknown class, 27.1 (24A94401), 1752B68F-919A-404A-93CB-FCA3A5886971> claim LaunchSessionClaim_0x7560a3a880 on simulator was relinquished, 1 claims remain.
+22:12:28.043 xcodebuild[54603:59469935] 📱<DVTiPhoneSimulator (0x755d45e000), iPhone Duo, unknown class, 27.1 (24A94401), 1752B68F-919A-404A-93CB-FCA3A5886971> claim LaunchSessionClaim_0x7560a3a880 on simulator was relinquished, 1 claims remain.
+22:12:28.043 xcodebuild[54603:59469935] Launch session expired.
+22:12:28.043 xcodebuild[54603:59469935] Lost connection to test process
+22:12:28.115 xcodebuild[54603:59469935] Nothing to delete
+22:12:28.301 xcodebuild[54603:59469935] <XCTHTestOperationCoordinator: 0x7560a3ab80> finished receiving data from testing launch session
+22:12:28.301 xcodebuild[54603:59469935] <XCTHTestOperationCoordinator: 0x7560a3ab80>: _considerFlushingDelegateBlockQueue - nothing to flush
+22:12:28.301 xcodebuild[54603:59469935] Nothing to delete
+22:12:28.301 xcodebuild[54603:59469935] Can finish test, forceToNotWaitForAsynchronousDiagnostics is NO. Finishing...
+22:12:28.301 xcodebuild[54603:59469935] _finishWithError:(null)
+22:12:28.301 xcodebuild[54603:59469935] Current state: testRunnerLaunchSessionHasFinishedReceivingData: YES, delegateBlockQueue.count: 0
+22:12:28.301 xcodebuild[54603:59469935] <XCTHTestOperationCoordinator: 0x7560a3ab80>: _considerFlushingDelegateBlockQueue - nothing to flush
