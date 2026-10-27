@@ -69,11 +69,11 @@ class SpokenFormTests(unittest.TestCase):
     def test_satan_only_when_present(self):
         self.assertEqual(spoken_forms.merge_spoken_forms(None, ["耶稣是得胜者。"]), {})
         self.assertEqual(spoken_forms.merge_spoken_forms(None, ["撒但被摔下去。"]),
-                         {"撒但": "魔鬼"})
+                         {"撒但": "撒旦"})
 
     def test_explicit_mapping_wins(self):
-        self.assertEqual(spoken_forms.merge_spoken_forms({"撒但": "撒旦"}, ["撒但"]),
-                         {"撒但": "撒旦"})
+        self.assertEqual(spoken_forms.merge_spoken_forms({"撒但": "魔鬼"}, ["撒但"]),
+                         {"撒但": "魔鬼"})
 
 
 class DiffGateTests(unittest.TestCase):
