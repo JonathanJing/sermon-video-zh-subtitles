@@ -495,7 +495,7 @@ struct ContentView: View {
                     OutlineSheet(model: model, playback: playback)
                         .dynamicTypeSize(typeSize)
                         .presentationDetents([.large]).presentationDragIndicator(.visible)
-                #if DEBUG
+                #if DEBUG || TONGXING_GUIDE_PREVIEW
                 case .guidePreview:
                     WeeklyGuidePreview(model: model, playback: playback)
                         .dynamicTypeSize(typeSize)
@@ -682,6 +682,18 @@ struct ContentView: View {
     }
 
     private var outlineButton: some View {
+        #if TONGXING_GUIDE_PREVIEW
+        VStack(alignment: .leading, spacing: 0) {
+            Button(localization.text("大纲与默想"), systemImage: "list.bullet.rectangle") { sheet = .outline }
+                .frame(minHeight: 44)
+                .accessibilityIdentifier("open-sermon-study")
+            Button("手册界面预览 · 测试样本", systemImage: "book") { sheet = .guidePreview }
+                .frame(minHeight: 44)
+                .accessibilityIdentifier("open-guide-beta-preview")
+        }
+        .font(.subheadline.weight(.medium)).frame(minHeight: 44)
+        .buttonStyle(.plain).foregroundStyle(Brand.accent)
+        #else
         Button {
             #if DEBUG
             if guidePreviewEnabled {
@@ -704,6 +716,7 @@ struct ContentView: View {
             .font(.subheadline.weight(.medium)).frame(minHeight: 44)
             .buttonStyle(.plain).foregroundStyle(Brand.accent)
             .accessibilityIdentifier("open-sermon-study")
+        #endif
     }
 
     #if DEBUG
@@ -1209,7 +1222,7 @@ struct AlignmentControls: View {
 
 private enum ListeningSheet: String, Identifiable {
     case weeks, languages, precision, outline, about, video, locate, weeklyUpdate
-    #if DEBUG
+    #if DEBUG || TONGXING_GUIDE_PREVIEW
     case guidePreview
     #endif
     var id: String { rawValue }

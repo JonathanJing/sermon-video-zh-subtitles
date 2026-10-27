@@ -20,7 +20,7 @@ make preview FILES=ContentView.swift DRY_RUN=1
 
 预览复用 AppModel、唯一 PlaybackController 与现有合成 UI 测试传输，使用测试临时目录和独立统计偏好。页面标题、字幕、审核状态与静音 MP3 均是合成测试数据，不下载线上媒体、不生成内容、不打开麦克风。外观与字号作用于测试窗口，不修改模拟器系统偏好。常规 XCTest 未提供请求时该测试明确跳过；只有显式预览命令运行它。
 
-`WeeklyGuidePreview.swift` 是手册目录式阅读界面的合成样本，明确标为非教会手册；仅在 Debug 构建中可用。可用 `make preview FILES=WeeklyGuidePreview.swift VARIANTS=light,dark,dark-large` 渲染。首页入口仅在 UI 测试同时传入 `--ui-testing` 和 `--ui-testing-study-guide` 时替换成预览入口；正式启动仍使用现有已发布学习内容。该预览不提供真实手册、发布关联或许可，也不证明音频或设备验收。
+`WeeklyGuidePreview.swift` 是手册目录式阅读界面的合成样本，明确标为非教会手册。可用 `make preview FILES=WeeklyGuidePreview.swift VARIANTS=light,dark,dark-large` 渲染。Debug UI 测试仅在同时传入 `--ui-testing` 和 `--ui-testing-study-guide` 时替换为预览入口；本轮 BetaRelease 另提供标明「测试样本」的独立预览入口，正式 Release 不包含它。该预览不提供真实手册、发布关联或许可，也不证明音频或设备验收。
 
 每轮保存到仓库忽略目录：
 

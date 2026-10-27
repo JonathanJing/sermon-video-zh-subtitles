@@ -1,4 +1,4 @@
-#if DEBUG
+#if DEBUG || TONGXING_GUIDE_PREVIEW
 import SwiftUI
 import TongxingCore
 
