@@ -1,3 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<plist version="1.0"><dict><key>aps-environment</key><string>$(TONGXING_APNS_ENVIRONMENT)</string></dict></plist>
+<plist version="1.0"><dict><key>aps-environment</key><string>$(TONGXING_APNS_ENVIRONMENT)</string>	<key>com.apple.developer.associated-domains</key>
+	<array>
+		<string>applinks:ai-for-god-sermon-audio-dev.web.app</string>
+	</array>
+</dict></plist>

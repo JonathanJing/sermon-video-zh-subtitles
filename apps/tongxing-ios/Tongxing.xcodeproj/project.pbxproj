@@ -28,6 +28,7 @@
 		35529B2801237F81F67785E8 /* TongxingCore in Frameworks */ = {isa = PBXBuildFile; productRef = 46FC649E9CD7E0BF9CEF7E49 /* TongxingCore */; };
 		3937DE5EED2CA2CD45C0307B /* PlaybackPanelLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE5FADDF09C04B640EEDA7F0 /* PlaybackPanelLayout.swift */; };
 		3C9938262804DF6B08B451C3 /* BetaRemotePush.swift in Sources */ = {isa = PBXBuildFile; fileRef = D870632D5A2996F9F1FF55C8 /* BetaRemotePush.swift */; };
+		3F8F5BD601847BC075B93414 /* AppDeepLink.swift in Sources */ = {isa = PBXBuildFile; fileRef = F28DD6EB12E674F224056564 /* AppDeepLink.swift */; };
 		40CC996E1E39A5B6F34BA38F /* ListeningActivityDismissalTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E0A6DA6C0A30670D209835C /* ListeningActivityDismissalTests.swift */; };
 		475EF22CC006DCDA4BBD0DA9 /* WeeklyUpdateUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 45F5D15A9F475F5551F890ED /* WeeklyUpdateUITests.swift */; };
 		4ABE01FD69729C4F7F3EC0BD /* ListeningActivityExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 4AE35BDEC7081304D75711B2 /* ListeningActivityExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
@@ -36,6 +37,7 @@
 		6C29EA8473280EA03BE25CF6 /* ListeningActivityWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 70BEE8330224D04ACF54EE70 /* ListeningActivityWidget.swift */; };
 		6ED24D1A41D86A3FD506381B /* BetaNotificationUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 584EEEF8EAD4278FE9B4381A /* BetaNotificationUITests.swift */; };
 		7EC13E455FCB8AD28F90271C /* AudioAlignmentController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98A292DFC6FBB07302A4DE77 /* AudioAlignmentController.swift */; };
+		7F1E0DCF4F475AE96129904C /* AppDeepLinkTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4999B7E416C8D48890E944F8 /* AppDeepLinkTests.swift */; };
 		82DAE4DBC18C3F1A4BD05687 /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 02EF54CEB76892C25F99A6FB /* Localizable.xcstrings */; };
 		8B8A2624687249CFAB61DAFB /* ListeningFlowUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 239227789D17BF0B1B0A1614 /* ListeningFlowUITests.swift */; };
 		929F88DB6567F7C0CF7A5B91 /* ListeningActivityCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31BF35CC679A65F678EA91AF /* ListeningActivityCard.swift */; };
@@ -120,6 +122,7 @@
 		3E53066E0326AFD8370B5145 /* PrivacySupportView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrivacySupportView.swift; sourceTree = "<group>"; };
 		45D034927C1BDF6858317287 /* BetaRemotePushTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BetaRemotePushTests.swift; sourceTree = "<group>"; };
 		45F5D15A9F475F5551F890ED /* WeeklyUpdateUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeeklyUpdateUITests.swift; sourceTree = "<group>"; };
+		4999B7E416C8D48890E944F8 /* AppDeepLinkTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDeepLinkTests.swift; sourceTree = "<group>"; };
 		4AE35BDEC7081304D75711B2 /* ListeningActivityExtension.appex */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = "wrapper.app-extension"; path = ListeningActivityExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		502E58B32BA9CB649A03DB11 /* AppIdentityTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppIdentityTests.swift; sourceTree = "<group>"; };
 		5407843D3180E72B300943F4 /* ListeningActivityUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ListeningActivityUITests.swift; sourceTree = "<group>"; };
@@ -157,6 +160,7 @@
 		E8CDE0AD081CB32BAE3CD0CB /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		EE58D0C358A74F0BDE595617 /* PlaybackControllerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaybackControllerTests.swift; sourceTree = "<group>"; };
 		EEFE877B3072430F0D7A31CB /* AppIcon.icon */ = {isa = PBXFileReference; lastKnownFileType = wrapper.icon; path = AppIcon.icon; sourceTree = "<group>"; };
+		F28DD6EB12E674F224056564 /* AppDeepLink.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDeepLink.swift; sourceTree = "<group>"; };
 		FD504056359930D928DD8069 /* ListeningLiveActivity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ListeningLiveActivity.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -226,6 +230,7 @@
 		6C5420C74F47EF1E13AC8C7D /* App */ = {
 			isa = PBXGroup;
 			children = (
+				F28DD6EB12E674F224056564 /* AppDeepLink.swift */,
 				EEFE877B3072430F0D7A31CB /* AppIcon.icon */,
 				0F81E8D165D65FEF70E65FFF /* AppModel.swift */,
 				07B59FA4533A491CF4AA2D83 /* Assets.xcassets */,
@@ -283,6 +288,7 @@
 		DDCFFA9BC8A66D0705E124E9 /* Tests */ = {
 			isa = PBXGroup;
 			children = (
+				4999B7E416C8D48890E944F8 /* AppDeepLinkTests.swift */,
 				502E58B32BA9CB649A03DB11 /* AppIdentityTests.swift */,
 				9BF531D6B8AD0E94016F0BC3 /* AudioAlignmentControllerTests.swift */,
 				45D034927C1BDF6858317287 /* BetaRemotePushTests.swift */,
@@ -491,6 +497,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				7F1E0DCF4F475AE96129904C /* AppDeepLinkTests.swift in Sources */,
 				9A00442EA947A8B5939AB68B /* AppIdentityTests.swift in Sources */,
 				C2AF9808AFFEED2AD7D2DF2A /* AudioAlignmentControllerTests.swift in Sources */,
 				63BD02A90C508318F264AA48 /* BetaRemotePushTests.swift in Sources */,
@@ -520,6 +527,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				3F8F5BD601847BC075B93414 /* AppDeepLink.swift in Sources */,
 				F104CF6576ABBCDDF4B54A62 /* AppModel.swift in Sources */,
 				7EC13E455FCB8AD28F90271C /* AudioAlignmentController.swift in Sources */,
 				01889D8EA2866C1BBA9A3B83 /* BetaNotifications.swift in Sources */,
@@ -611,6 +619,7 @@
 			baseConfigurationReference = 58CF4F36B9265709AAF09A1C /* Signing.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = Config/AssociatedDomainsDev.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CURRENT_PROJECT_VERSION = 58;
 				GENERATE_INFOPLIST_FILE = NO;
@@ -1133,6 +1142,7 @@
 			baseConfigurationReference = 58CF4F36B9265709AAF09A1C /* Signing.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = Config/AssociatedDomains.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CURRENT_PROJECT_VERSION = 58;
 				GENERATE_INFOPLIST_FILE = NO;

@@ -37,7 +37,7 @@ App Store 官方徽章内的文字和标志保持官方素材原样，不应用�
 
 正式 App 下载二维码固定为 `https://apps.apple.com/app/id6809255441`。每周网页二维码使用 `https://ai-for-god-sermon-audio.web.app/?week=<pageId>&contentLang=<locale>&lang=<interfaceLang>`；不能误用 Beta/Dev origin，也不能遗漏周次或语言绑定。中文为 `contentLang=zh-Hans&lang=zh`，韩语为 `ko&lang=ko`，西语为 `es&lang=es`；英语内容目标仅在实际发布后配置。未发布独立英语内容时，可生成明确标注「中文音频 · 英文对照」的英语宣传海报，网页二维码使用 `contentLang=zh-Hans&lang=en`；不得添加虚构的 `en` 内容 release 或 App announcement。
 
-左侧二维码进入商店下载，不能宣称会直接打开本周证道。Universal Links 未在本海报规范中实现。二维码由真实编码器生成，不交给图像模型绘制。
+左侧二维码进入商店下载，不能宣称会直接打开本周证道。Universal Links 已接入 App 代码，但**尚未随新版本发布**；发布前二维码仍打开网页，发布后才可能直接进 App。实现与发布要求见 [iOS Universal Links](ios-universal-links.zh.md)。二维码由真实编码器生成，不交给图像模型绘制。
 
 官方徽章来源与规则：[Apple 营销规范](https://developer.apple.com/app-store/marketing/guidelines/)。保留原比例、规定留白，屏幕显示高度至少 40 px，印刷高度至少 10 mm；印刷须根据实际尺寸检查，不凭像素数声称已验证。每张海报只放一个 App Store 徽章。
 
