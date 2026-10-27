@@ -1,0 +1,292 @@
+2026-10-21 21:57:23-0700 logd[90440]: Error connecting to logd_helper: Connection invalid
+2026-10-21 21:57:23-0700 logd[90440]: Error connecting to logd_helper: Connection invalid
+2026-10-21 21:57:23-0700 logd[90440]: Error connecting to logd_helper: Connection invalid
+2026-10-21 21:57:23-0700 logd[90440]: Error connecting to logd_helper: Connection invalid
+2026-10-21 21:57:23-0700 logd[90440]: Error connecting to logd_helper: Connection invalid
+2026-10-21 21:57:23-0700 logd[90440]: Error connecting to logd_helper: Connection invalid
+2026-10-21 21:57:23-0700 logd[90440]: Error connecting to logd_helper: Connection invalid
+2026-10-21 21:57:23-0700 logd[90440]: Error connecting to logd_helper: Connection invalid
+2026-10-21 21:57:23-0700 logd[90440]: Error connecting to logd_helper: Connection invalid
+2026-10-21 21:57:23-0700 logd[90440]: Error connecting to logd_helper: Connection invalid
+2026-10-21 21:57:23-0700 logd[90440]: Error connecting to logd_helper: Connection invalid
+2026-10-21 21:57:23-0700 logd[90440]: Error connecting to logd_helper: Connection invalid
+2026-10-21 21:57:23-0700 logd[90440]: Error connecting to logd_helper: Connection invalid
+2026-10-21 21:57:23-0700 logd[90440]: Error connecting to logd_helper: Connection invalid
+2026-10-21 21:57:23-0700 logd[90440]: Error connecting to logd_helper: Connection invalid
+2026-10-21 21:57:23-0700 logd[90440]: Error connecting to logd_helper: Connection invalid
+2026-10-21 21:57:23-0700 logd[90440]: Error connecting to logd_helper: Connection invalid
+2026-10-21 21:57:23-0700 logd[90440]: Error connecting to logd_helper: Connection invalid
+2026-10-21 21:57:23-0700 logd[90440]: Error connecting to logd_helper: Connection invalid
+2026-10-21 21:57:23-0700 logd[90440]: Error connecting to logd_helper: Connection invalid
+2026-10-21 21:57:23-0700 logd[90440]: Error connecting to logd_helper: Connection invalid
+2026-10-21 21:57:23-0700 logd[90440]: Error connecting to logd_helper: Connection invalid
+2026-10-21 21:57:23-0700 logd[90440]: Error connecting to logd_helper: Connection invalid
+2026-10-21 21:57:23-0700 logd[90440]: Error connecting to logd_helper: Connection invalid
+2026-10-21 21:57:23-0700 logd[90440]: Error connecting to logd_helper: Connection invalid
+2026-10-21 21:57:23-0700 logd[90440]: Error connecting to logd_helper: Connection invalid
+2026-10-21 21:57:23-0700 logd[90440]: Error connecting to logd_helper: Connection invalid
+2026-10-21 21:57:23-0700 logd[90440]: Error connecting to logd_helper: Connection invalid
+2026-10-21 21:57:23-0700 logd[90440]: Error connecting to logd_helper: Connection invalid
+2026-10-21 21:57:23-0700 logd[90440]: Error connecting to logd_helper: Connection invalid
+2026-10-21 21:57:23-0700 logd[90440]: Error connecting to logd_helper: Connection invalid
+2026-10-21 21:57:23-0700 logd[90440]: Error connecting to logd_helper: Connection invalid
+2026-10-21 21:57:23-0700 logd[90440]: Error connecting to logd_helper: Connection invalid
+2026-10-21 21:57:23-0700 logd[90440]: Error connecting to logd_helper: Connection invalid
+2026-10-21 21:57:23-0700 logd[90440]: Error connecting to logd_helper: Connection invalid
+2026-10-21 21:57:23-0700 logd[90440]: Error connecting to logd_helper: Connection invalid
+2026-10-21 21:57:23-0700 logd[90440]: Error connecting to logd_helper: Connection invalid
+2026-10-21 21:57:23-0700 logd[90440]: Error connecting to logd_helper: Connection invalid
+2026-10-21 21:57:23-0700 logd[90440]: Error connecting to logd_helper: Connection invalid
+2026-10-21 21:57:23-0700 logd[90440]: Error connecting to logd_helper: Connection invalid
+... 9973 lines omitted; 9897 error-like lines, 50 kept below ...
+[line 42] 2026-10-21 21:57:23-0700 logd[90440]: Error connecting to logd_helper: Connection invalid
+[line 43] 2026-10-21 21:57:23-0700 logd[90440]: Error connecting to logd_helper: Connection invalid
+[line 44] 2026-10-21 21:57:23-0700 logd[90440]: Error connecting to logd_helper: Connection invalid
+[line 45] 2026-10-21 21:57:23-0700 logd[90440]: Error connecting to logd_helper: Connection invalid
+[line 46] 2026-10-21 21:57:23-0700 logd[90440]: Error connecting to logd_helper: Connection invalid
+[line 47] 2026-10-21 21:57:23-0700 logd[90440]: Error connecting to logd_helper: Connection invalid
+[line 48] 2026-10-21 21:57:23-0700 logd[90440]: Error connecting to logd_helper: Connection invalid
+[line 49] 2026-10-21 21:57:23-0700 logd[90440]: Error connecting to logd_helper: Connection invalid
+[line 50] 2026-10-21 21:57:23-0700 logd[90440]: Error connecting to logd_helper: Connection invalid
+[line 53] 2026-10-25 19:46:57-0700 logd[25588]: assertion failed: 26A434 24A94401: logd + 83020 [E7C5ED80-F9E1-32E5-B9DB-D86E56B06B03]: 0x2
+[line 54] 2026-10-25 19:46:57-0700 logd[25588]: assertion failed: 26A434 24A94401: logd + 83020 [E7C5ED80-F9E1-32E5-B9DB-D86E56B06B03]: 0x2
+[line 55] 2026-10-25 19:46:57-0700 logd[25588]: assertion failed: 26A434 24A94401: logd + 83020 [E7C5ED80-F9E1-32E5-B9DB-D86E56B06B03]: 0x2
+[line 56] 2026-10-25 19:46:57-0700 logd[25588]: Failed to create prefscachedir Operation not permitted
+[line 57] 2026-10-25 19:46:57-0700 logd[25588]: assertion failed: 26A434 24A94401: logd + 75396 [E7C5ED80-F9E1-32E5-B9DB-D86E56B06B03]: 0x2
+[line 58] 2026-10-25 19:46:57-0700 logd[25588]: Failed to get persona for 25623, 1 Operation not permitted, falling back to metadata page -1
+[line 59] 2026-10-25 19:46:57-0700 logd[25588]: Failed to get persona for 25585, 1 Operation not permitted, falling back to metadata page -1
+[line 61] 2026-10-25 19:46:57-0700 logd[25588]: Failed to get persona for 25615, 1 Operation not permitted, falling back to metadata page -1
+[line 63] 2026-10-25 19:46:57-0700 logd[25588]: Failed to get persona for 25603, 1 Operation not permitted, falling back to metadata page -1
+[line 64] 2026-10-25 19:46:57-0700 logd[25588]: Failed to get persona for 25608, 1 Operation not permitted, falling back to metadata page -1
+[line 65] 2026-10-25 19:46:57-0700 logd[25588]: Failed to get persona for 25613, 1 Operation not permitted, falling back to metadata page -1
+[line 66] 2026-10-25 19:46:57-0700 logd[25588]: Failed to get persona for 25626, 1 Operation not permitted, falling back to metadata page -1
+[line 67] 2026-10-25 19:46:58-0700 logd[25588]: Failed to get persona for 25604, 1 Operation not permitted, falling back to metadata page -1
+[line 68] 2026-10-25 19:46:58-0700 logd[25588]: Failed to get persona for 25621, 1 Operation not permitted, falling back to metadata page -1
+[line 69] 2026-10-25 19:46:58-0700 logd[25588]: Failed to get persona for 25617, 1 Operation not permitted, falling back to metadata page -1
+[line 70] 2026-10-25 19:46:58-0700 logd[25588]: Failed to get persona for 25614, 1 Operation not permitted, falling back to metadata page -1
+[line 71] 2026-10-25 19:46:58-0700 logd[25588]: Failed to get persona for 25611, 1 Operation not permitted, falling back to metadata page -1
+[line 72] 2026-10-25 19:46:58-0700 logd[25588]: Failed to get persona for 25671, 1 Operation not permitted, falling back to metadata page -1
+[line 73] 2026-10-25 19:46:58-0700 logd[25588]: Failed to get persona for 25590, 1 Operation not permitted, falling back to metadata page -1
+[line 74] 2026-10-25 19:46:58-0700 logd[25588]: Failed to get persona for 25680, 1 Operation not permitted, falling back to metadata page -1
+[line 75] 2026-10-25 19:46:59-0700 logd[25588]: Failed to get persona for 25696, 1 Operation not permitted, falling back to metadata page -1
+[line 76] 2026-10-25 19:46:59-0700 logd[25588]: Failed to get persona for 25693, 1 Operation not permitted, falling back to metadata page -1
+[line 77] 2026-10-25 19:46:59-0700 logd[25588]: Failed to get persona for 25698, 1 Operation not permitted, falling back to metadata page -1
+[line 78] 2026-10-25 19:46:59-0700 logd[25588]: Failed to get persona for 25694, 1 Operation not permitted, falling back to metadata page -1
+[line 79] 2026-10-25 19:47:00-0700 logd[25588]: Failed to get persona for 25703, 1 Operation not permitted, falling back to metadata page -1
+[line 80] 2026-10-25 19:47:00-0700 logd[25588]: Failed to get persona for 25704, 1 Operation not permitted, falling back to metadata page -1
+[line 81] 2026-10-25 19:47:00-0700 logd[25588]: Failed to get persona for 25598, 1 Operation not permitted, falling back to metadata page -1
+[line 82] 2026-10-25 19:47:00-0700 logd[25588]: Failed to get persona for 25593, 1 Operation not permitted, falling back to metadata page -1
+[line 83] 2026-10-25 19:47:01-0700 logd[25588]: Failed to get persona for 25679, 1 Operation not permitted, falling back to metadata page -1
+[line 84] 2026-10-25 19:47:01-0700 logd[25588]: Failed to get persona for 25700, 1 Operation not permitted, falling back to metadata page -1
+[line 85] 2026-10-25 19:47:01-0700 logd[25588]: Failed to get persona for 25599, 1 Operation not permitted, falling back to metadata page -1
+[line 86] 2026-10-25 19:47:01-0700 logd[25588]: Failed to get persona for 25692, 1 Operation not permitted, falling back to metadata page -1
+[line 87] 2026-10-25 19:47:01-0700 logd[25588]: Failed to get persona for 25701, 1 Operation not permitted, falling back to metadata page -1
+[line 88] 2026-10-25 19:47:01-0700 logd[25588]: Failed to get persona for 25697, 1 Operation not permitted, falling back to metadata page -1
+[line 89] 2026-10-25 19:47:01-0700 logd[25588]: Failed to get persona for 25681, 1 Operation not permitted, falling back to metadata page -1
+[line 90] 2026-10-25 19:47:01-0700 logd[25588]: Failed to get persona for 25711, 1 Operation not permitted, falling back to metadata page -1
+[line 91] 2026-10-25 19:47:02-0700 logd[25588]: Failed to get persona for 25709, 1 Operation not permitted, falling back to metadata page -1
+[line 92] 2026-10-25 19:47:02-0700 logd[25588]: Failed to get persona for 25699, 1 Operation not permitted, falling back to metadata page -1
+[line 93] 2026-10-25 19:47:02-0700 logd[25588]: Failed to get persona for 25595, 1 Operation not permitted, falling back to metadata page -1
+[line 94] 2026-10-25 19:47:02-0700 logd[25588]: Failed to get persona for 25601, 1 Operation not permitted, falling back to metadata page -1
+[line 95] 2026-10-25 19:47:02-0700 logd[25588]: Failed to get persona for 25713, 1 Operation not permitted, falling back to metadata page -1
+... end of omitted section ...
+2026-10-26 22:07:38-0700 logd[52006]: Error connecting to logd_helper: Connection invalid
+2026-10-26 22:07:38-0700 logd[52006]: Error connecting to logd_helper: Connection invalid
+2026-10-26 22:07:38-0700 logd[52006]: Error connecting to logd_helper: Connection invalid
+2026-10-26 22:07:38-0700 logd[52006]: Error connecting to logd_helper: Connection invalid
+2026-10-26 22:07:38-0700 logd[52006]: Error connecting to logd_helper: Connection invalid
+2026-10-26 22:07:38-0700 logd[52006]: Error connecting to logd_helper: Connection invalid
+2026-10-26 22:07:38-0700 logd[52006]: Error connecting to logd_helper: Connection invalid
+2026-10-26 22:07:38-0700 logd[52006]: Error connecting to logd_helper: Connection invalid
+2026-10-26 22:07:38-0700 logd[52006]: Error connecting to logd_helper: Connection invalid
+2026-10-26 22:07:38-0700 logd[52006]: Error connecting to logd_helper: Connection invalid
+2026-10-26 22:07:38-0700 logd[52006]: Error connecting to logd_helper: Connection invalid
+2026-10-26 22:07:38-0700 logd[52006]: Error connecting to logd_helper: Connection invalid
+2026-10-26 22:07:38-0700 logd[52006]: Error connecting to logd_helper: Connection invalid
+2026-10-26 22:07:38-0700 logd[52006]: Error connecting to logd_helper: Connection invalid
+2026-10-26 22:07:38-0700 logd[52006]: Error connecting to logd_helper: Connection invalid
+2026-10-26 22:07:38-0700 logd[52006]: Error connecting to logd_helper: Connection invalid
+2026-10-26 22:07:38-0700 logd[52006]: Error connecting to logd_helper: Connection invalid
+2026-10-26 22:07:38-0700 logd[52006]: Error connecting to logd_helper: Connection invalid
+2026-10-26 22:07:38-0700 logd[52006]: Error connecting to logd_helper: Connection invalid
+2026-10-26 22:07:38-0700 logd[52006]: Error connecting to logd_helper: Connection invalid
+2026-10-26 22:07:38-0700 logd[52006]: Error connecting to logd_helper: Connection invalid
+2026-10-26 22:07:38-0700 logd[52006]: Error connecting to logd_helper: Connection invalid
+2026-10-26 22:07:38-0700 logd[52006]: Error connecting to logd_helper: Connection invalid
+2026-10-26 22:07:38-0700 logd[52006]: Error connecting to logd_helper: Connection invalid
+2026-10-26 22:07:38-0700 logd[52006]: Error connecting to logd_helper: Connection invalid
+2026-10-26 22:07:38-0700 logd[52006]: Error connecting to logd_helper: Connection invalid
+2026-10-26 22:07:38-0700 logd[52006]: Error connecting to logd_helper: Connection invalid
+2026-10-26 22:07:38-0700 logd[52006]: Error connecting to logd_helper: Connection invalid
+2026-10-26 22:07:38-0700 logd[52006]: Error connecting to logd_helper: Connection invalid
+2026-10-26 22:07:38-0700 logd[52006]: Error connecting to logd_helper: Connection invalid
+2026-10-26 22:07:38-0700 logd[52006]: Error connecting to logd_helper: Connection invalid
+2026-10-26 22:07:38-0700 logd[52006]: Error connecting to logd_helper: Connection invalid
+2026-10-26 22:07:38-0700 logd[52006]: Error connecting to logd_helper: Connection invalid
+2026-10-26 22:07:38-0700 logd[52006]: Error connecting to logd_helper: Connection invalid
+2026-10-26 22:07:38-0700 logd[52006]: Error connecting to logd_helper: Connection invalid
+2026-10-26 22:07:38-0700 logd[52006]: Error connecting to logd_helper: Connection invalid
+2026-10-26 22:07:38-0700 logd[52006]: Error connecting to logd_helper: Connection invalid
+2026-10-26 22:07:38-0700 logd[52006]: Error connecting to logd_helper: Connection invalid
+2026-10-26 22:07:38-0700 logd[52006]: Error connecting to logd_helper: Connection invalid
+2026-10-26 22:07:38-0700 logd[52006]: Error connecting to logd_helper: Connection invalid
+2026-10-26 22:07:38-0700 logd[52006]: Error connecting to logd_helper: Connection invalid
+2026-10-26 22:07:38-0700 logd[52006]: Error connecting to logd_helper: Connection invalid
+2026-10-26 22:07:38-0700 logd[52006]: Error connecting to logd_helper: Connection invalid
+2026-10-26 22:07:38-0700 logd[52006]: Error connecting to logd_helper: Connection invalid
+2026-10-26 22:07:38-0700 logd[52006]: Error connecting to logd_helper: Connection invalid
+2026-10-26 22:07:38-0700 logd[52006]: Error connecting to logd_helper: Connection invalid
+2026-10-26 22:07:38-0700 logd[52006]: Error connecting to logd_helper: Connection invalid
+2026-10-26 22:07:38-0700 logd[52006]: Error connecting to logd_helper: Connection invalid
+2026-10-26 22:07:38-0700 logd[52006]: Error connecting to logd_helper: Connection invalid
+2026-10-26 22:07:38-0700 logd[52006]: Error connecting to logd_helper: Connection invalid
+2026-10-26 22:07:38-0700 logd[52006]: Error connecting to logd_helper: Connection invalid
+2026-10-26 22:07:38-0700 logd[52006]: Error connecting to logd_helper: Connection invalid
+2026-10-26 22:07:38-0700 logd[52006]: Error connecting to logd_helper: Connection invalid
+2026-10-26 22:07:38-0700 logd[52006]: Error connecting to logd_helper: Connection invalid
+2026-10-26 22:07:38-0700 logd[52006]: Error connecting to logd_helper: Connection invalid
+2026-10-26 22:07:38-0700 logd[52006]: Error connecting to logd_helper: Connection invalid
+2026-10-26 22:07:38-0700 logd[52006]: Error connecting to logd_helper: Connection invalid
+2026-10-26 22:07:38-0700 logd[52006]: Error connecting to logd_helper: Connection invalid
+2026-10-26 22:07:38-0700 logd[52006]: Error connecting to logd_helper: Connection invalid
+2026-10-26 22:07:38-0700 logd[52006]: Error connecting to logd_helper: Connection invalid
+2026-10-26 22:07:38-0700 logd[52006]: Error connecting to logd_helper: Connection invalid
+2026-10-26 22:07:38-0700 logd[52006]: Error connecting to logd_helper: Connection invalid
+2026-10-26 22:07:38-0700 logd[52006]: Error connecting to logd_helper: Connection invalid
+2026-10-26 22:07:38-0700 logd[52006]: Error connecting to logd_helper: Connection invalid
+2026-10-26 22:07:38-0700 logd[52006]: Error connecting to logd_helper: Connection invalid
+2026-10-26 22:07:38-0700 logd[52006]: Error connecting to logd_helper: Connection invalid
+2026-10-26 22:07:38-0700 logd[52006]: Error connecting to logd_helper: Connection invalid
+2026-10-26 22:07:38-0700 logd[52006]: Error connecting to logd_helper: Connection invalid
+2026-10-26 22:07:38-0700 logd[52006]: Error connecting to logd_helper: Connection invalid
+2026-10-26 22:07:38-0700 logd[52006]: Error connecting to logd_helper: Connection invalid
+2026-10-26 22:07:38-0700 logd[52006]: Error connecting to logd_helper: Connection invalid
+2026-10-26 22:07:38-0700 logd[52006]: Error connecting to logd_helper: Connection invalid
+2026-10-26 22:07:38-0700 logd[52006]: Error connecting to logd_helper: Connection invalid
+2026-10-26 22:07:38-0700 logd[52006]: Error connecting to logd_helper: Connection invalid
+2026-10-26 22:07:38-0700 logd[52006]: Error connecting to logd_helper: Connection invalid
+2026-10-26 22:07:38-0700 logd[52006]: Error connecting to logd_helper: Connection invalid
+2026-10-26 22:07:38-0700 logd[52006]: Error connecting to logd_helper: Connection invalid
+2026-10-26 22:07:38-0700 logd[52006]: Error connecting to logd_helper: Connection invalid
+2026-10-26 22:07:38-0700 logd[52006]: Error connecting to logd_helper: Connection invalid
+2026-10-26 22:07:38-0700 logd[52006]: Error connecting to logd_helper: Connection invalid
+2026-10-26 22:07:38-0700 logd[52006]: Error connecting to logd_helper: Connection invalid
+2026-10-26 22:07:38-0700 logd[52006]: Error connecting to logd_helper: Connection invalid
+2026-10-26 22:07:38-0700 logd[52006]: Error connecting to logd_helper: Connection invalid
+2026-10-26 22:07:38-0700 logd[52006]: Error connecting to logd_helper: Connection invalid
+2026-10-26 22:07:38-0700 logd[52006]: Error connecting to logd_helper: Connection invalid
+2026-10-26 22:07:38-0700 logd[52006]: Error connecting to logd_helper: Connection invalid
+2026-10-26 22:07:38-0700 logd[52006]: Error connecting to logd_helper: Connection invalid
+2026-10-26 22:07:38-0700 logd[52006]: Error connecting to logd_helper: Connection invalid
+2026-10-26 22:07:38-0700 logd[52006]: Error connecting to logd_helper: Connection invalid
+2026-10-26 22:07:38-0700 logd[52006]: Error connecting to logd_helper: Connection invalid
+2026-10-26 22:07:38-0700 logd[52006]: Error connecting to logd_helper: Connection invalid
+2026-10-26 22:07:38-0700 logd[52006]: Error connecting to logd_helper: Connection invalid
+2026-10-26 22:07:38-0700 logd[52006]: Error connecting to logd_helper: Connection invalid
+2026-10-26 22:07:38-0700 logd[52006]: Error connecting to logd_helper: Connection invalid
+2026-10-26 22:07:38-0700 logd[52006]: Error connecting to logd_helper: Connection invalid
+2026-10-26 22:07:38-0700 logd[52006]: Error connecting to logd_helper: Connection invalid
+2026-10-26 22:07:38-0700 logd[52006]: Error connecting to logd_helper: Connection invalid
+2026-10-26 22:07:38-0700 logd[52006]: Error connecting to logd_helper: Connection invalid
+2026-10-26 22:07:38-0700 logd[52006]: Error connecting to logd_helper: Connection invalid
+2026-10-26 22:07:38-0700 logd[52006]: Error connecting to logd_helper: Connection invalid
+2026-10-26 22:07:38-0700 logd[52006]: Error connecting to logd_helper: Connection invalid
+2026-10-26 22:07:38-0700 logd[52006]: Error connecting to logd_helper: Connection invalid
+2026-10-26 22:07:38-0700 logd[52006]: Error connecting to logd_helper: Connection invalid
+2026-10-26 22:07:38-0700 logd[52006]: Error connecting to logd_helper: Connection invalid
+2026-10-26 22:07:38-0700 logd[52006]: Error connecting to logd_helper: Connection invalid
+2026-10-26 22:07:38-0700 logd[52006]: Error connecting to logd_helper: Connection invalid
+2026-10-26 22:07:38-0700 logd[52006]: Error connecting to logd_helper: Connection invalid
+2026-10-26 22:07:38-0700 logd[52006]: Error connecting to logd_helper: Connection invalid
+2026-10-26 22:07:38-0700 logd[52006]: Error connecting to logd_helper: Connection invalid
+2026-10-26 22:07:38-0700 logd[52006]: Error connecting to logd_helper: Connection invalid
+2026-10-26 22:07:38-0700 logd[52006]: Error connecting to logd_helper: Connection invalid
+2026-10-26 22:07:38-0700 logd[52006]: Error connecting to logd_helper: Connection invalid
+2026-10-26 22:07:38-0700 logd[52006]: Error connecting to logd_helper: Connection invalid
+2026-10-26 22:07:38-0700 logd[52006]: Error connecting to logd_helper: Connection invalid
+2026-10-26 22:07:38-0700 logd[52006]: Error connecting to logd_helper: Connection invalid
+2026-10-26 22:07:38-0700 logd[52006]: Error connecting to logd_helper: Connection invalid
+2026-10-26 22:07:38-0700 logd[52006]: Error connecting to logd_helper: Connection invalid
+2026-10-26 22:07:38-0700 logd[52006]: Error connecting to logd_helper: Connection invalid
+2026-10-26 22:07:38-0700 logd[52006]: Error connecting to logd_helper: Connection invalid
+2026-10-26 22:07:38-0700 logd[52006]: Error connecting to logd_helper: Connection invalid
+2026-10-26 22:07:38-0700 logd[52006]: Error connecting to logd_helper: Connection invalid
+2026-10-26 22:07:38-0700 logd[52006]: Error connecting to logd_helper: Connection invalid
+2026-10-26 22:07:38-0700 logd[52006]: Error connecting to logd_helper: Connection invalid
+2026-10-26 22:07:38-0700 logd[52006]: Error connecting to logd_helper: Connection invalid
+2026-10-26 22:07:38-0700 logd[52006]: Error connecting to logd_helper: Connection invalid
+2026-10-26 22:07:38-0700 logd[52006]: Error connecting to logd_helper: Connection invalid
+2026-10-26 22:07:38-0700 logd[52006]: Error connecting to logd_helper: Connection invalid
+2026-10-26 22:07:38-0700 logd[52006]: Error connecting to logd_helper: Connection invalid
+2026-10-26 22:07:38-0700 logd[52006]: Error connecting to logd_helper: Connection invalid
+2026-10-26 22:07:38-0700 logd[52006]: Error connecting to logd_helper: Connection invalid
+2026-10-26 22:07:38-0700 logd[52006]: Error connecting to logd_helper: Connection invalid
+2026-10-26 22:07:38-0700 logd[52006]: Error connecting to logd_helper: Connection invalid
+2026-10-26 22:07:38-0700 logd[52006]: Error connecting to logd_helper: Connection invalid
+2026-10-26 22:07:38-0700 logd[52006]: Error connecting to logd_helper: Connection invalid
+2026-10-26 22:07:38-0700 logd[52006]: Error connecting to logd_helper: Connection invalid
+2026-10-26 22:07:38-0700 logd[52006]: Error connecting to logd_helper: Connection invalid
+2026-10-26 22:07:38-0700 logd[52006]: Error connecting to logd_helper: Connection invalid
+2026-10-26 22:07:38-0700 logd[52006]: Error connecting to logd_helper: Connection invalid
+2026-10-26 22:07:38-0700 logd[52006]: Error connecting to logd_helper: Connection invalid
+2026-10-26 22:07:38-0700 logd[52006]: Error connecting to logd_helper: Connection invalid
+2026-10-26 22:07:38-0700 logd[52006]: Error connecting to logd_helper: Connection invalid
+2026-10-26 22:07:38-0700 logd[52006]: Error connecting to logd_helper: Connection invalid
+2026-10-26 22:07:38-0700 logd[52006]: Error connecting to logd_helper: Connection invalid
+2026-10-26 22:07:38-0700 logd[52006]: Error connecting to logd_helper: Connection invalid
+2026-10-26 22:07:38-0700 logd[52006]: Error connecting to logd_helper: Connection invalid
+2026-10-26 22:07:38-0700 logd[52006]: Error connecting to logd_helper: Connection invalid
+2026-10-26 22:07:38-0700 logd[52006]: Error connecting to logd_helper: Connection invalid
+2026-10-26 22:07:38-0700 logd[52006]: Error connecting to logd_helper: Connection invalid
+2026-10-26 22:07:38-0700 logd[52006]: Error connecting to logd_helper: Connection invalid
+2026-10-26 22:07:38-0700 logd[52006]: Error connecting to logd_helper: Connection invalid
+2026-10-26 22:07:38-0700 logd[52006]: Error connecting to logd_helper: Connection invalid
+2026-10-26 22:07:38-0700 logd[52006]: Error connecting to logd_helper: Connection invalid
+2026-10-26 22:07:38-0700 logd[52006]: Error connecting to logd_helper: Connection invalid
+2026-10-26 22:07:38-0700 logd[52006]: Error connecting to logd_helper: Connection invalid
+2026-10-26 22:07:38-0700 logd[52006]: Error connecting to logd_helper: Connection invalid
+2026-10-26 22:07:38-0700 logd[52006]: Error connecting to logd_helper: Connection invalid
+2026-10-26 22:07:38-0700 logd[52006]: Error connecting to logd_helper: Connection invalid
+2026-10-26 22:07:38-0700 logd[52006]: Error connecting to logd_helper: Connection invalid
+2026-10-26 22:07:38-0700 logd[52006]: Error connecting to logd_helper: Connection invalid
+2026-10-26 22:07:38-0700 logd[52006]: Error connecting to logd_helper: Connection invalid
+2026-10-26 22:07:38-0700 logd[52006]: Error connecting to logd_helper: Connection invalid
+2026-10-26 22:07:38-0700 logd[52006]: Error connecting to logd_helper: Connection invalid
+2026-10-26 22:07:38-0700 logd[52006]: Error connecting to logd_helper: Connection invalid
+2026-10-26 22:07:38-0700 logd[52006]: Error connecting to logd_helper: Connection invalid
+2026-10-26 22:07:38-0700 logd[52006]: Error connecting to logd_helper: Connection invalid
+2026-10-26 22:07:38-0700 logd[52006]: Error connecting to logd_helper: Connection invalid
+2026-10-26 22:07:38-0700 logd[52006]: Error connecting to logd_helper: Connection invalid
+2026-10-26 22:07:38-0700 logd[52006]: Error connecting to logd_helper: Connection invalid
+2026-10-26 22:07:38-0700 logd[52006]: Error connecting to logd_helper: Connection invalid
+2026-10-26 22:07:38-0700 logd[52006]: Error connecting to logd_helper: Connection invalid
+2026-10-26 22:07:38-0700 logd[52006]: Error connecting to logd_helper: Connection invalid
+2026-10-26 22:07:38-0700 logd[52006]: Error connecting to logd_helper: Connection invalid
+2026-10-26 22:07:38-0700 logd[52006]: Error connecting to logd_helper: Connection invalid
+2026-10-26 22:07:38-0700 logd[52006]: Error connecting to logd_helper: Connection invalid
+2026-10-26 22:07:38-0700 logd[52006]: Error connecting to logd_helper: Connection invalid
+2026-10-26 22:07:38-0700 logd[52006]: Error connecting to logd_helper: Connection invalid
+2026-10-26 22:07:38-0700 logd[52006]: Error connecting to logd_helper: Connection invalid
+2026-10-26 22:07:38-0700 logd[52006]: Error connecting to logd_helper: Connection invalid
+2026-10-26 22:07:38-0700 logd[52006]: Error connecting to logd_helper: Connection invalid
+2026-10-26 22:07:38-0700 logd[52006]: Error connecting to logd_helper: Connection invalid
+2026-10-26 22:07:38-0700 logd[52006]: Error connecting to logd_helper: Connection invalid
+2026-10-26 22:07:38-0700 logd[52006]: Error connecting to logd_helper: Connection invalid
+2026-10-26 22:07:38-0700 logd[52006]: Error connecting to logd_helper: Connection invalid
+2026-10-26 22:07:38-0700 logd[52006]: Error connecting to logd_helper: Connection invalid
+2026-10-26 22:07:38-0700 logd[52006]: Error connecting to logd_helper: Connection invalid
+2026-10-26 22:07:38-0700 logd[52006]: Error connecting to logd_helper: Connection invalid
+2026-10-26 22:07:38-0700 logd[52006]: Error connecting to logd_helper: Connection invalid
+2026-10-26 22:07:38-0700 logd[52006]: Error connecting to logd_helper: Connection invalid
+2026-10-26 22:07:38-0700 logd[52006]: Error connecting to logd_helper: Connection invalid
+2026-10-26 22:07:38-0700 logd[52006]: Error connecting to logd_helper: Connection invalid
+2026-10-26 22:07:38-0700 logd[52006]: Error connecting to logd_helper: Connection invalid
+2026-10-26 22:07:38-0700 logd[52006]: Error connecting to logd_helper: Connection invalid
+2026-10-26 22:07:38-0700 logd[52006]: Error connecting to logd_helper: Connection invalid
+2026-10-26 22:07:38-0700 logd[52006]: Error connecting to logd_helper: Connection invalid
+2026-10-26 22:07:38-0700 logd[52006]: Error connecting to logd_helper: Connection invalid
+2026-10-26 22:07:38-0700 logd[52006]: Error connecting to logd_helper: Connection invalid
+2026-10-26 22:07:38-0700 logd[52006]: Error connecting to logd_helper: Connection invalid
+2026-10-26 22:07:38-0700 logd[52006]: Error connecting to logd_helper: Connection invalid
+2026-10-26 22:07:38-0700 logd[52006]: Error connecting to logd_helper: Connection invalid
+2026-10-26 22:07:38-0700 logd[52006]: Error connecting to logd_helper: Connection invalid

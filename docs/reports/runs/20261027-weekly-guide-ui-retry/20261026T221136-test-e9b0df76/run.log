@@ -1,0 +1,242 @@
+
+$ /usr/bin/xcrun xcodebuild -project ~/.codex/worktrees/weekly-study-guide-design/sermon-video-zh-subtitles/apps/tongxing-ios/Tongxing.xcodeproj -list -json -disableAutomaticPackageResolution
+{
+  "project" : {
+    "configurations" : [
+      "BetaDebug",
+      "BetaRelease",
+      "Debug",
+      "Release"
+    ],
+    "name" : "Tongxing",
+    "schemes" : [
+      "ListeningActivityExtension",
+      "Tongxing",
+      "TongxingBeta",
+      "TongxingCore",
+      "TongxingInfrastructure",
+      "TongxingPreview",
+      "TongxingScreenshots"
+    ],
+    "targets" : [
+      "Tongxing",
+      "ListeningActivityExtension",
+      "TongxingTests",
+      "TongxingUITests"
+    ]
+  }
+}
+
+$ /usr/bin/xcrun simctl list devices available --json
+{
+  "devices" : {
+    "com.apple.CoreSimulator.SimRuntime.iOS-27-0" : [
+      {
+        "dataPath" : "\/Users\/jonathan_jing\/Library\/Developer\/CoreSimulator\/Devices\/A9ACB321-07F8-4540-AD3C-7FACBD384A1F\/data",
+        "dataPathSize" : 5734416384,
+        "logPath" : "\/Users\/jonathan_jing\/Library\/Logs\/CoreSimulator\/A9ACB321-07F8-4540-AD3C-7FACBD384A1F",
+        "udid" : "A9ACB321-07F8-4540-AD3C-7FACBD384A1F",
+        "lastUsedAt" : "2026-10-27T05:10:27Z",
+        "isAvailable" : true,
+... 297 lines omitted; 0 error-like lines, 0 kept below ...
+... end of omitted section ...
+
+SendProjectDescription
+
+CreateBuildOperation
+
+ComputeTargetDependencyGraph
+note: Building targets in dependency order
+note: Target dependency graph (8 targets)
+    Target 'TongxingUITests' in project 'Tongxing'
+        ➜ Explicit dependency on target 'Tongxing' in project 'Tongxing'
+    Target 'TongxingTests' in project 'Tongxing'
+        ➜ Explicit dependency on target 'Tongxing' in project 'Tongxing'
+        ➜ Explicit dependency on target 'TongxingCore-product' in project 'TongxingCore'
+    Target 'Tongxing' in project 'Tongxing'
+        ➜ Explicit dependency on target 'ListeningActivityExtension' in project 'Tongxing'
+        ➜ Explicit dependency on target 'TongxingCore-product' in project 'TongxingCore'
+        ➜ Explicit dependency on target 'TongxingInfrastructure-product' in project 'TongxingIOS'
+    Target 'TongxingInfrastructure-product' in project 'TongxingIOS'
+        ➜ Explicit dependency on target 'TongxingInfrastructure' in project 'TongxingIOS'
+        ➜ Explicit dependency on target 'TongxingCore-product' in project 'TongxingCore'
+    Target 'TongxingInfrastructure' in project 'TongxingIOS'
+        ➜ Explicit dependency on target 'TongxingCore-product' in project 'TongxingCore'
+    Target 'ListeningActivityExtension' in project 'Tongxing'
+        ➜ Explicit dependency on target 'TongxingCore-product' in project 'TongxingCore'
+    Target 'TongxingCore-product' in project 'TongxingCore'
+        ➜ Explicit dependency on target 'TongxingCore' in project 'TongxingCore'
+    Target 'TongxingCore' in project 'TongxingCore' (no dependencies)
+
+GatherProvisioningInputs
+
+CreateBuildDescription
+
+ExecuteExternalTool /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc --version
+
+ExecuteExternalTool /Applications/Xcode.app/Contents/Developer/usr/bin/actool --print-asset-tag-combinations --output-format xml1 ~/.codex/worktrees/weekly-study-guide-design/sermon-video-zh-subtitles/apps/tongxing-ios/App/AppIcon.icon ~/.codex/worktrees/weekly-study-guide-design/sermon-video-zh-subtitles/apps/tongxing-ios/App/Assets.xcassets
+
+ExecuteExternalTool /Applications/Xcode.app/Contents/Developer/usr/bin/xcstringstool compile --dry-run --output-directory ~/.codex/worktrees/weekly-study-guide-design/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-26/cli/DerivedData/Build/Intermediates.noindex/Tongxing.build/Debug-iphonesimulator/Tongxing.build ~/.codex/worktrees/weekly-study-guide-design/sermon-video-zh-subtitles/apps/tongxing-ios/App/Resources/Localizable.xcstrings
+
+ExecuteExternalTool /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -v -E -dM -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator27.1.sdk -x c -c /dev/null
+
+ExecuteExternalTool /Applications/Xcode.app/Contents/Developer/usr/bin/actool --version --output-format xml1
+
+ExecuteExternalTool /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ld -version_details
+
+Build description signature: 68a643ba2fac02ff76f54ce669bd8fab
+Build description path: ~/.codex/worktrees/weekly-study-guide-design/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-26/cli/DerivedData/Build/Intermediates.noindex/XCBuildData/68a643ba2fac02ff76f54ce669bd8fab.xcbuilddata
+ClangStatCache /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang-stat-cache /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator27.1.sdk ~/.codex/worktrees/weekly-study-guide-design/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-26/cli/DerivedData/SDKStatCaches.noindex/iphonesimulator27.1-24A94232-35d3147121984ba087c28d913653d626.sdkstatcache
+    cd ~/.codex/worktrees/weekly-study-guide-design/sermon-video-zh-subtitles/apps/tongxing-ios/Tongxing.xcodeproj
+    /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang-stat-cache /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator27.1.sdk -o ~/.codex/worktrees/weekly-study-guide-design/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-26/cli/DerivedData/SDKStatCaches.noindex/iphonesimulator27.1-24A94232-35d3147121984ba087c28d913653d626.sdkstatcache
+
+ProcessInfoPlistFile ~/.codex/worktrees/weekly-study-guide-design/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-26/cli/DerivedData/Build/Products/Debug-iphonesimulator/PackageFrameworks/TongxingCore_-268EA610E369A1D_PackageProduct.framework/Info.plist ~/.codex/worktrees/weekly-study-guide-design/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-26/cli/DerivedData/Build/Intermediates.noindex/TongxingCore.build/Debug-iphonesimulator/TongxingCore-product-t.build/empty-TongxingCore_-268EA610E369A1D_PackageProduct.plist (in target 'TongxingCoredynamic-product' from project 'TongxingCore')
+    cd ~/.codex/worktrees/weekly-study-guide-design/sermon-video-zh-subtitles/apps/tongxing-ios/Core
+    builtin-infoPlistUtility ~/.codex/worktrees/weekly-study-guide-design/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-26/cli/DerivedData/Build/Intermediates.noindex/TongxingCore.build/Debug-iphonesimulator/TongxingCore-product-t.build/empty-TongxingCore_-268EA610E369A1D_PackageProduct.plist -producttype com.apple.product-type.framework -expandbuildsettings -format binary -platform iphonesimulator -o ~/.codex/worktrees/weekly-study-guide-design/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-26/cli/DerivedData/Build/Products/Debug-iphonesimulator/PackageFrameworks/TongxingCore_-268EA610E369A1D_PackageProduct.framework/Info.plist
+
+ProcessInfoPlistFile ~/.codex/worktrees/weekly-study-guide-design/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-26/cli/DerivedData/Build/Products/Debug-iphonesimulator/ListeningActivityExtension.appex/Info.plist ~/.codex/worktrees/weekly-study-guide-design/sermon-video-zh-subtitles/apps/tongxing-ios/ListeningActivityExtension/Info.plist (in target 'ListeningActivityExtension' from project 'Tongxing')
+    cd ~/.codex/worktrees/weekly-study-guide-design/sermon-video-zh-subtitles/apps/tongxing-ios
+    builtin-infoPlistUtility ~/.codex/worktrees/weekly-study-guide-design/sermon-video-zh-subtitles/apps/tongxing-ios/ListeningActivityExtension/Info.plist -producttype com.apple.product-type.app-extension -expandbuildsettings -format binary -platform iphonesimulator -o ~/.codex/worktrees/weekly-study-guide-design/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-26/cli/DerivedData/Build/Products/Debug-iphonesimulator/ListeningActivityExtension.appex/Info.plist
+
+ProcessInfoPlistFile ~/.codex/worktrees/weekly-study-guide-design/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-26/cli/DerivedData/Build/Products/Debug-iphonesimulator/Tongxing.app/Info.plist ~/.codex/worktrees/weekly-study-guide-design/sermon-video-zh-subtitles/apps/tongxing-ios/App/Info.plist (in target 'Tongxing' from project 'Tongxing')
+    cd ~/.codex/worktrees/weekly-study-guide-design/sermon-video-zh-subtitles/apps/tongxing-ios
+    builtin-infoPlistUtility ~/.codex/worktrees/weekly-study-guide-design/sermon-video-zh-subtitles/apps/tongxing-ios/App/Info.plist -producttype com.apple.product-type.application -genpkginfo ~/.codex/worktrees/weekly-study-guide-design/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-26/cli/DerivedData/Build/Products/Debug-iphonesimulator/Tongxing.app/PkgInfo -expandbuildsettings -format binary -platform iphonesimulator -additionalcontentfile ~/.codex/worktrees/weekly-study-guide-design/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-26/cli/DerivedData/Build/Intermediates.noindex/Tongxing.build/Debug-iphonesimulator/Tongxing.build/assetcatalog_generated_info.plist -scanforprivacyfile ~/.codex/worktrees/weekly-study-guide-design/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-26/cli/DerivedData/Build/Products/Debug-iphonesimulator/Tongxing.app/Frameworks/TongxingCore_-268EA610E369A1D_PackageProduct.framework -scanforprivacyfile ~/.codex/worktrees/weekly-study-guide-design/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-26/cli/DerivedData/Build/Products/Debug-iphonesimulator/Tongxing.app/PlugIns/ListeningActivityExtension.appex -o ~/.codex/worktrees/weekly-study-guide-design/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-26/cli/DerivedData/Build/Products/Debug-iphonesimulator/Tongxing.app/Info.plist
+
+ProcessInfoPlistFile ~/.codex/worktrees/weekly-study-guide-design/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-26/cli/DerivedData/Build/Products/Debug-iphonesimulator/Tongxing.app/PlugIns/TongxingTests.xctest/Info.plist ~/.codex/worktrees/weekly-study-guide-design/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-26/cli/DerivedData/Build/Intermediates.noindex/Tongxing.build/Debug-iphonesimulator/TongxingTests.build/empty-TongxingTests.plist (in target 'TongxingTests' from project 'Tongxing')
+    cd ~/.codex/worktrees/weekly-study-guide-design/sermon-video-zh-subtitles/apps/tongxing-ios
+    builtin-infoPlistUtility ~/.codex/worktrees/weekly-study-guide-design/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-26/cli/DerivedData/Build/Intermediates.noindex/Tongxing.build/Debug-iphonesimulator/TongxingTests.build/empty-TongxingTests.plist -producttype com.apple.product-type.bundle.unit-test -expandbuildsettings -format binary -platform iphonesimulator -o ~/.codex/worktrees/weekly-study-guide-design/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-26/cli/DerivedData/Build/Products/Debug-iphonesimulator/Tongxing.app/PlugIns/TongxingTests.xctest/Info.plist
+
+ProcessInfoPlistFile ~/.codex/worktrees/weekly-study-guide-design/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-26/cli/DerivedData/Build/Products/Debug-iphonesimulator/TongxingUITests-Runner.app/PlugIns/TongxingUITests.xctest/Info.plist ~/.codex/worktrees/weekly-study-guide-design/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-26/cli/DerivedData/Build/Intermediates.noindex/Tongxing.build/Debug-iphonesimulator/TongxingUITests.build/empty-TongxingUITests.plist (in target 'TongxingUITests' from project 'Tongxing')
+    cd ~/.codex/worktrees/weekly-study-guide-design/sermon-video-zh-subtitles/apps/tongxing-ios
+    builtin-infoPlistUtility ~/.codex/worktrees/weekly-study-guide-design/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-26/cli/DerivedData/Build/Intermediates.noindex/Tongxing.build/Debug-iphonesimulator/TongxingUITests.build/empty-TongxingUITests.plist -producttype com.apple.product-type.bundle.ui-testing -expandbuildsettings -format binary -platform iphonesimulator -additionalcontentfile ~/.codex/worktrees/weekly-study-guide-design/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-26/cli/DerivedData/Build/Intermediates.noindex/Tongxing.build/Debug-iphonesimulator/TongxingUITests.build/ProductTypeInfoPlistAdditions.plist -o ~/.codex/worktrees/weekly-study-guide-design/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-26/cli/DerivedData/Build/Products/Debug-iphonesimulator/TongxingUITests-Runner.app/PlugIns/TongxingUITests.xctest/Info.plist
+
+PruneExplicitPrecompiledModules ~/.codex/worktrees/weekly-study-guide-design/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-26/cli/DerivedData/Build/Intermediates.noindex/ExplicitPrecompiledModules
+
+PruneExplicitPrecompiledModules ~/.codex/worktrees/weekly-study-guide-design/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-26/cli/DerivedData/Build/Intermediates.noindex/SwiftExplicitPrecompiledModules
+
+PruneExplicitPrecompiledModules ~/.codex/worktrees/weekly-study-guide-design/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-26/cli/DerivedData/SDKExplicitPrecompiledModules
+
+2026-10-26 22:11:42.997 xcodebuild[54603:59469935] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+2026-10-26 22:11:42.997 xcodebuild[54603:59469935] [MT] IDESchemeActionDeviceRecord: versionAndBuild = 27.1 (24A94401), error = invalidDigitCount(94401).
+2026-10-26 22:12:10.098835-0700 TongxingUITests-Runner[54857:59472189] [Default] Running tests...
+    t =      nans Interface orientation changed to Portrait
+Test Suite 'Selected tests' started at 2026-10-26 22:12:10.500.
+Test Suite 'TongxingUITests.xctest' started at 2026-10-26 22:12:10.501.
+Test Suite 'WeeklyGuidePreviewUITests' started at 2026-10-26 22:12:10.501.
+Test Case '-[TongxingUITests.WeeklyGuidePreviewUITests testGuidePreviewNavigationKeepsPlaybackAndUsesSyntheticContent]' started.
+    t =     0.02s Start Test at 2026-10-26 22:12:10.525
+    t =     0.19s Set Up
+    t =     0.20s Open com.jonathanjing.tongxing.dev
+    t =     0.20s     Launch com.jonathanjing.tongxing.dev
+2026-10-26 22:12:10.785 xcodebuild[54603:59469935] [MT] IDELaunchParametersSnapshot: debugger version lookup failed for path '<nil>': noURL
+2026-10-26 22:12:10.785 xcodebuild[54603:59469935] [MT] IDELaunchParametersSnapshot: no debugger version
+2026-10-26 22:12:10.835 xcodebuild[54603:59469935] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+2026-10-26 22:12:10.835 xcodebuild[54603:59469935] [MT] IDESchemeActionDeviceRecord: versionAndBuild = 27.1 (24A94401), error = invalidDigitCount(94401).
+objc[54857]: Class UIAccessibilityLoaderWebShared is implemented in both /Library/Developer/CoreSimulator/Volumes/iOS_24A94401/Library/Developer/CoreSimulator/Profiles/Runtimes/iOS 27.1.simruntime/Contents/Resources/RuntimeRoot/System/Library/AccessibilityBundles/WebKit.axbundle/WebKit (0x10a9f8398) and /Library/Developer/CoreSimulator/Volumes/iOS_24A94401/Library/Developer/CoreSimulator/Profiles/Runtimes/iOS 27.1.simruntime/Contents/Resources/RuntimeRoot/System/Library/AccessibilityBundles/WebCore.axbundle/WebCore (0x10ab68310). This may cause spurious casting failures and mysterious crashes. One of the duplicates must be removed or renamed.
+    t =     1.94s         Setting up automation session
+    t =     4.80s         Wait for com.jonathanjing.tongxing.dev to idle
+    t =     7.12s Waiting 20.0s for "open-sermon-study" Button to exist
+    t =     8.17s     Checking `Expect predicate `existsNoRetry == 1` for object "open-sermon-study" Button`
+    t =     8.17s         Checking existence of `"open-sermon-study" Button`
+    t =     8.34s Find the "open-sermon-study" Button
+    t =     8.40s Waiting 10.0s for "playback-toggle" Button to exist
+    t =     9.41s     Checking `Expect predicate `existsNoRetry == 1` for object "playback-toggle" Button`
+    t =     9.41s         Checking existence of `"playback-toggle" Button`
+    t =     9.47s Find the "playback-toggle" Button
+    t =     9.54s Tap "open-sermon-study" Button
+    t =     9.54s     Wait for com.jonathanjing.tongxing.dev to idle
+    t =     9.55s     Find the "open-sermon-study" Button
+    t =     9.62s     Check for interrupting elements affecting "open-sermon-study" Button
+    t =     9.69s         Wait for com.apple.springboard to idle
+    t =     9.79s     Synthesize event
+    t =    10.21s     Wait for com.jonathanjing.tongxing.dev to idle
+    t =    10.35s Waiting 10.0s for "合成预览 · 非教会手册" StaticText to exist
+    t =    11.44s     Checking `Expect predicate `existsNoRetry == 1` for object "合成预览 · 非教会手册" StaticText`
+    t =    11.44s         Checking existence of `"合成预览 · 非教会手册" StaticText`
+    t =    11.59s Get all elements bound by index for: Elements matching predicate '"playback-toggle" IN identifiers'
+    t =    11.70s Find the "playback-toggle" Button
+    t =    11.85s Find the "playback-toggle" Button
+    t =    11.97s Find the "playback-toggle" Button
+    t =    12.09s Checking existence of `"playback-dock-collapse-toggle" Button`
+    t =    12.21s Checking existence of `"guide-section-group" Button`
+    t =    12.32s Tap "guide-section-group" Button
+    t =    12.32s     Wait for com.jonathanjing.tongxing.dev to idle
+    t =    12.32s     Find the "guide-section-group" Button
+    t =    12.45s     Check for interrupting elements affecting "guide-section-group" Button
+    t =    12.55s         Wait for com.apple.springboard to idle
+    t =    12.62s     Synthesize event
+    t =    12.93s     Wait for com.jonathanjing.tongxing.dev to idle
+    t =    12.93s Waiting 5.0s for "示意问题：请分享你在本周学习中的一个观察。" StaticText to exist
+    t =    13.99s     Checking `Expect predicate `existsNoRetry == 1` for object "示意问题：请分享你在本周学习中的一个观察。" StaticText`
+    t =    13.99s         Checking existence of `"示意问题：请分享你在本周学习中的一个观察。" StaticText`
+    t =    14.11s Find the "示意问题：请分享你在本周学习中的一个观察。" StaticText
+    t =    14.23s Find the Target Application 'com.jonathanjing.tongxing.dev'
+    t =    14.42s Added attachment named 'guide-synthetic-discussion'
+    t =    14.43s Tap "guide-close" Button
+    t =    14.43s     Wait for com.jonathanjing.tongxing.dev to idle
+    t =    14.43s     Find the "guide-close" Button
+    t =    15.54s         Find the "guide-close" Button (retry 1)
+    t =    16.69s         Find the "guide-close" Button (retry 2)
+    t =    16.80s Requesting snapshot of accessibility hierarchy for app with pid 54997
+~/.codex/worktrees/weekly-study-guide-design/sermon-video-zh-subtitles/apps/tongxing-ios/UITests/WeeklyGuidePreviewUITests.swift:32: error: -[TongxingUITests.WeeklyGuidePreviewUITests testGuidePreviewNavigationKeepsPlaybackAndUsesSyntheticContent] : Failed to tap "guide-close" Button: No matches found for Elements matching predicate '"guide-close" IN identifiers' from input {(
+    Button, label: '表单控制柄', value: 已展开,
+    Button, identifier: 'app-language-menu', label: '界面语言', value: 中,
+    Button, identifier: 'choose-content-language', label: '选择证道语言', value: 简体中文，仅文字,
+    Button, identifier: 'open-sermon-study', label: '本周研读手册 · 测试',
+    Button, identifier: 'open-english-locate', label: '没跟上现场？按英文找位置',
+    Button, identifier: 'download-audio', label: '下载本篇',
+    Button, label: '来源与内容说明',
+    Button,
+    Button, label: '现场收听', Selected,
+    Button, label: '字幕全文',
+    Button, identifier: 'guide-section-scripture', label: '经文、阅读本周经文',
+    Button, identifier: 'guide-section-background', label: '理解本周、背景与图解',
+    Button, identifier: 'guide-section-notes', label: '讲道笔记、阅读手册中的讲道笔记',
+    Button, identifier: 'guide-section-group', label: '生活小组、一起阅读与讨论',
+    Button, identifier: 'choose-sermon', label: '选择证道周次',
+    Button, identifier: 'more-options', label: '更多选项',
+    Button, identifier: 'nudge-backward', label: '中文抢先，后退1秒', Disabled,
+    Button, identifier: 'playback-toggle', label: '开始播放', value: 00:00，总长 00:36。音频加..., Disabled,
+    Button, identifier: 'nudge-forward', label: '中文落后，前进1秒', Disabled,
+    Button, identifier: 'playback-more', label: '定位',
+    Button, identifier: 'nudge-backward', label: '中文抢先，后退1秒', Disabled,
+    Button, identifier: 'playback-toggle', label: '开始播放', value: 00:00，总长 00:36。音频加..., Disabled,
+    Button, identifier: 'nudge-forward', label: '中文落后，前进1秒', Disabled,
+    Button, identifier: 'playback-more', label: '定位'
+)}
+Possibly caused by runtime issues:
+Automation type mismatch: computed Button from legacy attributes vs PopUpButton from modern attribute. Input attributes and values: {
+    "XC_kAXXCAttributeAutomationType" = 14;
+    "XC_kAXXCAttributeElementBaseType" = NSObject;
+    "XC_kAXXCAttributeElementType" = "SwiftUI.AccessibilityNode";
+    "XC_kAXXCAttributeTraits" = 1108101562369;
+}
+Automation type mismatch: computed Button from legacy attributes vs DisclosureTriangle from modern attribute. Input attributes and values: {
+    "XC_kAXXCAttributeAutomationType" = 13;
+    "XC_kAXXCAttributeElementBaseType" = NSObject;
+    "XC_kAXXCAttributeElementType" = "SwiftUI.AccessibilityNode";
+    "XC_kAXXCAttributeTraits" = 8589934593;
+}
+See test report attachments for more detail.
+    t =    17.18s Tear Down
+Test Case '-[TongxingUITests.WeeklyGuidePreviewUITests testGuidePreviewNavigationKeepsPlaybackAndUsesSyntheticContent]' failed (17.445 seconds).
+Test Suite 'WeeklyGuidePreviewUITests' failed at 2026-10-26 22:12:27.970.
+	 Executed 1 test, with 1 failure (0 unexpected) in 17.445 (17.470) seconds
+Test Suite 'TongxingUITests.xctest' failed at 2026-10-26 22:12:27.971.
+	 Executed 1 test, with 1 failure (0 unexpected) in 17.445 (17.470) seconds
+Test Suite 'Selected tests' failed at 2026-10-26 22:12:27.971.
+	 Executed 1 test, with 1 failure (0 unexpected) in 17.445 (17.471) seconds
+2026-10-26 22:12:28.014 xcodebuild[54603:59469935] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+2026-10-26 22:12:28.014 xcodebuild[54603:59469935] [MT] IDESchemeActionDeviceRecord: versionAndBuild = 27.1 (24A94401), error = invalidDigitCount(94401).
+2026-10-26 22:12:28.014 xcodebuild[54603:59469935] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+2026-10-26 22:12:28.014 xcodebuild[54603:59469935] [MT] IDESchemeActionDeviceRecord: versionAndBuild = 27.1 (24A94401), error = invalidDigitCount(94401).
+2026-10-26 22:12:28.014 xcodebuild[54603:59469935] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+2026-10-26 22:12:28.015 xcodebuild[54603:59469935] [MT] IDESchemeActionDeviceRecord: versionAndBuild = 27.1 (24A94401), error = invalidDigitCount(94401).
+2026-10-26 22:12:28.041 xcodebuild[54603:59469935] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+2026-10-26 22:12:28.042 xcodebuild[54603:59469935] [MT] IDESchemeActionDeviceRecord: versionAndBuild = 27.1 (24A94401), error = invalidDigitCount(94401).
+2026-10-26 22:12:28.042 xcodebuild[54603:59469935] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+2026-10-26 22:12:28.042 xcodebuild[54603:59469935] [MT] IDESchemeActionDeviceRecord: versionAndBuild = 27.1 (24A94401), error = invalidDigitCount(94401).
+2026-10-26 22:12:28.042 xcodebuild[54603:59469935] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+2026-10-26 22:12:28.042 xcodebuild[54603:59469935] [MT] IDESchemeActionDeviceRecord: versionAndBuild = 27.1 (24A94401), error = invalidDigitCount(94401).
+
+Exit status: 130
