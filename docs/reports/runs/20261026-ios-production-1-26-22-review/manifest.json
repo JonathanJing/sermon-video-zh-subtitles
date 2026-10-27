@@ -1,0 +1,115 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261026-ios-production-1-26-22-review",
+  "runs": [
+    {
+      "label": "20261025T185139-test-fc387eb0",
+      "source": "/private/tmp/tongxing-ios-production-1.26.22-pr1383/artifacts/tongxing-ios/2026-10-25/cli/20261025T185139-test-fc387eb0",
+      "skipped": {
+        ".json": 1,
+        ".0~2tFY8_4_JLFOkLCqAfqJHHUB1yT9z8i0RlY3pxFxM5kWgPlH0H0sA-4mnlNRH4RK__S-x0_s9HUFD7hKJ5TZNA==": 2,
+        ".0~A0O45LJxj1Yxsw9froSH7ImEhStwsx8_0RQyDoPTr9nAW45JqroVGfavwXIHVph32OlL5XQZkKRxhG-DGzOP5A==": 2,
+        ".0~IfvblqxckJs8m8PYOLChsAT9yFWqY6UA-FeFWXGxw6tcrmzy7zUCJe3wcc5EB9MlSq4yiV02BnCTuexGrRyIyw==": 2,
+        ".0~J2OU6dUO9b7pU5n0B7q5x3Na7dkmHCDGOiiH_z4xPX4PLgQWQx7dF4xuVB5EHbJZMidw8TPHIHdvGqMhbnIKhQ==": 2,
+        ".0~NIX8pDK0qrkYxM0VJTt8vehgZPwOUJTZs8Ctdz3xbaAvODYTDWskRoTPzKKNcP9HnNKYJHTMVuihS83s5QGXrA==": 2,
+        ".0~OHtlee2dp-tmqXxQwvMpRFFTK0_pRui_zzKzwwMHkdSAnQ4gJJ99bnk3UbzfnbxdSCfc2s7omYMz0e-S3yW-4g==": 2,
+        ".0~eEmUlEMNnh6CJ8IKnN7yvOS-vtrC3BjIk8yyYwOHLT2cUgrOCmJlF-A5la0pKmdqs_05-nxkzfFnaXiLAPbSvw==": 2,
+        ".0~i1xahC6SjL1xEWDo4GIR1WgusAQ7TnJLsVvioTVZ-cEYhyYM-5vo5jpc7GA76D3_14yQWAR5fKW9Oz6l-uo-yA==": 2,
+        ".plist": 1
+      }
+    },
+    {
+      "label": "formal-1.26.22-build65",
+      "source": "/private/tmp/tongxing-ios-production-1.26.22-pr1383/artifacts/tongxing-ios/formal-1.26.22-build65",
+      "skipped": {
+        ".plist": 20,
+        "(none)": 76,
+        ".yml": 4,
+        ".json": 26,
+        ".swiftdoc": 8,
+        ".swiftmodule": 8,
+        ".timestamp": 4,
+        ".h": 9,
+        ".modulemap": 4,
+        ".hmap": 12,
+        ".DependencyMetadataFileList": 4,
+        ".DependencyStaticMetadataFileList": 4,
+        ".xcent": 2,
+        ".der": 2,
+        ".stringsdata": 4,
+        ".o": 59,
+        ".dia": 8,
+        ".d": 4,
+        ".swiftconstvalues": 4,
+        ".LinkFileList": 4,
+        ".SwiftConstValuesFileList": 4,
+        ".SwiftFileList": 4,
+        ".swiftsourceinfo": 4,
+        ".dat": 4,
+        ".yaml": 1,
+        ".swift": 1,
+        ".dep": 1,
+        ".plist_thinned": 1,
+        ".png": 6,
+        ".car": 3,
+        ".strings": 19,
+        ".mobileprovision": 5,
+        ".msgpack": 2,
+        ".txt": 3,
+        ".db": 1,
+        ".v1": 3,
+        ".shared": 3,
+        ".xcactivitylog": 2,
+        ".pcm": 398,
+        ".modulevalidation": 1,
+        ".sdkstatcache": 1,
+        ".xcprivacy": 2,
+        ".ipa": 1,
+        ".symbols": 2
+      }
+    }
+  ],
+  "files": [
+    {
+      "run": "20261025T185139-test-fc387eb0",
+      "path": "run.log",
+      "kind": "log",
+      "bytes": 677863,
+      "truncated": true,
+      "sha256": "3491388a3092515955ca564970c2bf9bf13e1d222fc79179de8a81f348b80784",
+      "redactions": {
+        "email": 1,
+        "home_dir": 6
+      }
+    },
+    {
+      "run": "formal-1.26.22-build65",
+      "path": "archive.log",
+      "kind": "log",
+      "bytes": 365765,
+      "truncated": true,
+      "sha256": "b1d771235bb1d858f64d8636707091fb00e68e4c1be57b16edf2f7d4a464439e",
+      "redactions": {
+        "email": 2,
+        "home_dir": 6
+      }
+    },
+    {
+      "run": "formal-1.26.22-build65",
+      "path": "export/Packaging.log",
+      "kind": "log",
+      "bytes": 97092,
+      "truncated": true,
+      "sha256": "6eb41f1170cae20b7c2fbc4c328250f9ca167171e3b2f73a1620ad6808ed4333",
+      "redactions": {
+        "secret_field": 1,
+        "email": 4
+      }
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}
