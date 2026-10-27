@@ -45,11 +45,13 @@
 		94B466A5A536CBD9995786DE /* EnglishLocateSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6FEF8605856DB0FE84A04EC2 /* EnglishLocateSheet.swift */; };
 		97DAC43194A8678823249118 /* ListeningActivityCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31BF35CC679A65F678EA91AF /* ListeningActivityCard.swift */; };
 		9A00442EA947A8B5939AB68B /* AppIdentityTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 502E58B32BA9CB649A03DB11 /* AppIdentityTests.swift */; };
+		9A247006AA03DEAAED3B6E15 /* WeeklyGuidePreview.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3080F1D3CD5A0A770935EFD2 /* WeeklyGuidePreview.swift */; };
 		9D37A5E9084A59C6C69B0EEA /* ListeningLiveActivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD504056359930D928DD8069 /* ListeningLiveActivity.swift */; };
 		A442F0B6EE2D16D0DAE46A00 /* SwiftUIPreviewTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6163F70382A5001D532DC114 /* SwiftUIPreviewTests.swift */; };
 		A55D82ACF53BFD530F2D7889 /* StatisticsPromptCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = D8C86CA5674CE86CFD433769 /* StatisticsPromptCard.swift */; };
 		A62A77ABFD144A65E44B48B9 /* WeeklyPosterPublishedUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8EB7754D60DA3B7C6FAA6231 /* WeeklyPosterPublishedUITests.swift */; };
 		AAE50D4E51C22893F01DEAFD /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = E8CDE0AD081CB32BAE3CD0CB /* PrivacyInfo.xcprivacy */; };
+		AD94FC740DDEDCC870211634 /* WeeklyGuidePreviewUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 901C441D4B62BA69E50575EC /* WeeklyGuidePreviewUITests.swift */; };
 		B23482E21D63D7D5A3E4F670 /* TongxingCore in Frameworks */ = {isa = PBXBuildFile; productRef = C194255167B8AD9FCB74BBA5 /* TongxingCore */; };
 		B415795B942C6189370AAE61 /* UITestLaunch.swift in Sources */ = {isa = PBXBuildFile; fileRef = BD0FEA1F83F4300CB78A0935 /* UITestLaunch.swift */; };
 		BB468865C54870860F167EA8 /* MicrophoneCapture.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1EB48128E58E88F812DC4214 /* MicrophoneCapture.swift */; };
@@ -118,6 +120,7 @@
 		2221C72D2D8132B2F626CD29 /* DownloadBackgroundAssertionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DownloadBackgroundAssertionTests.swift; sourceTree = "<group>"; };
 		239227789D17BF0B1B0A1614 /* ListeningFlowUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ListeningFlowUITests.swift; sourceTree = "<group>"; };
 		270C99CB4AFCBD470C0E1B75 /* VoiceDemoSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceDemoSection.swift; sourceTree = "<group>"; };
+		3080F1D3CD5A0A770935EFD2 /* WeeklyGuidePreview.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeeklyGuidePreview.swift; sourceTree = "<group>"; };
 		31BF35CC679A65F678EA91AF /* ListeningActivityCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ListeningActivityCard.swift; sourceTree = "<group>"; };
 		3258F6BBF467D18B238176B8 /* Tongxing.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = Tongxing.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		34B67E7FE8944242C03C8904 /* PlaybackController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaybackController.swift; sourceTree = "<group>"; };
@@ -146,6 +149,7 @@
 		81423A9849E5E7BDFBDA1423 /* zh-Hans */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "zh-Hans"; path = "zh-Hans.lproj/InfoPlist.strings"; sourceTree = "<group>"; };
 		8D941F809567228C8BDF94B2 /* AppStoreScreenshotUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppStoreScreenshotUITests.swift; sourceTree = "<group>"; };
 		8EB7754D60DA3B7C6FAA6231 /* WeeklyPosterPublishedUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeeklyPosterPublishedUITests.swift; sourceTree = "<group>"; };
+		901C441D4B62BA69E50575EC /* WeeklyGuidePreviewUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeeklyGuidePreviewUITests.swift; sourceTree = "<group>"; };
 		98A292DFC6FBB07302A4DE77 /* AudioAlignmentController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioAlignmentController.swift; sourceTree = "<group>"; };
 		9BF531D6B8AD0E94016F0BC3 /* AudioAlignmentControllerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioAlignmentControllerTests.swift; sourceTree = "<group>"; };
 		A53125E45FD7C62523C2E7E2 /* BetaNotifications.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BetaNotifications.swift; sourceTree = "<group>"; };
@@ -208,6 +212,7 @@
 				5407843D3180E72B300943F4 /* ListeningActivityUITests.swift */,
 				239227789D17BF0B1B0A1614 /* ListeningFlowUITests.swift */,
 				804E0750D21232AD9A48858C /* ProductionPushUITests.swift */,
+				901C441D4B62BA69E50575EC /* WeeklyGuidePreviewUITests.swift */,
 				8EB7754D60DA3B7C6FAA6231 /* WeeklyPosterPublishedUITests.swift */,
 				45F5D15A9F475F5551F890ED /* WeeklyUpdateUITests.swift */,
 			);
@@ -263,6 +268,7 @@
 				BD0FEA1F83F4300CB78A0935 /* UITestLaunch.swift */,
 				01D4A798172E895D46CF48E4 /* VoiceDemoCatalog.swift */,
 				270C99CB4AFCBD470C0E1B75 /* VoiceDemoSection.swift */,
+				3080F1D3CD5A0A770935EFD2 /* WeeklyGuidePreview.swift */,
 				E1C23DB6967DA535C2F9C6DD /* WeeklyUpdates.swift */,
 				E8AB6F9FA25BB0980EF2FE48 /* InfoPlist.strings */,
 				8DE1B32273C5ED188D2CD1CC /* Resources */,
@@ -498,6 +504,7 @@
 				2BFA9AF2842D1D85CEAB3804 /* ListeningActivityUITests.swift in Sources */,
 				8B8A2624687249CFAB61DAFB /* ListeningFlowUITests.swift in Sources */,
 				84880BF9676B537F6C8E0CE5 /* ProductionPushUITests.swift in Sources */,
+				AD94FC740DDEDCC870211634 /* WeeklyGuidePreviewUITests.swift in Sources */,
 				A62A77ABFD144A65E44B48B9 /* WeeklyPosterPublishedUITests.swift in Sources */,
 				475EF22CC006DCDA4BBD0DA9 /* WeeklyUpdateUITests.swift in Sources */,
 			);
@@ -562,6 +569,7 @@
 				B415795B942C6189370AAE61 /* UITestLaunch.swift in Sources */,
 				042AC6D42BFDE10152C60248 /* VoiceDemoCatalog.swift in Sources */,
 				D0F9336C23F6D98E4B199A86 /* VoiceDemoSection.swift in Sources */,
+				9A247006AA03DEAAED3B6E15 /* WeeklyGuidePreview.swift in Sources */,
 				00CE40404E05127FA0783677 /* WeeklyUpdates.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -934,21 +942,21 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = Config/BetaPush.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
-				CURRENT_PROJECT_VERSION = 65;
+				CURRENT_PROJECT_VERSION = 66;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = App/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.26.22;
+				MARKETING_VERSION = 1.26.24;
 				OTHER_LDFLAGS = "$(inherited) -weak_framework ActivityKit";
 				PRODUCT_BUNDLE_IDENTIFIER = com.jonathanjing.tongxing.beta;
 				PRODUCT_NAME = Tongxing;
 				SDKROOT = iphoneos;
 				SUPPORTS_MACCATALYST = NO;
 				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
-				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(inherited) TONGXING_APNS_PRODUCTION";
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(inherited) TONGXING_APNS_PRODUCTION TONGXING_GUIDE_PREVIEW";
 				TARGETED_DEVICE_FAMILY = "1,2";
 				TONGXING_APNS_ENVIRONMENT = production;
 				TONGXING_CONTENT_ORIGIN = "https://ai-for-god-sermon-audio-dev.web.app";
@@ -1009,7 +1017,7 @@
 			baseConfigurationReference = 58CF4F36B9265709AAF09A1C /* Signing.xcconfig */;
 			buildSettings = {
 				APPLICATION_EXTENSION_API_ONLY = YES;
-				CURRENT_PROJECT_VERSION = 65;
+				CURRENT_PROJECT_VERSION = 66;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = ListeningActivityExtension/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -1017,7 +1025,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 1.26.22;
+				MARKETING_VERSION = 1.26.24;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.jonathanjing.tongxing.beta.listening-activity";
 				PRODUCT_NAME = ListeningActivityExtension;
 				SDKROOT = iphoneos;

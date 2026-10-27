@@ -11,8 +11,6 @@ struct PlaybackDock: View {
     @ObservedObject var playback: PlaybackController
     @Environment(\.colorScheme) private var scheme
     @Environment(\.dynamicTypeSize) private var typeSize
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @State private var isCollapsed = false
     @State private var currentMoreFrame: CGRect = .null
     var isPreparing = false
     var alignmentModel: AppModel? = nil
@@ -38,19 +36,7 @@ struct PlaybackDock: View {
 
     private var dockSurface: some View {
         Group {
-            if isCollapsed {
-                if placement == .trailing {
-                    VStack(spacing: 2) {
-                        collapsedPlayButton
-                        collapseToggleButton
-                    }
-                } else {
-                    HStack(spacing: 2) {
-                        collapsedPlayButton
-                        collapseToggleButton
-                    }
-                }
-            } else if placement == .trailing {
+            if placement == .trailing {
                 if inSystemBar { verticalControls }
                 else { verticalControls.padding(6).listeningGlassSurface() }
             } else {
@@ -60,14 +46,8 @@ struct PlaybackDock: View {
             }
         }
         .contentShape(Rectangle())
-        .simultaneousGesture(dockGesture)
         .padding(.horizontal, inSystemBar ? 0 : placement == .trailing ? 6 : 12)
         .padding(.vertical, inSystemBar ? 0 : 8)
-    }
-
-    @ViewBuilder private var collapsedPlayButton: some View {
-        if inSystemBar { playButton }
-        else { playButton.padding(6).listeningCircularGlassSurface() }
     }
 
     @ViewBuilder private var horizontalControls: some View {
@@ -95,7 +75,6 @@ struct PlaybackDock: View {
         playButton
         nudgeButton(1)
         if hasMoreControls { moreButton }
-        collapseToggleButton
     }
 
     private var verticalControls: some View {
@@ -105,7 +84,6 @@ struct PlaybackDock: View {
             playButton
             nudgeButton(1)
             if hasMoreControls { moreButton }
-            collapseToggleButton
         }
         .buttonStyle(.plain)
     }
@@ -175,7 +153,6 @@ struct PlaybackDock: View {
             "status": statusLabel
         ]))
         .accessibilityIdentifier("playback-progress")
-        .accessibilityAction(named: Text(localization.text("收起播放栏"))) { setCollapsed(true) }
     }
 
     private func nudgeButton(_ seconds: Double) -> some View {
@@ -233,58 +210,6 @@ struct PlaybackDock: View {
                 ? localization.text("正在对齐。{status}", ["status": statusLabel]) : statusLabel
         ]))
         .accessibilityIdentifier("playback-toggle")
-        .accessibilityHint(localization.text(isCollapsed ? "点按展开按钮或向上轻扫展开播放栏" : "点按收起按钮或向下轻扫收起播放栏"))
-        .accessibilityAction(named: Text(localization.text(isCollapsed ? "展开播放栏" : "收起播放栏"))) {
-            setCollapsed(!isCollapsed)
-        }
-        .contextMenu {
-            Button(localization.text(isCollapsed ? "展开播放栏" : "收起播放栏"),
-                   systemImage: isCollapsed ? "chevron.up" : "chevron.down") {
-                setCollapsed(!isCollapsed)
-            }
-        }
-    }
-
-    /// Visible collapse/expand affordance. The swipe gesture alone is
-    /// undiscoverable, so the dock carries its own chevron button; the
-    /// gesture, accessibility action, and context menu remain as alternatives.
-    private var collapseToggleButton: some View {
-        Button { setCollapsed(!isCollapsed) } label: {
-            Image(systemName: isCollapsed ? "chevron.up" : "chevron.down")
-                .font(.footnote.weight(.semibold))
-                .frame(width: 44, height: 44)
-                .contentShape(Rectangle())
-        }
-        .accessibilityLabel(localization.text(isCollapsed ? "展开播放栏" : "收起播放栏"))
-        .accessibilityIdentifier("playback-dock-collapse-toggle")
-    }
-
-    private var dockGesture: some Gesture {
-        DragGesture(minimumDistance: 16)
-            .onEnded { value in
-                let movement = value.translation
-                if placement == .trailing,
-                   abs(movement.width) > 32,
-                   abs(movement.width) > abs(movement.height) * 1.5 {
-                    // A side column is narrow: accept a horizontal swipe too
-                    // (right to collapse, left to expand). The bottom bar keeps
-                    // vertical-only so it never fights horizontal scrolling.
-                    setCollapsed(movement.width > 0)
-                    return
-                }
-                guard abs(movement.height) > 32,
-                      abs(movement.height) > abs(movement.width) * 1.5 else { return }
-                setCollapsed(movement.height > 0)
-            }
-    }
-
-    private func setCollapsed(_ collapsed: Bool) {
-        withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.2)) {
-            isCollapsed = collapsed
-            if collapsed {
-                onMoreDismiss?()
-            }
-        }
     }
 
     private var statusLabel: String { localization.text(isPreparing ? "正在准备音频…" : playback.message) }

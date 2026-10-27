@@ -18,7 +18,7 @@ private struct TranscriptScrollRow<Value>: Identifiable {
     let value: Value
 }
 
-private struct ToolbarVerticalEdgeReader<Content: View>: View {
+struct ToolbarVerticalEdgeReader<Content: View>: View {
     let content: (HorizontalEdge?) -> Content
 
     var body: some View {
@@ -495,6 +495,12 @@ struct ContentView: View {
                     OutlineSheet(model: model, playback: playback)
                         .dynamicTypeSize(typeSize)
                         .presentationDetents([.large]).presentationDragIndicator(.visible)
+                #if DEBUG || TONGXING_GUIDE_PREVIEW
+                case .guidePreview:
+                    WeeklyGuidePreview(model: model, playback: playback)
+                        .dynamicTypeSize(typeSize)
+                        .presentationDetents([.large]).presentationDragIndicator(.visible)
+                #endif
                 case .about:
                     AboutSheet(model: model)
                         .environment(\.dynamicTypeSize, typeSize)
@@ -676,11 +682,49 @@ struct ContentView: View {
     }
 
     private var outlineButton: some View {
-        Button(localization.text("大纲与默想"), systemImage: "list.bullet.rectangle") { sheet = .outline }
+        #if TONGXING_GUIDE_PREVIEW
+        VStack(alignment: .leading, spacing: 0) {
+            Button(localization.text("大纲与默想"), systemImage: "list.bullet.rectangle") { sheet = .outline }
+                .frame(minHeight: 44)
+                .accessibilityIdentifier("open-sermon-study")
+            Button("手册界面预览 · 测试样本", systemImage: "book") { sheet = .guidePreview }
+                .frame(minHeight: 44)
+                .accessibilityIdentifier("open-guide-beta-preview")
+        }
+        .font(.subheadline.weight(.medium)).frame(minHeight: 44)
+        .buttonStyle(.plain).foregroundStyle(Brand.accent)
+        #else
+        Button {
+            #if DEBUG
+            if guidePreviewEnabled {
+                sheet = .guidePreview
+                return
+            }
+            #endif
+            sheet = .outline
+        } label: {
+            #if DEBUG
+            if guidePreviewEnabled {
+                Label("本周研读手册 · 测试", systemImage: "book")
+            } else {
+                Label(localization.text("大纲与默想"), systemImage: "list.bullet.rectangle")
+            }
+            #else
+            Label(localization.text("大纲与默想"), systemImage: "list.bullet.rectangle")
+            #endif
+        }
             .font(.subheadline.weight(.medium)).frame(minHeight: 44)
             .buttonStyle(.plain).foregroundStyle(Brand.accent)
             .accessibilityIdentifier("open-sermon-study")
+        #endif
     }
+
+    #if DEBUG
+    private var guidePreviewEnabled: Bool {
+        UITestLaunch.isEnabled && ProcessInfo.processInfo.arguments.contains("--ui-testing-study-guide")
+            && model.selectedPageID == "ui-test-week"
+    }
+    #endif
 
     private var appLanguageMenu: some View {
         Menu {
@@ -1178,6 +1222,9 @@ struct AlignmentControls: View {
 
 private enum ListeningSheet: String, Identifiable {
     case weeks, languages, precision, outline, about, video, locate, weeklyUpdate
+    #if DEBUG || TONGXING_GUIDE_PREVIEW
+    case guidePreview
+    #endif
     var id: String { rawValue }
 }
 
