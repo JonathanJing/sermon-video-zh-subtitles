@@ -123,9 +123,8 @@ final class ListeningFlowUITests: XCTestCase {
         try downloadSelection(in: app)
         let play = app.buttons["playback-toggle"]
         let more = app.buttons["playback-more"]
-        let collapse = app.buttons["playback-dock-collapse-toggle"]
         XCTAssertTrue(play.isHittable)
-        XCTAssertTrue(collapse.isHittable)
+        XCTAssertFalse(app.buttons["playback-dock-collapse-toggle"].exists)
         XCTAssertTrue(app.frame.contains(play.frame))
         screenshot("duo-posture-ready", app: app)
         play.tap()
@@ -136,13 +135,9 @@ final class ListeningFlowUITests: XCTestCase {
         XCTAssertTrue(app.buttons["playback-more-close"].waitForExistence(timeout: 5))
         screenshot("duo-posture-playing-more", app: app)
         app.buttons["playback-more-close"].tap()
-        collapse.tap()
-        try waitFor(element("playback-progress", in: app), "exists == false")
+        XCTAssertTrue(app.frame.contains(play.frame))
         XCTAssertEqual(play.label, "暂停播放")
-        XCTAssertTrue(app.frame.contains(collapse.frame))
-        screenshot("duo-posture-collapsed-playing", app: app)
-        collapse.tap()
-        try waitFor(playbackStatus(in: app), "exists == true")
+        XCTAssertTrue(app.buttons["nudge-forward"].isHittable)
         play.tap()
         more.tap()
         app.buttons["precision-controls"].tap()
@@ -1195,59 +1190,39 @@ final class ListeningFlowUITests: XCTestCase {
         XCTAssertFalse(app.buttons["playback-more-close"].exists)
     }
 
-    func testPlaybackDockSwipeCollapsesWithoutPausingAndExpands() throws {
+    func testPlaybackDockSwipeDoesNotCollapseOrPause() throws {
         let app = launchFixture()
         try downloadSelection(in: app)
         let play = app.buttons["playback-toggle"]
         play.tap()
         try waitFor(play, "label == '暂停播放'")
         try waitFor(playbackStatus(in: app), "NOT (value BEGINSWITH '00:00，')")
-        collapseDock(in: app)
-        try waitFor(element("playback-progress", in: app), "exists == false")
-        XCTAssertFalse(app.buttons["nudge-forward"].exists)
-        XCTAssertFalse(app.buttons["align-live-audio"].exists)
-        XCTAssertEqual(app.buttons.matching(identifier: "playback-toggle").count, 1)
-        XCTAssertEqual(play.label, "暂停播放", "收起操作不能暂停音频")
-        XCTAssertTrue(play.isHittable)
-        play.tap()
-        try waitFor(play, "label == '开始播放'")
-        screenshot("collapsed-player-paused", app: app)
-        screenshot("duo-large-text-collapsed", app: app)
-        expandDock(in: app)
-        try waitFor(playbackStatus(in: app), "exists == true")
-        try assertAlignmentAvailableInMore(in: app)
-        screenshot("duo-large-text-more", app: app)
-        XCTAssertEqual(play.label, "开始播放", "展开操作不能改变暂停状态")
-        screenshot("expanded-player-restored", app: app)
-    }
-
-    func testAccessibilityTextDockCanCollapseAndExpand() throws {
-        let app = launchFixture(largeText: true)
-        let collapse = app.buttons["playback-dock-collapse-toggle"]
-        XCTAssertTrue(collapse.isHittable)
-        collapse.tap()
-        try waitFor(collapse, "label == '展开播放栏'")
-        let play = app.buttons["playback-toggle"]
-        XCTAssertTrue(play.isHittable)
-        XCTAssertGreaterThanOrEqual(play.frame.width, 44)
-        XCTAssertGreaterThanOrEqual(play.frame.height, 44)
-        XCTAssertTrue(app.frame.contains(play.frame))
-        screenshot("duo-large-text-collapsed", app: app)
-        collapse.tap()
-        try waitFor(collapse, "label == '收起播放栏'")
-        try assertAlignmentAvailableInMore(in: app)
-        screenshot("duo-large-text-more", app: app)
-    }
-
-    private func collapseDock(in app: XCUIApplication) {
         let progress = playbackStatus(in: app)
         let start = progress.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
         start.press(forDuration: 0.05, thenDragTo: start.withOffset(CGVector(dx: 0, dy: 70)))
+        XCTAssertFalse(app.buttons["playback-dock-collapse-toggle"].exists)
+        XCTAssertTrue(app.buttons["nudge-backward"].isHittable)
+        XCTAssertTrue(app.buttons["nudge-forward"].isHittable)
+        XCTAssertTrue(app.buttons["playback-more"].isHittable)
+        XCTAssertEqual(play.label, "暂停播放", "轻扫不能暂停音频或收起控制")
+        screenshot("playback-dock-after-swipe", app: app)
+        play.tap()
+        try waitFor(play, "label == '开始播放'")
     }
 
-    private func expandDock(in app: XCUIApplication) {
-        let start = app.buttons["playback-toggle"].coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
-        start.press(forDuration: 0.05, thenDragTo: start.withOffset(CGVector(dx: 0, dy: -100)))
+    func testAccessibilityTextDockKeepsPlaybackControlsAvailable() throws {
+        let app = launchFixture(largeText: true)
+        try downloadSelection(in: app)
+        XCTAssertFalse(app.buttons["playback-dock-collapse-toggle"].exists)
+        for id in ["playback-toggle", "nudge-backward", "nudge-forward", "playback-more"] {
+            let button = app.buttons[id]
+            XCTAssertTrue(button.isHittable, "\(id) should remain available")
+            XCTAssertGreaterThanOrEqual(button.frame.width, 44)
+            XCTAssertGreaterThanOrEqual(button.frame.height, 44)
+            XCTAssertTrue(app.frame.contains(button.frame))
+        }
+        try assertAlignmentAvailableInMore(in: app)
+        screenshot("duo-large-text-more", app: app)
     }
 
     func testLiveAlignmentRemainsAvailableOnFirstScreenAndTranscript() throws {

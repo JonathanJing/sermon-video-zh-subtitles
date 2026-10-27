@@ -18,7 +18,7 @@ private struct TranscriptScrollRow<Value>: Identifiable {
     let value: Value
 }
 
-private struct ToolbarVerticalEdgeReader<Content: View>: View {
+struct ToolbarVerticalEdgeReader<Content: View>: View {
     let content: (HorizontalEdge?) -> Content
 
     var body: some View {
@@ -495,6 +495,12 @@ struct ContentView: View {
                     OutlineSheet(model: model, playback: playback)
                         .dynamicTypeSize(typeSize)
                         .presentationDetents([.large]).presentationDragIndicator(.visible)
+                #if DEBUG
+                case .guidePreview:
+                    WeeklyGuidePreview(model: model, playback: playback)
+                        .dynamicTypeSize(typeSize)
+                        .presentationDetents([.large]).presentationDragIndicator(.visible)
+                #endif
                 case .about:
                     AboutSheet(model: model)
                         .environment(\.dynamicTypeSize, typeSize)
@@ -676,7 +682,25 @@ struct ContentView: View {
     }
 
     private var outlineButton: some View {
-        Button(localization.text("大纲与默想"), systemImage: "list.bullet.rectangle") { sheet = .outline }
+        Button {
+            #if DEBUG
+            if UITestLaunch.isEnabled && ProcessInfo.processInfo.arguments.contains("--ui-testing-study-guide") {
+                sheet = .guidePreview
+                return
+            }
+            #endif
+            sheet = .outline
+        } label: {
+            #if DEBUG
+            if UITestLaunch.isEnabled && ProcessInfo.processInfo.arguments.contains("--ui-testing-study-guide") {
+                Label("本周研读手册 · 测试", systemImage: "book")
+            } else {
+                Label(localization.text("大纲与默想"), systemImage: "list.bullet.rectangle")
+            }
+            #else
+            Label(localization.text("大纲与默想"), systemImage: "list.bullet.rectangle")
+            #endif
+        }
             .font(.subheadline.weight(.medium)).frame(minHeight: 44)
             .buttonStyle(.plain).foregroundStyle(Brand.accent)
             .accessibilityIdentifier("open-sermon-study")
@@ -1178,6 +1202,9 @@ struct AlignmentControls: View {
 
 private enum ListeningSheet: String, Identifiable {
     case weeks, languages, precision, outline, about, video, locate, weeklyUpdate
+    #if DEBUG
+    case guidePreview
+    #endif
     var id: String { rawValue }
 }
 

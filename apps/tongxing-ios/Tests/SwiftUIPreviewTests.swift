@@ -138,7 +138,7 @@ final class SwiftUIPreviewTests: XCTestCase {
         }
         let data = try XCTUnwrap(Data(base64Encoded: encoded), "Invalid preview request encoding")
         let request = try JSONDecoder().decode(Request.self, from: data)
-        let supportedFiles = Set(["ContentView.swift", "PlaybackDock.swift", "DesignSystem.swift", "EnglishLocateSheet.swift", "VoiceDemoSection.swift"])
+        let supportedFiles = Set(["ContentView.swift", "PlaybackDock.swift", "DesignSystem.swift", "EnglishLocateSheet.swift", "VoiceDemoSection.swift", "WeeklyGuidePreview.swift"])
         let supportedVariants = Set(["light", "dark", "dark-large"])
         try XCTUnwrap(request.files.first, "Select at least one registered view fixture")
         try XCTUnwrap(request.variants.first, "Select at least one appearance variant")
@@ -193,6 +193,8 @@ final class SwiftUIPreviewTests: XCTestCase {
         switch file {
         case "ContentView.swift":
             return AnyView(ContentView(model: model))
+        case "WeeklyGuidePreview.swift":
+            return AnyView(WeeklyGuidePreview(model: model, playback: model.playback))
         case "VoiceDemoSection.swift":
             return AnyView(NavigationStack {
                 Form { Section { VoiceDemoSection(model: model, fixture: voiceDemoCatalog ?? (try? UITestLaunch.voiceDemoFixture())) } }

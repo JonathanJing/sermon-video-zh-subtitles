@@ -86,12 +86,6 @@ extension View {
     func listeningGlassSurface() -> some View {
         modifier(ListeningGlassSurface(shape: RoundedRectangle(cornerRadius: 30, style: .continuous)))
     }
-
-    /// Circular glass for the collapsed dock: a round play button should sit in
-    /// round glass, since Liquid Glass shapes follow their content.
-    func listeningCircularGlassSurface() -> some View {
-        modifier(ListeningGlassSurface(shape: Circle()))
-    }
 }
 
 private struct ListeningGlassSurface<S: InsettableShape>: ViewModifier {
