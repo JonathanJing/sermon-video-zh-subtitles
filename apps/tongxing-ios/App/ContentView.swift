@@ -684,7 +684,7 @@ struct ContentView: View {
     private var outlineButton: some View {
         Button {
             #if DEBUG
-            if UITestLaunch.isEnabled && ProcessInfo.processInfo.arguments.contains("--ui-testing-study-guide") {
+            if guidePreviewEnabled {
                 sheet = .guidePreview
                 return
             }
@@ -692,7 +692,7 @@ struct ContentView: View {
             sheet = .outline
         } label: {
             #if DEBUG
-            if UITestLaunch.isEnabled && ProcessInfo.processInfo.arguments.contains("--ui-testing-study-guide") {
+            if guidePreviewEnabled {
                 Label("本周研读手册 · 测试", systemImage: "book")
             } else {
                 Label(localization.text("大纲与默想"), systemImage: "list.bullet.rectangle")
@@ -705,6 +705,13 @@ struct ContentView: View {
             .buttonStyle(.plain).foregroundStyle(Brand.accent)
             .accessibilityIdentifier("open-sermon-study")
     }
+
+    #if DEBUG
+    private var guidePreviewEnabled: Bool {
+        UITestLaunch.isEnabled && ProcessInfo.processInfo.arguments.contains("--ui-testing-study-guide")
+            && model.selectedPageID == "ui-test-week"
+    }
+    #endif
 
     private var appLanguageMenu: some View {
         Menu {

@@ -1,5 +1,6 @@
 #if DEBUG
 import SwiftUI
+import TongxingCore
 
 /// Synthetic, explicitly opt-in UI fixture. No church text, published identity,
 /// or access permission is inferred from this preview.
@@ -12,6 +13,7 @@ struct WeeklyGuidePreview: View {
     @State private var moreFrame: CGRect = .null
     @State private var showingWeeks = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @AccessibilityFocusState private var focusedSection: String?
 
     private let sections: [GuidePreviewSection] = [
         .init(id: "scripture", title: "经文", subtitle: "阅读本周经文", symbol: "book", body: "示意内容：这里展示本周经文。实际经文与译本须经许可及核对。"),
@@ -21,6 +23,8 @@ struct WeeklyGuidePreview: View {
     ]
 
     var body: some View {
+        GeometryReader { geometry in
+        let controlRegion = dockRegion(in: geometry)
         NavigationStack {
             ToolbarVerticalEdgeReader { verticalEdge in
             ScrollViewReader { proxy in
@@ -37,6 +41,7 @@ struct WeeklyGuidePreview: View {
                                     withAnimation(reduceMotion ? nil : .easeInOut) {
                                         proxy.scrollTo(section.id, anchor: .top)
                                     }
+                                    focusedSection = section.id
                                 } label: {
                                     HStack(spacing: 14) {
                                         Image(systemName: section.symbol)
@@ -62,6 +67,7 @@ struct WeeklyGuidePreview: View {
                         ForEach(sections) { section in
                             VStack(alignment: .leading, spacing: 12) {
                                 Text(section.title).font(.title2.bold()).accessibilityAddTraits(.isHeader)
+                                    .accessibilityFocused($focusedSection, equals: section.id)
                                 if section.id == "group" {
                                     Text("祷告 · 靠近 · 向下看 · 向外看 · 向内看")
                                         .font(.subheadline).foregroundStyle(.secondary)
@@ -110,7 +116,13 @@ struct WeeklyGuidePreview: View {
                 .presentationDetents([.medium, .large])
             }
             .listeningPlayerDock(atTrailingEdge: false, inSystemBar: verticalEdge != nil) {
-                if verticalEdge == nil { guideDock(placement: .bottom) }
+                if verticalEdge == nil {
+                    HStack(spacing: 0) {
+                        Color.clear.frame(width: controlRegion.minX, height: 0)
+                        guideDock(placement: .bottom).frame(width: controlRegion.width)
+                        Spacer(minLength: 0)
+                    }
+                }
             }
             }
         }
@@ -120,6 +132,18 @@ struct WeeklyGuidePreview: View {
                                      onClose: { showingMore = false }, width: width)
             }
         }
+        }
+    }
+
+    private func dockRegion(in geometry: GeometryProxy) -> CGRect {
+        let bounds = CGRect(origin: .zero, size: geometry.size)
+        #if os(iOS) && canImport(SwiftUI, _version: 8.0.85)
+        if #available(iOS 27.1, macOS 27.1, *) {
+            let divisions = geometry.reservedRegions(kind: .division).filter(\.isActive).map(\.frame)
+            return PlaybackControlRegion.resolve(in: bounds, excluding: divisions)
+        }
+        #endif
+        return bounds
     }
 
     @State private var morePlacement: PlaybackDockPlacement = .bottom

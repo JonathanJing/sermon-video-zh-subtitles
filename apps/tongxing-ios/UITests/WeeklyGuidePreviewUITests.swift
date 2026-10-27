@@ -17,12 +17,14 @@ final class WeeklyGuidePreviewUITests: XCTestCase {
         let playLabel = play.label
         entry.tap()
         XCTAssertTrue(app.staticTexts["合成预览 · 非教会手册"].waitForExistence(timeout: 10))
-        XCTAssertEqual(app.buttons["playback-toggle"].label, playLabel)
+        let visiblePlay = app.buttons.matching(identifier: "playback-toggle").allElementsBoundByIndex.first(where: { $0.isHittable })
+        XCTAssertEqual(visiblePlay?.label, playLabel)
         XCTAssertFalse(app.buttons["playback-dock-collapse-toggle"].exists)
         let group = app.buttons["guide-section-group"]
         XCTAssertTrue(group.exists)
         group.tap()
         XCTAssertTrue(app.staticTexts["示意问题：请分享你在本周学习中的一个观察。"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts["示意问题：请分享你在本周学习中的一个观察。"].isHittable)
         let image = XCTAttachment(screenshot: app.screenshot())
         image.name = "guide-synthetic-discussion"
         image.lifetime = .keepAlways
