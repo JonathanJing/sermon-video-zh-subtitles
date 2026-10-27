@@ -544,6 +544,33 @@ final class AppModel: ObservableObject {
                 catalog.defaultPage.targets[selectedContentLocale]?.releasePackageJsonSha256 ?? ""].joined(separator: ":")
     }
 
+    /// Open a Universal Link or custom-scheme deep link after validating its host,
+    /// page ID and locale. The page must be present in the published catalog; a
+    /// missing or withdrawn page is ignored rather than falling back to another page.
+    func openDeepLink(_ url: URL) async {
+        let bundleScheme = Bundle.main.object(forInfoDictionaryKey: "TongxingURLScheme") as? String
+        let allowedSchemes = Set([bundleScheme, "tongxing", "tongxing-beta"].compactMap { $0 })
+        guard let link = AppDeepLink.parse(url,
+                                           allowedHost: Self.contentOrigin.host ?? "",
+                                           allowedSchemes: allowedSchemes) else { return }
+
+        if !started {
+            await start()
+        }
+        if multilingualCatalog == nil
+            || multilingualCatalog?.pages.contains(where: { $0.id == link.pageID }) != true {
+            await refreshMultilingualCatalog(pageID: link.pageID)
+        }
+        guard let catalog = multilingualCatalog,
+              let page = catalog.pages.first(where: { $0.id == link.pageID }),
+              independentPages.contains(where: { $0.id == page.id }) else { return }
+
+        openWeeklyUpdate(page, catalog: catalog)
+        if let locale = link.locale, page.targets[locale] != nil {
+            selectPublishedContentLanguage(locale)
+        }
+    }
+
     func openWeeklyUpdate(_ page: MultilingualPage, catalog: MultilingualCatalog) {
         let previous = selectedMultilingualPage
         let bindingChanged = previous?.id == page.id &&

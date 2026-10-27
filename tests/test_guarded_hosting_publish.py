@@ -217,7 +217,7 @@ def test_process_crash_releases_local_lock_but_needs_explicit_remote_reconciliat
 
 def test_v4_catalog_is_compare_and_swapped_alongside_v3(tmp_path, monkeypatch):
     # Snapshot validation has its own tests; this one covers only the live CAS.
-    monkeypatch.setattr(p.contract, 'validate_catalog_snapshot', lambda snapshot: None)
+    monkeypatch.setattr(p.contract, 'validate_catalog_snapshot', lambda snapshot, **_: None)
     intent, data, sha = setup(tmp_path); remote = Remote()
     v4 = b'{"schemaVersion": "sermon-multilingual-catalog-v4"}'
     report = json.loads((tmp_path / 'seal-report.json').read_text())
@@ -249,7 +249,7 @@ def test_v4_catalog_is_compare_and_swapped_alongside_v3(tmp_path, monkeypatch):
 
 
 def test_v5_catalog_is_compare_and_swapped_alongside_legacy_catalogs(tmp_path, monkeypatch):
-    monkeypatch.setattr(p.contract, 'validate_catalog_snapshot', lambda snapshot: None)
+    monkeypatch.setattr(p.contract, 'validate_catalog_snapshot', lambda snapshot, **_: None)
     intent, data, sha = setup(tmp_path); remote = Remote()
     v5 = b'{"schemaVersion": "sermon-multilingual-catalog-v5"}'
     report = json.loads((tmp_path / 'seal-report.json').read_text())
@@ -277,7 +277,7 @@ def test_v5_catalog_is_compare_and_swapped_alongside_legacy_catalogs(tmp_path, m
 
 
 def test_published_v4_readback_must_match_the_sealed_catalog(tmp_path, monkeypatch):
-    monkeypatch.setattr(p.contract, 'validate_catalog_snapshot', lambda snapshot: None)
+    monkeypatch.setattr(p.contract, 'validate_catalog_snapshot', lambda snapshot, **_: None)
     intent, data, sha = setup(tmp_path); remote = Remote()
     report = json.loads((tmp_path / 'seal-report.json').read_text())
     report['catalogV4Sha256'] = 'f' * 64
@@ -308,7 +308,7 @@ def test_await_propagation_retries_reads_until_they_pass_or_the_deadline():
 def test_a_v4_catalog_that_reads_back_stale_at_first_is_deployed_once_it_propagates(tmp_path, monkeypatch):
     # 2026-10-13 Dev: the v4 catalog read back stale right after a successful deploy and the
     # attempt was left outcome_unknown, needing a manual reconcile.
-    monkeypatch.setattr(p.contract, 'validate_catalog_snapshot', lambda snapshot: None)
+    monkeypatch.setattr(p.contract, 'validate_catalog_snapshot', lambda snapshot, **_: None)
     monkeypatch.setattr(p, 'PROPAGATION_TIMEOUT_SECONDS', 60.0)
     monkeypatch.setattr(p.time, 'sleep', lambda seconds: None)
     intent, data, sha = setup(tmp_path); remote = Remote()

@@ -79,6 +79,13 @@ struct TongxingApp: App {
                     Button(localization.text("完成")) { productionPush.landingMessage = nil }
                 } message: { Text(localization.text(productionPush.landingMessage ?? "")) }
                 #endif
+                .onOpenURL { url in
+                    Task { await model.openDeepLink(url) }
+                }
+                .onContinueUserActivity(NSUserActivityTypeBrowsingWeb) { activity in
+                    guard let url = activity.webpageURL else { return }
+                    Task { await model.openDeepLink(url) }
+                }
                 #if os(macOS)
                 .modifier(DevelopmentPreviewAppearance())
                 #endif

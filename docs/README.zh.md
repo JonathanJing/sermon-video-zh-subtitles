@@ -46,6 +46,7 @@
 - [系列名称表](series-terminology.zh.md)：页面、字幕、阅读稿、大纲和配音共用术语
 - [MFA 阅读稿对齐](mfa-production.zh.md)
 - [双语全文显示](bilingual-transcript-display.zh.md)
+- [从 PDF 抽取、翻译到中文重排](pdf-layout-localization.zh.md)：文字层与坐标抽取、按页对齐、HTML/CSS 重建、字体嵌入与裁切校验
 
 ### 编排、并发与证据
 
