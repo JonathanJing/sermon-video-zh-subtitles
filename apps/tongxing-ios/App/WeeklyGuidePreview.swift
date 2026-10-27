@@ -81,6 +81,10 @@ struct WeeklyGuidePreview: View {
                         }
                         Text("测试样本，不包含教会原文或正式译文。")
                             .font(.footnote).foregroundStyle(.secondary)
+                        Button("返回证道") { dismiss() }
+                            .buttonStyle(.bordered)
+                            .frame(minHeight: 44)
+                            .accessibilityIdentifier("guide-close-bottom")
                     }
                     .padding(20).frame(maxWidth: 680, alignment: .leading)
                     .frame(maxWidth: .infinity)

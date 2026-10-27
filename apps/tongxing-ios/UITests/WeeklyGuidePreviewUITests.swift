@@ -24,12 +24,17 @@ final class WeeklyGuidePreviewUITests: XCTestCase {
         XCTAssertTrue(group.exists)
         group.tap()
         XCTAssertTrue(app.staticTexts["示意问题：请分享你在本周学习中的一个观察。"].waitForExistence(timeout: 5))
-        XCTAssertTrue(app.staticTexts["示意问题：请分享你在本周学习中的一个观察。"].isHittable)
+        let question = app.staticTexts["示意问题：请分享你在本周学习中的一个观察。"]
+        let visible = expectation(for: NSPredicate(format: "hittable == true"), evaluatedWith: question)
+        wait(for: [visible], timeout: 5)
         let image = XCTAttachment(screenshot: app.screenshot())
         image.name = "guide-synthetic-discussion"
         image.lifetime = .keepAlways
         add(image)
-        app.buttons["guide-close"].tap()
+        let close = app.buttons["guide-close-bottom"]
+        if !close.isHittable { app.scrollViews["guide-scroll"].swipeUp() }
+        XCTAssertTrue(close.isHittable)
+        close.tap()
         XCTAssertTrue(entry.waitForExistence(timeout: 5))
         XCTAssertEqual(app.buttons["playback-toggle"].label, playLabel)
     }
