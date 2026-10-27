@@ -54,6 +54,7 @@
 		AD94FC740DDEDCC870211634 /* WeeklyGuidePreviewUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 901C441D4B62BA69E50575EC /* WeeklyGuidePreviewUITests.swift */; };
 		B23482E21D63D7D5A3E4F670 /* TongxingCore in Frameworks */ = {isa = PBXBuildFile; productRef = C194255167B8AD9FCB74BBA5 /* TongxingCore */; };
 		B415795B942C6189370AAE61 /* UITestLaunch.swift in Sources */ = {isa = PBXBuildFile; fileRef = BD0FEA1F83F4300CB78A0935 /* UITestLaunch.swift */; };
+		B43649C42D1DAA38044E5481 /* WeeklyGuideData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7CB9A8038F5DCCB354A796FA /* WeeklyGuideData.swift */; };
 		BB468865C54870860F167EA8 /* MicrophoneCapture.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1EB48128E58E88F812DC4214 /* MicrophoneCapture.swift */; };
 		C18C784B85DC395F257A21B7 /* TongxingInfrastructure in Frameworks */ = {isa = PBXBuildFile; productRef = FA2F2228F6CC524F87E2AC7D /* TongxingInfrastructure */; };
 		C2AF9808AFFEED2AD7D2DF2A /* AudioAlignmentControllerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9BF531D6B8AD0E94016F0BC3 /* AudioAlignmentControllerTests.swift */; };
@@ -62,6 +63,7 @@
 		C84F91355DB74C84BAC96384 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3A757BEABA30910DC76E26BE /* ContentView.swift */; };
 		CAB48F9F80542B5845FEF4B7 /* ListeningActivityAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 60D53F716EC96280DEAF16C4 /* ListeningActivityAttributes.swift */; };
 		CB435A938093472AA1DF77EB /* VoiceDemoCatalogV2Tests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E55BEC389D3326BFB083428 /* VoiceDemoCatalogV2Tests.swift */; };
+		CEBEB51C414B9274C0D2F9F3 /* WeeklyGuideDataTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 238F7184601DF2B752925AA6 /* WeeklyGuideDataTests.swift */; };
 		D0F9336C23F6D98E4B199A86 /* VoiceDemoSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 270C99CB4AFCBD470C0E1B75 /* VoiceDemoSection.swift */; };
 		D2C385311D9B608FA482691C /* DownloadBackgroundAssertionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2221C72D2D8132B2F626CD29 /* DownloadBackgroundAssertionTests.swift */; };
 		DA598EC364686E234B86F56B /* PlaybackController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 34B67E7FE8944242C03C8904 /* PlaybackController.swift */; };
@@ -118,6 +120,7 @@
 		177E9F09DA605249B8B10216 /* PlaybackPanelLayoutTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaybackPanelLayoutTests.swift; sourceTree = "<group>"; };
 		1EB48128E58E88F812DC4214 /* MicrophoneCapture.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MicrophoneCapture.swift; sourceTree = "<group>"; };
 		2221C72D2D8132B2F626CD29 /* DownloadBackgroundAssertionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DownloadBackgroundAssertionTests.swift; sourceTree = "<group>"; };
+		238F7184601DF2B752925AA6 /* WeeklyGuideDataTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeeklyGuideDataTests.swift; sourceTree = "<group>"; };
 		239227789D17BF0B1B0A1614 /* ListeningFlowUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ListeningFlowUITests.swift; sourceTree = "<group>"; };
 		270C99CB4AFCBD470C0E1B75 /* VoiceDemoSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceDemoSection.swift; sourceTree = "<group>"; };
 		3080F1D3CD5A0A770935EFD2 /* WeeklyGuidePreview.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeeklyGuidePreview.swift; sourceTree = "<group>"; };
@@ -144,6 +147,7 @@
 		6FEF8605856DB0FE84A04EC2 /* EnglishLocateSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EnglishLocateSheet.swift; sourceTree = "<group>"; };
 		70BEE8330224D04ACF54EE70 /* ListeningActivityWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ListeningActivityWidget.swift; sourceTree = "<group>"; };
 		72F704FFC13274A549628FF2 /* Core */ = {isa = PBXFileReference; lastKnownFileType = folder; name = Core; path = Core; sourceTree = SOURCE_ROOT; };
+		7CB9A8038F5DCCB354A796FA /* WeeklyGuideData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeeklyGuideData.swift; sourceTree = "<group>"; };
 		7E0A6DA6C0A30670D209835C /* ListeningActivityDismissalTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ListeningActivityDismissalTests.swift; sourceTree = "<group>"; };
 		804E0750D21232AD9A48858C /* ProductionPushUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProductionPushUITests.swift; sourceTree = "<group>"; };
 		81423A9849E5E7BDFBDA1423 /* zh-Hans */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "zh-Hans"; path = "zh-Hans.lproj/InfoPlist.strings"; sourceTree = "<group>"; };
@@ -268,6 +272,7 @@
 				BD0FEA1F83F4300CB78A0935 /* UITestLaunch.swift */,
 				01D4A798172E895D46CF48E4 /* VoiceDemoCatalog.swift */,
 				270C99CB4AFCBD470C0E1B75 /* VoiceDemoSection.swift */,
+				7CB9A8038F5DCCB354A796FA /* WeeklyGuideData.swift */,
 				3080F1D3CD5A0A770935EFD2 /* WeeklyGuidePreview.swift */,
 				E1C23DB6967DA535C2F9C6DD /* WeeklyUpdates.swift */,
 				E8AB6F9FA25BB0980EF2FE48 /* InfoPlist.strings */,
@@ -314,6 +319,7 @@
 				177E9F09DA605249B8B10216 /* PlaybackPanelLayoutTests.swift */,
 				6163F70382A5001D532DC114 /* SwiftUIPreviewTests.swift */,
 				6E55BEC389D3326BFB083428 /* VoiceDemoCatalogV2Tests.swift */,
+				238F7184601DF2B752925AA6 /* WeeklyGuideDataTests.swift */,
 				B894299ED2AF8249D5E4694C /* WeeklyUpdateModelTests.swift */,
 			);
 			path = Tests;
@@ -369,6 +375,7 @@
 			buildConfigurationList = A0D147F90124C3CF570A1EBC /* Build configuration list for PBXNativeTarget "Tongxing" */;
 			buildPhases = (
 				D128CF3B139D2EA68547E367 /* Sources */,
+				B1FE3CBD00B66EF2D06D7F83 /* Copy local Beta weekly guides */,
 				BDBF819BAEDD303CDD9E3D36 /* Resources */,
 				180A55B611AD0E790158B7C9 /* Frameworks */,
 				C2437DBFD6C6DE28068C99A2 /* Embed Foundation Extensions */,
@@ -494,6 +501,30 @@
 		};
 /* End PBXResourcesBuildPhase section */
 
+/* Begin PBXShellScriptBuildPhase section */
+		B1FE3CBD00B66EF2D06D7F83 /* Copy local Beta weekly guides */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"$(SRCROOT)/GuideResources",
+			);
+			name = "Copy local Beta weekly guides";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+				"$(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/weekly-guides.json",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "set -eu\ndestination=\"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/weekly-guides.json\"\nrm -f \"$destination\"\ncase \"${CONFIGURATION}\" in\n  BetaDebug|BetaRelease)\n    source=\"${SRCROOT}/GuideResources/weekly-guides.json\"\n    checksum=\"${SRCROOT}/GuideResources/weekly-guides.sha256\"\n    if [ -f \"$source\" ] || [ -f \"$checksum\" ]; then\n      if [ ! -f \"$source\" ] || [ ! -f \"$checksum\" ]; then\n        echo \"error: local guide payload and SHA-256 must both exist\"\n        exit 1\n      fi\n      expected=$(/bin/cat \"$checksum\")\n      actual=$(/usr/bin/shasum -a 256 \"$source\" | /usr/bin/awk '{print $1}')\n      if [ \"$actual\" != \"$expected\" ]; then\n        echo \"error: local guide payload checksum mismatch\"\n        exit 1\n      fi\n      /bin/mkdir -p \"$(/usr/bin/dirname \"$destination\")\"\n      /bin/cp \"$source\" \"$destination\"\n    fi\n    ;;\nesac\n";
+		};
+/* End PBXShellScriptBuildPhase section */
+
 /* Begin PBXSourcesBuildPhase section */
 		6313D3362A815F91E9D38C12 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
@@ -525,6 +556,7 @@
 				0D171F4F74D6C1396431F589 /* PlaybackPanelLayoutTests.swift in Sources */,
 				A442F0B6EE2D16D0DAE46A00 /* SwiftUIPreviewTests.swift in Sources */,
 				CB435A938093472AA1DF77EB /* VoiceDemoCatalogV2Tests.swift in Sources */,
+				CEBEB51C414B9274C0D2F9F3 /* WeeklyGuideDataTests.swift in Sources */,
 				2FE79637F859BA290C2C1A65 /* WeeklyUpdateModelTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -569,6 +601,7 @@
 				B415795B942C6189370AAE61 /* UITestLaunch.swift in Sources */,
 				042AC6D42BFDE10152C60248 /* VoiceDemoCatalog.swift in Sources */,
 				D0F9336C23F6D98E4B199A86 /* VoiceDemoSection.swift in Sources */,
+				B43649C42D1DAA38044E5481 /* WeeklyGuideData.swift in Sources */,
 				9A247006AA03DEAAED3B6E15 /* WeeklyGuidePreview.swift in Sources */,
 				00CE40404E05127FA0783677 /* WeeklyUpdates.swift in Sources */,
 			);
@@ -942,14 +975,15 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = Config/BetaPush.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
-				CURRENT_PROJECT_VERSION = 68;
+				CURRENT_PROJECT_VERSION = 69;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = App/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.26.26;
+				MARKETING_VERSION = 1.26.27;
 				OTHER_LDFLAGS = "$(inherited) -weak_framework ActivityKit";
 				PRODUCT_BUNDLE_IDENTIFIER = com.jonathanjing.tongxing.beta;
 				PRODUCT_NAME = Tongxing;
@@ -973,6 +1007,7 @@
 				CODE_SIGN_ENTITLEMENTS = Config/BetaPush.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CURRENT_PROJECT_VERSION = 67;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = App/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -1017,7 +1052,7 @@
 			baseConfigurationReference = 58CF4F36B9265709AAF09A1C /* Signing.xcconfig */;
 			buildSettings = {
 				APPLICATION_EXTENSION_API_ONLY = YES;
-				CURRENT_PROJECT_VERSION = 68;
+				CURRENT_PROJECT_VERSION = 69;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = ListeningActivityExtension/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -1025,7 +1060,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 1.26.26;
+				MARKETING_VERSION = 1.26.27;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.jonathanjing.tongxing.beta.listening-activity";
 				PRODUCT_NAME = ListeningActivityExtension;
 				SDKROOT = iphoneos;
