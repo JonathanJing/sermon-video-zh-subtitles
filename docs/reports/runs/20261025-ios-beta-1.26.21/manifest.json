@@ -1,0 +1,27 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261025-ios-beta-1.26.21",
+  "runs": [
+    {
+      "label": "release-1.26.21",
+      "source": "/private/tmp/tongxing-ios-beta-1.26.21-pr1383/artifacts/tongxing-ios/2026-10-25/release-1.26.21",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "release-1.26.21",
+      "path": "archive-receipt.json",
+      "kind": "whole",
+      "bytes": 796,
+      "truncated": false,
+      "sha256": "e1602704e80d1e901878fcd59a474fd7644edacd979bdeed942803b06b142b44",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}
