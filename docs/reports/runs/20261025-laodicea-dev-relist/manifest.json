@@ -1,0 +1,215 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261025-laodicea-dev-relist",
+  "runs": [
+    {
+      "label": "20261025-laodicea-dev",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/sentence-first-agent/20261025-laodicea-dev",
+      "skipped": {
+        ".json": 3861,
+        ".html": 696,
+        ".mp3": 1317,
+        ".wav": 94,
+        ".js": 58,
+        ".mjs": 301,
+        ".png": 168,
+        ".svg": 21,
+        ".txt": 7,
+        ".mp4": 161,
+        ".srt": 14,
+        ".pdf": 28,
+        ".jpg": 7,
+        ".css": 28,
+        ".cache": 3,
+        ".lock": 3
+      }
+    }
+  ],
+  "files": [
+    {
+      "run": "20261025-laodicea-dev",
+      "path": "baseline/baseline-receipt.json",
+      "kind": "whole",
+      "bytes": 350407,
+      "truncated": false,
+      "sha256": "d929d1b049951440f783ad764beed6c409e869831978bfb13a9f2ba7c9f2aef8",
+      "omitted": "over_size_cap"
+    },
+    {
+      "run": "20261025-laodicea-dev",
+      "path": "baseline/public/audio-extension-preparation-receipt.json",
+      "kind": "whole",
+      "bytes": 433,
+      "truncated": false,
+      "sha256": "2aee35129b3dd3134165ea77ba74d900e7376cbf8c2d8af1351e6f6af3b99df8",
+      "redactions": {}
+    },
+    {
+      "run": "20261025-laodicea-dev",
+      "path": "baseline-2/baseline-receipt.json",
+      "kind": "whole",
+      "bytes": 352913,
+      "truncated": false,
+      "sha256": "434eadeb31f9d362149f37747f5ea44e9afeb9157e5c08ec582afbdfbc72a483",
+      "omitted": "over_size_cap"
+    },
+    {
+      "run": "20261025-laodicea-dev",
+      "path": "baseline-2/public/audio-extension-preparation-receipt.json",
+      "kind": "whole",
+      "bytes": 433,
+      "truncated": false,
+      "sha256": "2aee35129b3dd3134165ea77ba74d900e7376cbf8c2d8af1351e6f6af3b99df8",
+      "redactions": {}
+    },
+    {
+      "run": "20261025-laodicea-dev",
+      "path": "dry/stage1/baseline-receipt.json",
+      "kind": "whole",
+      "bytes": 352913,
+      "truncated": false,
+      "sha256": "434eadeb31f9d362149f37747f5ea44e9afeb9157e5c08ec582afbdfbc72a483",
+      "omitted": "over_size_cap"
+    },
+    {
+      "run": "20261025-laodicea-dev",
+      "path": "dry/stage1/public/audio-extension-preparation-receipt.json",
+      "kind": "whole",
+      "bytes": 433,
+      "truncated": false,
+      "sha256": "2aee35129b3dd3134165ea77ba74d900e7376cbf8c2d8af1351e6f6af3b99df8",
+      "redactions": {}
+    },
+    {
+      "run": "20261025-laodicea-dev",
+      "path": "dry/stage2/baseline-receipt.json",
+      "kind": "whole",
+      "bytes": 352913,
+      "truncated": false,
+      "sha256": "434eadeb31f9d362149f37747f5ea44e9afeb9157e5c08ec582afbdfbc72a483",
+      "omitted": "over_size_cap"
+    },
+    {
+      "run": "20261025-laodicea-dev",
+      "path": "dry/stage2/public/audio-extension-preparation-receipt.json",
+      "kind": "whole",
+      "bytes": 433,
+      "truncated": false,
+      "sha256": "2aee35129b3dd3134165ea77ba74d900e7376cbf8c2d8af1351e6f6af3b99df8",
+      "redactions": {}
+    },
+    {
+      "run": "20261025-laodicea-dev",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 504,
+      "truncated": false,
+      "sha256": "f4aa59ae3fb7bee24c074dfaf2be9ddace6643d1cad8f5ee9b66230fb7a44a74",
+      "redactions": {}
+    },
+    {
+      "run": "20261025-laodicea-dev",
+      "path": "stage/baseline-receipt.json",
+      "kind": "whole",
+      "bytes": 350407,
+      "truncated": false,
+      "sha256": "d929d1b049951440f783ad764beed6c409e869831978bfb13a9f2ba7c9f2aef8",
+      "omitted": "over_size_cap"
+    },
+    {
+      "run": "20261025-laodicea-dev",
+      "path": "stage/hosting-publish.log",
+      "kind": "log",
+      "bytes": 0,
+      "truncated": false,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "redactions": {}
+    },
+    {
+      "run": "20261025-laodicea-dev",
+      "path": "stage/public/audio-extension-preparation-receipt.json",
+      "kind": "whole",
+      "bytes": 433,
+      "truncated": false,
+      "sha256": "2aee35129b3dd3134165ea77ba74d900e7376cbf8c2d8af1351e6f6af3b99df8",
+      "redactions": {}
+    },
+    {
+      "run": "20261025-laodicea-dev",
+      "path": "stage1/baseline-receipt.json",
+      "kind": "whole",
+      "bytes": 352913,
+      "truncated": false,
+      "sha256": "434eadeb31f9d362149f37747f5ea44e9afeb9157e5c08ec582afbdfbc72a483",
+      "omitted": "over_size_cap"
+    },
+    {
+      "run": "20261025-laodicea-dev",
+      "path": "stage1/hosting-publish.log",
+      "kind": "log",
+      "bytes": 0,
+      "truncated": false,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "redactions": {}
+    },
+    {
+      "run": "20261025-laodicea-dev",
+      "path": "stage1/public/audio-extension-preparation-receipt.json",
+      "kind": "whole",
+      "bytes": 433,
+      "truncated": false,
+      "sha256": "2aee35129b3dd3134165ea77ba74d900e7376cbf8c2d8af1351e6f6af3b99df8",
+      "redactions": {}
+    },
+    {
+      "run": "20261025-laodicea-dev",
+      "path": "stage2/baseline-receipt.json",
+      "kind": "whole",
+      "bytes": 352913,
+      "truncated": false,
+      "sha256": "434eadeb31f9d362149f37747f5ea44e9afeb9157e5c08ec582afbdfbc72a483",
+      "omitted": "over_size_cap"
+    },
+    {
+      "run": "20261025-laodicea-dev",
+      "path": "stage2/hosting-publish.log",
+      "kind": "log",
+      "bytes": 0,
+      "truncated": false,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "redactions": {}
+    },
+    {
+      "run": "20261025-laodicea-dev",
+      "path": "stage2/public/audio-extension-preparation-receipt.json",
+      "kind": "whole",
+      "bytes": 433,
+      "truncated": false,
+      "sha256": "2aee35129b3dd3134165ea77ba74d900e7376cbf8c2d8af1351e6f6af3b99df8",
+      "redactions": {}
+    },
+    {
+      "run": "20261025-laodicea-dev",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 1924,
+      "truncated": false,
+      "sha256": "030475eb496d0512fa6ce8c1a942b96aa846036d7c6a14db5c0ce3dfa49ecb84",
+      "redactions": {}
+    },
+    {
+      "run": "20261025-laodicea-dev",
+      "path": "timings.tsv",
+      "kind": "whole",
+      "bytes": 1505,
+      "truncated": false,
+      "sha256": "83ddad420a04567a68fafdcdfaecb6924c180012a9e65ae5c034a29d191d3b5f",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}
