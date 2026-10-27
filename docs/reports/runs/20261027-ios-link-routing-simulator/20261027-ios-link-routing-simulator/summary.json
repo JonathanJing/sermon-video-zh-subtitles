@@ -1,0 +1,48 @@
+{
+  "status": "simulator_passed_negative_control_reproduced_device_fix_not_validated",
+  "scope": "iOS BetaDebug Simulator build and targeted Universal Link routing model tests",
+  "sourceIdentity": {
+    "baseCommit": "3414918205e7cc666362f93799bdd4bfdfa28429",
+    "sourceState": "Uncommitted changes. The earlier positive run used an earlier working-tree version. The later positive run used the revised routing code and tests; later version metadata changes are outside these file hashes. Do not attribute tests to a later commit.",
+    "revisedAppModelSHA256": "2564689fce0923a2e239862f86753515173ec0ab0cd6de1da8894516beec826e",
+    "revisedTestsSHA256": "1be29f3a92cdb32f8dbc9b606854c2a60272a6c42821a351fbfe9f95a51613e5",
+    "negativeControlOriginalAppModelSHA256": "fb7e2b2faa1cafc8777eff0522601ead89bed3eb3adba60d8b86fb8552999cb3"
+  },
+  "runs": [
+    {
+      "id": "20261027T083407-build-cf33fc6d",
+      "action": "build",
+      "exit": 0,
+      "statusSHA256": "790c7d4ff492b4bc05b14d1c616bac7171fbb14029ff9595b31af1a0549fef75",
+      "logSHA256": "8a8a4e9cefecfc622c6dffa1c060800f9a23196bf14c6faa0136df6225606268"
+    },
+    {
+      "id": "20261027T083820-test-9a1c3f62",
+      "action": "test",
+      "exit": 0,
+      "testsPassed": 10,
+      "statusSHA256": "134bcf47ff4fd7778bc8f9d5af928dc56de57e288cc4eab2e85747b905c3fc30",
+      "logSHA256": "117e6ac84e6f340ea3c6c8738e403dc618023e6786f2dd650a6e84b0aea7522c"
+    },
+    {
+      "id": "20261027T084856-test-9779b901",
+      "action": "test",
+      "exit": 0,
+      "testsPassed": 12,
+      "statusSHA256": "9a7ccec5cb8adf26dd0103717ab8ab4f86c5074ada98cce49df3817241836742",
+      "logSHA256": "a6fcb45bfba5c265596e0575af64c3a83645ca0d9dde32b2cc2d47c0662c571f"
+    },
+    {
+      "id": "20261027T085048-test-ea8cd896",
+      "action": "negative_control",
+      "exit": 65,
+      "testsRun": 1,
+      "failures": 1,
+      "observation": "Original AppModel with this run’s test file reproduced startup overwrite: actual synthetic default, expected synthetic target.",
+      "statusSHA256": "e47d349fb9a34a5d69d0cfac2fc21e8094b6ae7853a950b72215ddf700c72f6e",
+      "logSHA256": "c3413231b6cea7a2e1ba0e03fb9dbf2bbf3675793fb26efc08b3c79d83e987ac"
+    }
+  ],
+  "deviceEvidence": "User reported Build 65 cold-start link landed on wrong default page; warm-start test subsequently succeeded. The fix has not been verified on a new Beta build on a physical device.",
+  "limits": "Simulator model tests do not establish iOS Universal Link delivery or physical-device/venue acceptance. Original logs and xcresults remain local."
+}
