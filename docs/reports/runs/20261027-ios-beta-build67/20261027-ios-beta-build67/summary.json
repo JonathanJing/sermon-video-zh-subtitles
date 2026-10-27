@@ -1,0 +1,47 @@
+{
+  "status": "apple_valid_device_pending",
+  "scope": "iOS Beta 1.26.25 build 67 Universal Link routing fix archive, export, upload and Apple status readback",
+  "candidate": {
+    "bundleID": "com.jonathanjing.tongxing.beta",
+    "version": "1.26.25",
+    "build": "67",
+    "sourceCommit": "e17f6cb72bd56116a3201eabe4b9d66e1f45bcb9",
+    "sourceTree": "b37163568af7d3decd8b84a0d0cabce87ab59674",
+    "iosModuleTree": "a1df019c16abb282708123c2b2396b6731b1d254",
+    "archiveManifestSHA256": "868ce0c4206eab90cf395bddb8df3b9db1833b93e720c6473dac8710d928419d",
+    "ipaSHA256": "dbf796927d55e77a228306db7b2c51e0ce18296e4c2cb3da97d6ef72767cfc75",
+    "scopeNote": "Independent frozen baseline for the routing fix; subsequent reading interface work is not included."
+  },
+  "archive": "succeeded",
+  "export": "succeeded",
+  "upload": {
+    "status": "command_succeeded",
+    "exitCode": 0,
+    "run": "20261027T160437Z-14d59edd",
+    "earlyAppleSnapshot": "2026-10-27T16:05:29Z snapshot did not yet list Build 67"
+  },
+  "appleReadback": {
+    "run": "20261027T160734Z-90335dfa",
+    "checkedAt": "2026-10-27T16:08:07Z",
+    "processingState": "VALID",
+    "internalBuildState": "IN_BETA_TESTING",
+    "group": "Rooted",
+    "buildInGroup": true
+  },
+  "device": {
+    "build67": "not_run; pending user installation and cold-start test",
+    "lastObservedBuild": "65",
+    "venue": "not_run"
+  },
+  "evidenceHashes": {
+    "releaseRecord": "b601e43f51a99335d42732c539f370e2074b7c781a6b55d169f0397365cce47a",
+    "archiveLog": "d91e89122eff51c7b9d5b7809cdd1194fdfc47d2b746c76e5197614019825479",
+    "exportLog": "2712e39d9d6a47ec6e5b5deff4d24a8bf9d76a09b5e40e317731f62f96ddbebb",
+    "uploadCommandResult": "90979f1321fe45fa4a56988f1cb6786a459a99e44d128955a876215af2f56cb2",
+    "uploadLog": "f800a354641543e45ec73f980c04faaa99ce6edaa659545e8a5c15f597c0b636",
+    "earlyAppleState": "7b5afc227bfa2d6e904f117f30097908afe8bf45d2bcded535871cab6df67573",
+    "waitCommandResult": "88a900360c1e10be7493855be6f042270e1907e8d839748b4f30db0ca157059b",
+    "appleState": "196a084f7a22c42d7204dae63b865766d368083e8344080be43360c0c6cb526a"
+  },
+  "limits": "Apple status is point-in-time; distribution and successful processing do not establish physical-device Universal Link delivery or destination correctness. Private logs and binaries remain local."
+}
