@@ -37,6 +37,7 @@ scripts/language_review_plugins/weekly_reference_common.py
 scripts/language_review_plugins/zh_hans_laodicea.py
 scripts/language_review_plugins/zh_hans_sermon.py
 scripts/language_review_plugins/zh_hans_weekly_15030286.py
+scripts/language_review_plugins/zh_hans_weekly_auto.py
 scripts/language_review_plugins/zh_hans_weekly_cuv.py
 scripts/live_source_monitor.py
 scripts/plan_run_budgets.py

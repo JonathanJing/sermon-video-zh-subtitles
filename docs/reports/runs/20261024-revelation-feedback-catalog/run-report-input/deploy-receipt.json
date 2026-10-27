@@ -1,0 +1,20 @@
+{
+  "schemaVersion": "sermon-feedback-function-deploy-receipt-v1",
+  "status": "ACTIVE",
+  "project": "ai-for-god-caption-dev",
+  "region": "us-west1",
+  "function": "sermon-feedback-api",
+  "previousRevision": "sermon-feedback-api-00019-yik",
+  "revision": "sermon-feedback-api-00020-nag",
+  "sourceGeneration": "1792906120158370",
+  "previousCatalogSha256": "948f93d2cfb1ea02f6684207cba8624b315176af7f51c97719e92ff9beed4b41",
+  "catalogSha256": "09c067c052948308b7a4f859dafdedda9e23153569985e965e6f7baf0f90c0cf",
+  "sourceCount": 37,
+  "previousSourceCount": 34,
+  "addedSourceCount": 3,
+  "changedExistingSources": 0,
+  "runtimeCodeChanged": false,
+  "publicSnapshotMultilingualV5Sha256": "b9bf4d897ba04522c19f660e6f35b3dfc7ac5029b0abcf8dc55460bfcfce497a",
+  "hostingVersion": "sites/ai-for-god-sermon-audio/versions/833eda14595b165d",
+  "sourceZipVerified": "all 00018 source files byte-identical except catalog.json"
+}

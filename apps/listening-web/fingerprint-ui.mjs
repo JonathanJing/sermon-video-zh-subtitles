@@ -17,7 +17,9 @@ export function fingerprintBinding(context) {
     || !Number.isFinite(window.startSeconds) || !Number.isFinite(window.endSeconds)
     || window.startSeconds < 0 || window.endSeconds <= window.startSeconds
     || !matchesSourceDuration(track?.durationSeconds, window.endSeconds - window.startSeconds, true))) return null;
-  const sourceStart = window?.startSeconds ?? week?.sourceStartSeconds;
+  // A podcast has no source clock of its own; its binding's window (checked
+  // against the track duration below) is the source clock.
+  const sourceStart = window?.startSeconds ?? week?.sourceStartSeconds ?? (week?.sourceRoute === 'podcast' ? m?.sourceStartSeconds : undefined);
   const sourceEnd = window?.endSeconds ?? week?.sourceEndSeconds;
   if (!m || !track || m.schemaVersion !== 'sermon-audio-fingerprint-binding-v1' || m.algorithmVersion !== 'spectral-landmarks-v1' || m.pageId !== week.id || !HASH.test(m.sourceSha256) || !HASH.test(m.trackSha256) || !HASH.test(m.indexSha256) || m.trackSha256 !== track.sha256 || m.sourceStartSeconds !== sourceStart || !Number.isFinite(m.sourceStartSeconds) || !Number.isFinite(m.sourceEndSeconds) || m.sourceEndSeconds <= m.sourceStartSeconds || !matchesSourceDuration(track.durationSeconds, m.sourceEndSeconds - m.sourceStartSeconds, Boolean(window)) || m.captureSeconds !== 10 || !/^\/fingerprints\/[a-zA-Z0-9_.-]+\.json$/.test(m.indexUrl)) return null;
   if (sourceEnd !== undefined && sourceEnd !== m.sourceEndSeconds) return null;

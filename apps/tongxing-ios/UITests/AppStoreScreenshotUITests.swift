@@ -23,7 +23,7 @@ final class AppStoreScreenshotUITests: XCTestCase {
     private func captureProductionWeeklyPoster(language interfaceLanguage: CaptureLanguage) throws {
         continueAfterFailure = false
         let app = XCUIApplication()
-        app.launchArguments = ["-AppleLanguages", interfaceLanguage.appleLanguages,
+        app.launchArguments = ["--ui-testing", "-AppleLanguages", interfaceLanguage.appleLanguages,
                                "-AppleLocale", interfaceLanguage.appleLocale]
         app.launchEnvironment["TONGXING_TEST_HOST"] = "0"
         app.launch()
@@ -61,7 +61,7 @@ final class AppStoreScreenshotUITests: XCTestCase {
         #else
         continueAfterFailure = false
         let app = XCUIApplication()
-        app.launchArguments = ["-AppleLanguages", interfaceLanguage.appleLanguages,
+        app.launchArguments = ["--ui-testing", "-AppleLanguages", interfaceLanguage.appleLanguages,
                                "-AppleLocale", interfaceLanguage.appleLocale]
         app.launchEnvironment["TONGXING_TEST_HOST"] = "0"
         app.launch()

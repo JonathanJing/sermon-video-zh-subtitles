@@ -1,0 +1,226 @@
+asr memory_admission ko need=6GiB available=116GiB 2026-10-25T01:51:05Z
+asr start ko 2026-10-25T01:51:05Z
+W1025 01:51:08.275000 1 torch/utils/_pytree.py:630] <enum 'KernelPreference'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
+W1025 01:51:08.287000 1 torch/utils/_pytree.py:630] <enum 'ScaleCalculationMode'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
+{"sentences": 418, "pending": 418}
+The following generation flags are not valid and may be ignored: ['temperature']. Set `TRANSFORMERS_VERBOSITY=info` for more details.
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 8}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 16}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 24}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 32}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 40}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 48}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 56}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 64}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 72}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 80}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 88}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 96}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 104}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 112}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 120}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 128}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 136}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 144}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 152}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 160}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 168}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 176}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 184}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 192}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 200}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 208}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 216}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 224}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 232}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 240}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 248}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 256}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 264}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 272}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 280}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 288}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 296}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 304}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 312}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 320}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 328}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 336}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 344}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 352}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 360}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 368}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 376}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 384}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 392}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 400}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 408}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 416}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 418}
+asr exit ko 0 2026-10-25T01:52:12Z
+asr memory_admission ko need=6GiB available=116GiB 2026-10-25T02:06:55Z
+asr start ko 2026-10-25T02:06:55Z
+W1025 02:06:58.422000 1 torch/utils/_pytree.py:630] <enum 'KernelPreference'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
+W1025 02:06:58.434000 1 torch/utils/_pytree.py:630] <enum 'ScaleCalculationMode'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
+{"sentences": 418, "pending": 418}
+The following generation flags are not valid and may be ignored: ['temperature']. Set `TRANSFORMERS_VERBOSITY=info` for more details.
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 8}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 16}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 24}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 32}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 40}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 48}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 56}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 64}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 72}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 80}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 88}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 96}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 104}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 112}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 120}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 128}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 136}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 144}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 152}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 160}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 168}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 176}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 184}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 192}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 200}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 208}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 216}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 224}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 232}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 240}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 248}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 256}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 264}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 272}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 280}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 288}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 296}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 304}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 312}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 320}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 328}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 336}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 344}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 352}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 360}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 368}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 376}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 384}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 392}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 400}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 408}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 416}
+Setting `pad_token_id` to `eos_token_id`:151645 for open-end generation.
+{"done": 418}
+asr exit ko 0 2026-10-25T02:08:02Z

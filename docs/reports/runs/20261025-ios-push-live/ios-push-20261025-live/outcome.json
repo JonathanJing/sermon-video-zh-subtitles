@@ -1,0 +1,17 @@
+{
+  "schemaVersion": "tongxing-run-outcome-v1",
+  "deliveryType": "four_layer_release",
+  "stage": "formal_ios_poster_push",
+  "status": "apns_accepted",
+  "exitCode": 0,
+  "startedAt": "2026-10-25T15:10:42.840Z",
+  "finishedAt": "2026-10-25T15:10:56.596Z",
+  "pageID": "revelation-jesus-wins-20261025",
+  "planned": 1,
+  "accepted": 1,
+  "skipped": 0,
+  "rejected": 0,
+  "unknown": 0,
+  "deviceDisplayed": "not_verified",
+  "posterOpenedOnDevice": "not_verified"
+}

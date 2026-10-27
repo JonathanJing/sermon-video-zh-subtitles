@@ -292,7 +292,10 @@ def _publish(snapshot, *, intent, routes, baseline_version, baseline_catalog_sha
              baseline_catalog_v5_sha, allow_pending_replacements=()):
     snapshot = Path(snapshot)
     contract.validate_intent(intent, routes)
-    contract.validate_catalog_snapshot(snapshot, allow_pending_replacements=frozenset(allow_pending_replacements))
+    if allow_pending_replacements:
+        contract.validate_catalog_snapshot(snapshot, allow_pending_replacements=frozenset(allow_pending_replacements))
+    else:
+        contract.validate_catalog_snapshot(snapshot)
     report = json.loads((snapshot / 'seal-report.json').read_text())
     receipt_path = snapshot / 'deployment-attempt-v2.json'
     contract.require(not receipt_path.exists(), 'Existing attempt requires reconciliation; never retry an unknown deployment')

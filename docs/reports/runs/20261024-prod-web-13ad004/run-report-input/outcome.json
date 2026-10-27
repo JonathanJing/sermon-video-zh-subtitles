@@ -1,0 +1,10 @@
+{
+  "schemaVersion": "sermon-web-two-file-deploy-outcome-v1",
+  "status": "deployed_http_pass_browser_smoke_fail",
+  "startedAt": "2026-10-25T05:03:40.569810+00:00",
+  "endedAt": "2026-10-25T05:04:31.600952+00:00",
+  "deliveryType": "production_web_runtime_only",
+  "sourceCommit": "13ad004fc15f61ca63b5af6a5ec76294d34d5068",
+  "site": "ai-for-god-sermon-audio",
+  "pageId": "revelation-jesus-wins-20261025"
+}

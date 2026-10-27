@@ -1,0 +1,13 @@
+{
+  "status": "preflight_pass",
+  "scope": "formal App APNs credential creation and local validation",
+  "applePortalScope": "one production topic",
+  "privateFileMode": "0600",
+  "keyAlgorithm": "P-256",
+  "localSignVerify": "pass",
+  "senderTopicMatch": "pass",
+  "senderEnvironmentMatch": "pass",
+  "apnsProviderRequest": "not_run",
+  "deviceReceipt": "not_run",
+  "note": "Credential bytes, token and private path are not exported. The scheduled push remains bound to 2026-10-25 09:00 America/Los_Angeles."
+}

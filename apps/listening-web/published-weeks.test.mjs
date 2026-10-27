@@ -409,6 +409,20 @@ test('published listening alignment binds each locale to its reviewed source and
     assert.equal(v.automaticAudioAlignment.status,'ready');
   }
 });
+test('published podcast alignment binds the window that covers each reviewed track, as on iOS', async () => {
+  const f=publishedPodcastFixture(); addAlignment(f, s=>Object.values(s.targets).forEach(t=>{t.audioFingerprint.sourceEndSeconds=9;}));
+  const result=await loadPublishedWeeks(f.fetchImpl);
+  assert.deepEqual(result.errors,[]);
+  for (const v of Object.values(result.weeks[0].contentVariants)) {
+    assert.equal(v.audioFingerprint.sourceEndSeconds,9);
+    assert.equal(v.automaticAudioAlignment.status,'ready');
+    assert.equal(Object.hasOwn(v,'sourceStartSeconds'),false);
+  }
+  const stale=publishedPodcastFixture(); addAlignment(stale);
+  const rejected=await loadPublishedWeeks(stale.fetchImpl);
+  assert.ok(Object.values(rejected.weeks[0].contentVariants).every(v=>v.audioFingerprint===undefined && v.tracks.length===1));
+  assert.equal(rejected.errors.length,3);
+});
 test('stale track, source, release and window bindings disable alignment without losing playback', async () => {
   for (const change of [m=>m.trackSha256='f'.repeat(64),m=>m.sourceSha256='f'.repeat(64),m=>m.sourceEndSeconds=11,m=>m.indexUrl='/wrong.json']) {
     const f=fixture();addAlignment(f,s=>change(s.targets.ko.audioFingerprint));

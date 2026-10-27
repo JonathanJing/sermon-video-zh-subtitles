@@ -10,6 +10,13 @@
     "trailingSlash": false,
     "rewrites": [
       {
+        "source": "/api/push/**",
+        "function": {
+          "functionId": "sermonPushSubscription",
+          "region": "us-west1"
+        }
+      },
+      {
         "source": "/pages/**",
         "destination": "/multilingual-reader.html"
       }

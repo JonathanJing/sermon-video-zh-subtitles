@@ -1,0 +1,13 @@
+{
+  "status": "preflight_pass",
+  "scope": "formal iOS poster push read-only preflight",
+  "codeCommit": "a2d63ada73f2d064a71ef8ebbdbd7f21b69b4031",
+  "test": "node --test services/push/test/core.test.mjs",
+  "testsPassed": 7,
+  "testsFailed": 0,
+  "liveVerifiedPublication": true,
+  "eligibleSubscribersAtPreflight": 1,
+  "suppressedDuplicateTokens": 0,
+  "posterSidecarReadback": "sites/ai-for-god-sermon-audio/versions/361c2ecfb4a9f5ea",
+  "note": "No APNs request or device receipt; short-lived plan must be regenerated at scheduled send time."
+}

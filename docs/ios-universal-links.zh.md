@@ -1,6 +1,6 @@
 # iOS Universal Links 与二维码深链
 
-状态：代码已接入，**尚未随新 App 版本发布**。旧版 App 仍只会打开网页；AASA 也必须和下一次 Hosting 发布一起上线。
+状态：代码已接入，目标为 **Beta 1.26.22 (65)**；旧版 App 仍只会打开网页；AASA 必须和 Hosting 发布一起上线。
 
 ## 支持的目标
 
@@ -36,7 +36,7 @@ tongxing://page/<pageId>?contentLang=<locale>
 | 正式域名 | `ai-for-god-sermon-audio.web.app` |
 | Dev 域名 | `ai-for-god-sermon-audio-dev.web.app` |
 
-- 正式版 entitlement：`Config/AssociatedDomains.entitlements`，只含正式域名。
+- 正式版 entitlement：`Config/ProductionPush.entitlements`，同时含正式推送和正式域名。
 - Debug entitlement：`Config/AssociatedDomainsDev.entitlements`，只含 Dev 域名。
 - Beta entitlement：`Config/BetaPush.entitlements`，含 Dev 域名。
 - Dev AASA：`firebase/dev/public/.well-known/apple-app-site-association`，包含 Beta 与 Dev App ID。

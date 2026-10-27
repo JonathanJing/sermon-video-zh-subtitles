@@ -1,6 +1,6 @@
 # Dev 统一 Backlog
 
-更新：2026-10-24。本页是项目 **Dev 开发工作的唯一顶层 backlog**，统一管理四层生产、Firebase Dev、Web／iOS、现场对齐、审核后台、Tracker、CI/CD 和独立 `live_session` 的优先级与依赖。新增开发事项先在这里取得稳定 ID；专项文档只展开接口、实现和验收，不再各自形成互相竞争的顶层排期。
+更新：2026-10-25。本页是项目 **Dev 开发工作的唯一顶层 backlog**，统一管理四层生产、Firebase Dev、Web／iOS、现场对齐、审核后台、Tracker、CI/CD 和独立 `live_session` 的优先级与依赖。新增开发事项先在这里取得稳定 ID；专项文档只展开接口、实现和验收，不再各自形成互相竞争的顶层排期。
 
 English index: [backlog.md](./backlog.md)
 
@@ -22,6 +22,21 @@ English index: [backlog.md](./backlog.md)
 
 状态枚举：`verified_baseline`、`in_progress`、`pending`、`waiting_evidence`、`blocked`、`complete`。`verified_baseline` 只说明列出的基线已验证，不代表该项所有未来周次完成；只有满足本页第 2 条维护规则和该项验收定义后才能标记 `complete`。
 
+<a id="backlog-sentence-first-next-round-20261025"></a>
+
+## 2026-10-25：逐句优先线下一轮迭代（来自 10-24 两轮生产的复盘）
+
+2026-10-24 用逐句优先线两次发布 `revelation-jesus-wins-20261025`：直播抓取版（418 句，裁切到上线 1 h 53 min，[运行报告](reports/runs/20261024-sat400-sermon-zh-ko-es/RETROSPECTIVE.md)）和官方录音重建版（447 句，计算到上线 50 分钟，[运行报告](reports/runs/20261024-sat400-official-rebuild/RETROSPECTIVE.md)）。机器环节可以复用：batch 8 × 8 副本 TTS 4.3–5.9 倍实时，三段式发布加 HTTP／Range 核验与回读，撤回重建用了新身份。下面是下一轮之前要改的工程项，全部未实现；runbook 与路线文档的步骤文字已随本节同步修改，不授权付费或发布。
+
+| ID | 优先级／状态 | 内容与完成条件 |
+|---|---|---|
+| `DEV-SF-002` | P0 / `pending` | 发布门禁与收据版本化：`assets` 拒绝缺 `l1.preflight`／`l2.consistency`／`l3.asr-triage` journal、收据 `reviewedAt` 晚于当前时间或 `note` 含「未听审」、英文表人审文件缺失的 run；收据文件按版本追加（`human-review-verdict-<n>.json`），发布包绑定过的那份不再改写；收据含 `reviewMode` 与播放器导出的逐句结论。依据：重建版 20:58 PDT 以 `human_reviewed` 上线、用户 22:22 才确认听审，发布包绑定的收据 `e0285487…` 随后被终版覆盖且无副本；重建版运行报告未记录这两点。完成条件：合成 run 测试覆盖四种拒绝；一次真实周更的发布包绑定收据与磁盘文件哈希一致 |
+| `DEV-SF-003` | P0 / `pending` | 层序与默认值：`split_sentences.py` 写 `sourceUnitId`；`finish_run.py` 对同步 run 默认 `--gap 0.05`；`preflight.py --english-package` 成为第 6 步 TTS 的前置，`spark_queue.py` 启动前检查 journal。依据：直播抓取版的预检在 Spark 跑完后才暴露 `sourceUnitId` 缺失，默认 gap 让三语各重出一次。完成条件：合成 run 上预检缺失时 TTS 入口退出；一次真实周更零次因对齐重出 |
+| `DEV-SF-004` | P1 / `pending` | 发布驱动参数化：一份驱动加每页配置（pageId、语言、run 目录、窗口、标题、类别、来源、日期、环境），路径一律 `resolve()`，撤回重建与原地替换复用 #1367 的 `published_page_replace`。依据：`publish_podcast_page.py`、`publish_clip_page_dev.py`、`publish_sat400_20261025.py`、`publish_sat400_alignment.py`、`publish_sat400_v2.py` 五份按页复制并带本机绝对路径。完成条件：下一期用配置文件发布，旧驱动删除或冻结 |
+| `DEV-SF-005` | P1 / `pending` | 发布后旁路绑定扫描：列出引用本页 release／sourceIdentity／音频哈希的全部文件（`weekly-announcements-v1.json`、海报收据、`sermon-feedback-api` 目录、英文对照），哈希变化后输出重绑清单；统计目录同步并入发布清单（与 `DEV-USAGE-001` 共用）。依据：重建版上线后公告与海报收据仍绑直播抓取版哈希，统计目录两次失效共丢约两小时上报。完成条件：一次撤回重建后扫描清单为空或全部重绑并有收据 |
+| `DEV-SF-006` | P1 / `pending` | 术语落地的形态检查：`consistency_check.py` 对韩语术语替换后的助词（을／를、이／가、은／는）按词尾校验，西语冠词与性数同理；替换只走 `--rules terms`，禁止全局字符串替换。依据：直播抓取版韩语 13 处 `참소을` 类错误靠 ASR 打分才发现，3 处已入配音。完成条件：合成样例全部报出；一次真实周更韩语术语替换零助词错误 |
+| `DEV-SF-007` | P2 / `pending` | 报告完整性：发布型子命令经 `runlog.py` 写 outcome／timings；`finish_run.py` 发出可审时自动 `waiting`，收据写入时自动 `resumed`；导出器把重建、热修、海报、统计目录同步作为独立 run 列出。依据：两轮 journal 等待均为 0，重建版报告里 62 分钟听审等待是从对话时间手工补的。完成条件：一次真实周更的报告无需手工补时间 |
+
 <a id="backlog-sat400-prep-20261024"></a>
 
 ## 2026-10-24：周六 4 点场直播的预备用途
@@ -32,7 +47,7 @@ English index: [backlog.md](./backlog.md)
 |---|---|---|
 | `DEV-PREP-001` | P0 / `pending` | 验证 H1：一个周六抓取 4 点场链接、本地 ASR、与正式来源转写做对齐 diff，比较时长，导出运行报告并给出判定。完成条件：报告含相同段落比例、差异位置、时长比较与明确判定，零付费调用；连续三周重复后才把 H1 写成默认假设（设计第七节） |
 | `DEV-PREP-002` | P1 / `pending` | 术语覆盖预检：英文单元与 policy `seriesNames`/`properNames` 比对，列出出现但未批准的条目并生成 register rule 候选，作为 `rule_preflight` 的零付费步骤；即[Layer 2 定向修复](layer2-targeted-repair-and-resume.zh.md) R4 第 2 项。完成条件：在 `15030286` 来源包上离线运行，列出条目与当时人工补入的 `properNames` 一致；预检失败时无模型调用 |
-| `DEV-PREP-003` | P1 / `pending` | 预备产物合同：`artifacts/weekend-live/<sunday>/sat400-prep/` 目录与标签字段（`kind=rehearsal`、`service=sat400`、`humanApproval=false`），consumer 预检拒绝 rehearsal 转写（归 `DEV-R242-001`），P5 写 policy `properNames` 的流程，P9 对真实来源重签 policy v4 `termApprovalReceipt`。完成条件：拒绝规则测试通过；一次真实周更里术语收据在正式来源到达后 10 分钟内重签完成 |
+| `DEV-PREP-003` | P1 / `in_progress` | 预备产物合同：`artifacts/weekend-live/<sunday>/sat400-prep/` 目录与标签字段（`kind=rehearsal`、`service=sat400`、`humanApproval=false`），consumer 预检拒绝 rehearsal 转写（归 `DEV-R242-001`），P5 写 policy `properNames` 的流程，P9 对真实来源重签 policy v4 `termApprovalReceipt`。完成条件：拒绝规则测试通过；一次真实周更里术语收据在正式来源到达后 10 分钟内重签完成。2026-10-24 已实施 P9：`text/term_scope.py`（`tools/ops/run.py text.term_scope`），从决定文件和正式来源包／锚点生成三语 v4 草稿与术语收据，列出未覆盖的扫描名，试冻结并核对插件钉；`tests/test_term_scope.py` 7 项通过；在 4 点场 rehearsal 上三语试冻结通过，ko/es 插件钉过期、zh 所钉插件已不存在（运行报告 `20261024-sat400-prep`）。剩余：rehearsal 拒绝规则、真实周更计时 |
 | `DEV-PREP-004` | P1 / `pending` | 审核预热包（4 点场英文转写、术语与经文清单，封面标注 rehearsal）与差异报告生成器（4 点场 vs 正式来源）。完成条件：一次真实周更里审核者在正式来源到达前拿到预热包，全文审核时长与 10-18 周比较并记入运行报告 |
 | `DEV-PREP-005` | P2 / `pending` | 开工检查彩排作为周六 17:00 的只读定时步骤：用本周真实输入跑开工检查与预算规划，不派发付费请求。完成条件：连续两周彩排发现的问题在正式开工前修复；任务只读、无付费、无发布 |
 
@@ -100,7 +115,7 @@ English index: [backlog.md](./backlog.md)
 | `DEV-L4-001`、`DEV-L4-004`、`DEV-IOS-001` 交付合同 | #1248 Firebase Dev v5 混合来源目录（887 文件基线，24 v5／25 v4／13 v3 页封印，Dev 部署见运行报告 `20261021-firebase-dev-v5-mixed`）；#1218 诊断页允许 1–3 语发布、来源预算 v5 明确失败记账、overlay 等待资产上线（Dev 页 `mockup-dev-clip-20261020-es-solo-v2` 上线；ko 音频 QC 仍败 `translation-chunk-0005-u007`；zh 机器豁免被校准覆盖拒绝；结算 $1.674／授权 $8）；#1317 v2 发布资产固定路径规则进 Python 合同（iOS 生产 App 的规则，播客页曾因 `-r2` 路径三语全被拒）；#1318 `/english-reference/<pageId>.json` 成为必需发布步骤；#1345 Web 阅读器允许已发布播客缺 summary／outline（生产曾只列出 7 页中的 5 页） | #1345 已随晋升进 main，生产 Hosting 部署没有仓库内收据；#1317／#1318 部署后的设备验收未做 |
 | `DEV-IOS-001`、`DEV-CICD-004`、`DEV-NOTIFY-001` | #1258 Beta 1.26.20（61）`VALID／IN_BETA_TESTING`，iOS 27.1 三语海报 UI smoke 通过，本地通知 UI 测试仍在系统授权处失败两次；#1301 正式 App opt-in 生产推送（Keychain 身份、Firestore 订阅、受控 APNs 操作者），正式 1.26.21（64）`WAITING_FOR_REVIEW`，`/api/push/**` 经生产 Hosting，合成记录 upsert／delete 通过 | 生产服务器 0 个活跃订阅；真机注册、单设备 APNs 锁屏／点击、退订未验证；审核通过与上架另读回；不排程广播发送 |
 | `DEV-CLIP-001`–`005`、`DEV-R242-020`、`DEV-L2-001` 片段 E2E | #1235 7 分钟片段（Revelation 10:8–11，88 组，424.7 s）三语过 Layer 2（预算 profile 按 88/16 缩放至 $11，账本按 locale 分片）；#1215 以新布局移植 #432 五个提交（Opus 后端与订阅账本、QC 预算修订间的 Claude 缓存身份、digest 续跑；`review/seeded_errors.py` 的中文数词校准改动因在 W 内并入 D-5 窗口） | 片段的 Layer 3／4 与三语发布不在本次范围 |
-| `DEV-SF-001` 句子优先 agent 配音路线（新） | P1 / `in_progress`。#1268 [设计](design/sentence-first-dubbing-path.zh.md)与实验线；#1315 整期播客 `if-i-had-more-time-jesus-sends-and-resurrects-his-own` 2026-10-22 发布到生产（约 13 h 50 min，无付费 API，约 698k 订阅 token；[复盘](reports/20261022-sentence-first-production-retrospective.zh.md)）；#1316 [路线文档](sentence-first-agent-production.zh.md)，runbook 只留每周重复的步骤 0–11；#1317／#1318 发布修复；#1330 Dev 片段发布路径；#1334 `if-i-had-more-time-jesus-promises` 946 句三语生产发布（SRT 来源英文，用户批准；es batch 8 整体 2.68×）；#1335 [流程评审](reports/20261023-sentence-first-full-episode-flow-review.zh.md)；#1336 P0（SRT 规范化、预检、审核播放器、batch-8 修复）；#1337 P1／P2（双讲员 TTS 池、第二次部署带英文参照、一致性检查、ASR 分类、journal）；#1339 每语完成即产出 review MP3／播放器；#1341 显存策略 | 完成条件：一期新节目按 runbook 步骤 0–11 跑完，每语 review 产物、英文参照、人工试听收据齐全并导出运行报告。8 副本 GPU 基准、stage2 `--with-english` 的 Dev 验证、Spark 上的内存日志都还没运行；设备／浏览器／现场验收 `not_run`；人审后发布，每次生产部署须用户在对话中授权 |
+| `DEV-SF-001` 句子优先 agent 配音路线（新） | P1 / `in_progress`。#1268 [设计](design/sentence-first-dubbing-path.zh.md)与实验线；#1315 整期播客 `if-i-had-more-time-jesus-sends-and-resurrects-his-own` 2026-10-22 发布到生产（约 13 h 50 min，无付费 API，约 698k 订阅 token；[复盘](reports/20261022-sentence-first-production-retrospective.zh.md)）；#1316 [路线文档](sentence-first-agent-production.zh.md)，runbook 只留每周重复的步骤 0–11；#1317／#1318 发布修复；#1330 Dev 片段发布路径；#1334 `if-i-had-more-time-jesus-promises` 946 句三语生产发布（SRT 来源英文，用户批准；es batch 8 整体 2.68×）；#1335 [流程评审](reports/20261023-sentence-first-full-episode-flow-review.zh.md)；#1336 P0（SRT 规范化、预检、审核播放器、batch-8 修复）；#1337 P1／P2（双讲员 TTS 池、第二次部署带英文参照、一致性检查、ASR 分类、journal）；#1339 每语完成即产出 review MP3／播放器；#1341 显存策略；2026-10-24 单讲员证道 `revelation-jesus-wins-20261025` 两轮生产（运行报告 `20261024-sat400-sermon-zh-ko-es`／#1360 与 `20261024-sat400-official-rebuild`／#1372），下一轮迭代项见 [`DEV-SF-002`–`007`](#backlog-sentence-first-next-round-20261025) | 完成条件：一期新节目按 runbook 步骤 0–11 跑完，每语 review 产物、英文参照、人工试听收据齐全并导出运行报告。8 副本 GPU 基准、stage2 `--with-english` 的 Dev 验证、Spark 上的内存日志都还没运行；设备／浏览器／现场验收 `not_run`；人审后发布，每次生产部署须用户在对话中授权 |
 | `DEV-POD-001` 双人播客制作（新） | P1 / `pending`。#1227 [规范](podcast-dual-speaker-production.zh.md)（说话人区分产物、映射收据、逐单元讲员路由、双 voice 音频包）；#1231 系列 `if-i-had-more-time` 登记并重新冻结三语政策（#1234 测试固定对照 09-12 快照）；#1232 John Thomas 音色；VibeVoice-ASR 说话人区分试跑见运行报告 #1226 | dev 正式路径缺口：说话人路由、多讲员 speech job、双 worker 渲染、播客音频包，renderer 与 8×8 路径拒绝多讲员；句子优先线已有 `assign_speakers.py` 与 `tts_pool.py`（归 `DEV-SF-001`）。待决定：说话人区分默认主机、附和声配音、翻译是否带讲员标签。2026-10-24 评估：推迟；句子优先线已交付两期双人播客，若其成为播客常规路线则正式 8×8 多讲员支持可砍（[证据核对](#backlog-evidence-audit-20261024)） |
 | `DEV-WEEK-001`、术语（不变量 7） | #1340 启示录 1–12 周三语[标题表](series-sermon-titles.zh.md)（英文标题与来源一致时免单独标题批准；哈希的术语表未变）；#1326 架构与流程图同步；#1320 README 两段 60 秒演示 | 已发布 3–6 周的中文标题与表不同，改动是单独的发布决定；没有生产代码读取标题表 |
 

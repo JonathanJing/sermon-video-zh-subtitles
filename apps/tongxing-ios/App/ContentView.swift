@@ -82,6 +82,7 @@ struct ContentView: View {
     @ViewState private var returnToCurrent = UUID()
     @ViewState private var followsTranscriptPlayback = true
     @ViewState private var locateConfirmation: Double?
+    @ViewState private var copyConfirmation: String?
     @ViewState private var showingPlaybackMore = false
     @ViewState private var showingAlignmentFailure = false
     @ViewState private var playbackMoreButtonFrame: CGRect = .null
@@ -110,18 +111,10 @@ struct ContentView: View {
         .environment(\.locale, localization.locale)
         #if os(iOS)
         .onReceive(NotificationCenter.default.publisher(for: .betaNotificationOpened)) { _ in
-            sheet = nil
-            showingPlaybackMore = false
-            Task {
-                if let catalog = model.multilingualCatalog {
-                    await model.notificationWeeklyUpdates.load(catalog: catalog, locale: model.selectedContentLocale, pageID: model.selectedPageID)
-                    if let item = model.notificationWeeklyUpdates.announcement {
-                        showingNotificationPoster = true
-                        weeklyUpdates.markSeen(item.deduplicationKey)
-                        sheet = .weeklyUpdate
-                    }
-                }
-            }
+            openNotificationPoster()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .productionNotificationOpened)) { _ in
+            openNotificationPoster()
         }
         #endif
         .task(id: model.weeklyUpdateIdentity) {
@@ -150,6 +143,12 @@ struct ContentView: View {
             guard !Task.isCancelled else { return }
             locateConfirmation = nil
         }
+        .task(id: copyConfirmation) {
+            guard copyConfirmation != nil else { return }
+            try? await Task.sleep(for: .seconds(3))
+            guard !Task.isCancelled else { return }
+            copyConfirmation = nil
+        }
         .onChange(of: model.alignmentFailure?.id) { _, failure in
             if failure != nil { showingPlaybackMore = false }
             updateAlignmentFailurePresentation()
@@ -176,6 +175,23 @@ struct ContentView: View {
             updateAlignmentFailurePresentation()
         }
     }
+
+    #if os(iOS)
+    private func openNotificationPoster() {
+        sheet = nil
+        showingPlaybackMore = false
+        Task {
+            if let catalog = model.multilingualCatalog {
+                await model.notificationWeeklyUpdates.load(catalog: catalog, locale: model.selectedContentLocale, pageID: model.selectedPageID)
+                if let item = model.notificationWeeklyUpdates.announcement {
+                    showingNotificationPoster = true
+                    weeklyUpdates.markSeen(item.deduplicationKey)
+                    sheet = .weeklyUpdate
+                }
+            }
+        }
+    }
+    #endif
 
     private func alignmentFeedbackBar(_ phase: ListeningAlignmentPhase) -> some View {
         HStack(spacing: 10) {
@@ -332,6 +348,10 @@ struct ContentView: View {
                     }
                 })
                 .refreshable { await model.refresh() }
+                .overlay(alignment: .top) {
+                    copyConfirmationToast
+                        .animation(reduceMotion ? nil : .easeInOut(duration: 0.2), value: copyConfirmation)
+                }
                 .onChange(of: model.display) { _, display in
                     followsTranscriptPlayback = true
                     guard display == .transcript, playback.isPlaying else { return }
@@ -899,6 +919,56 @@ struct ContentView: View {
         }
     }
 
+    @ViewBuilder private var copyConfirmationToast: some View {
+        if let copyConfirmation {
+            Label(copyConfirmation, systemImage: "checkmark.circle.fill")
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(Brand.accent)
+                .padding(.horizontal, 14)
+                .padding(.vertical, 9)
+                .background(.regularMaterial, in: Capsule())
+                .overlay { Capsule().strokeBorder(Brand.accent.opacity(0.25), lineWidth: 1) }
+                .shadow(color: .black.opacity(0.10), radius: 8, y: 3)
+                .padding(.top, 8)
+                .allowsHitTesting(false)
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel(copyConfirmation)
+                .accessibilityIdentifier("copy-confirmation")
+                .transition(.move(edge: .top).combined(with: .opacity))
+        }
+    }
+
+    /// Context menus keep paragraph copying available on systems where the
+    /// native text-selection long press no longer opens an edit menu.
+    @ViewBuilder
+    private func transcriptCopyActions(text: String, english: String?, suffix: String) -> some View {
+        Button {
+            copyTranscript(text, confirmation: "已复制本段")
+        } label: {
+            Label(localization.text("复制本段"), systemImage: "doc.on.doc")
+        }
+        .accessibilityIdentifier("copy-transcript-\(suffix)")
+        if let english, !english.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            Button {
+                copyTranscript(text + "\n\n" + english, confirmation: "已复制双语对照")
+            } label: {
+                Label(localization.text("复制双语对照"), systemImage: "text.alignleft")
+            }
+            .accessibilityIdentifier("copy-transcript-bilingual-\(suffix)")
+        }
+    }
+
+    private func copyTranscript(_ text: String, confirmation: String) {
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty, Clipboard.copy(trimmed) else { return }
+        let message = localization.text(confirmation)
+        copyConfirmation = message
+        #if os(iOS)
+        UINotificationFeedbackGenerator().notificationOccurred(.success)
+        UIAccessibility.post(notification: .announcement, argument: message)
+        #endif
+    }
+
     private var englishLocateEntry: some View {
         Button { sheet = .locate } label: {
             HStack {
@@ -925,18 +995,23 @@ struct ContentView: View {
                         .accessibilityIdentifier("\(prefix)-time-\(cue.id)")
                         .accessibilityAddTraits(audioCue.map { $0.start <= playback.position && playback.position < $0.end } == true ? .isSelected : [])
                     sourceText(cue.text, language: model.selectedContentLocale)
-                        .font(.title3).lineSpacing(7).textSelection(.enabled)
+                        .font(.title3).lineSpacing(7)
                         .fixedSize(horizontal: false, vertical: true)
                         .accessibilityIdentifier("\(prefix)-text-\(cue.id)")
                     if let english = cue.english {
                         sourceText(english, language: "en").font(.body).lineSpacing(5)
-                            .foregroundStyle(.secondary).textSelection(.enabled)
+                            .foregroundStyle(.secondary)
                             .fixedSize(horizontal: false, vertical: true)
                             .accessibilityIdentifier("\(prefix)-english-\(cue.id)")
                     }
                 }.padding(16).frame(maxWidth: .infinity, alignment: .leading)
                     .background(Brand.surface, in: RoundedRectangle(cornerRadius: 20))
                     .id("\(prefix)-\(cue.id)")
+                    // iOS 27 no longer opens the native edit menu for a long press
+                    // on selectable text, so the row owns an explicit copy menu.
+                    .contextMenu {
+                        transcriptCopyActions(text: cue.text, english: cue.english, suffix: cue.id)
+                    }
             }
         }
     }
@@ -997,11 +1072,11 @@ struct ContentView: View {
                         .accessibilityLabel(localization.text("跳转至 {time}", ["time": PlaybackTime.format(cue.start)]))
                         .accessibilityIdentifier("subtitle-cue-\(row.index)")
                         .disabled(!playback.isReady)
-                    sourceText(cue.text, language: "zh-Hans").font(.title3).lineSpacing(7).textSelection(.enabled)
+                    sourceText(cue.text, language: "zh-Hans").font(.title3).lineSpacing(7)
                         .fixedSize(horizontal: false, vertical: true)
                     if let english = row.english {
                         DisclosureGroup {
-                            sourceText(english, language: "en").font(.body).lineSpacing(5).textSelection(.enabled)
+                            sourceText(english, language: "en").font(.body).lineSpacing(5)
                                 .fixedSize(horizontal: false, vertical: true)
                                 .environment(\.locale, Locale(identifier: "en"))
                                 .accessibilityIdentifier("transcript-english-\(row.index)")
@@ -1018,6 +1093,9 @@ struct ContentView: View {
                 .background(cue.start <= playback.position && playback.position < cue.end ? Brand.accent.opacity(0.13) : Color.clear,
                             in: RoundedRectangle(cornerRadius: 22, style: .continuous))
                 .id("cue-\(row.index)")
+                .contextMenu {
+                    transcriptCopyActions(text: cue.text, english: row.english, suffix: "cue-\(row.index)")
+                }
             }
         }
     }
@@ -1697,6 +1775,10 @@ private struct AboutSheet: View {
                         NavigationLink { BetaNotificationSettingsView(model: model) } label: {
                             Label(localization.text("Beta 通知测试"), systemImage: "bell.badge")
                         }.accessibilityIdentifier("beta-notification-settings")
+                    } else if ProductionPush.isProduction {
+                        NavigationLink { ProductionPushSettingsView() } label: {
+                            Label(localization.text("每周通知"), systemImage: "bell.badge")
+                        }.accessibilityIdentifier("production-push-settings")
                     }
                     #endif
                 }

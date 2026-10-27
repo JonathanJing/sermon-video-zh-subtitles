@@ -1,0 +1,25 @@
+{
+ "locales": {
+  "es": {
+   "meditationArtifactSha256": "8f3f96ef1b62935fd91dac93be0a629a5cb2dc2f87d4c28420f55dbccff838d7",
+   "meditationReviewSha256": "2feea6c2ee1b3a0d1d5b257f82dd4ecabefc2c964511ece9e2b50bc711bb9b63",
+   "outlineArtifactSha256": "c22cb820e90070f9cfc1e549737b178ca1755c24d20cd2f49826218ffbbdb938",
+   "outlineReviewSha256": "0c8a1d40fe0cb787b3c7e3310c7c6ae064dae9e306a74e3dac746178cd0d0732"
+  },
+  "ko": {
+   "meditationArtifactSha256": "6a03a6d3b06d2286b46c40631ac7a7b901ee6411c565c7e95f20d23fcb4a9e52",
+   "meditationReviewSha256": "2ca22cfe9fc434e0ca82513da2ed7fa7f69bdc8353db721e29be03d2d4b5b48b",
+   "outlineArtifactSha256": "3525b648f5981c5542f62a7643a9b1697434f5a8484b8ee5383c7d206b007c93",
+   "outlineReviewSha256": "a012e7a7149f6de2214f23cff51df19282a487fccec2f4d76cc1b434b02a49a3"
+  },
+  "zh-Hans": {
+   "meditationArtifactSha256": "dd84d3f107d94bc0f951328709c2c2bf124dc3a7e0726db2d014789955137195",
+   "meditationReviewSha256": "60bf0f3100d905b0b77e0f51d15e2131662a6285ffd632fedf23f436ef7ce77c",
+   "outlineArtifactSha256": "ad206074655324c7945ea2fd8f2e6c5b11743cea7c89fa50f7465a11608f8589",
+   "outlineReviewSha256": "8e89206a4047232a4958e08f94cfbbe449e0d431f78aef108d4919431bfdcdb3"
+  }
+ },
+ "metadataApprovalSha256": "201646523e82503a2425682f9cd33104f09073b7b29b9648caa21cc23abd5b0b",
+ "sourcePackageSha256": "199e4b86e58c6456c462b41e359e72f3ccc61ad59bd78e296e8e8a8717504d35",
+ "windowReceiptSha256": "9cbc03d982c7e954d02ca61919138cce8a265622c26ad3f3a06be445261652d9"
+}

@@ -760,6 +760,23 @@ final class ListeningFlowUITests: XCTestCase {
         screenshot("full-transcript-return-current-paused12", app: app)
     }
 
+    func testFullTranscriptChineseParagraphOffersLongPressCopy() throws {
+        let app = launchFixture(locateFlow: true)
+        app.segmentedControls["listening-display"].buttons["字幕全文"].tap()
+        let chinese = app.staticTexts["published-caption-text-g1"]
+        XCTAssertTrue(chinese.waitForExistence(timeout: 5))
+        XCTAssertTrue(chinese.isHittable)
+        chinese.press(forDuration: 1.2)
+        let copy = app.buttons["copy-transcript-g1"]
+        XCTAssertTrue(copy.waitForExistence(timeout: 5), "Long press must offer the paragraph copy action")
+        screenshot("full-transcript-long-press-copy-menu", app: app)
+        copy.tap()
+        let toast = app.descendants(matching: .any).matching(identifier: "copy-confirmation").firstMatch
+        XCTAssertTrue(toast.waitForExistence(timeout: 5), "Copying must confirm the pasteboard write")
+        XCTAssertTrue(toast.label.contains("已复制"), toast.label)
+        screenshot("full-transcript-copy-confirmation", app: app)
+    }
+
     func testNormalTextTranscriptTimeTapAndAutomaticFollowing() throws {
         let app = launchFixture(locateFlow: true)
         try locateSecondEnglishSegment(in: app, fromDock: false)
