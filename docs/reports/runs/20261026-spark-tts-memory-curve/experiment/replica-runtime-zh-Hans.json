@@ -1,0 +1,1804 @@
+{
+  "schemaVersion": "sermon-spark-tts-replica-runtime-v1",
+  "status": "closed",
+  "replicas": 8,
+  "batchSize": 8,
+  "jobSha256": "1491cea2d3068ae1ee28728649263f6e9970a5e30f773ad868cb8e62dac61a73",
+  "reserveGiB": 24,
+  "memoryPolicy": "release_cuda_cache_expandable_segments_v1",
+  "cudaAllocConf": "expandable_segments:True",
+  "releaseCudaCache": true,
+  "admissionGiBPerReplica": 9.0,
+  "rendererSha256": "78861f56e040905fc654d168fc9bc38db91d41fdc46e639f7b57ced8da44c35e",
+  "poolSha256": "9fcc5d5b5e6340c4485b6216b6a18127461f99a5230a254e853f36a29257cb10",
+  "events": [
+    {
+      "kind": "admission",
+      "timestamp": 1793027048.038625,
+      "memAvailableBytes": 124603944960,
+      "requiredBytes": 103079215104,
+      "reserveBytes": 25769803776,
+      "admissionBytesPerReplica": 9663676416,
+      "replicas": 8,
+      "status": "admitted"
+    },
+    {
+      "kind": "ready",
+      "worker": 5,
+      "pid": 60,
+      "timestamp": 1793027098.0330846,
+      "loadSeconds": 49.32485505566001,
+      "memory": {
+        "rssBytes": 1151082496,
+        "cuda": {
+          "allocatedBytes": 4174547456,
+          "reservedBytes": 4311744512,
+          "maxAllocatedBytes": 4176354304,
+          "maxReservedBytes": 4311744512
+        }
+      },
+      "memAvailableBytes": 78700339200,
+      "parentRssBytes": 83316736
+    },
+    {
+      "kind": "ready",
+      "worker": 3,
+      "pid": 58,
+      "timestamp": 1793027098.6238,
+      "loadSeconds": 49.90382907446474,
+      "memory": {
+        "rssBytes": 1184636928,
+        "cuda": {
+          "allocatedBytes": 4174547456,
+          "reservedBytes": 4311744512,
+          "maxAllocatedBytes": 4176354304,
+          "maxReservedBytes": 4311744512
+        }
+      },
+      "memAvailableBytes": 78467973120,
+      "parentRssBytes": 83316736
+    },
+    {
+      "kind": "ready",
+      "worker": 1,
+      "pid": 56,
+      "timestamp": 1793027099.7308235,
+      "loadSeconds": 51.00646873842925,
+      "memory": {
+        "rssBytes": 1186881536,
+        "cuda": {
+          "allocatedBytes": 4174547456,
+          "reservedBytes": 4311744512,
+          "maxAllocatedBytes": 4176354304,
+          "maxReservedBytes": 4311744512
+        }
+      },
+      "memAvailableBytes": 81424162816,
+      "parentRssBytes": 83316736
+    },
+    {
+      "kind": "ready",
+      "worker": 0,
+      "pid": 55,
+      "timestamp": 1793027100.0203714,
+      "loadSeconds": 51.28007826395333,
+      "memory": {
+        "rssBytes": 1187069952,
+        "cuda": {
+          "allocatedBytes": 4174547456,
+          "reservedBytes": 4311744512,
+          "maxAllocatedBytes": 4176354304,
+          "maxReservedBytes": 4311744512
+        }
+      },
+      "memAvailableBytes": 81137332224,
+      "parentRssBytes": 83316736
+    },
+    {
+      "kind": "ready",
+      "worker": 4,
+      "pid": 59,
+      "timestamp": 1793027100.0241303,
+      "loadSeconds": 51.2713764635846,
+      "memory": {
+        "rssBytes": 1183637504,
+        "cuda": {
+          "allocatedBytes": 4174547456,
+          "reservedBytes": 4311744512,
+          "maxAllocatedBytes": 4176354304,
+          "maxReservedBytes": 4311744512
+        }
+      },
+      "memAvailableBytes": 81137188864,
+      "parentRssBytes": 83316736
+    },
+    {
+      "kind": "ready",
+      "worker": 2,
+      "pid": 57,
+      "timestamp": 1793027100.0945754,
+      "loadSeconds": 51.354351254180074,
+      "memory": {
+        "rssBytes": 1186377728,
+        "cuda": {
+          "allocatedBytes": 4174547456,
+          "reservedBytes": 4311744512,
+          "maxAllocatedBytes": 4176354304,
+          "maxReservedBytes": 4311744512
+        }
+      },
+      "memAvailableBytes": 81140252672,
+      "parentRssBytes": 83316736
+    },
+    {
+      "kind": "ready",
+      "worker": 7,
+      "pid": 62,
+      "timestamp": 1793027100.1044354,
+      "loadSeconds": 51.37624421995133,
+      "memory": {
+        "rssBytes": 1186029568,
+        "cuda": {
+          "allocatedBytes": 4174547456,
+          "reservedBytes": 4311744512,
+          "maxAllocatedBytes": 4176354304,
+          "maxReservedBytes": 4311744512
+        }
+      },
+      "memAvailableBytes": 81140035584,
+      "parentRssBytes": 83316736
+    },
+    {
+      "kind": "ready",
+      "worker": 6,
+      "pid": 61,
+      "timestamp": 1793027100.1083984,
+      "loadSeconds": 51.35615476593375,
+      "memory": {
+        "rssBytes": 1186050048,
+        "cuda": {
+          "allocatedBytes": 4174547456,
+          "reservedBytes": 4311744512,
+          "maxAllocatedBytes": 4176354304,
+          "maxReservedBytes": 4311744512
+        }
+      },
+      "memAvailableBytes": 81139630080,
+      "parentRssBytes": 83316736
+    },
+    {
+      "kind": "pool_ready",
+      "timestamp": 1793027100.1166961,
+      "replicas": 8,
+      "memAvailableBytes": 81139630080,
+      "parentRssBytes": 83316736,
+      "releaseCudaCache": true,
+      "cudaAllocConf": "expandable_segments:True"
+    },
+    {
+      "kind": "submitted",
+      "timestamp": 1793027100.123034,
+      "worker": 0,
+      "index": 0,
+      "memAvailableBytes": 81139630080
+    },
+    {
+      "kind": "submitted",
+      "timestamp": 1793027100.1276798,
+      "worker": 1,
+      "index": 8,
+      "memAvailableBytes": 81138716672
+    },
+    {
+      "kind": "submitted",
+      "timestamp": 1793027100.1316626,
+      "worker": 2,
+      "index": 16,
+      "memAvailableBytes": 81138716672
+    },
+    {
+      "kind": "submitted",
+      "timestamp": 1793027100.1348393,
+      "worker": 3,
+      "index": 24,
+      "memAvailableBytes": 81136898048
+    },
+    {
+      "kind": "submitted",
+      "timestamp": 1793027100.1386268,
+      "worker": 4,
+      "index": 32,
+      "memAvailableBytes": 81122344960
+    },
+    {
+      "kind": "submitted",
+      "timestamp": 1793027100.1419353,
+      "worker": 5,
+      "index": 40,
+      "memAvailableBytes": 81113247744
+    },
+    {
+      "kind": "submitted",
+      "timestamp": 1793027100.1460407,
+      "worker": 6,
+      "index": 48,
+      "memAvailableBytes": 81087766528
+    },
+    {
+      "kind": "submitted",
+      "timestamp": 1793027100.149358,
+      "worker": 7,
+      "index": 56,
+      "memAvailableBytes": 81059577856
+    },
+    {
+      "kind": "result",
+      "worker": 3,
+      "pid": 58,
+      "index": 24,
+      "timestamp": 1793027134.2813702,
+      "generationSeconds": 34.091059535741806,
+      "releaseSeconds": 0.05534755624830723,
+      "memory": {
+        "rssBytes": 2486153216,
+        "cuda": {
+          "allocatedBytes": 4184116224,
+          "reservedBytes": 4206886912,
+          "maxAllocatedBytes": 5468990464,
+          "maxReservedBytes": 5744099328
+        }
+      },
+      "memAvailableBytes": 71667544064,
+      "parentRssBytes": 89890816
+    },
+    {
+      "kind": "result",
+      "worker": 0,
+      "pid": 55,
+      "index": 0,
+      "timestamp": 1793027140.737728,
+      "generationSeconds": 40.54531051777303,
+      "releaseSeconds": 0.06905066035687923,
+      "memory": {
+        "rssBytes": 2472820736,
+        "cuda": {
+          "allocatedBytes": 4184116224,
+          "reservedBytes": 4206886912,
+          "maxAllocatedBytes": 5785185280,
+          "maxReservedBytes": 6111100928
+        }
+      },
+      "memAvailableBytes": 71710601216,
+      "parentRssBytes": 89927680
+    },
+    {
+      "kind": "submitted",
+      "timestamp": 1793027140.762755,
+      "worker": 0,
+      "index": 64,
+      "memAvailableBytes": 71710601216
+    },
+    {
+      "kind": "result",
+      "worker": 7,
+      "pid": 62,
+      "index": 56,
+      "timestamp": 1793027150.0700994,
+      "generationSeconds": 49.824633149430156,
+      "releaseSeconds": 0.09598469082266092,
+      "memory": {
+        "rssBytes": 2473181184,
+        "cuda": {
+          "allocatedBytes": 4184116224,
+          "reservedBytes": 4206886912,
+          "maxAllocatedBytes": 6140904448,
+          "maxReservedBytes": 6469713920
+        }
+      },
+      "memAvailableBytes": 66791788544,
+      "parentRssBytes": 116846592
+    },
+    {
+      "kind": "result",
+      "worker": 6,
+      "pid": 61,
+      "index": 48,
+      "timestamp": 1793027151.1687524,
+      "generationSeconds": 50.93382509890944,
+      "releaseSeconds": 0.08877009805291891,
+      "memory": {
+        "rssBytes": 2472374272,
+        "cuda": {
+          "allocatedBytes": 4184116224,
+          "reservedBytes": 4206886912,
+          "maxAllocatedBytes": 6200190976,
+          "maxReservedBytes": 6624903168
+        }
+      },
+      "memAvailableBytes": 69260611584,
+      "parentRssBytes": 117256192
+    },
+    {
+      "kind": "result",
+      "worker": 5,
+      "pid": 60,
+      "index": 40,
+      "timestamp": 1793027151.531266,
+      "generationSeconds": 51.311094232834876,
+      "releaseSeconds": 0.07812195178121328,
+      "memory": {
+        "rssBytes": 2473512960,
+        "cuda": {
+          "allocatedBytes": 4184116224,
+          "reservedBytes": 4206886912,
+          "maxAllocatedBytes": 6180428800,
+          "maxReservedBytes": 6566182912
+        }
+      },
+      "memAvailableBytes": 71621419008,
+      "parentRssBytes": 124334080
+    },
+    {
+      "kind": "result",
+      "worker": 1,
+      "pid": 56,
+      "index": 8,
+      "timestamp": 1793027153.5756562,
+      "generationSeconds": 53.37148844730109,
+      "releaseSeconds": 0.07638256624341011,
+      "memory": {
+        "rssBytes": 2473648128,
+        "cuda": {
+          "allocatedBytes": 4184116224,
+          "reservedBytes": 4206886912,
+          "maxAllocatedBytes": 6318764032,
+          "maxReservedBytes": 6666846208
+        }
+      },
+      "memAvailableBytes": 71614427136,
+      "parentRssBytes": 124555264
+    },
+    {
+      "kind": "submitted",
+      "timestamp": 1793027153.6027935,
+      "worker": 1,
+      "index": 72,
+      "memAvailableBytes": 71614513152
+    },
+    {
+      "kind": "result",
+      "worker": 2,
+      "pid": 57,
+      "index": 16,
+      "timestamp": 1793027155.6262794,
+      "generationSeconds": 55.41300257202238,
+      "releaseSeconds": 0.08151020761579275,
+      "memory": {
+        "rssBytes": 2472390656,
+        "cuda": {
+          "allocatedBytes": 4184116224,
+          "reservedBytes": 4206886912,
+          "maxAllocatedBytes": 6476861440,
+          "maxReservedBytes": 6801063936
+        }
+      },
+      "memAvailableBytes": 71585943552,
+      "parentRssBytes": 150839296
+    },
+    {
+      "kind": "submitted",
+      "timestamp": 1793027155.6526935,
+      "worker": 2,
+      "index": 80,
+      "memAvailableBytes": 71585955840
+    },
+    {
+      "kind": "submitted",
+      "timestamp": 1793027157.2616005,
+      "worker": 3,
+      "index": 88,
+      "memAvailableBytes": 71429918720
+    },
+    {
+      "kind": "result",
+      "worker": 4,
+      "pid": 59,
+      "index": 32,
+      "timestamp": 1793027160.8499672,
+      "generationSeconds": 60.62231192551553,
+      "releaseSeconds": 0.08891611453145742,
+      "memory": {
+        "rssBytes": 2467962880,
+        "cuda": {
+          "allocatedBytes": 4184116224,
+          "reservedBytes": 4206886912,
+          "maxAllocatedBytes": 6812818432,
+          "maxReservedBytes": 7237271552
+        }
+      },
+      "memAvailableBytes": 71382753280,
+      "parentRssBytes": 191938560
+    },
+    {
+      "kind": "submitted",
+      "timestamp": 1793027160.8781164,
+      "worker": 4,
+      "index": 96,
+      "memAvailableBytes": 71382765568
+    },
+    {
+      "kind": "submitted",
+      "timestamp": 1793027162.6834548,
+      "worker": 5,
+      "index": 104,
+      "memAvailableBytes": 71162257408
+    },
+    {
+      "kind": "submitted",
+      "timestamp": 1793027164.4619331,
+      "worker": 6,
+      "index": 112,
+      "memAvailableBytes": 70913388544
+    },
+    {
+      "kind": "submitted",
+      "timestamp": 1793027166.1725612,
+      "worker": 7,
+      "index": 120,
+      "memAvailableBytes": 70782689280
+    },
+    {
+      "kind": "result",
+      "worker": 0,
+      "pid": 55,
+      "index": 64,
+      "timestamp": 1793027177.0820768,
+      "generationSeconds": 36.243835599161685,
+      "releaseSeconds": 0.07524286583065987,
+      "memory": {
+        "rssBytes": 2484600832,
+        "cuda": {
+          "allocatedBytes": 4184116224,
+          "reservedBytes": 4206886912,
+          "maxAllocatedBytes": 5963044864,
+          "maxReservedBytes": 6253707264
+        }
+      },
+      "memAvailableBytes": 70435782656,
+      "parentRssBytes": 285155328
+    },
+    {
+      "kind": "submitted",
+      "timestamp": 1793027177.109191,
+      "worker": 0,
+      "index": 128,
+      "memAvailableBytes": 70439489536
+    },
+    {
+      "kind": "result",
+      "worker": 1,
+      "pid": 56,
+      "index": 72,
+      "timestamp": 1793027188.5184174,
+      "generationSeconds": 34.83591993805021,
+      "releaseSeconds": 0.07949011772871017,
+      "memory": {
+        "rssBytes": 2487967744,
+        "cuda": {
+          "allocatedBytes": 4184116224,
+          "reservedBytes": 4206886912,
+          "maxAllocatedBytes": 6318764032,
+          "maxReservedBytes": 6666846208
+        }
+      },
+      "memAvailableBytes": 70274293760,
+      "parentRssBytes": 290058240
+    },
+    {
+      "kind": "submitted",
+      "timestamp": 1793027188.5393007,
+      "worker": 1,
+      "index": 136,
+      "memAvailableBytes": 70258147328
+    },
+    {
+      "kind": "result",
+      "worker": 3,
+      "pid": 58,
+      "index": 88,
+      "timestamp": 1793027192.4320917,
+      "generationSeconds": 35.094625329598784,
+      "releaseSeconds": 0.07559520285576582,
+      "memory": {
+        "rssBytes": 2496471040,
+        "cuda": {
+          "allocatedBytes": 4184116224,
+          "reservedBytes": 4206886912,
+          "maxAllocatedBytes": 5686374400,
+          "maxReservedBytes": 6018826240
+        }
+      },
+      "memAvailableBytes": 70398103552,
+      "parentRssBytes": 304525312
+    },
+    {
+      "kind": "result",
+      "worker": 2,
+      "pid": 57,
+      "index": 80,
+      "timestamp": 1793027199.6097639,
+      "generationSeconds": 43.87930459342897,
+      "releaseSeconds": 0.07757114805281162,
+      "memory": {
+        "rssBytes": 2487042048,
+        "cuda": {
+          "allocatedBytes": 4184116224,
+          "reservedBytes": 4206886912,
+          "maxAllocatedBytes": 6476861440,
+          "maxReservedBytes": 6801063936
+        }
+      },
+      "memAvailableBytes": 70410833920,
+      "parentRssBytes": 306446336
+    },
+    {
+      "kind": "submitted",
+      "timestamp": 1793027199.636336,
+      "worker": 2,
+      "index": 144,
+      "memAvailableBytes": 70410604544
+    },
+    {
+      "kind": "submitted",
+      "timestamp": 1793027201.4419012,
+      "worker": 3,
+      "index": 152,
+      "memAvailableBytes": 69541343232
+    },
+    {
+      "kind": "result",
+      "worker": 6,
+      "pid": 61,
+      "index": 112,
+      "timestamp": 1793027203.3648558,
+      "generationSeconds": 38.831337100826204,
+      "releaseSeconds": 0.07127355132251978,
+      "memory": {
+        "rssBytes": 2482622464,
+        "cuda": {
+          "allocatedBytes": 4184116224,
+          "reservedBytes": 4206886912,
+          "maxAllocatedBytes": 6200190976,
+          "maxReservedBytes": 6624903168
+        }
+      },
+      "memAvailableBytes": 70398779392,
+      "parentRssBytes": 330366976
+    },
+    {
+      "kind": "result",
+      "worker": 0,
+      "pid": 55,
+      "index": 128,
+      "timestamp": 1793027210.221267,
+      "generationSeconds": 33.04040002077818,
+      "releaseSeconds": 0.07140417583286762,
+      "memory": {
+        "rssBytes": 2490925056,
+        "cuda": {
+          "allocatedBytes": 4184116224,
+          "reservedBytes": 4206886912,
+          "maxAllocatedBytes": 5963044864,
+          "maxReservedBytes": 6253707264
+        }
+      },
+      "memAvailableBytes": 70457303040,
+      "parentRssBytes": 330366976
+    },
+    {
+      "kind": "result",
+      "worker": 5,
+      "pid": 60,
+      "index": 104,
+      "timestamp": 1793027212.571661,
+      "generationSeconds": 49.81467444449663,
+      "releaseSeconds": 0.07303832657635212,
+      "memory": {
+        "rssBytes": 2487640064,
+        "cuda": {
+          "allocatedBytes": 4184116224,
+          "reservedBytes": 4206886912,
+          "maxAllocatedBytes": 6200190976,
+          "maxReservedBytes": 6566182912
+        }
+      },
+      "memAvailableBytes": 70586896384,
+      "parentRssBytes": 333373440
+    },
+    {
+      "kind": "result",
+      "worker": 7,
+      "pid": 62,
+      "index": 120,
+      "timestamp": 1793027215.9222338,
+      "generationSeconds": 49.61708874627948,
+      "releaseSeconds": 0.13234369363635778,
+      "memory": {
+        "rssBytes": 2485911552,
+        "cuda": {
+          "allocatedBytes": 4184116224,
+          "reservedBytes": 4206886912,
+          "maxAllocatedBytes": 6279239680,
+          "maxReservedBytes": 6645874688
+        }
+      },
+      "memAvailableBytes": 68150206464,
+      "parentRssBytes": 333889536
+    },
+    {
+      "kind": "result",
+      "worker": 4,
+      "pid": 59,
+      "index": 96,
+      "timestamp": 1793027217.497143,
+      "generationSeconds": 56.52687309961766,
+      "releaseSeconds": 0.09194492734968662,
+      "memory": {
+        "rssBytes": 2479796224,
+        "cuda": {
+          "allocatedBytes": 4184116224,
+          "reservedBytes": 4208984064,
+          "maxAllocatedBytes": 6812818432,
+          "maxReservedBytes": 7237271552
+        }
+      },
+      "memAvailableBytes": 71105613824,
+      "parentRssBytes": 337661952
+    },
+    {
+      "kind": "submitted",
+      "timestamp": 1793027217.5223176,
+      "worker": 0,
+      "index": 160,
+      "memAvailableBytes": 71105634304
+    },
+    {
+      "kind": "submitted",
+      "timestamp": 1793027219.427655,
+      "worker": 4,
+      "index": 168,
+      "memAvailableBytes": 69321732096
+    },
+    {
+      "kind": "result",
+      "worker": 1,
+      "pid": 56,
+      "index": 136,
+      "timestamp": 1793027220.4280093,
+      "generationSeconds": 31.83480483200401,
+      "releaseSeconds": 0.053696765564382076,
+      "memory": {
+        "rssBytes": 2488217600,
+        "cuda": {
+          "allocatedBytes": 4184116224,
+          "reservedBytes": 4206886912,
+          "maxAllocatedBytes": 6318764032,
+          "maxReservedBytes": 6666846208
+        }
+      },
+      "memAvailableBytes": 71069020160,
+      "parentRssBytes": 377327616
+    },
+    {
+      "kind": "submitted",
+      "timestamp": 1793027221.253509,
+      "worker": 1,
+      "index": 176,
+      "memAvailableBytes": 71069020160
+    },
+    {
+      "kind": "submitted",
+      "timestamp": 1793027222.9092705,
+      "worker": 5,
+      "index": 184,
+      "memAvailableBytes": 70899961856
+    },
+    {
+      "kind": "submitted",
+      "timestamp": 1793027224.6082273,
+      "worker": 6,
+      "index": 192,
+      "memAvailableBytes": 70724538368
+    },
+    {
+      "kind": "submitted",
+      "timestamp": 1793027226.2206657,
+      "worker": 7,
+      "index": 200,
+      "memAvailableBytes": 70586224640
+    },
+    {
+      "kind": "result",
+      "worker": 2,
+      "pid": 57,
+      "index": 144,
+      "timestamp": 1793027238.7093866,
+      "generationSeconds": 38.97329062502831,
+      "releaseSeconds": 0.09948032442480326,
+      "memory": {
+        "rssBytes": 2489712640,
+        "cuda": {
+          "allocatedBytes": 4184116224,
+          "reservedBytes": 4206886912,
+          "maxAllocatedBytes": 6476861440,
+          "maxReservedBytes": 6801063936
+        }
+      },
+      "memAvailableBytes": 68481904640,
+      "parentRssBytes": 341889024
+    },
+    {
+      "kind": "submitted",
+      "timestamp": 1793027238.735077,
+      "worker": 2,
+      "index": 208,
+      "memAvailableBytes": 68481679360
+    },
+    {
+      "kind": "result",
+      "worker": 3,
+      "pid": 58,
+      "index": 152,
+      "timestamp": 1793027239.7602665,
+      "generationSeconds": 38.24177957046777,
+      "releaseSeconds": 0.07636507879942656,
+      "memory": {
+        "rssBytes": 2505388032,
+        "cuda": {
+          "allocatedBytes": 4184116224,
+          "reservedBytes": 4206886912,
+          "maxAllocatedBytes": 6002569216,
+          "maxReservedBytes": 6287261696
+        }
+      },
+      "memAvailableBytes": 70343397376,
+      "parentRssBytes": 341155840
+    },
+    {
+      "kind": "submitted",
+      "timestamp": 1793027240.4799876,
+      "worker": 3,
+      "index": 216,
+      "memAvailableBytes": 70343417856
+    },
+    {
+      "kind": "result",
+      "worker": 4,
+      "pid": 59,
+      "index": 168,
+      "timestamp": 1793027256.1753206,
+      "generationSeconds": 36.65276070591062,
+      "releaseSeconds": 0.09468546882271767,
+      "memory": {
+        "rssBytes": 2486288384,
+        "cuda": {
+          "allocatedBytes": 4184116224,
+          "reservedBytes": 4206886912,
+          "maxAllocatedBytes": 6812818432,
+          "maxReservedBytes": 7237271552
+        }
+      },
+      "memAvailableBytes": 67326083072,
+      "parentRssBytes": 341602304
+    },
+    {
+      "kind": "result",
+      "worker": 6,
+      "pid": 61,
+      "index": 192,
+      "timestamp": 1793027257.6119812,
+      "generationSeconds": 32.924890141934156,
+      "releaseSeconds": 0.07859089691191912,
+      "memory": {
+        "rssBytes": 2484760576,
+        "cuda": {
+          "allocatedBytes": 4184116224,
+          "reservedBytes": 4206886912,
+          "maxAllocatedBytes": 6200190976,
+          "maxReservedBytes": 6624903168
+        }
+      },
+      "memAvailableBytes": 70286864384,
+      "parentRssBytes": 341602304
+    },
+    {
+      "kind": "result",
+      "worker": 5,
+      "pid": 60,
+      "index": 184,
+      "timestamp": 1793027257.6259859,
+      "generationSeconds": 34.64290540199727,
+      "releaseSeconds": 0.07357844151556492,
+      "memory": {
+        "rssBytes": 2496335872,
+        "cuda": {
+          "allocatedBytes": 4184116224,
+          "reservedBytes": 4208984064,
+          "maxAllocatedBytes": 6200190976,
+          "maxReservedBytes": 6566182912
+        }
+      },
+      "memAvailableBytes": 70561058816,
+      "parentRssBytes": 341602304
+    },
+    {
+      "kind": "result",
+      "worker": 1,
+      "pid": 56,
+      "index": 176,
+      "timestamp": 1793027261.4594479,
+      "generationSeconds": 40.14605477359146,
+      "releaseSeconds": 0.059678648598492146,
+      "memory": {
+        "rssBytes": 2490417152,
+        "cuda": {
+          "allocatedBytes": 4184116224,
+          "reservedBytes": 4206886912,
+          "maxAllocatedBytes": 6318764032,
+          "maxReservedBytes": 6666846208
+        }
+      },
+      "memAvailableBytes": 70730858496,
+      "parentRssBytes": 341602304
+    },
+    {
+      "kind": "result",
+      "worker": 0,
+      "pid": 55,
+      "index": 160,
+      "timestamp": 1793027263.655912,
+      "generationSeconds": 46.06703666970134,
+      "releaseSeconds": 0.06636234372854233,
+      "memory": {
+        "rssBytes": 2494644224,
+        "cuda": {
+          "allocatedBytes": 4184116224,
+          "reservedBytes": 4206886912,
+          "maxAllocatedBytes": 6299001856,
+          "maxReservedBytes": 6668943360
+        }
+      },
+      "memAvailableBytes": 71019659264,
+      "parentRssBytes": 341602304
+    },
+    {
+      "kind": "submitted",
+      "timestamp": 1793027263.6813262,
+      "worker": 0,
+      "index": 224,
+      "memAvailableBytes": 71019659264
+    },
+    {
+      "kind": "submitted",
+      "timestamp": 1793027265.4029307,
+      "worker": 1,
+      "index": 232,
+      "memAvailableBytes": 70896627712
+    },
+    {
+      "kind": "submitted",
+      "timestamp": 1793027267.034197,
+      "worker": 4,
+      "index": 240,
+      "memAvailableBytes": 70763036672
+    },
+    {
+      "kind": "submitted",
+      "timestamp": 1793027268.5614827,
+      "worker": 5,
+      "index": 248,
+      "memAvailableBytes": 68560326656
+    },
+    {
+      "kind": "result",
+      "worker": 7,
+      "pid": 62,
+      "index": 200,
+      "timestamp": 1793027269.5251007,
+      "generationSeconds": 43.20907520223409,
+      "releaseSeconds": 0.09513478353619576,
+      "memory": {
+        "rssBytes": 2492411904,
+        "cuda": {
+          "allocatedBytes": 4184116224,
+          "reservedBytes": 4206886912,
+          "maxAllocatedBytes": 6279239680,
+          "maxReservedBytes": 6645874688
+        }
+      },
+      "memAvailableBytes": 69217730560,
+      "parentRssBytes": 341479424
+    },
+    {
+      "kind": "submitted",
+      "timestamp": 1793027270.0497203,
+      "worker": 6,
+      "index": 256,
+      "memAvailableBytes": 69217730560
+    },
+    {
+      "kind": "result",
+      "worker": 2,
+      "pid": 57,
+      "index": 208,
+      "timestamp": 1793027270.3150182,
+      "generationSeconds": 31.520985685288906,
+      "releaseSeconds": 0.058773268945515156,
+      "memory": {
+        "rssBytes": 2492481536,
+        "cuda": {
+          "allocatedBytes": 4184116224,
+          "reservedBytes": 4206886912,
+          "maxAllocatedBytes": 6476861440,
+          "maxReservedBytes": 6801063936
+        }
+      },
+      "memAvailableBytes": 70950903808,
+      "parentRssBytes": 341479424
+    },
+    {
+      "kind": "submitted",
+      "timestamp": 1793027271.5678742,
+      "worker": 2,
+      "index": 264,
+      "memAvailableBytes": 70950903808
+    },
+    {
+      "kind": "submitted",
+      "timestamp": 1793027273.0477507,
+      "worker": 7,
+      "index": 272,
+      "memAvailableBytes": 70828437504
+    },
+    {
+      "kind": "result",
+      "worker": 3,
+      "pid": 58,
+      "index": 216,
+      "timestamp": 1793027275.1663046,
+      "generationSeconds": 34.59468718804419,
+      "releaseSeconds": 0.09117316454648972,
+      "memory": {
+        "rssBytes": 2508619776,
+        "cuda": {
+          "allocatedBytes": 4184116224,
+          "reservedBytes": 4206886912,
+          "maxAllocatedBytes": 6002569216,
+          "maxReservedBytes": 6287261696
+        }
+      },
+      "memAvailableBytes": 70907064320,
+      "parentRssBytes": 341565440
+    },
+    {
+      "kind": "submitted",
+      "timestamp": 1793027275.1869226,
+      "worker": 3,
+      "index": 280,
+      "memAvailableBytes": 70905257984
+    },
+    {
+      "kind": "result",
+      "worker": 6,
+      "pid": 61,
+      "index": 256,
+      "timestamp": 1793027294.5318017,
+      "generationSeconds": 24.428354454226792,
+      "releaseSeconds": 0.053480060771107674,
+      "memory": {
+        "rssBytes": 2487336960,
+        "cuda": {
+          "allocatedBytes": 4184116224,
+          "reservedBytes": 4206886912,
+          "maxAllocatedBytes": 6200190976,
+          "maxReservedBytes": 6624903168
+        }
+      },
+      "memAvailableBytes": 70111760384,
+      "parentRssBytes": 341475328
+    },
+    {
+      "kind": "result",
+      "worker": 4,
+      "pid": 59,
+      "index": 240,
+      "timestamp": 1793027302.8135526,
+      "generationSeconds": 35.71304991282523,
+      "releaseSeconds": 0.06598706264048815,
+      "memory": {
+        "rssBytes": 2486349824,
+        "cuda": {
+          "allocatedBytes": 4184116224,
+          "reservedBytes": 4206886912,
+          "maxAllocatedBytes": 6812818432,
+          "maxReservedBytes": 7237271552
+        }
+      },
+      "memAvailableBytes": 70252834816,
+      "parentRssBytes": 341475328
+    },
+    {
+      "kind": "result",
+      "worker": 1,
+      "pid": 56,
+      "index": 232,
+      "timestamp": 1793027305.208971,
+      "generationSeconds": 39.74210505746305,
+      "releaseSeconds": 0.06371087580919266,
+      "memory": {
+        "rssBytes": 2489937920,
+        "cuda": {
+          "allocatedBytes": 4184116224,
+          "reservedBytes": 4206886912,
+          "maxAllocatedBytes": 6318764032,
+          "maxReservedBytes": 6666846208
+        }
+      },
+      "memAvailableBytes": 70502572032,
+      "parentRssBytes": 341475328
+    },
+    {
+      "kind": "result",
+      "worker": 2,
+      "pid": 57,
+      "index": 264,
+      "timestamp": 1793027306.9611945,
+      "generationSeconds": 35.330304097384214,
+      "releaseSeconds": 0.0627614464610815,
+      "memory": {
+        "rssBytes": 2492600320,
+        "cuda": {
+          "allocatedBytes": 4184116224,
+          "reservedBytes": 4206886912,
+          "maxAllocatedBytes": 6476861440,
+          "maxReservedBytes": 6801063936
+        }
+      },
+      "memAvailableBytes": 69057622016,
+      "parentRssBytes": 341475328
+    },
+    {
+      "kind": "result",
+      "worker": 5,
+      "pid": 60,
+      "index": 248,
+      "timestamp": 1793027307.0489094,
+      "generationSeconds": 38.42098908871412,
+      "releaseSeconds": 0.0660681826993823,
+      "memory": {
+        "rssBytes": 2498494464,
+        "cuda": {
+          "allocatedBytes": 4184116224,
+          "reservedBytes": 4206886912,
+          "maxAllocatedBytes": 6200190976,
+          "maxReservedBytes": 6566182912
+        }
+      },
+      "memAvailableBytes": 70998880256,
+      "parentRssBytes": 341475328
+    },
+    {
+      "kind": "result",
+      "worker": 7,
+      "pid": 62,
+      "index": 272,
+      "timestamp": 1793027309.1812649,
+      "generationSeconds": 35.816001676023006,
+      "releaseSeconds": 0.3171568997204304,
+      "memory": {
+        "rssBytes": 2495152128,
+        "cuda": {
+          "allocatedBytes": 4184116224,
+          "reservedBytes": 4206886912,
+          "maxAllocatedBytes": 6279239680,
+          "maxReservedBytes": 6645874688
+        }
+      },
+      "memAvailableBytes": 68103675904,
+      "parentRssBytes": 341475328
+    },
+    {
+      "kind": "result",
+      "worker": 3,
+      "pid": 58,
+      "index": 280,
+      "timestamp": 1793027309.7533789,
+      "generationSeconds": 34.44127425458282,
+      "releaseSeconds": 0.12488045915961266,
+      "memory": {
+        "rssBytes": 2508734464,
+        "cuda": {
+          "allocatedBytes": 4184116224,
+          "reservedBytes": 4208984064,
+          "maxAllocatedBytes": 6002569216,
+          "maxReservedBytes": 6287261696
+        }
+      },
+      "memAvailableBytes": 69251600384,
+      "parentRssBytes": 341475328
+    },
+    {
+      "kind": "result",
+      "worker": 0,
+      "pid": 55,
+      "index": 224,
+      "timestamp": 1793027309.895859,
+      "generationSeconds": 46.17777353338897,
+      "releaseSeconds": 0.036558923311531544,
+      "memory": {
+        "rssBytes": 2496638976,
+        "cuda": {
+          "allocatedBytes": 4184116224,
+          "reservedBytes": 4206886912,
+          "maxAllocatedBytes": 6358288384,
+          "maxReservedBytes": 6752829440
+        }
+      },
+      "memAvailableBytes": 71846051840,
+      "parentRssBytes": 341475328
+    },
+    {
+      "kind": "submitted",
+      "timestamp": 1793027309.9226003,
+      "worker": 0,
+      "index": 288,
+      "memAvailableBytes": 71846084608
+    },
+    {
+      "kind": "submitted",
+      "timestamp": 1793027311.5411947,
+      "worker": 1,
+      "index": 296,
+      "memAvailableBytes": 71683420160
+    },
+    {
+      "kind": "submitted",
+      "timestamp": 1793027312.8828087,
+      "worker": 2,
+      "index": 304,
+      "memAvailableBytes": 71505068032
+    },
+    {
+      "kind": "submitted",
+      "timestamp": 1793027314.3058727,
+      "worker": 3,
+      "index": 312,
+      "memAvailableBytes": 71370928128
+    },
+    {
+      "kind": "submitted",
+      "timestamp": 1793027315.97441,
+      "worker": 4,
+      "index": 320,
+      "memAvailableBytes": 71217516544
+    },
+    {
+      "kind": "submitted",
+      "timestamp": 1793027317.471748,
+      "worker": 5,
+      "index": 328,
+      "memAvailableBytes": 71079636992
+    },
+    {
+      "kind": "submitted",
+      "timestamp": 1793027319.0156953,
+      "worker": 6,
+      "index": 336,
+      "memAvailableBytes": 70946832384
+    },
+    {
+      "kind": "submitted",
+      "timestamp": 1793027320.403544,
+      "worker": 7,
+      "index": 344,
+      "memAvailableBytes": 69331193856
+    },
+    {
+      "kind": "result",
+      "worker": 0,
+      "pid": 55,
+      "index": 288,
+      "timestamp": 1793027321.748342,
+      "generationSeconds": 11.763659947551787,
+      "releaseSeconds": 0.0618960028514266,
+      "memory": {
+        "rssBytes": 2497413120,
+        "cuda": {
+          "allocatedBytes": 4184116224,
+          "reservedBytes": 4206886912,
+          "maxAllocatedBytes": 6358288384,
+          "maxReservedBytes": 6752829440
+        }
+      },
+      "memAvailableBytes": 70830792704,
+      "parentRssBytes": 347082752
+    },
+    {
+      "kind": "submitted",
+      "timestamp": 1793027321.7613494,
+      "worker": 0,
+      "index": 352,
+      "memAvailableBytes": 70830653440
+    },
+    {
+      "kind": "result",
+      "worker": 1,
+      "pid": 56,
+      "index": 296,
+      "timestamp": 1793027337.121054,
+      "generationSeconds": 25.512016599066556,
+      "releaseSeconds": 0.06765479780733585,
+      "memory": {
+        "rssBytes": 2491138048,
+        "cuda": {
+          "allocatedBytes": 4184116224,
+          "reservedBytes": 4206886912,
+          "maxAllocatedBytes": 6318764032,
+          "maxReservedBytes": 6666846208
+        }
+      },
+      "memAvailableBytes": 70347128832,
+      "parentRssBytes": 350277632
+    },
+    {
+      "kind": "submitted",
+      "timestamp": 1793027337.140168,
+      "worker": 1,
+      "index": 360,
+      "memAvailableBytes": 70346469376
+    },
+    {
+      "kind": "result",
+      "worker": 7,
+      "pid": 62,
+      "index": 344,
+      "timestamp": 1793027338.5720935,
+      "generationSeconds": 18.12973855715245,
+      "releaseSeconds": 0.03857459779828787,
+      "memory": {
+        "rssBytes": 2513195008,
+        "cuda": {
+          "allocatedBytes": 4184116224,
+          "reservedBytes": 4206886912,
+          "maxAllocatedBytes": 6279239680,
+          "maxReservedBytes": 6645874688
+        }
+      },
+      "memAvailableBytes": 70377742336,
+      "parentRssBytes": 350277632
+    },
+    {
+      "kind": "result",
+      "worker": 2,
+      "pid": 57,
+      "index": 304,
+      "timestamp": 1793027350.1280432,
+      "generationSeconds": 37.15993035398424,
+      "releaseSeconds": 0.08510040026158094,
+      "memory": {
+        "rssBytes": 2492989440,
+        "cuda": {
+          "allocatedBytes": 4184116224,
+          "reservedBytes": 4206886912,
+          "maxAllocatedBytes": 6476861440,
+          "maxReservedBytes": 6801063936
+        }
+      },
+      "memAvailableBytes": 68646883328,
+      "parentRssBytes": 353165312
+    },
+    {
+      "kind": "submitted",
+      "timestamp": 1793027350.153456,
+      "worker": 2,
+      "index": 368,
+      "memAvailableBytes": 68646690816
+    },
+    {
+      "kind": "result",
+      "worker": 3,
+      "pid": 58,
+      "index": 312,
+      "timestamp": 1793027351.1792734,
+      "generationSeconds": 36.79253513831645,
+      "releaseSeconds": 0.08061826694756746,
+      "memory": {
+        "rssBytes": 2508812288,
+        "cuda": {
+          "allocatedBytes": 4184116224,
+          "reservedBytes": 4206886912,
+          "maxAllocatedBytes": 6002569216,
+          "maxReservedBytes": 6287261696
+        }
+      },
+      "memAvailableBytes": 69226848256,
+      "parentRssBytes": 363732992
+    },
+    {
+      "kind": "submitted",
+      "timestamp": 1793027351.7157586,
+      "worker": 3,
+      "index": 376,
+      "memAvailableBytes": 69224591360
+    },
+    {
+      "kind": "result",
+      "worker": 0,
+      "pid": 55,
+      "index": 352,
+      "timestamp": 1793027351.9440804,
+      "generationSeconds": 30.1189675796777,
+      "releaseSeconds": 0.06353328935801983,
+      "memory": {
+        "rssBytes": 2497662976,
+        "cuda": {
+          "allocatedBytes": 4184116224,
+          "reservedBytes": 4206886912,
+          "maxAllocatedBytes": 6358288384,
+          "maxReservedBytes": 6752829440
+        }
+      },
+      "memAvailableBytes": 68906328064,
+      "parentRssBytes": 364199936
+    },
+    {
+      "kind": "result",
+      "worker": 4,
+      "pid": 59,
+      "index": 320,
+      "timestamp": 1793027353.3525956,
+      "generationSeconds": 37.31368665955961,
+      "releaseSeconds": 0.06420079804956913,
+      "memory": {
+        "rssBytes": 2486439936,
+        "cuda": {
+          "allocatedBytes": 4184116224,
+          "reservedBytes": 4206886912,
+          "maxAllocatedBytes": 6812818432,
+          "maxReservedBytes": 7237271552
+        }
+      },
+      "memAvailableBytes": 70867759104,
+      "parentRssBytes": 364199936
+    },
+    {
+      "kind": "submitted",
+      "timestamp": 1793027353.3729844,
+      "worker": 0,
+      "index": 384,
+      "memAvailableBytes": 70867795968
+    },
+    {
+      "kind": "result",
+      "worker": 6,
+      "pid": 61,
+      "index": 336,
+      "timestamp": 1793027359.754116,
+      "generationSeconds": 40.65128106623888,
+      "releaseSeconds": 0.08691952750086784,
+      "memory": {
+        "rssBytes": 2487414784,
+        "cuda": {
+          "allocatedBytes": 4184116224,
+          "reservedBytes": 4206886912,
+          "maxAllocatedBytes": 6200190976,
+          "maxReservedBytes": 6624903168
+        }
+      },
+      "memAvailableBytes": 69028753408,
+      "parentRssBytes": 370405376
+    },
+    {
+      "kind": "result",
+      "worker": 5,
+      "pid": 60,
+      "index": 328,
+      "timestamp": 1793027360.0788248,
+      "generationSeconds": 42.54710748139769,
+      "releaseSeconds": 0.05961826350539923,
+      "memory": {
+        "rssBytes": 2498572288,
+        "cuda": {
+          "allocatedBytes": 4184116224,
+          "reservedBytes": 4206886912,
+          "maxAllocatedBytes": 6200190976,
+          "maxReservedBytes": 6566182912
+        }
+      },
+      "memAvailableBytes": 71139524608,
+      "parentRssBytes": 370405376
+    },
+    {
+      "kind": "submitted",
+      "timestamp": 1793027360.1000164,
+      "worker": 4,
+      "index": 392,
+      "memAvailableBytes": 71139565568
+    },
+    {
+      "kind": "submitted",
+      "timestamp": 1793027361.7333705,
+      "worker": 5,
+      "index": 400,
+      "memAvailableBytes": 70979846144
+    },
+    {
+      "kind": "submitted",
+      "timestamp": 1793027363.3013093,
+      "worker": 6,
+      "index": 408,
+      "memAvailableBytes": 70867316736
+    },
+    {
+      "kind": "submitted",
+      "timestamp": 1793027364.7251413,
+      "worker": 7,
+      "index": 416,
+      "memAvailableBytes": 70688104448
+    },
+    {
+      "kind": "result",
+      "worker": 1,
+      "pid": 56,
+      "index": 360,
+      "timestamp": 1793027371.5427232,
+      "generationSeconds": 34.32506358716637,
+      "releaseSeconds": 0.0772675946354866,
+      "memory": {
+        "rssBytes": 2492096512,
+        "cuda": {
+          "allocatedBytes": 4184116224,
+          "reservedBytes": 4206886912,
+          "maxAllocatedBytes": 6318764032,
+          "maxReservedBytes": 6666846208
+        }
+      },
+      "memAvailableBytes": 70532214784,
+      "parentRssBytes": 379338752
+    },
+    {
+      "kind": "submitted",
+      "timestamp": 1793027371.5667033,
+      "worker": 1,
+      "index": 424,
+      "memAvailableBytes": 70532255744
+    },
+    {
+      "kind": "result",
+      "worker": 2,
+      "pid": 57,
+      "index": 368,
+      "timestamp": 1793027373.9329362,
+      "generationSeconds": 23.72794091515243,
+      "releaseSeconds": 0.05111668724566698,
+      "memory": {
+        "rssBytes": 2495664128,
+        "cuda": {
+          "allocatedBytes": 4184116224,
+          "reservedBytes": 4206886912,
+          "maxAllocatedBytes": 6476861440,
+          "maxReservedBytes": 6801063936
+        }
+      },
+      "memAvailableBytes": 70610669568,
+      "parentRssBytes": 380682240
+    },
+    {
+      "kind": "submitted",
+      "timestamp": 1793027373.9560199,
+      "worker": 2,
+      "index": 432,
+      "memAvailableBytes": 70610481152
+    },
+    {
+      "kind": "result",
+      "worker": 0,
+      "pid": 55,
+      "index": 384,
+      "timestamp": 1793027385.9581313,
+      "generationSeconds": 32.51909325737506,
+      "releaseSeconds": 0.0656068678945303,
+      "memory": {
+        "rssBytes": 2499649536,
+        "cuda": {
+          "allocatedBytes": 4184116224,
+          "reservedBytes": 4206886912,
+          "maxAllocatedBytes": 6358288384,
+          "maxReservedBytes": 6752829440
+        }
+      },
+      "memAvailableBytes": 70236180480,
+      "parentRssBytes": 382533632
+    },
+    {
+      "kind": "result",
+      "worker": 4,
+      "pid": 59,
+      "index": 392,
+      "timestamp": 1793027387.6969783,
+      "generationSeconds": 27.532505994662642,
+      "releaseSeconds": 0.06419927813112736,
+      "memory": {
+        "rssBytes": 2485141504,
+        "cuda": {
+          "allocatedBytes": 4184116224,
+          "reservedBytes": 4206886912,
+          "maxAllocatedBytes": 6812818432,
+          "maxReservedBytes": 7237271552
+        }
+      },
+      "memAvailableBytes": 68717871104,
+      "parentRssBytes": 382533632
+    },
+    {
+      "kind": "result",
+      "worker": 3,
+      "pid": 58,
+      "index": 376,
+      "timestamp": 1793027388.981737,
+      "generationSeconds": 37.187279948964715,
+      "releaseSeconds": 0.07850185688585043,
+      "memory": {
+        "rssBytes": 2508828672,
+        "cuda": {
+          "allocatedBytes": 4184116224,
+          "reservedBytes": 4206886912,
+          "maxAllocatedBytes": 6002569216,
+          "maxReservedBytes": 6287261696
+        }
+      },
+      "memAvailableBytes": 69398867968,
+      "parentRssBytes": 382533632
+    },
+    {
+      "kind": "submitted",
+      "timestamp": 1793027389.004222,
+      "worker": 0,
+      "index": 440,
+      "memAvailableBytes": 69398712320
+    },
+    {
+      "kind": "result",
+      "worker": 5,
+      "pid": 60,
+      "index": 400,
+      "timestamp": 1793027389.4138272,
+      "generationSeconds": 27.634478154592216,
+      "releaseSeconds": 0.04570816643536091,
+      "memory": {
+        "rssBytes": 2514952192,
+        "cuda": {
+          "allocatedBytes": 4184116224,
+          "reservedBytes": 4206886912,
+          "maxAllocatedBytes": 6200190976,
+          "maxReservedBytes": 6566182912
+        }
+      },
+      "memAvailableBytes": 70619648000,
+      "parentRssBytes": 382857216
+    },
+    {
+      "kind": "submitted",
+      "timestamp": 1793027390.736009,
+      "worker": 3,
+      "index": 448,
+      "memAvailableBytes": 70619648000
+    },
+    {
+      "kind": "submitted",
+      "timestamp": 1793027392.214113,
+      "worker": 4,
+      "index": 456,
+      "memAvailableBytes": 70537900032
+    },
+    {
+      "kind": "submitted",
+      "timestamp": 1793027393.5640805,
+      "worker": 5,
+      "index": 464,
+      "memAvailableBytes": 70413836288
+    },
+    {
+      "kind": "result",
+      "worker": 7,
+      "pid": 62,
+      "index": 416,
+      "timestamp": 1793027401.3171468,
+      "generationSeconds": 36.51450419332832,
+      "releaseSeconds": 0.07714543491601944,
+      "memory": {
+        "rssBytes": 2517098496,
+        "cuda": {
+          "allocatedBytes": 4184116224,
+          "reservedBytes": 4206886912,
+          "maxAllocatedBytes": 6279239680,
+          "maxReservedBytes": 6645874688
+        }
+      },
+      "memAvailableBytes": 69007396864,
+      "parentRssBytes": 384937984
+    },
+    {
+      "kind": "result",
+      "worker": 1,
+      "pid": 56,
+      "index": 424,
+      "timestamp": 1793027402.418498,
+      "generationSeconds": 30.796333253383636,
+      "releaseSeconds": 0.05526307597756386,
+      "memory": {
+        "rssBytes": 2494050304,
+        "cuda": {
+          "allocatedBytes": 4184116224,
+          "reservedBytes": 4206886912,
+          "maxAllocatedBytes": 6318764032,
+          "maxReservedBytes": 6666846208
+        }
+      },
+      "memAvailableBytes": 70474100736,
+      "parentRssBytes": 384937984
+    },
+    {
+      "kind": "result",
+      "worker": 6,
+      "pid": 61,
+      "index": 408,
+      "timestamp": 1793027405.4360292,
+      "generationSeconds": 42.06854096893221,
+      "releaseSeconds": 0.06595714204013348,
+      "memory": {
+        "rssBytes": 2492219392,
+        "cuda": {
+          "allocatedBytes": 4184116224,
+          "reservedBytes": 4206886912,
+          "maxAllocatedBytes": 6200190976,
+          "maxReservedBytes": 6624903168
+        }
+      },
+      "memAvailableBytes": 70541803520,
+      "parentRssBytes": 384937984
+    },
+    {
+      "kind": "submitted",
+      "timestamp": 1793027405.4595368,
+      "worker": 1,
+      "index": 472,
+      "memAvailableBytes": 70541848576
+    },
+    {
+      "kind": "result",
+      "worker": 2,
+      "pid": 57,
+      "index": 432,
+      "timestamp": 1793027412.7172956,
+      "generationSeconds": 38.69285102095455,
+      "releaseSeconds": 0.06798324827104807,
+      "memory": {
+        "rssBytes": 2495664128,
+        "cuda": {
+          "allocatedBytes": 4184116224,
+          "reservedBytes": 4206886912,
+          "maxAllocatedBytes": 6476861440,
+          "maxReservedBytes": 6801063936
+        }
+      },
+      "memAvailableBytes": 70661120000,
+      "parentRssBytes": 385265664
+    },
+    {
+      "kind": "result",
+      "worker": 0,
+      "pid": 55,
+      "index": 440,
+      "timestamp": 1793027422.8089728,
+      "generationSeconds": 33.746387613005936,
+      "releaseSeconds": 0.058005424216389656,
+      "memory": {
+        "rssBytes": 2499670016,
+        "cuda": {
+          "allocatedBytes": 4184116224,
+          "reservedBytes": 4206886912,
+          "maxAllocatedBytes": 6358288384,
+          "maxReservedBytes": 6752829440
+        }
+      },
+      "memAvailableBytes": 70801551360,
+      "parentRssBytes": 384966656
+    },
+    {
+      "kind": "result",
+      "worker": 4,
+      "pid": 59,
+      "index": 456,
+      "timestamp": 1793027425.7210994,
+      "generationSeconds": 33.45117961708456,
+      "releaseSeconds": 0.055580261163413525,
+      "memory": {
+        "rssBytes": 2487693312,
+        "cuda": {
+          "allocatedBytes": 4184116224,
+          "reservedBytes": 4206886912,
+          "maxAllocatedBytes": 6812818432,
+          "maxReservedBytes": 7237271552
+        }
+      },
+      "memAvailableBytes": 71059832832,
+      "parentRssBytes": 390168576
+    },
+    {
+      "kind": "result",
+      "worker": 3,
+      "pid": 58,
+      "index": 448,
+      "timestamp": 1793027428.571678,
+      "generationSeconds": 37.778462113812566,
+      "releaseSeconds": 0.057001516222953796,
+      "memory": {
+        "rssBytes": 2511106048,
+        "cuda": {
+          "allocatedBytes": 4184116224,
+          "reservedBytes": 4206886912,
+          "maxAllocatedBytes": 6279239680,
+          "maxReservedBytes": 6666846208
+        }
+      },
+      "memAvailableBytes": 71297380352,
+      "parentRssBytes": 390168576
+    },
+    {
+      "kind": "result",
+      "worker": 1,
+      "pid": 56,
+      "index": 472,
+      "timestamp": 1793027429.9034975,
+      "generationSeconds": 24.434314485639334,
+      "releaseSeconds": 0.009431883692741394,
+      "memory": {
+        "rssBytes": 2491572224,
+        "cuda": {
+          "allocatedBytes": 4184116224,
+          "reservedBytes": 4206886912,
+          "maxAllocatedBytes": 6318764032,
+          "maxReservedBytes": 6666846208
+        }
+      },
+      "memAvailableBytes": 71635120128,
+      "parentRssBytes": 402309120
+    },
+    {
+      "kind": "result",
+      "worker": 5,
+      "pid": 60,
+      "index": 464,
+      "timestamp": 1793027429.6414485,
+      "generationSeconds": 36.01989068090916,
+      "releaseSeconds": 0.057049356400966644,
+      "memory": {
+        "rssBytes": 2519908352,
+        "cuda": {
+          "allocatedBytes": 4184116224,
+          "reservedBytes": 4206886912,
+          "maxAllocatedBytes": 6239715328,
+          "maxReservedBytes": 6603931648
+        }
+      },
+      "memAvailableBytes": 71635120128,
+      "parentRssBytes": 402309120
+    },
+    {
+      "kind": "pool_closed",
+      "timestamp": 1793027437.2128801,
+      "minAvailableBytes": 57865646080
+    }
+  ]
+}

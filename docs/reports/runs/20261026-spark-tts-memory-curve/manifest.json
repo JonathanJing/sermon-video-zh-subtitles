@@ -1,0 +1,253 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261026-spark-tts-memory-curve",
+  "runs": [
+    {
+      "label": "spark-tts-memory-full-episode-20261026",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/spark-tts-memory-full-episode-20261026",
+      "skipped": {
+        ".json": 36055,
+        ".py": 5,
+        ".lock": 12,
+        ".jsonl": 6,
+        ".csv": 18,
+        ".sha256": 4719,
+        ".wav": 7150,
+        ".svg": 1,
+        ".mp3": 2
+      }
+    }
+  ],
+  "files": [
+    {
+      "run": "spark-tts-memory-full-episode-20261026",
+      "path": "l3/ko/spark-output/render.log",
+      "kind": "log",
+      "bytes": 9364,
+      "truncated": false,
+      "sha256": "01ece5c8828cedfc7ba68f3f59477e18668c8f934f6156922f6746b00292389b",
+      "redactions": {}
+    },
+    {
+      "run": "spark-tts-memory-full-episode-20261026",
+      "path": "l3/ko/spark-output/speech-job/accounting/operations.log",
+      "kind": "log",
+      "bytes": 1858031,
+      "truncated": true,
+      "sha256": "71ef4c7657b0fc5867bd28fb8fa475632c55fa08cabfe4e5a1f8ddc773843d86",
+      "redactions": {}
+    },
+    {
+      "run": "spark-tts-memory-full-episode-20261026",
+      "path": "l3/ko/spark-output/speech-job/accounting/summary.json",
+      "kind": "whole",
+      "bytes": 4413824,
+      "truncated": false,
+      "sha256": "be70a33ae85c5fb51f06a145f725305a16e68c6a728defafefd4fb7c4ff41a34",
+      "omitted": "over_size_cap"
+    },
+    {
+      "run": "spark-tts-memory-full-episode-20261026",
+      "path": "l3/zh-Hans/spark-output/render.log",
+      "kind": "log",
+      "bytes": 10010,
+      "truncated": false,
+      "sha256": "1cd3b6f40767f1ba3c7a1dd743bc82b5f14f3752ce9cd968c3c025951d041560",
+      "redactions": {}
+    },
+    {
+      "run": "spark-tts-memory-full-episode-20261026",
+      "path": "l3/zh-Hans/spark-output/speech-job/accounting/operations.log",
+      "kind": "log",
+      "bytes": 2220294,
+      "truncated": true,
+      "sha256": "0fcbbea821d859fc6a2a285bee54005780a78961a93eaed4a368128633bded1b",
+      "redactions": {}
+    },
+    {
+      "run": "spark-tts-memory-full-episode-20261026",
+      "path": "l3/zh-Hans/spark-output/speech-job/accounting/summary.json",
+      "kind": "whole",
+      "bytes": 5227791,
+      "truncated": false,
+      "sha256": "670ea67d66fd2c83642cfba63b3b3a74cb7f273f4f58a752d3a28a095b4571f4",
+      "omitted": "over_size_cap"
+    },
+    {
+      "run": "spark-tts-memory-full-episode-20261026",
+      "path": "lanes.log",
+      "kind": "log",
+      "bytes": 84,
+      "truncated": false,
+      "sha256": "63474527a3f0a37122f574efe71ebf616071903a8e7cd6fe01a8f0c61a6f8598",
+      "redactions": {}
+    },
+    {
+      "run": "spark-tts-memory-full-episode-20261026",
+      "path": "run2/l3/ko/spark-output/render.log",
+      "kind": "log",
+      "bytes": 9376,
+      "truncated": false,
+      "sha256": "3f5f7c2804cc52568e0871d0a72ab56dfd90dcca1c5489d15432de04cc6a924c",
+      "redactions": {}
+    },
+    {
+      "run": "spark-tts-memory-full-episode-20261026",
+      "path": "run2/l3/ko/spark-output/speech-job/accounting/operations.log",
+      "kind": "log",
+      "bytes": 1858030,
+      "truncated": true,
+      "sha256": "1a62cf4b5314a92c37b66842fdec030436d908bbe1e69b4180d64488f5702ac3",
+      "redactions": {}
+    },
+    {
+      "run": "spark-tts-memory-full-episode-20261026",
+      "path": "run2/l3/ko/spark-output/speech-job/accounting/summary.json",
+      "kind": "whole",
+      "bytes": 4413843,
+      "truncated": false,
+      "sha256": "af85ac6eeabab0b0f17f738923a0cc7864e03aced1868b97c60f7c7f38ed19d5",
+      "omitted": "over_size_cap"
+    },
+    {
+      "run": "spark-tts-memory-full-episode-20261026",
+      "path": "run2/l3/zh-Hans/spark-output/render.log",
+      "kind": "log",
+      "bytes": 10242,
+      "truncated": false,
+      "sha256": "a873aa697a934221deeee6693c6de815d76b53bfabe0cc51207c4d85afdd45f7",
+      "redactions": {}
+    },
+    {
+      "run": "spark-tts-memory-full-episode-20261026",
+      "path": "run2/l3/zh-Hans/spark-output/speech-job/accounting/operations.log",
+      "kind": "log",
+      "bytes": 2220315,
+      "truncated": true,
+      "sha256": "f13140800e5ced7e0d1007c749f6b799b9a9f9249ffb621ff157796902c7d7e0",
+      "redactions": {}
+    },
+    {
+      "run": "spark-tts-memory-full-episode-20261026",
+      "path": "run2/l3/zh-Hans/spark-output/speech-job/accounting/summary.json",
+      "kind": "whole",
+      "bytes": 5227814,
+      "truncated": false,
+      "sha256": "bc13bcf7daa57785fa024b38bbcf8e566e715f13647013fe39a6e66643406cbd",
+      "omitted": "over_size_cap"
+    },
+    {
+      "run": "spark-tts-memory-full-episode-20261026",
+      "path": "run2/lanes.log",
+      "kind": "log",
+      "bytes": 84,
+      "truncated": false,
+      "sha256": "63474527a3f0a37122f574efe71ebf616071903a8e7cd6fe01a8f0c61a6f8598",
+      "redactions": {}
+    },
+    {
+      "run": "spark-tts-memory-full-episode-20261026",
+      "path": "run3/l3/ko/spark-output/render.log",
+      "kind": "log",
+      "bytes": 9377,
+      "truncated": false,
+      "sha256": "78bfde85387933815ef7854792c1d1259c8a0a8cb70f1289422185f2e7e402aa",
+      "redactions": {}
+    },
+    {
+      "run": "spark-tts-memory-full-episode-20261026",
+      "path": "run3/l3/ko/spark-output/speech-job/accounting/operations.log",
+      "kind": "log",
+      "bytes": 1857993,
+      "truncated": true,
+      "sha256": "e3b496b3763b76ee8b40d9b467a7d031f2660692419fd1fe479236d5514b2349",
+      "redactions": {}
+    },
+    {
+      "run": "spark-tts-memory-full-episode-20261026",
+      "path": "run3/l3/ko/spark-output/speech-job/accounting/summary.json",
+      "kind": "whole",
+      "bytes": 4413745,
+      "truncated": false,
+      "sha256": "41bc2fd0d3262152d07aeaca6a796828426c5339cfd9f411a5f27547da208a51",
+      "omitted": "over_size_cap"
+    },
+    {
+      "run": "spark-tts-memory-full-episode-20261026",
+      "path": "run3/l3/zh-Hans/spark-output/compact.log",
+      "kind": "log",
+      "bytes": 200,
+      "truncated": false,
+      "sha256": "e1d2a70205aafba50cae6c75f8b1515938243a691503b1e6e255b0e89843ae09",
+      "redactions": {}
+    },
+    {
+      "run": "spark-tts-memory-full-episode-20261026",
+      "path": "run3/l3/zh-Hans/spark-output/render.log",
+      "kind": "log",
+      "bytes": 8506,
+      "truncated": false,
+      "sha256": "580547ef37ad5f4116c32c307233510d4b5c898309ae20c0515e144d00f01cbb",
+      "redactions": {}
+    },
+    {
+      "run": "spark-tts-memory-full-episode-20261026",
+      "path": "run3/l3/zh-Hans/spark-output/screen-v1.log",
+      "kind": "log",
+      "bytes": 35986,
+      "truncated": true,
+      "sha256": "1d78d0cdc00838f4a643e097ca125b2451ccc3a0586931e71e16b7d9577823a3",
+      "redactions": {}
+    },
+    {
+      "run": "spark-tts-memory-full-episode-20261026",
+      "path": "run3/l3/zh-Hans/spark-output/speech-job/accounting/operations.log",
+      "kind": "log",
+      "bytes": 2220937,
+      "truncated": true,
+      "sha256": "79f993006f970503476f5a8e5326bab2f4cd0d13adb807951ab2b2d48dd4d05f",
+      "redactions": {}
+    },
+    {
+      "run": "spark-tts-memory-full-episode-20261026",
+      "path": "run3/l3/zh-Hans/spark-output/speech-job/accounting/summary.json",
+      "kind": "whole",
+      "bytes": 5228205,
+      "truncated": false,
+      "sha256": "ef705a7a2762779e5bbe8b92be4d375f8f857184dcf1d9ee048db653bf6f9041",
+      "omitted": "over_size_cap"
+    },
+    {
+      "run": "spark-tts-memory-full-episode-20261026",
+      "path": "run3/l3/zh-Hans/spark-output/speech-job/asr-screening-receipt-v1.memory.json",
+      "kind": "whole",
+      "bytes": 660,
+      "truncated": false,
+      "sha256": "ca4ace682544679a68740e9d37e6a4986d2597e02696ba9cc34d8da7718d3ab2",
+      "redactions": {}
+    },
+    {
+      "run": "spark-tts-memory-full-episode-20261026",
+      "path": "run3/l3/zh-Hans/spark-zh-Hans-curve2-c/compact.log",
+      "kind": "log",
+      "bytes": 200,
+      "truncated": false,
+      "sha256": "e1d2a70205aafba50cae6c75f8b1515938243a691503b1e6e255b0e89843ae09",
+      "redactions": {}
+    },
+    {
+      "run": "spark-tts-memory-full-episode-20261026",
+      "path": "run3/lanes.log",
+      "kind": "log",
+      "bytes": 84,
+      "truncated": false,
+      "sha256": "470ca38cecf3cccd1067c4ebfa7d4c694a50268019d874853a319dabfbd6423a",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}
