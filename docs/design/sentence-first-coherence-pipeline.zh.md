@@ -284,7 +284,7 @@ python3 $EXP/run_coherence_ab.py --phase 2 --run $RUN --held-out <second-run>
 - 实验是文本为主；TTS/ASR 只做 Phase 3 抽查，不能替代整期音频验收。
 - 留出证道的选择要在 Phase 1 结论冻结前确定，避免“看过结果再挑样本”。
 
-## 11. TTS 口播形式：撒但
+## 11. TTS 口播形式：撒但 → 撒旦
 
 2026-10-26 Opus 版 TTS 的实测：
 
@@ -292,7 +292,9 @@ python3 $EXP/run_coherence_ab.py --phase 2 --run $RUN --held-out <second-run>
 - 音频时长 3.6–5.0 字/秒，属于正常，没有整句被截短的证据；问题更像 TTS 把“撒但”分成“撒/但”两个词，中间停顿让 ASR 拆读。
 - 把 TTS 口播形式映射为“魔鬼”（字幕仍保留“撒但”）后，**22/22** 句 ASR 都完整识别“魔鬼”，包括原本最差的 s0080、s0204、s0233。
 
-因此管线默认在 `review.json` 的 `spokenForms` 里写 `{"撒但": "魔鬼"}`，只在目标句含“撒但”时添加；已有显式映射优先。`spoken_forms.py` 实现该规则，`audit_deepseek.py` 用它生成 `review.json`；`build_speech.py` 把口播文本换成“魔鬼”，字幕/文稿不变。没有“撒但”的 run 不会写这个 key，因为 `build_speech.py` 会拒绝未匹配任何句子的 `spokenForms`。
+2026-10-26 用户决定：**以后口播也用“撒旦”**，不再用“魔鬼”替代；字幕和文稿继续用“撒但”。ASR 拆读风险保留，作为已知限制。
+
+因此管线默认在 `review.json` 的 `spokenForms` 里写 `{"撒但": "撒旦"}`，只在目标句含“撒但”时添加；已有显式映射优先。`spoken_forms.py` 实现该规则，`audit_deepseek.py` 用它生成 `review.json`；`build_speech.py` 把口播文本换成“撒旦”，字幕/文稿不变。没有“撒但”的 run 不会写这个 key，因为 `build_speech.py` 会拒绝未匹配任何句子的 `spokenForms`。
 
 ## 12. 压缩但保留口语感
 
