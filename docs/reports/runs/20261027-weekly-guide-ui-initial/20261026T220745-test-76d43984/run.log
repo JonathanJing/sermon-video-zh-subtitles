@@ -1,0 +1,256 @@
+
+$ /usr/bin/xcrun xcodebuild -project ~/.codex/worktrees/weekly-study-guide-design/sermon-video-zh-subtitles/apps/tongxing-ios/Tongxing.xcodeproj -list -json -disableAutomaticPackageResolution
+{
+  "project" : {
+    "configurations" : [
+      "BetaDebug",
+      "BetaRelease",
+      "Debug",
+      "Release"
+    ],
+    "name" : "Tongxing",
+    "schemes" : [
+      "ListeningActivityExtension",
+      "Tongxing",
+      "TongxingBeta",
+      "TongxingCore",
+      "TongxingInfrastructure",
+      "TongxingPreview",
+      "TongxingScreenshots"
+    ],
+    "targets" : [
+      "Tongxing",
+      "ListeningActivityExtension",
+      "TongxingTests",
+      "TongxingUITests"
+    ]
+  }
+}
+
+$ /usr/bin/xcrun simctl list devices available --json
+{
+  "devices" : {
+    "com.apple.CoreSimulator.SimRuntime.iOS-27-0" : [
+      {
+        "dataPath" : "\/Users\/jonathan_jing\/Library\/Developer\/CoreSimulator\/Devices\/A9ACB321-07F8-4540-AD3C-7FACBD384A1F\/data",
+        "dataPathSize" : 5734416384,
+        "logPath" : "\/Users\/jonathan_jing\/Library\/Logs\/CoreSimulator\/A9ACB321-07F8-4540-AD3C-7FACBD384A1F",
+        "udid" : "A9ACB321-07F8-4540-AD3C-7FACBD384A1F",
+        "lastUsedAt" : "2026-10-27T05:07:46Z",
+        "isAvailable" : true,
+... 597 lines omitted; 14 error-like lines, 14 kept below ...
+[line 429] 2026-10-26 22:07:52.039 xcodebuild[52384:59449112] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+[line 430] 2026-10-26 22:07:52.040 xcodebuild[52384:59449112] [MT] IDESchemeActionDeviceRecord: versionAndBuild = 27.1 (24A94401), error = invalidDigitCount(94401).
+[line 442] 2026-10-26 22:08:21.967 xcodebuild[52384:59449112] [MT] IDELaunchParametersSnapshot: debugger version lookup failed for path '<nil>': noURL
+[line 444] 2026-10-26 22:08:22.009 xcodebuild[52384:59449112] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+[line 445] 2026-10-26 22:08:22.010 xcodebuild[52384:59449112] [MT] IDESchemeActionDeviceRecord: versionAndBuild = 27.1 (24A94401), error = invalidDigitCount(94401).
+[line 588] 2026-10-26 22:08:49.838 xcodebuild[52384:59449112] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+[line 589] 2026-10-26 22:08:49.838 xcodebuild[52384:59449112] [MT] IDESchemeActionDeviceRecord: versionAndBuild = 27.1 (24A94401), error = invalidDigitCount(94401).
+[line 590] 2026-10-26 22:08:49.839 xcodebuild[52384:59449112] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+[line 591] 2026-10-26 22:08:49.839 xcodebuild[52384:59449112] [MT] IDESchemeActionDeviceRecord: versionAndBuild = 27.1 (24A94401), error = invalidDigitCount(94401).
+[line 592] 2026-10-26 22:08:49.840 xcodebuild[52384:59449112] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+[line 593] 2026-10-26 22:08:49.840 xcodebuild[52384:59449112] [MT] IDESchemeActionDeviceRecord: versionAndBuild = 27.1 (24A94401), error = invalidDigitCount(94401).
+[line 600] 2026-10-26 22:08:50.977 xcodebuild[52384:59449112] [MT] IDELaunchParametersSnapshot: debugger version lookup failed for path '<nil>': noURL
+[line 602] 2026-10-26 22:08:50.983 xcodebuild[52384:59449112] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+[line 603] 2026-10-26 22:08:50.983 xcodebuild[52384:59449112] [MT] IDESchemeActionDeviceRecord: versionAndBuild = 27.1 (24A94401), error = invalidDigitCount(94401).
+... end of omitted section ...
+    t =     9.95s Find the "download-audio" Button
+    t =    10.01s Find the "download-audio" Button
+    t =    10.09s Tap "download-audio" Button
+    t =    10.09s     Wait for com.jonathanjing.tongxing.dev to idle
+    t =    10.09s     Find the "download-audio" Button
+    t =    10.15s     Check for interrupting elements affecting "download-audio" Button
+    t =    10.21s         Wait for com.apple.springboard to idle
+    t =    10.25s     Synthesize event
+    t =    10.54s     Wait for com.jonathanjing.tongxing.dev to idle
+    t =    11.61s Checking `Expect predicate `label CONTAINS "正在使用已下载音频"` for object "download-status" Any`
+    t =    11.61s     Find the "download-status" Any
+    t =    12.76s Checking `Expect predicate `enabled == 1 AND hittable == 1` for object "playback-toggle" Button`
+    t =    12.76s     Find the "playback-toggle" Button
+    t =    12.84s     Find the "playback-toggle" Button
+    t =    12.91s Tap "playback-toggle" Button
+    t =    12.91s     Wait for com.jonathanjing.tongxing.dev to idle
+    t =    12.91s     Find the "playback-toggle" Button
+    t =    12.97s     Check for interrupting elements affecting "playback-toggle" Button
+    t =    13.02s         Wait for com.apple.springboard to idle
+    t =    13.07s     Synthesize event
+    t =    13.37s     Wait for com.jonathanjing.tongxing.dev to idle
+    t =    15.29s Checking `Expect predicate `label == "暂停播放"` for object "playback-toggle" Button`
+    t =    15.29s     Find the "playback-toggle" Button
+    t =    15.37s Checking existence of `"playback-progress" Any`
+    t =    16.53s Checking `Expect predicate `NOT value BEGINSWITH "00:00，"` for object "playback-progress" Any`
+    t =    16.53s     Find the "playback-progress" Any
+    t =    16.70s Checking existence of `"playback-progress" Any`
+    t =    16.85s Press "playback-progress" Any[0.50, 0.50] for 0.1 seconds, then drag to "playback-progress" Any[0.50, 0.50] -> (0.0, 70.0) with velocity of 500.00 pixels per second, and then hold for 0.0 seconds
+    t =    16.85s     Wait for com.jonathanjing.tongxing.dev to idle
+    t =    16.86s     Find the "playback-progress" Any
+    t =    17.02s     Check for interrupting elements affecting "playback-progress" Other
+    t =    17.07s         Wait for com.apple.springboard to idle
+    t =    17.14s     Synthesize event
+    t =    17.14s         Find the "playback-progress" Other
+    t =    17.30s         Find the "playback-progress" Other
+    t =    17.46s         Find the "playback-progress" Other
+    t =    17.62s         Find the "playback-progress" Other
+    t =    17.79s         Find the "playback-progress" Other
+    t =    18.40s     Wait for com.jonathanjing.tongxing.dev to idle
+    t =    18.93s Checking existence of `"playback-dock-collapse-toggle" Button`
+    t =    19.00s Find the "nudge-backward" Button
+    t =    19.06s Find the "nudge-forward" Button
+    t =    19.13s Find the "playback-more" Button
+    t =    19.20s Find the "playback-toggle" Button
+    t =    19.35s Added attachment named 'playback-dock-after-swipe'
+    t =    19.35s Tap "playback-toggle" Button
+    t =    19.35s     Wait for com.jonathanjing.tongxing.dev to idle
+    t =    19.35s     Find the "playback-toggle" Button
+    t =    19.42s     Check for interrupting elements affecting "playback-toggle" Button
+    t =    19.48s         Wait for com.apple.springboard to idle
+    t =    19.52s     Synthesize event
+    t =    19.81s     Wait for com.jonathanjing.tongxing.dev to idle
+    t =    21.65s Checking `Expect predicate `label == "开始播放"` for object "playback-toggle" Button`
+    t =    21.65s     Find the "playback-toggle" Button
+    t =    21.71s Tear Down
+    t =    21.81s     Added attachment named 'final-ui-state'
+    t =    21.81s     Requesting snapshot of accessibility hierarchy for app with pid 52874
+    t =    21.97s     Requesting snapshot of accessibility hierarchy for app with pid 52874
+    t =    22.03s     Added attachment named 'final-accessibility-hierarchy'
+    t =    22.03s     Terminate com.jonathanjing.tongxing.dev:52874
+2026-10-26 22:09:13.005 xcodebuild[52384:59449112] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+2026-10-26 22:09:13.005 xcodebuild[52384:59449112] [MT] IDESchemeActionDeviceRecord: versionAndBuild = 27.1 (24A94401), error = invalidDigitCount(94401).
+2026-10-26 22:09:13.006 xcodebuild[52384:59449112] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+2026-10-26 22:09:13.006 xcodebuild[52384:59449112] [MT] IDESchemeActionDeviceRecord: versionAndBuild = 27.1 (24A94401), error = invalidDigitCount(94401).
+2026-10-26 22:09:13.006 xcodebuild[52384:59449112] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+2026-10-26 22:09:13.006 xcodebuild[52384:59449112] [MT] IDESchemeActionDeviceRecord: versionAndBuild = 27.1 (24A94401), error = invalidDigitCount(94401).
+Test Case '-[TongxingUITests.ListeningFlowUITests testPlaybackDockSwipeDoesNotCollapseOrPause]' passed (23.120 seconds).
+Test Suite 'ListeningFlowUITests' passed at 2026-10-26 22:09:14.070.
+	 Executed 2 tests, with 0 failures (0 unexpected) in 52.443 (52.445) seconds
+Test Suite 'WeeklyGuidePreviewUITests' started at 2026-10-26 22:09:14.070.
+Test Case '-[TongxingUITests.WeeklyGuidePreviewUITests testGuidePreviewNavigationKeepsPlaybackAndUsesSyntheticContent]' started.
+    t =     0.00s Start Test at 2026-10-26 22:09:14.071
+    t =     0.02s Set Up
+    t =     0.02s Open com.jonathanjing.tongxing.dev
+    t =     0.02s     Launch com.jonathanjing.tongxing.dev
+2026-10-26 22:09:14.095 xcodebuild[52384:59449112] [MT] IDELaunchParametersSnapshot: debugger version lookup failed for path '<nil>': noURL
+2026-10-26 22:09:14.095 xcodebuild[52384:59449112] [MT] IDELaunchParametersSnapshot: no debugger version
+2026-10-26 22:09:14.099 xcodebuild[52384:59449112] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+2026-10-26 22:09:14.099 xcodebuild[52384:59449112] [MT] IDESchemeActionDeviceRecord: versionAndBuild = 27.1 (24A94401), error = invalidDigitCount(94401).
+    t =     0.23s         Setting up automation session
+    t =     2.90s         Wait for com.jonathanjing.tongxing.dev to idle
+    t =     5.03s Waiting 20.0s for "open-sermon-study" Button to exist
+    t =     6.09s     Checking `Expect predicate `existsNoRetry == 1` for object "open-sermon-study" Button`
+    t =     6.09s         Checking existence of `"open-sermon-study" Button`
+    t =     6.23s Find the "open-sermon-study" Button
+    t =     6.30s Waiting 10.0s for "playback-toggle" Button to exist
+    t =     7.35s     Checking `Expect predicate `existsNoRetry == 1` for object "playback-toggle" Button`
+    t =     7.35s         Checking existence of `"playback-toggle" Button`
+    t =     7.43s Find the "playback-toggle" Button
+    t =     7.50s Tap "open-sermon-study" Button
+    t =     7.50s     Wait for com.jonathanjing.tongxing.dev to idle
+    t =     7.50s     Find the "open-sermon-study" Button
+    t =     7.57s     Check for interrupting elements affecting "open-sermon-study" Button
+    t =     7.63s         Wait for com.apple.springboard to idle
+    t =     7.68s     Synthesize event
+    t =     7.98s     Wait for com.jonathanjing.tongxing.dev to idle
+    t =     8.13s Waiting 10.0s for "合成预览 · 非教会手册" StaticText to exist
+    t =     9.16s     Checking `Expect predicate `existsNoRetry == 1` for object "合成预览 · 非教会手册" StaticText`
+    t =     9.16s         Checking existence of `"合成预览 · 非教会手册" StaticText`
+    t =     9.32s Find the "playback-toggle" Button
+    t =     9.44s     Collecting debug information to assist test failure triage
+    t =     9.44s         Requesting snapshot of accessibility hierarchy for app with pid 52932
+    t =     9.58s     Requesting snapshot of accessibility hierarchy for app with pid 52932
+    t =     9.72s     Find: Descendants matching type Button
+    t =     9.72s     Find: Elements matching predicate '"playback-toggle" IN identifiers'
+    t =     9.82s     Requesting snapshot of accessibility hierarchy for app with pid 52932
+    t =     9.96s     Find: Descendants matching type Button
+    t =     9.96s     Find: Elements matching predicate '"playback-toggle" IN identifiers'
+    t =     9.96s     Requesting snapshot of accessibility hierarchy for app with pid 52932
+    t =    10.09s     Find: Descendants matching type Button
+    t =    10.10s     Requesting snapshot of accessibility hierarchy for app with pid 52932
+    t =    10.36s     Requesting snapshot of accessibility hierarchy for app with pid 52932
+~/.codex/worktrees/weekly-study-guide-design/sermon-video-zh-subtitles/apps/tongxing-ios/UITests/WeeklyGuidePreviewUITests.swift:20: error: -[TongxingUITests.WeeklyGuidePreviewUITests testGuidePreviewNavigationKeepsPlaybackAndUsesSyntheticContent] : Failed to get matching snapshot: Find single matching element. Multiple matching elements found for <XCUIElementQuery: 0x10613c820>.
+Sparse tree of matches:
+→Application, pid: 52932, label: '同行'
+  ↳Window (Main)
+    ↳Other
+    ⋅ ↳Other
+    ⋅   ↳Other
+    ⋅     ↳Other
+    ⋅       ↳Other
+    ⋅         ↳Toolbar, identifier: 'Toolbar', label: '工具栏'
+    ⋅           ↳Other
+    ⋅             ↳Other
+    ⋅               ↳Other
+    ⋅                 ↳Other
+    ⋅                   ↳Other
+    ⋅                     ↳Other
+    ⋅                       ↳Other
+    ⋅                         ↳Other
+    ⋅                           ↳Other
+    ⋅                             ↳Other
+    ⋅                               ↳Button, identifier: 'playback-toggle', label: '开始播放', value: 00:00，总长 00:36。音频加..., Disabled
+    ↳Other
+      ↳Other
+        ↳Other
+          ↳Other
+            ↳Other
+              ↳Other
+                ↳Toolbar, identifier: 'Toolbar', label: '工具栏'
+                  ↳Other
+                    ↳Other
+                      ↳Other
+                        ↳Other
+                          ↳Other
+                            ↳Other
+                              ↳Other
+                                ↳Other
+                                  ↳Other
+                                    ↳Other
+                                      ↳Button, identifier: 'playback-toggle', label: '开始播放', value: 00:00，总长 00:36。音频加..., Disabled
+Possibly caused by runtime issues:
+Automation type mismatch: computed Button from legacy attributes vs PopUpButton from modern attribute. Input attributes and values: {
+    "XC_kAXXCAttributeAutomationType" = 14;
+    "XC_kAXXCAttributeElementBaseType" = NSObject;
+    "XC_kAXXCAttributeElementType" = "SwiftUI.AccessibilityNode";
+    "XC_kAXXCAttributeTraits" = 1108101562369;
+}
+Automation type mismatch: computed Button from legacy attributes vs DisclosureTriangle from modern attribute. Input attributes and values: {
+    "XC_kAXXCAttributeAutomationType" = 13;
+    "XC_kAXXCAttributeElementBaseType" = NSObject;
+    "XC_kAXXCAttributeElementType" = "SwiftUI.AccessibilityNode";
+    "XC_kAXXCAttributeTraits" = 8589934593;
+}
+See test report attachments for more detail.
+    t =    10.76s Tear Down
+Test Case '-[TongxingUITests.WeeklyGuidePreviewUITests testGuidePreviewNavigationKeepsPlaybackAndUsesSyntheticContent]' failed (11.037 seconds).
+Test Suite 'WeeklyGuidePreviewUITests' failed at 2026-10-26 22:09:25.107.
+	 Executed 1 test, with 1 failure (0 unexpected) in 11.037 (11.037) seconds
+Test Suite 'TongxingUITests.xctest' failed at 2026-10-26 22:09:25.108.
+	 Executed 3 tests, with 1 failure (0 unexpected) in 63.480 (63.483) seconds
+Test Suite 'Selected tests' failed at 2026-10-26 22:09:25.108.
+	 Executed 3 tests, with 1 failure (0 unexpected) in 63.480 (63.484) seconds
+2026-10-26 22:09:25.142 xcodebuild[52384:59449112] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+2026-10-26 22:09:25.142 xcodebuild[52384:59449112] [MT] IDESchemeActionDeviceRecord: versionAndBuild = 27.1 (24A94401), error = invalidDigitCount(94401).
+2026-10-26 22:09:25.143 xcodebuild[52384:59449112] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+2026-10-26 22:09:25.143 xcodebuild[52384:59449112] [MT] IDESchemeActionDeviceRecord: versionAndBuild = 27.1 (24A94401), error = invalidDigitCount(94401).
+2026-10-26 22:09:25.143 xcodebuild[52384:59449112] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+2026-10-26 22:09:25.143 xcodebuild[52384:59449112] [MT] IDESchemeActionDeviceRecord: versionAndBuild = 27.1 (24A94401), error = invalidDigitCount(94401).
+2026-10-26 22:09:25.170 xcodebuild[52384:59449112] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+2026-10-26 22:09:25.170 xcodebuild[52384:59449112] [MT] IDESchemeActionDeviceRecord: versionAndBuild = 27.1 (24A94401), error = invalidDigitCount(94401).
+2026-10-26 22:09:25.170 xcodebuild[52384:59449112] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+2026-10-26 22:09:25.170 xcodebuild[52384:59449112] [MT] IDESchemeActionDeviceRecord: versionAndBuild = 27.1 (24A94401), error = invalidDigitCount(94401).
+2026-10-26 22:09:25.170 xcodebuild[52384:59449112] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+2026-10-26 22:09:25.170 xcodebuild[52384:59449112] [MT] IDESchemeActionDeviceRecord: versionAndBuild = 27.1 (24A94401), error = invalidDigitCount(94401).
+2026-10-26 22:09:37.420 xcodebuild[52384:59449112] [MT] IDETestOperationsObserverDebug: 107.874 elapsed -- Testing started completed.
+2026-10-26 22:09:37.420 xcodebuild[52384:59449112] [MT] IDETestOperationsObserverDebug: 0.000 sec, +0.000 sec -- start
+2026-10-26 22:09:37.420 xcodebuild[52384:59449112] [MT] IDETestOperationsObserverDebug: 107.874 sec, +107.874 sec -- end
+
+Test session results, code coverage, and logs:
+	~/.codex/worktrees/weekly-study-guide-design/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-26/cli/20261026T220745-test-76d43984/test.xcresult
+
+Failing tests:
+	WeeklyGuidePreviewUITests.testGuidePreviewNavigationKeepsPlaybackAndUsesSyntheticContent()
+
+** TEST FAILED **
+
+Testing started
+
+Exit status: 65
