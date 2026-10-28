@@ -208,10 +208,6 @@ struct ContentView: View {
                         #if DEBUG || TONGXING_GUIDE_PREVIEW
                         if guideWidth > 0 {
                             WeeklyGuidePreview(model: model, playback: playback, embedded: true)
-                                // Compact navigation can cover the fixed header after
-                                // rotation. Regular-height bars already reserve this space.
-                                .padding(.top, verticalSizeClass == .compact
-                                         ? readingGeometry.safeAreaInsets.top : 0)
                                 .frame(width: guideWidth)
                             Divider()
                         }
