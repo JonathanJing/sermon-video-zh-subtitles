@@ -1,0 +1,27 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261027-ios-link-routing-simulator",
+  "runs": [
+    {
+      "label": "20261027-ios-link-routing-simulator",
+      "source": "~/.codex/worktrees/ios-universal-link-routing/sermon-video-zh-subtitles/artifacts/run-report-inputs/20261027-ios-link-routing-simulator",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "20261027-ios-link-routing-simulator",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 2587,
+      "truncated": false,
+      "sha256": "ca8660288f4d0eebdff2d74a8c2933003b54717280cb7edced18e9d13d4b02a2",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}
