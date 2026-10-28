@@ -1,0 +1,27 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261027-weekly-guide-beta69",
+  "runs": [
+    {
+      "label": "guide69-run-summary",
+      "source": "~/.codex/worktrees/weekly-study-guide-design/sermon-video-zh-subtitles/artifacts/tongxing-ios/guide69-run-summary",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "guide69-run-summary",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 1969,
+      "truncated": false,
+      "sha256": "c28c49f29964afb08044aa98c99f32a750c85f0c2ede7afa9de325afb18554f8",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}
