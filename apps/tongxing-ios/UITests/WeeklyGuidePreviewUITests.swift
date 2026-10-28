@@ -32,7 +32,10 @@ final class WeeklyGuidePreviewUITests: XCTestCase {
         XCTAssertTrue(entry.waitForExistence(timeout: 10))
         entry.tap()
         XCTAssertTrue(app.staticTexts["韩语机器翻译 · 未经人工审校"].waitForExistence(timeout: 20))
-        XCTAssertTrue(app.buttons["guide-section-source-page-56"].exists)
+        XCTAssertTrue(app.staticTexts["第 3 周 · 예수님은 합당하십니다"].exists)
+        let section = app.buttons["guide-section-source-page-56"]
+        XCTAssertTrue(section.exists)
+        XCTAssertTrue(section.label.contains("합당하신 분"))
         XCTAssertFalse(app.staticTexts["本周研读手册尚不可用"].exists)
         let screenshot = XCTAttachment(screenshot: app.screenshot())
         screenshot.name = "live-dev-korean-week-three-guide"
