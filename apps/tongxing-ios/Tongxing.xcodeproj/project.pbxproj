@@ -375,7 +375,7 @@
 			buildConfigurationList = A0D147F90124C3CF570A1EBC /* Build configuration list for PBXNativeTarget "Tongxing" */;
 			buildPhases = (
 				D128CF3B139D2EA68547E367 /* Sources */,
-				B1FE3CBD00B66EF2D06D7F83 /* Copy local Beta weekly guides */,
+				6B7301F5D4B58931DD4E94D1 /* Copy local weekly guides */,
 				BDBF819BAEDD303CDD9E3D36 /* Resources */,
 				180A55B611AD0E790158B7C9 /* Frameworks */,
 				C2437DBFD6C6DE28068C99A2 /* Embed Foundation Extensions */,
@@ -502,7 +502,7 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
-		B1FE3CBD00B66EF2D06D7F83 /* Copy local Beta weekly guides */ = {
+		6B7301F5D4B58931DD4E94D1 /* Copy local weekly guides */ = {
 			isa = PBXShellScriptBuildPhase;
 			alwaysOutOfDate = 1;
 			buildActionMask = 2147483647;
@@ -512,8 +512,10 @@
 			);
 			inputPaths = (
 				"$(SRCROOT)/GuideResources",
+				"$(TONGXING_GUIDE_DATA_INPUT)",
+				"$(TONGXING_GUIDE_CHECKSUM_INPUT)",
 			);
-			name = "Copy local Beta weekly guides";
+			name = "Copy local weekly guides";
 			outputFileListPaths = (
 			);
 			outputPaths = (
@@ -521,7 +523,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "set -eu\ndestination=\"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/weekly-guides.json\"\nrm -f \"$destination\"\ncase \"${CONFIGURATION}\" in\n  BetaDebug|BetaRelease)\n    source=\"${SRCROOT}/GuideResources/weekly-guides.json\"\n    checksum=\"${SRCROOT}/GuideResources/weekly-guides.sha256\"\n    if [ -f \"$source\" ] || [ -f \"$checksum\" ]; then\n      if [ ! -f \"$source\" ] || [ ! -f \"$checksum\" ]; then\n        echo \"error: local guide payload and SHA-256 must both exist\"\n        exit 1\n      fi\n      expected=$(/bin/cat \"$checksum\")\n      actual=$(/usr/bin/shasum -a 256 \"$source\" | /usr/bin/awk '{print $1}')\n      if [ \"$actual\" != \"$expected\" ]; then\n        echo \"error: local guide payload checksum mismatch\"\n        exit 1\n      fi\n      /bin/mkdir -p \"$(/usr/bin/dirname \"$destination\")\"\n      /bin/cp \"$source\" \"$destination\"\n    fi\n    ;;\nesac\n";
+			shellScript = "set -eu\ndestination=\"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/weekly-guides.json\"\nrm -f \"$destination\"\ncase \"${CONFIGURATION}\" in\n  Release|BetaDebug|BetaRelease)\n    source=\"${SRCROOT}/GuideResources/weekly-guides.json\"\n    checksum=\"${SRCROOT}/GuideResources/weekly-guides.sha256\"\n    if [ \"${CONFIGURATION}\" = \"Release\" ] && { [ ! -f \"$source\" ] || [ ! -f \"$checksum\" ]; }; then\n      echo \"error: Release requires the verified weekly guide payload and SHA-256\"\n      exit 1\n    fi\n    if [ -f \"$source\" ] || [ -f \"$checksum\" ]; then\n      if [ ! -f \"$source\" ] || [ ! -f \"$checksum\" ]; then\n        echo \"error: local guide payload and SHA-256 must both exist\"\n        exit 1\n      fi\n      expected=$(/bin/cat \"$checksum\")\n      actual=$(/usr/bin/shasum -a 256 \"$source\" | /usr/bin/awk '{print $1}')\n      if [ \"$actual\" != \"$expected\" ]; then\n        echo \"error: local guide payload checksum mismatch\"\n        exit 1\n      fi\n      /bin/mkdir -p \"$(/usr/bin/dirname \"$destination\")\"\n      /bin/cp \"$source\" \"$destination\"\n    fi\n    ;;\nesac\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 
@@ -693,6 +695,8 @@
 				TARGETED_DEVICE_FAMILY = "1,2";
 				TONGXING_CONTENT_ORIGIN = "https://ai-for-god-sermon-audio-dev.web.app";
 				TONGXING_DISPLAY_NAME = "同行";
+				TONGXING_GUIDE_CHECKSUM_INPUT = "$(SRCROOT)/GuideResources";
+				TONGXING_GUIDE_DATA_INPUT = "$(SRCROOT)/GuideResources";
 				TONGXING_URL_SCHEME = tongxing;
 			};
 			name = Debug;
@@ -995,6 +999,8 @@
 				TONGXING_APNS_ENVIRONMENT = production;
 				TONGXING_CONTENT_ORIGIN = "https://ai-for-god-sermon-audio-dev.web.app";
 				TONGXING_DISPLAY_NAME = "同行-beta";
+				TONGXING_GUIDE_CHECKSUM_INPUT = "$(SRCROOT)/GuideResources";
+				TONGXING_GUIDE_DATA_INPUT = "$(SRCROOT)/GuideResources";
 				TONGXING_URL_SCHEME = "tongxing-beta";
 			};
 			name = BetaRelease;
@@ -1025,6 +1031,8 @@
 				TONGXING_APNS_ENVIRONMENT = development;
 				TONGXING_CONTENT_ORIGIN = "https://ai-for-god-sermon-audio-dev.web.app";
 				TONGXING_DISPLAY_NAME = "同行-beta";
+				TONGXING_GUIDE_CHECKSUM_INPUT = "$(SRCROOT)/GuideResources";
+				TONGXING_GUIDE_DATA_INPUT = "$(SRCROOT)/GuideResources";
 				TONGXING_URL_SCHEME = "tongxing-beta";
 			};
 			name = BetaDebug;
@@ -1173,7 +1181,7 @@
 			baseConfigurationReference = 58CF4F36B9265709AAF09A1C /* Signing.xcconfig */;
 			buildSettings = {
 				APPLICATION_EXTENSION_API_ONLY = YES;
-				CURRENT_PROJECT_VERSION = 64;
+				CURRENT_PROJECT_VERSION = 70;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = ListeningActivityExtension/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -1181,7 +1189,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 1.26.21;
+				MARKETING_VERSION = 1.26.27;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.jonathanjing.tongxing.dev.listening-activity";
 				PRODUCT_NAME = ListeningActivityExtension;
 				SDKROOT = iphoneos;
@@ -1201,23 +1209,26 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = Config/ProductionPush.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
-				CURRENT_PROJECT_VERSION = 64;
+				CURRENT_PROJECT_VERSION = 70;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = App/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.26.21;
+				MARKETING_VERSION = 1.26.27;
 				OTHER_LDFLAGS = "$(inherited) -weak_framework ActivityKit";
 				PRODUCT_BUNDLE_IDENTIFIER = com.jonathanjing.tongxing.dev;
 				PRODUCT_NAME = Tongxing;
 				SDKROOT = iphoneos;
 				SUPPORTS_MACCATALYST = NO;
 				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(inherited) TONGXING_GUIDE_PREVIEW";
 				TARGETED_DEVICE_FAMILY = "1,2";
 				TONGXING_CONTENT_ORIGIN = "https://ai-for-god-sermon-audio.web.app";
 				TONGXING_DISPLAY_NAME = "同行";
+				TONGXING_GUIDE_CHECKSUM_INPUT = "$(SRCROOT)/GuideResources/weekly-guides.sha256";
+				TONGXING_GUIDE_DATA_INPUT = "$(SRCROOT)/GuideResources/weekly-guides.json";
 				TONGXING_URL_SCHEME = tongxing;
 			};
 			name = Release;

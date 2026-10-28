@@ -1,8 +1,10 @@
 # Weekly guide staging
 
 This directory contains only locally generated, ignored content. The application
-copies it into Beta builds when it is present; production configurations remove
-it from the bundle. Generate it from the identified local sources (replace the
+copies it into Beta builds when it is present. Release requires the payload and
+its SHA-256 file and fails if either is absent or the bytes do not match. It
+declares both files as Xcode script inputs so Release retains script sandboxing.
+Generate it from the identified local sources (replace the
 placeholder with their local folder), and retain the receipt with the release evidence:
 
 ```sh
