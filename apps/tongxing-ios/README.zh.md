@@ -14,7 +14,7 @@ Dev Debug 与正式版沿用同一原生收听界面、播放器、下载、字�
 
 2026-10-04，全文定位与自动跟随候选已作为独立 Beta `1.26.11 (52)` 上传并在 Rooted 内部组确认可用；API Key 认证和分发已验证，真机安装／验收仍待核对。准确源码、签名路径、重试与 Apple 读回见 [Beta 1.26.11 分发记录](BETA-RELEASE-1.26.11.zh.md)。
 
-当前最新 tracked Beta 发行记录为 [1.26.20 (61)](BETA-RELEASE-1.26.20.zh.md)：2026-10-21 归档，Apple 读回 `VALID`、`IN_BETA_TESTING` 并关联 Rooted 内部组；Dev v5 默认页是 10 月 18 日三语 family。用户已报告实体 iPhone／iOS 27.0.1 的本机通知及一次本人设备 APNs 显示和点击跳转成功；Agent 未独立观察设备。iOS 27.1 模拟器通知权限用例仍失败，韩／西语真机海报、真实麦克风与现场声学效果仍待验收，正式重建、Production 来源验收与 App Store 提交未执行。上述 10 月 3／4 日记录保留为历史，不能当作当前候选号。
+当前最新 tracked Beta 发行记录为 [1.26.32 (75)](BETA-RELEASE-1.26.32.zh.md)：2026-10-28 归档并上传，Apple 读回 `VALID`、`IN_BETA_TESTING`，Rooted 内部组已关联；包内含启示录第 1–7 周中文机器翻译研读手册。真机安装、实际手册阅读、真实麦克风与现场声学效果仍待验收，正式重建、Production 来源验收和 App Store 提交未执行。[1.26.20 (61)](BETA-RELEASE-1.26.20.zh.md) 的通知与设备观察保留为历史记录。
 
 通知入口当前分为 [Beta 本机测试](BETA-NOTIFICATIONS.zh.md)、[本人设备远端 APNs](APNS-SINGLE-DEVICE-TEST.zh.md)和周更卡片／海报。Beta 测试默认关闭，内容语言与界面语言分别选择；正式通知也必须先说明用途，由用户主动 opt-in 后再请求系统权限，不能把 Beta 开关或单设备发送器当作正式群体推送已交付。
 
@@ -30,7 +30,7 @@ Beta 的 App Store Connect API Key 本机配置及 fastlane 上传／内部组�
 
 ## 打开与运行
 
-后续 App 版本统一用点分隔的 `1.26.N`；`1.26.7` 与从 `1.26.8` 开始的约定属于当时发行记录。最新已分配 Beta 为 `1.26.20 (61)`，准备下一分发候选前核对最新发行记录和 Apple 状态，不复用已分配号码；Beta 验收后转正式保留同一数字版本，后台 Build 独立递增。跨年、重试与实际归档要求见 [版本号约定](VERSIONING.zh.md)。
+后续 App 版本统一用点分隔的 `1.26.N`；`1.26.7` 与从 `1.26.8` 开始的约定属于当时发行记录。最新已分配 Beta 为 `1.26.32 (75)`，准备下一分发候选前核对最新发行记录和 Apple 状态，不复用已分配号码；Beta 验收后转正式保留同一数字版本，后台 Build 独立递增。跨年、重试与实际归档要求见 [版本号约定](VERSIONING.zh.md)。
 
 正式版与可共存的测试版共用源码：`Tongxing` 使用原 App 标识，`TongxingBeta` 使用独立的 `com.jonathanjing.tongxing.beta`，手机名称为「同行-beta」。BetaDebug/BetaRelease 默认连接 Firebase Dev；灵动岛返回链接与本机存储随 App 身份隔离。开发测试使用 `./scripts/ios.sh test --scheme TongxingBeta`。测试版到正式版的源码冻结、归档记录与发布验证见 [Beta 晋升流程](BETA-PROMOTION.zh.md)。
 
