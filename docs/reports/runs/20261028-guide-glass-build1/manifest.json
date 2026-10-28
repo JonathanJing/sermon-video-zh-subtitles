@@ -1,0 +1,35 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261028-guide-glass-build1",
+  "runs": [
+    {
+      "label": "20261028T152415-build-ade92cb8",
+      "source": "~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-28/cli/20261028T152415-build-ade92cb8",
+      "skipped": {
+        ".0~-YkHOMaWZeuJpzPaTQq6koLSK_EiBOvPPEFbU4-tHqpyrLm_rLfVRHPPaV9DY_5MTa2226rcwMkgDVv1fgqBVQ==": 2,
+        ".0~7fchWX5p2HGF-JEGH9K5CEPyMp3p_r3EGCON2mV9UVj7jXDrN4T_AT8O7X7fWfMZGceRirIszXemkp_pTKRi4w==": 2,
+        ".0~g6hWXyvVvFovLahORoPsIIudrW5-J7C29PpihoDjX5WSbglZmSchZxe7fqzER5_9V8hzpNwnJ0vZmQ49yRtdyQ==": 2,
+        ".plist": 1,
+        ".json": 1
+      }
+    }
+  ],
+  "files": [
+    {
+      "run": "20261028T152415-build-ade92cb8",
+      "path": "run.log",
+      "kind": "log",
+      "bytes": 384445,
+      "truncated": true,
+      "sha256": "8ca90f60f51c3fc7016985da5375c49f9a4504515fe693413ee35c68afaf5b6b",
+      "redactions": {
+        "home_dir": 103
+      }
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}
