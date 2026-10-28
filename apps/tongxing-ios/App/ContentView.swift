@@ -679,7 +679,7 @@ struct ContentView: View {
 
     @ViewBuilder private var guideButton: some View {
         #if DEBUG || TONGXING_GUIDE_PREVIEW
-        Button("本周研读手册", systemImage: "book") { sheet = .guidePreview }
+        Button(localization.text("本周研读手册"), systemImage: "book") { sheet = .guidePreview }
             .font(.subheadline.weight(.medium)).frame(minHeight: 44)
             .buttonStyle(.plain).foregroundStyle(Brand.accent)
             .accessibilityIdentifier("open-guide-beta-preview")

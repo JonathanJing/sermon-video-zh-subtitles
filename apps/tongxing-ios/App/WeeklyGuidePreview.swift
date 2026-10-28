@@ -7,12 +7,33 @@ import TongxingCore
 struct WeeklyGuidePreview: View {
     @ObservedObject var model: AppModel
     @ObservedObject var playback: PlaybackController
+    @ObservedObject private var localization = AppLocalization.shared
     @Environment(\.dismiss) private var dismiss
     @Environment(\.dynamicTypeSize) private var typeSize
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var showingMore = false
     @State private var moreFrame: CGRect = .null
     @AccessibilityFocusState private var focusedSection: String?
+    @State private var remoteGuide: WeeklyGuide?
+    @State private var remoteSelection: WeeklyGuideSelection?
+    @State private var loadingSelection: WeeklyGuideSelection?
+
+    private var selection: WeeklyGuideSelection {
+        let locale = model.selectedContentLocale
+        if let week = model.selectedWeek {
+            guard let legacy = WeeklyGuideRepository.legacyIdentity(week: week) else {
+                return WeeklyGuideSelection(pageID: week.id, locale: locale)
+            }
+            return WeeklyGuideSelection(pageID: week.id, locale: locale, legacy: legacy)
+        }
+        guard let page = model.selectedMultilingualPage, page.id == model.selectedPageID,
+              let target = page.targets[locale], let source = try? target.sourceBinding(in: page) else {
+            return WeeklyGuideSelection(pageID: model.selectedPageID, locale: locale)
+        }
+        return WeeklyGuideSelection(pageID: page.id, locale: locale, editionId: source.editionId,
+                                    sourceIdentitySha256: source.sourceIdentitySha256,
+                                    releasePackageJsonSha256: target.releasePackageJsonSha256)
+    }
 
     private var guide: WeeklyGuide? {
         #if DEBUG
@@ -23,7 +44,37 @@ struct WeeklyGuidePreview: View {
                                  body: "测试用讨论内容，不代表教会手册。")])
         }
         #endif
-        return WeeklyGuideRepository.load(pageID: model.selectedPageID, locale: model.selectedContentLocale)
+        return WeeklyGuideRepository.matchingRemote(remoteGuide, resultFor: remoteSelection, current: selection)
+    }
+
+    private func refreshGuide(for requested: WeeklyGuideSelection) async {
+        loadingSelection = requested
+        remoteGuide = nil
+        remoteSelection = nil
+        let origin = model.mediaOrigin
+        #if DEBUG
+        if UITestLaunch.isEnabled && !ProcessInfo.processInfo.arguments.contains("--ui-testing-remote-guide") {
+            remoteSelection = requested
+            loadingSelection = nil
+            return
+        }
+        #endif
+        let result = await WeeklyGuideRepository.loadRemote(selection: requested, origin: origin)
+        guard !Task.isCancelled, selection == requested else { return }
+        remoteGuide = WeeklyGuideRepository.resolvedGuide(result, selection: requested, origin: origin,
+                                                          ledger: WeeklyGuideDenyLedger()) {
+            WeeklyGuideRepository.loadBundled(selection: requested, origin: origin)
+        }
+        remoteSelection = requested
+        loadingSelection = nil
+    }
+
+    private var translationNotice: String {
+        switch selection.locale {
+        case "ko": return localization.text("韩语机器翻译 · 未经人工审校")
+        case "es": return localization.text("西语机器翻译 · 未经人工审校")
+        default: return localization.text("中文机器翻译 · 未经人工审校")
+        }
     }
 
     var body: some View {
@@ -36,12 +87,12 @@ struct WeeklyGuidePreview: View {
                     VStack(alignment: .leading, spacing: 24) {
                         if let guide {
                             VStack(alignment: .leading, spacing: 8) {
-                                Text("中文机器翻译 · 未经人工审校").font(.caption).foregroundStyle(.secondary)
-                                Text("第 \(guide.week) 周 · \(guide.title)").font(.largeTitle.bold())
+                                Text(translationNotice).font(.caption).foregroundStyle(.secondary)
+                                Text(localization.text("第 {week} 周 · {title}", ["week": String(guide.week), "title": guide.title])).font(.largeTitle.bold())
                                 Text(guide.scripture).font(.title3).foregroundStyle(.secondary)
-                                Text("根据 Mariners Church《Revelation Series Guide》翻译；非教会官方中文译本。原稿部分经文仅标注章节范围。")
+                                Text(localization.text("根据 Mariners Church《Revelation Series Guide》翻译；非教会官方译本。部分经文在此仅标注章节范围。"))
                                     .font(.footnote).foregroundStyle(.secondary)
-                                Link("查看教会原手册", destination: URL(string: "https://www.flipsnack.com/57AF6AEEFB5/revelation-series-guide")!)
+                                Link(localization.text("查看教会原手册"), destination: URL(string: "https://www.flipsnack.com/57AF6AEEFB5/revelation-series-guide")!)
                                     .font(.footnote)
                             }
                             VStack(spacing: 0) {
@@ -84,12 +135,15 @@ struct WeeklyGuidePreview: View {
                                 .id(section.id)
                                 .accessibilityIdentifier("guide-content-\(section.id)")
                             }
+                        } else if remoteSelection != selection || loadingSelection == selection {
+                            ProgressView(localization.text("正在加载研读手册…"))
+                                .accessibilityIdentifier("guide-loading")
                         } else {
-                            ContentUnavailableView("本周研读手册尚不可用", systemImage: "book.closed",
-                                description: Text("当前讲道或内容语言暂无对应手册。"))
+                            ContentUnavailableView(localization.text("本周研读手册尚不可用"), systemImage: "book.closed",
+                                description: Text(localization.text("当前讲道或内容语言暂无对应手册。")))
                                 .accessibilityIdentifier("guide-unavailable")
                         }
-                        Button("返回证道") { dismiss() }
+                        Button(localization.text("返回证道")) { dismiss() }
                             .buttonStyle(.bordered)
                             .frame(minHeight: 44)
                             .accessibilityIdentifier("guide-close-bottom")
@@ -100,11 +154,11 @@ struct WeeklyGuidePreview: View {
                 .accessibilityIdentifier("guide-scroll")
                 .background(Brand.background)
             }
-            .navigationTitle(typeSize.isAccessibilitySize ? "手册" : "本周研读手册")
+            .navigationTitle(localization.text(typeSize.isAccessibilitySize || localization.language != .simplifiedChinese ? "手册" : "本周研读手册"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("返回证道") { dismiss() }.accessibilityIdentifier("guide-close")
+                    Button(localization.text("返回证道")) { dismiss() }.accessibilityIdentifier("guide-close")
                 }
                 #if os(iOS) && canImport(SwiftUI, _version: 8.0.85)
                 if #available(iOS 27.1, macOS 27.1, *), verticalEdge != nil {
@@ -126,6 +180,9 @@ struct WeeklyGuidePreview: View {
                 }
             }
             }
+        }
+        .task(id: selection) {
+            await refreshGuide(for: selection)
         }
         .overlay {
             PlaybackMorePanelOverlay(isPresented: $showingMore, buttonFrame: moreFrame, placement: morePlacement) { width in
