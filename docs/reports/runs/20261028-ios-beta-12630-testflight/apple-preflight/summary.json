@@ -1,0 +1,9 @@
+{
+  "checkedAt": "2026-10-28T18:24:38Z",
+  "highestObservedVersion": "1.26.29",
+  "highestObservedBuild": "72",
+  "processing": "VALID",
+  "internalStatus": "IN_BETA_TESTING",
+  "snapshotSha256": "c7cc5fd412b5126840e92c6c8627b168c82946212f43916e81168aa332524b30",
+  "targetVersionWasAvailable": true
+}

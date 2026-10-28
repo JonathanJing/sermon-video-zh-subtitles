@@ -1,0 +1,14 @@
+{
+  "version": "1.26.30",
+  "build": "73",
+  "bytes": 10844170,
+  "ipaSha256": "1e06bde08012445e665ebf9bd3e4364101e14d75d3c7a300535fd0eea470cf5c",
+  "signatureVerified": true,
+  "getTaskAllow": false,
+  "archiveAndIPAResourceSha256": {
+    "weekly-guides.json": "a527e23fbd693177b9589fc89cd3533b653f64918abb97213cf34172c36711f9",
+    "weekly-guide-statue.jpg": "f1d2f517120099a38614c7c560c1fbe054ec3ea4d741284fbcef496a7dab73b5",
+    "weekly-guide-son-of-man.jpg": "30c3e5b82c024bad3e40122f330f6606d022c91d8c77a82f06d6f1d5fc987f1f"
+  },
+  "verifiedBy": "archive resource hashes; IPA zip integrity, matching hashes, signature and candidate identity dry run"
+}
