@@ -43,6 +43,46 @@ final class WeeklyGuidePreviewUITests: XCTestCase {
         add(screenshot)
     }
 
+    func testLiveDevSpanishWeekThreeOpensMatchingRemoteGuide() {
+        let app = XCUIApplication()
+        app.launchArguments = ["-AppleLanguages", "(zh-Hans)", "-AppleLocale", "zh_CN"]
+        app.launchEnvironment["TONGXING_TEST_HOST"] = "0"
+        app.launch()
+        defer { app.terminate() }
+
+        let choose = app.buttons["choose-sermon"]
+        XCTAssertTrue(choose.waitForExistence(timeout: 30))
+        choose.tap()
+        let week = app.buttons["published-page-2026-09-27-weekend-sermon-drive-530"]
+        let scroll = app.scrollViews.firstMatch
+        XCTAssertTrue(scroll.waitForExistence(timeout: 10))
+        for _ in 0..<35 {
+            if week.exists && week.isHittable { break }
+            scroll.swipeUp()
+        }
+        XCTAssertTrue(week.exists && week.isHittable)
+        week.tap()
+        let language = app.buttons["choose-content-language"]
+        XCTAssertTrue(language.waitForExistence(timeout: 15))
+        language.tap()
+        let spanish = app.buttons["content-language-es"]
+        XCTAssertTrue(spanish.waitForExistence(timeout: 10))
+        spanish.tap()
+        let entry = app.buttons["open-guide-beta-preview"]
+        XCTAssertTrue(entry.waitForExistence(timeout: 10))
+        entry.tap()
+        XCTAssertTrue(app.staticTexts["西语机器翻译 · 未经人工审校"].waitForExistence(timeout: 20))
+        XCTAssertTrue(app.staticTexts["第 3 周 · Jesús es digno"].exists)
+        let section = app.buttons["guide-section-source-page-56"]
+        XCTAssertTrue(section.exists)
+        XCTAssertTrue(section.label.contains("Aquel que es digno"))
+        XCTAssertFalse(app.staticTexts["本周研读手册尚不可用"].exists)
+        let screenshot = XCTAttachment(screenshot: app.screenshot())
+        screenshot.name = "live-dev-spanish-week-three-guide"
+        screenshot.lifetime = .keepAlways
+        add(screenshot)
+    }
+
     func testGuideNavigationKeepsPlaybackAndShowsReviewDisclosure() {
         let app = XCUIApplication()
         app.launchArguments = ["--ui-testing", "--ui-testing-study-guide", "-AppleLanguages", "(zh-Hans)", "-AppleLocale", "zh_CN"]
