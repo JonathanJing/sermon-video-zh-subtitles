@@ -439,8 +439,9 @@ def prepare(args: argparse.Namespace) -> dict:
     require_study = getattr(args, "require_study", False)
     maps = {name: assignment_map(getattr(args, name), locales)
             for name in ("full_candidate", "full_review_receipt", "spoken_candidate",
-                         "spoken_review_receipt", "audio_package", "audio_review_receipt",
-                         "audio_screening_receipt", "full_content")}
+                         "spoken_review_receipt", "audio_package", "audio_review_receipt", "full_content")}
+    screening_values = getattr(args, "audio_screening_receipt", None) or []
+    screening_maps = assignment_map(screening_values, locales) if screening_values else {}
     condensation_maps = partial_assignment_map(getattr(args, "condensation_binding", None) or [], locales)
     args.out.parent.mkdir(parents=True, exist_ok=True)
     scratch = Path(tempfile.mkdtemp(prefix=f".{args.out.name}-", dir=args.out.parent))
@@ -463,24 +464,20 @@ def prepare(args: argparse.Namespace) -> dict:
             audio_receipt_path = maps["audio_review_receipt"][locale]
             receipt_schema = read(audio_receipt_path)["schemaVersion"] + ".schema.json"
             audio_receipt = stage.read_package(audio_receipt_path, receipt_schema)
-            audio_waived = _delivery.current().waivers.is_audio_waiver(audio_receipt)
             require(audio["targetLocale"] == locale
                     and audio["englishSourcePackageJsonSha256"] == source_sha
                     and audio["targetLanguageCandidateJsonSha256"] == spoken_sha
                     and (not audio["issues"] or override_audio_issues(audio["issues"], spoken_basis, spoken))
                     and audio["track"] and audio["captions"]
-                    and (audio_waived or (audio["status"] == "human_reviewed"
-                                          and audio["humanReview"]["humanApproval"] is True
-                                          and audio["humanReview"]["fullPlayback"] == "approved")),
+                    and (audio["status"] == "human_reviewed"
+                         and audio["humanReview"]["humanApproval"] is True
+                         and audio["humanReview"]["fullPlayback"] == "approved"),
                     f"{locale}: reviewed track does not bind approved spoken script")
-            # The audio waiver is issued against the spoken script's own text waiver.
-            require(not audio_waived or (spoken_basis["kind"] == "machine_quality_waiver"
-                                         and audio_receipt["textWaiverJsonSha256"] == spoken_basis["receiptSha256"]),
-                    f"{locale}: audio waiver does not bind the spoken script's text waiver")
-            screening = stage.read_audio_screening(maps["audio_screening_receipt"][locale])
+            screening = (stage.read_audio_screening(screening_maps[locale])
+                         if locale in screening_maps else None)
             stage.validate_audio_screening_review(audio, audio_receipt, screening)
             bases = {"fullText": full_basis, "spokenText": spoken_basis,
-                     "audio": {"kind": "machine_quality_waiver" if audio_waived else "human_review",
+                     "audio": {"kind": "human_review",
                                "receiptSha256": stage.canonical_sha(audio_receipt)}}
             content_status, audio_status = release_statuses(bases)
             machine = "machine_checked" in (content_status, audio_status)

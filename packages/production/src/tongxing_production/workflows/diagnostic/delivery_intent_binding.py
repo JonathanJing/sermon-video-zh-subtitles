@@ -179,7 +179,8 @@ def _audio(target, lane, source, candidate, evidence):
     require(version in {'sermon-target-language-audio-human-review-receipt-v1',
                         'sermon-target-language-audio-human-review-receipt-v2',
                         'sermon-target-language-audio-human-review-receipt-v3',
-                        'sermon-target-language-audio-human-review-receipt-v4'}, 'unsupported_delivery_audio_review')
+                        'sermon-target-language-audio-human-review-receipt-v4',
+                        'sermon-target-language-audio-human-review-receipt-v5'}, 'unsupported_delivery_audio_review')
     _schema(review, version + '.schema.json')
     screening = evidence.read(lane['screening'], prefix + 'screening') if 'screening' in lane else None
     if screening is not None:
@@ -189,7 +190,9 @@ def _audio(target, lane, source, candidate, evidence):
             and audio['voice']['authorizationStatus'] == 'authorized' and audio['voice']['targetLocaleCapability'] == 'reviewed'
             and audio['humanReview']['status'] == 'approved' and audio['humanReview']['humanApproval'] is True
             and audio['humanReview']['fullPlayback'] == 'approved'
-            and audio['machineScreening']['coverage'] == 1 and not audio['issues'], 'delivery_audio_not_reviewed')
+            and (version == 'sermon-target-language-audio-human-review-receipt-v5'
+                 or audio['machineScreening']['coverage'] == 1) and not audio['issues'],
+            'delivery_audio_not_reviewed')
     stage.validate_audio_screening_review(audio, review, screening)
     groups = candidate['groups']
     expected = {'targetLocale': locale, 'englishSourcePackageJsonSha256': intent.canonical_hash(source),

@@ -262,7 +262,8 @@ def audio(root, row, source, locale, candidate):
     schemas = {"sermon-target-language-audio-human-review-receipt-v1",
                "sermon-target-language-audio-human-review-receipt-v2",
                "sermon-target-language-audio-human-review-receipt-v3",
-               "sermon-target-language-audio-human-review-receipt-v4"}
+               "sermon-target-language-audio-human-review-receipt-v4",
+               "sermon-target-language-audio-human-review-receipt-v5"}
     require(receipt.get("schemaVersion") in schemas, "unsupported_audio_review_schema")
     existing_schema(receipt, receipt["schemaVersion"] + ".schema.json")
     screening = None
@@ -281,7 +282,8 @@ def audio(root, row, source, locale, candidate):
             and package["humanReview"]["humanApproval"] is True
             and package["humanReview"]["status"] == "approved"
             and package["humanReview"]["fullPlayback"] == "approved"
-            and package["machineScreening"]["coverage"] == 1
+            and (receipt.get("schemaVersion") == "sermon-target-language-audio-human-review-receipt-v5"
+                 or package["machineScreening"]["coverage"] == 1)
             and receipt["decision"] == "approved" and receipt["targetLocale"] == locale
             and receipt["englishSourcePackageJsonSha256"] == digest(source)
             and receipt["targetLanguageCandidateJsonSha256"] == digest(candidate)

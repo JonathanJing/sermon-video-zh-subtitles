@@ -87,7 +87,8 @@ def inspect(root, config, upstream_paths, read_package, hashes, locale):
         if version not in {'sermon-target-language-audio-human-review-receipt-v1',
                            'sermon-target-language-audio-human-review-receipt-v2',
                            'sermon-target-language-audio-human-review-receipt-v3',
-                           'sermon-target-language-audio-human-review-receipt-v4'}:
+                           'sermon-target-language-audio-human-review-receipt-v4',
+                           'sermon-target-language-audio-human-review-receipt-v5'}:
             raise ValueError('unsupported_audio_review_version')
         handoff._validate_schema(receipt, version + '.schema.json', 'audio review')
         screening = None

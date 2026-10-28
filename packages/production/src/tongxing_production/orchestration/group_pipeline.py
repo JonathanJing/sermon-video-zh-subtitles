@@ -38,7 +38,7 @@ DIRECTIVE_SCHEMA = "sermon-group-directive-v1"
 DIRECTIVE_DIRECTORY = "_directives"
 PENDING_STEPS = (
     "calibration", "text_release_basis", "speech_job_v3", "formal_render",
-    "schedule_and_subtitles", "track_package", "screening_and_audio_qc", "listening_waiver",
+    "schedule_and_subtitles", "track_package",
 )
 L3_HANDOFF = ("python tools/ops/run.py audio.speech_job --text-release-basis <text-release-basis> "
               "--out <speech-job>")
@@ -337,8 +337,7 @@ def prepare_l3(config: dict, *, text_basis: Path, adapter: Path, registry: Path,
         "adapterSha256": legacy.file_sha256(Path(adapter)),
         "speechJobSha256": legacy.file_sha256(job_path),
         "speechJobPath": str(job_path), "speechJobStatus": job.get("status"),
-        "pendingSteps": ["formal_render", "schedule_and_subtitles", "track_package",
-                         "screening_and_audio_qc", "listening_waiver"],
+        "pendingSteps": ["formal_render", "schedule_and_subtitles", "track_package"],
         "releaseEligible": False, "humanApproval": False,
     }
     data = (json.dumps(receipt, ensure_ascii=False, indent=1) + "\n").encode("utf-8")

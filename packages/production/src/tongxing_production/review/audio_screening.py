@@ -39,11 +39,34 @@ def validate_audio_screening_review(audio: dict, receipt: dict,
                                     screening: dict | None) -> None:
     waivers = backend.current().waivers
     if waivers.is_audio_waiver(receipt):
-        # A machine listening waiver (v3: with a person's per-unit acceptance), never a human approval of the track.
+        # Historical receipts only: no new machine listening waiver is issued.
         try:
             waivers.validate_audio_waiver(audio, receipt, screening)
         except ValueError as error:
             raise AudioScreeningError(str(error)) from error
+        return
+    if receipt.get("schemaVersion") == "sermon-target-language-audio-human-review-receipt-v5":
+        # Human listening is the only gate: no ASR screening is required or read.
+        if (_schema_errors(receipt, "sermon-target-language-audio-human-review-receipt-v5.schema.json")
+                or receipt["targetLocale"] != audio["targetLocale"]
+                or receipt["targetLanguageAudioPackageJsonSha256"] != _canonical_sha(audio)
+                or receipt["trackSha256"] != audio["track"]["sha256"]
+                or receipt["reviewedUnitIds"] != [row["textGroupId"] for row in audio["units"]]
+                or audio["status"] != "human_reviewed"
+                or audio["humanReview"]["humanApproval"] is not True):
+            raise AudioScreeningError("Invalid human-listening-only receipt")
+        exception = receipt.get("publicationException")
+        if exception is not None:
+            identities = {"trackSha256": audio["track"]["sha256"]}
+            if exception.get("schemaVersion") == "sermon-video-sync-publication-exception-v2":
+                identities.update({
+                    "targetLocale": audio["targetLocale"],
+                    "englishSourcePackageJsonSha256": audio["englishSourcePackageJsonSha256"],
+                    "targetLanguageCandidateJsonSha256": audio["targetLanguageCandidateJsonSha256"],
+                    "targetLanguageAudioPackageJsonSha256": _canonical_sha(audio),
+                })
+            if any(exception.get(key) != value for key, value in identities.items()):
+                raise AudioScreeningError("Publication exception is not bound to this audio package")
         return
     if receipt.get("schemaVersion") == "sermon-target-language-audio-human-review-receipt-v3":
         if (_schema_errors(receipt, "sermon-target-language-audio-human-review-receipt-v3.schema.json")
