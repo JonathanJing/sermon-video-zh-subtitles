@@ -1,5 +1,7 @@
 # 真实模型片段 E2E
 
+> **2026-10-28 退役。** 该夹具（`run_clip_real_e2e.py`、`clip_e2e_spark.py`、`tests/test_clip_real_e2e.py`、`config/group-l3-stages.draft.json` 的 screen/audio_qc 阶段）依赖已被移除的 ASR 初筛与机器试听豁免，已随机器听审链一起删除。本文保留为历史设计说明；新的端到端验证走正式四层入口与人工整轨听审。
+
 从一场已制作周次的讲道里截一段（约 16 句），用真实模型和真实配音走完 Layer 1–4，发布到 Firebase Dev 的隔离测试页。用来验证合并后的整条链路，以及新规则（读法、质检、预算、发布）在真实输出上的表现。
 
 入口是 [`tools/development/run_clip_real_e2e.py`](../tools/development/run_clip_real_e2e.py)。它只把现有的正式入口按顺序串起来，不另造规则：预算由 `plan_run_budgets.py` 规划，开工条件由 `check_run_start.py` 检查，Layer 2 走 canonical controller，质检、渲染和音频包也都用各自的正式脚本。

@@ -15,7 +15,7 @@ from tongxing_production.review import qc_budget_authorization as auth
 from tongxing_production.source.budget import SourceBudget
 from tests.auto_qc_fixtures import speech_wav
 from tests.test_source_budget_settlement import AUTHORITY
-from tests.test_run_machine_qc_audio_test import OPENAI_ENV
+from tests.support_env import OPENAI_ENV
 
 
 class SecondarySingleflightTests(unittest.TestCase):

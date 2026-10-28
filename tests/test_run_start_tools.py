@@ -32,7 +32,7 @@ class PlanTests(unittest.TestCase):
     def setUp(self):
         directory = tempfile.TemporaryDirectory(); self.addCleanup(directory.cleanup)
         self.base = Path(directory.name)
-        from tests.test_run_machine_qc_audio_test import OPENAI_ENV
+        from tests.support_env import OPENAI_ENV
         environment = mock.patch.dict('os.environ', {**OPENAI_ENV, 'OPENAI_PROJECT_ID': 'proj_fixture'})
         environment.start(); self.addCleanup(environment.stop)
         from tests.test_canonical_layer2_controller import CanonicalLayer2ControllerTests
@@ -44,7 +44,7 @@ class PlanTests(unittest.TestCase):
         for locale in plan.LOCALES:
             policy=json.loads(json.dumps(self.policy));policy['targetLocale']=locale
             write(self.base/f'{locale}.json',policy)
-        from tests.test_run_machine_qc_audio_test import OPENAI_ENV
+        from tests.support_env import OPENAI_ENV
         self.manifest = write(self.base / 'inputs.json', {
             'schemaVersion':'sermon-machine-qc-inputs-v3', 'environment':'dev',
             'openaiRoute':{'schemaVersion':'sermon-openai-runtime-route-v1','environment':'dev','projectId':'proj_fixture',
@@ -69,7 +69,7 @@ class PlanTests(unittest.TestCase):
 
     def test_planned_approval_is_consumed_only_under_its_approved_project(self):
         from tongxing_production.review import qc_text_run as driver
-        from tests.test_run_machine_qc_audio_test import OPENAI_ENV
+        from tests.support_env import OPENAI_ENV
         run_plan(*self.args());stage=self.load()['stages'][0]
         paths={'source':str(self.base/'source.json'),'anchor':str(self.base/'anchor.json'),'policy':str(self.base/'ko.json')}
         environment={**OPENAI_ENV,'OPENAI_PROJECT_ID':'proj_fixture'}

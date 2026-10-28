@@ -125,7 +125,7 @@ class GroupL3LanesTests(unittest.TestCase):
     def test_the_draft_lanes_plan_parses_with_the_draft_stage_plan(self):
         repo = Path(__file__).parents[1]
         stage_draft = json.loads((repo / "config/group-l3-stages.draft.json").read_text(encoding="utf-8"))
-        self.assertEqual([stage["resource"] for stage in stage_draft["stages"]], ["gpu", "cpu", "gpu", "cpu", "gpu"])
+        self.assertEqual([stage["resource"] for stage in stage_draft["stages"]], ["gpu", "cpu", "cpu"])
         lanes_draft = json.loads((repo / "config/group-l3-lanes.draft.json").read_text(encoding="utf-8"))
         for lane in lanes_draft["lanes"]:
             directory = self.root / lane["locale"]

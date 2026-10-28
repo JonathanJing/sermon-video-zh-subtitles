@@ -17,7 +17,7 @@ class LauncherBindingTests(unittest.TestCase):
         self.base=fixture.base
         self.assertEqual(run_plan(*fixture.args())[0],0)
         self.plan=self.base/'run'
-        from tests.test_run_machine_qc_audio_test import OPENAI_ENV
+        from tests.support_env import OPENAI_ENV
         self.key=OPENAI_ENV['OPENAI_API_KEY']
         self.env=self.base/'launcher.env'
         self.write_environment()

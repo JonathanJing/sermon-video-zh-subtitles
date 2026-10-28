@@ -14,7 +14,7 @@ from tongxing_production.text import controller
 from scripts import plan_run_budgets as planner, check_run_start as check
 from tongxing_production.text import models
 from tests import test_canonical_layer2_budget as fixtures
-from tests.test_run_machine_qc_audio_test import OPENAI_ENV
+from tests.support_env import OPENAI_ENV
 
 
 class Layer2RuntimeAuthorizationTests(unittest.TestCase):

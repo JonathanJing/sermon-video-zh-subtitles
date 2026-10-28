@@ -26,7 +26,7 @@ class RequiredPreflightScopeTests(unittest.TestCase):
 
     def test_qc_only_plan_with_actual_matching_launcher_passes(self):
         from tests.test_run_start_tools import PlanTests,run_plan
-        from tests.test_run_machine_qc_audio_test import OPENAI_ENV
+        from tests.support_env import OPENAI_ENV
         fixture=PlanTests();fixture.setUp();self.addCleanup(fixture.doCleanups)
         self.assertEqual(run_plan(*fixture.args())[0],0)
         env=fixture.base/'launcher.env';env.write_text('OPENAI_DEV_API_KEY='+OPENAI_ENV['OPENAI_API_KEY']+'\nOPENAI_DEV_PROJECT_ID=proj_fixture\n');env.chmod(0o600)

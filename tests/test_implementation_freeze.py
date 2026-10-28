@@ -9,7 +9,6 @@ from unittest.mock import patch
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.review import implementation_freeze as freeze
 from tongxing_production.review import waiver
-from tongxing_production.review import qc_audio_run as audio_driver
 from tongxing_production.review import qc_text_run as text_driver
 
 
@@ -95,7 +94,7 @@ class ImplementationFreezeTests(unittest.TestCase):
                 freeze.recorded_files(invalid)
             # A driver given the plan reports which files changed (none here: only the expected hash is stale).
             stale = "0" * 64
-            for driver, extra in ((audio_driver, ["--backend", "fake"]), (text_driver, ["--text-backend", "fake"])):
+            for driver, extra in ((text_driver, ["--text-backend", "fake"]),):
                 with self.subTest(driver=driver.__name__):
                     out = Path(directory) / ("out-" + driver.__name__.rsplit(".", 1)[-1])
                     with patch("sys.stderr") as stderr:
@@ -110,7 +109,7 @@ class ImplementationFreezeTests(unittest.TestCase):
 
     def test_both_drivers_refuse_other_code_before_doing_anything(self):
         stale = "0" * 64
-        for driver, extra in ((audio_driver, ["--backend", "fake"]), (text_driver, ["--text-backend", "fake"])):
+        for driver, extra in ((text_driver, ["--text-backend", "fake"]),):
             with self.subTest(driver=driver.__name__), tempfile.TemporaryDirectory() as directory:
                 out = Path(directory) / "out"
                 with patch("sys.stderr") as stderr:

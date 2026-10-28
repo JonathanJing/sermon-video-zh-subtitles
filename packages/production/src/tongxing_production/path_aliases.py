@@ -174,7 +174,6 @@ REVIEW = {
     'scripts/implementation_freeze.py': _REVIEW + 'implementation_freeze.py',
     'scripts/sermon_unified_reviews.py': _REVIEW + 'unified_reviews.py',
     'scripts/run_machine_qc_clip_test.py': _REVIEW + 'qc_text_run.py',
-    'scripts/run_machine_qc_audio_test.py': _REVIEW + 'qc_audio_run.py',
 }
 
 # Prepared-workflow composition (tongxing_production.workflows.prepared), batch W2.
