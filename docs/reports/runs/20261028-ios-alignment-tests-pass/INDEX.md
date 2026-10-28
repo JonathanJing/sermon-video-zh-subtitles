@@ -1,0 +1,18 @@
+# Run digest 20261028-ios-alignment-tests-pass
+
+Generated 2026-10-28T21:19:34+00:00. Redacted copies only; source hashes are in manifest.json.
+
+## 20261028T141634-test-a8cb4047
+
+Source: `~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-28/cli/20261028T141634-test-a8cb4047`
+
+
+Error-like log lines (first 5 per log):
+
+- `run.log`: ... 1049 lines omitted; 17 error-like lines, 17 kept below ...
+- `run.log`: [line 471]     export CLANG_WARN_DIRECT_OBJC_ISA_USAGE\=YES_ERROR
+- `run.log`: [line 480]     export CLANG_WARN_OBJC_ROOT_CLASS\=YES_ERROR
+- `run.log`: [line 637]     export GCC_WARN_ABOUT_RETURN_TYPE\=YES_ERROR
+- `run.log`: [line 834]     export RUNTIME_EXCEPTION_ALLOW_DYLD_ENVIRONMENT_VARIABLES\=NO
+
+Not copied: 2 .0~0-FUC0h9WnoUn5Wh1xvgTyd5RKG3ueTewdz1kq0r6CCXBGdYnTkpzm58AGvwVZBgJy0J1bxFa3ucn6IWXD_MYA==, 2 .0~0S98nrZUNkU0dQj359k8nFhHOYOjATl7fPBR4INXx9w4XZGfkt7mWJSHLdaZ8oxZwhhUxOd8WzHf0xh-GqDoUw==, 2 .0~2HJFmYe_wxyN-17W1198EHhJj7tfZOg8QvHI-7R8iV_nXADb5uqjsIWxfx2DrfIbKiz13lJdY55Ts-1Tc1zfAg==, 2 .0~4VqMqsI5lOfxRppnud6-VDWcNsU8J7VgFCJfW2dXPwOcAkvU-I8Um5yp9n0Zv6nr3VmcxYggaVMDFfR0U_vjKw==, 2 .0~5SZtroVKcMJXRkZJU4k2DEufkiFrEem-mxoopiWwaY3FO1s9emp8TIoVqZ2lhirvwh31OXY5FEsrm0vu9pBYPA==, 2 .0~5tLSxZXkGMWiaRCGMerKtWHaNEbQDL-lxre4JzpnXjq3Hr_1Pq2ddoJ8I4kiyLKQnIGfJOmthv6t9jK9Te7kpw==, 2 .0~81lHJxXZPSSix5GYaS2wlxbjRSOdpXXNuzuc-pEPKQORpfBb8yt3Uo-Taq9qqztIjrIL6GFjIsiEWh_yrnNYoQ==, 2 .0~CSDzLW3WHMGJvFyytsJVb8adNCHfgjTONRKAJw5A1ljBmYiVzYWfpXvUo2xBcKCGi9VSR_ImqI8mMfTjhpp2yg==, 2 .0~FRwbT3UyY2nZiTD2LXbD34hzvzd7LM0zShH9I-Ql1yAbp73ZG1CxCxFcSEdAknIkd5Zzxp6EHqJXb-RyD9zDeg==, 2 .0~M0qDj75x7qql-DzU8gelrbinGawgXiBCGT8M_k7EoJ6-0k0HwyYonIabQBsozXHdsw4FvR3re-4AM_n80NNVeA==, 2 .0~PwxdTLgaynLDz_Mr-WfWGqYflpM7EobXckJ5qdefj1fX_O3i4sR2ED0T8WhkZIquoO2ZeDROmtjmqhbaKWKgfw==, 2 .0~_uuxhy_lwgUseL1w5dwOlG7WOBAdn737FA5TTd9c1OmUekvRgQXNDTJR3HYMqQAfgHlAyfbTwjIUJ4-0fvsAUQ==, 2 .0~eyDtqg-aTsmaCLaBAW4ok575HWtqwLAqnBLznD4gF31pVhbjzj3YZe2wG7wFTU_3oaJdBNUlJ6Kw19mS8CtJGA==, 2 .0~gZKCQpnSxdyS1UpQ1m9Ze1wQjD-qUTPwK3pnjtHxtJqC2fte9Cxp7ZWnHTrqZP1AnEnbOqutr7JGg_VE7ZTwsg==, 2 .0~kkdiLjkxeKElr6njQiM-fgKGqo_Yhi7pcD9UPmQBdv2fOhmeAdxf1hN_VYgwdemezJB3N8lliIHMyw2P4qFG_g==, 2 .0~lDoFbZgmtnE2HHwY8-hn1vEaJRAtX0mmvvbf6IlTckUnXmXJwzsioulpSLNSnVL0I4IPEmILt7ohIzFpeu7ZNw==, 2 .0~oRMi0sbQLktfDDDGUS-SqBKpdDiD6HCztVES_ShfGr0KVcYENoIq7y9oUSDWL5B_P2gkdtWG8JEsJLxPbdWOZA==, 2 .0~sBP9DHkUmeBfkItUNALv4GzK_pu2MuF2O2BjT_PT1wQyC-1G9Wnp_zZf9JR-ALff05HGhopMtv9dSKe1gitSgg==, 2 .0~xTqjpeVnbr9X4GQ7Yn3B8E8QsmepG2DnMUHnaEcRDpMy6mfpu9z5gq5zFNu56oBkgzOSBuGtSBz73419w4Ykww==, 2 .0~ywjH9O1TvOtEpItVqZtpnMXj0pLkjMne9zjqJ5s0v-QEMGKMvClspho6yXembmgysXXRvrP3SFuT4wRHDI50tw==, 2 .0~z74C69A1C-JC5M5F4k_piOjfh5uF3W4nx_A9RVjX-2VfnYUKBYMKd1rjI0oBIyK_Qwutoh5iMwN4tnHiL54scg==, 1 .json, 1 .plist, 1 .sqlite3
