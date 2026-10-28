@@ -42,12 +42,15 @@ targets:
           - "$(SRCROOT)/GuideResources"
           - "$(TONGXING_GUIDE_DATA_INPUT)"
           - "$(TONGXING_GUIDE_CHECKSUM_INPUT)"
+          - "$(TONGXING_GUIDE_STATUE_INPUT)"
+          - "$(TONGXING_GUIDE_SON_INPUT)"
         outputFiles:
           - "$(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/weekly-guides.json"
         script: |
           set -eu
           destination="${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/weekly-guides.json"
           rm -f "$destination"
+          rm -f "${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/weekly-guide-statue.jpg" "${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/weekly-guide-son-of-man.jpg"
           case "${CONFIGURATION}" in
             Release|BetaDebug|BetaRelease)
               source="${SRCROOT}/GuideResources/weekly-guides.json"
@@ -67,8 +70,26 @@ targets:
                   echo "error: local guide payload checksum mismatch"
                   exit 1
                 fi
+                if [ "$actual" != "a527e23fbd693177b9589fc89cd3533b653f64918abb97213cf34172c36711f9" ]; then
+                  echo "error: local guide payload is not the revision accepted by this App"
+                  exit 1
+                fi
                 /bin/mkdir -p "$(/usr/bin/dirname "$destination")"
                 /bin/cp "$source" "$destination"
+                for asset in weekly-guide-statue.jpg weekly-guide-son-of-man.jpg; do
+                  if /usr/bin/grep -Fq "$asset" "$source"; then
+                    case "$asset" in
+                      weekly-guide-statue.jpg) asset_sha=f1d2f517120099a38614c7c560c1fbe054ec3ea4d741284fbcef496a7dab73b5 ;;
+                      weekly-guide-son-of-man.jpg) asset_sha=30c3e5b82c024bad3e40122f330f6606d022c91d8c77a82f06d6f1d5fc987f1f ;;
+                    esac
+                    asset_source="${SRCROOT}/GuideResources/${asset}"
+                    if [ ! -f "$asset_source" ] || [ "$(/usr/bin/shasum -a 256 "$asset_source" | /usr/bin/awk '{print $1}')" != "$asset_sha" ]; then
+                      echo "error: referenced weekly guide image missing or checksum mismatch: $asset"
+                      exit 1
+                    fi
+                    /bin/cp "$asset_source" "${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/${asset}"
+                  fi
+                done
               fi
               ;;
           esac
@@ -83,6 +104,8 @@ targets:
         # exact files as inputs, allowing the Xcode script sandbox to stay on.
         TONGXING_GUIDE_DATA_INPUT: "$(SRCROOT)/GuideResources"
         TONGXING_GUIDE_CHECKSUM_INPUT: "$(SRCROOT)/GuideResources"
+        TONGXING_GUIDE_STATUE_INPUT: "$(SRCROOT)/GuideResources"
+        TONGXING_GUIDE_SON_INPUT: "$(SRCROOT)/GuideResources"
         MARKETING_VERSION: "1.26.18"
         CURRENT_PROJECT_VERSION: "58"
         # ActivityStyle.transient is absent on iOS 17 despite the current SDK's
@@ -101,6 +124,8 @@ targets:
           SWIFT_ACTIVE_COMPILATION_CONDITIONS: "$(inherited) TONGXING_GUIDE_PREVIEW"
           TONGXING_GUIDE_DATA_INPUT: "$(SRCROOT)/GuideResources/weekly-guides.json"
           TONGXING_GUIDE_CHECKSUM_INPUT: "$(SRCROOT)/GuideResources/weekly-guides.sha256"
+          TONGXING_GUIDE_STATUE_INPUT: "$(SRCROOT)/GuideResources/weekly-guide-statue.jpg"
+          TONGXING_GUIDE_SON_INPUT: "$(SRCROOT)/GuideResources/weekly-guide-son-of-man.jpg"
           MARKETING_VERSION: "1.26.27"
           CURRENT_PROJECT_VERSION: "70"
           TONGXING_CONTENT_ORIGIN: "https://ai-for-god-sermon-audio.web.app"

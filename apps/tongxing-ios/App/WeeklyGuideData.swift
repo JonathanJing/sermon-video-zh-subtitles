@@ -17,6 +17,174 @@ struct WeeklyGuideSection: Decodable, Equatable, Identifiable {
     let subtitle: String
     let symbol: String
     let body: String
+    /// The plain-text body remains complete for old clients and as a safe
+    /// fallback when any structured block cannot be understood.
+    let blocks: [WeeklyGuideBlock]?
+
+    init(id: String, title: String, subtitle: String, symbol: String, body: String,
+         blocks: [WeeklyGuideBlock]? = nil) {
+        self.id = id
+        self.title = title
+        self.subtitle = subtitle
+        self.symbol = symbol
+        self.body = body
+        self.blocks = blocks
+    }
+
+    private enum CodingKeys: String, CodingKey { case id, title, subtitle, symbol, body, blocks }
+
+    init(from decoder: Decoder) throws {
+        let values = try decoder.container(keyedBy: CodingKeys.self)
+        id = try values.decode(String.self, forKey: .id)
+        title = try values.decode(String.self, forKey: .title)
+        subtitle = try values.decode(String.self, forKey: .subtitle)
+        symbol = try values.decode(String.self, forKey: .symbol)
+        body = try values.decode(String.self, forKey: .body)
+        // A partial render would silently omit unknown or malformed content.
+        // In that case show the complete plain-text body instead.
+        let decoded = try? values.decode([WeeklyGuideBlock].self, forKey: .blocks)
+        blocks = decoded.flatMap { $0.isEmpty ? nil : $0 }
+        if blocks == nil && body.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            throw DecodingError.dataCorruptedError(forKey: .body, in: values,
+                                                   debugDescription: "No readable guide content")
+        }
+    }
+}
+
+enum WeeklyGuideBlock: Decodable, Equatable {
+    case paragraph(text: String)
+    case table(title: String, columns: [String], rows: [[String]], footnote: String?)
+    case list(title: String, items: [String])
+    case flow(title: String, items: [String])
+    case image(assetID: String, alt: String, caption: String)
+    case map(title: String, points: [WeeklyGuideMapPoint], caption: String, attribution: String)
+
+    private enum CodingKeys: String, CodingKey { case type, text, title, columns, rows, footnote, items, assetID, alt, caption, points, attribution }
+    private struct AnyKey: CodingKey {
+        let stringValue: String
+        let intValue: Int? = nil
+        init?(stringValue: String) { self.stringValue = stringValue }
+        init?(intValue: Int) { return nil }
+    }
+
+    init(from decoder: Decoder) throws {
+        let values = try decoder.container(keyedBy: CodingKeys.self)
+        let type = try values.decode(String.self, forKey: .type)
+        let allKeys = try Set(decoder.container(keyedBy: AnyKey.self).allKeys.map(\.stringValue))
+        let allowed: Set<String>
+        switch type {
+        case "paragraph": allowed = ["type", "text"]
+        case "table": allowed = ["type", "title", "columns", "rows", "footnote"]
+        case "list", "flow": allowed = ["type", "title", "items"]
+        case "image": allowed = ["type", "assetID", "alt", "caption"]
+        case "map": allowed = ["type", "title", "points", "caption", "attribution"]
+        default:
+            throw DecodingError.dataCorruptedError(forKey: .type, in: values, debugDescription: "Unsupported guide block")
+        }
+        guard allKeys.isSubset(of: allowed) else {
+            throw DecodingError.dataCorruptedError(forKey: .type, in: values, debugDescription: "Unsupported guide block fields")
+        }
+        func requiredText(_ key: CodingKeys) throws -> String {
+            let value = try values.decode(String.self, forKey: key)
+            guard !value.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+                throw DecodingError.dataCorruptedError(forKey: key, in: values, debugDescription: "Empty content")
+            }
+            return value
+        }
+        switch type {
+        case "paragraph":
+            self = .paragraph(text: try requiredText(.text))
+        case "table":
+            let title = try values.decode(String.self, forKey: .title)
+            let columns = try values.decode([String].self, forKey: .columns)
+            let rows = try values.decode([[String]].self, forKey: .rows)
+            let footnote = try values.decodeIfPresent(String.self, forKey: .footnote)
+            guard !columns.isEmpty, columns.contains(where: { !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }),
+                  !rows.isEmpty, rows.allSatisfy({ $0.count == columns.count }) else {
+                throw DecodingError.dataCorruptedError(forKey: .rows, in: values, debugDescription: "Invalid table dimensions")
+            }
+            self = .table(title: title, columns: columns, rows: rows, footnote: footnote)
+        case "list", "flow":
+            let title = try values.decode(String.self, forKey: .title)
+            let items = try values.decode([String].self, forKey: .items)
+            guard !items.isEmpty, items.allSatisfy({ !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }) else {
+                throw DecodingError.dataCorruptedError(forKey: .items, in: values, debugDescription: "Empty list")
+            }
+            self = type == "list" ? .list(title: title, items: items) : .flow(title: title, items: items)
+        case "image":
+            let assetID = try requiredText(.assetID)
+            let alt = try requiredText(.alt)
+            let caption = try requiredText(.caption)
+            guard WeeklyGuideImageAssets.isAllowed(assetID) else {
+                throw DecodingError.dataCorruptedError(forKey: .assetID, in: values, debugDescription: "Unknown bundled guide image")
+            }
+            self = .image(assetID: assetID, alt: alt, caption: caption)
+        case "map":
+            let title = try requiredText(.title)
+            let caption = try requiredText(.caption)
+            let attribution = try requiredText(.attribution)
+            let points = try values.decode([WeeklyGuideMapPoint].self, forKey: .points)
+            guard (2...32).contains(points.count), Set(points.map(\.name)).count == points.count,
+                  let minLat = points.map(\.latitude).min(), let maxLat = points.map(\.latitude).max(),
+                  let minLon = points.map(\.longitude).min(), let maxLon = points.map(\.longitude).max(),
+                  maxLat > minLat, maxLon > minLon else {
+                throw DecodingError.dataCorruptedError(forKey: .points, in: values, debugDescription: "Invalid map points")
+            }
+            self = .map(title: title, points: points, caption: caption, attribution: attribution)
+        default:
+            throw DecodingError.dataCorruptedError(forKey: .type, in: values, debugDescription: "Unsupported guide block")
+        }
+    }
+}
+
+struct WeeklyGuideMapPoint: Decodable, Equatable {
+    let name: String
+    let latitude: Double
+    let longitude: Double
+    /// Metadata only; rendering never fetches this URL.
+    let sourceURL: String
+    let credit: String
+
+    private enum CodingKeys: String, CodingKey { case name, latitude, longitude, sourceURL, credit }
+
+    init(from decoder: Decoder) throws {
+        let values = try decoder.container(keyedBy: CodingKeys.self)
+        name = try values.decode(String.self, forKey: .name)
+        latitude = try values.decode(Double.self, forKey: .latitude)
+        longitude = try values.decode(Double.self, forKey: .longitude)
+        sourceURL = try values.decode(String.self, forKey: .sourceURL)
+        credit = try values.decode(String.self, forKey: .credit)
+        guard !name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+              !credit.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+              latitude.isFinite, (-90...90).contains(latitude), longitude.isFinite, (-180...180).contains(longitude),
+              let url = URLComponents(string: sourceURL), url.scheme == "https", url.host == "pleiades.stoa.org",
+              url.user == nil, url.password == nil, url.port == nil, url.query == nil, url.fragment == nil,
+              url.path.range(of: "^/places/[0-9]+/?$", options: .regularExpression) != nil else {
+            throw DecodingError.dataCorruptedError(forKey: .sourceURL, in: values, debugDescription: "Invalid source-backed map point")
+        }
+    }
+}
+
+/// Only these licensed image bytes may be used in guide content. No URL or
+/// caller-supplied path is interpreted as an image location.
+enum WeeklyGuideImageAssets {
+    private static let expected: [String: String] = [
+        "weekly-guide-statue.jpg": "f1d2f517120099a38614c7c560c1fbe054ec3ea4d741284fbcef496a7dab73b5",
+        "weekly-guide-son-of-man.jpg": "30c3e5b82c024bad3e40122f330f6606d022c91d8c77a82f06d6f1d5fc987f1f"
+    ]
+
+    static func isAllowed(_ assetID: String) -> Bool { expected[assetID] != nil }
+
+    static func verifies(_ data: Data, assetID: String) -> Bool {
+        guard let digest = expected[assetID], data.count <= 4 * 1024 * 1024 else { return false }
+        return WeeklyGuideRepository.sha256(data) == digest
+    }
+
+    static func data(for assetID: String, bundle: Bundle = .main) -> Data? {
+        guard isAllowed(assetID), let url = bundle.url(forResource: assetID, withExtension: nil),
+              let data = try? Data(contentsOf: url), verifies(data, assetID: assetID) else { return nil }
+        return data
+    }
 }
 
 struct WeeklyGuideLegacyIdentity: Hashable {
@@ -57,6 +225,7 @@ enum WeeklyGuideRemoteResult: Equatable {
     case manifestUnavailable
     case notDeclared
     case available(WeeklyGuide)
+    case outdatedRevision(Int)
     case revoked
     case invalidDeclared
 }
@@ -86,7 +255,7 @@ struct WeeklyGuideDenyLedger {
             defaults.set(true, forKey: key(selection, origin: origin))
         case .available:
             defaults.removeObject(forKey: key(selection, origin: origin))
-        case .manifestUnavailable, .notDeclared:
+        case .manifestUnavailable, .notDeclared, .outdatedRevision:
             break
         }
     }
@@ -95,7 +264,7 @@ struct WeeklyGuideDenyLedger {
 enum WeeklyGuideRepository {
     static let manifestLimit = 512 * 1024
     static let guideLimit = 2 * 1024 * 1024
-    static let acceptedBundleSHA = "99b494d5c52104df38e5a4be1a563b2905edd9cbe612209188ae2ea87ed860f2"
+    static let acceptedBundleSHA = "a527e23fbd693177b9589fc89cd3533b653f64918abb97213cf34172c36711f9"
     typealias Fetch = (URL, URL, Int) async throws -> WeeklyGuideResponse
 
     static func sha256(_ data: Data) -> String {
@@ -188,6 +357,11 @@ enum WeeklyGuideRepository {
             return guide
         case .manifestUnavailable, .notDeclared:
             return ledger.isDenied(selection, origin: origin) ? nil : bundled()
+        case .outdatedRevision(let week):
+            guard !ledger.isDenied(selection, origin: origin),
+                  let guide = bundled(), guide.id == selection.pageID, guide.week == week,
+                  hasApprovedBundleIdentity(selection: selection, origin: origin, week: week) else { return nil }
+            return guide
         case .revoked, .invalidDeclared:
             return nil
         }
@@ -253,6 +427,11 @@ enum WeeklyGuideRepository {
         guard entry.legacy == nil, entry.editionId == selection.editionId,
               entry.sourceIdentitySha256 == selection.sourceIdentitySha256,
               entry.releasePackageJsonSha256 == selection.releasePackageJsonSha256 else { return .invalidDeclared }
+        // A verified shipped week-five identity cannot bypass its content pin by
+        // claiming a different week in the manifest.
+        if hasApprovedBundleIdentity(selection: selection, origin: origin, week: 5), entry.week != 5 {
+            return .invalidDeclared
+        }
         if entry.status == "revoked" { return .revoked }
         guard entry.status == "available", let bytes = entry.bytes, bytes > 0, bytes <= guideLimit,
               let hash = entry.sha256, hash.range(of: "^[0-9a-f]{64}$", options: .regularExpression) != nil,
@@ -265,7 +444,45 @@ enum WeeklyGuideRepository {
               sha256(content.data) == hash,
               let guide = try? JSONDecoder().decode(WeeklyGuide.self, from: content.data),
               guide.id == pageID, guide.week == entry.week, valid(guide) else { return .invalidDeclared }
+        if let protection = protectedRevision(for: guide.week) {
+            guard let payload = try? JSONSerialization.jsonObject(with: content.data) as? [String: Any] else {
+                return .invalidDeclared
+            }
+            guard trustedProtectedRevision(revision: entry.richRevisionSHA256, payload: payload, protection: protection) else {
+                return .outdatedRevision(guide.week)
+            }
+        }
         return .available(guide)
+    }
+
+    // These pages had incorrect table relationships in an earlier remote release.
+    // Bind both the complete fallback text and the displayed blocks to reviewed
+    // revisions; a server-supplied revision label by itself proves nothing.
+    private struct ProtectedRevision {
+        let sectionID: String
+        let bodySHA: String
+        let blocksSHA: String
+    }
+    private static func protectedRevision(for week: Int) -> ProtectedRevision? {
+        switch week {
+        case 5: return ProtectedRevision(sectionID: "page-83", bodySHA: "3fde88f36266fcf1224a93d3b6dfa0f6b87bf67aef93a974a093c522b75584d3", blocksSHA: "ec8728953968f528ccf562df53f354de35c4d578ce9c841563b71b0523d4322c")
+        case 9: return ProtectedRevision(sectionID: "page-123", bodySHA: "3d10f079ec524da002721e170dba640ec0b4a2557b2ca36036f594d50e528d97", blocksSHA: "c75c35151a77ce52be0ba7cde8131f6a7042999b081fb488a8e44350a8180012")
+        default: return nil
+        }
+    }
+    private static func trustedProtectedRevision(revision: String?, payload: [String: Any],
+                                                 protection: ProtectedRevision) -> Bool {
+        let approved = ["0c327354029e9a92f22f03d07a11d153c825550c77f7cbf092edaa8c0b18d86a",
+                        "df50f608d7a802052bdbf949aa3fb0988432c331a57a10c128160e9eb77c62de"]
+        guard let revision, approved.contains(revision),
+              payload["richRevisionSHA256"] as? String == revision,
+              let sections = payload["sections"] as? [[String: Any]],
+              let section = sections.first(where: { $0["id"] as? String == protection.sectionID }),
+              let body = section["body"] as? String, sha256(Data(body.utf8)) == protection.bodySHA,
+              let blocks = section["blocks"] as? [[String: Any]],
+              let canonical = try? JSONSerialization.data(withJSONObject: blocks, options: [.sortedKeys, .withoutEscapingSlashes]),
+              sha256(canonical) == protection.blocksSHA else { return false }
+        return true
     }
 
     /// V2 languages are kept separate from the shipped Chinese v1 Bundle. The
@@ -392,6 +609,7 @@ enum WeeklyGuideRepository {
     private struct Entry: Decodable {
         let pageID: String; let locale: String; let week: Int; let editionId: String?
         let sourceIdentitySha256: String?; let releasePackageJsonSha256: String?; let status: String
+        let richRevisionSHA256: String?
         let path: String?; let sha256: String?; let bytes: Int?; let legacy: LegacyEntry?
     }
     private struct LegacyEntry: Decodable {

@@ -38,6 +38,83 @@ final class WeeklyGuideDataTests: XCTestCase {
         """.data(using: .utf8)!
         XCTAssertNil(WeeklyGuideRepository.load(pageID: "x", locale: "zh-Hans", data: duplicated))
     }
+
+    func testStructuredContentKeepsTableRowsAndFlowOrder() throws {
+        let json = #"""
+        {"id":"p","title":"来源表格","subtitle":"页 1","symbol":"book","body":"完整纯文字",
+         "blocks":[
+            {"type":"paragraph","text":"介绍"},
+            {"type":"table","title":"对照","columns":["","含义"],"rows":[["甲","乙"],["丙",""]],"footnote":"出处"},
+            {"type":"list","title":"项目","items":["第一","第二"]},
+            {"type":"flow","title":"次序","items":["光","水","地"]},
+            {"type":"image","assetID":"weekly-guide-statue.jpg","alt":"图像文字说明","caption":"图注"}
+         ]}
+        """#
+        let section = try JSONDecoder().decode(WeeklyGuideSection.self, from: Data(json.utf8))
+        XCTAssertEqual(section.body, "完整纯文字")
+        XCTAssertEqual(section.blocks, [
+            .paragraph(text: "介绍"),
+            .table(title: "对照", columns: ["", "含义"], rows: [["甲", "乙"], ["丙", ""]], footnote: "出处"),
+            .list(title: "项目", items: ["第一", "第二"]),
+            .flow(title: "次序", items: ["光", "水", "地"]),
+            .image(assetID: "weekly-guide-statue.jpg", alt: "图像文字说明", caption: "图注")
+        ])
+    }
+
+    func testUnsupportedOrMalformedBlocksFallBackToEntirePlainBody() throws {
+        for blocks in [
+            #"[{"type":"paragraph","text":"partial"},{"type":"future"}]"#,
+            #"[{"type":"table","title":"bad","columns":["A","B"],"rows":[["one"]]}]"#,
+            #"[{"type":"flow","items":[]}]"#,
+            #"[{"type":"paragraph","text":"部分文字","newContent":"不可丢失"}]"#,
+            #"[{"type":"image","assetID":"../../secret.jpg","alt":"x","caption":"x"}]"#,
+            #"[{"type":"image","assetID":"weekly-guide-statue.jpg","alt":"x"}]"#,
+            #"[]"#,
+            #"null"#
+        ] {
+            let json = """
+            {"id":"p","title":"T","subtitle":"S","symbol":"book","body":"完整纯文字", "blocks":\(blocks)}
+            """
+            let section = try JSONDecoder().decode(WeeklyGuideSection.self, from: Data(json.utf8))
+            XCTAssertNil(section.blocks, blocks)
+            XCTAssertEqual(section.body, "完整纯文字")
+        }
+        let missingBody = #"{"id":"p","title":"T","subtitle":"S","symbol":"book","body":"", "blocks":[{"type":"future"}]}"#
+        XCTAssertThrowsError(try JSONDecoder().decode(WeeklyGuideSection.self, from: Data(missingBody.utf8)))
+    }
+
+    func testOnlyKnownBundledImageBytesCanBeUsed() {
+        XCTAssertTrue(WeeklyGuideImageAssets.isAllowed("weekly-guide-statue.jpg"))
+        XCTAssertTrue(WeeklyGuideImageAssets.isAllowed("weekly-guide-son-of-man.jpg"))
+        XCTAssertFalse(WeeklyGuideImageAssets.isAllowed("../weekly-guide-statue.jpg"))
+        XCTAssertFalse(WeeklyGuideImageAssets.isAllowed("https://example.com/statue.jpg"))
+        XCTAssertFalse(WeeklyGuideImageAssets.verifies(Data("bad bytes".utf8), assetID: "weekly-guide-statue.jpg"))
+    }
+
+    func testSourceBackedMapDecodesAndRejectsUntrustedPoints() throws {
+        func section(_ points: String) throws -> WeeklyGuideSection {
+            let json = """
+            {"id":"p","title":"地图","subtitle":"来源","symbol":"book","body":"完整的地点列表",
+             "blocks":[{"type":"map","title":"地点","caption":"地点约略位置示意，并非教会建筑精确位置",
+             "attribution":"Pleiades CC BY 3.0","points":\(points)}]}
+            """
+            return try JSONDecoder().decode(WeeklyGuideSection.self, from: Data(json.utf8))
+        }
+        let valid = #"[{"name":"甲","latitude":37.9,"longitude":27.3,"sourceURL":"https://pleiades.stoa.org/places/599612","credit":"Contributor A"},{"name":"乙","latitude":38.4,"longitude":27.1,"sourceURL":"https://pleiades.stoa.org/places/550893","credit":"Contributor B"}]"#
+        guard case .map(_, let points, _, _) = try XCTUnwrap(section(valid).blocks?.first) else {
+            return XCTFail("Expected a source-backed map")
+        }
+        XCTAssertEqual(points.map(\.name), ["甲", "乙"])
+        for invalid in [
+            valid.replacingOccurrences(of: "https://pleiades.stoa.org", with: "https://example.com"),
+            valid.replacingOccurrences(of: "37.9", with: "137.9"),
+            valid.replacingOccurrences(of: "\"乙\"", with: "\"甲\""),
+            valid.replacingOccurrences(of: "Contributor A", with: "")
+        ] {
+            XCTAssertNil(try section(invalid).blocks)
+            XCTAssertEqual(try section(invalid).body, "完整的地点列表")
+        }
+    }
 }
 
 final class WeeklyGuideRemoteTests: XCTestCase {
@@ -561,4 +638,70 @@ private final class GuideTestURLProtocol: URLProtocol {
     }
     override func stopLoading() { }
 
+}
+
+// Source-bound page 83 fixture exercises both the text and structured content pins.
+extension WeeklyGuideRemoteTests {
+    func testProtectedChineseRevisionsAndSafeFallback() async throws {
+        let protectedOrigin = URL(string: "https://ai-for-god-sermon-audio-dev.web.app")!
+        let selected = WeeklyGuideSelection(pageID: "resi-20261011-54475d42", locale: "zh-Hans",
+            editionId: "resi-20261011-54475d42",
+            sourceIdentitySha256: "d1734702cf39394a3f283392043d0d33ed127302df393dc16b16d737ef320ec4",
+            releasePackageJsonSha256: "2503ca70abb2372d513bd9a14603d42b5aac6401d5cc0e635dbc988ec8c84e51")
+        let revision = "df50f608d7a802052bdbf949aa3fb0988432c331a57a10c128160e9eb77c62de"
+        let sectionData = Data(#"{"id":"page-83","title":"七号（启示录 8–9 章）与十灾（出埃及记）","subtitle":"原手册印刷页 81","symbol":"doc.text","body":"七号（启示录 8–9 章）与十灾（出埃及记）\n启示录最早的听众会立刻联想到神降在埃及的灾，那些灾使神的百姓从被掳中得释放。正如埃及的法老硬着心不悔改，敌挡神的人也\"……仍旧不悔改自己手所做的……\"（启示录 9:20）。\n\n七号：第一号：雹子、火与血\n十灾：第六灾和第七灾：疮与雹\n\n七号：第二号：海变成血\n十灾：第一灾：水变成血\n\n七号：第三号：水变苦\n十灾：第一灾：淡水受击打\n\n七号：第四号：日、月、星变黑\n十灾：第九灾：黑暗\n\n七号：第五号：蝗虫被释放\n十灾：第八灾：蝗虫\n\n七号：第六号：人类大规模死亡\n十灾：第十灾：长子之死\n\n创造（创世记 1 章）与\"反创造\"（启示录 8 章）\n随着七号的审判，我们看见三分之一的受造界在向后崩塌。\n\n创造之日\n第一日：光\n第二日：天空／水分开\n第三日：地与植物\n第四日：日、月、星\n\n“反创造”之号\n第一号：地和植物被烧\n第二号：海受击打\n第三号：淡水变毒\n第四号：黑暗\n\n创造的次序：光 → 水 → 地\n“反创造”的次序：地 → 水 → 光","blocks":[{"type":"paragraph","text":"七号（启示录 8–9 章）与十灾（出埃及记）\n启示录最早的听众会立刻联想到神降在埃及的灾，那些灾使神的百姓从被掳中得释放。正如埃及的法老硬着心不悔改，敌挡神的人也\"……仍旧不悔改自己手所做的……\"（启示录 9:20）。"},{"type":"table","title":"","columns":["七号","十灾"],"rows":[["第一号：雹子、火与血","第六灾和第七灾：疮与雹"],["第二号：海变成血","第一灾：水变成血"],["第三号：水变苦","第一灾：淡水受击打"],["第四号：日、月、星变黑","第九灾：黑暗"],["第五号：蝗虫被释放","第八灾：蝗虫"],["第六号：人类大规模死亡","第十灾：长子之死"]]},{"type":"paragraph","text":"创造（创世记 1 章）与\"反创造\"（启示录 8 章）\n随着七号的审判，我们看见三分之一的受造界在向后崩塌。"},{"type":"list","title":"创造之日","items":["第一日：光","第二日：天空／水分开","第三日：地与植物","第四日：日、月、星"]},{"type":"list","title":"“反创造”之号","items":["第一号：地和植物被烧","第二号：海受击打","第三号：淡水变毒","第四号：黑暗"]},{"type":"flow","title":"创造的次序","items":["光","水","地"]},{"type":"flow","title":"“反创造”的次序","items":["地","水","光"]}]}"#.utf8)
+        let section = try XCTUnwrap(JSONSerialization.jsonObject(with: sectionData) as? [String: Any])
+        let payloadObject: [String: Any] = ["id": selected.pageID!, "week": 5, "title": "test", "scripture": "test",
+                                          "sections": [section], "richRevisionSHA256": revision]
+        func run(_ object: [String: Any], entryRevision: String?, status: String = "available", source: String? = nil, week: Int = 5) async throws -> WeeklyGuideRemoteResult {
+            let bytes = try JSONSerialization.data(withJSONObject: object)
+            var root = try XCTUnwrap(JSONSerialization.jsonObject(with: manifest(payload: bytes, pageID: selected.pageID!, week: week,
+                status: status, edition: selected.editionId!, sourceSHA: source ?? selected.sourceIdentitySha256!,
+                releaseSHA: selected.releasePackageJsonSha256!)) as? [String: Any])
+            var entries = try XCTUnwrap(root["entries"] as? [[String: Any]])
+            entries[0]["richRevisionSHA256"] = entryRevision
+            root["entries"] = entries
+            let info = try JSONSerialization.data(withJSONObject: root)
+            return await WeeklyGuideRepository.loadRemote(selection: selected, origin: protectedOrigin, fetch: loader(manifest: info, body: bytes))
+        }
+        let valid = try await run(payloadObject, entryRevision: revision)
+        guard case .available(let bundledGuide) = valid else { return XCTFail("verified revision rejected: \(valid)") }
+        let old = try await run(payloadObject, entryRevision: nil)
+        XCTAssertEqual(old, .outdatedRevision(5))
+        let suite = "guide-protection-\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let ledger = WeeklyGuideDenyLedger(defaults: defaults)
+        XCTAssertEqual(WeeklyGuideRepository.resolvedGuide(old, selection: selected, origin: protectedOrigin, ledger: ledger, bundled: { bundledGuide }), bundledGuide)
+        var wrong = payloadObject
+        wrong["richRevisionSHA256"] = String(repeating: "0", count: 64)
+        let wrongRevision = try await run(wrong, entryRevision: revision)
+        XCTAssertEqual(wrongRevision, .outdatedRevision(5))
+        var badSection = section
+        badSection["body"] = "incorrect"
+        wrong = payloadObject; wrong["sections"] = [badSection]
+        let wrongBody = try await run(wrong, entryRevision: revision)
+        XCTAssertEqual(wrongBody, .outdatedRevision(5))
+        badSection = section; badSection["blocks"] = [["type": "paragraph", "text": "incorrect"]]
+        wrong["sections"] = [badSection]
+        let wrongBlocks = try await run(wrong, entryRevision: revision)
+        XCTAssertEqual(wrongBlocks, .outdatedRevision(5))
+        let revoked = try await run(payloadObject, entryRevision: nil, status: "revoked")
+        XCTAssertEqual(revoked, .revoked)
+        XCTAssertNil(WeeklyGuideRepository.resolvedGuide(revoked, selection: selected, origin: protectedOrigin, ledger: ledger, bundled: { bundledGuide }))
+        XCTAssertNil(WeeklyGuideRepository.resolvedGuide(old, selection: selected, origin: protectedOrigin, ledger: ledger, bundled: { bundledGuide }))
+        let mismatch = try await run(payloadObject, entryRevision: nil, source: String(repeating: "e", count: 64))
+        XCTAssertEqual(mismatch, .invalidDeclared)
+        var wrongWeek = payloadObject; wrongWeek["week"] = 8
+        let disguised = try await run(wrongWeek, entryRevision: nil, week: 8)
+        XCTAssertEqual(disguised, .invalidDeclared)
+        var weekNine = payloadObject; weekNine["week"] = 9; weekNine["id"] = selection.pageID!
+        let ninthData = try JSONSerialization.data(withJSONObject: weekNine)
+        let ninthManifest = try manifest(payload: ninthData, week: 9)
+        let oldNinth = await WeeklyGuideRepository.loadRemote(selection: selection, origin: origin,
+            fetch: loader(manifest: ninthManifest, body: ninthData))
+        XCTAssertEqual(oldNinth, .outdatedRevision(9))
+        let ninth = WeeklyGuideRepository.resolvedGuide(oldNinth, selection: selection, origin: origin, ledger: ledger, bundled: { nil })
+        XCTAssertNil(ninth)
+    }
 }

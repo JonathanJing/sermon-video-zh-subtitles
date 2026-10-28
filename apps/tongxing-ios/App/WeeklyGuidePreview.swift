@@ -1,6 +1,7 @@
 #if DEBUG || TONGXING_GUIDE_PREVIEW
 import SwiftUI
 import TongxingCore
+import UIKit
 
 /// The guide is independent of the sermon release package and is only shown
 /// for an explicitly mapped sermon and supported language.
@@ -17,6 +18,7 @@ struct WeeklyGuidePreview: View {
     @State private var remoteGuide: WeeklyGuide?
     @State private var remoteSelection: WeeklyGuideSelection?
     @State private var loadingSelection: WeeklyGuideSelection?
+    @State private var expandedImage: WeeklyGuideExpandedImage?
 
     private var selection: WeeklyGuideSelection {
         let locale = model.selectedContentLocale
@@ -128,8 +130,15 @@ struct WeeklyGuidePreview: View {
                                 VStack(alignment: .leading, spacing: 12) {
                                     Text(section.title).font(.title2.bold()).accessibilityAddTraits(.isHeader)
                                         .accessibilityFocused($focusedSection, equals: section.id)
-                                    Text(section.body).font(.body).lineSpacing(6)
-                                        .fixedSize(horizontal: false, vertical: true)
+                                    if let blocks = displayableBlocks(section) {
+                                        ForEach(blocks.indices, id: \.self) { index in
+                                            if !isRepeatedSectionHeading(blocks[index], at: index, section: section) {
+                                                guideBlock(blocks[index])
+                                            }
+                                        }
+                                    } else {
+                                        guideParagraph(section.body)
+                                    }
                                 }
                                 .frame(maxWidth: .infinity, alignment: .leading)
                                 .id(section.id)
@@ -190,6 +199,170 @@ struct WeeklyGuidePreview: View {
                                      onClose: { showingMore = false }, width: width)
             }
         }
+        .sheet(item: $expandedImage) { image in
+            WeeklyGuideImageSheet(image: image, closeLabel: localization.text("关闭"),
+                                  zoomInLabel: localization.text("放大图片"),
+                                  zoomOutLabel: localization.text("缩小图片"))
+        }
+        }
+    }
+
+    private func guideParagraph(_ text: String) -> some View {
+        Text(text).font(.body).lineSpacing(6)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .fixedSize(horizontal: false, vertical: true)
+    }
+
+    private func displayableBlocks(_ section: WeeklyGuideSection) -> [WeeklyGuideBlock]? {
+        guard let blocks = section.blocks else { return nil }
+        for block in blocks {
+            if case .image(let assetID, _, _) = block {
+                guard let data = WeeklyGuideImageAssets.data(for: assetID), UIImage(data: data) != nil else {
+                    return nil
+                }
+            }
+        }
+        return blocks
+    }
+
+    private func isRepeatedSectionHeading(_ block: WeeklyGuideBlock, at index: Int,
+                                          section: WeeklyGuideSection) -> Bool {
+        guard index == 0, case .paragraph(let text) = block else { return false }
+        return text.trimmingCharacters(in: .whitespacesAndNewlines)
+            == section.title.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    @ViewBuilder
+    private func guideBlock(_ block: WeeklyGuideBlock) -> some View {
+        switch block {
+        case .paragraph(let text):
+            guideParagraph(text)
+        case .table(let title, let columns, let rows, let footnote):
+            VStack(alignment: .leading, spacing: 12) {
+                if !title.isEmpty {
+                    Text(title).font(.headline).accessibilityAddTraits(.isHeader)
+                }
+                // Each source row remains one card so that narrow screens and
+                // VoiceOver preserve the relationship between its cells.
+                ForEach(rows.indices, id: \.self) { row in
+                    VStack(alignment: .leading, spacing: 12) {
+                        ForEach(columns.indices, id: \.self) { column in
+                            VStack(alignment: .leading, spacing: 3) {
+                                if !columns[column].trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                                    Text(columns[column]).font(.caption.weight(.semibold)).foregroundStyle(.secondary)
+                                }
+                                Text(rows[row][column]).font(.body)
+                                    .fixedSize(horizontal: false, vertical: true)
+                            }
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                        }
+                    }
+                    .padding(14)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(Brand.surface, in: RoundedRectangle(cornerRadius: 14))
+                    .accessibilityElement(children: .combine)
+                }
+                if let footnote, !footnote.isEmpty {
+                    Text(footnote).font(.footnote).foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+        case .list(let title, let items):
+            VStack(alignment: .leading, spacing: 8) {
+                if !title.isEmpty {
+                    Text(title).font(.headline).accessibilityAddTraits(.isHeader)
+                }
+                ForEach(items.indices, id: \.self) { index in
+                    HStack(alignment: .top, spacing: 8) {
+                        Text("•").accessibilityHidden(true)
+                        guideParagraph(items[index])
+                    }
+                }
+            }
+        case .flow(let title, let items):
+            VStack(alignment: .leading, spacing: 8) {
+                if !title.isEmpty {
+                    Text(title).font(.headline).accessibilityAddTraits(.isHeader)
+                }
+                ForEach(items.indices, id: \.self) { index in
+                    if index > 0 {
+                        Image(systemName: "arrow.down").foregroundStyle(.secondary)
+                            .accessibilityHidden(true)
+                    }
+                    guideParagraph(items[index])
+                }
+            }
+        case .image(let assetID, let alt, let caption):
+            if let data = WeeklyGuideImageAssets.data(for: assetID), let image = UIImage(data: data) {
+                VStack(alignment: .leading, spacing: 8) {
+                    Button {
+                        expandedImage = WeeklyGuideExpandedImage(id: assetID, image: image, alt: alt, caption: caption)
+                    } label: {
+                        Image(uiImage: image).resizable().scaledToFit()
+                            .frame(maxWidth: .infinity)
+                            .clipShape(RoundedRectangle(cornerRadius: 12))
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel(Text(alt))
+                    .accessibilityHint(Text(localization.text("点按可放大图片")))
+                    .accessibilityIdentifier("guide-image-\(assetID)")
+                    if !caption.isEmpty {
+                        Text(caption).font(.footnote).foregroundStyle(.secondary)
+                    }
+                }
+            }
+        case .map(let title, let points, let caption, let attribution):
+            VStack(alignment: .leading, spacing: 12) {
+                Text(title).font(.headline).accessibilityAddTraits(.isHeader)
+                // This is a local schematic: dots encode the validated
+                // relative coordinates, not coastlines, routes or buildings.
+                GeometryReader { geometry in
+                    let minLat = points.map(\.latitude).min() ?? 0
+                    let maxLat = points.map(\.latitude).max() ?? 1
+                    let minLon = points.map(\.longitude).min() ?? 0
+                    let maxLon = points.map(\.longitude).max() ?? 1
+                    let usableWidth = max(1, geometry.size.width - 40)
+                    let usableHeight = max(1, geometry.size.height - 40)
+                    ZStack {
+                        ForEach(points.indices, id: \.self) { index in
+                            let point = points[index]
+                            let x = 20 + usableWidth * CGFloat((point.longitude - minLon) / (maxLon - minLon))
+                            let y = 20 + usableHeight * CGFloat((maxLat - point.latitude) / (maxLat - minLat))
+                            ZStack {
+                                Circle().fill(Brand.accent).frame(width: 26, height: 26)
+                                Text("\(index + 1)").font(.caption2.bold()).foregroundStyle(.white)
+                            }
+                            .position(x: x, y: y)
+                        }
+                    }
+                }
+                .frame(height: 220)
+                .background(Brand.surface, in: RoundedRectangle(cornerRadius: 14))
+                .accessibilityHidden(true)
+                ForEach(points.indices, id: \.self) { index in
+                    Text("\(index + 1). \(points[index].name)")
+                        .font(.body).fixedSize(horizontal: false, vertical: true)
+                }
+                Text(caption).font(.footnote).foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                Text(attribution).font(.footnote).foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                DisclosureGroup(localization.text("查看地图来源")) {
+                    VStack(alignment: .leading, spacing: 12) {
+                        ForEach(points.indices, id: \.self) { index in
+                            VStack(alignment: .leading, spacing: 4) {
+                                if let url = URL(string: points[index].sourceURL) {
+                                    Link(points[index].name, destination: url).font(.footnote)
+                                }
+                                Text(points[index].credit).font(.footnote).foregroundStyle(.secondary)
+                                    .fixedSize(horizontal: false, vertical: true)
+                            }
+                        }
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.vertical, 8)
+                }
+            }
         }
     }
 
@@ -209,6 +382,58 @@ struct WeeklyGuidePreview: View {
         PlaybackDock(playback: playback, alignmentModel: model, placement: placement, inSystemBar: inSystemBar,
             onMoreTap: { morePlacement = placement; showingMore = true },
             onMoreDismiss: { showingMore = false }, onMoreFrameChange: { moreFrame = $0 })
+    }
+}
+
+private struct WeeklyGuideExpandedImage: Identifiable {
+    let id: String
+    let image: UIImage
+    let alt: String
+    let caption: String
+}
+
+private struct WeeklyGuideImageSheet: View {
+    let image: WeeklyGuideExpandedImage
+    let closeLabel: String
+    let zoomInLabel: String
+    let zoomOutLabel: String
+    @Environment(\.dismiss) private var dismiss
+    @State private var scale: CGFloat = 1
+    @GestureState private var magnification: CGFloat = 1
+
+    var body: some View {
+        NavigationStack {
+            GeometryReader { geometry in
+                ScrollView([.horizontal, .vertical]) {
+                    Image(uiImage: image.image).resizable().scaledToFit()
+                        .frame(width: max(1, geometry.size.width * min(4, max(1, scale * magnification))))
+                        .accessibilityLabel(Text(image.alt))
+                }
+                .gesture(MagnificationGesture()
+                    .updating($magnification) { value, state, _ in state = value }
+                    .onEnded { value in scale = min(4, max(1, scale * value)) })
+            }
+            .background(Brand.background)
+            .navigationTitle(image.caption)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button(closeLabel) { dismiss() }
+                }
+                ToolbarItemGroup(placement: .primaryAction) {
+                    Button { scale = max(1, scale / 1.5) } label: {
+                        Image(systemName: "minus.magnifyingglass")
+                    }
+                    .accessibilityLabel(Text(zoomOutLabel))
+                    .disabled(scale <= 1)
+                    Button { scale = min(4, scale * 1.5) } label: {
+                        Image(systemName: "plus.magnifyingglass")
+                    }
+                    .accessibilityLabel(Text(zoomInLabel))
+                    .disabled(scale >= 4)
+                }
+            }
+        }
     }
 }
 

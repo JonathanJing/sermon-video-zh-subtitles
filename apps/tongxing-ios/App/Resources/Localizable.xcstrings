@@ -1,6 +1,42 @@
 {
   "sourceLanguage": "zh-Hans",
   "strings": {
+    "查看地图来源": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "View map sources" } },
+        "ko": { "stringUnit": { "state": "translated", "value": "지도 출처 보기" } },
+        "es": { "stringUnit": { "state": "translated", "value": "Ver fuentes del mapa" } },
+        "vi": { "stringUnit": { "state": "translated", "value": "Xem nguồn bản đồ" } }
+      }
+    },
+    "放大图片": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Zoom in" } },
+        "ko": { "stringUnit": { "state": "translated", "value": "이미지 확대" } },
+        "es": { "stringUnit": { "state": "translated", "value": "Ampliar imagen" } },
+        "vi": { "stringUnit": { "state": "translated", "value": "Phóng to ảnh" } }
+      }
+    },
+    "缩小图片": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Zoom out" } },
+        "ko": { "stringUnit": { "state": "translated", "value": "이미지 축소" } },
+        "es": { "stringUnit": { "state": "translated", "value": "Reducir imagen" } },
+        "vi": { "stringUnit": { "state": "translated", "value": "Thu nhỏ ảnh" } }
+      }
+    },
+    "点按可放大图片": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Tap to enlarge image" } },
+        "ko": { "stringUnit": { "state": "translated", "value": "탭하여 이미지 확대" } },
+        "es": { "stringUnit": { "state": "translated", "value": "Toca para ampliar la imagen" } },
+        "vi": { "stringUnit": { "state": "translated", "value": "Chạm để phóng to ảnh" } }
+      }
+    },
     "本周更新": {
       "localizations": {
         "en": {
