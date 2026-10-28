@@ -1,0 +1,9 @@
+{
+  "action": "build",
+  "scheme": "TongxingBeta",
+  "configuration": "BetaDebug",
+  "statusFileSha256": "1703678aedf400e70aeb2619203832ce16c76c1f89b0daed7e868c59ae8aee8e",
+  "logSha256": "b7fd0c712d7eef68b8af3c78e6827ec279792e5aebe7040af8a5fdb55bdc26a6",
+  "resultBundle": "build.xcresult",
+  "resultBundleComplete": true
+}
