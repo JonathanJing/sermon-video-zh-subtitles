@@ -1,0 +1,27 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261028-guide-weeks8-12-staging",
+  "runs": [
+    {
+      "label": "weekly-guide-private-upload-run-summary",
+      "source": "~/.codex/worktrees/weekly-study-guide-design/sermon-video-zh-subtitles/artifacts/tongxing-ios/weekly-guide-private-upload-run-summary",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "weekly-guide-private-upload-run-summary",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 1034,
+      "truncated": false,
+      "sha256": "06aa91e331511d3777ccfd6f6bb4fbca6abe724177d4d6fa99c11050eac948df",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}
