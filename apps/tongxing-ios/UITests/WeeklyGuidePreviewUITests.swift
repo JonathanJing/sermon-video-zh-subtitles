@@ -319,7 +319,11 @@ final class WeeklyGuidePreviewUITests: XCTestCase {
         let before = play.label
         let rightFrame = listening.frame
         let pausedPosition = play.value as? String
-        app.buttons["guide-chapter-menu"].tap()
+        let menu = app.buttons["guide-chapter-menu"]
+        recordGuideHitRegions(app: app, phase: "after-download-and-rotation")
+        XCTAssertTrue(menu.isHittable)
+        menu.tap()
+        XCTAssertTrue(app.buttons["guide-section-group"].waitForExistence(timeout: 5))
         app.buttons["guide-section-group"].tap()
         let body = app.staticTexts["测试用讨论内容，不代表教会手册。"]
         XCTAssertTrue(body.waitForExistence(timeout: 5))
@@ -338,6 +342,56 @@ final class WeeklyGuidePreviewUITests: XCTestCase {
         XCUIDevice.shared.orientation = .landscapeLeft
         XCTAssertTrue(guide.waitForExistence(timeout: 10))
         XCTAssertEqual(app.buttons["playback-toggle"].label, playing)
+        let playingPosition = playbackSeconds(app.buttons["playback-toggle"])
+        XCTAssertNotNil(playingPosition)
+        let advanced = expectation(for: NSPredicate { _, _ in
+            guard let before = playingPosition,
+                  let now = self.playbackSeconds(app.buttons["playback-toggle"]) else { return false }
+            return now > before
+        }, evaluatedWith: nil)
+        wait(for: [advanced], timeout: 5)
+        XCTAssertEqual(app.buttons["playback-toggle"].label, playing)
+        // A system Menu can keep XCTest waiting for UI idleness until this
+        // 36-second fixture ends. Verify rotation progress first, then pause
+        // before exercising the menu again and checking stable position.
+        app.buttons["playback-toggle"].tap()
+        XCTAssertEqual(app.buttons["playback-toggle"].label, before)
+        let positionAfterRotation = playbackSeconds(app.buttons["playback-toggle"])
+        XCTAssertNotNil(positionAfterRotation)
+        recordGuideHitRegions(app: app, phase: "after-second-rotation")
+        XCTAssertTrue(menu.isHittable)
+        menu.tap()
+        XCTAssertTrue(app.buttons["guide-section-group"].waitForExistence(timeout: 5))
+        app.buttons["guide-section-group"].tap()
+        XCTAssertTrue(body.isHittable)
+        XCTAssertEqual(app.buttons["playback-toggle"].label, before)
+        XCTAssertEqual(playbackSeconds(app.buttons["playback-toggle"]), positionAfterRotation)
+    }
+
+    private func playbackSeconds(_ button: XCUIElement) -> Int? {
+        guard let value = button.value as? String,
+              let time = value.components(separatedBy: "，").first else { return nil }
+        let fields = time.split(separator: ":")
+        guard (2...3).contains(fields.count) else { return nil }
+        var seconds = 0
+        for field in fields {
+            guard let part = Int(field), part >= 0 else { return nil }
+            seconds = seconds * 60 + part
+        }
+        return seconds
+    }
+
+    private func recordGuideHitRegions(app: XCUIApplication, phase: String) {
+        let menu = app.buttons["guide-chapter-menu"]
+        let detail = "phase=\(phase) menu=\(menu.frame) hittable=\(menu.isHittable) "
+            + "navigation=\(app.navigationBars.allElementsBoundByIndex.map(\.frame)) "
+            + "guide=\(app.scrollViews["guide-scroll"].frame) "
+            + "listening=\(app.scrollViews["listening-scroll"].frame)"
+        print(detail)
+        let attachment = XCTAttachment(string: detail)
+        attachment.name = "guide-hit-regions-\(phase)"
+        attachment.lifetime = .keepAlways
+        add(attachment)
     }
 
     func testOpenPortraitGuideMovesIntoLandscapePane() {
