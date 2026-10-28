@@ -1,0 +1,61 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261028-ios-beta32-testflight",
+  "runs": [
+    {
+      "label": "20261028T224835Z-161ab8c3",
+      "source": "~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/testflight/20261028T224835Z-161ab8c3",
+      "skipped": {
+        ".json": 3
+      }
+    },
+    {
+      "label": "20261028T225006Z-4b08fa74",
+      "source": "~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/testflight/20261028T225006Z-4b08fa74",
+      "skipped": {
+        ".json": 2
+      }
+    },
+    {
+      "label": "20261028T225726Z-2796c46d",
+      "source": "~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/testflight/20261028T225726Z-2796c46d",
+      "skipped": {
+        ".json": 2
+      }
+    }
+  ],
+  "files": [
+    {
+      "run": "20261028T224835Z-161ab8c3",
+      "path": "fastlane.log",
+      "kind": "log",
+      "bytes": 1767,
+      "truncated": false,
+      "sha256": "68967647499e69f10884e2e797bf52bbbba40ab18b04060f57b1e58163cda785",
+      "redactions": {}
+    },
+    {
+      "run": "20261028T225006Z-4b08fa74",
+      "path": "fastlane.log",
+      "kind": "log",
+      "bytes": 829,
+      "truncated": false,
+      "sha256": "bd3c12fc2bbd633369ac117e49ba0cad5ca149803ee7c3cb199c0723060a9439",
+      "redactions": {}
+    },
+    {
+      "run": "20261028T225726Z-2796c46d",
+      "path": "fastlane.log",
+      "kind": "log",
+      "bytes": 831,
+      "truncated": false,
+      "sha256": "e9d9d645be8a984f3b218ac7936255976bbccd6c1fa33f8ab39ed361a91d0078",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}
