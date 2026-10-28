@@ -6,10 +6,14 @@ module never uploads or deploys. It does not translate or approve content.
 from __future__ import annotations
 
 import argparse
+import fcntl
 import json
+import os
 from pathlib import Path
 import re
 import shutil
+import stat
+from contextlib import contextmanager
 
 from tongxing_production.delivery import weekly_guide_staging as v1
 
@@ -260,14 +264,14 @@ def _target(catalog, page_id, locale, verify_file):
     return edition, identity, release_sha
 
 
-def _entry_valid(e):
+def _entry_valid(e, *, minimal=False):
     if (not isinstance(e, dict) or not isinstance(e.get('pageID'), str) or not v1.PAGE_ID.fullmatch(e['pageID'])
         or e.get('locale') not in LOCALES or not isinstance(e.get('week'), int) or isinstance(e['week'], bool)
         or not 1 <= e['week'] <= 12 or not isinstance(e.get('editionId'), str) or not v1.PAGE_ID.fullmatch(e['editionId'])
         or not all(_hash(e.get(k)) for k in ('sourceIdentitySha256', 'releasePackageJsonSha256'))
         or e.get('status') not in ('available', 'revoked')):
         raise ValueError('invalid v2 entry')
-    if e['status'] == 'available':
+    if e['status'] == 'available' and not minimal:
         if (e.get('sourceSHA256') != SOURCE_SHA256 or not _hash(e.get('translationSHA256'))
             or e.get('review') != REVIEW or e.get('humanApproval') is not False
             or not _hash(e.get('sha256')) or not isinstance(e.get('bytes'), int) or isinstance(e['bytes'], bool)
@@ -289,7 +293,7 @@ def _content_valid(e, raw):
     _guide({k: g.get(k) for k in ('week', 'title', 'scripture', 'sections')}, e['locale'], e['translationSHA256'])
 
 
-def existing_v2(rows, verify_file):
+def existing_v2(rows, verify_file, *, skip_assets=frozenset()):
     path = '/weekly-guides/manifest-v2.json'
     if path not in rows:
         return [], {}
@@ -301,19 +305,26 @@ def existing_v2(rows, verify_file):
         raise ValueError('invalid v2 manifest')
     entries, assets, seen = obj['entries'], {}, set()
     for e in entries:
-        _entry_valid(e)
-        key = (e['pageID'], e['locale'])
+        if not isinstance(e, dict):
+            raise ValueError('invalid v2 entry')
+        key = (e.get('pageID'), e.get('locale'))
+        _entry_valid(e, minimal=key in skip_assets)
         if key in seen:
             raise ValueError('duplicate v2 identity')
         seen.add(key)
-        if e['status'] == 'available':
+        if e['status'] == 'available' and key not in skip_assets:
             data = verify_file(e['path'])
             _content_valid(e, data)
             assets[e['path']] = data
     return entries, assets
 
 
-def prepare_fragment(staging, source, draft, reviews, review_records, snapshot, environment, bindings, out, *, bundle_evidence_bytes=None, alias_evidence_bytes=None):
+def _tombstone(prior):
+    return {**{k: prior[k] for k in ('pageID', 'locale', 'week', 'editionId',
+        'sourceIdentitySha256', 'releasePackageJsonSha256')}, 'status': 'revoked'}
+
+
+def prepare_fragment(staging, source, draft, reviews, review_records, snapshot, environment, bindings, out, *, bundle_evidence_bytes=None, alias_evidence_bytes=None, skip_assets=frozenset()):
     """Bind verified v1 or frozen bundle week mappings to a locale v5 release."""
     staged = _staged(staging, source, draft, reviews, review_records)
     rows, verify, receipt = v1.verified_live_snapshot(snapshot, environment)
@@ -322,7 +333,7 @@ def prepare_fragment(staging, source, draft, reviews, review_records, snapshot, 
     aliases = v1.validated_alias_evidence(alias_evidence_bytes, environment, v1.ALIAS_EVIDENCE_SHA256) if alias_evidence_bytes is not None else None
     if '/weekly-guides/manifest-v2.json' not in rows and (Path(snapshot) / 'public/weekly-guides/manifest-v2.json').exists():
         raise ValueError('v2 manifest absent from verified live receipt')
-    old, assets = existing_v2(rows, verify)
+    old, assets = existing_v2(rows, verify, skip_assets=skip_assets)
     entries = [dict(e) for e in old]
     by_key = {(e['pageID'], e['locale']): e for e in entries}
     catalog = json.loads(verify('/multilingual-v5.json'))
@@ -349,7 +360,7 @@ def prepare_fragment(staging, source, draft, reviews, review_records, snapshot, 
         if kind == 'revoke':
             if prior['status'] == 'revoked':
                 raise ValueError('already revoked')
-            revised = {**prior, 'status': 'revoked'}
+            revised = _tombstone(prior)
         else:
             if week not in staged:
                 raise ValueError('staged week required')
@@ -425,27 +436,295 @@ def prepare_fragment(staging, source, draft, reviews, review_records, snapshot, 
     return manifest
 
 
-def prepare_candidate(staging, source, draft, reviews, review_records, snapshot, environment, bindings, out, *, bundle_evidence_bytes=None, alias_evidence_bytes=None):
-    """Copy the entire verified live baseline and overlay v2, without deployment."""
+def _reject_public_symlinks(public):
+    """Inspect directories without traversing links, before any baseline copy."""
+    if public.is_symlink() or not public.is_dir():
+        raise ValueError('public baseline must be a non-symlink directory')
+    pending = [public]
+    while pending:
+        directory = pending.pop()
+        with os.scandir(directory) as entries:
+            for entry in entries:
+                if entry.is_symlink():
+                    raise ValueError('public baseline contains a symlink')
+                if entry.is_dir(follow_symlinks=False):
+                    pending.append(Path(entry.path))
+
+
+def _open_directory(name, *, dir_fd=None):
+    try:
+        return os.open(name, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW, dir_fd=dir_fd)
+    except OSError as exc:
+        raise ValueError('baseline directory changed or contains a symlink') from exc
+
+
+def _pinned_snapshot(snapshot):
+    """Walk from the filesystem root without following any snapshot ancestor."""
+    fd = _open_directory('/')
+    try:
+        for part in snapshot.parts[1:]:
+            child = _open_directory(part, dir_fd=fd)
+            os.close(fd)
+            fd = child
+        return fd
+    except BaseException:
+        os.close(fd)
+        raise
+
+
+@contextmanager
+def _pinned_publisher_lock(snapshot_fd):
+    """Lock the publisher's same file inside the pinned snapshot directory."""
+    try:
+        lock_fd = os.open('hosting-publisher.lock', os.O_RDWR | os.O_CREAT | os.O_NOFOLLOW | os.O_NONBLOCK,
+                          0o600, dir_fd=snapshot_fd)
+    except OSError as exc:
+        raise ValueError('publisher lock changed or is a symlink') from exc
+    try:
+        if not stat.S_ISREG(os.fstat(lock_fd).st_mode):
+            raise ValueError('publisher lock is not a regular file')
+        try:
+            fcntl.flock(lock_fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except BlockingIOError:
+            raise ValueError('Publisher is still running; wait for completion before reconciliation') from None
+        try:
+            yield
+        finally:
+            fcntl.flock(lock_fd, fcntl.LOCK_UN)
+    finally:
+        os.close(lock_fd)
+
+
+def _read_pinned_file(directory_fd, name):
+    try:
+        fd = os.open(name, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK, dir_fd=directory_fd)
+    except OSError as exc:
+        raise ValueError('baseline file changed or contains a symlink') from exc
+    try:
+        if not stat.S_ISREG(os.fstat(fd).st_mode):
+            raise ValueError('baseline file is not regular')
+        with os.fdopen(fd, 'rb', closefd=False) as stream:
+            return stream.read()
+    finally:
+        os.close(fd)
+
+
+def _scan_public_fd(public_fd):
+    """Check the entire source tree by pinned descriptors without following links."""
+    def scan(fd):
+        for name in os.listdir(fd):
+            info = os.stat(name, dir_fd=fd, follow_symlinks=False)
+            if stat.S_ISLNK(info.st_mode):
+                raise ValueError('public baseline contains a symlink')
+            if stat.S_ISDIR(info.st_mode):
+                child = _open_directory(name, dir_fd=fd)
+                try:
+                    now = os.fstat(child)
+                    if (now.st_dev, now.st_ino) != (info.st_dev, info.st_ino):
+                        raise ValueError('public directory changed during scan')
+                    scan(child)
+                finally:
+                    os.close(child)
+            elif not stat.S_ISREG(info.st_mode):
+                raise ValueError('public baseline contains a non-regular file')
+    scan(public_fd)
+
+
+def _copy_public_without_following(public_fd, destination):
+    """Copy via directory descriptors so links swapped in after scanning fail closed."""
+    directory_flags = os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW
+    def open_checked(path, flags, *, dir_fd=None):
+        try:
+            return os.open(path, flags, dir_fd=dir_fd)
+        except OSError as exc:
+            raise ValueError('public baseline changed or contains a symlink') from exc
+    root_fd = os.dup(public_fd)
+    try:
+        destination.mkdir()
+        def copy_directory(src_fd, dst):
+            for name in os.listdir(src_fd):
+                info = os.stat(name, dir_fd=src_fd, follow_symlinks=False)
+                if stat.S_ISLNK(info.st_mode):
+                    raise ValueError('public baseline contains a symlink')
+                if stat.S_ISDIR(info.st_mode):
+                    child_fd = open_checked(name, directory_flags, dir_fd=src_fd)
+                    try:
+                        opened = os.fstat(child_fd)
+                        if (opened.st_dev, opened.st_ino) != (info.st_dev, info.st_ino):
+                            raise ValueError('public directory changed during copy')
+                        child = dst / name
+                        child.mkdir()
+                        copy_directory(child_fd, child)
+                    finally:
+                        os.close(child_fd)
+                elif stat.S_ISREG(info.st_mode):
+                    file_fd = open_checked(name, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK, dir_fd=src_fd)
+                    try:
+                        opened = os.fstat(file_fd)
+                        if not stat.S_ISREG(opened.st_mode) or (opened.st_dev, opened.st_ino) != (info.st_dev, info.st_ino):
+                            raise ValueError('public file changed during copy')
+                        with os.fdopen(file_fd, 'rb', closefd=False) as source_file, (dst / name).open('xb') as output_file:
+                            shutil.copyfileobj(source_file, output_file)
+                    finally:
+                        os.close(file_fd)
+                else:
+                    raise ValueError('public baseline contains a non-regular file')
+        copy_directory(root_fd, destination)
+    finally:
+        os.close(root_fd)
+
+
+def prepare_revoke_fragment(locale, bindings, snapshot, environment, out, *, skip_assets=frozenset()):
+    """Revoke only existing verified entries; no new translation is read."""
+    if locale not in LOCALES or not isinstance(bindings, list) or not bindings:
+        raise ValueError('revoke locale and bindings required')
+    rows, verify, receipt = v1.verified_live_snapshot(snapshot, environment)
+    if '/weekly-guides/manifest-v2.json' not in rows:
+        raise ValueError('cannot revoke without a live v2 manifest')
+    entries, _ = existing_v2(rows, verify, skip_assets=skip_assets)
+    entries = [dict(e) for e in entries]
+    by_key = {(e['pageID'], e['locale']): e for e in entries}
+    seen = set()
+    for binding in bindings:
+        if (not isinstance(binding, dict) or not {'pageID', 'operation', 'expectedEntrySha256', 'reason'} <= binding.keys()
+            or not binding.keys() <= {'pageID', 'operation', 'expectedEntrySha256', 'reason', 'week'}
+            or binding['operation'] != 'revoke'):
+            raise ValueError('revoke-only input may contain only explicit revocations')
+        page = binding['pageID']
+        if not isinstance(page, str) or not v1.PAGE_ID.fullmatch(page):
+            raise ValueError('invalid revoke page')
+        key = (page, locale)
+        if key in seen:
+            raise ValueError('duplicate revoke identity')
+        seen.add(key)
+        prior = by_key.get(key)
+        if (not prior or prior['status'] != 'available'
+            or binding.get('expectedEntrySha256') != v1.digest(v1.encoded(prior))
+            or not isinstance(binding.get('reason'), str) or not binding['reason'].strip()
+            or ('week' in binding and binding['week'] != prior['week'])):
+            raise ValueError('prior identity and reason required for revocation')
+        revised = _tombstone(prior)
+        entries[entries.index(prior)] = revised
+        by_key[key] = revised
+    manifest = {'schemaVersion': 'tongxing-weekly-guide-manifest-v2', 'seriesID': v1.SERIES_ID, 'entries': entries}
+    raw = v1.encoded(manifest)
+    if len(raw) > v1.MANIFEST_LIMIT:
+        raise ValueError('manifest too large')
+    out = Path(out)
+    out.mkdir(parents=True, exist_ok=False)
+    (out / 'published').mkdir()
+    (out / 'manifest-v2.json').write_bytes(raw)
+    (out / 'plan.json').write_bytes(v1.encoded({'status': 'prepared_not_uploaded', 'environment': environment,
+        'baselineVersion': receipt['baselineVersion'], 'manifestSHA256': v1.digest(raw), 'liveRecheck': 'required_before_deploy'}))
+    return manifest
+
+
+def prepare_batch_candidate(inputs, snapshot, environment, out):
+    snapshot = Path(snapshot).resolve(strict=True)
+    snapshot_fd = _pinned_snapshot(snapshot)
+    try:
+        # Same inode and OS flock as publication.publisher_lock, opened through
+        # the pinned directory so ancestor replacement cannot redirect it.
+        with _pinned_publisher_lock(snapshot_fd):
+            public_fd = _open_directory('public', dir_fd=snapshot_fd)
+            try:
+                return _prepare_batch_candidate(inputs, snapshot, environment, out, snapshot_fd, public_fd)
+            finally:
+                os.close(public_fd)
+    finally:
+        os.close(snapshot_fd)
+
+
+def _prepare_batch_candidate(inputs, snapshot, environment, out, snapshot_fd, public_fd):
+    """Apply independently verified changes to one frozen baseline; never deploy.
+
+    Every operation is evaluated against the same live receipt. A repeated
+    page/locale is rejected even if the caller supplies a plausible intermediate
+    entry hash: no intermediate candidate is ever presented as a live baseline.
+    """
     from tongxing_production.delivery import baseline, contract
 
-    staging, snapshot, out = Path(staging).resolve(), Path(snapshot).resolve(), Path(out).resolve()
-    if (out.exists() or out == snapshot or out == staging or out.is_relative_to(snapshot)
-        or snapshot.is_relative_to(out) or out.is_relative_to(staging) or staging.is_relative_to(out)):
+    out = Path(out).resolve()
+    if out.exists() or out == snapshot or out.is_relative_to(snapshot) or snapshot.is_relative_to(out):
         raise ValueError('unsafe candidate output location')
-    receipt_bytes = (snapshot / 'baseline-receipt.json').read_bytes()
-    firebase_bytes = (snapshot / 'firebase.json').read_bytes()
+    if not isinstance(inputs, list) or not inputs:
+        raise ValueError('nonempty batch inputs required')
+    input_dirs = []
+    touched = set()
+    revoke_keys = set()
+    operations = []
+    for item in inputs:
+        if not isinstance(item, dict):
+            raise ValueError('invalid batch input')
+        if 'locale' in item:
+            if set(item) != {'locale', 'bindings'}:
+                raise ValueError('revoke-only input cannot contain draft or new content')
+            locale = item['locale']
+        else:
+            staging = Path(item['staging']).resolve()
+            input_dirs.extend((staging, Path(item['review_records']).resolve()))
+            draft_data = json.loads(item['draft'])
+            locale = draft_data.get('locale') if isinstance(draft_data, dict) else None
+        bindings = item.get('bindings')
+        if locale not in LOCALES or not isinstance(bindings, list) or not bindings:
+            raise ValueError('invalid batch locale or bindings')
+        for binding in bindings:
+            if 'locale' in item and (not isinstance(binding, dict) or binding.get('operation') != 'revoke'):
+                raise ValueError('revoke-only input may contain only explicit revocations')
+            page = binding.get('pageID') if isinstance(binding, dict) else None
+            if not isinstance(page, str) or not v1.PAGE_ID.fullmatch(page):
+                raise ValueError('invalid batch page')
+            key = (page, locale)
+            if key in touched:
+                raise ValueError('duplicate batch page and locale')
+            touched.add(key)
+            if binding.get('operation') == 'revoke':
+                revoke_keys.add(key)
+            operations.append({'pageID': page, 'locale': locale, 'operation': binding.get('operation', 'add'),
+                **{k: binding[k] for k in ('week', 'expectedEntrySha256', 'reason') if k in binding}})
+    if any(out == path or out.is_relative_to(path) or path.is_relative_to(out) for path in input_dirs):
+        raise ValueError('unsafe candidate output location')
+    _scan_public_fd(public_fd)
+    receipt_bytes = _read_pinned_file(snapshot_fd, 'baseline-receipt.json')
+    firebase_bytes = _read_pinned_file(snapshot_fd, 'firebase.json')
+    seal_bytes = _read_pinned_file(snapshot_fd, 'seal-report.json')
     receipt = json.loads(receipt_bytes)
     if v1.digest(firebase_bytes) != receipt.get('firebaseJsonSha256'):
         raise ValueError('baseline Firebase config differs from receipt')
+    try:
+        os.stat('deployment-attempt-v2.json', dir_fd=snapshot_fd, follow_symlinks=False)
+    except FileNotFoundError:
+        attempt_present = False
+    else:
+        attempt_present = True
+    if attempt_present:
+        attempt = json.loads(_read_pinned_file(snapshot_fd, 'deployment-attempt-v2.json'))
+        target = baseline.hosting_target(environment)
+        expected_intent = {**{k: target[k] for k in ('project', 'site', 'origin', 'channel')}, 'environment': environment}
+        try:
+            os.stat('publish-config.json', dir_fd=snapshot_fd, follow_symlinks=False)
+        except FileNotFoundError:
+            expected_version = receipt['baselineVersion']
+        else:
+            expected_version = json.loads(_read_pinned_file(snapshot_fd, 'publish-config.json'))['baseline_version']
+        if (attempt.get('status') != 'deployed' or not attempt.get('newVersion')
+            or any(attempt.get('intent', {}).get(k) != value for k, value in expected_intent.items())
+            or attempt.get('baselineVersion') != expected_version
+            or attempt.get('catalogSha256') != v1.digest(_read_pinned_file(public_fd, 'multilingual-v3.json'))):
+            raise ValueError('Prior publication remains uncertain or differs from baseline')
+        if attempt['newVersion'] != receipt.get('baselineVersion'):
+            raise ValueError('prior publication changed the baseline; capture a fresh live snapshot')
     out.mkdir(parents=True, exist_ok=False)
-    shutil.copytree(snapshot / 'public', out / 'public')
-    for name in ('firebase.json', 'baseline-receipt.json', 'seal-report.json'):
-        shutil.copyfile(snapshot / name, out / name)
+    # Descriptor-relative no-follow opens also protect against a link swapped
+    # in after the initial tree scan, including replacement of the root itself.
+    _copy_public_without_following(public_fd, out / 'public')
+    _reject_public_symlinks(out / 'public')
+    for name, raw in (('firebase.json', firebase_bytes), ('baseline-receipt.json', receipt_bytes), ('seal-report.json', seal_bytes)):
+        (out / name).write_bytes(raw)
     if ((out / 'baseline-receipt.json').read_bytes() != receipt_bytes
         or (out / 'firebase.json').read_bytes() != firebase_bytes):
         raise ValueError('copied baseline identity changed')
-    rows, _, frozen = v1.verified_live_snapshot(out, environment)
+    rows, verify, frozen = v1.verified_live_snapshot(out, environment)
     if frozen != receipt:
         raise ValueError('copied baseline receipt changed')
     for path, row in rows.items():
@@ -454,19 +733,50 @@ def prepare_candidate(staging, source, draft, reviews, review_records, snapshot,
         raw = v1._safe_asset(out / 'public', path).read_bytes()
         if len(raw) != row.get('rawBytes') or v1.digest(raw) != row.get('rawSha256'):
             raise ValueError('copied baseline differs from live receipt')
-    fragment = out / 'guide-v2-fragment'
-    manifest = prepare_fragment(staging, source, draft, reviews, review_records, out, environment, bindings, fragment,
-                                bundle_evidence_bytes=bundle_evidence_bytes, alias_evidence_bytes=alias_evidence_bytes)
+    if '/weekly-guides/manifest-v2.json' not in rows and (out / 'public/weekly-guides/manifest-v2.json').exists():
+        raise ValueError('v2 manifest absent from verified live receipt')
+    old, _ = existing_v2(rows, verify, skip_assets=revoke_keys)
+    baseline_entries = {(e['pageID'], e['locale']): e for e in old}
+    merged = dict(baseline_entries)
+    fragments = []
+    for number, item in enumerate(inputs):
+        fragment = out / 'guide-v2-fragments' / f'{number:04d}'
+        if 'locale' in item:
+            locale = item['locale']
+            manifest = prepare_revoke_fragment(locale, item['bindings'], out, environment, fragment, skip_assets=revoke_keys)
+        else:
+            manifest = prepare_fragment(item['staging'], item['source'], item['draft'], item['reviews'],
+                item['review_records'], out, environment, item['bindings'], fragment,
+                bundle_evidence_bytes=item.get('bundle_evidence_bytes'), alias_evidence_bytes=item.get('alias_evidence_bytes'),
+                skip_assets=revoke_keys)
+            locale = json.loads(item['draft'])['locale']
+        keys = {(b['pageID'], locale) for b in item['bindings']}
+        fragment_entries = {(e['pageID'], e['locale']): e for e in manifest['entries']}
+        if len(fragment_entries) != len(manifest['entries']) or not keys <= fragment_entries.keys():
+            raise ValueError('fragment missing or duplicating requested entry')
+        if any(fragment_entries.get(k) != value for k, value in baseline_entries.items() if k not in keys):
+            raise ValueError('fragment unexpectedly changed another baseline entry')
+        if set(fragment_entries) != set(baseline_entries) | keys:
+            raise ValueError('fragment contains unexpected entries')
+        for key in keys:
+            merged[key] = fragment_entries[key]
+        fragments.append(fragment)
+    manifest = {'schemaVersion': 'tongxing-weekly-guide-manifest-v2', 'seriesID': v1.SERIES_ID,
+                'entries': list(merged.values())}
+    manifest_raw = v1.encoded(manifest)
+    if len(manifest_raw) > v1.MANIFEST_LIMIT:
+        raise ValueError('manifest too large')
     dest = out / 'public/weekly-guides'
     published = dest / 'published'
     published.mkdir(parents=True, exist_ok=True)
-    for asset in sorted((fragment / 'published').glob('*.json')):
-        target = published / asset.name
-        if target.exists() and target.read_bytes() != asset.read_bytes():
-            raise ValueError('immutable guide collision')
-        if not target.exists():
-            shutil.copyfile(asset, target)
-    shutil.copyfile(fragment / 'manifest-v2.json', dest / 'manifest-v2.json')
+    for fragment in fragments:
+        for asset in sorted((fragment / 'published').glob('*.json')):
+            target = published / asset.name
+            if target.exists() and target.read_bytes() != asset.read_bytes():
+                raise ValueError('immutable guide collision')
+            if not target.exists():
+                shutil.copyfile(asset, target)
+    (dest / 'manifest-v2.json').write_bytes(manifest_raw)
     next_seal = out / 'seal-report.next.json'
     baseline.write(next_seal, {**baseline.catalog_report(out / 'public'), 'files': baseline.files_report(out / 'public')})
     next_seal.replace(out / 'seal-report.json')
@@ -480,8 +790,14 @@ def prepare_candidate(staging, source, draft, reviews, review_records, snapshot,
         'environment': environment, 'baselineVersion': receipt['baselineVersion'],
         'manifestSHA256': v1.digest((dest / 'manifest-v2.json').read_bytes()),
         'entryCount': len(manifest['entries']), 'liveRecheck': 'required_before_deploy',
-        'clientAcceptance': 'not_run'})
+        'clientAcceptance': 'not_run', 'operations': operations})
     return manifest
+
+
+def prepare_candidate(staging, source, draft, reviews, review_records, snapshot, environment, bindings, out, *, bundle_evidence_bytes=None, alias_evidence_bytes=None):
+    return prepare_batch_candidate([{'staging': staging, 'source': source, 'draft': draft, 'reviews': reviews,
+        'review_records': review_records, 'bindings': bindings, 'bundle_evidence_bytes': bundle_evidence_bytes,
+        'alias_evidence_bytes': alias_evidence_bytes}], snapshot, environment, out)
 
 
 def main(argv=None):
@@ -500,8 +816,42 @@ def main(argv=None):
         bind.add_argument('--environment', required=True, choices=('dev', 'production'))
         bind.add_argument('--bundle-evidence', type=Path)
         bind.add_argument('--alias-evidence', type=Path)
+    batch = sub.add_parser('batch-candidate')
+    batch.add_argument('--plan', required=True, type=Path)
+    batch.add_argument('--snapshot', required=True, type=Path)
+    batch.add_argument('--environment', required=True, choices=('dev', 'production'))
+    batch.add_argument('--output', required=True, type=Path)
     args = parser.parse_args(argv)
     output = v1.safe_output(args.output)
+    if args.action == 'batch-candidate':
+        plan = json.loads(args.plan.read_bytes())
+        if (not isinstance(plan, dict) or plan.get('schemaVersion') != 'tongxing-weekly-guide-batch-v1'
+            or not isinstance(plan.get('inputs'), list) or not plan['inputs']):
+            raise ValueError('invalid batch plan')
+        def input_path(value):
+            if not isinstance(value, str) or not value.strip():
+                raise ValueError('invalid batch input path')
+            path = Path(value)
+            return path if path.is_absolute() else args.plan.resolve().parent / path
+        inputs = []
+        required = {'source', 'draft', 'reviews', 'reviewRecords', 'staging', 'bindings'}
+        allowed = required | {'bundleEvidence', 'aliasEvidence'}
+        for item in plan['inputs']:
+            if isinstance(item, dict) and 'locale' in item:
+                if set(item) != {'locale', 'bindings'}:
+                    raise ValueError('revoke-only input cannot contain draft or new content')
+                inputs.append({'locale': item['locale'], 'bindings': item['bindings']})
+                continue
+            if not isinstance(item, dict) or not required <= item.keys() or not item.keys() <= allowed:
+                raise ValueError('invalid batch input fields')
+            inputs.append({'source': input_path(item['source']).read_bytes(), 'draft': input_path(item['draft']).read_bytes(),
+                'reviews': input_path(item['reviews']).read_bytes(), 'review_records': input_path(item['reviewRecords']),
+                'staging': input_path(item['staging']), 'bindings': item['bindings'],
+                'bundle_evidence_bytes': input_path(item['bundleEvidence']).read_bytes() if 'bundleEvidence' in item else None,
+                'alias_evidence_bytes': input_path(item['aliasEvidence']).read_bytes() if 'aliasEvidence' in item else None})
+        result = prepare_batch_candidate(inputs, args.snapshot, args.environment, output)
+        print(json.dumps({'status': 'prepared_not_uploaded', 'count': len(result['entries'])}))
+        return 0
     source, draft, reviews = args.source.read_bytes(), args.draft.read_bytes(), args.reviews.read_bytes()
     if args.action == 'stage':
         result = prepare_stage(source, draft, reviews, args.review_records, output)
