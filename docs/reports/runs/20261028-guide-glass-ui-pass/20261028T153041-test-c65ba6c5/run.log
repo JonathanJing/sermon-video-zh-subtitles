@@ -1,0 +1,260 @@
+
+$ /usr/bin/xcrun xcodebuild -project ~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/apps/tongxing-ios/Tongxing.xcodeproj -list -json -disableAutomaticPackageResolution
+{
+  "project" : {
+    "configurations" : [
+      "BetaDebug",
+      "BetaRelease",
+      "Debug",
+      "Release"
+    ],
+    "name" : "Tongxing",
+    "schemes" : [
+      "ListeningActivityExtension",
+      "Tongxing",
+      "TongxingBeta",
+      "TongxingCore",
+      "TongxingInfrastructure",
+      "TongxingPreview",
+      "TongxingScreenshots"
+    ],
+    "targets" : [
+      "Tongxing",
+      "ListeningActivityExtension",
+      "TongxingTests",
+      "TongxingUITests"
+    ]
+  }
+}
+
+$ /usr/bin/xcrun simctl list devices available --json
+{
+  "devices" : {
+    "com.apple.CoreSimulator.SimRuntime.iOS-27-0" : [
+      {
+        "dataPath" : "\/Users\/jonathan_jing\/Library\/Developer\/CoreSimulator\/Devices\/A9ACB321-07F8-4540-AD3C-7FACBD384A1F\/data",
+        "dataPathSize" : 5734416384,
+        "logPath" : "\/Users\/jonathan_jing\/Library\/Logs\/CoreSimulator\/A9ACB321-07F8-4540-AD3C-7FACBD384A1F",
+        "udid" : "A9ACB321-07F8-4540-AD3C-7FACBD384A1F",
+        "lastUsedAt" : "2026-10-28T22:30:42Z",
+        "isAvailable" : true,
+... 1377 lines omitted; 18 error-like lines, 18 kept below ...
+[line 575] ~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/apps/tongxing-ios/App/MicrophoneCapture.swift:259:92: warning: main actor-isolated static property 'startupSeconds' can not be referenced from a nonisolated context; this is an error in the Swift 6 language mode
+[line 582]     |                                                                                            `- warning: main actor-isolated static property 'startupSeconds' can not be referenced from a nonisolated context; this is an error in the Swift 6 language mode
+[line 664] ~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/apps/tongxing-ios/Tests/AudioAlignmentControllerTests.swift:876:100: warning: main actor-isolated static property 'match' can not be referenced from a nonisolated context; this is an error in the Swift 6 language mode
+[line 675]      |                                                                                                    `- warning: main actor-isolated static property 'match' can not be referenced from a nonisolated context; this is an error in the Swift 6 language mode
+[line 679] ~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/apps/tongxing-ios/Tests/AudioAlignmentControllerTests.swift:995:21: warning: stored property '_count' of 'Sendable'-conforming class 'CallCounter' is mutable; this is an error in the Swift 6 language mode
+[line 683]      |                     `- warning: stored property '_count' of 'Sendable'-conforming class 'CallCounter' is mutable; this is an error in the Swift 6 language mode
+[line 786]     export CLANG_WARN_DIRECT_OBJC_ISA_USAGE\=YES_ERROR
+[line 795]     export CLANG_WARN_OBJC_ROOT_CLASS\=YES_ERROR
+[line 953]     export GCC_WARN_ABOUT_RETURN_TYPE\=YES_ERROR
+[line 1150]     export RUNTIME_EXCEPTION_ALLOW_DYLD_ENVIRONMENT_VARIABLES\=NO
+[line 1151]     export RUNTIME_EXCEPTION_ALLOW_JIT\=NO
+[line 1152]     export RUNTIME_EXCEPTION_ALLOW_UNSIGNED_EXECUTABLE_MEMORY\=NO
+[line 1153]     export RUNTIME_EXCEPTION_DEBUGGING_TOOL\=NO
+[line 1154]     export RUNTIME_EXCEPTION_DISABLE_EXECUTABLE_PAGE_PROTECTION\=NO
+[line 1155]     export RUNTIME_EXCEPTION_DISABLE_LIBRARY_VALIDATION\=NO
+[line 1301]     export VALIDATE_DEVELOPMENT_ASSET_PATHS\=YES_ERROR
+[line 1330]     export __DIAGNOSE_INVALID_DEPLOYMENT_TARGET_AS_ERROR\=YES
+[line 1412] 2026-10-28 15:30:52.405 xcodebuild[59121:450954] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+... end of omitted section ...
+Test Case '-[TongxingUITests.WeeklyGuidePreviewUITests testLandscapeAutomaticallyShowsGuideAndRotationKeepsPlayback]' started.
+    t =     0.00s Start Test at 2026-10-28 15:31:17.745
+    t =     0.14s Set Up
+    t =     0.14s Setting device orientation to Portrait
+    t =     0.14s     Device orientation changed to Portrait
+    t =     0.16s     Wait for com.apple.springboard to idle
+    t =     0.21s Open com.jonathanjing.tongxing.dev
+    t =     0.21s     Launch com.jonathanjing.tongxing.dev
+2026-10-28 15:31:18.021 xcodebuild[59121:450954] [MT] IDELaunchParametersSnapshot: debugger version lookup failed for path '<nil>': noURL
+2026-10-28 15:31:18.021 xcodebuild[59121:450954] [MT] IDELaunchParametersSnapshot: no debugger version
+objc[59367]: Class UIAccessibilityLoaderWebShared is implemented in both /Library/Developer/CoreSimulator/Volumes/iOS_24A434/Library/Developer/CoreSimulator/Profiles/Runtimes/iOS 27.0.simruntime/Contents/Resources/RuntimeRoot/System/Library/AccessibilityBundles/WebKit.axbundle/WebKit (0x107fcc398) and /Library/Developer/CoreSimulator/Volumes/iOS_24A434/Library/Developer/CoreSimulator/Profiles/Runtimes/iOS 27.0.simruntime/Contents/Resources/RuntimeRoot/System/Library/AccessibilityBundles/WebCore.axbundle/WebCore (0x1084cc310). This may cause spurious casting failures and mysterious crashes. One of the duplicates must be removed or renamed.
+2026-10-28 15:31:18.059 xcodebuild[59121:450954] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+    t =     1.50s         Setting up automation session
+    t =     4.16s         Wait for com.jonathanjing.tongxing.dev to idle
+    t =     6.34s Waiting 15.0s for "sermon-title" StaticText to exist
+    t =     7.38s     Checking `Expect predicate `existsNoRetry == 1` for object "sermon-title" StaticText`
+    t =     7.38s         Checking existence of `"sermon-title" StaticText`
+    t =     7.53s Find the "download-audio" Button
+    t =     7.65s Find the "download-audio" Button
+    t =     7.74s Find the "playback-toggle" Button
+    t =     7.82s Swipe up "listening-scroll" ScrollView
+    t =     7.82s     Wait for com.jonathanjing.tongxing.dev to idle
+    t =     7.82s     Find the "listening-scroll" ScrollView
+    t =     7.90s     Check for interrupting elements affecting "listening-scroll" ScrollView
+    t =     7.97s     Synthesize event
+    t =     8.52s     Wait for com.jonathanjing.tongxing.dev to idle
+    t =     9.03s Find the "download-audio" Button
+    t =     9.12s Find the "download-audio" Button
+    t =     9.21s Find the "playback-toggle" Button
+    t =     9.29s Find the "download-audio" Button
+    t =     9.38s Find the "download-audio" Button
+    t =     9.46s Find the "playback-toggle" Button
+    t =     9.54s Tap "download-audio" Button
+    t =     9.54s     Wait for com.jonathanjing.tongxing.dev to idle
+    t =     9.55s     Find the "download-audio" Button
+    t =     9.63s     Check for interrupting elements affecting "download-audio" Button
+    t =     9.70s     Synthesize event
+    t =    10.00s     Wait for com.jonathanjing.tongxing.dev to idle
+    t =    11.13s Checking `Expect predicate `label CONTAINS "正在使用已下载音频"` for object "download-status" Any`
+    t =    11.14s     Find the "download-status" Any
+    t =    12.24s Checking `Expect predicate `enabled == 1` for object "playback-toggle" Button`
+    t =    12.24s     Find the "playback-toggle" Button
+    t =    12.32s Setting device orientation to Landscape Left
+    t =    12.33s     Device orientation changed to Landscape Left
+    t =    12.37s     Interface orientation changed to Landscape Right
+    t =    12.38s     Wait for com.jonathanjing.tongxing.dev to idle
+    t =    13.13s Waiting 15.0s for "guide-scroll" ScrollView to exist
+    t =    14.21s     Checking `Expect predicate `existsNoRetry == 1` for object "guide-scroll" ScrollView`
+    t =    14.21s         Checking existence of `"guide-scroll" ScrollView`
+    t =    14.31s Checking existence of `"listening-scroll" ScrollView`
+    t =    14.40s Find the "guide-scroll" ScrollView
+    t =    14.49s Find the "listening-scroll" ScrollView
+    t =    14.58s Checking existence of `"guide-close" Button`
+    t =    14.66s Checking existence of `"open-guide-beta-preview" Button`
+    t =    14.74s Get number of matches for: Elements matching predicate '"playback-toggle" IN identifiers'
+    t =    14.84s Find the "playback-toggle" Button
+    t =    14.94s Find the "playback-toggle" Button
+    t =    15.02s Find the "listening-scroll" ScrollView
+    t =    15.12s Find the "playback-toggle" Button
+    t =    15.20s Find the "guide-chapter-menu" Button
+    t =    15.29s Find the "guide-chapter-menu" Button
+    t =    15.41s Get all elements bound by index for: Descendants matching type NavigationBar
+    t =    15.49s Find the NavigationBar (Element at index 0)
+    t =    15.57s Find the "guide-scroll" ScrollView
+    t =    15.67s Find the "listening-scroll" ScrollView
+phase=after-download-and-rotation menu=(42.0, 28.0, 151.0, 36.0) hittable=true navigation=[(0.0, 24.0, 874.0, 54.0)] guide=(0.0, 0.0, 399.6666666666667, 402.0) listening=(400.0, 0.0, 411.33333333333337, 402.0)
+    t =    15.76s Added attachment named 'guide-hit-regions-after-download-and-rotation'
+    t =    15.76s Find the "guide-chapter-menu" Button
+    t =    15.88s Find the "guide-chapter-menu" Button
+    t =    15.97s Find the NavigationBar (First Match)
+    t =    15.98s Find the "guide-chapter-menu" Button
+    t =    16.07s Find the "guide-chapter-menu" Button
+    t =    16.16s Find the "guide-chapter-menu" Button
+    t =    16.25s Find the Target Application 'com.jonathanjing.tongxing.dev'
+    t =    16.43s Added attachment named 'landscape-guide-header-top'
+    t =    16.43s Tap "guide-chapter-menu" Button
+    t =    16.43s     Wait for com.jonathanjing.tongxing.dev to idle
+    t =    16.44s     Find the "guide-chapter-menu" Button
+    t =    16.52s     Check for interrupting elements affecting "guide-chapter-menu" Button
+    t =    16.61s     Synthesize event
+    t =    16.92s     Wait for com.jonathanjing.tongxing.dev to idle
+    t =    17.88s Waiting 5.0s for "guide-section-group" Button to exist
+    t =    18.91s     Checking `Expect predicate `existsNoRetry == 1` for object "guide-section-group" Button`
+    t =    18.91s         Checking existence of `"guide-section-group" Button`
+    t =    19.02s Tap "guide-section-group" Button
+    t =    19.02s     Wait for com.jonathanjing.tongxing.dev to idle
+    t =    19.02s     Find the "guide-section-group" Button
+    t =    19.11s     Check for interrupting elements affecting "guide-section-group" Button
+    t =    19.19s     Synthesize event
+    t =    19.48s     Wait for com.jonathanjing.tongxing.dev to idle
+    t =    20.53s Waiting 5.0s for "测试用讨论内容，不代表教会手册。" StaticText to exist
+    t =    21.56s     Checking `Expect predicate `existsNoRetry == 1` for object "测试用讨论内容，不代表教会手册。" StaticText`
+    t =    21.56s         Checking existence of `"测试用讨论内容，不代表教会手册。" StaticText`
+    t =    21.66s Find the "测试用讨论内容，不代表教会手册。" StaticText
+    t =    21.76s Swipe up "guide-scroll" ScrollView
+    t =    21.76s     Wait for com.jonathanjing.tongxing.dev to idle
+    t =    21.77s     Find the "guide-scroll" ScrollView
+    t =    21.86s     Check for interrupting elements affecting "guide-scroll" ScrollView
+    t =    21.95s     Synthesize event
+    t =    22.40s     Wait for com.jonathanjing.tongxing.dev to idle
+    t =    22.86s Find the "guide-chapter-menu" Button
+    t =    22.96s Find the "playback-toggle" Button
+    t =    23.06s Find the "playback-toggle" Button
+    t =    23.15s Find the "listening-scroll" ScrollView
+    t =    23.25s Find the Target Application 'com.jonathanjing.tongxing.dev'
+    t =    23.43s Added attachment named 'landscape-guide-and-listening'
+    t =    23.43s Tap "playback-toggle" Button
+    t =    23.43s     Wait for com.jonathanjing.tongxing.dev to idle
+    t =    23.44s     Find the "playback-toggle" Button
+    t =    23.53s     Check for interrupting elements affecting "playback-toggle" Button
+    t =    23.62s     Synthesize event
+    t =    23.91s     Wait for com.jonathanjing.tongxing.dev to idle
+    t =    24.13s Find the "playback-toggle" Button
+    t =    24.23s Find the "playback-toggle" Button
+    t =    24.33s Setting device orientation to Portrait
+    t =    24.33s     Device orientation changed to Portrait
+    t =    24.36s     Interface orientation changed to Portrait
+    t =    24.36s     Wait for com.jonathanjing.tongxing.dev to idle
+    t =    24.45s Waiting 10.0s for "open-guide-beta-preview" Button to exist
+    t =    25.47s     Checking `Expect predicate `existsNoRetry == 1` for object "open-guide-beta-preview" Button`
+    t =    25.47s         Checking existence of `"open-guide-beta-preview" Button`
+    t =    25.55s Checking existence of `"guide-scroll" ScrollView`
+    t =    25.63s Find the "playback-toggle" Button
+    t =    25.70s Setting device orientation to Landscape Left
+    t =    25.70s     Device orientation changed to Landscape Left
+    t =    25.74s     Interface orientation changed to Landscape Right
+    t =    25.74s     Wait for com.jonathanjing.tongxing.dev to idle
+    t =    26.42s Waiting 10.0s for "guide-scroll" ScrollView to exist
+    t =    27.44s     Checking `Expect predicate `existsNoRetry == 1` for object "guide-scroll" ScrollView`
+    t =    27.44s         Checking existence of `"guide-scroll" ScrollView`
+    t =    27.53s Find the "playback-toggle" Button
+    t =    27.63s Find the "playback-toggle" Button
+    t =    28.76s Find the "playback-toggle" Button
+    t =    28.85s Find the "playback-toggle" Button
+    t =    28.98s Tap "playback-toggle" Button
+    t =    28.98s     Wait for com.jonathanjing.tongxing.dev to idle
+    t =    28.99s     Find the "playback-toggle" Button
+    t =    29.08s     Check for interrupting elements affecting "playback-toggle" Button
+    t =    29.17s     Synthesize event
+    t =    29.47s     Wait for com.jonathanjing.tongxing.dev to idle
+    t =    29.48s Find the "playback-toggle" Button
+    t =    29.57s Find the "playback-toggle" Button
+    t =    29.66s Find the "guide-chapter-menu" Button
+    t =    29.77s Find the "guide-chapter-menu" Button
+    t =    29.90s Get all elements bound by index for: Descendants matching type NavigationBar
+    t =    29.98s Find the NavigationBar (Element at index 0)
+    t =    30.06s Find the "guide-scroll" ScrollView
+    t =    30.16s Find the "listening-scroll" ScrollView
+phase=after-second-rotation menu=(42.0, 28.0, 151.0, 36.0) hittable=true navigation=[(0.0, 24.0, 874.0, 54.0)] guide=(0.0, 0.0, 399.6666666666667, 402.0) listening=(400.0, 0.0, 411.33333333333337, 402.0)
+    t =    30.25s Added attachment named 'guide-hit-regions-after-second-rotation'
+    t =    30.25s Find the "guide-chapter-menu" Button
+    t =    30.38s Tap "guide-chapter-menu" Button
+    t =    30.38s     Wait for com.jonathanjing.tongxing.dev to idle
+    t =    30.39s     Find the "guide-chapter-menu" Button
+    t =    30.48s     Check for interrupting elements affecting "guide-chapter-menu" Button
+    t =    30.57s     Synthesize event
+    t =    30.89s     Wait for com.jonathanjing.tongxing.dev to idle
+    t =    31.73s Waiting 5.0s for "guide-section-group" Button to exist
+    t =    32.78s     Checking `Expect predicate `existsNoRetry == 1` for object "guide-section-group" Button`
+    t =    32.78s         Checking existence of `"guide-section-group" Button`
+    t =    32.87s Tap "guide-section-group" Button
+    t =    32.87s     Wait for com.jonathanjing.tongxing.dev to idle
+    t =    32.88s     Find the "guide-section-group" Button
+    t =    32.96s     Check for interrupting elements affecting "guide-section-group" Button
+    t =    33.04s     Synthesize event
+    t =    33.34s     Wait for com.jonathanjing.tongxing.dev to idle
+    t =    34.39s Find the "guide-content-group" StaticText
+    t =    34.49s Find the "playback-toggle" Button
+    t =    34.58s Find the "playback-toggle" Button
+    t =    34.67s Terminate com.jonathanjing.tongxing.dev:59471
+2026-10-28 15:31:52.440 xcodebuild[59121:450954] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+2026-10-28 15:31:52.441 xcodebuild[59121:450954] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+2026-10-28 15:31:52.443 xcodebuild[59121:450954] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+    t =    34.80s     Interface orientation changed to Portrait
+    t =    35.74s Setting device orientation to Portrait
+    t =    35.74s     Device orientation changed to Portrait
+    t =    35.75s     Wait for com.apple.springboard to idle
+    t =    35.75s Tear Down
+Test Case '-[TongxingUITests.WeeklyGuidePreviewUITests testLandscapeAutomaticallyShowsGuideAndRotationKeepsPlayback]' passed (35.844 seconds).
+Test Suite 'WeeklyGuidePreviewUITests' passed at 2026-10-28 15:31:53.590.
+	 Executed 1 test, with 0 failures (0 unexpected) in 35.844 (35.847) seconds
+Test Suite 'TongxingUITests.xctest' passed at 2026-10-28 15:31:53.590.
+	 Executed 1 test, with 0 failures (0 unexpected) in 35.844 (35.848) seconds
+Test Suite 'Selected tests' passed at 2026-10-28 15:31:53.591.
+	 Executed 1 test, with 0 failures (0 unexpected) in 35.844 (35.849) seconds
+2026-10-28 15:31:53.627 xcodebuild[59121:450954] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+2026-10-28 15:31:53.628 xcodebuild[59121:450954] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+2026-10-28 15:31:53.628 xcodebuild[59121:450954] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+2026-10-28 15:31:53.892 xcodebuild[59121:450954] [MT] IDETestOperationsObserverDebug: 63.533 elapsed -- Testing started completed.
+2026-10-28 15:31:53.892 xcodebuild[59121:450954] [MT] IDETestOperationsObserverDebug: 0.000 sec, +0.000 sec -- start
+2026-10-28 15:31:53.892 xcodebuild[59121:450954] [MT] IDETestOperationsObserverDebug: 63.533 sec, +63.533 sec -- end
+
+Test session results, code coverage, and logs:
+	~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-28/cli/20261028T153041-test-c65ba6c5/test.xcresult
+
+** TEST SUCCEEDED **
+
+Testing started
+
+Exit status: 0
