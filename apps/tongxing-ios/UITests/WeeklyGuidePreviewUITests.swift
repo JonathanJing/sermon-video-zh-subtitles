@@ -83,6 +83,34 @@ final class WeeklyGuidePreviewUITests: XCTestCase {
         add(screenshot)
     }
 
+    // Week six is a v5 family with distinct Chinese and Korean sources.
+    func testLiveDevKoreanWeekSixMatchesItsOwnSource() {
+        let app = XCUIApplication()
+        app.launchArguments = ["-AppleLanguages", "(zh-Hans)", "-AppleLocale", "zh_CN"]
+        app.launchEnvironment["TONGXING_TEST_HOST"] = "0"
+        app.launch()
+        defer { app.terminate() }
+        let choose = app.buttons["choose-sermon"]
+        XCTAssertTrue(choose.waitForExistence(timeout: 30))
+        choose.tap()
+        let week = app.buttons["published-page-resi-20261018-15030286"]
+        XCTAssertTrue(week.waitForExistence(timeout: 10))
+        week.tap()
+        let language = app.buttons["choose-content-language"]
+        XCTAssertTrue(language.waitForExistence(timeout: 15))
+        language.tap()
+        let korean = app.buttons["content-language-ko"]
+        XCTAssertTrue(korean.waitForExistence(timeout: 10))
+        korean.tap()
+        let entry = app.buttons["open-guide-beta-preview"]
+        XCTAssertTrue(entry.waitForExistence(timeout: 10))
+        entry.tap()
+        XCTAssertTrue(app.staticTexts["韩语机器翻译 · 未经人工审校"].waitForExistence(timeout: 20))
+        XCTAssertTrue(app.staticTexts["第 6 周 · 예수님은 자기 백성을 보내시고 부활시키십니다"].exists)
+        XCTAssertTrue(app.buttons["guide-section-source-page-86"].exists)
+        XCTAssertFalse(app.staticTexts["本周研读手册尚不可用"].exists)
+    }
+
     func testGuideNavigationKeepsPlaybackAndShowsReviewDisclosure() {
         let app = XCUIApplication()
         app.launchArguments = ["--ui-testing", "--ui-testing-study-guide", "-AppleLanguages", "(zh-Hans)", "-AppleLocale", "zh_CN"]
