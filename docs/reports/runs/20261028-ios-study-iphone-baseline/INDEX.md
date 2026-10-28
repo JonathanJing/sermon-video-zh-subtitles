@@ -1,0 +1,18 @@
+# Run digest 20261028-ios-study-iphone-baseline
+
+Generated 2026-10-28T21:09:20+00:00. Redacted copies only; source hashes are in manifest.json.
+
+## 20261028T140237-test-2be4c114
+
+Source: `~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-28/cli/20261028T140237-test-2be4c114`
+
+
+Error-like log lines (first 5 per log):
+
+- `run.log`: ... 3045 lines omitted; 51 error-like lines, 50 kept below ...
+- `run.log`: [line 1212] RegisterExecutionPolicyException ~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-28/cli/DerivedData/Build/Products/Debug-iphonesimulator/P
+- `run.log`: [line 1214]     builtin-RegisterExecutionPolicyException ~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-28/cli/DerivedData/Build/Products/Debug-iphon
+- `run.log`: [line 1609] RegisterExecutionPolicyException ~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-28/cli/DerivedData/Build/Products/Debug-iphonesimulator/L
+- `run.log`: [line 1611]     builtin-RegisterExecutionPolicyException ~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-28/cli/DerivedData/Build/Products/Debug-iphon
+
+Not copied: 2 .0~4VqMqsI5lOfxRppnud6-VDWcNsU8J7VgFCJfW2dXPwOcAkvU-I8Um5yp9n0Zv6nr3VmcxYggaVMDFfR0U_vjKw==, 2 .0~AEV63CTfLZ36o74mCYW7btQiTW6Hfs0LFzc457fjrBSaxCH10i6nIV9ejVJC7WnZVKns3ygPesj_7b2uVkEw7A==, 2 .0~CuwlqtO_liHtSsJHDNAcekxotvgUWtdM73BFiRt6s_9E86dw5Qvr6j6q3sjlHv_kT1UvXAhpGQMAZ8xeVbOIjg==, 2 .0~Hykaz49sEhxg0I5QnbNFSbcG6DIqNCwNAedBliPLu-oYhBtBE42OhtEaACM92OtYrEL0v3N_lyKy0k3tLzyPng==, 2 .0~I2goGJqIUNwhLzHLa7r_KxKfsK0rQRPHr-WX6SUHCMKdXt6HzUXV_R2dH-XIa1AYUOI7qXMHi5695qtnl9zaRA==, 2 .0~Ig2rZgNTjuJEt7w6bG4JEfHJGrzVm_ImjSFPXMdeeemMY-LC9jUc9irgC020KItUVtWqp-2Lc916itIbTC3yaw==, 2 .0~N96HBP8bAOM66zcItgCYuB6XomC_-0BIEkoYkIpDD3_yVremJMfLbeZ6d1CIcE4-xn4nU3_03y4xGvbazKbgVw==, 2 .0~OC-FrdR_HU5k6RdDa42w0XVax3YdKG19dsyCmJvpwUV4Cb6LTbLWsZ7uNsva_t1BsmL9IBRl2cBX4N-r6E3e3w==, 2 .0~UvftznV1dbXqvz-_WW12Ga8mbmE7BmgjfBNN79Bkql86vXM9miDN6OGAY-Kc6UtnwtnGleFiZmgeQnqb_TffYQ==, 2 .0~WF5Gd26tVSEfLrRo4twJoBDa4j7heXLH6d-Nsv9NEnVcpXXKSabrjywGiVi_8mS-zj_PV1PQQOfd8nEXCZ9d1g==, 2 .0~ZVbrfNg3zvpt0FN8MCwSuEYgwrBLTd4vkuX5mM3sfPLOHxxl8MtWdgoXn733di_Q9WxcSFxZAAoWyyaQ4XwiYQ==, 2 .0~bnsW1qbV1QQvoly2sHR_JN1TZJXkOg-PcOPRmOnE_8ttGXm-D0hdDe0GH3g47LYA1_vWsBuGrbVNAwhzFjs_cA==, 2 .0~dw0p36t0z5YpOAPLnaS1869UReCYtz1GgKzUhllChUBSsY8ujX-wd_XHMFHwnL8sKwlxuW_QPbn8vCDgCpaF8g==, 2 .0~hF0PNZT3e8Zjr-qI_tSsJVSgvu0yxyA9lV3UqtSt8zO722cV1BXFek-AHmx3yHEHqYsdHzXiz6l456wxrayirQ==, 2 .0~lHkixYBjr7ki6pVwLvJeM3PzGm-m1WhfX1wMPBJ4fe-bmAodzdntLhpZgDXqBr75WCxGkC7-OBY8wuPg3Nl19A==, 2 .0~n7GK_f40l2j2JrdOEuORF0oGer7C60Dh_DDENbAf1a33qy-wGr07Z2ucYhIOH69Ln16uhYTfZ4ocw7IkX_lO6Q==, 2 .0~n8X3Q6wHxlZwuQ0q5nPhVSOfaVtLixv0FDKOaXUsGiN1CVvAoVBzaZnqRHWzlA7qctrTR3Up-DkJ3a1MUYyyZQ==, 2 .0~ng_CxoGqbynmZ3G_-L_GjwryOlwuKaXAwCrXmBlIjT2Pza8OUo4GhNtxHxWf8spMkQW3ap6GHaMgR-wkpLE8Ng==, 2 .0~o6lWr4TwC1LIOkeyVCBjsV1emNQm76HkOerAYf5rYdcSQXd9Yi78MU9Feofdhm_v3M2_1Jicexa-kxkv374UuA==, 2 .0~oRMi0sbQLktfDDDGUS-SqBKpdDiD6HCztVES_ShfGr0KVcYENoIq7y9oUSDWL5B_P2gkdtWG8JEsJLxPbdWOZA==, 2 .0~qCJySPSsCOjAHKak0QtHIH7H2YNSpNhDq_MfAzfCHXDtXALBSXN6J5JCy7kDCuPcpbsTmqoGEXyjWpaY7TKjhA==, 2 .0~uQNR0FTmLqddmeuHAZo7RH-_fn5jCjRWbnJhqFgkBOYOqhd6kSOR7p7ypTXPoDAI7Wz0L-SgR2FqmrljUWC3mA==, 2 .0~uQeGRV_G4nqpNHCB53HJKjalZ1Wswy-J7OKK_Q-sIycg8U7XiXXwqJfr6RcM3Nk_RJLoazQ2qrHtVEEj8gdHmg==, 2 .0~zZ9trSkvat5HX6y-fumuroVsgKREs7GltDJgbRSHTEothcp7d_t5kVoqiJkkzQZMjVV_nMXyV8mZYyger0FKgQ==, 1 .json, 1 .plist, 1 .sqlite3
