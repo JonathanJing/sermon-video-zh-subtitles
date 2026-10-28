@@ -1,0 +1,81 @@
+{
+  "scope": "Simulator UI readback; not human approval or physical device acceptance",
+  "content": {
+    "date": "2026-10-25",
+    "guideWeek": 7,
+    "locale": "zh-Hans",
+    "fixture": false
+  },
+  "screenshots": [
+    {
+      "file": "iphone-bottom-player-final.png",
+      "device": "iPhone 17 Pro / iOS 26.2",
+      "revision": "65421648",
+      "codeDylibSha256": "812809641101617899ba8648c5f81c2c658dd993838d01e82939e5db818b0221",
+      "pixels": [
+        2622,
+        1206
+      ],
+      "bytes": 536960,
+      "sha256": "3ea85eb3cfc615a5ef14c5d202498d5dc4e137cc6360dda04061612d30a22af8"
+    },
+    {
+      "file": "ipad-mini-bottom-player-final.png",
+      "device": "iPad mini / iOS 27",
+      "revision": "65421648",
+      "codeDylibSha256": "812809641101617899ba8648c5f81c2c658dd993838d01e82939e5db818b0221",
+      "pixels": [
+        2266,
+        1488
+      ],
+      "bytes": 499268,
+      "sha256": "1e52449b97610b1c4eda418f575b57fd29f5fef0f5c4eb0c376fbe1108465676"
+    },
+    {
+      "file": "iphone-locate-popover-final.png",
+      "device": "iPhone 17 Pro / iOS 26.2",
+      "revision": "65421648",
+      "codeDylibSha256": "812809641101617899ba8648c5f81c2c658dd993838d01e82939e5db818b0221",
+      "pixels": [
+        2622,
+        1206
+      ],
+      "bytes": 654540,
+      "sha256": "3222d80049d660a6ba86d9ee05ce74d5f369ac148f26b4fd5f7c9244d976b6c9"
+    },
+    {
+      "file": "duo-system-rail.png",
+      "device": "Duo unfolded inner / iOS 27.1",
+      "revision": "85db4705",
+      "codeDylibSha256": "3ee09c010e5207a1576479c5a741237c257cfce9e0fb9f2aed5557502faf2d3a",
+      "pixels": [
+        2853,
+        2007
+      ],
+      "bytes": 536717,
+      "sha256": "d9739cb3cbd8380a329c40517be700c0ff645a40932de43dd2c3e5d384244fb0"
+    }
+  ],
+  "recordSha256": "2c610a83f4691a6e4842503cc1a86d5bb50ca2ba9a0a87f0c17a5eceea0c6439",
+  "iPhoneFinal": {
+    "bottomFloatingSingleRow": true,
+    "guideChapterJump": true,
+    "locatePanelOpensAboveAndCloses": true,
+    "duplicateTopGapRemoved": true,
+    "rightPaneScroll": "not confirmed; final image shows sermon heading"
+  },
+  "miniFinal": {
+    "bottomFloatingSingleRow": true,
+    "guideChapterJump": true,
+    "currentSubtitleVisible": true,
+    "locatePanel": "verified on initial bundle only; final regular-height computation unchanged"
+  },
+  "DuoInitial": {
+    "openInnerLandscape": true,
+    "systemVerticalPlayerRetained": true,
+    "guideChapterJump": true,
+    "pausedPosition": "02:29",
+    "finalBundleRetest": "not_run; changed compact padding was zero for Duo"
+  },
+  "humanApproval": false
+}

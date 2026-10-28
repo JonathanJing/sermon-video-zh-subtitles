@@ -1,0 +1,28 @@
+{
+  "action": "test",
+  "scheme": "TongxingBeta",
+  "configuration": "BetaDebug",
+  "statusFileSha256": "c7dc35ecd6a96f91eb8ffe11bd9dba52445f292fb16e1fba35f7cc8d169d70b3",
+  "logSha256": "17f518b90081e2b252d7bc393d460491f65fccc8546a333bd208e1eb1b0c5139",
+  "resultBundle": "test.xcresult",
+  "resultBundleComplete": true,
+  "result": "Passed",
+  "totalTestCount": 3,
+  "passedTests": 3,
+  "failedTests": 0,
+  "skippedTests": 0,
+  "expectedFailures": 0,
+  "runtimeWarnings": [],
+  "failures": [],
+  "platforms": [
+    {
+      "deviceName": "iPhone 17 Pro",
+      "osVersion": "26.2",
+      "platform": "iOS Simulator"
+    }
+  ],
+  "hitRegionDiagnostics": [
+    "phase=after-download-and-rotation menu=(339.66666666666663, 160.0, 44.00000000000006, 44.0) hittable=true navigation=[(0.0, 24.0, 874.0, 54.0)] guide=(0.0, 155.99999999999997, 399.6666666666667, 246.00000000000003) listening=(400.0, -1.4210854715202004e-14, 474.0, 402.0)",
+    "phase=after-second-rotation menu=(339.66666666666663, 160.0, 44.00000000000006, 44.0) hittable=true navigation=[(0.0, 24.0, 874.0, 54.0)] guide=(0.0, 155.99999999999997, 399.6666666666667, 246.00000000000003) listening=(400.0, -1.4210854715202004e-14, 474.0, 402.0)"
+  ]
+}
