@@ -1,6 +1,41 @@
 {
   "sourceLanguage": "zh-Hans",
   "strings": {
+    "手册目录": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Guide contents"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Índice de la guía"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "안내서 목차"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mục lục cẩm nang"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "手册目录"
+          }
+        }
+      }
+    },
     "查看地图来源": {
       "extractionState": "manual",
       "localizations": {

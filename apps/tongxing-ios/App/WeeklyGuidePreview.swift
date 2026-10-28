@@ -8,6 +8,7 @@ import UIKit
 struct WeeklyGuidePreview: View {
     @ObservedObject var model: AppModel
     @ObservedObject var playback: PlaybackController
+    var embedded = false
     @ObservedObject private var localization = AppLocalization.shared
     @Environment(\.dismiss) private var dismiss
     @Environment(\.dynamicTypeSize) private var typeSize
@@ -80,23 +81,106 @@ struct WeeklyGuidePreview: View {
     }
 
     var body: some View {
+        Group {
+            if embedded { guideReader } else { standaloneReader }
+        }
+        .task(id: selection) {
+            await refreshGuide(for: selection)
+        }
+        .sheet(item: $expandedImage) { image in
+            WeeklyGuideImageSheet(image: image, closeLabel: localization.text("关闭"),
+                                  zoomInLabel: localization.text("放大图片"),
+                                  zoomOutLabel: localization.text("缩小图片"))
+        }
+    }
+
+    private var standaloneReader: some View {
         GeometryReader { geometry in
         let controlRegion = dockRegion(in: geometry)
         NavigationStack {
             ToolbarVerticalEdgeReader { verticalEdge in
+            guideReader
+            .navigationTitle(localization.text(typeSize.isAccessibilitySize || localization.language != .simplifiedChinese ? "手册" : "本周研读手册"))
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button(localization.text("返回证道")) { dismiss() }.accessibilityIdentifier("guide-close")
+                }
+                #if os(iOS) && canImport(SwiftUI, _version: 8.0.85)
+                if #available(iOS 27.1, macOS 27.1, *), verticalEdge != nil {
+                    ToolbarItem(placement: .primaryAction) {
+                        guideDock(placement: .trailing, inSystemBar: true)
+                    }
+                    .axisBehavior(.verticalPreferred)
+                    .visibilityPriority(.high)
+                }
+                #endif
+            }
+            .listeningPlayerDock(atTrailingEdge: false, inSystemBar: verticalEdge != nil) {
+                if verticalEdge == nil {
+                    HStack(spacing: 0) {
+                        Color.clear.frame(width: controlRegion.minX, height: 0)
+                        guideDock(placement: .bottom).frame(width: controlRegion.width)
+                        Spacer(minLength: 0)
+                    }
+                }
+            }
+            }
+        }
+        .overlay {
+            PlaybackMorePanelOverlay(isPresented: $showingMore, buttonFrame: moreFrame, placement: morePlacement) { width in
+                PlaybackMoreControls(playback: playback, isPreparing: false, alignmentModel: model,
+                                     onClose: { showingMore = false }, width: width)
+            }
+        }
+        }
+    }
+
+    private var guideReader: some View {
             ScrollViewReader { proxy in
+                VStack(spacing: 0) {
+                    if embedded {
+                        HStack {
+                            Label(localization.text("本周研读手册"), systemImage: "book")
+                                .font(.headline).accessibilityAddTraits(.isHeader)
+                            Spacer(minLength: 8)
+                            if let guide {
+                                Menu {
+                                    ForEach(guide.sections) { section in
+                                        Button(section.title) {
+                                            withAnimation(reduceMotion ? nil : .easeInOut) {
+                                                proxy.scrollTo(section.id, anchor: .top)
+                                            }
+                                            focusedSection = section.id
+                                        }
+                                        .accessibilityIdentifier("guide-section-\(section.id)")
+                                    }
+                                } label: {
+                                    Image(systemName: "list.bullet")
+                                        .frame(minWidth: 44, minHeight: 44)
+                                }
+                                .accessibilityLabel(localization.text("手册目录"))
+                                .accessibilityIdentifier("guide-chapter-menu")
+                            }
+                        }
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 4)
+                        .background(Brand.surface)
+                        Divider()
+                    }
                 ScrollView {
                     VStack(alignment: .leading, spacing: 24) {
                         if let guide {
                             VStack(alignment: .leading, spacing: 8) {
                                 Text(translationNotice).font(.caption).foregroundStyle(.secondary)
-                                Text(localization.text("第 {week} 周 · {title}", ["week": String(guide.week), "title": guide.title])).font(.largeTitle.bold())
+                                Text(localization.text("第 {week} 周 · {title}", ["week": String(guide.week), "title": guide.title])).font(embedded ? .title2.bold() : .largeTitle.bold())
                                 Text(guide.scripture).font(.title3).foregroundStyle(.secondary)
                                 Text(localization.text("根据 Mariners Church《Revelation Series Guide》翻译；非教会官方译本。部分经文在此仅标注章节范围。"))
                                     .font(.footnote).foregroundStyle(.secondary)
                                 Link(localization.text("查看教会原手册"), destination: URL(string: "https://www.flipsnack.com/57AF6AEEFB5/revelation-series-guide")!)
                                     .font(.footnote)
                             }
+                            if !embedded {
                             VStack(spacing: 0) {
                                 ForEach(guide.sections) { section in
                                     Button {
@@ -126,6 +210,7 @@ struct WeeklyGuidePreview: View {
                                 }
                             }
                             .background(Brand.surface, in: RoundedRectangle(cornerRadius: 20))
+                            }
                             ForEach(guide.sections) { section in
                                 VStack(alignment: .leading, spacing: 12) {
                                     Text(section.title).font(.title2.bold()).accessibilityAddTraits(.isHeader)
@@ -152,10 +237,12 @@ struct WeeklyGuidePreview: View {
                                 description: Text(localization.text("当前讲道或内容语言暂无对应手册。")))
                                 .accessibilityIdentifier("guide-unavailable")
                         }
+                        if !embedded {
                         Button(localization.text("返回证道")) { dismiss() }
                             .buttonStyle(.bordered)
                             .frame(minHeight: 44)
                             .accessibilityIdentifier("guide-close-bottom")
+                        }
                     }
                     .padding(20).frame(maxWidth: 680, alignment: .leading)
                     .frame(maxWidth: .infinity)
@@ -163,48 +250,7 @@ struct WeeklyGuidePreview: View {
                 .accessibilityIdentifier("guide-scroll")
                 .background(Brand.background)
             }
-            .navigationTitle(localization.text(typeSize.isAccessibilitySize || localization.language != .simplifiedChinese ? "手册" : "本周研读手册"))
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button(localization.text("返回证道")) { dismiss() }.accessibilityIdentifier("guide-close")
                 }
-                #if os(iOS) && canImport(SwiftUI, _version: 8.0.85)
-                if #available(iOS 27.1, macOS 27.1, *), verticalEdge != nil {
-                    ToolbarItem(placement: .primaryAction) {
-                        guideDock(placement: .trailing, inSystemBar: true)
-                    }
-                    .axisBehavior(.verticalPreferred)
-                    .visibilityPriority(.high)
-                }
-                #endif
-            }
-            .listeningPlayerDock(atTrailingEdge: false, inSystemBar: verticalEdge != nil) {
-                if verticalEdge == nil {
-                    HStack(spacing: 0) {
-                        Color.clear.frame(width: controlRegion.minX, height: 0)
-                        guideDock(placement: .bottom).frame(width: controlRegion.width)
-                        Spacer(minLength: 0)
-                    }
-                }
-            }
-            }
-        }
-        .task(id: selection) {
-            await refreshGuide(for: selection)
-        }
-        .overlay {
-            PlaybackMorePanelOverlay(isPresented: $showingMore, buttonFrame: moreFrame, placement: morePlacement) { width in
-                PlaybackMoreControls(playback: playback, isPreparing: false, alignmentModel: model,
-                                     onClose: { showingMore = false }, width: width)
-            }
-        }
-        .sheet(item: $expandedImage) { image in
-            WeeklyGuideImageSheet(image: image, closeLabel: localization.text("关闭"),
-                                  zoomInLabel: localization.text("放大图片"),
-                                  zoomOutLabel: localization.text("缩小图片"))
-        }
-        }
     }
 
     private func guideParagraph(_ text: String) -> some View {

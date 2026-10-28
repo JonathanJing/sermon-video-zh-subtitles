@@ -99,7 +99,9 @@ struct ContentView: View {
             let controlRegion = dockControlRegion(in: geometry)
             listeningNavigation(
                 controlRegion: controlRegion,
-                usesTrailingDock: DockLayout.usesTrailingDock(for: controlRegion)
+                usesTrailingDock: DockLayout.usesTrailingDock(for: controlRegion),
+                isLandscape: geometry.size.width > geometry.size.height,
+                hasDividedRegion: controlRegion.size != geometry.size
             )
             .overlay { playbackMoreOverlay }
         }
@@ -216,11 +218,25 @@ struct ContentView: View {
         showingAlignmentFailure = model.alignmentFailure != nil && sheet == nil && scenePhase == .active
     }
 
-    private func listeningNavigation(controlRegion: CGRect, usesTrailingDock: Bool) -> some View {
+    private func listeningNavigation(controlRegion: CGRect, usesTrailingDock: Bool,
+                                     isLandscape: Bool, hasDividedRegion: Bool) -> some View {
         NavigationStack {
             ToolbarVerticalEdgeReader { verticalBarEdge in
                 let usesSystemVerticalBar = verticalBarEdge != nil
-                return ScrollViewReader { proxy in
+                return GeometryReader { readingGeometry in
+                    // Use the reading area after the system bar and player safe-area
+                    // insets. A divided/folded region keeps the existing single reader.
+                    let guideWidth = isLandscape && !hasDividedRegion && readingGeometry.size.width >= 620
+                        ? min(460, max(280, readingGeometry.size.width * 0.45)) : 0
+                    HStack(spacing: 0) {
+                        #if DEBUG || TONGXING_GUIDE_PREVIEW
+                        if guideWidth > 0 {
+                            WeeklyGuidePreview(model: model, playback: playback, embedded: true)
+                                .frame(width: guideWidth)
+                            Divider()
+                        }
+                        #endif
+                ScrollViewReader { proxy in
                 ScrollView {
                     VStack(alignment: .leading, spacing: verticalSizeClass == .compact ? 12 : 16) {
                         WeeklyUpdateCard(updates: weeklyUpdates) { showingNotificationPoster = false; sheet = .weeklyUpdate }
@@ -233,7 +249,7 @@ struct ContentView: View {
                             HStack { Spacer(); appLanguageMenu }
                         }
                         if let week = model.selectedWeek {
-                            sermonHeading(week).id("top")
+                            sermonHeading(week, showsInlineGuide: guideWidth > 0).id("top")
                             if let notice = model.catalogNotice {
                                 Label(localization.text(notice), systemImage: "wifi.slash")
                                     .font(.footnote).foregroundStyle(.secondary)
@@ -274,8 +290,8 @@ struct ContentView: View {
                                     appLanguageMenu
                                 }
                                 SermonHeadingView(heading: model.heading(for: page), date: page.date,
-                                                  titleFont: .largeTitle.bold(), identifier: "published-page")
-                                guideButton
+                                                  titleFont: guideWidth > 0 ? .title2.bold() : .largeTitle.bold(), identifier: "published-page")
+                                if guideWidth == 0 { guideButton }
                                 languageButton
                                 if model.fullVideoURL != nil || model.selectedAudioLanguageName != nil {
                                     if typeSize.isAccessibilitySize {
@@ -405,6 +421,13 @@ struct ContentView: View {
                     }
                 }
             }
+                    }
+                    .onChange(of: guideWidth > 0, initial: true) { _, showsGuide in
+                        #if DEBUG || TONGXING_GUIDE_PREVIEW
+                        if showsGuide && sheet == .guidePreview { sheet = nil }
+                        #endif
+                    }
+                }
             .background(Brand.background)
             .listeningPlayerDock(atTrailingEdge: usesTrailingDock,
                                  inSystemBar: usesSystemVerticalBar) {
@@ -632,8 +655,10 @@ struct ContentView: View {
         return bounds
     }
 
-    @ViewBuilder private func sermonHeading(_ week: SermonWeek) -> some View {
-        if verticalSizeClass == .compact {
+    @ViewBuilder private func sermonHeading(_ week: SermonWeek, showsInlineGuide: Bool) -> some View {
+        if showsInlineGuide {
+            regularSermonHeading(week, showsInlineGuide: true)
+        } else if verticalSizeClass == .compact {
             HStack(spacing: 16) {
                 VStack(alignment: .leading, spacing: 4) {
                     SermonHeadingView(heading: model.heading(for: week),
@@ -650,7 +675,7 @@ struct ContentView: View {
         }
     }
 
-    private func regularSermonHeading(_ week: SermonWeek) -> some View {
+    private func regularSermonHeading(_ week: SermonWeek, showsInlineGuide: Bool = false) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
                 Text(localization.text("证道")).font(.caption.weight(.medium)).foregroundStyle(.secondary)
@@ -658,7 +683,7 @@ struct ContentView: View {
                 appLanguageMenu
             }
             SermonHeadingView(heading: model.heading(for: week),
-                              date: week.date, titleFont: .largeTitle.bold(), identifier: "sermon")
+                              date: week.date, titleFont: showsInlineGuide ? .title2.bold() : .largeTitle.bold(), identifier: "sermon")
             Text(week.scripture).font(.footnote).foregroundStyle(.secondary)
             languageButton
             if model.selectedContentLocale != "zh-Hans", model.selectedContentTarget != nil {
@@ -672,7 +697,7 @@ struct ContentView: View {
                     .padding(.horizontal, 10).padding(.vertical, 6)
                     .background(Brand.accent.opacity(0.10), in: Capsule())
                 Spacer()
-                guideButton
+                if !showsInlineGuide { guideButton }
             }
         }
     }
