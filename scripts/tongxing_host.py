@@ -680,15 +680,6 @@ def _accounting_orchestration(name, *, depends_on=None, work_unit_id=None):
     return sermon_accounting.orchestration(name, depends_on=depends_on, work_unit_id=work_unit_id)
 
 
-def _screening_asr_settings(screening):
-    from tongxing_production.review import audio_qc as target_audio_auto_qc
-    return target_audio_auto_qc.screening_asr_settings(screening)
-
-
-def machine_qc() -> ports.MachineQc:
-    return ports.MachineQc(screening_asr_settings=_screening_asr_settings)
-
-
 def _rule_function(module, name):
     def call(*args, **kwargs):
         return getattr(_module(module)(), name)(*args, **kwargs)
@@ -759,7 +750,7 @@ def audio_unmoved() -> audio_backend.Unmoved:
 # public name: functions are called through their scripts/ module at call time, so
 # patches still intercept, and constants and classes are read when used.
 _PREDICTED = 'tongxing_production.audio.predicted_schedule'
-_SCREENING = 'tongxing_production.audio.screening'
+_SCREENING = 'tongxing_production.review.asr_scoring'
 _RENDERER = 'tongxing_production.audio.renderer'
 
 
@@ -965,7 +956,6 @@ def compute_unmoved():
     return compute_backend.Unmoved(
         waiver=_module('tongxing_production.review.waiver'),
         budget_authorization=_module('tongxing_production.review.qc_budget_authorization'),
-        screener=_module('tongxing_production.audio.screening'),
         predicted_schedule=_module('tongxing_production.audio.predicted_schedule'),
         formal_renderer=_module('tongxing_production.audio.renderer'),
         voice_demos=_module('tools.ops.render_multilingual_voice_demos'),
@@ -1118,7 +1108,7 @@ delivery_backend.configure(delivery_backend.DeliveryBackend(core=_core, code=_co
                                                             legacy=delivery_legacy(), unmoved=delivery_unmoved()))
 audio_backend.configure(audio_backend.AudioBackend(core=_core, code=_code, compute=_compute, measure=_measure,
                                                    accounting=_accounting, schemas=_schemas, diagnostic=_diagnostic,
-                                                   review=_review, waivers=_waivers, machine_qc=machine_qc(),
+                                                   review=_review, waivers=_waivers,
                                                    spoken_rules=spoken_rules(), tts_runtime=tts_runtime(),
                                                    dev_profile=dev_profile(), unmoved=audio_unmoved()))
 review_backend.configure(review_backend.ReviewBackend(core=_core, code=_code, snapshot=_snapshot,

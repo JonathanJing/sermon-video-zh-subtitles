@@ -9,7 +9,7 @@ from scripts import tongxing_host  # noqa: F401  binds the production package po
 from tongxing_production.review import release_basis as basis
 from tongxing_production.review import waiver
 from tongxing_production.review import repair_ledger as ledger
-from tongxing_production.audio import screening as audio_screen
+from tongxing_production.review import asr_scoring as audio_screen
 from tongxing_production.review import text_qc as text_screen
 from tongxing_production.review.audio_qc import THRESHOLDS, TRACK_ENVELOPE
 from tongxing_production.audio import speech_job as speech

@@ -25,7 +25,6 @@ from jsonschema import Draft202012Validator, FormatChecker
 from ..source import sentence_interpretation as interpretation
 from . import backend as _audio
 from . import clip_timeline as timeline_map
-from . import screening as audio_screen
 from . import speech_job as speech
 from . import unit_integrity
 from .hosted import accounting
@@ -340,21 +339,6 @@ def validate_captions(captions: dict[str, Any], candidate: dict[str, Any],
         near(float(entry["plannedStart"]), start, f"Caption start {index}")
         near(float(entry["plannedEnd"]), end, f"Caption end {index}")
         previous_end = end
-
-
-def legacy_v1_screening_score(expected: str, recognized: str, locale: str,
-                              min_similarity: float) -> tuple[float, list[dict], bool]:
-    """Reproduce the v1 producer: unfolded ratio and short-unit exactness only.
-
-    Keyword/protected-text checks were introduced with v2; adding them when
-    reading v1 would change frozen historical evidence.
-    """
-    left, right = audio_screen.tokens(expected, locale), audio_screen.tokens(recognized, locale)
-    matcher = difflib.SequenceMatcher(None, left, right, autojunk=False)
-    similarity = round(matcher.ratio(), 6)
-    differences = [{"kind": kind, "expected": left[start:end], "recognized": right[other_start:other_end]}
-                   for kind, start, end, other_start, other_end in matcher.get_opcodes() if kind != "equal"]
-    return similarity, differences, similarity >= min_similarity and (len(left) >= 4 or not differences)
 
 
 def build_package(paths: dict[str, Path], render_manifest_path: Path, artifact_root: Path, *,

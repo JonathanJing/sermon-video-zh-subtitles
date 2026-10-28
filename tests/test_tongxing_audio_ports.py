@@ -22,7 +22,7 @@ from tongxing_production.review import waiver
 from tongxing_production.audio import renderer
 from tools.ops import render_multilingual_voice_demos as demos
 from tongxing_production.audio import human_review as audio_review
-from tongxing_production.audio import screening
+from tongxing_production.review import asr_scoring as screening
 from tongxing_production.observability import local_model_observation as sermon_local_model_observation
 from tongxing_production.observability import accounting as sermon_accounting
 from tongxing_production.orchestration import jobs as sermon_workflow_jobs
@@ -92,7 +92,7 @@ class AudioPortsTests(unittest.TestCase):
         for name in ('schemas', 'diagnostic'):
             self.assertIs(getattr(backend, name), getattr(text.current(), name), name)
         self.assertIs(backend.waivers, delivery.current().waivers)
-        for record, kind in ((backend.machine_qc, ports.MachineQc), (backend.spoken_rules, ports.SpokenRules),
+        for record, kind in ((backend.spoken_rules, ports.SpokenRules),
                              (backend.tts_runtime, ports.TtsRuntime), (backend.dev_profile, ports.DevProfile),
                              (backend.unmoved, audio.Unmoved)):
             self.assertIsInstance(record, kind)
@@ -187,8 +187,6 @@ class AudioPortsTests(unittest.TestCase):
                  ({'m': 1},), {}),
                 (sermon_accounting, 'orchestration', backend.accounting.orchestration,
                  ('w.dispatch',), {'depends_on': None, 'work_unit_id': 'w.dispatch'}),
-                (target_audio_auto_qc, 'screening_asr_settings', backend.machine_qc.screening_asr_settings,
-                 ({'s': 1},), {}),
                 (demos, 'read_object', backend.tts_runtime.read_checkpoint_map, (Path('/m.json'), 'checkpoint map'), {}),
                 (demos, 'validate_checkpoint', backend.tts_runtime.validate_checkpoint, ({'t': 1},), {}),
                 (sermon_workflow_jobs, '_sync_directory_ancestry', backend.core.sync_directory_ancestry,

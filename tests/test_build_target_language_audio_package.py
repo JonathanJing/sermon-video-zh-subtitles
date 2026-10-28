@@ -640,11 +640,6 @@ class AudioPackageTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "another locale"):
             self.build()
 
-    def test_legacy_v1_still_requires_threshold_and_short_exactness(self):
-        for expected, recognized, threshold in [("하나", "하나 둘", .5), ("one two three", "one two four", .5),
-                                                 ("we read this long passage", "completely different words", .88)]:
-            self.assertFalse(subject.legacy_v1_screening_score(expected, recognized, "ko" if expected == "하나" else "en", threshold)[2])
-
     def test_full_pcm_wav_decode_without_ffmpeg_tools(self):
         path = self.asset_root / self.manifest["track"]["path"]
         with mock.patch.object(subject.subprocess, "run", side_effect=FileNotFoundError()):

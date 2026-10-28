@@ -177,7 +177,7 @@ class BenchmarkBackAsrTests(unittest.TestCase):
             "soundfile": SimpleNamespace(read=lambda path, **_: (
                 SimpleNamespace(ndim=1, text=Path(path).read_text()), 24000)),
             "qwen_asr": SimpleNamespace(Qwen3ASRModel=SimpleNamespace(from_pretrained=loader)),
-            "tongxing_production.audio.screening": SimpleNamespace(tokens=lambda text, _: text.split()),
+            "tongxing_production.review.asr_scoring": SimpleNamespace(tokens=lambda text, _: text.split()),
         }
         return modules, loader, batches
 

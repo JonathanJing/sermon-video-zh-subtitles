@@ -12,7 +12,7 @@ import unittest
 from pathlib import Path
 
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
-from tongxing_production.audio import screening as subject
+from tongxing_production.review import asr_scoring as subject
 
 FIXTURES = Path(__file__).resolve().parent / "fixtures" / "weekly-20261011" / "audio-qc"
 THRESHOLD = 0.88

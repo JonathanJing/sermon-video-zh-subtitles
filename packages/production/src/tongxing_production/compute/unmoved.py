@@ -32,7 +32,6 @@ def _module(field):
 waiver = _module('waiver')                          # machine_quality_waiver (review R3)
 audio_qc = _module('audio_qc')                      # target_audio_auto_qc (review R3)
 budget_authorization = _module('budget_authorization')   # machine_qc_budget_authorization (review R3)
-screener = _module('screener')                      # screen_target_language_audio_units (L3 A3)
 predicted_schedule = _module('predicted_schedule')  # target_audio_predicted_schedule (L3 A3)
 formal = _module('formal_renderer')                 # render_formal_target_language_speech (L3 A3)
 demos = _module('voice_demos')                      # render_multilingual_voice_demos

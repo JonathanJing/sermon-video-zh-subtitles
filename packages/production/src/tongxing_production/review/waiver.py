@@ -53,7 +53,6 @@ IMPLEMENTATION_FILES = (
     # L4 accepts a condensed script on its hash-bound binding without rerunning these checks.
     "scripts/spoken_condensation.py",
     # Scores every ASR transcript the audio QC and the waivers rescore.
-    "scripts/screen_target_language_audio_units.py",
     # The Layer 3 proxy and its backend/host binding select the executable spoken rules.
     "packages/production/src/tongxing_production/audio/hosted.py",
     "packages/production/src/tongxing_production/audio/backend.py",

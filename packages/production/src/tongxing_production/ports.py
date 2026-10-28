@@ -247,12 +247,6 @@ class Waivers:
 
 
 @dataclass(frozen=True)
-class MachineQc:
-    """Audio machine-QC settings a Layer 3 package records; review/ owns target_audio_auto_qc."""
-    screening_asr_settings: Callable[[dict], dict]   # (screening)
-
-
-@dataclass(frozen=True)
 class SpokenRules:
     """Spoken-number and citation rules Layer 3 scores and renders with.
 
