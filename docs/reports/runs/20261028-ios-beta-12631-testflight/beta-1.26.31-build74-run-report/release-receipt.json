@@ -1,0 +1,31 @@
+{
+  "releaseType": "testflight_internal_beta",
+  "version": "1.26.31",
+  "build": "74",
+  "bundleID": "com.jonathanjing.tongxing.beta",
+  "sourceCommit": "df5a438b4ce04e12886bf138e3ea4b51801c7d67",
+  "contentOrigin": "https://ai-for-god-sermon-audio-dev.web.app",
+  "archiveManifestSHA256": "22f1bf86681213bc1ca7a3b3d39d1869d92cc25ee4c2bf9c3a80e483087efa15",
+  "ipaSHA256": "2885dfd4227a49964632a51dcc7e1893a40efb17c269c784df4040cbdd195c94",
+  "archiveStatus": "archive_succeeded",
+  "exportStatus": "export_succeeded",
+  "uploadExitCode": 0,
+  "waitExitCode": 0,
+  "distributeExitCode": 0,
+  "appleProcessingState": "VALID",
+  "appleInternalState": "IN_BETA_TESTING",
+  "internalGroup": "Rooted",
+  "appleCheckedAt": "2026-10-28T21:40:36Z",
+  "bundledWeeklyGuides": false,
+  "deviceAcceptance": "not_run",
+  "venueAcceptance": "not_run",
+  "localEvidence": {
+    "releaseRecord": "artifacts/tongxing-ios/beta-1.26.31-build74-archive-20261028/release-record.json",
+    "archiveLog": "artifacts/tongxing-ios/beta-1.26.31-build74-archive-20261028/archive.log",
+    "exportLog": "artifacts/tongxing-ios/beta-1.26.31-build74-archive-20261028/export.log",
+    "uploadCommandResult": "artifacts/tongxing-ios/testflight/20261028T213526Z-7430d121/command-result.json",
+    "waitCommandResult": "artifacts/tongxing-ios/testflight/20261028T213753Z-31ff345c/command-result.json",
+    "distributeCommandResult": "artifacts/tongxing-ios/testflight/20261028T214031Z-31e5603c/command-result.json",
+    "appleSnapshot": "artifacts/tongxing-ios/testflight/20261028T214031Z-31e5603c/apple-state.json"
+  }
+}

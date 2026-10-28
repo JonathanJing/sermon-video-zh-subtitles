@@ -1,0 +1,32 @@
+{
+  "action": "test",
+  "scheme": "TongxingBeta",
+  "configuration": "BetaDebug",
+  "statusFileSha256": "8fa616a0d79d4a2a219adfc1d3e643cfa75e8e7634bb47f3914e6e4cfddba782",
+  "logSha256": "56cdfdf2bbfb9249bf06234a73e4b7c4a21ee5e1c3f31923db284afc3ffad80f",
+  "resultBundle": "test.xcresult",
+  "resultBundleComplete": true,
+  "result": "Failed",
+  "totalTestCount": 3,
+  "passedTests": 2,
+  "failedTests": 1,
+  "skippedTests": 0,
+  "expectedFailures": 0,
+  "runtimeWarnings": [],
+  "failures": [
+    {
+      "test": "WeeklyGuidePreviewUITests/testLandscapeAutomaticallyShowsGuideAndRotationKeepsPlayback()",
+      "message": "XCTAssertGreaterThanOrEqual failed: (\"58.666666666666686\") is less than (\"77.0\")"
+    }
+  ],
+  "platforms": [
+    {
+      "deviceName": "iPhone 17 Pro",
+      "osVersion": "26.2",
+      "platform": "iOS Simulator"
+    }
+  ],
+  "hitRegionDiagnostics": [
+    "phase=after-download-and-rotation menu=(303.66666666666663, 58.666666666666686, 44.00000000000006, 44.0) hittable=true navigation=[(0.0, 24.0, 874.0, 54.0)] guide=(0.0, 0.0, 363.6666666666667, 432.66666666666663) listening=(364.0, 0.0, 510.0, 432.66666666666663)"
+  ]
+}

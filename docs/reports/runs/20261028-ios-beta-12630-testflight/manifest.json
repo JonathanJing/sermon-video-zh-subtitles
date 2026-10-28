@@ -1,0 +1,174 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261028-ios-beta-12630-testflight",
+  "runs": [
+    {
+      "label": "apple-preflight",
+      "source": "~/.codex/worktrees/ios-landscape-study/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-28/testflight-12630-report-input/apple-preflight",
+      "skipped": {}
+    },
+    {
+      "label": "apple-processing",
+      "source": "~/.codex/worktrees/ios-landscape-study/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-28/testflight-12630-report-input/apple-processing",
+      "skipped": {}
+    },
+    {
+      "label": "archive-final",
+      "source": "~/.codex/worktrees/ios-landscape-study/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-28/testflight-12630-report-input/archive-final",
+      "skipped": {}
+    },
+    {
+      "label": "archive-first",
+      "source": "~/.codex/worktrees/ios-landscape-study/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-28/testflight-12630-report-input/archive-first",
+      "skipped": {}
+    },
+    {
+      "label": "internal-distribution",
+      "source": "~/.codex/worktrees/ios-landscape-study/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-28/testflight-12630-report-input/internal-distribution",
+      "skipped": {}
+    },
+    {
+      "label": "ipa-export",
+      "source": "~/.codex/worktrees/ios-landscape-study/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-28/testflight-12630-report-input/ipa-export",
+      "skipped": {}
+    },
+    {
+      "label": "upload",
+      "source": "~/.codex/worktrees/ios-landscape-study/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-28/testflight-12630-report-input/upload",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "apple-preflight",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 142,
+      "truncated": false,
+      "sha256": "761b302f0e664d33ee42152d93da2c3d93dc39c9186c4c9d8ffd2ef3cdad3467",
+      "redactions": {}
+    },
+    {
+      "run": "apple-preflight",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 302,
+      "truncated": false,
+      "sha256": "c8f5f687e28ce7fa4a86b322c1235805c2fdf213a1053322e050ea120be4729f",
+      "redactions": {}
+    },
+    {
+      "run": "apple-processing",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 142,
+      "truncated": false,
+      "sha256": "d1ffceb75129cc4a7f765d4e79dfb6a615effa08b1dba564bd61a5ab7dd4e2a7",
+      "redactions": {}
+    },
+    {
+      "run": "apple-processing",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 376,
+      "truncated": false,
+      "sha256": "6cc96595561512ebd94fee0da3d2066ecd67c25c577d4fed86bf1f5d342ca036",
+      "redactions": {}
+    },
+    {
+      "run": "archive-final",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 142,
+      "truncated": false,
+      "sha256": "e066e7f462131f0984dd2b0bda4d6eb82b02b476ea4ae9814109ce68d01c3146",
+      "redactions": {}
+    },
+    {
+      "run": "archive-final",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 321,
+      "truncated": false,
+      "sha256": "c0372ee21a2199653f18abcdfa66ee0f233f6a4caff141b758fdb8450770320d",
+      "redactions": {}
+    },
+    {
+      "run": "archive-first",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 143,
+      "truncated": false,
+      "sha256": "e5a57d0e57aae32ddb5c5712688cfca8ce385793f080b40782b3479c80f48a29",
+      "redactions": {}
+    },
+    {
+      "run": "archive-first",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 344,
+      "truncated": false,
+      "sha256": "fa193d0009c1f60c9ad0104b50ba78c556412cc467c76bb5e3146fb917495180",
+      "redactions": {}
+    },
+    {
+      "run": "internal-distribution",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 142,
+      "truncated": false,
+      "sha256": "f5019dce1fc2846c9a0a10f485da73531258a2dabfdc69593b75e20fb5d9520a",
+      "redactions": {}
+    },
+    {
+      "run": "internal-distribution",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 437,
+      "truncated": false,
+      "sha256": "613aba77bc8af03912e0783480c8b0be1aed3721f6f09323eba2ca67fe1d7d18",
+      "redactions": {}
+    },
+    {
+      "run": "ipa-export",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 142,
+      "truncated": false,
+      "sha256": "7aab1f7293169722afbeabbda71597e0d56df47e9edeed6b817ab926149ff1d1",
+      "redactions": {}
+    },
+    {
+      "run": "ipa-export",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 658,
+      "truncated": false,
+      "sha256": "194812cf7ca2be56f74781fef09888445b5e9b310af170e03dd9813fc48e2750",
+      "redactions": {}
+    },
+    {
+      "run": "upload",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 142,
+      "truncated": false,
+      "sha256": "bffa44d6d18a32b390d24570dc6f133866406c54d952ddfa620d9ae9508d6813",
+      "redactions": {}
+    },
+    {
+      "run": "upload",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 414,
+      "truncated": false,
+      "sha256": "e41c6fc892d450c35ec34555b312a3480764818a724a08300fb3afbe3d5545fd",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

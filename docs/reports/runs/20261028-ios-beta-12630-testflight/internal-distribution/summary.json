@@ -1,0 +1,12 @@
+{
+  "candidateVersion": "1.26.30",
+  "candidateBuild": "73",
+  "processingState": "VALID",
+  "internalBuildState": "IN_BETA_TESTING",
+  "expired": false,
+  "checkedAt": "2026-10-28T18:31:36Z",
+  "RootedAssociated": true,
+  "appleSnapshotSha256": "4c2dae38c01beb4c1255c32a949da317346343962463eaf82f21ff6162ecf1b5",
+  "notesSha256": "5e9800dcf3023fbc164348eb15b007a1af44b633b1f79fecbe635dae3dccbde1",
+  "testNotesReadbackVerified": true
+}

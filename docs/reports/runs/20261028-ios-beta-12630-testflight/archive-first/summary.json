@@ -1,0 +1,5 @@
+{
+  "failure": "App and extension lacked a development team because the ignored local signing config was absent",
+  "response": "Reused the same private team configuration from the prior successful Build 72 worktree; retained the failed output separately",
+  "rawLogSha256": "02afae60d57f074f8bf563f92069bb2e56768756a2aa2033dc5043ae9b5d97d1"
+}
