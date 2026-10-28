@@ -1,0 +1,33 @@
+{
+  "action": "test",
+  "scheme": "TongxingBeta",
+  "configuration": "BetaDebug",
+  "statusFileSha256": "678f86219df0726bc79c4149c27178c8d1768fb55038ad168f18c1e8a9c59227",
+  "logSha256": "ba24dc05e45d4b154e3d892185079b6c5b4f618dda59fea7f83aaea7a875cd49",
+  "resultBundle": "test.xcresult",
+  "resultBundleComplete": true,
+  "result": "Failed",
+  "totalTestCount": 3,
+  "passedTests": 2,
+  "failedTests": 1,
+  "skippedTests": 0,
+  "expectedFailures": 0,
+  "runtimeWarnings": [],
+  "failures": [
+    {
+      "test": "WeeklyGuidePreviewUITests/testLandscapeAutomaticallyShowsGuideAndRotationKeepsPlayback()",
+      "message": "XCTAssertEqual failed: (\"开始播放\") is not equal to (\"暂停播放\")"
+    }
+  ],
+  "platforms": [
+    {
+      "deviceName": "iPhone 17 Pro",
+      "osVersion": "26.2",
+      "platform": "iOS Simulator"
+    }
+  ],
+  "hitRegionDiagnostics": [
+    "phase=after-download-and-rotation menu=(303.66666666666663, 58.666666666666686, 44.00000000000006, 44.0) hittable=true navigation=[(0.0, 24.0, 874.0, 54.0)] guide=(0.0, 0.0, 363.6666666666667, 432.66666666666663) listening=(364.0, 0.0, 510.0, 432.66666666666663)",
+    "phase=after-second-rotation menu=(303.66666666666663, 58.666666666666686, 44.00000000000006, 44.0) hittable=true navigation=[(0.0, 24.0, 874.0, 54.0)] guide=(0.0, 0.0, 363.6666666666667, 432.66666666666663) listening=(364.0, 0.0, 510.0, 432.66666666666663)"
+  ]
+}
