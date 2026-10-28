@@ -1,0 +1,33 @@
+{
+  "status": "prepared_not_deployed",
+  "delivery": "private preparation and test candidate",
+  "guide_drafts": {
+    "languages": [
+      "ko",
+      "es"
+    ],
+    "weeks_per_language": 12,
+    "humanApproval": false
+  },
+  "private_readback": {
+    "initial_draft_files_sha256_verified": 11,
+    "full_draft_bundle_files_sha256_verified": 61,
+    "reviewed_bundle_files_sha256_verified": 105
+  },
+  "dev_baseline": {
+    "status": "complete_verified_not_deployed",
+    "liveFileCount": 991
+  },
+  "candidate": {
+    "week": 3,
+    "locale": "ko",
+    "status": "prepared_not_uploaded",
+    "blocker": "contains internal placeholders; corrections and renewed review required"
+  },
+  "limits": [
+    "Machine review is not human approval.",
+    "Original images and tables have not all been verified.",
+    "No remote guide manifest deployed.",
+    "No translated guide has passed real-device acceptance."
+  ]
+}
