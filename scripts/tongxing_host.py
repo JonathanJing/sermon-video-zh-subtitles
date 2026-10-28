@@ -473,8 +473,7 @@ def _validate_codex_test_configuration(configuration):
 
 def transports() -> ports.Transports:
     return ports.Transports(caller=_transport_caller, claude_chat_envelope=_claude_chat_envelope,
-                            validate_codex_test_configuration=_validate_codex_test_configuration,
-                            audio_qc=_module('tongxing_production.compute.qc_audio_transports'))
+                            validate_codex_test_configuration=_validate_codex_test_configuration)
 
 
 def _validate_handoff_schema(value, filename, label):
@@ -964,7 +963,7 @@ def _upcoming_sunday(*arguments, **options):
 
 def compute_unmoved():
     return compute_backend.Unmoved(
-        waiver=_module('tongxing_production.review.waiver'), audio_qc=_module('tongxing_production.review.audio_qc'),
+        waiver=_module('tongxing_production.review.waiver'),
         budget_authorization=_module('tongxing_production.review.qc_budget_authorization'),
         screener=_module('tongxing_production.audio.screening'),
         predicted_schedule=_module('tongxing_production.audio.predicted_schedule'),
@@ -1017,8 +1016,6 @@ ENTRY_LOAD_TIME_IMPORTS = {
         'tongxing_production.observability.measure', 'scripts.ko_spoken_numerals'),
     'tongxing_production.audio.package': ('tongxing_production.observability.accounting',),
     # G1: the audio QC transport imported the waiver and the audio QC checks at load time.
-    'tongxing_production.compute.qc_audio_transports': ('tongxing_production.review.waiver',
-                                                        'tongxing_production.review.audio_qc'),
     # L4 D2: the app release builder imported the waiver release basis at load time.
     'tongxing_production.delivery.app_release': ('tongxing_production.review.release_basis',),
     # D-5: the supervisor and its agent imported these backend helpers at load time; ports now defer them.

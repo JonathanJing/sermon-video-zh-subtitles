@@ -280,7 +280,7 @@ class OpenAiTranscribeListener:
     name = model = 'gpt-transcribe'
 
     def __init__(self, *, cache: Path, max_calls: int, budget: dict[str, Any] | None = None):
-        from .unmoved import transports
+        from ..compute import listener_support as transports
         from ..compute import openai_runtime as runtime
         self.route = _route_identity(runtime.selected_route())
         _require(self.route is not None, 'openai_environment_launcher_required')
@@ -316,7 +316,7 @@ class OpenAiTranscribeListener:
 
     def _request(self, wav: bytes) -> tuple[bytes, str, dict[str, Any]]:
         """The multipart body, its content type and the ledger identity of one clip's request."""
-        from .unmoved import transports
+        from ..compute import listener_support as transports
         body, content_type = transports._multipart(self.fields, wav)
         identity = {'schemaVersion': LISTEN_REQUEST_SCHEMA, 'model': self.model,
                     'endpoint': transports.TRANSCRIBE_URL, 'audioSha256': _sha(wav),
@@ -330,7 +330,7 @@ class OpenAiTranscribeListener:
         return known is not None and self.budget['store'].returned(known, self._request(wav)[2])
 
     def _send(self, wav: bytes) -> dict[str, Any]:
-        from .unmoved import transports
+        from ..compute import listener_support as transports
         from ..compute import transcription_request as transcription
         _require(self.budget is not None, 'budget_authorization_required')
         body, content_type, identity = self._request(wav)
@@ -391,7 +391,7 @@ class QwenListener:
 
     def __init__(self, model_path: Path, *, cache: Path, identity_probe: Callable[[Path], dict[str, Any]] | None = None,
                  session_verifier: Callable[[], dict[str, Any]] | None = None):
-        from .unmoved import transports
+        from ..compute import listener_support as transports
         self.model_path = Path(model_path).resolve()
         weights = self.model_path / 'model.safetensors'
         _require(weights.is_file(), 'qwen_weights_missing')

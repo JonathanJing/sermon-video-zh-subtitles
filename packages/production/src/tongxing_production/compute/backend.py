@@ -18,7 +18,6 @@ from .. import ports
 class Unmoved:
     """Host modules the audio QC transport reaches until review R3 and L3 A3 move them."""
     waiver: Callable[[], ModuleType]                # machine_quality_waiver
-    audio_qc: Callable[[], ModuleType]              # target_audio_auto_qc
     budget_authorization: Callable[[], ModuleType]  # machine_qc_budget_authorization
     screener: Callable[[], ModuleType]              # screen_target_language_audio_units
     predicted_schedule: Callable[[], ModuleType]    # target_audio_predicted_schedule

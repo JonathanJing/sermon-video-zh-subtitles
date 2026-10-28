@@ -47,8 +47,6 @@ def _current():
 source_review = _HostModule(lambda: _current().source.text_review())
 # Layer 2 policy: review uses canonical_sha256, a field of the same name on TextRules.
 policies = _HostModule(lambda: _current().text)
-# The audio QC transports (CallCache, TRANSCRIBE_URL, _multipart, qwen_inference_identity).
-transports = _HostModule(lambda: _current().transports.audio_qc())
 # The durable job store module (its private names are the host's to lend).
 jobs = _HostModule(lambda: _current().core.jobs)
 # Sentence interpretation file and JSON hashes: same names on SourceEvidence.
@@ -89,5 +87,4 @@ predicted_rules = _Renamed(lambda: _current().audio,
 freeze = _HostModule(lambda: _current().qc_runtime.implementation_freeze())
 audio_waiver_acceptance = _HostModule(lambda: _current().qc_runtime.audio_waiver_acceptance())
 codex_text_transport = _HostModule(lambda: _current().qc_runtime.codex_text_transport())
-audio_qc_transports = _HostModule(lambda: _current().transports.audio_qc())
 transcription_limits = _HostModule(lambda: _current().provider.transcription_limits())

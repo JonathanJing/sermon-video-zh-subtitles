@@ -38,7 +38,6 @@
     "packages/production/src/tongxing_production/compute/outcomes.py",
     "packages/production/src/tongxing_production/compute/provider_http.py",
     "packages/production/src/tongxing_production/compute/provider_limits.py",
-    "packages/production/src/tongxing_production/compute/qc_audio_transports.py",
     "packages/production/src/tongxing_production/compute/spark_admission.py",
     "packages/production/src/tongxing_production/compute/spark_exclusive_session.py",
     "packages/production/src/tongxing_production/compute/transcription_request.py",

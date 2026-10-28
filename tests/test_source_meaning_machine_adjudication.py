@@ -20,7 +20,7 @@ import wave
 
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.text import controller
-from tongxing_production.compute import qc_audio_transports as transports
+from tongxing_production.compute import listener_support as transports
 from tongxing_production.compute import provider_limits as limits
 from tongxing_production.source import sentence_interpretation as contract
 from tongxing_production.source import budget as source_budget

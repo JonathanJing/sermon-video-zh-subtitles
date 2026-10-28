@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Compatibility entry point for ``tools/ops/run_with_openai_environment.py``.
 
-The G1-closure modules review/qc_audio_run.py and compute/qc_audio_transports.py
+The former G1-closure modules (machine-QC driver and transports) are retired
 and the hashed config/decision-api-weekly-ab-plan-v1.json still name this path.
 Remove in the next closure window.
 The implementation is loaded by absolute path from this checkout, independent of
