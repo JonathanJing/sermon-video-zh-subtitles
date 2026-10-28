@@ -62,7 +62,7 @@ LAZY_AT_HOST_LOAD = ('render_formal_target_language_speech', 'compact_formal_tar
                      'target_audio_anomaly', 'target_audio_recovery', 'target_audio_predicted_schedule',
                      'target_audio_timing_plan', 'review_target_language_audio',
                      'render_speculative_target_language_speech', 'sermon_unified_audio',
-                     'machine_qc_audio_transports', 'target_audio_auto_qc', 'ko_spoken_numerals',
+                     'target_audio_auto_qc', 'ko_spoken_numerals',
                      'language_review_plugins.auto_qc_text_common', 'spark_tts_replica_pool',
                      'spark_tts_window_scheduler', 'bounded_audio_cpu', 'render_multilingual_voice_demos',
                      'sermon_local_model_observation')

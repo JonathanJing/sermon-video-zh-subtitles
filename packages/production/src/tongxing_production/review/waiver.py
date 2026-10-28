@@ -64,7 +64,6 @@ IMPLEMENTATION_FILES = (
     "scripts/ko_spoken_numerals.py",
     # Calibration executes these paths to derive and synthesize registered spoken forms.
     "scripts/render_formal_target_language_speech.py",
-    "scripts/machine_qc_audio_transports.py",
     "scripts/run_machine_qc_clip_test.py",
     "scripts/machine_qc_budget_authorization.py",
     # Request routing and project-header enforcement are part of the QC runtime.

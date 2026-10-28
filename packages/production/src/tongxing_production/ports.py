@@ -198,8 +198,6 @@ class Transports:
     caller: Callable[..., Any]                 # (backend, **options): 'openai-api' | 'codex-cli' | 'claude-cli' | 'deepseek-api'
     claude_chat_envelope: Callable[[Any, str], dict]   # (response, model)
     validate_codex_test_configuration: Callable[[Any], Any]
-    audio_qc: Callable[[], ModuleType]         # machine_qc_audio_transports (compute/): primary/secondary ASR, TTS, fakes,
-                                               # CallCache, asr_router, render_identity, implementation_sha256, qwen_inference_identity
 
 
 @dataclass(frozen=True)
