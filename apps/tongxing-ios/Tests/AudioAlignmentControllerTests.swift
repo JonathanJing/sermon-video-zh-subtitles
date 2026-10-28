@@ -458,6 +458,60 @@ final class AudioAlignmentControllerTests: XCTestCase {
         XCTAssertNil(model.alignmentPosition)
     }
 
+    func testPublishedAlignmentDoesNotClaimMissingWhileAudioIsLoading() async throws {
+        let support = FileManager.default.temporaryDirectory.appendingPathComponent("TongxingPublishedAlignment-\(UUID())")
+        let config = URLSessionConfiguration.ephemeral
+        config.protocolClasses = [MachineDisclosureProtocol.self]
+        let session = URLSession(configuration: config)
+        let suite = "TongxingPublishedAlignment-\(UUID())"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        let model = AppModel(supportDirectory: support,
+                             contentOrigin: URL(string: "https://ai-for-god-sermon-audio-dev.web.app")!,
+                             session: session, statisticsDefaults: defaults,
+                             applicationBundleIdentifier: "com.jonathanjing.tongxing.beta")
+        defer {
+            model.playback.clear(); session.invalidateAndCancel(); MachineDisclosureProtocol.install([:])
+            defaults.removePersistentDomain(forName: suite)
+            try? FileManager.default.removeItem(at: support)
+        }
+        let sourceHash = String(repeating: "a", count: 64)
+        let mediaHash = String(repeating: "b", count: 64)
+        let trackHash = String(repeating: "c", count: 64)
+        let indexHash = String(repeating: "d", count: 64)
+        let catalog = try JSONSerialization.data(withJSONObject: [
+            "schemaVersion": MultilingualCatalog.dualScriptSchemaVersion,
+            "generatedAt": "2026-10-28T00:00:00Z", "defaultPageId": "published-alignment",
+            "pages": [["id": "published-alignment", "title": "Synthetic aligned page", "date": "2026-10-28",
+                       "sourceLocale": "en", "sourceIdentitySha256": sourceHash,
+                       "sourceMediaSha256": mediaHash, "defaultTargetLocale": "zh-Hans",
+                       "targets": ["zh-Hans": [
+                           "releasePackageUrl": "/releases-v2/published-alignment/zh-Hans.json",
+                           "releasePackageJsonSha256": sourceHash,
+                           "contentStatus": "human_reviewed", "audioStatus": "human_reviewed",
+                           "capabilities": ["text", "captions", "audio", "alignment"],
+                           "audioFingerprint": [
+                               "schemaVersion": "sermon-audio-fingerprint-binding-v1",
+                               "pageId": "published-alignment", "sourceSha256": mediaHash,
+                               "trackSha256": trackHash, "sourceStartSeconds": 0,
+                               "sourceEndSeconds": 300, "algorithmVersion": "spectral-landmarks-v1",
+                               "captureSeconds": 10, "indexSha256": indexHash,
+                               "indexUrl": "/fingerprints/\(indexHash.prefix(16))-landmarks.json"
+                           ]]]]]
+        ])
+        _ = try MultilingualCatalog.decode(catalog)
+        XCTAssertEqual(model.alignmentDisplayStatus, "音频尚未准备就绪，请稍候或重新载入音频。")
+        MachineDisclosureProtocol.install(["/multilingual-v3.json": catalog])
+        await model.refresh()
+        XCTAssertEqual(model.selectedPageID, "published-alignment")
+        XCTAssertNotNil(model.selectedContentTarget?.audioFingerprint)
+        XCTAssertNil(model.selectedAudioLocale)
+        XCTAssertFalse(model.alignmentAvailable)
+        XCTAssertTrue([
+            "正在准备音频，请稍候再开始现场自动对齐。",
+            "音频尚未准备就绪，请稍候或重新载入音频。"
+        ].contains(model.alignmentDisplayStatus))
+    }
+
     func testSameTrackCapabilityRevocationClearsCompletedAlignmentFeedback() async throws {
         let fixture = try Fixture()
         let selected = try XCTUnwrap(fixture.selection)
@@ -1122,6 +1176,21 @@ final class MachineDisclosureTests: XCTestCase {
                           "sourceIdentitySha256": sourceIdentity, "sourceMediaSha256": sourceMedia,
                           "defaultTargetLocale": "es", "targets": targets])
         }
+        // The catalog advertises an index, but its 300-second binding cannot
+        // match the short synthetic audio. This exercises "present but unusable".
+        var alignmentTargets = pages[0]["targets"] as! [String: Any]
+        var alignedSpanish = alignmentTargets["es"] as! [String: Any]
+        let indexHash = String(repeating: "d", count: 64)
+        alignedSpanish["capabilities"] = ["text", "captions", "audio", "alignment"]
+        alignedSpanish["audioFingerprint"] = [
+            "schemaVersion": "sermon-audio-fingerprint-binding-v1", "pageId": "synthetic-machine-page",
+            "sourceSha256": sourceMedia, "trackSha256": audioHash,
+            "sourceStartSeconds": 0, "sourceEndSeconds": 300,
+            "algorithmVersion": "spectral-landmarks-v1", "captureSeconds": 10,
+            "indexSha256": indexHash, "indexUrl": "/fingerprints/\(indexHash.prefix(16))-landmarks.json"
+        ] as [String: Any]
+        alignmentTargets["es"] = alignedSpanish
+        pages[0]["targets"] = alignmentTargets
         func catalog() throws -> Data {
             try json(["schemaVersion": MultilingualCatalog.machineCheckedSchemaVersion,
                       "generatedAt": "2026-10-07T00:00:00Z", "defaultPageId": "synthetic-machine-page", "pages": pages])
@@ -1134,6 +1203,13 @@ final class MachineDisclosureTests: XCTestCase {
             try await Task.sleep(for: .milliseconds(10))
         }
         XCTAssertEqual(model.publishedAudioSha256, audioHash)
+        for _ in 0..<200 where !model.playback.isReady || model.isPreparingPublishedAudio {
+            try await Task.sleep(for: .milliseconds(10))
+        }
+        XCTAssertTrue(model.playback.isReady)
+        XCTAssertEqual(model.selectedAudioLocale, "es")
+        XCTAssertFalse(model.alignmentAvailable)
+        XCTAssertEqual(model.alignmentDisplayStatus, "当前音频没有可用的听声对齐资料。")
         await model.loadSelectedPublishedTranscript()
         XCTAssertNil(model.currentPublishedTranscript)
         XCTAssertNotNil(model.publishedTranscriptError)

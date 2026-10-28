@@ -82,7 +82,11 @@ struct WeeklyGuidePreview: View {
 
     var body: some View {
         Group {
-            if embedded { guideReader } else { standaloneReader }
+            if embedded {
+                guideReader.frame(maxHeight: .infinity, alignment: .top)
+            } else {
+                standaloneReader
+            }
         }
         .task(id: selection) {
             await refreshGuide(for: selection)

@@ -322,12 +322,20 @@ final class WeeklyGuidePreviewUITests: XCTestCase {
         let menu = app.buttons["guide-chapter-menu"]
         recordGuideHitRegions(app: app, phase: "after-download-and-rotation")
         XCTAssertTrue(menu.isHittable)
+        let header = app.staticTexts["本周研读手册"].firstMatch
+        XCTAssertTrue(header.exists)
+        let navigationBottom = app.navigationBars.firstMatch.frame.maxY
+        XCTAssertGreaterThanOrEqual(header.frame.minY, navigationBottom - 2)
+        XCTAssertLessThanOrEqual(header.frame.minY, navigationBottom + 24)
+        let headerTop = header.frame.minY
         menu.tap()
         XCTAssertTrue(app.buttons["guide-section-group"].waitForExistence(timeout: 5))
         app.buttons["guide-section-group"].tap()
         let body = app.staticTexts["测试用讨论内容，不代表教会手册。"]
         XCTAssertTrue(body.waitForExistence(timeout: 5))
         XCTAssertTrue(body.isHittable)
+        guide.swipeUp()
+        XCTAssertEqual(header.frame.minY, headerTop, accuracy: 1)
         XCTAssertEqual(play.label, before)
         XCTAssertEqual(play.value as? String, pausedPosition)
         XCTAssertEqual(listening.frame, rightFrame)

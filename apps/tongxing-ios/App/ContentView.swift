@@ -202,13 +202,20 @@ struct ContentView: View {
                 return GeometryReader { readingGeometry in
                     // Use the reading area after the system bar and player safe-area
                     // insets. A divided/folded region keeps the existing single reader.
+                    #if DEBUG || TONGXING_GUIDE_PREVIEW
                     let guideWidth = isLandscape && !hasDividedRegion && readingGeometry.size.width >= 620
                         ? min(460, max(280, readingGeometry.size.width * 0.45)) : 0
-                    HStack(spacing: 0) {
+                    #else
+                    let guideWidth: CGFloat = 0
+                    #endif
+                    let listeningWidth = readingGeometry.size.width - guideWidth - (guideWidth > 0 ? 1 : 0)
+                    let subtitleCardMinWidth = min(300, max(0, listeningWidth - 40))
+                    HStack(alignment: .top, spacing: 0) {
                         #if DEBUG || TONGXING_GUIDE_PREVIEW
                         if guideWidth > 0 {
                             WeeklyGuidePreview(model: model, playback: playback, embedded: true)
                                 .frame(width: guideWidth)
+                                .frame(maxHeight: .infinity, alignment: .top)
                             Divider()
                         }
                         #endif
@@ -243,7 +250,7 @@ struct ContentView: View {
                                     ForEach(AppModel.ListeningDisplay.allCases, id: \.self) { Text(localization.text($0.rawValue)).tag($0) }
                                 }.pickerStyle(.segmented).accessibilityIdentifier("listening-display")
                                 if model.display == .current {
-                                    currentSubtitle(track)
+                                    currentSubtitle(track, minimumCardWidth: subtitleCardMinWidth)
                                 }
                                 else { transcript(track) }
                                 locateConfirmationView
@@ -312,7 +319,9 @@ struct ContentView: View {
                                     if let saved = playback.resumePosition { resumeCard(saved) }
                                     if shouldShowPlaybackStatusDetail { playbackStatusDetail }
                                 }
-                                if model.usesNativePublishedReader { publishedReading }
+                                if model.usesNativePublishedReader {
+                                    publishedReading(minimumCardWidth: subtitleCardMinWidth)
+                                }
                             }
                             .frame(maxWidth: .infinity, alignment: .leading)
                         } else if model.isLoading {
@@ -396,6 +405,7 @@ struct ContentView: View {
                         }
                     }
                 }
+                .frame(width: listeningWidth)
             }
                     }
                     .onChange(of: guideWidth > 0, initial: true) { _, showsGuide in
@@ -799,7 +809,7 @@ struct ContentView: View {
             .background(Brand.surface, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
     }
 
-    @ViewBuilder private var publishedReading: some View {
+    @ViewBuilder private func publishedReading(minimumCardWidth: CGFloat) -> some View {
         if let notice = model.selectedContentReviewNotice {
             Text(localization.text(notice)).font(.footnote).foregroundStyle(.secondary)
                 .accessibilityIdentifier("content-review-notice")
@@ -830,16 +840,13 @@ struct ContentView: View {
                             .fixedSize(horizontal: false, vertical: true)
                             .accessibilityIdentifier("published-current-english")
                     }
-                }.padding(16).frame(maxWidth: .infinity, alignment: .leading)
+                }.padding(16).frame(minWidth: minimumCardWidth, maxWidth: .infinity, alignment: .leading)
                     .background(Brand.surface, in: RoundedRectangle(cornerRadius: 28))
                     .id("published-current-card")
                 locateConfirmationView
             } else {
                 publishedRows(transcript.captions, prefix: "published-caption")
             }
-            DisclosureGroup(localization.text("完整文稿 · 英文对照")) {
-                publishedRows(transcript.fullText, prefix: "published-full")
-            }.accessibilityIdentifier("published-full-transcript")
             englishLocateEntry
             if model.alignmentAvailable || model.alignmentBusy || model.hasAlignmentFeedback {
                 Text(localization.text(model.alignmentDisplayStatus, ["time": model.alignmentPosition.map(PlaybackTime.format) ?? ""]))
@@ -962,7 +969,7 @@ struct ContentView: View {
         }
     }
 
-    private func currentSubtitle(_ track: SermonTrack) -> some View {
+    private func currentSubtitle(_ track: SermonTrack, minimumCardWidth: CGFloat) -> some View {
         let cue = track.cue(at: playback.position) ?? (playback.position < (track.cues.first?.start ?? 0) ? track.cues.first : nil)
         let next = track.cues.first { $0.start > max(playback.position, cue?.start ?? -1) }
         let compact = typeSize.isAccessibilitySize
@@ -990,7 +997,8 @@ struct ContentView: View {
                     .lineLimit(2).lineSpacing(4)
             }
             Text(localization.text("字幕随中文音频更新")).font(.caption2).foregroundStyle(.secondary)
-        }.padding(compact ? 12 : 20).frame(maxWidth: .infinity, alignment: .leading)
+        }.padding(compact ? 12 : 20)
+            .frame(minWidth: minimumCardWidth, maxWidth: .infinity, alignment: .leading)
             .background(Brand.surface, in: RoundedRectangle(cornerRadius: 28, style: .continuous))
     }
 
