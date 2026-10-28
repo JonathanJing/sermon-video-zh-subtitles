@@ -36,7 +36,7 @@ REQUIRED_PATHS = ("speechJob", "source", "anchor", "candidate", "policy", "adapt
 STAGE_NAME = re.compile(r"[a-z][a-z0-9_]{0,63}")
 STAGE_RESOURCES = ("gpu", "cpu")
 DEFAULT_STAGE_RESOURCE = "gpu"
-REQUIRED_STAGES = ("formal_render", "compact", "screen", "package", "audio_qc")
+REQUIRED_STAGES = ("formal_render", "compact", "package")
 
 
 class StageRefused(ValueError):

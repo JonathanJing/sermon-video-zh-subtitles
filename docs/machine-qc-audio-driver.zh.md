@@ -1,5 +1,7 @@
 # 机器试听豁免驱动（音频 QC 实跑）
 
+> **2026-10-28 退役。** `review/qc_audio_run.py` 已删除；ASR 初筛、二级 ASR 与机器试听豁免不再生成或要求，人工整轨 1× 听审是唯一音频门禁。本文保留为历史设计说明。
+
 `tongxing_production.review.qc_audio_run` 是文字驱动 `tongxing_production.review.qc_text_run` 的音频版本：在已有译文豁免、speech job v3、正式音频包和 v2 ASR 筛查的 Dev 运行上，逐语言跑完机器试听豁免链。规则本身见[机器质检豁免](machine-quality-waiver.zh.md)；本文只说明驱动和传输。
 
 ## 链路

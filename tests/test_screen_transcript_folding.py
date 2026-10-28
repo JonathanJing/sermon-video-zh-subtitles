@@ -312,7 +312,7 @@ def test_current_scoring_hash_covers_every_new_local_dependency(tmp_path):
     receipt = calibration(implementationSha256=original_waiver)
     assert waiver.calibration_problems(receipt, "ko", original_waiver, require_audio=True) == []
     for name in ("scripts/render_formal_target_language_speech.py",
-                 "scripts/machine_qc_audio_transports.py", "scripts/run_machine_qc_audio_test.py",
+                 "scripts/machine_qc_audio_transports.py",
                  "scripts/sermon_sentence_interpretation.py"):
         assert name in waiver.IMPLEMENTATION_FILES
         path = tmp_path / compatibility.resolve(name)
