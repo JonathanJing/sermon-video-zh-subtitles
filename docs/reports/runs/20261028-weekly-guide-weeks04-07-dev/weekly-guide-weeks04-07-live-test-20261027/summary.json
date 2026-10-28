@@ -1,0 +1,16 @@
+{
+  "status": "dev_deployed_and_readback_passed",
+  "scope": "Korean and Spanish weeks 3–7",
+  "remote": "manifest and 10 resources exact bytes and SHA matched",
+  "simulator": {
+    "runtime": "iOS 27.1",
+    "real_week_six_korean_v5_per_target_passed": 1,
+    "failed": 0,
+    "skipped": 0
+  },
+  "limitations": [
+    "No production deployment or TestFlight in this run.",
+    "No human translation approval.",
+    "No real device or full end-to-end reading acceptance."
+  ]
+}
