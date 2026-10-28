@@ -1,0 +1,27 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261028-weekly-guide-cloud-candidate",
+  "runs": [
+    {
+      "label": "weekly-guide-cloud-run-summary",
+      "source": "~/.codex/worktrees/weekly-study-guide-design/sermon-video-zh-subtitles/artifacts/tongxing-ios/weekly-guide-cloud-run-summary",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "weekly-guide-cloud-run-summary",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 1222,
+      "truncated": false,
+      "sha256": "5b91e2e0a209466f310cf69b22344ac5acc7309b0050a4e021552727d39ab6ec",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}
