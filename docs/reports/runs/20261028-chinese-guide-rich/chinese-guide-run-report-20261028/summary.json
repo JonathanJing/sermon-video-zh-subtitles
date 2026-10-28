@@ -1,0 +1,22 @@
+{
+  "type": "targeted test and source audit",
+  "scope": "Chinese weekly guide rich presentation",
+  "python": {
+    "passed": 62,
+    "failed": 0
+  },
+  "iosSimulator": {
+    "platform": "iOS 27.1",
+    "unitTests": 25,
+    "uiTests": 4,
+    "result": "passed, 29 total, 0 failed or skipped"
+  },
+  "sourceAudit": "checked original page relationships and authorized illustrations; full guide text and source images omitted",
+  "earlierTestFailure": "image test initially failed due to accessibility element selection and playback match; fixed and rerun passed",
+  "week9": "actual local unbound guide decoded using app types and checked against approved correction hashes",
+  "futureWeeks": "8–12 prepared locally, sermon identities unbound",
+  "deployment": "not run",
+  "testFlight": "not run",
+  "realDeviceAccessibilityAndDarkMode": "not run",
+  "visual": "after screenshot confirms duplicate heading suppressed; no comparable real-content baseline"
+}
