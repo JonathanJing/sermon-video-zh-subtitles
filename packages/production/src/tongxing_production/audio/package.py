@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 """Build a fail-closed Layer 3 package from measured, hash-bound render evidence.
 
-The renderer and ASR are separate producers. This command never synthesizes,
-alters approved text, schedules speech, or grants human listening approval.
+The renderer is the producer. ASR screening and the machine listening waiver were
+retired on 2026-10-28, so a package records ``machineScreening.status = not_run``;
+this command never synthesizes, alters approved text, schedules speech, or grants
+human listening approval.
 All paths in the render manifest are relative to its artifact root.
 """
 from __future__ import annotations

@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-"""Queue every TTS and ASR step of several locales as registered jobs in one Spark exclusive session.
+"""Queue every TTS step of several locales as registered jobs in one Spark exclusive session.
 
 The session accepts one running job at a time, so locales run one after another: for each
---locale, one TTS job per --voice, then one ASR job. Each job goes through spark_session_job.py.
+--locale, one TTS job per --voice. Each job goes through spark_session_job.py.
 The queue stops at the first failed job and prints the command to resume it; spark_run.sh skips
-finished sentences and ASR rows, so rerunning the queue only redoes what is missing. Run it as a
+finished sentences, so rerunning the queue only redoes what is missing. Run it as a
 background task on the Mac and run finish_run.py for each locale as its "locale done" line appears.
 
   spark_queue.py --session sfa-<run> --owner sentence-first-agent \\
@@ -39,7 +39,6 @@ def main() -> int:
     parser.add_argument("--voice", action="append", required=True, metavar="SPEAKER_KEY=CHECKPOINT_DIR")
     parser.add_argument("--batch-size", type=int, default=1, help="sentences per TTS model call (batch>1 changes sound identity)")
     parser.add_argument("--pool-replicas", type=int, default=0, help="one two-speaker TTS pool per locale with this many model replicas (0 = one job per speaker)")
-    parser.add_argument("--skip-asr", action="store_true")
     args = parser.parse_args()
     base = [sys.executable, str(JOB), "--session", args.session, "--owner", args.owner, "--remote-tools", args.remote_tools]
     print(f"start {now()}", flush=True)
@@ -56,8 +55,6 @@ def main() -> int:
             steps = [(f"sentence-tts-{key}-{locale}", ["--steps", "tts", "--speaker", key, "--checkpoint", checkpoint,
                                                        "--batch-size", str(args.batch_size)])
                      for key, checkpoint in voices]
-        if not args.skip_asr:
-            steps.append((f"sentence-asr-{locale}", ["--steps", "asr"]))
         for purpose, step in steps:
             command = [*base, "--purpose", purpose, "--", "--work", work, "--locale", locale, *step]
             print(f"job {purpose} {now()}", flush=True)

@@ -60,15 +60,14 @@ class AudioInspectionTests(unittest.TestCase):
                 for p in self.root.rglob('*') if p.is_file()}
 
     def approve_fixture(self):
-        worksheet = review.prepare(self.package, self.fixture.screening)
+        worksheet = review.prepare(self.package)
         worksheet.update(decision='approved', reviewedBy='Synthetic test reviewer',
                          reviewedAt='2026-09-30T00:00:00Z', fullPlayback='approved',
                          videoSync1x='approved', checks={name: 'approved' for name in review.CHECKS})
-        package, receipt = review.approve(self.package, self.fixture.screening, worksheet)
+        package, receipt = review.approve(self.package, worksheet)
         fixtures.write_json(self.root / 'audio.json', package)
         fixtures.write_json(self.root / 'review.json', receipt)
-        fixtures.write_json(self.root / 'screening.json', self.fixture.screening)
-        self.config.update(humanReview='review.json', screening='screening.json')
+        self.config.update(humanReview='review.json')
         return package, receipt
 
     def test_actual_audio_and_voice_validation_is_read_only_without_human_promotion(self):
@@ -115,13 +114,8 @@ class AudioInspectionTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             self.inspect()
 
-    def test_voice_authorization_and_screening_drift_cannot_pass(self):
+    def test_voice_authorization_drift_cannot_pass(self):
         self.approve_fixture()
-        changed = copy.deepcopy(self.fixture.screening)
-        changed['trackSha256'] = '0' * 64
-        fixtures.write_json(self.root / 'screening.json', changed)
-        with self.assertRaises(ValueError): self.inspect()
-        fixtures.write_json(self.root / 'screening.json', self.fixture.screening)
         auth = self.fixture.paths['clip_voice_authorization']
         changed = json.loads(auth.read_text())
         changed['englishSourcePackageJsonSha256'] = '0' * 64
@@ -134,25 +128,6 @@ class AudioInspectionTests(unittest.TestCase):
         fixtures.write_json(self.root / 'audio.json', self.package)
         (self.fixture.asset_root / 'redirect').symlink_to(self.root / 'audio.json')
         with self.assertRaisesRegex(ValueError, 'Symlink'): self.inspect()
-
-    def test_audio_waiver_must_bind_the_text_receipt_this_lane_releases(self):
-        from unittest import mock
-        text_receipt = json.loads(self.upstream['human_receipt'].read_text())
-        waiver = {'reviewKind': 'machine_quality_waiver',
-                  'englishSourcePackageJsonSha256': fixtures.subject.json_sha256(
-                      json.loads(self.upstream['source'].read_text())),
-                  'targetLanguageCandidateJsonSha256': fixtures.subject.json_sha256(
-                      json.loads(self.upstream['candidate'].read_text())),
-                  'textWaiverJsonSha256': fixtures.subject.json_sha256(text_receipt)}
-        fixtures.write_json(self.root / 'screening.json', self.fixture.screening)
-        self.config.update(machineWaiver='waiver.json', screening='screening.json')
-        # Only the chain binding is under test; the waiver's own screening checks are covered elsewhere.
-        with mock.patch.object(subject.stage, 'validate_audio_screening_review'):
-            fixtures.write_json(self.root / 'waiver.json', waiver)
-            self.assertEqual(self.inspect()['listeningReviewKind'], 'machine_quality_waiver')
-            fixtures.write_json(self.root / 'waiver.json', {**waiver, 'textWaiverJsonSha256': '0' * 64})
-            with self.assertRaisesRegex(ValueError, 'audio_waiver_not_bound'):
-                self.inspect()
 
     def test_configuration_rejects_dispatch_and_overridden_upstream(self):
         for key in ('source', 'candidate', 'command', 'approve'):

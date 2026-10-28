@@ -393,16 +393,15 @@ class PortableMediaTests(unittest.TestCase):
 
     def test_real_package_builder_and_review_producer_relocate(self):
         from tests.test_build_target_language_audio_package import AudioPackageTests
-        fixture = AudioPackageTests("test_builds_machine_screened_package_but_never_human_approved")
+        fixture = AudioPackageTests("test_builds_candidate_package_but_never_human_approved")
         fixture.setUp()
         self.addCleanup(fixture.doCleanups)
         package = fixture.build()
-        screening = json.loads((fixture.asset_root / fixture.manifest["machineScreeningReceipt"]["path"]).read_text())
-        worksheet = review.prepare(package, screening)
+        worksheet = review.prepare(package)
         worksheet.update(decision="approved", reviewedBy="synthetic-reviewer",
                          reviewedAt="2026-10-01T12:00:00Z", fullPlayback="approved",
                          videoSync1x="approved", checks={key: "approved" for key in review.CHECKS})
-        package, approval = review.approve(package, screening, worksheet)
+        package, approval = review.approve(package, worksheet)
         write_json(self.package_path, package)
         write_json(self.approval_path, approval)
         archive_root = fixture.asset_root.resolve()

@@ -108,7 +108,8 @@ def inspect(root, config, upstream_paths, read_package, hashes, locale):
         }
         if (human['status'] != 'approved' or human['humanApproval'] is not True
                 or human['fullPlayback'] != 'approved' or package['issues']
-                or package['machineScreening']['status'] not in {'pass', 'requires_review'}
+                or (version != 'sermon-target-language-audio-human-review-receipt-v5'
+                    and package['machineScreening']['status'] not in {'pass', 'requires_review'})
                 or any(receipt.get(key) != value for key, value in expected.items())):
             raise ValueError('audio_review_not_bound')
         result['listeningReviewSha256'] = hashes[prefix + 'humanReview']
