@@ -6,7 +6,7 @@
 # stopped run resumes where it left off. Run it in the foreground over SSH (wrap the SSH call
 # in a background task if you want to wait); `nohup ... &` over SSH hangs the session.
 #
-#   bash spark_run.sh --work DIR --locale zh-Hans|ko|es --checkpoint HOST_DIR [--steps tts,asr]
+#   bash spark_run.sh --work DIR --locale zh-Hans|ko|es --checkpoint HOST_DIR [--steps tts]
 #                     [--speaker KEY] [--seed 7] [--dry-run]
 #
 # Two-speaker runs: call once per speaker with --steps tts --speaker KEY --checkpoint <that
@@ -35,7 +35,7 @@ MEM_PER_REPLICA_GIB=${MEM_PER_REPLICA_GIB:-9}
 MEM_ASR_GIB=${MEM_ASR_GIB:-6}
 TOOLS=$(cd "$(dirname "$0")" && pwd)
 
-WORK="" LOCALE="" CHECKPOINT="" STEPS="tts,asr" SEED=7 DRY=0 SPEAKER="" BATCH=1 IDS="" REPLICAS=8
+WORK="" LOCALE="" CHECKPOINT="" STEPS="tts" SEED=7 DRY=0 SPEAKER="" BATCH=1 IDS="" REPLICAS=8
 VOICES=()
 SESSION_LABEL="" OWNER_LABEL="" JOB_LABEL="" CID_PREFIX=""
 while [ $# -gt 0 ]; do

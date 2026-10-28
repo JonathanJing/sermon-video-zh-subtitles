@@ -45,7 +45,7 @@ class FormalRenderTests(unittest.TestCase):
                 [first], 10, 1, 1.0)
 
     def setUp(self):
-        fixture = fixture_module.AudioPackageTests("test_builds_machine_screened_package_but_never_human_approved")
+        fixture = fixture_module.AudioPackageTests("test_builds_candidate_package_but_never_human_approved")
         fixture.setUp()
         self.addCleanup(fixture.doCleanups)
         self.fixture = fixture

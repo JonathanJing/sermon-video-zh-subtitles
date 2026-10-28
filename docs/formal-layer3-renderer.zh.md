@@ -119,7 +119,7 @@ docker run --rm --gpus all --ipc=host --read-only --network none \
   --spark-production
 ```
 
-中文已有全局人审能力时可省略 `--clip-voice-capability`。以上命令是路径模板；2026-09-23 的真实结果见 [Layer 2/3 backlog](multilingual-layer-2-3-backlog.zh.md)。`tools/ops/run.py audio.package` 以 renderer 的 manifest 构建最高为 `candidate` 的 Layer 3 包。三语均有完整 Qwen3-ASR 筛查收据，机器结果仍为 `requires_review`。`tools/ops/run.py audio.human_review prepare` 从候选包和同一整轨／单元 hash 的筛查收据生成待审工作表；只在真人完成全文 1 倍速播放、视频同步及每个 ASR 疑点的显式裁决后，`approve` 才能产出 `human_reviewed` 包与 v2 人审收据。Dev staging 继续核对该收据及原机器筛查，不把机器状态改写为通过。
+中文已有全局人审能力时可省略 `--clip-voice-capability`。以上命令是路径模板；2026-09-23 的真实结果见 [Layer 2/3 backlog](multilingual-layer-2-3-backlog.zh.md)。`tools/ops/run.py audio.package` 以 renderer 的 manifest 构建最高为 `candidate` 的 Layer 3 包。**2026-10-28 起，ASR 初筛、二级 ASR 与机器试听豁免已移除**：包内 `machineScreening.status` 固定为 `not_run`，不再读取筛查收据；`tools/ops/run.py audio.human_review prepare` 只要求候选包，`approve` 在真人完成整轨 1 倍速播放、视频同步与全部检查后产出 `human_reviewed` 包和 `audio-human-review-receipt-v5`。确定性音频 QC 保留为预检，不再是发布依据。下文涉及筛查、ASR 疑点和 v2 人审收据的段落是历史说明，旧运行继续按其冻结身份读取。
 
 韩文引用的 ASR 初筛以 scoring v5 按书名锚定的完整引用链折叠汉字词数字，含单 counter 范围首端、连写章/节及 Psalm `편`；普通词内不放宽。旧 v4/v3 收据按原评分语义重评分，不自动升级。新实现改变初筛身份，旧 #361/#363 的真实音频 QC 不验证此 v5；新规则的真实模型/音频/校准尚未重跑。新 job 的口播规则为 v3，normalization 策略本身仍为 v2，policy hash 随登记规则变更；旧规则 v2 的冻结 hash 保留独立分派，不静默改写；ASR runtime scoring 和实现 hash 与口播 policy hash 分别绑定。
 

@@ -336,7 +336,8 @@ def preflight(args: argparse.Namespace) -> tuple[dict, dict[str, tuple[Path, str
                 "sermon-target-language-audio-human-review-receipt-v1",
                 "sermon-target-language-audio-human-review-receipt-v2",
                 "sermon-target-language-audio-human-review-receipt-v3",
-                "sermon-target-language-audio-human-review-receipt-v4"}:
+                "sermon-target-language-audio-human-review-receipt-v4",
+                "sermon-target-language-audio-human-review-receipt-v5"}:
             raise StageError(f"{locale}: unsupported audio human review receipt version")
         audio_receipt = read_package(
             audio_review_paths[locale], f"{audio_receipt_version}.schema.json")

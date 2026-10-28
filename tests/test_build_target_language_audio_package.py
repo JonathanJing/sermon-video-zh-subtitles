@@ -84,6 +84,7 @@ class AudioPackageTests(unittest.TestCase):
         self.candidate["translationPolicySha256"] = base_tests.policy_tools.validate_policy(
             fixture.policy)["translationPolicySha256"]
         self.human_receipt = fixture.human_review_receipt
+        self.human_receipt_path = fixture.human_review_receipt_path
         self.human_receipt["englishSourcePackageJsonSha256"] = subject.json_sha256(self.source)
         self.human_receipt["anchorManifestJsonSha256"] = subject.json_sha256(self.anchor)
         self.human_receipt["translationPolicySha256"] = self.candidate["translationPolicySha256"]
@@ -212,7 +213,7 @@ class AudioPackageTests(unittest.TestCase):
             "targetLanguageSpeechJobJsonSha256": subject.json_sha256(self.job),
             "clipTimelineMapJsonSha256": subject.json_sha256(self.clip_timeline),
             "voice": self.voice, "units": [], "machineScreening": {
-                "status": "pass", "model": "fixture-asr", "coverage": 1.0},
+                "status": "not_run", "model": None, "coverage": 0.0},
         }
         self.manifest["voiceAuthorization"] = self.artifact(authorization_rel, json_artifact=True)
         for index, unit in enumerate(self.job["units"]):
@@ -256,26 +257,6 @@ class AudioPackageTests(unittest.TestCase):
         ]}
         write_json(self.asset_root / captions_rel, self.captions)
         self.manifest["captions"] = self.artifact(captions_rel)
-        screening_rel = "review/machine-screening.json"
-        self.screening = {
-            "schemaVersion": "sermon-target-language-audio-screening-v1",
-            "targetLocale": "ko", "targetLanguageSpeechJobJsonSha256": subject.json_sha256(self.job),
-            "trackSha256": self.manifest["track"]["sha256"],
-            "status": "pass", "model": "fixture-asr", "modelRevision": "fixture-v1",
-            "minSimilarity": 0.88, "coverage": 1.0,
-            "reviewedGroupIds": ["g1", "g2"],
-            "unitAudioSha256s": [row["audio"]["sha256"] for row in self.manifest["units"]],
-            "results": [{
-                "textGroupId": unit["translationGroupId"],
-                "targetTextSha256": hashlib.sha256(unit["text"].encode()).hexdigest(),
-                "audioSha256": self.manifest["units"][index]["audio"]["sha256"],
-                "recognized": unit["text"], "similarity": 1.0,
-                "differences": [], "status": "pass",
-            } for index, unit in enumerate(self.job["units"])],
-            "humanListeningStatus": "pending",
-        }
-        write_json(self.asset_root / screening_rel, self.screening)
-        self.manifest["machineScreeningReceipt"] = self.artifact(screening_rel, json_artifact=True)
         self.manifest_path = self.root / "render-manifest.json"
         write_json(self.manifest_path, self.manifest)
 
@@ -308,7 +289,7 @@ class AudioPackageTests(unittest.TestCase):
         write_json(self.manifest_path, self.manifest)
         return subject.build_package(self.paths, self.manifest_path, self.asset_root)
 
-    def test_builds_machine_screened_package_but_never_human_approved(self):
+    def test_builds_candidate_package_but_never_human_approved(self):
         package = self.build()
         checked_in_registry = json.loads(
             (Path(__file__).parents[1] / "config/speaker-voice-registry.json").read_text(encoding="utf-8"))
@@ -325,8 +306,9 @@ class AudioPackageTests(unittest.TestCase):
         ko_status = next(row["status"] for row in self.registry["speakers"][0]["localeCapabilities"]
                          if row["targetLocale"] == "ko")
         self.assertEqual(ko_status, "unverified_poc")
-        self.assertEqual(package["status"], "machine_screened")
+        self.assertEqual(package["status"], "candidate")
         self.assertFalse(package["humanReview"]["humanApproval"])
+        self.assertEqual(package["machineScreening"], {"status": "not_run", "model": None, "coverage": 0.0})
         self.assertEqual([unit["textGroupId"] for unit in package["units"]], ["g1", "g2"])
         self.assertEqual(len(package["downstreamInvalidationKey"]), 64)
 
@@ -425,7 +407,7 @@ class AudioPackageTests(unittest.TestCase):
         with mock.patch.object(subject, "validate_job"), mock.patch.object(
                 subject.unit_integrity, "validate_receipt"):
             package = self.build()
-        self.assertEqual(package["status"], "machine_screened")
+        self.assertEqual(package["status"], "candidate")
         self.assertFalse(package["humanReview"]["humanApproval"])
         attestation["sourceId"] = "drive:another-file"
         write_json(attestation_path, attestation)
@@ -453,6 +435,9 @@ class AudioPackageTests(unittest.TestCase):
         write_json(self.paths["source"], self.source)
         self.candidate["englishSourcePackageJsonSha256"] = subject.json_sha256(self.source)
         write_json(self.paths["candidate"], self.candidate)
+        self.human_receipt["englishSourcePackageJsonSha256"] = subject.json_sha256(self.source)
+        self.human_receipt["candidateJsonSha256"] = subject.json_sha256(self.candidate)
+        write_json(self.human_receipt_path, self.human_receipt)
         with self.assertRaisesRegex(ValueError, "human gates"):
             subject.validate_job(self.source, self.anchor, self.candidate,
                                  self.job, self.adapter, self.policy,
@@ -655,103 +640,10 @@ class AudioPackageTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "another locale"):
             self.build()
 
-    def test_screening_receipt_change_changes_package_invalidation_key(self):
-        first = self.build()
-        rel = self.manifest["machineScreeningReceipt"]["path"]
-        self.screening["modelRevision"] = "fixture-v2"
-        write_json(self.asset_root / rel, self.screening)
-        self.manifest["machineScreeningReceipt"] = self.artifact(rel, json_artifact=True)
-        second = self.build()
-        self.assertNotEqual(first["packageId"], second["packageId"])
-        self.assertNotEqual(first["downstreamInvalidationKey"], second["downstreamInvalidationKey"])
-
-    def test_machine_screening_cannot_claim_another_audio_set(self):
-        self.screening["unitAudioSha256s"][0] = "9" * 64
-        rel = self.manifest["machineScreeningReceipt"]["path"]
-        write_json(self.asset_root / rel, self.screening)
-        self.manifest["machineScreeningReceipt"] = self.artifact(rel, json_artifact=True)
-        with self.assertRaisesRegex(ValueError, "exact audio set"):
-            self.build()
-
-    def write_screening(self):
-        rel = self.manifest["machineScreeningReceipt"]["path"]
-        write_json(self.asset_root / rel, self.screening)
-        self.manifest["machineScreeningReceipt"] = self.artifact(rel, json_artifact=True)
-
-    def use_v2_screening(self):
-        settings = {"protocol": "formal-back-asr-batch-v1", "model": self.screening["model"],
-                    "modelRevision": self.screening["modelRevision"], "language": "ko", "batchSize": 1,
-                    "minSimilarity": self.screening["minSimilarity"], "scoring": subject.audio_screen.SCORING,
-                    "implementationSha256": subject.audio_screen.implementation_sha256(),
-                    "runtime": {"backend": "fixture-asr"}}
-        self.screening.update(schemaVersion="sermon-target-language-audio-screening-v2",
-                              asrSettings=settings, asrSettingsSha256=subject.json_sha256(settings))
-        self.write_screening()
-
-    def test_screening_results_are_rescored_under_the_receipts_own_scoring(self):
-        with mock.patch.object(subject.audio_screen, "score", side_effect=AssertionError("v1 is not v3")):
-            self.assertEqual(self.build()["status"], "machine_screened")
-        self.use_v2_screening()
-        original, seen = subject.audio_screen.score, []
-        def spy(*args, **kwargs):
-            seen.append(kwargs.get("scoring"))
-            return original(*args, **kwargs)
-        with mock.patch.object(subject.audio_screen, "score", side_effect=spy):
-            self.assertEqual(self.build()["status"], "machine_screened")
-        self.assertEqual(set(seen), {subject.audio_screen.SCORING})
-
-    def test_v2_rejects_settings_digest_or_current_closure_before_scoring(self):
-        self.use_v2_screening()
-        pristine = copy.deepcopy(self.screening)
-        for mutation in ("digest", "closure", "scoring"):
-            self.screening = copy.deepcopy(pristine)
-            if mutation == "digest":
-                self.screening["asrSettingsSha256"] = "0" * 64
-            elif mutation == "scoring":
-                self.screening["asrSettings"]["scoring"] = subject.audio_screen.SCORING_V3
-            else:
-                self.screening["asrSettings"]["implementationSha256"] = "0" * 64
-                self.screening["asrSettingsSha256"] = subject.json_sha256(self.screening["asrSettings"])
-            self.write_screening()
-            with mock.patch.object(subject.audio_screen, "score") as score:
-                with self.assertRaisesRegex(ValueError, "runtime settings disagree|dependency closure"):
-                    self.build()
-                score.assert_not_called()
-        self.screening = pristine
-        self.write_screening()
-        self.assertEqual(self.build()["status"], "machine_screened")
-
-    def test_legacy_v1_ratio_pass_is_not_upgraded_to_protected_text_checks(self):
-        result = self.screening["results"][0]
-        text = self.job["units"][0]["text"]
-        recognized = text + " 2"
-        similarity, differences, passed = subject.legacy_v1_screening_score(text, recognized, "ko", .88)
-        self.assertTrue(passed)
-        self.assertFalse(subject.audio_screen.score(text, recognized, "ko", .88, subject.audio_screen.SCORING_V3)[2])
-        result.update(recognized=recognized, similarity=similarity, differences=differences)
-        self.write_screening()
-        self.assertEqual(self.build()["status"], "machine_screened")
-
     def test_legacy_v1_still_requires_threshold_and_short_exactness(self):
         for expected, recognized, threshold in [("하나", "하나 둘", .5), ("one two three", "one two four", .5),
                                                  ("we read this long passage", "completely different words", .88)]:
             self.assertFalse(subject.legacy_v1_screening_score(expected, recognized, "ko" if expected == "하나" else "en", threshold)[2])
-
-    def test_a_recorded_similarity_must_match_the_rescoring(self):
-        self.screening["results"][0]["similarity"] = 0.99
-        self.write_screening()
-        with self.assertRaisesRegex(ValueError, "incomplete or below threshold: 0"):
-            self.build()
-
-    def test_machine_screening_cannot_claim_another_delivered_track(self):
-        rel = self.manifest["track"]["path"]
-        path = self.asset_root / rel
-        changed = bytearray(path.read_bytes())
-        changed[-2:] = b"\x01\x00"
-        path.write_bytes(changed)
-        self.manifest["track"] = self.artifact(rel)
-        with self.assertRaisesRegex(ValueError, "exact audio set"):
-            self.build()
 
     def test_full_pcm_wav_decode_without_ffmpeg_tools(self):
         path = self.asset_root / self.manifest["track"]["path"]

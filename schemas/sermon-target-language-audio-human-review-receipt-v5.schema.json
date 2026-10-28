@@ -1,0 +1,44 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.invalid/schemas/sermon-target-language-audio-human-review-receipt-v5.schema.json",
+  "title": "Full-track human listening review; no machine listening evidence",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "targetLocale", "englishSourcePackageJsonSha256", "targetLanguageCandidateJsonSha256", "targetLanguageAudioPackageJsonSha256", "trackSha256", "decision", "reviewedBy", "reviewedAt", "fullPlayback", "videoSync1x", "reviewedUnitIds", "checks", "issues"],
+  "properties": {
+    "schemaVersion": { "const": "sermon-target-language-audio-human-review-receipt-v5" },
+    "targetLocale": { "type": "string", "minLength": 2 },
+    "englishSourcePackageJsonSha256": { "$ref": "#/$defs/sha256" },
+    "targetLanguageCandidateJsonSha256": { "$ref": "#/$defs/sha256" },
+    "targetLanguageAudioPackageJsonSha256": { "$ref": "#/$defs/sha256" },
+    "trackSha256": { "$ref": "#/$defs/sha256" },
+    "decision": { "const": "approved" },
+    "reviewedBy": { "type": "string", "minLength": 1 },
+    "reviewedAt": { "type": "string", "format": "date-time" },
+    "fullPlayback": { "const": "approved" },
+    "videoSync1x": { "enum": ["approved", "not_run"] },
+    "reviewedUnitIds": { "type": "array", "minItems": 1, "uniqueItems": true,
+      "items": { "type": "string", "minLength": 1 } },
+    "checks": { "type": "object", "additionalProperties": false,
+      "required": ["pronunciation", "naturalness", "completeness", "scripture", "voiceIdentity", "synchronization"],
+      "properties": {
+        "pronunciation": { "const": "approved" },
+        "naturalness": { "const": "approved" },
+        "completeness": { "const": "approved" },
+        "scripture": { "const": "approved" },
+        "voiceIdentity": { "const": "approved" },
+        "synchronization": { "enum": ["approved", "not_run"] }
+      }
+    },
+    "publicationException": { "type": "object", "required": ["schemaVersion", "scope", "humanApproval", "userDecision"],
+      "properties": {
+        "schemaVersion": { "enum": ["sermon-video-sync-publication-exception-v1", "sermon-video-sync-publication-exception-v2"] },
+        "scope": { "type": "string", "minLength": 1 },
+        "humanApproval": { "const": true },
+        "userDecision": { "type": "string", "minLength": 1 }
+      }
+    },
+    "issues": { "type": "array", "maxItems": 0 }
+  },
+  "$defs": { "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" } }
+}

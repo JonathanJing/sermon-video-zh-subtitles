@@ -47,19 +47,16 @@ def prepared(tmp_path, request):
         subprocess.run(['ffmpeg','-nostdin','-v','error','-f','lavfi','-i',f'sine=frequency=440:duration={getattr(request, "param", 10)}','-y',str(track)],check=True)
         captions={'cues':[{'textGroupId':g['translationGroupId'],'start':i*5,'end':(i+1)*5,'text':g['targetText']} for i,g in enumerate(candidate['groups'])]}
         cap_path=save(tmp_path,'captions.json',captions)
-        package, screening=audio_fixtures.fixture()
+        package=audio_fixtures.fixture()
         package.update(targetLocale=locale,englishSourcePackageJsonSha256=d.sha(source),targetLanguageCandidateJsonSha256=d.sha(candidate),
-            track=binding(track),captions=binding(cap_path),machineScreening={'status':'pass','model':'Qwen3-ASR','coverage':1.0})
+            track=binding(track),captions=binding(cap_path),machineScreening={'status':'not_run','model':None,'coverage':0.0})
         unit_path=tmp_path/'unit.wav';unit_path.write_bytes(b'synthetic-unit')
         package['units']=[{'textGroupId':g['translationGroupId'],'targetTextSha256':hashlib.sha256(g['targetText'].encode()).hexdigest(),
             'audio':binding(unit_path),'durationSeconds':5.0} for g in candidate['groups']]
         schedule=save(tmp_path,'schedule.json',{'synthetic':True});package['schedule']={**binding(schedule),'jsonSha256':d.sha({'synthetic':True})}
-        screening.update(targetLocale=locale,trackSha256=builder.digest(track),status='pass',reviewedGroupIds=[u['textGroupId'] for u in package['units']],
-            unitAudioSha256s=[u['audio']['sha256'] for u in package['units']],results=[{'textGroupId':u['textGroupId'],'targetTextSha256':u['targetTextSha256'],
-                'audioSha256':u['audio']['sha256'],'recognized':'synthetic','similarity':1.0,'differences':[],'status':'pass'} for u in package['units']])
-        worksheet=audio_review.prepare(package,screening)
+        worksheet=audio_review.prepare(package)
         worksheet.update(decision='approved',reviewedBy='synthetic reviewer',reviewedAt='2026-10-04T20:00:00Z',fullPlayback='approved',videoSync1x='approved',checks={name:'approved' for name in audio_review.CHECKS})
-        audio, audio_receipt=audio_review.approve(package,screening,worksheet)
+        audio, audio_receipt=audio_review.approve(package,worksheet)
         proposal=tmp_path/'proposal.md';proposal.write_text('Synthetic approved metadata')
         fields={'series':'Synthetic series','title':'Synthetic title','speaker':'Synthetic speaker','scripture':'John 3:16','summary':'Synthetic summary','outline':['Legacy metadata outline must not substitute approved outline']}
         proposal.write_text(' '.join(str(v) for v in fields.values()))
@@ -70,7 +67,7 @@ def prepared(tmp_path, request):
             'durationSeconds':source['source']['approvedWindow']['endSeconds']-source['source']['approvedWindow']['startSeconds'],'sourceVideoUrl':f'/pages/{page}/full-video-browser.mp4',**fields,
             'cues':[{**cue,'sourceUnitIds':g['sourceUnitIds']} for cue,g in zip(captions['cues'],candidate['groups'])]}
         documents={'source':source,'metadata_approval':metadata,'full_candidate':candidate,'spoken_candidate':candidate,'full_review_receipt':human,'spoken_review_receipt':human,
-            'audio_package':audio,'audio_review_receipt':audio_receipt,'audio_screening_receipt':screening,'full_content':content}
+            'audio_package':audio,'audio_review_receipt':audio_receipt,'full_content':content}
         for kind in ('outline','meditation'):
             artifact=study_artifacts.produce(kind,[{'title':kind+' <full>','body':"First complete sentence.\nSecond complete sentence & last words.\nJesus' 말씀 / esperanza.",'sourceUnitIds':candidate['groups'][0]['sourceUnitIds']}],page_id=page,locale=locale,source_sha=d.sha(source),text_sha=d.sha(candidate),producer_identity='synthetic-v1')
             review={'schemaVersion':'sermon-study-review-v1',**{k:artifact[k] for k in ('kind','pageId','locale','sourcePackageSha256','textCandidateSha256')},
