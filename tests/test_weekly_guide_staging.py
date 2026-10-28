@@ -59,6 +59,89 @@ def test_verified_explicit_binding_produces_content_hashed_manifest(context,tmp_
     assert json.loads(raw)['id']=='sermon-8' and entry['locale']=='zh-Hans'
 
 
+def test_rich_binding_verifies_v1_input_and_hashes_new_compatible_payload(context,tmp_path):
+    staging,snapshot,expected,*_=context
+    raw=expected[8];original=json.loads(raw)
+    section=next(s for s in original['sections'] if s['id']=='page-1')
+    revision={'correctionsSHA256':'f'*64,'entries':{1:{'week':8,
+        'expectedOriginalBodySHA256':m.digest(section['body'].encode()),
+        'correctedFallbackBody':'Corrected synthetic content',
+        'blocks':[{'type':'paragraph','text':'Corrected synthetic content'}]}}}
+    operations=m.verified_bindings(staging,snapshot,[{'week':8,'pageID':'sermon-8'}],expected,
+        {'14:1':'Synthetic verse one','14:2':'Synthetic verse two'},rich_revision=revision)
+    manifest=m.write_published(operations,tmp_path/'rich',[],{})
+    entry=manifest['entries'][0];payload=(tmp_path/'rich/published'/f"{entry['sha256']}.json").read_bytes()
+    guide=json.loads(payload);section=next(s for s in guide['sections'] if s['id']=='page-1')
+    assert section['body']=='Corrected synthetic content' and section['blocks'][0]['text']==section['body']
+    assert entry['richRevisionSHA256']==guide['richRevisionSHA256']=='f'*64
+    assert m.digest(payload)==entry['sha256'] and (staging/'week-08.json').read_bytes()==raw
+    bad=dict(revision,entries={1:{**revision['entries'][1], 'expectedOriginalBodySHA256':'0'*64}})
+    with pytest.raises(ValueError,match='original guide body'):
+        m.verified_bindings(staging,snapshot,[{'week':8,'pageID':'sermon-8'}],expected,
+            {'14:1':'Synthetic verse one','14:2':'Synthetic verse two'},rich_revision=bad)
+
+
+def test_rich_comparison_binding_preserves_source_body(context,tmp_path):
+    staging,snapshot,expected,*_=context
+    original=json.loads(expected[8]); section=next(s for s in original['sections'] if s['id']=='page-1')
+    blocks=[{'type':'table','title':'','columns':['Left','Right'],'rows':[['left quotation','right quotation']]}]
+    revision={'correctionsSHA256':'e'*64,'entries':{1:{'week':8,
+        'expectedOriginalBodySHA256':m.digest(section['body'].encode()),'blocks':blocks}}}
+    operations=m.verified_bindings(staging,snapshot,[{'week':8,'pageID':'sermon-8'}],expected,
+        {'14:1':'Synthetic verse one','14:2':'Synthetic verse two'},rich_revision=revision)
+    manifest=m.write_published(operations,tmp_path/'comparison',[],{})
+    entry=manifest['entries'][0]; guide=json.loads((tmp_path/'comparison/published'/f"{entry['sha256']}.json").read_bytes())
+    actual=next(s for s in guide['sections'] if s['id']=='page-1')
+    assert actual['body']==section['body'] and actual['blocks']==blocks
+
+
+def test_affected_week_rejects_default_add_and_update_but_allows_revoke(context, tmp_path):
+    _,snapshot,_,*_=context
+    guide=example_guide();guide['week']=9
+    stage=tmp_path/'week9-stage';m.write_stage([guide],stage)
+    expected={9:(stage/'week-09.json').read_bytes()}
+    verses={'14:1':'Synthetic verse one','14:2':'Synthetic verse two'}
+    for binding in ({'week':9,'pageID':'sermon-8'},
+                    {'week':9,'pageID':'sermon-8','operation':'update','expectedEntrySha256':'a'*64,'reason':'fix'}):
+        with pytest.raises(ValueError,match='requires verified --rich'):
+            m.verified_bindings(stage,snapshot,[binding],expected,verses)
+    revoke={'week':9,'pageID':'sermon-8','operation':'revoke','expectedEntrySha256':'a'*64,'reason':'unsafe'}
+    assert m.verified_bindings(stage,snapshot,[revoke],expected,verses)[0]['operation']=='revoke'
+
+
+def test_affected_week_requires_corrected_body_and_keeps_legacy_fallback(context,tmp_path,monkeypatch):
+    from tongxing_production.delivery import weekly_guide_rich as rich
+    _,snapshot,_,*_=context
+    guide=example_guide();guide['week']=9; section=guide['sections'][0];section['id']='page-123'
+    stage=tmp_path/'week9-stage';m.write_stage([guide],stage); expected={9:(stage/'week-09.json').read_bytes()}
+    verses={'14:1':'Synthetic verse one','14:2':'Synthetic verse two'}
+    corrected='Separate merged explanation'; sha=m.digest(corrected.encode())
+    blocks=[{'type':'paragraph','text':corrected}]
+    blocks_sha=m.digest(json.dumps(blocks,sort_keys=True,ensure_ascii=False,separators=(',',':')).encode())
+    monkeypatch.setitem(m.REQUIRED_CORRECTED_BODIES,9,(123,sha,blocks_sha))
+    monkeypatch.setattr(rich,'CORRECTIONS_SHA256','f'*64)
+    entry={'week':9,'expectedOriginalBodySHA256':m.digest(section['body'].encode()),
+           'correctedFallbackBody':corrected,'correctedFallbackBodySHA256':sha,
+           'blocks':blocks}
+    revision={'correctionsSHA256':'f'*64,'entries':{123:entry}}
+    bindings=[{'week':9,'pageID':'sermon-8'}]
+    operations=m.verified_bindings(stage,snapshot,bindings,expected,verses,rich_revision=revision)
+    manifest=m.write_published(operations,tmp_path/'safe',[],{}); record=manifest['entries'][0]
+    payload=json.loads((tmp_path/'safe/published'/f"{record['sha256']}.json").read_bytes())
+    corrected_section=next(s for s in payload['sections'] if s['id']=='page-123')
+    # Old decoders read body and ignore unknown block/revision fields.
+    assert corrected_section['body']==corrected
+    tampered=json.loads(json.dumps(operations)); tampered[0]['guide']['sections'][0]['blocks']=[{'type':'paragraph','text':'wrong'}]
+    with pytest.raises(ValueError,match='corrected blocks'):
+        m.write_published(tampered,tmp_path/'tampered',[],{})
+    for bad in ({'correctionsSHA256':'0'*64,'entries':{123:entry}},
+                {'correctionsSHA256':'f'*64,'entries':{}},
+                {'correctionsSHA256':'f'*64,'entries':{123:{**entry,'correctedFallbackBody':'wrong'}}},
+                {'correctionsSHA256':'f'*64,'entries':{123:{**entry,'blocks':[{'type':'paragraph','text':'wrong'}]}}}):
+        with pytest.raises(ValueError,match='requires'):
+            m.verified_bindings(stage,snapshot,bindings,expected,verses,rich_revision=bad)
+
+
 def test_unbound_weeks_never_enter_empty_manifest(tmp_path):
     assert m.write_published([],tmp_path/'empty',[],{},allow_initial_empty=True)['entries']==[]
 
@@ -145,7 +228,7 @@ def operation(page,week,body):
 def test_increment_preserves_previous_entries_assets_and_rejects_duplicates(tmp_path):
     first=m.write_published([operation('old',8,'old')],tmp_path/'first',[],{})
     entry=first['entries'][0];raw=(tmp_path/'first/published'/f"{entry['sha256']}.json").read_bytes()
-    second=m.write_published([operation('new',9,'new')],tmp_path/'second',[entry],{entry['path']:raw})
+    second=m.write_published([operation('new',10,'new')],tmp_path/'second',[entry],{entry['path']:raw})
     assert second['entries'][0]==entry and len(second['entries'])==2
     assert (tmp_path/'second/published'/f"{entry['sha256']}.json").read_bytes()==raw
     with pytest.raises(ValueError,match='duplicate existing page'):

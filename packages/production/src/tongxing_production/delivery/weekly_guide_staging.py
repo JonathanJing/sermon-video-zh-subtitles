@@ -104,6 +104,37 @@ def prepare_stage(source_bytes,cuv_bytes,out):
     return write_stage(weeks,out)
 
 
+def rich_revision(source_bytes,cuv_bytes,english_bytes,evidence_dir):
+    """Rebuild the reviewed revision without changing the v1 staging inputs."""
+    from tongxing_production.delivery import weekly_guide_rich as rich
+    pages=parse_pages(source_bytes.decode('utf-8'))
+    originals={(week,n):readable_tables(pages[n][1]) for n,(week,_) in rich.CHECKED_PAGES.items()}
+    correction=rich.build_corrections(source_bytes,cuv_bytes,english_bytes,originals,evidence_dir)
+    return rich.validate_revision(source_bytes,cuv_bytes,correction,evidence_dir),correction
+
+
+def prepare_rich_stage(source_bytes,cuv_bytes,english_bytes,evidence_dir,out):
+    """Produce independently versioned, unbound future-week review assets."""
+    from tongxing_production.delivery import weekly_guide_rich as rich
+    revision,correction=rich_revision(source_bytes,cuv_bytes,english_bytes,evidence_dir)
+    weeks=[rich.apply_revision(g,revision) for g in build_staged(source_bytes.decode('utf-8'),json.loads(cuv_bytes))]
+    out=Path(out);out.mkdir(parents=True,exist_ok=False);entries=[]
+    for guide in weeks:
+        if guide.get('sermonPageId') is not None: raise ValueError('future week must remain unbound')
+        guide['schemaVersion']='tongxing-weekly-guide-staging-rich-v1'
+        guide['richRevisionSHA256']=revision['correctionsSHA256']
+        raw=encoded(guide);name=f"week-{guide['week']:02d}.json";(out/name).write_bytes(raw)
+        entries.append({'week':guide['week'],'locale':'zh-Hans','file':name,'bytes':len(raw),
+                        'sha256':digest(raw),'sermonPageId':None})
+    manifest={'schemaVersion':'tongxing-weekly-guide-staging-rich-manifest-v1','seriesID':SERIES_ID,
+              'translationSHA256':SOURCE_SHA256,'cuvSHA256':CUV_SHA256,
+              'richRevisionSHA256':revision['correctionsSHA256'],'review':'machine_translation_not_human_reviewed',
+              'humanApproval':False,'entries':entries}
+    (out/'rich-corrections.json').write_bytes(correction)
+    (out/'staging-manifest-rich.json').write_bytes(encoded(manifest))
+    return manifest
+
+
 def write_stage(weeks,out):
     out=Path(out);out.mkdir(parents=True,exist_ok=False);entries=[]
     for guide in weeks:
@@ -330,7 +361,53 @@ def bundled_tombstone(binding,catalog,evidence,verify_file,alias_evidence=None):
         raise ValueError('invalid legacy source window')
     return {**common,'legacy':legacy}
 
-def verified_bindings(staging,snapshot,bindings,expected_staging,cuv,*,bundle_evidence=None,verify_file=None,alias_evidence=None):
+# These source pages previously flattened distinct relationships into false
+# pairs. Publishing their old v1 body must not replace a corrected bundle.
+REQUIRED_CORRECTED_BODIES = {
+    5: (83, '3fde88f36266fcf1224a93d3b6dfa0f6b87bf67aef93a974a093c522b75584d3',
+        'ec8728953968f528ccf562df53f354de35c4d578ce9c841563b71b0523d4322c'),
+    9: (123, '3d10f079ec524da002721e170dba640ec0b4a2557b2ca36036f594d50e528d97',
+        'c75c35151a77ce52be0ba7cde8131f6a7042999b081fb488a8e44350a8180012'),
+}
+
+
+def require_corrected_revision(week, revision):
+    if week not in REQUIRED_CORRECTED_BODIES:
+        return
+    from tongxing_production.delivery import weekly_guide_rich as rich
+    page, expected, expected_blocks = REQUIRED_CORRECTED_BODIES[week]
+    if not isinstance(revision,dict) or revision.get('correctionsSHA256') != rich.CORRECTIONS_SHA256:
+        raise ValueError(f'week {week} requires verified --rich corrections')
+    entry = revision.get('entries',{}).get(page)
+    if (not isinstance(entry,dict) or entry.get('week') != week
+        or not isinstance(entry.get('correctedFallbackBody'),str)
+        or digest(entry['correctedFallbackBody'].encode('utf-8')) != expected
+        or entry.get('correctedFallbackBodySHA256') != expected):
+        raise ValueError(f'week {week} requires the verified corrected fallback body')
+    rich.validate_blocks(entry.get('blocks'))
+    canonical=json.dumps(entry['blocks'],sort_keys=True,ensure_ascii=False,separators=(',',':')).encode('utf-8')
+    if digest(canonical)!=expected_blocks:
+        raise ValueError(f'week {week} requires the verified corrected blocks')
+
+
+def require_corrected_guide(week, guide, revision_sha):
+    if week not in REQUIRED_CORRECTED_BODIES:
+        return
+    from tongxing_production.delivery import weekly_guide_rich as rich
+    page, expected, expected_blocks = REQUIRED_CORRECTED_BODIES[week]
+    if revision_sha != rich.CORRECTIONS_SHA256 or guide.get('richRevisionSHA256') != revision_sha:
+        raise ValueError(f'week {week} requires verified --rich corrections')
+    sections=guide.get('sections')
+    if not isinstance(sections,list): raise ValueError(f'week {week} corrected page missing or changed')
+    matches=[s for s in sections if isinstance(s,dict) and s.get('id')==f'page-{page}']
+    if len(matches)!=1 or not isinstance(matches[0].get('body'),str) or digest(matches[0]['body'].encode('utf-8'))!=expected:
+        raise ValueError(f'week {week} corrected page missing or changed')
+    blocks=matches[0].get('blocks');rich.validate_blocks(blocks)
+    canonical=json.dumps(blocks,sort_keys=True,ensure_ascii=False,separators=(',',':')).encode('utf-8')
+    if digest(canonical)!=expected_blocks: raise ValueError(f'week {week} requires the verified corrected blocks')
+
+
+def verified_bindings(staging,snapshot,bindings,expected_staging,cuv,*,bundle_evidence=None,verify_file=None,alias_evidence=None,rich_revision=None):
     """Bind only to validated v5 Chinese releases. Date alone is insufficient."""
     staging=Path(staging);snapshot=Path(snapshot); public=(snapshot/'public').resolve()
     catalog=json.loads((public/'multilingual-v5.json').read_bytes())
@@ -357,6 +434,7 @@ def verified_bindings(staging,snapshot,bindings,expected_staging,cuv,*,bundle_ev
             result.append({'pageID':page_id,'week':week,'operation':operation,'reason':binding['reason'],'tombstone':tombstone});continue
         if operation=='revoke':
             result.append({'pageID':page_id,'week':week,'operation':operation,'expectedEntrySha256':binding['expectedEntrySha256'],'reason':binding['reason']});continue
+        require_corrected_revision(week,rich_revision)
         row=staged.get(week)
         if not row or row.get('sermonPageId') is not None: raise ValueError('week not staged or already bound')
         raw=_safe_asset(staging.resolve(),'/'+row['file']).read_bytes()
@@ -364,6 +442,14 @@ def verified_bindings(staging,snapshot,bindings,expected_staging,cuv,*,bundle_ev
         if expected_staging.get(week)!=raw: raise ValueError('staged content differs from verified sources')
         guide=json.loads(raw)
         if guide.get('sermonPageId') is not None or guide.get('week')!=week or guide.get('locale')!='zh-Hans': raise ValueError('staged identity mismatch')
+        if rich_revision is not None:
+            from tongxing_production.delivery import weekly_guide_rich as rich
+            guide=rich.apply_revision(guide,rich_revision)
+        if week in REQUIRED_CORRECTED_BODIES:
+            corrected_page,corrected_sha,_=REQUIRED_CORRECTED_BODIES[week]
+            matches=[section for section in guide['sections'] if section.get('id')==f'page-{corrected_page}']
+            if len(matches)!=1 or digest(matches[0]['body'].encode('utf-8'))!=corrected_sha:
+                raise ValueError(f'week {week} corrected page missing or changed')
         page,target,edition,identity,release_sha=_target_identity(catalog,page_id)
         release_raw=_safe_asset(public,target.get('releasePackageUrl')).read_bytes()
         if digest(release_raw)!=release_sha: raise ValueError('release hash mismatch')
@@ -402,6 +488,9 @@ def verified_bindings(staging,snapshot,bindings,expected_staging,cuv,*,bundle_ev
         if guide_verses!=scripture_set(content.get('scripture',''),cuv): raise ValueError('scripture mismatch')
         item={'pageID':page_id,'week':week,'operation':operation,'editionId':edition,'sourceIdentitySha256':identity,
               'releasePackageJsonSha256':release_sha,'guide':{'id':page_id, **{k:guide[k] for k in ('week','title','scripture','sections')}}}
+        if rich_revision is not None:
+            item['richRevisionSHA256']=rich_revision['correctionsSHA256']
+            item['guide']['richRevisionSHA256']=rich_revision['correctionsSHA256']
         if operation=='update': item.update(expectedEntrySha256=binding['expectedEntrySha256'],reason=binding['reason'])
         result.append(item)
     return result
@@ -447,6 +536,8 @@ def existing_manifest(snapshot,rows,verify_file,initialize_empty=False):
         if len(raw)!=size or digest(raw)!=sha: raise ValueError('existing guide asset mismatch')
         content=json.loads(raw)
         if content.get('id')!=page or content.get('week')!=e['week']: raise ValueError('existing guide identity mismatch')
+        if e.get('richRevisionSHA256') is not None and (not HEX.fullmatch(str(e['richRevisionSHA256']))
+            or content.get('richRevisionSHA256')!=e['richRevisionSHA256']): raise ValueError('existing rich revision mismatch')
         assets[e['path']]=raw
     return entries,assets
 
@@ -479,6 +570,7 @@ def write_published(operations,out,existing,assets,*,allow_initial_empty=False):
             guide=operation['guide']
             if guide.get('id')!=page or guide.get('week')!=week or not isinstance(guide.get('sections'),list) or not guide['sections']:
                 raise ValueError('new guide identity mismatch')
+            require_corrected_guide(week,guide,operation.get('richRevisionSHA256'))
             if not isinstance(operation.get('editionId'),str) or not PAGE_ID.fullmatch(operation['editionId']) or any(not isinstance(operation.get(k),str) or not HEX.fullmatch(operation[k]) for k in ('sourceIdentitySha256','releasePackageJsonSha256')):
                 raise ValueError('new guide source identity mismatch')
             raw=encoded(guide)
@@ -487,6 +579,11 @@ def write_published(operations,out,existing,assets,*,allow_initial_empty=False):
             revised={'pageID':page,'locale':'zh-Hans','week':week,'editionId':operation['editionId'],
               'sourceIdentitySha256':operation['sourceIdentitySha256'],'releasePackageJsonSha256':operation['releasePackageJsonSha256'],
               'status':'available','path':path,'sha256':sha,'bytes':len(raw)}
+            if 'richRevisionSHA256' in operation:
+                revision_sha=operation['richRevisionSHA256']
+                if not isinstance(revision_sha,str) or not HEX.fullmatch(revision_sha) or guide.get('richRevisionSHA256')!=revision_sha:
+                    raise ValueError('new rich revision mismatch')
+                revised['richRevisionSHA256']=revision_sha
         if prior: entries[entries.index(prior)]=revised
         else: entries.append(revised)
         by_page[page]=revised
@@ -502,7 +599,7 @@ def write_published(operations,out,existing,assets,*,allow_initial_empty=False):
 
 
 
-def prepare_guarded_candidate(staging,snapshot,bindings,expected_staging,cuv,out,environment,initialize_empty=False,bundle_evidence_bytes=None,alias_evidence_bytes=None):
+def prepare_guarded_candidate(staging,snapshot,bindings,expected_staging,cuv,out,environment,initialize_empty=False,bundle_evidence_bytes=None,alias_evidence_bytes=None,rich_revision=None):
     """Prepare a fresh guarded Hosting snapshot; never deploy or overwrite live data.
 
     Copy first, then bind from the frozen copy: the live receipt is the authority
@@ -535,7 +632,7 @@ def prepare_guarded_candidate(staging,snapshot,bindings,expected_staging,cuv,out
     old,assets=existing_manifest(out,rows,verify_file,initialize_empty)
     bundle_evidence=validated_bundle_evidence(bundle_evidence_bytes,environment) if bundle_evidence_bytes is not None else None
     alias_evidence=validated_alias_evidence(alias_evidence_bytes,environment) if alias_evidence_bytes is not None else None
-    operations=verified_bindings(staging,out,bindings,expected_staging,cuv,bundle_evidence=bundle_evidence,verify_file=verify_file,alias_evidence=alias_evidence)
+    operations=verified_bindings(staging,out,bindings,expected_staging,cuv,bundle_evidence=bundle_evidence,verify_file=verify_file,alias_evidence=alias_evidence,rich_revision=rich_revision)
     fragment=out/'guide-fragment'
     manifest=write_published(operations,fragment,old,assets,allow_initial_empty=initialize_empty)
     public=out/'public';dest=public/'weekly-guides';dest.mkdir(parents=True,exist_ok=True)
@@ -555,10 +652,12 @@ def prepare_guarded_candidate(staging,snapshot,bindings,expected_staging,cuv,out
     if config.get('baseline_version')!=frozen_receipt.get('baselineVersion') or config.get('baseline_catalog_sha')!=frozen_receipt.get('catalogSha256'):
         raise ValueError('guarded config differs from frozen baseline')
     baseline.write(out/'publish-config.json',config)
-    baseline.write(out/'weekly-guide-overlay-plan.json',{'schemaVersion':'tongxing-weekly-guide-overlay-plan-v1',
+    plan={'schemaVersion':'tongxing-weekly-guide-overlay-plan-v1',
         'status':'prepared_not_uploaded','environment':environment,'baselineVersion':receipt['baselineVersion'],
         'manifestSHA256':digest((dest/'manifest-v1.json').read_bytes()),'entryCount':len(manifest['entries']),
-        'liveRecheck':'required_before_deploy','clientAcceptance':'not_run'})
+        'liveRecheck':'required_before_deploy','clientAcceptance':'not_run'}
+    if rich_revision is not None: plan['richRevisionSHA256']=rich_revision['correctionsSHA256']
+    baseline.write(out/'weekly-guide-overlay-plan.json',plan)
     return manifest
 
 
@@ -572,9 +671,12 @@ def safe_output(path):
 def main(argv=None):
     p=argparse.ArgumentParser(description=__doc__);sub=p.add_subparsers(dest='action',required=True)
     s=sub.add_parser('stage');s.add_argument('--source',required=True,type=Path);s.add_argument('--cuv',required=True,type=Path);s.add_argument('--output',required=True,type=Path)
+    sr=sub.add_parser('stage-rich');sr.add_argument('--source',required=True,type=Path);sr.add_argument('--cuv',required=True,type=Path);sr.add_argument('--english',required=True,type=Path);sr.add_argument('--evidence-dir',required=True,type=Path);sr.add_argument('--output',required=True,type=Path)
     b=sub.add_parser('bind', aliases=['candidate']);b.add_argument('--staging',required=True,type=Path);b.add_argument('--snapshot',required=True,type=Path);b.add_argument('--environment',required=True,choices=['dev','production']);b.add_argument('--initialize-empty',action='store_true');b.add_argument('--bundle-evidence',type=Path);b.add_argument('--alias-evidence',type=Path);b.add_argument('--bindings',required=True,type=Path);b.add_argument('--source',required=True,type=Path);b.add_argument('--cuv',required=True,type=Path);b.add_argument('--output',required=True,type=Path)
+    b.add_argument('--rich',action='store_true');b.add_argument('--english',type=Path);b.add_argument('--evidence-dir',type=Path)
     a=p.parse_args(argv)
     if a.action=='stage': result=prepare_stage(a.source.read_bytes(),a.cuv.read_bytes(),safe_output(a.output))
+    elif a.action=='stage-rich': result=prepare_rich_stage(a.source.read_bytes(),a.cuv.read_bytes(),a.english.read_bytes(),a.evidence_dir,safe_output(a.output))
     else:
         binding=json.loads(a.bindings.read_text())
         if binding.get('schemaVersion')!='tongxing-weekly-guide-bindings-v1' or not isinstance(binding.get('bindings'),list): raise ValueError('invalid bindings schema')
@@ -582,17 +684,20 @@ def main(argv=None):
         if digest(source)!=SOURCE_SHA256 or digest(cuv)!=CUV_SHA256: raise ValueError('source hash mismatch')
         verses=json.loads(cuv)
         expected={g['week']:encoded(g) for g in build_staged(source.decode('utf-8'),verses)}
+        if a.rich and (not a.english or not a.evidence_dir): p.error('--rich requires --english and --evidence-dir')
+        if not a.rich and (a.english or a.evidence_dir): p.error('--english and --evidence-dir require --rich')
+        revision=rich_revision(source,cuv,a.english.read_bytes(),a.evidence_dir)[0] if a.rich else None
         evidence_bytes=a.bundle_evidence.read_bytes() if a.bundle_evidence else None
         alias_bytes=a.alias_evidence.read_bytes() if a.alias_evidence else None
         if a.action=='candidate':
-            result=prepare_guarded_candidate(a.staging,a.snapshot,binding['bindings'],expected,verses,safe_output(a.output),a.environment,a.initialize_empty,evidence_bytes,alias_bytes)
+            result=prepare_guarded_candidate(a.staging,a.snapshot,binding['bindings'],expected,verses,safe_output(a.output),a.environment,a.initialize_empty,evidence_bytes,alias_bytes,revision)
             receipt=json.loads((safe_output(a.output)/'baseline-receipt.json').read_bytes())
         else:
             rows,verify_file,receipt=verified_live_snapshot(a.snapshot,a.environment)
             old,assets=existing_manifest(a.snapshot,rows,verify_file,a.initialize_empty)
             bundle_evidence=validated_bundle_evidence(evidence_bytes,a.environment) if evidence_bytes is not None else None
             alias_evidence=validated_alias_evidence(alias_bytes,a.environment) if alias_bytes is not None else None
-            operations=verified_bindings(a.staging,a.snapshot,binding['bindings'],expected,verses,bundle_evidence=bundle_evidence,verify_file=verify_file,alias_evidence=alias_evidence)
+            operations=verified_bindings(a.staging,a.snapshot,binding['bindings'],expected,verses,bundle_evidence=bundle_evidence,verify_file=verify_file,alias_evidence=alias_evidence,rich_revision=revision)
             result=write_published(operations,safe_output(a.output),old,assets,allow_initial_empty=a.initialize_empty)
         print(json.dumps({'baselineVersion':receipt['baselineVersion'],'environment':a.environment,'liveRecheck':'required_before_deploy'}))
     print(json.dumps({'status':'prepared_not_uploaded','action':a.action,'count':len(result['entries'])}))

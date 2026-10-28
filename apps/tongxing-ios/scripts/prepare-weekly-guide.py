@@ -11,6 +11,14 @@ import hashlib
 import json
 from pathlib import Path
 import re
+import sys
+
+# Resolve the delivery helper from this checkout, not an editable install in a
+# different worktree. The legacy generator below remains byte-identical.
+REPO_ROOT = Path(__file__).resolve().parents[3]
+sys.path.insert(0, str(REPO_ROOT / 'packages/production/src'))
+from tongxing_production.delivery import weekly_guide_rich as rich
+from tongxing_production.delivery import weekly_guide_staging as staging
 
 SOURCE_SHA256 = "d6c6064e8fab11ab012edd9535372a9f99b83cd5240b6014f5451795a9198f86"
 CUV_SHA256 = "363afb38148f150b30fee727f4818faa821a0d17b4888c16be3e05bd462503bb"
@@ -140,7 +148,21 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--source', required=True, type=Path, help='previously identified Chinese translation')
     parser.add_argument('--cuv', required=True, type=Path, help='previously identified CUV 1919 Revelation JSON')
+    parser.add_argument('--rich', action='store_true', help='prepare a separately versioned rich bundle; never overwrite v1')
+    parser.add_argument('--english', type=Path, help='frozen English source extraction for the rich revision')
+    parser.add_argument('--evidence-dir', type=Path, help='private checked source-page screenshots')
+    parser.add_argument('--asset-dir', type=Path, help='licensed original illustration directory')
+    parser.add_argument('--map-evidence-dir', type=Path, help='frozen Pleiades map source evidence directory')
+    parser.add_argument('--output', required=True, type=Path, help='fresh ignored artifacts directory; never the active bundle directory')
     args = parser.parse_args()
+    if args.rich:
+        if not all((args.english, args.evidence_dir, args.asset_dir, args.map_evidence_dir)):
+            parser.error('--rich requires --english, --evidence-dir, --asset-dir, and --map-evidence-dir')
+    elif any((args.english, args.evidence_dir, args.asset_dir, args.map_evidence_dir)):
+        parser.error('rich options require --rich')
+    output = staging.safe_output(args.output)
+    if output.exists():
+        raise ValueError('output must be a new directory')
     data = args.source.read_bytes()
     actual = sha256(data)
     if actual != SOURCE_SHA256:
@@ -150,9 +172,31 @@ def main() -> None:
     if actual_cuv != CUV_SHA256:
         raise SystemExit(f'CUV source SHA-256 mismatch: {actual_cuv}; expected {CUV_SHA256}')
     cuv = json.loads(cuv_data.decode('utf-8'))
-    payload = (json.dumps(build_guides(data.decode('utf-8'), WEEKS, cuv), ensure_ascii=False, indent=2) + '\n').encode('utf-8')
-    output = Path(__file__).resolve().parent.parent / 'GuideResources'
-    output.mkdir(parents=True, exist_ok=True)
+    original = build_guides(data.decode('utf-8'), WEEKS, cuv)
+    original_bytes = rich.encoded(original)
+    if args.rich:
+        future = staging.build_staged(data.decode('utf-8'), cuv)
+        originals = {(guide['week'], int(section['id'][5:])): section['body']
+                     for guide in original['guides'] + future for section in guide['sections']
+                     if section['id'].startswith('page-')}
+        corrections = rich.build_corrections(data, cuv_data, args.english.read_bytes(), originals, args.evidence_dir,
+                                             exclude_pages=(138, 139))
+        revision = rich.validate_revision(data, cuv_data, corrections, args.evidence_dir,
+                                          expected_corrections_sha=rich.BUNDLE_CORRECTIONS_SHA256)
+        assets = rich.validate_assets(args.asset_dir)
+        map_evidence_sha, map_credits = rich.validate_map_evidence(args.map_evidence_dir)
+        result = {'schemaVersion': 'tongxing-weekly-guide-rich-bundle-v1',
+                  'richRevisionSHA256': revision['correctionsSHA256'],
+                  'mapEvidenceSHA256': map_evidence_sha,
+                  'guides': [rich.apply_revision(guide, revision, include_images=True, map_credits=map_credits) for guide in original['guides']]}
+        payload = rich.encoded(result)
+        output.mkdir(parents=True, exist_ok=False)
+        (output / 'rich-corrections.json').write_bytes(corrections)
+        for asset_id, asset_bytes in assets.items():
+            (output / asset_id).write_bytes(asset_bytes)
+    else:
+        payload = original_bytes
+        output.mkdir(parents=True, exist_ok=False)
     (output / 'weekly-guides.json').write_bytes(payload)
     digest = sha256(payload)
     (output / 'weekly-guides.sha256').write_text(digest + '\n', encoding='utf-8')
@@ -162,6 +206,17 @@ def main() -> None:
                'weeks': [{'week': week['week'], 'pageIDs': week['ids'],
                           'pageRange': [week['first_page'], week['last_page']],
                           'appendixPage': week['appendix_page']} for week in WEEKS]}
+    if args.rich:
+        receipt.update({'schemaVersion': rich.REVISION_SCHEMA,
+                        'englishSourceSHA256': rich.ENGLISH_SHA256,
+                        'baseV1PayloadSHA256': sha256(original_bytes),
+                        'richRevisionSHA256': revision['correctionsSHA256'],
+                        'mapEvidenceSHA256': map_evidence_sha,
+                        'humanApproval': False,
+                        'assets': [{'assetID': asset_id, 'sha256': info['sha256'],
+                                    'creator': info['creator'], 'sourcePage': info['sourcePage']}
+                                   for asset_id, info in rich.ASSETS.items()],
+                        'futureWeeks': 'not_in_bundle'})
     (output / 'weekly-guides.receipt.json').write_text(json.dumps(receipt, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
     print(f'Prepared {len(WEEKS)} guide(s); source SHA-256 {actual}; payload SHA-256 {digest}')
 

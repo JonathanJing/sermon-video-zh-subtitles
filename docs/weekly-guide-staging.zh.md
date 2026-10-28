@@ -26,6 +26,19 @@ gcloud storage cp --recursive \
   --output artifacts/weekly-guide-staging/new-run
 ```
 
+上述 `stage` 生成的是原始 v1，保留用于重新验证冻结源和绑定身份；它不是可直接发布的修正版。第 5、9 周的已知错误关系禁止作为旧版新增或更新。需要审查新版图表时，可额外在另一个全新的忽略目录运行：
+
+```sh
+.venv/bin/python tools/ops/run.py delivery.weekly_guide_staging stage-rich \
+  --source /path/to/revelation-series-guide.zh-Hans.md \
+  --cuv /path/to/cuv-1919-revelation.json \
+  --english /path/to/revelation-series-guide.en-extracted.txt \
+  --evidence-dir /path/to/checked-page-captures \
+  --output artifacts/weekly-guide-staging/rich-preview
+```
+
+`stage-rich` 的 `staging-manifest-rich.json` 仅供预览和审查。`bind` 和 `candidate` 的 `--staging` 必须仍指向原始 `stage` 目录（`staging-manifest.json`）；两个命令另外传 `--rich --english <冻结英文源> --evidence-dir <原页证据目录>`，先验证旧 staging 和讲道身份，再重建并核对修正版。不可把 `rich-preview` 目录直接传给 `--staging`。输出依旧为本地候选，不会自动上传。
+
 讲道尚未出现或页面标识尚未核实时，不编造或推算 ID。需要绑定时，提供完整、已封存且可通过 `validate_catalog_snapshot` 的 Hosting 快照和明确绑定文件：
 
 ```json
@@ -40,6 +53,9 @@ gcloud storage cp --recursive \
   --bindings artifacts/weekly-guide-staging/reviewed-bindings.json \
   --source /path/to/revelation-series-guide.zh-Hans.md \
   --cuv /path/to/cuv-1919-revelation.json \
+  --rich \
+  --english /path/to/revelation-series-guide.en-extracted.txt \
+  --evidence-dir /path/to/checked-page-captures \
   --output artifacts/weekly-guide-staging/bound-run
 ```
 

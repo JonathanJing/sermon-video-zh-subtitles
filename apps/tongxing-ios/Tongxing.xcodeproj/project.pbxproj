@@ -514,6 +514,8 @@
 				"$(SRCROOT)/GuideResources",
 				"$(TONGXING_GUIDE_DATA_INPUT)",
 				"$(TONGXING_GUIDE_CHECKSUM_INPUT)",
+				"$(TONGXING_GUIDE_STATUE_INPUT)",
+				"$(TONGXING_GUIDE_SON_INPUT)",
 			);
 			name = "Copy local weekly guides";
 			outputFileListPaths = (
@@ -523,7 +525,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "set -eu\ndestination=\"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/weekly-guides.json\"\nrm -f \"$destination\"\ncase \"${CONFIGURATION}\" in\n  Release|BetaDebug|BetaRelease)\n    source=\"${SRCROOT}/GuideResources/weekly-guides.json\"\n    checksum=\"${SRCROOT}/GuideResources/weekly-guides.sha256\"\n    if [ \"${CONFIGURATION}\" = \"Release\" ] && { [ ! -f \"$source\" ] || [ ! -f \"$checksum\" ]; }; then\n      echo \"error: Release requires the verified weekly guide payload and SHA-256\"\n      exit 1\n    fi\n    if [ -f \"$source\" ] || [ -f \"$checksum\" ]; then\n      if [ ! -f \"$source\" ] || [ ! -f \"$checksum\" ]; then\n        echo \"error: local guide payload and SHA-256 must both exist\"\n        exit 1\n      fi\n      expected=$(/bin/cat \"$checksum\")\n      actual=$(/usr/bin/shasum -a 256 \"$source\" | /usr/bin/awk '{print $1}')\n      if [ \"$actual\" != \"$expected\" ]; then\n        echo \"error: local guide payload checksum mismatch\"\n        exit 1\n      fi\n      /bin/mkdir -p \"$(/usr/bin/dirname \"$destination\")\"\n      /bin/cp \"$source\" \"$destination\"\n    fi\n    ;;\nesac\n";
+			shellScript = "set -eu\ndestination=\"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/weekly-guides.json\"\nrm -f \"$destination\"\nrm -f \"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/weekly-guide-statue.jpg\" \"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/weekly-guide-son-of-man.jpg\"\ncase \"${CONFIGURATION}\" in\n  Release|BetaDebug|BetaRelease)\n    source=\"${SRCROOT}/GuideResources/weekly-guides.json\"\n    checksum=\"${SRCROOT}/GuideResources/weekly-guides.sha256\"\n    if [ \"${CONFIGURATION}\" = \"Release\" ] && { [ ! -f \"$source\" ] || [ ! -f \"$checksum\" ]; }; then\n      echo \"error: Release requires the verified weekly guide payload and SHA-256\"\n      exit 1\n    fi\n    if [ -f \"$source\" ] || [ -f \"$checksum\" ]; then\n      if [ ! -f \"$source\" ] || [ ! -f \"$checksum\" ]; then\n        echo \"error: local guide payload and SHA-256 must both exist\"\n        exit 1\n      fi\n      expected=$(/bin/cat \"$checksum\")\n      actual=$(/usr/bin/shasum -a 256 \"$source\" | /usr/bin/awk '{print $1}')\n      if [ \"$actual\" != \"$expected\" ]; then\n        echo \"error: local guide payload checksum mismatch\"\n        exit 1\n      fi\n      if [ \"$actual\" != \"a527e23fbd693177b9589fc89cd3533b653f64918abb97213cf34172c36711f9\" ]; then\n        echo \"error: local guide payload is not the revision accepted by this App\"\n        exit 1\n      fi\n      /bin/mkdir -p \"$(/usr/bin/dirname \"$destination\")\"\n      /bin/cp \"$source\" \"$destination\"\n      for asset in weekly-guide-statue.jpg weekly-guide-son-of-man.jpg; do\n        if /usr/bin/grep -Fq \"$asset\" \"$source\"; then\n          case \"$asset\" in\n            weekly-guide-statue.jpg) asset_sha=f1d2f517120099a38614c7c560c1fbe054ec3ea4d741284fbcef496a7dab73b5 ;;\n            weekly-guide-son-of-man.jpg) asset_sha=30c3e5b82c024bad3e40122f330f6606d022c91d8c77a82f06d6f1d5fc987f1f ;;\n          esac\n          asset_source=\"${SRCROOT}/GuideResources/${asset}\"\n          if [ ! -f \"$asset_source\" ] || [ \"$(/usr/bin/shasum -a 256 \"$asset_source\" | /usr/bin/awk '{print $1}')\" != \"$asset_sha\" ]; then\n            echo \"error: referenced weekly guide image missing or checksum mismatch: $asset\"\n            exit 1\n          fi\n          /bin/cp \"$asset_source\" \"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/${asset}\"\n        fi\n      done\n    fi\n    ;;\nesac\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 
@@ -697,6 +699,8 @@
 				TONGXING_DISPLAY_NAME = "同行";
 				TONGXING_GUIDE_CHECKSUM_INPUT = "$(SRCROOT)/GuideResources";
 				TONGXING_GUIDE_DATA_INPUT = "$(SRCROOT)/GuideResources";
+				TONGXING_GUIDE_SON_INPUT = "$(SRCROOT)/GuideResources";
+				TONGXING_GUIDE_STATUE_INPUT = "$(SRCROOT)/GuideResources";
 				TONGXING_URL_SCHEME = tongxing;
 			};
 			name = Debug;
@@ -1001,6 +1005,8 @@
 				TONGXING_DISPLAY_NAME = "同行-beta";
 				TONGXING_GUIDE_CHECKSUM_INPUT = "$(SRCROOT)/GuideResources";
 				TONGXING_GUIDE_DATA_INPUT = "$(SRCROOT)/GuideResources";
+				TONGXING_GUIDE_SON_INPUT = "$(SRCROOT)/GuideResources";
+				TONGXING_GUIDE_STATUE_INPUT = "$(SRCROOT)/GuideResources";
 				TONGXING_URL_SCHEME = "tongxing-beta";
 			};
 			name = BetaRelease;
@@ -1033,6 +1039,8 @@
 				TONGXING_DISPLAY_NAME = "同行-beta";
 				TONGXING_GUIDE_CHECKSUM_INPUT = "$(SRCROOT)/GuideResources";
 				TONGXING_GUIDE_DATA_INPUT = "$(SRCROOT)/GuideResources";
+				TONGXING_GUIDE_SON_INPUT = "$(SRCROOT)/GuideResources";
+				TONGXING_GUIDE_STATUE_INPUT = "$(SRCROOT)/GuideResources";
 				TONGXING_URL_SCHEME = "tongxing-beta";
 			};
 			name = BetaDebug;
@@ -1229,6 +1237,8 @@
 				TONGXING_DISPLAY_NAME = "同行";
 				TONGXING_GUIDE_CHECKSUM_INPUT = "$(SRCROOT)/GuideResources/weekly-guides.sha256";
 				TONGXING_GUIDE_DATA_INPUT = "$(SRCROOT)/GuideResources/weekly-guides.json";
+				TONGXING_GUIDE_SON_INPUT = "$(SRCROOT)/GuideResources/weekly-guide-son-of-man.jpg";
+				TONGXING_GUIDE_STATUE_INPUT = "$(SRCROOT)/GuideResources/weekly-guide-statue.jpg";
 				TONGXING_URL_SCHEME = tongxing;
 			};
 			name = Release;
