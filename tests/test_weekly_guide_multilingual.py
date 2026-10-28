@@ -476,6 +476,52 @@ def test_existing_public_payload_cannot_carry_wrong_scripture_even_if_rehashed(c
         m._content_valid(entry, changed)
 
 
+@pytest.mark.parametrize('field', ['title', 'section_title', 'subtitle', 'body'])
+def test_staging_rejects_known_internal_placeholder_in_display_text(context, field):
+    c = context
+    value = json.loads(c['draft'])
+    guide = value['guides'][0]
+    marker = '[original graphic/table requires visual review]'
+    if field == 'title':
+        guide['title'] = marker
+    else:
+        key = 'title' if field == 'section_title' else field
+        guide['sections'][0][key] = 'Before ' + marker + ' after'
+    with pytest.raises(ValueError, match='internal guide placeholder'):
+        m.staged_guides(c['source'], v1.encoded(value), c['reviews'], c['records'])
+
+
+def test_existing_payload_rejects_known_internal_placeholder_even_if_rehashed(context):
+    c = context
+    entry = bind(c)['entries'][0]
+    raw = (c['tmp'] / 'out/published' / (entry['sha256'] + '.json')).read_bytes()
+    guide = json.loads(raw)
+    guide['sections'][0]['body'] = 'Before [Original graphic/table requires visual review] after'
+    changed = v1.encoded(guide)
+    sha = v1.digest(changed)
+    entry = {**entry, 'sha256': sha, 'bytes': len(changed), 'path': f'/weekly-guides/published/{sha}.json'}
+    with pytest.raises(ValueError, match='internal guide placeholder'):
+        m._content_valid(entry, changed)
+    manifest_path = '/weekly-guides/manifest-v2.json'
+    files = {manifest_path: v1.encoded({'schemaVersion': 'tongxing-weekly-guide-manifest-v2',
+                                       'seriesID': v1.SERIES_ID, 'entries': [entry]}),
+             entry['path']: changed}
+    with pytest.raises(ValueError, match='internal guide placeholder'):
+        m.existing_v2(files, files.__getitem__)
+
+
+def test_normal_graphic_reference_and_natural_language_are_not_blocked(context):
+    c = context
+    value = json.loads(c['draft'])
+    value['guides'][0]['sections'][0]['body'] = (
+        '그래픽은 원본 안내서를 참조하세요. Refer to the original graphic for a visual review.'
+    )
+    trans = v1.encoded(value)
+    reviews = reviews_for(c['source'], trans, c['records'])
+    staged = m.staged_guides(c['source'], trans, reviews, c['records'])
+    assert staged[0]['sections'][0]['body'] == value['guides'][0]['sections'][0]['body']
+
+
 def test_per_target_bundle_family_binds_separate_sources_but_not_other_family(context, monkeypatch):
     from tongxing_production.delivery import baseline
     c = context

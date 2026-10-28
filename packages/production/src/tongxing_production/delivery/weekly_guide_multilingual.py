@@ -26,6 +26,8 @@ SCRIPTURE_RANGES = {1:'1:1–20', 2:'2:1–3:22', 3:'4:1–5:14', 4:'6:1–8:1',
                     9:'15:1–16:21', 10:'17:1–19:10', 11:'19:11–21:8', 12:'21:9–22:21'}
 BOOK_NAMES = {'ko': '요한계시록', 'es': 'Apocalipsis'}
 ENGLISH_PAGE = re.compile(r'^=== PAGE (\d+) \(pdf page (\d+), id ([^)]+)\) ===\n(.*?)(?=^=== PAGE \d+ \(pdf page|\Z)', re.S | re.M)
+# Known internal extraction marker, not a general content-quality check.
+INTERNAL_PLACEHOLDERS = ('[Original graphic/table requires visual review]',)
 
 
 def _hash(value):
@@ -46,6 +48,9 @@ def _guide(guide, locale, translation_sha, source_pages=None):
         raise ValueError('invalid week')
     if any(not isinstance(guide[k], str) or not guide[k].strip() for k in ('title', 'scripture')):
         raise ValueError('empty guide title or scripture')
+    if any(marker.casefold() in guide[k].casefold()
+           for marker in INTERNAL_PLACEHOLDERS for k in ('title', 'scripture')):
+        raise ValueError('internal guide placeholder cannot be published')
     if guide['scripture'] != scripture_for_week(week, locale):
         raise ValueError('scripture does not match fixed weekly source range')
     sections = guide['sections']
@@ -61,6 +66,9 @@ def _guide(guide, locale, translation_sha, source_pages=None):
             or not s['id'].strip() or not s['title'].strip() or not s['body'].strip()
             or s['id'] in ids):
             raise ValueError('invalid or duplicate guide section')
+        if any(marker.casefold() in s[k].casefold()
+               for marker in INTERNAL_PLACEHOLDERS for k in ('title', 'subtitle', 'body')):
+            raise ValueError('internal guide placeholder cannot be published')
         ids.add(s['id'])
     if source_pages is not None:
         start, end, appendix = WEEK_PAGES[week]
