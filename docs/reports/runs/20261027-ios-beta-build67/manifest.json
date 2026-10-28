@@ -1,0 +1,27 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261027-ios-beta-build67",
+  "runs": [
+    {
+      "label": "20261027-ios-beta-build67",
+      "source": "/private/tmp/tongxing-build67-report-FX3IV9/20261027-ios-beta-build67",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "20261027-ios-beta-build67",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 2763,
+      "truncated": false,
+      "sha256": "2f78ad9adc6ae4395967ecc4d22fed5b016320576f19c3baf4bf03b6025a7359",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}
