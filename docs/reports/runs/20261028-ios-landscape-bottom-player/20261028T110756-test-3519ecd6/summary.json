@@ -1,0 +1,25 @@
+{
+  "action": "test",
+  "scheme": "TongxingBeta",
+  "configuration": "BetaDebug",
+  "statusFileSha256": "96b190f35ae306f9ad4944b7a5236cd727cac8bb66737f8c33eb9a377b628290",
+  "logSha256": "bc9df6dddf404f5370e496dcea46b4bacd97493e7261ec8029f14efc86aa97a5",
+  "resultBundle": "test.xcresult",
+  "resultBundleComplete": true,
+  "result": "Passed",
+  "totalTestCount": 1,
+  "passedTests": 1,
+  "failedTests": 0,
+  "skippedTests": 0,
+  "expectedFailures": 0,
+  "runtimeWarnings": [],
+  "failures": [],
+  "platforms": [
+    {
+      "deviceName": "iPad mini (A17 Pro)",
+      "osVersion": "27.0",
+      "platform": "iOS Simulator"
+    }
+  ],
+  "hitRegionDiagnostics": []
+}

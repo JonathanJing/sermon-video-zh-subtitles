@@ -1,0 +1,20 @@
+{
+  "baseline": "3fbd2c9f74236b8eecc7b49126d9a8eb89bf89ef",
+  "candidate": "6542164897c52bef3bf47fa4fe60eca0b916fa5b",
+  "diffSha256": "ed19a3219d1e3dc2e13f6697b7e3badf9630873be00f2faefec870d5588790e7",
+  "remoteCommitVerified": true,
+  "workingTreeClean": true,
+  "independentReview": "exact revision verified; no static blockers",
+  "humanApproval": false,
+  "manualAppExecutableSha256": "9eb22a9a49d90f79cb610537b46911eedbe15d8c0c46a4caa8d53a5ba4777238",
+  "testScopeNote": "Final iPhone 3 tests passed on final production and test sources; mini 1 test passed before removal of compact-only top padding, which was already zero for mini; final mini UI readback uses final fixed bundle; Duo rail readback uses initial bundle with unchanged regular-height behavior",
+  "initialAppExecutableSha256": "9eb22a9a49d90f79cb610537b46911eedbe15d8c0c46a4caa8d53a5ba4777238",
+  "reviewedCommits": [
+    "85db47057ae33aad501b6cfb02ae20b2f700824e",
+    "6542164897c52bef3bf47fa4fe60eca0b916fa5b"
+  ],
+  "binaryIdentityNote": "Tongxing is a Debug launcher stub; bind product code with Tongxing.debug.dylib, not the stub alone",
+  "initialCodeDylibSha256": "3ee09c010e5207a1576479c5a741237c257cfce9e0fb9f2aed5557502faf2d3a",
+  "finalCodeDylibSha256": "812809641101617899ba8648c5f81c2c658dd993838d01e82939e5db818b0221",
+  "priorMenuFixCodeDylibSha256": "f0fba5b046d07e2d37725aa5bf232a5cb642608885a57510de18d7bfd5d9b45b"
+}
