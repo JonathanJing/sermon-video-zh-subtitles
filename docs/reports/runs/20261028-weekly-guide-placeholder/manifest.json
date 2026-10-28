@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261028-weekly-guide-placeholder",
+  "runs": [
+    {
+      "label": "weekly-guide-placeholder-test-20261027",
+      "source": "~/.codex/worktrees/weekly-study-guide-design/sermon-video-zh-subtitles/artifacts/weekly-guide-placeholder-test-20261027",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "weekly-guide-placeholder-test-20261027",
+      "path": "backend.log",
+      "kind": "log",
+      "bytes": 179,
+      "truncated": false,
+      "sha256": "5df9dc61c18d02d79d534055021ba5744fd4025deac6c5f84c032e561d6a571e",
+      "redactions": {}
+    },
+    {
+      "run": "weekly-guide-placeholder-test-20261027",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 341,
+      "truncated": false,
+      "sha256": "1b236dd15edb52691dbc19bbbe770bc08c869d62c1244c81da0ab92723fd5e32",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}
