@@ -1,0 +1,38 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261028-guide-glass-ui-fail-safe",
+  "runs": [
+    {
+      "label": "guide-glass-ui-fail",
+      "source": "~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/run-report-sources/guide-glass-ui-fail",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "guide-glass-ui-fail",
+      "path": "run.log",
+      "kind": "log",
+      "bytes": 384422,
+      "truncated": true,
+      "sha256": "1d6b827926161274363ba8cad353af527ecb6f7279936dc33366a16cf380bee9",
+      "redactions": {
+        "home_dir": 119
+      }
+    },
+    {
+      "run": "guide-glass-ui-fail",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 460,
+      "truncated": false,
+      "sha256": "daa9c9bf5109362c00b16dade803406b61fa491d53053c703440de54ab0aa583",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "action": "TongxingUITests/WeeklyGuidePreviewUITests/testLandscapeAutomaticallyShowsGuideAndRotationKeepsPlayback",
+  "result": "failed_then_runner_cleanup_interrupted",
+  "failure": "guide-chapter-menu was absent from the accessibility hierarchy after moving a Label and Menu into one toolbar item",
+  "testAssertionsExecuted": true,
+  "simulator": "iPhone 17 Pro iOS 27.0",
+  "followUp": "Changed title itself into the menu; subsequent UI test passed"
+}
