@@ -1,0 +1,17 @@
+{
+  "status": "dev_updated_and_simulator_passed",
+  "scope": "Korean week 3 reader r9; titles refined",
+  "remote": "live manifest and guide exactly match candidate",
+  "ios_simulator": {
+    "runtime": "iOS 27.1",
+    "passed": 1,
+    "failed": 0,
+    "skipped": 0
+  },
+  "limitations": [
+    "No production deployment or new TestFlight.",
+    "Translation machine reviewed and not human approved.",
+    "Table descriptions refer to the original.",
+    "Screenshots show navigation, not a full read-through."
+  ]
+}
