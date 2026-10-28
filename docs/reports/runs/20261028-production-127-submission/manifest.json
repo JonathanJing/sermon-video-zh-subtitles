@@ -1,0 +1,27 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261028-production-127-submission",
+  "runs": [
+    {
+      "label": "promotion-summary",
+      "source": "~/.codex/worktrees/weekly-study-guide-design/sermon-video-zh-subtitles/artifacts/tongxing-ios/production-1.26.27-build70-guide-manual/promotion-summary",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "promotion-summary",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 1937,
+      "truncated": false,
+      "sha256": "7a5b8dc3836a6446359683d39a3623cc60c894b5350e33824461d0414e20c904",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}
