@@ -1,0 +1,10 @@
+{
+  "action": "build",
+  "sourceCommit": "intermediate working tree; see revision narrative",
+  "device": null,
+  "scheme": "TongxingBeta",
+  "configuration": "BetaDebug",
+  "exitStatus": 0,
+  "testCases": [],
+  "resultBundleFinalized": true
+}
