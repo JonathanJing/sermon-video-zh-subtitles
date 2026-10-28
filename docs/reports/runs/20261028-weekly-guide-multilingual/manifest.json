@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261028-weekly-guide-multilingual",
+  "runs": [
+    {
+      "label": "weekly-guide-multilingual-final-20261027",
+      "source": "~/.codex/worktrees/weekly-study-guide-design/sermon-video-zh-subtitles/artifacts/weekly-guide-multilingual-final-20261027",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "weekly-guide-multilingual-final-20261027",
+      "path": "backend.log",
+      "kind": "log",
+      "bytes": 179,
+      "truncated": false,
+      "sha256": "ce1a97cfd0c98f5b50854c0c39c4f0e3ac1026784fe5b71513e466acd2b290dd",
+      "redactions": {}
+    },
+    {
+      "run": "weekly-guide-multilingual-final-20261027",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 768,
+      "truncated": false,
+      "sha256": "ec62a1fd3048f16e78873636eb3aad7632a8bea7eebc74c4da8a87e7b791bc6c",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

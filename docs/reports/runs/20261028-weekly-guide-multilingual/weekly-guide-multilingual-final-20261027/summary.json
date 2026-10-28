@@ -1,0 +1,23 @@
+{
+  "status": "completed_with_known_debug_configuration_failure",
+  "purpose": "weekly guide multilingual backend and iOS tests",
+  "backend": {
+    "prior_tests_passed": 48,
+    "final_tests_passed": 85,
+    "failed": 0
+  },
+  "ios": {
+    "unit_passed": 20,
+    "unit_failed": 0,
+    "unit_skipped": 0,
+    "beta_debug_real_week_one_ui_passed": 1,
+    "final_synthetic_navigation_ui_passed": 1,
+    "debug_ui_run": "failed: Debug configuration did not package weekly guide; interrupted after Xcode hang, exit 143",
+    "beta_debug_retest": "passed with matching existing bundled resource"
+  },
+  "verification_limits": [
+    "No Korean or Spanish live guide enabled",
+    "No translated body real-device acceptance",
+    "Machine review is not human approval"
+  ]
+}
