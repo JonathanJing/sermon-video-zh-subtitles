@@ -1,0 +1,45 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261028-ios-beta-12631-testflight",
+  "runs": [
+    {
+      "label": "beta-1.26.31-build74-run-report",
+      "source": "~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/beta-1.26.31-build74-run-report",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "beta-1.26.31-build74-run-report",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 191,
+      "truncated": false,
+      "sha256": "b751632e03450e32374d41e653aa7d72a539b5ffa42330d698b88545e8593a67",
+      "redactions": {}
+    },
+    {
+      "run": "beta-1.26.31-build74-run-report",
+      "path": "release-receipt.json",
+      "kind": "whole",
+      "bytes": 1589,
+      "truncated": false,
+      "sha256": "2a9d125ccddaaa56101ead3162bf82ae934883cdbfd8a8c85ff5669e1dd076d0",
+      "redactions": {}
+    },
+    {
+      "run": "beta-1.26.31-build74-run-report",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 1589,
+      "truncated": false,
+      "sha256": "2a9d125ccddaaa56101ead3162bf82ae934883cdbfd8a8c85ff5669e1dd076d0",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}
