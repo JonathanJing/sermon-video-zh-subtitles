@@ -1,0 +1,27 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261028-chinese-guide-beta72",
+  "runs": [
+    {
+      "label": "chinese-guide-beta72-run-report",
+      "source": "~/.codex/worktrees/chinese-guide-rich-content/sermon-video-zh-subtitles/artifacts/chinese-guide-beta72-run-report",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "chinese-guide-beta72-run-report",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 1412,
+      "truncated": false,
+      "sha256": "e8c9c8a1f125527a5ed47924e1271d217ff0b3f40a79103b4e25de79976c6b73",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}
