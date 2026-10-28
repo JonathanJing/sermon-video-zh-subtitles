@@ -1,0 +1,27 @@
+{
+  "status": "internal_testing",
+  "channel": "beta",
+  "version": "1.26.28",
+  "build": "71",
+  "sourceCommit": "2ccc37de2df22f93680ea5d2ec9d555c7639b246",
+  "archiveManifestSHA256": "40eebc4279aecf2dd29bf56e64c9dee0f4f9616f3f2b3cc33e673fcd7505b7d9",
+  "ipaSHA256": "88d14e8a91f33accc7282f2e891d8f11edbd9786eda9dd6f99e7ab0d8e39db7a",
+  "apple": {
+    "processingState": "VALID",
+    "internalBuildState": "IN_BETA_TESTING",
+    "group": "Rooted",
+    "groupBuildReadback": true,
+    "notesReadback": true
+  },
+  "content": {
+    "dev_enabled": "Korean and Spanish weeks 3–7",
+    "unbound_private": "weeks 1–2 and 8–12",
+    "review": "machine reviewed, not human approved"
+  },
+  "limits": [
+    "No new production release.",
+    "No real-device acceptance.",
+    "No human language approval.",
+    "Older bundles do not gain cloud-reading capability."
+  ]
+}
