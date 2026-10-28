@@ -36,10 +36,12 @@ targets:
           - Info.plist
       - path: Shared
     postCompileScripts:
-      - name: Copy local Beta weekly guides
+      - name: Copy local weekly guides
         basedOnDependencyAnalysis: false
         inputFiles:
           - "$(SRCROOT)/GuideResources"
+          - "$(TONGXING_GUIDE_DATA_INPUT)"
+          - "$(TONGXING_GUIDE_CHECKSUM_INPUT)"
         outputFiles:
           - "$(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/weekly-guides.json"
         script: |
@@ -47,9 +49,13 @@ targets:
           destination="${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/weekly-guides.json"
           rm -f "$destination"
           case "${CONFIGURATION}" in
-            BetaDebug|BetaRelease)
+            Release|BetaDebug|BetaRelease)
               source="${SRCROOT}/GuideResources/weekly-guides.json"
               checksum="${SRCROOT}/GuideResources/weekly-guides.sha256"
+              if [ "${CONFIGURATION}" = "Release" ] && { [ ! -f "$source" ] || [ ! -f "$checksum" ]; }; then
+                echo "error: Release requires the verified weekly guide payload and SHA-256"
+                exit 1
+              fi
               if [ -f "$source" ] || [ -f "$checksum" ]; then
                 if [ ! -f "$source" ] || [ ! -f "$checksum" ]; then
                   echo "error: local guide payload and SHA-256 must both exist"
@@ -73,6 +79,10 @@ targets:
         TONGXING_DISPLAY_NAME: 同行
         TONGXING_URL_SCHEME: tongxing
         INFOPLIST_FILE: App/Info.plist
+        # Non-Release builds keep the guide optional. Release declares both
+        # exact files as inputs, allowing the Xcode script sandbox to stay on.
+        TONGXING_GUIDE_DATA_INPUT: "$(SRCROOT)/GuideResources"
+        TONGXING_GUIDE_CHECKSUM_INPUT: "$(SRCROOT)/GuideResources"
         MARKETING_VERSION: "1.26.18"
         CURRENT_PROJECT_VERSION: "58"
         # ActivityStyle.transient is absent on iOS 17 despite the current SDK's
@@ -88,8 +98,11 @@ targets:
           TONGXING_CONTENT_ORIGIN: "https://ai-for-god-sermon-audio-dev.web.app"
         Release:
           CODE_SIGN_ENTITLEMENTS: Config/ProductionPush.entitlements
-          MARKETING_VERSION: "1.26.21"
-          CURRENT_PROJECT_VERSION: "64"
+          SWIFT_ACTIVE_COMPILATION_CONDITIONS: "$(inherited) TONGXING_GUIDE_PREVIEW"
+          TONGXING_GUIDE_DATA_INPUT: "$(SRCROOT)/GuideResources/weekly-guides.json"
+          TONGXING_GUIDE_CHECKSUM_INPUT: "$(SRCROOT)/GuideResources/weekly-guides.sha256"
+          MARKETING_VERSION: "1.26.27"
+          CURRENT_PROJECT_VERSION: "70"
           TONGXING_CONTENT_ORIGIN: "https://ai-for-god-sermon-audio.web.app"
         BetaDebug:
           CODE_SIGN_ENTITLEMENTS: Config/BetaPush.entitlements
@@ -150,8 +163,8 @@ targets:
         SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD: NO
       configs:
         Release:
-          MARKETING_VERSION: "1.26.21"
-          CURRENT_PROJECT_VERSION: "64"
+          MARKETING_VERSION: "1.26.27"
+          CURRENT_PROJECT_VERSION: "70"
         BetaDebug:
           PRODUCT_BUNDLE_IDENTIFIER: com.jonathanjing.tongxing.beta.listening-activity
           TONGXING_ACTIVITY_DISPLAY_NAME: 同行-beta播放状态
