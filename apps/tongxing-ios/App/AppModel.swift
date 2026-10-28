@@ -141,11 +141,16 @@ final class AppModel: ObservableObject {
         }
         guard alignmentController?.available == true else {
             if publishedFingerprint { return "当前音频没有可用的听声对齐资料。" }
-            return "本篇尚未提供现场对齐资料，请刷新目录或手动定位。"
+            return "当前音频没有可用的听声对齐资料。"
         }
         if isPreparing { return "正在准备音频，请稍候再开始现场自动对齐。" }
         if !playback.isReady { return "音频尚未准备就绪，请稍候或重新载入音频。" }
         return alignmentStatus
+    }
+
+    var showsAlignmentStatus: Bool {
+        alignmentBusy || hasAlignmentFeedback || alignmentController?.available == true ||
+            (selectedWeek == nil && selectedContentTarget?.audioFingerprint != nil)
     }
 
     func updateAlignmentState(status: String, busy: Bool, position: Double?) {
@@ -163,7 +168,7 @@ final class AppModel: ObservableObject {
         alignmentPosition = nil
         alignmentStatus = alignmentController?.available == true
             ? "请播放同一录音的原声，再点击听声对齐。"
-            : "本篇尚未提供现场对齐资料，请刷新目录或手动定位。"
+            : "当前音频没有可用的听声对齐资料。"
     }
 
     var alignmentAvailable: Bool {

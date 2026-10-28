@@ -1080,12 +1080,14 @@ final class ListeningFlowUITests: XCTestCase {
     func testUnavailableAlignmentExplainsReason() throws {
         let app = launchFixture()
         expandCompactDockIfNeeded(in: app)
+        XCTAssertFalse(app.staticTexts["alignment-status"].exists)
+        screenshot("unavailable-alignment-status-hidden", app: app)
         let alignment = app.buttons["align-live-audio"]
         try waitFor(alignment, "exists == true AND enabled == true AND hittable == true")
         alignment.tap()
         let explanation = app.alerts["现场自动对齐暂不可用"]
         XCTAssertTrue(explanation.waitForExistence(timeout: 5))
-        XCTAssertTrue(explanation.staticTexts["本篇尚未提供现场对齐资料，请刷新目录或手动定位。"].exists)
+        XCTAssertTrue(explanation.staticTexts["当前音频没有可用的听声对齐资料。"].exists)
         screenshot("unavailable-alignment-explanation", app: app)
         explanation.buttons["关闭"].tap()
         XCTAssertFalse(explanation.exists)
