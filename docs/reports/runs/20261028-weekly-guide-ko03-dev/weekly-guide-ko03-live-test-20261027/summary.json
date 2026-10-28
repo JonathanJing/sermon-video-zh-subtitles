@@ -1,0 +1,19 @@
+{
+  "status": "dev_deployed_and_simulator_readback_passed",
+  "scope": "Korean week three reader r8 only",
+  "dev_hosting_version": "sites/ai-for-god-sermon-audio-dev/versions/de791451a6aed7dc",
+  "manifest_and_resource": "HTTP exact bytes and SHA matched",
+  "simulator": {
+    "runtime": "iOS 27.1",
+    "test_passed": 1,
+    "test_failed": 0,
+    "test_skipped": 0,
+    "real_catalog_and_remote_guide": true
+  },
+  "limitations": [
+    "No production deployment.",
+    "No new TestFlight or real-device acceptance.",
+    "Guide is machine translated, not human approved.",
+    "Table explanations remain referred to original; viewer-page-only labels reduce usability and are being revised."
+  ]
+}
