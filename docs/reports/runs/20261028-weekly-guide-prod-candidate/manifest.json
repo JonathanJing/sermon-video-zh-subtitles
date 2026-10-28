@@ -1,0 +1,27 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261028-weekly-guide-prod-candidate",
+  "runs": [
+    {
+      "label": "weekly-guide-production-candidate-report-20261027",
+      "source": "~/.codex/worktrees/weekly-study-guide-design/sermon-video-zh-subtitles/artifacts/weekly-guide-production-candidate-report-20261027",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "weekly-guide-production-candidate-report-20261027",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 558,
+      "truncated": false,
+      "sha256": "9d3d6aef21d2e42fefbc470c31b959a3cac97079a168dfff5c788b2d8538c5b5",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}
