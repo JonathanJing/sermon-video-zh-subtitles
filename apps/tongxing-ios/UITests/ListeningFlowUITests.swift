@@ -1154,18 +1154,33 @@ final class ListeningFlowUITests: XCTestCase {
         XCUIDevice.shared.orientation = .landscapeLeft
         defer { XCUIDevice.shared.orientation = .portrait }
         let app = launchFixture()
+        // Duo's inner/outer system-toolbar layouts have dedicated rail tests.
+        let longEdge = max(app.frame.width, app.frame.height)
+        let shortEdge = min(app.frame.width, app.frame.height)
+        let isDuoDisplay = (abs(longEdge - 951) < 2 && abs(shortEdge - 669) < 2)
+            || (abs(longEdge - 678) < 2 && abs(shortEdge - 466) < 2)
+        try XCTSkipIf(isDuoDisplay, "Duo retains its system vertical player toolbar")
         let play = app.buttons["playback-toggle"]
-        XCTAssertGreaterThan(play.frame.minX, app.frame.midX,
-                             "宽而矮的阅读区应把播放栏移到右侧")
-        assertNavigationActionsAbovePlayer(in: app)
+        XCTAssertGreaterThan(play.frame.midY, app.frame.maxY - 120,
+                             "普通横屏播放栏应悬浮在底部")
+        XCTAssertEqual(play.frame.midY, app.buttons["nudge-backward"].frame.midY, accuracy: 2)
+        XCTAssertEqual(play.frame.midY, app.buttons["nudge-forward"].frame.midY, accuracy: 2)
+        XCTAssertEqual(app.buttons.matching(identifier: "playback-toggle").count, 1)
         app.buttons["choose-sermon"].tap()
         XCTAssertTrue(app.buttons["legacy-week-ui-test-week"].waitForExistence(timeout: 5))
         app.buttons["完成"].tap()
         app.buttons["more-options"].tap()
         XCTAssertTrue(element("privacy-support-link", in: app).waitForExistence(timeout: 5))
         app.buttons["完成"].tap()
-        try assertAlignmentAvailableInMore(in: app)
-        screenshot("landscape-alignment-in-more", app: app)
+        let more = app.buttons["playback-more"]
+        let moreFrame = more.frame
+        let playerFrame = play.frame
+        more.tap()
+        assertPlaybackMorePopoverNearButton(in: app, buttonFrame: moreFrame, besideTrailingRail: false)
+        XCTAssertTrue(app.buttons["align-live-audio"].isHittable)
+        app.buttons["playback-more-close"].tap()
+        XCTAssertEqual(play.frame, playerFrame)
+        screenshot("landscape-bottom-player", app: app)
     }
 
     private func assertNavigationActionsAbovePlayer(in app: XCUIApplication,

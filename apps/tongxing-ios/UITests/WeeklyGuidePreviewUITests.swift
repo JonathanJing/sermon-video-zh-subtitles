@@ -303,7 +303,192 @@ final class WeeklyGuidePreviewUITests: XCTestCase {
         XCTAssertFalse(app.staticTexts["本周研读手册尚不可用"].exists)
     }
 
+    func testLandscapeAutomaticallyShowsGuideAndRotationKeepsPlayback() {
+        let app = launchLandscapeGuide(prepareAudio: true)
+        defer { app.terminate(); XCUIDevice.shared.orientation = .portrait }
+        let guide = app.scrollViews["guide-scroll"]
+        let listening = app.scrollViews["listening-scroll"]
+        XCTAssertTrue(guide.waitForExistence(timeout: 15))
+        XCTAssertTrue(listening.exists)
+        XCTAssertLessThanOrEqual(guide.frame.maxX, listening.frame.minX + 1)
+        XCTAssertFalse(app.buttons["guide-close"].exists)
+        XCTAssertFalse(app.buttons["open-guide-beta-preview"].exists)
+        XCTAssertEqual(app.buttons.matching(identifier: "playback-toggle").count, 1)
+        let play = app.buttons["playback-toggle"]
+        XCTAssertTrue(play.isHittable)
+        let before = play.label
+        let rightFrame = listening.frame
+        let pausedPosition = play.value as? String
+        let menu = app.buttons["guide-chapter-menu"]
+        recordGuideHitRegions(app: app, phase: "after-download-and-rotation")
+        XCTAssertTrue(menu.isHittable)
+        menu.tap()
+        XCTAssertTrue(app.buttons["guide-section-group"].waitForExistence(timeout: 5))
+        app.buttons["guide-section-group"].tap()
+        let body = app.staticTexts["测试用讨论内容，不代表教会手册。"]
+        XCTAssertTrue(body.waitForExistence(timeout: 5))
+        XCTAssertTrue(body.isHittable)
+        XCTAssertEqual(play.label, before)
+        XCTAssertEqual(play.value as? String, pausedPosition)
+        XCTAssertEqual(listening.frame, rightFrame)
+        attachLandscape("landscape-guide-and-listening", app: app)
+        play.tap()
+        XCTAssertNotEqual(play.label, before)
+        let playing = play.label
+        XCUIDevice.shared.orientation = .portrait
+        XCTAssertTrue(app.buttons["open-guide-beta-preview"].waitForExistence(timeout: 10))
+        XCTAssertFalse(guide.exists)
+        XCTAssertEqual(app.buttons["playback-toggle"].label, playing)
+        XCUIDevice.shared.orientation = .landscapeLeft
+        XCTAssertTrue(guide.waitForExistence(timeout: 10))
+        XCTAssertEqual(app.buttons["playback-toggle"].label, playing)
+        let playingPosition = playbackSeconds(app.buttons["playback-toggle"])
+        XCTAssertNotNil(playingPosition)
+        let advanced = expectation(for: NSPredicate { _, _ in
+            guard let before = playingPosition,
+                  let now = self.playbackSeconds(app.buttons["playback-toggle"]) else { return false }
+            return now > before
+        }, evaluatedWith: nil)
+        wait(for: [advanced], timeout: 5)
+        XCTAssertEqual(app.buttons["playback-toggle"].label, playing)
+        // A system Menu can keep XCTest waiting for UI idleness until this
+        // 36-second fixture ends. Verify rotation progress first, then pause
+        // before exercising the menu again and checking stable position.
+        app.buttons["playback-toggle"].tap()
+        XCTAssertEqual(app.buttons["playback-toggle"].label, before)
+        let positionAfterRotation = playbackSeconds(app.buttons["playback-toggle"])
+        XCTAssertNotNil(positionAfterRotation)
+        recordGuideHitRegions(app: app, phase: "after-second-rotation")
+        XCTAssertTrue(menu.isHittable)
+        menu.tap()
+        XCTAssertTrue(app.buttons["guide-section-group"].waitForExistence(timeout: 5))
+        app.buttons["guide-section-group"].tap()
+        XCTAssertTrue(body.isHittable)
+        XCTAssertEqual(app.buttons["playback-toggle"].label, before)
+        XCTAssertEqual(playbackSeconds(app.buttons["playback-toggle"]), positionAfterRotation)
+    }
+
+    private func playbackSeconds(_ button: XCUIElement) -> Int? {
+        guard let value = button.value as? String,
+              let time = value.components(separatedBy: "，").first else { return nil }
+        let fields = time.split(separator: ":")
+        guard (2...3).contains(fields.count) else { return nil }
+        var seconds = 0
+        for field in fields {
+            guard let part = Int(field), part >= 0 else { return nil }
+            seconds = seconds * 60 + part
+        }
+        return seconds
+    }
+
+    private func recordGuideHitRegions(app: XCUIApplication, phase: String) {
+        let menu = app.buttons["guide-chapter-menu"]
+        let detail = "phase=\(phase) menu=\(menu.frame) hittable=\(menu.isHittable) "
+            + "navigation=\(app.navigationBars.allElementsBoundByIndex.map(\.frame)) "
+            + "guide=\(app.scrollViews["guide-scroll"].frame) "
+            + "listening=\(app.scrollViews["listening-scroll"].frame)"
+        print(detail)
+        let attachment = XCTAttachment(string: detail)
+        attachment.name = "guide-hit-regions-\(phase)"
+        attachment.lifetime = .keepAlways
+        add(attachment)
+    }
+
+    func testOpenPortraitGuideMovesIntoLandscapePane() {
+        let app = launchLandscapeGuide(prepareAudio: true, startLandscape: false)
+        defer { app.terminate(); XCUIDevice.shared.orientation = .portrait }
+        let scroll = app.scrollViews["listening-scroll"]
+        let entry = app.buttons["open-guide-beta-preview"]
+        for _ in 0..<12 {
+            if entry.isHittable { break }
+            scroll.swipeDown()
+        }
+        XCTAssertTrue(entry.isHittable)
+        let position = app.buttons["playback-toggle"].value as? String
+        entry.tap()
+        XCTAssertTrue(app.buttons["guide-close"].waitForExistence(timeout: 10))
+        XCUIDevice.shared.orientation = .landscapeLeft
+        let dismissed = expectation(for: NSPredicate(format: "exists == false"),
+                                    evaluatedWith: app.buttons["guide-close"])
+        wait(for: [dismissed], timeout: 10)
+        XCTAssertTrue(app.scrollViews["guide-scroll"].exists)
+        XCTAssertTrue(app.scrollViews["listening-scroll"].exists)
+        XCTAssertEqual(app.buttons.matching(identifier: "playback-toggle").count, 1)
+        XCTAssertEqual(app.buttons["playback-toggle"].value as? String, position)
+        attachLandscape("portrait-guide-to-landscape-pane", app: app)
+    }
+
+    func testLandscapeUnavailableGuideKeepsListeningVisible() {
+        let app = launchLandscapeGuide(withGuide: false)
+        defer { app.terminate(); XCUIDevice.shared.orientation = .portrait }
+        XCTAssertTrue(app.scrollViews["guide-scroll"].waitForExistence(timeout: 15))
+        XCTAssertTrue(app.staticTexts["本周研读手册尚不可用"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.scrollViews["listening-scroll"].exists)
+        XCTAssertTrue(app.buttons["playback-toggle"].isHittable)
+        XCTAssertFalse(app.buttons["guide-chapter-menu"].exists)
+        attachLandscape("landscape-guide-unavailable", app: app)
+    }
+
+    func testLandscapeLargeTextKeepsChaptersAndPlayerReachable() {
+        let app = launchLandscapeGuide(largeText: true)
+        defer { app.terminate(); XCUIDevice.shared.orientation = .portrait }
+        XCTAssertTrue(app.scrollViews["guide-scroll"].waitForExistence(timeout: 15))
+        let menu = app.buttons["guide-chapter-menu"]
+        XCTAssertTrue(menu.isHittable)
+        menu.tap()
+        app.buttons["guide-section-group"].tap()
+        let body = app.staticTexts["测试用讨论内容，不代表教会手册。"]
+        XCTAssertTrue(body.waitForExistence(timeout: 5))
+        XCTAssertTrue(body.isHittable)
+        XCTAssertTrue(app.buttons["playback-toggle"].isHittable)
+        attachLandscape("landscape-guide-large-text", app: app)
+    }
+
+    private func launchLandscapeGuide(withGuide: Bool = true, largeText: Bool = false,
+                                      prepareAudio: Bool = false, startLandscape: Bool = true) -> XCUIApplication {
+        continueAfterFailure = false
+        XCUIDevice.shared.orientation = .portrait
+        let app = XCUIApplication()
+        app.launchArguments = ["--ui-testing", "-AppleLanguages", "(zh-Hans)", "-AppleLocale", "zh_CN"]
+            + (withGuide ? ["--ui-testing-study-guide"] : [])
+            + (largeText ? ["--ui-testing-large-text"] : [])
+        app.launchEnvironment["TONGXING_UI_TEST_RUN_ID"] = UUID().uuidString
+        app.launchEnvironment["TONGXING_TEST_HOST"] = "0"
+        app.launch()
+        XCTAssertTrue(app.staticTexts["sermon-title"].waitForExistence(timeout: 15))
+        if prepareAudio {
+            let download = app.buttons["download-audio"]
+            let scroll = app.scrollViews["listening-scroll"]
+            for _ in 0..<12 {
+                // XCTest can report a button behind the floating player as hittable.
+                // Bring the entire download button above the dock before tapping it.
+                if download.isHittable,
+                   download.frame.maxY < app.buttons["playback-toggle"].frame.minY - 12 { break }
+                scroll.swipeUp()
+            }
+            XCTAssertTrue(download.isHittable)
+            XCTAssertLessThan(download.frame.maxY, app.buttons["playback-toggle"].frame.minY - 12)
+            download.tap()
+            let downloaded = expectation(for: NSPredicate(format: "label CONTAINS %@", "正在使用已下载音频"),
+                                         evaluatedWith: app.descendants(matching: .any).matching(identifier: "download-status").firstMatch)
+            wait(for: [downloaded], timeout: 15)
+            let ready = expectation(for: NSPredicate(format: "enabled == true"),
+                                    evaluatedWith: app.buttons["playback-toggle"])
+            wait(for: [ready], timeout: 15)
+        }
+        if startLandscape { XCUIDevice.shared.orientation = .landscapeLeft }
+        return app
+    }
+
+    private func attachLandscape(_ name: String, app: XCUIApplication) {
+        let image = XCTAttachment(screenshot: app.screenshot())
+        image.name = name
+        image.lifetime = .keepAlways
+        add(image)
+    }
+
     func testGuideNavigationKeepsPlaybackAndShowsReviewDisclosure() {
+        XCUIDevice.shared.orientation = .portrait
         let app = XCUIApplication()
         app.launchArguments = ["--ui-testing", "--ui-testing-study-guide", "-AppleLanguages", "(zh-Hans)", "-AppleLocale", "zh_CN"]
         app.launchEnvironment["TONGXING_UI_TEST_RUN_ID"] = UUID().uuidString

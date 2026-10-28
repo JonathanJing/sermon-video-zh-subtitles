@@ -44,29 +44,6 @@ private struct CurrentToolbarVerticalEdge<Content: View>: View {
 }
 #endif
 
-/// Trailing-dock placement decision for Duo and other wide containers.
-///
-/// The trailing control column is for wide-and-short containers (Duo inner
-/// landscape, phone landscape). This intentionally stays a container-geometry
-/// decision rather than a size-class one: Duo inner landscape reports
-/// regular/regular while phone landscape reports compact/compact, so no
-/// single size-class combination selects both without branching on device or
-/// pose — and Apple's guidance frames the choice as "size classes *and*
-/// container size". Because it derives from the live control region (which
-/// already excludes the active fold), half-fold and Split View re-flow
-/// without extra code.
-private enum DockLayout {
-    /// Width threshold for the trailing column, near the regular-width
-    /// boundary. Height must also be below it: the column is only for
-    /// wide-and-short areas, not for tall regular-width layouts.
-    static let trailingDockThreshold: CGFloat = 700
-
-    static func usesTrailingDock(for controlRegion: CGRect) -> Bool {
-        controlRegion.width >= trailingDockThreshold
-            && controlRegion.height < trailingDockThreshold
-    }
-}
-
 struct ContentView: View {
     @ObservedObject private var localization = AppLocalization.shared
     @ObservedObject var model: AppModel
@@ -99,7 +76,8 @@ struct ContentView: View {
             let controlRegion = dockControlRegion(in: geometry)
             listeningNavigation(
                 controlRegion: controlRegion,
-                usesTrailingDock: DockLayout.usesTrailingDock(for: controlRegion)
+                isLandscape: geometry.size.width > geometry.size.height,
+                hasDividedRegion: controlRegion.size != geometry.size
             )
             .overlay { playbackMoreOverlay }
         }
@@ -216,11 +194,25 @@ struct ContentView: View {
         showingAlignmentFailure = model.alignmentFailure != nil && sheet == nil && scenePhase == .active
     }
 
-    private func listeningNavigation(controlRegion: CGRect, usesTrailingDock: Bool) -> some View {
+    private func listeningNavigation(controlRegion: CGRect,
+                                     isLandscape: Bool, hasDividedRegion: Bool) -> some View {
         NavigationStack {
             ToolbarVerticalEdgeReader { verticalBarEdge in
                 let usesSystemVerticalBar = verticalBarEdge != nil
-                return ScrollViewReader { proxy in
+                return GeometryReader { readingGeometry in
+                    // Use the reading area after the system bar and player safe-area
+                    // insets. A divided/folded region keeps the existing single reader.
+                    let guideWidth = isLandscape && !hasDividedRegion && readingGeometry.size.width >= 620
+                        ? min(460, max(280, readingGeometry.size.width * 0.45)) : 0
+                    HStack(spacing: 0) {
+                        #if DEBUG || TONGXING_GUIDE_PREVIEW
+                        if guideWidth > 0 {
+                            WeeklyGuidePreview(model: model, playback: playback, embedded: true)
+                                .frame(width: guideWidth)
+                            Divider()
+                        }
+                        #endif
+                ScrollViewReader { proxy in
                 ScrollView {
                     VStack(alignment: .leading, spacing: verticalSizeClass == .compact ? 12 : 16) {
                         WeeklyUpdateCard(updates: weeklyUpdates) { showingNotificationPoster = false; sheet = .weeklyUpdate }
@@ -233,7 +225,7 @@ struct ContentView: View {
                             HStack { Spacer(); appLanguageMenu }
                         }
                         if let week = model.selectedWeek {
-                            sermonHeading(week).id("top")
+                            sermonHeading(week, showsInlineGuide: guideWidth > 0).id("top")
                             if let notice = model.catalogNotice {
                                 Label(localization.text(notice), systemImage: "wifi.slash")
                                     .font(.footnote).foregroundStyle(.secondary)
@@ -274,8 +266,8 @@ struct ContentView: View {
                                     appLanguageMenu
                                 }
                                 SermonHeadingView(heading: model.heading(for: page), date: page.date,
-                                                  titleFont: .largeTitle.bold(), identifier: "published-page")
-                                guideButton
+                                                  titleFont: guideWidth > 0 ? .title2.bold() : .largeTitle.bold(), identifier: "published-page")
+                                if guideWidth == 0 { guideButton }
                                 languageButton
                                 if model.fullVideoURL != nil || model.selectedAudioLanguageName != nil {
                                     if typeSize.isAccessibilitySize {
@@ -405,29 +397,26 @@ struct ContentView: View {
                     }
                 }
             }
+                    }
+                    .onChange(of: guideWidth > 0, initial: true) { _, showsGuide in
+                        #if DEBUG || TONGXING_GUIDE_PREVIEW
+                        if showsGuide && sheet == .guidePreview { sheet = nil }
+                        #endif
+                    }
+                }
             .background(Brand.background)
-            .listeningPlayerDock(atTrailingEdge: usesTrailingDock,
+            // Standard phone and tablet layouts retain the floating bottom player.
+            // Duo uses its system-provided vertical toolbar when that is active.
+            .listeningPlayerDock(atTrailingEdge: false,
                                  inSystemBar: usesSystemVerticalBar) {
-                if usesTrailingDock && !usesSystemVerticalBar {
-                    VStack(spacing: 12) {
-                        trailingNavigationActions
-                        if model.selectedTrack != nil || model.selectedAudioLocale != nil {
-                            listeningPlaybackDock(placement: .trailing)
-                        }
+                if model.selectedTrack != nil || model.selectedAudioLocale != nil {
+                    HStack(spacing: 0) {
+                        Color.clear.frame(width: controlRegion.minX, height: 0)
+                        listeningPlaybackDock(placement: .bottom)
+                            .frame(width: controlRegion.width)
+                        Spacer(minLength: 0)
                     }
-                    .frame(width: 80)
-                    .frame(maxHeight: .infinity, alignment: .top)
-                    .padding(.top, 8)
-                } else {
-                    if model.selectedTrack != nil || model.selectedAudioLocale != nil {
-                        HStack(spacing: 0) {
-                            Color.clear.frame(width: controlRegion.minX, height: 0)
-                            listeningPlaybackDock(placement: .bottom)
-                                .frame(width: controlRegion.width)
-                            Spacer(minLength: 0)
-                        }
-                        .frame(maxWidth: .infinity)
-                    }
+                    .frame(maxWidth: .infinity)
                 }
             }
             .toolbar {
@@ -449,13 +438,11 @@ struct ContentView: View {
                         .disabled(currentTranscriptRowID == nil)
                     }
                 }
-                if !usesTrailingDock || usesSystemVerticalBar {
-                    ToolbarItemGroup(placement: .primaryAction) {
-                        Button(localization.text("选择证道周次"), systemImage: "calendar") { sheet = .weeks }
-                            .labelStyle(.iconOnly).accessibilityIdentifier("choose-sermon")
-                        Button(localization.text("更多选项"), systemImage: "ellipsis.circle") { sheet = .about }
-                            .labelStyle(.iconOnly).accessibilityIdentifier("more-options")
-                    }
+                ToolbarItemGroup(placement: .primaryAction) {
+                    Button(localization.text("选择证道周次"), systemImage: "calendar") { sheet = .weeks }
+                        .labelStyle(.iconOnly).accessibilityIdentifier("choose-sermon")
+                    Button(localization.text("更多选项"), systemImage: "ellipsis.circle") { sheet = .about }
+                        .labelStyle(.iconOnly).accessibilityIdentifier("more-options")
                 }
                 #if os(iOS) && canImport(SwiftUI, _version: 8.0.85)
                 if #available(iOS 27.1, macOS 27.1, *), usesSystemVerticalBar,
@@ -593,32 +580,6 @@ struct ContentView: View {
         }
     }
 
-    private var trailingNavigationActions: some View {
-        VStack(spacing: 0) {
-            Button { sheet = .weeks } label: {
-                Image(systemName: "calendar")
-                    .frame(width: 56, height: 52)
-                    .contentShape(Rectangle())
-            }
-            .accessibilityLabel(localization.text("选择证道周次"))
-            .accessibilityIdentifier("choose-sermon")
-
-            Button { sheet = .about } label: {
-                Image(systemName: "ellipsis.circle")
-                    .frame(width: 56, height: 52)
-                    .contentShape(Rectangle())
-            }
-            .accessibilityLabel(localization.text("更多选项"))
-            .accessibilityIdentifier("more-options")
-        }
-        .font(.title3.weight(.medium))
-        .buttonStyle(.plain)
-        .foregroundStyle(Brand.accent)
-        .padding(6)
-        .listeningGlassSurface()
-        .padding(.horizontal, 6)
-    }
-
     private func dockControlRegion(in geometry: GeometryProxy) -> CGRect {
         let bounds = CGRect(origin: .zero, size: geometry.size)
         #if os(iOS) && canImport(SwiftUI, _version: 8.0.85)
@@ -632,8 +593,10 @@ struct ContentView: View {
         return bounds
     }
 
-    @ViewBuilder private func sermonHeading(_ week: SermonWeek) -> some View {
-        if verticalSizeClass == .compact {
+    @ViewBuilder private func sermonHeading(_ week: SermonWeek, showsInlineGuide: Bool) -> some View {
+        if showsInlineGuide {
+            regularSermonHeading(week, showsInlineGuide: true)
+        } else if verticalSizeClass == .compact {
             HStack(spacing: 16) {
                 VStack(alignment: .leading, spacing: 4) {
                     SermonHeadingView(heading: model.heading(for: week),
@@ -650,7 +613,7 @@ struct ContentView: View {
         }
     }
 
-    private func regularSermonHeading(_ week: SermonWeek) -> some View {
+    private func regularSermonHeading(_ week: SermonWeek, showsInlineGuide: Bool = false) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
                 Text(localization.text("证道")).font(.caption.weight(.medium)).foregroundStyle(.secondary)
@@ -658,7 +621,7 @@ struct ContentView: View {
                 appLanguageMenu
             }
             SermonHeadingView(heading: model.heading(for: week),
-                              date: week.date, titleFont: .largeTitle.bold(), identifier: "sermon")
+                              date: week.date, titleFont: showsInlineGuide ? .title2.bold() : .largeTitle.bold(), identifier: "sermon")
             Text(week.scripture).font(.footnote).foregroundStyle(.secondary)
             languageButton
             if model.selectedContentLocale != "zh-Hans", model.selectedContentTarget != nil {
@@ -672,7 +635,7 @@ struct ContentView: View {
                     .padding(.horizontal, 10).padding(.vertical, 6)
                     .background(Brand.accent.opacity(0.10), in: Capsule())
                 Spacer()
-                guideButton
+                if !showsInlineGuide { guideButton }
             }
         }
     }
