@@ -1,0 +1,292 @@
+
+$ /usr/bin/xcrun xcodebuild -project ~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/apps/tongxing-ios/Tongxing.xcodeproj -list -json -disableAutomaticPackageResolution
+{
+  "project" : {
+    "configurations" : [
+      "BetaDebug",
+      "BetaRelease",
+      "Debug",
+      "Release"
+    ],
+    "name" : "Tongxing",
+    "schemes" : [
+      "ListeningActivityExtension",
+      "Tongxing",
+      "TongxingBeta",
+      "TongxingCore",
+      "TongxingInfrastructure",
+      "TongxingPreview",
+      "TongxingScreenshots"
+    ],
+    "targets" : [
+      "Tongxing",
+      "ListeningActivityExtension",
+      "TongxingTests",
+      "TongxingUITests"
+    ]
+  }
+}
+
+$ /usr/bin/xcrun simctl list devices available --json
+{
+  "devices" : {
+    "com.apple.CoreSimulator.SimRuntime.iOS-27-0" : [
+      {
+        "dataPath" : "\/Users\/jonathan_jing\/Library\/Developer\/CoreSimulator\/Devices\/A9ACB321-07F8-4540-AD3C-7FACBD384A1F\/data",
+        "dataPathSize" : 5734416384,
+        "logPath" : "\/Users\/jonathan_jing\/Library\/Logs\/CoreSimulator\/A9ACB321-07F8-4540-AD3C-7FACBD384A1F",
+        "udid" : "A9ACB321-07F8-4540-AD3C-7FACBD384A1F",
+        "lastUsedAt" : "2026-10-28T22:45:06Z",
+        "isAvailable" : true,
+... 2673 lines omitted; 51 error-like lines, 50 kept below ...
+[line 1155] RegisterExecutionPolicyException ~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-28/cli/DerivedData/Build/Products/BetaDebug-iphonesimulator/PackageFrameworks/TongxingCore_-268EA610E369A1D_PackageProduct.framework (in target 'TongxingCoredynamic-product' from project 'TongxingCore')
+[line 1157]     builtin-RegisterExecutionPolicyException ~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-28/cli/DerivedData/Build/Products/BetaDebug-iphonesimulator/PackageFrameworks/TongxingCore_-268EA610E369A1D_PackageProduct.framework
+[line 1281] ~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/apps/tongxing-ios/App/MicrophoneCapture.swift:259:92: warning: main actor-isolated static property 'startupSeconds' can not be referenced from a nonisolated context; this is an error in the Swift 6 language mode
+[line 1288]     |                                                                                            `- warning: main actor-isolated static property 'startupSeconds' can not be referenced from a nonisolated context; this is an error in the Swift 6 language mode
+[line 1362] ~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/apps/tongxing-ios/App/MicrophoneCapture.swift:259:92: warning: main actor-isolated static property 'startupSeconds' can not be referenced from a nonisolated context; this is an error in the Swift 6 language mode
+[line 1369]     |                                                                                            `- warning: main actor-isolated static property 'startupSeconds' can not be referenced from a nonisolated context; this is an error in the Swift 6 language mode
+[line 1428] RegisterExecutionPolicyException ~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-28/cli/DerivedData/Build/Products/BetaDebug-iphonesimulator/ListeningActivityExtension.appex (in target 'ListeningActivityExtension' from project 'Tongxing')
+[line 1430]     builtin-RegisterExecutionPolicyException ~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-28/cli/DerivedData/Build/Products/BetaDebug-iphonesimulator/ListeningActivityExtension.appex
+[line 1550]     export CLANG_WARN_DIRECT_OBJC_ISA_USAGE\=YES_ERROR
+[line 1559]     export CLANG_WARN_OBJC_ROOT_CLASS\=YES_ERROR
+[line 1717]     export GCC_WARN_ABOUT_RETURN_TYPE\=YES_ERROR
+[line 1914]     export RUNTIME_EXCEPTION_ALLOW_DYLD_ENVIRONMENT_VARIABLES\=NO
+[line 1915]     export RUNTIME_EXCEPTION_ALLOW_JIT\=NO
+[line 1916]     export RUNTIME_EXCEPTION_ALLOW_UNSIGNED_EXECUTABLE_MEMORY\=NO
+[line 1917]     export RUNTIME_EXCEPTION_DEBUGGING_TOOL\=NO
+[line 1918]     export RUNTIME_EXCEPTION_DISABLE_EXECUTABLE_PAGE_PROTECTION\=NO
+[line 1919]     export RUNTIME_EXCEPTION_DISABLE_LIBRARY_VALIDATION\=NO
+[line 2066]     export VALIDATE_DEVELOPMENT_ASSET_PATHS\=YES_ERROR
+[line 2095]     export __DIAGNOSE_INVALID_DEPLOYMENT_TARGET_AS_ERROR\=YES
+[line 2264] ~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/apps/tongxing-ios/Tests/AudioAlignmentControllerTests.swift:876:100: warning: main actor-isolated static property 'match' can not be referenced from a nonisolated context; this is an error in the Swift 6 language mode
+[line 2275]      |                                                                                                    `- warning: main actor-isolated static property 'match' can not be referenced from a nonisolated context; this is an error in the Swift 6 language mode
+[line 2279] ~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/apps/tongxing-ios/Tests/AudioAlignmentControllerTests.swift:995:21: warning: stored property '_count' of 'Sendable'-conforming class 'CallCounter' is mutable; this is an error in the Swift 6 language mode
+[line 2283]      |                     `- warning: stored property '_count' of 'Sendable'-conforming class 'CallCounter' is mutable; this is an error in the Swift 6 language mode
+[line 2328] ~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/apps/tongxing-ios/Tests/AudioAlignmentControllerTests.swift:876:100: warning: main actor-isolated static property 'match' can not be referenced from a nonisolated context; this is an error in the Swift 6 language mode
+[line 2339]      |                                                                                                    `- warning: main actor-isolated static property 'match' can not be referenced from a nonisolated context; this is an error in the Swift 6 language mode
+[line 2343] ~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/apps/tongxing-ios/Tests/AudioAlignmentControllerTests.swift:995:21: warning: stored property '_count' of 'Sendable'-conforming class 'CallCounter' is mutable; this is an error in the Swift 6 language mode
+[line 2347]      |                     `- warning: stored property '_count' of 'Sendable'-conforming class 'CallCounter' is mutable; this is an error in the Swift 6 language mode
+[line 2351] ~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/apps/tongxing-ios/Tests/AudioAlignmentControllerTests.swift:591:25: warning: main actor-isolated static property 'match' cannot be accessed from outside of the actor; this is an error in the Swift 6 language mode
+[line 2355]      |                         `- warning: main actor-isolated static property 'match' cannot be accessed from outside of the actor; this is an error in the Swift 6 language mode
+[line 2359] ~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/apps/tongxing-ios/Tests/AudioAlignmentControllerTests.swift:609:20: warning: expression is 'async' but is not marked with 'await'; this is an error in the Swift 6 language mode
+[line 2365]      |                    `- warning: expression is 'async' but is not marked with 'await'; this is an error in the Swift 6 language mode
+[line 2369] ~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/apps/tongxing-ios/Tests/AudioAlignmentControllerTests.swift:622:81: warning: main actor-isolated static property 'noMatch' cannot be accessed from outside of the actor; this is an error in the Swift 6 language mode
+[line 2373]      |                                                                                 `- warning: main actor-isolated static property 'noMatch' cannot be accessed from outside of the actor; this is an error in the Swift 6 language mode
+[line 2377] ~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/apps/tongxing-ios/Tests/AudioAlignmentControllerTests.swift:638:25: warning: main actor-isolated static property 'match' cannot be accessed from outside of the actor; this is an error in the Swift 6 language mode
+[line 2381]      |                         `- warning: main actor-isolated static property 'match' cannot be accessed from outside of the actor; this is an error in the Swift 6 language mode
+[line 2385] ~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/apps/tongxing-ios/Tests/AudioAlignmentControllerTests.swift:654:25: warning: main actor-isolated static property 'match' cannot be accessed from outside of the actor; this is an error in the Swift 6 language mode
+[line 2389]      |                         `- warning: main actor-isolated static property 'match' cannot be accessed from outside of the actor; this is an error in the Swift 6 language mode
+[line 2393] ~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/apps/tongxing-ios/Tests/AudioAlignmentControllerTests.swift:681:81: warning: main actor-isolated static property 'match' cannot be accessed from outside of the actor; this is an error in the Swift 6 language mode
+[line 2397]      |                                                                                 `- warning: main actor-isolated static property 'match' cannot be accessed from outside of the actor; this is an error in the Swift 6 language mode
+[line 2401] ~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/apps/tongxing-ios/Tests/AudioAlignmentControllerTests.swift:698:78: warning: expression is 'async' but is not marked with 'await'; this is an error in the Swift 6 language mode
+[line 2407]      |                                                                              `- warning: expression is 'async' but is not marked with 'await'; this is an error in the Swift 6 language mode
+[line 2411] ~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/apps/tongxing-ios/Tests/AudioAlignmentControllerTests.swift:707:56: warning: main actor-isolated static property 'noMatch' cannot be accessed from outside of the actor; this is an error in the Swift 6 language mode
+[line 2415]      |                                                        `- warning: main actor-isolated static property 'noMatch' cannot be accessed from outside of the actor; this is an error in the Swift 6 language mode
+[line 2419] ~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/apps/tongxing-ios/Tests/AudioAlignmentControllerTests.swift:763:72: warning: main actor-isolated static property 'match' cannot be accessed from outside of the actor; this is an error in the Swift 6 language mode
+[line 2423]      |                                                                        `- warning: main actor-isolated static property 'match' cannot be accessed from outside of the actor; this is an error in the Swift 6 language mode
+[line 2605] RegisterExecutionPolicyException ~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-28/cli/DerivedData/Build/Products/BetaDebug-iphonesimulator/Tongxing.app/PlugIns/TongxingTests.xctest (in target 'TongxingTests' from project 'Tongxing')
+[line 2607]     builtin-RegisterExecutionPolicyException ~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-28/cli/DerivedData/Build/Products/BetaDebug-iphonesimulator/Tongxing.app/PlugIns/TongxingTests.xctest
+[line 2613] RegisterExecutionPolicyException ~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-28/cli/DerivedData/Build/Products/BetaDebug-iphonesimulator/Tongxing.app (in target 'Tongxing' from project 'Tongxing')
+[line 2615]     builtin-RegisterExecutionPolicyException ~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-28/cli/DerivedData/Build/Products/BetaDebug-iphonesimulator/Tongxing.app
+[line 2667] RegisterExecutionPolicyException ~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-28/cli/DerivedData/Build/Products/BetaDebug-iphonesimulator/TongxingUITests-Runner.app/PlugIns/TongxingUITests.xctest (in target 'TongxingUITests' from project 'Tongxing')
+... end of omitted section ...
+
+note: Removed stale file '~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-28/cli/DerivedData/Build/Intermediates.noindex/TongxingCore.build/Debug-iphonesimulator/TongxingCore-t.build/Objects-normal/arm64/FingerprintIndex.swiftconstvalues'
+
+note: Removed stale file '~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-28/cli/DerivedData/Build/Intermediates.noindex/TongxingIOS.build/Debug-iphonesimulator/TongxingInfrastructure-t.build/Objects-normal/arm64/ListeningStatistics.o'
+
+note: Removed stale file '~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-28/cli/DerivedData/Build/Intermediates.noindex/TongxingCore.build/Debug-iphonesimulator/TongxingCore-t.build/Objects-normal/arm64/FingerprintMatcher.o'
+
+note: Removed stale file '~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-28/cli/DerivedData/Build/Intermediates.noindex/TongxingCore.build/Debug-iphonesimulator/TongxingCore-t.build/Objects-normal/arm64/FingerprintMatcher.swiftconstvalues'
+
+note: Removed stale file '~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-28/cli/DerivedData/Build/Intermediates.noindex/TongxingIOS.build/Debug-iphonesimulator/TongxingInfrastructure-t.build/Objects-normal/arm64/ListeningStatistics.swiftconstvalues'
+
+note: Removed stale file '~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-28/cli/DerivedData/Build/Intermediates.noindex/TongxingIOS.build/Debug-iphonesimulator/TongxingInfrastructure-t.build/Objects-normal/arm64/MultilingualCatalogRepository.o'
+
+note: Removed stale file '~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-28/cli/DerivedData/Build/Intermediates.noindex/TongxingCore.build/Debug-iphonesimulator/TongxingCore-t.build/Objects-normal/arm64/ListeningAlignmentPhase.o'
+
+note: Removed stale file '~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-28/cli/DerivedData/Build/Intermediates.noindex/TongxingIOS.build/Debug-iphonesimulator/TongxingInfrastructure-t.build/Objects-normal/arm64/MultilingualCatalogRepository.swiftconstvalues'
+
+note: Removed stale file '~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-28/cli/DerivedData/Build/Intermediates.noindex/TongxingCore.build/Debug-iphonesimulator/TongxingCore-t.build/Objects-normal/arm64/ListeningAlignmentPhase.swiftconstvalues'
+
+note: Removed stale file '~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-28/cli/DerivedData/Build/Intermediates.noindex/TongxingIOS.build/Debug-iphonesimulator/TongxingInfrastructure-t.build/Objects-normal/arm64/OfflineLibrary.o'
+
+note: Removed stale file '~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-28/cli/DerivedData/Build/Intermediates.noindex/TongxingIOS.build/Debug-iphonesimulator/TongxingInfrastructure-t.build/Objects-normal/arm64/OfflineLibrary.swiftconstvalues'
+
+note: Removed stale file '~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-28/cli/DerivedData/Build/Intermediates.noindex/TongxingCore.build/Debug-iphonesimulator/TongxingCore-t.build/Objects-normal/arm64/MultilingualCatalog.o'
+
+note: Removed stale file '~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-28/cli/DerivedData/Build/Intermediates.noindex/TongxingIOS.build/Debug-iphonesimulator/TongxingInfrastructure-t.build/Objects-normal/arm64/ReviewedStudyResources.o'
+
+note: Removed stale file '~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-28/cli/DerivedData/Build/Intermediates.noindex/TongxingCore.build/Debug-iphonesimulator/TongxingCore-t.build/Objects-normal/arm64/MultilingualCatalog.swiftconstvalues'
+
+note: Removed stale file '~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-28/cli/DerivedData/Build/Intermediates.noindex/TongxingIOS.build/Debug-iphonesimulator/TongxingInfrastructure-t.build/Objects-normal/arm64/ReviewedStudyResources.swiftconstvalues'
+
+note: Removed stale file '~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-28/cli/DerivedData/Build/Intermediates.noindex/TongxingIOS.build/Debug-iphonesimulator/TongxingInfrastructure-t.build/Objects-normal/arm64/TongxingInfrastructure-OutputFileMap.json'
+
+note: Removed stale file '~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-28/cli/DerivedData/Build/Intermediates.noindex/TongxingIOS.build/Debug-iphonesimulator/TongxingInfrastructure-t.build/Objects-normal/arm64/TongxingInfrastructure-Swift.h'
+
+note: Removed stale file '~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-28/cli/DerivedData/Build/Intermediates.noindex/TongxingCore.build/Debug-iphonesimulator/TongxingCore-t.build/Objects-normal/arm64/PlaybackControlRegion.o'
+
+note: Removed stale file '~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-28/cli/DerivedData/Build/Intermediates.noindex/TongxingCore.build/Debug-iphonesimulator/TongxingCore-t.build/Objects-normal/arm64/PlaybackControlRegion.swiftconstvalues'
+
+note: Removed stale file '~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-28/cli/DerivedData/Build/Intermediates.noindex/TongxingIOS.build/Debug-iphonesimulator/TongxingInfrastructure-t.build/Objects-normal/arm64/TongxingInfrastructure-dependency-scan.dia'
+
+note: Removed stale file '~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-28/cli/DerivedData/Build/Intermediates.noindex/TongxingCore.build/Debug-iphonesimulator/TongxingCore-t.build/Objects-normal/arm64/PlaybackHistory.o'
+
+note: Removed stale file '~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-28/cli/DerivedData/Build/Intermediates.noindex/TongxingIOS.build/Debug-iphonesimulator/TongxingInfrastructure-t.build/Objects-normal/arm64/TongxingInfrastructure.LinkFileList'
+
+note: Removed stale file '~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-28/cli/DerivedData/Build/Intermediates.noindex/TongxingCore.build/Debug-iphonesimulator/TongxingCore-t.build/Objects-normal/arm64/PlaybackHistory.swiftconstvalues'
+
+note: Removed stale file '~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-28/cli/DerivedData/Build/Intermediates.noindex/TongxingIOS.build/Debug-iphonesimulator/TongxingInfrastructure-t.build/Objects-normal/arm64/TongxingInfrastructure.SwiftConstValuesFileList'
+
+note: Removed stale file '~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-28/cli/DerivedData/Build/Intermediates.noindex/TongxingCore.build/Debug-iphonesimulator/TongxingCore-t.build/Objects-normal/arm64/PlaybackTime.o'
+
+note: Removed stale file '~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-28/cli/DerivedData/Build/Intermediates.noindex/TongxingIOS.build/Debug-iphonesimulator/TongxingInfrastructure-t.build/Objects-normal/arm64/TongxingInfrastructure.SwiftFileList'
+
+note: Removed stale file '~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-28/cli/DerivedData/Build/Intermediates.noindex/TongxingCore.build/Debug-iphonesimulator/TongxingCore-t.build/Objects-normal/arm64/PlaybackTime.swiftconstvalues'
+
+note: Removed stale file '~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-28/cli/DerivedData/Build/Intermediates.noindex/TongxingIOS.build/Debug-iphonesimulator/TongxingInfrastructure-t.build/Objects-normal/arm64/TongxingInfrastructure.abi.json'
+
+note: Removed stale file '~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-28/cli/DerivedData/Build/Intermediates.noindex/TongxingCore.build/Debug-iphonesimulator/TongxingCore-t.build/Objects-normal/arm64/ProductionNotification.o'
+
+note: Removed stale file '~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-28/cli/DerivedData/Build/Intermediates.noindex/TongxingIOS.build/Debug-iphonesimulator/TongxingInfrastructure-t.build/Objects-normal/arm64/TongxingInfrastructure.swiftdoc'
+
+note: Removed stale file '~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-28/cli/DerivedData/Build/Intermediates.noindex/TongxingCore.build/Debug-iphonesimulator/TongxingCore-t.build/Objects-normal/arm64/ProductionNotification.swiftconstvalues'
+
+note: Removed stale file '~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-28/cli/DerivedData/Build/Intermediates.noindex/TongxingIOS.build/Debug-iphonesimulator/TongxingInfrastructure-t.build/Objects-normal/arm64/TongxingInfrastructure.swiftmodule'
+
+note: Removed stale file '~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-28/cli/DerivedData/Build/Intermediates.noindex/TongxingIOS.build/Debug-iphonesimulator/TongxingInfrastructure-t.build/Objects-normal/arm64/TongxingInfrastructure.swiftsourceinfo'
+
+note: Removed stale file '~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-28/cli/DerivedData/Build/Intermediates.noindex/TongxingIOS.build/Debug-iphonesimulator/TongxingInfrastructure-t.build/Objects-normal/arm64/TongxingInfrastructure_const_extract_protocols.json'
+
+note: Removed stale file '~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-28/cli/DerivedData/Build/Intermediates.noindex/TongxingCore.build/Debug-iphonesimulator/TongxingCore-t.build/Objects-normal/arm64/PublishedFingerprintIndex.o'
+
+note: Removed stale file '~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-28/cli/DerivedData/Build/Intermediates.noindex/TongxingCore.build/Debug-iphonesimulator/TongxingCore-t.build/Objects-normal/arm64/PublishedFingerprintIndex.swiftconstvalues'
+
+note: Removed stale file '~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-28/cli/DerivedData/Build/Intermediates.noindex/TongxingIOS.build/Debug-iphonesimulator/TongxingInfrastructure-t.build/Objects-normal/arm64/TongxingInfrastructure_dependency_info.dat'
+
+note: Removed stale file '~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-28/cli/DerivedData/Build/Intermediates.noindex/TongxingCore.build/Debug-iphonesimulator/TongxingCore-t.build/Objects-normal/arm64/PublishedFingerprintMatcher.o'
+
+note: Removed stale file '~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-28/cli/DerivedData/Build/Intermediates.noindex/TongxingIOS.build/Debug-iphonesimulator/TongxingInfrastructure-t.build/Objects-normal/arm64/WeeklyAnnouncementRepository.o'
+
+note: Removed stale file '~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-28/cli/DerivedData/Build/Intermediates.noindex/TongxingIOS.build/Debug-iphonesimulator/TongxingInfrastructure-t.build/Objects-normal/arm64/WeeklyAnnouncementRepository.swiftconstvalues'
+
+note: Removed stale file '~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-28/cli/DerivedData/Build/Intermediates.noindex/TongxingCore.build/Debug-iphonesimulator/TongxingCore-t.build/Objects-normal/arm64/PublishedFingerprintMatcher.swiftconstvalues'
+
+note: Removed stale file '~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-28/cli/DerivedData/Build/Intermediates.noindex/TongxingIOS.build/Debug-iphonesimulator/TongxingInfrastructure-t.build/TongxingInfrastructure.DependencyMetadataFileList'
+
+note: Removed stale file '~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-28/cli/DerivedData/Build/Intermediates.noindex/TongxingCore.build/Debug-iphonesimulator/TongxingCore-t.build/Objects-normal/arm64/PublishedTranscript.o'
+
+note: Removed stale file '~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-28/cli/DerivedData/Build/Intermediates.noindex/TongxingIOS.build/Debug-iphonesimulator/TongxingInfrastructure-t.build/TongxingInfrastructure.DependencyStaticMetadataFileList'
+
+note: Removed stale file '~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-28/cli/DerivedData/Build/Intermediates.noindex/TongxingCore.build/Debug-iphonesimulator/TongxingCore-t.build/Objects-normal/arm64/PublishedTranscript.swiftconstvalues'
+
+note: Removed stale file '~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-28/cli/DerivedData/Build/Intermediates.noindex/TongxingIOS.build/Debug-iphonesimulator/TongxingInfrastructure-t.build/TongxingInfrastructure.modulemap'
+
+note: Removed stale file '~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-28/cli/DerivedData/Build/Intermediates.noindex/TongxingCore.build/Debug-iphonesimulator/TongxingCore-t.build/Objects-normal/arm64/ReviewedAppProducts.o'
+
+note: Removed stale file '~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-28/cli/DerivedData/Build/Intermediates.noindex/TongxingCore.build/Debug-iphonesimulator/TongxingCore-t.build/Objects-normal/arm64/ReviewedAppProducts.swiftconstvalues'
+
+note: Removed stale file '~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-28/cli/DerivedData/Build/Intermediates.noindex/TongxingCore.build/Debug-iphonesimulator/TongxingCore-t.build/Objects-normal/arm64/SermonAudioAlignment.o'
+
+note: Removed stale file '~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-28/cli/DerivedData/Build/Intermediates.noindex/TongxingCore.build/Debug-iphonesimulator/TongxingCore-t.build/Objects-normal/arm64/SermonAudioAlignment.swiftconstvalues'
+
+note: Removed stale file '~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-28/cli/DerivedData/Build/Intermediates.noindex/TongxingCore.build/Debug-iphonesimulator/TongxingCore-t.build/Objects-normal/arm64/SermonHeading.o'
+
+note: Removed stale file '~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-28/cli/DerivedData/Build/Intermediates.noindex/TongxingCore.build/Debug-iphonesimulator/TongxingCore-t.build/Objects-normal/arm64/SermonHeading.swiftconstvalues'
+
+note: Removed stale file '~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-28/cli/DerivedData/Build/Products/Debug-iphonesimulator/TongxingInfrastructure.o'
+
+note: Removed stale file '~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-28/cli/DerivedData/Build/Products/Debug-iphonesimulator/TongxingInfrastructure.swiftmodule/Project/arm64-apple-ios-simulator.swiftsourceinfo'
+
+note: Removed stale file '~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-28/cli/DerivedData/Build/Products/Debug-iphonesimulator/TongxingInfrastructure.swiftmodule/arm64-apple-ios-simulator.abi.json'
+
+note: Removed stale file '~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-28/cli/DerivedData/Build/Products/Debug-iphonesimulator/TongxingInfrastructure.swiftmodule/arm64-apple-ios-simulator.swiftdoc'
+
+note: Removed stale file '~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-28/cli/DerivedData/Build/Intermediates.noindex/TongxingCore.build/Debug-iphonesimulator/TongxingCore-t.build/Objects-normal/arm64/TongxingCore-OutputFileMap.json'
+
+note: Removed stale file '~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-28/cli/DerivedData/Build/Intermediates.noindex/TongxingCore.build/Debug-iphonesimulator/TongxingCore-t.build/Objects-normal/arm64/TongxingCore-Swift.h'
+
+note: Removed stale file '~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-28/cli/DerivedData/Build/Products/Debug-iphonesimulator/TongxingInfrastructure.swiftmodule/arm64-apple-ios-simulator.swiftmodule'
+
+note: Removed stale file '~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-28/cli/DerivedData/Build/Intermediates.noindex/TongxingCore.build/Debug-iphonesimulator/TongxingCore-t.build/Objects-normal/arm64/TongxingCore-dependency-scan.dia'
+
+note: Removed stale file '~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-28/cli/DerivedData/Build/Intermediates.noindex/TongxingCore.build/Debug-iphonesimulator/TongxingCore-t.build/Objects-normal/arm64/TongxingCore.LinkFileList'
+
+note: Removed stale file '~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-28/cli/DerivedData/Build/Intermediates.noindex/TongxingCore.build/Debug-iphonesimulator/TongxingCore-t.build/Objects-normal/arm64/TongxingCore.SwiftConstValuesFileList'
+
+note: Removed stale file '~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-28/cli/DerivedData/Build/Intermediates.noindex/TongxingCore.build/Debug-iphonesimulator/TongxingCore-t.build/Objects-normal/arm64/TongxingCore.SwiftFileList'
+
+note: Removed stale file '~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-28/cli/DerivedData/Build/Intermediates.noindex/TongxingCore.build/Debug-iphonesimulator/TongxingCore-t.build/Objects-normal/arm64/TongxingCore.abi.json'
+
+note: Removed stale file '~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-28/cli/DerivedData/Build/Intermediates.noindex/TongxingCore.build/Debug-iphonesimulator/TongxingCore-t.build/Objects-normal/arm64/TongxingCore.swiftdoc'
+
+note: Removed stale file '~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-28/cli/DerivedData/Build/Intermediates.noindex/TongxingCore.build/Debug-iphonesimulator/TongxingCore-t.build/Objects-normal/arm64/TongxingCore.swiftmodule'
+
+note: Removed stale file '~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-28/cli/DerivedData/Build/Intermediates.noindex/TongxingCore.build/Debug-iphonesimulator/TongxingCore-t.build/Objects-normal/arm64/TongxingCore.swiftsourceinfo'
+
+note: Removed stale file '~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-28/cli/DerivedData/Build/Intermediates.noindex/TongxingCore.build/Debug-iphonesimulator/TongxingCore-t.build/Objects-normal/arm64/TongxingCore_const_extract_protocols.json'
+
+note: Removed stale file '~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-28/cli/DerivedData/Build/Intermediates.noindex/TongxingCore.build/Debug-iphonesimulator/TongxingCore-t.build/Objects-normal/arm64/TongxingCore_dependency_info.dat'
+
+note: Removed stale file '~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-28/cli/DerivedData/Build/Intermediates.noindex/TongxingCore.build/Debug-iphonesimulator/TongxingCore-t.build/Objects-normal/arm64/WeeklyAnnouncement.o'
+
+note: Removed stale file '~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-28/cli/DerivedData/Build/Intermediates.noindex/TongxingCore.build/Debug-iphonesimulator/TongxingCore-t.build/Objects-normal/arm64/WeeklyAnnouncement.swiftconstvalues'
+
+note: Removed stale file '~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-28/cli/DerivedData/Build/Intermediates.noindex/TongxingCore.build/Debug-iphonesimulator/TongxingCore-t.build/TongxingCore.DependencyMetadataFileList'
+
+note: Removed stale file '~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-28/cli/DerivedData/Build/Intermediates.noindex/TongxingCore.build/Debug-iphonesimulator/TongxingCore-t.build/TongxingCore.DependencyStaticMetadataFileList'
+
+note: Removed stale file '~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-28/cli/DerivedData/Build/Intermediates.noindex/TongxingCore.build/Debug-iphonesimulator/TongxingCore-t.build/TongxingCore.modulemap'
+
+note: Removed stale file '~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-28/cli/DerivedData/Build/Products/Debug-iphonesimulator/TongxingCore.o'
+
+note: Removed stale file '~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-28/cli/DerivedData/Build/Products/Debug-iphonesimulator/TongxingCore.swiftmodule/Project/arm64-apple-ios-simulator.swiftsourceinfo'
+
+note: Removed stale file '~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-28/cli/DerivedData/Build/Products/Debug-iphonesimulator/TongxingCore.swiftmodule/arm64-apple-ios-simulator.abi.json'
+
+note: Removed stale file '~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-28/cli/DerivedData/Build/Products/Debug-iphonesimulator/TongxingCore.swiftmodule/arm64-apple-ios-simulator.swiftdoc'
+
+note: Removed stale file '~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-28/cli/DerivedData/Build/Products/Debug-iphonesimulator/TongxingCore.swiftmodule/arm64-apple-ios-simulator.swiftmodule'
+
+note: Run script build phase 'Copy local weekly guides' will be run during every build because the option to run the script phase "Based on dependency analysis" is unchecked. (in target 'Tongxing' from project 'Tongxing')
+2026-10-28 15:45:32.690 xcodebuild[63584:486705] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+2026-10-28 15:46:02.458969-0700 Tongxing[64118:490947] [XPCErrors] non-launching port is incompatible with service identifier "com.apple.PointerUI.pointeruid.default-service"
+2026-10-28 15:46:02.461948-0700 Tongxing[64118:490947] [API] cannot add handler to 0 from 0 - dropping
+2026-10-28 15:46:02.463963-0700 Tongxing[64118:490947] [API] cannot add handler to 0 from 0 - dropping
+Test Suite 'Selected tests' started at 2026-10-28 15:46:02.764.
+Test Suite 'TongxingTests.xctest' started at 2026-10-28 15:46:02.765.
+Test Suite 'WeeklyGuideDataTests' started at 2026-10-28 15:46:02.765.
+Test Case '-[TongxingTests.WeeklyGuideDataTests testInvalidOrAmbiguousPayloadDoesNotDisplayGuide]' started.
+Test Case '-[TongxingTests.WeeklyGuideDataTests testInvalidOrAmbiguousPayloadDoesNotDisplayGuide]' passed (0.007 seconds).
+Test Case '-[TongxingTests.WeeklyGuideDataTests testOnlyExactSermonAndSimplifiedChineseMatch]' started.
+Test Case '-[TongxingTests.WeeklyGuideDataTests testOnlyExactSermonAndSimplifiedChineseMatch]' passed (0.002 seconds).
+Test Case '-[TongxingTests.WeeklyGuideDataTests testOnlyKnownBundledImageBytesCanBeUsed]' started.
+Test Case '-[TongxingTests.WeeklyGuideDataTests testOnlyKnownBundledImageBytesCanBeUsed]' passed (0.001 seconds).
+Test Case '-[TongxingTests.WeeklyGuideDataTests testSourceBackedMapDecodesAndRejectsUntrustedPoints]' started.
+Test Case '-[TongxingTests.WeeklyGuideDataTests testSourceBackedMapDecodesAndRejectsUntrustedPoints]' passed (0.012 seconds).
+Test Case '-[TongxingTests.WeeklyGuideDataTests testStructuredContentKeepsTableRowsAndFlowOrder]' started.
+Test Case '-[TongxingTests.WeeklyGuideDataTests testStructuredContentKeepsTableRowsAndFlowOrder]' passed (0.001 seconds).
+Test Case '-[TongxingTests.WeeklyGuideDataTests testUnsupportedOrMalformedBlocksFallBackToEntirePlainBody]' started.
+Test Case '-[TongxingTests.WeeklyGuideDataTests testUnsupportedOrMalformedBlocksFallBackToEntirePlainBody]' passed (0.001 seconds).
+Test Suite 'WeeklyGuideDataTests' passed at 2026-10-28 15:46:02.792.
+	 Executed 6 tests, with 0 failures (0 unexpected) in 0.024 (0.027) seconds
+Test Suite 'TongxingTests.xctest' passed at 2026-10-28 15:46:02.792.
+	 Executed 6 tests, with 0 failures (0 unexpected) in 0.024 (0.027) seconds
+Test Suite 'Selected tests' passed at 2026-10-28 15:46:02.793.
+	 Executed 6 tests, with 0 failures (0 unexpected) in 0.024 (0.028) seconds
+2026-10-28 15:46:02.808 xcodebuild[63584:486705] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+2026-10-28 15:46:02.808 xcodebuild[63584:486705] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+2026-10-28 15:46:02.809 xcodebuild[63584:486705] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+2026-10-28 15:46:03.076 xcodebuild[63584:486705] [MT] IDETestOperationsObserverDebug: 34.917 elapsed -- Testing started completed.
+2026-10-28 15:46:03.076 xcodebuild[63584:486705] [MT] IDETestOperationsObserverDebug: 0.000 sec, +0.000 sec -- start
+2026-10-28 15:46:03.076 xcodebuild[63584:486705] [MT] IDETestOperationsObserverDebug: 34.917 sec, +34.917 sec -- end
+
+Test session results, code coverage, and logs:
+	~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-28/cli/20261028T154504-test-cc72a92c/test.xcresult
+
+** TEST SUCCEEDED **
+
+Testing started
+
+Exit status: 0
