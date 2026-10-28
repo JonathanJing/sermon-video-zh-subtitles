@@ -175,7 +175,7 @@ enum WeeklyGuideRepository {
 
     static func matchingRemote(_ guide: WeeklyGuide?, resultFor: WeeklyGuideSelection?,
                                current: WeeklyGuideSelection) -> WeeklyGuide? {
-        guard resultFor == current, guide?.id == current.pageID, current.locale == "zh-Hans" else { return nil }
+        guard resultFor == current, guide?.id == current.pageID else { return nil }
         return guide
     }
 
@@ -197,6 +197,15 @@ enum WeeklyGuideRepository {
     /// entries to downloaded bytes; they do not authenticate a compromised server.
     static func loadRemote(selection: WeeklyGuideSelection, origin: URL,
                            fetch: @escaping Fetch = fetchBounded) async -> WeeklyGuideRemoteResult {
+        switch selection.locale {
+        case "zh-Hans": return await loadRemoteV1(selection: selection, origin: origin, fetch: fetch)
+        case "ko", "es": return await loadRemoteV2(selection: selection, origin: origin, fetch: fetch)
+        default: return .manifestUnavailable
+        }
+    }
+
+    private static func loadRemoteV1(selection: WeeklyGuideSelection, origin: URL,
+                                     fetch: @escaping Fetch) async -> WeeklyGuideRemoteResult {
         guard selection.locale == "zh-Hans", (selection.hasV5Identity || selection.hasStrongLegacyIdentity),
               let pageID = selection.pageID,
               validOrigin(origin), let manifestURL = URL(string: "/weekly-guides/manifest-v1.json", relativeTo: origin)?.absoluteURL else { return .manifestUnavailable }
@@ -257,6 +266,75 @@ enum WeeklyGuideRepository {
               let guide = try? JSONDecoder().decode(WeeklyGuide.self, from: content.data),
               guide.id == pageID, guide.week == entry.week, valid(guide) else { return .invalidDeclared }
         return .available(guide)
+    }
+
+    /// V2 languages are kept separate from the shipped Chinese v1 Bundle. The
+    /// pinned hash identifies the extracted English source, not the original PDF.
+    private static let extractedEnglishSHA = "3eb6cca50c898c8fcb82be73bcdce67deaad64267ad7041581e363aa39757708"
+
+    private static func validSHA(_ value: String?) -> Bool {
+        guard let value else { return false }
+        return value.range(of: "^[0-9a-f]{64}$", options: .regularExpression) != nil
+    }
+
+    private static func loadRemoteV2(selection: WeeklyGuideSelection, origin: URL,
+                                     fetch: @escaping Fetch) async -> WeeklyGuideRemoteResult {
+        guard ["ko", "es"].contains(selection.locale), selection.hasV5Identity,
+              validSHA(selection.sourceIdentitySha256), validSHA(selection.releasePackageJsonSha256),
+              let pageID = selection.pageID, validOrigin(origin),
+              let manifestURL = URL(string: "/weekly-guides/manifest-v2.json", relativeTo: origin)?.absoluteURL else {
+            return .manifestUnavailable
+        }
+        let response: WeeklyGuideResponse
+        do { response = try await fetch(manifestURL, origin, manifestLimit) }
+        catch { return .manifestUnavailable }
+        guard !Task.isCancelled, response.statusCode == 200, response.data.count <= manifestLimit,
+              response.url == manifestURL,
+              let json = try? JSONSerialization.jsonObject(with: response.data) as? [String: Any],
+              json["schemaVersion"] as? String == "tongxing-weekly-guide-manifest-v2" else { return .manifestUnavailable }
+        guard json["seriesID"] as? String == "revelation-comfort-and-hope",
+              let rawEntries = json["entries"] as? [[String: Any]] else { return .invalidDeclared }
+        var entries: [Entry] = []
+        for raw in rawEntries {
+            guard let data = try? JSONSerialization.data(withJSONObject: raw),
+                  let entry = try? JSONDecoder().decode(Entry.self, from: data) else { return .invalidDeclared }
+            entries.append(entry)
+        }
+        let keys = entries.map { "\($0.pageID)\u{0}\($0.locale)" }
+        guard Set(keys).count == keys.count else { return .invalidDeclared }
+        guard let index = entries.firstIndex(where: { $0.pageID == pageID && $0.locale == selection.locale }) else { return .notDeclared }
+        let entry = entries[index]
+        guard entry.week > 0, entry.legacy == nil, entry.editionId == selection.editionId,
+              entry.sourceIdentitySha256 == selection.sourceIdentitySha256,
+              entry.releasePackageJsonSha256 == selection.releasePackageJsonSha256 else { return .invalidDeclared }
+        if entry.status == "revoked" { return .revoked }
+        let raw = rawEntries[index]
+        guard entry.status == "available", let bytes = entry.bytes, bytes > 0, bytes <= guideLimit,
+              let hash = entry.sha256, validSHA(hash),
+              let path = entry.path, path == "/weekly-guides/published/\(hash).json",
+              let resourceURL = publishedURL(path, origin: origin),
+              raw["review"] as? String == "machine_translation_not_human_reviewed",
+              isFalse(raw["humanApproval"]),
+              raw["sourceSHA256"] as? String == extractedEnglishSHA,
+              let translationSHA = raw["translationSHA256"] as? String, validSHA(translationSHA) else { return .invalidDeclared }
+        let content: WeeklyGuideResponse
+        do { content = try await fetch(resourceURL, origin, guideLimit) }
+        catch { return .invalidDeclared }
+        guard !Task.isCancelled, content.statusCode == 200, content.url == resourceURL,
+              content.data.count == bytes, content.data.count <= guideLimit, sha256(content.data) == hash,
+              let payload = try? JSONSerialization.jsonObject(with: content.data) as? [String: Any],
+              payload["locale"] as? String == selection.locale,
+              payload["review"] as? String == "machine_translation_not_human_reviewed",
+              isFalse(payload["humanApproval"]), payload["sourceSHA256"] as? String == extractedEnglishSHA,
+              payload["translationSHA256"] as? String == translationSHA,
+              let guide = try? JSONDecoder().decode(WeeklyGuide.self, from: content.data),
+              guide.id == pageID, guide.week == entry.week, valid(guide) else { return .invalidDeclared }
+        return .available(guide)
+    }
+
+    private static func isFalse(_ value: Any?) -> Bool {
+        guard let number = value as? NSNumber else { return false }
+        return CFGetTypeID(number) == CFBooleanGetTypeID() && !number.boolValue
     }
 
     private static func valid(_ guide: WeeklyGuide) -> Bool {

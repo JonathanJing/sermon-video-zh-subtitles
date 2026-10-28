@@ -9853,7 +9853,343 @@
         }
       }
     }
-
+,
+    "本周研读手册": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This week’s study guide"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "이번 주 학습 안내서"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Guía de estudio de esta semana"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tài liệu học tập tuần này"
+          }
+        }
+      }
+    },
+    "手册": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Study guide"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "학습 안내서"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Guía de estudio"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tài liệu học tập"
+          }
+        }
+      }
+    },
+    "返回证道": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Return to sermon"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "설교로 돌아가기"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Volver al sermón"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trở lại bài giảng"
+          }
+        }
+      }
+    },
+    "正在加载研读手册…": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Loading the study guide…"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "학습 안내서를 불러오는 중…"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cargando la guía de estudio…"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đang tải tài liệu học tập…"
+          }
+        }
+      }
+    },
+    "本周研读手册尚不可用": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This week’s study guide is unavailable"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "이번 주 학습 안내서를 사용할 수 없습니다"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La guía de estudio de esta semana no está disponible"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tài liệu học tập tuần này chưa có"
+          }
+        }
+      }
+    },
+    "当前讲道或内容语言暂无对应手册。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No guide is available for this sermon and content language."
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "현재 설교와 콘텐츠 언어에 해당하는 안내서가 없습니다."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No hay una guía disponible para este sermón y este idioma de contenido."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chưa có tài liệu cho bài giảng và ngôn ngữ nội dung này."
+          }
+        }
+      }
+    },
+    "中文机器翻译 · 未经人工审校": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chinese machine translation · not reviewed by a person"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "중국어 기계 번역 · 사람의 검토를 거치지 않음"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Traducción automática al chino · sin revisión humana"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bản dịch máy tiếng Trung · chưa được con người kiểm duyệt"
+          }
+        }
+      }
+    },
+    "韩语机器翻译 · 未经人工审校": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Korean machine translation · not reviewed by a person"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "한국어 기계 번역 · 사람의 검토를 거치지 않음"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Traducción automática al coreano · sin revisión humana"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bản dịch máy tiếng Hàn · chưa được con người kiểm duyệt"
+          }
+        }
+      }
+    },
+    "西语机器翻译 · 未经人工审校": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Spanish machine translation · not reviewed by a person"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "스페인어 기계 번역 · 사람의 검토를 거치지 않음"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Traducción automática al español · sin revisión humana"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bản dịch máy tiếng Tây Ban Nha · chưa được con người kiểm duyệt"
+          }
+        }
+      }
+    },
+    "根据 Mariners Church《Revelation Series Guide》翻译；非教会官方译本。部分经文在此仅标注章节范围。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Translated from the Mariners Church Revelation Series Guide; this is not an official church translation. Some Scripture passages are shown here by reference only."
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mariners Church의 Revelation Series Guide를 번역한 것으로 교회의 공식 번역본이 아닙니다. 일부 성경 구절은 여기에서 범위만 표시됩니다."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Traducido de Revelation Series Guide de Mariners Church; no es una traducción oficial de la iglesia. Aquí algunos pasajes bíblicos se muestran solo como referencias."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Được dịch từ Revelation Series Guide của Mariners Church; đây không phải bản dịch chính thức của hội thánh. Một số đoạn Kinh Thánh ở đây chỉ ghi phần tham chiếu."
+          }
+        }
+      }
+    },
+    "查看教会原手册": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "View the original church guide"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "교회 원본 안내서 보기"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ver la guía original de la iglesia"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Xem tài liệu gốc của hội thánh"
+          }
+        }
+      }
+    },
+    "第 {week} 周 · {title}": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Week {week} · {title}"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "{week}주차 · {title}"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Semana {week} · {title}"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tuần {week} · {title}"
+          }
+        }
+      }
+    }
   },
   "version": "1.0"
 }

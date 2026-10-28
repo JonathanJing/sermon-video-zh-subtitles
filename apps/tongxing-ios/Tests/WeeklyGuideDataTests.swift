@@ -82,6 +82,74 @@ final class WeeklyGuideRemoteTests: XCTestCase {
         }
     }
 
+    func testV2LanguageAndProvenanceAreBoundToTheSelectedSermon() async throws {
+        let englishSHA = "3eb6cca50c898c8fcb82be73bcdce67deaad64267ad7041581e363aa39757708"
+        let translationSHA = String(repeating: "d", count: 64)
+        let korean = WeeklyGuideSelection(pageID: "test-sermon", locale: "ko", editionId: "test-edition",
+                                          sourceIdentitySha256: source, releasePackageJsonSha256: release)
+        let spanish = WeeklyGuideSelection(pageID: "test-sermon", locale: "es", editionId: "test-edition",
+                                           sourceIdentitySha256: source, releasePackageJsonSha256: release)
+        func makePayload(locale: String = "ko", review: String = "machine_translation_not_human_reviewed",
+                         human: Any = false, sourceSHA: String? = nil, translation: String? = nil) throws -> Data {
+            try JSONSerialization.data(withJSONObject: ["id": "test-sermon", "locale": locale, "week": 8,
+                "title": "Title", "scripture": "Reference", "sections": [["id": "s", "title": "Section",
+                "subtitle": "Subtitle", "symbol": "book", "body": "Synthetic"]], "review": review,
+                "humanApproval": human, "sourceSHA256": sourceSHA ?? englishSHA,
+                "translationSHA256": translation ?? translationSHA])
+        }
+        func entry(_ data: Data, locale: String = "ko") -> [String: Any] {
+            let sha = WeeklyGuideRepository.sha256(data)
+            return ["pageID": "test-sermon", "locale": locale, "week": 8, "status": "available",
+                "editionId": "test-edition", "sourceIdentitySha256": source, "releasePackageJsonSha256": release,
+                "path": "/weekly-guides/published/\(sha).json", "bytes": data.count, "sha256": sha,
+                "review": "machine_translation_not_human_reviewed", "humanApproval": false,
+                "sourceSHA256": englishSHA, "translationSHA256": translationSHA]
+        }
+        func load(_ entries: [[String: Any]], _ data: Data, selected: WeeklyGuideSelection? = nil) async throws -> WeeklyGuideRemoteResult {
+            let manifest = try JSONSerialization.data(withJSONObject: ["schemaVersion": "tongxing-weekly-guide-manifest-v2",
+                "seriesID": "revelation-comfort-and-hope", "entries": entries])
+            return await WeeklyGuideRepository.loadRemote(selection: selected ?? korean, origin: origin) { url, _, _ in
+                WeeklyGuideResponse(data: url.path.hasSuffix("manifest-v2.json") ? manifest : data, url: url, statusCode: 200)
+            }
+        }
+        func check(_ expected: WeeklyGuideRemoteResult, _ entries: [[String: Any]], _ data: Data,
+                   selected: WeeklyGuideSelection? = nil, message: String = "") async throws {
+            let result = try await load(entries, data, selected: selected)
+            XCTAssertEqual(result, expected, message)
+        }
+        let body = try makePayload()
+        let validEntry = entry(body)
+        guard case .available = try await load([validEntry], body) else { return XCTFail("Expected Korean guide") }
+        try await check(.notDeclared, [validEntry], body, selected: spanish)
+        try await check(.invalidDeclared, [validEntry, validEntry], body)
+        for badBody in [try makePayload(locale: "es"), try makePayload(review: "human_reviewed"),
+                        try makePayload(human: 0), try makePayload(sourceSHA: String(repeating: "0", count: 64)),
+                        try makePayload(translation: String(repeating: "0", count: 64))] {
+            try await check(.invalidDeclared, [entry(badBody)], badBody)
+        }
+        for (key, value) in [("sourceIdentitySha256", String(repeating: "0", count: 64)),
+                             ("releasePackageJsonSha256", String(repeating: "0", count: 64)),
+                             ("sourceSHA256", String(repeating: "0", count: 64)),
+                             ("review", "human_reviewed"), ("path", "/weekly-guides/published/other.json")] {
+            var bad = validEntry; bad[key] = value
+            try await check(.invalidDeclared, [bad], body, message: key)
+        }
+        var numeric = validEntry; numeric["humanApproval"] = 0
+        try await check(.invalidDeclared, [numeric], body)
+        var revoked = validEntry; revoked["status"] = "revoked"
+        try await check(.revoked, [revoked], body)
+        let name = "WeeklyGuideV2.\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: name))
+        defer { defaults.removePersistentDomain(forName: name) }
+        let ledger = WeeklyGuideDenyLedger(defaults: defaults)
+        ledger.apply(.revoked, selection: korean, origin: origin)
+        XCTAssertTrue(ledger.isDenied(korean, origin: origin))
+        XCTAssertFalse(ledger.isDenied(spanish, origin: origin))
+        let bundled = Data("{\"guides\":[\(String(decoding: payload, as: UTF8.self))]}".utf8)
+        XCTAssertNil(WeeklyGuideRepository.load(pageID: "test-sermon", locale: "ko", data: bundled))
+        XCTAssertNil(WeeklyGuideRepository.load(pageID: "test-sermon", locale: "es", data: bundled))
+    }
+
     func testRemoteGuideIsBoundToExactIdentityAndBytes() async throws {
         let data = payload
         let info = try manifest(payload: data)

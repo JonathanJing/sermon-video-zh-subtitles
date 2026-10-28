@@ -1,5 +1,7 @@
 # 研读手册：未来周准备与讲道绑定
 
+多语言显示、来源和许可要求见[每周研读手册：多语言显示与上线注意事项](weekly-guide-multilingual-display.zh.md)。
+
 第 8–12 周先以独立 JSON 放在忽略的 `artifacts/`，`sermonPageId=null`。每周保留中文机器译稿的全部当周页、相关附录和另附的和合本（1919）经文；第 11 周的附录跨源页 174–175。机器翻译未经人工审校，`humanApproval=false`；不把它称为教会官方中文译本。摘要 manifest 记录源文件 SHA、各周原书页号、内容字节数和 SHA，不含原文或译文正文。
 
 已验证的第 8–12 周 staging 保存在私有位置：`gs://sermon-zh-artifacts-ai-for-god/staging/revelation-study-guide/d6c6064e8fab11ab012edd9535372a9f99b83cd5240b6014f5451795a9198f86/406e27e9aafcf624a93cfc0cc820d181656c9cbde25cfb355b8805dd86c2aae9/`。其中包括五周 JSON 和 staging manifest，`source/` 下两个按哈希绑定的源文件，以及 `evidence/` 下两份绑定证据；均已独立下载回读验证。它们尚未关联讲道，属于非公开内容；服务器尚无供客户端消费的手册 manifest。
