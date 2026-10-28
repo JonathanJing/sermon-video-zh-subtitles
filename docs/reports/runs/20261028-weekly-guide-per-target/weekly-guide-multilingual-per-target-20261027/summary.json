@@ -1,0 +1,11 @@
+{
+  "status": "passed",
+  "purpose": "per-target multilingual weekly guide candidate regression",
+  "tests_passed": 86,
+  "tests_failed": 0,
+  "limits": [
+    "synthetic backend tests do not establish publication",
+    "real Dev and production target identities were read-only checked",
+    "device acceptance not run"
+  ]
+}
