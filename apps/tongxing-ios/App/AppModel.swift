@@ -123,7 +123,24 @@ final class AppModel: ObservableObject {
 
     var alignmentDisplayStatus: String {
         if alignmentBusy || hasAlignmentFeedback { return alignmentStatus }
+        let publishedFingerprint = selectedWeek == nil && selectedContentTarget?.audioFingerprint != nil
+        // A published page advertises its fingerprint before its audio has been
+        // downloaded and verified. The controller cannot validate that binding
+        // against the playing track until selectedAudioLocale is set.
+        if selectedWeek == nil {
+            if publishedFingerprint {
+                if isPreparing || isPreparingPublishedAudio {
+                    return "正在准备音频，请稍候再开始现场自动对齐。"
+                }
+                if selectedAudioLocale != selectedContentLocale || !playback.isReady {
+                    return "音频尚未准备就绪，请稍候或重新载入音频。"
+                }
+            } else if multilingualCatalog == nil {
+                return "音频尚未准备就绪，请稍候或重新载入音频。"
+            }
+        }
         guard alignmentController?.available == true else {
+            if publishedFingerprint { return "当前音频没有可用的听声对齐资料。" }
             return "本篇尚未提供现场对齐资料，请刷新目录或手动定位。"
         }
         if isPreparing { return "正在准备音频，请稍候再开始现场自动对齐。" }
