@@ -1,0 +1,27 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261028-guide69-dev-publication",
+  "runs": [
+    {
+      "label": "guide69-20261028-publication-summary",
+      "source": "~/.codex/worktrees/guide-dev-overlay/sermon-video-zh-subtitles/artifacts/tongxing-ios/guide69-20261028-publication-summary",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "guide69-20261028-publication-summary",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 627,
+      "truncated": false,
+      "sha256": "d60fab7e0c02499c68445293a57fef971caf018b2314ce5b95af6b3f79bc7401",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

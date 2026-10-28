@@ -1,0 +1,15 @@
+{
+  "delivery": "four_layer_release Dev overlay for existing sermon",
+  "pageId": "revelation-jesus-wins-20261025",
+  "codePR": "1422",
+  "devBaselineVersion": "9867502f35782585",
+  "deployedVersion": "6a5392b342d59c0e",
+  "guardedDryRun": "validated_not_deployed",
+  "deploy": "deployed",
+  "httpReadback": "29/29 assets byte length and SHA256 match",
+  "audioRangeReadback": "3/3 HTTP 206, Content-Range and first 1024 bytes match",
+  "versionReadback": "before and after agree with deployment receipt",
+  "defaultPage": "unchanged week 6, week 7 selectable",
+  "browserRendering": "not_run",
+  "devicePlayback": "not_run"
+}
