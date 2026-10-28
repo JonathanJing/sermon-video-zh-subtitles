@@ -1,0 +1,17 @@
+{
+  "status": "dev_deployed_and_simulator_readback_passed",
+  "scope": "Spanish week three reader r5 and preserved Korean reader",
+  "remote": "manifest and both resources exact bytes and SHA matched",
+  "ios_simulator": {
+    "runtime": "iOS 27.1",
+    "test_passed": 1,
+    "failed": 0,
+    "skipped": 0
+  },
+  "limitations": [
+    "No production deployment or new TestFlight.",
+    "Machine review is not human approval.",
+    "Table descriptions refer to original.",
+    "Screenshots show navigation, not a full read-through."
+  ]
+}
