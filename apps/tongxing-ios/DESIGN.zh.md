@@ -42,7 +42,7 @@ Liquid Glass 属于导航与操作层；大量文字的控制优先使用 `.regu
 
 同行是单窗口 App：`Info.plist` 声明 `UIApplicationSupportsMultipleScenes=false`，Duo 内屏也只有一个窗口，`AppModel` 与唯一的 `PlaybackController` 挂在 App 作用域只是为了防止未来开启多场景时出现多个播放器。2026-10-15 审计确认此前验收表中的多窗口项与此声明冲突，已改为不适用；开启多场景属于独立决定，须先补验收再改声明。同日删除了 Core 中从未被界面调用的 840 pt 双栏阅读策略：当时所有宽度都使用单列正文（最大宽度 720 pt，紧凑高度 920 pt）加底部或侧边播放控制，不存在阅读／收听双栏模式。
 
-主界面留在 SwiftUI 安全区内。播放栏从运行时 `GeometryReader` 获取可用区域；iOS 27.1 起读取**已激活**的 `.division` 保留区域，把整组播放按钮放在折痕的一侧。iOS 27.1 的 `toolbarVerticalEdge` 出现时，页面选择、更多选项与竖向适配的播放器使用 `NavigationStack` 的系统工具栏，进入状态信息下方的共享侧边区域；播放器不再叠加自己的玻璃背景，播放键缩至 44 pt 以适合栏宽。系统负责状态信息避让和项目溢出。其他设备的宽横屏仍使用安全区内的自定义控制列；普通竖屏继续使用底部单排播放控制。“更多”以临时浮层呈现现场对齐、当前句、撤销与精调，不改变播放状态或定位。浮层根据按钮实际屏幕位置定位：竖栏时在按钮左侧，底栏时在按钮上方，并收进可用区域；点外部或关闭按钮可收起。使用实际几何位置，避免系统工具栏把弹窗重新放到远离按钮的左上角。
+主界面留在 SwiftUI 安全区内。播放栏从运行时 `GeometryReader` 获取可用区域；iOS 27.1 起读取**已激活**的 `.division` 保留区域，把整组播放按钮放在折痕的一侧。iOS 27.1 的 `toolbarVerticalEdge` 出现时，页面选择、更多选项与竖向适配的播放器使用 `NavigationStack` 的系统工具栏，进入状态信息下方的共享侧边区域；播放器不再叠加自己的玻璃背景，播放键缩至 44 pt 以适合栏宽。系统负责状态信息避让和项目溢出。根据 2026-10-28 横屏研读布局评审，普通 iPhone、iPad mini 与 iPad Pro 横屏均使用安全区内的底部悬浮播放条，不再按宽高阈值切换自定义右侧控制列；普通竖屏继续使用底部单排播放控制。“更多”以临时浮层呈现现场对齐、当前句、撤销与精调，不改变播放状态或定位。浮层根据按钮实际屏幕位置定位：竖栏时在按钮左侧，底栏时在按钮上方，并收进可用区域；点外部或关闭按钮可收起。使用实际几何位置，避免系统工具栏把弹窗重新放到远离按钮的左上角。
 
 此分组依据 Apple [Raise the bar with iPhone Duo](https://developer.apple.com/videos/play/tech-talks/111462/) 的系统竖栏、`axisBehavior(.verticalPreferred)` 和溢出规则，以及 [Layout](https://developer.apple.com/design/human-interface-guidelines/layout) 与 [Accessibility](https://developer.apple.com/design/human-interface-guidelines/accessibility) 的原则：导航和播放功能保持顺序，图标按钮保留至少 44×44 pt 命中区，正文由系统栏安全区避让。Duo 内屏、半折、大字与 VoiceOver 顺序仍须检查。
 

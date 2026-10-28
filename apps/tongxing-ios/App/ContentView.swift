@@ -44,29 +44,6 @@ private struct CurrentToolbarVerticalEdge<Content: View>: View {
 }
 #endif
 
-/// Trailing-dock placement decision for Duo and other wide containers.
-///
-/// The trailing control column is for wide-and-short containers (Duo inner
-/// landscape, phone landscape). This intentionally stays a container-geometry
-/// decision rather than a size-class one: Duo inner landscape reports
-/// regular/regular while phone landscape reports compact/compact, so no
-/// single size-class combination selects both without branching on device or
-/// pose — and Apple's guidance frames the choice as "size classes *and*
-/// container size". Because it derives from the live control region (which
-/// already excludes the active fold), half-fold and Split View re-flow
-/// without extra code.
-private enum DockLayout {
-    /// Width threshold for the trailing column, near the regular-width
-    /// boundary. Height must also be below it: the column is only for
-    /// wide-and-short areas, not for tall regular-width layouts.
-    static let trailingDockThreshold: CGFloat = 700
-
-    static func usesTrailingDock(for controlRegion: CGRect) -> Bool {
-        controlRegion.width >= trailingDockThreshold
-            && controlRegion.height < trailingDockThreshold
-    }
-}
-
 struct ContentView: View {
     @ObservedObject private var localization = AppLocalization.shared
     @ObservedObject var model: AppModel
@@ -99,7 +76,6 @@ struct ContentView: View {
             let controlRegion = dockControlRegion(in: geometry)
             listeningNavigation(
                 controlRegion: controlRegion,
-                usesTrailingDock: DockLayout.usesTrailingDock(for: controlRegion),
                 isLandscape: geometry.size.width > geometry.size.height,
                 hasDividedRegion: controlRegion.size != geometry.size
             )
@@ -218,7 +194,7 @@ struct ContentView: View {
         showingAlignmentFailure = model.alignmentFailure != nil && sheet == nil && scenePhase == .active
     }
 
-    private func listeningNavigation(controlRegion: CGRect, usesTrailingDock: Bool,
+    private func listeningNavigation(controlRegion: CGRect,
                                      isLandscape: Bool, hasDividedRegion: Bool) -> some View {
         NavigationStack {
             ToolbarVerticalEdgeReader { verticalBarEdge in
@@ -433,28 +409,18 @@ struct ContentView: View {
                     }
                 }
             .background(Brand.background)
-            .listeningPlayerDock(atTrailingEdge: usesTrailingDock,
+            // Standard phone and tablet layouts retain the floating bottom player.
+            // Duo uses its system-provided vertical toolbar when that is active.
+            .listeningPlayerDock(atTrailingEdge: false,
                                  inSystemBar: usesSystemVerticalBar) {
-                if usesTrailingDock && !usesSystemVerticalBar {
-                    VStack(spacing: 12) {
-                        trailingNavigationActions
-                        if model.selectedTrack != nil || model.selectedAudioLocale != nil {
-                            listeningPlaybackDock(placement: .trailing)
-                        }
+                if model.selectedTrack != nil || model.selectedAudioLocale != nil {
+                    HStack(spacing: 0) {
+                        Color.clear.frame(width: controlRegion.minX, height: 0)
+                        listeningPlaybackDock(placement: .bottom)
+                            .frame(width: controlRegion.width)
+                        Spacer(minLength: 0)
                     }
-                    .frame(width: 80)
-                    .frame(maxHeight: .infinity, alignment: .top)
-                    .padding(.top, 8)
-                } else {
-                    if model.selectedTrack != nil || model.selectedAudioLocale != nil {
-                        HStack(spacing: 0) {
-                            Color.clear.frame(width: controlRegion.minX, height: 0)
-                            listeningPlaybackDock(placement: .bottom)
-                                .frame(width: controlRegion.width)
-                            Spacer(minLength: 0)
-                        }
-                        .frame(maxWidth: .infinity)
-                    }
+                    .frame(maxWidth: .infinity)
                 }
             }
             .toolbar {
@@ -476,13 +442,11 @@ struct ContentView: View {
                         .disabled(currentTranscriptRowID == nil)
                     }
                 }
-                if !usesTrailingDock || usesSystemVerticalBar {
-                    ToolbarItemGroup(placement: .primaryAction) {
-                        Button(localization.text("选择证道周次"), systemImage: "calendar") { sheet = .weeks }
-                            .labelStyle(.iconOnly).accessibilityIdentifier("choose-sermon")
-                        Button(localization.text("更多选项"), systemImage: "ellipsis.circle") { sheet = .about }
-                            .labelStyle(.iconOnly).accessibilityIdentifier("more-options")
-                    }
+                ToolbarItemGroup(placement: .primaryAction) {
+                    Button(localization.text("选择证道周次"), systemImage: "calendar") { sheet = .weeks }
+                        .labelStyle(.iconOnly).accessibilityIdentifier("choose-sermon")
+                    Button(localization.text("更多选项"), systemImage: "ellipsis.circle") { sheet = .about }
+                        .labelStyle(.iconOnly).accessibilityIdentifier("more-options")
                 }
                 #if os(iOS) && canImport(SwiftUI, _version: 8.0.85)
                 if #available(iOS 27.1, macOS 27.1, *), usesSystemVerticalBar,
@@ -618,32 +582,6 @@ struct ContentView: View {
         ) { width in
             playbackMoreControls(width: width)
         }
-    }
-
-    private var trailingNavigationActions: some View {
-        VStack(spacing: 0) {
-            Button { sheet = .weeks } label: {
-                Image(systemName: "calendar")
-                    .frame(width: 56, height: 52)
-                    .contentShape(Rectangle())
-            }
-            .accessibilityLabel(localization.text("选择证道周次"))
-            .accessibilityIdentifier("choose-sermon")
-
-            Button { sheet = .about } label: {
-                Image(systemName: "ellipsis.circle")
-                    .frame(width: 56, height: 52)
-                    .contentShape(Rectangle())
-            }
-            .accessibilityLabel(localization.text("更多选项"))
-            .accessibilityIdentifier("more-options")
-        }
-        .font(.title3.weight(.medium))
-        .buttonStyle(.plain)
-        .foregroundStyle(Brand.accent)
-        .padding(6)
-        .listeningGlassSurface()
-        .padding(.horizontal, 6)
     }
 
     private func dockControlRegion(in geometry: GeometryProxy) -> CGRect {
