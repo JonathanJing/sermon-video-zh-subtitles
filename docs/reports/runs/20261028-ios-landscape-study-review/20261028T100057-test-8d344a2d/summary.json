@@ -1,0 +1,36 @@
+{
+  "action": "test",
+  "sourceCommit": "intermediate working tree; see revision narrative",
+  "device": "iPhone 17 Pro",
+  "scheme": "TongxingBeta",
+  "configuration": "BetaDebug",
+  "exitStatus": 143,
+  "testCases": [
+    {
+      "name": "TongxingUITests.WeeklyGuidePreviewUITests testGuideNavigationKeepsPlaybackAndShowsReviewDisclosure",
+      "result": "failed",
+      "seconds": 44.232
+    },
+    {
+      "name": "TongxingUITests.WeeklyGuidePreviewUITests testLandscapeAutomaticallyShowsGuideAndRotationKeepsPlayback",
+      "result": "failed",
+      "seconds": 36.161
+    },
+    {
+      "name": "TongxingUITests.WeeklyGuidePreviewUITests testLandscapeLargeTextKeepsChaptersAndPlayerReachable",
+      "result": "passed",
+      "seconds": 25.25
+    },
+    {
+      "name": "TongxingUITests.WeeklyGuidePreviewUITests testLandscapeUnavailableGuideKeepsListeningVisible",
+      "result": "passed",
+      "seconds": 19.847
+    },
+    {
+      "name": "TongxingUITests.WeeklyGuidePreviewUITests testOpenPortraitGuideMovesIntoLandscapePane",
+      "result": "failed",
+      "seconds": 23.127
+    }
+  ],
+  "resultBundleFinalized": false
+}
