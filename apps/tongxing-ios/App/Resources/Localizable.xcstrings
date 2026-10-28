@@ -5914,35 +5914,6 @@
         }
       }
     },
-    "本篇尚未提供现场对齐资料，请刷新目录或手动定位。": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Live alignment data is not available for this sermon. Refresh the catalog or adjust the position manually."
-          }
-        },
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "이 설교에는 현장 정렬 자료가 없습니다. 목록을 새로고침하거나 수동으로 위치를 조정하세요."
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Este sermón no tiene datos para alineación en vivo. Actualiza el catálogo o ajusta la posición manualmente."
-          }
-        },
-        "vi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Bài giảng này không có dữ liệu căn chỉnh trực tiếp. Làm mới danh mục hoặc tự chỉnh vị trí."
-          }
-        }
-      }
-    },
     "正在准备音频，请稍候再开始现场自动对齐。": {
       "extractionState": "manual",
       "localizations": {

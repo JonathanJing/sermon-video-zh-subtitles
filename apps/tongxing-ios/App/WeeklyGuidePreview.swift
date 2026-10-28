@@ -223,41 +223,49 @@ struct WeeklyGuidePreview: View {
                 }
                 .accessibilityIdentifier("guide-scroll")
                 .background(Brand.background)
-                .weeklyGuideTopBar(isEmbedded: embedded) {
-                    embeddedHeader(proxy: proxy)
+                .toolbar {
+                    if embedded {
+                        ToolbarItem(placement: .topBarLeading) {
+                            embeddedHeader(proxy: proxy)
+                        }
+                    }
                 }
             }
     }
 
     private func embeddedHeader(proxy: ScrollViewProxy) -> some View {
-        VStack(spacing: 0) {
-            HStack {
-                Label(localization.text("本周研读手册"), systemImage: "book")
-                    .font(.headline).accessibilityAddTraits(.isHeader)
-                Spacer(minLength: 8)
-                if let guide {
-                    Menu {
-                        ForEach(guide.sections) { section in
-                            Button(section.title) {
-                                withAnimation(reduceMotion ? nil : .easeInOut) {
-                                    proxy.scrollTo(section.id, anchor: .top)
-                                }
-                                focusedSection = section.id
+        Group {
+            if let guide {
+                Menu {
+                    ForEach(guide.sections) { section in
+                        Button(section.title) {
+                            withAnimation(reduceMotion ? nil : .easeInOut) {
+                                proxy.scrollTo(section.id, anchor: .top)
                             }
-                            .accessibilityIdentifier("guide-section-\(section.id)")
+                            focusedSection = section.id
                         }
-                    } label: {
-                        Image(systemName: "list.bullet")
-                            .frame(minWidth: 44, minHeight: 44)
+                        .accessibilityIdentifier("guide-section-\(section.id)")
                     }
-                    .accessibilityLabel(localization.text("手册目录"))
-                    .accessibilityIdentifier("guide-chapter-menu")
+                } label: {
+                    HStack(spacing: 8) {
+                        Image(systemName: "book")
+                        Text(localization.text("本周研读手册"))
+                    }
+                    .font(.headline)
+                    .fixedSize(horizontal: true, vertical: false)
                 }
+                .accessibilityLabel(localization.text("本周研读手册"))
+                .accessibilityHint(localization.text("手册目录"))
+                .accessibilityIdentifier("guide-chapter-menu")
+            } else {
+                HStack(spacing: 8) {
+                    Image(systemName: "book")
+                    Text(localization.text("本周研读手册"))
+                }
+                .font(.headline)
+                .fixedSize(horizontal: true, vertical: false)
+                .accessibilityAddTraits(.isHeader)
             }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 4)
-            .background(Brand.surface)
-            Divider()
         }
     }
 
@@ -487,27 +495,6 @@ private struct WeeklyGuideImageSheet: View {
                     .disabled(scale >= 4)
                 }
             }
-        }
-    }
-}
-
-// Register the fixed header as a scroll-view bar so the system navigation bar
-// reserves its hit region after rotation, including compact iPhone navigation.
-private extension View {
-    @ViewBuilder
-    func weeklyGuideTopBar<Bar: View>(isEmbedded: Bool, @ViewBuilder content: () -> Bar) -> some View {
-        if isEmbedded {
-            #if compiler(>=6.2)
-            if #available(iOS 26, *) {
-                safeAreaBar(edge: .top, spacing: 0, content: content)
-            } else {
-                safeAreaInset(edge: .top, spacing: 0, content: content)
-            }
-            #else
-            safeAreaInset(edge: .top, spacing: 0, content: content)
-            #endif
-        } else {
-            self
         }
     }
 }

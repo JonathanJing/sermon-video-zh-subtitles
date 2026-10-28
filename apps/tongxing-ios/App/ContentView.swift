@@ -254,10 +254,12 @@ struct ContentView: View {
                                 }
                                 else { transcript(track) }
                                 locateConfirmationView
-                                Text(localization.text(model.alignmentDisplayStatus, ["time": model.alignmentPosition.map(PlaybackTime.format) ?? ""]))
-                                    .font(.footnote).foregroundStyle(.secondary)
-                                    .fixedSize(horizontal: false, vertical: true)
-                                    .accessibilityIdentifier("alignment-status")
+                                if model.showsAlignmentStatus {
+                                    Text(localization.text(model.alignmentDisplayStatus, ["time": model.alignmentPosition.map(PlaybackTime.format) ?? ""]))
+                                        .font(.footnote).foregroundStyle(.secondary)
+                                        .fixedSize(horizontal: false, vertical: true)
+                                        .accessibilityIdentifier("alignment-status")
+                                }
                                 englishLocateEntry
                                 downloadControl
                             } else {
@@ -848,7 +850,7 @@ struct ContentView: View {
                 publishedRows(transcript.captions, prefix: "published-caption")
             }
             englishLocateEntry
-            if model.alignmentAvailable || model.alignmentBusy || model.hasAlignmentFeedback {
+            if model.showsAlignmentStatus {
                 Text(localization.text(model.alignmentDisplayStatus, ["time": model.alignmentPosition.map(PlaybackTime.format) ?? ""]))
                     .font(.footnote).foregroundStyle(.secondary)
                     .accessibilityIdentifier("alignment-status")
@@ -1120,7 +1122,7 @@ struct AlignmentControls: View {
                 Button(localization.text("刷新目录")) { Task { await model.refresh() } }
                 Button(localization.text("关闭"), role: .cancel) {}
             } message: { Text(status) }
-            if !compact || model.alignmentBusy || model.hasAlignmentFeedback {
+            if model.showsAlignmentStatus {
                 Text(status)
                     .font(.footnote).foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)

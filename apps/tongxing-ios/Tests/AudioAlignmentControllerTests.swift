@@ -447,13 +447,15 @@ final class AudioAlignmentControllerTests: XCTestCase {
         let unavailable = withoutAlignment(selected.track)
         await model.select(week: selected.week, track: unavailable)
         model.playback.clear()
-        XCTAssertEqual(model.alignmentDisplayStatus, "本篇尚未提供现场对齐资料，请刷新目录或手动定位。")
+        XCTAssertEqual(model.alignmentDisplayStatus, "当前音频没有可用的听声对齐资料。")
+        XCTAssertFalse(model.showsAlignmentStatus)
         XCTAssertFalse(model.alignmentAvailable)
 
         await model.select(week: selected.week, track: selected.track)
 
         XCTAssertEqual(model.alignmentStatus, "请播放同一录音的原声，再点击听声对齐。")
         XCTAssertEqual(model.alignmentDisplayStatus, "音频尚未准备就绪，请稍候或重新载入音频。")
+        XCTAssertTrue(model.showsAlignmentStatus)
         XCTAssertFalse(model.alignmentAvailable, "A capability must not bypass player readiness")
         XCTAssertNil(model.alignmentPosition)
     }
@@ -535,7 +537,7 @@ final class AudioAlignmentControllerTests: XCTestCase {
         XCTAssertNil(model.alignmentPosition)
         XCTAssertFalse(model.alignmentBusy)
         XCTAssertFalse(model.alignmentAvailable)
-        XCTAssertEqual(model.alignmentDisplayStatus, "本篇尚未提供现场对齐资料，请刷新目录或手动定位。")
+        XCTAssertEqual(model.alignmentDisplayStatus, "当前音频没有可用的听声对齐资料。")
     }
 
     func testPublishedFingerprintRefreshAndWindowChangeInvalidateOldFeedback() async throws {
@@ -569,7 +571,7 @@ final class AudioAlignmentControllerTests: XCTestCase {
         }
         await model.select(week: unavailableWeek, track: track)
         model.playback.clear()
-        XCTAssertEqual(model.alignmentDisplayStatus, "本篇尚未提供现场对齐资料，请刷新目录或手动定位。")
+        XCTAssertEqual(model.alignmentDisplayStatus, "当前音频没有可用的听声对齐资料。")
         await model.select(week: availableWeek, track: track)
         XCTAssertEqual(model.alignmentStatus, "请播放同一录音的原声，再点击听声对齐。")
         XCTAssertEqual(model.alignmentDisplayStatus, "音频尚未准备就绪，请稍候或重新载入音频。")
@@ -578,7 +580,7 @@ final class AudioAlignmentControllerTests: XCTestCase {
         await model.select(week: try decodeWeek(), track: track)
         XCTAssertNil(model.alignmentPosition)
         XCTAssertFalse(model.alignmentAvailable)
-        XCTAssertEqual(model.alignmentDisplayStatus, "本篇尚未提供现场对齐资料，请刷新目录或手动定位。")
+        XCTAssertEqual(model.alignmentDisplayStatus, "当前音频没有可用的听声对齐资料。")
     }
 
     func testEarlyStopAtFirstCheckpointSeeksOnceAndStopsMic() async throws {
