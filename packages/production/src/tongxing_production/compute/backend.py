@@ -19,7 +19,6 @@ class Unmoved:
     """Host modules the audio QC transport reaches until review R3 and L3 A3 move them."""
     waiver: Callable[[], ModuleType]                # machine_quality_waiver
     budget_authorization: Callable[[], ModuleType]  # machine_qc_budget_authorization
-    screener: Callable[[], ModuleType]              # screen_target_language_audio_units
     predicted_schedule: Callable[[], ModuleType]    # target_audio_predicted_schedule
     formal_renderer: Callable[[], ModuleType]       # render_formal_target_language_speech
     voice_demos: Callable[[], ModuleType]           # render_multilingual_voice_demos

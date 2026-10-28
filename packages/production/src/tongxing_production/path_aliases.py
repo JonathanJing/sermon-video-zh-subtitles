@@ -65,7 +65,6 @@ LAYER3 = {
     'scripts/prepare_target_language_speech_job.py': _AUDIO + 'speech_job.py',
     # L3 A3, the identity generation (closure window G1).
     'scripts/validate_target_language_audio_unit.py': _AUDIO + 'unit_integrity.py',
-    'scripts/screen_target_language_audio_units.py': _AUDIO + 'screening.py',
     'scripts/build_target_language_audio_package.py': _AUDIO + 'package.py',
     'scripts/render_formal_target_language_speech.py': _AUDIO + 'renderer.py',
     'scripts/compact_formal_target_audio.py': _AUDIO + 'compaction.py',

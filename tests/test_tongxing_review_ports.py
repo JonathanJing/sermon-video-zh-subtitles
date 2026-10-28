@@ -28,7 +28,7 @@ from tongxing_production.compute import spark_admission as production_spark_admi
 from tongxing_production.compute import spark_exclusive_session
 from tongxing_production.audio import renderer
 from tongxing_production.source import sentence_interpretation_models as interpretation_models
-from tongxing_production.audio import screening
+from tongxing_production.review import asr_scoring as screening
 from tongxing_production.review import scripture_machine
 from tongxing_production.workflows.supervisor import production as supervisor
 from tongxing_production.source import sentence_interpretation as interpretation
