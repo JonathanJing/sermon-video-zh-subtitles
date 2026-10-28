@@ -1,0 +1,27 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261028-guide-beta69-testflight",
+  "runs": [
+    {
+      "label": "release-summary",
+      "source": "~/.codex/worktrees/guide-beta69-archive/sermon-video-zh-subtitles/artifacts/tongxing-ios/beta-1.26.27-build69-guide-retry/release-summary",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "release-summary",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 1209,
+      "truncated": false,
+      "sha256": "9cd3ffcffe96a774eb9bb77e0f25040ba46d8ffab949c06e311709bcd245ea54",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}
