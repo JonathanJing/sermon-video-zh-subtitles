@@ -1,0 +1,27 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261028-weekly-guide-ko03-r9",
+  "runs": [
+    {
+      "label": "weekly-guide-ko03-r9-test-20261027",
+      "source": "~/.codex/worktrees/weekly-study-guide-design/sermon-video-zh-subtitles/artifacts/weekly-guide-ko03-r9-test-20261027",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "weekly-guide-ko03-r9-test-20261027",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 516,
+      "truncated": false,
+      "sha256": "42d7b9caf4213b980661c519b88cb398169d9f2c1bd150097905908909288e5f",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}
