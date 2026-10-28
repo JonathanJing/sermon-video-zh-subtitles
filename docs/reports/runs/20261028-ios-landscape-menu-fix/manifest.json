@@ -41,6 +41,11 @@
       "label": "code-review",
       "source": "~/.codex/worktrees/ios-landscape-study/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-28/landscape-fix/report-input/code-review",
       "skipped": {}
+    },
+    {
+      "label": "manual-device-readback",
+      "source": "~/.codex/worktrees/ios-landscape-study/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-28/landscape-fix/report-input/manual-device-readback",
+      "skipped": {}
     }
   ],
   "files": [
@@ -177,6 +182,15 @@
       "bytes": 1344,
       "truncated": false,
       "sha256": "9fafd885d0542fc5c916e43b42459cbdbbbcb6903a06f9d90b0feef81b4af80a",
+      "redactions": {}
+    },
+    {
+      "run": "manual-device-readback",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 2624,
+      "truncated": false,
+      "sha256": "b070fcc9b72f5d47bac4a1696f37b9abf09f00c1f8aad13c48cc3cd94bb3418d",
       "redactions": {}
     }
   ],

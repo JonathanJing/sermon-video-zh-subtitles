@@ -1,6 +1,6 @@
 # Run digest 20261028-ios-landscape-menu-fix
 
-Generated 2026-10-28T17:45:47+00:00. Redacted copies only; source hashes are in manifest.json.
+Generated 2026-10-28T17:55:24+00:00. Redacted copies only; source hashes are in manifest.json.
 
 ## 20261028T103306-build-e9b6a267
 
@@ -47,3 +47,8 @@ Source: `~/.codex/worktrees/ios-landscape-study/sermon-video-zh-subtitles/artifa
 ## code-review
 
 Source: `~/.codex/worktrees/ios-landscape-study/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-28/landscape-fix/report-input/code-review`
+
+
+## manual-device-readback
+
+Source: `~/.codex/worktrees/ios-landscape-study/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-28/landscape-fix/report-input/manual-device-readback`

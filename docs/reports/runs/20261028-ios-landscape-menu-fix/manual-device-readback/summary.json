@@ -1,0 +1,90 @@
+{
+  "scope": "iOS Simulator UI readback; not human approval or physical-device acceptance",
+  "candidate": "3fbd2c9f74236b8eecc7b49126d9a8eb89bf89ef",
+  "bundleExecutableSha256": "9eb22a9a49d90f79cb610537b46911eedbe15d8c0c46a4caa8d53a5ba4777238",
+  "localReadbackRecordSha256": "eb84f8e44eaf83f61c3ba6ced0e04e15ff9c9eaf7ea8c63b15d8c14ec60618fc",
+  "content": {
+    "sermonDate": "2026-10-25",
+    "guideWeek": 7,
+    "locale": "zh-Hans",
+    "fixture": false,
+    "selection": "explicit; Dev default remains 2026-10-18"
+  },
+  "screenshots": [
+    {
+      "device": "iPhone 17 Pro",
+      "iOS": "26.2",
+      "file": "iphone-landscape-final.png",
+      "pixels": [
+        2622,
+        1206
+      ],
+      "bytes": 503977,
+      "sha256": "c72dfdeb14d7d87edd426f65812e226ba9006567a6005751eb176a13c803764e",
+      "menuOpenedAndSectionSelected": true,
+      "onePlayerVisible": true
+    },
+    {
+      "device": "iPad Pro 11",
+      "iOS": "27.0",
+      "file": "ipad-pro11-landscape-final.png",
+      "pixels": [
+        2420,
+        1668
+      ],
+      "bytes": 536949,
+      "sha256": "5536c03baa1d8b61b235bbd92b19c45d009393ee9a08a4cf00e4a3ddd623b682",
+      "menuOpenedAndSectionSelected": true,
+      "onePlayerVisible": true
+    },
+    {
+      "device": "iPad mini",
+      "iOS": "27.0",
+      "file": "ipad-mini-landscape-final.png",
+      "pixels": [
+        2266,
+        1488
+      ],
+      "bytes": 497027,
+      "sha256": "decb74e1511c831db6101ed330d5d18f98291eb721046441a56425182c742442",
+      "menuOpenedAndSectionSelected": true,
+      "onePlayerVisible": true
+    },
+    {
+      "device": "iPhone Duo unfolded inner",
+      "iOS": "27.1",
+      "file": "duo-landscape-final.png",
+      "pixels": [
+        2853,
+        2007
+      ],
+      "bytes": 643346,
+      "sha256": "34b0c36e4a04a8569fdf9b0820e3d083f3e75b80ac28b298d98d89a916613f99",
+      "menuOpenedAndSectionSelected": true,
+      "onePlayerVisible": true
+    }
+  ],
+  "iPhone": {
+    "bothLandscapeDirectionsMenuPassed": true,
+    "landscapeRightPaneScrollPassed": true,
+    "portraitManualScroll": "attempted but visible movement not confirmed; do not count as passed"
+  },
+  "iPadMini": {
+    "extraTopWhitespaceRemoved": true
+  },
+  "Duo": {
+    "posture": "Open",
+    "display": "inner LCD-1, screen 3",
+    "landscapePoints": [
+      951,
+      669
+    ],
+    "audioDuration": "30:53",
+    "playingBeforeMenu": "00:06",
+    "playingAfterSectionJump": "01:28",
+    "pausedFinal": "02:29",
+    "evidence": "simulator UI playback state; no audible or physical-device acceptance"
+  },
+  "darkAppearance": "not_run",
+  "humanApproval": false
+}
