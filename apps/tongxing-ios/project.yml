@@ -35,6 +35,37 @@ targets:
         excludes:
           - Info.plist
       - path: Shared
+    postCompileScripts:
+      - name: Copy local Beta weekly guides
+        basedOnDependencyAnalysis: false
+        inputFiles:
+          - "$(SRCROOT)/GuideResources"
+        outputFiles:
+          - "$(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/weekly-guides.json"
+        script: |
+          set -eu
+          destination="${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/weekly-guides.json"
+          rm -f "$destination"
+          case "${CONFIGURATION}" in
+            BetaDebug|BetaRelease)
+              source="${SRCROOT}/GuideResources/weekly-guides.json"
+              checksum="${SRCROOT}/GuideResources/weekly-guides.sha256"
+              if [ -f "$source" ] || [ -f "$checksum" ]; then
+                if [ ! -f "$source" ] || [ ! -f "$checksum" ]; then
+                  echo "error: local guide payload and SHA-256 must both exist"
+                  exit 1
+                fi
+                expected=$(/bin/cat "$checksum")
+                actual=$(/usr/bin/shasum -a 256 "$source" | /usr/bin/awk '{print $1}')
+                if [ "$actual" != "$expected" ]; then
+                  echo "error: local guide payload checksum mismatch"
+                  exit 1
+                fi
+                /bin/mkdir -p "$(/usr/bin/dirname "$destination")"
+                /bin/cp "$source" "$destination"
+              fi
+              ;;
+          esac
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.jonathanjing.tongxing.dev
@@ -62,22 +93,27 @@ targets:
           TONGXING_CONTENT_ORIGIN: "https://ai-for-god-sermon-audio.web.app"
         BetaDebug:
           CODE_SIGN_ENTITLEMENTS: Config/BetaPush.entitlements
+          # The optional, ignored guide payload cannot be declared as a required
+          # Xcode script input: a clean checkout intentionally has no payload.
+          # Xcode's sandbox does not grant child-file reads from a directory input.
+          ENABLE_USER_SCRIPT_SANDBOXING: NO
           TONGXING_APNS_ENVIRONMENT: development
           PRODUCT_BUNDLE_IDENTIFIER: com.jonathanjing.tongxing.beta
           TONGXING_DISPLAY_NAME: 同行-beta
           TONGXING_URL_SCHEME: tongxing-beta
-          MARKETING_VERSION: "1.26.22"
-          CURRENT_PROJECT_VERSION: "65"
+          MARKETING_VERSION: "1.26.25"
+          CURRENT_PROJECT_VERSION: "67"
           TONGXING_CONTENT_ORIGIN: "https://ai-for-god-sermon-audio-dev.web.app"
         BetaRelease:
           CODE_SIGN_ENTITLEMENTS: Config/BetaPush.entitlements
+          ENABLE_USER_SCRIPT_SANDBOXING: NO
           TONGXING_APNS_ENVIRONMENT: production
           SWIFT_ACTIVE_COMPILATION_CONDITIONS: "$(inherited) TONGXING_APNS_PRODUCTION TONGXING_GUIDE_PREVIEW"
           PRODUCT_BUNDLE_IDENTIFIER: com.jonathanjing.tongxing.beta
           TONGXING_DISPLAY_NAME: 同行-beta
           TONGXING_URL_SCHEME: tongxing-beta
-          MARKETING_VERSION: "1.26.24"
-          CURRENT_PROJECT_VERSION: "66"
+          MARKETING_VERSION: "1.26.27"
+          CURRENT_PROJECT_VERSION: "69"
           TONGXING_CONTENT_ORIGIN: "https://ai-for-god-sermon-audio-dev.web.app"
     dependencies:
       - package: TongxingCore
@@ -120,14 +156,14 @@ targets:
           PRODUCT_BUNDLE_IDENTIFIER: com.jonathanjing.tongxing.beta.listening-activity
           TONGXING_ACTIVITY_DISPLAY_NAME: 同行-beta播放状态
           TONGXING_URL_SCHEME: tongxing-beta
-          MARKETING_VERSION: "1.26.22"
-          CURRENT_PROJECT_VERSION: "65"
+          MARKETING_VERSION: "1.26.25"
+          CURRENT_PROJECT_VERSION: "67"
         BetaRelease:
           PRODUCT_BUNDLE_IDENTIFIER: com.jonathanjing.tongxing.beta.listening-activity
           TONGXING_ACTIVITY_DISPLAY_NAME: 同行-beta播放状态
           TONGXING_URL_SCHEME: tongxing-beta
-          MARKETING_VERSION: "1.26.24"
-          CURRENT_PROJECT_VERSION: "66"
+          MARKETING_VERSION: "1.26.27"
+          CURRENT_PROJECT_VERSION: "69"
     dependencies:
       - package: TongxingCore
   TongxingTests:

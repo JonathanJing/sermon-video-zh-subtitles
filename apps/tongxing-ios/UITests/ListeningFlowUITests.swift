@@ -147,15 +147,7 @@ final class ListeningFlowUITests: XCTestCase {
         screenshot("duo-posture-precision-more", app: app)
         app.buttons["playback-more-close"].tap()
         app.buttons["完成"].tap()
-        let study = app.buttons["open-sermon-study"]
-        try reveal(study, in: app, direction: .down)
-        study.tap()
-        XCTAssertTrue(app.buttons["close-sermon-study"].waitForExistence(timeout: 5))
-        try hittableButton("playback-more", in: app).tap()
-        XCTAssertTrue(app.buttons["playback-more-close"].waitForExistence(timeout: 5))
-        screenshot("duo-posture-study-more", app: app)
-        app.buttons["playback-more-close"].tap()
-        app.buttons["close-sermon-study"].tap()
+        XCTAssertFalse(app.buttons["open-sermon-study"].exists)
         XCTAssertEqual(app.buttons["playback-toggle"].label, "开始播放")
     }
 
@@ -183,61 +175,13 @@ final class ListeningFlowUITests: XCTestCase {
         app.terminate()
     }
 
-    func testLargeTextStudyRemainsReadableAndCloseDoesNotStartPlayback() {
-        let app = launchFixture(largeText: true)
-        let entry = app.buttons["open-sermon-study"]
-        if !entry.isHittable { app.scrollViews["listening-scroll"].swipeUp() }
-        XCTAssertTrue(entry.isHittable)
-        entry.tap()
-        let question = app.staticTexts["1. 这是用于测试的默想问题。"]
-        let dockTop = app.buttons.matching(identifier: "playback-toggle").allElementsBoundByIndex.last!.frame.minY
-        let scroll = app.scrollViews["sermon-study-scroll"]
-        for _ in 0..<4 {
-            if question.exists && question.frame.maxY < dockTop - 12 { break }
-            scroll.swipeUp(velocity: .slow)
+    func testOutlineAndMeditationEntryIsRemoved() {
+        for published in [false, true] {
+            let app = launchFixture(locateFlow: published)
+            XCTAssertFalse(app.buttons["open-sermon-study"].exists)
+            XCTAssertFalse(app.buttons["大纲与默想"].exists)
+            app.terminate()
         }
-        XCTAssertTrue(question.isHittable)
-        XCTAssertLessThan(question.frame.maxY, dockTop - 12)
-        screenshot("study-large-text-reflection", app: app)
-        let close = app.buttons["close-sermon-study-bottom"]
-        if !close.isHittable || close.frame.maxY >= dockTop - 12 {
-            scroll.swipeUp(velocity: .slow)
-        }
-        XCTAssertTrue(close.isHittable)
-        XCTAssertLessThan(close.frame.maxY, dockTop - 12)
-        screenshot("study-large-text-completion", app: app)
-        close.tap()
-        XCTAssertEqual(app.buttons["playback-toggle"].label, "开始播放")
-    }
-
-    func testStudyShowsOutlineAndReflectionWithoutChangingPlayback() {
-        let app = launchFixture()
-        let progress = playbackStatus(in: app)
-        let before = (progress.value as? String)?.components(separatedBy: "，").first
-        let entry = app.buttons["open-sermon-study"]
-        XCTAssertTrue(entry.waitForExistence(timeout: 5))
-        entry.tap()
-        XCTAssertTrue(app.staticTexts["测试大纲"].waitForExistence(timeout: 5))
-        let scroll = app.scrollViews["sermon-study-scroll"]
-        scroll.swipeUp()
-        XCTAssertTrue(app.staticTexts["1. 这是用于测试的默想问题。"].exists)
-        screenshot("study-outline-reflection", app: app)
-        app.buttons["close-sermon-study"].tap()
-        XCTAssertEqual((progress.value as? String)?.components(separatedBy: "，").first, before)
-        XCTAssertEqual(app.buttons["playback-toggle"].label, "开始播放")
-    }
-
-    func testPublishedStudyMissingFieldsHasExplicitEmptyStates() {
-        let app = launchFixture(locateFlow: true)
-        let entry = app.buttons["open-sermon-study"]
-        XCTAssertTrue(entry.waitForExistence(timeout: 5))
-        entry.tap()
-        XCTAssertTrue(app.staticTexts["sermon-study-outline-unavailable"].waitForExistence(timeout: 5))
-        XCTAssertTrue(app.staticTexts["sermon-study-questions-unavailable"].exists)
-        screenshot("study-published-missing", app: app)
-        app.buttons["close-sermon-study"].tap()
-        XCTAssertTrue(app.staticTexts["published-page-title"].exists)
-        XCTAssertEqual(app.buttons["playback-toggle"].label, "开始播放")
     }
 
     func testPlaybackStatusAndMoreLabelAreVisibleAtRegularTextSize() {
@@ -595,49 +539,22 @@ final class ListeningFlowUITests: XCTestCase {
         XCTAssertFalse(app.buttons["content-language-es"].exists)
     }
 
-    func testReviewedStudyProductsShowCompleteOutlineAndMeditation() throws {
-        for withStudy in [false, true] {
-            let app = XCUIApplication()
-            app.launchArguments = ["--ui-testing", "--ui-testing-dual-script"]
-                + (withStudy ? ["--ui-testing-study-products"] : [])
-                + ["-AppleLanguages", "(zh-Hans)", "-AppleLocale", "zh_CN"]
-            app.launchEnvironment["TONGXING_UI_TEST_RUN_ID"] = UUID().uuidString
-            app.launch()
-            XCTAssertTrue(app.buttons["choose-content-language"].waitForExistence(timeout: 15))
-            app.buttons["choose-content-language"].tap()
-            XCTAssertTrue(app.buttons["content-language-ko"].waitForExistence(timeout: 5))
-            app.buttons["content-language-ko"].tap()
-            XCTAssertTrue(app.staticTexts["published-page-title"].waitForExistence(timeout: 10))
-            if withStudy {
-                app.buttons["open-sermon-study"].tap()
-                let sheetOutline = app.staticTexts["sermon-study-reviewed-outline-body-0"]
-                XCTAssertTrue(sheetOutline.waitForExistence(timeout: 10))
-                XCTAssertEqual(sheetOutline.label, "본문 전체가 표시됩니다.")
-                let sheetMeditation = app.staticTexts["sermon-study-reviewed-meditation-body-0"]
-                XCTAssertTrue(sheetMeditation.exists)
-                XCTAssertEqual(sheetMeditation.label, "예수님의 말씀을 묵상합니다.")
-                XCTAssertFalse(app.staticTexts["sermon-study-outline-unavailable"].exists)
-                XCTAssertFalse(app.staticTexts["sermon-study-questions-unavailable"].exists)
-                screenshot("reviewed-study-sheet-after", app: app)
-                app.buttons["close-sermon-study"].tap()
-
-                let outline = app.staticTexts["본문 전체가 표시됩니다."]
-                for _ in 0..<6 where !outline.isHittable { app.swipeUp() }
-                XCTAssertTrue(outline.waitForExistence(timeout: 10))
-                XCTAssertEqual(outline.label, "본문 전체가 표시됩니다.")
-                let meditation = app.staticTexts["예수님의 말씀을 묵상합니다."]
-                for _ in 0..<6 where !meditation.isHittable { app.swipeUp() }
-                XCTAssertTrue(meditation.exists)
-                XCTAssertEqual(meditation.label, "예수님의 말씀을 묵상합니다.")
-            } else {
-                XCTAssertFalse(app.staticTexts["예수님의 말씀을 묵상합니다."].exists)
-            }
-            screenshot(withStudy ? "reviewed-study-after" : "reviewed-study-before", app: app)
-            app.buttons["choose-content-language"].tap()
-            XCTAssertTrue(app.buttons["content-language-ko"].waitForExistence(timeout: 5))
-            app.buttons["完成"].tap()
-            app.terminate()
-        }
+    func testReviewedStudyProductsAreNotDisplayed() throws {
+        let app = XCUIApplication()
+        app.launchArguments = ["--ui-testing", "--ui-testing-dual-script", "--ui-testing-study-products",
+                               "-AppleLanguages", "(zh-Hans)", "-AppleLocale", "zh_CN"]
+        app.launchEnvironment["TONGXING_UI_TEST_RUN_ID"] = UUID().uuidString
+        app.launch()
+        defer { app.terminate() }
+        XCTAssertTrue(app.buttons["choose-content-language"].waitForExistence(timeout: 15))
+        app.buttons["choose-content-language"].tap()
+        XCTAssertTrue(app.buttons["content-language-ko"].waitForExistence(timeout: 5))
+        app.buttons["content-language-ko"].tap()
+        XCTAssertTrue(app.staticTexts["published-page-title"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.descendants(matching: .any)["published-full-transcript"].waitForExistence(timeout: 15))
+        XCTAssertFalse(app.buttons["open-sermon-study"].exists)
+        XCTAssertFalse(app.staticTexts["published-study-outline-body-0"].exists)
+        XCTAssertFalse(app.staticTexts["published-study-meditation-body-0"].exists)
     }
 
     func testSermonHeadingAndPickerUseTitleSeriesDateSpeakerWithoutSeeking() throws {

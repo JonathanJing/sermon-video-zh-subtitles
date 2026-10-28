@@ -262,7 +262,7 @@ struct ContentView: View {
                                 englishLocateEntry
                                 downloadControl
                             } else {
-                                ContentUnavailableView(localization.text("本周音频尚未准备好"), systemImage: "waveform", description: Text(localization.text("可以先阅读证道大纲。")))
+                                ContentUnavailableView(localization.text("本周音频尚未准备好"), systemImage: "waveform")
                             }
                             footer(week)
                         } else if let page = model.selectedMultilingualPage {
@@ -275,7 +275,7 @@ struct ContentView: View {
                                 }
                                 SermonHeadingView(heading: model.heading(for: page), date: page.date,
                                                   titleFont: .largeTitle.bold(), identifier: "published-page")
-                                outlineButton
+                                guideButton
                                 languageButton
                                 if model.fullVideoURL != nil || model.selectedAudioLanguageName != nil {
                                     if typeSize.isAccessibilitySize {
@@ -491,10 +491,6 @@ struct ContentView: View {
                     PrecisionSheet(model: model)
                         .presentationDetents(typeSize.isAccessibilitySize ? [.large] : [.medium, .large])
                         .presentationDragIndicator(.visible)
-                case .outline:
-                    OutlineSheet(model: model, playback: playback)
-                        .dynamicTypeSize(typeSize)
-                        .presentationDetents([.large]).presentationDragIndicator(.visible)
                 #if DEBUG || TONGXING_GUIDE_PREVIEW
                 case .guidePreview:
                     WeeklyGuidePreview(model: model, playback: playback)
@@ -647,7 +643,7 @@ struct ContentView: View {
                 Spacer(minLength: 8)
                 appLanguageMenu
                 compactLanguageButton
-                outlineButton
+                guideButton
             }
         } else {
             regularSermonHeading(week)
@@ -676,55 +672,19 @@ struct ContentView: View {
                     .padding(.horizontal, 10).padding(.vertical, 6)
                     .background(Brand.accent.opacity(0.10), in: Capsule())
                 Spacer()
-                outlineButton
+                guideButton
             }
         }
     }
 
-    private var outlineButton: some View {
-        #if TONGXING_GUIDE_PREVIEW
-        VStack(alignment: .leading, spacing: 0) {
-            Button(localization.text("大纲与默想"), systemImage: "list.bullet.rectangle") { sheet = .outline }
-                .frame(minHeight: 44)
-                .accessibilityIdentifier("open-sermon-study")
-            Button("手册界面预览 · 测试样本", systemImage: "book") { sheet = .guidePreview }
-                .frame(minHeight: 44)
-                .accessibilityIdentifier("open-guide-beta-preview")
-        }
-        .font(.subheadline.weight(.medium)).frame(minHeight: 44)
-        .buttonStyle(.plain).foregroundStyle(Brand.accent)
-        #else
-        Button {
-            #if DEBUG
-            if guidePreviewEnabled {
-                sheet = .guidePreview
-                return
-            }
-            #endif
-            sheet = .outline
-        } label: {
-            #if DEBUG
-            if guidePreviewEnabled {
-                Label("本周研读手册 · 测试", systemImage: "book")
-            } else {
-                Label(localization.text("大纲与默想"), systemImage: "list.bullet.rectangle")
-            }
-            #else
-            Label(localization.text("大纲与默想"), systemImage: "list.bullet.rectangle")
-            #endif
-        }
+    @ViewBuilder private var guideButton: some View {
+        #if DEBUG || TONGXING_GUIDE_PREVIEW
+        Button("本周研读手册", systemImage: "book") { sheet = .guidePreview }
             .font(.subheadline.weight(.medium)).frame(minHeight: 44)
             .buttonStyle(.plain).foregroundStyle(Brand.accent)
-            .accessibilityIdentifier("open-sermon-study")
+            .accessibilityIdentifier("open-guide-beta-preview")
         #endif
     }
-
-    #if DEBUG
-    private var guidePreviewEnabled: Bool {
-        UITestLaunch.isEnabled && ProcessInfo.processInfo.arguments.contains("--ui-testing-study-guide")
-            && model.selectedPageID == "ui-test-week"
-    }
-    #endif
 
     private var appLanguageMenu: some View {
         Menu {
@@ -917,10 +877,6 @@ struct ContentView: View {
             DisclosureGroup(localization.text("完整文稿 · 英文对照")) {
                 publishedRows(transcript.fullText, prefix: "published-full")
             }.accessibilityIdentifier("published-full-transcript")
-            if let studies = model.publishedStudies {
-                reviewedStudySection(studies.outline, title: model.selectedContentLocale == "ko" ? "설교 개요" : model.selectedContentLocale == "es" ? "Bosquejo" : "讲道大纲", kind: "outline")
-                reviewedStudySection(studies.meditation, title: model.selectedContentLocale == "ko" ? "묵상" : model.selectedContentLocale == "es" ? "Meditación" : "默想", kind: "meditation")
-            }
             englishLocateEntry
             if model.alignmentAvailable || model.alignmentBusy || model.hasAlignmentFeedback {
                 Text(localization.text(model.alignmentDisplayStatus, ["time": model.alignmentPosition.map(PlaybackTime.format) ?? ""]))
@@ -928,23 +884,6 @@ struct ContentView: View {
                     .accessibilityIdentifier("alignment-status")
             }
         }
-    }
-
-    private func reviewedStudySection(_ artifact: ReviewedStudyArtifact, title: String, kind: String) -> some View {
-        VStack(alignment: .leading, spacing: 14) {
-            sourceText(title, language: model.selectedContentLocale).font(.headline)
-            ForEach(Array(artifact.sections.enumerated()), id: \.offset) { index, section in
-                VStack(alignment: .leading, spacing: 8) {
-                    sourceText(section.title, language: model.selectedContentLocale).font(.headline)
-                    sourceText(section.body, language: model.selectedContentLocale)
-                        .font(.system(size: readingSize)).lineSpacing(6)
-                        .fixedSize(horizontal: false, vertical: true)
-                        .accessibilityIdentifier("published-study-\(kind)-body-\(index)")
-                }
-            }
-        }.frame(maxWidth: .infinity, alignment: .leading)
-            .padding(16).background(Brand.surface, in: RoundedRectangle(cornerRadius: 24))
-            .accessibilityIdentifier("published-study-\(kind)")
     }
 
     @ViewBuilder private var locateConfirmationView: some View {
@@ -1221,7 +1160,7 @@ struct AlignmentControls: View {
 }
 
 private enum ListeningSheet: String, Identifiable {
-    case weeks, languages, precision, outline, about, video, locate, weeklyUpdate
+    case weeks, languages, precision, about, video, locate, weeklyUpdate
     #if DEBUG || TONGXING_GUIDE_PREVIEW
     case guidePreview
     #endif
@@ -1647,160 +1586,6 @@ private struct PrecisionSheet: View {
         // The transport reports the confirmed position. Keep this field for
         // input errors so an old success label cannot disagree with a nudge.
         validation = nil
-    }
-}
-
-private struct OutlineSheet: View {
-    @ObservedObject private var localization = AppLocalization.shared
-    @ObservedObject var model: AppModel
-    @ObservedObject var playback: PlaybackController
-    @Environment(\.dismiss) private var dismiss
-    @Environment(\.dynamicTypeSize) private var typeSize
-
-    private var summary: String? { model.selectedWeek?.summary ?? model.currentPublishedTranscript?.summary }
-    private var outline: [OutlineSection] { model.selectedWeek?.outline ?? model.currentPublishedTranscript?.outline ?? [] }
-    private var questions: [String] { model.selectedWeek?.questions ?? model.currentPublishedTranscript?.questions ?? [] }
-    private var review: String {
-        if let week = model.selectedWeek { return week.contentReview ?? localization.text("AI 整理，供个人跟读参考") }
-        if let transcript = model.currentPublishedTranscript {
-            switch transcript.contentStatus {
-            case "human_reviewed": return localization.text("内容已人工审核")
-            // A machine quality waiver is never a human approval.
-            case "machine_checked": return localization.text("机器质检 · 未经人工审核")
-            default: return localization.text("机器审核候选，尚未人工放行")
-            }
-        }
-        return localization.text("以当前发布内容为准")
-    }
-
-    /// The verified release's disclosure for a machine-checked locale.
-    private var machineCheckedDisclosure: String? {
-        guard model.selectedWeek == nil else { return nil }
-        return model.selectedMachineCheckedDisclosure
-    }
-
-    private var reviewedStudies: ReviewedStudyResources? {
-        guard model.selectedWeek == nil, model.currentPublishedTranscript != nil else { return nil }
-        return model.publishedStudies
-    }
-
-    private func reviewedSections(_ artifact: ReviewedStudyArtifact, kind: String) -> some View {
-        ForEach(Array(artifact.sections.enumerated()), id: \.offset) { index, section in
-            VStack(alignment: .leading, spacing: 10) {
-                Text(section.title).font(.headline)
-                Text(section.body).font(.body).lineSpacing(6)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .accessibilityIdentifier("sermon-study-reviewed-\(kind)-body-\(index)")
-            }
-        }
-    }
-
-    @ViewState private var showingMore = false
-    @ViewState private var moreButtonFrame: CGRect = .null
-    var body: some View {
-        NavigationStack {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 24) {
-                    if let week = model.selectedWeek {
-                        Text(model.heading(for: week).title).font(.title2.bold())
-                    } else if let page = model.selectedMultilingualPage {
-                        Text(model.heading(for: page).title).font(.title2.bold())
-                    }
-                    if model.isLoadingPublishedTranscript {
-                        ProgressView(localization.text("正在读取本周证道…"))
-                    } else if let error = model.publishedTranscriptError, model.selectedWeek == nil {
-                        Text(localization.text(error)).foregroundStyle(.secondary)
-                        Button(localization.text("重新加载")) { Task { await model.loadSelectedPublishedTranscript() } }
-                    } else {
-                        if let studies = reviewedStudies {
-                            reviewedSections(studies.outline, kind: "outline")
-                            reviewedSections(studies.meditation, kind: "meditation")
-                        } else {
-                        if let summary, !summary.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                            VStack(alignment: .leading, spacing: 10) {
-                                Text(localization.text("内容说明")).font(.headline)
-                                Text(summary).font(.body).lineSpacing(6)
-                            }.accessibilityIdentifier("sermon-study-summary")
-                        }
-                        VStack(alignment: .leading, spacing: 12) {
-                            Text(localization.text("证道大纲")).font(.title3.bold())
-                            if outline.isEmpty {
-                                Text(localization.text("本篇暂未发布证道大纲")).foregroundStyle(.secondary)
-                                    .accessibilityIdentifier("sermon-study-outline-unavailable")
-                            } else {
-                                ForEach(Array(outline.enumerated()), id: \.offset) { _, section in
-                                    VStack(alignment: .leading, spacing: 10) {
-                                        Text(section.title).font(.headline)
-                                        ForEach(Array(section.points.enumerated()), id: \.offset) { _, point in
-                                            Text(point).font(.body).lineSpacing(6)
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                        VStack(alignment: .leading, spacing: 12) {
-                            Text(localization.text("默想问题")).font(.title3.bold())
-                            if questions.isEmpty {
-                                Text(localization.text("本篇暂未发布默想问题")).foregroundStyle(.secondary)
-                                    .accessibilityIdentifier("sermon-study-questions-unavailable")
-                            } else {
-                                ForEach(Array(questions.enumerated()), id: \.offset) { index, question in
-                                    Text("\(index + 1). \(question)").font(.body).lineSpacing(6)
-                                }
-                            }
-                        }
-                        }
-                        Text(review).font(.caption).foregroundStyle(.secondary)
-                        if let disclosure = machineCheckedDisclosure {
-                            sourceText(disclosure, language: model.selectedContentLocale)
-                                .font(.caption).foregroundStyle(.secondary)
-                                .fixedSize(horizontal: false, vertical: true)
-                                .accessibilityIdentifier("sermon-study-machine-checked-disclosure")
-                        }
-                        Button(localization.text("完成")) { dismiss() }
-                            .buttonStyle(.bordered).frame(minHeight: 44)
-                            .accessibilityIdentifier("close-sermon-study-bottom")
-                    }
-                }
-                .padding(.bottom, typeSize.isAccessibilitySize ? 96 : 0)
-                .padding(22).frame(maxWidth: 680, alignment: .leading)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-            }.accessibilityIdentifier("sermon-study-scroll")
-                .navigationTitle(localization.text("大纲与默想"))
-                .toolbar { ToolbarItem(placement: .confirmationAction) {
-                    Button(localization.text("完成")) { dismiss() }.accessibilityIdentifier("close-sermon-study")
-                } }
-                .listeningBottomBar {
-                    PlaybackDock(
-                        playback: playback,
-                        alignmentModel: model,
-                        onMoreTap: { showingMore = true },
-                        onMoreDismiss: { showingMore = false },
-                        onMoreFrameChange: { moreButtonFrame = $0 }
-                    )
-                }
-        }
-        // The panel belongs to the entire sheet, above both scrolling content
-        // and the safe-area playback bar, using one stable host coordinate space.
-        .overlay {
-            PlaybackMorePanelOverlay(
-                isPresented: $showingMore,
-                buttonFrame: moreButtonFrame,
-                placement: .bottom
-            ) { width in
-                PlaybackMoreControls(
-                    playback: playback,
-                    isPreparing: false,
-                    alignmentModel: model,
-                    onClose: { showingMore = false },
-                    width: width
-                )
-            }
-        }
-        .environment(\.locale, localization.locale)
-        #if os(macOS)
-        .frame(minWidth: 430, minHeight: 630)
-        #endif
     }
 }
 
