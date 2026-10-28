@@ -13,6 +13,26 @@ struct WeeklyGuidePreview: View {
     @State private var showingMore = false
     @State private var moreFrame: CGRect = .null
     @AccessibilityFocusState private var focusedSection: String?
+    @State private var remoteGuide: WeeklyGuide?
+    @State private var remoteSelection: WeeklyGuideSelection?
+    @State private var loadingSelection: WeeklyGuideSelection?
+
+    private var selection: WeeklyGuideSelection {
+        let locale = model.selectedContentLocale
+        if let week = model.selectedWeek {
+            guard let legacy = WeeklyGuideRepository.legacyIdentity(week: week) else {
+                return WeeklyGuideSelection(pageID: week.id, locale: locale)
+            }
+            return WeeklyGuideSelection(pageID: week.id, locale: locale, legacy: legacy)
+        }
+        guard let page = model.selectedMultilingualPage, page.id == model.selectedPageID,
+              let target = page.targets[locale], let source = try? target.sourceBinding(in: page) else {
+            return WeeklyGuideSelection(pageID: model.selectedPageID, locale: locale)
+        }
+        return WeeklyGuideSelection(pageID: page.id, locale: locale, editionId: source.editionId,
+                                    sourceIdentitySha256: source.sourceIdentitySha256,
+                                    releasePackageJsonSha256: target.releasePackageJsonSha256)
+    }
 
     private var guide: WeeklyGuide? {
         #if DEBUG
@@ -23,7 +43,29 @@ struct WeeklyGuidePreview: View {
                                  body: "测试用讨论内容，不代表教会手册。")])
         }
         #endif
-        return WeeklyGuideRepository.load(pageID: model.selectedPageID, locale: model.selectedContentLocale)
+        return WeeklyGuideRepository.matchingRemote(remoteGuide, resultFor: remoteSelection, current: selection)
+    }
+
+    private func refreshGuide(for requested: WeeklyGuideSelection) async {
+        loadingSelection = requested
+        remoteGuide = nil
+        remoteSelection = nil
+        let origin = model.mediaOrigin
+        #if DEBUG
+        if UITestLaunch.isEnabled && !ProcessInfo.processInfo.arguments.contains("--ui-testing-remote-guide") {
+            remoteSelection = requested
+            loadingSelection = nil
+            return
+        }
+        #endif
+        let result = await WeeklyGuideRepository.loadRemote(selection: requested, origin: origin)
+        guard !Task.isCancelled, selection == requested else { return }
+        remoteGuide = WeeklyGuideRepository.resolvedGuide(result, selection: requested, origin: origin,
+                                                          ledger: WeeklyGuideDenyLedger()) {
+            WeeklyGuideRepository.loadBundled(selection: requested, origin: origin)
+        }
+        remoteSelection = requested
+        loadingSelection = nil
     }
 
     var body: some View {
@@ -84,6 +126,9 @@ struct WeeklyGuidePreview: View {
                                 .id(section.id)
                                 .accessibilityIdentifier("guide-content-\(section.id)")
                             }
+                        } else if remoteSelection != selection || loadingSelection == selection {
+                            ProgressView("正在加载研读手册…")
+                                .accessibilityIdentifier("guide-loading")
                         } else {
                             ContentUnavailableView("本周研读手册尚不可用", systemImage: "book.closed",
                                 description: Text("当前讲道或内容语言暂无对应手册。"))
@@ -126,6 +171,9 @@ struct WeeklyGuidePreview: View {
                 }
             }
             }
+        }
+        .task(id: selection) {
+            await refreshGuide(for: selection)
         }
         .overlay {
             PlaybackMorePanelOverlay(isPresented: $showingMore, buttonFrame: moreFrame, placement: morePlacement) { width in

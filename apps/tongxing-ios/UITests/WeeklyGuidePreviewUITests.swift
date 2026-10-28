@@ -96,4 +96,43 @@ final class WeeklyGuidePreviewUITests: XCTestCase {
         add(image)
     }
 
+    // Live Dev readback; uses the real app catalog and staged Bundle, not UI fixtures.
+    func testLiveDevLegacyWeekOneOpensMatchingGuide() throws {
+        let app = XCUIApplication()
+        app.launchArguments = ["-AppleLanguages", "(zh-Hans)", "-AppleLocale", "zh_CN"]
+        app.launchEnvironment["TONGXING_TEST_HOST"] = "0"
+        app.launch()
+        defer { app.terminate() }
+
+        let choose = app.buttons["choose-sermon"]
+        guard choose.waitForExistence(timeout: 30) else {
+            throw XCTSkip("Live Dev sermon selector is unavailable")
+        }
+        choose.tap()
+        let week = app.buttons["legacy-week-2026-09-13-same_video-weekendlive-a9e91f52eb4c2484"]
+        let scroll = app.scrollViews.firstMatch
+        guard scroll.waitForExistence(timeout: 10) else {
+            throw XCTSkip("Live Dev sermon list is unavailable")
+        }
+        for _ in 0..<35 {
+            if week.exists && week.isHittable { break }
+            scroll.swipeUp()
+        }
+        guard week.exists && week.isHittable else {
+            throw XCTSkip("The verified legacy week-one sermon is absent or cannot be reached in the live Dev catalog")
+        }
+        week.tap()
+        let heading = app.staticTexts["sermon-title"]
+        XCTAssertTrue(heading.waitForExistence(timeout: 20))
+        let entry = app.buttons["open-guide-beta-preview"]
+        XCTAssertTrue(entry.waitForExistence(timeout: 10))
+        entry.tap()
+        XCTAssertTrue(app.staticTexts["第 1 周 · 耶稣与你同在"].waitForExistence(timeout: 20))
+        XCTAssertTrue(app.staticTexts["中文机器翻译 · 未经人工审校"].exists)
+        let screenshot = XCTAttachment(screenshot: app.screenshot())
+        screenshot.name = "live-dev-legacy-week-one-guide"
+        screenshot.lifetime = .keepAlways
+        add(screenshot)
+    }
+
 }

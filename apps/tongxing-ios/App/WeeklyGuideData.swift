@@ -1,6 +1,8 @@
 import Foundation
+import CryptoKit
+import CoreFoundation
+import TongxingCore
 
-/// A guide is bound to the exact weekly page ID from the published catalog.
 struct WeeklyGuide: Decodable, Equatable, Identifiable {
     let id: String
     let week: Int
@@ -17,26 +19,469 @@ struct WeeklyGuideSection: Decodable, Equatable, Identifiable {
     let body: String
 }
 
+struct WeeklyGuideLegacyIdentity: Hashable {
+    let sourceIdSHA256: String
+    let sourceUrlSHA256: String
+    let sourceMediaSHA256: String
+    let sourceStartSeconds: Double
+    let sourceEndSeconds: Double
+}
+
+struct WeeklyGuideSelection: Hashable {
+    let pageID: String?
+    let locale: String
+    var editionId: String? = nil
+    var sourceIdentitySha256: String? = nil
+    var releasePackageJsonSha256: String? = nil
+    var legacy: WeeklyGuideLegacyIdentity? = nil
+
+    var hasV5Identity: Bool {
+        pageID != nil && editionId != nil && sourceIdentitySha256 != nil && releasePackageJsonSha256 != nil && legacy == nil
+    }
+    var hasStrongLegacyIdentity: Bool {
+        guard pageID != nil, let legacy else { return false }
+        let hashes = [legacy.sourceIdSHA256, legacy.sourceUrlSHA256, legacy.sourceMediaSHA256]
+        return hashes.allSatisfy { $0.range(of: "^[0-9a-f]{64}$", options: .regularExpression) != nil } &&
+            legacy.sourceStartSeconds.isFinite && legacy.sourceEndSeconds.isFinite &&
+            legacy.sourceStartSeconds >= 0 && legacy.sourceEndSeconds > legacy.sourceStartSeconds
+    }
+}
+
+struct WeeklyGuideResponse {
+    let data: Data
+    let url: URL
+    let statusCode: Int
+}
+
+enum WeeklyGuideRemoteResult: Equatable {
+    case manifestUnavailable
+    case notDeclared
+    case available(WeeklyGuide)
+    case revoked
+    case invalidDeclared
+}
+
+/// Persist only deny decisions, scoped to the exact origin and sermon identity.
+/// A verified current resource clears the deny; a missing manifest never does.
+struct WeeklyGuideDenyLedger {
+    let defaults: UserDefaults
+    init(defaults: UserDefaults = .standard) { self.defaults = defaults }
+    private func key(_ selection: WeeklyGuideSelection, origin: URL) -> String {
+        let host = URLComponents(url: origin, resolvingAgainstBaseURL: false)?.host?.lowercased()
+        let canonicalOrigin = host.map { "https://" + $0 } ?? origin.absoluteString
+        let raw = [canonicalOrigin, selection.pageID ?? "", selection.locale,
+                   selection.editionId ?? "", selection.sourceIdentitySha256 ?? "",
+                   selection.releasePackageJsonSha256 ?? "", selection.legacy?.sourceIdSHA256 ?? "",
+                   selection.legacy?.sourceUrlSHA256 ?? "", selection.legacy?.sourceMediaSHA256 ?? "",
+                   selection.legacy.map { String($0.sourceStartSeconds) } ?? "",
+                   selection.legacy.map { String($0.sourceEndSeconds) } ?? ""].joined(separator: "\u{0}")
+        return "tongxing.guide.deny.v1." + WeeklyGuideRepository.sha256(Data(raw.utf8))
+    }
+    func isDenied(_ selection: WeeklyGuideSelection, origin: URL) -> Bool {
+        defaults.bool(forKey: key(selection, origin: origin))
+    }
+    func apply(_ result: WeeklyGuideRemoteResult, selection: WeeklyGuideSelection, origin: URL) {
+        switch result {
+        case .revoked, .invalidDeclared:
+            defaults.set(true, forKey: key(selection, origin: origin))
+        case .available:
+            defaults.removeObject(forKey: key(selection, origin: origin))
+        case .manifestUnavailable, .notDeclared:
+            break
+        }
+    }
+}
+
 enum WeeklyGuideRepository {
-    /// No fallback: missing content, another locale, or another page never shows
-    /// the current week's guide as if it belonged to the selected sermon.
-    static func load(pageID: String?, locale: String) -> WeeklyGuide? {
-        guard let url = Bundle.main.url(forResource: "weekly-guides", withExtension: "json"),
-              let data = try? Data(contentsOf: url) else { return nil }
-        return load(pageID: pageID, locale: locale, data: data)
+    static let manifestLimit = 512 * 1024
+    static let guideLimit = 2 * 1024 * 1024
+    static let acceptedBundleSHA = "99b494d5c52104df38e5a4be1a563b2905edd9cbe612209188ae2ea87ed860f2"
+    typealias Fetch = (URL, URL, Int) async throws -> WeeklyGuideResponse
+
+    static func sha256(_ data: Data) -> String {
+        SHA256.hash(data: data).map { String(format: "%02x", $0) }.joined()
+    }
+
+    /// A legacy catalog can omit the top-level source hash while carrying a
+    /// fingerprint binding. Accept it only when its page, window and track agree
+    /// with the selected week; a present top-level hash must never conflict.
+    /// The resulting source ID, URL, media hash and window are additionally
+    /// checked against the per-origin Bundle identity evidence before display.
+    static func legacyIdentity(week: SermonWeek) -> WeeklyGuideLegacyIdentity? {
+        guard let start = week.sourceStartSeconds, let end = week.sourceEndSeconds,
+              start.isFinite, end.isFinite, start >= 0, end > start else { return nil }
+        let sourceSHA: String
+        if let fingerprint = week.audioFingerprint {
+            guard (try? fingerprint.validate()) != nil, fingerprint.pageId == week.id,
+                  fingerprint.sourceStartSeconds == start, fingerprint.sourceEndSeconds == end,
+                  week.sourceSha256 == nil || week.sourceSha256 == fingerprint.sourceSha256,
+                  week.tracks.contains(where: { $0.sha256 == fingerprint.trackSha256 }) else { return nil }
+            sourceSHA = fingerprint.sourceSha256
+        } else {
+            guard let topLevelSHA = week.sourceSha256 else { return nil }
+            sourceSHA = topLevelSHA
+        }
+        return WeeklyGuideLegacyIdentity(sourceIdSHA256: sha256(Data(week.sourceId.utf8)),
+            sourceUrlSHA256: sha256(Data(week.sourceUrl.utf8)), sourceMediaSHA256: sourceSHA,
+            sourceStartSeconds: start, sourceEndSeconds: end)
     }
 
     static func load(pageID: String?, locale: String, data: Data) -> WeeklyGuide? {
         guard locale == "zh-Hans", let pageID, !pageID.isEmpty,
               let collection = try? JSONDecoder().decode(Collection.self, from: data) else { return nil }
         let matches = collection.guides.filter { $0.id == pageID }
-        guard matches.count == 1, let guide = matches.first,
-              guide.week > 0, !guide.sections.isEmpty,
-              Set(guide.sections.map(\.id)).count == guide.sections.count else { return nil }
+        guard matches.count == 1, let guide = matches.first, valid(guide) else { return nil }
         return guide
     }
 
-    private struct Collection: Decodable {
-        let guides: [WeeklyGuide]
+    static func loadBundled(selection: WeeklyGuideSelection, origin: URL) -> WeeklyGuide? {
+        guard let url = Bundle.main.url(forResource: "weekly-guides", withExtension: "json"),
+              let data = try? Data(contentsOf: url) else { return nil }
+        return loadBundled(selection: selection, origin: origin, data: data,
+                           bindingData: Data(bundledBindings.utf8), expectedSHA: acceptedBundleSHA)
+    }
+
+    static func loadBundled(selection: WeeklyGuideSelection, origin: URL, data: Data,
+                            bindingData: Data, expectedSHA: String) -> WeeklyGuide? {
+        guard sha256(data) == expectedSHA,
+              let guide = load(pageID: selection.pageID, locale: selection.locale, data: data),
+              matchesBundledIdentity(selection: selection, origin: origin, week: guide.week,
+                                     bindingData: bindingData) else { return nil }
+        return guide
+    }
+
+    static func hasApprovedBundleIdentity(selection: WeeklyGuideSelection, origin: URL, week: Int) -> Bool {
+        matchesBundledIdentity(selection: selection, origin: origin, week: week,
+                               bindingData: Data(bundledBindings.utf8))
+    }
+
+    private static func matchesBundledIdentity(selection: WeeklyGuideSelection, origin: URL, week: Int,
+                                               bindingData: Data) -> Bool {
+        guard validOrigin(origin),
+              let all = try? JSONDecoder().decode([String: [BundleBinding]].self, from: bindingData),
+              let originKey = URLComponents(url: origin, resolvingAgainstBaseURL: false)?.host?.lowercased(),
+              let bindings = all["https://" + originKey] else { return false }
+        let matches = bindings.filter { $0.pageID == selection.pageID && $0.locale == selection.locale }
+        guard matches.count == 1, let b = matches.first, b.week == week else { return false }
+        if let legacy = selection.legacy {
+            return b.sourceIdSHA256 == legacy.sourceIdSHA256 && b.sourceUrlSHA256 == legacy.sourceUrlSHA256 &&
+                b.sourceMediaSHA256 == legacy.sourceMediaSHA256 &&
+                b.sourceStartSeconds == legacy.sourceStartSeconds && b.sourceEndSeconds == legacy.sourceEndSeconds
+        }
+        return selection.hasV5Identity && b.editionId == selection.editionId &&
+            b.sourceIdentitySha256 == selection.sourceIdentitySha256 &&
+            b.releasePackageJsonSha256 == selection.releasePackageJsonSha256
+    }
+
+    static func matchingRemote(_ guide: WeeklyGuide?, resultFor: WeeklyGuideSelection?,
+                               current: WeeklyGuideSelection) -> WeeklyGuide? {
+        guard resultFor == current, guide?.id == current.pageID, current.locale == "zh-Hans" else { return nil }
+        return guide
+    }
+
+    static func resolvedGuide(_ result: WeeklyGuideRemoteResult, selection: WeeklyGuideSelection,
+                              origin: URL, ledger: WeeklyGuideDenyLedger,
+                              bundled: () -> WeeklyGuide?) -> WeeklyGuide? {
+        ledger.apply(result, selection: selection, origin: origin)
+        switch result {
+        case .available(let guide):
+            return guide
+        case .manifestUnavailable, .notDeclared:
+            return ledger.isDenied(selection, origin: origin) ? nil : bundled()
+        case .revoked, .invalidDeclared:
+            return nil
+        }
+    }
+
+    /// The configured same-origin service is the trust root. Hashes bind manifest
+    /// entries to downloaded bytes; they do not authenticate a compromised server.
+    static func loadRemote(selection: WeeklyGuideSelection, origin: URL,
+                           fetch: @escaping Fetch = fetchBounded) async -> WeeklyGuideRemoteResult {
+        guard selection.locale == "zh-Hans", (selection.hasV5Identity || selection.hasStrongLegacyIdentity),
+              let pageID = selection.pageID,
+              validOrigin(origin), let manifestURL = URL(string: "/weekly-guides/manifest-v1.json", relativeTo: origin)?.absoluteURL else { return .manifestUnavailable }
+        let response: WeeklyGuideResponse
+        do { response = try await fetch(manifestURL, origin, manifestLimit) }
+        catch { return .manifestUnavailable }
+        guard !Task.isCancelled, response.statusCode == 200, response.data.count <= manifestLimit,
+              response.url == manifestURL,
+              let json = try? JSONSerialization.jsonObject(with: response.data) as? [String: Any],
+              let schema = json["schemaVersion"] as? String,
+              schema == "tongxing-weekly-guide-manifest-v1" else { return .manifestUnavailable }
+        // Provenance is an explicit claim from the trusted service, not a signature.
+        guard json["seriesID"] as? String == "revelation-comfort-and-hope",
+              json["translationSHA256"] as? String == "d6c6064e8fab11ab012edd9535372a9f99b83cd5240b6014f5451795a9198f86",
+              json["cuvSHA256"] as? String == "363afb38148f150b30fee727f4818faa821a0d17b4888c16be3e05bd462503bb",
+              json["review"] as? String == "machine_translation_not_human_reviewed",
+              let human = json["humanApproval"] as? NSNumber,
+              CFGetTypeID(human) == CFBooleanGetTypeID(), human.boolValue == false,
+              let rawEntries = json["entries"] as? [[String: Any]] else { return .invalidDeclared }
+        var entries: [Entry] = []
+        for raw in rawEntries {
+            guard let data = try? JSONSerialization.data(withJSONObject: raw),
+                  let item = try? JSONDecoder().decode(Entry.self, from: data) else { return .invalidDeclared }
+            entries.append(item)
+        }
+        let keys = entries.map { "\($0.pageID)\u{0}\($0.locale)" }
+        guard Set(keys).count == keys.count else { return .invalidDeclared }
+        guard let entry = entries.first(where: { $0.pageID == pageID && $0.locale == selection.locale }) else { return .notDeclared }
+        guard entry.week > 0 else { return .invalidDeclared }
+        if let legacy = selection.legacy {
+            // Legacy catalogs lack a v5 release identity. They may carry only an
+            // exact-source tombstone; they never acquire remote guide content.
+            guard entry.status == "revoked", let declared = entry.legacy,
+                  declared.sourceIdSHA256 == legacy.sourceIdSHA256,
+                  declared.sourceUrlSHA256 == legacy.sourceUrlSHA256,
+                  declared.sourceMediaSHA256 == legacy.sourceMediaSHA256,
+                  declared.sourceStartSeconds == legacy.sourceStartSeconds,
+                  declared.sourceEndSeconds == legacy.sourceEndSeconds,
+                  entry.editionId == nil, entry.sourceIdentitySha256 == nil,
+                  entry.releasePackageJsonSha256 == nil,
+                  hasApprovedBundleIdentity(selection: selection, origin: origin, week: entry.week)
+            else { return .invalidDeclared }
+            return .revoked
+        }
+        guard entry.legacy == nil, entry.editionId == selection.editionId,
+              entry.sourceIdentitySha256 == selection.sourceIdentitySha256,
+              entry.releasePackageJsonSha256 == selection.releasePackageJsonSha256 else { return .invalidDeclared }
+        if entry.status == "revoked" { return .revoked }
+        guard entry.status == "available", let bytes = entry.bytes, bytes > 0, bytes <= guideLimit,
+              let hash = entry.sha256, hash.range(of: "^[0-9a-f]{64}$", options: .regularExpression) != nil,
+              let path = entry.path, let resourceURL = publishedURL(path, origin: origin) else { return .invalidDeclared }
+        let content: WeeklyGuideResponse
+        do { content = try await fetch(resourceURL, origin, guideLimit) }
+        catch { return .invalidDeclared }
+        guard !Task.isCancelled, content.statusCode == 200, content.url == resourceURL,
+              content.data.count == bytes, content.data.count <= guideLimit,
+              sha256(content.data) == hash,
+              let guide = try? JSONDecoder().decode(WeeklyGuide.self, from: content.data),
+              guide.id == pageID, guide.week == entry.week, valid(guide) else { return .invalidDeclared }
+        return .available(guide)
+    }
+
+    private static func valid(_ guide: WeeklyGuide) -> Bool {
+        guide.week > 0 && !guide.sections.isEmpty && Set(guide.sections.map(\.id)).count == guide.sections.count &&
+        guide.sections.allSatisfy { !$0.id.isEmpty }
+    }
+
+    static func validOrigin(_ url: URL) -> Bool {
+        guard let c = URLComponents(url: url, resolvingAgainstBaseURL: false) else { return false }
+        return c.scheme?.lowercased() == "https" && !(c.host ?? "").isEmpty &&
+            c.user == nil && c.password == nil && c.query == nil && c.fragment == nil &&
+            (c.port == nil || c.port == 443) && (c.path.isEmpty || c.path == "/")
+    }
+
+    static func sameOrigin(_ url: URL, _ origin: URL) -> Bool {
+        guard validOrigin(origin), let a = URLComponents(url: url, resolvingAgainstBaseURL: false),
+              let b = URLComponents(url: origin, resolvingAgainstBaseURL: false) else { return false }
+        return a.scheme?.lowercased() == "https" && a.host?.lowercased() == b.host?.lowercased() &&
+            (a.port ?? 443) == (b.port ?? 443) && a.user == nil && a.password == nil
+    }
+
+    static func publishedURL(_ path: String, origin: URL) -> URL? {
+        guard path.count <= 512,
+              let match = path.range(of: "^/weekly-guides/published/(?:[A-Za-z0-9_-]+/)*[A-Za-z0-9_-]+\\.json$", options: .regularExpression),
+              match == (path.startIndex..<path.endIndex),
+              let url = URL(string: path, relativeTo: origin)?.absoluteURL, sameOrigin(url, origin) else { return nil }
+        return url
+    }
+
+    private static func fetchBounded(_ url: URL, origin: URL, limit: Int) async throws -> WeeklyGuideResponse {
+        try await fetchBounded(url, origin: origin, limit: limit, configuration: .ephemeral)
+    }
+
+    static func fetchBounded(_ url: URL, origin: URL, limit: Int,
+                             configuration: URLSessionConfiguration) async throws -> WeeklyGuideResponse {
+        let session = URLSession(configuration: configuration, delegate: GuideRedirectGuard(), delegateQueue: nil)
+        defer { session.invalidateAndCancel() }
+        // Keep verified-bundle offline fallback usable without a long blank wait.
+        let timeout: TimeInterval = limit == manifestLimit ? 6 : 20
+        var request = URLRequest(url: url, cachePolicy: .reloadIgnoringLocalCacheData, timeoutInterval: timeout)
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+        let (bytes, raw) = try await session.bytes(for: request)
+        guard let response = raw as? HTTPURLResponse, let finalURL = response.url,
+              finalURL == url, sameOrigin(finalURL, origin), response.statusCode == 200,
+              response.expectedContentLength < 0 || response.expectedContentLength <= Int64(limit) else { throw URLError(.badServerResponse) }
+        var data = Data()
+        for try await byte in bytes {
+            guard !Task.isCancelled, data.count < limit else { throw URLError(.dataLengthExceedsMaximum) }
+            data.append(byte)
+        }
+        return WeeklyGuideResponse(data: data, url: finalURL, statusCode: response.statusCode)
+    }
+
+    private struct Collection: Decodable { let guides: [WeeklyGuide] }
+    private struct Entry: Decodable {
+        let pageID: String; let locale: String; let week: Int; let editionId: String?
+        let sourceIdentitySha256: String?; let releasePackageJsonSha256: String?; let status: String
+        let path: String?; let sha256: String?; let bytes: Int?; let legacy: LegacyEntry?
+    }
+    private struct LegacyEntry: Decodable {
+        let sourceIdSHA256: String; let sourceUrlSHA256: String; let sourceMediaSHA256: String
+        let sourceStartSeconds: Double; let sourceEndSeconds: Double
+    }
+    private struct BundleBinding: Decodable {
+        let week: Int; let pageID: String; let locale: String
+        let editionId: String?; let sourceIdentitySha256: String?; let releasePackageJsonSha256: String?
+        let sourceIdSHA256: String?; let sourceUrlSHA256: String?; let sourceMediaSHA256: String?
+        let sourceStartSeconds: Double?; let sourceEndSeconds: Double?
+    }
+
+    // Identity metadata only: generated from HTTPS/hash-verified evidence
+    // weekly-guide-identity-evidence-20261028/binding-evidence.json SHA-256
+    // 33300aab94e4c57ec66f39ba1efcd311478db0e1348b5690f68b36ba108f9e15.
+    // It binds only the exact shipped 99b494... Bundle to each origin's catalog;
+    // v3/v4 alias evidence SHA-256: ba582a43435ee7565a61210e041b7af7ab06d0d1024ad8aeba89d41b23a1a030.
+    // It is not a claim of human review or a signature on the cloud manifest.
+    private static let bundledBindings = #"""
+    {
+      "https://ai-for-god-sermon-audio.web.app": [
+        {
+          "week": 3,
+          "pageID": "2026-09-27-weekend-sermon-drive-530",
+          "locale": "zh-Hans",
+          "editionId": "2026-09-27-weekend-sermon-drive-530",
+          "sourceIdentitySha256": "a0cf67203bae17bff080b2d1af41f88bdef786345a435021c2739d14f15394ac",
+          "releasePackageJsonSha256": "32755dff59bd449c3199e760d6e280407d56bbd286fafd235ccf4adc94f8b675"
+        },
+        {
+          "week": 4,
+          "pageID": "resi-20261004-69ba7a66",
+          "locale": "zh-Hans",
+          "editionId": "resi-20261004-69ba7a66",
+          "sourceIdentitySha256": "dc9104063404d44866f762c76af7449e4f8d25ca6dd03f2312b256fb32f88502",
+          "releasePackageJsonSha256": "6d85d1c27c7cfcf676c9a77bdae55153389265e0056efe2e25ba2eec30e51063"
+        },
+        {
+          "week": 5,
+          "pageID": "resi-20261011-54475d42",
+          "locale": "zh-Hans",
+          "editionId": "resi-20261011-54475d42",
+          "sourceIdentitySha256": "d1734702cf39394a3f283392043d0d33ed127302df393dc16b16d737ef320ec4",
+          "releasePackageJsonSha256": "2503ca70abb2372d513bd9a14603d42b5aac6401d5cc0e635dbc988ec8c84e51"
+        },
+        {
+          "week": 6,
+          "pageID": "resi-20261018-15030286",
+          "locale": "zh-Hans",
+          "editionId": "resi-20261018-broadcast",
+          "sourceIdentitySha256": "5dc7deb518491cef0d0c98c8c21b5c7f8aebc3730c13042afc6427b640f75e2c",
+          "releasePackageJsonSha256": "3b0fbbfcd668b5379f837155080e6125e1ae3fb07d6b5bf4e3c46bee7861a4b5"
+        },
+        {
+          "week": 7,
+          "pageID": "revelation-jesus-wins-20261025",
+          "locale": "zh-Hans",
+          "editionId": "revelation-jesus-wins-20261025",
+          "sourceIdentitySha256": "199e4b86e58c6456c462b41e359e72f3ccc61ad59bd78e296e8e8a8717504d35",
+          "releasePackageJsonSha256": "4a40a4477447b6492232e36d350c8bcc34afd3e6da1b26875603b80a49cda8ce"
+        },
+        {
+          "week": 1,
+          "pageID": "2026-09-13-same_video-weekendlive-a9e91f52eb4c2484",
+          "locale": "zh-Hans",
+          "sourceIdSHA256": "40982af8843db9416e7162e1e6a78138b1e6880dec2dad65a5ec85cba950bce2",
+          "sourceUrlSHA256": "a681ffe1ecd1c7dd1d8f18f15bf835d3663400aba7f828a3ec4755e02e986624",
+          "sourceMediaSHA256": "a9e91f52eb4c24845d0e31f5300a352e8d4b84b59231b1c4ae5112aceb907567",
+          "sourceStartSeconds": 1793,
+          "sourceEndSeconds": 4033
+        },
+        {
+          "week": 2,
+          "pageID": "2026-09-20-same_video-7c193fd4-bc90-4f3b-aa00-37dfe8423aa0",
+          "locale": "zh-Hans",
+          "sourceIdSHA256": "1f7a8dceae03715cde50fd59e6f634b9b2fbd5d9ec20966d7418260a1b010a62",
+          "sourceUrlSHA256": "a681ffe1ecd1c7dd1d8f18f15bf835d3663400aba7f828a3ec4755e02e986624",
+          "sourceMediaSHA256": "728f864e92ea08dbce249249369016e0fee47950ec4e6dcb60cd6d83185e8caf",
+          "sourceStartSeconds": 1789,
+          "sourceEndSeconds": 3729
+        },
+        {
+          "week": 6,
+          "pageID": "resi-20261018-broadcast",
+          "locale": "zh-Hans",
+          "editionId": "resi-20261018-broadcast",
+          "sourceIdentitySha256": "5dc7deb518491cef0d0c98c8c21b5c7f8aebc3730c13042afc6427b640f75e2c",
+          "releasePackageJsonSha256": "3b0fbbfcd668b5379f837155080e6125e1ae3fb07d6b5bf4e3c46bee7861a4b5"
+        }
+      ],
+      "https://ai-for-god-sermon-audio-dev.web.app": [
+        {
+          "week": 3,
+          "pageID": "2026-09-27-weekend-sermon-drive-530",
+          "locale": "zh-Hans",
+          "editionId": "2026-09-27-weekend-sermon-drive-530",
+          "sourceIdentitySha256": "a0cf67203bae17bff080b2d1af41f88bdef786345a435021c2739d14f15394ac",
+          "releasePackageJsonSha256": "32755dff59bd449c3199e760d6e280407d56bbd286fafd235ccf4adc94f8b675"
+        },
+        {
+          "week": 4,
+          "pageID": "resi-20261004-69ba7a66",
+          "locale": "zh-Hans",
+          "editionId": "resi-20261004-69ba7a66",
+          "sourceIdentitySha256": "dc9104063404d44866f762c76af7449e4f8d25ca6dd03f2312b256fb32f88502",
+          "releasePackageJsonSha256": "0e886efc3a83ba9a58d4c808930b6b9955deedf02fc787eaa773c450d2e83df7"
+        },
+        {
+          "week": 5,
+          "pageID": "resi-20261011-54475d42",
+          "locale": "zh-Hans",
+          "editionId": "resi-20261011-54475d42",
+          "sourceIdentitySha256": "d1734702cf39394a3f283392043d0d33ed127302df393dc16b16d737ef320ec4",
+          "releasePackageJsonSha256": "2503ca70abb2372d513bd9a14603d42b5aac6401d5cc0e635dbc988ec8c84e51"
+        },
+        {
+          "week": 6,
+          "pageID": "resi-20261018-15030286",
+          "locale": "zh-Hans",
+          "editionId": "resi-20261018-broadcast",
+          "sourceIdentitySha256": "5dc7deb518491cef0d0c98c8c21b5c7f8aebc3730c13042afc6427b640f75e2c",
+          "releasePackageJsonSha256": "3b0fbbfcd668b5379f837155080e6125e1ae3fb07d6b5bf4e3c46bee7861a4b5"
+        },
+        {
+          "week": 7,
+          "pageID": "revelation-jesus-wins-20261025",
+          "locale": "zh-Hans",
+          "editionId": "revelation-jesus-wins-20261025",
+          "sourceIdentitySha256": "199e4b86e58c6456c462b41e359e72f3ccc61ad59bd78e296e8e8a8717504d35",
+          "releasePackageJsonSha256": "4a40a4477447b6492232e36d350c8bcc34afd3e6da1b26875603b80a49cda8ce"
+        },
+        {
+          "week": 1,
+          "pageID": "2026-09-13-same_video-weekendlive-a9e91f52eb4c2484",
+          "locale": "zh-Hans",
+          "sourceIdSHA256": "40982af8843db9416e7162e1e6a78138b1e6880dec2dad65a5ec85cba950bce2",
+          "sourceUrlSHA256": "a681ffe1ecd1c7dd1d8f18f15bf835d3663400aba7f828a3ec4755e02e986624",
+          "sourceMediaSHA256": "a9e91f52eb4c24845d0e31f5300a352e8d4b84b59231b1c4ae5112aceb907567",
+          "sourceStartSeconds": 1793,
+          "sourceEndSeconds": 4033
+        },
+        {
+          "week": 2,
+          "pageID": "2026-09-20-same_video-7c193fd4-bc90-4f3b-aa00-37dfe8423aa0",
+          "locale": "zh-Hans",
+          "sourceIdSHA256": "1f7a8dceae03715cde50fd59e6f634b9b2fbd5d9ec20966d7418260a1b010a62",
+          "sourceUrlSHA256": "a681ffe1ecd1c7dd1d8f18f15bf835d3663400aba7f828a3ec4755e02e986624",
+          "sourceMediaSHA256": "728f864e92ea08dbce249249369016e0fee47950ec4e6dcb60cd6d83185e8caf",
+          "sourceStartSeconds": 1789,
+          "sourceEndSeconds": 3729
+        },
+        {
+          "week": 6,
+          "pageID": "resi-20261018-broadcast",
+          "locale": "zh-Hans",
+          "editionId": "resi-20261018-broadcast",
+          "sourceIdentitySha256": "5dc7deb518491cef0d0c98c8c21b5c7f8aebc3730c13042afc6427b640f75e2c",
+          "releasePackageJsonSha256": "3b0fbbfcd668b5379f837155080e6125e1ae3fb07d6b5bf4e3c46bee7861a4b5"
+        }
+      ]
+    }
+    """#
+}
+
+final class GuideRedirectGuard: NSObject, URLSessionTaskDelegate {
+    func urlSession(_ session: URLSession, task: URLSessionTask, willPerformHTTPRedirection response: HTTPURLResponse,
+                    newRequest request: URLRequest, completionHandler: @escaping (URLRequest?) -> Void) {
+        completionHandler(nil)
     }
 }
