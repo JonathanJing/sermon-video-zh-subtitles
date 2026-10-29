@@ -1,0 +1,71 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261029-prod-web-type-headings",
+  "runs": [
+    {
+      "label": "web-type-headings-production-20261029",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/web-type-headings-production-20261029",
+      "skipped": {
+        ".json": 345,
+        ".js": 11,
+        "(none)": 2,
+        ".mjs": 66,
+        ".png": 80,
+        ".svg": 6,
+        ".srt": 4,
+        ".mp3": 132,
+        ".pdf": 8,
+        ".html": 62,
+        ".jpg": 2,
+        ".css": 6,
+        ".cache": 1,
+        ".lock": 1
+      }
+    }
+  ],
+  "files": [
+    {
+      "run": "web-type-headings-production-20261029",
+      "path": "baseline/baseline-receipt.json",
+      "kind": "whole",
+      "bytes": 138398,
+      "truncated": false,
+      "sha256": "162726d7cae9f11897871fda0a250b200f78d50283818eafcc95f18667ddd001",
+      "redactions": {}
+    },
+    {
+      "run": "web-type-headings-production-20261029",
+      "path": "candidate/baseline-receipt.json",
+      "kind": "whole",
+      "bytes": 138398,
+      "truncated": false,
+      "sha256": "162726d7cae9f11897871fda0a250b200f78d50283818eafcc95f18667ddd001",
+      "redactions": {}
+    },
+    {
+      "run": "web-type-headings-production-20261029",
+      "path": "candidate/hosting-publish.log",
+      "kind": "log",
+      "bytes": 0,
+      "truncated": false,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "redactions": {}
+    },
+    {
+      "run": "web-type-headings-production-20261029",
+      "path": "decisions.ndjson",
+      "kind": "whole",
+      "bytes": 570,
+      "truncated": false,
+      "sha256": "3ee8c704070b846aef96f3b0b4eaa56fb3bd035cd16f241bcf0aa2cc0304e09d",
+      "redactions": {
+        "home_dir": 1
+      }
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}
