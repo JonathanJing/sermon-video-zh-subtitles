@@ -1,0 +1,40 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261028-prod32-release-test-first",
+  "runs": [
+    {
+      "label": "20261028T163311-test-2e5883f1",
+      "source": "~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-28/cli/20261028T163311-test-2e5883f1",
+      "skipped": {
+        ".json": 1,
+        ".0~3s-0eT5WG1dy4wxhDnIqvn7JoxI08DozHFgKYucbtBcnjLoptTSG-Ee7CmHRDq_PmIGUESZYG8mYGi26naIvCw==": 2,
+        ".0~4PGPkQ3aXEBNdVD5n7Hh3M4_yXV3wAYDAssUMvbBKiPeFluHpjhMFa9H9LyjyaK6Yc0PC0HFQxF-Vfq16fk8UQ==": 2,
+        ".0~GY-pWJyphXoKz65VMttkbl2ih2j9ck5PzwoYPJMzXTQG1J_a8PbERvnA1ZTsLvSsyabFOTl9OSamctmywIGBpw==": 2,
+        ".0~GwJx_PI7HQGY10G5-5U_o4g7-m3sRjgD2_asvrruj2mdHBHv_ISfHGkQCwu4R93fHHAUiBJwqN_rX3pTQkyNWQ==": 2,
+        ".0~OHtlee2dp-tmqXxQwvMpRFFTK0_pRui_zzKzwwMHkdSAnQ4gJJ99bnk3UbzfnbxdSCfc2s7omYMz0e-S3yW-4g==": 2,
+        ".0~VeaAaw1euBjJjDGz_lNuAZGIjlpm2Ti6o_W22aTJN0_ZqdjnFSzQQJ43s49l3-LgIfKUsPDFT65Q_JrkcNrYIg==": 2,
+        ".0~kKeQbY19uSg8LuxMVE30wkZZa1ahMV05my-4IBTGQMri32xzoZZ5vfQB3P8Gv7xAICKOLaZUnxTIRqRsaKkttA==": 2,
+        ".0~txaly-EgklxzvQFQhyqLrH70xFmyLExDz1spSXNY-X1ZpnvOVRBKmnkO87oprFJnf4TFot56lthVeDLKLIgstQ==": 2,
+        ".plist": 1
+      }
+    }
+  ],
+  "files": [
+    {
+      "run": "20261028T163311-test-2e5883f1",
+      "path": "run.log",
+      "kind": "log",
+      "bytes": 532438,
+      "truncated": true,
+      "sha256": "35dee420c9ce3343e764e347f365472151ff54ae7a17c4a7b66d8069c669a3fa",
+      "redactions": {
+        "home_dir": 57
+      }
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}
