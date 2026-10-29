@@ -46,6 +46,8 @@ targets:
           - "$(TONGXING_GUIDE_SON_INPUT)"
         outputFiles:
           - "$(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/weekly-guides.json"
+          - "$(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/weekly-guide-statue.jpg"
+          - "$(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/weekly-guide-son-of-man.jpg"
         script: |
           set -eu
           destination="${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/weekly-guides.json"
@@ -126,8 +128,8 @@ targets:
           TONGXING_GUIDE_CHECKSUM_INPUT: "$(SRCROOT)/GuideResources/weekly-guides.sha256"
           TONGXING_GUIDE_STATUE_INPUT: "$(SRCROOT)/GuideResources/weekly-guide-statue.jpg"
           TONGXING_GUIDE_SON_INPUT: "$(SRCROOT)/GuideResources/weekly-guide-son-of-man.jpg"
-          MARKETING_VERSION: "1.26.27"
-          CURRENT_PROJECT_VERSION: "70"
+          MARKETING_VERSION: "1.26.32"
+          CURRENT_PROJECT_VERSION: "76"
           TONGXING_CONTENT_ORIGIN: "https://ai-for-god-sermon-audio.web.app"
         BetaDebug:
           CODE_SIGN_ENTITLEMENTS: Config/BetaPush.entitlements
@@ -150,8 +152,8 @@ targets:
           PRODUCT_BUNDLE_IDENTIFIER: com.jonathanjing.tongxing.beta
           TONGXING_DISPLAY_NAME: 同行-beta
           TONGXING_URL_SCHEME: tongxing-beta
-          MARKETING_VERSION: "1.26.31"
-          CURRENT_PROJECT_VERSION: "74"
+          MARKETING_VERSION: "1.26.32"
+          CURRENT_PROJECT_VERSION: "75"
           TONGXING_CONTENT_ORIGIN: "https://ai-for-god-sermon-audio-dev.web.app"
     dependencies:
       - package: TongxingCore
@@ -188,8 +190,8 @@ targets:
         SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD: NO
       configs:
         Release:
-          MARKETING_VERSION: "1.26.27"
-          CURRENT_PROJECT_VERSION: "70"
+          MARKETING_VERSION: "1.26.32"
+          CURRENT_PROJECT_VERSION: "76"
         BetaDebug:
           PRODUCT_BUNDLE_IDENTIFIER: com.jonathanjing.tongxing.beta.listening-activity
           TONGXING_ACTIVITY_DISPLAY_NAME: 同行-beta播放状态
@@ -200,8 +202,8 @@ targets:
           PRODUCT_BUNDLE_IDENTIFIER: com.jonathanjing.tongxing.beta.listening-activity
           TONGXING_ACTIVITY_DISPLAY_NAME: 同行-beta播放状态
           TONGXING_URL_SCHEME: tongxing-beta
-          MARKETING_VERSION: "1.26.31"
-          CURRENT_PROJECT_VERSION: "74"
+          MARKETING_VERSION: "1.26.32"
+          CURRENT_PROJECT_VERSION: "75"
     dependencies:
       - package: TongxingCore
   TongxingTests:
