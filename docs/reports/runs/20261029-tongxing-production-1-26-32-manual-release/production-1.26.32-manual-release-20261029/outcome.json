@@ -1,0 +1,10 @@
+{
+  "schemaVersion": "tongxing-ios-manual-release-run-v1",
+  "status": "ready_for_sale",
+  "exitCode": 0,
+  "startedAt": "2026-10-29T02:45:49Z",
+  "endedAt": "2026-10-29T02:47:48Z",
+  "deliveryType": "ios_app_store_manual_release",
+  "version": "1.26.32",
+  "build": "76"
+}
