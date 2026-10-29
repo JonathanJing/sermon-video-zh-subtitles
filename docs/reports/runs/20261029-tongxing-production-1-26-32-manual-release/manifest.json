@@ -1,0 +1,72 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261029-tongxing-production-1-26-32-manual-release",
+  "runs": [
+    {
+      "label": "production-1.26.32-manual-release-20261029",
+      "source": "~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/production-1.26.32-manual-release-20261029",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "production-1.26.32-manual-release-20261029",
+      "path": "approval-before-release.log",
+      "kind": "log",
+      "bytes": 833,
+      "truncated": false,
+      "sha256": "55dc864651dfe55ef996f143f960c7cd3e29a81e8f0981764746f6601c28dc49",
+      "redactions": {}
+    },
+    {
+      "run": "production-1.26.32-manual-release-20261029",
+      "path": "approval-review-status.log",
+      "kind": "log",
+      "bytes": 840,
+      "truncated": false,
+      "sha256": "07278dd4e536d9eee05cfa3ab606cf32ff388ee026462405c3e476168e08bf5c",
+      "redactions": {}
+    },
+    {
+      "run": "production-1.26.32-manual-release-20261029",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 274,
+      "truncated": false,
+      "sha256": "0b21eadebf932832a1f5b4ee4f31cb734293fa64158f442a87fc190f7e68b137",
+      "redactions": {}
+    },
+    {
+      "run": "production-1.26.32-manual-release-20261029",
+      "path": "release-readback-1.log",
+      "kind": "log",
+      "bytes": 833,
+      "truncated": false,
+      "sha256": "a9e313bc6b5d60c3a30f537f05bafd25e82aea7d8f8820fa2a738b5a57e0dd84",
+      "redactions": {}
+    },
+    {
+      "run": "production-1.26.32-manual-release-20261029",
+      "path": "release.log",
+      "kind": "log",
+      "bytes": 834,
+      "truncated": false,
+      "sha256": "6714274659a4a47e742a5882582af97de76e9f71f27dfcb4ed59d62e6bfc56cf",
+      "redactions": {}
+    },
+    {
+      "run": "production-1.26.32-manual-release-20261029",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 882,
+      "truncated": false,
+      "sha256": "b0968d18ad570d2e884abd0d143bc87a0f68da1adbf89aa0e971d4d7ddaef9d0",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

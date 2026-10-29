@@ -1,0 +1,24 @@
+{
+  "schemaVersion": "tongxing-ios-manual-release-summary-v1",
+  "status": "READY_FOR_SALE",
+  "appID": "6809255441",
+  "bundleID": "com.jonathanjing.tongxing.dev",
+  "version": "1.26.32",
+  "build": "76",
+  "versionID": "de1b21e6-85ab-442f-be83-544bf07d8e3f",
+  "buildID": "4d90ca11-d1b4-4943-a641-192351248840",
+  "reviewSubmissionID": "95019938-dce6-49f5-a9cc-eb630669c0f7",
+  "reviewStateBeforeRelease": "COMPLETE",
+  "reviewItemStateBeforeRelease": "APPROVED",
+  "versionStateBeforeRelease": "PENDING_DEVELOPER_RELEASE",
+  "releaseType": "MANUAL",
+  "releaseRequestReturnedAt": "2026-10-29T02:47:32Z",
+  "versionStateReadbackAt": "2026-10-29T02:47:48Z",
+  "publicStorefrontUSAtLastCheck": {
+    "version": "1.26.27",
+    "checkedAt": "2026-10-29T02:49:36.567250+00:00",
+    "status": "propagation_pending"
+  },
+  "deviceAcceptance": "not_run",
+  "venueAcceptance": "not_run"
+}
