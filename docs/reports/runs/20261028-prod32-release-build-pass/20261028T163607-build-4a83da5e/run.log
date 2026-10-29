@@ -1,0 +1,251 @@
+
+$ /usr/bin/xcrun xcodebuild -project ~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/apps/tongxing-ios/Tongxing.xcodeproj -list -json -disableAutomaticPackageResolution
+{
+  "project" : {
+    "configurations" : [
+      "BetaDebug",
+      "BetaRelease",
+      "Debug",
+      "Release"
+    ],
+    "name" : "Tongxing",
+    "schemes" : [
+      "ListeningActivityExtension",
+      "Tongxing",
+      "TongxingBeta",
+      "TongxingCore",
+      "TongxingInfrastructure",
+      "TongxingPreview",
+      "TongxingScreenshots"
+    ],
+    "targets" : [
+      "Tongxing",
+      "ListeningActivityExtension",
+      "TongxingTests",
+      "TongxingUITests"
+    ]
+  }
+}
+
+$ /usr/bin/xcrun xcodebuild -project ~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/apps/tongxing-ios/Tongxing.xcodeproj -scheme Tongxing -configuration Release -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' -derivedDataPath ~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/production-1.26.32-build76-validation/DerivedData -disableAutomaticPackageResolution CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO -resultBundlePath ~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/production-1.26.32-build76-validation/20261028T163607-build-4a83da5e/build.xcresult build
+Command line invocation:
+    /Applications/Xcode.app/Contents/Developer/usr/bin/xcodebuild -project ~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/apps/tongxing-ios/Tongxing.xcodeproj -scheme Tongxing -configuration Release -sdk iphonesimulator -destination "generic/platform=iOS Simulator" -derivedDataPath ~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/production-1.26.32-build76-validation/DerivedData -disableAutomaticPackageResolution CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO -resultBundlePath ~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/production-1.26.32-build76-validation/20261028T163607-build-4a83da5e/build.xcresult build
+
+Build settings from command line:
+    CODE_SIGNING_ALLOWED = NO
+    CODE_SIGNING_REQUIRED = NO
+    SDKROOT = iphonesimulator27.1
+
+Resolve Package Graph
+
+... 696 lines omitted; 9 error-like lines, 9 kept below ...
+[line 263]     export CLANG_WARN_DIRECT_OBJC_ISA_USAGE\=YES_ERROR
+[line 272]     export CLANG_WARN_OBJC_ROOT_CLASS\=YES_ERROR
+[line 426]     export GCC_WARN_ABOUT_RETURN_TYPE\=YES_ERROR
+[line 624]     export RUNTIME_EXCEPTION_ALLOW_DYLD_ENVIRONMENT_VARIABLES\=NO
+[line 625]     export RUNTIME_EXCEPTION_ALLOW_JIT\=NO
+[line 626]     export RUNTIME_EXCEPTION_ALLOW_UNSIGNED_EXECUTABLE_MEMORY\=NO
+[line 627]     export RUNTIME_EXCEPTION_DEBUGGING_TOOL\=NO
+[line 628]     export RUNTIME_EXCEPTION_DISABLE_EXECUTABLE_PAGE_PROTECTION\=NO
+[line 629]     export RUNTIME_EXCEPTION_DISABLE_LIBRARY_VALIDATION\=NO
+... end of omitted section ...
+    export TAPI_USE_SRCROOT\=YES
+    export TAPI_VERIFY_MODE\=Pedantic
+    export TARGETED_DEVICE_FAMILY\=1,2
+    export TARGETNAME\=Tongxing
+    export TARGET_BUILD_DIR\=~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/production-1.26.32-build76-validation/DerivedData/Build/Products/Release-iphonesimulator
+    export TARGET_NAME\=Tongxing
+    export TARGET_TEMP_DIR\=~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/production-1.26.32-build76-validation/DerivedData/Build/Intermediates.noindex/Tongxing.build/Release-iphonesimulator/Tongxing.build
+    export TEMP_DIR\=~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/production-1.26.32-build76-validation/DerivedData/Build/Intermediates.noindex/Tongxing.build/Release-iphonesimulator/Tongxing.build
+    export TEMP_FILES_DIR\=~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/production-1.26.32-build76-validation/DerivedData/Build/Intermediates.noindex/Tongxing.build/Release-iphonesimulator/Tongxing.build
+    export TEMP_FILE_DIR\=~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/production-1.26.32-build76-validation/DerivedData/Build/Intermediates.noindex/Tongxing.build/Release-iphonesimulator/Tongxing.build
+    export TEMP_ROOT\=~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/production-1.26.32-build76-validation/DerivedData/Build/Intermediates.noindex
+    export TEMP_SANDBOX_DIR\=~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/production-1.26.32-build76-validation/DerivedData/Build/Intermediates.noindex/TemporaryTaskSandboxes
+    export TEST_FRAMEWORK_SEARCH_PATHS\=\ /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/Library/Frameworks\ /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator27.1.sdk/Developer/Library/Frameworks
+    export TEST_LIBRARY_SEARCH_PATHS\=\ /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/usr/lib
+    export TONGXING_CONTENT_ORIGIN\=https://ai-for-god-sermon-audio.web.app
+    export TONGXING_DISPLAY_NAME\=同行
+    export TONGXING_GUIDE_CHECKSUM_INPUT\=~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/apps/tongxing-ios/GuideResources/weekly-guides.sha256
+    export TONGXING_GUIDE_DATA_INPUT\=~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/apps/tongxing-ios/GuideResources/weekly-guides.json
+    export TONGXING_GUIDE_SON_INPUT\=~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/apps/tongxing-ios/GuideResources/weekly-guide-son-of-man.jpg
+    export TONGXING_GUIDE_STATUE_INPUT\=~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/apps/tongxing-ios/GuideResources/weekly-guide-statue.jpg
+    export TONGXING_URL_SCHEME\=tongxing
+    export TOOLCHAINS\=com.apple.dt.toolchain.XcodeDefault
+    export TOOLCHAIN_DIR\=/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain
+    export TREAT_MISSING_BASELINES_AS_TEST_FAILURES\=NO
+    export TREAT_MISSING_SCRIPT_PHASE_OUTPUTS_AS_ERRORS\=NO
+    export UID\=501
+    export UNINSTALLED_PRODUCTS_DIR\=~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/production-1.26.32-build76-validation/DerivedData/Build/Intermediates.noindex/UninstalledProducts
+    export UNLOCALIZED_RESOURCES_FOLDER_PATH\=Tongxing.app
+    export UNLOCALIZED_RESOURCES_FOLDER_PATH_SHALLOW_BUNDLE_NO\=Tongxing.app/Resources
+    export UNLOCALIZED_RESOURCES_FOLDER_PATH_SHALLOW_BUNDLE_YES\=Tongxing.app
+    export UNSTRIPPED_PRODUCT\=NO
+    export USER\=jonathan_jing
+    export USER_APPS_DIR\=~/Applications
+    export USER_LIBRARY_DIR\=~/Library
+    export USE_DYNAMIC_NO_PIC\=YES
+    export USE_HEADERMAP\=YES
+    export USE_HEADER_SYMLINKS\=NO
+    export VALIDATE_DEVELOPMENT_ASSET_PATHS\=YES_ERROR
+    export VALIDATE_PRODUCT\=NO
+    export VALID_ARCHS\=arm64\ x86_64
+    export VERBOSE_PBXCP\=NO
+    export VERSIONPLIST_PATH\=Tongxing.app/version.plist
+    export VERSION_INFO_BUILDER\=jonathan_jing
+    export VERSION_INFO_FILE\=Tongxing_vers.c
+    export VERSION_INFO_STRING\=\"@\(\#\)PROGRAM:Tongxing\ \ PROJECT:Tongxing-76\"
+    export WORKSPACE_DIR\=~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/apps/tongxing-ios/Tongxing.xcodeproj
+    export WRAPPER_EXTENSION\=app
+    export WRAPPER_NAME\=Tongxing.app
+    export WRAPPER_SUFFIX\=.app
+    export WRAP_ASSET_PACKS_IN_SEPARATE_DIRECTORIES\=NO
+    export XCODE_APP_SUPPORT_DIR\=/Applications/Xcode.app/Contents/Developer/Library/Xcode
+    export XCODE_PRODUCT_BUILD_VERSION\=27A9275
+    export XCODE_VERSION_ACTUAL\=2710
+    export XCODE_VERSION_MAJOR\=2700
+    export XCODE_VERSION_MINOR\=2710
+    export XPCSERVICES_FOLDER_PATH\=Tongxing.app/XPCServices
+    export YACC\=yacc
+    export _DISCOVER_COMMAND_LINE_LINKER_INPUTS\=YES
+    export _DISCOVER_COMMAND_LINE_LINKER_INPUTS_INCLUDE_WL\=YES
+    export _LD_MULTIARCH\=YES
+    export _SWIFT_EXPLICIT_MODULES_ALLOW_CXX_INTEROP\=YES
+    export _WRAPPER_CONTENTS_DIR_SHALLOW_BUNDLE_NO\=/Contents
+    export _WRAPPER_PARENT_PATH_SHALLOW_BUNDLE_NO\=/..
+    export _WRAPPER_RESOURCES_DIR_SHALLOW_BUNDLE_NO\=/Resources
+    export __ARCHS__\=arm64\ x86_64
+    export __DIAGNOSE_DEPRECATED_ARCHS\=YES
+    export __DIAGNOSE_INVALID_DEPLOYMENT_TARGET_AS_ERROR\=YES
+    export __IS_NOT_MACOS\=YES
+    export __IS_NOT_MACOS_macosx\=NO
+    export __IS_NOT_SIMULATOR\=NO
+    export __IS_NOT_SIMULATOR_simulator\=NO
+    export __ORIGINAL_SDK_DEFINED_LLVM_TARGET_TRIPLE_SYS\=ios
+    export arch\=undefined_arch
+    export variant\=normal
+    /usr/bin/sandbox-exec -D SCRIPT_OUTPUT_FILE_0\=~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/production-1.26.32-build76-validation/DerivedData/Build/Products/Release-iphonesimulator/Tongxing.app/weekly-guides.json -D SCRIPT_OUTPUT_FILE_1\=~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/production-1.26.32-build76-validation/DerivedData/Build/Products/Release-iphonesimulator/Tongxing.app/weekly-guide-statue.jpg -D SCRIPT_OUTPUT_FILE_2\=~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/production-1.26.32-build76-validation/DerivedData/Build/Products/Release-iphonesimulator/Tongxing.app/weekly-guide-son-of-man.jpg -D SCRIPT_INPUT_FILE_0\=~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/apps/tongxing-ios/GuideResources -D SCRIPT_INPUT_FILE_1\=~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/apps/tongxing-ios/GuideResources/weekly-guides.json -D SCRIPT_INPUT_FILE_2\=~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/apps/tongxing-ios/GuideResources/weekly-guides.sha256 -D SCRIPT_INPUT_FILE_3\=~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/apps/tongxing-ios/GuideResources/weekly-guide-statue.jpg -D SCRIPT_INPUT_FILE_4\=~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/apps/tongxing-ios/GuideResources/weekly-guide-son-of-man.jpg -D SCRIPT_INPUT_FILE_5\=~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/production-1.26.32-build76-validation/DerivedData/Build/Intermediates.noindex/Tongxing.build/Release-iphonesimulator/Tongxing.build/Script-6B7301F5D4B58931DD4E94D1.sh -D SCRIPT_INPUT_ANCESTOR_0\=/ -D SCRIPT_INPUT_ANCESTOR_1\=/Users -D SCRIPT_INPUT_ANCESTO ...[line truncated]
+
+CpResource ~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/production-1.26.32-build76-validation/DerivedData/Build/Products/Release-iphonesimulator/Tongxing.app/PrivacyInfo.xcprivacy ~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/apps/tongxing-ios/App/PrivacyInfo.xcprivacy (in target 'Tongxing' from project 'Tongxing')
+    cd ~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/apps/tongxing-ios
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -resolve-src-symlinks ~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/apps/tongxing-ios/App/PrivacyInfo.xcprivacy ~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/production-1.26.32-build76-validation/DerivedData/Build/Products/Release-iphonesimulator/Tongxing.app
+
+CopyStringsFile ~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/production-1.26.32-build76-validation/DerivedData/Build/Products/Release-iphonesimulator/Tongxing.app/vi.lproj/InfoPlist.strings ~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/apps/tongxing-ios/App/vi.lproj/InfoPlist.strings (in target 'Tongxing' from project 'Tongxing')
+    cd ~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/apps/tongxing-ios
+    builtin-copyStrings --validate --outputencoding binary --outfilename InfoPlist.strings --outdir ~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/production-1.26.32-build76-validation/DerivedData/Build/Products/Release-iphonesimulator/Tongxing.app/vi.lproj -- ~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/apps/tongxing-ios/App/vi.lproj/InfoPlist.strings
+~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/apps/tongxing-ios/App/vi.lproj/InfoPlist.strings:1:1: note: detected encoding of input file as Unicode (UTF-8) (in target 'Tongxing' from project 'Tongxing')
+
+CopyStringsFile ~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/production-1.26.32-build76-validation/DerivedData/Build/Products/Release-iphonesimulator/Tongxing.app/en.lproj/InfoPlist.strings ~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/apps/tongxing-ios/App/en.lproj/InfoPlist.strings (in target 'Tongxing' from project 'Tongxing')
+    cd ~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/apps/tongxing-ios
+    builtin-copyStrings --validate --outputencoding binary --outfilename InfoPlist.strings --outdir ~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/production-1.26.32-build76-validation/DerivedData/Build/Products/Release-iphonesimulator/Tongxing.app/en.lproj -- ~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/apps/tongxing-ios/App/en.lproj/InfoPlist.strings
+~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/apps/tongxing-ios/App/en.lproj/InfoPlist.strings:1:1: note: detected encoding of input file as Unicode (UTF-8) (in target 'Tongxing' from project 'Tongxing')
+
+CopyStringsFile ~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/production-1.26.32-build76-validation/DerivedData/Build/Products/Release-iphonesimulator/Tongxing.app/ko.lproj/InfoPlist.strings ~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/apps/tongxing-ios/App/ko.lproj/InfoPlist.strings (in target 'Tongxing' from project 'Tongxing')
+    cd ~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/apps/tongxing-ios
+    builtin-copyStrings --validate --outputencoding binary --outfilename InfoPlist.strings --outdir ~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/production-1.26.32-build76-validation/DerivedData/Build/Products/Release-iphonesimulator/Tongxing.app/ko.lproj -- ~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/apps/tongxing-ios/App/ko.lproj/InfoPlist.strings
+~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/apps/tongxing-ios/App/ko.lproj/InfoPlist.strings:1:1: note: detected encoding of input file as Unicode (UTF-8) (in target 'Tongxing' from project 'Tongxing')
+
+CopyStringsFile ~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/production-1.26.32-build76-validation/DerivedData/Build/Products/Release-iphonesimulator/Tongxing.app/zh-Hans.lproj/InfoPlist.strings ~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/apps/tongxing-ios/App/zh-Hans.lproj/InfoPlist.strings (in target 'Tongxing' from project 'Tongxing')
+    cd ~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/apps/tongxing-ios
+    builtin-copyStrings --validate --outputencoding binary --outfilename InfoPlist.strings --outdir ~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/production-1.26.32-build76-validation/DerivedData/Build/Products/Release-iphonesimulator/Tongxing.app/zh-Hans.lproj -- ~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/apps/tongxing-ios/App/zh-Hans.lproj/InfoPlist.strings
+~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/apps/tongxing-ios/App/zh-Hans.lproj/InfoPlist.strings:1:1: note: detected encoding of input file as Unicode (UTF-8) (in target 'Tongxing' from project 'Tongxing')
+
+CopyStringsFile ~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/production-1.26.32-build76-validation/DerivedData/Build/Products/Release-iphonesimulator/Tongxing.app/es.lproj/InfoPlist.strings ~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/apps/tongxing-ios/App/es.lproj/InfoPlist.strings (in target 'Tongxing' from project 'Tongxing')
+    cd ~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/apps/tongxing-ios
+    builtin-copyStrings --validate --outputencoding binary --outfilename InfoPlist.strings --outdir ~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/production-1.26.32-build76-validation/DerivedData/Build/Products/Release-iphonesimulator/Tongxing.app/es.lproj -- ~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/apps/tongxing-ios/App/es.lproj/InfoPlist.strings
+~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/apps/tongxing-ios/App/es.lproj/InfoPlist.strings:1:1: note: detected encoding of input file as Unicode (UTF-8) (in target 'Tongxing' from project 'Tongxing')
+
+CompileXCStrings ~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/production-1.26.32-build76-validation/DerivedData/Build/Intermediates.noindex/Tongxing.build/Release-iphonesimulator/Tongxing.build/ ~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/apps/tongxing-ios/App/Resources/Localizable.xcstrings (in target 'Tongxing' from project 'Tongxing')
+    cd ~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/apps/tongxing-ios
+    /Applications/Xcode.app/Contents/Developer/usr/bin/xcstringstool compile --output-directory ~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/production-1.26.32-build76-validation/DerivedData/Build/Intermediates.noindex/Tongxing.build/Release-iphonesimulator/Tongxing.build ~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/apps/tongxing-ios/App/Resources/Localizable.xcstrings
+
+CopyStringsFile ~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/production-1.26.32-build76-validation/DerivedData/Build/Products/Release-iphonesimulator/Tongxing.app/zh-Hans.lproj/Localizable.strings ~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/production-1.26.32-build76-validation/DerivedData/Build/Intermediates.noindex/Tongxing.build/Release-iphonesimulator/Tongxing.build/zh-Hans.lproj/Localizable.strings (in target 'Tongxing' from project 'Tongxing')
+    cd ~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/apps/tongxing-ios
+    builtin-copyStrings --validate --outputencoding binary --outfilename Localizable.strings --outdir ~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/production-1.26.32-build76-validation/DerivedData/Build/Products/Release-iphonesimulator/Tongxing.app/zh-Hans.lproj -- ~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/production-1.26.32-build76-validation/DerivedData/Build/Intermediates.noindex/Tongxing.build/Release-iphonesimulator/Tongxing.build/zh-Hans.lproj/Localizable.strings
+~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/production-1.26.32-build76-validation/DerivedData/Build/Intermediates.noindex/Tongxing.build/Release-iphonesimulator/Tongxing.build/zh-Hans.lproj/Localizable.strings:1:1: note: detected encoding of input file as Unicode (UTF-8) (in target 'Tongxing' from project 'Tongxing')
+
+CopyStringsFile ~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/production-1.26.32-build76-validation/DerivedData/Build/Products/Release-iphonesimulator/Tongxing.app/es.lproj/Localizable.strings ~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/production-1.26.32-build76-validation/DerivedData/Build/Intermediates.noindex/Tongxing.build/Release-iphonesimulator/Tongxing.build/es.lproj/Localizable.strings (in target 'Tongxing' from project 'Tongxing')
+    cd ~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/apps/tongxing-ios
+    builtin-copyStrings --validate --outputencoding binary --outfilename Localizable.strings --outdir ~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/production-1.26.32-build76-validation/DerivedData/Build/Products/Release-iphonesimulator/Tongxing.app/es.lproj -- ~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/production-1.26.32-build76-validation/DerivedData/Build/Intermediates.noindex/Tongxing.build/Release-iphonesimulator/Tongxing.build/es.lproj/Localizable.strings
+~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/production-1.26.32-build76-validation/DerivedData/Build/Intermediates.noindex/Tongxing.build/Release-iphonesimulator/Tongxing.build/es.lproj/Localizable.strings:1:1: note: detected encoding of input file as Unicode (UTF-8) (in target 'Tongxing' from project 'Tongxing')
+
+CopyStringsFile ~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/production-1.26.32-build76-validation/DerivedData/Build/Products/Release-iphonesimulator/Tongxing.app/ko.lproj/Localizable.strings ~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/production-1.26.32-build76-validation/DerivedData/Build/Intermediates.noindex/Tongxing.build/Release-iphonesimulator/Tongxing.build/ko.lproj/Localizable.strings (in target 'Tongxing' from project 'Tongxing')
+    cd ~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/apps/tongxing-ios
+    builtin-copyStrings --validate --outputencoding binary --outfilename Localizable.strings --outdir ~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/production-1.26.32-build76-validation/DerivedData/Build/Products/Release-iphonesimulator/Tongxing.app/ko.lproj -- ~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/production-1.26.32-build76-validation/DerivedData/Build/Intermediates.noindex/Tongxing.build/Release-iphonesimulator/Tongxing.build/ko.lproj/Localizable.strings
+~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/production-1.26.32-build76-validation/DerivedData/Build/Intermediates.noindex/Tongxing.build/Release-iphonesimulator/Tongxing.build/ko.lproj/Localizable.strings:1:1: note: detected encoding of input file as Unicode (UTF-8) (in target 'Tongxing' from project 'Tongxing')
+
+CopyStringsFile ~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/production-1.26.32-build76-validation/DerivedData/Build/Products/Release-iphonesimulator/Tongxing.app/vi.lproj/Localizable.strings ~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/production-1.26.32-build76-validation/DerivedData/Build/Intermediates.noindex/Tongxing.build/Release-iphonesimulator/Tongxing.build/vi.lproj/Localizable.strings (in target 'Tongxing' from project 'Tongxing')
+    cd ~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/apps/tongxing-ios
+    builtin-copyStrings --validate --outputencoding binary --outfilename Localizable.strings --outdir ~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/production-1.26.32-build76-validation/DerivedData/Build/Products/Release-iphonesimulator/Tongxing.app/vi.lproj -- ~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/production-1.26.32-build76-validation/DerivedData/Build/Intermediates.noindex/Tongxing.build/Release-iphonesimulator/Tongxing.build/vi.lproj/Localizable.strings
+~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/production-1.26.32-build76-validation/DerivedData/Build/Intermediates.noindex/Tongxing.build/Release-iphonesimulator/Tongxing.build/vi.lproj/Localizable.strings:1:1: note: detected encoding of input file as Unicode (UTF-8) (in target 'Tongxing' from project 'Tongxing')
+
+CopyStringsFile ~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/production-1.26.32-build76-validation/DerivedData/Build/Products/Release-iphonesimulator/Tongxing.app/en.lproj/Localizable.strings ~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/production-1.26.32-build76-validation/DerivedData/Build/Intermediates.noindex/Tongxing.build/Release-iphonesimulator/Tongxing.build/en.lproj/Localizable.strings (in target 'Tongxing' from project 'Tongxing')
+    cd ~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/apps/tongxing-ios
+    builtin-copyStrings --validate --outputencoding binary --outfilename Localizable.strings --outdir ~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/production-1.26.32-build76-validation/DerivedData/Build/Products/Release-iphonesimulator/Tongxing.app/en.lproj -- ~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/production-1.26.32-build76-validation/DerivedData/Build/Intermediates.noindex/Tongxing.build/Release-iphonesimulator/Tongxing.build/en.lproj/Localizable.strings
+~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/production-1.26.32-build76-validation/DerivedData/Build/Intermediates.noindex/Tongxing.build/Release-iphonesimulator/Tongxing.build/en.lproj/Localizable.strings:1:1: note: detected encoding of input file as Unicode (UTF-8) (in target 'Tongxing' from project 'Tongxing')
+
+Copy ~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/production-1.26.32-build76-validation/DerivedData/Build/Products/Release-iphonesimulator/Tongxing.app/PlugIns/ListeningActivityExtension.appex ~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/production-1.26.32-build76-validation/DerivedData/Build/Products/Release-iphonesimulator/ListeningActivityExtension.appex (in target 'Tongxing' from project 'Tongxing')
+    cd ~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/apps/tongxing-ios
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -exclude Headers -exclude PrivateHeaders -exclude Modules -exclude \*.tbd -resolve-src-symlinks -remove-static-executable ~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/production-1.26.32-build76-validation/DerivedData/Build/Products/Release-iphonesimulator/ListeningActivityExtension.appex ~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/production-1.26.32-build76-validation/DerivedData/Build/Products/Release-iphonesimulator/Tongxing.app/PlugIns
+
+ProcessInfoPlistFile ~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/production-1.26.32-build76-validation/DerivedData/Build/Products/Release-iphonesimulator/Tongxing.app/Info.plist ~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/apps/tongxing-ios/App/Info.plist (in target 'Tongxing' from project 'Tongxing')
+    cd ~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/apps/tongxing-ios
+    builtin-infoPlistUtility ~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/apps/tongxing-ios/App/Info.plist -producttype com.apple.product-type.application -genpkginfo ~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/production-1.26.32-build76-validation/DerivedData/Build/Products/Release-iphonesimulator/Tongxing.app/PkgInfo -expandbuildsettings -format binary -platform iphonesimulator -additionalcontentfile ~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/production-1.26.32-build76-validation/DerivedData/Build/Intermediates.noindex/Tongxing.build/Release-iphonesimulator/Tongxing.build/assetcatalog_generated_info.plist -scanforprivacyfile ~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/production-1.26.32-build76-validation/DerivedData/Build/Products/Release-iphonesimulator/Tongxing.app/PlugIns/ListeningActivityExtension.appex -o ~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/production-1.26.32-build76-validation/DerivedData/Build/Products/Release-iphonesimulator/Tongxing.app/Info.plist
+
+CopySwiftLibs ~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/production-1.26.32-build76-validation/DerivedData/Build/Products/Release-iphonesimulator/Tongxing.app (in target 'Tongxing' from project 'Tongxing')
+    cd ~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/apps/tongxing-ios
+    builtin-swiftStdLibTool --copy --verbose --scan-executable ~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/production-1.26.32-build76-validation/DerivedData/Build/Products/Release-iphonesimulator/Tongxing.app/Tongxing --scan-folder ~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/production-1.26.32-build76-validation/DerivedData/Build/Products/Release-iphonesimulator/Tongxing.app/Frameworks --scan-folder ~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/production-1.26.32-build76-validation/DerivedData/Build/Products/Release-iphonesimulator/Tongxing.app/PlugIns --scan-folder ~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/production-1.26.32-build76-validation/DerivedData/Build/Products/Release-iphonesimulator/Tongxing.app/SystemExtensions --scan-folder ~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/production-1.26.32-build76-validation/DerivedData/Build/Products/Release-iphonesimulator/Tongxing.app/Extensions --platform iphonesimulator --toolchain /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain --destination ~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/production-1.26.32-build76-validation/DerivedData/Build/Products/Release-iphonesimulator/Tongxing.app/Frameworks --strip-bitcode --strip-bitcode-tool /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/bitcode_strip --emit-dependency-info ~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/production-1.26.32-build76-validation/DerivedData/Build/Intermediates.noindex/Tongxing.build/Release-iphonesimulator/Tongxing.build/SwiftStdLibToo ...[line truncated]
+Ignoring --strip-bitcode because --sign was not passed
+
+ExtractAppIntentsMetadata (in target 'Tongxing' from project 'Tongxing')
+    cd ~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/apps/tongxing-ios
+    /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/appintentsmetadataprocessor --toolchain-dir /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain --module-name Tongxing --sdk-root /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator27.1.sdk --xcode-version 27A9275 --platform-family iOS --deployment-target 17.0 --bundle-identifier com.jonathanjing.tongxing.dev --output ~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/production-1.26.32-build76-validation/DerivedData/Build/Products/Release-iphonesimulator/Tongxing.app --target-triple arm64-apple-ios17.0-simulator --target-triple x86_64-apple-ios17.0-simulator --binary-file ~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/production-1.26.32-build76-validation/DerivedData/Build/Products/Release-iphonesimulator/Tongxing.app/Tongxing --dependency-file ~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/production-1.26.32-build76-validation/DerivedData/Build/Intermediates.noindex/Tongxing.build/Release-iphonesimulator/Tongxing.build/Objects-normal/arm64/Tongxing_dependency_info.dat --dependency-file ~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/production-1.26.32-build76-validation/DerivedData/Build/Intermediates.noindex/Tongxing.build/Release-iphonesimulator/Tongxing.build/Objects-normal/x86_64/Tongxing_dependency_info.dat --stringsdata-file ~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/production-1.26.32-build76-validation/DerivedData/Build/Intermediates.noindex/Tongxing.build/Release-iphonesimulator/Tongxing.build/Objects-normal/arm64/ExtractedAppShortcutsMetadata.stringsdata --stringsdata-file /Users ...[line truncated]
+2026-10-28 16:36:14.111 appintentsmetadataprocessor[76760:623689] Starting appintentsmetadataprocessor export
+2026-10-28 16:36:14.113 appintentsmetadataprocessor[76760:623689] warning: Metadata extraction skipped, no AppIntents.framework dependency found
+
+ValidateEmbeddedBinary ~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/production-1.26.32-build76-validation/DerivedData/Build/Products/Release-iphonesimulator/Tongxing.app/PlugIns/ListeningActivityExtension.appex (in target 'Tongxing' from project 'Tongxing')
+    cd ~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/apps/tongxing-ios
+    /Applications/Xcode.app/Contents/Developer/usr/bin/embeddedBinaryValidationUtility ~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/production-1.26.32-build76-validation/DerivedData/Build/Products/Release-iphonesimulator/Tongxing.app/PlugIns/ListeningActivityExtension.appex -info-plist-path ~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/production-1.26.32-build76-validation/DerivedData/Build/Products/Release-iphonesimulator/Tongxing.app/Info.plist
+
+GenerateDSYMFile ~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/production-1.26.32-build76-validation/DerivedData/Build/Products/Release-iphonesimulator/Tongxing.app.dSYM ~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/production-1.26.32-build76-validation/DerivedData/Build/Products/Release-iphonesimulator/Tongxing.app/Tongxing (in target 'Tongxing' from project 'Tongxing')
+    cd ~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/apps/tongxing-ios
+    export PATH\=/Applications/Xcode.app/Contents/SharedFrameworks/SwiftBuild.framework/Versions/A/PlugIns/SWBBuildService.bundle/Contents/PlugIns/SWBUniversalPlatformPlugin.bundle/Contents/Frameworks/SWBUniversalPlatform.framework/Resources:/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin:/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/local/bin:/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/libexec:/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/usr/bin:/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/usr/local/bin:/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/usr/bin:/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/usr/local/bin:/Applications/Xcode.app/Contents/Developer/usr/bin:/Applications/Xcode.app/Contents/Developer/usr/local/bin:/Applications/ChatGPT.app/Contents/Resources/codex-cli/codex-path:/opt/homebrew/opt/openjdk@21/bin:~/.antigravity/antigravity/bin:~/.local/bin:/opt/homebrew/opt/<email>/libexec/bin:/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin:/System/Cryptexes/App/usr/bin:/usr/bin:/bin:/usr/sbin:/sbin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/local/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/appleinternal/bin:/pkg/env/global/bin:/opt/X11/bin:/Library/Apple/usr/bin:/Library/TeX/texbin:~/.codex/tmp/arg0-macos/codex-arg0Ya06Qi:~/.cache/codex-runtimes/codex-primary-runtime/dependencies/bin/override:~/.cargo/bin:~/.cache/codex-runtimes/codex-primary-runtime/dependencies/bin/fallback:/Applications/ChatGPT.app/Contents/Resources:/Applications/ChatGPT.app/Contents/Resources/code ...[line truncated]
+    /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/dsymutil ~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/production-1.26.32-build76-validation/DerivedData/Build/Products/Release-iphonesimulator/Tongxing.app/Tongxing -o ~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/production-1.26.32-build76-validation/DerivedData/Build/Products/Release-iphonesimulator/Tongxing.app.dSYM
+
+AppIntentsSSUTraining (in target 'Tongxing' from project 'Tongxing')
+    cd ~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/apps/tongxing-ios
+    /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/appintentsnltrainingprocessor --infoplist-path ~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/production-1.26.32-build76-validation/DerivedData/Build/Products/Release-iphonesimulator/Tongxing.app/Info.plist --temp-dir-path ~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/production-1.26.32-build76-validation/DerivedData/Build/Intermediates.noindex/Tongxing.build/Release-iphonesimulator/Tongxing.build/ssu --bundle-id com.jonathanjing.tongxing.dev --product-path ~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/production-1.26.32-build76-validation/DerivedData/Build/Products/Release-iphonesimulator/Tongxing.app --extracted-metadata-path ~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/production-1.26.32-build76-validation/DerivedData/Build/Products/Release-iphonesimulator/Tongxing.app/Metadata.appintents --metadata-file-list ~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/production-1.26.32-build76-validation/DerivedData/Build/Intermediates.noindex/Tongxing.build/Release-iphonesimulator/Tongxing.build/Tongxing.DependencyMetadataFileList --source-file ~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/production-1.26.32-build76-validation/DerivedData/Build/Products/Release-iphonesimulator/Tongxing.app/Info.plist --archive-ssu-assets
+2026-10-28 16:36:14.142 appintentsnltrainingprocessor[76763:623695] Parsing options for appintentsnltrainingprocessor
+2026-10-28 16:36:14.142 appintentsnltrainingprocessor[76763:623695] Starting AppIntents SSU YAML Generation
+2026-10-28 16:36:14.142 appintentsnltrainingprocessor[76763:623695] No AppShortcuts found - Skipping.
+
+RegisterExecutionPolicyException ~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/production-1.26.32-build76-validation/DerivedData/Build/Products/Release-iphonesimulator/Tongxing.app (in target 'Tongxing' from project 'Tongxing')
+    cd ~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/apps/tongxing-ios
+    builtin-RegisterExecutionPolicyException ~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/production-1.26.32-build76-validation/DerivedData/Build/Products/Release-iphonesimulator/Tongxing.app
+
+Validate ~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/production-1.26.32-build76-validation/DerivedData/Build/Products/Release-iphonesimulator/Tongxing.app (in target 'Tongxing' from project 'Tongxing')
+    cd ~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/apps/tongxing-ios
+    builtin-validationUtility ~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/production-1.26.32-build76-validation/DerivedData/Build/Products/Release-iphonesimulator/Tongxing.app -shallow-bundle -infoplist-subpath Info.plist
+
+Touch ~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/production-1.26.32-build76-validation/DerivedData/Build/Products/Release-iphonesimulator/Tongxing.app (in target 'Tongxing' from project 'Tongxing')
+    cd ~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/apps/tongxing-ios
+    /usr/bin/touch -c ~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/production-1.26.32-build76-validation/DerivedData/Build/Products/Release-iphonesimulator/Tongxing.app
+
+PruneExplicitPrecompiledModules ~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/production-1.26.32-build76-validation/DerivedData/SDKExplicitPrecompiledModules
+
+PruneExplicitPrecompiledModules ~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/production-1.26.32-build76-validation/DerivedData/Build/Intermediates.noindex/ExplicitPrecompiledModules
+
+PruneExplicitPrecompiledModules ~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/production-1.26.32-build76-validation/DerivedData/Build/Intermediates.noindex/SwiftExplicitPrecompiledModules
+
+note: Removed stale file '~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/production-1.26.32-build76-validation/DerivedData/Build/Intermediates.noindex/EagerLinkingTBDs/Release-iphonesimulator/TongxingCore_-268EA610E369A1D_PackageProduct.framework/TongxingCore_-268EA610E369A1D_PackageProduct.tbd'
+
+note: Removed stale file '~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/production-1.26.32-build76-validation/DerivedData/Build/Products/Release-iphonesimulator/Tongxing.app/Frameworks'
+
+note: Run script build phase 'Copy local weekly guides' will be run during every build because the option to run the script phase "Based on dependency analysis" is unchecked. (in target 'Tongxing' from project 'Tongxing')
+
+Result bundle written to path:
+	~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/production-1.26.32-build76-validation/20261028T163607-build-4a83da5e/build.xcresult
+
+** BUILD SUCCEEDED **
+
+
+Exit status: 0
