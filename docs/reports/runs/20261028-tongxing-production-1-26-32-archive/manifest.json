@@ -1,0 +1,101 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261028-tongxing-production-1-26-32-archive",
+  "runs": [
+    {
+      "label": "production-1.26.32-build76-archive-20261028",
+      "source": "~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/production-1.26.32-build76-archive-20261028",
+      "skipped": {
+        ".plist": 20,
+        "(none)": 78,
+        ".yml": 4,
+        ".json": 26,
+        ".swiftdoc": 8,
+        ".swiftmodule": 8,
+        ".timestamp": 4,
+        ".h": 9,
+        ".modulemap": 4,
+        ".hmap": 12,
+        ".DependencyMetadataFileList": 4,
+        ".DependencyStaticMetadataFileList": 4,
+        ".xcent": 2,
+        ".der": 2,
+        ".stringsdata": 4,
+        ".o": 62,
+        ".dia": 8,
+        ".d": 4,
+        ".swiftconstvalues": 4,
+        ".LinkFileList": 4,
+        ".SwiftConstValuesFileList": 4,
+        ".SwiftFileList": 4,
+        ".swiftsourceinfo": 4,
+        ".dat": 4,
+        ".yaml": 1,
+        ".swift": 1,
+        ".sh": 1,
+        ".dep": 1,
+        ".sb": 1,
+        ".plist_thinned": 1,
+        ".png": 6,
+        ".car": 3,
+        ".strings": 25,
+        ".mobileprovision": 5,
+        ".db": 1,
+        ".msgpack": 2,
+        ".txt": 2,
+        ".v1": 3,
+        ".shared": 3,
+        ".xcactivitylog": 2,
+        ".pcm": 398,
+        ".modulevalidation": 1,
+        ".sdkstatcache": 1,
+        ".xcprivacy": 2,
+        ".jpg": 4,
+        ".ipa": 1,
+        ".symbols": 2
+      }
+    }
+  ],
+  "files": [
+    {
+      "run": "production-1.26.32-build76-archive-20261028",
+      "path": "archive.log",
+      "kind": "log",
+      "bytes": 524675,
+      "truncated": true,
+      "sha256": "6b7bf775c86c0502a3ddf1b38352d1ea27b6d75fb623893013fe151a2279301e",
+      "redactions": {
+        "email": 1,
+        "home_dir": 170
+      }
+    },
+    {
+      "run": "production-1.26.32-build76-archive-20261028",
+      "path": "export/Packaging.log",
+      "kind": "log",
+      "bytes": 31237,
+      "truncated": true,
+      "sha256": "5c60a58e36f70d4c2113454042e3e7adcddb9ad925f31a47b4e6cd888f98b516",
+      "redactions": {
+        "email": 2,
+        "home_dir": 14
+      }
+    },
+    {
+      "run": "production-1.26.32-build76-archive-20261028",
+      "path": "export.log",
+      "kind": "log",
+      "bytes": 459,
+      "truncated": false,
+      "sha256": "557ddce34fae656f253d1ff93b918474b4f3334e79762435a0627df6047a6204",
+      "redactions": {
+        "home_dir": 1
+      }
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}
