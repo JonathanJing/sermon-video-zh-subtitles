@@ -1,0 +1,11 @@
+{
+  "schemaVersion": "tongxing-ios-asc-review-run-v1",
+  "status": "submitted_waiting_for_review",
+  "exitCode": 0,
+  "startedAt": "2026-10-28T23:43:41Z",
+  "endedAt": "2026-10-29T00:07:56Z",
+  "deliveryType": "ios_app_store_review_submission",
+  "sourceCommit": "b7373dec8141a8b9dc96d7eaf63975a61f4ff9d1",
+  "version": "1.26.32",
+  "build": "76"
+}
