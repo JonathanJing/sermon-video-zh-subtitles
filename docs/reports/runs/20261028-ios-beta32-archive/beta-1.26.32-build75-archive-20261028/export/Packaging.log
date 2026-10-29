@@ -1,0 +1,242 @@
+2026-10-28 22:48:13 +0000 [MT] Initial pipeline context: <IDEDistributionProcessingPipelineContext: 0x7947d8f000; archive(resolved)="<IDEArchive: 0x79493cc540>", distributionTask(resolved)="2", distributionDestination(resolved)="1", distributionMethod(resolved)="<IDEDistributionMethodiOSAppStoreDistribution: 0x7948d576d0>", team(resolved)="<IDEProvisioningBasicTeam: 0x794a396360; teamID='G2P4DTQNBA', teamName='(null)'>">
+	Chain (15, self inclusive):
+	<IDEDistributionProcessingPipelineContext: 0x7947d8f000; archive = "<IDEArchive: 0x79493cc540>", distributionMethod="<IDEDistributionMethodiOSAppStoreDistribution: 0x7948d576d0>", team="<IDEProvisioningBasicTeam: 0x794a396360; teamID='G2P4DTQNBA', teamName='(null)'>">
+	<IDEDistributionProcessingPipelineContext: 0x7947d8f300; archive = "<IDEArchive: 0x79493cc540>", distributionMethod="<IDEDistributionMethodiOSAppStoreDistribution: 0x7948d576d0>", team="<IDEProvisioningBasicTeam: 0x794a396360; teamID='G2P4DTQNBA', teamName='(null)'>">
+	<IDEDistributionContext: 0x794a3c0000; archive = "<IDEArchive: 0x79493cc540>", distributionMethod="<IDEDistributionMethodiOSAppStoreDistribution: 0x7948d576d0>", team="<IDEProvisioningBasicTeam: 0x794a396360; teamID='G2P4DTQNBA', teamName='(null)'>">
+	<IDEDistributionContext: 0x794a3c0500; archive = "<IDEArchive: 0x79493cc540>", distributionMethod="<IDEDistributionMethodiOSAppStoreDistribution: 0x7948d576d0>", team="<IDEProvisioningBasicTeam: 0x794a396360; teamID='G2P4DTQNBA', teamName='(null)'>">
+	<IDEDistributionContext: 0x794a3c0780; archive = "<IDEArchive: 0x79493cc540>", distributionMethod="<IDEDistributionMethodiOSAppStoreDistribution: 0x7948d576d0>", team="<IDEProvisioningBasicTeam: 0x794a396360; teamID='G2P4DTQNBA', teamName='(null)'>">
+	<IDEDistributionContext: 0x794a3c0a00; archive = "<IDEArchive: 0x79493cc540>", distributionMethod="<IDEDistributionMethodiOSAppStoreDistribution: 0x7948d576d0>", team="<IDEProvisioningBasicTeam: 0x794a396360; teamID='G2P4DTQNBA', teamName='(null)'>">
+	<IDEDistributionContext: 0x794a3c0c80; archive = "<IDEArchive: 0x79493cc540>", distributionMethod="<IDEDistributionMethodiOSAppStoreDistribution: 0x7948d576d0>", team="<IDEProvisioningBasicTeam: 0x794a396360; teamID='G2P4DTQNBA', teamName='(null)'>">
+	<IDEDistributionContext: 0x794a3c0f00; archive = "<IDEArchive: 0x79493cc540>", distributionMethod="<IDEDistributionMethodiOSAppStoreDistribution: 0x7948d576d0>", team="<IDEProvisioningBasicTeam: 0x794a396360; teamID='G2P4DTQNBA', teamName='(null)'>">
+	<IDEDistributionContext: 0x794a3c1180; archive = "<IDEArchive: 0x79493cc540>", distributionMethod="<IDEDistributionMethodiOSAppStoreDistribution: 0x7948d576d0>", team="<IDEProvisioningBasicTeam: 0x794a396360; teamID='G2P4DTQNBA', teamName='(null)'>">
+	<IDEDistributionContext: 0x794ac09180; archive = "<IDEArchive: 0x79493cc540>", distributionMethod="<IDEDistributionMethodiOSAppStoreDistribution: 0x7948d576d0>", team="<IDEProvisioningBasicTeam: 0x794a396360; teamID='G2P4DTQNBA', teamName='(null)'>">
+	<IDEDistributionContext: 0x794ac08f00; archive = "<IDEArchive: 0x79493cc540>", distributionMethod="<IDEDistributionMethodiOSAppStoreDistribution: 0x7948d576d0>", team="<IDEProvisioningBasicTeam: 0x794a396360; teamID='G2P4DTQNBA', teamName='(null)'>">
+	<IDEDistributionContext: 0x794ac08c80; archive = "<IDEArchive: 0x79493cc540>", distributionMethod="<IDEDistributionMethodiOSAppStoreDistribution: 0x7948d576d0>", team="<IDEProvisioningBasicTeam: 0x794a396360; teamID='G2P4DTQNBA', teamName='(null)'>">
+	<IDEDistributionContext: 0x794ac08a00; archive = "<IDEArchive: 0x79493cc540>", distributionMethod="<IDEDistributionMethodiOSAppStoreDistribution: 0x7948d576d0>", team="(null)">
+	<IDEDistributionContext: 0x794ac08280; archive = "<IDEArchive: 0x79493cc540>", distributionMethod="<IDEDistributionMethodiOSAppStoreDistribution: 0x7948d576d0>", team="(null)">
+	<IDEDistributionContext: 0x1013f5d80; archive = "<IDEArchive: 0x79493cc540>", distributionMethod="(null)", team="(null)">
+</IDEDistributionProcessingPipelineContext: 0x7947d8f000>
+2026-10-28 22:48:13 +0000 [MT] Processing step: IDEDistributionCreateDestRootStep
+2026-10-28 22:48:13 +0000 [MT] Processing step: IDEDistributionCopyItemStep
+2026-10-28 22:48:13 +0000 [MT] Running /usr/bin/ditto '-V' '~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/beta-1.26.32-build75-archive-20261028/Tongxing.xcarchive/Products/Applications/Tongxing.app' '/var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/XcodeDistPipeline.~~~0moxRn/Root/Payload/Tongxing.app'
+2026-10-28 22:48:13 +0000  >>> Copying ~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/beta-1.26.32-build75-archive-20261028/Tongxing.xcarchive/Products/Applications/Tongxing.app
+2026-10-28 22:48:13 +0000  copying file ./_CodeSignature/CodeResources ...
+2026-10-28 22:48:13 +0000  cloned ./_CodeSignature/CodeResources
+2026-10-28 22:48:13 +0000  copying file ./weekly-guides.json ...
+2026-10-28 22:48:13 +0000  cloned ./weekly-guides.json
+2026-10-28 22:48:13 +0000  copying file ./zh-Hans.lproj/Localizable.strings ...
+2026-10-28 22:48:13 +0000  cloned ./zh-Hans.lproj/Localizable.strings
+copying file ./zh-Hans.lproj/InfoPlist.strings ...
+2026-10-28 22:48:13 +0000  cloned ./zh-Hans.lproj/InfoPlist.strings
+2026-10-28 22:48:13 +0000  copying file ./en.lproj/Localizable.strings ...
+2026-10-28 22:48:13 +0000  cloned ./en.lproj/Localizable.strings
+copying file ./en.lproj/InfoPlist.strings ...
+2026-10-28 22:48:13 +0000  cloned ./en.lproj/InfoPlist.strings
+2026-10-28 22:48:13 +0000  copying file ./weekly-guide-statue.jpg ...
+2026-10-28 22:48:13 +0000  cloned ./weekly-guide-statue.jpg
+2026-10-28 22:48:13 +0000  copying file ./es.lproj/Localizable.strings ...
+2026-10-28 22:48:13 +0000  cloned ./es.lproj/Localizable.strings
+2026-10-28 22:48:13 +0000  copying file ./es.lproj/InfoPlist.strings ...
+2026-10-28 22:48:13 +0000  cloned ./es.lproj/InfoPlist.strings
+... 55 lines omitted; 0 error-like lines, 0 kept below ...
+... end of omitted section ...
+2026-10-28 22:48:13 +0000 [MT] Processing step: IDEDistributionCodesignStep
+2026-10-28 22:48:13 +0000 [MT] Entitlements for <IDEDistributionItem: 0x79486c8420; bundleID='com.jonathanjing.tongxing.beta.listening-activity', path='<DVTFilePath:0x794ac3a000:'~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/beta-1.26.32-build75-archive-20261028/Tongxing.xcarchive/Products/Applications/Tongxing.app/PlugIns/ListeningActivityExtension.appex'>', codeSigningInfo='<_DVTCodeSigningInformation_Path: 0x7947c290e0; isSigned='1', isAdHocSigned='0', signingCertificate='<DVTSigningCertificate: 0x7947d882a0; name='Apple Development: Zheng Jing (394KUAQAH8)', hash='9284B270626ACAA91C2CEA3D5D9165CC51DE58D9', serialNumber='74B74C4010072193D3EED621F44F4179', certificateKinds='(
+    "1.2.840.113635.100.6.1.12",
+    "1.2.840.113635.100.6.1.2"
+), issueDate='2026-03-16 04:59:53 +0000''>', entitlements='{
+    "application-identifier" = "G2P4DTQNBA.com.jonathanjing.tongxing.beta.listening-activity";
+    "com.apple.developer.team-identifier" = G2P4DTQNBA;
+    "get-task-allow" = 1;
+}', teamID='G2P4DTQNBA', identifier='com.jonathanjing.tongxing.beta.listening-activity', executablePath='<DVTFilePath:0x79493cf020:'~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/beta-1.26.32-build75-archive-20261028/Tongxing.xcarchive/Products/Applications/Tongxing.app/PlugIns/ListeningActivityExtension.appex/ListeningActivityExtension'>', hardenedRuntime='0'>'>: {
+    "application-identifier" = "G2P4DTQNBA.com.jonathanjing.tongxing.beta.listening-activity";
+    "beta-reports-active" = 1;
+    "com.apple.developer.team-identifier" = G2P4DTQNBA;
+    "get-task-allow" = 0;
+}
+2026-10-28 22:48:13 +0000 [MT] Associated App Clip Identifiers Filter: Skipping because "com.apple.developer.associated-appclip-app-identifiers" is not present
+2026-10-28 22:48:13 +0000 [MT] Entitlements for <IDEDistributionItem: 0x79486c8420; bundleID='com.jonathanjing.tongxing.beta.listening-activity', path='<DVTFilePath:0x794ac3a000:'~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/beta-1.26.32-build75-archive-20261028/Tongxing.xcarchive/Products/Applications/Tongxing.app/PlugIns/ListeningActivityExtension.appex'>', codeSigningInfo='<_DVTCodeSigningInformation_Path: 0x7947c290e0; isSigned='1', isAdHocSigned='0', signingCertificate='<DVTSigningCertificate: 0x7947d882a0; name='Apple Development: Zheng Jing (394KUAQAH8)', hash='9284B270626ACAA91C2CEA3D5D9165CC51DE58D9', serialNumber='74B74C4010072193D3EED621F44F4179', certificateKinds='(
+    "1.2.840.113635.100.6.1.12",
+    "1.2.840.113635.100.6.1.2"
+), issueDate='2026-03-16 04:59:53 +0000''>', entitlements='{
+    "application-identifier" = "G2P4DTQNBA.com.jonathanjing.tongxing.beta.listening-activity";
+    "com.apple.developer.team-identifier" = G2P4DTQNBA;
+    "get-task-allow" = 1;
+}', teamID='G2P4DTQNBA', identifier='com.jonathanjing.tongxing.beta.listening-activity', executablePath='<DVTFilePath:0x79493cf020:'~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/beta-1.26.32-build75-archive-20261028/Tongxing.xcarchive/Products/Applications/Tongxing.app/PlugIns/ListeningActivityExtension.appex/ListeningActivityExtension'>', hardenedRuntime='0'>'> are: {
+    "application-identifier" = "G2P4DTQNBA.com.jonathanjing.tongxing.beta.listening-activity";
+    "beta-reports-active" = 1;
+    "com.apple.developer.team-identifier" = G2P4DTQNBA;
+    "get-task-allow" = 0;
+}
+2026-10-28 22:48:13 +0000 [MT] Writing entitlements for <IDEDistributionItem: 0x79486c8420; bundleID='com.jonathanjing.tongxing.beta.listening-activity', path='<DVTFilePath:0x794ac3a000:'~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/beta-1.26.32-build75-archive-20261028/Tongxing.xcarchive/Products/Applications/Tongxing.app/PlugIns/ListeningActivityExtension.appex'>', codeSigningInfo='<_DVTCodeSigningInformation_Path: 0x7947c290e0; isSigned='1', isAdHocSigned='0', signingCertificate='<DVTSigningCertificate: 0x7947d882a0; name='Apple Development: Zheng Jing (394KUAQAH8)', hash='9284B270626ACAA91C2CEA3D5D9165CC51DE58D9', serialNumber='74B74C4010072193D3EED621F44F4179', certificateKinds='(
+    "1.2.840.113635.100.6.1.12",
+    "1.2.840.113635.100.6.1.2"
+), issueDate='2026-03-16 04:59:53 +0000''>', entitlements='{
+    "application-identifier" = "G2P4DTQNBA.com.jonathanjing.tongxing.beta.listening-activity";
+    "com.apple.developer.team-identifier" = G2P4DTQNBA;
+    "get-task-allow" = 1;
+}', teamID='G2P4DTQNBA', identifier='com.jonathanjing.tongxing.beta.listening-activity', executablePath='<DVTFilePath:0x79493cf020:'~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/beta-1.26.32-build75-archive-20261028/Tongxing.xcarchive/Products/Applications/Tongxing.app/PlugIns/ListeningActivityExtension.appex/ListeningActivityExtension'>', hardenedRuntime='0'>'> to: /var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/XcodeDistPipeline.~~~0moxRn/entitlements~~~hKcjp3
+2026-10-28 22:48:13 +0000 [MT] invoking codesign: <NSConcreteTask: 0x794a3d3de0; launchPath='/usr/bin/codesign', arguments='(
+    "-f",
+    "-s",
+    1449EC0932637B5731580FE2394256D154535652,
+    "--entitlements",
+    "/var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/XcodeDistPipeline.~~~0moxRn/entitlements~~~hKcjp3",
+    "--preserve-metadata=identifier,flags,runtime,launch-constraints,library-constraints",
+    "--generate-entitlement-der",
+    "--strip-disallowed-xattrs",
+    "-vvv",
+    "/var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/XcodeDistPipeline.~~~0moxRn/Root/Payload/Tongxing.app/PlugIns/ListeningActivityExtension.appex"
+)'>
+2026-10-28 22:48:13 +0000 [MT] codesign output: /var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/XcodeDistPipeline.~~~0moxRn/Root/Payload/Tongxing.app/PlugIns/ListeningActivityExtension.appex: replacing existing signature
+/var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/XcodeDistPipeline.~~~0moxRn/Root/Payload/Tongxing.app/PlugIns/ListeningActivityExtension.appex: signed bundle with Mach-O thin (arm64) [com.jonathanjing.tongxing.beta.listening-activity]
+2026-10-28 22:48:13 +0000 [MT] Entitlements for <IDEDistributionItem: 0x7947c297a0; bundleID='com.jonathanjing.tongxing.beta', path='<DVTFilePath:0x7948dc7d80:'~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/beta-1.26.32-build75-archive-20261028/Tongxing.xcarchive/Products/Applications/Tongxing.app'>', codeSigningInfo='<_DVTCodeSigningInformation_Path: 0x79486c8480; isSigned='1', isAdHocSigned='0', signingCertificate='<DVTSigningCertificate: 0x7947d8aa00; name='Apple Development: Zheng Jing (394KUAQAH8)', hash='9284B270626ACAA91C2CEA3D5D9165CC51DE58D9', serialNumber='74B74C4010072193D3EED621F44F4179', certificateKinds='(
+    "1.2.840.113635.100.6.1.12",
+    "1.2.840.113635.100.6.1.2"
+), issueDate='2026-03-16 04:59:53 +0000''>', entitlements='{
+    "application-identifier" = "G2P4DTQNBA.com.jonathanjing.tongxing.beta";
+    "aps-environment" = development;
+    "com.apple.developer.associated-domains" =     (
+        "applinks:ai-for-god-sermon-audio-dev.web.app"
+    );
+    "com.apple.developer.team-identifier" = G2P4DTQNBA;
+    "get-task-allow" = 1;
+}', teamID='G2P4DTQNBA', identifier='com.jonathanjing.tongxing.beta', executablePath='<DVTFilePath:0x79486c8180:'~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/beta-1.26.32-build75-archive-20261028/Tongxing.xcarchive/Products/Applications/Tongxing.app/Tongxing'>', hardenedRuntime='0'>'>: {
+    "application-identifier" = "G2P4DTQNBA.com.jonathanjing.tongxing.beta";
+    "aps-environment" = production;
+    "beta-reports-active" = 1;
+    "com.apple.developer.associated-domains" =     (
+        "applinks:ai-for-god-sermon-audio-dev.web.app"
+    );
+    "com.apple.developer.team-identifier" = G2P4DTQNBA;
+    "get-task-allow" = 0;
+}
+2026-10-28 22:48:13 +0000 [MT] Associated App Clip Identifiers Filter: Skipping because "com.apple.developer.associated-appclip-app-identifiers" is not present
+2026-10-28 22:48:13 +0000 [MT] Entitlements for <IDEDistributionItem: 0x7947c297a0; bundleID='com.jonathanjing.tongxing.beta', path='<DVTFilePath:0x7948dc7d80:'~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/beta-1.26.32-build75-archive-20261028/Tongxing.xcarchive/Products/Applications/Tongxing.app'>', codeSigningInfo='<_DVTCodeSigningInformation_Path: 0x79486c8480; isSigned='1', isAdHocSigned='0', signingCertificate='<DVTSigningCertificate: 0x7947d8aa00; name='Apple Development: Zheng Jing (394KUAQAH8)', hash='9284B270626ACAA91C2CEA3D5D9165CC51DE58D9', serialNumber='74B74C4010072193D3EED621F44F4179', certificateKinds='(
+    "1.2.840.113635.100.6.1.12",
+    "1.2.840.113635.100.6.1.2"
+), issueDate='2026-03-16 04:59:53 +0000''>', entitlements='{
+    "application-identifier" = "G2P4DTQNBA.com.jonathanjing.tongxing.beta";
+    "aps-environment" = development;
+    "com.apple.developer.associated-domains" =     (
+        "applinks:ai-for-god-sermon-audio-dev.web.app"
+    );
+    "com.apple.developer.team-identifier" = G2P4DTQNBA;
+    "get-task-allow" = 1;
+}', teamID='G2P4DTQNBA', identifier='com.jonathanjing.tongxing.beta', executablePath='<DVTFilePath:0x79486c8180:'~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/beta-1.26.32-build75-archive-20261028/Tongxing.xcarchive/Products/Applications/Tongxing.app/Tongxing'>', hardenedRuntime='0'>'> are: {
+    "application-identifier" = "G2P4DTQNBA.com.jonathanjing.tongxing.beta";
+    "aps-environment" = production;
+    "beta-reports-active" = 1;
+    "com.apple.developer.associated-domains" =     (
+        "applinks:ai-for-god-sermon-audio-dev.web.app"
+    );
+    "com.apple.developer.team-identifier" = G2P4DTQNBA;
+    "get-task-allow" = 0;
+}
+2026-10-28 22:48:13 +0000 [MT] Writing entitlements for <IDEDistributionItem: 0x7947c297a0; bundleID='com.jonathanjing.tongxing.beta', path='<DVTFilePath:0x7948dc7d80:'~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/beta-1.26.32-build75-archive-20261028/Tongxing.xcarchive/Products/Applications/Tongxing.app'>', codeSigningInfo='<_DVTCodeSigningInformation_Path: 0x79486c8480; isSigned='1', isAdHocSigned='0', signingCertificate='<DVTSigningCertificate: 0x7947d8aa00; name='Apple Development: Zheng Jing (394KUAQAH8)', hash='9284B270626ACAA91C2CEA3D5D9165CC51DE58D9', serialNumber='74B74C4010072193D3EED621F44F4179', certificateKinds='(
+    "1.2.840.113635.100.6.1.12",
+    "1.2.840.113635.100.6.1.2"
+), issueDate='2026-03-16 04:59:53 +0000''>', entitlements='{
+    "application-identifier" = "G2P4DTQNBA.com.jonathanjing.tongxing.beta";
+    "aps-environment" = development;
+    "com.apple.developer.associated-domains" =     (
+        "applinks:ai-for-god-sermon-audio-dev.web.app"
+    );
+    "com.apple.developer.team-identifier" = G2P4DTQNBA;
+    "get-task-allow" = 1;
+}', teamID='G2P4DTQNBA', identifier='com.jonathanjing.tongxing.beta', executablePath='<DVTFilePath:0x79486c8180:'~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/beta-1.26.32-build75-archive-20261028/Tongxing.xcarchive/Products/Applications/Tongxing.app/Tongxing'>', hardenedRuntime='0'>'> to: /var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/XcodeDistPipeline.~~~0moxRn/entitlements~~~PynbqH
+2026-10-28 22:48:13 +0000 [MT] invoking codesign: <NSConcreteTask: 0x794a3d3cf0; launchPath='/usr/bin/codesign', arguments='(
+    "-f",
+    "-s",
+    1449EC0932637B5731580FE2394256D154535652,
+    "--entitlements",
+    "/var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/XcodeDistPipeline.~~~0moxRn/entitlements~~~PynbqH",
+    "--preserve-metadata=identifier,flags,runtime,launch-constraints,library-constraints",
+    "--generate-entitlement-der",
+    "--strip-disallowed-xattrs",
+    "-vvv",
+    "/var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/XcodeDistPipeline.~~~0moxRn/Root/Payload/Tongxing.app"
+)'>
+2026-10-28 22:48:13 +0000 [MT] codesign output: /var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/XcodeDistPipeline.~~~0moxRn/Root/Payload/Tongxing.app: replacing existing signature
+/var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/XcodeDistPipeline.~~~0moxRn/Root/Payload/Tongxing.app: signed app bundle with Mach-O thin (arm64) [com.jonathanjing.tongxing.beta]
+2026-10-28 22:48:14 +0000 [MT] Processing step: IDEDistributionZipODRItemStep
+2026-10-28 22:48:14 +0000 [MT] Skipping step: IDEDistributionZipODRItemStep because it said so
+2026-10-28 22:48:14 +0000 [MT] Skipping step: IDEDistributionZipODRItemStep because it said so
+2026-10-28 22:48:14 +0000 [MT] Processing step: IDEDistributionCreateIPAStep
+2026-10-28 22:48:14 +0000 [MT] Running /usr/bin/rsync '-8aPhhE' '/var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/XcodeDistPipeline.~~~0moxRn/Symbols' '--link-dest' '/var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/XcodeDistPipeline.~~~0moxRn' '/var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/XcodeDistPipeline.~~~0moxRn/Root'
+2026-10-28 22:48:14 +0000  Symbols/
+._Symbols
+            163 127%    1.35MB/s   00:00:00 (xfer#1, to-check=0/6)
+2026-10-28 22:48:14 +0000  Symbols/5023D0BF-CBA7-3B90-8F43-B93839C3FA28.symbols
+Symbols/77B30423-9F24-3B1D-AEB9-AE0F0A998C1C.symbols
+Symbols/._5023D0BF-CBA7-3B90-8F43-B93839C3FA28.symbols
+            163   0%  187.28KB/s   00:00:00 (xfer#2, to-check=2/6)
+2026-10-28 22:48:14 +0000  Symbols/._77B30423-9F24-3B1D-AEB9-AE0F0A998C1C.symbols
+            163   0%  149.76KB/s   00:00:00 (xfer#3, to-check=3/6)
+2026-10-28 22:48:14 +0000 [MT] /usr/bin/rsync exited with 0
+2026-10-28 22:48:14 +0000 [MT] Running /usr/bin/ditto '-V' '-c' '-k' '--norsrc' '/var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/XcodeDistPipeline.~~~0moxRn/Root' '/var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/XcodeDistPipeline.~~~0moxRn/Packages/Tongxing.ipa'
+2026-10-28 22:48:14 +0000  >>> Copying /var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/XcodeDistPipeline.~~~0moxRn/Root
+2026-10-28 22:48:14 +0000  copying file ./Payload/Tongxing.app/_CodeSignature/CodeResources ...
+2026-10-28 22:48:14 +0000  8455 bytes for ./Payload/Tongxing.app/_CodeSignature/CodeResources
+2026-10-28 22:48:14 +0000  copying file ./Payload/Tongxing.app/weekly-guides.json ...
+2026-10-28 22:48:14 +0000  162751 bytes for ./Payload/Tongxing.app/weekly-guides.json
+2026-10-28 22:48:14 +0000  copying file ./Payload/Tongxing.app/zh-Hans.lproj/Localizable.strings ...
+2026-10-28 22:48:14 +0000  8761 bytes for ./Payload/Tongxing.app/zh-Hans.lproj/Localizable.strings
+2026-10-28 22:48:14 +0000  copying file ./Payload/Tongxing.app/zh-Hans.lproj/InfoPlist.strings ...
+2026-10-28 22:48:14 +0000  226 bytes for ./Payload/Tongxing.app/zh-Hans.lproj/InfoPlist.strings
+2026-10-28 22:48:14 +0000  copying file ./Payload/Tongxing.app/en.lproj/Localizable.strings ...
+2026-10-28 22:48:14 +0000  34644 bytes for ./Payload/Tongxing.app/en.lproj/Localizable.strings
+copying file ./Payload/Tongxing.app/en.lproj/InfoPlist.strings ...
+2026-10-28 22:48:14 +0000  317 bytes for ./Payload/Tongxing.app/en.lproj/InfoPlist.strings
+2026-10-28 22:48:14 +0000  copying file ./Payload/Tongxing.app/weekly-guide-statue.jpg ...
+2026-10-28 22:48:14 +0000  33196 bytes for ./Payload/Tongxing.app/weekly-guide-statue.jpg
+2026-10-28 22:48:14 +0000  copying file ./Payload/Tongxing.app/es.lproj/Localizable.strings ...
+2026-10-28 22:48:14 +0000  50500 bytes for ./Payload/Tongxing.app/es.lproj/Localizable.strings
+copying file ./Payload/Tongxing.app/es.lproj/InfoPlist.strings ...
+2026-10-28 22:48:14 +0000  565 bytes for ./Payload/Tongxing.app/es.lproj/InfoPlist.strings
+2026-10-28 22:48:14 +0000  copying file ./Payload/Tongxing.app/Tongxing ...
+2026-10-28 22:48:14 +0000  3565408 bytes for ./Payload/Tongxing.app/Tongxing
+2026-10-28 22:48:14 +0000  copying file ./Payload/Tongxing.app/PlugIns/ListeningActivityExtension.appex/_CodeSignature/CodeResources ...
+2026-10-28 22:48:14 +0000  2040 bytes for ./Payload/Tongxing.app/PlugIns/ListeningActivityExtension.appex/_CodeSignature/CodeResources
+copying file ./Payload/Tongxing.app/PlugIns/ListeningActivityExtension.appex/ListeningActivityExtension ...
+2026-10-28 22:48:14 +0000  799664 bytes for ./Payload/Tongxing.app/PlugIns/ListeningActivityExtension.appex/ListeningActivityExtension
+copying file ./Payload/Tongxing.app/PlugIns/ListeningActivityExtension.appex/embedded.mobileprovision ...
+2026-10-28 22:48:14 +0000  16478 bytes for ./Payload/Tongxing.app/PlugIns/ListeningActivityExtension.appex/embedded.mobileprovision
+copying file ./Payload/Tongxing.app/PlugIns/ListeningActivityExtension.appex/Info.plist ...
+2026-10-28 22:48:14 +0000  991 bytes for ./Payload/Tongxing.app/PlugIns/ListeningActivityExtension.appex/Info.plist
+2026-10-28 22:48:14 +0000  copying file ./Payload/Tongxing.app/<email> ...
+2026-10-28 22:48:14 +0000  15873 bytes for ./Payload/Tongxing.app/<email>
+2026-10-28 22:48:14 +0000  copying file ./Payload/Tongxing.app/ko.lproj/Localizable.strings ...
+2026-10-28 22:48:14 +0000  31690 bytes for ./Payload/Tongxing.app/ko.lproj/Localizable.strings
+2026-10-28 22:48:14 +0000  copying file ./Payload/Tongxing.app/ko.lproj/InfoPlist.strings ...
+2026-10-28 22:48:14 +0000  347 bytes for ./Payload/Tongxing.app/ko.lproj/InfoPlist.strings
+2026-10-28 22:48:14 +0000  copying file ./Payload/Tongxing.app/Assets.car ...
+2026-10-28 22:48:14 +0000  6874792 bytes for ./Payload/Tongxing.app/Assets.car
+copying file ./Payload/Tongxing.app/AppIcon76x76@2x~ipad.png ...
+2026-10-28 22:48:14 +0000  23034 bytes for ./Payload/Tongxing.app/AppIcon76x76@2x~ipad.png
+2026-10-28 22:48:14 +0000  copying file ./Payload/Tongxing.app/vi.lproj/Localizable.strings ...
+2026-10-28 22:48:14 +0000  48504 bytes for ./Payload/Tongxing.app/vi.lproj/Localizable.strings
+copying file ./Payload/Tongxing.app/vi.lproj/InfoPlist.strings ...
+2026-10-28 22:48:14 +0000  535 bytes for ./Payload/Tongxing.app/vi.lproj/InfoPlist.strings
+2026-10-28 22:48:14 +0000  copying file ./Payload/Tongxing.app/weekly-guide-son-of-man.jpg ...
+2026-10-28 22:48:14 +0000  173620 bytes for ./Payload/Tongxing.app/weekly-guide-son-of-man.jpg
+2026-10-28 22:48:14 +0000  copying file ./Payload/Tongxing.app/PrivacyInfo.xcprivacy ...
+2026-10-28 22:48:14 +0000  1877 bytes for ./Payload/Tongxing.app/PrivacyInfo.xcprivacy
+copying file ./Payload/Tongxing.app/embedded.mobileprovision ...
+2026-10-28 22:48:14 +0000  16599 bytes for ./Payload/Tongxing.app/embedded.mobileprovision
+copying file ./Payload/Tongxing.app/Info.plist ...
+2026-10-28 22:48:14 +0000  1893 bytes for ./Payload/Tongxing.app/Info.plist
+2026-10-28 22:48:14 +0000  copying file ./Payload/Tongxing.app/PkgInfo ...
+2026-10-28 22:48:14 +0000  8 bytes for ./Payload/Tongxing.app/PkgInfo
+2026-10-28 22:48:14 +0000  copying file ./Symbols/77B30423-9F24-3B1D-AEB9-AE0F0A998C1C.symbols ...
+2026-10-28 22:48:14 +0000  1789060 bytes for ./Symbols/77B30423-9F24-3B1D-AEB9-AE0F0A998C1C.symbols
+copying file ./Symbols/5023D0BF-CBA7-3B90-8F43-B93839C3FA28.symbols ...
+2026-10-28 22:48:14 +0000  10308748 bytes for ./Symbols/5023D0BF-CBA7-3B90-8F43-B93839C3FA28.symbols
+2026-10-28 22:48:14 +0000 [MT] /usr/bin/ditto exited with 0
+2026-10-28 22:48:14 +0000 [MT] Processing step: IDEDistributionAppStoreInformationStep
+2026-10-28 22:48:14 +0000 [MT] Skipping step: IDEDistributionAppStoreInformationStep because it said so
+2026-10-28 22:48:14 +0000 [MT] Processing step: IDEDistributionGenerateProcessedDistributionItems
+2026-10-28 22:48:14 +0000 [MT] IDEDistributionItem init <DVTFilePath:0x794a28a300:'/var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/XcodeDistPipeline.~~~0moxRn/Root/Payload/Tongxing.app/PlugIns/ListeningActivityExtension.appex'>
+2026-10-28 22:48:14 +0000 [MT] IDEDistributionItem init <DVTFilePath:0x79486ca040:'/var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/XcodeDistPipeline.~~~0moxRn/Root/Payload/Tongxing.app'>
+2026-10-28 22:48:14 +0000 [MT] Processing step: IDEDistributionCreateManifestStep
+2026-10-28 22:48:14 +0000 [MT] Skipping step: IDEDistributionCreateManifestStep because it said so
