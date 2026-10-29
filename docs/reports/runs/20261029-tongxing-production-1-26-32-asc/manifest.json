@@ -1,0 +1,239 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261029-tongxing-production-1-26-32-asc",
+  "runs": [
+    {
+      "label": "production-1.26.32-asc",
+      "source": "~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/production-1.26.32-asc",
+      "skipped": {
+        ".md": 2,
+        "(none)": 1,
+        ".json": 24,
+        ".xml": 1
+      }
+    }
+  ],
+  "files": [
+    {
+      "run": "production-1.26.32-asc",
+      "path": "apply-metadata.log",
+      "kind": "log",
+      "bytes": 841,
+      "truncated": false,
+      "sha256": "872214776834c9908a668758f2b2d704c71c95255c4670ca1526b38cdaae7976",
+      "redactions": {}
+    },
+    {
+      "run": "production-1.26.32-asc",
+      "path": "create-version.log",
+      "kind": "log",
+      "bytes": 846,
+      "truncated": false,
+      "sha256": "3f616c31d2458e845316e9bab71f226669cc3344eea323882fca8dc76d027bb1",
+      "redactions": {}
+    },
+    {
+      "run": "production-1.26.32-asc",
+      "path": "metadata.log",
+      "kind": "log",
+      "bytes": 835,
+      "truncated": false,
+      "sha256": "e8e168888e25b1dd8b3b4998b76076c3b418e7fe38159e4200b5f5d643cff0c1",
+      "redactions": {}
+    },
+    {
+      "run": "production-1.26.32-asc",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 349,
+      "truncated": false,
+      "sha256": "2127a3d4d6b0fa114a3d62c4d768390a6397bb30e00073d661db212bcde049d2",
+      "redactions": {}
+    },
+    {
+      "run": "production-1.26.32-asc",
+      "path": "prepare-version.log",
+      "kind": "log",
+      "bytes": 842,
+      "truncated": false,
+      "sha256": "f6eee6e1d3b6c3021a33bd56286674dd77c911f839b92227912f02611f1cb5cc",
+      "redactions": {}
+    },
+    {
+      "run": "production-1.26.32-asc",
+      "path": "processing-phase2.log",
+      "kind": "log",
+      "bytes": 831,
+      "truncated": false,
+      "sha256": "6c7f281711343ef1fe09d29e801ec599cbafb0cf2591c6abbe8951a521bea31f",
+      "redactions": {}
+    },
+    {
+      "run": "production-1.26.32-asc",
+      "path": "processing-snapshot-2.log",
+      "kind": "log",
+      "bytes": 833,
+      "truncated": false,
+      "sha256": "71e09a36a1fea8a33715f5e6fca70c818d7287140bb17a948a16624df621c250",
+      "redactions": {}
+    },
+    {
+      "run": "production-1.26.32-asc",
+      "path": "processing-snapshot-3.log",
+      "kind": "log",
+      "bytes": 833,
+      "truncated": false,
+      "sha256": "932cea5d499294e70a8e90a86ac32bbe2b0b1a228ae53cd741f927167cfb5e09",
+      "redactions": {}
+    },
+    {
+      "run": "production-1.26.32-asc",
+      "path": "processing-snapshot-4.log",
+      "kind": "log",
+      "bytes": 833,
+      "truncated": false,
+      "sha256": "2397147c7a9bf0d43a94576fb3d99aa89a1022194d5c1aefa7e916f9e31245fa",
+      "redactions": {}
+    },
+    {
+      "run": "production-1.26.32-asc",
+      "path": "processing-snapshot-5.log",
+      "kind": "log",
+      "bytes": 833,
+      "truncated": false,
+      "sha256": "3797ed44b97c8c0b5e83238d98782e9ffed00fe7d34bd154750920fc1ab74c1f",
+      "redactions": {}
+    },
+    {
+      "run": "production-1.26.32-asc",
+      "path": "processing-snapshot-6.log",
+      "kind": "log",
+      "bytes": 833,
+      "truncated": false,
+      "sha256": "42ec4a234e24f24681e95affb933adb311c258d680cc0151227d0efce2db73bc",
+      "redactions": {}
+    },
+    {
+      "run": "production-1.26.32-asc",
+      "path": "processing-snapshot.log",
+      "kind": "log",
+      "bytes": 833,
+      "truncated": false,
+      "sha256": "876d64af0a81ef0f65ae5a93dbf7442f8db83ad10875ae4a14193d68e3aa1e54",
+      "redactions": {}
+    },
+    {
+      "run": "production-1.26.32-asc",
+      "path": "processing.log",
+      "kind": "log",
+      "bytes": 1587,
+      "truncated": false,
+      "sha256": "c6827a4862249cf847fd338bcc1924ae78f2e03322f2cd23206231c68486be15",
+      "redactions": {}
+    },
+    {
+      "run": "production-1.26.32-asc",
+      "path": "review-readback.log",
+      "kind": "log",
+      "bytes": 833,
+      "truncated": false,
+      "sha256": "9c1c583ac0d22a471ab9af98e094a64754c7d9b28baf85c87a7566a13356df51",
+      "redactions": {}
+    },
+    {
+      "run": "production-1.26.32-asc",
+      "path": "review-status.log",
+      "kind": "log",
+      "bytes": 840,
+      "truncated": false,
+      "sha256": "ec6ade7f98db9e1de859ef2f5f9091bcf0a381ebfe062bbc12618641667f9449",
+      "redactions": {}
+    },
+    {
+      "run": "production-1.26.32-asc",
+      "path": "status-before-upload.log",
+      "kind": "log",
+      "bytes": 833,
+      "truncated": false,
+      "sha256": "64b78f2bab04a84c54fde155337b3bdb2c4299742888ff6dbd6d97641e875d25",
+      "redactions": {}
+    },
+    {
+      "run": "production-1.26.32-asc",
+      "path": "status.log",
+      "kind": "log",
+      "bytes": 833,
+      "truncated": false,
+      "sha256": "7842ee596efec3c862cc55e4d8188f4fd8facea5608d2b41ba2cdbb0c80de1f5",
+      "redactions": {}
+    },
+    {
+      "run": "production-1.26.32-asc",
+      "path": "submit-review.log",
+      "kind": "log",
+      "bytes": 840,
+      "truncated": false,
+      "sha256": "849dea5e83b224830de5f3ffdc4478d597076786a1149f3d45ebc83c4bb95293",
+      "redactions": {}
+    },
+    {
+      "run": "production-1.26.32-asc",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 844,
+      "truncated": false,
+      "sha256": "194b7687c315acdca07e71866114fb055a13a0b0f3b1f67caf00ae0637ce9735",
+      "redactions": {}
+    },
+    {
+      "run": "production-1.26.32-asc",
+      "path": "upload-status-2.log",
+      "kind": "log",
+      "bytes": 840,
+      "truncated": false,
+      "sha256": "01e8647fd95d54516f0c103445a9c84f8cfe42771b6c85f5d30eea6870b9a109",
+      "redactions": {}
+    },
+    {
+      "run": "production-1.26.32-asc",
+      "path": "upload-status-3.log",
+      "kind": "log",
+      "bytes": 840,
+      "truncated": false,
+      "sha256": "3a399ed2c6b15553c02e2d05778f35d7c648a5d24006a33c554819eb025dc455",
+      "redactions": {}
+    },
+    {
+      "run": "production-1.26.32-asc",
+      "path": "upload-status.log",
+      "kind": "log",
+      "bytes": 840,
+      "truncated": false,
+      "sha256": "73038eef7a0c4a79631071686b2f6e3495808d95035b4df63ea91c345c2df1b7",
+      "redactions": {}
+    },
+    {
+      "run": "production-1.26.32-asc",
+      "path": "upload.log",
+      "kind": "log",
+      "bytes": 1773,
+      "truncated": false,
+      "sha256": "bba478458782ea94d4509684fde17577d64a5d75bf0900b3ef2aeb991f69b4c9",
+      "redactions": {}
+    },
+    {
+      "run": "production-1.26.32-asc",
+      "path": "verify-metadata-with-build.log",
+      "kind": "log",
+      "bytes": 841,
+      "truncated": false,
+      "sha256": "781b72b14cd33419be9ab4ad8eef3f8f68dc6450b5e65e78b051206f171412ea",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}
