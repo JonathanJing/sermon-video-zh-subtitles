@@ -190,6 +190,7 @@ def repair(client, missing, units_by_id, glossary, flags, prior_by_id, window, t
             failures.extend(problems)
         else:
             fixed[unit_id] = rows[0]
+            client.record_done(f"repair:{unit_id}", [unit_id], kind="repair")
     return fixed, failures
 
 

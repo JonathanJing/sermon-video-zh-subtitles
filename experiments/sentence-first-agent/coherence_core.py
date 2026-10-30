@@ -277,7 +277,7 @@ class DeepSeek:
         self._event({"status": status, "context": context, **fields})
         self._state()
 
-    def record_done(self, context: str, ids: list[str]) -> None:
+    def record_done(self, context: str, ids: list[str], kind: str = "window") -> None:
         """Record the sentence ids a finished window covered, for resume and coverage."""
         if not hasattr(self, "_done_contexts"):
             path = self.state_dir / "done.jsonl"
@@ -290,7 +290,7 @@ class DeepSeek:
             return
         self._done_contexts.add(context)
         line = {"ts": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z",
-                "label": self.label, "context": context, "ids": ids}
+                "label": self.label, "context": context, "kind": kind, "ids": ids}
         with self._lock:
             with (self.state_dir / "done.jsonl").open("a", encoding="utf-8") as out:
                 out.write(json.dumps(line, ensure_ascii=False) + "\n")
@@ -502,7 +502,8 @@ def recorded_progress(state_dir: Path, label: str) -> tuple[int, int]:
             continue
         row = json.loads(line)
         if row.get("label") == label:
-            windows += 1
+            if row.get("kind", "window") == "window":
+                windows += 1
             units += len(row.get("ids") or [])
     return windows, units
 
@@ -556,3 +557,12 @@ def state_mismatches(live: dict, rebuilt: dict, ignore_status: bool = False) -> 
         keys += ("status",)
     return [f"{key}: live={live.get(key)!r} rebuilt={rebuilt.get(key)!r}"
             for key in keys if live.get(key) != rebuilt.get(key)]
+
+
+def missing_units(state_dir: Path, source_run: Path, label: str = "translate") -> list[str]:
+    """Sentence ids in the source run that no done.jsonl line covers yet."""
+    covered = recorded_units(state_dir)
+    if not covered:
+        return []
+    sentences = read_jsonl(Path(source_run) / "sentences.jsonl")
+    return [row["id"] for row in sentences if row["id"] not in covered]
