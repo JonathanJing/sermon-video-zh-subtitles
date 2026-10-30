@@ -1,0 +1,281 @@
+
+$ /usr/bin/xcrun xcodebuild -project ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.claude/worktrees/ios-beta-1.26.33/apps/tongxing-ios/Tongxing.xcodeproj -list -json -disableAutomaticPackageResolution
+{
+  "project" : {
+    "configurations" : [
+      "BetaDebug",
+      "BetaRelease",
+      "Debug",
+      "Release"
+    ],
+    "name" : "Tongxing",
+    "schemes" : [
+      "ListeningActivityExtension",
+      "Tongxing",
+      "TongxingBeta",
+      "TongxingCore",
+      "TongxingInfrastructure",
+      "TongxingPreview",
+      "TongxingScreenshots"
+    ],
+    "targets" : [
+      "Tongxing",
+      "ListeningActivityExtension",
+      "TongxingTests",
+      "TongxingUITests"
+    ]
+  }
+}
+
+$ /usr/bin/xcrun simctl list devices available --json
+{
+  "devices" : {
+    "com.apple.CoreSimulator.SimRuntime.iOS-27-0" : [
+      {
+        "dataPath" : "~\/Library\/Developer\/CoreSimulator\/Devices\/A9ACB321-07F8-4540-AD3C-7FACBD384A1F\/data",
+        "dataPathSize" : 5734416384,
+        "logPath" : "~\/Library\/Logs\/CoreSimulator\/A9ACB321-07F8-4540-AD3C-7FACBD384A1F",
+        "udid" : "A9ACB321-07F8-4540-AD3C-7FACBD384A1F",
+        "lastUsedAt" : "2026-10-30T18:12:48Z",
+        "isAvailable" : true,
+... 1272 lines omitted; 39 error-like lines, 39 kept below ...
+[line 477]     export CLANG_WARN_DIRECT_OBJC_ISA_USAGE\=YES_ERROR
+[line 486]     export CLANG_WARN_OBJC_ROOT_CLASS\=YES_ERROR
+[line 644]     export GCC_WARN_ABOUT_RETURN_TYPE\=YES_ERROR
+[line 841]     export RUNTIME_EXCEPTION_ALLOW_DYLD_ENVIRONMENT_VARIABLES\=NO
+[line 842]     export RUNTIME_EXCEPTION_ALLOW_JIT\=NO
+[line 843]     export RUNTIME_EXCEPTION_ALLOW_UNSIGNED_EXECUTABLE_MEMORY\=NO
+[line 844]     export RUNTIME_EXCEPTION_DEBUGGING_TOOL\=NO
+[line 845]     export RUNTIME_EXCEPTION_DISABLE_EXECUTABLE_PAGE_PROTECTION\=NO
+[line 846]     export RUNTIME_EXCEPTION_DISABLE_LIBRARY_VALIDATION\=NO
+[line 994]     export VALIDATE_DEVELOPMENT_ASSET_PATHS\=YES_ERROR
+[line 1023]     export __DIAGNOSE_INVALID_DEPLOYMENT_TARGET_AS_ERROR\=YES
+[line 1047] ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.claude/worktrees/ios-beta-1.26.33/apps/tongxing-ios/Tests/AudioAlignmentControllerTests.swift:1016:100: warning: main actor-isolated static property 'match' can not be referenced from a nonisolated context; this is an error in the Swift 6 language mode
+[line 1058]      |                                                                                                    `- warning: main actor-isolated static property 'match' can not be referenced from a nonisolated context; this is an error in the Swift 6 language mode
+[line 1062] ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.claude/worktrees/ios-beta-1.26.33/apps/tongxing-ios/Tests/AudioAlignmentControllerTests.swift:1135:21: warning: stored property '_count' of 'Sendable'-conforming class 'CallCounter' is mutable; this is an error in the Swift 6 language mode
+[line 1066]      |                     `- warning: stored property '_count' of 'Sendable'-conforming class 'CallCounter' is mutable; this is an error in the Swift 6 language mode
+[line 1070] ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.claude/worktrees/ios-beta-1.26.33/apps/tongxing-ios/Tests/AudioAlignmentControllerTests.swift:731:25: warning: main actor-isolated static property 'match' cannot be accessed from outside of the actor; this is an error in the Swift 6 language mode
+[line 1074]      |                         `- warning: main actor-isolated static property 'match' cannot be accessed from outside of the actor; this is an error in the Swift 6 language mode
+[line 1078] ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.claude/worktrees/ios-beta-1.26.33/apps/tongxing-ios/Tests/AudioAlignmentControllerTests.swift:749:20: warning: expression is 'async' but is not marked with 'await'; this is an error in the Swift 6 language mode
+[line 1084]      |                    `- warning: expression is 'async' but is not marked with 'await'; this is an error in the Swift 6 language mode
+[line 1088] ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.claude/worktrees/ios-beta-1.26.33/apps/tongxing-ios/Tests/AudioAlignmentControllerTests.swift:762:81: warning: main actor-isolated static property 'noMatch' cannot be accessed from outside of the actor; this is an error in the Swift 6 language mode
+[line 1092]      |                                                                                 `- warning: main actor-isolated static property 'noMatch' cannot be accessed from outside of the actor; this is an error in the Swift 6 language mode
+[line 1096] ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.claude/worktrees/ios-beta-1.26.33/apps/tongxing-ios/Tests/AudioAlignmentControllerTests.swift:778:25: warning: main actor-isolated static property 'match' cannot be accessed from outside of the actor; this is an error in the Swift 6 language mode
+[line 1100]      |                         `- warning: main actor-isolated static property 'match' cannot be accessed from outside of the actor; this is an error in the Swift 6 language mode
+[line 1104] ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.claude/worktrees/ios-beta-1.26.33/apps/tongxing-ios/Tests/AudioAlignmentControllerTests.swift:794:25: warning: main actor-isolated static property 'match' cannot be accessed from outside of the actor; this is an error in the Swift 6 language mode
+[line 1108]      |                         `- warning: main actor-isolated static property 'match' cannot be accessed from outside of the actor; this is an error in the Swift 6 language mode
+[line 1112] ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.claude/worktrees/ios-beta-1.26.33/apps/tongxing-ios/Tests/AudioAlignmentControllerTests.swift:821:81: warning: main actor-isolated static property 'match' cannot be accessed from outside of the actor; this is an error in the Swift 6 language mode
+[line 1116]      |                                                                                 `- warning: main actor-isolated static property 'match' cannot be accessed from outside of the actor; this is an error in the Swift 6 language mode
+[line 1120] ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.claude/worktrees/ios-beta-1.26.33/apps/tongxing-ios/Tests/AudioAlignmentControllerTests.swift:838:78: warning: expression is 'async' but is not marked with 'await'; this is an error in the Swift 6 language mode
+[line 1126]      |                                                                              `- warning: expression is 'async' but is not marked with 'await'; this is an error in the Swift 6 language mode
+[line 1130] ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.claude/worktrees/ios-beta-1.26.33/apps/tongxing-ios/Tests/AudioAlignmentControllerTests.swift:847:56: warning: main actor-isolated static property 'noMatch' cannot be accessed from outside of the actor; this is an error in the Swift 6 language mode
+[line 1134]      |                                                        `- warning: main actor-isolated static property 'noMatch' cannot be accessed from outside of the actor; this is an error in the Swift 6 language mode
+[line 1138] ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.claude/worktrees/ios-beta-1.26.33/apps/tongxing-ios/Tests/AudioAlignmentControllerTests.swift:903:72: warning: main actor-isolated static property 'match' cannot be accessed from outside of the actor; this is an error in the Swift 6 language mode
+[line 1142]      |                                                                        `- warning: main actor-isolated static property 'match' cannot be accessed from outside of the actor; this is an error in the Swift 6 language mode
+[line 1146] ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.claude/worktrees/ios-beta-1.26.33/apps/tongxing-ios/Tests/AudioAlignmentControllerTests.swift:1016:100: warning: main actor-isolated static property 'match' can not be referenced from a nonisolated context; this is an error in the Swift 6 language mode
+[line 1157]      |                                                                                                    `- warning: main actor-isolated static property 'match' can not be referenced from a nonisolated context; this is an error in the Swift 6 language mode
+[line 1161] ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.claude/worktrees/ios-beta-1.26.33/apps/tongxing-ios/Tests/AudioAlignmentControllerTests.swift:1135:21: warning: stored property '_count' of 'Sendable'-conforming class 'CallCounter' is mutable; this is an error in the Swift 6 language mode
+[line 1165]      |                     `- warning: stored property '_count' of 'Sendable'-conforming class 'CallCounter' is mutable; this is an error in the Swift 6 language mode
+[line 1277] 2026-10-30 11:31:22.844 xcodebuild[35918:6910333] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+[line 1312] 2026-10-30 11:32:06.267 xcodebuild[35918:6910333] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+... end of omitted section ...
+2026-10-30 11:32:06.267 xcodebuild[35918:6910333] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+2026-10-30 11:32:06.552 xcodebuild[35918:6910333] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+2026-10-30 11:32:09.779651-0700 TongxingUITests-Runner[36642:6917302] [Default] Running tests...
+    t =      nans Interface orientation changed to Portrait
+Test Suite 'Selected tests' started at 2026-10-30 11:32:13.141.
+Test Suite 'TongxingUITests.xctest' started at 2026-10-30 11:32:13.142.
+Test Suite 'ListeningFlowUITests' started at 2026-10-30 11:32:13.142.
+Test Case '-[TongxingUITests.ListeningFlowUITests testAccessibilityTextDockKeepsPlaybackControlsAvailable]' started.
+    t =     0.00s Start Test at 2026-10-30 11:32:13.143
+    t =     0.23s Set Up
+    t =     0.23s Open com.jonathanjing.tongxing.dev
+    t =     0.23s     Launch com.jonathanjing.tongxing.dev
+2026-10-30 11:32:13.502 xcodebuild[35918:6910333] [MT] IDELaunchParametersSnapshot: debugger version lookup failed for path '<nil>': noURL
+2026-10-30 11:32:13.502 xcodebuild[35918:6910333] [MT] IDELaunchParametersSnapshot: no debugger version
+2026-10-30 11:32:13.578 xcodebuild[35918:6910333] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+    t =     0.78s         Setting up automation session
+    t =     1.76s         Wait for com.jonathanjing.tongxing.dev to idle
+    t =     3.37s Waiting 15.0s for "sermon-title" Any to exist
+    t =     4.41s     Checking `Expect predicate `existsNoRetry == 1` for object "sermon-title" Any`
+    t =     4.41s         Checking existence of `"sermon-title" Any`
+    t =     4.53s Find the "sermon-title" Any
+    t =     4.61s Find the "listening-scroll" ScrollView
+    t =     4.69s Find the Target Application 'com.jonathanjing.tongxing.dev'
+    t =     4.72s Find the NavigationBar (First Match)
+    t =     4.74s Find the "playback-toggle" Button
+    t =     4.79s Find the Target Application 'com.jonathanjing.tongxing.dev'
+    t =     4.83s Checking existence of `"download-audio" Button`
+    t =     4.88s Find the "download-audio" Button
+    t =     4.94s Find the Target Application 'com.jonathanjing.tongxing.dev'
+    t =     5.00s Find the Target Application 'com.jonathanjing.tongxing.dev'
+    t =     5.03s Find the Target Application 'com.jonathanjing.tongxing.dev'
+    t =     5.07s Press Target Application 'com.jonathanjing.tongxing.dev'[0.00, 0.00] -> (201.0, 679.4) for 0.1 seconds, then drag to Target Application 'com.jonathanjing.tongxing.dev'[0.00, 0.00] -> (201.0, 231.5) with velocity of 250.00 pixels per second, and then hold for 0.1 seconds
+    t =     5.07s     Wait for com.jonathanjing.tongxing.dev to idle
+    t =     5.08s     Find the Target Application 'com.jonathanjing.tongxing.dev'
+    t =     5.12s     Check for interrupting elements affecting "同行" Application
+    t =     5.17s     Synthesize event
+    t =     5.17s         Find the Target Application 'com.jonathanjing.tongxing.dev'
+    t =     5.22s         Find the Target Application 'com.jonathanjing.tongxing.dev'
+    t =     5.26s         Find the Target Application 'com.jonathanjing.tongxing.dev'
+    t =     5.30s         Find the Target Application 'com.jonathanjing.tongxing.dev'
+    t =     5.34s         Find the Target Application 'com.jonathanjing.tongxing.dev'
+    t =     7.72s     Wait for com.jonathanjing.tongxing.dev to idle
+    t =     8.17s Find the "listening-scroll" ScrollView
+    t =     8.23s Find the Target Application 'com.jonathanjing.tongxing.dev'
+    t =     8.26s Find the NavigationBar (First Match)
+    t =     8.28s Find the "playback-toggle" Button
+    t =     8.33s Find the Target Application 'com.jonathanjing.tongxing.dev'
+    t =     8.37s Checking existence of `"download-audio" Button`
+    t =     8.43s Find the "download-audio" Button
+    t =     8.49s Find the Target Application 'com.jonathanjing.tongxing.dev'
+    t =     8.53s Find the Target Application 'com.jonathanjing.tongxing.dev'
+    t =     8.58s Find the Target Application 'com.jonathanjing.tongxing.dev'
+    t =     8.62s Press Target Application 'com.jonathanjing.tongxing.dev'[0.00, 0.00] -> (201.0, 679.4) for 0.1 seconds, then drag to Target Application 'com.jonathanjing.tongxing.dev'[0.00, 0.00] -> (201.0, 231.5) with velocity of 250.00 pixels per second, and then hold for 0.1 seconds
+    t =     8.62s     Wait for com.jonathanjing.tongxing.dev to idle
+    t =     8.78s     Find the Target Application 'com.jonathanjing.tongxing.dev'
+    t =     8.82s     Check for interrupting elements affecting "同行" Application
+    t =     8.87s     Synthesize event
+    t =     8.87s         Find the Target Application 'com.jonathanjing.tongxing.dev'
+    t =     8.91s         Find the Target Application 'com.jonathanjing.tongxing.dev'
+    t =     8.95s         Find the Target Application 'com.jonathanjing.tongxing.dev'
+    t =     8.99s         Find the Target Application 'com.jonathanjing.tongxing.dev'
+    t =     9.03s         Find the Target Application 'com.jonathanjing.tongxing.dev'
+    t =    11.32s     Wait for com.jonathanjing.tongxing.dev to idle
+    t =    11.99s Find the "listening-scroll" ScrollView
+    t =    12.04s Find the Target Application 'com.jonathanjing.tongxing.dev'
+    t =    12.08s Find the NavigationBar (First Match)
+    t =    12.10s Find the "playback-toggle" Button
+    t =    12.16s Find the Target Application 'com.jonathanjing.tongxing.dev'
+    t =    12.20s Checking existence of `"download-audio" Button`
+    t =    12.26s Find the "download-audio" Button
+    t =    12.32s Find the "download-audio" Button
+    t =    12.39s Tap "download-audio" Button
+    t =    12.39s     Wait for com.jonathanjing.tongxing.dev to idle
+    t =    12.40s     Find the "download-audio" Button
+    t =    12.45s     Check for interrupting elements affecting "download-audio" Button
+    t =    12.50s     Synthesize event
+    t =    12.80s     Wait for com.jonathanjing.tongxing.dev to idle
+    t =    13.85s Checking `Expect predicate `label CONTAINS "正在使用已下载音频"` for object "download-status" Any`
+    t =    13.85s     Find the "download-status" Any
+    t =    14.99s Checking `Expect predicate `enabled == 1 AND hittable == 1` for object "playback-toggle" Button`
+    t =    14.99s     Find the "playback-toggle" Button
+    t =    15.05s     Find the "playback-toggle" Button
+    t =    15.12s Checking existence of `"playback-dock-collapse-toggle" Button`
+    t =    15.17s Find the "playback-toggle" Button
+    t =    15.24s Find the "playback-toggle" Button
+    t =    15.30s Find the "playback-toggle" Button
+    t =    15.35s Find the Target Application 'com.jonathanjing.tongxing.dev'
+    t =    15.39s Find the "playback-toggle" Button
+    t =    15.45s Find the "nudge-backward" Button
+    t =    15.52s Find the "nudge-backward" Button
+    t =    15.58s Find the "nudge-backward" Button
+    t =    15.63s Find the Target Application 'com.jonathanjing.tongxing.dev'
+    t =    15.67s Find the "nudge-backward" Button
+    t =    15.76s Find the "nudge-forward" Button
+    t =    15.83s Find the "nudge-forward" Button
+    t =    15.89s Find the "nudge-forward" Button
+    t =    15.95s Find the Target Application 'com.jonathanjing.tongxing.dev'
+    t =    15.99s Find the "nudge-forward" Button
+    t =    16.05s Find the "playback-more" Button
+    t =    16.12s Find the "playback-more" Button
+    t =    16.18s Find the "playback-more" Button
+    t =    16.23s Find the Target Application 'com.jonathanjing.tongxing.dev'
+    t =    16.27s Find the "playback-more" Button
+    t =    16.33s Checking existence of `"playback-more" Button`
+    t =    16.38s Checking existence of `"playback-more-panel" Any`
+    t =    16.53s Tap "playback-more" Button
+    t =    16.53s     Wait for com.jonathanjing.tongxing.dev to idle
+    t =    16.53s     Find the "playback-more" Button
+    t =    16.58s     Check for interrupting elements affecting "playback-more" Button
+    t =    16.63s     Synthesize event
+    t =    16.93s     Wait for com.jonathanjing.tongxing.dev to idle
+    t =    18.49s Checking `Expect predicate `exists == 1 AND hittable == 1` for object "align-live-audio" Button`
+    t =    18.49s     Checking existence of `"align-live-audio" Button`
+    t =    18.59s     Find the "align-live-audio" Button
+    t =    18.69s Get number of matches for: Elements matching predicate '"align-live-audio" IN identifiers'
+    t =    18.76s Find the Target Application 'com.jonathanjing.tongxing.dev'
+    t =    18.82s Find the "align-live-audio" Button
+    t =    18.89s Checking existence of `"playback-more-panel" Any`
+    t =    18.94s Checking existence of `"PopoverDismissRegion" Other`
+    t =    18.96s Tap "PopoverDismissRegion" Other
+    t =    18.96s     Wait for com.jonathanjing.tongxing.dev to idle
+    t =    18.96s     Find the "PopoverDismissRegion" Other
+    t =    18.97s     Check for interrupting elements affecting "PopoverDismissRegion" Other
+    t =    19.03s     Synthesize event
+    t =    19.33s     Wait for com.jonathanjing.tongxing.dev to idle
+    t =    20.79s Checking `Expect predicate `exists == 0` for object "playback-more-panel" Any`
+    t =    20.79s     Checking existence of `"playback-more-panel" Any`
+    t =    21.07s Added attachment named 'duo-large-text-more'
+    t =    23.08s Tear Down
+    t =    23.21s     Added attachment named 'final-ui-state'
+    t =    23.21s     Requesting snapshot of accessibility hierarchy for app with pid 36667
+    t =    23.40s     Requesting snapshot of accessibility hierarchy for app with pid 36667
+    t =    23.47s     Added attachment named 'final-accessibility-hierarchy'
+    t =    23.47s     Terminate com.jonathanjing.tongxing.dev:36667
+2026-10-30 11:32:36.638 xcodebuild[35918:6910333] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+2026-10-30 11:32:36.638 xcodebuild[35918:6910333] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+Test Case '-[TongxingUITests.ListeningFlowUITests testAccessibilityTextDockKeepsPlaybackControlsAvailable]' passed (29.813 seconds).
+Test Case '-[TongxingUITests.ListeningFlowUITests testReviewedStudyProductsAreNotDisplayed]' started.
+    t =     0.00s Start Test at 2026-10-30 11:32:42.956
+    t =     0.03s Set Up
+    t =     0.03s Open com.jonathanjing.tongxing.dev
+    t =     0.03s     Launch com.jonathanjing.tongxing.dev
+2026-10-30 11:32:42.987 xcodebuild[35918:6910333] [MT] IDELaunchParametersSnapshot: debugger version lookup failed for path '<nil>': noURL
+2026-10-30 11:32:42.987 xcodebuild[35918:6910333] [MT] IDELaunchParametersSnapshot: no debugger version
+2026-10-30 11:32:42.995 xcodebuild[35918:6910333] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+    t =     0.24s         Setting up automation session
+    t =     1.16s         Wait for com.jonathanjing.tongxing.dev to idle
+    t =     2.81s Waiting 15.0s for "choose-content-language" Button to exist
+    t =     3.84s     Checking `Expect predicate `existsNoRetry == 1` for object "choose-content-language" Button`
+    t =     3.84s         Checking existence of `"choose-content-language" Button`
+    t =     3.95s Tap "choose-content-language" Button
+    t =     3.95s     Wait for com.jonathanjing.tongxing.dev to idle
+    t =     3.96s     Find the "choose-content-language" Button
+    t =     4.00s     Check for interrupting elements affecting "choose-content-language" Button
+    t =     4.05s     Synthesize event
+    t =     4.35s     Wait for com.jonathanjing.tongxing.dev to idle
+    t =     4.43s Waiting 5.0s for "content-language-ko" Button to exist
+    t =     5.45s     Checking `Expect predicate `existsNoRetry == 1` for object "content-language-ko" Button`
+    t =     5.45s         Checking existence of `"content-language-ko" Button`
+    t =     5.55s Tap "content-language-ko" Button
+    t =     5.55s     Wait for com.jonathanjing.tongxing.dev to idle
+    t =     5.56s     Find the "content-language-ko" Button
+    t =     5.62s     Check for interrupting elements affecting "content-language-ko" Button
+    t =     5.69s     Synthesize event
+    t =     5.98s     Wait for com.jonathanjing.tongxing.dev to idle
+    t =     6.39s Waiting 10.0s for "published-page-title" StaticText to exist
+    t =     7.42s     Checking `Expect predicate `existsNoRetry == 1` for object "published-page-title" StaticText`
+    t =     7.43s         Checking existence of `"published-page-title" StaticText`
+    t =     7.49s Waiting 15.0s for "published-current-subtitle" StaticText to exist
+    t =     8.52s     Checking `Expect predicate `existsNoRetry == 1` for object "published-current-subtitle" StaticText`
+    t =     8.53s         Checking existence of `"published-current-subtitle" StaticText`
+    t =     8.58s Find the "published-current-subtitle" StaticText
+    t =     8.62s Checking existence of `"open-sermon-study" Button`
+    t =     8.67s Checking existence of `"published-study-outline-body-0" StaticText`
+    t =     8.71s Checking existence of `"published-study-meditation-body-0" StaticText`
+    t =     8.76s Terminate com.jonathanjing.tongxing.dev:37069
+2026-10-30 11:32:51.727 xcodebuild[35918:6910333] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+2026-10-30 11:32:51.728 xcodebuild[35918:6910333] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+    t =     9.79s Tear Down
+Test Case '-[TongxingUITests.ListeningFlowUITests testReviewedStudyProductsAreNotDisplayed]' passed (12.078 seconds).
+Test Suite 'ListeningFlowUITests' passed at 2026-10-30 11:32:55.034.
+	 Executed 2 tests, with 0 failures (0 unexpected) in 41.891 (41.892) seconds
+Test Suite 'TongxingUITests.xctest' passed at 2026-10-30 11:32:55.034.
+	 Executed 2 tests, with 0 failures (0 unexpected) in 41.891 (41.893) seconds
+Test Suite 'Selected tests' passed at 2026-10-30 11:32:55.035.
+	 Executed 2 tests, with 0 failures (0 unexpected) in 41.891 (41.893) seconds
+2026-10-30 11:32:55.069 xcodebuild[35918:6910333] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+2026-10-30 11:32:55.069 xcodebuild[35918:6910333] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+2026-10-30 11:32:55.330 xcodebuild[35918:6910333] [MT] IDETestOperationsObserverDebug: 96.139 elapsed -- Testing started completed.
+2026-10-30 11:32:55.331 xcodebuild[35918:6910333] [MT] IDETestOperationsObserverDebug: 0.000 sec, +0.000 sec -- start
+2026-10-30 11:32:55.331 xcodebuild[35918:6910333] [MT] IDETestOperationsObserverDebug: 96.139 sec, +96.139 sec -- end
+
+Test session results, code coverage, and logs:
+	~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.claude/worktrees/ios-beta-1.26.33/artifacts/tongxing-ios/2026-10-30/cli/20261030T113109-test-f2e1d2c0/test.xcresult
+
+** TEST SUCCEEDED **
+
+Testing started
+
+Exit status: 0
