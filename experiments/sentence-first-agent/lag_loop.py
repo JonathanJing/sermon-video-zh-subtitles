@@ -104,6 +104,7 @@ def main() -> int:
                for row in slices}
     client = C.DeepSeek(run_dir / "lag-trim-cache", execute=args.execute, label="trim",
                         state_dir=run_dir)
+    client.windows_done, client.units_done = C.recorded_progress(run_dir, "trim")
     report = []
     for number in range(1, args.iterations + 1):
         schedule = json.loads((run_dir / "schedule.json").read_text())
@@ -147,6 +148,7 @@ def main() -> int:
              "--batch-size", "8"])
         run([sys.executable, str(HERE / "finish_run.py"), "--run", str(run_dir),
              "--remote", args.remote, "--gap", "0.05", "--no-video"])
+    client.finish("finished")
     final = json.loads((run_dir / "schedule.json").read_text())["summary"]
     report.append({"final": True, "maxLag": final["maxLagSeconds"],
                    "over": final["sentencesOverLag8s"]})

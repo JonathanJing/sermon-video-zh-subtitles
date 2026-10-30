@@ -264,6 +264,26 @@ class DeepSeek:
         self.state_path = self.state_dir / f"state-{label}.json"
         self._lock = threading.Lock()
         self._state_lock = threading.Lock()
+        # Resume counters from the event stream so a re-run's live state stays equal to
+        # rebuild_state (calls/hits/tokens/cost are lifetime, not per-process).
+        events = self.state_dir / "events.jsonl"
+        if events.is_file():
+            for raw in events.read_text(encoding="utf-8").splitlines():
+                if not raw.strip():
+                    continue
+                row = json.loads(raw)
+                if row.get("label") != label:
+                    continue
+                if row.get("status") == "ok":
+                    self.calls += 1
+                    self.input_tokens += int(row.get("promptTokens") or 0)
+                    self.output_tokens += int(row.get("completionTokens") or 0)
+                elif row.get("status") == "hit":
+                    self.hits += 1
+                elif row.get("status") == "error":
+                    self.failed += 1
+            self.cost = (0.3 * self.input_tokens + 1.2 * self.output_tokens) / 1_000_000
+        self.windows_done, self.units_done = recorded_progress(self.state_dir, label)
 
     def _event(self, event: dict) -> None:
         event = {"ts": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z",
