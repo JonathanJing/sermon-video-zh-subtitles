@@ -128,8 +128,8 @@ targets:
           TONGXING_GUIDE_CHECKSUM_INPUT: "$(SRCROOT)/GuideResources/weekly-guides.sha256"
           TONGXING_GUIDE_STATUE_INPUT: "$(SRCROOT)/GuideResources/weekly-guide-statue.jpg"
           TONGXING_GUIDE_SON_INPUT: "$(SRCROOT)/GuideResources/weekly-guide-son-of-man.jpg"
-          MARKETING_VERSION: "1.26.32"
-          CURRENT_PROJECT_VERSION: "76"
+          MARKETING_VERSION: "1.26.33"
+          CURRENT_PROJECT_VERSION: "78"
           TONGXING_CONTENT_ORIGIN: "https://ai-for-god-sermon-audio.web.app"
         BetaDebug:
           CODE_SIGN_ENTITLEMENTS: Config/BetaPush.entitlements
@@ -190,8 +190,8 @@ targets:
         SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD: NO
       configs:
         Release:
-          MARKETING_VERSION: "1.26.32"
-          CURRENT_PROJECT_VERSION: "76"
+          MARKETING_VERSION: "1.26.33"
+          CURRENT_PROJECT_VERSION: "78"
         BetaDebug:
           PRODUCT_BUNDLE_IDENTIFIER: com.jonathanjing.tongxing.beta.listening-activity
           TONGXING_ACTIVITY_DISPLAY_NAME: 同行-beta播放状态
