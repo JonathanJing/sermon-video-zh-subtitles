@@ -889,7 +889,7 @@ final class ListeningFlowUITests: XCTestCase {
         XCTAssertTrue(failure.waitForExistence(timeout: 5))
         failure.buttons["按英文找位置"].tap()
         XCTAssertTrue(element("english-locate-sheet", in: app).waitForExistence(timeout: 5))
-        XCTAssertTrue(app.textFields["english-locate-search"].exists)
+        XCTAssertTrue(app.searchFields.firstMatch.exists)
         screenshot("alignment-failure-english-fallback", app: app)
     }
 
@@ -903,7 +903,7 @@ final class ListeningFlowUITests: XCTestCase {
         XCTAssertTrue(fallback.waitForExistence(timeout: 5))
         fallback.tap()
         XCTAssertTrue(element("english-locate-sheet", in: app).waitForExistence(timeout: 5))
-        XCTAssertTrue(app.textFields["english-locate-search"].exists)
+        XCTAssertTrue(app.searchFields.firstMatch.exists)
         screenshot("alignment-unavailable-english-locate-fallback", app: app)
     }
 
@@ -922,7 +922,7 @@ final class ListeningFlowUITests: XCTestCase {
         }
         let sheet = element("english-locate-sheet", in: app)
         XCTAssertTrue(sheet.waitForExistence(timeout: 5))
-        let search = app.textFields["english-locate-search"]
+        let search = app.searchFields.firstMatch
         try waitFor(search, "exists == true AND hittable == true")
         search.tap()
         search.typeText("lighthouse\n")
