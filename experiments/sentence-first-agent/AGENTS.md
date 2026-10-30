@@ -117,7 +117,7 @@ TTS 墙钟 = audio / 速度 + 约 1 分钟模型加载
 可审 = TTS 开始 + TTS 墙钟 + 约 1 分钟加载 + 4–6 分钟（ASR 对齐、合并、review MP3/播放器、拉回）
 下一条语言 TTS 开始 = 上一条可审（队列串行）
 速度：batch 8 取 2.5×（2026-10-23 实测整体 2.68×、batch 段 3.87×）；batch 1 取 1.35×
-TTS 开始 = max(讲员映射确认, 翻译 + 口播规格)
+TTS 开始（首语）= max(讲员映射确认, 首语翻译 + 口播规格)；其余语言翻完补登记（见 0.2）
 内存：不为中途内存中止留重跑时间；TTS 每批后释放 CUDA 缓存，整期曲线应持平
       （正式 8×8 两篇 402 句实测 66.9→66.7 GiB；本线首次整期后用 tts-log.jsonl 核对）
 ```
@@ -145,6 +145,49 @@ TTS 开始 = max(讲员映射确认, 翻译 + 口播规格)
 - 开工发计划；英文表、映射、每条轨、页面各自发“可审”（链接 + 整轨长度 + 先听哪几句）。
 - 延误主动更新预计；一条轨发出去后下一条语言继续配，不要求用户空等。
 - 发轨和收到结论时用 `tools/development/run_journal.py append --run-dir $RUN --stage l3.review.<locale> --event waiting --waiting-on "user track review"`，收到结论再 `--event resumed`；导出器会把它算成等待，而不是计算。
+
+### 0.2 并行分工（子代理与排程）
+
+关键路径是 GPU 队列和人工听审，两者都压不短；子代理只能压缩两侧的本机准备与核验。按 2026-10-23 校准估算，可并行带约省 10–20 分钟/期，串行的 TTS 与三语听审不变。首次按本节跑完用 `timings.tsv` 核对，再改这里的估算。
+
+**可以派子代理的**
+
+| 任务 | 时机 | 子代理只碰 | 主代理做 |
+|---|---|---|---|
+| 翻译分片 | 第 4 步，英文表批准后 | 一份 `translate/input-<k>.jsonl` → 对应 `output-<k>.jsonl` | `split`、`merge`、写 `translations.jsonl` |
+| 独立保真审计 | 每语 `merge` 后 | 只读 `translations.jsonl`，返回 `revisions` | 写进 `review.json` |
+| 每语收尾 | 队列打印 `locale done` | 该语 run 目录的 `finish_run.py`、审核表、播放器 | 发「可审」、补 journal 的 waiting |
+| 发布前只读审计 | 第 10 步 `assets` 前 | 只读五项：英文对照逐单元覆盖、审核收据、固定路径与文稿时间、release 七资产与 `fourProducts`、`catalog.json` 与 sidecar 绑定 | 按报告修完再部署 |
+| 学习内容草稿 | 第 10.5 步，译文定稿后 | 一语草稿与 `sourceUnitIds` | 交用户批准；`humanApproval` 只由用户给 |
+| 仓库卫生 | 第 11 步 | `git diff --check`、链接与命令检查、报告叙述 | 跑导出器、开分支、提交 |
+
+三语同时翻时 12 份一起发。一分钟级的本机脚本（`preflight.py`、`consistency_check.py`）不派：启动加读上下文比它本身还慢。
+
+**不能并行的**
+
+- **Spark 上的任何事**：会话一次只接一个运行中的任务，8 副本已把 GPU 用满（96%）；`repair_sentence.py` 也要排进队列空档，不能和队列里正在跑的 TTS 同时来。两条队列或两个会话不会更快，只会互相拖慢。
+- **部署**：第 10 步的 `baseline`／`stage*`／`publish` 顺序固定，每次 publish 要用户在对话里授权；同一页面还有别的代理时按[边界](#边界)第 5 条先登记。
+- **单写者文件**：`run.md`、`review.json`、`translations.jsonl`、`speech.jsonl`、审核收据、`journal.ndjson`／`outcome.json`／`timings.tsv` 只由主代理写。子代理返回文本或 JSON，由主代理落盘；两边各写一次就是后写覆盖先写，收据与哈希绑定会断。
+- **`sentences.jsonl` 的句界**：三语共用的输入，改一次三语全失效，只在一个地方改。
+- **人审与授权**：子代理的审计是机器复核，不是人审；`human_reviewed`、`humanApproval` 和每次部署授权都只来自用户。
+
+**派发纪律**：每个子代理的提示自带 run 目录绝对路径、语言、输入与输出文件、本期术语表条目、输出格式，并写明「除了这个文件不要写别的」。开工前把它的任务与预计时段登记进 `run.md`——[边界](#边界)第 5 条把并发代理算在内，子代理同样适用；发布前再核一次。
+
+**增量喂队列（第 6 步）**：GPU 在翻译期间是空的，不必等三语都翻完才开队列。首语口播稿一通过第 5 步就先单独登记一批，其余语言翻完再登记第二批。`--locale` 可重复且只排给定的语言，`spark_run.sh` 可续跑、已完成的句子会跳过，所以分两次登记不会重配已完成的句子。
+
+```bash
+# 首语就绪就开；这一次退出后再登记下一批
+python3 $EXP/spark_queue.py --session <session> --owner sentence-first-agent \
+  --remote-tools /home/achillesjing/sentence-first-agent/tools \
+  --locale zh-Hans=<Spark 上的 zh run> --voice <speaker key>=<checkpoint> --batch-size 8
+# 第二批只列还没排的语言
+python3 $EXP/spark_queue.py --session <session> --owner sentence-first-agent \
+  --remote-tools /home/achillesjing/sentence-first-agent/tools \
+  --locale ko=<Spark 上的 ko run> --locale es=<Spark 上的 es run> \
+  --voice <speaker key>=<checkpoint> --batch-size 8
+```
+
+两次登记一前一后、同一会话，**不能重叠**：先用 `spark_exclusive_session.py status` 确认第一批已退出、没有运行中的任务，再登记第二批。不要重复列已配完的语言，那会白起一次容器和模型加载。省下的是「首语不等其余语言」那段，等于其余语言翻译完成比首语晚的时间（2026-10-23 校准里约 5–10 分钟）；实际值记进 `run.md`。
 
 ### 1 开自己的 Spark 独占会话
 
@@ -233,7 +276,7 @@ scp $RUN/speech.jsonl SPARK:sentence-first-agent/<run>/
 python3 $EXP/spark_queue.py --session <session> --owner sentence-first-agent --remote-tools /home/achillesjing/sentence-first-agent/tools --locale zh-Hans=<Spark 上的 zh run> --locale ko=<Spark 上的 ko run> --voice <speaker key>=<checkpoint> [--voice <第二位讲员>=<checkpoint>] --batch-size 8
 ```
 
-每种语言每位讲员一个 TTS 任务，然后一个回转写任务。整期合成用 batch 8（2026-10-23 实测 es 整体 2.68×、batch 段 3.87×），不拉伸、不变速；batch>1 的批次成员共享声音身份，改一句按第 9 步重配它的窗口。改批量要先问用户。双讲员要共用 8 副本时，队列加 `--pool-replicas 8`（`tts_pool.py`，4+4，每副本 batch 8）；正式 8×8 仍只支持单讲员，逐句线用这个池。中途失败时队列停下并打印怎么续跑；已完成的句子和回转写行会跳过，重跑队列只补缺的。登记的容器不带 `--rm`，会话结束后再删。
+首语口播稿就绪就可以只登记这一语，其余语言翻完再补登记，不必等三语齐（命令与检查见 0.2 的「增量喂队列」；下面示例是一次登记三语）。每种语言每位讲员一个 TTS 任务，然后一个回转写任务。整期合成用 batch 8（2026-10-23 实测 es 整体 2.68×、batch 段 3.87×），不拉伸、不变速；batch>1 的批次成员共享声音身份，改一句按第 9 步重配它的窗口。改批量要先问用户。双讲员要共用 8 副本时，队列加 `--pool-replicas 8`（`tts_pool.py`，4+4，每副本 batch 8）；正式 8×8 仍只支持单讲员，逐句线用这个池。中途失败时队列停下并打印怎么续跑；已完成的句子和回转写行会跳过，重跑队列只补缺的。登记的容器不带 `--rm`，会话结束后再删。
 
 **GPU 与内存怎么用（2026-10-23 实测，详见 `data/benchmarks/spark-tts-memory-ab/2026-10-23` 与 `data/benchmarks/l3-lanes/2026-10-23`）**
 
