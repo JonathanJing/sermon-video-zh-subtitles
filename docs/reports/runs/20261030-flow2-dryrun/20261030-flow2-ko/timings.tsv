@@ -1,0 +1,4 @@
+stage	computeSeconds	waitingSeconds	reworkSeconds
+l3.finish	8.0	0.0	5.0
+l3.lag-loop.ko	0.0	0.0	0.0
+total	8.0	0.0	5.0
