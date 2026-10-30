@@ -5,6 +5,11 @@ No production imports: this line deliberately stays inside
 """
 from __future__ import annotations
 
+import os
+import threading
+import time
+from datetime import datetime, timezone
+
 import hashlib
 import json
 import os
@@ -226,7 +231,8 @@ class DeepSeek:
     """Cached DeepSeek JSON calls with a cost ledger; no production dependency."""
 
     def __init__(self, cache_dir: Path, model: str = "deepseek-flash", effort: str = "low",
-                 execute: bool = False, timeout: int = 300):
+                 execute: bool = False, timeout: int = 300, label: str = "deepseek",
+                 state_dir: Path | None = None, total: int = 0):
         self.cache_dir = cache_dir
         self.cache_dir.mkdir(parents=True, exist_ok=True)
         self.model = model
@@ -240,8 +246,44 @@ class DeepSeek:
         self.input_tokens = 0
         self.output_tokens = 0
         self.max_chars = 0
+        # Observability (2026-10-30): one append-only event per call plus a live state file,
+        # so a long window/audit/trim pass can be watched instead of guessed.
+        self.label = label
+        self.total = total
+        self.done = 0
+        self.failed = 0
+        self.started = time.time()
+        self.state_dir = Path(state_dir) if state_dir else cache_dir.parent
+        self.state_dir.mkdir(parents=True, exist_ok=True)
+        self.events_path = self.state_dir / "events.jsonl"
+        self.state_path = self.state_dir / "state.json"
+        self._lock = threading.Lock()
 
-    def __call__(self, system: str, user: dict) -> dict:
+    def _event(self, event: dict) -> None:
+        event = {"ts": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z",
+                 "label": self.label, "model": self.model, "effort": self.effort, **event}
+        with self._lock:
+            with self.events_path.open("a", encoding="utf-8") as out:
+                out.write(json.dumps(event, ensure_ascii=False) + "\n")
+
+    def _state(self, status: str | None = None, error: str = "") -> None:
+        if status is None:
+            status = "finished" if self.total and self.done >= self.total and not self.failed else "running"
+        elapsed = time.time() - self.started
+        state = {"label": self.label, "model": self.model, "effort": self.effort,
+                 "status": status, "startedAt": datetime.fromtimestamp(self.started, timezone.utc).isoformat(),
+                 "updatedAt": datetime.now(timezone.utc).isoformat(),
+                 "done": self.done, "total": self.total, "calls": self.calls, "hits": self.hits,
+                 "failed": self.failed, "costUsd": round(self.cost, 4),
+                 "inputTokens": self.input_tokens, "outputTokens": self.output_tokens,
+                 "elapsedSeconds": round(elapsed, 1),
+                 "avgSeconds": round(elapsed / self.done, 2) if self.done else None,
+                 "lastError": error}
+        tmp = self.state_path.with_suffix(".tmp")
+        tmp.write_text(json.dumps(state, ensure_ascii=False, indent=1), encoding="utf-8")
+        os.replace(tmp, self.state_path)
+
+    def __call__(self, system: str, user: dict, context: str = "") -> dict:
         payload_user = json.dumps(user, ensure_ascii=False)
         self.max_chars = max(self.max_chars, len(system) + len(payload_user))
         if len(system) + len(payload_user) > 14000:
@@ -250,7 +292,12 @@ class DeepSeek:
             ["deepseek", self.model, self.effort, system, payload_user]).encode()).hexdigest()
         path = self.cache_dir / f"{key}.json"
         if path.is_file():
+            started = time.time()
             self.hits += 1
+            self.done += 1
+            self._event({"status": "hit", "context": context, "chars": len(system) + len(payload_user),
+                         "latencyMs": round((time.time() - started) * 1000, 1)})
+            self._state()
             return json.loads(path.read_text())["result"]
         if not self.execute:
             raise SystemExit("DeepSeek call required but --execute was not passed")
@@ -261,6 +308,7 @@ class DeepSeek:
                 "messages": [{"role": "system", "content": system},
                              {"role": "user", "content": payload_user}]}
         error = None
+        started = time.time()
         for attempt in range(3):
             request = urllib.request.Request(
                 "https://api.deepseek.com/chat/completions",
@@ -291,12 +339,22 @@ class DeepSeek:
                 continue
             usage = value.get("usage") or {}
             self.calls += 1
+            self.done += 1
             self.input_tokens += int(usage.get("prompt_tokens") or 0)
             self.output_tokens += int(usage.get("completion_tokens") or 0)
             self.cost += (0.3 * int(usage.get("prompt_tokens") or 0)
                           + 1.2 * int(usage.get("completion_tokens") or 0)) / 1_000_000
             path.write_text(json.dumps({"result": result, "usage": usage}, ensure_ascii=False))
+            self._event({"status": "ok", "context": context, "attempt": attempt + 1,
+                         "chars": len(system) + len(payload_user),
+                         "promptTokens": usage.get("prompt_tokens"),
+                         "completionTokens": usage.get("completion_tokens"),
+                         "latencyMs": round((time.time() - started) * 1000, 1)})
+            self._state()
             return result
+        self.failed += 1
+        self._event({"status": "error", "context": context, "error": str(error)[-300:]})
+        self._state(status="failed", error=str(error)[-300:])
         raise RuntimeError(f"DeepSeek call failed: {error}")
 
     def ledger(self) -> dict:
@@ -323,7 +381,7 @@ class ClaudeCLI:
         self.output_tokens = 0
         self.max_chars = 0
 
-    def __call__(self, system: str, user: dict) -> dict:
+    def __call__(self, system: str, user: dict, context: str = "") -> dict:
         payload_user = json.dumps(user, ensure_ascii=False)
         self.max_chars = max(self.max_chars, len(system) + len(payload_user))
         if len(system) + len(payload_user) > 14000:
@@ -331,7 +389,12 @@ class ClaudeCLI:
         key = hashlib.sha256(json.dumps(["claude", self.model, system, payload_user]).encode()).hexdigest()
         path = self.cache_dir / f"{key}.json"
         if path.is_file():
+            started = time.time()
             self.hits += 1
+            self.done += 1
+            self._event({"status": "hit", "context": context, "chars": len(system) + len(payload_user),
+                         "latencyMs": round((time.time() - started) * 1000, 1)})
+            self._state()
             return json.loads(path.read_text())["result"]
         if not self.execute:
             raise SystemExit("Claude call required but --execute was not passed")

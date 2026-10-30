@@ -27,6 +27,7 @@
 | `assign_speakers.py` | 本机 | 双人：按说话人区分结果给每句定讲员 |
 | `translate_parts.py` | 本机 | 把句表拆成几份交给并行翻译子代理（`split`），再按句序合并、检查（`merge`） |
 | `deepseek_translate.py`、`coherence_core.py` | 本机 | DeepSeek 逐窗口连贯翻译（zh-Hans/ko/es），产物写 `coherence-<tag>/`，只读 run 的 sentences/slices |
+| `deepseek_status.py` | 本机 | 读 `state.json`/`events.jsonl`，显示 DeepSeek 阶段的进度、调用数、失败与逐次延迟（`--watch` 刷新） |
 | `audit_deepseek.py`、`coherence_check.py`、`spoken_forms.py` | 本机 | 独立审计与 issue-bound 门（`--locale` 三语）、连贯性检查、数字读法与 TTS 专用读法（`spoken_forms.py --run --locale`） |
 | `lag_loop.py` | 本机 + Spark | 落后回环：读 `schedule.json` → DeepSeek 精简超时句 → 重建 speech → 清 tts → 重排该语 → `finish_run`，最多 `--iterations` 轮 |
 | `build_speech.py` | 本机 | 套用复核修订和口播读法，写 speech.jsonl |
@@ -280,6 +281,8 @@ python3 $EXP/translate_parts.py merge --run $RUN --locale <locale>
 **独立审计（三语）**：`audit_deepseek.py --source-run $RUN --arm-dir $RUN/coherence-<tag> --out $RUN --locale <locale> --execute`，DeepSeek high 按 25 句窗口复核，写回 `review.json` 的 `revisions`；被拒的改动留 `rejectedRevisions`。2026-10-30 实测 zh 24 条修订 $0.14、ko 28 条 $0.22、es 37 条 $0.17。
 
 **DeepSeek 连贯翻译（实验路线，2026-10-30 起支持三语）**：`deepseek_translate.py --source-run <首个 run> --out <run>/coherence-<tag> --locale {zh-Hans,ko,es} --chains 4 --window 12 --prior 8 --execute`，用 `tools/ops/run_with_openai_environment.py` 注入 key（不手写环境变量）。产物 `coherence-<tag>/translations.jsonl` 由主代理 `cp` 成 run 的 `translations.jsonl` 再进第 5 步；脚本只读 run 的 sentences/slices，不改主文件。2026-10-30 实测 418 句：zh $0.16／219 s，ko $0.39／443 s，es $0.32／371 s。ko/es 提示词是本日新写的，尚未经人工审校；独立审计仍要另跑（`audit_deepseek.py`）。
+
+**看 DeepSeek 跑到哪了**：每次调用在 `state_dir`（翻译是 `coherence-<tag>/`，审计是 `--out`，回环是 run 根）写一行 `events.jsonl`，并原子更新 `state.json`（label、done/total、calls/hits/failed、costUsd、avgSeconds、lastError）。`python3 $EXP/deepseek_status.py --run <dir>` 直接读，`--watch 2` 刷屏看；`--tail 8` 显示最近调用的 context（`chain-02:window-0012`）、延迟与 token。缓存命中记 `hit`，失败记 `error` 并留最后 300 字符。这些文件在 `artifacts/` 时被忽略，不进 Git。
 
 ### 5 口播规格（本机）
 

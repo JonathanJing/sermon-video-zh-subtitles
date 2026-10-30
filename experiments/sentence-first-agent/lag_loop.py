@@ -55,7 +55,7 @@ def trim(client: C.DeepSeek, locale: str, rows: list[dict], units: dict[str, dic
         user = {"locale": locale, "sentences": [
             {"id": row["id"], "english": units.get(row["id"], {}).get("english", ""),
              "target": row["target"], "maxChars": budgets.get(row["id"])} for row in window]}
-        result = client(system, user)
+        result = client(system, user, context=window[0]["id"])
         for item in result.get("sentences") or []:
             new = (item.get("target") or "").strip()
             original = next((row["target"] for row in window if row["id"] == item.get("id")), None)
@@ -94,7 +94,8 @@ def main() -> int:
     slices = json.loads((run_dir / "slices" / "slices.json").read_text())
     budgets = {row["id"]: max(1, int(float(row.get("budgetSeconds") or 0) * CPS[args.locale]))
                for row in slices}
-    client = C.DeepSeek(run_dir / "lag-trim-cache", execute=args.execute)
+    client = C.DeepSeek(run_dir / "lag-trim-cache", execute=args.execute, label="trim",
+                        state_dir=run_dir)
     report = []
     for number in range(1, args.iterations + 1):
         schedule = json.loads((run_dir / "schedule.json").read_text())

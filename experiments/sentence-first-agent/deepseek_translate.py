@@ -138,13 +138,13 @@ def translation_prompt(glossary, prior, continuation, units, context_after, budg
 def run_window(client, units, glossary, prior, flags, after, window_id, budgets, system, locale):
     user = translation_prompt(glossary, prior,
                               {unit["id"]: flags[unit["id"]] for unit in units}, units, after, budgets, locale)
-    result = client(system, user)
+    result = client(system, user, context=window_id)
     rows = result.get("sentences")
     failures = C.validate_sentences(rows, units, window_id, budgets, locale=locale)
     if failures:
         retry = dict(user)
         retry["previousFailures"] = failures
-        result = client(system, retry)
+        result = client(system, retry, context=window_id + ":retry")
         rows = result.get("sentences")
         failures = C.validate_sentences(rows, units, window_id, budgets, locale=locale)
     if failures:
@@ -225,7 +225,10 @@ def main() -> int:
     flags = C.continuation_flags(units)
     plan, boundaries = C.chain_plan(units, args.chains)
     args.out.mkdir(parents=True, exist_ok=True)
-    glossary_client = C.DeepSeek(args.out / "cache", execute=args.execute)
+    glossary_slices = len(C.glossary_slices(units))
+    window_count = sum(-(-len(chain) // args.window) for chain in plan)
+    glossary_client = C.DeepSeek(args.out / "cache", execute=args.execute, label="translate",
+                                 state_dir=args.out, total=glossary_slices + window_count)
     translator = (C.ClaudeCLI(args.out / "claude-cache", model=args.claude_model, execute=args.execute)
                   if args.translator == "claude" else glossary_client)
     started = time.time()

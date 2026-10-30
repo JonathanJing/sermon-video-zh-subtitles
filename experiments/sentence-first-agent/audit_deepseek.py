@@ -69,7 +69,7 @@ def audit_window(client: C.DeepSeek, rows: list[dict], units: list[dict], glossa
             "sentences": [{"id": row["id"], "sourceUnitId": unit["sourceUnitId"],
                            "english": unit["english"], "target": row["target"]}
                           for row, unit in zip(rows, units)]}
-    result = client(system, user)
+    result = client(system, user, context=str(number))
     issues = result.get("issues")
     return issues if isinstance(issues, list) else []
 
@@ -131,7 +131,8 @@ def main() -> int:
                    for row in json.loads(slices_path.read_text())}
     glossary = json.loads((args.arm_dir / "glossary.json").read_text())
     glossary.pop("entriesDropped", None)
-    client = C.DeepSeek(args.arm_dir / "audit-cache", effort="high", execute=args.execute)
+    client = C.DeepSeek(args.arm_dir / "audit-cache", effort="high", execute=args.execute,
+                        label="audit", state_dir=out, total=len(parts))
     parts = windows(translations, args.window)
     index_of = {row["id"]: number for number, row in enumerate(translations)}
     prior_for = {}
