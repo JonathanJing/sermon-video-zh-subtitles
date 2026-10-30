@@ -707,6 +707,15 @@
         "vi": { "stringUnit": { "state": "translated", "value": "Thêm" } }
       }
     },
+    "其他周次": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Other weeks" } },
+        "ko": { "stringUnit": { "state": "translated", "value": "다른 주" } },
+        "es": { "stringUnit": { "state": "translated", "value": "Otras semanas" } },
+        "vi": { "stringUnit": { "state": "translated", "value": "Các tuần khác" } }
+      }
+    },
     "已发布页面": {
       "extractionState": "manual",
       "localizations": {

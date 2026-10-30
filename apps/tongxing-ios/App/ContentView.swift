@@ -1419,59 +1419,66 @@ private struct WeekSheet: View {
     @Environment(\.dismiss) private var dismiss
     var body: some View {
         NavigationStack {
-            ScrollView {
-                LazyVStack(spacing: 0) {
-                    if !model.independentPages.isEmpty {
-                        Text(localization.text(model.allowsDevCandidates ? "Dev 内容" : "已发布页面"))
-                            .font(.footnote.weight(.semibold)).foregroundStyle(.secondary)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .padding(.horizontal, 20).padding(.top, 18)
+            // A plain picker list: no playback following, so the system List
+            // provides grouping, separators, selection marks and row sizing.
+            List {
+                if !model.independentPages.isEmpty {
+                    Section(localization.text(model.allowsDevCandidates ? "Dev 内容" : "已发布页面")) {
                         ForEach(model.independentPages.sorted { $0.date > $1.date }) { page in
                             Button {
                                 model.selectPublishedPage(page)
                                 dismiss()
                             } label: {
-                                HStack {
-                                    SermonHeadingView(heading: model.heading(for: page), date: page.date,
-                                                      titleFont: .headline, identifier: "picker-\(page.id)")
-                                    Spacer()
-                                    if page.id == model.selectedPageID { Image(systemName: "checkmark") }
-                                }
-                                .padding(20).frame(maxWidth: .infinity, minHeight: 72, alignment: .leading)
-                                .contentShape(Rectangle())
+                                pickerRow(heading: model.heading(for: page), date: page.date,
+                                          identifier: "picker-\(page.id)", selected: page.id == model.selectedPageID)
                             }
-                            .buttonStyle(.plain)
                             .accessibilityIdentifier("published-page-\(page.id)")
                             .task(id: model.publishedHeadingKey(page)) { await model.loadPublishedHeading(page) }
-                            Divider().padding(.horizontal, 20)
                         }
-                    }
-                    ForEach(model.weeks) { week in
-                        Button {
-                            dismiss()
-                            Task { await model.select(week: week) }
-                        } label: {
-                            HStack {
-                                SermonHeadingView(heading: model.heading(for: week),
-                                                  date: week.date, titleFont: .headline, identifier: "picker-\(week.id)")
-                                Spacer()
-                                if week.id == model.selectedWeek?.id { Image(systemName: "checkmark") }
-                            }
-                            .padding(20).frame(maxWidth: .infinity, minHeight: 72, alignment: .leading)
-                            .contentShape(Rectangle())
-                        }
-                        .buttonStyle(.plain)
-                        .accessibilityIdentifier("legacy-week-\(week.id)")
-                        Divider().padding(.horizontal, 20)
                     }
                 }
-            }.navigationTitle(localization.text("选择证道"))
-                .toolbar { ToolbarItem(placement: .confirmationAction) { Button(localization.text("完成")) { dismiss() } } }
+                if !model.weeks.isEmpty {
+                    Section {
+                        ForEach(model.weeks) { week in
+                            Button {
+                                dismiss()
+                                Task { await model.select(week: week) }
+                            } label: {
+                                pickerRow(heading: model.heading(for: week), date: week.date,
+                                          identifier: "picker-\(week.id)", selected: week.id == model.selectedWeek?.id)
+                            }
+                            .accessibilityIdentifier("legacy-week-\(week.id)")
+                        }
+                    } header: {
+                        if !model.independentPages.isEmpty { Text(localization.text("其他周次")) }
+                    }
+                }
+            }
+            #if os(iOS)
+            .listStyle(.insetGrouped)
+            #endif
+            .navigationTitle(localization.text("选择证道"))
+            .toolbar { ToolbarItem(placement: .confirmationAction) { Button(localization.text("完成")) { dismiss() } } }
         }
         .environment(\.locale, localization.locale)
         #if os(macOS)
         .frame(minWidth: 400, minHeight: 480)
         #endif
+    }
+
+    private func pickerRow(heading: SermonHeading, date: String, identifier: String, selected: Bool) -> some View {
+        HStack {
+            SermonHeadingView(heading: heading, date: date, titleFont: .headline, identifier: identifier)
+                // A plain .primary style resolves against the row button's tint,
+                // which would tint the whole heading; this keeps text neutral.
+                .foregroundStyle(Color.primary)
+            Spacer()
+            if selected {
+                Image(systemName: "checkmark").fontWeight(.semibold).foregroundStyle(Brand.accent)
+            }
+        }
+        .frame(minHeight: 44)
+        .contentShape(Rectangle())
     }
 }
 
