@@ -160,8 +160,15 @@ def chinese_chars(text: str) -> int:
     return len(re.findall(r"[\u4e00-\u9fff]", text))
 
 
+LOCALE_CHAR_PATTERNS = {"zh-Hans": r"[\u4e00-\u9fff]", "ko": r"[가-힣]", "es": r"[a-záéíóúñü]"}
+
+
+def counted_chars(text: str, locale: str = "zh-Hans") -> int:
+    return len(re.findall(LOCALE_CHAR_PATTERNS.get(locale, LOCALE_CHAR_PATTERNS["zh-Hans"]), text))
+
+
 def validate_sentences(rows, expected: list[dict], origin: str,
-                       max_chars: dict[str, int] | None = None) -> list[str]:
+                       max_chars: dict[str, int] | None = None, locale: str = "zh-Hans") -> list[str]:
     """Return failure strings for one window/repair reply."""
     if not isinstance(rows, list) or len(rows) != len(expected):
         return [f"{origin}: expected {len(expected)} sentences, got {len(rows) if isinstance(rows, list) else type(rows).__name__}"]
@@ -174,10 +181,10 @@ def validate_sentences(rows, expected: list[dict], origin: str,
         if not isinstance(target, str) or not target.strip():
             failures.append(f"{unit['id']}: empty target")
             continue
-        if re.search(r"[A-Za-z]{4,}", target) and len(re.findall(r"[A-Za-z]", target)) > len(target) * 0.3:
+        if locale != "es" and re.search(r"[A-Za-z]{4,}", target) and len(re.findall(r"[A-Za-z]", target)) > len(target) * 0.3:
             failures.append(f"{unit['id']}: target still looks English")
-        if max_chars and chinese_chars(target) > max_chars.get(unit["id"], 10**9) * 2.5:
-            failures.append(f"{unit['id']}: {chinese_chars(target)} chars exceed budget {max_chars.get(unit['id'])}")
+        if max_chars and counted_chars(target, locale) > max_chars.get(unit["id"], 10**9) * 2.5:
+            failures.append(f"{unit['id']}: {counted_chars(target, locale)} chars exceed budget {max_chars.get(unit['id'])}")
         coverage = row.get("coverage")
         if not isinstance(coverage, list) or len(coverage) != 1:
             failures.append(f"{unit['id']}: coverage is not exactly one row")

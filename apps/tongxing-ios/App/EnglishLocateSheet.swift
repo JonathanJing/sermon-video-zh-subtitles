@@ -11,7 +11,6 @@ struct EnglishLocateSheet: View {
     @State private var query = ""
     @State private var locating = false
     @State private var seekFailed = false
-    @FocusState private var searchFocused: Bool
     let onLocated: () -> Void
 
     init(model: AppModel, onLocated: @escaping () -> Void) {
@@ -70,12 +69,6 @@ struct EnglishLocateSheet: View {
         let current = currentID
         NavigationStack {
             VStack(spacing: 0) {
-                TextField(localization.text("搜索刚听到的英文"), text: $query)
-                    .textFieldStyle(.roundedBorder).autocorrectionDisabled()
-                    .focused($searchFocused).submitLabel(.search)
-                    .onSubmit { searchFocused = false }
-                    .accessibilityIdentifier("english-locate-search")
-                    .padding(.horizontal, 20).padding(.top, 12)
                 ScrollViewReader { proxy in
                 ScrollView {
                     LazyVStack(alignment: .leading, spacing: 16) {
@@ -113,6 +106,12 @@ struct EnglishLocateSheet: View {
             }
             }
             .background(Brand.background)
+            // The system search bar stays pinned under the title with its own
+            // magnifier, clear and cancel controls; the result list keeps the
+            // ScrollViewReader so it can still jump to the current sentence.
+            .searchable(text: $query, placement: searchPlacement,
+                        prompt: localization.text("搜索刚听到的英文"))
+            .autocorrectionDisabled()
             .navigationTitle(localization.text("按英文找位置"))
             #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
@@ -127,6 +126,14 @@ struct EnglishLocateSheet: View {
         .onChange(of: model.transcriptRowsRevision, initial: true) { _, _ in rebuildRows() }
         .environment(\.locale, localization.locale)
         .accessibilityIdentifier("english-locate-sheet")
+    }
+
+    private var searchPlacement: SearchFieldPlacement {
+        #if os(iOS)
+        .navigationBarDrawer(displayMode: .always)
+        #else
+        .automatic
+        #endif
     }
 
     private func rowView(_ row: Row, currentID: String?) -> some View {

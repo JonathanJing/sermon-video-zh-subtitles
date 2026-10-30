@@ -41,3 +41,4 @@ Purpose: help attendees follow English sermons in their own language, on time an
 | iOS client | [iOS instructions](apps/tongxing-ios/AGENTS.md) |
 | Priorities, stable IDs and status | [Dev backlog](docs/backlog.zh.md), the only top-level backlog; find an ID's rows with `python3 tools/development/backlog_ids.py <ID or prefix>` |
 | Benchmark, model trial or post-training | README Discovery links and that experiment's contract |
+| Rework keeps recurring, or a fix caused a new failure | [Avoiding rework](docs/rework-avoidance.zh.md): rework vs change vs waiting, six causes with evidence, the pre-start check list |

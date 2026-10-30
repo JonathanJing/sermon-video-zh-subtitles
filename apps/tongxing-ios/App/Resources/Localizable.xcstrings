@@ -326,6 +326,35 @@
         }
       }
     },
+    "点按重新对齐": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tap to align again"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Toca para alinear de nuevo"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "탭하여 다시 정렬"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chạm để căn chỉnh lại"
+          }
+        }
+      }
+    },
     "点按收起按钮或向下轻扫收起播放栏": {
       "extractionState": "manual",
       "localizations": {
@@ -351,6 +380,35 @@
           "stringUnit": {
             "state": "translated",
             "value": "Chạm nút thu gọn hoặc vuốt xuống để thu gọn điều khiển phát"
+          }
+        }
+      }
+    },
+    "跟着现场自动对到当前句": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Auto-aligns to the live sentence"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Alinea con la frase en vivo"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "현장 문장으로 자동 정렬"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tự căn chỉnh theo câu trực tiếp"
           }
         }
       }
@@ -705,6 +763,15 @@
         "ko": { "stringUnit": { "state": "translated", "value": "더 보기" } },
         "es": { "stringUnit": { "state": "translated", "value": "Más" } },
         "vi": { "stringUnit": { "state": "translated", "value": "Thêm" } }
+      }
+    },
+    "其他周次": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Other weeks" } },
+        "ko": { "stringUnit": { "state": "translated", "value": "다른 주" } },
+        "es": { "stringUnit": { "state": "translated", "value": "Otras semanas" } },
+        "vi": { "stringUnit": { "state": "translated", "value": "Các tuần khác" } }
       }
     },
     "已发布页面": {
@@ -2742,6 +2809,35 @@
         }
       }
     },
+    "已对齐 {time}": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aligned {time}"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Alineado {time}"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "{time}에 정렬됨"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đã căn chỉnh {time}"
+          }
+        }
+      }
+    },
     "已对齐至 {time}。": {
       "extractionState": "manual",
       "localizations": {
@@ -4096,6 +4192,35 @@
           "stringUnit": {
             "state": "translated",
             "value": "Đang dùng âm thanh đã tải"
+          }
+        }
+      }
+    },
+    "正在聆听现场…": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Listening to the room…"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Escuchando el ambiente…"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "현장 소리를 듣는 중…"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đang nghe âm thanh trực tiếp…"
           }
         }
       }

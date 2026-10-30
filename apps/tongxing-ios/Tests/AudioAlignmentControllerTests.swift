@@ -160,13 +160,15 @@ final class AudioAlignmentControllerTests: XCTestCase {
         XCTAssertNil(AlignmentTarget.position(offset: .nan, startedAt: start, now: start, duration: 300))
     }
 
-    func testPausedMatchSeeksOnceWithoutAutoplayAndReleasesCapture() async throws {
+    func testPausedMatchSeeksAndStartsPlaybackOnceThenReleasesCapture() async throws {
         let f = try Fixture()
         f.controller.start()
         try await eventually { !f.controller.busy }
         XCTAssertEqual(f.player.seeks, [108])
-        XCTAssertEqual(f.player.resumes, 0)
-        XCTAssertFalse(f.player.isPlaying)
+        // A successful alignment now starts playback so the listener lands on
+        // the live sentence without tapping play.
+        XCTAssertEqual(f.player.resumes, 1)
+        XCTAssertTrue(f.player.isPlaying)
         XCTAssertGreaterThan(f.capture.stops, 0)
         XCTAssertEqual(f.status, "已对齐至 {time}。")
         XCTAssertEqual(f.resultPosition, 108)
@@ -508,10 +510,148 @@ final class AudioAlignmentControllerTests: XCTestCase {
         XCTAssertNotNil(model.selectedContentTarget?.audioFingerprint)
         XCTAssertNil(model.selectedAudioLocale)
         XCTAssertFalse(model.alignmentAvailable)
-        XCTAssertTrue([
-            "正在准备音频，请稍候再开始现场自动对齐。",
-            "音频尚未准备就绪，请稍候或重新载入音频。"
-        ].contains(model.alignmentDisplayStatus))
+        XCTAssertTrue(model.showsAlignmentStatus)
+        // The release is never served, so preparation is either still queued or has
+        // already failed; neither state may claim the declared index is missing.
+        XCTAssertTrue([AppModel.alignmentLoadingStatus, AppModel.audioNotReadyStatus]
+            .contains(model.alignmentDisplayStatus), model.alignmentDisplayStatus)
+        XCTAssertNotEqual(model.alignmentDisplayStatus, AppModel.alignmentUnavailableStatus)
+    }
+
+    /// Regression for the 定位 panel briefly reading "没有可用的听声对齐资料" on a page
+    /// that ships a fingerprint index: the idle status must not freeze a verdict
+    /// taken before the player reported the verified track ready.
+    func testPublishedAlignmentLoadsThenOffersIdlePromptOnceTrackIsBound() async throws {
+        let support = FileManager.default.temporaryDirectory.appendingPathComponent("TongxingPublishedAlignmentBound-\(UUID())")
+        let config = URLSessionConfiguration.ephemeral
+        config.protocolClasses = [MachineDisclosureProtocol.self]
+        let session = URLSession(configuration: config)
+        let suite = "TongxingPublishedAlignmentBound-\(UUID())"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        let model = AppModel(supportDirectory: support, contentOrigin: URL(string: "https://example.invalid")!,
+                             session: session, statisticsDefaults: defaults)
+        defer {
+            model.playback.clear(); session.invalidateAndCancel(); MachineDisclosureProtocol.install([:])
+            defaults.removePersistentDomain(forName: suite)
+            try? FileManager.default.removeItem(at: support)
+        }
+        func json(_ value: Any) throws -> Data { try JSONSerialization.data(withJSONObject: value, options: [.sortedKeys]) }
+        func hash(_ data: Data) -> String { SHA256.hash(data: data).map { String(format: "%02x", $0) }.joined() }
+        // One silent MPEG-2.5 Layer III frame (8 kHz mono, 8 kbps, 72 bytes) repeated
+        // 112 times: about eight seconds, the shortest track a fingerprint window may
+        // bind. Pre-cached under its hash so the test never transfers media.
+        let frame = try XCTUnwrap(Data(base64Encoded:
+            "/+MYxMQAAANIAAAAAFVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVMQU1FNC4wVVVVVVVVVVVVVVVV"))
+        XCTAssertEqual(frame.count, 72)
+        var audio = Data()
+        for _ in 0..<112 { audio.append(frame) }
+        let audioHash = hash(audio)
+        let audioDirectory = support.appendingPathComponent("MultilingualCatalog/Audio")
+        try FileManager.default.createDirectory(at: audioDirectory, withIntermediateDirectories: true)
+        try audio.write(to: audioDirectory.appendingPathComponent("\(audioHash).mp3"))
+        let pageID = "published-alignment-bound"
+        let candidateHash = String(repeating: "a", count: 64)
+        let mediaHash = String(repeating: "b", count: 64)
+        let indexHash = String(repeating: "d", count: 64)
+        let html = Data("<html><body><h1>\(pageID)</h1></body></html>".utf8)
+        let cues = try json(["cues": []])
+        let release = try json([
+            "schemaVersion": "sermon-target-language-release-package-v2",
+            "packageId": "\(pageID)-zh-Hans", "pageId": pageID, "sourceLocale": "en", "targetLocale": "zh-Hans",
+            "targetLanguageCandidateJsonSha256": candidateHash,
+            "spokenTargetLanguageCandidateJsonSha256": candidateHash,
+            "targetLanguageAudioPackageJsonSha256": candidateHash,
+            "status": "published_http_verified", "contentStatus": "human_reviewed", "audioStatus": "human_reviewed",
+            "interfaceLocale": "zh-Hans", "contentLocale": "zh-Hans", "audioLocale": "zh-Hans",
+            "assets": [
+                ["role": "page", "path": "/pages/\(pageID)/zh-Hans/index.html", "sha256": hash(html)],
+                ["role": "content", "path": "/content/\(pageID)/zh-Hans.json", "sha256": hash(cues)],
+                ["role": "captions", "path": "/captions/\(pageID)/zh-Hans.json", "sha256": hash(cues)],
+                ["role": "audio", "path": "/media/\(pageID)/zh-Hans.mp3", "sha256": audioHash]
+            ],
+            "httpVerification": ["status": "pass", "evidenceSha256": candidateHash],
+            "deviceAcceptance": ["status": "not_run", "evidenceSha256": NSNull()],
+            "venueAcceptance": ["status": "not_run", "evidenceSha256": NSNull()], "issues": []
+        ])
+        let releasePath = "/releases-v2/\(pageID)/zh-Hans.json"
+        func install(fingerprintWindow: Double?) throws {
+            var target: [String: Any] = [
+                "releasePackageUrl": releasePath, "releasePackageJsonSha256": hash(release),
+                "contentStatus": "human_reviewed", "audioStatus": "human_reviewed",
+                "capabilities": ["text", "captions", "audio"] + (fingerprintWindow == nil ? [] : ["alignment"])
+            ]
+            if let fingerprintWindow {
+                target["audioFingerprint"] = [
+                    "schemaVersion": "sermon-audio-fingerprint-binding-v1", "pageId": pageID,
+                    "sourceSha256": mediaHash, "trackSha256": audioHash,
+                    "sourceStartSeconds": 0, "sourceEndSeconds": fingerprintWindow,
+                    "algorithmVersion": "spectral-landmarks-v1", "captureSeconds": 10,
+                    "indexSha256": indexHash, "indexUrl": "/fingerprints/\(indexHash.prefix(16))-landmarks.json"
+                ] as [String: Any]
+            }
+            let catalog = try json([
+                "schemaVersion": MultilingualCatalog.dualScriptSchemaVersion,
+                "generatedAt": "2026-10-30T00:00:00Z", "defaultPageId": pageID,
+                "pages": [["id": pageID, "title": "Synthetic bound page", "date": "2026-10-30",
+                           "sourceLocale": "en", "sourceIdentitySha256": candidateHash,
+                           "sourceMediaSha256": mediaHash, "defaultTargetLocale": "zh-Hans",
+                           "targets": ["zh-Hans": target]]]
+            ])
+            _ = try MultilingualCatalog.decode(catalog)
+            MachineDisclosureProtocol.install(["/multilingual-v3.json": catalog, releasePath: release])
+        }
+        /// Collects every status shown until the player has settled on the new track.
+        func settle() async throws -> Set<String> {
+            var observed: Set<String> = []
+            try await eventually(timeout: .seconds(15)) {
+                observed.insert(model.alignmentDisplayStatus)
+                return model.playback.isReady && !model.isPreparingPublishedAudio
+                    && model.selectedAudioLocale == "zh-Hans"
+            }
+            observed.insert(model.alignmentDisplayStatus)
+            return observed
+        }
+
+        // No fingerprint: the page truly has no index, and the player measures the
+        // cached track so the binding below matches exactly what it reports.
+        try install(fingerprintWindow: nil)
+        await model.refresh()
+        XCTAssertEqual(model.selectedPageID, pageID)
+        XCTAssertFalse(model.showsAlignmentStatus)
+        _ = try await settle()
+        let measured = (model.playback.duration * 1000).rounded() / 1000
+        XCTAssertGreaterThanOrEqual(measured, 7, "The synthetic track must satisfy the binding window")
+        XCTAssertFalse(model.alignmentAvailable)
+        XCTAssertEqual(model.alignmentDisplayStatus, AppModel.alignmentUnavailableStatus)
+
+        // A fingerprint bound to that track. The refresh clears the player and
+        // re-prepares the audio, so the panel is opened mid-load.
+        try install(fingerprintWindow: measured)
+        await model.refresh()
+        XCTAssertNotNil(model.selectedContentTarget?.audioFingerprint)
+        XCTAssertTrue(model.showsAlignmentStatus)
+        XCTAssertFalse(model.alignmentAvailable)
+        XCTAssertTrue(model.isLoadingAlignmentCapability)
+        XCTAssertEqual(model.alignmentDisplayStatus, AppModel.alignmentLoadingStatus)
+        var observed = try await settle()
+        XCTAssertFalse(observed.contains(AppModel.alignmentUnavailableStatus),
+                       "A declared index was reported missing while loading: \(observed)")
+        XCTAssertTrue(model.alignmentAvailable)
+        XCTAssertFalse(model.isLoadingAlignmentCapability)
+        XCTAssertEqual(model.alignmentDisplayStatus, AppModel.alignmentIdlePrompt)
+        XCTAssertEqual(model.alignmentStatus, AppModel.alignmentIdlePrompt)
+
+        // A binding whose window does not match the verified track: the index is
+        // reported unavailable only once the load has finished and validation failed.
+        try install(fingerprintWindow: measured + 1)
+        await model.refresh()
+        XCTAssertEqual(model.alignmentDisplayStatus, AppModel.alignmentLoadingStatus)
+        observed = try await settle()
+        XCTAssertFalse(observed.contains(AppModel.alignmentIdlePrompt),
+                       "An unvalidated binding must never offer the idle prompt: \(observed)")
+        XCTAssertFalse(model.alignmentAvailable)
+        XCTAssertFalse(model.isLoadingAlignmentCapability)
+        XCTAssertEqual(model.alignmentDisplayStatus, AppModel.alignmentUnavailableStatus)
     }
 
     func testSameTrackCapabilityRevocationClearsCompletedAlignmentFeedback() async throws {

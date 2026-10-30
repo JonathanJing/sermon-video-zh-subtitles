@@ -43,7 +43,8 @@ def sheet(run: Path, locale: str, out: Path, window_start: float, doubt: dict[st
     tr = {r["id"]: r for r in rows(run / "translations.jsonl")}
     sp = {r["id"]: r for r in rows(run / "speech.jsonl")}
     sched = {r["id"]: r for r in json.loads((run / "schedule.json").read_text())["sentences"]}
-    heard = {r["id"]: r["recognized"] for r in rows(run / "asr.jsonl")}
+    heard = ({r["id"]: r["recognized"] for r in rows(run / "asr.jsonl")}
+             if (run / "asr.jsonl").exists() else {})
     path = out / f"review-{locale}.csv"
     flagged = 0
     with path.open("w", encoding="utf-8-sig", newline="") as f:
@@ -54,7 +55,7 @@ def sheet(run: Path, locale: str, out: Path, window_start: float, doubt: dict[st
             i, t, k = s["id"], tr[s["id"]], sp[s["id"]]
             sim = difflib.SequenceMatcher(None, norm(k["spokenText"]), norm(heard.get(i, "")), autojunk=False).ratio()
             note = t.get("reviewNote", "pass")
-            reasons = [r for r, hit in (("回转写不一致", sim < 0.85), ("讲员归属存疑", s.get("speakerReview") == "check"),
+            reasons = [r for r, hit in (("回转写不一致", bool(heard) and sim < 0.85), ("讲员归属存疑", s.get("speakerReview") == "check"),
                                         (doubt.get(i, ""), i in doubt), ("复核改过或有备注", not quiet(note))) if hit]
             flagged += bool(reasons)
             w.writerow([i, names.get(s.get("speakerId", ""), s.get("speakerId", "")), mmss(sched[i]["actualStart"]),

@@ -78,11 +78,6 @@ struct ContentView: View {
                 hasDividedRegion: controlRegion.size != geometry.size
             )
         }
-        .safeAreaInset(edge: .top, spacing: 0) {
-            if let phase = model.foregroundAlignmentPhase {
-                alignmentFeedbackBar(phase)
-            }
-        }
         .environment(\.locale, localization.locale)
         #if os(iOS)
         .onReceive(NotificationCenter.default.publisher(for: .betaNotificationOpened)) { _ in
@@ -168,25 +163,6 @@ struct ContentView: View {
     }
     #endif
 
-    private func alignmentFeedbackBar(_ phase: ListeningAlignmentPhase) -> some View {
-        HStack(spacing: 10) {
-            Image(systemName: phase.symbolName)
-                .font(.title3)
-                .foregroundStyle(phase == .failed ? Color.orange : Brand.accent)
-                .accessibilityHidden(true)
-            Text(phase == .failed ? localization.text("听音对齐未完成")
-                 : phase.statusText(english: localization.language != .simplifiedChinese))
-                .font(.subheadline.weight(.semibold))
-                .fixedSize(horizontal: false, vertical: true)
-            Spacer(minLength: 0)
-        }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 10)
-        .background(.background)
-        .accessibilityElement(children: .combine)
-        .accessibilityIdentifier("foreground-alignment-feedback-\(phase.rawValue)")
-    }
-
     private func updateAlignmentFailurePresentation() {
         showingAlignmentFailure = model.alignmentFailure != nil && sheet == nil && scenePhase == .active
     }
@@ -251,12 +227,7 @@ struct ContentView: View {
                                 }
                                 else { transcript(track) }
                                 locateConfirmationView
-                                if model.showsAlignmentStatus {
-                                    Text(localization.text(model.alignmentDisplayStatus, ["time": model.alignmentPosition.map(PlaybackTime.format) ?? ""]))
-                                        .font(.footnote).foregroundStyle(.secondary)
-                                        .fixedSize(horizontal: false, vertical: true)
-                                        .accessibilityIdentifier("alignment-status")
-                                }
+                                if model.showsAlignmentStatus { liveAlignmentEntry }
                                 englishLocateEntry
                                 downloadControl
                             } else {
@@ -429,7 +400,13 @@ struct ContentView: View {
                 }
             }
             .toolbar {
-                ToolbarItem(placement: .principal) { BrandTitle() }
+                ToolbarItem(placement: .principal) {
+                    BrandTitle(alignmentPhase: model.foregroundAlignmentPhase,
+                               // The toolbar clamps its own type size, so the
+                               // compact-status decision comes from the page
+                               // environment that still reports accessibility sizes.
+                               usesCompactStatus: typeSize.isAccessibilitySize)
+                }
                 if model.display == .transcript {
                     ToolbarItem(placement: .primaryAction) {
                         // Toolbar bridges can discard a Button's outer custom
@@ -831,12 +808,8 @@ struct ContentView: View {
             } else {
                 publishedRows(transcript.captions, prefix: "published-caption")
             }
+            if model.showsAlignmentStatus { liveAlignmentEntry }
             englishLocateEntry
-            if model.showsAlignmentStatus {
-                Text(localization.text(model.alignmentDisplayStatus, ["time": model.alignmentPosition.map(PlaybackTime.format) ?? ""]))
-                    .font(.footnote).foregroundStyle(.secondary)
-                    .accessibilityIdentifier("alignment-status")
-            }
         }
     }
 
@@ -904,6 +877,84 @@ struct ContentView: View {
         UINotificationFeedbackGenerator().notificationOccurred(.success)
         UIAccessibility.post(notification: .announcement, argument: message)
         #endif
+    }
+
+    /// The app's headline capability: listen to the live sermon for a few
+    /// seconds and jump the captions to where the service actually is. It sits
+    /// on the page so it is reachable in one tap instead of inside the locate
+    /// panel, where it competed with manual lookup.
+    private var liveAlignmentEntry: some View {
+        let alignedAt = model.alignmentPosition
+        let busy = model.alignmentBusy
+        let available = model.alignmentAvailable
+        let style = alignmentEntryStyle(alignedAt: alignedAt, busy: busy, available: available)
+        return Button {
+            if busy { model.cancelAlignment() }
+            else if available { model.startAlignment() }
+        } label: {
+            HStack(spacing: 12) {
+                Group {
+                    if busy {
+                        ProgressView().controlSize(.small).tint(style.foreground)
+                    } else {
+                        Image(systemName: alignedAt == nil ? "mic.fill" : "checkmark.circle.fill")
+                            .font(.system(size: 18, weight: .semibold))
+                    }
+                }
+                .frame(width: 26)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(style.title).font(.subheadline.weight(.semibold))
+                    Text(style.subtitle).font(.caption).opacity(0.85)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                Spacer(minLength: 8)
+                if style.showsRedo { Image(systemName: "arrow.clockwise").font(.footnote.weight(.semibold)) }
+            }
+            .foregroundStyle(style.foreground)
+            .padding(.horizontal, 16)
+            .padding(.vertical, 12)
+            .frame(maxWidth: .infinity, minHeight: 60, alignment: .leading)
+            .background(style.background, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .disabled(!available && !busy)
+        .accessibilityLabel(style.title)
+        .accessibilityHint(style.subtitle)
+        .accessibilityIdentifier("live-alignment-entry")
+    }
+
+    private struct AlignmentEntryStyle {
+        let title: String
+        let subtitle: String
+        let background: Color
+        let foreground: Color
+        let showsRedo: Bool
+    }
+
+    private func alignmentEntryStyle(alignedAt: Double?, busy: Bool,
+                                     available: Bool) -> AlignmentEntryStyle {
+        if busy {
+            return AlignmentEntryStyle(title: localization.text("取消对齐"),
+                                       subtitle: localization.text("正在聆听现场…"),
+                                       background: Brand.accent, foreground: .white, showsRedo: false)
+        }
+        if !available {
+            return AlignmentEntryStyle(title: localization.text("听现场并对齐"),
+                                       subtitle: localization.text(model.alignmentDisplayStatus,
+                                                                   ["time": model.alignmentPosition.map(PlaybackTime.format) ?? ""]),
+                                       background: Brand.accent.opacity(0.10),
+                                       foreground: Brand.accent, showsRedo: false)
+        }
+        if let alignedAt {
+            return AlignmentEntryStyle(title: localization.text("已对齐 {time}", ["time": PlaybackTime.format(alignedAt)]),
+                                       subtitle: localization.text("点按重新对齐"),
+                                       background: Brand.accent.opacity(0.12),
+                                       foreground: Brand.accent, showsRedo: true)
+        }
+        return AlignmentEntryStyle(title: localization.text("听现场并对齐"),
+                                   subtitle: localization.text("跟着现场自动对到当前句"),
+                                   background: Brand.accent, foreground: .white, showsRedo: false)
     }
 
     private var englishLocateEntry: some View {
@@ -1313,9 +1364,14 @@ extension VerifiedHTMLView: NSViewRepresentable {
 }
 #endif
 
+/// The navigation bar's principal item. While live alignment runs, the brand
+/// subtitle gives way to the alignment status, so the toolbar reports progress
+/// without a separate bar pushing the reading area down.
 private struct BrandTitle: View {
     @ObservedObject private var localization = AppLocalization.shared
     @Environment(\.colorScheme) private var colorScheme
+    var alignmentPhase: ListeningAlignmentPhase? = nil
+    var usesCompactStatus = false
 
     private var brandMark: Image {
         #if SWIFT_PACKAGE
@@ -1333,9 +1389,39 @@ private struct BrandTitle: View {
                 .accessibilityHidden(true)
             VStack(alignment: .leading, spacing: 1) {
                 Text(localization.text("同行")).font(.headline)
-                Text(localization.text("证道中文听译")).font(.caption2).foregroundStyle(.secondary)
+                if let phase = alignmentPhase {
+                    alignmentSubtitle(phase)
+                } else {
+                    Text(localization.text("证道中文听译")).font(.caption2).foregroundStyle(.secondary)
+                }
             }
-        }.accessibilityElement(children: .combine)
+        }
+        .accessibilityElement(children: .combine)
+        .animation(.default, value: alignmentPhase)
+    }
+
+    private func alignmentSubtitle(_ phase: ListeningAlignmentPhase) -> some View {
+        HStack(spacing: 4) {
+            if phase.isActive {
+                ProgressView().controlSize(.mini)
+            } else {
+                Image(systemName: phase.symbolName)
+                    .font(.caption2.weight(.semibold))
+                    .foregroundStyle(phase == .failed ? Color.orange : Brand.accent)
+            }
+            Text(alignmentStatusText(phase))
+                .font(.caption2.weight(.semibold))
+                .foregroundStyle(phase == .failed ? Color.orange : Brand.accent)
+                .lineLimit(1)
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("foreground-alignment-feedback-\(phase.rawValue)")
+    }
+
+    private func alignmentStatusText(_ phase: ListeningAlignmentPhase) -> String {
+        let english = localization.language != .simplifiedChinese
+        if usesCompactStatus { return phase.compactText(english: english) }
+        return phase == .failed ? localization.text("听音对齐未完成") : phase.statusText(english: english)
     }
 }
 
@@ -1384,59 +1470,66 @@ private struct WeekSheet: View {
     @Environment(\.dismiss) private var dismiss
     var body: some View {
         NavigationStack {
-            ScrollView {
-                LazyVStack(spacing: 0) {
-                    if !model.independentPages.isEmpty {
-                        Text(localization.text(model.allowsDevCandidates ? "Dev 内容" : "已发布页面"))
-                            .font(.footnote.weight(.semibold)).foregroundStyle(.secondary)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .padding(.horizontal, 20).padding(.top, 18)
+            // A plain picker list: no playback following, so the system List
+            // provides grouping, separators, selection marks and row sizing.
+            List {
+                if !model.independentPages.isEmpty {
+                    Section(localization.text(model.allowsDevCandidates ? "Dev 内容" : "已发布页面")) {
                         ForEach(model.independentPages.sorted { $0.date > $1.date }) { page in
                             Button {
                                 model.selectPublishedPage(page)
                                 dismiss()
                             } label: {
-                                HStack {
-                                    SermonHeadingView(heading: model.heading(for: page), date: page.date,
-                                                      titleFont: .headline, identifier: "picker-\(page.id)")
-                                    Spacer()
-                                    if page.id == model.selectedPageID { Image(systemName: "checkmark") }
-                                }
-                                .padding(20).frame(maxWidth: .infinity, minHeight: 72, alignment: .leading)
-                                .contentShape(Rectangle())
+                                pickerRow(heading: model.heading(for: page), date: page.date,
+                                          identifier: "picker-\(page.id)", selected: page.id == model.selectedPageID)
                             }
-                            .buttonStyle(.plain)
                             .accessibilityIdentifier("published-page-\(page.id)")
                             .task(id: model.publishedHeadingKey(page)) { await model.loadPublishedHeading(page) }
-                            Divider().padding(.horizontal, 20)
                         }
-                    }
-                    ForEach(model.weeks) { week in
-                        Button {
-                            dismiss()
-                            Task { await model.select(week: week) }
-                        } label: {
-                            HStack {
-                                SermonHeadingView(heading: model.heading(for: week),
-                                                  date: week.date, titleFont: .headline, identifier: "picker-\(week.id)")
-                                Spacer()
-                                if week.id == model.selectedWeek?.id { Image(systemName: "checkmark") }
-                            }
-                            .padding(20).frame(maxWidth: .infinity, minHeight: 72, alignment: .leading)
-                            .contentShape(Rectangle())
-                        }
-                        .buttonStyle(.plain)
-                        .accessibilityIdentifier("legacy-week-\(week.id)")
-                        Divider().padding(.horizontal, 20)
                     }
                 }
-            }.navigationTitle(localization.text("选择证道"))
-                .toolbar { ToolbarItem(placement: .confirmationAction) { Button(localization.text("完成")) { dismiss() } } }
+                if !model.weeks.isEmpty {
+                    Section {
+                        ForEach(model.weeks) { week in
+                            Button {
+                                dismiss()
+                                Task { await model.select(week: week) }
+                            } label: {
+                                pickerRow(heading: model.heading(for: week), date: week.date,
+                                          identifier: "picker-\(week.id)", selected: week.id == model.selectedWeek?.id)
+                            }
+                            .accessibilityIdentifier("legacy-week-\(week.id)")
+                        }
+                    } header: {
+                        if !model.independentPages.isEmpty { Text(localization.text("其他周次")) }
+                    }
+                }
+            }
+            #if os(iOS)
+            .listStyle(.insetGrouped)
+            #endif
+            .navigationTitle(localization.text("选择证道"))
+            .toolbar { ToolbarItem(placement: .confirmationAction) { Button(localization.text("完成")) { dismiss() } } }
         }
         .environment(\.locale, localization.locale)
         #if os(macOS)
         .frame(minWidth: 400, minHeight: 480)
         #endif
+    }
+
+    private func pickerRow(heading: SermonHeading, date: String, identifier: String, selected: Bool) -> some View {
+        HStack {
+            SermonHeadingView(heading: heading, date: date, titleFont: .headline, identifier: identifier)
+                // A plain .primary style resolves against the row button's tint,
+                // which would tint the whole heading; this keeps text neutral.
+                .foregroundStyle(Color.primary)
+            Spacer()
+            if selected {
+                Image(systemName: "checkmark").fontWeight(.semibold).foregroundStyle(Brand.accent)
+            }
+        }
+        .frame(minHeight: 44)
+        .contentShape(Rectangle())
     }
 }
 

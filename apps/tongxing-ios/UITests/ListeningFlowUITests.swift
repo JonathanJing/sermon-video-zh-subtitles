@@ -175,6 +175,23 @@ final class ListeningFlowUITests: XCTestCase {
         app.terminate()
     }
 
+    func testForegroundAlignmentCompactStatusAtAccessibilitySizes() {
+        let app = XCUIApplication()
+        app.launchArguments = ["--ui-testing", "--ui-testing-live-activity", "--ui-testing-large-text",
+                               "-AppleLanguages", "(zh-Hans)", "-AppleLocale", "zh_CN"]
+        app.launchEnvironment["TONGXING_UI_TEST_RUN_ID"] = UUID().uuidString
+        app.launchEnvironment["TONGXING_TEST_HOST"] = "0"
+        app.launch()
+        defer { app.terminate() }
+        XCTAssertTrue(app.staticTexts["sermon-title"].waitForExistence(timeout: 10))
+        // The toolbar cannot grow with accessibility sizes, so the live status
+        // switches to the compact wording instead of truncating the sentence.
+        let listening = app.descendants(matching: .any)["foreground-alignment-feedback-listening"].firstMatch
+        XCTAssertTrue(listening.waitForExistence(timeout: 15))
+        XCTAssertTrue(listening.label.contains("监听"), listening.label)
+        XCTAssertFalse(listening.label.contains("保持前台"), listening.label)
+    }
+
     func testOutlineAndMeditationEntryIsRemoved() {
         for published in [false, true] {
             let app = launchFixture(locateFlow: published)
@@ -623,6 +640,17 @@ final class ListeningFlowUITests: XCTestCase {
         XCTAssertEqual(app.staticTexts["sermon-title"].label, "界面测试证道")
     }
 
+    func testLiveAlignmentEntryIsVisibleWithoutOpeningTheLocatePanel() throws {
+        // The alignment fixture carries a fingerprint, so this page advertises
+        // live alignment; the entry must be reachable without the locate panel.
+        let app = launchFixture(locateFlow: true, alignmentFailure: true)
+        XCTAssertTrue(app.staticTexts["published-current-subtitle"].waitForExistence(timeout: 15))
+        let entry = app.buttons["live-alignment-entry"]
+        XCTAssertTrue(entry.waitForExistence(timeout: 10), "听现场并对齐应直接出现在页面上")
+        try waitFor(entry, "exists == true AND hittable == true AND enabled == true")
+        screenshot("live-alignment-entry-visible", app: app)
+    }
+
     func testEnglishLocateFromHomeReturnsToCurrentSubtitleAndCanUndo() throws {
         let app = launchFixture(locateFlow: true)
         try locateSecondEnglishSegment(in: app, fromDock: false)
@@ -888,7 +916,7 @@ final class ListeningFlowUITests: XCTestCase {
         XCTAssertTrue(failure.waitForExistence(timeout: 5))
         failure.buttons["按英文找位置"].tap()
         XCTAssertTrue(element("english-locate-sheet", in: app).waitForExistence(timeout: 5))
-        XCTAssertTrue(app.textFields["english-locate-search"].exists)
+        XCTAssertTrue(app.searchFields.firstMatch.exists)
         screenshot("alignment-failure-english-fallback", app: app)
     }
 
@@ -902,7 +930,7 @@ final class ListeningFlowUITests: XCTestCase {
         XCTAssertTrue(fallback.waitForExistence(timeout: 5))
         fallback.tap()
         XCTAssertTrue(element("english-locate-sheet", in: app).waitForExistence(timeout: 5))
-        XCTAssertTrue(app.textFields["english-locate-search"].exists)
+        XCTAssertTrue(app.searchFields.firstMatch.exists)
         screenshot("alignment-unavailable-english-locate-fallback", app: app)
     }
 
@@ -921,7 +949,7 @@ final class ListeningFlowUITests: XCTestCase {
         }
         let sheet = element("english-locate-sheet", in: app)
         XCTAssertTrue(sheet.waitForExistence(timeout: 5))
-        let search = app.textFields["english-locate-search"]
+        let search = app.searchFields.firstMatch
         try waitFor(search, "exists == true AND hittable == true")
         search.tap()
         search.typeText("lighthouse\n")
