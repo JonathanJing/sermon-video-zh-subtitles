@@ -18,6 +18,9 @@ final class PlaybackController: ObservableObject {
     @Published private(set) var isPlaying = false
     @Published private(set) var isWaiting = false
     @Published private(set) var isReady = false
+    /// The loaded item failed to become playable; `isReady` alone cannot tell a
+    /// failed load from one still in progress.
+    @Published private(set) var loadFailed = false
     @Published private(set) var message = "选择一篇证道，开始收听"
     @Published private(set) var resumePosition: ResumePosition?
     @Published private(set) var undoPosition: Double?
@@ -375,6 +378,7 @@ final class PlaybackController: ObservableObject {
         undoSnapshot = nil
         undoPosition = nil
         isReady = false
+        loadFailed = false
         isPlaying = false
         isWaiting = false
         message = "正在准备音频…"
@@ -408,6 +412,7 @@ final class PlaybackController: ObservableObject {
                     self.publishNowPlaying()
                 case .failed:
                     self.isReady = false
+                    self.loadFailed = true
                     self.wantsPlayback = false
                     self.invalidateActivation()
                     self.message = "音频加载失败，请检查网络或使用已下载版本。"
@@ -493,6 +498,7 @@ final class PlaybackController: ObservableObject {
         undoPosition = nil
         undoSnapshot = nil
         isReady = false
+        loadFailed = false
         publishedLanguageTransfer = transfer
         publishedPositionRestoreFailed = false
         position = transfer?.position ?? 0
