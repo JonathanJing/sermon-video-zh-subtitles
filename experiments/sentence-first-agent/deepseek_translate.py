@@ -232,10 +232,10 @@ def main() -> int:
     glossary_slices = len(C.glossary_slices(units))
     window_count = sum(-(-len(chain) // args.window) for chain in plan)
     glossary_client = C.DeepSeek(args.out / "cache", execute=args.execute, label="translate",
-                                 state_dir=args.out, total=window_count)
+                                 state_dir=args.source_run, total=window_count)
     translator = (C.ClaudeCLI(args.out / "claude-cache", model=args.claude_model, execute=args.execute)
                   if args.translator == "claude" else glossary_client)
-    done_windows, done_units = C.recorded_progress(args.out, "translate")
+    done_windows, done_units = C.recorded_progress(args.source_run, "translate")
     glossary_client.windows_done, glossary_client.units_done = done_windows, done_units
     started = time.time()
     glossary = C.empty_glossary()

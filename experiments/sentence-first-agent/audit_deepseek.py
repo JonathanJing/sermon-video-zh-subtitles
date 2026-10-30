@@ -136,6 +136,7 @@ def main() -> int:
                         label="audit", state_dir=out)
     parts = windows(translations, args.window)
     client.total = len(parts)
+    client.windows_done, client.units_done = C.recorded_progress(out, "audit")
     index_of = {row["id"]: number for number, row in enumerate(translations)}
     prior_for = {}
     for part in parts:
