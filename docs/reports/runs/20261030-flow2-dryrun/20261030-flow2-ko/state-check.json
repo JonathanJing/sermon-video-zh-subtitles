@@ -1,0 +1,88 @@
+{
+  "run": "artifacts/sentence-first-agent/20261030-flow2-ko",
+  "consistent": true,
+  "labels": [
+    {
+      "label": "audit",
+      "path": "artifacts/sentence-first-agent/20261030-flow2-ko/state-audit.json",
+      "ok": true,
+      "mismatches": [],
+      "repaired": 0,
+      "live": {
+        "status": "finished",
+        "calls": 4,
+        "hits": 0,
+        "failed": 0,
+        "windowsDone": 4,
+        "unitsDone": 90,
+        "validationFailures": 0
+      },
+      "rebuilt": {
+        "status": "finished",
+        "calls": 4,
+        "hits": 0,
+        "failed": 0,
+        "windowsDone": 4,
+        "unitsDone": 90,
+        "validationFailures": 0
+      }
+    },
+    {
+      "label": "translate",
+      "path": "artifacts/sentence-first-agent/20261030-flow2-ko/state-translate.json",
+      "ok": true,
+      "mismatches": [],
+      "repaired": 0,
+      "live": {
+        "status": "finished",
+        "calls": 10,
+        "hits": 0,
+        "failed": 0,
+        "windowsDone": 8,
+        "unitsDone": 90,
+        "validationFailures": 0
+      },
+      "rebuilt": {
+        "status": "finished",
+        "calls": 10,
+        "hits": 0,
+        "failed": 0,
+        "windowsDone": 8,
+        "unitsDone": 90,
+        "validationFailures": 0
+      }
+    },
+    {
+      "label": "trim",
+      "path": "artifacts/sentence-first-agent/20261030-flow2-ko/state-trim.json",
+      "ok": true,
+      "mismatches": [],
+      "repaired": 0,
+      "live": {
+        "status": "finished",
+        "calls": 7,
+        "hits": 0,
+        "failed": 0,
+        "windowsDone": 7,
+        "unitsDone": 51,
+        "validationFailures": 0
+      },
+      "rebuilt": {
+        "status": "finished",
+        "calls": 7,
+        "hits": 0,
+        "failed": 0,
+        "windowsDone": 7,
+        "unitsDone": 51,
+        "validationFailures": 0
+      }
+    }
+  ],
+  "missing": [],
+  "units": {
+    "covered": 90,
+    "missing": [],
+    "failed": []
+  },
+  "checkedAt": "2026-10-30T20:38:57.235958+00:00"
+}

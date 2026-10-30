@@ -1,0 +1,187 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261030-flow2-dryrun",
+  "runs": [
+    {
+      "label": "20261030-flow2-zh",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/sentence-first-agent/20261030-flow2-zh",
+      "skipped": {
+        "(none)": 1,
+        ".json": 25,
+        ".wav": 182,
+        ".jsonl": 9,
+        ".html": 1,
+        ".mp3": 1,
+        ".md": 1
+      }
+    },
+    {
+      "label": "20261030-flow2-ko",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/sentence-first-agent/20261030-flow2-ko",
+      "skipped": {
+        "(none)": 1,
+        ".json": 33,
+        ".jsonl": 9,
+        ".html": 1,
+        ".mp3": 1,
+        ".wav": 181
+      }
+    },
+    {
+      "label": "20261030-flow2-es",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/sentence-first-agent/20261030-flow2-es",
+      "skipped": {
+        "(none)": 1,
+        ".json": 24,
+        ".jsonl": 9,
+        ".html": 1,
+        ".mp3": 1,
+        ".wav": 181
+      }
+    }
+  ],
+  "files": [
+    {
+      "run": "20261030-flow2-zh",
+      "path": "journal.ndjson",
+      "kind": "whole",
+      "bytes": 247,
+      "truncated": false,
+      "sha256": "43d7ee6e4b1db3e88e0d6033ff86998478f60f2e6044ea43b1cc080e2d8a33d9",
+      "redactions": {}
+    },
+    {
+      "run": "20261030-flow2-zh",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 662,
+      "truncated": false,
+      "sha256": "8588540edf3ac8ea143b615344446a0fd5723ffafeb716a6a8612be8ca71f545",
+      "redactions": {}
+    },
+    {
+      "run": "20261030-flow2-zh",
+      "path": "state-check.json",
+      "kind": "whole",
+      "bytes": 1228,
+      "truncated": false,
+      "sha256": "b3a85a4e0a8a8e43f8a4913ae9027f860f5a68176bac9725ae38b62ee68d4121",
+      "redactions": {}
+    },
+    {
+      "run": "20261030-flow2-zh",
+      "path": "timings.tsv",
+      "kind": "whole",
+      "bytes": 90,
+      "truncated": false,
+      "sha256": "74efc7dbba8d3bbc13e150eff9bb8afaee60a7398c7bc24f21d90636aeb3bf0b",
+      "redactions": {}
+    },
+    {
+      "run": "20261030-flow2-zh",
+      "path": "tts-run.log",
+      "kind": "log",
+      "bytes": 32509,
+      "truncated": false,
+      "sha256": "b21defd8f328526f627ef055317ae77f0398a7a49ee3eb33292016ecec3d9060",
+      "redactions": {}
+    },
+    {
+      "run": "20261030-flow2-ko",
+      "path": "journal.ndjson",
+      "kind": "whole",
+      "bytes": 997,
+      "truncated": false,
+      "sha256": "4693c6aa0513e1fc8b5d429120d327d27c2b8861664f79a10a9302b2a42200cb",
+      "redactions": {}
+    },
+    {
+      "run": "20261030-flow2-ko",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 807,
+      "truncated": false,
+      "sha256": "f85bcc2f29022d582bcb925ca26652df4991738539f67a0e280a95aa1e09f81e",
+      "redactions": {
+        "home_dir": 2
+      }
+    },
+    {
+      "run": "20261030-flow2-ko",
+      "path": "state-check.json",
+      "kind": "whole",
+      "bytes": 1720,
+      "truncated": false,
+      "sha256": "02316a65bbbbb8f2f50d7cf00777f2bb3f4baf69af0e1f36dc9899db7fea6d6f",
+      "redactions": {}
+    },
+    {
+      "run": "20261030-flow2-ko",
+      "path": "timings.tsv",
+      "kind": "whole",
+      "bytes": 117,
+      "truncated": false,
+      "sha256": "599a1b812268cccbce2794a97b5eb85f1565e0ce3ee73deba57856799de30eda",
+      "redactions": {}
+    },
+    {
+      "run": "20261030-flow2-ko",
+      "path": "tts-run.log",
+      "kind": "log",
+      "bytes": 97442,
+      "truncated": true,
+      "sha256": "9fea3a77fc9ba19e790240251f0b74b2a4ce51e36dcb380d94a64071e4fa8131",
+      "redactions": {}
+    },
+    {
+      "run": "20261030-flow2-es",
+      "path": "journal.ndjson",
+      "kind": "whole",
+      "bytes": 247,
+      "truncated": false,
+      "sha256": "29c5c280192b2e910213aad65ec2f30f57fc390821fdaa6d1ed0e7e6119b60aa",
+      "redactions": {}
+    },
+    {
+      "run": "20261030-flow2-es",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 657,
+      "truncated": false,
+      "sha256": "7391153a312e6bc474b57b153a95bc077d703687f311169b8f0de4940c18618f",
+      "redactions": {}
+    },
+    {
+      "run": "20261030-flow2-es",
+      "path": "state-check.json",
+      "kind": "whole",
+      "bytes": 1228,
+      "truncated": false,
+      "sha256": "d7041bc93e5026bb48ce132bc28af9c8e86d8ec0c32c67c580cb02d6f73a9c98",
+      "redactions": {}
+    },
+    {
+      "run": "20261030-flow2-es",
+      "path": "timings.tsv",
+      "kind": "whole",
+      "bytes": 90,
+      "truncated": false,
+      "sha256": "74efc7dbba8d3bbc13e150eff9bb8afaee60a7398c7bc24f21d90636aeb3bf0b",
+      "redactions": {}
+    },
+    {
+      "run": "20261030-flow2-es",
+      "path": "tts-run.log",
+      "kind": "log",
+      "bytes": 32500,
+      "truncated": false,
+      "sha256": "3e746a8d6a838cfd228cf5046d962b9412bcb5e339741bd09e1a79b772ec4cdf",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}
