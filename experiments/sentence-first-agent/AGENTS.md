@@ -28,7 +28,7 @@
 | `translate_parts.py` | 本机 | 把句表拆成几份交给并行翻译子代理（`split`），再按句序合并、检查（`merge`） |
 | `deepseek_translate.py`、`coherence_core.py` | 本机 | DeepSeek 逐窗口连贯翻译（zh-Hans/ko/es），产物写 `coherence-<tag>/`，只读 run 的 sentences/slices |
 | `deepseek_status.py` | 本机 | 读 `state-<label>.json`/`events.jsonl`，显示 DeepSeek 阶段的进度、调用数、失败与逐次延迟（`--watch` 刷新，`--label` 选阶段） |
-| `state_check.py` | 本机 | 从 `events.jsonl`+`done.jsonl` 重算 `state-<label>.json` 并比对；不一致退出码 1，`--write` 修复 |
+| `state_check.py` | 本机 | 从 `events.jsonl`+`done.jsonl` 重算状态并比对；`--all` 查全部阶段、`--missing` 列未覆盖句子、`--record` 写 `state-check.json`、`--write` 按事件流修复；不一致退出码 1 |
 | `audit_deepseek.py`、`coherence_check.py`、`spoken_forms.py` | 本机 | 独立审计与 issue-bound 门（`--locale` 三语）、连贯性检查、数字读法与 TTS 专用读法（`spoken_forms.py --run --locale`） |
 | `lag_loop.py` | 本机 + Spark | 落后回环：读 `schedule.json` → DeepSeek 精简超时句 → 重建 speech → 清 tts → 重排该语 → `finish_run`，最多 `--iterations` 轮 |
 | `build_speech.py` | 本机 | 套用复核修订和口播读法，写 speech.jsonl |
@@ -433,7 +433,7 @@ python3 $EXP/publish_study.py finish                                            
 
 ### 11 结束
 
-`finish` 关闭会话，再按会话标签删掉停止的容器（`docker rm $(docker ps -aq --filter label=tongxing.spark.session=<session>)`）。按[运行报告](../../docs/test-run-retrospective.zh.md)导出本次报告。各脚本经 `runlog.py` 写 `journal.ndjson`、`outcome.json`、`timings.tsv`；导出器自动出墙钟/计算/等待/返工。人工听审由代理在发出和收到结论时补 `waiting`/`resumed`。发布型子命令（assets、stage、publish）也经 `runlog.py` 写 outcome 与 timings，否则报告里发布阶段没有时间（`DEV-SF-007`）。重建、热修、海报、统计目录同步各自导出报告，不并入主报告。本轮新写或改过的驱动随报告 PR 一起提交，开自己的分支，不推到已合并的分支上。
+`finish` 关闭会话，再按会话标签删掉停止的容器（`docker rm $(docker ps -aq --filter label=tongxing.spark.session=<session>)`）。按[运行报告](../../docs/test-run-retrospective.zh.md)导出本次报告。各脚本经 `runlog.py` 写 `journal.ndjson`、`outcome.json`、`timings.tsv`；导出器自动出墙钟/计算/等待/返工。人工听审由代理在发出和收到结论时补 `waiting`/`resumed`。发布型子命令（assets、stage、publish）也经 `runlog.py` 写 outcome 与 timings，否则报告里发布阶段没有时间（`DEV-SF-007`）。导出前跑一次 `state_check.py --run $RUN --all --source-run $RUN --missing --record`：每个 DeepSeek 阶段的实时状态与事件流重算结果必须一致、且没有未覆盖的句子，否则先修再导出；`state-check.json` 就是这条证据。CI 恢复后同名的 `tests/test_sentence_first_state.py` 与 `tests/test_state_check_cli.py` 会随 `run_unittest_ci.py` 的发现一起跑。重建、热修、海报、统计目录同步各自导出报告，不并入主报告。本轮新写或改过的驱动随报告 PR 一起提交，开自己的分支，不推到已合并的分支上。
 
 发布后保留小文本表（`sentences.jsonl`、`translations.jsonl`、`speech.jsonl`、`speakers.json`、`review.json`、`schedule.json`、`run.md`、审核表），只删 `tts/`、`slices/`、`clip.wav`、`track.wav`、`dub*.mp4`；否则下一轮无法 resume 或复用讲员分配/已批准译文（2026-10-23 实测：上一期 run 目录被清理，只能从 Spark 拉回 `speech.jsonl`）。清理前把保留清单写进 `run.md`，删完 `test -f` 逐个核对，确认该有的小表都在（单讲员没有 `speakers.json`）。
 

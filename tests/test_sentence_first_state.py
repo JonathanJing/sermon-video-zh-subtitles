@@ -60,6 +60,29 @@ class RebuildStateTest(unittest.TestCase):
             self.assertEqual(C.state_mismatches(json.loads((run / "state-translate.json").read_text()),
                                                 C.rebuild_state(run)), [])
 
+    def test_repair_entries_do_not_inflate_windows(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            run = Path(tmp)
+            write_events(run, [{"status": "ok", "promptTokens": 1, "completionTokens": 1},
+                               {"status": "finished"}])
+            (run / "done.jsonl").write_text(
+                json.dumps({"label": "translate", "context": "w0", "kind": "window",
+                            "ids": ["s1", "s2"]}) + "\n"
+                + json.dumps({"label": "translate", "context": "repair:s3", "kind": "repair",
+                              "ids": ["s3"]}) + "\n", encoding="utf-8")
+            state = C.rebuild_state(run)
+            self.assertEqual(state["windowsDone"], 1)
+            self.assertEqual(state["unitsDone"], 3)
+
+    def test_missing_units_lists_uncovered_sentences(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            run = Path(tmp)
+            (run / "sentences.jsonl").write_text(
+                "".join(json.dumps({"id": f"s{number}", "english": "x"}) + "\n" for number in (1, 2, 3)),
+                encoding="utf-8")
+            write_done(run, [["s1", "s2"]])
+            self.assertEqual(C.missing_units(run, run), ["s3"])
+
     def test_labels_keep_separate_states(self):
         with tempfile.TemporaryDirectory() as tmp:
             run = Path(tmp)
