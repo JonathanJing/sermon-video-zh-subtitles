@@ -26,6 +26,8 @@
 | `split_sentences.py`、`slice_sentences.py` | 本机 | 没有锚点清单时拆句、切原声（prepare_clip 会调用后者） |
 | `assign_speakers.py` | 本机 | 双人：按说话人区分结果给每句定讲员 |
 | `translate_parts.py` | 本机 | 把句表拆成几份交给并行翻译子代理（`split`），再按句序合并、检查（`merge`） |
+| `deepseek_translate.py`、`coherence_core.py` | 本机 | DeepSeek 逐窗口连贯翻译（zh-Hans/ko/es），产物写 `coherence-<tag>/`，只读 run 的 sentences/slices |
+| `audit_deepseek.py`、`coherence_check.py`、`spoken_forms.py` | 本机 | 独立审计与 issue-bound 门、连贯性检查、TTS 专用读法（默认「撒但→撒旦」） |
 | `build_speech.py` | 本机 | 套用复核修订和口播读法，写 speech.jsonl |
 | `spark_queue.py` | 本机 | 把所有语言、所有讲员的配音排成一条任务队列（2026-10-28 起不再排回转写） |
 | `spark_session_job.py` | 本机 | 在 Spark 独占会话里把一步登记成任务并等它结束（spark_queue 调用它） |
@@ -67,7 +69,7 @@ artifacts/sentence-first-agent/<run>/
   dub.mp4             视频 + 配音；dub-preview-640.mp4 是手机预览
 ```
 
-每种语言一个 run 目录。第一种语言裁音频，其余语言用 `--share-from`／`--clip-from` 指向它，不重新裁。
+每种语言一个 run 目录。第一种语言裁音频，其余语言用 `--share-from`／`--clip-from` 指向它，不重新裁。**其余语言的 run 目录要先手抄三样**：`clip.json`、`sentences.jsonl`、`slices/`（2026-10-30 实测：`--share-from` 只补 `sentences.jsonl` 和 `slices/slices.json`，`--clip-from` 只给 `finish_run.py` 读媒体路径）。
 
 ## 每周步骤
 
@@ -274,6 +276,8 @@ python3 $EXP/translate_parts.py merge --run $RUN --locale <locale>
 
 独立复核不是可选项：每种语言合并后由另一个子代理做一遍逐句保真审计（漏译、增译、否定、数字、人名、经文），改动写进 `review.json` 的 `revisions`；`revisions` 为空又没有审计文件，就不进第 5 步（2026-10-24 重建版跳过了这一步）。审计子代理只拿只读副本、只写固定输出：先 `mkdir -p audit && cp translations.jsonl audit/translations.audit.jsonl` 并把 sha256 记进 `run.md`，提示里写明「只读 `audit/translations.audit.jsonl`，只写 `audit/audit-<locale>.jsonl`」；`translations.jsonl` 由主代理按它的结论改。术语落地不要做全局字符串替换：韩语助词随词尾音变（고발을→참소를、고발이→참소가），把变体写进 `--rules` 的 `terms`，替换后再跑一次 `consistency_check.py`；2026-10-24 这类错误 13 处，有 3 处进了配音，靠 ASR 打分才发现。
 
+**DeepSeek 连贯翻译（实验路线，2026-10-30 起支持三语）**：`deepseek_translate.py --source-run <首个 run> --out <run>/coherence-<tag> --locale {zh-Hans,ko,es} --chains 4 --window 12 --prior 8 --execute`，用 `tools/ops/run_with_openai_environment.py` 注入 key（不手写环境变量）。产物 `coherence-<tag>/translations.jsonl` 由主代理 `cp` 成 run 的 `translations.jsonl` 再进第 5 步；脚本只读 run 的 sentences/slices，不改主文件。2026-10-30 实测 418 句：zh $0.16／219 s，ko $0.39／443 s，es $0.32／371 s。ko/es 提示词是本日新写的，尚未经人工审校；独立审计仍要另跑（`audit_deepseek.py`）。
+
 ### 5 口播规格（本机）
 
 ```bash
@@ -282,9 +286,11 @@ python3 $EXP/build_speech.py --run $RUN --review $RUN/review.json [--share-from 
 
 它把修订写回 `translations.jsonl`，生成 `speech.jsonl`，列出粗估超预算的句子和仍含数字的口播句。`spokenForms` 有一项没对上任何句子就报错；仍含数字的句子要补读法。不同步时超预算不用处理；要同步时精简只删重复、填充、同义复述，不删论点、否定、数字、人名、经文出处。
 
+**口播读法要手工建**：2026-10-30 实测 418 句里 zh 有 24 句仍含数字（经文引用 `12:1-6`、页码、比分），没有工具，只能逐条写 `spokenForms`（形如 `"12:1-6": "十二章一到六节"`，按最长匹配先写，避免 `12章` 把 `12章18节` 吃掉）。不写的话 TTS 会把冒号、连字符念出来。
+
 ### 6 Spark 配音与回转写：一条队列
 
-讲员 checkpoint 路径从 Registry（`config/speaker-voice-registry.json`）的 checkpointRef/hash 与 Spark 上的实际目录核对；Spark 上没有 `speaker-checkpoints.dgx.json`（2026-10-23 核实）。当前两位讲员：Steve `~/dgx-spark-benchmark/results/sermon-speaker-bank-20260905/steve_bang_lee/checkpoints/checkpoint-epoch-0`（sha256 `b480bc6a…`）；John `~/dgx-spark-benchmark/results/john-thomas-voice-20261021/checkpoints/checkpoint-epoch-0`（root 所有，本机不能重算 hash；Registry 记 `3f722b17…`）。路径或 hash 对不上就停。上传脚本和每种语言的口播规格：
+讲员 checkpoint 路径从 Registry（`config/speaker-voice-registry.json`）的 checkpointRef/hash 与 Spark 上的实际目录核对；Spark 上没有 `speaker-checkpoints.dgx.json`（2026-10-23 核实）。当前两位讲员：Steve `~/dgx-spark-benchmark/results/sermon-speaker-bank-20260905/steve_bang_lee/checkpoints/checkpoint-epoch-0`（sha256 `b480bc6a…`）；John `~/dgx-spark-benchmark/results/john-thomas-voice-20261021/checkpoints/checkpoint-epoch-0`（root 所有，本机不能重算 hash；Registry 记 `3f722b17…`）；Eric `~/dgx-spark-benchmark/results/sermon-voice-poc-20260905/checkpoints/checkpoint-epoch-0`（Registry key `eric_pilot`，2026-10-30 核对）。路径或 hash 对不上就停。上传脚本和每种语言的口播规格：
 
 ```bash
 ssh SPARK 'mkdir -p ~/sentence-first-agent/tools ~/sentence-first-agent/<run>'
@@ -319,11 +325,15 @@ python3 $EXP/finish_run.py --run $RUN --remote SPARK:sentence-first-agent/<run> 
 
 跟视频同步的 run 显式传 `--gap 0.05`：默认 0.25 秒会把连续句逐句推后（2026-10-24 三语分别有 60、78、144 句落后超过 1 秒，三语各重出一次）。一种语言「可审」的最低条件是 journal 里 `l1.preflight`、`l2.consistency` 两条都 `finished`，缺一条先补再发链接。回转写不再是可审前提。
 
+**落后的闸门**：收尾后看 `maxLagSeconds`。要同步的 run 超过约 8 秒就回第 5 步，按 `build_speech` 的 `flaggedOverBudget` 精简，重配受影响的句子并重出整轨，不能带着几十秒落后发「可审」。2026-10-30 实测不精简时：zh 6.7 s（0 句超 8 s）、ko 14.0 s（34 句）、es 26.5 s（228 句）。
+
 ### 8 人工审核：边配边审
 
 ```bash
 python3 $EXP/review_sheets.py --out <审核目录> --window-start <窗口起点秒> --run <locale>=$RUN [--doubt doubts.json]
 ```
+
+2026-10-30 起 `asr.jsonl` 可以不存在：没有它时审核表只按讲员存疑、复核修订和 `--doubt` 标重点，不再把每句都标成「回转写不一致」。`asr_triage.py` 仍然需要 `asr.jsonl`；不跑 ASR 的 run 跳过它。
 
 一种语言收尾后就把整轨和审核表发给用户，并生成逐句播放器（音频放在审核目录）：
 
