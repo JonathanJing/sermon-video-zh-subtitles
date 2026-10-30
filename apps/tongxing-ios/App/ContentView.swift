@@ -1452,7 +1452,9 @@ private struct WeekSheet: View {
     private func pickerRow(heading: SermonHeading, date: String, identifier: String, selected: Bool) -> some View {
         HStack {
             SermonHeadingView(heading: heading, date: date, titleFont: .headline, identifier: identifier)
-                .foregroundStyle(.primary)
+                // A plain .primary style resolves against the row button's tint,
+                // which would tint the whole heading; this keeps text neutral.
+                .foregroundStyle(Color.primary)
             Spacer()
             if selected {
                 Image(systemName: "checkmark").fontWeight(.semibold).foregroundStyle(Brand.accent)
