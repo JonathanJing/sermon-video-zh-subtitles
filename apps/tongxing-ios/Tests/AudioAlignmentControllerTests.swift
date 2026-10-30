@@ -160,13 +160,15 @@ final class AudioAlignmentControllerTests: XCTestCase {
         XCTAssertNil(AlignmentTarget.position(offset: .nan, startedAt: start, now: start, duration: 300))
     }
 
-    func testPausedMatchSeeksOnceWithoutAutoplayAndReleasesCapture() async throws {
+    func testPausedMatchSeeksAndStartsPlaybackOnceThenReleasesCapture() async throws {
         let f = try Fixture()
         f.controller.start()
         try await eventually { !f.controller.busy }
         XCTAssertEqual(f.player.seeks, [108])
-        XCTAssertEqual(f.player.resumes, 0)
-        XCTAssertFalse(f.player.isPlaying)
+        // A successful alignment now starts playback so the listener lands on
+        // the live sentence without tapping play.
+        XCTAssertEqual(f.player.resumes, 1)
+        XCTAssertTrue(f.player.isPlaying)
         XCTAssertGreaterThan(f.capture.stops, 0)
         XCTAssertEqual(f.status, "已对齐至 {time}。")
         XCTAssertEqual(f.resultPosition, 108)

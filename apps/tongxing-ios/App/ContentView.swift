@@ -230,12 +230,7 @@ struct ContentView: View {
                                 }
                                 else { transcript(track) }
                                 locateConfirmationView
-                                if model.showsAlignmentStatus {
-                                    Text(localization.text(model.alignmentDisplayStatus, ["time": model.alignmentPosition.map(PlaybackTime.format) ?? ""]))
-                                        .font(.footnote).foregroundStyle(.secondary)
-                                        .fixedSize(horizontal: false, vertical: true)
-                                        .accessibilityIdentifier("alignment-status")
-                                }
+                                if model.showsAlignmentStatus { liveAlignmentEntry }
                                 englishLocateEntry
                                 downloadControl
                             } else {
@@ -831,12 +826,8 @@ struct ContentView: View {
             } else {
                 publishedRows(transcript.captions, prefix: "published-caption")
             }
+            if model.showsAlignmentStatus { liveAlignmentEntry }
             englishLocateEntry
-            if model.showsAlignmentStatus {
-                Text(localization.text(model.alignmentDisplayStatus, ["time": model.alignmentPosition.map(PlaybackTime.format) ?? ""]))
-                    .font(.footnote).foregroundStyle(.secondary)
-                    .accessibilityIdentifier("alignment-status")
-            }
         }
     }
 
@@ -904,6 +895,84 @@ struct ContentView: View {
         UINotificationFeedbackGenerator().notificationOccurred(.success)
         UIAccessibility.post(notification: .announcement, argument: message)
         #endif
+    }
+
+    /// The app's headline capability: listen to the live sermon for a few
+    /// seconds and jump the captions to where the service actually is. It sits
+    /// on the page so it is reachable in one tap instead of inside the locate
+    /// panel, where it competed with manual lookup.
+    private var liveAlignmentEntry: some View {
+        let alignedAt = model.alignmentPosition
+        let busy = model.alignmentBusy
+        let available = model.alignmentAvailable
+        let style = alignmentEntryStyle(alignedAt: alignedAt, busy: busy, available: available)
+        return Button {
+            if busy { model.cancelAlignment() }
+            else if available { model.startAlignment() }
+        } label: {
+            HStack(spacing: 12) {
+                Group {
+                    if busy {
+                        ProgressView().controlSize(.small).tint(style.foreground)
+                    } else {
+                        Image(systemName: alignedAt == nil ? "mic.fill" : "checkmark.circle.fill")
+                            .font(.system(size: 18, weight: .semibold))
+                    }
+                }
+                .frame(width: 26)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(style.title).font(.subheadline.weight(.semibold))
+                    Text(style.subtitle).font(.caption).opacity(0.85)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                Spacer(minLength: 8)
+                if style.showsRedo { Image(systemName: "arrow.clockwise").font(.footnote.weight(.semibold)) }
+            }
+            .foregroundStyle(style.foreground)
+            .padding(.horizontal, 16)
+            .padding(.vertical, 12)
+            .frame(maxWidth: .infinity, minHeight: 60, alignment: .leading)
+            .background(style.background, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .disabled(!available && !busy)
+        .accessibilityLabel(style.title)
+        .accessibilityHint(style.subtitle)
+        .accessibilityIdentifier("live-alignment-entry")
+    }
+
+    private struct AlignmentEntryStyle {
+        let title: String
+        let subtitle: String
+        let background: Color
+        let foreground: Color
+        let showsRedo: Bool
+    }
+
+    private func alignmentEntryStyle(alignedAt: Double?, busy: Bool,
+                                     available: Bool) -> AlignmentEntryStyle {
+        if busy {
+            return AlignmentEntryStyle(title: localization.text("取消对齐"),
+                                       subtitle: localization.text("正在聆听现场…"),
+                                       background: Brand.accent, foreground: .white, showsRedo: false)
+        }
+        if !available {
+            return AlignmentEntryStyle(title: localization.text("听现场并对齐"),
+                                       subtitle: localization.text(model.alignmentDisplayStatus,
+                                                                   ["time": model.alignmentPosition.map(PlaybackTime.format) ?? ""]),
+                                       background: Brand.accent.opacity(0.10),
+                                       foreground: Brand.accent, showsRedo: false)
+        }
+        if let alignedAt {
+            return AlignmentEntryStyle(title: localization.text("已对齐 {time}", ["time": PlaybackTime.format(alignedAt)]),
+                                       subtitle: localization.text("点按重新对齐"),
+                                       background: Brand.accent.opacity(0.12),
+                                       foreground: Brand.accent, showsRedo: true)
+        }
+        return AlignmentEntryStyle(title: localization.text("听现场并对齐"),
+                                   subtitle: localization.text("跟着现场自动对到当前句"),
+                                   background: Brand.accent, foreground: .white, showsRedo: false)
     }
 
     private var englishLocateEntry: some View {
