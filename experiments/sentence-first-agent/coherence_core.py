@@ -294,6 +294,12 @@ class DeepSeek:
         with self._lock:
             with (self.state_dir / "done.jsonl").open("a", encoding="utf-8") as out:
                 out.write(json.dumps(line, ensure_ascii=False) + "\n")
+            # Sentence-level ledger: one line per covered unit, so coverage and completion
+            # time are answerable per sentence even when a call covers a whole window.
+            with (self.state_dir / "units.jsonl").open("a", encoding="utf-8") as out:
+                for unit_id in ids:
+                    out.write(json.dumps({"ts": line["ts"], "label": self.label, "id": unit_id,
+                                          "context": context, "kind": kind}, ensure_ascii=False) + "\n")
         self.units_done += len(ids)
         self.windows_done += 1
         self._state()
@@ -480,15 +486,33 @@ class ClaudeCLI:
 
 
 def recorded_units(state_dir: Path) -> set[str]:
-    """Sentence ids already covered by done.jsonl in a stage directory."""
-    path = Path(state_dir) / "done.jsonl"
-    if not path.is_file():
+    """Sentence ids already covered, from units.jsonl (fallback: done.jsonl)."""
+    state_dir = Path(state_dir)
+    units = state_dir / "units.jsonl"
+    if units.is_file():
+        return {json.loads(line)["id"] for line in units.read_text(encoding="utf-8").splitlines()
+                if line.strip()}
+    done_path = state_dir / "done.jsonl"
+    if not done_path.is_file():
         return set()
     covered: set[str] = set()
-    for line in path.read_text(encoding="utf-8").splitlines():
+    for line in done_path.read_text(encoding="utf-8").splitlines():
         if line.strip():
             covered.update(json.loads(line).get("ids") or [])
     return covered
+
+
+def failed_units(state_dir: Path, label: str | None = None) -> list[str]:
+    """Sentence ids named by validation_failed events (window or repair)."""
+    seen: list[str] = []
+    for event in read_events(state_dir, label):
+        if event.get("status") != "validation_failed":
+            continue
+        for entry in event.get("failures") or []:
+            match = re.match(r"([A-Za-z0-9_-]+):", str(entry))
+            if match and match.group(1) not in seen:
+                seen.append(match.group(1))
+    return seen
 
 
 def recorded_progress(state_dir: Path, label: str) -> tuple[int, int]:
