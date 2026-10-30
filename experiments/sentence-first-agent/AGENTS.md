@@ -89,6 +89,18 @@ artifacts/sentence-first-agent/<run>/
 2. **跟不跟视频同步。** 不同步：独立音轨，自然语速，不精简。要同步：第 5 步按 `budgetSeconds` 精简口播稿，并请用户认可精简后的稿子（对谈通常要删约四分之一）。
 3. **发不发正式页面。** 要发就是 `human_reviewed`：用户要听完每条整轨（时长约为原片的 1.25–1.3 倍）并审译文，先把这个工作量告诉用户。页面标题、类别小标题、讲员栏一起问；标题先查[标题表](../../docs/series-sermon-titles.zh.md)，英文标题与来源一致就直接用表中三语标题和「系列名 · 本篇标题」格式，不另造译名（2026-10-24 两版都用了与表不同的韩、西标题和「讲题 · 经文」格式，海报为此多返工一次）。发布的页面都带英文对照（字幕和全文下的英文），不需要问；先确认正式 Layer 1 的英文来源包已经人工批准，没批准就先补英文审核，否则第 10 步的英文对照会被拒。
 
+**冻结决策（开跑前一次问清，写进第一个 `run.md` 的「冻结决策」表）。** 中途改任何一项都记为变更，不混进返工。逐句线的冻结表：
+
+| 决策 | 取值 | 谁定 |
+|---|---|---|
+| 形态 | 整期 / 10 分钟片段（两种时间模板见 0.1） | 用户 |
+| 语言 | 默认 zh-Hans、ko、es | 用户 |
+| 同步 | 跟视频同步（按 `budgetSeconds` 精简）或独立音轨 | 用户 |
+| 发布 | 正式页 / 只出 Dev 审核 / 不出页面 | 用户；正式页要听完每条整轨 |
+| 标题 | 先查标题表；表中一致就直接用三语，不一致问用户并补表 | 表 + 用户 |
+| 讲员 | 直播场次确定后填，同时核对 checkpoint 路径 | 来源 + Registry |
+| 窗口 / 单元 | 来源到达后填 | 来源 |
+
 开工前先跑一次 `preflight.py --run $RUN`（有英文包时加 `--english-package <layer1-srt/english-source.json>`）：它检查 run 文件、`speakerId→speakerKey`、Registry 用途与语言能力、英文包证据是否能解析。退出码非 0 先修，不要带着失败进 TTS 或发布。
 
 英文来源包（Layer 1）在第 4 步翻译之前就要建好，并让用户批准英文表：保存 `english-review.csv`，收据 `reviewedAt` 不得早于用户在对话里给结论的时间。`preflight.py --english-package` 必须在第 6 步 TTS 之前通过——2026-10-24 它在 Spark 跑完后才跑，`sourceUnitId` 缺失才暴露，白占一次 GPU。换媒体重建（新哈希、新句表）同样要重审英文表，不能沿用上一版的批准。
@@ -125,6 +137,8 @@ TTS 开始（首语）= max(讲员映射确认, 首语翻译 + 口播规格)；�
 本次校准（2026-10-23）：英文表 12:27、映射 13:20、中文可审 13:59、韩语 14:47、西语 15:16、页面 15:50；TTS 46/51/29 分钟；整轨 60.5/66.5/67.3 分钟；用户实际 21/17/15 分钟/条（偏标记）。计划里整轨和标记两种时间都写，由用户选；不要用标记时间承诺整轨。
 
 50 分钟单人的参考（原始断句、batch 8、三语）：19:00 开工 → 19:10 英文表 → 19:25 TTS → 19:50/20:17/20:44 可审 → 21:15 页面。音频对齐（ASR/合并/review MP3/播放器）已计入每条可审；不跑 MFA。若改用正式 MFA 锚点，Layer 1 机器段 +10–15 分钟、英文/句界审核 +10–20 分钟。
+
+**片段的计划另算**：10 分钟片段三语约 12–13 分钟/条（配音 1.25–1.3 倍），每条 TTS 约 4–6 分钟（batch 8），可审时间仍按上面的公式算。不要把整期的 60 分钟模板套到片段上。
 
 **海报与推送（独立交付）**：海报由用户的独立 agent 制作/上传，不占主生产线关键路径；开工时冻结标题/日期/讲员/类别，把 pageId 的固定页面 URL 交给海报 agent；页面发布后海报随 iOS 推送一起发。主生产线只给交接包（pageId、三语 URL、英文对照 URL、标题/日期/讲员/来源、部署版本），不生成、不发送海报；推送由 App 侧或用户触发，代理只准备标题/正文/深链。
 
@@ -163,6 +177,14 @@ TTS 开始（首语）= max(讲员映射确认, 首语翻译 + 口播规格)；�
 
 三语同时翻时 12 份一起发。一分钟级的本机脚本（`preflight.py`、`consistency_check.py`）不派：启动加读上下文比它本身还慢。
 
+**发布前只读审计的五项**（第 10 步 `assets` 前跑，子代理只读、只返回结论；缺一项不部署）：
+
+1. **英文对照覆盖**：`GET /english-reference/<pageId>.json`，每种语言的 `blocks` 数等于本页句数；片段用 `build_clip_reference` 的连续子集模式，整期页必须全覆盖。
+2. **审核收据**：`verdict=approved`、`reviewedAt` 不晚于当前时间、`note` 不含「未听审」；收据里记的 `review.mp3`／`track.wav` 哈希与要发布的音轨一致；发布过的收据没有被改写。
+3. **固定路径与文稿时间**：`/pages|content|captions/<pageId>/<locale>…` 三个前缀都对；文稿 `durationSeconds` ≥ 末句 `end`，并逐句过与 iOS `validateCues` 相同的检查。
+4. **release 合同**：v3 恰好七个资产，`fourProducts` 十个哈希；`validate_public_study`／`validate_v2_release_target` 通过。
+5. **旁路三件套**：`/english-reference/<pageId>.json`、`catalog.json`、`weekly-announcements-v1.json` 都引用当前 release／音频哈希；先列出仍引用旧哈希的文件（见第 10 步「旁路三件套」）。
+
 **不能并行的**
 
 - **Spark 上的任何事**：会话一次只接一个运行中的任务，8 副本已把 GPU 用满（96%）；`repair_sentence.py` 也要排进队列空档，不能和队列里正在跑的 TTS 同时来。两条队列或两个会话不会更快，只会互相拖慢。
@@ -187,7 +209,7 @@ python3 $EXP/spark_queue.py --session <session> --owner sentence-first-agent \
   --voice <speaker key>=<checkpoint> --batch-size 8
 ```
 
-两次登记一前一后、同一会话，**不能重叠**：先用 `spark_exclusive_session.py status` 确认第一批已退出、没有运行中的任务，再登记第二批。不要重复列已配完的语言，那会白起一次容器和模型加载。省下的是「首语不等其余语言」那段，等于其余语言翻译完成比首语晚的时间（2026-10-23 校准里约 5–10 分钟）；实际值记进 `run.md`。
+两次登记一前一后、同一会话，**不能重叠**：先用 `spark_exclusive_session.py status` 确认第一批已退出、没有运行中的任务，再登记第二批；还要看到第一批打印 `locale done <语言>`，只看到进程退出不算完成。不要重复列已配完的语言，那会白起一次容器和模型加载。省下的是「首语不等其余语言」那段，等于其余语言翻译完成比首语晚的时间（2026-10-23 校准里约 5–10 分钟）；实际值记进 `run.md`。
 
 ### 1 开自己的 Spark 独占会话
 
@@ -250,7 +272,7 @@ python3 $EXP/translate_parts.py merge --run $RUN --locale <locale>
 
 单讲员用 `"speaker": "<speaker key>"` 代替 `speakers`。合并后跑 `consistency_check.py --run $RUN --rules <episode-glossary.json>`；按报告改称呼/术语/数字，再进第 5 步。`--rules` 的 `terms` 是本期术语的 wrong→right 变体。`spokenForms` 把字幕写法换成 TTS 读法，字幕仍保留阿拉伯数字。
 
-独立复核不是可选项：每种语言合并后由另一个子代理做一遍逐句保真审计（漏译、增译、否定、数字、人名、经文），改动写进 `review.json` 的 `revisions`；`revisions` 为空又没有审计文件，就不进第 5 步（2026-10-24 重建版跳过了这一步）。术语落地不要做全局字符串替换：韩语助词随词尾音变（고발을→참소를、고발이→참소가），把变体写进 `--rules` 的 `terms`，替换后再跑一次 `consistency_check.py`；2026-10-24 这类错误 13 处，有 3 处进了配音，靠 ASR 打分才发现。
+独立复核不是可选项：每种语言合并后由另一个子代理做一遍逐句保真审计（漏译、增译、否定、数字、人名、经文），改动写进 `review.json` 的 `revisions`；`revisions` 为空又没有审计文件，就不进第 5 步（2026-10-24 重建版跳过了这一步）。审计子代理只拿只读副本、只写固定输出：先 `mkdir -p audit && cp translations.jsonl audit/translations.audit.jsonl` 并把 sha256 记进 `run.md`，提示里写明「只读 `audit/translations.audit.jsonl`，只写 `audit/audit-<locale>.jsonl`」；`translations.jsonl` 由主代理按它的结论改。术语落地不要做全局字符串替换：韩语助词随词尾音变（고발을→참소를、고발이→참소가），把变体写进 `--rules` 的 `terms`，替换后再跑一次 `consistency_check.py`；2026-10-24 这类错误 13 处，有 3 处进了配音，靠 ASR 打分才发现。
 
 ### 5 口播规格（本机）
 
@@ -317,7 +339,7 @@ python3 -m http.server -d $RUN 8765
 
 用户听这一条时下一种语言还在配。收尾后跑 `asr_triage.py --run $RUN`；播放器的 `asr_variant` / `asr_content` 用同一分类，先听 `asr_content`。`--doubt` 传翻译时发现的可疑英文源句（`{"s0043": "原因"}`）。回转写的同音字差异（它/他、再/在）不算问题；人名、数字、否定词不一致要人听；分数只是提示，不是听审。用户的结论写成审核收据，放在审核目录，并记进 `run.md`。
 
-收据要能回答「听了哪一版、怎么听的」：写 `reviewMode`（`whole_track` 或 `flagged_only`）、听审用的 `review.mp3` 与 `track.wav` 哈希；结论之后又重配或重出的，另写发布时音轨哈希并标 `unheardAfterApproval`；附播放器导出的逐句结论 JSON（哪些句被听过）。整轨听审耗时约等于音轨时长乘语言数，三条 31 分钟音轨不可能在 45 分钟内整轨听完；时间窗对不上就记 `flagged_only`，不要写成整轨。发出可审时 `run_journal.py append … --event waiting`，收到结论时 `--event resumed`；2026-10-24 两轮都没记，复盘里等待为 0。
+收据要能回答「听了哪一版、怎么听的」：写 `reviewMode`（`whole_track` 或 `flagged_only`）、听审用的 `review.mp3` 与 `track.wav` 哈希；结论之后又重配或重出的，另写发布时音轨哈希并标 `unheardAfterApproval`；附播放器导出的逐句结论 JSON（哪些句被听过）。整轨听审耗时约等于音轨时长乘语言数，三条 31 分钟音轨不可能在 45 分钟内整轨听完；时间窗对不上就记 `flagged_only`，不要写成整轨。发出可审时 `run_journal.py append … --event waiting`，收到结论时 `--event resumed`；2026-10-24 两轮都没记，复盘里等待为 0。这两条是必做步骤，不是可选记录：发链接的同一个动作里打 `waiting`，收据落盘后立刻打 `resumed`；脚本自动打点还没做，漏了这段时间就会被算成计算时间。
 
 ### 9 改句
 
@@ -342,6 +364,14 @@ python3 $EXP/repair_sentence.py --run $RUN --id s0123 --remote SPARK:<run> --ses
 6. `readback`：回读线上目录和 release，与 stage2 逐字节比对。
 7. `baseline` → `stage-english-reference` → `publish`：第三次部署，加 `/english-reference/<pageId>.json`。App 的字幕和全文靠它显示英文；没有它，页面照常能播，但只有译文（2026-10-22 播客首次发布就漏了这一步）。它的英文逐单元取自已人工批准的英文来源包，并绑定每种语言 release、文稿、字幕的哈希，所以必须在 release 上线之后生成；以后任何一种语言的 release、文稿或字幕变了，都要重新生成并部署这个文件，否则 App 会悄悄不显示英文。英文来源包未经人工批准时这一步会拒绝，先补英文审核。
 
+**旁路三件套（release、文稿或字幕的哈希一变就重生成）**：这三个文件不在 release 包里，漏一个就是页面能播、App 里缺东西：
+
+1. `/english-reference/<pageId>.json`：App 的字幕与全文靠它显示英文，必须在 release 上线后生成。
+2. 统计目录 `catalog.json`：`sermon-feedback-api` 的来源目录要含本页每条音轨的当前 MP3 哈希，否则该页赞踩与收听统计全部 400（`DEV-USAGE-001`）。
+3. 公告 sidecar `weekly-announcements-v1.json` 与海报收据的 release／sourceIdentity 绑定（`DEV-SF-005`）。
+
+做法：部署前先列出仍引用旧哈希的文件（`grep -rl "<旧 release sha256>"` 对快照或线上目录），逐个重生成，再部署；`verify`／`readback` 要覆盖这三项。
+
 每次 `publish` 都要用户在对话里授权；权限检查拒绝时不要绕过，把命令交给用户。发布后按 App 的读取路径（目录 → release → 文稿与字幕）再查一遍线上文件，然后请用户在手机上刷新确认。
 
 发布后清单，每项一条证据，缺项写进报告：
@@ -353,7 +383,7 @@ python3 $EXP/repair_sentence.py --run $RUN --id s0123 --remote SPARK:<run> --ses
 
 撤回重建的页面在撤回部署到 release 上线之间会从目录消失几分钟（2026-10-24 约 3 分钟），先告诉用户再部署。
 
-**发布到 Dev（实验页）**：目标是 `ai-for-god-sermon-audio-dev` / `https://ai-for-god-sermon-audio-dev.web.app`，channel `dev`。`publish_podcast_page.py` 写死 production（`stage()`、`baseline()` 的 environment、`ORIGIN`、句数、run 目录名、verdict 路径），复制后必须改成 dev 并参数化这些值，不能只改顶部常量（2026-10-23 实测）。Dev 目录有 25 页，v4 还有 v5 没有的 edition fan-out（26 页）；`baseline` 用 `allow_default_locale_drift=True`，`stage1` 修默认语言漂移。
+**发布到 Dev（实验页）**：目标是 `ai-for-god-sermon-audio-dev` / `https://ai-for-god-sermon-audio-dev.web.app`，channel `dev`。`publish_podcast_page.py` 写死 production（`stage()`、`baseline()` 的 environment、`ORIGIN`、句数、run 目录名、verdict 路径），复制后必须改成 dev 并参数化这些值，不能只改顶部常量（2026-10-23 实测）。Dev 目录有 25 页，v4 还有 v5 没有的 edition fan-out（26 页）；`baseline` 用 `allow_default_locale_drift=True`，`stage1` 修默认语言漂移。复制后逐项核对这份清单，缺一项就会出现「Dev 看得到、正式看不到」或反过来：pageId、语言列表、run 目录名、窗口起止、标题/类别/讲员、来源 URL 与日期、`environment`（production→dev）、`ORIGIN`、句数、verdict 路径、`allow_default_locale_drift`。部署前 `grep -n "ENVIRONMENT\|ORIGIN\|SITE\|environment=" <驱动>` 应只剩 dev 的那几行（`packages/production/src` 是导入路径，不算）。
 
 **片段页的英文对照**：规范 `build_reference` 要求页面覆盖英文来源包的全部单元，10 分钟片段只有连续子集，会被拒绝（2026-10-23 在本地合成快照验证）。用 dev 驱动里的 `build_clip_reference`：沿用同样的审批/哈希检查，只把覆盖改成连续有序子集；先在本地合成快照上验证每种语言的 `blocks` 等于本页句数（例如 187），不是整期 746。以后给规范 builder 加子集模式时，保留“整期页必须全覆盖”的检查。
 
@@ -388,7 +418,7 @@ python3 $EXP/publish_study.py finish                                            
 
 `finish` 关闭会话，再按会话标签删掉停止的容器（`docker rm $(docker ps -aq --filter label=tongxing.spark.session=<session>)`）。按[运行报告](../../docs/test-run-retrospective.zh.md)导出本次报告。各脚本经 `runlog.py` 写 `journal.ndjson`、`outcome.json`、`timings.tsv`；导出器自动出墙钟/计算/等待/返工。人工听审由代理在发出和收到结论时补 `waiting`/`resumed`。发布型子命令（assets、stage、publish）也经 `runlog.py` 写 outcome 与 timings，否则报告里发布阶段没有时间（`DEV-SF-007`）。重建、热修、海报、统计目录同步各自导出报告，不并入主报告。本轮新写或改过的驱动随报告 PR 一起提交，开自己的分支，不推到已合并的分支上。
 
-发布后保留小文本表（`sentences.jsonl`、`translations.jsonl`、`speech.jsonl`、`speakers.json`、`review.json`、`schedule.json`、`run.md`、审核表），只删 `tts/`、`slices/`、`clip.wav`、`track.wav`、`dub*.mp4`；否则下一轮无法 resume 或复用讲员分配/已批准译文（2026-10-23 实测：上一期 run 目录被清理，只能从 Spark 拉回 `speech.jsonl`）。
+发布后保留小文本表（`sentences.jsonl`、`translations.jsonl`、`speech.jsonl`、`speakers.json`、`review.json`、`schedule.json`、`run.md`、审核表），只删 `tts/`、`slices/`、`clip.wav`、`track.wav`、`dub*.mp4`；否则下一轮无法 resume 或复用讲员分配/已批准译文（2026-10-23 实测：上一期 run 目录被清理，只能从 Spark 拉回 `speech.jsonl`）。清理前把保留清单写进 `run.md`，删完 `test -f` 逐个核对，确认该有的小表都在（单讲员没有 `speakers.json`）。
 
 ## 完成的样子
 
