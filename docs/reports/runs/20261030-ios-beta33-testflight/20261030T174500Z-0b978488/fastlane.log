@@ -1,0 +1,17 @@
+[10:45:02]: [33mGet started using a Gemfile for fastlane https://docs.fastlane.tools/getting-started/ios/setup/#use-a-gemfile[0m
+[10:45:02]: fastlane 2.241.1 (Ruby 4.0.7, homebrew)
+[10:45:03]: [32mDriving the lane 'beta_wait' 🚀[0m
+[10:45:03]: [32m---------------------------------------[0m
+[10:45:03]: [32m--- Step: app_store_connect_api_key ---[0m
+[10:45:03]: [32m---------------------------------------[0m
+
++---------------------------------------------+
+|              [32mfastlane summary[0m               |
++------+------------------------+-------------+
+| Step | Action                 | Time (in s) |
++------+------------------------+-------------+
+| 1    | app_store_connect_api  | 0           |
+|      | _key                   |             |
++------+------------------------+-------------+
+
+[10:53:09]: [32mfastlane.tools just saved you 8 minutes! 🎉[0m
