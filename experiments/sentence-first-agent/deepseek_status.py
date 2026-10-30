@@ -15,9 +15,17 @@ import time
 from pathlib import Path
 
 
-def read_state(run: Path) -> dict:
-    path = run / "state.json"
-    return json.loads(path.read_text(encoding="utf-8")) if path.is_file() else {}
+def read_state(run: Path, label: str | None = None) -> dict:
+    if label:
+        path = run / f"state-{label}.json"
+        return json.loads(path.read_text(encoding="utf-8")) if path.is_file() else {}
+    candidates = sorted(run.glob("state-*.json"), key=lambda item: item.stat().st_mtime)
+    if not candidates:
+        legacy = run / "state.json"
+        candidates = [legacy] if legacy.is_file() else []
+    if not candidates:
+        return {}
+    return json.loads(candidates[-1].read_text(encoding="utf-8"))
 
 
 def read_events(run: Path, limit: int) -> list[dict]:
@@ -33,12 +41,12 @@ def cost(event: dict) -> float:
             + 1.2 * int(event.get("completionTokens") or 0)) / 1_000_000
 
 
-def render(run: Path, tail: int) -> str:
-    state = read_state(run)
+def render(run: Path, tail: int, label: str | None = None) -> str:
+    state = read_state(run, label)
     if not state:
         return f"{run}: no state.json yet (stage has not started)"
     total = state.get("total") or 0
-    done = state.get("done") or 0
+    done = state.get("windowsDone") or 0
     share = f"{done}/{total} ({done * 100 // total}%)" if total else str(done)
     eta = ""
     if total and state.get("avgSeconds") and done:
@@ -71,13 +79,14 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--run", type=Path, required=True, help="directory holding state.json/events.jsonl")
     parser.add_argument("--tail", type=int, default=8)
+    parser.add_argument("--label", help="pick one stage when a run has several")
     parser.add_argument("--watch", type=float, default=0.0, help="refresh every N seconds")
     args = parser.parse_args()
     if not args.watch:
-        print(render(args.run, args.tail))
+        print(render(args.run, args.tail, args.label))
         return 0
     while True:
-        print("\033[2J\033[H" + render(args.run, args.tail), flush=True)
+        print("\033[2J\033[H" + render(args.run, args.tail, args.label), flush=True)
         time.sleep(args.watch)
 
 
