@@ -18,10 +18,14 @@ IPA 于 2026-10-28 23:44:53 UTC 上传命令成功返回，上传收据与 IPA �
 
 正式 App 的 1.26.32 版本页 ID 为 `de1b21e6-85ab-442f-be83-544bf07d8e3f`，已关联该 Build 76，发布方式为 `MANUAL`，审核通过不自动上架。五种语言（简中、英文、韩文、西班牙文、越南文）的更新说明已写入并读回，其中明确说明中文手册为机器翻译且未经人工审校；审核备注保留同一披露。既有中、英截图各 18 张完整继承，审核联系信息已读回存在。
 
-用户授权提交审核后，Apple 于 2026-10-29 00:06:48 UTC 收到 iOS 审核提交 `95019938-dce6-49f5-a9cc-eb630669c0f7`。00:07:56 UTC 再次读回：审核提交与 1.26.32 版本均为 `WAITING_FOR_REVIEW`，提交项目绑定上述版本 ID；Build 76 仍为 `VALID`。审核批准与实际商店上架尚未发生。
+用户授权提交审核后，Apple 于 2026-10-29 00:06:48 UTC 收到 iOS 审核提交 `95019938-dce6-49f5-a9cc-eb630669c0f7`。00:07:56 UTC 再次读回：审核提交与 1.26.32 版本均为 `WAITING_FOR_REVIEW`，提交项目绑定上述版本 ID；Build 76 仍为 `VALID`。这是提审时的状态；过审与发布读回见下节。
 
-上述 Apple 步骤与首轮异步处理超时见[脱敏提审报告 PR #1490](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/1490)。更新后的本机 `release-record.json` SHA-256 为 `3965791f72aeead0cf81f2a5355d9232c57191325b8184d99ef35283b025ad70`；归档报告记录的是上传前的初始收据哈希。
+上述 Apple 步骤与首轮异步处理超时见[脱敏提审报告 PR #1490](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/1490)。提审时本机 `release-record.json` 快照 SHA-256 为 `3965791f72aeead0cf81f2a5355d9232c57191325b8184d99ef35283b025ad70`；归档报告记录的是上传前的初始收据哈希。
+
+## 过审后手动发布
+
+用户在 Apple 审核通过后授权发布。2026-10-29 02:45:49 UTC 的 App Store Connect 预检读回：版本 `PENDING_DEVELOPER_RELEASE`，发布方式 `MANUAL`，绑定的 Build 76 为 `VALID`、未过期；审核提交 `COMPLETE`，唯一 App 版本项目为 `APPROVED`。02:47:32 UTC 对准确版本 ID 发出手动发布请求并成功返回。02:47:48 UTC 版本读回 `READY_FOR_SALE`，审核提交保持 `COMPLETE`。美国公开商店目录截至 02:52 UTC 仍显示旧版本 1.26.27；14:32 UTC 再查 Apple 公开目录已显示 1.26.32，App Store Connect 仍为 `READY_FOR_SALE`，绑定同一 Build 76。公开页面也包含 1.26.32 信息。[美国商店页面](https://apps.apple.com/us/app/tongxing-sermon-companion/id6809255441)。脱敏过程与早期传播状态见[手动发布报告 PR #1492](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/1492)。最终本机 `release-record.json` SHA-256 为 `70596e2693dc6a600e565280ea5602c966e3d8343bb61f634ab8a7af0c4cb471`。
 
 ## 验收边界
 
-真机安装、实际手册阅读、麦克风听音对齐、完整收听和现场声学效果仍未由本轮验证；Apple 的 `WAITING_FOR_REVIEW` 只证明已收件，不代表审核批准或上架。本机 Archive、IPA、Apple 上传与提交回执均位于忽略的 `artifacts/tongxing-ios/` 下，不进入 Git。
+真机安装、实际手册阅读、麦克风听音对齐、完整收听和现场声学效果仍未由本轮验证；`READY_FOR_SALE` 与公开商店页面的版本传播分别记录。本机 Archive、IPA、Apple 上传、审核与发布回执均位于忽略的 `artifacts/tongxing-ios/` 下，不进入 Git。
