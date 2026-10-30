@@ -400,26 +400,26 @@ final class AudioAlignmentController {
             confirmedPosition = target
             failed = false
             status = "已对齐至 {time}。"
-            if wasPlaying {
-                resumed = true
-                playback.resumeAfterAlignment()
-                // Retain task ownership while AVPlayer activates/buffers, so a
-                // manual command or the deadline still defeats late correction.
-                while current(token) && !playback.isPlaying {
-                    if !playback.isWaiting && !playback.alignmentPlaybackIntent {
-                        status = "已定位，请点播放继续收听。"; return
-                    }
-                    try await Task.sleep(for: .milliseconds(50))
+            // A successful alignment starts playback: the listener lands on the
+            // live sentence without a second tap, even if they had paused first.
+            resumed = true
+            playback.resumeAfterAlignment()
+            // Retain task ownership while AVPlayer activates/buffers, so a
+            // manual command or the deadline still defeats late correction.
+            while current(token) && !playback.isPlaying {
+                if !playback.isWaiting && !playback.alignmentPlaybackIntent {
+                    status = "已定位，请点播放继续收听。"; return
                 }
+                try await Task.sleep(for: .milliseconds(50))
+            }
+            guard current(token) else { return }
+            if let final = AlignmentTarget.position(offset: hit.result.offsetSeconds, startedAt: capturedStart,
+                                                   now: now(), duration: selected.durationSeconds),
+               abs(final - playback.position) > 0.15 {
+                let corrected = await playback.applyAlignedPosition(final)
                 guard current(token) else { return }
-                if let final = AlignmentTarget.position(offset: hit.result.offsetSeconds, startedAt: capturedStart,
-                                                       now: now(), duration: selected.durationSeconds),
-                   abs(final - playback.position) > 0.15 {
-                    let corrected = await playback.applyAlignedPosition(final)
-                    guard current(token) else { return }
-                    if corrected { confirmedPosition = final }
-                    else { failed = true; outcome = .playFailed; status = "定位未完成，请重试或手动调整。" }
-                }
+                if corrected { confirmedPosition = final }
+                else { failed = true; outcome = .playFailed; status = "定位未完成，请重试或手动调整。" }
             }
         } catch is CancellationError {
             failed = false
