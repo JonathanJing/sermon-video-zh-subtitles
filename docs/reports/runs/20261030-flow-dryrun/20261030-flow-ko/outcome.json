@@ -1,0 +1,20 @@
+{
+  "schemaVersion": "sentence-first-outcome-v1",
+  "at": "2026-10-30T19:52:34+00:00",
+  "status": "track_ready_for_review",
+  "delivery": "four_layer_release",
+  "locale": "ko",
+  "trackSeconds": 220.67,
+  "ttsWallSeconds": 35.4,
+  "realtime": 6.23,
+  "asrMean": null,
+  "startedAt": "2026-10-30T19:52:32+00:00",
+  "endedAt": "2026-10-30T19:52:34+00:00",
+  "published": false,
+  "reviewMp3": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/sentence-first-agent/20261030-flow-ko/review.mp3",
+  "reviewPlayer": {
+    "html": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/sentence-first-agent/20261030-flow-ko/review-player.html",
+    "rows": 60
+  },
+  "note": "track merged and scored; audio alignment and review materials done in the same pass"
+}

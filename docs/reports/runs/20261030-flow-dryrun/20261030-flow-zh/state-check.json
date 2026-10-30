@@ -1,0 +1,59 @@
+{
+  "run": "artifacts/sentence-first-agent/20261030-flow-zh",
+  "consistent": true,
+  "labels": [
+    {
+      "label": "audit",
+      "path": "artifacts/sentence-first-agent/20261030-flow-zh/state-audit.json",
+      "ok": true,
+      "mismatches": [],
+      "repaired": 0,
+      "live": {
+        "status": "finished",
+        "calls": 0,
+        "hits": 9,
+        "failed": 0,
+        "windowsDone": 3,
+        "unitsDone": 60,
+        "validationFailures": 0
+      },
+      "rebuilt": {
+        "status": "finished",
+        "calls": 0,
+        "hits": 9,
+        "failed": 0,
+        "windowsDone": 3,
+        "unitsDone": 60,
+        "validationFailures": 0
+      }
+    },
+    {
+      "label": "translate",
+      "path": "artifacts/sentence-first-agent/20261030-flow-zh/state-translate.json",
+      "ok": true,
+      "mismatches": [],
+      "repaired": 0,
+      "live": {
+        "status": "finished",
+        "calls": 10,
+        "hits": 0,
+        "failed": 0,
+        "windowsDone": 7,
+        "unitsDone": 60,
+        "validationFailures": 0
+      },
+      "rebuilt": {
+        "status": "finished",
+        "calls": 10,
+        "hits": 0,
+        "failed": 0,
+        "windowsDone": 7,
+        "unitsDone": 60,
+        "validationFailures": 0
+      }
+    }
+  ],
+  "missing": [],
+  "units": {},
+  "checkedAt": "2026-10-30T19:58:01.261150+00:00"
+}
