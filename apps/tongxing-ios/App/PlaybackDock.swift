@@ -11,7 +11,6 @@ struct PlaybackDock: View {
     @ObservedObject var playback: PlaybackController
     @Environment(\.colorScheme) private var scheme
     @Environment(\.dynamicTypeSize) private var typeSize
-    @State private var currentMoreFrame: CGRect = .null
     var isPreparing = false
     var alignmentModel: AppModel? = nil
     var locate: (() -> Void)? = nil
@@ -20,9 +19,11 @@ struct PlaybackDock: View {
     var onTimeTap: (() -> Void)? = nil
     var placement: PlaybackDockPlacement = .bottom
     var inSystemBar = false
-    var onMoreTap: (() -> Void)? = nil
-    var onMoreDismiss: (() -> Void)? = nil
-    var onMoreFrameChange: ((CGRect) -> Void)? = nil
+    /// The host owns the open state so it can close the panel when a sheet or
+    /// an alignment failure takes over. The content is the shared
+    /// `PlaybackMoreControls`; the dock only anchors the system popover.
+    var isMorePresented: Binding<Bool>? = nil
+    var moreContent: (() -> AnyView)? = nil
 
     var body: some View {
         Group {
@@ -89,21 +90,17 @@ struct PlaybackDock: View {
     }
 
     private var hasMoreControls: Bool {
-        alignmentModel != nil || precision != nil || current != nil || playback.undoPosition != nil
+        isMorePresented != nil && moreContent != nil
+            && (alignmentModel != nil || precision != nil || current != nil || playback.undoPosition != nil)
     }
 
-    /// The dock never presents the more panel itself. It reports the tap and
-    /// the button frame; the host (ContentView or a sheet) presents the single
-    /// shared `PlaybackMorePanelOverlay`. This replaced an older split where
-    /// the dock fell back to a system popover when no onMoreTap was given —
-    /// the popover path is gone so reserved-region avoidance and styling
-    /// cannot diverge between hosts.
+    /// The more panel is a system popover anchored to this button. On iPhone
+    /// `.presentationCompactAdaptation(.popover)` keeps it a popover instead of
+    /// a sheet, so UIKit positions it, points the arrow at the button, keeps it
+    /// on screen and dismisses it on an outside tap.
     private var moreButton: some View {
         Button {
-            // Sheet transitions can clear the host anchor after its initial
-            // geometry notification. Republish this button before opening.
-            if !currentMoreFrame.isNull { onMoreFrameChange?(currentMoreFrame) }
-            onMoreTap?()
+            isMorePresented?.wrappedValue = true
         } label: {
             Image(systemName: "magnifyingglass")
                 .font(.system(size: 20, weight: .medium))
@@ -112,14 +109,13 @@ struct PlaybackDock: View {
         }
         .accessibilityLabel(localization.text("定位"))
         .accessibilityIdentifier("playback-more")
-        .onGeometryChange(for: CGRect.self, of: { $0.frame(in: .global) }) { frame in
-            currentMoreFrame = frame
-            onMoreFrameChange?(frame)
+        .popover(isPresented: isMorePresented ?? .constant(false),
+                 attachmentAnchor: .rect(.bounds),
+                 arrowEdge: placement == .trailing ? .trailing : .bottom) {
+            moreContent?()
+                .presentationCompactAdaptation(.popover)
         }
-        .onDisappear {
-            onMoreFrameChange?(.null)
-            onMoreDismiss?()
-        }
+        .onDisappear { isMorePresented?.wrappedValue = false }
     }
 
     @ViewBuilder private var timeAndStatus: some View {
@@ -228,109 +224,20 @@ private struct AlignmentObservedContent<Content: View>: View {
     var body: some View { content(model.alignmentBusy) }
 }
 
-/// Every host presents the same panel. It remains inside a verified free
-/// region, scrolling when the full panel is taller than the available space.
-/// If no usable region exists, the system sheet owns occlusion avoidance.
-struct PlaybackMorePanelOverlay<Panel: View>: View {
-    @Binding var isPresented: Bool
-    var buttonFrame: CGRect
-    var placement: PlaybackDockPlacement
-    @ViewBuilder var panel: (CGFloat) -> Panel
-    @State private var panelSize = CGSize(width: 320, height: 176)
-    @State private var requiresSystemSheet = false
-
-    var body: some View {
-        Group {
-            if isPresented && !buttonFrame.isNull {
-                GeometryReader { proxy in
-                    Color.clear
-                        .contentShape(Rectangle())
-                        .onTapGesture { isPresented = false }
-                        .accessibilityHidden(true)
-                    if let viewport = panelViewport(in: proxy) {
-                        ScrollView {
-                            panel(viewport.width)
-                                .fixedSize(horizontal: false, vertical: true)
-                                .onGeometryChange(for: CGSize.self, of: { $0.size }) { panelSize = $0 }
-                        }
-                        .frame(width: viewport.width, height: viewport.height)
-                        .listeningGlassSurface()
-                        .position(x: viewport.midX, y: viewport.midY)
-                    }
-                }
-                .onGeometryChange(for: Bool.self, of: { panelViewport(in: $0) == nil }) {
-                    requiresSystemSheet = $0
-                }
-            }
-        }
-        .sheet(isPresented: Binding(
-            get: { isPresented && requiresSystemSheet },
-            set: { if !$0 { isPresented = false } }
-        )) {
-            GeometryReader { proxy in
-                ScrollView { panel(min(320, max(0, proxy.size.width - 24))) }
-                    .frame(maxWidth: .infinity)
-                    .padding(12)
-            }
-            .presentationDetents([.large])
-        }
-        .onChange(of: isPresented) { _, presented in
-            if !presented { requiresSystemSheet = false }
-        }
-    }
-
-    private func panelViewport(in proxy: GeometryProxy) -> CGRect? {
-        let root = proxy.frame(in: .global)
-        let button = buttonFrame.offsetBy(dx: -root.minX, dy: -root.minY)
-        let width = min(320, max(0, proxy.size.width - 24))
-        let height = panelSize.height
-        let proposedX = placement == .trailing
-            ? button.minX - width - 10 : button.midX - width / 2
-        let proposedY = placement == .trailing
-            ? button.midY - height / 2 : button.minY - height - 8
-        return PlaybackPanelLayout.viewport(
-            preferred: CGRect(x: proposedX, y: proposedY, width: width, height: height),
-            in: CGRect(origin: .zero, size: proxy.size), avoiding: reservedRegions(in: proxy)
-        )
-    }
-
-    private func reservedRegions(in proxy: GeometryProxy) -> [CGRect] {
-        #if os(iOS) && canImport(SwiftUI, _version: 8.0.85)
-        if #available(iOS 27.1, macOS 27.1, *) {
-            return proxy.reservedRegions(kind: .division).filter(\.isActive).map(\.frame)
-                + proxy.reservedRegions(kind: .occlusion).filter(\.isActive).map(\.frame)
-        }
-        #endif
-        return []
-    }
-}
-
 struct PlaybackMoreControls: View {
     @ObservedObject private var localization = AppLocalization.shared
     @ObservedObject var playback: PlaybackController
-    @AccessibilityFocusState private var closeFocused: Bool
     var isPreparing: Bool
     var alignmentModel: AppModel?
     var locate: (() -> Void)? = nil
     var precision: (() -> Void)?
     var current: (() -> Void)?
+    /// Closes the popover before an action opens a sheet or scrolls. The
+    /// popover itself needs no close button: tapping outside dismisses it.
     var onClose: () -> Void
-    var width: CGFloat = 320
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            HStack {
-                Text(localization.text("定位")).font(.headline)
-                Spacer()
-                Button(action: onClose) {
-                    Image(systemName: "xmark")
-                        .font(.footnote.weight(.semibold))
-                        .frame(width: 44, height: 44)
-                }
-                .accessibilityLabel(localization.text("关闭"))
-                .accessibilityIdentifier("playback-more-close")
-                .accessibilityFocused($closeFocused)
-            }
             if let alignmentModel {
                 AlignmentControls(model: alignmentModel, compact: true, locate: locate == nil ? nil : openLocate)
             }
@@ -348,12 +255,10 @@ struct PlaybackMoreControls: View {
             }
         }
         .padding(12)
-        .frame(width: width)
+        .frame(minWidth: 260, idealWidth: 300, maxWidth: 320)
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("playback-more-panel")
-        .accessibilityAddTraits(.isModal)
         .accessibilityAction(.escape, onClose)
-        .task { closeFocused = true }
     }
 
     private func openLocate() {

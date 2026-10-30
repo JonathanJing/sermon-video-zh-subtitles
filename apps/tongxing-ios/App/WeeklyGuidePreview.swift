@@ -14,7 +14,6 @@ struct WeeklyGuidePreview: View {
     @Environment(\.dynamicTypeSize) private var typeSize
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var showingMore = false
-    @State private var moreFrame: CGRect = .null
     @AccessibilityFocusState private var focusedSection: String?
     @State private var remoteGuide: WeeklyGuide?
     @State private var remoteSelection: WeeklyGuideSelection?
@@ -129,12 +128,6 @@ struct WeeklyGuidePreview: View {
                     }
                 }
             }
-            }
-        }
-        .overlay {
-            PlaybackMorePanelOverlay(isPresented: $showingMore, buttonFrame: moreFrame, placement: morePlacement) { width in
-                PlaybackMoreControls(playback: playback, isPreparing: false, alignmentModel: model,
-                                     onClose: { showingMore = false }, width: width)
             }
         }
         }
@@ -439,11 +432,13 @@ struct WeeklyGuidePreview: View {
         return bounds
     }
 
-    @State private var morePlacement: PlaybackDockPlacement = .bottom
     private func guideDock(placement: PlaybackDockPlacement, inSystemBar: Bool = false) -> some View {
         PlaybackDock(playback: playback, alignmentModel: model, placement: placement, inSystemBar: inSystemBar,
-            onMoreTap: { morePlacement = placement; showingMore = true },
-            onMoreDismiss: { showingMore = false }, onMoreFrameChange: { moreFrame = $0 })
+            isMorePresented: $showingMore,
+            moreContent: {
+                AnyView(PlaybackMoreControls(playback: playback, isPreparing: false, alignmentModel: model,
+                                             onClose: { showingMore = false }))
+            })
     }
 }
 
