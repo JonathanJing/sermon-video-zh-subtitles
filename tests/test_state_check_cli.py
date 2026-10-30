@@ -54,6 +54,21 @@ class StateCheckCliTest(unittest.TestCase):
             self.assertEqual(repaired.returncode, 0)
             self.assertEqual(run_cli("--run", str(run)).returncode, 0)
 
+    def test_units_report_lists_coverage_and_failures(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            run = make_run(Path(tmp))
+            (run / "units.jsonl").write_text(
+                "".join(json.dumps({"label": "translate", "id": f"s{number}", "context": "w",
+                                    "kind": "window"}) + "\n" for number in range(2)),
+                encoding="utf-8")
+            events = (run / "events.jsonl").read_text()
+            (run / "events.jsonl").write_text(
+                events + json.dumps({"label": "translate", "status": "validation_failed",
+                                     "failures": ["s2: empty target"]}) + "\n", encoding="utf-8")
+            result = run_cli("--run", str(run), "--units", "--source-run", str(run))
+            self.assertIn("units covered 2, missing 1, failed 1", result.stdout)
+            self.assertEqual(result.returncode, 1)
+
     def test_all_labels_and_missing_report(self):
         with tempfile.TemporaryDirectory() as tmp:
             run = make_run(Path(tmp), windows=2)

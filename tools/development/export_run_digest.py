@@ -54,7 +54,10 @@ SCHEMA = "sermon-run-digest-v1"
 # diagnose/refute/risk.json carry agent-trial rows the run report reviews case by case.
 WHOLE_NAMES = {"outcome.json", "timings.tsv", "summary.json", "preflight.json", "diagnose.json", "refute.json", "risk.json",
                # The run journal and decision record (run_journal.py, record_decision.py) are the retrospective's spine.
-               "journal.ndjson", "decisions.ndjson"}
+               "journal.ndjson", "decisions.ndjson",
+               # state_check.py writes this before a run report; it carries the DeepSeek
+               # stage consistency and uncovered-sentence evidence.
+               "state-check.json"}
 BUDGET_LEDGER = "source-budget.json"
 BUDGET_SUMMARY_NAME = "source-budget.settlement.json"
 BUDGET_SUMMARY_SCHEMA_V1 = "sermon-run-digest-budget-settlement-v1"
@@ -538,6 +541,23 @@ def index_markdown(name: str, dest: Path, entries: list[dict], runs: list[dict])
                           if status_index is not None else [])
                 if failed:
                     out += ["", "Failed stages: " + ", ".join(f"`{s}`" for s in failed)]
+        state = read_json(dest / label / "state-check.json")
+        if state:
+            verdict = "一致" if state.get("consistent") else "不一致"
+            missing = state.get("missing") or []
+            out += ["", f"DeepSeek 状态（`state-check.json`）：**{verdict}**"
+                    + (f"；未覆盖句子 {len(missing)}" if missing else "；没有未覆盖句子")]
+            for item in state.get("labels") or []:
+                if not isinstance(item, dict):
+                    continue
+                rebuilt = item.get("rebuilt") or {}
+                out.append(f"- `{item.get('label')}`：{rebuilt.get('status', '?')}"
+                           f"，窗口 {rebuilt.get('windowsDone', '?')}"
+                           f"，句 {rebuilt.get('unitsDone', '?')}"
+                           f"，calls {rebuilt.get('calls', '?')}／hits {rebuilt.get('hits', '?')}"
+                           f"，失败 {rebuilt.get('failed', '?')}")
+                for line in item.get("mismatches") or []:
+                    out.append(f"  - 不一致：{line}")
         for entry in (e for e in entries if e["run"] == label and e["kind"] == "budget" and "omitted" not in e):
             record = read_json(dest / label / entry["path"]) or {}
             out.append(budget_line(entry["source"], record))

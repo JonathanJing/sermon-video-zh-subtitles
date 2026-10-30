@@ -83,6 +83,20 @@ class RebuildStateTest(unittest.TestCase):
             write_done(run, [["s1", "s2"]])
             self.assertEqual(C.missing_units(run, run), ["s3"])
 
+    def test_unit_ledger_wins_and_failed_ids_are_listed(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            run = Path(tmp)
+            (run / "done.jsonl").write_text(
+                json.dumps({"label": "translate", "context": "w0", "kind": "window",
+                            "ids": ["s1", "s2"]}) + "\n", encoding="utf-8")
+            (run / "units.jsonl").write_text(
+                json.dumps({"ts": "t", "label": "translate", "id": "s1", "context": "w0",
+                            "kind": "window"}) + "\n", encoding="utf-8")
+            self.assertEqual(C.recorded_units(run), {"s1"})
+            write_events(run, [{"status": "validation_failed",
+                                "failures": ["s2: empty target", "s3: coverage names another unit"]}])
+            self.assertEqual(C.failed_units(run), ["s2", "s3"])
+
     def test_labels_keep_separate_states(self):
         with tempfile.TemporaryDirectory() as tmp:
             run = Path(tmp)

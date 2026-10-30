@@ -64,6 +64,7 @@ def main() -> int:
     parser.add_argument("--all", action="store_true", help="check every label found in events.jsonl")
     parser.add_argument("--source-run", type=Path, help="for --missing: the run whose sentences must be covered")
     parser.add_argument("--missing", action="store_true", help="list sentences the translate stage has not covered")
+    parser.add_argument("--units", action="store_true", help="report per-sentence coverage and failed ids")
     parser.add_argument("--record", action="store_true", help="write state-check.json into the run directory")
     parser.add_argument("--write", action="store_true", help="overwrite each state file with the rebuilt counters")
     parser.add_argument("--ignore-status", action="store_true", help="compare counters only")
@@ -75,10 +76,14 @@ def main() -> int:
         return 1
     results = [check(args.run, label, args.write, args.ignore_status) for label in labels]
     missing = []
-    if args.missing and args.source_run:
+    if (args.missing or args.units) and args.source_run:
         missing = C.missing_units(args.run, args.source_run, "translate")
+    units = {}
+    if args.units:
+        units = {"covered": len(C.recorded_units(args.run)), "missing": missing,
+                 "failed": C.failed_units(args.run)}
     payload = {"run": str(args.run), "consistent": all(item["ok"] for item in results),
-               "labels": results, "missing": missing}
+               "labels": results, "missing": missing, "units": units}
     if args.record:
         payload["checkedAt"] = datetime.now(timezone.utc).isoformat()
         (args.run / "state-check.json").write_text(
@@ -99,6 +104,11 @@ def main() -> int:
                 print("  " + line)
         if args.missing and args.source_run:
             print(f"uncovered sentences: {len(missing)}" + (f"  first: {missing[:8]}" if missing else ""))
+        if args.units:
+            print(f"units covered {units['covered']}, missing {len(units['missing'])}, "
+                  f"failed {len(units['failed'])}"
+                  + (f"  first missing {units['missing'][:8]}" if units["missing"] else "")
+                  + (f"  failed {units['failed'][:8]}" if units["failed"] else ""))
         if args.record:
             print(f"wrote {args.run / 'state-check.json'}")
     return 0 if payload["consistent"] and not missing else 1
