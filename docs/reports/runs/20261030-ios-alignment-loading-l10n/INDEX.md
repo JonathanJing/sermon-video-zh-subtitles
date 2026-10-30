@@ -1,6 +1,6 @@
 # Run digest 20261030-ios-alignment-loading-l10n
 
-Generated 2026-10-30T19:32:46+00:00. Redacted copies only; source hashes are in manifest.json.
+Generated 2026-10-30T19:33:20+00:00. Redacted copies only; source hashes are in manifest.json.
 
 ## 20261030T122027-test-e08c601d
 
@@ -19,7 +19,7 @@ Not copied: 2 .0~-OHjLjqi0iWwvb3z2NSMsThWbyoBb2LH5i0bG1iiwA6N2fIHosXdag-9ffD_q6w
 
 ## 20261030T122124-test-d96e8a4a
 
-Source: `~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.claude/worktrees/ios-beta-1.26.33/artifacts/tongxing-ios/2026-10-30/cli/20261030T122124-test-d96e8a4a`
+Source: `~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.claude/worktrees/ios-beta-1.26.33/artifacts/tongxing-ios/report-src-20261030-l10n/20261030T122124-test-d96e8a4a`
 
 
 Error-like log lines (first 5 per log):
@@ -29,35 +29,5 @@ Error-like log lines (first 5 per log):
 - `run.log`: [line 478]     export CLANG_WARN_OBJC_ROOT_CLASS\=YES_ERROR
 - `run.log`: [line 636]     export GCC_WARN_ABOUT_RETURN_TYPE\=YES_ERROR
 - `run.log`: [line 833]     export RUNTIME_EXCEPTION_ALLOW_DYLD_ENVIRONMENT_VARIABLES\=NO
-- `test.xcresult/Staging/1_Test/Diagnostics/TongxingTests-DF4ACC00-A5AE-4EB3-A7C3-FA1855533B57-Configuration-Test Scheme Action-Iteration-1/TongxingTests-E4B99088-8AAD-48A5-9533-78C0F9C4D47A/Session-TongxingTests-2026-10-30_122127-12VCGb.log`: 12:21:27.623 xcodebuild[53643:7060654] Test standard output and standard error is at ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.claude/worktrees/ios-beta-1.26.33/artifacts/tongxing-ios/2
-- `test.xcresult/Staging/1_Test/Diagnostics/TongxingTests-DF4ACC00-A5AE-4EB3-A7C3-FA1855533B57-Configuration-Test Scheme Action-Iteration-1/TongxingTests-E4B99088-8AAD-48A5-9533-78C0F9C4D47A/Session-TongxingTests-2026-10-30_122127-12VCGb.log`: ... 553 lines omitted; 3 error-like lines, 3 kept below ...
-- `test.xcresult/Staging/1_Test/Diagnostics/TongxingTests-DF4ACC00-A5AE-4EB3-A7C3-FA1855533B57-Configuration-Test Scheme Action-Iteration-1/TongxingTests-E4B99088-8AAD-48A5-9533-78C0F9C4D47A/Session-TongxingTests-2026-10-30_122127-12VCGb.log`: [line 388] 12:21:27.943 xcodebuild[53643:7060705] Calling -[SimDevice getenv:error:] for TESTMANAGERD_SIM_SOCK
-- `test.xcresult/Staging/1_Test/Diagnostics/TongxingTests-DF4ACC00-A5AE-4EB3-A7C3-FA1855533B57-Configuration-Test Scheme Action-Iteration-1/TongxingTests-E4B99088-8AAD-48A5-9533-78C0F9C4D47A/Session-TongxingTests-2026-10-30_122127-12VCGb.log`: [line 411] 12:21:29.641 xcodebuild[53643:7060699] Got reply to session initiation request with identifier A58F2618-9FA4-4E37-9624-AB23832BD05A (error: (null))
-- `test.xcresult/Staging/1_Test/Diagnostics/TongxingTests-DF4ACC00-A5AE-4EB3-A7C3-FA1855533B57-Configuration-Test Scheme Action-Iteration-1/TongxingTests-E4B99088-8AAD-48A5-9533-78C0F9C4D47A/Session-TongxingTests-2026-10-30_122127-12VCGb.log`: [line 480] 12:22:01.196 Tongxing[53942:7064104] Creating future for 'requesting test configuration' with timeout 600.00
-- `test.xcresult/Staging/1_Test/Diagnostics/iPhone 17 Pro Max_0B2390DC-1B49-4815-8446-3E6DF7E911FE/testmanagerd.log`: 12:21:27.917 xcodebuild[53643:7060698] Calling -[SimDevice getenv:error:] for TESTMANAGERD_SIM_SOCK
-- `test.xcresult/Staging/1_Test/Diagnostics/iPhone 17 Pro Max_0B2390DC-1B49-4815-8446-3E6DF7E911FE/testmanagerd.log`: 12:21:29.643 xcodebuild[53643:7060655] Got reply to control session initiation request (result:error): <XCTCapabilities: 0x7916e42840>: {
-- `test.xcresult/Staging/1_Test/Diagnostics/iPhone 17 Pro Max_0B2390DC-1B49-4815-8446-3E6DF7E911FE/testmanagerd.log`: 12:22:01.201 xcodebuild[53643:7060699] Got reply to authorization request for pid 53942 (result:error): 1: (null)
-- `test.xcresult/Staging/1_Test/Diagnostics/simctl_diagnostics/0B2390DC-1B49-4815-8446-3E6DF7E911FE/launchd_state.log`: ... 137668 lines omitted; 547 error-like lines, 50 kept below ...
-- `test.xcresult/Staging/1_Test/Diagnostics/simctl_diagnostics/0B2390DC-1B49-4815-8446-3E6DF7E911FE/launchd_state.log`: [line 191] 	exit timeout = 3
-- `test.xcresult/Staging/1_Test/Diagnostics/simctl_diagnostics/0B2390DC-1B49-4815-8446-3E6DF7E911FE/launchd_state.log`: [line 291] 	exit timeout = 3
-- `test.xcresult/Staging/1_Test/Diagnostics/simctl_diagnostics/0B2390DC-1B49-4815-8446-3E6DF7E911FE/launchd_state.log`: [line 393] 	exit timeout = 3
-- `test.xcresult/Staging/1_Test/Diagnostics/simctl_diagnostics/0B2390DC-1B49-4815-8446-3E6DF7E911FE/launchd_state.log`: [line 542] 	exit timeout = 3
-- `test.xcresult/Staging/1_Test/Diagnostics/simctl_diagnostics/0B2390DC-1B49-4815-8446-3E6DF7E911FE/system.logarchive/Extra/logd.0.log`: 2026-10-30 12:21:12-0700 logd[53118]: Error connecting to logd_helper: Connection invalid
-- `test.xcresult/Staging/1_Test/Diagnostics/simctl_diagnostics/0B2390DC-1B49-4815-8446-3E6DF7E911FE/system.logarchive/Extra/logd.0.log`: 2026-10-30 12:21:12-0700 logd[53118]: Error connecting to logd_helper: Connection invalid
-- `test.xcresult/Staging/1_Test/Diagnostics/simctl_diagnostics/0B2390DC-1B49-4815-8446-3E6DF7E911FE/system.logarchive/Extra/logd.0.log`: 2026-10-30 12:21:12-0700 logd[53118]: Error connecting to logd_helper: Connection invalid
-- `test.xcresult/Staging/1_Test/Diagnostics/simctl_diagnostics/0B2390DC-1B49-4815-8446-3E6DF7E911FE/system.logarchive/Extra/logd.0.log`: 2026-10-30 12:21:12-0700 logd[53118]: Error connecting to logd_helper: Connection invalid
-- `test.xcresult/Staging/1_Test/Diagnostics/simctl_diagnostics/0B2390DC-1B49-4815-8446-3E6DF7E911FE/system.logarchive/Extra/logd.0.log`: 2026-10-30 12:21:12-0700 logd[53118]: Error connecting to logd_helper: Connection invalid
-- `test.xcresult/Staging/1_Test/Diagnostics/simctl_diagnostics/0B2390DC-1B49-4815-8446-3E6DF7E911FE/system.logarchive/Extra/logd.1.log`: 2026-09-29 19:30:11-0700 logd[70091]: Failed to get persona for 13171, 1 Operation not permitted, falling back to metadata page -1
-- `test.xcresult/Staging/1_Test/Diagnostics/simctl_diagnostics/0B2390DC-1B49-4815-8446-3E6DF7E911FE/system.logarchive/Extra/logd.1.log`: 2026-09-29 19:30:17-0700 logd[70091]: Failed to get persona for 13186, 1 Operation not permitted, falling back to metadata page -1
-- `test.xcresult/Staging/1_Test/Diagnostics/simctl_diagnostics/0B2390DC-1B49-4815-8446-3E6DF7E911FE/system.logarchive/Extra/logd.1.log`: 2026-09-29 19:30:22-0700 logd[70091]: Failed to get persona for 13209, 1 Operation not permitted, falling back to metadata page -1
-- `test.xcresult/Staging/1_Test/Diagnostics/simctl_diagnostics/0B2390DC-1B49-4815-8446-3E6DF7E911FE/system.logarchive/Extra/logd.1.log`: 2026-09-29 19:30:27-0700 logd[70091]: Failed to get persona for 13222, 1 Operation not permitted, falling back to metadata page -1
-- `test.xcresult/Staging/1_Test/Diagnostics/simctl_diagnostics/0B2390DC-1B49-4815-8446-3E6DF7E911FE/system.logarchive/Extra/logd.1.log`: 2026-09-29 19:30:32-0700 logd[70091]: Failed to get persona for 13244, 1 Operation not permitted, falling back to metadata page -1
-- `test.xcresult/Staging/1_Test/Diagnostics/simctl_diagnostics/CoreSimulator.log`: ... 64558 lines omitted; 45 error-like lines, 45 kept below ...
-- `test.xcresult/Staging/1_Test/Diagnostics/simctl_diagnostics/CoreSimulator.log`: [line 26376] Oct 30 10:43:05 JonathasMBP1284 CoreSimulatorService[13531] <Debug>: Invoking createDefaultPortsForDevice:error: on com.apple.gputools.GTSimPortVendor
-- `test.xcresult/Staging/1_Test/Diagnostics/simctl_diagnostics/CoreSimulator.log`: [line 26378] Oct 30 10:43:05 JonathasMBP1284 CoreSimulatorService[13531] <Debug>: Invoking createDefaultPortsForDevice:error: on com.apple.CoreSimulator.SimRenderingServices
-- `test.xcresult/Staging/1_Test/Diagnostics/simctl_diagnostics/CoreSimulator.log`: [line 26414] Oct 30 10:43:06 JonathasMBP1284 CoreSimulatorService[13531] <Error>: Could not register service com.apple.gputools.agent.producer.sim: Failed to lookup com.apple.gputools.agent.producer.s
-- `test.xcresult/Staging/1_Test/Diagnostics/simctl_diagnostics/CoreSimulator.log`: [line 26418] Oct 30 10:43:06 JonathasMBP1284 CoreSimulatorService[13531] <Error>: Could not register service com.apple.ist.ds.appleconnect.service.sim2host: Failed to lookup com.apple.ist.ds.appleconn
-- `test.xcresult/Staging/1_Test/Diagnostics/simctl_diagnostics/diagnose.log`: TIMEOUT - Waited 600 seconds for all devices to finish gathering but they never did.
-- `test.xcresult/Staging/1_Test/Diagnostics/simctl_diagnostics/simdiskimaged.log`: 2026-10-28 14:00:25.563-07:00   Fault    IOCTL eject failed for disk6: (16) Resource busy
 
-Not copied: 314 (none), 2 .0~UbkgqDZcJ6r7GYWUqPd9REv9ObrFcLXtRC5oq89mUspi_U958eQzWa4lt3HoKxpF_LkNtt2Y_L5jYfSnihlvVw==, 1 .csstoredump, 642 .ips, 1 .json, 1 .jsonl, 3 .plist, 1 .timesync, 7 .tracev3, 7 .txt
+Not copied: 1 .json
