@@ -261,7 +261,7 @@ class DeepSeek:
         self.state_dir = Path(state_dir) if state_dir else cache_dir.parent
         self.state_dir.mkdir(parents=True, exist_ok=True)
         self.events_path = self.state_dir / "events.jsonl"
-        self.state_path = self.state_dir / "state.json"
+        self.state_path = self.state_dir / f"state-{label}.json"
         self._lock = threading.Lock()
         self._state_lock = threading.Lock()
 
@@ -304,7 +304,7 @@ class DeepSeek:
 
     def finish(self, status: str = "finished") -> None:
         self.final_status = status
-        self._state()
+        self.note(status, "")
 
     def _state(self, status: str | None = None, error: str = "") -> None:
         if status is None:
@@ -505,3 +505,54 @@ def recorded_progress(state_dir: Path, label: str) -> tuple[int, int]:
             windows += 1
             units += len(row.get("ids") or [])
     return windows, units
+
+
+TERMINAL_STATUSES = {"finished", "failed"}
+
+
+def read_events(state_dir: Path, label: str | None = None) -> list[dict]:
+    path = Path(state_dir) / "events.jsonl"
+    if not path.is_file():
+        return []
+    rows = [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line.strip()]
+    return [row for row in rows if label is None or row.get("label") == label]
+
+
+def rebuild_state(state_dir: Path, label: str | None = None) -> dict:
+    """Derive one stage's state from events.jsonl + done.jsonl (no live counters)."""
+    state_dir = Path(state_dir)
+    events = read_events(state_dir, label)
+    if not events:
+        return {}
+    label = label or events[-1].get("label")
+    events = [row for row in events if row.get("label") == label]
+    calls = sum(1 for row in events if row.get("status") == "ok")
+    hits = sum(1 for row in events if row.get("status") == "hit")
+    errors = sum(1 for row in events if row.get("status") == "error")
+    validation = sum(1 for row in events if row.get("status") == "validation_failed")
+    prompt = sum(int(row.get("promptTokens") or 0) for row in events)
+    completion = sum(int(row.get("completionTokens") or 0) for row in events)
+    windows, units = recorded_progress(state_dir, label)
+    terminal = [row.get("status") for row in events if row.get("status") in TERMINAL_STATUSES]
+    done_events = calls + hits
+    return {
+        "label": label,
+        "model": events[-1].get("model"), "effort": events[-1].get("effort"),
+        "status": terminal[-1] if terminal else "running",
+        "done": done_events, "calls": calls, "hits": hits, "failed": errors,
+        "windowsDone": windows, "unitsDone": units, "validationFailures": validation,
+        "costUsd": round((0.3 * prompt + 1.2 * completion) / 1_000_000, 4),
+        "inputTokens": prompt, "outputTokens": completion,
+        "firstEvent": events[0].get("ts"), "lastEvent": events[-1].get("ts"),
+        "events": len(events),
+    }
+
+
+def state_mismatches(live: dict, rebuilt: dict, ignore_status: bool = False) -> list[str]:
+    """Counters that disagree between the written state and the event-derived one."""
+    keys = ("model", "effort", "calls", "hits", "failed", "windowsDone", "unitsDone",
+            "validationFailures", "costUsd", "inputTokens", "outputTokens")
+    if not ignore_status:
+        keys += ("status",)
+    return [f"{key}: live={live.get(key)!r} rebuilt={rebuilt.get(key)!r}"
+            for key in keys if live.get(key) != rebuilt.get(key)]
