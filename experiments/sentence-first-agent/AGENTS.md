@@ -30,7 +30,7 @@
 | `deepseek_status.py` | 本机 | 读 `state-<label>.json`/`events.jsonl`，显示 DeepSeek 阶段的进度、调用数、失败与逐次延迟（`--watch` 刷新，`--label` 选阶段） |
 | `state_check.py` | 本机 | 从 `events.jsonl`+`done.jsonl` 重算状态并比对；`--all` 查全部阶段、`--units` 报句级覆盖与失败句、`--missing` 列未覆盖句子、`--record` 写 `state-check.json`、`--write` 按事件流修复；不一致退出码 1 |
 | `audit_deepseek.py`、`coherence_check.py`、`spoken_forms.py` | 本机 | 独立审计与 issue-bound 门（`--locale` 三语）、连贯性检查、数字读法与 TTS 专用读法（`spoken_forms.py --run --locale`） |
-| `lag_loop.py` | 本机 + Spark | 落后回环：读 `schedule.json` → DeepSeek 精简超时句 → 重建 speech → 清 tts → 重排该语 → `finish_run`，最多 `--iterations` 轮 |
+| `lag_loop.py` | 本机 + Spark | 落后回环（同步 run 必跑）：读 `schedule.json` → 按 dub−source 精简推后句 → 重建 speech → 清 tts → 重排该语 → `finish_run`，最多 `--iterations` 轮；`--require-clean` 把闸门变成退出码，`--check-only` 只判不配 |
 | `build_speech.py` | 本机 | 套用复核修订和口播读法，写 speech.jsonl |
 | `spark_queue.py` | 本机 | 把所有语言、所有讲员的配音排成一条任务队列（2026-10-28 起不再排回转写） |
 | `spark_session_job.py` | 本机 | 在 Spark 独占会话里把一步登记成任务并等它结束（spark_queue 调用它） |
@@ -143,7 +143,7 @@ TTS 开始（首语）= max(讲员映射确认, 首语翻译 + 口播规格)；�
 
 50 分钟单人的参考（原始断句、batch 8、三语）：19:00 开工 → 19:10 英文表 → 19:25 TTS → 19:50/20:17/20:44 可审 → 21:15 页面。音频对齐（ASR/合并/review MP3/播放器）已计入每条可审；不跑 MFA。若改用正式 MFA 锚点，Layer 1 机器段 +10–15 分钟、英文/句界审核 +10–20 分钟。
 
-**片段的计划另算**：10 分钟片段三语约 12–13 分钟/条（配音 1.25–1.3 倍），每条 TTS 约 4–6 分钟（batch 8），可审时间仍按上面的公式算。不要把整期的 60 分钟模板套到片段上。
+**片段的计划另算**：10 分钟片段三语约 12–13 分钟/条（配音 1.25–1.3 倍），每条 TTS 约 4–6 分钟（batch 8），可审时间仍按上面的公式算。不要把整期的 60 分钟模板套到片段上。同步 run 还要给落后回环留 2–4 分钟/语（60 句一轮约 2 分钟，整期 5–8 分钟）。
 
 **海报与推送（独立交付）**：海报由用户的独立 agent 制作/上传，不占主生产线关键路径；开工时冻结标题/日期/讲员/类别，把 pageId 的固定页面 URL 交给海报 agent；页面发布后海报随 iOS 推送一起发。主生产线只给交接包（pageId、三语 URL、英文对照 URL、标题/日期/讲员/来源、部署版本），不生成、不发送海报；推送由 App 侧或用户触发，代理只准备标题/正文/深链。
 
@@ -330,9 +330,19 @@ python3 $EXP/finish_run.py --run $RUN --remote SPARK:sentence-first-agent/<run> 
 
 它拉回 `tts/` 和回转写，合并音轨（每句放在英文起点，放不下就接在上一句后 0.25 秒），打分，生成 `review.mp3`（96 kbps）和 `review-player.html`（逐句播放器），打印落后最多的句、配音与原声时长比、TTS 速度和回转写相似度低的句。**音频对齐（ASR 回转写、`schedule.json`）、review MP3 和播放器在这一步一并生成，不等发布。**
 
-跟视频同步的 run 显式传 `--gap 0.05`：默认 0.25 秒会把连续句逐句推后（2026-10-24 三语分别有 60、78、144 句落后超过 1 秒，三语各重出一次）。一种语言「可审」的最低条件是 journal 里 `l1.preflight`、`l2.consistency` 两条都 `finished`，缺一条先补再发链接。回转写不再是可审前提。
+跟视频同步的 run 显式传 `--gap 0.05`：默认 0.25 秒会把连续句逐句推后（2026-10-24 三语分别有 60、78、144 句落后超过 1 秒，三语各重出一次）。一种语言「可审」的最低条件是 journal 里 `l1.preflight`、`l2.consistency` 两条都 `finished`，同步 run 再加 `lag-loop-report.json` 的 `gate.clean=true`；缺一条先补再发链接。回转写不再是可审前提。
 
-**落后的闸门**：收尾后看 `maxLagSeconds`。要同步的 run 超过约 8 秒就回第 5 步，按 `build_speech` 的 `flaggedOverBudget` 精简，重配受影响的句子并重出整轨，不能带着几十秒落后发「可审」。2026-10-30 实测不精简时：zh 6.7 s（0 句超 8 s）、ko 14.0 s（34 句）、es 26.5 s（228 句）。回环可以直接跑：`lag_loop.py --run $RUN --locale <locale> --remote <SPARK>:<remote run> --session <session> --checkpoint <ckpt> --threshold 8 --iterations 2 --execute`（要有已上传的 `speech.jsonl` 和活动会话；它会清掉该语 `tts/` 重配）。
+**落后的闸门（同步 run 的固定步骤）**：`finish_run.py` 之后、发「可审」之前，必须跑一次落后回环；它按「dubSeconds − sourceSeconds」挑出推后句，交 DeepSeek 精简、重建 speech、清 `tts/` 重配，再跑 `finish_run.py`，最多 `--iterations` 轮：
+
+```bash
+python3 $EXP/lag_loop.py --run $RUN --locale <locale> --remote SPARK:sentence-first-agent/<run> \
+  --session <session> --checkpoint <ckpt> --threshold 8 --iterations 2 --require-clean --execute
+```
+
+- 退出码 0 才表示 `sentencesOverLag8s == 0` 且 `maxLagSeconds ≤ 8`；非 0 就是没过闸门，不能发「可审」。
+- 只看当前音轨、不重配：`lag_loop.py ... --check-only --require-clean`（不调用 DeepSeek、不用 Spark）。
+- 结果写 `lag-loop-report.json`（threshold、每轮 selected/accepted/rejected、final、gate）并进 journal 的 `l3.lag-loop.<locale>`。
+- 2026-10-30 实测：60 句片段 ko 29.3 s（53 句）→ 1.31 s、es 22.8 s（56 句）→ 2.34 s，各一轮；整期不精简时 zh 6.7 s / ko 14.0 s / es 26.5 s。不同步的 run 跳过这一步。
 
 ### 8 人工审核：边配边审
 
@@ -439,4 +449,4 @@ python3 $EXP/publish_study.py finish                                            
 
 ## 完成的样子
 
-每种语言的 `run.md` 能让另一个人复现：来源、窗口、模型与 checkpoint、每步的决定、改过哪些句、用户结论、每步用时。审核收据在审核目录；音频留在本机；发布了的话，报告里写明线上版本号和哪些检查没做。发布的页面要同时满足：每种语言在正式版 App 的解码规则下都能显示（固定路径、文稿时间），英文对照已上线且每一句都有英文。缺英文对照不算发布完成。整期用 batch 8；每条可审前 `finish_run.py` 一并生成 `review.mp3`/`review-player.html`；改句按窗口重配；开工与发布前 `preflight.py` 通过；审核用 `review_player.py`；合并后跑 `consistency_check.py`；ASR 用 `asr_triage.py` 分诊；双讲员可用 `--pool-replicas 8`。
+每种语言的 `run.md` 能让另一个人复现：来源、窗口、模型与 checkpoint、每步的决定、改过哪些句、用户结论、每步用时。审核收据在审核目录；音频留在本机；发布了的话，报告里写明线上版本号和哪些检查没做。发布的页面要同时满足：每种语言在正式版 App 的解码规则下都能显示（固定路径、文稿时间），英文对照已上线且每一句都有英文。缺英文对照不算发布完成。整期用 batch 8；同步 run 的 `lag-loop-report.json` 必须 `gate.clean=true`；每条可审前 `finish_run.py` 一并生成 `review.mp3`/`review-player.html`；改句按窗口重配；开工与发布前 `preflight.py` 通过；审核用 `review_player.py`；合并后跑 `consistency_check.py`；ASR 用 `asr_triage.py` 分诊；双讲员可用 `--pool-replicas 8`。
