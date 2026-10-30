@@ -1,0 +1,292 @@
+
+$ /usr/bin/xcrun xcodebuild -project ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.claude/worktrees/ios-beta-1.26.33/apps/tongxing-ios/Tongxing.xcodeproj -list -json -disableAutomaticPackageResolution
+{
+  "project" : {
+    "configurations" : [
+      "BetaDebug",
+      "BetaRelease",
+      "Debug",
+      "Release"
+    ],
+    "name" : "Tongxing",
+    "schemes" : [
+      "ListeningActivityExtension",
+      "Tongxing",
+      "TongxingBeta",
+      "TongxingCore",
+      "TongxingInfrastructure",
+      "TongxingPreview",
+      "TongxingScreenshots"
+    ],
+    "targets" : [
+      "Tongxing",
+      "ListeningActivityExtension",
+      "TongxingTests",
+      "TongxingUITests"
+    ]
+  }
+}
+
+$ /usr/bin/xcrun simctl list devices available --json
+{
+  "devices" : {
+    "com.apple.CoreSimulator.SimRuntime.iOS-27-0" : [
+      {
+        "dataPath" : "~\/Library\/Developer\/CoreSimulator\/Devices\/A9ACB321-07F8-4540-AD3C-7FACBD384A1F\/data",
+        "dataPathSize" : 5734416384,
+        "logPath" : "~\/Library\/Logs\/CoreSimulator\/A9ACB321-07F8-4540-AD3C-7FACBD384A1F",
+        "udid" : "A9ACB321-07F8-4540-AD3C-7FACBD384A1F",
+        "lastUsedAt" : "2026-10-30T17:42:34Z",
+        "isAvailable" : true,
+... 3793 lines omitted; 89 error-like lines, 50 kept below ...
+[line 1089] RegisterExecutionPolicyException ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.claude/worktrees/ios-beta-1.26.33/artifacts/tongxing-ios/2026-10-30/cli/DerivedData/Build/Products/Debug-iphonesimulator/PackageFrameworks/TongxingCore_-268EA610E369A1D_PackageProduct.framework (in target 'TongxingCoredynamic-product' from project 'TongxingCore')
+[line 1091]     builtin-RegisterExecutionPolicyException ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.claude/worktrees/ios-beta-1.26.33/artifacts/tongxing-ios/2026-10-30/cli/DerivedData/Build/Products/Debug-iphonesimulator/PackageFrameworks/TongxingCore_-268EA610E369A1D_PackageProduct.framework
+[line 1598] RegisterExecutionPolicyException ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.claude/worktrees/ios-beta-1.26.33/artifacts/tongxing-ios/2026-10-30/cli/DerivedData/Build/Products/Debug-iphonesimulator/ListeningActivityExtension.appex (in target 'ListeningActivityExtension' from project 'Tongxing')
+[line 1600]     builtin-RegisterExecutionPolicyException ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.claude/worktrees/ios-beta-1.26.33/artifacts/tongxing-ios/2026-10-30/cli/DerivedData/Build/Products/Debug-iphonesimulator/ListeningActivityExtension.appex
+[line 1653] ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.claude/worktrees/ios-beta-1.26.33/apps/tongxing-ios/App/MicrophoneCapture.swift:259:92: warning: main actor-isolated static property 'startupSeconds' can not be referenced from a nonisolated context; this is an error in the Swift 6 language mode
+[line 1660]     |                                                                                            `- warning: main actor-isolated static property 'startupSeconds' can not be referenced from a nonisolated context; this is an error in the Swift 6 language mode
+[line 1736] ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.claude/worktrees/ios-beta-1.26.33/apps/tongxing-ios/App/MicrophoneCapture.swift:259:92: warning: main actor-isolated static property 'startupSeconds' can not be referenced from a nonisolated context; this is an error in the Swift 6 language mode
+[line 1743]     |                                                                                            `- warning: main actor-isolated static property 'startupSeconds' can not be referenced from a nonisolated context; this is an error in the Swift 6 language mode
+[line 1887] ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.claude/worktrees/ios-beta-1.26.33/apps/tongxing-ios/Tests/AudioAlignmentControllerTests.swift:1016:100: warning: main actor-isolated static property 'match' can not be referenced from a nonisolated context; this is an error in the Swift 6 language mode
+[line 1898]      |                                                                                                    `- warning: main actor-isolated static property 'match' can not be referenced from a nonisolated context; this is an error in the Swift 6 language mode
+[line 1902] ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.claude/worktrees/ios-beta-1.26.33/apps/tongxing-ios/Tests/AudioAlignmentControllerTests.swift:1135:21: warning: stored property '_count' of 'Sendable'-conforming class 'CallCounter' is mutable; this is an error in the Swift 6 language mode
+[line 1906]      |                     `- warning: stored property '_count' of 'Sendable'-conforming class 'CallCounter' is mutable; this is an error in the Swift 6 language mode
+[line 2060] ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.claude/worktrees/ios-beta-1.26.33/apps/tongxing-ios/Tests/AudioAlignmentControllerTests.swift:1016:100: warning: main actor-isolated static property 'match' can not be referenced from a nonisolated context; this is an error in the Swift 6 language mode
+[line 2071]      |                                                                                                    `- warning: main actor-isolated static property 'match' can not be referenced from a nonisolated context; this is an error in the Swift 6 language mode
+[line 2075] ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.claude/worktrees/ios-beta-1.26.33/apps/tongxing-ios/Tests/AudioAlignmentControllerTests.swift:1135:21: warning: stored property '_count' of 'Sendable'-conforming class 'CallCounter' is mutable; this is an error in the Swift 6 language mode
+[line 2079]      |                     `- warning: stored property '_count' of 'Sendable'-conforming class 'CallCounter' is mutable; this is an error in the Swift 6 language mode
+[line 2083] ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.claude/worktrees/ios-beta-1.26.33/apps/tongxing-ios/Tests/AudioAlignmentControllerTests.swift:731:25: warning: main actor-isolated static property 'match' cannot be accessed from outside of the actor; this is an error in the Swift 6 language mode
+[line 2087]      |                         `- warning: main actor-isolated static property 'match' cannot be accessed from outside of the actor; this is an error in the Swift 6 language mode
+[line 2091] ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.claude/worktrees/ios-beta-1.26.33/apps/tongxing-ios/Tests/AudioAlignmentControllerTests.swift:749:20: warning: expression is 'async' but is not marked with 'await'; this is an error in the Swift 6 language mode
+[line 2097]      |                    `- warning: expression is 'async' but is not marked with 'await'; this is an error in the Swift 6 language mode
+[line 2101] ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.claude/worktrees/ios-beta-1.26.33/apps/tongxing-ios/Tests/AudioAlignmentControllerTests.swift:762:81: warning: main actor-isolated static property 'noMatch' cannot be accessed from outside of the actor; this is an error in the Swift 6 language mode
+[line 2105]      |                                                                                 `- warning: main actor-isolated static property 'noMatch' cannot be accessed from outside of the actor; this is an error in the Swift 6 language mode
+[line 2109] ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.claude/worktrees/ios-beta-1.26.33/apps/tongxing-ios/Tests/AudioAlignmentControllerTests.swift:778:25: warning: main actor-isolated static property 'match' cannot be accessed from outside of the actor; this is an error in the Swift 6 language mode
+[line 2113]      |                         `- warning: main actor-isolated static property 'match' cannot be accessed from outside of the actor; this is an error in the Swift 6 language mode
+[line 2117] ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.claude/worktrees/ios-beta-1.26.33/apps/tongxing-ios/Tests/AudioAlignmentControllerTests.swift:794:25: warning: main actor-isolated static property 'match' cannot be accessed from outside of the actor; this is an error in the Swift 6 language mode
+[line 2121]      |                         `- warning: main actor-isolated static property 'match' cannot be accessed from outside of the actor; this is an error in the Swift 6 language mode
+[line 2125] ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.claude/worktrees/ios-beta-1.26.33/apps/tongxing-ios/Tests/AudioAlignmentControllerTests.swift:821:81: warning: main actor-isolated static property 'match' cannot be accessed from outside of the actor; this is an error in the Swift 6 language mode
+[line 2129]      |                                                                                 `- warning: main actor-isolated static property 'match' cannot be accessed from outside of the actor; this is an error in the Swift 6 language mode
+[line 2133] ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.claude/worktrees/ios-beta-1.26.33/apps/tongxing-ios/Tests/AudioAlignmentControllerTests.swift:838:78: warning: expression is 'async' but is not marked with 'await'; this is an error in the Swift 6 language mode
+[line 2139]      |                                                                              `- warning: expression is 'async' but is not marked with 'await'; this is an error in the Swift 6 language mode
+[line 2143] ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.claude/worktrees/ios-beta-1.26.33/apps/tongxing-ios/Tests/AudioAlignmentControllerTests.swift:847:56: warning: main actor-isolated static property 'noMatch' cannot be accessed from outside of the actor; this is an error in the Swift 6 language mode
+[line 2147]      |                                                        `- warning: main actor-isolated static property 'noMatch' cannot be accessed from outside of the actor; this is an error in the Swift 6 language mode
+[line 2151] ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.claude/worktrees/ios-beta-1.26.33/apps/tongxing-ios/Tests/AudioAlignmentControllerTests.swift:903:72: warning: main actor-isolated static property 'match' cannot be accessed from outside of the actor; this is an error in the Swift 6 language mode
+[line 2155]      |                                                                        `- warning: main actor-isolated static property 'match' cannot be accessed from outside of the actor; this is an error in the Swift 6 language mode
+[line 2343]     export CLANG_WARN_DIRECT_OBJC_ISA_USAGE\=YES_ERROR
+[line 2352]     export CLANG_WARN_OBJC_ROOT_CLASS\=YES_ERROR
+[line 2510]     export GCC_WARN_ABOUT_RETURN_TYPE\=YES_ERROR
+[line 2707]     export RUNTIME_EXCEPTION_ALLOW_DYLD_ENVIRONMENT_VARIABLES\=NO
+[line 2708]     export RUNTIME_EXCEPTION_ALLOW_JIT\=NO
+[line 2709]     export RUNTIME_EXCEPTION_ALLOW_UNSIGNED_EXECUTABLE_MEMORY\=NO
+[line 2710]     export RUNTIME_EXCEPTION_DEBUGGING_TOOL\=NO
+[line 2711]     export RUNTIME_EXCEPTION_DISABLE_EXECUTABLE_PAGE_PROTECTION\=NO
+[line 2712]     export RUNTIME_EXCEPTION_DISABLE_LIBRARY_VALIDATION\=NO
+[line 2860]     export VALIDATE_DEVELOPMENT_ASSET_PATHS\=YES_ERROR
+[line 2889]     export __DIAGNOSE_INVALID_DEPLOYMENT_TARGET_AS_ERROR\=YES
+[line 3017] RegisterExecutionPolicyException ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.claude/worktrees/ios-beta-1.26.33/artifacts/tongxing-ios/2026-10-30/cli/DerivedData/Build/Products/Debug-iphonesimulator/Tongxing.app/PlugIns/TongxingTests.xctest (in target 'TongxingTests' from project 'Tongxing')
+[line 3019]     builtin-RegisterExecutionPolicyException ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.claude/worktrees/ios-beta-1.26.33/artifacts/tongxing-ios/2026-10-30/cli/DerivedData/Build/Products/Debug-iphonesimulator/Tongxing.app/PlugIns/TongxingTests.xctest
+[line 3025] RegisterExecutionPolicyException ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.claude/worktrees/ios-beta-1.26.33/artifacts/tongxing-ios/2026-10-30/cli/DerivedData/Build/Products/Debug-iphonesimulator/Tongxing.app (in target 'Tongxing' from project 'Tongxing')
+[line 3027]     builtin-RegisterExecutionPolicyException ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.claude/worktrees/ios-beta-1.26.33/artifacts/tongxing-ios/2026-10-30/cli/DerivedData/Build/Products/Debug-iphonesimulator/Tongxing.app
+[line 3079] RegisterExecutionPolicyException ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.claude/worktrees/ios-beta-1.26.33/artifacts/tongxing-ios/2026-10-30/cli/DerivedData/Build/Products/Debug-iphonesimulator/TongxingUITests-Runner.app/PlugIns/TongxingUITests.xctest (in target 'TongxingUITests' from project 'Tongxing')
+... end of omitted section ...
+2026-10-30 10:44:09.822618-0700 Tongxing[15464:6707878] [player] <<<< FigFilePlayer >>>> signalled err=-12864 at <>:10029
+Test Case '-[TongxingTests.PlaybackControllerTests testVideoPresentationBlocksSharedPlayerUntilDismissed]' passed (0.301 seconds).
+Test Suite 'PlaybackControllerTests' passed at 2026-10-30 10:44:09.831.
+	 Executed 39 tests, with 0 failures (0 unexpected) in 21.255 (21.269) seconds
+Test Suite 'SwiftUIPreviewTests' started at 2026-10-30 10:44:09.831.
+Test Case '-[TongxingTests.SwiftUIPreviewTests testDerivedTranscriptDataFollowsSelectionChanges]' started.
+2026-10-30 10:44:09.838037-0700 Tongxing[15464:6707556] [Default] Task <FBD78F3B-8832-44F5-AD11-9CCAEE9ECB60>.<2> finished with error [-1100] Error Domain=NSURLErrorDomain Code=-1100 "(null)" UserInfo={_NSURLErrorRelatedURLSessionTaskErrorKey=(
+    "LocalDataTask <FBD78F3B-8832-44F5-AD11-9CCAEE9ECB60>.<2>"
+), _NSURLErrorFailingURLSessionTaskErrorKey=LocalDataTask <FBD78F3B-8832-44F5-AD11-9CCAEE9ECB60>.<2>}
+2026-10-30 10:44:09.838803-0700 Tongxing[15464:6707556] [Default] Task <5651BDEE-6915-4E48-871C-ECDE9854DEFD>.<3> finished with error [-1100] Error Domain=NSURLErrorDomain Code=-1100 "(null)" UserInfo={_NSURLErrorRelatedURLSessionTaskErrorKey=(
+    "LocalDataTask <5651BDEE-6915-4E48-871C-ECDE9854DEFD>.<3>"
+), _NSURLErrorFailingURLSessionTaskErrorKey=LocalDataTask <5651BDEE-6915-4E48-871C-ECDE9854DEFD>.<3>}
+2026-10-30 10:44:09.854033-0700 Tongxing[15464:6709798] [player] <<<< FigFilePlayer >>>> signalled err=-12864 at <>:10029
+2026-10-30 10:44:09.856753-0700 Tongxing[15464:6709798] [player] <<<< FigFilePlayer >>>> signalled err=-12864 at <>:10029
+2026-10-30 10:44:09.866283-0700 Tongxing[15464:6707878] [player] <<<< FigFilePlayer >>>> signalled err=-12864 at <>:10029
+2026-10-30 10:44:09.867590-0700 Tongxing[15464:6710054] [player] <<<< FigFilePlayer >>>> signalled err=-12864 at <>:10029
+2026-10-30 10:44:09.879268-0700 Tongxing[15464:6709541] [AQ]        LoudnessManager.mm:1215  IsHardwareSupported: no plist loaded, returning false
+2026-10-30 10:44:09.879344-0700 Tongxing[15464:6709541] [AQ]        LoudnessManager.mm:1215  IsHardwareSupported: no plist loaded, returning false
+2026-10-30 10:44:09.881510-0700 Tongxing[15464:6710054] [player] <<<< FigFilePlayer >>>> signalled err=-12864 at <>:10029
+2026-10-30 10:44:09.881857-0700 Tongxing[15464:6709541] [player] <<<< FigFilePlayer >>>> signalled err=-12864 at <>:10029
+2026-10-30 10:44:09.882687-0700 Tongxing[15464:6709541] [player] <<<< FigFilePlayer >>>> signalled err=-12864 at <>:10029
+2026-10-30 10:44:09.883985-0700 Tongxing[15464:6710054] [player] <<<< FigFilePlayer >>>> signalled err=-12864 at <>:10029
+Test Case '-[TongxingTests.SwiftUIPreviewTests testDerivedTranscriptDataFollowsSelectionChanges]' passed (0.055 seconds).
+Test Case '-[TongxingTests.SwiftUIPreviewTests testRenderAlignmentIslandStates]' started.
+2026-10-30 10:44:09.888168-0700 Tongxing[15464:6710054] [player] <<<< FigFilePlayer >>>> signalled err=-12864 at <>:10029
+~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.claude/worktrees/ios-beta-1.26.33/apps/tongxing-ios/Tests/SwiftUIPreviewTests.swift:65: -[TongxingTests.SwiftUIPreviewTests testRenderAlignmentIslandStates] : Test skipped - Opt-in native island content previews
+Test Case '-[TongxingTests.SwiftUIPreviewTests testRenderAlignmentIslandStates]' skipped (0.005 seconds).
+Test Case '-[TongxingTests.SwiftUIPreviewTests testRenderLockScreenSubtitleSnapshots]' started.
+~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.claude/worktrees/ios-beta-1.26.33/apps/tongxing-ios/Tests/SwiftUIPreviewTests.swift:109: -[TongxingTests.SwiftUIPreviewTests testRenderLockScreenSubtitleSnapshots] : Test skipped - Opt-in shared lock-screen content preview
+Test Case '-[TongxingTests.SwiftUIPreviewTests testRenderLockScreenSubtitleSnapshots]' skipped (0.002 seconds).
+Test Case '-[TongxingTests.SwiftUIPreviewTests testRenderRequestedViews]' started.
+~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.claude/worktrees/ios-beta-1.26.33/apps/tongxing-ios/Tests/SwiftUIPreviewTests.swift:137: -[TongxingTests.SwiftUIPreviewTests testRenderRequestedViews] : Test skipped - Opt-in view rendering: use make preview FILES=App/ContentView.swift
+Test Case '-[TongxingTests.SwiftUIPreviewTests testRenderRequestedViews]' skipped (0.001 seconds).
+Test Suite 'SwiftUIPreviewTests' passed at 2026-10-30 10:44:09.896.
+	 Executed 4 tests, with 3 tests skipped and 0 failures (0 unexpected) in 0.063 (0.065) seconds
+Test Suite 'VoiceDemoCatalogTests' started at 2026-10-30 10:44:09.897.
+Test Case '-[TongxingTests.VoiceDemoCatalogTests testAcceptsDemoOnlyCatalogAndRejectsPromotedOrUnsafeAssets]' started.
+Test Case '-[TongxingTests.VoiceDemoCatalogTests testAcceptsDemoOnlyCatalogAndRejectsPromotedOrUnsafeAssets]' passed (0.008 seconds).
+Test Case '-[TongxingTests.VoiceDemoCatalogTests testCurrentProductionVoiceDemosDecode]' started.
+~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.claude/worktrees/ios-beta-1.26.33/apps/tongxing-ios/Tests/PlaybackControllerTests.swift:1135: -[TongxingTests.VoiceDemoCatalogTests testCurrentProductionVoiceDemosDecode] : Test skipped - Run explicitly against Production Hosting
+Test Case '-[TongxingTests.VoiceDemoCatalogTests testCurrentProductionVoiceDemosDecode]' skipped (0.001 seconds).
+Test Case '-[TongxingTests.VoiceDemoCatalogTests testProductionVoiceDemosMergePublishedEnglishChineseAndKoreanSpanish]' started.
+Test Case '-[TongxingTests.VoiceDemoCatalogTests testProductionVoiceDemosMergePublishedEnglishChineseAndKoreanSpanish]' passed (0.011 seconds).
+Test Case '-[TongxingTests.VoiceDemoCatalogTests testVoiceDemoBytesMustMatchPublishedSizeAndHash]' started.
+Test Case '-[TongxingTests.VoiceDemoCatalogTests testVoiceDemoBytesMustMatchPublishedSizeAndHash]' passed (0.001 seconds).
+Test Suite 'VoiceDemoCatalogTests' passed at 2026-10-30 10:44:09.919.
+	 Executed 4 tests, with 1 test skipped and 0 failures (0 unexpected) in 0.021 (0.022) seconds
+Test Suite 'VoiceDemoCatalogV2Tests' started at 2026-10-30 10:44:09.919.
+Test Case '-[TongxingTests.VoiceDemoCatalogV2Tests testBothEnvironmentsLoadIdenticalMatchedContractFromOwnOrigin]' started.
+Test Case '-[TongxingTests.VoiceDemoCatalogV2Tests testBothEnvironmentsLoadIdenticalMatchedContractFromOwnOrigin]' passed (0.007 seconds).
+Test Case '-[TongxingTests.VoiceDemoCatalogV2Tests testLiveDevEricVideoHashDecodePlayAndPause]' started.
+~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.claude/worktrees/ios-beta-1.26.33/apps/tongxing-ios/Tests/VoiceDemoCatalogV2Tests.swift:230: -[TongxingTests.VoiceDemoCatalogV2Tests testLiveDevEricVideoHashDecodePlayAndPause] : Test skipped - Opt in with TONGXING_LIVE_DEMO=1 to verify the real Firebase Dev video.
+Test Case '-[TongxingTests.VoiceDemoCatalogV2Tests testLiveDevEricVideoHashDecodePlayAndPause]' skipped (0.002 seconds).
+Test Case '-[TongxingTests.VoiceDemoCatalogV2Tests testMatchedCatalogRejectsRedirectAndUnsafeConfiguredOrigin]' started.
+Test Case '-[TongxingTests.VoiceDemoCatalogV2Tests testMatchedCatalogRejectsRedirectAndUnsafeConfiguredOrigin]' passed (0.002 seconds).
+Test Case '-[TongxingTests.VoiceDemoCatalogV2Tests testMatchedClipCatalogHasThreeLanguagesAndVideoWithoutText]' started.
+Test Case '-[TongxingTests.VoiceDemoCatalogV2Tests testMatchedClipCatalogHasThreeLanguagesAndVideoWithoutText]' passed (0.003 seconds).
+Test Case '-[TongxingTests.VoiceDemoCatalogV2Tests testMissingOrInvalidMatchedCatalogNeverRequestsLegacyOrAnotherEnvironment]' started.
+Test Case '-[TongxingTests.VoiceDemoCatalogV2Tests testMissingOrInvalidMatchedCatalogNeverRequestsLegacyOrAnotherEnvironment]' passed (0.001 seconds).
+Test Case '-[TongxingTests.VoiceDemoCatalogV2Tests testRejectsCrossClipAssetAndChangedEnglishManuscript]' started.
+Test Case '-[TongxingTests.VoiceDemoCatalogV2Tests testRejectsCrossClipAssetAndChangedEnglishManuscript]' passed (0.003 seconds).
+Test Case '-[TongxingTests.VoiceDemoCatalogV2Tests testRejectsDuplicateLocalesPromotedReviewAndInvalidWindow]' started.
+Test Case '-[TongxingTests.VoiceDemoCatalogV2Tests testRejectsDuplicateLocalesPromotedReviewAndInvalidWindow]' passed (0.002 seconds).
+Test Case '-[TongxingTests.VoiceDemoCatalogV2Tests testRejectsVideoMismatchUnsafePathsAndOversizedAssets]' started.
+Test Case '-[TongxingTests.VoiceDemoCatalogV2Tests testRejectsVideoMismatchUnsafePathsAndOversizedAssets]' passed (0.005 seconds).
+Test Case '-[TongxingTests.VoiceDemoCatalogV2Tests testVideoByteVerificationRetainsHashAndExactSizeCheck]' started.
+Test Case '-[TongxingTests.VoiceDemoCatalogV2Tests testVideoByteVerificationRetainsHashAndExactSizeCheck]' passed (0.001 seconds).
+Test Case '-[TongxingTests.VoiceDemoCatalogV2Tests testVideoUsesTwentyMegabyteLimitWhileAudioRetainsFiveMegabyteLimit]' started.
+Test Case '-[TongxingTests.VoiceDemoCatalogV2Tests testVideoUsesTwentyMegabyteLimitWhileAudioRetainsFiveMegabyteLimit]' passed (0.008 seconds).
+Test Suite 'VoiceDemoCatalogV2Tests' passed at 2026-10-30 10:44:09.957.
+	 Executed 10 tests, with 1 test skipped and 0 failures (0 unexpected) in 0.034 (0.038) seconds
+Test Suite 'WeeklyGuideDataTests' started at 2026-10-30 10:44:09.957.
+Test Case '-[TongxingTests.WeeklyGuideDataTests testInvalidOrAmbiguousPayloadDoesNotDisplayGuide]' started.
+Test Case '-[TongxingTests.WeeklyGuideDataTests testInvalidOrAmbiguousPayloadDoesNotDisplayGuide]' passed (0.011 seconds).
+Test Case '-[TongxingTests.WeeklyGuideDataTests testOnlyExactSermonAndSimplifiedChineseMatch]' started.
+Test Case '-[TongxingTests.WeeklyGuideDataTests testOnlyExactSermonAndSimplifiedChineseMatch]' passed (0.001 seconds).
+Test Case '-[TongxingTests.WeeklyGuideDataTests testOnlyKnownBundledImageBytesCanBeUsed]' started.
+Test Case '-[TongxingTests.WeeklyGuideDataTests testOnlyKnownBundledImageBytesCanBeUsed]' passed (0.001 seconds).
+Test Case '-[TongxingTests.WeeklyGuideDataTests testSourceBackedMapDecodesAndRejectsUntrustedPoints]' started.
+Test Case '-[TongxingTests.WeeklyGuideDataTests testSourceBackedMapDecodesAndRejectsUntrustedPoints]' passed (0.007 seconds).
+Test Case '-[TongxingTests.WeeklyGuideDataTests testStructuredContentKeepsTableRowsAndFlowOrder]' started.
+Test Case '-[TongxingTests.WeeklyGuideDataTests testStructuredContentKeepsTableRowsAndFlowOrder]' passed (0.002 seconds).
+Test Case '-[TongxingTests.WeeklyGuideDataTests testUnsupportedOrMalformedBlocksFallBackToEntirePlainBody]' started.
+Test Case '-[TongxingTests.WeeklyGuideDataTests testUnsupportedOrMalformedBlocksFallBackToEntirePlainBody]' passed (0.001 seconds).
+Test Suite 'WeeklyGuideDataTests' passed at 2026-10-30 10:44:09.982.
+	 Executed 6 tests, with 0 failures (0 unexpected) in 0.023 (0.025) seconds
+Test Suite 'WeeklyGuideRemoteTests' started at 2026-10-30 10:44:09.982.
+Test Case '-[TongxingTests.WeeklyGuideRemoteTests testBundledFallbackRequiresSameIdentityOriginAndHash]' started.
+Test Case '-[TongxingTests.WeeklyGuideRemoteTests testBundledFallbackRequiresSameIdentityOriginAndHash]' passed (0.009 seconds).
+Test Case '-[TongxingTests.WeeklyGuideRemoteTests testCrossOriginAndUnsafePathsFailClosed]' started.
+Test Case '-[TongxingTests.WeeklyGuideRemoteTests testCrossOriginAndUnsafePathsFailClosed]' passed (0.003 seconds).
+Test Case '-[TongxingTests.WeeklyGuideRemoteTests testEachSourceIdentityMismatchIsRejected]' started.
+Test Case '-[TongxingTests.WeeklyGuideRemoteTests testEachSourceIdentityMismatchIsRejected]' passed (0.001 seconds).
+Test Case '-[TongxingTests.WeeklyGuideRemoteTests testLegacyBundleRequiresSourceHashesAndExactWindow]' started.
+Test Case '-[TongxingTests.WeeklyGuideRemoteTests testLegacyBundleRequiresSourceHashesAndExactWindow]' passed (0.002 seconds).
+Test Case '-[TongxingTests.WeeklyGuideRemoteTests testLegacyExactSourceTombstoneBlocksOfflineFallback]' started.
+Test Case '-[TongxingTests.WeeklyGuideRemoteTests testLegacyExactSourceTombstoneBlocksOfflineFallback]' passed (0.008 seconds).
+Test Case '-[TongxingTests.WeeklyGuideRemoteTests testLegacyFingerprintSuppliesMissingHashOnlyWhenBoundToWeek]' started.
+Test Case '-[TongxingTests.WeeklyGuideRemoteTests testLegacyFingerprintSuppliesMissingHashOnlyWhenBoundToWeek]' passed (0.002 seconds).
+Test Case '-[TongxingTests.WeeklyGuideRemoteTests testNetworkAndMissingManifestAreDistinctFromDeclaredCorruption]' started.
+Test Case '-[TongxingTests.WeeklyGuideRemoteTests testNetworkAndMissingManifestAreDistinctFromDeclaredCorruption]' passed (0.002 seconds).
+Test Case '-[TongxingTests.WeeklyGuideRemoteTests testOversizedOrAmbiguousManifestFailsClosed]' started.
+Test Case '-[TongxingTests.WeeklyGuideRemoteTests testOversizedOrAmbiguousManifestFailsClosed]' passed (0.001 seconds).
+Test Case '-[TongxingTests.WeeklyGuideRemoteTests testProtectedChineseRevisionsAndSafeFallback]' started.
+Test Case '-[TongxingTests.WeeklyGuideRemoteTests testProtectedChineseRevisionsAndSafeFallback]' passed (0.010 seconds).
+Test Case '-[TongxingTests.WeeklyGuideRemoteTests testRealURLSessionEnforcesActualStreamLimit]' started.
+Test Case '-[TongxingTests.WeeklyGuideRemoteTests testRealURLSessionEnforcesActualStreamLimit]' passed (0.001 seconds).
+Test Case '-[TongxingTests.WeeklyGuideRemoteTests testRealURLSessionRejectsRedirectsBeforeFollowing]' started.
+Test Case '-[TongxingTests.WeeklyGuideRemoteTests testRealURLSessionRejectsRedirectsBeforeFollowing]' passed (0.002 seconds).
+Test Case '-[TongxingTests.WeeklyGuideRemoteTests testRedirectGuardRejectsEvenSameOriginBeforeFollowing]' started.
+Test Case '-[TongxingTests.WeeklyGuideRemoteTests testRedirectGuardRejectsEvenSameOriginBeforeFollowing]' passed (0.001 seconds).
+Test Case '-[TongxingTests.WeeklyGuideRemoteTests testRemoteGuideIsBoundToExactIdentityAndBytes]' started.
+Test Case '-[TongxingTests.WeeklyGuideRemoteTests testRemoteGuideIsBoundToExactIdentityAndBytes]' passed (0.001 seconds).
+Test Case '-[TongxingTests.WeeklyGuideRemoteTests testResolutionDoesNotShowBundleBeforeNetworkAndPreservesDenialsOffline]' started.
+Test Case '-[TongxingTests.WeeklyGuideRemoteTests testResolutionDoesNotShowBundleBeforeNetworkAndPreservesDenialsOffline]' passed (0.006 seconds).
+Test Case '-[TongxingTests.WeeklyGuideRemoteTests testRevocationPersistsAcrossOfflineAndUndeclaredResults]' started.
+Test Case '-[TongxingTests.WeeklyGuideRemoteTests testRevocationPersistsAcrossOfflineAndUndeclaredResults]' passed (0.005 seconds).
+Test Case '-[TongxingTests.WeeklyGuideRemoteTests testStaleResultIsNeverDisplayedAfterIdentityOrLocaleChanges]' started.
+Test Case '-[TongxingTests.WeeklyGuideRemoteTests testStaleResultIsNeverDisplayedAfterIdentityOrLocaleChanges]' passed (0.001 seconds).
+Test Case '-[TongxingTests.WeeklyGuideRemoteTests testV2LanguageAndProvenanceAreBoundToTheSelectedSermon]' started.
+Test Case '-[TongxingTests.WeeklyGuideRemoteTests testV2LanguageAndProvenanceAreBoundToTheSelectedSermon]' passed (0.006 seconds).
+Test Case '-[TongxingTests.WeeklyGuideRemoteTests testV5TombstoneNeedsExactIdentityAndNeverFetchesBody]' started.
+Test Case '-[TongxingTests.WeeklyGuideRemoteTests testV5TombstoneNeedsExactIdentityAndNeverFetchesBody]' passed (0.001 seconds).
+Test Case '-[TongxingTests.WeeklyGuideRemoteTests testVerifiedV4AliasAndEnvironmentSpecificBindings]' started.
+Test Case '-[TongxingTests.WeeklyGuideRemoteTests testVerifiedV4AliasAndEnvironmentSpecificBindings]' passed (0.001 seconds).
+Test Suite 'WeeklyGuideRemoteTests' passed at 2026-10-30 10:44:10.051.
+	 Executed 19 tests, with 0 failures (0 unexpected) in 0.063 (0.069) seconds
+Test Suite 'WeeklyUpdateModelTests' started at 2026-10-30 10:44:10.051.
+Test Case '-[TongxingTests.WeeklyUpdateModelTests testDefaultAndNotificationAnnouncementStatesRemainIndependentAndMergeReceipts]' started.
+2026-10-30 10:44:10.057113-0700 Tongxing[15464:6707556] [Default] Task <2CE48B84-B161-4BA7-B43C-CBBB8504BA01>.<2> finished with error [-1100] Error Domain=NSURLErrorDomain Code=-1100 "(null)" UserInfo={_NSURLErrorRelatedURLSessionTaskErrorKey=(
+    "LocalDataTask <2CE48B84-B161-4BA7-B43C-CBBB8504BA01>.<2>"
+), _NSURLErrorFailingURLSessionTaskErrorKey=LocalDataTask <2CE48B84-B161-4BA7-B43C-CBBB8504BA01>.<2>}
+2026-10-30 10:44:10.057949-0700 Tongxing[15464:6707557] [Default] Task <75720366-51B5-4861-83F3-C452EC228FC8>.<3> finished with error [-1100] Error Domain=NSURLErrorDomain Code=-1100 "(null)" UserInfo={_NSURLErrorRelatedURLSessionTaskErrorKey=(
+    "LocalDataTask <75720366-51B5-4861-83F3-C452EC228FC8>.<3>"
+), _NSURLErrorFailingURLSessionTaskErrorKey=LocalDataTask <75720366-51B5-4861-83F3-C452EC228FC8>.<3>}
+2026-10-30 10:44:10.075778-0700 Tongxing[15464:6709541] [AQ]        LoudnessManager.mm:1215  IsHardwareSupported: no plist loaded, returning false
+2026-10-30 10:44:10.075872-0700 Tongxing[15464:6709541] [AQ]        LoudnessManager.mm:1215  IsHardwareSupported: no plist loaded, returning false
+2026-10-30 10:44:10.078415-0700 Tongxing[15464:6709541] [player] <<<< FigFilePlayer >>>> signalled err=-12864 at <>:10029
+2026-10-30 10:44:10.079191-0700 Tongxing[15464:6709541] [player] <<<< FigFilePlayer >>>> signalled err=-12864 at <>:10029
+2026-10-30 10:44:10.114332-0700 Tongxing[15464:6709540] [player] <<<< FigFilePlayer >>>> signalled err=-12864 at <>:10029
+2026-10-30 10:44:10.203224-0700 Tongxing[15464:6709540] [player] <<<< FigFilePlayer >>>> signalled err=-12864 at <>:10029
+2026-10-30 10:44:10.205414-0700 Tongxing[15464:6710054] [player] <<<< FigFilePlayer >>>> signalled err=-12864 at <>:10029
+Test Case '-[TongxingTests.WeeklyUpdateModelTests testDefaultAndNotificationAnnouncementStatesRemainIndependentAndMergeReceipts]' passed (0.156 seconds).
+Test Case '-[TongxingTests.WeeklyUpdateModelTests testOpeningSamePageWithChangedReleaseInvalidatesOldPreparedAudio]' started.
+2026-10-30 10:44:10.216837-0700 Tongxing[15464:6710309] [] (Fig) signalled err=-12785 at <>:1469
+2026-10-30 10:44:10.216936-0700 Tongxing[15464:6710054] [player] <<<< FigFilePlayer >>>> signalled err=-12864 at <>:10029
+2026-10-30 10:44:10.221622-0700 Tongxing[15464:6707554] [Default] Task <46FC9776-D298-4510-9291-9B344EC5766A>.<2> finished with error [-1100] Error Domain=NSURLErrorDomain Code=-1100 "(null)" UserInfo={_NSURLErrorRelatedURLSessionTaskErrorKey=(
+    "LocalDataTask <46FC9776-D298-4510-9291-9B344EC5766A>.<2>"
+), _NSURLErrorFailingURLSessionTaskErrorKey=LocalDataTask <46FC9776-D298-4510-9291-9B344EC5766A>.<2>}
+2026-10-30 10:44:10.227737-0700 Tongxing[15464:6707554] [Default] Task <5AA9C4DB-4F4A-4E4A-B899-EE696E7D815F>.<3> finished with error [-1100] Error Domain=NSURLErrorDomain Code=-1100 "(null)" UserInfo={_NSURLErrorRelatedURLSessionTaskErrorKey=(
+    "LocalDataTask <5AA9C4DB-4F4A-4E4A-B899-EE696E7D815F>.<3>"
+), _NSURLErrorFailingURLSessionTaskErrorKey=LocalDataTask <5AA9C4DB-4F4A-4E4A-B899-EE696E7D815F>.<3>}
+2026-10-30 10:44:10.256522-0700 Tongxing[15464:6709541] [AQ]        LoudnessManager.mm:1215  IsHardwareSupported: no plist loaded, returning false
+2026-10-30 10:44:10.256624-0700 Tongxing[15464:6709541] [AQ]        LoudnessManager.mm:1215  IsHardwareSupported: no plist loaded, returning false
+2026-10-30 10:44:10.259534-0700 Tongxing[15464:6709541] [player] <<<< FigFilePlayer >>>> signalled err=-12864 at <>:10029
+2026-10-30 10:44:10.260252-0700 Tongxing[15464:6709541] [player] <<<< FigFilePlayer >>>> signalled err=-12864 at <>:10029
+2026-10-30 10:44:10.332963-0700 Tongxing[15464:6710054] [player] <<<< FigFilePlayer >>>> signalled err=-12864 at <>:10029
+Test Case '-[TongxingTests.WeeklyUpdateModelTests testOpeningSamePageWithChangedReleaseInvalidatesOldPreparedAudio]' passed (0.127 seconds).
+Test Case '-[TongxingTests.WeeklyUpdateModelTests testOpeningSameUnchangedReleasePreservesPreparedPlaybackAndPosition]' started.
+2026-10-30 10:44:10.341299-0700 Tongxing[15464:6707554] [Default] Task <B6531865-54BC-4600-8FCA-18A0EF52B77B>.<2> finished with error [-1100] Error Domain=NSURLErrorDomain Code=-1100 "(null)" UserInfo={_NSURLErrorRelatedURLSessionTaskErrorKey=(
+    "LocalDataTask <B6531865-54BC-4600-8FCA-18A0EF52B77B>.<2>"
+), _NSURLErrorFailingURLSessionTaskErrorKey=LocalDataTask <B6531865-54BC-4600-8FCA-18A0EF52B77B>.<2>}
+2026-10-30 10:44:10.342323-0700 Tongxing[15464:6707556] [Default] Task <30C473E8-57CC-4D79-9546-6C3390EBE28F>.<3> finished with error [-1100] Error Domain=NSURLErrorDomain Code=-1100 "(null)" UserInfo={_NSURLErrorRelatedURLSessionTaskErrorKey=(
+    "LocalDataTask <30C473E8-57CC-4D79-9546-6C3390EBE28F>.<3>"
+), _NSURLErrorFailingURLSessionTaskErrorKey=LocalDataTask <30C473E8-57CC-4D79-9546-6C3390EBE28F>.<3>}
+2026-10-30 10:44:10.344728-0700 Tongxing[15464:6707932] [] (Fig) signalled err=-12785 at <>:1469
+2026-10-30 10:44:10.344832-0700 Tongxing[15464:6710054] [player] <<<< FigFilePlayer >>>> signalled err=-12864 at <>:10029
+2026-10-30 10:44:10.363347-0700 Tongxing[15464:6709540] [AQ]        LoudnessManager.mm:1215  IsHardwareSupported: no plist loaded, returning false
+2026-10-30 10:44:10.363445-0700 Tongxing[15464:6709540] [AQ]        LoudnessManager.mm:1215  IsHardwareSupported: no plist loaded, returning false
+2026-10-30 10:44:10.365908-0700 Tongxing[15464:6709540] [player] <<<< FigFilePlayer >>>> signalled err=-12864 at <>:10029
+2026-10-30 10:44:10.366615-0700 Tongxing[15464:6709540] [player] <<<< FigFilePlayer >>>> signalled err=-12864 at <>:10029
+2026-10-30 10:44:10.395234-0700 Tongxing[15464:6710054] [player] <<<< FigFilePlayer >>>> signalled err=-12864 at <>:10029
+Test Case '-[TongxingTests.WeeklyUpdateModelTests testOpeningSameUnchangedReleasePreservesPreparedPlaybackAndPosition]' passed (0.062 seconds).
+Test Suite 'WeeklyUpdateModelTests' passed at 2026-10-30 10:44:10.397.
+	 Executed 3 tests, with 0 failures (0 unexpected) in 0.345 (0.346) seconds
+Test Suite 'TongxingTests.xctest' failed at 2026-10-30 10:44:10.397.
+	 Executed 169 tests, with 16 tests skipped and 2 failures (0 unexpected) in 34.434 (34.498) seconds
+Test Suite 'All tests' failed at 2026-10-30 10:44:10.398.
+	 Executed 169 tests, with 16 tests skipped and 2 failures (0 unexpected) in 34.434 (34.499) seconds
+2026-10-30 10:44:10.398270-0700 Tongxing[15464:6710054] [player] <<<< Async >>>> signalled err=-12785 at <>:2025
+2026-10-30 10:44:10.398446-0700 Tongxing[15464:6707557] [player] <<<< Async >>>> signalled err=-12785 at <>:3887
+2026-10-30 10:44:10.399296-0700 Tongxing[15464:6710054] [player] <<<< FigFilePlayer >>>> signalled err=-12864 at <>:10029
+2026-10-30 10:44:10.444 xcodebuild[14568:6700525] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+2026-10-30 10:44:10.445 xcodebuild[14568:6700525] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+2026-10-30 10:44:40.674 xcodebuild[14568:6700525] [MT] IDETestOperationsObserverDebug: 94.951 elapsed -- Testing started completed.
+2026-10-30 10:44:40.674 xcodebuild[14568:6700525] [MT] IDETestOperationsObserverDebug: 0.000 sec, +0.000 sec -- start
+2026-10-30 10:44:40.674 xcodebuild[14568:6700525] [MT] IDETestOperationsObserverDebug: 94.951 sec, +94.951 sec -- end
+
+Test session results, code coverage, and logs:
+	~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.claude/worktrees/ios-beta-1.26.33/artifacts/tongxing-ios/2026-10-30/cli/20261030T104233-test-14edb6bc/test.xcresult
+
+Failing tests:
+	MachineDisclosureTests.testAudioDisclosureSurvivesTranscriptFailureAndRejectsStaleSelections()
+	MachineDisclosureTests.testAudioDisclosureSurvivesTranscriptFailureAndRejectsStaleSelections()
+
+** TEST FAILED **
+
+Testing started
+
+Exit status: 65
