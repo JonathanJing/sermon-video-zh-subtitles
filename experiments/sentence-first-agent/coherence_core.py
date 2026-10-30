@@ -252,6 +252,9 @@ class DeepSeek:
         self.total = total
         self.done = 0
         self.failed = 0
+        self.units_done = 0
+        self.validation_failures = 0
+        self.summary_data: dict = {}
         self.started = time.time()
         self.state_dir = Path(state_dir) if state_dir else cache_dir.parent
         self.state_dir.mkdir(parents=True, exist_ok=True)
@@ -266,6 +269,25 @@ class DeepSeek:
             with self.events_path.open("a", encoding="utf-8") as out:
                 out.write(json.dumps(event, ensure_ascii=False) + "\n")
 
+    def note(self, status: str, context: str = "", **fields) -> None:
+        """Append a diagnostic event (validation failure, summary) without a model call."""
+        self._event({"status": status, "context": context, **fields})
+        self._state()
+
+    def record_done(self, context: str, ids: list[str]) -> None:
+        """Record the sentence ids a finished window covered, for resume and coverage."""
+        line = {"ts": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z",
+                "label": self.label, "context": context, "ids": ids}
+        with self._lock:
+            with (self.state_dir / "done.jsonl").open("a", encoding="utf-8") as out:
+                out.write(json.dumps(line, ensure_ascii=False) + "\n")
+        self.units_done += len(ids)
+        self._state()
+
+    def summary(self, data: dict) -> None:
+        self.summary_data = data
+        self._state()
+
     def _state(self, status: str | None = None, error: str = "") -> None:
         if status is None:
             status = "finished" if self.total and self.done >= self.total and not self.failed else "running"
@@ -278,6 +300,8 @@ class DeepSeek:
                  "inputTokens": self.input_tokens, "outputTokens": self.output_tokens,
                  "elapsedSeconds": round(elapsed, 1),
                  "avgSeconds": round(elapsed / self.done, 2) if self.done else None,
+                 "unitsDone": self.units_done, "validationFailures": self.validation_failures,
+                 "summary": self.summary_data,
                  "lastError": error}
         tmp = self.state_path.with_suffix(".tmp")
         tmp.write_text(json.dumps(state, ensure_ascii=False, indent=1), encoding="utf-8")
@@ -432,3 +456,15 @@ class ClaudeCLI:
         return {"model": self.model, "effort": None, "calls": self.calls, "hits": self.hits,
                 "costUsd": round(self.cost, 4), "inputTokens": self.input_tokens,
                 "outputTokens": self.output_tokens, "maxRequestChars": self.max_chars}
+
+
+def recorded_units(state_dir: Path) -> set[str]:
+    """Sentence ids already covered by done.jsonl in a stage directory."""
+    path = Path(state_dir) / "done.jsonl"
+    if not path.is_file():
+        return set()
+    covered: set[str] = set()
+    for line in path.read_text(encoding="utf-8").splitlines():
+        if line.strip():
+            covered.update(json.loads(line).get("ids") or [])
+    return covered

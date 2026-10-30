@@ -47,25 +47,32 @@ def load_rows(path: Path) -> list[dict]:
 
 
 def trim(client: C.DeepSeek, locale: str, rows: list[dict], units: dict[str, dict],
-         budgets: dict[str, int]) -> dict[str, dict]:
+         budgets: dict[str, int]) -> tuple[dict[str, dict], dict]:
     system = SYSTEM[locale]
     revisions: dict[str, dict] = {}
+    rejected: dict[str, int] = {}
     for start in range(0, len(rows), 8):
         window = rows[start:start + 8]
         user = {"locale": locale, "sentences": [
             {"id": row["id"], "english": units.get(row["id"], {}).get("english", ""),
              "target": row["target"], "maxChars": budgets.get(row["id"])} for row in window]}
         result = client(system, user, context=window[0]["id"])
+        client.record_done(window[0]["id"], [row["id"] for row in window])
         for item in result.get("sentences") or []:
             new = (item.get("target") or "").strip()
             original = next((row["target"] for row in window if row["id"] == item.get("id")), None)
-            if not original or not new or new == original or len(new) >= len(original):
+            if not original or not new:
+                rejected["empty"] = rejected.get("empty", 0) + 1
+                continue
+            if new == original or len(new) >= len(original):
+                rejected["not_shorter"] = rejected.get("not_shorter", 0) + 1
                 continue
             if any(token not in new and not C.target_has_number(new, token)
                    for token in C.number_tokens(original)):
+                rejected["number_dropped"] = rejected.get("number_dropped", 0) + 1
                 continue
             revisions[item["id"]] = {"target": new, "note": "revised: lag trim"}
-    return revisions
+    return revisions, {"selected": len(rows), "accepted": len(revisions), "rejected": rejected}
 
 
 def run(command: list[str]) -> None:
@@ -86,6 +93,7 @@ def main() -> int:
                         help="dubSeconds - sourceSeconds treated as a pushing sentence")
     parser.add_argument("--max-sentences", type=int, default=80)
     parser.add_argument("--iterations", type=int, default=2)
+    parser.add_argument("--plan-only", action="store_true", help="select and trim, but do not re-synthesize")
     parser.add_argument("--execute", action="store_true")
     args = parser.parse_args()
     remote_host, remote_dir = args.remote.split(":", 1)
@@ -113,7 +121,15 @@ def main() -> int:
             break
         translations = {row["id"]: row for row in load_rows(run_dir / "translations.jsonl")}
         rows = [translations[row["id"]] for row in bad if row["id"] in translations]
-        revisions = trim(client, args.locale, rows, sentences, budgets)
+        revisions, stats = trim(client, args.locale, rows, sentences, budgets)
+        client.note("trim_iteration", str(number), **stats,
+                    maxLagBefore=schedule["summary"]["maxLagSeconds"])
+        report[-1].update(stats)
+        if args.plan_only:
+            C.write_json(run_dir / "lag-plan.json", {"iteration": number, "stats": stats,
+                                                     "revisions": revisions})
+            print(json.dumps({"planOnly": True, **stats}, ensure_ascii=False), flush=True)
+            break
         review_path = run_dir / "review.json"
         review = json.loads(review_path.read_text(encoding="utf-8")) if review_path.is_file() else {}
         review.setdefault("revisions", {}).update(revisions)

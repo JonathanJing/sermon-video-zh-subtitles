@@ -148,7 +148,10 @@ def run_window(client, units, glossary, prior, flags, after, window_id, budgets,
         rows = result.get("sentences")
         failures = C.validate_sentences(rows, units, window_id, budgets, locale=locale)
     if failures:
+        client.validation_failures += 1
+        client.note("validation_failed", window_id, failures=failures[:6])
         return {}, failures
+    client.record_done(window_id, [unit["id"] for unit in units])
     return {row["id"]: row for row in rows}, []
 
 
@@ -266,6 +269,8 @@ def main() -> int:
                                         window_system, args.locale)
         results.update(fixed)
         failures.extend(repair_failures)
+    if failures:
+        translator.note("repair_failed", "", failures=[str(item) for item in failures[:8]])
     missing = [unit_id for unit_id in order if unit_id not in results]
     total_usd = translator.cost + (glossary_client.cost if glossary_client is not translator else 0)
     cost = {"translator": translator.ledger(),
