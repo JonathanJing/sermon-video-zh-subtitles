@@ -62,8 +62,6 @@ struct ContentView: View {
     @ViewState private var copyConfirmation: String?
     @ViewState private var showingPlaybackMore = false
     @ViewState private var showingAlignmentFailure = false
-    @ViewState private var playbackMoreButtonFrame: CGRect = .null
-    @ViewState private var playbackMorePlacement: PlaybackDockPlacement = .bottom
 
     init(model: AppModel) {
         self.model = model
@@ -79,7 +77,6 @@ struct ContentView: View {
                 isLandscape: geometry.size.width > geometry.size.height,
                 hasDividedRegion: controlRegion.size != geometry.size
             )
-            .overlay { playbackMoreOverlay }
         }
         .environment(\.locale, localization.locale)
         #if os(iOS)
@@ -537,16 +534,12 @@ struct ContentView: View {
             onTimeTap: model.display == .transcript && currentTranscriptRowID != nil ? { returnToCurrent = UUID() } : nil,
             placement: placement,
             inSystemBar: inSystemBar,
-            onMoreTap: {
-                playbackMorePlacement = placement
-                showingPlaybackMore = true
-            },
-            onMoreDismiss: { showingPlaybackMore = false },
-            onMoreFrameChange: { playbackMoreButtonFrame = $0 }
+            isMorePresented: $showingPlaybackMore,
+            moreContent: { AnyView(playbackMoreControls) }
         )
     }
 
-    private func playbackMoreControls(width: CGFloat) -> some View {
+    private var playbackMoreControls: some View {
         PlaybackMoreControls(
             playback: playback,
             isPreparing: model.isPreparing || model.isPreparingPublishedAudio,
@@ -554,19 +547,8 @@ struct ContentView: View {
             locate: { sheet = .locate },
             precision: model.selectedTrack == nil ? nil : { sheet = .precision },
             current: currentTranscriptRowID == nil ? nil : { returnToCurrent = UUID() },
-            onClose: { showingPlaybackMore = false },
-            width: width
+            onClose: { showingPlaybackMore = false }
         )
-    }
-
-    private var playbackMoreOverlay: some View {
-        PlaybackMorePanelOverlay(
-            isPresented: $showingPlaybackMore,
-            buttonFrame: playbackMoreButtonFrame,
-            placement: playbackMorePlacement
-        ) { width in
-            playbackMoreControls(width: width)
-        }
     }
 
     private func dockControlRegion(in geometry: GeometryProxy) -> CGRect {
@@ -1561,7 +1543,6 @@ private struct PrecisionSheet: View {
     @ViewState private var slider = 0.0
     @ViewState private var dragging = false
     @ViewState private var showingMore = false
-    @ViewState private var moreButtonFrame: CGRect = .null
 
     init(model: AppModel) {
         self.model = model
@@ -1614,25 +1595,16 @@ private struct PrecisionSheet: View {
                 PlaybackDock(
                     playback: playback,
                     alignmentModel: model,
-                    onMoreTap: { showingMore = true },
-                    onMoreDismiss: { showingMore = false },
-                    onMoreFrameChange: { moreButtonFrame = $0 }
+                    isMorePresented: $showingMore,
+                    moreContent: {
+                        AnyView(PlaybackMoreControls(
+                            playback: playback,
+                            isPreparing: false,
+                            alignmentModel: model,
+                            onClose: { showingMore = false }
+                        ))
+                    }
                 )
-            }
-            .overlay {
-                PlaybackMorePanelOverlay(
-                    isPresented: $showingMore,
-                    buttonFrame: moreButtonFrame,
-                    placement: .bottom
-                ) { width in
-                    PlaybackMoreControls(
-                        playback: playback,
-                        isPreparing: false,
-                        alignmentModel: model,
-                        onClose: { showingMore = false },
-                        width: width
-                    )
-                }
             }
         }
         .environment(\.locale, localization.locale)
