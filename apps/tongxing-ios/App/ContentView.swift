@@ -81,11 +81,6 @@ struct ContentView: View {
             )
             .overlay { playbackMoreOverlay }
         }
-        .safeAreaInset(edge: .top, spacing: 0) {
-            if let phase = model.foregroundAlignmentPhase {
-                alignmentFeedbackBar(phase)
-            }
-        }
         .environment(\.locale, localization.locale)
         #if os(iOS)
         .onReceive(NotificationCenter.default.publisher(for: .betaNotificationOpened)) { _ in
@@ -170,25 +165,6 @@ struct ContentView: View {
         }
     }
     #endif
-
-    private func alignmentFeedbackBar(_ phase: ListeningAlignmentPhase) -> some View {
-        HStack(spacing: 10) {
-            Image(systemName: phase.symbolName)
-                .font(.title3)
-                .foregroundStyle(phase == .failed ? Color.orange : Brand.accent)
-                .accessibilityHidden(true)
-            Text(phase == .failed ? localization.text("听音对齐未完成")
-                 : phase.statusText(english: localization.language != .simplifiedChinese))
-                .font(.subheadline.weight(.semibold))
-                .fixedSize(horizontal: false, vertical: true)
-            Spacer(minLength: 0)
-        }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 10)
-        .background(.background)
-        .accessibilityElement(children: .combine)
-        .accessibilityIdentifier("foreground-alignment-feedback-\(phase.rawValue)")
-    }
 
     private func updateAlignmentFailurePresentation() {
         showingAlignmentFailure = model.alignmentFailure != nil && sheet == nil && scenePhase == .active
@@ -432,7 +408,13 @@ struct ContentView: View {
                 }
             }
             .toolbar {
-                ToolbarItem(placement: .principal) { BrandTitle() }
+                ToolbarItem(placement: .principal) {
+                    BrandTitle(alignmentPhase: model.foregroundAlignmentPhase,
+                               // The toolbar clamps its own type size, so the
+                               // compact-status decision comes from the page
+                               // environment that still reports accessibility sizes.
+                               usesCompactStatus: typeSize.isAccessibilitySize)
+                }
                 if model.display == .transcript {
                     ToolbarItem(placement: .primaryAction) {
                         // Toolbar bridges can discard a Button's outer custom
@@ -1331,9 +1313,14 @@ extension VerifiedHTMLView: NSViewRepresentable {
 }
 #endif
 
+/// The navigation bar's principal item. While live alignment runs, the brand
+/// subtitle gives way to the alignment status, so the toolbar reports progress
+/// without a separate bar pushing the reading area down.
 private struct BrandTitle: View {
     @ObservedObject private var localization = AppLocalization.shared
     @Environment(\.colorScheme) private var colorScheme
+    var alignmentPhase: ListeningAlignmentPhase? = nil
+    var usesCompactStatus = false
 
     private var brandMark: Image {
         #if SWIFT_PACKAGE
@@ -1351,9 +1338,39 @@ private struct BrandTitle: View {
                 .accessibilityHidden(true)
             VStack(alignment: .leading, spacing: 1) {
                 Text(localization.text("同行")).font(.headline)
-                Text(localization.text("证道中文听译")).font(.caption2).foregroundStyle(.secondary)
+                if let phase = alignmentPhase {
+                    alignmentSubtitle(phase)
+                } else {
+                    Text(localization.text("证道中文听译")).font(.caption2).foregroundStyle(.secondary)
+                }
             }
-        }.accessibilityElement(children: .combine)
+        }
+        .accessibilityElement(children: .combine)
+        .animation(.default, value: alignmentPhase)
+    }
+
+    private func alignmentSubtitle(_ phase: ListeningAlignmentPhase) -> some View {
+        HStack(spacing: 4) {
+            if phase.isActive {
+                ProgressView().controlSize(.mini)
+            } else {
+                Image(systemName: phase.symbolName)
+                    .font(.caption2.weight(.semibold))
+                    .foregroundStyle(phase == .failed ? Color.orange : Brand.accent)
+            }
+            Text(alignmentStatusText(phase))
+                .font(.caption2.weight(.semibold))
+                .foregroundStyle(phase == .failed ? Color.orange : Brand.accent)
+                .lineLimit(1)
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("foreground-alignment-feedback-\(phase.rawValue)")
+    }
+
+    private func alignmentStatusText(_ phase: ListeningAlignmentPhase) -> String {
+        let english = localization.language != .simplifiedChinese
+        if usesCompactStatus { return phase.compactText(english: english) }
+        return phase == .failed ? localization.text("听音对齐未完成") : phase.statusText(english: english)
     }
 }
 
