@@ -1,0 +1,287 @@
+Oct 30 09:59:51 JonathasMBP1284 CoreSimulatorService[13531] <Debug>: Developer directory for new connection: /Applications/Xcode.app/Contents/Developer
+Oct 30 09:59:51 JonathasMBP1284 CoreSimulatorService[13531] <Debug>: Client connected: simctl[93860]
+Oct 30 09:59:51 JonathasMBP1284 CoreSimulatorService[13531] <Debug>: Client connected: simctl[93860]
+Oct 30 09:59:51 JonathasMBP1284 com.apple.CoreSimulator.simctl[93860] <Warning>: Unable to discover any Simulator runtimes. Developer Directory is /Applications/Xcode.app/Contents/Developer.
+Oct 30 09:59:51 JonathasMBP1284 CoreSimulatorService[13531] <Debug>: Client disconnected: simctl[93860]
+Oct 30 09:59:51 JonathasMBP1284 CoreSimulatorService[13531] <Debug>: Notification subscription cancellation for set: all sets
+Oct 30 09:59:51 JonathasMBP1284 com.apple.CoreSimulator.simctl[93860] <Info>: Attempting to add runtime: com.apple.CoreSimulator.SimRuntime.iOS-27-0 - /Library/Developer/CoreSimulator/Volumes/iOS_24A434/Library/Developer/CoreSimulator/Profiles/Runtimes/iOS 27.0.simruntime
+Oct 30 09:59:51 JonathasMBP1284 com.apple.CoreSimulator.simctl[93860] <Info>: Runtime bundle found. Adding to supported runtimes. com.apple.CoreSimulator.SimRuntime.iOS-27-0 : /Library/Developer/CoreSimulator/Volumes/iOS_24A434/Library/Developer/CoreSimulator/Profiles/Runtimes/iOS 27.0.simruntime
+Oct 30 09:59:51 JonathasMBP1284 com.apple.CoreSimulator.simctl[93860] <Info>: Regenerating runtime dictionaries because of adding profiles for volume path `/Library/Developer/CoreSimulator/Volumes/iOS_24A434` (1 supported runtimes)
+Oct 30 09:59:51 JonathasMBP1284 com.apple.CoreSimulator.simctl[93860] <Info>: Attempting to add runtime: com.apple.CoreSimulator.SimRuntime.iOS-18-0 - /Library/Developer/CoreSimulator/Volumes/iOS_22A5346a/Library/Developer/CoreSimulator/Profiles/Runtimes/iOS 18.0.simruntime
+Oct 30 09:59:51 JonathasMBP1284 com.apple.CoreSimulator.simctl[93860] <Info>: Runtime bundle found. Adding to supported runtimes. com.apple.CoreSimulator.SimRuntime.iOS-18-0 : /Library/Developer/CoreSimulator/Volumes/iOS_22A5346a/Library/Developer/CoreSimulator/Profiles/Runtimes/iOS 18.0.simruntime
+Oct 30 09:59:51 JonathasMBP1284 com.apple.CoreSimulator.simctl[93860] <Info>: Regenerating runtime dictionaries because of adding profiles for volume path `/Library/Developer/CoreSimulator/Volumes/iOS_22A5346a` (2 supported runtimes)
+Oct 30 09:59:51 JonathasMBP1284 com.apple.CoreSimulator.simctl[93860] <Info>: Attempting to add runtime: com.apple.CoreSimulator.SimRuntime.iOS-27-1 - /Library/Developer/CoreSimulator/Volumes/iOS_24A94401/Library/Developer/CoreSimulator/Profiles/Runtimes/iOS 27.1.simruntime
+Oct 30 09:59:51 JonathasMBP1284 com.apple.CoreSimulator.simctl[93860] <Info>: Runtime bundle found. Adding to supported runtimes. com.apple.CoreSimulator.SimRuntime.iOS-27-1 : /Library/Developer/CoreSimulator/Volumes/iOS_24A94401/Library/Developer/CoreSimulator/Profiles/Runtimes/iOS 27.1.simruntime
+Oct 30 09:59:51 JonathasMBP1284 com.apple.CoreSimulator.simctl[93860] <Info>: Regenerating runtime dictionaries because of adding profiles for volume path `/Library/Developer/CoreSimulator/Volumes/iOS_24A94401` (3 supported runtimes)
+Oct 30 09:59:51 JonathasMBP1284 com.apple.CoreSimulator.simctl[93860] <Info>: Attempting to add runtime: com.apple.CoreSimulator.SimRuntime.iOS-26-2 - /Library/Developer/CoreSimulator/Volumes/iOS_23C54/Library/Developer/CoreSimulator/Profiles/Runtimes/iOS 26.2.simruntime
+Oct 30 09:59:51 JonathasMBP1284 com.apple.CoreSimulator.simctl[93860] <Info>: Runtime bundle found. Adding to supported runtimes. com.apple.CoreSimulator.SimRuntime.iOS-26-2 : /Library/Developer/CoreSimulator/Volumes/iOS_23C54/Library/Developer/CoreSimulator/Profiles/Runtimes/iOS 26.2.simruntime
+Oct 30 09:59:51 JonathasMBP1284 CoreSimulatorService[13531] <Debug>: Notification subscription for set: ~/Library/Developer/CoreSimulator/Devices
+Oct 30 09:59:51 JonathasMBP1284 com.apple.CoreSimulator.simctl[93860] <Info>: Regenerating runtime dictionaries because of adding profiles for volume path `/Library/Developer/CoreSimulator/Volumes/iOS_23C54` (4 supported runtimes)
+Oct 30 09:59:51 JonathasMBP1284 com.apple.CoreSimulator.simctl[93860] <Debug>: VolumeManager: Disk Appeared <DADisk 0x7ca123b9c0 [0x1fa6a4fc8]>{id = /dev/disk15s1}
+Oct 30 09:59:51 JonathasMBP1284 com.apple.CoreSimulator.simctl[93860] <Debug>: VolumeManager: Ignoring outer cryptex volume (file:///Library/Developer/CoreSimulator/Cryptex/Images/bundle/SimRuntimeBundle-AF73F92B-83A6-425C-A2CF-D7EF280BC0A6/)
+Oct 30 09:59:51 JonathasMBP1284 com.apple.CoreSimulator.simctl[93860] <Debug>: VolumeManager: Appeared: Ignoring disk disk7s1
+Oct 30 09:59:51 JonathasMBP1284 com.apple.CoreSimulator.simctl[93860] <Debug>: VolumeManager: Disk Appeared <DADisk 0x7ca123bbd0 [0x1fa6a4fc8]>{id = /dev/disk13s1}
+Oct 30 09:59:51 JonathasMBP1284 com.apple.CoreSimulator.simctl[93860] <Debug>: VolumeManager: Disk Appeared <DADisk 0x7ca123b900 [0x1fa6a4fc8]>{id = /dev/disk11s1}
+Oct 30 09:59:51 JonathasMBP1284 com.apple.CoreSimulator.simctl[93860] <Debug>: VolumeManager: Disk Appeared <DADisk 0x7ca123b8d0 [0x1fa6a4fc8]>{id = /dev/disk9s1}
+Oct 30 09:59:51 JonathasMBP1284 com.apple.CoreSimulator.simctl[93860] <Debug>: VolumeManager: Ignoring disk due to missing volume path.
+Oct 30 09:59:51 JonathasMBP1284 com.apple.CoreSimulator.simctl[93860] <Debug>: VolumeManager: Appeared: Ignoring disk disk1s1
+Oct 30 09:59:51 JonathasMBP1284 com.apple.CoreSimulator.simctl[93860] <Debug>: VolumeManager: Ignoring disk due to missing volume path.
+Oct 30 09:59:51 JonathasMBP1284 com.apple.CoreSimulator.simctl[93860] <Debug>: VolumeManager: Appeared: Ignoring disk disk1s2
+Oct 30 09:59:51 JonathasMBP1284 com.apple.CoreSimulator.simctl[93860] <Debug>: VolumeManager: Disk Appeared <DADisk 0x7ca123bc00 [0x1fa6a4fc8]>{id = /dev/disk2s1}
+Oct 30 09:59:51 JonathasMBP1284 com.apple.CoreSimulator.simctl[93860] <Debug>: VolumeManager: Disk Appeared <DADisk 0x7ca123bb10 [0x1fa6a4fc8]>{id = /dev/disk2s2}
+Oct 30 09:59:51 JonathasMBP1284 com.apple.CoreSimulator.simctl[93860] <Debug>: VolumeManager: Disk Appeared <DADisk 0x7ca123bae0 [0x1fa6a4fc8]>{id = /dev/disk2s3}
+Oct 30 09:59:51 JonathasMBP1284 com.apple.CoreSimulator.simctl[93860] <Debug>: VolumeManager: Ignoring disk due to missing volume path.
+Oct 30 09:59:51 JonathasMBP1284 com.apple.CoreSimulator.simctl[93860] <Debug>: VolumeManager: Appeared: Ignoring disk disk2s4
+Oct 30 09:59:51 JonathasMBP1284 com.apple.CoreSimulator.simctl[93860] <Debug>: VolumeManager: Disk Appeared <DADisk 0x7ca123bae0 [0x1fa6a4fc8]>{id = /dev/disk3s2}
+Oct 30 09:59:51 JonathasMBP1284 com.apple.CoreSimulator.simctl[93860] <Debug>: VolumeManager: Ignoring disk due to missing volume path.
+Oct 30 09:59:51 JonathasMBP1284 com.apple.CoreSimulator.simctl[93860] <Debug>: VolumeManager: Appeared: Ignoring disk disk3s1
+Oct 30 09:59:51 JonathasMBP1284 com.apple.CoreSimulator.simctl[93860] <Debug>: VolumeManager: Ignoring root volume (file:///System/Volumes/Data/)
+Oct 30 09:59:51 JonathasMBP1284 com.apple.CoreSimulator.simctl[93860] <Debug>: VolumeManager: Appeared: Ignoring disk disk3s5
+Oct 30 09:59:51 JonathasMBP1284 com.apple.CoreSimulator.simctl[93860] <Debug>: VolumeManager: Disk Appeared <DADisk 0x7ca1527150 [0x1fa6a4fc8]>{id = /dev/disk3s3}
+... 64558 lines omitted; 45 error-like lines, 45 kept below ...
+[line 26376] Oct 30 10:43:05 JonathasMBP1284 CoreSimulatorService[13531] <Debug>: Invoking createDefaultPortsForDevice:error: on com.apple.gputools.GTSimPortVendor
+[line 26378] Oct 30 10:43:05 JonathasMBP1284 CoreSimulatorService[13531] <Debug>: Invoking createDefaultPortsForDevice:error: on com.apple.CoreSimulator.SimRenderingServices
+[line 26414] Oct 30 10:43:06 JonathasMBP1284 CoreSimulatorService[13531] <Error>: Could not register service com.apple.gputools.agent.producer.sim: Failed to lookup com.apple.gputools.agent.producer.sim: 0x44e
+[line 26418] Oct 30 10:43:06 JonathasMBP1284 CoreSimulatorService[13531] <Error>: Could not register service com.apple.ist.ds.appleconnect.service.sim2host: Failed to lookup com.apple.ist.ds.appleconnect.service.sim2host: 0x44e
+[line 29994] Oct 30 10:44:50 JonathasMBP1284 CoreSimulatorService[13531] <Debug>: Invoking createDefaultPortsForDevice:error: on com.apple.gputools.GTSimPortVendor
+[line 29996] Oct 30 10:44:50 JonathasMBP1284 CoreSimulatorService[13531] <Debug>: Invoking createDefaultPortsForDevice:error: on com.apple.CoreSimulator.SimRenderingServices
+[line 30031] Oct 30 10:44:50 JonathasMBP1284 CoreSimulatorService[13531] <Error>: Could not register service com.apple.gputools.agent.producer.sim: Failed to lookup com.apple.gputools.agent.producer.sim: 0x44e
+[line 30035] Oct 30 10:44:50 JonathasMBP1284 CoreSimulatorService[13531] <Error>: Could not register service com.apple.ist.ds.appleconnect.service.sim2host: Failed to lookup com.apple.ist.ds.appleconnect.service.sim2host: 0x44e
+[line 30613] Oct 30 10:45:27 JonathasMBP1284 com.apple.CoreSimulator.simctl[17527] <Error>: terminateApplicationWithID:error:: Error Domain=NSPOSIXErrorDomain Code=3 "No such process" UserInfo={BSErrorCodeDescription=No such process, NSUnderlyingError=0x7583525ec0 {Error Domain=NSPOSIXErrorDomain Code=3 "No such process" UserInfo={NSLocalizedFailure=The request to terminate "com.jonathanjing.tongxing.beta" failed., NSLocalizedFailureReason=found nothing to terminate, BSErrorCodeDescription=No such process}}, NSLocalizedDescription=Simulator device failed to terminate com.jonathanjing.tongxing.beta., NSLocalizedFailure=The request to terminate "com.jonathanjing.tongxing.beta" failed., SimCallingSelector=terminateApplicationWithID:error:, NSLocalizedFailureReason=found nothing to terminate}
+[line 31051] Oct 30 10:45:27 JonathasMBP1284 com.apple.CoreSimulator.simctl[17541] <Error>: terminateApplicationWithID:error:: Error Domain=NSPOSIXErrorDomain Code=3 "No such process" UserInfo={BSErrorCodeDescription=No such process, NSUnderlyingError=0x7a8b1ae010 {Error Domain=NSPOSIXErrorDomain Code=3 "No such process" UserInfo={NSLocalizedFailure=The request to terminate "com.jonathanjing.tongxing.dev" failed., NSLocalizedFailureReason=found nothing to terminate, BSErrorCodeDescription=No such process}}, NSLocalizedDescription=Simulator device failed to terminate com.jonathanjing.tongxing.dev., NSLocalizedFailure=The request to terminate "com.jonathanjing.tongxing.dev" failed., SimCallingSelector=terminateApplicationWithID:error:, NSLocalizedFailureReason=found nothing to terminate}
+[line 31489] Oct 30 10:45:28 JonathasMBP1284 com.apple.CoreSimulator.simctl[17552] <Error>: terminateApplicationWithID:error:: Error Domain=NSPOSIXErrorDomain Code=3 "No such process" UserInfo={BSErrorCodeDescription=No such process, NSUnderlyingError=0x78531904e0 {Error Domain=NSPOSIXErrorDomain Code=3 "No such process" UserInfo={NSLocalizedFailure=The request to terminate "com.jonathanjing.tongxing.beta.uitests.xctrunner" failed., NSLocalizedFailureReason=found nothing to terminate, BSErrorCodeDescription=No such process}}, NSLocalizedDescription=Simulator device failed to terminate com.jonathanjing.tongxing.beta.uitests.xctrunner., NSLocalizedFailure=The request to terminate "com.jonathanjing.tongxing.beta.uitests.xctrunner" failed., SimCallingSelector=terminateApplicationWithID:error:, NSLocalizedFailureReason=found nothing to terminate}
+[line 31927] Oct 30 10:45:28 JonathasMBP1284 com.apple.CoreSimulator.simctl[17573] <Error>: terminateApplicationWithID:error:: Error Domain=NSPOSIXErrorDomain Code=3 "No such process" UserInfo={BSErrorCodeDescription=No such process, NSUnderlyingError=0x77db517c00 {Error Domain=NSPOSIXErrorDomain Code=3 "No such process" UserInfo={NSLocalizedFailure=The request to terminate "com.jonathanjing.tongxing.dev.uitests.xctrunner" failed., NSLocalizedFailureReason=found nothing to terminate, BSErrorCodeDescription=No such process}}, NSLocalizedDescription=Simulator device failed to terminate com.jonathanjing.tongxing.dev.uitests.xctrunner., NSLocalizedFailure=The request to terminate "com.jonathanjing.tongxing.dev.uitests.xctrunner" failed., SimCallingSelector=terminateApplicationWithID:error:, NSLocalizedFailureReason=found nothing to terminate}
+[line 32365] Oct 30 10:45:28 JonathasMBP1284 com.apple.CoreSimulator.simctl[17582] <Error>: terminateApplicationWithID:error:: Error Domain=NSPOSIXErrorDomain Code=3 "No such process" UserInfo={BSErrorCodeDescription=No such process, NSUnderlyingError=0x76c74f0420 {Error Domain=NSPOSIXErrorDomain Code=3 "No such process" UserInfo={NSLocalizedFailure=The request to terminate "com.jonathanjing.harnesswatch" failed., NSLocalizedFailureReason=found nothing to terminate, BSErrorCodeDescription=No such process}}, NSLocalizedDescription=Simulator device failed to terminate com.jonathanjing.harnesswatch., NSLocalizedFailure=The request to terminate "com.jonathanjing.harnesswatch" failed., SimCallingSelector=terminateApplicationWithID:error:, NSLocalizedFailureReason=found nothing to terminate}
+[line 38916] Oct 30 10:47:34 JonathasMBP1284 CoreSimulatorService[13531] <Debug>: Invoking createDefaultPortsForDevice:error: on com.apple.gputools.GTSimPortVendor
+[line 38918] Oct 30 10:47:35 JonathasMBP1284 CoreSimulatorService[13531] <Debug>: Invoking createDefaultPortsForDevice:error: on com.apple.CoreSimulator.SimRenderingServices
+[line 38954] Oct 30 10:47:35 JonathasMBP1284 CoreSimulatorService[13531] <Error>: Could not register service com.apple.gputools.agent.producer.sim: Failed to lookup com.apple.gputools.agent.producer.sim: 0x44e
+[line 38958] Oct 30 10:47:35 JonathasMBP1284 CoreSimulatorService[13531] <Error>: Could not register service com.apple.ist.ds.appleconnect.service.sim2host: Failed to lookup com.apple.ist.ds.appleconnect.service.sim2host: 0x44e
+[line 40609] Oct 30 10:49:37 JonathasMBP1284 CoreSimulatorService[13531] <Debug>: Invoking createDefaultPortsForDevice:error: on com.apple.gputools.GTSimPortVendor
+[line 40611] Oct 30 10:49:37 JonathasMBP1284 CoreSimulatorService[13531] <Debug>: Invoking createDefaultPortsForDevice:error: on com.apple.CoreSimulator.SimRenderingServices
+[line 40647] Oct 30 10:49:37 JonathasMBP1284 CoreSimulatorService[13531] <Error>: Could not register service com.apple.gputools.agent.producer.sim: Failed to lookup com.apple.gputools.agent.producer.sim: 0x44e
+[line 40652] Oct 30 10:49:37 JonathasMBP1284 CoreSimulatorService[13531] <Error>: Could not register service com.apple.ist.ds.appleconnect.service.sim2host: Failed to lookup com.apple.ist.ds.appleconnect.service.sim2host: 0x44e
+[line 48430] Oct 30 11:10:08 JonathasMBP1284 CoreSimulatorService[13531] <Debug>: Invoking createDefaultPortsForDevice:error: on com.apple.gputools.GTSimPortVendor
+[line 48432] Oct 30 11:10:08 JonathasMBP1284 CoreSimulatorService[13531] <Debug>: Invoking createDefaultPortsForDevice:error: on com.apple.CoreSimulator.SimRenderingServices
+[line 48467] Oct 30 11:10:08 JonathasMBP1284 CoreSimulatorService[13531] <Error>: Could not register service com.apple.gputools.agent.producer.sim: Failed to lookup com.apple.gputools.agent.producer.sim: 0x44e
+[line 48472] Oct 30 11:10:08 JonathasMBP1284 CoreSimulatorService[13531] <Error>: Could not register service com.apple.ist.ds.appleconnect.service.sim2host: Failed to lookup com.apple.ist.ds.appleconnect.service.sim2host: 0x44e
+[line 52491] Oct 30 11:13:16 JonathasMBP1284 CoreSimulatorService[13531] <Debug>: Invoking createDefaultPortsForDevice:error: on com.apple.gputools.GTSimPortVendor
+[line 52493] Oct 30 11:13:16 JonathasMBP1284 CoreSimulatorService[13531] <Debug>: Invoking createDefaultPortsForDevice:error: on com.apple.CoreSimulator.SimRenderingServices
+[line 52529] Oct 30 11:13:16 JonathasMBP1284 CoreSimulatorService[13531] <Error>: Could not register service com.apple.gputools.agent.producer.sim: Failed to lookup com.apple.gputools.agent.producer.sim: 0x44e
+[line 52533] Oct 30 11:13:16 JonathasMBP1284 CoreSimulatorService[13531] <Error>: Could not register service com.apple.ist.ds.appleconnect.service.sim2host: Failed to lookup com.apple.ist.ds.appleconnect.service.sim2host: 0x44e
+[line 57915] Oct 30 11:31:19 JonathasMBP1284 CoreSimulatorService[13531] <Debug>: Invoking createDefaultPortsForDevice:error: on com.apple.gputools.GTSimPortVendor
+[line 57917] Oct 30 11:31:19 JonathasMBP1284 CoreSimulatorService[13531] <Debug>: Invoking createDefaultPortsForDevice:error: on com.apple.gputools.GTSimPortVendor
+[line 57919] Oct 30 11:31:19 JonathasMBP1284 CoreSimulatorService[13531] <Debug>: Invoking createDefaultPortsForDevice:error: on com.apple.CoreSimulator.SimRenderingServices
+[line 57920] Oct 30 11:31:19 JonathasMBP1284 CoreSimulatorService[13531] <Debug>: Invoking createDefaultPortsForDevice:error: on com.apple.CoreSimulator.SimRenderingServices
+[line 57988] Oct 30 11:31:19 JonathasMBP1284 CoreSimulatorService[13531] <Error>: Could not register service com.apple.gputools.agent.producer.sim: Failed to lookup com.apple.gputools.agent.producer.sim: 0x44e
+[line 57992] Oct 30 11:31:19 JonathasMBP1284 CoreSimulatorService[13531] <Error>: Could not register service com.apple.ist.ds.appleconnect.service.sim2host: Failed to lookup com.apple.ist.ds.appleconnect.service.sim2host: 0x44e
+[line 58021] Oct 30 11:31:19 JonathasMBP1284 CoreSimulatorService[13531] <Error>: Could not register service com.apple.gputools.agent.producer.sim: Failed to lookup com.apple.gputools.agent.producer.sim: 0x44e
+[line 58025] Oct 30 11:31:19 JonathasMBP1284 CoreSimulatorService[13531] <Error>: Could not register service com.apple.ist.ds.appleconnect.service.sim2host: Failed to lookup com.apple.ist.ds.appleconnect.service.sim2host: 0x44e
+[line 62151] Oct 30 12:20:37 JonathasMBP1284 CoreSimulatorService[13531] <Debug>: Invoking createDefaultPortsForDevice:error: on com.apple.gputools.GTSimPortVendor
+[line 62153] Oct 30 12:20:37 JonathasMBP1284 CoreSimulatorService[13531] <Debug>: Invoking createDefaultPortsForDevice:error: on com.apple.CoreSimulator.SimRenderingServices
+[line 62188] Oct 30 12:20:37 JonathasMBP1284 CoreSimulatorService[13531] <Error>: Could not register service com.apple.gputools.agent.producer.sim: Failed to lookup com.apple.gputools.agent.producer.sim: 0x44e
+[line 62193] Oct 30 12:20:37 JonathasMBP1284 CoreSimulatorService[13531] <Error>: Could not register service com.apple.ist.ds.appleconnect.service.sim2host: Failed to lookup com.apple.ist.ds.appleconnect.service.sim2host: 0x44e
+[line 63698] Oct 30 12:21:27 JonathasMBP1284 CoreSimulatorService[13531] <Debug>: Invoking createDefaultPortsForDevice:error: on com.apple.gputools.GTSimPortVendor
+[line 63700] Oct 30 12:21:27 JonathasMBP1284 CoreSimulatorService[13531] <Debug>: Invoking createDefaultPortsForDevice:error: on com.apple.CoreSimulator.SimRenderingServices
+[line 63736] Oct 30 12:21:27 JonathasMBP1284 CoreSimulatorService[13531] <Error>: Could not register service com.apple.gputools.agent.producer.sim: Failed to lookup com.apple.gputools.agent.producer.sim: 0x44e
+[line 63740] Oct 30 12:21:27 JonathasMBP1284 CoreSimulatorService[13531] <Error>: Could not register service com.apple.ist.ds.appleconnect.service.sim2host: Failed to lookup com.apple.ist.ds.appleconnect.service.sim2host: 0x44e
+... end of omitted section ...
+Oct 30 12:22:05 JonathasMBP1284 com.apple.CoreSimulator.simctl[54015] <Debug>: Adding device iPhone 17 (3D5AF104-2F19-4426-ABE4-3F805123D8AE, iOS 27.0, Booted) to _devicesByUDID for set ~/Library/Developer/CoreSimulator/Devices
+Oct 30 12:22:05 JonathasMBP1284 com.apple.CoreSimulator.simctl[54015] <Debug>: On devices queue adding device (3D5AF104-2F19-4426-ABE4-3F805123D8AE) in set ~/Library/Developer/CoreSimulator/Devices
+Oct 30 12:22:05 JonathasMBP1284 com.apple.CoreSimulator.simctl[54015] <Debug>: Client side deviceSet ~/Library/Developer/CoreSimulator/Devices is handling device added notification: {
+	    "added_bootstatus_obj" = "SimDeviceBootInfo { status = 4294967295 (Finished), elapsed = 8.000000, isTerminal = 1, info = {\n    DataMigrationElapsedTime = \"4.066976070404053\";\n    DataMigrationPhaseDescription = kDMMigrationPhaseDescriptionDidFinishWithSuccess;\n    DataMigrationPluginDetails =     {\n        \"com.apple.-0LaunchServicesMigrator\" =         {\n            kDMMigrationPluginResultsBundlePathKey = \"/private/var/run/com.apple.security.cryptexd/mnt/com.apple.iPhoneOS.SimulatorRuntime-v24.1.434.0.WiYC1i/Library/Developer/CoreSimulator/Profiles/Runtimes/iOS 27.0.simruntime/Contents/Resources/RuntimeRoot/System/Library/DataClassMigrators/00LaunchServicesMigrator.migrator\";\n            kDMMigrationPluginResultsDuration = \"12.24741925\";\n            kDMMigrationPluginResultsPhaseDescription = kDMMigrationPhaseDescriptionDidFinishWithSuccess;\n        };\n        \"com.apple.CloudTabsMigrator.migrator\" =         {\n            kDMMigrationPluginResultsBundlePathKey = \"/private/var/run/com.apple.security.cryptexd/mnt/com.apple.iPhoneOS.SimulatorRuntime-v24.1.434.0.WiYC1i/Library/Developer/CoreSimulator/Profiles/Runtimes/iOS 27.0.simruntime/Contents/Resources/RuntimeRoot/System/Library/DataClassMigrators/CloudTabsMigrator.migrator\";\n            kDMMigrationPluginResultsDuration = \"0.01239033333333333\";\n            kDMMigrationPluginResultsPhaseDescription = kDMMigrationPhaseDescriptionDidFinishWithSuccess;\n        };\n        \"com.apple.MobileAsset\" =         {\n            kDMMigrationPluginResultsBundlePathKey = \"/private/var/run/com.apple.security.cryptexd/mnt/com.apple.iPhoneOS.SimulatorRuntime-v24.1.434.0.WiYC1i/Library/Developer/CoreSimulator/Profiles/Runtimes/iOS 27.0.simruntime/Contents/Resources/RuntimeRoot/System/Library/DataClassMigrators/MobileAsset.migrator\";\n            kDMMigrationPluginResultsDuration = \"0.01210975\";\n            kDMMigrationPluginResultsPhaseDescription = kDMMigrationPhaseDescriptionDidFinishWithSucc ...[line truncated]
+	    "device_type" = "com.apple.CoreSimulator.SimDeviceType.iPad-Pro-13-inch-M5-12GB";
+	    "device_type_override" = "file:///Library/Developer/CoreSimulator/Profiles/DeviceTypes/iPad%20Pro%2013-inch%20(M5).simdevicetype/";
+	    "is_default_created" = 1;
+	    "last_used_at" = "2026-10-29 16:24:25 +0000";
+	    name = "iPad Pro 13-inch (M5)";
+	    notification = "device_added";
+	    runtime = "com.apple.CoreSimulator.SimRuntime.iOS-27-0";
+	    "runtime_override" = "file:///Library/Developer/CoreSimulator/Volumes/iOS_24A434/Library/Developer/CoreSimulator/Profiles/Runtimes/iOS%2027.0.simruntime/";
+	    "runtime_policy" = 0;
+	    "set_path" = "~/Library/Developer/CoreSimulator/Devices";
+	    state = 3;
+	    udid = "0E899AB9-4016-4063-82FE-1D623AEAC90D";
+	}
+Oct 30 12:22:05 JonathasMBP1284 com.apple.CoreSimulator.simctl[54015] <Debug>: Client side deviceSet ~/Library/Developer/CoreSimulator/Devices is handling device added notification: {
+	    "added_bootstatus_obj" = "SimDeviceBootInfo { status = 4294967295 (Finished), elapsed = 0.000000, isTerminal = 1, info = (null) }";
+	    "device_type" = "com.apple.CoreSimulator.SimDeviceType.iPad-Pro-11-inch-M5-12GB";
+	    "is_default_created" = 1;
+	    "last_used_at" = "2026-10-28 22:32:38 +0000";
+	    name = "iPad Pro 11-inch (M5)";
+	    notification = "device_added";
+	    runtime = "com.apple.CoreSimulator.SimRuntime.iOS-27-0";
+	    "runtime_policy" = 0;
+	    "set_path" = "~/Library/Developer/CoreSimulator/Devices";
+	    state = 1;
+	    udid = "7F180013-BF34-4EB5-9FBF-31EE824C4581";
+	}
+Oct 30 12:22:05 JonathasMBP1284 com.apple.CoreSimulator.simctl[54015] <Debug>: New device (0E899AB9-4016-4063-82FE-1D623AEAC90D) in set ~/Library/Developer/CoreSimulator/Devices
+Oct 30 12:22:05 JonathasMBP1284 com.apple.CoreSimulator.simctl[54015] <Debug>: On devices queue adding device (0E899AB9-4016-4063-82FE-1D623AEAC90D) in set ~/Library/Developer/CoreSimulator/Devices
+Oct 30 12:22:05 JonathasMBP1284 com.apple.CoreSimulator.simctl[54015] <Debug>: Adding device iPad Pro 13-inch (M5) (0E899AB9-4016-4063-82FE-1D623AEAC90D, iOS 27.0, Booted) to _devicesByUDID for set ~/Library/Developer/CoreSimulator/Devices
+Oct 30 12:22:05 JonathasMBP1284 com.apple.CoreSimulator.simctl[54015] <Debug>: New device (7F180013-BF34-4EB5-9FBF-31EE824C4581) in set ~/Library/Developer/CoreSimulator/Devices
+Oct 30 12:22:05 JonathasMBP1284 com.apple.CoreSimulator.simctl[54015] <Debug>: On devices queue adding device (7F180013-BF34-4EB5-9FBF-31EE824C4581) in set ~/Library/Developer/CoreSimulator/Devices
+Oct 30 12:22:05 JonathasMBP1284 com.apple.CoreSimulator.simctl[54015] <Debug>: Adding device iPad Pro 11-inch (M5) (7F180013-BF34-4EB5-9FBF-31EE824C4581, iOS 27.0, Shutdown) to _devicesByUDID for set ~/Library/Developer/CoreSimulator/Devices
+Oct 30 12:22:05 JonathasMBP1284 com.apple.CoreSimulator.simctl[54015] <Debug>: Client side deviceSet ~/Library/Developer/CoreSimulator/Devices is handling device added notification: {
+	    "device_type" = "com.apple.CoreSimulator.SimDeviceType.iPad-mini-A17-Pro";
+	    "is_default_created" = 1;
+	    "last_used_at" = "2026-10-28 16:57:47 +0000";
+	    name = "iPad mini (A17 Pro)";
+	    notification = "device_added";
+	    runtime = "com.apple.CoreSimulator.SimRuntime.iOS-27-0";
+	    "runtime_policy" = 0;
+	    "set_path" = "~/Library/Developer/CoreSimulator/Devices";
+	    state = 1;
+	    udid = "714D8298-1150-4DCF-94B4-C02AB9DB8E5C";
+	}
+Oct 30 12:22:05 JonathasMBP1284 com.apple.CoreSimulator.simctl[54015] <Debug>: New device (714D8298-1150-4DCF-94B4-C02AB9DB8E5C) in set ~/Library/Developer/CoreSimulator/Devices
+Oct 30 12:22:05 JonathasMBP1284 com.apple.CoreSimulator.simctl[54015] <Debug>: On devices queue adding device (714D8298-1150-4DCF-94B4-C02AB9DB8E5C) in set ~/Library/Developer/CoreSimulator/Devices
+Oct 30 12:22:05 JonathasMBP1284 com.apple.CoreSimulator.simctl[54015] <Debug>: Client side deviceSet ~/Library/Developer/CoreSimulator/Devices is handling device added notification: {
+	    "device_type" = "com.apple.CoreSimulator.SimDeviceType.iPad-Air-13-inch-M4";
+	    "is_default_created" = 1;
+	    name = "iPad Air 13-inch (M4)";
+	    notification = "device_added";
+	    runtime = "com.apple.CoreSimulator.SimRuntime.iOS-27-0";
+	    "runtime_policy" = 0;
+	    "set_path" = "~/Library/Developer/CoreSimulator/Devices";
+	    state = 1;
+	    udid = "1EFF8CCF-C26A-4A2A-BB58-D2EA171F8D5F";
+	}
+Oct 30 12:22:05 JonathasMBP1284 com.apple.CoreSimulator.simctl[54015] <Debug>: Adding device iPad mini (A17 Pro) (714D8298-1150-4DCF-94B4-C02AB9DB8E5C, iOS 27.0, Shutdown) to _devicesByUDID for set ~/Library/Developer/CoreSimulator/Devices
+Oct 30 12:22:05 JonathasMBP1284 com.apple.CoreSimulator.simctl[54015] <Debug>: New device (1EFF8CCF-C26A-4A2A-BB58-D2EA171F8D5F) in set ~/Library/Developer/CoreSimulator/Devices
+Oct 30 12:22:05 JonathasMBP1284 com.apple.CoreSimulator.simctl[54015] <Debug>: On devices queue adding device (1EFF8CCF-C26A-4A2A-BB58-D2EA171F8D5F) in set ~/Library/Developer/CoreSimulator/Devices
+Oct 30 12:22:05 JonathasMBP1284 com.apple.CoreSimulator.simctl[54015] <Debug>: Adding device iPad Air 13-inch (M4) (1EFF8CCF-C26A-4A2A-BB58-D2EA171F8D5F, iOS 27.0, Shutdown) to _devicesByUDID for set ~/Library/Developer/CoreSimulator/Devices
+Oct 30 12:22:05 JonathasMBP1284 com.apple.CoreSimulator.simctl[54015] <Debug>: Client side deviceSet ~/Library/Developer/CoreSimulator/Devices is handling device added notification: {
+	    "device_type" = "com.apple.CoreSimulator.SimDeviceType.iPad-Air-11-inch-M4";
+	    "is_default_created" = 1;
+	    name = "iPad Air 11-inch (M4)";
+	    notification = "device_added";
+	    runtime = "com.apple.CoreSimulator.SimRuntime.iOS-27-0";
+	    "runtime_policy" = 0;
+	    "set_path" = "~/Library/Developer/CoreSimulator/Devices";
+	    state = 1;
+	    udid = "E18812A0-A7A9-4387-AF36-EE9CF07C6763";
+	}
+Oct 30 12:22:05 JonathasMBP1284 com.apple.CoreSimulator.simctl[54015] <Debug>: Adding device iPad Air 11-inch (M4) (E18812A0-A7A9-4387-AF36-EE9CF07C6763, iOS 27.0, Shutdown) to _devicesByUDID for set ~/Library/Developer/CoreSimulator/Devices
+Oct 30 12:22:05 JonathasMBP1284 com.apple.CoreSimulator.simctl[54015] <Debug>: New device (51EA5EFB-B6CB-495F-B3EF-4DAF6DAE208D) in set ~/Library/Developer/CoreSimulator/Devices
+Oct 30 12:22:05 JonathasMBP1284 com.apple.CoreSimulator.simctl[54015] <Debug>: Client side deviceSet ~/Library/Developer/CoreSimulator/Devices is handling device added notification: {
+	    "device_type" = "com.apple.CoreSimulator.SimDeviceType.iPhone-Duo";
+	    "is_default_created" = 1;
+	    "last_used_at" = "2026-10-28 17:02:16 +0000";
+	    name = "iPhone Duo";
+	    notification = "device_added";
+	    runtime = "com.apple.CoreSimulator.SimRuntime.iOS-27-1";
+	    "runtime_policy" = 0;
+	    "set_path" = "~/Library/Developer/CoreSimulator/Devices";
+	    state = 1;
+	    udid = "1752B68F-919A-404A-93CB-FCA3A5886971";
+	}
+Oct 30 12:22:05 JonathasMBP1284 com.apple.CoreSimulator.simctl[54015] <Debug>: On devices queue adding device (51EA5EFB-B6CB-495F-B3EF-4DAF6DAE208D) in set ~/Library/Developer/CoreSimulator/Devices
+Oct 30 12:22:05 JonathasMBP1284 com.apple.CoreSimulator.simctl[54015] <Debug>: Adding device iPad (A16) (51EA5EFB-B6CB-495F-B3EF-4DAF6DAE208D, iOS 27.0, Shutdown) to _devicesByUDID for set ~/Library/Developer/CoreSimulator/Devices
+Oct 30 12:22:05 JonathasMBP1284 com.apple.CoreSimulator.simctl[54015] <Debug>: New device (E18812A0-A7A9-4387-AF36-EE9CF07C6763) in set ~/Library/Developer/CoreSimulator/Devices
+Oct 30 12:22:05 JonathasMBP1284 com.apple.CoreSimulator.simctl[54015] <Debug>: On devices queue adding device (E18812A0-A7A9-4387-AF36-EE9CF07C6763) in set ~/Library/Developer/CoreSimulator/Devices
+Oct 30 12:22:05 JonathasMBP1284 com.apple.CoreSimulator.simctl[54015] <Debug>: New device (1752B68F-919A-404A-93CB-FCA3A5886971) in set ~/Library/Developer/CoreSimulator/Devices
+Oct 30 12:22:05 JonathasMBP1284 com.apple.CoreSimulator.simctl[54015] <Debug>: On devices queue adding device (1752B68F-919A-404A-93CB-FCA3A5886971) in set ~/Library/Developer/CoreSimulator/Devices
+Oct 30 12:22:05 JonathasMBP1284 com.apple.CoreSimulator.simctl[54015] <Debug>: Client side deviceSet ~/Library/Developer/CoreSimulator/Devices is handling device added notification: {
+	    "device_type" = "com.apple.CoreSimulator.SimDeviceType.iPad-A16";
+	    "is_default_created" = 1;
+	    name = "iPad (A16)";
+	    notification = "device_added";
+	    runtime = "com.apple.CoreSimulator.SimRuntime.iOS-27-0";
+	    "runtime_policy" = 0;
+	    "set_path" = "~/Library/Developer/CoreSimulator/Devices";
+	    state = 1;
+	    udid = "51EA5EFB-B6CB-495F-B3EF-4DAF6DAE208D";
+	}
+Oct 30 12:22:05 JonathasMBP1284 com.apple.CoreSimulator.simctl[54015] <Notice>: Connecting to com.apple.CoreSimulator.SimLaunchHost-arm64
+Oct 30 12:22:05 JonathasMBP1284 com.apple.CoreSimulator.simctl[54015] <Notice>: Sending load request for liblaunch at file:///Library/Developer/CoreSimulator/Volumes/iOS_22A5346a/Library/Developer/CoreSimulator/Profiles/Runtimes/iOS%2018.0.simruntime/Contents/Resources/RuntimeRoot/usr/lib/system/host/liblaunch_sim.dylib
+Oct 30 12:22:05 JonathasMBP1284 com.apple.CoreSimulator.simctl[54015] <Debug>: Adding device iPhone Duo (1752B68F-919A-404A-93CB-FCA3A5886971, iOS 27.1, Shutdown) to _devicesByUDID for set ~/Library/Developer/CoreSimulator/Devices
+Oct 30 12:22:05 JonathasMBP1284 com.apple.CoreSimulator.simctl[54015] <Notice>: Sending load request for liblaunch at file:///Library/Developer/CoreSimulator/Volumes/iOS_23C54/Library/Developer/CoreSimulator/Profiles/Runtimes/iOS%2026.2.simruntime/Contents/Resources/RuntimeRoot/usr/lib/system/host/liblaunch_sim.dylib
+Oct 30 12:22:05 JonathasMBP1284 com.apple.CoreSimulator.simctl[54015] <Notice>: Sending load request for liblaunch at file:///Library/Developer/CoreSimulator/Volumes/iOS_24A434/Library/Developer/CoreSimulator/Profiles/Runtimes/iOS%2027.0.simruntime/Contents/Resources/RuntimeRoot/usr/lib/system/host/liblaunch_sim.dylib
+Oct 30 12:22:05 JonathasMBP1284 com.apple.CoreSimulator.simctl[54015] <Notice>: Sending load request for liblaunch at file:///Library/Developer/CoreSimulator/Volumes/iOS_24A94401/Library/Developer/CoreSimulator/Profiles/Runtimes/iOS%2027.1.simruntime/Contents/Resources/RuntimeRoot/usr/lib/system/host/liblaunch_sim.dylib
+Oct 30 12:22:05 JonathasMBP1284 com.apple.CoreSimulator.simctl[54015] <Notice>: Sending load request for liblaunch at file:///Library/Developer/CoreSimulator/Volumes/iOS_23C54/Library/Developer/CoreSimulator/Profiles/Runtimes/iOS%2026.2.simruntime/Contents/Resources/RuntimeRoot/usr/lib/system/host/liblaunch_sim.dylib
+Oct 30 12:22:05 JonathasMBP1284 com.apple.CoreSimulator.simctl[54015] <Notice>: Sending load request for liblaunch at file:///Library/Developer/CoreSimulator/Volumes/iOS_24A434/Library/Developer/CoreSimulator/Profiles/Runtimes/iOS%2027.0.simruntime/Contents/Resources/RuntimeRoot/usr/lib/system/host/liblaunch_sim.dylib
+Oct 30 12:22:05 JonathasMBP1284 com.apple.CoreSimulator.simctl[54015] <Notice>: Sending load request for liblaunch at file:///Library/Developer/CoreSimulator/Volumes/iOS_24A434/Library/Developer/CoreSimulator/Profiles/Runtimes/iOS%2027.0.simruntime/Contents/Resources/RuntimeRoot/usr/lib/system/host/liblaunch_sim.dylib
+Oct 30 12:22:05 JonathasMBP1284 com.apple.CoreSimulator.simctl[54015] <Notice>: Sending load request for liblaunch at file:///Library/Developer/CoreSimulator/Volumes/iOS_24A434/Library/Developer/CoreSimulator/Profiles/Runtimes/iOS%2027.0.simruntime/Contents/Resources/RuntimeRoot/usr/lib/system/host/liblaunch_sim.dylib
+Oct 30 12:22:05 JonathasMBP1284 com.apple.CoreSimulator.simctl[54015] <Notice>: Sending load request for liblaunch at file:///Library/Developer/CoreSimulator/Volumes/iOS_24A434/Library/Developer/CoreSimulator/Profiles/Runtimes/iOS%2027.0.simruntime/Contents/Resources/RuntimeRoot/usr/lib/system/host/liblaunch_sim.dylib
+Oct 30 12:22:05 JonathasMBP1284 CoreSimulatorService[13531] <Debug>: Client disconnected: simctl[54015]
+Oct 30 12:22:05 JonathasMBP1284 CoreSimulatorService[13531] <Debug>: Notification subscription cancellation for set: all sets
+Oct 30 12:22:05 JonathasMBP1284 CoreSimulatorService[13531] <Debug>: Client disconnected: simctl[54015]
+Oct 30 12:22:05 JonathasMBP1284 CoreSimulatorService[13531] <Debug>: Notification subscription cancellation for set: all sets
+Oct 30 12:22:05 JonathasMBP1284 CoreSimulatorService[13531] <Debug>: Client connected: simctl[54025]
+Oct 30 12:22:05 JonathasMBP1284 CoreSimulatorService[13531] <Debug>: Client disconnected: simctl[54025]
+Oct 30 12:22:05 JonathasMBP1284 CoreSimulatorService[13531] <Debug>: Notification subscription cancellation for set: all sets
+Oct 30 12:22:05 JonathasMBP1284 CoreSimulatorService[13531] <Debug>: Client connected: simctl[54025]
+Oct 30 12:22:05 JonathasMBP1284 CoreSimulatorService[13531] <Debug>: Developer directory for new connection: /Applications/Xcode.app/Contents/Developer
+Oct 30 12:22:05 JonathasMBP1284 CoreSimulatorService[13531] <Debug>: Client connected: simctl[54025]
+Oct 30 12:22:05 JonathasMBP1284 com.apple.CoreSimulator.simctl[54025] <Warning>: Unable to discover any Simulator runtimes. Developer Directory is /Applications/Xcode.app/Contents/Developer.
+Oct 30 12:22:05 JonathasMBP1284 com.apple.CoreSimulator.simctl[54025] <Info>: Attempting to add runtime: com.apple.CoreSimulator.SimRuntime.iOS-27-0 - /Library/Developer/CoreSimulator/Volumes/iOS_24A434/Library/Developer/CoreSimulator/Profiles/Runtimes/iOS 27.0.simruntime
+Oct 30 12:22:05 JonathasMBP1284 com.apple.CoreSimulator.simctl[54025] <Info>: Runtime bundle found. Adding to supported runtimes. com.apple.CoreSimulator.SimRuntime.iOS-27-0 : /Library/Developer/CoreSimulator/Volumes/iOS_24A434/Library/Developer/CoreSimulator/Profiles/Runtimes/iOS 27.0.simruntime
+Oct 30 12:22:05 JonathasMBP1284 com.apple.CoreSimulator.simctl[54025] <Info>: Regenerating runtime dictionaries because of adding profiles for volume path `/Library/Developer/CoreSimulator/Volumes/iOS_24A434` (1 supported runtimes)
+Oct 30 12:22:05 JonathasMBP1284 com.apple.CoreSimulator.simctl[54025] <Info>: Attempting to add runtime: com.apple.CoreSimulator.SimRuntime.iOS-18-0 - /Library/Developer/CoreSimulator/Volumes/iOS_22A5346a/Library/Developer/CoreSimulator/Profiles/Runtimes/iOS 18.0.simruntime
+Oct 30 12:22:05 JonathasMBP1284 com.apple.CoreSimulator.simctl[54025] <Info>: Runtime bundle found. Adding to supported runtimes. com.apple.CoreSimulator.SimRuntime.iOS-18-0 : /Library/Developer/CoreSimulator/Volumes/iOS_22A5346a/Library/Developer/CoreSimulator/Profiles/Runtimes/iOS 18.0.simruntime
+Oct 30 12:22:05 JonathasMBP1284 com.apple.CoreSimulator.simctl[54025] <Info>: Regenerating runtime dictionaries because of adding profiles for volume path `/Library/Developer/CoreSimulator/Volumes/iOS_22A5346a` (2 supported runtimes)
+Oct 30 12:22:05 JonathasMBP1284 com.apple.CoreSimulator.simctl[54025] <Info>: Attempting to add runtime: com.apple.CoreSimulator.SimRuntime.iOS-27-1 - /Library/Developer/CoreSimulator/Volumes/iOS_24A94401/Library/Developer/CoreSimulator/Profiles/Runtimes/iOS 27.1.simruntime
+Oct 30 12:22:05 JonathasMBP1284 com.apple.CoreSimulator.simctl[54025] <Info>: Runtime bundle found. Adding to supported runtimes. com.apple.CoreSimulator.SimRuntime.iOS-27-1 : /Library/Developer/CoreSimulator/Volumes/iOS_24A94401/Library/Developer/CoreSimulator/Profiles/Runtimes/iOS 27.1.simruntime
+Oct 30 12:22:05 JonathasMBP1284 com.apple.CoreSimulator.simctl[54025] <Info>: Regenerating runtime dictionaries because of adding profiles for volume path `/Library/Developer/CoreSimulator/Volumes/iOS_24A94401` (3 supported runtimes)
+Oct 30 12:22:05 JonathasMBP1284 com.apple.CoreSimulator.simctl[54025] <Info>: Attempting to add runtime: com.apple.CoreSimulator.SimRuntime.iOS-26-2 - /Library/Developer/CoreSimulator/Volumes/iOS_23C54/Library/Developer/CoreSimulator/Profiles/Runtimes/iOS 26.2.simruntime
+Oct 30 12:22:05 JonathasMBP1284 com.apple.CoreSimulator.simctl[54025] <Info>: Runtime bundle found. Adding to supported runtimes. com.apple.CoreSimulator.SimRuntime.iOS-26-2 : /Library/Developer/CoreSimulator/Volumes/iOS_23C54/Library/Developer/CoreSimulator/Profiles/Runtimes/iOS 26.2.simruntime
+Oct 30 12:22:05 JonathasMBP1284 com.apple.CoreSimulator.simctl[54025] <Info>: Regenerating runtime dictionaries because of adding profiles for volume path `/Library/Developer/CoreSimulator/Volumes/iOS_23C54` (4 supported runtimes)
+Oct 30 12:22:05 JonathasMBP1284 com.apple.CoreSimulator.simctl[54025] <Debug>: VolumeManager: Disk Appeared <DADisk 0x7b81224f90 [0x1fa6a4fc8]>{id = /dev/disk15s1}
+Oct 30 12:22:05 JonathasMBP1284 com.apple.CoreSimulator.simctl[54025] <Debug>: VolumeManager: Ignoring outer cryptex volume (file:///Library/Developer/CoreSimulator/Cryptex/Images/bundle/SimRuntimeBundle-AF73F92B-83A6-425C-A2CF-D7EF280BC0A6/)
+Oct 30 12:22:05 JonathasMBP1284 com.apple.CoreSimulator.simctl[54025] <Debug>: VolumeManager: Appeared: Ignoring disk disk7s1
+Oct 30 12:22:05 JonathasMBP1284 com.apple.CoreSimulator.simctl[54025] <Debug>: VolumeManager: Disk Appeared <DADisk 0x7b81224f90 [0x1fa6a4fc8]>{id = /dev/disk13s1}
+Oct 30 12:22:05 JonathasMBP1284 CoreSimulatorService[13531] <Debug>: Client disconnected: simctl[54025]
+Oct 30 12:22:05 JonathasMBP1284 CoreSimulatorService[13531] <Debug>: Notification subscription cancellation for set: all sets
+Oct 30 12:22:05 JonathasMBP1284 CoreSimulatorService[13531] <Debug>: Client disconnected: simctl[54025]
+Oct 30 12:22:05 JonathasMBP1284 CoreSimulatorService[13531] <Debug>: Notification subscription cancellation for set: all sets
+Oct 30 12:22:05 JonathasMBP1284 CoreSimulatorService[13531] <Debug>: Client connected: simctl[54036]
+Oct 30 12:22:05 JonathasMBP1284 CoreSimulatorService[13531] <Debug>: Developer directory for new connection: /Applications/Xcode.app/Contents/Developer
+Oct 30 12:22:05 JonathasMBP1284 CoreSimulatorService[13531] <Debug>: Client connected: simctl[54036]
+Oct 30 12:22:05 JonathasMBP1284 CoreSimulatorService[13531] <Debug>: Client connected: simctl[54036]
+Oct 30 12:22:05 JonathasMBP1284 com.apple.CoreSimulator.simctl[54036] <Warning>: Unable to discover any Simulator runtimes. Developer Directory is /Applications/Xcode.app/Contents/Developer.
+Oct 30 12:22:05 JonathasMBP1284 CoreSimulatorService[13531] <Debug>: Client disconnected: simctl[54036]
+Oct 30 12:22:05 JonathasMBP1284 CoreSimulatorService[13531] <Debug>: Notification subscription cancellation for set: all sets
+Oct 30 12:22:05 JonathasMBP1284 com.apple.CoreSimulator.simctl[54036] <Info>: Attempting to add runtime: com.apple.CoreSimulator.SimRuntime.iOS-27-0 - /Library/Developer/CoreSimulator/Volumes/iOS_24A434/Library/Developer/CoreSimulator/Profiles/Runtimes/iOS 27.0.simruntime
+Oct 30 12:22:05 JonathasMBP1284 com.apple.CoreSimulator.simctl[54036] <Info>: Runtime bundle found. Adding to supported runtimes. com.apple.CoreSimulator.SimRuntime.iOS-27-0 : /Library/Developer/CoreSimulator/Volumes/iOS_24A434/Library/Developer/CoreSimulator/Profiles/Runtimes/iOS 27.0.simruntime
+Oct 30 12:22:05 JonathasMBP1284 com.apple.CoreSimulator.simctl[54036] <Info>: Regenerating runtime dictionaries because of adding profiles for volume path `/Library/Developer/CoreSimulator/Volumes/iOS_24A434` (1 supported runtimes)
+Oct 30 12:22:05 JonathasMBP1284 com.apple.CoreSimulator.simctl[54036] <Info>: Attempting to add runtime: com.apple.CoreSimulator.SimRuntime.iOS-18-0 - /Library/Developer/CoreSimulator/Volumes/iOS_22A5346a/Library/Developer/CoreSimulator/Profiles/Runtimes/iOS 18.0.simruntime
+Oct 30 12:22:05 JonathasMBP1284 com.apple.CoreSimulator.simctl[54036] <Info>: Runtime bundle found. Adding to supported runtimes. com.apple.CoreSimulator.SimRuntime.iOS-18-0 : /Library/Developer/CoreSimulator/Volumes/iOS_22A5346a/Library/Developer/CoreSimulator/Profiles/Runtimes/iOS 18.0.simruntime
+Oct 30 12:22:05 JonathasMBP1284 com.apple.CoreSimulator.simctl[54036] <Info>: Regenerating runtime dictionaries because of adding profiles for volume path `/Library/Developer/CoreSimulator/Volumes/iOS_22A5346a` (2 supported runtimes)
+Oct 30 12:22:05 JonathasMBP1284 com.apple.CoreSimulator.simctl[54036] <Info>: Attempting to add runtime: com.apple.CoreSimulator.SimRuntime.iOS-27-1 - /Library/Developer/CoreSimulator/Volumes/iOS_24A94401/Library/Developer/CoreSimulator/Profiles/Runtimes/iOS 27.1.simruntime
+Oct 30 12:22:05 JonathasMBP1284 com.apple.CoreSimulator.simctl[54036] <Info>: Runtime bundle found. Adding to supported runtimes. com.apple.CoreSimulator.SimRuntime.iOS-27-1 : /Library/Developer/CoreSimulator/Volumes/iOS_24A94401/Library/Developer/CoreSimulator/Profiles/Runtimes/iOS 27.1.simruntime
+Oct 30 12:22:05 JonathasMBP1284 com.apple.CoreSimulator.simctl[54036] <Info>: Regenerating runtime dictionaries because of adding profiles for volume path `/Library/Developer/CoreSimulator/Volumes/iOS_24A94401` (3 supported runtimes)
+Oct 30 12:22:05 JonathasMBP1284 com.apple.CoreSimulator.simctl[54036] <Info>: Attempting to add runtime: com.apple.CoreSimulator.SimRuntime.iOS-26-2 - /Library/Developer/CoreSimulator/Volumes/iOS_23C54/Library/Developer/CoreSimulator/Profiles/Runtimes/iOS 26.2.simruntime
+Oct 30 12:22:05 JonathasMBP1284 com.apple.CoreSimulator.simctl[54036] <Info>: Runtime bundle found. Adding to supported runtimes. com.apple.CoreSimulator.SimRuntime.iOS-26-2 : /Library/Developer/CoreSimulator/Volumes/iOS_23C54/Library/Developer/CoreSimulator/Profiles/Runtimes/iOS 26.2.simruntime
+Oct 30 12:22:05 JonathasMBP1284 com.apple.CoreSimulator.simctl[54036] <Info>: Regenerating runtime dictionaries because of adding profiles for volume path `/Library/Developer/CoreSimulator/Volumes/iOS_23C54` (4 supported runtimes)
+Oct 30 12:22:05 JonathasMBP1284 com.apple.CoreSimulator.simctl[54036] <Debug>: VolumeManager: Disk Appeared <DADisk 0x76e558c1e0 [0x1fa6a4fc8]>{id = /dev/disk15s1}
+Oct 30 12:22:05 JonathasMBP1284 com.apple.CoreSimulator.simctl[54036] <Debug>: VolumeManager: Ignoring outer cryptex volume (file:///Library/Developer/CoreSimulator/Cryptex/Images/bundle/SimRuntimeBundle-AF73F92B-83A6-425C-A2CF-D7EF280BC0A6/)
+Oct 30 12:22:05 JonathasMBP1284 com.apple.CoreSimulator.simctl[54036] <Debug>: VolumeManager: Appeared: Ignoring disk disk7s1
+Oct 30 12:22:05 JonathasMBP1284 com.apple.CoreSimulator.simctl[54036] <Debug>: VolumeManager: Disk Appeared <DADisk 0x76e558c1e0 [0x1fa6a4fc8]>{id = /dev/disk13s1}
+Oct 30 12:22:05 JonathasMBP1284 com.apple.CoreSimulator.simctl[54036] <Debug>: VolumeManager: Disk Appeared <DADisk 0x76e558d560 [0x1fa6a4fc8]>{id = /dev/disk11s1}
+Oct 30 12:22:05 JonathasMBP1284 com.apple.CoreSimulator.simctl[54036] <Debug>: VolumeManager: Disk Appeared <DADisk 0x76e558d620 [0x1fa6a4fc8]>{id = /dev/disk9s1}
+Oct 30 12:22:05 JonathasMBP1284 com.apple.CoreSimulator.simctl[54036] <Debug>: Platform does not have FamilyPlatforms so skipping: /Applications/Xcode.app/Contents/Developer/Platforms/DriverKit.platform
+Oct 30 12:22:05 JonathasMBP1284 com.apple.CoreSimulator.simctl[54036] <Debug>: VolumeManager: Ignoring disk due to missing volume path.
+Oct 30 12:22:05 JonathasMBP1284 com.apple.CoreSimulator.simctl[54036] <Debug>: VolumeManager: Appeared: Ignoring disk disk1s1
+Oct 30 12:22:05 JonathasMBP1284 com.apple.CoreSimulator.simctl[54036] <Debug>: VolumeManager: Ignoring disk due to missing volume path.
+Oct 30 12:22:05 JonathasMBP1284 com.apple.CoreSimulator.simctl[54036] <Debug>: VolumeManager: Appeared: Ignoring disk disk1s2
+Oct 30 12:22:05 JonathasMBP1284 com.apple.CoreSimulator.simctl[54036] <Debug>: VolumeManager: Disk Appeared <DADisk 0x76e558e640 [0x1fa6a4fc8]>{id = /dev/disk2s1}
+Oct 30 12:22:05 JonathasMBP1284 com.apple.CoreSimulator.simctl[54036] <Debug>: VolumeManager: Disk Appeared <DADisk 0x76e558d620 [0x1fa6a4fc8]>{id = /dev/disk2s2}
+Oct 30 12:22:05 JonathasMBP1284 com.apple.CoreSimulator.simctl[54036] <Debug>: VolumeManager: Disk Appeared <DADisk 0x76e558e5b0 [0x1fa6a4fc8]>{id = /dev/disk2s3}
+Oct 30 12:22:05 JonathasMBP1284 com.apple.CoreSimulator.simctl[54036] <Debug>: VolumeManager: Ignoring disk due to missing volume path.
+Oct 30 12:22:05 JonathasMBP1284 com.apple.CoreSimulator.simctl[54036] <Debug>: VolumeManager: Appeared: Ignoring disk disk2s4
+Oct 30 12:22:05 JonathasMBP1284 com.apple.CoreSimulator.simctl[54036] <Debug>: VolumeManager: Disk Appeared <DADisk 0x76e558e5b0 [0x1fa6a4fc8]>{id = /dev/disk3s2}
+Oct 30 12:22:05 JonathasMBP1284 com.apple.CoreSimulator.simctl[54036] <Debug>: VolumeManager: Appeared: Ignoring disk disk3s1
+Oct 30 12:22:05 JonathasMBP1284 com.apple.CoreSimulator.simctl[54036] <Debug>: VolumeManager: Ignoring disk due to missing volume path.
+Oct 30 12:22:05 JonathasMBP1284 com.apple.CoreSimulator.simctl[54036] <Debug>: VolumeManager: Ignoring root volume (file:///System/Volumes/Data/)
+Oct 30 12:22:05 JonathasMBP1284 com.apple.CoreSimulator.simctl[54036] <Debug>: VolumeManager: Appeared: Ignoring disk disk3s5
+Oct 30 12:22:05 JonathasMBP1284 com.apple.CoreSimulator.simctl[54036] <Debug>: VolumeManager: Disk Appeared <DADisk 0x76e558e610 [0x1fa6a4fc8]>{id = /dev/disk3s3}
+Oct 30 12:22:05 JonathasMBP1284 com.apple.CoreSimulator.simctl[54036] <Debug>: VolumeManager: Disk Appeared <DADisk 0x76e558e5b0 [0x1fa6a4fc8]>{id = /dev/disk3s4}
+Oct 30 12:22:05 JonathasMBP1284 com.apple.CoreSimulator.simctl[54036] <Debug>: Platform does not have FamilyPlatforms so skipping: /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform
+Oct 30 12:22:05 JonathasMBP1284 com.apple.CoreSimulator.simctl[54036] <Debug>: VolumeManager: Disk Appeared <DADisk 0x76e558d620 [0x1fa6a4fc8]>{id = /dev/disk3s6}
+Oct 30 12:22:05 JonathasMBP1284 com.apple.CoreSimulator.simctl[54036] <Debug>: VolumeManager: Ignoring root volume (file:///)
+Oct 30 12:22:05 JonathasMBP1284 com.apple.CoreSimulator.simctl[54036] <Debug>: VolumeManager: Appeared: Ignoring disk disk3s1s1
+Oct 30 12:22:05 JonathasMBP1284 com.apple.CoreSimulator.simctl[54036] <Debug>: VolumeManager: SVMDiskIdleTrampoline <SimVolumeManager: 0x103b98ab0>
+Oct 30 12:22:05 JonathasMBP1284 CoreSimulatorService[13531] <Debug>: Client disconnected: simctl[54036]
+Oct 30 12:22:05 JonathasMBP1284 CoreSimulatorService[13531] <Debug>: Notification subscription cancellation for set: all sets
+Oct 30 12:22:05 JonathasMBP1284 CoreSimulatorService[13531] <Debug>: Client disconnected: simctl[54036]
+Oct 30 12:22:05 JonathasMBP1284 CoreSimulatorService[13531] <Debug>: Notification subscription cancellation for set: all sets

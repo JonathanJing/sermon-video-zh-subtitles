@@ -1,0 +1,260 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261030-ios-alignment-loading-l10n",
+  "runs": [
+    {
+      "label": "20261030T122027-test-e08c601d",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.claude/worktrees/ios-beta-1.26.33/artifacts/tongxing-ios/2026-10-30/cli/20261030T122027-test-e08c601d",
+      "skipped": {
+        ".json": 1,
+        ".0~-OHjLjqi0iWwvb3z2NSMsThWbyoBb2LH5i0bG1iiwA6N2fIHosXdag-9ffD_q6w95zXm38RbJA4eYWIJbxL_tQ==": 2,
+        ".0~1omF6cedsmIMtsSnADVF4Kd4HP08zhXk9J4WVgvKP2WjRVMl4WFcXZ0o4xin22haTkAV4lJ705oarxJ6LW2J0A==": 2,
+        ".0~4VqMqsI5lOfxRppnud6-VDWcNsU8J7VgFCJfW2dXPwOcAkvU-I8Um5yp9n0Zv6nr3VmcxYggaVMDFfR0U_vjKw==": 2,
+        ".0~8isEXWquSPN6-xx-fflWimgKTuEiS3WScK5JjS-2XFEBAyZWfFOd3FpP882DT8OvdMKdEKTFudNCuSIrGzhxcg==": 2,
+        ".0~9qvR_fdaj6YyH4Q5hjYV6AdkdTKje8gw6lK1b4fCgLQOXqoTEsKZLb02OP1yBQiEmtXsrzk8D4DjpbUAhcqV7A==": 2,
+        ".0~E0VaZ2bezj8ZQ_QcNcBg9mwcHgcmquVHVVhA7Eohes3kMk0vClCs_mPLtcca8Y2vzfou8BKZYvvVMoHzsKpdmA==": 2,
+        ".0~F58YKiWiyLIPV-sYX5d2--C7tySXYHYc7DJNxOc4X4t_nsyBJ__FaetvFYpmrejaEEsKBr9IkooJXk5tWf8W1w==": 2,
+        ".0~IQ9CnRbjjifF7leIlmIK-oa29UI2tMn34ckD0jfn4JSRPCFgrtl6MY4VM5WhpmwZUiXAQajLFDGyj0B-4zAvWw==": 2,
+        ".0~K-31xY0i4hDr9U4VTmi-UrE-DZ9gI_gLc2E_QkN_crn7ust7U-YftOAejWZiIIHWQFdFV3Qhfxth4rVb0JO7Zw==": 2,
+        ".0~LuLy4bLyMCigmh1qDOnW3NVOoEAUigHmn7r67DYR1hRYKWXSsfmy-aqMHAfdNzgs2HzM_wydob43LRpI1GuTYQ==": 2,
+        ".0~S3WqxnIdkG7QWMdIhpT5kc3M7vtQyzRYYQG8HOHET-QWFEuel2xfo8BdLICThF37RMkI0qHy-SKgzs6txE5mwQ==": 2,
+        ".0~TMvG-L71KTov94WGYdMGmsmCQXLQqat36SowdbQfnKvVcGkNrXTAsbfnAEH6bger581B0xUhutkyOwc6pOgNqw==": 2,
+        ".0~Tgg6h7OxFA8j46NGpSzBQ73FyRYvSSa0GSvEKQrcB-U3vJoqZUDDDo1pOeW4Ulfy7mzK6qsrc2oXVC4T6R5TOQ==": 2,
+        ".0~X3tv9A3jL_11Blg6TDIWiQKObIhXIS6Hhb9Fi7xBEy2q5b-zcbxZwht3GSAzQiteQMxPV3DqeWD6rxsAJt36mQ==": 2,
+        ".0~XuGmph8EmJT-kVqmANfdtRP-ayAY1IRuUti6i-0MRLdcX3C16TKwsWCeR4i4BOPQANA-7YT7WY0FHxwFiJkDQw==": 2,
+        ".0~bF69994KNsBAoLCsSBzKjULEacPESpNZmN_PYxsZamLQXJb-4LlRezCJjX08yDQee7YjYQs0KfNbdMs_3pontw==": 2,
+        ".0~csVkdr0cgIrWJoy01FmwVro7pdg6cHGhVfmi_YDVrJDFwh1OIvRPQO3pv5ImQHKVHLHW9KPQ0fZ8UGA4OtFxMQ==": 2,
+        ".0~lk7qTeRwnTpv0dnJb9NoorlyupGqpss6exkR4WOpOjeKb0rNtrK-P-CbMroiwRspV7Y2tuSFqsqupV5ToU6h-g==": 2,
+        ".0~oRMi0sbQLktfDDDGUS-SqBKpdDiD6HCztVES_ShfGr0KVcYENoIq7y9oUSDWL5B_P2gkdtWG8JEsJLxPbdWOZA==": 2,
+        ".0~uo_pi_Jx5_KY_O4G_MjhOIB6zh7bL1E3u3QH3BDeCVj5GgBD8rMNrRfAx7uRShr0LelPAvHUmRAx5LMV-mAxUQ==": 2,
+        ".0~x_N7kiGnjYr5YTU1khGzqTRmAHv9q2DbQ9cpdLiOAKVJgrTZKs3B2MPGHJuhRHVYHtSkGFgXKFlCoYyORRdIqg==": 2,
+        ".plist": 1
+      }
+    },
+    {
+      "label": "20261030T122124-test-d96e8a4a",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.claude/worktrees/ios-beta-1.26.33/artifacts/tongxing-ios/2026-10-30/cli/20261030T122124-test-d96e8a4a",
+      "skipped": {
+        ".json": 1,
+        ".0~UbkgqDZcJ6r7GYWUqPd9REv9ObrFcLXtRC5oq89mUspi_U958eQzWa4lt3HoKxpF_LkNtt2Y_L5jYfSnihlvVw==": 2,
+        ".txt": 7,
+        ".plist": 3,
+        ".csstoredump": 1,
+        "(none)": 314,
+        ".jsonl": 1,
+        ".tracev3": 7,
+        ".timesync": 1,
+        ".ips": 642
+      }
+    }
+  ],
+  "files": [
+    {
+      "run": "20261030T122027-test-e08c601d",
+      "path": "run.log",
+      "kind": "log",
+      "bytes": 202745,
+      "truncated": true,
+      "sha256": "d8da74da724831038eaf621151e07f8cba3856f2c444e30901ee39ce12c5c937",
+      "redactions": {
+        "home_dir": 127
+      }
+    },
+    {
+      "run": "20261030T122124-test-d96e8a4a",
+      "path": "run.log",
+      "kind": "log",
+      "bytes": 108669,
+      "truncated": true,
+      "sha256": "a9a459f13b9064cdaca17d7f9da36c2e74424e15d9513c3790fc8a3aa60dc356",
+      "redactions": {
+        "home_dir": 86
+      }
+    },
+    {
+      "run": "20261030T122124-test-d96e8a4a",
+      "path": "test.xcresult/Staging/1_Test/Diagnostics/TongxingTests-DF4ACC00-A5AE-4EB3-A7C3-FA1855533B57-Configuration-Test Scheme Action-Iteration-1/TongxingTests-E4B99088-8AAD-48A5-9533-78C0F9C4D47A/Session-TongxingTests-2026-10-30_122127-12VCGb.log",
+      "kind": "log",
+      "bytes": 58564,
+      "truncated": true,
+      "sha256": "75879dbef2c8b1f7fbce711a326c023d3540905358953b55286f250bfe0dde4b",
+      "redactions": {
+        "home_dir": 10
+      }
+    },
+    {
+      "run": "20261030T122124-test-d96e8a4a",
+      "path": "test.xcresult/Staging/1_Test/Diagnostics/TongxingTests-DF4ACC00-A5AE-4EB3-A7C3-FA1855533B57-Configuration-Test Scheme Action-Iteration-1/scheduling.log",
+      "kind": "log",
+      "bytes": 664,
+      "truncated": false,
+      "sha256": "f2c0b0fe23cc9c400a15f0e493178801fcedca64892a743b8590b7d31ab38da8",
+      "redactions": {}
+    },
+    {
+      "run": "20261030T122124-test-d96e8a4a",
+      "path": "test.xcresult/Staging/1_Test/Diagnostics/iPhone 17 Pro Max_0B2390DC-1B49-4815-8446-3E6DF7E911FE/testmanagerd.log",
+      "kind": "log",
+      "bytes": 3596,
+      "truncated": false,
+      "sha256": "4fafbb907efee9cb7d6d55f08f8c62f3482c7178ff178361b0cbd096a945e9ae",
+      "redactions": {}
+    },
+    {
+      "run": "20261030T122124-test-d96e8a4a",
+      "path": "test.xcresult/Staging/1_Test/Diagnostics/simctl_diagnostics/0B2390DC-1B49-4815-8446-3E6DF7E911FE/darwinupList.log",
+      "kind": "log",
+      "bytes": 0,
+      "truncated": false,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "redactions": {}
+    },
+    {
+      "run": "20261030T122124-test-d96e8a4a",
+      "path": "test.xcresult/Staging/1_Test/Diagnostics/simctl_diagnostics/0B2390DC-1B49-4815-8446-3E6DF7E911FE/io_enumerate.log",
+      "kind": "log",
+      "bytes": 7762,
+      "truncated": false,
+      "sha256": "a36a2037c73451048d1d8eb263d8b1ad54169f48d02d98ae8d97f7d7ecc70bb8",
+      "redactions": {}
+    },
+    {
+      "run": "20261030T122124-test-d96e8a4a",
+      "path": "test.xcresult/Staging/1_Test/Diagnostics/simctl_diagnostics/0B2390DC-1B49-4815-8446-3E6DF7E911FE/launchd_state.log",
+      "kind": "log",
+      "bytes": 14849071,
+      "truncated": true,
+      "sha256": "93876cf35b98f19a0714a65741a8dbd865f0513ffa07c81eb5d74292fbfcf1ae",
+      "redactions": {
+        "hostname": 1,
+        "home_dir": 21
+      }
+    },
+    {
+      "run": "20261030T122124-test-d96e8a4a",
+      "path": "test.xcresult/Staging/1_Test/Diagnostics/simctl_diagnostics/0B2390DC-1B49-4815-8446-3E6DF7E911FE/system.logarchive/Extra/diagnosticd.0.log",
+      "kind": "log",
+      "bytes": 4136,
+      "truncated": false,
+      "sha256": "4773a1dab19834ce99bec674d68b7847082c9bd0b8d200fecc6fcd704222f819",
+      "redactions": {}
+    },
+    {
+      "run": "20261030T122124-test-d96e8a4a",
+      "path": "test.xcresult/Staging/1_Test/Diagnostics/simctl_diagnostics/0B2390DC-1B49-4815-8446-3E6DF7E911FE/system.logarchive/Extra/logd.0.log",
+      "kind": "log",
+      "bytes": 174439,
+      "truncated": true,
+      "sha256": "a7b0b2c86fa0afc7a550a1df1a8c93dcb918688bf74f76efe2addf4d6da3c902",
+      "redactions": {}
+    },
+    {
+      "run": "20261030T122124-test-d96e8a4a",
+      "path": "test.xcresult/Staging/1_Test/Diagnostics/simctl_diagnostics/0B2390DC-1B49-4815-8446-3E6DF7E911FE/system.logarchive/Extra/logd.1.log",
+      "kind": "log",
+      "bytes": 1048654,
+      "truncated": true,
+      "sha256": "2d54a4a549a5e276163fade3baed25bc859cf0271eda01484bf895f3cc49efc3",
+      "redactions": {}
+    },
+    {
+      "run": "20261030T122124-test-d96e8a4a",
+      "path": "test.xcresult/Staging/1_Test/Diagnostics/simctl_diagnostics/0B2390DC-1B49-4815-8446-3E6DF7E911FE/system.logarchive/Extra/logd_helper.0.log",
+      "kind": "log",
+      "bytes": 1089,
+      "truncated": false,
+      "sha256": "c964a54944c6e9edfe3b6ac049884fa17505903467dc5b68dad9cf9aecf580b0",
+      "redactions": {}
+    },
+    {
+      "run": "20261030T122124-test-d96e8a4a",
+      "path": "test.xcresult/Staging/1_Test/Diagnostics/simctl_diagnostics/CoreSimulator.log",
+      "kind": "log",
+      "bytes": 17860253,
+      "truncated": true,
+      "sha256": "6fea708849367849d585171115a25a7406938594add93f1bd5f70af650237a8d",
+      "redactions": {
+        "home_dir": 38
+      }
+    },
+    {
+      "run": "20261030T122124-test-d96e8a4a",
+      "path": "test.xcresult/Staging/1_Test/Diagnostics/simctl_diagnostics/diagnose.log",
+      "kind": "log",
+      "bytes": 1292,
+      "truncated": false,
+      "sha256": "cb1bfadd707bb7db64395194adaf8a6cc8873ecbe2c179058db8e4019ae36f44",
+      "redactions": {
+        "home_dir": 1
+      }
+    },
+    {
+      "run": "20261030T122124-test-d96e8a4a",
+      "path": "test.xcresult/Staging/1_Test/Diagnostics/simctl_diagnostics/host_version.log",
+      "kind": "log",
+      "bytes": 405,
+      "truncated": false,
+      "sha256": "a6cc38d6dc15316b5ebe10ca547f7fbabd6f98ea5ba36a71662164aaeddb1657",
+      "redactions": {}
+    },
+    {
+      "run": "20261030T122124-test-d96e8a4a",
+      "path": "test.xcresult/Staging/1_Test/Diagnostics/simctl_diagnostics/simctl_list.log",
+      "kind": "log",
+      "bytes": 26183,
+      "truncated": false,
+      "sha256": "2660a15217b1b02aca21d5a6c4d0da85c1f7d0f94c667c106c515646f1f0f0b1",
+      "redactions": {}
+    },
+    {
+      "run": "20261030T122124-test-d96e8a4a",
+      "path": "test.xcresult/Staging/1_Test/Diagnostics/simctl_diagnostics/simctl_runtime_list.log",
+      "kind": "log",
+      "bytes": 2527,
+      "truncated": false,
+      "sha256": "04d2817f076348753534c7814b0f1368b52e8eaf9a0a0379810ccc6f2340ffa0",
+      "redactions": {}
+    },
+    {
+      "run": "20261030T122124-test-d96e8a4a",
+      "path": "test.xcresult/Staging/1_Test/Diagnostics/simctl_diagnostics/simctl_runtime_match_list.log",
+      "kind": "log",
+      "bytes": 5439,
+      "truncated": false,
+      "sha256": "864b486d33e067ae601bc79d6c89ad701cca547fd73e4b001f378aa6e702fa87",
+      "redactions": {}
+    },
+    {
+      "run": "20261030T122124-test-d96e8a4a",
+      "path": "test.xcresult/Staging/1_Test/Diagnostics/simctl_diagnostics/simdiskimaged.log",
+      "kind": "log",
+      "bytes": 6324,
+      "truncated": false,
+      "sha256": "316f06da361d78460f11e6613bf8e121a5000edaef50551c167aefaae14ac5e8",
+      "redactions": {}
+    },
+    {
+      "run": "20261030T122124-test-d96e8a4a",
+      "path": "test.xcresult/Staging/1_Test/Diagnostics/simctl_diagnostics/simulator_version.log",
+      "kind": "log",
+      "bytes": 121,
+      "truncated": false,
+      "sha256": "0c0d3bdc5734c2c53bd3301f4a36d68d1b9eaf3607b327af5343733019b7caa0",
+      "redactions": {}
+    },
+    {
+      "run": "20261030T122124-test-d96e8a4a",
+      "path": "test.xcresult/Staging/1_Test/Diagnostics/simctl_diagnostics/xcode_version.log",
+      "kind": "log",
+      "bytes": 4955,
+      "truncated": false,
+      "sha256": "d9105a392b6bd0b4e3f5f2af86157c915fb26ff9d92e9a72e3bb357731b12b94",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

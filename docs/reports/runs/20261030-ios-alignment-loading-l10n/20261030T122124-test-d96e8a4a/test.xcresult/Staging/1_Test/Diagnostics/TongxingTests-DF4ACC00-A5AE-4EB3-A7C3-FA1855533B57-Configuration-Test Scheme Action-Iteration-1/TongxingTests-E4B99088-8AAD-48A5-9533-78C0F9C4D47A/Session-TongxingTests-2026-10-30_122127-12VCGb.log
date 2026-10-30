@@ -1,0 +1,245 @@
+Xcode version: 27.1 (27A9275)
+12:21:27.622 xcodebuild[53643:7060654] Beginning test session TongxingTests-A58F2618-9FA4-4E37-9624-AB23832BD05A at 2026-10-30 12:21:27.622 on target <DVTiPhoneSimulator: 0x7916384c00> {
+		SimDevice: iPhone 17 Pro Max (0B2390DC-1B49-4815-8446-3E6DF7E911FE, iOS 27.0, Shutdown)
+} (27.0 (24A434))
+12:21:27.623 xcodebuild[53643:7060654] 	/Applications/Xcode.app/Contents/Developer/usr/bin/xcodebuild
+-project
+~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.claude/worktrees/ios-beta-1.26.33/apps/tongxing-ios/Tongxing.xcodeproj
+-scheme
+Tongxing
+-configuration
+Debug
+-sdk
+iphonesimulator
+-destination
+platform=iOS Simulator,id=0B2390DC-1B49-4815-8446-3E6DF7E911FE
+-derivedDataPath
+~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.claude/worktrees/ios-beta-1.26.33/artifacts/tongxing-ios/2026-10-30/cli/DerivedData-recheck
+-disableAutomaticPackageResolution
+CODE_SIGNING_ALLOWED=NO
+CODE_SIGNING_REQUIRED=NO
+-resultBundlePath
+~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.claude/worktrees/ios-beta-1.26.33/artifacts/tongxing-ios/2026-10-30/cli/20261030T122124-test-d96e8a4a/test.xcresult
+-parallel-testing-enabled
+NO
+-only-testing:TongxingTests/AudioAlignmentControllerTests/testAlignmentStatusPromptsAreLocalized
+test
+12:21:27.623 xcodebuild[53643:7060654] Test standard output and standard error is at ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.claude/worktrees/ios-beta-1.26.33/artifacts/tongxing-ios/2026-10-30/cli/20261030T122124-test-d96e8a4a/test.xcresult/Staging/1_Test/Diagnostics/TongxingTests-DF4ACC00-A5AE-4EB3-A7C3-FA1855533B57-Configuration-Test Scheme Action-Iteration-1/TongxingTests-E4B99088-8AAD-48A5-9533-78C0F9C4D47A/StandardOutputAndStandardError.txt
+12:21:27.832 xcodebuild[53643:7060654] 0B2390DC-1B49-4815-8446-3E6DF7E911FE: Received sim device notification: {
+    notification = "availableDevices_changed";
+}
+12:21:27.832 xcodebuild[53643:7060694] ~/Library/Developer/CoreSimulator/Devices: Received sim device set notification: {
+    device = "iPhone 17 Pro Max (0B2390DC-1B49-4815-8446-3E6DF7E911FE, iOS 27.0, Booting)";
+    "last_used_at" = "2026-10-30 19:21:27 +0000";
+    "new_state" = 2;
+    notification = "device_state";
+    "prev_state" = 1;
+}
+12:21:27.833 xcodebuild[53643:7060654] 0B2390DC-1B49-4815-8446-3E6DF7E911FE: Received sim device notification: {
+    device = "iPhone 17 Pro Max (0B2390DC-1B49-4815-8446-3E6DF7E911FE, iOS 27.0, Booting)";
+    "last_used_at" = "2026-10-30 19:21:27 +0000";
+... 553 lines omitted; 3 error-like lines, 3 kept below ...
+[line 388] 12:21:27.943 xcodebuild[53643:7060705] Calling -[SimDevice getenv:error:] for TESTMANAGERD_SIM_SOCK
+[line 411] 12:21:29.641 xcodebuild[53643:7060699] Got reply to session initiation request with identifier A58F2618-9FA4-4E37-9624-AB23832BD05A (error: (null))
+[line 480] 12:22:01.196 Tongxing[53942:7064104] Creating future for 'requesting test configuration' with timeout 600.00
+... end of omitted section ...
+	            severity:warning
+
+	            checkedAllocations:disabled
+
+	 isMemoryTaggingAddressSanitizerEnabled:NO
+	    deferSymbolicationToHarness:NO
+	applicationCrashDetectionPolicy:<XCTApplicationCrashDetectionPolicy: 0x105ffd2c0>
+	            severity:Failure
+
+	          hangDetectionPolicy:<XCTHangDetectionPolicy: detectionEnabled=NO, severity=off, durationThreshold=1.000s>
+	            testTimeoutsEnabled:NO
+	              leaksCheckingMode:off
+	                testInteropMode:limited
+	 defaultTestExecutionTimeAllowance:600
+	 maximumTestExecutionTimeAllowance:0
+	                IDECapabilities:<XCTCapabilities: 0x105ed5db0>: {
+    "XCTIssue capability" = 1;
+    "delayed attachment transfer" = 1;
+    "expected failure test capability" = 1;
+    "in-process test parallelization capability" = 1;
+    "lazy test case snapshots" = 1;
+    "monitoring crash reports for additional processes" = 1;
+    "request diagnostics for specific devices" = 1;
+    "request spindump capability" = 1;
+    "runner plan" = 1;
+    "skipped suite capability" = 1;
+    "skipped test capability" = 1;
+    "sync crash reporter capability" = 1;
+    "test case run configurations" = 1;
+    "test iterations" = 3;
+    "test timeout capability" = 1;
+    traits = 1;
+    "ubiquitous test identifiers" = 1;
+    "unified issue recorded" = 1;
+}
+	        symbolicationImageNames:Tongxing, TongxingTests, ListeningActivityExtension, TongxingUITests, TongxingUITests-Runner
+	         applicationBundleInfos:(null)
+
+12:22:01.207 Tongxing[53942:7064104] <XCTWaiter: 0x110de7c60> entering wait loop for 600.00s with expectations: `requesting ready for testing`
+12:22:01.208 Tongxing[53942:7064104] Returning result XCTWaiterResultCompleted for synchronous waiter <XCTWaiter: 0x110de7c60>
+12:22:01.208 Tongxing[53942:7064104] Wait <XCTWaiterWait: 0x110e877c0> completed after 0.000s
+12:22:01.208 Tongxing[53942:7064104] cleaning up requesting ready for testing
+12:22:01.208 Tongxing[53942:7064104] <XCTWaiter: 0x110de7ed0> entering wait loop for 600.00s with expectations: `IDE proxy`
+12:22:01.208 Tongxing[53942:7064104] Returning result XCTWaiterResultCompleted for synchronous waiter <XCTWaiter: 0x110de7ed0>
+12:22:01.208 Tongxing[53942:7064104] Wait <XCTWaiterWait: 0x110dc0e40> completed after 0.000s
+12:22:01.208 Tongxing[53942:7064104] cleaning up IDE proxy
+12:22:01.208 Tongxing[53942:7064104] Bypassing UI testing initialization because the test configuration does not request it.
+12:22:01.208 Tongxing[53942:7064104] Loading test suite...
+12:22:01.209 Tongxing[53942:7064104] Finished loading test suite, took 0.001s
+12:22:01.209 Tongxing[53942:7064104] <XCTWaiter: 0x110e965b0> entering wait loop for 599.72s with expectations: `preparing execution worker`
+12:22:01.220 Tongxing[53942:7064104] Returning result XCTWaiterResultCompleted for synchronous waiter <XCTWaiter: 0x110e965b0>
+12:22:01.220 Tongxing[53942:7064104] Wait <XCTWaiterWait: 0x110dc22c0> completed after 0.011s
+12:22:01.220 Tongxing[53942:7064104] cleaning up preparing execution worker
+12:22:01.227 xcodebuild[53643:7064119] XCTHTestOperationStateMachine: Transitioning from state ReportedReady to ExecutingTests
+12:22:01.227 xcodebuild[53643:7060654] Test runner started executing tests.
+12:22:01.220 Tongxing[53942:7064104] Entering test execution event loop
+12:22:01.225 Tongxing[53942:7064497] -[XCTRunnerDaemonSession(XCTMessagingRole_UIApplicationStateUpdating) _XCT_applicationDidUpdateState:] com.jonathanjing.tongxing.dev@~/Library/Developer/CoreSimulator/Devices/0B2390DC-1B49-4815-8446-3E6DF7E911FE/data/Containers/Bundle/Application/BC648893-14A1-4409-B2CD-CB23B8C7988F/Tongxing.app processName: Tongxing pid: 53942 state: running foreground
+12:22:01.225 Tongxing[53942:7064104] Setting a new interop record handler: Optional(XCTestCore.XCTestInteropRecordHandler())
+12:22:01.225 Tongxing[53942:7064104] -[XCTRunnerIDESession(_XCTestObservationInternal) testBundleWillStart:]
+12:22:01.225 Tongxing[53942:7064104] Running suite...
+12:22:01.225 Tongxing[53942:7064104] -[XCTRunnerIDESession(_XCTestObservationInternal) testSuiteWillStart:]
+12:22:01.227 xcodebuild[53643:7060654] _XCT_testSuiteWithIdentifier:<XCTTestIdentifier container ["Selected tests"]> didStartAt:2026-10-30 19:22:01 +0000 traits:(null)
+12:22:01.229 xcodebuild[53643:7060654] Nothing to delete
+Test Suite 'Selected tests' started at 2026-10-30 12:22:01.225.
+Test Suite 'TongxingTests.xctest' started at 2026-10-30 12:22:01.227.
+Test Suite 'AudioAlignmentControllerTests' started at 2026-10-30 12:22:01.227.
+12:22:01.227 Tongxing[53942:7064104] -[XCTRunnerIDESession(_XCTestObservationInternal) testSuiteWillStart:]
+12:22:01.229 xcodebuild[53643:7060654] _XCT_testSuiteWithIdentifier:<XCTTestIdentifier container []> didStartAt:2026-10-30 19:22:01 +0000 traits:(null)
+12:22:01.229 xcodebuild[53643:7060654] Nothing to delete
+12:22:01.227 Tongxing[53942:7064104] -[XCTRunnerIDESession(_XCTestObservationInternal) testSuiteWillStart:]
+12:22:01.229 xcodebuild[53643:7060654] _XCT_testSuiteWithIdentifier:<XCTTestIdentifier container, class ["AudioAlignmentControllerTests"]> didStartAt:2026-10-30 19:22:01 +0000 traits:(null)
+12:22:01.229 xcodebuild[53643:7060654] Nothing to delete
+12:22:01.227 Tongxing[53942:7064104] -[XCTRuntimeIssueDetectionManager runtimeIssueDetectionEnabled] runtimeIssueDetectionEnabled based on XCTDisableRuntimeIssues and runtime diagnostics policies: YES
+12:22:01.228 Tongxing[53942:7064104] -[XCTRunnerIDESession(_XCTestObservationInternal) testCaseWillStart:] TongxingTests.AudioAlignmentControllerTests testAlignmentStatusPromptsAreLocalized
+12:22:01.229 xcodebuild[53643:7060654] _XCT_testCaseDidStartWithIdentifier:<XCTTestIdentifier leaf, method, swift ["AudioAlignmentControllerTests", "testAlignmentStatusPromptsAreLocalized"]>testCaseRunConfiguration:<XCTestCaseRunConfiguration: 0x7918dd8ee0>traits:(null)
+12:22:01.229 xcodebuild[53643:7060654] Test case did start: <XCTTestIdentifier leaf, method, swift ["AudioAlignmentControllerTests", "testAlignmentStatusPromptsAreLocalized"]>
+12:22:01.230 xcodebuild[53643:7060654] Nothing to delete
+12:22:01.233 xcodebuild[53643:7060654] Nothing to delete
+12:22:01.233 xcodebuild[53643:7060654] Nothing to delete
+Test Case '-[TongxingTests.AudioAlignmentControllerTests testAlignmentStatusPromptsAreLocalized]' started.
+12:22:01.229 Tongxing[53942:7064104] <XCTWaiter: 0x105c65b30> entering indefinite wait loop for expectations: `failable invocation block completion`
+12:22:01.229 Tongxing[53942:7064104] Returning result XCTWaiterResultCompleted for synchronous waiter <XCTWaiter: 0x105c65b30>
+12:22:01.229 Tongxing[53942:7064104] Wait <XCTWaiterWait: 0x110dc1780> completed after 0.000s
+12:22:01.229 Tongxing[53942:7064104] cleaning up failable invocation block completion
+12:22:01.233 xcodebuild[53643:7060654] Nothing to delete
+12:22:01.233 xcodebuild[53643:7060654] Nothing to delete
+12:22:01.233 xcodebuild[53643:7060654] Nothing to delete
+12:22:01.233 xcodebuild[53643:7060654] Nothing to delete
+12:22:01.243 Tongxing[53942:7064104] Performing in-process symbolication of 84-frame call stack for reporting
+12:22:01.338 xcodebuild[53643:7060654] Nothing to delete
+~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.claude/worktrees/ios-beta-1.26.33/apps/tongxing-ios/Tests/AudioAlignmentControllerTests.swift:931: error: -[TongxingTests.AudioAlignmentControllerTests testAlignmentStatusPromptsAreLocalized] : XCTAssertNotEqual failed: ("正在载入听声对齐资料…") is equal to ("正在载入听声对齐资料…") - english 正在载入听声对齐资料…
+12:22:03.280 Tongxing[53942:7064104] -[XCTRunnerIDESession(_XCTestObservationInternal) testCase:didRecordIssue:]
+12:22:03.283 xcodebuild[53643:7060654] _XCT_testWithIdentifier:<XCTTestIdentifier leaf, method, swift ["AudioAlignmentControllerTests", "testAlignmentStatusPromptsAreLocalized"]> didRecordIssue:Assertion Failure at AudioAlignmentControllerTests.swift:931: XCTAssertNotEqual failed: ("正在载入听声对齐资料…") is equal to ("正在载入听声对齐资料…") - english 正在载入听声对齐资料…
+12:22:03.283 xcodebuild[53643:7060654] Nothing to delete
+~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.claude/worktrees/ios-beta-1.26.33/apps/tongxing-ios/Tests/AudioAlignmentControllerTests.swift:931: error: -[TongxingTests.AudioAlignmentControllerTests testAlignmentStatusPromptsAreLocalized] : XCTAssertNotEqual failed: ("正在载入听声对齐资料…") is equal to ("正在载入听声对齐资料…") - korean 正在载入听声对齐资料…
+12:22:03.287 Tongxing[53942:7064104] Performing in-process symbolication of 84-frame call stack for reporting
+12:22:03.287 Tongxing[53942:7064104] -[XCTRunnerIDESession(_XCTestObservationInternal) testCase:didRecordIssue:]
+12:22:03.297 xcodebuild[53643:7060654] Nothing to delete
+12:22:03.297 xcodebuild[53643:7060654] _XCT_testWithIdentifier:<XCTTestIdentifier leaf, method, swift ["AudioAlignmentControllerTests", "testAlignmentStatusPromptsAreLocalized"]> didRecordIssue:Assertion Failure at AudioAlignmentControllerTests.swift:931: XCTAssertNotEqual failed: ("正在载入听声对齐资料…") is equal to ("正在载入听声对齐资料…") - korean 正在载入听声对齐资料…
+12:22:03.297 xcodebuild[53643:7060654] Nothing to delete
+~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.claude/worktrees/ios-beta-1.26.33/apps/tongxing-ios/Tests/AudioAlignmentControllerTests.swift:931: error: -[TongxingTests.AudioAlignmentControllerTests testAlignmentStatusPromptsAreLocalized] : XCTAssertNotEqual failed: ("正在载入听声对齐资料…") is equal to ("正在载入听声对齐资料…") - spanish 正在载入听声对齐资料…
+12:22:03.291 Tongxing[53942:7064104] Performing in-process symbolication of 84-frame call stack for reporting
+12:22:03.292 Tongxing[53942:7064104] -[XCTRunnerIDESession(_XCTestObservationInternal) testCase:didRecordIssue:]
+12:22:03.297 xcodebuild[53643:7060654] _XCT_testWithIdentifier:<XCTTestIdentifier leaf, method, swift ["AudioAlignmentControllerTests", "testAlignmentStatusPromptsAreLocalized"]> didRecordIssue:Assertion Failure at AudioAlignmentControllerTests.swift:931: XCTAssertNotEqual failed: ("正在载入听声对齐资料…") is equal to ("正在载入听声对齐资料…") - spanish 正在载入听声对齐资料…
+12:22:03.297 xcodebuild[53643:7060654] Nothing to delete
+12:22:03.295 Tongxing[53942:7064104] Performing in-process symbolication of 84-frame call stack for reporting
+12:22:03.295 Tongxing[53942:7064104] -[XCTRunnerIDESession(_XCTestObservationInternal) testCase:didRecordIssue:]
+12:22:03.297 xcodebuild[53643:7060654] _XCT_testWithIdentifier:<XCTTestIdentifier leaf, method, swift ["AudioAlignmentControllerTests", "testAlignmentStatusPromptsAreLocalized"]> didRecordIssue:Assertion Failure at AudioAlignmentControllerTests.swift:931: XCTAssertNotEqual failed: ("正在载入听声对齐资料…") is equal to ("正在载入听声对齐资料…") - vietnamese 正在载入听声对齐资料…
+12:22:03.297 xcodebuild[53643:7060654] Nothing to delete
+12:22:03.297 Tongxing[53942:7064104] <XCTWaiter: 0x105c66490> entering indefinite wait loop for expectations: `failable invocation block completion`
+12:22:03.297 Tongxing[53942:7064104] Returning result XCTWaiterResultCompleted for synchronous waiter <XCTWaiter: 0x105c66490>
+12:22:03.297 Tongxing[53942:7064104] Wait <XCTWaiterWait: 0x110ffc080> completed after 0.000s
+12:22:03.297 Tongxing[53942:7064104] cleaning up failable invocation block completion
+12:22:03.297 Tongxing[53942:7064104] -[XCTRunnerIDESession(_XCTestObservationInternal) testCaseDidFinish:] TongxingTests.AudioAlignmentControllerTests testAlignmentStatusPromptsAreLocalized
+12:22:03.298 xcodebuild[53643:7060654] Nothing to delete
+12:22:03.298 xcodebuild[53643:7060654] _XCT_testCaseWithIdentifier:<XCTTestIdentifier leaf, method, swift ["AudioAlignmentControllerTests", "testAlignmentStatusPromptsAreLocalized"]> didFinishWithStatus:failed duration:2.069002985954285
+12:22:03.298 xcodebuild[53643:7060654] Test case (<XCTTestIdentifier leaf, method, swift ["AudioAlignmentControllerTests", "testAlignmentStatusPromptsAreLocalized"]>) finished - enqueuing console chunks to delegate.
+12:22:03.298 xcodebuild[53643:7060654] Nothing to delete
+~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.claude/worktrees/ios-beta-1.26.33/apps/tongxing-ios/Tests/AudioAlignmentControllerTests.swift:931: error: -[TongxingTests.AudioAlignmentControllerTests testAlignmentStatusPromptsAreLocalized] : XCTAssertNotEqual failed: ("正在载入听声对齐资料…") is equal to ("正在载入听声对齐资料…") - vietnamese 正在载入听声对齐资料…
+Test Case '-[TongxingTests.AudioAlignmentControllerTests testAlignmentStatusPromptsAreLocalized]' failed (2.069 seconds).
+Test Suite 'AudioAlignmentControllerTests' failed at 2026-10-30 12:22:03.297.
+	 Executed 1 test, with 4 failures (0 unexpected) in 2.069 (2.070) seconds
+12:22:03.297 Tongxing[53942:7064104] -[XCTRunnerIDESession(_XCTestObservationInternal) testSuiteDidFinish:]
+12:22:03.298 xcodebuild[53643:7060654] _XCT_testSuiteWithIdentifier:<XCTTestIdentifier container, class ["AudioAlignmentControllerTests"]> didFinishAt:2026-10-30 19:22:03 +0000 runCount:1 skipCount:0 failureCount:4 expectedFailureCount:0 uncaughtExceptionCount:0 testDuration:2.069002985954285 totalDuration:2.07046103477478
+12:22:03.298 xcodebuild[53643:7060654] Nothing to delete
+12:22:03.300 xcodebuild[53643:7060654] Nothing to delete
+12:22:03.300 xcodebuild[53643:7060654] Nothing to delete
+12:22:03.297 Tongxing[53942:7064104] -[XCTRunnerIDESession(_XCTestObservationInternal) testSuiteDidFinish:]
+12:22:03.300 xcodebuild[53643:7060654] _XCT_testSuiteWithIdentifier:<XCTTestIdentifier container []> didFinishAt:2026-10-30 19:22:03 +0000 runCount:1 skipCount:0 failureCount:4 expectedFailureCount:0 uncaughtExceptionCount:0 testDuration:2.069002985954285 totalDuration:2.07090699672699
+12:22:03.300 xcodebuild[53643:7060654] Nothing to delete
+12:22:03.300 xcodebuild[53643:7060654] Nothing to delete
+12:22:03.301 xcodebuild[53643:7060654] Nothing to delete
+12:22:03.301 xcodebuild[53643:7060654] Nothing to delete
+12:22:03.301 xcodebuild[53643:7060654] Finishing test with new console chunk Test Case '-[TongxingTests.AudioAlignmentControllerTests testAlignmentStatusPromptsAreLocalized]' failed (2.069 seconds).
+
+12:22:03.303 xcodebuild[53643:7060654] Nothing to delete
+12:22:03.298 Tongxing[53942:7064104] -[XCTRunnerIDESession(_XCTestObservationInternal) testSuiteDidFinish:]
+Test Suite 'TongxingTests.xctest' failed at 2026-10-30 12:22:03.297.
+	 Executed 1 test, with 4 failures (0 unexpected) in 2.069 (2.071) seconds
+Test Suite 'Selected tests' failed at 2026-10-30 12:22:03.298.
+	 Executed 1 test, with 4 failures (0 unexpected) in 2.069 (2.072) seconds
+12:22:03.304 xcodebuild[53643:7060654] _XCT_testSuiteWithIdentifier:<XCTTestIdentifier container ["Selected tests"]> didFinishAt:2026-10-30 19:22:03 +0000 runCount:1 skipCount:0 failureCount:4 expectedFailureCount:0 uncaughtExceptionCount:0 testDuration:2.069002985954285 totalDuration:2.072144985198975
+12:22:03.304 xcodebuild[53643:7060654] Nothing to delete
+12:22:03.304 xcodebuild[53643:7060654] Nothing to delete
+12:22:03.298 Tongxing[53942:7064104] Finished running suite.
+12:22:03.298 Tongxing[53942:7064104] Setting a new interop record handler: nil
+12:22:03.298 Tongxing[53942:7064104] <XCTWaiter: 0x1098b3d50> entering indefinite wait loop for expectations: `XCTAsyncEnumerateWithWaiter(<XCTest.SwiftTestingExecutionExtension: 0x110ee4000>)`
+12:22:03.298 Tongxing[53942:7064513] -[XCTRuntimeIssueDetectionManager runtimeIssueDetectionEnabled] runtimeIssueDetectionEnabled based on XCTDisableRuntimeIssues and runtime diagnostics policies: YES
+12:22:03.298 Tongxing[53942:7064513] -[XCTRuntimeIssueDetectionManager runtimeIssueDetectionEnabled] runtimeIssueDetectionEnabled based on XCTDisableRuntimeIssues and runtime diagnostics policies: YES
+12:22:03.304 xcodebuild[53643:7060654] Nothing to delete
+12:22:03.304 xcodebuild[53643:7060654] Nothing to delete
+12:22:03.304 xcodebuild[53643:7060654] Nothing to delete
+12:22:03.305 xcodebuild[53643:7060654] Nothing to delete
+12:22:03.305 xcodebuild[53643:7060654] Nothing to delete
+12:22:03.305 xcodebuild[53643:7060654] Nothing to delete
+12:22:03.305 xcodebuild[53643:7060654] Nothing to delete
+12:22:03.306 Tongxing[53942:7064513] Setting a new interop record handler: Optional(XCTest.SwiftTestingInteropRecordHandler(interruptTestHandler: nil))
+12:22:03.307 Tongxing[53942:7064513] Setting a new interop record handler: nil
+12:22:03.307 Tongxing[53942:7064104] Returning result XCTWaiterResultCompleted for synchronous waiter <XCTWaiter: 0x1098b3d50>
+12:22:03.307 Tongxing[53942:7064104] Wait <XCTWaiterWait: 0x110ffc100> completed after 0.009s
+12:22:03.308 Tongxing[53942:7064104] cleaning up XCTAsyncEnumerateWithWaiter(<XCTest.SwiftTestingExecutionExtension: 0x110ee4000>)
+12:22:03.308 Tongxing[53942:7064104] <XCTWaiter: 0x1098b3d50> entering indefinite wait loop for expectations: `XCTAsyncEnumerateWithWaiter(<XCTTestRunSession: 0x105f0b560>)`
+12:22:03.308 Tongxing[53942:7064104] Returning result XCTWaiterResultCompleted for synchronous waiter <XCTWaiter: 0x1098b3d50>
+12:22:03.308 Tongxing[53942:7064104] Wait <XCTWaiterWait: 0x110ffc200> completed after 0.000s
+12:22:03.308 Tongxing[53942:7064104] cleaning up XCTAsyncEnumerateWithWaiter(<XCTTestRunSession: 0x105f0b560>)
+12:22:03.308 Tongxing[53942:7064104] -[XCTRunnerIDESession(_XCTestObservationInternal) testBundleDidFinish:], Flushing connection to IDE...
+12:22:03.308 Tongxing[53942:7064104] Exited test execution event loop
+12:22:03.308 Tongxing[53942:7064104] Creating future for 'flushing telemetry' with timeout 10.00
+12:22:03.308 Tongxing[53942:7064104] <XCTWaiter: 0x105c67660> entering wait loop for 10.00s with expectations: `flushing telemetry`
+12:22:03.308 Tongxing[53942:7064104] Returning result XCTWaiterResultCompleted for synchronous waiter <XCTWaiter: 0x105c67660>
+12:22:03.308 Tongxing[53942:7064104] Wait <XCTWaiterWait: 0x110ffc340> completed after 0.000s
+12:22:03.308 Tongxing[53942:7064104] cleaning up flushing telemetry
+12:22:03.308 Tongxing[53942:7064104] Creating future for 'confirming end of session with the harness' with timeout 1800.00
+12:22:03.308 Tongxing[53942:7064104] <XCTWaiter: 0x105c66910> entering wait loop for 1800.00s with expectations: `confirming end of session with the harness`
+12:22:03.308 xcodebuild[53643:7060654] -[XCTTestRunnerSession _XCT_didFinishExecutingTestPlan]_block_invoke
+12:22:03.309 xcodebuild[53643:7060654] Nothing to delete
+12:22:03.309 Tongxing[53942:7064513] Creating future for 'flushing telemetry' with timeout 10.00
+12:22:03.309 Tongxing[53942:7064513] <XCTWaiter: 0x110e973f0> entering wait loop for 10.00s with expectations: `flushing telemetry`
+12:22:03.309 Tongxing[53942:7064513] Returning result XCTWaiterResultCompleted for synchronous waiter <XCTWaiter: 0x110e973f0>
+12:22:03.309 Tongxing[53942:7064513] Wait <XCTWaiterWait: 0x110ffc540> completed after 0.000s
+12:22:03.309 Tongxing[53942:7064513] cleaning up flushing telemetry
+12:22:03.309 Tongxing[53942:7064104] Returning result XCTWaiterResultCompleted for synchronous waiter <XCTWaiter: 0x105c66910>
+12:22:03.309 Tongxing[53942:7064104] Wait <XCTWaiterWait: 0x110ffc480> completed after 0.001s
+12:22:03.309 Tongxing[53942:7064104] cleaning up confirming end of session with the harness
+12:22:03.319 xcodebuild[53643:7064119] Closing socket 32 to testmanagerd for Sim iPhone 17 Pro Max
+12:22:03.319 xcodebuild[53643:7064118] <XCTTestRunnerSession: 0x79190a19a0> lost its connection.
+12:22:03.319 xcodebuild[53643:7060654] 📱<DVTiPhoneSimulator (0x7916384c00), iPhone 17 Pro Max, unknown class, 27.0 (24A434), 0B2390DC-1B49-4815-8446-3E6DF7E911FE> got death notice for pid 53942 (exit code: 1, signal: (null)), removing from SimulatorSessionMap
+12:22:03.319 xcodebuild[53643:7060654] Lost connection to test process
+12:22:03.321 xcodebuild[53643:7060654] 📱<DVTiPhoneSimulator (0x7916384c00), iPhone 17 Pro Max, unknown class, 27.0 (24A434), 0B2390DC-1B49-4815-8446-3E6DF7E911FE> claim LaunchSessionClaim_0x7918b00480 on simulator was relinquished, 1 claims remain.
+12:22:03.321 xcodebuild[53643:7060654] 📱<DVTiPhoneSimulator (0x7916384c00), iPhone 17 Pro Max, unknown class, 27.0 (24A434), 0B2390DC-1B49-4815-8446-3E6DF7E911FE> claim LaunchSessionClaim_0x7918b00480 on simulator was relinquished, 1 claims remain.
+12:22:03.321 xcodebuild[53643:7060654] 📱<DVTiPhoneSimulator (0x7916384c00), iPhone 17 Pro Max, unknown class, 27.0 (24A434), 0B2390DC-1B49-4815-8446-3E6DF7E911FE> claim LaunchSessionClaim_0x7918b00480 on simulator was relinquished, 1 claims remain.
+12:22:03.321 xcodebuild[53643:7060654] Launch session expired.
+12:22:03.418 xcodebuild[53643:7060654] Nothing to delete
+12:22:03.582 xcodebuild[53643:7060654] <XCTHTestOperationCoordinator: 0x7918b03780> finished receiving data from testing launch session
+12:22:03.582 xcodebuild[53643:7060654] <XCTHTestOperationCoordinator: 0x7918b03780>: _considerFlushingDelegateBlockQueue - nothing to flush
+12:22:03.582 xcodebuild[53643:7060654] Nothing to delete
+12:22:03.583 xcodebuild[53643:7060654] Can finish test, forceToNotWaitForAsynchronousDiagnostics is NO. Finishing...
+12:22:03.583 xcodebuild[53643:7060654] _finishWithError:(null)
+12:22:03.583 xcodebuild[53643:7060654] Current state: testRunnerLaunchSessionHasFinishedReceivingData: YES, delegateBlockQueue.count: 0
+12:22:03.583 xcodebuild[53643:7060654] <XCTHTestOperationCoordinator: 0x7918b03780>: _considerFlushingDelegateBlockQueue - nothing to flush
