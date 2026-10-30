@@ -641,6 +641,17 @@ final class ListeningFlowUITests: XCTestCase {
         XCTAssertEqual(app.staticTexts["sermon-title"].label, "界面测试证道")
     }
 
+    func testLiveAlignmentEntryIsVisibleWithoutOpeningTheLocatePanel() throws {
+        // The alignment fixture carries a fingerprint, so this page advertises
+        // live alignment; the entry must be reachable without the locate panel.
+        let app = launchFixture(locateFlow: true, alignmentFailure: true)
+        XCTAssertTrue(app.staticTexts["published-current-subtitle"].waitForExistence(timeout: 15))
+        let entry = app.buttons["live-alignment-entry"]
+        XCTAssertTrue(entry.waitForExistence(timeout: 10), "听现场并对齐应直接出现在页面上")
+        try waitFor(entry, "exists == true AND hittable == true AND enabled == true")
+        screenshot("live-alignment-entry-visible", app: app)
+    }
+
     func testEnglishLocateFromHomeReturnsToCurrentSubtitleAndCanUndo() throws {
         let app = launchFixture(locateFlow: true)
         try locateSecondEnglishSegment(in: app, fromDock: false)
