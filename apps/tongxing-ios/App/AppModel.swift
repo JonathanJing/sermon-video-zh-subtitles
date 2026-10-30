@@ -88,7 +88,7 @@ final class AppModel: ObservableObject {
     @Published private(set) var downloadStates: [String: DownloadState] = [:]
     @Published private(set) var usingOfflineAudio = false
     @Published var display: ListeningDisplay = .current
-    @Published private(set) var alignmentStatus = "请播放同一录音的原声，再点击听声对齐。"
+    @Published private(set) var alignmentStatus = AppModel.alignmentIdlePrompt
     @Published private(set) var alignmentBusy = false
     @Published private(set) var alignmentPosition: Double?
     @Published private(set) var foregroundAlignmentPhase: ListeningAlignmentPhase?
@@ -121,31 +121,44 @@ final class AppModel: ObservableObject {
 
     func dismissAlignmentFailure() { alignmentFailure = nil }
 
+    static let alignmentIdlePrompt = "请播放同一录音的原声，再点击听声对齐。"
+    /// Shown while a declared fingerprint cannot be checked yet; it is neither
+    /// "available" nor "missing" until the bound track has been prepared.
+    static let alignmentLoadingStatus = "正在载入听声对齐资料…"
+    /// Only for a page that declares no index, or whose binding failed validation
+    /// against the verified, ready track.
+    static let alignmentUnavailableStatus = "当前音频没有可用的听声对齐资料。"
+    static let audioNotReadyStatus = "音频尚未准备就绪，请稍候或重新载入音频。"
+
+    /// A published page advertises its fingerprint before its audio has been
+    /// downloaded, hash-verified and reported ready by the player. The controller
+    /// validates the binding against that track, so until the preparation has
+    /// finished or failed the index must not be reported as missing.
+    var isLoadingAlignmentCapability: Bool {
+        guard selectedWeek == nil, selectedContentTarget?.audioFingerprint != nil else { return false }
+        if isPreparingPublishedAudio { return true }
+        guard let selectedAudioLocale else { return publishedAudioError == nil && !playback.isPreview }
+        return selectedAudioLocale == selectedContentLocale && !playback.isReady && !playback.loadFailed
+    }
+
     var alignmentDisplayStatus: String {
         if alignmentBusy || hasAlignmentFeedback { return alignmentStatus }
-        let publishedFingerprint = selectedWeek == nil && selectedContentTarget?.audioFingerprint != nil
-        // A published page advertises its fingerprint before its audio has been
-        // downloaded and verified. The controller cannot validate that binding
-        // against the playing track until selectedAudioLocale is set.
         if selectedWeek == nil {
-            if publishedFingerprint {
-                if isPreparing || isPreparingPublishedAudio {
-                    return "正在准备音频，请稍候再开始现场自动对齐。"
-                }
+            if selectedContentTarget?.audioFingerprint != nil {
+                if isLoadingAlignmentCapability { return Self.alignmentLoadingStatus }
                 if selectedAudioLocale != selectedContentLocale || !playback.isReady {
-                    return "音频尚未准备就绪，请稍候或重新载入音频。"
+                    return Self.audioNotReadyStatus
                 }
             } else if multilingualCatalog == nil {
-                return "音频尚未准备就绪，请稍候或重新载入音频。"
+                return Self.audioNotReadyStatus
             }
         }
-        guard alignmentController?.available == true else {
-            if publishedFingerprint { return "当前音频没有可用的听声对齐资料。" }
-            return "当前音频没有可用的听声对齐资料。"
-        }
+        guard alignmentController?.available == true else { return Self.alignmentUnavailableStatus }
         if isPreparing { return "正在准备音频，请稍候再开始现场自动对齐。" }
-        if !playback.isReady { return "音频尚未准备就绪，请稍候或重新载入音频。" }
-        return alignmentStatus
+        if !playback.isReady { return Self.audioNotReadyStatus }
+        // Availability is derived here, at display time. `alignmentStatus` only
+        // carries controller feedback, never a frozen pre-readiness verdict.
+        return Self.alignmentIdlePrompt
     }
 
     var showsAlignmentStatus: Bool {
@@ -166,9 +179,10 @@ final class AppModel: ObservableObject {
         hasAlignmentFeedback = false
         alignmentBusy = false
         alignmentPosition = nil
-        alignmentStatus = alignmentController?.available == true
-            ? "请播放同一录音的原声，再点击听声对齐。"
-            : "当前音频没有可用的听声对齐资料。"
+        // Published audio is reset before its player item is ready, when the
+        // controller cannot yet validate the binding; a verdict stored here would
+        // outlive readiness and show "no index" for a page that has one.
+        alignmentStatus = Self.alignmentIdlePrompt
     }
 
     var alignmentAvailable: Bool {
