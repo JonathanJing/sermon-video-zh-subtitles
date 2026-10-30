@@ -176,8 +176,7 @@ def main() -> int:
         gate = {**gate, "clean": None, "planOnly": True}
     C.write_json(run_dir / "lag-loop-report.json", {"threshold": args.threshold, "iterations": report,
                                                     "gate": gate, "promptVersion": PROMPT_VERSION})
-    runlog.mark(run_dir, f"l3.lag-loop.{args.locale}", "finished",
-                maxLagSeconds=gate["maxLag"], sentencesOverLag8s=gate["over"], clean=gate["clean"])
+    runlog.mark(run_dir, f"l3.lag-loop.{args.locale}", "finished")
     print(json.dumps({"report": report, "gate": gate, "cost": client.ledger()}, ensure_ascii=False))
     if args.require_clean and not gate["clean"]:
         print(f"still over the gate: maxLag={gate['maxLag']} over={gate['over']}", flush=True)
