@@ -175,6 +175,23 @@ final class ListeningFlowUITests: XCTestCase {
         app.terminate()
     }
 
+    func testForegroundAlignmentCompactStatusAtAccessibilitySizes() {
+        let app = XCUIApplication()
+        app.launchArguments = ["--ui-testing", "--ui-testing-live-activity", "--ui-testing-large-text",
+                               "-AppleLanguages", "(zh-Hans)", "-AppleLocale", "zh_CN"]
+        app.launchEnvironment["TONGXING_UI_TEST_RUN_ID"] = UUID().uuidString
+        app.launchEnvironment["TONGXING_TEST_HOST"] = "0"
+        app.launch()
+        defer { app.terminate() }
+        XCTAssertTrue(app.staticTexts["sermon-title"].waitForExistence(timeout: 10))
+        // The toolbar cannot grow with accessibility sizes, so the live status
+        // switches to the compact wording instead of truncating the sentence.
+        let listening = app.descendants(matching: .any)["foreground-alignment-feedback-listening"].firstMatch
+        XCTAssertTrue(listening.waitForExistence(timeout: 15))
+        XCTAssertTrue(listening.label.contains("监听"), listening.label)
+        XCTAssertFalse(listening.label.contains("保持前台"), listening.label)
+    }
+
     func testOutlineAndMeditationEntryIsRemoved() {
         for published in [false, true] {
             let app = launchFixture(locateFlow: published)

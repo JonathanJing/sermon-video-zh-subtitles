@@ -408,7 +408,13 @@ struct ContentView: View {
                 }
             }
             .toolbar {
-                ToolbarItem(placement: .principal) { BrandTitle(alignmentPhase: model.foregroundAlignmentPhase) }
+                ToolbarItem(placement: .principal) {
+                    BrandTitle(alignmentPhase: model.foregroundAlignmentPhase,
+                               // The toolbar clamps its own type size, so the
+                               // compact-status decision comes from the page
+                               // environment that still reports accessibility sizes.
+                               usesCompactStatus: typeSize.isAccessibilitySize)
+                }
                 if model.display == .transcript {
                     ToolbarItem(placement: .primaryAction) {
                         // Toolbar bridges can discard a Button's outer custom
@@ -1314,6 +1320,7 @@ private struct BrandTitle: View {
     @ObservedObject private var localization = AppLocalization.shared
     @Environment(\.colorScheme) private var colorScheme
     var alignmentPhase: ListeningAlignmentPhase? = nil
+    var usesCompactStatus = false
 
     private var brandMark: Image {
         #if SWIFT_PACKAGE
@@ -1351,14 +1358,19 @@ private struct BrandTitle: View {
                     .font(.caption2.weight(.semibold))
                     .foregroundStyle(phase == .failed ? Color.orange : Brand.accent)
             }
-            Text(phase == .failed ? localization.text("听音对齐未完成")
-                 : phase.statusText(english: localization.language != .simplifiedChinese))
+            Text(alignmentStatusText(phase))
                 .font(.caption2.weight(.semibold))
                 .foregroundStyle(phase == .failed ? Color.orange : Brand.accent)
                 .lineLimit(1)
         }
         .accessibilityElement(children: .combine)
         .accessibilityIdentifier("foreground-alignment-feedback-\(phase.rawValue)")
+    }
+
+    private func alignmentStatusText(_ phase: ListeningAlignmentPhase) -> String {
+        let english = localization.language != .simplifiedChinese
+        if usesCompactStatus { return phase.compactText(english: english) }
+        return phase == .failed ? localization.text("听音对齐未完成") : phase.statusText(english: english)
     }
 }
 
