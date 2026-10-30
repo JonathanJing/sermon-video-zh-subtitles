@@ -567,7 +567,10 @@ final class ListeningFlowUITests: XCTestCase {
         XCTAssertTrue(app.buttons["content-language-ko"].waitForExistence(timeout: 5))
         app.buttons["content-language-ko"].tap()
         XCTAssertTrue(app.staticTexts["published-page-title"].waitForExistence(timeout: 10))
-        XCTAssertTrue(app.descendants(matching: .any)["published-full-transcript"].waitForExistence(timeout: 15))
+        // The reader no longer has a full-transcript section; the Korean
+        // subtitle shows the published text has loaded before the checks below.
+        XCTAssertTrue(app.staticTexts["published-current-subtitle"].waitForExistence(timeout: 15))
+        XCTAssertEqual(app.staticTexts["published-current-subtitle"].label, "짧은 자막입니다.")
         XCTAssertFalse(app.buttons["open-sermon-study"].exists)
         XCTAssertFalse(app.staticTexts["published-study-outline-body-0"].exists)
         XCTAssertFalse(app.staticTexts["published-study-meditation-body-0"].exists)
@@ -1158,8 +1161,9 @@ final class ListeningFlowUITests: XCTestCase {
         for id in ["playback-toggle", "nudge-backward", "nudge-forward", "playback-more"] {
             let button = app.buttons[id]
             XCTAssertTrue(button.isHittable, "\(id) should remain available")
-            XCTAssertGreaterThanOrEqual(button.frame.width, 44)
-            XCTAssertGreaterThanOrEqual(button.frame.height, 44)
+            // Layout arithmetic can land a 44 pt target at 43.999999999999986.
+            XCTAssertGreaterThanOrEqual(button.frame.width, 44 - 0.01, "\(id) width")
+            XCTAssertGreaterThanOrEqual(button.frame.height, 44 - 0.01, "\(id) height")
             XCTAssertTrue(app.frame.contains(button.frame))
         }
         try assertAlignmentAvailableInMore(in: app)

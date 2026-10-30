@@ -1345,7 +1345,8 @@ final class MachineDisclosureTests: XCTestCase {
             try await Task.sleep(for: .milliseconds(10))
         }
         XCTAssertEqual(model.publishedAudioSha256, audioHash)
-        for _ in 0..<200 where !model.playback.isReady || model.isPreparingPublishedAudio {
+        // A cold or busy simulator can take over 2 s to ready the player item.
+        for _ in 0..<1500 where !model.playback.isReady || model.isPreparingPublishedAudio {
             try await Task.sleep(for: .milliseconds(10))
         }
         XCTAssertTrue(model.playback.isReady)
