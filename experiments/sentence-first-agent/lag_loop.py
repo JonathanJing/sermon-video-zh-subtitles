@@ -22,6 +22,7 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 import coherence_core as C  # noqa: E402
+import runlog  # noqa: E402
 import spoken_forms  # noqa: E402
 
 PROMPT_VERSION = "sentence-first-lag-trim-20261030-v1"
@@ -75,6 +76,14 @@ def trim(client: C.DeepSeek, locale: str, rows: list[dict], units: dict[str, dic
     return revisions, {"selected": len(rows), "accepted": len(revisions), "rejected": rejected}
 
 
+def final_gate(summary: dict, threshold: float) -> dict:
+    """A locale is review-ready only when nothing sits past the sync threshold."""
+    return {"maxLag": summary.get("maxLagSeconds"), "over": summary.get("sentencesOverLag8s"),
+            "threshold": threshold,
+            "clean": (summary.get("sentencesOverLag8s") or 0) == 0
+            and (summary.get("maxLagSeconds") or 0) <= threshold}
+
+
 def run(command: list[str]) -> None:
     print("$ " + " ".join(command), flush=True)
     subprocess.run(command, check=True, cwd=HERE.parents[1])
@@ -94,10 +103,19 @@ def main() -> int:
     parser.add_argument("--max-sentences", type=int, default=80)
     parser.add_argument("--iterations", type=int, default=2)
     parser.add_argument("--plan-only", action="store_true", help="select and trim, but do not re-synthesize")
+    parser.add_argument("--check-only", action="store_true",
+                        help="gate the current schedule without calling DeepSeek or Spark")
+    parser.add_argument("--require-clean", action="store_true",
+                        help="exit 1 unless the final track is inside the threshold")
     parser.add_argument("--execute", action="store_true")
     args = parser.parse_args()
     remote_host, remote_dir = args.remote.split(":", 1)
     run_dir = args.run.resolve()
+    if args.check_only:
+        summary = json.loads((run_dir / "schedule.json").read_text())["summary"]
+        gate = final_gate(summary, args.threshold)
+        print(json.dumps({"checkOnly": True, "gate": gate}, ensure_ascii=False))
+        return 0 if gate["clean"] or not args.require_clean else 1
     sentences = {row["id"]: row for row in load_rows(run_dir / "sentences.jsonl")}
     slices = json.loads((run_dir / "slices" / "slices.json").read_text())
     budgets = {row["id"]: max(1, int(float(row.get("budgetSeconds") or 0) * CPS[args.locale]))
@@ -106,6 +124,7 @@ def main() -> int:
                         state_dir=run_dir)
     client.windows_done, client.units_done = C.recorded_progress(run_dir, "trim")
     report = []
+    runlog.mark(run_dir, f"l3.lag-loop.{args.locale}", "started")
     for number in range(1, args.iterations + 1):
         schedule = json.loads((run_dir / "schedule.json").read_text())
         # Root-cause selection: a sentence that reads longer than its source slot pushes
@@ -152,9 +171,17 @@ def main() -> int:
     final = json.loads((run_dir / "schedule.json").read_text())["summary"]
     report.append({"final": True, "maxLag": final["maxLagSeconds"],
                    "over": final["sentencesOverLag8s"]})
+    gate = final_gate(final, args.threshold)
+    if args.plan_only:
+        gate = {**gate, "clean": None, "planOnly": True}
     C.write_json(run_dir / "lag-loop-report.json", {"threshold": args.threshold, "iterations": report,
-                                                    "promptVersion": PROMPT_VERSION})
-    print(json.dumps({"report": report, "cost": client.ledger()}, ensure_ascii=False))
+                                                    "gate": gate, "promptVersion": PROMPT_VERSION})
+    runlog.mark(run_dir, f"l3.lag-loop.{args.locale}", "finished",
+                maxLagSeconds=gate["maxLag"], sentencesOverLag8s=gate["over"], clean=gate["clean"])
+    print(json.dumps({"report": report, "gate": gate, "cost": client.ledger()}, ensure_ascii=False))
+    if args.require_clean and not gate["clean"]:
+        print(f"still over the gate: maxLag={gate['maxLag']} over={gate['over']}", flush=True)
+        return 1
     return 0
 
 
