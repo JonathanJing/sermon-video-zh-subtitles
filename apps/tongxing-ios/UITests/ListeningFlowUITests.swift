@@ -1566,7 +1566,9 @@ final class ListeningFlowUITests: XCTestCase {
                                      file: StaticString = #filePath, line: UInt = #line) {
         let panel = element("playback-more-panel", in: app)
         guard panel.exists else { return }
-        let dismissRegion = app.otherElements["PopoverDismissRegion"]
+        // A popover opened from inside a presented sheet leaves more than one
+        // dismiss region in the hierarchy; any of them dismisses the popover.
+        let dismissRegion = app.otherElements["PopoverDismissRegion"].firstMatch
         if dismissRegion.exists { dismissRegion.tap() }
         else { app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.12)).tap() }
         let closed = XCTNSPredicateExpectation(predicate: NSPredicate(format: "exists == false"), object: panel)

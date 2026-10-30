@@ -11,7 +11,6 @@
 		01889D8EA2866C1BBA9A3B83 /* BetaNotifications.swift in Sources */ = {isa = PBXBuildFile; fileRef = A53125E45FD7C62523C2E7E2 /* BetaNotifications.swift */; };
 		042AC6D42BFDE10152C60248 /* VoiceDemoCatalog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 01D4A798172E895D46CF48E4 /* VoiceDemoCatalog.swift */; };
 		07BD5A2684273F556EB2A486 /* ListeningActivityStateTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE351B05886BDF3AF8AB9ECE /* ListeningActivityStateTests.swift */; };
-		0D171F4F74D6C1396431F589 /* PlaybackPanelLayoutTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 177E9F09DA605249B8B10216 /* PlaybackPanelLayoutTests.swift */; };
 		17719995BCE43C60385DB306 /* PlaybackControllerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE58D0C358A74F0BDE595617 /* PlaybackControllerTests.swift */; };
 		1922373411A3F2980F9E9B7A /* AppStoreScreenshotUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8D941F809567228C8BDF94B2 /* AppStoreScreenshotUITests.swift */; };
 		1F287CC791B5CA1037903C80 /* Localization.swift in Sources */ = {isa = PBXBuildFile; fileRef = BDD37841E68B061E39E91375 /* Localization.swift */; };
@@ -26,7 +25,6 @@
 		318C506CF300A57522C9F2F9 /* PlaybackDock.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAE586AE0AE5D2F197DC5483 /* PlaybackDock.swift */; };
 		32B58C5985220B581D4CF45B /* ListeningActivityAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 60D53F716EC96280DEAF16C4 /* ListeningActivityAttributes.swift */; };
 		35529B2801237F81F67785E8 /* TongxingCore in Frameworks */ = {isa = PBXBuildFile; productRef = 46FC649E9CD7E0BF9CEF7E49 /* TongxingCore */; };
-		3937DE5EED2CA2CD45C0307B /* PlaybackPanelLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE5FADDF09C04B640EEDA7F0 /* PlaybackPanelLayout.swift */; };
 		3C9938262804DF6B08B451C3 /* BetaRemotePush.swift in Sources */ = {isa = PBXBuildFile; fileRef = D870632D5A2996F9F1FF55C8 /* BetaRemotePush.swift */; };
 		3F8F5BD601847BC075B93414 /* AppDeepLink.swift in Sources */ = {isa = PBXBuildFile; fileRef = F28DD6EB12E674F224056564 /* AppDeepLink.swift */; };
 		40CC996E1E39A5B6F34BA38F /* ListeningActivityDismissalTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E0A6DA6C0A30670D209835C /* ListeningActivityDismissalTests.swift */; };
@@ -117,7 +115,6 @@
 		0BB4E01FD39137A27EA512D2 /* es */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = es; path = es.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		0D25C402E721BC4E502AF672 /* tongxing-ios */ = {isa = PBXFileReference; lastKnownFileType = folder; name = "tongxing-ios"; path = .; sourceTree = SOURCE_ROOT; };
 		0F81E8D165D65FEF70E65FFF /* AppModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppModel.swift; sourceTree = "<group>"; };
-		177E9F09DA605249B8B10216 /* PlaybackPanelLayoutTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaybackPanelLayoutTests.swift; sourceTree = "<group>"; };
 		1EB48128E58E88F812DC4214 /* MicrophoneCapture.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MicrophoneCapture.swift; sourceTree = "<group>"; };
 		2221C72D2D8132B2F626CD29 /* DownloadBackgroundAssertionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DownloadBackgroundAssertionTests.swift; sourceTree = "<group>"; };
 		238F7184601DF2B752925AA6 /* WeeklyGuideDataTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeeklyGuideDataTests.swift; sourceTree = "<group>"; };
@@ -158,7 +155,6 @@
 		9BF531D6B8AD0E94016F0BC3 /* AudioAlignmentControllerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioAlignmentControllerTests.swift; sourceTree = "<group>"; };
 		A53125E45FD7C62523C2E7E2 /* BetaNotifications.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BetaNotifications.swift; sourceTree = "<group>"; };
 		AAE586AE0AE5D2F197DC5483 /* PlaybackDock.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaybackDock.swift; sourceTree = "<group>"; };
-		AE5FADDF09C04B640EEDA7F0 /* PlaybackPanelLayout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaybackPanelLayout.swift; sourceTree = "<group>"; };
 		B894299ED2AF8249D5E4694C /* WeeklyUpdateModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeeklyUpdateModelTests.swift; sourceTree = "<group>"; };
 		BC6D116D3A73A078D6FA5218 /* DesignSystem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesignSystem.swift; sourceTree = "<group>"; };
 		BD0FEA1F83F4300CB78A0935 /* UITestLaunch.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UITestLaunch.swift; sourceTree = "<group>"; };
@@ -263,7 +259,6 @@
 				1EB48128E58E88F812DC4214 /* MicrophoneCapture.swift */,
 				34B67E7FE8944242C03C8904 /* PlaybackController.swift */,
 				AAE586AE0AE5D2F197DC5483 /* PlaybackDock.swift */,
-				AE5FADDF09C04B640EEDA7F0 /* PlaybackPanelLayout.swift */,
 				E8CDE0AD081CB32BAE3CD0CB /* PrivacyInfo.xcprivacy */,
 				3E53066E0326AFD8370B5145 /* PrivacySupportView.swift */,
 				414B7CEB37A42480C382B458 /* ProductionPush.swift */,
@@ -316,7 +311,6 @@
 				7E0A6DA6C0A30670D209835C /* ListeningActivityDismissalTests.swift */,
 				DE351B05886BDF3AF8AB9ECE /* ListeningActivityStateTests.swift */,
 				EE58D0C358A74F0BDE595617 /* PlaybackControllerTests.swift */,
-				177E9F09DA605249B8B10216 /* PlaybackPanelLayoutTests.swift */,
 				6163F70382A5001D532DC114 /* SwiftUIPreviewTests.swift */,
 				6E55BEC389D3326BFB083428 /* VoiceDemoCatalogV2Tests.swift */,
 				238F7184601DF2B752925AA6 /* WeeklyGuideDataTests.swift */,
@@ -559,7 +553,6 @@
 				40CC996E1E39A5B6F34BA38F /* ListeningActivityDismissalTests.swift in Sources */,
 				07BD5A2684273F556EB2A486 /* ListeningActivityStateTests.swift in Sources */,
 				17719995BCE43C60385DB306 /* PlaybackControllerTests.swift in Sources */,
-				0D171F4F74D6C1396431F589 /* PlaybackPanelLayoutTests.swift in Sources */,
 				A442F0B6EE2D16D0DAE46A00 /* SwiftUIPreviewTests.swift in Sources */,
 				CB435A938093472AA1DF77EB /* VoiceDemoCatalogV2Tests.swift in Sources */,
 				CEBEB51C414B9274C0D2F9F3 /* WeeklyGuideDataTests.swift in Sources */,
@@ -599,7 +592,6 @@
 				BB468865C54870860F167EA8 /* MicrophoneCapture.swift in Sources */,
 				DA598EC364686E234B86F56B /* PlaybackController.swift in Sources */,
 				318C506CF300A57522C9F2F9 /* PlaybackDock.swift in Sources */,
-				3937DE5EED2CA2CD45C0307B /* PlaybackPanelLayout.swift in Sources */,
 				23FBE0C19259FFC619DE3B8B /* PrivacySupportView.swift in Sources */,
 				C462391418A654BA6F7F87FA /* ProductionPush.swift in Sources */,
 				A55D82ACF53BFD530F2D7889 /* StatisticsPromptCard.swift in Sources */,
