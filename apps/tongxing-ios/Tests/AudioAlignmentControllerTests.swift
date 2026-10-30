@@ -920,6 +920,18 @@ final class AudioAlignmentControllerTests: XCTestCase {
         }
     }
 
+    func testAlignmentStatusPromptsAreLocalized() throws {
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString).appendingPathComponent("lang.json")
+        let localization = AppLocalization(preferenceURL: url)
+        defer { try? FileManager.default.removeItem(at: url.deletingLastPathComponent()) }
+        let keys = [AppModel.alignmentIdlePrompt, AppModel.alignmentLoadingStatus,
+                    AppModel.alignmentUnavailableStatus, AppModel.audioNotReadyStatus]
+        for language in [AppLanguage.english, .korean, .spanish, .vietnamese] {
+            localization.setPreference(language)
+            for key in keys { XCTAssertNotEqual(localization.text(key), key, "\(language) \(key)") }
+        }
+    }
+
     func testContinuousSessionStartupStallStopsBeforePCMBudget() async throws {
         var restores = 0
         let session = ContinuousCaptureSession(owner: nil, token: UUID(),

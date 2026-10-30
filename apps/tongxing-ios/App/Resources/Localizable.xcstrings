@@ -3244,6 +3244,35 @@
         }
       }
     },
+    "正在载入听声对齐资料…": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Loading audio alignment data…"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "소리 정렬 자료를 불러오는 중…"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cargando datos de alineación…"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đang tải dữ liệu căn chỉnh…"
+          }
+        }
+      }
+    },
     "恢复位置": {
       "extractionState": "manual",
       "localizations": {
