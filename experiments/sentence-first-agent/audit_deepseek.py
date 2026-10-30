@@ -183,6 +183,7 @@ def main() -> int:
     client.summary({"acceptedByCode": accepted_codes, "rejectedByReason": rejected_codes,
                     "issued": sum(len(batch) for batch in issue_batches),
                     "accepted": len(revisions), "rejected": len(rejected)})
+    client.finish("finished")
     C.write_json(out / "review.json", review)
     C.write_json(out / "audit-cost.json", {**client.ledger(), "issues": sum(len(b) for b in issue_batches),
                                            "accepted": len(revisions), "rejected": len(rejected)})

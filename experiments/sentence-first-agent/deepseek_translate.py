@@ -231,9 +231,11 @@ def main() -> int:
     glossary_slices = len(C.glossary_slices(units))
     window_count = sum(-(-len(chain) // args.window) for chain in plan)
     glossary_client = C.DeepSeek(args.out / "cache", execute=args.execute, label="translate",
-                                 state_dir=args.out, total=glossary_slices + window_count)
+                                 state_dir=args.out, total=window_count)
     translator = (C.ClaudeCLI(args.out / "claude-cache", model=args.claude_model, execute=args.execute)
                   if args.translator == "claude" else glossary_client)
+    done_windows, done_units = C.recorded_progress(args.out, "translate")
+    glossary_client.windows_done, glossary_client.units_done = done_windows, done_units
     started = time.time()
     glossary = C.empty_glossary()
     if not args.no_glossary:
@@ -280,6 +282,7 @@ def main() -> int:
             "units": len(units), "failed": len(missing)}
     C.write_json(args.out / "cost.json", cost)
     if missing:
+        translator.finish("failed")
         C.write_json(args.out / "failures.json", failures)
         C.write_jsonl(args.out / "repair_queue.jsonl",
                       [{"id": unit_id, "reason": "coverage/empty after retry and repair"}
@@ -289,6 +292,7 @@ def main() -> int:
         return 1
     rows = [{"id": unit_id, "locale": args.locale, "target": results[unit_id]["target"],
              "reviewNote": "pass"} for unit_id in order]
+    translator.finish("finished")
     C.write_jsonl(args.out / "translations.jsonl", rows)
     C.write_json(args.out / "coherence.json", {
         "schemaVersion": C.COHERENCE_SCHEMA, "promptVersion": PROMPT_VERSION, "locale": args.locale,

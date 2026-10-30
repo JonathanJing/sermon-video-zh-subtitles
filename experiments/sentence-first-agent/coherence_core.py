@@ -253,14 +253,17 @@ class DeepSeek:
         self.done = 0
         self.failed = 0
         self.units_done = 0
+        self.windows_done = 0
         self.validation_failures = 0
         self.summary_data: dict = {}
+        self.final_status: str | None = None
         self.started = time.time()
         self.state_dir = Path(state_dir) if state_dir else cache_dir.parent
         self.state_dir.mkdir(parents=True, exist_ok=True)
         self.events_path = self.state_dir / "events.jsonl"
         self.state_path = self.state_dir / "state.json"
         self._lock = threading.Lock()
+        self._state_lock = threading.Lock()
 
     def _event(self, event: dict) -> None:
         event = {"ts": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z",
@@ -276,21 +279,37 @@ class DeepSeek:
 
     def record_done(self, context: str, ids: list[str]) -> None:
         """Record the sentence ids a finished window covered, for resume and coverage."""
+        if not hasattr(self, "_done_contexts"):
+            path = self.state_dir / "done.jsonl"
+            self._done_contexts = set()
+            if path.is_file():
+                for raw in path.read_text(encoding="utf-8").splitlines():
+                    if raw.strip() and json.loads(raw).get("label") == self.label:
+                        self._done_contexts.add(json.loads(raw).get("context"))
+        if context in self._done_contexts:
+            return
+        self._done_contexts.add(context)
         line = {"ts": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z",
                 "label": self.label, "context": context, "ids": ids}
         with self._lock:
             with (self.state_dir / "done.jsonl").open("a", encoding="utf-8") as out:
                 out.write(json.dumps(line, ensure_ascii=False) + "\n")
         self.units_done += len(ids)
+        self.windows_done += 1
         self._state()
 
     def summary(self, data: dict) -> None:
         self.summary_data = data
         self._state()
 
+    def finish(self, status: str = "finished") -> None:
+        self.final_status = status
+        self._state()
+
     def _state(self, status: str | None = None, error: str = "") -> None:
         if status is None:
-            status = "finished" if self.total and self.done >= self.total and not self.failed else "running"
+            status = self.final_status or (
+                "finished" if self.total and self.done >= self.total and not self.failed else "running")
         elapsed = time.time() - self.started
         state = {"label": self.label, "model": self.model, "effort": self.effort,
                  "status": status, "startedAt": datetime.fromtimestamp(self.started, timezone.utc).isoformat(),
@@ -300,12 +319,14 @@ class DeepSeek:
                  "inputTokens": self.input_tokens, "outputTokens": self.output_tokens,
                  "elapsedSeconds": round(elapsed, 1),
                  "avgSeconds": round(elapsed / self.done, 2) if self.done else None,
-                 "unitsDone": self.units_done, "validationFailures": self.validation_failures,
+                 "unitsDone": self.units_done, "windowsDone": self.windows_done,
+                 "validationFailures": self.validation_failures,
                  "summary": self.summary_data,
                  "lastError": error}
-        tmp = self.state_path.with_suffix(".tmp")
-        tmp.write_text(json.dumps(state, ensure_ascii=False, indent=1), encoding="utf-8")
-        os.replace(tmp, self.state_path)
+        with self._state_lock:
+            tmp = self.state_path.with_suffix(".tmp")
+            tmp.write_text(json.dumps(state, ensure_ascii=False, indent=1), encoding="utf-8")
+            os.replace(tmp, self.state_path)
 
     def __call__(self, system: str, user: dict, context: str = "") -> dict:
         payload_user = json.dumps(user, ensure_ascii=False)
@@ -468,3 +489,19 @@ def recorded_units(state_dir: Path) -> set[str]:
         if line.strip():
             covered.update(json.loads(line).get("ids") or [])
     return covered
+
+
+def recorded_progress(state_dir: Path, label: str) -> tuple[int, int]:
+    """(windows, units) already recorded in done.jsonl for one stage label."""
+    path = Path(state_dir) / "done.jsonl"
+    if not path.is_file():
+        return 0, 0
+    windows = units = 0
+    for line in path.read_text(encoding="utf-8").splitlines():
+        if not line.strip():
+            continue
+        row = json.loads(line)
+        if row.get("label") == label:
+            windows += 1
+            units += len(row.get("ids") or [])
+    return windows, units
