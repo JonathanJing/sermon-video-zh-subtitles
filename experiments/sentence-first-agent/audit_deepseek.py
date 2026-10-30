@@ -71,6 +71,7 @@ def audit_window(client: C.DeepSeek, rows: list[dict], units: list[dict], glossa
                           for row, unit in zip(rows, units)]}
     result = client(system, user, context=str(number))
     issues = result.get("issues")
+    client.record_done(str(number), [row["id"] for row in rows])
     return issues if isinstance(issues, list) else []
 
 
@@ -132,8 +133,9 @@ def main() -> int:
     glossary = json.loads((args.arm_dir / "glossary.json").read_text())
     glossary.pop("entriesDropped", None)
     client = C.DeepSeek(args.arm_dir / "audit-cache", effort="high", execute=args.execute,
-                        label="audit", state_dir=out, total=len(parts))
+                        label="audit", state_dir=out)
     parts = windows(translations, args.window)
+    client.total = len(parts)
     index_of = {row["id"]: number for number, row in enumerate(translations)}
     prior_for = {}
     for part in parts:
@@ -148,6 +150,8 @@ def main() -> int:
     with ThreadPoolExecutor(min(args.workers, len(parts))) as pool:
         issue_batches = list(pool.map(one, parts))
     revisions, rejected = {}, []
+    accepted_codes: dict[str, int] = {}
+    rejected_codes: dict[str, int] = {}
     for issues in issue_batches:
         for issue in issues:
             if not isinstance(issue, dict) or issue.get("id") not in by_id:
@@ -158,7 +162,9 @@ def main() -> int:
             ok, reason = acceptable(issue, row, previous, budgets, args.locale)
             if not ok:
                 rejected.append({**issue, "reason": reason})
+                rejected_codes[reason.split(" ")[0]] = rejected_codes.get(reason.split(" ")[0], 0) + 1
                 continue
+            accepted_codes[str(issue.get("code"))] = accepted_codes.get(str(issue.get("code")), 0) + 1
             revisions[row["id"]] = {"target": issue["suggestion"].strip(),
                                     "note": f"revised: {issue.get('code')}: {issue.get('note', '')[:120]}"}
     source_review = load_source_review(args.source_run)
@@ -174,6 +180,9 @@ def main() -> int:
         "auditPromptVersion": PROMPT_VERSION,
         "humanApproval": False,
     }
+    client.summary({"acceptedByCode": accepted_codes, "rejectedByReason": rejected_codes,
+                    "issued": sum(len(batch) for batch in issue_batches),
+                    "accepted": len(revisions), "rejected": len(rejected)})
     C.write_json(out / "review.json", review)
     C.write_json(out / "audit-cost.json", {**client.ledger(), "issues": sum(len(b) for b in issue_batches),
                                            "accepted": len(revisions), "rejected": len(rejected)})

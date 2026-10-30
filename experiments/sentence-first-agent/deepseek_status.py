@@ -45,11 +45,14 @@ def render(run: Path, tail: int) -> str:
         eta = f"  eta≈{max(0, total - done) * state['avgSeconds']:.0f}s"
     rows = [f"{state.get('label')}  {state.get('model')}/{state.get('effort')}  {state.get('status')}"
             f"  {share}{eta}",
-            f"calls {state.get('calls')}  hits {state.get('hits')}  failed {state.get('failed')}"
+            f"units {state.get('unitsDone')}  calls {state.get('calls')}  hits {state.get('hits')}"
+            f"  failed {state.get('failed')}  validation {state.get('validationFailures')}"
             f"  ${state.get('costUsd')}  elapsed {state.get('elapsedSeconds')}s"
             f"  avg {state.get('avgSeconds')}s/call"]
     if state.get("lastError"):
         rows.append(f"last error: {state['lastError']}")
+    if state.get("summary"):
+        rows.append(f"summary: {json.dumps(state['summary'], ensure_ascii=False)}")
     events = read_events(run, tail)
     if events:
         rows.append("")
