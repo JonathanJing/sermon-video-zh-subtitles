@@ -1,0 +1,216 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261030-flow-dryrun",
+  "runs": [
+    {
+      "label": "20261030-flow-zh",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/sentence-first-agent/20261030-flow-zh",
+      "skipped": {
+        "(none)": 1,
+        ".json": 24,
+        ".wav": 122,
+        ".jsonl": 9,
+        ".html": 1,
+        ".mp3": 1,
+        ".md": 1
+      }
+    },
+    {
+      "label": "20261030-flow-ko",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/sentence-first-agent/20261030-flow-ko",
+      "skipped": {
+        "(none)": 1,
+        ".json": 32,
+        ".jsonl": 9,
+        ".html": 1,
+        ".mp3": 1,
+        ".wav": 121
+      }
+    },
+    {
+      "label": "20261030-flow-es",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/sentence-first-agent/20261030-flow-es",
+      "skipped": {
+        "(none)": 1,
+        ".json": 32,
+        ".jsonl": 9,
+        ".html": 1,
+        ".mp3": 1,
+        ".wav": 121
+      }
+    }
+  ],
+  "files": [
+    {
+      "run": "20261030-flow-zh",
+      "path": "coherence-flow/state-check.json",
+      "kind": "whole",
+      "bytes": 762,
+      "truncated": false,
+      "sha256": "95104661d92173d8c469f878bf4a5fb84e11a481dc4eed1b2ec406ab709a993b",
+      "redactions": {}
+    },
+    {
+      "run": "20261030-flow-zh",
+      "path": "journal.ndjson",
+      "kind": "whole",
+      "bytes": 247,
+      "truncated": false,
+      "sha256": "1cb696415f78629e7c6c7ebca3dc48d4fd197ae44e468f31aeeeb0ec158f6432",
+      "redactions": {}
+    },
+    {
+      "run": "20261030-flow-zh",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 660,
+      "truncated": false,
+      "sha256": "a5dee144be2fa698a01d2d0a5100e36f2a0be8e00c61a776657d80ac6dc2fd15",
+      "redactions": {}
+    },
+    {
+      "run": "20261030-flow-zh",
+      "path": "state-check.json",
+      "kind": "whole",
+      "bytes": 1174,
+      "truncated": false,
+      "sha256": "914c42f5b6725453c03fecc7279c3619ce9ac1b73f9cb78081d5eaf8e8bad938",
+      "redactions": {}
+    },
+    {
+      "run": "20261030-flow-zh",
+      "path": "timings.tsv",
+      "kind": "whole",
+      "bytes": 90,
+      "truncated": false,
+      "sha256": "02ac0932933cbf354b3a15208a3018e977e6ee7a194b81c6d82de27f21913fab",
+      "redactions": {}
+    },
+    {
+      "run": "20261030-flow-zh",
+      "path": "tts-run.log",
+      "kind": "log",
+      "bytes": 21990,
+      "truncated": false,
+      "sha256": "549af68f3454376b81e137b08fa70568d9e41832e62f25afdbf0103e81aabef8",
+      "redactions": {}
+    },
+    {
+      "run": "20261030-flow-ko",
+      "path": "coherence-flow/state-check.json",
+      "kind": "whole",
+      "bytes": 760,
+      "truncated": false,
+      "sha256": "0e5b27ffde83e284f6e9bb9dd7fd19ef49db45e7605a74a8d5f4316501acda19",
+      "redactions": {}
+    },
+    {
+      "run": "20261030-flow-ko",
+      "path": "journal.ndjson",
+      "kind": "whole",
+      "bytes": 494,
+      "truncated": false,
+      "sha256": "244e0e51184a4b4a85b5040981cd92d650afce760ac63d847443ce46b59dd476",
+      "redactions": {}
+    },
+    {
+      "run": "20261030-flow-ko",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 805,
+      "truncated": false,
+      "sha256": "585eea2a8fe8bfe2eec4c4aad7120a4a8f2a7f2801f0f9a4e2f417824030b2b9",
+      "redactions": {
+        "home_dir": 2
+      }
+    },
+    {
+      "run": "20261030-flow-ko",
+      "path": "state-check.json",
+      "kind": "whole",
+      "bytes": 1663,
+      "truncated": false,
+      "sha256": "14f5c07a837b6bfac04cafc411bcc8ac91feb0138617beee48f88f4e6744c3b3",
+      "redactions": {}
+    },
+    {
+      "run": "20261030-flow-ko",
+      "path": "timings.tsv",
+      "kind": "whole",
+      "bytes": 90,
+      "truncated": false,
+      "sha256": "91d4137d2569315e7261c2505079607bd99049961c07ff50cba82d1eee9f6ef4",
+      "redactions": {}
+    },
+    {
+      "run": "20261030-flow-ko",
+      "path": "tts-run.log",
+      "kind": "log",
+      "bytes": 43938,
+      "truncated": false,
+      "sha256": "67f674acb81d6301f24180403373af93f3374c1b35fa53538ea27e1a373232e2",
+      "redactions": {}
+    },
+    {
+      "run": "20261030-flow-es",
+      "path": "coherence-flow/state-check.json",
+      "kind": "whole",
+      "bytes": 760,
+      "truncated": false,
+      "sha256": "0672ee30b49ee3246f5f2807d57efdc0c9151763e5befb5c4629cfe8577c4ed9",
+      "redactions": {}
+    },
+    {
+      "run": "20261030-flow-es",
+      "path": "journal.ndjson",
+      "kind": "whole",
+      "bytes": 494,
+      "truncated": false,
+      "sha256": "92d531540e9d915cee72c90e119f72056e62a9dff449ffa4bbbe589e91d4f3a9",
+      "redactions": {}
+    },
+    {
+      "run": "20261030-flow-es",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 805,
+      "truncated": false,
+      "sha256": "b7f8f88089d37b0dacb403052e1c82145e3e66179152e9b4414af30b2b8332c6",
+      "redactions": {
+        "home_dir": 2
+      }
+    },
+    {
+      "run": "20261030-flow-es",
+      "path": "state-check.json",
+      "kind": "whole",
+      "bytes": 1663,
+      "truncated": false,
+      "sha256": "5a0b2270e3304d9230d9c52c0204b5b958d73843eb12a479fdb9df7104af4dbf",
+      "redactions": {}
+    },
+    {
+      "run": "20261030-flow-es",
+      "path": "timings.tsv",
+      "kind": "whole",
+      "bytes": 90,
+      "truncated": false,
+      "sha256": "91d4137d2569315e7261c2505079607bd99049961c07ff50cba82d1eee9f6ef4",
+      "redactions": {}
+    },
+    {
+      "run": "20261030-flow-es",
+      "path": "tts-run.log",
+      "kind": "log",
+      "bytes": 43960,
+      "truncated": false,
+      "sha256": "a19dda7d6a2b8d42287e468d5302b8c4893aa785f678db8544aa86e9409145db",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}
