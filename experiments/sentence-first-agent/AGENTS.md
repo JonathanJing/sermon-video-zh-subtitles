@@ -233,13 +233,14 @@ python3 $EXP/spark_queue.py --session <session> --owner sentence-first-agent \
 python3 $EXP/sfa.py start --run $RUN --locale zh-Hans \
   --share-to ko=<ko-run> --share-to es=<es-run> \
   --anchor <anchor-manifest.json> --media <video> --window-start <窗口起点秒> --units <LO:HI> \
-  --title "<一行说明>" \
+  --title "<一行说明>" --sync|--no-sync --publish|--no-publish [--form full|clip] \
   [--segments <segments.json> --speaker-map <speaker-label-mapping.json> [--use-text]] \
-  [--english-package <english-source.json>] [--spark-session <session>] [--publish] \
+  [--english-package <english-source.json>] [--spark-session <session>] \
   [--check-git] [--check-package] [--plan] [--pretty] [--out <json>]
 ```
 
 - `--plan` 先看步骤再跑；`--pretty` 缩进输出；`--out` 另存 JSON。
+- **同步与发布是必填决策，不是默认值**：`--sync`/`--no-sync`、`--publish`/`--no-publish` 由用户在第 0 步给定；命令把形态、语言、同步、发布、标题、窗口写进每个 run 的 `decisions.json`，`preflight.py --stage setup` 会校验它。
 - 幂等：已有 `clip.json`+`sentences.jsonl` 跳过裁切（`--force-prepare` 重跑）；分发目标一致时不动，目标已有 `translations.jsonl`/`review.json`/`speech.jsonl` 时拒绝覆盖（`--force-share` 才写）。
 - 门禁：`--stage setup` 只查开工时存在的 `clip.json`/`sentences.jsonl`、`speakerId→Registry`、英文包证据，journal 记 `l1.start` 与 `l1.preflight.setup`；完整 `preflight.py`（需要 translations/review/speech）仍在 TTS 前跑，`l1.preflight` 由它记。
 - 双人 run 可以在这里加 `--segments`/`--speaker-map` 提前写入 `speakerId`；一致度低的句子仍按第 3 步交用户确认。
@@ -416,20 +417,26 @@ python3 $EXP/repair_sentence.py --run $RUN --id s0123 --remote SPARK:<run> --ses
 ```bash
 PUB="python3 $EXP/sfa_publish.py --config $EXP/pages/<pageId>.json"
 $PUB validate                                   # 先确认 pageId、environment、origin、run 与英文包路径
+$PUB preflight                                  # 发布门禁：英文包人工批准、回执 approved/reviewedAt、track 哈希、decisions
 $PUB assets --out <run>-publish/assets
 $PUB baseline --out <run>-publish/baseline
 $PUB stage1 --baseline <run>-publish/baseline --assets <run>-publish/assets --out <run>-publish/stage1
+$PUB publish-check --snapshot <run>-publish/stage1 --baseline <run>-publish/baseline
 $PUB publish --snapshot <run>-publish/stage1    # 需要用户对话授权
 $PUB verify --assets <run>-publish/assets --out <run>-publish/http-verification.json
 $PUB stage2 --stage1 <run>-publish/stage1 --assets <run>-publish/assets --evidence <run>-publish/http-verification.json --out <run>-publish/stage2
+$PUB publish-check --snapshot <run>-publish/stage2 --baseline <run>-publish/baseline
 $PUB publish --snapshot <run>-publish/stage2
 $PUB readback --stage2 <run>-publish/stage2
 $PUB baseline --out <run>-publish/baseline-english
 $PUB stage-english-reference --base <run>-publish/baseline-english --out <run>-publish/stage-english
+$PUB publish-check --snapshot <run>-publish/stage-english --baseline <run>-publish/baseline-english --require-english-reference
 $PUB publish --snapshot <run>-publish/stage-english
 ```
 
-`stage2` 也可以加 `--with-english`，把英文对照并进第二次部署，省第三次部署。
+- `preflight` 是资产生成前的门禁：英文来源包必须已批准、回执 `approved` 且 `reviewedAt` 不晚于现在、回执里的 `trackWavSha256` 必须等于当前 `run/track.wav`（结论后重配会失败，需要重新听审或按边界第 3 条另存收据）、每个语言 run 的 `decisions.json` 必须记录 sync/publish/标题。旧 run 没有 `decisions.json` 时加 `--allow-missing-decisions` 并在 `run.md` 记明。
+- `publish-check` 是每次 deploy 前的哈希绑定检查：catalog ↔ release ↔ page/content/captions/audio、`/english-reference/<pageId>.json` 与 `weekly-announcements-v1.json` 必须绑定当前 release/content/captions 哈希；`--baseline` 还会扫出仍引用旧 release/content/captions 哈希的文件。它覆盖旁路三件套里的英文对照与公告；统计目录 `catalog.json` 在 `sermon-feedback-api` 仓库，仍按本节手动同步。
+- `stage2` 也可以加 `--with-english`，把英文对照并进第二次部署，省第三次部署。
 3. `stage1` → `publish`：第一次部署，只加资产（和上面的投影修正）。
 4. `verify`：逐个 GET 新资产比对 SHA，MP3 查 Range。
 5. `stage2` → `publish`：第二次部署，release 与 v5/v4/v3 目录。

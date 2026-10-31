@@ -176,7 +176,7 @@ class PlanTest(unittest.TestCase):
         sfa = load("sfa")
         argv = ["start", "--run", "run-zh", "--locale", "zh-Hans",
                 "--anchor", str(root / "anchor.json"), "--media", str(root / "media.mp4"),
-                "--window-start", "0", "--units", "0:1"]
+                "--window-start", "0", "--units", "0:1", "--no-sync", "--no-publish"]
         if share:
             argv += ["--share-to", "ko=run-ko"]
         return sfa.build_parser().parse_args(argv)
@@ -205,7 +205,8 @@ class PlanTest(unittest.TestCase):
         sfa = load("sfa")
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
-            a = sfa.build_parser().parse_args(["start", "--run", "run-zh", "--locale", "zh-Hans"])
+            a = sfa.build_parser().parse_args(
+                ["start", "--run", "run-zh", "--locale", "zh-Hans", "--no-sync", "--no-publish"])
             errors = sfa.validate_start(a, True)
             self.assertTrue(any("--anchor" in error for error in errors))
             self.assertTrue(any("--media" in error for error in errors))
@@ -219,8 +220,79 @@ class PlanTest(unittest.TestCase):
             a = sfa.build_parser().parse_args(
                 ["start", "--run", "run-zh", "--locale", "zh-Hans",
                  "--anchor", str(root / "anchor.json"), "--media", str(root / "media.mp4"),
-                 "--window-start", "0", "--units", "0:1", "--segments", str(root / "segments.json")])
+                 "--window-start", "0", "--units", "0:1", "--segments", str(root / "segments.json"),
+                 "--no-sync", "--no-publish"])
             self.assertTrue(any("--speaker-map" in error for error in sfa.validate_start(a, False)))
+
+
+class DecisionsTest(unittest.TestCase):
+    def test_the_two_decisions_are_required(self):
+        sfa = load("sfa")
+        parser = sfa.build_parser()
+        with self.assertRaises(SystemExit):
+            parser.parse_args(["start", "--run", "r", "--locale", "zh-Hans"])
+        args = parser.parse_args(["start", "--run", "r", "--locale", "zh-Hans",
+                                  "--sync", "--no-publish", "--form", "clip"])
+        self.assertTrue(args.sync)
+        self.assertFalse(args.publish)
+        self.assertEqual(args.form, "clip")
+
+    def test_build_decisions_records_the_frozen_values(self):
+        sfa = load("sfa")
+        args = sfa.build_parser().parse_args(
+            ["start", "--run", "run-zh", "--locale", "zh-Hans", "--sync", "--publish",
+             "--form", "full", "--title", "耶稣的应许", "--window-start", "5.5", "--units", "0:9"])
+        decisions = sfa.build_decisions(args, Path("/repo/artifacts/sentence-first-agent/run-zh"),
+                                       shares={"ko": Path("/repo/artifacts/sentence-first-agent/run-ko")},
+                                       sentences=10, clip_seconds=12.5)
+        self.assertEqual(decisions["schemaVersion"], "sentence-first-frozen-decisions-v1")
+        self.assertEqual(decisions["locales"], ["zh-Hans", "ko"])
+        self.assertTrue(decisions["sync"])
+        self.assertTrue(decisions["publish"])
+        self.assertEqual(decisions["form"], "full")
+        self.assertEqual(decisions["title"], "耶稣的应许")
+        self.assertEqual(decisions["sentences"], 10)
+        self.assertEqual(decisions["clipSeconds"], 12.5)
+
+
+class PreflightDecisionsTest(unittest.TestCase):
+    def _run_with_decisions(self, root: Path, decisions: dict | None):
+        run = make_run(root, "run-zh")
+        if decisions is not None:
+            (run / "decisions.json").write_text(json.dumps(decisions), encoding="utf-8")
+        return run
+
+    def test_missing_decisions_is_a_warning_but_required_mode_fails(self):
+        preflight = load("preflight")
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            run = self._run_with_decisions(root, None)
+            registry = make_registry(root)
+            out = root / "preflight.json"
+            self.assertEqual(preflight.main(["--stage", "setup", "--run", str(run),
+                                             "--registry", str(registry), "--locale", "zh-Hans",
+                                             "--out", str(out)]), 0)
+            self.assertTrue(any(w["name"] == "decisions:file" for w in
+                                json.loads(out.read_text(encoding="utf-8"))["warnings"]))
+            self.assertEqual(preflight.main(["--stage", "setup", "--run", str(run),
+                                             "--registry", str(registry), "--locale", "zh-Hans",
+                                             "--require-decisions"]), 1)
+
+    def test_complete_decisions_pass_and_publishing_needs_a_title(self):
+        preflight = load("preflight")
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            complete = {"schemaVersion": "sentence-first-frozen-decisions-v1",
+                        "locales": ["zh-Hans", "ko"], "sync": False, "publish": True,
+                        "title": "耶稣的应许", "form": "full"}
+            run = self._run_with_decisions(root, complete)
+            registry = make_registry(root)
+            self.assertEqual(preflight.main(["--stage", "setup", "--require-decisions", "--run", str(run),
+                                             "--registry", str(registry), "--locale", "zh-Hans"]), 0)
+            broken = dict(complete, title="  ")
+            (run / "decisions.json").write_text(json.dumps(broken), encoding="utf-8")
+            self.assertEqual(preflight.main(["--stage", "setup", "--require-decisions", "--run", str(run),
+                                             "--registry", str(registry), "--locale", "zh-Hans"]), 1)
 
 
 class PreflightSetupStageTest(unittest.TestCase):

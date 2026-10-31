@@ -31,6 +31,7 @@ from __future__ import annotations
 import argparse
 import copy
 from dataclasses import dataclass
+from datetime import datetime, timedelta, timezone
 import hashlib
 import html
 import json
@@ -241,6 +242,279 @@ def _check_consistency(cfg: PageConfig) -> None:
                          f"releasePackageId does not include pageId/locale ({locale})")
         contract.require(cfg.environment in release_id, f"releasePackageId does not include the environment ({locale})")
         contract.require(cfg.origin().startswith("https://"), f"unknown Hosting origin for {cfg.environment}")
+
+
+# --- preflight gates -----------------------------------------------------------
+
+RECEIPT_SCHEMA = "sentence-first-human-review-verdict-v1"
+DECISION_SCHEMA = "sentence-first-frozen-decisions-v1"
+
+
+def _english_source_checks(cfg: PageConfig) -> tuple[dict, str]:
+    esp, esp_sha = cfg.english_source()
+    contract.require(esp.get("schemaVersion") == "sermon-english-source-package-v1",
+                     "Unsupported English source package")
+    contract.require(esp.get("status") == "ready_for_translation",
+                     "English source is not approved for translation")
+    contract.require(esp.get("translationEligible") is True, "English source is not translation-eligible")
+    contract.require((esp.get("review") or {}).get("humanApproval") is True, "English source needs human approval")
+    window = esp["source"]["approvedWindow"]
+    contract.require(window.get("humanApproval") is True and window.get("status") == "approved",
+                     "Source window is not approved")
+    contract.require(hashlib.sha256(cfg.source_url.encode()).hexdigest() == esp["source"]["sourceUrlHash"],
+                     "source.url differs from the English package's sourceUrlHash")
+    return esp, esp_sha
+
+
+def _receipt_checks(cfg: PageConfig) -> dict:
+    receipt = json.loads(cfg.verdict_path.read_text(encoding="utf-8"))
+    contract.require(receipt.get("schemaVersion") == RECEIPT_SCHEMA, "Unsupported review verdict schema")
+    contract.require(receipt.get("verdict") == "approved", "Human review verdict is not approved")
+    contract.require(receipt.get("pageId") in (None, cfg.page_id), "Verdict pageId differs from the config")
+    reviewed_at = datetime.fromisoformat(str(receipt.get("reviewedAt", "")).replace("Z", "+00:00"))
+    contract.require(reviewed_at <= datetime.now(timezone.utc) + timedelta(seconds=120),
+                     "reviewedAt is in the future")
+    locales = receipt.get("locales") or {}
+    warnings = []
+    for locale in cfg.locales:
+        entry = locales.get(locale)
+        contract.require(isinstance(entry, dict), f"Review verdict has no entry for {locale}")
+        track = cfg.run_dir(locale) / "track.wav"
+        contract.require(entry.get("trackWavSha256") == sha_file(track),
+                         f"{locale}: track.wav changed after the review; the receipt no longer binds the audio")
+        review_mp3 = cfg.run_dir(locale) / "review.mp3"
+        if review_mp3.is_file() and entry.get("reviewMp3Sha256"):
+            contract.require(entry["reviewMp3Sha256"] == sha_file(review_mp3),
+                             f"{locale}: review.mp3 changed after the review")
+        elif entry.get("reviewMp3Sha256") and not review_mp3.is_file():
+            warnings.append(f"{locale}: verdict binds a review.mp3 that is not in the run directory")
+    return {"reviewedAt": receipt.get("reviewedAt"), "reviewer": receipt.get("reviewer"), "warnings": warnings}
+
+
+def _decision_checks(cfg: PageConfig, *, allow_missing: bool) -> dict:
+    decisions, warnings = {}, []
+    for locale in cfg.locales:
+        path = cfg.run_dir(locale) / "decisions.json"
+        if not path.is_file():
+            if allow_missing:
+                warnings.append(f"{locale}: decisions.json missing (allowed by --allow-missing-decisions)")
+                continue
+            contract.require(False, f"{locale}: decisions.json missing; start the run with sfa.py start "
+                                    "or pass --allow-missing-decisions for a legacy run")
+        data = json.loads(path.read_text(encoding="utf-8"))
+        contract.require(data.get("schemaVersion") == DECISION_SCHEMA, f"{locale}: unsupported decisions schema")
+        contract.require(data.get("publish") is True, f"{locale}: decisions say publish=false")
+        contract.require(isinstance(data.get("sync"), bool), f"{locale}: sync decision is not recorded")
+        contract.require(isinstance(data.get("title"), str) and bool(data["title"].strip()),
+                         f"{locale}: the frozen title is empty")
+        contract.require(locale in (data.get("locales") or []), f"{locale}: decisions do not list this locale")
+        decisions[locale] = {key: data.get(key) for key in ("form", "sync", "publish", "title")}
+    return {"decisions": decisions, "warnings": warnings}
+
+
+def cmd_preflight(cfg: PageConfig, *, allow_missing_decisions: bool = False) -> dict:
+    """The publish gate before assets: identity, English approval, receipt freshness, decisions."""
+    cfg.require_inputs()
+    esp, esp_sha = _english_source_checks(cfg)
+    receipt = _receipt_checks(cfg)
+    decision_info = _decision_checks(cfg, allow_missing=allow_missing_decisions)
+    return {"ok": True, "pageId": cfg.page_id, "environment": cfg.environment, "origin": cfg.origin(),
+            "locales": list(cfg.locales), "englishSourceJsonSha256": esp_sha,
+            "sourceMediaSha256": esp["source"]["media"]["sha256"],
+            "verdict": {"reviewedAt": receipt["reviewedAt"], "reviewer": receipt["reviewer"]},
+            "decisions": decision_info["decisions"],
+            "warnings": receipt["warnings"] + decision_info["warnings"]}
+
+
+def _read_json(path: Path):
+    return json.loads(path.read_text(encoding="utf-8"))
+
+
+def _public_file(public: Path, rel: str, problems: list) -> Path | None:
+    cleaned = rel.lstrip("/")
+    if ".." in Path(cleaned).parts:
+        problems.append({"path": rel, "detail": "unsafe public path"})
+        return None
+    return public / cleaned
+
+
+def cmd_publish_check(cfg: PageConfig, snapshot: Path, *, baseline: Path | None = None,
+                      require_english_reference: bool = False,
+                      require_announcements: bool = False) -> dict:
+    """Verify every cross-artifact hash binding before a deploy, and scan for stale old hashes."""
+    public = snapshot / "public"
+    contract.require(public.is_dir(), f"not a snapshot: {snapshot}")
+    problems, warnings = [], []
+    _, esp_sha = cfg.english_source()
+    catalog_path = public / "multilingual-v3.json"
+    contract.require(catalog_path.is_file(), "snapshot has no multilingual-v3.json")
+    catalog = _read_json(catalog_path)
+    pages = [page for page in catalog.get("pages", []) if page.get("id") == cfg.page_id]
+    contract.require(len(pages) == 1, f"page appears {len(pages)} times in the live catalog")
+    page = pages[0]
+    if page.get("sourceIdentitySha256") != esp_sha:
+        problems.append({"path": "multilingual-v3.json", "detail": "catalog source identity differs from the English package"})
+    v5_path = public / "multilingual-v5.json"
+    if v5_path.is_file():
+        v5_pages = [entry for entry in _read_json(v5_path).get("pages", []) if entry.get("id") == cfg.page_id]
+        if len(v5_pages) != 1:
+            problems.append({"path": "multilingual-v5.json", "detail": "page missing from the v5 catalog"})
+        else:
+            for locale in cfg.locales:
+                if ((v5_pages[0].get("targets") or {}).get(locale) or {}).get("releasePackageJsonSha256") != \
+                        ((page.get("targets") or {}).get(locale) or {}).get("releasePackageJsonSha256"):
+                    problems.append({"path": "multilingual-v5.json", "detail": f"{locale}: v5 release hash differs from v3"})
+
+    content_by_locale, current_hashes = {}, set()
+    for locale in cfg.locales:
+        target = (page.get("targets") or {}).get(locale)
+        if not isinstance(target, dict):
+            problems.append({"path": "multilingual-v3.json", "detail": f"{locale}: no target"})
+            continue
+        release_rel = target.get("releasePackageUrl", "")
+        release_path = _public_file(public, release_rel, problems)
+        if release_path is None or not release_path.is_file():
+            problems.append({"path": release_rel, "detail": f"{locale}: release file missing"})
+            continue
+        release_sha = sha_file(release_path)
+        if release_sha != target.get("releasePackageJsonSha256"):
+            problems.append({"path": release_rel, "detail": f"{locale}: release hash differs from the catalog"})
+        current_hashes.add(release_sha)
+        release = _read_json(release_path)
+        if release.get("pageId") != cfg.page_id or release.get("targetLocale") != locale:
+            problems.append({"path": release_rel, "detail": f"{locale}: release identity mismatch"})
+        if release.get("status") != "published_http_verified":
+            problems.append({"path": release_rel, "detail": f"{locale}: release status is {release.get('status')!r}"})
+        assets = {}
+        for role in ("page", "content", "captions", "audio"):
+            matches = [asset for asset in release.get("assets", []) if asset.get("role") == role]
+            if len(matches) != 1:
+                problems.append({"path": release_rel, "detail": f"{locale}: expected one {role} asset"})
+                continue
+            asset = matches[0]
+            asset_path = _public_file(public, asset.get("path", ""), problems)
+            if asset_path is None or not asset_path.is_file():
+                problems.append({"path": asset.get("path", ""), "detail": f"{locale}: {role} file missing"})
+                continue
+            digest = sha_file(asset_path)
+            if digest != asset.get("sha256"):
+                problems.append({"path": asset["path"], "detail": f"{locale}: {role} hash differs from the release"})
+            assets[role] = (asset_path, digest)
+            current_hashes.add(digest)
+        content_path, content_digest = assets.get("content", (None, None))
+        captions_path, captions_digest = assets.get("captions", (None, None))
+        if content_path is None or captions_path is None:
+            continue
+        content, captions = _read_json(content_path), _read_json(captions_path)
+        content_by_locale[locale] = (content, content_digest, captions_digest)
+        if content.get("englishSourcePackageJsonSha256") != esp_sha:
+            problems.append({"path": str(content_path.relative_to(public)), "detail": f"{locale}: content source hash mismatch"})
+        if content.get("targetLanguageCandidateJsonSha256") != release.get("targetLanguageCandidateJsonSha256"):
+            problems.append({"path": str(content_path.relative_to(public)), "detail": f"{locale}: content candidate hash mismatch"})
+        cues = content.get("cues") or []
+        if not cues:
+            problems.append({"path": str(content_path.relative_to(public)), "detail": f"{locale}: content has no cues"})
+        elif cues[-1]["end"] > float(content.get("durationSeconds", 0)) + 0.001:
+            problems.append({"path": str(content_path.relative_to(public)), "detail": f"{locale}: last cue ends after durationSeconds"})
+        group_ids = [cue.get("textGroupId") for cue in cues]
+        if len(set(group_ids)) != len(group_ids):
+            problems.append({"path": str(content_path.relative_to(public)), "detail": f"{locale}: duplicate textGroupId"})
+        if [cue.get("textGroupId") for cue in captions.get("cues", [])] != group_ids:
+            problems.append({"path": str(captions_path.relative_to(public)), "detail": f"{locale}: captions group order differs from content"})
+        if captions.get("audioPackageJsonSha256") != release.get("targetLanguageAudioPackageJsonSha256"):
+            problems.append({"path": str(captions_path.relative_to(public)), "detail": f"{locale}: captions audio-package hash mismatch"})
+
+    english_path = public / "english-reference" / f"{cfg.page_id}.json"
+    english_info = {"present": english_path.is_file(), "locales": []}
+    if english_path.is_file():
+        reference = _read_json(english_path)
+        if reference.get("pageId") != cfg.page_id:
+            problems.append({"path": str(english_path.relative_to(public)), "detail": "English reference pageId mismatch"})
+        for locale in cfg.locales:
+            target = (reference.get("targets") or {}).get(locale)
+            if not isinstance(target, dict):
+                problems.append({"path": str(english_path.relative_to(public)), "detail": f"{locale}: English reference misses the locale"})
+                continue
+            english_info["locales"].append(locale)
+            content, content_digest, captions_digest = content_by_locale.get(locale, (None, None, None))
+            if target.get("contentSha256") != content_digest or target.get("captionsSha256") != captions_digest:
+                problems.append({"path": str(english_path.relative_to(public)),
+                                 "detail": f"{locale}: English reference binds older content/captions"})
+            blocks = target.get("blocks") or []
+            if content is not None and len(blocks) != len(content.get("cues") or []):
+                problems.append({"path": str(english_path.relative_to(public)),
+                                 "detail": f"{locale}: English reference has {len(blocks)} blocks for {len(content.get('cues') or [])} cues"})
+    elif require_english_reference:
+        problems.append({"path": f"english-reference/{cfg.page_id}.json", "detail": "English reference is required but missing"})
+    else:
+        warnings.append("English reference is not staged yet (the third deploy adds it)")
+
+    announcements_info = {"present": (public / "weekly-announcements-v1.json").is_file(), "entries": 0}
+    ann_path = public / "weekly-announcements-v1.json"
+    if ann_path.is_file():
+        announcements = _read_json(ann_path).get("announcements", [])
+        for locale in cfg.locales:
+            target = (page.get("targets") or {}).get(locale) or {}
+            release_sha = target.get("releasePackageJsonSha256")
+            entries = [item for item in announcements
+                       if item.get("pageID") == cfg.page_id and item.get("locale") == locale]
+            if not entries:
+                (problems if require_announcements else warnings).append(
+                    f"{locale}: no weekly-announcements entry for this page")
+                continue
+            for entry in entries:
+                announcements_info["entries"] += 1
+                if entry.get("releaseSHA256") != release_sha:
+                    problems.append({"path": "weekly-announcements-v1.json",
+                                     "detail": f"{locale}: announcement binds an older release hash"})
+                if entry.get("sourceIdentitySHA256") != esp_sha:
+                    problems.append({"path": "weekly-announcements-v1.json",
+                                     "detail": f"{locale}: announcement source identity differs"})
+    elif require_announcements:
+        problems.append({"path": "weekly-announcements-v1.json", "detail": "announcement sidecar is required but missing"})
+    else:
+        warnings.append("weekly-announcements-v1.json is not in this snapshot")
+
+    stale = []
+    if baseline is not None:
+        baseline_public = baseline / "public"
+        old_hashes = set()
+        old_catalog = baseline_public / "multilingual-v3.json"
+        if old_catalog.is_file():
+            for entry in _read_json(old_catalog).get("pages", []):
+                if entry.get("id") != cfg.page_id:
+                    continue
+                for target in (entry.get("targets") or {}).values():
+                    if target.get("releasePackageJsonSha256"):
+                        old_hashes.add(target["releasePackageJsonSha256"])
+        old_reference = baseline_public / "english-reference" / f"{cfg.page_id}.json"
+        if old_reference.is_file():
+            for target in (_read_json(old_reference).get("targets") or {}).values():
+                for key in ("contentSha256", "captionsSha256", "releasePackageJsonSha256"):
+                    if target.get(key):
+                        old_hashes.add(target[key])
+        stale_hashes = sorted(old_hashes - current_hashes)
+        if stale_hashes:
+            for path in sorted(public.rglob("*")):
+                if not path.is_file() or path.suffix not in (".json", ".html", ".txt", ".xml"):
+                    continue
+                try:
+                    text = path.read_text(encoding="utf-8")
+                except (OSError, UnicodeDecodeError):
+                    continue
+                for digest in stale_hashes:
+                    if digest in text:
+                        stale.append({"path": "/" + path.relative_to(public).as_posix(), "hash": digest})
+    if stale:
+        for item in stale:
+            problems.append({"path": item["path"], "detail": "still references an old release/content/captions hash"})
+
+    return {"ok": not problems, "pageId": cfg.page_id, "environment": cfg.environment,
+            "snapshot": str(snapshot), "problems": problems, "warnings": warnings,
+            "staleReferences": stale,
+            "checked": {"catalog": "multilingual-v3.json", "locales": list(cfg.locales),
+                        "englishReference": english_info, "announcements": announcements_info,
+                        "baselineScanned": baseline is not None}}
 
 
 # --- assets --------------------------------------------------------------------
@@ -648,6 +922,14 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--config", type=Path, required=True, help="pages/<pageId>.json")
     sub = parser.add_subparsers(dest="cmd", required=True)
     sub.add_parser("validate", help="print the resolved page identity and check inputs")
+    preflight = sub.add_parser("preflight", help="publish gate: English approval, receipt freshness, decisions")
+    preflight.add_argument("--allow-missing-decisions", action="store_true",
+                           help="legacy run without decisions.json (recorded in run.md instead)")
+    check = sub.add_parser("publish-check", help="verify hash bindings and hunt stale hashes before a deploy")
+    check.add_argument("--snapshot", type=Path, required=True)
+    check.add_argument("--baseline", type=Path, help="live baseline snapshot; enables the old-hash scan")
+    check.add_argument("--require-english-reference", action="store_true")
+    check.add_argument("--require-announcements", action="store_true")
     assets = sub.add_parser("assets"); assets.add_argument("--out", type=Path, required=True)
     baseline = sub.add_parser("baseline"); baseline.add_argument("--out", type=Path, required=True)
     baseline.add_argument("--cache-public", type=Path); baseline.add_argument("--cache-receipt", type=Path)
@@ -683,6 +965,12 @@ def main(argv=None) -> int:
         cfg = load_config(config_path)
         if args.cmd == "validate":
             result = cmd_validate(cfg)
+        elif args.cmd == "preflight":
+            result = cmd_preflight(cfg, allow_missing_decisions=args.allow_missing_decisions)
+        elif args.cmd == "publish-check":
+            result = cmd_publish_check(cfg, args.snapshot, baseline=args.baseline,
+                                       require_english_reference=args.require_english_reference,
+                                       require_announcements=args.require_announcements)
         elif args.cmd == "assets":
             result = cmd_assets(cfg, args.out)
         elif args.cmd == "baseline":
@@ -707,7 +995,7 @@ def main(argv=None) -> int:
         print(f"sfa_publish: {exc}", file=sys.stderr)
         return 1
     print(json.dumps(result, ensure_ascii=False))
-    return 0
+    return 0 if result.get("ok", True) else 1
 
 
 if __name__ == "__main__":
