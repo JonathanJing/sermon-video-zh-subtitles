@@ -20,7 +20,7 @@
 | legacy Qwen ASR/ForcedAligner | `SERMON_SPEECH_BACKEND=auto` 先用 Spark，受限故障时回到 MacBook MLX；`spark`/`macbook` 可强制指定 |
 | canonical 多语言 TTS | [正式 renderer](formal-layer3-renderer.zh.md) 默认 `cuda:0`/BF16；新单讲员周日任务加 `--spark-production`，按 **8 副本 × batch8** 在 Spark 运行。它仍需操作员指定模型路径、传输和任务目录，不具备完整跨机自动 dispatch |
 | Mac 两路 1×8 配音 | 需要在本机离线出 WAV 时，用 [两路启动器](mac-tts-two-way.zh.md)：两个进程各 1 副本 × batch 8，seed 按原始窗口统一；实测合并 RTF 0.51，第三路无增益。它不是正式 renderer，仍需人工整轨听审 |
-| canonical 配音回转写 | CUDA worker 当前硬编码 CUDA；按本策略在 Spark 运行。完整 MacBook 自动 fallback adapter 尚未接入，不把 legacy 适配器代称为正式 producer |
+| canonical 配音回转写（2026-10-28 退役） | 回转写筛查已从正式与实验生产路径移除，不再派发；旧运行保留原后端与产物。历史：CUDA worker 硬编码 CUDA、按本策略在 Spark 运行，完整 MacBook 自动 fallback adapter 未接入，不把 legacy 适配器代称为正式 producer |
 | 转写、翻译、复核 API | 继续当前周次的生产 policy；迁移机器只迁移调用与账本，不更换内容模型和人审要求 |
 | FFmpeg、打包、hash、发布 | 选靠近输入的 CPU worker，减少媒体搬运；发布目标及 HTTP、设备、现场证据保持各自边界 |
 
@@ -32,11 +32,11 @@ Spark 上需要调 OpenAI API 的任务读 `~/.config/tongxing/openai.env`（dev
 
 [10 月 1 日分层 A/B](local-model-layer-latency-ab-20261001.zh.md)中，同 checkpoint 的 TTS 热推理按音频时长归一后，Spark CUDA/BF16 约为 MacBook MPS/FP32 的 4.5 倍。按 9 月 27 日三语工作量外推，纯 TTS 约 56 分钟与 249 分钟。不同运行时、精度、语言和正式 checkpoint 的边界见原报告，这些数值不是整篇实测或质量晋级。
 
-随后执行的[正式权重组件验收](local-production-performance-acceptance-20261001.zh.md)使用 `75d28…`、9/27 三语短长句与三次重复：同语言组件墙钟的 Mac/Spark 比为 1.71–3.26×，cold 模型加载 Spark 更慢。原 4.5×属于另一权重和样本的历史代理值；没有整周实测前不据新短样本重写总流程预算。该历史验收的正式 batch 基线为1，保留回转写待听审项。当前新单讲员周日 TTS 使用 [8×8 生产入口](formal-layer3-renderer.zh.md#周日单讲员spark-生产按-88)，原任务恢复保留原配置。
+随后执行的[正式权重组件验收](local-production-performance-acceptance-20261001.zh.md)使用 `75d28…`、9/27 三语短长句与三次重复：同语言组件墙钟的 Mac/Spark 比为 1.71–3.26×，cold 模型加载 Spark 更慢。原 4.5×属于另一权重和样本的历史代理值；没有整周实测前不据新短样本重写总流程预算。该历史验收的正式 batch 基线为1；当时保留的回转写待听审项已随 2026-10-28 机器听审链退役，不再是当前要求。当前新单讲员周日 TTS 使用 [8×8 生产入口](formal-layer3-renderer.zh.md#周日单讲员spark-生产按-88)，原任务恢复保留原配置。
 
 Spark 上的全本地预算中，文字初译＋复核代理约 71 分钟，已经超过 TTS 的约 56 分钟；优化不能只盯配音。总体加速、云端资源和成本调研见 [生产时长与 GCP 评估](gcp-production-feasibility-20261001.zh.md)。
 
-预算假设模型驻留。路由修改之后，四项提速代码已完成并行开发、离线验证与受限组件实测，入口、恢复边界与验收状态见[提速 backlog](local-production-speed-backlog.zh.md)。legacy 语音采用受限批次内驻留，正式 TTS/ASR 提供显式 batching，CPU 保存可与合成重叠；CPU可重复提速、10分钟及整周吞吐仍待测，不能据此降低原预算。云端编排尚未实现。
+预算假设模型驻留。路由修改之后，四项提速代码已完成并行开发、离线验证与受限组件实测，入口、恢复边界与验收状态见[提速 backlog](local-production-speed-backlog.zh.md)。legacy 语音采用受限批次内驻留，正式 TTS 提供显式 batching（回转写 ASR 批处理随 2026-10-28 机器听审链退役），CPU 保存可与合成重叠；CPU可重复提速、10分钟及整周吞吐仍待测，不能据此降低原预算。云端编排尚未实现。
 
 ## 路由策略验证
 

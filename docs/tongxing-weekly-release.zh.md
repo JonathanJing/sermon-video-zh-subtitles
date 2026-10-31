@@ -2,7 +2,7 @@
 
 本流程接收既有生产脚本生成的单周候选包，保存完整历史目录，再核验发布后的公共资源。它不调用模型、不重新生成音频、不授予内容审核或现场同步批准，也不创建或替换现有定时任务。生产和配音仍按 [本地生产 runbook](codex-local-production-runbook.zh.md) 执行。
 
-正文核查日期：2026-10-22。当前 registry／`weekly.json` 流程是 Layer 4 的 legacy adapter。Production 多语言周更输入同一 `targetLocale` 的有效 `Target-Language Candidate` 和 `Target-Language Audio Package`，按各自人审或有效豁免生成逐语言 Release。当前目录以 [Catalog v3](../schemas/sermon-multilingual-catalog-v3.schema.json) 为人工审核基数、[v4](../schemas/sermon-multilingual-catalog-v4.schema.json) 增加机器质检、[v5](../schemas/sermon-multilingual-catalog-v5.schema.json) 汇聚跨来源 family；两端优先读取 v5→v4→v3。Release schema v3 提供四产物合同，v4 增加机器质检，历史 v2 继续可读；`/releases-v2/` 同时承载 v2/v3，`/releases-v4/` 承载 v4，旧 `/releases/` 保留 v1 兼容。纯文字发行也必须由同语言 Layer 3 显式记录 `audio_unavailable`，且先确认 Web/iOS 都支持该能力。旧 v1/v2 CLI 不能作为正式 v3 周更证据。`published_http_verified` 不反向提升翻译、音频或现场审核状态。
+正文核查日期：2026-10-22；2026-10-28 同步音频门禁：音频机器听审已退役，人工整轨 1× 听审（`audio-human-review-receipt-v5`）是唯一音频收据。当前 registry／`weekly.json` 流程是 Layer 4 的 legacy adapter。Production 多语言周更输入同一 `targetLocale` 的有效 `Target-Language Candidate` 和 `Target-Language Audio Package`，文字按人工审核或有效的[文本机器质检豁免](machine-quality-waiver.zh.md)生成，音频按人工整轨 1× 听审收据生成逐语言 Release。当前目录以 [Catalog v3](../schemas/sermon-multilingual-catalog-v3.schema.json) 为人工审核基数、[v4](../schemas/sermon-multilingual-catalog-v4.schema.json) 增加文字机器质检、[v5](../schemas/sermon-multilingual-catalog-v5.schema.json) 汇聚跨来源 family；两端优先读取 v5→v4→v3。Release schema v3 提供四产物合同，v4 增加文字机器质检，历史 v2 继续可读；`/releases-v2/` 同时承载 v2/v3，`/releases-v4/` 承载 v4，旧 `/releases/` 保留 v1 兼容。纯文字发行也必须由同语言 Layer 3 显式记录 `audio_unavailable`，且先确认 Web/iOS 都支持该能力。旧 v1/v2 CLI 不能作为正式 v3 周更证据。`published_http_verified` 不反向提升翻译、音频或现场审核状态。
 
 ## 每周路径
 
@@ -14,9 +14,9 @@
 
 正式多语言目录的页面名称采用默认内容语言已批准的「系列名 · 本篇标题」，例如「启示录：耶稣带来的安慰与盼望 · 耶稣配得」。`multilingual-v3.json` 的 `pages[].title` 供 iOS 选页列表和本周页头直接读取；只改目录元数据即可让已安装的 App 在刷新目录后显示新名称。每周发布前用同语言 `content/<pageId>/<locale>.json` 的 `series`、`title` 校验该字段，不能只写简称或从未审核文字另造系列名。本篇标题已在[系列各篇标题表](series-sermon-titles.zh.md)登记且英文标题与来源一致时，直接采用表中三语标题，不再单独批准标题。
 
-### 机器质检周次：v4 目录与 v3 投影
+### 文字机器质检周次：v4 目录与 v3 投影
 
-按 [机器质检豁免](machine-quality-waiver.zh.md) 自动发布的语言走四层封存（`build_full_video_app_release.py seal` 与托管发布），不走下面的 v3 组装器。封存写出 `/releases-v4/<pageId>/<locale>.json`、`/multilingual-v4.json`，并把 `/multilingual-v3.json` 写成 v4 去掉机器质检语言后的投影：旧版 iOS 看到的目录与上周相同，新版网页和 iOS 先读 v5，再回退 v4/v3，显示“机器质检”标签和披露文案。两份目录一起比较交换、一起回读；只会改 v3 的旧组装器遇到带 v4 的基线会拒绝。字段见 [四产物公开交付](layer4-four-product-public-delivery.zh.md#机器质检发布release-v4--catalog-v4)。
+按[文本机器质检豁免](machine-quality-waiver.zh.md)自动发布的语言走四层封存（`build_full_video_app_release.py seal` 与托管发布），不走下面的 v3 组装器；音频自 2026-10-28 起仍须人工整轨 1× 听审，不随文字豁免自动放行。封存写出 `/releases-v4/<pageId>/<locale>.json`、`/multilingual-v4.json`，并把 `/multilingual-v3.json` 写成 v4 去掉文字机器质检语言后的投影：旧版 iOS 看到的目录与上周相同，新版网页和 iOS 先读 v5，再回退 v4/v3，显示“机器质检”标签和披露文案。两份目录一起比较交换、一起回读；只会改 v3 的旧组装器遇到带 v4 的基线会拒绝。字段见 [四产物公开交付](layer4-four-product-public-delivery.zh.md#文字机器质检发布release-v4--catalog-v4)。
 
 ### 同一讲道、不同视频来源：v5 family 页面
 

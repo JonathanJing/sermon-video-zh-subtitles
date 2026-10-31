@@ -252,13 +252,13 @@ shasum -a 256 /absolute/path/to/full-source.mp4 \
 
 **输入与准入**
 
-- 通过门禁的同 locale Target-Language Candidate、Layer 1 anchors/source package、语言音色注册及绑定的人工文字批准或支持路径上的有效机器质检收据。
-- 运行前对照 candidate hash、plugin identity、checkpoint、代码和配置；身份不匹配就停在 Layer 3 preflight，不派发 TTS/ASR。
+- 通过门禁的同 locale Target-Language Candidate、Layer 1 anchors/source package、语言音色注册及绑定的人工文字批准或有效文本机器豁免收据。
+- 运行前对照 candidate hash、plugin identity、checkpoint、代码和配置；身份不匹配就停在 Layer 3 preflight，不派发 TTS。
 
 **输出与检查**
 
-- 保存逐句/逐单元 TTS 输出、renderer manifest、文件 hash、真实时长、解码结果、回转写 ASR 筛查、同步排程和完整 Audio Package。
-- ASR 是筛查，不等于试听通过。正式人工路径须全文 1 倍速听审并对照视频同步，裁决 ASR 疑点；机器豁免路径须使用与当前实现、设置、候选及音频绑定的校准/QC 收据。
+- 保存逐句/逐单元 TTS 输出、renderer manifest、文件 hash、真实时长、解码结果、确定性音频 QC 预检、同步排程和完整 Audio Package。
+- 2026-10-28 起 ASR 初筛、二级 ASR 与机器试听豁免已退役。音频发布门禁只有人工整轨 1 倍速听审并对照视频同步，产出 `audio-human-review-receipt-v5`；确定性音频 QC（时长／静音／削波）只作预检，不构成接受依据。
 - 每个发布语言都要有同 locale 音频包，或在发布计划/producer/client 明确支持时产生显式 `audio_unavailable`。
 
 ## 五、Layer 4：多语言页面发布与播放
@@ -272,7 +272,7 @@ shasum -a 256 /absolute/path/to/full-source.mp4 \
 - 本次 release plan 的 locale join 要求；只有计划明确要求时，等待多个 locale 同时发布。
 - 正式站完整基线快照、当前 catalog、可回退 catalog、每个既有文件的 path/hash map 和旧站 Firebase 配置。新本地环境必须从受信任的已发布 release/快照备份或正式保管位置取得这些文件，再按随附 receipt 和线上读回校验；不允许从空目录构造 Production 全站基线。
 
-机器审核发布必须按适用的 release/catalog 版本产出 machine_checked 状态、逐项依据及披露，并提供人工投影 catalog；不得把 release v4 与 v3 projection 混淆。普通人工批准路径使用合同指定的正式 package/catalog 版本。纯文字 release 只有在 release plan、producer 和 Web/iOS 客户端都支持时才使用。
+文本机器豁免发布必须按适用的 release/catalog 版本产出 machine_checked 文字状态、逐项依据及披露，并提供人工投影 catalog；不得把 release v4 与 v3 projection 混淆。音频始终由人工整轨 1× 听审签收，新 release 不再写 `audioStatus=machine_checked`（历史 v4 保持可读）。普通人工批准路径使用合同指定的正式 package/catalog 版本。纯文字 release 只有在 release plan、producer 和 Web/iOS 客户端都支持时才使用。
 
 ### 4.2 Firebase/GCP 环境
 
