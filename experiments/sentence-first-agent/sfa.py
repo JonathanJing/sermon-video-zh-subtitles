@@ -11,7 +11,12 @@ Runs, in order, what the runbook asks the agent to do one step at a time at 开�
   share     copy clip.json + sentences.jsonl + slices/ to the other locale run dirs
   gate      preflight.py --stage setup (run files, speaker registry, English package,
             optional Spark session / Firebase ADC) for the primary run and every share
-  receipt   setup.json next to the run, plus one JSON line on stdout
+  receipt   decisions.json (the frozen decisions, machine-readable) and setup.json next to
+            the run, plus one JSON line on stdout
+
+The sync and publish decisions are required flags, not defaults: the runbook asks the user
+before any downstream work, and preflight.py --stage setup checks the recorded file. The
+title, window, units and sentence count land in decisions.json as well.
 
 It is idempotent: an existing clip.json + sentences.jsonl skips prepare (re-run with
 --force-prepare), an identical share target is left untouched, and a share target that
@@ -27,8 +32,9 @@ Examples:
       --anchor artifacts/podcasts/<episode>/layer1-srt/anchor-manifest.json \\
       --media <video> --window-start 0 --units 0:417 --title "…" \\
       --english-package artifacts/podcasts/<episode>/layer1-srt/english-source.json \\
-      --publish
-  python3 sfa.py start --run 20261102-jesus-wins-zh --locale zh-Hans --plan
+      --sync --publish
+  python3 sfa.py start --run 20261102-jesus-wins-zh --locale zh-Hans \
+      --no-sync --no-publish --plan
 
 Exit code 1 when an environment check, a step or a setup gate fails; stdout stays JSON.
 """
@@ -63,6 +69,31 @@ class SetupError(Exception):
 
 def utc_now() -> str:
     return datetime.now(timezone.utc).isoformat(timespec="seconds")
+
+
+def write_json(path: Path, value) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(value, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
+
+
+def build_decisions(a, run: Path, *, shares: dict[str, Path], sentences: int,
+                    clip_seconds: float | None) -> dict:
+    """The frozen decisions the runbook asks for before any downstream work."""
+    return {
+        "schemaVersion": "sentence-first-frozen-decisions-v1",
+        "run": repo_relative(run),
+        "recordedAt": utc_now(),
+        "locales": [a.locale, *shares],
+        "primaryLocale": a.locale,
+        "form": a.form,
+        "sync": bool(a.sync),
+        "publish": bool(a.publish),
+        "title": a.title or "",
+        "windowStart": a.window_start,
+        "units": a.units,
+        "sentences": sentences,
+        "clipSeconds": clip_seconds,
+    }
 
 
 def repo_relative(path: Path, repo: Path = ROOT) -> str:
@@ -277,7 +308,7 @@ def do_assign(a, run: Path) -> dict:
 
 
 def do_preflight(a, run: Path, *, locale: str, primary: bool) -> dict:
-    cmd = [sys.executable, str(HERE / "preflight.py"), "--stage", "setup",
+    cmd = [sys.executable, str(HERE / "preflight.py"), "--stage", "setup", "--require-decisions",
            "--run", repo_relative(run), "--locale", locale, "--registry", str(a.registry)]
     if primary:
         if a.english_package:
@@ -435,7 +466,17 @@ def build_parser() -> argparse.ArgumentParser:
     start.add_argument("--source-url", help="expected source URL (checked against sourceUrlHash)")
     start.add_argument("--registry", type=_path, default=(ROOT / "config" / "speaker-voice-registry.json"))
     start.add_argument("--spark-session", help="check this Spark exclusive session before starting work")
-    start.add_argument("--publish", action="store_true", help="plan to publish: also check the package import and Firebase ADC")
+    decisions = start.add_mutually_exclusive_group(required=True)
+    decisions.add_argument("--sync", action="store_true",
+                           help="the dub follows the source video clock; the lag loop is mandatory")
+    decisions.add_argument("--no-sync", action="store_true",
+                           help="independent track at natural speech rate, no trimming")
+    publishing = start.add_mutually_exclusive_group(required=True)
+    publishing.add_argument("--publish", action="store_true",
+                            help="a page will be published: also check the package import and Firebase ADC")
+    publishing.add_argument("--no-publish", action="store_true",
+                            help="review bundle only; no page will be published")
+    start.add_argument("--form", choices=("full", "clip"), help="整期 or 片段, recorded in decisions.json")
     start.add_argument("--firebase", action="store_true", help="check Firebase ADC even without --publish")
     start.add_argument("--check-git", action="store_true", help="fetch origin and warn when behind origin/main")
     start.add_argument("--check-package", action="store_true",
@@ -466,6 +507,8 @@ def main(argv=None) -> int:
         payload = {"ok": env_ok and not errors, "plan": True, "run": repo_relative(run),
                    "primaryLocale": a.locale, "locales": [a.locale, *shares],
                    "steps": build_plan(a, run, shares, prepare_needed),
+                   "decisions": {"form": a.form, "sync": bool(a.sync), "publish": bool(a.publish),
+                                 "title": a.title or "", "windowStart": a.window_start, "units": a.units},
                    "gates": {"env": checks}}
         if errors:
             payload["errors"] = errors
@@ -520,6 +563,14 @@ def main(argv=None) -> int:
             share_results[locale] = {"run": repo_relative(target),
                                      **share_run(run, target, force=a.force_share)}
         receipt["shares"] = share_results
+
+        decisions = build_decisions(a, run, shares=shares, sentences=sentences, clip_seconds=seconds)
+        write_json(run / "decisions.json", decisions)
+        for target in shares.values():
+            write_json(target / "decisions.json",
+                       {**decisions, "run": repo_relative(target), "primaryRun": repo_relative(run)})
+        receipt["decisions"] = decisions
+        receipt["decisionsFile"] = repo_relative(run / "decisions.json")
 
         gate_results: dict[str, dict] = {}
         failures: list[str] = []

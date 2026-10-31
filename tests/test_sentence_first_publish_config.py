@@ -181,3 +181,219 @@ class AssetsParityTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+def minimal_config(root: Path, *, page_id: str = "test-page", locale: str = "zh-Hans",
+                   english_source: Path | None = None, verdict: Path | None = None) -> Path:
+    english_source = english_source or (root / "english-source.json")
+    verdict = verdict or (root / "verdict.json")
+    config = {
+        "schemaVersion": "sentence-first-page-config-v1",
+        "pageId": page_id,
+        "environment": "dev",
+        "locales": [locale],
+        "defaultTargetLocale": locale,
+        "runsRoot": "runs",
+        "runs": {locale: "run"},
+        "source": {"url": "https://example.test/sermon", "date": "2026-10-31",
+                   "window": {"start": 0.0, "end": 10.0},
+                   "englishSource": str(english_source.relative_to(root))},
+        "sentences": 1,
+        "speakers": "Tester",
+        "category": {"schemaVersion": "sermon-page-display-category-v1", "labels": {"zh-Hans": "测试"}},
+        "title": "测试页",
+        "meta": {locale: {"title": "测试页", "series": "系列", "scripture": "经文",
+                          "badge": "徽章", "source": "来源", "note": "备注"}},
+        "verdict": str(verdict.relative_to(root)),
+        "candidate": {"schemaVersion": "sentence-first-episode-candidate-v1",
+                      "translationBasis": {"default": "{locale}: test"}},
+        "audioPackage": {"schemaVersion": "sentence-first-episode-audio-package-v1",
+                         "voices": "from-speakers", "synchronization": "test"},
+        "releasePackageId": "{pageId}-{locale}-{environment}-v1",
+        "verify": {"schemaVersion": "sentence-first-episode-http-verification-v1"},
+        "englishReference": {"mode": "full"},
+    }
+    path = root / "pages" / f"{page_id}.json"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(config, ensure_ascii=False), encoding="utf-8")
+    return path
+
+
+def minimal_inputs(root: Path, *, page_id: str = "test-page", locale: str = "zh-Hans") -> tuple[Path, Path]:
+    """An english source package, a verdict and one run dir, enough for the publish preflight."""
+    english = root / "english-source.json"
+    english.write_text(json.dumps({
+        "schemaVersion": "sermon-english-source-package-v1",
+        "status": "ready_for_translation", "translationEligible": True,
+        "source": {"sourceUrl": "https://example.test/sermon",
+                   "sourceUrlHash": hashlib.sha256(b"https://example.test/sermon").hexdigest(),
+                   "media": {"sha256": "a" * 64},
+                   "approvedWindow": {"humanApproval": True, "status": "approved"}},
+        "review": {"humanApproval": True},
+    }), encoding="utf-8")
+    run = root / "runs" / "run"
+    (run / "tts").mkdir(parents=True)
+    for name, text in (("sentences.jsonl", '{"id": "s0001", "sourceUnitId": "u1", "start": 0, "end": 1}\n'),
+                       ("translations.jsonl", '{"id": "s0001", "target": "测试"}\n'),
+                       ("speech.jsonl", '{"id": "s0001", "spokenText": "测试"}\n'),
+                       ("schedule.json", '{"sentences": [{"id": "s0001", "actualStart": 0, "dubSeconds": 1}]}\n')):
+        (run / name).write_text(text, encoding="utf-8")
+    (run / "track.wav").write_bytes(b"RIFF-track")
+    track_sha = hashlib.sha256(b"RIFF-track").hexdigest()
+    verdict = root / "verdict.json"
+    verdict.write_text(json.dumps({
+        "schemaVersion": "sentence-first-human-review-verdict-v1", "pageId": page_id,
+        "verdict": "approved", "reviewer": "tester", "reviewedAt": "2026-10-30T00:00:00+00:00",
+        "locales": {locale: {"trackWavSha256": track_sha, "trackSeconds": 1.0}},
+    }), encoding="utf-8")
+    return english, verdict
+
+
+def sha256_bytes(data: bytes) -> str:
+    return hashlib.sha256(data).hexdigest()
+
+
+def canonical_json_sha(value) -> str:
+    return hashlib.sha256(json.dumps(value, ensure_ascii=False, sort_keys=True,
+                                     separators=(",", ":")).encode()).hexdigest()
+
+
+def make_publish_snapshot(root: Path, *, page_id: str = "test-page", locale: str = "zh-Hans",
+                          english_sha: str, release_status: str = "published_http_verified",
+                          english_reference: bool = True, announcement_release_sha: str | None = None,
+                          cue_text: str = "x") -> Path:
+    public = root / "public"
+    content_bytes = json.dumps({"pageId": page_id, "locale": locale, "targetLocale": locale,
+                                "status": "human_reviewed", "durationSeconds": 10.0,
+                                "englishSourcePackageJsonSha256": english_sha,
+                                "targetLanguageCandidateJsonSha256": "c" * 64,
+                                "cues": [{"start": 0, "end": 1, "sourceUnitIds": ["u1"],
+                                          "text": cue_text, "textGroupId": "t1"}]}, ensure_ascii=False).encode()
+    captions_bytes = json.dumps({"pageId": page_id, "locale": locale, "audioPackageJsonSha256": "d" * 64,
+                                 "cues": [{"start": 0, "end": 1, "sourceUnitIds": ["u1"],
+                                           "text": cue_text, "textGroupId": "t1"}]}, ensure_ascii=False).encode()
+    page_bytes = b"<html>page</html>"
+    audio_bytes = b"mp3-bytes"
+    paths = {"page": f"/pages/{page_id}/{locale}/index.html",
+             "content": f"/content/{page_id}/{locale}.json",
+             "captions": f"/captions/{page_id}/{locale}.json",
+             "audio": f"/media/{page_id}/{locale}.mp3"}
+    payloads = {"page": page_bytes, "content": content_bytes, "captions": captions_bytes, "audio": audio_bytes}
+    assets = []
+    for role, path in paths.items():
+        target = public / path.lstrip("/")
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_bytes(payloads[role])
+        assets.append({"role": role, "path": path, "sha256": sha256_bytes(payloads[role])})
+    release = {"pageId": page_id, "targetLocale": locale, "status": release_status,
+               "targetLanguageCandidateJsonSha256": "c" * 64,
+               "targetLanguageAudioPackageJsonSha256": "d" * 64, "assets": assets}
+    release_path = public / "releases-v2" / page_id / f"{locale}.json"
+    release_path.parent.mkdir(parents=True, exist_ok=True)
+    release_path.write_bytes(json.dumps(release, ensure_ascii=False).encode())
+    release_sha = sha256_bytes(release_path.read_bytes())
+    catalog = {"schemaVersion": "sermon-multilingual-catalog-v3", "pages": [{
+        "id": page_id, "sourceIdentitySha256": english_sha,
+        "targets": {locale: {"releasePackageUrl": f"/releases-v2/{page_id}/{locale}.json",
+                             "releasePackageJsonSha256": release_sha}}}]}
+    (public / "multilingual-v3.json").write_text(json.dumps(catalog), encoding="utf-8")
+    if english_reference:
+        reference = {"pageId": page_id, "targets": {locale: {
+            "contentSha256": sha256_bytes(content_bytes), "captionsSha256": sha256_bytes(captions_bytes),
+            "releasePackageJsonSha256": release_sha,
+            "blocks": [{"textGroupId": "t1", "sourceUnitIds": ["u1"], "english": cue_text}]}}}
+        ref_path = public / "english-reference" / f"{page_id}.json"
+        ref_path.parent.mkdir(parents=True, exist_ok=True)
+        ref_path.write_text(json.dumps(reference), encoding="utf-8")
+    announcements = {"schemaVersion": "tongxing-weekly-announcements-v1", "announcements": [
+        {"pageID": page_id, "locale": locale,
+         "releaseSHA256": announcement_release_sha or release_sha, "sourceIdentitySHA256": english_sha}]}
+    (public / "weekly-announcements-v1.json").write_text(json.dumps(announcements), encoding="utf-8")
+    return root
+
+
+class PublishGateTest(unittest.TestCase):
+    def setUp(self):
+        self.publish = load("sfa_publish")
+
+    def test_preflight_passes_with_complete_inputs_and_decisions(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            _, _ = minimal_inputs(root)
+            config = minimal_config(root)
+            run = root / "runs" / "run"
+            (run / "decisions.json").write_text(json.dumps({
+                "schemaVersion": "sentence-first-frozen-decisions-v1", "locales": ["zh-Hans"],
+                "sync": False, "publish": True, "title": "测试页", "form": "clip"}), encoding="utf-8")
+            cfg = self.publish.load_config(config, root=root)
+            result = self.publish.cmd_preflight(cfg)
+            self.assertTrue(result["ok"])
+            self.assertEqual(result["decisions"]["zh-Hans"]["title"], "测试页")
+
+    def test_preflight_fails_on_a_track_that_changed_after_the_review(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            minimal_inputs(root)
+            cfg = self.publish.load_config(minimal_config(root), root=root)
+            (root / "runs/run/track.wav").write_bytes(b"changed-after-review")
+            with self.assertRaises(ValueError) as caught:
+                self.publish.cmd_preflight(cfg, allow_missing_decisions=True)
+            self.assertIn("changed after the review", str(caught.exception))
+
+    def test_publish_check_passes_on_a_consistent_snapshot(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            english, _ = minimal_inputs(root)
+            cfg = self.publish.load_config(minimal_config(root), root=root)
+            english_sha = canonical_json_sha(json.loads(english.read_text(encoding="utf-8")))
+            snapshot = make_publish_snapshot(root / "snap", english_sha=english_sha)
+            result = self.publish.cmd_publish_check(cfg, snapshot, require_english_reference=True,
+                                                    require_announcements=True)
+            self.assertTrue(result["ok"])
+            self.assertEqual(result["problems"], [])
+            self.assertEqual(result["checked"]["englishReference"]["locales"], ["zh-Hans"])
+
+    def test_publish_check_rejects_a_reference_that_binds_older_content(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            english, _ = minimal_inputs(root)
+            cfg = self.publish.load_config(minimal_config(root), root=root)
+            english_sha = canonical_json_sha(json.loads(english.read_text(encoding="utf-8")))
+            snapshot = make_publish_snapshot(root / "snap", english_sha=english_sha)
+            reference = snapshot / "public/english-reference/test-page.json"
+            data = json.loads(reference.read_text())
+            data["targets"]["zh-Hans"]["contentSha256"] = "0" * 64
+            reference.write_text(json.dumps(data), encoding="utf-8")
+            result = self.publish.cmd_publish_check(cfg, snapshot)
+            self.assertFalse(result["ok"])
+            self.assertTrue(any("older content" in problem["detail"] for problem in result["problems"]))
+
+    def test_publish_check_detects_a_stale_announcement_hash(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            english, _ = minimal_inputs(root)
+            cfg = self.publish.load_config(minimal_config(root), root=root)
+            old_snapshot = make_publish_snapshot(root / "old", english_sha="0" * 64, cue_text="old")
+            old_release = hashlib.sha256((old_snapshot / "public/releases-v2/test-page/zh-Hans.json").read_bytes()).hexdigest()
+            current = make_publish_snapshot(root / "new", english_sha="0" * 64,
+                                            announcement_release_sha=old_release, cue_text="new")
+            result = self.publish.cmd_publish_check(cfg, current, baseline=old_snapshot)
+            self.assertFalse(result["ok"])
+            self.assertTrue(any("announcement binds an older release" in problem["detail"]
+                                for problem in result["problems"]))
+            self.assertTrue(result["staleReferences"])
+            self.assertTrue(any(item["path"].endswith("weekly-announcements-v1.json")
+                                for item in result["staleReferences"]))
+
+    def test_publish_check_requires_the_english_reference_when_asked(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            english, _ = minimal_inputs(root)
+            cfg = self.publish.load_config(minimal_config(root), root=root)
+            snapshot = make_publish_snapshot(root / "snap", english_sha="0" * 64, english_reference=False)
+            result = self.publish.cmd_publish_check(cfg, snapshot, require_english_reference=True)
+            self.assertFalse(result["ok"])
+            self.assertTrue(any("required but missing" in problem["detail"] for problem in result["problems"]))
+
+
+if __name__ == "__main__":
+    unittest.main()

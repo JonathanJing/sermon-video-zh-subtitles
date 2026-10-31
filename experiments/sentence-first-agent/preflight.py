@@ -143,6 +143,41 @@ def check_run(run: Path, locale: str | None, registry_path: Path, report: Report
     return ctx
 
 
+DECISION_SCHEMA = "sentence-first-frozen-decisions-v1"
+
+
+def check_decisions(run: Path, report: Report, *, required: bool = False) -> dict | None:
+    """The frozen decisions must be recorded before any downstream work (runbook §0)."""
+    path = run / "decisions.json"
+    if not path.exists():
+        report.add("decisions:file", False,
+                   f"missing {path} (manual path: record 形态/语言/同步/发布/标题 in run.md)",
+                   warning=not required)
+        return None
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        report.add("decisions:file", False, f"{path}: {exc}")
+        return None
+    report.add("decisions:file", True, str(path))
+    report.add("decisions:schema", data.get("schemaVersion") == DECISION_SCHEMA,
+               f"schemaVersion={data.get('schemaVersion')!r}")
+    locales = data.get("locales")
+    report.add("decisions:locales", isinstance(locales, list) and bool(locales)
+               and all(isinstance(locale, str) and locale for locale in locales), f"locales={locales!r}")
+    for key in ("sync", "publish"):
+        report.add(f"decisions:{key}", isinstance(data.get(key), bool), f"{key}={data.get(key)!r}")
+    title = data.get("title")
+    if data.get("publish") is True:
+        report.add("decisions:title", isinstance(title, str) and bool(title.strip()),
+                   f"publish needs a title, got {title!r}")
+    else:
+        report.add("decisions:title", isinstance(title, str), f"title={title!r}")
+    form = data.get("form")
+    report.add("decisions:form", form in (None, "full", "clip"), f"form={form!r}")
+    return data
+
+
 def check_run_setup(run: Path, locale: str | None, registry_path: Path, report: Report) -> dict:
     """Checks that are possible right after prepare_clip/assign_speakers, before translation."""
     ctx: dict = {}
@@ -307,6 +342,8 @@ def main(argv=None) -> int:
     p.add_argument("--run", type=Path, required=True)
     p.add_argument("--stage", choices=("full", "setup"), default="full",
                    help="full: translations/review/speech exist; setup: only clip.json and sentences.jsonl (default: full)")
+    p.add_argument("--require-decisions", action="store_true",
+                   help="fail when decisions.json is missing (sfa.py start writes it and passes this)")
     p.add_argument("--locale", choices=("zh-Hans", "ko", "es"))
     p.add_argument("--registry", type=Path, default=DEFAULT_REGISTRY)
     p.add_argument("--english-package", type=Path)
@@ -324,6 +361,7 @@ def main(argv=None) -> int:
         _mark(a.run, stage, "started")
     ctx = check_run(a.run, a.locale, a.registry, report) if a.stage == "full" \
         else check_run_setup(a.run, a.locale, a.registry, report)
+    check_decisions(a.run, report, required=a.require_decisions)
     if a.english_package:
         check_english_package(a.english_package, ctx, report, a.repo_root, a.source_url)
     if a.checkpoint_map:
