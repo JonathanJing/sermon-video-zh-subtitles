@@ -237,6 +237,21 @@ class DecisionsTest(unittest.TestCase):
         self.assertFalse(args.publish)
         self.assertEqual(args.form, "clip")
 
+    def test_decisions_are_appended_to_run_md_once(self):
+        sfa = load("sfa")
+        with tempfile.TemporaryDirectory() as tmp:
+            run = Path(tmp)
+            (run / "run.md").write_text("# 实验\n\n## 决定与改动\n", encoding="utf-8")
+            decisions = {"form": "clip", "locales": ["zh-Hans", "ko"], "sync": False,
+                         "publish": True, "title": "耶稣的应许", "windowStart": 5.5,
+                         "units": "0:9", "sentences": 10}
+            self.assertTrue(sfa.append_decisions_to_run_md(run, decisions))
+            text = (run / "run.md").read_text(encoding="utf-8")
+            self.assertIn("## 冻结决策", text)
+            self.assertIn("不发" if not decisions["publish"] else "发布正式页面", text)
+            self.assertIn("zh-Hans、ko", text)
+            self.assertFalse(sfa.append_decisions_to_run_md(run, decisions))
+
     def test_build_decisions_records_the_frozen_values(self):
         sfa = load("sfa")
         args = sfa.build_parser().parse_args(
@@ -253,6 +268,42 @@ class DecisionsTest(unittest.TestCase):
         self.assertEqual(decisions["title"], "耶稣的应许")
         self.assertEqual(decisions["sentences"], 10)
         self.assertEqual(decisions["clipSeconds"], 12.5)
+
+
+class PreflightSingleSpeakerTest(unittest.TestCase):
+    def _single_speaker_run(self, root: Path, speaker_key: str = "eric_pilot") -> Path:
+        run = make_run(root, "run-zh", speaker_id=None)
+        (run / "translations.jsonl").write_text('{"id": "s0001", "target": "你好"}\n{"id": "s0002", "target": "再见"}\n',
+                                                encoding="utf-8")
+        (run / "review.json").write_text(json.dumps({"locale": "zh-Hans", "speaker": speaker_key}), encoding="utf-8")
+        (run / "speech.jsonl").write_text(
+            "".join(json.dumps({"id": f"s{number:04d}", "speaker": speaker_key, "language": "Chinese",
+                                "spokenText": "你好"}) + "\n" for number in (1, 2)), encoding="utf-8")
+        (run / "decisions.json").write_text(json.dumps({
+            "schemaVersion": "sentence-first-frozen-decisions-v1", "locales": ["zh-Hans"],
+            "sync": False, "publish": False, "title": "测试", "form": "clip"}), encoding="utf-8")
+        return run
+
+    def test_single_speaker_review_key_resolves_through_the_registry(self):
+        preflight = load("preflight")
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            run = self._single_speaker_run(root)
+            registry = make_registry(root)
+            self.assertEqual(preflight.main(["--stage", "full", "--run", str(run),
+                                             "--registry", str(registry), "--locale", "zh-Hans"]), 0)
+
+    def test_unknown_single_speaker_key_fails(self):
+        preflight = load("preflight")
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            run = self._single_speaker_run(root, speaker_key="ghost_pilot")
+            registry = make_registry(root)
+            out = root / "preflight.json"
+            self.assertEqual(preflight.main(["--stage", "full", "--run", str(run), "--registry", str(registry),
+                                             "--locale", "zh-Hans", "--out", str(out)]), 1)
+            result = json.loads(out.read_text())
+            self.assertTrue(any("registry:single-speaker" == error["name"] for error in result["errors"]))
 
 
 class PreflightDecisionsTest(unittest.TestCase):

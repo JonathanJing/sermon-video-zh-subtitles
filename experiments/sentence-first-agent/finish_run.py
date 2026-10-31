@@ -109,8 +109,9 @@ def main() -> int:
     if args.remote:
         sources = [f"{args.remote}/{name}" for name in ("tts", "tts-run.log", "asr.jsonl", "asr-run.log")]
         subprocess.run(["scp", "-q", "-o", "BatchMode=yes", "-r", sources[0], sources[1], str(run)], check=True)
-        # ASR is optional: pull it only if it exists remotely.
-        subprocess.run(["scp", "-q", "-o", "BatchMode=yes", sources[2], sources[3], str(run)], check=False)
+        # ASR is optional (2026-10-28: no longer a review condition); pull it quietly when present.
+        subprocess.run(["scp", "-q", "-o", "BatchMode=yes", sources[2], sources[3], str(run)],
+                       check=False, capture_output=True)
     wavs = sorted((run / "tts").glob("s*.wav"))
     print(json.dumps({"run": str(run), "wavs": len(wavs)}))
 

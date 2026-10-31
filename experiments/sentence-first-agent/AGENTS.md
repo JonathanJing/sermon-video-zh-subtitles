@@ -110,7 +110,7 @@ artifacts/sentence-first-agent/<run>/
 | 讲员 | 直播场次确定后填，同时核对 checkpoint 路径 | 来源 + Registry |
 | 窗口 / 单元 | 来源到达后填 | 来源 |
 
-开工前先跑一次 `preflight.py --run $RUN`（有英文包时加 `--english-package <layer1-srt/english-source.json>`）：它检查 run 文件、`speakerId→speakerKey`、Registry 用途与语言能力、英文包证据是否能解析。退出码非 0 先修，不要带着失败进 TTS 或发布。
+开工时由 `sfa.py start` 跑 `preflight.py --stage setup`（有英文包时加 `--english-package <layer1-srt/english-source.json>`）：它检查 run 文件、`speakerId→speakerKey`、Registry 用途与语言能力、英文包证据是否能解析。退出码非 0 先修，不要带着失败进 TTS 或发布。**完整 `preflight.py`（默认 `--stage full`，需要 translations/review/speech）在第 5 步末、TTS 之前跑**，见 §5 末尾的命令；它记 `l1.preflight`。
 
 英文来源包（Layer 1）在第 4 步翻译之前就要建好，并让用户批准英文表：保存 `english-review.csv`，收据 `reviewedAt` 不得早于用户在对话里给结论的时间。`preflight.py --english-package` 必须在第 6 步 TTS 之前通过——2026-10-24 它在 Spark 跑完后才跑，`sourceUnitId` 缺失才暴露，白占一次 GPU。换媒体重建（新哈希、新句表）同样要重审英文表，不能沿用上一版的批准。
 
@@ -222,25 +222,36 @@ python3 $EXP/spark_queue.py --session <session> --owner sentence-first-agent \
 
 ### 1 开自己的 Spark 独占会话
 
-1. 用会话工具（`packages/production/src/tongxing_production/compute/spark_exclusive_session.py`，`--help` 看参数）的 `status` 看有没有别人的会话；有就问用户，不要收尾别人的会话。
-2. `begin` 开自己的会话。之后所有容器都通过 `spark_queue.py` 或 `spark_session_job.py` 登记，不直接 `ssh … docker run`：未登记的容器会让会话收尾失败（`unmanaged_running_container`）。
+1. 用会话工具（`packages/production/src/tongxing_production/compute/spark_exclusive_session.py`）的 `status` 看有没有别人的会话；有就问用户，不要收尾别人的会话：
+   `python3 <tool> status --session-id sfa-<run> --owner sentence-first-agent`
+2. `begin` 开自己的会话，`finish` 收尾（两个都会停/起 llama-server 等服务）：
+   `python3 <tool> begin --session-id sfa-<run> --owner sentence-first-agent [--minimum-available-gib 96]`
+   `python3 <tool> finish --session-id sfa-<run> --owner sentence-first-agent`
+   `begin` 默认要求 110 GiB 可用；本线的 TTS 预算是 96 GiB（24 + 9×8），主机腾不出 110 GiB 时加 `--minimum-available-gib 96`。
+   之后所有容器都通过 `spark_queue.py` 或 `spark_session_job.py` 登记，不直接 `ssh … docker run`：未登记的容器会让会话收尾失败（`unmanaged_running_container`）。
 
 ### 2 裁音频、拆句（本机）
 
 默认用一条命令 `sfa.py start`：环境检查（§0.5）→ `prepare_clip.py`（裁切、拆句、切片）→ 可选 `assign_speakers.py` → 把 `clip.json` + `sentences.jsonl` + `slices/` 复制给其余语言 → `preflight.py --stage setup`；写 `setup.json`，stdout 一行 JSON。
 
+整期、同步、发布（今晚的形态）：
+
 ```bash
-python3 $EXP/sfa.py start --run $RUN --locale zh-Hans \
+python3 $EXP/sfa.py start --run <zh-run> --locale zh-Hans \
   --share-to ko=<ko-run> --share-to es=<es-run> \
   --anchor <anchor-manifest.json> --media <video> --window-start <窗口起点秒> --units <LO:HI> \
-  --title "<一行说明>" --sync|--no-sync --publish|--no-publish [--form full|clip] \
+  --title "<一行说明>" --sync --publish --form full \
+  --english-package <english-source.json> [--spark-session <session>] \
   [--segments <segments.json> --speaker-map <speaker-label-mapping.json> [--use-text]] \
-  [--english-package <english-source.json>] [--spark-session <session>] \
   [--check-git] [--check-package] [--plan] [--pretty] [--out <json>]
 ```
 
+片段、不同步、只出审核包时把两个决策换成 `--no-sync --no-publish --form clip`。
+可选参数：`--segments/--speaker-map/--use-text`（双讲员提前定讲员）、`--english-package`、`--spark-session`、
+`--check-git`、`--check-package`、`--plan`、`--pretty`、`--out`。
+
 - `--plan` 先看步骤再跑；`--pretty` 缩进输出；`--out` 另存 JSON。
-- **同步与发布是必填决策，不是默认值**：`--sync`/`--no-sync`、`--publish`/`--no-publish` 由用户在第 0 步给定；命令把形态、语言、同步、发布、标题、窗口写进每个 run 的 `decisions.json`，`preflight.py --stage setup` 会校验它。
+- **同步与发布是必填决策，不是默认值**：`--sync`/`--no-sync`、`--publish`/`--no-publish` 由用户在第 0 步给定；命令把形态、语言、同步、发布、标题、窗口写进每个 run 的 `decisions.json`，并把同一张「冻结决策」表追加到第一个 run 的 `run.md`；`preflight.py --stage setup` 会校验 `decisions.json`。
 - 幂等：已有 `clip.json`+`sentences.jsonl` 跳过裁切（`--force-prepare` 重跑）；分发目标一致时不动，目标已有 `translations.jsonl`/`review.json`/`speech.jsonl` 时拒绝覆盖（`--force-share` 才写）。
 - 门禁：`--stage setup` 只查开工时存在的 `clip.json`/`sentences.jsonl`、`speakerId→Registry`、英文包证据，journal 记 `l1.start` 与 `l1.preflight.setup`；完整 `preflight.py`（需要 translations/review/speech）仍在 TTS 前跑，`l1.preflight` 由它记。
 - 双人 run 可以在这里加 `--segments`/`--speaker-map` 提前写入 `speakerId`；一致度低的句子仍按第 3 步交用户确认。
@@ -323,13 +334,23 @@ python3 $EXP/build_speech.py --run $RUN --review $RUN/review.json [--share-from 
 
 **口播读法用工具生成**：`python3 $EXP/spoken_forms.py --run $RUN --locale <locale>` 把经文引用、页码、比分和剩余数字转成各语读法，写入 `review.json` 的 `spokenForms`（最长匹配优先，重叠键自动剔除）；跑完再 `build_speech.py` 一次，`spokenTextWithDigits` 应为空。2026-10-30 实测 zh 33 条、ko 34 条、es 27 条，重建后三语都是 0。仍要人看一眼：韩语助词（까지/부터）和西语的 veinti- 变体只保证读法、不保证语法。
 
+**TTS 前跑完整 preflight（会记 `l1.preflight`；`pub preflight` 的 journal 门禁要靠它）**：
+
+```bash
+python3 $EXP/preflight.py --stage full --run $RUN --locale <locale> --english-package <layer1-srt/english-source.json> \
+  [--spark-session <session>] [--firebase]
+```
+
+每种语言都要通过（三语各跑一次，或用主 run 一次 + 每语 `--run`）。失败先修，不要进 §6。
+
 ### 6 Spark 配音与回转写：一条队列
 
 讲员 checkpoint 路径从 Registry（`config/speaker-voice-registry.json`）的 checkpointRef/hash 与 Spark 上的实际目录核对；Spark 上没有 `speaker-checkpoints.dgx.json`（2026-10-23 核实）。当前两位讲员：Steve `~/dgx-spark-benchmark/results/sermon-speaker-bank-20260905/steve_bang_lee/checkpoints/checkpoint-epoch-0`（sha256 `b480bc6a…`）；John `~/dgx-spark-benchmark/results/john-thomas-voice-20261021/checkpoints/checkpoint-epoch-0`（root 所有，本机不能重算 hash；Registry 记 `3f722b17…`）；Eric `~/dgx-spark-benchmark/results/sermon-voice-poc-20260905/checkpoints/checkpoint-epoch-0`（Registry key `eric_pilot`，2026-10-30 核对）。路径或 hash 对不上就停。上传脚本和每种语言的口播规格：
 
 ```bash
 ssh SPARK 'mkdir -p ~/sentence-first-agent/tools ~/sentence-first-agent/<run>'
-scp $EXP/spark_run.sh $EXP/tts_sentences.py $EXP/asr_check.py SPARK:sentence-first-agent/tools/
+scp $EXP/spark_run.sh $EXP/tts_sentences.py $EXP/tts_pool.py $EXP/asr_check.py SPARK:sentence-first-agent/tools/
+# spark_run.sh 的开工检查要求 tts_sentences.py/tts_pool.py/asr_check.py 三个都在，即使 --steps tts 也一样。
 scp $RUN/speech.jsonl SPARK:sentence-first-agent/<run>/
 ```
 
@@ -353,7 +374,7 @@ python3 $EXP/spark_queue.py --session <session> --owner sentence-first-agent --r
 队列打印 `locale done <locale>` 后立刻跑这种语言，不必等全部结束：
 
 ```bash
-python3 $EXP/finish_run.py --run $RUN --remote SPARK:sentence-first-agent/<run> [--clip-from <第一种语言的 run>]
+python3 $EXP/finish_run.py --run $RUN --remote SPARK:sentence-first-agent/<run> [--clip-from <第一种语言的 run>] [--gap 0.05]  # 同步 run 必带 --gap 0.05
 ```
 
 它拉回 `tts/` 和回转写，合并音轨（每句放在英文起点，放不下就接在上一句后 0.25 秒），打分，生成 `review.mp3`（96 kbps）、`review-player.html`（逐句播放器）和手机预览 `dub-preview-640.mp4`（`--preview-encoder auto|quality|fast|hardware`；auto 在 macOS 用硬件编码、无视频流自动回退，约为 quality 耗时的 60–70%，文件约 2 倍），打印落后最多的句、配音与原声时长比、TTS 速度和回转写相似度低的句。**音频对齐（ASR 回转写、`schedule.json`）、review MP3 和播放器在这一步一并生成，不等发布。**
@@ -364,8 +385,11 @@ python3 $EXP/finish_run.py --run $RUN --remote SPARK:sentence-first-agent/<run> 
 
 ```bash
 python3 $EXP/lag_loop.py --run $RUN --locale <locale> --remote SPARK:sentence-first-agent/<run> \
-  --session <session> --checkpoint <ckpt> --threshold 8 --iterations 2 --require-clean --execute
+  --session <session> --voice <speaker key>=<checkpoint> [--voice <第二位讲员>=<checkpoint>] \
+  --threshold 8 --iterations 2 --require-clean --execute
 ```
+
+`--voice` 每个 `speech.jsonl` 里的讲员一条；旧参数 `--checkpoint` 只够单讲员（用它时从 speech 的 speaker 推出 key）。回环会重配该语全部句子（删 `tts/`），双讲员两条 voice 都要给，不能只给一位。
 
 - 退出码 0 才表示 `sentencesOverLag8s == 0` 且 `maxLagSeconds ≤ 8`；非 0 就是没过闸门，不能发「可审」。
 - 只看当前音轨、不重配：`lag_loop.py ... --check-only --require-clean`（不调用 DeepSeek、不用 Spark）。
@@ -392,7 +416,25 @@ python3 -m http.server -d $RUN 8765
 
 播放器按句播放合并音轨，标出 ASR <0.85、讲员存疑、复核修订和备注；逐句写结论，导出的 JSON 可作为审核收据附件。整轨 MP3 仍是给用户完整听一遍的版本。
 
-用户听这一条时下一种语言还在配。收尾后跑 `asr_triage.py --run $RUN`；播放器的 `asr_variant` / `asr_content` 用同一分类，先听 `asr_content`。`--doubt` 传翻译时发现的可疑英文源句（`{"s0043": "原因"}`）。回转写的同音字差异（它/他、再/在）不算问题；人名、数字、否定词不一致要人听；分数只是提示，不是听审。用户的结论写成审核收据，放在审核目录，并记进 `run.md`。
+用户听这一条时下一种语言还在配。收尾后跑 `asr_triage.py --run $RUN`；播放器的 `asr_variant` / `asr_content` 用同一分类，先听 `asr_content`。`--doubt` 传翻译时发现的可疑英文源句（`{"s0043": "原因"}`）。回转写的同音字差异（它/他、再/在）不算问题；人名、数字、否定词不一致要人听；分数只是提示，不是听审。用户的结论写成审核收据，放在审核目录，并记进 `run.md`。收据格式（`sentence-first-human-review-verdict-v1`；`publish preflight` 会核对 `pageId`、`reviewedAt`、`note`、每语 `trackWavSha256`）：
+
+```json
+{
+ "schemaVersion": "sentence-first-human-review-verdict-v1",
+ "pageId": "<pageId>",
+ "verdict": "approved",
+ "reviewer": "<user>",
+ "reviewedAt": "2026-11-01T12:34:56+00:00",
+ "note": "听完三条整轨，译文已审",
+ "locales": {
+  "zh-Hans": {"trackWavSha256": "<sha256 of run/track.wav>", "trackSeconds": 1234.5},
+  "ko": {"trackWavSha256": "…", "trackSeconds": 1300.0},
+  "es": {"trackWavSha256": "…", "trackSeconds": 1310.0}
+ }
+}
+```
+
+`reviewedAt` 必须带时区；`note` 不得含「未听审」。结论变了另存新版本，已发布收据不改写。
 
 收据要能回答「听了哪一版、怎么听的」：写 `reviewMode`（`whole_track` 或 `flagged_only`）、听审用的 `review.mp3` 与 `track.wav` 哈希；结论之后又重配或重出的，另写发布时音轨哈希并标 `unheardAfterApproval`；附播放器导出的逐句结论 JSON（哪些句被听过）。整轨听审耗时约等于音轨时长乘语言数，三条 31 分钟音轨不可能在 45 分钟内整轨听完；时间窗对不上就记 `flagged_only`，不要写成整轨。发出可审时 `run_journal.py append … --event waiting`，收到结论时 `--event resumed`；2026-10-24 两轮都没记，复盘里等待为 0。这两条是必做步骤，不是可选记录：发链接的同一个动作里打 `waiting`，收据落盘后立刻打 `resumed`；脚本自动打点还没做，漏了这段时间就会被算成计算时间。
 
@@ -409,19 +451,23 @@ python3 $EXP/repair_sentence.py --run $RUN --id s0123 --remote SPARK:<run> --ses
 
 ### 10 发布到正式页面
 
-只在用户审核通过并要求发布时做。`assets` 的前提，缺一项不生成资产：三语 journal 各有 `l1.preflight`、`l2.consistency` finished；审核收据 `verdict=approved`，`reviewedAt` 不晚于当前时间，`note` 不含「未听审」；英文表人审文件存在。发布过的收据不再改写。`stage2` 可加 `--with-english`：在 stage2 快照上生成英文对照、随第二次部署上线，省第三次部署；仍要 readback/HTTP 核验。未在 Dev 验证合同前保留第三次部署的路径。先跑 `preflight.py --run $RUN --english-package <layer1-srt/english-source.json> --firebase`：英文包证据路径必须能解析（相对路径按仓库根解析），否则第 7 步的英文对照会失败。发布用单一驱动 `sfa_publish.py` + 页面配置 `$EXP/pages/<pageId>.json`（改造2，`DEV-SF-004`）：配置里显式写 pageId、语言列表、run 目录、窗口、标题/类别/讲员、来源 URL/日期、environment、句数、verdict 路径、英文源包、候选/音频/校验 schema 名与 release id 模板；字段定义见 `pages/page-config.schema.json`，未知字段会被 schema 拒绝，拼错常量会在写资产之前失败。旧版按页复制的驱动只用于尚未迁移的页面和特殊修复路径（撤回、alignment sidecar、fix-content）；路径一律 `Path(...).resolve()`。撤回重建或修正已发布字节走 `published_page_replace`（#1367），不再手写撤回步骤。顺序固定，每步一个子命令：
+只在用户审核通过并要求发布时做。`assets` 的前提，缺一项不生成资产：三语 journal 各有 `l1.preflight`、`l2.consistency` finished；审核收据 `verdict=approved`，`reviewedAt` 不晚于当前时间，`note` 不含「未听审」；英文表人审文件存在。发布过的收据不再改写。`stage2` 可加 `--with-english`：在 stage2 快照上生成英文对照、随第二次部署上线，省第三次部署；仍要 readback/HTTP 核验。未在 Dev 验证合同前保留第三次部署的路径。先跑 `preflight.py --run $RUN --english-package <layer1-srt/english-source.json> --firebase`：英文包证据路径必须能解析（相对路径按仓库根解析），否则第 7 步的英文对照会失败。发布用单一驱动 `sfa_publish.py` + 页面配置 `$EXP/pages/<pageId>.json`（改造2，`DEV-SF-004`）：新页面先复制一份已发布页面的配置（例如 `cp $EXP/pages/if-i-had-more-time-jesus-promises.json $EXP/pages/<pageId>.json`），改 pageId/environment/locales/runs/source/title/meta/verdict 与 `titleCheck`，再跑 `$PUB validate`。配置里显式写 pageId、语言列表、run 目录、窗口、标题/类别/讲员、来源 URL/日期、environment、句数、verdict 路径、英文源包、候选/音频/校验 schema 名与 release id 模板；字段定义见 `pages/page-config.schema.json`，未知字段会被 schema 拒绝，拼错常量会在写资产之前失败。旧版按页复制的驱动只用于尚未迁移的页面和特殊修复路径（撤回、alignment sidecar、fix-content）；路径一律 `Path(...).resolve()`。撤回重建或修正已发布字节走 `published_page_replace`（#1367），不再手写撤回步骤。顺序固定，每步一个子命令：
+
+0. 页面配置：从已发布页面复制一份 `pages/<pageId>.json`，改 pageId/environment/locales/runs/source/title/meta/verdict 与 `titleCheck`（今晚第 8 周用 `mode: table`、`englishTitle: "Jesus marks His own"`、`seriesKey: revelation-comfort-and-hope`），`$PUB validate` 通过再往下。
 
 1. `assets`：生成每种语言的页面、文稿、字幕、MP3 和 release 模板；要求审核收据为 `approved`。文稿 `durationSeconds` 取窗口终点的媒体时间，并逐句跑与 iOS `validateCues` 相同的检查。
 2. `baseline`：取线上完整快照。线上 v4/v3 和 v5 的投影只在页面默认语言上不同时，`stage1` 按 v5 重新投影并记下改了哪几页；其他差异一律拒绝。
 
 ```bash
-PUB="python3 $EXP/sfa_publish.py --config $EXP/pages/<pageId>.json"
+# 用装了 jsonschema 的解释器（系统 python3 没有）；.venv 今天可用，bootstrap 出来的是 .venv-sfa
+PY=".venv/bin/python"; export PYTHONPATH="packages/production/src:."
+PUB="$PY $EXP/sfa_publish.py --config $EXP/pages/<pageId>.json"
 $PUB validate                                   # 先确认 pageId、environment、origin、run 与英文包路径
 $PUB preflight                                  # 发布门禁：英文包人工批准、回执 approved/reviewedAt、track 哈希、decisions
 $PUB assets --out <run>-publish/assets
 $PUB baseline --out <run>-publish/baseline
 $PUB stage1 --baseline <run>-publish/baseline --assets <run>-publish/assets --out <run>-publish/stage1
-$PUB publish-check --snapshot <run>-publish/stage1 --baseline <run>-publish/baseline
+$PUB publish-check --snapshot <run>-publish/stage1 --assets <run>-publish/assets --baseline <run>-publish/baseline
 $PUB publish --snapshot <run>-publish/stage1    # 需要用户对话授权
 $PUB verify --assets <run>-publish/assets --out <run>-publish/http-verification.json
 $PUB stage2 --stage1 <run>-publish/stage1 --assets <run>-publish/assets --evidence <run>-publish/http-verification.json --out <run>-publish/stage2
@@ -432,11 +478,16 @@ $PUB baseline --out <run>-publish/baseline-english
 $PUB stage-english-reference --base <run>-publish/baseline-english --out <run>-publish/stage-english
 $PUB publish-check --snapshot <run>-publish/stage-english --baseline <run>-publish/baseline-english --require-english-reference
 $PUB publish --snapshot <run>-publish/stage-english
+$PUB readback --stage2 <run>-publish/stage-english   # 英文对照上线后也要回读
 ```
+
+`verify`、`readback` 失败时退出码非 0（结果里 `ok=false`），不要只看打印。
 
 - `preflight` 是资产生成前的门禁：英文来源包必须已批准、回执 `approved` 且 `reviewedAt` 不晚于现在、回执里的 `trackWavSha256` 必须等于当前 `run/track.wav`（结论后重配会失败，需要重新听审或按边界第 3 条另存收据）、每个语言 run 的 `decisions.json` 必须记录 sync/publish/标题。旧 run 没有 `decisions.json` 时加 `--allow-missing-decisions` 并在 `run.md` 记明。
 - 标题门禁：`titleCheck` 缺省视为失败（旧配置可加 `--allow-missing-title-check`）。`check-title` 可单独跑：按英文标题在标题表定位行，`mode: table` 要求每语标题等于 `meta.<locale>.series + " · " + 表中该语标题`，并核对 zh 系列名等于表章节名；`mode: published` 用 `publishedTitles` 冻结已发布标题；`mode: approved_exception` 必须写 `reason` 与 `approvedBy`。表里登记过「已发布 vs 本表」差异的周次会给出提示。
-- `publish-check` 是每次 deploy 前的哈希绑定检查：catalog ↔ release ↔ page/content/captions/audio、`/english-reference/<pageId>.json` 与 `weekly-announcements-v1.json` 必须绑定当前 release/content/captions 哈希；`--baseline` 还会扫出仍引用旧 release/content/captions 哈希的文件。它覆盖旁路三件套里的英文对照与公告；统计目录 `catalog.json` 在 `sermon-feedback-api` 仓库，仍按本节手动同步。
+- `publish-check` 是每次 deploy 前的哈希绑定检查：catalog ↔ release ↔ page/content/captions/audio、`/english-reference/<pageId>.json` 与 `weekly-announcements-v1.json` 必须绑定当前 release/content/captions 哈希；`--baseline` 还会扫出仍引用旧 release/content/captions 哈希的文件。**第一次部署（stage1）用 `--assets <assets 目录>`**：此时页面还没进 catalog、release 也还没进快照，这个模式核对 `assets/releases/*.json` 与快照 `public/` 的资产哈希，并确认 catalog 尚未含本页；stage2 与英文对照部署前的检查不带 `--assets`。它覆盖旁路三件套里的英文对照与公告；统计目录 `catalog.json` 在 `sermon-feedback-api` 仓库，仍按本节手动同步。
+- `preflight` 也检查每语 journal 里有 `finished` 的 `l1.preflight`（缺则失败；旧 run 可 `--allow-missing-journal-gates`）；`l2.consistency` 缺只告警。这正是第 5 步末必须跑完整 preflight 的原因。
+- 公告 sidecar `weekly-announcements-v1.json` 与统计目录 `catalog.json`（在 `sermon-feedback-api` 仓库）不由驱动生成：发布后按下面清单手动重生成/同步；如果快照里已有公告侧车，可在最后 `publish-check` 加 `--require-announcements`。
 - `stage2` 也可以加 `--with-english`，把英文对照并进第二次部署，省第三次部署。
 3. `stage1` → `publish`：第一次部署，只加资产（和上面的投影修正）。
 4. `verify`：逐个 GET 新资产比对 SHA，MP3 查 Range。
@@ -502,4 +553,4 @@ python3 $EXP/publish_study.py finish                                            
 
 ## 完成的样子
 
-每种语言的 `run.md` 能让另一个人复现：来源、窗口、模型与 checkpoint、每步的决定、改过哪些句、用户结论、每步用时。审核收据在审核目录；音频留在本机；发布了的话，报告里写明线上版本号和哪些检查没做。发布的页面要同时满足：每种语言在正式版 App 的解码规则下都能显示（固定路径、文稿时间），英文对照已上线且每一句都有英文。缺英文对照不算发布完成。整期用 batch 8；同步 run 的 `lag-loop-report.json` 必须 `gate.clean=true`；每条可审前 `finish_run.py` 一并生成 `review.mp3`/`review-player.html`；改句按窗口重配；开工用 `sfa.py start`（含 `preflight --stage setup`），发布前 `preflight.py` 通过；审核用 `review_player.py`；合并后跑 `consistency_check.py`；ASR 用 `asr_triage.py` 分诊；双讲员可用 `--pool-replicas 8`。
+每种语言的 `run.md` 能让另一个人复现：来源、窗口、模型与 checkpoint、每步的决定、改过哪些句、用户结论、每步用时。审核收据在审核目录；音频留在本机；发布了的话，报告里写明线上版本号和哪些检查没做。发布的页面要同时满足：每种语言在正式版 App 的解码规则下都能显示（固定路径、文稿时间），英文对照已上线且每一句都有英文。缺英文对照不算发布完成。整期用 batch 8；同步 run 的 `lag-loop-report.json` 必须 `gate.clean=true`；每条可审前 `finish_run.py` 一并生成 `review.mp3`/`review-player.html`；改句按窗口重配；开工用 `sfa.py start`（含 `preflight --stage setup`），发布前 `preflight.py` 通过；审核用 `review_player.py`；合并后跑 `consistency_check.py`；ASR 用 `asr_triage.py` 分诊；`--pool-replicas 8` 的链路目前未打通（`spark_session_job.py` 不接受 `tts-pool`、日志名与 `finish_run` 拉取不一致），**修好前不要用**；双讲员先按每讲员一条 `--voice` 排队。

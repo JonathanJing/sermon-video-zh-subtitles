@@ -76,6 +76,36 @@ def write_json(path: Path, value) -> None:
     path.write_text(json.dumps(value, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
 
 
+def append_decisions_to_run_md(run: Path, decisions: dict) -> bool:
+    """Write the frozen-decision table into run.md once (the runbook asks for it there)."""
+    path = run / "run.md"
+    if not path.is_file():
+        return False
+    text = path.read_text(encoding="utf-8")
+    if "## 冻结决策" in text:
+        return False
+    form = {"full": "整期", "clip": "片段"}.get(decisions.get("form"), "未记录")
+    sync = "跟视频同步（--gap 0.05）" if decisions["sync"] else "不同步（自然语速）"
+    publish = "发布正式页面" if decisions["publish"] else "不发，停在审核包"
+    lines = [
+        "",
+        "## 冻结决策",
+        "",
+        "| 决策 | 取值 |",
+        "|---|---|",
+        f"| 形态 | {form} |",
+        f"| 语言 | {'、'.join(decisions['locales'])} |",
+        f"| 同步 | {sync} |",
+        f"| 发布 | {publish} |",
+        f"| 标题 | {decisions['title'] or '未记录'} |",
+        f"| 窗口 / 单元 | start {decisions.get('windowStart')}，units {decisions.get('units')}（{decisions.get('sentences')} 句） |",
+        "",
+    ]
+    with path.open("a", encoding="utf-8") as handle:
+        handle.write("\n".join(lines))
+    return True
+
+
 def build_decisions(a, run: Path, *, shares: dict[str, Path], sentences: int,
                     clip_seconds: float | None) -> dict:
     """The frozen decisions the runbook asks for before any downstream work."""
@@ -198,7 +228,7 @@ def _git_check(repo: Path) -> tuple[bool, str]:
 def _package_check(repo: Path) -> tuple[bool, str]:
     env = dict(os.environ)
     env["PYTHONPATH"] = os.pathsep.join([str(repo / "packages" / "production" / "src"), str(repo)])
-    code = ("import pathlib, tongxing_production as m; "
+    code = ("import pathlib, tongxing_production as m, jsonschema, google.auth; "
             "print(pathlib.Path(m.__file__).resolve())")
     try:
         proc = subprocess.run([sys.executable, "-c", code], cwd=repo, capture_output=True, text=True,
@@ -230,6 +260,9 @@ def env_checks(a, run: Path) -> tuple[list[dict], bool]:
         add("git", ok, detail, warning=True)
     if a.check_package or a.publish:
         ok, detail = _package_check(ROOT)
+        if not ok:
+            detail += ("; use .venv/bin/python or tools/ops/bootstrap_sentence_first_env.sh "
+                       "(.venv-sfa) — system python3 has no jsonschema/google-auth")
         add("package", ok, detail, warning=False)
     if a.publish:
         add("english-package", bool(a.english_package),
@@ -566,6 +599,7 @@ def main(argv=None) -> int:
 
         decisions = build_decisions(a, run, shares=shares, sentences=sentences, clip_seconds=seconds)
         write_json(run / "decisions.json", decisions)
+        append_decisions_to_run_md(run, decisions)
         for target in shares.values():
             write_json(target / "decisions.json",
                        {**decisions, "run": repo_relative(target), "primaryRun": repo_relative(run)})

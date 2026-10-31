@@ -271,6 +271,115 @@ class TitleTableTest(unittest.TestCase):
             self.assertIn("skipped", result["titleCheck"])
 
 
+def make_staged_assets(root: Path, *, page_id: str = "test-page", locale: str = "zh-Hans"):
+    """A stage1-like snapshot (assets already copied, catalog has no page) plus the assets dir."""
+    snapshot, assets = root / "stage1", root / "assets"
+    public = snapshot / "public"
+    paths = {"page": f"/pages/{page_id}/{locale}/index.html",
+             "content": f"/content/{page_id}/{locale}.json",
+             "captions": f"/captions/{page_id}/{locale}.json",
+             "audio": f"/media/{page_id}/{locale}.mp3"}
+    payloads = {"page": b"<html>page</html>",
+                "content": json.dumps({"pageId": page_id, "targetLocale": locale, "cues": []}).encode(),
+                "captions": json.dumps({"pageId": page_id, "locale": locale, "cues": []}).encode(),
+                "audio": b"mp3"}
+    release_assets = []
+    for role, path in paths.items():
+        target = public / path.lstrip("/")
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_bytes(payloads[role])
+        release_assets.append({"role": role, "path": path, "sha256": sha256_bytes(payloads[role])})
+    (public / "multilingual-v3.json").write_text(json.dumps({
+        "schemaVersion": "sermon-multilingual-catalog-v3", "pages": []}), encoding="utf-8")
+    release = {"schemaVersion": "sermon-target-language-release-package-v2",
+               "pageId": page_id, "targetLocale": locale, "contentLocale": locale,
+               "audioLocale": locale, "interfaceLocale": locale, "packageId": f"{page_id}-{locale}-dev-v1",
+               "status": "candidate", "assets": release_assets}
+    release_path = assets / "releases" / f"{locale}.json"
+    release_path.parent.mkdir(parents=True, exist_ok=True)
+    release_path.write_text(json.dumps(release), encoding="utf-8")
+    return snapshot, assets
+
+
+class FirstDeployCheckTest(unittest.TestCase):
+    def setUp(self):
+        self.publish = load("sfa_publish")
+
+    def test_staged_assets_pass_before_the_first_deploy(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            minimal_inputs(root)
+            cfg = self.publish.load_config(minimal_config(root), root=root)
+            snapshot, assets = make_staged_assets(root)
+            result = self.publish.cmd_publish_check(cfg, snapshot, assets=assets)
+            self.assertTrue(result["ok"], result["problems"])
+            self.assertEqual(result["mode"], "staged-assets")
+            self.assertEqual(result["staleReferences"], [])
+
+    def test_staged_assets_catch_a_changed_file(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            minimal_inputs(root)
+            cfg = self.publish.load_config(minimal_config(root), root=root)
+            snapshot, assets = make_staged_assets(root)
+            (snapshot / "public/content/test-page/zh-Hans.json").write_bytes(b"tampered")
+            result = self.publish.cmd_publish_check(cfg, snapshot, assets=assets)
+            self.assertFalse(result["ok"])
+            self.assertTrue(any("hash differs from the release" in problem["detail"]
+                                for problem in result["problems"]))
+
+    def test_staged_assets_reject_a_page_already_in_the_catalog(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            minimal_inputs(root)
+            cfg = self.publish.load_config(minimal_config(root), root=root)
+            snapshot, assets = make_staged_assets(root)
+            catalog = json.loads((snapshot / "public/multilingual-v3.json").read_text())
+            catalog["pages"].append({"id": "test-page"})
+            (snapshot / "public/multilingual-v3.json").write_text(json.dumps(catalog), encoding="utf-8")
+            result = self.publish.cmd_publish_check(cfg, snapshot, assets=assets)
+            self.assertFalse(result["ok"])
+            self.assertTrue(any("already in a snapshot catalog" in problem["detail"]
+                                for problem in result["problems"]))
+
+
+class PublishGateTighteningTest(unittest.TestCase):
+    def setUp(self):
+        self.publish = load("sfa_publish")
+
+    def test_preflight_fails_without_the_full_preflight_journal_stage(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            minimal_inputs(root)
+            cfg = self.publish.load_config(minimal_config(root), root=root)
+            (root / "runs/run/journal.ndjson").unlink()
+            with self.assertRaises(ValueError) as caught:
+                self.publish.cmd_preflight(cfg, allow_missing_decisions=True)
+            self.assertIn("journal.ndjson", str(caught.exception))
+            result = self.publish.cmd_preflight(cfg, allow_missing_decisions=True,
+                                                allow_missing_journal_gates=True)
+            self.assertTrue(result["ok"])
+
+    def test_preflight_rejects_an_unheard_note_and_tolerates_a_naive_timestamp(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            minimal_inputs(root)
+            verdict = root / "verdict.json"
+            data = json.loads(verdict.read_text())
+            data["note"] = "未听审"
+            verdict.write_text(json.dumps(data), encoding="utf-8")
+            cfg = self.publish.load_config(minimal_config(root), root=root)
+            with self.assertRaises(ValueError) as caught:
+                self.publish.cmd_preflight(cfg, allow_missing_decisions=True)
+            self.assertIn("未听审", str(caught.exception))
+            data.pop("note")
+            data["reviewedAt"] = "2026-10-30T00:00:00"  # no offset
+            verdict.write_text(json.dumps(data), encoding="utf-8")
+            result = self.publish.cmd_preflight(cfg, allow_missing_decisions=True)
+            self.assertTrue(result["ok"])
+            self.assertTrue(any("timezone" in warning for warning in result["warnings"]))
+
+
 class AssetsParityTest(unittest.TestCase):
     """The migrated config must reproduce the legacy driver's bytes exactly."""
 
@@ -365,6 +474,9 @@ def minimal_inputs(root: Path, *, page_id: str = "test-page", locale: str = "zh-
                        ("schedule.json", '{"sentences": [{"id": "s0001", "actualStart": 0, "dubSeconds": 1}]}\n')):
         (run / name).write_text(text, encoding="utf-8")
     (run / "track.wav").write_bytes(b"RIFF-track")
+    (run / "journal.ndjson").write_text(
+        "".join(json.dumps({"at": "2026-10-30T00:00:00+00:00", "stage": stage, "event": "finished"}) + "\n"
+                for stage in ("l1.preflight", "l2.consistency")), encoding="utf-8")
     track_sha = hashlib.sha256(b"RIFF-track").hexdigest()
     verdict = root / "verdict.json"
     verdict.write_text(json.dumps({

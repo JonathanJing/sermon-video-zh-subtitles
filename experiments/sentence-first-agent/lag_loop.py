@@ -9,6 +9,11 @@ locale's ``tts/`` on the host and locally -> re-queue that locale -> ``finish_ru
 
 It needs an active Spark exclusive session and an uploaded ``speech.jsonl`` path already
 working for ``spark_queue.py``; it never publishes.
+Run one pass per locale: trim the over-budget sentences, rebuild speech, delete the
+locale's TTS wavs (the whole locale is re-rendered), re-queue on Spark and finish with
+--gap 0.05. Pass one --voice KEY=CHECKPOINT per speaker in speech.jsonl; the legacy
+--checkpoint flag only covers a single-speaker run.
+
 """
 from __future__ import annotations
 
@@ -84,6 +89,28 @@ def final_gate(summary: dict, threshold: float) -> dict:
             and (summary.get("maxLagSeconds") or 0) <= threshold}
 
 
+def resolve_voices(voice_args: list[str], checkpoint: str | None, speech_rows: list[dict]) -> list[tuple[str, str]]:
+    """One (speakerKey, checkpoint) per speaker in speech.jsonl; legacy --checkpoint covers one."""
+    voices = []
+    for item in voice_args:
+        key, sep, value = item.partition("=")
+        if not sep or not key or not value:
+            raise SystemExit(f"--voice wants KEY=CHECKPOINT, got {item!r}")
+        voices.append((key, value))
+    speaker_keys = sorted({row.get("speaker") for row in speech_rows if row.get("speaker")})
+    if not voices:
+        if len(speaker_keys) == 1 and checkpoint:
+            voices = [(speaker_keys[0], checkpoint)]
+            print(f"lag_loop: --voice omitted; using speech speaker {speaker_keys[0]} with --checkpoint", flush=True)
+        else:
+            raise SystemExit("pass --voice KEY=CHECKPOINT for every speaker in speech.jsonl "
+                             f"(found {speaker_keys}); --checkpoint only covers a single-speaker legacy run")
+    missing = sorted(set(speaker_keys) - {key for key, _ in voices})
+    if missing:
+        raise SystemExit(f"no checkpoint for speech speakers: {missing}")
+    return voices
+
+
 def run(command: list[str]) -> None:
     print("$ " + " ".join(command), flush=True)
     subprocess.run(command, check=True, cwd=HERE.parents[1])
@@ -95,7 +122,9 @@ def main() -> int:
     parser.add_argument("--locale", choices=tuple(CPS), required=True)
     parser.add_argument("--remote", required=True, help="USER@HOST:/remote/run")
     parser.add_argument("--session", required=True)
-    parser.add_argument("--checkpoint", required=True)
+    parser.add_argument("--checkpoint", help="legacy single-speaker checkpoint; use --voice for anything else")
+    parser.add_argument("--voice", action="append", default=[], metavar="KEY=CHECKPOINT",
+                        help="one per speaker in speech.jsonl (repeatable)")
     parser.add_argument("--remote-tools", default="/home/achillesjing/sentence-first-agent/tools")
     parser.add_argument("--threshold", type=float, default=8.0)
     parser.add_argument("--overrun", type=float, default=0.25,
@@ -111,6 +140,7 @@ def main() -> int:
     args = parser.parse_args()
     remote_host, remote_dir = args.remote.split(":", 1)
     run_dir = args.run.resolve()
+    voices = resolve_voices(args.voice, args.checkpoint, load_rows(run_dir / "speech.jsonl"))
     if args.check_only:
         summary = json.loads((run_dir / "schedule.json").read_text())["summary"]
         gate = final_gate(summary, args.threshold)
@@ -160,11 +190,12 @@ def main() -> int:
         shutil.rmtree(run_dir / "tts", ignore_errors=True)
         subprocess.run(["ssh", remote_host, f"rm -rf {remote_dir}/tts"], check=True)
         subprocess.run(["scp", "-q", str(run_dir / "speech.jsonl"), f"{args.remote}/"], check=True)
-        run([sys.executable, str(HERE / "spark_queue.py"), "--session", args.session,
-             "--owner", "sentence-first-agent",
-             "--remote-tools", args.remote_tools,
-             "--locale", f"{args.locale}={remote_dir}", "--voice", f"eric_pilot={args.checkpoint}",
-             "--batch-size", "8"])
+        queue = [sys.executable, str(HERE / "spark_queue.py"), "--session", args.session,
+                 "--owner", "sentence-first-agent", "--remote-tools", args.remote_tools,
+                 "--locale", f"{args.locale}={remote_dir}", "--batch-size", "8"]
+        for key, checkpoint in voices:
+            queue += ["--voice", f"{key}={checkpoint}"]
+        run(queue)
         run([sys.executable, str(HERE / "finish_run.py"), "--run", str(run_dir),
              "--remote", args.remote, "--gap", "0.05", "--no-video"])
     client.finish("finished")
