@@ -61,6 +61,10 @@ struct ContentView: View {
     @ViewState private var locateConfirmation: Double?
     @ViewState private var copyConfirmation: String?
     @ViewState private var showingPlaybackMore = false
+    /// Global frame of the dock's more button, used only when the dock lives in
+    /// the system vertical rail: a popover anchored inside a toolbar item is
+    /// positioned against the bar, so the host presents it here instead.
+    @ViewState private var playbackMoreButtonFrame: CGRect = .null
     @ViewState private var showingAlignmentFailure = false
 
     init(model: AppModel) {
@@ -444,6 +448,7 @@ struct ContentView: View {
             #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
             #endif
+            .overlay { systemBarMoreAnchor(usesSystemVerticalBar) }
             .sheet(item: $sheet, onDismiss: {
                 playback.setVideoPresented(false)
                 updateAlignmentFailurePresentation()
@@ -535,8 +540,42 @@ struct ContentView: View {
             placement: placement,
             inSystemBar: inSystemBar,
             isMorePresented: $showingPlaybackMore,
-            moreContent: { AnyView(playbackMoreControls) }
+            moreContent: { AnyView(playbackMoreControls) },
+            defersMorePresentation: inSystemBar,
+            onMoreButtonFrame: { playbackMoreButtonFrame = $0 }
         )
+    }
+
+    /// Presents the more panel from the page instead of the toolbar host so the
+    /// popover keeps its arrow on the rail button. The toolbar's own anchor
+    /// resolves to the bar origin and drops the panel in the corner, and a
+    /// `.position`-ed anchor is ignored for presentation, so the panel is
+    /// attached to the whole page and aimed at the button's unit point.
+    @ViewBuilder
+    private func systemBarMoreAnchor(_ enabled: Bool) -> some View {
+        if enabled {
+            GeometryReader { proxy in
+                let origin = proxy.frame(in: .global).origin
+                let frame = playbackMoreButtonFrame
+                let size = proxy.size
+                // Aim at the button's leading edge so the panel sits fully to
+                // its left; aiming at the centre leaves it overlapping the rail.
+                let anchor = UnitPoint(
+                    x: size.width > 0 ? (frame.minX - origin.x) / size.width : 0.9,
+                    y: size.height > 0 ? (frame.midY - origin.y) / size.height : 0.7)
+                if !frame.isNull {
+                    Color.clear
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        .allowsHitTesting(false)
+                        .popover(isPresented: $showingPlaybackMore,
+                                 attachmentAnchor: .point(anchor),
+                                 arrowEdge: .trailing) {
+                            playbackMoreControls
+                                .presentationCompactAdaptation(.popover)
+                        }
+                }
+            }
+        }
     }
 
     private var playbackMoreControls: some View {
