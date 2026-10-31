@@ -12,8 +12,19 @@ Checks the cheap, repeated failure modes from the 2026-10-23 full-episode run:
 * the run's ``sourceUnitId`` set is covered by the English package;
 * optional: a checkpoint map, the Spark exclusive session and the Firebase ADC file.
 
+Two stages share the same report:
+
+* ``--stage full`` (default) checks a run that already has translations, review and
+  speech; it is the gate before TTS or before a publish.
+* ``--stage setup`` checks only what exists at 开工: ``clip.json`` and
+  ``sentences.jsonl``, every assigned ``speakerId`` against the Registry (purpose and
+  locale capability when ``--locale`` is given), the English package and the optional
+  Spark/Firebase probes. It journals ``l1.preflight.setup`` so the later full run keeps
+  ``l1.preflight``.
+
 Usage:
   preflight.py --run artifacts/sentence-first-agent/<run> \
+      [--stage full|setup] \
       --english-package artifacts/podcasts/<episode>/layer1-srt/english-source.json \
       [--checkpoint-map /path/to/speaker-checkpoints.dgx.json] \
       [--spark-session <name>] [--firebase]
@@ -129,6 +140,52 @@ def check_run(run: Path, locale: str | None, registry_path: Path, report: Report
     wrong = [s["id"] for s in speech if s.get("language") != "Chinese" and locale == "zh-Hans"] if locale == "zh-Hans" else []
     report.add("speech:language", not wrong, f"wrong={wrong[:5]} count={len(wrong)}")
     ctx["mapping"] = mapping
+    return ctx
+
+
+def check_run_setup(run: Path, locale: str | None, registry_path: Path, report: Report) -> dict:
+    """Checks that are possible right after prepare_clip/assign_speakers, before translation."""
+    ctx: dict = {}
+    for name in ("clip.json", "sentences.jsonl"):
+        p = run / name
+        report.add(f"file:{name}", p.exists(), str(p))
+        if not p.exists():
+            return ctx
+    clip = json.loads((run / "clip.json").read_text(encoding="utf-8"))
+    sentences = load_jsonl(run / "sentences.jsonl")
+    locale = locale or clip.get("locale")
+    ctx.update({"locale": locale, "clip": clip, "sentences": sentences})
+    report.add("locale", bool(locale), f"locale={locale}")
+    sids = [s["id"] for s in sentences]
+    report.add("rows:sentences", bool(sids), f"{len(sids)} sentences")
+    report.add("rows:unique", len(set(sids)) == len(sids), f"{len(sids)} unique sentence ids")
+    missing_units = [s["id"] for s in sentences if not s.get("sourceUnitId")]
+    report.add("sentences:source-unit-id", not missing_units,
+               f"missing={missing_units[:5]} count={len(missing_units)}")
+    speaker_ids = sorted({s["speakerId"] for s in sentences if s.get("speakerId")})
+    if not speaker_ids:
+        report.add("speakers:assigned", True, "no speakerId yet (single voice or assign_speakers not run)", warning=True)
+        return ctx
+    registry = json.loads(registry_path.read_text(encoding="utf-8"))
+    speakers = {s["speakerId"]: s for s in registry.get("speakers", [])}
+    for speaker_id in speaker_ids:
+        entry = speakers.get(speaker_id)
+        report.add(f"registry:{speaker_id}", entry is not None, "present" if entry else "missing speakerId")
+        if not entry:
+            continue
+        report.add(f"key:{speaker_id}", bool(entry.get("speakerKey")), f"speakerKey={entry.get('speakerKey')}")
+        if not locale:
+            continue
+        purposes = set(entry.get("authorization", {}).get("purposes", []))
+        allowed = PURPOSES_BY_LOCALE.get(locale, {"multilingual_dubbing"})
+        report.add(f"purpose:{speaker_id}", bool(purposes & allowed),
+                   f"purposes={sorted(purposes)} locale={locale}")
+        caps = [c for c in entry.get("localeCapabilities", []) if c.get("targetLocale") == locale]
+        report.add(f"capability:{speaker_id}:{locale}", bool(caps),
+                   f"status={caps[0].get('status') if caps else None}")
+        if caps and caps[0].get("status") != "human_reviewed":
+            report.add(f"capability-status:{speaker_id}:{locale}", False,
+                       f"status={caps[0].get('status')} (warn only; publish requires human_reviewed)", warning=True)
     return ctx
 
 
@@ -248,6 +305,8 @@ def check_firebase(report: Report) -> None:
 def main(argv=None) -> int:
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument("--run", type=Path, required=True)
+    p.add_argument("--stage", choices=("full", "setup"), default="full",
+                   help="full: translations/review/speech exist; setup: only clip.json and sentences.jsonl (default: full)")
     p.add_argument("--locale", choices=("zh-Hans", "ko", "es"))
     p.add_argument("--registry", type=Path, default=DEFAULT_REGISTRY)
     p.add_argument("--english-package", type=Path)
@@ -260,9 +319,11 @@ def main(argv=None) -> int:
     a = p.parse_args(argv)
     report = Report()
     journal = a.run.exists()
+    stage = "l1.preflight" if a.stage == "full" else "l1.preflight.setup"
     if journal:
-        _mark(a.run, "l1.preflight", "started")
-    ctx = check_run(a.run, a.locale, a.registry, report)
+        _mark(a.run, stage, "started")
+    ctx = check_run(a.run, a.locale, a.registry, report) if a.stage == "full" \
+        else check_run_setup(a.run, a.locale, a.registry, report)
     if a.english_package:
         check_english_package(a.english_package, ctx, report, a.repo_root, a.source_url)
     if a.checkpoint_map:
@@ -272,8 +333,9 @@ def main(argv=None) -> int:
     if a.firebase:
         check_firebase(report)
     result = report.result()
+    result["stage"] = a.stage
     if journal:
-        _mark(a.run, "l1.preflight", "finished" if result["status"] == "pass" else "failed")
+        _mark(a.run, stage, "finished" if result["status"] == "pass" else "failed")
     print(json.dumps(result, ensure_ascii=False, indent=1))
     if a.out:
         a.out.write_text(json.dumps(result, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
