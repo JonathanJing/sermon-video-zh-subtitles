@@ -23,7 +23,7 @@
 | 脚本 | 在哪跑 | 做什么 |
 |---|---|---|
 | `prepare_clip.py` | 本机 | 从锚点清单裁音频：clip.wav、clip.json、words.json、sentences.jsonl、原声切片、run.md 表头 |
-| `split_sentences.py`、`slice_sentences.py` | 本机 | 没有锚点清单时拆句、切原声（prepare_clip 会调用后者） |
+| `split_sentences.py`、`slice_sentences.py` | 本机 | 没有锚点清单时拆句、切原声；`slice_sentences.py` 默认在内存一次切完（`--method wave`，890 句约 0.2 s），不是 PCM16 mono 时才用 `--method ffmpeg` |
 | `assign_speakers.py` | 本机 | 双人：按说话人区分结果给每句定讲员 |
 | `translate_parts.py` | 本机 | 把句表拆成几份交给并行翻译子代理（`split`），再按句序合并、检查（`merge`） |
 | `deepseek_translate.py`、`coherence_core.py` | 本机 | DeepSeek 逐窗口连贯翻译（zh-Hans/ko/es），产物写 `coherence-<tag>/`，只读 run 的 sentences/slices |
@@ -78,14 +78,14 @@ artifacts/sentence-first-agent/<run>/
 
 ## 每周步骤
 
-命令里的 `$EXP` 指 `experiments/sentence-first-agent`，`$RUN` 指本语言的 run 目录，`SPARK` 指 `achillesjing@192.168.1.152`。
+命令里的 `$EXP` 指 `experiments/sentence-first-agent`，`$RUN` 指本语言的 run 目录，`SPARK` 指 `achillesjing@192.168.1.152`。本机命令里的 `python3` 建议换成 §0.5 的锁定环境 `.venv-sfa/bin/python`；用系统 `python3` 时至少带 `PYTHONPATH="packages/production/src:."`。
 
 ### 0.5 环境预检（本机，开工前几分钟）
 
 这些检查由 §2 的 `sfa.py start` 一次执行：默认查脚本、ffmpeg/ffprobe 与 run 路径；`--check-git` 才 fetch 并报落后 `origin/main`，`--check-package`（或 `--publish`）才验 `tongxing_production` 导入，`--spark-session` 与 `--firebase`/`--publish` 分别查 Spark 会话与 ADC。单独跑脚本或命令报错时按下面各项手工排查：
 
 1. 确认代码与脚本齐：`git fetch origin`，`git rev-list --left-right --count origin/main...HEAD`。落后很多时（2026-10-23：落后 2759 个提交，实验目录缺 11 个脚本），在 `artifacts/worktrees/sfa-main` 建 origin/main worktree，不要改当前分支。
-2. 确认导入的是 worktree 的包：主 checkout 的 `.venv` 是 editable 安装，指向旧包；运行发布驱动时用 `PYTHONPATH="packages/production/src:."` 把 worktree 放最前，并 `python -c "import tongxing_production; print(tongxing_production.__file__)"` 核对。
+2. 确认环境与导入：推荐 `tools/ops/bootstrap_sentence_first_env.sh` 建 `.venv-sfa`（uv + 锁定 `requirements-sfa.lock`，不做 editable 安装），本机脚本用 `PYTHONPATH="packages/production/src:." .venv-sfa/bin/python ...`；`--check` 会打印并校验 `tongxing_production` 的路径在 checkout 内。主 checkout 的 `.venv` 是 editable 安装（指向旧包），只作兜底；用 worktree 时务必用 `PYTHONPATH` 把当前 checkout 放最前。
 3. 确认 run 目录位置：`slices/slices.json` 存仓库相对路径（`artifacts/sentence-first-agent/<run>/slices/...`），所以 run 放在主 checkout 的 `artifacts/sentence-first-agent/`，所有本机步骤从仓库根运行；不要放 worktree。
 4. 要发布时确认 Firebase 与 ADC：`XDG_CONFIG_HOME=<可写 configstore 副本> firebase login:list` 和 ADC token 各一次；沙箱下 `~/.config/configstore` 不可写会让 firebase 报 “credentials no longer valid”。
 5. 确认 Spark 会话空闲、checkpoint 路径存在；有别人的会话先问用户。开工前 Spark 的 `MemAvailable` 要够 TTS 的预算：24 GiB 保留加每个模型副本 9 GiB（8 副本即 96 GiB，batch 1 单副本 33 GiB），回转写 6 GiB；`spark_run.sh` 在起容器前会自己检查，不够就带着数字退出，不用等 CUDA 报 OOM。**判断预算要在 `begin` 之后做**：`inspect` 看到的是带 llama-server 等非独占服务的状态（2026-10-30 实测可用 76 GiB、llama-server 占 35.7 GiB 显存），`begin` 会停掉这些服务再腾出预算；在 `begin` 之前看到数字不够不是故障。
@@ -356,7 +356,7 @@ python3 $EXP/spark_queue.py --session <session> --owner sentence-first-agent --r
 python3 $EXP/finish_run.py --run $RUN --remote SPARK:sentence-first-agent/<run> [--clip-from <第一种语言的 run>]
 ```
 
-它拉回 `tts/` 和回转写，合并音轨（每句放在英文起点，放不下就接在上一句后 0.25 秒），打分，生成 `review.mp3`（96 kbps）和 `review-player.html`（逐句播放器），打印落后最多的句、配音与原声时长比、TTS 速度和回转写相似度低的句。**音频对齐（ASR 回转写、`schedule.json`）、review MP3 和播放器在这一步一并生成，不等发布。**
+它拉回 `tts/` 和回转写，合并音轨（每句放在英文起点，放不下就接在上一句后 0.25 秒），打分，生成 `review.mp3`（96 kbps）、`review-player.html`（逐句播放器）和手机预览 `dub-preview-640.mp4`（`--preview-encoder auto|quality|fast|hardware`；auto 在 macOS 用硬件编码、无视频流自动回退，约为 quality 耗时的 60–70%，文件约 2 倍），打印落后最多的句、配音与原声时长比、TTS 速度和回转写相似度低的句。**音频对齐（ASR 回转写、`schedule.json`）、review MP3 和播放器在这一步一并生成，不等发布。**
 
 跟视频同步的 run 显式传 `--gap 0.05`：默认 0.25 秒会把连续句逐句推后（2026-10-24 三语分别有 60、78、144 句落后超过 1 秒，三语各重出一次）。一种语言「可审」的最低条件是 journal 里 `l1.preflight`、`l2.consistency` 两条都 `finished`，同步 run 再加 `lag-loop-report.json` 的 `gate.clean=true`；缺一条先补再发链接。回转写不再是可审前提。
 
