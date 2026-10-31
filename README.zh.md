@@ -66,6 +66,10 @@
 
 ## 架构
 
+![系统总览：本地四层生产、审核收据、受限发布、Firebase 托管与 Web/iOS 客户端](docs/diagrams/tongxing-system-architecture.svg)
+
+总览图把本地四层生产、审核收据、受限发布与两端客户端的消费边界放在一张图上；逐层的输入、模型与门禁见下文与[四层接口文档](docs/multilingual-production-interfaces.zh.md)。
+
 ### 四层，一份英文来源
 
 一份共享英文来源分出互相独立的中文、韩语和西班牙语分支。每个分支依次经过文字、音频、发布，各自有审核和哈希。Layer 1 身份变化使所有 locale 失效；Layer 2 或 Layer 3 产物变化只使该 locale 的下游失效。不跳层，也不在下游修补上游内容。
@@ -122,6 +126,12 @@
 5. **海报与报告。** 渲染[单行每周海报](docs/tongxing-weekly-poster-format.zh.md)，并以纯文档 PR 导出脱敏的[运行报告](docs/test-run-retrospective.zh.md)。
 
 同一路径在短片段上的真实模型演练是[片段 E2E](docs/clip-real-e2e.zh.md)。[工作流总览](docs/workflows/README.zh.md)是范围与完成状态的事实来源。
+
+### 逐句优先配音（代理直做）
+
+另一条并行的制作路线不走正式四层流水线：代理按句翻译与复核，Spark 用讲员自己的声音逐句配音，合并成整轨后由用户整轨听审，再按每次部署授权发布。运行手册见 [sentence-first runbook](experiments/sentence-first-agent/AGENTS.md)，适用范围、检查与成本见[路线说明](docs/sentence-first-agent-production.zh.md)。
+
+![逐句优先配音的每周运行流程：用户人审、本机脚本与 DGX Spark 独占会话](docs/diagrams/sentence-first-weekly-workflow.svg)
 
 ### 代码与内容发布
 
