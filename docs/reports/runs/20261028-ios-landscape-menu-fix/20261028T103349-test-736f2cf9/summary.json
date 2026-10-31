@@ -1,0 +1,30 @@
+{
+  "action": "test",
+  "scheme": "TongxingBeta",
+  "configuration": "BetaDebug",
+  "statusFileSha256": "a321d1eb613cedaf4fdce1c761b1198a36389be054dd9dbe5a24953b11cda450",
+  "logSha256": "15a60baa5274b46bac42d75daf71bcb38e4bd45224bb6cbeb8efa521c8aed6bd",
+  "resultBundle": "test.xcresult",
+  "resultBundleComplete": true,
+  "result": "Failed",
+  "totalTestCount": 3,
+  "passedTests": 2,
+  "failedTests": 1,
+  "skippedTests": 0,
+  "expectedFailures": 0,
+  "runtimeWarnings": [],
+  "failures": [
+    {
+      "test": "WeeklyGuidePreviewUITests/testLandscapeAutomaticallyShowsGuideAndRotationKeepsPlayback()",
+      "message": "XCTAssertTrue failed"
+    }
+  ],
+  "platforms": [
+    {
+      "deviceName": "iPhone 17 Pro",
+      "osVersion": "26.2",
+      "platform": "iOS Simulator"
+    }
+  ],
+  "hitRegionDiagnostics": []
+}

@@ -86,12 +86,6 @@ extension View {
     func listeningGlassSurface() -> some View {
         modifier(ListeningGlassSurface(shape: RoundedRectangle(cornerRadius: 30, style: .continuous)))
     }
-
-    /// Circular glass for the collapsed dock: a round play button should sit in
-    /// round glass, since Liquid Glass shapes follow their content.
-    func listeningCircularGlassSurface() -> some View {
-        modifier(ListeningGlassSurface(shape: Circle()))
-    }
 }
 
 private struct ListeningGlassSurface<S: InsettableShape>: ViewModifier {
@@ -125,5 +119,23 @@ private struct ListeningGlassSurface<S: InsettableShape>: ViewModifier {
                 .shadow(color: .black.opacity(0.10), radius: 12, y: 4)
             #endif
         }
+    }
+}
+
+/// Long-press copy shares one write path so the visible confirmation and the
+/// system announcement cannot claim success when the pasteboard refused.
+enum Clipboard {
+    @discardableResult
+    static func copy(_ value: String) -> Bool {
+        #if os(iOS)
+        UIPasteboard.general.string = value
+        return true
+        #elseif os(macOS)
+        let pasteboard = NSPasteboard.general
+        pasteboard.clearContents()
+        return pasteboard.setString(value, forType: .string)
+        #else
+        return false
+        #endif
     }
 }

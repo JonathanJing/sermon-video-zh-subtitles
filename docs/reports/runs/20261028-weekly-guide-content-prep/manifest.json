@@ -1,0 +1,27 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261028-weekly-guide-content-prep",
+  "runs": [
+    {
+      "label": "weekly-guide-content-prep-report-20261027",
+      "source": "~/.codex/worktrees/weekly-study-guide-design/sermon-video-zh-subtitles/artifacts/weekly-guide-content-prep-report-20261027",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "weekly-guide-content-prep-report-20261027",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 915,
+      "truncated": false,
+      "sha256": "a52456d44bb22c8bdf7aa0ddc5971d27d62b7af58fedeab3cefa965e48d9dfd9",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

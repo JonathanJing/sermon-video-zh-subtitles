@@ -12,7 +12,7 @@
 
 本页只负责路由，不重复定义流程。项目当前事实以根目录 [README](../README.zh.md)、[工作流总览](workflows/README.zh.md)、对应操作 Runbook、代码和绑定运行收据共同决定；单独一份设计稿、测试或历史报告不能升级生产状态。
 
-导航更新日期：**2026-10-22**，只表示本页路由已核对。当前提交、远端部署、现场同步和实体设备验收须分别重新读取实际证据，不从文档日期推断。
+导航更新日期：**2026-10-31**，只表示本页路由已核对。当前提交、远端部署、现场同步和实体设备验收须分别重新读取实际证据，不从文档日期推断。
 
 ## 从任务进入
 
@@ -22,10 +22,11 @@
 | 正式运行或测试后生成报告并复盘 | [运行报告与复盘](test-run-retrospective.zh.md) | 报告只汇总脱敏证据，不改变任何层的完成状态 |
 | 查看或更新 Dev 开发优先级 | [Dev 统一 Backlog](backlog.zh.md) | 唯一顶层开发清单；专项 backlog 只展开细节，生产 Tracker 只记录单次运行 |
 | 执行未来预制多语言生产 | [四层接口合同](multilingual-production-interfaces.zh.md) → [本地生产 Runbook](codex-local-production-runbook.zh.md) | 必须按 Layer 1–4 逐层留证；legacy 完成不等于四层完成 |
-| 查看三条产品路径与完成标准 | [工作流总览](workflows/README.zh.md) | 当前总入口 |
+| 查看三条交付路径、两条预制生产路线与完成标准 | [工作流总览](workflows/README.zh.md) | 当前总入口 |
 | 周六从完整礼拜／归档生成双 PDF | [本地生产 Runbook](codex-local-production-runbook.zh.md) → [稳定双 PDF 流程](stable-post-live-reading-pdf-workflow.zh.md) | 独立的 `dual_pdf` 交付路径 |
 | 查看或恢复生产 Supervisor | [Supervisor 契约](sermon-production-supervisor-agent.zh.md) | 默认 Codex CLI / Luna；Agents API 仅历史原会话恢复，状态仍由本地证据决定 |
 | 从英文视频制作中文音轨与同行页面 | [配音操作 Runbook](../experiments/sermon-dubbing-poc/SATURDAY_AUDIO_RUNBOOK.zh.md) → [系统设计](sermon-dubbing-system-design.zh.md) | legacy 中文配音路径；当前多语言周更按四层合同 |
+| 由代理逐句配音并发布正式页面 | [逐句优先路线说明](sentence-first-agent-production.zh.md) → [runbook](../experiments/sentence-first-agent/AGENTS.md) | `four_layer_release` 页面；人工整轨听审是唯一音频门禁，每次部署单独授权 |
 | 审核 CUV 引文和口播中文 | [CUV 生产流程](sermon-cuv-production.zh.md) → [固定经文库](cuv-scripture-library.zh.md) | 翻译、字幕、TTS 共用同一锁定文本 |
 | 发行同行页面和海报 | [每周发行流程](tongxing-weekly-release.zh.md) | 发布、HTTP 核验、App 验收、海报分别留证 |
 | 准备周日实时字幕页面 | [Agent 执行入口](sunday-live-agent-runbook.zh.md) → [运行白皮书](sunday-live-operations-whitepaper.zh.md) | 准备模式不开始录音 |
@@ -37,7 +38,7 @@
 ### 来源、文本与 PDF
 
 - [多语言生产四层接口](multilingual-production-interfaces.zh.md)：今后预制多语言生产的命名、包和失效规则唯一来源
-- [机器质检豁免与 TTS 前时长预算](machine-quality-waiver.zh.md)：三语机器质检自动发布、单句 4 次修复、5% 规则、注错校准与 8 秒预测排程
+- [机器质检豁免与 TTS 前时长预算](machine-quality-waiver.zh.md)：音频机器听审已于 2026-10-28 退役，人工整轨听审是唯一音频门禁；本页保留文字豁免、单句 4 次修复、5% 规则、注错校准与 8 秒预测排程
 - [Dev 统一 Backlog](backlog.zh.md)：跨 Layer 1–4、Firebase Dev、Web／iOS、现场对齐、CI 与审核工具的唯一顶层优先级
 - [四层制作 Tracker](four-layer-production-tracker.zh.md)：单次制作的每层检查点、状态记录和有条件 ETA
 - [Firebase 四层公开 Tracker](../apps/tracker-web/README.zh.md)：每周源视频、三语分层制作、页面／语音／声纹的脱敏实时只读视图
@@ -46,6 +47,7 @@
 - [系列名称表](series-terminology.zh.md)：页面、字幕、阅读稿、大纲和配音共用术语
 - [MFA 阅读稿对齐](mfa-production.zh.md)
 - [双语全文显示](bilingual-transcript-display.zh.md)
+- [从 PDF 抽取、翻译到中文重排](pdf-layout-localization.zh.md)：文字层与坐标抽取、按页对齐、HTML/CSS 重建、字体嵌入与裁切校验
 
 ### 编排、并发与证据
 

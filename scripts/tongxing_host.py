@@ -473,8 +473,7 @@ def _validate_codex_test_configuration(configuration):
 
 def transports() -> ports.Transports:
     return ports.Transports(caller=_transport_caller, claude_chat_envelope=_claude_chat_envelope,
-                            validate_codex_test_configuration=_validate_codex_test_configuration,
-                            audio_qc=_module('tongxing_production.compute.qc_audio_transports'))
+                            validate_codex_test_configuration=_validate_codex_test_configuration)
 
 
 def _validate_handoff_schema(value, filename, label):
@@ -681,15 +680,6 @@ def _accounting_orchestration(name, *, depends_on=None, work_unit_id=None):
     return sermon_accounting.orchestration(name, depends_on=depends_on, work_unit_id=work_unit_id)
 
 
-def _screening_asr_settings(screening):
-    from tongxing_production.review import audio_qc as target_audio_auto_qc
-    return target_audio_auto_qc.screening_asr_settings(screening)
-
-
-def machine_qc() -> ports.MachineQc:
-    return ports.MachineQc(screening_asr_settings=_screening_asr_settings)
-
-
 def _rule_function(module, name):
     def call(*args, **kwargs):
         return getattr(_module(module)(), name)(*args, **kwargs)
@@ -760,7 +750,7 @@ def audio_unmoved() -> audio_backend.Unmoved:
 # public name: functions are called through their scripts/ module at call time, so
 # patches still intercept, and constants and classes are read when used.
 _PREDICTED = 'tongxing_production.audio.predicted_schedule'
-_SCREENING = 'tongxing_production.audio.screening'
+_SCREENING = 'tongxing_production.review.asr_scoring'
 _RENDERER = 'tongxing_production.audio.renderer'
 
 
@@ -964,9 +954,8 @@ def _upcoming_sunday(*arguments, **options):
 
 def compute_unmoved():
     return compute_backend.Unmoved(
-        waiver=_module('tongxing_production.review.waiver'), audio_qc=_module('tongxing_production.review.audio_qc'),
+        waiver=_module('tongxing_production.review.waiver'),
         budget_authorization=_module('tongxing_production.review.qc_budget_authorization'),
-        screener=_module('tongxing_production.audio.screening'),
         predicted_schedule=_module('tongxing_production.audio.predicted_schedule'),
         formal_renderer=_module('tongxing_production.audio.renderer'),
         voice_demos=_module('tools.ops.render_multilingual_voice_demos'),
@@ -1017,8 +1006,6 @@ ENTRY_LOAD_TIME_IMPORTS = {
         'tongxing_production.observability.measure', 'scripts.ko_spoken_numerals'),
     'tongxing_production.audio.package': ('tongxing_production.observability.accounting',),
     # G1: the audio QC transport imported the waiver and the audio QC checks at load time.
-    'tongxing_production.compute.qc_audio_transports': ('tongxing_production.review.waiver',
-                                                        'tongxing_production.review.audio_qc'),
     # L4 D2: the app release builder imported the waiver release basis at load time.
     'tongxing_production.delivery.app_release': ('tongxing_production.review.release_basis',),
     # D-5: the supervisor and its agent imported these backend helpers at load time; ports now defer them.
@@ -1121,7 +1108,7 @@ delivery_backend.configure(delivery_backend.DeliveryBackend(core=_core, code=_co
                                                             legacy=delivery_legacy(), unmoved=delivery_unmoved()))
 audio_backend.configure(audio_backend.AudioBackend(core=_core, code=_code, compute=_compute, measure=_measure,
                                                    accounting=_accounting, schemas=_schemas, diagnostic=_diagnostic,
-                                                   review=_review, waivers=_waivers, machine_qc=machine_qc(),
+                                                   review=_review, waivers=_waivers,
                                                    spoken_rules=spoken_rules(), tts_runtime=tts_runtime(),
                                                    dev_profile=dev_profile(), unmoved=audio_unmoved()))
 review_backend.configure(review_backend.ReviewBackend(core=_core, code=_code, snapshot=_snapshot,

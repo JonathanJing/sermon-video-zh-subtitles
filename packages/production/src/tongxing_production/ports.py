@@ -198,8 +198,6 @@ class Transports:
     caller: Callable[..., Any]                 # (backend, **options): 'openai-api' | 'codex-cli' | 'claude-cli' | 'deepseek-api'
     claude_chat_envelope: Callable[[Any, str], dict]   # (response, model)
     validate_codex_test_configuration: Callable[[Any], Any]
-    audio_qc: Callable[[], ModuleType]         # machine_qc_audio_transports (compute/): primary/secondary ASR, TTS, fakes,
-                                               # CallCache, asr_router, render_identity, implementation_sha256, qwen_inference_identity
 
 
 @dataclass(frozen=True)
@@ -246,12 +244,6 @@ class Waivers:
     audio_waiver_schema: str
     condensation_binding_schema: str
     review_kind: str                           # the review kind a machine-waived hand-off records
-
-
-@dataclass(frozen=True)
-class MachineQc:
-    """Audio machine-QC settings a Layer 3 package records; review/ owns target_audio_auto_qc."""
-    screening_asr_settings: Callable[[dict], dict]   # (screening)
 
 
 @dataclass(frozen=True)

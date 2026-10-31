@@ -1,0 +1,242 @@
+2026-10-26 01:41:45 +0000 [MT] Initial pipeline context: <IDEDistributionProcessingPipelineContext: 0x7c3645f600; archive(resolved)="<IDEArchive: 0x7c360c11f0>", distributionTask(resolved)="2", distributionDestination(resolved)="1", distributionMethod(resolved)="<IDEDistributionMethodiOSAppStoreDistribution: 0x7c35c84f20>", team(resolved)="<IDEProvisioningBasicTeam: 0x7c3616c9c0; teamID='G2P4DTQNBA', teamName='Zheng Jing'>">
+	Chain (15, self inclusive):
+	<IDEDistributionProcessingPipelineContext: 0x7c3645f600; archive = "<IDEArchive: 0x7c360c11f0>", distributionMethod="<IDEDistributionMethodiOSAppStoreDistribution: 0x7c35c84f20>", team="<IDEProvisioningBasicTeam: 0x7c3616c9c0; teamID='G2P4DTQNBA', teamName='Zheng Jing'>">
+	<IDEDistributionProcessingPipelineContext: 0x7c3645f300; archive = "<IDEArchive: 0x7c360c11f0>", distributionMethod="<IDEDistributionMethodiOSAppStoreDistribution: 0x7c35c84f20>", team="<IDEProvisioningBasicTeam: 0x7c3616c9c0; teamID='G2P4DTQNBA', teamName='Zheng Jing'>">
+	<IDEDistributionContext: 0x7c36135e00; archive = "<IDEArchive: 0x7c360c11f0>", distributionMethod="<IDEDistributionMethodiOSAppStoreDistribution: 0x7c35c84f20>", team="<IDEProvisioningBasicTeam: 0x7c3616c9c0; teamID='G2P4DTQNBA', teamName='Zheng Jing'>">
+	<IDEDistributionContext: 0x7c36135900; archive = "<IDEArchive: 0x7c360c11f0>", distributionMethod="<IDEDistributionMethodiOSAppStoreDistribution: 0x7c35c84f20>", team="<IDEProvisioningBasicTeam: 0x7c3616c9c0; teamID='G2P4DTQNBA', teamName='Zheng Jing'>">
+	<IDEDistributionContext: 0x7c36135680; archive = "<IDEArchive: 0x7c360c11f0>", distributionMethod="<IDEDistributionMethodiOSAppStoreDistribution: 0x7c35c84f20>", team="<IDEProvisioningBasicTeam: 0x7c3616c9c0; teamID='G2P4DTQNBA', teamName='Zheng Jing'>">
+	<IDEDistributionContext: 0x7c36135400; archive = "<IDEArchive: 0x7c360c11f0>", distributionMethod="<IDEDistributionMethodiOSAppStoreDistribution: 0x7c35c84f20>", team="<IDEProvisioningBasicTeam: 0x7c3616c9c0; teamID='G2P4DTQNBA', teamName='Zheng Jing'>">
+	<IDEDistributionContext: 0x7c36135180; archive = "<IDEArchive: 0x7c360c11f0>", distributionMethod="<IDEDistributionMethodiOSAppStoreDistribution: 0x7c35c84f20>", team="<IDEProvisioningBasicTeam: 0x7c3616c9c0; teamID='G2P4DTQNBA', teamName='Zheng Jing'>">
+	<IDEDistributionContext: 0x7c36136f80; archive = "<IDEArchive: 0x7c360c11f0>", distributionMethod="<IDEDistributionMethodiOSAppStoreDistribution: 0x7c35c84f20>", team="<IDEProvisioningBasicTeam: 0x7c3616c9c0; teamID='G2P4DTQNBA', teamName='Zheng Jing'>">
+	<IDEDistributionContext: 0x7c36137200; archive = "<IDEArchive: 0x7c360c11f0>", distributionMethod="<IDEDistributionMethodiOSAppStoreDistribution: 0x7c35c84f20>", team="<IDEProvisioningBasicTeam: 0x7c3616c9c0; teamID='G2P4DTQNBA', teamName='Zheng Jing'>">
+	<IDEDistributionContext: 0x7c36134a00; archive = "<IDEArchive: 0x7c360c11f0>", distributionMethod="<IDEDistributionMethodiOSAppStoreDistribution: 0x7c35c84f20>", team="<IDEProvisioningBasicTeam: 0x7c3616c9c0; teamID='G2P4DTQNBA', teamName='Zheng Jing'>">
+	<IDEDistributionContext: 0x7c36134780; archive = "<IDEArchive: 0x7c360c11f0>", distributionMethod="<IDEDistributionMethodiOSAppStoreDistribution: 0x7c35c84f20>", team="<IDEProvisioningBasicTeam: 0x7c3616c9c0; teamID='G2P4DTQNBA', teamName='Zheng Jing'>">
+	<IDEDistributionContext: 0x7c36134500; archive = "<IDEArchive: 0x7c360c11f0>", distributionMethod="<IDEDistributionMethodiOSAppStoreDistribution: 0x7c35c84f20>", team="<IDEProvisioningBasicTeam: 0x7c3616c9c0; teamID='G2P4DTQNBA', teamName='Zheng Jing'>">
+	<IDEDistributionContext: 0x7c36134280; archive = "<IDEArchive: 0x7c360c11f0>", distributionMethod="<IDEDistributionMethodiOSAppStoreDistribution: 0x7c35c84f20>", team="(null)">
+	<IDEDistributionContext: 0x7c36134000; archive = "<IDEArchive: 0x7c360c11f0>", distributionMethod="<IDEDistributionMethodiOSAppStoreDistribution: 0x7c35c84f20>", team="(null)">
+	<IDEDistributionContext: 0x101275e10; archive = "<IDEArchive: 0x7c360c11f0>", distributionMethod="(null)", team="(null)">
+</IDEDistributionProcessingPipelineContext: 0x7c3645f600>
+2026-10-26 01:41:45 +0000 [MT] Processing step: IDEDistributionCreateDestRootStep
+2026-10-26 01:41:45 +0000 [MT] Processing step: IDEDistributionCopyItemStep
+2026-10-26 01:41:45 +0000 [MT] Running /usr/bin/ditto '-V' '/tmp/tongxing-ios-beta-1.26.22-pr1383/artifacts/tongxing-ios/beta-1.26.22-build63/Tongxing.xcarchive/Products/Applications/Tongxing.app' '/var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/XcodeDistPipeline.~~~N82rsy/Root/Payload/Tongxing.app'
+2026-10-26 01:41:45 +0000  >>> Copying /tmp/tongxing-ios-beta-1.26.22-pr1383/artifacts/tongxing-ios/beta-1.26.22-build63/Tongxing.xcarchive/Products/Applications/Tongxing.app
+2026-10-26 01:41:45 +0000  copying file ./_CodeSignature/CodeResources ...
+2026-10-26 01:41:45 +0000  hardlinked ./_CodeSignature/CodeResources
+2026-10-26 01:41:45 +0000  copying file ./zh-Hans.lproj/Localizable.strings ...
+2026-10-26 01:41:45 +0000  hardlinked ./zh-Hans.lproj/Localizable.strings
+2026-10-26 01:41:45 +0000  copying file ./zh-Hans.lproj/InfoPlist.strings ...
+2026-10-26 01:41:45 +0000  hardlinked ./zh-Hans.lproj/InfoPlist.strings
+2026-10-26 01:41:45 +0000  copying file ./en.lproj/Localizable.strings ...
+2026-10-26 01:41:45 +0000  hardlinked ./en.lproj/Localizable.strings
+2026-10-26 01:41:45 +0000  copying file ./en.lproj/InfoPlist.strings ...
+2026-10-26 01:41:45 +0000  hardlinked ./en.lproj/InfoPlist.strings
+2026-10-26 01:41:45 +0000  copying file ./es.lproj/Localizable.strings ...
+2026-10-26 01:41:45 +0000  hardlinked ./es.lproj/Localizable.strings
+2026-10-26 01:41:45 +0000  copying file ./Tongxing ...
+2026-10-26 01:41:45 +0000  hardlinked ./Tongxing
+2026-10-26 01:41:45 +0000  copying file ./PlugIns/ListeningActivityExtension.appex/_CodeSignature/CodeResources ...
+2026-10-26 01:41:45 +0000  hardlinked ./PlugIns/ListeningActivityExtension.appex/_CodeSignature/CodeResources
+2026-10-26 01:41:45 +0000  copying file ./PlugIns/ListeningActivityExtension.appex/ListeningActivityExtension ...
+2026-10-26 01:41:45 +0000  hardlinked ./PlugIns/ListeningActivityExtension.appex/ListeningActivityExtension
+... 553 lines omitted; 0 error-like lines, 0 kept below ...
+... end of omitted section ...
+2026-10-26 01:41:46 +0000 [MT] Received response for 40B05943-365D-44C3-89DC-F40E6AC39E0F @ <https://developerservices2.apple.com/services/v1/certificates>. Code = 0
+2026-10-26 01:41:46 +0000 [MT] Response payload: {
+  "data" : [ {
+    "type" : "certificates",
+    "id" : "M52G6L6Z7L",
+    "attributes" : {
+      "requesterEmail" : "<email>",
+      "serialNumber" : "5B81CF88644452514484B33CA00AD47C",
+      "certificateContent" : "MIIF1TCCBL2gAwIBAgIQW4HPiGREUlFEhLM8oArUfDANBgkqhkiG9w0BAQsFADB1MUQwQgYDVQQDDDtBcHBsZSBXb3JsZHdpZGUgRGV2ZWxvcGVyIFJlbGF0aW9ucyBDZXJ0aWZpY2F0aW9uIEF1dGhvcml0eTELMAkGA1UECwwCRzMxEzARBgNVBAoMCkFwcGxlIEluYy4xCzAJBgNVBAYTAlVTMB4XDTI2MDkwNjIzMzUwM1oXDTI3MDkwNjIzMzUwMlowgYkxGjAYBgoJkiaJk/IsZAEBDApHMlA0RFRRTkJBMTQwMgYDVQQDDCtBcHBsZSBEaXN0cmlidXRpb246IFpoZW5nIEppbmcgKEcyUDREVFFOQkEpMRMwEQYDVQQLDApHMlA0RFRRTkJBMRMwEQYDVQQKDApaaGVuZyBKaW5nMQswCQYDVQQGEwJVUzCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBANu2+JPIpbwZmiOF1ZcGjhIzc8yGbInsozct168MM8TS1AXB2D6apiO4eV30Dh8r4W5Ejj70TBMYj5Y/MyT292KjYFwToYDVIceRat6RyvnApdVCmzHR6Qm817z53EYL7tsRnT5y4Fhj2M8peraXvE6ONR8oDHGIS2ABDk7K8EFWztXWooq5TPh8HchrAOu0QjpELH4aDEp+qpadZ4zP3cMeHU+YqjPENdL8RDt4Lffg2dwxdsHF8WBWugX46hVrGzG08WrUdDDCxWhioPIWC2kDmkh26/1QcZXfUmn7epOgyFfNa83zSSjOY5DZTTho4NTSWh5MTAVMV3XbRA6Ig+UCAwEAAaOCAkowggJGMAwGA1UdEwEB/wQCMAAwHwYDVR0jBBgwFoAUCf7AFZD5r2QKkhK5JihjDJfsp7IwcAYIKwYBBQUHAQEEZDBiMC0GCCsGAQUFBzAChiFodHRwOi8vY2VydHMuYXBwbGUuY29tL3d3ZHJnMy5kZXIwMQYIKwYBBQUHMAGGJWh0dHA6Ly9vY3NwLmFwcGxlLmNvbS9vY3NwMDMtd3dkcmczMTEwggEeBgNVHSAEggEVMIIBETCCAQ0GCSqGSIb3Y2QFATCB/zCBwwYIKwYBBQUHAgIwgbYMgbNSZWxpYW5jZSBvbiB0aGlzIGNlcnRpZmljYXRlIGJ5IGFueSBwYXJ0eSBhc3N1bWVzIGFjY2VwdGFuY2Ugb2YgdGhlIHRoZW4gYXBwbGljYWJsZSBzdGFuZGFyZCB0ZXJtcyBhbmQgY29uZGl0aW9ucyBvZiB1c2UsIGNlcnRpZmljYXRlIHBvbGljeSBhbmQgY2VydGlmaWNhdGlvbiBwcmFjdGljZSBzdGF0ZW1lbnRzLjA3BggrBgEFBQcCARYraHR0cHM6Ly93d3cuYXBwbGUuY29tL2NlcnRpZmljYXRlYXV0aG9yaXR5LzAWBgNVHSUBAf8EDDAKBggrBgEFBQcDAzAdBgNVHQ4EFgQUDnBcK67WMmx3Avj8uCQoW04SS+gwDgYDVR0PAQH/BAQDAgeAMBMGCiqGSIb3Y2QGAQcBAf8EAgUAMBAGCiqGSIb3Y2QGASAEAgUAMBMGCiqGSIb3Y2QGAQQBAf8EAgUAMA0GCSqGSIb3DQEBCwUAA4IBAQDFl5O4EHTtVKkFPIFEjOsqVjnoS0t0S1ltUmpS+U1rEIyXq2yXSUEenac5rusGfFBrRcZtc5AeuBayPvOW3Du/Mev8EHJfln4f1vHJiPhKcCV/Z9hFZ+J8sWHB2F9vWtpeBwiqNpWyVGiuPTJFRgJ1K71gY8UA80yQUxvCuU/X2FQbhatVz9CYF8m6hIimEFXIJyHYPirDXWFpdT1in3IRXkOvWcmqpNjP2OyDBhdpBqWbQsDojZra9spgODh9ETCiNX8pqIhqcYpsgwIVPwO+GSssP02Tf5megQQp7nxNW6VqF+hUIsvR4gQXXZ ...[line truncated]
+      "displayName" : "Zheng Jing",
+      "requesterLastName" : "Jing",
+      "csrContent" : null,
+      "machineName" : null,
+      "platform" : null,
+      "requesterFirstName" : "Zheng",
+      "machineId" : null,
+      "name" : "Apple Distribution: Zheng Jing",
+      "responseId" : "89109218-c065-44f7-a10c-9ef782ad4189",
+      "expirationDate" : "2027-09-06T23:35:02.000+00:00",
+      "certificateType" : "DISTRIBUTION_MANAGED"
+    },
+    "links" : {
+      "self" : "https://developerservices2.apple.com:443/services/v1/certificates/M52G6L6Z7L"
+    }
+  } ],
+  "links" : {
+    "self" : "https://developerservices2.apple.com:443/services/v1/certificates?filter%5BserialNumber%5D=5B81CF88644452514484B33CA00AD47C&limit=200"
+  },
+  "meta" : {
+    "paging" : {
+      "total" : 1,
+      "limit" : 200
+    }
+  }
+}
+
+2026-10-26 01:41:46 +0000 [MT] Sending request 3FBA6F4F-3492-46EA-9CEF-8DD0E45C1ED2 to <https://developerservices3.apple.com/services/v1/batch> for session <DVTServicesAccountBasedSession: 0x7c36e10720; account='<DVTAppleIDBasedDeveloperAccount: 0x7c33689dc0; username='<email>'>'>.
+Method: POST
+
+Headers:
+{
+    Accept = "application/vnd.api+json";
+    "Accept-Encoding" = "gzip, deflate";
+    "Content-Length" = 488;
+    "Content-Type" = "application/vnd.api+json";
+    DSESSIONID = sjs5qfrt8lg1o5pq1ear5b1c39ijgp3bqhungobo48ptrh6qavj;
+    "User-Agent" = Xcode;
+    "X-Apple-App-Info" = "com.apple.gs.xcode.auth";
+    "X-Apple-GS-Token" = "<redacted>";
+    "X-Apple-I-Identity-Id" = "001387-05-0910bd01-04ba-4959-a648-184b4b33bbf3";
+    "X-MMe-Client-Info" = "<MacBookPro18,2> <macOS;27.0.1;26A434> <com.apple.AuthKit/1 (com.apple.dt.xcodebuild/25107)>";
+    "X-Mme-Device-Id" = "3C521BFA-B701-5A35-B8D6-C72BDAD7482B";
+    "X-Xcode-Version" = "27.1 (27A9275)";
+}
+
+Payload:
+{"data":{"attributes":{"teamId":"G2P4DTQNBA","resourceList":[{"data":{"attributes":{"cdHashSha256":"5DC04AF1F4DB3F9CCFDA7B17C28CECE77AFFED53D245B1D7FCDC45F2817B2FCF","name":"0","digestHash":"5DC04AF1F4DB3F9CCFDA7B17C28CECE77AFFED53D245B1D7FCDC45F2817B2FCF","teamId":"G2P4DTQNBA"},"relationships":{"certificate":{"data":{"type":"certificates","id":"M52G6L6Z7L"}},"bundleId":{"data":{"id":"73V5C9DC35","type":"bundleIds"}}},"type":"codeSignatures"}}],"resourceVersion":"1"},"type":"batch"}}
+2026-10-26 01:41:46 +0000 [MT] Received response for 3FBA6F4F-3492-46EA-9CEF-8DD0E45C1ED2 @ <https://developerservices3.apple.com/services/v1/batch>. Code = 0
+2026-10-26 01:41:46 +0000 [MT] Response payload: {
+  "data" : {
+    "type" : "batch",
+    "id" : "298f7d11-b8ec-45b8-90c1-aee9c003e81b",
+    "attributes" : {
+      "responseId" : "298f7d11-b8ec-45b8-90c1-aee9c003e81b",
+      "resourceList" : [ {
+        "type" : "codeSignatures",
+        "id" : "62221767-f36f-4e54-ae81-91a91e011a13",
+        "attributes" : {
+          "digestHash" : "5DC04AF1F4DB3F9CCFDA7B17C28CECE77AFFED53D245B1D7FCDC45F2817B2FCF",
+          "cdHashSha256" : "5DC04AF1F4DB3F9CCFDA7B17C28CECE77AFFED53D245B1D7FCDC45F2817B2FCF",
+          "signature" : "MIAGCSqGSIb3DQEHAqCAMIACAQExDzANBglghkgBZQMEAgEFADALBgkqhkiG9w0BBwGggDCCBdUwggS9oAMCAQICEFuBz4hkRFJRRISzPKAK1HwwDQYJKoZIhvcNAQELBQAwdTFEMEIGA1UEAww7QXBwbGUgV29ybGR3aWRlIERldmVsb3BlciBSZWxhdGlvbnMgQ2VydGlmaWNhdGlvbiBBdXRob3JpdHkxCzAJBgNVBAsMAkczMRMwEQYDVQQKDApBcHBsZSBJbmMuMQswCQYDVQQGEwJVUzAeFw0yNjA5MDYyMzM1MDNaFw0yNzA5MDYyMzM1MDJaMIGJMRowGAYKCZImiZPyLGQBAQwKRzJQNERUUU5CQTE0MDIGA1UEAwwrQXBwbGUgRGlzdHJpYnV0aW9uOiBaaGVuZyBKaW5nIChHMlA0RFRRTkJBKTETMBEGA1UECwwKRzJQNERUUU5CQTETMBEGA1UECgwKWmhlbmcgSmluZzELMAkGA1UEBhMCVVMwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQDbtviTyKW8GZojhdWXBo4SM3PMhmyJ7KM3LdevDDPE0tQFwdg+mqYjuHld9A4fK+FuRI4+9EwTGI+WPzMk9vdio2BcE6GA1SHHkWrekcr5wKXVQpsx0ekJvNe8+dxGC+7bEZ0+cuBYY9jPKXq2l7xOjjUfKAxxiEtgAQ5OyvBBVs7V1qKKuUz4fB3IawDrtEI6RCx+GgxKfqqWnWeMz93DHh1PmKozxDXS/EQ7eC334NncMXbBxfFgVroF+OoVaxsxtPFq1HQwwsVoYqDyFgtpA5pIduv9UHGV31Jp+3qToMhXzWvN80kozmOQ2U04aODU0loeTEwFTFd120QOiIPlAgMBAAGjggJKMIICRjAMBgNVHRMBAf8EAjAAMB8GA1UdIwQYMBaAFAn+wBWQ+a9kCpISuSYoYwyX7KeyMHAGCCsGAQUFBwEBBGQwYjAtBggrBgEFBQcwAoYhaHR0cDovL2NlcnRzLmFwcGxlLmNvbS93d2RyZzMuZGVyMDEGCCsGAQUFBzABhiVodHRwOi8vb2NzcC5hcHBsZS5jb20vb2NzcDAzLXd3ZHJnMzExMIIBHgYDVR0gBIIBFTCCAREwggENBgkqhkiG92NkBQEwgf8wgcMGCCsGAQUFBwICMIG2DIGzUmVsaWFuY2Ugb24gdGhpcyBjZXJ0aWZpY2F0ZSBieSBhbnkgcGFydHkgYXNzdW1lcyBhY2NlcHRhbmNlIG9mIHRoZSB0aGVuIGFwcGxpY2FibGUgc3RhbmRhcmQgdGVybXMgYW5kIGNvbmRpdGlvbnMgb2YgdXNlLCBjZXJ0aWZpY2F0ZSBwb2xpY3kgYW5kIGNlcnRpZmljYXRpb24gcHJhY3RpY2Ugc3RhdGVtZW50cy4wNwYIKwYBBQUHAgEWK2h0dHBzOi8vd3d3LmFwcGxlLmNvbS9jZXJ0aWZpY2F0ZWF1dGhvcml0eS8wFgYDVR0lAQH/BAwwCgYIKwYBBQUHAwMwHQYDVR0OBBYEFA5wXCuu1jJsdwL4/LgkKFtOEkvoMA4GA1UdDwEB/wQEAwIHgDATBgoqhkiG92NkBgEHAQH/BAIFADAQBgoqhkiG92NkBgEgBAIFADATBgoqhkiG92NkBgEEAQH/BAIFADANBgkqhkiG9w0BAQsFAAOCAQEAxZeTuBB07VSpBTyBRIzrKlY56EtLdEtZbVJqUvlNaxCMl6tsl0lBHp2nOa7rBnxQa0XGbXOQHrgWsj7zltw7vzHr/BByX5Z+H9bxyYj4SnAlf2fYRWfifLFhwdhfb1raXgcIqjaVslRorj0yRUYCdSu9YGPFAPNMkFMbwrlP19hUG4WrVc/QmBfJuoSIphBVyCch2D4qw11haXU9Yp9yEV5Dr1nJqqTYz9jsgwYXaQalm0LA6I2a2vbKYDg ...[line truncated]
+          "name" : "0",
+          "responseId" : "298f7d11-b8ec-45b8-90c1-aee9c003e81b",
+          "cmsSignature" : "MIAGCSqGSIb3DQEHAqCAMIACAQExDzANBglghkgBZQMEAgEFADALBgkqhkiG9w0BBwGggDCCBdUwggS9oAMCAQICEFuBz4hkRFJRRISzPKAK1HwwDQYJKoZIhvcNAQELBQAwdTFEMEIGA1UEAww7QXBwbGUgV29ybGR3aWRlIERldmVsb3BlciBSZWxhdGlvbnMgQ2VydGlmaWNhdGlvbiBBdXRob3JpdHkxCzAJBgNVBAsMAkczMRMwEQYDVQQKDApBcHBsZSBJbmMuMQswCQYDVQQGEwJVUzAeFw0yNjA5MDYyMzM1MDNaFw0yNzA5MDYyMzM1MDJaMIGJMRowGAYKCZImiZPyLGQBAQwKRzJQNERUUU5CQTE0MDIGA1UEAwwrQXBwbGUgRGlzdHJpYnV0aW9uOiBaaGVuZyBKaW5nIChHMlA0RFRRTkJBKTETMBEGA1UECwwKRzJQNERUUU5CQTETMBEGA1UECgwKWmhlbmcgSmluZzELMAkGA1UEBhMCVVMwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQDbtviTyKW8GZojhdWXBo4SM3PMhmyJ7KM3LdevDDPE0tQFwdg+mqYjuHld9A4fK+FuRI4+9EwTGI+WPzMk9vdio2BcE6GA1SHHkWrekcr5wKXVQpsx0ekJvNe8+dxGC+7bEZ0+cuBYY9jPKXq2l7xOjjUfKAxxiEtgAQ5OyvBBVs7V1qKKuUz4fB3IawDrtEI6RCx+GgxKfqqWnWeMz93DHh1PmKozxDXS/EQ7eC334NncMXbBxfFgVroF+OoVaxsxtPFq1HQwwsVoYqDyFgtpA5pIduv9UHGV31Jp+3qToMhXzWvN80kozmOQ2U04aODU0loeTEwFTFd120QOiIPlAgMBAAGjggJKMIICRjAMBgNVHRMBAf8EAjAAMB8GA1UdIwQYMBaAFAn+wBWQ+a9kCpISuSYoYwyX7KeyMHAGCCsGAQUFBwEBBGQwYjAtBggrBgEFBQcwAoYhaHR0cDovL2NlcnRzLmFwcGxlLmNvbS93d2RyZzMuZGVyMDEGCCsGAQUFBzABhiVodHRwOi8vb2NzcC5hcHBsZS5jb20vb2NzcDAzLXd3ZHJnMzExMIIBHgYDVR0gBIIBFTCCAREwggENBgkqhkiG92NkBQEwgf8wgcMGCCsGAQUFBwICMIG2DIGzUmVsaWFuY2Ugb24gdGhpcyBjZXJ0aWZpY2F0ZSBieSBhbnkgcGFydHkgYXNzdW1lcyBhY2NlcHRhbmNlIG9mIHRoZSB0aGVuIGFwcGxpY2FibGUgc3RhbmRhcmQgdGVybXMgYW5kIGNvbmRpdGlvbnMgb2YgdXNlLCBjZXJ0aWZpY2F0ZSBwb2xpY3kgYW5kIGNlcnRpZmljYXRpb24gcHJhY3RpY2Ugc3RhdGVtZW50cy4wNwYIKwYBBQUHAgEWK2h0dHBzOi8vd3d3LmFwcGxlLmNvbS9jZXJ0aWZpY2F0ZWF1dGhvcml0eS8wFgYDVR0lAQH/BAwwCgYIKwYBBQUHAwMwHQYDVR0OBBYEFA5wXCuu1jJsdwL4/LgkKFtOEkvoMA4GA1UdDwEB/wQEAwIHgDATBgoqhkiG92NkBgEHAQH/BAIFADAQBgoqhkiG92NkBgEgBAIFADATBgoqhkiG92NkBgEEAQH/BAIFADANBgkqhkiG9w0BAQsFAAOCAQEAxZeTuBB07VSpBTyBRIzrKlY56EtLdEtZbVJqUvlNaxCMl6tsl0lBHp2nOa7rBnxQa0XGbXOQHrgWsj7zltw7vzHr/BByX5Z+H9bxyYj4SnAlf2fYRWfifLFhwdhfb1raXgcIqjaVslRorj0yRUYCdSu9YGPFAPNMkFMbwrlP19hUG4WrVc/QmBfJuoSIphBVyCch2D4qw11haXU9Yp9yEV5Dr1nJqqTYz9jsgwYXaQalm0LA6I2a2vbK ...[line truncated]
+          "timestamp" : false
+        },
+        "relationships" : {
+          "bundleId" : {
+            "data" : {
+              "type" : "bundleIds",
+              "id" : "73V5C9DC35"
+            },
+            "links" : {
+              "self" : {
+                "href" : "https://developerservices3.apple.com:443/services/v1/codeSignatures/62221767-f36f-4e54-ae81-91a91e011a13/relationships/bundleId"
+              },
+              "related" : {
+                "href" : "https://developerservices3.apple.com:443/services/v1/codeSignatures/62221767-f36f-4e54-ae81-91a91e011a13/bundleId"
+              }
+            }
+          },
+          "certificate" : {
+            "data" : {
+              "type" : "certificates",
+              "id" : "M52G6L6Z7L"
+            },
+            "links" : {
+              "self" : {
+                "href" : "https://developerservices3.apple.com:443/services/v1/codeSignatures/62221767-f36f-4e54-ae81-91a91e011a13/relationships/certificate"
+              },
+              "related" : {
+                "href" : "https://developerservices3.apple.com:443/services/v1/codeSignatures/62221767-f36f-4e54-ae81-91a91e011a13/certificate"
+              }
+            }
+          }
+        },
+        "links" : {
+          "self" : {
+            "href" : "https://developerservices3.apple.com:443/services/v1/codeSignatures/62221767-f36f-4e54-ae81-91a91e011a13"
+          }
+        }
+      } ],
+      "resourceVersion" : "1"
+    },
+    "links" : {
+      "self" : "https://developerservices3.apple.com:443/services/v1/batch/298f7d11-b8ec-45b8-90c1-aee9c003e81b"
+    }
+  },
+  "links" : {
+    "self" : "https://developerservices3.apple.com:443/services/v1/batch"
+  }
+}
+
+2026-10-26 01:41:46 +0000 [MT] Remote signature for /var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/XcodeDistPipeline.~~~N82rsy/Root/Payload/Tongxing.app (arch: arm64) is MIAGCSqGSIb3DQEHAqCAMIACAQExDzANBglghkgBZQMEAgEFADALBgkqhkiG9w0BBwGggDCCBdUwggS9oAMCAQICEFuBz4hkRFJRRISzPKAK1HwwDQYJKoZIhvcNAQELBQAwdTFEMEIGA1UEAww7QXBwbGUgV29ybGR3aWRlIERldmVsb3BlciBSZWxhdGlvbnMgQ2VydGlmaWNhdGlvbiBBdXRob3JpdHkxCzAJBgNVBAsMAkczMRMwEQYDVQQKDApBcHBsZSBJbmMuMQswCQYDVQQGEwJVUzAeFw0yNjA5MDYyMzM1MDNaFw0yNzA5MDYyMzM1MDJaMIGJMRowGAYKCZImiZPyLGQBAQwKRzJQNERUUU5CQTE0MDIGA1UEAwwrQXBwbGUgRGlzdHJpYnV0aW9uOiBaaGVuZyBKaW5nIChHMlA0RFRRTkJBKTETMBEGA1UECwwKRzJQNERUUU5CQTETMBEGA1UECgwKWmhlbmcgSmluZzELMAkGA1UEBhMCVVMwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQDbtviTyKW8GZojhdWXBo4SM3PMhmyJ7KM3LdevDDPE0tQFwdg+mqYjuHld9A4fK+FuRI4+9EwTGI+WPzMk9vdio2BcE6GA1SHHkWrekcr5wKXVQpsx0ekJvNe8+dxGC+7bEZ0+cuBYY9jPKXq2l7xOjjUfKAxxiEtgAQ5OyvBBVs7V1qKKuUz4fB3IawDrtEI6RCx+GgxKfqqWnWeMz93DHh1PmKozxDXS/EQ7eC334NncMXbBxfFgVroF+OoVaxsxtPFq1HQwwsVoYqDyFgtpA5pIduv9UHGV31Jp+3qToMhXzWvN80kozmOQ2U04aODU0loeTEwFTFd120QOiIPlAgMBAAGjggJKMIICRjAMBgNVHRMBAf8EAjAAMB8GA1UdIwQYMBaAFAn+wBWQ+a9kCpISuSYoYwyX7KeyMHAGCCsGAQUFBwEBBGQwYjAtBggrBgEFBQcwAoYhaHR0cDovL2NlcnRzLmFwcGxlLmNvbS93d2RyZzMuZGVyMDEGCCsGAQUFBzABhiVodHRwOi8vb2NzcC5hcHBsZS5jb20vb2NzcDAzLXd3ZHJnMzExMIIBHgYDVR0gBIIBFTCCAREwggENBgkqhkiG92NkBQEwgf8wgcMGCCsGAQUFBwICMIG2DIGzUmVsaWFuY2Ugb24gdGhpcyBjZXJ0aWZpY2F0ZSBieSBhbnkgcGFydHkgYXNzdW1lcyBhY2NlcHRhbmNlIG9mIHRoZSB0aGVuIGFwcGxpY2FibGUgc3RhbmRhcmQgdGVybXMgYW5kIGNvbmRpdGlvbnMgb2YgdXNlLCBjZXJ0aWZpY2F0ZSBwb2xpY3kgYW5kIGNlcnRpZmljYXRpb24gcHJhY3RpY2Ugc3RhdGVtZW50cy4wNwYIKwYBBQUHAgEWK2h0dHBzOi8vd3d3LmFwcGxlLmNvbS9jZXJ0aWZpY2F0ZWF1dGhvcml0eS8wFgYDVR0lAQH/BAwwCgYIKwYBBQUHAwMwHQYDVR0OBBYEFA5wXCuu1jJsdwL4/LgkKFtOEkvoMA4GA1UdDwEB/wQEAwIHgDATBgoqhkiG92NkBgEHAQH/BAIFADAQBgoqhkiG92NkBgEgBAIFADATBgoqhkiG92NkBgEEAQH/BAIFADANBgkqhkiG9w0BAQsFAAOCAQEAxZeTuBB07VSpBTyBRIzrKlY56EtLdEtZbVJqUvlNaxCMl6tsl0lBHp2nOa7rBnxQa0XGbXOQHrgWsj7zltw7vzHr/BByX5Z+H9bxyYj4 ...[line truncated]
+2026-10-26 01:41:46 +0000 [MT] invoking codesign: <NSConcreteTask: 0x7c36e15770; launchPath='/usr/bin/codesign', arguments='(
+    "-e",
+    "--edit-cms",
+    "/var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/cms~~~uABnnh",
+    "/var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/XcodeDistPipeline.~~~N82rsy/Root/Payload/Tongxing.app"
+)'>
+2026-10-26 01:41:46 +0000 [MT] codesign output:
+2026-10-26 01:41:46 +0000 [MT] Processing step: IDEDistributionZipODRItemStep
+2026-10-26 01:41:46 +0000 [MT] Skipping step: IDEDistributionZipODRItemStep because it said so
+2026-10-26 01:41:46 +0000 [MT] Skipping step: IDEDistributionZipODRItemStep because it said so
+2026-10-26 01:41:46 +0000 [MT] Processing step: IDEDistributionCreateIPAStep
+2026-10-26 01:41:46 +0000 [MT] Running /usr/bin/rsync '-8aPhhE' '/var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/XcodeDistPipeline.~~~N82rsy/Symbols' '--link-dest' '/var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/XcodeDistPipeline.~~~N82rsy' '/var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/XcodeDistPipeline.~~~N82rsy/Root'
+2026-10-26 01:41:46 +0000  Symbols/
+._Symbols
+            163 127%    1.65MB/s   00:00:00 (xfer#1, to-check=0/6)
+2026-10-26 01:41:46 +0000  Symbols/39B99B6D-E8AA-3A88-95EB-BFE028B125B7.symbols
+Symbols/EF3D7C18-FF17-320E-81C8-55FA7543FDD8.symbols
+Symbols/._39B99B6D-E8AA-3A88-95EB-BFE028B125B7.symbols
+            163   0%  323.63KB/s   00:00:00 (xfer#2, to-check=2/6)
+2026-10-26 01:41:46 +0000  Symbols/._EF3D7C18-FF17-320E-81C8-55FA7543FDD8.symbols
+            163   0%  359.34KB/s   00:00:00 (xfer#3, to-check=3/6)
+2026-10-26 01:41:46 +0000 [MT] /usr/bin/rsync exited with 0
+2026-10-26 01:41:46 +0000 [MT] Running /usr/bin/ditto '-V' '-c' '-k' '--norsrc' '/var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/XcodeDistPipeline.~~~N82rsy/Root' '/var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/XcodeDistPipeline.~~~N82rsy/Packages/Tongxing.ipa'
+2026-10-26 01:41:46 +0000  >>> Copying /var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/XcodeDistPipeline.~~~N82rsy/Root
+2026-10-26 01:41:46 +0000  copying file ./Payload/Tongxing.app/_CodeSignature/CodeResources ...
+2026-10-26 01:41:46 +0000  6720 bytes for ./Payload/Tongxing.app/_CodeSignature/CodeResources
+2026-10-26 01:41:46 +0000  copying file ./Payload/Tongxing.app/zh-Hans.lproj/Localizable.strings ...
+2026-10-26 01:41:46 +0000  8733 bytes for ./Payload/Tongxing.app/zh-Hans.lproj/Localizable.strings
+2026-10-26 01:41:46 +0000  copying file ./Payload/Tongxing.app/zh-Hans.lproj/InfoPlist.strings ...
+2026-10-26 01:41:46 +0000  226 bytes for ./Payload/Tongxing.app/zh-Hans.lproj/InfoPlist.strings
+2026-10-26 01:41:46 +0000  copying file ./Payload/Tongxing.app/en.lproj/Localizable.strings ...
+2026-10-26 01:41:46 +0000  33303 bytes for ./Payload/Tongxing.app/en.lproj/Localizable.strings
+2026-10-26 01:41:46 +0000  copying file ./Payload/Tongxing.app/en.lproj/InfoPlist.strings ...
+2026-10-26 01:41:46 +0000  317 bytes for ./Payload/Tongxing.app/en.lproj/InfoPlist.strings
+2026-10-26 01:41:46 +0000  copying file ./Payload/Tongxing.app/es.lproj/Localizable.strings ...
+2026-10-26 01:41:46 +0000  48843 bytes for ./Payload/Tongxing.app/es.lproj/Localizable.strings
+2026-10-26 01:41:46 +0000  copying file ./Payload/Tongxing.app/Tongxing ...
+2026-10-26 01:41:47 +0000  3308144 bytes for ./Payload/Tongxing.app/Tongxing
+2026-10-26 01:41:47 +0000  copying file ./Payload/Tongxing.app/PlugIns/ListeningActivityExtension.appex/_CodeSignature/CodeResources ...
+2040 bytes for ./Payload/Tongxing.app/PlugIns/ListeningActivityExtension.appex/_CodeSignature/CodeResources
+copying file ./Payload/Tongxing.app/PlugIns/ListeningActivityExtension.appex/ListeningActivityExtension ...
+2026-10-26 01:41:47 +0000  797664 bytes for ./Payload/Tongxing.app/PlugIns/ListeningActivityExtension.appex/ListeningActivityExtension
+2026-10-26 01:41:47 +0000  copying file ./Payload/Tongxing.app/PlugIns/ListeningActivityExtension.appex/embedded.mobileprovision ...
+2026-10-26 01:41:47 +0000  12410 bytes for ./Payload/Tongxing.app/PlugIns/ListeningActivityExtension.appex/embedded.mobileprovision
+2026-10-26 01:41:47 +0000  copying file ./Payload/Tongxing.app/PlugIns/ListeningActivityExtension.appex/Info.plist ...
+991 bytes for ./Payload/Tongxing.app/PlugIns/ListeningActivityExtension.appex/Info.plist
+2026-10-26 01:41:47 +0000  copying file ./Payload/Tongxing.app/<email> ...
+2026-10-26 01:41:47 +0000  15873 bytes for ./Payload/Tongxing.app/<email>
+2026-10-26 01:41:47 +0000  copying file ./Payload/Tongxing.app/ko.lproj/Localizable.strings ...
+2026-10-26 01:41:47 +0000  30568 bytes for ./Payload/Tongxing.app/ko.lproj/Localizable.strings
+2026-10-26 01:41:47 +0000  copying file ./Payload/Tongxing.app/Assets.car ...
+2026-10-26 01:41:47 +0000  6874792 bytes for ./Payload/Tongxing.app/Assets.car
+2026-10-26 01:41:47 +0000  copying file ./Payload/Tongxing.app/AppIcon76x76@2x~ipad.png ...
+2026-10-26 01:41:47 +0000  23034 bytes for ./Payload/Tongxing.app/AppIcon76x76@2x~ipad.png
+2026-10-26 01:41:47 +0000  copying file ./Payload/Tongxing.app/vi.lproj/Localizable.strings ...
+2026-10-26 01:41:47 +0000  46840 bytes for ./Payload/Tongxing.app/vi.lproj/Localizable.strings
+2026-10-26 01:41:47 +0000  copying file ./Payload/Tongxing.app/PrivacyInfo.xcprivacy ...
+2026-10-26 01:41:47 +0000  1877 bytes for ./Payload/Tongxing.app/PrivacyInfo.xcprivacy
+2026-10-26 01:41:47 +0000  copying file ./Payload/Tongxing.app/embedded.mobileprovision ...
+2026-10-26 01:41:47 +0000  14425 bytes for ./Payload/Tongxing.app/embedded.mobileprovision
+2026-10-26 01:41:47 +0000  copying file ./Payload/Tongxing.app/Info.plist ...
+2026-10-26 01:41:47 +0000  1893 bytes for ./Payload/Tongxing.app/Info.plist
+2026-10-26 01:41:47 +0000  copying file ./Payload/Tongxing.app/PkgInfo ...
+2026-10-26 01:41:47 +0000  8 bytes for ./Payload/Tongxing.app/PkgInfo
+2026-10-26 01:41:47 +0000  copying file ./Symbols/EF3D7C18-FF17-320E-81C8-55FA7543FDD8.symbols ...
+2026-10-26 01:41:47 +0000  1787940 bytes for ./Symbols/EF3D7C18-FF17-320E-81C8-55FA7543FDD8.symbols
+2026-10-26 01:41:47 +0000  copying file ./Symbols/39B99B6D-E8AA-3A88-95EB-BFE028B125B7.symbols ...
+2026-10-26 01:41:47 +0000  9356036 bytes for ./Symbols/39B99B6D-E8AA-3A88-95EB-BFE028B125B7.symbols
+2026-10-26 01:41:47 +0000 [MT] /usr/bin/ditto exited with 0
+2026-10-26 01:41:47 +0000 [MT] Processing step: IDEDistributionAppStoreInformationStep
+2026-10-26 01:41:47 +0000 [MT] Skipping step: IDEDistributionAppStoreInformationStep because it said so
+2026-10-26 01:41:47 +0000 [MT] Processing step: IDEDistributionGenerateProcessedDistributionItems
+2026-10-26 01:41:47 +0000 [MT] IDEDistributionItem init <DVTFilePath:0x7c3301f700:'/var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/XcodeDistPipeline.~~~N82rsy/Root/Payload/Tongxing.app/PlugIns/ListeningActivityExtension.appex'>
+2026-10-26 01:41:47 +0000 [MT] IDEDistributionItem init <DVTFilePath:0x7c3610e940:'/var/folders/s2/0bt6pz_51h1899zqs32x4vm80000gn/T/XcodeDistPipeline.~~~N82rsy/Root/Payload/Tongxing.app'>
+2026-10-26 01:41:47 +0000 [MT] Processing step: IDEDistributionCreateManifestStep
+2026-10-26 01:41:47 +0000 [MT] Skipping step: IDEDistributionCreateManifestStep because it said so

@@ -1,0 +1,47 @@
+{
+  "type": "beta distribution and private guide staging",
+  "candidate": {
+    "version": "1.26.29",
+    "build": "72",
+    "sourceCommit": "b539d3fdae23fd3f1bbbdde63297272e28da720e"
+  },
+  "guideStaging": {
+    "scope": "private storage only",
+    "weeks": [
+      8,
+      9,
+      10,
+      11,
+      12
+    ],
+    "sermonBindings": "unbound",
+    "readback": "all seven uploaded objects matched source SHA-256",
+    "publicHosting": "not published",
+    "humanApproval": false
+  },
+  "archiveFirstAttempt": {
+    "status": "failed",
+    "reason": "development team missing from worktree local signing configuration",
+    "repair": "reused existing ignored local signing configuration without committing it"
+  },
+  "archiveRetry": {
+    "status": "succeeded",
+    "actualBundleResources": "guide JSON and both licensed illustrations matched expected hashes"
+  },
+  "upload": "succeeded, command exit 0",
+  "appleProcessing": {
+    "checkedAtUTC": "2026-10-28T16:49:28Z",
+    "processingState": "VALID",
+    "internalState": "READY_FOR_BETA_TESTING"
+  },
+  "internalGroup": {
+    "name": "Rooted",
+    "result": "distribution command exit 0; test notes readback succeeded; exact build present",
+    "checkedAtUTC": "2026-10-28T16:49:54Z",
+    "processingState": "VALID",
+    "internalState": "IN_BETA_TESTING"
+  },
+  "deviceAcceptance": "not run",
+  "venueAcceptance": "not run",
+  "ipaExport": "succeeded"
+}

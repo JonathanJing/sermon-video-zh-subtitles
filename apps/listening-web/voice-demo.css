@@ -9,7 +9,7 @@
 .voice-demo-speaker { border: 1px solid var(--line); border-radius: 16px; padding: 0 16px; background: var(--surface-soft, var(--surface)); min-width: 0; }
 .voice-demo-speaker > summary { font-weight: 650; padding: 16px 0; cursor: pointer; }
 .voice-demo-track { padding: 14px 0; border-top: 1px solid var(--line); }
-.voice-demo-track h4 { font-size: 14px; margin: 0 0 10px; color: var(--ink); }
+.voice-demo-track h3 { font-size: 14px; margin: 0 0 10px; color: var(--ink); }
 .voice-demo-controls { display: flex; align-items: center; gap: 12px; }
 .voice-demo-play { display: inline-flex; align-items: center; justify-content: center; border: 1px solid var(--line); border-radius: 50%; width: 48px; height: 48px; color: var(--teal); background: var(--surface); cursor: pointer; }
 .voice-demo-play .app-icon { width: 20px; height: 20px; }
@@ -20,7 +20,7 @@
 .voice-demo-text { padding: 10px 0; }
 .voice-demo-text summary { color: var(--teal); font-size: 13px; cursor: pointer; min-height: 24px; }
 .voice-demo-text p { color: var(--support, var(--muted)); font-size: 14px; line-height: 1.7; margin: 8px 0; overflow-wrap: anywhere; white-space: pre-line; }
-.voice-demo-text h4 { margin-top: 14px; }
+.voice-demo-text h3 { font-size: 1em; color: inherit; margin: 14px 0 1.33em; }
 .voice-demo-source { display: inline-block; margin: 8px 0 14px; color: var(--teal); font-size: 12px; }
 .voice-demo-pending, .voice-demo-error { font-size: 12px; line-height: 1.5; color: var(--muted); }
 .voice-demo-error { color: var(--warning); }

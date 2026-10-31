@@ -24,7 +24,7 @@ let package = Package(
             exclude: ["Info.plist", "PrivacyInfo.xcprivacy",
                       "Assets.xcassets/Contents.json", "Assets.xcassets/AppIcon.appiconset",
                       "Assets.xcassets/BrandMark.imageset/Contents.json",
-                      "en.lproj", "zh-Hans.lproj"],
+                      "en.lproj", "es.lproj", "ko.lproj", "vi.lproj", "zh-Hans.lproj"],
             resources: [
                 .copy("Assets.xcassets/BrandMark.imageset/BrandMark.png"),
                 .copy("Assets.xcassets/BrandMark.imageset/BrandMark-dark.png"),

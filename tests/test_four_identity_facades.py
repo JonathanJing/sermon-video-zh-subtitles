@@ -5,9 +5,8 @@ import unittest
 from unittest.mock import patch
 
 from scripts import tongxing_host as host  # noqa: F401  configures package ports
-from tongxing_production.compute import qc_audio_transports as transport
 from tongxing_production.review import waiver
-from tongxing_production.audio import screening
+from tongxing_production.review import asr_scoring as screening
 from tongxing_production.audio import predicted_schedule as predicted
 from tongxing_production import path_aliases
 
@@ -21,10 +20,9 @@ class FourIdentityFacadeTests(unittest.TestCase):
         cases = (
             ("waiver", waiver.implementation_sha256, waiver.IMPLEMENTATION_PHYSICAL_FILES,
              "scripts/machine_quality_waiver.py", path_aliases.resolve("scripts/machine_quality_waiver.py")),
-            ("transport", transport.implementation_sha256, transport.TRANSPORT_PHYSICAL_FILES,
-             "scripts/machine_qc_audio_transports.py", path_aliases.resolve("scripts/machine_qc_audio_transports.py")),
             ("scoring", screening.implementation_sha256, screening.SCORING_PHYSICAL_FILES,
-             "scripts/screen_target_language_audio_units.py", path_aliases.resolve("scripts/screen_target_language_audio_units.py")),
+             "scripts/screen_target_language_audio_units.py",
+             "packages/production/src/tongxing_production/review/asr_scoring.py"),
             ("rate", predicted.rate_implementation_sha256, predicted.RATE_PHYSICAL_FILES,
              "scripts/target_audio_predicted_schedule.py", path_aliases.resolve("scripts/target_audio_predicted_schedule.py")),
         )

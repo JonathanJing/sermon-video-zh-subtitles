@@ -1,0 +1,31 @@
+{
+  "version": "1.26.27",
+  "build": "70",
+  "candidateCommit": "b0166c3c75ce193b787aad1f61e651243c189300",
+  "validatedBetaCommit": "dd4521f45e5db3e2cf026cce4cd9ff2978a67558",
+  "betaGuideSHA256": "99b494d5c52104df38e5a4be1a563b2905edd9cbe612209188ae2ea87ed860f2",
+  "runs": [
+    {
+      "name": "Release simulator build",
+      "result": "passed and guide bytes match accepted beta"
+    },
+    {
+      "name": "Release simulator production-source guide UI",
+      "result": "1 passed; real week 6 guide"
+    },
+    {
+      "name": "Release incorrect guide checksum negative build",
+      "result": "rejected as expected"
+    },
+    {
+      "name": "Formal ASC helper isolated tests",
+      "result": "4 passed; beta IPA rejected"
+    },
+    {
+      "name": "Initial production archive",
+      "result": "failed: signing profile lacks Associated Domains and local Xcode account credentials unavailable"
+    }
+  ],
+  "device": "user reported beta passed; formal binary untested",
+  "upload": "not run"
+}

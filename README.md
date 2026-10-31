@@ -8,13 +8,15 @@
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-lightgrey" alt="MIT License" /></a>
 </p>
 
-Tongxing turns one English sermon recording into reviewed Chinese, Korean and Spanish text, generated speech in the speaker's own voice, timed captions, a study outline and a weekly page that attendees open on the web or in a native iOS app. A separate local path produces live Chinese captions during a Sunday service, and a third path produces a bilingual reading PDF and a Chinese companion.
+Tongxing turns one English sermon recording into reviewed Chinese, Korean and Spanish text, generated speech in the speaker's own voice, timed captions, a study outline and a weekly page that attendees open on the web or in a native iOS app. A separate local path produces live Chinese captions during a Sunday service, and a third path produces a bilingual reading PDF and a Chinese companion. In parallel, a sentence-first agent-direct route produces the same kind of weekly page through sentence-by-sentence agent review and Spark dubbing, gated by the user's full-track listening (see below).
 
-Every generated artifact is bound to its inputs by hash, carries its review status honestly, and is published only after the checks for its own layer pass. There are usually about 10 to 12 hours between receiving the source video and the next service, so the backend is built to resume, reuse paid results and stop on unknown outcomes instead of retrying blindly.
+Every artifact formally released through the four-layer pipeline is bound to its inputs by hash, carries its review status honestly, and is published only after the checks for its own layer pass. The sentence-first agent-direct route does not hash-bind its intermediate files, but its release package still binds source, candidate, audio and review receipt. There are usually about 10 to 12 hours between receiving the source video and the next service, so the backend is built to resume, reuse paid results and stop on unknown outcomes instead of retrying blindly.
 
 This is an independent personal open-source project with no affiliation, endorsement or operational relationship with Mariners Church. Use public or authorized media and keep the source and review status of generated translations, speech and explanations visible.
 
 **Listen:** [Two 60-second demos](https://ai-for-god-sermon-audio-dev.web.app/demos/) — Eric Geiger and Steve Bang Lee, English → Chinese → Korean → Spanish.
+
+**Watch:** [66-second intro film](https://storage.googleapis.com/ai-for-god-sermon-media-dev/demos/tongxing-intro-2026-10-25-duo-720p.mp4) — why the app exists and what it does in the room, on an unfolded iPhone Duo ([iPhone version](https://storage.googleapis.com/ai-for-god-sermon-media-dev/demos/tongxing-intro-2026-10-25-iphone-720p.mp4)).
 
 ## What it looks like
 
@@ -52,11 +54,27 @@ Two presentation reels play one continuous sermon clip while the audio switches 
 
 Source: Mariners Church weekend services, 2026-09-20 and 2026-10-18. This project is not affiliated with Mariners Church.
 
+## 66-second intro film
+
+A short film for congregations: in one sanctuary, not everyone can follow the English sermon; with the app, each listener follows the same sentence in their own language. Stained-glass opening and close, the real 2026-09-20 sermon clip with Chinese, Korean and Spanish dubbing, and the Dev beta app beside the speaker. Chinese narration with English source lines on the app screens.
+
+| iPhone Duo (unfolded) | iPhone |
+|---|---|
+| [![Tongxing intro film, iPhone Duo version](docs/assets/readme/intro-film-duo-poster.png)](https://storage.googleapis.com/ai-for-god-sermon-media-dev/demos/tongxing-intro-2026-10-25-duo-720p.mp4) | [![Tongxing intro film, iPhone version](docs/assets/readme/intro-film-iphone-poster.png)](https://storage.googleapis.com/ai-for-god-sermon-media-dev/demos/tongxing-intro-2026-10-25-iphone-720p.mp4) |
+| 66 s · 1280×720 · −14 LUFS | 66 s · 1280×720 · −14 LUFS |
+
+**What it shows.** App screens are captures of the Dev beta app (`TongxingBeta`) in the iPhone Duo (unfolded) and iPhone 17 Pro simulators, paused on the sentences the speaker is saying: Chinese 01:28, Korean 01:50, Spanish 02:02 of the 2026-09-20 clip, re-listed on Dev as “耶稣的应许 · 启示录 2–3 章（片段）” (“Jesus promises”, excerpt; run report in [PR #1393](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/1393)). The stained-glass shots are rendered in code in the lemo-opuscar Stained Glass style; score and sound effects are synthesized.
+
+**What it does not show.** The fully lit window at the end, marked 效果示意 in the film, illustrates the goal: in-room live following has no venue acceptance. Screens are simulator captures, not device acceptance. Narration and dubbing are AI speech in Eric Geiger's authorized voice, labelled in the film; the dubbed texts and audio are the human-approved 2026-09-24 clip packages.
+
+SHA-256: Duo `cafef64bba4ed11d59b747880d70d865cdd510e05eccdcaef2f8cdcacfb7b2d1`, iPhone `f657ec85c84ff2d42f63f88657bd71d4436be649264b6fc13cfac988d0cb7251`. Source: Mariners Church weekend service, 2026-09-20. This project is not affiliated with Mariners Church.
+
 ## Main modules
 
 | Module | What it does | Where it lives | Read next |
 |---|---|---|---|
 | Four-layer production backend | Freezes the English source, translates and reviews each language, renders and times speech, assembles per-locale release packages | `packages/production/src/tongxing_production/`, `tools/ops/run.py`, `schemas/`, `config/` | [Four-layer contract](docs/multilingual-production-interfaces.zh.md) · [Backend design](docs/backend-workflow-system-design.zh-en.md) |
+| Sentence-first dubbing (agent-direct) | Agent translates and reviews sentence by sentence, the Spark renders in the speaker's voice, and the protected publisher releases after the user's full-track listening | `experiments/sentence-first-agent/` | [Route note](docs/sentence-first-agent-production.zh.md) · [runbook](experiments/sentence-first-agent/AGENTS.md) |
 | Web reader (Firebase Hosting) | Weekly page with captions that follow the audio, full bilingual text, outline, language pickers and sound-based position alignment | `apps/listening-web/`, `firebase/` | [Layer 4 public delivery](docs/layer4-four-product-public-delivery.zh.md) · [Weekly release](docs/tongxing-weekly-release.zh.md) |
 | iOS client | SwiftUI + AVPlayer app with verified caching, background audio, lock-screen controls, Dynamic Island state, microphone alignment and a Beta channel | `apps/tongxing-ios/` | [iOS README](apps/tongxing-ios/README.zh.md) · [Design conventions](apps/tongxing-ios/DESIGN.zh.md) |
 | Sunday live captions | Local microphone to live Chinese captions with recording kept for recovery; a separate `live_session` delivery type | `experiments/local-live-poc/` | [Live POC](experiments/local-live-poc/README.md) · [Operations whitepaper](docs/sunday-live-operations-whitepaper.zh.md) |
@@ -65,6 +83,10 @@ Source: Mariners Church weekend services, 2026-09-20 and 2026-10-18. This projec
 | Experiments | Model trials, A/B comparisons, benchmarks, Decisions API studies | `experiments/`, `config/agent-trials/` | [Experiment directions](docs/experiment-directions.zh.md) · [Model output speed index](docs/model-output-speed-index.zh.md) |
 
 ## Architecture
+
+![System overview: local four-layer production, review receipts, guarded publishing, Firebase hosting and the Web/iOS clients](docs/diagrams/tongxing-system-architecture.svg)
+
+The overview ties local four-layer production, review receipts, guarded publishing and the two client surfaces into one picture; per-layer inputs, models and gates follow below and in the [four-layer interface contract](docs/multilingual-production-interfaces.zh.md).
 
 ### Four layers, one English source
 
@@ -75,8 +97,8 @@ One shared English source feeds independent Chinese, Korean and Spanish branches
 | Layer | Name | Formal output | Gate |
 |---|---|---|---|
 | 1 | Shared English Source & Anchors | English Source Package | Completeness, word alignment and sentence boundaries reviewed; identity frozen |
-| 2 | Target-Language Text | Target-Language Candidate per locale | Independent model review, text machine QC, then human approval or a recorded machine waiver |
-| 3 | Target-Language Audio & Synchronization | Target-Language Audio Package per locale, or explicit `audio_unavailable` | Back-transcription screening, timing plan, human listening or a recorded waiver |
+| 2 | Target-Language Text | Target-Language Candidate per locale | Independent model review, text machine QC, then human approval or a recorded text machine waiver |
+| 3 | Target-Language Audio & Synchronization | Target-Language Audio Package per locale, or explicit `audio_unavailable` | Timing plan and human 1× full-track listening (the only audio gate); deterministic QC (duration/silence/clipping) is preflight only |
 | 4 | Multilingual Delivery & Playback | Release Package per `pageId + targetLocale` | Deploy, then HTTP, hash and Range verification; device and venue acceptance recorded separately |
 
 The per-layer process, models and gates are drawn in the [four-layer workflow diagram](docs/diagrams/four-layer-production-workflow.svg). The maintained contract is the [four-layer interface document](docs/multilingual-production-interfaces.zh.md); the Python dependency definition is in `packages/production/src/tongxing_production/contracts/pipeline_definition.py`.
@@ -97,11 +119,11 @@ More diagrams, their sources and the regeneration command are listed in the [dia
 
 ## Technical implementation
 
-**Backend.** Python 3 producers in `packages/production/src/tongxing_production/`, invoked with `.venv/bin/python tools/ops/run.py <area.module>`. `scripts/` retains compatibility facades, hosts and frozen files. JSON schemas live in `schemas/` and frozen policies in `config/`. Every package records canonical source ID and URL, media hash and duration, approved window, model and prompt identity and review receipts. Runs resume from verified artifacts; durable jobs, response caches and a budget ledger make paid model calls reusable across restarts. Human acceptance, machine waivers and budget approvals are separate receipts written by separate scripts, so a machine pass can never be mistaken for human approval.
+**Backend.** Python 3 producers in `packages/production/src/tongxing_production/`, invoked with `.venv/bin/python tools/ops/run.py <area.module>`. `scripts/` retains compatibility facades, hosts and frozen files. JSON schemas live in `schemas/` and frozen policies in `config/`. Every four-layer package records canonical source ID and URL, media hash and duration, approved window, model and prompt identity and review receipts. Runs resume from verified artifacts; durable jobs, response caches and a budget ledger make paid model calls reusable across restarts. Human acceptance, text machine waivers and budget approvals are separate receipts written by separate scripts, so a machine pass can never be mistaken for human approval.
 
-**Models and compute.** Translation and independent review run through a frozen Layer 2 backend chosen per run; speech rendering, back-transcription and word alignment run on a local DGX Spark with a MacBook fallback. Model names, reasoning levels, tiers and budget caps live in the [runtime model policy](docs/production-model-runtime-policy.zh.md), the [compute policy](docs/local-production-compute-policy.zh.md) and the [weekly run profile](docs/weekly-run-profile.zh.md); the Layer 2 [controller](docs/canonical-layer2-controller.zh.md) covers concurrency and recovery. OpenAI projects are used only through the [environment launcher](docs/openai-minimal-project-setup.zh.md).
+**Models and compute.** Translation and independent review run through a frozen Layer 2 backend chosen per run; speech rendering and word alignment run on a local DGX Spark with a MacBook fallback. Model names, reasoning levels, tiers and budget caps live in the [runtime model policy](docs/production-model-runtime-policy.zh.md), the [compute policy](docs/local-production-compute-policy.zh.md) and the [weekly run profile](docs/weekly-run-profile.zh.md); the Layer 2 [controller](docs/canonical-layer2-controller.zh.md) covers concurrency and recovery. OpenAI projects are used only through the [environment launcher](docs/openai-minimal-project-setup.zh.md).
 
-**Quality gates.** Text machine QC checks meaning preservation, numerals, Scripture references and terminology from the [shared terminology table](docs/series-terminology.zh.md); audio QC screens rendered speech by back-transcription and timing. A failing check goes back into a bounded repair loop. Publication without human review requires a [machine-quality waiver](docs/machine-quality-waiver.zh.md) that binds the implementation, runtime settings, frozen source and audio, and the page shows the disclosure.
+**Quality gates.** Text machine QC checks meaning preservation, numerals, Scripture references and terminology from the [shared terminology table](docs/series-terminology.zh.md); a failing check goes back into a bounded repair loop. Publication without human text review requires a [text machine-quality waiver](docs/machine-quality-waiver.zh.md) that keeps `humanApproval=false`, binds the implementation, frozen policy, frozen source and candidate, and the page shows the disclosure. Audio accepts no machine listening or machine waiver: since 2026-10-28 ASR screening, second-level ASR and the audio listening waiver are retired, and human 1× full-track listening (`audio-human-review-receipt-v5`) is the only audio gate; deterministic audio QC (duration/silence/clipping) is preflight only.
 
 **Web.** Static ES modules with no framework, served by Firebase Hosting from separate Dev and Production projects. The page validates the catalog and each release package before enabling a language, follows captions from the audio timeline, and offers a short microphone capture that matches against a source-bound fingerprint index to jump to the current position. Full videos live in a storage bucket with exact redirects. Node tests cover the shared client contracts.
 
@@ -116,12 +138,18 @@ More diagrams, their sources and the regeneration command are listed in the [dia
 ### Weekly prepared content
 
 1. **Source.** Download the authorized recording, confirm the sermon window and freeze the English Source Package with word alignment ([runbook](docs/codex-local-production-runbook.zh.md)).
-2. **Text.** Produce a candidate per locale, run independent review and machine QC, then human text review or a recorded waiver.
-3. **Audio.** Prepare the speech job, render with the authorized speaker voice on the Spark, screen by back-transcription, compact silences and build the audio package ([formal Layer 3 renderer](docs/formal-layer3-renderer.zh.md)).
+2. **Text.** Produce a candidate per locale, run independent review and machine QC, then human text review or a recorded text machine waiver.
+3. **Audio.** Prepare the speech job, render with the authorized speaker voice on the Spark, compact silences and build the audio package, then run the human 1× full-track listening ([formal Layer 3 renderer](docs/formal-layer3-renderer.zh.md)).
 4. **Release.** Build the release package, publish to the Dev project, verify HTTP, hashes and a browser smoke, then deploy to Production under the [weekly release contract](docs/tongxing-weekly-release.zh.md).
 5. **Poster and report.** Render the [single-line weekly poster](docs/tongxing-weekly-poster-format.zh.md) and export a redacted [run report](docs/test-run-retrospective.zh.md) as a docs-only PR.
 
-A short real-model rehearsal of the same path on a clip is the [clip E2E](docs/clip-real-e2e.zh.md). The [workflow map](docs/workflows/README.zh.md) is the source of truth for scope and completion states.
+The short clip fixture was retired on 2026-10-28 together with the machine-listening chain ([historical note](docs/clip-real-e2e.zh.md)); new end-to-end checks run through the formal four-layer entry and human full-track listening. The [workflow map](docs/workflows/README.zh.md) is the source of truth for scope and completion states.
+
+### Sentence-first dubbing (agent-direct)
+
+A second, parallel production route skips the formal four-layer pipeline: the agent translates and reviews sentence by sentence, the Spark renders each sentence in the speaker's own voice, the track is merged, and the user's full-track listening plus per-deploy authorization gate publication. Delivery is still a `four_layer_release` Layer 4 page, with no machine-quality waiver and no sound-fingerprint synchronization. The operating runbook is the [sentence-first runbook](experiments/sentence-first-agent/AGENTS.md); scope, checks and cost are in the [route note](docs/sentence-first-agent-production.zh.md).
+
+![Sentence-first dubbing weekly flow: human review, local scripts and the DGX Spark exclusive session](docs/diagrams/sentence-first-weekly-workflow.svg)
 
 ### Code and content release
 
@@ -164,6 +192,7 @@ A simulator build is not TestFlight, physical-device or venue acceptance; each i
 | `infra/` | Firebase and other infrastructure configuration |
 | `firebase/` | Hosting configuration and Dev page adapters |
 | `experiments/local-live-poc/` | Sunday live caption runtime |
+| `experiments/sentence-first-agent/` | Sentence-first agent-direct route scripts and runbook; artifacts stay outside Git |
 | `docs/` | Contracts, runbooks, design documents, diagrams and dated reports |
 | `skills/` | Agent skills for Spark, dubbing, alignment and live fallback |
 

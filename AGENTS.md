@@ -31,7 +31,7 @@ Purpose: help attendees follow English sermons in their own language, on time an
 | Layer 2 translation and review: models, budget, tier | [Runtime model policy](docs/production-model-runtime-policy.zh.md); [controller](docs/canonical-layer2-controller.zh.md) for concurrency and recovery |
 | Compute host for local model work | [Compute policy](docs/local-production-compute-policy.zh.md) |
 | OpenAI keys and projects | [Environment launcher](docs/openai-minimal-project-setup.zh.md) |
-| Machine-checked text or audio, or publication without manual review | [Machine-quality waiver](docs/machine-quality-waiver.zh.md): calibration, repair limits, degradation, current wiring limits |
+| Machine-checked text, or historical audio waivers | [Machine-quality waiver](docs/machine-quality-waiver.zh.md): text waiver, calibration, repair limits; **audio machine listening retired 2026-10-28 (human 1x listening is the only audio gate)** |
 | Canonical App delivery | [Layer 4 public delivery](docs/layer4-four-product-public-delivery.zh.md) and [weekly release](docs/tongxing-weekly-release.zh.md) |
 | Weekly or ad hoc poster | Use the same [single-line poster template](docs/tongxing-weekly-poster-format.zh.md) and [poster procedure](docs/tongxing-weekly-release.zh.md#每周海报交付), including one-locale work; separate from page publication and do not send or upload it without the user's instruction |
 | Resume a weekly production run | [Local production runbook](docs/codex-local-production-runbook.zh.md), [run profile](docs/weekly-run-profile.zh.md) for concurrency and budget caps, and the existing run artifacts |
@@ -41,3 +41,4 @@ Purpose: help attendees follow English sermons in their own language, on time an
 | iOS client | [iOS instructions](apps/tongxing-ios/AGENTS.md) |
 | Priorities, stable IDs and status | [Dev backlog](docs/backlog.zh.md), the only top-level backlog; find an ID's rows with `python3 tools/development/backlog_ids.py <ID or prefix>` |
 | Benchmark, model trial or post-training | README Discovery links and that experiment's contract |
+| Rework keeps recurring, or a fix caused a new failure | [Avoiding rework](docs/rework-avoidance.zh.md): rework vs change vs waiting, six causes with evidence, the pre-start check list |

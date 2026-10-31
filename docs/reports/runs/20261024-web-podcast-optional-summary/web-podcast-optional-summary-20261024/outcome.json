@@ -1,0 +1,20 @@
+{
+  "status": "pass",
+  "deliveryType": "production_web_ui_update",
+  "startedAt": "2026-10-24T17:20:00Z",
+  "finishedAt": "2026-10-24T23:56:00Z",
+  "summary": "Production web reader hid two published human_reviewed podcasts (2026-10-18 jesus-sends-and-resurrects-his-own, 2026-09-19 jesus-promises): their content JSON omits summary/outline and published-weeks.mjs required both. iOS lists them (fields optional there). Fix PR #1345 -> dev, promoted to main in #1344 (e821690e); UI-only overlay changed only /published-weeks.mjs; deployed by the operator via guarded_hosting_publish.",
+  "sourceCommit": "e821690ef4530b4b3e277e201bdf5d7e11279c7b",
+  "changedPaths": [
+    "/published-weeks.mjs"
+  ],
+  "evidence": {
+    "codeTests": "node web suites 616/617 pass (1 skipped); root unittest 13 failures + 2 errors, identical on previous main b8c2556e (pre-existing, not from this change)",
+    "http": "live /published-weeks.mjs sha256 12ae1442f9350f75eac688dee8f49020b61ce3d6854af79c0f8eb957f29bbc2c matches candidate",
+    "liveLoader": "loadPublishedWeeks served from production lists 7/7 v5 pages; remaining non-blocking error: resi-20261018-15030286 ko/es alignment binding",
+    "browser": "podcast page jesus-promises renders title, speakers, 1892 cues; both podcasts present in picker; summary area empty by design",
+    "device": "not_run",
+    "venue": "not_run",
+    "ios": "unchanged; not re-verified"
+  }
+}

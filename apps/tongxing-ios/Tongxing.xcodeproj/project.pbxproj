@@ -11,7 +11,6 @@
 		01889D8EA2866C1BBA9A3B83 /* BetaNotifications.swift in Sources */ = {isa = PBXBuildFile; fileRef = A53125E45FD7C62523C2E7E2 /* BetaNotifications.swift */; };
 		042AC6D42BFDE10152C60248 /* VoiceDemoCatalog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 01D4A798172E895D46CF48E4 /* VoiceDemoCatalog.swift */; };
 		07BD5A2684273F556EB2A486 /* ListeningActivityStateTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE351B05886BDF3AF8AB9ECE /* ListeningActivityStateTests.swift */; };
-		0D171F4F74D6C1396431F589 /* PlaybackPanelLayoutTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 177E9F09DA605249B8B10216 /* PlaybackPanelLayoutTests.swift */; };
 		17719995BCE43C60385DB306 /* PlaybackControllerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE58D0C358A74F0BDE595617 /* PlaybackControllerTests.swift */; };
 		1922373411A3F2980F9E9B7A /* AppStoreScreenshotUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8D941F809567228C8BDF94B2 /* AppStoreScreenshotUITests.swift */; };
 		1F287CC791B5CA1037903C80 /* Localization.swift in Sources */ = {isa = PBXBuildFile; fileRef = BDD37841E68B061E39E91375 /* Localization.swift */; };
@@ -26,8 +25,8 @@
 		318C506CF300A57522C9F2F9 /* PlaybackDock.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAE586AE0AE5D2F197DC5483 /* PlaybackDock.swift */; };
 		32B58C5985220B581D4CF45B /* ListeningActivityAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 60D53F716EC96280DEAF16C4 /* ListeningActivityAttributes.swift */; };
 		35529B2801237F81F67785E8 /* TongxingCore in Frameworks */ = {isa = PBXBuildFile; productRef = 46FC649E9CD7E0BF9CEF7E49 /* TongxingCore */; };
-		3937DE5EED2CA2CD45C0307B /* PlaybackPanelLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE5FADDF09C04B640EEDA7F0 /* PlaybackPanelLayout.swift */; };
 		3C9938262804DF6B08B451C3 /* BetaRemotePush.swift in Sources */ = {isa = PBXBuildFile; fileRef = D870632D5A2996F9F1FF55C8 /* BetaRemotePush.swift */; };
+		3F8F5BD601847BC075B93414 /* AppDeepLink.swift in Sources */ = {isa = PBXBuildFile; fileRef = F28DD6EB12E674F224056564 /* AppDeepLink.swift */; };
 		40CC996E1E39A5B6F34BA38F /* ListeningActivityDismissalTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E0A6DA6C0A30670D209835C /* ListeningActivityDismissalTests.swift */; };
 		475EF22CC006DCDA4BBD0DA9 /* WeeklyUpdateUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 45F5D15A9F475F5551F890ED /* WeeklyUpdateUITests.swift */; };
 		4ABE01FD69729C4F7F3EC0BD /* ListeningActivityExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 4AE35BDEC7081304D75711B2 /* ListeningActivityExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
@@ -36,25 +35,33 @@
 		6C29EA8473280EA03BE25CF6 /* ListeningActivityWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 70BEE8330224D04ACF54EE70 /* ListeningActivityWidget.swift */; };
 		6ED24D1A41D86A3FD506381B /* BetaNotificationUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 584EEEF8EAD4278FE9B4381A /* BetaNotificationUITests.swift */; };
 		7EC13E455FCB8AD28F90271C /* AudioAlignmentController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98A292DFC6FBB07302A4DE77 /* AudioAlignmentController.swift */; };
+		7F1E0DCF4F475AE96129904C /* AppDeepLinkTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4999B7E416C8D48890E944F8 /* AppDeepLinkTests.swift */; };
 		82DAE4DBC18C3F1A4BD05687 /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 02EF54CEB76892C25F99A6FB /* Localizable.xcstrings */; };
+		84880BF9676B537F6C8E0CE5 /* ProductionPushUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 804E0750D21232AD9A48858C /* ProductionPushUITests.swift */; };
 		8B8A2624687249CFAB61DAFB /* ListeningFlowUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 239227789D17BF0B1B0A1614 /* ListeningFlowUITests.swift */; };
 		929F88DB6567F7C0CF7A5B91 /* ListeningActivityCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31BF35CC679A65F678EA91AF /* ListeningActivityCard.swift */; };
 		94B466A5A536CBD9995786DE /* EnglishLocateSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6FEF8605856DB0FE84A04EC2 /* EnglishLocateSheet.swift */; };
 		97DAC43194A8678823249118 /* ListeningActivityCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31BF35CC679A65F678EA91AF /* ListeningActivityCard.swift */; };
 		9A00442EA947A8B5939AB68B /* AppIdentityTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 502E58B32BA9CB649A03DB11 /* AppIdentityTests.swift */; };
+		9A247006AA03DEAAED3B6E15 /* WeeklyGuidePreview.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3080F1D3CD5A0A770935EFD2 /* WeeklyGuidePreview.swift */; };
 		9D37A5E9084A59C6C69B0EEA /* ListeningLiveActivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD504056359930D928DD8069 /* ListeningLiveActivity.swift */; };
 		A442F0B6EE2D16D0DAE46A00 /* SwiftUIPreviewTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6163F70382A5001D532DC114 /* SwiftUIPreviewTests.swift */; };
+		A55D82ACF53BFD530F2D7889 /* StatisticsPromptCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = D8C86CA5674CE86CFD433769 /* StatisticsPromptCard.swift */; };
 		A62A77ABFD144A65E44B48B9 /* WeeklyPosterPublishedUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8EB7754D60DA3B7C6FAA6231 /* WeeklyPosterPublishedUITests.swift */; };
 		AAE50D4E51C22893F01DEAFD /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = E8CDE0AD081CB32BAE3CD0CB /* PrivacyInfo.xcprivacy */; };
+		AD94FC740DDEDCC870211634 /* WeeklyGuidePreviewUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 901C441D4B62BA69E50575EC /* WeeklyGuidePreviewUITests.swift */; };
 		B23482E21D63D7D5A3E4F670 /* TongxingCore in Frameworks */ = {isa = PBXBuildFile; productRef = C194255167B8AD9FCB74BBA5 /* TongxingCore */; };
 		B415795B942C6189370AAE61 /* UITestLaunch.swift in Sources */ = {isa = PBXBuildFile; fileRef = BD0FEA1F83F4300CB78A0935 /* UITestLaunch.swift */; };
+		B43649C42D1DAA38044E5481 /* WeeklyGuideData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7CB9A8038F5DCCB354A796FA /* WeeklyGuideData.swift */; };
 		BB468865C54870860F167EA8 /* MicrophoneCapture.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1EB48128E58E88F812DC4214 /* MicrophoneCapture.swift */; };
 		C18C784B85DC395F257A21B7 /* TongxingInfrastructure in Frameworks */ = {isa = PBXBuildFile; productRef = FA2F2228F6CC524F87E2AC7D /* TongxingInfrastructure */; };
 		C2AF9808AFFEED2AD7D2DF2A /* AudioAlignmentControllerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9BF531D6B8AD0E94016F0BC3 /* AudioAlignmentControllerTests.swift */; };
+		C462391418A654BA6F7F87FA /* ProductionPush.swift in Sources */ = {isa = PBXBuildFile; fileRef = 414B7CEB37A42480C382B458 /* ProductionPush.swift */; };
 		C7430BCC556F70CBE78D8CDB /* DesignSystem.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC6D116D3A73A078D6FA5218 /* DesignSystem.swift */; };
 		C84F91355DB74C84BAC96384 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3A757BEABA30910DC76E26BE /* ContentView.swift */; };
 		CAB48F9F80542B5845FEF4B7 /* ListeningActivityAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 60D53F716EC96280DEAF16C4 /* ListeningActivityAttributes.swift */; };
 		CB435A938093472AA1DF77EB /* VoiceDemoCatalogV2Tests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E55BEC389D3326BFB083428 /* VoiceDemoCatalogV2Tests.swift */; };
+		CEBEB51C414B9274C0D2F9F3 /* WeeklyGuideDataTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 238F7184601DF2B752925AA6 /* WeeklyGuideDataTests.swift */; };
 		D0F9336C23F6D98E4B199A86 /* VoiceDemoSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 270C99CB4AFCBD470C0E1B75 /* VoiceDemoSection.swift */; };
 		D2C385311D9B608FA482691C /* DownloadBackgroundAssertionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2221C72D2D8132B2F626CD29 /* DownloadBackgroundAssertionTests.swift */; };
 		DA598EC364686E234B86F56B /* PlaybackController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 34B67E7FE8944242C03C8904 /* PlaybackController.swift */; };
@@ -105,20 +112,24 @@
 		01D4A798172E895D46CF48E4 /* VoiceDemoCatalog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceDemoCatalog.swift; sourceTree = "<group>"; };
 		02EF54CEB76892C25F99A6FB /* Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Localizable.xcstrings; sourceTree = "<group>"; };
 		07B59FA4533A491CF4AA2D83 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		0BB4E01FD39137A27EA512D2 /* es */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = es; path = es.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		0D25C402E721BC4E502AF672 /* tongxing-ios */ = {isa = PBXFileReference; lastKnownFileType = folder; name = "tongxing-ios"; path = .; sourceTree = SOURCE_ROOT; };
 		0F81E8D165D65FEF70E65FFF /* AppModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppModel.swift; sourceTree = "<group>"; };
-		177E9F09DA605249B8B10216 /* PlaybackPanelLayoutTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaybackPanelLayoutTests.swift; sourceTree = "<group>"; };
 		1EB48128E58E88F812DC4214 /* MicrophoneCapture.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MicrophoneCapture.swift; sourceTree = "<group>"; };
 		2221C72D2D8132B2F626CD29 /* DownloadBackgroundAssertionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DownloadBackgroundAssertionTests.swift; sourceTree = "<group>"; };
+		238F7184601DF2B752925AA6 /* WeeklyGuideDataTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeeklyGuideDataTests.swift; sourceTree = "<group>"; };
 		239227789D17BF0B1B0A1614 /* ListeningFlowUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ListeningFlowUITests.swift; sourceTree = "<group>"; };
 		270C99CB4AFCBD470C0E1B75 /* VoiceDemoSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceDemoSection.swift; sourceTree = "<group>"; };
+		3080F1D3CD5A0A770935EFD2 /* WeeklyGuidePreview.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeeklyGuidePreview.swift; sourceTree = "<group>"; };
 		31BF35CC679A65F678EA91AF /* ListeningActivityCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ListeningActivityCard.swift; sourceTree = "<group>"; };
 		3258F6BBF467D18B238176B8 /* Tongxing.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = Tongxing.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		34B67E7FE8944242C03C8904 /* PlaybackController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaybackController.swift; sourceTree = "<group>"; };
 		3A757BEABA30910DC76E26BE /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		3E53066E0326AFD8370B5145 /* PrivacySupportView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrivacySupportView.swift; sourceTree = "<group>"; };
+		414B7CEB37A42480C382B458 /* ProductionPush.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProductionPush.swift; sourceTree = "<group>"; };
 		45D034927C1BDF6858317287 /* BetaRemotePushTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BetaRemotePushTests.swift; sourceTree = "<group>"; };
 		45F5D15A9F475F5551F890ED /* WeeklyUpdateUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeeklyUpdateUITests.swift; sourceTree = "<group>"; };
+		4999B7E416C8D48890E944F8 /* AppDeepLinkTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDeepLinkTests.swift; sourceTree = "<group>"; };
 		4AE35BDEC7081304D75711B2 /* ListeningActivityExtension.appex */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = "wrapper.app-extension"; path = ListeningActivityExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		502E58B32BA9CB649A03DB11 /* AppIdentityTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppIdentityTests.swift; sourceTree = "<group>"; };
 		5407843D3180E72B300943F4 /* ListeningActivityUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ListeningActivityUITests.swift; sourceTree = "<group>"; };
@@ -133,21 +144,26 @@
 		6FEF8605856DB0FE84A04EC2 /* EnglishLocateSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EnglishLocateSheet.swift; sourceTree = "<group>"; };
 		70BEE8330224D04ACF54EE70 /* ListeningActivityWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ListeningActivityWidget.swift; sourceTree = "<group>"; };
 		72F704FFC13274A549628FF2 /* Core */ = {isa = PBXFileReference; lastKnownFileType = folder; name = Core; path = Core; sourceTree = SOURCE_ROOT; };
+		7CB9A8038F5DCCB354A796FA /* WeeklyGuideData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeeklyGuideData.swift; sourceTree = "<group>"; };
 		7E0A6DA6C0A30670D209835C /* ListeningActivityDismissalTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ListeningActivityDismissalTests.swift; sourceTree = "<group>"; };
+		804E0750D21232AD9A48858C /* ProductionPushUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProductionPushUITests.swift; sourceTree = "<group>"; };
 		81423A9849E5E7BDFBDA1423 /* zh-Hans */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "zh-Hans"; path = "zh-Hans.lproj/InfoPlist.strings"; sourceTree = "<group>"; };
 		8D941F809567228C8BDF94B2 /* AppStoreScreenshotUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppStoreScreenshotUITests.swift; sourceTree = "<group>"; };
 		8EB7754D60DA3B7C6FAA6231 /* WeeklyPosterPublishedUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeeklyPosterPublishedUITests.swift; sourceTree = "<group>"; };
+		901C441D4B62BA69E50575EC /* WeeklyGuidePreviewUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeeklyGuidePreviewUITests.swift; sourceTree = "<group>"; };
 		98A292DFC6FBB07302A4DE77 /* AudioAlignmentController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioAlignmentController.swift; sourceTree = "<group>"; };
 		9BF531D6B8AD0E94016F0BC3 /* AudioAlignmentControllerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioAlignmentControllerTests.swift; sourceTree = "<group>"; };
 		A53125E45FD7C62523C2E7E2 /* BetaNotifications.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BetaNotifications.swift; sourceTree = "<group>"; };
 		AAE586AE0AE5D2F197DC5483 /* PlaybackDock.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaybackDock.swift; sourceTree = "<group>"; };
-		AE5FADDF09C04B640EEDA7F0 /* PlaybackPanelLayout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaybackPanelLayout.swift; sourceTree = "<group>"; };
 		B894299ED2AF8249D5E4694C /* WeeklyUpdateModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeeklyUpdateModelTests.swift; sourceTree = "<group>"; };
 		BC6D116D3A73A078D6FA5218 /* DesignSystem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesignSystem.swift; sourceTree = "<group>"; };
 		BD0FEA1F83F4300CB78A0935 /* UITestLaunch.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UITestLaunch.swift; sourceTree = "<group>"; };
 		BDD37841E68B061E39E91375 /* Localization.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Localization.swift; sourceTree = "<group>"; };
+		D2095BC021971AF1B80C7236 /* vi */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = vi; path = vi.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		D76315F9ECA722C00FEE69F2 /* TongxingUITests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = TongxingUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		D870632D5A2996F9F1FF55C8 /* BetaRemotePush.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BetaRemotePush.swift; sourceTree = "<group>"; };
+		D8C86CA5674CE86CFD433769 /* StatisticsPromptCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatisticsPromptCard.swift; sourceTree = "<group>"; };
+		DA25732CD3AE742246160B68 /* ko */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ko; path = ko.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		DE351B05886BDF3AF8AB9ECE /* ListeningActivityStateTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ListeningActivityStateTests.swift; sourceTree = "<group>"; };
 		E1C23DB6967DA535C2F9C6DD /* WeeklyUpdates.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeeklyUpdates.swift; sourceTree = "<group>"; };
 		E5859794C1B0B7852C183B63 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/InfoPlist.strings; sourceTree = "<group>"; };
@@ -155,6 +171,7 @@
 		E8CDE0AD081CB32BAE3CD0CB /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		EE58D0C358A74F0BDE595617 /* PlaybackControllerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaybackControllerTests.swift; sourceTree = "<group>"; };
 		EEFE877B3072430F0D7A31CB /* AppIcon.icon */ = {isa = PBXFileReference; lastKnownFileType = wrapper.icon; path = AppIcon.icon; sourceTree = "<group>"; };
+		F28DD6EB12E674F224056564 /* AppDeepLink.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDeepLink.swift; sourceTree = "<group>"; };
 		FD504056359930D928DD8069 /* ListeningLiveActivity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ListeningLiveActivity.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -194,6 +211,8 @@
 				584EEEF8EAD4278FE9B4381A /* BetaNotificationUITests.swift */,
 				5407843D3180E72B300943F4 /* ListeningActivityUITests.swift */,
 				239227789D17BF0B1B0A1614 /* ListeningFlowUITests.swift */,
+				804E0750D21232AD9A48858C /* ProductionPushUITests.swift */,
+				901C441D4B62BA69E50575EC /* WeeklyGuidePreviewUITests.swift */,
 				8EB7754D60DA3B7C6FAA6231 /* WeeklyPosterPublishedUITests.swift */,
 				45F5D15A9F475F5551F890ED /* WeeklyUpdateUITests.swift */,
 			);
@@ -224,6 +243,7 @@
 		6C5420C74F47EF1E13AC8C7D /* App */ = {
 			isa = PBXGroup;
 			children = (
+				F28DD6EB12E674F224056564 /* AppDeepLink.swift */,
 				EEFE877B3072430F0D7A31CB /* AppIcon.icon */,
 				0F81E8D165D65FEF70E65FFF /* AppModel.swift */,
 				07B59FA4533A491CF4AA2D83 /* Assets.xcassets */,
@@ -239,13 +259,16 @@
 				1EB48128E58E88F812DC4214 /* MicrophoneCapture.swift */,
 				34B67E7FE8944242C03C8904 /* PlaybackController.swift */,
 				AAE586AE0AE5D2F197DC5483 /* PlaybackDock.swift */,
-				AE5FADDF09C04B640EEDA7F0 /* PlaybackPanelLayout.swift */,
 				E8CDE0AD081CB32BAE3CD0CB /* PrivacyInfo.xcprivacy */,
 				3E53066E0326AFD8370B5145 /* PrivacySupportView.swift */,
+				414B7CEB37A42480C382B458 /* ProductionPush.swift */,
+				D8C86CA5674CE86CFD433769 /* StatisticsPromptCard.swift */,
 				61FE1B88425139B2F592ED0A /* TongxingApp.swift */,
 				BD0FEA1F83F4300CB78A0935 /* UITestLaunch.swift */,
 				01D4A798172E895D46CF48E4 /* VoiceDemoCatalog.swift */,
 				270C99CB4AFCBD470C0E1B75 /* VoiceDemoSection.swift */,
+				7CB9A8038F5DCCB354A796FA /* WeeklyGuideData.swift */,
+				3080F1D3CD5A0A770935EFD2 /* WeeklyGuidePreview.swift */,
 				E1C23DB6967DA535C2F9C6DD /* WeeklyUpdates.swift */,
 				E8AB6F9FA25BB0980EF2FE48 /* InfoPlist.strings */,
 				8DE1B32273C5ED188D2CD1CC /* Resources */,
@@ -280,6 +303,7 @@
 		DDCFFA9BC8A66D0705E124E9 /* Tests */ = {
 			isa = PBXGroup;
 			children = (
+				4999B7E416C8D48890E944F8 /* AppDeepLinkTests.swift */,
 				502E58B32BA9CB649A03DB11 /* AppIdentityTests.swift */,
 				9BF531D6B8AD0E94016F0BC3 /* AudioAlignmentControllerTests.swift */,
 				45D034927C1BDF6858317287 /* BetaRemotePushTests.swift */,
@@ -287,9 +311,9 @@
 				7E0A6DA6C0A30670D209835C /* ListeningActivityDismissalTests.swift */,
 				DE351B05886BDF3AF8AB9ECE /* ListeningActivityStateTests.swift */,
 				EE58D0C358A74F0BDE595617 /* PlaybackControllerTests.swift */,
-				177E9F09DA605249B8B10216 /* PlaybackPanelLayoutTests.swift */,
 				6163F70382A5001D532DC114 /* SwiftUIPreviewTests.swift */,
 				6E55BEC389D3326BFB083428 /* VoiceDemoCatalogV2Tests.swift */,
+				238F7184601DF2B752925AA6 /* WeeklyGuideDataTests.swift */,
 				B894299ED2AF8249D5E4694C /* WeeklyUpdateModelTests.swift */,
 			);
 			path = Tests;
@@ -345,6 +369,7 @@
 			buildConfigurationList = A0D147F90124C3CF570A1EBC /* Build configuration list for PBXNativeTarget "Tongxing" */;
 			buildPhases = (
 				D128CF3B139D2EA68547E367 /* Sources */,
+				6B7301F5D4B58931DD4E94D1 /* Copy local weekly guides */,
 				BDBF819BAEDD303CDD9E3D36 /* Resources */,
 				180A55B611AD0E790158B7C9 /* Frameworks */,
 				C2437DBFD6C6DE28068C99A2 /* Embed Foundation Extensions */,
@@ -470,6 +495,36 @@
 		};
 /* End PBXResourcesBuildPhase section */
 
+/* Begin PBXShellScriptBuildPhase section */
+		6B7301F5D4B58931DD4E94D1 /* Copy local weekly guides */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"$(SRCROOT)/GuideResources",
+				"$(TONGXING_GUIDE_DATA_INPUT)",
+				"$(TONGXING_GUIDE_CHECKSUM_INPUT)",
+				"$(TONGXING_GUIDE_STATUE_INPUT)",
+				"$(TONGXING_GUIDE_SON_INPUT)",
+			);
+			name = "Copy local weekly guides";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+				"$(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/weekly-guides.json",
+				"$(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/weekly-guide-statue.jpg",
+				"$(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/weekly-guide-son-of-man.jpg",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "set -eu\ndestination=\"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/weekly-guides.json\"\nrm -f \"$destination\"\nrm -f \"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/weekly-guide-statue.jpg\" \"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/weekly-guide-son-of-man.jpg\"\ncase \"${CONFIGURATION}\" in\n  Release|BetaDebug|BetaRelease)\n    source=\"${SRCROOT}/GuideResources/weekly-guides.json\"\n    checksum=\"${SRCROOT}/GuideResources/weekly-guides.sha256\"\n    if [ \"${CONFIGURATION}\" = \"Release\" ] && { [ ! -f \"$source\" ] || [ ! -f \"$checksum\" ]; }; then\n      echo \"error: Release requires the verified weekly guide payload and SHA-256\"\n      exit 1\n    fi\n    if [ -f \"$source\" ] || [ -f \"$checksum\" ]; then\n      if [ ! -f \"$source\" ] || [ ! -f \"$checksum\" ]; then\n        echo \"error: local guide payload and SHA-256 must both exist\"\n        exit 1\n      fi\n      expected=$(/bin/cat \"$checksum\")\n      actual=$(/usr/bin/shasum -a 256 \"$source\" | /usr/bin/awk '{print $1}')\n      if [ \"$actual\" != \"$expected\" ]; then\n        echo \"error: local guide payload checksum mismatch\"\n        exit 1\n      fi\n      if [ \"$actual\" != \"a527e23fbd693177b9589fc89cd3533b653f64918abb97213cf34172c36711f9\" ]; then\n        echo \"error: local guide payload is not the revision accepted by this App\"\n        exit 1\n      fi\n      /bin/mkdir -p \"$(/usr/bin/dirname \"$destination\")\"\n      /bin/cp \"$source\" \"$destination\"\n      for asset in weekly-guide-statue.jpg weekly-guide-son-of-man.jpg; do\n        if /usr/bin/grep -Fq \"$asset\" \"$source\"; then\n          case \"$asset\" in\n            weekly-guide-statue.jpg) asset_sha=f1d2f517120099a38614c7c560c1fbe054ec3ea4d741284fbcef496a7dab73b5 ;;\n            weekly-guide-son-of-man.jpg) asset_sha=30c3e5b82c024bad3e40122f330f6606d022c91d8c77a82f06d6f1d5fc987f1f ;;\n          esac\n          asset_source=\"${SRCROOT}/GuideResources/${asset}\"\n          if [ ! -f \"$asset_source\" ] || [ \"$(/usr/bin/shasum -a 256 \"$asset_source\" | /usr/bin/awk '{print $1}')\" != \"$asset_sha\" ]; then\n            echo \"error: referenced weekly guide image missing or checksum mismatch: $asset\"\n            exit 1\n          fi\n          /bin/cp \"$asset_source\" \"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/${asset}\"\n        fi\n      done\n    fi\n    ;;\nesac\n";
+		};
+/* End PBXShellScriptBuildPhase section */
+
 /* Begin PBXSourcesBuildPhase section */
 		6313D3362A815F91E9D38C12 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
@@ -479,6 +534,8 @@
 				6ED24D1A41D86A3FD506381B /* BetaNotificationUITests.swift in Sources */,
 				2BFA9AF2842D1D85CEAB3804 /* ListeningActivityUITests.swift in Sources */,
 				8B8A2624687249CFAB61DAFB /* ListeningFlowUITests.swift in Sources */,
+				84880BF9676B537F6C8E0CE5 /* ProductionPushUITests.swift in Sources */,
+				AD94FC740DDEDCC870211634 /* WeeklyGuidePreviewUITests.swift in Sources */,
 				A62A77ABFD144A65E44B48B9 /* WeeklyPosterPublishedUITests.swift in Sources */,
 				475EF22CC006DCDA4BBD0DA9 /* WeeklyUpdateUITests.swift in Sources */,
 			);
@@ -488,6 +545,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				7F1E0DCF4F475AE96129904C /* AppDeepLinkTests.swift in Sources */,
 				9A00442EA947A8B5939AB68B /* AppIdentityTests.swift in Sources */,
 				C2AF9808AFFEED2AD7D2DF2A /* AudioAlignmentControllerTests.swift in Sources */,
 				63BD02A90C508318F264AA48 /* BetaRemotePushTests.swift in Sources */,
@@ -495,9 +553,9 @@
 				40CC996E1E39A5B6F34BA38F /* ListeningActivityDismissalTests.swift in Sources */,
 				07BD5A2684273F556EB2A486 /* ListeningActivityStateTests.swift in Sources */,
 				17719995BCE43C60385DB306 /* PlaybackControllerTests.swift in Sources */,
-				0D171F4F74D6C1396431F589 /* PlaybackPanelLayoutTests.swift in Sources */,
 				A442F0B6EE2D16D0DAE46A00 /* SwiftUIPreviewTests.swift in Sources */,
 				CB435A938093472AA1DF77EB /* VoiceDemoCatalogV2Tests.swift in Sources */,
+				CEBEB51C414B9274C0D2F9F3 /* WeeklyGuideDataTests.swift in Sources */,
 				2FE79637F859BA290C2C1A65 /* WeeklyUpdateModelTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -517,6 +575,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				3F8F5BD601847BC075B93414 /* AppDeepLink.swift in Sources */,
 				F104CF6576ABBCDDF4B54A62 /* AppModel.swift in Sources */,
 				7EC13E455FCB8AD28F90271C /* AudioAlignmentController.swift in Sources */,
 				01889D8EA2866C1BBA9A3B83 /* BetaNotifications.swift in Sources */,
@@ -533,12 +592,15 @@
 				BB468865C54870860F167EA8 /* MicrophoneCapture.swift in Sources */,
 				DA598EC364686E234B86F56B /* PlaybackController.swift in Sources */,
 				318C506CF300A57522C9F2F9 /* PlaybackDock.swift in Sources */,
-				3937DE5EED2CA2CD45C0307B /* PlaybackPanelLayout.swift in Sources */,
 				23FBE0C19259FFC619DE3B8B /* PrivacySupportView.swift in Sources */,
+				C462391418A654BA6F7F87FA /* ProductionPush.swift in Sources */,
+				A55D82ACF53BFD530F2D7889 /* StatisticsPromptCard.swift in Sources */,
 				272F205288C38B205D9DE540 /* TongxingApp.swift in Sources */,
 				B415795B942C6189370AAE61 /* UITestLaunch.swift in Sources */,
 				042AC6D42BFDE10152C60248 /* VoiceDemoCatalog.swift in Sources */,
 				D0F9336C23F6D98E4B199A86 /* VoiceDemoSection.swift in Sources */,
+				B43649C42D1DAA38044E5481 /* WeeklyGuideData.swift in Sources */,
+				9A247006AA03DEAAED3B6E15 /* WeeklyGuidePreview.swift in Sources */,
 				00CE40404E05127FA0783677 /* WeeklyUpdates.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -568,6 +630,9 @@
 			isa = PBXVariantGroup;
 			children = (
 				E5859794C1B0B7852C183B63 /* en */,
+				0BB4E01FD39137A27EA512D2 /* es */,
+				DA25732CD3AE742246160B68 /* ko */,
+				D2095BC021971AF1B80C7236 /* vi */,
 				81423A9849E5E7BDFBDA1423 /* zh-Hans */,
 			);
 			name = InfoPlist.strings;
@@ -581,7 +646,7 @@
 			baseConfigurationReference = 58CF4F36B9265709AAF09A1C /* Signing.xcconfig */;
 			buildSettings = {
 				APPLICATION_EXTENSION_API_ONLY = YES;
-				CURRENT_PROJECT_VERSION = 60;
+				CURRENT_PROJECT_VERSION = 67;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = ListeningActivityExtension/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -589,7 +654,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 1.26.19;
+				MARKETING_VERSION = 1.26.25;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.jonathanjing.tongxing.beta.listening-activity";
 				PRODUCT_NAME = ListeningActivityExtension;
 				SDKROOT = iphoneos;
@@ -607,6 +672,7 @@
 			baseConfigurationReference = 58CF4F36B9265709AAF09A1C /* Signing.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = Config/AssociatedDomainsDev.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CURRENT_PROJECT_VERSION = 58;
 				GENERATE_INFOPLIST_FILE = NO;
@@ -625,6 +691,10 @@
 				TARGETED_DEVICE_FAMILY = "1,2";
 				TONGXING_CONTENT_ORIGIN = "https://ai-for-god-sermon-audio-dev.web.app";
 				TONGXING_DISPLAY_NAME = "同行";
+				TONGXING_GUIDE_CHECKSUM_INPUT = "$(SRCROOT)/GuideResources";
+				TONGXING_GUIDE_DATA_INPUT = "$(SRCROOT)/GuideResources";
+				TONGXING_GUIDE_SON_INPUT = "$(SRCROOT)/GuideResources";
+				TONGXING_GUIDE_STATUE_INPUT = "$(SRCROOT)/GuideResources";
 				TONGXING_URL_SCHEME = tongxing;
 			};
 			name = Debug;
@@ -907,25 +977,30 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = Config/BetaPush.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
-				CURRENT_PROJECT_VERSION = 60;
+				CURRENT_PROJECT_VERSION = 77;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = App/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.26.19;
+				MARKETING_VERSION = 1.26.33;
 				OTHER_LDFLAGS = "$(inherited) -weak_framework ActivityKit";
 				PRODUCT_BUNDLE_IDENTIFIER = com.jonathanjing.tongxing.beta;
 				PRODUCT_NAME = Tongxing;
 				SDKROOT = iphoneos;
 				SUPPORTS_MACCATALYST = NO;
 				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
-				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(inherited) TONGXING_APNS_PRODUCTION";
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(inherited) TONGXING_APNS_PRODUCTION TONGXING_GUIDE_PREVIEW";
 				TARGETED_DEVICE_FAMILY = "1,2";
 				TONGXING_APNS_ENVIRONMENT = production;
 				TONGXING_CONTENT_ORIGIN = "https://ai-for-god-sermon-audio-dev.web.app";
 				TONGXING_DISPLAY_NAME = "同行-beta";
+				TONGXING_GUIDE_CHECKSUM_INPUT = "$(SRCROOT)/GuideResources";
+				TONGXING_GUIDE_DATA_INPUT = "$(SRCROOT)/GuideResources";
+				TONGXING_GUIDE_SON_INPUT = "$(SRCROOT)/GuideResources";
+				TONGXING_GUIDE_STATUE_INPUT = "$(SRCROOT)/GuideResources";
 				TONGXING_URL_SCHEME = "tongxing-beta";
 			};
 			name = BetaRelease;
@@ -937,14 +1012,15 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = Config/BetaPush.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
-				CURRENT_PROJECT_VERSION = 60;
+				CURRENT_PROJECT_VERSION = 67;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = App/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.26.19;
+				MARKETING_VERSION = 1.26.25;
 				OTHER_LDFLAGS = "$(inherited) -weak_framework ActivityKit";
 				PRODUCT_BUNDLE_IDENTIFIER = com.jonathanjing.tongxing.beta;
 				PRODUCT_NAME = Tongxing;
@@ -955,6 +1031,10 @@
 				TONGXING_APNS_ENVIRONMENT = development;
 				TONGXING_CONTENT_ORIGIN = "https://ai-for-god-sermon-audio-dev.web.app";
 				TONGXING_DISPLAY_NAME = "同行-beta";
+				TONGXING_GUIDE_CHECKSUM_INPUT = "$(SRCROOT)/GuideResources";
+				TONGXING_GUIDE_DATA_INPUT = "$(SRCROOT)/GuideResources";
+				TONGXING_GUIDE_SON_INPUT = "$(SRCROOT)/GuideResources";
+				TONGXING_GUIDE_STATUE_INPUT = "$(SRCROOT)/GuideResources";
 				TONGXING_URL_SCHEME = "tongxing-beta";
 			};
 			name = BetaDebug;
@@ -982,7 +1062,7 @@
 			baseConfigurationReference = 58CF4F36B9265709AAF09A1C /* Signing.xcconfig */;
 			buildSettings = {
 				APPLICATION_EXTENSION_API_ONLY = YES;
-				CURRENT_PROJECT_VERSION = 60;
+				CURRENT_PROJECT_VERSION = 77;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = ListeningActivityExtension/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -990,7 +1070,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 1.26.19;
+				MARKETING_VERSION = 1.26.33;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.jonathanjing.tongxing.beta.listening-activity";
 				PRODUCT_NAME = ListeningActivityExtension;
 				SDKROOT = iphoneos;
@@ -1103,7 +1183,7 @@
 			baseConfigurationReference = 58CF4F36B9265709AAF09A1C /* Signing.xcconfig */;
 			buildSettings = {
 				APPLICATION_EXTENSION_API_ONLY = YES;
-				CURRENT_PROJECT_VERSION = 58;
+				CURRENT_PROJECT_VERSION = 78;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = ListeningActivityExtension/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -1111,7 +1191,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 1.26.18;
+				MARKETING_VERSION = 1.26.33;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.jonathanjing.tongxing.dev.listening-activity";
 				PRODUCT_NAME = ListeningActivityExtension;
 				SDKROOT = iphoneos;
@@ -1129,24 +1209,30 @@
 			baseConfigurationReference = 58CF4F36B9265709AAF09A1C /* Signing.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = Config/ProductionPush.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
-				CURRENT_PROJECT_VERSION = 58;
+				CURRENT_PROJECT_VERSION = 78;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = App/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.26.18;
+				MARKETING_VERSION = 1.26.33;
 				OTHER_LDFLAGS = "$(inherited) -weak_framework ActivityKit";
 				PRODUCT_BUNDLE_IDENTIFIER = com.jonathanjing.tongxing.dev;
 				PRODUCT_NAME = Tongxing;
 				SDKROOT = iphoneos;
 				SUPPORTS_MACCATALYST = NO;
 				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(inherited) TONGXING_GUIDE_PREVIEW";
 				TARGETED_DEVICE_FAMILY = "1,2";
 				TONGXING_CONTENT_ORIGIN = "https://ai-for-god-sermon-audio.web.app";
 				TONGXING_DISPLAY_NAME = "同行";
+				TONGXING_GUIDE_CHECKSUM_INPUT = "$(SRCROOT)/GuideResources/weekly-guides.sha256";
+				TONGXING_GUIDE_DATA_INPUT = "$(SRCROOT)/GuideResources/weekly-guides.json";
+				TONGXING_GUIDE_SON_INPUT = "$(SRCROOT)/GuideResources/weekly-guide-son-of-man.jpg";
+				TONGXING_GUIDE_STATUE_INPUT = "$(SRCROOT)/GuideResources/weekly-guide-statue.jpg";
 				TONGXING_URL_SCHEME = tongxing;
 			};
 			name = Release;

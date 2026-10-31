@@ -110,33 +110,8 @@
       "resource": "cpu"
     },
     {
-      "name": "screen",
-      "note": "ASR screening of the compacted job; writes the receipt that the package and audio QC stages read.",
-      "command": [
-        "{python}",
-        "tools/development/clip_e2e_spark.py",
-        "screen",
-        "--locale",
-        "{locale}",
-        "--stage",
-        "{stageDir}",
-        "--code",
-        "{code}",
-        "--job",
-        "{speechJob}",
-        "--remote-name",
-        "{locale}-compact",
-        "--batch-size",
-        "1",
-        "--tag",
-        "v1"
-      ],
-      "produces": "l3/{locale}/spark-{locale}-compact/screen-v1.result.json",
-      "resource": "gpu"
-    },
-    {
       "name": "package",
-      "note": "Deterministic audio package from the screened render.",
+      "note": "Deterministic audio package from the render manifest; human listening is the only audio gate.",
       "command": [
         "{python}",
         "tools/ops/run.py",
@@ -160,7 +135,7 @@
         "--source-voice-authorization",
         "{voiceAuthorization}",
         "--render-manifest",
-        "l3/{locale}/spark-{locale}-compact/spark-output/speech-job/render-manifest-screened-v1.json",
+        "l3/{locale}/spark-{locale}-compact/spark-output/speech-job/render-manifest.json",
         "--artifact-root",
         "l3/{locale}/spark-{locale}-compact/spark-output/speech-job",
         "--out",
@@ -168,28 +143,6 @@
       ],
       "produces": "audio-package.json",
       "resource": "cpu"
-    },
-    {
-      "name": "audio_qc",
-      "note": "Reads the package and screening receipt; failures are read back from its summary.",
-      "command": [
-        "{python}",
-        "tools/development/clip_e2e_spark.py",
-        "audio-qc",
-        "--locale",
-        "{locale}",
-        "--stage",
-        "{stageDir}",
-        "--code",
-        "{code}",
-        "--audio-package",
-        "{out}/audio-package.json",
-        "--out",
-        "{out}/aqc"
-      ],
-      "produces": "aqc/summary.json",
-      "failures": "aqc/summary.json",
-      "resource": "gpu"
     }
   ]
 }

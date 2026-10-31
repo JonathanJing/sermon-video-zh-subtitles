@@ -1,0 +1,79 @@
+{
+  "schemaVersion": "sermon-feedback-function-deploy-receipt-v1",
+  "status": "active",
+  "project": "ai-for-god-caption-dev",
+  "region": "us-west1",
+  "function": "sermon-feedback-api",
+  "revision": "sermon-feedback-api-00019-yik",
+  "previousRevision": "sermon-feedback-api-00018-nux",
+  "runtime": "nodejs22",
+  "entryPoint": "sermonFeedback",
+  "sourceGeneration": "1792897689233697",
+  "build": "09c14d0a-f311-4fa6-ab33-52ea234ce518",
+  "previousCatalogSha256": "948f93d2cfb1ea02f6684207cba8624b315176af7f51c97719e92ff9beed4b41",
+  "catalogSha256": "8da829642a10ced49abb7ca9ea26c8cc9e435072fa56b9e08416acc37f7668ed",
+  "sourceCount": 37,
+  "previousSourceCount": 34,
+  "addedSourceCount": 3,
+  "changedExistingSources": 0,
+  "runtimeCodeChanged": false,
+  "deployedSourceMatchesLocal": true,
+  "publicSnapshot": "artifacts/sermon-poster/2026-10-25/upload-v2-readback/public",
+  "publicSnapshotMultilingualV5Sha256": "cc4891e4516c338f129f0de152812a2f342df4975d014076e88dc88f46204c37",
+  "publicSnapshotWeeklySha256": "6b7bbd018e1df2d39ea5287c9e6a3114ee6a6a0c953e2f39cdc4d3d3244204bf",
+  "addedSources": [
+    {
+      "trackId": "revelation-jesus-wins-20261025-es-487a9087b9e3",
+      "audioLocale": "es",
+      "durationSeconds": 1861.07,
+      "cues": 418
+    },
+    {
+      "trackId": "revelation-jesus-wins-20261025-ko-201b172acd5b",
+      "audioLocale": "ko",
+      "durationSeconds": 1860.0,
+      "cues": 418
+    },
+    {
+      "trackId": "revelation-jesus-wins-20261025-zh-Hans-a1a09348f9ae",
+      "audioLocale": "zh-Hans",
+      "durationSeconds": 1860.24,
+      "cues": 418
+    }
+  ],
+  "smoke": {
+    "endpoint": "POST /api/session",
+    "preDeploy": [
+      {
+        "locale": "es",
+        "status": 400,
+        "error": "unknown_source"
+      },
+      {
+        "locale": "ko",
+        "status": 400,
+        "error": "unknown_source"
+      },
+      {
+        "locale": "zh-Hans",
+        "status": 400,
+        "error": "unknown_source"
+      }
+    ],
+    "postDeploy": [
+      {
+        "locale": "es",
+        "status": 200
+      },
+      {
+        "locale": "ko",
+        "status": 200
+      },
+      {
+        "locale": "zh-Hans",
+        "status": 200
+      }
+    ]
+  },
+  "deployedAt": "2026-10-25T03:08:54.960256051Z"
+}

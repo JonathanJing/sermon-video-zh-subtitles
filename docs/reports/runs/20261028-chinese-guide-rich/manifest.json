@@ -1,0 +1,27 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261028-chinese-guide-rich",
+  "runs": [
+    {
+      "label": "chinese-guide-run-report-20261028",
+      "source": "~/.codex/worktrees/chinese-guide-rich-content/sermon-video-zh-subtitles/artifacts/chinese-guide-run-report-20261028",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "chinese-guide-run-report-20261028",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 959,
+      "truncated": false,
+      "sha256": "1b9ab32b723522dea58054068d44cda2df56fdcfd65ffc61e243cb7285f3ce8f",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

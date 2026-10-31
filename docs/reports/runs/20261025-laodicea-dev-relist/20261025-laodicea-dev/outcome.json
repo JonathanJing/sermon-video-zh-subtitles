@@ -1,0 +1,14 @@
+{
+  "schemaVersion": "run-outcome-v1",
+  "run": "20261025-laodicea-dev-relist",
+  "deliveryType": "test",
+  "status": "pass",
+  "startedAt": "2026-10-26T04:30:40Z",
+  "endedAt": "2026-10-26T05:45:20Z",
+  "environment": "dev",
+  "endSignal": "readback 7/7 on Dev 4c18773a; iOS Core decode pass (production mode); Dev beta app screens captured",
+  "notes": [
+    "first attempt (Dev candidate releases) rejected by iOS; republished on the formal v2 path",
+    "no Production change; no model calls; no paid stages"
+  ]
+}

@@ -1,0 +1,84 @@
+{
+  "run": "artifacts/sentence-first-agent/20261030-flow-es",
+  "consistent": true,
+  "labels": [
+    {
+      "label": "audit",
+      "path": "artifacts/sentence-first-agent/20261030-flow-es/state-audit.json",
+      "ok": true,
+      "mismatches": [],
+      "repaired": 0,
+      "live": {
+        "status": "finished",
+        "calls": 0,
+        "hits": 12,
+        "failed": 0,
+        "windowsDone": 3,
+        "unitsDone": 60,
+        "validationFailures": 0
+      },
+      "rebuilt": {
+        "status": "finished",
+        "calls": 0,
+        "hits": 12,
+        "failed": 0,
+        "windowsDone": 3,
+        "unitsDone": 60,
+        "validationFailures": 0
+      }
+    },
+    {
+      "label": "translate",
+      "path": "artifacts/sentence-first-agent/20261030-flow-es/state-translate.json",
+      "ok": true,
+      "mismatches": [],
+      "repaired": 0,
+      "live": {
+        "status": "finished",
+        "calls": 9,
+        "hits": 0,
+        "failed": 0,
+        "windowsDone": 7,
+        "unitsDone": 60,
+        "validationFailures": 0
+      },
+      "rebuilt": {
+        "status": "finished",
+        "calls": 9,
+        "hits": 0,
+        "failed": 0,
+        "windowsDone": 7,
+        "unitsDone": 60,
+        "validationFailures": 0
+      }
+    },
+    {
+      "label": "trim",
+      "path": "artifacts/sentence-first-agent/20261030-flow-es/state-trim.json",
+      "ok": true,
+      "mismatches": [],
+      "repaired": 0,
+      "live": {
+        "status": "running",
+        "calls": 8,
+        "hits": 0,
+        "failed": 0,
+        "windowsDone": 8,
+        "unitsDone": 60,
+        "validationFailures": 0
+      },
+      "rebuilt": {
+        "status": "running",
+        "calls": 8,
+        "hits": 0,
+        "failed": 0,
+        "windowsDone": 8,
+        "unitsDone": 60,
+        "validationFailures": 0
+      }
+    }
+  ],
+  "missing": [],
+  "units": {},
+  "checkedAt": "2026-10-30T19:58:01.655433+00:00"
+}

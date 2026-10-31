@@ -1,0 +1,57 @@
+{
+  "schemaVersion": "zh-transcript-coherence-local-rerun-v1",
+  "runId": "20261026-deepseek",
+  "date": "2026-10-26",
+  "host": "local MacBook",
+  "inputs": {
+    "zh": {
+      "url": "https://ai-for-god-sermon-audio.web.app/content/revelation-jesus-wins-20261025/zh-Hans.json",
+      "sha256": "024433bd20713c70f51155ec01f64687c6b3cb94d4814500c44840afaa435d06",
+      "units": 447
+    },
+    "en": {
+      "url": "https://ai-for-god-sermon-audio.web.app/english-reference/revelation-jesus-wins-20261025.json",
+      "sha256": "2f4c08da62e50a4417e7160ca3cfe1810832605c3ce6224d0cc296f409ac49df"
+    },
+    "policySha256": "8c744774b70e74493ebda45db92bb2de843d73c5fc46bbcc7e528e5f42e3ea9c"
+  },
+  "runnerSha256": "58235ae0ee1e39bfcbb5d5bacb6496b4dbda130c03ec1aa5a6f5ad6177c23628",
+  "translator": {
+    "backend": "deepseek",
+    "model": "deepseek-flash",
+    "effort": "low",
+    "transport": "https://api.deepseek.com/chat/completions"
+  },
+  "judge": {
+    "backend": "deepseek",
+    "model": "deepseek-flash",
+    "effort": "high",
+    "count": 1,
+    "consistencyPromptCap": 20,
+    "note": "consistency prompt caps at 20 items because the uncapped high-effort call hit the output cap twice"
+  },
+  "invocations": 5,
+  "invocationNote": "25-unit smoke (8 arms), full run attempt 1 stopped at the whole-transcript consistency call (8192 output cap), attempt 2 stopped at the same call (16384), attempt 3 completed with a capped consistency prompt; after PR #1397 added p123_wired, a 25-unit p123 smoke and a 9-arm full run. Translation and completed judge calls were reused from cache; no successful paid call was repeated.",
+  "paidCalls": 2260,
+  "cacheHitsInFinalInvocation": 1621,
+  "costUsdTotal": 4.4,
+  "costBasis": "DeepSeek peak cache-miss prices from compute/provider_limits.py (input 0.30 / output 1.20 USD per 1M tokens)",
+  "tokens": {
+    "input": 5699393,
+    "output": 2154667
+  },
+  "artifacts": "artifacts/zh-coherence/20261026-deepseek (ignored, not committed)",
+  "costUsdBreakdown": {
+    "cachedSuccessfulCalls": 4.3,
+    "truncatedRetriesApprox": 0.1
+  },
+  "summaryCostNote": "summary.json costUsd (0.19) covers only the completing invocation; cache hits from the two earlier invocations are not charged again.",
+  "paidCallsNote": "2260 successful cached calls: phase A smoke + 8-arm full run 1695, phase B p123 smoke 33 and 9-arm full run 532. Failed truncation retries (about $0.10) are not cached.",
+  "fullBenchmarkCalls": 2162,
+  "arms": 9,
+  "codeBasis": {
+    "baseCommit": "56654e72 (PR #1397 head; includes the 0b44e352 wiring commit)",
+    "note": "phase A (8 arms) ran at a8fd8a9f before the Layer 2 wiring; phase B re-ran all arms plus p123_wired on the merged head",
+    "phaseACommit": "a8fd8a9f (pre-wiring; 8 arms)"
+  }
+}

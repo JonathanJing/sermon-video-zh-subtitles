@@ -1,0 +1,98 @@
+{
+ "schemaVersion": "sermon-study-asset-verification-v1",
+ "status": "pass",
+ "origin": "https://ai-for-god-sermon-audio.web.app",
+ "checkedAt": "2026-10-25T15:21:17Z",
+ "checks": [
+  {
+   "path": "/pages/revelation-jesus-wins-20261025/zh-Hans/index.html",
+   "status": 200,
+   "sha256": "5d27982bbb32ead624a3cf5fcd3819574da5bf108d604bdba1b62620bc26b3f3",
+   "matchesStagedBytes": true
+  },
+  {
+   "path": "/content/revelation-jesus-wins-20261025/zh-Hans.json",
+   "status": 200,
+   "sha256": "024433bd20713c70f51155ec01f64687c6b3cb94d4814500c44840afaa435d06",
+   "matchesStagedBytes": true
+  },
+  {
+   "path": "/study/revelation-jesus-wins-20261025/zh-Hans/outline.json",
+   "status": 200,
+   "sha256": "be6f18f8001a18881e14253faa990c097e16b2b67f5fc4876d55935f85848c3d",
+   "matchesStagedBytes": true
+  },
+  {
+   "path": "/study/revelation-jesus-wins-20261025/zh-Hans/meditation.json",
+   "status": 200,
+   "sha256": "832631802ab1ecadbaaa2040eacf15577f31dde915bbb596d720089f20e7461a",
+   "matchesStagedBytes": true
+  },
+  {
+   "path": "/study/revelation-jesus-wins-20261025/zh-Hans/products.json",
+   "status": 200,
+   "sha256": "b76f4267b07ec10fe38a4ba0f9b50f26c4d8ef32630998cf8849dbaef835f614",
+   "matchesStagedBytes": true
+  },
+  {
+   "path": "/pages/revelation-jesus-wins-20261025/ko/index.html",
+   "status": 200,
+   "sha256": "ca8547fa13a42bf049dedeb41dfdda3d1b36907d44c4b00cfc479ab0b3b49c84",
+   "matchesStagedBytes": true
+  },
+  {
+   "path": "/content/revelation-jesus-wins-20261025/ko.json",
+   "status": 200,
+   "sha256": "907d28cd886abd5d6f97521583639a9d0380aea6a1b37651f69e47b437046bd6",
+   "matchesStagedBytes": true
+  },
+  {
+   "path": "/study/revelation-jesus-wins-20261025/ko/outline.json",
+   "status": 200,
+   "sha256": "36a5143ce379931a0ee524febf6e49a42d3193fa64b707fcd04fb4e432f3906f",
+   "matchesStagedBytes": true
+  },
+  {
+   "path": "/study/revelation-jesus-wins-20261025/ko/meditation.json",
+   "status": 200,
+   "sha256": "7bf3945529aef9a25e38af95e838cd4fad5b228e9a9005fc0104936381b68ffb",
+   "matchesStagedBytes": true
+  },
+  {
+   "path": "/study/revelation-jesus-wins-20261025/ko/products.json",
+   "status": 200,
+   "sha256": "62a1d2cc45a2aa124700bcebaaa6e51485962cccfdd3c649db5e16a8d76d101a",
+   "matchesStagedBytes": true
+  },
+  {
+   "path": "/pages/revelation-jesus-wins-20261025/es/index.html",
+   "status": 200,
+   "sha256": "3d2d1f8ef0544b7e6028463e8ef0ca016956831a8ac11db61026a1ddb5f1f134",
+   "matchesStagedBytes": true
+  },
+  {
+   "path": "/content/revelation-jesus-wins-20261025/es.json",
+   "status": 200,
+   "sha256": "8e37cb581ebed970c529a323b87ad0ff0aa8c4f50d3928480fe8506843bac784",
+   "matchesStagedBytes": true
+  },
+  {
+   "path": "/study/revelation-jesus-wins-20261025/es/outline.json",
+   "status": 200,
+   "sha256": "e1c0e6b0550cfe04b2c4f757785e4b9fe9c0d597264e08dfcc83ee733b04f312",
+   "matchesStagedBytes": true
+  },
+  {
+   "path": "/study/revelation-jesus-wins-20261025/es/meditation.json",
+   "status": 200,
+   "sha256": "05b47a22b2949e0dc294e9e408f6aac5f07514abeab3381d53e848ec1457e80a",
+   "matchesStagedBytes": true
+  },
+  {
+   "path": "/study/revelation-jesus-wins-20261025/es/products.json",
+   "status": 200,
+   "sha256": "4f9bc167717f7263533eaca80db0c99892369740c4ee862c41254e9e838ba89a",
+   "matchesStagedBytes": true
+  }
+ ]
+}

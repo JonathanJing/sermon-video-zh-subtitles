@@ -1,0 +1,5 @@
+2026-10-27 05:11:40 +0000: Received worker from worker provider: <XCTHTestRunner: 0x755da1c640, PID: 0, device: iPhone Duo (1752B68F-919A-404A-93CB-FCA3A5886971)>
+2026-10-27 05:12:10 +0000: Worker <XCTHTestRunner: 0x755da1c640, PID: 54857, device: iPhone Duo (1752B68F-919A-404A-93CB-FCA3A5886971)> finished bootstrapping
+2026-10-27 05:12:10 +0000: Parallelization disabled; test execution driven by the test process
+2026-10-27 05:12:28 +0000: Worker <XCTHTestRunner: 0x755da1c640, PID: 54857, device: iPhone Duo (1752B68F-919A-404A-93CB-FCA3A5886971)> finished successfully
+2026-10-27 05:12:28 +0000: Finished executing tests (cancelled: No)

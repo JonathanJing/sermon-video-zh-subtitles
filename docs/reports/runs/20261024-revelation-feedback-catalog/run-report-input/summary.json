@@ -1,0 +1,37 @@
+{
+  "status": "pass",
+  "functionRevision": "sermon-feedback-api-00020-nag",
+  "catalogSources": 37,
+  "newSources": 3,
+  "unchangedOldSources": 34,
+  "directSessionPosts": [
+    {
+      "locale": "es",
+      "status": 200
+    },
+    {
+      "locale": "ko",
+      "status": 200
+    },
+    {
+      "locale": "zh-Hans",
+      "status": 200
+    }
+  ],
+  "browserSmoke": [
+    {
+      "locale": "zh-Hans",
+      "status": "pass"
+    },
+    {
+      "locale": "ko",
+      "status": "pass"
+    },
+    {
+      "locale": "es",
+      "status": "pass"
+    }
+  ],
+  "firstDeployAttempt": "rejected before revision creation due to build service account format; same candidate deployed after format correction",
+  "hostingUnchanged": true
+}

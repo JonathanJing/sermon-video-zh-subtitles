@@ -1,0 +1,11 @@
+{
+  "candidateVersion": "1.26.30",
+  "candidateBuild": "73",
+  "sourceCommit": "1d427244f79470cb981d35c7b72639318e33082d",
+  "ipaSha256": "1e06bde08012445e665ebf9bd3e4364101e14d75d3c7a300535fd0eea470cf5c",
+  "uploadPhase": "upload_returned",
+  "exitCode": 0,
+  "visibleInImmediateSnapshot": false,
+  "processingState": null,
+  "snapshotSha256": "1e53666656e30604fcb2dd876d0c2c0ab96e4dccef9e9b505f2296a002894764"
+}

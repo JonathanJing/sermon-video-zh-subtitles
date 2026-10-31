@@ -1,0 +1,14 @@
+{
+  "status": "validated_not_deployed",
+  "scope": "production candidate Korean and Spanish weeks 3–7",
+  "baseline": "sites/ai-for-god-sermon-audio/versions/642d25fc58fe5c4e",
+  "contentCount": 10,
+  "resources": "local bytes and SHA match",
+  "publisherPreflight": "validated_not_deployed",
+  "limits": [
+    "Baseline must be rechecked at actual deployment.",
+    "No production write or production app update.",
+    "Beta human acceptance and real-device check remain outstanding.",
+    "Machine-reviewed translations are not human-approved."
+  ]
+}

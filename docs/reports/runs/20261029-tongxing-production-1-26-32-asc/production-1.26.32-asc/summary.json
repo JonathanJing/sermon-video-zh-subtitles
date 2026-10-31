@@ -1,0 +1,30 @@
+{
+  "schemaVersion": "tongxing-ios-asc-review-summary-v1",
+  "status": "WAITING_FOR_REVIEW",
+  "bundleID": "com.jonathanjing.tongxing.dev",
+  "appStoreAppID": "6809255441",
+  "appStoreVersionID": "de1b21e6-85ab-442f-be83-544bf07d8e3f",
+  "buildID": "4d90ca11-d1b4-4943-a641-192351248840",
+  "buildProcessingState": "VALID",
+  "buildExpired": false,
+  "releaseType": "MANUAL",
+  "reviewSubmissionID": "95019938-dce6-49f5-a9cc-eb630669c0f7",
+  "submittedDate": "2026-10-29T00:06:48.421Z",
+  "readbackAt": "2026-10-29T00:07:56Z",
+  "locales": [
+    "zh-Hans",
+    "en-US",
+    "ko",
+    "es-MX",
+    "vi"
+  ],
+  "screenshotCounts": {
+    "zh-Hans": 18,
+    "en-US": 18
+  },
+  "reviewContactPresent": true,
+  "demoAccountRequired": false,
+  "machineTranslatedGuideDisclosed": true,
+  "deviceAcceptance": "not_run",
+  "venueAcceptance": "not_run"
+}

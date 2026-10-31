@@ -28,10 +28,12 @@ assert set(stages.STAGE_MODULES) == backend.STAGE_NAMES
 
 
 def required_modules():
-    # Includes existing validators and late imports. Docs unrelated to model
-    # consumption are deliberately excluded. Term rules are an input dependency.
-    modules = {str(p.relative_to(ROOT)) for folder, glob in [('scripts', '*.py'), ('schemas', '*.json')]
-               for p in (ROOT / folder).rglob(glob)}
+    # The Layer 2 code closure (config/layer2-code-closure.json, text/code_closure.py) names the
+    # scripts/, schema, host, entry and terminology files a run executes; the rest of scripts/ and
+    # schemas/ no longer enter the admission (DEV-GOV-002). Docs unrelated to model consumption
+    # are deliberately excluded.
+    from tongxing_production.text import code_closure
+    modules = set(code_closure.files(ROOT))
     # Producers late-load the legacy renderer/publisher and copy its web assets.
     # Enumerate tracked source files, never node_modules or ignored output trees.
     # packages/ holds the installable production and fingerprint code that moved out of scripts/.
@@ -42,7 +44,7 @@ def required_modules():
         raise contracts.ContractError('legacy_execution_closure_unavailable')
     modules.update(name for name in tracked.stdout.splitlines()
                    if Path(name).suffix in {'.py', '.mjs', '.js', '.html', '.css', '.json'})
-    return sorted(modules | {'docs/series-terminology.zh.md'})
+    return sorted(modules)
 
 
 def worker_command(state_root, key):

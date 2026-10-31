@@ -1,0 +1,25 @@
+{
+  "delivery": "TestFlight internal beta",
+  "version": "1.26.26",
+  "build": "68",
+  "bundleID": "com.jonathanjing.tongxing.beta",
+  "sourceCommit": "5a97218e1d67703deffdd81f3a5b12d498f6a10c",
+  "baseDev": "44ebe29cb81d7722b45b9d95ca9ef4d2d462c191",
+  "previousBetaSource": "e17f6cb72bd56116a3201eabe4b9d66e1f45bcb9",
+  "archiveManifestSHA256": "28affeb3e675334fd32956589c8b78ed2b574f67d323f1cd07e963f426ae5cd7",
+  "ipaSHA256": "e7091de17560f8b2a8216f72f8f4656790b50ae9696ce947639424390cca45af",
+  "archive": "succeeded, signature verified",
+  "upload": "succeeded",
+  "appleCheckedAt": "2026-10-27T18:02:35Z",
+  "processingState": "VALID",
+  "internalBuildState": "IN_BETA_TESTING",
+  "group": "Rooted",
+  "groupContainsBuild": true,
+  "test": "iOS 27.1 simulator 10 passed, 0 failed; report PR #1417",
+  "guide": "synthetic preview only; not actual church guide",
+  "limitations": [
+    "device link routing not verified",
+    "VoiceOver and fold posture not verified",
+    "possible playback dock overlap on horizontal fold"
+  ]
+}

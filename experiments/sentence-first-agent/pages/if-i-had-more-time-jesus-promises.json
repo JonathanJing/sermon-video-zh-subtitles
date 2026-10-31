@@ -1,0 +1,101 @@
+{
+  "schemaVersion": "sentence-first-page-config-v1",
+  "pageId": "if-i-had-more-time-jesus-promises",
+  "environment": "production",
+  "locales": [
+    "zh-Hans",
+    "ko",
+    "es"
+  ],
+  "defaultTargetLocale": "zh-Hans",
+  "runsRoot": "artifacts/sentence-first-agent",
+  "runs": {
+    "zh-Hans": "20261023-jesus-promises-zh",
+    "ko": "20261023-jesus-promises-ko",
+    "es": "20261023-jesus-promises-es"
+  },
+  "source": {
+    "url": "https://www.youtube.com/watch?v=NfJx9YHGGe4",
+    "date": "2026-09-19",
+    "window": {
+      "start": 5.839,
+      "end": 3550.76
+    },
+    "englishSource": "artifacts/podcasts/if-i-had-more-time-jesus-promises/layer1-srt/english-source.json"
+  },
+  "sentences": 946,
+  "speakers": "Eric Geiger · Steve Bang Lee",
+  "category": {
+    "schemaVersion": "sermon-page-display-category-v1",
+    "labels": {
+      "zh-Hans": "播客",
+      "en": "Podcast",
+      "ko": "팟캐스트",
+      "es": "Pódcast"
+    }
+  },
+  "title": "如果我有更多时间 · 耶稣的应许",
+  "meta": {
+    "zh-Hans": {
+      "title": "如果我有更多时间 · 耶稣的应许",
+      "series": "如果我有更多时间（播客系列）",
+      "scripture": "启示录 6 章",
+      "badge": "证道播客 · AI 合成配音 · 已人工审核",
+      "source": "英文来源 / English source",
+      "note": "自然语速配音，非原视频同步。本项目与 Mariners Church 无隶属关系。"
+    },
+    "ko": {
+      "title": "If I Had More Time · 예수님의 약속",
+      "series": "If I Had More Time",
+      "scripture": "요한계시록 6장",
+      "badge": "설교 팟캐스트 · AI 합성 음성 · 검토 완료",
+      "source": "영어 원본 / English source",
+      "note": "자연스러운 속도의 더빙으로, 원본 영상과 동기화되지 않습니다. 이 프로젝트는 Mariners Church와 관련이 없습니다."
+    },
+    "es": {
+      "title": "If I Had More Time · Las promesas de Jesús",
+      "series": "If I Had More Time",
+      "scripture": "Apocalipsis 6",
+      "badge": "Pódcast del sermón · Voz sintetizada por IA · Revisado",
+      "source": "Fuente en inglés / English source",
+      "note": "Doblaje a ritmo natural, no sincronizado con el video original. Este proyecto no está afiliado a Mariners Church."
+    }
+  },
+  "verdict": "artifacts/sentence-first-agent/20261023-jesus-promises-review/human-review-verdict.json",
+  "candidate": {
+    "schemaVersion": "sentence-first-episode-candidate-v1",
+    "translationBasis": {
+      "default": "{locale}: agent translation with independent second-pass review"
+    }
+  },
+  "audioPackage": {
+    "schemaVersion": "sentence-first-episode-audio-package-v1",
+    "voices": "from-speakers",
+    "synchronization": "not on the source video clock; natural-rate dub of a 10-minute clip"
+  },
+  "releasePackageId": "{pageId}-{locale}-{environment}-v1",
+  "verify": {
+    "schemaVersion": "sentence-first-episode-http-verification-v1"
+  },
+  "englishReference": {
+    "mode": "full"
+  },
+  "summary": {
+    "includeEnvironment": true
+  },
+  "baseline": {
+    "allowDefaultLocaleDrift": true
+  },
+  "mediaType": "podcast",
+  "titleCheck": {
+    "englishTitle": "Jesus promises",
+    "mode": "published",
+    "seriesKey": "revelation-comfort-and-hope",
+    "publishedTitles": {
+      "zh-Hans": "如果我有更多时间 · 耶稣的应许",
+      "ko": "If I Had More Time · 예수님의 약속",
+      "es": "If I Had More Time · Las promesas de Jesús"
+    },
+    "reason": "Podcast page published 2026-10-23 under the podcast-series titles; keep the published titles instead of the weekly Revelation titles (runbook: published titles stay unless the user decides otherwise)."
+  }
+}

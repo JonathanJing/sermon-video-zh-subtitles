@@ -1275,9 +1275,14 @@ class BackendAppTest(unittest.TestCase):
         self.assertIn("pip install", text)
         self.assertIn("COPY backend/", text)
         self.assertIn('CMD ["python", "-m", "backend.app"]', text)
-        # Layer 2 code_identity() hashes these tools/ files, so the image must carry them.
-        for path in ("tools/ops/sermon_unified_preflight.py", "tools/ops/run.py"):
-            self.assertIn(f"COPY {path} /app/{path}", text)
+        # Layer 2 code_identity() hashes every file of config/layer2-code-closure.json, so the
+        # image must carry each one, by its directory or by name.
+        from tongxing_production.text import code_closure
+        copied = [line.split()[1] for line in text.splitlines() if line.startswith("COPY ")]
+        for path in code_closure.files(Path(__file__).resolve().parents[1]):
+            with self.subTest(path=path):
+                self.assertTrue(any(path == source or path.startswith(source.rstrip("/") + "/") for source in copied),
+                                f"Dockerfile does not COPY {path}")
         # backend/worker.py runs these through their scripts/ facades.
         for path in ("tools/ops/run_openai_model_access_preflight.py", "tools/ops/upload_file_to_gcs.py",
                      "tools/ops/prepare_live_link_playback.py", "tools/ops/translate_playback_with_openai.py",

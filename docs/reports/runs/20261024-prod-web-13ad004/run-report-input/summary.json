@@ -1,0 +1,12 @@
+{
+  "sourceCommit": "13ad004fc15f61ca63b5af6a5ec76294d34d5068",
+  "nodeTests": {
+    "passed": 86,
+    "failed": 0
+  },
+  "deployment": "deployed",
+  "httpReadback": "pass",
+  "browserSmoke": "fail",
+  "failureBoundary": "Target-page /api/session returned 400 for each of zh-Hans, ko and es; default-page anchor returned 200. Render and audio identity checks passed.",
+  "scope": "Only published-weeks.mjs and fingerprint-ui.mjs changed in Hosting snapshot."
+}

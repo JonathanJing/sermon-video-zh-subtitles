@@ -1,0 +1,26 @@
+{
+  "action": "test",
+  "sourceCommit": "intermediate working tree; see revision narrative",
+  "device": "iPad Pro 11-inch (M5)",
+  "scheme": "TongxingBeta",
+  "configuration": "BetaDebug",
+  "exitStatus": 65,
+  "testCases": [
+    {
+      "name": "TongxingUITests.WeeklyGuidePreviewUITests testLandscapeAutomaticallyShowsGuideAndRotationKeepsPlayback",
+      "result": "failed",
+      "seconds": 45.098
+    },
+    {
+      "name": "TongxingUITests.WeeklyGuidePreviewUITests testLandscapeLargeTextKeepsChaptersAndPlayerReachable",
+      "result": "failed",
+      "seconds": 27.287
+    },
+    {
+      "name": "TongxingUITests.WeeklyGuidePreviewUITests testLandscapeUnavailableGuideKeepsListeningVisible",
+      "result": "failed",
+      "seconds": 31.198
+    }
+  ],
+  "resultBundleFinalized": true
+}

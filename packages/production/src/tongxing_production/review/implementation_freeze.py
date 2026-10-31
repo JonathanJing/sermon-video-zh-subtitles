@@ -14,6 +14,7 @@ to the admission guard invalidate a frozen run.
 from __future__ import annotations
 
 import hashlib
+import json
 import re
 from pathlib import Path
 
@@ -61,6 +62,34 @@ def add_argument(parser) -> None:
     parser.add_argument("--expected-implementation", metavar="SHA256",
                         help="Refuse to run unless machine_quality_waiver.implementation_sha256() equals this "
                              "value from the run plan (exit 2 before any model call)")
+    parser.add_argument("--expected-implementation-files", metavar="PATH", type=Path,
+                        help="The run plan (plan_run_budgets.py plan.json, expectedImplementationFiles) or a "
+                             "JSON map of per-file hashes it recorded, so a refusal names the changed files")
+
+
+def recorded_files(path: Path | str | None) -> dict[str, str] | None:
+    """The per-file hashes a run plan recorded (``expectedImplementationFiles``), or a bare map.
+
+    ``None`` when no path is given. A file that is neither is an error: a refusal
+    that cannot name the changed files must not look like one that found none."""
+    if path is None:
+        return None
+    value = json.loads(Path(path).read_text(encoding="utf-8"))
+    if isinstance(value, dict) and "expectedImplementationFiles" in value:
+        value = value["expectedImplementationFiles"]
+    if not (isinstance(value, dict) and value
+            and all(isinstance(name, str) and isinstance(digest, str) and SHA.fullmatch(digest)
+                    for name, digest in value.items())):
+        raise ValueError(f"{path}: not a run plan with expectedImplementationFiles or a map of file hashes")
+    return dict(value)
+
+
+def check(args) -> dict | None:
+    """The drivers' guard: ``None`` to proceed, or the mismatch report to print before exit 2."""
+    if not args.expected_implementation:
+        return None
+    return mismatch(args.expected_implementation,
+                    recorded_files=recorded_files(getattr(args, "expected_implementation_files", None)))
 
 
 def closure_files(root: Path | None = None) -> list[Path]:

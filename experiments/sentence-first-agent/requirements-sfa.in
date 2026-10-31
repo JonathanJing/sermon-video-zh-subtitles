@@ -1,0 +1,6 @@
+# Direct third-party dependencies of the sentence-first local tools.
+# The production package is imported from this checkout via PYTHONPATH and is never
+# editable-installed; this lock only pins the libraries those imports need.
+jsonschema>=4.23,<5
+google-auth[requests]>=2.35,<3
+reportlab>=4.2,<5

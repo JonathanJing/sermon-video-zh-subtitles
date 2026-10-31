@@ -106,8 +106,8 @@ def closure(modules):
 
 
 def required_modules():
-    # The execution closure is a property of the host checkout (which trees are
-    # tracked, which are late-loaded); the host enumerates it.
+    # The execution closure is a property of the host checkout (the Layer 2 code closure
+    # manifest, which trees are tracked, which are late-loaded); the host enumerates it.
     return list(_backend.current().required_modules())
 
 

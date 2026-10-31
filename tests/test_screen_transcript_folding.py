@@ -12,7 +12,7 @@ import unittest
 from pathlib import Path
 
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
-from tongxing_production.audio import screening as subject
+from tongxing_production.review import asr_scoring as subject
 
 FIXTURES = Path(__file__).resolve().parent / "fixtures" / "weekly-20261011" / "audio-qc"
 THRESHOLD = 0.88
@@ -312,7 +312,6 @@ def test_current_scoring_hash_covers_every_new_local_dependency(tmp_path):
     receipt = calibration(implementationSha256=original_waiver)
     assert waiver.calibration_problems(receipt, "ko", original_waiver, require_audio=True) == []
     for name in ("scripts/render_formal_target_language_speech.py",
-                 "scripts/machine_qc_audio_transports.py", "scripts/run_machine_qc_audio_test.py",
                  "scripts/sermon_sentence_interpretation.py"):
         assert name in waiver.IMPLEMENTATION_FILES
         path = tmp_path / compatibility.resolve(name)

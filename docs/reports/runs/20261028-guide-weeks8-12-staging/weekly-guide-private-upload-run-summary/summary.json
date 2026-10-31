@@ -1,0 +1,24 @@
+{
+  "delivery": "private staging of weekly study guide translation",
+  "weeks": [
+    8,
+    9,
+    10,
+    11,
+    12
+  ],
+  "locale": "zh-Hans",
+  "review": "machine_translation_not_human_reviewed",
+  "humanApproval": false,
+  "rights": "user confirmed permission for public App Store distribution",
+  "sourceSHA256": "d6c6064e8fab11ab012edd9535372a9f99b83cd5240b6014f5451795a9198f86",
+  "cuvSourceSHA256": "363afb38148f150b30fee727f4818faa821a0d17b4888c16be3e05bd462503bb",
+  "manifestSHA256": "406e27e9aafcf624a93cfc0cc820d181656c9cbde25cfb355b8805dd86c2aae9",
+  "bucketPublicAccessPrevention": "enforced",
+  "stagedObjects": 6,
+  "readbackVerified": 6,
+  "sermonPageIds": "not assigned; not yet published",
+  "independentContentReview": "55 source pages, 7 tables and 175 scripture verses independently verified; images and original layout are not included",
+  "tests": "staging generation 13 passed; earlier test assertion corrected after initial failure",
+  "clientAvailability": "existing 1.26.27 cannot read these objects"
+}

@@ -35,8 +35,10 @@ def _audio_waived(review):
     """A machine listening waiver of the release-basis schemas (v1/v2), exactly as before."""
     return _delivery.current().waivers.is_basis_audio_waiver(review)
 MAPS = ('full_candidate', 'full_review_receipt', 'spoken_candidate', 'spoken_review_receipt',
-        'audio_package', 'audio_review_receipt', 'audio_screening_receipt', 'full_content',
+        'audio_package', 'audio_review_receipt', 'full_content',
         'outline', 'outline_review', 'meditation', 'meditation_review')
+# Human-listening-only runs no longer bind a screening receipt; old runs may still supply one.
+OPTIONAL_MAPS = ('audio_screening_receipt',)
 
 
 def read(path):
@@ -69,6 +71,12 @@ def load(config_path):
     for name in ('source', 'metadata_approval', 'metadata_proposal'):
         args[name] = bound(value['inputs'][name])
     for name in MAPS:
+        rows = value['inputs'][name]
+        d.require(set(rows) == set(value['locales']), 'Delivery locale input coverage differs: ' + name)
+        args[name] = [locale + '=' + str(bound(rows[locale])) for locale in value['locales']]
+    for name in OPTIONAL_MAPS:
+        if name not in value['inputs']:
+            continue
         rows = value['inputs'][name]
         d.require(set(rows) == set(value['locales']), 'Delivery locale input coverage differs: ' + name)
         args[name] = [locale + '=' + str(bound(rows[locale])) for locale in value['locales']]
@@ -136,8 +144,10 @@ def _products(value, args):
         d.require(audio['targetLocale'] == locale and audio['englishSourcePackageJsonSha256'] == source_sha
                   and audio['targetLanguageCandidateJsonSha256'] == spoken_sha
                   and (audio['status'] == 'human_reviewed' or _audio_waived(review)), 'Audio product identity differs')
-        _delivery.current().review.validate_review('audio', maps['audio_review_receipt'][locale], inputs={'source': args.source,
-                        'package': maps['audio_package'][locale], 'screening': maps['audio_screening_receipt'][locale]},
+        review_inputs = {'source': args.source, 'package': maps['audio_package'][locale]}
+        if locale in maps.get('audio_screening_receipt', {}):
+            review_inputs['screening'] = maps['audio_screening_receipt'][locale]
+        _delivery.current().review.validate_review('audio', maps['audio_review_receipt'][locale], inputs=review_inputs,
                         expected_source={'sourceId': source['source']['sourceId'], 'mediaSha256': source['source']['media']['sha256'], 'sourceUrlHash': source['source']['sourceUrlHash'], 'window': source['source']['approvedWindow']}, expected_locale=locale)
         studies = {name: read(maps[name][locale]) for name in ('outline', 'outline_review', 'meditation', 'meditation_review')}
         for kind in ('outline', 'meditation'):

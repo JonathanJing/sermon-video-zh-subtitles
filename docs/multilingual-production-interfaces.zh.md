@@ -44,16 +44,16 @@ Target-Language Candidate + Target-Language Audio Package
 
 ### 周更最少人工审核点
 
-同一来源、策略和产物 hash 未变化时，复用已有批准；操作员不必按每个生产步骤重新回答。正式周更只安排以下内容判断，并把机器结构检查、逐组模型复核、文件哈希、解码、ASR 筛查和 HTTP 核验交给工具自动执行：
+同一来源、策略和产物 hash 未变化时，复用已有批准；操作员不必按每个生产步骤重新回答。正式周更只安排以下内容判断，并把机器结构检查、逐组模型复核、文件哈希、解码、确定性音频 QC 和 HTTP 核验交给工具自动执行：
 
 1. **Layer 1 一轮来源审核**：确定窗口，并确认英文完整性、词时间、句界和停顿；窗口批准与英文审核仍分别保存原有收据。来源或锚点变化才重审受影响范围。
 2. **Layer 2 每个 locale 一次全文文字审核**：审核最终候选及经文、术语、否定、数字；页面显示文案准备好时在同一轮展示，仍保存独立的页面字段批准记录。可用 `review_target_language_candidate.py approve-batch` 将审核者明确的全文决定展开为原有逐组收据；有疑点时先按组修订并重新生成候选，不使用批量批准。经文边界、机器初译、独立复核和页面文案不另设重复的聊天批准问题。
-3. **Layer 3 每个 locale 一次正式整轨听审**：听完 1 倍速音轨并对照视频检查同步，同时裁决 ASR 标出的组；三语可在同一轮分别给出决定，收据仍按 locale 保存。已登记且授权范围、checkpoint、adapter 与 locale 能力均未变化的音色，不每周重做短样／长句能力听审；首次扩展到新语言、模型或用途时仍需能力证据。文字变动只重做该语言的音轨和听审。
+3. **Layer 3 每个 locale 一次正式整轨听审**：听完 1 倍速音轨并对照视频检查同步；2026-10-28 起没有机器听审，不再有 ASR 疑点组需要裁决。三语可在同一轮分别给出决定，收据仍按 locale 保存。已登记且授权范围、checkpoint、adapter 与 locale 能力均未变化的音色，不每周重做短样／长句能力听审；首次扩展到新语言、模型或用途时仍需能力证据。文字变动只重做该语言的音轨和听审。
 4. **Layer 4 不重复内容审核**：本次发布计划中的各语言资产和页面字段均与已审 hash 一致后，自动预检目标站点、发布清单、文件和 HTTP。已有明确发布授权时直接执行对应环境发布；受影响的内容或绑定发生变化才重审。音频或纯文字交付遵守该周已经批准的计划及客户端能力，不追加无关审批。
 
-这里的“批量”只减少填写动作，不把模型结果升级为人工批准，也不允许跳过完整阅读、完整听播、ASR 疑点裁决或来源失效检查。设备与现场验收仍单列。
+这里的“批量”只减少填写动作，不把模型结果升级为人工批准，也不允许跳过完整阅读、完整听播或来源失效检查。设备与现场验收仍单列。
 
-**机器质检豁免（2026-10-06 决定，接线中）：** 中文、韩语、西语的第 2、3 项改为机器质检通过后自动发布，人工改为发布后抽查。每句最多自动修复 4 次；音频仍不过关的句子只显示字幕；不配音的句子超过 5% 时，该语言改为只发文字。豁免收据保持 `humanApproval=false`，并要求当前 QC 代码有有效的注错校准。检查组件、规则与尚未接上的门禁见[机器质检豁免](machine-quality-waiver.zh.md)。已接上：译文豁免收据可以代替人工译文审核进入第 3 层（speech job v3），试听豁免收据可以代替人工试听通过 `sermon_unified` 审核门（状态记为 `waived`，不是 `approved`）。第 4 层也已接上：用了豁免的语言写成 release v4（`machine_checked` 状态、逐项审核依据和披露文案），目录同时写 catalog v4 与作为人工投影的 v3；网页和 iOS 先读 v5，再回退 v4 / v3；按实际 target 显示“机器质检”，不显示人工批准。
+**机器质检豁免（2026-10-06 决定；2026-10-28 音频门禁变更）：** 文字机器质检通过后可以代替人工文字审核自动发布，人工改为发布后抽查；每句最多自动修复 4 次。译文／口播稿豁免收据保持 `humanApproval=false`，并要求当前文本 QC 代码有有效的注错校准。检查组件、规则与门禁见[文本机器质检豁免](machine-quality-waiver.zh.md)。已接上：译文豁免收据可以代替人工译文审核进入第 3 层（speech job v3）；用了文字豁免的语言写成 release v4（`contentStatus=machine_checked`、逐项审核依据和披露文案），目录同时写 catalog v4 与作为人工投影的 v3；网页和 iOS 先读 v5，再回退 v4 / v3；按实际 target 显示“机器质检”，不显示人工批准。**音频自 2026-10-28 起没有机器听审或机器豁免**：ASR 初筛、二级 ASR 与试听豁免不再生成、不再要求；人工整轨 1× 听审（`audio-human-review-receipt-v5`）是唯一音频发布门禁，确定性音频 QC（时长／静音／削波）只作预检。历史 v4 release 中已有的 `audioStatus=machine_checked` 保留可读，不按新规则重写。
 
 ### 审核与执行解耦
 
@@ -63,7 +63,7 @@ Target-Language Candidate + Target-Language Audio Package
 | --- | --- | --- |
 | Layer 1 英文审核 | 媒体完整性、词对齐、锚点、机器裁判、Layer 2 shadow 候选 | 正式 Layer 2 只接收 `ready_for_translation` |
 | 某 locale 的 Layer 2 文字审核 | 其他 locale 的 Layer 2；本 locale 审核表、机器风险定位、语音资源预热，以及机器复核通过后的 `preview_only` 单元配音 | 本 locale 正式 speech job 需 `human_translation_approved` 和独立同 hash 收据 |
-| 某 locale 的 Layer 3 整轨听审 | 其他 locale 的 Layer 3；本 locale 解码、ASR 筛查、排程及供听审的候选音轨 | 带正式音频的 Release Package 需 `human_reviewed` Audio Package 和全文／同步收据；用试听豁免时改为 release v4 的 `audioStatus=machine_checked` |
+| 某 locale 的 Layer 3 整轨听审 | 其他 locale 的 Layer 3；本 locale 解码、确定性音频 QC、排程及供听审的候选音轨 | 带正式音频的 Release Package 需 `human_reviewed` Audio Package 和全文／同步收据；音频无机器豁免，文字机器豁免只决定 release v3／v4 与 `contentStatus` |
 | Layer 4 发布后设备／现场验收 | HTTP 核验完成后独立安排设备及现场检查 | HTTP、设备、现场状态分别记录，不互相推断 |
 
 调度以 `sourceHash + targetLocale + policyHash + candidateHash` 为任务身份。某语言的审核未回只挂起该语言的后继正式任务，不为其他语言新增审批依赖；Layer 1 身份变化使所有语言失效，Layer 2/3 变化只使本语言下游失效。审批依赖独立不等于运行资源完全隔离：[当前 canonical Layer 2 controller](canonical-layer2-controller.zh.md) v1 同一 production run 至多一个 active locale；v3 / v7 可冻结 `maxActiveLocales=1–3`、`groupWorkers=1–16`，周更默认以[运行配置](weekly-run-profile.zh.md)为准；uncertain owner 在 reconciliation 前仍占名额。表中的并行准备须遵守实际 producer 的容量；发布仍遵守该次 release plan 的多语言汇合条件。本项只描述已有配置能力，不改变冻结 run 的容量或授权。合同允许显式 `audio_unavailable` 的文字页，但现有 Production Web 桥接只支持 `zh-Hans`、`ko`、`es` 且要求正式音轨；纯文字页或新语言须先有两端客户端兼容证据，不能只改目录宣称可用。
@@ -89,7 +89,7 @@ Target-Language Candidate + Target-Language Audio Package
 - `candidate_ready_for_translation`：结构检查和绑定的逐句机器裁判通过，可用于 Layer 2 shadow 开发，但仍缺生产所需的来源或人工门禁。干净锚点在机器裁判前的 shadow 收据为 `waiting_machine_judge`。
 - `ready_for_translation`：媒体身份、批准范围和四项英文人工检查均已绑定，允许正式 Layer 2 消费。
 
-当前生成器：[english_source_package.py](../packages/production/src/tongxing_production/source/english_source_package.py)；[独立机器裁判](../packages/production/src/tongxing_production/source/english_source_judge.py)只产生 `humanApproval=false`、`productionTranslationEligible=false` 的 shadow 收据。未来周入口 [prepare_sentence_interpretation_shadow.py](../packages/production/src/tongxing_production/source/sentence_interpretation_shadow.py) 同时写出 `anchor-manifest.json` 和 `english-source-package.json`；`run_post_live_subtitle_generation.py` 可用 `--sentence-interpretation-english-review` 绑定人工审核收据并重跑 Layer 1。这一层不写入中文 prompt，也不生成目标语言文字。
+当前生成器：[english_source_package.py](../packages/production/src/tongxing_production/source/english_source_package.py)；[独立机器裁判](../packages/production/src/tongxing_production/source/english_source_judge.py)只产生 `humanApproval=false`、`productionTranslationEligible=false` 的 shadow 收据。未来周入口 [prepare_sentence_interpretation_shadow.py](../packages/production/src/tongxing_production/source/sentence_interpretation_shadow.py) 同时写出 `anchor-manifest.json` 和 `english-source-package.json`；`.venv/bin/python tools/ops/run.py workflows.dual_pdf.post_live` 可用 `--sentence-interpretation-english-review` 绑定人工审核收据并重跑 Layer 1。这一层不写入中文 prompt，也不生成目标语言文字。
 
 ## Layer 2：目标语言文字
 
@@ -107,7 +107,7 @@ Target-Language Candidate + Target-Language Audio Package
 
 长期讲员 checkpoint、授权范围与各语言能力由 [Speaker Voice Registry](multilingual-speaker-voice-registry.zh.md) 独立管理；训练不算第五层，也不随每周内容自动重跑。Layer 1 完成后，各 locale 的 Layer 2 审批依赖独立，实际派发遵守 producer 容量（v1 为一个 active locale；v3 / v7 按冻结配置允许 1–3 个）；某 locale 通过文字门禁后即可独立进入本 locale 的 Layer 3，不等待其他语言。
 
-处理：以目标语言的完整自然句子或已审核的完整分句为 TTS 单元，每个单元一次自然语速合成，不在词组内部拼接，不为匹配英文总时长强制变速／拉伸；然后完整解码、回转写筛查、实测时长、确定性滚动排程、字幕 cue、人耳全文听审和同视频 1 倍速检查。Layer 1 的英文词级停顿是源语证据，不自动成为目标语言的合成切点；如果目标语言与源时间轴不合，记录局部偏差并回到译文、自然句界或候选语音审核，不靠句内碎片补静音掩盖。ASR 筛查不等于人工听审，听感通过也不等于同步通过。
+处理：以目标语言的完整自然句子或已审核的完整分句为 TTS 单元，每个单元一次自然语速合成，不在词组内部拼接，不为匹配英文总时长强制变速／拉伸；然后完整解码、确定性音频 QC（时长／静音／削波）、实测时长、确定性滚动排程、字幕 cue、人耳全文听审和同视频 1 倍速检查。2026-10-28 起 ASR 回转写筛查已退出流程：它不再是发布依据，剩余历史产物只作只读参考。Layer 1 的英文词级停顿是源语证据，不自动成为目标语言的合成切点；如果目标语言与源时间轴不合，记录局部偏差并回到译文、自然句界或候选语音审核，不靠句内碎片补静音掩盖。确定性 QC 不等于人工听审，听感通过也不等于同步通过。
 
 输出 schema：[Target-Language Audio Package](../schemas/sermon-target-language-audio-package-v1.schema.json)。每个要发布的 locale 都必须留下这一层的包；`audio_unavailable` 是合法状态，可进入纯文字发布，不得借用另一语言音轨冒充当前 locale。
 
@@ -122,8 +122,8 @@ Target-Language Candidate + Target-Language Audio Package
 | 接口 | 当前合同与兼容范围 |
 | --- | --- |
 | [release v2](../schemas/sermon-target-language-release-package-v2.schema.json) / [v3](../schemas/sermon-target-language-release-package-v3.schema.json) | v2 绑定全文、口播稿和 Audio Package；v3 增加四产物封存。两者都可位于 `/releases-v2/<editionId>/<locale>.json`，目录名是兼容路由 |
-| [release v4](../schemas/sermon-target-language-release-package-v4.schema.json) | 机器质检豁免路径，位于 `/releases-v4/`；保留 `humanApproval=false`、审核依据与披露 |
-| [catalog v3](../schemas/sermon-multilingual-catalog-v3.schema.json) / [v4](../schemas/sermon-multilingual-catalog-v4.schema.json) | v3 是人工审核投影；v4 可包含机器质检 target，不把豁免写成人工批准 |
+| [release v4](../schemas/sermon-target-language-release-package-v4.schema.json) | 文字机器质检豁免路径（2026-10-28 起音频不再有机器豁免），位于 `/releases-v4/`；保留 `humanApproval=false`、审核依据与披露；历史 v4 已写出的 `audioStatus=machine_checked` 仅保持可读 |
+| [catalog v3](../schemas/sermon-multilingual-catalog-v3.schema.json) / [v4](../schemas/sermon-multilingual-catalog-v4.schema.json) | v3 是人工审核投影；v4 可包含文字机器质检 target，音频只来自人工整轨听审，不把豁免写成人工批准 |
 | [catalog v5](../schemas/sermon-multilingual-catalog-v5.schema.json) | family 页面可汇聚同一讲道的不同来源 edition；各语言仍绑定自己的 L1、edition、release、视频与定位，不把不同来源合成一个 L1 身份 |
 
 两端当前读取顺序为 v5 → v4 → v3；旧 v2 Catalog / v1 Release 仅保留兼容范围。具体封存、比较交换、投影及发布门禁见[四产物公开交付](layer4-four-product-public-delivery.zh.md)。
@@ -155,7 +155,7 @@ Target-Language Candidate + Target-Language Audio Package
 ## 当前实现边界
 
 - Layer 1：确定性锚点和机器裁判代码可运行；无机器裁判且无正式英文人工收据的干净 shadow 输入停在 `waiting_machine_judge`。机器裁判通过只允许 Layer 2 shadow，正式 `ready_for_translation` 仍需英文人工收据。
-- Layer 2：中文 legacy runner 可工作；`zh-Hans`、`ko`、`es`、`vi` 有同源六句 shadow 候选及机器复核。通用模型执行器、语言插件和候选准入器已实现，新 canonical policy 默认 DeepSeek Flash low / high，Sol / Opus 显式回退；[按组执行与恢复](design/per-group-independent-pipeline.zh.md)保留有效结果，机器失败的人工作法见[override 合同](layer2-human-override.zh.md)；每次正式运行仍需就绪的来源、冻结 policy、逐组机器证据及对应人审，或受支持路径上的有效机器质检豁免，代码可运行不等于整篇生产验收。
+- Layer 2：中文 legacy runner 可工作；`zh-Hans`、`ko`、`es`、`vi` 有同源六句 shadow 候选及机器复核。通用模型执行器、语言插件和候选准入器已实现，新 canonical policy 默认 DeepSeek Flash low / high，Sol / Opus 显式回退；[按组执行与恢复](design/per-group-independent-pipeline.zh.md)保留有效结果，机器失败的人工作法见[override 合同](layer2-human-override.zh.md)；每次正式运行仍需就绪的来源、冻结 policy、逐组机器证据及对应人审，或受支持路径上的有效文本机器质检豁免，代码可运行不等于整篇生产验收。
 - Layer 3：中文 legacy TTS／同步及三语正式 renderer 可工作；整篇音轨的听审、同步与批准以各周实际收据为准，不由本合同自动继承。
 - Layer 4：2026-09-27 Production 的 v3 目录／v2 包与 HTTP / Range 是历史发布收据；当前已有[四产物 builder / seal](../packages/production/src/tongxing_production/delivery/app_release.py)、[统一 CD](../tools/ops/run_multilingual_cd.py)、release v3 / v4、catalog v5 / v4 / v3 和 Web / iOS reader。不能继续称它们仅在临时 staging；具体周次的发布、同版本 App 刷新、原生视频、设备与现场验收仍须各自收据，旧 v1 / v2 CLI 不自动获得新 schema 交付资格。
 - Canonical English Content 是从英文事实派生的页面内容输入，可以作为 English Source Package 的可选绑定；它不是英文逐字稿，也不能替代 Layer 1 审核。

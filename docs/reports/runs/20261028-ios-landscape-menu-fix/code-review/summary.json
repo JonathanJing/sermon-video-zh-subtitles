@@ -1,0 +1,30 @@
+{
+  "baseline": "afe21906487eff39229ddc480b152c70e015b209",
+  "candidate": "3fbd2c9f74236b8eecc7b49126d9a8eb89bf89ef",
+  "diffSha256": "546e5613bc9a60025c6cfb3f8c17925f9ba081bbeea46b82091fbe7c69740aca",
+  "remoteCommitVerified": true,
+  "workingTreeClean": true,
+  "independentReview": "no new static blockers; exact revision verified",
+  "humanApproval": false,
+  "testScope": "download and rotate, normal menu tap and jump; playback rotation progress; pause then menu stable position",
+  "notCoveredByXCTest": "menu operation during ongoing long audio; recorded separately by UI readback",
+  "manualAppExecutableSha256": "9eb22a9a49d90f79cb610537b46911eedbe15d8c0c46a4caa8d53a5ba4777238",
+  "files": [
+    {
+      "path": "apps/tongxing-ios/App/ContentView.swift",
+      "sha256": "c95b7fe3daf0f521114d983295a48a8cd432afae07691909c4a0fd3a862028b2"
+    },
+    {
+      "path": "apps/tongxing-ios/App/WeeklyGuidePreview.swift",
+      "sha256": "a0442e661d0da0c0426dceef49dc5241e1c435e7cbd317a422ed71f4c0762549"
+    },
+    {
+      "path": "apps/tongxing-ios/UITests/WeeklyGuidePreviewUITests.swift",
+      "sha256": "a31b4b3ffa6b44a1b967fbd2f20c61862d6f7889b1e1e5d6f93483def76b1a16"
+    },
+    {
+      "path": "docs/design/ios-landscape-study.zh.md",
+      "sha256": "0adac28e8b63904044032f2d39fa11b78caeb17c875816a2522b13e793f0ab50"
+    }
+  ]
+}

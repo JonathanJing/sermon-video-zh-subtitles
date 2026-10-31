@@ -1,0 +1,27 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261027-ios-build65-testflight",
+  "runs": [
+    {
+      "label": "20261027-ios-build65",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/run-report-inputs/20261027-ios-build65",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "20261027-ios-build65",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 1824,
+      "truncated": false,
+      "sha256": "373e451f47047a9a6896d3760336d126e0b053d2b9aed36fe1f5d63a1e927f40",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

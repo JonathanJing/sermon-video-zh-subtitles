@@ -1,0 +1,63 @@
+{
+  "status": "prepared_not_deployed",
+  "pageId": "revelation-jesus-wins-20261025",
+  "baselineVersion": "sites/ai-for-god-sermon-audio/versions/c3890bd4d3b193e3",
+  "oldFileCount": 310,
+  "newFileCount": 318,
+  "changed": [
+    "/weekly-announcements-v1.json"
+  ],
+  "added": [
+    "/posters/revelation-jesus-wins-20261025/zh-Hans-17cf3e316099a1af99701a95090a56215f90def81e5b696460f1b5d603031093.png",
+    "/posters/revelation-jesus-wins-20261025/zh-Hans-preview-4ba535a6817a27ad4e69b637b98ecd33100faec35a8b1ed2f17d4479ba906859.png",
+    "/posters/revelation-jesus-wins-20261025/ko-d25f514d1b62174dd323883fb0b32bac0fecf34fceb49bde49a329ae1aface12.png",
+    "/posters/revelation-jesus-wins-20261025/ko-preview-5dcfcf4a448b6ba60d5f59e0bb533f47c34bd7050f8b605d2408c5fab2e7ca3f.png",
+    "/posters/revelation-jesus-wins-20261025/es-7a074f65b1d6cec7c66dedef953f076b65a102b7aa8013115033d72f10afe9cf.png",
+    "/posters/revelation-jesus-wins-20261025/es-preview-e38cb131f76e31e1ab3f5305359f86c788117fb825c8236f4a9928c2e174b11a.png",
+    "/posters/revelation-jesus-wins-20261025/en-ab3ffe099739354582b606b5504eddf8c2d457b27065809baede6e45c7c6ba48.png",
+    "/posters/revelation-jesus-wins-20261025/en-preview-7f649d325aa8630aa7c513cbc43b8415dc8c5398a462b6472203e9c19a4a1cd2.png"
+  ],
+  "bindings": [
+    {
+      "schemaVersion": "tongxing-announcement-binding-receipt-v1",
+      "pageID": "revelation-jesus-wins-20261025",
+      "locale": "zh-Hans",
+      "sourceIdentitySHA256": "880da5121ed5367a6c521f30fefcc46c93bb8beb34896917836c2b068fd0bc3d",
+      "contentSHA256": "8ee72ce72e7d9ca4c0468a30d07670f5f8bab10ce3043bddc4d7f63f467d8596",
+      "originalReleaseSHA256": "db10ea11b163dfb6a0aa5caa4ae3189da34ac33b2fd146f28ab60b69ddac3f4a",
+      "currentReleaseSHA256": "db10ea11b163dfb6a0aa5caa4ae3189da34ac33b2fd146f28ab60b69ddac3f4a",
+      "metadataRebound": false,
+      "posterSHA256": "17cf3e316099a1af99701a95090a56215f90def81e5b696460f1b5d603031093",
+      "originalPosterOrigin": "https://ai-for-god-sermon-audio.web.app",
+      "note": "Poster image is unchanged. Source and frozen content match exactly. Existing QR may target original origin; App action uses current catalog."
+    },
+    {
+      "schemaVersion": "tongxing-announcement-binding-receipt-v1",
+      "pageID": "revelation-jesus-wins-20261025",
+      "locale": "ko",
+      "sourceIdentitySHA256": "880da5121ed5367a6c521f30fefcc46c93bb8beb34896917836c2b068fd0bc3d",
+      "contentSHA256": "3a05942b8dd6ccfa83695d4b16145122f8b5eb2da31c37120f4238ff90297da1",
+      "originalReleaseSHA256": "aeeee0473f9a497fd5d9f3267ae4853a90107f3cdcf91f7d460de3cd3b74679a",
+      "currentReleaseSHA256": "aeeee0473f9a497fd5d9f3267ae4853a90107f3cdcf91f7d460de3cd3b74679a",
+      "metadataRebound": false,
+      "posterSHA256": "d25f514d1b62174dd323883fb0b32bac0fecf34fceb49bde49a329ae1aface12",
+      "originalPosterOrigin": "https://ai-for-god-sermon-audio.web.app",
+      "note": "Poster image is unchanged. Source and frozen content match exactly. Existing QR may target original origin; App action uses current catalog."
+    },
+    {
+      "schemaVersion": "tongxing-announcement-binding-receipt-v1",
+      "pageID": "revelation-jesus-wins-20261025",
+      "locale": "es",
+      "sourceIdentitySHA256": "880da5121ed5367a6c521f30fefcc46c93bb8beb34896917836c2b068fd0bc3d",
+      "contentSHA256": "3698605a78555f1b71008fa98c00f50ec974e5bfbef8647dcc52e489392c84fe",
+      "originalReleaseSHA256": "45771ef3782d9c3884a0fcdc96942678ec3294899dc2fd67589931ce81d36b6c",
+      "currentReleaseSHA256": "45771ef3782d9c3884a0fcdc96942678ec3294899dc2fd67589931ce81d36b6c",
+      "metadataRebound": false,
+      "posterSHA256": "7a074f65b1d6cec7c66dedef953f076b65a102b7aa8013115033d72f10afe9cf",
+      "originalPosterOrigin": "https://ai-for-god-sermon-audio.web.app",
+      "note": "Poster image is unchanged. Source and frozen content match exactly. Existing QR may target original origin; App action uses current catalog."
+    }
+  ],
+  "englishAnnouncement": false,
+  "catalogsAndFirebaseConfigUnchanged": true
+}

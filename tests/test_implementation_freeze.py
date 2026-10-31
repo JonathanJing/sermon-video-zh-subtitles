@@ -9,7 +9,6 @@ from unittest.mock import patch
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.review import implementation_freeze as freeze
 from tongxing_production.review import waiver
-from tongxing_production.review import qc_audio_run as audio_driver
 from tongxing_production.review import qc_text_run as text_driver
 
 
@@ -79,9 +78,38 @@ class ImplementationFreezeTests(unittest.TestCase):
         self.assertNotEqual(old_hash, waiver.implementation_sha256())
         self.assertEqual(freeze.mismatch(old_hash)["status"], "implementation_mismatch")
 
+    def test_recorded_files_come_from_the_run_plan_and_name_the_changed_files(self):
+        files = freeze.file_hashes()
+        self.assertIsNone(freeze.recorded_files(None))
+        with tempfile.TemporaryDirectory() as directory:
+            plan = Path(directory) / "plan.json"
+            plan.write_text(json.dumps({"schemaVersion": "sermon-run-budget-plan-v2", "expectedImplementationFiles": files}))
+            bare = Path(directory) / "files.json"
+            bare.write_text(json.dumps(files))
+            self.assertEqual(freeze.recorded_files(plan), files)
+            self.assertEqual(freeze.recorded_files(str(bare)), files)
+            invalid = Path(directory) / "invalid.json"
+            invalid.write_text(json.dumps({"expectedImplementationFiles": {"a.py": "not-a-sha"}}))
+            with self.assertRaisesRegex(ValueError, "expectedImplementationFiles"):
+                freeze.recorded_files(invalid)
+            # A driver given the plan reports which files changed (none here: only the expected hash is stale).
+            stale = "0" * 64
+            for driver, extra in ((text_driver, ["--text-backend", "fake"]),):
+                with self.subTest(driver=driver.__name__):
+                    out = Path(directory) / ("out-" + driver.__name__.rsplit(".", 1)[-1])
+                    with patch("sys.stderr") as stderr:
+                        code = driver.main(["--out", str(out), "--expected-implementation", stale,
+                                            "--expected-implementation-files", str(plan), *extra])
+                    self.assertEqual(code, 2)
+                    self.assertFalse(out.exists())
+                    written = "".join(str(call.args[0]) for call in stderr.write.call_args_list if call.args)
+                    report = json.loads(written.strip().splitlines()[0])
+                    self.assertEqual(report["changedFiles"], [])
+                    self.assertEqual(report["files"], files)
+
     def test_both_drivers_refuse_other_code_before_doing_anything(self):
         stale = "0" * 64
-        for driver, extra in ((audio_driver, ["--backend", "fake"]), (text_driver, ["--text-backend", "fake"])):
+        for driver, extra in ((text_driver, ["--text-backend", "fake"]),):
             with self.subTest(driver=driver.__name__), tempfile.TemporaryDirectory() as directory:
                 out = Path(directory) / "out"
                 with patch("sys.stderr") as stderr:

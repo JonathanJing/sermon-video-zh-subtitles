@@ -1,0 +1,4 @@
+{
+  "functions": [{ "source": ".", "codebase": "push" }],
+  "firestore": [{ "database": "sermon-push", "rules": "firestore.rules" }]
+}

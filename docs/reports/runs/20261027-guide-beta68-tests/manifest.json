@@ -1,0 +1,73 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261027-guide-beta68-tests",
+  "runs": [
+    {
+      "label": "20261027T103849-test-9b404b3f",
+      "source": "~/.codex/worktrees/weekly-study-guide-design/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-27/cli/20261027T103849-test-9b404b3f",
+      "skipped": {
+        ".json": 1,
+        ".0~--v_bsIOEGCGTspbpVgduaWe0ZdDC6OkPSEU0HhjhT-3M6M2r_enBbaySyA0TxP5xm0PMZ0iRGflsM7dwyYB_w==": 2,
+        ".0~3ur1zejqMwxjeg51nH22vQOM0Xn0j40UaeTYRw7xY2fK5Q0Iahm5V1ekGll9tDb-UVFhlJS60UvuiezvY2MTIA==": 2,
+        ".0~4VqMqsI5lOfxRppnud6-VDWcNsU8J7VgFCJfW2dXPwOcAkvU-I8Um5yp9n0Zv6nr3VmcxYggaVMDFfR0U_vjKw==": 2,
+        ".0~4eh_l3ptDZN__Gs12k0XTGmIOYlzQA8lvjvM7TmZJmRIDRKXimwoZDyU5GsrS07kVsT60AQONGqY1OFzZVG7Bg==": 2,
+        ".0~AFS_u2Lp7i2jptQjJzMFWLxSAzq6DL9o2N_zZ12KnOz9OgymW7qZpNy1L1CA0fo2WH8UjvDmgQ9n9rPndBfSUg==": 2,
+        ".0~AWchesUdZOzMGnzTOa_kACNa1TT8lm3Gdrv4WVSb_CH7AFr4ouFqXPRLO8o2dnCV0PsQF32Pxw8h7MIILl22RQ==": 2,
+        ".0~GFX7FG8VyVwk5bZfjp09XPaeyczbYdkcqtXrqxOWvY-mJrwm2IKKZtgvTUEUeqyBOgqcFkQPonmzlvjApD3htA==": 2,
+        ".0~GspkvRk53RZU2qQsbyQYXvSc5RM5VURw8PBoPyWZfja-4X77FW9zAf6-PqGgWSgWzLS1lMMN7ZtqBsjEhxjAWw==": 2,
+        ".0~Hv1dOfZVxLrdc6D3XRSa6Rb-kJp1aeTiHCnjeRJjZX2yOne3ffw5_6hvUfFlzvwIDskAaqnj1KDdfpdLc1tkOQ==": 2,
+        ".0~HwPI-Dhta0gBkg1B3598TnmxkXn2D_4Ld5I58o-rdXLDmaxYUArvdqqF7Lt5kut9cemko9yz00hrGpncXxZulw==": 2,
+        ".0~K7A8ZrzZmqgHr_I8vuMmWPb5SQ-9I-CaEgOXs5UmBONjlXY7TwbSrQRannEB_ChU5C5yOR9w56pTem19aShD1g==": 2,
+        ".0~L96OGnrr8M994qufBr5IjPpemb4iyeni04Zw16UB0qcx4aitmG1WGpyi2Dw-Q0PNugZ8jRU_L4nYIvCTpPkQ1g==": 2,
+        ".0~Lg7VOIHYLw_qarMSXinorGF5bvlKm4uTE7DNxtpFDaz7t1AC9hb0FalQe3zs4T3Nyk1m88DeLssK9gsk0y-HCQ==": 2,
+        ".0~Lr8AqPvtRLduEj5yZ8PawyMsIUp6j9rldtSbCMMZHWbbBVDMiQQ1dE4wTKQHmGLzD9FVssfzCcVxX3Le17qNWw==": 2,
+        ".0~Lr9TD8vE0QFuoVy9tcLuGDvRuzb-uldj4gpgMRmuR-Wg68qJZSM4lSR91JXQdcxTjzDY8h81qNcg2yD2SQTJDg==": 2,
+        ".0~NhOmglb7llsKkf4sWU5VTcMvWKDgpMllq4Z15Hqvqqrb49-K6GJqUewfKuHrUDlfsMJd_0AscacyM4cInwlqUA==": 2,
+        ".0~OFwC-Wvbd26iTHSa0Qj9DYQ58wvotbbXQHO8qyMXKQgjltWX3rm3uGYwkfYrOI1yh2dfrLWh0CVPxBwHyuUNEA==": 2,
+        ".0~OrGHbnBS8eoTwiQuA9z7HNASx4BBGchbDWpCf0VRIymhSuuAmWSHXdvVlL-6clghPWCD7LEFyAoDZcPgJ3kGmw==": 2,
+        ".0~POvk0F75-tNlHnQqEHjaCjmPkg0WN5m4ovJscwdTrKQmNtIrdf0aUdwKf4ITRdFfd8JFygoMt1D5bp0qOegA5w==": 2,
+        ".0~SU_dHROaQ2xcIxE5pPb5NNlXZoPtkBZbxUcEpyoVvWxmvs038wDUnEg_RDiLJ5m2EqTJCvL5Pofql2CghaFm7w==": 2,
+        ".0~VTkkf5ZgIEy2Ooe-yhziXCRXv-_10aVdFtYsbkKnBOzv1aU0esqCEVQARiDYh8VOhwCMfsqrmVyTOwSKGWOwnw==": 2,
+        ".0~XDL1n6qmhD-X7z7RsUr6EYaGIDPSsnq0hh7PjGrhTme2irOo2ifw8INsqn5z9e6JASifNCJtwM1DA-XEcNEu8A==": 2,
+        ".0~Y6hiPb98hfWgQLHfeznRd_uMWR0ckefULlyi4stiFrlBi1qAhR_tZMH7VTvtFyXoCkprnW05Qfm8_ToNiQoZgg==": 2,
+        ".0~_6rHv2gOluN8ZcGZIaHVNDHsqqrgKNKR0l4n4owWxpQalfe_UkKKBQW2PrhWROrCy-SkFB44yQ2Mg0UFeMIlBw==": 2,
+        ".0~d8qmjNDBRrC97IdL8MjJo4mk7oYaiu04Z_zcAccKUg3AUP6TwICJGoIB1lLejb0LLQtrwYlLpHXaLRpgVvIY2w==": 2,
+        ".0~djTJq1UGZLNuA6OckJK5IncTZmtPU5VL44oHPIgJWYSMCjizCWa0Ywhzlo_EprjhaUktQWbhIostGOrFNQZBRg==": 2,
+        ".0~eGYsb9DGroyK4IoqEtxIck21ltfm1K4rknSaXOn6zNuB3sN8b2NLugNWs1BdjHhio2BpT0xlt0EbZuV1kjLqjw==": 2,
+        ".0~eMOkAPBlUeb8zNaQYMmqgz3b0fqdH5uup9d4e7s68GaxP_mD7D6_MmxRsF72FQvAf9Ht3XmxtRTwO1SujDm-3Q==": 2,
+        ".0~fVnEoxItff7kPefEPw5BtRo5pl6b_NXzyEFYTdsLM10rVKlpsNOy94q1RB_lFDLX02AfJQdJwtSnhvIwbuA0BA==": 2,
+        ".0~jnHA_bgzF1PiDH3g0Sphfd_Qmz85hAYzCjgBKFf8CSS9jEbazZKZc916RHl0zJUL2GiB4LWKDSV_EqRcGCfJDQ==": 2,
+        ".0~kr_jplCFZKCekb_J-GcJdAfT3hVuGuO90QU3240JK9VByvey5Par96A9E3CqP2-faDemNZdqaAtwoqqsQvdo2w==": 2,
+        ".0~l0fGNweoTH4T5UK1v5Mh3KBgP3RcMFejHrHvHzXz2CfF-HNP-ykNfFnNXammlKahys39TY3plOIR-5W5KRzpnw==": 2,
+        ".0~m64aUkAXCMRe3WfPt2TpIznRK77Z-exermycyAz8z_P3J4KDNTSwri9fkC5Qa64dcR3xgEmEC5dPwEB0G_mIsA==": 2,
+        ".0~nhrxqmmnk6Uod9Ms0lEXcp4_6gQrudvjfAnejea3CwarQxKlQRvUPlpwPUcwPKm6TRuZthOrcakLAjAXpnV_xw==": 2,
+        ".0~oQqU2DUxDqpbXlz5Y0BoIfGBxJkLsFSGXZTc5xos_BIGSJ77sErKrgP0qQj30grVpZ4pBMNx6JGjpPJaoosr5A==": 2,
+        ".0~oRMi0sbQLktfDDDGUS-SqBKpdDiD6HCztVES_ShfGr0KVcYENoIq7y9oUSDWL5B_P2gkdtWG8JEsJLxPbdWOZA==": 2,
+        ".0~oZ99zLIUPfNbcfyYyi8avBkJF01xMMO9Qixsf217Pl0XLTgKCYkfmWFlijSHpUL1AZo_Az8KyBNegStxjnYHMw==": 2,
+        ".0~pwzsQLPToc-S9jMmTlzA4dvd9dXIKzdchAmzZRKVPGUPHQ5xzn-AQF6rprF4YsrdnpTzhLoXaZ-IbMyoBHQMrw==": 2,
+        ".0~s3er5yD7fWya220cyNolatOU2S70Yq-0j3yCEWrbNothzhgATSsw4Go9nBA-PARJmgUsGS6Sb8RGm3iQvaiHvg==": 2,
+        ".0~x8nMzDPDkxTsTU7gwDBFHVHoSBT1rpmVnAh89S4key816Cu2r0QlaBvvWXDRO4rDIbV3X7V-1DGixMI-ROAS4Q==": 2,
+        ".0~y6PQe1wNatmXJSz97Qa3-3JFKICq6PJYEAaLMQX8yZJ11QOR5gwQ5AGsbJ7hpfy5XOOurVsOd31JyoypwuIJpg==": 2,
+        ".plist": 1
+      }
+    }
+  ],
+  "files": [
+    {
+      "run": "20261027T103849-test-9b404b3f",
+      "path": "run.log",
+      "kind": "log",
+      "bytes": 568169,
+      "truncated": true,
+      "sha256": "fb96028d0c9204ff4733b18a18ad7bbd1c04525370687dfbfeb96611e417f40f",
+      "redactions": {
+        "home_dir": 27
+      }
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

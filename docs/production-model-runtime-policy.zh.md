@@ -44,12 +44,12 @@ python scripts/target_language_policy.py freeze --policy <draft.json> --out <pol
 - **政策绑定：** 选择写入政策的 translator/reviewer 角色，进入政策哈希。controller 按冻结的后端选择 transport，并在执行身份里记下两个角色的 CLI 身份；caller 与政策后端不一致时，在派发前拒绝。
 - **仍然拒绝的组合：** 只有完整的这一对模型才能冻结。旧的"Opus 初译 + Sol 复核"实验政策，以及其他 Claude 组合，冻结时仍会拒绝。
 - **预算：** 账本仍按列价最坏情况（`strict-claude-list-worst-case-2026-10-08-v1`）逐次预留和结算，上限取[周更运行配置](weekly-run-profile.zh.md)的 `claudeCliListPriceCapUsdPerLocale`。列价等价不是实际扣费，不计入用户批准的美元总额；计划里该阶段记 `countsTowardTotal: false`。
-- **不变的部分：** 文本质检、校准和音频质检的评判仍走 OpenAI API，按原预算规则。
+- **不变的部分：** 文本质检和校准的评判仍走 OpenAI API，按原预算规则；音频质检（机器听审）已于 2026-10-28 退役，新运行不再派发，旧运行保留冻结的机器豁免证据。
 - **待验证：** 下一次片段 E2E 用此后端做第一次真实运行，在那之前没有 Claude Layer 2 的真实运行证据。Claude 订阅的速率和额度不受 API 并发槽约束，`groupWorkers` 并发时要观察 CLI 是否限流。
 
 原 Claude 冻结运行已经返回的付费结果允许 `cache_only` 恢复，恢复仍禁止派发。预算响应记录按模型选择价格版本；Claude 对应 `strict-claude-list-worst-case-2026-10-08-v1`，列价等价不是订阅实际收费。没有真实 Claude Layer 2 运行或部署证据。
 
-来源 ASR、OpenAI 音频、MFA、Spark Qwen TTS／回转写 ASR、ImageGen 继续使用各自入口。其他文字入口保留其实际接线范围；本次修复不证明所有旧 producer 已消费此策略。
+来源 ASR、OpenAI 音频、MFA、Spark Qwen TTS、ImageGen 继续使用各自入口；Spark 回转写 ASR 已于 2026-10-28 随机器听审链退役，旧运行保留冻结的筛查与豁免证据。其他文字入口保留其实际接线范围；本次修复不证明所有旧 producer 已消费此策略。
 
 配音精简（`tools/ops/run_spoken_condensation.py`）保持自身的 `gpt-6.1-sol` `high`，与机器质检回译（`tongxing_production.review.qc_text_run`，`gpt-6.1-sol` `medium`）一样经 ChatGPT 登录的本机 Codex CLI（requested tier `fast`）调用，不用 API key；两者各用自己的缓存命名空间，按请求和 transport 身份（CLI 版本、CLI／二进制／适配器哈希）缓存。精简不是 Layer 2 翻译入口：它只产出精简记录和 revision brief，口播候选仍经 Layer 2 链按上表生成。
 

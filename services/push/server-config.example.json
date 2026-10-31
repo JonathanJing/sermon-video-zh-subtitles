@@ -1,0 +1,7 @@
+{
+  "projectId": "ai-for-god-caption-dev",
+  "databaseId": "sermon-push",
+  "serviceAccount": "sermon-push-runtime@ai-for-god-caption-dev.iam.gserviceaccount.com",
+  "maxPerMinute": 600,
+  "maxPerDay": 10000
+}

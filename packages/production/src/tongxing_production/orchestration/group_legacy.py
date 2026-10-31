@@ -34,6 +34,9 @@ MAX_PRODUCT_BYTES = 64 * 1024 * 1024
 # repair or operator instruction and goes into revisionSha256.
 BASE_PROMPT_FIELDS = {"translationGroupId", "sourceUnitIds", "englishUnits", "context", "targetLocale",
                       "terminology", "scripture", "formatting", "modelRules", "astraDraft"}
+# Whole-sermon coherence inputs (text/coherence.py): the same for every round of a group, not a
+# revision. They stay in boundedPayloadSha256 and the request fingerprint.
+COHERENCE_PROMPT_FIELDS = {"sermonGlossary", "priorTarget", "continuation", "windowDraft"}
 # Renderer intent fields that are assembly or batch information, not sound identity
 # (design section 3; batch membership is open decision 1 and stays out of the key).
 INTENT_ASSEMBLY_FIELDS = {"unitIndex", "jobJsonSha256", "jobFileSha256", "sourceJsonSha256",
@@ -202,7 +205,8 @@ def _prompt(preview: dict) -> dict:
 def _role_inputs(preview: dict, cache: dict, draft_text_sha256: str | None) -> dict:
     prompt = _prompt(preview)
     payload = preview["payload"]
-    extra = {key: value for key, value in prompt.items() if key not in BASE_PROMPT_FIELDS}
+    extra = {key: value for key, value in prompt.items()
+             if key not in BASE_PROMPT_FIELDS and key not in COHERENCE_PROMPT_FIELDS}
     inputs = {
         "boundedPayloadSha256": preview["payloadSha256"],
         "requestFingerprintSha256": cache["payloadSha256"],

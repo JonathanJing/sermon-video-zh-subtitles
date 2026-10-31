@@ -21,7 +21,6 @@ from tools.development import export_run_digest
 from tongxing_production.compute.transports import codex_cli as sermon_codex_transport
 from tongxing_production.compute import transcription_request as sermon_transcription_request
 from tongxing_production.text import human_ruling
-from tongxing_production.compute import qc_audio_transports as audio_transports
 from tongxing_production.review import waiver
 from tongxing_production.audio import speech_job as handoff
 from tongxing_production.text import candidate
@@ -29,7 +28,7 @@ from tongxing_production.compute import spark_admission as production_spark_admi
 from tongxing_production.compute import spark_exclusive_session
 from tongxing_production.audio import renderer
 from tongxing_production.source import sentence_interpretation_models as interpretation_models
-from tongxing_production.audio import screening
+from tongxing_production.review import asr_scoring as screening
 from tongxing_production.review import scripture_machine
 from tongxing_production.workflows.supervisor import production as supervisor
 from tongxing_production.source import sentence_interpretation as interpretation
@@ -177,7 +176,6 @@ class ReviewPortsTests(unittest.TestCase):
             (handoff, 'validate_target_candidate', backend.qc_runtime.validate_target_candidate,
              ({'s': 1}, {'a': 1}, {'c': 1}), {'require_human_approval': False})))
         self.assertIs(backend.qc_runtime.codex_text_transport(), sermon_codex_transport)
-        self.assertIs(backend.transports.audio_qc(), audio_transports)
         limits = backend.provider.transcription_limits()
         for name in ('MAX_RESPONSE_BYTES', 'WALL_TIME_MS', 'MICROUSD_PER_MINUTE'):
             self.assertEqual(getattr(limits, name), getattr(sermon_transcription_request, name), name)
@@ -212,7 +210,7 @@ class ReviewPortsTests(unittest.TestCase):
                 'tongxing_production.source.sentence_interpretation_models', 'tools.development.export_run_digest',
                 'tongxing_production.compute.transports.codex_cli', 'tongxing_production.compute.spark_exclusive_session',
                 'tongxing_production.audio.predicted_schedule', 'tongxing_production.audio.renderer',
-                'tongxing_production.compute.qc_audio_transports')
+)
         code = ("import sys; from scripts import tongxing_host; "
                 f"print([m for m in {lazy!r} if m in sys.modules])")
         result = subprocess.run([sys.executable, '-c', code], cwd=host.ROOT, capture_output=True, text=True, timeout=60)

@@ -1,0 +1,38 @@
+{
+  "run": "artifacts/sentence-first-agent/20261030-flow-ko/coherence-flow",
+  "consistent": true,
+  "labels": [
+    {
+      "label": "translate",
+      "path": "artifacts/sentence-first-agent/20261030-flow-ko/coherence-flow/state-translate.json",
+      "ok": true,
+      "mismatches": [],
+      "repaired": 0,
+      "live": {
+        "status": "finished",
+        "calls": 9,
+        "hits": 0,
+        "failed": 0,
+        "windowsDone": 7,
+        "unitsDone": 60,
+        "validationFailures": 0
+      },
+      "rebuilt": {
+        "status": "finished",
+        "calls": 9,
+        "hits": 0,
+        "failed": 0,
+        "windowsDone": 7,
+        "unitsDone": 60,
+        "validationFailures": 0
+      }
+    }
+  ],
+  "missing": [],
+  "units": {
+    "covered": 60,
+    "missing": [],
+    "failed": []
+  },
+  "checkedAt": "2026-10-30T19:47:41.689500+00:00"
+}

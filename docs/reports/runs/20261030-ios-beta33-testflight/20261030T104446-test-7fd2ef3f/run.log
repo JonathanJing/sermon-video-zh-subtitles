@@ -1,0 +1,292 @@
+
+$ /usr/bin/xcrun xcodebuild -project ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.claude/worktrees/ios-beta-1.26.33/apps/tongxing-ios/Tongxing.xcodeproj -list -json -disableAutomaticPackageResolution
+{
+  "project" : {
+    "configurations" : [
+      "BetaDebug",
+      "BetaRelease",
+      "Debug",
+      "Release"
+    ],
+    "name" : "Tongxing",
+    "schemes" : [
+      "ListeningActivityExtension",
+      "Tongxing",
+      "TongxingBeta",
+      "TongxingCore",
+      "TongxingInfrastructure",
+      "TongxingPreview",
+      "TongxingScreenshots"
+    ],
+    "targets" : [
+      "Tongxing",
+      "ListeningActivityExtension",
+      "TongxingTests",
+      "TongxingUITests"
+    ]
+  }
+}
+
+$ /usr/bin/xcrun simctl list devices available --json
+{
+  "devices" : {
+    "com.apple.CoreSimulator.SimRuntime.iOS-27-0" : [
+      {
+        "dataPath" : "~\/Library\/Developer\/CoreSimulator\/Devices\/A9ACB321-07F8-4540-AD3C-7FACBD384A1F\/data",
+        "dataPathSize" : 5734416384,
+        "logPath" : "~\/Library\/Logs\/CoreSimulator\/A9ACB321-07F8-4540-AD3C-7FACBD384A1F",
+        "udid" : "A9ACB321-07F8-4540-AD3C-7FACBD384A1F",
+        "lastUsedAt" : "2026-10-30T17:44:26Z",
+        "isAvailable" : true,
+... 6755 lines omitted; 230 error-like lines, 50 kept below ...
+[line 454]     export CLANG_WARN_DIRECT_OBJC_ISA_USAGE\=YES_ERROR
+[line 463]     export CLANG_WARN_OBJC_ROOT_CLASS\=YES_ERROR
+[line 621]     export GCC_WARN_ABOUT_RETURN_TYPE\=YES_ERROR
+[line 818]     export RUNTIME_EXCEPTION_ALLOW_DYLD_ENVIRONMENT_VARIABLES\=NO
+[line 819]     export RUNTIME_EXCEPTION_ALLOW_JIT\=NO
+[line 820]     export RUNTIME_EXCEPTION_ALLOW_UNSIGNED_EXECUTABLE_MEMORY\=NO
+[line 821]     export RUNTIME_EXCEPTION_DEBUGGING_TOOL\=NO
+[line 822]     export RUNTIME_EXCEPTION_DISABLE_EXECUTABLE_PAGE_PROTECTION\=NO
+[line 823]     export RUNTIME_EXCEPTION_DISABLE_LIBRARY_VALIDATION\=NO
+[line 971]     export VALIDATE_DEVELOPMENT_ASSET_PATHS\=YES_ERROR
+[line 1000]     export __DIAGNOSE_INVALID_DEPLOYMENT_TARGET_AS_ERROR\=YES
+[line 1045] 2026-10-30 10:44:52.698 xcodebuild[16915:6717994] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+[line 1056] 2026-10-30 10:45:14.724 xcodebuild[16915:6717994] [MT] IDELaunchParametersSnapshot: debugger version lookup failed for path '<nil>': noURL
+[line 1058] 2026-10-30 10:45:14.771 xcodebuild[16915:6717994] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+[line 1134] ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.claude/worktrees/ios-beta-1.26.33/apps/tongxing-ios/UITests/ListeningFlowUITests.swift:1161: error: -[TongxingUITests.ListeningFlowUITests testAccessibilityTextDockKeepsPlaybackControlsAvailable] : XCTAssertGreaterThanOrEqual failed: ("43.999999999999986") is less than ("44.0")
+[line 1141] 2026-10-30 10:45:32.886 xcodebuild[16915:6717994] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+[line 1142] 2026-10-30 10:45:32.887 xcodebuild[16915:6717994] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+[line 1143] Test Case '-[TongxingUITests.ListeningFlowUITests testAccessibilityTextDockKeepsPlaybackControlsAvailable]' failed (30.565 seconds).
+[line 1149] 2026-10-30 10:45:44.829 xcodebuild[16915:6717994] [MT] IDELaunchParametersSnapshot: debugger version lookup failed for path '<nil>': noURL
+[line 1151] 2026-10-30 10:45:44.838 xcodebuild[16915:6717994] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+[line 1307] 2026-10-30 10:46:12.378 xcodebuild[16915:6717994] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+[line 1308] 2026-10-30 10:46:12.379 xcodebuild[16915:6717994] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+[line 1315] 2026-10-30 10:46:17.668 xcodebuild[16915:6717994] [MT] IDELaunchParametersSnapshot: debugger version lookup failed for path '<nil>': noURL
+[line 1317] 2026-10-30 10:46:17.676 xcodebuild[16915:6717994] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+[line 1370] 2026-10-30 10:46:31.664 xcodebuild[16915:6717994] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+[line 1371] 2026-10-30 10:46:31.665 xcodebuild[16915:6717994] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+[line 1378] 2026-10-30 10:46:42.889 xcodebuild[16915:6717994] [MT] IDELaunchParametersSnapshot: debugger version lookup failed for path '<nil>': noURL
+[line 1380] 2026-10-30 10:46:42.897 xcodebuild[16915:6717994] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+[line 1517] 2026-10-30 10:47:23.987 xcodebuild[16915:6717994] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+[line 1518] 2026-10-30 10:47:23.987 xcodebuild[16915:6717994] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+[line 1525] 2026-10-30 10:47:32.048 xcodebuild[16915:6717994] [MT] IDELaunchParametersSnapshot: debugger version lookup failed for path '<nil>': noURL
+[line 1527] 2026-10-30 10:47:32.058 xcodebuild[16915:6717994] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+[line 1664] 2026-10-30 10:48:04.349 xcodebuild[16915:6717994] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+[line 1665] 2026-10-30 10:48:04.349 xcodebuild[16915:6717994] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+[line 1672] 2026-10-30 10:48:16.029 xcodebuild[16915:6717994] [MT] IDELaunchParametersSnapshot: debugger version lookup failed for path '<nil>': noURL
+[line 1674] 2026-10-30 10:48:16.265 xcodebuild[16915:6717994] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+[line 1775] 2026-10-30 10:48:38.367 xcodebuild[16915:6717994] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+[line 1776] 2026-10-30 10:48:38.367 xcodebuild[16915:6717994] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+[line 1779] 2026-10-30 10:48:39.407 xcodebuild[16915:6717994] [MT] IDELaunchParametersSnapshot: debugger version lookup failed for path '<nil>': noURL
+[line 1781] 2026-10-30 10:48:39.421 xcodebuild[16915:6717994] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+[line 1859] 2026-10-30 10:49:01.054 xcodebuild[16915:6717994] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+[line 1860] 2026-10-30 10:49:01.055 xcodebuild[16915:6717994] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+[line 1867] 2026-10-30 10:49:03.277 xcodebuild[16915:6717994] [MT] IDELaunchParametersSnapshot: debugger version lookup failed for path '<nil>': noURL
+[line 1869] 2026-10-30 10:49:03.284 xcodebuild[16915:6717994] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+[line 1949] 2026-10-30 10:49:46.247 xcodebuild[16915:6717994] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+[line 1950] 2026-10-30 10:49:46.247 xcodebuild[16915:6717994] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+[line 1960] 2026-10-30 10:49:59.947 xcodebuild[16915:6717994] [MT] IDELaunchParametersSnapshot: debugger version lookup failed for path '<nil>': noURL
+[line 1962] 2026-10-30 10:49:59.954 xcodebuild[16915:6717994] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+[line 1983] 2026-10-30 10:50:06.337 xcodebuild[16915:6717994] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+[line 1984] 2026-10-30 10:50:06.338 xcodebuild[16915:6717994] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+... end of omitted section ...
+    t =    20.94s Find the CollectionView (First Match)
+    t =    21.00s Find the Target Application 'com.jonathanjing.tongxing.dev'
+    t =    21.10s Find the "更多选项" NavigationBar
+    t =    21.21s Checking existence of `"voice-demo-locale-speaker_0-ko" Button`
+    t =    21.32s Find the "voice-demo-locale-speaker_0-ko" Button
+    t =    21.44s Find the "voice-demo-locale-speaker_0-ko" Button
+    t =    21.60s Tap "voice-demo-locale-speaker_0-ko" Button
+    t =    21.60s     Wait for com.jonathanjing.tongxing.dev to idle
+    t =    21.60s     Find the "voice-demo-locale-speaker_0-ko" Button
+    t =    21.72s     Check for interrupting elements affecting "voice-demo-locale-speaker_0-ko" Button
+    t =    21.82s     Synthesize event
+    t =    22.13s     Wait for com.jonathanjing.tongxing.dev to idle
+    t =    23.15s Checking `Expect predicate `label BEGINSWITH "播放"` for object "voice-demo-sample-speaker_0-ko" Button`
+    t =    23.15s     Find the "voice-demo-sample-speaker_0-ko" Button
+    t =    23.26s Checking existence of `"voice-demo-sample-speaker_0-zh-Hans" Button`
+    t =    24.37s Checking `Expect predicate `label BEGINSWITH "播放"` for object "voice-demo-original-speaker_0" Button`
+    t =    24.37s     Find the "voice-demo-original-speaker_0" Button
+    t =    24.48s Find the CollectionView (First Match)
+    t =    24.54s Find the Target Application 'com.jonathanjing.tongxing.dev'
+    t =    24.60s Find the "更多选项" NavigationBar
+    t =    24.71s Checking existence of `"voice-demo-transcript-speaker_0" Button`
+    t =    24.82s Find the "voice-demo-transcript-speaker_0" Button
+    t =    24.95s Find the "voice-demo-transcript-speaker_0" Button
+    t =    25.07s Tap "voice-demo-transcript-speaker_0" Button
+    t =    25.07s     Wait for com.jonathanjing.tongxing.dev to idle
+    t =    25.08s     Find the "voice-demo-transcript-speaker_0" Button
+    t =    25.18s     Check for interrupting elements affecting "voice-demo-transcript-speaker_0" Button
+    t =    25.27s     Synthesize event
+    t =    25.56s     Wait for com.jonathanjing.tongxing.dev to idle
+    t =    25.83s Waiting 5.0s for "Synthetic ko sample." StaticText to exist
+    t =    26.90s     Checking `Expect predicate `existsNoRetry == 1` for object "Synthetic ko sample." StaticText`
+    t =    26.90s         Checking existence of `"Synthetic ko sample." StaticText`
+    t =    27.11s Added attachment named 'voice-demo-korean-transcript'
+    t =    27.11s Tap "voice-demo-sample-speaker_0-ko" Button
+    t =    27.11s     Wait for com.jonathanjing.tongxing.dev to idle
+    t =    27.11s     Find the "voice-demo-sample-speaker_0-ko" Button
+    t =    27.21s     Check for interrupting elements affecting "voice-demo-sample-speaker_0-ko" Button
+    t =    27.29s     Synthesize event
+    t =    27.59s     Wait for com.jonathanjing.tongxing.dev to idle
+    t =    28.90s Checking `Expect predicate `label BEGINSWITH "暂停"` for object "voice-demo-sample-speaker_0-ko" Button`
+    t =    28.90s     Find the "voice-demo-sample-speaker_0-ko" Button
+    t =    29.03s Find the CollectionView (First Match)
+    t =    29.09s Find the Target Application 'com.jonathanjing.tongxing.dev'
+    t =    29.19s Find the "更多选项" NavigationBar
+    t =    29.29s Checking existence of `"voice-demo-speaker-speaker_0" Button`
+    t =    29.40s Find the "voice-demo-speaker-speaker_0" Button
+    t =    29.53s Find the "voice-demo-speaker-speaker_0" Button
+    t =    29.68s Tap "voice-demo-speaker-speaker_0" Button
+    t =    29.68s     Wait for com.jonathanjing.tongxing.dev to idle
+    t =    29.68s     Find the "voice-demo-speaker-speaker_0" Button
+    t =    29.79s     Check for interrupting elements affecting "voice-demo-speaker-speaker_0" Button
+    t =    29.88s     Synthesize event
+    t =    30.22s     Wait for com.jonathanjing.tongxing.dev to idle
+    t =    30.57s Tap "voice-demo-speaker-speaker_0" Button
+    t =    30.57s     Wait for com.jonathanjing.tongxing.dev to idle
+    t =    30.57s     Find the "voice-demo-speaker-speaker_0" Button
+    t =    30.68s     Check for interrupting elements affecting "voice-demo-speaker-speaker_0" Button
+    t =    30.78s     Synthesize event
+    t =    31.08s     Wait for com.jonathanjing.tongxing.dev to idle
+    t =    32.45s Checking `Expect predicate `label BEGINSWITH "播放"` for object "voice-demo-sample-speaker_0-ko" Button`
+    t =    32.46s     Find the "voice-demo-sample-speaker_0-ko" Button
+    t =    32.66s Added attachment named 'voice-demo-collapsed-paused'
+    t =    32.66s Tear Down
+    t =    32.79s     Added attachment named 'final-ui-state'
+    t =    32.79s     Requesting snapshot of accessibility hierarchy for app with pid 27566
+    t =    33.25s     Requesting snapshot of accessibility hierarchy for app with pid 27566
+    t =    33.39s     Added attachment named 'final-accessibility-hierarchy'
+    t =    33.39s     Terminate com.jonathanjing.tongxing.dev:27566
+2026-10-30 11:08:56.729 xcodebuild[16915:6717994] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+2026-10-30 11:08:56.729 xcodebuild[16915:6717994] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+Test Case '-[TongxingUITests.ListeningFlowUITests testVoiceDemoPausesResumesAndLanguageChangeStopsAudio]' passed (34.695 seconds).
+Test Case '-[TongxingUITests.ListeningFlowUITests testVoiceDemoVideoUsesVerifiedClipAndReturnsPaused]' started.
+    t =     0.00s Start Test at 2026-10-30 11:08:58.023
+    t =     0.03s Set Up
+    t =     0.03s Open com.jonathanjing.tongxing.dev
+    t =     0.03s     Launch com.jonathanjing.tongxing.dev
+2026-10-30 11:08:58.052 xcodebuild[16915:6717994] [MT] IDELaunchParametersSnapshot: debugger version lookup failed for path '<nil>': noURL
+2026-10-30 11:08:58.052 xcodebuild[16915:6717994] [MT] IDELaunchParametersSnapshot: no debugger version
+2026-10-30 11:08:58.059 xcodebuild[16915:6717994] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+    t =     0.25s         Setting up automation session
+    t =     1.12s         Wait for com.jonathanjing.tongxing.dev to idle
+    t =     2.73s Waiting 15.0s for "sermon-title" Any to exist
+    t =     3.77s     Checking `Expect predicate `existsNoRetry == 1` for object "sermon-title" Any`
+    t =     3.77s         Checking existence of `"sermon-title" Any`
+    t =     3.90s Find the "sermon-title" Any
+    t =     3.97s Tap "more-options" Button
+    t =     3.97s     Wait for com.jonathanjing.tongxing.dev to idle
+    t =     3.98s     Find the "more-options" Button
+    t =     4.04s     Check for interrupting elements affecting "more-options" Button
+    t =     4.09s     Synthesize event
+    t =     4.39s     Wait for com.jonathanjing.tongxing.dev to idle
+    t =     5.26s Find the CollectionView (First Match)
+    t =     5.34s Find the Target Application 'com.jonathanjing.tongxing.dev'
+    t =     5.42s Find the "更多选项" NavigationBar
+    t =     5.51s Checking existence of `"voice-demo-disclosure" Button`
+    t =     5.62s Find the "voice-demo-disclosure" Button
+    t =     5.72s Find the "voice-demo-disclosure" Button
+    t =     5.82s Tap "voice-demo-disclosure" Button
+    t =     5.82s     Wait for com.jonathanjing.tongxing.dev to idle
+    t =     5.83s     Find the "voice-demo-disclosure" Button
+    t =     5.92s     Check for interrupting elements affecting "voice-demo-disclosure" Button
+    t =     5.99s     Synthesize event
+    t =     6.29s     Wait for com.jonathanjing.tongxing.dev to idle
+    t =     6.53s Find the CollectionView (First Match)
+    t =     6.60s Find the Target Application 'com.jonathanjing.tongxing.dev'
+    t =     6.66s Find the "更多选项" NavigationBar
+    t =     6.76s Checking existence of `"voice-demo-speaker-speaker_0" Button`
+    t =     6.86s Find the "voice-demo-speaker-speaker_0" Button
+    t =     6.97s Checking existence of `"voice-demo-speaker-speaker_0" Button`
+    t =     7.06s Find the "voice-demo-speaker-speaker_0" Button
+    t =     7.16s Swipe up CollectionView at {{0.0, 62.0}, {402.0, 812.0}}
+    t =     7.16s     Wait for com.jonathanjing.tongxing.dev to idle
+    t =     7.16s     Find the CollectionView at {{0.0, 62.0}, {402.0, 812.0}}
+    t =     7.22s     Check for interrupting elements affecting CollectionView
+    t =     7.30s     Synthesize event
+    t =     7.82s     Wait for com.jonathanjing.tongxing.dev to idle
+    t =     9.78s Find the CollectionView at {{0.0, 62.0}, {402.0, 812.0}}
+    t =     9.85s Find the Target Application 'com.jonathanjing.tongxing.dev'
+    t =     9.92s Find the "更多选项" NavigationBar
+    t =    10.02s Checking existence of `"voice-demo-speaker-speaker_0" Button`
+    t =    10.11s Find the "voice-demo-speaker-speaker_0" Button
+    t =    10.21s Find the "voice-demo-speaker-speaker_0" Button
+    t =    10.32s Tap "voice-demo-speaker-speaker_0" Button
+    t =    10.32s     Wait for com.jonathanjing.tongxing.dev to idle
+    t =    11.04s     Find the "voice-demo-speaker-speaker_0" Button
+    t =    11.21s     Check for interrupting elements affecting "voice-demo-speaker-speaker_0" Button
+    t =    11.31s     Synthesize event
+    t =    11.61s     Wait for com.jonathanjing.tongxing.dev to idle
+    t =    11.94s Find the CollectionView (First Match)
+    t =    12.01s Find the Target Application 'com.jonathanjing.tongxing.dev'
+    t =    12.09s Find the "更多选项" NavigationBar
+    t =    12.21s Checking existence of `"voice-demo-original-speaker_0" Button`
+    t =    12.31s Find the "voice-demo-original-speaker_0" Button
+    t =    12.42s Find the "voice-demo-original-speaker_0" Button
+    t =    12.53s Tap "voice-demo-original-speaker_0" Button
+    t =    12.53s     Wait for com.jonathanjing.tongxing.dev to idle
+    t =    12.54s     Find the "voice-demo-original-speaker_0" Button
+    t =    12.64s     Check for interrupting elements affecting "voice-demo-original-speaker_0" Button
+    t =    12.73s     Synthesize event
+    t =    13.02s     Wait for com.jonathanjing.tongxing.dev to idle
+    t =    14.66s Checking `Expect predicate `label BEGINSWITH "暂停"` for object "voice-demo-original-speaker_0" Button`
+    t =    14.66s     Find the "voice-demo-original-speaker_0" Button
+    t =    14.77s Find the CollectionView (First Match)
+    t =    14.84s Find the Target Application 'com.jonathanjing.tongxing.dev'
+    t =    14.91s Find the "更多选项" NavigationBar
+    t =    15.05s Checking existence of `"voice-demo-video-speaker_0" Button`
+    t =    15.16s Find the "voice-demo-video-speaker_0" Button
+    t =    15.30s Find the "voice-demo-video-speaker_0" Button
+    t =    15.42s Tap "voice-demo-video-speaker_0" Button
+    t =    15.42s     Wait for com.jonathanjing.tongxing.dev to idle
+    t =    15.42s     Find the "voice-demo-video-speaker_0" Button
+    t =    15.55s     Check for interrupting elements affecting "voice-demo-video-speaker_0" Button
+    t =    15.64s     Synthesize event
+    t =    15.93s     Wait for com.jonathanjing.tongxing.dev to idle
+    t =    17.11s Waiting 10.0s for "voice-demo-video-player" Any to exist
+    t =    18.13s     Checking `Expect predicate `existsNoRetry == 1` for object "voice-demo-video-player" Any`
+    t =    18.13s         Checking existence of `"voice-demo-video-player" Any`
+    t =    18.42s Added attachment named 'voice-demo-verified-video'
+    t =    18.42s Tap "完成" Button
+    t =    18.42s     Wait for com.jonathanjing.tongxing.dev to idle
+    t =    18.42s     Find the "完成" Button
+    t =    18.56s     Check for interrupting elements affecting "voice-demo-video-done" Button
+    t =    18.65s     Synthesize event
+    t =    18.95s     Wait for com.jonathanjing.tongxing.dev to idle
+    t =    20.82s Checking `Expect predicate `label BEGINSWITH "播放"` for object "voice-demo-original-speaker_0" Button`
+    t =    20.82s     Find the "voice-demo-original-speaker_0" Button
+    t =    20.93s Find the "voice-demo-original-speaker_0" Button
+    t =    21.05s Tear Down
+    t =    21.16s     Added attachment named 'final-ui-state'
+    t =    21.16s     Requesting snapshot of accessibility hierarchy for app with pid 27757
+    t =    21.68s     Requesting snapshot of accessibility hierarchy for app with pid 27757
+    t =    21.81s     Added attachment named 'final-accessibility-hierarchy'
+    t =    21.81s     Terminate com.jonathanjing.tongxing.dev:27757
+2026-10-30 11:09:19.853 xcodebuild[16915:6717994] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+2026-10-30 11:09:19.853 xcodebuild[16915:6717994] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+Test Case '-[TongxingUITests.ListeningFlowUITests testVoiceDemoVideoUsesVerifiedClipAndReturnsPaused]' passed (23.022 seconds).
+Test Suite 'ListeningFlowUITests' failed at 2026-10-30 11:09:21.045.
+	 Executed 56 tests, with 5 tests skipped and 2 failures (0 unexpected) in 1446.778 (1446.812) seconds
+Test Suite 'TongxingUITests.xctest' failed at 2026-10-30 11:09:21.046.
+	 Executed 56 tests, with 5 tests skipped and 2 failures (0 unexpected) in 1446.778 (1446.813) seconds
+Test Suite 'Selected tests' failed at 2026-10-30 11:09:21.046.
+	 Executed 56 tests, with 5 tests skipped and 2 failures (0 unexpected) in 1446.778 (1446.814) seconds
+2026-10-30 11:09:21.107 xcodebuild[16915:6717994] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+2026-10-30 11:09:21.108 xcodebuild[16915:6717994] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+2026-10-30 11:09:35.921 xcodebuild[16915:6717994] [MT] IDETestOperationsObserverDebug: 1485.535 elapsed -- Testing started completed.
+2026-10-30 11:09:35.921 xcodebuild[16915:6717994] [MT] IDETestOperationsObserverDebug: 0.000 sec, +0.000 sec -- start
+2026-10-30 11:09:35.921 xcodebuild[16915:6717994] [MT] IDETestOperationsObserverDebug: 1485.535 sec, +1485.535 sec -- end
+
+Test session results, code coverage, and logs:
+	~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.claude/worktrees/ios-beta-1.26.33/artifacts/tongxing-ios/2026-10-30/cli/20261030T104446-test-7fd2ef3f/test.xcresult
+
+Failing tests:
+	ListeningFlowUITests.testAccessibilityTextDockKeepsPlaybackControlsAvailable()
+	ListeningFlowUITests.testReviewedStudyProductsAreNotDisplayed()
+
+** TEST FAILED **
+
+Testing started
+
+Exit status: 65

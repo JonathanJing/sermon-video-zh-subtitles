@@ -1,0 +1,31 @@
+{
+  "status": "published_http_verified",
+  "deliveryType": "four_layer_release_catalog_default_fix",
+  "pageId": "revelation-jesus-wins-20261025",
+  "baselineVersion": "sites/ai-for-god-sermon-audio/versions/361c2ecfb4a9f5ea",
+  "newVersion": "sites/ai-for-god-sermon-audio/versions/61e7e79c4fa61b42",
+  "changedFiles": [
+    "/multilingual-v3.json",
+    "/multilingual-v4.json",
+    "/multilingual-v5.json"
+  ],
+  "catalogSHA256": {
+    "v5": "64ab3b4372fb77b6b463aac4b84497aba3868a9f1c615515a2efc030bc324364",
+    "v4": "9e6d4ae20c838eea001380b8c29757817898f6fd6aa1fcb12cc07ff0f187aff1",
+    "v3": "0aa7027bce2e891be35e6d9c828f5aee29350de0e6cc8582548c996269c5d13b"
+  },
+  "publicFileCount": 328,
+  "allPublicFilesByteIdenticalToCandidate": true,
+  "selectedPosterLocales": [
+    "zh-Hans",
+    "ko",
+    "es"
+  ],
+  "posterSHA256": {
+    "zh-Hans": "086ece7bffd14656ab369d4a3c850034342826e7597befdf5074ce1d40259359",
+    "ko": "875fa22420cd9cf245a5857ce3e45935b5196a4c8041aae5d1a369704a83f0d2",
+    "es": "23b0a0e8fe7acd7a6dfcb18b4f87ad8bca2d92ff4d582218c76a97f1c81c3db3"
+  },
+  "apnsResent": false,
+  "deviceVerification": "not_run"
+}

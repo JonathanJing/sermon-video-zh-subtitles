@@ -2,11 +2,11 @@
 
 媒体获取参考：[Resi 直播已播内容下载](../resi-live-download.zh.md)（冻结公开清单、合并、校验；下载完成不等于证道范围批准）。
 
-日常代码开发遵循 [`feature/*`／`codex/*` → `dev` → `main`](../development-branch-and-firebase-environments.zh.md) 的两级 PR 门禁；Firebase 听译 App 的 Dev 与 Production 环境必须使用独立 project，避免多语言候选影响当前生产 App。
+日常代码开发遵循 [`feature/*`／`codex/*` → `dev` → `main`](../development-branch-and-firebase-environments.zh.md) 的两级 PR 门禁（`dev → main` 晋升自 2026-10-24 起用 merge commit，不再 squash）；Firebase 听译 App 的 Dev 与 Production 环境必须使用独立 project，避免多语言候选影响当前生产 App。
 
-这份 README 是项目的 workflow source of truth。它描述三条相互独立但可共享证据的路径：四层多语言预制内容与同行页面、post-live 双 PDF、周日本地实时字幕。执行时先按 [AGENTS.md](../../AGENTS.md) 的任务路由读取对应入口，不必加载全部历史文档。
+这份 README 是项目的 workflow source of truth。它描述三条相互独立但可共享证据的交付路径：四层多语言预制内容与同行页面、post-live 双 PDF、周日本地实时字幕。三条路径按交付类型划分（`four_layer_release`、`dual_pdf`、`live_session`）；其中第一条有两条生产路线——正式四层流水线与逐句优先代理直做——它们共享 Layer 1，产出同一种发布页面。执行时先按 [AGENTS.md](../../AGENTS.md) 的任务路由读取对应入口，不必加载全部历史文档。
 
-正文校准日期：**2026-10-22**。模型默认以[运行时策略](../production-model-runtime-policy.zh.md)为准：新 Layer 2 默认 DeepSeek Flash low 初译／high 复核，Sol／Opus 为显式回退；策略切换不代表 canonical DeepSeek 真实生产已验收。历史运行、9 月现场反馈及回放数据保留原日期与冻结身份。当前提交、push、远端部署、实时服务健康、实体设备和现场验收仍须分别核对。
+正文校准日期：**2026-10-31**。本轮补齐逐句优先代理直做与双人播客两种预制生产形态、2026-10-28 音频门禁退役，并接入 2026-10-31 的系统总览图与逐句优先流程图；模型默认以[运行时策略](../production-model-runtime-policy.zh.md)为准：新 Layer 2 默认 DeepSeek Flash low 初译／high 复核，Sol／Opus 5.5 为显式回退；策略切换不代表 canonical DeepSeek 真实生产已验收。历史运行、9 月现场反馈及回放数据保留原日期与冻结身份。当前提交、push、远端部署、实时服务健康、实体设备和现场验收仍须分别核对。
 
 状态定义：
 
@@ -18,13 +18,17 @@
 
 ![周六、周日与 Discovery 的总体关系](../diagrams/project-map.svg)
 
-当前三条路径：
+正式四层路线的系统总览见[四层制作与发布架构图](../diagrams/tongxing-system-architecture.svg)（2026-10-31，Archify 生成；只覆盖正式路线，不含逐句优先线）。图稿清单、Dev 预览站与再生成命令见[流程图清单](../diagrams/README.md)与 [Archify 源与再生成](../diagrams/archify-sources.md)；图稿更新不证明任何运行或部署状态。
+
+当前三条交付路径（第一条有两条生产路线）：
 
 1. **预制每周内容：** 绑定已批准来源与英文事实，按 locale 独立生成经审校文字、讲员音色音轨、同步字幕、学习产物、页面和分享海报；同篇不同来源通过 v5 family 汇聚，target 保留各自源身份。
 2. **周六双 PDF：** 从完整 post-live 媒体与人工范围生成中英阅读版和中文证道同行 PDF，并可导出受控的周日 Context Pack。
 3. **周日实时字幕：** 以当场麦克风和当下英文 ASR 为事实来源，本地生成中文字幕并保留独立恢复录音。
 
-**多语言生产合同：** 今后预制生产统一使用 Layer 1“共享英文事实与锚点”、Layer 2“目标语言文字”、Layer 3“目标语言音频与同步”、Layer 4“多语言发布与播放”。四个版本化接口见[多语言生产四层接口](../multilingual-production-interfaces.zh.md)，按 locale 的 DAG 调度与长期讲员 checkpoint 管理见[多语言每周调度与 Speaker Voice Registry](../multilingual-speaker-voice-registry.zh.md)。后续预制内容以 English Source Package 和 Canonical English Content 为共同主干，中文、韩语、西班牙语、越南语及其他语言作为独立同级分支；禁止以中文作为其他语言的默认翻译源。当前四层 producer、按语言恢复和 Layer 4 v3/v4/v5 发布合同见各层文档；2026-09-27 起已有三语正式内容，不能再以早期六句韩语演示概括全部实施状态。独立机器裁判不授予人工批准；每周仍须核对四个 canonical package、该语言人审或有效豁免、发布及 HTTP 证据。现有 legacy 工具只证明其明确的 PDF、中文音频或页面范围；设备、全篇听感与现场同步另记。迁移顺序见[英文源到多语言证道生产 POC](../english-to-multilingual-production-poc.zh.md)。
+第 1 条的两条生产路线产出同一种 `four_layer_release` 页面：正式四层流水线（第 0 节主线）与逐句优先代理直做（第 0 节末）；同一个 `pageId` 只能由一条路线发布。
+
+**多语言生产合同：** 今后正式四层预制生产统一使用 Layer 1“共享英文事实与锚点”、Layer 2“目标语言文字”、Layer 3“目标语言音频与同步”、Layer 4“多语言发布与播放”。四个版本化接口见[多语言生产四层接口](../multilingual-production-interfaces.zh.md)，按 locale 的 DAG 调度与长期讲员 checkpoint 管理见[多语言每周调度与 Speaker Voice Registry](../multilingual-speaker-voice-registry.zh.md)。后续预制内容以 English Source Package 和 Canonical English Content 为共同主干，中文、韩语、西班牙语、越南语及其他语言作为独立同级分支；禁止以中文作为其他语言的默认翻译源。当前四层 producer、按语言恢复和 Layer 4 release v3／v4、catalog v5／v4／v3（family 投影）发布合同见各层文档；2026-09-27 起已有三语正式内容，不能再以早期六句韩语演示概括全部实施状态。独立机器裁判不授予人工批准；每周仍须核对四个 canonical package、该语言人工审核或有效文本豁免、音频人工整轨听审、发布及 HTTP 证据。现有 legacy 工具只证明其明确的 PDF、中文音频或页面范围；设备、全篇听感与现场同步另记。迁移顺序见[英文源到多语言证道生产 POC](../english-to-multilingual-production-poc.zh.md)。
 环境首次准备与周更开工核对见[多语言证道生产环境准备](../environment-preparation.zh.md)，其中按四层列出凭据、工具、Codex Skills、Layer 4 发布及海报收尾。
 
 ![四层多语言生产：每层流程、模型、输出与门禁](../diagrams/four-layer-production-workflow.svg)
@@ -35,13 +39,13 @@
 - 周日路径的目标是低延迟显示，同时保留足够录音和日志供回放、A/B 与后续训练。
 - 周日实时录音不能依赖 ASR 或翻译成功；模型失败时继续录音，并显示英文或降级状态。
 - 周六 content pack 是可选增强；`A0 / none` 始终保留为可比较基线。
-- 双 PDF 的 `complete`、周日实时 session 的 `finalized` 和四层预制发行的 `complete` 是三个不同范围，Agent 和报告必须显式标记。
+- 双 PDF 的 `complete`、周日实时 session 的 `finalized` 和四层预制发行的 `complete` 是三个不同范围，Agent 和报告必须显式标记。逐句优先路线发布的页面属于同一个四层预制发行 `complete`，不另立第四种完成状态，区别在审核依据（人工整轨听审，无机器质检豁免）。
 
 ## 0. 预制每周内容：英文视频到同行页面
 
 ![两路来源、中文配音审核与同行页面发行](../diagrams/saturday-chinese-voice-workflow.svg)
 
-当前入口是[配音操作 Runbook](../../experiments/sermon-dubbing-poc/SATURDAY_AUDIO_RUNBOOK.zh.md)、[CUV 生产合同](../sermon-cuv-production.zh.md)和[每周发行流程](../tongxing-weekly-release.zh.md)。早期的[原讲员音色方案草案](../saturday-to-sunday-chinese-voice-plan.zh.md)只保留设计历史，不再描述当前实现状态。
+预制内容有两条生产路线：正式四层流水线（本节主线）与逐句优先代理直做（见本节末）；两者产出同一种 `four_layer_release` 页面。正式周更以[Codex 本地周末生产 Runbook](../codex-local-production-runbook.zh.md)与[周更运行配置](../weekly-run-profile.zh.md)开工；中文配音 legacy adapter 见[配音操作 Runbook](../../experiments/sermon-dubbing-poc/SATURDAY_AUDIO_RUNBOOK.zh.md)，经文引用见[CUV 生产合同](../sermon-cuv-production.zh.md)，页面与资产发布见[每周发行流程](../tongxing-weekly-release.zh.md)。早期的[原讲员音色方案草案](../saturday-to-sunday-chinese-voice-plan.zh.md)只保留设计历史，不再描述当前实现状态。
 
 2026-09-20 的 legacy 中文链已连接以下阶段；下列模型与算力说明按当前策略校准，不改写该次运行身份：
 
@@ -49,6 +53,8 @@
 - `gpt-transcribe` 英文、MFA 阅读对齐；当前双 PDF／阅读稿使用 `gpt-6.1-sol / high`，旧 Astra 配音 job 保留其冻结模型与审核回执；2026-10-01 起，本地模型按 [Spark 默认、MacBook fallback](../local-production-compute-policy.zh.md) 路由，已存在任务保留原后端恢复身份。
 - 讲员检查点 TTS、中文回转写、原声锚点、同步组装、人工听审、页面构建、声音指纹绑定、发行和 HTTP 文件核验。
 - 页面发行后由 Codex 单独生成并检查本周二维码海报；现有定时 Supervisor 不自动调用 ImageGen，也不自动上传或发送海报。
+
+**音频门禁（2026-10-28 起）：** ASR 初筛、二级 ASR 与机器试听豁免已从正式与实验路径移除；正式 Layer 3 由[正式配音 renderer](../formal-layer3-renderer.zh.md) 逐单元合成、`audio.package` 打包，再由 `audio.human_review` 在真人完成整轨 1 倍速播放与视频同步核对后签发 `audio-human-review-receipt-v5`。确定性音频 QC（时长／静音／削波）只是预检，不构成接受依据；[机器质检豁免](../machine-quality-waiver.zh.md) 从此只保留文字豁免，上文 2026-09-20 链里的「中文回转写」与「机器豁免」保留为历史说明。
 
 ### 预制播放质量门槛（2026-09-20 现场反馈）
 
@@ -60,13 +66,25 @@
 2. 将冻结英文与原声做词级时间轴对齐；低置信、未覆盖、非单调和边界不连续处须显式审核，不用阅读版时间填补。
 3. 从已对齐英文生成逐句完整中文，并保存一对一、一对多或多对一的来源映射与覆盖报告。中文可以自然表达，但不得为时槽静默删义。
 4. 完整性通过后才生成 TTS 和同步音轨。中文保持自然语速；若完整中文无法自然放入原声时槽，该段停止发布并重新分段或修订，不自动变速、拉伸或裁切。
-5. 正式发行须增加同一录音正常 1 倍速的全篇播放听审，分别记录英文覆盖、中文语速和同步状态。文件可播、回转写、指纹定位或 HTTP 核验均不能单独满足该门槛。
+5. 正式发行的音频门禁是同一录音正常 1 倍速的全篇播放听审（`audio-human-review-receipt-v5`），分别记录英文覆盖、中文语速和同步状态。2026-10-28 起音频机器听审（ASR 初筛、二级 ASR、机器试听豁免）已退役，确定性音频 QC（时长／静音／削波）只作预检、不构成接受依据；文件可播、回转写、指纹定位或 HTTP 核验也不能单独满足该门槛。
 
 英文词序、句／停顿锚、逐句覆盖、独立语义复核、自然语速音频和滚动同传排程已实现为版本化 shadow 合同，见[句级锚定与滚动同传设计](../sentence-aligned-interpretation.zh.md)及[英文逐字稿与词级时间轴 POC](../../experiments/english-word-timeline-poc/README.zh.md)。13 个分层区块的 99 个意义单元已完成 Astra 初译和不同 request 的独立复核，99/99 机器语义检查通过；99 组自然语速 Qwen TTS 也已生成并完整解码，但实测滚动结束延迟中位数 8.33 秒、P95 20.56 秒、最大 26.13 秒，52/99 组超过 8 秒门槛，因此状态仍为 `candidate_blocked`。
 
-未来周生产现已接入 Layer 1 clause-stable v2 的**自动 shadow 阶段**：当 `run_post_live_subtitle_generation.py` 配置 `--dubbing-config` 时，默认从同一 run 的 `segments_timed_en_corrected.json` 生成哈希隔离的 `anchor-manifest.json`、`english-source-package.json` 和 `receipt.json`。干净锚点先记录 `waiting_machine_judge`；绑定独立逐句机器裁判通过的收据后，`candidate_ready_for_translation` 才允许 Layer 2 shadow 实验。用 `--sentence-interpretation-english-review` 绑定来源、完整性、字词对齐和句／停顿人工审核后，才可进入 `ready_for_translation`。锚点问题写入 `waiting_anchor_review` 并停止新候选链。只做双 PDF 时可以显式关闭 shadow，但那个 run 不得称为四层生产完成。Layer 1 不调用翻译或 TTS，也不改变双 PDF 产物；完整 Layer 2–4 及全篇听审通过前，不宣称播放问题已解决。详见[四层接口](../multilingual-production-interfaces.zh.md)与[9 月 20 日制作记录](../production-2026-09-20.zh.md#当日实际播放复盘)。
+未来周生产现已接入 Layer 1 clause-stable v2 的**自动 shadow 阶段**：主生产入口 `workflows.dual_pdf.post_live`（`.venv/bin/python tools/ops/run.py workflows.dual_pdf.post_live`；旧脚本名 `run_post_live_subtitle_generation.py` 已于 2026-10-19 移除）配置 `--dubbing-config` 时，默认从同一 run 的 `segments_timed_en_corrected.json` 生成哈希隔离的 `anchor-manifest.json`、`english-source-package.json` 和 `receipt.json`。干净锚点先记录 `waiting_machine_judge`；绑定独立逐句机器裁判通过的收据后，`candidate_ready_for_translation` 才允许 Layer 2 shadow 实验。用 `--sentence-interpretation-english-review` 绑定来源、完整性、字词对齐和句／停顿人工审核后，才可进入 `ready_for_translation`。锚点问题写入 `waiting_anchor_review` 并停止新候选链。只做双 PDF 时可以显式关闭 shadow，但那个 run 不得称为四层生产完成。Layer 1 不调用翻译或 TTS，也不改变双 PDF 产物；完整 Layer 2–4 及全篇听审通过前，不宣称播放问题已解决。详见[四层接口](../multilingual-production-interfaces.zh.md)与[9 月 20 日制作记录](../production-2026-09-20.zh.md#当日实际播放复盘)。
 
 [9 月 20 日制作记录](../production-2026-09-20.zh.md)保存了一次已完成页面、音频修复、用户听审／Firebase／iOS 播放确认及海报交付的运行证据。该记录不证明未来周次自动成功，也不证明真实现场同步；同录制声音定位、实体设备、现场音频路由与其他场次复用仍分别验收。
+
+### 逐句优先代理直做（第二条预制生产路线，2026-10-21 起有运行记录）
+
+另一条预制生产路线不走正式四层流水线的哈希绑定与机器质检门禁：英文按锚点单元逐句拆开，代理逐句翻译与独立复核，Spark 用讲员自己的 checkpoint 逐句合成，合并成整轨后由用户听完整轨、审过译文，再以 `human_reviewed` 发布为 `four_layer_release` 的 Layer 4 页面；除发布使用受保护发布器 `sfa_publish.py` 外，其余都在代理会话里完成。开工用 `sfa.py start`，发布已改为单一页面配置驱动（2026-10-31 合并，`DEV-SF-004`；旧按页驱动仍保留给未迁移页面与特殊修复路径）。它只读正式 Layer 1 的批准窗口、锚点、讲员映射与已人工批准的译文，不写正式目录；没有机器质检校准（不能用豁免代替人审）、没有声音指纹同步，实验目录里的中间产物不做哈希绑定（发布包本身仍绑定来源、候选、音频与审核收据的哈希），每次正式部署单独授权。同一个 `pageId` 只能由一条路线发布。
+
+![逐句优先配音的每周运行流程：用户人审、本机脚本与 DGX Spark 独占会话](../diagrams/sentence-first-weekly-workflow.svg)
+
+单讲员证道和双人播客都按这条路线走。状态：**Working**（2026-10-21 首个片段；2026-10-22／10-23 连续两个三语双人播客正式页以 `human_reviewed` 发布，10-23 整期 946 句；2026-10-24 重建；2026-10-30 dry run；2026-10-31 单一发布驱动合并），不代表无人值守发布、设备或现场验收。路线说明、检查、用时与限制见[逐句优先、代理直做的配音生产路线](../sentence-first-agent-production.zh.md)，命令见 [runbook](../../experiments/sentence-first-agent/AGENTS.md)，运行记录见[播客正式发布](../reports/20261022-podcast-production-publication.zh.md)与[整期流程复盘](../reports/20261023-sentence-first-full-episode-flow-review.zh.md)。
+
+### 双人播客（正式四层的两人形态，2026-10-21 起采用合同）
+
+两位讲员对谈的播客按[双人播客制作规范](../podcast-dual-speaker-production.zh.md)在正式四层内制作，交付类型同样是 `four_layer_release`，不是 `live_session`。相对单讲员周更，它另加独立的说话人区分产物与人工映射收据、按讲员切分的锚点与路由、两位讲员各自的语言能力与声音授权，以及按讲员路由的 Layer 3 speech job。状态：**合同生效（2026-10-21）**；Layer 2 可按合同走，但 Layer 1 的说话人区分 producer 与正式 Layer 3／Layer 4 的双人入口尚未在 dev 实现（缺口与跟踪见该页「现有代码的缺口」），因此不按 Working 计。2026-10-22／10-23 的两期双人正式页面来自逐句优先路线，不能记作本合同的验收；2026-10-03 那期保留冻结身份，不按本合同迁移。
 
 ## A. 周六：直播/归档到两个 PDF
 
@@ -78,7 +96,7 @@
 
 统一入口与持久化推进的开发说明见[统一 CLI 与持久化执行](../unified-cli-pipeline.zh.md)，流程、产物和命令的字段合同见[协议](../unified-cli-protocol.zh.md)。命令、owner 服务和验收目标仍是拟议能力，不代表正式生产已经打通或提速已经实测。
 
-**Layer 2 新生产模型流程：** 已审核的 `ready_for_translation` 英文包按[当前模型及调用策略](../production-model-runtime-policy.zh.md)执行：DeepSeek Flash low 初译、high 逐组独立复核为新 policy 默认，Sol 6.1 high／medium 和 Opus 为显式回退，按冻结后端与已批准的 tier、预算调用，之后运行冻结语言插件和候选准入。正式后继门禁消费人工收据，或在已支持路径消费有效的[机器质检豁免](../machine-quality-waiver.zh.md)；机器豁免保持 `humanApproval=false`。单组失败的修复边界与预检清单见[Layer 2：只重跑缺失组](../layer2-targeted-repair-and-resume.zh.md)。旧运行保持其原 policy／收据身份；双 PDF 路径和 Layer 1 shadow 不会自动升级为 Layer 2 完成。
+**Layer 2 新生产模型流程：** 已审核的 `ready_for_translation` 英文包按[当前模型及调用策略](../production-model-runtime-policy.zh.md)执行：DeepSeek Flash low 初译、high 逐组独立复核为新 policy 默认，Sol 6.1 high／medium 和 Opus 5.5 high／medium 为显式回退，按冻结后端与已批准的 tier、预算调用，之后运行冻结语言插件和候选准入。正式后继门禁消费人工收据，或在已支持路径消费有效的[文本机器质检豁免](../machine-quality-waiver.zh.md)；机器豁免保持 `humanApproval=false`。音频没有机器豁免：人工整轨 1× 听审是唯一音频发布门禁（2026-10-28 起）。单组失败的修复边界与预检清单见[Layer 2：只重跑缺失组](../layer2-targeted-repair-and-resume.zh.md)。旧运行保持其原 policy／收据身份；双 PDF 路径和 Layer 1 shadow 不会自动升级为 Layer 2 完成。
 
 **当前控制层：** [Production Supervisor](../sermon-production-supervisor-agent.zh.md) 的新 dev／正式本地任务默认 `--agent-backend codex-cli`，使用 Luna medium fast。旧 Agents API 会话以显式 `--agent-backend agents-api` 按原身份恢复，新 SDK 会话禁用，自动后端 fallback 禁用。source、审批或适用的豁免、lease、恢复、QA 与发布继续由确定性层约束，完成状态须重新读取 production snapshot。
 
@@ -155,7 +173,7 @@
 
 ### 当前可读字幕证据
 
-代码基线为 main `beeda82`；真实长测运行在 clean `edaa9d1`，之后的 POC 变更只有文档。完整 provenance、指标与限制见[2026-09-04 验收报告](../../experiments/local-live-poc/benchmarks/SUNDAY_READINESS_20260904.zh.md)。
+代码与证据基线：9 月 4 日报告提交在 `main beeda82`，真实长测运行身份为 clean `edaa9d1`。此后 POC 已有多次代码变更（2026-09-05 接入 v4.1 翻译、2026-09-12 本地 supervisor、2026-09-25 合入、2026-10-15 legacy web 迁移、2026-10-20 R1 路径迁移）；9 月 4 日指标只对应 `edaa9d1` 冻结身份，不代表当前代码重跑结果。完整 provenance、指标与限制见[2026-09-04 验收报告](../../experiments/local-live-poc/benchmarks/SUNDAY_READINESS_20260904.zh.md)。
 
 - MacBook Pro M1 Max 64 GB，Qwen3-ASR 0.6B 8-bit + MiLMMT 4B Q8，冻结 A0、无 Pack、3 秒窗口、即时翻译。
 - 3620.818 秒浏览器 WAV 回放，20 分钟唯一音频循环三轮；真实 MediaRecorder/Worklet、ASR、翻译和操作页显示，不经过物理麦克风。
@@ -223,5 +241,10 @@
 - [公网手机字幕分享方案](../../experiments/local-live-poc/PUBLIC_SHARING.zh.md)
 - [周六产物到周日 Runtime Pack 方案与开发步骤](../saturday-to-sunday-context-pack-plan.zh.md)
 - [稳定 post-live PDF 工作流](../stable-post-live-reading-pdf-workflow.zh.md)
+- [正式 Layer 3 配音 renderer](../formal-layer3-renderer.zh.md)
+- [逐句优先、代理直做的配音生产路线](../sentence-first-agent-production.zh.md)与 [runbook](../../experiments/sentence-first-agent/AGENTS.md)
+- [双人播客制作规范](../podcast-dual-speaker-production.zh.md)
+- [流程图清单与预览站](../diagrams/README.md)
+- [少返工手册](../rework-avoidance.zh.md)：返工／变更／等待的口径与开工前检查
 - [本地周末生产 runbook](../codex-local-production-runbook.zh.md)
 - [完整文档索引](../README.zh.md)

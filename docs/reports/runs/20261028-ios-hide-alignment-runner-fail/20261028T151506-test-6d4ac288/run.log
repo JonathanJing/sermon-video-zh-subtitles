@@ -1,0 +1,262 @@
+
+$ /usr/bin/xcrun xcodebuild -project ~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/apps/tongxing-ios/Tongxing.xcodeproj -list -json -disableAutomaticPackageResolution
+{
+  "project" : {
+    "configurations" : [
+      "BetaDebug",
+      "BetaRelease",
+      "Debug",
+      "Release"
+    ],
+    "name" : "Tongxing",
+    "schemes" : [
+      "ListeningActivityExtension",
+      "Tongxing",
+      "TongxingBeta",
+      "TongxingCore",
+      "TongxingInfrastructure",
+      "TongxingPreview",
+      "TongxingScreenshots"
+    ],
+    "targets" : [
+      "Tongxing",
+      "ListeningActivityExtension",
+      "TongxingTests",
+      "TongxingUITests"
+    ]
+  }
+}
+
+$ /usr/bin/xcrun simctl list devices available --json
+{
+  "devices" : {
+    "com.apple.CoreSimulator.SimRuntime.iOS-27-0" : [
+      {
+        "dataPath" : "\/Users\/jonathan_jing\/Library\/Developer\/CoreSimulator\/Devices\/A9ACB321-07F8-4540-AD3C-7FACBD384A1F\/data",
+        "dataPathSize" : 5734416384,
+        "logPath" : "\/Users\/jonathan_jing\/Library\/Logs\/CoreSimulator\/A9ACB321-07F8-4540-AD3C-7FACBD384A1F",
+        "udid" : "A9ACB321-07F8-4540-AD3C-7FACBD384A1F",
+        "lastUsedAt" : "2026-10-28T22:15:07Z",
+        "isAvailable" : true,
+... 1114 lines omitted; 20 error-like lines, 20 kept below ...
+[line 474]     export CLANG_WARN_DIRECT_OBJC_ISA_USAGE\=YES_ERROR
+[line 483]     export CLANG_WARN_OBJC_ROOT_CLASS\=YES_ERROR
+[line 641]     export GCC_WARN_ABOUT_RETURN_TYPE\=YES_ERROR
+[line 838]     export RUNTIME_EXCEPTION_ALLOW_DYLD_ENVIRONMENT_VARIABLES\=NO
+[line 839]     export RUNTIME_EXCEPTION_ALLOW_JIT\=NO
+[line 840]     export RUNTIME_EXCEPTION_ALLOW_UNSIGNED_EXECUTABLE_MEMORY\=NO
+[line 841]     export RUNTIME_EXCEPTION_DEBUGGING_TOOL\=NO
+[line 842]     export RUNTIME_EXCEPTION_DISABLE_EXECUTABLE_PAGE_PROTECTION\=NO
+[line 843]     export RUNTIME_EXCEPTION_DISABLE_LIBRARY_VALIDATION\=NO
+[line 989]     export VALIDATE_DEVELOPMENT_ASSET_PATHS\=YES_ERROR
+[line 1018]     export __DIAGNOSE_INVALID_DEPLOYMENT_TARGET_AS_ERROR\=YES
+[line 1094] 2026-10-28 15:15:13.522 xcodebuild[53169:402877] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+[line 1095] 2026-10-28 15:15:31.812 xcodebuild[53169:402931]  iOSSimulator: F81F811B-0268-4A84-8CCD-83416CA4EC15: Failed to launch app with identifier: com.jonathanjing.tongxing.dev.uitests.xctrunner and options: {
+[line 1138] } (error = Error Domain=FBSOpenApplicationServiceErrorDomain Code=1 "Simulator device failed to launch com.jonathanjing.tongxing.dev.uitests.xctrunner." UserInfo={NSLocalizedDescription=Simulator device failed to launch com.jonathanjing.tongxing.dev.uitests.xctrunner., NSUnderlyingError=0x78a7a2fbd0 {Error Domain=FBSOpenApplicationServiceErrorDomain Code=1 "The request to open "com.jonathanjing.tongxing.dev.uitests.xctrunner" failed." UserInfo={BSErrorCodeDescription=RequestDenied, NSLocalizedDescription=The request to open "com.jonathanjing.tongxing.dev.uitests.xctrunner" failed., NSUnderlyingError=0x78a7a2fa80 {Error Domain=FBSOpenApplicationErrorDomain Code=6 "Application failed preflight checks" UserInfo={BSErrorCodeDescription=Busy, NSLocalizedFailureReason=Application failed preflight checks}}, FBSOpenApplicationRequestID=0x2996, NSLocalizedFailureReason=The request was denied by service delegate (SBMainWorkspace) for reason: Busy ("Application failed preflight checks").}}, NSLocalizedFailureReason=The request was denied by service delegate (SBMainWorkspace) for reason: Busy ("Application failed preflight checks")., FBSOpenApplicationRequestID=0x2996, SimCallingSelector=launchApplicationWithID:options:pid:error:, BSErrorCodeDescription=RequestDenied})
+[line 1139] 2026-10-28 15:15:31.812 xcodebuild[53169:402877] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+[line 1140] 2026-10-28 15:15:31.813 xcodebuild[53169:402877] [MT] IDELaunchReport: 52445600b364eac0:52445600b364ed40:Launching TongxingUITests Finished with error: Simulator device failed to launch com.jonathanjing.tongxing.dev.uitests.xctrunner.
+[line 1143] Failure Reason: The request was denied by service delegate (SBMainWorkspace) for reason: Busy ("Application failed preflight checks").
+[line 1145]     BSErrorCodeDescription = RequestDenied;
+[line 1149]     SimCallingSelector = "launchApplicationWithID:options:pid:error:";
+[line 1152] The request to open "com.jonathanjing.tongxing.dev.uitests.xctrunner" failed.
+... end of omitted section ...
+Failure Reason: The request was denied by service delegate (SBMainWorkspace) for reason: Busy ("Application failed preflight checks").
+User Info: {
+    BSErrorCodeDescription = RequestDenied;
+    FBSOpenApplicationRequestID = 0x2996;
+}
+--
+The operation couldn’t be completed. Application failed preflight checks
+Domain: FBSOpenApplicationErrorDomain
+Code: 6
+Failure Reason: Application failed preflight checks
+User Info: {
+    BSErrorCodeDescription = Busy;
+}
+--
+
+2026-10-28 15:15:31.814 xcodebuild[53169:402877] [MT] IDELaunchReport: 52445600b364eac0:52445600b364ed40:Launching TongxingUITests com.apple.dt.IDERunOperationWorkerFinished {
+    "device_identifier" = "F81F811B-0268-4A84-8CCD-83416CA4EC15";
+    "device_model" = "iPhone18,1";
+    "device_osBuild" = "26.2 (23C54)";
+    "device_osBuild_monotonic" = 23002054000000000;
+    "device_os_variant" = 1;
+    "device_platform" = "com.apple.platform.iphonesimulator";
+    "device_platform_family" = 2;
+    "device_reality" = 2;
+    "device_thinningType" = "iPhone18,1";
+    "device_transport" = 4;
+    "launchSession_initiator" = 1;
+    "launchSession_schemeCommand" = Test;
+    "launchSession_schemeCommand_enum" = 2;
+    "launchSession_targetArch" = arm64;
+    "launchSession_targetArch_enum" = 6;
+    "operation_duration_ms" = 18288;
+    "operation_errorCode" = 1;
+    "operation_errorDomain" = FBSOpenApplicationServiceErrorDomain;
+    "operation_errorWorker" = IDELaunchiPhoneSimulatorLauncher;
+    "operation_error_reportable" = 1;
+    "operation_name" = IDELaunchiPhoneSimulatorLauncher;
+    "param_consoleMode" = 0;
+    "param_debugger_attachToExtensions" = 0;
+    "param_debugger_attachToXPC" = 0;
+    "param_debugger_type" = 1;
+    "param_destination_isProxy" = 0;
+    "param_destination_platform" = "com.apple.platform.iphonesimulator";
+    "param_diag_MTE_enable" = 0;
+    "param_diag_MainThreadChecker_stopOnIssue" = 0;
+    "param_diag_MallocStackLogging_enableDuringAttach" = 0;
+    "param_diag_MallocStackLogging_enableForXPC" = 0;
+    "param_diag_allowLocationSimulation" = 1;
+    "param_diag_checker_mtc_enable" = 0;
+    "param_diag_checker_tpc_enable" = 1;
+    "param_diag_gpu_frameCapture_enable" = 3;
+    "param_diag_gpu_shaderValidation_enable" = 0;
+    "param_diag_gpu_validation_enable" = 1;
+    "param_diag_guardMalloc_enable" = 0;
+    "param_diag_memoryGraphOnResourceException" = 0;
+    "param_diag_queueDebugging_enable" = 0;
+    "param_diag_runtimeProfile_generate" = 1;
+    "param_diag_sanitizer_asan_enable" = 0;
+    "param_diag_sanitizer_mtasan_enable" = 0;
+    "param_diag_sanitizer_tsan_enable" = 0;
+    "param_diag_sanitizer_tsan_stopOnIssue" = 0;
+    "param_diag_sanitizer_ubsan_enable" = 0;
+    "param_diag_sanitizer_ubsan_stopOnIssue" = 0;
+    "param_diag_showNonLocalizedStrings" = 0;
+    "param_diag_viewDebugging_enabled" = 0;
+    "param_diag_viewDebugging_insertDylibOnLaunch" = 0;
+    "param_install_style" = 2;
+    "param_launcher_UID" = 2;
+    "param_launcher_allowDeviceSensorReplayData" = 0;
+    "param_launcher_kind" = 0;
+    "param_launcher_style" = 0;
+    "param_launcher_substyle" = 64;
+    "param_runnable_appExtensionHostRunMode" = 0;
+    "param_runnable_productType" = "com.apple.product-type.application";
+    "param_testing_launchedForTesting" = 1;
+    "param_testing_suppressSimulatorApp" = 1;
+    "param_testing_usingCLI" = 0;
+    "sdk_canonicalName" = "iphonesimulator27.1";
+    "sdk_osVersion" = "27.1";
+    "sdk_platformID" = 7;
+    "sdk_variant" = iphonesimulator;
+}
+2026-10-28 15:15:31.814 xcodebuild[53169:402877] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+2026-10-28 15:15:31.814 xcodebuild[53169:402877] [MT] IDELaunchReport: 52445600b364eac0:52445600b364eac0: Finished with error: Simulator device failed to launch com.jonathanjing.tongxing.dev.uitests.xctrunner.
+Domain: FBSOpenApplicationServiceErrorDomain
+Code: 1
+Failure Reason: The request was denied by service delegate (SBMainWorkspace) for reason: Busy ("Application failed preflight checks").
+User Info: {
+    BSErrorCodeDescription = RequestDenied;
+    DVTErrorCreationDateKey = "2026-10-28 22:15:31 +0000";
+    FBSOpenApplicationRequestID = 0x2996;
+    IDERunOperationFailingWorker = IDELaunchiPhoneSimulatorLauncher;
+    SimCallingSelector = "launchApplicationWithID:options:pid:error:";
+}
+--
+The request to open "com.jonathanjing.tongxing.dev.uitests.xctrunner" failed.
+Domain: FBSOpenApplicationServiceErrorDomain
+Code: 1
+Failure Reason: The request was denied by service delegate (SBMainWorkspace) for reason: Busy ("Application failed preflight checks").
+User Info: {
+    BSErrorCodeDescription = RequestDenied;
+    FBSOpenApplicationRequestID = 0x2996;
+}
+--
+The operation couldn’t be completed. Application failed preflight checks
+Domain: FBSOpenApplicationErrorDomain
+Code: 6
+Failure Reason: Application failed preflight checks
+User Info: {
+    BSErrorCodeDescription = Busy;
+}
+--
+
+2026-10-28 15:15:31.814 xcodebuild[53169:402877] [MT] IDELaunchReport: 52445600b364eac0:52445600b364eac0: com.apple.dt.IDERunOperationWorkerFinished {
+    "device_identifier" = "F81F811B-0268-4A84-8CCD-83416CA4EC15";
+    "device_model" = "iPhone18,1";
+    "device_osBuild" = "26.2 (23C54)";
+    "device_osBuild_monotonic" = 23002054000000000;
+    "device_os_variant" = 1;
+    "device_platform" = "com.apple.platform.iphonesimulator";
+    "device_platform_family" = 2;
+    "device_reality" = 2;
+    "device_thinningType" = "iPhone18,1";
+    "device_transport" = 4;
+    "launchSession_initiator" = 1;
+    "launchSession_schemeCommand" = Test;
+    "launchSession_schemeCommand_enum" = 2;
+    "launchSession_targetArch" = arm64;
+    "launchSession_targetArch_enum" = 6;
+    "operation_duration_ms" = 18294;
+    "operation_errorCode" = 1;
+    "operation_errorDomain" = FBSOpenApplicationServiceErrorDomain;
+    "operation_errorWorker" = IDELaunchiPhoneSimulatorLauncher;
+    "operation_error_reportable" = 1;
+    "operation_name" = IDERunOperationWorkerGroup;
+    "param_consoleMode" = 0;
+    "param_debugger_attachToExtensions" = 0;
+    "param_debugger_attachToXPC" = 0;
+    "param_debugger_type" = 1;
+    "param_destination_isProxy" = 0;
+    "param_destination_platform" = "com.apple.platform.iphonesimulator";
+    "param_diag_MTE_enable" = 0;
+    "param_diag_MainThreadChecker_stopOnIssue" = 0;
+    "param_diag_MallocStackLogging_enableDuringAttach" = 0;
+    "param_diag_MallocStackLogging_enableForXPC" = 0;
+    "param_diag_allowLocationSimulation" = 1;
+    "param_diag_checker_mtc_enable" = 0;
+    "param_diag_checker_tpc_enable" = 1;
+    "param_diag_gpu_frameCapture_enable" = 3;
+    "param_diag_gpu_shaderValidation_enable" = 0;
+    "param_diag_gpu_validation_enable" = 1;
+    "param_diag_guardMalloc_enable" = 0;
+    "param_diag_memoryGraphOnResourceException" = 0;
+    "param_diag_queueDebugging_enable" = 0;
+    "param_diag_runtimeProfile_generate" = 1;
+    "param_diag_sanitizer_asan_enable" = 0;
+    "param_diag_sanitizer_mtasan_enable" = 0;
+    "param_diag_sanitizer_tsan_enable" = 0;
+    "param_diag_sanitizer_tsan_stopOnIssue" = 0;
+    "param_diag_sanitizer_ubsan_enable" = 0;
+    "param_diag_sanitizer_ubsan_stopOnIssue" = 0;
+    "param_diag_showNonLocalizedStrings" = 0;
+    "param_diag_viewDebugging_enabled" = 0;
+    "param_diag_viewDebugging_insertDylibOnLaunch" = 0;
+    "param_install_style" = 2;
+    "param_launcher_UID" = 2;
+    "param_launcher_allowDeviceSensorReplayData" = 0;
+    "param_launcher_kind" = 0;
+    "param_launcher_style" = 0;
+    "param_launcher_substyle" = 64;
+    "param_runnable_appExtensionHostRunMode" = 0;
+    "param_runnable_productType" = "com.apple.product-type.application";
+    "param_testing_launchedForTesting" = 1;
+    "param_testing_suppressSimulatorApp" = 1;
+    "param_testing_usingCLI" = 0;
+    "sdk_canonicalName" = "iphonesimulator27.1";
+    "sdk_osVersion" = "27.1";
+    "sdk_platformID" = 7;
+    "sdk_variant" = iphonesimulator;
+}
+
+
+*** If you believe this error represents a bug, please attach the result bundle at ~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-28/cli/20261028T151506-test-6d4ac288/test.xcresult
+
+2026-10-28 15:15:44.325 xcodebuild[53169:402877] [MT] IDETestOperationsObserverDebug: 32.716 elapsed -- Testing started completed.
+2026-10-28 15:15:44.325 xcodebuild[53169:402877] [MT] IDETestOperationsObserverDebug: 0.000 sec, +0.000 sec -- start
+2026-10-28 15:15:44.325 xcodebuild[53169:402877] [MT] IDETestOperationsObserverDebug: 32.716 sec, +32.716 sec -- end
+
+Test session results, code coverage, and logs:
+	~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-28/cli/20261028T151506-test-6d4ac288/test.xcresult
+
+Testing failed:
+	Simulator device failed to launch com.jonathanjing.tongxing.dev.uitests.xctrunner.
+	TongxingUITests-Runner encountered an error (Failed to install or launch the test runner. (Underlying Error: Simulator device failed to launch com.jonathanjing.tongxing.dev.uitests.xctrunner. The request was denied by service delegate (SBMainWorkspace) for reason: Busy ("Application failed preflight checks"). (Underlying Error: The request to open "com.jonathanjing.tongxing.dev.uitests.xctrunner" failed. The request was denied by service delegate (SBMainWorkspace) for reason: Busy ("Application failed preflight checks"). (Underlying Error: The operation couldn’t be completed. Application failed preflight checks))))
+
+** TEST FAILED **
+
+Testing started
+
+Exit status: 65

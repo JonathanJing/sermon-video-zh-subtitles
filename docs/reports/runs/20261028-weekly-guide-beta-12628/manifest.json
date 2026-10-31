@@ -1,0 +1,27 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261028-weekly-guide-beta-12628",
+  "runs": [
+    {
+      "label": "weekly-guide-beta-1.26.28-71-report",
+      "source": "~/.codex/worktrees/weekly-study-guide-design/sermon-video-zh-subtitles/artifacts/weekly-guide-beta-1.26.28-71-report",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "weekly-guide-beta-1.26.28-71-report",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 877,
+      "truncated": false,
+      "sha256": "305df3d857e8fc0be5b1ecdde1e5ce288cc31c95462d87c44737ba16fac406b1",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

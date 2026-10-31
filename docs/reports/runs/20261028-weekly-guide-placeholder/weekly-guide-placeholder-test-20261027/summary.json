@@ -1,0 +1,11 @@
+{
+  "status": "passed",
+  "purpose": "weekly guide placeholder regression",
+  "tests_passed": 92,
+  "tests_failed": 0,
+  "actual_old_candidate": "rejected for known internal placeholder",
+  "limits": [
+    "Known marker only; no proof of translation quality or scripture compliance.",
+    "No hosting deployment or device acceptance."
+  ]
+}

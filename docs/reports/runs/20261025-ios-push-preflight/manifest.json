@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261025-ios-push-preflight",
+  "runs": [
+    {
+      "label": "ios-push-20261025-preflight-report",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/ios-push-20261025-preflight-report",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "ios-push-20261025-preflight-report",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 235,
+      "truncated": false,
+      "sha256": "8bd7fba4fb43eac43e8cbc5e8dc646337b4b38fb87114f333eab5f2666633009",
+      "redactions": {}
+    },
+    {
+      "run": "ios-push-20261025-preflight-report",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 506,
+      "truncated": false,
+      "sha256": "8b8a28d5e157ae48060bfdb57554f69df94fb5d58c7bb67cf7a376dceec61123",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

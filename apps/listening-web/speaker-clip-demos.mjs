@@ -218,7 +218,7 @@ export async function mountSpeakerClipDemos(root, { production = false, doc = do
   body.append(label(catalog.matchedClip ? 'intro' : 'legacy', 'p', 'voice-demo-intro'));
   const player = (asset, speaker, heading, video = false) => {
     let currentAsset = asset;
-    const section = node('section', 'voice-demo-track'), headingNode = label(heading, 'h4');
+    const section = node('section', 'voice-demo-track'), headingNode = label(heading, 'h3');
     const audio = node(video ? 'video' : 'audio'); audio.preload = 'none'; audio.playsInline = true;
     if (video) { audio.controls = true; audio.hidden = true; }
     const controls = node('div', 'voice-demo-controls'), button = node('button', 'voice-demo-play'), icon = node('span');
@@ -256,7 +256,7 @@ export async function mountSpeakerClipDemos(root, { production = false, doc = do
     let selected = speaker.samples.find(sample => sample.locale === 'zh-Hans');
     const synthetic = player(selected, speaker, 'generated');
     const transcript = node('details', 'voice-demo-text'); transcript.append(label(catalog.matchedClip ? 'compare' : 'script', 'summary'));
-    if (catalog.matchedClip) { transcript.append(label('english', 'h4')); const en = node('p', '', speaker.original.text); en.lang = 'en'; transcript.append(en); }
+    if (catalog.matchedClip) { transcript.append(label('english', 'h3')); const en = node('p', '', speaker.original.text); en.lang = 'en'; transcript.append(en); }
     const translation = node('p', '', selected.text); translation.lang = selected.locale; transcript.append(translation);
     const buttons = [];
     for (const locale of DEMO_LOCALES) {

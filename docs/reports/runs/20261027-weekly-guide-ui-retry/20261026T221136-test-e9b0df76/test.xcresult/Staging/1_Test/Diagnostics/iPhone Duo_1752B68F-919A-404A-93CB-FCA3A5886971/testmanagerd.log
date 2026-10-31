@@ -1,0 +1,52 @@
+22:11:40.903 xcodebuild[54603:59469948] Got a sim device notification for iPhone Duo: {
+    notification = "availableDevices_changed";
+}
+22:11:40.903 xcodebuild[54603:59469948] Got a sim device notification for iPhone Duo: {
+    device = "iPhone Duo (1752B68F-919A-404A-93CB-FCA3A5886971, iOS 27.1, Booting)";
+    "last_used_at" = "2026-10-27 05:11:40 +0000";
+    "new_state" = 2;
+    notification = "device_state";
+    "prev_state" = 1;
+}
+22:11:40.903 xcodebuild[54603:59469948] Sim iPhone Duo state changed to 2
+22:11:40.915 xcodebuild[54603:59469952] Got a sim device notification for iPhone Duo: {
+    "SimDeviceNotification_NewBootStatus" = "SimDeviceBootInfo { status = 0 (Booting), elapsed = 0.000000, isTerminal = 0, info = (null) }";
+    "SimDeviceNotification_PreviousBootStatus" = "SimDeviceBootInfo { status = 4294967295 (Finished), elapsed = 0.000000, isTerminal = 1, info = (null) }";
+    device = "iPhone Duo (1752B68F-919A-404A-93CB-FCA3A5886971, iOS 27.1, Booting)";
+    notification = "SimDeviceNotificationType_BootStatus";
+}
+22:11:41.044 xcodebuild[54603:59469952] Got a sim device notification for iPhone Duo: {
+    notification = "availableDevices_changed";
+}
+22:11:41.044 xcodebuild[54603:59469952] Got a sim device notification for iPhone Duo: {
+    device = "iPhone Duo (1752B68F-919A-404A-93CB-FCA3A5886971, iOS 27.1, Booted)";
+    "new_state" = 3;
+    notification = "device_state";
+    "prev_state" = 2;
+}
+22:11:41.044 xcodebuild[54603:59469952] Sim iPhone Duo state changed to 3
+22:11:41.044 xcodebuild[54603:59469952] Sim iPhone Duo: Unregistering for sim device notification with token 3
+22:11:41.044 xcodebuild[54603:59469952] Calling -[SimDevice getenv:error:] for TESTMANAGERD_SIM_SOCK
+22:11:41.122 xcodebuild[54603:59469952] Sim iPhone Duo has testmanagerd socket at /private/var/tmp/com.apple.launchd.qawmhaqEwc/com.apple.testmanagerd.unix-domain.socket
+22:11:41.122 xcodebuild[54603:59469952] Validating test connection socket path (/private/var/tmp/com.apple.launchd.qawmhaqEwc/com.apple.testmanagerd.unix-domain.socket)
+22:11:41.122 xcodebuild[54603:59469952] Constructing transport for test connection socket
+22:11:41.123 xcodebuild[54603:59469952] Connected socket 30 to testmanagerd for Sim iPhone Duo
+22:11:41.130 xcodebuild[54603:59469952] Initiating control session with IDE capabilities: <XCTCapabilities: 0x755f2ea8e0>: {
+    "report crashes capability" = 3;
+}
+22:11:42.604 xcodebuild[54603:59469950] Got reply to control session initiation request (result:error): <XCTCapabilities: 0x756020ccd0>: {
+    "authorize test session capability" = 1;
+    "automation mode" = 1;
+    "initiate daemon control session capability" = 4;
+    "initiate test runner session capability" = 2;
+    "record UI interaction capability" = 2;
+    "recording events as source code" = 1;
+    "request log archive capability" = 1;
+    "structured results configuration" = 1;
+    "supports delayed attachment transfers" = 1;
+}: (null)
+22:11:42.605 xcodebuild[54603:59469950] Requesting crash report collection for process names: assertiond, FrontBoard, testmanagerd, debugserver, TongxingUITests-Runner, runningboardd, xctest, ListeningActivityExtension, Tongxing, SpringBoard, backboardd, DTServiceHub
+22:12:10.341 xcodebuild[54603:59469952] Requesting authorization for pid 54857
+22:12:10.342 xcodebuild[54603:59469948] Got reply to authorization request for pid 54857 (result:error): 1: (null)
+22:13:44.096 xcodebuild[54603:59479526] <XCTDaemonControlSession: 0x756047e170> lost connection to daemon
+22:13:44.098 xcodebuild[54603:59479522] Closing socket 30 to testmanagerd for Sim iPhone Duo

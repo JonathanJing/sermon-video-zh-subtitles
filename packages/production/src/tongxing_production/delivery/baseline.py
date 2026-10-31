@@ -109,7 +109,7 @@ def firebase_config(config, *, environment='dev'):
     """Lossless mapping of supported API VersionConfig to Firebase CLI keys."""
     allowed = {'headers', 'redirects', 'rewrites', 'cleanUrls', 'trailingSlashBehavior'}
     contract.require(set(config) <= allowed, 'Unsupported live Hosting config; preserve explicitly before proceeding')
-    hosting = {'site': hosting_target(environment)['site'], 'public': 'public', 'ignore': ['firebase.json', '**/.*', '**/node_modules/**']}
+    hosting = {'site': hosting_target(environment)['site'], 'public': 'public', 'ignore': ['firebase.json', '**/node_modules/**', '**/.DS_Store']}
     if 'headers' in config:
         hosting['headers'] = [{'source': row['glob'], 'headers': [{'key': k, 'value': v} for k, v in row['headers'].items()]} for row in config['headers']]
     if 'redirects' in config:
@@ -129,6 +129,11 @@ def firebase_config(config, *, environment='dev'):
                              'Invalid live rewrite destination')
             hosting['rewrites'].append({'source': row['glob'],
                                        'destination' if kind == 'path' else kind: row[kind]})
+    headers = hosting.setdefault('headers', [])
+    if not any(row.get('source') == '/.well-known/apple-app-site-association' for row in headers):
+        headers.insert(0, {'source': '/.well-known/apple-app-site-association',
+                          'headers': [{'key': 'Content-Type', 'value': 'application/json'},
+                                      {'key': 'Cache-Control', 'value': 'no-cache'}]})
     if 'cleanUrls' in config:
         hosting['cleanUrls'] = config['cleanUrls']
     if 'trailingSlashBehavior' in config:
@@ -276,6 +281,15 @@ def baseline(out, *, cache_public=None, cache_receipt=None, environment='dev', a
     with ThreadPoolExecutor(max_workers=6) as pool:
         verified = list(pool.map(materialize, rows))
     contract.require(publisher.live_version(request, site) == version, 'Live version changed during baseline acquisition')
+    # Universal Links need the dot-directory; keep one canonical AASA in every
+    # baseline so a later Hosting publish cannot silently drop it.
+    aasa_source = (Path(__file__).resolve().parents[5]
+                   / ('firebase/dev/public' if environment == 'dev' else 'firebase/production-overlay/public')
+                   / '.well-known/apple-app-site-association')
+    if aasa_source.is_file():
+        aasa_target = public / '.well-known/apple-app-site-association'
+        aasa_target.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(aasa_source, aasa_target)
     report = {**catalog_report(public), 'files': files_report(public)}
     write(out / 'seal-report.json', report)
     contract.validate_catalog_snapshot(out, allow_default_locale_drift=allow_default_locale_drift)

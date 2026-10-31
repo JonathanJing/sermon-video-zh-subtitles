@@ -1,6 +1,77 @@
 {
   "sourceLanguage": "zh-Hans",
   "strings": {
+    "手册目录": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Guide contents"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Índice de la guía"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "안내서 목차"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mục lục cẩm nang"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "手册目录"
+          }
+        }
+      }
+    },
+    "查看地图来源": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "View map sources" } },
+        "ko": { "stringUnit": { "state": "translated", "value": "지도 출처 보기" } },
+        "es": { "stringUnit": { "state": "translated", "value": "Ver fuentes del mapa" } },
+        "vi": { "stringUnit": { "state": "translated", "value": "Xem nguồn bản đồ" } }
+      }
+    },
+    "放大图片": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Zoom in" } },
+        "ko": { "stringUnit": { "state": "translated", "value": "이미지 확대" } },
+        "es": { "stringUnit": { "state": "translated", "value": "Ampliar imagen" } },
+        "vi": { "stringUnit": { "state": "translated", "value": "Phóng to ảnh" } }
+      }
+    },
+    "缩小图片": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Zoom out" } },
+        "ko": { "stringUnit": { "state": "translated", "value": "이미지 축소" } },
+        "es": { "stringUnit": { "state": "translated", "value": "Reducir imagen" } },
+        "vi": { "stringUnit": { "state": "translated", "value": "Thu nhỏ ảnh" } }
+      }
+    },
+    "点按可放大图片": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Tap to enlarge image" } },
+        "ko": { "stringUnit": { "state": "translated", "value": "탭하여 이미지 확대" } },
+        "es": { "stringUnit": { "state": "translated", "value": "Toca para ampliar la imagen" } },
+        "vi": { "stringUnit": { "state": "translated", "value": "Chạm để phóng to ảnh" } }
+      }
+    },
     "本周更新": {
       "localizations": {
         "en": {
@@ -255,6 +326,35 @@
         }
       }
     },
+    "点按重新对齐": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tap to align again"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Toca para alinear de nuevo"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "탭하여 다시 정렬"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chạm để căn chỉnh lại"
+          }
+        }
+      }
+    },
     "点按收起按钮或向下轻扫收起播放栏": {
       "extractionState": "manual",
       "localizations": {
@@ -280,6 +380,35 @@
           "stringUnit": {
             "state": "translated",
             "value": "Chạm nút thu gọn hoặc vuốt xuống để thu gọn điều khiển phát"
+          }
+        }
+      }
+    },
+    "跟着现场自动对到当前句": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Auto-aligns to the live sentence"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Alinea con la frase en vivo"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "현장 문장으로 자동 정렬"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tự căn chỉnh theo câu trực tiếp"
           }
         }
       }
@@ -634,6 +763,15 @@
         "ko": { "stringUnit": { "state": "translated", "value": "더 보기" } },
         "es": { "stringUnit": { "state": "translated", "value": "Más" } },
         "vi": { "stringUnit": { "state": "translated", "value": "Thêm" } }
+      }
+    },
+    "其他周次": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Other weeks" } },
+        "ko": { "stringUnit": { "state": "translated", "value": "다른 주" } },
+        "es": { "stringUnit": { "state": "translated", "value": "Otras semanas" } },
+        "vi": { "stringUnit": { "state": "translated", "value": "Các tuần khác" } }
       }
     },
     "已发布页面": {
@@ -2671,6 +2809,35 @@
         }
       }
     },
+    "已对齐 {time}": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aligned {time}"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Alineado {time}"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "{time}에 정렬됨"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đã căn chỉnh {time}"
+          }
+        }
+      }
+    },
     "已对齐至 {time}。": {
       "extractionState": "manual",
       "localizations": {
@@ -3073,6 +3240,35 @@
           "stringUnit": {
             "state": "translated",
             "value": "Bản âm thanh này không có dữ liệu căn chỉnh."
+          }
+        }
+      }
+    },
+    "正在载入听声对齐资料…": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Loading audio alignment data…"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "소리 정렬 자료를 불러오는 중…"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cargando datos de alineación…"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đang tải dữ liệu căn chỉnh…"
           }
         }
       }
@@ -4025,6 +4221,35 @@
           "stringUnit": {
             "state": "translated",
             "value": "Đang dùng âm thanh đã tải"
+          }
+        }
+      }
+    },
+    "正在聆听现场…": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Listening to the room…"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Escuchando el ambiente…"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "현장 소리를 듣는 중…"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đang nghe âm thanh trực tiếp…"
           }
         }
       }
@@ -5839,35 +6064,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Đọc tiếng Trung và mở “Đối chiếu tiếng Anh” ở cuối đoạn để so sánh."
-          }
-        }
-      }
-    },
-    "本篇尚未提供现场对齐资料，请刷新目录或手动定位。": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Live alignment data is not available for this sermon. Refresh the catalog or adjust the position manually."
-          }
-        },
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "이 설교에는 현장 정렬 자료가 없습니다. 목록을 새로고침하거나 수동으로 위치를 조정하세요."
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Este sermón no tiene datos para alineación en vivo. Actualiza el catálogo o ajusta la posición manualmente."
-          }
-        },
-        "vi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Bài giảng này không có dữ liệu căn chỉnh trực tiếp. Làm mới danh mục hoặc tự chỉnh vị trí."
           }
         }
       }
@@ -8925,6 +9121,1267 @@
           "stringUnit": {
             "state": "translated",
             "value": "Kiểm tra chất lượng tự động · Chưa được người duyệt"
+          }
+        }
+      }
+    },
+    "帮助改进同行？": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Help improve Tongxing?"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "동행 개선에 도움을 주시겠어요?"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "¿Nos ayudas a mejorar Tongxing?"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Giúp cải thiện Tongxing?"
+          }
+        }
+      }
+    },
+    "开启匿名使用统计后，我们能知道哪些语言和讲道有人在听。只上传界面语言、收听语言和收听时长；不含姓名、邮箱或广告标识，不跨日追踪。可随时在“隐私与支持”中关闭。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "With anonymous usage statistics on, we can see which languages and sermons people listen to. Only the interface language, listening language and listening time are sent — no name, email or advertising identifier, and no tracking across days. You can turn it off anytime in “Privacy & Support”."
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "익명 사용 통계를 켜면 어떤 언어와 설교를 듣는지 알 수 있습니다. 화면 언어, 청취 언어, 청취 시간만 전송하며 이름, 이메일, 광고 식별자는 포함하지 않고 날짜를 넘어 추적하지 않습니다. “개인정보 및 지원”에서 언제든지 끌 수 있습니다."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Con las estadísticas anónimas activadas, sabremos qué idiomas y sermones se escuchan. Solo se envían el idioma de la interfaz, el idioma de escucha y el tiempo escuchado; sin nombre, correo ni identificador publicitario, y sin seguimiento entre días. Puedes desactivarlas cuando quieras en “Privacidad y asistencia”."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Khi bật thống kê sử dụng ẩn danh, chúng tôi biết được ngôn ngữ và bài giảng nào đang được nghe. Chỉ gửi ngôn ngữ giao diện, ngôn ngữ nghe và thời gian nghe; không có tên, email hay mã quảng cáo, không theo dõi qua các ngày. Bạn có thể tắt bất cứ lúc nào trong “Quyền riêng tư và hỗ trợ”."
+          }
+        }
+      }
+    },
+    "开启统计": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Turn on"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "통계 켜기"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Activar"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bật thống kê"
+          }
+        }
+      }
+    },
+    "暂不": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Not now"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "나중에"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ahora no"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Để sau"
+          }
+        }
+      }
+    },
+    "首次收听满 3 分钟后，App 会在收听页询问一次是否开启；选择任一项后不再询问。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "After your first 3 minutes of listening, the app asks once on the listening page whether to turn this on. After you choose either option, it won’t ask again."
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "처음 3분 동안 들은 뒤 앱이 청취 화면에서 켤지 한 번 묻습니다. 어느 쪽을 선택하든 다시 묻지 않습니다."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tras tus primeros 3 minutos de escucha, la app pregunta una vez en la página de escucha si deseas activarlo. Después de elegir cualquiera de las opciones, no volverá a preguntar."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sau 3 phút nghe đầu tiên, ứng dụng sẽ hỏi một lần trên trang nghe có muốn bật hay không. Sau khi bạn chọn, ứng dụng sẽ không hỏi lại."
+          }
+        }
+      }
+    },
+    "选择开启后，同行会按你选的内容语言发送每周新内容通知。默认关闭，可随时退出。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "If you enable notifications, Tongxing will notify you of new weekly content in your chosen language. Off by default; you can leave anytime."
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "알림을 켜면 선택한 콘텐츠 언어로 매주 새 콘텐츠를 알려 드립니다. 기본적으로 꺼져 있으며 언제든 해제할 수 있습니다."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Si activas las notificaciones, Tongxing te avisará del nuevo contenido semanal en el idioma elegido. Están desactivadas por defecto y puedes darte de baja cuando quieras."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Khi bật thông báo, Tongxing sẽ báo nội dung mới hằng tuần bằng ngôn ngữ bạn chọn. Mặc định tắt; bạn có thể hủy bất cứ lúc nào."
+          }
+        }
+      }
+    },
+    "通知内容语言": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Notification content language"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "알림 콘텐츠 언어"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Idioma del contenido de las notificaciones"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ngôn ngữ nội dung thông báo"
+          }
+        }
+      }
+    },
+    "关闭每周通知": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Turn off weekly notifications"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "주간 알림 끄기"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Desactivar notificaciones semanales"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tắt thông báo hằng tuần"
+          }
+        }
+      }
+    },
+    "开启每周通知": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Turn on weekly notifications"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "주간 알림 켜기"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Activar notificaciones semanales"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bật thông báo hằng tuần"
+          }
+        }
+      }
+    },
+    "订阅状态": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Subscription status"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "구독 상태"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Estado de la suscripción"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trạng thái đăng ký"
+          }
+        }
+      }
+    },
+    "每周通知": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Weekly notifications"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "주간 알림"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Notificaciones semanales"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Thông báo hằng tuần"
+          }
+        }
+      }
+    },
+    "通知默认关闭。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Notifications are off by default."
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "알림은 기본적으로 꺼져 있습니다."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Las notificaciones están desactivadas por defecto."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Thông báo được tắt theo mặc định."
+          }
+        }
+      }
+    },
+    "系统通知已关闭。可在系统设置中更改。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "System notifications are off. You can change this in Settings."
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "시스템 알림이 꺼져 있습니다. 설정에서 변경할 수 있습니다."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Las notificaciones del sistema están desactivadas. Puedes cambiarlas en Ajustes."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Thông báo hệ thống đang tắt. Bạn có thể thay đổi trong Cài đặt."
+          }
+        }
+      }
+    },
+    "无法确认系统通知权限。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Could not confirm notification permission."
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "알림 권한을 확인할 수 없습니다."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No se pudo confirmar el permiso de notificaciones."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Không thể xác nhận quyền thông báo."
+          }
+        }
+      }
+    },
+    "系统通知未获允许；没有订阅。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Notifications were not allowed; you are not subscribed."
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "알림이 허용되지 않아 구독하지 않았습니다."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No se permitieron las notificaciones; no estás suscrito."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Thông báo chưa được cho phép; bạn chưa đăng ký."
+          }
+        }
+      }
+    },
+    "正在登记通知；完成前不会加入发送名单。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Registering notifications. You will not receive weekly messages until this finishes."
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "알림 등록 중입니다. 완료 전에는 발송 대상에 포함되지 않습니다."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Registrando notificaciones. No recibirás mensajes semanales hasta que termine."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đang đăng ký thông báo. Bạn sẽ chưa nhận thông báo hằng tuần cho đến khi hoàn tất."
+          }
+        }
+      }
+    },
+    "无法开启通知，请稍后重试。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Could not enable notifications. Try again later."
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "알림을 켤 수 없습니다. 나중에 다시 시도하세요."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No se pudieron activar las notificaciones. Inténtalo más tarde."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Không thể bật thông báo. Vui lòng thử lại sau."
+          }
+        }
+      }
+    },
+    "已关闭本机通知；正在撤回服务器订阅。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Notifications are off on this device; removing the server subscription."
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "이 기기의 알림을 껐습니다. 서버 구독을 해제하는 중입니다."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Las notificaciones están desactivadas en este dispositivo; se está cancelando la suscripción del servidor."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đã tắt thông báo trên thiết bị; đang hủy đăng ký trên máy chủ."
+          }
+        }
+      }
+    },
+    "无法安全保存推送登记，请重试。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Could not save push registration securely. Try again."
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "푸시 등록을 안전하게 저장할 수 없습니다. 다시 시도하세요."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No se pudo guardar de forma segura el registro de notificaciones. Inténtalo de nuevo."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Không thể lưu đăng ký thông báo an toàn. Vui lòng thử lại."
+          }
+        }
+      }
+    },
+    "Apple 推送登记失败；请检查网络后重试。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apple push registration failed. Check your connection and try again."
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apple 푸시 등록에 실패했습니다. 네트워크를 확인하고 다시 시도하세요."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Falló el registro de notificaciones de Apple. Comprueba la conexión e inténtalo de nuevo."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đăng ký thông báo Apple thất bại. Kiểm tra mạng và thử lại."
+          }
+        }
+      }
+    },
+    "本机已订阅每周内容通知。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This device is subscribed to weekly content notifications."
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "이 기기는 주간 콘텐츠 알림을 구독 중입니다."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Este dispositivo está suscrito a las notificaciones de contenido semanal."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Thiết bị này đã đăng ký thông báo nội dung hằng tuần."
+          }
+        }
+      }
+    },
+    "已撤回服务器订阅。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The server subscription has been removed."
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "서버 구독이 해제되었습니다."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Se ha cancelado la suscripción del servidor."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đã hủy đăng ký trên máy chủ."
+          }
+        }
+      }
+    },
+    "订阅尚未确认；联网后会重试。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Subscription is not confirmed yet; it will retry when connected."
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "구독이 아직 확인되지 않았습니다. 연결되면 다시 시도합니다."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La suscripción aún no se ha confirmado; se reintentará al conectarse."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chưa xác nhận đăng ký; sẽ thử lại khi có mạng."
+          }
+        }
+      }
+    },
+    "退订尚未确认；联网后会继续重试。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unsubscription is not confirmed yet; it will retry when connected."
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "구독 해제가 아직 확인되지 않았습니다. 연결되면 다시 시도합니다."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La baja aún no se ha confirmado; se reintentará al conectarse."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chưa xác nhận hủy đăng ký; sẽ tiếp tục thử khi có mạng."
+          }
+        }
+      }
+    },
+    "通知对应的内容或订阅已变化；请刷新页面。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The content or subscription linked to this notification changed. Refresh the page."
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "이 알림에 연결된 콘텐츠나 구독이 변경되었습니다. 페이지를 새로고침하세요."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "El contenido o la suscripción de esta notificación ha cambiado. Actualiza la página."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nội dung hoặc đăng ký gắn với thông báo đã thay đổi. Hãy làm mới trang."
+          }
+        }
+      }
+    },
+    "开启每周通知？": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Turn on weekly notifications?"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "주간 알림을 켜시겠습니까?"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "¿Activar las notificaciones semanales?"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bật thông báo hằng tuần?"
+          }
+        }
+      }
+    },
+    "开启通知": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Turn on notifications"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "알림 켜기"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Activar notificaciones"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bật thông báo"
+          }
+        }
+      }
+    },
+    "开启后按你选择的内容语言通知新证道。可随时关闭。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Get notified of new sermons in your chosen content language. You can turn this off anytime."
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "선택한 콘텐츠 언어로 새 설교 알림을 받습니다. 언제든 끌 수 있습니다."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recibe avisos de nuevos sermones en el idioma de contenido elegido. Puedes desactivarlos cuando quieras."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nhận thông báo bài giảng mới bằng ngôn ngữ nội dung bạn chọn. Có thể tắt bất cứ lúc nào."
+          }
+        }
+      }
+    },
+    "开启时会上传 Apple 推送令牌、随机安装标识和所选语言。关闭时尝试撤回订阅；离线时会在下次联网后重试。有效登记最长 60 天，登记与发送记录最多保留 365 天。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enabling notifications sends your Apple push token, a random installation ID, and your chosen language to our server. Turning them off attempts to withdraw the subscription; if offline, the app retries when connected. An active registration lasts up to 60 days, and registration and send records are kept for up to 365 days."
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "알림을 켜면 Apple 푸시 토큰, 임의 설치 ID 및 선택한 언어가 서버로 전송됩니다. 끄면 구독 철회를 시도하며, 오프라인이면 다시 연결될 때 재시도합니다. 유효한 등록 기간은 최대 60일이고 등록 및 발송 기록은 최대 365일 보관됩니다."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Al activar las notificaciones, se envían al servidor el token de Apple Push, un identificador aleatorio de instalación y el idioma elegido. Al desactivarlas, se intenta retirar la suscripción; si no hay conexión, se reintenta al volver a conectarse. El registro activo dura hasta 60 días y los registros de registro y envío se conservan hasta 365 días."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Khi bật thông báo, ứng dụng gửi mã thông báo đẩy của Apple, mã cài đặt ngẫu nhiên và ngôn ngữ đã chọn lên máy chủ. Khi tắt, ứng dụng sẽ cố hủy đăng ký; nếu ngoại tuyến, ứng dụng sẽ thử lại khi có mạng. Đăng ký còn hiệu lực tối đa 60 ngày; hồ sơ đăng ký và gửi được lưu tối đa 365 ngày."
+          }
+        }
+      }
+    },
+    "复制本段": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Copy paragraph"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "문단 복사"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Copiar párrafo"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sao chép đoạn"
+          }
+        }
+      }
+    },
+    "复制双语对照": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Copy bilingual text"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "이중 언어 복사"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Copiar texto bilingüe"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sao chép bản song ngữ"
+          }
+        }
+      }
+    },
+    "已复制本段": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Paragraph copied"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "문단을 복사했습니다"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Párrafo copiado"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đã sao chép đoạn"
+          }
+        }
+      }
+    },
+    "已复制双语对照": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bilingual text copied"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "이중 언어를 복사했습니다"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Texto bilingüe copiado"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đã sao chép bản song ngữ"
+          }
+        }
+      }
+    }
+,
+    "本周研读手册": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This week’s study guide"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "이번 주 학습 안내서"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Guía de estudio de esta semana"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tài liệu học tập tuần này"
+          }
+        }
+      }
+    },
+    "手册": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Study guide"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "학습 안내서"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Guía de estudio"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tài liệu học tập"
+          }
+        }
+      }
+    },
+    "返回证道": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Return to sermon"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "설교로 돌아가기"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Volver al sermón"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trở lại bài giảng"
+          }
+        }
+      }
+    },
+    "正在加载研读手册…": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Loading the study guide…"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "학습 안내서를 불러오는 중…"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cargando la guía de estudio…"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đang tải tài liệu học tập…"
+          }
+        }
+      }
+    },
+    "本周研读手册尚不可用": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This week’s study guide is unavailable"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "이번 주 학습 안내서를 사용할 수 없습니다"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La guía de estudio de esta semana no está disponible"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tài liệu học tập tuần này chưa có"
+          }
+        }
+      }
+    },
+    "当前讲道或内容语言暂无对应手册。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No guide is available for this sermon and content language."
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "현재 설교와 콘텐츠 언어에 해당하는 안내서가 없습니다."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No hay una guía disponible para este sermón y este idioma de contenido."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chưa có tài liệu cho bài giảng và ngôn ngữ nội dung này."
+          }
+        }
+      }
+    },
+    "中文机器翻译 · 未经人工审校": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chinese machine translation · not reviewed by a person"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "중국어 기계 번역 · 사람의 검토를 거치지 않음"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Traducción automática al chino · sin revisión humana"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bản dịch máy tiếng Trung · chưa được con người kiểm duyệt"
+          }
+        }
+      }
+    },
+    "韩语机器翻译 · 未经人工审校": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Korean machine translation · not reviewed by a person"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "한국어 기계 번역 · 사람의 검토를 거치지 않음"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Traducción automática al coreano · sin revisión humana"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bản dịch máy tiếng Hàn · chưa được con người kiểm duyệt"
+          }
+        }
+      }
+    },
+    "西语机器翻译 · 未经人工审校": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Spanish machine translation · not reviewed by a person"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "스페인어 기계 번역 · 사람의 검토를 거치지 않음"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Traducción automática al español · sin revisión humana"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bản dịch máy tiếng Tây Ban Nha · chưa được con người kiểm duyệt"
+          }
+        }
+      }
+    },
+    "根据 Mariners Church《Revelation Series Guide》翻译；非教会官方译本。部分经文在此仅标注章节范围。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Translated from the Mariners Church Revelation Series Guide; this is not an official church translation. Some Scripture passages are shown here by reference only."
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mariners Church의 Revelation Series Guide를 번역한 것으로 교회의 공식 번역본이 아닙니다. 일부 성경 구절은 여기에서 범위만 표시됩니다."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Traducido de Revelation Series Guide de Mariners Church; no es una traducción oficial de la iglesia. Aquí algunos pasajes bíblicos se muestran solo como referencias."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Được dịch từ Revelation Series Guide của Mariners Church; đây không phải bản dịch chính thức của hội thánh. Một số đoạn Kinh Thánh ở đây chỉ ghi phần tham chiếu."
+          }
+        }
+      }
+    },
+    "查看教会原手册": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "View the original church guide"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "교회 원본 안내서 보기"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ver la guía original de la iglesia"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Xem tài liệu gốc của hội thánh"
+          }
+        }
+      }
+    },
+    "第 {week} 周 · {title}": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Week {week} · {title}"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "{week}주차 · {title}"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Semana {week} · {title}"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tuần {week} · {title}"
           }
         }
       }

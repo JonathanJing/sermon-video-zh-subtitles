@@ -1,0 +1,91 @@
+{
+  "schemaVersion": "sentence-first-page-config-v1",
+  "pageId": "sentence-first-clip-20261023",
+  "environment": "dev",
+  "locales": [
+    "zh-Hans",
+    "ko"
+  ],
+  "defaultTargetLocale": "zh-Hans",
+  "runsRoot": "artifacts/sentence-first-agent",
+  "runs": {
+    "zh-Hans": "20261023-clip-u179-365-zh",
+    "ko": "20261023-clip-u179-365-ko"
+  },
+  "source": {
+    "url": "https://www.youtube.com/watch?v=AKY0k5KiKns",
+    "date": "2026-10-18",
+    "window": {
+      "start": 596.47,
+      "end": 1221.97
+    },
+    "englishSource": "artifacts/podcasts/if-i-had-more-time-jesus-sends-and-resurrects-his-own/layer2/zh-Hans/english-source.json"
+  },
+  "sentences": 187,
+  "speakers": "Steve Bang Lee · John Thomas",
+  "category": {
+    "schemaVersion": "sermon-page-display-category-v1",
+    "labels": {
+      "zh-Hans": "实验片段",
+      "en": "Experiment clip",
+      "ko": "실험 클립",
+      "es": "Clip de experimento"
+    }
+  },
+  "title": "如果我有更多时间 · 四种观点与两位见证人（10 分钟片段）",
+  "meta": {
+    "zh-Hans": {
+      "title": "如果我有更多时间 · 四种观点与两位见证人（10 分钟片段）",
+      "series": "如果我有更多时间（播客系列）",
+      "scripture": "启示录 10–11 章",
+      "badge": "实验片段 · Experiment clip · AI 合成配音 · 已人工审核",
+      "source": "英文来源 / English source",
+      "note": "自然语速配音，非原视频同步；10 分钟实验片段。本项目与 Mariners Church 无隶属关系。"
+    },
+    "ko": {
+      "title": "If I Had More Time · 네 가지 관점과 두 증인 (10분 클립)",
+      "series": "요한계시록: 예수님이 주시는 위로와 소망",
+      "scripture": "요한계시록 10–11장",
+      "badge": "실험 클립 · Experiment clip · AI 합성 음성 · 사람 검토 완료",
+      "source": "영어 원본 / English source",
+      "note": "자연스러운 속도의 더빙으로, 원본 영상과 동기화되지 않습니다. 10분 실험 클립입니다. 이 프로젝트는 Mariners Church와 관련이 없습니다."
+    }
+  },
+  "verdict": "artifacts/sentence-first-agent/20261023-review-sheets/human-review-verdict.json",
+  "candidate": {
+    "schemaVersion": "sentence-first-clip-candidate-v1",
+    "translationBasis": {
+      "zh-Hans": "zh-Hans: formal Layer 2 candidate-approved.json targets, subset by sourceUnitId",
+      "ko": "ko: agent translation with independent second-pass review"
+    }
+  },
+  "audioPackage": {
+    "schemaVersion": "sentence-first-clip-audio-package-v1",
+    "voices": "from-speakers",
+    "synchronization": "not on the source video clock; natural-rate dub of a 10-minute clip"
+  },
+  "releasePackageId": "{pageId}-{locale}-{environment}-v1",
+  "verify": {
+    "schemaVersion": "sentence-first-clip-http-verification-v1"
+  },
+  "englishReference": {
+    "mode": "clip"
+  },
+  "summary": {
+    "includeEnvironment": true
+  },
+  "baseline": {
+    "allowDefaultLocaleDrift": true
+  },
+  "mediaType": "podcast",
+  "titleCheck": {
+    "englishTitle": "Jesus sends and resurrects His own",
+    "mode": "published",
+    "seriesKey": "revelation-comfort-and-hope",
+    "publishedTitles": {
+      "zh-Hans": "如果我有更多时间 · 四种观点与两位见证人（10 分钟片段）",
+      "ko": "If I Had More Time · 네 가지 관점과 두 증인 (10분 클립)"
+    },
+    "reason": "Dev clip page with a custom clip title; the page is already published and its titles are frozen."
+  }
+}

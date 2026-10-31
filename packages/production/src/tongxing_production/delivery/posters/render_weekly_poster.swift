@@ -16,7 +16,7 @@ struct Brief: Decodable {
 }
 let W = 1200, H = 1800
 let ink = NSColor(calibratedRed: 0.055, green: 0.23, blue: 0.24, alpha: 1)
-let muted = NSColor(calibratedRed: 0.29, green: 0.39, blue: 0.39, alpha: 1)
+let muted = NSColor(calibratedRed: 0.25, green: 0.35, blue: 0.35, alpha: 1)
 let paper = NSColor(calibratedRed: 0.953, green: 0.941, blue: 0.897, alpha: 1)
 var posterLocale = "zh-Hans"
 func font(_ size: CGFloat, headline: Bool = false) throws -> NSFont {
@@ -138,15 +138,17 @@ do {
      try text(brief.reviewLabel,NSRect(x:180,y:755,width:840,height:75),maxSize:28,minSize:18,alignment:.center)
  }
  paper.setFill();NSRect(x:0,y:1200,width:1200,height:600).fill()
- try text(brief.labels["cta"] ?? "",NSRect(x:80,y:1224,width:1040,height:58),maxSize:34,minSize:29,alignment:.center)
- try text(brief.labels["storeHeading"] ?? "",NSRect(x:125,y:1290,width:350,height:43),maxSize:29,minSize:27,alignment:.center)
- try text(brief.labels["webHeading"] ?? "",NSRect(x:725,y:1290,width:350,height:43),maxSize:29,minSize:27,alignment:.center)
- try placeQR(storeURL,x:156,y:1340,box:288)
- try placeQR(webURL,x:756,y:1340,box:288)
- muted.withAlphaComponent(0.18).setFill();NSRect(x:600,y:1345,width:1,height:338).fill()
- badge.draw(in:NSRect(x:165,y:1635,width:270,height:90),from:.zero,operation:.sourceOver,fraction:1,respectFlipped:true,hints:[.interpolation:NSImageInterpolation.high])
- try text(brief.labels["caption"] ?? "",NSRect(x:660,y:1648,width:480,height:65),maxSize:29,minSize:25,color:muted,alignment:.center)
- try text(brief.labels["disclaimer"] ?? "",NSRect(x:58,y:1724,width:1084,height:73),maxSize:28,minSize:24,color:muted,alignment:.center)
+ // The official badge needs clear space of a quarter of its height on every side,
+ // and the disclaimer keeps the 60 px side margins and a visible bottom margin.
+ try text(brief.labels["cta"] ?? "",NSRect(x:80,y:1214,width:1040,height:50),maxSize:34,minSize:29,alignment:.center)
+ try text(brief.labels["storeHeading"] ?? "",NSRect(x:125,y:1270,width:350,height:40),maxSize:29,minSize:27,alignment:.center)
+ try text(brief.labels["webHeading"] ?? "",NSRect(x:725,y:1270,width:350,height:40),maxSize:29,minSize:27,alignment:.center)
+ try placeQR(storeURL,x:156,y:1316,box:288)
+ try placeQR(webURL,x:756,y:1316,box:288)
+ muted.withAlphaComponent(0.18).setFill();NSRect(x:600,y:1321,width:1,height:330).fill()
+ badge.draw(in:NSRect(x:192,y:1624,width:216,height:72),from:.zero,operation:.sourceOver,fraction:1,respectFlipped:true,hints:[.interpolation:NSImageInterpolation.high])
+ try text(brief.labels["caption"] ?? "",NSRect(x:660,y:1640,width:480,height:50),maxSize:29,minSize:25,color:muted,alignment:.center)
+ try text(brief.labels["disclaimer"] ?? "",NSRect(x:60,y:1716,width:1080,height:62),maxSize:28,minSize:24,color:muted,alignment:.center)
  }
  try writePNG(poster,out.appendingPathComponent("poster.png"))
  let preview=try bitmap(600,900)

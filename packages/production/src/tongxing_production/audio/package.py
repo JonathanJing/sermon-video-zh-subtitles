@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 """Build a fail-closed Layer 3 package from measured, hash-bound render evidence.
 
-The renderer and ASR are separate producers. This command never synthesizes,
-alters approved text, schedules speech, or grants human listening approval.
+The renderer is the producer. ASR screening and the machine listening waiver were
+retired on 2026-10-28, so a package records ``machineScreening.status = not_run``;
+this command never synthesizes, alters approved text, schedules speech, or grants
+human listening approval.
 All paths in the render manifest are relative to its artifact root.
 """
 from __future__ import annotations
@@ -23,7 +25,6 @@ from jsonschema import Draft202012Validator, FormatChecker
 from ..source import sentence_interpretation as interpretation
 from . import backend as _audio
 from . import clip_timeline as timeline_map
-from . import screening as audio_screen
 from . import speech_job as speech
 from . import unit_integrity
 from .hosted import accounting
@@ -340,21 +341,6 @@ def validate_captions(captions: dict[str, Any], candidate: dict[str, Any],
         previous_end = end
 
 
-def legacy_v1_screening_score(expected: str, recognized: str, locale: str,
-                              min_similarity: float) -> tuple[float, list[dict], bool]:
-    """Reproduce the v1 producer: unfolded ratio and short-unit exactness only.
-
-    Keyword/protected-text checks were introduced with v2; adding them when
-    reading v1 would change frozen historical evidence.
-    """
-    left, right = audio_screen.tokens(expected, locale), audio_screen.tokens(recognized, locale)
-    matcher = difflib.SequenceMatcher(None, left, right, autojunk=False)
-    similarity = round(matcher.ratio(), 6)
-    differences = [{"kind": kind, "expected": left[start:end], "recognized": right[other_start:other_end]}
-                   for kind, start, end, other_start, other_end in matcher.get_opcodes() if kind != "equal"]
-    return similarity, differences, similarity >= min_similarity and (len(left) >= 4 or not differences)
-
-
 def build_package(paths: dict[str, Path], render_manifest_path: Path, artifact_root: Path, *,
                   strict_rubric: dict[str, Any] | None = None) -> dict[str, Any]:
     source, anchor, candidate, job, adapter, policy, human_receipt, registry, clip_timeline = (
@@ -554,55 +540,11 @@ def build_package(paths: dict[str, Path], render_manifest_path: Path, artifact_r
                       clip_timeline["anchorOffsetSeconds"],
                       clip_timeline["clipDurationSeconds"], track_format=track_format)
     validate_captions(captions, candidate, schedule, track_duration)
-    screen = manifest.get("machineScreening", {})
-    require(isinstance(screen, dict) and screen.get("status") in {"not_run", "pass", "requires_review", "fail"}
-            and isinstance(screen.get("coverage"), (int, float))
-            and 0 <= screen["coverage"] <= 1,
-            "Invalid machine screening")
-    if screen["status"] == "pass":
-        require(isinstance(screen.get("model"), str) and screen["model"]
-                and screen["coverage"] == 1.0, "Machine pass requires full measured coverage")
-        screening_artifact = checked_artifact(
-            artifact_root, manifest.get("machineScreeningReceipt"), json_artifact=True)
-        screening = read_object(Path(screening_artifact["path"]))
-        speech._validate_schema(screening, speech.audio_screening_schema_file(screening),
-                                "audio screening receipt")
-        require(screening.get("schemaVersion") in speech.AUDIO_SCREENING_VERSIONS
-                and screening.get("targetLocale") == locale
-                and screening.get("targetLanguageSpeechJobJsonSha256") == job_hash
-                and screening.get("trackSha256") == track["sha256"]
-                and screening.get("status") == "pass"
-                and screening.get("model") == screen["model"]
-                and screening.get("coverage") == 1.0
-                and screening.get("reviewedGroupIds") == [unit["textGroupId"] for unit in units]
-                and screening.get("unitAudioSha256s") == [unit["audio"]["sha256"] for unit in units],
-                "Machine screening receipt does not cover this exact audio set")
-        require(len(screening["results"]) == len(units),
-                "Machine screening result count differs from audio units")
-        # Check the complete v2 settings/implementation identity before any score runs.
-        # Legacy v1 has its own historical ratio rule, predating v2's protected checks.
-        scoring = None
-        if screening["schemaVersion"] == "sermon-target-language-audio-screening-v2":
-            screening_asr_settings = _audio.current().machine_qc.screening_asr_settings
-            scoring = screening_asr_settings(screening)["scoring"]
-        for index, (result, unit, job_unit) in enumerate(zip(
-                screening["results"], units, job["units"])):
-            if scoring is None:
-                similarity, differences, passed = legacy_v1_screening_score(
-                    job_unit["text"], result["recognized"], locale, screening["minSimilarity"])
-            else:
-                similarity, differences, passed = audio_screen.score(
-                    job_unit["text"], result["recognized"], locale, screening["minSimilarity"], scoring=scoring)
-            require(result["textGroupId"] == unit["textGroupId"]
-                    and result["targetTextSha256"] == unit["targetTextSha256"]
-                    and result["audioSha256"] == unit["audio"]["sha256"]
-                    and result["status"] == "pass"
-                    and result["similarity"] == similarity
-                    and passed,
-                    f"Machine screening result is incomplete or below threshold: {index}")
-    else:
-        require(screen.get("status") != "fail", "Failed machine screening cannot produce package")
-    status = "machine_screened" if screen["status"] == "pass" else "candidate"
+    # ASR screening and the machine listening waiver were retired on 2026-10-28.
+    # A package records that no machine listening ran and never gates on it; the
+    # full-track human listening receipt is the only audio acceptance.
+    screen = {"status": "not_run", "model": None, "coverage": 0.0}
+    status = "candidate"
     package = {
         "schemaVersion": SCHEMA,
         "packageId": f"target-audio-{locale}-{json_sha256(manifest)[:24]}",

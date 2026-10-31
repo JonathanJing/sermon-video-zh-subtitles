@@ -1,0 +1,40 @@
+{
+  "schemaVersion": "sermon-multilingual-poster-v1",
+  "source": {
+    "pageId": "revelation-jesus-wins-20261025",
+    "targetLocale": "zh-Hans",
+    "sourceIdentitySha256": "880da5121ed5367a6c521f30fefcc46c93bb8beb34896917836c2b068fd0bc3d",
+    "catalogSha256": "cc4891e4516c338f129f0de152812a2f342df4975d014076e88dc88f46204c37",
+    "releasePackageSha256": "db10ea11b163dfb6a0aa5caa4ae3189da34ac33b2fd146f28ab60b69ddac3f4a",
+    "contentSha256": "8ee72ce72e7d9ca4c0468a30d07670f5f8bab10ce3043bddc4d7f63f467d8596",
+    "brief": {
+      "locale": "zh-Hans",
+      "date": "2026-10-25",
+      "origin": "https://ai-for-god-sermon-audio.web.app",
+      "title": "耶稣得胜 · 启示录 12–13 章",
+      "series": "启示录：耶稣带来的安慰与盼望",
+      "scripture": "启示录 12–13 章",
+      "speaker": "Eric Geiger",
+      "tagline": "一起听懂，一路同行。",
+      "reviewLabel": "译文与配音已审核",
+      "labels": {
+        "brand": "同行",
+        "eyebrow": "本周证道 · 中文",
+        "cta": "扫码开启本周证道",
+        "serviceLine": "中文配音 · 英文对照 · 完整文稿",
+        "qrCaption": "直接打开本周 · 中文",
+        "disclaimer": "独立个人项目，与 Mariners Church 无隶属或背书关系。\nAI 合成中文音频与整理文字仅供个人跟读参考。",
+        "header": "同行   ───   本周证道",
+        "web": "网页版",
+        "caption": "扫码阅读 · 收听",
+        "storeHeading": "下载同行 App",
+        "webHeading": "打开本周网页版",
+        "showReview": "false"
+      },
+      "qrURL": "https://ai-for-god-sermon-audio.web.app/?week=revelation-jesus-wins-20261025&contentLang=zh-Hans&lang=zh",
+      "displayTitle": "耶稣得胜 · 启示录 12–13 章",
+      "storeURL": "https://apps.apple.com/app/id6809255441"
+    }
+  },
+  "status": "awaiting_image_generation"
+}

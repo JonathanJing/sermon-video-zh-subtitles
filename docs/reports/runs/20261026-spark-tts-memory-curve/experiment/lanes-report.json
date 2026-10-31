@@ -1,0 +1,120 @@
+{
+ "schemaVersion": "sermon-group-l3-lanes-report-v1",
+ "mode": "execute",
+ "startedAt": "2026-10-26T15:03:39.692Z",
+ "gpuSlots": 1,
+ "lanes": [
+  {
+   "locale": "zh-Hans",
+   "config": "<repo>/artifacts/spark-tts-memory-full-episode-20261026/run3/config/zh-Hans.json",
+   "out": "<repo>/artifacts/spark-tts-memory-full-episode-20261026/run3/l3/zh-Hans",
+   "status": "failed",
+   "stage": "screen",
+   "reason": "exit 2",
+   "groupIds": [],
+   "stages": [
+    {
+     "name": "formal_render",
+     "resource": "gpu",
+     "status": "done",
+     "startedAt": "2026-10-26T15:03:39Z",
+     "endedAt": "2026-10-26T15:11:02Z",
+     "seconds": 442.448,
+     "waitSeconds": 0.0,
+     "exitCode": 0
+    },
+    {
+     "name": "compact",
+     "resource": "cpu",
+     "status": "done",
+     "startedAt": "2026-10-26T15:11:02Z",
+     "endedAt": "2026-10-26T15:13:17Z",
+     "seconds": 135.751,
+     "waitSeconds": 0.0,
+     "exitCode": 0
+    },
+    {
+     "name": "screen",
+     "resource": "gpu",
+     "status": "failed",
+     "startedAt": "2026-10-26T15:19:14Z",
+     "endedAt": "2026-10-26T15:19:14Z",
+     "seconds": 0.22,
+     "waitSeconds": 356.149,
+     "exitCode": 2
+    }
+   ]
+  },
+  {
+   "locale": "ko",
+   "config": "<repo>/artifacts/spark-tts-memory-full-episode-20261026/run3/config/ko.json",
+   "out": "<repo>/artifacts/spark-tts-memory-full-episode-20261026/run3/l3/ko",
+   "status": "failed",
+   "stage": "formal_render",
+   "reason": "exit 1",
+   "groupIds": [],
+   "stages": [
+    {
+     "name": "formal_render",
+     "resource": "gpu",
+     "status": "failed",
+     "startedAt": "2026-10-26T15:11:02Z",
+     "endedAt": "2026-10-26T15:19:14Z",
+     "seconds": 491.903,
+     "waitSeconds": 442.445,
+     "exitCode": 1
+    }
+   ]
+  }
+ ],
+ "overlaps": [
+  {
+   "cpuStage": {
+    "locale": "zh-Hans",
+    "stage": "compact"
+   },
+   "gpuStage": {
+    "locale": "ko",
+    "stage": "formal_render"
+   }
+  }
+ ],
+ "releaseEligible": false,
+ "humanApproval": false,
+ "timeline": [
+  {
+   "locale": "zh-Hans",
+   "stage": "formal_render",
+   "resource": "gpu",
+   "startedAt": "2026-10-26T15:03:39.693Z",
+   "endedAt": "2026-10-26T15:11:02.144Z",
+   "waitSeconds": 0.0
+  },
+  {
+   "locale": "ko",
+   "stage": "formal_render",
+   "resource": "gpu",
+   "startedAt": "2026-10-26T15:11:02.144Z",
+   "endedAt": "2026-10-26T15:19:14.050Z",
+   "waitSeconds": 442.445
+  },
+  {
+   "locale": "zh-Hans",
+   "stage": "compact",
+   "resource": "cpu",
+   "startedAt": "2026-10-26T15:11:02.146Z",
+   "endedAt": "2026-10-26T15:13:17.898Z",
+   "waitSeconds": 0.0
+  },
+  {
+   "locale": "zh-Hans",
+   "stage": "screen",
+   "resource": "gpu",
+   "startedAt": "2026-10-26T15:19:14.050Z",
+   "endedAt": "2026-10-26T15:19:14.270Z",
+   "waitSeconds": 356.149
+  }
+ ],
+ "endedAt": "2026-10-26T15:19:14.271Z",
+ "status": "failed"
+}

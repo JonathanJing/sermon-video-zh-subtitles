@@ -150,7 +150,7 @@ class GroupL3StagesTests(unittest.TestCase):
         self.assertEqual(code, 0)
         self.assertTrue((self.out / "rendered.json").is_file())
 
-    def test_the_draft_plan_parses_and_plans_five_stages(self):
+    def test_the_draft_plan_parses_and_plans_three_stages(self):
         draft_path = Path(__file__).parents[1] / "config/group-l3-stages.draft.json"
         draft = json.loads(draft_path.read_text(encoding="utf-8"))
         for name in group_l3.REQUIRED_PATHS:
@@ -160,7 +160,7 @@ class GroupL3StagesTests(unittest.TestCase):
         self.config_path.write_text(json.dumps(draft), encoding="utf-8")
         report = self.execute(dry_run=True)
         self.assertEqual([row["name"] for row in report["stages"]],
-                         ["formal_render", "compact", "screen", "package", "audio_qc"])
+                         ["formal_render", "compact", "package"])
         self.assertEqual({row["status"] for row in report["stages"]}, {"planned"})
 
     def test_cli_returns_five_on_a_failed_stage(self):

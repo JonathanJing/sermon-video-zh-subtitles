@@ -18,7 +18,7 @@ private struct TranscriptScrollRow<Value>: Identifiable {
     let value: Value
 }
 
-private struct ToolbarVerticalEdgeReader<Content: View>: View {
+struct ToolbarVerticalEdgeReader<Content: View>: View {
     let content: (HorizontalEdge?) -> Content
 
     var body: some View {
@@ -44,29 +44,6 @@ private struct CurrentToolbarVerticalEdge<Content: View>: View {
 }
 #endif
 
-/// Trailing-dock placement decision for Duo and other wide containers.
-///
-/// The trailing control column is for wide-and-short containers (Duo inner
-/// landscape, phone landscape). This intentionally stays a container-geometry
-/// decision rather than a size-class one: Duo inner landscape reports
-/// regular/regular while phone landscape reports compact/compact, so no
-/// single size-class combination selects both without branching on device or
-/// pose — and Apple's guidance frames the choice as "size classes *and*
-/// container size". Because it derives from the live control region (which
-/// already excludes the active fold), half-fold and Split View re-flow
-/// without extra code.
-private enum DockLayout {
-    /// Width threshold for the trailing column, near the regular-width
-    /// boundary. Height must also be below it: the column is only for
-    /// wide-and-short areas, not for tall regular-width layouts.
-    static let trailingDockThreshold: CGFloat = 700
-
-    static func usesTrailingDock(for controlRegion: CGRect) -> Bool {
-        controlRegion.width >= trailingDockThreshold
-            && controlRegion.height < trailingDockThreshold
-    }
-}
-
 struct ContentView: View {
     @ObservedObject private var localization = AppLocalization.shared
     @ObservedObject var model: AppModel
@@ -82,10 +59,9 @@ struct ContentView: View {
     @ViewState private var returnToCurrent = UUID()
     @ViewState private var followsTranscriptPlayback = true
     @ViewState private var locateConfirmation: Double?
+    @ViewState private var copyConfirmation: String?
     @ViewState private var showingPlaybackMore = false
     @ViewState private var showingAlignmentFailure = false
-    @ViewState private var playbackMoreButtonFrame: CGRect = .null
-    @ViewState private var playbackMorePlacement: PlaybackDockPlacement = .bottom
 
     init(model: AppModel) {
         self.model = model
@@ -98,30 +74,17 @@ struct ContentView: View {
             let controlRegion = dockControlRegion(in: geometry)
             listeningNavigation(
                 controlRegion: controlRegion,
-                usesTrailingDock: DockLayout.usesTrailingDock(for: controlRegion)
+                isLandscape: geometry.size.width > geometry.size.height,
+                hasDividedRegion: controlRegion.size != geometry.size
             )
-            .overlay { playbackMoreOverlay }
-        }
-        .safeAreaInset(edge: .top, spacing: 0) {
-            if let phase = model.foregroundAlignmentPhase {
-                alignmentFeedbackBar(phase)
-            }
         }
         .environment(\.locale, localization.locale)
         #if os(iOS)
         .onReceive(NotificationCenter.default.publisher(for: .betaNotificationOpened)) { _ in
-            sheet = nil
-            showingPlaybackMore = false
-            Task {
-                if let catalog = model.multilingualCatalog {
-                    await model.notificationWeeklyUpdates.load(catalog: catalog, locale: model.selectedContentLocale, pageID: model.selectedPageID)
-                    if let item = model.notificationWeeklyUpdates.announcement {
-                        showingNotificationPoster = true
-                        weeklyUpdates.markSeen(item.deduplicationKey)
-                        sheet = .weeklyUpdate
-                    }
-                }
-            }
+            openNotificationPoster()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .productionNotificationOpened)) { _ in
+            openNotificationPoster()
         }
         #endif
         .task(id: model.weeklyUpdateIdentity) {
@@ -150,6 +113,12 @@ struct ContentView: View {
             guard !Task.isCancelled else { return }
             locateConfirmation = nil
         }
+        .task(id: copyConfirmation) {
+            guard copyConfirmation != nil else { return }
+            try? await Task.sleep(for: .seconds(3))
+            guard !Task.isCancelled else { return }
+            copyConfirmation = nil
+        }
         .onChange(of: model.alignmentFailure?.id) { _, failure in
             if failure != nil { showingPlaybackMore = false }
             updateAlignmentFailurePresentation()
@@ -177,37 +146,57 @@ struct ContentView: View {
         }
     }
 
-    private func alignmentFeedbackBar(_ phase: ListeningAlignmentPhase) -> some View {
-        HStack(spacing: 10) {
-            Image(systemName: phase.symbolName)
-                .font(.title3)
-                .foregroundStyle(phase == .failed ? Color.orange : Brand.accent)
-                .accessibilityHidden(true)
-            Text(phase == .failed ? localization.text("听音对齐未完成")
-                 : phase.statusText(english: localization.language != .simplifiedChinese))
-                .font(.subheadline.weight(.semibold))
-                .fixedSize(horizontal: false, vertical: true)
-            Spacer(minLength: 0)
+    #if os(iOS)
+    private func openNotificationPoster() {
+        sheet = nil
+        showingPlaybackMore = false
+        Task {
+            if let catalog = model.multilingualCatalog {
+                await model.notificationWeeklyUpdates.load(catalog: catalog, locale: model.selectedContentLocale, pageID: model.selectedPageID)
+                if let item = model.notificationWeeklyUpdates.announcement {
+                    showingNotificationPoster = true
+                    weeklyUpdates.markSeen(item.deduplicationKey)
+                    sheet = .weeklyUpdate
+                }
+            }
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 10)
-        .background(.background)
-        .accessibilityElement(children: .combine)
-        .accessibilityIdentifier("foreground-alignment-feedback-\(phase.rawValue)")
     }
+    #endif
 
     private func updateAlignmentFailurePresentation() {
         showingAlignmentFailure = model.alignmentFailure != nil && sheet == nil && scenePhase == .active
     }
 
-    private func listeningNavigation(controlRegion: CGRect, usesTrailingDock: Bool) -> some View {
+    private func listeningNavigation(controlRegion: CGRect,
+                                     isLandscape: Bool, hasDividedRegion: Bool) -> some View {
         NavigationStack {
             ToolbarVerticalEdgeReader { verticalBarEdge in
                 let usesSystemVerticalBar = verticalBarEdge != nil
-                return ScrollViewReader { proxy in
+                return GeometryReader { readingGeometry in
+                    // Use the reading area after the system bar and player safe-area
+                    // insets. A divided/folded region keeps the existing single reader.
+                    #if DEBUG || TONGXING_GUIDE_PREVIEW
+                    let guideWidth = isLandscape && !hasDividedRegion && readingGeometry.size.width >= 620
+                        ? min(460, max(280, readingGeometry.size.width * 0.45)) : 0
+                    #else
+                    let guideWidth: CGFloat = 0
+                    #endif
+                    let listeningWidth = readingGeometry.size.width - guideWidth - (guideWidth > 0 ? 1 : 0)
+                    let subtitleCardMinWidth = min(300, max(0, listeningWidth - 40))
+                    HStack(alignment: .top, spacing: 0) {
+                        #if DEBUG || TONGXING_GUIDE_PREVIEW
+                        if guideWidth > 0 {
+                            WeeklyGuidePreview(model: model, playback: playback, embedded: true)
+                                .frame(width: guideWidth)
+                                .frame(maxHeight: .infinity, alignment: .top)
+                            Divider()
+                        }
+                        #endif
+                ScrollViewReader { proxy in
                 ScrollView {
                     VStack(alignment: .leading, spacing: verticalSizeClass == .compact ? 12 : 16) {
                         WeeklyUpdateCard(updates: weeklyUpdates) { showingNotificationPoster = false; sheet = .weeklyUpdate }
+                        StatisticsPromptCard(playback: playback)
                         if weeklyUpdates.announcement != nil && !weeklyUpdates.isNew {
                             Button(localization.text("本周海报"), systemImage: "doc.richtext") { showingNotificationPoster = false; sheet = .weeklyUpdate }
                                 .font(.footnote).accessibilityIdentifier("weekly-update-reopen")
@@ -216,7 +205,7 @@ struct ContentView: View {
                             HStack { Spacer(); appLanguageMenu }
                         }
                         if let week = model.selectedWeek {
-                            sermonHeading(week).id("top")
+                            sermonHeading(week, showsInlineGuide: guideWidth > 0).id("top")
                             if let notice = model.catalogNotice {
                                 Label(localization.text(notice), systemImage: "wifi.slash")
                                     .font(.footnote).foregroundStyle(.secondary)
@@ -234,18 +223,15 @@ struct ContentView: View {
                                     ForEach(AppModel.ListeningDisplay.allCases, id: \.self) { Text(localization.text($0.rawValue)).tag($0) }
                                 }.pickerStyle(.segmented).accessibilityIdentifier("listening-display")
                                 if model.display == .current {
-                                    currentSubtitle(track)
+                                    currentSubtitle(track, minimumCardWidth: subtitleCardMinWidth)
                                 }
                                 else { transcript(track) }
                                 locateConfirmationView
-                                Text(localization.text(model.alignmentDisplayStatus, ["time": model.alignmentPosition.map(PlaybackTime.format) ?? ""]))
-                                    .font(.footnote).foregroundStyle(.secondary)
-                                    .fixedSize(horizontal: false, vertical: true)
-                                    .accessibilityIdentifier("alignment-status")
+                                if model.showsAlignmentStatus { liveAlignmentEntry }
                                 englishLocateEntry
                                 downloadControl
                             } else {
-                                ContentUnavailableView(localization.text("本周音频尚未准备好"), systemImage: "waveform", description: Text(localization.text("可以先阅读证道大纲。")))
+                                ContentUnavailableView(localization.text("本周音频尚未准备好"), systemImage: "waveform")
                             }
                             footer(week)
                         } else if let page = model.selectedMultilingualPage {
@@ -257,8 +243,8 @@ struct ContentView: View {
                                     appLanguageMenu
                                 }
                                 SermonHeadingView(heading: model.heading(for: page), date: page.date,
-                                                  titleFont: .largeTitle.bold(), identifier: "published-page")
-                                outlineButton
+                                                  titleFont: guideWidth > 0 ? .title2.bold() : .largeTitle.bold(), identifier: "published-page")
+                                if guideWidth == 0 { guideButton }
                                 languageButton
                                 if model.fullVideoURL != nil || model.selectedAudioLanguageName != nil {
                                     if typeSize.isAccessibilitySize {
@@ -303,7 +289,9 @@ struct ContentView: View {
                                     if let saved = playback.resumePosition { resumeCard(saved) }
                                     if shouldShowPlaybackStatusDetail { playbackStatusDetail }
                                 }
-                                if model.usesNativePublishedReader { publishedReading }
+                                if model.usesNativePublishedReader {
+                                    publishedReading(minimumCardWidth: subtitleCardMinWidth)
+                                }
                             }
                             .frame(maxWidth: .infinity, alignment: .leading)
                         } else if model.isLoading {
@@ -331,6 +319,10 @@ struct ContentView: View {
                     }
                 })
                 .refreshable { await model.refresh() }
+                .overlay(alignment: .top) {
+                    copyConfirmationToast
+                        .animation(reduceMotion ? nil : .easeInOut(duration: 0.2), value: copyConfirmation)
+                }
                 .onChange(of: model.display) { _, display in
                     followsTranscriptPlayback = true
                     guard display == .transcript, playback.isPlaying else { return }
@@ -383,34 +375,38 @@ struct ContentView: View {
                         }
                     }
                 }
+                .frame(width: listeningWidth)
             }
+                    }
+                    .onChange(of: guideWidth > 0, initial: true) { _, showsGuide in
+                        #if DEBUG || TONGXING_GUIDE_PREVIEW
+                        if showsGuide && sheet == .guidePreview { sheet = nil }
+                        #endif
+                    }
+                }
             .background(Brand.background)
-            .listeningPlayerDock(atTrailingEdge: usesTrailingDock,
+            // Standard phone and tablet layouts retain the floating bottom player.
+            // Duo uses its system-provided vertical toolbar when that is active.
+            .listeningPlayerDock(atTrailingEdge: false,
                                  inSystemBar: usesSystemVerticalBar) {
-                if usesTrailingDock && !usesSystemVerticalBar {
-                    VStack(spacing: 12) {
-                        trailingNavigationActions
-                        if model.selectedTrack != nil || model.selectedAudioLocale != nil {
-                            listeningPlaybackDock(placement: .trailing)
-                        }
+                if model.selectedTrack != nil || model.selectedAudioLocale != nil {
+                    HStack(spacing: 0) {
+                        Color.clear.frame(width: controlRegion.minX, height: 0)
+                        listeningPlaybackDock(placement: .bottom)
+                            .frame(width: controlRegion.width)
+                        Spacer(minLength: 0)
                     }
-                    .frame(width: 80)
-                    .frame(maxHeight: .infinity, alignment: .top)
-                    .padding(.top, 8)
-                } else {
-                    if model.selectedTrack != nil || model.selectedAudioLocale != nil {
-                        HStack(spacing: 0) {
-                            Color.clear.frame(width: controlRegion.minX, height: 0)
-                            listeningPlaybackDock(placement: .bottom)
-                                .frame(width: controlRegion.width)
-                            Spacer(minLength: 0)
-                        }
-                        .frame(maxWidth: .infinity)
-                    }
+                    .frame(maxWidth: .infinity)
                 }
             }
             .toolbar {
-                ToolbarItem(placement: .principal) { BrandTitle() }
+                ToolbarItem(placement: .principal) {
+                    BrandTitle(alignmentPhase: model.foregroundAlignmentPhase,
+                               // The toolbar clamps its own type size, so the
+                               // compact-status decision comes from the page
+                               // environment that still reports accessibility sizes.
+                               usesCompactStatus: typeSize.isAccessibilitySize)
+                }
                 if model.display == .transcript {
                     ToolbarItem(placement: .primaryAction) {
                         // Toolbar bridges can discard a Button's outer custom
@@ -428,13 +424,11 @@ struct ContentView: View {
                         .disabled(currentTranscriptRowID == nil)
                     }
                 }
-                if !usesTrailingDock || usesSystemVerticalBar {
-                    ToolbarItemGroup(placement: .primaryAction) {
-                        Button(localization.text("选择证道周次"), systemImage: "calendar") { sheet = .weeks }
-                            .labelStyle(.iconOnly).accessibilityIdentifier("choose-sermon")
-                        Button(localization.text("更多选项"), systemImage: "ellipsis.circle") { sheet = .about }
-                            .labelStyle(.iconOnly).accessibilityIdentifier("more-options")
-                    }
+                ToolbarItemGroup(placement: .primaryAction) {
+                    Button(localization.text("选择证道周次"), systemImage: "calendar") { sheet = .weeks }
+                        .labelStyle(.iconOnly).accessibilityIdentifier("choose-sermon")
+                    Button(localization.text("更多选项"), systemImage: "ellipsis.circle") { sheet = .about }
+                        .labelStyle(.iconOnly).accessibilityIdentifier("more-options")
                 }
                 #if os(iOS) && canImport(SwiftUI, _version: 8.0.85)
                 if #available(iOS 27.1, macOS 27.1, *), usesSystemVerticalBar,
@@ -470,10 +464,12 @@ struct ContentView: View {
                     PrecisionSheet(model: model)
                         .presentationDetents(typeSize.isAccessibilitySize ? [.large] : [.medium, .large])
                         .presentationDragIndicator(.visible)
-                case .outline:
-                    OutlineSheet(model: model, playback: playback)
+                #if DEBUG || TONGXING_GUIDE_PREVIEW
+                case .guidePreview:
+                    WeeklyGuidePreview(model: model, playback: playback)
                         .dynamicTypeSize(typeSize)
                         .presentationDetents([.large]).presentationDragIndicator(.visible)
+                #endif
                 case .about:
                     AboutSheet(model: model)
                         .environment(\.dynamicTypeSize, typeSize)
@@ -538,16 +534,12 @@ struct ContentView: View {
             onTimeTap: model.display == .transcript && currentTranscriptRowID != nil ? { returnToCurrent = UUID() } : nil,
             placement: placement,
             inSystemBar: inSystemBar,
-            onMoreTap: {
-                playbackMorePlacement = placement
-                showingPlaybackMore = true
-            },
-            onMoreDismiss: { showingPlaybackMore = false },
-            onMoreFrameChange: { playbackMoreButtonFrame = $0 }
+            isMorePresented: $showingPlaybackMore,
+            moreContent: { AnyView(playbackMoreControls) }
         )
     }
 
-    private func playbackMoreControls(width: CGFloat) -> some View {
+    private var playbackMoreControls: some View {
         PlaybackMoreControls(
             playback: playback,
             isPreparing: model.isPreparing || model.isPreparingPublishedAudio,
@@ -555,45 +547,8 @@ struct ContentView: View {
             locate: { sheet = .locate },
             precision: model.selectedTrack == nil ? nil : { sheet = .precision },
             current: currentTranscriptRowID == nil ? nil : { returnToCurrent = UUID() },
-            onClose: { showingPlaybackMore = false },
-            width: width
+            onClose: { showingPlaybackMore = false }
         )
-    }
-
-    private var playbackMoreOverlay: some View {
-        PlaybackMorePanelOverlay(
-            isPresented: $showingPlaybackMore,
-            buttonFrame: playbackMoreButtonFrame,
-            placement: playbackMorePlacement
-        ) { width in
-            playbackMoreControls(width: width)
-        }
-    }
-
-    private var trailingNavigationActions: some View {
-        VStack(spacing: 0) {
-            Button { sheet = .weeks } label: {
-                Image(systemName: "calendar")
-                    .frame(width: 56, height: 52)
-                    .contentShape(Rectangle())
-            }
-            .accessibilityLabel(localization.text("选择证道周次"))
-            .accessibilityIdentifier("choose-sermon")
-
-            Button { sheet = .about } label: {
-                Image(systemName: "ellipsis.circle")
-                    .frame(width: 56, height: 52)
-                    .contentShape(Rectangle())
-            }
-            .accessibilityLabel(localization.text("更多选项"))
-            .accessibilityIdentifier("more-options")
-        }
-        .font(.title3.weight(.medium))
-        .buttonStyle(.plain)
-        .foregroundStyle(Brand.accent)
-        .padding(6)
-        .listeningGlassSurface()
-        .padding(.horizontal, 6)
     }
 
     private func dockControlRegion(in geometry: GeometryProxy) -> CGRect {
@@ -609,8 +564,10 @@ struct ContentView: View {
         return bounds
     }
 
-    @ViewBuilder private func sermonHeading(_ week: SermonWeek) -> some View {
-        if verticalSizeClass == .compact {
+    @ViewBuilder private func sermonHeading(_ week: SermonWeek, showsInlineGuide: Bool) -> some View {
+        if showsInlineGuide {
+            regularSermonHeading(week, showsInlineGuide: true)
+        } else if verticalSizeClass == .compact {
             HStack(spacing: 16) {
                 VStack(alignment: .leading, spacing: 4) {
                     SermonHeadingView(heading: model.heading(for: week),
@@ -620,14 +577,14 @@ struct ContentView: View {
                 Spacer(minLength: 8)
                 appLanguageMenu
                 compactLanguageButton
-                outlineButton
+                guideButton
             }
         } else {
             regularSermonHeading(week)
         }
     }
 
-    private func regularSermonHeading(_ week: SermonWeek) -> some View {
+    private func regularSermonHeading(_ week: SermonWeek, showsInlineGuide: Bool = false) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
                 Text(localization.text("证道")).font(.caption.weight(.medium)).foregroundStyle(.secondary)
@@ -635,7 +592,7 @@ struct ContentView: View {
                 appLanguageMenu
             }
             SermonHeadingView(heading: model.heading(for: week),
-                              date: week.date, titleFont: .largeTitle.bold(), identifier: "sermon")
+                              date: week.date, titleFont: showsInlineGuide ? .title2.bold() : .largeTitle.bold(), identifier: "sermon")
             Text(week.scripture).font(.footnote).foregroundStyle(.secondary)
             languageButton
             if model.selectedContentLocale != "zh-Hans", model.selectedContentTarget != nil {
@@ -649,16 +606,18 @@ struct ContentView: View {
                     .padding(.horizontal, 10).padding(.vertical, 6)
                     .background(Brand.accent.opacity(0.10), in: Capsule())
                 Spacer()
-                outlineButton
+                if !showsInlineGuide { guideButton }
             }
         }
     }
 
-    private var outlineButton: some View {
-        Button(localization.text("大纲与默想"), systemImage: "list.bullet.rectangle") { sheet = .outline }
+    @ViewBuilder private var guideButton: some View {
+        #if DEBUG || TONGXING_GUIDE_PREVIEW
+        Button(localization.text("本周研读手册"), systemImage: "book") { sheet = .guidePreview }
             .font(.subheadline.weight(.medium)).frame(minHeight: 44)
             .buttonStyle(.plain).foregroundStyle(Brand.accent)
-            .accessibilityIdentifier("open-sermon-study")
+            .accessibilityIdentifier("open-guide-beta-preview")
+        #endif
     }
 
     private var appLanguageMenu: some View {
@@ -811,7 +770,7 @@ struct ContentView: View {
             .background(Brand.surface, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
     }
 
-    @ViewBuilder private var publishedReading: some View {
+    @ViewBuilder private func publishedReading(minimumCardWidth: CGFloat) -> some View {
         if let notice = model.selectedContentReviewNotice {
             Text(localization.text(notice)).font(.footnote).foregroundStyle(.secondary)
                 .accessibilityIdentifier("content-review-notice")
@@ -842,44 +801,16 @@ struct ContentView: View {
                             .fixedSize(horizontal: false, vertical: true)
                             .accessibilityIdentifier("published-current-english")
                     }
-                }.padding(16).frame(maxWidth: .infinity, alignment: .leading)
+                }.padding(16).frame(minWidth: minimumCardWidth, maxWidth: .infinity, alignment: .leading)
                     .background(Brand.surface, in: RoundedRectangle(cornerRadius: 28))
                     .id("published-current-card")
                 locateConfirmationView
             } else {
                 publishedRows(transcript.captions, prefix: "published-caption")
             }
-            DisclosureGroup(localization.text("完整文稿 · 英文对照")) {
-                publishedRows(transcript.fullText, prefix: "published-full")
-            }.accessibilityIdentifier("published-full-transcript")
-            if let studies = model.publishedStudies {
-                reviewedStudySection(studies.outline, title: model.selectedContentLocale == "ko" ? "설교 개요" : model.selectedContentLocale == "es" ? "Bosquejo" : "讲道大纲", kind: "outline")
-                reviewedStudySection(studies.meditation, title: model.selectedContentLocale == "ko" ? "묵상" : model.selectedContentLocale == "es" ? "Meditación" : "默想", kind: "meditation")
-            }
+            if model.showsAlignmentStatus { liveAlignmentEntry }
             englishLocateEntry
-            if model.alignmentAvailable || model.alignmentBusy || model.hasAlignmentFeedback {
-                Text(localization.text(model.alignmentDisplayStatus, ["time": model.alignmentPosition.map(PlaybackTime.format) ?? ""]))
-                    .font(.footnote).foregroundStyle(.secondary)
-                    .accessibilityIdentifier("alignment-status")
-            }
         }
-    }
-
-    private func reviewedStudySection(_ artifact: ReviewedStudyArtifact, title: String, kind: String) -> some View {
-        VStack(alignment: .leading, spacing: 14) {
-            sourceText(title, language: model.selectedContentLocale).font(.headline)
-            ForEach(Array(artifact.sections.enumerated()), id: \.offset) { index, section in
-                VStack(alignment: .leading, spacing: 8) {
-                    sourceText(section.title, language: model.selectedContentLocale).font(.headline)
-                    sourceText(section.body, language: model.selectedContentLocale)
-                        .font(.system(size: readingSize)).lineSpacing(6)
-                        .fixedSize(horizontal: false, vertical: true)
-                        .accessibilityIdentifier("published-study-\(kind)-body-\(index)")
-                }
-            }
-        }.frame(maxWidth: .infinity, alignment: .leading)
-            .padding(16).background(Brand.surface, in: RoundedRectangle(cornerRadius: 24))
-            .accessibilityIdentifier("published-study-\(kind)")
     }
 
     @ViewBuilder private var locateConfirmationView: some View {
@@ -896,6 +827,134 @@ struct ContentView: View {
                 }
             }.font(.subheadline).foregroundStyle(Brand.accent)
         }
+    }
+
+    @ViewBuilder private var copyConfirmationToast: some View {
+        if let copyConfirmation {
+            Label(copyConfirmation, systemImage: "checkmark.circle.fill")
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(Brand.accent)
+                .padding(.horizontal, 14)
+                .padding(.vertical, 9)
+                .background(.regularMaterial, in: Capsule())
+                .overlay { Capsule().strokeBorder(Brand.accent.opacity(0.25), lineWidth: 1) }
+                .shadow(color: .black.opacity(0.10), radius: 8, y: 3)
+                .padding(.top, 8)
+                .allowsHitTesting(false)
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel(copyConfirmation)
+                .accessibilityIdentifier("copy-confirmation")
+                .transition(.move(edge: .top).combined(with: .opacity))
+        }
+    }
+
+    /// Context menus keep paragraph copying available on systems where the
+    /// native text-selection long press no longer opens an edit menu.
+    @ViewBuilder
+    private func transcriptCopyActions(text: String, english: String?, suffix: String) -> some View {
+        Button {
+            copyTranscript(text, confirmation: "已复制本段")
+        } label: {
+            Label(localization.text("复制本段"), systemImage: "doc.on.doc")
+        }
+        .accessibilityIdentifier("copy-transcript-\(suffix)")
+        if let english, !english.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            Button {
+                copyTranscript(text + "\n\n" + english, confirmation: "已复制双语对照")
+            } label: {
+                Label(localization.text("复制双语对照"), systemImage: "text.alignleft")
+            }
+            .accessibilityIdentifier("copy-transcript-bilingual-\(suffix)")
+        }
+    }
+
+    private func copyTranscript(_ text: String, confirmation: String) {
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty, Clipboard.copy(trimmed) else { return }
+        let message = localization.text(confirmation)
+        copyConfirmation = message
+        #if os(iOS)
+        UINotificationFeedbackGenerator().notificationOccurred(.success)
+        UIAccessibility.post(notification: .announcement, argument: message)
+        #endif
+    }
+
+    /// The app's headline capability: listen to the live sermon for a few
+    /// seconds and jump the captions to where the service actually is. It sits
+    /// on the page so it is reachable in one tap instead of inside the locate
+    /// panel, where it competed with manual lookup.
+    private var liveAlignmentEntry: some View {
+        let alignedAt = model.alignmentPosition
+        let busy = model.alignmentBusy
+        let available = model.alignmentAvailable
+        let style = alignmentEntryStyle(alignedAt: alignedAt, busy: busy, available: available)
+        return Button {
+            if busy { model.cancelAlignment() }
+            else if available { model.startAlignment() }
+        } label: {
+            HStack(spacing: 12) {
+                Group {
+                    if busy {
+                        ProgressView().controlSize(.small).tint(style.foreground)
+                    } else {
+                        Image(systemName: alignedAt == nil ? "mic.fill" : "checkmark.circle.fill")
+                            .font(.system(size: 18, weight: .semibold))
+                    }
+                }
+                .frame(width: 26)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(style.title).font(.subheadline.weight(.semibold))
+                    Text(style.subtitle).font(.caption).opacity(0.85)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                Spacer(minLength: 8)
+                if style.showsRedo { Image(systemName: "arrow.clockwise").font(.footnote.weight(.semibold)) }
+            }
+            .foregroundStyle(style.foreground)
+            .padding(.horizontal, 16)
+            .padding(.vertical, 12)
+            .frame(maxWidth: .infinity, minHeight: 60, alignment: .leading)
+            .background(style.background, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .disabled(!available && !busy)
+        .accessibilityLabel(style.title)
+        .accessibilityHint(style.subtitle)
+        .accessibilityIdentifier("live-alignment-entry")
+    }
+
+    private struct AlignmentEntryStyle {
+        let title: String
+        let subtitle: String
+        let background: Color
+        let foreground: Color
+        let showsRedo: Bool
+    }
+
+    private func alignmentEntryStyle(alignedAt: Double?, busy: Bool,
+                                     available: Bool) -> AlignmentEntryStyle {
+        if busy {
+            return AlignmentEntryStyle(title: localization.text("取消对齐"),
+                                       subtitle: localization.text("正在聆听现场…"),
+                                       background: Brand.accent, foreground: .white, showsRedo: false)
+        }
+        if !available {
+            return AlignmentEntryStyle(title: localization.text("听现场并对齐"),
+                                       subtitle: localization.text(model.alignmentDisplayStatus,
+                                                                   ["time": model.alignmentPosition.map(PlaybackTime.format) ?? ""]),
+                                       background: Brand.accent.opacity(0.10),
+                                       foreground: Brand.accent, showsRedo: false)
+        }
+        if let alignedAt {
+            return AlignmentEntryStyle(title: localization.text("已对齐 {time}", ["time": PlaybackTime.format(alignedAt)]),
+                                       subtitle: localization.text("点按重新对齐"),
+                                       background: Brand.accent.opacity(0.12),
+                                       foreground: Brand.accent, showsRedo: true)
+        }
+        return AlignmentEntryStyle(title: localization.text("听现场并对齐"),
+                                   subtitle: localization.text("跟着现场自动对到当前句"),
+                                   background: Brand.accent, foreground: .white, showsRedo: false)
     }
 
     private var englishLocateEntry: some View {
@@ -924,23 +983,28 @@ struct ContentView: View {
                         .accessibilityIdentifier("\(prefix)-time-\(cue.id)")
                         .accessibilityAddTraits(audioCue.map { $0.start <= playback.position && playback.position < $0.end } == true ? .isSelected : [])
                     sourceText(cue.text, language: model.selectedContentLocale)
-                        .font(.title3).lineSpacing(7).textSelection(.enabled)
+                        .font(.title3).lineSpacing(7)
                         .fixedSize(horizontal: false, vertical: true)
                         .accessibilityIdentifier("\(prefix)-text-\(cue.id)")
                     if let english = cue.english {
                         sourceText(english, language: "en").font(.body).lineSpacing(5)
-                            .foregroundStyle(.secondary).textSelection(.enabled)
+                            .foregroundStyle(.secondary)
                             .fixedSize(horizontal: false, vertical: true)
                             .accessibilityIdentifier("\(prefix)-english-\(cue.id)")
                     }
                 }.padding(16).frame(maxWidth: .infinity, alignment: .leading)
                     .background(Brand.surface, in: RoundedRectangle(cornerRadius: 20))
                     .id("\(prefix)-\(cue.id)")
+                    // iOS 27 no longer opens the native edit menu for a long press
+                    // on selectable text, so the row owns an explicit copy menu.
+                    .contextMenu {
+                        transcriptCopyActions(text: cue.text, english: cue.english, suffix: cue.id)
+                    }
             }
         }
     }
 
-    private func currentSubtitle(_ track: SermonTrack) -> some View {
+    private func currentSubtitle(_ track: SermonTrack, minimumCardWidth: CGFloat) -> some View {
         let cue = track.cue(at: playback.position) ?? (playback.position < (track.cues.first?.start ?? 0) ? track.cues.first : nil)
         let next = track.cues.first { $0.start > max(playback.position, cue?.start ?? -1) }
         let compact = typeSize.isAccessibilitySize
@@ -968,7 +1032,8 @@ struct ContentView: View {
                     .lineLimit(2).lineSpacing(4)
             }
             Text(localization.text("字幕随中文音频更新")).font(.caption2).foregroundStyle(.secondary)
-        }.padding(compact ? 12 : 20).frame(maxWidth: .infinity, alignment: .leading)
+        }.padding(compact ? 12 : 20)
+            .frame(minWidth: minimumCardWidth, maxWidth: .infinity, alignment: .leading)
             .background(Brand.surface, in: RoundedRectangle(cornerRadius: 28, style: .continuous))
     }
 
@@ -996,11 +1061,11 @@ struct ContentView: View {
                         .accessibilityLabel(localization.text("跳转至 {time}", ["time": PlaybackTime.format(cue.start)]))
                         .accessibilityIdentifier("subtitle-cue-\(row.index)")
                         .disabled(!playback.isReady)
-                    sourceText(cue.text, language: "zh-Hans").font(.title3).lineSpacing(7).textSelection(.enabled)
+                    sourceText(cue.text, language: "zh-Hans").font(.title3).lineSpacing(7)
                         .fixedSize(horizontal: false, vertical: true)
                     if let english = row.english {
                         DisclosureGroup {
-                            sourceText(english, language: "en").font(.body).lineSpacing(5).textSelection(.enabled)
+                            sourceText(english, language: "en").font(.body).lineSpacing(5)
                                 .fixedSize(horizontal: false, vertical: true)
                                 .environment(\.locale, Locale(identifier: "en"))
                                 .accessibilityIdentifier("transcript-english-\(row.index)")
@@ -1017,6 +1082,9 @@ struct ContentView: View {
                 .background(cue.start <= playback.position && playback.position < cue.end ? Brand.accent.opacity(0.13) : Color.clear,
                             in: RoundedRectangle(cornerRadius: 22, style: .continuous))
                 .id("cue-\(row.index)")
+                .contextMenu {
+                    transcriptCopyActions(text: cue.text, english: row.english, suffix: "cue-\(row.index)")
+                }
             }
         }
     }
@@ -1087,7 +1155,7 @@ struct AlignmentControls: View {
                 Button(localization.text("刷新目录")) { Task { await model.refresh() } }
                 Button(localization.text("关闭"), role: .cancel) {}
             } message: { Text(status) }
-            if !compact || model.alignmentBusy || model.hasAlignmentFeedback {
+            if model.showsAlignmentStatus {
                 Text(status)
                     .font(.footnote).foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
@@ -1098,7 +1166,10 @@ struct AlignmentControls: View {
 }
 
 private enum ListeningSheet: String, Identifiable {
-    case weeks, languages, precision, outline, about, video, locate, weeklyUpdate
+    case weeks, languages, precision, about, video, locate, weeklyUpdate
+    #if DEBUG || TONGXING_GUIDE_PREVIEW
+    case guidePreview
+    #endif
     var id: String { rawValue }
 }
 
@@ -1293,9 +1364,14 @@ extension VerifiedHTMLView: NSViewRepresentable {
 }
 #endif
 
+/// The navigation bar's principal item. While live alignment runs, the brand
+/// subtitle gives way to the alignment status, so the toolbar reports progress
+/// without a separate bar pushing the reading area down.
 private struct BrandTitle: View {
     @ObservedObject private var localization = AppLocalization.shared
     @Environment(\.colorScheme) private var colorScheme
+    var alignmentPhase: ListeningAlignmentPhase? = nil
+    var usesCompactStatus = false
 
     private var brandMark: Image {
         #if SWIFT_PACKAGE
@@ -1313,9 +1389,39 @@ private struct BrandTitle: View {
                 .accessibilityHidden(true)
             VStack(alignment: .leading, spacing: 1) {
                 Text(localization.text("同行")).font(.headline)
-                Text(localization.text("证道中文听译")).font(.caption2).foregroundStyle(.secondary)
+                if let phase = alignmentPhase {
+                    alignmentSubtitle(phase)
+                } else {
+                    Text(localization.text("证道中文听译")).font(.caption2).foregroundStyle(.secondary)
+                }
             }
-        }.accessibilityElement(children: .combine)
+        }
+        .accessibilityElement(children: .combine)
+        .animation(.default, value: alignmentPhase)
+    }
+
+    private func alignmentSubtitle(_ phase: ListeningAlignmentPhase) -> some View {
+        HStack(spacing: 4) {
+            if phase.isActive {
+                ProgressView().controlSize(.mini)
+            } else {
+                Image(systemName: phase.symbolName)
+                    .font(.caption2.weight(.semibold))
+                    .foregroundStyle(phase == .failed ? Color.orange : Brand.accent)
+            }
+            Text(alignmentStatusText(phase))
+                .font(.caption2.weight(.semibold))
+                .foregroundStyle(phase == .failed ? Color.orange : Brand.accent)
+                .lineLimit(1)
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("foreground-alignment-feedback-\(phase.rawValue)")
+    }
+
+    private func alignmentStatusText(_ phase: ListeningAlignmentPhase) -> String {
+        let english = localization.language != .simplifiedChinese
+        if usesCompactStatus { return phase.compactText(english: english) }
+        return phase == .failed ? localization.text("听音对齐未完成") : phase.statusText(english: english)
     }
 }
 
@@ -1364,59 +1470,66 @@ private struct WeekSheet: View {
     @Environment(\.dismiss) private var dismiss
     var body: some View {
         NavigationStack {
-            ScrollView {
-                LazyVStack(spacing: 0) {
-                    if !model.independentPages.isEmpty {
-                        Text(localization.text(model.allowsDevCandidates ? "Dev 内容" : "已发布页面"))
-                            .font(.footnote.weight(.semibold)).foregroundStyle(.secondary)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .padding(.horizontal, 20).padding(.top, 18)
+            // A plain picker list: no playback following, so the system List
+            // provides grouping, separators, selection marks and row sizing.
+            List {
+                if !model.independentPages.isEmpty {
+                    Section(localization.text(model.allowsDevCandidates ? "Dev 内容" : "已发布页面")) {
                         ForEach(model.independentPages.sorted { $0.date > $1.date }) { page in
                             Button {
                                 model.selectPublishedPage(page)
                                 dismiss()
                             } label: {
-                                HStack {
-                                    SermonHeadingView(heading: model.heading(for: page), date: page.date,
-                                                      titleFont: .headline, identifier: "picker-\(page.id)")
-                                    Spacer()
-                                    if page.id == model.selectedPageID { Image(systemName: "checkmark") }
-                                }
-                                .padding(20).frame(maxWidth: .infinity, minHeight: 72, alignment: .leading)
-                                .contentShape(Rectangle())
+                                pickerRow(heading: model.heading(for: page), date: page.date,
+                                          identifier: "picker-\(page.id)", selected: page.id == model.selectedPageID)
                             }
-                            .buttonStyle(.plain)
                             .accessibilityIdentifier("published-page-\(page.id)")
                             .task(id: model.publishedHeadingKey(page)) { await model.loadPublishedHeading(page) }
-                            Divider().padding(.horizontal, 20)
                         }
-                    }
-                    ForEach(model.weeks) { week in
-                        Button {
-                            dismiss()
-                            Task { await model.select(week: week) }
-                        } label: {
-                            HStack {
-                                SermonHeadingView(heading: model.heading(for: week),
-                                                  date: week.date, titleFont: .headline, identifier: "picker-\(week.id)")
-                                Spacer()
-                                if week.id == model.selectedWeek?.id { Image(systemName: "checkmark") }
-                            }
-                            .padding(20).frame(maxWidth: .infinity, minHeight: 72, alignment: .leading)
-                            .contentShape(Rectangle())
-                        }
-                        .buttonStyle(.plain)
-                        .accessibilityIdentifier("legacy-week-\(week.id)")
-                        Divider().padding(.horizontal, 20)
                     }
                 }
-            }.navigationTitle(localization.text("选择证道"))
-                .toolbar { ToolbarItem(placement: .confirmationAction) { Button(localization.text("完成")) { dismiss() } } }
+                if !model.weeks.isEmpty {
+                    Section {
+                        ForEach(model.weeks) { week in
+                            Button {
+                                dismiss()
+                                Task { await model.select(week: week) }
+                            } label: {
+                                pickerRow(heading: model.heading(for: week), date: week.date,
+                                          identifier: "picker-\(week.id)", selected: week.id == model.selectedWeek?.id)
+                            }
+                            .accessibilityIdentifier("legacy-week-\(week.id)")
+                        }
+                    } header: {
+                        if !model.independentPages.isEmpty { Text(localization.text("其他周次")) }
+                    }
+                }
+            }
+            #if os(iOS)
+            .listStyle(.insetGrouped)
+            #endif
+            .navigationTitle(localization.text("选择证道"))
+            .toolbar { ToolbarItem(placement: .confirmationAction) { Button(localization.text("完成")) { dismiss() } } }
         }
         .environment(\.locale, localization.locale)
         #if os(macOS)
         .frame(minWidth: 400, minHeight: 480)
         #endif
+    }
+
+    private func pickerRow(heading: SermonHeading, date: String, identifier: String, selected: Bool) -> some View {
+        HStack {
+            SermonHeadingView(heading: heading, date: date, titleFont: .headline, identifier: identifier)
+                // A plain .primary style resolves against the row button's tint,
+                // which would tint the whole heading; this keeps text neutral.
+                .foregroundStyle(Color.primary)
+            Spacer()
+            if selected {
+                Image(systemName: "checkmark").fontWeight(.semibold).foregroundStyle(Brand.accent)
+            }
+        }
+        .frame(minHeight: 44)
+        .contentShape(Rectangle())
     }
 }
 
@@ -1430,7 +1543,6 @@ private struct PrecisionSheet: View {
     @ViewState private var slider = 0.0
     @ViewState private var dragging = false
     @ViewState private var showingMore = false
-    @ViewState private var moreButtonFrame: CGRect = .null
 
     init(model: AppModel) {
         self.model = model
@@ -1483,25 +1595,16 @@ private struct PrecisionSheet: View {
                 PlaybackDock(
                     playback: playback,
                     alignmentModel: model,
-                    onMoreTap: { showingMore = true },
-                    onMoreDismiss: { showingMore = false },
-                    onMoreFrameChange: { moreButtonFrame = $0 }
+                    isMorePresented: $showingMore,
+                    moreContent: {
+                        AnyView(PlaybackMoreControls(
+                            playback: playback,
+                            isPreparing: false,
+                            alignmentModel: model,
+                            onClose: { showingMore = false }
+                        ))
+                    }
                 )
-            }
-            .overlay {
-                PlaybackMorePanelOverlay(
-                    isPresented: $showingMore,
-                    buttonFrame: moreButtonFrame,
-                    placement: .bottom
-                ) { width in
-                    PlaybackMoreControls(
-                        playback: playback,
-                        isPreparing: false,
-                        alignmentModel: model,
-                        onClose: { showingMore = false },
-                        width: width
-                    )
-                }
             }
         }
         .environment(\.locale, localization.locale)
@@ -1524,160 +1627,6 @@ private struct PrecisionSheet: View {
     }
 }
 
-private struct OutlineSheet: View {
-    @ObservedObject private var localization = AppLocalization.shared
-    @ObservedObject var model: AppModel
-    @ObservedObject var playback: PlaybackController
-    @Environment(\.dismiss) private var dismiss
-    @Environment(\.dynamicTypeSize) private var typeSize
-
-    private var summary: String? { model.selectedWeek?.summary ?? model.currentPublishedTranscript?.summary }
-    private var outline: [OutlineSection] { model.selectedWeek?.outline ?? model.currentPublishedTranscript?.outline ?? [] }
-    private var questions: [String] { model.selectedWeek?.questions ?? model.currentPublishedTranscript?.questions ?? [] }
-    private var review: String {
-        if let week = model.selectedWeek { return week.contentReview ?? localization.text("AI 整理，供个人跟读参考") }
-        if let transcript = model.currentPublishedTranscript {
-            switch transcript.contentStatus {
-            case "human_reviewed": return localization.text("内容已人工审核")
-            // A machine quality waiver is never a human approval.
-            case "machine_checked": return localization.text("机器质检 · 未经人工审核")
-            default: return localization.text("机器审核候选，尚未人工放行")
-            }
-        }
-        return localization.text("以当前发布内容为准")
-    }
-
-    /// The verified release's disclosure for a machine-checked locale.
-    private var machineCheckedDisclosure: String? {
-        guard model.selectedWeek == nil else { return nil }
-        return model.selectedMachineCheckedDisclosure
-    }
-
-    private var reviewedStudies: ReviewedStudyResources? {
-        guard model.selectedWeek == nil, model.currentPublishedTranscript != nil else { return nil }
-        return model.publishedStudies
-    }
-
-    private func reviewedSections(_ artifact: ReviewedStudyArtifact, kind: String) -> some View {
-        ForEach(Array(artifact.sections.enumerated()), id: \.offset) { index, section in
-            VStack(alignment: .leading, spacing: 10) {
-                Text(section.title).font(.headline)
-                Text(section.body).font(.body).lineSpacing(6)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .accessibilityIdentifier("sermon-study-reviewed-\(kind)-body-\(index)")
-            }
-        }
-    }
-
-    @ViewState private var showingMore = false
-    @ViewState private var moreButtonFrame: CGRect = .null
-    var body: some View {
-        NavigationStack {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 24) {
-                    if let week = model.selectedWeek {
-                        Text(model.heading(for: week).title).font(.title2.bold())
-                    } else if let page = model.selectedMultilingualPage {
-                        Text(model.heading(for: page).title).font(.title2.bold())
-                    }
-                    if model.isLoadingPublishedTranscript {
-                        ProgressView(localization.text("正在读取本周证道…"))
-                    } else if let error = model.publishedTranscriptError, model.selectedWeek == nil {
-                        Text(localization.text(error)).foregroundStyle(.secondary)
-                        Button(localization.text("重新加载")) { Task { await model.loadSelectedPublishedTranscript() } }
-                    } else {
-                        if let studies = reviewedStudies {
-                            reviewedSections(studies.outline, kind: "outline")
-                            reviewedSections(studies.meditation, kind: "meditation")
-                        } else {
-                        if let summary, !summary.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                            VStack(alignment: .leading, spacing: 10) {
-                                Text(localization.text("内容说明")).font(.headline)
-                                Text(summary).font(.body).lineSpacing(6)
-                            }.accessibilityIdentifier("sermon-study-summary")
-                        }
-                        VStack(alignment: .leading, spacing: 12) {
-                            Text(localization.text("证道大纲")).font(.title3.bold())
-                            if outline.isEmpty {
-                                Text(localization.text("本篇暂未发布证道大纲")).foregroundStyle(.secondary)
-                                    .accessibilityIdentifier("sermon-study-outline-unavailable")
-                            } else {
-                                ForEach(Array(outline.enumerated()), id: \.offset) { _, section in
-                                    VStack(alignment: .leading, spacing: 10) {
-                                        Text(section.title).font(.headline)
-                                        ForEach(Array(section.points.enumerated()), id: \.offset) { _, point in
-                                            Text(point).font(.body).lineSpacing(6)
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                        VStack(alignment: .leading, spacing: 12) {
-                            Text(localization.text("默想问题")).font(.title3.bold())
-                            if questions.isEmpty {
-                                Text(localization.text("本篇暂未发布默想问题")).foregroundStyle(.secondary)
-                                    .accessibilityIdentifier("sermon-study-questions-unavailable")
-                            } else {
-                                ForEach(Array(questions.enumerated()), id: \.offset) { index, question in
-                                    Text("\(index + 1). \(question)").font(.body).lineSpacing(6)
-                                }
-                            }
-                        }
-                        }
-                        Text(review).font(.caption).foregroundStyle(.secondary)
-                        if let disclosure = machineCheckedDisclosure {
-                            sourceText(disclosure, language: model.selectedContentLocale)
-                                .font(.caption).foregroundStyle(.secondary)
-                                .fixedSize(horizontal: false, vertical: true)
-                                .accessibilityIdentifier("sermon-study-machine-checked-disclosure")
-                        }
-                        Button(localization.text("完成")) { dismiss() }
-                            .buttonStyle(.bordered).frame(minHeight: 44)
-                            .accessibilityIdentifier("close-sermon-study-bottom")
-                    }
-                }
-                .padding(.bottom, typeSize.isAccessibilitySize ? 96 : 0)
-                .padding(22).frame(maxWidth: 680, alignment: .leading)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-            }.accessibilityIdentifier("sermon-study-scroll")
-                .navigationTitle(localization.text("大纲与默想"))
-                .toolbar { ToolbarItem(placement: .confirmationAction) {
-                    Button(localization.text("完成")) { dismiss() }.accessibilityIdentifier("close-sermon-study")
-                } }
-                .listeningBottomBar {
-                    PlaybackDock(
-                        playback: playback,
-                        alignmentModel: model,
-                        onMoreTap: { showingMore = true },
-                        onMoreDismiss: { showingMore = false },
-                        onMoreFrameChange: { moreButtonFrame = $0 }
-                    )
-                }
-        }
-        // The panel belongs to the entire sheet, above both scrolling content
-        // and the safe-area playback bar, using one stable host coordinate space.
-        .overlay {
-            PlaybackMorePanelOverlay(
-                isPresented: $showingMore,
-                buttonFrame: moreButtonFrame,
-                placement: .bottom
-            ) { width in
-                PlaybackMoreControls(
-                    playback: playback,
-                    isPreparing: false,
-                    alignmentModel: model,
-                    onClose: { showingMore = false },
-                    width: width
-                )
-            }
-        }
-        .environment(\.locale, localization.locale)
-        #if os(macOS)
-        .frame(minWidth: 430, minHeight: 630)
-        #endif
-    }
-}
-
 private struct AboutSheet: View {
     @ObservedObject private var localization = AppLocalization.shared
     @ObservedObject var model: AppModel
@@ -1696,6 +1645,10 @@ private struct AboutSheet: View {
                         NavigationLink { BetaNotificationSettingsView(model: model) } label: {
                             Label(localization.text("Beta 通知测试"), systemImage: "bell.badge")
                         }.accessibilityIdentifier("beta-notification-settings")
+                    } else if ProductionPush.isProduction {
+                        NavigationLink { ProductionPushSettingsView() } label: {
+                            Label(localization.text("每周通知"), systemImage: "bell.badge")
+                        }.accessibilityIdentifier("production-push-settings")
                     }
                     #endif
                 }

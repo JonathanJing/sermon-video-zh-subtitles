@@ -1,0 +1,10 @@
+{
+  "action": "build",
+  "sourceCommit": "afe21906487eff39229ddc480b152c70e015b209",
+  "device": null,
+  "scheme": "TongxingBeta",
+  "configuration": "BetaDebug",
+  "exitStatus": 0,
+  "testCases": [],
+  "resultBundleFinalized": true
+}

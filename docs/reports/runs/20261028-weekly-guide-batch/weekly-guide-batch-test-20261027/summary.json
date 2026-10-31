@@ -1,0 +1,10 @@
+{
+  "status": "passed",
+  "tests_passed": 181,
+  "tests_failed": 0,
+  "scope": "batch candidate, safe baseline copy, stale version, independent revocation and hosting lease checks",
+  "limits": [
+    "Mock publisher is not actual deployment",
+    "No human approval or real-device acceptance"
+  ]
+}

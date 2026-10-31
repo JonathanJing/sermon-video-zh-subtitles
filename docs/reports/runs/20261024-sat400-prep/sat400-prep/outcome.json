@@ -1,0 +1,20 @@
+{
+  "status": "completed_partial",
+  "completedStages": [
+    "P1",
+    "P2",
+    "P3",
+    "P4",
+    "P6",
+    "P7"
+  ],
+  "waiting": [
+    "P5 user term decisions",
+    "P8 formal broadcast file"
+  ],
+  "paidCalls": 0,
+  "published": false,
+  "exitCode": 0,
+  "startedAt": "2026-10-24T17:55:47-07:00",
+  "endedAt": "2026-10-24T18:12:00-07:00"
+}

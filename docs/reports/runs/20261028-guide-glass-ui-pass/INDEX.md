@@ -1,0 +1,18 @@
+# Run digest 20261028-guide-glass-ui-pass
+
+Generated 2026-10-28T22:34:00+00:00. Redacted copies only; source hashes are in manifest.json.
+
+## 20261028T153041-test-c65ba6c5
+
+Source: `~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/artifacts/tongxing-ios/2026-10-28/cli/20261028T153041-test-c65ba6c5`
+
+
+Error-like log lines (first 5 per log):
+
+- `run.log`: ... 1377 lines omitted; 18 error-like lines, 18 kept below ...
+- `run.log`: [line 575] ~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/apps/tongxing-ios/App/MicrophoneCapture.swift:259:92: warning: main actor-isolated static property 'startupSeconds' can no
+- `run.log`: [line 582]     |                                                                                            `- warning: main actor-isolated static property 'startupSeconds' can not be referenced from
+- `run.log`: [line 664] ~/.codex/worktrees/ios-ui-fixes-20261028/sermon-video-zh-subtitles/apps/tongxing-ios/Tests/AudioAlignmentControllerTests.swift:876:100: warning: main actor-isolated static property 'match'
+- `run.log`: [line 675]      |                                                                                                    `- warning: main actor-isolated static property 'match' can not be referenced from
+
+Not copied: 2 .0~3Eyu_Spa_X_A5CJmxh6_fl-Ikd0f0SrMoK1dS2z2G9700WmjIu1nu7i0LJeLrgpLGB2uGAOHRsoRI8DCq17Fkw==, 2 .0~4VqMqsI5lOfxRppnud6-VDWcNsU8J7VgFCJfW2dXPwOcAkvU-I8Um5yp9n0Zv6nr3VmcxYggaVMDFfR0U_vjKw==, 2 .0~55yw0WYL6JiJtG6TyE0soBJnIsgQMRFU603EieeZtmGHVRbqLvryr8xCD4CwuSFDn5Z0ae2MHnMoBkNF3klWfw==, 2 .0~62euNohErRUvVaREGwzYCFk4QJF48AZRsnILSesP2vHQjFFhQBvc1sG-9MoEeuww8NO3kfY-XyYo56v5LTPYvA==, 2 .0~68n0eAvhHZijfOlVFb2bRXwSUbztk6bEjDzBb53DcYVLQQJLYeXyON-zIbgRYRMkv42XzEZoaq_oqpDPY0ruZg==, 2 .0~9bpn5bgdCWN-DD4y6FbajM85ZbY-KaJTwecVkTz-_ofQk44x5gvJM6sLgoVhJIZNGIv1rr16ctwkjeZblmCEeA==, 2 .0~Amu5dnCbKZEWhQnoYM20LASWQH-TiBclKJbyHqDiwSwxvJHNezXzJuOe8c8KGe7HznsTj1kD8ATJAmSCG5UXMg==, 2 .0~Cw_9PR3bLi2TMeebWYIEZkiGZ0-Cg3udHUNdGM8tLasHeOOCylIqQvHvHA1Oq7cVUr0JsioLUu3yMZ_IJNLLNQ==, 2 .0~GoibpIEy8Yps85BXRdPTFTdNZ-EXVyfDSCwjB81n5JBAZbpLcSjQNuL2nj9hdUNUk6Yk_9ObiCNlKyBpNy-Mfw==, 2 .0~I-ZNB2WCIPiR3VHONDZuSS54NJw9FQXEC9BN65b4-Dp2pcR4rhnIOikbY5cUctFs9cifpmcKa_Z_XcB1cwJn4w==, 2 .0~IpDfWdt4vyK_DhsU3VQRrFmTE9YY9bT0WblZEZUfjJaVpbGjVS1ZEA3urPMUb_8BPJZmfYobiDr80K-GNsn4gg==, 2 .0~LJjm2IPVkyPZt_hCL2VEabvrfIZKA1z2s88OuvyGlwvu5NXsdd7mXzlEmqhJ_OKOwYs65F1ngX6iKETnj93zUg==, 2 .0~UROWJdmIdOuNSdRMy8c_yn0A6oXBmFB4p1ddxpKvcQYgtSu1cNyOgzhlOZYKu38y9_dxFLw9WzxOips92kyDXA==, 2 .0~YeHq5MzD0WSvZl7vRAOkvoEp6CbAbSRGI_zzRZrJPSnJ5q_Cj6bxwF4Ru2W5lXeRTrLbfI1JfbRpG4I3Motu1g==, 2 .0~c0X9V7anD0GTviQnGNYAk0cBFiaEcuJqwrwMyWVlerxuAqsiLB6dciYgB7anSDOfD8PBPFAdzEu8nAWa5Jz5FA==, 2 .0~gixb-rIXTEA_Q-nx6qPHFU235MsK36ZNCON812VumYeHcDOHSeyyaYa2mv5Tu2jndHgIVtVZ97gEpvtAe1_TiQ==, 2 .0~oRMi0sbQLktfDDDGUS-SqBKpdDiD6HCztVES_ShfGr0KVcYENoIq7y9oUSDWL5B_P2gkdtWG8JEsJLxPbdWOZA==, 2 .0~p4d5R8UFdF7uDpN7gSxRHiKgBDZZYx96ZznD7Ng6gRIk8KmszC8iRjBhxY3SUlCQhEKE3B9tFOuoY5oAivA3lg==, 2 .0~pEmjiS6fBEKrFb93Ir25hhmf9yxVEk_nzUImM0YcxSmW5m_YSgnmMmv2MDpBstxrydGpd6PG8zp9NYJXwkVagQ==, 2 .0~sAoC69sgbZxhRmvsIvFcdp-CXVk_ugmHUAG4zLb-xWU0_Vkm2L7u1hgCZ7Be8TBq0eTXlP4p9OGmnMhrJVu3Fg==, 2 .0~su3kPloulZuuOKo2LGfzMYRPN98bxhxHb-uEnGNCSguAuzMCEGRGfVabjvT397B6F6jKNIlz2T4gRzAe32vbTw==, 2 .0~tSn_K2f_g05HlyWlairi-OYowpkcG1cBkwIqksE7lWqsZVB-LMUHvJosBFvjoD9S7HRHwtYqX4M7IklfhAmEKg==, 2 .0~uu2TB7zfG7j0ABQ09Y98ZGtOPzsUVl5o60dZRSoWIBi3d7FAvAPwJc-z7cudv0RFZ7l2-YaS3QkPWDPMA-mfRA==, 2 .0~x4V4ORZaUtGkZZJifEEaAwZ82Exzs4fROENu-R2p5HsfujsiQPda1DLaH95ogxql-jUlglayQ0OLOcJNJWzoOA==, 2 .0~xSjIIPxj--vPOvPzNLwr96sZFWqEuc4tmudt1CtSlAbK-_c0t12mGUzuLEv2HBY5JeYNHkeVd2hm7XQN74ZcUg==, 2 .json, 1 .plist, 2 .png, 1 .sqlite3

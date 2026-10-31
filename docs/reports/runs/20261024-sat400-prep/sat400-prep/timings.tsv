@@ -1,0 +1,7 @@
+stage	result	seconds
+P1-asr-spark	pass	281.6
+P2-P4-terms-scripture	pass
+P6-warmup-pack	pass
+P7-start-check	fail
+P5-term-decisions	waiting
+P8-broadcast-diff	waiting

@@ -88,7 +88,7 @@ final class AppModel: ObservableObject {
     @Published private(set) var downloadStates: [String: DownloadState] = [:]
     @Published private(set) var usingOfflineAudio = false
     @Published var display: ListeningDisplay = .current
-    @Published private(set) var alignmentStatus = "请播放同一录音的原声，再点击听声对齐。"
+    @Published private(set) var alignmentStatus = AppModel.alignmentIdlePrompt
     @Published private(set) var alignmentBusy = false
     @Published private(set) var alignmentPosition: Double?
     @Published private(set) var foregroundAlignmentPhase: ListeningAlignmentPhase?
@@ -121,14 +121,49 @@ final class AppModel: ObservableObject {
 
     func dismissAlignmentFailure() { alignmentFailure = nil }
 
+    static let alignmentIdlePrompt = "请播放同一录音的原声，再点击听声对齐。"
+    /// Shown while a declared fingerprint cannot be checked yet; it is neither
+    /// "available" nor "missing" until the bound track has been prepared.
+    static let alignmentLoadingStatus = "正在载入听声对齐资料…"
+    /// Only for a page that declares no index, or whose binding failed validation
+    /// against the verified, ready track.
+    static let alignmentUnavailableStatus = "当前音频没有可用的听声对齐资料。"
+    static let audioNotReadyStatus = "音频尚未准备就绪，请稍候或重新载入音频。"
+
+    /// A published page advertises its fingerprint before its audio has been
+    /// downloaded, hash-verified and reported ready by the player. The controller
+    /// validates the binding against that track, so until the preparation has
+    /// finished or failed the index must not be reported as missing.
+    var isLoadingAlignmentCapability: Bool {
+        guard selectedWeek == nil, selectedContentTarget?.audioFingerprint != nil else { return false }
+        if isPreparingPublishedAudio { return true }
+        guard let selectedAudioLocale else { return publishedAudioError == nil && !playback.isPreview }
+        return selectedAudioLocale == selectedContentLocale && !playback.isReady && !playback.loadFailed
+    }
+
     var alignmentDisplayStatus: String {
         if alignmentBusy || hasAlignmentFeedback { return alignmentStatus }
-        guard alignmentController?.available == true else {
-            return "本篇尚未提供现场对齐资料，请刷新目录或手动定位。"
+        if selectedWeek == nil {
+            if selectedContentTarget?.audioFingerprint != nil {
+                if isLoadingAlignmentCapability { return Self.alignmentLoadingStatus }
+                if selectedAudioLocale != selectedContentLocale || !playback.isReady {
+                    return Self.audioNotReadyStatus
+                }
+            } else if multilingualCatalog == nil {
+                return Self.audioNotReadyStatus
+            }
         }
+        guard alignmentController?.available == true else { return Self.alignmentUnavailableStatus }
         if isPreparing { return "正在准备音频，请稍候再开始现场自动对齐。" }
-        if !playback.isReady { return "音频尚未准备就绪，请稍候或重新载入音频。" }
-        return alignmentStatus
+        if !playback.isReady { return Self.audioNotReadyStatus }
+        // Availability is derived here, at display time. `alignmentStatus` only
+        // carries controller feedback, never a frozen pre-readiness verdict.
+        return Self.alignmentIdlePrompt
+    }
+
+    var showsAlignmentStatus: Bool {
+        alignmentBusy || hasAlignmentFeedback || alignmentController?.available == true ||
+            (selectedWeek == nil && selectedContentTarget?.audioFingerprint != nil)
     }
 
     func updateAlignmentState(status: String, busy: Bool, position: Double?) {
@@ -144,9 +179,10 @@ final class AppModel: ObservableObject {
         hasAlignmentFeedback = false
         alignmentBusy = false
         alignmentPosition = nil
-        alignmentStatus = alignmentController?.available == true
-            ? "请播放同一录音的原声，再点击听声对齐。"
-            : "本篇尚未提供现场对齐资料，请刷新目录或手动定位。"
+        // Published audio is reset before its player item is ready, when the
+        // controller cannot yet validate the binding; a verdict stored here would
+        // outlive readiness and show "no index" for a page that has one.
+        alignmentStatus = Self.alignmentIdlePrompt
     }
 
     var alignmentAvailable: Bool {
@@ -185,6 +221,9 @@ final class AppModel: ObservableObject {
     private let languagePreferenceURL: URL
     private var languagePreferences: ContentLanguagePreferences
     private var started = false
+    private var startTask: Task<Void, Never>?
+    private var deepLinkRequest = UUID()
+    private var userSelectionRevision = UUID()
     private var preparation = UUID()
     private var publishedAudioRequest = UUID()
     private var publishedSelectionRevision = UUID()
@@ -501,6 +540,7 @@ final class AppModel: ObservableObject {
               canSelectContent(locale, in: page),
               let source = publishedSource(page: page, locale: locale) else { return }
         guard locale != selectedContentLocale else { return }
+        userSelectionRevision = UUID()
         publishedSelectionRevision = UUID()
         cancelPublishedAudioPreparation()
         playback.preparePublishedLanguageSwitch(pageID: page.id, editionID: source.editionId,
@@ -533,15 +573,60 @@ final class AppModel: ObservableObject {
     var currentDownload: DownloadState { selectionKey.flatMap { downloadStates[$0] } ?? .absent }
 
     func start() async {
+        if let startTask {
+            await startTask.value
+            return
+        }
         guard !started else { return }
         started = true
-        await refresh()
+        let task = Task { await refresh() }
+        startTask = task
+        await task.value
+        startTask = nil
     }
 
     var weeklyUpdateIdentity: String {
         guard let catalog = multilingualCatalog else { return "" }
         return [catalog.defaultPageId, selectedContentLocale,
                 catalog.defaultPage.targets[selectedContentLocale]?.releasePackageJsonSha256 ?? ""].joined(separator: ":")
+    }
+
+    /// Open a Universal Link or custom-scheme deep link after validating its host,
+    /// page ID and locale. The page must be present in the published catalog; a
+    /// missing or withdrawn page is ignored rather than falling back to another page.
+    func openDeepLink(_ url: URL) async {
+        let bundleScheme = Bundle.main.object(forInfoDictionaryKey: "TongxingURLScheme") as? String
+        let allowedSchemes = Set([bundleScheme, "tongxing", "tongxing-beta"].compactMap { $0 })
+        guard let link = AppDeepLink.parse(url,
+                                           allowedHost: mediaOrigin.host ?? "",
+                                           allowedSchemes: allowedSchemes) else { return }
+
+        let request = UUID()
+        deepLinkRequest = request
+        let userSelection = userSelectionRevision
+        // A concurrent launch must finish choosing its default before applying
+        // a link; otherwise the initial refresh can overwrite the linked page.
+        await start()
+        guard deepLinkRequest == request, userSelectionRevision == userSelection else { return }
+
+        let selectionRevision = publishedSelectionRevision
+        var catalog = multilingualCatalog
+        if catalog?.pages.contains(where: { $0.id == link.pageID }) != true,
+           let multilingualRepository {
+            // Fetch without mutating the current selection. An unknown or
+            // withdrawn page must not send the listener to the default page.
+            catalog = try? await multilingualRepository.loadCatalog().catalog
+        }
+        guard deepLinkRequest == request, userSelectionRevision == userSelection,
+              publishedSelectionRevision == selectionRevision, let catalog,
+              let page = catalog.pages.first(where: { $0.id == link.pageID }),
+              !weeks.contains(where: { $0.id == page.id }),
+              !Self.selectableTargets(in: page, allowDevCandidates: allowsDevCandidates).isEmpty else { return }
+
+        openWeeklyUpdate(page, catalog: catalog)
+        if let locale = link.locale, page.targets[locale] != nil {
+            selectPublishedContentLanguage(locale)
+        }
     }
 
     func openWeeklyUpdate(_ page: MultilingualPage, catalog: MultilingualCatalog) {
@@ -562,6 +647,7 @@ final class AppModel: ObservableObject {
 
     func refresh() async {
         guard !isLoading, let repository else { return }
+        let selectionRevision = publishedSelectionRevision
         let preferPublishedDefault = selectedWeek == nil && selectedPageID == nil
         if isPreparingPublishedAudio { cancelPublishedAudioPreparation() }
         isLoading = true
@@ -581,27 +667,33 @@ final class AppModel: ObservableObject {
             if let selectedWeek {
                 let next = result.catalog.weeks.first { $0.id == selectedWeek.id } ?? result.catalog.defaultWeek
                 let track = next.tracks.first { $0.id == selectedTrack?.id } ?? next.tracks.first
-                await select(week: next, track: track)
+                await select(week: next, track: track, userInitiated: false)
             }
-            await refreshMultilingualCatalog(pageID: selectedPageID, preferPublishedDefault: preferPublishedDefault)
+            await refreshMultilingualCatalog(pageID: selectedPageID,
+                                             preferPublishedDefault: preferPublishedDefault && publishedSelectionRevision == selectionRevision)
             if selectedWeek == nil, selectedPageID == nil {
                 let next = result.catalog.defaultWeek
-                await select(week: next, track: next.tracks.first)
+                await select(week: next, track: next.tracks.first, userInitiated: false)
             }
         } catch {
             errorMessage = "暂时无法读取证道目录。请连接网络后重试。"
-            await refreshMultilingualCatalog(pageID: selectedPageID, preferPublishedDefault: preferPublishedDefault)
+            await refreshMultilingualCatalog(pageID: selectedPageID,
+                                             preferPublishedDefault: preferPublishedDefault && publishedSelectionRevision == selectionRevision)
         }
     }
 
     private func refreshMultilingualCatalog(pageID: String?, preferPublishedDefault: Bool = false) async {
         guard let multilingualRepository else { return }
         do {
+            let selectionRevision = publishedSelectionRevision
             let oldAudioTarget = selectedAudioLocale.flatMap { selectedMultilingualPage?.targets[$0] }
             let oldSource = selectedMultilingualPage.flatMap { page in
                 publishedSource(page: page, locale: selectedContentLocale)
             }
             let result = try await multilingualRepository.loadCatalog()
+            // A user selection or a link made during the fetch supersedes this
+            // refresh's saved page and audio state.
+            guard publishedSelectionRevision == selectionRevision else { return }
             multilingualCatalog = result.catalog
             multilingualNotice = result.warning
             if result.machineCheckedCatalogError != nil {
@@ -615,7 +707,7 @@ final class AppModel: ObservableObject {
                 && result.catalog.isDualScript
                 && independentPages.contains(where: { $0.id == result.catalog.defaultPageId })
             if usePublishedDefault {
-                selectPublishedPage(result.catalog.defaultPage)
+                selectPublishedPage(result.catalog.defaultPage, userInitiated: false)
             }
             if !usePublishedDefault, let pageID, result.catalog.pages.contains(where: { $0.id == pageID }) {
                 selectedPageID = pageID
@@ -648,6 +740,7 @@ final class AppModel: ObservableObject {
     func selectContentLanguage(_ locale: String) async -> VerifiedLanguagePage? {
         guard !isSelectingLanguage, let page = selectedMultilingualPage,
               canSelectContent(locale, in: page), let multilingualRepository else { return nil }
+        userSelectionRevision = UUID()
         let request = UUID()
         let selectionRevision = publishedSelectionRevision
         languageSelectionRequest = request
@@ -715,9 +808,10 @@ final class AppModel: ObservableObject {
         }
     }
 
-    func selectPublishedPage(_ page: MultilingualPage, forceReload: Bool = false) {
+    func selectPublishedPage(_ page: MultilingualPage, forceReload: Bool = false, userInitiated: Bool = true) {
         guard independentPages.contains(where: { $0.id == page.id }) else { return }
         guard forceReload || selectedWeek != nil || selectedPageID != page.id else { return }
+        if userInitiated { userSelectionRevision = UUID() }
         publishedSelectionRevision = UUID()
         cancelPublishedAudioPreparation()
         playback.clear()
@@ -830,7 +924,8 @@ final class AppModel: ObservableObject {
         }
     }
 
-    func select(week: SermonWeek, track: SermonTrack? = nil, force: Bool = false) async {
+    func select(week: SermonWeek, track: SermonTrack? = nil, force: Bool = false, userInitiated: Bool = true) async {
+        if userInitiated { userSelectionRevision = UUID() }
         publishedSelectionRevision = UUID()
         cancelPublishedAudioPreparation()
         selectedAudioLocale = nil

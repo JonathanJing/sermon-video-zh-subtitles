@@ -1,0 +1,21 @@
+{
+  "scope": "testflight_beta_candidate",
+  "version": "1.26.24",
+  "build": "66",
+  "sourceCommit": "f13ec4f2766f913ae6f763af267f95c87d3b877e",
+  "archiveStatus": "archive_succeeded",
+  "archiveManifestSHA256": "374d17c48451c0e9d663a641c18c9eee185cf3ffe0c3f740dc0b8f8c4d889cd7",
+  "signatureCheck": "passed",
+  "betaSimulatorBuild": "passed",
+  "betaSimulatorHomeEntry": "visible",
+  "ipaExport": "failed",
+  "upload": "not_run",
+  "appleProcessing": "not_run",
+  "deviceAcceptance": "not_run",
+  "issues": [
+    "Xcode account credentials unavailable",
+    "No local distribution signing identity",
+    "App Store Connect API key lacks cloud signing permission",
+    "App Store provisioning profile lacks associated-domains entitlement"
+  ]
+}

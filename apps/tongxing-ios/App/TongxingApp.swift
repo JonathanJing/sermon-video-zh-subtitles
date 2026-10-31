@@ -6,6 +6,8 @@ struct TongxingApp: App {
     #if os(iOS)
     @UIApplicationDelegateAdaptor(BetaNotificationAppDelegate.self) private var notificationDelegate
     @ObservedObject private var notifications = BetaNotificationController.shared
+    @ObservedObject private var productionPush = ProductionPush.shared
+    @State private var showingProductionPushOffer = false
     #endif
     @Environment(\.scenePhase) private var scenePhase
     // App-scoped on purpose: Tongxing owns a single audio session and declares
@@ -33,6 +35,7 @@ struct TongxingApp: App {
                         model.setAlignmentFeedbackForeground(true)
                         model.playback.refreshLiveActivityPresentation()
                         Task { await model.checkWeeklyUpdates() }
+                        Task { await productionPush.refreshPermissionAndRegistration() }
                     }
                     model.playback.setStatisticsForeground(phase == .active)
                 }
@@ -52,16 +55,37 @@ struct TongxingApp: App {
                     #endif
                     #if os(iOS)
                     notifications.openPending(in: model)
+                    productionPush.openPending(in: model)
+                    showingProductionPushOffer = productionPush.shouldOfferAfterUpdate()
                     #endif
                 }
                 #if os(iOS)
                 .onChange(of: notifications.pending) { _, _ in notifications.openPending(in: model) }
                 .onChange(of: model.multilingualCatalog) { _, _ in notifications.openPending(in: model) }
+                .onChange(of: productionPush.pending) { _, _ in productionPush.openPending(in: model) }
+                .onChange(of: model.multilingualCatalog) { _, _ in productionPush.openPending(in: model) }
+                .alert(localization.text("开启每周通知？"), isPresented: $showingProductionPushOffer) {
+                    Button(localization.text("稍后"), role: .cancel) { }
+                    Button(localization.text("开启通知")) { Task { await productionPush.enable() } }
+                } message: {
+                    Text(localization.text("开启后按你选择的内容语言通知新证道。可随时关闭。"))
+                }
                 .alert(localization.text("Beta 通知测试"), isPresented: Binding(get: { notifications.landingMessage != nil },
                                                       set: { if !$0 { notifications.landingMessage = nil } })) {
                     Button(localization.text("完成")) { notifications.landingMessage = nil }
                 } message: { Text(localization.text(notifications.landingMessage ?? "")) }
+                .alert(localization.text("每周通知"), isPresented: Binding(get: { productionPush.landingMessage != nil },
+                                                   set: { if !$0 { productionPush.landingMessage = nil } })) {
+                    Button(localization.text("完成")) { productionPush.landingMessage = nil }
+                } message: { Text(localization.text(productionPush.landingMessage ?? "")) }
                 #endif
+                .onOpenURL { url in
+                    Task { await model.openDeepLink(url) }
+                }
+                .onContinueUserActivity(NSUserActivityTypeBrowsingWeb) { activity in
+                    guard let url = activity.webpageURL else { return }
+                    Task { await model.openDeepLink(url) }
+                }
                 #if os(macOS)
                 .modifier(DevelopmentPreviewAppearance())
                 #endif

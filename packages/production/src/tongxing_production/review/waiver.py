@@ -53,7 +53,6 @@ IMPLEMENTATION_FILES = (
     # L4 accepts a condensed script on its hash-bound binding without rerunning these checks.
     "scripts/spoken_condensation.py",
     # Scores every ASR transcript the audio QC and the waivers rescore.
-    "scripts/screen_target_language_audio_units.py",
     # The Layer 3 proxy and its backend/host binding select the executable spoken rules.
     "packages/production/src/tongxing_production/audio/hosted.py",
     "packages/production/src/tongxing_production/audio/backend.py",
@@ -64,8 +63,6 @@ IMPLEMENTATION_FILES = (
     "scripts/ko_spoken_numerals.py",
     # Calibration executes these paths to derive and synthesize registered spoken forms.
     "scripts/render_formal_target_language_speech.py",
-    "scripts/machine_qc_audio_transports.py",
-    "scripts/run_machine_qc_audio_test.py",
     "scripts/run_machine_qc_clip_test.py",
     "scripts/machine_qc_budget_authorization.py",
     # Request routing and project-header enforcement are part of the QC runtime.

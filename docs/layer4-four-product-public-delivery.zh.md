@@ -39,12 +39,12 @@ candidateSha256 = sha({products: join, metadataApproval: metadataApprovalSha256,
 
 PDF 不进入该身份。静态 HTML 包含 `study-outline` 和 `study-meditation` 两个 section，每条标题和完整正文进行 HTML 转义。Web App 从独立资源校验 hash 与身份后加载全文学习内容，独立大纲替换旧 metadata outline。正文保留换行，使用 textContent 渲染；切换 UI 语言不会改写已批准学习文本。
 
-## 机器质检发布（release v4 / catalog v4）
+## 文字机器质检发布（release v4 / catalog v4）
 
-完整文稿、口播稿或音轨中有任何一项用[机器质检豁免](machine-quality-waiver.zh.md)代替人工收据时，builder 输出 [release v4](../schemas/sermon-target-language-release-package-v4.schema.json)，URL 改为 `/releases-v4/{pageId}/{locale}.json`。v4 与 v3 的七种资源、`sourceIdentity`、`fourProducts` 相同，另加：
+完整文稿或口播稿用[文本机器质检豁免](machine-quality-waiver.zh.md)代替人工文字收据时，builder 输出 [release v4](../schemas/sermon-target-language-release-package-v4.schema.json)，URL 改为 `/releases-v4/{pageId}/{locale}.json`。音轨自 2026-10-28 起不再有机器豁免，只能由人工整轨 1× 听审签收。v4 与 v3 的七种资源、`sourceIdentity`、`fourProducts` 相同，另加：
 
-- `contentStatus`、`audioStatus`：各为 `human_reviewed` 或 `machine_checked`，至少一项为 `machine_checked`。完整文稿用豁免时 `contentStatus=machine_checked`；口播稿和音轨都是人工收据时 `audioStatus` 才是 `human_reviewed`。
-- `reviewBasis`：`fullText`、`spokenText`、`audio` 各记 `kind`（`human_review` 或 `machine_quality_waiver`）和收据的 canonical SHA-256。
+- `contentStatus`、`audioStatus`：`contentStatus` 为 `human_reviewed` 或 `machine_checked`，至少一项为 `machine_checked`；新 v4 的 `audioStatus` 固定为 `human_reviewed`。历史 v4 已写出的 `audioStatus=machine_checked` 保持可读，不按新规则重写。
+- `reviewBasis`：`fullText`、`spokenText` 各记 `kind`（`human_review` 或 `machine_quality_waiver`）和收据的 canonical SHA-256；`audio` 自 2026-10-28 起只记 `human_review`，历史豁免收据保留可读。
 - `disclosure`：`{locale, text, english}`，`locale` 必须等于 `targetLocale`。
 
 `contentStatus=machine_checked` 时正文必须是 [content v3](../schemas/sermon-full-video-text-content-v3.schema.json)：`status=machine_checked`、`reviewMode=formal`，`disclosure` 与 release 相同；人工文稿不得带 `disclosure`。content v3 只能随 release v4 发布：三项都是人工审核时（写 release v3）必须用 content v2，因为网页和 iOS 只通过 release v4 读取 content v3。大纲与默想在这一步仍要求人工批准。

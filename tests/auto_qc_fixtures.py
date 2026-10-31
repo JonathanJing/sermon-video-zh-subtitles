@@ -134,7 +134,7 @@ PACKAGE_VOICE = {"provider": "local", "model": "tts", "checkpointSha256": "e" * 
 
 
 def _asr_settings(model: str, backend: str) -> dict:
-    from tongxing_production.audio.screening import SCORING, implementation_sha256
+    from tongxing_production.review.asr_scoring import SCORING, implementation_sha256
     return {"protocol": "fake-asr-v1", "model": model, "modelRevision": None, "language": "auto",
             "minSimilarity": audio_qc.THRESHOLDS["asrMinSimilarity"], "scoring": SCORING,
             "implementationSha256": implementation_sha256(), "runtime": {"backend": backend, "temperature": 0.0}}

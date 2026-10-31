@@ -38,7 +38,7 @@ DIRECTIVE_SCHEMA = "sermon-group-directive-v1"
 DIRECTIVE_DIRECTORY = "_directives"
 PENDING_STEPS = (
     "calibration", "text_release_basis", "speech_job_v3", "formal_render",
-    "schedule_and_subtitles", "track_package", "screening_and_audio_qc", "listening_waiver",
+    "schedule_and_subtitles", "track_package",
 )
 L3_HANDOFF = ("python tools/ops/run.py audio.speech_job --text-release-basis <text-release-basis> "
               "--out <speech-job>")
@@ -54,7 +54,8 @@ def _require(condition: bool, message: str) -> None:
 
 def stage_identities(config: dict) -> dict:
     """Current implementation identities for every stage, from this checkout's code."""
-    from ..audio import renderer, screening
+    from ..audio import identity as audio_identity
+    from ..audio import screening
     from ..review import audio_qc, waiver
     from ..text import candidate as producer
     from ..text import models
@@ -63,7 +64,7 @@ def stage_identities(config: dict) -> dict:
     return {
         "runnerImplementationSha256": models.RUNNER_PRODUCTION_IDENTITY_SHA256,
         "machineQcImplementationSha256": waiver.implementation_sha256(),
-        "rendererSoundIdentitySha256": renderer.RENDERER_SOUND_IDENTITY_SHA256,
+        "rendererSoundIdentitySha256": audio_identity.RENDERER_SOUND_IDENTITY_SHA256,
         "asrImplementationSha256": screening.implementation_sha256(),
         "audioQcThresholdsSha256": records.json_sha256(audio_qc.THRESHOLDS),
         "pluginImplementationSha256": producer.plugin_implementation_sha256(config["plugin"]),
@@ -336,8 +337,7 @@ def prepare_l3(config: dict, *, text_basis: Path, adapter: Path, registry: Path,
         "adapterSha256": legacy.file_sha256(Path(adapter)),
         "speechJobSha256": legacy.file_sha256(job_path),
         "speechJobPath": str(job_path), "speechJobStatus": job.get("status"),
-        "pendingSteps": ["formal_render", "schedule_and_subtitles", "track_package",
-                         "screening_and_audio_qc", "listening_waiver"],
+        "pendingSteps": ["formal_render", "schedule_and_subtitles", "track_package"],
         "releaseEligible": False, "humanApproval": False,
     }
     data = (json.dumps(receipt, ensure_ascii=False, indent=1) + "\n").encode("utf-8")

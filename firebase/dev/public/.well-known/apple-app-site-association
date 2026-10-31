@@ -1,0 +1,15 @@
+{
+  "applinks": {
+    "apps": [],
+    "details": [
+      {
+        "appID": "G2P4DTQNBA.com.jonathanjing.tongxing.beta",
+        "paths": ["/", "/pages/*", "/open/*"]
+      },
+      {
+        "appID": "G2P4DTQNBA.com.jonathanjing.tongxing.dev",
+        "paths": ["/", "/pages/*", "/open/*"]
+      }
+    ]
+  }
+}

@@ -65,7 +65,6 @@ LAYER3 = {
     'scripts/prepare_target_language_speech_job.py': _AUDIO + 'speech_job.py',
     # L3 A3, the identity generation (closure window G1).
     'scripts/validate_target_language_audio_unit.py': _AUDIO + 'unit_integrity.py',
-    'scripts/screen_target_language_audio_units.py': _AUDIO + 'screening.py',
     'scripts/build_target_language_audio_package.py': _AUDIO + 'package.py',
     'scripts/render_formal_target_language_speech.py': _AUDIO + 'renderer.py',
     'scripts/compact_formal_target_audio.py': _AUDIO + 'compaction.py',
@@ -106,7 +105,6 @@ COMPUTE = {
     'scripts/codex_layer2_resources.py': PRODUCTION + 'compute/transports/codex_resources.py',
     'scripts/sermon_codex_transport.py': PRODUCTION + 'compute/transports/codex_cli.py',
     # Closure window G1: the audio QC transport (in W; computes T).
-    'scripts/machine_qc_audio_transports.py': PRODUCTION + 'compute/qc_audio_transports.py',
 }
 
 # Layer 4 Delivery (tongxing_production.delivery), batches D1-D9.
@@ -174,7 +172,6 @@ REVIEW = {
     'scripts/implementation_freeze.py': _REVIEW + 'implementation_freeze.py',
     'scripts/sermon_unified_reviews.py': _REVIEW + 'unified_reviews.py',
     'scripts/run_machine_qc_clip_test.py': _REVIEW + 'qc_text_run.py',
-    'scripts/run_machine_qc_audio_test.py': _REVIEW + 'qc_audio_run.py',
 }
 
 # Prepared-workflow composition (tongxing_production.workflows.prepared), batch W2.

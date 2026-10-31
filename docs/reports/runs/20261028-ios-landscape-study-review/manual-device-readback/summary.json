@@ -1,0 +1,80 @@
+{
+  "sourceCommit": "afe21906487eff39229ddc480b152c70e015b209",
+  "humanApproval": false,
+  "independentCodeReview": "no new blocking static finding; original portrait-guide rotation finding fixed",
+  "screenshots": [
+    {
+      "file": "ipad-mini-r2-1018-landscape.png",
+      "sha256": "cec6e9b48e3e52067127e96949d199e69d916fa3328bcab71ecdbf8263555207",
+      "bytes": 511497
+    },
+    {
+      "file": "ipad-pro-r2-1018-landscape.png",
+      "sha256": "b6555dca9906d2197355cb96f989122aae3c5d142f12c764f316c8f2df2f72ea",
+      "bytes": 571898
+    },
+    {
+      "file": "ipad-pro-r2-portrait-sheet-to-landscape.png",
+      "sha256": "bca96a51c1d3be99d23972767bc35f6fde61bc2d22f4db21b78ab6ff7d4ff659",
+      "bytes": 572012
+    },
+    {
+      "file": "ipad-pro-test-diagnostic.png",
+      "sha256": "fedf5dcd318143f8181fa1943ba3a0453a0af3193dd48e9e1b405cc896d8ba4b",
+      "bytes": 502470
+    },
+    {
+      "file": "iphone-current-week-1025.png",
+      "sha256": "d13ab43bc08d1224d60043e81ccc2e3e987fcc643807797e98416ed6c5917771",
+      "bytes": 556343
+    },
+    {
+      "file": "iphone-current-week-reading-and-listening.png",
+      "sha256": "41f9592c3bb15525660075f8d43a226491c68db21dbad87650f136174c189d3e",
+      "bytes": 497481
+    },
+    {
+      "file": "iphone-rotated-after-scroll.png",
+      "sha256": "fd7939d1e60eebe776636557332769980c2af6c043094f2f2fec9d4a00211a50",
+      "bytes": 588759
+    },
+    {
+      "file": "iphone17pro-current-week.png",
+      "sha256": "9d3f5259df8dc0eeace5b8fc6c711e985343950ddc05688c5b01cd07b8f67859",
+      "bytes": 525025
+    },
+    {
+      "file": "iphone17pro-r1-1018.png",
+      "sha256": "0b3ca92db6a6993688d1d11586362fe56e9e060d36693ed2fac2cd9b753d4ca5",
+      "bytes": 593379
+    },
+    {
+      "file": "iphone17pro-unavailable.png",
+      "sha256": "a36789f41e91facdd41a697025a8b9daeab544ae7dd242b4b096c85166a30900",
+      "bytes": 544096
+    }
+  ],
+  "devices": {
+    "iPhone 17 Pro": "Real 10/18 guide loaded; chapter navigation and independent reading observed initially. Real 10/25 week 7 read back. After portrait content scrolled then landscape, chapter-menu tap did not open; cause unresolved.",
+    "iPad Pro 11-inch": "Real 10/18 before/after landscape screenshots; portrait guide sheet automatically became left pane after rotation. Three focused fixture UI cases passed with finalized result bundle.",
+    "iPad mini": "Real 10/18 matching before/after landscape screenshots.",
+    "iPhone Duo": "Unfolded inner landscape not verified: Device Hub connection timed out and inner display stayed black, including after one bounded simulator restart."
+  },
+  "knownIssues": [
+    "iPhone chapter-menu tap after a scrolled portrait-to-landscape transition remains unresolved; do not count as passed.",
+    "Dev catalog still defaults to 10/18 and its weekly-update banner shows the old sermon while the selected 10/25 guide and sermon match. No upstream content or poster deployment changed.",
+    "Two iPhone xcodebuild result collectors hung after test logs completed and were terminated; log observations are separate from a finalized successful xcresult.",
+    "Native preview first attempt stalled and ended with status 73.",
+    "Second native preview also stalled before the render test started; terminated with 143. No successful preview manifest or PNG was claimed. Actual simulator screenshots remain available."
+  ],
+  "scope": {
+    "delivery": "native design candidate",
+    "web": "not_applicable",
+    "testFlight": "not_run",
+    "humanDevice": "not_run",
+    "venue": "not_run"
+  },
+  "reusedGuideBundleSHA256": "a527e23fbd693177b9589fc89cd3533b653f64918abb97213cf34172c36711f9",
+  "presentationScreenshot": "iphone-current-week-reading-and-listening.png shows the right pane scrolled to current captions; the old banner is offscreen, not confirmed dismissed.",
+  "codePR": "https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/1447"
+}

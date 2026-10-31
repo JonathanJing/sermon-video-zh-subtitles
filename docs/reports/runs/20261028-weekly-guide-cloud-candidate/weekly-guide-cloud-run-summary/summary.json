@@ -1,0 +1,24 @@
+{
+  "delivery": "private staging and cloud guide capability candidate",
+  "candidateCommit": "c2c944108a3fd09cd37d7ad527c74807edde4780",
+  "weeks": [
+    8,
+    9,
+    10,
+    11,
+    12
+  ],
+  "privateObjects": 10,
+  "readbackVerified": 10,
+  "privacy": "bucket public access prevention enforced",
+  "sourceTranslationSHA256": "d6c6064e8fab11ab012edd9535372a9f99b83cd5240b6014f5451795a9198f86",
+  "sourceCuvSHA256": "363afb38148f150b30fee727f4818faa821a0d17b4888c16be3e05bd462503bb",
+  "review": "machine translation not human reviewed",
+  "independentReview": "55 source pages, 7 tables, 175 scripture verses verified; no original figures",
+  "iosTests": "22 tests passed on iOS 27.1 simulator; separate tombstone test passed; separate live Dev week 1 and week 6 tests passed",
+  "backendTests": "37 passed; earlier fixture failures and isolated invocation failure corrected",
+  "sourceAudit": "production and dev identity/alias values checked via HTTP; source payload and bytes checked",
+  "liveCloudManifest": "not deployed; future page identity not yet available",
+  "release": "not built or uploaded; 1.26.27 remains unchanged",
+  "takedown": "revocation hides client content; public URL/CDN takedown is separate"
+}

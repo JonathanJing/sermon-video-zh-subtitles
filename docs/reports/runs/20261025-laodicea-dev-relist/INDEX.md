@@ -1,0 +1,33 @@
+# Run digest 20261025-laodicea-dev-relist
+
+Generated 2026-10-26T06:10:32+00:00. Redacted copies only; source hashes are in manifest.json.
+
+## 20261025-laodicea-dev
+
+Source: `~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/sentence-first-agent/20261025-laodicea-dev`
+
+- outcome `outcome.json`: **pass** exit ? (2026-10-26T04:30:40Z → 2026-10-26T05:45:20Z)
+
+Timings `timings.tsv`:
+
+| stage | start | end | seconds | status | note |
+|---|---|---|---|---|---|
+| assets-candidate | 2026-10-26T04:30:40Z | 2026-10-26T04:31:02Z | 22 | pass | legacy v1 assets verified by hash |
+| baseline-1 | 2026-10-26T04:32:30Z | 2026-10-26T04:33:17Z | 47 | pass | Dev f103d290 |
+| stage-candidate | 2026-10-26T04:34:00Z | 2026-10-26T04:35:10Z | 70 | pass | catalog + English reference staged |
+| publish-candidate | 2026-10-26T04:38:45Z | 2026-10-26T04:39:20Z | 35 | pass | user-run deploy, Dev b447eeab |
+| verify-candidate | 2026-10-26T04:39:40Z | 2026-10-26T04:39:55Z | 15 | pass | 10/10 files |
+| ios-beta-open-candidate | 2026-10-26T04:41:15Z | 2026-10-26T04:42:52Z | 97 | fail | iOS: 文稿暂时无法读取; Core: Dev 候选字幕音轨绑定无效 |
+| assets-formal | 2026-10-26T04:51:00Z | 2026-10-26T04:51:54Z | 54 | pass | content v2 + official title + MP3 |
+| baseline-2 | 2026-10-26T04:49:00Z | 2026-10-26T04:49:41Z | 41 | pass | Dev b447eeab |
+| core-probe-dry-run | 2026-10-26T04:44:00Z | 2026-10-26T04:52:20Z | 500 | pass | after two fixes: MP3 path rule, stage1 release rebinding |
+| publish-stage1 | 2026-10-26T04:52:40Z | 2026-10-26T04:53:20Z | 40 | pass | Dev b3931ac3 |
+| http-verify | 2026-10-26T04:53:30Z | 2026-10-26T04:53:47Z | 17 | pass | 12/12 incl. MP3 Range |
+| publish-stage2 | 2026-10-26T04:54:22Z | 2026-10-26T04:55:00Z | 38 | pass | Dev 4c18773a |
+| readback | 2026-10-26T04:55:05Z | 2026-10-26T04:55:20Z | 15 | pass | 7/7 |
+| capture-iphone17pro | 2026-10-26T05:00:50Z | 2026-10-26T05:07:20Z | 390 | pass | TongxingBeta/BetaDebug UI test (temporary, reverted) |
+| capture-duo-unfolded | 2026-10-26T05:37:58Z | 2026-10-26T05:45:20Z | 442 | pass | 4th attempt; XCTest frames black, host simctl inner-display frames used |
+
+Failed stages: `ios-beta-open-candidate`
+
+Not copied: 3 .cache, 28 .css, 696 .html, 7 .jpg, 58 .js, 3861 .json, 3 .lock, 301 .mjs, 1317 .mp3, 161 .mp4, 28 .pdf, 168 .png, 14 .srt, 21 .svg, 7 .txt, 94 .wav

@@ -1,0 +1,10 @@
+{
+  "schemaVersion": "tongxing-run-outcome-v1",
+  "status": "preflight_pass",
+  "exitCode": 0,
+  "deliveryType": "test",
+  "startedAt": "2026-10-25T05:33:00Z",
+  "finishedAt": "2026-10-25T05:45:00Z",
+  "pageID": "revelation-jesus-wins-20261025",
+  "apnsSent": false
+}

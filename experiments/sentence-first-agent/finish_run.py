@@ -9,7 +9,9 @@ already exists unless noted:
   merge    merge_track.py -> track.wav + schedule.json (always rerun; it is cheap)
   score    asr_check.py score -> asr-report.json (always rerun when asr.jsonl exists)
   video    ffmpeg: clip video + track.wav -> dub.mp4 (skip with --no-video)
-  preview  dub.mp4 -> dub-preview-640.mp4, small enough to send to a phone
+  preview  dub.mp4 -> dub-preview-640.mp4, small enough to send to a phone;
+           --preview-encoder auto|quality|fast|hardware (auto: hardware on macOS,
+           else fast; the result must contain a video stream or it falls back)
 
 Prints the worst lag, sentences over 8 s, dub/source length ratio, TTS speed and
 the ASR sentences below --show-below.
@@ -34,6 +36,58 @@ def py(*args) -> str:
     return subprocess.run([sys.executable, *map(str, args)], check=True, capture_output=True, text=True).stdout.strip()
 
 
+# Preview encode settings, measured on a 55-min 640x360 preview (258 s with quality):
+# decode of the 4K AV1 source dominates; fast/hardware cut the encoder part and land
+# around 60-70% of the quality time (larger files). "hardware" replaces the encoder
+# only, because AV1 hardware decode is not available on this host.
+PREVIEW_ENCODER_FLAGS = {
+    "quality": ["-c:v", "libx264", "-preset", "veryfast", "-crf", "30"],
+    "fast": ["-c:v", "libx264", "-preset", "ultrafast", "-crf", "30"],
+    "hardware": ["-c:v", "h264_videotoolbox", "-b:v", "200k"],
+}
+
+
+def choose_preview_encoder(mode: str, platform: str, hardware_available: bool) -> str:
+    """auto: hardware on macOS when the encoder exists, else fast. Explicit modes stay."""
+    if mode != "auto":
+        return mode
+    return "hardware" if platform == "darwin" and hardware_available else "fast"
+
+
+def hardware_encoder_available() -> bool:
+    try:
+        proc = subprocess.run(["ffmpeg", "-hide_banner", "-encoders"], capture_output=True, text=True, timeout=60)
+    except (OSError, subprocess.TimeoutExpired):
+        return False
+    return "h264_videotoolbox" in proc.stdout
+
+
+def preview_has_video(path: Path) -> bool:
+    try:
+        proc = subprocess.run(["ffprobe", "-v", "error", "-select_streams", "v:0",
+                               "-show_entries", "stream=codec_type", "-of", "csv=p=0", str(path)],
+                              capture_output=True, text=True, timeout=120)
+    except (OSError, subprocess.TimeoutExpired):
+        return False
+    return proc.returncode == 0 and "video" in proc.stdout
+
+
+def build_preview(run: Path, mode: str) -> str:
+    available = hardware_encoder_available() if mode == "auto" else False
+    encoder = choose_preview_encoder(mode, sys.platform, available)
+    out = run / "dub-preview-640.mp4"
+    subprocess.run(["ffmpeg", "-nostdin", "-v", "error", "-y", "-i", str(run / "dub.mp4"),
+                    "-vf", "scale=640:-2", *PREVIEW_ENCODER_FLAGS[encoder],
+                    "-c:a", "aac", "-b:a", "96k", "-movflags", "+faststart", str(out)], check=True)
+    if not preview_has_video(out):
+        out.unlink(missing_ok=True)
+        if encoder == "quality":
+            raise SystemExit("preview encode produced no video stream")
+        print(f"preview: {encoder} produced no video stream; falling back to quality", file=sys.stderr)
+        return build_preview(run, "quality")
+    return encoder
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--run", type=Path, required=True)
@@ -41,6 +95,9 @@ def main() -> int:
     parser.add_argument("--clip-from", type=Path, help="run directory whose clip.json to copy (second locale)")
     parser.add_argument("--gap", type=float, default=0.25)
     parser.add_argument("--no-video", action="store_true")
+    parser.add_argument("--preview-encoder", choices=("auto", "quality", "fast", "hardware"), default="auto",
+                        help="preview encode settings; auto = hardware on macOS, else fast; "
+                             "quality is the old libx264 veryfast/crf30 path")
     parser.add_argument("--show-below", type=float, default=0.97)
     args = parser.parse_args()
     run = args.run
@@ -52,8 +109,9 @@ def main() -> int:
     if args.remote:
         sources = [f"{args.remote}/{name}" for name in ("tts", "tts-run.log", "asr.jsonl", "asr-run.log")]
         subprocess.run(["scp", "-q", "-o", "BatchMode=yes", "-r", sources[0], sources[1], str(run)], check=True)
-        # ASR is optional: pull it only if it exists remotely.
-        subprocess.run(["scp", "-q", "-o", "BatchMode=yes", sources[2], sources[3], str(run)], check=False)
+        # ASR is optional (2026-10-28: no longer a review condition); pull it quietly when present.
+        subprocess.run(["scp", "-q", "-o", "BatchMode=yes", sources[2], sources[3], str(run)],
+                       check=False, capture_output=True)
     wavs = sorted((run / "tts").glob("s*.wav"))
     print(json.dumps({"run": str(run), "wavs": len(wavs)}))
 
@@ -71,9 +129,7 @@ def main() -> int:
                             "-map", "0:v:0", "-map", "1:a:0", "-c:v", "copy", "-c:a", "aac", "-b:a", "128k",
                             str(run / "dub.mp4")], check=True)
         if not (run / "dub-preview-640.mp4").exists():
-            subprocess.run(["ffmpeg", "-nostdin", "-v", "error", "-y", "-i", str(run / "dub.mp4"), "-vf", "scale=640:-2",
-                            "-c:v", "libx264", "-preset", "veryfast", "-crf", "30", "-c:a", "aac", "-b:a", "96k",
-                            "-movflags", "+faststart", str(run / "dub-preview-640.mp4")], check=True)
+            print("preview encoder:", build_preview(run, args.preview_encoder))
         print("preview MB:", round((run / "dub-preview-640.mp4").stat().st_size / 1e6, 1))
 
     rows = json.loads((run / "schedule.json").read_text(encoding="utf-8"))["sentences"]

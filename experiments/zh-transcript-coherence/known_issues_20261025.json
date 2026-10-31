@@ -1,0 +1,20 @@
+[
+  {"id": "K01", "unitIds": ["asr-u0196", "asr-u0197"], "problem": "第二句“带着对局势的恐惧”成了离开上一句就看不懂的残句"},
+  {"id": "K02", "unitIds": ["asr-u0322", "asr-u0323", "asr-u0324"], "problem": "“为要照顾你”悬空，三句没连成一个完整意思"},
+  {"id": "K03", "unitIds": ["asr-u0295", "asr-u0296"], "problem": "经文“一载二载半载”被拆成两句，前半句没有标点"},
+  {"id": "K04", "unitIds": ["asr-u0138", "asr-u0139"], "problem": "插入语把条件句和结果句隔开，读起来像重复"},
+  {"id": "K05", "unitIds": ["asr-u0202", "asr-u0225", "asr-u0227", "asr-u0292"], "problem": "同一要点“Jesus silences the accuser”前后译法不一（如哑口无言/沉默）"},
+  {"id": "K06", "unitIds": ["asr-u0078", "asr-u0080", "asr-u0191", "asr-u0192", "asr-u0234"], "problem": "耶稣的代词“祂/他”混用"},
+  {"id": "K07", "unitIds": ["asr-u0209", "asr-u0210"], "problem": "“控告者论到你”是看不懂的片段"},
+  {"id": "K08", "unitIds": ["asr-u0044", "asr-u0045"], "problem": "“来自耶稣”成了多余残句，没体现“关于耶稣、也来自耶稣”的强调"},
+  {"id": "K09", "unitIds": ["asr-u0256", "asr-u0257"], "problem": "人名 D.A. 卡森被切成单独一句"},
+  {"id": "K10", "unitIds": ["asr-u0011", "asr-u0311", "asr-u0312"], "problem": "贝茜是彭柯丽的姐姐，不能译成妹妹"},
+  {"id": "K11", "unitIds": ["asr-u0016", "asr-u0017"], "problem": "“三个……词”直译，但中文“耶稣是得胜者”不是三个词"},
+  {"id": "K12", "unitIds": ["asr-u0154", "asr-u0155"], "problem": "《教父》台词“正想退出又被拉回来”的笑点没有译出来，只剩重复"},
+  {"id": "K13", "unitIds": ["asr-u0166", "asr-u0169", "asr-u0170"], "problem": "梦幻橄榄球术语（弃权名单、一边倒交易）直译，中文听众听不懂"},
+  {"id": "K14", "unitIds": ["asr-u0195"], "problem": "“the little g god of this world”译成“小神”，应为“这世界的神”"},
+  {"id": "K15", "unitIds": ["asr-u0031", "asr-u0032"], "problem": "漏译“如果我们还没见过”，且“马林纳斯主任牧师”不通（应为 Mariners 教会的主任牧师）"},
+  {"id": "K16", "unitIds": ["asr-u0117"], "problem": "“我们正处在得救的中间”直译生硬"},
+  {"id": "K17", "unitIds": ["asr-u0229"], "problem": "“好喜欢”缺主语、语域太轻"},
+  {"id": "K18", "unitIds": ["asr-u0306"], "problem": "“却从不叫他意外”里的“他”指神，单看不知指谁"}
+]

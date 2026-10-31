@@ -35,6 +35,66 @@ targets:
         excludes:
           - Info.plist
       - path: Shared
+    postCompileScripts:
+      - name: Copy local weekly guides
+        basedOnDependencyAnalysis: false
+        inputFiles:
+          - "$(SRCROOT)/GuideResources"
+          - "$(TONGXING_GUIDE_DATA_INPUT)"
+          - "$(TONGXING_GUIDE_CHECKSUM_INPUT)"
+          - "$(TONGXING_GUIDE_STATUE_INPUT)"
+          - "$(TONGXING_GUIDE_SON_INPUT)"
+        outputFiles:
+          - "$(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/weekly-guides.json"
+          - "$(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/weekly-guide-statue.jpg"
+          - "$(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/weekly-guide-son-of-man.jpg"
+        script: |
+          set -eu
+          destination="${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/weekly-guides.json"
+          rm -f "$destination"
+          rm -f "${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/weekly-guide-statue.jpg" "${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/weekly-guide-son-of-man.jpg"
+          case "${CONFIGURATION}" in
+            Release|BetaDebug|BetaRelease)
+              source="${SRCROOT}/GuideResources/weekly-guides.json"
+              checksum="${SRCROOT}/GuideResources/weekly-guides.sha256"
+              if [ "${CONFIGURATION}" = "Release" ] && { [ ! -f "$source" ] || [ ! -f "$checksum" ]; }; then
+                echo "error: Release requires the verified weekly guide payload and SHA-256"
+                exit 1
+              fi
+              if [ -f "$source" ] || [ -f "$checksum" ]; then
+                if [ ! -f "$source" ] || [ ! -f "$checksum" ]; then
+                  echo "error: local guide payload and SHA-256 must both exist"
+                  exit 1
+                fi
+                expected=$(/bin/cat "$checksum")
+                actual=$(/usr/bin/shasum -a 256 "$source" | /usr/bin/awk '{print $1}')
+                if [ "$actual" != "$expected" ]; then
+                  echo "error: local guide payload checksum mismatch"
+                  exit 1
+                fi
+                if [ "$actual" != "a527e23fbd693177b9589fc89cd3533b653f64918abb97213cf34172c36711f9" ]; then
+                  echo "error: local guide payload is not the revision accepted by this App"
+                  exit 1
+                fi
+                /bin/mkdir -p "$(/usr/bin/dirname "$destination")"
+                /bin/cp "$source" "$destination"
+                for asset in weekly-guide-statue.jpg weekly-guide-son-of-man.jpg; do
+                  if /usr/bin/grep -Fq "$asset" "$source"; then
+                    case "$asset" in
+                      weekly-guide-statue.jpg) asset_sha=f1d2f517120099a38614c7c560c1fbe054ec3ea4d741284fbcef496a7dab73b5 ;;
+                      weekly-guide-son-of-man.jpg) asset_sha=30c3e5b82c024bad3e40122f330f6606d022c91d8c77a82f06d6f1d5fc987f1f ;;
+                    esac
+                    asset_source="${SRCROOT}/GuideResources/${asset}"
+                    if [ ! -f "$asset_source" ] || [ "$(/usr/bin/shasum -a 256 "$asset_source" | /usr/bin/awk '{print $1}')" != "$asset_sha" ]; then
+                      echo "error: referenced weekly guide image missing or checksum mismatch: $asset"
+                      exit 1
+                    fi
+                    /bin/cp "$asset_source" "${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/${asset}"
+                  fi
+                done
+              fi
+              ;;
+          esac
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.jonathanjing.tongxing.dev
@@ -42,6 +102,12 @@ targets:
         TONGXING_DISPLAY_NAME: 同行
         TONGXING_URL_SCHEME: tongxing
         INFOPLIST_FILE: App/Info.plist
+        # Non-Release builds keep the guide optional. Release declares both
+        # exact files as inputs, allowing the Xcode script sandbox to stay on.
+        TONGXING_GUIDE_DATA_INPUT: "$(SRCROOT)/GuideResources"
+        TONGXING_GUIDE_CHECKSUM_INPUT: "$(SRCROOT)/GuideResources"
+        TONGXING_GUIDE_STATUE_INPUT: "$(SRCROOT)/GuideResources"
+        TONGXING_GUIDE_SON_INPUT: "$(SRCROOT)/GuideResources"
         MARKETING_VERSION: "1.26.18"
         CURRENT_PROJECT_VERSION: "58"
         # ActivityStyle.transient is absent on iOS 17 despite the current SDK's
@@ -53,27 +119,41 @@ targets:
         SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD: NO
       configs:
         Debug:
+          CODE_SIGN_ENTITLEMENTS: Config/AssociatedDomainsDev.entitlements
           TONGXING_CONTENT_ORIGIN: "https://ai-for-god-sermon-audio-dev.web.app"
         Release:
+          CODE_SIGN_ENTITLEMENTS: Config/ProductionPush.entitlements
+          SWIFT_ACTIVE_COMPILATION_CONDITIONS: "$(inherited) TONGXING_GUIDE_PREVIEW"
+          TONGXING_GUIDE_DATA_INPUT: "$(SRCROOT)/GuideResources/weekly-guides.json"
+          TONGXING_GUIDE_CHECKSUM_INPUT: "$(SRCROOT)/GuideResources/weekly-guides.sha256"
+          TONGXING_GUIDE_STATUE_INPUT: "$(SRCROOT)/GuideResources/weekly-guide-statue.jpg"
+          TONGXING_GUIDE_SON_INPUT: "$(SRCROOT)/GuideResources/weekly-guide-son-of-man.jpg"
+          MARKETING_VERSION: "1.26.33"
+          CURRENT_PROJECT_VERSION: "78"
           TONGXING_CONTENT_ORIGIN: "https://ai-for-god-sermon-audio.web.app"
         BetaDebug:
           CODE_SIGN_ENTITLEMENTS: Config/BetaPush.entitlements
+          # The optional, ignored guide payload cannot be declared as a required
+          # Xcode script input: a clean checkout intentionally has no payload.
+          # Xcode's sandbox does not grant child-file reads from a directory input.
+          ENABLE_USER_SCRIPT_SANDBOXING: NO
           TONGXING_APNS_ENVIRONMENT: development
           PRODUCT_BUNDLE_IDENTIFIER: com.jonathanjing.tongxing.beta
           TONGXING_DISPLAY_NAME: 同行-beta
           TONGXING_URL_SCHEME: tongxing-beta
-          MARKETING_VERSION: "1.26.19"
-          CURRENT_PROJECT_VERSION: "60"
+          MARKETING_VERSION: "1.26.25"
+          CURRENT_PROJECT_VERSION: "67"
           TONGXING_CONTENT_ORIGIN: "https://ai-for-god-sermon-audio-dev.web.app"
         BetaRelease:
           CODE_SIGN_ENTITLEMENTS: Config/BetaPush.entitlements
+          ENABLE_USER_SCRIPT_SANDBOXING: NO
           TONGXING_APNS_ENVIRONMENT: production
-          SWIFT_ACTIVE_COMPILATION_CONDITIONS: "$(inherited) TONGXING_APNS_PRODUCTION"
+          SWIFT_ACTIVE_COMPILATION_CONDITIONS: "$(inherited) TONGXING_APNS_PRODUCTION TONGXING_GUIDE_PREVIEW"
           PRODUCT_BUNDLE_IDENTIFIER: com.jonathanjing.tongxing.beta
           TONGXING_DISPLAY_NAME: 同行-beta
           TONGXING_URL_SCHEME: tongxing-beta
-          MARKETING_VERSION: "1.26.19"
-          CURRENT_PROJECT_VERSION: "60"
+          MARKETING_VERSION: "1.26.33"
+          CURRENT_PROJECT_VERSION: "77"
           TONGXING_CONTENT_ORIGIN: "https://ai-for-god-sermon-audio-dev.web.app"
     dependencies:
       - package: TongxingCore
@@ -109,18 +189,21 @@ targets:
         SUPPORTS_MACCATALYST: NO
         SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD: NO
       configs:
+        Release:
+          MARKETING_VERSION: "1.26.33"
+          CURRENT_PROJECT_VERSION: "78"
         BetaDebug:
           PRODUCT_BUNDLE_IDENTIFIER: com.jonathanjing.tongxing.beta.listening-activity
           TONGXING_ACTIVITY_DISPLAY_NAME: 同行-beta播放状态
           TONGXING_URL_SCHEME: tongxing-beta
-          MARKETING_VERSION: "1.26.19"
-          CURRENT_PROJECT_VERSION: "60"
+          MARKETING_VERSION: "1.26.25"
+          CURRENT_PROJECT_VERSION: "67"
         BetaRelease:
           PRODUCT_BUNDLE_IDENTIFIER: com.jonathanjing.tongxing.beta.listening-activity
           TONGXING_ACTIVITY_DISPLAY_NAME: 同行-beta播放状态
           TONGXING_URL_SCHEME: tongxing-beta
-          MARKETING_VERSION: "1.26.19"
-          CURRENT_PROJECT_VERSION: "60"
+          MARKETING_VERSION: "1.26.33"
+          CURRENT_PROJECT_VERSION: "77"
     dependencies:
       - package: TongxingCore
   TongxingTests:

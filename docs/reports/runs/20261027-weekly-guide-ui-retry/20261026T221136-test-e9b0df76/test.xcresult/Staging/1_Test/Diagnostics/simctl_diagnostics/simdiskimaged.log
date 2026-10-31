@@ -1,0 +1,15 @@
+2026-10-26 21:12:49.784-07:00   Info     Found runtime bundle on disk image at: /Library/Developer/CoreSimulator/Volumes/iOS_23C54/Library/Developer/CoreSimulator/Profiles/Runtimes/iOS 26.2.simruntime
+2026-10-26 21:12:49.785-07:00   Info     Got supported architectures back for /Library/Developer/CoreSimulator/Volumes/iOS_23C54/Library/Developer/CoreSimulator/Profiles/Runtimes/iOS 26.2.simruntime/Contents/Resources/RuntimeRoot: arm64
+2026-10-26 21:12:49.786-07:00   Info     Attempting to synchronize runtime info from mount point '/Library/Developer/CoreSimulator/Volumes/iOS_24A434'
+2026-10-26 21:12:49.786-07:00   Info     Found runtime bundle on disk image at: /Library/Developer/CoreSimulator/Volumes/iOS_24A434/Library/Developer/CoreSimulator/Profiles/Runtimes/iOS 27.0.simruntime
+2026-10-26 21:12:49.786-07:00   Info     Got supported architectures back for /Library/Developer/CoreSimulator/Volumes/iOS_24A434/Library/Developer/CoreSimulator/Profiles/Runtimes/iOS 27.0.simruntime/Contents/Resources/RuntimeRoot: arm64
+2026-10-26 22:03:20.230-07:00   Info     Starting minimal (600.0s interval) scan and mount (on <private>)
+2026-10-26 22:03:20.233-07:00   Info     Attempting to synchronize runtime info from mount point '/Library/Developer/CoreSimulator/Volumes/iOS_24A94401'
+2026-10-26 22:03:20.233-07:00   Info     Found runtime bundle on disk image at: /Library/Developer/CoreSimulator/Volumes/iOS_24A94401/Library/Developer/CoreSimulator/Profiles/Runtimes/iOS 27.1.simruntime
+2026-10-26 22:03:20.259-07:00   Info     Got supported architectures back for /Library/Developer/CoreSimulator/Volumes/iOS_24A94401/Library/Developer/CoreSimulator/Profiles/Runtimes/iOS 27.1.simruntime/Contents/Resources/RuntimeRoot: arm64
+2026-10-26 22:03:20.261-07:00   Info     Attempting to synchronize runtime info from mount point '/Library/Developer/CoreSimulator/Volumes/iOS_23C54'
+2026-10-26 22:03:20.261-07:00   Info     Found runtime bundle on disk image at: /Library/Developer/CoreSimulator/Volumes/iOS_23C54/Library/Developer/CoreSimulator/Profiles/Runtimes/iOS 26.2.simruntime
+2026-10-26 22:03:20.266-07:00   Info     Got supported architectures back for /Library/Developer/CoreSimulator/Volumes/iOS_23C54/Library/Developer/CoreSimulator/Profiles/Runtimes/iOS 26.2.simruntime/Contents/Resources/RuntimeRoot: arm64
+2026-10-26 22:03:20.267-07:00   Info     Attempting to synchronize runtime info from mount point '/Library/Developer/CoreSimulator/Volumes/iOS_24A434'
+2026-10-26 22:03:20.267-07:00   Info     Found runtime bundle on disk image at: /Library/Developer/CoreSimulator/Volumes/iOS_24A434/Library/Developer/CoreSimulator/Profiles/Runtimes/iOS 27.0.simruntime
+2026-10-26 22:03:20.267-07:00   Info     Got supported architectures back for /Library/Developer/CoreSimulator/Volumes/iOS_24A434/Library/Developer/CoreSimulator/Profiles/Runtimes/iOS 27.0.simruntime/Contents/Resources/RuntimeRoot: arm64

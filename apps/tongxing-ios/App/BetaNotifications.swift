@@ -213,13 +213,16 @@ final class BetaNotificationController: NSObject, ObservableObject, UNUserNotifi
 final class BetaNotificationAppDelegate: NSObject, UIApplicationDelegate {
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil) -> Bool {
         BetaNotificationController.shared.installDelegate()
+        ProductionPush.shared.installDelegate()
         return true
     }
     func application(_ application: UIApplication, didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {
         BetaRemotePush.shared.didRegister(deviceToken)
+        ProductionPush.shared.didRegister(deviceToken)
     }
     func application(_ application: UIApplication, didFailToRegisterForRemoteNotificationsWithError error: Error) {
         BetaRemotePush.shared.didFail()
+        ProductionPush.shared.didFailToRegister()
     }
 }
 

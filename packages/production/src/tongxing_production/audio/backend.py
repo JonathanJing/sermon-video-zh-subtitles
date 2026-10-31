@@ -29,7 +29,6 @@ class AudioBackend:
     diagnostic: ports.Diagnostic
     review: ports.Review
     waivers: ports.Waivers
-    machine_qc: ports.MachineQc
     spoken_rules: ports.SpokenRules
     tts_runtime: ports.TtsRuntime
     dev_profile: ports.DevProfile
