@@ -77,5 +77,15 @@
   "baseline": {
     "allowDefaultLocaleDrift": true
   },
-  "mediaType": "podcast"
+  "mediaType": "podcast",
+  "titleCheck": {
+    "englishTitle": "Jesus sends and resurrects His own",
+    "mode": "published",
+    "seriesKey": "revelation-comfort-and-hope",
+    "publishedTitles": {
+      "zh-Hans": "如果我有更多时间 · 四种观点与两位见证人（10 分钟片段）",
+      "ko": "If I Had More Time · 네 가지 관점과 두 증인 (10분 클립)"
+    },
+    "reason": "Dev clip page with a custom clip title; the page is already published and its titles are frozen."
+  }
 }

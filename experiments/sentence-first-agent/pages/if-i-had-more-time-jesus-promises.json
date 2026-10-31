@@ -86,5 +86,16 @@
   "baseline": {
     "allowDefaultLocaleDrift": true
   },
-  "mediaType": "podcast"
+  "mediaType": "podcast",
+  "titleCheck": {
+    "englishTitle": "Jesus promises",
+    "mode": "published",
+    "seriesKey": "revelation-comfort-and-hope",
+    "publishedTitles": {
+      "zh-Hans": "如果我有更多时间 · 耶稣的应许",
+      "ko": "If I Had More Time · 예수님의 약속",
+      "es": "If I Had More Time · Las promesas de Jesús"
+    },
+    "reason": "Podcast page published 2026-10-23 under the podcast-series titles; keep the published titles instead of the weekly Revelation titles (runbook: published titles stay unless the user decides otherwise)."
+  }
 }

@@ -154,6 +154,123 @@ class ConfigTest(unittest.TestCase):
         self.assertIn("Use a new assets directory", str(caught.exception))
 
 
+class TitleTableTest(unittest.TestCase):
+    def setUp(self):
+        self.publish = load("sfa_publish")
+
+    def test_parses_the_repository_title_table(self):
+        table = self.publish.parse_title_table(ROOT / "docs/series-sermon-titles.zh.md")
+        self.assertIn("revelation-comfort-and-hope", table)
+        section = table["revelation-comfort-and-hope"]
+        week6 = next(row for row in section["rows"] if row["week"] == 6)
+        self.assertEqual(week6["english"], "Jesus sends and resurrects His own")
+        self.assertEqual(week6["zh"], "耶稣差遣属祂的人，并使他们复活")
+        self.assertEqual(week6["ko"], "예수님은 자기 백성을 보내시고 다시 살리십니다")
+        self.assertEqual(section["differences"][6]["published"], "耶稣差遣并使属祂的人复活")
+
+    def test_shipped_configs_pass_their_title_check(self):
+        for page_id in ("if-i-had-more-time-jesus-promises", "sentence-first-clip-20261023"):
+            with self.subTest(page=page_id):
+                cfg = self.publish.load_config(PAGES / f"{page_id}.json")
+                result = self.publish.cmd_check_title(cfg)
+                self.assertTrue(result["ok"], result["problems"])
+                self.assertEqual(result["expected"], result["actual"])
+                self.assertEqual(result["mode"], "published")
+
+    def _table_config(self, root: Path, mutate=None):
+        table = root / "titles.zh.md"
+        table.write_text("# 测试标题表\n\n## 测试系列（`test-series`）\n\n"
+                         "| 周次 | 日期 | 英文原标题 | 经文 | 讲员 | 中文 | 韩文 | 西班牙语 |\n"
+                         "|---|---|---|---|---|---|---|---|\n"
+                         "| 1 | 2026-11-01 | Test episode | 约 1 | Tester | 测试标题 | 테스트 제목 | Título |\n",
+                         encoding="utf-8")
+        config = minimal_config(root)
+        data = json.loads(config.read_text(encoding="utf-8"))
+        data["meta"]["zh-Hans"] = {"title": "测试系列 · 测试标题", "series": "测试系列", "scripture": "约 1",
+                                   "badge": "b", "source": "s", "note": "n"}
+        data["title"] = "测试系列 · 测试标题"
+        data["titleCheck"] = {"englishTitle": "Test episode", "mode": "table", "table": "titles.zh.md"}
+        if mutate:
+            mutate(data)
+        config.write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
+        return self.publish.load_config(config, root=root)
+
+    def test_table_mode_passes_when_the_page_titles_come_from_the_table(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            cfg = self._table_config(Path(tmp))
+            result = self.publish.cmd_check_title(cfg)
+            self.assertTrue(result["ok"], result["problems"])
+            self.assertEqual(result["expected"]["zh-Hans"], "测试系列 · 测试标题")
+
+    def test_table_mode_reports_a_title_that_was_not_taken_from_the_table(self):
+        def mutate(data):
+            data["meta"]["zh-Hans"]["title"] = "测试系列 · 自造标题"
+            data["title"] = "测试系列 · 自造标题"
+        with tempfile.TemporaryDirectory() as tmp:
+            cfg = self._table_config(Path(tmp), mutate)
+            result = self.publish.cmd_check_title(cfg)
+            self.assertFalse(result["ok"])
+            self.assertIn("自造标题", result["problems"][0]["detail"])
+
+    def test_approved_exception_needs_a_reason_and_an_approver(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            config = minimal_config(root)
+            data = json.loads(config.read_text(encoding="utf-8"))
+            data["titleCheck"] = {"englishTitle": "Test episode", "mode": "approved_exception",
+                                  "publishedTitles": {"zh-Hans": "测试页"}, "reason": "custom title",
+                                  "table": "titles.zh.md"}
+            config.write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
+            cfg = self.publish.load_config(config, root=root)
+            with self.assertRaises(ValueError) as caught:
+                self.publish.cmd_check_title(cfg)
+            self.assertIn("approvedBy", str(caught.exception))
+            data["titleCheck"]["approvedBy"] = "user (chat, 2026-10-31)"
+            config.write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
+            cfg = self.publish.load_config(config, root=root)
+            self.assertTrue(self.publish.cmd_check_title(cfg)["ok"])
+
+    def test_unknown_english_title_is_reported(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            config = minimal_config(root)
+            data = json.loads(config.read_text(encoding="utf-8"))
+            data["titleCheck"]["englishTitle"] = "No such episode"
+            config.write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
+            cfg = self.publish.load_config(config, root=root)
+            with self.assertRaises(ValueError) as caught:
+                self.publish.cmd_check_title(cfg)
+            self.assertIn("matches 0 rows", str(caught.exception))
+
+    def test_unknown_title_check_key_is_rejected(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            config = minimal_config(root)
+            data = json.loads(config.read_text(encoding="utf-8"))
+            data["titleCheck"]["tabel"] = "titles.zh.md"
+            config.write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
+            with self.assertRaises(ValueError) as caught:
+                self.publish.load_config(config, root=root)
+            self.assertIn("tabel", str(caught.exception))
+
+    def test_preflight_requires_a_title_check_block(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            minimal_inputs(root)
+            config = minimal_config(root)
+            data = json.loads(config.read_text(encoding="utf-8"))
+            data.pop("titleCheck")
+            config.write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
+            cfg = self.publish.load_config(config, root=root)
+            with self.assertRaises(ValueError) as caught:
+                self.publish.cmd_preflight(cfg, allow_missing_decisions=True)
+            self.assertIn("titleCheck", str(caught.exception))
+            result = self.publish.cmd_preflight(cfg, allow_missing_decisions=True,
+                                                allow_missing_title_check=True)
+            self.assertTrue(result["ok"])
+            self.assertIn("skipped", result["titleCheck"])
+
+
 class AssetsParityTest(unittest.TestCase):
     """The migrated config must reproduce the legacy driver's bytes exactly."""
 
@@ -212,6 +329,16 @@ def minimal_config(root: Path, *, page_id: str = "test-page", locale: str = "zh-
         "verify": {"schemaVersion": "sentence-first-episode-http-verification-v1"},
         "englishReference": {"mode": "full"},
     }
+    table = root / "titles.zh.md"
+    if not table.exists():
+        table.write_text("# 测试标题表\n\n## 测试系列（`test-series`）\n\n"
+                         "| 周次 | 日期 | 英文原标题 | 经文 | 讲员 | 中文 | 韩文 | 西班牙语 |\n"
+                         "|---|---|---|---|---|---|---|---|\n"
+                         "| 1 | 2026-11-01 | Test episode | 约 1 | Tester | 测试页 | 테스트 | Prueba |\n",
+                         encoding="utf-8")
+    config["titleCheck"] = {"englishTitle": "Test episode", "mode": "published",
+                            "publishedTitles": {locale: "测试页"}, "reason": "test fixture",
+                            "table": "titles.zh.md"}
     path = root / "pages" / f"{page_id}.json"
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(config, ensure_ascii=False), encoding="utf-8")

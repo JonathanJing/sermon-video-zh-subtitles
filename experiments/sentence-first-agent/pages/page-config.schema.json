@@ -158,6 +158,25 @@
       "properties": { "allowDefaultLocaleDrift": { "type": "boolean" } }
     },
     "mediaType": { "enum": ["podcast", "clip"] },
-    "sourceMode": { "enum": ["single_source"] }
+    "sourceMode": { "enum": ["single_source"] },
+    "titleCheck": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["englishTitle", "mode"],
+      "description": "Title-table check: titles must come from docs/series-sermon-titles.zh.md, or be explicitly frozen under a recorded reason.",
+      "properties": {
+        "englishTitle": { "type": "string", "minLength": 1 },
+        "mode": { "enum": ["table", "published", "approved_exception"] },
+        "seriesKey": { "type": "string", "minLength": 1 },
+        "table": { "type": "string", "minLength": 1 },
+        "publishedTitles": {
+          "type": "object",
+          "minProperties": 1,
+          "additionalProperties": { "type": "string", "minLength": 1 }
+        },
+        "reason": { "type": "string", "minLength": 1 },
+        "approvedBy": { "type": "string", "minLength": 1 }
+      }
+    }
   }
 }
