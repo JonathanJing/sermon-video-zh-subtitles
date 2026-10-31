@@ -39,7 +39,8 @@
 | `finish_run.py` | 本机 | 拉回、合并、打分、混回视频、出手机预览，打印落后与回转写摘要 |
 | `merge_track.py`、`asr_check.py score` | 本机 | 由 finish_run.py 调用 |
 | `review_sheets.py` | 本机 | 每种语言一张人工审核表（CSV），标出要重点听的句子 |
-| `publish_podcast_page.py` | 本机 | 正式页面发布驱动；页面信息是文件顶部的常量 |
+| `sfa_publish.py` | 本机 | 页面发布单一驱动（`DEV-SF-004`）：读 `pages/<pageId>.json`，assets→baseline→stage1→publish→verify→stage2→publish→readback→english-reference |
+| `publish_podcast_page.py` | 本机 | 旧版按页复制驱动；未迁移页面与特殊修复路径（撤回、alignment、fix-content）仍可用 |
 | `build_study.py` | 本机 | 生成大纲与默想的 `sermon-study-artifact-v1`、审核收据、元数据/窗口批准与四产品清单 |
 | `publish_study.py` | 本机 | 把大纲与默想以 release v3 发布：页面学习段、`/study/<pageId>/<locale>/`、三语 release 与目录 |
 | `srt_normalize.py` | 本机 | 没有锚点清单时从滚动 SRT 建句表；去重、内插、清洗已核实名称、强制单调不重叠，写验证报告 |
@@ -407,10 +408,28 @@ python3 $EXP/repair_sentence.py --run $RUN --id s0123 --remote SPARK:<run> --ses
 
 ### 10 发布到正式页面
 
-只在用户审核通过并要求发布时做。`assets` 的前提，缺一项不生成资产：三语 journal 各有 `l1.preflight`、`l2.consistency` finished；审核收据 `verdict=approved`，`reviewedAt` 不晚于当前时间，`note` 不含「未听审」；英文表人审文件存在。发布过的收据不再改写。`stage2` 可加 `--with-english`：在 stage2 快照上生成英文对照、随第二次部署上线，省第三次部署；仍要 readback/HTTP 核验。未在 Dev 验证合同前保留第三次部署的路径。先跑 `preflight.py --run $RUN --english-package <layer1-srt/english-source.json> --firebase`：英文包证据路径必须能解析（相对路径按仓库根解析），否则第 7 步的英文对照会失败。复制一份 `publish_podcast_page.py`，改顶部常量（pageId、语言、run 目录、窗口、标题、类别、讲员、来源、日期），不要改已发布页面那一份的常量；路径常量一律 `Path(...).resolve()`（相对 `--base` 曾报 `Asset escapes public directory`）。按页复制的驱动已有五份，第五个页面之前先参数化成一份驱动加页面配置（`DEV-SF-004`）；撤回重建或修正已发布字节走 `published_page_replace`（#1367），不再手写撤回步骤。顺序固定，每步一个子命令：
+只在用户审核通过并要求发布时做。`assets` 的前提，缺一项不生成资产：三语 journal 各有 `l1.preflight`、`l2.consistency` finished；审核收据 `verdict=approved`，`reviewedAt` 不晚于当前时间，`note` 不含「未听审」；英文表人审文件存在。发布过的收据不再改写。`stage2` 可加 `--with-english`：在 stage2 快照上生成英文对照、随第二次部署上线，省第三次部署；仍要 readback/HTTP 核验。未在 Dev 验证合同前保留第三次部署的路径。先跑 `preflight.py --run $RUN --english-package <layer1-srt/english-source.json> --firebase`：英文包证据路径必须能解析（相对路径按仓库根解析），否则第 7 步的英文对照会失败。发布用单一驱动 `sfa_publish.py` + 页面配置 `$EXP/pages/<pageId>.json`（改造2，`DEV-SF-004`）：配置里显式写 pageId、语言列表、run 目录、窗口、标题/类别/讲员、来源 URL/日期、environment、句数、verdict 路径、英文源包、候选/音频/校验 schema 名与 release id 模板；字段定义见 `pages/page-config.schema.json`，未知字段会被 schema 拒绝，拼错常量会在写资产之前失败。旧版按页复制的驱动只用于尚未迁移的页面和特殊修复路径（撤回、alignment sidecar、fix-content）；路径一律 `Path(...).resolve()`。撤回重建或修正已发布字节走 `published_page_replace`（#1367），不再手写撤回步骤。顺序固定，每步一个子命令：
 
 1. `assets`：生成每种语言的页面、文稿、字幕、MP3 和 release 模板；要求审核收据为 `approved`。文稿 `durationSeconds` 取窗口终点的媒体时间，并逐句跑与 iOS `validateCues` 相同的检查。
 2. `baseline`：取线上完整快照。线上 v4/v3 和 v5 的投影只在页面默认语言上不同时，`stage1` 按 v5 重新投影并记下改了哪几页；其他差异一律拒绝。
+
+```bash
+PUB="python3 $EXP/sfa_publish.py --config $EXP/pages/<pageId>.json"
+$PUB validate                                   # 先确认 pageId、environment、origin、run 与英文包路径
+$PUB assets --out <run>-publish/assets
+$PUB baseline --out <run>-publish/baseline
+$PUB stage1 --baseline <run>-publish/baseline --assets <run>-publish/assets --out <run>-publish/stage1
+$PUB publish --snapshot <run>-publish/stage1    # 需要用户对话授权
+$PUB verify --assets <run>-publish/assets --out <run>-publish/http-verification.json
+$PUB stage2 --stage1 <run>-publish/stage1 --assets <run>-publish/assets --evidence <run>-publish/http-verification.json --out <run>-publish/stage2
+$PUB publish --snapshot <run>-publish/stage2
+$PUB readback --stage2 <run>-publish/stage2
+$PUB baseline --out <run>-publish/baseline-english
+$PUB stage-english-reference --base <run>-publish/baseline-english --out <run>-publish/stage-english
+$PUB publish --snapshot <run>-publish/stage-english
+```
+
+`stage2` 也可以加 `--with-english`，把英文对照并进第二次部署，省第三次部署。
 3. `stage1` → `publish`：第一次部署，只加资产（和上面的投影修正）。
 4. `verify`：逐个 GET 新资产比对 SHA，MP3 查 Range。
 5. `stage2` → `publish`：第二次部署，release 与 v5/v4/v3 目录。
