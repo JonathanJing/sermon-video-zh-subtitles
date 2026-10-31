@@ -39,7 +39,7 @@
 | `finish_run.py` | 本机 | 拉回、合并、打分、混回视频、出手机预览，打印落后与回转写摘要 |
 | `merge_track.py`、`asr_check.py score` | 本机 | 由 finish_run.py 调用 |
 | `review_sheets.py` | 本机 | 每种语言一张人工审核表（CSV），标出要重点听的句子 |
-| `sfa_publish.py` | 本机 | 页面发布单一驱动（`DEV-SF-004`）：读 `pages/<pageId>.json`，assets→baseline→stage1→publish→verify→stage2→publish→readback→english-reference |
+| `sfa_publish.py` | 本机 | 页面发布单一驱动（`DEV-SF-004`）：读 `pages/<pageId>.json`；`validate`/`preflight`/`check-title`/`publish-check` 门禁与 assets→baseline→stage1→publish→verify→stage2→publish→readback→english-reference |
 | `publish_podcast_page.py` | 本机 | 旧版按页复制驱动；未迁移页面与特殊修复路径（撤回、alignment、fix-content）仍可用 |
 | `build_study.py` | 本机 | 生成大纲与默想的 `sermon-study-artifact-v1`、审核收据、元数据/窗口批准与四产品清单 |
 | `publish_study.py` | 本机 | 把大纲与默想以 release v3 发布：页面学习段、`/study/<pageId>/<locale>/`、三语 release 与目录 |
@@ -96,7 +96,7 @@ artifacts/sentence-first-agent/<run>/
 
 1. **目标语言和讲员。** 逐一查每位讲员在每种语言的 Registry 授权与能力；缺一项的讲员不能配，先告诉用户。
 2. **跟不跟视频同步。** 不同步：独立音轨，自然语速，不精简。要同步：第 5 步按 `budgetSeconds` 精简口播稿，并请用户认可精简后的稿子（对谈通常要删约四分之一）。
-3. **发不发正式页面。** 要发就是 `human_reviewed`：用户要听完每条整轨（时长约为原片的 1.25–1.3 倍）并审译文，先把这个工作量告诉用户。页面标题、类别小标题、讲员栏一起问；标题先查[标题表](../../docs/series-sermon-titles.zh.md)，英文标题与来源一致就直接用表中三语标题和「系列名 · 本篇标题」格式，不另造译名（2026-10-24 两版都用了与表不同的韩、西标题和「讲题 · 经文」格式，海报为此多返工一次）。发布的页面都带英文对照（字幕和全文下的英文），不需要问；先确认正式 Layer 1 的英文来源包已经人工批准，没批准就先补英文审核，否则第 10 步的英文对照会被拒。
+3. **发不发正式页面。** 要发就是 `human_reviewed`：用户要听完每条整轨（时长约为原片的 1.25–1.3 倍）并审译文，先把这个工作量告诉用户。页面标题、类别小标题、讲员栏一起问；标题先查[标题表](../../docs/series-sermon-titles.zh.md)，英文标题与来源一致就直接用表中三语标题和「系列名 · 本篇标题」格式，不另造译名。发布 preflight 会读页面配置的 `titleCheck` 自动核对：`mode: table` 按表中三语标题加 `meta.<locale>.series` 前缀比对；已发布页面用 `mode: published` 冻结 `publishedTitles`，偏离标题表的新页面用 `mode: approved_exception` 并写 `reason` 与 `approvedBy`（2026-10-24 两版都用了与表不同的韩、西标题和「讲题 · 经文」格式，海报为此多返工一次）。发布的页面都带英文对照（字幕和全文下的英文），不需要问；先确认正式 Layer 1 的英文来源包已经人工批准，没批准就先补英文审核，否则第 10 步的英文对照会被拒。
 
 **冻结决策（开跑前一次问清，写进第一个 `run.md` 的「冻结决策」表）。** 中途改任何一项都记为变更，不混进返工。逐句线的冻结表：
 
@@ -435,6 +435,7 @@ $PUB publish --snapshot <run>-publish/stage-english
 ```
 
 - `preflight` 是资产生成前的门禁：英文来源包必须已批准、回执 `approved` 且 `reviewedAt` 不晚于现在、回执里的 `trackWavSha256` 必须等于当前 `run/track.wav`（结论后重配会失败，需要重新听审或按边界第 3 条另存收据）、每个语言 run 的 `decisions.json` 必须记录 sync/publish/标题。旧 run 没有 `decisions.json` 时加 `--allow-missing-decisions` 并在 `run.md` 记明。
+- 标题门禁：`titleCheck` 缺省视为失败（旧配置可加 `--allow-missing-title-check`）。`check-title` 可单独跑：按英文标题在标题表定位行，`mode: table` 要求每语标题等于 `meta.<locale>.series + " · " + 表中该语标题`，并核对 zh 系列名等于表章节名；`mode: published` 用 `publishedTitles` 冻结已发布标题；`mode: approved_exception` 必须写 `reason` 与 `approvedBy`。表里登记过「已发布 vs 本表」差异的周次会给出提示。
 - `publish-check` 是每次 deploy 前的哈希绑定检查：catalog ↔ release ↔ page/content/captions/audio、`/english-reference/<pageId>.json` 与 `weekly-announcements-v1.json` 必须绑定当前 release/content/captions 哈希；`--baseline` 还会扫出仍引用旧 release/content/captions 哈希的文件。它覆盖旁路三件套里的英文对照与公告；统计目录 `catalog.json` 在 `sermon-feedback-api` 仓库，仍按本节手动同步。
 - `stage2` 也可以加 `--with-english`，把英文对照并进第二次部署，省第三次部署。
 3. `stage1` → `publish`：第一次部署，只加资产（和上面的投影修正）。

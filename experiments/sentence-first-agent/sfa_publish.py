@@ -36,6 +36,7 @@ import hashlib
 import html
 import json
 from pathlib import Path
+import re
 import shutil
 import subprocess
 import sys
@@ -51,6 +52,7 @@ from tongxing_production.delivery import baseline as bl, contract, publication a
 from tongxing_production.delivery import published_english_reference as english_reference  # noqa: E402
 
 CONFIG_SCHEMA = HERE / "pages" / "page-config.schema.json"
+TITLE_TABLE_DEFAULT = "docs/series-sermon-titles.zh.md"
 
 
 def sha_file(path: Path) -> str:
@@ -129,6 +131,8 @@ class PageConfig:
     allow_default_locale_drift: bool
     media_type: str
     source_mode: str
+    title_check: dict | None
+    title_table_path: Path
 
     def origin(self) -> str:
         return bl.hosting_target(self.environment)["origin"]
@@ -221,6 +225,8 @@ def load_config(path: Path | str, root: Path = WT) -> PageConfig:
         allow_default_locale_drift=bool(data.get("baseline", {}).get("allowDefaultLocaleDrift", True)),
         media_type=data.get("mediaType", "podcast"),
         source_mode=data.get("sourceMode", "single_source"),
+        title_check=data.get("titleCheck"),
+        title_table_path=_resolve((data.get("titleCheck") or {}).get("table", TITLE_TABLE_DEFAULT), root),
     )
     _check_consistency(config)
     return config
@@ -312,18 +318,112 @@ def _decision_checks(cfg: PageConfig, *, allow_missing: bool) -> dict:
     return {"decisions": decisions, "warnings": warnings}
 
 
-def cmd_preflight(cfg: PageConfig, *, allow_missing_decisions: bool = False) -> dict:
+TITLE_COLUMNS = {"zh-Hans": "zh", "ko": "ko", "es": "es"}
+
+
+def parse_title_table(path: Path) -> dict:
+    """Sections of docs/series-sermon-titles.zh.md: main rows plus the published-difference table."""
+    sections, current = {}, None
+    heading = re.compile(r"^##\s+(.+?)（`([a-z0-9][a-z0-9-]*)`）\s*$")
+    for raw in path.read_text(encoding="utf-8").splitlines():
+        line = raw.strip()
+        match = heading.match(line)
+        if match:
+            current = sections.setdefault(match.group(2), {"key": match.group(2), "zhName": match.group(1),
+                                                           "rows": [], "differences": {}})
+            continue
+        if not line.startswith("|") or current is None:
+            continue
+        cells = [cell.strip() for cell in line.strip("|").split("|")]
+        if len(cells) == 8 and cells[0].isdigit():
+            current["rows"].append({"week": int(cells[0]), "date": cells[1], "english": cells[2],
+                                    "scripture": cells[3], "speaker": cells[4],
+                                    "zh": cells[5], "ko": cells[6], "es": cells[7]})
+        elif len(cells) == 3 and cells[0].isdigit():
+            current["differences"][int(cells[0])] = {"table": cells[1], "published": cells[2]}
+    contract.require(bool(sections), f"no title table found in {path}")
+    return sections
+
+
+def find_title_row(sections: dict, english_title: str, series_key: str | None = None):
+    wanted = english_title.strip().casefold()
+    matches = [(section, row) for section in sections.values()
+               if not series_key or section["key"] == series_key
+               for row in section["rows"] if row["english"].strip().casefold() == wanted]
+    contract.require(len(matches) == 1,
+                     f"English title {english_title!r} matches {len(matches)} rows in the title table")
+    return matches[0]
+
+
+def cmd_check_title(cfg: PageConfig) -> dict:
+    """Check the page titles against the title table, or against the explicitly frozen published titles."""
+    spec = cfg.title_check
+    contract.require(spec is not None,
+                     "page config has no titleCheck block (mode table|published|approved_exception)")
+    mode = spec["mode"]
+    published = spec.get("publishedTitles") or {}
+    if mode != "table":
+        missing = [locale for locale in cfg.locales if locale not in published]
+        contract.require(not missing, f"titleCheck.publishedTitles misses {missing} for mode {mode}")
+        contract.require(bool((spec.get("reason") or "").strip()), f"titleCheck mode {mode} needs a reason")
+        if mode == "approved_exception":
+            contract.require(bool((spec.get("approvedBy") or "").strip()),
+                             "titleCheck mode approved_exception needs approvedBy")
+    contract.require(cfg.title_table_path.is_file(), f"title table not found: {cfg.title_table_path}")
+    sections = parse_title_table(cfg.title_table_path)
+    section, row = find_title_row(sections, spec["englishTitle"], spec.get("seriesKey"))
+    actual = {locale: cfg.meta[locale]["title"] for locale in cfg.locales}
+    expected, problems, warnings = {}, [], []
+    if mode == "table":
+        for locale in cfg.locales:
+            expected[locale] = f"{cfg.meta[locale]['series']} · {row[TITLE_COLUMNS[locale]]}"
+        if "zh-Hans" in cfg.locales and cfg.meta["zh-Hans"]["series"] != section["zhName"]:
+            problems.append({"locale": "zh-Hans",
+                             "detail": f"series {cfg.meta['zh-Hans']['series']!r} differs from the table "
+                                       f"section {section['zhName']!r}"})
+    else:
+        expected = {locale: published[locale] for locale in cfg.locales}
+    difference = section["differences"].get(row["week"])
+    if difference:
+        warnings.append(f"week {row['week']} has a published-title difference: table {difference['table']!r} "
+                        f"vs published {difference['published']!r}")
+    for locale in cfg.locales:
+        if actual[locale] != expected[locale]:
+            problems.append({"locale": locale,
+                             "detail": f"page title {actual[locale]!r} differs from the title table value {expected[locale]!r}"})
+    if cfg.title != cfg.meta[cfg.default_target_locale]["title"]:
+        problems.append({"locale": cfg.default_target_locale,
+                         "detail": f"config.title {cfg.title!r} differs from meta.title "
+                                   f"{cfg.meta[cfg.default_target_locale]['title']!r}"})
+    return {"ok": not problems, "mode": mode, "series": section["key"], "week": row["week"],
+            "englishTitle": row["english"], "tableRow": row, "expected": expected, "actual": actual,
+            "problems": problems, "warnings": warnings}
+
+
+def cmd_preflight(cfg: PageConfig, *, allow_missing_decisions: bool = False,
+                  allow_missing_title_check: bool = False) -> dict:
     """The publish gate before assets: identity, English approval, receipt freshness, decisions."""
     cfg.require_inputs()
     esp, esp_sha = _english_source_checks(cfg)
     receipt = _receipt_checks(cfg)
     decision_info = _decision_checks(cfg, allow_missing=allow_missing_decisions)
+    if cfg.title_check is None:
+        contract.require(allow_missing_title_check,
+                         "page config has no titleCheck block; add it or pass --allow-missing-title-check")
+        title_info = {"skipped": "no titleCheck block (legacy config)"}
+    else:
+        title_info = cmd_check_title(cfg)
+        contract.require(title_info["ok"], "title check failed: "
+                         + " | ".join(problem["detail"] for problem in title_info["problems"]))
     return {"ok": True, "pageId": cfg.page_id, "environment": cfg.environment, "origin": cfg.origin(),
             "locales": list(cfg.locales), "englishSourceJsonSha256": esp_sha,
             "sourceMediaSha256": esp["source"]["media"]["sha256"],
             "verdict": {"reviewedAt": receipt["reviewedAt"], "reviewer": receipt["reviewer"]},
             "decisions": decision_info["decisions"],
-            "warnings": receipt["warnings"] + decision_info["warnings"]}
+            "titleCheck": {"mode": title_info.get("mode"), "series": title_info.get("series"),
+                           "week": title_info.get("week"), "expected": title_info.get("expected"),
+                           "actual": title_info.get("actual"), "skipped": title_info.get("skipped")},
+            "warnings": receipt["warnings"] + decision_info["warnings"] + title_info.get("warnings", [])}
 
 
 def _read_json(path: Path):
@@ -525,8 +625,13 @@ def cmd_validate(cfg: PageConfig) -> dict:
     digest = hashlib.sha256(cfg.source_url.encode()).hexdigest()
     contract.require(digest == english["source"]["sourceUrlHash"],
                      "source.url differs from the English package's sourceUrlHash")
-    return {"ok": True, **cfg.identity(), "sourceUrlHash": digest,
-            "sourceMediaSha256": english["source"]["media"]["sha256"]}
+    result = {"ok": True, **cfg.identity(), "sourceUrlHash": digest,
+              "sourceMediaSha256": english["source"]["media"]["sha256"]}
+    if cfg.title_check is not None:
+        title_check = cmd_check_title(cfg)
+        result["titleCheck"] = title_check
+        result["ok"] = result["ok"] and title_check["ok"]
+    return result
 
 
 def cmd_assets(cfg: PageConfig, out: Path) -> dict:
@@ -922,9 +1027,13 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--config", type=Path, required=True, help="pages/<pageId>.json")
     sub = parser.add_subparsers(dest="cmd", required=True)
     sub.add_parser("validate", help="print the resolved page identity and check inputs")
-    preflight = sub.add_parser("preflight", help="publish gate: English approval, receipt freshness, decisions")
+    preflight = sub.add_parser("preflight", help="publish gate: English approval, receipt freshness, decisions, titles")
     preflight.add_argument("--allow-missing-decisions", action="store_true",
                            help="legacy run without decisions.json (recorded in run.md instead)")
+    preflight.add_argument("--allow-missing-title-check", action="store_true",
+                           help="legacy config without a titleCheck block")
+    title = sub.add_parser("check-title", help="check the page titles against the title table")
+    title.add_argument("--allow-missing", action="store_true", help="do not fail when titleCheck is absent")
     check = sub.add_parser("publish-check", help="verify hash bindings and hunt stale hashes before a deploy")
     check.add_argument("--snapshot", type=Path, required=True)
     check.add_argument("--baseline", type=Path, help="live baseline snapshot; enables the old-hash scan")
@@ -966,7 +1075,13 @@ def main(argv=None) -> int:
         if args.cmd == "validate":
             result = cmd_validate(cfg)
         elif args.cmd == "preflight":
-            result = cmd_preflight(cfg, allow_missing_decisions=args.allow_missing_decisions)
+            result = cmd_preflight(cfg, allow_missing_decisions=args.allow_missing_decisions,
+                                   allow_missing_title_check=args.allow_missing_title_check)
+        elif args.cmd == "check-title":
+            if cfg.title_check is None and args.allow_missing:
+                result = {"ok": True, "skipped": "no titleCheck block"}
+            else:
+                result = cmd_check_title(cfg)
         elif args.cmd == "publish-check":
             result = cmd_publish_check(cfg, args.snapshot, baseline=args.baseline,
                                        require_english_reference=args.require_english_reference,
