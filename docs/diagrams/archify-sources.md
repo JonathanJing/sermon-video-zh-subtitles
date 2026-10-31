@@ -2,6 +2,24 @@
 
 `tongxing-system-architecture.svg` 与 `sentence-first-weekly-workflow.svg` 由 [Archify](https://github.com/tt-a1i/archify) 的 `finalize` 生成。每张图的证据绑定在 spec 的 `meta.repository.revision` 上，节点的 `sources` 指向该提交里的代码与文档；图稿不证明上线、人工 Gold、设备或现场验收，事实以当前代码与合同为准。
 
+## 托管（Dev 预览站）
+
+交互版与静态 SVG 部署在 Dev 项目的独立站点 `tongxing-diagrams-dev`（项目 `ai-for-god-sermon-audio-dev`）：<https://tongxing-diagrams-dev.web.app>。它和周更 Dev 站（`ai-for-god-sermon-audio-dev.web.app`）是两个 Hosting site，发布图稿不会改动周更内容。
+
+独立站而非周更站的原因：周更站给 `**` 设了 `script-src 'self'; style-src 'self'` 的 CSP，查看器的内联脚本与样式会被拦截；周更站 live 版本还包含上千个既有文件（含大体积音频），整站重发需要完整的每周发布快照。
+
+再发布：
+
+```bash
+# 站点只创建一次
+firebase hosting:sites:create tongxing-diagrams-dev --project ai-for-god-sermon-audio-dev
+
+# 在含 firebase.json（hosting.site=tongxing-diagrams-dev, public=public）的目录运行
+firebase deploy --only hosting --project ai-for-god-sermon-audio-dev
+```
+
+站点内容只有 `index.html`、两张交互版 HTML、两张静态 SVG 和站点图标；图稿按下方 spec 重新生成后覆盖同名文件再部署。该站的 CSP 允许查看器所需的内联脚本与样式（`script-src/style-src 'unsafe-inline'`），仅承载这两张静态图，不放用户输入或内容包。
+
 ## 再生成
 
 ```bash

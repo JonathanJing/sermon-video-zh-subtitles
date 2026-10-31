@@ -33,7 +33,7 @@
 | [tongxing-system-architecture.svg](tongxing-system-architecture.svg) | System overview: local four-layer production, review receipts, guarded publishing, Firebase Hosting and the Web/iOS clients | root READMEs, four-layer interface contract |
 | [sentence-first-weekly-workflow.svg](sentence-first-weekly-workflow.svg) | Sentence-first agent-direct dubbing: human gates, local scripts, Spark exclusive session and publication | root READMEs, sentence-first runbook |
 
-这两张图由 [Archify](https://github.com/tt-a1i/archify) 生成，视觉语言与手绘 SVG 不同（角色色圆角节点、细体标签、点阵画布），事实仍以仓库代码与合同为准。可复制的 spec 与再生成命令见 [Archify 源与再生成](archify-sources.md)。提交的是清理后的静态 SVG：无脚本、无内嵌字体、无外链；交互版 HTML（明暗主题、缩放、透视、来源面板）不进入仓库——文档门禁只接受根 README、`docs/` 下的 Markdown／SVG／图片，需要交互版时按该文件的命令在本地生成。
+这两张图由 [Archify](https://github.com/tt-a1i/archify) 生成，视觉语言与手绘 SVG 不同（角色色圆角节点、细体标签、点阵画布），事实仍以仓库代码与合同为准。可复制的 spec 与再生成命令见 [Archify 源与再生成](archify-sources.md)。提交的是清理后的静态 SVG：无脚本、无内嵌字体、无外链；交互版 HTML（明暗主题、缩放、透视、来源面板）不进入仓库——文档门禁只接受根 README、`docs/` 下的 Markdown／SVG／图片，需要交互版时按该文件的命令在本地生成。已生成的交互版与静态 SVG 托管在 Dev 项目的独立站 [tongxing-diagrams-dev.web.app](https://tongxing-diagrams-dev.web.app)；它只是图稿预览，不触碰周更 Dev 站内容，也不证明上线或验收。
 
 
 ## 设计与维护
