@@ -43,7 +43,8 @@
 | `build_study.py` | 本机 | 生成大纲与默想的 `sermon-study-artifact-v1`、审核收据、元数据/窗口批准与四产品清单 |
 | `publish_study.py` | 本机 | 把大纲与默想以 release v3 发布：页面学习段、`/study/<pageId>/<locale>/`、三语 release 与目录 |
 | `srt_normalize.py` | 本机 | 没有锚点清单时从滚动 SRT 建句表；去重、内插、清洗已核实名称、强制单调不重叠，写验证报告 |
-| `preflight.py` | 本机 | 开工/发布前检查 run、`speakerId→speakerKey`、Registry 用途/能力、英文包证据路径、Spark、Firebase |
+| `preflight.py` | 本机 | 开工/发布前检查 run、`speakerId→speakerKey`、Registry 用途/能力、英文包证据路径、Spark、Firebase；`--stage setup` 是开工子集（只要 clip.json/sentences.jsonl） |
+| `sfa.py` | 本机 | 开工默认路径：环境检查 → 裁切拆句 → 讲员分配 → 三语分发 → `preflight --stage setup`；回执 `setup.json` |
 | `review_player.py` | 本机 | 逐句听审 HTML：按句播放、标记、跳转、逐句结论导出 |
 | `repair_sentence.py` | 本机 + Spark | 按 `tts/tts-batches.jsonl` 重配一句所在的 batch 窗口；`--single` 用 batch 1 |
 | `tts_pool.py` | Spark 容器内 | 同语言两讲员共用 N 个模型副本（8 → 4+4），每副本 batch 8 |
@@ -79,6 +80,8 @@ artifacts/sentence-first-agent/<run>/
 命令里的 `$EXP` 指 `experiments/sentence-first-agent`，`$RUN` 指本语言的 run 目录，`SPARK` 指 `achillesjing@192.168.1.152`。
 
 ### 0.5 环境预检（本机，开工前几分钟）
+
+这些检查由 §2 的 `sfa.py start` 一次执行：默认查脚本、ffmpeg/ffprobe 与 run 路径；`--check-git` 才 fetch 并报落后 `origin/main`，`--check-package`（或 `--publish`）才验 `tongxing_production` 导入，`--spark-session` 与 `--firebase`/`--publish` 分别查 Spark 会话与 ADC。单独跑脚本或命令报错时按下面各项手工排查：
 
 1. 确认代码与脚本齐：`git fetch origin`，`git rev-list --left-right --count origin/main...HEAD`。落后很多时（2026-10-23：落后 2759 个提交，实验目录缺 11 个脚本），在 `artifacts/worktrees/sfa-main` 建 origin/main worktree，不要改当前分支。
 2. 确认导入的是 worktree 的包：主 checkout 的 `.venv` 是 editable 安装，指向旧包；运行发布驱动时用 `PYTHONPATH="packages/production/src:."` 把 worktree 放最前，并 `python -c "import tongxing_production; print(tongxing_production.__file__)"` 核对。
@@ -223,6 +226,27 @@ python3 $EXP/spark_queue.py --session <session> --owner sentence-first-agent \
 
 ### 2 裁音频、拆句（本机）
 
+默认用一条命令 `sfa.py start`：环境检查（§0.5）→ `prepare_clip.py`（裁切、拆句、切片）→ 可选 `assign_speakers.py` → 把 `clip.json` + `sentences.jsonl` + `slices/` 复制给其余语言 → `preflight.py --stage setup`；写 `setup.json`，stdout 一行 JSON。
+
+```bash
+python3 $EXP/sfa.py start --run $RUN --locale zh-Hans \
+  --share-to ko=<ko-run> --share-to es=<es-run> \
+  --anchor <anchor-manifest.json> --media <video> --window-start <窗口起点秒> --units <LO:HI> \
+  --title "<一行说明>" \
+  [--segments <segments.json> --speaker-map <speaker-label-mapping.json> [--use-text]] \
+  [--english-package <english-source.json>] [--spark-session <session>] [--publish] \
+  [--check-git] [--check-package] [--plan] [--pretty] [--out <json>]
+```
+
+- `--plan` 先看步骤再跑；`--pretty` 缩进输出；`--out` 另存 JSON。
+- 幂等：已有 `clip.json`+`sentences.jsonl` 跳过裁切（`--force-prepare` 重跑）；分发目标一致时不动，目标已有 `translations.jsonl`/`review.json`/`speech.jsonl` 时拒绝覆盖（`--force-share` 才写）。
+- 门禁：`--stage setup` 只查开工时存在的 `clip.json`/`sentences.jsonl`、`speakerId→Registry`、英文包证据，journal 记 `l1.start` 与 `l1.preflight.setup`；完整 `preflight.py`（需要 translations/review/speech）仍在 TTS 前跑，`l1.preflight` 由它记。
+- 双人 run 可以在这里加 `--segments`/`--speaker-map` 提前写入 `speakerId`；一致度低的句子仍按第 3 步交用户确认。
+- 不写 `translations.jsonl`、`review.json`、`speech.jsonl`、`run.md`（表头仍由 `prepare_clip.py` 写）；发布仍需第 10 步的固定顺序与每次授权。
+- 输入文件按当前工作目录解析；`--run`/`--share-to` 按 `artifacts/sentence-first-agent/` 解析。
+
+手工路径（命令不适用、只重做一种语言或排查单个步骤时）：
+
 ```bash
 python3 $EXP/prepare_clip.py --anchor <anchor-manifest.json> --media <video> --window-start <窗口起点秒> --units <LO:HI> --run $RUN --title "<一行说明>"
 ```
@@ -236,6 +260,8 @@ python3 $EXP/srt_normalize.py --srt <episode.srt> --out <layer1-srt> --media <vi
 它去重、按 cue 内插、清洗已核实的名字、强制单调不重叠，写 `srt-normalization-report.json` 和 `anchor-manifest.json`；先看 `rawIssues` 与 `issues` 都为 0 再继续。它仍是时间近似，不是 MFA，英文仍要人审。代理读一遍句表，断得不对就改 `sentences.jsonl`，在 `run.md` 记原因。改句界时，每个锚点单元仍要按原顺序恰好出现一次（`sourceUnitId`），不改单元里的英文：App 的英文对照逐单元取自正式英文来源包，覆盖不全就整页没有英文。
 
 ### 3 双人：定讲员，用户确认后再往下
+
+§2 的 `sfa.py start` 已带 `--segments`/`--speaker-map` 时 `speakerId` 已写入，跳过下面的命令，直接做用户确认；否则单独跑：
 
 ```bash
 python3 $EXP/assign_speakers.py --run $RUN --segments <segments.json> --mapping <speaker-label-mapping.json> --use-text
@@ -449,4 +475,4 @@ python3 $EXP/publish_study.py finish                                            
 
 ## 完成的样子
 
-每种语言的 `run.md` 能让另一个人复现：来源、窗口、模型与 checkpoint、每步的决定、改过哪些句、用户结论、每步用时。审核收据在审核目录；音频留在本机；发布了的话，报告里写明线上版本号和哪些检查没做。发布的页面要同时满足：每种语言在正式版 App 的解码规则下都能显示（固定路径、文稿时间），英文对照已上线且每一句都有英文。缺英文对照不算发布完成。整期用 batch 8；同步 run 的 `lag-loop-report.json` 必须 `gate.clean=true`；每条可审前 `finish_run.py` 一并生成 `review.mp3`/`review-player.html`；改句按窗口重配；开工与发布前 `preflight.py` 通过；审核用 `review_player.py`；合并后跑 `consistency_check.py`；ASR 用 `asr_triage.py` 分诊；双讲员可用 `--pool-replicas 8`。
+每种语言的 `run.md` 能让另一个人复现：来源、窗口、模型与 checkpoint、每步的决定、改过哪些句、用户结论、每步用时。审核收据在审核目录；音频留在本机；发布了的话，报告里写明线上版本号和哪些检查没做。发布的页面要同时满足：每种语言在正式版 App 的解码规则下都能显示（固定路径、文稿时间），英文对照已上线且每一句都有英文。缺英文对照不算发布完成。整期用 batch 8；同步 run 的 `lag-loop-report.json` 必须 `gate.clean=true`；每条可审前 `finish_run.py` 一并生成 `review.mp3`/`review-player.html`；改句按窗口重配；开工用 `sfa.py start`（含 `preflight --stage setup`），发布前 `preflight.py` 通过；审核用 `review_player.py`；合并后跑 `consistency_check.py`；ASR 用 `asr_triage.py` 分诊；双讲员可用 `--pool-replicas 8`。

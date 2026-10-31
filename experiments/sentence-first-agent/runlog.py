@@ -3,7 +3,8 @@
 
 Wraps ``tools/development/run_journal.py`` (the repository's standard journal the run
 report exporter already knows) and writes the ``outcome.json`` and ``timings.tsv`` the
-exporter's retrospective reads. Stage names: ``l1.srt``, ``l1.preflight``,
+exporter's retrospective reads. Stage names: ``l1.start`` (``sfa.py start``),
+``l1.preflight`` (full gate), ``l1.preflight.setup`` (setup gate), ``l1.srt``,
 ``l2.consistency``, ``l3.tts.<speaker>.<locale>``, ``l3.asr.<locale>``, ``l3.finish``,
 ``l3.review.<locale>``, ``l4.assets``, ``l4.publish.<n>``.
 
