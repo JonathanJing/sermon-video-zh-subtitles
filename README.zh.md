@@ -8,13 +8,15 @@
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-lightgrey" alt="MIT License" /></a>
 </p>
 
-同行把一场英文证道录音转换成经过审核的中文、韩语和西班牙语文字、讲员本人音色的合成配音、随声字幕、学习大纲和每周页面，会众可以在网页或原生 iOS App 中打开。另一条本地路径在主日现场生成中文实时字幕；第三条路径生成中英对照阅读 PDF 和中文证道同行稿。
+同行把一场英文证道录音转换成经过审核的中文、韩语和西班牙语文字、讲员本人音色的合成配音、随声字幕、学习大纲和每周页面，会众可以在网页或原生 iOS App 中打开。另一条本地路径在主日现场生成中文实时字幕；第三条路径生成中英对照阅读 PDF 和中文证道同行稿。此外，逐句优先代理直做路线并行制作同一类周更页面：代理逐句翻译与复核、Spark 逐句配音，人工整轨听审后发布（见下文）。
 
-每个生成产物都通过哈希绑定其输入，如实标注审核状态，只有本层检查通过后才发布。从拿到源视频到下一场证道通常只有 10 到 12 小时，所以后端的设计重点是可恢复、复用已付费结果，遇到结果未知时停下来而不是盲目重试。
+四层流水线正式发布的每个产物都通过哈希绑定其输入，如实标注审核状态，只有本层检查通过后才发布；逐句优先代理直做路线的中间产物不做哈希绑定，但发布包仍绑定来源、候选、音频与审核收据。从拿到源视频到下一场证道通常只有 10 到 12 小时，所以后端的设计重点是可恢复、复用已付费结果，遇到结果未知时停下来而不是盲目重试。
 
 这是独立的个人开源项目，与 Mariners Church 无隶属、背书或运营关系。使用公开或已获授权的媒体，并让生成的翻译、配音和说明保留来源与审核状态。
 
 **试听：** [两段 60 秒演示](https://ai-for-god-sermon-audio-dev.web.app/demos/) — Eric Geiger 与 Steve Bang Lee，英文 → 中文 → 韩文 → 西文。
+
+**观看：** [66 秒介绍片](https://storage.googleapis.com/ai-for-god-sermon-media-dev/demos/tongxing-intro-2026-10-25-duo-720p.mp4) — 为什么做这个 App，以及它在会众中间的用法；用展开的 iPhone Duo 呈现（[iPhone 版](https://storage.googleapis.com/ai-for-god-sermon-media-dev/demos/tongxing-intro-2026-10-25-iphone-720p.mp4)）。
 
 ## 界面截图
 
@@ -52,11 +54,27 @@
 
 来源：Mariners Church 2026-09-20、2026-10-18 周末证道。本项目与 Mariners Church 无隶属关系。
 
+## 66 秒介绍片
+
+一部面向会众的短片：在同一个会堂里，不是每个人都能跟上英文证道；用这个 App，每位听众都能用自己的语言跟随同一句话。片头片尾是彩绘玻璃，中间是 2026-09-20 证道的真实片段，配中文、韩语和西班牙语配音，讲员旁边是 Dev Beta App。中文旁白，App 画面上保留英文原句。
+
+| iPhone Duo（展开） | iPhone |
+|---|---|
+| [![同行介绍片，iPhone Duo 版](docs/assets/readme/intro-film-duo-poster.png)](https://storage.googleapis.com/ai-for-god-sermon-media-dev/demos/tongxing-intro-2026-10-25-duo-720p.mp4) | [![同行介绍片，iPhone 版](docs/assets/readme/intro-film-iphone-poster.png)](https://storage.googleapis.com/ai-for-god-sermon-media-dev/demos/tongxing-intro-2026-10-25-iphone-720p.mp4) |
+| 66 s · 1280×720 · −14 LUFS | 66 s · 1280×720 · −14 LUFS |
+
+**说明什么。** App 画面是 Dev Beta App（`TongxingBeta`）在 iPhone Duo（展开）和 iPhone 17 Pro 模拟器中的截图，停在讲员正在说的句子上：中文 01:28、韩语 01:50、西语 02:02（2026-09-20 片段），在 Dev 上以“耶稣的应许 · 启示录 2–3 章（片段）”重新列出（运行报告见 [PR #1393](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/1393)）。彩绘玻璃镜头用 lemo-opuscar Stained Glass 风格在代码中渲染；配乐与音效为合成。
+
+**不说明什么。** 片尾点亮完整彩绘玻璃窗并标注“效果示意”的镜头只表达目标：会众在现场实时跟随尚未通过场地验收。画面是模拟器截图，不是设备验收。旁白与配音是 Eric Geiger 授权音色的 AI 语音，片中已标注；配音文字与音频是 2026-09-24 人工批准的片段包。
+
+SHA-256：Duo `cafef64bba4ed11d59b747880d70d865cdd510e05eccdcaef2f8cdcacfb7b2d1`，iPhone `f657ec85c84ff2d42f63f88657bd71d4436be649264b6fc13cfac988d0cb7251`。来源：Mariners Church 2026-09-20 周末证道。本项目与 Mariners Church 无隶属关系。
+
 ## 主要模块
 
 | 模块 | 作用 | 位置 | 进一步阅读 |
 |---|---|---|---|
 | 四层生产后端 | 冻结英文来源，逐语言翻译与复核，渲染并对齐配音，组装逐 locale 发布包 | `packages/production/src/tongxing_production/`、`tools/ops/run.py`、`schemas/`、`config/` | [四层生产合同](docs/multilingual-production-interfaces.zh.md) · [后端设计](docs/backend-workflow-system-design.zh-en.md) |
+| 逐句优先配音（代理直做） | 代理逐句翻译与复核，Spark 用讲员音色逐句合成，整轨人工听审后经受保护发布器发布 | `experiments/sentence-first-agent/` | [路线说明](docs/sentence-first-agent-production.zh.md) · [runbook](experiments/sentence-first-agent/AGENTS.md) |
 | Web 阅读器（Firebase Hosting） | 每周页面：随声字幕、双语全文、大纲、语言选择和听声定位 | `apps/listening-web/`、`firebase/` | [Layer 4 公开交付](docs/layer4-four-product-public-delivery.zh.md) · [每周发布](docs/tongxing-weekly-release.zh.md) |
 | iOS 客户端 | SwiftUI + AVPlayer，校验缓存、后台音频、锁屏控制、灵动岛状态、麦克风定位和 Beta 渠道 | `apps/tongxing-ios/` | [iOS README](apps/tongxing-ios/README.zh.md) · [设计约定](apps/tongxing-ios/DESIGN.zh.md) |
 | 主日实时字幕 | 本地麦克风到中文实时字幕，保留恢复录音；独立的 `live_session` 交付类型 | `experiments/local-live-poc/` | [实时字幕 POC](experiments/local-live-poc/README.md) · [周日字幕指南](docs/sunday-live-operations-whitepaper.zh.md) |
@@ -79,8 +97,8 @@
 | 层 | 名称 | 正式输出 | 门禁 |
 |---|---|---|---|
 | 1 | 共享英文事实与锚点 | English Source Package | 完整性、词级对齐与句界审核；身份冻结 |
-| 2 | 目标语言文字 | 每 locale 一个 Target-Language Candidate | 独立模型复核、文字机器质检，然后人工批准或记录在案的机器豁免 |
-| 3 | 目标语言音频与同步 | 每 locale 一个 Target-Language Audio Package，或显式 `audio_unavailable` | 回转写筛查、时间计划、人工听审或记录在案的豁免 |
+| 2 | 目标语言文字 | 每 locale 一个 Target-Language Candidate | 独立模型复核、文字机器质检，然后人工批准或记录在案的文本机器豁免 |
+| 3 | 目标语言音频与同步 | 每 locale 一个 Target-Language Audio Package，或显式 `audio_unavailable` | 时间计划与人工整轨 1× 听审（唯一音频门禁）；确定性 QC（时长／静音／削波）仅预检 |
 | 4 | 多语言发布与播放 | 每个 `pageId + targetLocale` 一个 Release Package | 部署后核验 HTTP、哈希与 Range；设备与现场验收分别记录 |
 
 每层的流程、模型与门禁见[四层工作流图](docs/diagrams/four-layer-production-workflow.svg)。维护中的合同是[四层接口文档](docs/multilingual-production-interfaces.zh.md)；Python 依赖定义在 `packages/production/src/tongxing_production/contracts/pipeline_definition.py`。
@@ -101,11 +119,11 @@
 
 ## 技术实现
 
-**后端。** `packages/production/src/tongxing_production/` 中的 Python 3 生产器，经 `.venv/bin/python tools/ops/run.py <area.module>` 调用；`scripts/` 保留兼容门面、宿主和冻结文件。`schemas/` 中的 JSON schema，`config/` 中的冻结策略。每个包记录规范来源 ID 和 URL、媒体哈希与时长、批准窗口、模型与提示身份以及审核收据。运行从已验证产物恢复；durable jobs、响应缓存和预算账本让付费模型调用可以跨重启复用。人工验收、机器豁免和预算批准由不同脚本写成不同收据，机器通过永远不会被当作人工批准。
+**后端。** `packages/production/src/tongxing_production/` 中的 Python 3 生产器，经 `.venv/bin/python tools/ops/run.py <area.module>` 调用；`scripts/` 保留兼容门面、宿主和冻结文件。`schemas/` 中的 JSON schema，`config/` 中的冻结策略。四层流水线的每个包记录规范来源 ID 和 URL、媒体哈希与时长、批准窗口、模型与提示身份以及审核收据。运行从已验证产物恢复；durable jobs、响应缓存和预算账本让付费模型调用可以跨重启复用。人工验收、文本机器豁免和预算批准由不同脚本写成不同收据，机器通过永远不会被当作人工批准。
 
-**模型与算力。** 翻译和独立复核经每次运行冻结的 Layer 2 后端执行；语音渲染、回转写和词级对齐在本地 DGX Spark 运行，MacBook 作为后备。模型名称、推理强度、tier 和预算上限见[运行时模型策略](docs/production-model-runtime-policy.zh.md)、[算力策略](docs/local-production-compute-policy.zh.md)和[周更运行配置](docs/weekly-run-profile.zh.md)；并发与恢复见 Layer 2 [控制器](docs/canonical-layer2-controller.zh.md)。OpenAI 项目只通过[环境启动器](docs/openai-minimal-project-setup.zh.md)使用。
+**模型与算力。** 翻译和独立复核经每次运行冻结的 Layer 2 后端执行；语音渲染与词级对齐在本地 DGX Spark 运行，MacBook 作为后备。模型名称、推理强度、tier 和预算上限见[运行时模型策略](docs/production-model-runtime-policy.zh.md)、[算力策略](docs/local-production-compute-policy.zh.md)和[周更运行配置](docs/weekly-run-profile.zh.md)；并发与恢复见 Layer 2 [控制器](docs/canonical-layer2-controller.zh.md)。OpenAI 项目只通过[环境启动器](docs/openai-minimal-project-setup.zh.md)使用。
 
-**质量门禁。** 文字机器质检检查原意保留、数字、经文引用和[共享术语表](docs/series-terminology.zh.md)中的术语；音频质检通过回转写和时间检查筛查渲染语音。不通过的检查回到有界修复循环。未经人工审核的发布需要[机器质量豁免](docs/machine-quality-waiver.zh.md)，豁免绑定实现、运行时设置、冻结来源和音频，页面显示声明。
+**质量门禁。** 文字机器质检检查原意保留、数字、经文引用和[共享术语表](docs/series-terminology.zh.md)中的术语；不通过的检查回到有界修复循环。未经人工文字审核的发布需要[文本机器质检豁免](docs/machine-quality-waiver.zh.md)，豁免保持 `humanApproval=false`，绑定实现、冻结策略、冻结来源与候选，页面显示声明。音频不接受机器听审或机器豁免：2026-10-28 起 ASR 初筛、二级 ASR 与机器试听豁免已退役，人工整轨 1× 听审（`audio-human-review-receipt-v5`）是唯一音频门禁；确定性音频 QC（时长／静音／削波）只作预检。
 
 **Web。** 无框架的静态 ES 模块，由 Firebase Hosting 从独立的 Dev 和 Production 项目提供。页面先校验目录和各发布包再启用语言，按音频时间轴跟随字幕，并提供短时麦克风采集，与同源指纹索引匹配后跳到当前位置。完整视频存放在带精确重定向的存储桶。Node 测试覆盖共享客户端合同。
 
@@ -120,16 +138,16 @@
 ### 每周预制内容
 
 1. **来源。** 下载授权录音，确认证道范围，冻结带词级对齐的 English Source Package（[runbook](docs/codex-local-production-runbook.zh.md)）。
-2. **文字。** 逐 locale 生成候选，运行独立复核和机器质检，然后人工文字审核或记录在案的豁免。
-3. **音频。** 准备 speech job，在 Spark 上用授权讲员音色渲染，回转写筛查，压缩静音并组装音频包（[正式 Layer 3 渲染器](docs/formal-layer3-renderer.zh.md)）。
+2. **文字。** 逐 locale 生成候选，运行独立复核和机器质检，然后人工文字审核或记录在案的文本机器豁免。
+3. **音频。** 准备 speech job，在 Spark 上用授权讲员音色渲染，压缩静音并组装音频包，再由人工整轨 1 倍速听审（[正式 Layer 3 渲染器](docs/formal-layer3-renderer.zh.md)）。
 4. **发布。** 组装发布包，发布到 Dev 项目，核验 HTTP、哈希和浏览器 smoke，再按[每周发布合同](docs/tongxing-weekly-release.zh.md)部署到 Production。
 5. **海报与报告。** 渲染[单行每周海报](docs/tongxing-weekly-poster-format.zh.md)，并以纯文档 PR 导出脱敏的[运行报告](docs/test-run-retrospective.zh.md)。
 
-同一路径在短片段上的真实模型演练是[片段 E2E](docs/clip-real-e2e.zh.md)。[工作流总览](docs/workflows/README.zh.md)是范围与完成状态的事实来源。
+短片段真实模型演练的旧夹具已于 2026-10-28 随机器听审链退役（[历史说明](docs/clip-real-e2e.zh.md)）；新的端到端验证走正式四层入口与人工整轨听审。[工作流总览](docs/workflows/README.zh.md)是范围与完成状态的事实来源。
 
 ### 逐句优先配音（代理直做）
 
-另一条并行的制作路线不走正式四层流水线：代理按句翻译与复核，Spark 用讲员自己的声音逐句配音，合并成整轨后由用户整轨听审，再按每次部署授权发布。运行手册见 [sentence-first runbook](experiments/sentence-first-agent/AGENTS.md)，适用范围、检查与成本见[路线说明](docs/sentence-first-agent-production.zh.md)。
+另一条并行的制作路线不走正式四层流水线：代理按句翻译与复核，Spark 用讲员自己的声音逐句配音，合并成整轨后由用户整轨听审，再按每次部署授权发布。交付仍是 `four_layer_release` 的 Layer 4 页面，没有机器质检豁免与声音指纹同步。运行手册见 [sentence-first runbook](experiments/sentence-first-agent/AGENTS.md)，适用范围、检查与成本见[路线说明](docs/sentence-first-agent-production.zh.md)。
 
 ![逐句优先配音的每周运行流程：用户人审、本机脚本与 DGX Spark 独占会话](docs/diagrams/sentence-first-weekly-workflow.svg)
 
@@ -174,6 +192,7 @@ App 采用 iOS 27 设计语言：系统导航与 Sheet、随 Dynamic Type 增长
 | `infra/` | Firebase 等基础设施配置 |
 | `firebase/` | Hosting 配置与 Dev 页面 adapter |
 | `experiments/local-live-poc/` | 主日实时字幕运行时 |
+| `experiments/sentence-first-agent/` | 逐句优先代理直做路线的本地脚本与 runbook；产物保存在 Git 外 |
 | `docs/` | 合同、runbook、设计文档、流程图与带日期的报告 |
 | `skills/` | Spark、配音、对齐与实时后备的 agent skills |
 
