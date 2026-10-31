@@ -24,6 +24,11 @@ struct PlaybackDock: View {
     /// `PlaybackMoreControls`; the dock only anchors the system popover.
     var isMorePresented: Binding<Bool>? = nil
     var moreContent: (() -> AnyView)? = nil
+    /// When the dock lives inside a system toolbar item, a popover anchored
+    /// here is placed against the bar instead of the button. The host then
+    /// presents `moreContent` itself, anchored to this button frame.
+    var defersMorePresentation = false
+    var onMoreButtonFrame: ((CGRect) -> Void)? = nil
 
     var body: some View {
         Group {
@@ -109,13 +114,16 @@ struct PlaybackDock: View {
         }
         .accessibilityLabel(localization.text("定位"))
         .accessibilityIdentifier("playback-more")
-        .popover(isPresented: isMorePresented ?? .constant(false),
-                 attachmentAnchor: .rect(.bounds),
-                 arrowEdge: placement == .trailing ? .trailing : .bottom) {
-            moreContent?()
-                .presentationCompactAdaptation(.popover)
+        .background {
+            if defersMorePresentation {
+                WindowFrameReader { onMoreButtonFrame?($0) }
+            }
         }
-        .onDisappear { isMorePresented?.wrappedValue = false }
+        .modifier(MorePopoverAnchor(isPresented: isMorePresented ?? .constant(false),
+                                    deferred: defersMorePresentation,
+                                    content: moreContent,
+                                    arrowEdge: placement == .trailing ? .trailing : .bottom,
+                                    onDisappear: { isMorePresented?.wrappedValue = false }))
     }
 
     @ViewBuilder private var timeAndStatus: some View {
@@ -322,3 +330,72 @@ struct PlaybackMoreControls: View {
         .disabled(!playback.isReady || isPreparing)
     }
 }
+
+/// Attaches the popover unless the host defers presentation (system toolbar
+/// hosts cannot anchor a popover to their own subview).
+private struct MorePopoverAnchor: ViewModifier {
+    let isPresented: Binding<Bool>
+    let deferred: Bool
+    let content: (() -> AnyView)?
+    let arrowEdge: Edge
+    let onDisappear: () -> Void
+
+    func body(content base: Content) -> some View {
+        if deferred {
+            base.onDisappear(perform: onDisappear)
+        } else {
+            base
+                .popover(isPresented: isPresented, attachmentAnchor: .rect(.bounds), arrowEdge: arrowEdge) {
+                    content?()
+                        .presentationCompactAdaptation(.popover)
+                }
+                .onDisappear(perform: onDisappear)
+        }
+    }
+}
+
+#if os(iOS)
+/// Reports the hosted view's frame in window coordinates. A toolbar item's
+/// `.frame(in: .global)` resolves against the bar, so anchoring a popover from
+/// inside the bar drops it in the corner; this keeps real screen geometry.
+private struct WindowFrameReader: UIViewRepresentable {
+    var onChange: (CGRect) -> Void
+
+    func makeUIView(context: Context) -> ReaderView {
+        let view = ReaderView()
+        view.onChange = onChange
+        return view
+    }
+
+    func updateUIView(_ view: ReaderView, context: Context) {
+        view.onChange = onChange
+        view.report()
+    }
+
+    final class ReaderView: UIView {
+        var onChange: ((CGRect) -> Void)?
+
+        override func layoutSubviews() {
+            super.layoutSubviews()
+            report()
+        }
+
+        override func didMoveToWindow() {
+            super.didMoveToWindow()
+            report()
+        }
+
+        override var intrinsicContentSize: CGSize { .zero }
+
+        private var reported: CGRect = .null
+
+        func report() {
+            guard window != nil else { return }
+            let frame = convert(bounds, to: nil)
+            guard frame != reported else { return }
+            reported = frame
+            onChange?(frame)
+        }
+    }
+}
+#endif

@@ -267,8 +267,11 @@ final class ListeningFlowUITests: XCTestCase {
         XCUIDevice.shared.orientation = .landscapeLeft
         defer { XCUIDevice.shared.orientation = .portrait }
         let app = launchFixture()
-        try XCTSkipUnless(abs(app.frame.width - 951) < 2 && abs(app.frame.height - 669) < 2,
-                          "This geometry check targets the iPhone Duo inner landscape display; observed \(app.frame)")
+        // XCUITest reports the Duo inner screen in its physical (portrait) size
+        // even while the UI runs landscape, so accept either orientation and
+        // distinguish the inner screen from the 466x678 outer one by size.
+        try XCTSkipUnless(max(app.frame.width, app.frame.height) >= 600,
+                          "This geometry check targets the iPhone Duo inner display; observed \(app.frame)")
         let play = app.buttons["playback-toggle"]
         XCTAssertTrue(play.waitForExistence(timeout: 5))
         XCTAssertGreaterThan(play.frame.minX, app.frame.midX)
@@ -1626,7 +1629,12 @@ final class ListeningFlowUITests: XCTestCase {
             XCTAssertLessThanOrEqual(panelFrame.maxY, buttonFrame.minY + 4,
                                      "底栏的更多浮窗应在按钮上方", file: file, line: line)
         }
-        XCTAssertTrue(app.frame.contains(panelFrame), "播放更多浮窗应完整位于屏幕内", file: file, line: line)
+        // The Duo inner screen reports its physical portrait frame even while
+        // the UI runs landscape, so accept either orientation of the screen.
+        let screen = app.frame
+        let rotated = CGRect(origin: .zero, size: CGSize(width: screen.height, height: screen.width))
+        XCTAssertTrue(screen.contains(panelFrame) || rotated.contains(panelFrame),
+                      "播放更多浮窗应完整位于屏幕内", file: file, line: line)
     }
 
     private func waitFor(_ element: XCUIElement, _ predicate: String,
