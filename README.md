@@ -83,6 +83,10 @@ SHA-256: Duo `cafef64bba4ed11d59b747880d70d865cdd510e05eccdcaef2f8cdcacfb7b2d1`,
 
 ## Architecture
 
+![System overview: local four-layer production, review receipts, guarded publishing, Firebase hosting and the Web/iOS clients](docs/diagrams/tongxing-system-architecture.svg)
+
+The overview ties local four-layer production, review receipts, guarded publishing and the two client surfaces into one picture; per-layer inputs, models and gates follow below and in the [four-layer interface contract](docs/multilingual-production-interfaces.zh.md).
+
 ### Four layers, one English source
 
 One shared English source feeds independent Chinese, Korean and Spanish branches. Each branch goes through text, then audio, then release, with its own review and hashes. A changed Layer 1 identity invalidates every locale; a changed Layer 2 or 3 artifact invalidates only that locale's downstream work. No layer is skipped and no upstream content is repaired downstream.
@@ -139,6 +143,12 @@ More diagrams, their sources and the regeneration command are listed in the [dia
 5. **Poster and report.** Render the [single-line weekly poster](docs/tongxing-weekly-poster-format.zh.md) and export a redacted [run report](docs/test-run-retrospective.zh.md) as a docs-only PR.
 
 A short real-model rehearsal of the same path on a clip is the [clip E2E](docs/clip-real-e2e.zh.md). The [workflow map](docs/workflows/README.zh.md) is the source of truth for scope and completion states.
+
+### Sentence-first dubbing (agent-direct)
+
+A second, parallel production route skips the formal four-layer pipeline: the agent translates and reviews sentence by sentence, the Spark renders each sentence in the speaker's own voice, the track is merged, and the user's full-track listening plus per-deploy authorization gate publication. The operating runbook is the [sentence-first runbook](experiments/sentence-first-agent/AGENTS.md); scope, checks and cost are in the [route note](docs/sentence-first-agent-production.zh.md).
+
+![Sentence-first dubbing weekly flow: human review, local scripts and the DGX Spark exclusive session](docs/diagrams/sentence-first-weekly-workflow.svg)
 
 ### Code and content release
 
