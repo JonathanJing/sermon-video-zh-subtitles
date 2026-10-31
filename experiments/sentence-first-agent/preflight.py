@@ -114,8 +114,19 @@ def check_run(run: Path, locale: str | None, registry_path: Path, report: Report
     registry = json.loads(registry_path.read_text(encoding="utf-8"))
     speakers = {s["speakerId"]: s for s in registry.get("speakers", [])}
     mapping = review.get("speakers") or {}
-    if review.get("speaker") and not mapping:
-        mapping = {next((s["speakerId"] for s in sentences if s.get("speakerId")), "unknown"): review["speaker"]}
+    if not mapping and review.get("speaker"):
+        speaker_key = review["speaker"]
+        owner = next((s["speakerId"] for s in sentences if s.get("speakerId")), None)
+        if owner:
+            mapping = {owner: speaker_key}
+        else:
+            # Single-speaker runs have no speakerId per sentence; `review.speaker` is the
+            # checkpoint key, so resolve it through the Registry by speakerKey.
+            entry = next((entry for entry in speakers.values() if entry.get("speakerKey") == speaker_key), None)
+            report.add("registry:single-speaker", entry is not None,
+                       f"speakerKey={speaker_key!r} (review.speaker)")
+            if entry:
+                mapping = {entry["speakerId"]: speaker_key}
     report.add("review:speakers", bool(mapping), f"mapping={mapping}")
     for speaker_id, speaker_key in mapping.items():
         entry = speakers.get(speaker_id)

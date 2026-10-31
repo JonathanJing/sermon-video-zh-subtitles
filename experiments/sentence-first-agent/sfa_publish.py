@@ -277,11 +277,19 @@ def _receipt_checks(cfg: PageConfig) -> dict:
     contract.require(receipt.get("schemaVersion") == RECEIPT_SCHEMA, "Unsupported review verdict schema")
     contract.require(receipt.get("verdict") == "approved", "Human review verdict is not approved")
     contract.require(receipt.get("pageId") in (None, cfg.page_id), "Verdict pageId differs from the config")
-    reviewed_at = datetime.fromisoformat(str(receipt.get("reviewedAt", "")).replace("Z", "+00:00"))
+    warnings = []
+    try:
+        reviewed_at = datetime.fromisoformat(str(receipt.get("reviewedAt", "")).replace("Z", "+00:00"))
+    except ValueError as exc:
+        contract.require(False, f"reviewedAt is not ISO-8601: {exc}")
+    if reviewed_at.tzinfo is None:
+        reviewed_at = reviewed_at.replace(tzinfo=timezone.utc)
+        warnings.append("reviewedAt has no timezone offset; treated as UTC")
     contract.require(reviewed_at <= datetime.now(timezone.utc) + timedelta(seconds=120),
                      "reviewedAt is in the future")
+    note = str(receipt.get("note") or "")
+    contract.require("未听审" not in note, "review verdict note still says 未听审")
     locales = receipt.get("locales") or {}
-    warnings = []
     for locale in cfg.locales:
         entry = locales.get(locale)
         contract.require(isinstance(entry, dict), f"Review verdict has no entry for {locale}")
@@ -400,13 +408,33 @@ def cmd_check_title(cfg: PageConfig) -> dict:
             "problems": problems, "warnings": warnings}
 
 
+def _journal_checks(cfg: PageConfig, *, allow_missing: bool) -> list[str]:
+    """The runbook's pre-publish journal gates: full preflight (fail) and consistency (warn)."""
+    warnings = []
+    for locale in cfg.locales:
+        path = cfg.run_dir(locale) / "journal.ndjson"
+        if not path.is_file():
+            contract.require(allow_missing, f"{locale}: journal.ndjson missing; cannot prove l1.preflight ran")
+            warnings.append(f"{locale}: journal.ndjson missing (allowed by --allow-missing-journal-gates)")
+            continue
+        finished = {json.loads(line)["stage"] for line in path.read_text(encoding="utf-8").splitlines()
+                    if line.strip() and json.loads(line).get("event") == "finished"}
+        contract.require("l1.preflight" in finished,
+                         f"{locale}: journal has no finished l1.preflight; run the full preflight before TTS")
+        if "l2.consistency" not in finished:
+            warnings.append(f"{locale}: journal has no finished l2.consistency (consistency_check.py)")
+    return warnings
+
+
 def cmd_preflight(cfg: PageConfig, *, allow_missing_decisions: bool = False,
-                  allow_missing_title_check: bool = False) -> dict:
+                  allow_missing_title_check: bool = False,
+                  allow_missing_journal_gates: bool = False) -> dict:
     """The publish gate before assets: identity, English approval, receipt freshness, decisions."""
     cfg.require_inputs()
     esp, esp_sha = _english_source_checks(cfg)
     receipt = _receipt_checks(cfg)
     decision_info = _decision_checks(cfg, allow_missing=allow_missing_decisions)
+    journal_warnings = _journal_checks(cfg, allow_missing=allow_missing_journal_gates)
     if cfg.title_check is None:
         contract.require(allow_missing_title_check,
                          "page config has no titleCheck block; add it or pass --allow-missing-title-check")
@@ -423,7 +451,8 @@ def cmd_preflight(cfg: PageConfig, *, allow_missing_decisions: bool = False,
             "titleCheck": {"mode": title_info.get("mode"), "series": title_info.get("series"),
                            "week": title_info.get("week"), "expected": title_info.get("expected"),
                            "actual": title_info.get("actual"), "skipped": title_info.get("skipped")},
-            "warnings": receipt["warnings"] + decision_info["warnings"] + title_info.get("warnings", [])}
+            "warnings": receipt["warnings"] + decision_info["warnings"] + journal_warnings
+                        + title_info.get("warnings", [])}
 
 
 def _read_json(path: Path):
@@ -438,10 +467,78 @@ def _public_file(public: Path, rel: str, problems: list) -> Path | None:
     return public / cleaned
 
 
+def _check_staged_assets(cfg: PageConfig, snapshot: Path, assets: Path,
+                         baseline: Path | None) -> dict:
+    """Pre-first-deploy check: releases live in the assets dir, the catalog has no page yet."""
+    public = snapshot / "public"
+    contract.require(public.is_dir(), f"not a snapshot: {snapshot}")
+    problems, warnings, current = [], [], set()
+    for name, catalog in sorted((name, _read_json(public / name)) for name in contract.CATALOG_FILES.values()
+                                if (public / name).is_file()):
+        if any(page.get("id") == cfg.page_id for page in catalog.get("pages", [])):
+            problems.append({"path": name, "detail": "page is already in a snapshot catalog before the first deploy"})
+    for locale in cfg.locales:
+        release_path = assets / "releases" / f"{locale}.json"
+        if not release_path.is_file():
+            problems.append({"path": f"assets/releases/{locale}.json", "detail": "release file missing from the assets directory"})
+            continue
+        release = _read_json(release_path)
+        if release.get("pageId") != cfg.page_id or release.get("targetLocale") != locale:
+            problems.append({"path": f"assets/releases/{locale}.json", "detail": "release identity mismatch"})
+        try:
+            contract.validate_v2_asset_paths(release, cfg.page_id, locale)
+        except ValueError as exc:
+            problems.append({"path": f"assets/releases/{locale}.json", "detail": str(exc)})
+        for asset in release.get("assets", []):
+            target = _public_file(public, asset.get("path", ""), problems)
+            if target is None or not target.is_file():
+                problems.append({"path": asset.get("path", ""), "detail": f"{locale}: staged asset missing"})
+                continue
+            digest = sha_file(target)
+            current.add(digest)
+            if digest != asset.get("sha256"):
+                problems.append({"path": asset["path"], "detail": f"{locale}: staged asset hash differs from the release"})
+    stale = []
+    if baseline is not None:
+        baseline_public = baseline / "public"
+        old_hashes = set()
+        old_catalog = baseline_public / "multilingual-v3.json"
+        if old_catalog.is_file():
+            for entry in _read_json(old_catalog).get("pages", []):
+                if entry.get("id") == cfg.page_id:
+                    warnings.append("page already exists in the baseline catalog; this is a rebuild, not a first deploy")
+                    for target in (entry.get("targets") or {}).values():
+                        if target.get("releasePackageJsonSha256"):
+                            old_hashes.add(target["releasePackageJsonSha256"])
+        for path in sorted(public.rglob("*")):
+            if not path.is_file() or path.suffix not in (".json", ".html", ".txt", ".xml"):
+                continue
+            try:
+                text = path.read_text(encoding="utf-8")
+            except (OSError, UnicodeDecodeError):
+                continue
+            for digest in sorted(old_hashes - current):
+                if digest in text:
+                    stale.append({"path": "/" + path.relative_to(public).as_posix(), "hash": digest})
+        problems.extend({"path": item["path"], "detail": "still references an old release hash"} for item in stale)
+    return {"ok": not problems, "pageId": cfg.page_id, "environment": cfg.environment,
+            "snapshot": str(snapshot), "mode": "staged-assets", "problems": problems,
+            "warnings": warnings, "staleReferences": stale,
+            "checked": {"catalog": "must not contain the page yet", "locales": list(cfg.locales),
+                        "assets": str(assets), "baselineScanned": baseline is not None}}
+
+
 def cmd_publish_check(cfg: PageConfig, snapshot: Path, *, baseline: Path | None = None,
                       require_english_reference: bool = False,
-                      require_announcements: bool = False) -> dict:
-    """Verify every cross-artifact hash binding before a deploy, and scan for stale old hashes."""
+                      require_announcements: bool = False,
+                      assets: Path | None = None) -> dict:
+    """Verify every cross-artifact hash binding before a deploy, and scan for stale old hashes.
+
+    With ``assets`` set, check the first deploy instead: releases still live in the assets
+    directory and the snapshot catalog must not contain the page yet.
+    """
+    if assets is not None:
+        return _check_staged_assets(cfg, snapshot, assets, baseline)
     public = snapshot / "public"
     contract.require(public.is_dir(), f"not a snapshot: {snapshot}")
     problems, warnings = [], []
@@ -833,7 +930,7 @@ def cmd_verify(cfg: PageConfig, assets: Path, out: Path) -> dict:
     evidence = {"schemaVersion": cfg.verify_schema, "origin": origin, "pageId": cfg.page_id,
                 "checks": checks, "status": "pass" if all(check["pass"] for check in checks) else "fail"}
     write_json(out, evidence)
-    return {"status": evidence["status"], "checks": len(checks),
+    return {"ok": evidence["status"] == "pass", "status": evidence["status"], "checks": len(checks),
             "failed": [check["path"] for check in checks if not check["pass"]]}
 
 
@@ -929,7 +1026,7 @@ def cmd_readback(cfg: PageConfig, stage2: Path) -> dict:
         status, data = reader(origin + f"/english-reference/{cfg.page_id}.json")
         results[f"english-reference/{cfg.page_id}.json"] = (
             status == 200 and hashlib.sha256(data).hexdigest() == sha_file(extra))
-    return {"pass": all(results.values()), "checks": results}
+    return {"ok": all(results.values()), "pass": all(results.values()), "checks": results}
 
 
 def _build_clip_reference(cfg: PageConfig, public: Path) -> dict:
@@ -1032,10 +1129,14 @@ def build_parser() -> argparse.ArgumentParser:
                            help="legacy run without decisions.json (recorded in run.md instead)")
     preflight.add_argument("--allow-missing-title-check", action="store_true",
                            help="legacy config without a titleCheck block")
+    preflight.add_argument("--allow-missing-journal-gates", action="store_true",
+                           help="legacy run without the l1.preflight journal gate")
     title = sub.add_parser("check-title", help="check the page titles against the title table")
     title.add_argument("--allow-missing", action="store_true", help="do not fail when titleCheck is absent")
     check = sub.add_parser("publish-check", help="verify hash bindings and hunt stale hashes before a deploy")
     check.add_argument("--snapshot", type=Path, required=True)
+    check.add_argument("--assets", type=Path,
+                       help="first-deploy mode: verify the assets directory against the staged snapshot")
     check.add_argument("--baseline", type=Path, help="live baseline snapshot; enables the old-hash scan")
     check.add_argument("--require-english-reference", action="store_true")
     check.add_argument("--require-announcements", action="store_true")
@@ -1076,7 +1177,8 @@ def main(argv=None) -> int:
             result = cmd_validate(cfg)
         elif args.cmd == "preflight":
             result = cmd_preflight(cfg, allow_missing_decisions=args.allow_missing_decisions,
-                                   allow_missing_title_check=args.allow_missing_title_check)
+                                   allow_missing_title_check=args.allow_missing_title_check,
+                                   allow_missing_journal_gates=args.allow_missing_journal_gates)
         elif args.cmd == "check-title":
             if cfg.title_check is None and args.allow_missing:
                 result = {"ok": True, "skipped": "no titleCheck block"}
@@ -1085,7 +1187,8 @@ def main(argv=None) -> int:
         elif args.cmd == "publish-check":
             result = cmd_publish_check(cfg, args.snapshot, baseline=args.baseline,
                                        require_english_reference=args.require_english_reference,
-                                       require_announcements=args.require_announcements)
+                                       require_announcements=args.require_announcements,
+                                       assets=args.assets)
         elif args.cmd == "assets":
             result = cmd_assets(cfg, args.out)
         elif args.cmd == "baseline":
