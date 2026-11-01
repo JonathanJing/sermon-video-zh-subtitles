@@ -11,6 +11,7 @@ What it writes (all under the run's ignored ``artifacts/`` directory):
 
   status/events.ndjson     progress, heartbeats, attention, evidence markers
   status/status.json       snapshot derived from journal + status events + state files
+  status/notify-sent.ndjson dedupe ledger for Bark notifications (P2)
   status/status-check.json optional consistency report from ``check``
   .status-index.json       production -> locale run directory index (at status root)
 
@@ -26,6 +27,7 @@ Typical use:
       --stage l3.review.zh-Hans --waiting-on "user track review" --url http://127.0.0.1:8765/review-player.html
   python3 experiments/sentence-first-agent/run_status.py resume --run RUN --stage l3.review.zh-Hans
   python3 experiments/sentence-first-agent/run_status.py wrap --run RUN --stage l3.finish -- python3 finish_run.py ...
+  python3 experiments/sentence-first-agent/run_status.py notify --run RUN [--execute]  # Bark (P2)
 
 Start/register and the TTS queue call the same helpers; see ``sfa.py`` and
 ``spark_queue.py``. The snapshot's ``evidenceLevel`` is E0-E6 and is explicitly
@@ -45,12 +47,19 @@ import uuid
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, Callable
+from urllib.parse import urlsplit
 
 ROOT = Path(__file__).resolve().parents[2]
 TOOLS_DEVELOPMENT = ROOT / "tools" / "development"
-if str(TOOLS_DEVELOPMENT) not in sys.path:
-    sys.path.insert(0, str(TOOLS_DEVELOPMENT))
+TOOLS_OPS = ROOT / "tools" / "ops"
+for _entry in (str(TOOLS_DEVELOPMENT), str(TOOLS_OPS)):
+    if _entry not in sys.path:
+        sys.path.insert(0, _entry)
 import run_journal  # noqa: E402
+try:  # notification transport is optional until P2 is used
+    import notify as notify_transport
+except Exception:  # noqa: BLE001
+    notify_transport = None
 
 SCHEMA_EVENT = "sentence-first-status-event-v1"
 SCHEMA_SNAPSHOT = "sentence-first-run-status-v1"
@@ -60,6 +69,7 @@ EVENTS_FILE = "events.ndjson"
 SNAPSHOT_FILE = "status.json"
 CHECK_FILE = "status-check.json"
 AGENT_FILE = "agent.json"
+NOTIFY_SENT_FILE = "notify-sent.ndjson"
 INDEX_FILE = ".status-index.json"
 STATUS_ROOT = ROOT / "artifacts" / "sentence-first-agent"
 EVIDENCE_LEVELS = ("E0", "E1", "E2", "E3", "E4", "E5", "E6")
@@ -1043,6 +1053,7 @@ def derive_snapshot(run: Path, *, index: Path | None = None, entry: dict | None 
         "runId": run.name,
         "locale": locale,
         "generatedAt": now_value,
+        "startedAt": combined[0]["at"] if combined else None,
         "runState": run_state,
         "stalled": any(stage.get("stalled") for stage in stages.values()),
         "freshness": {
@@ -1311,6 +1322,231 @@ def wrap_command(run: Path, stage: str, command: list[str], *, heartbeat_seconds
     return int(code)
 
 
+
+
+# ---------------------------------------------------------------- notifications (P2)
+
+def _safe_text(value: Any, limit: int = 300) -> str:
+    """Sanitize a local message before it leaves the Mac for Bark."""
+    text = str(value or "").strip()
+    text = re.sub(r"(?:/Users|/home|/private|/var/folders)/[^\s,;]+", "<path>", text)
+    text = re.sub(r"artifacts/[^\s,;]+", "<artifact>", text)
+    text = re.sub(r"\bsk-[A-Za-z0-9_-]{6,}", "<key>", text)
+    text = re.sub(r"\s+", " ", text)
+    return text[:limit]
+
+
+def _safe_url(value: Any) -> str | None:
+    text = str(value or "").strip()
+    if not text.startswith(("http://", "https://")):
+        return None
+    host = (urlsplit(text).hostname or "").lower()
+    if host in ("localhost", "127.0.0.1", "::1") or host.endswith(".local"):
+        return None
+    return text
+
+
+def _duration(seconds: Any) -> str:
+    try:
+        total = max(0, int(float(seconds)))
+    except (TypeError, ValueError):
+        return "未知"
+    minutes, sec = divmod(total, 60)
+    if minutes >= 60:
+        hours, minutes = divmod(minutes, 60)
+        return f"{hours}h{minutes:02d}m"
+    return f"{minutes}m{sec:02d}s"
+
+
+def _candidate(key: str, kind: str, level: str, title: str, body: str,
+               *, url: str | None = None, since: str | None = None,
+               cooldown_seconds: float | None = None) -> dict:
+    return {"key": key, "kind": kind, "level": level, "title": title,
+            "body": _safe_text(body, 500), "url": _safe_url(url),
+            "since": since, "cooldownSeconds": cooldown_seconds}
+
+
+def notification_candidates(snapshot: dict) -> list[dict]:
+    """Policy: start, human-review handoff, failure, stall, missing step, completion."""
+    run_id = snapshot.get("runId") or "run"
+    production = snapshot.get("productionId") or run_id
+    decisions = snapshot.get("decisions") or {}
+    candidates: list[dict] = []
+    started_at = snapshot.get("startedAt")
+    run_state = snapshot.get("runState")
+    if started_at and run_state in ("planned", "active", "attention_required"):
+        title = decisions.get("title") or production
+        locales = "/".join(decisions.get("locales") or []) or "?"
+        mode_parts = []
+        if decisions.get("form"):
+            mode_parts.append(str(decisions["form"]))
+        if decisions.get("sync") is not None:
+            mode_parts.append("sync" if decisions.get("sync") else "no-sync")
+        if decisions.get("publish") is not None:
+            mode_parts.append("publish" if decisions.get("publish") else "no-publish")
+        mode = "/".join(mode_parts)
+        candidates.append(_candidate(
+            f"start:{run_id}", "started", "passive",
+            f"[同行] 开工 · {title}",
+            f"{run_id} · {locales} · {mode or '形态未记录'}；状态页：run_status.py status",
+            since=started_at))
+    for item in snapshot.get("attention") or []:
+        kind = item.get("kind")
+        severity = item.get("severity")
+        if severity not in ("attention", "timeSensitive", "critical"):
+            continue
+        stage = item.get("stage") or "?"
+        if kind == "human_review":
+            expected = f"预计 {item['expectedMinutes']}" if item.get("expectedMinutes") else "预计审听时间见计划"
+            candidates.append(_candidate(
+                f"review:{run_id}:{stage}:{item.get('since')}", "human_review", "active",
+                f"[同行] 可审 · {stage}",
+                f"{item.get('waitingOn') or '等待用户'} · 已等 {_duration(item.get('ageSeconds'))} · {expected}；回到电脑打开播放器",
+                url=item.get("actionUrl"), since=item.get("since")))
+        elif kind == "failed":
+            unknown = item.get("errorClass") == "unknown_outcome"
+            body = f"{item.get('errorClass') or 'failed'}"
+            if item.get("message"):
+                body += f" · {item['message']}"
+            if item.get("resume"):
+                body += f" · 续跑：{item['resume']}"
+            candidates.append(_candidate(
+                f"failed:{run_id}:{stage}:{item.get('since')}", "failed",
+                "critical" if unknown else "timeSensitive",
+                f"[同行] 失败 · {stage}", body, since=item.get("since")))
+        elif kind == "stalled":
+            candidates.append(_candidate(
+                f"stalled:{run_id}:{stage}", "stalled", "timeSensitive",
+                f"[同行] 可能卡住 · {stage}",
+                f"最后心跳 {_duration(item.get('ageSeconds'))} 前 · 期望 {_duration(item.get('heartbeatExpectedSeconds'))}"
+                "；先查进程/SSH/GPU，不要自动重启整条队列",
+                since=item.get("since"), cooldown_seconds=900))
+        elif kind == "missing_required":
+            candidates.append(_candidate(
+                f"missing:{run_id}:{stage}", "missing_required", "active",
+                f"[同行] 缺步骤 · {stage}", f"{stage} 已到期但没有记录；补跑或确认是否被静默跳过",
+                since=item.get("since")))
+    if run_state == "completed":
+        evidence = ", ".join(f"{item.get('id')}={item.get('evidenceLevel')}"
+                             for item in (snapshot.get("deliverables") or [])[:8])
+        candidates.append(_candidate(
+            f"complete:{run_id}", "completed", "active",
+            f"[同行] 完成 · {run_id}",
+            "已到完成状态；证据级别：" + (evidence or "见 status.json") + "。设备/现场验收仍单独记录。",
+            since=snapshot.get("generatedAt")))
+    return candidates
+
+
+def _sent_ledger(run: Path) -> dict[str, dict]:
+    path = status_dir(run) / NOTIFY_SENT_FILE
+    if not path.is_file():
+        return {}
+    ledger = {}
+    for line in path.read_text(encoding="utf-8").splitlines():
+        if not line.strip():
+            continue
+        try:
+            row = json.loads(line)
+        except ValueError:
+            continue
+        if isinstance(row, dict) and row.get("key"):
+            ledger[row["key"]] = row
+    return ledger
+
+
+def _record_sent(run: Path, candidate: dict, now: Callable[[], Any] | None) -> None:
+    _append_line(status_dir(run) / NOTIFY_SENT_FILE, {
+        "schemaVersion": "sentence-first-notify-sent-v1",
+        "at": utc_now(now), "key": candidate["key"], "kind": candidate["kind"],
+        "level": candidate["level"], "title": candidate["title"],
+    })
+
+
+def notify_run(run: Path, *, notifier=None, execute: bool = False,
+               index: Path | None = None, now: Callable[[], Any] | None = None,
+               cooldown_seconds: float = 900) -> dict:
+    """Plan (dry-run) or send the notifications for one run; returns a redacted plan."""
+    run = Path(run)
+    snapshot = derive_snapshot(run, index=index, now=now)
+    candidates = notification_candidates(snapshot)
+    ledger = _sent_ledger(run)
+    plan, sent, skipped, failed = [], [], [], []
+    now_value = utc_now(now)
+    for candidate in candidates:
+        key = candidate["key"]
+        previous = ledger.get(key)
+        if previous:
+            if candidate.get("cooldownSeconds"):
+                try:
+                    last = parse_time(previous["at"])
+                    if (parse_time(now_value) - last).total_seconds() < float(candidate["cooldownSeconds"]):
+                        skipped.append({**candidate, "reason": "cooldown"})
+                        continue
+                except (KeyError, ValueError):
+                    pass
+            else:
+                skipped.append({**candidate, "reason": "already-sent"})
+                continue
+        plan.append(candidate)
+        if not execute:
+            continue
+        if notifier is None:
+            failed.append({**candidate, "reason": "no-notifier"})
+            continue
+        message = notify_transport.Message(
+            candidate["title"], candidate["body"], candidate["level"], candidate.get("url"))
+        results = notifier.send(message)
+        if notify_transport.delivered(results):
+            sent.append({**candidate, "results": results})
+            try:
+                _record_sent(run, candidate, now)
+            except OSError as exc:
+                print(f"run_status: could not record notification dedupe: {exc}", file=sys.stderr)
+        else:
+            failed.append({**candidate, "results": results})
+    return {"run": run.name, "plan": plan, "sent": sent, "skipped": skipped, "failed": failed}
+
+
+def notify_production(production: str, *, notifier=None, execute: bool = False,
+                      index: Path | None = None, now: Callable[[], Any] | None = None,
+                      cooldown_seconds: float = 900) -> dict:
+    index_path = resolve_index(index)
+    data = load_index(index_path)
+    entry = (data.get("productions") or {}).get(production)
+    if not entry:
+        raise ValueError(f"unknown production: {production}")
+    results = []
+    for locale, ref in (entry.get("runs") or {}).items():
+        run = _resolve_ref(ref, index_path)
+        if run.exists():
+            results.append(notify_run(run, notifier=notifier, execute=execute, index=index_path,
+                                      now=now, cooldown_seconds=cooldown_seconds))
+    return {"production": production, "runs": results}
+
+
+def _default_notifier(*, service: str | None = None, group: str | None = None,
+                      bark_url: str | None = None, accounts: list[str] | None = None,
+                      push: bool = True):
+    if notify_transport is None:
+        raise ValueError("tools/ops/notify.py is unavailable")
+    keys = notify_transport.keychain_keys(tuple(accounts or notify_transport.ACCOUNTS),
+                                          service=service or notify_transport.SERVICE)
+    return notify_transport.Notifier(
+        keys, bark_url=bark_url or notify_transport.BARK_URL,
+        group=group or notify_transport.GROUP, push=push)
+
+
+def _render_notify_plan(result: dict) -> str:
+    lines = []
+    for run in result.get("runs", [result]):
+        lines.append(f"{run.get('run') or run.get('production')}: "
+                     f"plan={len(run.get('plan') or [])} sent={len(run.get('sent') or [])} "
+                     f"skipped={len(run.get('skipped') or [])} failed={len(run.get('failed') or [])}")
+        for item in run.get("plan") or []:
+            lines.append(f"  [{item['level']}] {item['title']} — {item['body']}")
+        for item in run.get("failed") or []:
+            lines.append(f"  FAILED {item['title']}: {item.get('reason') or item.get('results')}")
+    return "\n".join(lines)
 # ---------------------------------------------------------------- CLI
 
 def _common(p: argparse.ArgumentParser) -> None:
@@ -1402,6 +1638,21 @@ def build_parser() -> argparse.ArgumentParser:
     check.add_argument("--record", action="store_true", help="write status/status-check.json")
     check.add_argument("--json", action="store_true")
     _common(check)
+
+    notify = commands.add_parser("notify", help="plan or send Bark notifications for a run/production")
+    notify.add_argument("--run", type=Path)
+    notify.add_argument("--production")
+    notify.add_argument("--execute", action="store_true", help="send; default is a dry run")
+    notify.add_argument("--watch", type=float, metavar="SECONDS")
+    notify.add_argument("--cooldown-seconds", type=float, default=900)
+    notify.add_argument("--keychain-service")
+    notify.add_argument("--group")
+    notify.add_argument("--bark-url")
+    notify.add_argument("--account", action="append", dest="accounts")
+    notify.add_argument("--no-push", action="store_true", help="print instead of sending")
+    notify.add_argument("--test", action="store_true", help="send one test message")
+    notify.add_argument("--json", action="store_true")
+    _common(notify)
     return parser
 
 
@@ -1516,6 +1767,47 @@ def main(argv: list[str] | None = None) -> int:
             print(json.dumps(report, ensure_ascii=False, indent=1) if args.json else
                   ("consistent" if report["consistent"] else "MISMATCH: " + ", ".join(report.get("mismatches", []))))
             return 0 if report["consistent"] else 1
+        if args.command == "notify":
+            notifier = _default_notifier(service=args.keychain_service, group=args.group,
+                                         bark_url=args.bark_url, accounts=args.accounts,
+                                         push=not args.no_push)
+            execute = bool(args.execute and not args.no_push)
+            if args.test:
+                if notify_transport is None:
+                    raise ValueError("tools/ops/notify.py is unavailable")
+                message = notify_transport.Message("[同行] 测试通知", "production progress notification test",
+                                                   "active")
+                if not args.execute:
+                    print(f"test notification would be sent to {sorted(notifier.keys)}; pass --execute")
+                    return 0
+                results = notifier.send(message)
+                print(json.dumps(results, ensure_ascii=False, indent=1) if args.json else
+                      f"test notification: {results}")
+                if args.no_push:
+                    return 0
+                return 0 if notify_transport.delivered(results) else 1
+            if not (args.run or args.production):
+                raise ValueError("notify needs --run or --production")
+            def once():
+                if args.run:
+                    return notify_run(args.run, notifier=notifier, execute=execute,
+                                      index=args.index, cooldown_seconds=args.cooldown_seconds)
+                return notify_production(args.production, notifier=notifier, execute=execute,
+                                         index=args.index, cooldown_seconds=args.cooldown_seconds)
+            if args.watch:
+                try:
+                    while True:
+                        result = once()
+                        print(_render_notify_plan(result) if not args.json else
+                              json.dumps(result, ensure_ascii=False, indent=1), flush=True)
+                        time.sleep(max(5.0, args.watch))
+                except KeyboardInterrupt:
+                    return 0
+            result = once()
+            print(json.dumps(result, ensure_ascii=False, indent=1) if args.json else _render_notify_plan(result))
+            failed = (result.get("failed") or []) if "failed" in result else [
+                item for run in result.get("runs", []) for item in run.get("failed", [])]
+            return 0 if not failed else 1
     except (ValueError, OSError, json.JSONDecodeError) as exc:
         print(f"run_status: {exc}", file=sys.stderr)
         return 2

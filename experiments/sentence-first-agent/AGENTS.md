@@ -29,7 +29,7 @@
 | `deepseek_translate.py`、`coherence_core.py` | 本机 | DeepSeek 逐窗口连贯翻译（zh-Hans/ko/es），产物写 `coherence-<tag>/`，只读 run 的 sentences/slices |
 | `deepseek_status.py` | 本机 | 读 `state-<label>.json`/`events.jsonl`，显示 DeepSeek 阶段的进度、调用数、失败与逐次延迟（`--watch` 刷新，`--label` 选阶段） |
 | `state_check.py` | 本机 | 从 `events.jsonl`+`done.jsonl` 重算状态并比对；`--all` 查全部阶段、`--units` 报句级覆盖与失败句、`--missing` 列未覆盖句子、`--record` 写 `state-check.json`、`--write` 按事件流修复；不一致退出码 1 |
-| `run_status.py` | 本机 | 观察整条 run：`register`/`mark`/`wrap`/`handoff`/`resume`/`rebuild`/`status`/`production`/`check`；写 `status/` 与 `.status-index.json`，只读派生、不改变门禁 |
+| `run_status.py` | 本机 | 观察整条 run：`register`/`mark`/`wrap`/`handoff`/`resume`/`rebuild`/`status`/`production`/`check`/`notify`；写 `status/` 与 `.status-index.json`，只读派生、不改变门禁 |
 | `audit_deepseek.py`、`coherence_check.py`、`spoken_forms.py` | 本机 | 独立审计与 issue-bound 门（`--locale` 三语）、连贯性检查、数字读法与 TTS 专用读法（`spoken_forms.py --run --locale`） |
 | `lag_loop.py` | 本机 + Spark | 落后回环（同步 run 必跑）：读 `schedule.json` → 按 dub−source 精简推后句 → 重建 speech → 清 tts → 重排该语 → `finish_run`，最多 `--iterations` 轮；`--require-clean` 把闸门变成退出码，`--check-only` 只判不配 |
 | `build_speech.py` | 本机 | 套用复核修订和口播读法，写 speech.jsonl |
@@ -42,6 +42,7 @@
 | `review_sheets.py` | 本机 | 每种语言一张人工审核表（CSV），标出要重点听的句子 |
 | `sfa_publish.py` | 本机 | 页面发布单一驱动（`DEV-SF-004`）：读 `pages/<pageId>.json`；`validate`/`preflight`/`check-title`/`publish-check` 门禁与 assets→baseline→stage1→publish→verify→stage2→publish→readback→english-reference |
 | `tools/ops/sfa_publish_gate.py` | 本机 | 发布前/后完整性门禁（`sentence-first-publish-gate-v1`）：目录↔release↔资产、英文对照、对齐 sidecar/指纹/窗口、手册条目、页面标题渲染；任一必检失败退出码 1。规则见[发布门禁](../../docs/sentence-first-agent-publish-gate.zh.md) |
+| `tools/ops/notify.py` | 本机 | Bark 传输（P2）：`test-push` / `send`；keychain 服务 `org.sermonvideo.production-progress`，group `sermon-production`；不进任何门禁 |
 | `publish_podcast_page.py` | 本机 | 旧版按页复制驱动；未迁移页面与特殊修复路径（撤回、alignment、fix-content）仍可用 |
 | `build_study.py` | 本机 | 生成大纲与默想的 `sermon-study-artifact-v1`、审核收据、元数据/窗口批准与四产品清单 |
 | `publish_study.py` | 本机 | 把大纲与默想以 release v3 发布：页面学习段、`/study/<pageId>/<locale>/`、三语 release 与目录 |
@@ -60,7 +61,7 @@
 ```text
 artifacts/sentence-first-agent/<run>/
   run.md              工作日志：来源、决定、改动、用户结论
-  status/             进度事件与派生快照（run_status.py；忽略 Git、不公开）
+  status/             进度事件、派生快照与通知去重账本（run_status.py；忽略 Git、不公开）
   clip.json           媒体路径、媒体起止、单元范围
   clip.wav            音频，16 kHz 单声道
   words.json          词级时间，相对 clip.wav
@@ -338,7 +339,20 @@ python3 $EXP/run_status.py resume --run $RUN --stage l3.review.zh-Hans
 python3 $EXP/run_status.py production --production <首个 run 名>
 ```
 
-不要 wrap 自己会写 journal 的脚本（`sfa.py start`、`preflight.py`、`finish_run.py`、`lag_loop.py`、`consistency_check.py`），否则同一 stage 会写两次迁移；这些阶段先靠 journal 的 started 心跳，P1 再补内部进度。手工开工、没有经过 `sfa.py start` 的 run 先用 `run_status.py register --run $RUN --locale <locale> --production <首个 run 名> --sync/--no-sync --publish/--no-publish` 登记。
+不要 wrap 自己会写 journal 的脚本（`sfa.py start`、`preflight.py`、`finish_run.py`、`lag_loop.py`、`consistency_check.py`），否则同一 stage 会写两次迁移。P1 起：`finish_run.py` 自己写五个子步骤的 progress；`lag_loop.py` 写每轮 iterations、成功记 E2、不过闸门记 failed；`sfa_publish.py` 每个子命令自动写 `l4.<command>` 的 started/finished/failed（首个 locale 的 run 为观察点）。手工开工、没有经过 `sfa.py start` 的 run 先用 `run_status.py register --run $RUN --locale <locale> --production <首个 run 名> --sync/--no-sync --publish/--no-publish` 登记。
+
+**离开电脑时（P2）**：状态里的开工、可审、失败、停滞、完成可以推到 Bark。key 只放登录钥匙串，不进 URL/日志/仓库；先用 `test-push` 真机确认：
+
+```bash
+security add-generic-password -s org.sermonvideo.production-progress -a bark-iphone -w
+security add-generic-password -s org.sermonvideo.production-progress -a bark-mac -w
+python3 tools/ops/notify.py test-push --level timeSensitive
+python3 $EXP/run_status.py notify --run $RUN              # dry run，只打印计划
+python3 $EXP/run_status.py notify --run $RUN --execute    # 发一次
+python3 $EXP/run_status.py notify --production <首个 run 名> --execute --watch 30
+```
+
+策略：开工 passive；可审/缺步骤/完成 active；失败/停滞 timeSensitive；`unknown_outcome` critical（需手机「重要警告」权限）。同一事项只发一次，停滞默认 900 秒冷却；本地播放器地址不会转发到手机。`status/notify-sent.ndjson` 是去重账本；默认 dry-run，`--execute` 才发送，`--no-push` 只打印。不要按句/按批推送。
 
 状态写在 `<run>/status/`：`events.ndjson` 是高频进度/心跳，`status.json` 由 `journal.ndjson` + `state-*.json` + 状态事件派生。`check` 重放比对，不一致退出码 1；`mark` 用于 audit 等尚无自动打点的阶段（`--stage`、`--event`、`--evidence-level`）。它只用于观察，**不是门禁**，写入失败不影响生产；`status.json` 不公开，公开前必须脱敏。
 
