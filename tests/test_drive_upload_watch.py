@@ -1,4 +1,4 @@
-"""tools/ops/drive_upload_watch.py: Saturday Drive folder watcher with Bark pushes (no network)."""
+"""tools/ops/drive_upload_watch.py: Saturday Drive folder watcher with Bark pushes and a Gmail backup (no network)."""
 import datetime as dt
 import json
 from pathlib import Path
@@ -66,11 +66,46 @@ class Bark:
         return [p["title"] for _, p in self.calls if p["device_key"] == key]
 
 
-def make(tmp_path, clock, fetch, *, bark=None, keys=KEYS, local=None):
+class Email:
+    """Records notices sent by email; `results` scripts True/False/Exception outcomes."""
+
+    def __init__(self, results=(True,)):
+        self.sent, self.results = [], list(results)
+
+    def __call__(self, message):
+        self.sent.append((message.title, message.url))
+        outcome = self.results.pop(0) if len(self.results) > 1 else self.results[0]
+        if isinstance(outcome, Exception):
+            raise outcome
+        return outcome
+
+
+class FakeSMTP:
+    instances = []
+
+    def __init__(self, host, port, timeout=None):
+        self.host, self.port, self.timeout = host, port, timeout
+        self.logins, self.messages = [], []
+        FakeSMTP.instances.append(self)
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *exc):
+        return False
+
+    def login(self, user, password):
+        self.logins.append((user, password))
+
+    def send_message(self, message):
+        self.messages.append(message)
+
+
+def make(tmp_path, clock, fetch, *, bark=None, keys=KEYS, local=None, mail=None):
     bark = bark or Bark()
     local_calls = []
     notifier = watch.Notifier(dict(keys), post=bark, sleep=lambda s: None,
-                              local=local or (lambda m: local_calls.append(m) or True))
+                              local=local or (lambda m: local_calls.append(m) or True), mail=mail or Email())
     watcher = watch.Watcher(state_path=tmp_path / "state.json", notifier=notifier, fetch=fetch,
                             clock=clock, sleep=clock.sleep, jitter_seconds=0)
     return watcher, bark, local_calls
@@ -218,9 +253,9 @@ def test_three_failed_reads_push_one_error_then_one_recovery(tmp_path):
 
 def test_bark_payload_retries_and_key_stays_out_of_the_url(tmp_path):
     bark = Bark(fail={"IPHONEKEY": 2})
-    notifier = watch.Notifier(dict(KEYS), post=bark, sleep=lambda s: None, local=lambda m: True)
+    notifier = watch.Notifier(dict(KEYS), post=bark, sleep=lambda s: None, local=lambda m: True, mail=Email())
     results = notifier.send(watch.Message("t", "b", level="timeSensitive", url="https://drive.google.com/x", sound="bell"))
-    assert results == {"bark-iphone": True, "bark-mac": True}
+    assert results == {"bark-iphone": True, "bark-mac": True, "email": True}
     assert len([c for c in bark.calls if c[1]["device_key"] == "IPHONEKEY"]) == 3
     url, payload = bark.calls[-1]
     assert url == "https://api.day.app/push" and "KEY" not in url
@@ -232,11 +267,14 @@ def test_bark_payload_retries_and_key_stays_out_of_the_url(tmp_path):
 def test_local_notification_only_when_the_mac_push_did_not_arrive():
     shown = []
     local = lambda m: shown.append(m.title) or True
-    failing = watch.Notifier(dict(KEYS), post=Bark(fail={"MACKEY": 9}), sleep=lambda s: None, local=local)
-    assert failing.send(watch.Message("a", "b")) == {"bark-iphone": True, "bark-mac": False, "local": True}
-    iphone_only = watch.Notifier({"bark-iphone": "IPHONEKEY"}, post=Bark(), local=local)
+    failing = watch.Notifier(dict(KEYS), post=Bark(fail={"MACKEY": 9}), sleep=lambda s: None, local=local,
+                             mail=Email())
+    assert failing.send(watch.Message("a", "b")) == {"bark-iphone": True, "bark-mac": False, "email": True,
+                                                     "local": True}
+    iphone_only = watch.Notifier({"bark-iphone": "IPHONEKEY"}, post=Bark(), local=local, mail=Email())
     assert iphone_only.send(watch.Message("c", "d"))["local"] is True
-    assert "local" not in iphone_only.send(watch.Message("quiet", "d", level="passive"))
+    quiet = iphone_only.send(watch.Message("quiet", "d", level="passive"))
+    assert "local" not in quiet and "email" not in quiet
     assert shown == ["a", "c"]
 
 
@@ -244,7 +282,7 @@ def test_undelivered_notice_is_retried_on_the_next_poll(tmp_path):
     new = drive_file("new", "x.mp4", "2026-10-31T19:00")
     bark = Bark(fail={"IPHONEKEY": 3})
     watcher, bark, _ = make(tmp_path, Clock("2026-10-31T19:30"), lambda: [new], bark=bark,
-                            keys={"bark-iphone": "IPHONEKEY"}, local=lambda m: False)
+                            keys={"bark-iphone": "IPHONEKEY"}, local=lambda m: False, mail=Email((False,)))
     window = watch.Window(dt.date(2026, 10, 31))
     watcher.poll(window)
     assert watcher.state["notified"] == {}
@@ -257,6 +295,75 @@ def test_unknown_state_version_is_refused(tmp_path):
     path.write_text('{"version": 99}')
     with pytest.raises(SystemExit, match="unsupported state version 99"):
         watch.load_state(path)
+
+
+def test_email_runs_only_for_noteworthy_messages_and_a_mail_bug_does_not_block():
+    email = Email((True,))
+    notifier = watch.Notifier(dict(KEYS), post=Bark(), local=lambda m: True, mail=email)
+    assert notifier.send(watch.Message("a", "b", level="active"))["email"] is True
+    assert notifier.send(watch.Message("quiet", "b", level="passive")) == {"bark-iphone": True, "bark-mac": True}
+    assert email.sent == [("a", None)]
+
+    def boom(message):
+        raise RuntimeError("smtp bug")
+
+    broken = watch.Notifier(dict(KEYS), post=Bark(), local=lambda m: True, mail=boom)
+    assert broken.send(watch.Message("c", "d"))["email"] is False
+
+
+def test_email_channel_sends_gmail_smtp_and_keeps_secrets_out_of_logs(monkeypatch, capsys):
+    monkeypatch.setattr(watch, "email_credentials", lambda: ("me@example.com", "APPPASSWORD", "me@example.com"))
+    FakeSMTP.instances = []
+    monkeypatch.setattr(watch.smtplib, "SMTP_SSL", FakeSMTP)
+    message = watch.Message("证道视频已上传", "x.mp4 · 0.97 GB · 19:19 PT", level="timeSensitive",
+                            url="https://drive.google.com/file/d/ID/view")
+    assert watch.send_email(message) is True
+    client = FakeSMTP.instances[-1]
+    assert (client.host, client.port) == ("smtp.gmail.com", 465)
+    assert client.logins == [("me@example.com", "APPPASSWORD")]
+    mail = client.messages[-1]
+    assert (mail["To"], mail["Subject"]) == ("me@example.com", "[证道视频监控] 证道视频已上传")
+    body = mail.get_content()
+    assert "x.mp4" in body and "https://drive.google.com/file/d/ID/view" in body
+    assert "APPPASSWORD" not in body and "me@example.com" not in body
+    assert "APPPASSWORD" not in capsys.readouterr().out
+
+
+def test_email_failure_is_logged_without_the_address_or_password(monkeypatch, capsys):
+    class Broken(FakeSMTP):
+        def login(self, user, password):
+            raise watch.smtplib.SMTPAuthenticationError(535, b"bad credentials")
+
+    monkeypatch.setattr(watch, "email_credentials", lambda: ("me@example.com", "APPPASSWORD", "me@example.com"))
+    monkeypatch.setattr(watch.smtplib, "SMTP_SSL", Broken)
+    assert watch.send_email(watch.Message("t", "b")) is False
+    out = capsys.readouterr().out
+    assert "email push failed: SMTPAuthenticationError" in out
+    assert "APPPASSWORD" not in out and "me@example.com" not in out
+
+
+def test_email_channel_is_skipped_when_unconfigured(monkeypatch):
+    monkeypatch.setattr(watch, "email_credentials", lambda: None)
+    assert watch.send_email(watch.Message("t", "b")) is False
+
+
+def test_test_push_requires_every_configured_channel(monkeypatch, capsys):
+    results = {"bark-iphone": True, "bark-mac": True, "email": True}
+
+    class Stub:
+        def __init__(self, keys, **kwargs):
+            self.keys = keys
+
+        def send(self, message):
+            return dict(results)
+
+    monkeypatch.setattr(watch, "keychain_keys", lambda accounts=watch.BARK_ACCOUNTS: dict(KEYS))
+    monkeypatch.setattr(watch, "email_credentials", lambda: ("me@example.com", "pw", "me@example.com"))
+    monkeypatch.setattr(watch, "Notifier", Stub)
+    assert watch.main(["test-push"]) == 0
+    results["email"] = False
+    assert watch.main(["test-push"]) == 1
+    assert capsys.readouterr().out.count('"email"') == 2
 
 
 def test_launch_agent_starts_saturday_1800_awake_with_system_python(tmp_path):
