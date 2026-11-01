@@ -63,3 +63,9 @@
 - 方案 A：只裁尾部 TTS 静音（最后 6 片），ko 最后一句 +5%、es 最后两句 +15% `atempo`（保留音高）；音轨 zh 2019.400／ko 2019.463／es 2019.462 s，窗口 0–2019.370667 s，容差内。
 - 重新发布：`992b3a2b`（音轨/字幕/文稿，HTTP 9/9）→ `e50b0684`（release＋对齐目录＋指纹＋sidecar，readback）→ `2eacebd0`（英文对照，readback）。阅读器三语 `automaticAudioAlignment=ready`、页面 0 错误；浏览器 smoke（含 `/api/session`）三语 pass；反馈统计目录重建（46 sources）并部署函数。
 - 客户端设备验收 `not_run`。
+
+## 后续：手册条目随 release 更新（2026-11-01 06:40Z）
+
+- 听音定位替换 release 后，手册 manifest 仍绑定旧 release（`eee90c82…`），iOS `invalidDeclared`，显示「尚不可用」。
+- 以 `operation=update`（旧条目 SHA）重绑当前 zh release `056160f4…`，部署 `18e3eba5dbd2f9a8`；正文不变，回读与客户端逐条检查通过。
+- 教训：**每次替换 release（音轨/字幕/文稿）后必须重绑手册条目**，否则客户端静默不可用。
