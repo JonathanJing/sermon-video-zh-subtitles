@@ -124,6 +124,8 @@ class PosterArtworkTests(unittest.TestCase):
         self.assertEqual(receipt['c2pa']['softwareAgentVersion'], 'gpt-image')
         self.assertEqual(receipt['c2pa']['instanceId'], '28d29d78-90e2-4e21-b203-076b8ff3b652')
         self.assertEqual(receipt['agentReply'], {'present': True, 'namesSavedImage': True})
+        self.assertIn(receipt['composition']['placement'], {'ok', 'edge', 'low', 'high', 'unknown'})
+        self.assertIsInstance(receipt['warnings'], list)
         self.assertFalse(receipt['humanApproval'])
         self.assertFalse((out / 'started.json').exists())
 

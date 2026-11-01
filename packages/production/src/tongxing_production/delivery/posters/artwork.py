@@ -41,6 +41,7 @@ import sys
 import tempfile
 import time
 
+from . import composition
 from .files import digest, read, write
 
 SCHEMA = 'tongxing-poster-artwork-v1'
@@ -218,6 +219,11 @@ def run(prompt_path, out, model=DEFAULT_MODEL, timeout_seconds=DEFAULT_TIMEOUT, 
     except ArtworkError as error:
         record_known_failure(out, 'failed_png_identity', str(error))
         raise
+    try:
+        placement = composition.analyse(saved)
+    except (composition.CompositionError, OSError, ValueError):
+        placement = dict(placement='unknown', method='vision_objectness', objects=0,
+                         reason='composition lint failed', warnings=[])
     result = (out / 'result.txt').read_text(encoding='utf-8')
     reply = next((line.strip() for line in reversed(result.splitlines()) if line.strip()), '')
     reply_name = Path(reply).name if reply.lower().endswith('.png') else None
@@ -226,7 +232,8 @@ def run(prompt_path, out, model=DEFAULT_MODEL, timeout_seconds=DEFAULT_TIMEOUT, 
         raise ArtworkError('agent reply names a different image; refusing to bind an unproven artifact')
     usage = terminals[0].get('usage')
     receipt = dict(record, status='complete', artSha256=sha(raw), artBytes=len(raw),
-                   width=width, height=height, threadId=thread,
+                   width=width, height=height, threadId=thread, composition=placement,
+                   warnings=list(placement.get('warnings', [])),
                    savedPath=str(saved.relative_to(codex_home())),
                    c2pa=c2pa(raw), usage=usage,
                    agentReply=dict(present=bool(reply), namesSavedImage=reply_name == saved.name),
@@ -258,6 +265,7 @@ def main(argv=None):
     print(json.dumps(dict(status=receipt['status'], art=str(Path(args.out) / 'art.png'),
                           artSha256=receipt.get('artSha256'), width=receipt.get('width'),
                           height=receipt.get('height'), threadId=receipt.get('threadId'),
+                          composition=(receipt.get('composition') or {}).get('placement'),
                           c2pa=(receipt.get('c2pa') or {}).get('manifestUrn'))))
 
 
