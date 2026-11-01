@@ -76,8 +76,10 @@ flowchart TD
 | HTTP 核验与回读 | 两次部署之间与之后 | 线上文件与本地 SHA 不一致、MP3 不支持 Range |
 | 发布前哈希绑定 | `sfa_publish.py publish-check`（每次 deploy 前） | catalog / release / content / captions / 英文对照 / 公告仍是旧哈希，或快照里还引用旧 release 哈希 |
 | 目录投影检查 | 线上快照 | v4/v3 与 v5 投影不一致；只有页面默认语言的差异可以修正 |
+| 发布完整性 gate | 正式部署后、smoke 前（`tools/ops/sfa_publish_gate.py`） | 目录↔release↔资产、英文对照、对齐、手册条目、页面标题任一处旧哈希或不一致；`--require-guide --require-alignment` 必开 |
+| 发布粒度 | 发布意图构建与批次记录 | 发布后单改身份字节；release 变化未同批重做英文对照/对齐/手册/统计目录 |
 
-没有的检查：没有机器质检校准，不能用豁免代替人审；没有声音指纹同步；实验目录里的中间产物不做哈希绑定（发布包本身仍绑定来源、候选、音频与审核收据的哈希）。
+没有的检查：没有机器质检校准，不能用豁免代替人审；声音指纹对齐的**数据层合同**由 `sfa_publish_gate.py` 检查，真机麦克风实测仍是单独的 `not_run`；实验目录里的中间产物不做哈希绑定（发布包本身仍绑定来源、候选、音频与审核收据的哈希）。完整规则见[发布门禁](sentence-first-agent-publish-gate.zh.md)。
 
 ## 时间与花费
 

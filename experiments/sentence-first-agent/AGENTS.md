@@ -40,6 +40,7 @@
 | `merge_track.py`、`asr_check.py score` | 本机 | 有历史 `asr.jsonl` 时由 finish_run.py 调用；默认不生成 |
 | `review_sheets.py` | 本机 | 每种语言一张人工审核表（CSV），标出要重点听的句子 |
 | `sfa_publish.py` | 本机 | 页面发布单一驱动（`DEV-SF-004`）：读 `pages/<pageId>.json`；`validate`/`preflight`/`check-title`/`publish-check` 门禁与 assets→baseline→stage1→publish→verify→stage2→publish→readback→english-reference |
+| `tools/ops/sfa_publish_gate.py` | 本机 | 发布前/后完整性门禁（`sentence-first-publish-gate-v1`）：目录↔release↔资产、英文对照、对齐 sidecar/指纹/窗口、手册条目、页面标题渲染；任一必检失败退出码 1。规则见[发布门禁](../../docs/sentence-first-agent-publish-gate.zh.md) |
 | `publish_podcast_page.py` | 本机 | 旧版按页复制驱动；未迁移页面与特殊修复路径（撤回、alignment、fix-content）仍可用 |
 | `build_study.py` | 本机 | 生成大纲与默想的 `sermon-study-artifact-v1`、审核收据、元数据/窗口批准与四产品清单 |
 | `publish_study.py` | 本机 | 把大纲与默想以 release v3 发布：页面学习段、`/study/<pageId>/<locale>/`、三语 release 与目录 |
@@ -544,6 +545,23 @@ python3 $EXP/publish_study.py finish                                            
 4. **合同**：release v3 恰好七个资产（page/content/audio/captions/outline/meditation/product_manifest），`fourProducts` 十个哈希；`contract.validate_public_study` 会核对 artifact、review、manifest、content 与 candidate 哈希。`products.json` 的 `contentSha256` 是文稿文件哈希，`candidateSha256` 由 `products+metadataApproval+content` 推导。
 5. **改内容**：改 `build_study.py` 里的文本 → 重建 artifact 与 review → `publish_study.py build/assets → publish → verify → finish → publish` → 重新生成英文对照。只改字节不改身份时也可以直接用 `published_page_replace`（页面本地新增只允许 `/study/<pageId>/`）。
 6. **状态**：`outcome` 只代表文本就绪；发布以部署版本、`validate_public_study` 线上核验和英文对照重新上线为准。设备、现场、推送仍是各自的 `not_run`。
+
+### 10.6 发布前完整性检查与发布粒度（下轮起强制）
+
+本轮教训（手册静默失效约 90 分钟、对齐返工 23 分钟、全周 17 次部署）的整改，完整规则见[发布门禁](../../docs/sentence-first-agent-publish-gate.zh.md)。三条硬规则：
+
+1. **一个发布意图一批做完**：页面/assets/release/目录/英文对照/对齐/手册条目/统计目录同批构建、同批部署（计划内 ≤3 次），不得发布后单改身份字节（标题、文稿、音轨、字幕、页面 HTML）。要改就开新的发布意图。
+2. **release 一变，四件下游同批重做**：`/english-reference/`、对齐绑定（sidecar + 每语索引 + 目录）、手册条目（`weekly_guide_staging candidate --operation update`，带旧条目 SHA 与原因）、反馈统计目录。任何一件留到"下次"都算未完成。
+3. **部署后、smoke 前必须过 gate**，退出码 1 阻断收尾（smoke/报告/发布宣布）：
+
+```bash
+PYTHONPATH=packages/production/src:. .venv/bin/python tools/ops/sfa_publish_gate.py \
+  --page-id <pageId> --origin https://ai-for-god-sermon-audio.web.app \
+  --require-guide --require-alignment \
+  --json-out artifacts/sentence-first-agent/<run>-publish/publish-gate.json
+```
+
+候选快照构建完先在 dev/staging 跑一遍；正式部署后对 production 再跑一遍。产出 `publish-intent.json`（意图、冻结值、releases、rebinds、deploys、gate、smoke、exceptions），随运行报告归档。手册与对齐不是可选项：页面具备对应能力/条目时必须 `--require-guide --require-alignment`；本轮「smoke 三语 pass」与「手册不可用」能同时成立，就是缺了这道门禁。
 
 ### 11 结束
 

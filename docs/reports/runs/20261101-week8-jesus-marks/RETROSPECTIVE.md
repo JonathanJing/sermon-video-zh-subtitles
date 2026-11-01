@@ -156,7 +156,14 @@
 | 审核收据 | `artifacts/sentence-first-agent/20261101-sermon-source/review/human-review-verdict.json`、`player-verdict-zh.json` |
 | 英文表与 L1 包 | `20261101-sermon-source/layer1-srt/`（`english-source.json`、`anchor-manifest.json`、`english-review.csv`） |
 
-## 12. 下一步（按优先级）
+## 12. 整改落地（2026-11-01）
+
+- 新增[发布门禁与发布粒度](../../../sentence-first-agent-publish-gate.zh.md)：一次发布意图（release intent）规则、三处 gate 时机、11 项必检、≤3 次部署的批次结构、紧急修复流程、`publish-intent.json` 记录。
+- 新增工具 `tools/ops/sfa_publish_gate.py`（`sentence-first-publish-gate-v1`）：只读检查目录↔release↔资产、文稿/字幕时间、英文对照、对齐 sidecar/索引/窗口（ffprobe 实测音轨）、手册条目、页面标题渲染；失败退出码 1。
+- 已在线上验证：对本周页面全检 **pass**；用整改前的旧手册 manifest 复跑，准确报出 `guide.entry.release: entry=eee90c82… live=056160f4…` 并退出 1——正是本周手册失效的根因。
+- 运行手册 [AGENTS.md §10.6](../../../../experiments/sentence-first-agent/AGENTS.md) 与[生产路线检查表](../../../sentence-first-agent-production.zh.md#检查)已改为强制引用。
+
+## 13. 下一步（按优先级）
 
 1. **把手册重绑与统计目录纳入发布清单/自动化**：任何替换 release 的发布后，自动执行 `weekly_guide_staging update` 与统计目录重建；最好在发布后步骤里检查 manifest 条目 release == 目录 release。
 2. **对齐尾部处理固定进 TTS 后流程**：`finish_run` 后检查 `trackSeconds − content.durationSeconds`；超出 0.1 s 时自动裁静音/微调末句，再进入绑定。
