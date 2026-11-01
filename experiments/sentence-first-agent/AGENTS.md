@@ -366,7 +366,9 @@ python3 $EXP/run_status.py notify --production <首个 run 名> --execute --watc
 
 发出链接/请求的同一个动作里调用 `run_status.py handoff --run $RUN --stage <stage> --waiting-on <...>`；收到结论后先 `resume`，批准时再 `mark --stage <stage> --event finished --evidence-level E3`，退回时 `mark --stage <stage> --event failed --error-class content --message <原因>`。`resume` 只关闭等待，不会自动把人工阶段判成功；不补 finished，run 会一直停在 active，完成通知也不会发。只有 `l3.review` 在脚本里没有自动边界，其余人工步骤同样需要代理显式 handoff，不能只写在对话里。
 
-状态写在 `<run>/status/`：`events.ndjson` 是高频进度/心跳，`status.json` 由 `journal.ndjson` + `state-*.json` + 状态事件派生。`check` 重放比对，不一致退出码 1；`mark` 用于 audit 等尚无自动打点的阶段（`--stage`、`--event`、`--evidence-level`）。它只用于观察，**不是门禁**，写入失败不影响生产；`status.json` 不公开，公开前必须脱敏。
+状态写在 `<run>/status/`：`events.ndjson` 是高频进度/心跳，`status.json` 由 `journal.ndjson` + `state-*.json` + 状态事件派生。`check` 重放比对，不一致退出码 1；`mark` 用于 audit 等尚无自动打点的阶段（`--stage`、`--event`、`--evidence-level`）。它只用于观察，**不是门禁**，写入失败不影响生产；`status.json` 不公开，公开前必须脱敏。`register`/`mark` 写完事件会顺手刷新 `status.json`（fail-open），所以 DSH 插件和 `status` 命令不需要自己重建。
+
+**DSH 内嵌进度（P3）**：`tools/ops/dsh-production-progress/` 是本地 DSH 插件（host 路由 + `conversation.input.dock` 一行）。它只读 `<statusRoot>/.status-index.json` 和各 run 的 `status/status.json`；默认找本机主 checkout 的 `artifacts/sentence-first-agent`，可用 `SFA_STATUS_ROOT` 或 profile 的 `cordis.patch.yml` 按 id `production-progress` 覆盖。装进 desktop profile 后重启 DSH：输入框上方显示当前阶段、`done/total`、心跳/等待和 `⚠ n`，点击展开阶段与 attention。安装/测试命令见该目录的 `README.md`；没有 run 时 dock 不渲染。
 
 ### 5 口播规格（本机）
 

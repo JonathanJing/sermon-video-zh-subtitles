@@ -325,6 +325,7 @@ def register_run(run: Path, *, production: str | None = None, page_id: str | Non
     save_index(data, index_path)
     append_status_event(run, "run.planned", stage="run", source="register", now=now,
                         message=f"production={production} locale={locale or 'default'}")
+    _refresh_snapshot(run, index=index_path, now=now)
     return entry
 
 
@@ -431,7 +432,7 @@ def mark_event(run: Path, stage: str, event: str, *, attempt: int | None = None,
     progress = None
     if unit is not None or done is not None or total is not None:
         progress = {"unit": unit or "units", "done": done, "total": total}
-    return append_status_event(
+    written = append_status_event(
         run, status_type, stage=stage, source=source, attempt=attempt,
         progress=progress, eta_seconds=eta_seconds, message=message, waiting_on=waiting_on,
         kind=kind or ("human" if event == "waiting" and (waiting_on or "") and
@@ -441,6 +442,17 @@ def mark_event(run: Path, stage: str, event: str, *, attempt: int | None = None,
         evidence_level=evidence_level, error_class=error_class, resume=resume,
         heartbeat_expected_seconds=heartbeat_expected_seconds, now=now,
     )
+    _refresh_snapshot(run, now=now)
+    return written
+
+
+def _refresh_snapshot(run: Path, *, index: Path | None = None,
+                      now: Callable[[], Any] | None = None) -> None:
+    """Best-effort snapshot refresh after a write; never breaks the producer."""
+    try:
+        rebuild_run(Path(run), index=index, now=now)
+    except Exception as exc:  # noqa: BLE001 - status must not break production
+        print(f"run_status: could not refresh snapshot for {Path(run).name}: {exc}", file=sys.stderr)
 
 
 def safe_mark(run: Path, stage: str, event: str, **kwargs: Any) -> dict | None:

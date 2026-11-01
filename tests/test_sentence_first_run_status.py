@@ -142,6 +142,14 @@ class RunStatusTests(unittest.TestCase):
         self.assertEqual(stalled[0]["severity"], "timeSensitive")
         self.assertFalse(any(stage["state"] == "failed" for stage in snapshot["stages"]))
 
+    def test_mark_refreshes_the_snapshot_for_the_dock(self):
+        self.register()
+        self.mark("l1.start", "started")
+        snapshot = run_status._read_json(run_status.status_path(self.run))
+        self.assertIsNotNone(snapshot.get("generatedAt"))
+        self.assertEqual(snapshot["stages"][0]["id"], "l1.start")
+        self.assertEqual(snapshot["stages"][0]["state"], "running")
+
     def test_missing_required_after_translation_includes_audit_and_consistency(self):
         self.register()
         self.mark("l1.start", "started")
@@ -242,6 +250,11 @@ class RunStatusTests(unittest.TestCase):
         self.assertTrue(run_status.check_snapshot(self.run, index=self.index, now=self.clock)["consistent"])
         self.clock.bump(10)
         self.mark("l1.start", "finished", evidence_level="E1")
+        # Producers now refresh the snapshot on write; simulate an external edit
+        # that left it stale so the checker still has something to detect.
+        stale = run_status._read_json(run_status.status_path(self.run))
+        stale["stages"] = []
+        run_status._write_json(run_status.status_path(self.run), stale)
         report = run_status.check_snapshot(self.run, index=self.index, now=self.clock)
         self.assertFalse(report["consistent"])
         self.assertIn("stages", report["mismatches"])
