@@ -71,6 +71,8 @@ def load_context(release, page_id, locale='zh-Hans'):
     cues = {cue['textGroupId']: cue['text'] for cue in content.get('cues', [])
             if cue.get('textGroupId') and cue.get('text')}
     return dict(pageId=page_id, locale=locale, title=content.get('title'),
+                series=content.get('series'), scripture=content.get('scripture'),
+                speaker=content.get('speaker'), date=content.get('date') or page.get('date'),
                 sourceIdentitySha256=source_identity, contentSha256=content_sha, cues=cues)
 
 

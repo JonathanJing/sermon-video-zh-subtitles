@@ -1,12 +1,12 @@
 # 周海报主视觉：headless ImageGen 接入与设计流程合同
 
-状态：**2026-11-01 已接入 `delivery.posters.artwork` 与 `delivery.posters.design` 入口，未接入默认周更或 Supervisor**。本文记录一条可用的 `codex exec` → 内置 ImageGen 路径、已验证的边界，以及把「设计 → 主视觉 → 合成」接成流程所需的三段合同。它不改变[海报格式规范](tongxing-weekly-poster-format.zh.md)、不提升任何页面或海报状态，也不授权上传或发送。
+状态：**2026-11-01 已接入 `delivery.posters.artwork`、`delivery.posters.design` 与 `delivery.posters.draft_design` 入口，未接入默认周更或 Supervisor**。本文记录一条可用的 `codex exec` → 内置 ImageGen 路径、已验证的边界，以及把「设计 → 主视觉 → 合成」接成流程所需的三段合同。它不改变[海报格式规范](tongxing-weekly-poster-format.zh.md)、不提升任何页面或海报状态，也不授权上传或发送。
 
 ## 结论先行
 
 1. **能连，且不需要图片 API key。** 当前 Codex CLI（`0.166.0-alpha.5.1`）内置 `image_gen.imagegen` 工具（feature `image_generation` 为 stable），`codex exec --json` 可以在无会话、无 shell 的情况下调用它，一次产出一张 2:3 竖版 PNG。
 2. **缺口不在「调用」，在「交接」。** 现在的主视觉 prompt 由会话里的 agent 手写，图片靠人工从 `~/.codex/generated_images/` 拷给 `delivery.posters.build --art`；收据只绑定 `artSha256` 和 `promptSha256`，没有绑定线程、模型和图片自带来源。每周都要重做同一套手工动作。
-3. **三段已经接上**：`design`（候选概念 + 证据层级 + 打分 → 可校验的 prompt）→ `artwork`（headless 生成）→ 现有 `build --art`（合成二维码与文案）。2026-11-01 的教训写进了 design 合同：主语优先取标题／关键经文／本章物件，讲员例证只能做辅助；`poster-design.json` v2 由 `delivery.posters.design` 校验后才允许生成。每段都留下可 resume 的收据，任何一段失败都不阻塞页面发行。
+3. **三段已经接上**：`design`（候选概念 + 证据层级 + 打分 → 可校验的 prompt；可由 `draft_design` 自动起草）→ `artwork`（headless 生成 + 构图检查 + 可选一次重试）→ 现有 `build --art`（合成二维码与文案）。2026-11-01 的教训写进了 design 合同：主语优先取标题／关键经文／本章物件，讲员例证只能做辅助；`poster-design.json` v2 由 `delivery.posters.design` 校验后才允许生成。每段都留下可 resume 的收据，任何一段失败都不阻塞页面发行。
 4. **不要让图像模型解经。** 设计阶段的证据必须引用已发布文稿的 `textGroupId`；图像只负责画，不负责选主题、写标题或判断内容。
 
 ## 已核实的调用事实（2026-11-01）
@@ -25,7 +25,7 @@ codex exec --json --ephemeral --skip-git-repo-check \
 | 事实 | 观察值 | 对流程的含义 |
 |---|---|---|
 | 工具合同 | `image_gen.imagegen`，参数 `prompt`、`transparent_background`、`referenced_image_paths`、`num_last_images_to_include`；无尺寸参数 | 比例只能写进 prompt 再校验产物；不合格要重写 prompt，不能裁切 |
-| 产物位置 | `$CODEX_HOME/generated_images/<thread-id>/exec-<uuid>.png`（文件夹名等于 `thread.started` 的 thread id） | 用生成前后的快照 diff + 线程目录校验来绑定，不解析正文 |
+| 产物位置 | `$CODEX_HOME/generated_images/<thread-id>/exec-<uuid>.png`（文件夹名等于 `thread.started` 的 thread id） | 只检查本次线程目录内恰好一张 PNG，不解析正文；并发会话互不干扰 |
 | 尺寸 | 1024 × 1536（精确 2:3） | 与 1200 × 1800 画布同比例，现有 Swift 渲染器直接复用 |
 | 事件流 | `thread.started` → `item.completed`(agent_message) → `turn.completed` | 本版本**没有**图像生成 item；不能像文本工具那样从事件里读参数或 generation id |
 | 回复中的路径 | 2026-11-01 三次调用中两次回显 `saved_path`，一次只回「无法取得已保存图像的绝对路径」 | 不能把回显路径当成功门槛；以线程目录和 PNG 校验为准，回显只作交叉核对 |
@@ -82,6 +82,19 @@ Layer 4 页面发布 + HTTP 核验
 
 校验通过后输出 `poster-design.json`、`art-prompt.txt` 和 `design-receipt.json`（候选总分、选中项、prompt 哈希、warning）。历史概念与层级见[海报概念历史](poster-concept-history.zh.md)。
 
+### 第 2 段：自动起草（2026-11-01 已实现）
+
+`delivery.posters.draft_design` 用现有无工具文本通道（`gpt-6.1-sol`，medium）起草 v2 设计：
+
+```bash
+.venv/bin/python tools/ops/run.py delivery.posters.draft_design \
+  --release <发布快照> --page-id '<pageId>' --out <新目录>
+```
+
+- 模型只**选择** `textGroupId` 和层级、写候选与字段；**引文由工具从已发布 cues 逐字回填**，模板也由工具展开，所以模型无法编造证据或残留占位符。
+- 输出 `poster-design.draft.json`、`art-prompt.txt`、`draft-receipt.json`，`userChoice=pending`；再跑 `delivery.posters.design` 才算通过。
+- 2026-11-01 实跑：自动选出「暗酒红封蜡 + 克制十字架」（11 分，与「锡安山上的羔羊」并列最高，金牌 8 分），prompt 字段自带主语高度（中心约 53%、轮廓 42%–63%）；用它生成的主视觉构图首次判 `ok`，无需重试。模型同时把本周已记录方向当作在位方案，而不是重复扣分。
+
 ### 第 3 段：主视觉合同（已实现）
 
 实现在 [`delivery/posters/artwork.py`](../packages/production/src/tongxing_production/delivery/posters/artwork.py)，通过统一入口运行：
@@ -96,14 +109,16 @@ Layer 4 页面发布 + HTTP 核验
 
 1. 拒绝未展开的 prompt、拒绝非 ChatGPT 认证、剥离子进程里的 API key；
 2. 先写 `started.json` 再派发，超时记为 `unknown_outcome`，不自动重派；
-3. 用快照 diff 找出本次线程目录里**恰好一张**新 PNG；回复给出路径时核对其指向同一文件，未给出路径时记录缺失并继续绑定；
+3. 只检查本次线程自己的 `generated_images/<thread-id>/` 目录，要求**恰好一张** PNG；不同时扫描整棵生成树，所以同一 `CODEX_HOME` 上的并发会话不会互相串图；回复给出路径时核对其指向同一文件，未给出路径时记录缺失并继续绑定；
 4. 校验 PNG 签名与精确 2:3，抽取 C2PA 来源；
 5. 用 macOS Vision 的 objectness 显著性框做构图检查：主语带底边 > 0.74 记 `subject_covered_by_footer`，0.70–0.74 记 `subject_touches_footer`，中心 < 0.35 记 `subject_too_high_for_title_area`；结果写进收据 `composition`，只警告、不阻断已付费的生成；
 6. 复制 `art.png`、`art-prompt.txt`，写 `art-receipt.json`；
 7. 已有收据且 prompt 与图片哈希未变时直接复用，不再派发；
 8. 不合成、不上传、不修改 release，也不把机器检查写成人工审核。
 
-命令与参数：`--prompt`（已展开的 prompt 文件）、`--out`（全新目录）、`--model`（默认 `gpt-6.1-sol`）、`--timeout-seconds`（默认 600）、`--dry-run`。
+命令与参数：`--prompt`（已展开的 prompt 文件）、`--out`（全新目录）、`--model`（默认 `gpt-6.1-sol`）、`--timeout-seconds`（默认 600）、`--dry-run`、`--retry-on-low`。
+
+**构图重试（2026-11-01）**：`--retry-on-low` 默认关闭。构图检查判为 `low` 时，把第一次尝试整体移到 `<out>-attempt-1` 保留为证据，在 prompt 末尾追加 `COMPOSITION CORRECTION`（要求主语完整位于 66% 以上、下三分之一留空），再生成一次；最多一次，最终收据写 `retry`（含第一次的 prompt sha、art sha 和构图分类）。10-25 宝座实测：0.769（low）→ 0.739（edge），有改善但仍触到页脚；更有效的做法是**在 prompt 里直接写主语高度**（自动起草版本写了「中心约 53%，轮廓 42%–63%」，同周封蜡首次生成即判 `ok`）。
 
 收据字段（`tongxing-poster-artwork-v1`）包含：`promptSha256`、`artSha256`、`width/height`、`threadId`、`savedPath`、`c2pa`（manifest URN、`xmp:iid`、`softwareAgent`、版本、chunk 哈希）、`agentReply`（是否回显、是否指向同一文件）、`composition`（Vision 显著性带、分类与 warning）、`usage`、`cliVersion`、`cliSha256`、`adapterSha256`、`elapsedSeconds`、`promptDelivery=model_mediated_unverified`、`humanApproval=false`。
 
@@ -137,8 +152,8 @@ Layer 4 页面发布 + HTTP 核验
 
 | 阶段 | 内容 | 验收 |
 |---|---|---|
-| P0 ✅ 2026-11-01 | 已落地 `packages/production/src/tongxing_production/delivery/posters/artwork.py`，注册 `tools/ops/run.py delivery.posters.artwork`，含 Vision 构图检查（`composition.py` + `saliency_lint.swift`）；15 个 artwork 单测、9 个构图单测；未改默认 Supervisor | 单测 + `--dry-run` + 一次真实生成，收据字段齐全 |
-| P1 ✅ 2026-11-01 | 已落地 `poster-design.json` v2 合同与 `delivery.posters.design` 校验器（证据层级、逐字引用、打分、覆盖理由、模板标记）；10 个离线单测；先由人工/agent 填写，再评估文本模型起草 | 一份真实本周设计通过校验并驱动 P0 |
+| P0 ✅ 2026-11-01 | 已落地 `packages/production/src/tongxing_production/delivery/posters/artwork.py`，注册 `tools/ops/run.py delivery.posters.artwork`；含 Vision 构图检查（`composition.py` + `saliency_lint.swift`）、线程目录绑定（并发安全）与 `--retry-on-low` 一次重试；18 个 artwork 单测、9 个构图单测；未改默认 Supervisor | 单测 + `--dry-run` + 一次真实生成，收据字段齐全 |
+| P1 ✅ 2026-11-01 | 已落地 `poster-design.json` v2 合同与 `delivery.posters.design` 校验器（证据层级、逐字引用、打分、覆盖理由、模板标记）；10 个离线单测；`delivery.posters.draft_design` 自动起草（证据由工具回填，7 个离线单测），仍以人工选择为准 | 一份真实本周设计通过校验并驱动 P0 |
 | P2 | 周更编排里在 Layer 4 HTTP 核验后自动跑 P0/P1，停在「待目视」状态；定时任务仍不自动上传或发送 | 连续一周真实产物与既有 `build` 串通 |
 | P3（可选） | 改走 app-server 线程事件，拿到 `generationId`/`revisedPrompt` | 与 P0 收据逐项对齐 |
 
@@ -147,6 +162,7 @@ Layer 4 页面发布 + HTTP 核验
 ```bash
 .venv/bin/python -m unittest discover -s tests -p 'test_poster_design_contract.py' -v
 .venv/bin/python -m unittest discover -s tests -p 'test_poster_composition.py' -v
+.venv/bin/python -m unittest discover -s tests -p 'test_poster_draft_design.py' -v
 .venv/bin/python -m unittest discover -s tests -p 'test_poster_artwork.py' -v
 .venv/bin/python tools/ops/run.py delivery.posters.artwork --prompt <prompt.txt> --out <fresh-dir> --dry-run
 .venv/bin/python tools/ops/run.py delivery.posters.artwork --prompt <prompt.txt> --out <fresh-dir>
@@ -168,6 +184,7 @@ Layer 4 页面发布 + HTTP 核验
 - 2026-11-01 通过统一入口实测：`gpt-6.1-sol`、24.9 秒、1024 × 1536、`artSha256=45ab4796…`、`threadId=01a197e5…`、`savedPath=generated_images/01a197e5…/exec-95e7af25….png`、C2PA `urn:c2pa:009f0a85…`；同 prompt 再次运行直接复用收据，没有第二次派发。
 - 2026-11-01 第 8 周实跑（`revelation-jesus-marks-his-own-20261101`，中／韩／西）：主视觉 `artSha256=e5d8db19…`、prompt `59cdb0e1…`、`poster-design.json` 绑定 5 条文稿证据；`build --art` 通过 7 项公开输入核验，三语两尺寸各解出两个二维码，收据 `complete`、`humanApproval=false`。只写本地 `artifacts/`，未上传、未发送。
 - 2026-11-01 v2 设计合同实跑：`poster-design.json` 列出封蜡（title，12 分）、风暴避难所（illustration，6 分）、锡安山（passage，8 分）；`delivery.posters.design` 选封蜡、拒绝例证锚点，生成新主视觉 `978d9fda…`（该次工具回复没有路径，art 收据记 `namesSavedImage=false` 仍绑定成功），三语海报 `complete`、双二维码通过、`humanApproval=false`，只写本地 `artifacts/`。
+- 2026-11-01 自动起草 + 重试实测：起草 v2 选中封蜡（11/11/8），prompt 自带主语高度，artwork 首次构图 `ok`、无重试；10-25 宝座 `--retry-on-low` 从 0.769（low）到 0.739（edge），一次重试有改善但未完全离开页脚。并发测试还暴露过一个真实缺陷：两个 artwork 同时派发时，旧的全局快照 diff 会看到两张新图；已改为只绑定本次线程目录。
 - 2026-11-01 构图 lint 实测：封蜡 0.669（ok）、10-11 号角 0.728（edge）、10-18 书卷 0.751（low）、10-25 宝座 0.773（low）、风暴避难所 0.724（edge）——正好把 10-25 被页脚盖住的那次问题标出来；`composition` 只写收据，不阻断生成。
 - 2026-11-01 历史周次回归（本地，不发布）：10-11 号角（12）/ 香炉（9）/ 锤子（6）、10-18 书卷（12）/ 灯台（10）/ 见证人（7）、10-25 宝座（11）/ 旷野（7）/ 拴绳（6），三份 v2 设计均由 `delivery.posters.design` 选最高分并通过校验；随后 artwork + build，三周九张海报（三语×两尺寸）二维码全部通过、收据 `complete`。10-25 的宝座构图偏低、下半被页脚盖住，说明「主语高度」还需要一条版面检查。
 - 同周还有一版已发布的手工封蜡主视觉（`artSha256=ea477301…`，Codex 会话 `01a1956e…`，v3）。用它和它的完整编辑 prompt 链重渲本地三语海报，六张图与线上 v3 逐字节相同（zh `8c266931…`、ko `00c65d59…`、es `b1f23f75…`），收据 `complete`；这证明同一构建入口能复现已发布成品，也说明主视觉质量取决于设计阶段选的概念。

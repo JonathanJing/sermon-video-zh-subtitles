@@ -23,7 +23,7 @@ if '--version' in sys.argv:
 if os.environ.get('FAKE_COUNT_FILE'):
     with open(os.environ['FAKE_COUNT_FILE'], 'a') as handle: handle.write('1\\n')
 mode = os.environ.get('FAKE_MODE', 'ok')
-thread = os.environ.get('FAKE_THREAD', '01a197d9-0000-7000-8000-000000000001')
+thread = '01a197d9-0000-7000-8000-' + uuid.uuid4().hex[:12]
 if mode == 'sleep':
     time.sleep(30)
 result = Path(sys.argv[sys.argv.index('-o') + 1])
@@ -96,6 +96,11 @@ class PosterArtworkTests(unittest.TestCase):
         }, clear=False)
         self.environment.start()
         self.addCleanup(self.environment.stop)
+        self.vision = mock.patch.object(
+            artwork.composition, 'analyse',
+            return_value=dict(placement='unknown', method='vision_objectness', objects=0, warnings=[]))
+        self.vision.start()
+        self.addCleanup(self.vision.stop)
         self.saved_key = os.environ.pop('OPENAI_API_KEY', None)
         self.addCleanup(self._restore_key)
 
@@ -117,8 +122,8 @@ class PosterArtworkTests(unittest.TestCase):
         self.assertEqual(receipt['artSha256'], artwork.digest(out / 'art.png'))
         self.assertEqual((receipt['width'], receipt['height']), (1024, 1536))
         self.assertEqual(receipt['promptDelivery'], 'model_mediated_unverified')
-        self.assertEqual(receipt['threadId'], '01a197d9-0000-7000-8000-000000000001')
-        self.assertTrue(receipt['savedPath'].startswith('generated_images/01a197d9'))
+        self.assertTrue(receipt['threadId'].startswith('01a197d9-0000-7000-8000-'))
+        self.assertTrue(receipt['savedPath'].startswith('generated_images/' + receipt['threadId']))
         self.assertEqual(receipt['c2pa']['manifestUrn'], 'urn:c2pa:74e2d223-b93d-48a8-888b-5f3324c53a51')
         self.assertEqual(receipt['c2pa']['softwareAgent'], 'ChatGPT')
         self.assertEqual(receipt['c2pa']['softwareAgentVersion'], 'gpt-image')
@@ -128,6 +133,38 @@ class PosterArtworkTests(unittest.TestCase):
         self.assertIsInstance(receipt['warnings'], list)
         self.assertFalse(receipt['humanApproval'])
         self.assertFalse((out / 'started.json').exists())
+
+    def test_retry_on_low_dispatches_once_more_and_keeps_attempt_one(self):
+        low = dict(placement='low', method='vision_objectness', objects=1,
+                   bandBottomRatio=0.78, warnings=['subject_covered_by_footer'])
+        ok = dict(placement='ok', method='vision_objectness', objects=1,
+                  bandBottomRatio=0.62, warnings=[])
+        with mock.patch.object(artwork.composition, 'analyse', side_effect=[low, ok]):
+            receipt = artwork.run(self.prompt, self.root / 'art', 'gpt-6.1-sol', 60, retry_on_low=True)
+        self.assertEqual(self.dispatches(), 2)
+        self.assertEqual(receipt['retry']['attempts'], 2)
+        self.assertEqual(receipt['composition']['placement'], 'ok')
+        sibling = self.root / 'art-attempt-1'
+        self.assertTrue((sibling / 'art-receipt.json').is_file())
+        self.assertEqual(json.loads((sibling / 'art-receipt.json').read_text())['composition']['placement'], 'low')
+        self.assertIn('COMPOSITION CORRECTION', (self.root / 'art' / 'art-prompt.txt').read_text())
+
+    def test_retry_stops_after_one_correction(self):
+        low = dict(placement='low', method='vision_objectness', objects=1,
+                   bandBottomRatio=0.78, warnings=['subject_covered_by_footer'])
+        with mock.patch.object(artwork.composition, 'analyse', side_effect=[low, low]):
+            receipt = artwork.run(self.prompt, self.root / 'art', 'gpt-6.1-sol', 60, retry_on_low=True)
+        self.assertEqual(self.dispatches(), 2)
+        self.assertEqual(receipt['retry']['attempts'], 2)
+        self.assertIn('subject_covered_by_footer', receipt['warnings'])
+
+    def test_retry_is_off_by_default(self):
+        low = dict(placement='low', method='vision_objectness', objects=1,
+                   bandBottomRatio=0.78, warnings=['subject_covered_by_footer'])
+        with mock.patch.object(artwork.composition, 'analyse', side_effect=[low]):
+            receipt = artwork.run(self.prompt, self.root / 'art', 'gpt-6.1-sol', 60)
+        self.assertEqual(self.dispatches(), 1)
+        self.assertNotIn('retry', receipt)
 
     def test_turn_without_path_evidence_still_binds_the_single_artifact(self):
         os.environ['FAKE_MODE'] = 'nopath'
@@ -169,7 +206,7 @@ class PosterArtworkTests(unittest.TestCase):
     def test_turn_without_an_image_is_a_recorded_known_failure(self):
         os.environ['FAKE_MODE'] = 'none'
         out = self.root / 'art'
-        with self.assertRaisesRegex(artwork.ArtworkError, 'exactly one new generated image'):
+        with self.assertRaisesRegex(artwork.ArtworkError, 'exactly one generated image'):
             artwork.run(self.prompt, out, 'gpt-6.1-sol', 60)
         self.assertEqual(json.loads((out / 'outcome.json').read_text())['status'],
                          'failed_expected_one_image')
@@ -178,7 +215,7 @@ class PosterArtworkTests(unittest.TestCase):
 
     def test_more_than_one_image_is_rejected(self):
         os.environ['FAKE_MODE'] = 'two'
-        with self.assertRaisesRegex(artwork.ArtworkError, 'exactly one new generated image'):
+        with self.assertRaisesRegex(artwork.ArtworkError, 'exactly one generated image'):
             artwork.run(self.prompt, self.root / 'art', 'gpt-6.1-sol', 60)
 
     def test_non_portrait_artwork_is_rejected_before_composition(self):

@@ -11,8 +11,9 @@ It never calls an image API directly, needs no OpenAI/Gemini/Apple key, never
 publishes or uploads, and never claims a human visual review. The tool is
 ChatGPT-login backed; its PNG lands under
 ``$CODEX_HOME/generated_images/<thread-id>/exec-<uuid>.png``. This entry takes a
-snapshot before the turn, requires exactly one new PNG in the new thread
-directory, verifies the PNG header and exact 2:3 portrait ratio, cross-checks
+checks that the turn's own thread directory holds exactly one PNG (so
+concurrent dispatches sharing CODEX_HOME cannot be confused with each other),
+verifies the PNG header and exact 2:3 portrait ratio, cross-checks
 the agent's reply when it names a file, copies the PNG next to the exact
 prompt, and records the dispatch identity in ``art-receipt.json``. The tool
 sometimes returns the generated image without a path, so a reply that names no
@@ -81,19 +82,6 @@ def child_environment():
             if not key.upper().startswith('OPENAI_') and key.upper() != 'CODEX_API_KEY'}
 
 
-def snapshot(root):
-    if not root.is_dir():
-        return {}
-    return {str(path): (path.stat().st_size, path.stat().st_mtime_ns)
-            for path in root.rglob('*.png')}
-
-
-def new_images(root, before):
-    return sorted(path for path in root.rglob('*.png')
-                  if str(path) not in before
-                  or before[str(path)] != (path.stat().st_size, path.stat().st_mtime_ns))
-
-
 def png_identity(raw):
     if raw[:8] != b'\x89PNG\r\n\x1a\n' or raw[12:16] != b'IHDR':
         raise ArtworkError('generated file is not a PNG')
@@ -148,7 +136,8 @@ def approve_existing(out, prompt_sha):
     return receipt
 
 
-def run(prompt_path, out, model=DEFAULT_MODEL, timeout_seconds=DEFAULT_TIMEOUT, cli_path=None, dry_run=False):
+def run(prompt_path, out, model=DEFAULT_MODEL, timeout_seconds=DEFAULT_TIMEOUT, cli_path=None,
+        dry_run=False, retry_on_low=False):
     out = Path(out).resolve()
     prompt_path = Path(prompt_path).resolve()
     prompt = prompt_path.read_text(encoding='utf-8')
@@ -171,7 +160,6 @@ def run(prompt_path, out, model=DEFAULT_MODEL, timeout_seconds=DEFAULT_TIMEOUT, 
         raise ArtworkError(f'codex CLI not found: {cli}')
     version = subprocess.check_output([str(cli), '--version'], env=env, text=True, timeout=30).strip()
     generated = codex_home() / 'generated_images'
-    before = snapshot(generated)
     command = [str(cli), 'exec', '--json', '--ephemeral', '--skip-git-repo-check',
                '-m', model, '-c', 'model_reasoning_effort="medium"',
                '-c', 'suppress_unstable_features_warning=true',
@@ -205,14 +193,12 @@ def run(prompt_path, out, model=DEFAULT_MODEL, timeout_seconds=DEFAULT_TIMEOUT, 
         record_known_failure(out, 'failed_codex_turn', 'codex turn did not complete cleanly')
         raise ArtworkError('codex turn did not complete cleanly; inspect events.jsonl and stderr.txt')
     thread = threads[0]
-    discovered = new_images(generated, before)
+    thread_dir = generated / thread
+    discovered = sorted(thread_dir.glob('*.png')) if thread_dir.is_dir() else []
     if len(discovered) != 1:
-        record_known_failure(out, 'failed_expected_one_image', f'found {len(discovered)} new images')
-        raise ArtworkError(f'expected exactly one new generated image, found {len(discovered)}')
+        record_known_failure(out, 'failed_expected_one_image', f'found {len(discovered)} images in the turn directory')
+        raise ArtworkError(f'expected exactly one generated image in the turn directory, found {len(discovered)}')
     saved = discovered[0]
-    if saved.parent.name != thread:
-        record_known_failure(out, 'failed_image_outside_turn', str(saved))
-        raise ArtworkError('generated image did not land in this turn directory')
     raw = saved.read_bytes()
     try:
         width, height = png_identity(raw)
@@ -246,7 +232,33 @@ def run(prompt_path, out, model=DEFAULT_MODEL, timeout_seconds=DEFAULT_TIMEOUT, 
     shutil.copyfile(prompt_path, out / 'art-prompt.txt')
     (out / 'started.json').unlink()
     write(out / 'art-receipt.json', receipt)
+    if retry_on_low and placement.get('placement') == 'low':
+        return _retry_low(out, prompt_path, prompt, receipt, model, timeout_seconds, cli_path, placement)
     return receipt
+
+
+def _retry_low(out, prompt_path, prompt, first_receipt, model, timeout_seconds, cli_path, placement):
+    """Regenerate once with an explicit safe-area correction; keep attempt 1 as evidence."""
+    sibling = out.parent / (out.name + '-attempt-1')
+    if sibling.exists():
+        raise ArtworkError('cannot keep attempt 1: ' + str(sibling) + ' already exists')
+    bottom = placement.get('bandBottomRatio')
+    correction = (prompt + '\n\nCOMPOSITION CORRECTION: The previous generation placed the primary subject '
+                  'too low' + (f' (its bottom reached {bottom:.0%} of image height)' if isinstance(bottom, float) else '') +
+                  '. Regenerate the same concept with the primary subject fully above 66% of image height, '
+                  'its centre around 50-60%, and the bottom third quiet and empty because a solid ivory footer '
+                  'covers it. Keep the subject, style, colour, light and the no-text rule unchanged.')
+    retry_prompt = out.parent / (out.name + '-retry-prompt.txt')
+    retry_prompt.write_text(correction, encoding='utf-8')
+    out.rename(sibling)
+    final = run(retry_prompt, out, model, timeout_seconds, cli_path, dry_run=False, retry_on_low=False)
+    final['retry'] = dict(attempts=2, reason='subject_covered_by_footer',
+                          firstAttempt=str(sibling), firstArtSha256=first_receipt.get('artSha256'),
+                          firstComposition=first_receipt.get('composition'),
+                          correctedPromptPath=str(retry_prompt))
+    write(out / 'art-receipt.json', final)
+    write(out / 'retry.json', final['retry'])
+    return final
 
 
 def main(argv=None):
@@ -257,15 +269,19 @@ def main(argv=None):
     parser.add_argument('--timeout-seconds', type=int, default=DEFAULT_TIMEOUT)
     parser.add_argument('--codex', help='codex CLI path (default: $SERMON_CODEX_CLI or ~/.local/bin/codex)')
     parser.add_argument('--dry-run', action='store_true')
+    parser.add_argument('--retry-on-low', action='store_true',
+                        help='regenerate once with a safe-area correction when the subject sits under the footer')
     args = parser.parse_args(argv)
     try:
-        receipt = run(args.prompt, args.out, args.model, args.timeout_seconds, args.codex, args.dry_run)
+        receipt = run(args.prompt, args.out, args.model, args.timeout_seconds, args.codex, args.dry_run,
+                      args.retry_on_low)
     except (ArtworkError, OSError, ValueError, KeyError) as error:
         sys.exit(str(error))
     print(json.dumps(dict(status=receipt['status'], art=str(Path(args.out) / 'art.png'),
                           artSha256=receipt.get('artSha256'), width=receipt.get('width'),
                           height=receipt.get('height'), threadId=receipt.get('threadId'),
                           composition=(receipt.get('composition') or {}).get('placement'),
+                          retry=receipt.get('retry', {}).get('attempts'),
                           c2pa=(receipt.get('c2pa') or {}).get('manifestUrn'))))
 
 
