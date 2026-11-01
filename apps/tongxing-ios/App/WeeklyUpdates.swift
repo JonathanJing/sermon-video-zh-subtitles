@@ -64,6 +64,16 @@ final class WeeklyUpdates: ObservableObject {
         }
     }
 
+    /// A verified poster may open by itself from 08:00 local time on the page's
+    /// own service date, once per unseen release. It never replaces a missing
+    /// poster with an empty sheet; the announcement card stays available.
+    func autoPresentationDue(now: Date = Date(),
+                             calendar: Calendar = WeeklyPosterSchedule.calendar()) -> Bool {
+        guard let item = announcement, isNew, posterData != nil,
+              let page = verifiedCatalog?.pages.first(where: { $0.id == item.pageID }) else { return false }
+        return WeeklyPosterSchedule.isDue(pageDate: page.date, now: now, calendar: calendar)
+    }
+
     func markSeen(_ key: String? = nil) {
         guard let key = key ?? announcement?.deduplicationKey else { return }
         if let saved = try? JSONDecoder().decode(Set<String>.self, from: Data(contentsOf: receiptURL)) { seen.formUnion(saved) }
