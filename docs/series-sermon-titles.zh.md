@@ -22,7 +22,9 @@
 | 5 | 2026-10-11 | Jesus warns | 启 8–9 | Steve Bang Lee | 耶稣发出警戒 | 예수님은 경고하십니다 | Jesús advierte |
 | 6 | 2026-10-18 | Jesus sends and resurrects His own | 启 10–11 | Steve Bang Lee | 耶稣差遣属祂的人，并使他们复活 | 예수님은 자기 백성을 보내시고 다시 살리십니다 | Jesús envía y resucita a los suyos |
 | 7 | 2026-10-25（推算） | Jesus wins | 启 12–13 | 待核 | 耶稣得胜 | 예수님은 승리하십니다 | Jesús vence |
-| 8 | 2026-11-01（推算） | Jesus marks His own | 启 14 | 待核 | 耶稣为属祂的人加上印记 | 예수님은 자기 백성에게 인을 치십니다 | Jesús sella a los suyos |
+| 8 | 2026-11-01（推算） | Jesus marks His own | 启 14 | 待核 | 耶稣为属祂的人盖印 | 예수님은 자기 백성에게 인을 치십니다 | Jesús sella a los suyos |
+
+2026-10-31：用户把第 8 周中文标题由「耶稣为属祂的人加上印记」改为「耶稣为属祂的人盖印」；该篇尚未发布，直接更新表内值，韩文／西班牙语不变。
 | 9 | 2026-11-08（推算） | Jesus is just and will bring sin to its end | 启 15–16 | 待核 | 耶稣是公义的，必终结罪恶 | 예수님은 공의로우시며 죄를 끝내실 것입니다 | Jesús es justo y pondrá fin al pecado |
 | 10 | 2026-11-15（推算） | Jesus is better than this world | 启 17–19:10 | 待核 | 耶稣比这世界更美好 | 예수님은 이 세상보다 더 귀하십니다 | Jesús es mejor que este mundo |
 | 11 | 2026-11-22（推算） | Jesus will return | 启 19:11–21:8 | 待核 | 耶稣必再来 | 예수님은 다시 오실 것입니다 | Jesús volverá |
