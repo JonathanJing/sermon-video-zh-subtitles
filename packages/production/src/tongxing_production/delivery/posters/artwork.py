@@ -13,8 +13,10 @@ ChatGPT-login backed; its PNG lands under
 ``$CODEX_HOME/generated_images/<thread-id>/exec-<uuid>.png``. This entry takes a
 snapshot before the turn, requires exactly one new PNG in the new thread
 directory, verifies the PNG header and exact 2:3 portrait ratio, cross-checks
-the agent's reply against that file, copies it next to the exact prompt, and
-records the dispatch identity in ``art-receipt.json``.
+the agent's reply when it names a file, copies the PNG next to the exact
+prompt, and records the dispatch identity in ``art-receipt.json``. The tool
+sometimes returns the generated image without a path, so a reply that names no
+file is recorded as missing evidence instead of failing a completed turn.
 
 Known limit, recorded honestly in the receipt: the string handed to the image
 backend is produced by the model inside the tool call and is not observable in
@@ -217,14 +219,17 @@ def run(prompt_path, out, model=DEFAULT_MODEL, timeout_seconds=DEFAULT_TIMEOUT, 
         record_known_failure(out, 'failed_png_identity', str(error))
         raise
     result = (out / 'result.txt').read_text(encoding='utf-8')
-    if Path(result.strip().splitlines()[-1] if result.strip() else '').name != saved.name:
-        record_known_failure(out, 'failed_agent_reply_mismatch', 'reply does not name the discovered image')
-        raise ArtworkError('agent reply does not name the discovered image; refusing to bind an unproven artifact')
+    reply = next((line.strip() for line in reversed(result.splitlines()) if line.strip()), '')
+    reply_name = Path(reply).name if reply.lower().endswith('.png') else None
+    if reply_name is not None and reply_name != saved.name:
+        record_known_failure(out, 'failed_agent_reply_mismatch', reply[:200])
+        raise ArtworkError('agent reply names a different image; refusing to bind an unproven artifact')
     usage = terminals[0].get('usage')
     receipt = dict(record, status='complete', artSha256=sha(raw), artBytes=len(raw),
                    width=width, height=height, threadId=thread,
                    savedPath=str(saved.relative_to(codex_home())),
                    c2pa=c2pa(raw), usage=usage,
+                   agentReply=dict(present=bool(reply), namesSavedImage=reply_name == saved.name),
                    cliVersion=version, cliSha256=digest(cli),
                    adapterSha256=digest(Path(__file__)),
                    elapsedSeconds=round(time.monotonic() - started, 1),

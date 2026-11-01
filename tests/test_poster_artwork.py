@@ -42,9 +42,13 @@ if mode == 'fail':
     emit(rows); sys.exit(1)
 paths = []
 if mode == 'ok': paths = [make('OK')]
+elif mode == 'nopath': paths = [make('OK')]
+elif mode == 'wrongpath': paths = [make('OK')]
 elif mode == 'two': paths = [make('OK'), make('OK')]
 elif mode == 'bad_ratio': paths = [make('SQUARE')]
-text = 'SAVED=' + str(paths[0]) if paths else 'NO IMAGE'
+if mode == 'nopath': text = 'IMAGE READY'
+elif mode == 'wrongpath': text = 'SAVED=/tmp/some-other-image.png'
+else: text = 'SAVED=' + str(paths[0]) if paths else 'NO IMAGE'
 rows.append({'type': 'item.completed', 'item': {'id': 'item_1', 'type': 'agent_message', 'text': text}})
 rows.append({'type': 'turn.completed', 'usage': {'input_tokens': 1000, 'output_tokens': 10}})
 emit(rows)
@@ -119,8 +123,25 @@ class PosterArtworkTests(unittest.TestCase):
         self.assertEqual(receipt['c2pa']['softwareAgent'], 'ChatGPT')
         self.assertEqual(receipt['c2pa']['softwareAgentVersion'], 'gpt-image')
         self.assertEqual(receipt['c2pa']['instanceId'], '28d29d78-90e2-4e21-b203-076b8ff3b652')
+        self.assertEqual(receipt['agentReply'], {'present': True, 'namesSavedImage': True})
         self.assertFalse(receipt['humanApproval'])
         self.assertFalse((out / 'started.json').exists())
+
+    def test_turn_without_path_evidence_still_binds_the_single_artifact(self):
+        os.environ['FAKE_MODE'] = 'nopath'
+        out = self.root / 'art'
+        receipt = artwork.run(self.prompt, out, 'gpt-6.1-sol', 60)
+        self.assertEqual(receipt['status'], 'complete')
+        self.assertEqual(receipt['agentReply'], {'present': True, 'namesSavedImage': False})
+        self.assertTrue((out / 'art.png').is_file())
+
+    def test_reply_naming_a_different_image_is_rejected(self):
+        os.environ['FAKE_MODE'] = 'wrongpath'
+        out = self.root / 'art'
+        with self.assertRaisesRegex(artwork.ArtworkError, 'different image'):
+            artwork.run(self.prompt, out, 'gpt-6.1-sol', 60)
+        self.assertEqual(json.loads((out / 'outcome.json').read_text())['status'],
+                         'failed_agent_reply_mismatch')
 
     def test_resume_reuses_the_verified_artifact_without_another_dispatch(self):
         out = self.root / 'art'

@@ -28,6 +28,7 @@ codex exec --json --ephemeral --skip-git-repo-check \
 | 产物位置 | `$CODEX_HOME/generated_images/<thread-id>/exec-<uuid>.png`（文件夹名等于 `thread.started` 的 thread id） | 用生成前后的快照 diff + 线程目录校验来绑定，不解析正文 |
 | 尺寸 | 1024 × 1536（精确 2:3） | 与 1200 × 1800 画布同比例，现有 Swift 渲染器直接复用 |
 | 事件流 | `thread.started` → `item.completed`(agent_message) → `turn.completed` | 本版本**没有**图像生成 item；不能像文本工具那样从事件里读参数或 generation id |
+| 回复中的路径 | 2026-11-01 三次调用中两次回显 `saved_path`，一次只回「无法取得已保存图像的绝对路径」 | 不能把回显路径当成功门槛；以线程目录和 PNG 校验为准，回显只作交叉核对 |
 | 图像自带来源 | C2PA `caBX` chunk：manifest URN、`xmp:iid`、`softwareAgent=ChatGPT`、`version=gpt-image`、创建时间 | 收据可绑定来源字节；但版本字段只到 `gpt-image`，**不能**据此声称 2.5 或具体子版本 |
 | 用量 | 端到端一次（`gpt-6.1-sol`）：输入 51,223 / 缓存 30,976 / 输出 235 tokens，24.9 秒 | 工具说明占输入大头；每周一张可接受，但按文本调用的 10 倍量级预留时间与额度 |
 | 认证 | ChatGPT 登录；`auth.json` 无 API key；子进程剥掉 `OPENAI_*` / `CODEX_API_KEY` | 符合「不加额外 key、不走隐藏 API」的既有边界 |
@@ -76,7 +77,7 @@ Layer 4 页面发布 + HTTP 核验
 
 1. 拒绝未展开的 prompt、拒绝非 ChatGPT 认证、剥离子进程里的 API key；
 2. 先写 `started.json` 再派发，超时记为 `unknown_outcome`，不自动重派；
-3. 用快照 diff 找出本次线程目录里**恰好一张**新 PNG，并核对外层回复指向同一文件；
+3. 用快照 diff 找出本次线程目录里**恰好一张**新 PNG；回复给出路径时核对其指向同一文件，未给出路径时记录缺失并继续绑定；
 4. 校验 PNG 签名与精确 2:3，抽取 C2PA 来源；
 5. 复制 `art.png`、`art-prompt.txt`，写 `art-receipt.json`；
 6. 已有收据且 prompt 与图片哈希未变时直接复用，不再派发；
@@ -84,7 +85,7 @@ Layer 4 页面发布 + HTTP 核验
 
 命令与参数：`--prompt`（已展开的 prompt 文件）、`--out`（全新目录）、`--model`（默认 `gpt-6.1-sol`）、`--timeout-seconds`（默认 600）、`--dry-run`。
 
-收据字段（`tongxing-poster-artwork-v1`）包含：`promptSha256`、`artSha256`、`width/height`、`threadId`、`savedPath`、`c2pa`（manifest URN、`xmp:iid`、`softwareAgent`、版本、chunk 哈希）、`usage`、`cliVersion`、`cliSha256`、`adapterSha256`、`elapsedSeconds`、`promptDelivery=model_mediated_unverified`、`humanApproval=false`。
+收据字段（`tongxing-poster-artwork-v1`）包含：`promptSha256`、`artSha256`、`width/height`、`threadId`、`savedPath`、`c2pa`（manifest URN、`xmp:iid`、`softwareAgent`、版本、chunk 哈希）、`agentReply`（是否回显、是否指向同一文件）、`usage`、`cliVersion`、`cliSha256`、`adapterSha256`、`elapsedSeconds`、`promptDelivery=model_mediated_unverified`、`humanApproval=false`。
 
 **必须诚实标注的未知项**：真正送给图片后端的 prompt 由模型在工具调用里生成，`codex exec --json` 看不到，也没有 `revised_prompt`/`generationId`。因此收据只声明「意图 prompt 的哈希」和「产物的哈希与 C2PA」，不声明 prompt 逐字送达。若以后需要这一证据，改走 app-server 协议：其 `ImageGenerationThreadItem` 明确定义了 `savedPath`、`generationId`、`revisedPrompt` 与 `failure`。
 
@@ -116,7 +117,7 @@ Layer 4 页面发布 + HTTP 核验
 
 | 阶段 | 内容 | 验收 |
 |---|---|---|
-| P0 ✅ 2026-11-01 | 已落地 `packages/production/src/tongxing_production/delivery/posters/artwork.py`，注册 `tools/ops/run.py delivery.posters.artwork`，13 个离线单测；未改默认 Supervisor | 单测 + `--dry-run` + 一次真实生成，收据字段齐全 |
+| P0 ✅ 2026-11-01 | 已落地 `packages/production/src/tongxing_production/delivery/posters/artwork.py`，注册 `tools/ops/run.py delivery.posters.artwork`，15 个离线单测；未改默认 Supervisor | 单测 + `--dry-run` + 一次真实生成，收据字段齐全 |
 | P1 | 定义 `poster-design.json` 合同与校验器（证据 `textGroupId`、无占位符、字段非空），先由人工/agent 填写，再评估是否用文本模型起草 | 一份真实本周设计通过校验并驱动 P0 |
 | P2 | 周更编排里在 Layer 4 HTTP 核验后自动跑 P0/P1，停在「待目视」状态；定时任务仍不自动上传或发送 | 连续一周真实产物与既有 `build` 串通 |
 | P3（可选） | 改走 app-server 线程事件，拿到 `generationId`/`revisedPrompt` | 与 P0 收据逐项对齐 |
@@ -129,7 +130,7 @@ Layer 4 页面发布 + HTTP 核验
 .venv/bin/python tools/ops/run.py delivery.posters.artwork --prompt <prompt.txt> --out <fresh-dir>
 ```
 
-离线单测覆盖：成功绑定、续跑复用、prompt 变化拒绝、图片被篡改拒绝、无图/多图/比例不符/失败回合、超时未知结果、API key 剥离、非 ChatGPT 认证、占位符拒绝、dry-run。真实调用另见「已验证的调用事实」。
+离线单测覆盖：成功绑定、无路径回显仍绑定、回显指向别的图片拒绝、续跑复用、prompt 变化拒绝、图片被篡改拒绝、无图/多图/比例不符/失败回合、超时未知结果、API key 剥离、非 ChatGPT 认证、占位符拒绝、dry-run。真实调用另见「已验证的调用事实」。
 
 ## 未验证与风险
 
@@ -140,7 +141,7 @@ Layer 4 页面发布 + HTTP 核验
 
 ## 证据位置
 
-- 实现与单测：`packages/production/src/tongxing_production/delivery/posters/artwork.py`、`tests/test_poster_artwork.py`（13 个用例全部离线通过）。
+- 实现与单测：`packages/production/src/tongxing_production/delivery/posters/artwork.py`、`tests/test_poster_artwork.py`（15 个用例全部离线通过）。
 - 真实调用产物、prompt、事件日志与收据在本地忽略目录 `artifacts/poster-imagegen/`，不提交 Git。
 - 2026-11-01 通过统一入口实测：`gpt-6.1-sol`、24.9 秒、1024 × 1536、`artSha256=45ab4796…`、`threadId=01a197e5…`、`savedPath=generated_images/01a197e5…/exec-95e7af25….png`、C2PA `urn:c2pa:009f0a85…`；同 prompt 再次运行直接复用收据，没有第二次派发。
 - 验证命令见「验收」。
