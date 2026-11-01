@@ -29,6 +29,7 @@
 | `deepseek_translate.py`、`coherence_core.py` | 本机 | DeepSeek 逐窗口连贯翻译（zh-Hans/ko/es），产物写 `coherence-<tag>/`，只读 run 的 sentences/slices |
 | `deepseek_status.py` | 本机 | 读 `state-<label>.json`/`events.jsonl`，显示 DeepSeek 阶段的进度、调用数、失败与逐次延迟（`--watch` 刷新，`--label` 选阶段） |
 | `state_check.py` | 本机 | 从 `events.jsonl`+`done.jsonl` 重算状态并比对；`--all` 查全部阶段、`--units` 报句级覆盖与失败句、`--missing` 列未覆盖句子、`--record` 写 `state-check.json`、`--write` 按事件流修复；不一致退出码 1 |
+| `run_status.py` | 本机 | 观察整条 run：`register`/`mark`/`wrap`/`handoff`/`resume`/`rebuild`/`status`/`production`/`check`；写 `status/` 与 `.status-index.json`，只读派生、不改变门禁 |
 | `audit_deepseek.py`、`coherence_check.py`、`spoken_forms.py` | 本机 | 独立审计与 issue-bound 门（`--locale` 三语）、连贯性检查、数字读法与 TTS 专用读法（`spoken_forms.py --run --locale`） |
 | `lag_loop.py` | 本机 + Spark | 落后回环（同步 run 必跑）：读 `schedule.json` → 按 dub−source 精简推后句 → 重建 speech → 清 tts → 重排该语 → `finish_run`，最多 `--iterations` 轮；`--require-clean` 把闸门变成退出码，`--check-only` 只判不配 |
 | `build_speech.py` | 本机 | 套用复核修订和口播读法，写 speech.jsonl |
@@ -59,6 +60,7 @@
 ```text
 artifacts/sentence-first-agent/<run>/
   run.md              工作日志：来源、决定、改动、用户结论
+  status/             进度事件与派生快照（run_status.py；忽略 Git、不公开）
   clip.json           媒体路径、媒体起止、单元范围
   clip.wav            音频，16 kHz 单声道
   words.json          词级时间，相对 clip.wav
@@ -168,7 +170,7 @@ TTS 开始（首语）= max(讲员映射确认, 首语翻译 + 口播规格)；�
 
 - 开工发计划；英文表、映射、每条轨、页面各自发“可审”（链接 + 整轨长度 + 先听哪几句）。
 - 延误主动更新预计；一条轨发出去后下一条语言继续配，不要求用户空等。
-- 发轨和收到结论时用 `tools/development/run_journal.py append --run-dir $RUN --stage l3.review.<locale> --event waiting --waiting-on "user track review"`，收到结论再 `--event resumed`；导出器会把它算成等待，而不是计算。
+- 发轨和收到结论时用 `run_status.py handoff --run $RUN --stage l3.review.<locale> --waiting-on "user track review" --url <播放器>`，收到结论再 `run_status.py resume --run $RUN --stage l3.review.<locale>`；两者同时写 journal 的 `waiting`/`resumed`，导出器会把它算成等待，而不是计算。
 
 ### 0.2 并行分工（子代理与排程）
 
@@ -325,6 +327,21 @@ python3 $EXP/translate_parts.py merge --run $RUN --locale <locale>
 
 **看 DeepSeek 跑到哪了**：每次调用在 `state_dir`（翻译是 `coherence-<tag>/`，审计是 `--out`，回环是 run 根）写一行 `events.jsonl`，并原子更新 `state.json`（label、done/total、calls/hits/failed、costUsd、avgSeconds、lastError）。`python3 $EXP/deepseek_status.py --run <dir>` 直接读，`--watch 2` 刷屏看；`--tail 8` 显示最近调用的 context（`chain-02:window-0012`）、延迟与 token。缓存命中记 `hit`，失败记 `error` 并留最后 300 字符。每个阶段一个状态文件（`state-translate.json`、`state-audit.json`、`state-trim.json`），同一 run 目录里互不覆盖。`state_check.py --run <dir> --label <stage>` 用事件流重算状态并比对，计数对不上就以退出码 1 拦下（`--write` 可按事件流修复），这是防止「续跑重复计数」这类错误的守卫。这些文件在 `artifacts/` 时被忽略，不进 Git。
 
+**看整条 run 跑到哪了（P0，2026-11-01 起）**：`sfa.py start` 把每种语言登记到 `artifacts/sentence-first-agent/.status-index.json`；`spark_queue.py` 在 TTS 期间按 locale/讲员写 `l3.tts.<speaker>.<locale>` 的 started、心跳、progress、finished（`--no-status` 关闭，`--status-run LOCALE=RUN` 覆盖索引）。代理在长命令和人工交接处用：
+
+```bash
+python3 $EXP/run_status.py status --run $RUN --watch 2
+python3 $EXP/run_status.py wrap --run $RUN --stage l4.assets -- python3 $EXP/sfa_publish.py --config $EXP/pages/<pageId>.json assets --out <assets>
+python3 $EXP/run_status.py handoff --run $RUN --stage l3.review.zh-Hans \
+  --waiting-on "user track review" --url <播放器> --expected-minutes "20-80"
+python3 $EXP/run_status.py resume --run $RUN --stage l3.review.zh-Hans
+python3 $EXP/run_status.py production --production <首个 run 名>
+```
+
+不要 wrap 自己会写 journal 的脚本（`sfa.py start`、`preflight.py`、`finish_run.py`、`lag_loop.py`、`consistency_check.py`），否则同一 stage 会写两次迁移；这些阶段先靠 journal 的 started 心跳，P1 再补内部进度。手工开工、没有经过 `sfa.py start` 的 run 先用 `run_status.py register --run $RUN --locale <locale> --production <首个 run 名> --sync/--no-sync --publish/--no-publish` 登记。
+
+状态写在 `<run>/status/`：`events.ndjson` 是高频进度/心跳，`status.json` 由 `journal.ndjson` + `state-*.json` + 状态事件派生。`check` 重放比对，不一致退出码 1；`mark` 用于 audit 等尚无自动打点的阶段（`--stage`、`--event`、`--evidence-level`）。它只用于观察，**不是门禁**，写入失败不影响生产；`status.json` 不公开，公开前必须脱敏。
+
 ### 5 口播规格（本机）
 
 ```bash
@@ -437,7 +454,7 @@ python3 -m http.server -d $RUN 8765
 
 `reviewedAt` 必须带时区；`note` 不得含「未听审」。结论变了另存新版本，已发布收据不改写。
 
-收据要能回答「听了哪一版、怎么听的」：写 `reviewMode`（`whole_track` 或 `flagged_only`）、听审用的 `review.mp3` 与 `track.wav` 哈希；结论之后又重配或重出的，另写发布时音轨哈希并标 `unheardAfterApproval`；附播放器导出的逐句结论 JSON（哪些句被听过）。整轨听审耗时约等于音轨时长乘语言数，三条 31 分钟音轨不可能在 45 分钟内整轨听完；时间窗对不上就记 `flagged_only`，不要写成整轨。发出可审时 `run_journal.py append … --event waiting`，收到结论时 `--event resumed`；2026-10-24 两轮都没记，复盘里等待为 0。这两条是必做步骤，不是可选记录：发链接的同一个动作里打 `waiting`，收据落盘后立刻打 `resumed`；脚本自动打点还没做，漏了这段时间就会被算成计算时间。
+收据要能回答「听了哪一版、怎么听的」：写 `reviewMode`（`whole_track` 或 `flagged_only`）、听审用的 `review.mp3` 与 `track.wav` 哈希；结论之后又重配或重出的，另写发布时音轨哈希并标 `unheardAfterApproval`；附播放器导出的逐句结论 JSON（哪些句被听过）。整轨听审耗时约等于音轨时长乘语言数，三条 31 分钟音轨不可能在 45 分钟内整轨听完；时间窗对不上就记 `flagged_only`，不要写成整轨。发出可审时用 `run_status.py handoff --run $RUN --stage l3.review.<locale> --waiting-on "user track review" --url <播放器>`，收到结论时用 `run_status.py resume --run $RUN --stage l3.review.<locale>`；它们同时写 journal 的 `waiting`/`resumed`。2026-10-24 两轮都没记，复盘里等待为 0。这两条是必做步骤，不是可选记录：发链接的同一个动作里打 `waiting`，收据落盘后立刻打 `resumed`；脚本仍不能自动判断用户是否开始听，漏了这段时间就会被算成计算时间。
 
 ### 9 改句
 
