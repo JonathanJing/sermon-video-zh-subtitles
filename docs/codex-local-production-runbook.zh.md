@@ -325,12 +325,16 @@ export SERMON_YOUTUBE_COOKIES_FILE=/absolute/path/youtube.cookies.txt
   | 时机 | 标题 | Bark `level` |
   |---|---|---|
   | 进程开始 | 开始监控证道视频上传（含已配置的设备，缺 key 时注明） | `passive`，缺 key 时 `active` |
-  | 发现新文件 | 证道视频已上传：文件名 · GB · 最早时间 PT · 名称标签，点开为 Drive 文件页 | `timeSensitive` |
+  | 发现新文件 | 证道视频已上传：文件名 · GB · 最早时间 PT · 名称标签，点开为 Drive 文件页 | `critical` + `volume=0`（忽略静音与专注模式、亮屏显示，但不响铃；需先开「重要警告」） |
   | 22:00 仍没有新文件 | 本周未见新证道视频，列出文件夹现有文件 | `active` |
-  | 连续 3 次读取失败 / 之后恢复 | 证道视频检查失败 / 已恢复 | `active` / `passive` |
+  | 连续 3 次读取失败 / 之后恢复 | 证道视频检查失败 / 已恢复 | `timeSensitive` / `passive` |
 
   所有渠道都没送达时不记为已通知，下一次读取重发。
-- **安装与检查。** 先存 key（会提示输入，不回显）：`security add-generic-password -s org.sermonvideo.drive-upload-watch -a bark-iphone -w`，Mac 再加 `-a bark-mac`。`python3 tools/ops/drive_upload_watch.py install` 把脚本复制到 `~/Library/Application Support/org.sermonvideo.drive-upload-watch/`（以 `/usr/bin/python3` 运行，不受本 checkout 切换分支影响）并加载 LaunchAgent；改代码后重新 `install`。`status` 显示加载状态、已存的 Bark 账户、下次窗口、日志末尾，以及已安装副本是否与当前文件一致；`check` 只读一次文件夹并打印 JSON；`test-push` 向每个 key 发一条测试；`uninstall` 卸载但保留状态。`run --now 2026-10-31T19:30 --no-push --state <临时路径>` 从指定时刻模拟窗口，只打印不推送。
+
+  除 Bark 外，非静默消息（发现新文件、检查失败、22:00 未见新文件）还会用 Gmail SMTP 另发一封邮件：钥匙串服务同为 `org.sermonvideo.drive-upload-watch`，账户 `gmail-user` 存发件地址、`gmail-app` 存应用专用密码（Google 账号开启两步验证后生成），可选 `gmail-to` 改收件人，默认发给发件人自己。主题前缀 `[证道视频监控]`，正文含文件信息与 Drive 链接，并带 `Importance: high` / `X-Priority: 1` 标准头（Outlook 等客户端会显示为高重要性；Gmail 的「重要」标记由算法判定，发件人无法通过 SMTP 设置，邮件也无法像 Bark 的 `critical` 那样绕过静音或专注模式）；邮件是独立的兜底与记录，不保证响，`passive` 消息（进程开始、恢复）不发。邮件失败只记录异常类型名，不记录地址和密码；Bark 与邮件都没送达时同样不记为已通知，下一次读取重发。邮件与 Bark 都成功时，按任一渠道送达即视为已通知。
+
+  发现新文件现在用 `level=critical` + `volume=0`：忽略静音和专注模式、亮屏显示，但铃声音量为 0。它要求先在手机设置里给 Bark 打开「重要警告」权限；未授权时这条推送可能投递失败，因此切换后要用 `test-push --critical` 确认手机确实收到，收不到就退回 `timeSensitive`（可加 `call=1` 重响 30 秒）。
+- **安装与检查。** 先存 key（会提示输入，不回显）：`security add-generic-password -s org.sermonvideo.drive-upload-watch -a bark-iphone -w`，Mac 再加 `-a bark-mac`；要开邮件兜底再加 `-a gmail-user`（Gmail 地址）和 `-a gmail-app`（应用专用密码），可选 `-a gmail-to` 改收件人。`python3 tools/ops/drive_upload_watch.py install` 把脚本复制到 `~/Library/Application Support/org.sermonvideo.drive-upload-watch/`（以 `/usr/bin/python3` 运行，不受本 checkout 切换分支影响）并加载 LaunchAgent；改代码后重新 `install`。`status` 显示加载状态、已存的 Bark 账户、邮件是否已配置、下次窗口、日志末尾，以及已安装副本是否与当前文件一致；`check` 只读一次文件夹并打印 JSON；`test-push` 向每个 key 和已配置的邮件通道各发一条测试（`--critical` 用发现文件同样的 critical + volume=0 形状），邮件已配置却没送达时退出码为 1；`uninstall` 卸载但保留状态。`run --now 2026-10-31T19:30 --no-push --state <临时路径>` 从指定时刻模拟窗口，只打印不推送。
 - **记录。** 同一目录下 `state.json`（已通知与基线文件、每个窗口的消息状态，版本 1）和 `observations.ndjson`（每个新文件的 ID、名称、大小、两个时间戳、首次看到时间与送达结果，以及每个窗口的收尾），供核对每周上传时间与 [H1](design/saturday-first-service-preparation.zh.md) 使用。旧 Claude 定时任务在新检查经过一个周六并行验证后停用。
 
 边界：该检查只读，不下载视频，不写 GCS state，不建立 Layer 1 来源身份，也不启动任何生产阶段。检测到文件不等于确认它与周六直播或周日讲道同篇，也不等于确认可用于生产；要把它作为来源，须另行核实使用授权与来源署名，并按[四层合同](multilingual-production-interfaces.zh.md)从 Layer 1 开始绑定 source ID、URL、媒体哈希与时长。
