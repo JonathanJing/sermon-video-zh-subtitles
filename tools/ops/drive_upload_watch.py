@@ -264,6 +264,11 @@ def send_email(message: Message, *, credentials: Optional[tuple] = None,
     mail = EmailMessage()
     mail["From"], mail["To"] = sender, recipient
     mail["Subject"] = f"{EMAIL_SUBJECT_PREFIX} {message.title}"
+    # Standard priority headers: Outlook and Apple Mail flag the message as high importance.
+    # Gmail decides its own "Important" marker by algorithm and ignores these; no email can be critical.
+    mail["Importance"] = "high"
+    mail["X-Priority"] = "1 (Highest)"
+    mail["X-MSMail-Priority"] = "High"
     body = f"{message.body}\n\n{message.url}" if message.url else message.body
     mail.set_content(f"{body}\n\nbark-level={message.level}")
     factory = smtp_factory or smtplib.SMTP_SSL

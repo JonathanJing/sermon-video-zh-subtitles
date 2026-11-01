@@ -325,6 +325,8 @@ def test_email_channel_sends_gmail_smtp_and_keeps_secrets_out_of_logs(monkeypatc
     assert client.logins == [("me@example.com", "APPPASSWORD")]
     mail = client.messages[-1]
     assert (mail["To"], mail["Subject"]) == ("me@example.com", "[证道视频监控] 证道视频已上传")
+    assert (mail["Importance"], mail["X-Priority"], mail["X-MSMail-Priority"]) == (
+        "high", "1 (Highest)", "High")
     body = mail.get_content()
     assert "x.mp4" in body and "https://drive.google.com/file/d/ID/view" in body
     assert "APPPASSWORD" not in body and "me@example.com" not in body
