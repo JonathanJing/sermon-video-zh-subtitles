@@ -144,5 +144,6 @@ Layer 4 页面发布 + HTTP 核验
 - 实现与单测：`packages/production/src/tongxing_production/delivery/posters/artwork.py`、`tests/test_poster_artwork.py`（15 个用例全部离线通过）。
 - 真实调用产物、prompt、事件日志与收据在本地忽略目录 `artifacts/poster-imagegen/`，不提交 Git。
 - 2026-11-01 通过统一入口实测：`gpt-6.1-sol`、24.9 秒、1024 × 1536、`artSha256=45ab4796…`、`threadId=01a197e5…`、`savedPath=generated_images/01a197e5…/exec-95e7af25….png`、C2PA `urn:c2pa:009f0a85…`；同 prompt 再次运行直接复用收据，没有第二次派发。
+- 2026-11-01 第 8 周实跑（`revelation-jesus-marks-his-own-20261101`，中／韩／西）：主视觉 `artSha256=e5d8db19…`、prompt `59cdb0e1…`、`poster-design.json` 绑定 5 条文稿证据；`build --art` 通过 7 项公开输入核验，三语两尺寸各解出两个二维码，收据 `complete`、`humanApproval=false`。只写本地 `artifacts/`，未上传、未发送。
 - 验证命令见「验收」。
 - 相关既有合同：[海报格式规范](tongxing-weekly-poster-format.zh.md)、[内容 brief](tongxing-weekly-poster-content-brief.zh.md)、[每周海报交付](tongxing-weekly-release.zh.md#每周海报交付)、[环境准备](environment-preparation.zh.md)。
