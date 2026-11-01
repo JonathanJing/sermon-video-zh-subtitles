@@ -63,6 +63,8 @@ Layer 4 页面发布 + HTTP 核验
 
 填写者可以是人、交互式 agent 或一次有 schema 的文本调用；**合同先于实现**：只有通过上述校验的 JSON 才能进入第 3 段。若由文本模型生成，复用现有无工具文本通道（`gpt-6.1-sol`），并把 prompt 哈希、模型身份和 call id 写入收据；它仍然只是机器起草，不因此获得内容批准。
 
+**概念选择（2026-11-01 用户反馈）：** 优先用经文自身的核心物件或动作做主视觉（例：印记 → 封蜡；启示录本身是写给七个教会的信），不要把象征扩写成风暴、灾难或行为场景。同一周手工版「暗酒红封蜡 + 中心十字架」比机器起草的「风暴避难所」更贴切：封蜡直接对应标题里的「盖印」，而避难所是额外发明的比喻，容易被读成灾难画面。设计阶段应把这条件为写 prompt 前的检查项。
+
 ### 第 3 段：主视觉合同（已实现）
 
 实现在 [`delivery/posters/artwork.py`](../packages/production/src/tongxing_production/delivery/posters/artwork.py)，通过统一入口运行：
@@ -145,5 +147,6 @@ Layer 4 页面发布 + HTTP 核验
 - 真实调用产物、prompt、事件日志与收据在本地忽略目录 `artifacts/poster-imagegen/`，不提交 Git。
 - 2026-11-01 通过统一入口实测：`gpt-6.1-sol`、24.9 秒、1024 × 1536、`artSha256=45ab4796…`、`threadId=01a197e5…`、`savedPath=generated_images/01a197e5…/exec-95e7af25….png`、C2PA `urn:c2pa:009f0a85…`；同 prompt 再次运行直接复用收据，没有第二次派发。
 - 2026-11-01 第 8 周实跑（`revelation-jesus-marks-his-own-20261101`，中／韩／西）：主视觉 `artSha256=e5d8db19…`、prompt `59cdb0e1…`、`poster-design.json` 绑定 5 条文稿证据；`build --art` 通过 7 项公开输入核验，三语两尺寸各解出两个二维码，收据 `complete`、`humanApproval=false`。只写本地 `artifacts/`，未上传、未发送。
+- 同周还有一版已发布的手工封蜡主视觉（`artSha256=ea477301…`，Codex 会话 `01a1956e…`，v3）。用它和它的完整编辑 prompt 链重渲本地三语海报，六张图与线上 v3 逐字节相同（zh `8c266931…`、ko `00c65d59…`、es `b1f23f75…`），收据 `complete`；这证明同一构建入口能复现已发布成品，也说明主视觉质量取决于设计阶段选的概念。
 - 验证命令见「验收」。
 - 相关既有合同：[海报格式规范](tongxing-weekly-poster-format.zh.md)、[内容 brief](tongxing-weekly-poster-content-brief.zh.md)、[每周海报交付](tongxing-weekly-release.zh.md#每周海报交付)、[环境准备](environment-preparation.zh.md)。
