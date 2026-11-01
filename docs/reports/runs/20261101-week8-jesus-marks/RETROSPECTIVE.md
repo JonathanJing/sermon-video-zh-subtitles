@@ -50,3 +50,9 @@
 - **审核深度**：`reviewMode=flagged_only`，用户按播放器标记抽查（约 4 分钟），不是三条整轨通听；收据如实记录。
 - **英文时间轴**：本机 ASR 词级时间，不是 MFA；英文参考按单元覆盖 477/477，但词级时间精度低于 MFA。
 - **反馈目录同步**：本次用线上源码包 + `build_language_listening_catalog.py` 重建并部署；第一次部署的 503 已修复，但当时约 2 分钟的 503 会产生窗口。
+
+## 后续：研读手册绑定（2026-11-01 04:50Z）
+
+- 第 8 周中文手册（私有 staging，机器译稿 `humanApproval=false`）已用 `delivery.weekly_guide_staging candidate` 绑定到本页：条目 `editionId/sourceIdentitySha256/releasePackageJsonSha256` 与 v5 页面身份一致，资源 `/weekly-guides/published/d0337446….json`（10,105 B）。
+- `guarded_hosting_publish` 部署 **`d5696f5b32f72484`**（目录哈希不变）；线上 `manifest-v1.json` 200、哈希 `4d30b0ff…`、条目与正文 SHA/字节回读通过；正文 11 节。
+- 客户端 `clientAcceptance=not_run`；韩/西第 8 周无译稿，保持「暂不可用」。
