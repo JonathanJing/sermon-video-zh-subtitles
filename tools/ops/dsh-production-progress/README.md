@@ -64,8 +64,12 @@ client module scanner 服务到 `/plugins/dsh-production-progress/client.js`。
 
 ## 界面
 
-- 一行：状态点、语言、当前阶段、`done/total`、心跳/等待、`⚠ n`。
-- 点击展开：run 标题、阶段表（最多 12 条）、第一条 attention、缺步骤、快照 age。
+- 一行：状态点、语言、当前阶段、`done/total`、心跳/等待、`预计 HH:MM`、`⚠ n`。
+- 待审听（`human_review` waiting）且存在 `sessionId` 时，行尾出现“打开对话 ↗”：
+  - `run_status.py handoff` 默认把 `DSH_SESSION_ID` 写进 waiting；也支持 `--session-id` 覆盖。
+  - 点击调用客户端的 `sessions.open(id)`（旧版回退 `uiWorkspace.openSession(id)`），切到发起审听的会话。
+  - 没有 `DSH_SESSION_ID` 或不在 DSH 内运行时不会显示按钮。
+- 点击行展开：run 标题、阶段表（最多 12 条）、第一条 attention、缺步骤、快照 age。
 - 没有 run 时 dock 不渲染；完成超过 6 小时的 run 也会隐藏。
 - 颜色：蓝=进行中，琥珀=等待/需处理，红=失败/停滞，绿=完成。
 
@@ -86,3 +90,4 @@ npm test
 - 4 秒轮询，不是 WebSocket；快照本身由生产脚本刷新。
 - 只覆盖 DSH 0.2.x 的 `conversation.input.dock`；DSH 升级后需用真实槽位复核。
 - `status.json` 不公开：dock 只在本地 GUI 读它，不要把该路由暴露到公网。
+- “打开对话”依赖 host 半透传 `sessionId`；首次安装/更新 host 后需要重启 DSH，client 半可单独 HMR。

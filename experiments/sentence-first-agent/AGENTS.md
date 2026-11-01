@@ -368,7 +368,7 @@ python3 $EXP/run_status.py notify --production <首个 run 名> --execute --watc
 
 状态写在 `<run>/status/`：`events.ndjson` 是高频进度/心跳，`status.json` 由 `journal.ndjson` + `state-*.json` + 状态事件派生。`check` 重放比对，不一致退出码 1；`mark` 用于 audit 等尚无自动打点的阶段（`--stage`、`--event`、`--evidence-level`）。它只用于观察，**不是门禁**，写入失败不影响生产；`status.json` 不公开，公开前必须脱敏。`register`/`mark` 写完事件会顺手刷新 `status.json`（fail-open），所以 DSH 插件和 `status` 命令不需要自己重建。
 
-**DSH 内嵌进度（P3）**：`tools/ops/dsh-production-progress/` 是本地 DSH 插件（host 路由 + `conversation.input.dock` 一行）。它只读 `<statusRoot>/.status-index.json` 和各 run 的 `status/status.json`；默认找本机主 checkout 的 `artifacts/sentence-first-agent`，可用 `SFA_STATUS_ROOT` 或 profile 的 `cordis.patch.yml` 按 id `production-progress` 覆盖。装进 desktop profile 后重启 DSH：输入框上方显示当前阶段、`done/total`、心跳/等待、active 阶段的 `预计 HH:MM` 和 `⚠ n`，点击展开阶段与 attention；展开的阶段行对 running/waiting 显示预计完成、对 succeeded/failed 显示实际完成/失败时间。Bark 的开工、可审、失败、停滞、缺步骤、完成消息也带 `预计完成`（等待人工按 `expectedMinutes` 上限）或“需重估/实际完成”。安装/测试命令见该目录的 `README.md`；没有 run 时 dock 不渲染。
+**DSH 内嵌进度（P3）**：`tools/ops/dsh-production-progress/` 是本地 DSH 插件（host 路由 + `conversation.input.dock` 一行）。它只读 `<statusRoot>/.status-index.json` 和各 run 的 `status/status.json`；默认找本机主 checkout 的 `artifacts/sentence-first-agent`，可用 `SFA_STATUS_ROOT` 或 profile 的 `cordis.patch.yml` 按 id `production-progress` 覆盖。装进 desktop profile 后重启 DSH：输入框上方显示当前阶段、`done/total`、心跳/等待、active 阶段的 `预计 HH:MM` 和 `⚠ n`，点击展开阶段与 attention；展开的阶段行对 running/waiting 显示预计完成、对 succeeded/failed 显示实际完成/失败时间。人工 waiting 且 `handoff` 记录了 `DSH_SESSION_ID` 时，行尾出现“打开对话 ↗”，点击切到发起该审听的 DSH 会话；`handoff` 不传 `--session-id` 时自动读 `$DSH_SESSION_ID`。Bark 的开工、可审、失败、停滞、缺步骤、完成消息也带 `预计完成`（等待人工按 `expectedMinutes` 上限）或“需重估/实际完成”。安装/测试命令见该目录的 `README.md`；没有 run 时 dock 不渲染。
 
 ### 5 口播规格（本机）
 

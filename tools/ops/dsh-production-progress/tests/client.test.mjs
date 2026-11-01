@@ -25,7 +25,7 @@ test('client bundle registers the production-progress dock entry', async () => {
     if (spec === 'react') return fakeReact
     throw new Error(`unexpected require ${spec}`)
   })
-  assert.deepEqual(exports.inject, ['slots'])
+  assert.deepEqual(exports.inject, ['slots', 'sessions'])
   assert.equal(typeof exports.apply, 'function')
   assert.equal(typeof exports.Dock, 'function')
   assert.equal(exports.stageLabel('l3.tts.john_thomas.zh-Hans'), 'L3 配音 · 中文')
@@ -36,6 +36,9 @@ test('client bundle registers the production-progress dock entry', async () => {
   assert.match(exports.etaText({ state: 'waiting', waitingSince: nowIso, expectedMinutes: '20-80' }, nowIso), /^预计 /)
   assert.match(exports.etaText({ state: 'succeeded', finishedAt: nowIso }), /^完成 /)
   assert.equal(exports.etaText({ state: 'pending' }), '')
+  assert.equal(exports.reviewSessionId({ attention: [{ kind: 'human_review', sessionId: 's1' }], stages: [] }), 's1')
+  assert.equal(exports.reviewSessionId({ attention: [], stages: [{ state: 'waiting', sessionId: 's2' }] }), 's2')
+  assert.equal(exports.reviewSessionId({ attention: [], stages: [] }), null)
 
   let injected = null
   let registered = null
@@ -49,5 +52,5 @@ test('client bundle registers the production-progress dock entry', async () => {
   assert.equal(injected, 'conversation.input.dock')
   assert.equal(registered.options.id, 'production-progress')
   assert.equal(registered.options.order, 16)
-  assert.equal(registered.component, exports.Dock)
+  assert.equal(typeof registered.component, 'function')
 })

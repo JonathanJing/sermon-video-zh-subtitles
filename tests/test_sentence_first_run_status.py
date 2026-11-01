@@ -1,10 +1,14 @@
 """Tests for the sentence-first observable run status sidecar (P0)."""
 from __future__ import annotations
 
+import contextlib
+import io
 import json
+import os
 import sys
 import tempfile
 import unittest
+from unittest import mock
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
@@ -141,6 +145,29 @@ class RunStatusTests(unittest.TestCase):
         self.assertEqual(len(stalled), 1)
         self.assertEqual(stalled[0]["severity"], "timeSensitive")
         self.assertFalse(any(stage["state"] == "failed" for stage in snapshot["stages"]))
+
+    def test_handoff_waiting_carries_the_dsh_session_id(self):
+        self.register()
+        self.mark("l3.review.zh-Hans", "waiting", waiting_on="user track review",
+                  session_id="session-test-1")
+        snapshot = self.snapshot()
+        stage = next(stage for stage in snapshot["stages"] if stage["id"] == "l3.review.zh-Hans")
+        self.assertEqual(stage["sessionId"], "session-test-1")
+        attention = next(item for item in snapshot["attention"] if item["kind"] == "human_review")
+        self.assertEqual(attention["sessionId"], "session-test-1")
+
+    def test_handoff_cli_defaults_to_dsh_session_id(self):
+        self.register()
+        with mock.patch.dict(os.environ, {"DSH_SESSION_ID": "session-env"}):
+            with contextlib.redirect_stdout(io.StringIO()):
+                code = run_status.main([
+                    "handoff", "--run", str(self.run), "--stage", "l3.review.zh-Hans",
+                    "--waiting-on", "user track review", "--expected-minutes", "20-80",
+                ])
+        self.assertEqual(code, 0)
+        snapshot = self.snapshot()
+        stage = next(stage for stage in snapshot["stages"] if stage["id"] == "l3.review.zh-Hans")
+        self.assertEqual(stage["sessionId"], "session-env")
 
     def test_running_eta_uses_the_progress_rate(self):
         self.register()

@@ -371,6 +371,7 @@ def append_status_event(run: Path, event_type: str, *, stage: str, source: str =
                         expected_minutes: str | None = None, evidence_level: str | None = None,
                         error_class: str | None = None, resume: str | None = None,
                         heartbeat_expected_seconds: int | None = None,
+                        session_id: str | None = None,
                         now: Callable[[], Any] | None = None, **extra: Any) -> dict:
     _validate_stage(stage)
     if event_type not in STATUS_TYPES:
@@ -390,6 +391,7 @@ def append_status_event(run: Path, event_type: str, *, stage: str, source: str =
         "expectedMinutes": expected_minutes, "evidenceLevel": _validate_evidence(evidence_level),
         "errorClass": error_class, "resume": resume,
         "heartbeatExpectedSeconds": heartbeat_expected_seconds,
+        "sessionId": session_id,
     }
     for key, value in optional.items():
         if value is not None:
@@ -409,6 +411,7 @@ def mark_event(run: Path, stage: str, event: str, *, attempt: int | None = None,
                error_class: str | None = None, resume: str | None = None,
                action_url: str | None = None, expected_minutes: str | None = None,
                heartbeat_expected_seconds: int | None = None,
+               session_id: str | None = None,
                now: Callable[[], Any] | None = None) -> dict:
     """Write a stage event to the journal (transitions) and the status sidecar."""
     _validate_stage(stage)
@@ -440,7 +443,7 @@ def mark_event(run: Path, stage: str, event: str, *, attempt: int | None = None,
                       else ("external" if event == "waiting" else None)),
         action_url=action_url, expected_minutes=expected_minutes,
         evidence_level=evidence_level, error_class=error_class, resume=resume,
-        heartbeat_expected_seconds=heartbeat_expected_seconds, now=now,
+        heartbeat_expected_seconds=heartbeat_expected_seconds, session_id=session_id, now=now,
     )
     _refresh_snapshot(run, now=now)
     return written
@@ -530,6 +533,7 @@ def _new_stage(stage: str, locales: set[str]) -> dict:
         "id": stage, "phase": phase_for(stage), "lane": lane_for(stage, locales),
         "state": "pending", "attempt": 0, "startedAt": None, "finishedAt": None,
         "waitingSince": None, "waitingOn": None, "waitingKind": None, "actionUrl": None,
+        "sessionId": None,
         "expectedMinutes": None, "progress": None, "heartbeatAt": None,
         "heartbeatExpectedSeconds": expected_heartbeat_seconds(stage),
         "etaSeconds": None, "etaAt": None, "etaSource": None, "evidenceLevel": None,
@@ -567,6 +571,7 @@ def _apply_event(stages: dict[str, dict], event: dict, locales: set[str]) -> Non
         stage["waitingSince"] = None
         stage["waitingOn"] = None
         stage["waitingKind"] = None
+        stage["sessionId"] = None
         stage["heartbeatAt"] = at
         stage["progress"] = None
         stage["etaSeconds"] = None
@@ -602,11 +607,13 @@ def _apply_event(stages: dict[str, dict], event: dict, locales: set[str]) -> Non
         stage["waitingKind"] = event.get("kind") or _infer_waiting_kind(event.get("waitingOn"))
         stage["actionUrl"] = event.get("actionUrl")
         stage["expectedMinutes"] = event.get("expectedMinutes")
+        stage["sessionId"] = event.get("sessionId")
     elif typ == "stage.resumed":
         stage["state"] = "running"
         stage["waitingSince"] = None
         stage["waitingOn"] = None
         stage["waitingKind"] = None
+        stage["sessionId"] = None
         stage["heartbeatAt"] = at
     elif typ == "stage.finished":
         stage["state"] = "succeeded"
@@ -982,7 +989,8 @@ def _attention_items(run: Path, stages: dict[str, dict], missing: list[str],
                 "stage": stage["id"], "since": stage.get("waitingSince"),
                 "ageSeconds": stage.get("waitingAgeSeconds"),
                 "waitingOn": stage.get("waitingOn"), "actionUrl": stage.get("actionUrl"),
-                "expectedMinutes": stage.get("expectedMinutes"), "state": "open",
+                "expectedMinutes": stage.get("expectedMinutes"),
+                "sessionId": stage.get("sessionId"), "state": "open",
             })
         if state == "failed":
             items.append({
@@ -1752,6 +1760,7 @@ def build_parser() -> argparse.ArgumentParser:
     mark.add_argument("--action-url")
     mark.add_argument("--expected-minutes")
     mark.add_argument("--heartbeat-expected-seconds", type=int)
+    mark.add_argument("--session-id", help="DSH conversation to open from the dock")
 
     wrap = commands.add_parser("wrap", help="run a command with started/heartbeat/finished status")
     wrap.add_argument("--run", type=Path, required=True)
@@ -1769,6 +1778,7 @@ def build_parser() -> argparse.ArgumentParser:
     handoff.add_argument("--url")
     handoff.add_argument("--expected-minutes")
     handoff.add_argument("--kind", choices=("human", "external"), default="human")
+    handoff.add_argument("--session-id", help="defaults to $DSH_SESSION_ID")
 
     resume = commands.add_parser("resume", help="close a waiting stage")
     resume.add_argument("--run", type=Path, required=True)
@@ -1864,6 +1874,7 @@ def main(argv: list[str] | None = None) -> int:
                 error_class=args.error_class, resume=args.resume,
                 action_url=args.action_url, expected_minutes=args.expected_minutes,
                 heartbeat_expected_seconds=args.heartbeat_expected_seconds,
+                session_id=args.session_id,
             )
             print(json.dumps(event, ensure_ascii=False))
             return 0
@@ -1878,6 +1889,7 @@ def main(argv: list[str] | None = None) -> int:
         if args.command == "handoff":
             event = mark_event(args.run, args.stage, "waiting", waiting_on=args.waiting_on,
                                kind=args.kind, action_url=args.url, expected_minutes=args.expected_minutes,
+                               session_id=args.session_id or os.environ.get("DSH_SESSION_ID"),
                                source="agent")
             print(json.dumps(event, ensure_ascii=False))
             return 0

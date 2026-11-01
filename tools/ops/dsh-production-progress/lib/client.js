@@ -245,7 +245,7 @@ window.__ModuleLoader__.load({
       )
     }
 
-    function Dock() {
+    function Dock({ openSession }) {
       const { data } = useStatus()
       const now = useNow()
       const [open, setOpen] = React.useState(false)
@@ -264,6 +264,8 @@ window.__ModuleLoader__.load({
       const attentionItems = run.attention.filter(item => item.severity !== 'info')
       const attention = attentionItems[0] || null
       const attentionCount = attentionItems.length
+      const reviewSession = reviewSessionId(run)
+      const canOpenReview = Boolean(reviewSession && typeof openSession === 'function')
       const stale = run.freshness?.state === 'stale'
       const tone = run.stalled ? TONE.bad
         : run.state === 'attention_required' ? TONE.attention
@@ -288,7 +290,7 @@ window.__ModuleLoader__.load({
         title: run.title,
         'aria-expanded': open,
         style: {
-          display: 'flex', alignItems: 'center', gap: 6, width: '100%', minWidth: 0,
+          display: 'flex', alignItems: 'center', gap: 6, flex: '1 1 auto', minWidth: 0,
           padding: '2px 0', border: 0, background: 'transparent', cursor: 'pointer',
           color: 'var(--dsh-text-secondary, #8a8a8a)', font: 'inherit', fontSize: 12,
           textAlign: 'left',
@@ -331,7 +333,24 @@ window.__ModuleLoader__.load({
           open ? '▾' : '▸'),
       )
 
-      if (!open) return h('div', { style: { width: '100%' } }, row)
+      const head = h('div', {
+        style: { display: 'flex', alignItems: 'center', gap: 6, width: '100%', minWidth: 0 },
+      },
+        row,
+        canOpenReview ? h('button', {
+          type: 'button',
+          title: '打开待审听对话',
+          onClick: () => openSession(reviewSession),
+          style: {
+            flex: '0 0 auto', border: '1px solid var(--dsh-border, rgba(127,127,127,.28))',
+            background: 'transparent', color: 'var(--dsh-accent, #4aa3df)',
+            borderRadius: 999, padding: '1px 8px', font: 'inherit', fontSize: 11,
+            cursor: 'pointer', whiteSpace: 'nowrap',
+          },
+        }, '打开对话 ↗') : null,
+      )
+
+      if (!open) return h('div', { style: { width: '100%' } }, head)
 
       const panel = h('div', {
         style: {
@@ -377,10 +396,35 @@ window.__ModuleLoader__.load({
           stale ? h('span', { style: { color: TONE.attention } }, '· 可能过期') : null,
         ),
       )
-      return h('div', { style: { width: '100%' } }, row, panel)
+      return h('div', { style: { width: '100%' } }, head, panel)
     }
 
-    const inject = ['slots']
+    const inject = ['slots', 'sessions']
+
+    function reviewSessionId(run) {
+      const human = (run.attention || []).find(item => item.kind === 'human_review' && item.sessionId)
+      if (human) return human.sessionId
+      const waiting = (run.stages || []).find(stage => stage.state === 'waiting' && stage.sessionId)
+      return waiting ? waiting.sessionId : null
+    }
+
+    function openSession(ctx, sessionId) {
+      if (!sessionId) return false
+      try {
+        if (ctx.sessions && typeof ctx.sessions.open === 'function') {
+          ctx.sessions.open(sessionId)
+          return true
+        }
+        const workspace = typeof ctx.get === 'function' ? ctx.get('uiWorkspace') : null
+        if (workspace && typeof workspace.openSession === 'function') {
+          workspace.openSession(sessionId)
+          return true
+        }
+      } catch (error) {
+        // Navigation is best-effort; never break the dock.
+      }
+      return false
+    }
 
     function apply(ctx) {
       ctx.slots.inject('conversation.input.dock', () => ctx.slots.register({
@@ -388,9 +432,9 @@ window.__ModuleLoader__.load({
         id: 'production-progress',
         order: 16,
         registrant: 'dsh-production-progress',
-      }, Dock))
+      }, props => h(Dock, { ...props, openSession: id => openSession(ctx, id) })))
     }
 
-    return { apply, inject, Dock, stageLabel, etaText, formatClock }
+    return { apply, inject, Dock, stageLabel, etaText, formatClock, reviewSessionId }
   },
 })

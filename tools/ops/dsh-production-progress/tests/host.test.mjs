@@ -33,13 +33,14 @@ async function fixture() {
     decisions: { form: 'full', sync: true, publish: true, locales: ['zh-Hans'], title: 'Proverbs 3' },
     stages: [
       { id: 'l2.translate.zh-Hans', state: 'succeeded', progress: { unit: 'rows', done: 100, total: 100 } },
-      { id: 'l3.tts.zh-Hans', state: 'running', heartbeatAt: '2026-11-01T12:00:00+00:00', progress: { unit: 'sentences', done: 12, total: 42 }, etaAt: '2026-11-01T12:10:00+00:00', etaSource: 'observed' },
+      { id: 'l3.tts.zh-Hans', state: 'running', heartbeatAt: '2026-11-01T12:00:00+00:00', progress: { unit: 'sentences', done: 12, total: 42 }, etaAt: '2026-11-01T12:10:00+00:00', etaSource: 'observed', sessionId: 'session-test-1' },
       { id: 'l3.finish', state: 'failed', errorClass: 'infra', errorMessage: 'ssh timeout' },
       { id: 'l4.publish', state: 'pending' },
     ],
     attention: [{
       kind: 'failed', severity: 'timeSensitive', stage: 'l3.finish', since: '2026-11-01T12:00:01+00:00',
       ageSeconds: 1, message: 'ssh timeout', actionUrl: 'http://127.0.0.1:8765/review-player.html',
+      sessionId: 'session-test-1',
     }],
     required: { missing: ['l3.lag-loop.zh-Hans'] },
   }))
@@ -60,8 +61,10 @@ test('buildPayload merges the index and compacts the snapshot', async () => {
   assert.equal(entry.stages.find(stage => stage.id === 'l3.tts.zh-Hans').progress.done, 12)
   assert.equal(entry.stages.find(stage => stage.id === 'l3.tts.zh-Hans').etaAt, '2026-11-01T12:10:00+00:00')
   assert.equal(entry.stages.find(stage => stage.id === 'l3.tts.zh-Hans').etaSource, 'observed')
+  assert.equal(entry.stages.find(stage => stage.id === 'l3.tts.zh-Hans').sessionId, 'session-test-1')
   assert.equal(entry.attention[0].severity, 'timeSensitive')
   assert.equal(entry.attention[0].actionUrl, undefined)
+  assert.equal(entry.attention[0].sessionId, 'session-test-1')
   assert.deepEqual(entry.required.missing, ['l3.lag-loop.zh-Hans'])
   assert.equal(payload.activeRun, 'run-zh')
   assert.equal(entry.decisions.publish, true)

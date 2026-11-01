@@ -77,6 +77,7 @@ function compactStage(stage) {
     waitingSince: iso(stage.waitingSince),
     waitingOn: trimText(stage.waitingOn, 120),
     expectedMinutes: stage.expectedMinutes ?? null,
+    sessionId: stage.sessionId ?? null,
     progress: stage.progress && typeof stage.progress === 'object'
       ? {
           unit: stage.progress.unit ?? 'units',
@@ -104,6 +105,7 @@ function compactAttention(item) {
     kind: item.kind ?? 'unknown',
     severity: item.severity ?? 'info',
     stage: item.stage ?? null,
+    sessionId: item.sessionId ?? null,
     since: iso(item.since),
     ageSeconds: item.ageSeconds ?? null,
     message: trimText(item.message),
