@@ -25,11 +25,14 @@ DSH 的逐句优先生产进度 dock。它把 `run_status.py` 写的快照显示
 
 ## 安装（desktop profile，本地包）
 
-桌面 profile 由 App 管理，CLI 不一定接受 `--profile desktop`。当前机器可直接：
+桌面 profile 由 App 管理，CLI 不一定接受 `--profile desktop`。把源码复制到稳定的
+用户目录（不要直接 link 到临时 worktree），再让 profile link 它：
 
 ```bash
+mkdir -p ~/.dsh/plugins
+cp -R tools/ops/dsh-production-progress ~/.dsh/plugins/dsh-production-progress
 cd ~/.dsh/profiles/desktop
-pnpm add link:/Users/jonathan_jing/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.agents/worktrees/feat/sfa-run-status-p0/tools/ops/dsh-production-progress
+pnpm add --ignore-scripts link:$HOME/.dsh/plugins/dsh-production-progress
 ```
 
 然后把包名加进 `~/.dsh/profiles/desktop/package.json` 的
@@ -42,9 +45,10 @@ pnpm add link:/Users/jonathan_jing/SynologyDrive/GitHub/Active/sermon-video-zh-s
 重启 DSH 后生效。`cordis.patch.yml` 会挂载 host 半；`dsh.client` 会由
 client module scanner 服务到 `/plugins/dsh-production-progress/client.js`。
 
-> 这是本地开发包（`private: true`，`link:` 安装）。移动 checkout 后需要重新
-> `pnpm add link:<新路径>`；卸载用 `pnpm remove dsh-production-progress` 并从
-> `bundles` 删除。
+> 这是本地开发包（`private: true`，`link:` 安装）。更新时重新复制到
+> `~/.dsh/plugins/dsh-production-progress` 并重启；卸载用
+> `pnpm remove dsh-production-progress` 并从 `bundles` 删除。安装前备份
+> `package.json` 与 `pnpm-lock.yaml`。
 
 ## 配置
 
