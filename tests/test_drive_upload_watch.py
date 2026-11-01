@@ -163,8 +163,8 @@ def test_new_file_is_pushed_once_whatever_its_name_and_old_file_stays_silent(tmp
     found = [p for _, p in bark.calls if p["title"] == "证道视频已上传" and p["device_key"] == "IPHONEKEY"][0]
     assert found["body"] == "Saturday_400pm_Live__1080.mp4 · 0.90 GB · 19:37 PT · 名称不含 20261101"
     assert (found["level"], found["group"], found["url"]) == (
-        "timeSensitive", "sermon-upload", "https://drive.google.com/file/d/new/view")
-    assert found["call"] == "1"  # found notices ring for 30 s
+        "critical", "sermon-upload", "https://drive.google.com/file/d/new/view")
+    assert found["volume"] == "0" and "call" not in found  # shows in focus/dnd, never rings
     start = [p for _, p in bark.calls if p["title"] == "开始监控证道视频上传"][0]
     assert start["level"] == "passive" and "Bark: iphone, mac" in start["body"]
     assert local_calls == []  # the Mac's Bark push arrived
@@ -351,12 +351,14 @@ def test_email_channel_is_skipped_when_unconfigured(monkeypatch):
 
 def test_test_push_requires_every_configured_channel(monkeypatch, capsys):
     results = {"bark-iphone": True, "bark-mac": True, "email": True}
+    seen = []
 
     class Stub:
         def __init__(self, keys, **kwargs):
             self.keys = keys
 
         def send(self, message):
+            seen.append(message)
             return dict(results)
 
     monkeypatch.setattr(watch, "keychain_keys", lambda accounts=watch.BARK_ACCOUNTS: dict(KEYS))
@@ -366,6 +368,9 @@ def test_test_push_requires_every_configured_channel(monkeypatch, capsys):
     results["email"] = False
     assert watch.main(["test-push"]) == 1
     assert capsys.readouterr().out.count('"email"') == 2
+    results["email"] = True
+    assert watch.main(["test-push", "--critical"]) == 0
+    assert (seen[-1].level, seen[-1].volume) == ("critical", "0")
 
 
 def test_launch_agent_starts_saturday_1800_awake_with_system_python(tmp_path):
