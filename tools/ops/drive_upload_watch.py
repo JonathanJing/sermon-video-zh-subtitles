@@ -211,7 +211,7 @@ class Message:
     level: str = "active"  # Bark: passive | active | timeSensitive | critical (critical needs the phone's permission)
     url: Optional[str] = None
     sound: Optional[str] = None
-    repeat_sound: bool = False
+    volume: Optional[str] = None  # Bark: 0-10, critical-alert ringtone volume only
 
 
 def keychain_keys(accounts=BARK_ACCOUNTS) -> dict:
@@ -306,8 +306,8 @@ class Notifier:
             payload["url"] = message.url
         if message.sound:
             payload["sound"] = message.sound
-        if message.repeat_sound:
-            payload["call"] = "1"
+        if message.volume is not None:
+            payload["volume"] = message.volume
         for attempt in range(1, self.attempts + 1):
             try:
                 reply = self.post(self.bark_url, payload)
@@ -451,7 +451,7 @@ class Watcher:
         body = f"{item.name} · {size_text(item.size)} · {stamp} · {label}"
         if item.earliest and item.earliest < window.start:
             body += " · 窗口前已上传"
-        return Message("证道视频已上传", body, level="timeSensitive", url=item.url, sound="bell", repeat_sound=True)
+        return Message("证道视频已上传", body, level="critical", url=item.url, sound="bell", volume="0")
 
     def summarise(self, window: Window, slot: dict) -> None:
         if slot["summarySent"]:
@@ -565,8 +565,11 @@ def cmd_test_push(args) -> int:
     if not email_ready:
         print(f"email channel not configured (service {KEYCHAIN_SERVICE}, accounts gmail-user and gmail-app)",
               file=sys.stderr)
-    results = Notifier(keys).send(Message("证道视频监控测试", f"测试推送 · {dt.datetime.now(TZ):%m-%d %H:%M} PT",
-                                          level="active", url=FOLDER_URL))
+    critical = getattr(args, "critical", False)
+    test_message = Message("证道视频监控测试", f"测试推送 · {dt.datetime.now(TZ):%m-%d %H:%M} PT",
+                           level="critical" if critical else "active", url=FOLDER_URL,
+                           volume="0" if critical else None)
+    results = Notifier(keys).send(test_message)
     print(json.dumps(results, indent=2))
     ok = bool(keys) and all(results.get(a) for a in keys)
     if email_ready:
@@ -604,7 +607,9 @@ def build_parser() -> argparse.ArgumentParser:
     run.add_argument("--now", help="pretend the run starts at this Pacific time (ISO), e.g. 2026-10-31T19:30")
     run.add_argument("--no-push", action="store_true", help="print notices instead of sending them")
     commands.add_parser("check", help="read the folder once and print JSON (no state, no notice)")
-    commands.add_parser("test-push", help="send one test notice to every Bark key and the email channel")
+    test_push = commands.add_parser("test-push", help="send one test notice to every Bark key and the email channel")
+    test_push.add_argument("--critical", action="store_true",
+                           help="send the found-upload shape: critical level with volume=0 (silent)")
     install = commands.add_parser("install", help="copy this file and load the Saturday LaunchAgent")
     install.add_argument("--print", action="store_true", help="print the plist only")
     commands.add_parser("uninstall", help="unload and remove the LaunchAgent (state is kept)")
