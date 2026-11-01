@@ -54,6 +54,9 @@ final class AppModel: ObservableObject {
         didSet { playback.statisticsContentLocale = selectedContentLocale }
     }
     @Published private(set) var isSelectingLanguage = false
+    /// Changes after the app-scoped foreground announcement refresh finishes,
+    /// so the view can re-evaluate the automatic poster with fresh state.
+    @Published private(set) var weeklyUpdateCheckRevision = UUID()
     @Published private(set) var languageSelectionError: String?
     @Published private(set) var selectedAudioLocale: String?
     @Published private(set) var publishedAudioSha256: String?
@@ -643,6 +646,10 @@ final class AppModel: ObservableObject {
         guard started, !isLoading, let multilingualRepository,
               let result = try? await multilingualRepository.loadCatalog() else { return }
         await weeklyUpdates.load(catalog: result.catalog, locale: selectedContentLocale)
+        // A resume can happen before the announcement sidecar was ever fetched
+        // (for example the first open after publication). Bump so the view
+        // re-evaluates the automatic poster instead of requiring a second resume.
+        weeklyUpdateCheckRevision = UUID()
     }
 
     func refresh() async {

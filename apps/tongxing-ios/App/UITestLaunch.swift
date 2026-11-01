@@ -415,6 +415,15 @@ private enum UITestContent {
                 title: "本周海报 · 合成交互测试", publishedAt: "2026-10-04T00:00:00Z", poster: poster)
         }
         result["/weekly-announcements-v1.json"] = try! JSONEncoder().encode(WeeklyAnnouncementCatalog(announcements: items))
+        if ProcessInfo.processInfo.arguments.contains("--ui-testing-weekly-update-pending") {
+            // Same release binding, but a service date whose 08:00 local
+            // presentation has not arrived: the card must stay manual.
+            var pending = try! JSONSerialization.jsonObject(with: result["/multilingual-v3.json"]!) as! [String: Any]
+            var pages = pending["pages"] as! [[String: Any]]
+            pages[0]["date"] = "2099-01-01"
+            pending["pages"] = pages
+            result["/multilingual-v3.json"] = try! JSONSerialization.data(withJSONObject: pending, options: [.sortedKeys])
+        }
         if !ProcessInfo.processInfo.arguments.contains("--ui-testing-poster-missing") {
             result["/posters/ui-test.png"] = image
         }

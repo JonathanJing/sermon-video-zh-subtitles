@@ -66,6 +66,9 @@ struct ContentView: View {
     /// positioned against the bar, so the host presents it here instead.
     @ViewState private var playbackMoreButtonFrame: CGRect = .null
     @ViewState private var showingAlignmentFailure = false
+    /// One-shot per scene: the automatic poster is a launch/foreground offer,
+    /// not a side effect of switching the reading language.
+    @ViewState private var attemptedWeeklyPosterAutoPresentation = false
 
     init(model: AppModel) {
         self.model = model
@@ -94,6 +97,16 @@ struct ContentView: View {
         .task(id: model.weeklyUpdateIdentity) {
             if let catalog = model.multilingualCatalog {
                 await weeklyUpdates.load(catalog: catalog, locale: model.selectedContentLocale)
+                // Only a launch or a foreground return may open the poster by
+                // itself; switching content language must not, even when that
+                // translation's release is still unseen.
+                guard !attemptedWeeklyPosterAutoPresentation else { return }
+                // A load racing a locale change can hold the previous language's
+                // announcement; leave the one-shot for the matching reload.
+                if let announcement = weeklyUpdates.announcement,
+                   announcement.locale != model.selectedContentLocale { return }
+                attemptedWeeklyPosterAutoPresentation = true
+                presentWeeklyPosterIfDue()
             }
         }
         .task(id: model.publishedTranscriptSelectionKey) {
@@ -142,10 +155,20 @@ struct ContentView: View {
             Button(localization.text("关闭"), role: .cancel) { model.dismissAlignmentFailure() }
         } message: { failure in Text(localization.text(failure.message)) }
         .onChange(of: model.selectedPageID) { _, _ in locateConfirmation = nil }
+        .onChange(of: model.weeklyUpdateCheckRevision) { _, _ in
+            // The app-scoped foreground refresh may deliver the announcement
+            // after the resume-time check saw only the previous state.
+            presentWeeklyPosterIfDue()
+        }
         .onChange(of: localization.language) { _, _ in model.refreshSystemPresentation() }
         .onChange(of: scenePhase) { _, phase in
             if phase != .active { playback.saveProgress() }
-            else { localization.refreshSystemLanguage() }
+            else {
+                localization.refreshSystemLanguage()
+                // The 08:00 threshold may have passed while the app was in the
+                // background; a return to the app is the second allowed moment.
+                presentWeeklyPosterIfDue()
+            }
             updateAlignmentFailurePresentation()
         }
     }
@@ -166,6 +189,22 @@ struct ContentView: View {
         }
     }
     #endif
+
+    /// Opens this week's verified poster by itself from 08:00 on the service
+    /// date. It yields to another sheet, a dismissal, an alignment alert and a
+    /// language reload still holding another locale; a failed poster never
+    /// produces an automatic empty sheet.
+    private func presentWeeklyPosterIfDue() {
+        #if os(iOS)
+        // No scenePhase gate: the launch task can run while the scene is still
+        // inactive, and a sheet set then is shown when the app becomes active.
+        guard sheet == nil, !showingAlignmentFailure,
+              weeklyUpdates.announcement?.locale == model.selectedContentLocale else { return }
+        guard weeklyUpdates.autoPresentationDue() else { return }
+        showingNotificationPoster = false
+        sheet = .weeklyUpdate
+        #endif
+    }
 
     private func updateAlignmentFailurePresentation() {
         showingAlignmentFailure = model.alignmentFailure != nil && sheet == nil && scenePhase == .active
