@@ -629,4 +629,51 @@ final class WeeklyGuidePreviewUITests: XCTestCase {
         add(screenshot)
     }
 
+
+    // Production check for the 2026-11-01 page: the remote v1 manifest, its
+    // release binding and the guide bytes are all served by the production
+    // origin (the Debug scheme sets TONGXING_CONTENT_ORIGIN to production).
+    func testProductionWeekEightGuideLoads() {
+        let app = XCUIApplication()
+        app.launchArguments = ["-AppleLanguages", "(zh-Hans)", "-AppleLocale", "zh_CN"]
+        app.launchEnvironment["TONGXING_TEST_HOST"] = "0"
+        app.launch()
+        defer { app.terminate() }
+        let choose = app.buttons["choose-sermon"]
+        XCTAssertTrue(choose.waitForExistence(timeout: 45))
+        choose.tap()
+        let week = app.buttons["published-page-revelation-jesus-marks-his-own-20261101"]
+        let chooser = app.scrollViews.firstMatch
+        for _ in 0..<45 {
+            if week.exists && week.isHittable { break }
+            chooser.swipeUp()
+        }
+        XCTAssertTrue(week.exists && week.isHittable, "week 8 page missing from the production chooser")
+        week.tap()
+        let language = app.buttons["choose-content-language"]
+        XCTAssertTrue(language.waitForExistence(timeout: 20))
+        language.tap()
+        let chinese = app.buttons["content-language-zh-Hans"]
+        XCTAssertTrue(chinese.waitForExistence(timeout: 10))
+        chinese.tap()
+        let entry = app.buttons["open-guide-beta-preview"]
+        XCTAssertTrue(entry.waitForExistence(timeout: 15))
+        entry.tap()
+        let section = app.buttons["guide-section-page-109"]
+        let scroll = app.scrollViews["guide-scroll"]
+        XCTAssertTrue(section.waitForExistence(timeout: 30), "guide sheet did not load the production manifest")
+        XCTAssertFalse(app.staticTexts["本周研读手册尚不可用"].exists)
+        XCTAssertTrue(app.staticTexts["手册第 107 页"].waitForExistence(timeout: 10))
+        let shot = XCTAttachment(screenshot: app.screenshot())
+        shot.name = "production-week-eight-guide"
+        shot.lifetime = .keepAlways
+        add(shot)
+        section.tap()
+        XCTAssertTrue(app.staticTexts["第 8 周　启示录 14 章"].waitForExistence(timeout: 10) ||
+                      app.staticTexts["耶稣为属祂的人盖印"].waitForExistence(timeout: 10))
+        let detail = XCTAttachment(screenshot: app.screenshot())
+        detail.name = "production-week-eight-guide-detail"
+        detail.lifetime = .keepAlways
+        add(detail)
+    }
 }
