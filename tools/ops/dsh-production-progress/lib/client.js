@@ -161,7 +161,15 @@ window.__ModuleLoader__.load({
       const tone = stageTone(stage)
       const progress = progressText(stage)
       const percent = progressPercent(stage)
-      const detail = [progress, heartbeatText(stage, Date.now())].filter(Boolean).join(' · ')
+      const now = Date.now()
+      const waiting = stage.state === 'waiting'
+        ? `等 ${formatAge(ageSeconds(stage.waitingSince, now))}`
+        : ''
+      const stall = stage.stalled ? `停滞 ${formatAge(stage.stalledSeconds ?? 0)}` : ''
+      const retry = stage.attempt > 1 ? `↻${stage.attempt}` : ''
+      const evidence = stage.evidenceLevel || ''
+      const detail = [progress, heartbeatText(stage, now), waiting, stall, evidence, retry]
+        .filter(Boolean).join(' · ')
       return h('div', {
         style: {
           display: 'flex', alignItems: 'center', gap: 6, minWidth: 0, padding: '2px 0',
@@ -202,8 +210,11 @@ window.__ModuleLoader__.load({
         || run.stages.find(stage => stage.state === 'waiting')
         || run.stages.find(stage => stage.state === 'running')
         || null
-      const attention = run.attention[0] || null
-      const attentionCount = run.attention.length
+      // External waits are severity=info; the stage table still shows them,
+      // but they must not turn into a warning badge in the dock.
+      const attentionItems = run.attention.filter(item => item.severity !== 'info')
+      const attention = attentionItems[0] || null
+      const attentionCount = attentionItems.length
       const stale = run.freshness?.state === 'stale'
       const tone = run.stalled ? TONE.bad
         : run.state === 'attention_required' ? TONE.attention
