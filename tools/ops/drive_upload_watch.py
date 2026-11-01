@@ -208,9 +208,10 @@ def append_observation(path: Path, record: dict) -> None:
 class Message:
     title: str
     body: str
-    level: str = "active"  # Bark: passive | active | timeSensitive
+    level: str = "active"  # Bark: passive | active | timeSensitive | critical (critical needs the phone's permission)
     url: Optional[str] = None
     sound: Optional[str] = None
+    repeat_sound: bool = False
 
 
 def keychain_keys(accounts=BARK_ACCOUNTS) -> dict:
@@ -305,6 +306,8 @@ class Notifier:
             payload["url"] = message.url
         if message.sound:
             payload["sound"] = message.sound
+        if message.repeat_sound:
+            payload["call"] = "1"
         for attempt in range(1, self.attempts + 1):
             try:
                 reply = self.post(self.bark_url, payload)
@@ -406,7 +409,8 @@ class Watcher:
             self.failures += 1
             log(f"read failed ({self.failures} in a row): {exc}")
             if self.failures >= ERROR_THRESHOLD and not slot["errorSent"]:
-                results = self.notifier.send(Message("证道视频检查失败", f"连续 {self.failures} 次读不到文件夹：{exc}"))
+                results = self.notifier.send(Message("证道视频检查失败", f"连续 {self.failures} 次读不到文件夹：{exc}",
+                                                     level="timeSensitive"))
                 slot["errorSent"] = delivered(results)
                 self.save()
             return []
@@ -447,7 +451,7 @@ class Watcher:
         body = f"{item.name} · {size_text(item.size)} · {stamp} · {label}"
         if item.earliest and item.earliest < window.start:
             body += " · 窗口前已上传"
-        return Message("证道视频已上传", body, level="timeSensitive", url=item.url, sound="bell")
+        return Message("证道视频已上传", body, level="timeSensitive", url=item.url, sound="bell", repeat_sound=True)
 
     def summarise(self, window: Window, slot: dict) -> None:
         if slot["summarySent"]:
