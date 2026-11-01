@@ -1,0 +1,20 @@
+{
+  "schemaVersion": "sentence-first-outcome-v1",
+  "at": "2026-11-01T03:55:33+00:00",
+  "status": "track_ready_for_review",
+  "delivery": "four_layer_release",
+  "locale": "es",
+  "trackSeconds": 2020.75,
+  "ttsWallSeconds": 363.0,
+  "realtime": 5.57,
+  "asrMean": null,
+  "startedAt": "2026-11-01T03:54:50+00:00",
+  "endedAt": "2026-11-01T03:55:33+00:00",
+  "published": false,
+  "reviewMp3": "artifacts/sentence-first-agent/20261101-jesus-marks-es/review.mp3",
+  "reviewPlayer": {
+    "html": "artifacts/sentence-first-agent/20261101-jesus-marks-es/review-player.html",
+    "rows": 477
+  },
+  "note": "track merged and scored; audio alignment and review materials done in the same pass"
+}

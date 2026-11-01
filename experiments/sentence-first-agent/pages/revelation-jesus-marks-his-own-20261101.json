@@ -1,0 +1,95 @@
+{
+  "schemaVersion": "sentence-first-page-config-v1",
+  "pageId": "revelation-jesus-marks-his-own-20261101",
+  "environment": "production",
+  "locales": [
+    "zh-Hans",
+    "ko",
+    "es"
+  ],
+  "defaultTargetLocale": "zh-Hans",
+  "runsRoot": "artifacts/sentence-first-agent",
+  "runs": {
+    "zh-Hans": "20261101-jesus-marks-zh",
+    "ko": "20261101-jesus-marks-ko",
+    "es": "20261101-jesus-marks-es"
+  },
+  "source": {
+    "url": "https://www.marinerschurch.org/weekendlive/",
+    "date": "2026-11-01",
+    "window": {
+      "start": 0.0,
+      "end": 2019.370667
+    },
+    "englishSource": "artifacts/sentence-first-agent/20261101-sermon-source/layer1-srt/english-source.json"
+  },
+  "sentences": 477,
+  "speakers": "Eric Geiger",
+  "category": {
+    "schemaVersion": "sermon-page-display-category-v1",
+    "labels": {
+      "zh-Hans": "周日证道",
+      "en": "Sunday sermon",
+      "ko": "주일 설교",
+      "es": "Sermón del domingo"
+    }
+  },
+  "title": "启示录：耶稣带来的安慰与盼望 · 耶稣为属祂的人盖印",
+  "meta": {
+    "zh-Hans": {
+      "title": "启示录：耶稣带来的安慰与盼望 · 耶稣为属祂的人盖印",
+      "series": "启示录：耶稣带来的安慰与盼望",
+      "scripture": "启示录 14 章",
+      "badge": "周日证道 · AI 合成配音 · 已人工审核",
+      "source": "英文来源 / English source",
+      "note": "AI 合成配音，与原视频同步。本项目与 Mariners Church 无隶属关系。"
+    },
+    "ko": {
+      "title": "요한계시록: 예수님이 주시는 위로와 소망 · 예수님은 자기 백성에게 인을 치십니다",
+      "series": "요한계시록: 예수님이 주시는 위로와 소망",
+      "scripture": "요한계시록 14장",
+      "badge": "주일 설교 · AI 합성 음성 · 검토 완료",
+      "source": "영어 원본 / English source",
+      "note": "AI 합성 음성 더빙으로 원본 영상과 동기화됩니다. 이 프로젝트는 Mariners Church와 관련이 없습니다."
+    },
+    "es": {
+      "title": "Apocalipsis: El consuelo y la esperanza que Jesús trae · Jesús sella a los suyos",
+      "series": "Apocalipsis: El consuelo y la esperanza que Jesús trae",
+      "scripture": "Apocalipsis 14",
+      "badge": "Sermón del domingo · Voz sintetizada por IA · Revisado",
+      "source": "Fuente en inglés / English source",
+      "note": "Doblaje con voz sintetizada por IA, sincronizado con el video original. Este proyecto no está afiliado con Mariners Church."
+    }
+  },
+  "verdict": "artifacts/sentence-first-agent/20261101-sermon-source/review/human-review-verdict.json",
+  "candidate": {
+    "schemaVersion": "sentence-first-episode-candidate-v1",
+    "translationBasis": {
+      "default": "{locale}: Claude CLI Opus translation with an independent Opus second-pass audit"
+    }
+  },
+  "audioPackage": {
+    "schemaVersion": "sentence-first-episode-audio-package-v1",
+    "voices": "from-speakers",
+    "synchronization": "unit audio placed on the English source start times (gap 0.05 s); sync gate max lag <= 8 s"
+  },
+  "releasePackageId": "{pageId}-{locale}-{environment}-v1",
+  "verify": {
+    "schemaVersion": "sentence-first-episode-http-verification-v1"
+  },
+  "englishReference": {
+    "mode": "full"
+  },
+  "summary": {
+    "includeEnvironment": true
+  },
+  "baseline": {
+    "allowDefaultLocaleDrift": true
+  },
+  "mediaType": "podcast",
+  "titleCheck": {
+    "englishTitle": "Jesus marks His own",
+    "mode": "table",
+    "seriesKey": "revelation-comfort-and-hope"
+  }
+}
