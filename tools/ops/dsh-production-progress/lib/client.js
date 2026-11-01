@@ -44,6 +44,55 @@ window.__ModuleLoader__.load({
       return `${Math.floor(seconds / 86400)}d`
     }
 
+    function formatClock(value) {
+      const parsed = parseTime(value)
+      if (parsed === null) return ''
+      const stamp = new Date(parsed)
+      const now = new Date()
+      const time = stamp.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit', hour12: false })
+      return stamp.toDateString() === now.toDateString()
+        ? time
+        : `${stamp.getMonth() + 1}/${stamp.getDate()} ${time}`
+    }
+
+    function expectedMaxMinutes(value) {
+      const numbers = String(value || '').match(/\d+/g)
+      return numbers ? Math.max(...numbers.map(Number)) : null
+    }
+
+    function stageEtaAt(stage, snapshotAt) {
+      if (!stage) return null
+      if (stage.etaAt) return stage.etaAt
+      const base = parseTime(snapshotAt)
+      if (base === null) return null
+      if (stage.state === 'running' && stage.etaSeconds !== null && stage.etaSeconds !== undefined) {
+        return new Date(base + Number(stage.etaSeconds) * 1000).toISOString()
+      }
+      if (stage.state === 'waiting') {
+        const since = parseTime(stage.waitingSince) ?? base
+        const minutes = expectedMaxMinutes(stage.expectedMinutes)
+        return minutes === null ? null : new Date(since + minutes * 60000).toISOString()
+      }
+      return null
+    }
+
+    function etaText(stage, snapshotAt) {
+      if (!stage) return ''
+      if (stage.state === 'running' || stage.state === 'waiting') {
+        const clock = formatClock(stageEtaAt(stage, snapshotAt))
+        return clock ? `预计 ${clock}` : '预计 —'
+      }
+      if (stage.state === 'succeeded' || stage.state === 'skipped') {
+        const clock = formatClock(stage.finishedAt)
+        return clock ? `完成 ${clock}` : ''
+      }
+      if (stage.state === 'failed') {
+        const clock = formatClock(stage.finishedAt)
+        return clock ? `失败 ${clock}` : ''
+      }
+      return ''
+    }
+
     function localeOf(id) {
       const match = /(zh-Hans|ko|es)$/.exec(id || '')
       return match ? match[1] : ''
@@ -157,7 +206,7 @@ window.__ModuleLoader__.load({
       return now
     }
 
-    function StageLine({ stage }) {
+    function StageLine({ stage, snapshotAt }) {
       const tone = stageTone(stage)
       const progress = progressText(stage)
       const percent = progressPercent(stage)
@@ -168,7 +217,7 @@ window.__ModuleLoader__.load({
       const stall = stage.stalled ? `停滞 ${formatAge(stage.stalledSeconds ?? 0)}` : ''
       const retry = stage.attempt > 1 ? `↻${stage.attempt}` : ''
       const evidence = stage.evidenceLevel || ''
-      const detail = [progress, heartbeatText(stage, now), waiting, stall, evidence, retry]
+      const detail = [etaText(stage, snapshotAt), progress, heartbeatText(stage, now), waiting, stall, evidence, retry]
         .filter(Boolean).join(' · ')
       return h('div', {
         style: {
@@ -229,6 +278,9 @@ window.__ModuleLoader__.load({
         ? `停滞 ${formatAge(active.stalledSeconds ?? 0)}`
         : ''
       const heartbeat = active ? heartbeatText(active, now) : ''
+      const activeEta = active && (active.state === 'running' || active.state === 'waiting')
+        ? etaText(active, run.generatedAt)
+        : ''
 
       const row = h('button', {
         type: 'button',
@@ -266,6 +318,9 @@ window.__ModuleLoader__.load({
         heartbeat && !waiting && !stalled ? h('span', {
           style: { fontVariantNumeric: 'tabular-nums', opacity: 0.6, flex: '0 0 auto' },
         }, heartbeat) : null,
+        activeEta ? h('span', {
+          style: { opacity: 0.75, flex: '0 0 auto' },
+        }, activeEta) : null,
         attentionCount > 0 ? h('span', {
           style: { color: attentionTone(attention?.severity), flex: '0 0 auto' },
         }, `⚠ ${attentionCount}`) : null,
@@ -311,7 +366,7 @@ window.__ModuleLoader__.load({
             },
           }, attention.message || attention.waitingOn || stageLabel(attention.stage)),
         ) : null,
-        run.stages.slice(0, 12).map(stage => h(StageLine, { key: stage.id, stage })),
+        run.stages.slice(0, 12).map(stage => h(StageLine, { key: stage.id, stage, snapshotAt: run.generatedAt })),
         run.stages.length > 12 ? h('div', { style: { opacity: 0.55, padding: '2px 0' } },
           `+${run.stages.length - 12} 个阶段`) : null,
         run.required?.missing?.length ? h('div', {
@@ -336,6 +391,6 @@ window.__ModuleLoader__.load({
       }, Dock))
     }
 
-    return { apply, inject, Dock, stageLabel }
+    return { apply, inject, Dock, stageLabel, etaText, formatClock }
   },
 })

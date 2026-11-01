@@ -89,6 +89,8 @@ function compactStage(stage) {
     stalled: Boolean(stage.stalled),
     stalledSeconds: stage.stalledSeconds ?? null,
     etaSeconds: stage.etaSeconds ?? null,
+    etaAt: iso(stage.etaAt),
+    etaSource: stage.etaSource ?? null,
     evidenceLevel: stage.evidenceLevel ?? null,
     errorClass: stage.errorClass ?? null,
     errorMessage: trimText(stage.errorMessage),

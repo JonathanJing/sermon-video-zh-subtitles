@@ -30,6 +30,12 @@ test('client bundle registers the production-progress dock entry', async () => {
   assert.equal(typeof exports.Dock, 'function')
   assert.equal(exports.stageLabel('l3.tts.john_thomas.zh-Hans'), 'L3 配音 · 中文')
   assert.equal(exports.stageLabel('l3.tts.john_thomas.zh-Hans', false), 'L3 配音')
+  const nowIso = new Date().toISOString()
+  assert.match(exports.etaText({ state: 'running', etaAt: nowIso }), /^预计 /)
+  assert.match(exports.etaText({ state: 'running', etaSeconds: 60 }, nowIso), /^预计 /)
+  assert.match(exports.etaText({ state: 'waiting', waitingSince: nowIso, expectedMinutes: '20-80' }, nowIso), /^预计 /)
+  assert.match(exports.etaText({ state: 'succeeded', finishedAt: nowIso }), /^完成 /)
+  assert.equal(exports.etaText({ state: 'pending' }), '')
 
   let injected = null
   let registered = null

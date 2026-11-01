@@ -532,7 +532,7 @@ def _new_stage(stage: str, locales: set[str]) -> dict:
         "waitingSince": None, "waitingOn": None, "waitingKind": None, "actionUrl": None,
         "expectedMinutes": None, "progress": None, "heartbeatAt": None,
         "heartbeatExpectedSeconds": expected_heartbeat_seconds(stage),
-        "etaSeconds": None, "etaSource": None, "evidenceLevel": None,
+        "etaSeconds": None, "etaAt": None, "etaSource": None, "evidenceLevel": None,
         "errorClass": None, "errorMessage": None, "resume": None,
         "source": "derived", "stalled": False, "stalledSeconds": None,
         "waitingAgeSeconds": None, "_progress_history": [],
@@ -570,6 +570,7 @@ def _apply_event(stages: dict[str, dict], event: dict, locales: set[str]) -> Non
         stage["heartbeatAt"] = at
         stage["progress"] = None
         stage["etaSeconds"] = None
+        stage["etaAt"] = None
         stage["etaSource"] = None
         stage["errorClass"] = None
         stage["errorMessage"] = None
@@ -628,6 +629,56 @@ def _apply_event(stages: dict[str, dict], event: dict, locales: set[str]) -> Non
     elif typ == "stage.skipped":
         stage["state"] = "skipped"
         stage["finishedAt"] = at
+
+
+def _expected_minutes(value: Any) -> int | None:
+    """Upper bound of a human-review expectation such as ``20-80`` or ``5``."""
+    numbers = [int(number) for number in re.findall(r"\d+", str(value or ""))]
+    return max(numbers) if numbers else None
+
+
+def _stamp_stage_etas(stages: dict[str, dict], now: Callable[[], Any] | None) -> None:
+    """Attach an absolute completion estimate to every stage that can have one.
+
+    running: explicit event ETA, observed progress rate, or a conservative
+    elapsed-time fallback once the stage has run at least 30 s.
+    waiting: the upper bound of the human handoff's ``expectedMinutes``.
+    terminal/pending: no forecast (the UI shows actual finish time or "—").
+    """
+    now_iso = utc_now(now)
+    now_dt = parse_time(now_iso)
+    for stage in stages.values():
+        state = stage.get("state")
+        stage["etaAt"] = None
+        if state in ("succeeded", "failed", "skipped", "pending"):
+            stage["etaSeconds"] = None
+            continue
+        if state == "waiting":
+            minutes = _expected_minutes(stage.get("expectedMinutes"))
+            if minutes is not None:
+                base = parse_time(stage.get("waitingSince") or now_iso)
+                eta_at = base + timedelta(minutes=minutes)
+                stage["etaAt"] = eta_at.isoformat(timespec="seconds")
+                stage["etaSeconds"] = max(0, int((eta_at - now_dt).total_seconds()))
+                stage["etaSource"] = "waiting"
+            continue
+        if state != "running":
+            continue
+        if stage.get("etaSeconds") is None:
+            progress = stage.get("progress") or {}
+            done, total = progress.get("done"), progress.get("total")
+            started = stage.get("startedAt")
+            if (started and isinstance(done, (int, float)) and isinstance(total, (int, float))
+                    and done > 0 and total > done):
+                elapsed = (now_dt - parse_time(started)).total_seconds()
+                if elapsed >= 30:
+                    rate = float(done) / elapsed
+                    if rate > 0:
+                        stage["etaSeconds"] = int(round((float(total) - float(done)) / rate))
+                        stage["etaSource"] = "elapsed"
+        if stage.get("etaSeconds") is not None:
+            eta_at = now_dt + timedelta(seconds=max(0, int(stage["etaSeconds"])))
+            stage["etaAt"] = eta_at.isoformat(timespec="seconds")
 
 
 def _finish_stage(stage: dict, now: Callable[[], Any] | None) -> None:
@@ -1090,6 +1141,7 @@ def derive_snapshot(run: Path, *, index: Path | None = None, entry: dict | None 
     derived += _derive_deepseek_states(run, stages, locale, all_locales, clock)
     for stage in stages.values():
         _finish_stage(stage, clock)
+    _stamp_stage_etas(stages, clock)
     required = _required_stages(run, stages, locale, all_locales, decisions, speakers)
     attention = _attention_items(run, stages, required["missing"], clock, required["all"])
     publish = bool(decisions.get("publish"))
@@ -1397,6 +1449,39 @@ def _safe_url(value: Any) -> str | None:
     return text
 
 
+def _clock_text(value: Any) -> str | None:
+    """Local clock label for an ISO timestamp; include the date when it is not today."""
+    if not value:
+        return None
+    try:
+        stamp = parse_time(str(value)).astimezone()
+    except (TypeError, ValueError):
+        return None
+    now = datetime.now().astimezone()
+    return stamp.strftime("%H:%M") if stamp.date() == now.date() else stamp.strftime("%m-%d %H:%M")
+
+
+def _current_stage(snapshot: dict) -> dict | None:
+    stages = snapshot.get("stages") or []
+    for state in ("failed", "waiting", "running"):
+        for stage in stages:
+            if stage.get("state") == state:
+                return stage
+    return None
+
+
+def _eta_text(snapshot: dict, stage_id: str | None = None) -> str:
+    """The completion estimate line used by Bark and the dock."""
+    stage = None
+    if stage_id:
+        stage = next((item for item in (snapshot.get("stages") or [])
+                      if item.get("id") == stage_id), None)
+    else:
+        stage = _current_stage(snapshot)
+    clock = _clock_text((stage or {}).get("etaAt"))
+    return f"预计完成 {clock}" if clock else "预计完成：待估算"
+
+
 def _duration(seconds: Any) -> str:
     try:
         total = max(0, int(float(seconds)))
@@ -1459,7 +1544,7 @@ def notification_candidates(snapshot: dict) -> list[dict]:
         candidates.append(_candidate(
             f"start:{run_id}", "started", "passive",
             f"[同行] 开工 · {title}",
-            f"{run_id} · {locales} · {mode or '形态未记录'}；状态页：run_status.py status",
+            f"{run_id} · {locales} · {mode or '形态未记录'}；{_eta_text(snapshot)}；状态页：run_status.py status",
             since=started_at))
     for item in snapshot.get("attention") or []:
         kind = item.get("kind")
@@ -1470,6 +1555,7 @@ def notification_candidates(snapshot: dict) -> list[dict]:
         if kind == "human_review":
             title, body = _human_review_copy(stage, item.get("waitingOn"),
                                              item.get("expectedMinutes"), item.get("ageSeconds"))
+            body = f"{body}；{_eta_text(snapshot, stage)}"
             candidates.append(_candidate(
                 f"review:{run_id}:{stage}:{item.get('since')}", "human_review", "active",
                 title, body, url=item.get("actionUrl"), since=item.get("since")))
@@ -1480,6 +1566,7 @@ def notification_candidates(snapshot: dict) -> list[dict]:
                 body += f" · {item['message']}"
             if item.get("resume"):
                 body += f" · 续跑：{item['resume']}"
+            body += "；预计完成：—（续跑后重估）"
             candidates.append(_candidate(
                 f"failed:{run_id}:{stage}:{item.get('since')}", "failed",
                 "critical" if unknown else "timeSensitive",
@@ -1489,12 +1576,13 @@ def notification_candidates(snapshot: dict) -> list[dict]:
                 f"stalled:{run_id}:{stage}", "stalled", "timeSensitive",
                 f"[同行] 可能卡住 · {stage}",
                 f"最后心跳 {_duration(item.get('ageSeconds'))} 前 · 期望 {_duration(item.get('heartbeatExpectedSeconds'))}"
-                "；先查进程/SSH/GPU，不要自动重启整条队列",
+                "；先查进程/SSH/GPU，不要自动重启整条队列；预计完成：—（检查后重估）",
                 since=item.get("since"), cooldown_seconds=900))
         elif kind == "missing_required":
             candidates.append(_candidate(
                 f"missing:{run_id}:{stage}", "missing_required", "active",
-                f"[同行] 缺步骤 · {stage}", f"{stage} 已到期但没有记录；补跑或确认是否被静默跳过",
+                f"[同行] 缺步骤 · {stage}",
+                f"{stage} 已到期但没有记录；补跑或确认是否被静默跳过；预计完成：—（补齐后重估）",
                 since=item.get("since")))
     if run_state == "completed":
         evidence = ", ".join(f"{item.get('id')}={item.get('evidenceLevel')}"
@@ -1502,7 +1590,8 @@ def notification_candidates(snapshot: dict) -> list[dict]:
         candidates.append(_candidate(
             f"complete:{run_id}", "completed", "active",
             f"[同行] 完成 · {run_id}",
-            "已到完成状态；证据级别：" + (evidence or "见 status.json") + "。设备/现场验收仍单独记录。",
+            "已到完成状态；实际完成：" + (_clock_text(snapshot.get("generatedAt")) or "未知")
+            + "；证据级别：" + (evidence or "见 status.json") + "。设备/现场验收仍单独记录。",
             since=snapshot.get("generatedAt")))
     return candidates
 

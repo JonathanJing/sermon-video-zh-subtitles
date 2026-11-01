@@ -91,6 +91,7 @@ class NotifyPolicyTests(unittest.TestCase):
         self.assertEqual(review["level"], "active")
         self.assertIsNone(review["url"])
         self.assertIn("user track review", review["body"])
+        self.assertIn("预计完成", review["body"])
 
     def test_human_review_copy_is_stage_specific(self):
         for stage, expected_title in (
@@ -116,6 +117,7 @@ class NotifyPolicyTests(unittest.TestCase):
                       if item["kind"] == "failed")
         self.assertEqual(failed["level"], "timeSensitive")
         self.assertIn("retry", failed["body"])
+        self.assertIn("预计完成", failed["body"])
 
         snapshot["attention"] = [{
             "kind": "failed", "severity": "timeSensitive", "stage": "l3.tts.zh-Hans",

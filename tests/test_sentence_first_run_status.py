@@ -142,6 +142,28 @@ class RunStatusTests(unittest.TestCase):
         self.assertEqual(stalled[0]["severity"], "timeSensitive")
         self.assertFalse(any(stage["state"] == "failed" for stage in snapshot["stages"]))
 
+    def test_running_eta_uses_the_progress_rate(self):
+        self.register()
+        self.mark("l3.tts.zh-Hans", "started")
+        self.clock.bump(60)
+        self.mark("l3.tts.zh-Hans", "progress", unit="sentences", done=5, total=10)
+        stage = next(stage for stage in self.snapshot()["stages"]
+                     if stage["id"] == "l3.tts.zh-Hans")
+        self.assertEqual(stage["etaSource"], "elapsed")
+        self.assertEqual(stage["etaSeconds"], 60)
+        self.assertIsNotNone(stage["etaAt"])
+
+    def test_waiting_eta_uses_the_upper_expected_minutes(self):
+        self.register()
+        self.mark("l3.review.zh-Hans", "waiting", waiting_on="user track review",
+                  expected_minutes="20-80")
+        self.clock.bump(600)
+        stage = next(stage for stage in self.snapshot()["stages"]
+                     if stage["id"] == "l3.review.zh-Hans")
+        self.assertEqual(stage["etaSource"], "waiting")
+        self.assertEqual(stage["etaSeconds"], 80 * 60 - 600)
+        self.assertEqual(stage["etaAt"], "2026-11-01T13:20:00+00:00")
+
     def test_mark_refreshes_the_snapshot_for_the_dock(self):
         self.register()
         self.mark("l1.start", "started")
