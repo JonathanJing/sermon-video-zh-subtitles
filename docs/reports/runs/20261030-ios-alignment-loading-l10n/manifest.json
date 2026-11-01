@@ -1,0 +1,71 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261030-ios-alignment-loading-l10n",
+  "runs": [
+    {
+      "label": "20261030T122027-test-e08c601d",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.claude/worktrees/ios-beta-1.26.33/artifacts/tongxing-ios/2026-10-30/cli/20261030T122027-test-e08c601d",
+      "skipped": {
+        ".json": 1,
+        ".0~-OHjLjqi0iWwvb3z2NSMsThWbyoBb2LH5i0bG1iiwA6N2fIHosXdag-9ffD_q6w95zXm38RbJA4eYWIJbxL_tQ==": 2,
+        ".0~1omF6cedsmIMtsSnADVF4Kd4HP08zhXk9J4WVgvKP2WjRVMl4WFcXZ0o4xin22haTkAV4lJ705oarxJ6LW2J0A==": 2,
+        ".0~4VqMqsI5lOfxRppnud6-VDWcNsU8J7VgFCJfW2dXPwOcAkvU-I8Um5yp9n0Zv6nr3VmcxYggaVMDFfR0U_vjKw==": 2,
+        ".0~8isEXWquSPN6-xx-fflWimgKTuEiS3WScK5JjS-2XFEBAyZWfFOd3FpP882DT8OvdMKdEKTFudNCuSIrGzhxcg==": 2,
+        ".0~9qvR_fdaj6YyH4Q5hjYV6AdkdTKje8gw6lK1b4fCgLQOXqoTEsKZLb02OP1yBQiEmtXsrzk8D4DjpbUAhcqV7A==": 2,
+        ".0~E0VaZ2bezj8ZQ_QcNcBg9mwcHgcmquVHVVhA7Eohes3kMk0vClCs_mPLtcca8Y2vzfou8BKZYvvVMoHzsKpdmA==": 2,
+        ".0~F58YKiWiyLIPV-sYX5d2--C7tySXYHYc7DJNxOc4X4t_nsyBJ__FaetvFYpmrejaEEsKBr9IkooJXk5tWf8W1w==": 2,
+        ".0~IQ9CnRbjjifF7leIlmIK-oa29UI2tMn34ckD0jfn4JSRPCFgrtl6MY4VM5WhpmwZUiXAQajLFDGyj0B-4zAvWw==": 2,
+        ".0~K-31xY0i4hDr9U4VTmi-UrE-DZ9gI_gLc2E_QkN_crn7ust7U-YftOAejWZiIIHWQFdFV3Qhfxth4rVb0JO7Zw==": 2,
+        ".0~LuLy4bLyMCigmh1qDOnW3NVOoEAUigHmn7r67DYR1hRYKWXSsfmy-aqMHAfdNzgs2HzM_wydob43LRpI1GuTYQ==": 2,
+        ".0~S3WqxnIdkG7QWMdIhpT5kc3M7vtQyzRYYQG8HOHET-QWFEuel2xfo8BdLICThF37RMkI0qHy-SKgzs6txE5mwQ==": 2,
+        ".0~TMvG-L71KTov94WGYdMGmsmCQXLQqat36SowdbQfnKvVcGkNrXTAsbfnAEH6bger581B0xUhutkyOwc6pOgNqw==": 2,
+        ".0~Tgg6h7OxFA8j46NGpSzBQ73FyRYvSSa0GSvEKQrcB-U3vJoqZUDDDo1pOeW4Ulfy7mzK6qsrc2oXVC4T6R5TOQ==": 2,
+        ".0~X3tv9A3jL_11Blg6TDIWiQKObIhXIS6Hhb9Fi7xBEy2q5b-zcbxZwht3GSAzQiteQMxPV3DqeWD6rxsAJt36mQ==": 2,
+        ".0~XuGmph8EmJT-kVqmANfdtRP-ayAY1IRuUti6i-0MRLdcX3C16TKwsWCeR4i4BOPQANA-7YT7WY0FHxwFiJkDQw==": 2,
+        ".0~bF69994KNsBAoLCsSBzKjULEacPESpNZmN_PYxsZamLQXJb-4LlRezCJjX08yDQee7YjYQs0KfNbdMs_3pontw==": 2,
+        ".0~csVkdr0cgIrWJoy01FmwVro7pdg6cHGhVfmi_YDVrJDFwh1OIvRPQO3pv5ImQHKVHLHW9KPQ0fZ8UGA4OtFxMQ==": 2,
+        ".0~lk7qTeRwnTpv0dnJb9NoorlyupGqpss6exkR4WOpOjeKb0rNtrK-P-CbMroiwRspV7Y2tuSFqsqupV5ToU6h-g==": 2,
+        ".0~oRMi0sbQLktfDDDGUS-SqBKpdDiD6HCztVES_ShfGr0KVcYENoIq7y9oUSDWL5B_P2gkdtWG8JEsJLxPbdWOZA==": 2,
+        ".0~uo_pi_Jx5_KY_O4G_MjhOIB6zh7bL1E3u3QH3BDeCVj5GgBD8rMNrRfAx7uRShr0LelPAvHUmRAx5LMV-mAxUQ==": 2,
+        ".0~x_N7kiGnjYr5YTU1khGzqTRmAHv9q2DbQ9cpdLiOAKVJgrTZKs3B2MPGHJuhRHVYHtSkGFgXKFlCoYyORRdIqg==": 2,
+        ".plist": 1
+      }
+    },
+    {
+      "label": "20261030T122124-test-d96e8a4a",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.claude/worktrees/ios-beta-1.26.33/artifacts/tongxing-ios/report-src-20261030-l10n/20261030T122124-test-d96e8a4a",
+      "skipped": {
+        ".json": 1
+      }
+    }
+  ],
+  "files": [
+    {
+      "run": "20261030T122027-test-e08c601d",
+      "path": "run.log",
+      "kind": "log",
+      "bytes": 202745,
+      "truncated": true,
+      "sha256": "d8da74da724831038eaf621151e07f8cba3856f2c444e30901ee39ce12c5c937",
+      "redactions": {
+        "home_dir": 127
+      }
+    },
+    {
+      "run": "20261030T122124-test-d96e8a4a",
+      "path": "run.log",
+      "kind": "log",
+      "bytes": 108669,
+      "truncated": true,
+      "sha256": "a9a459f13b9064cdaca17d7f9da36c2e74424e15d9513c3790fc8a3aa60dc356",
+      "redactions": {
+        "home_dir": 86
+      }
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}
