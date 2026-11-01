@@ -748,6 +748,9 @@ def cmd_assets(cfg: PageConfig, out: Path) -> dict:
         tr = {row["id"]: row for row in rows(run / "translations.jsonl")}
         sp = {row["id"]: row for row in rows(run / "speech.jsonl")}
         sched = {row["id"]: row for row in json.loads((run / "schedule.json").read_text())["sentences"]}
+        # Single-speaker runs carry the voice on each speech row instead of a sentence speakerId.
+        for sentence in sent:
+            sentence.setdefault("speakerId", sp[sentence["id"]].get("speaker") or "")
         contract.require(len(sent) == cfg.sentences
                          and all(sched.get(s["id"], {}).get("actualStart") is not None for s in sent),
                          f"{locale}: sentence table or schedule incomplete")
@@ -975,14 +978,20 @@ def cmd_stage2(cfg: PageConfig, stage1: Path, assets: Path, evidence_path: Path,
     page = _page_entry(cfg, esp, esp_sha, targets)
     v5 = copy.deepcopy(old[contract.CATALOG_V5])
     v5["pages"].append(page)
+    # The weekly release contract appends the page and makes it the catalog default
+    # (docs/tongxing-weekly-release.zh.md, 合并 row). The v4/v3 projections inherit it.
+    v5["defaultPageId"] = cfg.page_id
     contract.validate_catalog_schema(v5)
     v4 = contract.project_legacy_catalog_v4(v5)
     v3 = contract.project_human_catalog(v4)
     for name, new in ((contract.CATALOG_V4, v4), (contract.CATALOG_V3, v3)):
         contract.require(sum(entry["id"] == cfg.page_id for entry in new["pages"]) == 1,
                          name + ": page missing from projection")
-        contract.require({**new, "pages": [entry for entry in new["pages"] if entry["id"] != cfg.page_id]} == old[name],
+        contract.require([entry for entry in new["pages"] if entry["id"] != cfg.page_id] == old[name]["pages"],
                          name + ": projection changed other pages")
+        contract.require({key: value for key, value in new.items() if key not in ("pages", "defaultPageId")}
+                         == {key: value for key, value in old[name].items() if key not in ("pages", "defaultPageId")},
+                         name + ": projection changed catalog metadata")
     for locale in cfg.locales:
         release = json.loads(files[f"releases-v2/{cfg.page_id}/{locale}.json"])
         contract.validate_v2_release_target(release, page, locale)
