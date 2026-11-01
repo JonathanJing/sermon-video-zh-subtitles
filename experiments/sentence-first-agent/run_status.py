@@ -71,6 +71,7 @@ CHECK_FILE = "status-check.json"
 AGENT_FILE = "agent.json"
 NOTIFY_SENT_FILE = "notify-sent.ndjson"
 INDEX_FILE = ".status-index.json"
+MISSING_GRACE_SECONDS = 600
 STATUS_ROOT = ROOT / "artifacts" / "sentence-first-agent"
 EVIDENCE_LEVELS = ("E0", "E1", "E2", "E3", "E4", "E5", "E6")
 JOURNAL_EVENTS = ("started", "finished", "failed", "waiting", "resumed")
@@ -866,7 +867,10 @@ def _required_stages(run: Path, stages: dict[str, dict], locale: str | None,
         consistency = "l2.consistency"
         speech = f"l3.speech.{locale}"
         finish = "l3.finish"
-        add(translate, ["l1.preflight", "l1.start"])
+        translate_prereqs = ["l1.preflight", "l1.start"]
+        if publish:
+            translate_prereqs.append("l1.english-review")
+        add(translate, translate_prereqs)
         add(f"l2.audit.{locale}", [translate])
         add(consistency, [translate])
         add(speech, [consistency, translate])
@@ -901,8 +905,10 @@ def _required_stages(run: Path, stages: dict[str, dict], locale: str | None,
 
 
 def _attention_items(run: Path, stages: dict[str, dict], missing: list[str],
-                     now: Callable[[], Any] | None) -> list[dict]:
+                     now: Callable[[], Any] | None, required_all: list[dict] | None = None) -> list[dict]:
     items = []
+    required_by_id = {item["id"]: item for item in (required_all or [])}
+    now_iso = utc_now(now)
     for stage in stages.values():
         state = stage["state"]
         if state == "waiting":
@@ -932,10 +938,22 @@ def _attention_items(run: Path, stages: dict[str, dict], missing: list[str],
                 "stalledSeconds": stage.get("stalledSeconds"), "state": "open",
             })
     for stage_id in missing:
+        if stage_id != "l1.start":
+            item = required_by_id.get(stage_id) or {}
+            due_times = []
+            for prerequisite in item.get("prerequisites") or []:
+                for key, stage in stages.items():
+                    if key == prerequisite or key.startswith(prerequisite + "."):
+                        if stage.get("finishedAt"):
+                            due_times.append(stage["finishedAt"])
+            if due_times:
+                due_since = max(due_times, key=parse_time)
+                if (parse_time(now_iso) - parse_time(due_since)).total_seconds() < MISSING_GRACE_SECONDS:
+                    continue
         items.append({
             "id": f"att-{stage_id}-missing", "kind": "missing_required",
             "severity": "info" if stage_id == "l1.start" else "attention",
-            "stage": stage_id, "since": utc_now(now), "ageSeconds": 0, "state": "open",
+            "stage": stage_id, "since": now_iso, "ageSeconds": 0, "state": "open",
         })
     items.sort(key=lambda item: (SEVERITY_RANK.get(item.get("severity"), 9), item.get("since") or ""))
     return items
@@ -1042,8 +1060,16 @@ def derive_snapshot(run: Path, *, index: Path | None = None, entry: dict | None 
     status_events, status_issues = _status_events(run)
     issues = journal_issues + status_issues
     combined = journal_events + status_events
-    combined.sort(key=lambda event: (parse_time(event["at"]), 0 if event["source"] == "journal" else 1,
-                                     event.get("eventId", "")))
+    # Stable ordering: journal transitions first, then status events in append order.
+    # Real callers use microsecond timestamps, but tests and fast scripts can emit
+    # several events inside one second; random event ids must not reorder them.
+    for order, event in enumerate(journal_events):
+        event["_order"] = order
+    for order, event in enumerate(status_events):
+        event["_order"] = order
+    combined.sort(key=lambda event: (parse_time(event["at"]),
+                                     0 if event["source"] == "journal" else 1,
+                                     int(event.get("_order", 0))))
     stages: dict[str, dict] = {}
     for event in combined:
         _apply_event(stages, event, all_locales)
@@ -1053,7 +1079,7 @@ def derive_snapshot(run: Path, *, index: Path | None = None, entry: dict | None 
     for stage in stages.values():
         _finish_stage(stage, clock)
     required = _required_stages(run, stages, locale, all_locales, decisions, speakers)
-    attention = _attention_items(run, stages, required["missing"], clock)
+    attention = _attention_items(run, stages, required["missing"], clock, required["all"])
     publish = bool(decisions.get("publish"))
     run_state = _run_state(stages, attention, required, publish)
     last_at = max((event["at"] for event in combined), default=None)

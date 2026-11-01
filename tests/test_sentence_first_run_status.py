@@ -155,6 +155,7 @@ class RunStatusTests(unittest.TestCase):
         self.mark("l2.translate.zh-Hans", "started")
         self.clock.bump(10)
         self.mark("l2.translate.zh-Hans", "finished", evidence_level="E1")
+        self.clock.bump(run_status.MISSING_GRACE_SECONDS + 60)
         snapshot = self.snapshot()
         self.assertIn("l2.audit.zh-Hans", snapshot["required"]["missing"])
         self.assertIn("l2.consistency", snapshot["required"]["missing"])
