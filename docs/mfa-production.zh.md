@@ -50,7 +50,7 @@ export MFA_SPARK_G2P_MODEL=/home/achillesjing/sermon-mfa-runtime/models/english_
 ssh -o BatchMode=yes -o ConnectTimeout=5 achillesjing@192.168.1.152 'hostname; whoami; pwd'
 ```
 
-**方式二：Mac 经 Tailscale 连接 Mac mini，由 mini 再连接 Spark。** 以下是已配置的地址，并非本次实测可达收据；要求 mini 可以访问 Spark，且拥有到 Spark 的 SSH 认证。
+**方式二：Mac 经 Tailscale 连接 Mac mini，由 mini 再连接 Spark。** 以下地址已配置，2026-10-31 的实测收据见本节末；要求 mini 可以访问 Spark，且拥有到 Spark 的 SSH 认证。
 
 ```sh
 ssh -o BatchMode=yes -o ConnectTimeout=5 -o HostKeyAlias=jonys-mac-mini.local jonyopenclaw@100.73.116.52 'hostname'
@@ -68,6 +68,15 @@ export MFA_SPARK_RELAY_HOST_KEY_ALIAS=jonys-mac-mini.local
 对应参数是 `--mfa-spark-relay-host` 与 `--mfa-spark-relay-host-key-alias`。已有本机可认证到 Spark 的 SSH 跳板配置时，也可使用 `MFA_SPARK_PROXY_JUMP`／`--mfa-spark-proxy-jump`；它与 relay 互斥。relay 在 mini 上发起第二段 SSH；ProxyJump 只转发连接，不取得 mini 的 SSH 身份。正常校验主机密钥，不关闭验证。
 
 SSH 成功只证明连接与认证；仍须检查本次所需的 Python、MFA 模型和执行路径。上述环境变量只适用于支持它们的 MFA producer，不代表 canonical TTS／ASR 已自动使用中转；后者须核对各自的远程执行与文件传输入口。离开局域网时，中转也不会让 Mac 的直连 NFS 自动可用，静态文件可通过 SSH 读取。
+
+**2026-10-31 中继实测收据（只覆盖 SSH 连接与 Spark 会话工具，不覆盖 MFA 执行）**
+
+- 环境：MacBook Pro（Tailscale 节点 `jonathans-macbook-pro-2`）；Mac mini `jonys-mac-mini`（`100.73.116.52`，macOS 27.0，用户 `jonyopenclaw`）；Spark `spark-38f8`（`192.168.1.152`，用户 `achillesjing`）。MacBook→mini 走 DERP(lax)，RTT 10–21 ms，未建立直连。
+- 第一段（18:54 PDT）：`ssh -o BatchMode=yes -o HostKeyAlias=jonys-mac-mini.local jonyopenclaw@100.73.116.52 'hostname'` 返回 `Jonys-Mac-mini.localdomain`。
+- mini→Spark：`nc -z -G 3 192.168.1.152 22` 成功；`ssh-keyscan -t ed25519 192.168.1.152` 的主机键指纹 `SHA256:MjqtR/2UUnBnrS71TmidLeGvc47IVhKnX/OxA7TMdLU` 与本机 known_hosts 中的既有键一致。mini 原先只登记了 Spark 的 RSA 键（`SHA256:RntuSIUw…`），直接执行第二段会 `Host key verification failed`；核对同一 ed25519 键后追加到 mini 的 `~/.ssh/known_hosts`（先备份为 `known_hosts.bak-20261031`），本文第二条命令随即原样返回 `spark-38f8 / achillesjing / /home/achillesjing`（19:01 PDT）。
+- ProxyJump／ProxyCommand 方式同样可用，且由本机完成对 Spark 的认证、不使用 mini 的 SSH 身份：本机 `~/.ssh/config` 为 `192.168.1.152` 配置 `ProxyCommand ssh -o BatchMode=yes -o HostKeyAlias=jonys-mac-mini.local -W %h:%p jonyopenclaw@100.73.116.52`；`spark_exclusive_session.py inspect` 经该链路通过（`memAvailable` 81.0 GB，`llama-server` 占 35.7 GB，队列空，上一条会话已 `closed`）。该 ProxyCommand 在本机对 `192.168.1.152` 无条件生效，回到同一局域网要直连时用 `ssh -o ProxyCommand=none`。
+- 吞吐（同一中继）：下载 96 MiB 用 4.6 s（≈20.8 MiB/s），上传 96 MiB 用 54.2 s（≈1.8 MiB/s）。
+- 未覆盖：MFA producer（`--mfa-spark-relay-host`／`--mfa-spark-proxy-jump`）本次没有执行；`begin` 级独占会话没有在该链路上开始；没有直连，全部经 DERP 中继。SSH 可达不等于 MFA 的 Python、模型或执行路径已经验证。
 
 Spark 运行根目录为 `/home/achillesjing/sermon-mfa-runtime/`，分别保存 `env/`、`models/`、`bin/mfa-run`、`jobs/`。本次 ARM64 部署发现 Conda 的 `kalpy` 包不可直接取得，使用 [Spark MFA 安装脚本](../tools/ops/setup_spark_mfa.sh) 在独立环境源码构建。安装脚本包含 SQLite 依赖；修复原生 SQLite 运行依赖后，已验证 MFA 3.4.2 在 Spark 完成真实 A 样本对齐，详见下方冒烟记录。此结果只确认已测样本路径，不代表完整周次验收。MFA 可在 Spark CPU 执行，不必占用或重启现有 GPU 模型服务。
 
