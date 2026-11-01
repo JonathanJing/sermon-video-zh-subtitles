@@ -1,0 +1,105 @@
+{
+  "schemaVersion": "sermon-multilingual-poster-v1",
+  "source": {
+    "pageId": "revelation-jesus-marks-his-own-20261101",
+    "targetLocale": "es",
+    "sourceIdentitySha256": "86acc52182afe0eaa7846d4ac7c3731a0f4c7c16272ff83429b7b34a8915e325",
+    "catalogSha256": "301aea81ebc174c50e235d31dba2739c3b9ba18dffc1d5b131fb601d8b7758ea",
+    "releasePackageSha256": "2625b4b1675c8a4652d1c9840f4c2dd462e9b553ce06fc757cb1e92a3a67595f",
+    "contentSha256": "a405e30427544eee862867974de810bdf8bb849fa15d181084d31fd54c9a24a8",
+    "brief": {
+      "locale": "es",
+      "date": "2026-11-01",
+      "origin": "https://ai-for-god-sermon-audio.web.app",
+      "title": "Jesús sella a los suyos",
+      "series": "Apocalipsis: El consuelo y la esperanza que Jesús trae",
+      "scripture": "Apocalipsis 14",
+      "speaker": "Eric Geiger",
+      "tagline": "Escuchamos y caminamos juntos.",
+      "reviewLabel": "Traducción y audio revisados",
+      "labels": {
+        "brand": "Tongxing",
+        "eyebrow": "SERMÓN SEMANAL · ESPAÑOL",
+        "cta": "Lee y escucha el sermón de esta semana",
+        "serviceLine": "Audio en español · Texto en inglés · Transcripción completa",
+        "qrCaption": "Esta semana, en español",
+        "disclaimer": "Proyecto personal independiente, sin afiliación ni respaldo de Mariners Church. El audio en español sintetizado por IA y el texto preparado por IA son para consulta personal.",
+        "header": "Tongxing   ───   SERMÓN SEMANAL",
+        "web": "Versión web",
+        "caption": "Escanea para leer y escuchar",
+        "storeHeading": "Descargar Tongxing",
+        "webHeading": "Abrir sermón semanal",
+        "showReview": "false"
+      },
+      "qrURL": "https://ai-for-god-sermon-audio.web.app/?week=revelation-jesus-marks-his-own-20261101&contentLang=es&lang=es",
+      "displayTitle": "Jesús sella a los suyos",
+      "storeURL": "https://apps.apple.com/app/id6809255441"
+    }
+  },
+  "status": "complete",
+  "provenance": {
+    "templateVersion": "tongxing-dual-qr-v2",
+    "templateSha256": "08b7dd24bab8a770f68b9a87822875636ff35404dfb29b85ff92ca7a3ac19c47",
+    "badgeHashes": {
+      "zh-Hans": "65191b2d1182a194e510b27c9985b1367b60ed6ef565f86fc492f585a27bc932",
+      "ko": "fc82d5344d0f2919a7ae697e677fc9c62872f1ee47bd70e24a581245423de9c1",
+      "es": "e4d7c2c1606454536482735c96b933b04ea86a2e72701b3319ae1f3a369b0479"
+    },
+    "artSha256": "ea4773015b071e247a8999d0f356bcedcbc83b8db8f219f6aab88477d20899f7",
+    "promptSha256": "8b3169e05dab4ad6eea69eb16b04f91634c9397901180cc768c19d50bfab4c5f",
+    "rendererSha256": "df7840eabb8c01b019726a18f4263d747621ffa69b8a7f15b4347313210980c1",
+    "builderSha256": "eba5ca10f470a8d0c361886a5403844c1e362f9ef245ac8cb7ab189536ff630e"
+  },
+  "outputs": {
+    "poster.png": "b1f23f75e77bc416f7677f47551141c2ea56f5169b0830d0827900e2b98ff9ba",
+    "poster-preview.png": "9bc3128ad2420116342f66ae53bef0bee850b7b6b1cd446a1c5e4ced8afc8d28",
+    "qr-validation.json": "2df89811c44c87389b9b0b116e4b29b41f6933b0424aab12be7b0dc1cc437903"
+  },
+  "publicVerification": {
+    "checkedAt": "2026-11-01T04:54:03.213193+00:00",
+    "origin": "https://ai-for-god-sermon-audio.web.app",
+    "status": "pass",
+    "checks": [
+      {
+        "path": "/multilingual-v5.json",
+        "sha256": "301aea81ebc174c50e235d31dba2739c3b9ba18dffc1d5b131fb601d8b7758ea",
+        "status": 200
+      },
+      {
+        "path": "/releases-v2/revelation-jesus-marks-his-own-20261101/zh-Hans.json",
+        "sha256": "eee90c828e6dcd65b0b74fc3f9f6f64c6a8558a73542a789d62ff8971aa82469",
+        "status": 200
+      },
+      {
+        "path": "/content/revelation-jesus-marks-his-own-20261101/zh-Hans.json",
+        "sha256": "b67248cb9c659ed7800d1a970d78146fe136ffe33209e47c7820c97908f8ed8a",
+        "status": 200
+      },
+      {
+        "path": "/releases-v2/revelation-jesus-marks-his-own-20261101/ko.json",
+        "sha256": "b84067bccb3825b5494a7bf3a6a057598b2b1c3a263d049fee179cce64ccda30",
+        "status": 200
+      },
+      {
+        "path": "/content/revelation-jesus-marks-his-own-20261101/ko.json",
+        "sha256": "16768ea4f4ffce4e693e2751d8f66ce4e25fe75a39f5d0ad7f796bcd3cdf1cf4",
+        "status": 200
+      },
+      {
+        "path": "/releases-v2/revelation-jesus-marks-his-own-20261101/es.json",
+        "sha256": "2625b4b1675c8a4652d1c9840f4c2dd462e9b553ce06fc757cb1e92a3a67595f",
+        "status": 200
+      },
+      {
+        "path": "/content/revelation-jesus-marks-his-own-20261101/es.json",
+        "sha256": "a405e30427544eee862867974de810bdf8bb849fa15d181084d31fd54c9a24a8",
+        "status": 200
+      }
+    ]
+  },
+  "visualReview": {
+    "reviewer": "codex",
+    "humanApproval": false
+  },
+  "visualReviewedAt": "2026-11-01T04:54:03.248580+00:00"
+}
