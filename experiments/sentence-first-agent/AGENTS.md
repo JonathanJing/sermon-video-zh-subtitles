@@ -352,7 +352,19 @@ python3 $EXP/run_status.py notify --run $RUN --execute    # 发一次
 python3 $EXP/run_status.py notify --production <首个 run 名> --execute --watch 30
 ```
 
-策略：开工 passive；可审/缺步骤/完成 active；失败/停滞 timeSensitive；`unknown_outcome` critical（需手机「重要警告」权限）。同一事项只发一次，停滞默认 900 秒冷却；本地播放器地址不会转发到手机。`status/notify-sent.ndjson` 是去重账本；默认 dry-run，`--execute` 才发送，`--no-push` 只打印。不要按句/按批推送。
+策略：开工 passive；可审/缺步骤/完成 active；失败/停滞 timeSensitive；`unknown_outcome` critical（需手机「重要警告」权限）。同一事项只发一次，停滞默认 900 秒冷却；本地播放器地址不会转发到手机。`status/notify-sent.ndjson` 是去重账本；默认 dry-run，`--execute` 才发送，`--no-push` 只打印。不要按句/按批推送。开工时把 `notify --production ... --execute --watch 30` 作为后台任务跑；否则只有手动执行 `notify` 时才会推送。
+
+**人工审核步骤都要 handoff**（Bark 只把 attention 当作“需要你”；不 handoff 就不会有可审推送）：
+
+| 人工步骤 | stage | handoff 的 `--waiting-on` |
+|---|---|---|
+| 英文表批准 | `l1.english-review` | `user English review` |
+| 讲员映射确认 | `l1.speakers` | `user speaker mapping` |
+| 每条语言轨听审 | `l3.review.<locale>` | `user track review`（带 `--url <播放器>`） |
+| 页面发布授权 | `l4.publish.authorization` | `user publish authorization` |
+| 学习内容批准 | `l4.study` | `user study approval` |
+
+发出链接/请求的同一个动作里调用 `run_status.py handoff --run $RUN --stage <stage> --waiting-on <...>`；收到结论后 `resume`。只有 `l3.review` 在脚本里没有自动边界，其余人工步骤同样需要代理显式 handoff，不能只写在对话里。
 
 状态写在 `<run>/status/`：`events.ndjson` 是高频进度/心跳，`status.json` 由 `journal.ndjson` + `state-*.json` + 状态事件派生。`check` 重放比对，不一致退出码 1；`mark` 用于 audit 等尚无自动打点的阶段（`--stage`、`--event`、`--evidence-level`）。它只用于观察，**不是门禁**，写入失败不影响生产；`status.json` 不公开，公开前必须脱敏。
 

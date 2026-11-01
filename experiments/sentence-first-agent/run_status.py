@@ -1371,6 +1371,26 @@ def _duration(seconds: Any) -> str:
     return f"{minutes}m{sec:02d}s"
 
 
+def _human_review_copy(stage: str, waiting_on: str | None, expected: str | None,
+                       age_seconds: Any) -> tuple[str, str]:
+    """Stage-specific copy; not every human handoff is a track listening review."""
+    waiting = waiting_on or "等待用户"
+    expected_text = f"预计 {expected}" if expected else "预计时间见计划"
+    body = f"{waiting} · 已等 {_duration(age_seconds)} · {expected_text}"
+    if stage.startswith("l3.review."):
+        locale = stage.split(".")[-1] if "." in stage else ""
+        return f"[同行] 可审 · {locale} 轨" if locale else "[同行] 可审 · 整轨", body + "；回到电脑打开播放器"
+    if stage == "l1.english-review":
+        return "[同行] 待批准 · 英文来源", body + "；打开英文审核表"
+    if stage == "l1.speakers":
+        return "[同行] 待确认 · 讲员映射", body + "；核对低一致度句子"
+    if stage.startswith("l4.publish"):
+        return "[同行] 待授权 · 页面发布", body + "；在对话里确认后继续"
+    if stage.startswith("l4.study"):
+        return "[同行] 待批准 · 学习内容", body + "；审阅大纲与默想"
+    return f"[同行] 需你处理 · {stage}", body
+
+
 def _candidate(key: str, kind: str, level: str, title: str, body: str,
                *, url: str | None = None, since: str | None = None,
                cooldown_seconds: float | None = None) -> dict:
@@ -1410,12 +1430,11 @@ def notification_candidates(snapshot: dict) -> list[dict]:
             continue
         stage = item.get("stage") or "?"
         if kind == "human_review":
-            expected = f"预计 {item['expectedMinutes']}" if item.get("expectedMinutes") else "预计审听时间见计划"
+            title, body = _human_review_copy(stage, item.get("waitingOn"),
+                                             item.get("expectedMinutes"), item.get("ageSeconds"))
             candidates.append(_candidate(
                 f"review:{run_id}:{stage}:{item.get('since')}", "human_review", "active",
-                f"[同行] 可审 · {stage}",
-                f"{item.get('waitingOn') or '等待用户'} · 已等 {_duration(item.get('ageSeconds'))} · {expected}；回到电脑打开播放器",
-                url=item.get("actionUrl"), since=item.get("since")))
+                title, body, url=item.get("actionUrl"), since=item.get("since")))
         elif kind == "failed":
             unknown = item.get("errorClass") == "unknown_outcome"
             body = f"{item.get('errorClass') or 'failed'}"

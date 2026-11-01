@@ -92,6 +92,22 @@ class NotifyPolicyTests(unittest.TestCase):
         self.assertIsNone(review["url"])
         self.assertIn("user track review", review["body"])
 
+    def test_human_review_copy_is_stage_specific(self):
+        for stage, expected_title in (
+            ("l1.english-review", "待批准 · 英文来源"),
+            ("l1.speakers", "待确认 · 讲员映射"),
+            ("l4.publish.authorization", "待授权 · 页面发布"),
+            ("l4.study", "待批准 · 学习内容"),
+            ("l3.review.ko", "可审 · ko 轨"),
+        ):
+            title, body = run_status._human_review_copy(stage, "user review", "5-10", 600)
+            self.assertIn(expected_title, title)
+            self.assertIn("已等 10m00s", body)
+            if stage.startswith("l3.review"):
+                self.assertIn("播放器", body)
+            else:
+                self.assertNotIn("播放器", body)
+
     def test_failed_and_unknown_outcome_levels(self):
         self.mark("l1.start", "started")
         self.mark("l1.start", "failed", error_class="infra", message="ssh down", resume="retry")
