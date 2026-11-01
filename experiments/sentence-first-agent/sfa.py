@@ -606,6 +606,18 @@ def main(argv=None) -> int:
         receipt["decisions"] = decisions
         receipt["decisionsFile"] = repo_relative(run / "decisions.json")
 
+        # Register the observation run. Status is a display sidecar: never fail start.
+        try:
+            from run_status import register_run
+            production = run.name
+            for locale, target in [(a.locale, run), *shares.items()]:
+                register_run(target, production=production, locale=locale,
+                             form=decisions.get("form"), sync=decisions.get("sync"),
+                             publish=decisions.get("publish"), title=decisions.get("title") or "",
+                             locales=decisions.get("locales"))
+        except Exception as exc:  # noqa: BLE001 - observation must not break setup
+            print(f"sfa: status registration skipped: {exc}", file=sys.stderr)
+
         gate_results: dict[str, dict] = {}
         failures: list[str] = []
         for locale, target in [(a.locale, run), *shares.items()]:
