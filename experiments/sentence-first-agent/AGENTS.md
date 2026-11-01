@@ -352,7 +352,7 @@ python3 $EXP/run_status.py notify --run $RUN --execute    # 发一次
 python3 $EXP/run_status.py notify --production <首个 run 名> --execute --watch 30
 ```
 
-策略：开工 passive；可审/缺步骤/完成 active；失败/停滞 timeSensitive；`unknown_outcome` critical（需手机「重要警告」权限）。同一事项只发一次，停滞默认 900 秒冷却；本地播放器地址不会转发到手机。`status/notify-sent.ndjson` 是去重账本；默认 dry-run，`--execute` 才发送，`--no-push` 只打印。不要按句/按批推送。开工时把 `notify --production ... --execute --watch 30` 作为后台任务跑；否则只有手动执行 `notify` 时才会推送。
+策略：开工 passive；可审/缺步骤/完成 active；失败/停滞 timeSensitive；`unknown_outcome` critical（需手机「重要警告」权限）。同一事项只发一次，停滞默认 900 秒冷却；缺步骤在到期后宽限 600 秒，避免刚进入下一步就误报；本地播放器地址不会转发到手机。`status/notify-sent.ndjson` 是去重账本；默认 dry-run，`--execute` 才发送，`--no-push` 只打印。不要按句/按批推送。开工时把 `notify --production ... --execute --watch 30` 作为后台任务跑；否则只有手动执行 `notify` 时才会推送。
 
 **人工审核步骤都要 handoff**（Bark 只把 attention 当作“需要你”；不 handoff 就不会有可审推送）：
 
