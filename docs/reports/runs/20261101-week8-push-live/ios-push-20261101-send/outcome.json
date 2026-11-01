@@ -1,0 +1,20 @@
+{
+  "schemaVersion": "tongxing-run-outcome-v1",
+  "status": "apns_accepted",
+  "exitCode": 0,
+  "deliveryType": "four_layer_release",
+  "stage": "formal_ios_poster_push",
+  "scope": "formal App opt-in push for the published November 1 poster",
+  "codeCommit": "eaac2a5b",
+  "startedAt": "2026-11-01T16:00:04Z",
+  "finishedAt": "2026-11-01T16:00:24.555Z",
+  "pageID": "revelation-jesus-marks-his-own-20261101",
+  "planned": 1,
+  "accepted": 1,
+  "skipped": 0,
+  "rejected": 0,
+  "unknown": 0,
+  "apnsHttpStatus": 200,
+  "deviceDisplay": "not_verified",
+  "posterOpenedOnDevice": "not_verified"
+}
