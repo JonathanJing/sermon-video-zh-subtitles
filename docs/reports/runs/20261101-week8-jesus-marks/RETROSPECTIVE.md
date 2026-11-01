@@ -56,3 +56,10 @@
 - 第 8 周中文手册（私有 staging，机器译稿 `humanApproval=false`）已用 `delivery.weekly_guide_staging candidate` 绑定到本页：条目 `editionId/sourceIdentitySha256/releasePackageJsonSha256` 与 v5 页面身份一致，资源 `/weekly-guides/published/d0337446….json`（10,105 B）。
 - `guarded_hosting_publish` 部署 **`d5696f5b32f72484`**（目录哈希不变）；线上 `manifest-v1.json` 200、哈希 `4d30b0ff…`、条目与正文 SHA/字节回读通过；正文 11 节。
 - 客户端 `clientAcceptance=not_run`；韩/西第 8 周无译稿，保持「暂不可用」。
+
+## 后续：听音定位上线（2026-11-01 05:42Z）
+
+- 第一次尝试失败：视频在最后一句会众「阿们」后结束，配音尾部超出源窗口 1.0–1.4 s，阅读器 podcast 合同要求 `|音轨−窗口| ≤ 0.1 s`；已回退（`234e503c → 21a85f64 → 4ecec776`）。
+- 方案 A：只裁尾部 TTS 静音（最后 6 片），ko 最后一句 +5%、es 最后两句 +15% `atempo`（保留音高）；音轨 zh 2019.400／ko 2019.463／es 2019.462 s，窗口 0–2019.370667 s，容差内。
+- 重新发布：`992b3a2b`（音轨/字幕/文稿，HTTP 9/9）→ `e50b0684`（release＋对齐目录＋指纹＋sidecar，readback）→ `2eacebd0`（英文对照，readback）。阅读器三语 `automaticAudioAlignment=ready`、页面 0 错误；浏览器 smoke（含 `/api/session`）三语 pass；反馈统计目录重建（46 sources）并部署函数。
+- 客户端设备验收 `not_run`。
