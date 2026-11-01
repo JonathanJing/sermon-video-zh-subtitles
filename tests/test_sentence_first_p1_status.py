@@ -71,6 +71,17 @@ class P1StatusHookTests(unittest.TestCase):
         self.assertEqual(stage["state"], "succeeded")
         self.assertEqual(stage["evidenceLevel"], "E2")
 
+    def test_translate_subagent_output_is_visible_as_rows_progress(self):
+        translate = self.run / "translate"
+        translate.mkdir()
+        (translate / "input-0.jsonl").write_text('{"id":"s1"}\n{"id":"s2"}\n', encoding="utf-8")
+        (translate / "output-0.jsonl").write_text('{"id":"s1"}\n', encoding="utf-8")
+        snapshot = run_status.derive_snapshot(self.run, index=self.index)
+        stage = next(stage for stage in snapshot["stages"] if stage["id"] == "l2.translate.zh-Hans")
+        self.assertEqual(stage["state"], "running")
+        self.assertEqual(stage["progress"], {"unit": "rows", "done": 1, "total": 2})
+        self.assertEqual(stage["source"], "derived:translate/")
+
     @unittest.skipIf(sfa_publish is None, f"sfa_publish production deps unavailable: {SFA_IMPORT_ERROR}")
     def test_publish_commands_write_l4_stages(self):
         cfg = FakeCfg(self.run)

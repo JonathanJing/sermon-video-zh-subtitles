@@ -706,10 +706,23 @@ def _derive_artifacts(run: Path, stages: dict[str, dict], locale: str | None,
             derived.append(name)
 
     translations = run / "translations.jsonl"
-    if translations.is_file() and _line_count(translations):
+    translated_rows = _line_count(translations) if translations.is_file() else 0
+    if translated_rows:
         _fill_stage(stages, f"l2.translate.{locale}", locales, state="succeeded",
                     evidence_level="E1", source="derived:translations.jsonl", path=translations)
         note("translations.jsonl")
+    else:
+        # The subagent route writes translate/output-<k>.jsonl and only merges later.
+        inputs = sorted((run / "translate").glob("input-*.jsonl"))
+        outputs = sorted((run / "translate").glob("output-*.jsonl"))
+        total = sum(_line_count(path) for path in inputs)
+        done = sum(_line_count(path) for path in outputs)
+        if total:
+            path = outputs[-1] if outputs else inputs[-1]
+            _fill_stage(stages, f"l2.translate.{locale}", locales, state="running",
+                        evidence_level="E0", source="derived:translate/", path=path,
+                        progress={"unit": "rows", "done": done, "total": total})
+            note("translate/")
     consistency = run / f"consistency-{locale}.json"
     if not consistency.is_file():
         consistency = run / "consistency.json"
