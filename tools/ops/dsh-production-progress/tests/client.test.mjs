@@ -28,6 +28,8 @@ test('client bundle registers the production-progress dock entry', async () => {
   assert.deepEqual(exports.inject, ['slots'])
   assert.equal(typeof exports.apply, 'function')
   assert.equal(typeof exports.Dock, 'function')
+  assert.equal(exports.stageLabel('l3.tts.john_thomas.zh-Hans'), 'L3 配音 · 中文')
+  assert.equal(exports.stageLabel('l3.tts.john_thomas.zh-Hans', false), 'L3 配音')
 
   let injected = null
   let registered = null

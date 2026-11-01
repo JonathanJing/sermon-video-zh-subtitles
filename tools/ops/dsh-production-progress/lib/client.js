@@ -53,10 +53,10 @@ window.__ModuleLoader__.load({
       return LOCALE_LABEL[locale] || locale || ''
     }
 
-    function stageLabel(id) {
+    function stageLabel(id, includeLocale = true) {
       if (!id) return '等待中'
       const locale = localeOf(id)
-      const suffix = locale ? ` · ${localeLabel(locale)}` : ''
+      const suffix = includeLocale && locale ? ` · ${localeLabel(locale)}` : ''
       if (id.startsWith('l1.start')) return 'L1 开工'
       if (id.startsWith('l1.preflight')) return 'L1 前置检查'
       if (id.startsWith('l1.english')) return 'L1 英文表'
@@ -257,7 +257,7 @@ window.__ModuleLoader__.load({
             color: 'var(--dsh-text-primary, #e6e6e6)', fontWeight: 600,
             overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0,
           },
-        }, active ? stageLabel(active.id) : stateLabel(run.state)),
+        }, active ? stageLabel(active.id, false) : stateLabel(run.state)),
         progress ? h('span', {
           style: { fontVariantNumeric: 'tabular-nums', flex: '0 0 auto' },
         }, progress) : null,
@@ -336,6 +336,6 @@ window.__ModuleLoader__.load({
       }, Dock))
     }
 
-    return { apply, inject, Dock }
+    return { apply, inject, Dock, stageLabel }
   },
 })
