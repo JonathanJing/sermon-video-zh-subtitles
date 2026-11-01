@@ -164,6 +164,7 @@ def test_new_file_is_pushed_once_whatever_its_name_and_old_file_stays_silent(tmp
     assert found["body"] == "Saturday_400pm_Live__1080.mp4 · 0.90 GB · 19:37 PT · 名称不含 20261101"
     assert (found["level"], found["group"], found["url"]) == (
         "timeSensitive", "sermon-upload", "https://drive.google.com/file/d/new/view")
+    assert found["call"] == "1"  # found notices ring for 30 s
     start = [p for _, p in bark.calls if p["title"] == "开始监控证道视频上传"][0]
     assert start["level"] == "passive" and "Bark: iphone, mac" in start["body"]
     assert local_calls == []  # the Mac's Bark push arrived
@@ -249,6 +250,7 @@ def test_three_failed_reads_push_one_error_then_one_recovery(tmp_path):
     assert titles == ["证道视频检查失败", "证道视频检查已恢复"]
     error = [p for _, p in bark.calls if p["title"] == "证道视频检查失败"][0]
     assert error["body"] == "连续 3 次读不到文件夹：folder private"
+    assert error["level"] == "timeSensitive"
 
 
 def test_bark_payload_retries_and_key_stays_out_of_the_url(tmp_path):
