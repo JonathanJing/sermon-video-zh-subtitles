@@ -34,10 +34,10 @@
       "es": "Sermón del domingo"
     }
   },
-  "title": "启示录：耶稣带来的安慰与盼望 · 耶稣为属祂的人盖印",
+  "title": "耶稣为属祂的人盖印",
   "meta": {
     "zh-Hans": {
-      "title": "启示录：耶稣带来的安慰与盼望 · 耶稣为属祂的人盖印",
+      "title": "耶稣为属祂的人盖印",
       "series": "启示录：耶稣带来的安慰与盼望",
       "scripture": "启示录 14 章",
       "badge": "周日证道 · AI 合成配音 · 已人工审核",
@@ -45,7 +45,7 @@
       "note": "AI 合成配音，与原视频同步。本项目与 Mariners Church 无隶属关系。"
     },
     "ko": {
-      "title": "요한계시록: 예수님이 주시는 위로와 소망 · 예수님은 자기 백성에게 인을 치십니다",
+      "title": "예수님이 자기 백성에게 인을 치십니다",
       "series": "요한계시록: 예수님이 주시는 위로와 소망",
       "scripture": "요한계시록 14장",
       "badge": "주일 설교 · AI 합성 음성 · 검토 완료",
@@ -53,7 +53,7 @@
       "note": "AI 합성 음성 더빙으로 원본 영상과 동기화됩니다. 이 프로젝트는 Mariners Church와 관련이 없습니다."
     },
     "es": {
-      "title": "Apocalipsis: El consuelo y la esperanza que Jesús trae · Jesús sella a los suyos",
+      "title": "Jesús sella a los suyos",
       "series": "Apocalipsis: El consuelo y la esperanza que Jesús trae",
       "scripture": "Apocalipsis 14",
       "badge": "Sermón del domingo · Voz sintetizada por IA · Revisado",
@@ -89,7 +89,14 @@
   "mediaType": "podcast",
   "titleCheck": {
     "englishTitle": "Jesus marks His own",
-    "mode": "table",
-    "seriesKey": "revelation-comfort-and-hope"
+    "mode": "approved_exception",
+    "seriesKey": "revelation-comfort-and-hope",
+    "publishedTitles": {
+      "zh-Hans": "耶稣为属祂的人盖印",
+      "ko": "예수님이 자기 백성에게 인을 치십니다",
+      "es": "Jesús sella a los suyos"
+    },
+    "reason": "用户 2026-10-31 要求页面与海报标题只写本篇标题，不带「系列名 · 」前缀；已发布页以短标题重出（c022dca29c0d511e）。",
+    "approvedBy": "Jony (chat, 2026-10-31)"
   }
 }
