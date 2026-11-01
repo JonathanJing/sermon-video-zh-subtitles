@@ -12,7 +12,7 @@
 2. **先立一份事件协议和一份派生快照，再谈显示面**。DSH 插件、Bark、Web 页都只是快照的消费者；任何显示面都无法凭空知道"第几批、是否卡住"。
 3. **三个显示面分工不同**：DSH 插件是**桌面驾驶舱**（实时细节），Bark 是**传呼机**（阶段里程碑、需要人工、停滞、失败），Web 页是**档案与远程视图**（历史、多 run、离开电脑后回看）。不要用一个替代另一个，也不要在协议未立时同时铺三个面。
 4. **如果只能先做一件事：做 P0（状态协议 + `run_status` CLI + 现有事件/文件派生）**。它同时喂饱三个面。如果只能先做一个显示面：Bark 最快缓解"离开就瞎"；但"在 DSH 里看进度"只能靠插件。
-5. **不新增第三套正式状态账本**。四层线继续用自己的 `sermon-four-layer-progress-v1`；逐句线新增的是**运行级可观测快照**。词表借鉴 `sermon-run-progress-v1` 已经区分开的"已处理／机器复核／人审／准入"，不合并账本、不互相冒充。
+5. **不新增第三套正式状态账本**。四层线继续用自己的 `sermon-four-layer-progress-v1`；正式 run 级进度/ETA 已有 [`sermon-run-progress-v1`](../offline-run-progress-eta.md)。逐句线新增的是**轻量运行快照**：因缺少冻结 plan 与验证收据，不直接投影 `run_progress`，但沿用它的计数分层（已处理／机器复核／人审／准入）、phase 与 ETA 纪律，不合并账本、不互相冒充。
 
 ## 一、问题、证据与边界
 
@@ -79,7 +79,7 @@
 
 1. **事件优先，快照派生。** 事件只追加；快照可从事件重建（像 `state_check.py` 对 DeepSeek state 做的那样）。
 2. **状态不是门禁。** 失败/停滞只是注意项；放行仍由现有 validator、preflight、收据和人工决定。
-3. **fail-open。** 状态写入、通知、插件读取任何一步出错都只记录警告，不改生产命令的退出码。
+3. **fail-open（仅限本设计新增的状态旁路）。** 状态显示写入、通知、插件读取任何一步出错都只记录警告，不改生产命令的退出码。既有 [Dry run 日志充分性契约](../observability-dry-run-contract.zh.md) / accounting 的必需日志语义不变：那些日志写入失败仍按原合同处理，本设计不削弱它们。
 4. **来源与置信度可见。** 显式脚本事件 > 从状态文件派生 > 代理手打 > DSH 推断；冲突不静默覆盖，显示 `source` 徽章。
 5. **先回答"卡住"，再回答"多久"。** 心跳年龄是一等字段；ETA 没有样本就显示未知，不编造完成时刻。
 6. **证据分级。** "完成"必须说明到哪一级：产物、机器门禁、人审、已发布、HTTP 核验、设备/现场。
@@ -93,6 +93,8 @@
 |---|---|---|---|
 | 通用 stage 日志 | [`tools/development/run_journal.py`](../../tools/development/run_journal.py) | 阶段迁移（started/finished/failed/waiting/resumed）、compute/waiting/rework 汇总、`hostId` 脱敏 | 不改格式；高频率进度不要写这里 |
 | 逐句 stage 词表 | [`experiments/sentence-first-agent/runlog.py`](../../experiments/sentence-first-agent/runlog.py) | 现有 stage 命名与 outcome/timings 派生 | 词表在 docstring 里，建议提升为机读注册表 |
+| 运行级进度/ETA 模型 | [`offline-run-progress-eta.md`](../offline-run-progress-eta.md)、`run_progress.py` | 计数分层（processed / executionSucceeded / contentReviewPassed / realHumanApproved / simulatedHumanApproved / admitted）、phase 枚举、心跳/ETA 纪律、`unknown_outcome` | 需要冻结 plan + 验证收据；逐句线先对齐字段，不直接投影 |
+| 联合 job 检查 | [`canonical-durable-job-inspection.zh.md`](../canonical-durable-job-inspection.zh.md) | queued/running/uncertain/reconciliation_required；未知结果只读对账 | 可作 TTS/发布的对账语义参考，不替代运行时监控 |
 | DeepSeek 三件套 | `coherence_core.py` → `state-<label>.json` / `events.jsonl` / `done.jsonl` / `units.jsonl` | 唯一的句级覆盖来源；state 可由事件流重建 | 已处理 `total=0`、`done>total`、永久 `running` 的边界 |
 | 一致性检查 | `state_check.py` | 重放比对、缺失句、失败句、`state-check.json` | 天然适合作为公开/推送的脱敏汇总 |
 | 发布门禁结果 | `gate/live-gate.json`、`http-verification.json`、`publish-intent.json` | 发布阶段的证据 | 只能到文件级；没有时长与重试 |
@@ -321,6 +323,17 @@ stateDiagram-v2
 - **独立探针（可选，不替代业务心跳）**：由 launchd 或后台进程每 30–60 秒检查活跃 stage 的 PID、SSH 可达性、容器/session 状态，把结果写 `status/probe.json`。它只回答"进程还在不在"，不产生业务进度；没有探针时，停滞只能靠最后心跳推断。
 - **DSH 插件缺席不是停滞信号**：`agent.json` 缺失只表示没有 DSH 心跳；stage 停滞仍以 stage 自己的心跳为准。两者都缺失时显示 `liveness: unknown`，不能直接报"卡住"。
 
+### 3.6.1 ETA 与不确定性
+
+ETA 不重新发明概率模型，沿用[离线运行进度/ETA](../offline-run-progress-eta.md)已经定下的纪律：
+
+- 只用**可比**的已成功样本（stage × speaker/locale × 长度档 × 缓存/资源类）；文件时间、stdout 估计、跨语言借用都不算样本。
+- 少于 5 个可比样本只给宽区间 + `confidence: low`；5 个以上给较窄区间 + `medium`；样本冲突、重复或维度不一致 → ETA 未知，不取平均。
+- 没有样本、分母未知（`total=0`）、心跳未知/过期、存在未解决的人审/授权/未知结果 → **ETA 未知**；不能用"剩余句数 × 平均"硬造一个时间。
+- 人工听审/授权没有 ETA（只能显示已等多久与计划时长）；机器耗时不能估计人的响应。
+- 运行级 ETA 是**条件式**：串行阶段求和 + 已知队列 + 已知人审等待；显示区间、样本数、置信度、假设与 `generatedAt`，不承诺完成时刻。
+- 当前 stage 的 ETA 可以来自本 run 的观测；跨 run 借用必须同 stage/模型/语言/长度档/资源类，且显式标 `source=history`。
+
 ### 3.7 证据分级（诚实标签）
 
 | 级别 | 含义 | 例子 | 谁能写 |
@@ -336,6 +349,18 @@ stateDiagram-v2
 - `stage.finished` 必须带 `evidenceLevel`；`l4.publish` 到 E4 不等于 E5，`human_reviewed` 只到 E3。
 - `run.completed` 需要每个必需交付物达到目标级别；状态页并列显示"已发布（HTTP 已核验）／设备未验收"，不合并成一个绿勾。
 - 机器复核不是人审：`revisions`、`audit`、`consistency` 都只能到 E2；只有用户收据到 E3。
+
+`sermon-run-progress-v1` 的计数与本设计证据级别只对齐语义、不直接复制数值：
+
+| run_progress 计数 | 本设计 | 说明 |
+|---|---|---|
+| `processed` | E1（历史已处理） | 有执行事实，不代表产物有效 |
+| `executionSucceeded` | E1 + 产物哈希 | 产物有效 |
+| `contentReviewPassed` | E2 | 机器复核通过 |
+| `realHumanApproved` | E3 | 真人收据；`simulatedHumanApproved` 不得映射到 E3 |
+| `admitted` | 不适用 | 逐句线没有正式包准入；发布走 E4/E5，不伪造 admitted |
+
+逐句线没有冻结 plan / validator 收据，因此不直接生成 `sermon-run-progress-v1`；未来若接入正式 plan，再由适配器投影。
 
 ### 3.8 失败、恢复与未知结果
 
@@ -750,3 +775,5 @@ run_status notify  --run <run-dir> --policy production
 - [少返工手册](../rework-avoidance.zh.md)：静默跳过与"等待"记录的反面案例。
 - DSH 调研（本机 2026-11-01，未入库）：运行版 `0.2.1-rc.5`；`dsh-working-activity@0.6.0`（状态行、projection、slot `conversation.input.dock`）；`dsh-notify-me@1.17.0`（会话级通知）；可读源码 `~/Developer/deepseek-harness`（`docs/cookbook/extension-cookbook.md`、`docs/user/develop/framework/events.md`、`packages/core/session/src/types.ts`、`packages/host/apiproxy/README.md`）。
 - Bark API 文档：<https://bark.day.app>。
+- [离线运行进度与 ETA](../offline-run-progress-eta.md)：`sermon-run-progress-v1` 的计数、phase、ETA/心跳纪律；本设计只对齐语义。
+- [Canonical 产物与 durable job 联合检查](../canonical-durable-job-inspection.zh.md)：未知结果与 reconciliation 的既有语义。
