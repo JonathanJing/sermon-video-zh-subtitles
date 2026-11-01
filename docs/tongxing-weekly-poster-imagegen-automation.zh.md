@@ -166,6 +166,7 @@ Layer 4 页面发布 + HTTP 核验
 - 2026-11-01 通过统一入口实测：`gpt-6.1-sol`、24.9 秒、1024 × 1536、`artSha256=45ab4796…`、`threadId=01a197e5…`、`savedPath=generated_images/01a197e5…/exec-95e7af25….png`、C2PA `urn:c2pa:009f0a85…`；同 prompt 再次运行直接复用收据，没有第二次派发。
 - 2026-11-01 第 8 周实跑（`revelation-jesus-marks-his-own-20261101`，中／韩／西）：主视觉 `artSha256=e5d8db19…`、prompt `59cdb0e1…`、`poster-design.json` 绑定 5 条文稿证据；`build --art` 通过 7 项公开输入核验，三语两尺寸各解出两个二维码，收据 `complete`、`humanApproval=false`。只写本地 `artifacts/`，未上传、未发送。
 - 2026-11-01 v2 设计合同实跑：`poster-design.json` 列出封蜡（title，12 分）、风暴避难所（illustration，6 分）、锡安山（passage，8 分）；`delivery.posters.design` 选封蜡、拒绝例证锚点，生成新主视觉 `978d9fda…`（该次工具回复没有路径，art 收据记 `namesSavedImage=false` 仍绑定成功），三语海报 `complete`、双二维码通过、`humanApproval=false`，只写本地 `artifacts/`。
+- 2026-11-01 历史周次回归（本地，不发布）：10-11 号角（12）/ 香炉（9）/ 锤子（6）、10-18 书卷（12）/ 灯台（10）/ 见证人（7）、10-25 宝座（11）/ 旷野（7）/ 拴绳（6），三份 v2 设计均由 `delivery.posters.design` 选最高分并通过校验；随后 artwork + build，三周九张海报（三语×两尺寸）二维码全部通过、收据 `complete`。10-25 的宝座构图偏低、下半被页脚盖住，说明「主语高度」还需要一条版面检查。
 - 同周还有一版已发布的手工封蜡主视觉（`artSha256=ea477301…`，Codex 会话 `01a1956e…`，v3）。用它和它的完整编辑 prompt 链重渲本地三语海报，六张图与线上 v3 逐字节相同（zh `8c266931…`、ko `00c65d59…`、es `b1f23f75…`），收据 `complete`；这证明同一构建入口能复现已发布成品，也说明主视觉质量取决于设计阶段选的概念。
 - 验证命令见「验收」。
 - 相关既有合同：[海报格式规范](tongxing-weekly-poster-format.zh.md)、[内容 brief](tongxing-weekly-poster-content-brief.zh.md)、[每周海报交付](tongxing-weekly-release.zh.md#每周海报交付)、[环境准备](environment-preparation.zh.md)。
