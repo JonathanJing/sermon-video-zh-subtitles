@@ -1,0 +1,9 @@
+{"at": "2026-11-01T22:55:37+00:00", "stage": "l1.preflight.setup", "event": "started", "hostId": "host-fca713d1423b", "pid": 10149}
+{"at": "2026-11-01T22:55:37+00:00", "stage": "l1.preflight.setup", "event": "finished", "hostId": "host-fca713d1423b", "pid": 10149}
+{"at": "2026-11-01T23:53:47+00:00", "stage": "l1.preflight", "event": "started", "hostId": "host-fca713d1423b", "pid": 30850}
+{"at": "2026-11-01T23:53:48+00:00", "stage": "l1.preflight", "event": "finished", "hostId": "host-fca713d1423b", "pid": 30850}
+{"at": "2026-11-02T01:02:57+00:00", "stage": "l3.finish", "event": "started", "hostId": "host-fca713d1423b", "pid": 47988}
+{"at": "2026-11-02T01:03:57+00:00", "stage": "l3.finish", "event": "finished", "hostId": "host-fca713d1423b", "pid": 47988}
+{"at": "2026-11-02T01:05:06+00:00", "stage": "l3.review.ko", "event": "waiting", "hostId": "host-fca713d1423b", "pid": 49233, "waitingOn": "user track review"}
+{"at": "2026-11-02T01:07:54+00:00", "stage": "l2.consistency", "event": "started", "hostId": "host-fca713d1423b", "pid": 51082}
+{"at": "2026-11-02T01:07:54+00:00", "stage": "l2.consistency", "event": "finished", "hostId": "host-fca713d1423b", "pid": 51082}
