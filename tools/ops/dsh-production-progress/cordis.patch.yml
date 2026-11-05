@@ -1,0 +1,14 @@
+# dsh-production-progress bundle patch: mount the host half into the DSH
+# profile composition. The client half is discovered from package.json
+# `dsh.client` and served at /plugins/dsh-production-progress/client.js.
+#
+# statusRoot is optional. Without it the plugin checks $SFA_STATUS_ROOT, then
+# the personal checkout path, then <cwd>/artifacts/sentence-first-agent.
+# Override it here (or in the profile user patch by id) when the checkout moves:
+#   - id: production-progress
+#     name: 'dsh-production-progress'
+#     config:
+#       statusRoot: /path/to/artifacts/sentence-first-agent
+- insert:
+    - id: production-progress
+      name: 'dsh-production-progress'

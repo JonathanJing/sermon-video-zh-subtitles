@@ -53,6 +53,33 @@ from tongxing_production.delivery import published_english_reference as english_
 
 CONFIG_SCHEMA = HERE / "pages" / "page-config.schema.json"
 TITLE_TABLE_DEFAULT = "docs/series-sermon-titles.zh.md"
+PUBLISH_EVIDENCE = {
+    "validate": "E1", "preflight": "E2", "check-title": "E2", "publish-check": "E2",
+    "assets": "E1", "baseline": "E1", "stage1": "E1", "stage2": "E1",
+    "stage-english-reference": "E1", "publish": "E4", "verify": "E5", "readback": "E5",
+}
+
+
+def _status_run(cfg) -> Path | None:
+    try:
+        run = cfg.run_dir(cfg.locales[0])
+    except Exception:  # noqa: BLE001 - status is optional
+        return None
+    return run if run.exists() else None
+
+
+def _mark_publish(cfg, cmd: str, event: str, **kwargs) -> None:
+    """Observation only: publish gates and exit codes are unchanged."""
+    if cfg is None:
+        return
+    run = _status_run(cfg)
+    if run is None:
+        return
+    try:
+        from run_status import safe_mark
+        safe_mark(run, f"l4.{cmd}", event, source="sfa_publish", **kwargs)
+    except Exception:  # noqa: BLE001 - status is a sidecar
+        pass
 
 
 def sha_file(path: Path) -> str:
@@ -1180,8 +1207,10 @@ def main(argv=None) -> int:
     config_path = args.config.expanduser()
     if not config_path.is_absolute():
         config_path = (Path.cwd() / config_path).resolve()
+    cfg = None
     try:
         cfg = load_config(config_path)
+        _mark_publish(cfg, args.cmd, "started")
         if args.cmd == "validate":
             result = cmd_validate(cfg)
         elif args.cmd == "preflight":
@@ -1218,11 +1247,19 @@ def main(argv=None) -> int:
         else:
             result = cmd_readback(cfg, args.stage2)
     except ValueError as exc:
+        _mark_publish(cfg, args.cmd, "failed", error_class="gate", message=str(exc),
+                      resume=f"rerun sfa_publish.py {args.cmd} and fix the named gate")
         print(json.dumps({"ok": False, "error": str(exc)}, ensure_ascii=False))
         print(f"sfa_publish: {exc}", file=sys.stderr)
         return 1
+    ok = bool(result.get("ok", True))
+    if ok:
+        _mark_publish(cfg, args.cmd, "finished", evidence_level=PUBLISH_EVIDENCE.get(args.cmd, "E1"))
+    else:
+        _mark_publish(cfg, args.cmd, "failed", error_class="gate",
+                      message=str(result)[:300], resume=f"rerun sfa_publish.py {args.cmd}")
     print(json.dumps(result, ensure_ascii=False))
-    return 0 if result.get("ok", True) else 1
+    return 0 if ok else 1
 
 
 if __name__ == "__main__":

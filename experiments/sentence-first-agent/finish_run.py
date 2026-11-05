@@ -36,6 +36,19 @@ def py(*args) -> str:
     return subprocess.run([sys.executable, *map(str, args)], check=True, capture_output=True, text=True).stdout.strip()
 
 
+FINISH_STEPS = 5
+
+
+def status_progress(run: Path, done: int, message: str) -> None:
+    """Observation only: never let a status write change finish_run's behaviour."""
+    try:
+        from run_status import safe_mark
+        safe_mark(run, "l3.finish", "progress", unit="steps", done=done, total=FINISH_STEPS,
+                  message=message, source="finish_run")
+    except Exception:  # noqa: BLE001 - status is a sidecar
+        pass
+
+
 # Preview encode settings, measured on a 55-min 640x360 preview (258 s with quality):
 # decode of the 4K AV1 source dominates; fast/hardware cut the encoder part and land
 # around 60-70% of the quality time (larger files). "hardware" replaces the encoder
@@ -112,6 +125,7 @@ def main() -> int:
         # ASR is optional (2026-10-28: no longer a review condition); pull it quietly when present.
         subprocess.run(["scp", "-q", "-o", "BatchMode=yes", sources[2], sources[3], str(run)],
                        check=False, capture_output=True)
+    status_progress(run, 1, "pulled tts")
     wavs = sorted((run / "tts").glob("s*.wav"))
     print(json.dumps({"run": str(run), "wavs": len(wavs)}))
 
@@ -120,6 +134,7 @@ def main() -> int:
     if (run / "asr.jsonl").exists():
         print(py(HERE / "asr_check.py", "score", "--speech", run / "speech.jsonl", "--asr", run / "asr.jsonl",
                  "--report", run / "asr-report.json"))
+    status_progress(run, 2, "merged track")
 
     if not args.no_video:
         clip = json.loads((run / "clip.json").read_text(encoding="utf-8"))
@@ -131,6 +146,7 @@ def main() -> int:
         if not (run / "dub-preview-640.mp4").exists():
             print("preview encoder:", build_preview(run, args.preview_encoder))
         print("preview MB:", round((run / "dub-preview-640.mp4").stat().st_size / 1e6, 1))
+    status_progress(run, 3, "video/preview")
 
     rows = json.loads((run / "schedule.json").read_text(encoding="utf-8"))["sentences"]
     placed = [r for r in rows if r.get("lagSeconds") is not None]
@@ -149,6 +165,7 @@ def main() -> int:
         wall = sum(e["wallSeconds"] for e in entries)
         line += f"; tts wall {wall:.1f}s for {len(entries)} sentences ({total_dub / wall:.2f}x realtime, no model load)"
     print(line)
+    status_progress(run, 4, "schedule")
     asr_mean = None
     if (run / "asr-report.json").exists():
         report = json.loads((run / "asr-report.json").read_text(encoding="utf-8"))
@@ -179,6 +196,7 @@ def main() -> int:
                           "reviewPlayer": player_info}, ensure_ascii=False))
     except Exception as exc:
         print("review player skipped:", exc)
+    status_progress(run, 5, "review materials")
     mark(run, "l3.finish", "finished")
     write_outcome(run, status="track_ready_for_review", delivery="four_layer_release", locale=locale,
                   trackSeconds=track_seconds, ttsWallSeconds=tts_wall,

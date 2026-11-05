@@ -29,6 +29,7 @@
 | `deepseek_translate.py`、`coherence_core.py` | 本机 | DeepSeek 逐窗口连贯翻译（zh-Hans/ko/es），产物写 `coherence-<tag>/`，只读 run 的 sentences/slices |
 | `deepseek_status.py` | 本机 | 读 `state-<label>.json`/`events.jsonl`，显示 DeepSeek 阶段的进度、调用数、失败与逐次延迟（`--watch` 刷新，`--label` 选阶段） |
 | `state_check.py` | 本机 | 从 `events.jsonl`+`done.jsonl` 重算状态并比对；`--all` 查全部阶段、`--units` 报句级覆盖与失败句、`--missing` 列未覆盖句子、`--record` 写 `state-check.json`、`--write` 按事件流修复；不一致退出码 1 |
+| `run_status.py` | 本机 | 观察整条 run：`register`/`mark`/`wrap`/`handoff`/`resume`/`rebuild`/`status`/`production`/`check`/`notify`；写 `status/` 与 `.status-index.json`，只读派生、不改变门禁 |
 | `audit_deepseek.py`、`coherence_check.py`、`spoken_forms.py` | 本机 | 独立审计与 issue-bound 门（`--locale` 三语）、连贯性检查、数字读法与 TTS 专用读法（`spoken_forms.py --run --locale`） |
 | `lag_loop.py` | 本机 + Spark | 落后回环（同步 run 必跑）：读 `schedule.json` → 按 dub−source 精简推后句 → 重建 speech → 清 tts → 重排该语 → `finish_run`，最多 `--iterations` 轮；`--require-clean` 把闸门变成退出码，`--check-only` 只判不配 |
 | `build_speech.py` | 本机 | 套用复核修订和口播读法，写 speech.jsonl |
@@ -41,6 +42,7 @@
 | `review_sheets.py` | 本机 | 每种语言一张人工审核表（CSV），标出要重点听的句子 |
 | `sfa_publish.py` | 本机 | 页面发布单一驱动（`DEV-SF-004`）：读 `pages/<pageId>.json`；`validate`/`preflight`/`check-title`/`publish-check` 门禁与 assets→baseline→stage1→publish→verify→stage2→publish→readback→english-reference |
 | `tools/ops/sfa_publish_gate.py` | 本机 | 发布前/后完整性门禁（`sentence-first-publish-gate-v1`）：目录↔release↔资产、英文对照、对齐 sidecar/指纹/窗口、手册条目、页面标题渲染；任一必检失败退出码 1。规则见[发布门禁](../../docs/sentence-first-agent-publish-gate.zh.md) |
+| `tools/ops/notify.py` | 本机 | Bark 传输（P2）：`test-push` / `send`；keychain 服务 `org.sermonvideo.production-progress`，group `sermon-production`；不进任何门禁 |
 | `publish_podcast_page.py` | 本机 | 旧版按页复制驱动；未迁移页面与特殊修复路径（撤回、alignment、fix-content）仍可用 |
 | `build_study.py` | 本机 | 生成大纲与默想的 `sermon-study-artifact-v1`、审核收据、元数据/窗口批准与四产品清单 |
 | `publish_study.py` | 本机 | 把大纲与默想以 release v3 发布：页面学习段、`/study/<pageId>/<locale>/`、三语 release 与目录 |
@@ -59,6 +61,7 @@
 ```text
 artifacts/sentence-first-agent/<run>/
   run.md              工作日志：来源、决定、改动、用户结论
+  status/             进度事件、派生快照与通知去重账本（run_status.py；忽略 Git、不公开）
   clip.json           媒体路径、媒体起止、单元范围
   clip.wav            音频，16 kHz 单声道
   words.json          词级时间，相对 clip.wav
@@ -168,7 +171,7 @@ TTS 开始（首语）= max(讲员映射确认, 首语翻译 + 口播规格)；�
 
 - 开工发计划；英文表、映射、每条轨、页面各自发“可审”（链接 + 整轨长度 + 先听哪几句）。
 - 延误主动更新预计；一条轨发出去后下一条语言继续配，不要求用户空等。
-- 发轨和收到结论时用 `tools/development/run_journal.py append --run-dir $RUN --stage l3.review.<locale> --event waiting --waiting-on "user track review"`，收到结论再 `--event resumed`；导出器会把它算成等待，而不是计算。
+- 发轨和收到结论时用 `run_status.py handoff --run $RUN --stage l3.review.<locale> --waiting-on "user track review" --url <播放器>`，收到结论再 `run_status.py resume --run $RUN --stage l3.review.<locale>`；两者同时写 journal 的 `waiting`/`resumed`，导出器会把它算成等待，而不是计算。
 
 ### 0.2 并行分工（子代理与排程）
 
@@ -325,6 +328,48 @@ python3 $EXP/translate_parts.py merge --run $RUN --locale <locale>
 
 **看 DeepSeek 跑到哪了**：每次调用在 `state_dir`（翻译是 `coherence-<tag>/`，审计是 `--out`，回环是 run 根）写一行 `events.jsonl`，并原子更新 `state.json`（label、done/total、calls/hits/failed、costUsd、avgSeconds、lastError）。`python3 $EXP/deepseek_status.py --run <dir>` 直接读，`--watch 2` 刷屏看；`--tail 8` 显示最近调用的 context（`chain-02:window-0012`）、延迟与 token。缓存命中记 `hit`，失败记 `error` 并留最后 300 字符。每个阶段一个状态文件（`state-translate.json`、`state-audit.json`、`state-trim.json`），同一 run 目录里互不覆盖。`state_check.py --run <dir> --label <stage>` 用事件流重算状态并比对，计数对不上就以退出码 1 拦下（`--write` 可按事件流修复），这是防止「续跑重复计数」这类错误的守卫。这些文件在 `artifacts/` 时被忽略，不进 Git。
 
+**看整条 run 跑到哪了（P0，2026-11-01 起）**：`sfa.py start` 把每种语言登记到 `artifacts/sentence-first-agent/.status-index.json`；`spark_queue.py` 在 TTS 期间按 locale/讲员写 `l3.tts.<speaker>.<locale>` 的 started、心跳、progress、finished（`--no-status` 关闭，`--status-run LOCALE=RUN` 覆盖索引）。代理在长命令和人工交接处用：
+
+```bash
+python3 $EXP/run_status.py status --run $RUN --watch 2
+python3 $EXP/run_status.py wrap --run $RUN --stage l4.assets -- python3 $EXP/sfa_publish.py --config $EXP/pages/<pageId>.json assets --out <assets>
+python3 $EXP/run_status.py handoff --run $RUN --stage l3.review.zh-Hans \
+  --waiting-on "user track review" --url <播放器> --expected-minutes "20-80"
+python3 $EXP/run_status.py resume --run $RUN --stage l3.review.zh-Hans
+python3 $EXP/run_status.py production --production <首个 run 名>
+```
+
+不要 wrap 自己会写 journal 的脚本（`sfa.py start`、`preflight.py`、`finish_run.py`、`lag_loop.py`、`consistency_check.py`），否则同一 stage 会写两次迁移。P1 起：`finish_run.py` 自己写五个子步骤的 progress；`lag_loop.py` 写每轮 iterations、成功记 E2、不过闸门记 failed；`sfa_publish.py` 每个子命令自动写 `l4.<command>` 的 started/finished/failed（首个 locale 的 run 为观察点）。手工开工、没有经过 `sfa.py start` 的 run 先用 `run_status.py register --run $RUN --locale <locale> --production <首个 run 名> --sync/--no-sync --publish/--no-publish` 登记。
+
+**离开电脑时（P2）**：状态里的开工、可审、失败、停滞、完成可以推到 Bark。key 只放登录钥匙串，不进 URL/日志/仓库；先用 `test-push` 真机确认：
+
+```bash
+security add-generic-password -s org.sermonvideo.production-progress -a bark-iphone -w
+security add-generic-password -s org.sermonvideo.production-progress -a bark-mac -w
+python3 tools/ops/notify.py test-push --level timeSensitive
+python3 $EXP/run_status.py notify --run $RUN              # dry run，只打印计划
+python3 $EXP/run_status.py notify --run $RUN --execute    # 发一次
+python3 $EXP/run_status.py notify --production <首个 run 名> --execute --watch 30
+```
+
+策略：开工 passive；可审/缺步骤/完成 active；失败/停滞 timeSensitive；`unknown_outcome` critical（需手机「重要警告」权限）。同一事项只发一次，停滞默认 900 秒冷却；缺步骤在到期后宽限 600 秒，避免刚进入下一步就误报；本地播放器地址不会转发到手机。`status/notify-sent.ndjson` 是去重账本；默认 dry-run，`--execute` 才发送，`--no-push` 只打印。不要按句/按批推送。开工时把 `notify --production ... --execute --watch 30` 作为后台任务跑；否则只有手动执行 `notify` 时才会推送。
+
+**人工审核步骤都要 handoff**（Bark 只把 attention 当作“需要你”；不 handoff 就不会有可审推送）：
+
+| 人工步骤 | stage | handoff 的 `--waiting-on` |
+|---|---|---|
+| 英文表批准 | `l1.english-review` | `user English review` |
+| 讲员映射确认 | `l1.speakers` | `user speaker mapping` |
+| 每条语言轨听审 | `l3.review.<locale>` | `user track review`（带 `--url <播放器>`） |
+| 页面发布授权 | `l4.publish.authorization` | `user publish authorization` |
+| 学习内容批准 | `l4.study` | `user study approval` |
+
+发出链接/请求的同一个动作里调用 `run_status.py handoff --run $RUN --stage <stage> --waiting-on <...>`；收到结论后先 `resume`，批准时再 `mark --stage <stage> --event finished --evidence-level E3`，退回时 `mark --stage <stage> --event failed --error-class content --message <原因>`。`resume` 只关闭等待，不会自动把人工阶段判成功；不补 finished，run 会一直停在 active，完成通知也不会发。只有 `l3.review` 在脚本里没有自动边界，其余人工步骤同样需要代理显式 handoff，不能只写在对话里。
+
+状态写在 `<run>/status/`：`events.ndjson` 是高频进度/心跳，`status.json` 由 `journal.ndjson` + `state-*.json` + 状态事件派生。`check` 重放比对，不一致退出码 1；`mark` 用于 audit 等尚无自动打点的阶段（`--stage`、`--event`、`--evidence-level`）。它只用于观察，**不是门禁**，写入失败不影响生产；`status.json` 不公开，公开前必须脱敏。`register`/`mark` 写完事件会顺手刷新 `status.json`（fail-open），所以 DSH 插件和 `status` 命令不需要自己重建。
+
+**DSH 内嵌进度（P3）**：`tools/ops/dsh-production-progress/` 是本地 DSH 插件（host 路由 + `conversation.input.dock` 一行）。它只读 `<statusRoot>/.status-index.json` 和各 run 的 `status/status.json`；默认找本机主 checkout 的 `artifacts/sentence-first-agent`，可用 `SFA_STATUS_ROOT` 或 profile 的 `cordis.patch.yml` 按 id `production-progress` 覆盖。装进 desktop profile 后重启 DSH：输入框上方显示当前阶段、`done/total`、心跳/等待、active 阶段的 `预计 HH:MM` 和 `⚠ n`，点击展开阶段与 attention；展开的阶段行对 running/waiting 显示预计完成、对 succeeded/failed 显示实际完成/失败时间。人工 waiting 且 `handoff` 记录了 `DSH_SESSION_ID` 时，行尾出现“打开对话 ↗”，点击切到发起该审听的 DSH 会话；`handoff` 不传 `--session-id` 时自动读 `$DSH_SESSION_ID`。Bark 的开工、可审、失败、停滞、缺步骤、完成消息也带 `预计完成`（等待人工按 `expectedMinutes` 上限）或“需重估/实际完成”。安装/测试命令见该目录的 `README.md`；没有 run 时 dock 不渲染。
+
 ### 5 口播规格（本机）
 
 ```bash
@@ -437,7 +482,7 @@ python3 -m http.server -d $RUN 8765
 
 `reviewedAt` 必须带时区；`note` 不得含「未听审」。结论变了另存新版本，已发布收据不改写。
 
-收据要能回答「听了哪一版、怎么听的」：写 `reviewMode`（`whole_track` 或 `flagged_only`）、听审用的 `review.mp3` 与 `track.wav` 哈希；结论之后又重配或重出的，另写发布时音轨哈希并标 `unheardAfterApproval`；附播放器导出的逐句结论 JSON（哪些句被听过）。整轨听审耗时约等于音轨时长乘语言数，三条 31 分钟音轨不可能在 45 分钟内整轨听完；时间窗对不上就记 `flagged_only`，不要写成整轨。发出可审时 `run_journal.py append … --event waiting`，收到结论时 `--event resumed`；2026-10-24 两轮都没记，复盘里等待为 0。这两条是必做步骤，不是可选记录：发链接的同一个动作里打 `waiting`，收据落盘后立刻打 `resumed`；脚本自动打点还没做，漏了这段时间就会被算成计算时间。
+收据要能回答「听了哪一版、怎么听的」：写 `reviewMode`（`whole_track` 或 `flagged_only`）、听审用的 `review.mp3` 与 `track.wav` 哈希；结论之后又重配或重出的，另写发布时音轨哈希并标 `unheardAfterApproval`；附播放器导出的逐句结论 JSON（哪些句被听过）。整轨听审耗时约等于音轨时长乘语言数，三条 31 分钟音轨不可能在 45 分钟内整轨听完；时间窗对不上就记 `flagged_only`，不要写成整轨。发出可审时用 `run_status.py handoff --run $RUN --stage l3.review.<locale> --waiting-on "user track review" --url <播放器>`，收到结论时用 `run_status.py resume --run $RUN --stage l3.review.<locale>`；它们同时写 journal 的 `waiting`/`resumed`。2026-10-24 两轮都没记，复盘里等待为 0。这两条是必做步骤，不是可选记录：发链接的同一个动作里打 `waiting`，收据落盘后立刻打 `resumed`；脚本仍不能自动判断用户是否开始听，漏了这段时间就会被算成计算时间。
 
 ### 9 改句
 
