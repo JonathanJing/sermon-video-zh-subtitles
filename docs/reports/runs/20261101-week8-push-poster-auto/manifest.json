@@ -1,0 +1,62 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261101-week8-push-poster-auto",
+  "runs": [
+    {
+      "label": "ios-push-20261101-preflight",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/ios-push-20261101-preflight",
+      "skipped": {
+        ".md": 1,
+        ".json": 1
+      }
+    },
+    {
+      "label": "ios-poster-auto-20261101",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/ios-poster-auto-20261101",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "ios-push-20261101-preflight",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 634,
+      "truncated": false,
+      "sha256": "4968567dc07f79a2af9b6cf91b6bc8f2b9240bb92e78cd2c902dc8826e45f3f5",
+      "redactions": {}
+    },
+    {
+      "run": "ios-push-20261101-preflight",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 4958,
+      "truncated": false,
+      "sha256": "f613d012776c613c1994c747145c0ed2e7aecbe5c934580a9e835e0ff02ff66a",
+      "redactions": {}
+    },
+    {
+      "run": "ios-poster-auto-20261101",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 411,
+      "truncated": false,
+      "sha256": "0eaf600fea29bcd887084b47e7b1357cfca6671672c4a5370c52c821be91324a",
+      "redactions": {}
+    },
+    {
+      "run": "ios-poster-auto-20261101",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 4335,
+      "truncated": false,
+      "sha256": "149db81a8fe8ef205316b41432f55cacbebc99f8a1b89f57a09d71309bb15db2",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}
