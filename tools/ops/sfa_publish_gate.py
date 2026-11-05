@@ -60,6 +60,33 @@ def sha(data: bytes) -> str:
     return hashlib.sha256(data).hexdigest()
 
 
+SYNC_DRIFT_LOW, SYNC_DRIFT_HIGH = -0.1, 1.1
+INDEPENDENT_CLOCK_LOW, INDEPENDENT_CLOCK_HIGH = 0.75, 1.35
+
+
+def content_clock_verdict(duration, audio_seconds):
+    """Judge the content's two clocks; returns ``(kind, ok, detail)``.
+
+    ``durationSeconds`` is the source-video clock the cues live on; ``audioDurationSeconds`` is the
+    dub track. A synchronized page keeps the two within a second of each other. A natural-rate dub
+    does not follow the video clock — the iOS reader models them as independent clocks
+    (``PublishedTranscriptClockTests`` "Independent clocks") — so a different pair is accepted only
+    while it stays plausible for one episode: 0.75–1.35x the source length. A mixed-up, truncated
+    or missing audio file falls outside that band and fails.
+    """
+    if not isinstance(duration, (int, float)) or isinstance(duration, bool) or duration <= 0:
+        return "invalid", False, f"durationSeconds={duration}"
+    if not isinstance(audio_seconds, (int, float)) or isinstance(audio_seconds, bool) or audio_seconds <= 0:
+        return "invalid", False, f"audioDurationSeconds={audio_seconds}"
+    drift = audio_seconds - duration
+    if SYNC_DRIFT_LOW < drift < SYNC_DRIFT_HIGH:
+        return "synchronized", True, f"audioDuration-duration={drift:+.3f}s (synchronized)"
+    low, high = INDEPENDENT_CLOCK_LOW * duration, INDEPENDENT_CLOCK_HIGH * duration
+    ok = low <= audio_seconds <= high
+    return "independent", ok, (f"audioDuration-duration={drift:+.3f}s "
+                               f"(independent clocks, allowed {low:.0f}-{high:.0f}s)")
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--page-id", required=True)
@@ -176,8 +203,11 @@ def check_locale(gate: Gate, origin: str, page: dict, locale: str, reference: di
     audio_seconds_field = content.get("audioDurationSeconds", duration)
     gate.require(f"{locale}.content.duration", isinstance(duration, (int, float)) and duration > 0,
                  f"durationSeconds={duration}")
-    drift = (audio_seconds_field or 0) - (duration or 0)
-    gate.require(f"{locale}.content.drift", -0.1 < drift < 1.1, f"audioDuration-duration={drift:+.3f}s")
+    gate.require(f"{locale}.content.audioDuration",
+                 isinstance(audio_seconds_field, (int, float)) and audio_seconds_field > 0,
+                 f"audioDurationSeconds={audio_seconds_field}")
+    _, clock_ok, clock_detail = content_clock_verdict(duration, audio_seconds_field)
+    gate.require(f"{locale}.content.drift", clock_ok, clock_detail)
 
     status, captions_raw = get(origin + assets["captions"]["path"])
     if gate.require(f"{locale}.captions.http", status == 200, f"{status}"):

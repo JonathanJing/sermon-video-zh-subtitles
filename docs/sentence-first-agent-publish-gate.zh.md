@@ -54,7 +54,7 @@ PYTHONPATH=packages/production/src:. .venv/bin/python tools/ops/sfa_publish_gate
 | 2 | 目录与页面 | v5 schema；页面唯一；`defaultPageId` 指向本页；语言集合 ⊆ {zh-Hans,ko,es}；标题非空 | 修目录/配置后重构建 |
 | 3 | 目录 ↔ release | 三语 `releasePackageJsonSha256` == 线上 release 字节的 SHA | 重出 release/目录，不得只改目录 |
 | 4 | release ↔ 资产 | `status=published_http_verified`、`httpVerification.status=pass`；page/content/audio/captions 四个角色齐全，content/captions 字节 SHA 与 release 一致 | 替换资产后重出 release |
-| 5 | 文稿与字幕时间 | `pageId`/`targetLocale` 一致；`durationSeconds>0`；`audioDuration−duration` 在 (−0.1, 1.1)；字幕 cue 数 == 文稿 cue 数；所有 cue 结束 ≤ 音轨时长+1 ms | 重生成 assets，禁止手改字幕 |
+| 5 | 文稿与字幕时间 | `pageId`/`targetLocale` 一致；`durationSeconds>0`、`audioDurationSeconds>0`；两钟一致（差值在 (−0.1, 1.1)）按同步页通过；不一致时按独立双钟检查（iOS `PublishedTranscript` 的 `Independent clocks` 模型，语速自然的配音不跟原视频时钟），音轨时长须在文稿时长的 0.75–1.35 倍之间；字幕 cue 数 == 文稿 cue 数；所有 cue 结束 ≤ 音轨时长+1 ms | 重生成 assets，禁止手改字幕 |
 | 6 | 英文对照 | `human_approved`、`pageId`/`sourceIdentitySha256` 一致；三语 targets 齐全；`contentSha256`/`captionsSha256` == release 资产；blocks 数 == cues 数 | 重出 `stage-english-reference` 并部署 |
 | 7 | 对齐绑定 | 三语 `capabilities` 含 `alignment`；sidecar 身份与 targets 齐全；catalog binding == sidecar binding；索引 SHA/身份正确（pageId、track/source、窗口）；音轨实测长度与窗口差 ≤ 0.12 s | 重算索引/重绑目录，不得跳过 |
 | 8 | 手册条目 | manifest 固定 provenance（schema/series/translation/cuv/review/humanApproval=false）；条目唯一、`available`、`editionId`/`sourceIdentitySha256`/`releasePackageJsonSha256` 与线上一致；正文 `bytes`/`sha256` 匹配、`id`/`week`/`sections` 正确 | `weekly_guide_staging candidate --operation update` 重绑并部署 |
@@ -136,3 +136,5 @@ PYTHONPATH=packages/production/src:. .venv/bin/python tools/ops/sfa_publish_gate
 - 对齐：`packages/production/src/tongxing_production/delivery/published_alignment_catalog.py`
 - 运行手册：`experiments/sentence-first-agent/AGENTS.md` §10.6
 - 本周复盘：`docs/reports/runs/20261101-week8-jesus-marks/RETROSPECTIVE.md`
+
+> 2026-11-01：双人播客（`if-i-had-more-time-jesus-marks-his-own`）首次按独立双钟通过。该页是自然语速配音、不与原视频同步，`durationSeconds` 是原片窗口（3476.16 s），`audioDurationSeconds` 是配音音轨（中 3469.72、韩 3471.81、西 3564.58）。原规则只接受两钟相差 ≤1.1 s，会把这类页面误判为不一致；现规则保留同步页的严格检查，并对独立双钟要求音轨长度落在 0.75–1.35 倍区间，仍能拦住混错音轨。
