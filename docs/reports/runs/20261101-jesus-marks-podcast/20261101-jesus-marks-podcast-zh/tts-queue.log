@@ -1,0 +1,11 @@
+start 2026-11-01T23:35:54Z
+job sentence-tts-eric_pilot-zh-Hans 2026-11-01T23:35:54Z
+{"job": "4acb86133d23461984a66866c31c394e", "event": "reserved"}
+{"job": "4acb86133d23461984a66866c31c394e", "event": "bound", "container": "da78d6111bc8"}
+{"job": "4acb86133d23461984a66866c31c394e", "event": "ended", "stepExit": "0", "log": "tts exit zh-Hans 0 2026-11-01T23:46:07Z"}
+job sentence-tts-steve_bang_lee-zh-Hans 2026-11-01T23:46:15Z
+{"job": "f3070a5f830d40b68a756618a4cb05c0", "event": "reserved"}
+{"job": "f3070a5f830d40b68a756618a4cb05c0", "event": "bound", "container": "b0a72fea7d31"}
+{"job": "f3070a5f830d40b68a756618a4cb05c0", "event": "ended", "stepExit": "0", "log": "tts exit zh-Hans 0 2026-11-01T23:50:36Z"}
+locale done zh-Hans 2026-11-01T23:51:00Z
+all done 2026-11-01T23:51:00Z

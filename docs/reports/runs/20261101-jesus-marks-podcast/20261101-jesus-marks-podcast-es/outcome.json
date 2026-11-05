@@ -1,0 +1,20 @@
+{
+  "schemaVersion": "sentence-first-outcome-v1",
+  "at": "2026-11-02T01:03:58+00:00",
+  "status": "track_ready_for_review",
+  "delivery": "four_layer_release",
+  "locale": "es",
+  "trackSeconds": 3564.58,
+  "ttsWallSeconds": 845.9,
+  "realtime": 4.21,
+  "asrMean": null,
+  "startedAt": "2026-11-02T01:02:57+00:00",
+  "endedAt": "2026-11-02T01:03:58+00:00",
+  "published": false,
+  "reviewMp3": "artifacts/sentence-first-agent/20261101-jesus-marks-podcast-es/review.mp3",
+  "reviewPlayer": {
+    "html": "artifacts/sentence-first-agent/20261101-jesus-marks-podcast-es/review-player.html",
+    "rows": 940
+  },
+  "note": "track merged and scored; audio alignment and review materials done in the same pass"
+}
