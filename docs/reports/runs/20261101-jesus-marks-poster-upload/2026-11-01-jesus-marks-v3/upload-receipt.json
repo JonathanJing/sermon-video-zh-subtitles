@@ -1,0 +1,124 @@
+{
+  "status": "published_http_verified",
+  "origin": "https://ai-for-god-sermon-audio.web.app",
+  "pageId": "revelation-jesus-marks-his-own-20261101",
+  "version": "sites/ai-for-god-sermon-audio/versions/4a2be2e620783fe6",
+  "inventoryFiles": 382,
+  "inventoryMatches": true,
+  "firebaseConfigSemanticsMatch": true,
+  "httpChecks": [
+    {
+      "path": "/posters/revelation-jesus-marks-his-own-20261101/zh-Hans-8c266931ec06b5765f10ed9dc5bc2adcf754b44f4058edac248ec0ef913d72ca.png",
+      "status": 200,
+      "sha256": "8c266931ec06b5765f10ed9dc5bc2adcf754b44f4058edac248ec0ef913d72ca",
+      "bytes": 1952821
+    },
+    {
+      "path": "/posters/revelation-jesus-marks-his-own-20261101/zh-Hans-preview-755068b14cf5326d2a4b58fc26eaf5002a00eea4b05a29a5447a0890d650d532.png",
+      "status": 200,
+      "sha256": "755068b14cf5326d2a4b58fc26eaf5002a00eea4b05a29a5447a0890d650d532",
+      "bytes": 583099
+    },
+    {
+      "path": "/posters/revelation-jesus-marks-his-own-20261101/ko-00c65d59dd2e6a85d40cfb04304854eccd7bd41080c120bbdd23c79e6f6645e2.png",
+      "status": 200,
+      "sha256": "00c65d59dd2e6a85d40cfb04304854eccd7bd41080c120bbdd23c79e6f6645e2",
+      "bytes": 1956509
+    },
+    {
+      "path": "/posters/revelation-jesus-marks-his-own-20261101/ko-preview-c0df457a9eafab5ff5bc454acbad3857549c0531ce8c08693d0a1ede5a5ab939.png",
+      "status": 200,
+      "sha256": "c0df457a9eafab5ff5bc454acbad3857549c0531ce8c08693d0a1ede5a5ab939",
+      "bytes": 583395
+    },
+    {
+      "path": "/posters/revelation-jesus-marks-his-own-20261101/es-b1f23f75e77bc416f7677f47551141c2ea56f5169b0830d0827900e2b98ff9ba.png",
+      "status": 200,
+      "sha256": "b1f23f75e77bc416f7677f47551141c2ea56f5169b0830d0827900e2b98ff9ba",
+      "bytes": 1952060
+    },
+    {
+      "path": "/posters/revelation-jesus-marks-his-own-20261101/es-preview-9bc3128ad2420116342f66ae53bef0bee850b7b6b1cd446a1c5e4ced8afc8d28.png",
+      "status": 200,
+      "sha256": "9bc3128ad2420116342f66ae53bef0bee850b7b6b1cd446a1c5e4ced8afc8d28",
+      "bytes": 585633
+    },
+    {
+      "path": "/weekly-announcements-v1.json",
+      "status": 200,
+      "sha256": "4349bf8bffc34204cf39ca3549a0d14e5de7a1b54848fbc19e08f92c4bf1961b",
+      "bytes": 11058
+    },
+    {
+      "path": "/multilingual-v5.json",
+      "status": 200,
+      "sha256": "f42fb90f83bda39a47441de80d342181564fea807e64337e3067f3009567b697",
+      "bytes": 35009
+    },
+    {
+      "path": "/multilingual-v4.json",
+      "status": 200,
+      "sha256": "f0f09ac4bbebac5579e9a20012bf79fe2b7ff777a4c35f8b475840a639f5f3b5",
+      "bytes": 33065
+    },
+    {
+      "path": "/multilingual-v3.json",
+      "status": 200,
+      "sha256": "bc6939d77d6f6bc769f9e41d8db8a9283a0b2a3de982dc44ef96a01d54a84f7d",
+      "bytes": 28593
+    }
+  ],
+  "announcements": [
+    {
+      "id": "revelation-jesus-marks-his-own-20261101-zh-Hans",
+      "pageID": "revelation-jesus-marks-his-own-20261101",
+      "locale": "zh-Hans",
+      "releaseSHA256": "056160f4a3dd527a8db4d87ee597ef34e84630978f094bcb0e60bbcb756613e7",
+      "sourceIdentitySHA256": "86acc52182afe0eaa7846d4ac7c3731a0f4c7c16272ff83429b7b34a8915e325",
+      "title": "耶稣为属祂的人盖印",
+      "publishedAt": "2026-11-01T06:29:07Z",
+      "poster": {
+        "url": "/posters/revelation-jesus-marks-his-own-20261101/zh-Hans-8c266931ec06b5765f10ed9dc5bc2adcf754b44f4058edac248ec0ef913d72ca.png",
+        "sha256": "8c266931ec06b5765f10ed9dc5bc2adcf754b44f4058edac248ec0ef913d72ca",
+        "bytes": 1952821,
+        "width": 1200,
+        "height": 1800
+      }
+    },
+    {
+      "id": "revelation-jesus-marks-his-own-20261101-ko",
+      "pageID": "revelation-jesus-marks-his-own-20261101",
+      "locale": "ko",
+      "releaseSHA256": "33b48816e367f766a1b8d7a467ccaee208b8d78d9cabf7682455a5df9fe654aa",
+      "sourceIdentitySHA256": "86acc52182afe0eaa7846d4ac7c3731a0f4c7c16272ff83429b7b34a8915e325",
+      "title": "예수님이 자기 백성에게 인을 치십니다",
+      "publishedAt": "2026-11-01T06:29:07Z",
+      "poster": {
+        "url": "/posters/revelation-jesus-marks-his-own-20261101/ko-00c65d59dd2e6a85d40cfb04304854eccd7bd41080c120bbdd23c79e6f6645e2.png",
+        "sha256": "00c65d59dd2e6a85d40cfb04304854eccd7bd41080c120bbdd23c79e6f6645e2",
+        "bytes": 1956509,
+        "width": 1200,
+        "height": 1800
+      }
+    },
+    {
+      "id": "revelation-jesus-marks-his-own-20261101-es",
+      "pageID": "revelation-jesus-marks-his-own-20261101",
+      "locale": "es",
+      "releaseSHA256": "d01e711fd7db048d8bbcbe9d3e5468dd4a0d73755b575772267849870c9e4f68",
+      "sourceIdentitySHA256": "86acc52182afe0eaa7846d4ac7c3731a0f4c7c16272ff83429b7b34a8915e325",
+      "title": "Jesús sella a los suyos",
+      "publishedAt": "2026-11-01T06:29:07Z",
+      "poster": {
+        "url": "/posters/revelation-jesus-marks-his-own-20261101/es-b1f23f75e77bc416f7677f47551141c2ea56f5169b0830d0827900e2b98ff9ba.png",
+        "sha256": "b1f23f75e77bc416f7677f47551141c2ea56f5169b0830d0827900e2b98ff9ba",
+        "bytes": 1952060,
+        "width": 1200,
+        "height": 1800
+      }
+    }
+  ],
+  "defaultPageId": "revelation-jesus-marks-his-own-20261101",
+  "deviceDisplay": "not_run",
+  "physicalScan": "not_run"
+}
