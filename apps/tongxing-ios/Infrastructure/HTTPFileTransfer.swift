@@ -63,12 +63,17 @@ final class HTTPFileTransfer: NSObject, URLSessionDataDelegate, @unchecked Senda
     private var expectedLength: Int64 = -1
     private var acceptedResponse = false
     private var digest = SHA256()
+    /// Called off the main thread with (received, expected) bytes; expected is
+    /// -1 when the server sends no usable Content-Length.
+    private let progress: (@Sendable (Int64, Int64) -> Void)?
 
-    init(session: URLSession, url: URL, temporaryURL: URL, maximumBytes: Int64) {
+    init(session: URLSession, url: URL, temporaryURL: URL, maximumBytes: Int64,
+         progress: (@Sendable (Int64, Int64) -> Void)? = nil) {
         self.session = session
         self.requestURL = url
         self.temporaryURL = temporaryURL
         self.maximumBytes = maximumBytes
+        self.progress = progress
     }
 
     func run() async throws -> HTTPFileReceipt {
@@ -177,7 +182,9 @@ final class HTTPFileTransfer: NSObject, URLSessionDataDelegate, @unchecked Senda
             try handle?.write(contentsOf: data)
             digest.update(data: data)
             received += Int64(data.count)
+            let snapshot = (received, expectedLength)
             lock.unlock()
+            progress?(snapshot.0, snapshot.1)
         } catch {
             failure = error
             lock.unlock()

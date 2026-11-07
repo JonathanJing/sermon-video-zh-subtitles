@@ -165,6 +165,7 @@ struct ContentView: View {
             if phase != .active { playback.saveProgress() }
             else {
                 localization.refreshSystemLanguage()
+                model.resumePublishedAudioPreparationIfStalled()
                 // The 08:00 threshold may have passed while the app was in the
                 // background; a return to the app is the second allowed moment.
                 presentWeeklyPosterIfDue()
@@ -318,6 +319,11 @@ struct ContentView: View {
                                             }
                                             .accessibilityIdentifier("retry-published-audio")
                                         }
+                                    } else if let progress = model.publishedAudioProgress {
+                                        ProgressView(value: progress) {
+                                            Text(localization.text("正在准备音频…"))
+                                        }
+                                        .accessibilityIdentifier("preparing-published-audio")
                                     } else {
                                         ProgressView(localization.text("正在准备音频…"))
                                             .accessibilityIdentifier("preparing-published-audio")
@@ -432,7 +438,7 @@ struct ContentView: View {
             // Duo uses its system-provided vertical toolbar when that is active.
             .listeningPlayerDock(atTrailingEdge: false,
                                  inSystemBar: usesSystemVerticalBar) {
-                if model.selectedTrack != nil || model.selectedAudioLocale != nil {
+                if showsPlaybackDock {
                     HStack(spacing: 0) {
                         Color.clear.frame(width: controlRegion.minX, height: 0)
                         listeningPlaybackDock(placement: .bottom)
@@ -474,8 +480,7 @@ struct ContentView: View {
                         .labelStyle(.iconOnly).accessibilityIdentifier("more-options")
                 }
                 #if os(iOS) && canImport(SwiftUI, _version: 8.0.85)
-                if #available(iOS 27.1, macOS 27.1, *), usesSystemVerticalBar,
-                   model.selectedTrack != nil || model.selectedAudioLocale != nil {
+                if #available(iOS 27.1, macOS 27.1, *), usesSystemVerticalBar, showsPlaybackDock {
                     ToolbarItem(placement: .primaryAction) {
                         listeningPlaybackDock(placement: .trailing, inSystemBar: true)
                     }
@@ -560,6 +565,13 @@ struct ContentView: View {
             .foregroundStyle(.secondary)
             .fixedSize(horizontal: false, vertical: true)
             .accessibilityIdentifier("playback-status-detail")
+    }
+
+    /// A published page keeps its player bar while its audio downloads and is
+    /// verified; the controls stay disabled until the track is ready. Hiding
+    /// the bar until then left a slow download looking like a missing player.
+    private var showsPlaybackDock: Bool {
+        model.selectedTrack != nil || model.selectedAudioLocale != nil || model.isPreparingPublishedAudio
     }
 
     private var shouldShowPlaybackStatusDetail: Bool {

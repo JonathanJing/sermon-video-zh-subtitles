@@ -61,6 +61,10 @@ final class AppModel: ObservableObject {
     @Published private(set) var selectedAudioLocale: String?
     @Published private(set) var publishedAudioSha256: String?
     @Published private(set) var isPreparingPublishedAudio = false
+    /// Fraction of the published audio downloaded so far, or nil while the size
+    /// is unknown. A full sermon is downloaded and hash-checked before playback,
+    /// which takes a while on a slow cellular link; the bar shows it is moving.
+    @Published private(set) var publishedAudioProgress: Double?
     @Published private(set) var publishedAudioError: String?
     @Published private var audioReleaseDisclosure: MachineCheckedDisclosure?
     private var audioReleaseSelectionKey: String?
@@ -239,6 +243,15 @@ final class AppModel: ObservableObject {
         publishedAudioTask = nil
         publishedAudioRequest = UUID()
         isPreparingPublishedAudio = false
+        publishedAudioProgress = nil
+    }
+
+    /// Restarts preparation when a published page with audio is left with no
+    /// audio, no running preparation and no error. Without this the page keeps
+    /// showing "正在准备音频…" and never shows the player bar.
+    func resumePublishedAudioPreparationIfStalled() {
+        guard publishedAudioError == nil else { return }
+        preparePublishedAudioIfNeeded()
     }
 
     private func preparePublishedAudioIfNeeded() {
@@ -687,6 +700,10 @@ final class AppModel: ObservableObject {
             await refreshMultilingualCatalog(pageID: selectedPageID,
                                              preferPublishedDefault: preferPublishedDefault && publishedSelectionRevision == selectionRevision)
         }
+        // The refresh cancelled any running download above. When the catalog
+        // fetch fails, or a newer selection won the race, nothing else restarts
+        // it, and the page would stay on "正在准备音频…" with no player bar.
+        preparePublishedAudioIfNeeded()
     }
 
     private func refreshMultilingualCatalog(pageID: String?, preferPublishedDefault: Bool = false) async {
@@ -854,19 +871,32 @@ final class AppModel: ObservableObject {
         let request = UUID()
         publishedAudioRequest = request
         isPreparingPublishedAudio = true
+        publishedAudioProgress = nil
         publishedAudioError = nil
+        let reportProgress: @Sendable (Int64, Int64) -> Void = { [weak self] received, expected in
+            guard expected > 0 else { return }
+            let fraction = min(1, Double(received) / Double(expected))
+            Task { @MainActor [weak self] in
+                guard let self, self.publishedAudioRequest == request, self.isPreparingPublishedAudio else { return }
+                // Publish whole-percent steps only, so chunk callbacks do not redraw the page.
+                if let current = self.publishedAudioProgress, (fraction - current) < 0.01, fraction < 1 { return }
+                self.publishedAudioProgress = fraction
+            }
+        }
         let audioTask = Task { () throws -> (VerifiedLanguageAudio, MachineCheckedDisclosure?) in
             let package = try await multilingualRepository.loadRelease(page: page, locale: locale)
             // Keep the verified disclosure even if the audio download or hash check fails next.
             self.retainReleaseDisclosure(package.disclosure, request: request, page: page,
                                          locale: locale, target: requestedTarget)
-            return (try await multilingualRepository.loadAudio(for: package, page: page), package.disclosure)
+            return (try await multilingualRepository.loadAudio(for: package, page: page, progress: reportProgress),
+                    package.disclosure)
         }
         publishedAudioTask = audioTask
         defer {
             if publishedAudioRequest == request {
                 publishedAudioTask = nil
                 isPreparingPublishedAudio = false
+                publishedAudioProgress = nil
             }
         }
         do {
