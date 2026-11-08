@@ -46,6 +46,25 @@ struct HTTPFileReceipt: Sendable {
     let sha256: String
 }
 
+/// Bytes received by a foreground transfer. `expectedBytes` is negative when the
+/// response did not declare a trustworthy Content-Length, so callers show an
+/// indeterminate indicator instead of inventing a percentage.
+public struct HTTPTransferProgress: Equatable, Sendable {
+    public let receivedBytes: Int64
+    public let expectedBytes: Int64
+
+    public init(receivedBytes: Int64, expectedBytes: Int64) {
+        self.receivedBytes = receivedBytes
+        self.expectedBytes = expectedBytes
+    }
+
+    /// Nil until the response declares a usable length.
+    public var fraction: Double? {
+        guard expectedBytes > 0 else { return nil }
+        return min(1, max(0, Double(receivedBytes) / Double(expectedBytes)))
+    }
+}
+
 /// Foreground transfer. Each response chunk goes to an app-owned temporary file;
 /// size checks happen before writing. The injected session remains caller-owned.
 final class HTTPFileTransfer: NSObject, URLSessionDataDelegate, @unchecked Sendable {
@@ -53,6 +72,7 @@ final class HTTPFileTransfer: NSObject, URLSessionDataDelegate, @unchecked Senda
     private let requestURL: URL
     private let temporaryURL: URL
     private let maximumBytes: Int64
+    private let progress: (@Sendable (HTTPTransferProgress) -> Void)?
     private let lock = NSLock()
     private var task: URLSessionDataTask?
     private var handle: FileHandle?
@@ -64,11 +84,13 @@ final class HTTPFileTransfer: NSObject, URLSessionDataDelegate, @unchecked Senda
     private var acceptedResponse = false
     private var digest = SHA256()
 
-    init(session: URLSession, url: URL, temporaryURL: URL, maximumBytes: Int64) {
+    init(session: URLSession, url: URL, temporaryURL: URL, maximumBytes: Int64,
+         progress: (@Sendable (HTTPTransferProgress) -> Void)? = nil) {
         self.session = session
         self.requestURL = url
         self.temporaryURL = temporaryURL
         self.maximumBytes = maximumBytes
+        self.progress = progress
     }
 
     func run() async throws -> HTTPFileReceipt {
@@ -157,8 +179,12 @@ final class HTTPFileTransfer: NSObject, URLSessionDataDelegate, @unchecked Senda
             expectedLength = (encoding == nil || encoding == "identity")
                 ? response.expectedContentLength : -1
             acceptedResponse = true
+            let expected = expectedLength
             lock.unlock()
             completionHandler(.allow)
+            // Announce the declared length before the first chunk so the page can
+            // switch from an indeterminate spinner to a determinate bar.
+            progress?(HTTPTransferProgress(receivedBytes: 0, expectedBytes: expected))
         } catch {
             failure = error
             lock.unlock()
@@ -177,7 +203,9 @@ final class HTTPFileTransfer: NSObject, URLSessionDataDelegate, @unchecked Senda
             try handle?.write(contentsOf: data)
             digest.update(data: data)
             received += Int64(data.count)
+            let reported = HTTPTransferProgress(receivedBytes: received, expectedBytes: expectedLength)
             lock.unlock()
+            progress?(reported)
         } catch {
             failure = error
             lock.unlock()

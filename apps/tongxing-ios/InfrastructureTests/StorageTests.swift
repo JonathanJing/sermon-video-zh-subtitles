@@ -443,7 +443,7 @@ final class StorageTests {
             switch request.url?.path {
             case "/multilingual-v2.json": return .init(chunks: [fixture.catalog])
             case "/releases/page-1/ko.json": return .init(chunks: [fixture.release])
-            case "/media/page-1/ko.wav": return .init(chunks: [audio])
+            case "/media/page-1/ko.wav": return .init(chunks: [audio], declaredLength: audio.count)
             default: return .init(status: 404, chunks: [Data("missing".utf8)])
             }
         }
@@ -451,12 +451,21 @@ final class StorageTests {
             origin: baseURL, cacheDirectory: directory.appendingPathComponent("multilingual-audio"), session: session)
         let page = try await repository.loadCatalog().catalog.defaultPage
         let package = try await repository.loadRelease(page: page, locale: "ko")
-        let verified = try await repository.loadAudio(for: package, page: page)
+        let progress = TransferProgressRecorder()
+        let verified = try await repository.loadAudio(for: package, page: page) { progress.record($0) }
         #expect(verified.locale == "ko")
         #expect(verified.pageID == "page-1")
         #expect(try Data(contentsOf: verified.localURL) == audio)
         #expect(try verified.localURL.deletingLastPathComponent()
             .resourceValues(forKeys: [.isExcludedFromBackupKey]).isExcludedFromBackup == true)
+        // The declared length is announced before bytes arrive and reaches the
+        // full byte count, so the page can render a determinate bar.
+        let reports = progress.values
+        #expect(reports.first?.receivedBytes == 0)
+        #expect(reports.first?.expectedBytes == Int64(audio.count))
+        #expect(reports.last?.receivedBytes == Int64(audio.count))
+        #expect(reports.last?.expectedBytes == Int64(audio.count))
+        #expect(reports.last?.fraction == 1)
 
         stub(.init(chunks: [], error: URLError(.notConnectedToInternet)))
         #expect(try await repository.loadAudio(for: package, page: page).localURL == verified.localURL)
@@ -989,6 +998,14 @@ private final class Counter: @unchecked Sendable {
     private var count = 0
     var value: Int { lock.lock(); defer { lock.unlock() }; return count }
     func increment() { lock.lock(); count += 1; lock.unlock() }
+}
+
+/// Collects transfer callbacks from the URLSession delegate queue for assertions.
+private final class TransferProgressRecorder: @unchecked Sendable {
+    private let lock = NSLock()
+    private var reports: [HTTPTransferProgress] = []
+    var values: [HTTPTransferProgress] { lock.lock(); defer { lock.unlock() }; return reports }
+    func record(_ progress: HTTPTransferProgress) { lock.lock(); reports.append(progress); lock.unlock() }
 }
 
 private struct StubResponse {

@@ -61,6 +61,9 @@ final class AppModel: ObservableObject {
     @Published private(set) var selectedAudioLocale: String?
     @Published private(set) var publishedAudioSha256: String?
     @Published private(set) var isPreparingPublishedAudio = false
+    /// Received audio bytes while a published page's verified audio downloads.
+    /// Nil outside an active transfer, or before the first response byte.
+    @Published private(set) var publishedAudioProgress: HTTPTransferProgress?
     @Published private(set) var publishedAudioError: String?
     @Published private var audioReleaseDisclosure: MachineCheckedDisclosure?
     private var audioReleaseSelectionKey: String?
@@ -232,6 +235,8 @@ final class AppModel: ObservableObject {
     private var publishedSelectionRevision = UUID()
     private var languageSelectionRequest = UUID()
     private var publishedAudioTask: Task<(VerifiedLanguageAudio, MachineCheckedDisclosure?), Error>?
+    /// Last reported percentage, so a large transfer wakes SwiftUI at most ~100 times.
+    private var publishedAudioProgressPercent: Int?
     private var downloadTasks: [String: Task<Void, Never>] = [:]
 
     private func cancelPublishedAudioPreparation() {
@@ -239,6 +244,8 @@ final class AppModel: ObservableObject {
         publishedAudioTask = nil
         publishedAudioRequest = UUID()
         isPreparingPublishedAudio = false
+        publishedAudioProgress = nil
+        publishedAudioProgressPercent = nil
     }
 
     private func preparePublishedAudioIfNeeded() {
@@ -565,6 +572,19 @@ final class AppModel: ObservableObject {
     }
     var selectedContentLanguageName: String { Self.languageName(selectedContentLocale) }
     var selectedAudioLanguageName: String? { selectedAudioLocale.map(Self.languageName) }
+
+    /// Either a legacy track's own preparation or a published page downloading
+    /// its verified audio. The dock disables its controls while this is true.
+    /// It deliberately follows the running task, not "no audio yet": a path that
+    /// cancels preparation must not leave a permanently disabled dock behind.
+    var isPreparingPlaybackAudio: Bool { isPreparing || isPreparingPublishedAudio }
+
+    /// Mount the dock for legacy tracks, prepared published audio, and a running
+    /// published preparation. Without the last case a slow first download hides
+    /// the controls entirely and looks like a missing player.
+    var showsPlaybackDock: Bool {
+        selectedTrack != nil || selectedAudioLocale != nil || isPreparingPublishedAudio
+    }
     var selectedContentCapabilitySummary: String {
         guard let target = selectedContentTarget else { return "当前中文版本" }
         return target.hasPublishedAudio ? "文字 · 音频" : "仅文字"
@@ -658,7 +678,15 @@ final class AppModel: ObservableObject {
         let preferPublishedDefault = selectedWeek == nil && selectedPageID == nil
         if isPreparingPublishedAudio { cancelPublishedAudioPreparation() }
         isLoading = true
-        defer { isLoading = false }
+        // This refresh cancelled any running preparation. Every exit path — a
+        // failed legacy catalog, a failed multilingual catalog, or a superseded
+        // selection — must hand the page back a preparation it can finish.
+        // An explicit refresh may also retry a known failure, unlike the
+        // foreground recovery that leaves a failed preparation to its button.
+        defer {
+            isLoading = false
+            preparePublishedAudioIfNeeded()
+        }
         do {
             let result = try await repository.load()
             catalog = result.catalog
@@ -855,18 +883,35 @@ final class AppModel: ObservableObject {
         publishedAudioRequest = request
         isPreparingPublishedAudio = true
         publishedAudioError = nil
+        publishedAudioProgress = nil
+        publishedAudioProgressPercent = nil
         let audioTask = Task { () throws -> (VerifiedLanguageAudio, MachineCheckedDisclosure?) in
             let package = try await multilingualRepository.loadRelease(page: page, locale: locale)
             // Keep the verified disclosure even if the audio download or hash check fails next.
             self.retainReleaseDisclosure(package.disclosure, request: request, page: page,
                                          locale: locale, target: requestedTarget)
-            return (try await multilingualRepository.loadAudio(for: package, page: page), package.disclosure)
+            let audio = try await multilingualRepository.loadAudio(for: package, page: page) { progress in
+                // The transfer reports on a URLSession queue. Only publish a new
+                // value when the displayed percentage changes, and never after a
+                // newer request has replaced this one.
+                Task { @MainActor [weak self] in
+                    guard let self, self.publishedAudioRequest == request,
+                          self.isPreparingPublishedAudio else { return }
+                    let percent = progress.fraction.map { Int(($0 * 100).rounded(.down)) }
+                    guard percent != self.publishedAudioProgressPercent else { return }
+                    self.publishedAudioProgressPercent = percent
+                    self.publishedAudioProgress = progress
+                }
+            }
+            return (audio, package.disclosure)
         }
         publishedAudioTask = audioTask
         defer {
             if publishedAudioRequest == request {
                 publishedAudioTask = nil
                 isPreparingPublishedAudio = false
+                publishedAudioProgress = nil
+                publishedAudioProgressPercent = nil
             }
         }
         do {
@@ -917,6 +962,18 @@ final class AppModel: ObservableObject {
         publishedAudioSha256 = nil
         alignmentController.cancel()
         resetAlignmentState()
+        preparePublishedAudioIfNeeded()
+    }
+
+    /// Returning to the app restarts a preparation that no path restarted: the
+    /// page has no verified audio, no running task and no error to show. A
+    /// genuine failure keeps its message and retry button instead of silently
+    /// retrying on every foreground return.
+    func restartStalledPublishedAudioPreparation() {
+        guard selectedWeek == nil, selectedAudioLocale == nil,
+              selectedContentTarget?.hasPublishedAudio == true,
+              !isPreparingPublishedAudio, publishedAudioError == nil,
+              !playback.isPreview else { return }
         preparePublishedAudioIfNeeded()
     }
 
