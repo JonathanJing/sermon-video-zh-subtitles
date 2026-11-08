@@ -221,6 +221,26 @@ python3 $EXP/spark_queue.py --session <session> --owner sentence-first-agent \
 
 两次登记一前一后、同一会话，**不能重叠**：先用 `spark_exclusive_session.py status` 确认第一批已退出、没有运行中的任务，再登记第二批；还要看到第一批打印 `locale done <语言>`，只看到进程退出不算完成。不要重复列已配完的语言，那会白起一次容器和模型加载。省下的是「首语不等其余语言」那段，等于其余语言翻译完成比首语晚的时间（2026-10-23 校准里约 5–10 分钟）；实际值记进 `run.md`。
 
+### 0.3 发布意图七件套（开跑前填，收尾逐项打勾）
+
+周日证道默认就是**一次完整发布意图**。开工时 `prepare_clip.py` 已经把「发布意图清单」写进第一个
+`run.md`，把这七行填掉（本轮不做的那行写「本轮不交付」并写原因），发布前再按证据逐行核对：
+
+| # | 产物 | 证据落点 |
+|---|---|---|
+| 1 | 页面 + 三语 assets（page/content/audio/captions） | `assets` 目录 + HTTP 逐文件 SHA |
+| 2 | release 包（v2；含四产品时 v3） | `assets/releases/*.json` |
+| 3 | 目录（multilingual-v5/v4/v3） | `stage2`/`replace-B` 快照 + readback |
+| 4 | `/english-reference/<pageId>.json` | `stage-english-reference` + readback |
+| 5 | 现场对齐（sidecar + 每语指纹索引 + 目录 `audioFingerprint`/`capabilities`） | `/alignment/<pageId>.json` + gate `--require-alignment` |
+| 6 | 研读手册 `/weekly-guides/manifest-v1.json` 条目 | `candidate` 快照 + gate `--require-guide` |
+| 7 | 统计目录（`sermon-feedback-api` 函数目录） | 函数 `updateTime` + 三语 `/api/session` 200 |
+
+- 海报是发布后的独立交付，不占这七件的关键路径；只在页面 gate 通过后制作。
+- 一个发布意图最多 **3 次托管部署**。超了先停下查清单是不是没列全，不是继续发。
+- 2026-11-07 复盘：第一轮只发页面和英文对照，七件里漏了第 5、6、7 三件，用户追问后才补；
+  原因就是开工时没填这张表，把 `sfa_publish` 的子命令顺序当成了完整清单。
+
 ### 1 开自己的 Spark 独占会话
 
 1. 用会话工具（`packages/production/src/tongxing_production/compute/spark_exclusive_session.py`）的 `status` 看有没有别人的会话；有就问用户，不要收尾别人的会话：
@@ -394,6 +414,8 @@ python3 $EXP/lag_loop.py --run $RUN --locale <locale> --remote SPARK:sentence-fi
 
 - 退出码 0 才表示 `sentencesOverLag8s == 0` 且 `maxLagSeconds ≤ 8`；非 0 就是没过闸门，不能发「可审」。
 - 只看当前音轨、不重配：`lag_loop.py ... --check-only --require-clean`（不调用 DeepSeek、不用 Spark）。
+  **先跑一次 `--check-only` 再决定精简范围**：2026-11-07 三语各做了一轮全量重渲（22 分钟），
+  如果先看到 maxLag 只有几秒、超阈值的句子集中在少数窗口，就只重配那些句子，不做全量。
 - 结果写 `lag-loop-report.json`（threshold、每轮 selected/accepted/rejected、final、gate）并进 journal 的 `l3.lag-loop.<locale>`。
 - 2026-10-30 实测：60 句片段 ko 29.3 s（53 句）→ 1.31 s、es 22.8 s（56 句）→ 2.34 s，各一轮；整期不精简时 zh 6.7 s / ko 14.0 s / es 26.5 s。不同步的 run 跳过这一步。
 
@@ -546,12 +568,16 @@ python3 $EXP/publish_study.py finish                                            
 5. **改内容**：改 `build_study.py` 里的文本 → 重建 artifact 与 review → `publish_study.py build/assets → publish → verify → finish → publish` → 重新生成英文对照。只改字节不改身份时也可以直接用 `published_page_replace`（页面本地新增只允许 `/study/<pageId>/`）。
 6. **状态**：`outcome` 只代表文本就绪；发布以部署版本、`validate_public_study` 线上核验和英文对照重新上线为准。设备、现场、推送仍是各自的 `not_run`。
 
-### 10.6 发布前完整性检查与发布粒度（下轮起强制）
+### 10.6 发布意图、完成信号与部署粒度（2026-11-07 复盘整改，强制）
 
-本轮教训（手册静默失效约 90 分钟、对齐返工 23 分钟、全周 17 次部署）的整改，完整规则见[发布门禁](../../docs/sentence-first-agent-publish-gate.zh.md)。三条硬规则：
+完整规则见[发布门禁](../../docs/sentence-first-agent-publish-gate.zh.md)。三条硬规则：
 
-1. **一个发布意图一批做完**：页面/assets/release/目录/英文对照/对齐/手册条目/统计目录同批构建、同批部署（计划内 ≤3 次），不得发布后单改身份字节（标题、文稿、音轨、字幕、页面 HTML）。要改就开新的发布意图。
-2. **release 一变，四件下游同批重做**：`/english-reference/`、对齐绑定（sidecar + 每语索引 + 目录）、手册条目（`weekly_guide_staging candidate --operation update`，带旧条目 SHA 与原因）、反馈统计目录。任何一件留到"下次"都算未完成。
+1. **一个发布意图一批做完**：页面/assets/release/目录/英文对照/对齐/手册条目/统计目录同批构建、
+   同批部署（计划内 ≤3 次），不得发布后单改身份字节（标题、文稿、音轨、字幕、页面 HTML）。
+   要改就开新的发布意图。
+2. **release 一变，四件下游同批重做**：`/english-reference/`、对齐绑定（sidecar + 每语索引 + 目录）、
+   手册条目（`weekly_guide_staging candidate`，`operation: update` 要带旧条目 SHA 与原因）、
+   反馈统计目录。任何一件留到「下次」都算未完成。
 3. **部署后、smoke 前必须过 gate**，退出码 1 阻断收尾（smoke/报告/发布宣布）：
 
 ```bash
@@ -561,7 +587,79 @@ PYTHONPATH=packages/production/src:. .venv/bin/python tools/ops/sfa_publish_gate
   --json-out artifacts/sentence-first-agent/<run>-publish/publish-gate.json
 ```
 
-候选快照构建完先在 dev/staging 跑一遍；正式部署后对 production 再跑一遍。产出 `publish-intent.json`（意图、冻结值、releases、rebinds、deploys、gate、smoke、exceptions），随运行报告归档。手册与对齐不是可选项：页面具备对应能力/条目时必须 `--require-guide --require-alignment`；本轮「smoke 三语 pass」与「手册不可用」能同时成立，就是缺了这道门禁。
+候选快照构建完先在 dev/staging 跑一遍；正式部署后对 production 再跑一遍。产出 `publish-intent.json`
+随运行报告归档。手册与对齐不是可选项：页面具备对应能力/条目时必须带这两个开关。
+
+#### 八条整改（2026-11-07 第 9 周复盘）
+
+| # | 整改 | 依据 | 落点 |
+|---|---|---|---|
+| 1 | 开跑前先把七件套写进 `run.md` 并填「本轮/不交付」 | 首轮漏现场对齐、研读手册、统计目录三件，用户追问才补 | §0.3 + `prepare_clip.py` 模板 |
+| 2 | 完成信号只认带 `--require-guide --require-alignment` 的 gate + smoke（含 `/api/session`） | 首次 gate 不带开关返回 pass，被当成收尾 | 本条规则 3 + gate 文档 |
+| 3 | 英文包在 assets 前先跑 `published_english_reference.build_reference` 干跑（对候选快照） | 包缺 `approvedWindow.evidence`/`transcript`/`review.evidence`，部署后才暴露 | §10 步骤 1 前的预检 |
+| 4 | 候选快照阶段先跑 gate，再首次部署（三处都要跑，不是只跑线上） | `content.drift` 是线上 gate 才发现的 | 本条规则 3 |
+| 5 | 精简后先 `lag_loop --check-only` 估收敛，再一次全量重配 | 三语各做了一轮全量重渲（22 分钟） | §7 落后回环开头 |
+| 6 | 对齐索引绑**已发布 MP3** 的 sha，`track.wav` 只用于听审收据 | 绑 `track.wav` 触发 `Invalid fingerprint binding` | §10 对齐步骤 |
+| 7 | 手册/页面/海报标题统一取 `docs/series-sermon-titles.zh.md`；工具常量随表更新 | 手册第 9 周标题与标题表不一致，bind 被拒（`b1180124`） | §10 手册步骤 |
+| 8 | 发布型子命令与发布返工也走 `run_journal` | journal 记 1h27m/计算 3m17s，实际墙钟 2h57m | §11 + `DEV-SF-007` |
+
+### 10.7 发布后三项旁路（对齐、研读手册、统计目录）
+
+这三项与页面共享同一套 release 哈希，漏一项就是「页面能播、App 缺东西」。2026-11-07 第 9 周
+第一轮就是漏了这三项、用户追问后才补，所以写在这里当固定步骤；完成后必须重跑
+`--require-guide --require-alignment` 的 gate。
+
+**现场声音对齐（iOS 现场音频对齐）**
+
+```bash
+# 1) 源指纹只算一次（相对媒体 0 → 窗口终点）
+SHA=$(shasum -a 256 <media.mp4> | cut -d' ' -f1)
+node packages/fingerprint/bin/build_fingerprint_index.mjs --mode precompute \
+  --source <media.mp4> --source-sha "$SHA" --start 0 --end <windowEnd> --out <run>/source-landmarks.json
+# 2) 每种语言 bind 到**已发布 MP3**（不是 track.wav；合同要求等于 release 的 audio asset 哈希）
+node packages/fingerprint/bin/build_fingerprint_index.mjs --mode bind \
+  --precomputed <run>/source-landmarks.json --precomputed-sha <上一步 sha256> \
+  --source-sha "$SHA" --start 0 --end <windowEnd> --track <assets>/public/media/<pageId>/<locale>.mp3 \
+  --page-id <pageId> --out <run>/index-<locale>.json
+# 3) sidecar：/alignment/<pageId>.json（sermon-published-alignment-v1，三语各一条 audioFingerprint，
+#    indexUrl=/fingerprints/<indexSha前16位>-landmarks.json，captureSeconds=10）
+# 4) 用 delivery.published_alignment_catalog.bind_catalogs(public, pageId) 重绑 v5/v4/v3，
+#    快照要含 sidecar + 三个索引 + 新目录，再走 guarded publisher 部署
+# 5) 核验：GET sidecar 200、三个索引 200 且 sha 与 sidecar 一致、gate --require-alignment pass
+```
+
+**研读手册**
+
+```bash
+# 标题先从 docs/series-sermon-titles.zh.md 取；工具里的周次常量与表不一致就先改常量再 stage
+python3 tools/ops/run.py delivery.weekly_guide_staging stage \
+  --source <series-guide.zh-Hans.md> --cuv <cuv-1919-revelation.json> --output <忽略目录>/v1
+python3 tools/ops/run.py delivery.weekly_guide_staging candidate \
+  --staging <上面的 v1> --snapshot <线上快照> --environment production \
+  --bindings <bindings.json> --source <…> --cuv <…> --output <忽略目录>/candidate \
+  --rich --english <en-extracted.txt> --evidence-dir <已核对原页截图目录>
+# candidate 会保留既有条目与资源；部署后 GET /weekly-guides/manifest-v1.json 核对新条目
+```
+
+`--rich` 需要 22 张已核对原页截图（`weekly_guide_rich.CHECKED_PAGES`）；截图不全时不要退回 v1，
+已知错误页（第 5、9 周）禁止按 v1 发布。手册是机器译稿：清单顶层保持
+`review=machine_translation_not_human_reviewed`、`humanApproval=false`。
+
+**统计目录（`sermon-feedback-api`）**
+
+```bash
+# 取当前线上目录（最近一次部署的 source/catalog.json），按 week/trackId/audioSha256/cues 追加本页三语：
+#   week = <页面日期>；trackId = <pageId>-<locale>-<MP3 sha 前12位>；audioSha256 = 已发布 MP3 sha；
+#   cues = content 的 cue 列表（id 从 "0" 递增，blockId null）；weekIds 追加该周
+# 只换 catalog.json、函数代码沿用线上 revision；源目录放到新的忽略目录后部署：
+gcloud functions deploy sermon-feedback-api --project=ai-for-god-caption-dev --gen2 --region=us-west1 \
+  --runtime=nodejs22 --entry-point=sermonFeedback --source <新目录> --trigger-http --allow-unauthenticated \
+  --service-account=sermon-feedback-runtime@ai-for-god-caption-dev.iam.gserviceaccount.com \
+  --build-service-account=projects/ai-for-god-caption-dev/serviceAccounts/sermon-feedback-build@ai-for-god-caption-dev.iam.gserviceaccount.com \
+  --docker-repository=projects/ai-for-god-caption-dev/locations/us-west1/repositories/sermon-feedback \
+  --memory=256Mi --cpu=1 --concurrency=20 --min-instances=0 --max-instances=2 --timeout=15s --quiet
+# 核验：本页三语与上一周三语 POST /api/session 全部 200（key = week + trackId + audioSha256）
+```
 
 ### 11 结束
 

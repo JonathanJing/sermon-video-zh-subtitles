@@ -24,6 +24,11 @@
    - 对齐绑定（sidecar、每语指纹索引、目录 `audioFingerprint` 与 `capabilities`）
    - 每周手册条目（release、content 与身份不变时也要按新 release 重绑）
    - 反馈统计目录（每语音轨哈希变化后重建并重部署函数）
+4. **完成信号**：`sfa_publish_gate.py --require-guide --require-alignment` 通过 + smoke（含
+   `/api/session`）通过，才算这次发布意图完成。**不带这两个开关的 gate 通过不算完成**——
+   2026-11-07 第 9 周就是拿一次不带开关的 pass 当收尾，漏了现场对齐、研读手册、统计目录三件，
+   用户追问后才补。开工时把清单填进第一个 `run.md` 的「发布意图清单」小节（`prepare_clip.py` 已写模板），
+   收尾逐行按证据打勾。
 
 ## 1. 发布前完整性检查（gate）
 
@@ -42,7 +47,7 @@ PYTHONPATH=packages/production/src:. .venv/bin/python tools/ops/sfa_publish_gate
 
 | 时机 | origin | 作用 |
 |---|---|---|
-| 候选快照构建完、正式部署前 | dev 或 staging 预览 | 提前挡住目录/资产/release 不一致 |
+| 候选快照构建完、**首次部署前**（必跑） | dev 或 staging 预览 | 提前挡住目录/资产/release 不一致；2026-11-07 的 `content.drift` 是线上才发现的，那次首次部署前没跑 |
 | 正式部署后、smoke 前 | production | 线上字节与目录一致性的最终门禁 |
 | 任何 release 替换（紧急修复）后 | 对应环境 | 确认四件下游都已完成 |
 
@@ -63,6 +68,22 @@ PYTHONPATH=packages/production/src:. .venv/bin/python tools/ops/sfa_publish_gate
 | 11 | 发布收尾 | 无 pending replacement；每段部署有 readback；smoke（含 `/api/session`）三语 pass | 修完重跑 gate + smoke |
 
 > 手册与对齐都**不是**可选项：只要页面存在对应能力/条目，就必须通过 `--require-guide`、`--require-alignment`。本轮教训：smoke 不检查它们，于是「smoke 三语 pass」与「手册不可用」同时成立。
+
+
+### 1.1 2026-11-07 第 9 周复盘整改
+
+这一轮的实际代价：一个页面 **13 次托管部署**（规则是 ≤3）、两轮返工（滞后修复 38 分钟、
+发布返工 28 分钟）、补漏 25 分钟；journal 只记 1h27m／计算 3m17s，实际墙钟 2h57m。
+八条整改写在[逐句优先 runbook](../experiments/sentence-first-agent/AGENTS.md) §10.6，执行时对照：
+
+1. 开跑前把七件套填进 `run.md`（`prepare_clip.py` 模板固定小节）。
+2. 完成信号只认带 `--require-guide --require-alignment` 的 gate + smoke。
+3. 英文包在 `assets` 前先对候选快照跑 `published_english_reference.build_reference` 干跑。
+4. 候选快照阶段先跑 gate，再首次部署。
+5. 精简后先 `lag_loop --check-only` 估收敛，再一次全量重配。
+6. 对齐索引绑已发布 MP3 的 sha，`track.wav` 只用于听审收据。
+7. 手册/页面/海报标题统一取[标题表](series-sermon-titles.zh.md)。
+8. 发布型子命令与发布返工也走 `run_journal`（`DEV-SF-007`）。
 
 ## 2. 发布粒度
 
