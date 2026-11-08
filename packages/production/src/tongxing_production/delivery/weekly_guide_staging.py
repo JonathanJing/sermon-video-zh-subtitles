@@ -20,7 +20,7 @@ SERIES_ID = 'revelation-comfort-and-hope'
 ORIGIN = 'https://www.flipsnack.com/57AF6AEEFB5/revelation-series-guide'
 WEEKS = [
     dict(week=8,title='耶稣为属祂的人盖印',scripture='启示录 14 章',first=109,last=117,scripture_page=112,start='14:1',end='14:20',appendix=[171]),
-    dict(week=9,title='耶稣是公义的，必使罪恶终结',scripture='启示录 15–16 章',first=119,last=129,scripture_page=120,start='15:1',end='16:21',appendix=[172]),
+    dict(week=9,title='耶稣是公义的，必终结罪恶',scripture='启示录 15–16 章',first=119,last=129,scripture_page=120,start='15:1',end='16:21',appendix=[172]),
     dict(week=10,title='耶稣胜过这世界',scripture='启示录 17–19:10',first=131,last=143,scripture_page=132,start='17:1',end='19:10',appendix=[173]),
     dict(week=11,title='耶稣必再来',scripture='启示录 19:11–21:8',first=145,last=153,scripture_page=146,start='19:11',end='21:8',appendix=[174,175]),
     dict(week=12,title='耶稣将更新万有',scripture='启示录 21:9–22:21',first=155,last=161,scripture_page=156,start='21:9',end='22:21',appendix=[176]),
