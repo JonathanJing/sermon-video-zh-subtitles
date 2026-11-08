@@ -93,7 +93,7 @@ class ExportTests(unittest.TestCase):
             self.assertFalse(any(".intent.json" in str(call.args[0]) for call in read.call_args_list))
 
     def test_batch_export_matches_full_window_and_actual_renderer(self):
-        from tests.test_formal_audio_batching import BatchEngine
+        from tests.tts_batch_fixtures import BatchEngine
         self.settings_path.write_text(json.dumps(settings(batchSize=2)))
         exported = self.export()
         context = producer.checked_context(self.paths, self.map_path, self.policies_path, assembly_only=True)
@@ -133,7 +133,7 @@ class ExportTests(unittest.TestCase):
                 producer.recovery_render_settings(settings(tailOverrunSeconds=bad))
 
     def test_precise_direct_parent_batch_cache_survives_pure_builder_extraction(self):
-        from tests.test_formal_audio_batching import BatchEngine
+        from tests.tts_batch_fixtures import BatchEngine
         context = producer.checked_context(self.paths, self.map_path, self.policies_path, assembly_only=True)
         producer.render_units(context, self.paths, self.root, self.map_path,
                               batch_size=2, synth_factory=BatchEngine)

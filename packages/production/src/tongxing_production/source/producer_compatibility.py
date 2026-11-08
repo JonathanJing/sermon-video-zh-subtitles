@@ -168,6 +168,22 @@ JUDGE_IDENTITY_SOURCE_SHA256 = {**D5_MOVE_SOURCE_SHA256,
 JUDGE_IDENTITY_MIGRATION = 'l1-source-builder-claude-judge-identity-v14'
 JUDGE_IDENTITY_CHANGED = ['scripts/build_english_source_package.py']
 
+# v15: three reviewed changes landed in one window and none of them alters how an
+# original Source is inspected. The MFA chunk cache directory stops carrying the
+# adapter bytes in its key (mfa_backend/mfa_spark), the alignment adapter gains the
+# Chinese transcript coherence remedies (mfa_alignment), and clause_stable_v3 numbers
+# a unit by its first word so earlier splits no longer renumber later units
+# (sermon_sentence_interpretation). The checkout before was exactly the v14 table.
+TRANSCRIPT_COHERENCE_HISTORICAL_SHA256 = JUDGE_IDENTITY_SOURCE_SHA256
+TRANSCRIPT_COHERENCE_SOURCE_SHA256 = {**JUDGE_IDENTITY_SOURCE_SHA256,
+    'scripts/mfa_alignment.py': '9f421014357de49c21da76d8d590428efc2e9702deae210ccbb8b493b296e5e7',
+    'scripts/mfa_backend.py': '81f6f672e6de4bc11db5a9cfa02bd653a46f4317555d2364b6d0bb5b08988285',
+    'scripts/mfa_spark.py': '90db3d8d5497e34d64ab3e3719a27980733c9eeba04cf187dd870132812625a9',
+    'scripts/sermon_sentence_interpretation.py': 'a38391faf2fafb98d049506eb9174d848cc6d657cc59491f63d460bca845adb2'}
+TRANSCRIPT_COHERENCE_MIGRATION = 'l1-transcript-coherence-and-anchor-renumbering-v15'
+TRANSCRIPT_COHERENCE_CHANGED = ['scripts/mfa_alignment.py', 'scripts/mfa_backend.py',
+                                'scripts/mfa_spark.py', 'scripts/sermon_sentence_interpretation.py']
+
 def verify(historical,current,planned,binding):
     _require(type(historical) is dict and type(current) is dict and type(planned) is dict
         and set(historical)==set(current)==set(HISTORICAL_SOURCE_SHA256)
@@ -189,6 +205,8 @@ def verify(historical,current,planned,binding):
     c_facade_removal = historical==C_FACADE_REMOVAL_HISTORICAL_SHA256 and current==C_FACADE_REMOVAL_SOURCE_SHA256
     d5_move = historical==D5_MOVE_HISTORICAL_SHA256 and current==D5_MOVE_SOURCE_SHA256
     judge_identity = historical==JUDGE_IDENTITY_HISTORICAL_SHA256 and current==JUDGE_IDENTITY_SOURCE_SHA256
+    transcript_coherence = (historical==TRANSCRIPT_COHERENCE_HISTORICAL_SHA256
+                            and current==TRANSCRIPT_COHERENCE_SOURCE_SHA256)
     package_move = (move or producer_move or transport_move or contracts_split or storage_move or measure_move
                     or jobs_split or facade_removal or c_facade_removal or d5_move)
     changed = (CHANGED if original else MOVE_CHANGED if move else PRODUCER_MOVE_CHANGED if producer_move
@@ -197,8 +215,10 @@ def verify(historical,current,planned,binding):
         else JOBS_SPLIT_CHANGED if jobs_split else FACADE_REMOVAL_CHANGED if facade_removal
         else C_FACADE_REMOVAL_CHANGED if c_facade_removal else D5_MOVE_CHANGED if d5_move
         else JUDGE_IDENTITY_CHANGED if judge_identity
+        else TRANSCRIPT_COHERENCE_CHANGED if transcript_coherence
         else ['scripts/sermon_fresh_diagnostic_source.py'])
-    _require((original or followup or extraction or package_move or judge_identity) and {path for path in current if current[path]!=historical[path]}==set(changed),
+    _require((original or followup or extraction or package_move or judge_identity or transcript_coherence)
+        and {path for path in current if current[path]!=historical[path]}==set(changed),
         'source_producer_compatibility_unknown_revision')
     _require(not contracts_split or all(recorded(planned,path)==sha
         for path,sha in CONTRACTS_SPLIT_MEMBER_SHA256.items()),
@@ -219,6 +239,7 @@ def verify(historical,current,planned,binding):
         else JOBS_SPLIT_MIGRATION if jobs_split else FACADE_REMOVAL_MIGRATION if facade_removal
         else C_FACADE_REMOVAL_MIGRATION if c_facade_removal else D5_MOVE_MIGRATION if d5_move
         else JUDGE_IDENTITY_MIGRATION if judge_identity
+        else TRANSCRIPT_COHERENCE_MIGRATION if transcript_coherence
         else EXTRACTION_MIGRATION if extraction else FOLLOWUP_MIGRATION)
     return {'schemaVersion':SCHEMA,'migrationId':migration,'binding':binding,
         'historicalProducerSha256':historical,'currentInspectorProducerSha256':current,
@@ -226,6 +247,7 @@ def verify(historical,current,planned,binding):
         'acceptedScope':('original_deadline_and_typed_failures_only_no_source_semantic_change' if original else
             'read_only_original_source_under_package_move_no_new_inference' if package_move else
             'read_only_original_source_under_judge_identity_allowlist_extension_no_new_inference' if judge_identity else
+            'read_only_original_source_under_transcript_coherence_refinement_no_new_inference' if transcript_coherence else
             'read_only_original_source_under_fixed_stage_extraction_no_new_inference' if extraction else
             'read_only_original_source_under_typed_completion_and_identity_inspector_no_new_inference'),
         'sourceExecution':'historical_receipts_reused_current_deterministic_inspection',

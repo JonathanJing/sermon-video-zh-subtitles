@@ -349,7 +349,9 @@ class StartCheckTests(unittest.TestCase):
         self.assertNotIn('scripts/implementation_freeze.py', files)
         self.assertIn('packages/production/src/tongxing_production/review/waiver.py', files)
         self.assertIn('packages/production/src/tongxing_production/review/implementation_freeze.py', files)
-        self.assertIn('packages/production/src/tongxing_production/audio/screening.py', files)
+        # 61dc5069 moved the screener to review/asr_scoring.py and dropped it from
+        # the machine-quality closure; the closure still hashes review/audio_qc.py.
+        self.assertIn('packages/production/src/tongxing_production/review/audio_qc.py', files)
         self.assertIn('packages/production/src/tongxing_production/path_aliases.py', files)
         self.assertTrue(all((check.ROOT / path).is_file() for path in files))
         observed_commands = []

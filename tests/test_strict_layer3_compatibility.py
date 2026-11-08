@@ -79,10 +79,6 @@ class StrictLayer3Tests(unittest.TestCase):
             relative=f'receipts/unit-{index:04d}.json'
             fixtures.write_json(f.asset_root/relative,receipt)
             row['receipt']=f.artifact(relative,json_artifact=True)
-        f.screening['targetLanguageSpeechJobJsonSha256']=package.json_sha256(f.job)
-        relative=f.manifest['machineScreeningReceipt']['path']
-        fixtures.write_json(f.asset_root/relative,f.screening)
-        f.manifest['machineScreeningReceipt']=f.artifact(relative,json_artifact=True)
         fixtures.write_json(f.manifest_path,f.manifest)
 
     def prepare(self,rubric):
@@ -101,13 +97,15 @@ class StrictLayer3Tests(unittest.TestCase):
         self.assertTrue(self.f.job['synthesisEligible'])
         self.assertFalse(self.f.job['releaseEligible'])
         value=self.build(self.rubric)
-        self.assertEqual(value['status'],'machine_screened')
+        # ASR screening is retired (2026-10-28): a strict L3 package is built as
+        # ``candidate`` and waits for human listening, the only audio gate.
+        self.assertEqual(value['status'],'candidate')
         self.assertEqual(value['targetLocale'],'ko')
         self.assertFalse(value['humanReview']['humanApproval'])
-        worksheet=audio_review.prepare(value,self.f.screening)
+        worksheet=audio_review.prepare(value)
         self.assertEqual(worksheet['decision'],'pending')
         self.assertEqual(worksheet['videoSync1x'],'pending')
-        with self.assertRaises(ValueError):audio_review.approve(value,self.f.screening,worksheet)
+        with self.assertRaises(ValueError):audio_review.approve(value,worksheet)
 
     def test_missing_changed_or_cross_locale_rubric_fails_before_render_or_package(self):
         changed=copy.deepcopy(self.rubric);changed['rubricVersion']='changed'
