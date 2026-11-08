@@ -38,7 +38,9 @@ struct TongxingApp: App {
                         // with no running download and no error to show.
                         model.restartStalledPublishedAudioPreparation()
                         Task { await model.checkWeeklyUpdates() }
+                        #if os(iOS)
                         Task { await productionPush.refreshPermissionAndRegistration() }
+                        #endif
                     }
                     model.playback.setStatisticsForeground(phase == .active)
                 }
