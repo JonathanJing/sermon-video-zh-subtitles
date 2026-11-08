@@ -5,20 +5,45 @@
   "timezone": "America/Los_Angeles",
   "kind": "published_page_in_place_replace",
   "pageId": "revelation-jesus-is-just-20261108",
-  "locales": ["zh-Hans", "ko", "es"],
+  "locales": [
+    "zh-Hans",
+    "ko",
+    "es"
+  ],
   "environment": "production",
   "origin": "https://ai-for-god-sermon-audio.web.app",
   "deployments": [
-    {"step": "A", "baselineVersion": "sites/ai-for-god-sermon-audio/versions/9d4124dbedd8a6c5", "newVersion": "sites/ai-for-god-sermon-audio/versions/50d37bec4af1aa47", "kind": "page_bytes_pending"},
-    {"step": "B", "baselineVersion": "sites/ai-for-god-sermon-audio/versions/50d37bec4af1aa47", "newVersion": "sites/ai-for-god-sermon-audio/versions/bc60c4c0ee183a0c", "kind": "releases_catalogs_english_reference"},
-    {"step": "C", "baselineVersion": "sites/ai-for-god-sermon-audio/versions/bc60c4c0ee183a0c", "newVersion": "sites/ai-for-god-sermon-audio/versions/ae2975d8f0072bde", "kind": "guide_manifest_release_rebind"}
+    {
+      "step": "A",
+      "baselineVersion": "sites/ai-for-god-sermon-audio/versions/9d4124dbedd8a6c5",
+      "newVersion": "sites/ai-for-god-sermon-audio/versions/50d37bec4af1aa47",
+      "kind": "page_bytes_pending"
+    },
+    {
+      "step": "B",
+      "baselineVersion": "sites/ai-for-god-sermon-audio/versions/50d37bec4af1aa47",
+      "newVersion": "sites/ai-for-god-sermon-audio/versions/bc60c4c0ee183a0c",
+      "kind": "releases_catalogs_english_reference"
+    },
+    {
+      "step": "C",
+      "baselineVersion": "sites/ai-for-god-sermon-audio/versions/bc60c4c0ee183a0c",
+      "newVersion": "sites/ai-for-god-sermon-audio/versions/ae2975d8f0072bde",
+      "kind": "guide_manifest_release_rebind"
+    },
+    {
+      "step": "D",
+      "baselineVersion": "sites/ai-for-god-sermon-audio/versions/ae2975d8f0072bde",
+      "newVersion": "sites/ai-for-god-sermon-audio/versions/b1cbe9127c1182e7",
+      "kind": "page_script_font_size_only"
+    }
   ],
   "pageSha256": {
     "zh-Hans": "b42ceb47d6527f79ce6f5260bb5c91cbf87900a209706da9e267f97c0b0d17e9",
     "ko": "02b51da7aa7091124a4e8d14c0c2b20464902d7da9dc07ff008348b0446d0ed7",
     "es": "a436d256ac2b51f89c4466e7e07259b3cd777c4ec8196ac352fbb37b04ff1168"
   },
-  "appLinkSha256": "48d3a376f5b04b72a3c0bfa6259bb3e3a7a2c2e9e0dc67b552a853862994495b",
+  "appLinkSha256": "5bd85aeae0a5f689fec1d85a1aeadb88a21d86eff92784a21bd542f56e14881f",
   "evidence": {
     "httpChecks": 4,
     "httpFailed": [],
@@ -27,8 +52,21 @@
     "publishGate": "pass"
   },
   "tests": {
-    "pytest": {"files": ["tests/test_published_page_replace.py", "tests/test_guarded_hosting_publish.py"], "passed": 63, "failed": 0},
-    "node": {"files": ["tests/test_app_link.mjs"], "passed": 3, "failed": 0}
+    "pytest": {
+      "files": [
+        "tests/test_published_page_replace.py",
+        "tests/test_guarded_hosting_publish.py"
+      ],
+      "passed": 63,
+      "failed": 0
+    },
+    "node": {
+      "files": [
+        "tests/test_app_link.mjs"
+      ],
+      "passed": 3,
+      "failed": 0
+    }
   },
   "browserEvidence": {
     "tool": "Google Chrome headless 141 (500x900)",

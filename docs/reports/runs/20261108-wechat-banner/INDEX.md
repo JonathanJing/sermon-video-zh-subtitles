@@ -15,8 +15,9 @@
 | A | `snapshot-a` | `9d4124dbedd8a6c5` | `50d37bec4af1aa47` | 三语页面 + `app-link.js`（pending 替换） |
 | B | `snapshot-b` | `50d37bec4af1aa47` | `bc60c4c0ee183a0c` | 新 release、v3/v4/v5 目录、重出英文对照 |
 | C | `snapshot-c` | `bc60c4c0ee183a0c` | `ae2975d8f0072bde` | 研读手册条目 release 重新绑定（手册内容字节不变） |
+| D | `snapshot-d` | `ae2975d8f0072bde` | `b1cbe9127c1182e7` | 页面级脚本字号 14→16px（不涉及 release 字节） |
 
-三次部署均经 `tools/ops/guarded_hosting_publish.py`，租约与 attempt 回执在 `deployment-attempt-v2.json`；同一发布意图 3 次部署，未超上限。
+四次部署均经 `tools/ops/guarded_hosting_publish.py`，租约与 attempt 回执在 `deployment-attempt-v2.json`。前三步是同一发布意图（页面字节替换），3 次部署未超上限；D 是随后的字号热修，单独一次部署，只改页面本地脚本，release／目录／英文对照／手册条目都无需重绑。
 
 ## 证据
 
@@ -24,7 +25,11 @@
 - 回读：v3/v4/v5、三语 release、英文对照、页面与脚本与快照逐字节一致。
 - `sfa_publish_gate --require-alignment`：`status: pass`，`failed: []`。
 - 测试：`pytest tests/test_published_page_replace.py tests/test_guarded_hosting_publish.py` 63 项通过；`node --test tests/test_app_link.mjs` 3 项通过。
-- 浏览器：Chrome headless + `MicroMessenger` UA 显示顶部提示并下移正文；Safari UA 无提示；两者都与线上页逐字节相同的渲染结果（截图在忽略目录 `artifacts/wechat-banner/20261108/`）。
+- 浏览器：Chrome headless + `MicroMessenger` UA 显示顶部提示并下移正文；Safari UA 无提示；两者都与线上页逐字节相同的渲染结果（截图在忽略目录 `artifacts/wechat-banner/20261108/`）。D 部署后同一口径复验，脚本 sha256 `5bd85aea…`，门禁仍为 `pass`。
+
+## 后续调整
+
+- 2026-11-08 部署 D：微信提示条字号由 14px 调到 16px（行高 1.55，内边距与关闭键同步放大），只替换页面本地脚本 `pages/<pageId>/app-link.js`，严格校验通过；release、目录、英文对照、研读手册条目都没有变化。
 
 ## 未验证与残留
 
