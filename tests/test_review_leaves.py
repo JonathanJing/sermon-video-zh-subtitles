@@ -50,10 +50,10 @@ class ReviewLeafTests(unittest.TestCase):
 
     def test_package_modules_import_with_only_the_spark_container_path(self):
         """Spark containers run without site-packages and put <code>/packages/production/src
-        and <code> on PYTHONPATH (clip_e2e_spark.PACKAGE_SRC)."""
-        from tools.development import clip_e2e_spark
+        and <code> on PYTHONPATH; this is the same pair clip_e2e_spark exported as
+        PACKAGE_SRC before the clip E2E harness was retired on 2026-11-01."""
         environment = {key: value for key, value in os.environ.items() if key != 'PYTHONPATH'}
-        environment['PYTHONPATH'] = os.pathsep.join([str(ROOT/clip_e2e_spark.PACKAGE_SRC), str(ROOT)])
+        environment['PYTHONPATH'] = os.pathsep.join([str(ROOT/'packages/production/src'), str(ROOT)])
         code = ''.join(f'import tongxing_production.review.{current} as m\n'
                        f'assert m.__name__ == "tongxing_production.review.{current}", m.__name__\n'
                        for current in MOVED.values())

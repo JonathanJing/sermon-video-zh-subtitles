@@ -78,8 +78,10 @@ jobs:
           python-version: "3.12"
           cache: pip
 
-      - name: Install contract dependency
-        run: python -m pip install 'jsonschema>=4.23,<5'
+      - name: Install contract dependencies
+        # The shared client fixtures import tongxing_production contracts, so the
+        # package is installed here; jsonschema is its only hard dependency.
+        run: python -m pip install 'jsonschema>=4.23,<5' -e ./packages/production
 
       - name: Check Python native and shared fixture contracts
         run: >-
@@ -91,6 +93,8 @@ jobs:
           tests.test_ios_testflight_release
           tests.test_ios_apns_single_device
           tests.test_tongxing_interface_locales
+          tests.test_ios_weekly_guide_generation
+          tests.test_weekly_guide_multilingual
           tests.test_shared_client_contract_fixtures
           tests.test_shared_text_only_release_fixtures
           tests.test_shared_machine_checked_fixtures

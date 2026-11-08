@@ -172,6 +172,9 @@ REVIEW = {
     'scripts/implementation_freeze.py': _REVIEW + 'implementation_freeze.py',
     'scripts/sermon_unified_reviews.py': _REVIEW + 'unified_reviews.py',
     'scripts/run_machine_qc_clip_test.py': _REVIEW + 'qc_text_run.py',
+    # 61dc5069 retired the ASR screening producer; its scoring half is
+    # review/asr_scoring.py and the release gate is review/audio_screening.py.
+    'scripts/screen_target_language_audio_units.py': _REVIEW + 'asr_scoring.py',
 }
 
 # Prepared-workflow composition (tongxing_production.workflows.prepared), batch W2.
