@@ -68,9 +68,9 @@
     bar.style.cssText = [
       'position:fixed', 'top:0', 'left:0', 'right:0', 'z-index:2147483647',
       'display:flex', 'align-items:flex-start', 'gap:8px',
-      'box-sizing:border-box', 'padding:10px 8px 10px 14px',
+      'box-sizing:border-box', 'padding:12px 8px 12px 16px',
       'background:#1f2937', 'color:#f9fafb',
-      'font:14px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB",sans-serif',
+      'font:16px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB",sans-serif',
       'box-shadow:0 2px 8px rgba(0,0,0,.35)'
     ].join(';');
 
@@ -84,7 +84,7 @@
     close.setAttribute('aria-label', dismissLabelFor(language));
     close.style.cssText = [
       'flex:0 0 auto', 'border:0', 'background:transparent', 'color:inherit',
-      'font:inherit', 'font-size:20px', 'line-height:1', 'padding:0 6px',
+      'font:inherit', 'font-size:22px', 'line-height:1', 'padding:0 6px', 'margin-top:-2px',
       'cursor:pointer', '-webkit-appearance:none', 'appearance:none'
     ].join(';');
     close.addEventListener('click', function () {
