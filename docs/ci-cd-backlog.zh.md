@@ -53,6 +53,8 @@
 
 2026-10-14 起 push 到 `dev` 不再触发 Python workflow：每个 dev 改动已在 PR 上跑过同一套件，8 月至 10 月 288 次 dev push 运行只重复暴露 flaky 测试，未发现 PR 检查漏掉的回归。合并顺序造成的语义冲突改由每日定时运行发现：`nightly-dev.yml` 在 `dev` 上手动触发 Python workflow，结果记在 `dev` 的提交上。定时任务读取 `main` 上的 workflow 文件，本改动推广到 `main` 后才生效。复盘数据见 [CI 必要性复盘](reports/20261014-ci-necessity-review.zh.md)。
 
+2026-11-08 恢复 CI：六个 `disabled_manually` workflow（Python tests、Tongxing iOS、Backend image resources、Nightly dev tests、Local Prefect pilot、Tracker contracts）恢复为 `active`，路由、分片、required check 名称与触发范围均未改动。开关验证用 `dev` 上 `workflow_dispatch` 的完整套件 run [42497670921](https://github.com/JonathanJing/sermon-video-zh-subtitles/actions/runs/42497670921)；CI 关闭期间（2026-10-19 至 2026-11-08）的 PR 只有本地测试报告，不因本次恢复追认为 hosted 验收。远端开关与分支保护以[执行环境设计](execution-environment-design.zh.md)的核对记录为准。
+
 独立的 iOS workflow 继续按原生／共享合同与目标分支执行 Swift 或模拟器检查。此处的小合同套件不代替它，`DEV-CICD-002` 的完整领域矩阵仍待完善。
 
 [模块权重](../.github/unittest-module-timings.json) 自 2026-10-07 起为 schema v2（新增 `slowCases`；runner 仍可读取 v1 文件，按无慢用例处理），改用三次成功的 hosted Ubuntu／Python 3.12 报告中位数，来源 run URL 和提交保存在 `source`。仅用来估算分片；不以本机耗时冒充 CI 实测。runner 根据当前用例数调整已有模块权重，未测模块按已测平均每例成本估算，并在日志提示。2026-10-07 起分片单位从模块改为单个用例，并由两 shard 改为四 shard：单个慢模块不再把一个 shard 拖到 13 分钟以上，各 shard 内保持发现顺序。同日再改为八 shard：四 shard 时 hosted 根套件合计约 62 分钟、最慢 shard 约 18 分钟，每个 shard 准备步骤不到 1 分钟，八 shard 预计约 9 到 10 分钟；最慢单例约 4 分钟以上，再加 shard 收益有限；用例集合、required `unittest` 汇总与超时不变。报告新增 `slowCases`（单例不少于 5 秒的用例耗时），权重文件同名字段让慢用例按自身耗时分配，其余用例分摊模块剩余耗时。首批 `slowCases` 来自本地 Linux 四 shard 通过的运行（当时无法下载 hosted artifact），刷新时以成功 hosted 报告的 `slowCases` 替换。测试结构明显改变或新增模块较多时，从成功 run 下载全部八份 `unittest-timings-root-*` artifact 后刷新权重：同一模块分散在多个 shard，须把各份的模块 `seconds`／`tests` 相加，并合并各份 `slowCases`；不得以失败或不完整分片更新。用以下命令检查完整根套件并保存新计时：
