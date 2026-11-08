@@ -23,16 +23,26 @@ def main():
     parser.add_argument('--execute', action='store_true')
     args = parser.parse_args()
     config = json.loads(args.config.read_text())
+    # A published-page replacement deploys intermediate bytes while the previous release and
+    # catalog still describe the old ones. The pending page ids travel in the snapshot config;
+    # only those pages are relaxed, every other page stays strictly validated.
+    pending = tuple(config.pop('allowPendingReplacements', ()))
     _implementation.contract.validate_intent(config['intent'], config['routes'])
-    _implementation.contract.validate_catalog_snapshot(config['snapshot'])
+    if pending:
+        _implementation.contract.validate_catalog_snapshot(
+            config['snapshot'], allow_pending_replacements=frozenset(pending))
+    else:
+        _implementation.contract.validate_catalog_snapshot(config['snapshot'])
     if not args.execute:
-        print(json.dumps({'status': 'validated_not_deployed'}))
+        print(json.dumps({'status': 'validated_not_deployed',
+                          **({'pendingReplacements': list(pending)} if pending else {})}))
         return
     import urllib.request
     def reader(url, *, timeout=60):
         with urllib.request.urlopen(urllib.request.Request(url, headers={'Cache-Control': 'no-cache'}), timeout=timeout) as response:
             return response.status, response.read()
-    result = _implementation.publish(**config, request=_implementation.authenticated_transport(), reader=reader)
+    result = _implementation.publish(**config, request=_implementation.authenticated_transport(),
+                                     reader=reader, allow_pending_replacements=pending)
     print(json.dumps(result))
 
 

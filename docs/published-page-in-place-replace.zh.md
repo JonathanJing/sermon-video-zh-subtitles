@@ -41,7 +41,8 @@
   --baseline artifacts/<完整正式站快照> \
   --out artifacts/<替换候选-A> \
   --page-id '<pageId>' \
-  --replace-dir artifacts/<按 public/ 结构的替换文件>
+  --replace-dir artifacts/<按 public/ 结构的替换文件> \
+  --extra-dir artifacts/<按 public/ 结构的新增页面本地文件，例如 pages/<pageId>/app-link.js>
 
 # 2) 部署 A、核验资产（按现有发布流程）
 
@@ -56,7 +57,7 @@
 
 两个子命令都会写出 `publish-config.json`；部署仍走受保护的发布器，每次部署都需要用户授权。
 
-页面本地新增只允许 `/study/<pageId>/` 下的文件（四产品的大纲、默想与 `products.json`），`finish` 允许重写 `/alignment/<pageId>.json`。部署待替换快照时，发布器按 `publish-config.json` 里的 `allowPendingReplacements` 只对点名的页面放宽；其他调用方不传就是严格校验。
+页面本地新增只允许 `/pages/<pageId>/` 与 `/study/<pageId>/` 下的文件：前者放页面自己的小脚本等静态资产，后者放四产品的大纲、默想与 `products.json`；`finish` 另允许重写 `/alignment/<pageId>.json`。`assets` 把待替换页面写进 `staged-changes.json` 的 `pendingReplacements`，`write_publish_config` 再写成 `publish-config.json` 的 `allowPendingReplacements`；受保护的发布器 `tools/ops/guarded_hosting_publish.py` 读取并只对点名的页面放宽，其他调用方不传就是严格校验。
 
 ## 约束与证据
 
