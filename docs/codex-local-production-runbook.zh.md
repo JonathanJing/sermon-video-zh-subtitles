@@ -32,7 +32,7 @@ QC 的 inputs v3 必须含实际 launcher 的非秘密 `openaiRoute`（schemaVer
 
 合并后的真实模型片段演练（Layer 1–4、按语言质检、质检失败回 Layer 2 修订、Spark 配音与音频质检、受控发布）曾按[真实模型片段 E2E](clip-real-e2e.zh.md)用 `tools/development/run_clip_real_e2e.py` 和一份运行规格执行，可断点续跑。该夹具与入口已于 2026-10-28 随机器听审链退役，该文档只作历史说明；新的端到端验证走正式四层入口与人工整轨 1× 听审。
 
-真实 Dev 音频测试的原入口 `tools/development/run_dev_local_audio_test.py` 与它依赖的 ASR 筛查 producer 已于 2026-10-28 退役，入口文件、对应测试和幂等权重在 2026-11-08 移除（[历史参数](local-production-next-dev-test-parameters.zh.md#已接入的音频入口2026-11-08-起为历史)）。2026-10-28 起音频发布只认人工整轨 1× 听审；正式 renderer 的 `--dev-test` profile 参数仍在 `tongxing_production.audio.dev_profile`，不依赖该入口。合并 dev 和 CI 不会自动运行 GPU 或付费模型。
+真实 Dev 音频测试的原入口 `tools/development/run_dev_local_audio_test.py` 与它依赖的 ASR 筛查 producer 已于 2026-10-28 退役，入口文件、对应测试和幂等权重在 2026-11-08 移除（[历史参数页](local-production-next-dev-test-parameters.zh.md)）。2026-10-28 起音频发布只认人工整轨 1× 听审；正式 renderer 的 `--dev-test` profile 参数仍在 `tongxing_production.audio.dev_profile`，不依赖该入口。合并 dev 和 CI 不会自动运行 GPU 或付费模型。
 
 每周正式制作前先运行 `python tools/development/evaluate_backend_four_layer_dry_run.py --out <忽略目录内的评估收据>`，再按[后端四层快速 Dry Run](backend-four-layer-dry-run.zh.md)生成 Firebase Dev 独立测试页。该评估模拟拿到链接，走 Layer 1–4 的短夹具交接，并测试四处失败阻断及无效故障点；CI 也在非文档 PR 上执行。模拟通过只说明这条测试链路工作；正式周次仍从真实来源、审核和音频证据继续。本 runbook 下文的 Supervisor 仍只覆盖 `dual_pdf` 范围。
 
