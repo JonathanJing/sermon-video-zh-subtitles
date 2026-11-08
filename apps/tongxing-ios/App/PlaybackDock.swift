@@ -149,9 +149,13 @@ struct PlaybackDock: View {
         .accessibilityLabel(localization.text("定位"))
         .accessibilityIdentifier("playback-more")
         .background {
+            // WindowFrameReader is iOS-only: the macOS preview host keeps
+            // UIKit out, so it simply reports no anchor frame there.
+            #if os(iOS)
             if defersMorePresentation {
                 WindowFrameReader { onMoreButtonFrame?($0) }
             }
+            #endif
         }
         .modifier(MorePopoverAnchor(isPresented: isMorePresented ?? .constant(false),
                                     deferred: defersMorePresentation,
