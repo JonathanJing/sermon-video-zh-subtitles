@@ -769,7 +769,12 @@ def cmd_assets(cfg: PageConfig, out: Path) -> dict:
             candidate_sha = json_sha(candidate)
         mp3 = out / f"public/media/{cfg.page_id}/{locale}.mp3"
         mp3.parent.mkdir(parents=True, exist_ok=True)
+        # A synchronized dub may end a few seconds before the source window when the last
+        # sentences were trimmed; the published track still has to cover the video, so pad it
+        # with silence to the window end (the run's track.wav, which the review receipt binds,
+        # is left untouched).
         subprocess.run(["ffmpeg", "-nostdin", "-v", "error", "-y", "-i", str(run / "track.wav"),
+                        "-af", "apad", "-t", f"{cfg.window_end:.3f}",
                         "-c:a", "libmp3lame", "-b:a", "192k", str(mp3)], check=True)
         audio_seconds = round(float(subprocess.run(
             ["ffprobe", "-v", "error", "-show_entries", "format=duration", "-of", "default=nw=1:nk=1", str(mp3)],
