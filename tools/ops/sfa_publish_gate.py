@@ -232,6 +232,13 @@ def check_alignment(gate: Gate, origin: str, page: dict, catalog: dict, require:
         sidecar_binding = ((sidecar.get("targets") or {}).get(locale) or {}).get("audioFingerprint")
         gate.require(f"alignment.sidecar.binding.{locale}", catalog_binding == sidecar_binding,
                      "sidecar binding differs from catalog")
+        # The audio fingerprint can stay identical while the release bytes change; a sidecar
+        # left on an older release is stale and must be rebound in the same batch (2026-11-07).
+        sidecar_release = ((sidecar.get("targets") or {}).get(locale) or {}).get("releasePackageJsonSha256")
+        gate.add(f"alignment.sidecar.release.{locale}",
+                 sidecar_release == target.get("releasePackageJsonSha256"),
+                 f"sidecar release {str(sidecar_release)[:16]} vs catalog {str(target.get('releasePackageJsonSha256'))[:16]}",
+                 required=require)
         if not isinstance(catalog_binding, dict):
             continue
         status, index_raw = get(origin + catalog_binding.get("indexUrl", ""))

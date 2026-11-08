@@ -741,6 +741,11 @@ def cmd_assets(cfg: PageConfig, out: Path) -> dict:
     verdict = cfg.verdict_path
     contract.require(json.loads(verdict.read_text(encoding="utf-8"))["verdict"] == "approved",
                      "Human review verdict is not approved")
+    # The page-level banner is a same-origin asset (the CSP allows `script-src 'self'` only):
+    # WeChat cannot launch the app from its webview, so the page explains the browser route.
+    script = out / f"public/pages/{cfg.page_id}/app-link.js"
+    script.parent.mkdir(parents=True, exist_ok=True)
+    script.write_bytes((HERE / "app-link.js").read_bytes())
     summary = {}
     for locale in cfg.locales:
         run = cfg.run_dir(locale)
@@ -824,7 +829,8 @@ def cmd_assets(cfg: PageConfig, out: Path) -> dict:
                 f'<p>{html.escape(meta["badge"])}</p>'
                 f'<audio controls preload="none" src="/media/{cfg.page_id}/{locale}.mp3"></audio>'
                 f'<p><a href="{cfg.source_url}">{html.escape(meta["source"])}</a></p>'
-                f'<p>{html.escape(meta["note"])}</p>{body}</body></html>')
+                f'<p>{html.escape(meta["note"])}</p>{body}'
+                f'<script src="/pages/{cfg.page_id}/app-link.js" defer></script></body></html>')
         page_path = out / f"public/pages/{cfg.page_id}/{locale}/index.html"
         page_path.parent.mkdir(parents=True, exist_ok=True)
         page_path.write_text(page, encoding="utf-8")

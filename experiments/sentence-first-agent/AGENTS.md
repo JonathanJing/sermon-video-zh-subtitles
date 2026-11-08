@@ -602,6 +602,7 @@ PYTHONPATH=packages/production/src:. .venv/bin/python tools/ops/sfa_publish_gate
 | 6 | 对齐索引绑**已发布 MP3** 的 sha，`track.wav` 只用于听审收据 | 绑 `track.wav` 触发 `Invalid fingerprint binding` | §10 对齐步骤 |
 | 7 | 手册/页面/海报标题统一取 `docs/series-sermon-titles.zh.md`；工具常量随表更新 | 手册第 9 周标题与标题表不一致，bind 被拒（`b1180124`） | §10 手册步骤 |
 | 8 | 发布型子命令与发布返工也走 `run_journal` | journal 记 1h27m/计算 3m17s，实际墙钟 2h57m | §11 + `DEV-SF-007` |
+| 9 | 对齐 sidecar 必须与 catalog 的 release 哈希一致；release 一变就重绑 | 并发代理改页面后 sidecar 停在旧 release，旧门禁没查这条，照样 pass | `sfa_publish_gate` 的 `alignment.sidecar.release.<locale>`（2026-11-07 补） |
 
 ### 10.7 发布后三项旁路（对齐、研读手册、统计目录）
 
