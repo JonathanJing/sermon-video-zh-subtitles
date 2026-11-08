@@ -344,6 +344,7 @@ class TextRules:
     validate_source_for_translation: Callable[[dict, dict], str]   # (source, anchor)
     human_ruling_schema: Callable[[], str]     # layer2_human_ruling.SCHEMA
     load_human_ruling: Callable[..., dict]     # (path, *, source, anchor)
+    validate_human_override: Callable[..., None]   # (source, anchor, candidate, receipt)
 
 
 @dataclass(frozen=True)

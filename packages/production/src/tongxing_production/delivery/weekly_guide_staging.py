@@ -13,6 +13,8 @@ import re
 import shutil
 import unicodedata
 
+from . import backend as _delivery
+
 SOURCE_SHA256 = 'd6c6064e8fab11ab012edd9535372a9f99b83cd5240b6014f5451795a9198f86'
 CUV_SHA256 = '363afb38148f150b30fee727f4818faa821a0d17b4888c16be3e05bd462503bb'
 SERIES = '启示录：耶稣带来的安慰与盼望'
@@ -662,7 +664,7 @@ def prepare_guarded_candidate(staging,snapshot,bindings,expected_staging,cuv,out
 
 
 def safe_output(path):
-    root=Path(__file__).resolve().parents[5];target=Path(path).resolve()
+    root=_delivery.current().core.repo_root;target=Path(path).resolve()
     if not target.is_relative_to((root/'artifacts').resolve()) or target==(root/'artifacts').resolve():
         raise ValueError('output must be a fresh path within ignored artifacts')
     return target
