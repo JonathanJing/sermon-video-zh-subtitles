@@ -1,0 +1,53 @@
+{
+  "schemaVersion": "tongxing-push-live-summary-v1",
+  "status": "apns_accepted",
+  "scope": "formal App opt-in push for the published November 1 poster",
+  "pageID": "revelation-jesus-marks-his-own-20261101",
+  "codeCommit": "eaac2a5b",
+  "planSha256": "6fbb5a9dd5fc9a3d736870d62aafaea013829299aa67e7bd4028cdbfbc0cd3bb",
+  "publicationDigest": "f7e816d776fb69b013ec9d2833e268376a6fe81c178ca31143f43ae086a5195f",
+  "planCreatedAt": "2026-11-01T16:00:12.935Z",
+  "sendTimeLocal": "2026-11-01 08:00 America/Los_Angeles (PST, UTC-8)",
+  "sendTimeUtc": "2026-11-01T16:00:24Z",
+  "targetLocale": "zh-Hans",
+  "verifiedPublishedLocales": [
+    "zh-Hans",
+    "ko",
+    "es"
+  ],
+  "approvedCopy": {
+    "zh-Hans": {
+      "title": "耶稣为属祂的人盖印",
+      "body": "打开同行查看海报、阅读并收听本周证道。"
+    },
+    "ko": {
+      "title": "예수님이 자기 백성에게 인을 치십니다",
+      "body": "동행에서 포스터를 보고 이번 주 설교를 읽고 들어보세요."
+    },
+    "es": {
+      "title": "Jesús sella a los suyos",
+      "body": "Abre Tongxing para ver el cartel, leer y escuchar el sermón de esta semana."
+    }
+  },
+  "copyMatchesApprovedPreflight": true,
+  "planned": 1,
+  "accepted": 1,
+  "skipped": 0,
+  "rejected": 0,
+  "unknown": 0,
+  "apnsAccepted": 1,
+  "apnsHttpStatus": 200,
+  "suppressedDuplicates": 0,
+  "firestoreDispatchReadback": "accepted",
+  "firestoreDispatch": {
+    "count": 1,
+    "status": "accepted",
+    "httpStatus": 200,
+    "locale": "zh-Hans",
+    "claimedAt": "2026-11-01T16:00:24.287Z",
+    "completedAt": "2026-11-01T16:00:24.555Z"
+  },
+  "deviceDisplay": "not_verified",
+  "tapToPoster": "not_verified",
+  "note": "The fresh plan re-verified the current production catalog, all three release packages, announcement bindings and poster PNG bytes, and its copy matched the approved preflight byte-for-byte. APNs 200 confirms provider acceptance only; the private server-config.json was deleted after the run and no device token or secret is recorded here."
+}
