@@ -65,6 +65,7 @@ client module scanner 服务到 `/plugins/dsh-production-progress/client.js`。
 ## 界面
 
 - 一行：状态点、语言、当前阶段、`done/total`、心跳/等待、`预计 HH:MM`、`⚠ n`。
+- 行尾 `×` 直接关闭整行（不是只能点状态栏切换）；有新 run、阶段变化、attention 或缺失步骤时会自动恢复显示。
 - 待审听（`human_review` waiting）且存在 `sessionId` 时，行尾出现“打开对话 ↗”：
   - `run_status.py handoff` 默认把 `DSH_SESSION_ID` 写进 waiting；也支持 `--session-id` 覆盖。
   - 点击调用客户端的 `sessions.open(id)`（旧版回退 `uiWorkspace.openSession(id)`），切到发起审听的会话。
