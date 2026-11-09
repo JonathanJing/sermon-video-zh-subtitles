@@ -16,7 +16,7 @@ if str(Path(__file__).resolve().parent) not in sys.path:  # sibling modules of t
     sys.path.append(str(Path(__file__).resolve().parent))
 import replay_fixed_clip_local_models as worker
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
-from tongxing_production.audio.screening import tokens
+from tongxing_production.review.asr_scoring import tokens
 from tongxing_production.audio import timing_plan as target_audio_timing_plan
 
 

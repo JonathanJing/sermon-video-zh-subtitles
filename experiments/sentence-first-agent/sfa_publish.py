@@ -53,6 +53,33 @@ from tongxing_production.delivery import published_english_reference as english_
 
 CONFIG_SCHEMA = HERE / "pages" / "page-config.schema.json"
 TITLE_TABLE_DEFAULT = "docs/series-sermon-titles.zh.md"
+PUBLISH_EVIDENCE = {
+    "validate": "E1", "preflight": "E2", "check-title": "E2", "publish-check": "E2",
+    "assets": "E1", "baseline": "E1", "stage1": "E1", "stage2": "E1",
+    "stage-english-reference": "E1", "publish": "E4", "verify": "E5", "readback": "E5",
+}
+
+
+def _status_run(cfg) -> Path | None:
+    try:
+        run = cfg.run_dir(cfg.locales[0])
+    except Exception:  # noqa: BLE001 - status is optional
+        return None
+    return run if run.exists() else None
+
+
+def _mark_publish(cfg, cmd: str, event: str, **kwargs) -> None:
+    """Observation only: publish gates and exit codes are unchanged."""
+    if cfg is None:
+        return
+    run = _status_run(cfg)
+    if run is None:
+        return
+    try:
+        from run_status import safe_mark
+        safe_mark(run, f"l4.{cmd}", event, source="sfa_publish", **kwargs)
+    except Exception:  # noqa: BLE001 - status is a sidecar
+        pass
 
 
 def sha_file(path: Path) -> str:
@@ -144,6 +171,15 @@ class PageConfig:
         template = self.translation_basis.get(locale) or self.translation_basis.get("default")
         contract.require(bool(template), f"candidate.translationBasis needs {locale} or default")
         return template.format(locale=locale)
+
+    def independent_audio(self) -> bool:
+        """Podcast pages published with a natural-rate track, not the source-video clock.
+
+        Those pages keep the source-timed text cues and publish the full dub as a
+        separate clock; padding/truncating the MP3 to the source window would cut a
+        longer dub and drop audio the review receipt binds.
+        """
+        return self.media_type == "podcast" and "not on the source video clock" in self.synchronization.lower()
 
     def voices_for(self, sentences: list[dict]) -> list[str]:
         if self.voices == "from-speakers":
@@ -741,6 +777,11 @@ def cmd_assets(cfg: PageConfig, out: Path) -> dict:
     verdict = cfg.verdict_path
     contract.require(json.loads(verdict.read_text(encoding="utf-8"))["verdict"] == "approved",
                      "Human review verdict is not approved")
+    # The page-level banner is a same-origin asset (the CSP allows `script-src 'self'` only):
+    # WeChat cannot launch the app from its webview, so the page explains the browser route.
+    script = out / f"public/pages/{cfg.page_id}/app-link.js"
+    script.parent.mkdir(parents=True, exist_ok=True)
+    script.write_bytes((HERE / "app-link.js").read_bytes())
     summary = {}
     for locale in cfg.locales:
         run = cfg.run_dir(locale)
@@ -769,8 +810,19 @@ def cmd_assets(cfg: PageConfig, out: Path) -> dict:
             candidate_sha = json_sha(candidate)
         mp3 = out / f"public/media/{cfg.page_id}/{locale}.mp3"
         mp3.parent.mkdir(parents=True, exist_ok=True)
-        subprocess.run(["ffmpeg", "-nostdin", "-v", "error", "-y", "-i", str(run / "track.wav"),
-                        "-c:a", "libmp3lame", "-b:a", "192k", str(mp3)], check=True)
+        # A synchronized dub may end a few seconds before the source window when the last
+        # sentences were trimmed; the published track still has to cover the video, so pad it
+        # with silence to the window end (the run's track.wav, which the review receipt binds,
+        # is left untouched).
+        ffmpeg_mp3 = ["ffmpeg", "-nostdin", "-v", "error", "-y", "-i", str(run / "track.wav")]
+        if cfg.independent_audio():
+            # Natural-rate podcast track: keep the whole dub, do not pad or truncate it to the
+            # source window; the content cues stay on the source clock and captions use the dub.
+            ffmpeg_mp3 += ["-c:a", "libmp3lame", "-b:a", "192k", str(mp3)]
+        else:
+            ffmpeg_mp3 += ["-af", "apad", "-t", f"{cfg.window_end:.3f}",
+                           "-c:a", "libmp3lame", "-b:a", "192k", str(mp3)]
+        subprocess.run(ffmpeg_mp3, check=True)
         audio_seconds = round(float(subprocess.run(
             ["ffprobe", "-v", "error", "-show_entries", "format=duration", "-of", "default=nw=1:nk=1", str(mp3)],
             capture_output=True, text=True, check=True).stdout.strip()), 3)
@@ -819,7 +871,8 @@ def cmd_assets(cfg: PageConfig, out: Path) -> dict:
                 f'<p>{html.escape(meta["badge"])}</p>'
                 f'<audio controls preload="none" src="/media/{cfg.page_id}/{locale}.mp3"></audio>'
                 f'<p><a href="{cfg.source_url}">{html.escape(meta["source"])}</a></p>'
-                f'<p>{html.escape(meta["note"])}</p>{body}</body></html>')
+                f'<p>{html.escape(meta["note"])}</p>{body}'
+                f'<script src="/pages/{cfg.page_id}/app-link.js" defer></script></body></html>')
         page_path = out / f"public/pages/{cfg.page_id}/{locale}/index.html"
         page_path.parent.mkdir(parents=True, exist_ok=True)
         page_path.write_text(page, encoding="utf-8")
@@ -1180,8 +1233,10 @@ def main(argv=None) -> int:
     config_path = args.config.expanduser()
     if not config_path.is_absolute():
         config_path = (Path.cwd() / config_path).resolve()
+    cfg = None
     try:
         cfg = load_config(config_path)
+        _mark_publish(cfg, args.cmd, "started")
         if args.cmd == "validate":
             result = cmd_validate(cfg)
         elif args.cmd == "preflight":
@@ -1218,11 +1273,19 @@ def main(argv=None) -> int:
         else:
             result = cmd_readback(cfg, args.stage2)
     except ValueError as exc:
+        _mark_publish(cfg, args.cmd, "failed", error_class="gate", message=str(exc),
+                      resume=f"rerun sfa_publish.py {args.cmd} and fix the named gate")
         print(json.dumps({"ok": False, "error": str(exc)}, ensure_ascii=False))
         print(f"sfa_publish: {exc}", file=sys.stderr)
         return 1
+    ok = bool(result.get("ok", True))
+    if ok:
+        _mark_publish(cfg, args.cmd, "finished", evidence_level=PUBLISH_EVIDENCE.get(args.cmd, "E1"))
+    else:
+        _mark_publish(cfg, args.cmd, "failed", error_class="gate",
+                      message=str(result)[:300], resume=f"rerun sfa_publish.py {args.cmd}")
     print(json.dumps(result, ensure_ascii=False))
-    return 0 if result.get("ok", True) else 1
+    return 0 if ok else 1
 
 
 if __name__ == "__main__":

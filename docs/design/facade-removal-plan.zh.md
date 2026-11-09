@@ -48,7 +48,7 @@
 - **生产导入方。** 包括 `scripts/tongxing_host.py` 用 `_module('scripts.' + name)` 动态绑定的端口（如 `spark_tts_replica_pool`、`spark_tts_window_scheduler`）、仍留在 `scripts/` 的非门面脚本和 `backend/`。改为包内模块名。
 - **argv 与路径常量。** 例：`backend/app.py` 与 `scripts/sermon_production_supervisor.py` 拼 `scripts/run_post_live_subtitle_generation.py`（Cloud Run 镜像内的命令）；`workflows/dual_pdf/post_live.py` 的 `SERMON_PIPELINE_SCRIPT`、`MOBILE_PDF_SCRIPT`；`scripts/run_clip_real_e2e.py`、`scripts/run_multilingual_cd.py` 的子进程命令；`tools/ops/tracker-publisher/publish.mjs`。L2 语言插件的 `except ImportError` 注释提到直接运行 `produce_target_language_candidate.py`，插件被 policy 冻结，不改它们，改的是入口。
 - **Spark 容器。** `scripts/clip_e2e_spark.py` 在容器检出里运行 `{code}/scripts/compact_formal_target_audio.py`，改为容器内能运行的新入口。同文件另外三条容器命令指向必须保留的门面（§3.3）。
-- **CI。** `python-tests.yml` 的 py_compile 列表与 `tongxing-ios.yml` 的 `shared_contracts` 列出 20 个门面路径。CI 自 2026-10-19 关闭，列表仍在仓库里，删门面时同批改，避免重新启用 CI 后出现永远找不到的路径。
+- **CI。** `python-tests.yml` 的 py_compile 列表与 `tongxing-ios.yml` 的 `shared_contracts` 列出 20 个门面路径。CI 自 2026-10-19 关闭、2026-11-08 恢复，列表仍在仓库里，删门面时同批改，避免重新启用 CI 后出现永远找不到的路径。
 - **Markdown 链接（29）。** 包括 `docs/backlog.zh.md` 与 `docs/design/` 里指向门面文件的链接（阶段 5 没改这两处）。删门面时同批改指实现文件，否则链接断掉；`docs/reports/`、`docs/evidence/` 不计。
 - **现行文档命令（38）。** 包内 CLI 不能裸跑：门面先导入 `scripts.tongxing_host` 绑定端口，所以阶段 5 只把解释器改成 `.venv/bin/python`，命令仍写门面路径。2026-10-19 已定：[包内命令入口](package-cli-entry.zh.md)是分发器 `tools/ops/run.py <模块> [参数]`，它先绑定宿主再调用模块的 `main()`，不用包内 console script。同日把这 38 个门面的全部现行文档命令（37 个文件、84 处）改到这个入口或 `tools/` 路径，门面本身没删。必须保留门面的 11 个命令仍写 `scripts/` 路径。
 

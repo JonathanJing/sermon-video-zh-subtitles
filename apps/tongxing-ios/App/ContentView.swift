@@ -319,11 +319,23 @@ struct ContentView: View {
                                             }
                                             .accessibilityIdentifier("retry-published-audio")
                                         }
-                                    } else if let progress = model.publishedAudioProgress {
-                                        ProgressView(value: progress) {
-                                            Text(localization.text("正在准备音频…"))
+                                    } else if let fraction = model.publishedAudioProgress?.fraction {
+                                        let percent = Int((fraction * 100).rounded(.down))
+                                        VStack(alignment: .leading, spacing: 6) {
+                                            HStack(spacing: 8) {
+                                                Text(localization.text("正在准备音频…"))
+                                                    .font(.footnote)
+                                                Spacer(minLength: 8)
+                                                Text("\(percent)%")
+                                                    .font(.footnote.monospacedDigit())
+                                                    .accessibilityIdentifier("preparing-published-audio-percent")
+                                            }
+                                            .foregroundStyle(.secondary)
+                                            ProgressView(value: fraction)
+                                                .progressViewStyle(.linear)
+                                                .accessibilityIdentifier("preparing-published-audio")
+                                                .accessibilityValue("\(percent)%")
                                         }
-                                        .accessibilityIdentifier("preparing-published-audio")
                                     } else {
                                         ProgressView(localization.text("正在准备音频…"))
                                             .accessibilityIdentifier("preparing-published-audio")
@@ -438,7 +450,7 @@ struct ContentView: View {
             // Duo uses its system-provided vertical toolbar when that is active.
             .listeningPlayerDock(atTrailingEdge: false,
                                  inSystemBar: usesSystemVerticalBar) {
-                if showsPlaybackDock {
+                if model.showsPlaybackDock {
                     HStack(spacing: 0) {
                         Color.clear.frame(width: controlRegion.minX, height: 0)
                         listeningPlaybackDock(placement: .bottom)
@@ -480,7 +492,8 @@ struct ContentView: View {
                         .labelStyle(.iconOnly).accessibilityIdentifier("more-options")
                 }
                 #if os(iOS) && canImport(SwiftUI, _version: 8.0.85)
-                if #available(iOS 27.1, macOS 27.1, *), usesSystemVerticalBar, showsPlaybackDock {
+                if #available(iOS 27.1, macOS 27.1, *), usesSystemVerticalBar,
+                   model.showsPlaybackDock {
                     ToolbarItem(placement: .primaryAction) {
                         listeningPlaybackDock(placement: .trailing, inSystemBar: true)
                     }
@@ -559,30 +572,23 @@ struct ContentView: View {
     }
 
     private var playbackStatusDetail: some View {
-        Text(localization.text(model.isPreparing || model.isPreparingPublishedAudio
-                               ? "正在准备音频…" : playback.message))
+        Text(localization.text(model.isPreparingPlaybackAudio ? "正在准备音频…" : playback.message))
             .font(.footnote)
             .foregroundStyle(.secondary)
             .fixedSize(horizontal: false, vertical: true)
             .accessibilityIdentifier("playback-status-detail")
     }
 
-    /// A published page keeps its player bar while its audio downloads and is
-    /// verified; the controls stay disabled until the track is ready. Hiding
-    /// the bar until then left a slow download looking like a missing player.
-    private var showsPlaybackDock: Bool {
-        model.selectedTrack != nil || model.selectedAudioLocale != nil || model.isPreparingPublishedAudio
-    }
-
     private var shouldShowPlaybackStatusDetail: Bool {
-        model.isPreparing || model.isPreparingPublishedAudio || playback.message != "音频就绪 · 可以播放"
+        model.isPreparingPlaybackAudio || playback.message != "音频就绪 · 可以播放"
     }
 
     private func listeningPlaybackDock(placement: PlaybackDockPlacement,
                                        inSystemBar: Bool = false) -> some View {
         PlaybackDock(
             playback: playback,
-            isPreparing: model.isPreparing || model.isPreparingPublishedAudio,
+            isPreparing: model.isPreparingPlaybackAudio,
+            preparationProgress: model.publishedAudioProgress?.fraction,
             alignmentModel: model,
             locate: { sheet = .locate },
             precision: model.selectedTrack == nil ? nil : { sheet = .precision },
@@ -632,7 +638,7 @@ struct ContentView: View {
     private var playbackMoreControls: some View {
         PlaybackMoreControls(
             playback: playback,
-            isPreparing: model.isPreparing || model.isPreparingPublishedAudio,
+            isPreparing: model.isPreparingPlaybackAudio,
             alignmentModel: model,
             locate: { sheet = .locate },
             precision: model.selectedTrack == nil ? nil : { sheet = .precision },

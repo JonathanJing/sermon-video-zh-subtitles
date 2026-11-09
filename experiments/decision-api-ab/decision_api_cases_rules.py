@@ -110,7 +110,7 @@ def _read_frozen_json(path):
 
 def _screen_values(expected_text, recognized_text, locale, threshold):
     from scripts import tongxing_host  # noqa: F401  binds the production package ports
-    from tongxing_production.audio.screening import tokens
+    from tongxing_production.review.asr_scoring import tokens
     expected=tokens(expected_text,locale);actual=tokens(recognized_text,locale)
     if not expected:
         raise ValueError('empty_expected_asr_tokens')

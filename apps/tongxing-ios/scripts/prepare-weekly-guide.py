@@ -17,6 +17,10 @@ import sys
 # different worktree. The legacy generator below remains byte-identical.
 REPO_ROOT = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(REPO_ROOT / 'packages/production/src'))
+sys.path.insert(0, str(REPO_ROOT))
+# Bind the production package ports: staging.safe_output reads the checkout root
+# from the delivery port instead of deriving it from its own file location.
+from scripts import tongxing_host  # noqa: F401
 from tongxing_production.delivery import weekly_guide_rich as rich
 from tongxing_production.delivery import weekly_guide_staging as staging
 

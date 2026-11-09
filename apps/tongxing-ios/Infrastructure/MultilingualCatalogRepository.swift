@@ -454,9 +454,11 @@ public actor MultilingualCatalogRepository {
 
     /// Download only the reviewed or machine-checked same-locale audio declared by
     /// this page's verified release. Never hand AVPlayer network bytes or an unchecked cache.
+    /// `progress` reports transferred audio bytes so a slow first download can show
+    /// a determinate bar instead of an unlabeled spinner.
     public func loadAudio(for package: TargetLanguageReleasePackage,
                           page: MultilingualPage,
-                          progress: (@Sendable (Int64, Int64) -> Void)? = nil) async throws -> VerifiedLanguageAudio {
+                          progress: (@Sendable (HTTPTransferProgress) -> Void)? = nil) async throws -> VerifiedLanguageAudio {
         try package.validate(allowDevCandidate: allowDevCandidate)
         guard allowDevCandidate || (page.diagnosticOnly != true && page.simulationOnly != true) else {
             throw ContentStorageError.invalidDownloadReference
