@@ -245,14 +245,30 @@ window.__ModuleLoader__.load({
       )
     }
 
+    function runSignature(run) {
+      if (!run) return ''
+      const attention = (run.attention || [])
+        .map(item => `${item.kind}:${item.stage || ''}:${item.since || ''}`).join(',')
+      const missing = (run.required?.missing || []).join(',')
+      return [run.runId, run.state, run.activeStage || '', attention, missing].join('|')
+    }
+
     function Dock({ openSession }) {
       const { data } = useStatus()
       const now = useNow()
       const [open, setOpen] = React.useState(false)
+      const [dismissed, setDismissed] = React.useState(null)
       const runs = Array.isArray(data?.runs) ? data.runs : []
       const run = pickRun(runs)
+      const signature = runSignature(run)
+      React.useEffect(() => {
+        // A closed row returns as soon as a new run, stage change, attention,
+        // or missing-step set arrives; polling the same status stays hidden.
+        if (dismissed && signature && signature !== dismissed) setDismissed(null)
+      }, [dismissed, signature])
       if (!run) return null
       if (run.state === 'completed' && (ageSeconds(run.generatedAt, now) ?? 0) > 6 * 3600) return null
+      if (dismissed === signature) return null
 
       const active = run.stages.find(stage => stage.id === run.activeStage)
         || run.stages.find(stage => stage.state === 'failed')
@@ -348,6 +364,17 @@ window.__ModuleLoader__.load({
             cursor: 'pointer', whiteSpace: 'nowrap',
           },
         }, '打开对话 ↗') : null,
+        h('button', {
+          type: 'button',
+          title: '关闭进度条；有新状态时自动恢复',
+          'aria-label': '关闭进度条',
+          onClick: () => setDismissed(signature),
+          style: {
+            flex: '0 0 auto', border: 0, background: 'transparent',
+            color: 'var(--dsh-text-secondary, #8a8a8a)', cursor: 'pointer',
+            fontSize: 15, lineHeight: 1, padding: '0 2px', opacity: 0.62,
+          },
+        }, '×'),
       )
 
       if (!open) return h('div', { style: { width: '100%' } }, head)
@@ -435,6 +462,6 @@ window.__ModuleLoader__.load({
       }, props => h(Dock, { ...props, openSession: id => openSession(ctx, id) })))
     }
 
-    return { apply, inject, Dock, stageLabel, etaText, formatClock, reviewSessionId }
+    return { apply, inject, Dock, stageLabel, etaText, formatClock, reviewSessionId, runSignature }
   },
 })

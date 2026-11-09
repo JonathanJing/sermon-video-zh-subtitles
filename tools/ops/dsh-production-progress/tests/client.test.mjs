@@ -39,6 +39,19 @@ test('client bundle registers the production-progress dock entry', async () => {
   assert.equal(exports.reviewSessionId({ attention: [{ kind: 'human_review', sessionId: 's1' }], stages: [] }), 's1')
   assert.equal(exports.reviewSessionId({ attention: [], stages: [{ state: 'waiting', sessionId: 's2' }] }), 's2')
   assert.equal(exports.reviewSessionId({ attention: [], stages: [] }), null)
+  const sig = exports.runSignature({
+    runId: 'r1', state: 'active', activeStage: 'l3.tts.zh-Hans',
+    attention: [], required: { missing: [] },
+  })
+  assert.equal(sig, exports.runSignature({
+    runId: 'r1', state: 'active', activeStage: 'l3.tts.zh-Hans',
+    attention: [], required: { missing: [] },
+  }))
+  assert.notEqual(sig, exports.runSignature({
+    runId: 'r1', state: 'attention_required', activeStage: 'l3.review.zh-Hans',
+    attention: [{ kind: 'human_review', stage: 'l3.review.zh-Hans', since: 't' }],
+    required: { missing: [] },
+  }))
 
   let injected = null
   let registered = null
