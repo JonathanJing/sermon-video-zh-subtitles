@@ -1,0 +1,62 @@
+[11:59:02]: [33mGet started using a Gemfile for fastlane https://docs.fastlane.tools/getting-started/ios/setup/#use-a-gemfile[0m
+[11:59:02]: fastlane 2.241.1 (Ruby 4.0.7, homebrew)
+[11:59:02]: [31mWARNING: fastlane requires your locale to be set to UTF-8. To learn more go to https://docs.fastlane.tools/getting-started/ios/setup/#set-up-environment-variables[0m
+[11:59:03]: [32mDriving the lane 'production_upload' 🚀[0m
+[11:59:03]: [32m---------------------------------------[0m
+[11:59:03]: [32m--- Step: app_store_connect_api_key ---[0m
+[11:59:03]: [32m---------------------------------------[0m
++-----------------------------------+
+|           [33mLane Context[0m            |
++---------------+-------------------+
+| PLATFORM_NAME |                   |
+| LANE_NAME     | production_upload |
++---------------+-------------------+
+[11:59:03]: [31mCalled from Fastfile at line 78[0m
+[11:59:03]: [31m```[0m
+[11:59:03]: [31m    76:	lane :production_upload do[0m
+[11:59:03]: [31m    77:	  key, app = connect[0m
+[11:59:03]: [31m => 78:	  record = JSON.parse(File.read(ENV.fetch('TONGXING_PRODUCTION_RECORD')))[0m
+[11:59:03]: [31m    79:	  ipa = ENV.fetch('TONGXING_PRODUCTION_IPA')[0m
+[11:59:03]: [31m    80:	  digest = Digest::SHA256.file(ipa).hexdigest[0m
+[11:59:03]: [31m```[0m
+
++---------------------------------------------+
+|              [32mfastlane summary[0m               |
++------+------------------------+-------------+
+| Step | Action                 | Time (in s) |
++------+------------------------+-------------+
+| 1    | app_store_connect_api  | 0           |
+|      | _key                   |             |
++------+------------------------+-------------+
+
+[11:59:03]: [31mfastlane finished with errors[0m
+
+Looking for related GitHub issues on fastlane/fastlane...
+
+Found no similar issues. To create a new issue, please visit:
+https://github.com/fastlane/fastlane/issues/new
+Run `fastlane env` to append the fastlane environment to your issue
+[11:59:03]: [31mWARNING: fastlane requires your locale to be set to UTF-8. To learn more go to https://docs.fastlane.tools/getting-started/ios/setup/#set-up-environment-variables[0m
+/opt/homebrew/Cellar/ruby/4.0.7_1/lib/ruby/4.0.0/json/common.rb:353:in 'String#encode': [31m[!] "\xE5" on US-ASCII[0m (Encoding::InvalidByteSequenceError)
+	from /opt/homebrew/Cellar/ruby/4.0.7_1/lib/ruby/4.0.0/json/common.rb:353:in 'JSON::Ext::Parser.parse'
+	from /opt/homebrew/Cellar/ruby/4.0.7_1/lib/ruby/4.0.0/json/common.rb:353:in 'JSON.parse'
+	from Fastfile:78:in 'block in Fastlane::FastFile#parsing_binding'
+	from /opt/homebrew/Cellar/fastlane/2.241.1/libexec/gems/fastlane-2.241.1/fastlane/lib/fastlane/lane.rb:41:in 'Fastlane::Lane#call'
+	from /opt/homebrew/Cellar/fastlane/2.241.1/libexec/gems/fastlane-2.241.1/fastlane/lib/fastlane/runner.rb:49:in 'block in Fastlane::Runner#execute'
+	from /opt/homebrew/Cellar/fastlane/2.241.1/libexec/gems/fastlane-2.241.1/fastlane/lib/fastlane/runner.rb:45:in 'Dir.chdir'
+	from /opt/homebrew/Cellar/fastlane/2.241.1/libexec/gems/fastlane-2.241.1/fastlane/lib/fastlane/runner.rb:45:in 'Fastlane::Runner#execute'
+	from /opt/homebrew/Cellar/fastlane/2.241.1/libexec/gems/fastlane-2.241.1/fastlane/lib/fastlane/lane_manager.rb:46:in 'Fastlane::LaneManager.cruise_lane'
+	from /opt/homebrew/Cellar/fastlane/2.241.1/libexec/gems/fastlane-2.241.1/fastlane/lib/fastlane/command_line_handler.rb:34:in 'Fastlane::CommandLineHandler.handle'
+	from /opt/homebrew/Cellar/fastlane/2.241.1/libexec/gems/fastlane-2.241.1/fastlane/lib/fastlane/commands_generator.rb:110:in 'block (2 levels) in Fastlane::CommandsGenerator#run'
+	from /opt/homebrew/Cellar/fastlane/2.241.1/libexec/gems/commander-4.6.0/lib/commander/command.rb:187:in 'Commander::Command#call'
+	from /opt/homebrew/Cellar/fastlane/2.241.1/libexec/gems/commander-4.6.0/lib/commander/command.rb:157:in 'Commander::Command#run'
+	from /opt/homebrew/Cellar/fastlane/2.241.1/libexec/gems/commander-4.6.0/lib/commander/runner.rb:444:in 'Commander::Runner#run_active_command'
+	from /opt/homebrew/Cellar/fastlane/2.241.1/libexec/gems/fastlane-2.241.1/fastlane_core/lib/fastlane_core/ui/fastlane_runner.rb:124:in 'Commander::Runner#run!'
+	from /opt/homebrew/Cellar/fastlane/2.241.1/libexec/gems/commander-4.6.0/lib/commander/delegates.rb:18:in 'Commander::Delegates#run!'
+	from /opt/homebrew/Cellar/fastlane/2.241.1/libexec/gems/fastlane-2.241.1/fastlane/lib/fastlane/commands_generator.rb:363:in 'Fastlane::CommandsGenerator#run'
+	from /opt/homebrew/Cellar/fastlane/2.241.1/libexec/gems/fastlane-2.241.1/fastlane/lib/fastlane/commands_generator.rb:43:in 'Fastlane::CommandsGenerator.start'
+	from /opt/homebrew/Cellar/fastlane/2.241.1/libexec/gems/fastlane-2.241.1/fastlane/lib/fastlane/cli_tools_distributor.rb:133:in 'Fastlane::CLIToolsDistributor.take_off'
+	from /opt/homebrew/Cellar/fastlane/2.241.1/libexec/gems/fastlane-2.241.1/bin/fastlane:25:in '<top (required)>'
+	from /opt/homebrew/Cellar/ruby/4.0.7_1/lib/ruby/4.0.0/rubygems.rb:305:in 'Kernel#load'
+	from /opt/homebrew/Cellar/ruby/4.0.7_1/lib/ruby/4.0.0/rubygems.rb:305:in 'Gem.activate_and_load_bin_path'
+	from /opt/homebrew/Cellar/fastlane/2.241.1/libexec/bin/fastlane:25:in '<main>'

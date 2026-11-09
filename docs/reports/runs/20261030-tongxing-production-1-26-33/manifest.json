@@ -1,0 +1,200 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261030-tongxing-production-1-26-33",
+  "runs": [
+    {
+      "label": "production-1.26.33-build78-archive-20261030",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.claude/worktrees/ios-beta-1.26.33/artifacts/tongxing-ios/production-1.26.33-build78-archive-20261030",
+      "skipped": {
+        ".plist": 18,
+        "(none)": 73,
+        ".yml": 4,
+        ".json": 25,
+        ".swiftdoc": 8,
+        ".swiftmodule": 8,
+        ".timestamp": 4,
+        ".h": 9,
+        ".modulemap": 4,
+        ".hmap": 12,
+        ".DependencyMetadataFileList": 4,
+        ".DependencyStaticMetadataFileList": 4,
+        ".xcent": 2,
+        ".der": 2,
+        ".stringsdata": 4,
+        ".o": 61,
+        ".dia": 8,
+        ".d": 4,
+        ".swiftconstvalues": 4,
+        ".LinkFileList": 4,
+        ".SwiftConstValuesFileList": 4,
+        ".SwiftFileList": 4,
+        ".swiftsourceinfo": 4,
+        ".dat": 4,
+        ".yaml": 1,
+        ".sb": 1,
+        ".swift": 1,
+        ".sh": 1,
+        ".dep": 1,
+        ".plist_thinned": 1,
+        ".png": 4,
+        ".car": 2,
+        ".strings": 15,
+        ".mobileprovision": 3,
+        ".msgpack": 2,
+        ".txt": 2,
+        ".db": 1,
+        ".v1": 3,
+        ".shared": 3,
+        ".xcactivitylog": 2,
+        ".pcm": 398,
+        ".modulevalidation": 1,
+        ".sdkstatcache": 1,
+        ".xcprivacy": 1,
+        ".jpg": 2,
+        ".ipa": 1
+      }
+    },
+    {
+      "label": "production-1.26.33-asc",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.claude/worktrees/ios-beta-1.26.33/artifacts/tongxing-ios/production-1.26.33-asc",
+      "skipped": {
+        "(none)": 1,
+        ".md": 1,
+        ".xml": 1,
+        ".json": 8
+      }
+    }
+  ],
+  "files": [
+    {
+      "run": "production-1.26.33-build78-archive-20261030",
+      "path": "archive.log",
+      "kind": "log",
+      "bytes": 561173,
+      "truncated": true,
+      "sha256": "55518d355c4fb170dec4382ced3ea49626bd23a2ca26066c4f2799e9c58ef068",
+      "redactions": {
+        "email": 1,
+        "home_dir": 170
+      }
+    },
+    {
+      "run": "production-1.26.33-build78-archive-20261030",
+      "path": "export/Packaging.log",
+      "kind": "log",
+      "bytes": 31484,
+      "truncated": true,
+      "sha256": "15c50eaade85c00006164de5547cdce9758337b4f82c951463db4a998749e551",
+      "redactions": {
+        "email": 2,
+        "home_dir": 14
+      }
+    },
+    {
+      "run": "production-1.26.33-build78-archive-20261030",
+      "path": "export.log",
+      "kind": "log",
+      "bytes": 484,
+      "truncated": false,
+      "sha256": "e3a916d5a253806894cf448596e37b7309b29cad51c62038441feb95b6e02cd9",
+      "redactions": {
+        "home_dir": 1
+      }
+    },
+    {
+      "run": "production-1.26.33-asc",
+      "path": "apply-metadata.log",
+      "kind": "log",
+      "bytes": 895,
+      "truncated": false,
+      "sha256": "d37db6ffd9671df8090347e433ff84f4f657e35101f1126e8fa1020203f4078f",
+      "redactions": {}
+    },
+    {
+      "run": "production-1.26.33-asc",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 140,
+      "truncated": false,
+      "sha256": "3017693243262e49bc45dafac32745dea98bf4bfc7873f87398431762f349cc0",
+      "redactions": {}
+    },
+    {
+      "run": "production-1.26.33-asc",
+      "path": "prepare-version.log",
+      "kind": "log",
+      "bytes": 896,
+      "truncated": false,
+      "sha256": "4524cf5eb98f68d0ce7c34494ed2bd71742a618058f6a07611a01b77ac7be678",
+      "redactions": {}
+    },
+    {
+      "run": "production-1.26.33-asc",
+      "path": "processing.log",
+      "kind": "log",
+      "bytes": 885,
+      "truncated": false,
+      "sha256": "1e2465d5f709f232bf3e09c836255c79961a838d635842735013facf50750821",
+      "redactions": {}
+    },
+    {
+      "run": "production-1.26.33-asc",
+      "path": "review-readback.log",
+      "kind": "log",
+      "bytes": 894,
+      "truncated": false,
+      "sha256": "f39bb948f27b9f2d18f54d764a54eca36a13b8a4cf4f6125179b256721144bc9",
+      "redactions": {}
+    },
+    {
+      "run": "production-1.26.33-asc",
+      "path": "status-before.log",
+      "kind": "log",
+      "bytes": 1255,
+      "truncated": false,
+      "sha256": "6701766cf9312df156d37731b30b4b6fa20d1ab465de71ebaf2656a855235f7f",
+      "redactions": {}
+    },
+    {
+      "run": "production-1.26.33-asc",
+      "path": "submit-review.log",
+      "kind": "log",
+      "bytes": 894,
+      "truncated": false,
+      "sha256": "07841452e71849b5b13609b175e559c53e2bec1336a2b897f2ac372a0cd0f47d",
+      "redactions": {}
+    },
+    {
+      "run": "production-1.26.33-asc",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 1193,
+      "truncated": false,
+      "sha256": "14036f37045a89c3d06aece55f481ae40999747db987e6320d81aceeeeea3cd5",
+      "redactions": {}
+    },
+    {
+      "run": "production-1.26.33-asc",
+      "path": "upload-attempt1-encoding.log",
+      "kind": "log",
+      "bytes": 5209,
+      "truncated": false,
+      "sha256": "cee16dbf0e11915a74f1488e31ac7ef5996b2c6ffdfb2f19deb6f69206cdb35b",
+      "redactions": {}
+    },
+    {
+      "run": "production-1.26.33-asc",
+      "path": "upload.log",
+      "kind": "log",
+      "bytes": 1917,
+      "truncated": false,
+      "sha256": "31cd0cf1778192feb443243799811fad1c22da5b1074e5b295c320c9ef476033",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

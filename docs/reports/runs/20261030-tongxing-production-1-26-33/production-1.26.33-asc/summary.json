@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "tongxing-ios-asc-review-summary-v1",
+  "status": "WAITING_FOR_REVIEW",
+  "bundleID": "com.jonathanjing.tongxing.dev",
+  "appStoreAppID": "6809255441",
+  "version": "1.26.33",
+  "build": "78",
+  "sourceCommit": "f74093fe748b0dd81b83c38cf49f03ab302aa381",
+  "validatedBetaCommit": "96d2bc00d0d2368bfdab85adba7c7835a2ecd884",
+  "ipaSHA256": "65fe87a204ef44aca3518105ae0418948a0398fe62d7bd8cbf73e017ea4e08aa",
+  "archiveManifestSHA256": "65608c0311e3548c2415854d149cd4a7770e304f3b03955cf9578004fcc1824d",
+  "appStoreVersionID": "f10bf3f1-49c2-4e81-9838-629c06782c75",
+  "buildID": "27fa80a4-a930-41d8-9d1e-da855562ae4d",
+  "buildProcessingState": "VALID",
+  "buildExpired": false,
+  "releaseType": "MANUAL",
+  "reviewSubmissionID": "d008f658-b101-4582-883c-725530f63791",
+  "submittedDate": "2026-10-30T19:04:05.915Z",
+  "readbackAt": "2026-10-30T19:04:15Z",
+  "locales": [
+    "ko",
+    "zh-Hans",
+    "en-US",
+    "vi",
+    "es-MX"
+  ],
+  "screenshotCounts": {
+    "zh-Hans": 18,
+    "en-US": 18
+  },
+  "reviewContactPresent": true,
+  "demoAccountRequired": false,
+  "machineTranslatedGuideDisclosed": true,
+  "deviceAcceptance": "not_run",
+  "venueAcceptance": "not_run"
+}
