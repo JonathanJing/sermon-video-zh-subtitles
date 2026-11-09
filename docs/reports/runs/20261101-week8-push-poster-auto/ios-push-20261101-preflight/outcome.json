@@ -1,0 +1,16 @@
+{
+  "schemaVersion": "tongxing-run-outcome-v1",
+  "status": "preflight_pass",
+  "exitCode": 0,
+  "deliveryType": "test",
+  "startedAt": "2026-11-01T06:41:38Z",
+  "finishedAt": "2026-11-01T06:43:14Z",
+  "pageID": "revelation-jesus-marks-his-own-20261101",
+  "codeCommit": "ce293ecd74fbdb7f54c18bbb56b935c8297fe7a6",
+  "planSha256": "d572799e8e32997c2ce1a1d6255fb79b3a9dacd7b33ed781854b6e48396aa01c",
+  "apnsSent": false,
+  "deviceDisplay": "not_verified",
+  "testsPassed": 7,
+  "testsFailed": 0,
+  "note": "Read-only preflight only. No APNs request was made. Regenerate the plan at send time; it expires 15 minutes after createdAt."
+}

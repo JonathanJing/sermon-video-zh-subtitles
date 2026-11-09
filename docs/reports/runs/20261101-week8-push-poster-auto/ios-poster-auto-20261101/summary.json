@@ -1,0 +1,100 @@
+{
+  "schemaVersion": "tongxing-ios-weekly-poster-auto-present-summary-v1",
+  "status": "pass",
+  "scope": "iOS weekly poster auto-present after 08:00 local on the page service date",
+  "deliveryType": "test",
+  "commit": "eaac2a5b",
+  "parentCommit": "7850e638",
+  "baseBranch": "dev",
+  "simulator": {
+    "device": "iPhone 17",
+    "runtime": "iOS 27.0",
+    "udid": "3D5AF104-2F19-4426-ABE4-3F805123D8AE",
+    "configuration": "Debug"
+  },
+  "behaviour": {
+    "rule": "The verified poster presents itself once per unseen page/locale/release from 08:00 device-local time on the page's own service date.",
+    "triggers": [
+      "cold launch",
+      "foreground return",
+      "completion of the app-scoped foreground announcement refresh"
+    ],
+    "exclusions": [
+      "another sheet is open",
+      "alignment alert is showing",
+      "content-language switch",
+      "poster bytes missing or unverified",
+      "reload still holding another locale"
+    ],
+    "repeat": "A seen receipt suppresses the same release; the manual card and reopen entry stay available."
+  },
+  "coreTests": {
+    "command": "DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer swift test --package-path Core",
+    "executed": 119,
+    "failed": 0,
+    "newSuite": "WeeklyPosterScheduleTests (5 cases: 08:00 boundary, earlier/later service dates, device time zone, exact DST instants, malformed dates)"
+  },
+  "hostedTests": {
+    "command": "apps/tongxing-ios/scripts/ios.sh test --only-testing TongxingTests/WeeklyUpdateModelTests",
+    "executed": 6,
+    "failed": 0,
+    "newCases": [
+      "testAutomaticPosterOfferWaitsForLocalEightOnServiceDate",
+      "testAutomaticPosterOfferRequiresVerifiedBytes",
+      "testForegroundRefreshPublishesAFreshPosterCheckSignal"
+    ]
+  },
+  "uiTests": {
+    "command": "apps/tongxing-ios/scripts/ios.sh test --only-testing TongxingUITests/WeeklyUpdateUITests",
+    "executed": 4,
+    "failed": 0,
+    "passed": [
+      "testPosterOpensByItselfAfterEightOnServiceDate",
+      "testPosterStaysManualBeforeItsServiceDate",
+      "testPosterPromptPersistsDismissalAndCanReopen",
+      "testMissingPosterStillOffersContent"
+    ],
+    "firstRound": "Two pending-fixture tests failed because the new launch argument did not also request the weekly-update fixture; fixed the argument pair and reran all four.",
+    "screenshots": [
+      "weekly-update-card-before-service-date",
+      "weekly-update-manual-before-service-date",
+      "weekly-update-auto-presented",
+      "weekly-update-poster-synthetic",
+      "weekly-update-new-synthetic",
+      "weekly-update-poster-unavailable-synthetic"
+    ]
+  },
+  "independentReview": {
+    "reviewer": "ios-reviewer (read-only, separate agent)",
+    "reviewedRevision": "e7d348b8",
+    "verdict": "APPROVE",
+    "blockingFindings": 0,
+    "nonBlockingFindingsAddressed": [
+      "foreground return presented from un-refreshed state; the app-scoped refresh now publishes a revision that re-evaluates the offer",
+      "one-shot/locale races; presentation refuses a stale-language announcement and a failed initial load no longer enables a language-switch popup",
+      "App Store and live poster capture flows accept an already-presented sheet"
+    ],
+    "notAddressed": [
+      "app left open across 08:00 does not auto-open until the next launch/foreground return (intended: 'opening the app')",
+      "push-tap versus auto-present ordering remains unverified on a device"
+    ]
+  },
+  "productionBinding": {
+    "pageID": "revelation-jesus-marks-his-own-20261101",
+    "verifiedBy": "artifacts/ios-push-20261101-preflight",
+    "locales": [
+      "zh-Hans",
+      "ko",
+      "es"
+    ],
+    "note": "Announcement, release package and poster PNG bytes were re-verified against production hosting in the push preflight; this App build only adds the local-time gate and presentation trigger."
+  },
+  "notVerified": [
+    "real-device install of a build containing this change",
+    "production-origin App build on a physical device",
+    "physical poster QR scan",
+    "push notification device display and tap",
+    "live poster smoke (TONGXING_LIVE_POSTER_SMOKE) and App Store capture flows (Release, env-gated)"
+  ],
+  "notes": "The installed store/beta App does not contain this commit, so it will keep the manual card until a new build is distributed. The scheduled 2026-11-01 08:00 America/Los_Angeles push send is recorded separately."
+}
