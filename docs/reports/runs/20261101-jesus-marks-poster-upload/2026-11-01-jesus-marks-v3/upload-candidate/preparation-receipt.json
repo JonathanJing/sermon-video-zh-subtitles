@@ -1,0 +1,61 @@
+{
+  "status": "prepared_not_deployed",
+  "pageId": "revelation-jesus-marks-his-own-20261101",
+  "baselineVersion": "sites/ai-for-god-sermon-audio/versions/18e3eba5dbd2f9a8",
+  "oldFileCount": 376,
+  "newFileCount": 382,
+  "changed": [
+    "/weekly-announcements-v1.json"
+  ],
+  "added": [
+    "/posters/revelation-jesus-marks-his-own-20261101/zh-Hans-8c266931ec06b5765f10ed9dc5bc2adcf754b44f4058edac248ec0ef913d72ca.png",
+    "/posters/revelation-jesus-marks-his-own-20261101/zh-Hans-preview-755068b14cf5326d2a4b58fc26eaf5002a00eea4b05a29a5447a0890d650d532.png",
+    "/posters/revelation-jesus-marks-his-own-20261101/ko-00c65d59dd2e6a85d40cfb04304854eccd7bd41080c120bbdd23c79e6f6645e2.png",
+    "/posters/revelation-jesus-marks-his-own-20261101/ko-preview-c0df457a9eafab5ff5bc454acbad3857549c0531ce8c08693d0a1ede5a5ab939.png",
+    "/posters/revelation-jesus-marks-his-own-20261101/es-b1f23f75e77bc416f7677f47551141c2ea56f5169b0830d0827900e2b98ff9ba.png",
+    "/posters/revelation-jesus-marks-his-own-20261101/es-preview-9bc3128ad2420116342f66ae53bef0bee850b7b6b1cd446a1c5e4ced8afc8d28.png"
+  ],
+  "reused": [],
+  "bindings": [
+    {
+      "schemaVersion": "tongxing-announcement-binding-receipt-v1",
+      "pageID": "revelation-jesus-marks-his-own-20261101",
+      "locale": "zh-Hans",
+      "sourceIdentitySHA256": "86acc52182afe0eaa7846d4ac7c3731a0f4c7c16272ff83429b7b34a8915e325",
+      "contentSHA256": "adbe11a13b605b5db0c01aa57ce9f0d9fe36e8617bc7c7a0c391b5a17ff18c80",
+      "originalReleaseSHA256": "056160f4a3dd527a8db4d87ee597ef34e84630978f094bcb0e60bbcb756613e7",
+      "currentReleaseSHA256": "056160f4a3dd527a8db4d87ee597ef34e84630978f094bcb0e60bbcb756613e7",
+      "metadataRebound": false,
+      "posterSHA256": "8c266931ec06b5765f10ed9dc5bc2adcf754b44f4058edac248ec0ef913d72ca",
+      "originalPosterOrigin": "https://ai-for-god-sermon-audio.web.app",
+      "note": "Poster image is unchanged. Source and frozen content match exactly. Existing QR may target original origin; App action uses current catalog."
+    },
+    {
+      "schemaVersion": "tongxing-announcement-binding-receipt-v1",
+      "pageID": "revelation-jesus-marks-his-own-20261101",
+      "locale": "ko",
+      "sourceIdentitySHA256": "86acc52182afe0eaa7846d4ac7c3731a0f4c7c16272ff83429b7b34a8915e325",
+      "contentSHA256": "69138a73bc1798d4294cf49fc32a14b995f6ffcfb6a870cd63e644c6648cd7d8",
+      "originalReleaseSHA256": "33b48816e367f766a1b8d7a467ccaee208b8d78d9cabf7682455a5df9fe654aa",
+      "currentReleaseSHA256": "33b48816e367f766a1b8d7a467ccaee208b8d78d9cabf7682455a5df9fe654aa",
+      "metadataRebound": false,
+      "posterSHA256": "00c65d59dd2e6a85d40cfb04304854eccd7bd41080c120bbdd23c79e6f6645e2",
+      "originalPosterOrigin": "https://ai-for-god-sermon-audio.web.app",
+      "note": "Poster image is unchanged. Source and frozen content match exactly. Existing QR may target original origin; App action uses current catalog."
+    },
+    {
+      "schemaVersion": "tongxing-announcement-binding-receipt-v1",
+      "pageID": "revelation-jesus-marks-his-own-20261101",
+      "locale": "es",
+      "sourceIdentitySHA256": "86acc52182afe0eaa7846d4ac7c3731a0f4c7c16272ff83429b7b34a8915e325",
+      "contentSHA256": "f2ed11121746275b4f36120445f386184731f0053edd143aa29ef77a5ca489ea",
+      "originalReleaseSHA256": "d01e711fd7db048d8bbcbe9d3e5468dd4a0d73755b575772267849870c9e4f68",
+      "currentReleaseSHA256": "d01e711fd7db048d8bbcbe9d3e5468dd4a0d73755b575772267849870c9e4f68",
+      "metadataRebound": false,
+      "posterSHA256": "b1f23f75e77bc416f7677f47551141c2ea56f5169b0830d0827900e2b98ff9ba",
+      "originalPosterOrigin": "https://ai-for-god-sermon-audio.web.app",
+      "note": "Poster image is unchanged. Source and frozen content match exactly. Existing QR may target original origin; App action uses current catalog."
+    }
+  ],
+  "defaultPageId": "revelation-jesus-marks-his-own-20261101"
+}
