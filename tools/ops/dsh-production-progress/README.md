@@ -1,7 +1,8 @@
 # dsh-production-progress
 
-DSH 的逐句优先生产进度 dock。它把 `run_status.py` 写的快照显示在输入框上方的
-`conversation.input.dock`：一行当前阶段、进度、心跳和 attention；点击展开阶段表。
+DSH 的逐句优先生产进度面板。它把 `run_status.py` 写的快照显示在右侧栏的
+**「进度」tab**（`sidebarRightTabs` + `sidebar.right.pane.tab`）：每个 run 一张卡片，
+行内是当前阶段、进度、心跳和 attention；点击展开阶段表。
 
 它是**只读观察器**：不写 run、不改变门禁、不调用 Python、不碰 keychain。
 
@@ -20,7 +21,7 @@ DSH 的逐句优先生产进度 dock。它把 `run_status.py` 写的快照显示
    `~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/sentence-first-agent`；
 4. `<cwd>/artifacts/sentence-first-agent`。
 
-`run_status.py` 的 `register`/`mark` 现在写完事件后会刷新 `status.json`，所以 dock
+`run_status.py` 的 `register`/`mark` 现在写完事件后会刷新 `status.json`，所以 tab
 是低延迟的；没有新事件时它会显示快照 age，超过 120 秒标为可能过期。
 
 ## 安装（desktop profile，本地包）
@@ -64,14 +65,15 @@ client module scanner 服务到 `/plugins/dsh-production-progress/client.js`。
 
 ## 界面
 
-- 一行：状态点、语言、当前阶段、`done/total`、心跳/等待、`预计 HH:MM`、`⚠ n`。
-- 行尾 `×` 直接关闭整行（不是只能点状态栏切换）；有新 run、阶段变化、attention 或缺失步骤时会自动恢复显示。
-- 待审听（`human_review` waiting）且存在 `sessionId` 时，行尾出现“打开对话 ↗”：
+- 右侧栏的 **「进度」tab**，同时列出所有 run（attention > active > planned > completed）。
+- 每行：状态点、标题、语言、当前阶段、`done/total`、心跳/等待、`预计 HH:MM`、`⚠ n`。
+- 行尾 `×` **只关闭这一行**；tab 保留。关闭状态按 `runId` 存 `localStorage`，打开/切换会话不会把该行带回来；新 run 会显示。全部关闭时 tab 内显示“恢复显示”。
+- 点击行展开：阶段表（全部阶段）、所有非 info attention、缺步骤、快照 age。
+- 待审听（`human_review` waiting）且存在 `sessionId` 时，行内出现“打开对话 ↗”：
   - `run_status.py handoff` 默认把 `DSH_SESSION_ID` 写进 waiting；也支持 `--session-id` 覆盖。
   - 点击调用客户端的 `sessions.open(id)`（旧版回退 `uiWorkspace.openSession(id)`），切到发起审听的会话。
   - 没有 `DSH_SESSION_ID` 或不在 DSH 内运行时不会显示按钮。
-- 点击行展开：run 标题、阶段表（最多 12 条）、第一条 attention、缺步骤、快照 age。
-- 没有 run 时 dock 不渲染；完成超过 6 小时的 run 也会隐藏。
+- tab 常驻；没有 run 时显示“暂无生产 run”。不再占用输入框上方 dock，也不会自动隐藏完成 run。
 - 颜色：蓝=进行中，琥珀=等待/需处理，红=失败/停滞，绿=完成。
 
 ## 测试
@@ -82,13 +84,12 @@ npm test
 ```
 
 7 个 Node 测试覆盖 host 的 index/snapshot 合并、目录回退、路由注册、GET/405，
-以及 client bundle 的 `__ModuleLoader__` 形状和 `conversation.input.dock` 注册。
+以及 client bundle 的 `__ModuleLoader__` 形状、右侧栏 tab 与 body/title slot 注册。
 
 ## 限制
 
-- 全局显示最近一个生产 run，不按 session/workspace 过滤；多生产并行时只显示
-  优先级最高（attention > active > planned > completed）的一个。
+- 所有 run 都列出，不按 session/workspace 过滤；同一 run 被关闭后不会再自动出现。
 - 4 秒轮询，不是 WebSocket；快照本身由生产脚本刷新。
-- 只覆盖 DSH 0.2.x 的 `conversation.input.dock`；DSH 升级后需用真实槽位复核。
-- `status.json` 不公开：dock 只在本地 GUI 读它，不要把该路由暴露到公网。
-- “打开对话”依赖 host 半透传 `sessionId`；首次安装/更新 host 后需要重启 DSH，client 半可单独 HMR。
+- 只覆盖 DSH 0.2.x 的 `sidebarRightTabs` / `sidebar.right.pane.tab`；DSH 升级后用真实槽位复核。
+- `status.json` 不公开：tab 只在本地 GUI 读它，不要把该路由暴露到公网。
+- “打开对话”依赖 host 半透传 `sessionId`；首次安装/更新 host 后需要重启 DSH。客户端 bundle 在启动时缓存，改了 tab/注册也要完整重启才可见。
