@@ -46,6 +46,36 @@ class ClockTest(unittest.TestCase):
         target = {"capabilities": ["text", "captions", "audio"]}
         self.assertFalse(self.gate.content_clock(page, target, 3008.0, 3100.0)[0])
 
+    # The 2026-11-01 podcast dubs: the source window is 3476.16 s and each locale runs on its
+    # own natural-rate clock. These are the real numbers the loosened rule must keep passing.
+    def test_natural_rate_podcast_real_dubs_pass(self):
+        page = {"mediaType": "podcast"}
+        target = {"capabilities": ["text", "captions", "audio"]}
+        for audio in (3469.72, 3471.81, 3564.58):
+            ok, detail = self.gate.content_clock(page, target, 3476.16, audio)
+            self.assertTrue(ok, detail)
+
+    def test_independent_band_edges(self):
+        page = {"mediaType": "podcast"}
+        target = {"capabilities": ["text", "captions", "audio"]}
+        self.assertTrue(self.gate.content_clock(page, target, 1000.0, 750.0)[0])
+        self.assertTrue(self.gate.content_clock(page, target, 1000.0, 1350.0)[0])
+        self.assertFalse(self.gate.content_clock(page, target, 1000.0, 749.9)[0])
+        self.assertFalse(self.gate.content_clock(page, target, 1000.0, 1350.1)[0])
+
+    def test_audio_of_another_episode_fails(self):
+        page = {"mediaType": "podcast"}
+        target = {"capabilities": ["text", "captions", "audio"]}
+        self.assertFalse(self.gate.content_clock(page, target, 1000.0, 2400.0)[0])
+        self.assertFalse(self.gate.content_clock(page, target, 3476.16, 1800.0)[0])
+
+    def test_zero_or_negative_audio_fails(self):
+        page = {"mediaType": "podcast"}
+        target = {"capabilities": ["text", "captions", "audio"]}
+        for duration, audio in ((0, 100), (100, 0), (-1, 100), (100, -1)):
+            self.assertFalse(self.gate.content_clock(page, target, duration, audio)[0], (duration, audio))
+
+
 
 if __name__ == "__main__":
     unittest.main()
