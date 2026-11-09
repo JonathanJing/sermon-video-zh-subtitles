@@ -1,0 +1,60 @@
+{"at": "2026-11-08T20:54:25+00:00", "stage": "l1.start", "event": "started", "hostId": "host-6d1ae0e372f9", "pid": 79612}
+{"at": "2026-11-08T20:54:26+00:00", "stage": "l1.preflight.setup", "event": "started", "hostId": "host-6d1ae0e372f9", "pid": 79616}
+{"at": "2026-11-08T20:54:26+00:00", "stage": "l1.preflight.setup", "event": "finished", "hostId": "host-6d1ae0e372f9", "pid": 79616}
+{"at": "2026-11-08T20:54:27+00:00", "stage": "l1.start", "event": "finished", "hostId": "host-6d1ae0e372f9", "pid": 79612}
+{"at": "2026-11-08T21:08:01+00:00", "stage": "l1.preflight", "event": "started", "hostId": "host-6d1ae0e372f9", "pid": 87355}
+{"at": "2026-11-08T21:08:02+00:00", "stage": "l1.preflight", "event": "finished", "hostId": "host-6d1ae0e372f9", "pid": 87355}
+{"at": "2026-11-08T21:08:09+00:00", "stage": "l1.preflight", "event": "started", "hostId": "host-6d1ae0e372f9", "pid": 87428}
+{"at": "2026-11-08T21:08:09+00:00", "stage": "l1.preflight", "event": "finished", "hostId": "host-6d1ae0e372f9", "pid": 87428}
+{"at": "2026-11-08T21:09:41+00:00", "stage": "l1.preflight", "event": "started", "hostId": "host-6d1ae0e372f9", "pid": 88307}
+{"at": "2026-11-08T21:09:41+00:00", "stage": "l1.preflight", "event": "finished", "hostId": "host-6d1ae0e372f9", "pid": 88307}
+{"at": "2026-11-08T21:09:45.518388+00:00", "stage": "l3.tts.eric_pilot.zh-Hans", "event": "started", "hostId": "host-6d1ae0e372f9", "pid": 88335, "note": "sentence-tts-eric_pilot-zh-Hans"}
+{"at": "2026-11-08T21:10:13.041835+00:00", "stage": "l4.validate", "event": "started", "hostId": "host-6d1ae0e372f9", "pid": 88528}
+{"at": "2026-11-08T21:10:13.048628+00:00", "stage": "l4.validate", "event": "failed", "hostId": "host-6d1ae0e372f9", "pid": 88528, "note": "Human review verdict missing: ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/sentence-first-agent/20261108-jesus-is-just-podcast-review/human-review-verdict.json"}
+{"at": "2026-11-08T21:18:03.942912+00:00", "stage": "l3.tts.eric_pilot.zh-Hans", "event": "finished", "hostId": "host-6d1ae0e372f9", "pid": 88335, "note": "sentence-tts-eric_pilot-zh-Hans"}
+{"at": "2026-11-08T21:18:03.949977+00:00", "stage": "l3.tts.steve_bang_lee.zh-Hans", "event": "started", "hostId": "host-6d1ae0e372f9", "pid": 88335, "note": "sentence-tts-steve_bang_lee-zh-Hans"}
+{"at": "2026-11-08T21:22:17.359125+00:00", "stage": "l3.tts.steve_bang_lee.zh-Hans", "event": "finished", "hostId": "host-6d1ae0e372f9", "pid": 88335, "note": "sentence-tts-steve_bang_lee-zh-Hans"}
+{"at": "2026-11-08T21:23:59+00:00", "stage": "l3.finish", "event": "started", "hostId": "host-6d1ae0e372f9", "pid": 91983}
+{"at": "2026-11-08T21:24:44+00:00", "stage": "l3.finish", "event": "finished", "hostId": "host-6d1ae0e372f9", "pid": 91983}
+{"at": "2026-11-09T00:23:15.255018+00:00", "stage": "l4.preflight", "event": "started", "hostId": "host-6d1ae0e372f9", "pid": 26688}
+{"at": "2026-11-09T00:23:15.548421+00:00", "stage": "l4.preflight", "event": "finished", "hostId": "host-6d1ae0e372f9", "pid": 26688}
+{"at": "2026-11-09T00:23:23+00:00", "stage": "l2.consistency", "event": "started", "hostId": "host-6d1ae0e372f9", "pid": 26743}
+{"at": "2026-11-09T00:23:23+00:00", "stage": "l2.consistency", "event": "finished", "hostId": "host-6d1ae0e372f9", "pid": 26743}
+{"at": "2026-11-09T00:23:30.284353+00:00", "stage": "l4.assets", "event": "started", "hostId": "host-6d1ae0e372f9", "pid": 26781}
+{"at": "2026-11-09T00:23:39.106211+00:00", "stage": "l4.assets", "event": "failed", "hostId": "host-6d1ae0e372f9", "pid": 26781, "note": "iOS would reject cue translation-u0092 (396.34–402.26 vs 3008.238)"}
+{"at": "2026-11-09T00:24:08.678563+00:00", "stage": "l4.assets", "event": "started", "hostId": "host-6d1ae0e372f9", "pid": 26969}
+{"at": "2026-11-09T00:24:08.684504+00:00", "stage": "l4.assets", "event": "failed", "hostId": "host-6d1ae0e372f9", "pid": 26969, "note": "Use a new assets directory"}
+{"at": "2026-11-09T00:24:11.233740+00:00", "stage": "l4.assets", "event": "started", "hostId": "host-6d1ae0e372f9", "pid": 26989}
+{"at": "2026-11-09T00:24:39.356379+00:00", "stage": "l4.assets", "event": "finished", "hostId": "host-6d1ae0e372f9", "pid": 26989}
+{"at": "2026-11-09T00:24:43.797238+00:00", "stage": "l4.preflight", "event": "started", "hostId": "host-6d1ae0e372f9", "pid": 27083}
+{"at": "2026-11-09T00:24:44.094663+00:00", "stage": "l4.preflight", "event": "finished", "hostId": "host-6d1ae0e372f9", "pid": 27083}
+{"at": "2026-11-09T00:24:44.262241+00:00", "stage": "l4.baseline", "event": "started", "hostId": "host-6d1ae0e372f9", "pid": 27085}
+{"at": "2026-11-09T00:25:45.375842+00:00", "stage": "l4.baseline", "event": "finished", "hostId": "host-6d1ae0e372f9", "pid": 27085}
+{"at": "2026-11-09T00:25:48.135744+00:00", "stage": "l4.stage1", "event": "started", "hostId": "host-6d1ae0e372f9", "pid": 27348}
+{"at": "2026-11-09T00:25:51.900134+00:00", "stage": "l4.stage1", "event": "finished", "hostId": "host-6d1ae0e372f9", "pid": 27348}
+{"at": "2026-11-09T00:25:55.155009+00:00", "stage": "l4.publish-check", "event": "started", "hostId": "host-6d1ae0e372f9", "pid": 27510}
+{"at": "2026-11-09T00:25:55.339245+00:00", "stage": "l4.publish-check", "event": "finished", "hostId": "host-6d1ae0e372f9", "pid": 27510}
+{"at": "2026-11-09T00:25:55.504294+00:00", "stage": "l4.publish", "event": "started", "hostId": "host-6d1ae0e372f9", "pid": 27512}
+{"at": "2026-11-09T00:26:31.183388+00:00", "stage": "l4.publish", "event": "finished", "hostId": "host-6d1ae0e372f9", "pid": 27512}
+{"at": "2026-11-09T00:26:34.436275+00:00", "stage": "l4.verify", "event": "started", "hostId": "host-6d1ae0e372f9", "pid": 27729}
+{"at": "2026-11-09T00:26:51.088781+00:00", "stage": "l4.verify", "event": "finished", "hostId": "host-6d1ae0e372f9", "pid": 27729}
+{"at": "2026-11-09T00:26:55.435598+00:00", "stage": "l4.stage2", "event": "started", "hostId": "host-6d1ae0e372f9", "pid": 27798}
+{"at": "2026-11-09T00:26:59.304289+00:00", "stage": "l4.stage2", "event": "finished", "hostId": "host-6d1ae0e372f9", "pid": 27798}
+{"at": "2026-11-09T00:27:02.341264+00:00", "stage": "l4.publish-check", "event": "started", "hostId": "host-6d1ae0e372f9", "pid": 27917}
+{"at": "2026-11-09T00:27:02.456385+00:00", "stage": "l4.publish-check", "event": "finished", "hostId": "host-6d1ae0e372f9", "pid": 27917}
+{"at": "2026-11-09T00:27:02.626344+00:00", "stage": "l4.publish", "event": "started", "hostId": "host-6d1ae0e372f9", "pid": 27919}
+{"at": "2026-11-09T00:27:35.222197+00:00", "stage": "l4.publish", "event": "finished", "hostId": "host-6d1ae0e372f9", "pid": 27919}
+{"at": "2026-11-09T00:27:35.433233+00:00", "stage": "l4.readback", "event": "started", "hostId": "host-6d1ae0e372f9", "pid": 28064}
+{"at": "2026-11-09T00:27:36.220183+00:00", "stage": "l4.readback", "event": "finished", "hostId": "host-6d1ae0e372f9", "pid": 28064}
+{"at": "2026-11-09T00:27:39.372418+00:00", "stage": "l4.baseline", "event": "started", "hostId": "host-6d1ae0e372f9", "pid": 28092}
+{"at": "2026-11-09T00:28:40.024243+00:00", "stage": "l4.baseline", "event": "finished", "hostId": "host-6d1ae0e372f9", "pid": 28092}
+{"at": "2026-11-09T00:28:40.215207+00:00", "stage": "l4.stage-english-reference", "event": "started", "hostId": "host-6d1ae0e372f9", "pid": 28382}
+{"at": "2026-11-09T00:28:40.255092+00:00", "stage": "l4.stage-english-reference", "event": "failed", "hostId": "host-6d1ae0e372f9", "pid": 28382, "note": "Transcript binding mismatch"}
+{"at": "2026-11-09T00:30:04.334615+00:00", "stage": "l4.stage-english-reference", "event": "started", "hostId": "host-6d1ae0e372f9", "pid": 28706}
+{"at": "2026-11-09T00:30:08.813306+00:00", "stage": "l4.stage-english-reference", "event": "finished", "hostId": "host-6d1ae0e372f9", "pid": 28706}
+{"at": "2026-11-09T00:30:12.082999+00:00", "stage": "l4.publish-check", "event": "started", "hostId": "host-6d1ae0e372f9", "pid": 28797}
+{"at": "2026-11-09T00:30:12.202889+00:00", "stage": "l4.publish-check", "event": "finished", "hostId": "host-6d1ae0e372f9", "pid": 28797}
+{"at": "2026-11-09T00:30:12.366034+00:00", "stage": "l4.publish", "event": "started", "hostId": "host-6d1ae0e372f9", "pid": 28807}
+{"at": "2026-11-09T00:30:44.070564+00:00", "stage": "l4.publish", "event": "finished", "hostId": "host-6d1ae0e372f9", "pid": 28807}
+{"at": "2026-11-09T00:30:44.251870+00:00", "stage": "l4.readback", "event": "started", "hostId": "host-6d1ae0e372f9", "pid": 28995}
+{"at": "2026-11-09T00:30:45.488660+00:00", "stage": "l4.readback", "event": "finished", "hostId": "host-6d1ae0e372f9", "pid": 28995}

@@ -1,0 +1,163 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261108-jesus-is-just-podcast",
+  "runs": [
+    {
+      "label": "20261108-jesus-is-just-podcast-zh",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/sentence-first-agent/20261108-jesus-is-just-podcast-zh",
+      "skipped": {
+        "(none)": 1,
+        ".jsonl": 15,
+        ".json": 10,
+        ".wav": 1768,
+        ".html": 1,
+        ".mp3": 1,
+        ".md": 1,
+        ".ndjson": 1
+      }
+    },
+    {
+      "label": "20261108-jesus-is-just-podcast-ko",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/sentence-first-agent/20261108-jesus-is-just-podcast-ko",
+      "skipped": {
+        "(none)": 1,
+        ".jsonl": 15,
+        ".json": 6,
+        ".html": 1,
+        ".mp3": 1,
+        ".wav": 1767,
+        ".ndjson": 1
+      }
+    },
+    {
+      "label": "20261108-jesus-is-just-podcast-es",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/sentence-first-agent/20261108-jesus-is-just-podcast-es",
+      "skipped": {
+        "(none)": 1,
+        ".jsonl": 15,
+        ".json": 6,
+        ".html": 1,
+        ".mp3": 1,
+        ".wav": 1767,
+        ".ndjson": 1
+      }
+    }
+  ],
+  "files": [
+    {
+      "run": "20261108-jesus-is-just-podcast-zh",
+      "path": "journal.ndjson",
+      "kind": "whole",
+      "bytes": 8536,
+      "truncated": false,
+      "sha256": "e7375266a9a3fc8446ddccd8e77b24a775017a97858739a2ed961ff37683cb45",
+      "redactions": {
+        "home_dir": 1
+      }
+    },
+    {
+      "run": "20261108-jesus-is-just-podcast-zh",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 697,
+      "truncated": false,
+      "sha256": "84dce92b14784cef05f75eb094157998ff814661d3f3dba0f4879076eca8cc01",
+      "redactions": {}
+    },
+    {
+      "run": "20261108-jesus-is-just-podcast-zh",
+      "path": "timings.tsv",
+      "kind": "whole",
+      "bytes": 286,
+      "truncated": false,
+      "sha256": "9528f7e2b0be30370db53b3d8775c9fc6e12617cc4712ce538421f36ebcbc81c",
+      "redactions": {}
+    },
+    {
+      "run": "20261108-jesus-is-just-podcast-zh",
+      "path": "tts-run.log",
+      "kind": "log",
+      "bytes": 308607,
+      "truncated": true,
+      "sha256": "d2e6a0b3130bc29de64857544552cad8b12a13ab88f7d5105eadfaf5efa8407e",
+      "redactions": {}
+    },
+    {
+      "run": "20261108-jesus-is-just-podcast-ko",
+      "path": "journal.ndjson",
+      "kind": "whole",
+      "bytes": 1756,
+      "truncated": false,
+      "sha256": "4bae6f0c30e40df9ad36ba898cfd0e91c3ddf27ece15decbcd7856f1c521a6d3",
+      "redactions": {}
+    },
+    {
+      "run": "20261108-jesus-is-just-podcast-ko",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 691,
+      "truncated": false,
+      "sha256": "60a119247f5b1970ba7515950adcb4743559e415e9aa9ab06c8df67936296c0b",
+      "redactions": {}
+    },
+    {
+      "run": "20261108-jesus-is-just-podcast-ko",
+      "path": "timings.tsv",
+      "kind": "whole",
+      "bytes": 229,
+      "truncated": false,
+      "sha256": "61ebe6a45734a6832c81bf6461008a4196f725eec8db4e127fb2b2f02352172f",
+      "redactions": {}
+    },
+    {
+      "run": "20261108-jesus-is-just-podcast-ko",
+      "path": "tts-run.log",
+      "kind": "log",
+      "bytes": 308619,
+      "truncated": true,
+      "sha256": "07315c4b20c2b9cdc495294237bf86fc36a8a24c9524e8b33e5f74a90b258c83",
+      "redactions": {}
+    },
+    {
+      "run": "20261108-jesus-is-just-podcast-es",
+      "path": "journal.ndjson",
+      "kind": "whole",
+      "bytes": 1756,
+      "truncated": false,
+      "sha256": "62a2b78638cb8e5a7234eeb4a3793443c5c324ff338e4fd5117872c098a9b025",
+      "redactions": {}
+    },
+    {
+      "run": "20261108-jesus-is-just-podcast-es",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 692,
+      "truncated": false,
+      "sha256": "7694cbea6e544243923fb3fc68b8a4e2f6ab5c8a465a7345ab5156d5deaf7867",
+      "redactions": {}
+    },
+    {
+      "run": "20261108-jesus-is-just-podcast-es",
+      "path": "timings.tsv",
+      "kind": "whole",
+      "bytes": 229,
+      "truncated": false,
+      "sha256": "eb608eb0f6260d529d4b45c624f3839ba0603eb058b5082218b67e4720db4782",
+      "redactions": {}
+    },
+    {
+      "run": "20261108-jesus-is-just-podcast-es",
+      "path": "tts-run.log",
+      "kind": "log",
+      "bytes": 308582,
+      "truncated": true,
+      "sha256": "1ae5e5035baeb1d63cce48ae9d3e0f7246018f5bd962e417a27fa7a3321fab9a",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}
