@@ -379,23 +379,37 @@ class CodexCacheIsolationTests(unittest.TestCase):
         return {"id": "api-fixture", "model": payload["model"], "choices": [{
             "finish_reason": "stop", "message": {"content": '{"targetUtterances":["中文。"]}'}}]}
 
-    def test_cli_cache_cannot_be_reused_as_api_or_api_as_cli(self):
+    def test_content_identical_cache_crosses_transports_and_changed_content_does_not(self):
+        """ebc200de decoupled the cache key from the transport identity.
+
+        At this level the key is the content identity (model, prompts, source,
+        rules, payload), so a CLI result may seed an API call and the reverse. The
+        CLI cross-run refusal lives in ``_group_call``, not in this cache key;
+        tests/test_canonical_layer2_auto_repair covers it.
+        """
         cli_path = self.root / "cli" / "result.json"
         api_path = self.root / "api" / "result.json"
         self.call(cli_path, FakeCLITransport())
         self.call(api_path, self.api_call)
-        with self.assertRaises(ValueError):
-            self.call(self.root / "api-reuse" / "result.json", self.api_call, cli_path)
-        with self.assertRaises(ValueError):
-            self.call(self.root / "cli-reuse" / "result.json", FakeCLITransport(), api_path)
+        api_reuse = self.call(self.root / "api-reuse" / "result.json", self.api_call, cli_path)
+        cli_reuse = self.call(self.root / "cli-reuse" / "result.json", FakeCLITransport(), api_path)
+        self.assertEqual(api_reuse["result"], {"targetUtterances": ["中文。"]})
+        self.assertEqual(cli_reuse["result"], {"targetUtterances": ["中文。"]})
 
-    def test_changed_cli_execution_identity_cannot_reuse_cache(self):
+        # A different prompt is a different content identity: no reuse, no call.
+        changed = {**self.prompt, "input": {"english": "Hello there."}}
+        with self.assertRaisesRegex(ValueError, "belongs to different inputs"):
+            runner._model_call("translator", changed, self.policy,
+                               self.root / "changed" / "result.json", "", self.api_call, cli_path)
+
+    def test_changed_cli_execution_identity_reuses_content_without_a_new_call(self):
+        """The CLI tier is transport, not content: a re-planned tier still reuses."""
         old = self.root / "old" / "result.json"
         self.call(old, FakeCLITransport(tier="fast"))
         other = FakeCLITransport(tier="default")
-        with self.assertRaises(ValueError):
-            self.call(self.root / "new" / "result.json", other, old)
+        reused = self.call(self.root / "new" / "result.json", other, old)
         self.assertEqual(other.calls, 0)
+        self.assertEqual(reused["result"], {"targetUtterances": ["中文。"]})
 
     def test_raw_cli_receipt_recovers_without_another_online_call(self):
         path = self.root / "result.json"

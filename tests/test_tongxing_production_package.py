@@ -37,7 +37,10 @@ READS_LOADED_MODULE_FILES = {"observability/accounting.py",
                              # never to locate the checkout (workflows design section 4.1).
                              "compute/transports/claude_layer2.py", "compute/transports/codex_layer2.py",
                              "compute/transports/openai_layer2.py", "compute/transports/codex_cli.py",
-                             "compute/transports/claude_source_judge.py",
+                             "compute/transports/claude_source_judge.py", "compute/transports/deepseek_layer2.py",
+                             # Poster artwork adapter: hashes its own bytes (adapterSha256) into the
+                             # receipt; it never derives the checkout from its location.
+                             "delivery/posters/artwork.py",
                              # Diagnostic identity witnesses bind their own bytes (helperSha256), never the checkout.
                              "workflows/diagnostic/historical_identity.py",
                              # Checkpoint manifests bind the validator's own bytes (validatorCode, checkpointCode).
@@ -101,10 +104,20 @@ class ProductionPackageTests(unittest.TestCase):
                                     "tongxing_production.delivery", "tongxing_production.orchestration",
                                     "tongxing_production.review", "tongxing_production.compute",
                                     "tongxing_production.adapters")}
+        # The scoring closure is pinned to the scripts/ spoken rules (ports.SpokenRules
+        # keeps them there), so review/asr_scoring.py reaches them through
+        # audio/hosted.py's late-binding facade. That facade only forwards the host's
+        # SpokenRules; it is not an audio-stage dependency, and nothing else in review/
+        # may import audio.
+        pinned_rule_facade = {("review/asr_scoring.py", "tongxing_production.audio.hosted")}
         for layer, forbidden in downstream.items():
             for path in sorted((PACKAGE_SRC / layer).rglob("*.py")):
                 with self.subTest(path=str(path.relative_to(ROOT))):
                     for name in package_imports_of(path):
+                        if any(path.relative_to(PACKAGE_SRC).as_posix() == member
+                               and (name == facade or name.startswith(facade + "."))
+                               for member, facade in pinned_rule_facade):
+                            continue
                         self.assertFalse(any(name == f or name.startswith(f + ".") for f in forbidden),
                                          f"{path.name} imports {name}")
 

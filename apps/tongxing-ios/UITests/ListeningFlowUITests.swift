@@ -657,6 +657,34 @@ final class ListeningFlowUITests: XCTestCase {
         screenshot("live-alignment-entry-visible", app: app)
     }
 
+    /// #1549: a slow published-audio download must not hide the player bar.
+    /// The dock appears immediately with disabled controls, then shows a
+    /// determinate bar once the declared byte length is known, and enables
+    /// when the verified audio is ready.
+    func testPublishedAudioPreparationKeepsDockVisibleWithProgress() throws {
+        let app = launchFixture(locateFlow: true, slowPublishedAudio: true)
+        let play = app.buttons["playback-toggle"]
+        XCTAssertTrue(play.waitForExistence(timeout: 15), "准备音频期间播放栏必须出现")
+        XCTAssertFalse(play.isEnabled, "准备期间播放控件必须禁用")
+        let status = app.staticTexts["playback-preparing-status"]
+        XCTAssertTrue(status.waitForExistence(timeout: 5), "播放栏应可见地说明正在准备音频")
+        XCTAssertEqual(status.label, "正在准备音频…")
+
+        let dockProgress = app.progressIndicators["published-audio-progress"]
+        XCTAssertTrue(dockProgress.waitForExistence(timeout: 30), "已知长度时播放栏应显示确定进度条")
+        XCTAssertTrue(app.staticTexts["preparing-published-audio-percent"].exists, "页面应显示已下载百分比")
+        XCTAssertTrue(element("preparing-published-audio", in: app).exists)
+        screenshot("published-audio-preparing-dock", app: app)
+
+        let ready = XCTNSPredicateExpectation(predicate: NSPredicate(format: "enabled == true"), object: play)
+        XCTAssertEqual(XCTWaiter.wait(for: [ready], timeout: 90), .completed, "音频就绪后播放栏应启用")
+        let progressGone = XCTNSPredicateExpectation(predicate: NSPredicate(format: "exists == false"),
+                                                     object: dockProgress)
+        XCTAssertEqual(XCTWaiter.wait(for: [progressGone], timeout: 10), .completed, "就绪后准备进度条应消失")
+        XCTAssertEqual(play.label, "开始播放")
+        screenshot("published-audio-ready-dock", app: app)
+    }
+
     func testEnglishLocateFromHomeReturnsToCurrentSubtitleAndCanUndo() throws {
         let app = launchFixture(locateFlow: true)
         try locateSecondEnglishSegment(in: app, fromDock: false)
@@ -1458,6 +1486,7 @@ final class ListeningFlowUITests: XCTestCase {
                                dualScript: Bool = false,
                                independentDefault: Bool = false,
                                locateFlow: Bool = false,
+                               slowPublishedAudio: Bool = false,
                                delayedTranscript: Bool = false, alignmentFailure: Bool = false,
                                immediateFailure: Bool = false, voiceClips: Bool = false) -> XCUIApplication {
         continueAfterFailure = false
@@ -1467,6 +1496,7 @@ final class ListeningFlowUITests: XCTestCase {
             + (dualScript ? ["--ui-testing-dual-script"] : [])
             + (independentDefault ? ["--ui-testing-current-page-default"] : [])
             + (locateFlow ? ["--ui-testing-locate-flow"] : [])
+            + (slowPublishedAudio ? ["--ui-testing-slow-published-audio"] : [])
             + (delayedTranscript ? ["--ui-testing-delayed-transcript"] : [])
             + (alignmentFailure ? ["--ui-testing-alignment-failure"] : [])
             + (immediateFailure ? ["--ui-testing-alignment-failure-immediate"] : [])

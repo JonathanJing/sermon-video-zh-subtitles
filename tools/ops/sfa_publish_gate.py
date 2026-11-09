@@ -60,33 +60,6 @@ def sha(data: bytes) -> str:
     return hashlib.sha256(data).hexdigest()
 
 
-SYNC_DRIFT_LOW, SYNC_DRIFT_HIGH = -0.1, 1.1
-INDEPENDENT_CLOCK_LOW, INDEPENDENT_CLOCK_HIGH = 0.75, 1.35
-
-
-def content_clock_verdict(duration, audio_seconds):
-    """Judge the content's two clocks; returns ``(kind, ok, detail)``.
-
-    ``durationSeconds`` is the source-video clock the cues live on; ``audioDurationSeconds`` is the
-    dub track. A synchronized page keeps the two within a second of each other. A natural-rate dub
-    does not follow the video clock — the iOS reader models them as independent clocks
-    (``PublishedTranscriptClockTests`` "Independent clocks") — so a different pair is accepted only
-    while it stays plausible for one episode: 0.75–1.35x the source length. A mixed-up, truncated
-    or missing audio file falls outside that band and fails.
-    """
-    if not isinstance(duration, (int, float)) or isinstance(duration, bool) or duration <= 0:
-        return "invalid", False, f"durationSeconds={duration}"
-    if not isinstance(audio_seconds, (int, float)) or isinstance(audio_seconds, bool) or audio_seconds <= 0:
-        return "invalid", False, f"audioDurationSeconds={audio_seconds}"
-    drift = audio_seconds - duration
-    if SYNC_DRIFT_LOW < drift < SYNC_DRIFT_HIGH:
-        return "synchronized", True, f"audioDuration-duration={drift:+.3f}s (synchronized)"
-    low, high = INDEPENDENT_CLOCK_LOW * duration, INDEPENDENT_CLOCK_HIGH * duration
-    ok = low <= audio_seconds <= high
-    return "independent", ok, (f"audioDuration-duration={drift:+.3f}s "
-                               f"(independent clocks, allowed {low:.0f}-{high:.0f}s)")
-
-
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--page-id", required=True)
@@ -172,6 +145,23 @@ def check_catalog(gate: Gate, catalog: dict, page_id: str) -> tuple[dict | None,
     return page, b""
 
 
+def content_clock(page: dict, target: dict, duration: float, audio_seconds: float) -> tuple[bool, str]:
+    """Two-clock check: synced pages must match; independent podcast tracks may run longer.
+
+    A podcast page without the ``alignment`` capability publishes its natural-rate dub on
+    its own clock (the 2026-10-22/11-01 contract), so the audio may be 0.75-1.35x the
+    source-timed content. Pages with alignment, or non-podcast pages, keep the strict
+    +/-1 second rule.
+    """
+    independent = (page.get("mediaType") == "podcast"
+                   and "alignment" not in (target.get("capabilities") or []))
+    if independent:
+        ratio = (audio_seconds or 0) / duration if duration else 0.0
+        return 0.75 <= ratio <= 1.35, f"audioDuration-duration={audio_seconds-duration:+.3f}s ratio={ratio:.3f}"
+    drift = (audio_seconds or 0) - (duration or 0)
+    return -0.1 < drift < 1.1, f"audioDuration-duration={drift:+.3f}s"
+
+
 def check_locale(gate: Gate, origin: str, page: dict, locale: str, reference: dict | None) -> None:
     target = page["targets"][locale]
     release_path = target.get("releasePackageUrl") or f"/releases-v2/{page['id']}/{locale}.json"
@@ -203,10 +193,7 @@ def check_locale(gate: Gate, origin: str, page: dict, locale: str, reference: di
     audio_seconds_field = content.get("audioDurationSeconds", duration)
     gate.require(f"{locale}.content.duration", isinstance(duration, (int, float)) and duration > 0,
                  f"durationSeconds={duration}")
-    gate.require(f"{locale}.content.audioDuration",
-                 isinstance(audio_seconds_field, (int, float)) and audio_seconds_field > 0,
-                 f"audioDurationSeconds={audio_seconds_field}")
-    _, clock_ok, clock_detail = content_clock_verdict(duration, audio_seconds_field)
+    clock_ok, clock_detail = content_clock(page, target, duration, audio_seconds_field)
     gate.require(f"{locale}.content.drift", clock_ok, clock_detail)
 
     status, captions_raw = get(origin + assets["captions"]["path"])
@@ -262,6 +249,13 @@ def check_alignment(gate: Gate, origin: str, page: dict, catalog: dict, require:
         sidecar_binding = ((sidecar.get("targets") or {}).get(locale) or {}).get("audioFingerprint")
         gate.require(f"alignment.sidecar.binding.{locale}", catalog_binding == sidecar_binding,
                      "sidecar binding differs from catalog")
+        # The audio fingerprint can stay identical while the release bytes change; a sidecar
+        # left on an older release is stale and must be rebound in the same batch (2026-11-07).
+        sidecar_release = ((sidecar.get("targets") or {}).get(locale) or {}).get("releasePackageJsonSha256")
+        gate.add(f"alignment.sidecar.release.{locale}",
+                 sidecar_release == target.get("releasePackageJsonSha256"),
+                 f"sidecar release {str(sidecar_release)[:16]} vs catalog {str(target.get('releasePackageJsonSha256'))[:16]}",
+                 required=require)
         if not isinstance(catalog_binding, dict):
             continue
         status, index_raw = get(origin + catalog_binding.get("indexUrl", ""))

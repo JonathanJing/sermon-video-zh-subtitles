@@ -102,15 +102,18 @@ class Layer2RuntimeAuthorizationTests(unittest.TestCase):
                                    request_limits=self.base.limits)
         self.assertEqual(calls,[1]); self.assertEqual(output.read_bytes(),before)
         self.assertEqual(caller.execution_identity['runtimeIdentity'],self.runtime)
-        # Even a separately approved new route cannot adopt the old parsed/raw
-        # cache merely because payload and dev alias are unchanged.
+        # ebc200de decoupled the cache key from the transport identity: the key is
+        # the content identity, and the route/authorization is recorded beside the
+        # response. A new caller with the same content therefore replays the frozen
+        # result without another provider call, exactly like the budget-authorization
+        # case below.
         with patch.dict(os.environ, {'OPENAI_PROJECT_ID':'proj_other'}):
             self.runtime = b.selected_runtime_identity(); self.write_v3()
             next_caller = self.caller(transport)
             self.assertNotEqual(next_caller.execution_identity, caller.execution_identity)
-            with self.assertRaises(ValueError):
-                models._model_call('translator',prompt,self.base.policy,output,self.env['OPENAI_API_KEY'],next_caller,
-                                   request_limits=self.base.limits)
+            replayed = models._model_call('translator',prompt,self.base.policy,output,self.env['OPENAI_API_KEY'],
+                                          next_caller,request_limits=self.base.limits)
+        self.assertEqual(replayed, first)
         self.assertEqual(calls,[1])
 
     def test_new_budget_authorization_reuses_same_runtime_cache(self):

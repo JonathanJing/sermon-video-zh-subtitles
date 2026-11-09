@@ -12,6 +12,9 @@ struct PlaybackDock: View {
     @Environment(\.colorScheme) private var scheme
     @Environment(\.dynamicTypeSize) private var typeSize
     var isPreparing = false
+    /// Declared download fraction while published audio is prepared. Nil keeps
+    /// the dock text-only (indeterminate) because no trustworthy length exists.
+    var preparationProgress: Double? = nil
     var alignmentModel: AppModel? = nil
     var locate: (() -> Void)? = nil
     var precision: (() -> Void)? = nil
@@ -43,10 +46,10 @@ struct PlaybackDock: View {
     private var dockSurface: some View {
         Group {
             if placement == .trailing {
-                if inSystemBar { verticalControls }
-                else { verticalControls.padding(6).listeningGlassSurface() }
+                if inSystemBar { verticalDock }
+                else { verticalDock.padding(6).listeningGlassSurface() }
             } else {
-                horizontalControls
+                horizontalDock
                     .padding(.horizontal, 8).padding(.vertical, 6)
                     .listeningGlassSurface()
             }
@@ -54,6 +57,37 @@ struct PlaybackDock: View {
         .contentShape(Rectangle())
         .padding(.horizontal, inSystemBar ? 0 : placement == .trailing ? 6 : 12)
         .padding(.vertical, inSystemBar ? 0 : 8)
+    }
+
+    /// The progress bar lives inside the same surface, under the controls. It
+    /// appears only for a published download whose Content-Length is known.
+    private var horizontalDock: some View {
+        VStack(spacing: 4) {
+            horizontalControls
+            if isPreparing, let preparationProgress {
+                preparationBar(progress: preparationProgress)
+                    .padding(.horizontal, 12)
+            }
+        }
+    }
+
+    private var verticalDock: some View {
+        VStack(spacing: 4) {
+            verticalControls
+            if isPreparing, let preparationProgress {
+                preparationBar(progress: preparationProgress)
+            }
+        }
+    }
+
+    private func preparationBar(progress: Double) -> some View {
+        let clamped = min(max(progress, 0), 1)
+        return ProgressView(value: clamped)
+            .progressViewStyle(.linear)
+            .frame(maxWidth: placement == .trailing ? 52 : .infinity)
+            .accessibilityIdentifier("published-audio-progress")
+            .accessibilityLabel(localization.text("正在准备音频…"))
+            .accessibilityValue("\(Int((clamped * 100).rounded(.down)))%")
     }
 
     @ViewBuilder private var horizontalControls: some View {
@@ -115,9 +149,13 @@ struct PlaybackDock: View {
         .accessibilityLabel(localization.text("定位"))
         .accessibilityIdentifier("playback-more")
         .background {
+            // WindowFrameReader is iOS-only: the macOS preview host keeps
+            // UIKit out, so it simply reports no anchor frame there.
+            #if os(iOS)
             if defersMorePresentation {
                 WindowFrameReader { onMoreButtonFrame?($0) }
             }
+            #endif
         }
         .modifier(MorePopoverAnchor(isPresented: isMorePresented ?? .constant(false),
                                     deferred: defersMorePresentation,
@@ -127,7 +165,16 @@ struct PlaybackDock: View {
     }
 
     @ViewBuilder private var timeAndStatus: some View {
-        if let onTimeTap {
+        if isPreparing {
+            // A visible caption, not only the accessibility value: the dimmed
+            // 00:00/00:00 alone reads as a broken player during a slow download.
+            Text(localization.text("正在准备音频…"))
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
+                .accessibilityIdentifier("playback-preparing-status")
+        } else if let onTimeTap {
             Button(action: onTimeTap) {
                 progressText.frame(minWidth: 44, minHeight: 44).contentShape(Rectangle())
             }

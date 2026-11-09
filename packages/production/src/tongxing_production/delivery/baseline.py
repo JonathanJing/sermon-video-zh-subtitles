@@ -283,7 +283,7 @@ def baseline(out, *, cache_public=None, cache_receipt=None, environment='dev', a
     contract.require(publisher.live_version(request, site) == version, 'Live version changed during baseline acquisition')
     # Universal Links need the dot-directory; keep one canonical AASA in every
     # baseline so a later Hosting publish cannot silently drop it.
-    aasa_source = (Path(__file__).resolve().parents[5]
+    aasa_source = (_delivery.current().core.repo_root
                    / ('firebase/dev/public' if environment == 'dev' else 'firebase/production-overlay/public')
                    / '.well-known/apple-app-site-association')
     if aasa_source.is_file():

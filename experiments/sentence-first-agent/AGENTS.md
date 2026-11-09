@@ -29,6 +29,7 @@
 | `deepseek_translate.py`、`coherence_core.py` | 本机 | DeepSeek 逐窗口连贯翻译（zh-Hans/ko/es），产物写 `coherence-<tag>/`，只读 run 的 sentences/slices |
 | `deepseek_status.py` | 本机 | 读 `state-<label>.json`/`events.jsonl`，显示 DeepSeek 阶段的进度、调用数、失败与逐次延迟（`--watch` 刷新，`--label` 选阶段） |
 | `state_check.py` | 本机 | 从 `events.jsonl`+`done.jsonl` 重算状态并比对；`--all` 查全部阶段、`--units` 报句级覆盖与失败句、`--missing` 列未覆盖句子、`--record` 写 `state-check.json`、`--write` 按事件流修复；不一致退出码 1 |
+| `run_status.py` | 本机 | 观察整条 run：`register`/`mark`/`wrap`/`handoff`/`resume`/`rebuild`/`status`/`production`/`check`/`notify`；写 `status/` 与 `.status-index.json`，只读派生、不改变门禁 |
 | `audit_deepseek.py`、`coherence_check.py`、`spoken_forms.py` | 本机 | 独立审计与 issue-bound 门（`--locale` 三语）、连贯性检查、数字读法与 TTS 专用读法（`spoken_forms.py --run --locale`） |
 | `lag_loop.py` | 本机 + Spark | 落后回环（同步 run 必跑）：读 `schedule.json` → 按 dub−source 精简推后句 → 重建 speech → 清 tts → 重排该语 → `finish_run`，最多 `--iterations` 轮；`--require-clean` 把闸门变成退出码，`--check-only` 只判不配 |
 | `build_speech.py` | 本机 | 套用复核修订和口播读法，写 speech.jsonl |
@@ -41,6 +42,7 @@
 | `review_sheets.py` | 本机 | 每种语言一张人工审核表（CSV），标出要重点听的句子 |
 | `sfa_publish.py` | 本机 | 页面发布单一驱动（`DEV-SF-004`）：读 `pages/<pageId>.json`；`validate`/`preflight`/`check-title`/`publish-check` 门禁与 assets→baseline→stage1→publish→verify→stage2→publish→readback→english-reference |
 | `tools/ops/sfa_publish_gate.py` | 本机 | 发布前/后完整性门禁（`sentence-first-publish-gate-v1`）：目录↔release↔资产、英文对照、对齐 sidecar/指纹/窗口、手册条目、页面标题渲染；任一必检失败退出码 1。规则见[发布门禁](../../docs/sentence-first-agent-publish-gate.zh.md) |
+| `tools/ops/notify.py` | 本机 | Bark 传输（P2）：`test-push` / `send`；keychain 服务 `org.sermonvideo.production-progress`，group `sermon-production`；不进任何门禁 |
 | `publish_podcast_page.py` | 本机 | 旧版按页复制驱动；未迁移页面与特殊修复路径（撤回、alignment、fix-content）仍可用 |
 | `build_study.py` | 本机 | 生成大纲与默想的 `sermon-study-artifact-v1`、审核收据、元数据/窗口批准与四产品清单 |
 | `publish_study.py` | 本机 | 把大纲与默想以 release v3 发布：页面学习段、`/study/<pageId>/<locale>/`、三语 release 与目录 |
@@ -59,6 +61,7 @@
 ```text
 artifacts/sentence-first-agent/<run>/
   run.md              工作日志：来源、决定、改动、用户结论
+  status/             进度事件、派生快照与通知去重账本（run_status.py；忽略 Git、不公开）
   clip.json           媒体路径、媒体起止、单元范围
   clip.wav            音频，16 kHz 单声道
   words.json          词级时间，相对 clip.wav
@@ -168,7 +171,7 @@ TTS 开始（首语）= max(讲员映射确认, 首语翻译 + 口播规格)；�
 
 - 开工发计划；英文表、映射、每条轨、页面各自发“可审”（链接 + 整轨长度 + 先听哪几句）。
 - 延误主动更新预计；一条轨发出去后下一条语言继续配，不要求用户空等。
-- 发轨和收到结论时用 `tools/development/run_journal.py append --run-dir $RUN --stage l3.review.<locale> --event waiting --waiting-on "user track review"`，收到结论再 `--event resumed`；导出器会把它算成等待，而不是计算。
+- 发轨和收到结论时用 `run_status.py handoff --run $RUN --stage l3.review.<locale> --waiting-on "user track review" --url <播放器>`，收到结论再 `run_status.py resume --run $RUN --stage l3.review.<locale>`；两者同时写 journal 的 `waiting`/`resumed`，导出器会把它算成等待，而不是计算。
 
 ### 0.2 并行分工（子代理与排程）
 
@@ -220,6 +223,26 @@ python3 $EXP/spark_queue.py --session <session> --owner sentence-first-agent \
 ```
 
 两次登记一前一后、同一会话，**不能重叠**：先用 `spark_exclusive_session.py status` 确认第一批已退出、没有运行中的任务，再登记第二批；还要看到第一批打印 `locale done <语言>`，只看到进程退出不算完成。不要重复列已配完的语言，那会白起一次容器和模型加载。省下的是「首语不等其余语言」那段，等于其余语言翻译完成比首语晚的时间（2026-10-23 校准里约 5–10 分钟）；实际值记进 `run.md`。
+
+### 0.3 发布意图七件套（开跑前填，收尾逐项打勾）
+
+周日证道默认就是**一次完整发布意图**。开工时 `prepare_clip.py` 已经把「发布意图清单」写进第一个
+`run.md`，把这七行填掉（本轮不做的那行写「本轮不交付」并写原因），发布前再按证据逐行核对：
+
+| # | 产物 | 证据落点 |
+|---|---|---|
+| 1 | 页面 + 三语 assets（page/content/audio/captions） | `assets` 目录 + HTTP 逐文件 SHA |
+| 2 | release 包（v2；含四产品时 v3） | `assets/releases/*.json` |
+| 3 | 目录（multilingual-v5/v4/v3） | `stage2`/`replace-B` 快照 + readback |
+| 4 | `/english-reference/<pageId>.json` | `stage-english-reference` + readback |
+| 5 | 现场对齐（sidecar + 每语指纹索引 + 目录 `audioFingerprint`/`capabilities`） | `/alignment/<pageId>.json` + gate `--require-alignment` |
+| 6 | 研读手册 `/weekly-guides/manifest-v1.json` 条目 | `candidate` 快照 + gate `--require-guide` |
+| 7 | 统计目录（`sermon-feedback-api` 函数目录） | 函数 `updateTime` + 三语 `/api/session` 200 |
+
+- 海报是发布后的独立交付，不占这七件的关键路径；只在页面 gate 通过后制作。
+- 一个发布意图最多 **3 次托管部署**。超了先停下查清单是不是没列全，不是继续发。
+- 2026-11-07 复盘：第一轮只发页面和英文对照，七件里漏了第 5、6、7 三件，用户追问后才补；
+  原因就是开工时没填这张表，把 `sfa_publish` 的子命令顺序当成了完整清单。
 
 ### 1 开自己的 Spark 独占会话
 
@@ -325,6 +348,48 @@ python3 $EXP/translate_parts.py merge --run $RUN --locale <locale>
 
 **看 DeepSeek 跑到哪了**：每次调用在 `state_dir`（翻译是 `coherence-<tag>/`，审计是 `--out`，回环是 run 根）写一行 `events.jsonl`，并原子更新 `state.json`（label、done/total、calls/hits/failed、costUsd、avgSeconds、lastError）。`python3 $EXP/deepseek_status.py --run <dir>` 直接读，`--watch 2` 刷屏看；`--tail 8` 显示最近调用的 context（`chain-02:window-0012`）、延迟与 token。缓存命中记 `hit`，失败记 `error` 并留最后 300 字符。每个阶段一个状态文件（`state-translate.json`、`state-audit.json`、`state-trim.json`），同一 run 目录里互不覆盖。`state_check.py --run <dir> --label <stage>` 用事件流重算状态并比对，计数对不上就以退出码 1 拦下（`--write` 可按事件流修复），这是防止「续跑重复计数」这类错误的守卫。这些文件在 `artifacts/` 时被忽略，不进 Git。
 
+**看整条 run 跑到哪了（P0，2026-11-01 起）**：`sfa.py start` 把每种语言登记到 `artifacts/sentence-first-agent/.status-index.json`；`spark_queue.py` 在 TTS 期间按 locale/讲员写 `l3.tts.<speaker>.<locale>` 的 started、心跳、progress、finished（`--no-status` 关闭，`--status-run LOCALE=RUN` 覆盖索引）。代理在长命令和人工交接处用：
+
+```bash
+python3 $EXP/run_status.py status --run $RUN --watch 2
+python3 $EXP/run_status.py wrap --run $RUN --stage l4.assets -- python3 $EXP/sfa_publish.py --config $EXP/pages/<pageId>.json assets --out <assets>
+python3 $EXP/run_status.py handoff --run $RUN --stage l3.review.zh-Hans \
+  --waiting-on "user track review" --url <播放器> --expected-minutes "20-80"
+python3 $EXP/run_status.py resume --run $RUN --stage l3.review.zh-Hans
+python3 $EXP/run_status.py production --production <首个 run 名>
+```
+
+不要 wrap 自己会写 journal 的脚本（`sfa.py start`、`preflight.py`、`finish_run.py`、`lag_loop.py`、`consistency_check.py`），否则同一 stage 会写两次迁移。P1 起：`finish_run.py` 自己写五个子步骤的 progress；`lag_loop.py` 写每轮 iterations、成功记 E2、不过闸门记 failed；`sfa_publish.py` 每个子命令自动写 `l4.<command>` 的 started/finished/failed（首个 locale 的 run 为观察点）。手工开工、没有经过 `sfa.py start` 的 run 先用 `run_status.py register --run $RUN --locale <locale> --production <首个 run 名> --sync/--no-sync --publish/--no-publish` 登记。
+
+**离开电脑时（P2）**：状态里的开工、可审、失败、停滞、完成可以推到 Bark。key 只放登录钥匙串，不进 URL/日志/仓库；先用 `test-push` 真机确认：
+
+```bash
+security add-generic-password -s org.sermonvideo.production-progress -a bark-iphone -w
+security add-generic-password -s org.sermonvideo.production-progress -a bark-mac -w
+python3 tools/ops/notify.py test-push --level timeSensitive
+python3 $EXP/run_status.py notify --run $RUN              # dry run，只打印计划
+python3 $EXP/run_status.py notify --run $RUN --execute    # 发一次
+python3 $EXP/run_status.py notify --production <首个 run 名> --execute --watch 30
+```
+
+策略：开工 passive；可审/缺步骤/完成 active；失败/停滞 timeSensitive；`unknown_outcome` critical（需手机「重要警告」权限）。同一事项只发一次，停滞默认 900 秒冷却；缺步骤在到期后宽限 600 秒，避免刚进入下一步就误报；本地播放器地址不会转发到手机。`status/notify-sent.ndjson` 是去重账本；默认 dry-run，`--execute` 才发送，`--no-push` 只打印。不要按句/按批推送。开工时把 `notify --production ... --execute --watch 30` 作为后台任务跑；否则只有手动执行 `notify` 时才会推送。
+
+**人工审核步骤都要 handoff**（Bark 只把 attention 当作“需要你”；不 handoff 就不会有可审推送）：
+
+| 人工步骤 | stage | handoff 的 `--waiting-on` |
+|---|---|---|
+| 英文表批准 | `l1.english-review` | `user English review` |
+| 讲员映射确认 | `l1.speakers` | `user speaker mapping` |
+| 每条语言轨听审 | `l3.review.<locale>` | `user track review`（带 `--url <播放器>`） |
+| 页面发布授权 | `l4.publish.authorization` | `user publish authorization` |
+| 学习内容批准 | `l4.study` | `user study approval` |
+
+发出链接/请求的同一个动作里调用 `run_status.py handoff --run $RUN --stage <stage> --waiting-on <...>`；收到结论后先 `resume`，批准时再 `mark --stage <stage> --event finished --evidence-level E3`，退回时 `mark --stage <stage> --event failed --error-class content --message <原因>`。`resume` 只关闭等待，不会自动把人工阶段判成功；不补 finished，run 会一直停在 active，完成通知也不会发。只有 `l3.review` 在脚本里没有自动边界，其余人工步骤同样需要代理显式 handoff，不能只写在对话里。
+
+状态写在 `<run>/status/`：`events.ndjson` 是高频进度/心跳，`status.json` 由 `journal.ndjson` + `state-*.json` + 状态事件派生。`check` 重放比对，不一致退出码 1；`mark` 用于 audit 等尚无自动打点的阶段（`--stage`、`--event`、`--evidence-level`）。它只用于观察，**不是门禁**，写入失败不影响生产；`status.json` 不公开，公开前必须脱敏。`register`/`mark` 写完事件会顺手刷新 `status.json`（fail-open），所以 DSH 插件和 `status` 命令不需要自己重建。
+
+**DSH 内嵌进度（P3）**：`tools/ops/dsh-production-progress/` 是本地 DSH 插件（host 路由 + `conversation.input.dock` 一行）。它只读 `<statusRoot>/.status-index.json` 和各 run 的 `status/status.json`；默认找本机主 checkout 的 `artifacts/sentence-first-agent`，可用 `SFA_STATUS_ROOT` 或 profile 的 `cordis.patch.yml` 按 id `production-progress` 覆盖。装进 desktop profile 后重启 DSH：输入框上方显示当前阶段、`done/total`、心跳/等待、active 阶段的 `预计 HH:MM` 和 `⚠ n`，点击展开阶段与 attention；展开的阶段行对 running/waiting 显示预计完成、对 succeeded/failed 显示实际完成/失败时间。人工 waiting 且 `handoff` 记录了 `DSH_SESSION_ID` 时，行尾出现“打开对话 ↗”，点击切到发起该审听的 DSH 会话；`handoff` 不传 `--session-id` 时自动读 `$DSH_SESSION_ID`。Bark 的开工、可审、失败、停滞、缺步骤、完成消息也带 `预计完成`（等待人工按 `expectedMinutes` 上限）或“需重估/实际完成”。安装/测试命令见该目录的 `README.md`；没有 run 时 dock 不渲染。
+
 ### 5 口播规格（本机）
 
 ```bash
@@ -394,6 +459,8 @@ python3 $EXP/lag_loop.py --run $RUN --locale <locale> --remote SPARK:sentence-fi
 
 - 退出码 0 才表示 `sentencesOverLag8s == 0` 且 `maxLagSeconds ≤ 8`；非 0 就是没过闸门，不能发「可审」。
 - 只看当前音轨、不重配：`lag_loop.py ... --check-only --require-clean`（不调用 DeepSeek、不用 Spark）。
+  **先跑一次 `--check-only` 再决定精简范围**：2026-11-07 三语各做了一轮全量重渲（22 分钟），
+  如果先看到 maxLag 只有几秒、超阈值的句子集中在少数窗口，就只重配那些句子，不做全量。
 - 结果写 `lag-loop-report.json`（threshold、每轮 selected/accepted/rejected、final、gate）并进 journal 的 `l3.lag-loop.<locale>`。
 - 2026-10-30 实测：60 句片段 ko 29.3 s（53 句）→ 1.31 s、es 22.8 s（56 句）→ 2.34 s，各一轮；整期不精简时 zh 6.7 s / ko 14.0 s / es 26.5 s。不同步的 run 跳过这一步。
 
@@ -437,7 +504,7 @@ python3 -m http.server -d $RUN 8765
 
 `reviewedAt` 必须带时区；`note` 不得含「未听审」。结论变了另存新版本，已发布收据不改写。
 
-收据要能回答「听了哪一版、怎么听的」：写 `reviewMode`（`whole_track` 或 `flagged_only`）、听审用的 `review.mp3` 与 `track.wav` 哈希；结论之后又重配或重出的，另写发布时音轨哈希并标 `unheardAfterApproval`；附播放器导出的逐句结论 JSON（哪些句被听过）。整轨听审耗时约等于音轨时长乘语言数，三条 31 分钟音轨不可能在 45 分钟内整轨听完；时间窗对不上就记 `flagged_only`，不要写成整轨。发出可审时 `run_journal.py append … --event waiting`，收到结论时 `--event resumed`；2026-10-24 两轮都没记，复盘里等待为 0。这两条是必做步骤，不是可选记录：发链接的同一个动作里打 `waiting`，收据落盘后立刻打 `resumed`；脚本自动打点还没做，漏了这段时间就会被算成计算时间。
+收据要能回答「听了哪一版、怎么听的」：写 `reviewMode`（`whole_track` 或 `flagged_only`）、听审用的 `review.mp3` 与 `track.wav` 哈希；结论之后又重配或重出的，另写发布时音轨哈希并标 `unheardAfterApproval`；附播放器导出的逐句结论 JSON（哪些句被听过）。整轨听审耗时约等于音轨时长乘语言数，三条 31 分钟音轨不可能在 45 分钟内整轨听完；时间窗对不上就记 `flagged_only`，不要写成整轨。发出可审时用 `run_status.py handoff --run $RUN --stage l3.review.<locale> --waiting-on "user track review" --url <播放器>`，收到结论时用 `run_status.py resume --run $RUN --stage l3.review.<locale>`；它们同时写 journal 的 `waiting`/`resumed`。2026-10-24 两轮都没记，复盘里等待为 0。这两条是必做步骤，不是可选记录：发链接的同一个动作里打 `waiting`，收据落盘后立刻打 `resumed`；脚本仍不能自动判断用户是否开始听，漏了这段时间就会被算成计算时间。
 
 ### 9 改句
 
@@ -546,12 +613,16 @@ python3 $EXP/publish_study.py finish                                            
 5. **改内容**：改 `build_study.py` 里的文本 → 重建 artifact 与 review → `publish_study.py build/assets → publish → verify → finish → publish` → 重新生成英文对照。只改字节不改身份时也可以直接用 `published_page_replace`（页面本地新增只允许 `/study/<pageId>/`）。
 6. **状态**：`outcome` 只代表文本就绪；发布以部署版本、`validate_public_study` 线上核验和英文对照重新上线为准。设备、现场、推送仍是各自的 `not_run`。
 
-### 10.6 发布前完整性检查与发布粒度（下轮起强制）
+### 10.6 发布意图、完成信号与部署粒度（2026-11-07 复盘整改，强制）
 
-本轮教训（手册静默失效约 90 分钟、对齐返工 23 分钟、全周 17 次部署）的整改，完整规则见[发布门禁](../../docs/sentence-first-agent-publish-gate.zh.md)。三条硬规则：
+完整规则见[发布门禁](../../docs/sentence-first-agent-publish-gate.zh.md)。三条硬规则：
 
-1. **一个发布意图一批做完**：页面/assets/release/目录/英文对照/对齐/手册条目/统计目录同批构建、同批部署（计划内 ≤3 次），不得发布后单改身份字节（标题、文稿、音轨、字幕、页面 HTML）。要改就开新的发布意图。
-2. **release 一变，四件下游同批重做**：`/english-reference/`、对齐绑定（sidecar + 每语索引 + 目录）、手册条目（`weekly_guide_staging candidate --operation update`，带旧条目 SHA 与原因）、反馈统计目录。任何一件留到"下次"都算未完成。
+1. **一个发布意图一批做完**：页面/assets/release/目录/英文对照/对齐/手册条目/统计目录同批构建、
+   同批部署（计划内 ≤3 次），不得发布后单改身份字节（标题、文稿、音轨、字幕、页面 HTML）。
+   要改就开新的发布意图。
+2. **release 一变，四件下游同批重做**：`/english-reference/`、对齐绑定（sidecar + 每语索引 + 目录）、
+   手册条目（`weekly_guide_staging candidate`，`operation: update` 要带旧条目 SHA 与原因）、
+   反馈统计目录。任何一件留到「下次」都算未完成。
 3. **部署后、smoke 前必须过 gate**，退出码 1 阻断收尾（smoke/报告/发布宣布）：
 
 ```bash
@@ -561,7 +632,80 @@ PYTHONPATH=packages/production/src:. .venv/bin/python tools/ops/sfa_publish_gate
   --json-out artifacts/sentence-first-agent/<run>-publish/publish-gate.json
 ```
 
-候选快照构建完先在 dev/staging 跑一遍；正式部署后对 production 再跑一遍。产出 `publish-intent.json`（意图、冻结值、releases、rebinds、deploys、gate、smoke、exceptions），随运行报告归档。手册与对齐不是可选项：页面具备对应能力/条目时必须 `--require-guide --require-alignment`；本轮「smoke 三语 pass」与「手册不可用」能同时成立，就是缺了这道门禁。
+候选快照构建完先在 dev/staging 跑一遍；正式部署后对 production 再跑一遍。产出 `publish-intent.json`
+随运行报告归档。手册与对齐不是可选项：页面具备对应能力/条目时必须带这两个开关。
+
+#### 八条整改（2026-11-07 第 9 周复盘）
+
+| # | 整改 | 依据 | 落点 |
+|---|---|---|---|
+| 1 | 开跑前先把七件套写进 `run.md` 并填「本轮/不交付」 | 首轮漏现场对齐、研读手册、统计目录三件，用户追问才补 | §0.3 + `prepare_clip.py` 模板 |
+| 2 | 完成信号只认带 `--require-guide --require-alignment` 的 gate + smoke（含 `/api/session`） | 首次 gate 不带开关返回 pass，被当成收尾 | 本条规则 3 + gate 文档 |
+| 3 | 英文包在 assets 前先跑 `published_english_reference.build_reference` 干跑（对候选快照） | 包缺 `approvedWindow.evidence`/`transcript`/`review.evidence`，部署后才暴露 | §10 步骤 1 前的预检 |
+| 4 | 候选快照阶段先跑 gate，再首次部署（三处都要跑，不是只跑线上） | `content.drift` 是线上 gate 才发现的 | 本条规则 3 |
+| 5 | 精简后先 `lag_loop --check-only` 估收敛，再一次全量重配 | 三语各做了一轮全量重渲（22 分钟） | §7 落后回环开头 |
+| 6 | 对齐索引绑**已发布 MP3** 的 sha，`track.wav` 只用于听审收据 | 绑 `track.wav` 触发 `Invalid fingerprint binding` | §10 对齐步骤 |
+| 7 | 手册/页面/海报标题统一取 `docs/series-sermon-titles.zh.md`；工具常量随表更新 | 手册第 9 周标题与标题表不一致，bind 被拒（`b1180124`） | §10 手册步骤 |
+| 8 | 发布型子命令与发布返工也走 `run_journal` | journal 记 1h27m/计算 3m17s，实际墙钟 2h57m | §11 + `DEV-SF-007` |
+| 9 | 对齐 sidecar 必须与 catalog 的 release 哈希一致；release 一变就重绑 | 并发代理改页面后 sidecar 停在旧 release，旧门禁没查这条，照样 pass | `sfa_publish_gate` 的 `alignment.sidecar.release.<locale>`（2026-11-07 补） |
+
+### 10.7 发布后三项旁路（对齐、研读手册、统计目录）
+
+这三项与页面共享同一套 release 哈希，漏一项就是「页面能播、App 缺东西」。2026-11-07 第 9 周
+第一轮就是漏了这三项、用户追问后才补，所以写在这里当固定步骤；完成后必须重跑
+`--require-guide --require-alignment` 的 gate。
+
+**现场声音对齐（iOS 现场音频对齐）**
+
+```bash
+# 1) 源指纹只算一次（相对媒体 0 → 窗口终点）
+SHA=$(shasum -a 256 <media.mp4> | cut -d' ' -f1)
+node packages/fingerprint/bin/build_fingerprint_index.mjs --mode precompute \
+  --source <media.mp4> --source-sha "$SHA" --start 0 --end <windowEnd> --out <run>/source-landmarks.json
+# 2) 每种语言 bind 到**已发布 MP3**（不是 track.wav；合同要求等于 release 的 audio asset 哈希）
+node packages/fingerprint/bin/build_fingerprint_index.mjs --mode bind \
+  --precomputed <run>/source-landmarks.json --precomputed-sha <上一步 sha256> \
+  --source-sha "$SHA" --start 0 --end <windowEnd> --track <assets>/public/media/<pageId>/<locale>.mp3 \
+  --page-id <pageId> --out <run>/index-<locale>.json
+# 3) sidecar：/alignment/<pageId>.json（sermon-published-alignment-v1，三语各一条 audioFingerprint，
+#    indexUrl=/fingerprints/<indexSha前16位>-landmarks.json，captureSeconds=10）
+# 4) 用 delivery.published_alignment_catalog.bind_catalogs(public, pageId) 重绑 v5/v4/v3，
+#    快照要含 sidecar + 三个索引 + 新目录，再走 guarded publisher 部署
+# 5) 核验：GET sidecar 200、三个索引 200 且 sha 与 sidecar 一致、gate --require-alignment pass
+```
+
+**研读手册**
+
+```bash
+# 标题先从 docs/series-sermon-titles.zh.md 取；工具里的周次常量与表不一致就先改常量再 stage
+python3 tools/ops/run.py delivery.weekly_guide_staging stage \
+  --source <series-guide.zh-Hans.md> --cuv <cuv-1919-revelation.json> --output <忽略目录>/v1
+python3 tools/ops/run.py delivery.weekly_guide_staging candidate \
+  --staging <上面的 v1> --snapshot <线上快照> --environment production \
+  --bindings <bindings.json> --source <…> --cuv <…> --output <忽略目录>/candidate \
+  --rich --english <en-extracted.txt> --evidence-dir <已核对原页截图目录>
+# candidate 会保留既有条目与资源；部署后 GET /weekly-guides/manifest-v1.json 核对新条目
+```
+
+`--rich` 需要 22 张已核对原页截图（`weekly_guide_rich.CHECKED_PAGES`）；截图不全时不要退回 v1，
+已知错误页（第 5、9 周）禁止按 v1 发布。手册是机器译稿：清单顶层保持
+`review=machine_translation_not_human_reviewed`、`humanApproval=false`。
+
+**统计目录（`sermon-feedback-api`）**
+
+```bash
+# 取当前线上目录（最近一次部署的 source/catalog.json），按 week/trackId/audioSha256/cues 追加本页三语：
+#   week = <页面日期>；trackId = <pageId>-<locale>-<MP3 sha 前12位>；audioSha256 = 已发布 MP3 sha；
+#   cues = content 的 cue 列表（id 从 "0" 递增，blockId null）；weekIds 追加该周
+# 只换 catalog.json、函数代码沿用线上 revision；源目录放到新的忽略目录后部署：
+gcloud functions deploy sermon-feedback-api --project=ai-for-god-caption-dev --gen2 --region=us-west1 \
+  --runtime=nodejs22 --entry-point=sermonFeedback --source <新目录> --trigger-http --allow-unauthenticated \
+  --service-account=sermon-feedback-runtime@ai-for-god-caption-dev.iam.gserviceaccount.com \
+  --build-service-account=projects/ai-for-god-caption-dev/serviceAccounts/sermon-feedback-build@ai-for-god-caption-dev.iam.gserviceaccount.com \
+  --docker-repository=projects/ai-for-god-caption-dev/locations/us-west1/repositories/sermon-feedback \
+  --memory=256Mi --cpu=1 --concurrency=20 --min-instances=0 --max-instances=2 --timeout=15s --quiet
+# 核验：本页三语与上一周三语 POST /api/session 全部 200（key = week + trackId + audioSha256）
+```
 
 ### 11 结束
 

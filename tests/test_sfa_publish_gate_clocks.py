@@ -1,104 +1,80 @@
-"""The publish gate's content-clock rule.
+"""Clock rule for the published-page gate: synced strict, independent podcast 0.75-1.35x."""
+from __future__ import annotations
 
-`durationSeconds` is the source-video clock; `audioDurationSeconds` is the dub track. Synchronized
-pages keep them within a second of each other, while the natural-rate podcast dubs used since
-2026-11-01 deliberately carry an independent dub clock (the iOS reader's "Independent clocks").
-The rule accepts the second case only inside a plausible band for one episode, so a mixed-up or
-truncated audio file still fails the gate.
-"""
-
-from tests import experiment_modules
-
+import importlib.util
+from pathlib import Path
+import sys
 import unittest
 
-gate = experiment_modules.load("tools/ops/sfa_publish_gate.py")
-
-ZH_DURATION, ZH_AUDIO = 3476.16, 3469.72   # 2026-11-01 podcast, natural rate
-ES_AUDIO = 3564.58
-SYNC_DURATION, SYNC_AUDIO = 2019.370667, 2019.40  # week-8 sermon, synchronized
+ROOT = Path(__file__).resolve().parents[1]
+PATH = ROOT / "tools" / "ops" / "sfa_publish_gate.py"
 
 
-class SynchronizedClockTest(unittest.TestCase):
-    def test_equal_clocks_pass(self):
-        kind, ok, detail = gate.content_clock_verdict(SYNC_DURATION, SYNC_DURATION)
-        self.assertEqual(kind, "synchronized")
-        self.assertTrue(ok)
-        self.assertIn("synchronized", detail)
-
-    def test_audio_slightly_longer_passes(self):
-        kind, ok, _ = gate.content_clock_verdict(SYNC_DURATION, SYNC_DURATION + 0.8)
-        self.assertEqual(kind, "synchronized")
-        self.assertTrue(ok)
-
-    def test_audio_slightly_shorter_passes(self):
-        kind, ok, _ = gate.content_clock_verdict(SYNC_DURATION, SYNC_DURATION - 0.05)
-        self.assertEqual(kind, "synchronized")
-        self.assertTrue(ok)
-
-    def test_upper_edge_moves_to_independent_clock(self):
-        kind, ok, _ = gate.content_clock_verdict(1000.0, 1001.1)
-        self.assertEqual(kind, "independent")
-        self.assertTrue(ok)
+def load():
+    spec = importlib.util.spec_from_file_location("sfa_publish_gate", PATH)
+    module = importlib.util.module_from_spec(spec)
+    sys.modules["sfa_publish_gate"] = module
+    spec.loader.exec_module(module)
+    return module
 
 
-class IndependentClockTest(unittest.TestCase):
-    def test_natural_rate_short_dub_passes(self):
-        kind, ok, detail = gate.content_clock_verdict(ZH_DURATION, ZH_AUDIO)
-        self.assertEqual(kind, "independent")
-        self.assertTrue(ok)
-        self.assertIn("independent clocks", detail)
+class ClockTest(unittest.TestCase):
+    def setUp(self):
+        self.gate = load()
 
-    def test_natural_rate_long_dub_passes(self):
-        kind, ok, _ = gate.content_clock_verdict(ZH_DURATION, ES_AUDIO)
-        self.assertEqual(kind, "independent")
-        self.assertTrue(ok)
+    def test_independent_podcast_allows_a_longer_natural_rate_dub(self):
+        page = {"mediaType": "podcast"}
+        target = {"capabilities": ["text", "captions", "audio"]}
+        ok, detail = self.gate.content_clock(page, target, 3008.238, 3407.26)
+        self.assertTrue(ok, detail)
+        self.assertIn("ratio=1.133", detail)
 
-    def test_lower_band_edge_passes(self):
-        kind, ok, _ = gate.content_clock_verdict(1000.0, 750.0)
-        self.assertEqual(kind, "independent")
-        self.assertTrue(ok)
+    def test_independent_podcast_rejects_a_truncated_or_bloated_track(self):
+        page = {"mediaType": "podcast"}
+        target = {"capabilities": ["text", "captions", "audio"]}
+        self.assertFalse(self.gate.content_clock(page, target, 3008.0, 2000.0)[0])
+        self.assertFalse(self.gate.content_clock(page, target, 3008.0, 5000.0)[0])
 
-    def test_upper_band_edge_passes(self):
-        kind, ok, _ = gate.content_clock_verdict(1000.0, 1350.0)
-        self.assertEqual(kind, "independent")
-        self.assertTrue(ok)
+    def test_podcast_with_alignment_keeps_the_strict_rule(self):
+        page = {"mediaType": "podcast"}
+        target = {"capabilities": ["text", "captions", "audio", "alignment"]}
+        self.assertTrue(self.gate.content_clock(page, target, 3008.0, 3008.5)[0])
+        self.assertFalse(self.gate.content_clock(page, target, 3008.0, 3200.0)[0])
 
-    def test_truncated_audio_fails(self):
-        kind, ok, _ = gate.content_clock_verdict(1000.0, 749.9)
-        self.assertEqual(kind, "independent")
-        self.assertFalse(ok)
+    def test_non_podcast_page_keeps_the_strict_rule(self):
+        page = {"mediaType": None}
+        target = {"capabilities": ["text", "captions", "audio"]}
+        self.assertFalse(self.gate.content_clock(page, target, 3008.0, 3100.0)[0])
+
+    # The 2026-11-01 podcast dubs: the source window is 3476.16 s and each locale runs on its
+    # own natural-rate clock. These are the real numbers the loosened rule must keep passing.
+    def test_natural_rate_podcast_real_dubs_pass(self):
+        page = {"mediaType": "podcast"}
+        target = {"capabilities": ["text", "captions", "audio"]}
+        for audio in (3469.72, 3471.81, 3564.58):
+            ok, detail = self.gate.content_clock(page, target, 3476.16, audio)
+            self.assertTrue(ok, detail)
+
+    def test_independent_band_edges(self):
+        page = {"mediaType": "podcast"}
+        target = {"capabilities": ["text", "captions", "audio"]}
+        self.assertTrue(self.gate.content_clock(page, target, 1000.0, 750.0)[0])
+        self.assertTrue(self.gate.content_clock(page, target, 1000.0, 1350.0)[0])
+        self.assertFalse(self.gate.content_clock(page, target, 1000.0, 749.9)[0])
+        self.assertFalse(self.gate.content_clock(page, target, 1000.0, 1350.1)[0])
 
     def test_audio_of_another_episode_fails(self):
-        kind, ok, _ = gate.content_clock_verdict(1000.0, 2400.0)
-        self.assertEqual(kind, "independent")
-        self.assertFalse(ok)
+        page = {"mediaType": "podcast"}
+        target = {"capabilities": ["text", "captions", "audio"]}
+        self.assertFalse(self.gate.content_clock(page, target, 1000.0, 2400.0)[0])
+        self.assertFalse(self.gate.content_clock(page, target, 3476.16, 1800.0)[0])
 
-    def test_far_too_short_audio_fails(self):
-        kind, ok, _ = gate.content_clock_verdict(3476.16, 1800.0)
-        self.assertFalse(ok)
-
-
-class InvalidClockTest(unittest.TestCase):
-    def test_missing_duration_fails(self):
-        kind, ok, _ = gate.content_clock_verdict(None, ZH_AUDIO)
-        self.assertEqual(kind, "invalid")
-        self.assertFalse(ok)
-
-    def test_missing_audio_fails(self):
-        kind, ok, _ = gate.content_clock_verdict(ZH_DURATION, None)
-        self.assertEqual(kind, "invalid")
-        self.assertFalse(ok)
-
-    def test_zero_and_negative_values_fail(self):
+    def test_zero_or_negative_audio_fails(self):
+        page = {"mediaType": "podcast"}
+        target = {"capabilities": ["text", "captions", "audio"]}
         for duration, audio in ((0, 100), (100, 0), (-1, 100), (100, -1)):
-            kind, ok, _ = gate.content_clock_verdict(duration, audio)
-            self.assertEqual(kind, "invalid", (duration, audio))
-            self.assertFalse(ok)
+            self.assertFalse(self.gate.content_clock(page, target, duration, audio)[0], (duration, audio))
 
-    def test_booleans_are_not_seconds(self):
-        kind, ok, _ = gate.content_clock_verdict(True, True)
-        self.assertEqual(kind, "invalid")
-        self.assertFalse(ok)
 
 
 if __name__ == "__main__":

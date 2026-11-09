@@ -24,6 +24,11 @@
    - 对齐绑定（sidecar、每语指纹索引、目录 `audioFingerprint` 与 `capabilities`）
    - 每周手册条目（release、content 与身份不变时也要按新 release 重绑）
    - 反馈统计目录（每语音轨哈希变化后重建并重部署函数）
+4. **完成信号**：`sfa_publish_gate.py --require-guide --require-alignment` 通过 + smoke（含
+   `/api/session`）通过，才算这次发布意图完成。**不带这两个开关的 gate 通过不算完成**——
+   2026-11-07 第 9 周就是拿一次不带开关的 pass 当收尾，漏了现场对齐、研读手册、统计目录三件，
+   用户追问后才补。开工时把清单填进第一个 `run.md` 的「发布意图清单」小节（`prepare_clip.py` 已写模板），
+   收尾逐行按证据打勾。
 
 ## 1. 发布前完整性检查（gate）
 
@@ -42,7 +47,7 @@ PYTHONPATH=packages/production/src:. .venv/bin/python tools/ops/sfa_publish_gate
 
 | 时机 | origin | 作用 |
 |---|---|---|
-| 候选快照构建完、正式部署前 | dev 或 staging 预览 | 提前挡住目录/资产/release 不一致 |
+| 候选快照构建完、**首次部署前**（必跑） | dev 或 staging 预览 | 提前挡住目录/资产/release 不一致；2026-11-07 的 `content.drift` 是线上才发现的，那次首次部署前没跑 |
 | 正式部署后、smoke 前 | production | 线上字节与目录一致性的最终门禁 |
 | 任何 release 替换（紧急修复）后 | 对应环境 | 确认四件下游都已完成 |
 
@@ -54,7 +59,7 @@ PYTHONPATH=packages/production/src:. .venv/bin/python tools/ops/sfa_publish_gate
 | 2 | 目录与页面 | v5 schema；页面唯一；`defaultPageId` 指向本页；语言集合 ⊆ {zh-Hans,ko,es}；标题非空 | 修目录/配置后重构建 |
 | 3 | 目录 ↔ release | 三语 `releasePackageJsonSha256` == 线上 release 字节的 SHA | 重出 release/目录，不得只改目录 |
 | 4 | release ↔ 资产 | `status=published_http_verified`、`httpVerification.status=pass`；page/content/audio/captions 四个角色齐全，content/captions 字节 SHA 与 release 一致 | 替换资产后重出 release |
-| 5 | 文稿与字幕时间 | `pageId`/`targetLocale` 一致；`durationSeconds>0`、`audioDurationSeconds>0`；两钟一致（差值在 (−0.1, 1.1)）按同步页通过；不一致时按独立双钟检查（iOS `PublishedTranscript` 的 `Independent clocks` 模型，语速自然的配音不跟原视频时钟），音轨时长须在文稿时长的 0.75–1.35 倍之间；字幕 cue 数 == 文稿 cue 数；所有 cue 结束 ≤ 音轨时长+1 ms | 重生成 assets，禁止手改字幕 |
+| 5 | 文稿与字幕时间 | `pageId`/`targetLocale` 一致；`durationSeconds>0`、`audioDurationSeconds>0`；两钟一致（差值在 (−0.1, 1.1)）按同步页通过；不一致时只有「播客页且 `capabilities` 不含 `alignment`」才按独立双钟检查（iOS `PublishedTranscript` 的 `Independent clocks` 模型，语速自然的配音不跟原视频时钟），音轨时长须在文稿时长的 0.75–1.35 倍之间；带对齐的播客页与非播客页仍按 (−0.1, 1.1) 严格判定；字幕 cue 数 == 文稿 cue 数；所有 cue 结束 ≤ 音轨时长+1 ms | 重生成 assets，禁止手改字幕 |
 | 6 | 英文对照 | `human_approved`、`pageId`/`sourceIdentitySha256` 一致；三语 targets 齐全；`contentSha256`/`captionsSha256` == release 资产；blocks 数 == cues 数 | 重出 `stage-english-reference` 并部署 |
 | 7 | 对齐绑定 | 三语 `capabilities` 含 `alignment`；sidecar 身份与 targets 齐全；catalog binding == sidecar binding；索引 SHA/身份正确（pageId、track/source、窗口）；音轨实测长度与窗口差 ≤ 0.12 s | 重算索引/重绑目录，不得跳过 |
 | 8 | 手册条目 | manifest 固定 provenance（schema/series/translation/cuv/review/humanApproval=false）；条目唯一、`available`、`editionId`/`sourceIdentitySha256`/`releasePackageJsonSha256` 与线上一致；正文 `bytes`/`sha256` 匹配、`id`/`week`/`sections` 正确 | `weekly_guide_staging candidate --operation update` 重绑并部署 |
@@ -63,6 +68,22 @@ PYTHONPATH=packages/production/src:. .venv/bin/python tools/ops/sfa_publish_gate
 | 11 | 发布收尾 | 无 pending replacement；每段部署有 readback；smoke（含 `/api/session`）三语 pass | 修完重跑 gate + smoke |
 
 > 手册与对齐都**不是**可选项：只要页面存在对应能力/条目，就必须通过 `--require-guide`、`--require-alignment`。本轮教训：smoke 不检查它们，于是「smoke 三语 pass」与「手册不可用」同时成立。
+
+
+### 1.1 2026-11-07 第 9 周复盘整改
+
+这一轮的实际代价：一个页面 **13 次托管部署**（规则是 ≤3）、两轮返工（滞后修复 38 分钟、
+发布返工 28 分钟）、补漏 25 分钟；journal 只记 1h27m／计算 3m17s，实际墙钟 2h57m。
+八条整改写在[逐句优先 runbook](../experiments/sentence-first-agent/AGENTS.md) §10.6，执行时对照：
+
+1. 开跑前把七件套填进 `run.md`（`prepare_clip.py` 模板固定小节）。
+2. 完成信号只认带 `--require-guide --require-alignment` 的 gate + smoke。
+3. 英文包在 `assets` 前先对候选快照跑 `published_english_reference.build_reference` 干跑。
+4. 候选快照阶段先跑 gate，再首次部署。
+5. 精简后先 `lag_loop --check-only` 估收敛，再一次全量重配。
+6. 对齐索引绑已发布 MP3 的 sha，`track.wav` 只用于听审收据。
+7. 手册/页面/海报标题统一取[标题表](series-sermon-titles.zh.md)。
+8. 发布型子命令与发布返工也走 `run_journal`（`DEV-SF-007`）。
 
 ## 2. 发布粒度
 
@@ -137,4 +158,4 @@ PYTHONPATH=packages/production/src:. .venv/bin/python tools/ops/sfa_publish_gate
 - 运行手册：`experiments/sentence-first-agent/AGENTS.md` §10.6
 - 本周复盘：`docs/reports/runs/20261101-week8-jesus-marks/RETROSPECTIVE.md`
 
-> 2026-11-01：双人播客（`if-i-had-more-time-jesus-marks-his-own`）首次按独立双钟通过。该页是自然语速配音、不与原视频同步，`durationSeconds` 是原片窗口（3476.16 s），`audioDurationSeconds` 是配音音轨（中 3469.72、韩 3471.81、西 3564.58）。原规则只接受两钟相差 ≤1.1 s，会把这类页面误判为不一致；现规则保留同步页的严格检查，并对独立双钟要求音轨长度落在 0.75–1.35 倍区间，仍能拦住混错音轨。
+> 2026-11-01：双人播客（`if-i-had-more-time-jesus-marks-his-own`）首次按独立双钟通过。该页是自然语速配音、不与原视频同步，`durationSeconds` 是原片窗口（3476.16 s），`audioDurationSeconds` 是配音音轨（中 3469.72、韩 3471.81、西 3564.58）。原规则只接受两钟相差 ≤1.1 s，会把这类页面误判为不一致；现规则只对「播客页且无 alignment」放开独立双钟（0.75–1.35 倍），带对齐的播客页与非播客页保留严格检查，仍能拦住混错音轨。该规则由 2026-11-08 的 `content_clock` 落地，本页配置随本分支补入。

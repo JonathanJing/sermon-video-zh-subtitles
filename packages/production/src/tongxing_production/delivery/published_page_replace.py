@@ -14,9 +14,10 @@ A content correction therefore needs an explicit channel:
    verification evidence) and the catalog targets that hash them. This snapshot is validated
    strictly, so the deployed state is consistent again.
 
-Only existing released paths are accepted for replacement; ``extra_paths`` may add files under
-the page's own ``/study/<pageId>/`` tree (the four-product study assets) and, in ``finish``,
-rewrite ``/alignment/<pageId>.json``. The channel never adds pages or locales; new pages still go
+Only existing released paths are accepted for replacement; ``extra_paths`` may add files inside
+the page's own ``/pages/<pageId>/`` or ``/study/<pageId>/`` tree (page-local assets such as a
+small script, and the four-product study assets) and, in ``finish``, rewrite
+``/alignment/<pageId>.json``. The channel never adds pages or locales; new pages still go
 through the normal assets -> releases -> catalogs flow.
 
 Usage (through the ops runner):
@@ -87,10 +88,14 @@ def _seal(out: Path, changed: list[str], pending: list[str]) -> None:
 
 
 def _check_page_local(paths: dict[str, bytes], page_id: str, *, allow_alignment: bool):
+    # A page may carry its own small static assets next to its HTML, and the four-product
+    # study files in the sibling study tree. Both prefixes belong to this one page id.
+    roots = (f'pages/{page_id}/', f'study/{page_id}/')
     for rel in paths:
-        prefix = f'alignment/{page_id}.json' if allow_alignment else f'study/{page_id}/'
-        ok = rel == f'alignment/{page_id}.json' if allow_alignment else rel.startswith(prefix)
-        delivery_contract.require(ok, 'Extra file must stay inside the page\'s study tree: ' + rel)
+        if allow_alignment and rel == f'alignment/{page_id}.json':
+            continue
+        ok = any(rel.startswith(root) for root in roots)
+        delivery_contract.require(ok, 'Extra file must stay inside the page\'s own pages/ or study/ tree: ' + rel)
         delivery_contract.require('..' not in Path(rel).parts and not Path(rel).is_absolute(), 'Unsafe extra path')
 
 
@@ -198,8 +203,19 @@ def _files_from(directory: Path) -> dict[str, bytes]:
 
 def write_publish_config(baseline: Path, snapshot: Path, environment: str) -> dict:
     config = bl.publication_config(Path(baseline), Path(snapshot), environment=environment)
+    # A pending snapshot keeps the previous release and catalog for this page, so the publisher
+    # must relax only that page while validating everything else. The key travels with the
+    # snapshot's own staged-changes record; the guarded CLI pops it and passes it through.
+    staged = Path(snapshot) / 'staged-changes.json'
+    if staged.is_file():
+        pending = json.loads(staged.read_text(encoding='utf-8')).get('pendingReplacements') or []
+        if pending:
+            config['allowPendingReplacements'] = list(pending)
     bl.write(Path(snapshot) / 'publish-config.json', config)
-    return {'snapshot': str(snapshot), 'baselineVersion': config['baseline_version']}
+    result = {'snapshot': str(snapshot), 'baselineVersion': config['baseline_version']}
+    if config.get('allowPendingReplacements'):
+        result['pendingReplacements'] = config['allowPendingReplacements']
+    return result
 
 
 def main():
@@ -210,6 +226,8 @@ def main():
     a.add_argument('--out', required=True, type=Path)
     a.add_argument('--page-id', required=True)
     a.add_argument('--replace-dir', required=True, type=Path, help='files mirror public/, e.g. content/<pageId>/ko.json')
+    a.add_argument('--extra-dir', type=Path,
+                   help='new page-local files mirror public/, e.g. pages/<pageId>/app-link.js')
     a.add_argument('--environment', default='production')
     f = sub.add_parser('finish', help='snapshot B: replacement releases and catalogs')
     f.add_argument('--assets', required=True, type=Path)
@@ -220,7 +238,8 @@ def main():
     f.add_argument('--environment', default='production')
     args = parser.parse_args()
     if args.command == 'assets':
-        result = replace_assets(args.baseline, args.out, args.page_id, _files_from(args.replace_dir))
+        result = replace_assets(args.baseline, args.out, args.page_id, _files_from(args.replace_dir),
+                                extra_paths=_files_from(args.extra_dir) if args.extra_dir else None)
         result['publishConfig'] = write_publish_config(args.baseline, args.out, args.environment)
     else:
         evidence = _read(args.evidence)

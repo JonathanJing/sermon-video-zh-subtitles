@@ -778,7 +778,9 @@ def text_rules() -> ports.TextRules:
         validate_source_for_translation=_rule_function('tongxing_production.text.candidate',
                                                        'validate_source_for_translation'),
         human_ruling_schema=_rule_constant('tongxing_production.text.human_ruling', 'SCHEMA'),
-        load_human_ruling=_rule_function('tongxing_production.text.human_ruling', 'load'))
+        load_human_ruling=_rule_function('tongxing_production.text.human_ruling', 'load'),
+        validate_human_override=_rule_function('tongxing_production.text.human_override',
+                                               'validate_override_receipt'))
 
 
 def source_evidence() -> ports.SourceEvidence:

@@ -720,7 +720,12 @@ private class UITestContentProtocol: URLProtocol {
                 catalog["pages"] = pages
                 data = try! JSONSerialization.data(withJSONObject: catalog, options: [.sortedKeys])
             }
-            if ProcessInfo.processInfo.arguments.contains("--ui-testing-delayed-transcript"),
+            if ProcessInfo.processInfo.arguments.contains("--ui-testing-slow-published-audio"),
+               url.path.hasPrefix("/media/") {
+                // Spread the audio body over ten chunks so a UI test can observe
+                // the preparation dock and its determinate progress before ready.
+                deliverSlowNativeResponse(data, at: url)
+            } else if ProcessInfo.processInfo.arguments.contains("--ui-testing-delayed-transcript"),
                url.path == "/content/ui-test-locate-flow/ko.json" {
                 // Delay only the transcript request, never the language release
                 // or audio. The URLSession actor remains free to prepare audio.
@@ -770,6 +775,41 @@ private class UITestContentProtocol: URLProtocol {
         client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
         client?.urlProtocol(self, didLoad: data)
         client?.urlProtocolDidFinishLoading(self)
+    }
+
+    /// Declares the full content length and then dribbles the body out. The
+    /// declared length is what lets the page show a determinate bar; the pauses
+    /// leave the preparation state observable to XCUITest.
+    private func deliverSlowNativeResponse(_ data: Data, at url: URL) {
+        deliveryLock.lock()
+        guard !stopped else { deliveryLock.unlock(); return }
+        deliveryLock.unlock()
+        let response = HTTPURLResponse(url: url, statusCode: 200, httpVersion: "HTTP/1.1",
+            headerFields: ["Content-Length": String(data.count),
+                           "Content-Type": "audio/mpeg"])!
+        let chunkSize = max(1, data.count / 10)
+        let chunks = stride(from: 0, to: data.count, by: chunkSize).map {
+            data.subdata(in: $0..<min($0 + chunkSize, data.count))
+        }
+        client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
+        client?.urlProtocol(self, didLoad: chunks[0])
+        sendSlowChunks(chunks, index: 1)
+    }
+
+    private func sendSlowChunks(_ chunks: [Data], index: Int) {
+        guard index < chunks.count else {
+            client?.urlProtocolDidFinishLoading(self)
+            return
+        }
+        DispatchQueue.global(qos: .userInitiated).asyncAfter(deadline: .now() + 2) { [weak self] in
+            guard let self else { return }
+            self.deliveryLock.lock()
+            let stopped = self.stopped
+            self.deliveryLock.unlock()
+            guard !stopped else { return }
+            self.client?.urlProtocol(self, didLoad: chunks[index])
+            self.sendSlowChunks(chunks, index: index + 1)
+        }
     }
 
     override func stopLoading() {
