@@ -172,6 +172,15 @@ class PageConfig:
         contract.require(bool(template), f"candidate.translationBasis needs {locale} or default")
         return template.format(locale=locale)
 
+    def independent_audio(self) -> bool:
+        """Podcast pages published with a natural-rate track, not the source-video clock.
+
+        Those pages keep the source-timed text cues and publish the full dub as a
+        separate clock; padding/truncating the MP3 to the source window would cut a
+        longer dub and drop audio the review receipt binds.
+        """
+        return self.media_type == "podcast" and "not on the source video clock" in self.synchronization.lower()
+
     def voices_for(self, sentences: list[dict]) -> list[str]:
         if self.voices == "from-speakers":
             return sorted({sentence["speakerId"] for sentence in sentences})
@@ -805,9 +814,15 @@ def cmd_assets(cfg: PageConfig, out: Path) -> dict:
         # sentences were trimmed; the published track still has to cover the video, so pad it
         # with silence to the window end (the run's track.wav, which the review receipt binds,
         # is left untouched).
-        subprocess.run(["ffmpeg", "-nostdin", "-v", "error", "-y", "-i", str(run / "track.wav"),
-                        "-af", "apad", "-t", f"{cfg.window_end:.3f}",
-                        "-c:a", "libmp3lame", "-b:a", "192k", str(mp3)], check=True)
+        ffmpeg_mp3 = ["ffmpeg", "-nostdin", "-v", "error", "-y", "-i", str(run / "track.wav")]
+        if cfg.independent_audio():
+            # Natural-rate podcast track: keep the whole dub, do not pad or truncate it to the
+            # source window; the content cues stay on the source clock and captions use the dub.
+            ffmpeg_mp3 += ["-c:a", "libmp3lame", "-b:a", "192k", str(mp3)]
+        else:
+            ffmpeg_mp3 += ["-af", "apad", "-t", f"{cfg.window_end:.3f}",
+                           "-c:a", "libmp3lame", "-b:a", "192k", str(mp3)]
+        subprocess.run(ffmpeg_mp3, check=True)
         audio_seconds = round(float(subprocess.run(
             ["ffprobe", "-v", "error", "-show_entries", "format=duration", "-of", "default=nw=1:nk=1", str(mp3)],
             capture_output=True, text=True, check=True).stdout.strip()), 3)
