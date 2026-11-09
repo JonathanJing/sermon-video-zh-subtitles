@@ -337,6 +337,23 @@ export SERMON_YOUTUBE_COOKIES_FILE=/absolute/path/youtube.cookies.txt
 - **安装与检查。** 先存 key（会提示输入，不回显）：`security add-generic-password -s org.sermonvideo.drive-upload-watch -a bark-iphone -w`，Mac 再加 `-a bark-mac`；要开邮件兜底再加 `-a gmail-user`（Gmail 地址）和 `-a gmail-app`（应用专用密码），可选 `-a gmail-to` 改收件人。`python3 tools/ops/drive_upload_watch.py install` 把脚本复制到 `~/Library/Application Support/org.sermonvideo.drive-upload-watch/`（以 `/usr/bin/python3` 运行，不受本 checkout 切换分支影响）并加载 LaunchAgent；改代码后重新 `install`。`status` 显示加载状态、已存的 Bark 账户、邮件是否已配置、下次窗口、日志末尾，以及已安装副本是否与当前文件一致；`check` 只读一次文件夹并打印 JSON；`test-push` 向每个 key 和已配置的邮件通道各发一条测试（`--critical` 用发现文件同样的 critical + volume=0 形状），邮件已配置却没送达时退出码为 1；`uninstall` 卸载但保留状态。`run --now 2026-10-31T19:30 --no-push --state <临时路径>` 从指定时刻模拟窗口，只打印不推送。
 - **记录。** 同一目录下 `state.json`（已通知与基线文件、每个窗口的消息状态，版本 1）和 `observations.ndjson`（每个新文件的 ID、名称、大小、两个时间戳、首次看到时间与送达结果，以及每个窗口的收尾），供核对每周上传时间与 [H1](design/saturday-first-service-preparation.zh.md) 使用。旧 Claude 定时任务在新检查经过一个周六并行验证后停用。
 
+**每周记录**（抄自本机 `state.json` 与 `observations.ndjson`，云端读不到这两个文件）：
+
+| 窗口（周六） | 文件 | 大小 | 最早 / 最新时间戳 PT | 首次看到 | 送达 | 备注 |
+|---|---|---|---|---|---|---|
+| 2026-10-18 | `20261018 BROADCAST MESSAGE.mp4` | 1.09 GB | 18:47:54 / 18:50:01 | 人工查看 | 旧 Claude 任务 | 带日期前缀的最后一个样本 |
+| 2026-10-24 | `Saturday_400pm_Live__1080.mp4` | 0.90 GB | 19:37:03 / 19:46:10 | 10-31 18:00:08 记为基线 | — | 早于本检查上线，静默记基线、不通知 |
+| 2026-10-31 | `Saturday_530pm_Live__1080.mp4` | 0.97 GB | 19:19:10 / 19:29:31 | 19:29:39 | Bark ×2 | 首次实跑；20:20:04 一次瞬时读取失败，未到 3 次阈值 |
+| 2026-11-07 | `Saturday_530pm_Live__1080-2.mp4` | 1.00 GB | 19:30:02 / 19:37:45 | 19:37:50（通知 19:37:53） | Bark ×2 + 邮件 | 18:00 时机器不在运行，18:25:52 由 `RunAtLoad` 补跑，22:00:00 退出码 0 |
+
+检测延迟按「最新时间戳到首次看到」算：10-31 为 8 秒，11-07 为 5 秒。10-24 起文件名不再带日期前缀，10-31 与 11-07 连续两周是 5:30 场，11-07 还带 `-2` 后缀；按文件 ID 判定不受影响，名称只作标签——这正是旧任务按日期前缀匹配会漏报的原因。5:30 场连续出现也说明 [H1](design/saturday-first-service-preparation.zh.md)「正式版多半来自 4:00 场」只能按周核对，不能当作固定前提。
+
+2026-11-07 实跑暴露的三处边界：
+
+- **手机是否显示未验证。** 11-07 是 `critical` + `volume=0` 与 Gmail 兜底上线后的第一次实跑。`delivery` 为真只说明 Bark 服务端返回 `code=200`、SMTP 接受，手机是否真的弹出（需先在系统设置里给 Bark 开「重要警告」）没有人工确认；切换或怀疑时用 `test-push --critical` 确认并回写结果。
+- **开始时刻没有记录。** 18:00 机器没开机或没登录时，实际开始时间取决于登录时刻（11-07 是 18:25:52，窗口前的约 26 分钟没有轮询）。开始消息是 `passive`，正文固定写 18:00–22:00，`watch.log` 与 `state.json` 都不记开始时刻；这段空档靠启动后的第一次读取兜住，窗口内已经存在的文件不会漏。
+- **跨午夜不补读。** 22:00 后、当天午夜前登录会补读一次再收尾；跨过午夜再登录只剩 `outside the window`，既没有补读也没有「未见新文件」的收尾消息，需要手动 `check`。
+
 边界：该检查只读，不下载视频，不写 GCS state，不建立 Layer 1 来源身份，也不启动任何生产阶段。检测到文件不等于确认它与周六直播或周日讲道同篇，也不等于确认可用于生产；要把它作为来源，须另行核实使用授权与来源署名，并按[四层合同](multilingual-production-interfaces.zh.md)从 Layer 1 开始绑定 source ID、URL、媒体哈希与时长。
 
 ## 完成标准
