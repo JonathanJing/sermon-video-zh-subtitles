@@ -248,6 +248,14 @@ final class AppModel: ObservableObject {
         publishedAudioProgressPercent = nil
     }
 
+    /// Restarts preparation when a published page with audio is left with no
+    /// audio, no running preparation and no error. Without this the page keeps
+    /// showing "正在准备音频…" and never shows the player bar.
+    func resumePublishedAudioPreparationIfStalled() {
+        guard publishedAudioError == nil else { return }
+        preparePublishedAudioIfNeeded()
+    }
+
     private func preparePublishedAudioIfNeeded() {
         guard selectedWeek == nil, selectedAudioLocale == nil,
               selectedContentTarget?.hasPublishedAudio == true,
@@ -715,6 +723,10 @@ final class AppModel: ObservableObject {
             await refreshMultilingualCatalog(pageID: selectedPageID,
                                              preferPublishedDefault: preferPublishedDefault && publishedSelectionRevision == selectionRevision)
         }
+        // The refresh cancelled any running download above. When the catalog
+        // fetch fails, or a newer selection won the race, nothing else restarts
+        // it, and the page would stay on "正在准备音频…" with no player bar.
+        preparePublishedAudioIfNeeded()
     }
 
     private func refreshMultilingualCatalog(pageID: String?, preferPublishedDefault: Bool = false) async {
@@ -882,8 +894,8 @@ final class AppModel: ObservableObject {
         let request = UUID()
         publishedAudioRequest = request
         isPreparingPublishedAudio = true
-        publishedAudioError = nil
         publishedAudioProgress = nil
+        publishedAudioError = nil
         publishedAudioProgressPercent = nil
         let audioTask = Task { () throws -> (VerifiedLanguageAudio, MachineCheckedDisclosure?) in
             let package = try await multilingualRepository.loadRelease(page: page, locale: locale)

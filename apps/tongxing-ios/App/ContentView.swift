@@ -165,6 +165,7 @@ struct ContentView: View {
             if phase != .active { playback.saveProgress() }
             else {
                 localization.refreshSystemLanguage()
+                model.resumePublishedAudioPreparationIfStalled()
                 // The 08:00 threshold may have passed while the app was in the
                 // background; a return to the app is the second allowed moment.
                 presentWeeklyPosterIfDue()
