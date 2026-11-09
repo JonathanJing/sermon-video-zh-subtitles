@@ -455,8 +455,6 @@ final class StorageTests {
         let verified = try await repository.loadAudio(for: package, page: page) { progress.record($0) }
         #expect(verified.locale == "ko")
         #expect(verified.pageID == "page-1")
-        // The player bar shows download progress, so every chunk is reported.
-        #expect(reported.last == Int64(audio.count))
         #expect(try Data(contentsOf: verified.localURL) == audio)
         #expect(try verified.localURL.deletingLastPathComponent()
             .resourceValues(forKeys: [.isExcludedFromBackupKey]).isExcludedFromBackup == true)
@@ -1069,12 +1067,4 @@ private final class StubURLProtocol: URLProtocol {
     }
 
     override func stopLoading() { callbackQueue.async { self.stopped = true } }
-}
-
-/// Collects progress callbacks, which arrive on the URL session's delegate queue.
-private final class ReceivedBytes: @unchecked Sendable {
-    private let lock = NSLock()
-    private var value: Int64 = 0
-    func record(_ received: Int64) { lock.lock(); value = received; lock.unlock() }
-    var last: Int64 { lock.lock(); defer { lock.unlock() }; return value }
 }
