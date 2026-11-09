@@ -1,0 +1,63 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261108-jesus-is-just",
+  "runs": [
+    {
+      "label": "20261108-jesus-is-just-zh",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/sentence-first-agent/20261108-jesus-is-just-zh",
+      "skipped": {
+        "(none)": 1,
+        ".jsonl": 22,
+        ".json": 10,
+        ".wav": 923,
+        ".mp4": 2,
+        ".html": 1,
+        ".mp3": 1,
+        ".md": 1
+      }
+    }
+  ],
+  "files": [
+    {
+      "run": "20261108-jesus-is-just-zh",
+      "path": "journal.ndjson",
+      "kind": "whole",
+      "bytes": 3468,
+      "truncated": false,
+      "sha256": "e658ba594461dfb6920daaa910975c9778f1fdca275805683ad0e89f5ee3ab61",
+      "redactions": {}
+    },
+    {
+      "run": "20261108-jesus-is-just-zh",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 681,
+      "truncated": false,
+      "sha256": "1b4c6508ead4c1993154171c77f9864cca5e6d9e61156f4fe3d6e2bfd13d1394",
+      "redactions": {}
+    },
+    {
+      "run": "20261108-jesus-is-just-zh",
+      "path": "timings.tsv",
+      "kind": "whole",
+      "bytes": 232,
+      "truncated": false,
+      "sha256": "a7a3c860886b2d9c9a0a13b9751b34991a1838b4736283c60253836a5edc454c",
+      "redactions": {}
+    },
+    {
+      "run": "20261108-jesus-is-just-zh",
+      "path": "tts-run.log",
+      "kind": "log",
+      "bytes": 321574,
+      "truncated": true,
+      "sha256": "3636cdbbf3e8309b4bc4b00262ec78f1a40247e3a705ab81247695ce574d7895",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}
