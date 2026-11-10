@@ -6,7 +6,7 @@
 
 - **交付类型**：测试（Layer 3 TTS 组件计时 A/B），不是 `dual_pdf`／`live_session`／`four_layer_release`。
 - **最终状态**：`complete_diagnostic`（`outcome.json`）。两臂各完成 32 个 warm trial（8 条件 × 1 预热 + 3 次测量）与 8 个 cold 条件（每条件新进程）。全部输出非空、完整解码通过、单元覆盖与顺序校验通过。
-- **结束信号**：Mac 套件打印 `mac suite complete`；Spark 侧 `suite exit=0` 且独占会话 `finish` 返回 `closed`。会话 `tts-ab-20261109` 于 UTC 05:44:25 创建、05:57:36 关闭；关闭后 `inspect` 显示四个受管 unit 全部 `active`、`llama-server` 模型健康 `healthy`、GPU 上重新出现 `llama-server`，`memAvailable` 回升到 80.3 GiB。**服务已恢复**。
+- **结束信号**：Mac 套件打印 `mac suite complete`；Spark 侧 `suite exit=0` 且独占会话 `finish` 返回 `closed`。会话 `tts-ab-20261109` 于 UTC 05:44:25 创建、05:57:36 关闭；关闭后 `inspect` 显示四个受管服务的 unit 与推理评审定时器全部 `active`、`llama-server` 模型健康 `healthy`、GPU 上重新出现 `llama-server`，`memAvailable` 回升到 80.3 GiB。**服务已恢复**。
 - **主要结果**：同一 checkpoint、同一冻结输入清单、同一渲染器身份下，Spark（CUDA BF16）warm 合成总耗时 **77.36 s**，MacBook Pro 14（M5 Max，MPS FP32）**118.44 s**，Spark 约为 Mac 的 **1.53×**；同一批 8 条件逐项为 1.39×–1.69×。两臂总音频秒数几乎相同（172.08 s vs 173.36 s），说明差距不是内容长度造成的。
 - **反向项**：模型加载 Spark 明显更慢（30.39 s vs 4.63 s；cold 进程 31–37 s vs 2.4–3.3 s）。小任务（单句）的 cold 首批两者接近，甚至个别 b1 条件 Mac 更快；但一旦进入多句/批量，Spark 稳定领先。
 - **证据边界**：两侧运行时不同（Mac torch 2.14.0 MPS FP32；Spark torch 2.13.0a0+8145d630e8.nv26.06 CUDA BF16），所以比值是「硬件＋运行时」差异，不是纯硬件加速比。OS 缓存未清、样本只有一台机器、没有人听审、没有与生产整篇对齐。Spark 测量期间 `llama-server` 等既有服务按独占会话要求被停止，结束后恢复；这不是「服务照常运行」的并发基准。
@@ -54,7 +54,7 @@
 | L2 初译 | not_run | — | 0 | — | — | — | 0 | — |
 | L2 独立审核 | not_run | — | 0 | — | — | — | 0 | — |
 | 文本质检（回写） | not_run | — | 0 | — | — | — | 0 | — |
-| L3 配音（TTS） | Mac：Eric checkpoint／Qwen3-TTS 1.7B，torch 2.14.0，MPS FP32；Spark：同一 checkpoint，torch 2.13.0a0 nv26.06，CUDA BF16 | 固定 temperature 0.7、repetition 1.05、maxNewTokens 768、SDPA、seed 42+窗口起点 | warm 32 trial／条件 8、cold 8 次（每条件新进程）；每臂 160 个 WAV | Mac warm 118.44 s；Spark warm 77.36 s | Mac 172.08 s；Spark 173.36 s | Mac 1.45× 实时；Spark 2.24× 实时（Spark 比 Mac 快 1.53×） | 0（本地 GPU） | `summary.json`、`macbook/warm.log`、`spark/suite.log` |
+| L3 配音（TTS） | Mac：Eric checkpoint／Qwen3-TTS 1.7B，torch 2.14.0，MPS FP32；Spark：同一 checkpoint，torch 2.13.0a0 nv26.06，CUDA BF16 | 固定 temperature 0.7、repetition 1.05、maxNewTokens 768、SDPA、seed 42+窗口起点 | warm 32 trial／条件 8、cold 8 次（每条件新进程）；每臂 133 个 WAV（warm 112 + cold 21） | Mac warm 118.44 s；Spark warm 77.36 s | Mac 172.08 s；Spark 173.36 s | Mac 1.45× 实时；Spark 2.24× 实时（Spark 比 Mac 快 1.53×） | 0（本地 GPU） | `summary.json`、`macbook/warm.log`、`spark/suite.log` |
 | L3 回转写筛查（ASR） | not_run（2026-10-28 起已退役） | — | 0 | — | — | — | 0 | — |
 | 音频质检 | not_run（仅完整解码检查，非听审） | — | 0 | — | — | — | 0 | `result.json` 内 `fullDecode=pass` |
 | L4 构建与发布 | not_run | — | 0 | — | — | — | 0 | — |
@@ -108,7 +108,7 @@
 Mac 臂（MPS FP32，torch 2.14.0）：
 
 ```sh
-.venv/bin/python artifacts/local-tts-ab-20261109/venv/bin/python  # 该 venv 含 torch/qwen-tts
+artifacts/local-tts-ab-20261109/venv/bin/python   # 该 venv 含 torch 2.14.0 + qwen-tts 0.1.1
 .venv/bin/python artifacts/local-tts-ab-20261109/tooling/benchmark_formal_tts_local.py \
   --inputs artifacts/local-tts-ab-20261109/inputs/shared-tts.json \
   --checkpoint artifacts/local-tts-ab-20261109/inputs/checkpoint-eric \
