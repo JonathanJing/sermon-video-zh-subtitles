@@ -94,7 +94,7 @@
 - Spark 独占会话 `tts-ab-20261109` 已 `closed`，四个受管 unit 与 `llama-server` 已恢复（结束核对：`modelHealth.healthy=true`）。
 - Spark 上的暂存目录 `~/dgx-spark-benchmark/results/local-tts-ab-20261109/`（代码、输入、输出含 160 WAV）**保留**，供复核；未删除、未上传。
 - 本机 `artifacts/local-tts-ab-20261109/` 内含 4.2 GB checkpoint 与 MPS venv（已被 `.gitignore` 忽略），本轮未清理。
-- MacBook Pro 16（arm C）暂存目录 `~/tts-ab-20261109/` 正在准备（仓库快照、清单、harness、checkpoint、venv）；**臂 C 本轮未运行**，因此本轮只有 A/B，不是 ABC。
+- MacBook Pro 16（臂 C）暂存目录 `~/tts-ab-20261109/` 已完成：同一提交快照 `00d8d195`、同一清单 `477271f3…`、同一 checkpoint `75d28…` 与 config `9dd6cf2c…`、同一 harness 文件 `6fc09092…`、Python 3.12.8 + torch 2.14.0 + qwen-tts 0.1.1。已完成一次单条件 readiness probe（zh-Hans-b1：模型加载 20.08 s，warm-1 墙钟 35.66 s，RTF 2.10，M1 Max 明显慢于本机 M5 Max）。**全量臂 C 本轮未运行**，因此本轮只有 A/B，不是 ABC；按同一命令即可补齐。
 - 无 Dev 发布、无构建号、无绕过分支保护的推送。
 
 ## 外部可见的变化
