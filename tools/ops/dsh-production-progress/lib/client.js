@@ -3,9 +3,9 @@
 // Plain lazy-CJS bundle using the same handoff shape as the shipped UI
 // packages. React is a platform-seeded module; no build step is required.
 //
-// The dock row is intentionally small: one line for the current stage and a
-// click-to-expand panel for stages/attention. It polls the host route; it does
-// not touch Python, the filesystem, or any gate.
+// The right-sidebar tab shows one card per run with a stage table and attention.
+// It polls the host route; it does not touch Python, the filesystem, or any gate.
+// Closing a card only persists that run id in localStorage; the tab stays.
 window.__ModuleLoader__.load({
   id: 'dsh-production-progress',
   factory: (require) => {
@@ -25,6 +25,8 @@ window.__ModuleLoader__.load({
     const TONE = {
       ok: '#4ca66a', active: '#4aa3df', attention: '#e0a23a', bad: '#d9534f', dim: '#8a8a8a',
     }
+
+    const DISMISS_KEY = 'dsh-production-progress.dismissed-runs.v1'
 
     function parseTime(value) {
       const parsed = Date.parse(value)
@@ -161,16 +163,6 @@ window.__ModuleLoader__.load({
       return TONE.dim
     }
 
-    function pickRun(runs) {
-      if (!Array.isArray(runs) || runs.length === 0) return null
-      const rank = { attention_required: 0, active: 1, planned: 2, completed: 3 }
-      return [...runs].sort((a, b) => {
-        const order = (rank[a.state] ?? 9) - (rank[b.state] ?? 9)
-        if (order !== 0) return order
-        return String(b.generatedAt || '').localeCompare(String(a.generatedAt || ''))
-      })[0]
-    }
-
     function useStatus() {
       const [value, setValue] = React.useState({ data: null, error: null })
       React.useEffect(() => {
@@ -245,41 +237,61 @@ window.__ModuleLoader__.load({
       )
     }
 
-    function runSignature(run) {
-      if (!run) return ''
-      const attention = (run.attention || [])
-        .map(item => `${item.kind}:${item.stage || ''}:${item.since || ''}`).join(',')
-      const missing = (run.required?.missing || []).join(',')
-      return [run.runId, run.state, run.activeStage || '', attention, missing].join('|')
+    function orderedRuns(runs) {
+      if (!Array.isArray(runs)) return []
+      const rank = { attention_required: 0, active: 1, planned: 2, completed: 3 }
+      return [...runs].sort((a, b) => {
+        const order = (rank[a.state] ?? 9) - (rank[b.state] ?? 9)
+        if (order !== 0) return order
+        return String(b.generatedAt || '').localeCompare(String(a.generatedAt || ''))
+      })
     }
 
-    function Dock({ openSession }) {
-      const { data } = useStatus()
-      const now = useNow()
-      const [open, setOpen] = React.useState(false)
-      const [dismissed, setDismissed] = React.useState(null)
-      const runs = Array.isArray(data?.runs) ? data.runs : []
-      const run = pickRun(runs)
-      const signature = runSignature(run)
-      React.useEffect(() => {
-        // A closed row returns as soon as a new run, stage change, attention,
-        // or missing-step set arrives; polling the same status stays hidden.
-        if (dismissed && signature && signature !== dismissed) setDismissed(null)
-      }, [dismissed, signature])
-      if (!run) return null
-      if (run.state === 'completed' && (ageSeconds(run.generatedAt, now) ?? 0) > 6 * 3600) return null
-      if (dismissed === signature) return null
+    function readDismissedRuns() {
+      try {
+        if (typeof localStorage === 'undefined') return []
+        const raw = localStorage.getItem(DISMISS_KEY)
+        if (!raw) return []
+        const parsed = JSON.parse(raw)
+        return Array.isArray(parsed)
+          ? parsed.filter(runId => typeof runId === 'string' && runId !== '')
+          : []
+      } catch (error) {
+        return []
+      }
+    }
 
+    function saveDismissedRuns(runIds) {
+      try {
+        if (typeof localStorage !== 'undefined') {
+          localStorage.setItem(DISMISS_KEY, JSON.stringify(runIds))
+        }
+      } catch (error) {
+        // Private mode / a locked-down webview must not break the tab.
+      }
+    }
+
+    function useDismissedRuns() {
+      const [runIds, setRunIds] = React.useState(readDismissedRuns)
+      React.useEffect(() => { saveDismissedRuns(runIds) }, [runIds])
+      return {
+        ids: runIds,
+        has: runId => runIds.includes(runId),
+        dismiss: runId => setRunIds(prev => prev.includes(runId) ? prev : [...prev, runId]),
+        restoreAll: () => setRunIds([]),
+      }
+    }
+
+    function RunCard({ run, now, openSession, onDismiss, defaultOpen }) {
+      const [open, setOpen] = React.useState(Boolean(defaultOpen))
       const active = run.stages.find(stage => stage.id === run.activeStage)
         || run.stages.find(stage => stage.state === 'failed')
         || run.stages.find(stage => stage.state === 'waiting')
         || run.stages.find(stage => stage.state === 'running')
         || null
-      // External waits are severity=info; the stage table still shows them,
-      // but they must not turn into a warning badge in the dock.
+      // severity=info is an external wait; keep it in the stage table but do
+      // not turn it into a warning on the row.
       const attentionItems = run.attention.filter(item => item.severity !== 'info')
-      const attention = attentionItems[0] || null
-      const attentionCount = attentionItems.length
       const reviewSession = reviewSessionId(run)
       const canOpenReview = Boolean(reviewSession && typeof openSession === 'function')
       const stale = run.freshness?.state === 'stale'
@@ -300,57 +312,70 @@ window.__ModuleLoader__.load({
         ? etaText(active, run.generatedAt)
         : ''
 
+      const summary = [
+        localeLabel(run.locale) || '—',
+        active ? stageLabel(active.id, false) : stateLabel(run.state),
+        progress,
+        waiting,
+        stalled,
+        heartbeat && !waiting && !stalled ? heartbeat : '',
+        activeEta,
+      ].filter(Boolean)
+
       const row = h('button', {
         type: 'button',
         onClick: () => setOpen(value => !value),
         title: run.title,
         'aria-expanded': open,
         style: {
-          display: 'flex', alignItems: 'center', gap: 6, flex: '1 1 auto', minWidth: 0,
-          padding: '2px 0', border: 0, background: 'transparent', cursor: 'pointer',
-          color: 'var(--dsh-text-secondary, #8a8a8a)', font: 'inherit', fontSize: 12,
-          textAlign: 'left',
+          flex: '1 1 auto', minWidth: 0, display: 'flex', flexDirection: 'column', gap: 3,
+          padding: 0, border: 0, background: 'transparent', cursor: 'pointer',
+          color: 'inherit', font: 'inherit', textAlign: 'left',
         },
       },
         h('span', {
-          style: {
-            width: 7, height: 7, borderRadius: '50%', background: tone, flex: '0 0 auto',
-            boxShadow: `0 0 0 3px ${tone}22`,
-          },
-        }),
-        h('span', { style: { color: 'var(--dsh-text-primary, #e6e6e6)', fontWeight: 600 } }, '生产'),
-        h('span', { style: { opacity: 0.35 } }, '·'),
-        h('span', { style: { flex: '0 0 auto' } }, localeLabel(run.locale) || '—'),
-        h('span', { style: { opacity: 0.35 } }, '·'),
+          style: { display: 'flex', alignItems: 'center', gap: 6, minWidth: 0, width: '100%' },
+        },
+          h('span', {
+            style: {
+              width: 7, height: 7, borderRadius: '50%', background: tone, flex: '0 0 auto',
+              boxShadow: `0 0 0 3px ${tone}22`,
+            },
+          }),
+          h('span', {
+            style: {
+              color: 'var(--dsh-text-primary, #e6e6e6)', fontWeight: 600,
+              overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0,
+            },
+          }, run.title || run.runId),
+          h('span', {
+            style: { color: tone, flex: '0 0 auto', fontSize: 11, fontWeight: 600 },
+          }, stateLabel(run.state)),
+          h('span', { style: { marginLeft: 'auto', opacity: 0.45, fontSize: 10, flex: '0 0 auto' } },
+            open ? '▾' : '▸'),
+        ),
         h('span', {
           style: {
-            color: 'var(--dsh-text-primary, #e6e6e6)', fontWeight: 600,
-            overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0,
+            display: 'flex', alignItems: 'center', gap: 6, minWidth: 0, width: '100%',
+            color: 'var(--dsh-text-secondary, #8a8a8a)', fontSize: 11.5,
           },
-        }, active ? stageLabel(active.id, false) : stateLabel(run.state)),
-        progress ? h('span', {
-          style: { fontVariantNumeric: 'tabular-nums', flex: '0 0 auto' },
-        }, progress) : null,
-        waiting ? h('span', { style: { color: TONE.attention, flex: '0 0 auto' } }, waiting) : null,
-        stalled ? h('span', { style: { color: TONE.bad, flex: '0 0 auto' } }, stalled) : null,
-        heartbeat && !waiting && !stalled ? h('span', {
-          style: { fontVariantNumeric: 'tabular-nums', opacity: 0.6, flex: '0 0 auto' },
-        }, heartbeat) : null,
-        activeEta ? h('span', {
-          style: { opacity: 0.75, flex: '0 0 auto' },
-        }, activeEta) : null,
-        attentionCount > 0 ? h('span', {
-          style: { color: attentionTone(attention?.severity), flex: '0 0 auto' },
-        }, `⚠ ${attentionCount}`) : null,
-        run.state === 'completed' ? h('span', {
-          style: { color: TONE.ok, flex: '0 0 auto' },
-        }, '✓ 完成') : null,
-        h('span', { style: { marginLeft: 'auto', opacity: 0.45, fontSize: 10, flex: '0 0 auto' } },
-          open ? '▾' : '▸'),
+        },
+          summary.map(value => h('span', {
+            key: value,
+            style: {
+              flex: '0 0 auto', fontVariantNumeric: 'tabular-nums',
+              color: value === waiting || value === stalled ? TONE.attention : 'inherit',
+            },
+          }, value)),
+          attentionItems.length > 0 ? h('span', {
+            style: { color: attentionTone(attentionItems[0]?.severity), flex: '0 0 auto' },
+          }, `⚠ ${attentionItems.length}`) : null,
+          run.state === 'completed' ? h('span', { style: { color: TONE.ok, flex: '0 0 auto' } }, '✓ 完成') : null,
+        ),
       )
 
       const head = h('div', {
-        style: { display: 'flex', alignItems: 'center', gap: 6, width: '100%', minWidth: 0 },
+        style: { display: 'flex', alignItems: 'flex-start', gap: 6, width: '100%', minWidth: 0 },
       },
         row,
         canOpenReview ? h('button', {
@@ -360,15 +385,15 @@ window.__ModuleLoader__.load({
           style: {
             flex: '0 0 auto', border: '1px solid var(--dsh-border, rgba(127,127,127,.28))',
             background: 'transparent', color: 'var(--dsh-accent, #4aa3df)',
-            borderRadius: 999, padding: '1px 8px', font: 'inherit', fontSize: 11,
+            borderRadius: 999, padding: '1px 7px', font: 'inherit', fontSize: 10.5,
             cursor: 'pointer', whiteSpace: 'nowrap',
           },
         }, '打开对话 ↗') : null,
         h('button', {
           type: 'button',
-          title: '关闭进度条；有新状态时自动恢复',
-          'aria-label': '关闭进度条',
-          onClick: () => setDismissed(signature),
+          title: '关闭这一行（tab 保留）',
+          'aria-label': '关闭进度行',
+          onClick: () => onDismiss(run.runId),
           style: {
             flex: '0 0 auto', border: 0, background: 'transparent',
             color: 'var(--dsh-text-secondary, #8a8a8a)', cursor: 'pointer',
@@ -377,13 +402,11 @@ window.__ModuleLoader__.load({
         }, '×'),
       )
 
-      if (!open) return h('div', { style: { width: '100%' } }, head)
-
       const panel = h('div', {
         style: {
-          marginTop: 6, padding: '8px 10px', border: '1px solid var(--dsh-border, rgba(127,127,127,.22))',
-          borderRadius: 8, background: 'var(--dsh-surface-2, rgba(127,127,127,.08))',
-          fontSize: 11.5, lineHeight: 1.45, maxHeight: 300, overflowY: 'auto',
+          marginTop: 8, padding: '8px 9px', border: '1px solid var(--dsh-border, rgba(127,127,127,.2))',
+          borderRadius: 8, background: 'var(--dsh-surface-2, rgba(127,127,127,.07))',
+          fontSize: 11.2, lineHeight: 1.45, maxHeight: 380, overflowY: 'auto',
         },
       },
         h('div', {
@@ -394,27 +417,27 @@ window.__ModuleLoader__.load({
               color: 'var(--dsh-text-primary, #e6e6e6)', fontWeight: 600,
               overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
             },
-          }, run.title),
+          }, run.runId),
           h('span', { style: { marginLeft: 'auto', opacity: 0.55, flex: '0 0 auto' } },
-            `${run.runId} · ${stateLabel(run.state)}`),
+            stale ? '快照可能过期' : stateLabel(run.state)),
         ),
-        attention ? h('div', {
-          style: {
-            display: 'flex', gap: 6, alignItems: 'baseline', padding: '4px 0',
-            color: attentionTone(attention.severity),
-          },
-        },
-          h('span', { style: { flex: '0 0 auto' } }, `⚠ ${attention.kind}`),
-          h('span', {
+        attentionItems.length > 0 ? h('div', { style: { marginBottom: 5 } },
+          attentionItems.map(item => h('div', {
+            key: `${item.kind}:${item.stage || ''}:${item.since || ''}`,
             style: {
-              minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-              color: 'var(--dsh-text-secondary, #8a8a8a)',
+              display: 'flex', gap: 6, alignItems: 'baseline', padding: '2px 0',
+              color: attentionTone(item.severity),
             },
-          }, attention.message || attention.waitingOn || stageLabel(attention.stage)),
-        ) : null,
-        run.stages.slice(0, 12).map(stage => h(StageLine, { key: stage.id, stage, snapshotAt: run.generatedAt })),
-        run.stages.length > 12 ? h('div', { style: { opacity: 0.55, padding: '2px 0' } },
-          `+${run.stages.length - 12} 个阶段`) : null,
+          },
+            h('span', { style: { flex: '0 0 auto' } }, `⚠ ${item.kind}`),
+            h('span', {
+              style: {
+                minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                color: 'var(--dsh-text-secondary, #8a8a8a)',
+              },
+            }, item.message || item.waitingOn || stageLabel(item.stage)),
+          ))) : null,
+        run.stages.map(stage => h(StageLine, { key: stage.id, stage, snapshotAt: run.generatedAt })),
         run.required?.missing?.length ? h('div', {
           style: { marginTop: 5, color: TONE.attention, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' },
         }, `缺步骤：${run.required.missing.slice(0, 4).map(stageLabel).join('、')}`) : null,
@@ -423,7 +446,82 @@ window.__ModuleLoader__.load({
           stale ? h('span', { style: { color: TONE.attention } }, '· 可能过期') : null,
         ),
       )
-      return h('div', { style: { width: '100%' } }, head, panel)
+
+      return h('section', {
+        style: {
+          border: '1px solid var(--dsh-border, rgba(127,127,127,.2))',
+          borderRadius: 10, padding: '9px 10px', marginBottom: 9,
+          background: 'var(--dsh-surface-1, rgba(127,127,127,.04))', minWidth: 0,
+        },
+      }, head, open ? panel : null)
+    }
+
+    function ProgressView({ openSession }) {
+      const { data, error } = useStatus()
+      const now = useNow()
+      const dismissed = useDismissedRuns()
+      const runs = orderedRuns(data?.runs)
+      const visible = runs.filter(run => !dismissed.has(run.runId))
+      const dismissedCount = runs.filter(run => dismissed.has(run.runId)).length
+      const generatedAt = data?.generatedAt
+
+      return h('div', {
+        style: {
+          width: '100%', height: '100%', overflowY: 'auto', boxSizing: 'border-box',
+          padding: '14px 12px 28px', color: 'var(--dsh-text-primary, #e6e6e6)',
+        },
+      },
+        h('div', {
+          style: { display: 'flex', alignItems: 'baseline', gap: 8, flexWrap: 'wrap', marginBottom: 4 },
+        },
+          h('div', { style: { fontSize: 16, fontWeight: 650 } }, '生产进度'),
+          generatedAt ? h('span', {
+            style: { fontSize: 10.5, opacity: 0.55, fontVariantNumeric: 'tabular-nums' },
+          }, `更新 ${formatAge(ageSeconds(generatedAt, now))} 前`) : null,
+          error ? h('span', { style: { fontSize: 10.5, color: TONE.attention } }, `读取失败：${error}`) : null,
+        ),
+        h('div', { style: { fontSize: 10.5, opacity: 0.52, lineHeight: 1.45, marginBottom: 10 } },
+          '关闭只隐藏这一行，tab 会保留；新 run 会出现。'),
+        !data ? h('div', { style: { opacity: 0.55, fontSize: 12, padding: '16px 0' } }, '读取中…')
+          : runs.length === 0 ? h('div', { style: { opacity: 0.55, fontSize: 12, padding: '16px 0' } }, '暂无生产 run')
+          : visible.length === 0 ? h('div', {
+            style: {
+              border: '1px dashed var(--dsh-border, rgba(127,127,127,.28))', borderRadius: 10,
+              padding: '16px 12px', fontSize: 12, opacity: 0.75,
+            },
+          },
+            h('div', null, `已关闭 ${dismissedCount} 条进度`),
+            h('button', {
+              type: 'button',
+              onClick: dismissed.restoreAll,
+              style: {
+                marginTop: 8, border: '1px solid var(--dsh-border, rgba(127,127,127,.28))',
+                background: 'transparent', color: 'var(--dsh-accent, #4aa3df)',
+                borderRadius: 6, padding: '3px 9px', font: 'inherit', fontSize: 11, cursor: 'pointer',
+              },
+            }, '恢复显示'),
+          ) : visible.map((run, index) => h(RunCard, {
+            key: run.runId,
+            run,
+            now,
+            openSession,
+            onDismiss: dismissed.dismiss,
+            defaultOpen: index === 0,
+          })),
+        dismissedCount > 0 && visible.length > 0 ? h('div', {
+          style: { marginTop: 12, fontSize: 10.5, opacity: 0.55, display: 'flex', gap: 8, alignItems: 'center' },
+        },
+          h('span', null, `已关闭 ${dismissedCount} 条`),
+          h('button', {
+            type: 'button',
+            onClick: dismissed.restoreAll,
+            style: {
+              border: 0, background: 'transparent', color: 'var(--dsh-accent, #4aa3df)',
+              padding: 0, font: 'inherit', fontSize: 10.5, cursor: 'pointer',
+            },
+          }, '恢复显示'),
+        ) : null,
+      )
     }
 
     const inject = ['slots', 'sessions']
@@ -453,15 +551,38 @@ window.__ModuleLoader__.load({
       return false
     }
 
+    const TAB_ID = 'production-progress'
+    const TAB_TITLE = '进度'
+
     function apply(ctx) {
-      ctx.slots.inject('conversation.input.dock', () => ctx.slots.register({
-        name: 'conversation.input.dock',
-        id: 'production-progress',
-        order: 16,
-        registrant: 'dsh-production-progress',
-      }, props => h(Dock, { ...props, openSession: id => openSession(ctx, id) })))
+      const open = id => openSession(ctx, id)
+      return ctx.inject(['sidebarRightTabs'], scope => {
+        const tabs = scope.sidebarRightTabs
+        if (!tabs || typeof tabs.register !== 'function') return
+        const disposers = []
+        const track = value => { if (typeof value === 'function') disposers.push(value) }
+        try {
+          track(tabs.register({
+            id: TAB_ID,
+            kind: TAB_ID,
+            title: () => TAB_TITLE,
+          }))
+          track(scope.slots.inject('sidebar.right.pane.tab', () => scope.slots.register({
+            name: 'sidebar.right.pane.tab',
+            key: TAB_ID,
+          }, props => h(ProgressView, { ...props, openSession: open }))))
+          track(scope.slots.inject('sidebar.right.pane.tab.title', () => scope.slots.register({
+            name: 'sidebar.right.pane.tab.title',
+            key: TAB_ID,
+          }, () => h('span', { style: { fontWeight: 600 } }, TAB_TITLE))))
+        } catch (error) {
+          for (const dispose of disposers.splice(0)) dispose()
+          return
+        }
+        return () => { for (const dispose of disposers.splice(0)) dispose() }
+      })
     }
 
-    return { apply, inject, Dock, stageLabel, etaText, formatClock, reviewSessionId, runSignature }
+    return { apply, inject, ProgressView, stageLabel, etaText, formatClock, reviewSessionId, orderedRuns, readDismissedRuns }
   },
 })
