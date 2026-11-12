@@ -1,4 +1,4 @@
-import { fullReadingRows, findEnglishPositions, ReadingFollow } from '/reading-mode.mjs';
+import { fullReadingRows, findEnglishPositions, ReadingFollow, coalesceFrame, readingModeSignature } from '/reading-mode.mjs';
 import { registerOfflineReading, offlineReadingState } from '/offline.mjs';
 import { setIcon, setButtonLabel } from './icons.mjs';
 import { t, getLocale, setLocale, onLocaleChange, localizeDOM } from "/i18n.mjs";
@@ -204,7 +204,13 @@ function renderCategories() {
   $("display-category").textContent = label; $("display-category").hidden = !label;
   $("picker-category").textContent = label;
 }
+let readingModeRendered = null;
 function renderReadingMode() {
+  // Scroll events arrive far more often than this state changes; identical writes
+  // would replace text nodes and force layout on every one of them.
+  const signature = readingModeSignature(readingFollow.following, Boolean(track), getLocale());
+  if (signature === readingModeRendered) return;
+  readingModeRendered = signature;
   $("reading-follow").setAttribute("aria-pressed", String(readingFollow.following));
   $("reading-free").setAttribute("aria-pressed", String(!readingFollow.following));
   $("reading-mode-hint").textContent = t(readingFollow.following ? "reader.followHint" : "reader.freeHint");
@@ -851,10 +857,12 @@ function userReadingScroll() {
   if (activeView === "tab-transcript") { readingFollow.userScroll(); renderReadingMode(); }
 }
 window.addEventListener("wheel", userReadingScroll, {passive:true});
+const nextFrame = typeof requestAnimationFrame === "function" ? requestAnimationFrame : (task) => task(0);
+const queueReadingScroll = coalesceFrame(nextFrame);
 window.addEventListener("scroll", event => {
-  if (activeView === "tab-transcript" && (event.target === document || event.target === window)) {
-    readingFollow.observeScroll(readingScrollPosition()); renderReadingMode();
-  }
+  if (activeView !== "tab-transcript" || (event.target !== document && event.target !== window)) return;
+  // Observe at frame time: a programmatic scroll that lands first keeps follow mode on.
+  queueReadingScroll(() => { readingFollow.observeScroll(readingScrollPosition()); renderReadingMode(); });
 }, {passive:true, capture:true});
 let readingTouchY = null;
 window.addEventListener("touchstart", event => { readingTouchY = event.touches[0]?.clientY ?? null; }, {passive:true});
