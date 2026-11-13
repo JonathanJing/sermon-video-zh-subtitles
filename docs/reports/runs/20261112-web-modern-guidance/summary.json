@@ -1,0 +1,54 @@
+{
+  "schemaVersion": "tongxing-run-report-v1",
+  "runId": "20261112-web-modern-guidance",
+  "date": "2026-11-12",
+  "timezone": "America/Los_Angeles",
+  "kind": "web_shell_update_only",
+  "sourceCommit": "6a80f1f643a5fd9baeb91e374588d0aec1e6b9fe",
+  "pullRequest": "https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/1563",
+  "environments": ["dev", "production"],
+  "deployments": [
+    {
+      "environment": "dev",
+      "origin": "https://ai-for-god-sermon-audio-dev.web.app",
+      "baselineVersion": "sites/ai-for-god-sermon-audio-dev/versions/b694596f2c9d83f2",
+      "newVersion": "sites/ai-for-god-sermon-audio-dev/versions/afccd110ce4c179a",
+      "attemptId": "556467ad-06cc-4d3e-83b2-ebc71b1cc493",
+      "ownedVersionObserved": true,
+      "changedPaths": ["/index.html", "/style.css", "/app.mjs", "/published-weeks.mjs", "/reading-mode.mjs", "/icons.mjs", "/icons.svg", "/theme.js"],
+      "catalogUnchanged": true
+    },
+    {
+      "environment": "production",
+      "origin": "https://ai-for-god-sermon-audio.web.app",
+      "baselineVersion": "sites/ai-for-god-sermon-audio/versions/52626ab9d163a8cc",
+      "newVersion": "sites/ai-for-god-sermon-audio/versions/0870bc317bcd011f",
+      "attemptId": "2ec19971-78b6-47a0-8dca-ae7ac20bfb84",
+      "ownedVersionObserved": true,
+      "changedPaths": ["/app.mjs", "/reading-mode.mjs", "/icons.mjs", "/icons.svg", "/theme.js"],
+      "preservedPublicFiles": 434,
+      "catalogUnchanged": true
+    }
+  ],
+  "changes": [
+    "theme.js syncs <meta name=\"color-scheme\"> with the pinned scheme and follows another tab's stored override through the storage event",
+    "app.mjs renderReadingMode() skips identical DOM writes via readingModeSignature()",
+    "app.mjs scroll handling coalesces to one observe+render per animation frame and reads scroll position at frame time"
+  ],
+  "verification": {
+    "webTests": {"command": "node --test apps/listening-web/*.test.mjs", "total": 623, "passed": 622, "skipped": 1, "failed": 0},
+    "layoutGuard": {"command": "pytest tests/test_scripts_layout_guard.py", "passed": 2},
+    "diffCheck": "clean",
+    "httpBytes": {"changedFilesMatched": 5, "changedFilesFailed": 0, "catalogHashesUnchanged": ["multilingual-v3.json", "weekly.json"]},
+    "smokeDev": {"pageId": "revelation-jesus-wins-20261025", "locales": ["zh-Hans", "ko", "es"], "status": "pass", "sessionGate": "excluded (site has no feedback catalog, also absent from the pre-publish baseline)"},
+    "smokeProduction": {"pageId": "revelation-jesus-is-just-20261108", "locales": ["zh-Hans", "ko", "es"], "status": "pass", "sessionGate": "excluded (pre-existing anchor-track 400, reproduced on a page published 2026-10-25)"},
+    "realEngine": {"browser": "Chrome 157", "paletteAssertions": 10, "paletteFailures": 0, "scrollFollowFlip": "pass on dev and production", "uncaughtExceptions": 0}
+  },
+  "openItems": [
+    "Usage-anchor track if-i-had-more-time-jesus-is-just-zh-Hans-1236c3575 fails /api/session with 400 before and after this release; the smoke session gate cannot pass until the feedback catalog covers that track.",
+    "Page version label stays 1.26.16; behaviour changed without a version bump, matching the practice since 2026-11-08.",
+    "The shell closure (runtimeAssets) changed, so the next content release must re-prepare instead of reusing an older candidate."
+  ],
+  "notVerified": ["physical phone", "WeChat in-app browser", "venue acceptance"],
+  "artifacts": "artifacts/web-modern-guidance-20261112/ (ignored)"
+}
