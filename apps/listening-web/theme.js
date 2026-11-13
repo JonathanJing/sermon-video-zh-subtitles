@@ -6,7 +6,12 @@
   function apply(theme) {
     const dark = theme !== "light";
     root.dataset.theme = dark ? "dark" : "light";
-    document.querySelector('meta[name="theme-color"]').content = dark ? "#141b1a" : "#f5f3eb";
+    const themeColor = document.querySelector('meta[name="theme-color"]');
+    if (themeColor) themeColor.content = dark ? "#141b1a" : "#f5f3eb";
+    // Pin the UA hint to the same scheme the CSS declares, so browser chrome and
+    // native controls never disagree with the rendered page.
+    const colorScheme = document.querySelector('meta[name="color-scheme"]');
+    if (colorScheme) colorScheme.content = dark ? "dark" : "light";
     const icon = document.getElementById("brand-icon");
     if (icon) icon.src = dark ? "/brand-icon.svg" : "/brand-icon-light.svg";
     const button = document.getElementById("theme-toggle");
@@ -27,6 +32,12 @@
   try { saved = localStorage.getItem(key); } catch { /* Dark also works without storage. */ }
   apply(saved);
   function initializeControls() {
+    // A toggle in another tab is the source of truth for this one; no value means
+    // the stored override was removed, so fall back to the app's dark default.
+    window.addEventListener("storage", event => {
+      if (event.key !== key) return;
+      apply(event.newValue === "light" ? "light" : "dark");
+    });
     const button = document.getElementById("theme-toggle");
     if (!button) return;
     apply(root.dataset.theme);

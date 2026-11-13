@@ -41,7 +41,8 @@ async function fixture(run, { saved = null, blockedStorage = false, search = '',
     return search(doc) || null;
   };
   const themeMeta = { content: '' };
-  doc.querySelector = () => themeMeta;
+  const colorSchemeMeta = { content: '' };
+  doc.querySelector = selector => String(selector).includes('color-scheme') ? colorSchemeMeta : themeMeta;
   globalThis.document = doc;
   Object.defineProperty(globalThis, 'location', {configurable:true,value:{search}});
   globalThis.CustomEvent = class { constructor(type, options = {}) { this.type = type; this.detail = options.detail; } };
@@ -165,7 +166,7 @@ test('every page language names each sermon language in the brand', async () => 
 
 const themeSource = await readFile(new URL('./theme.js', import.meta.url), 'utf8');
 function executeTheme(doc) {
-  runInNewContext(themeSource, { document: doc, localStorage: globalThis.localStorage, CustomEvent: globalThis.CustomEvent });
+  runInNewContext(themeSource, { document: doc, localStorage: globalThis.localStorage, CustomEvent: globalThis.CustomEvent, window: { addEventListener() {} } });
 }
 function mountTheme(doc) {
   const label = new Element({ id: 'theme-label' });

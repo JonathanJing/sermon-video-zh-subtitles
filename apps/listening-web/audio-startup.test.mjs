@@ -153,6 +153,7 @@ function setup({ bookmark = false, bootstrapFetch, alignmentPlay } = {}) {
     ...i18n,
     ...timing, ...catalogHelpers,
     fullReadingRows: readingHelpers.fullReadingRows, findEnglishPositions: readingHelpers.findEnglishPositions, ReadingFollow: readingHelpers.ReadingFollow,
+    coalesceFrame: readingHelpers.coalesceFrame, readingModeSignature: readingHelpers.readingModeSignature,
     offlineReadingState, registerOfflineReading: async () => ({}), PlaybackMemory, document, window: new Element(),
     localStorage: storage, location: { href: 'https://example.test/', search: '' }, history: { replaceState() {} },
     URL, URLSearchParams, console, performance, queueMicrotask, DOMException,
