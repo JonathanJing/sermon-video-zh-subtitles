@@ -2,7 +2,7 @@
 
 [README 实测摘要](../README.md) · [App 设计](app-system-design.zh.md) · [后端工作流 DAG](backend-workflow-system-design.zh-en.md) · [执行环境](execution-environment-design.zh.md) · [文档索引](README.zh.md)
 
-索引核查：2026-09-30，`dev@fc3e2fbc60b0fd2c5b59c64fcd515c465efc6b0b`。本页按问题组织仓库已有实验，不新增研究项目、不改正式模型 policy，也不重跑模型。每项链接保留原始语言、日期、输入与结论；退出门槛是进入后续验证或考虑晋升前的条件，不表示已经满足。
+索引核查：2026-09-30，`dev@fc3e2fbc60b0fd2c5b59c64fcd515c465efc6b0b`。2026-11-14 在 C 段增补一行云 TTS 速度对照，其余条目仍是上述核查结果。本页按问题组织仓库已有实验，不新增研究项目、不改正式模型 policy，也不重跑模型。每项链接保留原始语言、日期、输入与结论；退出门槛是进入后续验证或考虑晋升前的条件，不表示已经满足。
 
 **状态词**：`已运行／未晋升` 是有范围明确的实验结果；`工具已实现／验收待补` 是代码存在但缺对应实测；`计划／未运行` 只表示已记录提案。正式流程虽有部分代码位于 `experiments/`，不能只按目录名判断成熟度；[配音系统](sermon-dubbing-system-design.zh.md)、[App](app-system-design.zh.md)与[正式 L3](formal-layer3-renderer.zh.md)以自己的生产合同为准。
 
@@ -37,6 +37,7 @@
 | pace 指令、整句生成、短语装配能否同步？六句英文 40.88 秒窗口及韩／中文变体 | 已运行／未证明同步达标；接近总时长不等于局部自然度，中文拼接曾被指出不自然 | [多语言韵律 POC](multilingual-prosody-poc.zh.md) | 源语声学停顿、目标语内容覆盖与人耳自然度，逐处同步且保持自然语速合同 |
 | AuK 是否适合直接合成或速度后处理？六句韩语 Qwen 基线，两个 challenger 单元 | 已运行／不替换 Qwen，不注册当前后处理器；时长精确但内容退化，两个盲听偏好分裂 | [AuK 结果](../experiments/layer3-auk-poc/RESULTS-2026-09-22.zh.md) | 先过内容，再测独立速度变量、词覆盖与人耳；需独立 adapter/schema，不能冒充自然无拉伸 v1 |
 | VoxCPM2、MOSS 是否适合克隆或控时？19 个短句/四语 smoke，另有中文长段 A/B | 已运行／继续 Qwen SFT；VoxCPM2 短句有偏好、长段 Qwen 获偏好；MOSS 无人耳通过样本 | [VoxCPM2/MOSS 结果](../experiments/layer3-voxcpm2-moss-poc/RESULTS-2026-09-22.zh.md) | 先解决重复音频听评冲突、分长度/维度扩样；MOSS 改善自然度后再考虑候选，其他语种单独听审 |
+| DeepSeek 云 TTS 能否替代 Spark 配音的速度位置？同一 run 的 460 个中文单元，串行/8 并发对我们 8×8 Spark | 已运行／仅速度与时长；串行慢约 2 倍、8 路快约 4 倍、$0.38/期，但每单元音频长 17.7%，原样排程最大滞后 42.9 秒（裁掉首尾静音后 6.3 秒）；无人耳听审，不换声、不改 L3 政策 | [云 TTS 速度对照](deepseek-tts-speed-ab-20261114.zh.md) · [实验入口](../experiments/deepseek-tts-speed/README.md) | 人工整轨听审、边缘静音改动作为 L3 改动的记录与复核、429/503 长跑表现，以及同分钟同条件的 Spark 对照 |
 
 ## D. 执行、资源与设备路径
 
