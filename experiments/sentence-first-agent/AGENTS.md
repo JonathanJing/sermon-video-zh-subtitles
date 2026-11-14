@@ -93,6 +93,10 @@ artifacts/sentence-first-agent/<run>/
 3. 确认 run 目录位置：`slices/slices.json` 存仓库相对路径（`artifacts/sentence-first-agent/<run>/slices/...`），所以 run 放在主 checkout 的 `artifacts/sentence-first-agent/`，所有本机步骤从仓库根运行；不要放 worktree。
 4. 要发布时确认 Firebase 与 ADC：`XDG_CONFIG_HOME=<可写 configstore 副本> firebase login:list` 和 ADC token 各一次；沙箱下 `~/.config/configstore` 不可写会让 firebase 报 “credentials no longer valid”。
 5. 确认 Spark 会话空闲、checkpoint 路径存在；有别人的会话先问用户。开工前 Spark 的 `MemAvailable` 要够 TTS 的预算：24 GiB 保留加每个模型副本 9 GiB（8 副本即 96 GiB，batch 1 单副本 33 GiB）；回转写 6 GiB 仅历史 `--steps asr` 诊断需要，默认队列不排；`spark_run.sh` 在起容器前会自己检查，不够就带着数字退出，不用等 CUDA 报 OOM。**判断预算要在 `begin` 之后做**：`inspect` 看到的是带 llama-server 等非独占服务的状态（2026-10-30 实测可用 76 GiB、llama-server 占 35.7 GiB 显存），`begin` 会停掉这些服务再腾出预算；在 `begin` 之前看到数字不够不是故障。
+6. 确认发布与翻译的 CLI：`firebase --version`（发布用 `firebase deploy`；没有就 `npm i -g firebase-tools@15.29.0`）并 `firebase login:list`；`claude --version` 与 `claude auth status`（翻译用 Claude Code CLI；没有就 `npm i -g @anthropic-ai/claude-code@2.1.325`，再 `claude auth login`）。OpenAI 转录用 `--environment prod` 的启动器；`--check` 只验本地配置，模型可见性另用 models 列表确认 `whisper-1`/`gpt-4o-transcribe`。
+7. 确认 Synology 镜像没有漏点目录：`firebase/dev/public/.well-known/apple-app-site-association` 与 `firebase/production-overlay/public/.well-known/apple-app-site-association` 必须在；缺了就从锁定 checkout 复制（Synology 不落点目录），否则 baseline 的规范 AASA 覆盖会静默缺失。
+8. Spark 上未登记的容器或服务会挡住独占会话：`h3image` 容器与 `h3-image-studio.service` 要在 `begin` 前停；`begin`/`resume-begin` 停 `spark-api`/`llama-server` 后单元可能是 `failed`（OOM-kill），用 `systemctl --user reset-failed <unit>` → `reconcile` → `resume-begin` 继续，不要新开 session。
+9. 锚点单元 0 从 0.0 开始时，`prepare_clip.py` 默认 `--margin-before 1.0` 会报 “clip would start before the media”；显式传 `--margin-before 0 --margin-after 8`。
 
 ### 0 开工前向用户问清
 
@@ -253,6 +257,7 @@ python3 $EXP/spark_queue.py --session <session> --owner sentence-first-agent \
    `python3 <tool> finish --session-id sfa-<run> --owner sentence-first-agent`
    `begin` 默认要求 110 GiB 可用；本线的 TTS 预算是 96 GiB（24 + 9×8），主机腾不出 110 GiB 时加 `--minimum-available-gib 96`。
    之后所有容器都通过 `spark_queue.py` 或 `spark_session_job.py` 登记，不直接 `ssh … docker run`：未登记的容器会让会话收尾失败（`unmanaged_running_container`）。
+   Spark 上还有 `h3image`（SGLang）容器与 `h3-image-studio.service` 时，`begin` 会报 `unmanaged_running_container` / `unmanaged_model_or_worker_process`；先停这两个（`bash ~/h3image/web/deploy/spark-h3.sh --stop`、`systemctl --user stop h3-image-studio.service`），生产后再启。停止 `spark-api`/`llama-server` 后单元可能进入 `failed`，按 §0.5 第 8 条 reset-failed + reconcile + resume-begin。
 
 ### 2 裁音频、拆句（本机）
 
@@ -315,6 +320,8 @@ python3 $EXP/assign_speakers.py --run $RUN --segments <segments.json> --mapping 
 1. 读这一句英文、前 3 句后 2 句英文、[术语表](../../docs/series-terminology.zh.md)里本系列的条目；韩语、西语参照该周正式译文的用词约定（如 하나님、에스겔；Dios、Ezequiel、ustedes）。
 2. 完整覆盖本句；经文出处、数字、人名、系列名按英文和术语表；不借邻句内容。
 3. 全部写完后做独立的第二遍复核，判漏译、增译、否定、数字、人名、经文、意思偏移。
+
+翻译栈固定为 Claude Code CLI `opus`（2026-11-14 验证为 `claude-opus-5-5`，CLI 2.1.325）：`claude -p <prompt> --model opus --permission-mode acceptEdits`，每语 4 片、4 并发；合并后由另一个 Opus 子代理做只读保真审计。开工前 `claude auth status` 必须是 `loggedIn: true`。完整栈与哈希见[模型栈](../../docs/sentence-first-model-stack.zh.md)。
 
 已有人工批准的中文译文时，按句对过去直接用，不重译。其他语言用子代理并行：
 
@@ -410,6 +417,8 @@ python3 $EXP/preflight.py --stage full --run $RUN --locale <locale> --english-pa
 每种语言都要通过（三语各跑一次，或用主 run 一次 + 每语 `--run`）。失败先修，不要进 §6。
 
 ### 6 Spark 配音：一条队列
+
+TTS 栈固定为 Qwen3-TTS 12Hz 1.7B Base（Registry `fd4b254…`）、镜像 `nvcr.io/nvidia/pytorch:26.06-py3`、batch 8、seed 7、`--steps tts`（ASR 已退役）；讲员 checkpoint 按下方路径逐个核对哈希。完整栈见[模型栈](../../docs/sentence-first-model-stack.zh.md)。
 
 讲员 checkpoint 路径从 Registry（`config/speaker-voice-registry.json`）的 checkpointRef/hash 与 Spark 上的实际目录核对；Spark 上没有 `speaker-checkpoints.dgx.json`（2026-10-23 核实）。当前两位讲员：Steve `~/dgx-spark-benchmark/results/sermon-speaker-bank-20260905/steve_bang_lee/checkpoints/checkpoint-epoch-0`（sha256 `b480bc6a…`）；John `~/dgx-spark-benchmark/results/john-thomas-voice-20261021/checkpoints/checkpoint-epoch-0`（root 所有，本机不能重算 hash；Registry 记 `3f722b17…`）；Eric `~/dgx-spark-benchmark/results/sermon-voice-poc-20260905/checkpoints/checkpoint-epoch-0`（Registry key `eric_pilot`，2026-10-30 核对）。路径或 hash 对不上就停。上传脚本和每种语言的口播规格：
 
@@ -518,6 +527,8 @@ python3 $EXP/repair_sentence.py --run $RUN --id s0123 --remote SPARK:<run> --ses
 它从 `tts/tts-batches.jsonl` 找到该句所在的窗口（默认 8 句），删掉窗口的 wav、上传当前 speech 与 ids，用 `spark_session_job.py` 重配整个窗口；`--single` 只重配这一句（batch 1，接受声音身份例外）。之后跑第 7、8 步（`finish_run.py` 与 `review_player.py`），把窗口/这一句请用户再听。没有 `tts-batches.jsonl` 时先 `finish_run.py` 拉回 tts 目录。
 
 ### 10 发布到正式页面
+
+发布前确认 `firebase --version` 可用且 `firebase login:list` 已登录：`publish` 走 `firebase deploy`，没有 CLI 会在部署时直接失败。
 
 只在用户审核通过并要求发布时做。`assets` 的前提，缺一项不生成资产：三语 journal 各有 `l1.preflight`、`l2.consistency` finished；审核收据 `verdict=approved`，`reviewedAt` 不晚于当前时间，`note` 不含「未听审」；英文表人审文件存在。发布过的收据不再改写。`stage2` 可加 `--with-english`：在 stage2 快照上生成英文对照、随第二次部署上线，省第三次部署；仍要 readback/HTTP 核验。未在 Dev 验证合同前保留第三次部署的路径。先跑 `preflight.py --run $RUN --english-package <layer1-srt/english-source.json> --firebase`：英文包证据路径必须能解析（相对路径按仓库根解析），否则第 7 步的英文对照会失败。发布用单一驱动 `sfa_publish.py` + 页面配置 `$EXP/pages/<pageId>.json`（改造2，`DEV-SF-004`）：新页面先复制一份已发布页面的配置（例如 `cp $EXP/pages/if-i-had-more-time-jesus-promises.json $EXP/pages/<pageId>.json`），改 pageId/environment/locales/runs/source/title/meta/verdict 与 `titleCheck`，再跑 `$PUB validate`。配置里显式写 pageId、语言列表、run 目录、窗口、标题/类别/讲员、来源 URL/日期、environment、句数、verdict 路径、英文源包、候选/音频/校验 schema 名与 release id 模板；字段定义见 `pages/page-config.schema.json`，未知字段会被 schema 拒绝，拼错常量会在写资产之前失败。旧版按页复制的驱动只用于尚未迁移的页面和特殊修复路径（撤回、alignment sidecar、fix-content）；路径一律 `Path(...).resolve()`。撤回重建或修正已发布字节走 `published_page_replace`（#1367），不再手写撤回步骤。顺序固定，每步一个子命令：
 
