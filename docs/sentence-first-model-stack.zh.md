@@ -43,9 +43,10 @@
   - `steve_bang_lee` — `b480bc6a…`；
   - `john_thomas` — `3f722b17…`（Registry 记录）。
 - 脚本：`spark_run.sh` — `4a73e62d…`；`tts_sentences.py` — `f22afce3…`；`tts_pool.py` — `559de1c6…`；`asr_check.py` — `a1a8e011…`；`spark_queue.py` — `266f2368…`；`spark_session_job.py` — `41e167f7…`。
-- 参数：整期 batch 8、seed 7、`--steps tts`；单讲员 8 副本，双讲员 `--pool-replicas 8`（4+4）；不拉伸、不变速；改批量要先问用户。
+- 并发：`spark_queue.py` 逐语言串行，每个语言任务通过 `spark_session_job.py` 登记；独占会话一次只接一个运行中的任务。单讲员（默认 `--pool-replicas 0`）一个任务只起一个 `tts_sentences.py` 模型进程，batch 8 按批串行；双讲员加 `--pool-replicas 8` 时一个 `tts-pool` 任务起 8 个 worker（4+4，每 worker 独立模型与 batch 8），这 8 路才并发。8 副本已把 GPU 用满，不要为“并行”再开第二个会话或第二条队列。
+- 参数：整期 batch 8、seed 7、`--steps tts`；不拉伸、不变速；改批量要先问用户。
 - 冒烟（2026-11-14）：Eric、3 句、batch 1；3 个 0.96 s / 24 kHz wav，`MemAvailable` 111.5→111.6 GiB，`cudaReservedBytes` 峰值 4032 MiB，合并 26.9 s、maxLag 0.82 s。batch 8 的整期速度沿用 2026-10-23 的 2.68× 证据，本轮没有再跑整期。
-- 会话：`spark-38f8`，最低 96 GiB；`begin` 前后按 runbook §0.5/§1 处理未登记容器与 `failed` 单元。
+- 会话：`spark-38f8`；`begin` 按本线预算给到 96 GiB（8 副本池的 24+9×8；单讲员 `--steps tts` 自身准入是 24+9×1=33 GiB）。`begin` 前后按 runbook §0.5/§1 处理未登记容器与 `failed` 单元。
 
 ## 开工前安装与处理清单
 
