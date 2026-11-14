@@ -1,0 +1,11 @@
+stage	host	seconds
+warm-all	spark	353
+cold-zh-Hans-b1	spark	46
+cold-zh-Hans-b2	spark	51
+cold-ko-b1	spark	41
+cold-ko-b2	spark	48
+cold-es-b1	spark	41
+cold-es-b2	spark	48
+cold-mixed-b4	spark	52
+cold-mixed-b8	spark	57
+mac-suite-wall-approx	mac	634.4

@@ -1,0 +1,20 @@
+warm-all: running
+warm-all: exit=0 after 353s
+cold-zh-Hans-b1: running
+cold-zh-Hans-b1: exit=0 after 46s
+cold-zh-Hans-b2: running
+cold-zh-Hans-b2: exit=0 after 51s
+cold-ko-b1: running
+cold-ko-b1: exit=0 after 41s
+cold-ko-b2: running
+cold-ko-b2: exit=0 after 48s
+cold-es-b1: running
+cold-es-b1: exit=0 after 41s
+cold-es-b2: running
+cold-es-b2: exit=0 after 48s
+cold-mixed-b4: running
+cold-mixed-b4: exit=0 after 52s
+cold-mixed-b8: running
+cold-mixed-b8: exit=0 after 57s
+[suite exit:0]
+[finish exit:0]

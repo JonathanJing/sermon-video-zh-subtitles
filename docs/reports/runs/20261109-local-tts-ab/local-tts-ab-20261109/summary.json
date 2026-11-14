@@ -1,0 +1,354 @@
+{
+  "schemaVersion": "local-tts-ab-summary-v1",
+  "diagnosticOnly": true,
+  "releaseEligible": false,
+  "humanListening": "not_run",
+  "deliveryType": "component_benchmark",
+  "status": "complete_diagnostic",
+  "frozenIdentity": {
+    "commit": "00d8d195d7967aee5ae33fddff42fac2da623437",
+    "inputManifestSha256": "477271f3d7fa1e46578cfa167ddc1ed52f0a6b396bc22ec9916a6f4b96dde48b",
+    "checkpointWeightsSha256": "75d28ce6022b3df3a72df3dd6dbc01e53f584d685770d60ea04b341920968c9a",
+    "checkpointConfigSha256": "9dd6cf2c1b1fdfb1c90dcee20ab81ee5367925bb7a8123b6046af9bce8b2941c",
+    "rendererSha256": "78861f56e040905f",
+    "benchmarkSha256": {
+      "mac": "6fc09092e375ebeb",
+      "spark": "dbcd9bcddfab1b77"
+    },
+    "harnessNote": "Mac arm runs a one-line diagnostic patch injecting a session_verifier; Spark arm runs the unmodified production harness under the held exclusive session and admission gateway."
+  },
+  "runtime": {
+    "mac": {
+      "host": "MacBook-Pro.localdomain",
+      "platform": "macOS-27.2.1-arm64",
+      "device": "mps",
+      "dtype": "float32",
+      "torch": "2.14.0",
+      "qwenTts": "0.1.1"
+    },
+    "spark": {
+      "host": "spark container f9ed4a4ad1e7",
+      "platform": "Linux (nvcr.io/nvidia/pytorch:26.06-py3)",
+      "device": "cuda:0",
+      "dtype": "bfloat16",
+      "torch": "2.13.0a0+8145d630e8.nv26.06",
+      "qwenTts": "0.1.1"
+    }
+  },
+  "sparkSession": {
+    "sessionId": "tts-ab-20261109",
+    "owner": "local-tts-ab",
+    "status": "closed",
+    "servicesRestored": true,
+    "events": 62
+  },
+  "timingSeconds": {
+    "sparkWarmAll": 353,
+    "sparkColdRuns": [
+      46,
+      51,
+      41,
+      48,
+      41,
+      48,
+      52,
+      57
+    ],
+    "sparkColdTotal": 384,
+    "macSuiteWallApprox": 634.4
+  },
+  "comparison": {
+    "warmTotalSynthesisSecondsMedian": {
+      "mac": 118.4448105420015,
+      "spark": 77.35542306303978
+    },
+    "warmTotalAudioSecondsMedian": {
+      "mac": 172.08,
+      "spark": 173.36
+    },
+    "modelLoadSeconds": {
+      "mac": 4.6338491670030635,
+      "spark": 30.393186531960964
+    },
+    "warmOverallRtf": {
+      "mac": 0.6883124740934536,
+      "spark": 0.446212638803875
+    },
+    "sparkSpeedupOfMacWarm": 1.5311765594698703
+  },
+  "warmPerCondition": {
+    "zh-Hans-b1": {
+      "repetitions": 3,
+      "synthesisSecondsMedian": 17.94346408299316,
+      "audioSecondsMedian": 16.88,
+      "rtfMedian": 1.0630014267176042,
+      "wallSecondsMedian": 18.216798708002898,
+      "sparkOverMac": 0.6340406800903341
+    },
+    "zh-Hans-b2": {
+      "repetitions": 3,
+      "synthesisSecondsMedian": 13.471186667004076,
+      "audioSecondsMedian": 15.440000000000001,
+      "rtfMedian": 0.8724861830961188,
+      "wallSecondsMedian": 13.766723041997466,
+      "sparkOverMac": 0.7165618167245966
+    },
+    "ko-b1": {
+      "repetitions": 3,
+      "synthesisSecondsMedian": 13.694035332999192,
+      "audioSecondsMedian": 13.280000000000001,
+      "rtfMedian": 1.0311773594125897,
+      "wallSecondsMedian": 13.984957332999329,
+      "sparkOverMac": 0.6853763280020694
+    },
+    "ko-b2": {
+      "repetitions": 3,
+      "synthesisSecondsMedian": 10.73562099999981,
+      "audioSecondsMedian": 12.48,
+      "rtfMedian": 0.8602260416666514,
+      "wallSecondsMedian": 11.084321375004947,
+      "sparkOverMac": 0.7168914027325365
+    },
+    "es-b1": {
+      "repetitions": 3,
+      "synthesisSecondsMedian": 10.204775750011322,
+      "audioSecondsMedian": 9.76,
+      "rtfMedian": 1.0455712858618158,
+      "wallSecondsMedian": 10.515741166003863,
+      "sparkOverMac": 0.6773342495713449
+    },
+    "es-b2": {
+      "repetitions": 3,
+      "synthesisSecondsMedian": 8.561217332993692,
+      "audioSecondsMedian": 9.6,
+      "rtfMedian": 0.891793472186843,
+      "wallSecondsMedian": 8.918182167006307,
+      "sparkOverMac": 0.5941495754434415
+    },
+    "mixed-b4": {
+      "repetitions": 3,
+      "synthesisSecondsMedian": 26.715504334002617,
+      "audioSecondsMedian": 48.08,
+      "rtfMedian": 0.5556469287438148,
+      "wallSecondsMedian": 28.290999415999977,
+      "sparkOverMac": 0.5925595941783414
+    },
+    "mixed-b8": {
+      "repetitions": 3,
+      "synthesisSecondsMedian": 17.119006041997636,
+      "audioSecondsMedian": 46.56,
+      "rtfMedian": 0.3676762466064784,
+      "wallSecondsMedian": 18.448013125002035,
+      "sparkOverMac": 0.6667759009137011
+    }
+  },
+  "sparkWarmPerCondition": {
+    "zh-Hans-b1": {
+      "repetitions": 3,
+      "synthesisSecondsMedian": 11.376886170357466,
+      "audioSecondsMedian": 15.68,
+      "rtfMedian": 0.7255667200483078,
+      "wallSecondsMedian": 11.482631012797356,
+      "sparkOverMac": 0.6340406800903341
+    },
+    "zh-Hans-b2": {
+      "repetitions": 3,
+      "synthesisSecondsMedian": 9.652937991544604,
+      "audioSecondsMedian": 15.760000000000002,
+      "rtfMedian": 0.6124960654533378,
+      "wallSecondsMedian": 9.758952163159847,
+      "sparkOverMac": 0.7165618167245966
+    },
+    "ko-b1": {
+      "repetitions": 3,
+      "synthesisSecondsMedian": 9.385567652061582,
+      "audioSecondsMedian": 12.879999999999999,
+      "rtfMedian": 0.728693140688011,
+      "wallSecondsMedian": 9.469764452427626,
+      "sparkOverMac": 0.6853763280020694
+    },
+    "ko-b2": {
+      "repetitions": 3,
+      "synthesisSecondsMedian": 7.69627439789474,
+      "audioSecondsMedian": 13.36,
+      "rtfMedian": 0.5760684429561932,
+      "wallSecondsMedian": 7.785748006775975,
+      "sparkOverMac": 0.7168914027325365
+    },
+    "es-b1": {
+      "repetitions": 3,
+      "synthesisSecondsMedian": 6.912044124677777,
+      "audioSecondsMedian": 9.440000000000001,
+      "rtfMedian": 0.7322080640548492,
+      "wallSecondsMedian": 6.974530281499028,
+      "sparkOverMac": 0.6773342495713449
+    },
+    "es-b2": {
+      "repetitions": 3,
+      "synthesisSecondsMedian": 5.086643643677235,
+      "audioSecondsMedian": 9.2,
+      "rtfMedian": 0.5528960482257864,
+      "wallSecondsMedian": 5.149473676458001,
+      "sparkOverMac": 0.5941495754434415
+    },
+    "mixed-b4": {
+      "repetitions": 3,
+      "synthesisSecondsMedian": 15.83052840642631,
+      "audioSecondsMedian": 49.12,
+      "rtfMedian": 0.3222827444305031,
+      "wallSecondsMedian": 16.15408930554986,
+      "sparkOverMac": 0.5925595941783414
+    },
+    "mixed-b8": {
+      "repetitions": 3,
+      "synthesisSecondsMedian": 11.414540676400065,
+      "audioSecondsMedian": 47.92,
+      "rtfMedian": 0.23819993064273925,
+      "wallSecondsMedian": 11.735486410558224,
+      "sparkOverMac": 0.6667759009137011
+    }
+  },
+  "coldPerCondition": {
+    "mac": {
+      "zh-Hans-b1": {
+        "modelLoadSeconds": 3.2830662909982493,
+        "synthesisSeconds": 3.5894320830047945,
+        "audioSeconds": 3.44,
+        "rtf": 1.0434395590130217,
+        "units": 1,
+        "sparkOverMac": 1.0896708425009998
+      },
+      "zh-Hans-b2": {
+        "modelLoadSeconds": 2.423804125006427,
+        "synthesisSeconds": 14.186653208998905,
+        "audioSeconds": 15.440000000000001,
+        "rtf": 0.9188246897020016,
+        "units": 2,
+        "sparkOverMac": 0.7922387727788159
+      },
+      "ko-b1": {
+        "modelLoadSeconds": 2.4237590830016416,
+        "synthesisSeconds": 3.0226030830017407,
+        "audioSeconds": 2.96,
+        "rtf": 1.0211496902032908,
+        "units": 1,
+        "sparkOverMac": 1.4027922928339265
+      },
+      "ko-b2": {
+        "modelLoadSeconds": 2.4338821670025936,
+        "synthesisSeconds": 11.838781750004273,
+        "audioSeconds": 12.48,
+        "rtf": 0.9486203325323936,
+        "units": 2,
+        "sparkOverMac": 0.8048747475327335
+      },
+      "es-b1": {
+        "modelLoadSeconds": 2.511007917004463,
+        "synthesisSeconds": 2.637309334000747,
+        "audioSeconds": 2.16,
+        "rtf": 1.2209765435188644,
+        "units": 1,
+        "sparkOverMac": 1.2749509575819835
+      },
+      "es-b2": {
+        "modelLoadSeconds": 2.5664295829992625,
+        "synthesisSeconds": 8.08006279100664,
+        "audioSeconds": 9.6,
+        "rtf": 0.841673207396525,
+        "units": 2,
+        "sparkOverMac": 0.8556724967930888
+      },
+      "mixed-b4": {
+        "modelLoadSeconds": 2.448280666001665,
+        "synthesisSeconds": 14.086710916999436,
+        "audioSeconds": 28.72,
+        "rtf": 0.49048436340527285,
+        "units": 4,
+        "sparkOverMac": 0.8374602861395753
+      },
+      "mixed-b8": {
+        "modelLoadSeconds": 2.862169250001898,
+        "synthesisSeconds": 15.53003075000015,
+        "audioSeconds": 46.56,
+        "rtf": 0.3335487704037833,
+        "units": 8,
+        "sparkOverMac": 0.8680027930964697
+      }
+    },
+    "spark": {
+      "zh-Hans-b1": {
+        "modelLoadSeconds": 36.95510876737535,
+        "synthesisSeconds": 3.911299481987953,
+        "audioSeconds": 2.88,
+        "rtf": 1.3580900979124837,
+        "units": 1,
+        "sparkOverMac": 1.0896708425009998
+      },
+      "zh-Hans-b2": {
+        "modelLoadSeconds": 34.169671235606074,
+        "synthesisSeconds": 11.239216728135943,
+        "audioSeconds": 15.760000000000002,
+        "rtf": 0.713148269551773,
+        "units": 2,
+        "sparkOverMac": 0.7922387727788159
+      },
+      "ko-b1": {
+        "modelLoadSeconds": 30.953320764005184,
+        "synthesisSeconds": 4.240084309130907,
+        "audioSeconds": 3.36,
+        "rtf": 1.2619298539080082,
+        "units": 1,
+        "sparkOverMac": 1.4027922928339265
+      },
+      "ko-b2": {
+        "modelLoadSeconds": 31.847938371822238,
+        "synthesisSeconds": 9.528736472129822,
+        "audioSeconds": 13.36,
+        "rtf": 0.7132287778540286,
+        "units": 2,
+        "sparkOverMac": 0.8048747475327335
+      },
+      "es-b1": {
+        "modelLoadSeconds": 32.32596543058753,
+        "synthesisSeconds": 3.362440060824156,
+        "audioSeconds": 2.24,
+        "rtf": 1.5010893128679266,
+        "units": 1,
+        "sparkOverMac": 1.2749509575819835
+      },
+      "es-b2": {
+        "modelLoadSeconds": 35.49300437606871,
+        "synthesisSeconds": 6.913887502625585,
+        "audioSeconds": 9.2,
+        "rtf": 0.7515095111549549,
+        "units": 2,
+        "sparkOverMac": 0.8556724967930888
+      },
+      "mixed-b4": {
+        "modelLoadSeconds": 33.55303657613695,
+        "synthesisSeconds": 11.797060955315828,
+        "audioSeconds": 29.92,
+        "rtf": 0.3942867966348873,
+        "units": 4,
+        "sparkOverMac": 0.8374602861395753
+      },
+      "mixed-b8": {
+        "modelLoadSeconds": 36.83612774312496,
+        "synthesisSeconds": 13.480110067874193,
+        "audioSeconds": 47.92,
+        "rtf": 0.2813044671927002,
+        "units": 8,
+        "sparkOverMac": 0.8680027930964697
+      }
+    }
+  },
+  "limits": [
+    "component timing only",
+    "MPS float32 vs CUDA BF16",
+    "torch 2.14.0 vs 2.13.0a0 nv26.06",
+    "no human listening",
+    "no speech job or release package",
+    "OS caches never cleared",
+    "Spark llama-server stopped for the session and restored after finish"
+  ]
+}
