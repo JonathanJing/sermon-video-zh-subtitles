@@ -1,0 +1,71 @@
+{
+  "schemaVersion": "tongxing-run-report-v1",
+  "runId": "20261114-subtitle-filler-shadow",
+  "date": "2026-11-14",
+  "timezone": "America/Los_Angeles",
+  "kind": "offline_prompt_ab_and_repair_prototype",
+  "question": "字幕层是否应加一条只删无语义语气词的 prompt 规则",
+  "model": "gpt-6.1-sol",
+  "reasoningEffort": "high",
+  "corpus": {
+    "sermons": 3,
+    "segments": 238,
+    "publishedTranslationsBy": "gpt-5.6",
+    "note": "gpt-5.6 is no longer in SUPPORTED_MODELS; text-level drift against published output is model-version drift and is not attributed to the rule"
+  },
+  "promptAb": {
+    "fillerTokensV3": 9,
+    "fillerTokensV4": 11,
+    "removed": 4,
+    "added": 6,
+    "net": 2,
+    "perSermon": {
+      "sermon_ZDQwL3K-A44": {
+        "v3": 5,
+        "v4": 8
+      },
+      "sermon_-BeFX5G2oAw": {
+        "v3": 1,
+        "v4": 1
+      },
+      "sermon_8JYwTq1xcBE": {
+        "v3": 3,
+        "v4": 2
+      }
+    },
+    "verdict": "no measurable effect; rejected"
+  },
+  "repairPrototype": {
+    "flaggedSegments": 9,
+    "changedSegments": 5,
+    "keptSegments": 4,
+    "fillersBefore": 10,
+    "fillersAfter": 5,
+    "semanticFalseDeletions": 0,
+    "remainingAreAllLegitimate": true,
+    "callsPerSermon": 3,
+    "verdict": "works; 5 removed, 4 correctly kept"
+  },
+  "decision": {
+    "addPromptRule": false,
+    "recommendedMechanism": "deterministic filler detection plus targeted repair call, mirroring the reading edition QA+repair loop",
+    "qaNote": "subtitle QA must not hard-fail on zero filler matches; semantic 我知道/我要你知道 uses are legitimate",
+    "humanListeningCompleted": false,
+    "productionChangeMade": false
+  },
+  "evidence": {
+    "promptAbSummary": {
+      "path": "artifacts/subtitle-filler-shadow/summary.json",
+      "sha256": "cb970a2267c2d3493060eda249176621754d94b90da1b018f28baf36a68ff4d6"
+    },
+    "repairSummary": {
+      "path": "artifacts/subtitle-filler-shadow/repair/summary.json",
+      "sha256": "5337327b33a98d2a0659b8399c4adfbe7b95c796eaaa1988bbee20be384c5609"
+    }
+  },
+  "code": [
+    "experiments/subtitle-filler-shadow/run_prompt_ab.py",
+    "experiments/subtitle-filler-shadow/analyze_shadow.py",
+    "experiments/subtitle-filler-shadow/repair_candidates.py"
+  ]
+}
