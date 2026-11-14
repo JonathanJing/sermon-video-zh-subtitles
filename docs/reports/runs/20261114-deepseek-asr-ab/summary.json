@@ -1,0 +1,171 @@
+{
+  "schemaVersion": "tongxing-run-report-v1",
+  "runId": "20261114-deepseek-asr-ab",
+  "date": "2026-11-14",
+  "timezone": "America/Los_Angeles",
+  "kind": "offline_asr_provider_ab",
+  "deliverableType": "benchmark",
+  "sourceCommit": null,
+  "pullRequest": null,
+  "dataset": {
+    "manifest": "data/benchmarks/live-sermon-translation-v1/local-asr-gpt-reaudited-reference-v1.json",
+    "manifestSha256": "35af38c496e9a5bb0e679f9755b94857b123b5b40403ee063cf1918aae666de7",
+    "referenceTier": "mixed_model_reviewed_and_gpt_reaudited_reference_not_human_gold",
+    "itemCount": 60,
+    "clipSeconds": 30.0,
+    "totalAudioMinutes": 29.811,
+    "sourceSermons": ["post-live-2026-08-23-ZDQwL3K-A44", "post-live-2026-08-30--BeFX5G2oAw"],
+    "sourceAudioHashesVerified": 60,
+    "audioFormatSent": "16 kHz mono 16-bit PCM WAV"
+  },
+  "arms": [
+    {
+      "arm": "deepseek-asr",
+      "provider": "deepseek",
+      "endpoint": "https://api.deepseek.com/v1/tools/asr",
+      "prompt": false,
+      "languageHint": false,
+      "mrqs": 97.446,
+      "wer": 0.028075,
+      "criticalTermRecall": 0.971014,
+      "validOutputs": "60/60",
+      "silenceHallucinations": "0/1",
+      "exactMatchesWithReference": "13/60",
+      "latencyP50Seconds": 2.5724,
+      "latencyP95Seconds": 3.292,
+      "meanRtf": 0.0868,
+      "estimatedCostUsd": 0.0288,
+      "estimatedCostAtListPriceUsd": 0.0576,
+      "hardGatesPassed": true
+    },
+    {
+      "arm": "openai-gpt-transcribe-nohint",
+      "provider": "openai",
+      "model": "gpt-transcribe",
+      "prompt": false,
+      "languageHint": "en",
+      "mrqs": 97.758,
+      "wer": 0.00838,
+      "criticalTermRecall": 0.942029,
+      "validOutputs": "60/60",
+      "silenceHallucinations": "0/1",
+      "exactMatchesWithReference": "46/60",
+      "latencyP50Seconds": 4.8978,
+      "latencyP95Seconds": 6.0949,
+      "meanRtf": 0.1633,
+      "estimatedCostUsd": 0.1342,
+      "hardGatesPassed": false,
+      "gateFailure": "critical term recall below 95%"
+    },
+    {
+      "arm": "openai-gpt-transcribe-hinted",
+      "provider": "openai",
+      "model": "gpt-transcribe",
+      "prompt": true,
+      "keywords": "manifest critical terms",
+      "languageHint": "en",
+      "mrqs": 99.1,
+      "wer": 0.007752,
+      "criticalTermRecall": 0.985507,
+      "validOutputs": "60/60",
+      "silenceHallucinations": "0/1",
+      "exactMatchesWithReference": "50/60",
+      "latencyP50Seconds": 4.779,
+      "latencyP95Seconds": 5.8804,
+      "meanRtf": 0.1593,
+      "estimatedCostUsd": 0.1342,
+      "hardGatesPassed": true
+    }
+  ],
+  "pairedWordErrorWins": {
+    "deepseek-asr_vs_openai-gpt-transcribe-nohint": {"deepseek-asr": 2, "openai-gpt-transcribe-nohint": 43, "ties": 15},
+    "deepseek-asr_vs_openai-gpt-transcribe-hinted": {"deepseek-asr": 2, "openai-gpt-transcribe-hinted": 43, "ties": 15}
+  },
+  "blindAdjudication": {
+    "judgeModel": "gemini-3.8-flash",
+    "judgeRole": "independent_audio_model_adjudication_not_human_gold",
+    "humanListeningCompleted": false,
+    "twoLabelOrdersPerClip": true,
+    "sets": [
+      {
+        "pair": "deepseek-asr vs openai-gpt-transcribe-nohint",
+        "rubric": "v1-loose-preserves-disfluency",
+        "clipWins": {"deepseek-asr": 20, "openai-gpt-transcribe-nohint": 12},
+        "ties": 17,
+        "splits": 11,
+        "failedJudgments": 0,
+        "judgmentWins": {"deepseek-asr": 51, "openai-gpt-transcribe-nohint": 35, "tie": 34}
+      },
+      {
+        "pair": "deepseek-asr vs openai-gpt-transcribe-nohint",
+        "rubric": "v2-strict-meaning-primary",
+        "clipWins": {"deepseek-asr": 6, "openai-gpt-transcribe-nohint": 15},
+        "ties": 28,
+        "splits": 6,
+        "failedJudgments": 5,
+        "judgmentWins": {"deepseek-asr": 18, "openai-gpt-transcribe-nohint": 37, "tie": 60}
+      },
+      {
+        "pair": "deepseek-asr vs openai-gpt-transcribe-hinted",
+        "rubric": "v2-strict-meaning-primary",
+        "clipWins": {"deepseek-asr": 3, "openai-gpt-transcribe-hinted": 15},
+        "ties": 29,
+        "splits": 5,
+        "failedJudgments": 8,
+        "judgmentWins": {"deepseek-asr": 16, "openai-gpt-transcribe-hinted": 35, "tie": 60}
+      }
+    ]
+  },
+  "providerLimits": {
+    "deepseek": {
+      "maxSecondsPerRequest": 120,
+      "maxBytesPerRequest": 8388608,
+      "promptOrKeywordSupport": false,
+      "languageParameter": false,
+      "wordTimestamps": false,
+      "streaming": false,
+      "stereoHandling": "left channel only",
+      "maxConcurrentRequestsPerAccount": 50,
+      "priceUsdPerAudioHour": 0.116,
+      "limitedPriceUsdPerAudioHour": 0.058
+    },
+    "openai_gpt_transcribe": {
+      "maxSecondsPerRequest": 180,
+      "maxBytesPerRequest": 26214400,
+      "promptOrKeywordSupport": true,
+      "languageParameter": true,
+      "wordTimestamps": false,
+      "streaming": false,
+      "priceUsdPerAudioMinute": 0.0045
+    }
+  },
+  "decision": {
+    "productionSelectionAllowed": false,
+    "qualityWinner": "openai-gpt-transcribe",
+    "costLatencyWinner": "deepseek-asr",
+    "reason": "Reference WER and the strict blind rubric both favour gpt-transcribe; DeepSeek is competitive on most clips and 4.7x cheaper but has no prompt, glossary, timestamps, streaming or >120s requests, and no human listening has confirmed either transcript.",
+    "nextStep": "Human listening over artifacts/deepseek-asr-ab/human-review-queue.md before any provider change."
+  },
+  "evidence": {
+    "leaderboardJson": {"path": "artifacts/deepseek-asr-ab/leaderboard.json", "sha256": "c3c87d2a407f94a6d400957ce4cb054a2438db975e5a692ba78e01355d63eec1"},
+    "runReports": {
+      "deepseek-asr": {"path": "artifacts/deepseek-asr-ab/runs/deepseek-asr/run-report.json", "sha256": "3f4c55e1a904e270b3728da54511c9b8014326bc7c1c7014bf8077d52a6c3f21"},
+      "openai-gpt-transcribe-nohint": {"path": "artifacts/deepseek-asr-ab/runs/openai-gpt-transcribe-nohint/run-report.json", "sha256": "277f88daf768149725e7714776d3fb19008c68656b3731a373197000f0a88f16"},
+      "openai-gpt-transcribe-hinted": {"path": "artifacts/deepseek-asr-ab/runs/openai-gpt-transcribe-hinted/run-report.json", "sha256": "122e8283c22413299c09fa21fd0ea85726e8d0784a200334d1548aee2c37d3b6"}
+    },
+    "adjudications": {
+      "v1": {"path": "artifacts/deepseek-asr-ab/adjudication-v1/summary.json", "sha256": "a84f0da4c6db726b549976427df1fa1b74304bd71e11a196013b29340dae266f"},
+      "v2": {"path": "artifacts/deepseek-asr-ab/adjudication-v2/summary.json", "sha256": "d8ab7d6843f78ce8a1a9ff3f54c1d2377b5b3eb6ca0327d3cb42f96d2b263f8d"},
+      "hintedV2": {"path": "artifacts/deepseek-asr-ab/adjudication-vs-hinted-v2/summary.json", "sha256": "ba56041db80575cd1688f04a9a7984f829bb553156751e67e693a632cefe3b58"}
+    },
+    "humanReviewQueue": "artifacts/deepseek-asr-ab/human-review-queue.md",
+    "invoiceVerified": false,
+    "apiKeyMaterialIncluded": false
+  },
+  "code": [
+    "experiments/deepseek-asr-ab/run_provider_ab.py",
+    "experiments/deepseek-asr-ab/adjudicate_clip_pairs.py",
+    "experiments/deepseek-asr-ab/score_ab.py",
+    "experiments/deepseek-asr-ab/build_review_artifacts.py"
+  ]
+}
