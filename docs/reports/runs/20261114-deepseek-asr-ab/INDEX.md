@@ -40,7 +40,9 @@
 | DeepSeek vs `nohint` | v2（严格，主口径） | 6 | 15 | 28 | 6 | 5/120 |
 | DeepSeek vs `hinted` | v2 | 3 | 15 | 29 | 5 | 8/120 |
 
-两个 rubric 的差别是本轮最值得记录的方法学结果。v1 要求「保留口吃、重复词、口头语」，于是 DeepSeek 因为保留了 `it's a it's a psalm`、`with, with`、`to to` 而大量得分；v2 明确把这些算噪音、只计改变意义的错误，结论随即反转。这说明**「哪个 ASR 更好」在未定义口吃是否保留时没有唯一答案**：对阅读版 PDF 应清洗，对逐字稿应保留。生产链路当前是阅读版，所以 v2 是主口径。
+两个 rubric 的差别是本轮最值得记录的方法学结果，也把「生产链路要哪一种」推到了台面上。v1 把「保留口吃、重复词、口头语」算优点，于是 DeepSeek 因为保留了 `it's a it's a psalm`、`with, with`、`to to` 而大量得分；v2 把这些算噪音、只计改变意义的错误，结论随即反转。
+
+生产链路实际是两边都要：**英文源与阅读版英文逐字保留**（`output_mode=reading` 时 `corrected = raw_segments`，不做英文清洗；`subtitle` 模式的校正 prompt 也禁止 omit/merge/split），2026-08-23 那场 81 段里 10 处相邻重复词原样进了字幕与阅读版；**只有中文阅读版清洗口语填充词**（prompt 要求删「嗯/呃/你知道/我是说/好吧/你看」，QA 把 `oral_fillers` 当硬失败）。因此 v1 更接近英文产物的要求、v2 更接近中文产物的要求，本轮不能用一个口径替整条链路下结论，只能分别记：英文侧 20:12 偏 DeepSeek，中文阅读侧 15:6 偏 OpenAI。
 
 v2 判定在抽查里站得住：`gold_004` 两轮都指出 OpenAI 把 `a Mariners congregation` 读成 `America's congregation`；`gold_016` 指出 DeepSeek 把 `this psalm` 写成 `the psalm`；`gold_044` 指出 OpenAI 漏掉 `every knee will bow` 并编造了 `There's no other name but Jesus` 式的歌词行。这些是机器判断，仍需人耳确认。
 
