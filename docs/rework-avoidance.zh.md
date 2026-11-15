@@ -86,3 +86,11 @@
 - [10-26 Spark TTS 内存复盘](reports/20261026-spark-tts-memory-retrospective.zh.md)：内存中止与 8 副本的预算。
 - [运行报告 20261024-sat400-sermon-zh-ko-es](reports/runs/20261024-sat400-sermon-zh-ko-es/INDEX.md)：`reworkSeconds` 的自动计量示例。
 - [测试运行复盘](test-run-retrospective.zh.md)：本手册第一节的三分口径来自这里。
+- [测试运行复盘](test-run-retrospective.zh.md)：本手册第一节的三分口径来自这里。
+
+## 2026-11-15 阅读版取错文本：原因与新增检查
+
+- **现象**：中英阅读版第一次误用了 `/downloads/7270…-full-video-clock.srt`。该文件是 full-video 时钟下的另一版中文（首句「还没见过面的朋友，我叫埃里克…」，时间轴 00:29:53 起），不是页面终稿；与英文源（00:00:02.9 起）时间轴错位，PDF 中英对不上。
+- **原因**：`/downloads/` 下有多个 `full-video-clock.srt`（`7270…` 与 `00776…`，译本和时钟都不同），文件名/哈希不自解释；这次按文件名挑了一个，没有绑定页面终稿 `content/<pageId>/zh-Hans.json` 的哈希与 cue 数。往期 `20261108-jesus-is-just-reading/source-binding.json` 绑定的是 content 460 cues + english-reference 460 blocks，本期漏了这一步。
+- **新增检查（开工前提早做）**：阅读版的中文源必须是页面终稿 `content/<pageId>/zh-Hans.json`（记录 `contentSha256` 与 cue 数），英文源必须是 `english-reference/<pageId>.json`（记录 sha 与 blocks）；禁止从 `/downloads/*.srt` 取源，除非该 SRT 的 cue 数、文本、时间轴与 content 逐项一致。PDF 收据必须同时写 `source-binding.json`（content/英文 sha、cue/block 数、标题、日期、讲员）和 `.qa.json`。
+- **本次修正**：中文改用 content 435 cues，英文用 english-source 435 units，PDF 32 页、QA pass、sha256 `f1700907…`；源绑定见 `artifacts/sentence-first-agent/20261115-jesus-is-better-reading/source-binding.json`。
