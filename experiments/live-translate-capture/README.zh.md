@@ -10,6 +10,7 @@
   - 直接运行 60 秒：英文 7 条 final，普通话音频 56.75 秒；同窗口会话日志 7/7 条英文 final 完全匹配。
   - 经 `run-capture.sh` 完整链路 74 秒：英文 22 条 final，普通话音频 73.75 秒；会话日志 39 条英文行，22/22 完全匹配（归一化后逐条相同）。
 - 采集、断线续传、音频封装、会话日志取回、LaunchAgent 定时启动都已在本机跑通；9 个本地测试通过（含一个本地 WebSocket 假服务器，覆盖断线后带 `since` 重连）。
+- 另做了一次 **10 分钟 demo 房间长测**：597.25 秒连续音频、0 次重连、0 个到达空隙；期间捕获到提供商会话轮换（540 秒 `goAway`、587 秒 `cutover`，`droppedMs=0`），音频没有断。
 - 默认定时已装好：**每周日 09:55 启动，10:00 开始录，11:20 自动截断**，房间 `mariners-north-irvine`；LaunchAgent 见 `~/Library/LaunchAgents/ai.pastors.live-capture.plist`。
 - 依赖只有仓库 venv 里的 `websockets` 和 `requests`，见 `requirements.txt`。
 
@@ -139,6 +140,7 @@ bash experiments/live-translate-capture/install-schedule.sh --uninstall
 | 直接采集 | `artifacts/live-capture-test/mariners-irvine-outdoor/2026-11-14` | 60.5 s | 7 | 56.75 s | 7 行 | 7/7 |
 | 包装链路 | `artifacts/live-capture-test/wrapper/mariners-irvine-outdoor/2026-11-14-164445` | 74.5 s | 22 | 73.75 s | 39 行 | 22/22 |
 | launchd 临时任务 | `artifacts/live-capture-test/launchd/mariners-irvine-outdoor/2026-11-14` | 58 s | 14 | 57.00 s | 48 行 | 14/14 |
+| 10 分钟 demo 长测 | `artifacts/live-capture-test/soak/demo/2026-11-14` | 600.4 s | 139 | 597.25 s | 143 行（同一进行中会话） | 139/139 |
 
 本地测试：
 
@@ -154,7 +156,7 @@ bash experiments/live-translate-capture/install-schedule.sh --uninstall
 - 房间在窗口内没有直播时，采集为空；清单会写 `status: empty` 和广播时间线。定时任务不会因此重试。
 - 英文 caption 是 ASR，专有名词/经文引用可能错；必须走 Layer 1 修正和术语表。
 - 普通话字幕经常只有累计 partial、final 很少；短窗口内 `mandarin.finals.jsonl` 可能为空，对照要看 `mandarin.captions.jsonl` 或 `session.mandarin.jsonl`。
-- 断线超过服务端音频回放窗口（约 2 秒）会丢音频；`resumed.audioSkippedMs` 会补静音并记录。字幕回放窗口更长，但仍可能缺行，所以要做会话日志对照。
+- 断线超过服务端音频回放窗口（约 2 秒）会丢音频；`resumed.audioSkippedMs` 会补静音并记录。字幕回放窗口更长，但仍可能缺行，所以要做会话日志对照。10 分钟长测里没有断线，轮换切缝也没有丢音频；这只证明一次正常轮换，不证明所有网络/提供方故障。
 - 提供商会话轮换、网络抖动、macOS 睡眠都会造成缺口；`events.jsonl` 和 `warnings` 是判断依据。
 - 打开 `zh` 流会为该语言启动/占用提供商会话；服务自己的估算约 `$0.0368/语言分钟`，80 分钟约 3 美元（仅估算，不是账单）。请只在获授权的场景使用。
 - 会话日志是公开可读接口；本工具只读、只取本次窗口，并去掉听众标识和 ingest 地址。仍然不要把 `session.json` 当公开材料传播。
