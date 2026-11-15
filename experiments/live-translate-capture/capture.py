@@ -112,6 +112,11 @@ def iso_utc(value: datetime) -> str:
     return value.astimezone(timezone.utc).isoformat(timespec="milliseconds").replace("+00:00", "Z")
 
 
+def room_ever_broadcast(timeline: list[dict[str, Any]]) -> bool:
+    """True if any status event reported broadcasting, not just the last one."""
+    return any(bool(event.get("broadcasting")) for event in timeline)
+
+
 def sha256_file(path: Path) -> str | None:
     if not path.exists():
         return None
@@ -987,7 +992,7 @@ class Capture:
                 "Mandarin captions were partial-only during this window; "
                 "mandarin.captions.jsonl is the comparison source."
             )
-        if not any(value for value in self.broadcast_state.values()):
+        if not room_ever_broadcast(self.broadcast_timeline):
             self.warn("room never reported broadcasting during the capture window")
 
         duration_s = (stopped_at - (self.t0_wall or stopped_at)).total_seconds()
