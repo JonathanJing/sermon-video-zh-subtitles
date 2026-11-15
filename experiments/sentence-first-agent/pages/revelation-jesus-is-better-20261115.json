@@ -45,7 +45,7 @@
       "note": "AI 合成配音，与原视频同步。本项目与 Mariners Church 无隶属关系。"
     },
     "ko": {
-      "title": "요한계시록: 예수님이 주시는 위로와 소망 · 예수님은 이 세상보다 더 귀하십니다",
+      "title": "예수님은 이 세상보다 더 귀하십니다",
       "series": "요한계시록: 예수님이 주시는 위로와 소망",
       "scripture": "요한계시록 17-19:10",
       "badge": "주일 설교 · AI 합성 음성 · 검토 완료",
@@ -53,7 +53,7 @@
       "note": "AI 합성 음성 더빙으로 원본 영상과 동기화됩니다. 이 프로젝트는 Mariners Church와 관련이 없습니다."
     },
     "es": {
-      "title": "Apocalipsis: El consuelo y la esperanza que Jesús trae · Jesús es mejor que este mundo",
+      "title": "Jesús es mejor que este mundo",
       "series": "Apocalipsis: El consuelo y la esperanza que Jesús trae",
       "scripture": "Apocalipsis 17-19:10",
       "badge": "Sermón del domingo · Voz sintetizada por IA · Revisado",
@@ -92,8 +92,8 @@
     "mode": "approved_exception",
     "publishedTitles": {
       "zh-Hans": "耶稣胜过这世界",
-      "ko": "요한계시록: 예수님이 주시는 위로와 소망 · 예수님은 이 세상보다 더 귀하십니다",
-      "es": "Apocalipsis: El consuelo y la esperanza que Jesús trae · Jesús es mejor que este mundo"
+      "ko": "예수님은 이 세상보다 더 귀하십니다",
+      "es": "Jesús es mejor que este mundo"
     },
     "reason": "用户要求主标题不显示系列前缀『启示录：』，只留证道标题『耶稣胜过这世界』",
     "approvedBy": "Jony"

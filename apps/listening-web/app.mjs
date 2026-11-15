@@ -195,6 +195,9 @@ function renderWeekLabels() {
 }
 
 function displayCategoryLabel(item) {
+  const locale = getLocale();
+  const label = item?.displayCategory?.labels?.[locale === 'zh' ? 'zh-Hans' : locale];
+  if (label) return label;
   const mediaType = item?.displayMediaType || item?.mediaType;
   return mediaType === 'podcast' ? t('reader.podcastCategory')
     : mediaType === 'video' ? t('reader.sermonCategory') : item?.sourceLabel || "";

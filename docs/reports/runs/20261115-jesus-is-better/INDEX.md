@@ -48,3 +48,12 @@
 - `docs/series-sermon-titles.zh.md`：week 10 中文标题
 
 工具改动均不在 `sfa-prod-20261115` 锁定清单内；生产页面字节、release、catalog、英文对照、对齐、手册、统计目录均按上述发布意图留证。
+
+## 纯 ko/es 标题、web 标签修复与三语海报（2026-11-15 23:47–00:03 PST）
+
+- 新意图 `20261115-week10-04`：页面 zh/ko/es 主标题全部为纯证道标题（zh「耶稣胜过这世界」、ko「예수님은 이 세상보다 더 귀하십니다」、es「Jesús es mejor que este mundo」），`titleCheck` 仍为 approved_exception，三语 `publishedTitles` 显式冻结。
+- 页面/目录/release/英文对照/手册/对齐 A/B/C：`66e7eacf…`（page/content）→ `a98d3252…`（release/catalog）→ `107f5b97…`（guide/English/alignment）。
+- web app 类别标签修复：`displayCategoryLabel` 优先使用页面目录的 `displayCategory.labels`；UI-only 部署 `a39e3143…`。页面 `mediaType` 仍为 `podcast`（发布器 schema 只接受 podcast/clip），标签与 iOS 一致显示「周日证道」。
+- 三语海报：中文沿用 `imagegen-v1/render-v2/zh-Hans`，ko/es 用同一 ImageGen 主视觉重出；三语均 1200×1800 + 600×900，双二维码解码通过。中文先发 `e6959642…`；ko/es 发布 `00bf73e7…`；三语公告重绑当前 release 后发 `45fdf242…`。
+- 最终核验：467 个线上文件一致，7/7 HTTP 校验通过；三语公告均为纯讲题并绑定当前 release；默认页仍为本页。真机展示与物理扫码 `not_run`。
+- 海报收据：`artifacts/sentence-first-agent/20261115-jesus-is-better-poster/imagegen-v1/render-v2/`（zh-Hans、ko-es）与 `upload-receipt-final.json`。
