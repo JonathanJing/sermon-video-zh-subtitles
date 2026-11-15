@@ -113,7 +113,7 @@ run-evidence/v1/weekly/<周>/...
 
 ## 七、云端定时 agent
 
-每周一 16:00 UTC（太平洋标准时间 08:00）在 Claude 云端运行一次，从 `dev` 检出。它做的事：
+例程名 `Weekly rollup PR (sermon-video-zh-subtitles)`，2026-11-15 创建，在维护者的 Claude 账号下管理。每周一 16:00 UTC（太平洋标准时间 08:00，夏令时为 09:00）在 Claude 云端运行一次，从 `dev` 检出，模型 `claude-sonnet-5-5`。第一次触发是 2026-11-16；`dev` 上还没有 `weekly_rollup.py` 时它在第一步停下并说明原因，该周已有周汇总分支或目录时也不覆盖。它做的事：
 
 1. 运行 `weekly_rollup.py build`，周次取最近一个周日。
 2. 读本周各报告的 `INDEX.md` 和 `RETROSPECTIVE.md`，写 `WEEKLY.md` 的「结论」，只引用表里的数值和报告里的错误行。
