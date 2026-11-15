@@ -5,6 +5,7 @@
 ## 结论
 
 - **采集链路跑通。** 对正在直播的 `mariners-irvine-outdoor` 做了三次真实采集（直接运行、包装链路、launchd 临时任务）：英文 final 分别 7、22、14 条，普通话音频 56.75、73.75、57.00 秒；服务端会话日志的 `source` 行与实时英文 final **分别 7/7、22/22、14/14 完全匹配**（归一化后逐条相同）。
+- **采集端不切讲道。** 10:00–11:20 整段保存（含敬拜、报告）；讲道起止由人工事后写入 `sermon.window.json`，并绑定 `capture.json`/`session.json` 的 SHA-256。它是采集元数据，不是 Layer 1 的 `approvedWindow`。
 - **10 分钟 demo 长测通过。** 597.25 秒连续音频、2,389 个音频帧、0 次重连、0 个到达空隙；期间捕获到一次提供商会话轮换（540 秒 `goAway`、540 秒 `standby_ready`、587 秒 `cutover`，`droppedMs=0`、`cutover=deadline`），音频没有断。英文 final 139 条，会话日志同一进行中会话的 143 条 source 行 **139/139 匹配**。
 - **页面只提供英文文字 + 普通话音频。** `lang=captions` 是英文原文字幕、无音频；`lang=zh` 是机器翻译后的普通话 TTS 音频 + 普通话字幕；`lang=en` 实测 HTTP 400。**没有讲员英文原声。** 需要原声时必须另接现场麦克风或教会直播流。
 - **普通话字幕 final 很少。** 三次运行的实时普通话 final 只有 0/1/1 条，累计 partial 有 56/73/56 条；会话日志的 `zh` 行只有 4/3/3 条。它只能做对照，不能作为 Layer 2 的批准文本或英文底稿。
@@ -33,10 +34,12 @@
 
 ```bash
 .venv/bin/python -m pytest tests/test_live_translate_capture.py -q
-# 9 passed
+# 12 passed
 ```
 
-测试覆盖：本地日期/跨 UTC 午夜的窗口解析、迟到开始、已过窗口拒绝、caption final 去重、WAV 封装与补静音、会话选择、遥测/ingest 脱敏、本地 WebSocket 断线重连。
+测试覆盖：本地日期/跨 UTC 午夜的窗口解析、迟到开始、已过窗口拒绝、caption final 去重、WAV 封装与补静音、会话选择、遥测/ingest 脱敏、本地 WebSocket 断线重连，以及人工讲道起止的记录/边界校验/哈希绑定。
+
+代码 PR 后续加入 `mark_window.py`（3 个测试）：采集端保存整段 10:00–11:20，人工回看后再记录讲道起止；这不改变本报告三次采集和 10 分钟长测的证据。
 
 ## 边界与未验证
 
