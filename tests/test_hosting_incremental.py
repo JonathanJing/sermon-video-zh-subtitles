@@ -29,12 +29,13 @@ def test_local_files_skips_hidden_entries_and_ignored_globs(tmp_path):
     (public / 'media').mkdir(parents=True)
     (public / 'index.html').write_bytes(b'<html>')
     (public / 'media' / 'episode.mp3').write_bytes(b'audio')
-    (public / '.well-known-dir').mkdir()
-    (public / '.well-known-dir' / 'app.json').write_bytes(b'{}')
+    (public / '.well-known').mkdir()
+    (public / '.well-known' / 'apple-app-site-association').write_bytes(b'{}')
     (public / '.DS_Store').write_bytes(b'junk')
     (public / 'bundle.js.map').write_bytes(b'map')
     files = hosting_incremental.local_files(public, ['**/*.map'])
-    assert sorted(files) == ['/index.html', '/media/episode.mp3']
+    # A dot directory is served on this site, so only the declared ignore globs may drop it.
+    assert sorted(files) == ['/.well-known/apple-app-site-association', '/index.html', '/media/episode.mp3']
     assert files['/media/episode.mp3'] == public / 'media' / 'episode.mp3'
 
 

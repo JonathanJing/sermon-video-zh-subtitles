@@ -66,7 +66,12 @@ def ignore_matcher(patterns):
 
 
 def local_files(public, ignore=()):
-    """Every served path in ``public``, keyed by its absolute Hosting path."""
+    """Every served path in ``public``, keyed by its absolute Hosting path.
+
+    Only what the CLI would skip is skipped. Dot directories are served on this site
+    (``/.well-known/apple-app-site-association`` has its own headers entry), so the declared
+    ``hosting.ignore`` globs decide, not the leading dot.
+    """
     public = Path(public)
     ignored = ignore_matcher(ignore)
     files = {}
@@ -74,7 +79,7 @@ def local_files(public, ignore=()):
         if not path.is_file():
             continue
         relative = path.relative_to(public)
-        if any(part in SKIP_NAMES or part.startswith('.') for part in relative.parts):
+        if any(part in SKIP_NAMES for part in relative.parts):
             continue
         if ignored(relative.as_posix()):
             continue
