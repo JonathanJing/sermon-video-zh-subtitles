@@ -1,0 +1,16 @@
+/bin/sh: sox: command not found
+SoX could not be found!
+
+    If you do not have SoX, proceed here:
+     - - - http://sox.sourceforge.net/ - - -
+
+    If you do (or think that you should) have SoX, double-check your
+    path variables.
+
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+
+********
+Warning: flash-attn is not installed. Will only run the manual PyTorch version. Please install flash-attn for faster inference.
+********
+
+{"event": "trial_complete", "condition": "mixed-b8", "repetition": "cold-first-batch", "wallSeconds": 16.419367041999067, "rtf": 0.3335487704037833}

@@ -1,0 +1,94 @@
+/bin/sh: sox: command not found
+SoX could not be found!
+
+    If you do not have SoX, proceed here:
+     - - - http://sox.sourceforge.net/ - - -
+
+    If you do (or think that you should) have SoX, double-check your
+    path variables.
+
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+
+********
+Warning: flash-attn is not installed. Will only run the manual PyTorch version. Please install flash-attn for faster inference.
+********
+
+{"event": "trial_complete", "condition": "zh-Hans-b1", "repetition": "warmup", "wallSeconds": 18.53832654099824, "rtf": 1.0791627023700217}
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+{"event": "trial_complete", "condition": "zh-Hans-b1", "repetition": "warm-1", "wallSeconds": 18.216798708002898, "rtf": 1.0630014267176042}
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+{"event": "trial_complete", "condition": "zh-Hans-b1", "repetition": "warm-2", "wallSeconds": 17.955563208000967, "rtf": 1.0456535890405843}
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+{"event": "trial_complete", "condition": "zh-Hans-b1", "repetition": "warm-3", "wallSeconds": 18.347048249997897, "rtf": 1.0675837653442188}
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+{"event": "trial_complete", "condition": "zh-Hans-b2", "repetition": "warmup", "wallSeconds": 17.781318707995524, "rtf": 1.1304887818651768}
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+{"event": "trial_complete", "condition": "zh-Hans-b2", "repetition": "warm-1", "wallSeconds": 13.766723041997466, "rtf": 0.8724861830961188}
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+{"event": "trial_complete", "condition": "zh-Hans-b2", "repetition": "warm-2", "wallSeconds": 13.503626083998824, "rtf": 0.853492241515318}
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+{"event": "trial_complete", "condition": "zh-Hans-b2", "repetition": "warm-3", "wallSeconds": 14.265212167003483, "rtf": 0.9038867174221444}
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+{"event": "trial_complete", "condition": "ko-b1", "repetition": "warmup", "wallSeconds": 13.880573958005698, "rtf": 1.0205798882529358}
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+{"event": "trial_complete", "condition": "ko-b1", "repetition": "warm-1", "wallSeconds": 13.542021791996376, "rtf": 0.9991690198044617}
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+{"event": "trial_complete", "condition": "ko-b1", "repetition": "warm-2", "wallSeconds": 13.984957332999329, "rtf": 1.0311773594125897}
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+{"event": "trial_complete", "condition": "ko-b1", "repetition": "warm-3", "wallSeconds": 14.598179916996742, "rtf": 1.0770389496237072}
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+{"event": "trial_complete", "condition": "ko-b2", "repetition": "warmup", "wallSeconds": 10.648779625000316, "rtf": 0.8256286057694058}
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+{"event": "trial_complete", "condition": "ko-b2", "repetition": "warm-1", "wallSeconds": 11.084321375004947, "rtf": 0.8602260416666514}
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+{"event": "trial_complete", "condition": "ko-b2", "repetition": "warm-2", "wallSeconds": 11.11765870799718, "rtf": 0.8647001169067199}
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+{"event": "trial_complete", "condition": "ko-b2", "repetition": "warm-3", "wallSeconds": 10.742778540996369, "rtf": 0.8376856504005795}
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+{"event": "trial_complete", "condition": "es-b1", "repetition": "warmup", "wallSeconds": 11.030766957999731, "rtf": 1.0977063438531331}
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+{"event": "trial_complete", "condition": "es-b1", "repetition": "warm-1", "wallSeconds": 10.515741166003863, "rtf": 1.0455712858618158}
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+{"event": "trial_complete", "condition": "es-b1", "repetition": "warm-2", "wallSeconds": 10.25942062499962, "rtf": 1.0207975324796221}
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+{"event": "trial_complete", "condition": "es-b1", "repetition": "warm-3", "wallSeconds": 11.548356249993958, "rtf": 1.1404194800203096}
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+{"event": "trial_complete", "condition": "es-b2", "repetition": "warmup", "wallSeconds": 9.079420000001846, "rtf": 0.9152809331249045}
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+{"event": "trial_complete", "condition": "es-b2", "repetition": "warm-1", "wallSeconds": 8.417400500002259, "rtf": 0.8466812543755017}
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+{"event": "trial_complete", "condition": "es-b2", "repetition": "warm-2", "wallSeconds": 8.918182167006307, "rtf": 0.891793472186843}
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+{"event": "trial_complete", "condition": "es-b2", "repetition": "warm-3", "wallSeconds": 9.13386604200059, "rtf": 0.9181758289582831}
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+{"event": "trial_complete", "condition": "mixed-b4", "repetition": "warmup", "wallSeconds": 31.05821716599894, "rtf": 0.6128769585275268}
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+{"event": "trial_complete", "condition": "mixed-b4", "repetition": "warm-1", "wallSeconds": 28.290999415999977, "rtf": 0.5547668079241751}
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+{"event": "trial_complete", "condition": "mixed-b4", "repetition": "warm-2", "wallSeconds": 28.227636416995665, "rtf": 0.5556469287438148}
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+{"event": "trial_complete", "condition": "mixed-b4", "repetition": "warm-3", "wallSeconds": 31.33750091699767, "rtf": 0.6171928296797087}
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+{"event": "trial_complete", "condition": "mixed-b8", "repetition": "warmup", "wallSeconds": 26.660549166001147, "rtf": 0.5221996241407927}
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+{"event": "trial_complete", "condition": "mixed-b8", "repetition": "warm-1", "wallSeconds": 19.773055999998178, "rtf": 0.3788778520404391}
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+{"event": "trial_complete", "condition": "mixed-b8", "repetition": "warm-2", "wallSeconds": 18.448013125002035, "rtf": 0.3676762466064784}
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+{"event": "trial_complete", "condition": "mixed-b8", "repetition": "warm-3", "wallSeconds": 17.63009854100528, "rtf": 0.3499205272766124}
