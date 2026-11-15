@@ -177,8 +177,8 @@ def find_summary(directory: Path, kind: str) -> Path | None:
 
 def build(directory: Path) -> dict:
     """Read the private reports under ``directory`` and return the public-safe metrics."""
-    result: dict = {"schemaVersion": SCHEMA, "smallCountRule": f"1–{SMALL - 1} is written as <{SMALL}; "
-                    f"rates need a denominator of at least {SMALL}", "range": None, "reports": {}, "missing": []}
+    result: dict = {"schemaVersion": SCHEMA, "smallCountRule": f"1 到 {SMALL - 1} 写成 <{SMALL}；分母不足 {SMALL} 不算比例",
+                    "range": None, "reports": {}, "missing": []}
     for kind, schema in REPORTS.items():
         path = find_summary(Path(directory), kind)
         if path is None:

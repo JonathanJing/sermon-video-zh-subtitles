@@ -1,7 +1,7 @@
 {
   "schemaVersion": "sermon-private-evidence-index-v1",
   "store": "gs://sermon-zh-artifacts-ai-for-god/run-evidence/v1",
-  "generatedAt": "2026-11-15T16:43:42+00:00",
+  "generatedAt": "2026-11-15T16:49:30+00:00",
   "runs": [
     {
       "runName": "20261023-jesus-promises-publish",
@@ -199,5 +199,7 @@
   "frontend": [
     "20261115"
   ],
-  "weekly": []
+  "weekly": [
+    "20261115"
+  ]
 }
