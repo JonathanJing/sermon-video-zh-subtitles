@@ -9,7 +9,7 @@
 - 2026-11-14 用正在直播的 `mariners-irvine-outdoor` 做了两次真实采集：
   - 直接运行 60 秒：英文 7 条 final，普通话音频 56.75 秒；同窗口会话日志 7/7 条英文 final 完全匹配。
   - 经 `run-capture.sh` 完整链路 74 秒：英文 22 条 final，普通话音频 73.75 秒；会话日志 39 条英文行，22/22 完全匹配（归一化后逐条相同）。
-- 采集、断线续传、音频封装、会话日志取回、LaunchAgent 定时启动都已在本机跑通；15 个本地测试通过（含一个本地 WebSocket 假服务器，覆盖断线后带 `since` 重连）。
+- 采集、断线续传、音频封装、会话日志取回、LaunchAgent 定时启动都已在本机跑通；16 个本地测试通过（含一个本地 WebSocket 假服务器，覆盖断线后带 `since` 重连）。
 - 另做了一次 **10 分钟 demo 房间长测**：597.25 秒连续音频、0 次重连、0 个到达空隙；期间捕获到提供商会话轮换（540 秒 `goAway`、587 秒 `cutover`，`droppedMs=0`），音频没有断。
 - 默认定时已装好：**每周日 09:55 启动，10:00 开始录，11:20 自动截断**，房间 `mariners-north-irvine`（2026-11-14 已确认）；LaunchAgent 见 `~/Library/LaunchAgents/ai.pastors.live-capture.plist`。
 - 依赖只有仓库 venv 里的 `websockets` 和 `requests`，见 `requirements.txt`。
@@ -194,7 +194,7 @@ bash experiments/live-translate-capture/install-schedule.sh --uninstall
 
 ```bash
 .venv/bin/python -m pytest tests/test_live_translate_capture.py -q
-# 15 passed
+# 16 passed
 ```
 
 这些是**采集链路**证据，不是周日本身、教会现场声学、人工 ASR Gold、翻译质量或发布验收。

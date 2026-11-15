@@ -308,6 +308,16 @@ class ExtractSermonTests(unittest.TestCase):
         self.assertEqual([row["text"] for row in rows], ["live first.", "live second."])
         self.assertEqual(manifest["source"]["english"]["kind"], "live")
 
+    def test_falls_back_when_the_session_file_is_empty(self):
+        (self.run_dir / "session.english.jsonl").write_text("", encoding="utf-8")
+        self.write_jsonl(
+            "english.finals.jsonl",
+            [{"received_at": "2026-11-15T18:05:00.000Z", "t_ms": 300000, "text": "live fallback."}],
+        )
+        manifest = extract_sermon.extract(self.run_dir)
+        self.assertEqual(manifest["source"]["english"]["kind"], "live")
+        self.assertEqual(manifest["english"]["lines"], 1)
+
     def test_requires_a_recorded_window(self):
         (self.run_dir / "sermon.window.json").unlink()
         with self.assertRaises(ValueError):

@@ -173,6 +173,11 @@ def extract(
         raise ValueError("no English source: neither session.english.jsonl nor english.finals.jsonl exists")
     english_kind, english_path = english_choice
     english_rows = select_lines(read_jsonl(english_path), start, end, actual_start)
+    if not english_rows and english_kind == "session" and source_kind == "auto":
+        live_path = capture_dir / "english.finals.jsonl"
+        if live_path.exists():
+            english_kind, english_path = "live", live_path
+            english_rows = select_lines(read_jsonl(live_path), start, end, actual_start)
     if not english_rows:
         raise ValueError(f"no English lines inside the window in {english_path}")
 
