@@ -177,6 +177,10 @@ def finish_replace(assets: Path, out: Path, page_id: str, releases: dict[str, by
         for locale, sha in updates.items():
             _page(v3, page_id)['targets'][locale]['releasePackageJsonSha256'] = sha
         delivery_contract.validate_catalog_schema(v3)
+    content_title = json.loads((public / 'content' / page_id / 'zh-Hans.json').read_text(encoding='utf-8')).get('title')
+    if content_title:
+        for value in target_catalogs.values():
+            _page(value, page_id)['title'] = content_title
     written = []
     for catalog_name, value in target_catalogs.items():
         (public / catalog_name).write_text(json.dumps(value, ensure_ascii=False, indent=2, sort_keys=True) + '\n',
