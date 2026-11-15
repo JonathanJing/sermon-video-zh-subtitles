@@ -9,7 +9,7 @@
 - 2026-11-14 用正在直播的 `mariners-irvine-outdoor` 做了两次真实采集：
   - 直接运行 60 秒：英文 7 条 final，普通话音频 56.75 秒；同窗口会话日志 7/7 条英文 final 完全匹配。
   - 经 `run-capture.sh` 完整链路 74 秒：英文 22 条 final，普通话音频 73.75 秒；会话日志 39 条英文行，22/22 完全匹配（归一化后逐条相同）。
-- 采集、断线续传、音频封装、会话日志取回、LaunchAgent 定时启动都已在本机跑通；9 个本地测试通过（含一个本地 WebSocket 假服务器，覆盖断线后带 `since` 重连）。
+- 采集、断线续传、音频封装、会话日志取回、LaunchAgent 定时启动都已在本机跑通；12 个本地测试通过（含一个本地 WebSocket 假服务器，覆盖断线后带 `since` 重连）。
 - 另做了一次 **10 分钟 demo 房间长测**：597.25 秒连续音频、0 次重连、0 个到达空隙；期间捕获到提供商会话轮换（540 秒 `goAway`、587 秒 `cutover`，`droppedMs=0`），音频没有断。
 - 默认定时已装好：**每周日 09:55 启动，10:00 开始录，11:20 自动截断**，房间 `mariners-north-irvine`（2026-11-14 已确认）；LaunchAgent 见 `~/Library/LaunchAgents/ai.pastors.live-capture.plist`。
 - 依赖只有仓库 venv 里的 `websockets` 和 `requests`，见 `requirements.txt`。
@@ -25,7 +25,7 @@
 
 - **不是英文原声。** 这个服务不提供讲员原声通道；`lang=en` 在实测中直接返回 HTTP 400。英文原声要另录：现场麦克风（可接现有的 `experiments/local-live-poc`）、教会直播流或调音台。
 - **不是已批准的译文。** `zh` 的字幕和音频都是机器翻译/机器合成，只能做对照，不能当作 Layer 2 的批准文本，也不能把机器中文写进阅读版而不经过我们自己的翻译与审校。
-- **不是完整礼拜。** 10:00–11:20 的窗口包含敬拜、报告和讲道；讲道起止仍需人工确认，或由后续流程切分。
+- **不是在采集端切讲道。** 10:00–11:20 的整段服务全部保存（含敬拜、报告）；讲道起止由人工事后写入 `sermon.window.json`，后续流程按这个窗口取正文。
 
 ## 为什么这样采集
 
@@ -63,6 +63,7 @@ wss://translate.pastors.ai/ws/listen?room=<room>&lang=<code>&v=2[&since=<seq>][&
 | `mandarin.frames.jsonl` | 每个音频帧的 seq、到达时间、PCM 偏移 |
 | `session.english.jsonl` / `session.mandarin.jsonl` | 服务端会话日志的 final 行，带精确 `ts` |
 | `session.json` | 会话元数据（已去掉听众遥测和 ingest URL）、行数、哈希、与实时采集的匹配统计 |
+| `sermon.window.json` | 人工事后提供的讲道起止；绑定 `capture.json`/`session.json` 的 SHA-256（见“人工讲道起止”） |
 | `run.status.json` / `wrapper.log` | 定时包装脚本的退出码和日志 |
 
 实时采集的音频是**按到达顺序写入**的：正常连续时与真实时间一致；断线时服务端声明的 `audioSkippedMs` 会补静音，未声明的空隙不补。`mandarin.frames.jsonl` 和 `capture.json` 保留每帧时间，供需要严格对齐时使用。
@@ -102,6 +103,35 @@ bash experiments/live-translate-capture/run-capture.sh
 
 只读公开接口；保存前去掉 `listenerTelemetry`、`listenerSocket`、`timeline` 和 ingest URL。`session.json` 里的 `comparison_with_live` 会给出实时英文 final 与会话 `source` 行的匹配数。
 
+## 人工讲道起止
+
+采集端**不切讲道**：10:00–11:20 整段保存。人工回看后，再把讲道起止写成 `sermon.window.json`：
+
+```bash
+.venv/bin/python experiments/live-translate-capture/mark_window.py \
+  --capture-dir artifacts/live-capture/mariners-north-irvine/2026-11-15 \
+  --start 10:29:35 --end 11:02:10 \
+  --approved-by "Jony (chat)" \
+  --evidence "回看整场；讲道从宣布后开始，到回应诗歌前结束"
+```
+
+也接受相对采集实际起点的偏移：`--start-offset 1775 --end-offset 3730`（秒、`MM:SS` 或 `HH:MM:SS`）。
+
+写入前会校验：
+
+- start/end 在 capture 的实际窗口内，end > start，长度至少 60 秒；
+- 绑定 `capture.json` 的 SHA-256；有 `session.json` 时也绑定它的哈希；
+- 同值重复执行是幂等的；要改值必须加 `--force`。
+
+校验已有文件：
+
+```bash
+.venv/bin/python experiments/live-translate-capture/mark_window.py \
+  --capture-dir artifacts/live-capture/mariners-north-irvine/2026-11-15 --check
+```
+
+`sermon.window.json` 是采集元数据，**不是** Layer 1 的 `approvedWindow`；下游 Layer 1 仍要按自己的证据和审批流程绑定。阅读版 PDF 只应使用人工确认后的窗口；窗口之前的敬拜/报告保留在原始文件里，但不进入讲道正文。
+
 ## 定时
 
 ```bash
@@ -128,7 +158,7 @@ bash experiments/live-translate-capture/install-schedule.sh --uninstall
 
 ## 交给后续流程
 
-1. **Layer 1**：以 `session.english.jsonl`（精确时间戳）为主、`english.finals.jsonl`（我们实际收到的副本）作审计对照；两者都有哈希。讲道起止仍需确认，窗口里的敬拜/报告要切掉。英文 ASR 会有术语和人名错误（实测出现过 `Kent Bshore` 这类），按现有 Layer 1 规则修正并保留修正记录。
+1. **Layer 1**：以 `session.english.jsonl`（精确时间戳）为主、`english.finals.jsonl`（我们实际收到的副本）作审计对照；两者都有哈希。讲道起止用人工写入的 `sermon.window.json`（见上）；窗口里的敬拜/报告保留在原始文件里，但不进入讲道正文。英文 ASR 会有术语和人名错误（实测出现过 `Kent Bshore` 这类），按现有 Layer 1 规则修正并保留修正记录。
 2. **Layer 2**：用我们自己的翻译链，从修正后的英文出发；`session.mandarin.jsonl` / `mandarin.*` 只作对照，**不得**作为批准译文或训练/提示的“已验证样例”。
 3. **Layer 3**：`mandarin.audio.wav` 是机器 TTS 译文音频，不是讲员原声。若音频版需要原声或更高质量，另走录音/配音路径；不要把这段 TTS 直接标成原声。
 4. **诚实标签**：阅读版必须标明英文来源是现场 ASR、中文是我们自己的机器翻译、人工审校状态按实际记录；机器审校不等于人工批准。
@@ -147,7 +177,7 @@ bash experiments/live-translate-capture/install-schedule.sh --uninstall
 
 ```bash
 .venv/bin/python -m pytest tests/test_live_translate_capture.py -q
-# 9 passed
+# 12 passed
 ```
 
 这些是**采集链路**证据，不是周日本身、教会现场声学、人工 ASR Gold、翻译质量或发布验收。

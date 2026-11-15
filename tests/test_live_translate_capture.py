@@ -39,6 +39,8 @@ def load_module(name: str, filename: str):
     return module
 
 
+mark_window = load_module("live_capture_mark_window_under_test", "mark_window.py")
+
 if HAVE_WEBSOCKETS:
     capture = load_module("live_capture_under_test", "capture.py")
     fetch_session = load_module("live_capture_session_under_test", "fetch_session.py")
@@ -113,6 +115,117 @@ class SinkTests(unittest.TestCase):
                 self.assertEqual(handle.getnchannels(), 1)
                 self.assertEqual(handle.getsampwidth(), 2)
                 self.assertAlmostEqual(handle.getnframes() / 24000, 1.25, places=3)
+
+
+class WindowMarkTests(unittest.TestCase):
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory()
+        self.run_dir = Path(self.temp.name)
+        (self.run_dir / "capture.json").write_text(
+            json.dumps(
+                {
+                    "schema": "live-translate-capture/v1",
+                    "window": {
+                        "actual_start": "2026-11-15T18:00:00.000Z",  # 10:00 PST
+                        "actual_stop": "2026-11-15T19:20:00.000Z",   # 11:20 PST
+                    },
+                    "host": {"timezone": "America/Los_Angeles"},
+                }
+            ),
+            encoding="utf-8",
+        )
+
+    def tearDown(self):
+        self.temp.cleanup()
+
+    def test_records_offset_window_and_checks_binding(self):
+        payload = mark_window.record_window(
+            self.run_dir,
+            start="10:29:35",
+            end="11:02:10",
+            approved_by="Jony (chat)",
+            evidence="reviewed the full service",
+        )
+        window = payload["sermon_window"]
+        self.assertEqual(window["start"], "2026-11-15T18:29:35.000Z")
+        self.assertEqual(window["end"], "2026-11-15T19:02:10.000Z")
+        self.assertAlmostEqual(window["start_offset_s"], 1775.0, places=3)
+        self.assertAlmostEqual(window["end_offset_s"], 3730.0, places=3)
+        self.assertAlmostEqual(window["duration_s"], 1955.0, places=3)
+        checked = mark_window.check_window(self.run_dir)
+        self.assertTrue(checked["ok"])
+        self.assertEqual(checked["approved_by"], "Jony (chat)")
+
+        # Same values are idempotent; changed values need --force.
+        again = mark_window.record_window(
+            self.run_dir,
+            start="10:29:35",
+            end="11:02:10",
+            approved_by="Jony (chat)",
+            evidence="reviewed the full service",
+        )
+        self.assertEqual(again["sermon_window"], window)
+        with self.assertRaises(ValueError):
+            mark_window.record_window(
+                self.run_dir,
+                start="10:30:00",
+                end="11:02:10",
+                approved_by="Jony (chat)",
+                evidence="changed",
+            )
+        replaced = mark_window.record_window(
+            self.run_dir,
+            start="10:30:00",
+            end="11:02:10",
+            approved_by="Jony (chat)",
+            evidence="changed",
+            force=True,
+        )
+        self.assertEqual(replaced["sermon_window"]["start_offset_s"], 1800.0)
+
+    def test_offset_mode_and_bounds(self):
+        payload = mark_window.record_window(
+            self.run_dir,
+            start_offset="60",
+            end_offset="120",
+            approved_by="Jony (chat)",
+            evidence="offset review",
+        )
+        self.assertAlmostEqual(payload["sermon_window"]["start_offset_s"], 60.0, places=3)
+        self.assertAlmostEqual(payload["sermon_window"]["end_offset_s"], 120.0, places=3)
+        with self.assertRaises(ValueError):
+            mark_window.record_window(
+                self.run_dir,
+                start="09:50:00",
+                end="11:02:10",
+                approved_by="Jony (chat)",
+                evidence="outside",
+                force=True,
+            )
+        with self.assertRaises(ValueError):
+            mark_window.record_window(
+                self.run_dir,
+                start="10:30:00",
+                end="10:30:30",
+                approved_by="Jony (chat)",
+                evidence="too short",
+                force=True,
+            )
+
+    def test_capture_hash_mismatch_is_rejected(self):
+        mark_window.record_window(
+            self.run_dir,
+            start="10:29:35",
+            end="11:02:10",
+            approved_by="Jony (chat)",
+            evidence="reviewed",
+        )
+        manifest_path = self.run_dir / "capture.json"
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        manifest["notes"] = ["capture edited after the window was recorded"]
+        manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+        with self.assertRaises(ValueError):
+            mark_window.check_window(self.run_dir)
 
 
 @unittest.skipUnless(HAVE_WEBSOCKETS, "websockets not installed")
