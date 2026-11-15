@@ -17,6 +17,7 @@ from urllib.parse import unquote, urlsplit
 IMAGE_SUFFIXES = {".jpg", ".jpeg", ".png", ".webp"}
 RUN_REPORT_SUFFIXES = {".json", ".tsv", ".log"}
 STANDALONE_GENERATED_DIAGRAMS = {"firebase-release-flow.svg"}
+WEEKLY_ROLLUP_DATA = re.compile(r"docs/reports/weekly/(?:\d{8}/weekly\.json|private-evidence-index\.json)")
 INLINE_LINK = re.compile(r"!?\[[^\]]*\]\(([^)]+)\)")
 REFERENCE_LINK = re.compile(r"^ {0,3}\[[^\]]+\]:\s*(\S+)", re.MULTILINE)
 HTML_LINK = re.compile(r"\b(?:src|href)\s*=\s*[\"']([^\"']+)[\"']", re.IGNORECASE)
@@ -30,6 +31,8 @@ def is_documentation_path(path: str) -> bool:
         return False
     if path.startswith("docs/reports/runs/") and file.suffix.lower() in RUN_REPORT_SUFFIXES:
         return True  # redacted run evidence from tools/development/export_run_digest.py; nothing executes it
+    if WEEKLY_ROLLUP_DATA.fullmatch(path):
+        return True  # weekly rollup numbers and the private-store index (weekly_rollup.py, evidence_store.py); data only
     return file.suffix.lower() in {".md", ".svg", *IMAGE_SUFFIXES} or path == "docs/diagrams/diagram-specs.json"
 
 

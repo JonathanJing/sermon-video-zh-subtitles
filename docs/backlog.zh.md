@@ -1,6 +1,6 @@
 # Dev 统一 Backlog
 
-更新：2026-10-25。本页是项目 **Dev 开发工作的唯一顶层 backlog**，统一管理四层生产、Firebase Dev、Web／iOS、现场对齐、审核后台、Tracker、CI/CD 和独立 `live_session` 的优先级与依赖。新增开发事项先在这里取得稳定 ID；专项文档只展开接口、实现和验收，不再各自形成互相竞争的顶层排期。
+更新：2026-11-15。本页是项目 **Dev 开发工作的唯一顶层 backlog**，统一管理四层生产、Firebase Dev、Web／iOS、现场对齐、审核后台、Tracker、CI/CD 和独立 `live_session` 的优先级与依赖。新增开发事项先在这里取得稳定 ID；专项文档只展开接口、实现和验收，不再各自形成互相竞争的顶层排期。
 
 English index: [backlog.md](./backlog.md)
 
@@ -21,6 +21,23 @@ English index: [backlog.md](./backlog.md)
 7. 查某个 ID 或前缀当前在哪几行、状态是什么：`python3 tools/development/backlog_ids.py DEV-R242-011`（或 `DEV-R242`）；文件越靠前的小节越新。
 
 状态枚举：`verified_baseline`、`in_progress`、`pending`、`waiting_evidence`、`blocked`、`complete`。`verified_baseline` 只说明列出的基线已验证，不代表该项所有未来周次完成；只有满足本页第 2 条维护规则和该项验收定义后才能标记 `complete`。
+
+<a id="backlog-weekly-iteration-loop-20261115"></a>
+
+## 2026-11-15：每周迭代链路（运行报告、私有证据、周汇总）
+
+来源：[每周迭代链路设计稿](design/weekly-iteration-loop.zh.md)。11-08 与 11-15 两周的复盘改进没有进本页，11-15 主日证道的报告是手写的，运行证据分散在两台机器上。本节登记把「复盘 → 改进 → 验证」接成回路的工程项。代码与单元测试随同一 PR；所有行在一次真实周更走完之前都不标 `complete`。
+
+| ID | 优先级／状态 | 内容与完成条件 |
+|---|---|---|
+| `DEV-WK-001` | P1 / `waiting_evidence` | 私有证据库：`tools/ops/evidence_store.py` 把运行目录的文本证据（去掉凭据）存到 `gs://sermon-zh-artifacts-ai-for-god/run-evidence/v1/`，上传前复查桶不可公开；2026-11-15 已回填 32 个运行目录（两台机器）和本周三份前端报表，[索引](reports/weekly/private-evidence-index.json)在仓库里。完成条件：下一次周更的报告带 `private-evidence.json` 且库里有对应清单；一次复盘在没有原机器的会话里读到私有证据 |
+| `DEV-WK-002` | P1 / `waiting_evidence` | 整次生产自动导出：`sfa_publish.py readback` 通过时经 `tools/development/export_production_report.py` 导出全部同词干运行目录，导出器复制发布门禁与部署记录。承接 `DEV-RUNREPORT-001` 的①和 `DEV-SF-007` 的导出部分。完成条件：一次真实周更的报告由该入口生成，含各语言、发布目录和部署记录，无需手工补时间 |
+| `DEV-WK-003` | P1 / `waiting_evidence` | 周汇总与改进项验证：`tools/development/weekly_rollup.py` 生成 `docs/reports/weekly/<周日>/`，审核人的决定经 `finalize` 存入，下一周自动给出生效、无效、退步或本周没走到。[11-08 基线](reports/weekly/20261108/WEEKLY.md)已生成，未经人工审核。完成条件：连续两周的周汇总 PR 经人工审核合并，至少一条接受的改进项在下一周得到非「本周没走到」的结果，且对应 backlog 行已登记 |
+| `DEV-WK-004` | P1 / `pending` | 云端定时 agent：每周一生成周汇总草稿 PR。公开版不需要凭据；读私有证据库和导出前端报表需要维护者配置只读服务账号。完成条件：定时 agent 连续两周按时开出只含 `docs/reports/weekly/<周日>/` 的草稿 PR；只读凭据配置后，私有周汇总写入私有库的 `weekly/<周日>/` |
+| `DEV-WK-005` | P2 / `pending` | 其余入口的自动导出：原地替换（`published_page_replace`）、现场对齐、研读手册、统计目录同步、海报、正式四层周更。完成条件：这些入口结束时都经同一个导出命令留下报告和私有证据 |
+| `DEV-WK-006` | P2 / `pending` | 三项未实现的周指标：人工修正的分类计数（从私有库的审核表与译文修订算出，只公开计数）、来源到达至页面上线的时长、生产期间改动的生产代码。完成条件：三项进 `weekly.json` 并各有一周的数值 |
+
+既有条目的关系：`DEV-SF-007` 里「发布型子命令写 journal」已由提交 `20985126`（`_mark_publish`）实施，导出部分转 `DEV-WK-002`，「`finish_run.py` 发出可审时自动 `waiting`」仍在原行；`DEV-RUNREPORT-001` 保持 `waiting_evidence`，①由 `DEV-WK-002` 补逐句优先线，④由 `DEV-WK-004` 补。11-08 复盘里写「待开 backlog」的改进不在这里逐条取 ID：它们是 [11-08 周汇总](reports/weekly/20261108/WEEKLY.md)的候选改进，审核人接受哪条，就为哪条取 ID 并写验证信号。
 
 <a id="backlog-sentence-first-next-round-20261025"></a>
 

@@ -6,8 +6,11 @@ Spark), where a cloud review session cannot read it. This tool copies only the
 files a retrospective needs from one or more run directories:
 
 - ``outcome.json``, ``timings.tsv``, ``summary.json``, the run journal
-  ``journal.ndjson``, the decision record ``decisions.ndjson`` and
-  ``*receipt*.json`` (whole, when under the size cap);
+  ``journal.ndjson``, the decision record ``decisions.ndjson``,
+  ``*receipt*.json`` and the publish evidence ``publish-gate.json``,
+  ``http-verification.json``, ``deployment-attempt*.json``,
+  ``deployment-reconciliation.json`` and ``smoke-*.json`` (whole, when under
+  the size cap);
 - ``source-budget.json`` as a settlement summary only (requests, reserved and
   estimated cost, tokens, unknown-cost reasons), never the ledger itself;
 - ``*.log`` (first and last lines, with every error line in between).
@@ -57,7 +60,12 @@ WHOLE_NAMES = {"outcome.json", "timings.tsv", "summary.json", "preflight.json", 
                "journal.ndjson", "decisions.ndjson",
                # state_check.py writes this before a run report; it carries the DeepSeek
                # stage consistency and uncovered-sentence evidence.
-               "state-check.json"}
+               "state-check.json",
+               # Publish evidence the weekly rollup counts: gate result, HTTP checks and the
+               # reconciliation of an unknown deploy outcome. They name checks and hashes, not content.
+               "publish-gate.json", "http-verification.json", "deployment-reconciliation.json"}
+# Whole by prefix: one deploy attempt per staged snapshot, one browser smoke per locale.
+WHOLE_PREFIXES = ("deployment-attempt", "smoke-")
 BUDGET_LEDGER = "source-budget.json"
 BUDGET_SUMMARY_NAME = "source-budget.settlement.json"
 BUDGET_SUMMARY_SCHEMA_V1 = "sermon-run-digest-budget-settlement-v1"
@@ -314,7 +322,8 @@ def read_log(path: Path, digest) -> tuple[str, bool]:
 
 
 def classify(path: Path) -> str | None:
-    if path.name in WHOLE_NAMES or (path.suffix == ".json" and "receipt" in path.name):
+    if path.name in WHOLE_NAMES or (path.suffix == ".json" and ("receipt" in path.name
+                                                              or path.name.startswith(WHOLE_PREFIXES))):
         return "whole"
     if path.name == BUDGET_LEDGER:
         return "budget"

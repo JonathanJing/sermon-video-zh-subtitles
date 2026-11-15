@@ -1,0 +1,203 @@
+{
+  "schemaVersion": "sermon-private-evidence-index-v1",
+  "store": "gs://sermon-zh-artifacts-ai-for-god/run-evidence/v1",
+  "generatedAt": "2026-11-15T16:43:42+00:00",
+  "runs": [
+    {
+      "runName": "20261023-jesus-promises-publish",
+      "files": 54,
+      "collectedAt": "2026-11-15T16:32:01+00:00",
+      "manifestSha256": "4cc7d75f22912d909965b2d76712336b636acd4445cf455fceb439c04c7fe993"
+    },
+    {
+      "runName": "20261023-publish",
+      "files": 51,
+      "collectedAt": "2026-11-15T16:32:05+00:00",
+      "manifestSha256": "bb8675159eca2500287a8878e3b33937359dbbc0c694d70ec28e14ccf1745c81"
+    },
+    {
+      "runName": "20261024-sat400-publish",
+      "files": 54,
+      "collectedAt": "2026-11-15T16:32:07+00:00",
+      "manifestSha256": "0386cb7394db398b9579dea6b4b32c3a4a75aaa219629b2615733bd9173dabe9"
+    },
+    {
+      "runName": "20261024-sat400-v2-publish",
+      "files": 88,
+      "collectedAt": "2026-11-15T16:32:10+00:00",
+      "manifestSha256": "6b3ebeebd5e8c689ef60eff1c4e4fb9643b2a672112dc29ae88db1a5876d1961"
+    },
+    {
+      "runName": "20261024-sat400-v2-study-publish",
+      "files": 46,
+      "collectedAt": "2026-11-15T16:32:12+00:00",
+      "manifestSha256": "be330163a67a87a9efb8883422a7de63974e2e283415a9ba779cb333cbbbb74c"
+    },
+    {
+      "runName": "20261026-jesus-wins-publish",
+      "files": 114,
+      "collectedAt": "2026-11-15T16:32:17+00:00",
+      "manifestSha256": "4124450b8e45f3c4d2f9cb7a0e7c560e9c547bb45603d3bdccd062e510d545a2"
+    },
+    {
+      "runName": "20261101-jesus-marks-podcast-publish",
+      "files": 56,
+      "collectedAt": "2026-11-15T16:32:20+00:00",
+      "manifestSha256": "cbef6a27adc37522d98274e9714f1ca871b6c9e14adccce56e485525643a90ed"
+    },
+    {
+      "runName": "20261101-jesus-marks-publish",
+      "files": 278,
+      "collectedAt": "2026-11-15T16:32:35+00:00",
+      "manifestSha256": "e4d3f79255f55742abcbaa793eab06b819ec1919f9b2714eb456546354e66597"
+    },
+    {
+      "runName": "20261107-sermon-source",
+      "files": 0,
+      "collectedAt": "2026-11-15T16:32:37+00:00",
+      "manifestSha256": "f26d67b54622453577ce4852c4236f3bb7baaeb7cbca6688308ab1865d61038a"
+    },
+    {
+      "runName": "20261108-alignment",
+      "files": 5,
+      "collectedAt": "2026-11-15T16:32:41+00:00",
+      "manifestSha256": "38928612d5d23a4d9edd60a3e1270f083601838c17f518bba61ab82ac61e52ea"
+    },
+    {
+      "runName": "20261108-feedback",
+      "files": 5,
+      "collectedAt": "2026-11-15T16:32:43+00:00",
+      "manifestSha256": "efda0f7fbb3a8a84b724bd74a449faab77a8587adba6d2830f1ad42871b57d77"
+    },
+    {
+      "runName": "20261108-jesus-is-just-es",
+      "files": 37,
+      "collectedAt": "2026-11-15T16:32:44+00:00",
+      "manifestSha256": "220e9489e04a9373d21c9c6c79167dc9ed9fd1835731e34de73f38bf34b0fc48"
+    },
+    {
+      "runName": "20261108-jesus-is-just-ko",
+      "files": 39,
+      "collectedAt": "2026-11-15T16:32:45+00:00",
+      "manifestSha256": "430413d81ffd6b125cb7ef251ff63d382d85066b43ffbc9fcc71477e07b84739"
+    },
+    {
+      "runName": "20261108-jesus-is-just-podcast-es",
+      "files": 26,
+      "collectedAt": "2026-11-15T16:32:46+00:00",
+      "manifestSha256": "0e923093b455330d970b8ad865b5e064e4e61ed0cca79e6077e18f7d191f73f3"
+    },
+    {
+      "runName": "20261108-jesus-is-just-podcast-ko",
+      "files": 26,
+      "collectedAt": "2026-11-15T16:32:47+00:00",
+      "manifestSha256": "457433b4c0996fe3123853de6489cea5194d4e500133bbf0087e597710c0b83b"
+    },
+    {
+      "runName": "20261108-jesus-is-just-podcast-publish",
+      "files": 58,
+      "collectedAt": "2026-11-15T16:32:50+00:00",
+      "manifestSha256": "9b112d467ea05b2c16878097e15d108a8fb01b25be3f9a65ffd09a679dcccfc0"
+    },
+    {
+      "runName": "20261108-jesus-is-just-podcast-review",
+      "files": 1,
+      "collectedAt": "2026-11-15T16:32:50+00:00",
+      "manifestSha256": "3faf4f522c615ced19b7b492bff4afc3661c16cbebdfb725f33cc9768291d634"
+    },
+    {
+      "runName": "20261108-jesus-is-just-podcast-source",
+      "files": 1,
+      "collectedAt": "2026-11-15T16:32:50+00:00",
+      "manifestSha256": "bcb725a28a9c6e3808def6fc2a136c7967a5476339b8e1a28fe1483fdff09018"
+    },
+    {
+      "runName": "20261108-jesus-is-just-podcast-zh",
+      "files": 31,
+      "collectedAt": "2026-11-15T16:32:51+00:00",
+      "manifestSha256": "2c562dd01c2f87bb0d7d42bc9e4d962b38d8fdcc9153f36fdacb9b6fa4885ddd"
+    },
+    {
+      "runName": "20261108-jesus-is-just-publish",
+      "files": 332,
+      "collectedAt": "2026-11-15T16:33:04+00:00",
+      "manifestSha256": "354ec14c84292ffd8b5e74a12645f17b30eb0fec76663b3e28a0df0b8fcc3a9c"
+    },
+    {
+      "runName": "20261108-jesus-is-just-reading",
+      "files": 5,
+      "collectedAt": "2026-11-15T16:33:04+00:00",
+      "manifestSha256": "f3369b7c72693774ace3f1001cf5aab36693cea93b9e17cc7bf7f10ce689f1a9"
+    },
+    {
+      "runName": "20261108-jesus-is-just-zh",
+      "files": 40,
+      "collectedAt": "2026-11-15T16:33:05+00:00",
+      "manifestSha256": "d3679845f629f0a48cf02bb07c64353043738fe82a188acf96f863c7f2be2515"
+    },
+    {
+      "runName": "20261108-push",
+      "files": 2,
+      "collectedAt": "2026-11-15T16:33:05+00:00",
+      "manifestSha256": "e847206c8b5efa7686a9dba69023d41a4f5e32645052346484e3ffc989c1cfc7"
+    },
+    {
+      "runName": "20261108-review",
+      "files": 3,
+      "collectedAt": "2026-11-15T16:33:05+00:00",
+      "manifestSha256": "022bf07511e4d9125a2fba4521078c68761f12233a9b37c01f177ff237de1c8c"
+    },
+    {
+      "runName": "20261108-sermon-source",
+      "files": 22,
+      "collectedAt": "2026-11-15T16:33:07+00:00",
+      "manifestSha256": "077d8a4fc4f0db19a9615a64ade912ea10ea96f5f70e44dba39bbb8365af0b20"
+    },
+    {
+      "runName": "20261115-jesus-is-better-podcast-es",
+      "files": 26,
+      "collectedAt": "2026-11-15T16:35:01+00:00",
+      "manifestSha256": "352ae1fc655fd2f8cfc4e61459c422fbd59f3461586ae14c0b5efc8c6b4114fd"
+    },
+    {
+      "runName": "20261115-jesus-is-better-podcast-ko",
+      "files": 26,
+      "collectedAt": "2026-11-15T16:35:02+00:00",
+      "manifestSha256": "78a39404a1c57048c017c70ab042ca54addba1acfac1c7b1c09b0176e5b53739"
+    },
+    {
+      "runName": "20261115-jesus-is-better-podcast-publish",
+      "files": 60,
+      "collectedAt": "2026-11-15T16:35:05+00:00",
+      "manifestSha256": "a8e431066a379b1cb469894cb2d2fc4a4d3629ad8a9be82182c4d8f946017e1c"
+    },
+    {
+      "runName": "20261115-jesus-is-better-podcast-review",
+      "files": 1,
+      "collectedAt": "2026-11-15T16:35:06+00:00",
+      "manifestSha256": "a030b2858214735d58c4e3371a966ee6c17f1f9e318bb4629002dd677352a419"
+    },
+    {
+      "runName": "20261115-jesus-is-better-podcast-source",
+      "files": 38,
+      "collectedAt": "2026-11-15T16:35:07+00:00",
+      "manifestSha256": "4236b2393c490feed2cf49098f0598c4fff38ed9d62ea263973b8710650bef41"
+    },
+    {
+      "runName": "20261115-jesus-is-better-podcast-zh",
+      "files": 31,
+      "collectedAt": "2026-11-15T16:35:08+00:00",
+      "manifestSha256": "60658ef7d2a7372a79b1be70796638d144b39185972114a1c8ad5273319abda8"
+    },
+    {
+      "runName": "20261115-jesus-is-better-poster",
+      "files": 54,
+      "collectedAt": "2026-11-15T16:31:17+00:00",
+      "manifestSha256": "a721b8780a16e7a5bfc1f0400cc2a548107d43793a487e3bf0872d9a7fdad1cd"
+    }
+  ],
+  "frontend": [
+    "20261115"
+  ],
+  "weekly": []
+}
