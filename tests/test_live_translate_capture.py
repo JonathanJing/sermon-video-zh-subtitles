@@ -19,9 +19,12 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from urllib.parse import parse_qs, urlparse
 
-import pytest
-
-websockets = pytest.importorskip("websockets")
+try:
+    import websockets
+    HAVE_WEBSOCKETS = True
+except ImportError:  # CI installs requirements-test.txt, which does not pin websockets
+    websockets = None
+    HAVE_WEBSOCKETS = False
 
 ROOT = Path(__file__).resolve().parents[1]
 EXPERIMENT = ROOT / "experiments" / "live-translate-capture"
@@ -36,10 +39,15 @@ def load_module(name: str, filename: str):
     return module
 
 
-capture = load_module("live_capture_under_test", "capture.py")
-fetch_session = load_module("live_capture_session_under_test", "fetch_session.py")
+if HAVE_WEBSOCKETS:
+    capture = load_module("live_capture_under_test", "capture.py")
+    fetch_session = load_module("live_capture_session_under_test", "fetch_session.py")
+else:
+    capture = None
+    fetch_session = None
 
 
+@unittest.skipUnless(HAVE_WEBSOCKETS, "websockets not installed")
 class WindowTests(unittest.TestCase):
     def test_hh_mm_uses_local_date_across_utc_midnight(self):
         # 00:44Z = 16:44 in Los Angeles; "16:45" is the same local day, 27 s later.
@@ -67,6 +75,7 @@ class WindowTests(unittest.TestCase):
             capture.resolve_window("10:00", "11:20", None, "America/Los_Angeles", now=now)
 
 
+@unittest.skipUnless(HAVE_WEBSOCKETS, "websockets not installed")
 class SinkTests(unittest.TestCase):
     def test_caption_sink_dedupes_replayed_finals(self):
         with tempfile.TemporaryDirectory() as raw:
@@ -106,6 +115,7 @@ class SinkTests(unittest.TestCase):
                 self.assertAlmostEqual(handle.getnframes() / 24000, 1.25, places=3)
 
 
+@unittest.skipUnless(HAVE_WEBSOCKETS, "websockets not installed")
 class SessionTests(unittest.TestCase):
     def test_choose_session_prefers_overlap(self):
         now = datetime(2026, 11, 15, 1, 0, tzinfo=timezone.utc)
@@ -200,6 +210,7 @@ class LocalWireServer:
             pass
 
 
+@unittest.skipUnless(HAVE_WEBSOCKETS, "websockets not installed")
 class IntegrationTests(unittest.IsolatedAsyncioTestCase):
     async def asyncSetUp(self):
         capture.LOG.handlers.clear()
