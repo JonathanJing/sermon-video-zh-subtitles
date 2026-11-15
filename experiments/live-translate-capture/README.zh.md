@@ -11,7 +11,7 @@
   - 经 `run-capture.sh` 完整链路 74 秒：英文 22 条 final，普通话音频 73.75 秒；会话日志 39 条英文行，22/22 完全匹配（归一化后逐条相同）。
 - 采集、断线续传、音频封装、会话日志取回、LaunchAgent 定时启动都已在本机跑通；9 个本地测试通过（含一个本地 WebSocket 假服务器，覆盖断线后带 `since` 重连）。
 - 另做了一次 **10 分钟 demo 房间长测**：597.25 秒连续音频、0 次重连、0 个到达空隙；期间捕获到提供商会话轮换（540 秒 `goAway`、587 秒 `cutover`，`droppedMs=0`），音频没有断。
-- 默认定时已装好：**每周日 09:55 启动，10:00 开始录，11:20 自动截断**，房间 `mariners-north-irvine`；LaunchAgent 见 `~/Library/LaunchAgents/ai.pastors.live-capture.plist`。
+- 默认定时已装好：**每周日 09:55 启动，10:00 开始录，11:20 自动截断**，房间 `mariners-north-irvine`（2026-11-14 已确认）；LaunchAgent 见 `~/Library/LaunchAgents/ai.pastors.live-capture.plist`。
 - 依赖只有仓库 venv 里的 `websockets` 和 `requests`，见 `requirements.txt`。
 
 ## 采集的是什么，不是什么
@@ -124,6 +124,7 @@ bash experiments/live-translate-capture/install-schedule.sh --uninstall
 - 需要 Mac 在周日早上**开机、联网、已登录**；launchd 会在唤醒后补跑错过的日历任务，但它不能自己唤醒睡眠中的 Mac。`run-capture.sh` 用 `caffeinate -i -m -s` 保持运行期间不休眠（`-s` 仅在接电源时有效）。
 - 采集进程发现已有另一个 `capture.py` 在跑时会拒绝启动，避免重复开提供商会话。
 - 若 09:55 的实例在 10:00 前失败，本次不会自动重试；可手动跑 `run-capture.sh`，或重新 `install-schedule.sh`。`KeepAlive` 没有启用，避免 11:20 后反复启动已过窗口的任务。
+- 空跑验证（2026-11-14，`mariners-north-irvine` 未直播）：capture 正常在窗口结束时写 `capture.json`（`status: empty`，广播状态全程 false），`fetch_session.py` 因没有重叠会话而失败并把 `session_fetch_exit: 1` 写进 `run.status.json`；包装脚本仍以 0 退出，不会把“没有直播”误报成采集进程崩溃。
 
 ## 交给后续流程
 
@@ -163,6 +164,6 @@ bash experiments/live-translate-capture/install-schedule.sh --uninstall
 
 ## 下一步
 
-1. 确认周日目标房间是 `mariners-north-irvine` 还是 `mariners-irvine-outdoor`，以及 10:00–11:20 是否就是目标礼拜。
+1. 周日目标房间已确认：`mariners-north-irvine`，窗口按 10:00–11:20。2026-11-14 用该房间做了一次空跑，确认“未直播时正常收尾”的路径。
 2. 确认是否需要**英文原声**；需要的话，把现场麦克风或教会直播流作为第二条音频输入接进来（当前只录页面提供的普通话 TTS）。
 3. 用一次真实周日的产物跑 11:20 → 英文清理 → 我们自己的翻译 → 阅读版 PDF 的下游链路，并记录它和既有 post-live 工作流的差异。
