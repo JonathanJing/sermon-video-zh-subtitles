@@ -34,12 +34,12 @@
 
 ```bash
 .venv/bin/python -m pytest tests/test_live_translate_capture.py -q
-# 15 passed
+# 16 passed
 ```
 
 测试覆盖：本地日期/跨 UTC 午夜的窗口解析、迟到开始、已过窗口拒绝、caption final 去重、WAV 封装与补静音、会话选择、遥测/ingest 脱敏、本地 WebSocket 断线重连，以及人工讲道起止的记录/边界校验/哈希绑定和窗口内正文导出。
 
-代码 PR 后续加入 `mark_window.py` 与 `extract_sermon.py`（共 6 个测试）：采集端保存整段 10:00–11:20，人工回看后记录讲道起止，再确定性导出窗口内英文正文；这不改变本报告三次采集和 10 分钟长测的证据。
+代码 PR 后续加入 `mark_window.py` 与 `extract_sermon.py`（共 7 个测试）：采集端保存整段 10:00–11:20，人工回看后记录讲道起止，再确定性导出窗口内英文正文；这不改变本报告三次采集和 10 分钟长测的证据。
 
 ## 边界与未验证
 
