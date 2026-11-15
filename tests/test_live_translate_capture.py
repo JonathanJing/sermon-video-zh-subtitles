@@ -28,6 +28,8 @@ except ImportError:  # CI installs requirements-test.txt, which does not pin web
 
 ROOT = Path(__file__).resolve().parents[1]
 EXPERIMENT = ROOT / "experiments" / "live-translate-capture"
+if str(EXPERIMENT) not in sys.path:
+    sys.path.insert(0, str(EXPERIMENT))
 
 
 def load_module(name: str, filename: str):
@@ -40,6 +42,7 @@ def load_module(name: str, filename: str):
 
 
 mark_window = load_module("live_capture_mark_window_under_test", "mark_window.py")
+extract_sermon = load_module("live_capture_extract_under_test", "extract_sermon.py")
 
 if HAVE_WEBSOCKETS:
     capture = load_module("live_capture_under_test", "capture.py")
@@ -226,6 +229,89 @@ class WindowMarkTests(unittest.TestCase):
         manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
         with self.assertRaises(ValueError):
             mark_window.check_window(self.run_dir)
+
+
+class ExtractSermonTests(unittest.TestCase):
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory()
+        self.run_dir = Path(self.temp.name)
+        (self.run_dir / "capture.json").write_text(
+            json.dumps(
+                {
+                    "schema": "live-translate-capture/v1",
+                    "window": {
+                        "actual_start": "2026-11-15T18:00:00.000Z",
+                        "actual_stop": "2026-11-15T19:20:00.000Z",
+                    },
+                    "host": {"timezone": "America/Los_Angeles"},
+                }
+            ),
+            encoding="utf-8",
+        )
+        self.write_jsonl(
+            "session.english.jsonl",
+            [
+                {"ts": "2026-11-15T17:58:00.000Z", "text": "before the window"},
+                {"ts": "2026-11-15T18:05:00.000Z", "text": "first sermon line."},
+                {"ts": "2026-11-15T18:10:00.000Z", "text": "second sermon line."},
+                {"ts": "2026-11-15T18:30:00.000Z", "text": "after the window"},
+            ],
+        )
+        self.write_jsonl(
+            "session.mandarin.jsonl",
+            [
+                {"ts": "2026-11-15T18:05:00.000Z", "text": "第一句。"},
+                {"ts": "2026-11-15T18:10:00.000Z", "text": "第二句。"},
+            ],
+        )
+        mark_window.record_window(
+            self.run_dir,
+            start="10:04:00",
+            end="10:11:00",
+            approved_by="test operator",
+            evidence="test window",
+        )
+
+    def tearDown(self):
+        self.temp.cleanup()
+
+    def write_jsonl(self, name: str, rows: list[dict]) -> None:
+        (self.run_dir / name).write_text(
+            "\n".join(json.dumps(row, ensure_ascii=False) for row in rows) + "\n",
+            encoding="utf-8",
+        )
+
+    def test_extracts_session_lines_inside_the_window(self):
+        manifest = extract_sermon.extract(self.run_dir)
+        rows = [json.loads(line) for line in (self.run_dir / "sermon.english.jsonl").read_text().splitlines()]
+        self.assertEqual([row["text"] for row in rows], ["first sermon line.", "second sermon line."])
+        self.assertEqual(manifest["english"]["lines"], 2)
+        self.assertEqual(manifest["source"]["english"]["kind"], "session")
+        self.assertEqual(manifest["mandarin"]["lines"], 2)
+        self.assertTrue(manifest["mandarin"]["comparison_only"])
+        timed = (self.run_dir / "sermon.english.timed.txt").read_text(encoding="utf-8")
+        self.assertIn("[00:05:00.000] first sermon line.", timed)
+        self.assertTrue((self.run_dir / "sermon.manifest.json").exists())
+
+    def test_falls_back_to_live_arrival_times(self):
+        (self.run_dir / "session.english.jsonl").unlink()
+        self.write_jsonl(
+            "english.finals.jsonl",
+            [
+                {"received_at": "2026-11-15T18:05:00.000Z", "t_ms": 300000, "text": "live first."},
+                {"received_at": "2026-11-15T18:05:00.000Z", "t_ms": 600000, "text": "live second."},
+                {"received_at": "2026-11-15T18:20:00.000Z", "t_ms": 1200000, "text": "live after."},
+            ],
+        )
+        manifest = extract_sermon.extract(self.run_dir)
+        rows = [json.loads(line) for line in (self.run_dir / "sermon.english.jsonl").read_text().splitlines()]
+        self.assertEqual([row["text"] for row in rows], ["live first.", "live second."])
+        self.assertEqual(manifest["source"]["english"]["kind"], "live")
+
+    def test_requires_a_recorded_window(self):
+        (self.run_dir / "sermon.window.json").unlink()
+        with self.assertRaises(ValueError):
+            extract_sermon.extract(self.run_dir)
 
 
 @unittest.skipUnless(HAVE_WEBSOCKETS, "websockets not installed")
