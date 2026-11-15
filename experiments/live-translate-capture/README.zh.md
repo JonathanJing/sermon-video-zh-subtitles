@@ -249,6 +249,10 @@ bash experiments/live-translate-capture/install-schedule.sh --uninstall
 4. **诚实标签**：阅读版必须标明英文来源是现场 ASR、中文是我们自己的机器翻译、人工审校状态按实际记录；机器审校不等于人工批准。
 5. **实时直播** 仍是独立的 `live_session`；这次采集的录像/文本如果用于耐久内容，从 Layer 1 重新开始，不把直播机器中文提升为 Layer 2 批准。
 
+## 翻译质量对比
+
+如果需要比较 pastors.ai 实际下发的机器中文和我们生产链的中文，见 [`experiments/translation-quality-comparison/README.zh.md`](../translation-quality-comparison/README.zh.md) 与它的 [`AGENTS.md`](../translation-quality-comparison/AGENTS.md)。对比以人工盲评为主，不做金标结论，也不调用模型。
+
 ## 本机验证记录
 
 | 运行 | 目录（本机，gitignored） | 时长 | 英文 final | 普通话音频 | 会话日志 | 匹配 |
