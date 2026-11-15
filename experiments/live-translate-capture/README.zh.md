@@ -10,6 +10,7 @@
   - 直接运行 60 秒：英文 7 条 final，普通话音频 56.75 秒；同窗口会话日志 7/7 条英文 final 完全匹配。
   - 经 `run-capture.sh` 完整链路 74 秒：英文 22 条 final，普通话音频 73.75 秒；会话日志 39 条英文行，22/22 完全匹配（归一化后逐条相同）。
 - 采集、断线续传、音频封装、会话日志取回、LaunchAgent 定时启动都已在本机跑通；18 个本地测试通过（含一个本地 WebSocket 假服务器，覆盖断线后带 `since` 重连）。
+- 阅读适配器 `build_reading_pdf.py` 已接到现有生产链（英文清理 → 我们的翻译 → 2-pass 阅读编辑 → 中英对照 PDF）；默认只出 plan，`--execute` 必须走显式 OpenAI 环境。5 分钟 demo 窗口 plan 得到 61 行 caption → 13 个阅读段 / 4,262 字符。
 - 另做了一次 **10 分钟 demo 房间长测**：597.25 秒连续音频、0 次重连、0 个到达空隙；期间捕获到提供商会话轮换（540 秒 `goAway`、587 秒 `cutover`，`droppedMs=0`），音频没有断。
 - 默认定时已装好：**每周日 09:55 启动，10:00 开始录，11:20 自动截断**，房间 `mariners-north-irvine`（2026-11-14 已确认）；LaunchAgent 见 `~/Library/LaunchAgents/ai.pastors.live-capture.plist`。
 - 依赖只有仓库 venv 里的 `websockets` 和 `requests`，见 `requirements.txt`。
@@ -255,4 +256,4 @@ bash experiments/live-translate-capture/install-schedule.sh --uninstall
 
 1. 周日目标房间已确认：`mariners-north-irvine`，窗口按 10:00–11:20。2026-11-14 用该房间做了一次空跑，确认“未直播时正常收尾”的路径。
 2. 确认是否需要**英文原声**；需要的话，把现场麦克风或教会直播流作为第二条音频输入接进来（当前只录页面提供的普通话 TTS）。
-3. 用一次真实周日的产物跑 11:20 → 英文清理 → 我们自己的翻译 → 阅读版 PDF 的下游链路，并记录它和既有 post-live 工作流的差异。
+3. 阅读适配器已就绪。等周日真实产物和显式环境/预算确认后，先跑 `build_reading_pdf.py` 的 plan 检查分段，再用 `--execute` 跑英文清理、我们的翻译、阅读编辑和 PDF；记录它与既有 post-live 工作流的差异。真实付费链路尚未跑。
