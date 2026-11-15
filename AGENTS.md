@@ -35,6 +35,7 @@ Purpose: help attendees follow English sermons in their own language, on time an
 | Canonical App delivery | [Layer 4 public delivery](docs/layer4-four-product-public-delivery.zh.md) and [weekly release](docs/tongxing-weekly-release.zh.md) |
 | Web frontend change (listening-web, operator-web, support-web, tracker-web) | [Web frontend modernization policy](docs/web-frontend-modernization-policy.zh.md): Baseline 2024, the strict CSP, the dark-first theme decision, and which modern-web-guidance findings were dropped |
 | Weekly or ad hoc poster | Use the same [single-line poster template](docs/tongxing-weekly-poster-format.zh.md) and [poster procedure](docs/tongxing-weekly-release.zh.md#每周海报交付), including one-locale work; separate from page publication and do not send or upload it without the user's instruction |
+| Podcast poster | [Podcast cover poster format](docs/tongxing-podcast-cover-poster-format.zh.md): 1080×1080, the episode's whole YouTube cover above a Chinese information band; a separate format from the weekly 2:3 template, same no-upload/no-send rule |
 | Resume a weekly production run | [Local production runbook](docs/codex-local-production-runbook.zh.md), [run profile](docs/weekly-run-profile.zh.md) for concurrency and budget caps, and the existing run artifacts |
 | Manual dual-PDF production | [Stable post-live workflow](docs/stable-post-live-reading-pdf-workflow.md) |
 | Supervisor state or tools | [Supervisor contract](docs/sermon-production-supervisor-agent.md) |
