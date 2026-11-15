@@ -1,0 +1,289 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261115-jesus-is-better-podcast",
+  "runs": [
+    {
+      "label": "20261115-jesus-is-better-podcast-source",
+      "source": "~/dev/sermon-video-zh-subtitles/artifacts/sentence-first-agent/20261115-jesus-is-better-podcast-source",
+      "skipped": {
+        ".py": 13,
+        ".json": 27,
+        ".csv": 3,
+        ".txt": 1,
+        ".mp3": 3,
+        ".wav": 802,
+        ".html": 5,
+        ".md": 1,
+        ".m4a": 1
+      }
+    },
+    {
+      "label": "20261115-jesus-is-better-podcast-zh",
+      "source": "~/dev/sermon-video-zh-subtitles/artifacts/sentence-first-agent/20261115-jesus-is-better-podcast-zh",
+      "skipped": {
+        "(none)": 1,
+        ".jsonl": 15,
+        ".json": 10,
+        ".wav": 1582,
+        ".html": 1,
+        ".mp3": 1,
+        ".md": 1,
+        ".ndjson": 1
+      }
+    },
+    {
+      "label": "20261115-jesus-is-better-podcast-ko",
+      "source": "~/dev/sermon-video-zh-subtitles/artifacts/sentence-first-agent/20261115-jesus-is-better-podcast-ko",
+      "skipped": {
+        "(none)": 1,
+        ".jsonl": 15,
+        ".json": 6,
+        ".html": 1,
+        ".mp3": 1,
+        ".wav": 1581,
+        ".ndjson": 1
+      }
+    },
+    {
+      "label": "20261115-jesus-is-better-podcast-es",
+      "source": "~/dev/sermon-video-zh-subtitles/artifacts/sentence-first-agent/20261115-jesus-is-better-podcast-es",
+      "skipped": {
+        "(none)": 1,
+        ".jsonl": 15,
+        ".json": 6,
+        ".html": 1,
+        ".mp3": 1,
+        ".wav": 1581,
+        ".ndjson": 1
+      }
+    },
+    {
+      "label": "20261115-jesus-is-better-podcast-review",
+      "source": "~/dev/sermon-video-zh-subtitles/artifacts/sentence-first-agent/20261115-jesus-is-better-podcast-review",
+      "skipped": {
+        ".json": 1
+      }
+    },
+    {
+      "label": "20261115-jesus-is-better-podcast-publish",
+      "source": "~/dev/sermon-video-zh-subtitles/artifacts/sentence-first-agent/20261115-jesus-is-better-podcast-publish",
+      "skipped": {
+        ".json": 1472,
+        ".mp3": 501,
+        ".js": 56,
+        ".html": 291,
+        "(none)": 6,
+        ".mjs": 198,
+        ".png": 330,
+        ".svg": 18,
+        ".srt": 12,
+        ".pdf": 24,
+        ".jpg": 6,
+        ".css": 18,
+        ".cache": 1,
+        ".lock": 1
+      }
+    }
+  ],
+  "files": [
+    {
+      "run": "20261115-jesus-is-better-podcast-source",
+      "path": "layer1/english-approval-receipt.json",
+      "kind": "whole",
+      "bytes": 10115,
+      "truncated": false,
+      "sha256": "c4ea3a48f2cd586b044fdd4aa6db39023bf1838f286e2a57afa677e6cb39c32c",
+      "redactions": {}
+    },
+    {
+      "run": "20261115-jesus-is-better-podcast-zh",
+      "path": "journal.ndjson",
+      "kind": "whole",
+      "bytes": 11179,
+      "truncated": false,
+      "sha256": "7043405d09244023fcf2e70d5864b3a5af5a424c431902ccf985e3fc743176bd",
+      "redactions": {
+        "home_dir": 2
+      }
+    },
+    {
+      "run": "20261115-jesus-is-better-podcast-zh",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 701,
+      "truncated": false,
+      "sha256": "31258802a5446de63966db9a79ebaa26b7aaffb576d2cb73052949b570ebb4c5",
+      "redactions": {}
+    },
+    {
+      "run": "20261115-jesus-is-better-podcast-zh",
+      "path": "timings.tsv",
+      "kind": "whole",
+      "bytes": 311,
+      "truncated": false,
+      "sha256": "239618cff01c8225aa81a3a32d32ed49bd69800d7df6ffa8b7a20141cbf6883a",
+      "redactions": {}
+    },
+    {
+      "run": "20261115-jesus-is-better-podcast-zh",
+      "path": "tts-run.log",
+      "kind": "log",
+      "bytes": 276532,
+      "truncated": true,
+      "sha256": "14bada46ea125fc862cd05dcce855d743b9632388a8ecd5c5d00627dc18ae9bf",
+      "redactions": {}
+    },
+    {
+      "run": "20261115-jesus-is-better-podcast-ko",
+      "path": "journal.ndjson",
+      "kind": "whole",
+      "bytes": 2796,
+      "truncated": false,
+      "sha256": "f5a7a1a4cccaca61fd349431935f69c0dc29c0fb31fc9443a3e876a728196145",
+      "redactions": {}
+    },
+    {
+      "run": "20261115-jesus-is-better-podcast-ko",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 696,
+      "truncated": false,
+      "sha256": "a294f3bffbccb93e6ce52ea593688403bf0244bedebe162f276508064690060c",
+      "redactions": {}
+    },
+    {
+      "run": "20261115-jesus-is-better-podcast-ko",
+      "path": "timings.tsv",
+      "kind": "whole",
+      "bytes": 252,
+      "truncated": false,
+      "sha256": "191c3b46df1b36ba4b6ed1ec9829ce4dda816f4fafea8b94a26bfad8c6fe74eb",
+      "redactions": {}
+    },
+    {
+      "run": "20261115-jesus-is-better-podcast-ko",
+      "path": "tts-run.log",
+      "kind": "log",
+      "bytes": 276497,
+      "truncated": true,
+      "sha256": "73d396b17d9c8200ddcd03982ce603e6c323912f7217608dee464f58c571ec3b",
+      "redactions": {}
+    },
+    {
+      "run": "20261115-jesus-is-better-podcast-es",
+      "path": "journal.ndjson",
+      "kind": "whole",
+      "bytes": 2796,
+      "truncated": false,
+      "sha256": "55c32a2d9fbe87c81e83894a7d1ab63a839965a12c6c2b9b069cda83654a046e",
+      "redactions": {}
+    },
+    {
+      "run": "20261115-jesus-is-better-podcast-es",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 696,
+      "truncated": false,
+      "sha256": "48b41147cbffdad86b27566ed1a2090ddc3da4237cd62ea06944629af7248507",
+      "redactions": {}
+    },
+    {
+      "run": "20261115-jesus-is-better-podcast-es",
+      "path": "timings.tsv",
+      "kind": "whole",
+      "bytes": 252,
+      "truncated": false,
+      "sha256": "c8aa2568ff25514e5471b16f9a606884a6498a45e89f74301ca52b8946aa8ee3",
+      "redactions": {}
+    },
+    {
+      "run": "20261115-jesus-is-better-podcast-es",
+      "path": "tts-run.log",
+      "kind": "log",
+      "bytes": 276534,
+      "truncated": true,
+      "sha256": "d39d3bc10cd085918eaba367b70764fb77ad44161665506f93b0fce83693fe2d",
+      "redactions": {}
+    },
+    {
+      "run": "20261115-jesus-is-better-podcast-publish",
+      "path": "baseline/baseline-receipt.json",
+      "kind": "whole",
+      "bytes": 176633,
+      "truncated": false,
+      "sha256": "c5052bc48e1d3d3107a1b12c2d06d651ea5bb9529c681db34429bf0eed1fd3bb",
+      "redactions": {}
+    },
+    {
+      "run": "20261115-jesus-is-better-podcast-publish",
+      "path": "baseline-english/baseline-receipt.json",
+      "kind": "whole",
+      "bytes": 182753,
+      "truncated": false,
+      "sha256": "8fe2d15eb289e30c4a834b43ea13cb9f14cfdb9f175f65217c51156c7a7f6a73",
+      "redactions": {}
+    },
+    {
+      "run": "20261115-jesus-is-better-podcast-publish",
+      "path": "baseline-reconcile/baseline-receipt.json",
+      "kind": "whole",
+      "bytes": 176633,
+      "truncated": false,
+      "sha256": "c3935a3c119dfee8f133e3f6e2a80feffb2cab27f5930b4a6aa788e72101f330",
+      "redactions": {}
+    },
+    {
+      "run": "20261115-jesus-is-better-podcast-publish",
+      "path": "stage-english/baseline-receipt.json",
+      "kind": "whole",
+      "bytes": 182753,
+      "truncated": false,
+      "sha256": "8fe2d15eb289e30c4a834b43ea13cb9f14cfdb9f175f65217c51156c7a7f6a73",
+      "redactions": {}
+    },
+    {
+      "run": "20261115-jesus-is-better-podcast-publish",
+      "path": "stage1/baseline-receipt.json",
+      "kind": "whole",
+      "bytes": 176633,
+      "truncated": false,
+      "sha256": "c5052bc48e1d3d3107a1b12c2d06d651ea5bb9529c681db34429bf0eed1fd3bb",
+      "redactions": {}
+    },
+    {
+      "run": "20261115-jesus-is-better-podcast-publish",
+      "path": "stage1/firebase-debug.log",
+      "kind": "log",
+      "bytes": 15718388,
+      "truncated": true,
+      "sha256": "d9f6bf9018d9200d16f74f47489af931a2174d2fa1b19e463fbd562118c62562",
+      "redactions": {
+        "email": 1,
+        "home_dir": 2
+      }
+    },
+    {
+      "run": "20261115-jesus-is-better-podcast-publish",
+      "path": "stage1/hosting-publish.log",
+      "kind": "log",
+      "bytes": 0,
+      "truncated": false,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "redactions": {}
+    },
+    {
+      "run": "20261115-jesus-is-better-podcast-publish",
+      "path": "stage2/baseline-receipt.json",
+      "kind": "whole",
+      "bytes": 176633,
+      "truncated": false,
+      "sha256": "c5052bc48e1d3d3107a1b12c2d06d651ea5bb9529c681db34429bf0eed1fd3bb",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}
