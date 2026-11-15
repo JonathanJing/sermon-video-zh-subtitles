@@ -39,6 +39,7 @@ Purpose: help attendees follow English sermons in their own language, on time an
 | Manual dual-PDF production | [Stable post-live workflow](docs/stable-post-live-reading-pdf-workflow.md) |
 | Supervisor state or tools | [Supervisor contract](docs/sermon-production-supervisor-agent.md) |
 | Sunday live captions or offline backup | [Live POC instructions](experiments/local-live-poc/AGENTS.md) or [fallback skill](skills/live-caption-zh-fallback/SKILL.md) |
+| Sunday translate.pastors.ai capture, human sermon window, translated reading PDF | [Live translate capture runbook](experiments/live-translate-capture/AGENTS.md) |
 | iOS client | [iOS instructions](apps/tongxing-ios/AGENTS.md) |
 | Priorities, stable IDs and status | [Dev backlog](docs/backlog.zh.md), the only top-level backlog; find an ID's rows with `python3 tools/development/backlog_ids.py <ID or prefix>` |
 | Benchmark, model trial or post-training | README Discovery links and that experiment's contract |
