@@ -81,6 +81,8 @@ v5 同时投影出诚实的 v4/v3 兼容目录：v4 按 edition 拆成独立页�
 
 逐语言人工验收行的 `checks` 另含 `outline: pass` 和 `meditation: pass`。缺任一资源、任何语言的当前学习展示或原有播放/字幕证据，不能把该端点提升为通过。HTTP、设备和现场验收仍分别记录；测试用 synthetic receipt 不证明真实设备/生产验收。
 
+**托管上传的并发上限。** firebase-tools 默认用 200 个并发上传整站（`lib/deploy/hosting/deploy.js`，可用 `FIREBASE_HOSTING_UPLOAD_CONCURRENCY` 覆盖）。每个在传的上传同时持有原始字节和 gzip 后的请求体，周快照里最大的单个媒体约 88 MB，失败还会重试 5 次，所以默认值在 36 GiB 笔记本上的峰值远超余量。2026-11-15 07:43:13 那次就是这样：`firebase deploy` 的 node 进程被 jetsam 记账约 305 GB 常驻页，系统一次杀掉 1085 个进程，macOS 弹出「应用程序内存不足」；同一晚 23:19:46 已发生过一次同签名事件。因此 `guarded_hosting_publish` 在调用 CLI 时固定 `FIREBASE_HOSTING_UPLOAD_CONCURRENCY=4`（`HOSTING_UPLOAD_CONCURRENCY`），并且由发布器拥有该值、不继承 shell 里的 200；测试 `test_hosting_upload_concurrency_stays_bounded` 守住这条上限。降并发只改变上传节奏，不改变回执与身份：`hosting-deploy-result.json`、版本回执、传播与回读规则不变。站点继续变大时，仍应改走增量发布（clone + `populateFiles`，只传变化文件），而不是把并发调回去。
+
 ## 旧版本迁移
 
 - 旧版（legacy）工具保留其文档化范围，不能替代本路径；纯文字语言经 `audio_unavailable` 发布，仅当发布计划、producer 与客户端都支持。

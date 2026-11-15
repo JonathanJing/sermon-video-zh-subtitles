@@ -1,5 +1,6 @@
 import hashlib
 import json
+import os
 from pathlib import Path
 import pytest
 import time
@@ -67,9 +68,22 @@ def test_default_runner_is_the_host_firebase_cli_with_the_recorded_argv(tmp_path
     receipt = p.publish(tmp_path, intent=intent, routes={'dev': intent}, baseline_version='sites/site/versions/old',
                         baseline_catalog_sha=sha, lease_bucket='bucket', request=remote, reader=v3_only(data))
     assert receipt['status'] == 'deployed'
-    assert calls == [(['firebase', 'deploy', '--only', 'hosting', '--project', 'project', '--config',
-                       str((tmp_path / 'firebase-bound.json').resolve()), '--non-interactive', '--json'],
-                      {'cwd': tmp_path, 'check': True, 'timeout': 3600})]
+    argv, options = calls[0]
+    assert argv == ['firebase', 'deploy', '--only', 'hosting', '--project', 'project', '--config',
+                    str((tmp_path / 'firebase-bound.json').resolve()), '--non-interactive', '--json']
+    assert {k: v for k, v in options.items() if k != 'env'} == {'cwd': tmp_path, 'check': True, 'timeout': 3600}
+    assert options['env']['FIREBASE_HOSTING_UPLOAD_CONCURRENCY'] == str(p.HOSTING_UPLOAD_CONCURRENCY)
+    assert options['env']['PATH'] == os.environ['PATH']
+
+
+def test_hosting_upload_concurrency_stays_bounded():
+    # firebase-tools defaults to 200 concurrent uploads; on 2026-11-15 that node process was
+    # charged ~305 GB of resident pages and the jetsam behind the out-of-application-memory
+    # dialog killed 1085 processes. The publisher owns a small bound and ignores an inherited
+    # value, so a shell that still has 200 cannot bring the blow-up back.
+    assert 0 < p.HOSTING_UPLOAD_CONCURRENCY <= 8
+    assert p.hosting_upload_environment({'PATH': '/usr/bin'})['FIREBASE_HOSTING_UPLOAD_CONCURRENCY'] == str(p.HOSTING_UPLOAD_CONCURRENCY)
+    assert p.hosting_upload_environment({'FIREBASE_HOSTING_UPLOAD_CONCURRENCY': '200'})['FIREBASE_HOSTING_UPLOAD_CONCURRENCY'] == str(p.HOSTING_UPLOAD_CONCURRENCY)
 
 
 def test_concurrent_version_change_rebuilds_without_deployment(tmp_path):

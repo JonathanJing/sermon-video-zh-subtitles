@@ -95,6 +95,22 @@ def authenticated_transport():
 PROPAGATION_TIMEOUT_SECONDS = 120.0
 PROPAGATION_INTERVAL_SECONDS = 5.0
 
+# firebase-tools uploads the snapshot with 200 concurrent uploads by default
+# (lib/deploy/hosting/deploy.js). Every in-flight upload holds the raw bytes plus its
+# gzip-encoded body, the largest media file in the weekly snapshot is ~88 MB, and the
+# failed uploads retry up to 5 times, so the default peaks well above the free memory of a
+# 36 GiB laptop: on 2026-11-15 that node process was charged ~305 GB of resident pages and
+# the 07:43:13 jetsam killed 1085 processes, which is the macOS "out of application memory"
+# dialog. The CLI reads FIREBASE_HOSTING_UPLOAD_CONCURRENCY, so bound it here rather than
+# changing the recorded argv; 4 uploads hold at most a few hundred MB.
+HOSTING_UPLOAD_CONCURRENCY = 4
+
+
+def hosting_upload_environment(environ=None):
+    """The firebase CLI environment with a bounded Hosting upload concurrency."""
+    environ = os.environ if environ is None else environ
+    return {**environ, 'FIREBASE_HOSTING_UPLOAD_CONCURRENCY': str(HOSTING_UPLOAD_CONCURRENCY)}
+
 
 _READ_DEADLINE = ContextVar('hosting_read_deadline', default=None)
 
@@ -332,7 +348,8 @@ def _publish(snapshot, *, intent, routes, baseline_version, baseline_catalog_sha
         result_path = snapshot / 'hosting-deploy-result.json'
         with progress.heartbeat(heartbeat_interval), (snapshot / 'hosting-publish.log').open('w') as log, result_path.open('w') as output:
             run(['firebase', 'deploy', '--only', 'hosting', '--project', intent['project'], '--config', str(bound_config.resolve()), '--non-interactive', '--json'],
-                cwd=snapshot, check=True, stdout=output, stderr=log, timeout=3600)
+                cwd=snapshot, check=True, stdout=output, stderr=log, timeout=3600,
+                env=hosting_upload_environment())
         attempt['newVersion'] = deployed_version(result_path, site=intent['site'], baseline_version=baseline_version)
         attempt['versionPropagation'] = {
             'schemaVersion': PROPAGATION_STATE_SCHEMA, 'attemptId': attempt['attemptId'],
