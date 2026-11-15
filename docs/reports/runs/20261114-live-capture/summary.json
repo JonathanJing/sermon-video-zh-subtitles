@@ -1,0 +1,143 @@
+{
+  "direct": {
+    "run_dir": "<local>/live-capture-test/mariners-irvine-outdoor/2026-11-14",
+    "window": {
+      "requested_start": "2026-11-15T00:42:00.577Z",
+      "requested_stop": "2026-11-15T00:43:00.577Z",
+      "actual_start": "2026-11-15T00:42:00.578Z",
+      "actual_stop": "2026-11-15T00:43:01.086Z",
+      "duration_s": 60.508,
+      "late_start": false,
+      "stop_reason": "deadline"
+    },
+    "english": {
+      "messages": 67,
+      "finals": 7,
+      "chars": 1197
+    },
+    "mandarin": {
+      "messages": 56,
+      "partials": 56,
+      "finals": 0
+    },
+    "audio": {
+      "frames": 227,
+      "received_audio_s": 56.75,
+      "total_duration_s": 56.75,
+      "pad_ms": 0,
+      "wav_frames": null
+    },
+    "session": {
+      "id": "20261114-235501-f0a1",
+      "english_lines": 36,
+      "mandarin_lines": 4,
+      "comparison": {
+        "live_english_finals": 7,
+        "session_source_lines": 36,
+        "exact_normalised_matches": 7,
+        "match_fraction": 1.0
+      }
+    },
+    "sha256": {
+      "capture.json": "3ae86641e399407bb63c9ba994c6a342b01b01468396146bda2096396c828ff1",
+      "session.json": "c212406b01c1c01dad71b1aaa6ec86745fce1b15fb67afb0d08f973f9feabbbb",
+      "english.finals.jsonl": "67989436b3a00e6cbeabc69f46556965fd4e17ba0e08e11a60f88302ae36c925",
+      "session.english.jsonl": "27f5ccd40a3ef1e4ed849ba118e2b9b8e208a4ae91ea9cedd936c3bf35c85a6b",
+      "mandarin.audio.wav": "56a8c1d280aaca067be61ea54159f0d7733aae377f23112cff409587c0dc9433"
+    }
+  },
+  "wrapper": {
+    "run_dir": "<local>/live-capture-test/wrapper/mariners-irvine-outdoor/2026-11-14-164445",
+    "window": {
+      "requested_start": "2026-11-15T00:44:46.315Z",
+      "requested_stop": "2026-11-15T00:46:00.000Z",
+      "actual_start": "2026-11-15T00:44:46.315Z",
+      "actual_stop": "2026-11-15T00:46:00.223Z",
+      "duration_s": 73.908,
+      "late_start": false,
+      "stop_reason": "deadline"
+    },
+    "english": {
+      "messages": 94,
+      "finals": 22,
+      "chars": 1158
+    },
+    "mandarin": {
+      "messages": 74,
+      "partials": 73,
+      "finals": 1
+    },
+    "audio": {
+      "frames": 295,
+      "received_audio_s": 73.75,
+      "total_duration_s": 73.75,
+      "pad_ms": 0,
+      "wav_frames": null
+    },
+    "session": {
+      "id": "20261114-235501-f0a1",
+      "english_lines": 39,
+      "mandarin_lines": 3,
+      "comparison": {
+        "live_english_finals": 22,
+        "session_source_lines": 39,
+        "exact_normalised_matches": 22,
+        "match_fraction": 1.0
+      }
+    },
+    "sha256": {
+      "capture.json": "c2eb32d9d0bce4e52dfddd60439c7229e0f171caca01d5bcf7642c2da2bad5bb",
+      "session.json": "bb12e0e16b79a389b8dc1b89f53dd08c85c621a816aa99c5b316fa470e69f214",
+      "english.finals.jsonl": "9a0ffb053df9ce5743207cbe1fa33603adbe2146db878da09bbd63c320717f07",
+      "session.english.jsonl": "cd9b3911d654ada5dc0a34dbad6c59bfc958d958a480922eda9aac5a051adcaf",
+      "mandarin.audio.wav": "98cb91bed77ad4abb60b2ac54ef6f464f1d841ac54be1a4409106f44f7a95a38"
+    }
+  },
+  "launchd": {
+    "run_dir": "<local>/live-capture-test/launchd/mariners-irvine-outdoor/2026-11-14",
+    "window": {
+      "requested_start": "2026-11-15T00:48:02.930Z",
+      "requested_stop": "2026-11-15T00:49:00.000Z",
+      "actual_start": "2026-11-15T00:48:02.934Z",
+      "actual_stop": "2026-11-15T00:49:00.216Z",
+      "duration_s": 57.283,
+      "late_start": false,
+      "stop_reason": "deadline"
+    },
+    "english": {
+      "messages": 71,
+      "finals": 14,
+      "chars": 887
+    },
+    "mandarin": {
+      "messages": 57,
+      "partials": 56,
+      "finals": 1
+    },
+    "audio": {
+      "frames": 228,
+      "received_audio_s": 57.0,
+      "total_duration_s": 57.0,
+      "pad_ms": 0,
+      "wav_frames": 1368000
+    },
+    "session": {
+      "id": "20261114-235501-f0a1",
+      "english_lines": 48,
+      "mandarin_lines": 3,
+      "comparison": {
+        "live_english_finals": 14,
+        "session_source_lines": 48,
+        "exact_normalised_matches": 14,
+        "match_fraction": 1.0
+      }
+    },
+    "sha256": {
+      "capture.json": "af175f89934d6b93f9da0dfa901e46fa34de2ea019899451dfffa983c4fd920d",
+      "session.json": "c2670efa01fdcddda156c40b94065993e8ba935ff56c539978a95051f5fb12a5",
+      "english.finals.jsonl": "6be5c3fec0016c778b2e35884f876f203ee902736d9fd5f2269b63f64a8a7232",
+      "session.english.jsonl": "7ea9bc43ba9fa8048f5b768c9deca8bba6c831af000e6d3d8b54556794bfccff",
+      "mandarin.audio.wav": "9b640487e25fe4abbcd5154f8fa3f417db3be872b0d92ea25a2d7c396160a6a1"
+    }
+  }
+}
