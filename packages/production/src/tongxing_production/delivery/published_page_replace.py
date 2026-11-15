@@ -42,6 +42,7 @@ from pathlib import Path
 
 from . import baseline as bl
 from . import contract as delivery_contract
+from . import snapshot_clone
 
 V3, V4, V5 = 'multilingual-v3.json', 'multilingual-v4.json', 'multilingual-v5.json'
 
@@ -74,7 +75,7 @@ def _catalogs(public: Path) -> dict[str, dict]:
 def _copy_snapshot(source: Path, out: Path) -> None:
     delivery_contract.require(not out.exists(), 'Use a new snapshot directory')
     out.mkdir(parents=True)
-    shutil.copytree(source / 'public', out / 'public')
+    snapshot_clone.clone_tree(source / 'public', out / 'public')
     shutil.copyfile(source / 'firebase.json', out / 'firebase.json')
     if (source / 'baseline-receipt.json').exists():
         shutil.copyfile(source / 'baseline-receipt.json', out / 'baseline-receipt.json')

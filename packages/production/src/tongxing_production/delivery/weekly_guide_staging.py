@@ -14,6 +14,7 @@ import shutil
 import unicodedata
 
 from . import backend as _delivery
+from . import snapshot_clone
 
 SOURCE_SHA256 = 'd6c6064e8fab11ab012edd9535372a9f99b83cd5240b6014f5451795a9198f86'
 CUV_SHA256 = '363afb38148f150b30fee727f4818faa821a0d17b4888c16be3e05bd462503bb'
@@ -620,7 +621,7 @@ def prepare_guarded_candidate(staging,snapshot,bindings,expected_staging,cuv,out
     frozen_receipt=json.loads(receipt_bytes)
     if digest(firebase_bytes)!=frozen_receipt.get('firebaseJsonSha256'): raise ValueError('baseline Firebase config differs from frozen receipt')
     out.mkdir(parents=True,exist_ok=False)
-    shutil.copytree(snapshot/'public',out/'public')
+    snapshot_clone.clone_tree(snapshot/'public',out/'public')
     shutil.copyfile(snapshot/'firebase.json',out/'firebase.json')
     shutil.copyfile(snapshot/'baseline-receipt.json',out/'baseline-receipt.json')
     shutil.copyfile(snapshot/'seal-report.json',out/'seal-report.json')
