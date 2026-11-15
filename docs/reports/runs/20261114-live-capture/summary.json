@@ -139,5 +139,79 @@
       "session.english.jsonl": "7ea9bc43ba9fa8048f5b768c9deca8bba6c831af000e6d3d8b54556794bfccff",
       "mandarin.audio.wav": "9b640487e25fe4abbcd5154f8fa3f417db3be872b0d92ea25a2d7c396160a6a1"
     }
+  },
+  "soak": {
+    "run_dir": "<local>/live-capture-test/soak/demo/2026-11-14",
+    "window": {
+      "requested_start": "2026-11-15T00:54:10.791Z",
+      "requested_stop": "2026-11-15T01:04:10.791Z",
+      "actual_start": "2026-11-15T00:54:10.792Z",
+      "actual_stop": "2026-11-15T01:04:11.159Z",
+      "duration_s": 600.367,
+      "late_start": false,
+      "stop_reason": "deadline"
+    },
+    "english": {
+      "messages": 715,
+      "finals": 139,
+      "chars": 7641
+    },
+    "mandarin": {
+      "messages": 585,
+      "partials": 576,
+      "finals": 9
+    },
+    "audio": {
+      "frames": 2389,
+      "received_audio_s": 597.25,
+      "total_duration_s": 597.25,
+      "pad_ms": 0,
+      "max_arrival_gap_s": 0.427,
+      "wav_frames": 14334000
+    },
+    "session": {
+      "id": "20261108-170841-dbdd",
+      "english_lines": 143,
+      "mandarin_lines": 9,
+      "comparison": {
+        "live_english_finals": 139,
+        "session_source_lines": 143,
+        "exact_normalised_matches": 139,
+        "match_fraction": 1.0
+      }
+    },
+    "handoff": [
+      {
+        "phase": "goAway",
+        "t_ms": 540389,
+        "dropped_ms": null,
+        "cutover": null
+      },
+      {
+        "phase": "standby_ready",
+        "t_ms": 540683,
+        "dropped_ms": null,
+        "cutover": null
+      },
+      {
+        "phase": "cutover",
+        "t_ms": 587389,
+        "dropped_ms": 0,
+        "cutover": "deadline"
+      },
+      {
+        "phase": "old_closed",
+        "t_ms": 587456,
+        "dropped_ms": null,
+        "cutover": null
+      }
+    ],
+    "sha256": {
+      "capture.json": "eb39572f6ae907c86830935e4d65fcbcd8b08cc84acc056508ce8517f2e963ee",
+      "session.json": "4c413b701a9879802f73e958ddbb27fb95b3aac8c93c78cb27f99dc1c22c5048",
+      "english.finals.jsonl": "daef945d7ce1edd267e3a78bad554611c66d3f2c35b0ad5b31d6290ac88d3b09",
+      "session.english.jsonl": "7c737cff9f3e6b14933d76ce6df7d31d78f06e2a880bf6a2ca5ee1100d613352",
+      "mandarin.audio.wav": "22906ba42114e0922ef284c0cc7bf2e429fb274e734a5322312e702f449dd193"
+    }
   }
 }
