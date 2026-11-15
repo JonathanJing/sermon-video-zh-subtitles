@@ -139,7 +139,11 @@ Never commit `artifacts/`, the PDF, audio or raw transcripts.
 - Test/demo PDFs must be titled as non-published. Real PDFs keep the `mobile_pdf` disclaimer; no page or file is published by this runbook.
 - An 80-minute service scales to roughly 200 reading blocks × 2 passes plus translation; estimate the budget before running. The 5-minute dev reference is in [`README.zh.md`](README.zh.md).
 
-## 9. Done definition
+## 9. Translation quality comparison
+
+If the question is “which Chinese is better”, do not improvise a comparison inside this runbook. Use the separate blinded process in [`experiments/translation-quality-comparison/AGENTS.md`](../translation-quality-comparison/AGENTS.md): it aligns both candidates on English anchor units, samples/blinds, collects two independent human ratings, and reports win rate/score CIs. Pastors.ai Chinese remains comparison evidence, never a Layer 2 approval or training gold.
+
+## 10. Done definition
 
 - The human window is recorded and bound by hash.
 - All gates in §5 pass.
