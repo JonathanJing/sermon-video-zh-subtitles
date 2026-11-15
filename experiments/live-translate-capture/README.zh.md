@@ -9,7 +9,7 @@
 - 2026-11-14 用正在直播的 `mariners-irvine-outdoor` 做了两次真实采集：
   - 直接运行 60 秒：英文 7 条 final，普通话音频 56.75 秒；同窗口会话日志 7/7 条英文 final 完全匹配。
   - 经 `run-capture.sh` 完整链路 74 秒：英文 22 条 final，普通话音频 73.75 秒；会话日志 39 条英文行，22/22 完全匹配（归一化后逐条相同）。
-- 采集、断线续传、音频封装、会话日志取回、LaunchAgent 定时启动都已在本机跑通；16 个本地测试通过（含一个本地 WebSocket 假服务器，覆盖断线后带 `since` 重连）。
+- 采集、断线续传、音频封装、会话日志取回、LaunchAgent 定时启动都已在本机跑通；18 个本地测试通过（含一个本地 WebSocket 假服务器，覆盖断线后带 `since` 重连）。
 - 另做了一次 **10 分钟 demo 房间长测**：597.25 秒连续音频、0 次重连、0 个到达空隙；期间捕获到提供商会话轮换（540 秒 `goAway`、587 秒 `cutover`，`droppedMs=0`），音频没有断。
 - 默认定时已装好：**每周日 09:55 启动，10:00 开始录，11:20 自动截断**，房间 `mariners-north-irvine`（2026-11-14 已确认）；LaunchAgent 见 `~/Library/LaunchAgents/ai.pastors.live-capture.plist`。
 - 依赖只有仓库 venv 里的 `websockets` 和 `requests`，见 `requirements.txt`。
@@ -66,6 +66,8 @@ wss://translate.pastors.ai/ws/listen?room=<room>&lang=<code>&v=2[&since=<seq>][&
 | `sermon.window.json` | 人工事后提供的讲道起止；绑定 `capture.json`/`session.json` 的 SHA-256（见“人工讲道起止”） |
 | `sermon.english.jsonl` / `sermon.english.txt` / `sermon.english.timed.txt` | 人工窗口内的讲道英文；JSONL 带时间戳，timed.txt 带相对采集起点的偏移（见“取讲道正文”） |
 | `sermon.manifest.json` | 讲道正文导出的输入哈希、窗口、行数、覆盖率和 warnings |
+| `reading/segments_timed_en_raw.json` / `reading.plan.json` | 阅读适配器的确定性分段和计划（不调用模型） |
+| `reading/sermon_zh_en_reading.pdf` | `--execute` 成功后生成的阅读版 PDF；同目录还有 `reading.manifest.json`、`qa_report.json`、`reading-edition-v2/` |
 | `run.status.json` / `wrapper.log` | 定时包装脚本的退出码和日志 |
 
 实时采集的音频是**按到达顺序写入**的：正常连续时与真实时间一致；断线时服务端声明的 `audioSkippedMs` 会补静音，未声明的空隙不补。`mandarin.frames.jsonl` 和 `capture.json` 保留每帧时间，供需要严格对齐时使用。
@@ -149,6 +151,46 @@ bash experiments/live-translate-capture/run-capture.sh
 - `sermon.manifest.json` 记录 capture/window/source 的 SHA-256、行数、首末时间和覆盖 warnings；如果窗口内行数过少或首末行离边界太远，会写 warning，不自动改写正文。
 - 英文仍是 provider ASR，必须走 Layer 1 修正和人工审校；这一步只做时间窗过滤。
 
+## 生成阅读版 PDF（适配器）
+
+`build_reading_pdf.py` 把窗口内英文接到现有生产链：
+
+```text
+sermon.english.jsonl
+  -> 阅读分段（caption 到达时间，synthetic reading timing）
+  -> 英文清理 correct_english（OpenAI，可关）
+  -> 中文翻译 translate_chinese（OpenAI，带缓存/账本）
+  -> 阅读版编辑 scripts/build_sermon_reading_edition_with_openai.py（现有 2-pass）
+  -> 中英对照阅读版 PDF workflows.dual_pdf.mobile_pdf --layout reading（现有）
+```
+
+默认只出计划，不调用模型：
+
+```bash
+.venv/bin/python experiments/live-translate-capture/build_reading_pdf.py \
+  --capture-dir artifacts/live-capture/mariners-north-irvine/2026-11-15
+```
+
+它写 `reading/segments_timed_en_raw.json` 和 `reading/reading.plan.json`，打印段数、字符数和后续命令。付费运行必须经过显式环境：
+
+```bash
+python3 tools/ops/run_with_openai_environment.py --environment dev -- \
+  .venv/bin/python experiments/live-translate-capture/build_reading_pdf.py \
+  --capture-dir artifacts/live-capture/mariners-north-irvine/2026-11-15 --execute
+```
+
+模型默认 `gpt-6.1-sol`、reasoning high；可覆盖 `--en-model`、`--zh-model`、`--reading-model`、`--reasoning-effort`、`--translation-workers`。`--max-segments`/`--max-chars` 是预检上限，超过要显式 `--allow-large`。
+
+门禁：
+
+- 英文只来自人工窗口内的 provider ASR；`timingQuality=caption_arrival_synthetic_not_for_subtitles`，不能当作字幕时间或视频同步时间。
+- 只有阅读编辑的 `reading-quality-report.json` 为 `pass` 才生成 PDF；没有绕过开关。
+- 中文是我们自己的机器翻译，不是 `session.mandarin` 的机器中文，也不是人工批准。
+- 不下载 YouTube、不跑 ASR/MFA、不伪造视频时间；PDF 不写点击跳转的视频链接。
+- 计费走现有 accounting；`--execute` 前请确认 dev/prod 环境和预算。
+
+本地验证：18 个测试；5 分钟 demo 窗口 plan 得到 61 行 caption → 13 个阅读段 / 4,262 字符。**真实付费链路尚未跑**，等周日素材和显式环境/预算确认。
+
 ## 定时
 
 ```bash
@@ -176,7 +218,7 @@ bash experiments/live-translate-capture/install-schedule.sh --uninstall
 ## 交给后续流程
 
 1. **Layer 1**：先跑 `extract_sermon.py`，得到人工窗口内的 `sermon.english.jsonl`；它的时间戳来自 `session.english.jsonl`，`english.finals.jsonl`（我们实际收到的副本）作审计对照。讲道起止用人工写入的 `sermon.window.json`（见上）；窗口里的敬拜/报告保留在原始文件里，但不进入讲道正文。英文 ASR 会有术语和人名错误（实测出现过 `Kent Bshore` 这类），按现有 Layer 1 规则修正并保留修正记录。
-2. **Layer 2**：用我们自己的翻译链，从修正后的英文出发；`session.mandarin.jsonl` / `mandarin.*` 只作对照，**不得**作为批准译文或训练/提示的“已验证样例”。
+2. **Layer 2**：`build_reading_pdf.py --execute` 用现有 `translate_chinese` 从修正后的英文出发；`session.mandarin.jsonl` / `mandarin.*` 只作对照，**不得**作为批准译文或训练/提示的“已验证样例”。
 3. **Layer 3**：`mandarin.audio.wav` 是机器 TTS 译文音频，不是讲员原声。若音频版需要原声或更高质量，另走录音/配音路径；不要把这段 TTS 直接标成原声。
 4. **诚实标签**：阅读版必须标明英文来源是现场 ASR、中文是我们自己的机器翻译、人工审校状态按实际记录；机器审校不等于人工批准。
 5. **实时直播** 仍是独立的 `live_session`；这次采集的录像/文本如果用于耐久内容，从 Layer 1 重新开始，不把直播机器中文提升为 Layer 2 批准。
@@ -194,7 +236,7 @@ bash experiments/live-translate-capture/install-schedule.sh --uninstall
 
 ```bash
 .venv/bin/python -m pytest tests/test_live_translate_capture.py -q
-# 16 passed
+# 18 passed
 ```
 
 这些是**采集链路**证据，不是周日本身、教会现场声学、人工 ASR Gold、翻译质量或发布验收。

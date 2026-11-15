@@ -11,6 +11,7 @@ from __future__ import annotations
 import asyncio
 import importlib.util
 import json
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -43,6 +44,7 @@ def load_module(name: str, filename: str):
 
 mark_window = load_module("live_capture_mark_window_under_test", "mark_window.py")
 extract_sermon = load_module("live_capture_extract_under_test", "extract_sermon.py")
+build_reading_pdf = load_module("live_capture_build_reading_under_test", "build_reading_pdf.py")
 
 if HAVE_WEBSOCKETS:
     capture = load_module("live_capture_under_test", "capture.py")
@@ -322,6 +324,124 @@ class ExtractSermonTests(unittest.TestCase):
         (self.run_dir / "sermon.window.json").unlink()
         with self.assertRaises(ValueError):
             extract_sermon.extract(self.run_dir)
+
+
+class BuildReadingTests(unittest.TestCase):
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory()
+        self.run_dir = Path(self.temp.name)
+        (self.run_dir / "capture.json").write_text(
+            json.dumps(
+                {
+                    "schema": "live-translate-capture/v1",
+                    "window": {
+                        "actual_start": "2026-11-15T18:00:00.000Z",
+                        "actual_stop": "2026-11-15T19:20:00.000Z",
+                    },
+                    "host": {"timezone": "America/Los_Angeles"},
+                }
+            ),
+            encoding="utf-8",
+        )
+        rows = []
+        for minute, text in [
+            (5, "The first sentence of the sermon is here."),
+            (6, "The second sentence continues the same thought."),
+            (7, "The third sentence adds a little more context."),
+            (8, "The fourth sentence names Jesus and the church."),
+            (9, "The fifth sentence closes the opening paragraph."),
+            (10, "The sixth sentence begins the next paragraph."),
+        ]:
+            rows.append({"ts": f"2026-11-15T18:{minute:02d}:00.000Z", "text": text})
+        (self.run_dir / "session.english.jsonl").write_text(
+            "\n".join(json.dumps(row) for row in rows) + "\n", encoding="utf-8"
+        )
+        mark_window.record_window(
+            self.run_dir,
+            start="10:04:00",
+            end="10:11:00",
+            approved_by="test operator",
+            evidence="test window",
+        )
+        extract_sermon.extract(self.run_dir)
+        self.settings = build_reading_pdf.BuildSettings(
+            capture_dir=self.run_dir,
+            outdir=self.run_dir / "reading",
+            title="Test Sermon",
+            sermon_date="2026-11-15",
+            speaker=None,
+            glossary=None,
+            en_model="test-en",
+            zh_model="test-zh",
+            reading_model="test-reading",
+            reasoning_effort="high",
+            translation_workers=1,
+            no_english_cleanup=False,
+            hide_timecodes=False,
+            max_segments=100,
+            max_chars=100000,
+            allow_large=False,
+        )
+
+    def tearDown(self):
+        self.temp.cleanup()
+
+    def test_plan_builds_raw_segments_without_paid_calls(self):
+        plan = build_reading_pdf.make_plan(self.settings)
+        self.assertEqual(plan["status"], "planned")
+        self.assertGreater(plan["source"]["reading_segments"], 0)
+        self.assertTrue((self.run_dir / "reading" / "segments_timed_en_raw.json").exists())
+        self.assertTrue((self.run_dir / "reading" / "reading.plan.json").exists())
+        commands = plan["commands"]
+        self.assertIn("build_sermon_reading_edition_with_openai.py", commands["readingEdition"][1])
+        self.assertIn("workflows.dual_pdf.mobile_pdf", commands["pdf"])
+
+    def test_execute_writes_manifest_pdf_and_qa(self):
+        calls = []
+
+        def correct(api_key, segments, *args, **kwargs):
+            return [{**segment, "text": segment["text"] + " corrected"} for segment in segments]
+
+        def translate(api_key, segments, *args, **kwargs):
+            return [{**segment, "zh": f"译文{segment['id']}"} for segment in segments]
+
+        def qa(english, chinese, glossary):
+            return {"hardFailures": {}}
+
+        def runner(command, check=False):
+            calls.append(command)
+            if "build_sermon_reading_edition_with_openai.py" in command[1]:
+                outdir = Path(command[command.index("--outdir") + 1])
+                outdir.mkdir(parents=True, exist_ok=True)
+                (outdir / "sermon_zh_reading_revised.srt").write_text(
+                    "1\n00:00:00,000 --> 00:00:05,000\n译文\n", encoding="utf-8"
+                )
+                (outdir / "sermon_en_reading_revised.srt").write_text(
+                    "1\n00:00:00,000 --> 00:00:05,000\nEnglish\n", encoding="utf-8"
+                )
+                (outdir / "reading_quality_report.json").write_text(
+                    json.dumps({"status": "pass"}), encoding="utf-8"
+                )
+            elif "workflows.dual_pdf.mobile_pdf" in command:
+                out = Path(command[command.index("--out") + 1])
+                out.write_bytes(b"%PDF-1.4 test")
+            return subprocess.CompletedProcess(command, 0)
+
+        manifest = build_reading_pdf.execute_plan(
+            self.settings,
+            correct_fn=correct,
+            translate_fn=translate,
+            qa_fn=qa,
+            runner=runner,
+            route_check=lambda: None,
+            api_key="test-key",
+        )
+        self.assertEqual(manifest["status"], "completed")
+        self.assertEqual(len(calls), 2)
+        self.assertTrue((self.run_dir / "reading" / "sermon_zh_en_reading.pdf").exists())
+        self.assertTrue((self.run_dir / "reading" / "reading.manifest.json").exists())
+        self.assertEqual(manifest["readingQuality"]["status"], "pass")
+        self.assertIn("pdf_sha256", manifest["outputs"])
 
 
 @unittest.skipUnless(HAVE_WEBSOCKETS, "websockets not installed")
