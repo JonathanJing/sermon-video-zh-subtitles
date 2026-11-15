@@ -82,3 +82,70 @@
 - 正式站页面三语上线（部署版本见上）；目录 `defaultPageId` 已指向本页。
 - `/english-reference/if-i-had-more-time-jesus-is-better-than-this-world.json` 上线，`readback` 通过。
 - App 真机、现场与推送 `not_run`。
+
+## 本机内存复盘（macOS「应用程序内存不足」弹窗）
+
+**结论**：弹窗不是 Chrome 撑爆的。把系统推到 critical 的是 L4 部署阶段 `firebase deploy` 的**单个 Node 进程**（整站哈希 + 上传 2.9 GB 快照），它触发全系统 jetsam；macOS「强制退出应用」只列 GUI App，CLI 子进程根本不在列表里。
+
+### 机器口径（先纠正一个前提）
+
+- `hw.memsize` = 38,654,705,664 B = **36 GiB**，MacBook Pro `Mac17,11`（M5 Max，18 核）。
+- 不是 48 GB。这条差距决定了余量：实际比预期少 12 GB，而 `firebase deploy` 要在这台机器上把整站过一遍。
+
+### 时间线（PST）
+
+| 时刻 | 事件 | 证据 |
+|---|---|---|
+| 06:56:05 | CLI 部署开始（`firebase deploy --only hosting --non-interactive --json`），待传 124 个文件 | `stage1/firebase-debug.log` 首行 14:56:05Z |
+| 07:00:02 | 系统内存压力 warning | `modelmanagerd` memory pressure |
+| 07:13:54 | 压力升到 **critical** | 同上 |
+| 07:17:53 | 上传卡在 60/124，请求大量重试 | firebase-debug.log 末行 15:17:53Z |
+| ~07:36 | CLI 子进程被 SIGKILL(9) | `subprocess.CalledProcessError ... died with SIGKILL: 9` |
+| 07:42:37 | 核对：两次 CLI 均被杀、线上未产生 release | `stage1/deployment-reconciliation.json` |
+| **07:43:13** | **全系统 jetsam，largestProcess=node** | `JetsamEvent-2026-11-15-074313.ips` |
+| 07:48:09 | REST 增量发布成功（12 文件 / 163 MB） | `stage1/incremental-publish.json` |
+| 07:52:59 | 用户看到弹窗 | 截图 |
+
+### Jetsam 读数（pageSize = 16384）
+
+| 项 | 值 |
+|---|---|
+| largestProcess | `node` |
+| node rpages 记账 | 19,969,519 页 ≈ **304.7 GB**（峰值 306.0 GB） |
+| node CPU 时间 | **470.6 s** |
+| node 打开的文件描述符 | 256 |
+| 被处理进程 | 1781 项：low-swap **1085**、idle-exit 221、per-process-limit 1 |
+| compressor | 18.35 GB，里面装着 **54.9 GB** 逻辑页 |
+| swap | 已用 9.3–9.6 GB（上限约 10–11 GB） |
+| App 汇总（rpages 口径） | Chrome 8.22 GB / DSH 1.82 / Codex 1.56 / Claude 1.16 |
+
+305 GB 在 36 GB 机器上不可能是真实物理占用，它是 jetsam 账本对该进程的记账。但「记账 305 GB + 470 秒 CPU + 256 个 fd」与「单进程对 2.9 GB / 480 文件快照做整站哈希与上传、124 个待传、大量重试」完全对应，且该子进程确实死于 SIGKILL(9)。
+
+### 为什么弹窗看起来像 Chrome 的锅
+
+- 弹窗按 **App 聚合**排序，Chrome 8.23 GB 排第一；node 是 CLI 子进程，不进「应用」列表。
+- 弹窗数字与 jetsam 时刻的 App 汇总对得上（Chrome 8.22 vs 8.23），说明两者是同一轮压力。
+- 真正的触发源是 node；GUI 大户只是把余量吃掉的人，不是把系统推过线的人。
+
+### 同一晚已发生过一次
+
+- 23:19:46 也有一份 jetsam，largestProcess 同样是 node（325.1 GB、494 s CPU、256 fd），签名一致。
+- 那一轮证道运行已记录处理：Node 26 的 firebase CLI 被 SIGKILL，**改 Node 22 后 35 秒发完**（`docs/reports/runs/20261115-jesus-is-better/INDEX.md`）。
+- 本机默认 `node` 是 v26.13.0（`/opt/homebrew/bin/node`），firebase CLI 15.29.0 以 `#!/usr/bin/env node` 启动；`node@22` 同时装在 `/opt/homebrew/opt/node@22`。
+- 本轮播客发布没有沿 Node 22 这条路，而是改用 Hosting REST 增量发布，同样绕开 CLI。
+
+### 哪个环节吃内存
+
+| 环节 | 峰值形态 | 是否元凶 |
+|---|---|---|
+| L1 whisper / gpt-4o ASR | 云端 API，本机只有 v3 builder | 否 |
+| L2 Opus 翻译 | `claude` CLI，6 并发 | 否 |
+| L3 TTS（Qwen3-TTS，本地 GPU） | 串行 2 讲员 × 3 语，4.5× 实时 | 否（jetsam 账户里 python 占比很小） |
+| L4 部署 `firebase deploy` | 单 Node 进程整站哈希上传 | **是** |
+
+### 改进
+
+1. 大站（> 1 GB）把 `hosting_incremental_publish.py` 设为默认路径，而不是 CLI 失败后再切。
+2. 必须用 CLI 时钉 `PATH=/opt/homebrew/opt/node@22/bin:$PATH`：同一站点已在 11-14 晚证明 35 秒完成。
+3. `sfa_publish publish` 起整站上传前加一条内存预检：`memory_pressure` ≥ warning 时先让用户关掉 GUI 大户（Chrome 8.2 GB）。
+4. `artifacts/sentence-first-agent/*-publish/` 下现有 6 份 2.9 GB 快照副本（合计约 17 GB），既占磁盘也拖慢 Synology 同步；保留 `stage1` 与最终 baseline 即可。
