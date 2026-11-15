@@ -59,3 +59,11 @@ tongxing://page/<pageId>?contentLang=<locale>
 - Universal Link 从不同扫码器打开时，少数会先进入 Safari，需要再点一次；不能承诺所有扫码器 100% 无感。
 - 旧版 App 不会因为站点新增 AASA 而获得深链能力。
 - 当前页面二维码在 App 新版本发布前仍按普通网页打开。
+
+## 微信内置浏览器
+
+微信不会把页面里的 HTTPS 链接交给 Universal Link，也不会打开 `tongxing://`。官方唯一通道是「微信开放标签」：要求已认证服务号、同一开放平台账号下审核通过的移动应用、页面域名作为该服务号的 JS 接口安全域名，并且只能由用户点按钮触发。个人主体项目不满足这些条件，所以**微信内不能自动跳转到 App**，也不能自动跳 App Store。
+
+页面因此带一份页面级脚本 `/pages/<pageId>/app-link.js`：检测到 `MicroMessenger` UA 后，在页面顶部显示一条可关闭的提示「微信内无法直接打开同行 App，可点右上角 ⋯ → 在浏览器中打开；也可直接在这里收听」；其他浏览器不显示任何内容。文案按页面 `lang` 选择中／韩／西／英，样式经 CSSOM 写入，因为正式站 CSP 是 `script-src 'self'; style-src 'self'`，内联 `<style>` 与内联脚本都会被拦。
+
+未覆盖：微信内真机查看，「在浏览器中打开」后 Safari 是否触发 Universal Link（Apple 只在点击链接时触发，直接打开网址通常不触发），以及 Android 微信。网页表现、Safari 不显示提示都只是浏览器模拟证据，不等于微信内验收。

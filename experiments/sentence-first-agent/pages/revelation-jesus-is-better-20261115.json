@@ -1,0 +1,101 @@
+{
+  "schemaVersion": "sentence-first-page-config-v1",
+  "pageId": "revelation-jesus-is-better-20261115",
+  "environment": "production",
+  "locales": [
+    "zh-Hans",
+    "ko",
+    "es"
+  ],
+  "defaultTargetLocale": "zh-Hans",
+  "runsRoot": "artifacts/sentence-first-agent",
+  "runs": {
+    "zh-Hans": "20261115-jesus-is-better-zh",
+    "ko": "20261115-jesus-is-better-ko",
+    "es": "20261115-jesus-is-better-es"
+  },
+  "source": {
+    "url": "https://drive.google.com/file/d/1kzxU2KOnJdOjSvSJc-KYFVVWav3K9QnK/view",
+    "date": "2026-11-15",
+    "window": {
+      "start": 0.0,
+      "end": 1945.125333
+    },
+    "englishSource": "artifacts/sentence-first-agent/20261115-sermon-source/layer1/english-source.json"
+  },
+  "sentences": 435,
+  "speakers": "Eric Geiger",
+  "category": {
+    "schemaVersion": "sermon-page-display-category-v1",
+    "labels": {
+      "zh-Hans": "周日证道",
+      "en": "Sunday sermon",
+      "ko": "주일 설교",
+      "es": "Sermón del domingo"
+    }
+  },
+  "title": "启示录：耶稣带来的安慰与盼望 · 耶稣胜过这世界",
+  "meta": {
+    "zh-Hans": {
+      "title": "启示录：耶稣带来的安慰与盼望 · 耶稣胜过这世界",
+      "series": "启示录：耶稣带来的安慰与盼望",
+      "scripture": "启示录 17–19:10",
+      "badge": "周日证道 · AI 合成配音 · 已人工审核",
+      "source": "英文来源 / English source",
+      "note": "AI 合成配音，与原视频同步。本项目与 Mariners Church 无隶属关系。"
+    },
+    "ko": {
+      "title": "예수님은 이 세상보다 더 귀하십니다",
+      "series": "요한계시록: 예수님이 주시는 위로와 소망",
+      "scripture": "요한계시록 17-19:10",
+      "badge": "주일 설교 · AI 합성 음성 · 검토 완료",
+      "source": "영어 원본 / English source",
+      "note": "AI 합성 음성 더빙으로 원본 영상과 동기화됩니다. 이 프로젝트는 Mariners Church와 관련이 없습니다."
+    },
+    "es": {
+      "title": "Jesús es mejor que este mundo",
+      "series": "Apocalipsis: El consuelo y la esperanza que Jesús trae",
+      "scripture": "Apocalipsis 17-19:10",
+      "badge": "Sermón del domingo · Voz sintetizada por IA · Revisado",
+      "source": "Fuente en inglés / English source",
+      "note": "Doblaje con voz sintetizada por IA, sincronizado con el video original. Este proyecto no está afiliado con Mariners Church."
+    }
+  },
+  "verdict": "artifacts/sentence-first-agent/20261115-sermon-source/review/human-review-verdict.json",
+  "candidate": {
+    "schemaVersion": "sentence-first-episode-candidate-v1",
+    "translationBasis": {
+      "default": "{locale}: Claude Code CLI Opus 2.1.325 translation with an independent Opus audit"
+    }
+  },
+  "audioPackage": {
+    "schemaVersion": "sentence-first-episode-audio-package-v1",
+    "voices": "from-speakers",
+    "synchronization": "unit audio placed on the English source start times (gap 0.05 s); sync gate max lag <= 8 s"
+  },
+  "releasePackageId": "{pageId}-{locale}-{environment}-v1",
+  "verify": {
+    "schemaVersion": "sentence-first-episode-http-verification-v1"
+  },
+  "englishReference": {
+    "mode": "full"
+  },
+  "summary": {
+    "includeEnvironment": true
+  },
+  "baseline": {
+    "allowDefaultLocaleDrift": true
+  },
+  "mediaType": "podcast",
+  "titleCheck": {
+    "englishTitle": "Jesus is better than this world",
+    "mode": "approved_exception",
+    "publishedTitles": {
+      "zh-Hans": "耶稣胜过这世界",
+      "ko": "예수님은 이 세상보다 더 귀하십니다",
+      "es": "Jesús es mejor que este mundo"
+    },
+    "reason": "用户要求主标题不显示系列前缀『启示录：』，只留证道标题『耶稣胜过这世界』",
+    "approvedBy": "Jony"
+  }
+}

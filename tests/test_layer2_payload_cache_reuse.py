@@ -380,11 +380,17 @@ class Layer2PayloadCacheReuseTests(unittest.TestCase):
         self.execute(self.current, caller, payload_cache_from=self.prior)
         self.assertEqual(len(caller.calls), 4)
 
-    def test_changed_transport_identity_does_not_hit(self):
+    def test_changed_transport_identity_hits_content_cache(self):
+        """ebc200de: the payload cache key is content identity.
+
+        A re-planned transport runtime is recorded beside the response, not in the
+        key, so the frozen prior payload is reused instead of paying again. Role,
+        output and draft changes still invalidate the key in the tests below.
+        """
         self.make_prior()
         caller = _Caller(self, runtime="runtime-b")
         self.execute(self.current, caller, payload_cache_from=self.prior)
-        self.assertEqual(len(caller.calls), 4)
+        self.assertEqual(caller.calls, [])
 
     def test_role_specific_payload_and_draft_invalidation(self):
         self.make_prior()

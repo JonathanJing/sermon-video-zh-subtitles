@@ -1,0 +1,16 @@
+tts memory_admission zh-Hans need=33GiB available=118GiB 2026-11-14T18:29:30Z
+tts start zh-Hans 2026-11-14T18:29:30Z
+{"sentences": 3, "pending": 3}
+W1114 18:29:37.073000 1 torch/utils/_pytree.py:630] <enum 'KernelPreference'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
+W1114 18:29:37.103000 1 torch/utils/_pytree.py:630] <enum 'ScaleCalculationMode'> is an Enum subclass and is now natively supported by torch.compile as an opaque value type. Calling register_constant() on Enum subclasses is deprecated and will be an error in a future release.
+[0;93m2026-11-14 18:29:37.655735361 [W:onnxruntime:Default, device_discovery.cc:164 DiscoverDevicesForPlatform] GPU device discovery failed: device_discovery.cc:89 ReadFileContents Failed to open file: "/sys/class/drm/card0/device/vendor"[m
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+{"id": "s0001", "seconds": 0.96, "wallSeconds": 3.775, "seed": 7, "batchSize": 1, "memAvailableBytes": 119770726400, "cudaAllocatedBytes": 4208102400, "cudaReservedBytes": 4227858432, "cudaMaxReservedBytes": 4318035968, "cudaReservedBeforeReleaseBytes": 4318035968, "releaseSeconds": 0.001}
+{"batchIndex": 0, "ids": ["s0001"], "seed": 7, "batchSize": 1, "wallSeconds": 3.775, "audioSeconds": 0.96, "memAvailableBytes": 119770726400, "cudaAllocatedBytes": 4208102400, "cudaReservedBytes": 4227858432, "cudaMaxReservedBytes": 4318035968, "cudaReservedBeforeReleaseBytes": 4318035968, "releaseSeconds": 0.001}
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+{"id": "s0002", "seconds": 0.96, "wallSeconds": 0.715, "seed": 7, "batchSize": 1, "memAvailableBytes": 119781732352, "cudaAllocatedBytes": 4208102400, "cudaReservedBytes": 4227858432, "cudaMaxReservedBytes": 4318035968, "cudaReservedBeforeReleaseBytes": 4276092928, "releaseSeconds": 0.001}
+{"batchIndex": 1, "ids": ["s0002"], "seed": 7, "batchSize": 1, "wallSeconds": 0.715, "audioSeconds": 0.96, "memAvailableBytes": 119781732352, "cudaAllocatedBytes": 4208102400, "cudaReservedBytes": 4227858432, "cudaMaxReservedBytes": 4318035968, "cudaReservedBeforeReleaseBytes": 4276092928, "releaseSeconds": 0.001}
+Setting `pad_token_id` to `eos_token_id`:2150 for open-end generation.
+{"id": "s0003", "seconds": 0.96, "wallSeconds": 0.715, "seed": 7, "batchSize": 1, "memAvailableBytes": 119791316992, "cudaAllocatedBytes": 4208102400, "cudaReservedBytes": 4227858432, "cudaMaxReservedBytes": 4318035968, "cudaReservedBeforeReleaseBytes": 4278190080, "releaseSeconds": 0.001}
+{"batchIndex": 2, "ids": ["s0003"], "seed": 7, "batchSize": 1, "wallSeconds": 0.715, "audioSeconds": 0.96, "memAvailableBytes": 119791316992, "cudaAllocatedBytes": 4208102400, "cudaReservedBytes": 4227858432, "cudaMaxReservedBytes": 4318035968, "cudaReservedBeforeReleaseBytes": 4278190080, "releaseSeconds": 0.001}
+tts exit zh-Hans 0 2026-11-14T18:30:18Z

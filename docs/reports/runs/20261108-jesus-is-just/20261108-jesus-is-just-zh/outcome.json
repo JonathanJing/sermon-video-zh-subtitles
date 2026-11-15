@@ -1,0 +1,20 @@
+{
+  "schemaVersion": "sentence-first-outcome-v1",
+  "at": "2026-11-08T05:04:24+00:00",
+  "status": "track_ready_for_review",
+  "delivery": "four_layer_release",
+  "locale": "zh-Hans",
+  "trackSeconds": 2143.54,
+  "ttsWallSeconds": 380.8,
+  "realtime": 5.63,
+  "asrMean": null,
+  "startedAt": "2026-11-08T05:03:48+00:00",
+  "endedAt": "2026-11-08T05:04:24+00:00",
+  "published": false,
+  "reviewMp3": "artifacts/sentence-first-agent/20261108-jesus-is-just-zh/review.mp3",
+  "reviewPlayer": {
+    "html": "artifacts/sentence-first-agent/20261108-jesus-is-just-zh/review-player.html",
+    "rows": 460
+  },
+  "note": "track merged and scored; audio alignment and review materials done in the same pass"
+}

@@ -1,0 +1,3 @@
+# The capture experiment runs from the repository venv.
+websockets>=13,<17
+requests>=2.32,<3

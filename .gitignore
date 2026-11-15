@@ -43,3 +43,8 @@ apps/operator-web/playback-simulation.generated.js
 *.publisher-runtime.json.*.tmp
 *.publisher-start.lock
 *.egg-info/
+
+# Third-party agent skill corpus (2.3 MB, auto-updating). `skills-lock.json` pins the
+# version; reinstall with `npx modern-web-guidance@latest install --agent universal`.
+.agents/skills/modern-web-guidance/
+.claude/skills/

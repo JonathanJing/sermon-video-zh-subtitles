@@ -71,6 +71,13 @@ class ConfigTest(unittest.TestCase):
         self.assertEqual(clip.locales, ("zh-Hans", "ko"))
         self.assertEqual(clip.english_reference_mode, "clip")
 
+    def test_independent_podcast_audio_keeps_the_full_dub(self):
+        podcast = self.publish.load_config(PAGES / "if-i-had-more-time-jesus-is-just.json", root=ROOT)
+        self.assertEqual(podcast.media_type, "podcast")
+        self.assertTrue(podcast.independent_audio())
+        synchronized = self.publish.load_config(PAGES / "revelation-jesus-marks-his-own-20261101.json", root=ROOT)
+        self.assertFalse(synchronized.independent_audio())
+
     def test_unknown_key_is_rejected(self):
         self.assert_invalid("if-i-had-more-time-jesus-promises",
                             lambda data: data.update({"environmnet": "dev"}),

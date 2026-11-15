@@ -1,0 +1,20 @@
+start 2026-11-01T23:53:52Z
+job sentence-tts-eric_pilot-ko 2026-11-01T23:53:52Z
+{"job": "35a300a15c1a464ba20580311fd0c896", "event": "reserved"}
+{"job": "35a300a15c1a464ba20580311fd0c896", "event": "bound", "container": "823d64d0ab19"}
+{"job": "35a300a15c1a464ba20580311fd0c896", "event": "ended", "stepExit": "0", "log": "tts exit ko 0 2026-11-02T00:04:24Z"}
+job sentence-tts-steve_bang_lee-ko 2026-11-02T00:04:46Z
+{"job": "028fc21795cc4b9dbd953ed0ce25843b", "event": "reserved"}
+{"job": "028fc21795cc4b9dbd953ed0ce25843b", "event": "bound", "container": "a134bd7434b8"}
+{"job": "028fc21795cc4b9dbd953ed0ce25843b", "event": "ended", "stepExit": "0", "log": "tts exit ko 0 2026-11-02T00:09:01Z"}
+locale done ko 2026-11-02T00:09:31Z
+job sentence-tts-eric_pilot-es 2026-11-02T00:09:31Z
+{"job": "043a509eb7cb4f5aa66764a7fc311e9b", "event": "reserved"}
+{"job": "043a509eb7cb4f5aa66764a7fc311e9b", "event": "bound", "container": "e412b592332a"}
+{"job": "043a509eb7cb4f5aa66764a7fc311e9b", "event": "ended", "stepExit": "0", "log": "tts exit es 0 2026-11-02T00:20:32Z"}
+job sentence-tts-steve_bang_lee-es 2026-11-02T00:20:54Z
+{"job": "8c0e50906fc9402182038f1cbb6b58f9", "event": "reserved"}
+{"job": "8c0e50906fc9402182038f1cbb6b58f9", "event": "bound", "container": "87c48b49edc9"}
+{"job": "8c0e50906fc9402182038f1cbb6b58f9", "event": "ended", "stepExit": "0", "log": "tts exit es 0 2026-11-02T00:25:18Z"}
+locale done es 2026-11-02T00:25:39Z
+all done 2026-11-02T00:25:39Z

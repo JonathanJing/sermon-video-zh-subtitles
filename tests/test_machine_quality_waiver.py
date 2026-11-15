@@ -290,7 +290,7 @@ class AudioQcTests(unittest.TestCase):
         self.assertEqual(result["repairGroupIds"], [])
 
     def test_a_dropped_negation_or_number_is_not_passed_on_the_ratio(self):
-        from tongxing_production.audio.screening import score
+        from tongxing_production.review.asr_scoring import score
         for locale, text in (("es", "Jesús no nos deja solos en nuestros fracasos ni en nuestras dudas."),
                              ("zh-Hans", "耶稣不会在我们失败的时候丢下我们，也不会离开我们。"),
                              ("ko", "예수님은 우리가 실패할 때 우리를 홀로 두지 않으십니다."),

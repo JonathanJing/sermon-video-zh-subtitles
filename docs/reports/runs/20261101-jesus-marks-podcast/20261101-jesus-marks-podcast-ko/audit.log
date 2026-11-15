@@ -1,0 +1,1 @@
+{"issues": 73, "accepted": 63, "rejected": 10, "cost": {"model": "deepseek-flash", "effort": "high", "calls": 38, "hits": 0, "costUsd": 0.5463, "inputTokens": 169987, "outputTokens": 412750, "maxRequestChars": 11258}}

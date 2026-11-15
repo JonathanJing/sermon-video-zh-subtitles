@@ -1,0 +1,62 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261114-sfa-preproduction-rehearsal",
+  "runs": [
+    {
+      "label": "20261115-rehearsal-start-zh",
+      "source": "~/Library/CloudStorage/SynologyDrive-macbook14/GitHub/Active/sermon-video-zh-subtitles/artifacts/sentence-first-agent/20261115-rehearsal-start-zh",
+      "skipped": {
+        "(none)": 1,
+        ".json": 7,
+        ".wav": 22,
+        ".mp3": 1,
+        ".md": 1,
+        ".jsonl": 4,
+        ".ndjson": 1
+      }
+    }
+  ],
+  "files": [
+    {
+      "run": "20261115-rehearsal-start-zh",
+      "path": "journal.ndjson",
+      "kind": "whole",
+      "bytes": 1246,
+      "truncated": false,
+      "sha256": "e90c56869653bc28ff90666f8d365f7c071cabc987193dd50c36c22426eb6f33",
+      "redactions": {}
+    },
+    {
+      "run": "20261115-rehearsal-start-zh",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 570,
+      "truncated": false,
+      "sha256": "d2154b5e1c6d42b460264aa3905a2fe9ff366875f94d03206323a8fc42ff84ba",
+      "redactions": {}
+    },
+    {
+      "run": "20261115-rehearsal-start-zh",
+      "path": "timings.tsv",
+      "kind": "whole",
+      "bytes": 142,
+      "truncated": false,
+      "sha256": "bd01558720c133f03ec18a17530fad87ef5f7781c38a49e08f0115c109ba8dbf",
+      "redactions": {}
+    },
+    {
+      "run": "20261115-rehearsal-start-zh",
+      "path": "tts-run.log",
+      "kind": "log",
+      "bytes": 3015,
+      "truncated": false,
+      "sha256": "169c77738f02c5123a1f61a5c03bb41a22f3a3b33455d6c7f084e3e8fb7c9461",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

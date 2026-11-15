@@ -33,6 +33,22 @@ export function findEnglishPositions(rows, query) {
     row.english.toLocaleLowerCase('en').includes(term))).slice(0, 40);
 }
 
+// One task per animation frame: later tasks in the same frame are dropped, so the
+// task must read the current state instead of capturing event-time values.
+export function coalesceFrame(frame) {
+  let pending = false;
+  return (task) => {
+    if (pending) return;
+    pending = true;
+    frame(() => { pending = false; task(); });
+  };
+}
+
+// Cheap key for renderReadingMode: any input that changes its DOM output belongs here.
+export function readingModeSignature(following, hasTrack, locale) {
+  return `${following ? 1 : 0}|${hasTrack ? 1 : 0}|${locale}`;
+}
+
 export class ReadingFollow {
   following = true;
   programmaticPosition = null;

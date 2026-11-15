@@ -9,6 +9,12 @@ final class WeeklyPosterPublishedUITests: XCTestCase {
         app.launchArguments = ["-AppleLanguages", "(zh-Hans)", "-AppleLocale", "zh_CN"]
         app.launch()
         XCTAssertTrue(app.buttons["choose-content-language"].waitForExistence(timeout: 45))
+        // From 08:00 local on the service date the verified poster may already
+        // be open by itself; capture that state instead of tapping a hidden card.
+        if app.staticTexts["weekly-update-title"].waitForExistence(timeout: 15) {
+            captureAndVerifyPoster(app, "weekly-poster-published-launch-auto-present")
+            app.buttons["weekly-update-done"].tap()
+        }
         capture(app, "weekly-poster-published-home")
         for locale in ["zh-Hans", "ko", "es"] {
             if locale != "zh-Hans" {
@@ -19,20 +25,32 @@ final class WeeklyPosterPublishedUITests: XCTestCase {
                 XCTAssertTrue(target.waitForExistence(timeout: 10))
                 target.tap()
             }
-            let open = app.buttons["weekly-update-open"]
-            let reopen = app.buttons["weekly-update-reopen"]
-            let ready = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in open.exists || reopen.exists }, object: nil)
-            XCTAssertEqual(XCTWaiter.wait(for: [ready], timeout: 30), .completed)
-            let button = open.exists ? open : reopen
-            for _ in 0..<5 where !button.isHittable { app.swipeDown() }
-            button.tap()
-            XCTAssertTrue(app.staticTexts["weekly-update-title"].waitForExistence(timeout: 10))
-            let image = app.images["weekly-update-poster"]
-            let verified = XCTNSPredicateExpectation(predicate: NSPredicate(format: "value == %@", "本周海报"), object: image)
-            XCTAssertEqual(XCTWaiter.wait(for: [verified], timeout: 30), .completed)
-            capture(app, "weekly-poster-published-\(locale)")
+            let title = app.staticTexts["weekly-update-title"]
+            if !title.exists {
+                let open = app.buttons["weekly-update-open"]
+                let reopen = app.buttons["weekly-update-reopen"]
+                let ready = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+                    open.exists || reopen.exists || title.exists
+                }, object: nil)
+                XCTAssertEqual(XCTWaiter.wait(for: [ready], timeout: 30), .completed)
+                // The auto-presented sheet can still land during this wait.
+                if !title.exists {
+                    let button = open.exists ? open : reopen
+                    for _ in 0..<5 where !button.isHittable { app.swipeDown() }
+                    button.tap()
+                }
+            }
+            captureAndVerifyPoster(app, "weekly-poster-published-\(locale)")
             app.buttons["weekly-update-done"].tap()
         }
+    }
+
+    private func captureAndVerifyPoster(_ app: XCUIApplication, _ name: String) {
+        XCTAssertTrue(app.staticTexts["weekly-update-title"].waitForExistence(timeout: 10))
+        let image = app.images["weekly-update-poster"]
+        let verified = XCTNSPredicateExpectation(predicate: NSPredicate(format: "value == %@", "本周海报"), object: image)
+        XCTAssertEqual(XCTWaiter.wait(for: [verified], timeout: 30), .completed)
+        capture(app, name)
     }
 
     private func capture(_ app: XCUIApplication, _ name: String) {

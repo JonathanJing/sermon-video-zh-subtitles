@@ -60,6 +60,8 @@ App Store 官方徽章内的文字和标志保持官方素材原样，不应用�
 
 标题、日期、讲员、系列、经文从精确 pageId 的正式 catalog/content/release package 读取。字体、官方徽章和两个二维码由本地排版合成，不靠模型生成；统一入口 `tools/ops/run.py delivery.posters.build`（实现在 `tongxing_production/delivery/posters/build.py`）调用同目录的 `template.py` 与包内资源 `render_weekly_poster.swift`。单语临时制作也用该入口及 `--locales`，不因只做一张就回到旧版 `build_sermon_poster.py`／`render_sermon_poster.swift`。旧脚本仅供复现既有 `weekly.json` 历史产物；它不是未来海报的交付模板。准备与渲染命令见[每周海报交付](tongxing-weekly-release.zh.md#每周海报交付)。
 
+2026-11-01 起提供 `tools/ops/run.py delivery.posters.artwork` 入口（`codex exec` → 内置 `image_gen`），收据绑定线程、产物与 C2PA；设计合同与边界见 [ImageGen 接入设计](tongxing-weekly-poster-imagegen-automation.zh.md)。它尚未接入默认周更或 Supervisor，因此当前周次仍按本节的手工会话步骤生成。
+
 ## 验收与证据
 
 - 校验正式 release 状态、catalog/release/content 哈希及页面身份，不以文件夹日期猜测内容。

@@ -81,7 +81,7 @@ def current_identities(manifest: dict, base: Path) -> dict:
     from ..text import candidate, models
     from ..text import policy as policy_tools
     from ..audio import identity as audio_identity
-    from ..audio import screening
+    from ..review import asr_scoring as screening
     from ..review import audio_qc, waiver
     locales = {}
     for locale, entry in manifest["locales"].items():

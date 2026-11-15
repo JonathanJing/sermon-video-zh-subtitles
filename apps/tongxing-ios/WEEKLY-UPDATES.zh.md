@@ -4,6 +4,10 @@
 
 本机通知点击仍校验 Beta Dev 的页面、订阅语言和发布包 SHA，成功后展示对应页面的海报。通知目标使用独立状态，默认页面检查不覆盖通知海报。此候选没有接通远程 APNs；配置见 [APNs 步骤](APNS-SETUP.zh.md)。通知横幅中的富媒体附件也未实现。
 
+## 到点自动显示（2026-11-01 起）
+
+同一个「本周海报」Sheet 还会在页面**服务日 08:00（设备本地时区）之后自动打开一次**。触发点只有冷启动和回到前台；自动打开要求公告已发布、海报字节数／SHA／实际尺寸校验通过、且该 `pageID + locale + releaseSHA256` 尚未写入已读凭据。关闭或看过即写入 `weekly-update-seen-v1.json`，同一 release 不再自动打开；切换阅读语言不会自动弹出；海报下载或校验失败时保留卡片与手动入口，不自动弹出空 Sheet。「到点」是日历日加本地小时，不是「公告发布后 N 小时」，因此晚发布的一周仍要等下一次打开；推送点击继续走原有通知路由。规则在 `Core/Sources/TongxingCore/WeeklyPosterSchedule.swift`，由 `WeeklyPosterScheduleTests` 覆盖 08:00 边界、设备时区与夏令时切换。
+
 ## Firebase 数据
 
 新增可选 `/weekly-announcements-v1.json`，schema `tongxing-weekly-announcements-v1`，不改 existing catalog/release schemas。每条包含 id、pageID、locale、releaseSHA256、sourceIdentitySHA256、title、publishedAt 和 poster（url、sha256、bytes、width、height）。客户端仅显示能与当前已发布内容绑定的条目；机器质检仍遵循已有 v4 发布包声明，不成为人工批准。

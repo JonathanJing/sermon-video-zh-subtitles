@@ -55,7 +55,7 @@ def _require(condition: bool, message: str) -> None:
 def stage_identities(config: dict) -> dict:
     """Current implementation identities for every stage, from this checkout's code."""
     from ..audio import identity as audio_identity
-    from ..audio import screening
+    from ..review import asr_scoring as screening
     from ..review import audio_qc, waiver
     from ..text import candidate as producer
     from ..text import models

@@ -1,0 +1,38 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261101-week8-push-live",
+  "runs": [
+    {
+      "label": "ios-push-20261101-send",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/ios-push-20261101-send",
+      "skipped": {
+        ".json": 1
+      }
+    }
+  ],
+  "files": [
+    {
+      "run": "ios-push-20261101-send",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 522,
+      "truncated": false,
+      "sha256": "8b1d8bb494ce7004851795a398c4dfd2099dc133a89553b21e94e032312d7084",
+      "redactions": {}
+    },
+    {
+      "run": "ios-push-20261101-send",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 2037,
+      "truncated": false,
+      "sha256": "716a556727858baa799e9eb3b994fc96aff8775d3a65de58462f83d3ac547010",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

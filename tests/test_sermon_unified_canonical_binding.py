@@ -3,6 +3,7 @@ import json
 import pytest
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from scripts import sermon_unified  # noqa: F401  binds the orchestration these stages compose
+from tongxing_production.delivery import inspect_canonical_packages as package_inspector
 from tongxing_production.workflows.prepared import canonical_binding as adapter
 from scripts.sermon_unified import contracts as c
 
@@ -19,7 +20,11 @@ def setup(tmp_path):
 
 def test_validated_inspector_cannot_hide_active_source_drift(tmp_path, monkeypatch):
     source, manifest, config = setup(tmp_path)
-    monkeypatch.setattr(adapter.packages, 'inspect', lambda path: {'nodes': {'source': {'status': 'validated'}}, 'packageIdentities': {'source': c.digest(source)}})
+    # Patch the host module the prepared-workflow proxy delegates to. Patching the
+    # proxy itself is unsafe: pytest >= 9.2 records the old value from the target's
+    # instance __dict__ (GH #10644) and therefore treats the dynamic attribute as
+    # newly added, deleting the real module attribute on undo.
+    monkeypatch.setattr(package_inspector, 'inspect', lambda path: {'nodes': {'source': {'status': 'validated'}}, 'packageIdentities': {'source': c.digest(source)}})
     assert adapter.inspect_bound(manifest, tmp_path, config, {'stageId': 'english_source'})['nodes']['source']['status'] == 'validated'
     for key in ('mediaSha256', 'sourceId', 'sourceUrlHash'):
         changed = copy.deepcopy(manifest); changed['source'][key] = 'wrong'

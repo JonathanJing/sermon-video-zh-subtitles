@@ -1,0 +1,153 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261101-jesus-marks-poster-upload",
+  "runs": [
+    {
+      "label": "2026-11-01-jesus-marks-v3",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/sermon-poster/2026-11-01-jesus-marks-v3",
+      "skipped": {
+        ".txt": 7,
+        ".png": 191,
+        ".md": 1,
+        ".py": 2,
+        "(none)": 5,
+        ".json": 760,
+        ".svg": 18,
+        ".js": 22,
+        ".mjs": 132,
+        ".srt": 8,
+        ".mp3": 276,
+        ".pdf": 16,
+        ".html": 136,
+        ".jpg": 4,
+        ".css": 12,
+        ".cache": 1,
+        ".lock": 1
+      }
+    }
+  ],
+  "files": [
+    {
+      "run": "2026-11-01-jesus-marks-v3",
+      "path": "render/es/poster-receipt.json",
+      "kind": "whole",
+      "bytes": 4769,
+      "truncated": false,
+      "sha256": "a612036e2a56e476f94fdc8b66cc8c05cd4d5844dcf22ca406cec46b463560ac",
+      "redactions": {}
+    },
+    {
+      "run": "2026-11-01-jesus-marks-v3",
+      "path": "render/ko/poster-receipt.json",
+      "kind": "whole",
+      "bytes": 4870,
+      "truncated": false,
+      "sha256": "7389ded26df9666d7db019903338dcad3004cdaec8ae7bc6eeb4eeb36ec88370",
+      "redactions": {}
+    },
+    {
+      "run": "2026-11-01-jesus-marks-v3",
+      "path": "render/zh-Hans/poster-receipt.json",
+      "kind": "whole",
+      "bytes": 4677,
+      "truncated": false,
+      "sha256": "f1009b5d0a3c6498d684d7a85d4cef66b96bd95b69a84d32a8509e0f7ee36116",
+      "redactions": {}
+    },
+    {
+      "run": "2026-11-01-jesus-marks-v3",
+      "path": "render-live-rebind/es/poster-receipt.json",
+      "kind": "whole",
+      "bytes": 4769,
+      "truncated": false,
+      "sha256": "927ed530afab077dfbbba33676b8d6146e06303cb52077841b901049f4b72bd3",
+      "redactions": {}
+    },
+    {
+      "run": "2026-11-01-jesus-marks-v3",
+      "path": "render-live-rebind/ko/poster-receipt.json",
+      "kind": "whole",
+      "bytes": 4870,
+      "truncated": false,
+      "sha256": "0bfe590981ceae94edf66d517b41efe879f8ed1080917d13bd59556ab3ce36a2",
+      "redactions": {}
+    },
+    {
+      "run": "2026-11-01-jesus-marks-v3",
+      "path": "render-live-rebind/zh-Hans/poster-receipt.json",
+      "kind": "whole",
+      "bytes": 4677,
+      "truncated": false,
+      "sha256": "b403401772c6a290475ec706149fb6096d3ae40c3881cf53870abe2417cbc0e9",
+      "redactions": {}
+    },
+    {
+      "run": "2026-11-01-jesus-marks-v3",
+      "path": "upload-baseline/baseline-receipt.json",
+      "kind": "whole",
+      "bytes": 147096,
+      "truncated": false,
+      "sha256": "2db29a02b59fe950c5b8ec242ec7b3e52b62293c8687a9f919174c9fdbfc9cd3",
+      "redactions": {}
+    },
+    {
+      "run": "2026-11-01-jesus-marks-v3",
+      "path": "upload-candidate/baseline-receipt.json",
+      "kind": "whole",
+      "bytes": 147096,
+      "truncated": false,
+      "sha256": "2db29a02b59fe950c5b8ec242ec7b3e52b62293c8687a9f919174c9fdbfc9cd3",
+      "redactions": {}
+    },
+    {
+      "run": "2026-11-01-jesus-marks-v3",
+      "path": "upload-candidate/hosting-publish.log",
+      "kind": "log",
+      "bytes": 0,
+      "truncated": false,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "redactions": {}
+    },
+    {
+      "run": "2026-11-01-jesus-marks-v3",
+      "path": "upload-candidate/preparation-receipt.json",
+      "kind": "whole",
+      "bytes": 3896,
+      "truncated": false,
+      "sha256": "d7d8dd2c6edf9211d6b0f38fd163ba9b4a400540902795225016bfc49de2c0cf",
+      "redactions": {}
+    },
+    {
+      "run": "2026-11-01-jesus-marks-v3",
+      "path": "upload-candidate-incomplete/baseline-receipt.json",
+      "kind": "whole",
+      "bytes": 147096,
+      "truncated": false,
+      "sha256": "2db29a02b59fe950c5b8ec242ec7b3e52b62293c8687a9f919174c9fdbfc9cd3",
+      "redactions": {}
+    },
+    {
+      "run": "2026-11-01-jesus-marks-v3",
+      "path": "upload-readback/baseline-receipt.json",
+      "kind": "whole",
+      "bytes": 150026,
+      "truncated": false,
+      "sha256": "a707876d58d37f6045d21cbfc27c4192635c95be571c39084fe54a94b4893b8b",
+      "redactions": {}
+    },
+    {
+      "run": "2026-11-01-jesus-marks-v3",
+      "path": "upload-receipt.json",
+      "kind": "whole",
+      "bytes": 5212,
+      "truncated": false,
+      "sha256": "a07679793a32db9adf8cb5fc7ab7ce3aef72f3cf9752ac735b82c86e91fb94f2",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

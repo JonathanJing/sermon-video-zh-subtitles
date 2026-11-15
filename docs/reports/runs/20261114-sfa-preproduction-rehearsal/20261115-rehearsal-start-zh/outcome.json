@@ -1,0 +1,17 @@
+{
+  "schemaVersion": "sentence-first-outcome-v1",
+  "at": "2026-11-14T18:30:56+00:00",
+  "status": "track_ready_for_review",
+  "delivery": "four_layer_release",
+  "locale": null,
+  "trackSeconds": 26.9,
+  "ttsWallSeconds": 5.2,
+  "realtime": 5.17,
+  "asrMean": null,
+  "startedAt": "2026-11-14T18:30:56+00:00",
+  "endedAt": "2026-11-14T18:30:56+00:00",
+  "published": false,
+  "reviewMp3": "artifacts/sentence-first-agent/20261115-rehearsal-start-zh/review.mp3",
+  "reviewPlayer": null,
+  "note": "track merged and scored; audio alignment and review materials done in the same pass"
+}

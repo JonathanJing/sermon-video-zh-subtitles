@@ -6,6 +6,11 @@ still in the host checkout through ports those already have. Each proxy looks
 its module up at every use, so these modules import without a host, and an
 attribute patch on a proxy lands on the host module, as it did when the stages
 imported that module by name. Drop a proxy when its module moves into the package.
+
+Patch the host module, not the proxy, with ``pytest``'s ``monkeypatch``: since
+pytest 9.2 it reads the old value from the target's instance ``__dict__`` (GH
+#10644), so a dynamic proxy attribute looks newly added and undo deletes the real
+one. ``unittest.mock.patch.object`` restores by assignment and stays safe.
 """
 from __future__ import annotations
 

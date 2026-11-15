@@ -1,0 +1,7 @@
+stage	computeSeconds	waitingSeconds	reworkSeconds
+l1.preflight.setup	0.0	0.0	0.0
+l1.preflight	0.0	0.0	0.0
+l3.tts.eric_pilot.ko	528.863	0.0	0.0
+l3.tts.steve_bang_lee.ko	284.303	0.0	0.0
+l3.finish	43.0	0.0	0.0
+total	856.166	0.0	0.0

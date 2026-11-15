@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { categoryLabel, fullReadingRows, findEnglishPositions, ReadingFollow } from './reading-mode.mjs';
+import { categoryLabel, fullReadingRows, findEnglishPositions, ReadingFollow, coalesceFrame, readingModeSignature } from './reading-mode.mjs';
 
 test('category follows interface locale with simplified Chinese and English fallback', () => {
   const category = {schemaVersion:'sermon-page-display-category-v1', labels:{'zh-Hans':'正式播放版', en:'Archive', ko:'설교'}};
@@ -41,4 +41,25 @@ test('real scrolling distinguishes the programmatic target from manual scrollbar
   follow.observeScroll([0, 420]); assert.equal(follow.following, false);
   follow.returnToCurrent(() => follow.programmaticScroll(() => { position = [0, 500]; }, () => position));
   follow.observeScroll([0, 500]); assert.equal(follow.following, true);
+});
+
+test('coalesceFrame runs one task per frame and reopens the next frame', () => {
+  const frames = [], ran = [];
+  const run = coalesceFrame(task => frames.push(task));
+  run(() => ran.push('first')); run(() => ran.push('second')); run(() => ran.push('third'));
+  assert.equal(frames.length, 1);
+  frames.shift()();
+  assert.deepEqual(ran, ['first']);
+  run(() => ran.push('fourth'));
+  assert.equal(frames.length, 1);
+  frames.shift()();
+  assert.deepEqual(ran, ['first', 'fourth']);
+});
+
+test('reading-mode signature changes with every input the render reads', () => {
+  const base = readingModeSignature(true, true, 'zh');
+  assert.equal(base, readingModeSignature(true, true, 'zh'));
+  assert.notEqual(base, readingModeSignature(false, true, 'zh'));
+  assert.notEqual(base, readingModeSignature(true, false, 'zh'));
+  assert.notEqual(base, readingModeSignature(true, true, 'en'));
 });

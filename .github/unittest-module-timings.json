@@ -268,10 +268,6 @@
       "seconds": 0.019,
       "tests": 15
     },
-    "test_dev_local_audio_entry": {
-      "seconds": 5.431,
-      "tests": 13
-    },
     "test_diagnostic_continuation_entry": {
       "seconds": 2.368,
       "tests": 3

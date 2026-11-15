@@ -131,7 +131,7 @@ SHA-256：Duo `cafef64bba4ed11d59b747880d70d865cdd510e05eccdcaef2f8cdcacfb7b2d1`
 
 **实时字幕。** 本地网关负责麦克风采集、ASR 和翻译，保留恢复录音，并渲染操作页与观看页。实时字幕依据本场正在说的话；会后复用录音做持久内容时，重新从 Layer 1 开始。
 
-**测试与 CI。** `tests/` 下的 Python 测试、Web 模块旁的 Node 测试、`apps/tongxing-ios/` 下的 Swift package 与模拟器测试。仓库保留按路径分类的 Python、iOS 合同／模拟器及晋升 workflow；2026-10-22 远端核对时，多项测试 workflow 为 `disabled_manually`，Branch promotion 仍 active。远端开关与分支保护分别以[执行环境设计](docs/execution-environment-design.zh.md)的核对记录为准；路由和分片见 [CI/CD backlog](docs/ci-cd-backlog.zh.md)。
+**测试与 CI。** `tests/` 下的 Python 测试、Web 模块旁的 Node 测试、`apps/tongxing-ios/` 下的 Swift package 与模拟器测试。仓库保留按路径分类的 Python、iOS 合同／模拟器及晋升 workflow；六个测试与镜像 workflow 自 2026-10-19 为 `disabled_manually`，2026-11-08 已恢复启用，重新启用后的 hosted 运行才是证据，配置存在本身不算。远端开关与分支保护分别以[执行环境设计](docs/execution-environment-design.zh.md)的核对记录为准；路由和分片见 [CI/CD backlog](docs/ci-cd-backlog.zh.md)。
 
 ## 工作流
 

@@ -131,7 +131,7 @@ More diagrams, their sources and the regeneration command are listed in the [dia
 
 **Live captions.** A local gateway owns microphone capture, ASR and translation, keeps a recovery recording and renders operator and viewer pages. Live captions use what is being said in that session; a recording reused later for durable content starts again at Layer 1.
 
-**Testing and CI.** Python tests under `tests/`, Node tests beside the web modules, Swift package and simulator tests under `apps/tongxing-ios/`. The repository retains path-classified Python, iOS contract/simulator and promotion workflows. On 2026-10-22, several test workflows were `disabled_manually` while Branch promotion remained active. Workflow switches and branch protection are recorded separately in the [execution environment design](docs/execution-environment-design.zh.md); routing and sharding are documented in the [CI/CD backlog](docs/ci-cd-backlog.zh.md).
+**Testing and CI.** Python tests under `tests/`, Node tests beside the web modules, Swift package and simulator tests under `apps/tongxing-ios/`. The repository retains path-classified Python, iOS contract/simulator and promotion workflows. Six test and image workflows were `disabled_manually` from 2026-10-19 and were re-enabled on 2026-11-08; the first hosted runs after that switch are the evidence, not the configuration alone. Workflow switches and branch protection are recorded separately in the [execution environment design](docs/execution-environment-design.zh.md); routing and sharding are documented in the [CI/CD backlog](docs/ci-cd-backlog.zh.md).
 
 ## Workflows
 

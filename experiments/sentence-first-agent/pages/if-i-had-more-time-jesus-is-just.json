@@ -1,0 +1,102 @@
+{
+  "schemaVersion": "sentence-first-page-config-v1",
+  "pageId": "if-i-had-more-time-jesus-is-just",
+  "environment": "production",
+  "locales": [
+    "zh-Hans",
+    "ko",
+    "es"
+  ],
+  "defaultTargetLocale": "zh-Hans",
+  "runsRoot": "artifacts/sentence-first-agent",
+  "runs": {
+    "zh-Hans": "20261108-jesus-is-just-podcast-zh",
+    "ko": "20261108-jesus-is-just-podcast-ko",
+    "es": "20261108-jesus-is-just-podcast-es"
+  },
+  "source": {
+    "url": "https://www.youtube.com/watch?v=gUsJFtFJmHc",
+    "date": "2026-11-08",
+    "window": {
+      "start": 0.0,
+      "end": 3008.238
+    },
+    "englishSource": "artifacts/podcasts/if-i-had-more-time-jesus-is-just/layer1/english-source.json"
+  },
+  "sentences": 883,
+  "speakers": "Eric Geiger · Steve Bang Lee",
+  "category": {
+    "schemaVersion": "sermon-page-display-category-v1",
+    "labels": {
+      "zh-Hans": "证道播客",
+      "en": "Sermon Podcast",
+      "ko": "설교 팟캐스트",
+      "es": "Pódcast del sermón"
+    }
+  },
+  "title": "如果我有更多时间 · 耶稣是公义的，必终结罪恶",
+  "meta": {
+    "zh-Hans": {
+      "title": "如果我有更多时间 · 耶稣是公义的，必终结罪恶",
+      "series": "如果我有更多时间",
+      "scripture": "启示录 15–16 章",
+      "badge": "证道播客 · AI 合成配音 · 已人工审核",
+      "source": "英文来源 / English source",
+      "note": "自然语速配音，非原视频同步，不提供听音定位。本项目与 Mariners Church 无隶属关系。"
+    },
+    "ko": {
+      "title": "If I Had More Time · 예수님은 공의로우시며 죄를 끝내실 것입니다",
+      "series": "If I Had More Time",
+      "scripture": "요한계시록 15-16장",
+      "badge": "설교 팟캐스트 · AI 합성 음성 · 검토 완료",
+      "source": "영어 원본 / English source",
+      "note": "자연스러운 속도의 더빙으로, 원본 영상과 동기화되지 않으며 오디오 정렬을 제공하지 않습니다. 이 프로젝트는 Mariners Church와 관련이 없습니다."
+    },
+    "es": {
+      "title": "If I Had More Time · Jesús es justo y pondrá fin al pecado",
+      "series": "If I Had More Time",
+      "scripture": "Apocalipsis 15-16",
+      "badge": "Pódcast del sermón · Voz sintetizada por IA · Revisado",
+      "source": "Fuente en inglés / English source",
+      "note": "Doblaje a ritmo natural, no sincronizado con el video original y sin alineación de audio. Este proyecto no está afiliado a Mariners Church."
+    }
+  },
+  "verdict": "artifacts/sentence-first-agent/20261108-jesus-is-just-podcast-review/human-review-verdict.json",
+  "candidate": {
+    "schemaVersion": "sentence-first-episode-candidate-v1",
+    "translationBasis": {
+      "default": "{locale}: Claude CLI Opus 5.5 translation (4 parts) with an independent Opus 5.5 second-pass fidelity audit"
+    }
+  },
+  "audioPackage": {
+    "schemaVersion": "sentence-first-episode-audio-package-v1",
+    "voices": "from-speakers",
+    "synchronization": "not on the source video clock; natural-rate dub of the full episode; no audio alignment or fingerprint index"
+  },
+  "releasePackageId": "{pageId}-{locale}-{environment}-v1",
+  "verify": {
+    "schemaVersion": "sentence-first-episode-http-verification-v1"
+  },
+  "englishReference": {
+    "mode": "full"
+  },
+  "summary": {
+    "includeEnvironment": true
+  },
+  "baseline": {
+    "allowDefaultLocaleDrift": true
+  },
+  "mediaType": "podcast",
+  "titleCheck": {
+    "englishTitle": "Jesus is just and will bring sin to its end",
+    "mode": "approved_exception",
+    "seriesKey": "revelation-comfort-and-hope",
+    "publishedTitles": {
+      "zh-Hans": "如果我有更多时间 · 耶稣是公义的，必终结罪恶",
+      "ko": "If I Had More Time · 예수님은 공의로우시며 죄를 끝내실 것입니다",
+      "es": "If I Had More Time · Jesús es justo y pondrá fin al pecado"
+    },
+    "reason": "播客页沿用「系列名 · 本篇标题」格式：系列名为 If I Had More Time / 如果我有更多时间，本篇标题取标题表第 9 周；这是播客系列页，不是启示录周日证道页，因此标题表的章节系列名不适用于页面的系列字段。",
+    "approvedBy": "Jony (chat, 2026-11-08 13:06 PST)"
+  }
+}

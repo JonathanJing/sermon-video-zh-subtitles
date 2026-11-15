@@ -32,7 +32,7 @@ QC 的 inputs v3 必须含实际 launcher 的非秘密 `openaiRoute`（schemaVer
 
 合并后的真实模型片段演练（Layer 1–4、按语言质检、质检失败回 Layer 2 修订、Spark 配音与音频质检、受控发布）曾按[真实模型片段 E2E](clip-real-e2e.zh.md)用 `tools/development/run_clip_real_e2e.py` 和一份运行规格执行，可断点续跑。该夹具与入口已于 2026-10-28 随机器听审链退役，该文档只作历史说明；新的端到端验证走正式四层入口与人工整轨 1× 听审。
 
-真实 Dev 音频测试按[已接入的参数入口](local-production-next-dev-test-parameters.zh.md#已接入的音频入口)使用 `tools/development/run_dev_local_audio_test.py`：`tts` 自动读取 profile 选配音 batch2，显式 batch1 作基线；`back-asr` 只作历史诊断（回转写 batch4，显式 1／8 作对照），不是发布门禁——2026-10-28 起音频发布只认人工整轨 1× 听审，该档依赖的筛查 producer 已删除，当前执行会因缺少 `tongxing_production.audio.screening` 失败，待清理，不作为任何发布依据。此入口保留正式 producer 门禁与独立回执；合并 dev 和 CI 不会自动运行 GPU 或付费模型。
+真实 Dev 音频测试的原入口 `tools/development/run_dev_local_audio_test.py` 与它依赖的 ASR 筛查 producer 已于 2026-10-28 退役，入口文件、对应测试和幂等权重在 2026-11-08 移除（[历史参数页](local-production-next-dev-test-parameters.zh.md)）。2026-10-28 起音频发布只认人工整轨 1× 听审；正式 renderer 的 `--dev-test` profile 参数仍在 `tongxing_production.audio.dev_profile`，不依赖该入口。合并 dev 和 CI 不会自动运行 GPU 或付费模型。
 
 每周正式制作前先运行 `python tools/development/evaluate_backend_four_layer_dry_run.py --out <忽略目录内的评估收据>`，再按[后端四层快速 Dry Run](backend-four-layer-dry-run.zh.md)生成 Firebase Dev 独立测试页。该评估模拟拿到链接，走 Layer 1–4 的短夹具交接，并测试四处失败阻断及无效故障点；CI 也在非文档 PR 上执行。模拟通过只说明这条测试链路工作；正式周次仍从真实来源、审核和音频证据继续。本 runbook 下文的 Supervisor 仍只覆盖 `dual_pdf` 范围。
 
@@ -325,13 +325,34 @@ export SERMON_YOUTUBE_COOKIES_FILE=/absolute/path/youtube.cookies.txt
   | 时机 | 标题 | Bark `level` |
   |---|---|---|
   | 进程开始 | 开始监控证道视频上传（含已配置的设备，缺 key 时注明） | `passive`，缺 key 时 `active` |
-  | 发现新文件 | 证道视频已上传：文件名 · GB · 最早时间 PT · 名称标签，点开为 Drive 文件页 | `timeSensitive` |
+  | 发现新文件 | 证道视频已上传：文件名 · GB · 最早时间 PT · 名称标签，点开为 Drive 文件页 | `critical` + `volume=0`（忽略静音与专注模式、亮屏显示，但不响铃；需先开「重要警告」） |
   | 22:00 仍没有新文件 | 本周未见新证道视频，列出文件夹现有文件 | `active` |
-  | 连续 3 次读取失败 / 之后恢复 | 证道视频检查失败 / 已恢复 | `active` / `passive` |
+  | 连续 3 次读取失败 / 之后恢复 | 证道视频检查失败 / 已恢复 | `timeSensitive` / `passive` |
 
   所有渠道都没送达时不记为已通知，下一次读取重发。
-- **安装与检查。** 先存 key（会提示输入，不回显）：`security add-generic-password -s org.sermonvideo.drive-upload-watch -a bark-iphone -w`，Mac 再加 `-a bark-mac`。`python3 tools/ops/drive_upload_watch.py install` 把脚本复制到 `~/Library/Application Support/org.sermonvideo.drive-upload-watch/`（以 `/usr/bin/python3` 运行，不受本 checkout 切换分支影响）并加载 LaunchAgent；改代码后重新 `install`。`status` 显示加载状态、已存的 Bark 账户、下次窗口、日志末尾，以及已安装副本是否与当前文件一致；`check` 只读一次文件夹并打印 JSON；`test-push` 向每个 key 发一条测试；`uninstall` 卸载但保留状态。`run --now 2026-10-31T19:30 --no-push --state <临时路径>` 从指定时刻模拟窗口，只打印不推送。
+
+  除 Bark 外，非静默消息（发现新文件、检查失败、22:00 未见新文件）还会用 Gmail SMTP 另发一封邮件：钥匙串服务同为 `org.sermonvideo.drive-upload-watch`，账户 `gmail-user` 存发件地址、`gmail-app` 存应用专用密码（Google 账号开启两步验证后生成），可选 `gmail-to` 改收件人，默认发给发件人自己。主题前缀 `[证道视频监控]`，正文含文件信息与 Drive 链接，并带 `Importance: high` / `X-Priority: 1` 标准头（Outlook 等客户端会显示为高重要性；Gmail 的「重要」标记由算法判定，发件人无法通过 SMTP 设置，邮件也无法像 Bark 的 `critical` 那样绕过静音或专注模式）；邮件是独立的兜底与记录，不保证响，`passive` 消息（进程开始、恢复）不发。邮件失败只记录异常类型名，不记录地址和密码；Bark 与邮件都没送达时同样不记为已通知，下一次读取重发。邮件与 Bark 都成功时，按任一渠道送达即视为已通知。
+
+  发现新文件现在用 `level=critical` + `volume=0`：忽略静音和专注模式、亮屏显示，但铃声音量为 0。它要求先在手机设置里给 Bark 打开「重要警告」权限；未授权时这条推送可能投递失败，因此切换后要用 `test-push --critical` 确认手机确实收到，收不到就退回 `timeSensitive`（可加 `call=1` 重响 30 秒）。
+- **安装与检查。** 先存 key（会提示输入，不回显）：`security add-generic-password -s org.sermonvideo.drive-upload-watch -a bark-iphone -w`，Mac 再加 `-a bark-mac`；要开邮件兜底再加 `-a gmail-user`（Gmail 地址）和 `-a gmail-app`（应用专用密码），可选 `-a gmail-to` 改收件人。`python3 tools/ops/drive_upload_watch.py install` 把脚本复制到 `~/Library/Application Support/org.sermonvideo.drive-upload-watch/`（以 `/usr/bin/python3` 运行，不受本 checkout 切换分支影响）并加载 LaunchAgent；改代码后重新 `install`。`status` 显示加载状态、已存的 Bark 账户、邮件是否已配置、下次窗口、日志末尾，以及已安装副本是否与当前文件一致；`check` 只读一次文件夹并打印 JSON；`test-push` 向每个 key 和已配置的邮件通道各发一条测试（`--critical` 用发现文件同样的 critical + volume=0 形状），邮件已配置却没送达时退出码为 1；`uninstall` 卸载但保留状态。`run --now 2026-10-31T19:30 --no-push --state <临时路径>` 从指定时刻模拟窗口，只打印不推送。
 - **记录。** 同一目录下 `state.json`（已通知与基线文件、每个窗口的消息状态，版本 1）和 `observations.ndjson`（每个新文件的 ID、名称、大小、两个时间戳、首次看到时间与送达结果，以及每个窗口的收尾），供核对每周上传时间与 [H1](design/saturday-first-service-preparation.zh.md) 使用。旧 Claude 定时任务在新检查经过一个周六并行验证后停用。
+
+**每周记录**（抄自本机 `state.json` 与 `observations.ndjson`，云端读不到这两个文件）：
+
+| 窗口（周六） | 文件 | 大小 | 最早 / 最新时间戳 PT | 首次看到 | 送达 | 备注 |
+|---|---|---|---|---|---|---|
+| 2026-10-18 | `20261018 BROADCAST MESSAGE.mp4` | 1.09 GB | 18:47:54 / 18:50:01 | 人工查看 | 旧 Claude 任务 | 带日期前缀的最后一个样本 |
+| 2026-10-24 | `Saturday_400pm_Live__1080.mp4` | 0.90 GB | 19:37:03 / 19:46:10 | 10-31 18:00:08 记为基线 | — | 早于本检查上线，静默记基线、不通知 |
+| 2026-10-31 | `Saturday_530pm_Live__1080.mp4` | 0.97 GB | 19:19:10 / 19:29:31 | 19:29:39 | Bark ×2 | 首次实跑；20:20:04 一次瞬时读取失败，未到 3 次阈值 |
+| 2026-11-07 | `Saturday_530pm_Live__1080-2.mp4` | 1.00 GB | 19:30:02 / 19:37:45 | 19:37:50（通知 19:37:53） | Bark ×2 + 邮件 | 18:00 时机器不在运行，18:25:52 由 `RunAtLoad` 补跑，22:00:00 退出码 0 |
+
+检测延迟按「最新时间戳到首次看到」算：10-31 为 8 秒，11-07 为 5 秒。10-24 起文件名不再带日期前缀，10-31 与 11-07 连续两周是 5:30 场，11-07 还带 `-2` 后缀；按文件 ID 判定不受影响，名称只作标签——这正是旧任务按日期前缀匹配会漏报的原因。5:30 场连续出现也说明 [H1](design/saturday-first-service-preparation.zh.md)「正式版多半来自 4:00 场」只能按周核对，不能当作固定前提。
+
+2026-11-07 实跑暴露的三处边界：
+
+- **手机是否显示未验证。** 11-07 是 `critical` + `volume=0` 与 Gmail 兜底上线后的第一次实跑。`delivery` 为真只说明 Bark 服务端返回 `code=200`、SMTP 接受，手机是否真的弹出（需先在系统设置里给 Bark 开「重要警告」）没有人工确认；切换或怀疑时用 `test-push --critical` 确认并回写结果。
+- **开始时刻没有记录。** 18:00 机器没开机或没登录时，实际开始时间取决于登录时刻（11-07 是 18:25:52，窗口前的约 26 分钟没有轮询）。开始消息是 `passive`，正文固定写 18:00–22:00，`watch.log` 与 `state.json` 都不记开始时刻；这段空档靠启动后的第一次读取兜住，窗口内已经存在的文件不会漏。
+- **跨午夜不补读。** 22:00 后、当天午夜前登录会补读一次再收尾；跨过午夜再登录只剩 `outside the window`，既没有补读也没有「未见新文件」的收尾消息，需要手动 `check`。
 
 边界：该检查只读，不下载视频，不写 GCS state，不建立 Layer 1 来源身份，也不启动任何生产阶段。检测到文件不等于确认它与周六直播或周日讲道同篇，也不等于确认可用于生产；要把它作为来源，须另行核实使用授权与来源署名，并按[四层合同](multilingual-production-interfaces.zh.md)从 Layer 1 开始绑定 source ID、URL、媒体哈希与时长。
 

@@ -30,6 +30,11 @@ final class AppStoreScreenshotUITests: XCTestCase {
         defer { app.terminate() }
 
         XCTAssertTrue(app.staticTexts["published-page-title"].waitForExistence(timeout: 45))
+        // From 08:00 local on the service date the published poster can open by
+        // itself; clear it before using the home-screen controls.
+        if app.staticTexts["weekly-update-title"].waitForExistence(timeout: 10) {
+            app.buttons["weekly-update-done"].tap()
+        }
         let interface = element("app-language-menu", in: app)
         try reveal(interface, in: app, towardTop: true)
         interface.tap()
@@ -70,6 +75,11 @@ final class AppStoreScreenshotUITests: XCTestCase {
         let title = app.staticTexts["published-page-title"]
         XCTAssertTrue(title.waitForExistence(timeout: 45), "The real published sermon must load.")
         XCTAssertFalse(title.label.isEmpty)
+        // The auto-present poster can land after the home screen is ready; clear
+        // it before the language controls are tapped.
+        if app.staticTexts["weekly-update-title"].waitForExistence(timeout: 10) {
+            app.buttons["weekly-update-done"].tap()
+        }
 
         // Reset only visible interface/content choices through the actual controls.
         let interface = element("app-language-menu", in: app)

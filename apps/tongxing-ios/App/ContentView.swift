@@ -66,6 +66,9 @@ struct ContentView: View {
     /// positioned against the bar, so the host presents it here instead.
     @ViewState private var playbackMoreButtonFrame: CGRect = .null
     @ViewState private var showingAlignmentFailure = false
+    /// One-shot per scene: the automatic poster is a launch/foreground offer,
+    /// not a side effect of switching the reading language.
+    @ViewState private var attemptedWeeklyPosterAutoPresentation = false
 
     init(model: AppModel) {
         self.model = model
@@ -94,6 +97,16 @@ struct ContentView: View {
         .task(id: model.weeklyUpdateIdentity) {
             if let catalog = model.multilingualCatalog {
                 await weeklyUpdates.load(catalog: catalog, locale: model.selectedContentLocale)
+                // Only a launch or a foreground return may open the poster by
+                // itself; switching content language must not, even when that
+                // translation's release is still unseen.
+                guard !attemptedWeeklyPosterAutoPresentation else { return }
+                // A load racing a locale change can hold the previous language's
+                // announcement; leave the one-shot for the matching reload.
+                if let announcement = weeklyUpdates.announcement,
+                   announcement.locale != model.selectedContentLocale { return }
+                attemptedWeeklyPosterAutoPresentation = true
+                presentWeeklyPosterIfDue()
             }
         }
         .task(id: model.publishedTranscriptSelectionKey) {
@@ -142,10 +155,21 @@ struct ContentView: View {
             Button(localization.text("关闭"), role: .cancel) { model.dismissAlignmentFailure() }
         } message: { failure in Text(localization.text(failure.message)) }
         .onChange(of: model.selectedPageID) { _, _ in locateConfirmation = nil }
+        .onChange(of: model.weeklyUpdateCheckRevision) { _, _ in
+            // The app-scoped foreground refresh may deliver the announcement
+            // after the resume-time check saw only the previous state.
+            presentWeeklyPosterIfDue()
+        }
         .onChange(of: localization.language) { _, _ in model.refreshSystemPresentation() }
         .onChange(of: scenePhase) { _, phase in
             if phase != .active { playback.saveProgress() }
-            else { localization.refreshSystemLanguage() }
+            else {
+                localization.refreshSystemLanguage()
+                model.resumePublishedAudioPreparationIfStalled()
+                // The 08:00 threshold may have passed while the app was in the
+                // background; a return to the app is the second allowed moment.
+                presentWeeklyPosterIfDue()
+            }
             updateAlignmentFailurePresentation()
         }
     }
@@ -166,6 +190,22 @@ struct ContentView: View {
         }
     }
     #endif
+
+    /// Opens this week's verified poster by itself from 08:00 on the service
+    /// date. It yields to another sheet, a dismissal, an alignment alert and a
+    /// language reload still holding another locale; a failed poster never
+    /// produces an automatic empty sheet.
+    private func presentWeeklyPosterIfDue() {
+        #if os(iOS)
+        // No scenePhase gate: the launch task can run while the scene is still
+        // inactive, and a sheet set then is shown when the app becomes active.
+        guard sheet == nil, !showingAlignmentFailure,
+              weeklyUpdates.announcement?.locale == model.selectedContentLocale else { return }
+        guard weeklyUpdates.autoPresentationDue() else { return }
+        showingNotificationPoster = false
+        sheet = .weeklyUpdate
+        #endif
+    }
 
     private func updateAlignmentFailurePresentation() {
         showingAlignmentFailure = model.alignmentFailure != nil && sheet == nil && scenePhase == .active
@@ -278,6 +318,23 @@ struct ContentView: View {
                                                 Task { await model.prepareSelectedPublishedAudio() }
                                             }
                                             .accessibilityIdentifier("retry-published-audio")
+                                        }
+                                    } else if let fraction = model.publishedAudioProgress?.fraction {
+                                        let percent = Int((fraction * 100).rounded(.down))
+                                        VStack(alignment: .leading, spacing: 6) {
+                                            HStack(spacing: 8) {
+                                                Text(localization.text("正在准备音频…"))
+                                                    .font(.footnote)
+                                                Spacer(minLength: 8)
+                                                Text("\(percent)%")
+                                                    .font(.footnote.monospacedDigit())
+                                                    .accessibilityIdentifier("preparing-published-audio-percent")
+                                            }
+                                            .foregroundStyle(.secondary)
+                                            ProgressView(value: fraction)
+                                                .progressViewStyle(.linear)
+                                                .accessibilityIdentifier("preparing-published-audio")
+                                                .accessibilityValue("\(percent)%")
                                         }
                                     } else {
                                         ProgressView(localization.text("正在准备音频…"))
@@ -393,7 +450,7 @@ struct ContentView: View {
             // Duo uses its system-provided vertical toolbar when that is active.
             .listeningPlayerDock(atTrailingEdge: false,
                                  inSystemBar: usesSystemVerticalBar) {
-                if model.selectedTrack != nil || model.selectedAudioLocale != nil {
+                if model.showsPlaybackDock {
                     HStack(spacing: 0) {
                         Color.clear.frame(width: controlRegion.minX, height: 0)
                         listeningPlaybackDock(placement: .bottom)
@@ -436,7 +493,7 @@ struct ContentView: View {
                 }
                 #if os(iOS) && canImport(SwiftUI, _version: 8.0.85)
                 if #available(iOS 27.1, macOS 27.1, *), usesSystemVerticalBar,
-                   model.selectedTrack != nil || model.selectedAudioLocale != nil {
+                   model.showsPlaybackDock {
                     ToolbarItem(placement: .primaryAction) {
                         listeningPlaybackDock(placement: .trailing, inSystemBar: true)
                     }
@@ -515,8 +572,7 @@ struct ContentView: View {
     }
 
     private var playbackStatusDetail: some View {
-        Text(localization.text(model.isPreparing || model.isPreparingPublishedAudio
-                               ? "正在准备音频…" : playback.message))
+        Text(localization.text(model.isPreparingPlaybackAudio ? "正在准备音频…" : playback.message))
             .font(.footnote)
             .foregroundStyle(.secondary)
             .fixedSize(horizontal: false, vertical: true)
@@ -524,14 +580,15 @@ struct ContentView: View {
     }
 
     private var shouldShowPlaybackStatusDetail: Bool {
-        model.isPreparing || model.isPreparingPublishedAudio || playback.message != "音频就绪 · 可以播放"
+        model.isPreparingPlaybackAudio || playback.message != "音频就绪 · 可以播放"
     }
 
     private func listeningPlaybackDock(placement: PlaybackDockPlacement,
                                        inSystemBar: Bool = false) -> some View {
         PlaybackDock(
             playback: playback,
-            isPreparing: model.isPreparing || model.isPreparingPublishedAudio,
+            isPreparing: model.isPreparingPlaybackAudio,
+            preparationProgress: model.publishedAudioProgress?.fraction,
             alignmentModel: model,
             locate: { sheet = .locate },
             precision: model.selectedTrack == nil ? nil : { sheet = .precision },
@@ -581,7 +638,7 @@ struct ContentView: View {
     private var playbackMoreControls: some View {
         PlaybackMoreControls(
             playback: playback,
-            isPreparing: model.isPreparing || model.isPreparingPublishedAudio,
+            isPreparing: model.isPreparingPlaybackAudio,
             alignmentModel: model,
             locate: { sheet = .locate },
             precision: model.selectedTrack == nil ? nil : { sheet = .precision },

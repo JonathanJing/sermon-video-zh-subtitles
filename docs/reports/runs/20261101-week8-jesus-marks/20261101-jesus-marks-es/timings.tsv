@@ -1,0 +1,5 @@
+stage	computeSeconds	waitingSeconds	reworkSeconds
+l1.preflight.setup	0.0	0.0	0.0
+l1.preflight	0.0	0.0	0.0
+l3.finish	90.0	0.0	90.0
+total	90.0	0.0	90.0

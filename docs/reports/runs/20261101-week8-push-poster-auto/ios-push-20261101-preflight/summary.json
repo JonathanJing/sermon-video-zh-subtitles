@@ -1,0 +1,131 @@
+{
+  "schemaVersion": "tongxing-push-preflight-summary-v1",
+  "status": "preflight_pass",
+  "scope": "formal iOS poster push read-only preflight; no APNs request, no send",
+  "pageID": "revelation-jesus-marks-his-own-20261101",
+  "codeCommit": "ce293ecd74fbdb7f54c18bbb56b935c8297fe7a6",
+  "planSha256": "d572799e8e32997c2ce1a1d6255fb79b3a9dacd7b33ed781854b6e48396aa01c",
+  "planFile": "artifacts/ios-push-20261101-preflight/plan.json",
+  "planFileMode": "0600",
+  "planBytes": 1100,
+  "planCreatedAt": "2026-11-01T06:42:04.288Z",
+  "planExpiresAt": "2026-11-01T06:57:04.288Z",
+  "publicationDigest": "f7e816d776fb69b013ec9d2833e268376a6fe81c178ca31143f43ae086a5195f",
+  "catalogVersion": "v5",
+  "catalogSchemaVersion": "sermon-multilingual-catalog-v5",
+  "pageDate": "2026-11-01",
+  "pageIsCatalogDefault": true,
+  "verifiedPublishedLocales": [
+    "zh-Hans",
+    "ko",
+    "es"
+  ],
+  "absentLocales": [
+    "en",
+    "vi"
+  ],
+  "copy": {
+    "zh-Hans": {
+      "title": "耶稣为属祂的人盖印",
+      "body": "打开同行查看海报、阅读并收听本周证道。"
+    },
+    "ko": {
+      "title": "예수님이 자기 백성에게 인을 치십니다",
+      "body": "동행에서 포스터를 보고 이번 주 설교를 읽고 들어보세요."
+    },
+    "es": {
+      "title": "Jesús sella a los suyos",
+      "body": "Abre Tongxing para ver el cartel, leer y escuchar el sermón de esta semana."
+    }
+  },
+  "publishedReleases": {
+    "zh-Hans": {
+      "releasePackageUrl": "/releases-v2/revelation-jesus-marks-his-own-20261101/zh-Hans.json",
+      "releaseSHA256": "056160f4a3dd527a8db4d87ee597ef34e84630978f094bcb0e60bbcb756613e7",
+      "contentStatus": "human_reviewed",
+      "audioStatus": "human_reviewed",
+      "bodyVariant": "audio",
+      "posterSha256": "8c266931ec06b5765f10ed9dc5bc2adcf754b44f4058edac248ec0ef913d72ca",
+      "posterBytes": 1952821,
+      "announcementBindingMatches": 1
+    },
+    "ko": {
+      "releasePackageUrl": "/releases-v2/revelation-jesus-marks-his-own-20261101/ko.json",
+      "releaseSHA256": "33b48816e367f766a1b8d7a467ccaee208b8d78d9cabf7682455a5df9fe654aa",
+      "contentStatus": "human_reviewed",
+      "audioStatus": "human_reviewed",
+      "bodyVariant": "audio",
+      "posterSha256": "00c65d59dd2e6a85d40cfb04304854eccd7bd41080c120bbdd23c79e6f6645e2",
+      "posterBytes": 1956509,
+      "announcementBindingMatches": 1
+    },
+    "es": {
+      "releasePackageUrl": "/releases-v2/revelation-jesus-marks-his-own-20261101/es.json",
+      "releaseSHA256": "d01e711fd7db048d8bbcbe9d3e5468dd4a0d73755b575772267849870c9e4f68",
+      "contentStatus": "human_reviewed",
+      "audioStatus": "human_reviewed",
+      "bodyVariant": "audio",
+      "posterSha256": "b1f23f75e77bc416f7677f47551141c2ea56f5169b0830d0827900e2b98ff9ba",
+      "posterBytes": 1952060,
+      "announcementBindingMatches": 1
+    }
+  },
+  "httpVerificationStatus": "published_http_verified",
+  "recipientsPerLocale": {
+    "zh-Hans": 1,
+    "ko": 0,
+    "es": 0
+  },
+  "totalRecipients": 1,
+  "suppressedDuplicates": 0,
+  "planContainsDeviceTokens": false,
+  "planRecipientFields": [
+    "installationId",
+    "seq",
+    "tokenHash",
+    "locale"
+  ],
+  "apnsConfigPreflight": {
+    "result": "pass",
+    "networkUsed": false,
+    "apnsContacted": false,
+    "topic": "com.jonathanjing.tongxing.dev",
+    "environment": "production",
+    "keyId": "73JTV5Q5MY",
+    "teamId": "G2P4DTQNBA",
+    "configMode0600": true,
+    "keyFileMode0600": true,
+    "keyType": "ec",
+    "keyCurve": "prime256v1",
+    "keyFileMatchesKeyId": true,
+    "jwtSignedEs256": true,
+    "jwtVerifiedWithSameKey": true,
+    "publicKeySpkiSha256": "348578182cdee90f60f9230e8c9ae9cf55cdd72819b1a1e3b952cdaaf37907f1"
+  },
+  "tests": {
+    "command": "node --test test/*.test.mjs",
+    "passed": 7,
+    "failed": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "durationMs": 170
+  },
+  "npmInstall": {
+    "command": "npm ci --ignore-scripts",
+    "status": "pass",
+    "packages": 246,
+    "engineWarning": "package declares node 22; host runs node v26.12.0",
+    "auditVulnerabilities": "7 (6 moderate, 1 high) in dependencies"
+  },
+  "sendTime": {
+    "requestedLocal": "2026-11-01 08:00 America/Los_Angeles",
+    "resolvedUtc": "2026-11-01T16:00:00Z",
+    "utcOffset": "UTC-8 (PST; US DST ended 2026-11-01 02:00 local, i.e. 09:00Z)",
+    "briefStatedUtc": "2026-11-01T15:00:00Z",
+    "briefUtcDiscrepancy": "15:00Z resolves to 2026-11-01 07:00 PST, one hour before the stated 08:00 local; 08:00 local is 16:00Z"
+  },
+  "sendTimeUtc": "2026-11-01T16:00:00Z",
+  "apnsSent": false,
+  "deviceDisplay": "not_verified",
+  "note": "No APNs request and no device receipt; Apple 200 would only be provider acceptance, not device display. The plan is valid for exactly 15 minutes after createdAt (and only after it), so it must be regenerated at send time: plan then send within 15 minutes; this preflight plan is expired long before 2026-11-01T16:00:00Z."
+}

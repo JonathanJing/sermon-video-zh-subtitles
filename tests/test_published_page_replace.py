@@ -7,7 +7,7 @@ import pytest
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.delivery import baseline as bl
 from tongxing_production.delivery import contract
-from tongxing_production.delivery.published_page_replace import finish_replace, replace_assets
+from tongxing_production.delivery.published_page_replace import finish_replace, replace_assets, write_publish_config
 
 PAGE = 'week'
 LOCALE = 'ko'
@@ -129,9 +129,21 @@ def test_replace_assets_can_add_page_local_study_files(tmp_path):
                             extra_paths={f'study/{PAGE}/{LOCALE}/outline.json': b'{"sections": []}'})
     assert result['added'] == [f'/study/{PAGE}/{LOCALE}/outline.json']
     assert (staged / 'public' / f'study/{PAGE}/{LOCALE}/outline.json').read_bytes() == b'{"sections": []}'
-    with pytest.raises(ValueError, match='study tree'):
+    with pytest.raises(ValueError, match='pages/ or study/'):
         replace_assets(live, tmp_path / 'stage-b', PAGE, {f'content/{PAGE}/{LOCALE}.json': b'{}'},
                        extra_paths={f'pages/other/{LOCALE}/index.html': b'x'})
+
+
+def test_replace_assets_can_add_a_page_local_script(tmp_path):
+    live = write_snapshot(tmp_path)
+    staged = tmp_path / 'stage-a'
+    script = b'(function(){})();'
+    page = b'<html><script src="./app-link.js"></script></html>'
+    result = replace_assets(live, staged, PAGE, {f'pages/{PAGE}/{LOCALE}/index.html': page},
+                            extra_paths={f'pages/{PAGE}/app-link.js': script})
+    assert result['added'] == [f'/pages/{PAGE}/app-link.js']
+    assert (staged / 'public' / f'pages/{PAGE}/app-link.js').read_bytes() == script
+    contract.validate_catalog_snapshot(staged, allow_pending_replacements=frozenset({PAGE}))
 
 
 def test_finish_rewrites_the_alignment_sidecar(tmp_path):
@@ -172,3 +184,37 @@ def test_finish_requires_verified_releases(tmp_path):
     data = (json.dumps(release, ensure_ascii=False, indent=1, sort_keys=True) + '\n').encode()
     with pytest.raises(ValueError, match='not http-verified'):
         finish_replace(staged, tmp_path / 'b', PAGE, {LOCALE: data}, 'f' * 64)
+
+
+def test_publish_config_carries_the_pending_page_to_the_publisher(tmp_path):
+    live = write_snapshot(tmp_path)
+    (live / 'baseline-receipt.json').write_text(json.dumps({
+        'baselineVersion': 'sites/ai-for-god-sermon-audio/versions/1',
+        'project': 'ai-for-god-caption-dev', 'site': 'ai-for-god-sermon-audio',
+        'origin': 'https://ai-for-god-sermon-audio.web.app'}))
+    staged = tmp_path / 'stage-a'
+    replace_assets(live, staged, PAGE, {f'content/{PAGE}/{LOCALE}.json': b'{"pageId":"week"}'})
+    result = write_publish_config(live, staged, 'production')
+    config = json.loads((staged / 'publish-config.json').read_text())
+    assert config['allowPendingReplacements'] == [PAGE]
+    assert config['baseline_version'] == 'sites/ai-for-god-sermon-audio/versions/1'
+    assert result['pendingReplacements'] == [PAGE]
+
+
+def test_publish_config_has_no_pending_key_once_finished(tmp_path):
+    live = write_snapshot(tmp_path)
+    (live / 'baseline-receipt.json').write_text(json.dumps({
+        'baselineVersion': 'sites/ai-for-god-sermon-audio/versions/1',
+        'project': 'ai-for-god-caption-dev', 'site': 'ai-for-god-sermon-audio',
+        'origin': 'https://ai-for-god-sermon-audio.web.app'}))
+    staged = tmp_path / 'stage-a'
+    replace_assets(live, staged, PAGE, {f'content/{PAGE}/{LOCALE}.json': b'{"pageId":"week"}'})
+    evidence = tmp_path / 'verify.json'
+    evidence.write_text(json.dumps({'status': 'pass'}))
+    evidence_sha = hashlib.sha256(evidence.read_bytes()).hexdigest()
+    release = replacement_release(live, b'{"pageId":"week"}', evidence_sha)
+    final = tmp_path / 'stage-b'
+    finish_replace(staged, final, PAGE, {LOCALE: release}, evidence_sha)
+    write_publish_config(staged, final, 'production')
+    config = json.loads((final / 'publish-config.json').read_text())
+    assert 'allowPendingReplacements' not in config

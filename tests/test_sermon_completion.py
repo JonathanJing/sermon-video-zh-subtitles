@@ -150,9 +150,15 @@ class CompletionTests(unittest.TestCase):
         self.assertEqual(compatibility.EXTRACTION_SOURCE_SHA256['scripts/sermon_fresh_diagnostic_source.py'],
             compatibility.FACADE_REMOVAL_HISTORICAL_SHA256['scripts/sermon_fresh_diagnostic_source.py'])
         latest=compatibility.TRANSPORT_MOVE_SOURCE_SHA256
-        # The builder changed again in v14 (Claude judge identity); the MFA transport files did not.
+        # Later generations changed the builder again (v14) and four Source files (v15);
+        # every other transport key still names today's bytes.
         for path in {*compatibility.MOVE_CHANGED,*compatibility.PRODUCER_MOVE_CHANGED,*compatibility.TRANSPORT_MOVE_CHANGED}:
-            today=compatibility.JUDGE_IDENTITY_SOURCE_SHA256 if path in compatibility.JUDGE_IDENTITY_CHANGED else latest
+            if path in compatibility.TRANSCRIPT_COHERENCE_CHANGED:
+                today = compatibility.TRANSCRIPT_COHERENCE_SOURCE_SHA256
+            elif path in compatibility.JUDGE_IDENTITY_CHANGED:
+                today = compatibility.JUDGE_IDENTITY_SOURCE_SHA256
+            else:
+                today = latest
             self.assertEqual(today[path],c.bytes_sha256((repository/compatibility.resolve(path)).read_bytes()))
         moved=compatibility.verify(compatibility.EXTRACTION_SOURCE_SHA256,compatibility.MOVE_SOURCE_SHA256,
             {compatibility.resolve(path):sha for path,sha in compatibility.MOVE_SOURCE_SHA256.items()},binding)
@@ -343,9 +349,9 @@ class CompletionTests(unittest.TestCase):
             'anchorCanonicalSha256','alignmentBytesSha256','asrReceiptSha256','sourceCheckReceiptSha256')}
         repository=Path(__file__).resolve().parents[1]
         before,after=compatibility.JUDGE_IDENTITY_HISTORICAL_SHA256,compatibility.JUDGE_IDENTITY_SOURCE_SHA256
-        # Every key reads the file it names today; only the Source builder changed bytes.
-        for path,sha in after.items():
-            self.assertEqual(sha,c.bytes_sha256((repository/compatibility.resolve(path)).read_bytes()),path)
+        # v14's own changed file still names today's bytes; v15 later changed four others.
+        for path in compatibility.JUDGE_IDENTITY_CHANGED:
+            self.assertEqual(after[path],c.bytes_sha256((repository/compatibility.resolve(path)).read_bytes()),path)
         self.assertEqual({path for path in after if after[path]!=before[path]},set(compatibility.JUDGE_IDENTITY_CHANGED))
         planned={compatibility.resolve(path):sha for path,sha in after.items()}
         step=compatibility.verify(before,after,planned,binding)
@@ -357,5 +363,26 @@ class CompletionTests(unittest.TestCase):
         # Generations do not compose: a v12 parent cannot jump straight to the v14 checkout.
         with self.assertRaises(c.ContractError):
             compatibility.verify(compatibility.D5_MOVE_HISTORICAL_SHA256,after,planned,binding)
+
+    def test_v15_generation_covers_only_the_reviewed_transcript_coherence_changes(self):
+        binding={key:'a'*64 for key in ('parentPlanSha256','newPlanSha256','sourceCanonicalSha256',
+            'anchorCanonicalSha256','alignmentBytesSha256','asrReceiptSha256','sourceCheckReceiptSha256')}
+        repository=Path(__file__).resolve().parents[1]
+        before,after=compatibility.TRANSCRIPT_COHERENCE_HISTORICAL_SHA256,compatibility.TRANSCRIPT_COHERENCE_SOURCE_SHA256
+        # The checkout before v15 was exactly the v14 current table.
+        self.assertEqual(before,compatibility.JUDGE_IDENTITY_SOURCE_SHA256)
+        for path,sha in after.items():
+            self.assertEqual(sha,c.bytes_sha256((repository/compatibility.resolve(path)).read_bytes()),path)
+        self.assertEqual({path for path in after if after[path]!=before[path]},set(compatibility.TRANSCRIPT_COHERENCE_CHANGED))
+        planned={compatibility.resolve(path):sha for path,sha in after.items()}
+        step=compatibility.verify(before,after,planned,binding)
+        self.assertEqual(step['migrationId'],compatibility.TRANSCRIPT_COHERENCE_MIGRATION)
+        self.assertEqual(step['changedModules'],compatibility.TRANSCRIPT_COHERENCE_CHANGED)
+        self.assertEqual(step['acceptedScope'],'read_only_original_source_under_transcript_coherence_refinement_no_new_inference')
+        self.assertEqual((step['newASRCalls'],step['newMFACalls'],step['newSourceCheckCalls'],step['productionEligible'],
+                          step['historicalSourcePreserved']),(0,0,0,False,True))
+        # Generations do not compose: a v13 parent cannot jump straight to the v15 checkout.
+        with self.assertRaises(c.ContractError):
+            compatibility.verify(compatibility.JUDGE_IDENTITY_HISTORICAL_SHA256,after,planned,binding)
 
 if __name__=='__main__':unittest.main()

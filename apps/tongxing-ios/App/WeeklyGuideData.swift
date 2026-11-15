@@ -238,12 +238,25 @@ struct WeeklyGuideDenyLedger {
     private func key(_ selection: WeeklyGuideSelection, origin: URL) -> String {
         let host = URLComponents(url: origin, resolvingAgainstBaseURL: false)?.host?.lowercased()
         let canonicalOrigin = host.map { "https://" + $0 } ?? origin.absoluteString
-        let raw = [canonicalOrigin, selection.pageID ?? "", selection.locale,
-                   selection.editionId ?? "", selection.sourceIdentitySha256 ?? "",
-                   selection.releasePackageJsonSha256 ?? "", selection.legacy?.sourceIdSHA256 ?? "",
-                   selection.legacy?.sourceUrlSHA256 ?? "", selection.legacy?.sourceMediaSHA256 ?? "",
-                   selection.legacy.map { String($0.sourceStartSeconds) } ?? "",
-                   selection.legacy.map { String($0.sourceEndSeconds) } ?? ""].joined(separator: "\u{0}")
+        // Keep this split into typed parts: as one 11-element literal the
+        // expression needs more type-checking time than the hosted macOS
+        // runner's compiler budget allows ("unable to type-check in reasonable
+        // time"), which failed the iOS CI job that builds this target.
+        let legacy = selection.legacy
+        let parts: [String] = [
+            canonicalOrigin,
+            selection.pageID ?? "",
+            selection.locale,
+            selection.editionId ?? "",
+            selection.sourceIdentitySha256 ?? "",
+            selection.releasePackageJsonSha256 ?? "",
+            legacy?.sourceIdSHA256 ?? "",
+            legacy?.sourceUrlSHA256 ?? "",
+            legacy?.sourceMediaSHA256 ?? "",
+            legacy.map { String($0.sourceStartSeconds) } ?? "",
+            legacy.map { String($0.sourceEndSeconds) } ?? "",
+        ]
+        let raw = parts.joined(separator: "\u{0}")
         return "tongxing.guide.deny.v1." + WeeklyGuideRepository.sha256(Data(raw.utf8))
     }
     func isDenied(_ selection: WeeklyGuideSelection, origin: URL) -> Bool {

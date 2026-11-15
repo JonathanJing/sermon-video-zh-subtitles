@@ -2,7 +2,7 @@
 """Watch the public Broadcast Message Files Drive folder on Saturday evenings.
 
     python3 tools/ops/drive_upload_watch.py check        # read the folder once, print JSON
-    python3 tools/ops/drive_upload_watch.py test-push    # passive Bark test to every key
+    python3 tools/ops/drive_upload_watch.py test-push    # one test notice to Bark and email
     python3 tools/ops/drive_upload_watch.py install      # copy + LaunchAgent, Sat 18:00
     python3 tools/ops/drive_upload_watch.py status | uninstall
     python3 tools/ops/drive_upload_watch.py run          # what launchd starts
@@ -14,7 +14,10 @@ Files whose earliest Drive timestamp falls before this week's Sunday 00:00 are
 recorded silently as the baseline. Pushes go to every Bark key stored in the
 login keychain (service org.sermonvideo.drive-upload-watch, accounts bark-iphone
 and bark-mac); a macOS notification is shown when the Mac's Bark push did not
-arrive. Read-only: no download, no Google sign-in, no production stage.
+arrive. Every non-passive notice also goes out by Gmail SMTP as an independent
+backup channel (same keychain service, accounts gmail-user and gmail-app, plus
+an optional gmail-to recipient; the sender is the default recipient).
+Read-only: no download, no Google sign-in, no production stage.
 Standard library only, Python 3.9+, so `install` can run a copy with
 /usr/bin/python3 independent of this checkout's branch. See
 docs/codex-local-production-runbook.zh.md (Broadcast Message 网盘上传检查).
@@ -24,6 +27,7 @@ from __future__ import annotations
 import argparse
 from dataclasses import dataclass
 import datetime as dt
+from email.message import EmailMessage
 import fcntl
 import json
 import os
@@ -32,6 +36,7 @@ import plistlib
 import random
 import re
 import shutil
+import smtplib
 import subprocess
 import sys
 import time
@@ -58,6 +63,10 @@ BARK_ACCOUNTS = ("bark-iphone", "bark-mac")
 MAC_ACCOUNT = "bark-mac"
 BARK_URL = "https://api.day.app/push"
 BARK_GROUP = "sermon-upload"
+EMAIL_ACCOUNTS = ("gmail-user", "gmail-app", "gmail-to")
+EMAIL_SUBJECT_PREFIX = "[证道视频监控]"
+SMTP_HOST = "smtp.gmail.com"
+SMTP_PORT = 465
 SUPPORT_DIR = Path.home() / "Library/Application Support" / LABEL
 LAUNCH_AGENT = Path.home() / "Library/LaunchAgents" / f"{LABEL}.plist"
 SYSTEM_PYTHON = "/usr/bin/python3"
@@ -199,9 +208,10 @@ def append_observation(path: Path, record: dict) -> None:
 class Message:
     title: str
     body: str
-    level: str = "active"  # Bark: passive | active | timeSensitive
+    level: str = "active"  # Bark: passive | active | timeSensitive | critical (critical needs the phone's permission)
     url: Optional[str] = None
     sound: Optional[str] = None
+    volume: Optional[str] = None  # Bark: 0-10, critical-alert ringtone volume only
 
 
 def keychain_keys(accounts=BARK_ACCOUNTS) -> dict:
@@ -235,10 +245,49 @@ def local_notify(message: Message) -> bool:
     return subprocess.run(command, capture_output=True, check=False).returncode == 0
 
 
+def email_credentials() -> Optional[tuple]:
+    """(sender, app password, recipient) from the login keychain, or None when unset."""
+    stored = keychain_keys(EMAIL_ACCOUNTS)
+    sender, password = stored.get("gmail-user"), stored.get("gmail-app")
+    if not sender or not password:
+        return None
+    return sender, password, stored.get("gmail-to", sender)
+
+
+def send_email(message: Message, *, credentials: Optional[tuple] = None,
+               smtp_factory: Optional[Callable] = None) -> bool:
+    """Gmail SMTP backup channel; returns False instead of raising so a mail outage cannot stop the watcher."""
+    credentials = credentials or email_credentials()
+    if not credentials:
+        return False
+    sender, password, recipient = credentials
+    mail = EmailMessage()
+    mail["From"], mail["To"] = sender, recipient
+    mail["Subject"] = f"{EMAIL_SUBJECT_PREFIX} {message.title}"
+    # Standard priority headers: Outlook and Apple Mail flag the message as high importance.
+    # Gmail decides its own "Important" marker by algorithm and ignores these; no email can be critical.
+    mail["Importance"] = "high"
+    mail["X-Priority"] = "1 (Highest)"
+    mail["X-MSMail-Priority"] = "High"
+    body = f"{message.body}\n\n{message.url}" if message.url else message.body
+    mail.set_content(f"{body}\n\nbark-level={message.level}")
+    factory = smtp_factory or smtplib.SMTP_SSL
+    try:
+        with factory(SMTP_HOST, SMTP_PORT, timeout=15) as client:
+            client.login(sender, password)
+            client.send_message(mail)
+        return True
+    except (OSError, smtplib.SMTPException, ValueError) as exc:
+        log(f"email push failed: {type(exc).__name__}")  # class name only: no address, no password
+        return False
+
+
 class Notifier:
     def __init__(self, keys: dict, *, bark_url: str = BARK_URL, post: Callable = post_json,
-                 local: Callable = local_notify, sleep: Callable = time.sleep, attempts: int = 3, push: bool = True):
+                 local: Callable = local_notify, mail: Optional[Callable] = None,
+                 sleep: Callable = time.sleep, attempts: int = 3, push: bool = True):
         self.keys, self.bark_url, self.post, self.local = keys, bark_url, post, local
+        self.mail = mail  # None: resolve send_email at send time so tests and patches stay honest
         self.sleep, self.attempts, self.push = sleep, attempts, push
 
     def send(self, message: Message) -> dict:
@@ -249,6 +298,8 @@ class Notifier:
             return {"printed": True}
         for account, key in self.keys.items():
             results[account] = self._push(account, key, message)
+        if message.level != "passive":
+            results["email"] = self._mail(message)
         if message.level != "passive" and not results.get(MAC_ACCOUNT):
             results["local"] = self.local(message)
         return results
@@ -260,6 +311,8 @@ class Notifier:
             payload["url"] = message.url
         if message.sound:
             payload["sound"] = message.sound
+        if message.volume is not None:
+            payload["volume"] = message.volume
         for attempt in range(1, self.attempts + 1):
             try:
                 reply = self.post(self.bark_url, payload)
@@ -272,6 +325,14 @@ class Notifier:
             if attempt < self.attempts:
                 self.sleep(2 ** attempt)
         return False
+
+    def _mail(self, message: Message) -> bool:
+        mailer = self.mail or send_email
+        try:
+            return bool(mailer(message))
+        except Exception as exc:  # a mail bug must not stop the watcher
+            log(f"email push failed: {type(exc).__name__}")
+            return False
 
 
 def delivered(results: dict) -> bool:
@@ -353,7 +414,8 @@ class Watcher:
             self.failures += 1
             log(f"read failed ({self.failures} in a row): {exc}")
             if self.failures >= ERROR_THRESHOLD and not slot["errorSent"]:
-                results = self.notifier.send(Message("证道视频检查失败", f"连续 {self.failures} 次读不到文件夹：{exc}"))
+                results = self.notifier.send(Message("证道视频检查失败", f"连续 {self.failures} 次读不到文件夹：{exc}",
+                                                     level="timeSensitive"))
                 slot["errorSent"] = delivered(results)
                 self.save()
             return []
@@ -394,7 +456,7 @@ class Watcher:
         body = f"{item.name} · {size_text(item.size)} · {stamp} · {label}"
         if item.earliest and item.earliest < window.start:
             body += " · 窗口前已上传"
-        return Message("证道视频已上传", body, level="timeSensitive", url=item.url, sound="bell")
+        return Message("证道视频已上传", body, level="critical", url=item.url, sound="bell", volume="0")
 
     def summarise(self, window: Window, slot: dict) -> None:
         if slot["summarySent"]:
@@ -447,7 +509,7 @@ def cmd_install(args) -> int:
         print(result.stderr.strip(), file=sys.stderr)
         return 1
     print(json.dumps({"installed": str(LAUNCH_AGENT), "script": str(script), "log": str(support / "watch.log"),
-                      "barkAccounts": sorted(keychain_keys()),
+                      "barkAccounts": sorted(keychain_keys()), "emailConfigured": email_credentials() is not None,
                       "nextWindow": next_window(dt.datetime.now(TZ)).start.isoformat()}, indent=2))
     return 0
 
@@ -473,6 +535,7 @@ def cmd_status(args) -> int:
         "lastExit": last_exit.group(1) if last_exit else None,
         "installedCopyMatchesThisFile": _same_file(args.support_dir / "drive_upload_watch.py", Path(__file__)),
         "barkAccounts": sorted(keychain_keys()),
+        "emailConfigured": email_credentials() is not None,
         "nextWindow": next_window(dt.datetime.now(TZ)).start.isoformat(),
         "logTail": tail,
     }, ensure_ascii=False, indent=2))
@@ -503,10 +566,20 @@ def cmd_test_push(args) -> int:
     if not keys:
         print(f"no Bark key in the keychain (service {KEYCHAIN_SERVICE}, accounts {', '.join(BARK_ACCOUNTS)})",
               file=sys.stderr)
-    results = Notifier(keys).send(Message("证道视频监控测试", f"测试推送 · {dt.datetime.now(TZ):%m-%d %H:%M} PT",
-                                          level="active", url=FOLDER_URL))
+    email_ready = email_credentials() is not None
+    if not email_ready:
+        print(f"email channel not configured (service {KEYCHAIN_SERVICE}, accounts gmail-user and gmail-app)",
+              file=sys.stderr)
+    critical = getattr(args, "critical", False)
+    test_message = Message("证道视频监控测试", f"测试推送 · {dt.datetime.now(TZ):%m-%d %H:%M} PT",
+                           level="critical" if critical else "active", url=FOLDER_URL,
+                           volume="0" if critical else None)
+    results = Notifier(keys).send(test_message)
     print(json.dumps(results, indent=2))
-    return 0 if keys and all(results.get(a) for a in keys) else 1
+    ok = bool(keys) and all(results.get(a) for a in keys)
+    if email_ready:
+        ok = ok and results.get("email") is True
+    return 0 if ok else 1
 
 
 def simulated_clock(start: dt.datetime) -> Callable:
@@ -539,7 +612,9 @@ def build_parser() -> argparse.ArgumentParser:
     run.add_argument("--now", help="pretend the run starts at this Pacific time (ISO), e.g. 2026-10-31T19:30")
     run.add_argument("--no-push", action="store_true", help="print notices instead of sending them")
     commands.add_parser("check", help="read the folder once and print JSON (no state, no notice)")
-    commands.add_parser("test-push", help="send one test notice to every Bark key")
+    test_push = commands.add_parser("test-push", help="send one test notice to every Bark key and the email channel")
+    test_push.add_argument("--critical", action="store_true",
+                           help="send the found-upload shape: critical level with volume=0 (silent)")
     install = commands.add_parser("install", help="copy this file and load the Saturday LaunchAgent")
     install.add_argument("--print", action="store_true", help="print the plist only")
     commands.add_parser("uninstall", help="unload and remove the LaunchAgent (state is kept)")

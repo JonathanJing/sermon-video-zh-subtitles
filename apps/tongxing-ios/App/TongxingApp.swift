@@ -34,8 +34,13 @@ struct TongxingApp: App {
                     if phase == .active {
                         model.setAlignmentFeedbackForeground(true)
                         model.playback.refreshLiveActivityPresentation()
+                        // A cancelled refresh can leave a published page waiting
+                        // with no running download and no error to show.
+                        model.restartStalledPublishedAudioPreparation()
                         Task { await model.checkWeeklyUpdates() }
+                        #if os(iOS)
                         Task { await productionPush.refreshPermissionAndRegistration() }
+                        #endif
                     }
                     model.playback.setStatisticsForeground(phase == .active)
                 }

@@ -46,6 +46,87 @@ final class WeeklyUpdateModelTests: XCTestCase {
         XCTAssertEqual(fixture.model.multilingualCatalog, revised)
     }
 
+    func testAutomaticPosterOfferWaitsForLocalEightOnServiceDate() async throws {
+        let fixture = try Fixture()
+        defer { fixture.dispose() }
+        let (catalog, page) = try await fixture.preparePublishedPage()
+        let locale = fixture.model.selectedContentLocale
+        let target = try XCTUnwrap(page.targets[locale])
+        let source = try target.sourceBinding(in: page)
+        let png = Data(base64Encoded: "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+a3ioAAAAASUVORK5CYII=")!
+        let hash = SHA256.hash(data: png).map { String(format: "%02x", $0) }.joined()
+        let announcement = WeeklyAnnouncement(id: page.id, pageID: page.id, locale: locale,
+            releaseSHA256: target.releasePackageJsonSha256, sourceIdentitySHA256: source.sourceIdentitySha256,
+            title: "Synthetic weekly poster", publishedAt: "2026-10-07T00:00:00Z",
+            poster: .init(url: "/posters/fixture.png", sha256: hash, bytes: Int64(png.count), width: 1, height: 1))
+        WeeklyModelPosterProtocol.responses = [
+            "/weekly-announcements-v1.json": try JSONEncoder().encode(WeeklyAnnouncementCatalog(announcements: [announcement])),
+            "/posters/fixture.png": png,
+        ]
+        let config = URLSessionConfiguration.ephemeral
+        config.protocolClasses = [WeeklyModelPosterProtocol.self]
+        let session = URLSession(configuration: config)
+        defer { session.invalidateAndCancel(); WeeklyModelPosterProtocol.responses = [:] }
+        let updates = WeeklyUpdates(origin: fixture.model.mediaOrigin, support: fixture.directory, session: session)
+        await updates.load(catalog: catalog, locale: locale)
+        XCTAssertNotNil(updates.announcement)
+        XCTAssertNotNil(updates.posterData)
+
+        let utc = WeeklyPosterSchedule.calendar(timeZone: TimeZone(identifier: "UTC")!)
+        let eight = try XCTUnwrap(WeeklyPosterSchedule.notBefore(pageDate: page.date, calendar: utc))
+        // UTC fixture date: the boundary must be exactly 08:00Z, not merely the
+        // value the same helper returns.
+        XCTAssertEqual(eight, ISO8601DateFormatter().date(from: "\(page.date)T08:00:00Z"))
+        XCTAssertFalse(updates.autoPresentationDue(now: eight.addingTimeInterval(-1), calendar: utc),
+                       "07:59:59 local must not auto-present")
+        XCTAssertTrue(updates.autoPresentationDue(now: eight, calendar: utc),
+                      "08:00 local on the service date is the first eligible instant")
+
+        updates.markSeen()
+        XCTAssertFalse(updates.autoPresentationDue(now: eight.addingTimeInterval(3_600), calendar: utc),
+                       "A seen release must not auto-present again")
+    }
+
+    func testAutomaticPosterOfferRequiresVerifiedBytes() async throws {
+        let fixture = try Fixture()
+        defer { fixture.dispose() }
+        let (catalog, page) = try await fixture.preparePublishedPage()
+        let locale = fixture.model.selectedContentLocale
+        let target = try XCTUnwrap(page.targets[locale])
+        let source = try target.sourceBinding(in: page)
+        let announcement = WeeklyAnnouncement(id: page.id, pageID: page.id, locale: locale,
+            releaseSHA256: target.releasePackageJsonSha256, sourceIdentitySHA256: source.sourceIdentitySha256,
+            title: "Synthetic weekly poster", publishedAt: "2026-10-07T00:00:00Z",
+            poster: .init(url: "/posters/fixture.png", sha256: String(repeating: "a", count: 64),
+                          bytes: 12, width: 1, height: 1))
+        WeeklyModelPosterProtocol.responses = [
+            "/weekly-announcements-v1.json": try JSONEncoder().encode(WeeklyAnnouncementCatalog(announcements: [announcement])),
+        ]
+        let config = URLSessionConfiguration.ephemeral
+        config.protocolClasses = [WeeklyModelPosterProtocol.self]
+        let session = URLSession(configuration: config)
+        defer { session.invalidateAndCancel(); WeeklyModelPosterProtocol.responses = [:] }
+        let updates = WeeklyUpdates(origin: fixture.model.mediaOrigin, support: fixture.directory, session: session)
+        await updates.load(catalog: catalog, locale: locale)
+        XCTAssertNotNil(updates.announcement)
+        XCTAssertTrue(updates.posterUnavailable)
+        XCTAssertFalse(updates.autoPresentationDue(now: Date().addingTimeInterval(86_400 * 7)),
+                       "A missing poster keeps the card, never an automatic empty sheet")
+    }
+
+    func testForegroundRefreshPublishesAFreshPosterCheckSignal() async throws {
+        let fixture = try Fixture()
+        defer { fixture.dispose() }
+        _ = try await fixture.preparePublishedPage()
+        let before = fixture.model.weeklyUpdateCheckRevision
+        // The app-scoped foreground check may deliver the announcement after the
+        // resume-time view check saw only the previous state; the view listens
+        // for this signal to re-evaluate the automatic poster.
+        await fixture.model.checkWeeklyUpdates()
+        XCTAssertNotEqual(fixture.model.weeklyUpdateCheckRevision, before,
+                          "A completed foreground refresh must re-trigger the poster check")
+    }
+
     func testDefaultAndNotificationAnnouncementStatesRemainIndependentAndMergeReceipts() async throws {
         let fixture = try Fixture()
         defer { fixture.dispose() }

@@ -1,0 +1,105 @@
+{
+  "schemaVersion": "sermon-multilingual-poster-v1",
+  "source": {
+    "pageId": "revelation-jesus-marks-his-own-20261101",
+    "targetLocale": "zh-Hans",
+    "sourceIdentitySha256": "86acc52182afe0eaa7846d4ac7c3731a0f4c7c16272ff83429b7b34a8915e325",
+    "catalogSha256": "301aea81ebc174c50e235d31dba2739c3b9ba18dffc1d5b131fb601d8b7758ea",
+    "releasePackageSha256": "eee90c828e6dcd65b0b74fc3f9f6f64c6a8558a73542a789d62ff8971aa82469",
+    "contentSha256": "b67248cb9c659ed7800d1a970d78146fe136ffe33209e47c7820c97908f8ed8a",
+    "brief": {
+      "locale": "zh-Hans",
+      "date": "2026-11-01",
+      "origin": "https://ai-for-god-sermon-audio.web.app",
+      "title": "耶稣为属祂的人盖印",
+      "series": "启示录：耶稣带来的安慰与盼望",
+      "scripture": "启示录 14 章",
+      "speaker": "Eric Geiger",
+      "tagline": "一起听懂，一路同行。",
+      "reviewLabel": "译文与配音已审核",
+      "labels": {
+        "brand": "同行",
+        "eyebrow": "本周证道 · 中文",
+        "cta": "扫码开启本周证道",
+        "serviceLine": "中文配音 · 英文对照 · 完整文稿",
+        "qrCaption": "直接打开本周 · 中文",
+        "disclaimer": "独立个人项目，与 Mariners Church 无隶属或背书关系。\nAI 合成中文音频与整理文字仅供个人跟读参考。",
+        "header": "同行   ───   本周证道",
+        "web": "网页版",
+        "caption": "扫码阅读 · 收听",
+        "storeHeading": "下载同行 App",
+        "webHeading": "打开本周网页版",
+        "showReview": "false"
+      },
+      "qrURL": "https://ai-for-god-sermon-audio.web.app/?week=revelation-jesus-marks-his-own-20261101&contentLang=zh-Hans&lang=zh",
+      "displayTitle": "耶稣为属祂的人盖印",
+      "storeURL": "https://apps.apple.com/app/id6809255441"
+    }
+  },
+  "status": "complete",
+  "provenance": {
+    "templateVersion": "tongxing-dual-qr-v2",
+    "templateSha256": "08b7dd24bab8a770f68b9a87822875636ff35404dfb29b85ff92ca7a3ac19c47",
+    "badgeHashes": {
+      "zh-Hans": "65191b2d1182a194e510b27c9985b1367b60ed6ef565f86fc492f585a27bc932",
+      "ko": "fc82d5344d0f2919a7ae697e677fc9c62872f1ee47bd70e24a581245423de9c1",
+      "es": "e4d7c2c1606454536482735c96b933b04ea86a2e72701b3319ae1f3a369b0479"
+    },
+    "artSha256": "ea4773015b071e247a8999d0f356bcedcbc83b8db8f219f6aab88477d20899f7",
+    "promptSha256": "8b3169e05dab4ad6eea69eb16b04f91634c9397901180cc768c19d50bfab4c5f",
+    "rendererSha256": "df7840eabb8c01b019726a18f4263d747621ffa69b8a7f15b4347313210980c1",
+    "builderSha256": "eba5ca10f470a8d0c361886a5403844c1e362f9ef245ac8cb7ab189536ff630e"
+  },
+  "outputs": {
+    "poster.png": "8c266931ec06b5765f10ed9dc5bc2adcf754b44f4058edac248ec0ef913d72ca",
+    "poster-preview.png": "755068b14cf5326d2a4b58fc26eaf5002a00eea4b05a29a5447a0890d650d532",
+    "qr-validation.json": "e719da6ff21f0ccb4625f88876c45a131d7e7ecd84612748895fb59388cb0c36"
+  },
+  "publicVerification": {
+    "checkedAt": "2026-11-01T04:54:03.213193+00:00",
+    "origin": "https://ai-for-god-sermon-audio.web.app",
+    "status": "pass",
+    "checks": [
+      {
+        "path": "/multilingual-v5.json",
+        "sha256": "301aea81ebc174c50e235d31dba2739c3b9ba18dffc1d5b131fb601d8b7758ea",
+        "status": 200
+      },
+      {
+        "path": "/releases-v2/revelation-jesus-marks-his-own-20261101/zh-Hans.json",
+        "sha256": "eee90c828e6dcd65b0b74fc3f9f6f64c6a8558a73542a789d62ff8971aa82469",
+        "status": 200
+      },
+      {
+        "path": "/content/revelation-jesus-marks-his-own-20261101/zh-Hans.json",
+        "sha256": "b67248cb9c659ed7800d1a970d78146fe136ffe33209e47c7820c97908f8ed8a",
+        "status": 200
+      },
+      {
+        "path": "/releases-v2/revelation-jesus-marks-his-own-20261101/ko.json",
+        "sha256": "b84067bccb3825b5494a7bf3a6a057598b2b1c3a263d049fee179cce64ccda30",
+        "status": 200
+      },
+      {
+        "path": "/content/revelation-jesus-marks-his-own-20261101/ko.json",
+        "sha256": "16768ea4f4ffce4e693e2751d8f66ce4e25fe75a39f5d0ad7f796bcd3cdf1cf4",
+        "status": 200
+      },
+      {
+        "path": "/releases-v2/revelation-jesus-marks-his-own-20261101/es.json",
+        "sha256": "2625b4b1675c8a4652d1c9840f4c2dd462e9b553ce06fc757cb1e92a3a67595f",
+        "status": 200
+      },
+      {
+        "path": "/content/revelation-jesus-marks-his-own-20261101/es.json",
+        "sha256": "a405e30427544eee862867974de810bdf8bb849fa15d181084d31fd54c9a24a8",
+        "status": 200
+      }
+    ]
+  },
+  "visualReview": {
+    "reviewer": "codex",
+    "humanApproval": false
+  },
+  "visualReviewedAt": "2026-11-01T04:54:03.219820+00:00"
+}

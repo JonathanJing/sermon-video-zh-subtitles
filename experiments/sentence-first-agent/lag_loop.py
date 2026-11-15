@@ -48,6 +48,35 @@ SYSTEM = {
 CPS = {"zh-Hans": 4.3, "ko": 6.0, "es": 13.0}
 
 
+def status_progress(run_dir: Path, locale: str, done: int, total: int, message: str) -> None:
+    """Observation only: never let a status write change lag_loop's behaviour."""
+    try:
+        from run_status import safe_mark
+        safe_mark(run_dir, f"l3.lag-loop.{locale}", "progress", unit="iterations",
+                  done=done, total=total, message=message, source="lag_loop")
+    except Exception:  # noqa: BLE001 - status is a sidecar
+        pass
+
+
+def status_failed(run_dir: Path, locale: str, message: str) -> None:
+    try:
+        from run_status import safe_mark
+        safe_mark(run_dir, f"l3.lag-loop.{locale}", "failed", source="lag_loop",
+                  error_class="lag_gate", message=message,
+                  resume="lag_loop.py --check-only --require-clean")
+    except Exception:  # noqa: BLE001
+        runlog.mark(run_dir, f"l3.lag-loop.{locale}", "failed", note=message)
+
+
+def status_finished(run_dir: Path, locale: str, *, evidence_level: str) -> None:
+    try:
+        from run_status import safe_mark
+        safe_mark(run_dir, f"l3.lag-loop.{locale}", "finished", source="lag_loop",
+                  evidence_level=evidence_level)
+    except Exception:  # noqa: BLE001
+        runlog.mark(run_dir, f"l3.lag-loop.{locale}", "finished")
+
+
 def load_rows(path: Path) -> list[dict]:
     return [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line.strip()]
 
@@ -155,6 +184,7 @@ def main() -> int:
     client.windows_done, client.units_done = C.recorded_progress(run_dir, "trim")
     report = []
     runlog.mark(run_dir, f"l3.lag-loop.{args.locale}", "started")
+    status_progress(run_dir, args.locale, 0, args.iterations, "started")
     for number in range(1, args.iterations + 1):
         schedule = json.loads((run_dir / "schedule.json").read_text())
         # Root-cause selection: a sentence that reads longer than its source slot pushes
@@ -166,6 +196,8 @@ def main() -> int:
         bad = bad[: args.max_sentences]
         report.append({"iteration": number, "maxLag": schedule["summary"]["maxLagSeconds"],
                        "over": len(bad)})
+        status_progress(run_dir, args.locale, number, args.iterations,
+                        f"iteration {number}: maxLag={schedule['summary']['maxLagSeconds']} over={len(bad)}")
         print(json.dumps(report[-1], ensure_ascii=False), flush=True)
         if not bad:
             break
@@ -207,11 +239,13 @@ def main() -> int:
         gate = {**gate, "clean": None, "planOnly": True}
     C.write_json(run_dir / "lag-loop-report.json", {"threshold": args.threshold, "iterations": report,
                                                     "gate": gate, "promptVersion": PROMPT_VERSION})
-    runlog.mark(run_dir, f"l3.lag-loop.{args.locale}", "finished")
     print(json.dumps({"report": report, "gate": gate, "cost": client.ledger()}, ensure_ascii=False))
     if args.require_clean and not gate["clean"]:
         print(f"still over the gate: maxLag={gate['maxLag']} over={gate['over']}", flush=True)
+        status_failed(run_dir, args.locale,
+                      f"still over the gate: maxLag={gate['maxLag']} over={gate['over']}")
         return 1
+    status_finished(run_dir, args.locale, evidence_level="E1" if args.plan_only else "E2")
     return 0
 
 

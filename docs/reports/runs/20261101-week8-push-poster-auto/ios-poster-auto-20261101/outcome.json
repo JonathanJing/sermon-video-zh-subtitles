@@ -1,0 +1,15 @@
+{
+  "schemaVersion": "tongxing-run-outcome-v1",
+  "status": "pass",
+  "exitCode": 0,
+  "deliveryType": "test",
+  "scope": "iOS weekly poster auto-present after 08:00 local on the service date",
+  "codeCommit": "eaac2a5b",
+  "baseBranch": "dev",
+  "startedAt": "2026-11-01T06:44:35Z",
+  "finishedAt": "2026-11-01T07:15:00Z",
+  "apnsSent": false,
+  "deviceDisplay": "not_verified",
+  "productionOriginAppOnDevice": "not_verified",
+  "independentReview": "approve"
+}

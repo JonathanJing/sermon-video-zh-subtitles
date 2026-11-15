@@ -1,7 +1,25 @@
 #if DEBUG || TONGXING_GUIDE_PREVIEW
 import SwiftUI
 import TongxingCore
+// The DEBUG preview host builds this target on macOS too (Package.swift keeps
+// App/ in the executable target); UIKit is iOS-only, so images go through the
+// platform type each side actually has.
+#if os(iOS)
 import UIKit
+typealias GuidePlatformImage = UIImage
+#else
+import AppKit
+typealias GuidePlatformImage = NSImage
+#endif
+
+/// Resizable platform image for the guide reader and its zoom sheet.
+private func guideImage(_ image: GuidePlatformImage) -> Image {
+    #if os(iOS)
+    return Image(uiImage: image).resizable()
+    #else
+    return Image(nsImage: image).resizable()
+    #endif
+}
 
 /// The guide is independent of the sermon release package and is only shown
 /// for an explicitly mapped sermon and supported language.
@@ -104,7 +122,9 @@ struct WeeklyGuidePreview: View {
             ToolbarVerticalEdgeReader { verticalEdge in
             guideReader
             .navigationTitle(localization.text(typeSize.isAccessibilitySize || localization.language != .simplifiedChinese ? "手册" : "本周研读手册"))
+            #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
+            #endif
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button(localization.text("返回证道")) { dismiss() }.accessibilityIdentifier("guide-close")
@@ -217,11 +237,15 @@ struct WeeklyGuidePreview: View {
                 .accessibilityIdentifier("guide-scroll")
                 .background(Brand.background)
                 .toolbar {
+                    // .topBarLeading is iOS-only; the macOS preview host has no
+                    // embedded toolbar, so the header is iOS-only too.
+                    #if os(iOS)
                     if embedded {
                         ToolbarItem(placement: .topBarLeading) {
                             embeddedHeader(proxy: proxy)
                         }
                     }
+                    #endif
                 }
             }
     }
@@ -272,7 +296,7 @@ struct WeeklyGuidePreview: View {
         guard let blocks = section.blocks else { return nil }
         for block in blocks {
             if case .image(let assetID, _, _) = block {
-                guard let data = WeeklyGuideImageAssets.data(for: assetID), UIImage(data: data) != nil else {
+                guard let data = WeeklyGuideImageAssets.data(for: assetID), GuidePlatformImage(data: data) != nil else {
                     return nil
                 }
             }
@@ -348,12 +372,12 @@ struct WeeklyGuidePreview: View {
                 }
             }
         case .image(let assetID, let alt, let caption):
-            if let data = WeeklyGuideImageAssets.data(for: assetID), let image = UIImage(data: data) {
+            if let data = WeeklyGuideImageAssets.data(for: assetID), let image = GuidePlatformImage(data: data) {
                 VStack(alignment: .leading, spacing: 8) {
                     Button {
                         expandedImage = WeeklyGuideExpandedImage(id: assetID, image: image, alt: alt, caption: caption)
                     } label: {
-                        Image(uiImage: image).resizable().scaledToFit()
+                        guideImage(image).scaledToFit()
                             .frame(maxWidth: .infinity)
                             .clipShape(RoundedRectangle(cornerRadius: 12))
                     }
@@ -444,7 +468,7 @@ struct WeeklyGuidePreview: View {
 
 private struct WeeklyGuideExpandedImage: Identifiable {
     let id: String
-    let image: UIImage
+    let image: GuidePlatformImage
     let alt: String
     let caption: String
 }
@@ -462,7 +486,7 @@ private struct WeeklyGuideImageSheet: View {
         NavigationStack {
             GeometryReader { geometry in
                 ScrollView([.horizontal, .vertical]) {
-                    Image(uiImage: image.image).resizable().scaledToFit()
+                    guideImage(image.image).scaledToFit()
                         .frame(width: max(1, geometry.size.width * min(4, max(1, scale * magnification))))
                         .accessibilityLabel(Text(image.alt))
                 }
@@ -472,7 +496,9 @@ private struct WeeklyGuideImageSheet: View {
             }
             .background(Brand.background)
             .navigationTitle(image.caption)
+            #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
+            #endif
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button(closeLabel) { dismiss() }

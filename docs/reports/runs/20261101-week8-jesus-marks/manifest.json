@@ -1,0 +1,274 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261101-week8-jesus-marks",
+  "runs": [
+    {
+      "label": "20261101-jesus-marks-zh",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/sentence-first-agent/20261101-jesus-marks-zh",
+      "skipped": {
+        "(none)": 1,
+        ".jsonl": 18,
+        ".txt": 5,
+        ".json": 28,
+        ".wav": 956,
+        ".mp4": 2,
+        ".html": 1,
+        ".mp3": 1,
+        ".md": 1
+      }
+    },
+    {
+      "label": "20261101-jesus-marks-ko",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/sentence-first-agent/20261101-jesus-marks-ko",
+      "skipped": {
+        "(none)": 1,
+        ".jsonl": 15,
+        ".txt": 5,
+        ".json": 11,
+        ".mp4": 2,
+        ".html": 1,
+        ".mp3": 1,
+        ".md": 1,
+        ".wav": 955
+      }
+    },
+    {
+      "label": "20261101-jesus-marks-es",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/sentence-first-agent/20261101-jesus-marks-es",
+      "skipped": {
+        "(none)": 1,
+        ".jsonl": 15,
+        ".txt": 5,
+        ".json": 11,
+        ".mp4": 2,
+        ".html": 1,
+        ".mp3": 1,
+        ".md": 1,
+        ".wav": 955
+      }
+    },
+    {
+      "label": "20261101-jesus-marks-publish",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/sentence-first-agent/20261101-jesus-marks-publish",
+      "skipped": {
+        ".json": 923,
+        ".mp3": 345,
+        ".html": 170,
+        ".js": 27,
+        "(none)": 5,
+        ".mjs": 175,
+        ".png": 200,
+        ".svg": 15,
+        ".srt": 10,
+        ".pdf": 20,
+        ".jpg": 5,
+        ".css": 15,
+        ".zip": 2,
+        ".cache": 3,
+        ".lock": 3
+      }
+    },
+    {
+      "label": "20261101-sermon-source",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/sentence-first-agent/20261101-sermon-source",
+      "skipped": {
+        ".pyc": 1,
+        ".py": 5,
+        ".wav": 1,
+        ".json": 11,
+        ".md": 1,
+        ".csv": 4,
+        ".mp4": 1,
+        ".sha256": 1,
+        ".txt": 31
+      }
+    }
+  ],
+  "files": [
+    {
+      "run": "20261101-jesus-marks-zh",
+      "path": "journal.ndjson",
+      "kind": "whole",
+      "bytes": 2531,
+      "truncated": false,
+      "sha256": "ca863267e417c4dcbb35e45dd70ee7683517be28a262035dd818d8cdf4712157",
+      "redactions": {}
+    },
+    {
+      "run": "20261101-jesus-marks-zh",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 677,
+      "truncated": false,
+      "sha256": "660f8d0fedf994912721fea57b4a1d127759e42f470f152230de497b2d0651e8",
+      "redactions": {}
+    },
+    {
+      "run": "20261101-jesus-marks-zh",
+      "path": "timings.tsv",
+      "kind": "whole",
+      "bytes": 232,
+      "truncated": false,
+      "sha256": "062e605b63120dfc82fc181c56ecc563caa6f0f066e3dab18ba2be5ab48bedc4",
+      "redactions": {}
+    },
+    {
+      "run": "20261101-jesus-marks-zh",
+      "path": "tts-run.log",
+      "kind": "log",
+      "bytes": 344599,
+      "truncated": true,
+      "sha256": "74439c24c2abb9200bf80854d861463a4e6a0c08db8c9a74dd95914f29e1c83e",
+      "redactions": {}
+    },
+    {
+      "run": "20261101-jesus-marks-ko",
+      "path": "journal.ndjson",
+      "kind": "whole",
+      "bytes": 1520,
+      "truncated": false,
+      "sha256": "3b8239f1efba792a93233a879dd3a146f023b0045b9c5b812e04198d0e585cea",
+      "redactions": {}
+    },
+    {
+      "run": "20261101-jesus-marks-ko",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 672,
+      "truncated": false,
+      "sha256": "f8ad0181a54e6be8c352e34f0e27c69e85218256cd897f88b6a415b6be52aa73",
+      "redactions": {}
+    },
+    {
+      "run": "20261101-jesus-marks-ko",
+      "path": "timings.tsv",
+      "kind": "whole",
+      "bytes": 150,
+      "truncated": false,
+      "sha256": "ca32b5ee16b6f27ddd661f550040916b7bbdf1adff3b80625535c76742c0fdd5",
+      "redactions": {}
+    },
+    {
+      "run": "20261101-jesus-marks-ko",
+      "path": "tts-run.log",
+      "kind": "log",
+      "bytes": 333282,
+      "truncated": true,
+      "sha256": "e4a0d674adb72fabd2b24dec399ce8d3c6a7a5cab74f3e7f2ff474cabb551bd9",
+      "redactions": {}
+    },
+    {
+      "run": "20261101-jesus-marks-es",
+      "path": "journal.ndjson",
+      "kind": "whole",
+      "bytes": 1390,
+      "truncated": false,
+      "sha256": "8536910bae7ce2b3db2c96c404ef9122e6ad2f9e572868036ab98e8e97f1bc58",
+      "redactions": {}
+    },
+    {
+      "run": "20261101-jesus-marks-es",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 672,
+      "truncated": false,
+      "sha256": "87522dd369c571de178c1473686a247172b20138dc4a9e071aac802b221bce5e",
+      "redactions": {}
+    },
+    {
+      "run": "20261101-jesus-marks-es",
+      "path": "timings.tsv",
+      "kind": "whole",
+      "bytes": 150,
+      "truncated": false,
+      "sha256": "43a79d26a852ab7b5a7f33567782352eff871132c886fd698d83581d65704c47",
+      "redactions": {}
+    },
+    {
+      "run": "20261101-jesus-marks-es",
+      "path": "tts-run.log",
+      "kind": "log",
+      "bytes": 333368,
+      "truncated": true,
+      "sha256": "4c87dfe2927374457c63670936c64871f44c5357f29d6f98738d9203eef4cde5",
+      "redactions": {}
+    },
+    {
+      "run": "20261101-jesus-marks-publish",
+      "path": "baseline/baseline-receipt.json",
+      "kind": "whole",
+      "bytes": 134052,
+      "truncated": false,
+      "sha256": "5bd1b3f018ae14b8bae9975c5eb8d057a811106a5b9b3a7afb1165384e3726bd",
+      "redactions": {}
+    },
+    {
+      "run": "20261101-jesus-marks-publish",
+      "path": "baseline-english/baseline-receipt.json",
+      "kind": "whole",
+      "bytes": 139623,
+      "truncated": false,
+      "sha256": "d3acbcaf17f4c83f43a47d26a3291f5de4ff94128d3746dc7ec3904ca31c3b82",
+      "redactions": {}
+    },
+    {
+      "run": "20261101-jesus-marks-publish",
+      "path": "stage-english/baseline-receipt.json",
+      "kind": "whole",
+      "bytes": 139623,
+      "truncated": false,
+      "sha256": "d3acbcaf17f4c83f43a47d26a3291f5de4ff94128d3746dc7ec3904ca31c3b82",
+      "redactions": {}
+    },
+    {
+      "run": "20261101-jesus-marks-publish",
+      "path": "stage-english/hosting-publish.log",
+      "kind": "log",
+      "bytes": 0,
+      "truncated": false,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "redactions": {}
+    },
+    {
+      "run": "20261101-jesus-marks-publish",
+      "path": "stage1/baseline-receipt.json",
+      "kind": "whole",
+      "bytes": 134052,
+      "truncated": false,
+      "sha256": "5bd1b3f018ae14b8bae9975c5eb8d057a811106a5b9b3a7afb1165384e3726bd",
+      "redactions": {}
+    },
+    {
+      "run": "20261101-jesus-marks-publish",
+      "path": "stage1/hosting-publish.log",
+      "kind": "log",
+      "bytes": 0,
+      "truncated": false,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "redactions": {}
+    },
+    {
+      "run": "20261101-jesus-marks-publish",
+      "path": "stage2/baseline-receipt.json",
+      "kind": "whole",
+      "bytes": 134052,
+      "truncated": false,
+      "sha256": "5bd1b3f018ae14b8bae9975c5eb8d057a811106a5b9b3a7afb1165384e3726bd",
+      "redactions": {}
+    },
+    {
+      "run": "20261101-jesus-marks-publish",
+      "path": "stage2/hosting-publish.log",
+      "kind": "log",
+      "bytes": 0,
+      "truncated": false,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

@@ -333,9 +333,8 @@ def resolve_locale(run_dir: Path, index: dict, locale: str, override: Path | Non
             problems.append("human override receipts are supported only for the full candidate, not spoken condensation")
         elif "source" in paths and "anchor" in paths:
             try:
-                from ..text import human_override
                 receipt = read(human_override_path)
-                human_override.validate_override_receipt(source, anchor, candidate, receipt)
+                _review.current().text.validate_human_override(source, anchor, candidate, receipt)
                 accepted_as_is = {row["translationGroupId"] for row in receipt["groupOverrides"]
                                   if row["disposition"] == "accepted_as_is"}
                 override_summary = {"receiptJsonSha256": json_sha256(receipt),

@@ -401,7 +401,8 @@ class ControllerAutoRepairTests(unittest.TestCase):
         _, config = self.run_worker(api_caller)
         source, anchor, policy = subject._inputs(config, "zh-Hans", subject.snapshot(config))
         lane = config.lanes["zh-Hans"]
-        with self.assertRaisesRegex(ValueError, "cross-run cache reuse is not enabled"):
+        with self.assertRaisesRegex(ValueError,
+                                     "cross-run cache reuse requires openai_api"):
             subject.models.run_accounted(source, anchor, policy, self.base.root / "plain-reuse", "fixture-key",
                                          api_caller, None, lane["plugin"], None,
                                          self.base.output / "repair-rounds" / "round-001")

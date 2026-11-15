@@ -14,7 +14,7 @@ import re
 import unicodedata
 
 from .. import path_aliases
-from ..audio import backend as _audio
+from . import backend as _review
 
 
 SCORING_V3 = ("token-sequence-ratio-v3; short units (<4 tokens) must match exactly; "
@@ -96,7 +96,7 @@ SCORING_PHYSICAL_FILES = path_aliases.physical_closure_paths(SCORING_IMPLEMENTAT
 def implementation_sha256(root: Path | None = None) -> str:
     """Current scoring closure; v5 single-file receipts require explicit rescreening."""
     # Each key names the actual file read: the package target when a legacy path moved.
-    checkout = root or _audio.current().core.repo_root
+    checkout = root or _review.current().core.repo_root
     digest = hashlib.sha256()
     for name in SCORING_PHYSICAL_FILES:
         digest.update(name.encode() + b"\0" + (checkout / name).read_bytes() + b"\0")

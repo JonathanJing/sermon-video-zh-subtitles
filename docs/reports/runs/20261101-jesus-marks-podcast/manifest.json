@@ -1,0 +1,215 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261101-jesus-marks-podcast",
+  "runs": [
+    {
+      "label": "20261101-jesus-marks-podcast-zh",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/sentence-first-agent/20261101-jesus-marks-podcast-zh",
+      "skipped": {
+        "(none)": 1,
+        ".json": 403,
+        ".wav": 1882,
+        ".jsonl": 10,
+        ".mp4": 2,
+        ".html": 1,
+        ".mp3": 1,
+        ".md": 1
+      }
+    },
+    {
+      "label": "20261101-jesus-marks-podcast-ko",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/sentence-first-agent/20261101-jesus-marks-podcast-ko",
+      "skipped": {
+        "(none)": 1,
+        ".json": 311,
+        ".jsonl": 9,
+        ".html": 1,
+        ".mp3": 1,
+        ".md": 1,
+        ".wav": 1881
+      }
+    },
+    {
+      "label": "20261101-jesus-marks-podcast-es",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/sentence-first-agent/20261101-jesus-marks-podcast-es",
+      "skipped": {
+        "(none)": 1,
+        ".json": 237,
+        ".jsonl": 10,
+        ".html": 1,
+        ".mp3": 1,
+        ".md": 1,
+        ".wav": 1881
+      }
+    }
+  ],
+  "files": [
+    {
+      "run": "20261101-jesus-marks-podcast-zh",
+      "path": "finish.log",
+      "kind": "log",
+      "bytes": 5774,
+      "truncated": false,
+      "sha256": "7e6934e1cb4127eb86f944612315ef5b1a245989903e3935a7a012914cd86afa",
+      "redactions": {}
+    },
+    {
+      "run": "20261101-jesus-marks-podcast-zh",
+      "path": "journal.ndjson",
+      "kind": "whole",
+      "bytes": 2193,
+      "truncated": false,
+      "sha256": "12855adde8895d6e06b5d9d81afed67ad4e2e9347e71509d0dede4ffc2e0d608",
+      "redactions": {}
+    },
+    {
+      "run": "20261101-jesus-marks-podcast-zh",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 693,
+      "truncated": false,
+      "sha256": "3edc1be99eac1b039f7f4c206feb713d7eaa325e32456fa95c3f34e4b23c450d",
+      "redactions": {}
+    },
+    {
+      "run": "20261101-jesus-marks-podcast-zh",
+      "path": "timings.tsv",
+      "kind": "whole",
+      "bytes": 229,
+      "truncated": false,
+      "sha256": "86e21c803f355f1bd6e1ab9f95898a2b80ef56389a68659f0de5dd2e02294750",
+      "redactions": {}
+    },
+    {
+      "run": "20261101-jesus-marks-podcast-zh",
+      "path": "tts-queue.log",
+      "kind": "log",
+      "bytes": 786,
+      "truncated": false,
+      "sha256": "b004346926899424c002a21eb8071f95a6a1a951666e7a1ba84c2509245c7034",
+      "redactions": {}
+    },
+    {
+      "run": "20261101-jesus-marks-podcast-zh",
+      "path": "tts-run.log",
+      "kind": "log",
+      "bytes": 328962,
+      "truncated": true,
+      "sha256": "6f0db5ba512621c855cc6994ab1512317492612137134b1a703025a3741ae170",
+      "redactions": {}
+    },
+    {
+      "run": "20261101-jesus-marks-podcast-ko",
+      "path": "audit.log",
+      "kind": "log",
+      "bytes": 218,
+      "truncated": false,
+      "sha256": "20915b2872cba4c9f2551da2649d7081684ed51cc7ca0e87a80ff792db1ea870",
+      "redactions": {}
+    },
+    {
+      "run": "20261101-jesus-marks-podcast-ko",
+      "path": "finish.log",
+      "kind": "log",
+      "bytes": 11464,
+      "truncated": false,
+      "sha256": "1fe6f43a46178110c844303f7b84c1b343c583b1652f9d36bce0e88f2a6d022f",
+      "redactions": {}
+    },
+    {
+      "run": "20261101-jesus-marks-podcast-ko",
+      "path": "journal.ndjson",
+      "kind": "whole",
+      "bytes": 1182,
+      "truncated": false,
+      "sha256": "d0ebb36ba8715c63ccdaa6cdc9c1b9edd8c56cfee716826dba34496b18f9c0ed",
+      "redactions": {}
+    },
+    {
+      "run": "20261101-jesus-marks-podcast-ko",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 688,
+      "truncated": false,
+      "sha256": "e75cf2302eda8b3220fea8ce76cc14a1d5de89e063a6c781d0f49e68ba9f1f31",
+      "redactions": {}
+    },
+    {
+      "run": "20261101-jesus-marks-podcast-ko",
+      "path": "timings.tsv",
+      "kind": "whole",
+      "bytes": 148,
+      "truncated": false,
+      "sha256": "68e0daab084a0ca47421879a2a04d8c661e38436958f8612445399194afaf6b6",
+      "redactions": {}
+    },
+    {
+      "run": "20261101-jesus-marks-podcast-ko",
+      "path": "tts-queue.log",
+      "kind": "log",
+      "bytes": 1465,
+      "truncated": false,
+      "sha256": "30130abe516f4cb678ddba77cdee7bffda22b889b26e046e153db9253de72d66",
+      "redactions": {}
+    },
+    {
+      "run": "20261101-jesus-marks-podcast-ko",
+      "path": "tts-run.log",
+      "kind": "log",
+      "bytes": 328998,
+      "truncated": true,
+      "sha256": "2b44c4b80dda587553bd8699a025620617a3b2d059fd0ba85d6616fc88178823",
+      "redactions": {}
+    },
+    {
+      "run": "20261101-jesus-marks-podcast-es",
+      "path": "finish.log",
+      "kind": "log",
+      "bytes": 13088,
+      "truncated": false,
+      "sha256": "11d1db3acedd12b87f13bcfd0052d547b579ba1a52ca9af74769f297cd82cb48",
+      "redactions": {}
+    },
+    {
+      "run": "20261101-jesus-marks-podcast-es",
+      "path": "journal.ndjson",
+      "kind": "whole",
+      "bytes": 1182,
+      "truncated": false,
+      "sha256": "15b29211407e690f0baaa6239aeb7f3211137f624c636a8d0295bff499ae25b6",
+      "redactions": {}
+    },
+    {
+      "run": "20261101-jesus-marks-podcast-es",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 688,
+      "truncated": false,
+      "sha256": "8cb11589c68052fb3209541d395c8aacf1cd870f86714e55b111eb08e614b2bc",
+      "redactions": {}
+    },
+    {
+      "run": "20261101-jesus-marks-podcast-es",
+      "path": "timings.tsv",
+      "kind": "whole",
+      "bytes": 148,
+      "truncated": false,
+      "sha256": "bf2dbff4047db80d3afe7df344f3a81ca55623d52679183a9ae9f86bd9a39049",
+      "redactions": {}
+    },
+    {
+      "run": "20261101-jesus-marks-podcast-es",
+      "path": "tts-run.log",
+      "kind": "log",
+      "bytes": 329042,
+      "truncated": true,
+      "sha256": "a7d2e6eae3b005c00f94b7987c9a4a5ef2d21603b98c207352fb2c73639643ab",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

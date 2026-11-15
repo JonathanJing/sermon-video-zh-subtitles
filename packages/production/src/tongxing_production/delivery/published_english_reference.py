@@ -94,8 +94,12 @@ def build_reference(public, page_id, source_path):
             "Incomplete approval receipt")
     require(receipt.get("anchorManifestJsonSha256") == source["anchors"]["artifact"]["jsonSha256"],
             "Approval receipt does not cover these anchors")
+    # The package always carries the binding; older agent-built manifests may omit the
+    # duplicate copy in the manifest header, so fall back to the package field.
+    anchor_binding = (anchors.get("input", {}).get("mfaSegmentsSha256")
+                      or source.get("anchors", {}).get("input", {}).get("mfaSegmentsSha256"))
     require(receipt.get("alignedSegmentsSha256") == source["transcript"]["artifact"]["sha256"]
-            == anchors.get("input", {}).get("mfaSegmentsSha256"), "Transcript binding mismatch")
+            == anchor_binding, "Transcript binding mismatch")
     units = anchors["sourceUnits"]
     unit_ids = [unit["sourceUnitId"] for unit in units]
     require(unit_ids and len(set(unit_ids)) == len(unit_ids), "Duplicate or absent source units")

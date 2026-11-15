@@ -637,8 +637,13 @@ class UnifiedSourceTests(unittest.TestCase):
                    '--reviewed-by', 'fixture (chat)', '--evidence', 'synthetic approval for the test'])
         self.assertEqual(subject.load_configuration(config_path).authorization_version, subject.AUTHORIZATION_V2)
         self.calls.clear()
+        # The stage builds a Claude judge transport even when the run stops at
+        # confirmation; inject the fixture instead of requiring the claude CLI
+        # (the hosted runner has none).
+        judge = written['judge']
         result = subject.execute(config_path, api_key='', transport=self.transport, aligner=self.align,
-                                 mfa_preflight=self.preflight)
+                                 mfa_preflight=self.preflight,
+                                 claude_transport=self.claude_judge(judge['model'], judge['reasoningEffort']))
         self.assertEqual(result['status'], 'awaiting_confirmation')
         self.assertEqual([c for c in self.calls if c.endswith('/transcriptions')], [])
         # A second draft never overwrites the papers of the first.

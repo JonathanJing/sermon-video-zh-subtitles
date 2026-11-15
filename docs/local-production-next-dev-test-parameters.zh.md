@@ -20,7 +20,11 @@
 
 TTS保留正式授权checkpoint `75d28ce6022b3df3a72df3dd6dbc01e53f584d685770d60ea04b341920968c9a`、模型config、声音绑定、base seed42＋固定窗口start、temperature0.7、repetition penalty1.05、max new tokens768、SDPA与自然语速。ASR固定本轮Qwen3-ASR-0.6B snapshot `5eb144179a02acc5e5ba31e748d22b0cf3e303b0`、CUDA/BF16、max new tokens2048，相似度门槛0.88。不得降低门槛来消除既有疑点。
 
-## 已接入的音频入口
+## 已接入的音频入口（2026-11-08 起为历史）
+
+> 2026-11-08：本节入口 `tools/development/run_dev_local_audio_test.py` 及其依赖的 ASR 筛查
+> producer 已于 2026-10-28 退役（[runbook](codex-local-production-runbook.zh.md)），入口文件与
+> 对应测试同批移除。下面的命令与回归清单只作历史记录，不能执行；真实音频验收按人工整轨 1× 听审。
 
 下一次真实Dev音频测试使用下面入口，**不需要再手填默认batch**。在Spark已校验的运行时和stage内执行；传入现有正式producer的所有必需来源、批准、声音授权、模型和输出参数，门禁继续由原producer校验。stage必须同时包含新helper及profile JSON；跨机复制不会由此入口自动执行。
 
@@ -62,8 +66,7 @@ PRODUCTION_PYTHON=/absolute/path/to/existing-production-env/bin/python
 复现接入回归（使用已有项目依赖Python）：
 
 ```sh
+# 2026-11-08：入口已移除；偏差配置的 loader 回归仍在 tests.test_dev_audio_test_profile。
 PRODUCTION_PYTHON=/absolute/path/to/existing-production-env/bin/python
-"$PRODUCTION_PYTHON" -m unittest tests.test_dev_audio_test_profile \
-  tests.test_dev_local_audio_entry tests.test_formal_audio_batching \
-  tests.test_render_formal_target_language_speech tests.test_screen_target_language_audio_units -q
+"$PRODUCTION_PYTHON" -m unittest tests.test_dev_audio_test_profile -q
 ```
