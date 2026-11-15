@@ -10,7 +10,7 @@
 - **页面只提供英文文字 + 普通话音频。** `lang=captions` 是英文原文字幕、无音频；`lang=zh` 是机器翻译后的普通话 TTS 音频 + 普通话字幕；`lang=en` 实测 HTTP 400。**没有讲员英文原声。** 需要原声时必须另接现场麦克风或教会直播流。
 - **普通话字幕 final 很少。** 三次运行的实时普通话 final 只有 0/1/1 条，累计 partial 有 56/73/56 条；会话日志的 `zh` 行只有 4/3/3 条。它只能做对照，不能作为 Layer 2 的批准文本或英文底稿。
 - 本机 LaunchAgent 已安装并验证（周日 09:55 启动、10:00–11:20、房间 `mariners-north-irvine`）；这是本机状态，不在仓库里。还没跑满 80 分钟的真实周日。
-- 阅读适配器的 plan 路径已在 5 分钟 demo 窗口验证（61 行 caption → 13 段 / 4,262 字符）；真实付费的英文清理、翻译、阅读编辑和 PDF 链路尚未跑。
+- 阅读适配器已用 5 分钟 demo 跑通真实 dev 付费链路（13 段、13 块 × 2 轮、PDF 7 页 QA pass）；周日真实 80 分钟场次、真实讲员内容和发布验收尚未跑。
 
 ## 运行
 
@@ -35,12 +35,36 @@
 
 ```bash
 .venv/bin/python -m pytest tests/test_live_translate_capture.py -q
-# 18 passed
+# 19 passed
 ```
 
 测试覆盖：本地日期/跨 UTC 午夜的窗口解析、迟到开始、已过窗口拒绝、caption final 去重、WAV 封装与补静音、会话选择、遥测/ingest 脱敏、本地 WebSocket 断线重连，以及人工讲道起止的记录/边界校验/哈希绑定和窗口内正文导出。
 
 代码 PR 后续加入 `mark_window.py`、`extract_sermon.py` 与 `build_reading_pdf.py`（共 9 个测试）：采集端保存整段 10:00–11:20，人工回看后记录讲道起止，确定性导出窗口内英文正文，并接到现有阅读链生成 PDF（默认只出 plan；付费执行必须走显式 OpenAI 环境和阅读质量门禁）。这不改变本报告三次采集和 10 分钟长测的证据。
+
+## 真实 dev 付费试跑（5 分钟 demo，非发布）
+
+2026-11-14 用 `artifacts/live-capture-test/soak/demo/2026-11-14` 的 16:55–17:00 窗口，经 `tools/ops/run_with_openai_environment.py --environment dev` 跑通适配器的真实付费链路：
+
+| 指标 | 结果 |
+|---|---|
+| 输入 | 61 行 caption → 13 个阅读段 / 4,298 英文字符 |
+| 英文清理 / 翻译 | 13/13、13/13 |
+| 阅读编辑 | 13 块 × 2 轮（编辑 + 校对） |
+| 阅读质量 | `reading_quality_report.json` = pass |
+| PDF | 7 页，168,500 bytes；`sermon_zh_en_reading.qa.json` = pass（allPagesChecked） |
+| 调用 / token | 45 次 API；输入 73,910 / 输出 19,306（reasoning 13,485） |
+| 费用 | 按 `gpt-6.1-sol` 列表价估算约 **$0.38**；不是账单/发票 |
+| 产物 | `artifacts/live-reading-tests/20261114-demo-5min/sermon_zh_en_reading.pdf`，标题“Demo 5-minute reading test（非发布）” |
+| 哈希 | PDF `21623d8b…`；PDF QA `184695bc…`；质量报告 `a1edd509…`（完整值见 `summary.json`） |
+
+第一次失败：英文修正 240 秒窗口和 420 字符阅读块超过 legacy provider 的 8,192-byte 输入上限（`provider_input_bound_exceeded`，未产生付费调用）；阅读编辑 batch 3 同样超限；QA 把零值 `hardFailures` 当成失败。修复在 [#1573](https://github.com/JonathanJing/sermon-video-zh-subtitles/pull/1573)：
+
+- 英文修正窗口 45 秒；
+- 阅读编辑 `--batch-size 1`，块目标 12 秒 / 150 英文字符，硬上限 30 秒 / 300 字符；
+- QA 只在 `hardFailures` 有非零值时中止。
+
+边界：英文仍是 provider ASR，可能保留 `uh` / `you know`；中文阅读正文由阅读编辑清理。周日真实 80 分钟场次尚未跑；按 ~200 个阅读块 × 2 轮估算，预算会明显高于本次 5 分钟 demo。
 
 ## 边界与未验证
 

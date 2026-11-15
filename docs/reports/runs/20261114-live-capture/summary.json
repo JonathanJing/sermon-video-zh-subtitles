@@ -213,5 +213,60 @@
       "session.english.jsonl": "7c737cff9f3e6b14933d76ce6df7d31d78f06e2a880bf6a2ca5ee1100d613352",
       "mandarin.audio.wav": "22906ba42114e0922ef284c0cc7bf2e429fb274e734a5322312e702f449dd193"
     }
+  },
+  "paid_dev_reading": {
+    "run_dir": "<local>/live-reading-tests/20261114-demo-5min",
+    "capture_dir": "<local>/live-capture-test/soak/demo/2026-11-14",
+    "window": {
+      "start": "2026-11-15T00:55:00.000Z",
+      "end": "2026-11-15T01:00:00.000Z",
+      "local": "16:55:00-17:00:00",
+      "minutes": 5
+    },
+    "source": {
+      "caption_lines": 61,
+      "reading_segments": 13,
+      "english_characters": 4298
+    },
+    "stages": {
+      "english_correction": 13,
+      "chinese_translation": 13,
+      "reading_blocks": 13,
+      "reading_passes": 2
+    },
+    "qa": {
+      "pipeline_hard_failures": {
+        "emptyEnglish": 0,
+        "emptyChinese": 0,
+        "overlaps": 0,
+        "translationIdMismatchCount": 0
+      },
+      "reading_quality": "pass",
+      "pdf_qa": "pass",
+      "pdf_pages": 7
+    },
+    "api": {
+      "calls": 45,
+      "input_tokens": 73910,
+      "output_tokens": 19306,
+      "reasoning_tokens": 13485,
+      "estimated_usd_list": 0.38,
+      "note": "list-price estimate only; not a provider invoice"
+    },
+    "sha256": {
+      "pdf": "21623d8b8bf41798586a34f684d6037666119065044c9a9770ccd164352ab750",
+      "pdf_qa": "184695bcc508076fe1950963f804f879f7cda8607a3553f2b5a83c146d7ba30a",
+      "reading_quality": "a1edd509bfd1fcb2ecea88caecaacb0aa943d098613db45281b8ee5aa4a86b40",
+      "zh_reading_srt": "133793adf2db66bbf4ff426e48e752eabf6c297cef1ebaf14d4dc6046234a130",
+      "en_reading_srt": "c1c0485be8240fc6becac85465d35e93f9c8cdacc99b46ca35d9bb295c331394"
+    },
+    "pdf_bytes": 168500,
+    "title": "Demo 5-minute reading test（非发布）",
+    "provider_environment": "dev, explicit launcher",
+    "failures_and_fixes": [
+      "provider_input_bound_exceeded: 240s correction window and 420-char reading blocks exceeded the legacy 8192-byte input bound; fixed with 45s windows, batch size 1, and 12s/150/300 reading targets.",
+      "QA zero-valued hardFailures dict was treated as truthy; fixed to inspect non-zero values."
+    ],
+    "note": "Real dev paid run of the adapter on a 5-minute demo window. The PDF is clearly titled as a non-published test; English remains provider ASR and may contain fillers. The 80-minute Sunday run is still unverified."
   }
 }
