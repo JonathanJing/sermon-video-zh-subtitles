@@ -1,0 +1,54 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261114-deepseek-tts-speed",
+  "runs": [
+    {
+      "label": "20261114-deepseek-tts-speed",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/deepseek-tts-speed/20261114-deepseek-tts-speed",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "20261114-deepseek-tts-speed",
+      "path": "bench.log",
+      "kind": "log",
+      "bytes": 278,
+      "truncated": false,
+      "sha256": "595eee19d6750533bc22f35e2a21ec1119ecb0fd4f2fa89f5a00e699e51429d7",
+      "redactions": {}
+    },
+    {
+      "run": "20261114-deepseek-tts-speed",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 1041,
+      "truncated": false,
+      "sha256": "217cf21154f4292d43e52ed8460cd5ef76f016a13ff4c98de4f1fd10a013b780",
+      "redactions": {}
+    },
+    {
+      "run": "20261114-deepseek-tts-speed",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 4147,
+      "truncated": false,
+      "sha256": "277a33bda0c7605766602f526c81a295cfb6aa416fbb7a817d3daf648acc3550",
+      "redactions": {}
+    },
+    {
+      "run": "20261114-deepseek-tts-speed",
+      "path": "timings.tsv",
+      "kind": "whole",
+      "bytes": 175,
+      "truncated": false,
+      "sha256": "bc9e02991aee2acb97af1c8464ba1be6572dff8eeeee99d9b2533b8b089efa97",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}
