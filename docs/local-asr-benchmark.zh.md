@@ -184,3 +184,23 @@ Qwen3-ASR 0.6B MLX 8-bit 已接入独立 Local Live Gateway，前端仍使用原
 固定扬声器/房间/内置麦克风路径完成 60 分钟端到端运行：1,247 次 ASR processing 产生 1,246 个 final、1 个 empty、0 failed，ASR final availability 为 99.92%；1,246 个 ASR final 全部产生 translation final。音频结束到浏览器中文首字 P50/P95 为 1.419/1.486 秒，到完整中文为 1.530/1.720 秒。
 
 该结果补齐 Qwen + MiLMMT 当前 POC 的单次长时工程门禁，但不构成人工 WER Gold、教会现场声学验收或其他 ASR 候选的长测结果。完整报告见 [SOAK_E2E_20260904.zh.md](../experiments/local-live-poc/benchmarks/SOAK_E2E_20260904.zh.md)。
+
+## 2026-11-14 云端对照：DeepSeek ASR 与 OpenAI `gpt-transcribe`
+
+这一节不进入上面的本地模型榜：两臂都是云端 API，参考集与 WER 口径相同，完整报告在 [docs/reports/runs/20261114-deepseek-asr-ab](reports/runs/20261114-deepseek-asr-ab/INDEX.md)。
+
+同一份 60 段、29.811 分钟冻结音频，每段 30 秒、送相同 16 kHz 单声道 PCM WAV：
+
+| Arm | MRQS | WER | 关键术语召回 | 与参考逐字相同 | p50 | 平均 RTF | 估算成本 |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| `openai-gpt-transcribe` + prompt/术语 | 99.100 | 0.78% | 98.55% | 50/60 | 4.78s | 0.1593 | $0.1342 |
+| `openai-gpt-transcribe` 无提示 | 97.758 | 0.84% | 94.20% | 46/60 | 4.90s | 0.1633 | $0.1342 |
+| `deepseek-asr`（无任何提示） | 97.446 | 2.81% | 97.10% | 13/60 | 2.57s | 0.0868 | $0.0288 |
+
+参考文本由 GPT-Transcribe 生成，所以「与参考逐字相同」同时是准确度与自洽度。为此加了独立盲听：Gemini 3.8 flash 只看音频与两份匿名文本，每段换位两次。宽松 rubric（把保留口吃、重复词算优点）判 DeepSeek 20:12，严格 rubric（只计意义错误）判 OpenAI 15:6，对带提示的 OpenAI 是 15:3；严格口径下各有 28–29 段并列。
+
+结论是方法学上的，而不只是选型上的：**不先定义口吃、重复词和填充词是否保留，「哪个 ASR 更好」没有唯一答案**。生产链路两种口径同时要：英文源与阅读版英文逐字保留（`output_mode=reading` 时不做英文清洗，2026-08-23 那场 81 段里 10 处相邻重复词原样保留），只有中文阅读版显式删除「嗯/呃/你知道/我是说/好吧/你看」并把 `oral_fillers` 当 QA 硬失败。所以宽松口径对英文产物更贴切（DeepSeek 20:12），严格口径对中文阅读产物更贴切（OpenAI 15:6），参考 WER 则独立指向 OpenAI。
+
+DeepSeek ASR 的硬约束决定它现在只能做平行候选：单请求 ≤120 秒 / 8 MiB、无 prompt 与术语注入、无语言参数、无词级时间戳、无流式。它的优势是成本约 1/4.7、单请求延迟约 1/1.9，且唯一无语音片段同样返回空文本、没有静音幻觉。
+
+人工听审尚未执行；`artifacts/deepseek-asr-ab/human-review-queue.md` 给出全部 6 段 DeepSeek 判定胜出、4 段 OpenAI 判定胜出与 6 段两次换位判断不一致的片段，听完之前不宣称任何人工 Gold。
