@@ -25,6 +25,7 @@ from datetime import datetime, timezone
 
 from . import backend as _delivery
 from . import contract
+from . import hosting_incremental
 
 
 def atomic_json(path, value):
@@ -62,13 +63,13 @@ class PublisherProgress:
             atomic_json(self.path, self.state)
 
     @contextmanager
-    def heartbeat(self, interval):
+    def heartbeat(self, interval, phase='deploying'):
         stop = threading.Event()
         errors = []
         def beat():
             while not stop.wait(interval):
                 try:
-                    self.update('deploying')
+                    self.update(phase)
                 except BaseException as exc:
                     errors.append(exc)
                     return
@@ -241,6 +242,37 @@ def deployed_version(result_path, *, site, baseline_version):
 
 
 PROPAGATION_STATE_SCHEMA = 'sermon-hosting-version-propagation-v1'
+PROPAGATION_STATE_SCHEMA_V2 = 'sermon-hosting-version-propagation-v2'
+CLI_METHOD = 'firebase_cli'
+DEPLOY_METHODS = ('auto', 'incremental', 'cli')
+EVIDENCE_FILES = {'firebase_cli': 'hosting-deploy-result.json', hosting_incremental.METHOD: 'incremental-publish.json'}
+
+
+def _evidence_version(snapshot, attempt):
+    """The version this attempt's own deployment receipt names, checked against the attempt."""
+    method = attempt.get('deployMethod', CLI_METHOD)
+    contract.require(method in EVIDENCE_FILES, 'Unknown recorded deployment method')
+    path = Path(snapshot) / EVIDENCE_FILES[method]
+    baseline = attempt['baselineVersion']
+    site = attempt['intent']['site']
+    if method == hosting_incremental.METHOD:
+        return hosting_incremental.receipt_version(path, site=site, baseline_version=baseline)
+    return deployed_version(path, site=site, baseline_version=baseline)
+
+
+def _plan_deployment(snapshot, request, intent, baseline_version, method, ignore=None):
+    """Pick the route before anything is mutated: (incremental plan or None, fallback reason)."""
+    if method == 'cli':
+        return None, 'cli requested'
+    try:
+        return hosting_incremental.plan(request, site=intent['site'], public=Path(snapshot) / 'public',
+                                        baseline_version=baseline_version, ignore=ignore), None
+    except hosting_incremental.NotIncremental as reason:
+        contract.require(method == 'auto', 'Incremental publication refused: ' + str(reason))
+        return None, str(reason)
+    except Exception as error:  # a transport or API problem: the CLI reports it in its own log
+        contract.require(method == 'auto', 'Incremental publication could not plan: ' + str(error))
+        return None, type(error).__name__ + ': ' + str(error)[:300]
 
 
 def _persist_attempt(path, attempt):
@@ -257,20 +289,38 @@ def _propagation_state(snapshot, attempt):
     if 'versionPropagation' not in attempt:
         return None  # Legacy attempts retain strict live-head matching.
     state = attempt['versionPropagation']
-    receipt = Path(snapshot) / 'hosting-deploy-result.json'
+    snapshot = Path(snapshot)
+    if isinstance(state, dict) and state.get('schemaVersion') == PROPAGATION_STATE_SCHEMA:
+        # v1 predates the incremental route and can only name a firebase CLI receipt.
+        receipt = snapshot / EVIDENCE_FILES[CLI_METHOD]
+        contract.require(set(state) == {
+            'schemaVersion', 'attemptId', 'baselineVersion', 'ownedVersion',
+            'cliReceiptSha256', 'ownedVersionObserved'}
+            and state['attemptId'] == attempt['attemptId']
+            and state['baselineVersion'] == attempt['baselineVersion']
+            and state['ownedVersion'] == attempt['newVersion']
+            and type(state['ownedVersionObserved']) is bool,
+            'Invalid persisted Hosting propagation state')
+        contract.require(hashlib.sha256(receipt.read_bytes()).hexdigest() == state['cliReceiptSha256']
+            and deployed_version(receipt, site=attempt['intent']['site'],
+                                 baseline_version=attempt['baselineVersion']) == state['ownedVersion'],
+            'Propagation state differs from CLI deployment receipt')
+        return state
     contract.require(type(state) is dict and set(state) == {
         'schemaVersion', 'attemptId', 'baselineVersion', 'ownedVersion',
-        'cliReceiptSha256', 'ownedVersionObserved'}
-        and state['schemaVersion'] == PROPAGATION_STATE_SCHEMA
+        'deployMethod', 'evidenceFile', 'evidenceSha256', 'ownedVersionObserved'}
+        and state['schemaVersion'] == PROPAGATION_STATE_SCHEMA_V2
         and state['attemptId'] == attempt['attemptId']
         and state['baselineVersion'] == attempt['baselineVersion']
         and state['ownedVersion'] == attempt['newVersion']
+        and state['deployMethod'] == attempt.get('deployMethod')
+        and state['evidenceFile'] == EVIDENCE_FILES.get(state['deployMethod'])
         and type(state['ownedVersionObserved']) is bool,
         'Invalid persisted Hosting propagation state')
-    contract.require(hashlib.sha256(receipt.read_bytes()).hexdigest() == state['cliReceiptSha256']
-        and deployed_version(receipt, site=attempt['intent']['site'],
-                             baseline_version=attempt['baselineVersion']) == state['ownedVersion'],
-        'Propagation state differs from CLI deployment receipt')
+    evidence = snapshot / state['evidenceFile']
+    contract.require(hashlib.sha256(evidence.read_bytes()).hexdigest() == state['evidenceSha256']
+        and _evidence_version(snapshot, attempt) == state['ownedVersion'],
+        'Propagation state differs from the deployment receipt')
     return state
 
 
@@ -289,10 +339,16 @@ def _observe_owned_version(request, attempt, path, state):
 def publish(snapshot, *, intent, routes, baseline_version, baseline_catalog_sha,
             lease_bucket, request, reader, run=None, heartbeat_interval=5,
             baseline_catalog_v4_sha=None, baseline_catalog_v5_sha=None,
-            allow_pending_replacements=()):
+            allow_pending_replacements=(), method='auto'):
     """``baseline_catalog_v4_sha`` is the live v4 catalog the snapshot was built on (None: none yet).
-    ``run`` defaults to the host's firebase CLI runner."""
+    ``run`` defaults to the host's firebase CLI runner.
+
+    ``method`` selects how the snapshot reaches Hosting: 'auto' (the default) clones the live
+    version and uploads only the changed files, and falls back to ``firebase deploy`` when the
+    snapshot needs a whole-site deploy (files removed, nothing to clone, or 'cli' requested);
+    'incremental' and 'cli' pin one route for tests and recovery."""
     contract.require(heartbeat_interval > 0, 'Heartbeat interval must be positive')
+    contract.require(method in DEPLOY_METHODS, 'Unknown deployment method: ' + str(method))
     run = _delivery.current().hosting.run if run is None else run
     with publisher_lock(snapshot):
         return _publish(snapshot, intent=intent, routes=routes, baseline_version=baseline_version,
@@ -300,12 +356,12 @@ def publish(snapshot, *, intent, routes, baseline_version, baseline_catalog_sha,
                         request=request, reader=reader, run=run, heartbeat_interval=heartbeat_interval,
                         baseline_catalog_v4_sha=baseline_catalog_v4_sha,
                         baseline_catalog_v5_sha=baseline_catalog_v5_sha,
-                        allow_pending_replacements=tuple(allow_pending_replacements))
+                        allow_pending_replacements=tuple(allow_pending_replacements), method=method)
 
 
 def _publish(snapshot, *, intent, routes, baseline_version, baseline_catalog_sha,
              lease_bucket, request, reader, run, heartbeat_interval, baseline_catalog_v4_sha,
-             baseline_catalog_v5_sha, allow_pending_replacements=()):
+             baseline_catalog_v5_sha, allow_pending_replacements=(), method='auto'):
     snapshot = Path(snapshot)
     contract.validate_intent(intent, routes)
     if allow_pending_replacements:
@@ -341,21 +397,49 @@ def _publish(snapshot, *, intent, routes, baseline_version, baseline_catalog_sha
         atomic_json(bound_config, config)
         lease.check()
         contract.require(live_version(request, intent['site']) == baseline_version, 'Concurrent publication detected')
+        # Planning is read-only: a snapshot the REST route cannot express falls back to the CLI
+        # here, before any remote mutation, so the attempt never records an unknown it did not make.
+        progress.update('planning')
+        with progress.heartbeat(heartbeat_interval, phase='planning'):
+            incremental, fallback = _plan_deployment(snapshot, request, intent, baseline_version, method,
+                                                      config['hosting'].get('ignore'))
+        attempt['deployMethod'] = hosting_incremental.METHOD if incremental else CLI_METHOD
+        if fallback:
+            attempt['methodFallback'] = fallback
+        atomic_json(receipt_path, attempt)
         attempt['status'] = 'outcome_unknown'
         atomic_json(receipt_path, attempt)
         progress.update('deploying')
         deploying = True
         result_path = snapshot / 'hosting-deploy-result.json'
-        with progress.heartbeat(heartbeat_interval), (snapshot / 'hosting-publish.log').open('w') as log, result_path.open('w') as output:
-            run(['firebase', 'deploy', '--only', 'hosting', '--project', intent['project'], '--config', str(bound_config.resolve()), '--non-interactive', '--json'],
-                cwd=snapshot, check=True, stdout=output, stderr=log, timeout=3600,
-                env=hosting_upload_environment())
-        attempt['newVersion'] = deployed_version(result_path, site=intent['site'], baseline_version=baseline_version)
-        attempt['versionPropagation'] = {
-            'schemaVersion': PROPAGATION_STATE_SCHEMA, 'attemptId': attempt['attemptId'],
-            'baselineVersion': baseline_version, 'ownedVersion': attempt['newVersion'],
-            'cliReceiptSha256': hashlib.sha256(result_path.read_bytes()).hexdigest(),
-            'ownedVersionObserved': False}
+        incremental_path = snapshot / 'incremental-publish.json'
+        with progress.heartbeat(heartbeat_interval), (snapshot / 'hosting-publish.log').open('w') as log:
+            if incremental:
+                hosting_incremental.deploy(request, plan=incremental, out=incremental_path)
+            else:
+                with result_path.open('w') as output:
+                    run(['firebase', 'deploy', '--only', 'hosting', '--project', intent['project'], '--config', str(bound_config.resolve()), '--non-interactive', '--json'],
+                        cwd=snapshot, check=True, stdout=output, stderr=log, timeout=3600,
+                        env=hosting_upload_environment())
+        if incremental:
+            attempt['newVersion'] = hosting_incremental.receipt_version(
+                incremental_path, site=intent['site'], baseline_version=baseline_version)
+            # v2 binds the version to the incremental receipt; the CLI route keeps writing v1 so
+            # every attempt recorded before the incremental default reconciles unchanged.
+            attempt['versionPropagation'] = {
+                'schemaVersion': PROPAGATION_STATE_SCHEMA_V2, 'attemptId': attempt['attemptId'],
+                'baselineVersion': baseline_version, 'ownedVersion': attempt['newVersion'],
+                'deployMethod': hosting_incremental.METHOD, 'evidenceFile': incremental_path.name,
+                'evidenceSha256': hashlib.sha256(incremental_path.read_bytes()).hexdigest(),
+                'ownedVersionObserved': False}
+        else:
+            attempt['newVersion'] = deployed_version(result_path, site=intent['site'],
+                                                     baseline_version=baseline_version)
+            attempt['versionPropagation'] = {
+                'schemaVersion': PROPAGATION_STATE_SCHEMA, 'attemptId': attempt['attemptId'],
+                'baselineVersion': baseline_version, 'ownedVersion': attempt['newVersion'],
+                'cliReceiptSha256': hashlib.sha256(result_path.read_bytes()).hexdigest(),
+                'ownedVersionObserved': False}
         _persist_attempt(receipt_path, attempt)
         progress.update('verifying_readback')
         lease.check()
