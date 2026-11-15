@@ -41,7 +41,6 @@ from __future__ import annotations
 
 import argparse
 import json
-import math
 import os
 import subprocess
 import sys
@@ -182,8 +181,9 @@ def load_build_inputs(settings: BuildSettings) -> dict[str, Any]:
     actual_start = parse_ts(capture["window"]["actual_start"])
 
     sermon_path = capture_dir / "sermon.english.jsonl"
-    if not sermon_path.exists():
-        extract_sermon.extract(capture_dir)
+    # Re-run the deterministic window extraction so a changed sermon.window.json
+    # can never leave a stale sermon.english.jsonl behind.
+    extract_sermon.extract(capture_dir)
     rows = extract_sermon.read_jsonl(sermon_path)
     if not rows:
         raise ValueError(f"sermon.english.jsonl is empty: {sermon_path}")
