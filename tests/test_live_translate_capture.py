@@ -406,7 +406,14 @@ class BuildReadingTests(unittest.TestCase):
             return [{**segment, "zh": f"译文{segment['id']}"} for segment in segments]
 
         def qa(english, chinese, glossary):
-            return {"hardFailures": {}}
+            return {
+                "hardFailures": {
+                    "emptyEnglish": 0,
+                    "emptyChinese": 0,
+                    "overlaps": 0,
+                    "translationIdMismatchCount": 0,
+                }
+            }
 
         def runner(command, check=False):
             calls.append(command)
@@ -442,6 +449,35 @@ class BuildReadingTests(unittest.TestCase):
         self.assertTrue((self.run_dir / "reading" / "reading.manifest.json").exists())
         self.assertEqual(manifest["readingQuality"]["status"], "pass")
         self.assertIn("pdf_sha256", manifest["outputs"])
+
+    def test_execute_aborts_on_nonzero_hard_failure(self):
+        calls = []
+
+        def correct(api_key, segments, *args, **kwargs):
+            return segments
+
+        def translate(api_key, segments, *args, **kwargs):
+            return [{**segment, "zh": "译文"} for segment in segments]
+
+        def qa(english, chinese, glossary):
+            return {"hardFailures": {"emptyChinese": 1}}
+
+        def runner(command, check=False):
+            calls.append(command)
+            return subprocess.CompletedProcess(command, 0)
+
+        with self.assertRaises(ValueError):
+            build_reading_pdf.execute_plan(
+                self.settings,
+                correct_fn=correct,
+                translate_fn=translate,
+                qa_fn=qa,
+                runner=runner,
+                route_check=lambda: None,
+                api_key="test-key",
+            )
+        self.assertEqual(calls, [])
+        self.assertFalse((self.run_dir / "reading" / "sermon_zh_en_reading.pdf").exists())
 
 
 @unittest.skipUnless(HAVE_WEBSOCKETS, "websockets not installed")

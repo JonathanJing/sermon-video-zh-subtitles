@@ -76,7 +76,7 @@ READING_DIRNAME = "reading-edition-v2"
 CHUNK_TARGET_SECONDS = 45.0
 CHUNK_TARGET_CHARS = 700
 READING_SEGMENT_TARGET_CHARS = 420
-CORRECTION_WINDOW_SECONDS = 240.0
+CORRECTION_WINDOW_SECONDS = 45.0
 DEFAULT_TITLE = "Mariners Church North Irvine 主日讲道"
 
 
@@ -235,14 +235,16 @@ def reading_edition_command(settings: BuildSettings, outdir: Path) -> list[str]:
         settings.reasoning_effort,
         "--passes",
         "2",
+        "--batch-size",
+        "1",
         "--preferred-seconds",
-        "24.0",
+        "12.0",
         "--preferred-english-chars",
-        "420",
+        "150",
         "--hard-seconds",
-        "55.0",
+        "30.0",
         "--hard-english-chars",
-        "840",
+        "300",
     ]
 
 
@@ -419,8 +421,9 @@ def execute_plan(
         write_json(outdir / "segments_timed_zh.json", translated)
         qa = qa_fn(corrected, translated, glossary)
         write_json(outdir / "qa_report.json", qa)
-    if qa.get("hardFailures"):
-        raise ValueError(f"pipeline QA has hard failures: {qa['hardFailures']}")
+    hard_failures = qa.get("hardFailures") or {}
+    if any(bool(value) for value in hard_failures.values()):
+        raise ValueError(f"pipeline QA has hard failures: {hard_failures}")
 
     reading_command = reading_edition_command(settings, outdir)
     reading_run = runner(reading_command, check=False)
