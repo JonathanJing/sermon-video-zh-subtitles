@@ -35,7 +35,6 @@ import argparse
 import csv
 import hashlib
 import json
-import math
 import random
 import re
 import sys
