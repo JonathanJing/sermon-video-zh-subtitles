@@ -1,0 +1,195 @@
+{
+  "input": "artifacts/catalog-audit/ai-for-god-sermon-audio-dev-v3.json",
+  "schemaVersion": "sermon-multilingual-catalog-v3",
+  "pages": 17,
+  "changed": 17,
+  "changes": [
+    {
+      "pageId": "resi-20261004-69ba7a66",
+      "before": {
+        "contentKind": null,
+        "mediaType": null
+      },
+      "after": {
+        "contentKind": "sermon",
+        "mediaType": null
+      }
+    },
+    {
+      "pageId": "2026-09-27-weekend-sermon-drive-530",
+      "before": {
+        "contentKind": null,
+        "mediaType": null
+      },
+      "after": {
+        "contentKind": "sermon",
+        "mediaType": null
+      }
+    },
+    {
+      "pageId": "if-i-had-more-time-jesus-is-worthy",
+      "before": {
+        "contentKind": null,
+        "mediaType": "podcast"
+      },
+      "after": {
+        "contentKind": "podcast",
+        "mediaType": "podcast"
+      }
+    },
+    {
+      "pageId": "mockup-20261005-dev-180s",
+      "before": {
+        "contentKind": null,
+        "mediaType": null
+      },
+      "after": {
+        "contentKind": "sermon",
+        "mediaType": null
+      }
+    },
+    {
+      "pageId": "mockup-20261005-dev-180s-luna-rerun",
+      "before": {
+        "contentKind": null,
+        "mediaType": null
+      },
+      "after": {
+        "contentKind": "sermon",
+        "mediaType": null
+      }
+    },
+    {
+      "pageId": "mockup-dev-180s-dev-merged-rerun-20261005",
+      "before": {
+        "contentKind": null,
+        "mediaType": null
+      },
+      "after": {
+        "contentKind": "sermon",
+        "mediaType": null
+      }
+    },
+    {
+      "pageId": "mockup-dev-180s-e2e-20261007T193332Z",
+      "before": {
+        "contentKind": null,
+        "mediaType": null
+      },
+      "after": {
+        "contentKind": "sermon",
+        "mediaType": null
+      }
+    },
+    {
+      "pageId": "mockup-dev-180s-e2e-20261012T044117Z",
+      "before": {
+        "contentKind": null,
+        "mediaType": null
+      },
+      "after": {
+        "contentKind": "sermon",
+        "mediaType": null
+      }
+    },
+    {
+      "pageId": "mockup-dev-clip-20261012T050250Z-u216",
+      "before": {
+        "contentKind": null,
+        "mediaType": null
+      },
+      "after": {
+        "contentKind": "sermon",
+        "mediaType": null
+      }
+    },
+    {
+      "pageId": "mockup-dev-clip-e2e-20261013T034422Z",
+      "before": {
+        "contentKind": null,
+        "mediaType": null
+      },
+      "after": {
+        "contentKind": "sermon",
+        "mediaType": null
+      }
+    },
+    {
+      "pageId": "mockup-dev-clip-e2e-20261014T032153Z",
+      "before": {
+        "contentKind": null,
+        "mediaType": null
+      },
+      "after": {
+        "contentKind": "sermon",
+        "mediaType": null
+      }
+    },
+    {
+      "pageId": "mockup-dev-180s-e2e-20261020T161828Z",
+      "before": {
+        "contentKind": null,
+        "mediaType": null
+      },
+      "after": {
+        "contentKind": "sermon",
+        "mediaType": null
+      }
+    },
+    {
+      "pageId": "resi-20261018-broadcast",
+      "before": {
+        "contentKind": null,
+        "mediaType": null
+      },
+      "after": {
+        "contentKind": "sermon",
+        "mediaType": null
+      }
+    },
+    {
+      "pageId": "mockup-dev-sentence-first-3min-20261022",
+      "before": {
+        "contentKind": null,
+        "mediaType": "podcast"
+      },
+      "after": {
+        "contentKind": "podcast",
+        "mediaType": "podcast"
+      }
+    },
+    {
+      "pageId": "sentence-first-clip-20261023",
+      "before": {
+        "contentKind": null,
+        "mediaType": "podcast"
+      },
+      "after": {
+        "contentKind": "clip",
+        "mediaType": null
+      }
+    },
+    {
+      "pageId": "2026-09-20-laodicea-clip",
+      "before": {
+        "contentKind": null,
+        "mediaType": null
+      },
+      "after": {
+        "contentKind": "clip",
+        "mediaType": null
+      }
+    },
+    {
+      "pageId": "revelation-jesus-wins-20261025",
+      "before": {
+        "contentKind": null,
+        "mediaType": "podcast"
+      },
+      "after": {
+        "contentKind": "sermon",
+        "mediaType": null
+      }
+    }
+  ]
+}
