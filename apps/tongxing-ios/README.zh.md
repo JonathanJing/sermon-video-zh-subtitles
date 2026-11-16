@@ -28,6 +28,8 @@ Dev Debug 与正式版沿用同一原生收听界面、播放器、下载、字�
 
 Beta 的 App Store Connect API Key 本机配置及 fastlane 上传／内部组分发见 [TestFlight 自动分发](TESTFLIGHT-AUTOMATION.zh.md)。
 
+面向听众的主日现场使用指引（打开 App → 听现场并对齐 → 前后微调）有一段 CG 示意动画，场景、渲染命令与边界见 [使用指引动画](TutorialVideo/README.zh.md)；它不是真机录屏或验收证据。
+
 ## 打开与运行
 
 后续 App 版本统一用点分隔的 `1.26.N`；`1.26.7` 与从 `1.26.8` 开始的约定属于当时发行记录。最新已分配 Beta 为 `1.26.33 (77)`，正式为 `1.26.33 (78)`，准备下一分发候选前核对最新发行记录和 Apple 状态，不复用已分配号码；Beta 验收后转正式保留同一数字版本，后台 Build 独立递增。跨年、重试与实际归档要求见 [版本号约定](VERSIONING.zh.md)。

@@ -1,0 +1,754 @@
+<!doctype html>
+<html lang="zh-Hans">
+<head>
+<meta charset="utf-8">
+<title>同行 · 听现场并对齐 使用指引（示意动画）</title>
+<style>
+  :root {
+    --cream: #F7F3EC; --cream-2: #EFE9DD; --ink: #12343B; --accent: #2B6352;
+    --sage: #ADD1BF; --sage-deep: #8FA89A; --muted: #6E857B; --amber: #B9772A;
+    --ios-bg: #F2F2F7; --ios-surface: #FFFFFF; --ios-label: #1C1C1E; --ios-secondary: #6C6C70;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 100%; height: 100%; background: #1b1f1e; overflow: hidden; }
+  body { font-family: -apple-system, "PingFang SC", "Hiragino Sans GB", sans-serif; color: var(--ink);
+         -webkit-font-smoothing: antialiased; }
+  #stage { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; overflow: hidden;
+           background: var(--cream); transform-origin: 0 0; }
+  .abs { position: absolute; }
+  svg.i { width: 1em; height: 1em; flex: none; fill: none; stroke: currentColor; stroke-width: 2;
+          stroke-linecap: round; stroke-linejoin: round; }
+  .f { fill: currentColor; stroke: none; }  /* symbol parts live in the <defs> svg, so this is not scoped to svg.i */
+
+  /* ---------- backdrop ---------- */
+  #blobA, #blobB { position: absolute; border-radius: 50%; }
+  #blobA { width: 1300px; height: 1300px; left: 900px; top: -380px;
+           background: radial-gradient(closest-side, rgba(173,209,191,.55), rgba(173,209,191,0)); }
+  #blobB { width: 1100px; height: 1100px; left: -420px; top: 420px;
+           background: radial-gradient(closest-side, rgba(143,168,154,.28), rgba(143,168,154,0)); }
+
+  /* ---------- title ---------- */
+  #title { inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+  #title img { width: 208px; height: 208px; border-radius: 47px; box-shadow: 0 30px 70px rgba(18,52,59,.28); }
+  #title .kicker { margin-top: 44px; font-size: 34px; letter-spacing: .32em; color: var(--sage-deep); font-weight: 500; }
+  #title h1 { margin-top: 22px; font-size: 104px; font-weight: 600; letter-spacing: .02em; }
+  #title .sub { margin-top: 34px; font-size: 40px; color: var(--muted); display: flex; align-items: center; gap: 22px; }
+  #title .sub b { color: var(--accent); font-weight: 600; }
+  #title .sub .arrow { color: var(--sage-deep); }
+
+  /* ---------- persistent chrome ---------- */
+  #brand { left: 110px; top: 62px; display: flex; align-items: center; gap: 18px; font-size: 30px; font-weight: 600; }
+  #brand img { width: 56px; height: 56px; border-radius: 13px; }
+  #brand span { color: var(--sage-deep); font-weight: 500; font-size: 26px; padding-left: 18px;
+                border-left: 2px solid rgba(143,168,154,.5); }
+  #stepper { left: 110px; top: 934px; display: flex; align-items: center; gap: 14px; }
+  .step { display: flex; align-items: center; gap: 12px; padding: 12px 24px 12px 12px; border-radius: 999px;
+          font-size: 26px; font-weight: 500; color: var(--muted); background: rgba(255,255,255,.55);
+          border: 2px solid rgba(143,168,154,.35); }
+  .step i { width: 38px; height: 38px; border-radius: 50%; display: grid; place-items: center; font-style: normal;
+            font-size: 22px; font-weight: 700; background: rgba(143,168,154,.3); color: var(--ink); }
+  .step .i { font-size: 22px; stroke-width: 3; }
+  .stepLink { width: 26px; height: 2px; background: rgba(143,168,154,.6); }
+  #note { left: 112px; top: 1018px; font-size: 21px; color: var(--sage-deep); letter-spacing: .04em; }
+
+  /* ---------- left panels ---------- */
+  .panel { left: 110px; top: 196px; width: 860px; }
+  .chip { display: inline-flex; align-items: center; gap: 12px; padding: 9px 26px; border-radius: 999px;
+          background: var(--accent); color: #fff; font-size: 30px; font-weight: 600; letter-spacing: .08em; }
+  .chip.tip { background: var(--amber); }
+  .panel h2 { margin-top: 26px; font-size: 74px; line-height: 1.16; font-weight: 600; letter-spacing: .005em; white-space: nowrap; }
+  .panel h2 em { font-style: normal; color: var(--accent); }
+  .lines { margin-top: 34px; display: flex; flex-direction: column; gap: 20px; }
+  .line { display: flex; align-items: center; gap: 20px; font-size: 38px; line-height: 1.3; color: #29484C; white-space: nowrap; }
+  .line .dot { width: 54px; height: 54px; border-radius: 50%; background: rgba(173,209,191,.55); color: var(--accent);
+               display: grid; place-items: center; font-size: 30px; flex: none; }
+  .line b { font-weight: 600; color: var(--accent); }
+  .line.small { font-size: 30px; color: var(--muted); }
+  .line.small .dot { width: 44px; height: 44px; font-size: 24px; background: rgba(143,168,154,.22); color: var(--muted); }
+
+  /* ---------- explainer cards ---------- */
+  .card { left: 110px; width: 900px; background: rgba(255,255,255,.86); border-radius: 36px;
+          box-shadow: 0 24px 60px rgba(18,52,59,.10); border: 1.5px solid rgba(143,168,154,.28); padding: 30px 36px; }
+  .cardRow { display: flex; align-items: center; gap: 22px; }
+  .cardLabel { width: 156px; font-size: 27px; font-weight: 600; color: var(--ink); display: flex; align-items: center; gap: 12px; flex: none; }
+  .cardLabel .i { font-size: 32px; color: var(--accent); }
+  .cardHint { font-size: 24px; color: var(--muted); }
+  .pill { margin-left: auto; padding: 8px 20px; border-radius: 999px; font-size: 25px; font-weight: 600;
+          background: rgba(173,209,191,.5); color: var(--accent); white-space: nowrap; }
+  .pill.warn { background: rgba(185,119,42,.16); color: var(--amber); }
+  .pill.ok { background: var(--accent); color: #fff; }
+
+  #venue { top: 628px; height: 262px; padding: 0; overflow: hidden; display: flex; }
+  #venue .scene { position: relative; width: 420px; height: 100%; background: linear-gradient(180deg, #17404A, #0E2B31); flex: none; }
+  #venue .screen { position: absolute; left: 70px; top: 46px; width: 280px; height: 120px; border-radius: 12px;
+                   background: linear-gradient(180deg, #F3E9D2, #E4D5B4); }
+  #venue .live { position: absolute; left: 84px; top: 58px; font-size: 16px; font-weight: 700; color: #fff;
+                 background: #C24A3A; border-radius: 6px; padding: 2px 9px; letter-spacing: .08em; }
+  #venue .floor { position: absolute; left: 0; right: 0; bottom: 0; height: 62px; background: #0A2227; }
+  #venue .info { padding: 34px 34px; display: flex; flex-direction: column; justify-content: center; gap: 12px; }
+  #venue .info h3 { font-size: 34px; font-weight: 600; }
+  #venue .info p { font-size: 26px; color: var(--muted); line-height: 1.45; }
+
+  #match { top: 560px; }
+  #bars { flex: 1; height: 78px; display: flex; align-items: center; gap: 5px; }
+  #bars i { flex: 1; border-radius: 4px; background: var(--accent); min-height: 4px; }
+  #track { position: relative; flex: 1; height: 78px; }
+  #ticks { position: absolute; inset: 14px 0 22px 0; display: flex; align-items: center; gap: 3px; }
+  #ticks i { flex: 1; border-radius: 3px; background: var(--sage); }
+  #scan { position: absolute; top: 4px; height: 62px; width: 66px; border-radius: 14px;
+          border: 4px solid var(--accent); background: rgba(43,99,82,.10); }
+  #flag { position: absolute; top: -50px; padding: 5px 16px; border-radius: 12px; background: var(--accent); color: #fff;
+          font-size: 26px; font-weight: 700; font-variant-numeric: tabular-nums; transform-origin: 50% 100%; }
+  #flag::after { content: ""; position: absolute; left: 50%; bottom: -8px; margin-left: -8px; border: 8px solid transparent;
+                 border-top-color: var(--accent); border-bottom: 0; }
+  .ends { position: absolute; bottom: -8px; font-size: 20px; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .divider { height: 1.5px; background: rgba(143,168,154,.3); margin: 22px 0; }
+
+  #pair { top: 640px; }
+  #pair .txt { position: relative; flex: 1; height: 44px; }
+  #pair .txt span { position: absolute; left: 0; top: 0; font-size: 28px; line-height: 44px; white-space: nowrap; }
+  #pair .en span { font-style: italic; color: #3C5A5E; font-size: 25px; }
+  #pair .zh span { font-weight: 600; color: var(--accent); }
+
+  #lanes { top: 626px; }
+  .lane { position: relative; flex: 1; height: 62px; border-radius: 16px; background: rgba(143,168,154,.16); overflow: hidden; }
+  .lane .blocks { position: absolute; left: 0; top: 9px; height: 44px; }
+  .lane .blocks i { position: absolute; top: 0; height: 44px; border-radius: 11px; display: grid; place-items: center;
+                    font-style: normal; font-size: 24px; font-weight: 700; color: #fff; }
+  #nowLine { position: absolute; top: -10px; bottom: -10px; width: 4px; border-radius: 2px; background: var(--ink); }
+
+  /* ---------- phone ---------- */
+  #phone { left: 0; top: 0; width: 417px; height: 876px; transform-origin: 0 0; border-radius: 68px; background: #0c1112;
+           box-shadow: 0 50px 110px rgba(18,52,59,.34), 0 0 0 2px #2a3335 inset; }
+  #screen { position: absolute; left: 12px; top: 12px; width: 393px; height: 852px; border-radius: 56px; overflow: hidden;
+            background: var(--ios-bg); color: var(--ios-label); }
+  #island { position: absolute; left: 50%; top: 11px; width: 122px; height: 36px; margin-left: -61px; border-radius: 20px; background: #000; z-index: 30; }
+  #status { position: absolute; left: 0; right: 0; top: 0; height: 54px; z-index: 25; font-size: 16px; font-weight: 600; }
+  #status .time { position: absolute; left: 50px; top: 19px; }
+  #status .sys { position: absolute; right: 34px; top: 21px; display: flex; gap: 6px; align-items: center; }
+  #status .sys i { display: block; background: currentColor; border-radius: 2px; }
+  #homeBar { position: absolute; left: 50%; bottom: 8px; width: 138px; height: 5px; margin-left: -69px; border-radius: 3px; background: #1c1c1e; z-index: 25; opacity: .85; }
+
+  #home { inset: 0; background: linear-gradient(165deg, #CFE3D8 0%, #F1E9D8 46%, #9DB9AE 100%); }
+  #grid { position: absolute; left: 27px; top: 84px; display: grid; grid-template-columns: repeat(4, 64px); gap: 30px 27px; }
+  .app { width: 64px; }
+  .app .ic { width: 64px; height: 64px; border-radius: 15px; background: rgba(255,255,255,.5); }
+  .app .lb { margin: 8px auto 0; width: 38px; height: 7px; border-radius: 4px; background: rgba(18,52,59,.2); }
+  .app.mine .lb { width: auto; height: auto; background: none; font-size: 12px; font-weight: 500; text-align: center; margin-top: 4px; color: #12343B; }
+  .app.mine .ic { background: none; overflow: visible; }
+  .app.mine img { width: 64px; height: 64px; border-radius: 15px; display: block; box-shadow: 0 6px 16px rgba(18,52,59,.3); }
+  #dockHome { position: absolute; left: 14px; right: 14px; bottom: 22px; height: 92px; border-radius: 34px; background: rgba(255,255,255,.4);
+              display: flex; justify-content: space-around; align-items: center; padding: 0 12px; }
+  #dockHome .ic { width: 62px; height: 62px; border-radius: 15px; background: rgba(255,255,255,.62); }
+
+  #app { inset: 0; background: var(--ios-bg); overflow: hidden; }
+  #nav { position: absolute; left: 0; right: 0; top: 54px; height: 46px; z-index: 12; display: flex; align-items: center; justify-content: center; }
+  .navBtn { position: absolute; top: 3px; width: 40px; height: 40px; border-radius: 50%; background: #fff; display: grid; place-items: center;
+            font-size: 19px; color: var(--ios-label); box-shadow: 0 1px 4px rgba(0,0,0,.08); }
+  #brandTitle { display: flex; align-items: center; gap: 9px; }
+  #brandTitle img { width: 32px; height: 32px; border-radius: 9px; }
+  #brandTitle .t { font-size: 17px; font-weight: 600; line-height: 20px; }
+  #navSub { font-size: 11px; line-height: 14px; color: var(--ios-secondary); display: flex; align-items: center; gap: 4px; white-space: nowrap; }
+  #navSub.on { color: var(--accent); font-weight: 600; }
+  #navSub.fail { color: #C9731B; font-weight: 600; }
+  #navSub .i { font-size: 12px; }
+
+  #content { position: absolute; left: 20px; right: 20px; top: 112px; }
+  #heading h3 { font-size: 26px; line-height: 32px; font-weight: 700; }
+  #heading .series { margin-top: 5px; font-size: 15px; color: var(--ios-secondary); }
+  #heading .meta { margin-top: 3px; font-size: 13px; color: var(--ios-secondary); }
+  #align { margin-top: 16px; height: 60px; border-radius: 16px; display: flex; align-items: center; gap: 12px; padding: 0 16px; position: relative; }
+  #align .lead { width: 26px; height: 26px; display: grid; place-items: center; font-size: 21px; }
+  #align .at { font-size: 15px; font-weight: 600; line-height: 20px; font-variant-numeric: tabular-nums; }
+  #align .as { font-size: 12px; line-height: 16px; opacity: .85; }
+  #align .redo { margin-left: auto; font-size: 15px; }
+  #locate { height: 44px; margin-top: 4px; display: flex; align-items: center; gap: 8px; font-size: 15px; color: var(--accent); }
+  #locate .i:first-child { font-size: 18px; }
+  #locate .i:last-child { margin-left: auto; font-size: 13px; stroke-width: 2.6; }
+  #txWrap { position: absolute; left: 2px; right: 2px; top: 328px; height: 440px; overflow: hidden;
+           -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 26px, #000 calc(100% - 46px), transparent 100%); }
+  .tx { position: absolute; left: 0; right: 0; top: 0; }
+  .cue { padding: 14px 18px 16px; border-radius: 22px; margin-bottom: 8px; }
+  .cue .tm { display: inline-block; font-size: 13px; font-weight: 600; color: var(--accent); background: rgba(43,99,82,.10);
+             border-radius: 999px; padding: 4px 11px; font-variant-numeric: tabular-nums; }
+  .cue p { margin-top: 8px; font-size: 18px; line-height: 27px; }
+
+  #dock { position: absolute; left: 50%; bottom: 26px; height: 68px; transform: translateX(-50%); z-index: 14; border-radius: 34px;
+          background: rgba(255,255,255,.82); box-shadow: 0 8px 28px rgba(0,0,0,.14), 0 0 0 1px rgba(255,255,255,.7) inset;
+          display: flex; align-items: center; gap: 3px; padding: 0 10px 0 18px; }
+  #dockTime { min-width: 84px; font-size: 11.5px; color: var(--ios-secondary); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  #dockTime b { color: #48484A; font-weight: 600; }
+  .tb { width: 44px; height: 52px; display: grid; place-items: center; font-size: 23px; color: var(--ios-label); border-radius: 22px; position: relative; }
+  #playBtn { width: 56px; height: 56px; border-radius: 50%; background: var(--accent); color: #fff; display: grid; place-items: center; font-size: 24px; position: relative; }
+  #playBadge { position: absolute; right: -3px; top: -3px; width: 22px; height: 22px; border-radius: 50%; background: rgba(255,255,255,.92);
+               display: grid; place-items: center; box-shadow: 0 1px 4px rgba(0,0,0,.15); }
+  #prep { position: absolute; left: 30px; right: 30px; bottom: 5px; height: 3px; border-radius: 2px; background: rgba(60,60,67,.14); overflow: hidden; }
+  #prep i { display: block; height: 100%; background: var(--accent); border-radius: 2px; }
+  .spin { width: 1em; height: 1em; display: block; }
+
+  .scrim { inset: 0; background: rgba(0,0,0,.28); z-index: 18; }
+  .alert { left: 50%; top: 50%; width: 300px; margin-left: -150px; z-index: 19; background: rgba(250,250,252,.98); border-radius: 30px;
+           padding: 22px 20px 16px; box-shadow: 0 20px 50px rgba(0,0,0,.25); transform-origin: 50% 50%; }
+  .alert h4 { font-size: 17px; font-weight: 600; line-height: 22px; }
+  .alert p { margin-top: 6px; font-size: 13px; line-height: 18px; color: #3C3C43; }
+  .alert .btns { margin-top: 16px; display: flex; gap: 10px; }
+  .alert .btns.col { flex-direction: column; gap: 8px; }
+  .alert .btns.col .b { flex: none; }
+  .alert .b { flex: 1; height: 44px; border-radius: 22px; display: grid; place-items: center; font-size: 16px; font-weight: 500;
+              background: rgba(120,120,128,.14); color: var(--ios-label); }
+  .alert .b.pri { background: var(--accent); color: #fff; font-weight: 600; }
+  .alert .tag { position: absolute; right: 16px; top: -15px; background: var(--amber); color: #fff; font-size: 12px; font-weight: 600;
+                padding: 4px 12px; border-radius: 999px; }
+
+  /* ---------- touches ---------- */
+  .touch { left: 0; top: 0; width: 0; height: 0; z-index: 60; }
+  .touch .ring { position: absolute; left: -70px; top: -70px; width: 140px; height: 140px; border-radius: 50%; border: 6px solid rgba(43,99,82,.75); }
+  .touch .tip { position: absolute; left: -36px; top: -36px; width: 72px; height: 72px; border-radius: 50%;
+                background: rgba(18,52,59,.42); border: 4px solid rgba(255,255,255,.9); box-shadow: 0 8px 22px rgba(18,52,59,.3); }
+  .float { z-index: 61; font-size: 44px; font-weight: 700; color: #fff; background: var(--accent); padding: 8px 26px; border-radius: 999px;
+           box-shadow: 0 12px 30px rgba(18,52,59,.28); white-space: nowrap; transform-origin: 50% 100%; }
+
+  /* ---------- end card ---------- */
+  #end { inset: 0; background: var(--cream); display: flex; flex-direction: column; align-items: center; }
+  #end .lock { margin-top: 96px; display: flex; align-items: center; gap: 30px; }
+  #end .lock img { width: 132px; height: 132px; border-radius: 30px; box-shadow: 0 18px 44px rgba(18,52,59,.22); }
+  #end .lock .n { font-size: 84px; font-weight: 600; letter-spacing: .06em; line-height: 1; }
+  #end .lock .s { margin-top: 14px; font-size: 30px; letter-spacing: .34em; color: var(--sage-deep); }
+  #recap { margin-top: 76px; display: flex; gap: 36px; }
+  .tile { width: 500px; height: 318px; border-radius: 40px; background: #fff; box-shadow: 0 22px 54px rgba(18,52,59,.10);
+          border: 1.5px solid rgba(143,168,154,.28); padding: 40px 42px; }
+  .tile .num { width: 68px; height: 68px; border-radius: 50%; background: var(--accent); color: #fff; font-size: 36px; font-weight: 700; display: grid; place-items: center; }
+  .tile h5 { margin-top: 28px; font-size: 44px; font-weight: 600; white-space: nowrap; }
+  .tile p { margin-top: 14px; font-size: 28px; line-height: 1.45; color: var(--muted); }
+  #end .slogan { margin-top: 70px; font-size: 46px; letter-spacing: .3em; color: var(--sage-deep); }
+  #end .fine { position: absolute; left: 0; right: 0; bottom: 46px; text-align: center; font-size: 24px; line-height: 1.7; color: #8C9C93; letter-spacing: .03em; }
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute">
+  <defs>
+    <symbol id="mic" viewBox="0 0 24 24"><rect class="f" x="8.6" y="2.6" width="6.8" height="12" rx="3.4"/><path d="M5.2 11.2a6.8 6.8 0 0 0 13.6 0M12 18v3.2M8.4 21.2h7.2"/></symbol>
+    <symbol id="check" viewBox="0 0 24 24"><circle class="f" cx="12" cy="12" r="10"/><path d="M7.4 12.4l3.1 3.1 6.1-6.6" stroke="var(--knock,#fff)" stroke-width="2.4"/></symbol>
+    <symbol id="tick" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7"/></symbol>
+    <symbol id="redo" viewBox="0 0 24 24"><path d="M20 12a8 8 0 1 1-2.5-5.8M20 3.6v4.8h-4.8"/></symbol>
+    <symbol id="back" viewBox="0 0 24 24"><path d="M4 12a8 8 0 1 0 2.5-5.8M4 3.6v4.8h4.8"/></symbol>
+    <symbol id="fwd" viewBox="0 0 24 24"><path d="M20 12a8 8 0 1 1-2.5-5.8M20 3.6v4.8h-4.8"/></symbol>
+    <symbol id="play" viewBox="0 0 24 24"><path class="f" d="M8.2 5.2v13.6c0 .7.8 1.1 1.4.8l10.6-6.8a.9.9 0 0 0 0-1.6L9.6 4.4c-.6-.3-1.4.1-1.4.8z"/></symbol>
+    <symbol id="pause" viewBox="0 0 24 24"><rect class="f" x="6.4" y="5" width="4.2" height="14" rx="1.3"/><rect class="f" x="13.4" y="5" width="4.2" height="14" rx="1.3"/></symbol>
+    <symbol id="glass" viewBox="0 0 24 24"><circle cx="10.6" cy="10.6" r="6.4"/><path d="M15.4 15.4l5 5"/></symbol>
+    <symbol id="tglass" viewBox="0 0 24 24"><path d="M3 6h9M3 11h5M3 16h6"/><circle cx="15.4" cy="13" r="4.4"/><path d="M18.6 16.2l2.9 2.9"/></symbol>
+    <symbol id="chev" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></symbol>
+    <symbol id="arrow" viewBox="0 0 24 24"><path d="M4 12h15M13 6l6 6-6 6"/></symbol>
+    <symbol id="phones" viewBox="0 0 24 24"><path d="M4.5 15v-2.6a7.5 7.5 0 0 1 15 0V15"/><rect class="f" x="3.2" y="13.6" width="4.4" height="6.6" rx="1.8"/><rect class="f" x="16.4" y="13.6" width="4.4" height="6.6" rx="1.8"/></symbol>
+    <symbol id="list" viewBox="0 0 24 24"><path d="M8.5 7h11M8.5 12h11M8.5 17h11"/><circle class="f" cx="4.6" cy="7" r="1.2"/><circle class="f" cx="4.6" cy="12" r="1.2"/><circle class="f" cx="4.6" cy="17" r="1.2"/></symbol>
+    <symbol id="dots" viewBox="0 0 24 24"><circle class="f" cx="5.5" cy="12" r="1.7"/><circle class="f" cx="12" cy="12" r="1.7"/><circle class="f" cx="18.5" cy="12" r="1.7"/></symbol>
+    <symbol id="spk" viewBox="0 0 24 24"><path class="f" d="M3.4 9.4h3.2l4.6-3.9c.5-.4 1.2 0 1.2.6v11.8c0 .6-.7 1-1.2.6l-4.6-3.9H3.4a.9.9 0 0 1-.9-.9v-3.4c0-.5.4-.9.9-.9z"/><path d="M15.8 9.2a4 4 0 0 1 0 5.6M18.4 6.6a7.6 7.6 0 0 1 0 10.8"/></symbol>
+    <symbol id="lock" viewBox="0 0 24 24"><rect class="f" x="5" y="10.6" width="14" height="10" rx="2.6"/><path d="M8.2 10.6V8a3.8 3.8 0 0 1 7.6 0v2.6"/></symbol>
+    <symbol id="sun" viewBox="0 0 24 24"><rect x="3.6" y="5" width="16.8" height="15.4" rx="3"/><path d="M3.6 10h16.8M8 3v4M16 3v4"/></symbol>
+    <symbol id="wifi" viewBox="0 0 24 24"><path d="M3 9.5a13 13 0 0 1 18 0M6.2 13a8.4 8.4 0 0 1 11.6 0M9.4 16.4a3.8 3.8 0 0 1 5.2 0"/><circle class="f" cx="12" cy="19.4" r="1.3"/></symbol>
+    <symbol id="warn" viewBox="0 0 24 24"><path d="M12 4.2L21 19.4H3z"/><path d="M12 10.2v4.4M12 17.2v.2"/></symbol>
+    <symbol id="hand" viewBox="0 0 24 24"><path d="M8.5 13V5.4a1.7 1.7 0 0 1 3.4 0V11m0-1.2a1.7 1.7 0 0 1 3.4 0V11m0-.4a1.7 1.7 0 0 1 3.4 0v4.6c0 3.4-2.4 5.8-5.8 5.8-2.6 0-4-1-5.4-3.2l-2.8-4.4a1.6 1.6 0 0 1 2.6-1.8l1.2 1.4"/></symbol>
+  </defs>
+</svg>
+
+<div id="stage">
+  <div id="blobA"></div><div id="blobB"></div>
+
+  <!-- persistent chrome -->
+  <div id="brand" class="abs"><img src="../Branding/Logo-source.png" alt=""><div>同行</div><span>主日现场使用指引</span></div>
+  <div id="stepper" class="abs">
+    <div class="step" data-n="1"><i>1</i>打开同行</div><div class="stepLink"></div>
+    <div class="step" data-n="2"><i>2</i>听现场并对齐</div><div class="stepLink"></div>
+    <div class="step" data-n="3"><i>3</i>前后微调</div>
+  </div>
+  <div id="note" class="abs">示意动画 · 界面与文案以实际 App 为准 · 示例字幕非本周内容</div>
+
+  <!-- left panels -->
+  <div class="panel abs" id="p1">
+    <div class="chip">第 1 步</div>
+    <h2>到了现场，打开<em>「同行」</em></h2>
+    <div class="lines">
+      <div class="line" data-at="1.3"><span class="dot"><svg class="i"><use href="#phones"/></svg></span>戴好耳机</div>
+      <div class="line" data-at="3.4"><span class="dot"><svg class="i"><use href="#tick"/></svg></span>本周证道会自动准备好</div>
+      <div class="line small" data-at="4.6"><span class="dot"><svg class="i"><use href="#wifi"/></svg></span>首次打开需要联网</div>
+    </div>
+  </div>
+  <div class="panel abs" id="p2a">
+    <div class="chip">第 2 步</div>
+    <h2>点一下<em>「听现场并对齐」</em></h2>
+    <div class="lines">
+      <div class="line" data-at="1.0"><span class="dot"><svg class="i"><use href="#hand"/></svg></span>现场证道开始后，点页面上的<b>绿色按钮</b></div>
+      <div class="line" data-at="4.0"><span class="dot"><svg class="i"><use href="#mic"/></svg></span>首次使用，请<b>允许</b>麦克风</div>
+    </div>
+  </div>
+  <div class="panel abs" id="p2b">
+    <div class="chip">第 2 步</div>
+    <h2>让 App 听 <em>7–15 秒</em></h2>
+    <div class="lines">
+      <div class="line" data-at="0.9"><span class="dot"><svg class="i"><use href="#hand"/></svg></span>App 留在前台，先别锁屏</div>
+      <div class="line" data-at="2.6"><span class="dot"><svg class="i"><use href="#lock"/></svg></span>声音只在手机里比对，<b>不保存、不上传</b></div>
+    </div>
+  </div>
+  <div class="panel abs" id="p2c">
+    <div class="chip">第 2 步</div>
+    <h2>对上了，<em>中文自动播放</em></h2>
+    <div class="lines">
+      <div class="line" data-at="0.9"><span class="dot"><svg class="i"><use href="#tick"/></svg></span>按钮变成<b>「已对齐」</b>并显示时间</div>
+      <div class="line" data-at="2.6"><span class="dot"><svg class="i"><use href="#phones"/></svg></span>中文从现场这一句接着播</div>
+      <div class="line small" data-at="4.6"><span class="dot"><svg class="i"><use href="#redo"/></svg></span>之后又对不上了？再点一次重新对齐</div>
+    </div>
+  </div>
+  <div class="panel abs" id="p3">
+    <div class="chip">第 3 步</div>
+    <h2>差一点？<em>前后微调</em></h2>
+    <div class="lines">
+      <div class="line" data-at="1.0"><span class="dot"><svg class="i"><use href="#back"/></svg></span>中文<b>抢先</b>了 → 点左边，后退 1 秒</div>
+      <div class="line" data-at="5.6"><span class="dot"><svg class="i"><use href="#fwd"/></svg></span>中文<b>落后</b>了 → 点右边，前进 1 秒</div>
+      <div class="line small" data-at="7.4"><span class="dot"><svg class="i"><use href="#glass"/></svg></span>更细的调整：点放大镜 →「定位 / 精调」</div>
+    </div>
+  </div>
+  <div class="panel abs" id="p4">
+    <div class="chip tip">小提示</div>
+    <h2>没对上？<em>不要紧</em></h2>
+    <div class="lines">
+      <div class="line" data-at="1.0"><span class="dot"><svg class="i"><use href="#redo"/></svg></span>让手机离现场声音近一些，点<b>「重试对齐」</b></div>
+      <div class="line" data-at="2.9"><span class="dot"><svg class="i"><use href="#tglass"/></svg></span>或点<b>「按英文找位置」</b>手动定位</div>
+      <div class="line small" data-at="4.5"><span class="dot"><svg class="i"><use href="#mic"/></svg></span>不开麦克风，也可以手动收听和定位</div>
+    </div>
+  </div>
+
+  <!-- explainer cards -->
+  <div class="card abs" id="venue">
+    <div class="scene">
+      <div class="screen"></div><div class="live">LIVE</div>
+      <svg class="abs" style="left:0;top:0" width="420" height="262" viewBox="0 0 420 262">
+        <g fill="#12343B"><circle cx="210" cy="112" r="15"/><path d="M186 166c0-17 10-30 24-30s24 13 24 30z"/></g>
+        <rect x="196" y="160" width="28" height="44" rx="4" fill="#27555C"/>
+        <g fill="#27555C"><rect x="22" y="96" width="34" height="108" rx="6"/><rect x="364" y="96" width="34" height="108" rx="6"/></g>
+        <g fill="#0E2B31"><circle cx="39" cy="122" r="9"/><circle cx="39" cy="166" r="12"/><circle cx="381" cy="122" r="9"/><circle cx="381" cy="166" r="12"/></g>
+        <g id="venueArcs" fill="none" stroke="#ADD1BF" stroke-width="4" stroke-linecap="round"></g>
+      </svg>
+      <div class="floor"></div>
+    </div>
+    <div class="info"><h3>现场：英文证道</h3><p>耳机里听同行的中文，<br>进度要和现场对上</p></div>
+  </div>
+
+  <div class="card abs" id="match">
+    <div class="cardRow">
+      <div class="cardLabel"><svg class="i"><use href="#mic"/></svg>现场声音</div>
+      <div id="bars"></div>
+      <div class="pill" id="heard">已听 0 秒</div>
+    </div>
+    <div class="divider"></div>
+    <div class="cardRow" style="margin-top:42px">
+      <div class="cardLabel"><svg class="i"><use href="#tglass"/></svg>本周证道</div>
+      <div id="track"><div id="ticks"></div><div id="scan"></div><div id="flag">12:34</div>
+        <div class="ends" style="left:0">00:00</div><div class="ends" style="right:0">32:47</div></div>
+    </div>
+    <div class="cardHint" style="margin-top:22px" id="matchHint">在这篇证道的声音指纹里，找现场正在讲的位置</div>
+  </div>
+
+  <div class="card abs" id="pair">
+    <div class="cardRow en"><div class="cardLabel"><svg class="i"><use href="#spk"/></svg>现场英文</div><div class="txt" id="pairEn"></div></div>
+    <div class="divider"></div>
+    <div class="cardRow zh"><div class="cardLabel"><svg class="i"><use href="#phones"/></svg>耳机中文</div><div class="txt" id="pairZh"></div></div>
+  </div>
+
+  <div class="card abs" id="lanes">
+    <div class="cardRow"><div class="cardLabel"><svg class="i"><use href="#spk"/></svg>现场英文</div><div class="lane"><div class="blocks" id="laneEn"></div></div></div>
+    <div class="cardRow" style="margin-top:16px"><div class="cardLabel"><svg class="i"><use href="#phones"/></svg>耳机中文</div><div class="lane"><div class="blocks" id="laneZh"></div></div></div>
+    <div class="abs" id="nowWrap" style="left:0;top:30px;height:140px;width:0"><div id="nowLine"></div></div>
+    <div class="cardRow" style="margin-top:20px"><div class="cardHint" id="laneHint">同一句话，中文比现场早了一拍</div><div class="pill warn" id="lanePill">中文抢先 1 秒</div></div>
+  </div>
+
+  <!-- phone -->
+  <div id="phone" class="abs">
+    <div id="screen">
+      <div id="home" class="abs">
+        <div id="grid"></div>
+        <div id="dockHome"><div class="ic"></div><div class="ic"></div><div class="ic"></div><div class="ic"></div></div>
+      </div>
+      <div id="app" class="abs">
+        <div id="nav">
+          <div class="navBtn" style="left:16px"><svg class="i"><use href="#list"/></svg></div>
+          <div id="brandTitle"><img src="../Branding/Logo-light-source.png" alt="">
+            <div><div class="t">同行</div><div id="navSub">证道中文听译</div></div></div>
+          <div class="navBtn" style="right:16px"><svg class="i"><use href="#dots"/></svg></div>
+        </div>
+        <div id="content">
+          <div id="heading"><h3>葡萄树与枝子</h3><div class="series">示例证道 · 约翰福音 15 章</div><div class="meta">11月15日 · 示例讲员</div></div>
+          <div id="align"><div class="lead" id="alignLead"></div><div><div class="at" id="alignTitle"></div><div class="as" id="alignSub"></div></div>
+            <svg class="i redo" id="alignRedo"><use href="#redo"/></svg></div>
+          <div id="locate"><svg class="i"><use href="#tglass"/></svg>没跟上现场？按英文找位置<svg class="i"><use href="#chev"/></svg></div>
+        </div>
+        <div id="txWrap"><div class="tx" id="txEarly"></div><div class="tx" id="txLive"></div></div>
+        <div id="dock">
+          <div id="dockTime"></div>
+          <div class="tb" id="btnBack"><svg class="i"><use href="#back"/></svg></div>
+          <div id="playBtn"><svg class="i" id="playIcon"><use href="#play"/></svg><div id="playBadge"></div></div>
+          <div class="tb" id="btnFwd"><svg class="i"><use href="#fwd"/></svg></div>
+          <div class="tb" id="btnMore"><svg class="i"><use href="#glass"/></svg></div>
+          <div id="prep"><i></i></div>
+        </div>
+        <div class="scrim abs" id="scrim"></div>
+        <div class="alert abs" id="micAlert"><div class="tag">仅首次出现</div>
+          <h4>“同行”想访问麦克风</h4>
+          <p>点击“听音对齐”后，同行会聆听 7 至 15 秒声音（声音清楚时提前结束），在同一证道录音中查找播放位置。声音仅在本机内存中处理，不保存、不上传。</p>
+          <div class="btns"><div class="b">不允许</div><div class="b pri" id="allowBtn">允许</div></div>
+        </div>
+        <div class="alert abs" id="failAlert">
+          <h4>听音对齐未完成</h4><p>未能取得有效声音，请重试。</p>
+          <div class="btns col"><div class="b" id="locateBtn">按英文找位置</div><div class="b" id="retryBtn">重试对齐</div><div class="b">关闭</div></div>
+        </div>
+      </div>
+      <div id="status"><div class="time">10:12</div>
+        <div class="sys"><i style="width:3px;height:5px"></i><i style="width:3px;height:7px"></i><i style="width:3px;height:9px"></i><i style="width:3px;height:11px"></i>
+          <i style="width:24px;height:11px;border-radius:3.5px;margin-left:5px;opacity:.9"></i></div></div>
+      <div id="island"></div>
+      <div id="homeBar"></div>
+    </div>
+  </div>
+
+  <!-- title + end -->
+  <div id="title" class="abs">
+    <img src="../Branding/Logo-source.png" alt="">
+    <div class="kicker">同行 · 证道中文听译</div>
+    <h1>每个主日，三步跟上现场</h1>
+    <div class="sub"><span>打开 App</span><svg class="i arrow"><use href="#arrow"/></svg><b>点「听现场并对齐」</b><svg class="i arrow"><use href="#arrow"/></svg><span>前后微调</span></div>
+  </div>
+  <div id="end" class="abs">
+    <div class="lock"><img src="../Branding/Logo-source.png" alt=""><div><div class="n">同行</div><div class="s">证道中文听译</div></div></div>
+    <div id="recap">
+      <div class="tile"><div class="num">1</div><h5>打开同行</h5><p>到了现场，戴好耳机<br>本周证道自动准备好</p></div>
+      <div class="tile"><div class="num">2</div><h5>点「听现场并对齐」</h5><p>让 App 听 7–15 秒<br>对上后中文自动播放</p></div>
+      <div class="tile"><div class="num">3</div><h5>前后微调</h5><p>抢先就后退 1 秒<br>落后就前进 1 秒</p></div>
+    </div>
+    <div class="slogan">一起听懂，一路同行。</div>
+    <div class="fine">示意动画，界面与文案以实际 App 为准 · 听音对齐只匹配本周已发布的这篇证道，效果受现场声音影响<br>AI 合成中文配音与整理文字 · 独立个人项目</div>
+  </div>
+
+  <div id="touches"></div>
+</div>
+
+<script>
+'use strict';
+/* Every visual is a pure function of time: renderAt(t) may be called for any t, in any order. */
+const $ = id => document.getElementById(id);
+const clamp = (x, a = 0, b = 1) => Math.max(a, Math.min(b, x));
+const prog = (t, a, b) => clamp((t - a) / (b - a));
+const eo = x => 1 - Math.pow(1 - x, 3);
+const eio = x => x < .5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2;
+const pop = x => { const c = 1.70158; return 1 + (c + 1) * Math.pow(x - 1, 3) + c * Math.pow(x - 1, 2); };
+const lerp = (a, b, x) => a + (b - a) * x;
+const vis = (t, a, b, din = .55, dout = .4) => Math.min(eo(prog(t, a, a + din)), 1 - eo(prog(t, b - dout, b)));
+const rnd = i => { const x = Math.sin(i * 127.1 + 311.7) * 43758.5453; return x - Math.floor(x); };
+const fmt = s => { s = Math.max(0, Math.floor(s)); return String(Math.floor(s / 60)).padStart(2, '0') + ':' + String(s % 60).padStart(2, '0'); };
+const icon = (id, extra = '') => `<svg class="i" ${extra}><use href="#${id}"/></svg>`;
+
+const DURATION = 65, FPS = 30;
+const S = {            // scene windows, seconds
+  title: [0, 4.7], s1: [4.7, 13.3], s2a: [13.3, 21.3], s2b: [21.3, 31.3], s2c: [31.3, 40.4],
+  s3: [40.4, 51.6], s4: [51.6, 58.2], end: [58.2, DURATION],
+};
+const E = {            // events, seconds
+  tapIcon: 6.7, launched: 7.5, prepared: 9.7,
+  tapAlign: 16.4, micIn: 16.9, tapAllow: 19.2, listen: 19.7,
+  matching: 29.3, locked: 30.4, playing: 30.7,
+  tapBack: 46.2, failState: 51.9,
+};
+const DUR = 1967, ALIGNED = 754;                       // 32:47 and 12:34
+const LIVE = [
+  [741, '你们要常在我里面，我也常在你们里面。', 'Remain in me, and I in you.'],
+  [748, '枝子若不常在葡萄树上，自己就不能结果子；', 'As the branch can’t bear fruit by itself…'],
+  [754, '你们若不常在我里面，也是这样。', '…so neither can you, unless you remain in me.'],
+  [761, '我是葡萄树，你们是枝子。', 'I am the vine. You are the branches.'],
+  [767, '常在我里面的，我也常在他里面，', 'He who remains in me, and I in him,'],
+  [772, '这人就多结果子；', 'bears much fruit,'],
+  [777, '因为离了我，你们就不能做什么。', 'for apart from me you can do nothing.'],
+  [785, '人若不常在我里面，就像枝子丢在外面枯干，', 'If a man doesn’t remain in me…'],
+  [793, '人拾起来，扔在火里烧了。', '…they gather them, throw them into the fire.'],
+];
+const EARLY = [[0, '各位平安，欢迎来到今天的聚会。'], [6, '请大家翻到约翰福音第十五章。'],
+               [13, '今天我们一起来看葡萄树与枝子的比喻。'], [21, '先来读第一节到第八节。']];
+
+/* ---------- one-time DOM construction ---------- */
+const cueHTML = ([s, zh]) => `<div class="cue"><span class="tm">${fmt(s)}</span><p>${zh}</p></div>`;
+$('txEarly').innerHTML = EARLY.map(cueHTML).join('');
+$('txLive').innerHTML = LIVE.map(cueHTML).join('');
+$('grid').innerHTML = Array.from({ length: 20 }, (_, i) => i === 6
+  ? `<div class="app mine" id="txIcon"><div class="ic"><img src="../Branding/Logo-source.png" alt=""></div><div class="lb">同行</div></div>`
+  : `<div class="app"><div class="ic" style="background:rgba(255,255,255,${(.34 + rnd(i) * .3).toFixed(2)})"></div><div class="lb"></div></div>`).join('');
+$('bars').innerHTML = '<i></i>'.repeat(44);
+$('ticks').innerHTML = Array.from({ length: 110 }, (_, i) => `<i style="height:${Math.round(22 + rnd(i + 9) * 78)}%"></i>`).join('');
+$('pairEn').innerHTML = LIVE.map(c => `<span>${c[2]}</span>`).join('');
+$('pairZh').innerHTML = LIVE.map(c => `<span>${c[1]}</span>`).join('');
+const laneBlocks = () => Array.from({ length: 14 }, (_, i) =>
+  `<i style="left:${i * 168}px;width:150px;background:${['#2B6352', '#5E8F7C', '#8FA89A'][i % 3]}">${(i % 9) + 1}</i>`).join('');
+$('laneEn').innerHTML = laneBlocks(); $('laneZh').innerHTML = laneBlocks();
+$('venueArcs').innerHTML = Array.from({ length: 6 }, (_, i) => `<path data-k="${i}"/>`).join('');
+const spinner = (color = '#8E8E93') => `<svg class="spin" viewBox="0 0 24 24">${Array.from({ length: 8 }, (_, i) =>
+  `<rect x="11" y="2.4" width="2" height="6" rx="1" fill="${color}" opacity="${(.25 + .75 * i / 7).toFixed(2)}" transform="rotate(${i * 45} 12 12)"/>`).join('')}</svg>`;
+
+const touchDefs = [
+  { t: E.tapIcon, el: 'txIcon' }, { t: E.tapAlign, el: 'align' }, { t: E.tapAllow, el: 'allowBtn' }, { t: E.tapBack, el: 'btnBack' },
+];
+$('touches').innerHTML = touchDefs.map((_, i) => `<div class="touch abs" id="touch${i}"><div class="ring"></div><div class="tip"></div></div>`).join('')
+  + `<div class="float abs" id="floatBack">−1 秒</div>`;
+
+const LAUNCH = [$('grid').offsetLeft + $('txIcon').offsetLeft + 32, $('grid').offsetTop + $('txIcon').offsetTop + 32];
+document.querySelectorAll('.line').forEach(l => {   // keep the sentence one inline run next to its bullet
+  const say = document.createElement('span'); [...l.childNodes].slice(1).forEach(n => say.appendChild(n)); l.appendChild(say); });
+const PANELS = [['p1', S.s1], ['p2a', S.s2a], ['p2b', S.s2b], ['p2c', S.s2c], ['p3', S.s3], ['p4', S.s4]];
+const stage = $('stage');
+let lastHTML = {};
+const html = (id, v) => { if (lastHTML[id] !== v) { lastHTML[id] = v; $(id).innerHTML = v; } };
+const show = (el, o, extra = '') => { el.style.opacity = o.toFixed(3); el.style.visibility = o <= 0.001 ? 'hidden' : 'visible'; if (extra !== null) el.style.transform = extra; };
+
+/* camera: phone-local focus point (fx, fy) is pinned to the frame anchor at scale s */
+const CAM = [
+  { a: 0, b: 0, fx: 208, fy: 438, s: 1.12, ax: 1440 },
+  { a: 12.6, b: 14.0, fx: 208, fy: 292, s: 1.74, ax: 1440 },
+  { a: 16.6, b: 17.4, fx: 208, fy: 346, s: 1.6, ax: 1440 },    // room for the permission alert
+  { a: 19.5, b: 20.6, fx: 208, fy: 292, s: 1.74, ax: 1440 },
+  { a: 30.9, b: 32.3, fx: 208, fy: 430, s: 1.2, ax: 1440 },
+  { a: 40.0, b: 41.4, fx: 208, fy: 622, s: 1.74, ax: 1440 },
+  { a: 51.4, b: 52.4, fx: 208, fy: 345, s: 1.5, ax: 1440 },
+];
+function camAt(t) {
+  let c = CAM[0];
+  for (let i = 1; i < CAM.length; i++) {
+    const k = CAM[i];
+    if (t >= k.b) { c = k; continue; }
+    if (t > k.a) { const x = eio(prog(t, k.a, k.b)); c = { fx: lerp(c.fx, k.fx, x), fy: lerp(c.fy, k.fy, x), s: lerp(c.s, k.s, x), ax: lerp(c.ax, k.ax, x) }; }
+    break;
+  }
+  return c;
+}
+
+function liveIndex(pos) { let k = 0; for (let i = 0; i < LIVE.length; i++) if (pos >= LIVE[i][0]) k = i; return k; }
+
+function renderAt(t) {
+  t = clamp(t, 0, DURATION);
+  const inSteps = vis(t, S.s1[0] - .1, S.s4[1], .6, .5);
+
+  /* backdrop drift */
+  $('blobA').style.transform = `translate(${Math.sin(t * .11) * 40}px, ${Math.cos(t * .09) * 30}px)`;
+  $('blobB').style.transform = `translate(${Math.cos(t * .08) * 36}px, ${Math.sin(t * .1) * 26}px)`;
+
+  /* title */
+  { const o = vis(t, 0.15, S.title[1], .7, .5); const tt = $('title'); show(tt, o, null);
+    tt.querySelector('img').style.transform = `scale(${lerp(.82, 1, pop(prog(t, .15, .95)))})`;
+    const k = tt.querySelector('.kicker'), h = tt.querySelector('h1'), s = tt.querySelector('.sub');
+    [[k, .55], [h, .8], [s, 1.5]].forEach(([el, a]) => { const p = eo(prog(t, a, a + .7)); el.style.opacity = p; el.style.transform = `translateY(${(1 - p) * 26}px)`; }); }
+
+  /* chrome */
+  show($('brand'), inSteps, null); show($('note'), inSteps * .95, null); show($('stepper'), inSteps, null);
+  const active = t < S.s2a[0] ? 1 : t < S.s3[0] ? 2 : t < S.s4[0] ? 3 : 4;
+  document.querySelectorAll('.step').forEach(el => {
+    const n = +el.dataset.n, on = n === active, done = n < active;
+    el.style.background = on ? 'var(--accent)' : 'rgba(255,255,255,.55)';
+    el.style.color = on ? '#fff' : done ? 'var(--accent)' : 'var(--muted)';
+    el.style.borderColor = on ? 'var(--accent)' : 'rgba(143,168,154,.35)';
+    const b = el.querySelector('i'); b.style.background = on ? 'rgba(255,255,255,.22)' : done ? 'var(--accent)' : 'rgba(143,168,154,.3)';
+    b.style.color = on || done ? '#fff' : 'var(--ink)';
+    const want = done ? icon('tick') : String(n); if (b.dataset.v !== want) { b.dataset.v = want; b.innerHTML = want; }
+  });
+
+  /* panels */
+  for (const [id, [a, b]] of PANELS) {
+    const el = $(id), o = vis(t, a, b, .5, .35); show(el, o, `translateY(${(1 - eo(prog(t, a, a + .6))) * 30}px)`);
+    el.querySelectorAll('.line').forEach(l => { const at = a + (+l.dataset.at); const p = eo(prog(t, at, at + .55)); l.style.opacity = p; l.style.transform = `translateX(${(1 - p) * -28}px)`; });
+  }
+
+  /* ---------- phone state ---------- */
+  const cam = camAt(t);
+  const slideIn = eo(prog(t, S.s1[0] - .25, S.s1[0] + .85)), slideOut = eio(prog(t, S.s4[1] - .45, S.s4[1] + .25));
+  const ax = cam.ax + (1 - slideIn) * 900 + slideOut * 900;
+  const failFlip = 1 - 2 * Math.abs(prog(t, E.failState - .35, E.failState + .35) - .5);   // dip to 0 and back around the state swap
+  const phone = $('phone');
+  phone.style.transform = `translate(${ax - cam.fx * cam.s}px, ${540 - cam.fy * cam.s}px) scale(${cam.s})`;
+  phone.style.opacity = (t < S.s1[0] - .25 || t > S.s4[1] + .25 ? 0 : 1 - .9 * (t > E.failState - .35 && t < E.failState + .35 ? 1 - failFlip : 0)).toFixed(3);
+
+  const failed = t >= E.failState;
+  const launch = eio(prog(t, E.tapIcon + .12, E.launched));
+  const app = $('app');
+  app.style.opacity = prog(launch, 0, .35).toFixed(3); app.style.visibility = launch <= 0 ? 'hidden' : 'visible';
+  app.style.transformOrigin = `${LAUNCH[0]}px ${LAUNCH[1]}px`;
+  app.style.transform = `scale(${lerp(.17, 1, launch)})`; app.style.borderRadius = `${lerp(90, 0, launch)}px`;
+  $('home').style.transform = `scale(${lerp(1, 1.12, launch)})`;
+  $('status').style.color = '#12343B';
+
+  const busy = !failed && t >= E.tapAlign && t < E.locked, aligned = !failed && t >= E.locked;
+  const offset = t >= E.tapBack ? -1 : 0;
+  const pos = aligned ? ALIGNED + Math.max(0, t - E.playing) + offset * eo(prog(t, E.tapBack, E.tapBack + .2)) : 0;
+  const playing = aligned && t >= E.playing;
+
+  /* nav subtitle */
+  const sub = $('navSub');
+  let subHTML = '证道中文听译', subCls = '';
+  if (failed) { subHTML = icon('warn') + '听音对齐未完成'; subCls = 'fail'; }
+  else if (busy) { const label = t < E.listen ? '正在准备对齐' : t < E.matching ? '正在听现场 · 保持前台' : '正在本机匹配';
+    subHTML = `<span class="rot" style="font-size:11px">${spinner('#2B6352')}</span>${label}`; subCls = 'on'; }
+  else if (aligned && t < E.locked + 8) { subHTML = icon('check') + '已对齐'; subCls = 'on'; }
+  html('navSub', subHTML); sub.className = subCls;
+
+  /* alignment entry */
+  const al = $('align');
+  if (busy) { al.style.background = 'var(--accent)'; al.style.color = '#fff'; html('alignLead', `<span class="rot" style="font-size:20px">${spinner('#fff')}</span>`);
+    html('alignTitle', '取消对齐'); html('alignSub', '正在聆听现场…'); $('alignRedo').style.display = 'none'; }
+  else if (aligned) { al.style.background = 'rgba(43,99,82,.12)'; al.style.color = 'var(--accent)'; html('alignLead', icon('check'));
+    html('alignTitle', '已对齐 ' + fmt(ALIGNED)); html('alignSub', '点按重新对齐'); $('alignRedo').style.display = ''; }
+  else { al.style.background = 'var(--accent)'; al.style.color = '#fff'; html('alignLead', icon('mic'));
+    html('alignTitle', '听现场并对齐'); html('alignSub', '跟着现场自动对到当前句'); $('alignRedo').style.display = 'none'; }
+  const pulse = t > 14.3 && t < E.tapAlign ? .5 + .5 * Math.sin((t - 14.3) * Math.PI * 2 / 1.05 - Math.PI / 2) : 0;
+  const press = 1 - .04 * (1 - Math.abs(prog(t, E.tapAlign - .08, E.tapAlign + .22) * 2 - 1));
+  const okFlash = aligned ? 1 - eo(prog(t, E.locked, E.locked + 1.1)) : 0;
+  al.style.transform = `scale(${press + okFlash * .03})`;
+  al.style.boxShadow = pulse > 0 ? `0 0 0 ${3 + pulse * 7}px rgba(43,99,82,${.34 - pulse * .2})` : okFlash > 0 ? `0 0 0 ${(1 - okFlash) * 22}px rgba(43,99,82,${okFlash * .35})` : 'none';
+  document.querySelectorAll('.rot svg').forEach(s => { s.style.transform = `rotate(${Math.floor(t * 9) % 8 * 45}deg)`; });
+
+  /* transcript */
+  const jump = failed ? 0 : eio(prog(t, E.locked, E.locked + .45));
+  const early = $('txEarly'), live = $('txLive');
+  early.style.opacity = (1 - jump).toFixed(3); live.style.opacity = jump.toFixed(3);
+  const ecues = early.children, lcues = live.children;
+  for (let i = 0; i < ecues.length; i++) ecues[i].style.background = 'transparent';
+  const k = liveIndex(pos);
+  let scrollTo = 0;
+  for (let i = 0; i < lcues.length; i++) {
+    const on = aligned && i === k; lcues[i].style.background = on ? 'rgba(43,99,82,.13)' : 'transparent';
+  }
+  if (aligned) {
+    const top = i => lcues[Math.max(0, i)].offsetTop;
+    const target = i => Math.max(0, top(i) - 96);
+    const since = pos - LIVE[k][0];
+    scrollTo = k > 0 ? lerp(target(k - 1), target(k), eio(clamp(since / .6))) : target(0);
+    if (t < E.locked + .01) scrollTo = target(2);
+  }
+  live.style.transform = `translateY(${-scrollTo}px)`;
+
+  /* dock */
+  const prepP = prog(t, E.launched + .3, E.prepared);
+  const preparing = !failed && t < E.prepared;
+  html('dockTime', preparing ? '正在准备音频…' : `<b>${fmt(pos)}</b>/${fmt(DUR)}`);
+  $('prep').style.display = preparing ? '' : 'none'; $('prep').firstElementChild.style.width = (eio(prepP) * 100).toFixed(1) + '%';
+  const pb = $('playBtn'); pb.style.opacity = preparing ? .5 : 1;
+  html('playIcon', `<use href="#${playing ? 'pause' : 'play'}"/>`);
+  const badge = $('playBadge'); badge.style.display = busy ? '' : 'none'; html('playBadge', `<span class="rot" style="font-size:13px">${spinner('#3C3C43')}</span>`);
+  const bb = $('btnBack'), bf = $('btnFwd'), bm = $('btnMore');
+  const ringOf = (a, b) => t > a && t < b ? .5 + .5 * Math.sin((t - a) * Math.PI * 2 / 1.0 - Math.PI / 2) : -1;
+  const ring = (el, v, c = '43,99,82') => { el.style.boxShadow = v >= 0 ? `0 0 0 ${2 + v * 4}px rgba(${c},${.55 - v * .3})` : 'none'; el.style.background = v >= 0 ? `rgba(${c},.10)` : 'transparent'; };
+  ring(bb, ringOf(S.s3[0] + 1.6, E.tapBack + .1)); ring(bf, ringOf(S.s3[0] + 6.2, S.s3[0] + 8.0)); ring(bm, ringOf(S.s3[0] + 8.2, S.s3[0] + 10.6));
+  bb.style.transform = `scale(${1 - .12 * (1 - Math.abs(prog(t, E.tapBack - .08, E.tapBack + .24) * 2 - 1))})`;
+
+  /* alerts */
+  const micO = Math.min(eo(prog(t, E.micIn, E.micIn + .35)), 1 - eo(prog(t, E.tapAllow + .15, E.tapAllow + .45)));
+  const failO = failed ? eo(prog(t, E.failState + .45, E.failState + .8)) : 0;
+  const scr = $('scrim'); show(scr, Math.max(micO, failO), null);
+  const ma = $('micAlert'); show(ma, micO, `translateY(-50%) scale(${lerp(1.12, 1, micO)})`);
+  const fa = $('failAlert'); show(fa, failO, `translateY(-50%) scale(${lerp(1.12, 1, failO)})`);
+  $('allowBtn').style.transform = `scale(${1 - .06 * (1 - Math.abs(prog(t, E.tapAllow - .08, E.tapAllow + .22) * 2 - 1))})`;
+  const hl = (el, a, b) => { const v = ringOf(a, b); el.style.boxShadow = v >= 0 ? `0 0 0 ${2 + v * 4}px rgba(43,99,82,${.6 - v * .3})` : 'none'; el.style.background = v >= 0 ? 'rgba(43,99,82,.14)' : ''; };
+  hl($('retryBtn'), S.s4[0] + 1.4, S.s4[0] + 3.2); hl($('locateBtn'), S.s4[0] + 3.3, S.s4[0] + 5.3);
+
+  /* ---------- explainer cards ---------- */
+  { const o = vis(t, S.s1[0] + .9, S.s2a[1] - .1, .6, .4); show($('venue'), o, `translateY(${(1 - eo(prog(t, S.s1[0] + .9, S.s1[0] + 1.6))) * 40}px)`);
+    document.querySelectorAll('#venueArcs path').forEach(p => { const i = +p.dataset.k, side = i < 3 ? -1 : 1, j = i % 3;
+      const ph = ((t * .55 + j / 3) % 1), r = 16 + ph * 56, cx = side < 0 ? 62 : 358, cy = 144;
+      const a0 = side < 0 ? -40 : 220, a1 = side < 0 ? 40 : 140, rad = d => d * Math.PI / 180;
+      p.setAttribute('d', `M${cx + r * Math.cos(rad(a0))} ${cy + r * Math.sin(rad(a0))}A${r} ${r} 0 0 ${side < 0 ? 1 : 0} ${cx + r * Math.cos(rad(a1))} ${cy + r * Math.sin(rad(a1))}`);
+      p.style.opacity = (Math.sin(ph * Math.PI) * .9).toFixed(3); }); }
+
+  { const a = S.s2b[0] + .2, b = S.s2b[1] + .1, o = vis(t, a, b, .6, .4); show($('match'), o, `translateY(${(1 - eo(prog(t, a, a + .7))) * 40}px)`);
+    const listening = t >= E.listen && t < E.matching, locked = t >= E.locked;
+    const bars = $('bars').children;
+    for (let i = 0; i < bars.length; i++) {
+      const env = listening ? 1 : t < E.listen ? 0 : .12;
+      const v = .12 + .88 * Math.abs(Math.sin(t * 5.3 + i * .9) * Math.sin(t * 2.1 + i * .37) * Math.sin(i * 12.9898 + Math.floor(t * 12) * .7));
+      bars[i].style.height = Math.max(5, env * v * 100) + '%'; bars[i].style.opacity = locked ? .35 : 1;
+    }
+    const heard = $('heard'), sec = Math.floor(clamp(t - E.listen, 0, E.matching - E.listen));
+    html('heard', locked ? icon('tick', 'style="stroke-width:3;vertical-align:-3px"') + ' 找到了' : t >= E.matching ? '本机匹配中' : `已听 ${sec} 秒`);
+    heard.className = 'pill' + (locked ? ' ok' : '');
+    const W = $('track').clientWidth - 66, goal = ALIGNED / DUR;
+    const wander = .5 + .46 * Math.sin((t - a) * 1.9) * Math.cos((t - a) * .7 + 1.3);
+    const settle = eio(prog(t, E.matching - .6, E.locked));
+    const x = lerp(wander, goal, settle) * W;
+    const scan = $('scan'); scan.style.left = x + 'px'; scan.style.opacity = prog(t, a + .9, a + 1.4);
+    scan.style.background = locked ? 'rgba(43,99,82,.22)' : 'rgba(43,99,82,.10)';
+    const flag = $('flag'), fp = prog(t, E.locked, E.locked + .4); flag.style.left = (x + 33) + 'px';
+    flag.style.opacity = fp > 0 ? 1 : 0; flag.style.transform = `translateX(-50%) scale(${fp > 0 ? pop(fp) : 0})`;
+    const ticks = $('ticks').children, tw = $('track').clientWidth / ticks.length;
+    for (let i = 0; i < ticks.length; i++) { const cxp = (i + .5) * tw; ticks[i].style.background = cxp > x && cxp < x + 66 ? 'var(--accent)' : 'var(--sage)'; }
+    html('matchHint', locked ? '找到了：现场正讲到这篇证道的 12:34' : '在这篇证道的声音指纹里，找现场正在讲的位置'); }
+
+  { const a = S.s2c[0] + .3, b = S.s2c[1], o = vis(t, a, b, .6, .4); show($('pair'), o, `translateY(${(1 - eo(prog(t, a, a + .7))) * 40}px)`);
+    ['pairEn', 'pairZh'].forEach((id, row) => { const spans = $(id).children;
+      for (let i = 0; i < spans.length; i++) {
+        const since = pos - LIVE[i][0] - (row ? 0 : -.0), next = i + 1 < LIVE.length ? LIVE[i + 1][0] : 1e9;
+        const oIn = eo(prog(pos, LIVE[i][0], LIVE[i][0] + .45)), oOut = 1 - eo(prog(pos, next - .05, next + .3));
+        const v = aligned ? Math.min(oIn, oOut) : 0; spans[i].style.opacity = v.toFixed(3); spans[i].style.transform = `translateY(${(1 - oIn) * 14 - (1 - oOut) * 14}px)`;
+      } }); }
+
+  { const a = S.s3[0] + .3, b = S.s3[1], o = vis(t, a, b, .6, .4); const card = $('lanes'); show(card, o, `translateY(${(1 - eo(prog(t, a, a + .7))) * 40}px)`);
+    const speed = 62, fix = eio(prog(t, E.tapBack, E.tapBack + .5));
+    const base = -((t - a) * speed) - 110;
+    $('laneEn').style.transform = `translateX(${base}px)`;
+    $('laneZh').style.transform = `translateX(${base - speed * (1 - fix)}px)`;
+    const lane = card.querySelector('.lane'), nx = lane.offsetLeft + lane.clientWidth * .46;
+    $('nowWrap').style.left = nx + 'px';
+    const pill = $('lanePill'); html('lanePill', fix > .5 ? icon('tick', 'style="stroke-width:3;vertical-align:-3px"') + ' 对上了' : '中文抢先 1 秒');
+    pill.className = 'pill ' + (fix > .5 ? 'ok' : 'warn');
+    html('laneHint', fix > .5 ? '后退 1 秒，同一句话又对齐了' : '同一句话，中文比现场早了一拍'); }
+
+  /* ---------- touches (positions are read from the already-placed targets) ---------- */
+  const sr = stage.getBoundingClientRect(), ks = sr.width / 1920;
+  const center = id => { const r = $(id).getBoundingClientRect(); return [(r.left + r.width / 2 - sr.left) / ks, (r.top + r.height / 2 - sr.top) / ks]; };
+  touchDefs.forEach((d, i) => {
+    const el = $('touch' + i), inP = eo(prog(t, d.t - .6, d.t - .08)), outP = prog(t, d.t + .25, d.t + .6);
+    const o = t < d.t - .6 || t > d.t + .75 ? 0 : Math.min(inP * 1.2, 1) * (1 - outP);
+    el.style.opacity = o.toFixed(3); el.style.visibility = o <= 0.001 ? 'hidden' : 'visible';
+    if (o <= 0.001) return;
+    const [x, y] = center(d.el);
+    el.style.transform = `translate(${x + (1 - inP) * 70}px, ${y + (1 - inP) * 90}px)`;
+    const down = 1 - .2 * (1 - Math.abs(prog(t, d.t - .1, d.t + .2) * 2 - 1));
+    el.querySelector('.tip').style.transform = `scale(${down})`;
+    const rp = prog(t, d.t, d.t + .55), ring = el.querySelector('.ring');
+    ring.style.opacity = rp > 0 ? (1 - rp) : 0; ring.style.transform = `scale(${.3 + eo(rp) * 1.1})`;
+  });
+  { const el = $('floatBack'), a = E.tapBack + .05, p = prog(t, a, a + .4), q = prog(t, a + 1.5, a + 1.9);
+    const o = t < a ? 0 : (1 - q); el.style.opacity = o.toFixed(3); el.style.visibility = o <= 0.001 ? 'hidden' : 'visible';
+    if (o > 0.001) { const [x, y] = center('btnBack'); el.style.left = x + 'px'; el.style.top = (y - 150 - eo(p) * 26) + 'px'; el.style.transform = `translateX(-50%) scale(${pop(p)})`; } }
+
+  /* end card */
+  { const a = S.end[0], o = eo(prog(t, a - .1, a + .6)) * (1 - prog(t, DURATION - .5, DURATION)); const end = $('end'); show(end, o, null);
+    const items = [[end.querySelector('.lock'), .3], ...[...end.querySelectorAll('.tile')].map((e, i) => [e, 1.0 + i * .35]), [end.querySelector('.slogan'), 2.4], [end.querySelector('.fine'), 2.9]];
+    items.forEach(([el, d]) => { const p = eo(prog(t, a + d, a + d + .7)); el.style.opacity = p; el.style.transform = `translateY(${(1 - p) * 30}px)`; }); }
+}
+
+/* Sound cues for the renderer: [seconds, kind]. */
+window.TUTORIAL = {
+  duration: DURATION, fps: FPS, width: 1920, height: 1080,
+  cues: [[.2, 'intro'], [E.tapIcon, 'tap'], [E.tapAlign, 'tap'], [E.tapAllow, 'tap'], [E.listen + .1, 'listen'],
+         [E.locked, 'success'], [E.tapBack, 'tap'], [E.tapBack + .5, 'ok'], [E.failState + .5, 'soft'], [S.end[0] + .3, 'outro']],
+};
+window.renderAt = renderAt;
+
+/* Preview in a browser: ?t=12.5 shows one frame; without it the animation plays in real time (space pauses, arrows step). */
+(function preview() {
+  const q = new URLSearchParams(location.search);
+  if (q.has('render')) { renderAt(0); return; }
+  const fit = () => { const k = Math.min(innerWidth / 1920, innerHeight / 1080); stage.style.transform = `translate(${(innerWidth - 1920 * k) / 2}px, ${(innerHeight - 1080 * k) / 2}px) scale(${k})`; };
+  addEventListener('resize', fit); fit();
+  if (q.has('t')) { renderAt(+q.get('t')); return; }
+  let t0 = performance.now(), at = 0, paused = false;
+  const loop = now => { if (!paused) { at = ((now - t0) / 1000) % DURATION; renderAt(at); } requestAnimationFrame(loop); };
+  addEventListener('keydown', e => {
+    if (e.key === ' ') { paused = !paused; t0 = performance.now() - at * 1000; }
+    if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') { at = clamp(at + (e.key === 'ArrowRight' ? 1 : -1), 0, DURATION); t0 = performance.now() - at * 1000; renderAt(at); }
+  });
+  requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>
