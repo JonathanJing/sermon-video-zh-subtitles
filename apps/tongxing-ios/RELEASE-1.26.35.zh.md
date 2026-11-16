@@ -24,7 +24,7 @@ Xcode 27.1（`27A9275`）／iOS SDK 27.1（`24A94232`）的 `Tongxing / Release`
 - `APP_IPHONE_61`（2）、`APP_IPAD_PRO_3GEN_129`（8）、`APP_IPHONE_DUO`（2）沿用上一版继承的素材。
 - 截图由 API 逐张 reserve／upload／patch 上传，读回全部 `COMPLETE`；旧截图集在全部完成后删除。
 
-**Duo 屏幕截图未更新**：本机的 Xcode 安装不含 `Simulator.app`（`/Applications/Xcode.app/Contents/Developer/Applications` 不存在），Duo 模拟器以展开状态运行且无法在无 GUI 下折叠；`simctl io screenshot --display=1`（外屏 LCD，1398×2034）返回全黑，只有 `--display=3`（内屏，2007×2853）有画面。因此没有替换 `APP_IPHONE_DUO` 的两张旧图，也没有把内屏尺寸硬塞进外屏槽位。
+**Duo 屏幕截图未更新**（方法见 [商店截图方法](STORE-SCREENSHOTS.zh.md)，下个版本补做）：当时的判断是本机没有模拟器图形界面（`/Applications/Xcode.app/Contents/Developer/Applications` 不存在），Duo 模拟器以展开状态运行且无法在无 GUI 下折叠；`simctl io screenshot --display=1`（外屏 LCD，1398×2034）返回全黑，只有 `--display=3`（内屏，2007×2853）有画面。因此没有替换 `APP_IPHONE_DUO` 的两张旧图，也没有把内屏尺寸硬塞进外屏槽位。
 
 ## App Store Connect
 
