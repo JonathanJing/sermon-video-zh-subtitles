@@ -242,6 +242,39 @@ h1 {
   padding-left: 8px;
 }
 
+.issue {
+  display: block;
+  margin-top: 10px;
+}
+
+.issue-label {
+  display: block;
+  font-size: 11px;
+  letter-spacing: 0.03em;
+  color: var(--muted);
+  margin-bottom: 4px;
+}
+
+.issue-input {
+  width: 100%;
+  padding: 9px 10px;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: var(--surface-2);
+  color: var(--text);
+  font: inherit;
+  font-size: 15px;
+}
+
+.issue-input::placeholder { color: var(--muted); opacity: 0.75; }
+
+.issue-input:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.row.is-fixed .issue-input { border-color: var(--fix); }
+
 .actions {
   display: flex;
   gap: 8px;
@@ -326,6 +359,7 @@ h1 {
 }
 
 .copy-out {
+  white-space: pre-wrap;
   margin: 8px 0 0;
   padding: 8px 10px;
   border-radius: 8px;

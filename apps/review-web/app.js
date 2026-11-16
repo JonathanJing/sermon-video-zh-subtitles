@@ -44,6 +44,7 @@ const HOT_FLAGS = new Set(['speaker', 'digits', 'doubt', 'lag']);
 const state = {
   pack: null,
   verdicts: new Map(),
+  notes: new Map(),
   heard: new Set(),
   filter: 'hot',
   current: null,
@@ -62,6 +63,7 @@ const store = {
       for (const [id, verdict] of Object.entries(raw.verdicts || {})) {
         state.verdicts.set(id, verdict);
       }
+      for (const [id, text] of Object.entries(raw.notes || {})) state.notes.set(id, text);
       for (const id of raw.heard || []) state.heard.add(id);
     } catch {
       /* a corrupt entry only loses a session; never blocks the review */
@@ -71,6 +73,7 @@ const store = {
     try {
       localStorage.setItem(this.key(), JSON.stringify({
         verdicts: Object.fromEntries(state.verdicts),
+        notes: Object.fromEntries(state.notes),
         heard: [...state.heard],
       }));
     } catch {
@@ -89,14 +92,25 @@ function mmss(seconds) {
   return `${m}:${String(total % 60).padStart(2, '0')}`;
 }
 
-function rowNode(row) {
+function paintRow(node) {
+  const row = state.pack.sentences.find((item) => item.id === node.dataset.id);
+  if (!row) return;
   const verdict = state.verdicts.get(row.id);
+  node.classList.toggle('is-fixed', verdict === 'fix');
+  node.classList.toggle('is-passed', verdict === 'pass');
+  const [pass, fix] = node.querySelectorAll('.actions button');
+  if (!pass || !fix) return;
+  pass.textContent = verdict === 'pass' ? '已通过' : '通过';
+  pass.classList.toggle('on-pass', verdict === 'pass');
+  fix.textContent = verdict === 'fix' ? '已标问题' : '标问题';
+  fix.classList.toggle('on-fix', verdict === 'fix');
+}
+
+function rowNode(row) {
   const node = document.createElement('article');
   node.className = 'row';
   node.dataset.id = row.id;
   node.tabIndex = -1;
-  if (verdict === 'fix') node.classList.add('is-fixed');
-  if (verdict === 'pass') node.classList.add('is-passed');
 
   const head = document.createElement('div');
   head.className = 'row-head';
@@ -162,26 +176,39 @@ function rowNode(row) {
     node.append(note);
   }
 
+  const issue = document.createElement('label');
+  issue.className = 'issue';
+  const issueLabel = document.createElement('span');
+  issueLabel.className = 'issue-label';
+  issueLabel.textContent = '问题或改法';
+  const issueInput = document.createElement('input');
+  issueInput.type = 'text';
+  issueInput.className = 'issue-input';
+  issueInput.placeholder = '写出具体问题或改成什么；留空表示这句没问题';
+  issueInput.value = state.notes.get(row.id) || '';
+  issueInput.addEventListener('input', () => setNote(row.id, issueInput.value));
+  issueInput.addEventListener('keydown', (event) => event.stopPropagation());
+  issue.append(issueLabel, issueInput);
+
   const actions = document.createElement('div');
   actions.className = 'actions';
   const pass = document.createElement('button');
   pass.type = 'button';
-  pass.textContent = verdict === 'pass' ? '已通过' : '通过';
-  if (verdict === 'pass') pass.classList.add('on-pass');
+  pass.textContent = '通过';
   pass.addEventListener('click', () => setVerdict(row.id, 'pass'));
   const fix = document.createElement('button');
   fix.type = 'button';
-  fix.textContent = verdict === 'fix' ? '已标问题' : '标问题';
-  if (verdict === 'fix') fix.classList.add('on-fix');
+  fix.textContent = '标问题';
   fix.addEventListener('click', () => setVerdict(row.id, 'fix'));
   actions.append(pass, fix);
-  node.append(actions);
+  node.append(issue, actions);
 
   node.addEventListener('click', (event) => {
-    if (event.target.closest('button')) return;
+    if (event.target.closest('button') || event.target.closest('input')) return;
     select(row.id, false);
   });
 
+  paintRow(node);
   return node;
 }
 
@@ -223,10 +250,30 @@ function updateMeter() {
 function setVerdict(id, verdict) {
   if (state.verdicts.get(id) === verdict) state.verdicts.delete(id);
   else state.verdicts.set(id, verdict);
+  if (verdict === 'pass' && state.verdicts.get(id) === 'pass') {
+    state.notes.delete(id);
+    const node = els.list.querySelector(`[data-id="${id}"]`);
+    const input = node && node.querySelector('.issue-input');
+    if (input) input.value = '';
+  }
   store.save();
-  render();
   const node = els.list.querySelector(`[data-id="${id}"]`);
-  if (node) node.focus({ preventScroll: true });
+  if (node) paintRow(node);
+  updateMeter();
+}
+
+function setNote(id, text) {
+  const clean = String(text || '').slice(0, 240);
+  if (clean.trim()) {
+    state.notes.set(id, clean);
+    if (state.verdicts.get(id) !== 'fix') state.verdicts.set(id, 'fix');
+  } else {
+    state.notes.delete(id);
+  }
+  store.save();
+  const node = els.list.querySelector(`[data-id="${id}"]`);
+  if (node) paintRow(node);
+  updateMeter();
 }
 
 function audioSource(row) {
@@ -351,9 +398,14 @@ els.filters.addEventListener('click', (event) => {
 
 function commandLine() {
   const { code, checkpoint, sentences } = state.pack;
-  const fixes = sentences.filter((row) => state.verdicts.get(row.id) === 'fix').map((row) => row.id);
-  if (fixes.length) return `${code} ${checkpoint} FIX ${fixes.join(' ')}`;
-  return `${code} ${checkpoint} PASS played=${state.heard.size}`;
+  const fixes = sentences.filter((row) => state.verdicts.get(row.id) === 'fix');
+  if (!fixes.length) return `${code} ${checkpoint} PASS played=${state.heard.size}`;
+  const lines = [`${code} ${checkpoint} FIX ${fixes.map((row) => row.id).join(' ')}`];
+  for (const row of fixes) {
+    const note = (state.notes.get(row.id) || '').trim();
+    if (note) lines.push(`${row.id}: ${note}`);
+  }
+  return lines.join('\n');
 }
 
 els.copy.addEventListener('click', async () => {
