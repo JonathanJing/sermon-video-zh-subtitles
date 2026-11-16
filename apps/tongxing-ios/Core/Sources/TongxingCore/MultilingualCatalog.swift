@@ -41,7 +41,7 @@ public struct MultilingualCatalog: Codable, Sendable, Equatable {
             let locale = targets[page.defaultTargetLocale] != nil ? page.defaultTargetLocale : targets.keys.sorted().first!
             return MultilingualPage(id: page.id, title: page.title, date: page.date,
                 sourceLocale: page.sourceLocale, sourceIdentitySha256: page.sourceIdentitySha256,
-                sourceMediaSha256: page.sourceMediaSha256, mediaType: page.mediaType, displayCategory: page.displayCategory, defaultTargetLocale: locale, targets: targets,
+                sourceMediaSha256: page.sourceMediaSha256, mediaType: page.mediaType, contentKind: page.contentKind, displayCategory: page.displayCategory, defaultTargetLocale: locale, targets: targets,
                 diagnosticOnly: page.diagnosticOnly, simulationOnly: page.simulationOnly,
                 sourceMode: page.sourceMode)
         }
@@ -76,7 +76,7 @@ public struct MultilingualCatalog: Codable, Sendable, Equatable {
             let locale = targets[page.defaultTargetLocale] != nil ? page.defaultTargetLocale : targets.keys.sorted().first!
             return MultilingualPage(id: page.id, title: page.title, date: page.date,
                 sourceLocale: page.sourceLocale, sourceIdentitySha256: page.sourceIdentitySha256,
-                sourceMediaSha256: page.sourceMediaSha256, mediaType: page.mediaType, displayCategory: page.displayCategory, defaultTargetLocale: locale, targets: targets,
+                sourceMediaSha256: page.sourceMediaSha256, mediaType: page.mediaType, contentKind: page.contentKind, displayCategory: page.displayCategory, defaultTargetLocale: locale, targets: targets,
                 diagnosticOnly: page.diagnosticOnly, simulationOnly: page.simulationOnly,
                 sourceMode: page.sourceMode)
         }
@@ -103,10 +103,19 @@ public struct MultilingualPage: Codable, Sendable, Equatable, Identifiable {
     /// Older catalogs retain confirmed archive IDs and explicit podcast type.
     public var displayEdition: String? { displayEdition(locale: "zh-Hans") }
 
+    /// Locale-independent grouping for the content picker. The publisher only allows
+    /// `podcast`/`clip` for the technical media type, so the 2026-10/11 sermon pages
+    /// carried `mediaType: podcast`; grouping must therefore prefer `contentKind` and
+    /// fall back to the media type only for catalogs written before it existed.
+    public var isPodcastContent: Bool {
+        if let contentKind { return contentKind == "podcast" }
+        return mediaType == "podcast"
+    }
+
     public func displayEdition(locale: String) -> String? {
         guard diagnosticOnly != true, simulationOnly != true else { return nil }
         if let displayCategory { return displayCategory.label(locale: locale) }
-        if mediaType == "podcast" { return "播客" }
+        if isPodcastContent { return "播客" }
         switch id {
         case "2026-09-27-weekend-sermon-drive-530", "resi-20261004-69ba7a66":
             return "正式播放版"
@@ -122,6 +131,8 @@ public struct MultilingualPage: Codable, Sendable, Equatable, Identifiable {
     public let sourceIdentitySha256: String?
     public let sourceMediaSha256: String?
     public let mediaType: String?
+    /// `sermon`, `podcast` or `clip`; absent in catalogs written before 2026-11-16.
+    public var contentKind: String? = nil
     public var displayCategory: PageDisplayCategory? = nil
     public let defaultTargetLocale: String
     public let targets: [String: PageTarget]

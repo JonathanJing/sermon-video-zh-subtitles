@@ -1698,10 +1698,10 @@ private struct WeekSheet: View {
     }
     private var showsLegacyWeeks: Bool { !model.weeks.isEmpty && (!showsKindTabs || kind == .sermons) }
     private var sermonPages: [MultilingualPage] {
-        model.independentPages.filter { $0.mediaType != "podcast" }.sorted { $0.date > $1.date }
+        model.independentPages.filter { !$0.isPodcastContent }.sorted { $0.date > $1.date }
     }
     private var podcastPages: [MultilingualPage] {
-        model.independentPages.filter { $0.mediaType == "podcast" }.sorted { $0.date > $1.date }
+        model.independentPages.filter(\.isPodcastContent).sorted { $0.date > $1.date }
     }
     private var title: String {
         if showsKindTabs { return localization.text("证道与播客") }

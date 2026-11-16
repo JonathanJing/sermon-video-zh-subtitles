@@ -1021,12 +1021,41 @@ def cmd_verify(cfg: PageConfig, assets: Path, out: Path) -> dict:
             "failed": [check["path"] for check in checks if not check["pass"]]}
 
 
+# The page config only allows a technical media type of ``podcast``/``clip``,
+# so sermon pages published through this driver were tagged ``podcast`` and the
+# iOS picker listed them under the podcast tab (2026-11-16 incident). The
+# locale-independent kind is derived from the authoring category instead.
+CONTENT_KIND_BY_CATEGORY_LABEL = {
+    "Sunday sermon": "sermon",
+    "Archive edition": "sermon",
+    "Sermon clip": "clip",
+    "Sermon Podcast": "podcast",
+    "Podcast": "podcast",
+    "Experiment clip": "clip",
+}
+
+
+def content_kind(category: dict) -> str:
+    labels = (category or {}).get("labels") or {}
+    for label in (labels.get("en"), labels.get("zh-Hans")):
+        if label in CONTENT_KIND_BY_CATEGORY_LABEL:
+            return CONTENT_KIND_BY_CATEGORY_LABEL[label]
+    raise SystemExit(f"unknown display category {sorted(labels.values())}: "
+                     "add it to CONTENT_KIND_BY_CATEGORY_LABEL rather than guessing")
+
+
 def _page_entry(cfg: PageConfig, esp: dict, esp_sha: str, targets: dict) -> dict:
-    return {"id": cfg.page_id, "date": cfg.date, "title": cfg.title,
-            "defaultTargetLocale": cfg.default_target_locale, "displayCategory": cfg.category,
-            "mediaType": cfg.media_type, "sourceLocale": "en", "sourceIdentitySha256": esp_sha,
-            "sourceMediaSha256": esp["source"]["media"]["sha256"], "sourceMode": cfg.source_mode,
-            "sourceUrl": cfg.source_url, "targets": targets}
+    entry = {"id": cfg.page_id, "date": cfg.date, "title": cfg.title,
+             "defaultTargetLocale": cfg.default_target_locale, "displayCategory": cfg.category,
+             "contentKind": content_kind(cfg.category),
+             "sourceLocale": "en", "sourceIdentitySha256": esp_sha,
+             "sourceMediaSha256": esp["source"]["media"]["sha256"], "sourceMode": cfg.source_mode,
+             "sourceUrl": cfg.source_url, "targets": targets}
+    # Keep the technical tag only where it means something: the publish gate relaxes
+    # its two-clock check for podcast pages without alignment.
+    if entry["contentKind"] == "podcast":
+        entry["mediaType"] = cfg.media_type
+    return entry
 
 
 def build_reference(cfg: PageConfig, public: Path) -> dict:

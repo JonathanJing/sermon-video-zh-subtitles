@@ -10,7 +10,7 @@
 
 - 工具栏入口从「选择证道周次」+ `calendar` 改为「选择证道与播客」+ `list.bullet`；`choose-sermon` identifier 不变。
 - 面板标题在两类内容都存在时为「证道与播客」，只有一类时为「选择证道」／「选择播客」，标题改为 inline。
-- 顶部固定分段控件按目录 `mediaType` 分列：证道列保留 legacy `weekly.json` 周次，播客列只放播客；打开时落在当前正在收听内容所在的分类；只有一类内容时不显示控件。
+- 顶部固定分段控件分列证道与播客：证道列保留 legacy `weekly.json` 周次，播客列只放播客；打开时落在当前正在收听内容所在的分类；只有一类内容时不显示控件。该版本按 `mediaType` 分组，2026-11-16 发现目录把周日证道标成 `mediaType: podcast`，已修正数据（[目录内容类型](../../docs/catalog-content-kind.zh.md)）；下一个版本改按 `contentKind` 分组。
 - 无障碍字号下用上下两个整宽按钮替代固定 13 pt 的分段标签。
 - 设计、验证范围与未做项见 [PICKER-CONTENT-TABS.zh.md](PICKER-CONTENT-TABS.zh.md)。
 
