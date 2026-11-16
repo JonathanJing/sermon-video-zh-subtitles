@@ -765,13 +765,33 @@
         "vi": { "stringUnit": { "state": "translated", "value": "Thêm" } }
       }
     },
-    "其他周次": {
+    "包含 Dev 内容": {
       "extractionState": "manual",
       "localizations": {
-        "en": { "stringUnit": { "state": "translated", "value": "Other weeks" } },
-        "ko": { "stringUnit": { "state": "translated", "value": "다른 주" } },
-        "es": { "stringUnit": { "state": "translated", "value": "Otras semanas" } },
-        "vi": { "stringUnit": { "state": "translated", "value": "Các tuần khác" } }
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Includes dev content"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "개발 콘텐츠 포함"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Incluye contenido de desarrollo"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bao gồm nội dung phát triển"
+          }
+        }
       }
     },
     "已发布页面": {
