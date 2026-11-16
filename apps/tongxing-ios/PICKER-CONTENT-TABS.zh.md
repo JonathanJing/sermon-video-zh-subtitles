@@ -107,7 +107,7 @@
 
 ### 3.5 实现落点（不改数据层）
 
-- `WeekSheet` 拆为 `ContentPickerSheet` + `ContentTab`；分类只依据 `mediaType`：`"podcast"` → 播客，`"video"` 或空 → 证道；legacy `model.weeks` 只进证道 Tab。
+- `WeekSheet` 拆为 `ContentPickerSheet` + `ContentTab`；分类走 `MultilingualPage.isPodcastContent`（`contentKind` 优先，旧目录退回 `mediaType == "podcast"`）；legacy `model.weeks` 只进证道 Tab。
 - 复用 `SermonHeadingView`，新增「隐藏与 Tab 相同的版本小字」开关，不复制标题层级。
 - 保留既有 `accessibilityIdentifier`（`picker-<id>`、`published-page-<id>`、`legacy-week-<id>`），新增 `picker-tab-sermons`、`picker-tab-podcasts`、`picker-section-published`、`picker-section-other-weeks`。
 - 大字：系统分段控件标签不随 Dynamic Type 放大，因此无障碍字号下换成两个整宽按钮（≥44 pt 命中区），sheet 只用 `.large`；行不截断、自然换行。
@@ -140,7 +140,7 @@
 | 固定分段控件 | 系统分段控件固定在标题下、列表上；`mediaType == "podcast"` 进播客列，其余进证道列；legacy `weekly.json` 周次只留在证道列 |
 | 默认 Tab | 当前正在收听内容所在的类型；目录只有一类时不显示控件，退回原单列表 |
 | 无障碍大字 | 系统分段控件标签不随字号放大，改成上下两个整宽按钮（≥44 pt 命中区） |
-| 分类依据 | 只看 `mediaType`，不解析中文类别标签 |
+| 分类依据 | 优先 `contentKind`（`sermon`／`podcast`／`clip`），旧目录退回 `mediaType == "podcast"`；不解析中文类别标签。规则见 [目录内容类型](../../docs/catalog-content-kind.zh.md) |
 
 文件：`App/ContentView.swift`（`WeekSheet`）、`App/AppModel.swift`（`selectedContentIsPodcast`）、`App/Resources/Localizable.xcstrings`（新增 4 键、删除不再使用的「选择证道周次」）、`UITests/ContentPickerUITests.swift`（新增）、`UITests/ListeningFlowUITests.swift`（分类测试按 Tab 取行）、`UITests/AppStoreScreenshotUITests.swift`（sheet 标题候选列表）、`ICON-INVENTORY.zh.md`。
 

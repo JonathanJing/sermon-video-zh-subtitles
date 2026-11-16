@@ -349,6 +349,14 @@
             "video"
           ]
         },
+        "contentKind": {
+          "enum": [
+            "sermon",
+            "podcast",
+            "clip"
+          ],
+          "description": "Locale-independent content kind for UI grouping; mediaType stays a technical source tag."
+        },
         "defaultTargetLocale": {
           "$ref": "#/$defs/locale"
         },

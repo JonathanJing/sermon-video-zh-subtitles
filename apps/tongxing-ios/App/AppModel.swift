@@ -359,7 +359,7 @@ final class AppModel: ObservableObject {
     /// The content picker opens on the kind the page is showing, so the
     /// checkmark is visible without a tab switch. Only the catalog media type
     /// classifies a page; localized category labels never decide the list.
-    var selectedContentIsPodcast: Bool { selectedMultilingualPage?.mediaType == "podcast" }
+    var selectedContentIsPodcast: Bool { selectedMultilingualPage?.isPodcastContent == true }
     var availableContentLanguages: [(locale: String, target: PageTarget)] {
         selectedMultilingualPage.map { Self.selectableTargets(in: $0, allowDevCandidates: allowsDevCandidates) } ?? []
     }
