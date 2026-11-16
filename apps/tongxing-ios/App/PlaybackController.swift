@@ -5,6 +5,7 @@ import MediaPlayer
 import TongxingCore
 import TongxingInfrastructure
 #if os(iOS)
+import OSLog
 import UIKit
 #endif
 
@@ -984,6 +985,7 @@ final class SystemAudioSessionActivator: AudioSessionActivating, @unchecked Send
     static let shared = SystemAudioSessionActivator()
 
     #if os(iOS)
+    private static let logger = Logger(subsystem: "Tongxing", category: "AudioSession")
     // All mutable state and potentially blocking AVAudioSession configuration
     // belong to this dedicated serial queue, never the UI or cooperative executor.
     private let queue = DispatchQueue(label: "com.jonathanjing.tongxing.audio-session", qos: .userInitiated)
@@ -1015,10 +1017,15 @@ final class SystemAudioSessionActivator: AudioSessionActivating, @unchecked Send
                 do {
                     guard self.recordingOwner == token else { throw CancellationError() }
                     let session = AVAudioSession.sharedInstance()
-                    // The legacy spelling also builds with the older CI SDK;
-                    // both names select the same Bluetooth HFP option (0x4).
-                    try session.setCategory(.playAndRecord, mode: .measurement, options: [.allowBluetooth, .defaultToSpeaker])
+                    // Listening alignment must hear the room through the phone's own
+                    // microphone, so Bluetooth stays an output-only route (A2DP). Asking
+                    // for HFP as well would publish the headset microphone as an input
+                    // route, and when one accessory offers both profiles its HFP ports
+                    // outrank A2DP, so the built-in microphone would lose.
+                    try session.setCategory(.playAndRecord, mode: .measurement,
+                                            options: [.allowBluetoothA2DP, .defaultToSpeaker])
                     try session.setActive(true)
+                    Self.preferBuiltInInput(session)
                     continuation.resume()
                 } catch { continuation.resume(throwing: error) }
             }
@@ -1031,11 +1038,28 @@ final class SystemAudioSessionActivator: AudioSessionActivating, @unchecked Send
             guard self.recordingOwner == token else { return }
             self.recordingOwner = nil
             let session = AVAudioSession.sharedInstance()
+            // A capture must not leave its input preference behind for later recordings.
+            try? session.setPreferredInput(nil)
             // A manual play request can already have restored the category.
             if session.category != .playback || session.mode != .spokenAudio {
                 try? session.setCategory(.playback, mode: .spokenAudio)
             }
         }
+    }
+
+    /// Best effort: `AVAudioSession` treats the input port as a preference, so a device
+    /// that ignores it would otherwise record the room through the headset silently.
+    /// The resolved route is logged for the device acceptance run.
+    static func preferBuiltInInput(_ session: AVAudioSession) {
+        if let builtIn = session.availableInputs?.first(where: { $0.portType == .builtInMic }),
+           session.currentRoute.inputs.first?.portType != .builtInMic {
+            do { try session.setPreferredInput(builtIn) } catch {
+                logger.notice("alignment capture could not prefer the built-in microphone: \(String(describing: error), privacy: .public)")
+            }
+        }
+        let inputs = session.currentRoute.inputs.map { $0.portType.rawValue }.joined(separator: ",")
+        let outputs = session.currentRoute.outputs.map { $0.portType.rawValue }.joined(separator: ",")
+        logger.notice("alignment capture route input=\(inputs, privacy: .public) output=\(outputs, privacy: .public)")
     }
 
     private func configureAndActivate() {

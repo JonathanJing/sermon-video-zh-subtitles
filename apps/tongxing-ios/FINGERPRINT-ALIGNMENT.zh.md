@@ -10,7 +10,7 @@
 
 Swift 文件回放：63 个正例命中 62 个，1 个强噪声例安全拒绝；103 个负例全部拒绝，已命中例最大误差约 17.12 ms。该结果是 Mac 上的文件测试，不是手机声学或中文语义同步证明。证据：`artifacts/tongxing-ios/2026-09-07/fingerprint/swift-replay-report.json`。
 
-剩余验收：真实 iPhone 权限拒绝/恢复、8 秒麦克风指示关闭、扬声器和耳机路由、取消与来电、房间混响、错录音拒绝、实际中文播放位置、耗时与耗电。同步音轨仍保留候选审核状态，不因指纹命中升级为人工批准。
+剩余验收：真实 iPhone 权限拒绝/恢复、8 秒麦克风指示关闭、扬声器路由、蓝牙耳机下输入仍为内置麦克风（`AudioSession` 日志 `input=BuiltInMic`）、有线耳机路由、取消与来电、房间混响、错录音拒绝、实际中文播放位置、耗时与耗电。同步音轨仍保留候选审核状态，不因指纹命中升级为人工批准。
 
 代码入口：[匹配器](Core/Sources/TongxingCore/FingerprintMatcher.swift)、[索引存储](Infrastructure/FingerprintIndexStore.swift)、[采音](App/MicrophoneCapture.swift)、[请求与播放器协调](App/AudioAlignmentController.swift)。
 
