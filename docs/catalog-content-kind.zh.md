@@ -48,23 +48,26 @@
 
 ## 本次数据修复（2026-11-16）
 
-两个站点都用同一方式修复：发布前快照 → 规范化 → 单文件克隆发布 → HTTPS 读回。
+App 读 `multilingual-v5.json`（其次 v4、v3）；网页与旧客户端读 v3。三份投影必须一起修，否则 App 仍按旧字段分栏。两个站点都用同一方式：发布前快照 → 规范化 → 克隆发布 → HTTPS 读回。
 
-| 站点 | 修复前基线版本 | 新版本 | Release | 页面 |
-| --- | --- | --- | --- | --- |
-| `ai-for-god-sermon-audio`（正式） | `sites/ai-for-god-sermon-audio/versions/6e795dbcdd1580d0` | `…/versions/763fe8c46c773951` | `sites/ai-for-god-sermon-audio/releases/1794846098015000` | 14 页：7 `sermon` + 7 `podcast` |
-| `ai-for-god-sermon-audio-dev` | `sites/ai-for-god-sermon-audio-dev/versions/afccd110ce4c179a` | `…/versions/a65f405aaa50a157` | `sites/ai-for-god-sermon-audio-dev/releases/1794846089521000` | 17 页：13 `sermon` + 2 `podcast` + 2 `clip` |
+| 站点 | 文件 | 修复前基线版本 | 修复后版本 | Release | 页面 |
+| --- | --- | --- | --- | --- | --- |
+| `ai-for-god-sermon-audio`（正式） | v3 | `6e795dbcdd1580d0` | `763fe8c46c773951` | `…/releases/1794846098015000` | 14 页：7 `sermon` + 7 `podcast` |
+| `ai-for-god-sermon-audio`（正式） | v4、v5 | `763fe8c46c773951` | `d948e5c3691157e6` | `…/releases/1794847740202000` | 15 页全部规范化 |
+| `ai-for-god-sermon-audio-dev` | v3 | `afccd110ce4c179a` | `a65f405aaa50a157` | `…/releases/1794846089521000` | 17 页：13 `sermon` + 2 `podcast` + 2 `clip` |
+| `ai-for-god-sermon-audio-dev` | v4、v5 | `a65f405aaa50a157` | `24a69950d7d4e328` | `…/releases/1794847749037000` | v4 29 页、v5 28 页 |
 
-修复只改展示分类字段：发布包 URL、SHA-256、审核状态、音频与字幕都没有变。发布前的目录快照与规范化回执在忽略目录 `artifacts/catalog-audit/`（`<site>-v3.json`、`publish/<site>/normalize-receipt.json`、`publish.json`）。
+修复只改展示分类字段：逐页比对修复前后的目录，除 `contentKind`／`mediaType` 外完全一致；42（正式）与 48（dev）个 release 包哈希未变，审核状态、音频、字幕都没有动。发布前快照与回执在忽略目录 `artifacts/catalog-audit/`（`<site>-v*.json`、`publish/<site>/normalize-v*-receipt.json`、`publish*.json`）。
 
 ## 验证与边界
 
-- 修复后 HTTPS 读回的目录：正式 7 sermon + 7 podcast，dev 13 sermon + 2 podcast + 2 clip；没有页面仍同时具备 `contentKind != podcast` 与 `mediaType: podcast`。
-- iOS Core 120 项测试通过，含新增 `contentKindDecidesGroupingBeforeTheTechnicalMediaType`（回归用例直接取这次的错标组合）；两个 ops 工具的 18 项单元测试通过。
-- 已经提交审核的 1.26.34 按旧规则（`mediaType`）分组，因此数据修复后它的分栏立即变正确；`contentKind` 要等下一个包含该客户端判断的版本才生效，用于防止再次出现同类错标。
-- 本页不声称真机、Beta 或网页展示已验收；那需要人工在实际设备上确认。
+- 修复后 HTTPS 读回的 v3／v4／v5：没有页面仍同时具备 `contentKind != podcast` 与 `mediaType: podcast`；v5 的 15 页里 4 篇周日证道（10-25、11-01、11-08、11-15）全部为 `contentKind: sermon`。
+- 客户端实测（iPhone 17 / iOS 27.2 模拟器，BetaRelease 1.26.34 (79)，Dev 内容源）：调用 App 的刷新路径后打开选择面板——10-25 的「耶稣得胜」出现在「Sunday sermon」列，播客列只剩播客。截图在忽略目录 `artifacts/catalog-audit/app-evidence/`（`picker-podcast.png` 修复前、`picker-sermons-fixed.png`／`picker-podcast-fixed.png` 修复后）。
+- 已经提交审核的 1.26.34 按旧规则（`mediaType`）分组，因此数据修复后它的分栏立即变正确；客户端里 `contentKind` 优先的判断要等下一个包含该改动的版本才生效，用来防止再次出现同类错标。
+- iOS Core 120 项测试通过，含新增 `contentKindDecidesGroupingBeforeTheTechnicalMediaType`（回归用例直接取这次的错标组合）；ops 工具 18 项单元测试通过；`ContentPickerUITests` 在模拟器通过。
+- 未做：真机（与本机模拟器不同）显示、网页分栏、以及缓存已热的旧客户端；旧客户端需要一次刷新或重启才会读到新目录。
 
 ## 回滚
 
-- 目录：用 `artifacts/catalog-audit/<site>-v3.json`（修复前快照）重复同一条单文件发布命令即可回到修复前内容。
+- 目录：用 `artifacts/catalog-audit/<site>-v*.json`（修复前快照）重复同一条克隆发布命令即可回到修复前内容；三份投影要一起回滚。
 - 客户端：`isPodcastContent` 的 `mediaType` 兜底保证旧目录仍能分组；若下一个版本要撤销 `contentKind` 优先，只需改回该属性一处。

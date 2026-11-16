@@ -42,7 +42,7 @@ KIND_BY_LABEL = {
 }
 KINDS = ("sermon", "podcast", "clip")
 SCHEMA_FILES = {f"sermon-multilingual-catalog-v{v}": ROOT / f"schemas/sermon-multilingual-catalog-v{v}.schema.json"
-                for v in (2, 3, 4)}
+                for v in (2, 3, 4, 5)}
 
 
 class CatalogKindError(ValueError):

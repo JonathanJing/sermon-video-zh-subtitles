@@ -238,7 +238,7 @@ def project_legacy_catalog_v4(catalog):
                 projected = {'id': edition, 'date': page['date'], 'title': page['title'], 'sourceLocale': 'en',
                              'sourceIdentitySha256': source_identity,
                              'defaultTargetLocale': locale, 'targets': {}}
-                for key in ('displayCategory', 'mediaType', 'sourceUrl', 'simulationOnly', 'diagnosticOnly'):
+                for key in ('displayCategory', 'mediaType', 'contentKind', 'sourceUrl', 'simulationOnly', 'diagnosticOnly'):
                     if key in page:
                         projected[key] = copy.deepcopy(page[key])
                 by_id[edition] = projected
