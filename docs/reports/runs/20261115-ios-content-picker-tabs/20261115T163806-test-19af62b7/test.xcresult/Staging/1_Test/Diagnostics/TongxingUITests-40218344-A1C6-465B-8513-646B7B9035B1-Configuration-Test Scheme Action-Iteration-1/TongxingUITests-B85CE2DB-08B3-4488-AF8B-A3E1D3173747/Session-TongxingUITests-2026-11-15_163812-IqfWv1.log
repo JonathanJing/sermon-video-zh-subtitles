@@ -1,0 +1,246 @@
+Xcode version: 27.1 (27A9275)
+16:38:12.282 xcodebuild[66305:30399023] Beginning test session TongxingUITests-D7F737AB-ADAE-4A0C-B06F-A7478A2129C9 at 2026-11-15 16:38:12.281 on target <DVTiPhoneSimulator: 0x74de49de00> {
+		SimDevice: iPhone 17 (C063FC85-4233-4864-B4F0-F6F4E1F1AD6E, iOS 27.2, Shutdown)
+} (27.2 (24B114))
+16:38:12.282 xcodebuild[66305:30399023] 	/Applications/Xcode.app/Contents/Developer/usr/bin/xcodebuild
+-project
+~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.agents/worktrees/picker-content-tabs/apps/tongxing-ios/Tongxing.xcodeproj
+-scheme
+Tongxing
+-configuration
+Debug
+-sdk
+iphonesimulator
+-destination
+platform=iOS Simulator,id=C063FC85-4233-4864-B4F0-F6F4E1F1AD6E
+-derivedDataPath
+~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.agents/worktrees/picker-content-tabs/artifacts/tongxing-ios/2026-11-15/cli/DerivedData
+-disableAutomaticPackageResolution
+CODE_SIGNING_ALLOWED=NO
+CODE_SIGNING_REQUIRED=NO
+-resultBundlePath
+~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.agents/worktrees/picker-content-tabs/artifacts/tongxing-ios/2026-11-15/cli/20261115T163806-test-19af62b7/test.xcresult
+-parallel-testing-enabled
+NO
+-only-testing:TongxingUITests/ContentPickerUITests/testPickerSeparatesSermonsFromPodcasts
+-only-testing:TongxingUITests/ContentPickerUITests/testPickerLargeTypeUsesLabeledButtons
+-only-testing:TongxingUITests/ListeningFlowUITests/testPickerSourceCategoriesBelowDate
+-only-testing:TongxingUITests/ListeningFlowUITests/testRemoteCategoriesUseInterfaceLanguageForNewPageTypes
+-only-testing:TongxingUITests/ListeningFlowUITests/testRemoteCategoryRefreshWithoutRebuildPreservesPausedPlayback
+test
+16:38:12.282 xcodebuild[66305:30399023] Test standard output and standard error is at ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.agents/worktrees/picker-content-tabs/artifacts/tongxing-ios/2026-11-15/cli/20261115T163806-test-19af62b7/test.xcresult/Staging/1_Test/Diagnostics/TongxingUITests-40218344-A1C6-465B-8513-646B7B9035B1-Configuration-Test Scheme Action-Iteration-1/TongxingUITests-B85CE2DB-08B3-4488-AF8B-A3E1D3173747/StandardOutputAndStandardError.txt
+16:38:12.517 xcodebuild[66305:30399024] ~/Library/Developer/CoreSimulator/Devices: Received sim device set notification: {
+    device = "iPhone 17 (C063FC85-4233-4864-B4F0-F6F4E1F1AD6E, iOS 27.2, Booting)";
+    "last_used_at" = "2026-11-16 00:38:12 +0000";
+    "new_state" = 2;
+    notification = "device_state";
+    "prev_state" = 1;
+}
+16:38:12.517 xcodebuild[66305:30399023] C063FC85-4233-4864-B4F0-F6F4E1F1AD6E: Received sim device notification: {
+    notification = "availableDevices_changed";
+... 531 lines omitted; 4 error-like lines, 4 kept below ...
+[line 418] 16:38:12.670 xcodebuild[66305:30399125] Calling -[SimDevice getenv:error:] for TESTMANAGERD_SIM_SOCK
+[line 441] 16:38:14.596 xcodebuild[66305:30399112] Got reply to session initiation request with identifier D7F737AB-ADAE-4A0C-B06F-A7478A2129C9 (error: (null))
+[line 466] 16:38:21.890 xcodebuild[66305:30399108] C063FC85-4233-4864-B4F0-F6F4E1F1AD6E: Failed to install app at path: ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.agents/worktrees/picker-content-tabs/artifacts/tongxing-ios/2026-11-15/cli/DerivedData/Build/Products/Debug-iphonesimulator/TongxingUITests-Runner.app and options: {
+[line 468] } (error = Error Domain=NSMachErrorDomain Code=-308 "(ipc/mig) server died")
+... end of omitted section ...
+    device = "iPhone 17 (C063FC85-4233-4864-B4F0-F6F4E1F1AD6E, iOS 27.2, Shutting Down)";
+    "new_state" = 4;
+    notification = "device_state";
+    "prev_state" = 3;
+}
+16:38:21.985 xcodebuild[66305:30399023] ~/Library/Developer/CoreSimulator/Devices: Received sim device set notification: {
+    device = "iPhone 17 (C063FC85-4233-4864-B4F0-F6F4E1F1AD6E, iOS 27.2, Shutting Down)";
+    "new_state" = 4;
+    notification = "device_state";
+    "prev_state" = 3;
+}
+16:38:21.985 xcodebuild[66305:30399023] ~/Library/Developer/CoreSimulator/Devices: Received sim device set notification: {
+    device = "iPhone 17 (C063FC85-4233-4864-B4F0-F6F4E1F1AD6E, iOS 27.2, Shutting Down)";
+    "new_state" = 4;
+    notification = "device_state";
+    "prev_state" = 3;
+}
+16:38:21.985 xcodebuild[66305:30399023] ~/Library/Developer/CoreSimulator/Devices: Received sim device set notification: {
+    device = "iPhone 17 (C063FC85-4233-4864-B4F0-F6F4E1F1AD6E, iOS 27.2, Shutting Down)";
+    "new_state" = 4;
+    notification = "device_state";
+    "prev_state" = 3;
+}
+16:38:21.985 xcodebuild[66305:30399023] ~/Library/Developer/CoreSimulator/Devices: Received sim device set notification: {
+    device = "iPhone 17 (C063FC85-4233-4864-B4F0-F6F4E1F1AD6E, iOS 27.2, Shutting Down)";
+    "new_state" = 4;
+    notification = "device_state";
+    "prev_state" = 3;
+}
+16:38:21.985 xcodebuild[66305:30399023] ~/Library/Developer/CoreSimulator/Devices: Received sim device set notification: {
+    device = "iPhone 17 (C063FC85-4233-4864-B4F0-F6F4E1F1AD6E, iOS 27.2, Shutting Down)";
+    "new_state" = 4;
+    notification = "device_state";
+    "prev_state" = 3;
+}
+16:38:21.985 xcodebuild[66305:30399023] ~/Library/Developer/CoreSimulator/Devices: Received sim device set notification: {
+    device = "iPhone 17 (C063FC85-4233-4864-B4F0-F6F4E1F1AD6E, iOS 27.2, Shutting Down)";
+    "new_state" = 4;
+    notification = "device_state";
+    "prev_state" = 3;
+}
+16:38:21.985 xcodebuild[66305:30399023] ~/Library/Developer/CoreSimulator/Devices: Received sim device set notification: {
+    device = "iPhone 17 (C063FC85-4233-4864-B4F0-F6F4E1F1AD6E, iOS 27.2, Shutting Down)";
+    "new_state" = 4;
+    notification = "device_state";
+    "prev_state" = 3;
+}
+16:38:21.985 xcodebuild[66305:30399023] ~/Library/Developer/CoreSimulator/Devices: Received sim device set notification: {
+    device = "iPhone 17 (C063FC85-4233-4864-B4F0-F6F4E1F1AD6E, iOS 27.2, Shutting Down)";
+    "new_state" = 4;
+    notification = "device_state";
+    "prev_state" = 3;
+}
+16:38:21.985 xcodebuild[66305:30399023] ~/Library/Developer/CoreSimulator/Devices: Received sim device set notification: {
+    device = "iPhone 17 (C063FC85-4233-4864-B4F0-F6F4E1F1AD6E, iOS 27.2, Shutting Down)";
+    "new_state" = 4;
+    notification = "device_state";
+    "prev_state" = 3;
+}
+16:38:21.993 xcodebuild[66305:30399023] 📱<DVTiPhoneSimulator (0x74de49de00), iPhone 17, unknown class, 27.2 (24B114), C063FC85-4233-4864-B4F0-F6F4E1F1AD6E> claim LaunchSessionClaim_0x74deb27780 on simulator was relinquished, 1 claims remain.
+16:38:21.993 xcodebuild[66305:30399023] 📱<DVTiPhoneSimulator (0x74de49de00), iPhone 17, unknown class, 27.2 (24B114), C063FC85-4233-4864-B4F0-F6F4E1F1AD6E> claim LaunchSessionClaim_0x74deb27780 on simulator was relinquished, 1 claims remain.
+16:38:21.993 xcodebuild[66305:30399023] 📱<DVTiPhoneSimulator (0x74de49de00), iPhone 17, unknown class, 27.2 (24B114), C063FC85-4233-4864-B4F0-F6F4E1F1AD6E> claim LaunchSessionClaim_0x74deb27780 on simulator was relinquished, 1 claims remain.
+16:38:21.993 xcodebuild[66305:30399023] Launch session expired.
+16:38:21.994 xcodebuild[66305:30399108] XCTHTestOperationStateMachine: Transitioning from state Initial to PendingFinalization
+16:38:21.996 xcodebuild[66305:30399023] Test operation failure: Error Domain=XCTHTestOperationCoordinatorErrorDomain Code=4 "Failed to install or launch the test runner" UserInfo={NSLocalizedDescription=Failed to install or launch the test runner, NSUnderlyingError=0x74db377f60 {Error Domain=NSMachErrorDomain Code=-308 "(ipc/mig) server died" UserInfo={DVTAnalyticsEventNameKey=com.apple.dt.IDERunOperationWorkerFinished, DVTAnalyticsEventDictionaryKey={
+    "device_identifier" = "C063FC85-4233-4864-B4F0-F6F4E1F1AD6E";
+    "device_model" = "iPhone18,3";
+    "device_osBuild" = "27.2 (24B114)";
+    "device_osBuild_monotonic" = 24001114000000000;
+    "device_os_variant" = 1;
+    "device_platform" = "com.apple.platform.iphonesimulator";
+    "device_platform_family" = 2;
+    "device_reality" = 2;
+    "device_thinningType" = "iPhone18,3";
+    "device_transport" = 4;
+    "launchSession_initiator" = 1;
+    "launchSession_schemeCommand" = Test;
+    "launchSession_schemeCommand_enum" = 2;
+    "launchSession_targetArch" = arm64;
+    "launchSession_targetArch_enum" = 6;
+    "operation_duration_ms" = 6968;
+    "operation_errorCode" = "-308";
+    "operation_errorDomain" = NSMachErrorDomain;
+    "operation_errorWorker" = IDELaunchiPhoneSimulatorLauncher;
+    "operation_error_reportable" = 1;
+    "operation_name" = IDERunOperationWorkerGroup;
+    "param_consoleMode" = 0;
+    "param_debugger_attachToExtensions" = 0;
+    "param_debugger_attachToXPC" = 0;
+    "param_debugger_type" = 1;
+    "param_destination_isProxy" = 0;
+    "param_destination_platform" = "com.apple.platform.iphonesimulator";
+    "param_diag_MTE_enable" = 0;
+    "param_diag_MainThreadChecker_stopOnIssue" = 0;
+    "param_diag_MallocStackLogging_enableDuringAttach" = 0;
+    "param_diag_MallocStackLogging_enableForXPC" = 0;
+    "param_diag_allowLocationSimulation" = 1;
+    "param_diag_checker_mtc_enable" = 0;
+    "param_diag_checker_tpc_enable" = 1;
+    "param_diag_gpu_frameCapture_enable" = 3;
+    "param_diag_gpu_shaderValidation_enable" = 0;
+    "param_diag_gpu_validation_enable" = 1;
+    "param_diag_guardMalloc_enable" = 0;
+    "param_diag_memoryGraphOnResourceException" = 0;
+    "param_diag_queueDebugging_enable" = 0;
+    "param_diag_runtimeProfile_generate" = 1;
+    "param_diag_sanitizer_asan_enable" = 0;
+    "param_diag_sanitizer_mtasan_enable" = 0;
+    "param_diag_sanitizer_tsan_enable" = 0;
+    "param_diag_sanitizer_tsan_stopOnIssue" = 0;
+    "param_diag_sanitizer_ubsan_enable" = 0;
+    "param_diag_sanitizer_ubsan_stopOnIssue" = 0;
+    "param_diag_showNonLocalizedStrings" = 0;
+    "param_diag_viewDebugging_enabled" = 0;
+    "param_diag_viewDebugging_insertDylibOnLaunch" = 0;
+    "param_install_style" = 2;
+    "param_launcher_UID" = 2;
+    "param_launcher_allowDeviceSensorReplayData" = 0;
+    "param_launcher_kind" = 0;
+    "param_launcher_style" = 0;
+    "param_launcher_substyle" = 64;
+    "param_runnable_appExtensionHostRunMode" = 0;
+    "param_runnable_productType" = "com.apple.product-type.application";
+    "param_testing_launchedForTesting" = 1;
+    "param_testing_suppressSimulatorApp" = 1;
+    "param_testing_usingCLI" = 0;
+    "sdk_canonicalName" = "iphonesimulator27.1";
+    "sdk_osVersion" = "27.1";
+    "sdk_platformID" = 7;
+    "sdk_variant" = iphonesimulator;
+}, IDERunOperationFailingWorker=IDELaunchiPhoneSimulatorLauncher, DVTIssueReportingFunctionalityKey=1, DVTErrorCreationDateKey=2026-11-16 00:38:21 +0000}}}
+16:38:21.996 xcodebuild[66305:30399023] _finishWithError:Error Domain=XCTHTestOperationCoordinatorErrorDomain Code=4 "Failed to install or launch the test runner" UserInfo={NSLocalizedDescription=Failed to install or launch the test runner, NSUnderlyingError=0x74db377f60 {Error Domain=NSMachErrorDomain Code=-308 "(ipc/mig) server died" UserInfo={DVTAnalyticsEventNameKey=com.apple.dt.IDERunOperationWorkerFinished, DVTAnalyticsEventDictionaryKey={
+    "device_identifier" = "C063FC85-4233-4864-B4F0-F6F4E1F1AD6E";
+    "device_model" = "iPhone18,3";
+    "device_osBuild" = "27.2 (24B114)";
+    "device_osBuild_monotonic" = 24001114000000000;
+    "device_os_variant" = 1;
+    "device_platform" = "com.apple.platform.iphonesimulator";
+    "device_platform_family" = 2;
+    "device_reality" = 2;
+    "device_thinningType" = "iPhone18,3";
+    "device_transport" = 4;
+    "launchSession_initiator" = 1;
+    "launchSession_schemeCommand" = Test;
+    "launchSession_schemeCommand_enum" = 2;
+    "launchSession_targetArch" = arm64;
+    "launchSession_targetArch_enum" = 6;
+    "operation_duration_ms" = 6968;
+    "operation_errorCode" = "-308";
+    "operation_errorDomain" = NSMachErrorDomain;
+    "operation_errorWorker" = IDELaunchiPhoneSimulatorLauncher;
+    "operation_error_reportable" = 1;
+    "operation_name" = IDERunOperationWorkerGroup;
+    "param_consoleMode" = 0;
+    "param_debugger_attachToExtensions" = 0;
+    "param_debugger_attachToXPC" = 0;
+    "param_debugger_type" = 1;
+    "param_destination_isProxy" = 0;
+    "param_destination_platform" = "com.apple.platform.iphonesimulator";
+    "param_diag_MTE_enable" = 0;
+    "param_diag_MainThreadChecker_stopOnIssue" = 0;
+    "param_diag_MallocStackLogging_enableDuringAttach" = 0;
+    "param_diag_MallocStackLogging_enableForXPC" = 0;
+    "param_diag_allowLocationSimulation" = 1;
+    "param_diag_checker_mtc_enable" = 0;
+    "param_diag_checker_tpc_enable" = 1;
+    "param_diag_gpu_frameCapture_enable" = 3;
+    "param_diag_gpu_shaderValidation_enable" = 0;
+    "param_diag_gpu_validation_enable" = 1;
+    "param_diag_guardMalloc_enable" = 0;
+    "param_diag_memoryGraphOnResourceException" = 0;
+    "param_diag_queueDebugging_enable" = 0;
+    "param_diag_runtimeProfile_generate" = 1;
+    "param_diag_sanitizer_asan_enable" = 0;
+    "param_diag_sanitizer_mtasan_enable" = 0;
+    "param_diag_sanitizer_tsan_enable" = 0;
+    "param_diag_sanitizer_tsan_stopOnIssue" = 0;
+    "param_diag_sanitizer_ubsan_enable" = 0;
+    "param_diag_sanitizer_ubsan_stopOnIssue" = 0;
+    "param_diag_showNonLocalizedStrings" = 0;
+    "param_diag_viewDebugging_enabled" = 0;
+    "param_diag_viewDebugging_insertDylibOnLaunch" = 0;
+    "param_install_style" = 2;
+    "param_launcher_UID" = 2;
+    "param_launcher_allowDeviceSensorReplayData" = 0;
+    "param_launcher_kind" = 0;
+    "param_launcher_style" = 0;
+    "param_launcher_substyle" = 64;
+    "param_runnable_appExtensionHostRunMode" = 0;
+    "param_runnable_productType" = "com.apple.product-type.application";
+    "param_testing_launchedForTesting" = 1;
+    "param_testing_suppressSimulatorApp" = 1;
+    "param_testing_usingCLI" = 0;
+    "sdk_canonicalName" = "iphonesimulator27.1";
+    "sdk_osVersion" = "27.1";
+    "sdk_platformID" = 7;
+    "sdk_variant" = iphonesimulator;
+}, IDERunOperationFailingWorker=IDELaunchiPhoneSimulatorLauncher, DVTIssueReportingFunctionalityKey=1, DVTErrorCreationDateKey=2026-11-16 00:38:21 +0000}}}
+16:38:21.996 xcodebuild[66305:30399023] Current state: testRunnerLaunchSessionHasFinishedReceivingData: NO, delegateBlockQueue.count: 0
+16:38:21.996 xcodebuild[66305:30399023] <XCTHTestOperationCoordinator: 0x74deb27a80>: _considerFlushingDelegateBlockQueue - nothing to flush

@@ -1,0 +1,14 @@
+error: Unable to resolve the 'building' device alias.  No runtimes match platformDir=~/Applications/Xcode-beta.app/Contents/Developer/Platforms/iPhoneOS.platform, runtimes=(
+    "iOS 18.0 (18.0 - 22A5346a) - com.apple.CoreSimulator.SimRuntime.iOS-18-0",
+    "iOS 26.2 (26.2 - 23C54) - com.apple.CoreSimulator.SimRuntime.iOS-26-2",
+    "iOS 27.0 (27.0 - 24A434) - com.apple.CoreSimulator.SimRuntime.iOS-27-0",
+    "iOS 27.1 (27.1 - 24A94401) - com.apple.CoreSimulator.SimRuntime.iOS-27-1",
+    "iOS 27.2 (27.2 - 24B114) - com.apple.CoreSimulator.SimRuntime.iOS-27-2",
+    "iOS 27.2 (27.2 - 24B91016s) - com.apple.CoreSimulator.SimRuntime.iOS-27-2-iPhone19-4"
+), error=Error Domain=NSPOSIXErrorDomain Code=2 "No such file or directory" UserInfo={NSLocalizedFailureReason=Failed to locate any simulator runtime matching options: {
+    BuildVersionString = 24C5037e;
+    Platforms =     (
+        "com.apple.platform.iphonesimulator"
+    );
+    VersionString = "27.3";
+}}

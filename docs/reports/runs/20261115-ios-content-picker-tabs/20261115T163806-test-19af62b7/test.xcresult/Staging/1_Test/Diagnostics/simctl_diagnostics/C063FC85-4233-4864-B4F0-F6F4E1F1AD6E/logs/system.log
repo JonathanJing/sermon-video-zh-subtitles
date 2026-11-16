@@ -1,0 +1,68 @@
+Nov  9 15:47:17 JonathansMBP16 syslogd[81021]: --- syslogd restarted ---
+Nov  9 15:47:17 JonathansMBP16 syslogd[81021]: Configuration Notice:
+	ASL Module "com.apple.contacts.ContactsAutocomplete" claims selected messages.
+	Those messages may not appear in standard system log files or in the ASL database.
+Nov  9 15:49:18 JonathansMBP16 syslogd[82714]: --- syslogd restarted ---
+Nov  9 15:49:18 JonathansMBP16 syslogd[82714]: Configuration Notice:
+	ASL Module "com.apple.contacts.ContactsAutocomplete" claims selected messages.
+	Those messages may not appear in standard system log files or in the ASL database.
+Nov  9 15:52:18 JonathansMBP16 syslogd[85300]: --- syslogd restarted ---
+Nov  9 15:52:18 JonathansMBP16 syslogd[85300]: Configuration Notice:
+	ASL Module "com.apple.contacts.ContactsAutocomplete" claims selected messages.
+	Those messages may not appear in standard system log files or in the ASL database.
+Nov  9 22:09:52 JonathansMBP16 syslogd[27271]: --- syslogd restarted ---
+Nov  9 22:09:52 JonathansMBP16 syslogd[27271]: Configuration Notice:
+	ASL Module "com.apple.contacts.ContactsAutocomplete" claims selected messages.
+	Those messages may not appear in standard system log files or in the ASL database.
+Nov  9 22:11:25 JonathansMBP16 syslogd[28602]: --- syslogd restarted ---
+Nov  9 22:11:25 JonathansMBP16 syslogd[28602]: Configuration Notice:
+	ASL Module "com.apple.contacts.ContactsAutocomplete" claims selected messages.
+	Those messages may not appear in standard system log files or in the ASL database.
+Nov  9 22:30:56 JonathansMBP16 syslogd[44359]: --- syslogd restarted ---
+Nov  9 22:30:56 JonathansMBP16 syslogd[44359]: Configuration Notice:
+	ASL Module "com.apple.contacts.ContactsAutocomplete" claims selected messages.
+	Those messages may not appear in standard system log files or in the ASL database.
+Nov 10 06:47:41 JonathansMBP16 syslogd[55236]: --- syslogd restarted ---
+Nov 10 06:47:41 JonathansMBP16 syslogd[55236]: Configuration Notice:
+	ASL Module "com.apple.contacts.ContactsAutocomplete" claims selected messages.
+	Those messages may not appear in standard system log files or in the ASL database.
+Nov 10 07:04:39 JonathansMBP16 syslogd[67882]: --- syslogd restarted ---
+Nov 10 07:04:39 JonathansMBP16 syslogd[67882]: Configuration Notice:
+	ASL Module "com.apple.contacts.ContactsAutocomplete" claims selected messages.
+	Those messages may not appear in standard system log files or in the ASL database.
+Nov 10 07:59:44 JonathansMBP16 syslogd[8259]: --- syslogd restarted ---
+Nov 10 07:59:44 JonathansMBP16 syslogd[8259]: Configuration Notice:
+	ASL Module "com.apple.contacts.ContactsAutocomplete" claims selected messages.
+	Those messages may not appear in standard system log files or in the ASL database.
+Nov 10 08:05:26 JonathansMBP16 syslogd[12321]: --- syslogd restarted ---
+Nov 10 08:05:26 JonathansMBP16 syslogd[12321]: Configuration Notice:
+	ASL Module "com.apple.contacts.ContactsAutocomplete" claims selected messages.
+	Those messages may not appear in standard system log files or in the ASL database.
+Nov 10 08:10:46 JonathansMBP16 syslogd[20769]: --- syslogd restarted ---
+Nov 10 08:10:46 JonathansMBP16 syslogd[20769]: Configuration Notice:
+	ASL Module "com.apple.contacts.ContactsAutocomplete" claims selected messages.
+	Those messages may not appear in standard system log files or in the ASL database.
+Nov 13 20:48:06 JonathansMBP16 syslogd[29827]: --- syslogd restarted ---
+Nov 13 20:48:06 JonathansMBP16 syslogd[29827]: Configuration Notice:
+	ASL Module "com.apple.contacts.ContactsAutocomplete" claims selected messages.
+	Those messages may not appear in standard system log files or in the ASL database.
+Nov 15 16:28:10 JonathansMBP16 syslogd[56831]: --- syslogd restarted ---
+Nov 15 16:28:10 JonathansMBP16 syslogd[56831]: Configuration Notice:
+	ASL Module "com.apple.contacts.ContactsAutocomplete" claims selected messages.
+	Those messages may not appear in standard system log files or in the ASL database.
+Nov 15 16:30:12 JonathansMBP16 syslogd[58752]: --- syslogd restarted ---
+Nov 15 16:30:12 JonathansMBP16 syslogd[58752]: Configuration Notice:
+	ASL Module "com.apple.contacts.ContactsAutocomplete" claims selected messages.
+	Those messages may not appear in standard system log files or in the ASL database.
+Nov 15 16:32:04 JonathansMBP16 syslogd[60561]: --- syslogd restarted ---
+Nov 15 16:32:04 JonathansMBP16 syslogd[60561]: Configuration Notice:
+	ASL Module "com.apple.contacts.ContactsAutocomplete" claims selected messages.
+	Those messages may not appear in standard system log files or in the ASL database.
+Nov 15 16:34:00 JonathansMBP16 syslogd[62494]: --- syslogd restarted ---
+Nov 15 16:34:00 JonathansMBP16 syslogd[62494]: Configuration Notice:
+	ASL Module "com.apple.contacts.ContactsAutocomplete" claims selected messages.
+	Those messages may not appear in standard system log files or in the ASL database.
+Nov 15 16:38:12 JonathansMBP16 syslogd[66414]: --- syslogd restarted ---
+Nov 15 16:38:12 JonathansMBP16 syslogd[66414]: Configuration Notice:
+	ASL Module "com.apple.contacts.ContactsAutocomplete" claims selected messages.
+	Those messages may not appear in standard system log files or in the ASL database.
