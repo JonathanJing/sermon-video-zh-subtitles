@@ -1648,9 +1648,13 @@ private struct WeekSheet: View {
         // A plain picker list: no playback following, so the system List
         // provides grouping, separators, selection marks and row sizing.
         List {
-            if !visiblePages.isEmpty {
-                Section(localization.text(model.allowsDevCandidates ? "Dev 内容" : "已发布页面")) {
-                    ForEach(visiblePages) { page in
+            // One flat list per kind: no "published" or "other weeks" grouping.
+            // Legacy weekly.json weeks are sermons, so they share the sermon list
+            // and sort with it by date.
+            Section {
+                ForEach(visibleEntries) { entry in
+                    switch entry {
+                    case .page(let page):
                         Button {
                             model.selectPublishedPage(page)
                             dismiss()
@@ -1660,12 +1664,7 @@ private struct WeekSheet: View {
                         }
                         .accessibilityIdentifier("published-page-\(page.id)")
                         .task(id: model.publishedHeadingKey(page)) { await model.loadPublishedHeading(page) }
-                    }
-                }
-            }
-            if showsLegacyWeeks {
-                Section {
-                    ForEach(model.weeks) { week in
+                    case .week(let week):
                         Button {
                             dismiss()
                             Task { await model.select(week: week) }
@@ -1675,14 +1674,34 @@ private struct WeekSheet: View {
                         }
                         .accessibilityIdentifier("legacy-week-\(week.id)")
                     }
-                } header: {
-                    if !visiblePages.isEmpty { Text(localization.text("其他周次")) }
                 }
+            } footer: {
+                // Dev candidates are still labelled, just without a section header.
+                if model.allowsDevCandidates { Text(localization.text("包含 Dev 内容")) }
             }
         }
         #if os(iOS)
         .listStyle(.insetGrouped)
         #endif
+    }
+
+    /// A picker row: a published page or a legacy weekly.json week.
+    private enum Entry: Identifiable {
+        case page(MultilingualPage)
+        case week(SermonWeek)
+
+        var id: String {
+            switch self {
+            case .page(let page): return page.id
+            case .week(let week): return week.id
+            }
+        }
+        var date: String {
+            switch self {
+            case .page(let page): return page.date
+            case .week(let week): return week.date
+            }
+        }
     }
 
     // MARK: Content kinds
@@ -1692,11 +1711,16 @@ private struct WeekSheet: View {
     private var showsKindTabs: Bool {
         !podcastPages.isEmpty && (!sermonPages.isEmpty || !model.weeks.isEmpty)
     }
-    private var visiblePages: [MultilingualPage] {
-        guard showsKindTabs else { return model.independentPages.sorted { $0.date > $1.date } }
-        return kind == .sermons ? sermonPages : podcastPages
+    private var visibleEntries: [Entry] {
+        let pages = model.independentPages
+        guard showsKindTabs else {
+            // One kind only: keep everything reachable in the single list.
+            return (pages.map(Entry.page) + model.weeks.map(Entry.week)).sorted { $0.date > $1.date }
+        }
+        guard kind == .sermons else { return podcastPages.map(Entry.page) }
+        // Legacy weeks are sermons: one list, sorted by date, no second section.
+        return (sermonPages.map(Entry.page) + model.weeks.map(Entry.week)).sorted { $0.date > $1.date }
     }
-    private var showsLegacyWeeks: Bool { !model.weeks.isEmpty && (!showsKindTabs || kind == .sermons) }
     private var sermonPages: [MultilingualPage] {
         model.independentPages.filter { !$0.isPodcastContent }.sorted { $0.date > $1.date }
     }
