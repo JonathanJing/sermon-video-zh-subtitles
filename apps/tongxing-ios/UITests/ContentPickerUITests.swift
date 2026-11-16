@@ -50,6 +50,8 @@ final class ContentPickerUITests: XCTestCase {
         XCTAssertTrue(app.navigationBars["证道与播客"].waitForExistence(timeout: 5))
         let tabs = app.segmentedControls["picker-content-tabs"]
         XCTAssertTrue(tabs.waitForExistence(timeout: 10), "The picker separates the two content kinds.")
+        // The page on screen is a sermon, so the sheet must open on that tab.
+        XCTAssertTrue(tabs.buttons["周日证道"].isSelected, "The sermon page must open the sermon tab")
         XCTAssertTrue(sermon.waitForExistence(timeout: 10))
         XCTAssertFalse(podcast.exists, "A podcast must not sit in the sermon list.")
         capture("picker-content-tabs-sermons", app: app)
@@ -61,8 +63,32 @@ final class ContentPickerUITests: XCTestCase {
 
         tabs.buttons["周日证道"].tap()
         XCTAssertTrue(sermon.waitForExistence(timeout: 10))
-        // Choosing a row still closes the sheet and switches the page.
-        sermon.tap()
+
+        // Reopening after closing from another tab still follows the content, not
+        // the tab the user left behind (reported 2026-11-16).
+        app.buttons["完成"].tap()
+        XCTAssertTrue(app.navigationBars["证道与播客"].waitForNonExistence(timeout: 5))
+        app.buttons["choose-sermon"].tap()
+        let reopened = app.segmentedControls["picker-content-tabs"]
+        XCTAssertTrue(reopened.waitForExistence(timeout: 10))
+        XCTAssertTrue(reopened.buttons["周日证道"].isSelected, "Reopen must return to the sermon tab")
+        capture("picker-content-tabs-reopened", app: app)
+
+        // Choosing the podcast switches the page; the next open follows it.
+        reopened.buttons["播客"].tap()
+        let podRow = app.buttons["published-page-\(podcastID)"]
+        XCTAssertTrue(podRow.waitForExistence(timeout: 10))
+        podRow.tap()
+        XCTAssertTrue(app.staticTexts["published-page-title"].waitForExistence(timeout: 15))
+        app.buttons["choose-sermon"].tap()
+        let podcastDefault = app.segmentedControls["picker-content-tabs"]
+        XCTAssertTrue(podcastDefault.waitForExistence(timeout: 10))
+        XCTAssertTrue(podcastDefault.buttons["播客"].isSelected, "A podcast page must open the podcast tab")
+        capture("picker-content-tabs-podcast-default", app: app)
+        podcastDefault.buttons["周日证道"].tap()
+        let sermonAgain = app.buttons["published-page-\(sermonID)"]
+        XCTAssertTrue(sermonAgain.waitForExistence(timeout: 10))
+        sermonAgain.tap()
         XCTAssertTrue(app.staticTexts["published-page-title"].waitForExistence(timeout: 15))
         XCTAssertFalse(app.navigationBars["证道与播客"].exists)
     }
