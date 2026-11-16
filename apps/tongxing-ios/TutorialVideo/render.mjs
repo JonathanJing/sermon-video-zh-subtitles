@@ -5,7 +5,9 @@
 //   node apps/tongxing-ios/TutorialVideo/render.mjs                  # full video
 //   node apps/tongxing-ios/TutorialVideo/render.mjs --stills 2,17,30 # PNG frames only, for review
 //
-// Options: --out <dir>  --chrome <binary>  --stills <t,t,...>  --no-audio  --scene <html>
+//   node apps/tongxing-ios/TutorialVideo/render.mjs --narration <wav> --subtitles <srt>   # narrated cut
+//
+// Options: --out <dir>  --chrome <binary>  --stills <t,t,...>  --no-audio  --scene <html>  --narration <wav>  --subtitles <srt>
 import { spawn, execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { once } from 'node:events';
@@ -122,6 +124,9 @@ async function main() {
   const outDir = resolve(args.out ?? join(repo, 'artifacts/tongxing-ios', day, 'tutorial-video'));
   mkdirSync(outDir, { recursive: true });
   const chrome = findChrome(args.chrome);
+  const narration = args.narration ? resolve(args.narration) : null, subtitles = args.subtitles ? resolve(args.subtitles) : null;
+  for (const f of [narration, subtitles]) if (f && !existsSync(f)) throw new Error(`missing file: ${f}`);
+  if (narration && args.noAudio) throw new Error('--narration and --no-audio exclude each other');
 
   const { cdp, close } = await launch(chrome, 1920, 1080);
   try {
@@ -136,7 +141,7 @@ async function main() {
     await send('Page.enable');
     await send('Emulation.setDeviceMetricsOverride', { width: 1920, height: 1080, deviceScaleFactor: 1, mobile: false });
     const loaded = cdp.waitFor('Page.loadEventFired');
-    await send('Page.navigate', { url: `${pathToFileURL(scene).href}?render=1` });
+    await send('Page.navigate', { url: `${pathToFileURL(scene).href}?render=1${narration ? '&voice=1' : ''}` });
     await loaded;
     const broken = await evaluate(`document.fonts.ready.then(() => Promise.all([...document.images].map(i => i.decode().then(() => null, () => i.src)))).then(r => r.filter(Boolean))`);
     if (broken.length) throw new Error(`images failed to load: ${broken.join(', ')}`);
@@ -156,14 +161,24 @@ async function main() {
       return;
     }
 
-    const name = 'tongxing-alignment-tutorial';
+    const name = `tongxing-alignment-tutorial${narration ? '-zh-voice' : ''}`;
     const video = join(outDir, `${name}.mp4`), wav = join(outDir, `${name}-cues.wav`);
     const input = ['-f', 'image2pipe', '-framerate', String(meta.fps), '-c:v', 'png', '-i', 'pipe:0'];
+    const maps = ['-map', '0:v'];
     if (!args.noAudio) { writeFileSync(wav, synthCues(meta.cues, meta.duration)); input.push('-i', wav); }
-    const ff = spawn('ffmpeg', ['-y', '-loglevel', 'error', ...input,
+    if (narration) {   // the voice leads; the cue tones sit under it
+      input.push('-i', narration);
+      maps.unshift('-filter_complex', '[1:a]volume=0.45[c];[2:a]aresample=48000,volume=5.5dB,alimiter=limit=0.88:attack=3:release=60:level=disabled[n];[c][n]amix=inputs=2:duration=longest:normalize=0[a]');
+      maps.push('-map', '[a]');
+    } else if (!args.noAudio) maps.push('-map', '1:a');
+    if (subtitles) {
+      input.push('-i', subtitles);
+      maps.push('-map', `${input.filter(a => a === '-i').length - 1}:0`, '-c:s', 'mov_text', '-metadata:s:s:0', 'language=chi', '-metadata:s:s:0', 'title=中文旁白');
+    }
+    const ff = spawn('ffmpeg', ['-y', '-loglevel', 'error', ...input, ...maps,
       '-vf', 'scale=out_color_matrix=bt709:out_range=tv,format=yuv420p', '-c:v', 'libx264', '-preset', 'slow', '-crf', '17',
       '-colorspace', 'bt709', '-color_primaries', 'bt709', '-color_trc', 'bt709', '-r', String(meta.fps),
-      ...(args.noAudio ? [] : ['-c:a', 'aac', '-b:a', '160k', '-ac', '2']), '-movflags', '+faststart', video],
+      ...(args.noAudio ? [] : ['-c:a', 'aac', '-b:a', '160k', '-ac', '2']), '-t', String(meta.duration), '-movflags', '+faststart', video],
       { stdio: ['pipe', 'inherit', 'inherit'] });
     const ffDone = once(ff, 'exit');
     const total = Math.round(meta.duration * meta.fps);
@@ -180,7 +195,10 @@ async function main() {
       scene: { path: scene.replace(repo + '/', ''), sha256: sha256(scene) }, gitRevision: tryRun('git', ['rev-parse', 'HEAD']),
       gitDirty: (tryRun('git', ['status', '--porcelain', '--', here]) ?? '') !== '', chrome: tryRun(chrome, ['--version']),
       ffmpeg: (tryRun('ffmpeg', ['-version']) ?? '').split('\n')[0], frames: total, fps: meta.fps, width: meta.width, height: meta.height,
-      durationSeconds: meta.duration, audio: args.noAudio ? 'none' : 'synthesized cue tones (render.mjs)', video: { file: basename(video), sha256: sha256(video) },
+      durationSeconds: meta.duration, audio: args.noAudio ? 'none' : narration ? 'AI-synthesized narration over synthesized cue tones' : 'synthesized cue tones (render.mjs)',
+      ...(narration ? { narration: { file: basename(narration), sha256: sha256(narration), humanListening: 'not_run' } } : {}),
+      ...(subtitles ? { subtitles: { file: basename(subtitles), sha256: sha256(subtitles), track: 'mov_text, off by default' } } : {}),
+      video: { file: basename(video), sha256: sha256(video) },
       renderedAt: now.toISOString(),
     };
     writeFileSync(join(outDir, `${name}-manifest.json`), JSON.stringify(manifest, null, 2) + '\n');

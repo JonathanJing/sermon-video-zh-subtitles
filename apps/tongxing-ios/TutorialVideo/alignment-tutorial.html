@@ -304,8 +304,8 @@
     <h2>差一点？<em>前后微调</em></h2>
     <div class="lines">
       <div class="line" data-at="1.0"><span class="dot"><svg class="i"><use href="#back"/></svg></span>中文<b>抢先</b>了 → 点左边，后退 1 秒</div>
-      <div class="line" data-at="5.6"><span class="dot"><svg class="i"><use href="#fwd"/></svg></span>中文<b>落后</b>了 → 点右边，前进 1 秒</div>
-      <div class="line small" data-at="7.4"><span class="dot"><svg class="i"><use href="#glass"/></svg></span>更细的调整：点放大镜 →「定位 / 精调」</div>
+      <div class="line" data-at="6.6"><span class="dot"><svg class="i"><use href="#fwd"/></svg></span>中文<b>落后</b>了 → 点右边，前进 1 秒</div>
+      <div class="line small" data-at="8.6"><span class="dot"><svg class="i"><use href="#glass"/></svg></span>更细的调整：点放大镜 →「定位 / 精调」</div>
     </div>
   </div>
   <div class="panel abs" id="p4">
@@ -447,7 +447,8 @@ const rnd = i => { const x = Math.sin(i * 127.1 + 311.7) * 43758.5453; return x 
 const fmt = s => { s = Math.max(0, Math.floor(s)); return String(Math.floor(s / 60)).padStart(2, '0') + ':' + String(s % 60).padStart(2, '0'); };
 const icon = (id, extra = '') => `<svg class="i" ${extra}><use href="#${id}"/></svg>`;
 
-const DURATION = 65, FPS = 30;
+const DURATION = 66.5, FPS = 30;
+const VOICE = new URLSearchParams(location.search).has('voice');   // the narrated cut discloses its synthetic voice
 const S = {            // scene windows, seconds
   title: [0, 4.7], s1: [4.7, 13.3], s2a: [13.3, 21.3], s2b: [21.3, 31.3], s2c: [31.3, 40.4],
   s3: [40.4, 51.6], s4: [51.6, 58.2], end: [58.2, DURATION],
@@ -500,6 +501,10 @@ $('touches').innerHTML = touchDefs.map((_, i) => `<div class="touch abs" id="tou
 const LAUNCH = [$('grid').offsetLeft + $('txIcon').offsetLeft + 32, $('grid').offsetTop + $('txIcon').offsetTop + 32];
 document.querySelectorAll('.line').forEach(l => {   // keep the sentence one inline run next to its bullet
   const say = document.createElement('span'); [...l.childNodes].slice(1).forEach(n => say.appendChild(n)); l.appendChild(say); });
+if (VOICE) {
+  $('note').textContent = '示意动画 · 界面以实际 App 为准 · 示例字幕非本周内容 · 旁白为 AI 合成语音';
+  const fine = $('end').querySelector('.fine'); fine.innerHTML = fine.innerHTML.replace('<br>', '<br>本片旁白为 AI 合成语音 · ');
+}
 const PANELS = [['p1', S.s1], ['p2a', S.s2a], ['p2b', S.s2b], ['p2c', S.s2c], ['p3', S.s3], ['p4', S.s4]];
 const stage = $('stage');
 let lastHTML = {};
@@ -641,7 +646,7 @@ function renderAt(t) {
   const bb = $('btnBack'), bf = $('btnFwd'), bm = $('btnMore');
   const ringOf = (a, b) => t > a && t < b ? .5 + .5 * Math.sin((t - a) * Math.PI * 2 / 1.0 - Math.PI / 2) : -1;
   const ring = (el, v, c = '43,99,82') => { el.style.boxShadow = v >= 0 ? `0 0 0 ${2 + v * 4}px rgba(${c},${.55 - v * .3})` : 'none'; el.style.background = v >= 0 ? `rgba(${c},.10)` : 'transparent'; };
-  ring(bb, ringOf(S.s3[0] + 1.6, E.tapBack + .1)); ring(bf, ringOf(S.s3[0] + 6.2, S.s3[0] + 8.0)); ring(bm, ringOf(S.s3[0] + 8.2, S.s3[0] + 10.6));
+  ring(bb, ringOf(S.s3[0] + 1.6, E.tapBack + .1)); ring(bf, ringOf(S.s3[0] + 6.8, S.s3[0] + 8.9)); ring(bm, ringOf(S.s3[0] + 9.0, S.s3[0] + 10.9));
   bb.style.transform = `scale(${1 - .12 * (1 - Math.abs(prog(t, E.tapBack - .08, E.tapBack + .24) * 2 - 1))})`;
 
   /* alerts */
