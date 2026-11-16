@@ -1,0 +1,128 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261115-ios-production-1-26-34",
+  "runs": [
+    {
+      "label": "production-1.26.34",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.agents/worktrees/picker-content-tabs/artifacts/tongxing-ios/production-1.26.34",
+      "skipped": {
+        ".plist": 19,
+        "(none)": 73,
+        ".yml": 4,
+        ".json": 30,
+        ".swiftdoc": 8,
+        ".swiftmodule": 8,
+        ".timestamp": 4,
+        ".h": 9,
+        ".modulemap": 4,
+        ".hmap": 12,
+        ".DependencyMetadataFileList": 4,
+        ".DependencyStaticMetadataFileList": 4,
+        ".xcent": 2,
+        ".der": 2,
+        ".stringsdata": 4,
+        ".o": 62,
+        ".dia": 8,
+        ".d": 4,
+        ".swiftconstvalues": 4,
+        ".LinkFileList": 4,
+        ".SwiftConstValuesFileList": 4,
+        ".SwiftFileList": 4,
+        ".swiftsourceinfo": 4,
+        ".dat": 4,
+        ".yaml": 1,
+        ".sb": 1,
+        ".swift": 1,
+        ".sh": 1,
+        ".dep": 1,
+        ".plist_thinned": 1,
+        ".png": 4,
+        ".car": 2,
+        ".strings": 15,
+        ".mobileprovision": 3,
+        ".db": 1,
+        ".msgpack": 2,
+        ".txt": 2,
+        ".v1": 3,
+        ".shared": 3,
+        ".xcactivitylog": 2,
+        ".pcm": 398,
+        ".modulevalidation": 1,
+        ".sdkstatcache": 1,
+        ".xcprivacy": 1,
+        ".jpg": 2,
+        ".ipa": 1,
+        ".py": 7
+      }
+    }
+  ],
+  "files": [
+    {
+      "run": "production-1.26.34",
+      "path": "archive/archive.log",
+      "kind": "log",
+      "bytes": 546719,
+      "truncated": true,
+      "sha256": "0a1479909bad9775e6863ceefbeb9871c82360b70a57866cb8481e7a9794d283",
+      "redactions": {
+        "email": 1,
+        "home_dir": 166
+      }
+    },
+    {
+      "run": "production-1.26.34",
+      "path": "archive/export/Packaging.log",
+      "kind": "log",
+      "bytes": 31125,
+      "truncated": true,
+      "sha256": "9f8e22d795570c98432ae18aba04c91aefdafcc26cb846f6061680788ae0c707",
+      "redactions": {
+        "email": 2,
+        "home_dir": 14
+      }
+    },
+    {
+      "run": "production-1.26.34",
+      "path": "archive/export.log",
+      "kind": "log",
+      "bytes": 471,
+      "truncated": false,
+      "sha256": "190683fcc3d672734902b9ec54a65349caf3c468f266b5687e378e2460e6185f",
+      "redactions": {
+        "home_dir": 1
+      }
+    },
+    {
+      "run": "production-1.26.34",
+      "path": "archive/upload.log",
+      "kind": "log",
+      "bytes": 7013,
+      "truncated": false,
+      "sha256": "662f6981ca0bd9765fcb29dac8aee306e37eb45611d77fca164abe0433273387",
+      "redactions": {}
+    },
+    {
+      "run": "production-1.26.34",
+      "path": "state/apply-receipt.json",
+      "kind": "whole",
+      "bytes": 716,
+      "truncated": false,
+      "sha256": "c7acb98c02b252c5a747ae107aa5095d55e8941555d31d42d4cfc7d198115426",
+      "redactions": {}
+    },
+    {
+      "run": "production-1.26.34",
+      "path": "state/submit-receipt.json",
+      "kind": "whole",
+      "bytes": 485,
+      "truncated": false,
+      "sha256": "f6b9a39015a76180d9a29f3427def247c523f9a3f61359487d840505be228e59",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}
