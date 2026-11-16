@@ -35,19 +35,36 @@
 
 ## 错误
 
+真机整轮 179 项：155 通过、16 跳过、8 失败。8 项都在设备上真实复现，但都不经过本次改动触及的音频会话代码；同一批测试在模拟器上 0 失败。
+
 | 层／阶段 | 现象 | 原因 | 发现时机 | 处理 | 回归测试 | 提交或 PR |
 |---|---|---|---|---|---|---|
-| 真机整轮 | 7 个单测报 `NSCocoaErrorDomain 260`，读不到 fixture | 这些测试用 `#filePath` 拼绝对路径读构建机文件，设备上不存在 | 占用设备后 | 判为模拟器专用，未改测试 | 无 | 后续可加 `XCTSkip`（见改进） |
-| 真机整轮 | `TongxingUITests-Runner` 初始化超时 | 设备未开启「启用 UI 自动化」 | 占用设备后 | 本轮不需要 UI 测试，未处理 | 无 | 操作员设置项 |
-| 真机调试 | `xcode_lldb attach` 三次都在 35 s 后报「process never stopped」 | 未定位；设备调试通道未给出停止事件 | 占用设备后 | 改用真机测试套件读同一路由 | 本轮改用测试证据 | 记在本报告 |
+| 真机整轮（7 项单测） | `NSCocoaErrorDomain Code=260`，读不到 fixture | `URL(fileURLWithPath: #filePath)` 把构建机的源码绝对路径编进了测试二进制；手机上该路径不存在 | 占用设备后 | 判为模拟器专用，未改测试 | 模拟器同一轮同名测试通过 | 建议加 `XCTSkip`（见改进） |
+| 真机整轮（1 项 UI） | `TongxingUITests-Runner (10788)` 初始化失败，`Timed out while enabling automation mode` | 手机未开启「设置 → 开发者 → 启用 UI 自动化」，自动化模式握手超时 | 占用设备后 | 本轮不需要 UI 测试，未处理 | 无 | 操作员设备设置 |
+| 真机调试 | `xcode_lldb attach` 三次都在约 35 s 报「process never stopped」 | 未定位；设备调试通道没有给出停止事件 | 占用设备后 | 改用真机测试套件读同一路由 | 本轮改用测试证据 | 记在本报告 |
+
+### 8 项失败逐条对照
+
+| # | 测试 | 原因 |
+|---|---|---|
+| 1 | `AppDeepLinkModelTests.testLinkDuringRefreshSurvivesDelayedCatalogResponse` | 读 `Core/Tests/TongxingCoreTests/Fixtures/catalog.synthetic.json`，靠 `#filePath` 定位源码树；设备上无此路径 |
+| 2 | `AppDeepLinkModelTests.testLinkDuringStartupSurvivesDelayedInitialCatalogLoad` | 同上 |
+| 3 | `AppDeepLinkModelTests.testManualSelectionSurvivesDelayedMissingLinkRefresh` | 同上 |
+| 4 | `AppDeepLinkModelTests.testMissingLinkPreservesExistingSelectionAndLocale` | 同上 |
+| 5 | `AppDeepLinkModelTests.testWarmLinkSelectsRequestedPageAndLocale` | 同上 |
+| 6 | `AudioAlignmentControllerTests.testDevCandidateSelectionRequiresBetaIdentityAndExactOrigin` | 读 `dev-candidate-catalog-readback.json`，同一 `#filePath` 机制 |
+| 7 | `MachineDisclosureTests.testAudioDisclosureSurvivesTranscriptFailureAndRejectsStaleSelections` | 读 `shared-machine-checked-contracts.json`，同一 `#filePath` 机制 |
+| 8 | `TongxingUITests-Runner`（不是具体用例） | UI 自动化模式未启用，runner 无法初始化 |
+
+1–7 都用同一写法：`URL(fileURLWithPath: #filePath).deletingLastPathComponent()...Core/Tests/TongxingCoreTests/Fixtures/...`。`#filePath` 在编译期展开成这台 Mac 上的源码绝对路径，模拟器上该路径可读，设备上不可读；因此差异只在 fixture 能否打开，不在被测行为。本次两条路由测试不用 fixture，所以不受影响。
 
 ## 可以改进的地方
 
 | 类别 | 改进 | 依据（本报告的数值或错误） | 预期收益 | 负责人 | 跟踪 |
 |---|---|---|---|---|---|
-| 预检 | 设备跑全量前先确认 UI 自动化开关与 fixture 依赖 | 本轮 8 项失败 | 省一次约 2 分钟返工 | 待定 | 本报告 |
-| 质量 | 给 `#filePath` fixture 测试加 `fileExists` 的 `XCTSkip`，让设备整轮可作回归信号 | 同上 7 项 | 设备全量不再红 | 待定 | 本报告 |
-| 流程 | 记录无可用物理设备时先问，再准备构建 | 本次在无设备时先做了签名与构建准备 | 少一次等待 | 待定 | 本报告 |
+| 质量 | 把 7 个 `#filePath` fixture 测试改成 bundle resource，或先用 `FileManager.fileExists` 判断后 `XCTSkip` | 真机 7 项失败 | 设备整轮不再红，可当回归信号 | 待定 | 本报告 |
+| 预检 | 跑真机整轮前先确认「启用 UI 自动化」和 fixture 依赖 | 真机 1 项 UI runner 失败 | 省一次约 2 分钟返工 | 待定 | 本报告 |
+| 流程 | 没有可用物理设备时先确认再准备构建 | 本次在设备接入前先做了签名与构建准备 | 少一次等待 | 待定 | 本报告 |
 
 ## 实际覆盖范围
 
