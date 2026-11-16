@@ -156,38 +156,50 @@ launchd: sfa_supervisor (KeepAlive + 退避 + 熔断)
 
 所以只要把「详情页」的宿主管好，整条链可以做到零翻墙；而且决定根本不走页面。
 
-### 6.4 宿主：Firebase 能用的是哪一半
+### 6.4 宿主：假设 Firebase Hosting 必须翻墙
 
-Firebase 是三种完全不同的网络路径，必须分开看：
+先按最坏情况设计：**`ai-for-god-sermon-audio.web.app` 在境内必须开 VPN 才打得开**。产品站仍留在 Firebase（受众在美国），审核面另找宿主。
 
-| 组件 | 出口 | 境内可达 | 结论 |
+Firebase 的三条路径本来就是三种命运，这一假设只否掉第一条：
+
+| 组件 | 出口 | 境内 | 结论 |
 |---|---|---|---|
-| Hosting（`*.web.app` / `*.firebaseapp.com`） | Fastly 边缘（约 `199.36.158.x`），不是 Google 被封的网段 | **需实测，可能可用** | 若可用，直接复用现有 `firebase deploy` |
-| Firestore / Cloud Functions | Google 域名 | 基本不可达 | 不能承担页面写回 |
+| Hosting（`*.web.app`） | 据社区记录走 Fastly 边缘（约 `199.36.158.x`），不是 Google 被封的网段 | **假设不可达** | 审核面不用它 |
+| Firestore / Cloud Functions | Google 域名 | 不可达 | 不能承担页面写回 |
 | Cloud Storage | `storage.googleapis.com` | 不可达 | 音频不放这里 |
 
-这带来一个很省事的组合：**若 Hosting 实测可达，审核页做成纯静态页**——页面不发任何 API、音频同域、决定走飞书（§6.5）。只需要一条 `firebase deploy`，不需要新宿主，也不需要新运维。
+#### 首选栈：阿里云 OSS 香港 + 飞书
 
-若 Hosting 不可达，按顺序选：
+| 层 | 选什么 | 为什么 |
+|---|---|---|
+| 页面与音频 | 阿里云 OSS，香港区域（`oss-cn-hongkong`） | 默认域名 `oss-cn-hongkong.aliyuncs.com` **不用备案、不用自有域名**；阿里自己的网络，境内通常直连；支持 Range |
+| 决定 | 飞书自建应用 + 长连接（§6.5） | 境内推送与回调都不依赖翻墙，且不需要公网 IP |
+| 生产端 | Mac 用 `ossutil` 上传、轮询飞书 | 美国出站到阿里云与飞书都没有障碍 |
 
-| 候选 | 境内可达 | 成本 | 备注 |
-|---|---|---|---|
-| Cloudflare Pages/Worker + R2 | 通常可用 | 近零 | 支持 Range；自定义域名 |
-| 香港 OSS（`oss-cn-hongkong`） | 好 | 低 | 默认域名即可，不用备案 |
-| 阿里云 OSS + CDN | 最稳 | 中 | 自定义域名要备案 |
-| 香港/新加坡 VPS | 好 | 低 | 完全可控，自己运维 |
+不选 Cloudflare 当主栈的原因很具体：`*.workers.dev` 与 `*.pages.dev` 在境内时通时不通，稳定做法是绑**自有域名**——那就要多一个域名和证书的负担。如果已经有域名，Cloudflare 是很合适的备选；没有域名时，OSS 香港是最短路径。
+
+| 候选 | 需要域名？ | 需要备案？ | 境内 | 何时选它 |
+|---|---|---|---|---|
+| **阿里云 OSS 香港** | 否 | 否 | 通常直连可用 | 默认首选 |
+| Cloudflare Pages/Worker + R2 | 是（自有域名） | 否 | 视域名与线路 | 已有域名、想要一个 Worker API |
+| 阿里云 OSS + CDN（大陆） | 是 | **是** | 最稳 | 要求秒开、愿意备案 |
+| 香港/新加坡 VPS | 可选 | 否 | 好 | 需要服务端写回与长期存档 |
+
+#### 若实测 Hosting 反而可用
+
+那就退回更省的方案：审核页做成**纯静态页**随 `firebase deploy` 发布，音频同域，决定仍走飞书。两条分支的**页面代码完全相同**——只是上传目标不同（`firebase deploy` 或 `ossutil cp`）。所以先写页面、后定宿主，不会返工。
 
 **十分钟实测清单**（在境内、关掉 VPN 的同一台手机上做完，结论写进本节）：
 
 ```text
-1. 打开 https://ai-for-god-sermon-audio.web.app        # Firebase Hosting 能不能开
-2. 打开同一页面上的任意 MP3，确认能边下边播           # Range 是否被中间设备破坏
-3. 打开一个 Cloudflare 托管的测试页                    # 备选宿主
-4. 在飞书里收一条卡片并点一个按钮                      # 决定通道
-5. 打开任意 https://storage.googleapis.com/…          # 预期失败，确认 GCS 不能放音频
+1. 打开 https://ai-for-god-sermon-audio.web.app        # 假设失败；确认假设
+2. 打开一个 oss-cn-hongkong 上的测试对象               # 首选宿主
+3. 对该对象发 Range: bytes=0-1023 请求                 # MP3 边下边播的前提
+4. 在飞书里收一条卡片并回一句文字                       # 决定通道
+5. 打开任意 https://storage.googleapis.com/…           # 预期失败，确认 GCS 不能放音频
 ```
 
-五项里 1 与 2 通过，就选 Firebase Hosting；只有 4 通过，就说明「决定走飞书、页面另找宿主」的拆分是对的。
+2、3、4 通过就可以开工；2 失败才需要动用 VPS 或备案域名。
 
 ### 6.5 决定通道：飞书自建应用 + 长连接
 
@@ -199,12 +211,14 @@ Firebase 是三种完全不同的网络路径，必须分开看：
 2. 卡片回调必须走**新版 `card.action.trigger`**——[旧的「消息卡片回传交互」不支持长连接](https://open.feishu.cn/document/event-subscription-guide/callback-subscription/step-1-choose-a-subscription-mode/configure-callback-request-address?lang=zh-CN)；
 3. 收到事件后 **3 秒内**必须返回，否则触发重推。所以回调只写一条决定，绝不在这里跑生产步骤。
 
-用法分两层：
+**文字为准，按钮为辅。** 这条规则的来源很具体：卡片按钮的点击只走回调，**不进聊天记录**；回调若在 Mac 离线时丢失，就没有任何地方能捞回来。而一句文字口令留在聊天里，Mac 恢复后可以按 `message_id` 补读并重放。所以让「决定性信息」始终是一条可回读的文字。
 
-- **快决**：卡片里放「通过 / 有问题 / 稍后」按钮，回调直接落成一条决定。
-- **深审**：卡片里放纯静态详情页的链接；审完在飞书里回一句口令。
+| 形式 | 可靠性 | 用途 |
+|---|---|---|
+| 文字口令 | 消息在聊天历史里，可回放 | **决定性输入** |
+| 卡片按钮 | 只在 Mac 在线时落盘 | 顺手的快路径，丢了还有文字 |
 
-口令协议（短、幂等、可核对）：
+口令协议（短、可核对、幂等）：
 
 | 口令 | 含义 |
 |---|---|
@@ -213,7 +227,11 @@ Firebase 是三种完全不同的网络路径，必须分开看：
 | `B PASS played=52` | 按标记听完 52 句 |
 | `B PASS whole` | 整轨听完 |
 
-每条口令带 `productionId`，服务端校验飞书 `user_id`/`chat_id` 白名单，落成 `decisions.ndjson` 的一行；同一 `(productionId, checkpoint)` 只接受第一次，飞书重推天然幂等。
+**恢复路径**（这是能去掉 Worker 的关键）：Mac 启动或重连时，用 `im/v1/messages` 按 `chat_id` 拉上次已处理位置之后的消息，逐条匹配口令；以 `message_id` 去重，落 `decisions.ndjson`。于是「Mac 关机时点了通过」不会丢——只要你补发过一句文字，或者本来就用文字。
+
+**为什么不做「按钮失败就默认放行」**：那会把一次丢失的回调变成一次带 `auto_waived` 的发布，等于用假标签掩盖投递故障。默认不放行，只在超时且**确认无人应答**时才按 deadline 策略走。
+
+**校验**：只接受白名单内的飞书 `user_id` 与 `chat_id`；`productionId` 从卡片标题与口令前缀双写，不一致就不落地。
 
 ### 6.6 鉴权与过期
 
@@ -238,14 +256,14 @@ Firebase 是三种完全不同的网络路径，必须分开看：
 | `pack.json` | 几十 KB | 句表、译文、口播稿、时间、标记原因、哈希 |
 | 原声切片（可选） | 每句 3–8 s | A/B 用，`review_player.py` v2 已有该交互 |
 
-一次性下载约 75 MB，MBP14 可以整包缓存；手机只流式取当前句。
+一次性下载约 75 MB，MBP14 可以整包缓存；手机只流式取当前句。包由 `review_pack.py` 生成，`ossutil cp -r` 上传到 `oss://<bucket>/review/<随机 token>/`（或 `firebase deploy`，两条分支的包完全相同）。
 
 ### 7.2 交互
 
 复用 `review_player.py` v2，不重写：按句播放、空格暂停、J/K 跳句、Enter 通过、X 标记、F 下一疑点、A/B 原声对照、逐句备注。远程版只加两件：
 
 1. **只推疑点**：默认视图 = 全部疑点 + 随机 10 句，其余折叠。这是把 60 分钟压到 15 分钟的唯一办法，也和 `flagged_only` 的诚实标签一致。
-2. **本地保存进度**：`localStorage` + 一键导出，跨设备靠导出文件，不靠服务端（静态页没有服务端）。
+2. **一键复制口令**：审核结束按钮把 `B PASS played=52` 这类行复制到剪贴板，粘贴进飞书即完成回传。**这一步取代了 API**：页面不需要写任何请求，也就不需要 CN 可达的 Worker。
 
 ### 7.3 纯静态页的取舍
 
@@ -360,7 +378,7 @@ Firebase 是三种完全不同的网络路径，必须分开看：
 ## 11 未决问题
 
 1. **监督者怎么起会话**：走 `remote-agent-watch` 的 DSH Remote API（已有、手机在用），还是写一个只跑固定命令序列的窄脚本、只把判断类步骤交给代理？（决定 M0 的形状）
-2. **审核面宿主**：先做 §6.4 的十分钟实测——在境内手机上直接打开现有的 `https://ai-for-god-sermon-audio.web.app`。能开就用 Firebase Hosting（一条 `firebase deploy`，最省事）；打不开再选 Cloudflare / 香港 OSS / 阿里云。
+2. **审核面宿主**：按「Hosting 必须翻墙」设计，首选阿里云 OSS 香港（不用域名、不用备案）。确认两点：你有阿里云账号与 `ossutil`；以及哪个 bucket 放审核素材（建议与生产素材分开）。已有域名的话，Cloudflare 也很好。
 3. **飞书应用类型**：确认你用的是**企业自建应用**（长连接只支持这一类），并决定用哪个群或私聊承接决定。
 4. **发布授权粒度**：整批预授权（≤3 次部署），还是最后一次生产部署仍需人手点？
 5. **MBP14 的角色**：只做审核终端，还是保留「降级生产者」（MPS TTS）的能力？后者要提前把 checkpoint 与 `.venv-sfa` 复制过去，且产物是独立执行身份。
