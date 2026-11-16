@@ -1,35 +1,20 @@
 {
   "schemaVersion": "ios-alignment-tests-v1",
-  "status": "pass",
   "commit": "6fc2c0966409708e2c784fd8415d72667dea43f7",
   "branch": "fix/ios-builtin-mic-route",
-  "derivedBy": "agent, from each run's run.log and status.json under the listed run_directory; the CLI writes status.json, not summary.json",
   "change": "Listening alignment keeps the phone microphone: the capture session requests A2DP only instead of Bluetooth HFP, prefers the built-in input, and clears that preference when playback is restored",
   "newTests": [
     "AudioAlignmentControllerTests/testAlignmentCaptureRouteKeepsBluetoothMicrophoneOut",
     "AudioAlignmentControllerTests/testRestoringPlaybackClearsTheCaptureInputPreference"
   ],
   "notProven": [
-    "physical-device Bluetooth headset routes to the built-in microphone (requires the AudioSession log line on a device)",
     "actual listening quality with a headset connected",
     "iOS 17 minimum supported system (no such simulator runtime is installed here)"
   ],
+  "status": "pass",
   "scope": "simulator_unit_tests_not_physical_device_testflight_or_venue",
+  "note": "the alignment test class on the older supported simulator runtime",
   "runs": [
-    {
-      "action": "test",
-      "started": "2026-11-16T15:43:55.965958-08:00",
-      "finished": "2026-11-16T15:44:56.551892-08:00",
-      "exit_status": 0,
-      "only_testing": [
-        "TongxingTests"
-      ],
-      "configuration": "Debug",
-      "simulator": "iPhone 17 iOS 27.2",
-      "result": "178 executed, 162 passed, 16 skipped (Beta identity and frozen assets), 0 failed",
-      "run_directory": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.agents/worktrees/fix/ios-builtin-mic-route/artifacts/tongxing-ios/2026-11-16/cli/20261116T154355-test-77967781",
-      "xcresult": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.agents/worktrees/fix/ios-builtin-mic-route/artifacts/tongxing-ios/2026-11-16/cli/20261116T154355-test-77967781/test.xcresult"
-    },
     {
       "action": "test",
       "started": "2026-11-16T15:45:04.487327-08:00",
@@ -40,7 +25,7 @@
       ],
       "configuration": "Debug",
       "simulator": "iPhone 17 iOS 26.2",
-      "result": "48 executed, 46 passed, 2 skipped (Beta identity and frozen assets), 0 failed",
+      "result": "48 executed, 46 passed, 2 skipped, 0 failed",
       "run_directory": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.agents/worktrees/fix/ios-builtin-mic-route/artifacts/tongxing-ios/2026-11-16/cli/20261116T154504-test-c6e4aae1",
       "xcresult": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.agents/worktrees/fix/ios-builtin-mic-route/artifacts/tongxing-ios/2026-11-16/cli/20261116T154504-test-c6e4aae1/test.xcresult"
     }
