@@ -486,7 +486,7 @@ struct ContentView: View {
                     }
                 }
                 ToolbarItemGroup(placement: .primaryAction) {
-                    Button(localization.text("选择证道周次"), systemImage: "calendar") { sheet = .weeks }
+                    Button(localization.text("选择证道与播客"), systemImage: "list.bullet") { sheet = .weeks }
                         .labelStyle(.iconOnly).accessibilityIdentifier("choose-sermon")
                     Button(localization.text("更多选项"), systemImage: "ellipsis.circle") { sheet = .about }
                         .labelStyle(.iconOnly).accessibilityIdentifier("more-options")
@@ -1560,57 +1560,152 @@ private struct SermonHeadingView: View {
     }
 }
 
+/// Content picker for the listening page. Published sermons and podcasts are
+/// separate lists — the catalog media type is the only classifier, never a
+/// localized category label — and legacy `weekly.json` weeks stay with the
+/// sermons. A catalog with one kind only keeps the previous single list.
 private struct WeekSheet: View {
     @ObservedObject private var localization = AppLocalization.shared
     @ObservedObject var model: AppModel
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.dynamicTypeSize) private var typeSize
+    @State private var kind: ContentKind
+
+    private enum ContentKind: Hashable { case sermons, podcasts }
+
+    init(model: AppModel) {
+        self.model = model
+        // Open on the kind the page is showing so the checkmark is in view.
+        _kind = State(initialValue: model.selectedContentIsPodcast ? .podcasts : .sermons)
+    }
+
     var body: some View {
         NavigationStack {
-            // A plain picker list: no playback following, so the system List
-            // provides grouping, separators, selection marks and row sizing.
-            List {
-                if !model.independentPages.isEmpty {
-                    Section(localization.text(model.allowsDevCandidates ? "Dev 内容" : "已发布页面")) {
-                        ForEach(model.independentPages.sorted { $0.date > $1.date }) { page in
-                            Button {
-                                model.selectPublishedPage(page)
-                                dismiss()
-                            } label: {
-                                pickerRow(heading: model.heading(for: page), date: page.date,
-                                          identifier: "picker-\(page.id)", selected: page.id == model.selectedPageID)
-                            }
-                            .accessibilityIdentifier("published-page-\(page.id)")
-                            .task(id: model.publishedHeadingKey(page)) { await model.loadPublishedHeading(page) }
-                        }
-                    }
+            VStack(spacing: 0) {
+                if showsKindTabs {
+                    // The system segmented control keeps 13 pt labels at every
+                    // Dynamic Type size, so large type gets two buttons instead.
+                    if typeSize.isAccessibilitySize { kindButtons } else { kindPicker }
                 }
-                if !model.weeks.isEmpty {
-                    Section {
-                        ForEach(model.weeks) { week in
-                            Button {
-                                dismiss()
-                                Task { await model.select(week: week) }
-                            } label: {
-                                pickerRow(heading: model.heading(for: week), date: week.date,
-                                          identifier: "picker-\(week.id)", selected: week.id == model.selectedWeek?.id)
-                            }
-                            .accessibilityIdentifier("legacy-week-\(week.id)")
-                        }
-                    } header: {
-                        if !model.independentPages.isEmpty { Text(localization.text("其他周次")) }
-                    }
-                }
+                pickerList
             }
-            #if os(iOS)
-            .listStyle(.insetGrouped)
-            #endif
-            .navigationTitle(localization.text("选择证道"))
+            .navigationTitle(title)
             .toolbar { ToolbarItem(placement: .confirmationAction) { Button(localization.text("完成")) { dismiss() } } }
+            // A picker, not a page: the small title leaves the rows and the
+            // fixed switcher the height instead of a 34 pt display title.
+            #if os(iOS)
+            .navigationBarTitleDisplayMode(.inline)
+            #endif
         }
         .environment(\.locale, localization.locale)
         #if os(macOS)
         .frame(minWidth: 400, minHeight: 480)
         #endif
+    }
+
+    /// A fixed switcher: it stays put while each kind's list scrolls.
+    private var kindPicker: some View {
+        Picker(localization.text("内容类型"), selection: $kind) {
+            Text(localization.text("周日证道")).tag(ContentKind.sermons)
+            Text(localization.text("播客")).tag(ContentKind.podcasts)
+        }
+        .pickerStyle(.segmented)
+        .labelsHidden()
+        .accessibilityIdentifier("picker-content-tabs")
+        .accessibilityLabel(localization.text("内容类型"))
+        .padding(.horizontal, 16)
+        .padding(.top, 4)
+        .padding(.bottom, 8)
+        .background(Brand.background)
+        .overlay(alignment: .bottom) { Divider() }
+    }
+
+    private var kindButtons: some View {
+        // Stacked, not side by side: at accessibility sizes a half-width button
+        // cannot hold "周日证道" on one line.
+        VStack(spacing: 8) {
+            kindButton(.sermons, name: "周日证道")
+            kindButton(.podcasts, name: "播客")
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 8)
+        .background(Brand.background)
+        .overlay(alignment: .bottom) { Divider() }
+    }
+
+    private func kindButton(_ value: ContentKind, name: String) -> some View {
+        Button { kind = value } label: {
+            Text(localization.text(name)).font(.headline)
+                .frame(maxWidth: .infinity, minHeight: 44)
+        }
+        .buttonStyle(.bordered)
+        .buttonBorderShape(.roundedRectangle(radius: 12))
+        .tint(kind == value ? Brand.accent : Color.secondary)
+        .accessibilityAddTraits(kind == value ? .isSelected : [])
+    }
+
+    private var pickerList: some View {
+        // A plain picker list: no playback following, so the system List
+        // provides grouping, separators, selection marks and row sizing.
+        List {
+            if !visiblePages.isEmpty {
+                Section(localization.text(model.allowsDevCandidates ? "Dev 内容" : "已发布页面")) {
+                    ForEach(visiblePages) { page in
+                        Button {
+                            model.selectPublishedPage(page)
+                            dismiss()
+                        } label: {
+                            pickerRow(heading: model.heading(for: page), date: page.date,
+                                      identifier: "picker-\(page.id)", selected: page.id == model.selectedPageID)
+                        }
+                        .accessibilityIdentifier("published-page-\(page.id)")
+                        .task(id: model.publishedHeadingKey(page)) { await model.loadPublishedHeading(page) }
+                    }
+                }
+            }
+            if showsLegacyWeeks {
+                Section {
+                    ForEach(model.weeks) { week in
+                        Button {
+                            dismiss()
+                            Task { await model.select(week: week) }
+                        } label: {
+                            pickerRow(heading: model.heading(for: week), date: week.date,
+                                      identifier: "picker-\(week.id)", selected: week.id == model.selectedWeek?.id)
+                        }
+                        .accessibilityIdentifier("legacy-week-\(week.id)")
+                    }
+                } header: {
+                    if !visiblePages.isEmpty { Text(localization.text("其他周次")) }
+                }
+            }
+        }
+        #if os(iOS)
+        .listStyle(.insetGrouped)
+        #endif
+    }
+
+    // MARK: Content kinds
+
+    /// Two tabs only when both kinds exist; otherwise there would be an empty
+    /// tab to explain, so the sheet keeps the single list it had before.
+    private var showsKindTabs: Bool {
+        !podcastPages.isEmpty && (!sermonPages.isEmpty || !model.weeks.isEmpty)
+    }
+    private var visiblePages: [MultilingualPage] {
+        guard showsKindTabs else { return model.independentPages.sorted { $0.date > $1.date } }
+        return kind == .sermons ? sermonPages : podcastPages
+    }
+    private var showsLegacyWeeks: Bool { !model.weeks.isEmpty && (!showsKindTabs || kind == .sermons) }
+    private var sermonPages: [MultilingualPage] {
+        model.independentPages.filter { $0.mediaType != "podcast" }.sorted { $0.date > $1.date }
+    }
+    private var podcastPages: [MultilingualPage] {
+        model.independentPages.filter { $0.mediaType == "podcast" }.sorted { $0.date > $1.date }
+    }
+    private var title: String {
+        if showsKindTabs { return localization.text("证道与播客") }
+        return localization.text(podcastPages.isEmpty ? "选择证道" : "选择播客")
     }
 
     private func pickerRow(heading: SermonHeading, date: String, identifier: String, selected: Bool) -> some View {

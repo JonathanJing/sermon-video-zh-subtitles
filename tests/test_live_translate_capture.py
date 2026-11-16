@@ -56,6 +56,20 @@ else:
 
 @unittest.skipUnless(HAVE_WEBSOCKETS, "websockets not installed")
 class WindowTests(unittest.TestCase):
+    def test_broadcast_timeline_true_then_false_is_not_a_warning(self):
+        self.assertTrue(
+            capture.room_ever_broadcast(
+                [
+                    {"language": "mandarin", "broadcasting": True},
+                    {"language": "english", "broadcasting": True},
+                    {"language": "english", "broadcasting": False},
+                ]
+            )
+        )
+
+    def test_broadcast_timeline_without_true_is_a_warning(self):
+        self.assertFalse(capture.room_ever_broadcast([{"language": "english", "broadcasting": False}]))
+
     def test_hh_mm_uses_local_date_across_utc_midnight(self):
         # 00:44Z = 16:44 in Los Angeles; "16:45" is the same local day, 27 s later.
         now = datetime(2026, 11, 15, 0, 44, 33, tzinfo=timezone.utc)

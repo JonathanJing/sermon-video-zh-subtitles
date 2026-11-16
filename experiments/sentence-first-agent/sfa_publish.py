@@ -51,6 +51,7 @@ for entry in (str(WT), str(WT / "packages/production/src")):
 from scripts import tongxing_host  # noqa: E402,F401  binds the production package ports
 from tongxing_production.delivery import baseline as bl, contract, publication as pub  # noqa: E402
 from tongxing_production.delivery import published_english_reference as english_reference  # noqa: E402
+from tongxing_production.delivery import snapshot_clone  # noqa: E402
 
 CONFIG_SCHEMA = HERE / "pages" / "page-config.schema.json"
 TITLE_TABLE_DEFAULT = "docs/series-sermon-titles.zh.md"
@@ -938,7 +939,7 @@ def stage(cfg: PageConfig, base: Path, out: Path, add_public: Path | None,
           files: dict[str, bytes] | None = None, replace: frozenset[str] = frozenset()) -> None:
     contract.require(not out.exists(), "Use a new snapshot directory")
     out.mkdir(parents=True)
-    shutil.copytree(base / "public", out / "public")
+    snapshot_clone.clone_tree(base / "public", out / "public")
     shutil.copyfile(base / "firebase.json", out / "firebase.json")
     shutil.copyfile(base / "baseline-receipt.json", out / "baseline-receipt.json")
     added = []
