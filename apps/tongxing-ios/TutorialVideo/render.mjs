@@ -11,7 +11,7 @@ import { createHash } from 'node:crypto';
 import { once } from 'node:events';
 import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { homedir, tmpdir } from 'node:os';
-import { dirname, join, resolve } from 'node:path';
+import { basename, dirname, join, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -180,7 +180,7 @@ async function main() {
       scene: { path: scene.replace(repo + '/', ''), sha256: sha256(scene) }, gitRevision: tryRun('git', ['rev-parse', 'HEAD']),
       gitDirty: (tryRun('git', ['status', '--porcelain', '--', here]) ?? '') !== '', chrome: tryRun(chrome, ['--version']),
       ffmpeg: (tryRun('ffmpeg', ['-version']) ?? '').split('\n')[0], frames: total, fps: meta.fps, width: meta.width, height: meta.height,
-      durationSeconds: meta.duration, audio: args.noAudio ? 'none' : 'synthesized cue tones (render.mjs)', video: { path: video, sha256: sha256(video) },
+      durationSeconds: meta.duration, audio: args.noAudio ? 'none' : 'synthesized cue tones (render.mjs)', video: { file: basename(video), sha256: sha256(video) },
       renderedAt: now.toISOString(),
     };
     writeFileSync(join(outDir, `${name}-manifest.json`), JSON.stringify(manifest, null, 2) + '\n');

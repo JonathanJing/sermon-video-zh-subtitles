@@ -186,6 +186,7 @@
   #prep i { display: block; height: 100%; background: var(--accent); border-radius: 2px; }
   .spin { width: 1em; height: 1em; display: block; }
 
+  #veil { inset: 0; background: var(--ios-bg); z-index: 20; }
   .scrim { inset: 0; background: rgba(0,0,0,.28); z-index: 18; }
   .alert { left: 50%; top: 50%; width: 300px; margin-left: -150px; z-index: 19; background: rgba(250,250,252,.98); border-radius: 30px;
            padding: 22px 20px 16px; box-shadow: 0 20px 50px rgba(0,0,0,.25); transform-origin: 50% 50%; }
@@ -401,6 +402,7 @@
           <div class="btns col"><div class="b" id="locateBtn">按英文找位置</div><div class="b" id="retryBtn">重试对齐</div><div class="b">关闭</div></div>
         </div>
       </div>
+      <div id="veil" class="abs"></div>
       <div id="status"><div class="time">10:12</div>
         <div class="sys"><i style="width:3px;height:5px"></i><i style="width:3px;height:7px"></i><i style="width:3px;height:9px"></i><i style="width:3px;height:11px"></i>
           <i style="width:24px;height:11px;border-radius:3.5px;margin-left:5px;opacity:.9"></i></div></div>
@@ -564,10 +566,11 @@ function renderAt(t) {
   const cam = camAt(t);
   const slideIn = eo(prog(t, S.s1[0] - .25, S.s1[0] + .85)), slideOut = eio(prog(t, S.s4[1] - .45, S.s4[1] + .25));
   const ax = cam.ax + (1 - slideIn) * 900 + slideOut * 900;
-  const failFlip = 1 - 2 * Math.abs(prog(t, E.failState - .35, E.failState + .35) - .5);   // dip to 0 and back around the state swap
+  const veil = 1 - 2 * Math.abs(prog(t, E.failState - .35, E.failState + .35) - .5);       // 0 → 1 → 0 around the state swap
   const phone = $('phone');
   phone.style.transform = `translate(${ax - cam.fx * cam.s}px, ${540 - cam.fy * cam.s}px) scale(${cam.s})`;
-  phone.style.opacity = (t < S.s1[0] - .25 || t > S.s4[1] + .25 ? 0 : 1 - .9 * (t > E.failState - .35 && t < E.failState + .35 ? 1 - failFlip : 0)).toFixed(3);
+  phone.style.opacity = t < S.s1[0] - .25 || t > S.s4[1] + .25 ? 0 : 1;
+  show($('veil'), eio(clamp(veil)), null);
 
   const failed = t >= E.failState;
   const launch = eio(prog(t, E.tapIcon + .12, E.launched));
@@ -705,15 +708,15 @@ function renderAt(t) {
   const sr = stage.getBoundingClientRect(), ks = sr.width / 1920;
   const center = id => { const r = $(id).getBoundingClientRect(); return [(r.left + r.width / 2 - sr.left) / ks, (r.top + r.height / 2 - sr.top) / ks]; };
   touchDefs.forEach((d, i) => {
-    const el = $('touch' + i), inP = eo(prog(t, d.t - .6, d.t - .08)), outP = prog(t, d.t + .25, d.t + .6);
-    const o = t < d.t - .6 || t > d.t + .75 ? 0 : Math.min(inP * 1.2, 1) * (1 - outP);
+    const el = $('touch' + i), inP = eo(prog(t, d.t - .6, d.t - .08)), outP = prog(t, d.t + .2, d.t + .45);
+    const o = t < d.t - .6 || t > d.t + .45 ? 0 : Math.min(inP * 1.2, 1) * (1 - outP);
     el.style.opacity = o.toFixed(3); el.style.visibility = o <= 0.001 ? 'hidden' : 'visible';
     if (o <= 0.001) return;
     const [x, y] = center(d.el);
     el.style.transform = `translate(${x + (1 - inP) * 70}px, ${y + (1 - inP) * 90}px)`;
     const down = 1 - .2 * (1 - Math.abs(prog(t, d.t - .1, d.t + .2) * 2 - 1));
     el.querySelector('.tip').style.transform = `scale(${down})`;
-    const rp = prog(t, d.t, d.t + .55), ring = el.querySelector('.ring');
+    const rp = prog(t, d.t, d.t + .45), ring = el.querySelector('.ring');
     ring.style.opacity = rp > 0 ? (1 - rp) : 0; ring.style.transform = `scale(${.3 + eo(rp) * 1.1})`;
   });
   { const el = $('floatBack'), a = E.tapBack + .05, p = prog(t, a, a + .4), q = prog(t, a + 1.5, a + 1.9);
