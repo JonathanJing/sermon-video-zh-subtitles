@@ -35,6 +35,7 @@ from datetime import datetime, timedelta, timezone
 import hashlib
 import html
 import json
+import os
 from pathlib import Path
 import re
 import shutil
@@ -81,6 +82,35 @@ def _mark_publish(cfg, cmd: str, event: str, **kwargs) -> None:
         safe_mark(run, f"l4.{cmd}", event, source="sfa_publish", **kwargs)
     except Exception:  # noqa: BLE001 - status is a sidecar
         pass
+
+
+def _export_report(cfg, publish_dir: Path | None) -> dict | None:
+    """Observation only: a passed readback leaves the production's run report and private evidence.
+
+    Writes the redacted digest under ignored ``artifacts/run-reports/`` and uploads the run
+    directories' text evidence to the private evidence store. Publishing the report stays a
+    separate command. ``SFA_RUN_REPORT=0`` turns it off. Never raises, never changes an exit code.
+    """
+    if cfg is None or os.environ.get("SFA_RUN_REPORT", "1") == "0":
+        return None
+    try:
+        from tools.development.export_production_report import export_production
+        seeds = [cfg.run_dir(locale) for locale in cfg.locales if cfg.run_dir(locale).is_dir()]
+        if not seeds:
+            return None
+        also = [path for path in (publish_dir, cfg.verdict_path.parent, cfg.english_source_path.parent)
+                if path is not None and Path(path).is_dir()]
+        result = export_production(seeds, also=also)
+        for problem in result.get("problems", []):
+            print(f"sfa_publish: run report: {problem}", file=sys.stderr)
+        for report in result.get("reports", []):
+            print(f"sfa_publish: run report written; publish it with tools/development/publish_run_report.sh {report}",
+                  file=sys.stderr)
+        return result
+    except Exception as exc:  # noqa: BLE001 - the publish result must stand
+        print(f"sfa_publish: run report not written ({exc}); "
+              "run tools/development/export_production_report.py by hand", file=sys.stderr)
+        return None
 
 
 def sha_file(path: Path) -> str:
@@ -1282,6 +1312,8 @@ def main(argv=None) -> int:
     ok = bool(result.get("ok", True))
     if ok:
         _mark_publish(cfg, args.cmd, "finished", evidence_level=PUBLISH_EVIDENCE.get(args.cmd, "E1"))
+        if args.cmd == "readback":
+            _export_report(cfg, args.stage2.parent)
     else:
         _mark_publish(cfg, args.cmd, "failed", error_class="gate",
                       message=str(result)[:300], resume=f"rerun sfa_publish.py {args.cmd}")

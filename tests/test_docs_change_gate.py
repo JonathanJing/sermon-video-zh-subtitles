@@ -25,6 +25,9 @@ class DocsChangeGateTests(unittest.TestCase):
             "docs/reports/runs/20261008-e2e/manifest.json",
             "docs/reports/runs/20261008-e2e/run/timings.tsv",
             "docs/reports/runs/20261008-e2e/run/upload.log",
+            "docs/reports/weekly/20261115/WEEKLY.md",
+            "docs/reports/weekly/20261115/weekly.json",
+            "docs/reports/weekly/private-evidence-index.json",
         )
         rejected = (
             "apps/tongxing-ios/Assets.xcassets/icon.png",
@@ -33,6 +36,9 @@ class DocsChangeGateTests(unittest.TestCase):
             "docs/schema.json",
             "docs/reports/20261005-receipt.json",
             "docs/reports/runs/20261008-e2e/run/helper.py",
+            "docs/reports/weekly/20261115/helper.py",
+            "docs/reports/weekly/20261115/other.json",
+            "docs/reports/weekly/weekly.json",
             ".github/workflows/python-tests.yml",
         )
         for path in allowed:
