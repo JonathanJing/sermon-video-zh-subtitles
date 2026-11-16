@@ -132,3 +132,103 @@ def test_missing_sentences_is_a_clear_error(tmp_path):
     with pytest.raises(SystemExit) as error:
         build(empty, tmp_path / "out")
     assert "sentences.jsonl" in str(error.value)
+
+
+# ---------------------------------------------------------------- OSS publishing
+
+def oss_args(tmp_path, **overrides):
+    values = dict(pack=str(tmp_path / "out"), bucket="tongxing-review-hk",
+                  prefix="review/abc123", endpoint=review_pack.DEFAULT_ENDPOINT,
+                  config=None, execute=False, show=5)
+    values.update(overrides)
+    return argparse.Namespace(**values)
+
+
+def test_canonical_string_is_the_oss_v1_shape():
+    text = review_pack.canonical_string(
+        "PUT", "", "text/html; charset=utf-8", "Sun, 16 Nov 2026 00:00:00 GMT",
+        {"x-oss-object-acl": "public-read"}, "b", "review/x/index.html")
+    assert text == ("PUT\n\ntext/html; charset=utf-8\nSun, 16 Nov 2026 00:00:00 GMT\n"
+                    "x-oss-object-acl:public-read\n/b/review/x/index.html")
+
+
+def test_signature_is_stable_base64():
+    first = review_pack.oss_signature("secret", "PUT\n\n\n\n/b/k")
+    assert first == review_pack.oss_signature("secret", "PUT\n\n\n\n/b/k")
+    assert first != review_pack.oss_signature("other", "PUT\n\n\n\n/b/k")
+    assert len(first) == 28  # base64 of a 20-byte SHA-1 digest
+
+
+def test_content_types_cover_the_pack():
+    assert review_pack.content_type_for(Path("a/index.html")).startswith("text/html")
+    assert review_pack.content_type_for(Path("a/app.js")).startswith("text/javascript")
+    assert review_pack.content_type_for(Path("a/audio/review.mp3")) == "audio/mpeg"
+    assert review_pack.content_type_for(Path("a/pack.json")).startswith("application/json")
+    assert review_pack.content_type_for(Path("a/unknown.bin")) == "application/octet-stream"
+
+
+def test_object_url_quotes_the_key():
+    assert review_pack.object_url("b", "oss-cn-hongkong.aliyuncs.com", "review/a b/c.mp3") == (
+        "https://b.oss-cn-hongkong.aliyuncs.com/review/a%20b/c.mp3")
+
+
+def test_credentials_from_environment(monkeypatch):
+    monkeypatch.setenv("ALIYUN_OSS_ACCESS_KEY_ID", "AK")
+    monkeypatch.setenv("ALIYUN_OSS_ACCESS_KEY_SECRET", "SK")
+    credentials = review_pack.load_credentials()
+    assert credentials.key_id == "AK" and credentials.key_secret == "SK"
+    assert "SK" not in repr(credentials)
+
+
+def test_credentials_from_ossutil_config(tmp_path):
+    config = tmp_path / "ossutilconfig"
+    config.write_text("[Credentials]\nendpoint=oss-cn-hongkong.aliyuncs.com\n"
+                      "accessKeyID=AK2\naccessKeySecret=SK2\n", encoding="utf-8")
+    credentials = review_pack.load_credentials(config, environ={})
+    assert credentials.key_id == "AK2" and credentials.key_secret == "SK2"
+
+
+def test_missing_credentials_is_a_clear_error(tmp_path):
+    with pytest.raises(SystemExit) as error:
+        review_pack.load_credentials(tmp_path / "absent", environ={})
+    assert "credentials" in str(error.value)
+
+
+def test_publish_dry_run_makes_no_request(tmp_path, monkeypatch):
+    run = make_run(tmp_path)
+    build(run, tmp_path / "out", clips=0)
+    calls = []
+    monkeypatch.setattr(review_pack, "_request", lambda *a, **k: calls.append(a) or (200, {}))
+    result = review_pack.publish(oss_args(tmp_path))
+    assert result["dryRun"] is True
+    assert result["files"] >= 5          # html, js, css, pack.json, audio
+    assert result["url"].endswith("/review/abc123/index.html")
+    assert calls == []
+
+
+def test_publish_execute_puts_every_file(tmp_path, monkeypatch):
+    run = make_run(tmp_path)
+    build(run, tmp_path / "out", clips=0)
+    monkeypatch.setenv("ALIYUN_OSS_ACCESS_KEY_ID", "AK")
+    monkeypatch.setenv("ALIYUN_OSS_ACCESS_KEY_SECRET", "SK")
+    seen = []
+    monkeypatch.setattr(review_pack, "_request",
+                        lambda method, url, creds, bucket, key, **kw: seen.append((method, key, kw.get("content_type"))) or (200, {}))
+    result = review_pack.publish(oss_args(tmp_path, execute=True))
+    assert result["dryRun"] is False
+    assert len(seen) == result["files"]
+    assert all(method == "PUT" for method, _, _ in seen)
+    assert ("PUT", "review/abc123/index.html", "text/html; charset=utf-8") in seen
+
+
+def test_remove_executes_one_delete_per_file(tmp_path, monkeypatch):
+    run = make_run(tmp_path)
+    build(run, tmp_path / "out", clips=0)
+    monkeypatch.setenv("ALIYUN_OSS_ACCESS_KEY_ID", "AK")
+    monkeypatch.setenv("ALIYUN_OSS_ACCESS_KEY_SECRET", "SK")
+    seen = []
+    monkeypatch.setattr(review_pack, "_request",
+                        lambda method, url, creds, bucket, key, **kw: seen.append((method, key)) or (204, {}))
+    result = review_pack.remove(oss_args(tmp_path, execute=True))
+    assert result["deleted"] == len(seen)
+    assert all(method == "DELETE" for method, _ in seen)

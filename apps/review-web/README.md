@@ -74,26 +74,47 @@ s0012: 读法：삼천 → 삼 천
 
 ## 部署到阿里云 OSS 香港
 
-```bash
-# 一次性：装 ossutil 并配置（AccessKey 只留在本机 ~/.ossutilconfig，不进仓库）
-brew install ossutil            # 或从阿里云下载对应平台二进制
-ossutil config                  # endpoint: oss-cn-hongkong.aliyuncs.com
+本机没有 `ossutil`（Homebrew 也没有这个 formula），所以发布用的是同一个工具的 OSS REST 调用，**只依赖标准库**。凭据放在 ossutil 兼容的配置文件里，将来装了 `ossutil` 也能共用：
 
-# 每次发布：随机目录，避免猜路径
+```bash
+cat > ~/.ossutilconfig <<'EOF'
+[Credentials]
+endpoint=oss-cn-hongkong.aliyuncs.com
+accessKeyID=<你的 AccessKey ID>
+accessKeySecret=<你的 AccessKey Secret>
+EOF
+chmod 600 ~/.ossutilconfig
+```
+
+也可以改用环境变量 `ALIYUN_OSS_ACCESS_KEY_ID` / `ALIYUN_OSS_ACCESS_KEY_SECRET`。
+
+```bash
+# 1. 每次一个新随机前缀（32 位十六进制），路径就是权限
 TOKEN=$(python3 -c "import secrets;print(secrets.token_hex(16))")
-ossutil cp -r artifacts/review-pack/20261108-zh \
-  oss://<bucket>/review/$TOKEN/ --update
-echo "https://<bucket>.oss-cn-hongkong.aliyuncs.com/review/$TOKEN/index.html"
+
+# 2. 先看计划，不上传
+python3 tools/ops/review_pack.py publish \
+  --pack artifacts/review-pack/20261108-zh \
+  --bucket tongxing-review-hk --prefix review/$TOKEN
+
+# 3. 确认后上传（对象带 x-oss-object-acl: public-read）
+python3 tools/ops/review_pack.py publish \
+  --pack artifacts/review-pack/20261108-zh \
+  --bucket tongxing-review-hk --prefix review/$TOKEN --execute
+
+# 4. 看完就删
+python3 tools/ops/review_pack.py remove \
+  --pack artifacts/review-pack/20261108-zh \
+  --bucket tongxing-review-hk --prefix review/$TOKEN --execute
 ```
 
 要点：
 
 - **路径就是权限**：`$TOKEN` 用 32 位随机十六进制，不要用 pageId 或日期。
+- 每个对象单独设 `public-read`，bucket 本身可以保持私有；删掉前缀即收回访问。
 - 音频靠 OSS 原生 Range 播放，不需要转码或分片。
-- 看完就删：`ossutil rm -r oss://<bucket>/review/$TOKEN/`。
-- 不要把 token 写进 `pack.json`、Git、日志或通知正文之外的地方；它只出现在链接里。
-
-object 直连的 URL 够用；想要 `/review/<token>/` 这种目录式地址，就在 bucket 上开静态网站托管，把首页文档设为 `index.html`。
+- 对象直连的 URL 够用；要目录式地址就在 bucket 上开静态网站托管，首页文档设 `index.html`。
+- AccessKey 只留在 `~/.ossutilconfig` 或环境变量里，不进仓库、不进日志、不进通知正文。
 
 ## 交互
 
