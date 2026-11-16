@@ -171,7 +171,7 @@ final class AppStoreScreenshotUITests: XCTestCase {
             "identifier BEGINSWITH %@", "published-page-")).firstMatch
         XCTAssertTrue(publishedSermon.waitForExistence(timeout: 15))
         capture("store-05-sermon-catalog-\(interfaceLanguage.rawValue)", app: app)
-        try closeSheet(interfaceLanguage.sermonSheet, done: interfaceLanguage.done, in: app)
+        try closeSheet(interfaceLanguage.sermonSheetTitles, done: interfaceLanguage.done, in: app)
 
         app.buttons["more-options"].tap()
         let demos = element("voice-demo-disclosure", in: app)
@@ -213,15 +213,23 @@ final class AppStoreScreenshotUITests: XCTestCase {
         app.descendants(matching: .any).matching(identifier: identifier).firstMatch
     }
 
-    private func closeSheet(_ title: String, done doneTitle: String, in app: XCUIApplication) throws {
-        let done = app.navigationBars[title].buttons[doneTitle]
+    private func closeSheet(_ titles: [String], done doneTitle: String, in app: XCUIApplication) throws {
+        guard let bar = titles.map({ app.navigationBars[$0] })
+            .first(where: { $0.waitForExistence(timeout: 5) }) else {
+            XCTFail("The sheet did not open under any expected title: \(titles)")
+            throw CaptureFailure.sheetDidNotClose
+        }
+        let done = bar.buttons[doneTitle]
         XCTAssertTrue(done.waitForExistence(timeout: 5))
         done.tap()
-        let bar = app.navigationBars[title]
         let closed = XCTNSPredicateExpectation(predicate: NSPredicate(format: "exists == false"), object: bar)
         guard XCTWaiter.wait(for: [closed], timeout: 5) == .completed else {
             throw CaptureFailure.sheetDidNotClose
         }
+    }
+
+    private func closeSheet(_ title: String, done doneTitle: String, in app: XCUIApplication) throws {
+        try closeSheet([title], done: doneTitle, in: app)
     }
 
     private func reveal(_ target: XCUIElement, in app: XCUIApplication, towardTop: Bool) throws {
@@ -289,7 +297,12 @@ final class AppStoreScreenshotUITests: XCTestCase {
         var currentMode: String { self == .english ? "Listen" : "现场收听" }
         var fullMode: String { self == .english ? "Full transcript" : "字幕全文" }
         var languageSheet: String { self == .english ? "Choose sermon language" : "选择证道语言" }
-        var sermonSheet: String { self == .english ? "Choose a sermon" : "选择证道" }
+        /// The picker title follows the catalog: both content kinds name the
+        /// sheet, a catalog with one kind keeps the older titles.
+        var sermonSheetTitles: [String] {
+            self == .english ? ["Sermons & Podcasts", "Choose a sermon", "Choose a podcast"]
+                             : ["证道与播客", "选择证道", "选择播客"]
+        }
         var aboutSheet: String { self == .english ? "More options" : "更多选项" }
         var privacySheet: String { self == .english ? "Privacy & Support" : "隐私与支持" }
         var done: String { self == .english ? "Done" : "完成" }

@@ -24,6 +24,8 @@ final class ListeningFlowUITests: XCTestCase {
         let ids = ["resi-20261004-69ba7a66", "if-i-had-more-time-jesus-is-worthy", "2026-09-27-weekend-sermon-drive-530"]
         let baseline = ProcessInfo.processInfo.environment["TONGXING_CAPTURE_CATEGORY_BASELINE"] == "1"
         for id in ids {
+            // Podcasts sit in their own tab; sermons keep the legacy weeks.
+            showPickerKind(id == ids[1] ? "播客" : "周日证道", in: app)
             let row = app.buttons["published-page-\(id)"]
             XCTAssertTrue(row.waitForExistence(timeout: 10))
             try waitFor(row, "label CONTAINS 'Eric Geiger'")
@@ -51,6 +53,16 @@ final class ListeningFlowUITests: XCTestCase {
         return app
     }
 
+    /// Kind tabs separate podcasts from sermons. A catalog with one kind keeps
+    /// the previous single list and shows no control, so absence is allowed.
+    private func showPickerKind(_ tab: String, in app: XCUIApplication) {
+        let tabs = app.segmentedControls["picker-content-tabs"]
+        guard tabs.waitForExistence(timeout: 5) else { return }
+        let segment = tabs.buttons[tab]
+        XCTAssertTrue(segment.waitForExistence(timeout: 5), "Missing picker tab \(tab)")
+        segment.tap()
+    }
+
     private func expandCategoryPicker(_ app: XCUIApplication, doneLabel: String = "完成") throws {
         let done = app.buttons[doneLabel]
         XCTAssertTrue(done.waitForExistence(timeout: 5))
@@ -67,6 +79,7 @@ final class ListeningFlowUITests: XCTestCase {
         try expandCategoryPicker(app)
         for (id, category) in [("remote-archive", "正式播放版"), ("remote-youtube", "YouTube 版"),
                                ("remote-podcast", "播客"), ("remote-interview", "专题访谈")] {
+            showPickerKind(id == "remote-podcast" ? "播客" : "周日证道", in: app)
             let label = app.staticTexts["picker-\(id)-edition"]
             XCTAssertTrue(label.waitForExistence(timeout: 5))
             XCTAssertEqual(label.label, category)
@@ -87,6 +100,7 @@ final class ListeningFlowUITests: XCTestCase {
         try expandCategoryPicker(app, doneLabel: "Done")
         for (id, label) in [("remote-archive", "Archive edition"), ("remote-youtube", "YouTube edition"),
                             ("remote-podcast", "Podcast"), ("remote-interview", "Special interview")] {
+            showPickerKind(id == "remote-podcast" ? "Podcast" : "Sunday sermon", in: app)
             XCTAssertEqual(app.staticTexts["picker-\(id)-edition"].label, label)
         }
         screenshot("remote-categories-english", app: app)

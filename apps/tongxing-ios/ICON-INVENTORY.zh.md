@@ -48,7 +48,7 @@
 
 | 编号 | 当前符号／资源 | 用途与状态 | 源码位置 |
 | --- | --- | --- | --- |
-| 13 · 选择周次 | `calendar` | 页头与 Duo 系统侧栏选择证道周次。 | [ContentView.swift:268](App/ContentView.swift#L268)、[ContentView.swift:401](App/ContentView.swift#L401) |
+| 13 · 选择内容 | `list.bullet` | 页头与 Duo 系统侧栏打开「证道与播客」选择面板；证道与播客分列两个 Tab，不再暗示只能选周次。 | [ContentView.swift:489](App/ContentView.swift#L489) |
 | 14 · 更多选项 | `ellipsis.circle` | 页头与 Duo 系统侧栏打开更多选项；不同于播放栏的定位入口。 | [ContentView.swift:270](App/ContentView.swift#L270)、[ContentView.swift:409](App/ContentView.swift#L409) |
 | 15 · 证道语言 | `globe` | 选择已发布的证道内容语言；紧凑布局为纯图标，普通布局带语言和能力文字。 | [ContentView.swift:513](App/ContentView.swift#L513)、[ContentView.swift:524](App/ContentView.swift#L524) |
 | 16 · 完整视频 | `play.rectangle` | 首页观看完整视频入口。 | [ContentView.swift:537](App/ContentView.swift#L537) |
