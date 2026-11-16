@@ -2,7 +2,9 @@
 
 [逐句优先路线](../sentence-first-agent-production.zh.md) · [runbook](../../experiments/sentence-first-agent/AGENTS.md) · [发布门禁](../sentence-first-agent-publish-gate.zh.md) · [周更运行配置](../weekly-run-profile.zh.md) · [Firebase 环境隔离](../development-branch-and-firebase-environments.zh.md) · [本地计算策略](../local-production-compute-policy.zh.md) · [模型栈](../sentence-first-model-stack.zh.md) · [标题表](../series-sermon-titles.zh.md) · [术语表](../series-terminology.zh.md)
 
-状态：**设计稿（2026-11-16）**。只写方案，不含代码改动，也不代表已有无人值守发布能力（[AGENTS.md](../../AGENTS.md) 明确：代码支持不是已校准运行或活跃无人值守发布者的证据）。§2 的实测是写作当天在 MacBook Pro 16 上取的；Spark 侧的故障在写作时仍在发生。
+状态：**设计稿（2026-11-16）**。只写方案，不含代码改动，也不代表已有无人值守发布能力（[AGENTS.md](../../AGENTS.md) 明确：代码支持不是已校准运行或活跃无人值守发布者的证据）。§2 的实测是写作当天在 MacBook Pro 16 上取的。
+
+> **2026-11-16 更正。** 初稿把当天的 SSH 超时记成「Spark 侧故障」，结论错了。当晚定位到三个本机根因：`~/.ssh/config` 把 `Host 192.168.1.152` 默认路由到一个已不在 tailnet 的跳板（`jonyopenclaw@100.73.116.52`），于是每条 `ssh` 都在 banner 交换处超时；`com.h3.spark-tunnel` 转发到 Spark 上并不存在的 8080；`com.jonathan.dock-wifi-watch` 被 launchd 标记 disabled，导致 Wi-Fi 与有线同网段双 IP。Spark 本身 5 天未重启、banner 10 ms、负载 0.14。§2 的结论仍然成立（LAN 链路会静默坏、无通知），但「Spark 坏了」不是事实。
 
 ## 1 目标
 
@@ -142,22 +144,86 @@ launchd: sfa_supervisor (KeepAlive + 退避 + 熔断)
 
 计划不要新造格式：**它已经存在两处**——`experiments/sentence-first-agent/pages/<pageId>.json`（pageId、locales、runs、source、title、meta、titleCheck、verdict）与每个 run 的 `decisions.json`（form/sync/publish/title/window），`preflight.py` 已经在校验后者。无人值守只需追加三类字段：预算信封、部署授权（次数上限）、检查点策略（deadline 与默认决定）。
 
-### 6.3 宿主
+### 6.3 把「依赖翻墙」拆成三条通道
 
-审核面**不与产品站共用宿主**：`*.web.app`、`storage.googleapis.com`、Gmail 都在墙外，产品站保持 Firebase 不动（受众在美国），审核面单独选。
+「减少对翻墙的依赖」不是一个决定，是三个独立通道，各有各的解法：
+
+| 通道 | 境内默认可用？ | 取决于 | 结论 |
+|---|---|---|---|
+| 通知到达手机 | 是 | APNs（Bark 也走 APNs）、飞书/企业微信推送 | 不依赖翻墙 |
+| 打开详情页（音频、逐句） | 不一定 | 静态页的宿主 | **唯一真正的翻墙依赖** |
+| 决定回传（通过、改哪句） | 是 | 飞书自建应用长连接 | 不依赖翻墙 |
+
+所以只要把「详情页」的宿主管好，整条链可以做到零翻墙；而且决定根本不走页面。
+
+### 6.4 宿主：Firebase 能用的是哪一半
+
+Firebase 是三种完全不同的网络路径，必须分开看：
+
+| 组件 | 出口 | 境内可达 | 结论 |
+|---|---|---|---|
+| Hosting（`*.web.app` / `*.firebaseapp.com`） | Fastly 边缘（约 `199.36.158.x`），不是 Google 被封的网段 | **需实测，可能可用** | 若可用，直接复用现有 `firebase deploy` |
+| Firestore / Cloud Functions | Google 域名 | 基本不可达 | 不能承担页面写回 |
+| Cloud Storage | `storage.googleapis.com` | 不可达 | 音频不放这里 |
+
+这带来一个很省事的组合：**若 Hosting 实测可达，审核页做成纯静态页**——页面不发任何 API、音频同域、决定走飞书（§6.5）。只需要一条 `firebase deploy`，不需要新宿主，也不需要新运维。
+
+若 Hosting 不可达，按顺序选：
 
 | 候选 | 境内可达 | 成本 | 备注 |
 |---|---|---|---|
-| Cloudflare Worker + R2（自定义域名） | 通常可用 | 近零 | 支持 Range，Worker 同时做 API，首选 |
-| 香港/新加坡 VPS（Caddy + SQLite） | 好 | 低 | 完全可控，要自己运维 |
-| 阿里云 OSS + CDN | 最稳 | 中 | 需备案域名 |
-| Firebase / GCS | 需翻墙 | 已有 | 只作兜底，不作主路径 |
+| Cloudflare Pages/Worker + R2 | 通常可用 | 近零 | 支持 Range；自定义域名 |
+| 香港 OSS（`oss-cn-hongkong`） | 好 | 低 | 默认域名即可，不用备案 |
+| 阿里云 OSS + CDN | 最稳 | 中 | 自定义域名要备案 |
+| 香港/新加坡 VPS | 好 | 低 | 完全可控，自己运维 |
 
-**先测再定**（十分钟，一次做完）：同一台手机、同一张卡，开/关 VPN 各三次，分别打开 Firebase 页面、R2 预签名音频（Range 请求）、Cloudflare Worker、并收一条飞书卡片。测完再写代码。
+**十分钟实测清单**（在境内、关掉 VPN 的同一台手机上做完，结论写进本节）：
 
-### 6.4 鉴权
+```text
+1. 打开 https://ai-for-god-sermon-audio.web.app        # Firebase Hosting 能不能开
+2. 打开同一页面上的任意 MP3，确认能边下边播           # Range 是否被中间设备破坏
+3. 打开一个 Cloudflare 托管的测试页                    # 备选宿主
+4. 在飞书里收一条卡片并点一个按钮                      # 决定通道
+5. 打开任意 https://storage.googleapis.com/…          # 预期失败，确认 GCS 不能放音频
+```
 
-审核面承载未发布内容，**链接就是权限**。单用户场景可以用长随机 token，但必须：作用域限于单次 `productionId`、7 天过期、首次打开后交换成 `HttpOnly` Cookie、音频用短期签名 URL、所有写操作在服务端校验 `productionId` 与收据哈希。
+五项里 1 与 2 通过，就选 Firebase Hosting；只有 4 通过，就说明「决定走飞书、页面另找宿主」的拆分是对的。
+
+### 6.5 决定通道：飞书自建应用 + 长连接
+
+飞书开放平台的[长连接](https://open.feishu.cn/document/server-docs/event-subscription-guide/event-subscription-configure-/request-url-configuration-case)是 SDK 内置的 WebSocket，**本机只要能出公网**就能收消息和卡片回调：不需要公网 IP、不需要域名、不需要内网穿透，也不用手写解密验签。
+
+三条已核实的限制（2026-11-16 查开放平台文档）：
+
+1. 长连接只支持**企业自建应用**（商店应用不行）；
+2. 卡片回调必须走**新版 `card.action.trigger`**——[旧的「消息卡片回传交互」不支持长连接](https://open.feishu.cn/document/event-subscription-guide/callback-subscription/step-1-choose-a-subscription-mode/configure-callback-request-address?lang=zh-CN)；
+3. 收到事件后 **3 秒内**必须返回，否则触发重推。所以回调只写一条决定，绝不在这里跑生产步骤。
+
+用法分两层：
+
+- **快决**：卡片里放「通过 / 有问题 / 稍后」按钮，回调直接落成一条决定。
+- **深审**：卡片里放纯静态详情页的链接；审完在飞书里回一句口令。
+
+口令协议（短、幂等、可核对）：
+
+| 口令 | 含义 |
+|---|---|
+| `A PASS` | 检查点 A 通过 |
+| `A FIX s0031 s0088` | 只改这几句 |
+| `B PASS played=52` | 按标记听完 52 句 |
+| `B PASS whole` | 整轨听完 |
+
+每条口令带 `productionId`，服务端校验飞书 `user_id`/`chat_id` 白名单，落成 `decisions.ndjson` 的一行；同一 `(productionId, checkpoint)` 只接受第一次，飞书重推天然幂等。
+
+### 6.6 鉴权与过期
+
+纯静态页没有服务端，**链接就是权限**。三条硬要求：
+
+1. 路径随机且不可猜（`/review/<32 字节随机>/`），文件名也带随机后缀；
+2. 素材跟着单次 `productionId`，7 天后重新部署一次把旧目录删掉；
+3. 页面在 `robots`/`Referrer-Policy: no-referrer` 上不泄露路径，音频不放公开可枚举的位置。
+
+放弃的东西要写明：静态页无法服务端校验收据哈希，也无法记录「逐句真的听了哪些」。收据由 Mac 侧用「口令 + 页面内容哈希」合成，`reviewMode` 记 `whole` 或 `flagged_only`，并加 `selfReported: true`——**不把人的自述写成机器留证**（[AGENTS.md](../../AGENTS.md) 不变量 1）。等哪天真有 CN 可达的 Worker，再升级成服务端记录。
 
 ## 7 审核终端
 
@@ -176,15 +242,26 @@ launchd: sfa_supervisor (KeepAlive + 退避 + 熔断)
 
 ### 7.2 交互
 
-复用 `review_player.py` v2，不重写：按句播放、空格暂停、J/K 跳句、Enter 通过、X 标记、F 下一疑点、A/B 原声对照、进度条。增加三件：
+复用 `review_player.py` v2，不重写：按句播放、空格暂停、J/K 跳句、Enter 通过、X 标记、F 下一疑点、A/B 原声对照、逐句备注。远程版只加两件：
 
-1. **服务端续审**：每句状态节流写回（2 s），跨设备继续，不再只存 `localStorage`；
-2. **收据生成**：结束时产出 `sentence-first-human-review-verdict-v1` + 逐句结论 JSON，写 `reviewMode`、`review.mp3`/`track.wav` 哈希、实际播放过的句子列表；
-3. **只推疑点**：默认视图 = 全部疑点 + 随机 10 句，其余折叠。这是把 60 分钟压到 15 分钟的唯一办法，也和「flagged_only」的诚实标签一致。
+1. **只推疑点**：默认视图 = 全部疑点 + 随机 10 句，其余折叠。这是把 60 分钟压到 15 分钟的唯一办法，也和 `flagged_only` 的诚实标签一致。
+2. **本地保存进度**：`localStorage` + 一键导出，跨设备靠导出文件，不靠服务端（静态页没有服务端）。
 
-### 7.3 离线优先
+### 7.3 纯静态页的取舍
 
-MBP14 在中国，翻墙会抖。页面必须在断网时仍能继续审：审定结果先写本地队列，恢复后按 `(productionId, stage, sentenceId, updateTime)` 合并，冲突以服务端时间戳为准。收据只在全部写回后生成——**没写回的结论不算结论**。
+这一版刻意不做服务端写回，换掉的是三样东西：
+
+| 放弃 | 得到 | 补法 |
+|---|---|---|
+| 服务端续审 | 从中国打开只依赖一次 GET + Range | 审定结果导出成小文件；换设备就导入 |
+| 服务端收据 | 不用 CN 可达的 API、不用域名、不用证书 | 飞书口令 + 页面内容哈希，收据标 `selfReported: true` |
+| 逐句留证 | 部署仍是 `firebase deploy` 一条命令 | 页面显示「已听 N 句」，口令里带 `played=N` |
+
+**这是一次刻意的诚实降级**：宁可收据写「人自述按标记听完 52 句」，也不假装有机器留证。等有 CN 可达的 Worker 再升级。
+
+### 7.4 离线包（网络最差时的兜底）
+
+同一个 `pack.json` 打成一个自包含目录（`index.html` + 疑点句切片 + `pack.json`），经飞书文件消息或邮件附件发出。审完导出结论，连同口令一起回传。这条路径**零网络依赖**，只在页面打不开时用；它不改变收据语义，只是换一条投递方式。
 
 ## 8 可靠性
 
@@ -257,14 +334,15 @@ MBP14 在中国，翻墙会抖。页面必须在断网时仍能继续审：审�
 ### M0 看门与播报（1 天）
 
 - `sfa_supervisor` 骨架（launchd，退避 + 熔断）、`status_push`（POST `status.json`）、一个只读网页。
-- 通知加一条境内可达通道（飞书/企业微信机器人），保留 Bark 与邮件。
-- **验收**：在境内手机上能看到当前 run 到了哪一步、ETA、卡了多久；把 Spark 的 SSH 拔掉，5 分钟内收到通知。
+- **飞书自建应用 + 长连接**跑起来：一个进程、出站 WebSocket、不需要公网 IP；先只做「收到卡片按钮回调 → 写 `decisions.ndjson`」。
+- 保留 Bark 与邮件作为第二通道。
+- **验收**：在境内手机上收到卡片、看到当前阶段与 ETA、按下按钮后 Mac 侧在 3 秒内落盘一条决定；把 Spark 的 SSH 拔掉，5 分钟内收到通知。
 - 这一片几乎全是复用 `run_status.py` 的现成字段；它也是唯一能提前证明「这套东西在境内能用」的一步。
 
 ### M1 接入与检查点 A（2–3 天）
 
-- `review_pack.py`：生成 `pack.json`，上传 `review.mp3` + 疑点句切片 + 页面。
-- 审核页（远程版播放器）+ 决定写回 + 监督者落盘。
+- `review_pack.py`：生成 `pack.json` + 静态页，随 `firebase deploy`（或 Cloudflare）发布 `review.mp3` 与疑点句切片。
+- 静态播放器（远程版）+ 飞书口令解析 + 监督者落盘。
 - 计划表单（页面配置 + 预算信封 + 部署授权 + 检查点策略）。
 - L1 固定化：把「两遍 ASR + 合并」变成一条命令，或改用 `srt_normalize.py`（有 SRT 时）。
 - **验收**：不碰电脑完成英文表批准、讲员映射确认、精简稿认可。
@@ -282,11 +360,12 @@ MBP14 在中国，翻墙会抖。页面必须在断网时仍能继续审：审�
 ## 11 未决问题
 
 1. **监督者怎么起会话**：走 `remote-agent-watch` 的 DSH Remote API（已有、手机在用），还是写一个只跑固定命令序列的窄脚本、只把判断类步骤交给代理？（决定 M0 的形状）
-2. **审核面宿主**：按 §6.3 实测后定 Cloudflare / 香港 VPS / 阿里云。
-3. **发布授权粒度**：整批预授权（≤3 次部署），还是最后一次生产部署仍需人手点？
-4. **MBP14 的角色**：只做审核终端，还是保留「降级生产者」（MPS TTS）的能力？后者要提前把 checkpoint 与 `.venv-sfa` 复制过去，且产物是独立执行身份。
-5. **Drive 文件是否等于证道全文**：若几乎不需裁切，窗口确认可降级为 `record`，少一次手机操作。
-6. **L1 用哪条路**：`srt_normalize.py`（需要滚动 SRT）还是固化两遍 ASR？这决定检查点 A 之前要多久。
+2. **审核面宿主**：先做 §6.4 的十分钟实测——在境内手机上直接打开现有的 `https://ai-for-god-sermon-audio.web.app`。能开就用 Firebase Hosting（一条 `firebase deploy`，最省事）；打不开再选 Cloudflare / 香港 OSS / 阿里云。
+3. **飞书应用类型**：确认你用的是**企业自建应用**（长连接只支持这一类），并决定用哪个群或私聊承接决定。
+4. **发布授权粒度**：整批预授权（≤3 次部署），还是最后一次生产部署仍需人手点？
+5. **MBP14 的角色**：只做审核终端，还是保留「降级生产者」（MPS TTS）的能力？后者要提前把 checkpoint 与 `.venv-sfa` 复制过去，且产物是独立执行身份。
+6. **Drive 文件是否等于证道全文**：若几乎不需裁切，窗口确认可降级为 `record`，少一次手机操作。
+7. **L1 用哪条路**：`srt_normalize.py`（需要滚动 SRT）还是固化两遍 ASR？这决定检查点 A 之前要多久。
 
 ## 附录 A 复现本文的实测
 
