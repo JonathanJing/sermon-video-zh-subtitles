@@ -1,0 +1,29 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261116-ios-builtin-mic-route",
+  "runs": [
+    {
+      "label": "20261116-ios-builtin-mic-route",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.agents/worktrees/fix/ios-builtin-mic-route/artifacts/tongxing-ios/2026-11-16/evidence/20261116-ios-builtin-mic-route",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "20261116-ios-builtin-mic-route",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 2785,
+      "truncated": false,
+      "sha256": "d55b133847da0d7e19d9160e6c3e1597439ced1a5c0670b211d54c351690d9c7",
+      "redactions": {
+        "home_dir": 4
+      }
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}
