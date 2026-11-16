@@ -1596,6 +1596,9 @@ private struct WeekSheet: View {
             #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
             #endif
+            // The tab follows the content on screen every time the sheet
+            // appears, not only on the first render of this view.
+            .onAppear { kind = model.selectedContentIsPodcast ? .podcasts : .sermons }
         }
         .environment(\.locale, localization.locale)
         #if os(macOS)
