@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="zh-Hans" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="dark light">
+<meta name="robots" content="noindex, nofollow">
+<meta http-equiv="Referrer-Policy" content="no-referrer">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; media-src 'self' blob:; connect-src 'self'; base-uri 'none'; form-action 'none'; object-src 'none'">
+<title>逐句审核</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<header class="top">
+  <div class="top-line">
+    <div class="identity">
+      <p class="eyebrow" id="eyebrow">审核包</p>
+      <h1 id="title">正在载入…</h1>
+    </div>
+    <button class="icon" id="theme" type="button" aria-label="切换深浅色">◐</button>
+  </div>
+  <div class="meter" role="progressbar" aria-labelledby="counts" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="meter">
+    <div class="meter-fill" id="meter-fill"></div>
+  </div>
+  <div class="counts">
+    <span id="counts">0 / 0</span>
+    <span id="heard">听过 0</span>
+  </div>
+  <nav class="filters" id="filters" aria-label="筛选">
+    <button type="button" data-filter="hot" class="on">重点听</button>
+    <button type="button" data-filter="flagged">全部疑点</button>
+    <button type="button" data-filter="pending">未审</button>
+    <button type="button" data-filter="fixed">已标问题</button>
+    <button type="button" data-filter="all">全部</button>
+  </nav>
+</header>
+
+<main id="list" aria-live="polite"></main>
+
+<p class="empty" id="empty" hidden>没有符合当前筛选的句子。</p>
+
+<footer class="tray">
+  <audio id="player" preload="none"></audio>
+  <div class="tray-line">
+    <button class="play" id="play" type="button" aria-label="播放或暂停">▶</button>
+    <div class="now">
+      <p id="now" class="now-text">未选择句子</p>
+      <p id="hint" class="now-hint">空格播放 · J/K 上下句 · Enter 通过 · X 标问题 · F 下一疑点</p>
+    </div>
+    <button class="copy" id="copy" type="button">复制口令</button>
+  </div>
+  <p class="copy-out" id="copy-out" hidden></p>
+</footer>
+
+<script src="app.js" type="module"></script>
+</body>
+</html>
