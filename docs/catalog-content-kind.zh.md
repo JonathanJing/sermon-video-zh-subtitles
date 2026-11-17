@@ -46,6 +46,27 @@
 - `tools/ops/publish_hosting_files.py`：克隆线上版本、只上传指定文件、finalize + release 并做 HTTPS 读回；整站 `firebase deploy` 在 2.9 GB 快照上已被 jetsam 杀过两次，单文件展示修正不需要它。默认只出计划，`--execute` 才发布。
 - `experiments/sentence-first-agent/page-config.schema.json` 未改：`mediaType` 仍是技术枚举，`contentKind` 由类别派生，避免要求每个页面配置重复声明。
 
+## 默认页：最新一期周日证道
+
+`defaultPageId` 决定客户端在“没有已保存选择”时打开哪一页。生产目录曾把它指向 11-15 的播客单集（`if-i-had-more-time-jesus-is-better-than-this-world`），所以新装 App 打开就是播客，选篇面板默认也停在「播客」。
+
+2026-11-16 起统一为：
+
+- **默认页 = 最新一期周日证道**：在 `contentKind == "sermon"`、非 `diagnosticOnly`／`simulationOnly` 的页面里取日期最大的一页；播客与片段永远不会成为默认。
+- 工具：`tools/ops/set_catalog_default_page.py --policy latest-sermon`（`--check` 只报告；输出按目录 schema 校验；不部署）。
+- 每份投影（v3／v4／v5）都要改：客户端优先读 v5，网页与旧客户端读 v3。
+
+改完后的默认页：
+
+| 站点 | 改前默认 | 改后默认 |
+| --- | --- | --- |
+| 生产 | `if-i-had-more-time-jesus-is-better-than-this-world`（播客，11-15） | `revelation-jesus-is-better-20261115`（周日证道，11-15） |
+| Dev | `resi-20261018-broadcast`（证道，10-18） | `revelation-jesus-wins-20261025`（周日证道，10-25） |
+
+发布：生产 `d948e5c3691157e6` → `a27987cfbc3a7a23`（release `1794890764072000`）；Dev `24a69950d7d4e328` → `6045c142ca7299c1`（release `1794890771277000`），两份都做了 HTTPS 读回。
+
+验证：读回三份投影的 `defaultPageId` 均为最新证道；iPhone 18 Pro Max 模拟器上干净安装 Release 构建后，首页即该证道，选篇面板默认停在「周日证道」并勾选它。已保存过选择的用户仍会恢复自己的上次内容——本规则只决定“没有选择时”的默认。
+
 ## 本次数据修复（2026-11-16）
 
 App 读 `multilingual-v5.json`（其次 v4、v3）；网页与旧客户端读 v3。三份投影必须一起修，否则 App 仍按旧字段分栏。两个站点都用同一方式：发布前快照 → 规范化 → 克隆发布 → HTTPS 读回。
