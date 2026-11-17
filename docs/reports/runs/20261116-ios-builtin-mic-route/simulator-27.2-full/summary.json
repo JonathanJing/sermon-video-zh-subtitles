@@ -1,0 +1,33 @@
+{
+  "schemaVersion": "ios-alignment-tests-v1",
+  "commit": "6fc2c0966409708e2c784fd8415d72667dea43f7",
+  "branch": "fix/ios-builtin-mic-route",
+  "change": "Listening alignment keeps the phone microphone: the capture session requests A2DP only instead of Bluetooth HFP, prefers the built-in input, and clears that preference when playback is restored",
+  "newTests": [
+    "AudioAlignmentControllerTests/testAlignmentCaptureRouteKeepsBluetoothMicrophoneOut",
+    "AudioAlignmentControllerTests/testRestoringPlaybackClearsTheCaptureInputPreference"
+  ],
+  "notProven": [
+    "actual listening quality with a headset connected",
+    "iOS 17 minimum supported system (no such simulator runtime is installed here)"
+  ],
+  "status": "pass",
+  "scope": "simulator_unit_tests_not_physical_device_testflight_or_venue",
+  "note": "all TongxingTests on a simulator",
+  "runs": [
+    {
+      "action": "test",
+      "started": "2026-11-16T15:43:55.965958-08:00",
+      "finished": "2026-11-16T15:44:56.551892-08:00",
+      "exit_status": 0,
+      "only_testing": [
+        "TongxingTests"
+      ],
+      "configuration": "Debug",
+      "simulator": "iPhone 17 iOS 27.2",
+      "result": "178 executed, 162 passed, 16 skipped, 0 failed",
+      "run_directory": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.agents/worktrees/fix/ios-builtin-mic-route/artifacts/tongxing-ios/2026-11-16/cli/20261116T154355-test-77967781",
+      "xcresult": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.agents/worktrees/fix/ios-builtin-mic-route/artifacts/tongxing-ios/2026-11-16/cli/20261116T154355-test-77967781/test.xcresult"
+    }
+  ]
+}

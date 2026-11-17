@@ -1,0 +1,49 @@
+{
+  "schemaVersion": "ios-alignment-tests-v1",
+  "commit": "6fc2c0966409708e2c784fd8415d72667dea43f7",
+  "branch": "fix/ios-builtin-mic-route",
+  "change": "Listening alignment keeps the phone microphone: the capture session requests A2DP only instead of Bluetooth HFP, prefers the built-in input, and clears that preference when playback is restored",
+  "newTests": [
+    "AudioAlignmentControllerTests/testAlignmentCaptureRouteKeepsBluetoothMicrophoneOut",
+    "AudioAlignmentControllerTests/testRestoringPlaybackClearsTheCaptureInputPreference"
+  ],
+  "notProven": [
+    "actual listening quality with a headset connected",
+    "iOS 17 minimum supported system (no such simulator runtime is installed here)"
+  ],
+  "status": "target_tests_passed_unrelated_failures",
+  "scope": "physical_device_unit_tests_not_testflight_venue_or_listening_quality",
+  "device": {
+    "model": "iPhone 17 Pro (iPhone18,1)",
+    "os": "iOS 27.2.1 (24B156)",
+    "identity": "Beta",
+    "bundleId": "com.jonathanjing.tongxing.beta",
+    "scheme": "TongxingBeta",
+    "configuration": "BetaDebug",
+    "outputRoute": "BluetoothA2DPOutput (Bluetooth headset connected during the run)"
+  },
+  "targetTests": {
+    "result": "both passed on the device",
+    "appLogLine": "[AudioSession] alignment capture route input=MicrophoneBuiltIn output=BluetoothA2DPOutput",
+    "meaning": "AVAudioSession.Port.builtInMic.rawValue is MicrophoneBuiltIn; the capture uses the phone microphone while the headset stays on an A2DP output route"
+  },
+  "whyTheRunStillReportsFailure": {
+    "count": 8,
+    "causes": [
+      "7 unit tests read fixtures through #filePath, a build-machine path that does not exist on a device, so they are simulator-only by construction",
+      "1 TongxingUITests runner could not initialise because UI automation mode is not enabled on this device"
+    ],
+    "note": "none of the 8 touch the audio session or the two alignment route tests"
+  },
+  "buildNote": "the device build also printed the same route from inside the test; that test-only print was removed afterwards and the quoted line above is the app's own AudioSession log",
+  "runs": [
+    {
+      "action": "test",
+      "only_testing": "TongxingBeta scheme test action (TongxingTests + TongxingUITests)",
+      "configuration": "BetaDebug",
+      "simulator": "iPhone 17 Pro, iOS 27.2.1",
+      "result": "179 executed, 155 passed, 16 skipped, 8 failed (see whyTheRunStillReportsFailure)",
+      "xcresult": "~/Library/Developer/Xcode/DerivedData/Tongxing-fodomybmyshxewcntfuqbjwnwpus/Logs/Test/Test-TongxingBeta-2026.11.16_15-54-25--0800.xcresult"
+    }
+  ]
+}
