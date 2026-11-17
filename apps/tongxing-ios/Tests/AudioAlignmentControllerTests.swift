@@ -1001,10 +1001,41 @@ final class AudioAlignmentControllerTests: XCTestCase {
     private static let noMatch = FingerprintMatchResult(matched: false, offsetSeconds: nil, confidence: 0,
                                                         diagnostics: .init(reason: "no-match"))
 
-    private func eventually(timeout: Duration = .seconds(3), _ predicate: @MainActor () -> Bool) async throws {
+    /// Bluetooth must stay output-only. Requesting HFP would publish a paired headset's
+    /// microphone as an input route, and on one accessory supporting both profiles the HFP
+    /// ports outrank A2DP, so listening alignment would record the headset rather than the room.
+    func testAlignmentCaptureRouteKeepsBluetoothMicrophoneOut() async throws {
+        let token = UUID()
+        defer { SystemAudioSessionActivator.shared.restorePlaybackCategory(token: token) }
+
+        try await SystemAudioSessionActivator.shared.prepareRecording(token: token)
+
+        let session = AVAudioSession.sharedInstance()
+        XCTAssertEqual(session.category, .playAndRecord)
+        XCTAssertEqual(session.mode, .measurement)
+        XCTAssertTrue(session.categoryOptions.contains(.allowBluetoothA2DP))
+        XCTAssertFalse(session.categoryOptions.contains(.allowBluetoothHFP))
+        XCTAssertEqual(session.currentRoute.inputs.first?.portType, .builtInMic,
+                       "Alignment listens through the phone microphone, not an accessory")
+    }
+
+    func testRestoringPlaybackClearsTheCaptureInputPreference() async throws {
+        let session = AVAudioSession.sharedInstance()
+        let token = UUID()
+        defer { SystemAudioSessionActivator.shared.restorePlaybackCategory(token: token) }
+
+        try await SystemAudioSessionActivator.shared.prepareRecording(token: token)
+        SystemAudioSessionActivator.shared.restorePlaybackCategory(token: token)
+        try await eventually(message: "the playback category with a cleared input preference") {
+            session.category == .playback && session.mode == .spokenAudio && session.preferredInput == nil
+        }
+    }
+
+    private func eventually(timeout: Duration = .seconds(3), message: String = "alignment state",
+                            _ predicate: @MainActor () -> Bool) async throws {
         let deadline = ContinuousClock.now.advanced(by: timeout)
         while !predicate() {
-            guard ContinuousClock.now < deadline else { XCTFail("Timed out waiting for alignment state"); return }
+            guard ContinuousClock.now < deadline else { XCTFail("Timed out waiting for \(message)"); return }
             try await Task.sleep(for: .milliseconds(10))
         }
     }
