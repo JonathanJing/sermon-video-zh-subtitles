@@ -1,0 +1,160 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261116-catalog-default-latest-sermon",
+  "runs": [
+    {
+      "label": "ai-for-god-sermon-audio",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.agents/worktrees/picker-content-tabs/artifacts/catalog-audit/publish/ai-for-god-sermon-audio",
+      "skipped": {
+        ".json": 6
+      }
+    },
+    {
+      "label": "ai-for-god-sermon-audio-dev",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.agents/worktrees/picker-content-tabs/artifacts/catalog-audit/publish/ai-for-god-sermon-audio-dev",
+      "skipped": {
+        ".json": 6
+      }
+    },
+    {
+      "label": "app-evidence",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.agents/worktrees/picker-content-tabs/artifacts/catalog-audit/app-evidence",
+      "skipped": {
+        ".png": 17
+      }
+    }
+  ],
+  "files": [
+    {
+      "run": "ai-for-god-sermon-audio",
+      "path": "default-v3-receipt.json",
+      "kind": "whole",
+      "bytes": 293,
+      "truncated": false,
+      "sha256": "2e822f78fd82964cca647bf5da2fe97db87ceaa1c9cb16bb82709dfa90076dd5",
+      "redactions": {}
+    },
+    {
+      "run": "ai-for-god-sermon-audio",
+      "path": "default-v4-receipt.json",
+      "kind": "whole",
+      "bytes": 293,
+      "truncated": false,
+      "sha256": "b30765394738849f1ce1d0aa8391d792cdf1417e3d04c4ec3acc5adf67d52819",
+      "redactions": {}
+    },
+    {
+      "run": "ai-for-god-sermon-audio",
+      "path": "default-v5-receipt.json",
+      "kind": "whole",
+      "bytes": 293,
+      "truncated": false,
+      "sha256": "1099bc5874d0f28dfb6534ef8bc7933adae8a4e8038862e3bd0762f333114150",
+      "redactions": {}
+    },
+    {
+      "run": "ai-for-god-sermon-audio",
+      "path": "normalize-receipt.json",
+      "kind": "whole",
+      "bytes": 3546,
+      "truncated": false,
+      "sha256": "50b918db6c71fe9109af6636fd1c372d9ff040d2514afbefd5da4f816ee0f8b7",
+      "redactions": {}
+    },
+    {
+      "run": "ai-for-god-sermon-audio",
+      "path": "normalize-v3-receipt.json",
+      "kind": "whole",
+      "bytes": 3546,
+      "truncated": false,
+      "sha256": "50b918db6c71fe9109af6636fd1c372d9ff040d2514afbefd5da4f816ee0f8b7",
+      "redactions": {}
+    },
+    {
+      "run": "ai-for-god-sermon-audio",
+      "path": "normalize-v4-receipt.json",
+      "kind": "whole",
+      "bytes": 3780,
+      "truncated": false,
+      "sha256": "db93ef7d6155f67fd8280c4e7d6d45defae1ac5e29a7077e20e28cca7440be51",
+      "redactions": {}
+    },
+    {
+      "run": "ai-for-god-sermon-audio",
+      "path": "normalize-v5-receipt.json",
+      "kind": "whole",
+      "bytes": 3779,
+      "truncated": false,
+      "sha256": "91f89727c5a1ad58a1b93d34e84f7602b770742e3396808acc3161beb6c541d0",
+      "redactions": {}
+    },
+    {
+      "run": "ai-for-god-sermon-audio-dev",
+      "path": "default-v3-receipt.json",
+      "kind": "whole",
+      "bytes": 265,
+      "truncated": false,
+      "sha256": "f8c70214098cc54ec46293805733baded1ed9528f1fd3aa00fb42a04a9a324f1",
+      "redactions": {}
+    },
+    {
+      "run": "ai-for-god-sermon-audio-dev",
+      "path": "default-v4-receipt.json",
+      "kind": "whole",
+      "bytes": 265,
+      "truncated": false,
+      "sha256": "608e32742845357a11e7c320eaf0aa030ddd7aab2050cd66b583747e986dd919",
+      "redactions": {}
+    },
+    {
+      "run": "ai-for-god-sermon-audio-dev",
+      "path": "default-v5-receipt.json",
+      "kind": "whole",
+      "bytes": 264,
+      "truncated": false,
+      "sha256": "6f9817ef8c386cb8161e6ec601a8617abf6a63f069e17fa4498b82c38700ac16",
+      "redactions": {}
+    },
+    {
+      "run": "ai-for-god-sermon-audio-dev",
+      "path": "normalize-receipt.json",
+      "kind": "whole",
+      "bytes": 4144,
+      "truncated": false,
+      "sha256": "d84e0f61675baf2e00381649f664b15f34002fba6c96cf28784f3ed34dd29912",
+      "redactions": {}
+    },
+    {
+      "run": "ai-for-god-sermon-audio-dev",
+      "path": "normalize-v3-receipt.json",
+      "kind": "whole",
+      "bytes": 4144,
+      "truncated": false,
+      "sha256": "d84e0f61675baf2e00381649f664b15f34002fba6c96cf28784f3ed34dd29912",
+      "redactions": {}
+    },
+    {
+      "run": "ai-for-god-sermon-audio-dev",
+      "path": "normalize-v4-receipt.json",
+      "kind": "whole",
+      "bytes": 6948,
+      "truncated": false,
+      "sha256": "adc3f8b804e5e0f519d019557c5e790af5d578346f6856f860eab295f79d9eba",
+      "redactions": {}
+    },
+    {
+      "run": "ai-for-god-sermon-audio-dev",
+      "path": "normalize-v5-receipt.json",
+      "kind": "whole",
+      "bytes": 6726,
+      "truncated": false,
+      "sha256": "d2fd2396533da5ef75e0901b808c2ba65b26d34fd6718ba8346eb30e9693b1c8",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}
