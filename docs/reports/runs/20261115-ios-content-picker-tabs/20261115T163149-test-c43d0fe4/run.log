@@ -1,0 +1,255 @@
+
+$ /usr/bin/xcrun xcodebuild -project ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.agents/worktrees/picker-content-tabs/apps/tongxing-ios/Tongxing.xcodeproj -list -json -disableAutomaticPackageResolution
+{
+  "project" : {
+    "configurations" : [
+      "BetaDebug",
+      "BetaRelease",
+      "Debug",
+      "Release"
+    ],
+    "name" : "Tongxing",
+    "schemes" : [
+      "ListeningActivityExtension",
+      "Tongxing",
+      "TongxingBeta",
+      "TongxingCore",
+      "TongxingInfrastructure",
+      "TongxingPreview",
+      "TongxingScreenshots"
+    ],
+    "targets" : [
+      "Tongxing",
+      "ListeningActivityExtension",
+      "TongxingTests",
+      "TongxingUITests"
+    ]
+  }
+}
+
+$ /usr/bin/xcrun simctl list devices available --json
+{
+  "devices" : {
+    "com.apple.CoreSimulator.SimRuntime.iOS-27-0" : [
+      {
+        "dataPath" : "\/Users\/jonathan_jing\/Library\/Developer\/CoreSimulator\/Devices\/A9ACB321-07F8-4540-AD3C-7FACBD384A1F\/data",
+        "dataPathSize" : 5734416384,
+        "logPath" : "\/Users\/jonathan_jing\/Library\/Logs\/CoreSimulator\/A9ACB321-07F8-4540-AD3C-7FACBD384A1F",
+        "udid" : "A9ACB321-07F8-4540-AD3C-7FACBD384A1F",
+        "lastUsedAt" : "2026-11-16T00:31:50Z",
+        "isAvailable" : true,
+... 1054 lines omitted; 13 error-like lines, 13 kept below ...
+[line 415] ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.agents/worktrees/picker-content-tabs/apps/tongxing-ios/App/MicrophoneCapture.swift:259:92: warning: main actor-isolated static property 'startupSeconds' can not be referenced from a nonisolated context; this is an error in the Swift 6 language mode
+[line 422]     |                                                                                            `- warning: main actor-isolated static property 'startupSeconds' can not be referenced from a nonisolated context; this is an error in the Swift 6 language mode
+[line 533]     export CLANG_WARN_DIRECT_OBJC_ISA_USAGE\=YES_ERROR
+[line 542]     export CLANG_WARN_OBJC_ROOT_CLASS\=YES_ERROR
+[line 699]     export GCC_WARN_ABOUT_RETURN_TYPE\=YES_ERROR
+[line 896]     export RUNTIME_EXCEPTION_ALLOW_DYLD_ENVIRONMENT_VARIABLES\=NO
+[line 897]     export RUNTIME_EXCEPTION_ALLOW_JIT\=NO
+[line 898]     export RUNTIME_EXCEPTION_ALLOW_UNSIGNED_EXECUTABLE_MEMORY\=NO
+[line 899]     export RUNTIME_EXCEPTION_DEBUGGING_TOOL\=NO
+[line 900]     export RUNTIME_EXCEPTION_DISABLE_EXECUTABLE_PAGE_PROTECTION\=NO
+[line 901]     export RUNTIME_EXCEPTION_DISABLE_LIBRARY_VALIDATION\=NO
+[line 1049]     export VALIDATE_DEVELOPMENT_ASSET_PATHS\=YES_ERROR
+[line 1078]     export __DIAGNOSE_INVALID_DEPLOYMENT_TARGET_AS_ERROR\=YES
+... end of omitted section ...
+    cd ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.agents/worktrees/picker-content-tabs/apps/tongxing-ios
+    builtin-swiftStdLibTool --copy --verbose --scan-executable ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.agents/worktrees/picker-content-tabs/artifacts/tongxing-ios/2026-11-15/cli/DerivedData/Build/Products/Debug-iphonesimulator/Tongxing.app/Tongxing.debug.dylib --scan-folder ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.agents/worktrees/picker-content-tabs/artifacts/tongxing-ios/2026-11-15/cli/DerivedData/Build/Products/Debug-iphonesimulator/Tongxing.app/Frameworks --scan-folder ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.agents/worktrees/picker-content-tabs/artifacts/tongxing-ios/2026-11-15/cli/DerivedData/Build/Products/Debug-iphonesimulator/Tongxing.app/PlugIns --scan-folder ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.agents/worktrees/picker-content-tabs/artifacts/tongxing-ios/2026-11-15/cli/DerivedData/Build/Products/Debug-iphonesimulator/Tongxing.app/SystemExtensions --scan-folder ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.agents/worktrees/picker-content-tabs/artifacts/tongxing-ios/2026-11-15/cli/DerivedData/Build/Products/Debug-iphonesimulator/Tongxing.app/Extensions --scan-folder ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.agents/worktrees/picker-content-tabs/artifacts/tongxing-ios/2026-11-15/cli/DerivedData/Build/Products/Debug-iphonesimulator/PackageFrameworks/TongxingCore_-268EA610E369A1D_PackageProduct.framework --platform iphonesimulator --toolchain /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain --destination ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.agents/worktrees/picker-content-tabs/artifacts/tongxing-ios/2026-11-15/cli/DerivedData/Build/Products/Debug-iphonesimulator/Tongxing.app/Frameworks --strip-bitcode --strip-bitcode-tool /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.x ...[line truncated]
+Ignoring --strip-bitcode because --sign was not passed
+
+SwiftDriver TongxingUITests normal arm64 com.apple.xcode.tools.swift.compiler (in target 'TongxingUITests' from project 'Tongxing')
+    cd ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.agents/worktrees/picker-content-tabs/apps/tongxing-ios
+    builtin-SwiftDriver -- /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc -module-name TongxingUITests -Onone @~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.agents/worktrees/picker-content-tabs/artifacts/tongxing-ios/2026-11-15/cli/DerivedData/Build/Intermediates.noindex/Tongxing.build/Debug-iphonesimulator/TongxingUITests.build/Objects-normal/arm64/TongxingUITests.SwiftFileList -DDEBUG -module-alias Testing\=_Testing_Unavailable -plugin-path /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/plugins/testing -enable-bare-slash-regex -enable-experimental-feature DebugDescriptionMacro -sdk /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator27.1.sdk -target arm64-apple-ios17.0-simulator -g -module-cache-path ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.agents/worktrees/picker-content-tabs/artifacts/tongxing-ios/2026-11-15/cli/DerivedData/ModuleCache.noindex -Xfrontend -serialize-debugging-options -profile-coverage-mapping -profile-generate -enable-testing -index-store-path ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.agents/worktrees/picker-content-tabs/artifacts/tongxing-ios/2026-11-15/cli/DerivedData/Index.noindex/DataStore -Xcc -D_LIBCPP_HARDENING_MODE\=_LIBCPP_HARDENING_MODE_DEBUG -swift-version 5 -I ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.agents/worktrees/picker-content-tabs/artifacts/tongxing-ios/2026-11-15/cli/DerivedData/Build/Products/Debug-iphonesimulator -Isystem /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/usr/lib -F ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.agents/worktrees/picker-content-tabs/artifacts/tongxing-ios/2026-11-15/cli/DerivedData/Build/Products/Debug-iphonesimulator -F /Applications/Xcode.app/C ...[line truncated]
+
+Ld ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.agents/worktrees/picker-content-tabs/artifacts/tongxing-ios/2026-11-15/cli/DerivedData/Build/Products/Debug-iphonesimulator/Tongxing.app/PlugIns/TongxingTests.xctest/TongxingTests normal (in target 'TongxingTests' from project 'Tongxing')
+    cd ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.agents/worktrees/picker-content-tabs/apps/tongxing-ios
+    /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -Xlinker -reproducible -target arm64-apple-ios17.0-simulator -bundle -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator27.1.sdk -O0 -Xlinker -no_warn_duplicate_libraries -L~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.agents/worktrees/picker-content-tabs/artifacts/tongxing-ios/2026-11-15/cli/DerivedData/Build/Intermediates.noindex/EagerLinkingTBDs/Debug-iphonesimulator -L~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.agents/worktrees/picker-content-tabs/artifacts/tongxing-ios/2026-11-15/cli/DerivedData/Build/Products/Debug-iphonesimulator -L/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/usr/lib -F~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.agents/worktrees/picker-content-tabs/artifacts/tongxing-ios/2026-11-15/cli/DerivedData/Build/Intermediates.noindex/EagerLinkingTBDs/Debug-iphonesimulator -F~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.agents/worktrees/picker-content-tabs/artifacts/tongxing-ios/2026-11-15/cli/DerivedData/Build/Products/Debug-iphonesimulator/PackageFrameworks -F~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.agents/worktrees/picker-content-tabs/artifacts/tongxing-ios/2026-11-15/cli/DerivedData/Build/Products/Debug-iphonesimulator -iframework /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/Library/Frameworks -iframework /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator27.1.sdk/Developer/Library/Frameworks -filelist ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.agents/worktrees/picker-content-tabs/artifacts/tongxing-ios/2026-11-15/cli/DerivedData/Build/Intermediates.noindex/T ...[line truncated]
+
+SwiftEmitModule normal arm64 Emitting\ module\ for\ TongxingUITests (in target 'TongxingUITests' from project 'Tongxing')
+
+SwiftCompile normal arm64 (in target 'TongxingUITests' from project 'Tongxing')
+    cd ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.agents/worktrees/picker-content-tabs/apps/tongxing-ios
+
+
+SwiftCompile normal arm64 Compiling\ ListeningFlowUITests.swift ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.agents/worktrees/picker-content-tabs/apps/tongxing-ios/UITests/ListeningFlowUITests.swift (in target 'TongxingUITests' from project 'Tongxing')
+
+SwiftCompile normal arm64 ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.agents/worktrees/picker-content-tabs/apps/tongxing-ios/UITests/ListeningFlowUITests.swift (in target 'TongxingUITests' from project 'Tongxing')
+    cd ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.agents/worktrees/picker-content-tabs/apps/tongxing-ios
+    builtin-SwiftPerFileCompile ListeningFlowUITests.swift
+
+ExtractAppIntentsMetadata (in target 'TongxingTests' from project 'Tongxing')
+    cd ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.agents/worktrees/picker-content-tabs/apps/tongxing-ios
+    /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/appintentsmetadataprocessor --toolchain-dir /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain --module-name TongxingTests --sdk-root /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator27.1.sdk --xcode-version 27A9275 --platform-family iOS --deployment-target 17.0 --bundle-identifier com.jonathanjing.tongxing.dev.tests --output ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.agents/worktrees/picker-content-tabs/artifacts/tongxing-ios/2026-11-15/cli/DerivedData/Build/Products/Debug-iphonesimulator/Tongxing.app/PlugIns/TongxingTests.xctest --target-triple arm64-apple-ios17.0-simulator --binary-file ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.agents/worktrees/picker-content-tabs/artifacts/tongxing-ios/2026-11-15/cli/DerivedData/Build/Products/Debug-iphonesimulator/Tongxing.app/PlugIns/TongxingTests.xctest/TongxingTests --dependency-file ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.agents/worktrees/picker-content-tabs/artifacts/tongxing-ios/2026-11-15/cli/DerivedData/Build/Intermediates.noindex/Tongxing.build/Debug-iphonesimulator/TongxingTests.build/Objects-normal/arm64/TongxingTests_dependency_info.dat --stringsdata-file ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.agents/worktrees/picker-content-tabs/artifacts/tongxing-ios/2026-11-15/cli/DerivedData/Build/Intermediates.noindex/Tongxing.build/Debug-iphonesimulator/TongxingTests.build/Objects-normal/arm64/ExtractedAppShortcutsMetadata.stringsdata --source-file-list ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.agents/worktrees/picker-content-tabs/artifacts/tongxing-ios/2026-11-15/cli/DerivedData/Build/Intermediates.noindex/Tongxing.build/Debug-iphonesimulator/TongxingTests.build/Objects-normal/arm ...[line truncated]
+2026-11-15 16:32:02.649 appintentsmetadataprocessor[60530:30369397] Starting appintentsmetadataprocessor export
+2026-11-15 16:32:02.651 appintentsmetadataprocessor[60530:30369397] warning: Metadata extraction skipped, no AppIntents.framework dependency found
+
+CopySwiftLibs ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.agents/worktrees/picker-content-tabs/artifacts/tongxing-ios/2026-11-15/cli/DerivedData/Build/Products/Debug-iphonesimulator/Tongxing.app/PlugIns/TongxingTests.xctest (in target 'TongxingTests' from project 'Tongxing')
+    cd ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.agents/worktrees/picker-content-tabs/apps/tongxing-ios
+    builtin-swiftStdLibTool --copy --verbose --scan-executable ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.agents/worktrees/picker-content-tabs/artifacts/tongxing-ios/2026-11-15/cli/DerivedData/Build/Products/Debug-iphonesimulator/Tongxing.app/PlugIns/TongxingTests.xctest/TongxingTests --scan-folder ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.agents/worktrees/picker-content-tabs/artifacts/tongxing-ios/2026-11-15/cli/DerivedData/Build/Products/Debug-iphonesimulator/Tongxing.app/PlugIns/TongxingTests.xctest/Frameworks --scan-folder ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.agents/worktrees/picker-content-tabs/artifacts/tongxing-ios/2026-11-15/cli/DerivedData/Build/Products/Debug-iphonesimulator/Tongxing.app/PlugIns/TongxingTests.xctest/PlugIns --scan-folder ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.agents/worktrees/picker-content-tabs/artifacts/tongxing-ios/2026-11-15/cli/DerivedData/Build/Products/Debug-iphonesimulator/Tongxing.app/PlugIns/TongxingTests.xctest/SystemExtensions --scan-folder ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.agents/worktrees/picker-content-tabs/artifacts/tongxing-ios/2026-11-15/cli/DerivedData/Build/Products/Debug-iphonesimulator/Tongxing.app/PlugIns/TongxingTests.xctest/Extensions --scan-folder ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.agents/worktrees/picker-content-tabs/artifacts/tongxing-ios/2026-11-15/cli/DerivedData/Build/Products/Debug-iphonesimulator/PackageFrameworks/TongxingCore_-268EA610E369A1D_PackageProduct.framework --platform iphonesimulator --toolchain /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain --destination ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.agents/worktrees/picker-content-tabs/artifacts/tongxing-ios/2026-11-15/cli/DerivedData/Build/Products/Debug-iphones ...[line truncated]
+Ignoring --strip-bitcode because --sign was not passed
+
+Validate ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.agents/worktrees/picker-content-tabs/artifacts/tongxing-ios/2026-11-15/cli/DerivedData/Build/Products/Debug-iphonesimulator/Tongxing.app (in target 'Tongxing' from project 'Tongxing')
+    cd ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.agents/worktrees/picker-content-tabs/apps/tongxing-ios
+    builtin-validationUtility ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.agents/worktrees/picker-content-tabs/artifacts/tongxing-ios/2026-11-15/cli/DerivedData/Build/Products/Debug-iphonesimulator/Tongxing.app -shallow-bundle -infoplist-subpath Info.plist
+
+SwiftDriverJobDiscovery normal arm64 Emitting module for TongxingUITests (in target 'TongxingUITests' from project 'Tongxing')
+
+SwiftDriver\ Compilation\ Requirements TongxingUITests normal arm64 com.apple.xcode.tools.swift.compiler (in target 'TongxingUITests' from project 'Tongxing')
+    cd ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.agents/worktrees/picker-content-tabs/apps/tongxing-ios
+    builtin-Swift-Compilation-Requirements -- /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc -module-name TongxingUITests -Onone @~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.agents/worktrees/picker-content-tabs/artifacts/tongxing-ios/2026-11-15/cli/DerivedData/Build/Intermediates.noindex/Tongxing.build/Debug-iphonesimulator/TongxingUITests.build/Objects-normal/arm64/TongxingUITests.SwiftFileList -DDEBUG -module-alias Testing\=_Testing_Unavailable -plugin-path /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/plugins/testing -enable-bare-slash-regex -enable-experimental-feature DebugDescriptionMacro -sdk /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator27.1.sdk -target arm64-apple-ios17.0-simulator -g -module-cache-path ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.agents/worktrees/picker-content-tabs/artifacts/tongxing-ios/2026-11-15/cli/DerivedData/ModuleCache.noindex -Xfrontend -serialize-debugging-options -profile-coverage-mapping -profile-generate -enable-testing -index-store-path ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.agents/worktrees/picker-content-tabs/artifacts/tongxing-ios/2026-11-15/cli/DerivedData/Index.noindex/DataStore -Xcc -D_LIBCPP_HARDENING_MODE\=_LIBCPP_HARDENING_MODE_DEBUG -swift-version 5 -I ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.agents/worktrees/picker-content-tabs/artifacts/tongxing-ios/2026-11-15/cli/DerivedData/Build/Products/Debug-iphonesimulator -Isystem /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/usr/lib -F ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.agents/worktrees/picker-content-tabs/artifacts/tongxing-ios/2026-11-15/cli/DerivedData/Build/Products/Debug-iphonesimulator -F /Appli ...[line truncated]
+
+Copy ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.agents/worktrees/picker-content-tabs/artifacts/tongxing-ios/2026-11-15/cli/DerivedData/Build/Products/Debug-iphonesimulator/TongxingUITests.swiftmodule/Project/arm64-apple-ios-simulator.swiftsourceinfo ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.agents/worktrees/picker-content-tabs/artifacts/tongxing-ios/2026-11-15/cli/DerivedData/Build/Intermediates.noindex/Tongxing.build/Debug-iphonesimulator/TongxingUITests.build/Objects-normal/arm64/TongxingUITests.swiftsourceinfo (in target 'TongxingUITests' from project 'Tongxing')
+    cd ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.agents/worktrees/picker-content-tabs/apps/tongxing-ios
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -resolve-src-symlinks -rename ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.agents/worktrees/picker-content-tabs/artifacts/tongxing-ios/2026-11-15/cli/DerivedData/Build/Intermediates.noindex/Tongxing.build/Debug-iphonesimulator/TongxingUITests.build/Objects-normal/arm64/TongxingUITests.swiftsourceinfo ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.agents/worktrees/picker-content-tabs/artifacts/tongxing-ios/2026-11-15/cli/DerivedData/Build/Products/Debug-iphonesimulator/TongxingUITests.swiftmodule/Project/arm64-apple-ios-simulator.swiftsourceinfo
+
+Copy ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.agents/worktrees/picker-content-tabs/artifacts/tongxing-ios/2026-11-15/cli/DerivedData/Build/Products/Debug-iphonesimulator/TongxingUITests.swiftmodule/arm64-apple-ios-simulator.swiftmodule ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.agents/worktrees/picker-content-tabs/artifacts/tongxing-ios/2026-11-15/cli/DerivedData/Build/Intermediates.noindex/Tongxing.build/Debug-iphonesimulator/TongxingUITests.build/Objects-normal/arm64/TongxingUITests.swiftmodule (in target 'TongxingUITests' from project 'Tongxing')
+    cd ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.agents/worktrees/picker-content-tabs/apps/tongxing-ios
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -resolve-src-symlinks -rename ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.agents/worktrees/picker-content-tabs/artifacts/tongxing-ios/2026-11-15/cli/DerivedData/Build/Intermediates.noindex/Tongxing.build/Debug-iphonesimulator/TongxingUITests.build/Objects-normal/arm64/TongxingUITests.swiftmodule ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.agents/worktrees/picker-content-tabs/artifacts/tongxing-ios/2026-11-15/cli/DerivedData/Build/Products/Debug-iphonesimulator/TongxingUITests.swiftmodule/arm64-apple-ios-simulator.swiftmodule
+
+Copy ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.agents/worktrees/picker-content-tabs/artifacts/tongxing-ios/2026-11-15/cli/DerivedData/Build/Products/Debug-iphonesimulator/TongxingUITests.swiftmodule/arm64-apple-ios-simulator.abi.json ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.agents/worktrees/picker-content-tabs/artifacts/tongxing-ios/2026-11-15/cli/DerivedData/Build/Intermediates.noindex/Tongxing.build/Debug-iphonesimulator/TongxingUITests.build/Objects-normal/arm64/TongxingUITests.abi.json (in target 'TongxingUITests' from project 'Tongxing')
+    cd ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.agents/worktrees/picker-content-tabs/apps/tongxing-ios
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -resolve-src-symlinks -rename ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.agents/worktrees/picker-content-tabs/artifacts/tongxing-ios/2026-11-15/cli/DerivedData/Build/Intermediates.noindex/Tongxing.build/Debug-iphonesimulator/TongxingUITests.build/Objects-normal/arm64/TongxingUITests.abi.json ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.agents/worktrees/picker-content-tabs/artifacts/tongxing-ios/2026-11-15/cli/DerivedData/Build/Products/Debug-iphonesimulator/TongxingUITests.swiftmodule/arm64-apple-ios-simulator.abi.json
+
+SwiftDriverJobDiscovery normal arm64 Compiling ListeningFlowUITests.swift (in target 'TongxingUITests' from project 'Tongxing')
+
+SwiftDriver\ Compilation TongxingUITests normal arm64 com.apple.xcode.tools.swift.compiler (in target 'TongxingUITests' from project 'Tongxing')
+    cd ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.agents/worktrees/picker-content-tabs/apps/tongxing-ios
+    builtin-Swift-Compilation -- /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc -module-name TongxingUITests -Onone @~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.agents/worktrees/picker-content-tabs/artifacts/tongxing-ios/2026-11-15/cli/DerivedData/Build/Intermediates.noindex/Tongxing.build/Debug-iphonesimulator/TongxingUITests.build/Objects-normal/arm64/TongxingUITests.SwiftFileList -DDEBUG -module-alias Testing\=_Testing_Unavailable -plugin-path /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/plugins/testing -enable-bare-slash-regex -enable-experimental-feature DebugDescriptionMacro -sdk /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator27.1.sdk -target arm64-apple-ios17.0-simulator -g -module-cache-path ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.agents/worktrees/picker-content-tabs/artifacts/tongxing-ios/2026-11-15/cli/DerivedData/ModuleCache.noindex -Xfrontend -serialize-debugging-options -profile-coverage-mapping -profile-generate -enable-testing -index-store-path ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.agents/worktrees/picker-content-tabs/artifacts/tongxing-ios/2026-11-15/cli/DerivedData/Index.noindex/DataStore -Xcc -D_LIBCPP_HARDENING_MODE\=_LIBCPP_HARDENING_MODE_DEBUG -swift-version 5 -I ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.agents/worktrees/picker-content-tabs/artifacts/tongxing-ios/2026-11-15/cli/DerivedData/Build/Products/Debug-iphonesimulator -Isystem /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/usr/lib -F ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.agents/worktrees/picker-content-tabs/artifacts/tongxing-ios/2026-11-15/cli/DerivedData/Build/Products/Debug-iphonesimulator -F /Applications/Xcode ...[line truncated]
+
+Ld ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.agents/worktrees/picker-content-tabs/artifacts/tongxing-ios/2026-11-15/cli/DerivedData/Build/Products/Debug-iphonesimulator/TongxingUITests-Runner.app/PlugIns/TongxingUITests.xctest/TongxingUITests normal (in target 'TongxingUITests' from project 'Tongxing')
+    cd ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.agents/worktrees/picker-content-tabs/apps/tongxing-ios
+    /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -Xlinker -reproducible -target arm64-apple-ios17.0-simulator -bundle -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator27.1.sdk -O0 -Xlinker -no_warn_duplicate_libraries -L~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.agents/worktrees/picker-content-tabs/artifacts/tongxing-ios/2026-11-15/cli/DerivedData/Build/Intermediates.noindex/EagerLinkingTBDs/Debug-iphonesimulator -L~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.agents/worktrees/picker-content-tabs/artifacts/tongxing-ios/2026-11-15/cli/DerivedData/Build/Products/Debug-iphonesimulator -L/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/usr/lib -F~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.agents/worktrees/picker-content-tabs/artifacts/tongxing-ios/2026-11-15/cli/DerivedData/Build/Intermediates.noindex/EagerLinkingTBDs/Debug-iphonesimulator -F~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.agents/worktrees/picker-content-tabs/artifacts/tongxing-ios/2026-11-15/cli/DerivedData/Build/Products/Debug-iphonesimulator -iframework /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/Library/Frameworks -iframework /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator27.1.sdk/Developer/Library/Frameworks -filelist ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.agents/worktrees/picker-content-tabs/artifacts/tongxing-ios/2026-11-15/cli/DerivedData/Build/Intermediates.noindex/Tongxing.build/Debug-iphonesimulator/TongxingUITests.build/Objects-normal/arm64/TongxingUITests.LinkFileList -Xlinker -rpath -Xlinker /usr/lib/swift -Xlinker -rpath -Xlinker @loader_path/Frameworks -Xlinker -rpath -Xlinke ...[line truncated]
+
+ExtractAppIntentsMetadata (in target 'TongxingUITests' from project 'Tongxing')
+    cd ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.agents/worktrees/picker-content-tabs/apps/tongxing-ios
+    /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/appintentsmetadataprocessor --toolchain-dir /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain --module-name TongxingUITests --sdk-root /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator27.1.sdk --xcode-version 27A9275 --platform-family iOS --deployment-target 17.0 --bundle-identifier com.jonathanjing.tongxing.dev.uitests --output ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.agents/worktrees/picker-content-tabs/artifacts/tongxing-ios/2026-11-15/cli/DerivedData/Build/Products/Debug-iphonesimulator/TongxingUITests-Runner.app/PlugIns/TongxingUITests.xctest --target-triple arm64-apple-ios17.0-simulator --binary-file ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.agents/worktrees/picker-content-tabs/artifacts/tongxing-ios/2026-11-15/cli/DerivedData/Build/Products/Debug-iphonesimulator/TongxingUITests-Runner.app/PlugIns/TongxingUITests.xctest/TongxingUITests --dependency-file ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.agents/worktrees/picker-content-tabs/artifacts/tongxing-ios/2026-11-15/cli/DerivedData/Build/Intermediates.noindex/Tongxing.build/Debug-iphonesimulator/TongxingUITests.build/Objects-normal/arm64/TongxingUITests_dependency_info.dat --stringsdata-file ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.agents/worktrees/picker-content-tabs/artifacts/tongxing-ios/2026-11-15/cli/DerivedData/Build/Intermediates.noindex/Tongxing.build/Debug-iphonesimulator/TongxingUITests.build/Objects-normal/arm64/ExtractedAppShortcutsMetadata.stringsdata --source-file-list ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.agents/worktrees/picker-content-tabs/artifacts/tongxing-ios/2026-11-15/cli/DerivedData/Build/Intermediates.noindex/Tongxing.build/Debug-iphonesimu ...[line truncated]
+2026-11-15 16:32:03.747 appintentsmetadataprocessor[60534:30369443] Starting appintentsmetadataprocessor export
+2026-11-15 16:32:03.748 appintentsmetadataprocessor[60534:30369443] warning: Metadata extraction skipped, no AppIntents.framework dependency found
+
+CopySwiftLibs ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.agents/worktrees/picker-content-tabs/artifacts/tongxing-ios/2026-11-15/cli/DerivedData/Build/Products/Debug-iphonesimulator/TongxingUITests-Runner.app/PlugIns/TongxingUITests.xctest (in target 'TongxingUITests' from project 'Tongxing')
+    cd ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.agents/worktrees/picker-content-tabs/apps/tongxing-ios
+    builtin-swiftStdLibTool --copy --verbose --scan-executable ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.agents/worktrees/picker-content-tabs/artifacts/tongxing-ios/2026-11-15/cli/DerivedData/Build/Products/Debug-iphonesimulator/TongxingUITests-Runner.app/PlugIns/TongxingUITests.xctest/TongxingUITests --scan-folder ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.agents/worktrees/picker-content-tabs/artifacts/tongxing-ios/2026-11-15/cli/DerivedData/Build/Products/Debug-iphonesimulator/TongxingUITests-Runner.app/PlugIns/TongxingUITests.xctest/Frameworks --scan-folder ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.agents/worktrees/picker-content-tabs/artifacts/tongxing-ios/2026-11-15/cli/DerivedData/Build/Products/Debug-iphonesimulator/TongxingUITests-Runner.app/PlugIns/TongxingUITests.xctest/PlugIns --scan-folder ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.agents/worktrees/picker-content-tabs/artifacts/tongxing-ios/2026-11-15/cli/DerivedData/Build/Products/Debug-iphonesimulator/TongxingUITests-Runner.app/PlugIns/TongxingUITests.xctest/SystemExtensions --scan-folder ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.agents/worktrees/picker-content-tabs/artifacts/tongxing-ios/2026-11-15/cli/DerivedData/Build/Products/Debug-iphonesimulator/TongxingUITests-Runner.app/PlugIns/TongxingUITests.xctest/Extensions --platform iphonesimulator --toolchain /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain --destination ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.agents/worktrees/picker-content-tabs/artifacts/tongxing-ios/2026-11-15/cli/DerivedData/Build/Products/Debug-iphonesimulator/TongxingUITests-Runner.app/PlugIns/TongxingUITests.xctest/Frameworks --strip-bitcode --scan-executable /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/usr/l ...[line truncated]
+Ignoring --strip-bitcode because --sign was not passed
+
+PruneExplicitPrecompiledModules ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.agents/worktrees/picker-content-tabs/artifacts/tongxing-ios/2026-11-15/cli/DerivedData/Build/Intermediates.noindex/SwiftExplicitPrecompiledModules
+
+PruneExplicitPrecompiledModules ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.agents/worktrees/picker-content-tabs/artifacts/tongxing-ios/2026-11-15/cli/DerivedData/SDKExplicitPrecompiledModules
+
+PruneExplicitPrecompiledModules ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.agents/worktrees/picker-content-tabs/artifacts/tongxing-ios/2026-11-15/cli/DerivedData/Build/Intermediates.noindex/ExplicitPrecompiledModules
+
+2026-11-15 16:32:06.178 xcodebuild[60358:30368627] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+2026-11-15 16:32:55.562234-0800 TongxingUITests-Runner[61284:30374134] [Default] Running tests...
+    t =      nans Interface orientation changed to Portrait
+Test Suite 'Selected tests' started at 2026-11-15 16:33:05.138.
+Test Suite 'TongxingUITests.xctest' started at 2026-11-15 16:33:05.139.
+Test Suite 'ContentPickerUITests' started at 2026-11-15 16:33:05.139.
+Test Case '-[TongxingUITests.ContentPickerUITests testPickerSeparatesSermonsFromPodcasts]' started.
+    t =     0.00s Start Test at 2026-11-15 16:33:05.140
+    t =     0.14s Set Up
+    t =     0.15s Open com.jonathanjing.tongxing.dev
+    t =     0.15s     Launch com.jonathanjing.tongxing.dev
+2026-11-15 16:33:05.379 xcodebuild[60358:30368627] [MT] IDELaunchParametersSnapshot: debugger version lookup failed for path '<nil>': noURL
+2026-11-15 16:33:05.379 xcodebuild[60358:30368627] [MT] IDELaunchParametersSnapshot: no debugger version
+2026-11-15 16:33:05.427 xcodebuild[60358:30368627] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+objc[61284]: Class UIAccessibilityLoaderWebShared is implemented in both /Library/Developer/CoreSimulator/Volumes/iOS_24B114/Library/Developer/CoreSimulator/Profiles/Runtimes/iOS 27.2.simruntime/Contents/Resources/RuntimeRoot/System/Library/AccessibilityBundles/WebKit.axbundle/WebKit (0x106a58398) and /Library/Developer/CoreSimulator/Volumes/iOS_24B114/Library/Developer/CoreSimulator/Profiles/Runtimes/iOS 27.2.simruntime/Contents/Resources/RuntimeRoot/System/Library/AccessibilityBundles/WebCore.axbundle/WebCore (0x10a298310). This may cause spurious casting failures and mysterious crashes. One of the duplicates must be removed or renamed.
+    t =     1.90s         Setting up automation session
+    t =     5.70s         Wait for com.jonathanjing.tongxing.dev to idle
+    t =     8.01s Waiting 15.0s for "published-page-title" StaticText to exist
+    t =     9.02s     Checking `Expect predicate `existsNoRetry == 1` for object "published-page-title" StaticText`
+    t =     9.02s         Checking existence of `"published-page-title" StaticText`
+    t =     9.22s Waiting 5.0s for "choose-sermon" Button to exist
+    t =    10.26s     Checking `Expect predicate `existsNoRetry == 1` for object "choose-sermon" Button`
+    t =    10.26s         Checking existence of `"choose-sermon" Button`
+    t =    10.33s Find the "choose-sermon" Button
+    t =    10.40s Tap "choose-sermon" Button
+    t =    10.40s     Wait for com.jonathanjing.tongxing.dev to idle
+    t =    10.41s     Find the "choose-sermon" Button
+    t =    10.49s     Check for interrupting elements affecting "choose-sermon" Button
+    t =    10.56s     Synthesize event
+    t =    10.99s     Wait for com.jonathanjing.tongxing.dev to idle
+    t =    11.52s Waiting 5.0s for "完成" Button to exist
+    t =    12.56s     Checking `Expect predicate `existsNoRetry == 1` for object "完成" Button`
+    t =    12.56s         Checking existence of `"完成" Button`
+    t =    12.71s Find the Target Application 'com.jonathanjing.tongxing.dev'
+    t =    12.78s Find the "完成" Button
+    t =    12.89s Find the Target Application 'com.jonathanjing.tongxing.dev'
+    t =    12.96s Find the Target Application 'com.jonathanjing.tongxing.dev'
+    t =    13.03s Press Target Application 'com.jonathanjing.tongxing.dev'[0.00, 0.00] -> (201.0, 422.2) for 0.1 seconds, then drag to Target Application 'com.jonathanjing.tongxing.dev'[0.00, 0.00] -> (201.0, 70.0) with velocity of 500.00 pixels per second, and then hold for 0.0 seconds
+    t =    13.03s     Wait for com.jonathanjing.tongxing.dev to idle
+    t =    13.04s     Find the Target Application 'com.jonathanjing.tongxing.dev'
+    t =    13.14s     Check for interrupting elements affecting "同行" Application
+    t =    13.26s     Synthesize event
+    t =    13.26s         Find the Target Application 'com.jonathanjing.tongxing.dev'
+    t =    13.34s         Find the Target Application 'com.jonathanjing.tongxing.dev'
+    t =    13.42s         Find the Target Application 'com.jonathanjing.tongxing.dev'
+    t =    13.51s         Find the Target Application 'com.jonathanjing.tongxing.dev'
+    t =    13.61s         Find the Target Application 'com.jonathanjing.tongxing.dev'
+    t =    14.75s     Wait for com.jonathanjing.tongxing.dev to idle
+    t =    15.48s Waiting 5.0s for "证道与播客" NavigationBar to exist
+    t =    16.52s     Checking `Expect predicate `existsNoRetry == 1` for object "证道与播客" NavigationBar`
+    t =    16.52s         Checking existence of `"证道与播客" NavigationBar`
+    t =    16.62s Waiting 10.0s for "picker-content-tabs" SegmentedControl to exist
+    t =    17.66s     Checking `Expect predicate `existsNoRetry == 1` for object "picker-content-tabs" SegmentedControl`
+    t =    17.66s         Checking existence of `"picker-content-tabs" SegmentedControl`
+    t =    17.76s Waiting 10.0s for "published-page-resi-20261004-69ba7a66" Button to exist
+    t =    18.83s     Checking `Expect predicate `existsNoRetry == 1` for object "published-page-resi-20261004-69ba7a66" Button`
+    t =    18.83s         Checking existence of `"published-page-resi-20261004-69ba7a66" Button`
+    t =    18.93s Checking existence of `"published-page-if-i-had-more-time-jesus-is-worthy" Button`
+    t =    19.17s Added attachment named 'picker-content-tabs-sermons'
+    t =    19.17s Tap "播客" Button
+    t =    19.17s     Wait for com.jonathanjing.tongxing.dev to idle
+    t =    19.18s     Find the "播客" Button
+    t =    19.28s     Check for interrupting elements affecting "播客" Button
+    t =    19.38s     Synthesize event
+    t =    19.68s     Wait for com.jonathanjing.tongxing.dev to idle
+    t =    21.30s Waiting 10.0s for "published-page-if-i-had-more-time-jesus-is-worthy" Button to exist
+    t =    22.38s     Checking `Expect predicate `existsNoRetry == 1` for object "published-page-if-i-had-more-time-jesus-is-worthy" Button`
+    t =    22.38s         Checking existence of `"published-page-if-i-had-more-time-jesus-is-worthy" Button`
+    t =    22.46s Checking existence of `"published-page-resi-20261004-69ba7a66" Button`
+    t =    22.65s Added attachment named 'picker-content-tabs-podcasts'
+    t =    22.65s Tap "周日证道" Button
+    t =    22.65s     Wait for com.jonathanjing.tongxing.dev to idle
+    t =    22.65s     Find the "周日证道" Button
+    t =    22.74s     Check for interrupting elements affecting "周日证道" Button
+    t =    22.81s     Synthesize event
+    t =    23.11s     Wait for com.jonathanjing.tongxing.dev to idle
+    t =    24.75s Waiting 10.0s for "published-page-resi-20261004-69ba7a66" Button to exist
+    t =    25.78s     Checking `Expect predicate `existsNoRetry == 1` for object "published-page-resi-20261004-69ba7a66" Button`
+    t =    25.78s         Checking existence of `"published-page-resi-20261004-69ba7a66" Button`
+    t =    25.90s Tap "published-page-resi-20261004-69ba7a66" Button
+    t =    25.90s     Wait for com.jonathanjing.tongxing.dev to idle
+    t =    25.90s     Find the "published-page-resi-20261004-69ba7a66" Button
+    t =    26.01s     Check for interrupting elements affecting "published-page-resi-20261004-69ba7a66" Button
+    t =    26.11s     Synthesize event
+    t =    26.40s     Wait for com.jonathanjing.tongxing.dev to idle
+    t =    26.79s Waiting 15.0s for "published-page-title" StaticText to exist
+    t =    27.80s     Checking `Expect predicate `existsNoRetry == 1` for object "published-page-title" StaticText`
+    t =    27.80s         Checking existence of `"published-page-title" StaticText`
+    t =    27.87s Checking existence of `"证道与播客" NavigationBar`
+    t =    27.94s Terminate com.jonathanjing.tongxing.dev:61468
+2026-11-15 16:33:33.093 xcodebuild[60358:30368627] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+2026-11-15 16:33:33.093 xcodebuild[60358:30368627] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+2026-11-15 16:33:33.094 xcodebuild[60358:30368627] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+    t =    29.01s Tear Down
+Test Case '-[TongxingUITests.ContentPickerUITests testPickerSeparatesSermonsFromPodcasts]' passed (29.275 seconds).
+Test Suite 'ContentPickerUITests' passed at 2026-11-15 16:33:34.417.
+	 Executed 1 test, with 0 failures (0 unexpected) in 29.275 (29.278) seconds
+Test Suite 'TongxingUITests.xctest' passed at 2026-11-15 16:33:34.417.
+	 Executed 1 test, with 0 failures (0 unexpected) in 29.275 (29.279) seconds
+Test Suite 'Selected tests' passed at 2026-11-15 16:33:34.418.
+	 Executed 1 test, with 0 failures (0 unexpected) in 29.275 (29.280) seconds
+2026-11-15 16:33:34.497 xcodebuild[60358:30368627] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+2026-11-15 16:33:34.497 xcodebuild[60358:30368627] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+2026-11-15 16:33:34.498 xcodebuild[60358:30368627] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+2026-11-15 16:33:34.773 xcodebuild[60358:30368627] [MT] IDETestOperationsObserverDebug: 91.013 elapsed -- Testing started completed.
+2026-11-15 16:33:34.773 xcodebuild[60358:30368627] [MT] IDETestOperationsObserverDebug: 0.000 sec, +0.000 sec -- start
+2026-11-15 16:33:34.773 xcodebuild[60358:30368627] [MT] IDETestOperationsObserverDebug: 91.013 sec, +91.013 sec -- end
+
+Test session results, code coverage, and logs:
+	~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.agents/worktrees/picker-content-tabs/artifacts/tongxing-ios/2026-11-15/cli/20261115T163149-test-c43d0fe4/test.xcresult
+
+** TEST SUCCEEDED **
+
+Testing started
+
+Exit status: 0
