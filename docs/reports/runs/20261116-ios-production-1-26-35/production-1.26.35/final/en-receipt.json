@@ -1,0 +1,51 @@
+{
+  "version": "1.26.35",
+  "versionId": "0d1c993f-b331-4cfc-88f8-5c207aefca20",
+  "versionState": "PREPARE_FOR_SUBMISSION",
+  "locale": "en-US",
+  "displayType": "APP_IPHONE_67",
+  "images": [
+    {
+      "path": "artifacts/tongxing-ios/production-1.26.35/final/en-US/store-01-current-subtitle.png",
+      "bytes": 339642,
+      "sha256": "b200b9aa2da8fb3af2591428219b9497873730e231687a797cb8ad83bf10906c"
+    },
+    {
+      "path": "artifacts/tongxing-ios/production-1.26.35/final/en-US/store-02-sermons-and-podcasts.png",
+      "bytes": 694367,
+      "sha256": "6f711d20eb4bebed664ad57dc8652c00414708ee2cedb7dc25fb1eb20ba620ef"
+    },
+    {
+      "path": "artifacts/tongxing-ios/production-1.26.35/final/en-US/store-03-full-transcript.png",
+      "bytes": 339615,
+      "sha256": "570d1d3b1a547c5550e91086e90e4aea11be92f5638ffe49e866ff0e0112538d"
+    }
+  ],
+  "oldSetIds": [
+    "bf2bda7f-b5e7-4baf-8fd3-073039ec5ff5"
+  ],
+  "deletedOldSets": [
+    "bf2bda7f-b5e7-4baf-8fd3-073039ec5ff5"
+  ],
+  "newSetId": "1bdc2765-3e39-4b7b-a977-edbf98657b01",
+  "uploaded": [
+    {
+      "id": "ea000019-5dcf-8e11-801a-cb15b6760d96",
+      "fileName": "store-01-current-subtitle.png",
+      "state": "COMPLETE",
+      "path": "artifacts/tongxing-ios/production-1.26.35/final/en-US/store-01-current-subtitle.png"
+    },
+    {
+      "id": "c2400019-5dcf-8e11-8034-fcb016124b61",
+      "fileName": "store-02-sermons-and-podcasts.png",
+      "state": "COMPLETE",
+      "path": "artifacts/tongxing-ios/production-1.26.35/final/en-US/store-02-sermons-and-podcasts.png"
+    },
+    {
+      "id": "8bc00019-5dcf-8e11-8025-f1966c87ffa8",
+      "fileName": "store-03-full-transcript.png",
+      "state": "COMPLETE",
+      "path": "artifacts/tongxing-ios/production-1.26.35/final/en-US/store-03-full-transcript.png"
+    }
+  ]
+}
