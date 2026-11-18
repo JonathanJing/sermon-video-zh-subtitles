@@ -197,6 +197,10 @@ class LivePipeline:
         self.stopped = False
         self.aborting = False
         self.storage_failed = False
+        # Set by stop() when its sentinel cannot be queued: the worker drains what is queued and
+        # then exits instead of blocking in get() forever and keeping the session "draining".
+        self.asr_stop_requested = threading.Event()
+        self.translation_stop_requested = threading.Event()
         self.asr_worker.start()
         self.translation_worker.start()
 
@@ -267,6 +271,7 @@ class LivePipeline:
         try:
             self.asr_work.put(None, timeout=5)
         except queue.Full:
+            self.asr_stop_requested.set()
             self._emit({"type": "pipeline.failed", "reason": "asr_queue_did_not_drain"})
         self.asr_worker.join(timeout=35)
         asr_drained = not self.asr_worker.is_alive()
@@ -276,6 +281,7 @@ class LivePipeline:
         try:
             self.translation_work.put(None, timeout=20)
         except queue.Full:
+            self.translation_stop_requested.set()
             self._emit({"type": "pipeline.failed", "reason": "translation_queue_did_not_drain"})
         self.translation_worker.join(timeout=35)
         translation_drained = not self.translation_worker.is_alive()
@@ -351,7 +357,12 @@ class LivePipeline:
 
     def _run_asr_worker(self) -> None:
         while True:
-            segment = self.asr_work.get()
+            try:
+                segment = self.asr_work.get(timeout=0.5)
+            except queue.Empty:
+                if self.asr_stop_requested.is_set():
+                    return
+                continue
             if segment is None:
                 self.asr_work.task_done()
                 return
@@ -486,17 +497,21 @@ class LivePipeline:
     def _run_translation_worker(self) -> None:
         while True:
             deadline = self.translation_units.deadline_at
-            timeout = max(0, deadline - time.perf_counter()) if deadline is not None else None
+            timeout = max(0, deadline - time.perf_counter()) if deadline is not None else 0.5
             try:
-                task = self.translation_work.get(timeout=timeout)
+                task = self.translation_work.get(timeout=min(timeout, 0.5))
             except queue.Empty:
                 for unit in self.translation_units.flush_due(time.perf_counter()):
                     self._translate_unit(unit)
-                continue
+                if self.translation_stop_requested.is_set():
+                    task = None  # Finish as the sentinel would: flush pending units, then exit.
+                else:
+                    continue
             if task is None:
                 for unit in self.translation_units.flush(time.perf_counter(), reason="stop"):
                     self._translate_unit(unit)
-                self.translation_work.task_done()
+                if not self.translation_stop_requested.is_set():
+                    self.translation_work.task_done()
                 return
             try:
                 final = task.source_event or {"type": "asr.final", "segmentId": task.segment_id, "sourceTextEn": task.source_text, "audioStartMs": task.audio_start_ms, "audioEndMs": task.audio_end_ms}

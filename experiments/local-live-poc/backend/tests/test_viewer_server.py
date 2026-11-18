@@ -150,6 +150,28 @@ class ViewerHttpTest(unittest.TestCase):
             update = json.loads(response.readline().decode().removeprefix("data: "))
             self.assertEqual(update["targetTextZh"], "恩典。")
 
+    def test_sse_stream_survives_a_paused_and_resumed_session(self) -> None:
+        with urlopen(f"{self.base}/api/view/{self.token}/events", timeout=3) as response:
+            self.assertEqual(response.headers["Connection"], "close")
+            response.readline(); response.readline(); response.readline()  # snapshot
+            self.hub.end_session("session-http")
+            response.readline()
+            closed = json.loads(response.readline().decode().removeprefix("data: "))
+            self.assertEqual(closed["type"], "stream.closed")
+            response.readline()
+            self.assertEqual(self.hub.start_session("session-http", token=self.token), self.token)
+            self.hub.publish("session-http", {"type": "translation.final", "sourceTextEn": "Hope.",
+                                              "targetTextZh": "盼望。"})
+            response.readline()
+            resumed = json.loads(response.readline().decode().removeprefix("data: "))
+            self.assertEqual(resumed["targetTextZh"], "盼望。")
+
+    def test_viewer_page_reopens_a_closed_event_stream(self) -> None:
+        with urlopen(f"{self.base}/view/{self.token}", timeout=2) as response:
+            html = response.read().decode("utf-8")
+        self.assertIn("source.readyState===2", html)
+        self.assertIn("setTimeout(connect,retryDelay)", html)
+
 
 if __name__ == "__main__":
     unittest.main()

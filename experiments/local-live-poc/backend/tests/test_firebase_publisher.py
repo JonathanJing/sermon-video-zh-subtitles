@@ -43,6 +43,41 @@ class AccessTokenProviderTest(unittest.TestCase):
             self.assertEqual(AccessTokenProvider()(), "injected-token")
         run.assert_not_called()
 
+    @patch("backend.firebase_publisher.subprocess.run")
+    def test_rejected_token_is_refetched_instead_of_reused(self, run) -> None:
+        run.return_value.stdout = "token-1\n"
+        with patch.dict("os.environ", {}, clear=True):
+            provider = AccessTokenProvider()
+            self.assertEqual(provider(), "token-1")
+            self.assertEqual(provider(), "token-1")
+            run.return_value.stdout = "token-2\n"
+            provider.invalidate()
+            self.assertEqual(provider(), "token-2")
+        self.assertEqual(run.call_count, 2)
+
+    def test_http_401_drops_the_cached_token(self) -> None:
+        from io import BytesIO
+        from urllib.error import HTTPError
+
+        class Provider:
+            invalidated = 0
+
+            def __call__(self) -> str:
+                return "stale"
+
+            def invalidate(self) -> None:
+                self.invalidated += 1
+
+        provider = Provider()
+        publisher = FirebaseCaptionPublisher(
+            FirebasePublisherConfig(database_url="https://example.invalid", viewer_base_url="https://example.invalid"),
+            token_provider=provider)
+        denied = HTTPError("https://example.invalid", 401, "Unauthorized", {}, BytesIO(b""))
+        with patch("backend.firebase_publisher.urlopen", side_effect=denied):
+            with self.assertRaises(HTTPError):
+                publisher._rest_put("viewer-token", {"sequence": 1})
+        self.assertEqual(provider.invalidated, 1)
+
 
 class CaptionProjectorTest(unittest.TestCase):
     def test_previous_caption_moves_only_after_completed_final(self) -> None:

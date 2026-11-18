@@ -324,6 +324,36 @@ class LivePipelineTest(unittest.TestCase):
                 second["uxMetrics"]["translationQueueWaitMs"],
             )
 
+    def test_workers_exit_when_stop_cannot_queue_their_sentinel(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            sessions = SessionStore(temporary)
+            created = sessions.create({"audioMimeType": "audio/webm"})
+            release = threading.Event()
+
+            class SlowAsr(FakeAsr):
+                def transcribe(self, pcm, sample_rate_hz=16000):
+                    release.wait(timeout=5)
+                    return super().transcribe(pcm, sample_rate_hz)
+
+            sent = []
+            pipeline = LivePipeline(created["sessionId"], sessions, SlowAsr(), lambda *args: {
+                "targetTextZh": "翻译", "alignment": {"confidence": "none"}}, sent.append)
+            for index in range(3):  # one in the worker, two filling the queue (maxsize 2)
+                pipeline._enqueue_asr(SpeechSegment(f"seg-{index:06d}", 1 + index * 4, 4 + index * 4,
+                                                    frame(1000) * 4))
+                time.sleep(0.05)
+            self.assertTrue(pipeline.asr_work.full())
+            # What stop() does when its sentinel does not fit: the worker drains, then exits.
+            pipeline.asr_stop_requested.set()
+            release.set()
+            pipeline.asr_worker.join(timeout=3)
+            self.assertFalse(pipeline.asr_worker.is_alive())
+            pipeline.translation_stop_requested.set()
+            pipeline.translation_worker.join(timeout=3)
+            self.assertFalse(pipeline.translation_worker.is_alive())
+            finals = [event for event in sent if event["type"] == "asr.final"]
+            self.assertEqual(len(finals), 3)
+
     def test_pcm_storage_failure_is_visible_but_does_not_crash_pipeline(self) -> None:
         class FailingPcmStore(SessionStore):
             def append_pcm_frames(self, *args, **kwargs):
