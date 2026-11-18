@@ -141,6 +141,15 @@ export function eligibleSubscriptions(rows, publication, now = new Date()) {
   return { eligible, suppressedDuplicates };
 }
 
+// APNs answers about one device token: the app was removed (410) or the token is invalid for
+// this topic (400). Only these let the batch continue; anything else (403 provider token, 429,
+// 5xx) is a problem with the sender, and the batch stops as before.
+const DEVICE_REASONS = new Set(['BadDeviceToken', 'DeviceTokenNotForTopic', 'Unregistered']);
+export function isDeviceRejection(result) {
+  return result?.status === 'rejected' && (result.httpStatus === 410 ||
+    (result.httpStatus === 400 && DEVICE_REASONS.has(result.reason)));
+}
+
 export function dispatchKey(subscription, notice) {
   return sha256(JSON.stringify([TOPIC, subscription.installationId, notice.pageID,
     notice.locale, notice.releaseSHA256]));

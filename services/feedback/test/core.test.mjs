@@ -168,6 +168,11 @@ test('per-session request budget cannot be bypassed with another IP', async () =
   await rejected(s.request('/api/feedback', vote(null, 3), token, { address: '192.0.2.11' }), 'rate_limited', 429);
   s.advance(60000); await s.request('/api/feedback', vote(null, 3), token);
 });
+test('an unknown source is refused before it spends the shared per-IP budget', async () => {
+  const s = setup({ ipLimiter: createIpLimiter({ now: () => Date.UTC(2026, 8, 5) }) });
+  for (let i = 0; i < 25; i += 1) await rejected(s.request('/api/session', { ...common, trackId: 'not-in-catalog' }), 'unknown_source');
+  assert.equal((await s.mint()).token.length, 43);
+});
 test('ephemeral per-IP mint limiter bounds calls and resets each minute', () => {
   let now = 1000; const limit = createIpLimiter({ now: () => now });
   for (let i = 0; i < 20; i += 1) limit('192.0.2.10', '/api/session');
