@@ -3,7 +3,7 @@ import { randomBytes, randomUUID } from 'node:crypto';
 import test from 'node:test';
 import { PushApiError, createSourceLimiter, createSubscriptionService,
   parseSubscriptionRequest } from '../core.mjs';
-import { dispatchOne, eligibleSubscriptions, sha256, verifiedPublication } from '../send-core.mjs';
+import { dispatchOne, eligibleSubscriptions, isDeviceRejection, sha256, verifiedPublication } from '../send-core.mjs';
 
 class MemoryStore {
   rows = new Map();
@@ -151,4 +151,15 @@ test('accepted APNs response is recorded separately from device delivery', async
   assert.equal(ledger.httpStatus, 200);
   assert.equal(ledger.expiresAt.toISOString(), '2027-10-22T05:00:00.000Z');
   assert.equal(Object.hasOwn(ledger, 'deviceDisplayed'), false);
+});
+
+test('only device-level APNs rejections let the weekly batch continue', () => {
+  assert.equal(isDeviceRejection({ status: 'rejected', httpStatus: 410, reason: 'Unregistered' }), true);
+  assert.equal(isDeviceRejection({ status: 'rejected', httpStatus: 400, reason: 'BadDeviceToken' }), true);
+  assert.equal(isDeviceRejection({ status: 'rejected', httpStatus: 400, reason: 'DeviceTokenNotForTopic' }), true);
+  assert.equal(isDeviceRejection({ status: 'rejected', httpStatus: 400, reason: 'BadTopic' }), false);
+  assert.equal(isDeviceRejection({ status: 'rejected', httpStatus: 403, reason: 'InvalidProviderToken' }), false);
+  assert.equal(isDeviceRejection({ status: 'rejected', httpStatus: 429, reason: 'TooManyRequests' }), false);
+  assert.equal(isDeviceRejection({ status: 'outcome_unknown' }), false);
+  assert.equal(isDeviceRejection({ status: 'accepted', httpStatus: 200 }), false);
 });

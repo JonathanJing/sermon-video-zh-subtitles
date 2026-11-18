@@ -18,7 +18,7 @@ class Surface {
 }
 function fixture({ storage = {}, time = Date.parse('2026-09-27T18:00:00Z'), enabled = true } = {}) {
   const calls = [], records = new Map(), errors = [], identities = [], timers = [];
-  let tokenCount = 0, failMint = false, loseResponse = false, locale = 'zh', localeListener, tick = 0;
+  let tokenCount = 0, failMint = false, mintStatus = 0, loseResponse = false, locale = 'zh', localeListener, tick = 0;
   const audio = Object.assign(new Surface(), { currentTime: 0, paused: true, seeking: false, readyState: 4, playbackRate: 1, volume: 1, muted: false });
   const document = Object.assign(new Surface(), { visibilityState: 'visible' }), window = new Surface();
   function makeSession(selected, options) {
@@ -27,6 +27,7 @@ function fixture({ storage = {}, time = Date.parse('2026-09-27T18:00:00Z'), enab
       calls.push({ path, body, token });
       if (path === '/api/session') {
         if (failMint) throw new Error('offline');
+        if (mintStatus) return { ok: false, status: mintStatus, json: async () => ({}) };
         tokenCount += 1;
         return { ok: true, json: async () => ({ token: `token-${tokenCount}`, expiresAt: time + 86400000 }) };
       }
@@ -51,7 +52,7 @@ function fixture({ storage = {}, time = Date.parse('2026-09-27T18:00:00Z'), enab
     async pause() { audio.paused = true; audio.emit('pause'); await settle(); },
     async timer() { timers.forEach(fn => fn()); await settle(); },
     async interfaceLanguage(value) { locale = value; localeListener(); await settle(); },
-    setTime(value) { time = value; }, failMint(value) { failMint = value; }, loseResponse() { loseResponse = true; },
+    setTime(value) { time = value; }, failMint(value) { failMint = value; }, mintStatus(value) { mintStatus = value; }, loseResponse() { loseResponse = true; },
     summaries: () => calls.filter(call => call.path === '/api/listening' && call.body.action === 'upsert'),
     visits: () => calls.filter(call => call.path === '/api/interface-usage' && call.body.action === 'upsert'),
   };
@@ -197,4 +198,30 @@ test('real backend admits language and interface payloads, acknowledges uncertai
   assert(!JSON.stringify(summaries[0][1]).includes(id));
   await listen.retract(); await ui.retract();
   assert.equal([...records.keys()].filter(path => /^(languageListeningSessions30d|interfaceUsageSessions30d)\//.test(path)).length, 0);
+});
+
+test('a failed mint backs off instead of retrying on every timeupdate', async () => {
+  const h = fixture({ enabled: false }); h.failMint(true); h.controller.setEnabled(true); await settle();
+  const mints = () => h.calls.filter(call => call.path === '/api/session').length;
+  const first = mints();
+  await h.play();
+  for (let n = 0; n < 20; n += 1) { h.audio.emit('timeupdate'); await settle(); }
+  assert.equal(mints(), first);
+  // After the 15 s backoff the listening and the interface-usage stream each retry once.
+  await h.advance(16); assert.equal(mints(), first + 2);
+  for (let n = 0; n < 20; n += 1) { h.audio.emit('timeupdate'); await settle(); }
+  assert.equal(mints(), first + 2);
+});
+
+test('a permanent rejection stops minting for that track; 429 keeps retrying with backoff', async () => {
+  const h = fixture({ enabled: false }); h.mintStatus(400); h.controller.setEnabled(true); await settle();
+  const mints = () => h.calls.filter(call => call.path === '/api/session').length;
+  const first = mints();
+  await h.play(); await h.advance(400); await h.advance(400); h.window.emit('online'); await settle();
+  assert.equal(mints(), first);
+  const r = fixture({ enabled: false }); r.mintStatus(429); r.controller.setEnabled(true); await settle();
+  const limited = () => r.calls.filter(call => call.path === '/api/session').length;
+  const start = limited();
+  await r.play(); await r.advance(16);
+  assert.equal(limited(), start + 2);
 });
