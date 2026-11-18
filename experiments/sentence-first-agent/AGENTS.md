@@ -349,7 +349,7 @@ python3 $EXP/translate_parts.py merge --run $RUN --locale <locale>
 
 独立复核不是可选项：每种语言合并后由另一个子代理做一遍逐句保真审计（漏译、增译、否定、数字、人名、经文），改动写进 `review.json` 的 `revisions`；`revisions` 为空又没有审计文件，就不进第 5 步（2026-10-24 重建版跳过了这一步）。审计子代理只拿只读副本、只写固定输出：先 `mkdir -p audit && cp translations.jsonl audit/translations.audit.jsonl` 并把 sha256 记进 `run.md`，提示里写明「只读 `audit/translations.audit.jsonl`，只写 `audit/audit-<locale>.jsonl`」；`translations.jsonl` 由主代理按它的结论改。术语落地不要做全局字符串替换：韩语助词随词尾音变（고발을→참소를、고발이→참소가），把变体写进 `--rules` 的 `terms`，替换后再跑一次 `consistency_check.py`；2026-10-24 这类错误 13 处，有 3 处进了配音，靠 ASR 打分才发现。
 
-**独立审计（三语）**：`audit_deepseek.py --source-run $RUN --arm-dir $RUN/coherence-<tag> --out $RUN --locale <locale> --execute`，DeepSeek high 按 25 句窗口复核，写回 `review.json` 的 `revisions`；被拒的改动留 `rejectedRevisions`。2026-10-30 实测 zh 24 条修订 $0.14、ko 28 条 $0.22、es 37 条 $0.17。
+**独立审计（三语）**：`audit_deepseek.py --source-run $RUN --arm-dir $RUN/coherence-<tag> --out $RUN --locale <locale> --execute`，DeepSeek high 按 25 句窗口复核，合并进已有 `review.json` 的 `revisions`（保留 `speaker`/`speakers`、`notes` 与之前的修订；同一句已有修订时保留原修订，审计建议记进 `rejectedRevisions`）；`review.json` 里没有讲员时要传 `--speaker <registry key>`，不再默认 `eric_pilot`。2026-10-30 实测 zh 24 条修订 $0.14、ko 28 条 $0.22、es 37 条 $0.17。
 
 **DeepSeek 连贯翻译（实验路线，2026-10-30 起支持三语）**：`deepseek_translate.py --source-run <首个 run> --out <run>/coherence-<tag> --locale {zh-Hans,ko,es} --chains 4 --window 12 --prior 8 --execute`，用 `tools/ops/run_with_openai_environment.py` 注入 key（不手写环境变量）。产物 `coherence-<tag>/translations.jsonl` 由主代理 `cp` 成 run 的 `translations.jsonl` 再进第 5 步；脚本只读 run 的 sentences/slices，不改主文件。2026-10-30 实测 418 句：zh $0.16／219 s，ko $0.39／443 s，es $0.32／371 s。ko/es 提示词是本日新写的，尚未经人工审校；独立审计仍要另跑（`audit_deepseek.py`）。
 
@@ -429,6 +429,8 @@ scp $EXP/spark_run.sh $EXP/tts_sentences.py $EXP/tts_pool.py $EXP/asr_check.py S
 scp $RUN/speech.jsonl SPARK:sentence-first-agent/<run>/
 ```
 
+`spark_session_job.py` 只认带本任务 `job=<id>` 的退出行；内存准入拒绝（`refused`）立即结束任务；连续 `--max-poll-failures`（默认 20 次，约 10 分钟）ssh 轮询失败就报错退出，队列随之标记失败，Spark 恢复后用 `--resume-job <id>` 接着等。
+
 会话一次只接纳一个运行中的任务，所以所有语言、所有讲员排成一条队列，作为本机后台任务运行（不要在远端用 `nohup … &`）：
 
 ```bash
@@ -470,6 +472,7 @@ python3 $EXP/lag_loop.py --run $RUN --locale <locale> --remote SPARK:sentence-fi
 - 只看当前音轨、不重配：`lag_loop.py ... --check-only --require-clean`（不调用 DeepSeek、不用 Spark）。
   **先跑一次 `--check-only` 再决定精简范围**：2026-11-07 三语各做了一轮全量重渲（22 分钟），
   如果先看到 maxLag 只有几秒、超阈值的句子集中在少数窗口，就只重配那些句子，不做全量。
+- 闸门已干净、或一轮里没有被采纳的精简时就停，不再多跑一轮全量重配。重建 speech 后、新音轨合并前中断时，run 里留着 `lag-loop-pending-render.json`；重跑先把这次未完成的重配跑完（已配好的句子跳过），不会用旧的 `schedule.json` 再精简一次。
 - 结果写 `lag-loop-report.json`（threshold、每轮 selected/accepted/rejected、final、gate）并进 journal 的 `l3.lag-loop.<locale>`。
 - 2026-10-30 实测：60 句片段 ko 29.3 s（53 句）→ 1.31 s、es 22.8 s（56 句）→ 2.34 s，各一轮；整期不精简时 zh 6.7 s / ko 14.0 s / es 26.5 s。不同步的 run 跳过这一步。
 

@@ -497,7 +497,13 @@ def main() -> int:
     else:
         result = cmd_readback(args.stage2)
     print(json.dumps(result, ensure_ascii=False))
-    return 0
+    return 1 if failed(result) else 0
+
+
+def failed(result) -> bool:
+    """A verify or readback that did not pass must fail the command, not just print pass=false."""
+    return isinstance(result, dict) and (result.get("pass") is False or result.get("ok") is False
+                                         or result.get("status") == "fail")
 
 
 if __name__ == "__main__":

@@ -28,6 +28,11 @@ import urllib.request
 from datetime import datetime, timezone
 from pathlib import Path
 
+ROOT = Path(__file__).resolve().parents[2]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+from tools.ops import set_catalog_default_page as default_page  # noqa: E402
+
 LOCALES = ("zh-Hans", "ko", "es")
 GUIDE_PINS = {
     "schemaVersion": "tongxing-weekly-guide-manifest-v1",
@@ -136,8 +141,14 @@ def check_catalog(gate: Gate, catalog: dict, page_id: str) -> tuple[dict | None,
     if not gate.require("catalog.page", len(pages) == 1, f"pages with id {page_id}: {len(pages)}"):
         return None, b""
     page = pages[0]
-    gate.require("catalog.defaultPageId", catalog.get("defaultPageId") == page_id,
-                 f"defaultPageId={catalog.get('defaultPageId')}")
+    # Same rule as the publish driver and tools/ops/set_catalog_default_page.py: the default
+    # is the newest sermon, so a podcast or an older page never has to be the default to pass.
+    try:
+        expected_default = default_page.latest_sermon(catalog)["id"]
+    except default_page.DefaultPageError as error:
+        expected_default = f"<{error}>"
+    gate.require("catalog.defaultPageId", catalog.get("defaultPageId") == expected_default,
+                 f"defaultPageId={catalog.get('defaultPageId')} expected latest sermon {expected_default}")
     gate.require("catalog.locales", set(page.get("targets", {})) <= set(LOCALES),
                  f"targets={sorted(page.get('targets', {}))}")
     gate.require("catalog.title", isinstance(page.get("title"), str) and bool(page["title"].strip()),

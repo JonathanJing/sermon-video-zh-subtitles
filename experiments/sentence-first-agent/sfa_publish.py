@@ -52,6 +52,7 @@ from scripts import tongxing_host  # noqa: E402,F401  binds the production packa
 from tongxing_production.delivery import baseline as bl, contract, publication as pub  # noqa: E402
 from tongxing_production.delivery import published_english_reference as english_reference  # noqa: E402
 from tongxing_production.delivery import snapshot_clone  # noqa: E402
+from tools.ops import set_catalog_default_page as default_page  # noqa: E402
 
 CONFIG_SCHEMA = HERE / "pages" / "page-config.schema.json"
 TITLE_TABLE_DEFAULT = "docs/series-sermon-titles.zh.md"
@@ -798,16 +799,19 @@ def cmd_validate(cfg: PageConfig) -> dict:
     return result
 
 
-def cmd_assets(cfg: PageConfig, out: Path) -> dict:
+def cmd_assets(cfg: PageConfig, out: Path, *, allow_missing_journal_gates: bool = False) -> dict:
     contract.require(not out.exists(), "Use a new assets directory")
     cfg.require_inputs()
     esp, esp_sha = cfg.english_source()
     media = esp["source"]["media"]["sha256"]
     contract.require(hashlib.sha256(cfg.source_url.encode()).hexdigest() == esp["source"]["sourceUrlHash"],
                      "Source URL differs from the source package")
+    # Repeat the preflight's receipt and journal gates here: a track re-rendered after the
+    # review (repair, lag loop, finish_run) must not ship as human_reviewed because
+    # preflight ran earlier or was skipped.
+    _receipt_checks(cfg)
+    _journal_checks(cfg, allow_missing=allow_missing_journal_gates)
     verdict = cfg.verdict_path
-    contract.require(json.loads(verdict.read_text(encoding="utf-8"))["verdict"] == "approved",
-                     "Human review verdict is not approved")
     # The page-level banner is a same-origin asset (the CSP allows `script-src 'self'` only):
     # WeChat cannot launch the app from its webview, so the page explains the browser route.
     script = out / f"public/pages/{cfg.page_id}/app-link.js"
@@ -1091,9 +1095,9 @@ def cmd_stage2(cfg: PageConfig, stage1: Path, assets: Path, evidence_path: Path,
     page = _page_entry(cfg, esp, esp_sha, targets)
     v5 = copy.deepcopy(old[contract.CATALOG_V5])
     v5["pages"].append(page)
-    # The weekly release contract appends the page and makes it the catalog default
-    # (docs/tongxing-weekly-release.zh.md, 合并 row). The v4/v3 projections inherit it.
-    v5["defaultPageId"] = cfg.page_id
+    # The default is the newest published sermon (docs/catalog-content-kind.zh.md): a podcast,
+    # a clip or an older sermon published late never takes it. The v4/v3 projections inherit it.
+    v5["defaultPageId"] = default_page.latest_sermon(v5)["id"]
     contract.validate_catalog_schema(v5)
     v4 = contract.project_legacy_catalog_v4(v5)
     v3 = contract.project_human_catalog(v4)
@@ -1113,15 +1117,28 @@ def cmd_stage2(cfg: PageConfig, stage1: Path, assets: Path, evidence_path: Path,
     for name, value in ((contract.CATALOG_V5, v5), (contract.CATALOG_V4, v4), (contract.CATALOG_V3, v3)):
         files[contract.CATALOG_FILES[name]] = (
             json.dumps(value, ensure_ascii=False, indent=2, sort_keys=True) + "\n").encode()
-    stage(cfg, stage1, out, None, files)
-    result = {"staged": str(out), "changed": sorted(files), "defaultPageId": v3["defaultPageId"]}
+    replace = frozenset()
+    reference = None
     if with_english:
-        reference = build_reference(cfg, out / "public")
+        # The reference binds the new release, content and captions hashes, so it is built from
+        # a probe snapshot that already carries them. It then goes into the final snapshot through
+        # `files`, so seal-report.json covers it and the guarded publisher accepts the snapshot.
+        contract.require(not out.exists(), "Use a new snapshot directory")
+        probe = out.with_name(out.name + ".english-probe")
+        contract.require(not probe.exists(), "Remove the leftover probe snapshot: " + str(probe))
+        try:
+            stage(cfg, stage1, probe, None, files)
+            reference = build_reference(cfg, probe / "public")
+        finally:
+            shutil.rmtree(probe, ignore_errors=True)
         rel = f"english-reference/{cfg.page_id}.json"
-        target = out / "public" / rel
-        target.parent.mkdir(parents=True, exist_ok=True)
-        target.write_bytes((json.dumps(reference, ensure_ascii=False, indent=2) + "\n").encode())
-        result["englishReference"] = {"path": "/" + rel, "sha256": sha_file(target),
+        files[rel] = (json.dumps(reference, ensure_ascii=False, indent=2) + "\n").encode()
+        replace = frozenset([rel])
+    stage(cfg, stage1, out, None, files, replace=replace)
+    result = {"staged": str(out), "changed": sorted(files), "defaultPageId": v3["defaultPageId"]}
+    if reference is not None:
+        rel = f"english-reference/{cfg.page_id}.json"
+        result["englishReference"] = {"path": "/" + rel, "sha256": sha_file(out / "public" / rel),
                                       "blocks": {locale: len(value["blocks"])
                                                  for locale, value in reference["targets"].items()}}
     return result
@@ -1263,6 +1280,8 @@ def build_parser() -> argparse.ArgumentParser:
     check.add_argument("--require-english-reference", action="store_true")
     check.add_argument("--require-announcements", action="store_true")
     assets = sub.add_parser("assets"); assets.add_argument("--out", type=Path, required=True)
+    assets.add_argument("--allow-missing-journal-gates", action="store_true",
+                        help="legacy run without the l1.preflight journal gate")
     baseline = sub.add_parser("baseline"); baseline.add_argument("--out", type=Path, required=True)
     baseline.add_argument("--cache-public", type=Path); baseline.add_argument("--cache-receipt", type=Path)
     stage1 = sub.add_parser("stage1")
@@ -1314,7 +1333,7 @@ def main(argv=None) -> int:
                                        require_announcements=args.require_announcements,
                                        assets=args.assets)
         elif args.cmd == "assets":
-            result = cmd_assets(cfg, args.out)
+            result = cmd_assets(cfg, args.out, allow_missing_journal_gates=args.allow_missing_journal_gates)
         elif args.cmd == "baseline":
             result = bl.baseline(args.out, cache_public=args.cache_public, cache_receipt=args.cache_receipt,
                                  environment=cfg.environment,

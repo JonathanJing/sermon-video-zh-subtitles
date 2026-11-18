@@ -55,6 +55,7 @@
 - **默认页 = 最新一期周日证道**：在 `contentKind == "sermon"`、非 `diagnosticOnly`／`simulationOnly` 的页面里取日期最大的一页；播客与片段永远不会成为默认。
 - 工具：`tools/ops/set_catalog_default_page.py --policy latest-sermon`（`--check` 只报告；输出按目录 schema 校验；不部署）。
 - 每份投影（v3／v4／v5）都要改：客户端优先读 v5，网页与旧客户端读 v3。
+- 发布驱动 `sfa_publish.py stage2` 按同一规则设默认页（不再无条件设成本页），`tools/ops/sfa_publish_gate.py` 也按这条规则检查，所以播客页晚于证道发布不会再抢默认页。
 
 改完后的默认页：
 
