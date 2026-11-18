@@ -308,7 +308,7 @@ function fitCaptionPair(container, chinese, english, maximumScale = 1) {
 function scheduleFit(){if(fitFrame)return;fitFrame=requestAnimationFrame(()=>{fitFrame=0;fitCaptionPair(previous,previousZh,previousEn);fitCaptionPair(current,zh,en,scale)})}
 function draw(){const old=state.previousFinal;stage.classList.toggle('has-previous',Boolean(old));previous.hidden=!old;divider.hidden=!old;if(old){previousZh.textContent=old.targetTextZh||'';previousEn.textContent=old.sourceTextEn||''}zh.textContent=state.active.targetTextZh||'正在翻译…';en.textContent=state.active.sourceTextEn||'';if(state.sessionActive===false){status.textContent='本场已结束';status.className='waiting'}else{status.textContent='字幕连接正常';status.className='ok'}scheduleFit()}
 function render(event){if(event.displayEligible===false)return;if(event.type==='caption.snapshot'){state=event;draw();return}if(event.type==='stream.ready'){state.sessionActive=true;draw();return}if(event.type==='asr.final'){const active=state.active;if(active.phase==='final'&&active.sourceTextEn&&active.targetTextZh)state.previousFinal={segmentId:active.segmentId,sourceTextEn:active.sourceTextEn,targetTextZh:active.targetTextZh};state.active={segmentId:event.segmentId||'',sourceTextEn:event.sourceTextEn||'',targetTextZh:'',phase:'requesting'}}else if(event.type==='caption.display'){const active=state.active,isNew=event.segmentId&&active.segmentId&&event.segmentId!==active.segmentId;if(isNew&&active.phase==='final'&&active.sourceTextEn&&active.targetTextZh)state.previousFinal={segmentId:active.segmentId,sourceTextEn:active.sourceTextEn,targetTextZh:active.targetTextZh};state.active={segmentId:event.segmentId||active.segmentId,sourceTextEn:event.sourceTextEn??active.sourceTextEn,targetTextZh:event.targetTextZh||active.targetTextZh,phase:event.phase||(event.displayKind==='final'?'final':'streaming')}}else if(['translation.partial','translation.final','translation.failed','translation.skipped'].includes(event.type)){if(event.segmentId&&state.active.segmentId&&event.segmentId!==state.active.segmentId)return;state.active={segmentId:event.segmentId||state.active.segmentId,sourceTextEn:event.sourceTextEn??state.active.sourceTextEn,targetTextZh:event.targetTextZh||state.active.targetTextZh,phase:event.type==='translation.partial'?'streaming':event.type==='translation.final'?'final':'error'}}else if(event.type==='stream.closed')state.sessionActive=false;draw()}
-const source=new EventSource('/api/view/'+encodeURIComponent(token)+'/events');source.onopen=()=>{status.textContent='字幕连接正常';status.className='ok'};source.onmessage=e=>render(JSON.parse(e.data));source.onerror=()=>{status.textContent='正在重新连接…';status.className='waiting'};
+let source=null,retryDelay=3000,retryTimer=0;function connect(){retryTimer=0;source=new EventSource('/api/view/'+encodeURIComponent(token)+'/events');source.onopen=()=>{retryDelay=3000;status.textContent='字幕连接正常';status.className='ok'};source.onmessage=e=>render(JSON.parse(e.data));source.onerror=()=>{status.textContent='正在重新连接…';status.className='waiting';if(source.readyState===2&&!retryTimer){source.close();retryTimer=setTimeout(connect,retryDelay);retryDelay=Math.min(30000,retryDelay*2)}}}connect();
 function resize(delta){scale=Math.min(1.35,Math.max(.75,scale+delta));scheduleFit()}document.querySelector('#minus').onclick=()=>resize(-.1);document.querySelector('#plus').onclick=()=>resize(.1);
 window.addEventListener('resize',scheduleFit);window.addEventListener('orientationchange',scheduleFit);window.visualViewport?.addEventListener('resize',scheduleFit);if(window.ResizeObserver)new ResizeObserver(scheduleFit).observe(stage);document.fonts?.ready.then(scheduleFit);scheduleFit();
 </script></body></html>"""
@@ -330,7 +330,8 @@ class ViewerHandler(BaseHTTPRequestHandler):
     def log_message(self, format: str, *args: object) -> None:
         return
 
-    def _headers(self, status: HTTPStatus, content_type: str, length: int | None = None) -> None:
+    def _headers(self, status: HTTPStatus, content_type: str, length: int | None = None,
+                 close: bool = False) -> None:
         self.send_response(status)
         self.send_header("Content-Type", content_type)
         self.send_header("Cache-Control", "no-store")
@@ -340,6 +341,8 @@ class ViewerHandler(BaseHTTPRequestHandler):
         self.send_header("Content-Security-Policy", "default-src 'self'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; connect-src 'self'")
         if length is not None:
             self.send_header("Content-Length", str(length))
+        if close:
+            self.send_header("Connection", "close")
         self.end_headers()
 
     def do_GET(self) -> None:
@@ -377,13 +380,18 @@ class ViewerHandler(BaseHTTPRequestHandler):
         if subscriber is None:
             self._not_found()
             return
-        self._headers(HTTPStatus.OK, "text/event-stream; charset=utf-8")
+        # The stream has no Content-Length, so the connection must close when it ends; otherwise
+        # an HTTP/1.1 client waits on a socket that will never carry another event.
+        self.close_connection = True
+        self._headers(HTTPStatus.OK, "text/event-stream; charset=utf-8", close=True)
         event_id = 0
         try:
             while True:
                 try:
                     payload = subscriber.get(timeout=15)
                 except queue.Empty:
+                    if self.server.hub.snapshot(token) is None:
+                        return  # Retention purged the session; the client reconnects and gets 404.
                     self.wfile.write(b": keepalive\n\n")
                     self.wfile.flush()
                     continue
@@ -391,8 +399,8 @@ class ViewerHandler(BaseHTTPRequestHandler):
                 data = json.dumps(payload, ensure_ascii=False, separators=(",", ":"))
                 self.wfile.write(f"id: {event_id}\ndata: {data}\n\n".encode("utf-8"))
                 self.wfile.flush()
-                if payload.get("type") == "stream.closed":
-                    return
+                # stream.closed is not the end: the operator may resume the same session (same
+                # token), and this subscriber then receives stream.ready and new captions.
         except (BrokenPipeError, ConnectionResetError):
             pass
         finally:

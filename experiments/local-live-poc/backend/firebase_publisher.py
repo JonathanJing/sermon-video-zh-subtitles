@@ -8,6 +8,7 @@ import threading
 import time
 from dataclasses import dataclass
 from typing import Any, Callable
+from urllib.error import HTTPError
 from urllib.request import Request, urlopen
 
 
@@ -50,6 +51,9 @@ class FirebasePublisherConfig:
         )
 
 
+TOKEN_REUSE_SECONDS = 10 * 60
+
+
 class AccessTokenProvider:
     """Returns a short-lived Google OAuth token without ever logging it."""
 
@@ -85,8 +89,15 @@ class AccessTokenProvider:
             if not token:
                 raise RuntimeError("gcloud returned an empty Firebase access token")
             self.cached = token
-            self.refresh_at = time.monotonic() + 45 * 60
+            # gcloud may hand back a cached user token with only minutes left, so never trust it
+            # for long; a 401/403 from the database also drops it through invalidate().
+            self.refresh_at = time.monotonic() + TOKEN_REUSE_SECONDS
             return token
+
+    def invalidate(self) -> None:
+        with self.lock:
+            self.cached = ""
+            self.refresh_at = 0.0
 
 
 class CaptionProjector:
@@ -395,6 +406,14 @@ class FirebaseCaptionPublisher:
                 "Content-Type": "application/json; charset=utf-8",
             },
         )
-        with urlopen(request, timeout=3) as response:
-            if response.status not in {200, 204}:
-                raise RuntimeError(f"Firebase write failed with HTTP {response.status}")
+        try:
+            with urlopen(request, timeout=3) as response:
+                if response.status not in {200, 204}:
+                    raise RuntimeError(f"Firebase write failed with HTTP {response.status}")
+        except HTTPError as error:
+            if error.code in (401, 403):
+                # An expired access token: fetch a fresh one on the retry instead of reusing it.
+                invalidate = getattr(self.token_provider, "invalidate", None)
+                if invalidate:
+                    invalidate()
+            raise
