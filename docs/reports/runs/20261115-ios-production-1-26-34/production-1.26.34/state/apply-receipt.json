@@ -1,0 +1,13 @@
+{
+  "startedAt": "2026-11-16T03:09:01Z",
+  "whatsNew": {
+    "es-MX": true,
+    "en-US": true,
+    "zh-Hans": true,
+    "ko": true,
+    "vi": true
+  },
+  "buildId": "932a965c-f316-42a6-bd29-0ab9772401c5",
+  "reviewDetailId": "e579a28d-3b4f-4f2a-a7df-0e4c56533cc2",
+  "reviewNotes": "Version 1.26.34 only reorganizes the content picker: published podcasts and sermons now appear in two fixed tabs, and the toolbar entry that used to say \"Choose sermon week\" is relabeled \"Sermons & Podcasts\". No new permissions, no microphone behavior change, no new data collection. The Chinese weekly study guide is machine translated and not human reviewed (humanApproval=false); the app discloses this on the guide screen."
+}
