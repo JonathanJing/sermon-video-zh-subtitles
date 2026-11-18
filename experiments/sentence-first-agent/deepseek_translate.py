@@ -135,6 +135,12 @@ def translation_prompt(glossary, prior, continuation, units, context_after, budg
             "contextAfter": [{"id": unit["id"], "english": unit["english"]} for unit in context_after]}
 
 
+def forget(client, system, user) -> None:
+    """A reply that failed validation leaves the cache, so a rerun asks again instead of replaying it."""
+    if hasattr(client, "forget"):
+        client.forget(system, user)
+
+
 def run_window(client, units, glossary, prior, flags, after, window_id, budgets, system, locale):
     user = translation_prompt(glossary, prior,
                               {unit["id"]: flags[unit["id"]] for unit in units}, units, after, budgets, locale)
@@ -142,11 +148,14 @@ def run_window(client, units, glossary, prior, flags, after, window_id, budgets,
     rows = result.get("sentences")
     failures = C.validate_sentences(rows, units, window_id, budgets, locale=locale)
     if failures:
+        forget(client, system, user)
         retry = dict(user)
         retry["previousFailures"] = failures
         result = client(system, retry, context=window_id + ":retry")
         rows = result.get("sentences")
         failures = C.validate_sentences(rows, units, window_id, budgets, locale=locale)
+        if failures:
+            forget(client, system, retry)
     if failures:
         client.validation_failures += 1
         client.note("validation_failed", window_id, failures=failures[:6])
@@ -187,6 +196,7 @@ def repair(client, missing, units_by_id, glossary, flags, prior_by_id, window, t
         rows = result.get("sentences")
         problems = C.validate_sentences(rows, [unit], f"{tag}:repair-{unit_id}", budgets, locale=locale)
         if problems:
+            forget(client, system, user)
             failures.extend(problems)
         else:
             fixed[unit_id] = rows[0]
@@ -232,10 +242,10 @@ def main() -> int:
     glossary_slices = len(C.glossary_slices(units))
     window_count = sum(-(-len(chain) // args.window) for chain in plan)
     glossary_client = C.DeepSeek(args.out / "cache", execute=args.execute, label="translate",
-                                 state_dir=args.source_run, total=window_count)
+                                 state_dir=args.out, total=window_count)
     translator = (C.ClaudeCLI(args.out / "claude-cache", model=args.claude_model, execute=args.execute)
                   if args.translator == "claude" else glossary_client)
-    done_windows, done_units = C.recorded_progress(args.source_run, "translate")
+    done_windows, done_units = C.recorded_progress(args.out, "translate")
     glossary_client.windows_done, glossary_client.units_done = done_windows, done_units
     started = time.time()
     glossary = C.empty_glossary()

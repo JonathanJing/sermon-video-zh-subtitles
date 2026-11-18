@@ -18,6 +18,7 @@ locale's TTS wavs (the whole locale is re-rendered), re-queue on Spark and finis
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import shutil
 import subprocess
@@ -46,6 +47,9 @@ SYSTEM = {
 只返回 JSON：{"sentences":[{"id":"原 id","target":"改短后的完整本句"}]}""",
 }
 CPS = {"zh-Hans": 4.3, "ko": 6.0, "es": 13.0}
+PENDING_RENDER = "lag-loop-pending-render.json"
+SSH_OPTIONS = ["-o", "BatchMode=yes", "-o", "ConnectTimeout=15", "-o", "ServerAliveInterval=15",
+               "-o", "ServerAliveCountMax=4"]
 
 
 def status_progress(run_dir: Path, locale: str, done: int, total: int, message: str) -> None:
@@ -185,8 +189,45 @@ def main() -> int:
     report = []
     runlog.mark(run_dir, f"l3.lag-loop.{args.locale}", "started")
     status_progress(run_dir, args.locale, 0, args.iterations, "started")
+    pending = run_dir / PENDING_RENDER
+
+    def rerender(number: int, *, clear: bool) -> None:
+        # The marker says speech.jsonl is newer than tts/, track.wav and schedule.json. While it
+        # exists, schedule.json describes old audio and must not be used to pick sentences again.
+        C.write_json(pending, {"iteration": number, "speechSha256": hashlib.sha256(
+            (run_dir / "speech.jsonl").read_bytes()).hexdigest()})
+        if clear:
+            shutil.rmtree(run_dir / "tts", ignore_errors=True)
+            subprocess.run(["ssh", *SSH_OPTIONS, remote_host, f"rm -rf {remote_dir}/tts"], check=True, timeout=120)
+        subprocess.run(["scp", "-q", *SSH_OPTIONS, str(run_dir / "speech.jsonl"), f"{args.remote}/"],
+                       check=True, timeout=300)
+        queue = [sys.executable, str(HERE / "spark_queue.py"), "--session", args.session,
+                 "--owner", "sentence-first-agent", "--remote-tools", args.remote_tools,
+                 "--locale", f"{args.locale}={remote_dir}", "--batch-size", "8"]
+        for key, checkpoint in voices:
+            queue += ["--voice", f"{key}={checkpoint}"]
+        run(queue)
+        run([sys.executable, str(HERE / "finish_run.py"), "--run", str(run_dir),
+             "--remote", args.remote, "--gap", "0.05", "--no-video"])
+        pending.unlink()
+
+    if pending.is_file():
+        # A previous run trimmed and rebuilt speech.jsonl, then stopped before the new audio was
+        # rendered and merged. Finish that render first; spark_run.sh skips sentences already done.
+        state = json.loads(pending.read_text())
+        print(json.dumps({"resumePendingRender": state}, ensure_ascii=False), flush=True)
+        if not args.execute or args.plan_only:
+            raise SystemExit(f"{pending.name}: a trimmed speech.jsonl was never rendered; rerun with "
+                             "--execute to finish that render before any new trim")
+        rerender(int(state.get("iteration") or 0), clear=False)
     for number in range(1, args.iterations + 1):
         schedule = json.loads((run_dir / "schedule.json").read_text())
+        if final_gate(schedule["summary"], args.threshold)["clean"]:
+            # Already inside the gate: another trim would only re-render the whole locale again.
+            report.append({"iteration": number, "maxLag": schedule["summary"]["maxLagSeconds"],
+                           "over": 0, "stopped": "gate_clean"})
+            print(json.dumps(report[-1], ensure_ascii=False), flush=True)
+            break
         # Root-cause selection: a sentence that reads longer than its source slot pushes
         # everything after it. Lag alone only names the tail, which converges slowly.
         bad = [row for row in schedule["sentences"]
@@ -212,24 +253,21 @@ def main() -> int:
                                                      "revisions": revisions})
             print(json.dumps({"planOnly": True, **stats}, ensure_ascii=False), flush=True)
             break
+        if not revisions:
+            # Nothing accepted: a re-render would produce the same audio.
+            report[-1]["stopped"] = "no_accepted_revisions"
+            print(json.dumps(report[-1], ensure_ascii=False), flush=True)
+            break
         review_path = run_dir / "review.json"
         review = json.loads(review_path.read_text(encoding="utf-8")) if review_path.is_file() else {}
         review.setdefault("revisions", {}).update(revisions)
         review.setdefault("notes", {})
-        review_path.write_text(json.dumps(review, ensure_ascii=False, indent=1), encoding="utf-8")
+        tmp = review_path.with_suffix(".json.tmp")
+        tmp.write_text(json.dumps(review, ensure_ascii=False, indent=1), encoding="utf-8")
+        tmp.replace(review_path)
         run([sys.executable, str(HERE / "spoken_forms.py"), "--run", str(run_dir), "--locale", args.locale])
         run([sys.executable, str(HERE / "build_speech.py"), "--run", str(run_dir), "--review", str(review_path)])
-        shutil.rmtree(run_dir / "tts", ignore_errors=True)
-        subprocess.run(["ssh", remote_host, f"rm -rf {remote_dir}/tts"], check=True)
-        subprocess.run(["scp", "-q", str(run_dir / "speech.jsonl"), f"{args.remote}/"], check=True)
-        queue = [sys.executable, str(HERE / "spark_queue.py"), "--session", args.session,
-                 "--owner", "sentence-first-agent", "--remote-tools", args.remote_tools,
-                 "--locale", f"{args.locale}={remote_dir}", "--batch-size", "8"]
-        for key, checkpoint in voices:
-            queue += ["--voice", f"{key}={checkpoint}"]
-        run(queue)
-        run([sys.executable, str(HERE / "finish_run.py"), "--run", str(run_dir),
-             "--remote", args.remote, "--gap", "0.05", "--no-video"])
+        rerender(number, clear=True)
     client.finish("finished")
     final = json.loads((run_dir / "schedule.json").read_text())["summary"]
     report.append({"final": True, "maxLag": final["maxLagSeconds"],

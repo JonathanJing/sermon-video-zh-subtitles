@@ -63,6 +63,48 @@ def load_source_review(run: Path) -> dict:
     return json.loads(path.read_text()) if path.is_file() else {}
 
 
+def merged_review(existing: dict, source: dict, speaker: str | None, locale: str,
+                  revisions: dict, rejected: list, translations: list[dict]) -> dict:
+    """Fold this audit into the run's review.json instead of replacing it.
+
+    The output review.json may already hold the voice mapping (single ``speaker`` or a two-speaker
+    ``speakers`` map), earlier revisions and notes. Those are kept; an earlier revision of the same
+    sentence wins over this audit's suggestion, which is recorded as rejected. With no voice recorded
+    anywhere the audit refuses instead of guessing one.
+    """
+    base = existing or source
+    review = dict(base)
+    if not (review.get("speaker") or review.get("speakers")):
+        voice = speaker or source.get("speaker")
+        if not voice and source.get("speakers"):
+            review["speakers"] = source["speakers"]
+        elif voice:
+            review["speaker"] = voice
+        else:
+            raise SystemExit("review.json records no speaker or speakers; pass --speaker <registry key> "
+                             "(the audit no longer assumes eric_pilot)")
+    kept = dict(base.get("revisions") or {})
+    rejected = list(rejected)
+    for sentence_id, revision in revisions.items():
+        if sentence_id in kept and kept[sentence_id] != revision:
+            rejected.append({"id": sentence_id, "suggestion": revision.get("target"),
+                             "reason": "existing_revision_kept"})
+            continue
+        kept[sentence_id] = revision
+    review.update(
+        locale=locale,
+        charsPerSecond=base.get("charsPerSecond", {"zh-Hans": 4.3, "ko": 6.0, "es": 13.0}[locale]),
+        revisions=kept,
+        rejectedRevisions=list(base.get("rejectedRevisions") or []) + rejected,
+        notes=dict(base.get("notes") or {}),
+        spokenForms=spoken_forms.merge_spoken_forms(
+            base.get("spokenForms") or source.get("spokenForms"), [row["target"] for row in translations]),
+        auditPromptVersion=PROMPT_VERSION,
+        humanApproval=False,
+    )
+    return review
+
+
 def audit_window(client: C.DeepSeek, rows: list[dict], units: list[dict], glossary, prior, number: int,
                  system: str = AUDIT_SYSTEM, locale: str = "zh-Hans"):
     user = {"locale": locale, "glossary": glossary, "priorTarget": prior,
@@ -113,6 +155,7 @@ def main() -> int:
     parser.add_argument("--workers", type=int, default=6)
     parser.add_argument("--limit", type=int, default=0)
     parser.add_argument("--locale", choices=tuple(AUDIT_SYSTEMS), default="zh-Hans")
+    parser.add_argument("--speaker", help="registry voice key, used only when no review.json records one")
     parser.add_argument("--execute", action="store_true")
     args = parser.parse_args()
     out = args.out or args.arm_dir
@@ -168,19 +211,8 @@ def main() -> int:
             accepted_codes[str(issue.get("code"))] = accepted_codes.get(str(issue.get("code")), 0) + 1
             revisions[row["id"]] = {"target": issue["suggestion"].strip(),
                                     "note": f"revised: {issue.get('code')}: {issue.get('note', '')[:120]}"}
-    source_review = load_source_review(args.source_run)
-    review = {
-        "locale": args.locale,
-        "speaker": source_review.get("speaker", "eric_pilot"),
-        "charsPerSecond": source_review.get("charsPerSecond", {"zh-Hans": 4.3, "ko": 6.0, "es": 13.0}[args.locale]),
-        "revisions": revisions,
-        "rejectedRevisions": rejected,
-        "notes": {},
-        "spokenForms": spoken_forms.merge_spoken_forms(
-            source_review.get("spokenForms"), [row["target"] for row in translations]),
-        "auditPromptVersion": PROMPT_VERSION,
-        "humanApproval": False,
-    }
+    review = merged_review(load_source_review(out), load_source_review(args.source_run), args.speaker,
+                           args.locale, revisions, rejected, translations)
     client.summary({"acceptedByCode": accepted_codes, "rejectedByReason": rejected_codes,
                     "issued": sum(len(batch) for batch in issue_batches),
                     "accepted": len(revisions), "rejected": len(rejected)})
