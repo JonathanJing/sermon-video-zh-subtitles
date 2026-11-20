@@ -737,16 +737,20 @@ struct ContentView: View {
         .accessibilityIdentifier("app-language-menu")
     }
 
+    private var selectedContentCapabilityText: String {
+        model.selectedContentCapabilityKeys.map { localization.text($0) }.joined(separator: " · ")
+    }
+
     private var languageButton: some View {
         Button { sheet = .languages } label: {
-            Label("\(model.selectedContentLanguageName) · \(localization.text(model.selectedContentCapabilitySummary))",
+            Label("\(model.selectedContentLanguageName) · \(selectedContentCapabilityText)",
                   systemImage: "globe")
         }
         .buttonStyle(.bordered)
         .font(.subheadline.weight(.medium))
         .frame(minHeight: 44)
         .accessibilityLabel(localization.text("选择证道语言"))
-        .accessibilityValue("\(model.selectedContentLanguageName)，\(localization.text(model.selectedContentCapabilitySummary))")
+        .accessibilityValue("\(model.selectedContentLanguageName)，\(selectedContentCapabilityText)")
         .accessibilityIdentifier("choose-content-language")
     }
 
@@ -754,7 +758,7 @@ struct ContentView: View {
         Button { sheet = .languages } label: { Image(systemName: "globe") }
             .font(.title3).frame(minWidth: 44, minHeight: 44)
             .accessibilityLabel(localization.text("选择证道语言"))
-            .accessibilityValue("\(model.selectedContentLanguageName)，\(localization.text(model.selectedContentCapabilitySummary))")
+            .accessibilityValue("\(model.selectedContentLanguageName)，\(selectedContentCapabilityText)")
             .accessibilityIdentifier("choose-content-language")
     }
 
