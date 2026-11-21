@@ -1,6 +1,6 @@
 # 本地制作计算策略：Spark 默认，MacBook fallback
 
-决定日期：2026-10-01。今后的预制本地制作默认由 **DGX Spark 执行模型计算，MacBook 作为 fallback**。MacBook 仍可协调任务、取得媒体、保存收据、执行 CPU 媒体处理和提供人工审阅入口。此策略覆盖预制制作，不改周日独立 live_session 的现场设备要求，也不把当前 Layer 2 API／CLI 后端（DeepSeek／Sol／Opus）改成本地模型。
+决定日期：2026-10-01，2026-11-21 修订（句级配音线改本机）。预制本地制作默认由 **DGX Spark 执行模型计算，MacBook 作为 fallback**；句级配音线（`experiments/sentence-first-agent`）是记录在案的例外，2026-11-21 起它的 TTS 默认在 14 英寸 M5 Max 本机单路跑。MacBook 仍可协调任务、取得媒体、保存收据、执行 CPU 媒体处理和提供人工审阅入口。此策略覆盖预制制作，不改周日独立 live_session 的现场设备要求，也不把当前 Layer 2 API／CLI 后端（DeepSeek／Sol／Opus）改成本地模型。
 
 ## 默认与恢复
 
@@ -19,7 +19,8 @@
 | legacy weekly TTS | `run_weekly_dubbing.py` 新任务先用 Spark CUDA；恢复已存在的 render 时沿用原后端；见 [语音运行合同](../experiments/sermon-dubbing-poc/SPEECH-RUNTIME.zh.md) |
 | legacy Qwen ASR/ForcedAligner | `SERMON_SPEECH_BACKEND=auto` 先用 Spark，受限故障时回到 MacBook MLX；`spark`/`macbook` 可强制指定 |
 | canonical 多语言 TTS | [正式 renderer](formal-layer3-renderer.zh.md) 默认 `cuda:0`/BF16；新单讲员周日任务加 `--spark-production`，按 **8 副本 × batch8** 在 Spark 运行。它仍需操作员指定模型路径、传输和任务目录，不具备完整跨机自动 dispatch |
-| Mac 两路 1×8 配音 | 需要在本机离线出 WAV 时，用 [两路启动器](mac-tts-two-way.zh.md)：两个进程各 1 副本 × batch 8，seed 按原始窗口统一；实测合并 RTF 0.51，第三路无增益。它不是正式 renderer，仍需人工整轨听审 |
+| 逐句线本机配音（2026-11-21 起） | 句级配音线（`experiments/sentence-first-agent`）的 TTS 改在本机单路跑：`tts_sentences.py --device mps --dtype float32 --batch-size 8`，起跑前 free+inactive+speculative ≥ 20 GiB、低于 6 GiB 自动停，36 GiB 机身只允许一路（[runbook](../experiments/sentence-first-agent/AGENTS.md) §6）。实测约 2.4× 实时，比 Spark 8×8 慢 1.7–1.8×；Spark 队列保留为显式回退。仍不是正式 renderer，仍需人工整轨听审 |
+| Mac 两路 1×8 配音（64 GiB 机器） | 需要在本机离线出 WAV 时，用 [两路启动器](mac-tts-two-way.zh.md)：两个进程各 1 副本 × batch 8，seed 按原始窗口统一；实测合并 RTF 0.51，第三路无增益。36 GiB 机身放不下两路；它不是正式 renderer，仍需人工整轨听审 |
 | canonical 配音回转写（2026-10-28 退役） | 回转写筛查已从正式与实验生产路径移除，不再派发；旧运行保留原后端与产物。历史：CUDA worker 硬编码 CUDA、按本策略在 Spark 运行，完整 MacBook 自动 fallback adapter 未接入，不把 legacy 适配器代称为正式 producer |
 | 转写、翻译、复核 API | 继续当前周次的生产 policy；迁移机器只迁移调用与账本，不更换内容模型和人审要求 |
 | FFmpeg、打包、hash、发布 | 选靠近输入的 CPU worker，减少媒体搬运；发布目标及 HTTP、设备、现场证据保持各自边界 |

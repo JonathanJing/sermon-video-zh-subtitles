@@ -2,9 +2,9 @@
 
 > **2026-10-28：回转写（ASR）不再是本线的流程或可审条件。** `spark_queue.py` 默认只排 TTS，`spark_run.sh` 默认 `--steps tts`；`finish_run.py` 的 `asr.jsonl` 只作历史可选阅读。人工整轨听审是唯一的音频结论，`asr-triage` 不再作为「可审」的前置。下文涉及 ASR 分诊的段落保留为历史说明。
 
-这条线不走正式流水线和哈希绑定校验，所有工作在代理会话里直接完成：英文按句拆开，代理逐句翻译与复核，Spark 用讲员自己的声音逐句配音，合并成整轨，经用户人工审核后可以发布成正式页面。单讲员证道和双人播客都按本文走，每周重复使用。路线的完整说明（何时用、检查、用时与花费、限制）见[路线文档](../../docs/sentence-first-agent-production.zh.md)，路径设计见[逐句优先设计](../../docs/design/sentence-first-dubbing-path.zh.md)；正式四层的双人播客另见[双人播客制作规范](../../docs/podcast-dual-speaker-production.zh.md)。
+这条线不走正式流水线和哈希绑定校验，所有工作在代理会话里直接完成：英文按句拆开，代理逐句翻译与复核，本机（14 英寸 M5 Max）用讲员自己的声音逐句配音，合并成整轨，经用户人工审核后可以发布成正式页面。单讲员证道和双人播客都按本文走，每周重复使用。路线的完整说明（何时用、检查、用时与花费、限制）见[路线文档](../../docs/sentence-first-agent-production.zh.md)，路径设计见[逐句优先设计](../../docs/design/sentence-first-dubbing-path.zh.md)；正式四层的双人播客另见[双人播客制作规范](../../docs/podcast-dual-speaker-production.zh.md)。
 
-读完本文即可开工；连 Spark 时读 `dgx-spark-connect` skill。不需要读 controller、speech job 或豁免的文档。
+读完本文即可开工；2026-11-21 起配音在本机跑，不需要 Spark；只有显式回退到 Spark 时才读 `dgx-spark-connect` skill。不需要读 controller、speech job 或豁免的文档。
 
 ## 边界
 
@@ -31,13 +31,13 @@
 | `state_check.py` | 本机 | 从 `events.jsonl`+`done.jsonl` 重算状态并比对；`--all` 查全部阶段、`--units` 报句级覆盖与失败句、`--missing` 列未覆盖句子、`--record` 写 `state-check.json`、`--write` 按事件流修复；不一致退出码 1 |
 | `run_status.py` | 本机 | 观察整条 run：`register`/`mark`/`wrap`/`handoff`/`resume`/`rebuild`/`status`/`production`/`check`/`notify`；写 `status/` 与 `.status-index.json`，只读派生、不改变门禁 |
 | `audit_deepseek.py`、`coherence_check.py`、`spoken_forms.py` | 本机 | 独立审计与 issue-bound 门（`--locale` 三语）、连贯性检查、数字读法与 TTS 专用读法（`spoken_forms.py --run --locale`） |
-| `lag_loop.py` | 本机 + Spark | 落后回环（同步 run 必跑）：读 `schedule.json` → 按 dub−source 精简推后句 → 重建 speech → 清 tts → 重排该语 → `finish_run`，最多 `--iterations` 轮；`--require-clean` 把闸门变成退出码，`--check-only` 只判不配 |
+| `lag_loop.py` | 本机 | 落后回环（同步 run 必跑）：读 `schedule.json` → 按 dub−source 精简推后句 → 重建 speech → 清 tts → `--local` 在本机重配该语 → `finish_run`，最多 `--iterations` 轮；`--require-clean` 把闸门变成退出码，`--check-only` 只判不配；`--remote/--session` 回到 Spark 队列 |
 | `build_speech.py` | 本机 | 套用复核修订和口播读法，写 speech.jsonl |
-| `spark_queue.py` | 本机 | 把所有语言、所有讲员的配音排成一条任务队列（2026-10-28 起不再排回转写） |
-| `spark_session_job.py` | 本机 | 在 Spark 独占会话里把一步登记成任务并等它结束（spark_queue 调用它） |
-| `spark_run.sh` | Spark | 一个语言、一位讲员的逐句 TTS（batch 1；`--steps asr` 仅保留为历史诊断），可续跑；每步开工前按宿主 `MemAvailable` 做预算准入，容器带 `PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True` |
-| `tts_sentences.py`、`asr_check.py transcribe` | Spark 容器内 | 由 spark_run.sh 调用；TTS 每批后释放 CUDA 缓存，`tts-log.jsonl` 每行记 `memAvailableBytes` 与 `cudaReservedBytes` |
-| `finish_run.py` | 本机 | 拉回、合并、混回视频、出手机预览，打印落后摘要；有历史 `asr.jsonl` 时附带回转写打分与摘要（可选） |
+| `spark_queue.py` | 本机（Spark 回退） | 把所有语言、所有讲员的配音排成一条 Spark 任务队列（2026-10-28 起不再排回转写）；本机路径不需要它 |
+| `spark_session_job.py` | 本机（Spark 回退） | 在 Spark 独占会话里把一步登记成任务并等它结束（spark_queue 调用它） |
+| `spark_run.sh` | Spark（可选回退） | 一个语言、一位讲员的逐句 TTS（batch 1；`--steps asr` 仅保留为历史诊断），可续跑；每步开工前按宿主 `MemAvailable` 做预算准入，容器带 `PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True` |
+| `tts_sentences.py`、`asr_check.py transcribe` | 本机（mbp14）或 Spark 容器内 | 本线正式配音渲染器：本机由 §6 直接调用（`--device mps --dtype float32 --batch-size 8`），Spark 由 `spark_run.sh` 调用；每批后释放设备缓存，起跑前做宿主内存准入（MPS 默认 20 GiB 才加载模型）；`tts-log.jsonl` 每行记 `memAvailableBytes` 与 `mpsAllocatedBytes`／`cudaReservedBytes` |
+| `finish_run.py` | 本机 | 合并、混回视频、出手机预览，打印落后摘要；`--remote` 只在 Spark 回退时拉回 `tts/`；有历史 `asr.jsonl` 时附带回转写打分与摘要（可选） |
 | `merge_track.py`、`asr_check.py score` | 本机 | 有历史 `asr.jsonl` 时由 finish_run.py 调用；默认不生成 |
 | `review_sheets.py` | 本机 | 每种语言一张人工审核表（CSV），标出要重点听的句子 |
 | `sfa_publish.py` | 本机 | 页面发布单一驱动（`DEV-SF-004`）：读 `pages/<pageId>.json`；`validate`/`preflight`/`check-title`/`publish-check` 门禁与 assets→baseline→stage1→publish→verify→stage2→publish→readback→english-reference |
@@ -47,11 +47,11 @@
 | `build_study.py` | 本机 | 生成大纲与默想的 `sermon-study-artifact-v1`、审核收据、元数据/窗口批准与四产品清单 |
 | `publish_study.py` | 本机 | 把大纲与默想以 release v3 发布：页面学习段、`/study/<pageId>/<locale>/`、三语 release 与目录 |
 | `srt_normalize.py` | 本机 | 没有锚点清单时从滚动 SRT 建句表；去重、内插、清洗已核实名称、强制单调不重叠，写验证报告 |
-| `preflight.py` | 本机 | 开工/发布前检查 run、`speakerId→speakerKey`、Registry 用途/能力、英文包证据路径、Spark、Firebase；`--stage setup` 是开工子集（只要 clip.json/sentences.jsonl） |
+| `preflight.py` | 本机 | 开工/发布前检查 run、`speakerId→speakerKey`、Registry 用途/能力、英文包证据路径、Spark（`--spark-session` 才查）、Firebase；`--stage setup` 是开工子集（只要 clip.json/sentences.jsonl） |
 | `sfa.py` | 本机 | 开工默认路径：环境检查 → 裁切拆句 → 讲员分配 → 三语分发 → `preflight --stage setup`；回执 `setup.json` |
 | `review_player.py` | 本机 | 逐句听审 HTML：按句播放、标记、跳转、逐句结论导出 |
-| `repair_sentence.py` | 本机 + Spark | 按 `tts/tts-batches.jsonl` 重配一句所在的 batch 窗口；`--single` 用 batch 1 |
-| `tts_pool.py` | Spark 容器内 | 同语言两讲员共用 N 个模型副本（8 → 4+4），每副本 batch 8 |
+| `repair_sentence.py` | 本机 | 按 `tts/tts-batches.jsonl` 重配一句所在的 batch 窗口；`--local`（默认路径）在本机重配，`--remote/--session` 回退到 Spark；`--single` 用 batch 1 |
+| `tts_pool.py` | Spark 容器内（可选回退） | 同语言两讲员共用 N 个模型副本（8 → 4+4），每副本 batch 8 |
 | `consistency_check.py` | 本机 | 合并后检查称呼、术语、数字一致性 |
 | `asr_triage.py` | 本机 | 把 ASR 差异分成同音/数字/变体与内容差异 |
 | `runlog.py` | 本机 | journal/outcome/timings 包装；导出器自动读 |
@@ -86,16 +86,16 @@ artifacts/sentence-first-agent/<run>/
 
 ### 0.5 环境预检（本机，开工前几分钟）
 
-这些检查由 §2 的 `sfa.py start` 一次执行：默认查脚本、ffmpeg/ffprobe 与 run 路径；`--check-git` 才 fetch 并报落后 `origin/main`，`--check-package`（或 `--publish`）才验 `tongxing_production` 导入，`--spark-session` 与 `--firebase`/`--publish` 分别查 Spark 会话与 ADC。单独跑脚本或命令报错时按下面各项手工排查：
+这些检查由 §2 的 `sfa.py start` 一次执行：默认查脚本、ffmpeg/ffprobe 与 run 路径；`--check-git` 才 fetch 并报落后 `origin/main`，`--check-package`（或 `--publish`）才验 `tongxing_production` 导入，`--spark-session`（只有 Spark 回退时才用）与 `--firebase`/`--publish` 分别查 Spark 会话与 ADC。单独跑脚本或命令报错时按下面各项手工排查：
 
 1. 确认代码与脚本齐：`git fetch origin`，`git rev-list --left-right --count origin/main...HEAD`。落后很多时（2026-10-23：落后 2759 个提交，实验目录缺 11 个脚本），在 `artifacts/worktrees/sfa-main` 建 origin/main worktree，不要改当前分支。
 2. 确认环境与导入：推荐 `tools/ops/bootstrap_sentence_first_env.sh` 建 `.venv-sfa`（uv + 锁定 `requirements-sfa.lock`，不做 editable 安装），本机脚本用 `PYTHONPATH="packages/production/src:." .venv-sfa/bin/python ...`；`--check` 会打印并校验 `tongxing_production` 的路径在 checkout 内。主 checkout 的 `.venv` 是 editable 安装（指向旧包），只作兜底；用 worktree 时务必用 `PYTHONPATH` 把当前 checkout 放最前。
 3. 确认 run 目录位置：`slices/slices.json` 存仓库相对路径（`artifacts/sentence-first-agent/<run>/slices/...`），所以 run 放在主 checkout 的 `artifacts/sentence-first-agent/`，所有本机步骤从仓库根运行；不要放 worktree。
 4. 要发布时确认 Firebase 与 ADC：`XDG_CONFIG_HOME=<可写 configstore 副本> firebase login:list` 和 ADC token 各一次；沙箱下 `~/.config/configstore` 不可写会让 firebase 报 “credentials no longer valid”。
-5. 确认 Spark 会话空闲、checkpoint 路径存在；有别人的会话先问用户。开工前 Spark 的 `MemAvailable` 要够 TTS 的预算：24 GiB 保留加每个模型副本 9 GiB（8 副本即 96 GiB，batch 1 单副本 33 GiB）；回转写 6 GiB 仅历史 `--steps asr` 诊断需要，默认队列不排；`spark_run.sh` 在起容器前会自己检查，不够就带着数字退出，不用等 CUDA 报 OOM。**判断预算要在 `begin` 之后做**：`inspect` 看到的是带 llama-server 等非独占服务的状态（2026-10-30 实测可用 76 GiB、llama-server 占 35.7 GiB 显存），`begin` 会停掉这些服务再腾出预算；在 `begin` 之前看到数字不够不是故障。
+5. 确认配音机（mbp14）运行时与 checkpoint 存在（§1）。**本机内存是硬约束**：单副本 batch 8 要 free+inactive+speculative ≥ 20 GiB 才加载模型，`tts_sentences.py` 默认按设备取 20 GiB，不够就带着数字退出；开工前退出 Chrome 等重活，36 GiB 机身只允许一路。Spark 回退时另按会话预算（24 GiB 保留 + 每副本 9 GiB，8 副本 96 GiB），判断预算要在 `begin` 之后做（2026-10-30 实测带 llama-server 时 `inspect` 只看到 76 GiB 可用）。
 6. 确认发布与翻译的 CLI：`firebase --version`（发布用 `firebase deploy`；没有就 `npm i -g firebase-tools@15.29.0`）并 `firebase login:list`；`claude --version` 与 `claude auth status`（翻译用 Claude Code CLI；没有就 `npm i -g @anthropic-ai/claude-code@2.1.325`，再 `claude auth login`）。OpenAI 转录用 `--environment prod` 的启动器；`--check` 只验本地配置，模型可见性另用 models 列表确认 `whisper-1`/`gpt-4o-transcribe`。
 7. 确认 Synology 镜像没有漏点目录：`firebase/dev/public/.well-known/apple-app-site-association` 与 `firebase/production-overlay/public/.well-known/apple-app-site-association` 必须在；缺了就从锁定 checkout 复制（Synology 不落点目录），否则 baseline 的规范 AASA 覆盖会静默缺失。
-8. Spark 上未登记的容器或服务会挡住独占会话：`h3image` 容器与 `h3-image-studio.service` 要在 `begin` 前停；`begin`/`resume-begin` 停 `spark-api`/`llama-server` 后单元可能是 `failed`（OOM-kill），用 `systemctl --user reset-failed <unit>` → `reconcile` → `resume-begin` 继续，不要新开 session。
+8. **仅 Spark 回退时**：Spark 上未登记的容器或服务会挡住独占会话：`h3image` 容器与 `h3-image-studio.service` 要在 `begin` 前停；`begin`/`resume-begin` 停 `spark-api`/`llama-server` 后单元可能是 `failed`（OOM-kill），用 `systemctl --user reset-failed <unit>` → `reconcile` → `resume-begin` 继续，不要新开 session。
 9. 锚点单元 0 从 0.0 开始时，`prepare_clip.py` 默认 `--margin-before 1.0` 会报 “clip would start before the media”；显式传 `--margin-before 0 --margin-after 8`。
 
 ### 0 开工前向用户问清
@@ -142,20 +142,21 @@ TTS 可能 ±15 分钟；每条就绪我发链接和“先听这 5–10 句”�
 ```text
 audio(语言) ≈ Σ build_speech 的 estimatedSeconds
               （或用原声讲话秒数 × 语言系数：zh 0.95、ko 1.06、es 1.07）
-TTS 墙钟 = audio / 速度 + 约 1 分钟模型加载
-可审 = TTS 开始 + TTS 墙钟 + 约 1 分钟加载 + 4–6 分钟（合并、review MP3/播放器、拉回；ASR 对齐已退役，数字仍是 2026-10-23 含它的校准）
-下一条语言 TTS 开始 = 上一条可审（队列串行）
-速度：batch 8 取 2.5×（2026-10-23 实测整体 2.68×、batch 段 3.87×）；batch 1 取 1.35×
-TTS 开始（首语）= max(讲员映射确认, 首语翻译 + 口播规格)；其余语言翻完补登记（见 0.2）
-内存：不为中途内存中止留重跑时间；TTS 每批后释放 CUDA 缓存，整期曲线应持平
-      （正式 8×8 两篇 402 句实测 66.9→66.7 GiB；本线首次整期后用 tts-log.jsonl 核对）
+TTS 墙钟 = audio / 速度 + 约 20 秒模型加载（本机 MPS 单路）
+可审 = TTS 开始 + TTS 墙钟 + 约 20 秒加载 + 3–5 分钟（合并、review MP3/播放器；本机不再拉回）
+下一条语言 TTS 开始 = 上一条可审（本机单路串行，同一时间只跑一种语言）
+速度：mbp14 单路 batch 8 取 2.4×（2026-11-09 组件实测 RTF 0.368；按整篇落盘开销折算 0.40–0.42）
+      Spark 回退 8×8 仍是 4.3–5.9×（2026-10-24 两轮生产实测）
+TTS 开始（首语）= max(讲员映射确认, 首语翻译 + 口播规格)；其余语言翻完依次渲染（见 0.2）
+内存：起跑要 free+inactive+speculative ≥ 20 GiB；中途低于 6 GiB 自动停，续跑跳过已完成的句子
+      （单路每批后释放 MPS 缓存；每条配完用 tts-log.jsonl 核对 memAvailableBytes 首尾）
 ```
 
-本次校准（2026-10-23）：英文表 12:27、映射 13:20、中文可审 13:59、韩语 14:47、西语 15:16、页面 15:50；TTS 46/51/29 分钟；整轨 60.5/66.5/67.3 分钟；用户实际 21/17/15 分钟/条（偏标记）。计划里整轨和标记两种时间都写，由用户选；不要用标记时间承诺整轨。
+本次校准（2026-10-23，Spark 8×8）：英文表 12:27、映射 13:20、中文可审 13:59、韩语 14:47、西语 15:16、页面 15:50；TTS 46/51/29 分钟；整轨 60.5/66.5/67.3 分钟；用户实际 21/17/15 分钟/条（偏标记）。计划里整轨和标记两种时间都写，由用户选；不要用标记时间承诺整轨。**2026-11-21 起配音改在本机单路，TTS 段比这份 Spark 校准慢约 1.7–1.8×**（31 分钟证道每语约 12–13 分钟、三语约 36–39 分钟），排计划时按这一行调整，不要直接套 10-23 的 TTS 数字。
 
-50 分钟单人的参考（原始断句、batch 8、三语）：19:00 开工 → 19:10 英文表 → 19:25 TTS → 19:50/20:17/20:44 可审 → 21:15 页面。音频对齐（ASR/合并/review MP3/播放器）已计入每条可审；不跑 MFA。若改用正式 MFA 锚点，Layer 1 机器段 +10–15 分钟、英文/句界审核 +10–20 分钟。
+50 分钟单人的参考（原始断句、batch 8、三语；Spark 8×8 校准，本机单路把每语 TTS 再拉长约 1.8×）：19:00 开工 → 19:10 英文表 → 19:25 TTS → 19:50/20:17/20:44 可审 → 21:15 页面。音频对齐（ASR/合并/review MP3/播放器）已计入每条可审；不跑 MFA。若改用正式 MFA 锚点，Layer 1 机器段 +10–15 分钟、英文/句界审核 +10–20 分钟。
 
-**片段的计划另算**：10 分钟片段三语约 12–13 分钟/条（配音 1.25–1.3 倍），每条 TTS 约 4–6 分钟（batch 8），可审时间仍按上面的公式算。不要把整期的 60 分钟模板套到片段上。同步 run 还要给落后回环留 2–4 分钟/语（60 句一轮约 2 分钟，整期 5–8 分钟）。
+**片段的计划另算**：10 分钟片段三语约 12–13 分钟/条（配音 1.25–1.3 倍），每条 TTS 约 4–5 分钟（本机单路 batch 8），可审时间仍按上面的公式算。不要把整期的 60 分钟模板套到片段上。同步 run 还要给落后回环留 2–4 分钟/语（60 句一轮约 2 分钟，整期 5–8 分钟）。
 
 **海报与推送（独立交付）**：海报由用户的独立 agent 制作/上传，不占主生产线关键路径；开工时冻结标题/日期/讲员/类别，把 pageId 的固定页面 URL 交给海报 agent；页面发布后海报随 iOS 推送一起发。主生产线只给交接包（pageId、三语 URL、英文对照 URL、标题/日期/讲员/来源、部署版本），不生成、不发送海报；推送由 App 侧或用户触发，代理只准备标题/正文/深链。
 
@@ -187,7 +188,7 @@ TTS 开始（首语）= max(讲员映射确认, 首语翻译 + 口播规格)；�
 |---|---|---|---|
 | 翻译分片 | 第 4 步，英文表批准后 | 一份 `translate/input-<k>.jsonl` → 对应 `output-<k>.jsonl` | `split`、`merge`、写 `translations.jsonl` |
 | 独立保真审计 | 每语 `merge` 后 | 只读 `translations.jsonl`，返回 `revisions` | 写进 `review.json` |
-| 每语收尾 | 队列打印 `locale done` | 该语 run 目录的 `finish_run.py`、审核表、播放器 | 发「可审」、补 journal 的 waiting |
+| 每语收尾 | 本机渲染进程退出码 0 | 该语 run 目录的 `finish_run.py`、审核表、播放器 | 发「可审」、补 journal 的 waiting |
 | 发布前只读审计 | 第 10 步 `assets` 前 | 只读五项：英文对照逐单元覆盖、审核收据、固定路径与文稿时间、release 七资产与 `fourProducts`、`catalog.json` 与 sidecar 绑定 | 按报告修完再部署 |
 | 学习内容草稿 | 第 10.5 步，译文定稿后 | 一语草稿与 `sourceUnitIds` | 交用户批准；`humanApproval` 只由用户给 |
 | 仓库卫生 | 第 11 步 | `git diff --check`、链接与命令检查、报告叙述 | 跑导出器、开分支、提交 |
@@ -204,7 +205,7 @@ TTS 开始（首语）= max(讲员映射确认, 首语翻译 + 口播规格)；�
 
 **不能并行的**
 
-- **Spark 上的任何事**：会话一次只接一个运行中的任务，8 副本已把 GPU 用满（96%）；`repair_sentence.py` 也要排进队列空档，不能和队列里正在跑的 TTS 同时来。两条队列或两个会话不会更快，只会互相拖慢。
+- **配音机上的任何事**：mbp14 单路已把 GPU 用满，第二路只会争内存（36 GiB 放不下两路）；`repair_sentence.py` 与 `lag_loop.py` 也要等本次渲染结束再跑，不能和正在跑的 TTS 同时来。Spark 回退时同理：会话一次只接一个任务，8 副本已占满 GPU。
 - **部署**：第 10 步的 `baseline`／`stage*`／`publish` 顺序固定，每次 publish 要用户在对话里授权；同一页面还有别的代理时按[边界](#边界)第 5 条先登记。
 - **单写者文件**：`run.md`、`review.json`、`translations.jsonl`、`speech.jsonl`、审核收据、`journal.ndjson`／`outcome.json`／`timings.tsv` 只由主代理写。子代理返回文本或 JSON，由主代理落盘；两边各写一次就是后写覆盖先写，收据与哈希绑定会断。
 - **`sentences.jsonl` 的句界**：三语共用的输入，改一次三语全失效，只在一个地方改。
@@ -212,21 +213,16 @@ TTS 开始（首语）= max(讲员映射确认, 首语翻译 + 口播规格)；�
 
 **派发纪律**：每个子代理的提示自带 run 目录绝对路径、语言、输入与输出文件、本期术语表条目、输出格式，并写明「除了这个文件不要写别的」。开工前把它的任务与预计时段登记进 `run.md`——[边界](#边界)第 5 条把并发代理算在内，子代理同样适用；发布前再核一次。
 
-**增量喂队列（第 6 步）**：GPU 在翻译期间是空的，不必等三语都翻完才开队列。首语口播稿一通过第 5 步就先单独登记一批，其余语言翻完再登记第二批。`--locale` 可重复且只排给定的语言，`spark_run.sh` 可续跑、已完成的句子会跳过，所以分两次登记不会重配已完成的句子。
+**增量喂（第 6 步）**：翻译期间 GPU 是空的，不必等三语都翻完。首语口播稿一通过第 5 步就先在本机渲染这一语，其余语言翻完再依次渲染。`tts_sentences.py` 跳过已有 WAV，所以分几次跑不会重配已完成的句子。
 
 ```bash
-# 首语就绪就开；这一次退出后再登记下一批
-python3 $EXP/spark_queue.py --session <session> --owner sentence-first-agent \
-  --remote-tools /home/achillesjing/sentence-first-agent/tools \
-  --locale zh-Hans=<Spark 上的 zh run> --voice <speaker key>=<checkpoint> --batch-size 8
-# 第二批只列还没排的语言
-python3 $EXP/spark_queue.py --session <session> --owner sentence-first-agent \
-  --remote-tools /home/achillesjing/sentence-first-agent/tools \
-  --locale ko=<Spark 上的 ko run> --locale es=<Spark 上的 es run> \
-  --voice <speaker key>=<checkpoint> --batch-size 8
+# 首语就绪就开；本机单路，一次只跑一种语言（命令见 §6）
+python3 $EXP/tts_sentences.py --speech $RUN/speech.jsonl --checkpoint <checkpoint> --out $RUN/tts \
+  --device mps --dtype float32 --seed 7 --batch-size 8 \
+  --expect-checkpoint-sha256 <Registry hash> --min-available-gib 20
 ```
 
-两次登记一前一后、同一会话，**不能重叠**：先用 `spark_exclusive_session.py status` 确认第一批已退出、没有运行中的任务，再登记第二批；还要看到第一批打印 `locale done <语言>`，只看到进程退出不算完成。不要重复列已配完的语言，那会白起一次容器和模型加载。省下的是「首语不等其余语言」那段，等于其余语言翻译完成比首语晚的时间（2026-10-23 校准里约 5–10 分钟）；实际值记进 `run.md`。
+两次渲染**不能重叠**：起下一种语言前先 `pgrep -f tts_sentences.py` 为空（上一次进程已退出），否则两路会互相争内存。省下的是「首语不等其余语言」那段，等于其余语言翻译完成比首语晚的时间（2026-10-23 校准约 5–10 分钟）；实际值记进 `run.md`。Spark 回退时仍用 `spark_queue.py` 的两批登记，规则是同一会话内不能重叠、必须看到 `locale done <语言>`。
 
 ### 0.3 发布意图七件套（开跑前填，收尾逐项打勾）
 
@@ -248,16 +244,15 @@ python3 $EXP/spark_queue.py --session <session> --owner sentence-first-agent \
 - 2026-11-07 复盘：第一轮只发页面和英文对照，七件里漏了第 5、6、7 三件，用户追问后才补；
   原因就是开工时没填这张表，把 `sfa_publish` 的子命令顺序当成了完整清单。
 
-### 1 开自己的 Spark 独占会话
+### 1 开本机配音运行（不再需要 Spark 会话）
 
-1. 用会话工具（`packages/production/src/tongxing_production/compute/spark_exclusive_session.py`）的 `status` 看有没有别人的会话；有就问用户，不要收尾别人的会话：
-   `python3 <tool> status --session-id sfa-<run> --owner sentence-first-agent`
-2. `begin` 开自己的会话，`finish` 收尾（两个都会停/起 llama-server 等服务）：
-   `python3 <tool> begin --session-id sfa-<run> --owner sentence-first-agent [--minimum-available-gib 96]`
-   `python3 <tool> finish --session-id sfa-<run> --owner sentence-first-agent`
-   `begin` 默认要求 110 GiB 可用；本线的 TTS 预算是 96 GiB（24 + 9×8），主机腾不出 110 GiB 时加 `--minimum-available-gib 96`。
-   之后所有容器都通过 `spark_queue.py` 或 `spark_session_job.py` 登记，不直接 `ssh … docker run`：未登记的容器会让会话收尾失败（`unmanaged_running_container`）。
-   Spark 上还有 `h3image`（SGLang）容器与 `h3-image-studio.service` 时，`begin` 会报 `unmanaged_running_container` / `unmanaged_model_or_worker_process`；先停这两个（`bash ~/h3image/web/deploy/spark-h3.sh --stop`、`systemctl --user stop h3-image-studio.service`），生产后再启。停止 `spark-api`/`llama-server` 后单元可能进入 `failed`，按 §0.5 第 8 条 reset-failed + reconcile + resume-begin。
+2026-11-21 起本线配音在本机跑：第 6 步直接调用 `tts_sentences.py`，不需要 Spark 独占会话、上传或容器。
+
+1. 确认运行时：本机 `artifacts/local-tts-ab-20261109/venv/bin/python`（torch 2.14.0 + qwen-tts 0.1.1，2026-11-09 建，`torch.backends.mps.is_available()` 为 True）。运行时和 checkpoint 都在忽略的 `artifacts/` 里，清 `artifacts/` 前先另存到 `artifacts/model-routing/macbook-tts/`。
+2. 核对 checkpoint：按 Registry（`config/speaker-voice-registry.json`）的 `checkpointRef` 哈希逐个核对——Eric `75d28ce6…`、Steve `b480bc6a…`、John `3f722b17…`；第 6 步的 `--expect-checkpoint-sha256` 会在加载前直接拒绝不符的权重。本机当前只备了 Eric 的副本。
+3. 确认内存：`vm_stat` 的 free+inactive+speculative ≥ 20 GiB；不够就退出 Chrome 等重活，不要改门槛。36 GiB 机身只允许一路。
+4. 把渲染身份写进每个 run 的 `run.md`：模型 Registry `fd4b254…`、speaker checkpoint 哈希、`device=mps dtype=float32 seed=7 batch=8`、开始/结束时间、`tts-log.jsonl` 的内存首尾值。
+5. **Spark 回退**（只有用户明确要求，或本机内存长期不够时）：用会话工具（`packages/production/src/tongxing_production/compute/spark_exclusive_session.py`）`status` 看有没有别人的会话，有就问用户，不要收尾别人的会话；`begin`/`finish` 开收自己的会话（`--session-id sfa-<run> --owner sentence-first-agent`），预算 96 GiB（24 + 9×8），`begin` 默认要 110 GiB 可用，腾不出就加 `--minimum-available-gib 96`。`begin` 会停 llama-server 等服务，判断预算要在 `begin` 之后做。停 `spark-api`/`llama-server` 后单元可能 `failed`，按 §0.5 第 8 条 reset-failed → reconcile → resume-begin，不要新开 session。所有容器经 `spark_queue.py`／`spark_session_job.py` 登记，收尾 `finish` 并按会话标签删掉停止的容器。
 
 ### 2 裁音频、拆句（本机）
 
@@ -275,8 +270,10 @@ python3 $EXP/sfa.py start --run <zh-run> --locale zh-Hans \
   [--check-git] [--check-package] [--plan] [--pretty] [--out <json>]
 ```
 
+`--spark-session` 只有 Spark 回退时才传；本机配音路径不需要它。
+
 片段、不同步、只出审核包时把两个决策换成 `--no-sync --no-publish --form clip`。
-可选参数：`--segments/--speaker-map/--use-text`（双讲员提前定讲员）、`--english-package`、`--spark-session`、
+可选参数：`--segments/--speaker-map/--use-text`（双讲员提前定讲员）、`--english-package`、`--spark-session`（仅 Spark 回退）、
 `--check-git`、`--check-package`、`--plan`、`--pretty`、`--out`。
 
 - `--plan` 先看步骤再跑；`--pretty` 缩进输出；`--out` 另存 JSON。
@@ -355,7 +352,7 @@ python3 $EXP/translate_parts.py merge --run $RUN --locale <locale>
 
 **看 DeepSeek 跑到哪了**：每次调用在 `state_dir`（翻译是 `coherence-<tag>/`，审计是 `--out`，回环是 run 根）写一行 `events.jsonl`，并原子更新 `state.json`（label、done/total、calls/hits/failed、costUsd、avgSeconds、lastError）。`python3 $EXP/deepseek_status.py --run <dir>` 直接读，`--watch 2` 刷屏看；`--tail 8` 显示最近调用的 context（`chain-02:window-0012`）、延迟与 token。缓存命中记 `hit`，失败记 `error` 并留最后 300 字符。每个阶段一个状态文件（`state-translate.json`、`state-audit.json`、`state-trim.json`），同一 run 目录里互不覆盖。`state_check.py --run <dir> --label <stage>` 用事件流重算状态并比对，计数对不上就以退出码 1 拦下（`--write` 可按事件流修复），这是防止「续跑重复计数」这类错误的守卫。这些文件在 `artifacts/` 时被忽略，不进 Git。
 
-**看整条 run 跑到哪了（P0，2026-11-01 起）**：`sfa.py start` 把每种语言登记到 `artifacts/sentence-first-agent/.status-index.json`；`spark_queue.py` 在 TTS 期间按 locale/讲员写 `l3.tts.<speaker>.<locale>` 的 started、心跳、progress、finished（`--no-status` 关闭，`--status-run LOCALE=RUN` 覆盖索引）。代理在长命令和人工交接处用：
+**看整条 run 跑到哪了（P0，2026-11-01 起）**：`sfa.py start` 把每种语言登记到 `artifacts/sentence-first-agent/.status-index.json`；TTS 阶段的状态按 locale/讲员写 `l3.tts.<speaker>.<locale>`（Spark 回退时由 `spark_queue.py` 自动写；本机路径用 `run_status.py mark --stage l3.tts.<speaker>.<locale> --event started|finished` 手工打点）。代理在长命令和人工交接处用：
 
 ```bash
 python3 $EXP/run_status.py status --run $RUN --watch 2
@@ -411,65 +408,83 @@ python3 $EXP/build_speech.py --run $RUN --review $RUN/review.json [--share-from 
 
 ```bash
 python3 $EXP/preflight.py --stage full --run $RUN --locale <locale> --english-package <layer1-srt/english-source.json> \
-  [--spark-session <session>] [--firebase]
+  [--spark-session <session>] [--firebase]   # --spark-session 只在 Spark 回退时需要
 ```
 
 每种语言都要通过（三语各跑一次，或用主 run 一次 + 每语 `--run`）。失败先修，不要进 §6。
 
-### 6 Spark 配音：一条队列
+### 6 本机配音：单路 batch 8（mbp14）
 
-TTS 栈固定为 Qwen3-TTS 12Hz 1.7B Base（Registry `fd4b254…`）、镜像 `nvcr.io/nvidia/pytorch:26.06-py3`、batch 8、seed 7、`--steps tts`（ASR 已退役）；讲员 checkpoint 按下方路径逐个核对哈希。完整栈见[模型栈](../../docs/sentence-first-model-stack.zh.md)。
+TTS 栈固定为 Qwen3-TTS 12Hz 1.7B Base（Registry `fd4b254…`）、MPS/float32、batch 8、seed 7；渲染器是本目录的 `tts_sentences.py`，本机直接跑，不上传、不进容器。完整栈见[模型栈](../../docs/sentence-first-model-stack.zh.md)。
 
-讲员 checkpoint 路径从 Registry（`config/speaker-voice-registry.json`）的 checkpointRef/hash 与 Spark 上的实际目录核对；Spark 上没有 `speaker-checkpoints.dgx.json`（2026-10-23 核实）。当前两位讲员：Steve `~/dgx-spark-benchmark/results/sermon-speaker-bank-20260905/steve_bang_lee/checkpoints/checkpoint-epoch-0`（sha256 `b480bc6a…`）；John `~/dgx-spark-benchmark/results/john-thomas-voice-20261021/checkpoints/checkpoint-epoch-0`（root 所有，本机不能重算 hash；Registry 记 `3f722b17…`）；Eric `~/dgx-spark-benchmark/results/sermon-voice-poc-20260905/checkpoints/checkpoint-epoch-0`（Registry key `eric_pilot`，2026-10-30 核对）。路径或 hash 对不上就停。上传脚本和每种语言的口播规格：
+**2026-11-21 起本线配音从 Spark 8×8 改为 14 英寸 M5 Max 本机单路。** 代价（2026-11-09 组件实测）：同一 checkpoint 与输入下本机单路 RTF 0.368（约 2.7× 实时），Spark 8×8 是 4.3–5.9× 实时；31 分钟证道每语约 12–13 分钟、三语串行约 36–39 分钟，Spark 是 6–8 分钟/语、18–24 分钟三语。换来的是不开 Spark 会话、不上传、不排队。
 
-```bash
-ssh SPARK 'mkdir -p ~/sentence-first-agent/tools ~/sentence-first-agent/<run>'
-scp $EXP/spark_run.sh $EXP/tts_sentences.py $EXP/tts_pool.py $EXP/asr_check.py SPARK:sentence-first-agent/tools/
-# spark_run.sh 的开工检查要求 tts_sentences.py/tts_pool.py/asr_check.py 三个都在，即使 --steps tts 也一样。
-scp $RUN/speech.jsonl SPARK:sentence-first-agent/<run>/
-```
-
-`spark_session_job.py` 只认带本任务 `job=<id>` 的退出行；内存准入拒绝（`refused`）立即结束任务；连续 `--max-poll-failures`（默认 20 次，约 10 分钟）ssh 轮询失败就报错退出，队列随之标记失败，Spark 恢复后用 `--resume-job <id>` 接着等。
-
-会话一次只接纳一个运行中的任务，所以所有语言、所有讲员排成一条队列，作为本机后台任务运行（不要在远端用 `nohup … &`）：
+**先 dry run，再正式跑**：dry run 只读 speech、打印窗口/seed 与内存准入，不加载模型。
 
 ```bash
-python3 $EXP/spark_queue.py --session <session> --owner sentence-first-agent --remote-tools /home/achillesjing/sentence-first-agent/tools --locale zh-Hans=<Spark 上的 zh run> --locale ko=<Spark 上的 ko run> --voice <speaker key>=<checkpoint> [--voice <第二位讲员>=<checkpoint>] --batch-size 8
+RT=artifacts/local-tts-ab-20261109/venv/bin/python    # torch 2.14.0 + qwen-tts 0.1.1（2026-11-09 建）
+CKPT=artifacts/local-tts-ab-20261109/inputs/checkpoint-eric
+SHA=75d28ce6022b3df3a72df3dd6dbc01e53f584d685770d60ea04b341920968c9a
+
+$RT $EXP/tts_sentences.py --speech $RUN/speech.jsonl --checkpoint $CKPT --out $RUN/tts \
+  --device mps --dtype float32 --seed 7 --batch-size 8 \
+  --expect-checkpoint-sha256 $SHA --min-available-gib 20 --dry-run
 ```
 
-首语口播稿就绪就可以只登记这一语，其余语言翻完再补登记，不必等三语齐（命令与检查见 0.2 的「增量喂队列」；下面示例是一次登记三语）。每种语言每位讲员一个 TTS 任务（2026-10-28 起不再追加回转写任务）。整期合成用 batch 8（2026-10-23 实测 es 整体 2.68×、batch 段 3.87×），不拉伸、不变速；batch>1 的批次成员共享声音身份，改一句按第 9 步重配它的窗口。改批量要先问用户。双讲员要共用 8 副本时，队列加 `--pool-replicas 8`（`tts_pool.py`，4+4，每副本 batch 8）；正式 8×8 仍只支持单讲员，逐句线用这个池。中途失败时队列停下并打印怎么续跑；已完成的句子会跳过，重跑队列只补缺的。登记的容器不带 `--rm`，会话结束后再删。
+正式渲染（stdout 留日志）：
 
-**GPU 与内存怎么用（2026-10-23 实测，详见 `data/benchmarks/spark-tts-memory-ab/2026-10-23` 与 `data/benchmarks/l3-lanes/2026-10-23`）**
+```bash
+$RT $EXP/tts_sentences.py --speech $RUN/speech.jsonl --checkpoint $CKPT --out $RUN/tts \
+  --device mps --dtype float32 --seed 7 --batch-size 8 \
+  --expect-checkpoint-sha256 $SHA --min-available-gib 20 | tee -a $RUN/tts-run.log
+```
 
-- 8 个副本已把 GPU 用满（利用率 96%）。再加副本、或两种语言同时配音，总时长不会缩短，只会互相拖慢；所以队列保持一次一个 GPU 任务，不要为了“并行”开第二个会话或第二条队列。
-- 内存不是瓶颈，前提是每批后释放 CUDA 缓存（`tts_sentences.py` 已内置，`spark_run.sh` 同时设 `expandable_segments`）。不释放时每个副本每批多保留约 1 GiB 不回收，整期必然把宿主内存耗尽；释放后每副本稳定约 4 GiB 显存加约 2.3 GiB 宿主 RSS，峰值约 8 GiB，输出字节不变，耗时差异在 1% 内。8 副本整期约占 65 GiB，剩下的内存放得下回转写模型（Qwen3-ASR-0.6B 实测宿主占用 3.9 GiB、CUDA 峰值 1.8 GiB）；回转写当时每语约 2 分钟、排在 TTS 之后，2026-10-28 起队列不再排它，这句只作历史容量记录。
-- 真正能重叠的是 CPU 工作：一种语言配音时，上一种语言的 `finish_run.py`（拉回、合并、MP3、播放器；有历史 `asr.jsonl` 时可打分）和用户的听审在本机进行，这已经是第 7 步的做法，不要等队列全部结束再收尾。
-- 每条语言配完，在 `run.md` 记 `tts-log.jsonl` 里 `memAvailableBytes` 的首尾值和 `cudaReservedBytes` 的最大值；首尾相差超过几 GiB 就是异常，先停下查，不要改副本数绕过。
+- `--out` 必须是 `$RUN/tts`：`finish_run.py`、`merge_track.py`、`repair_sentence.py` 都按 `<run>/tts/<id>.wav` 与 `tts-batches.jsonl` 读。
+- dry run 会打印 `memoryAdmission` 和 `plan`；内存不够时退出码 1 并给出可用/所需两个数字，不要继续。
+- `tts-log.jsonl` 每句一行（含 `memAvailableBytes`、`mpsAllocatedBytes`、`mpsDriverAllocatedBytes`），`tts-batches.jsonl` 每个窗口一行（`ids`、`seed`、`batchSize`）。
+
+**内存（36 GiB 机身，硬约束）**
+
+- **只开一路**：单副本 batch 8 的 MPS 驱动分配约 11.45 GiB、进程 RSS 约 5.7 GiB（2026-10-28／11-09 实测）；两路要 ~23 GiB 驱动加系统，36 GiB 放不下。两路 1×8 只适用于 64 GiB 机器（[两路 1×8](../../docs/mac-tts-two-way.zh.md)）。
+- **起跑门**：free+inactive+speculative ≥ 20 GiB 才加载模型；脚本按设备默认 20 GiB，低于就拒绝。不要用 `--min-available-gib` 绕过——先退出 Chrome、Codex／Claude CLI 等重活。
+- **运行中**：每批写 `memAvailableBytes`；低于 6 GiB 会在下一批之前停（`--abort-below-gib` 默认 6）。已完成的 WAV 保留，重跑同一条命令续跑。
+- **不要在渲染期间跑** `firebase deploy` 或第二个大 Node 进程：2026-11-15 这台机器就是被部署进程推到 jetsam 的（[复盘](../../docs/reports/runs/20261115-jesus-is-better-podcast/RETROSPECTIVE.md)）。
+- 每条配完在 `run.md` 记 `tts-log.jsonl` 的 `memAvailableBytes` 首尾值和 `mpsDriverAllocatedBytes` 最大值；首尾差超过几 GiB 是异常，先查再续跑。
+
+**续跑、身份与双讲员**
+
+- 已有 `<out>/<id>.wav` 会跳过；断了直接重跑同一条命令，不要换 `--out`，也不要手工拼接。
+- batch 固定 8、seed 固定 7；batch>1 的批成员共享声音身份，改一句按第 9 步重配它的窗口。改批量要先问用户。
+- 双讲员：每个 speaker 各跑一次，加 `--only-speaker <key>` 和该讲员自己的 `--checkpoint`／`--expect-checkpoint-sha256`；不要用一份 checkpoint 配两位讲员。
+- checkpoint 只从 Registry 取哈希核对，路径或哈希不符就停。本机当前只备了 Eric 的权重；Steve（`b480bc6a…`）与 John（`3f722b17…`）要先取到本机并核对，缺就问用户，不自行下载。
+- 续跑前先 `pgrep -f tts_sentences.py` 为空；两路并发不是“更快”，只会争内存。
+
+**Spark 回退（可选，默认不用）**：需要显式改回 Spark 时，上传 `spark_run.sh`／`tts_sentences.py`／`tts_pool.py`／`asr_check.py` 到 `SPARK:sentence-first-agent/tools/`，用 `spark_queue.py --batch-size 8` 排队，产物与 `finish_run.py --remote` 仍兼容；那是 CUDA/BF16 的另一条执行身份，同一个 run 不要混着配。队列侧（上游 2026-11-21 前已定）：`spark_session_job.py` 只认带本任务 `job=<id>` 的退出行；内存准入拒绝（`refused`）立即结束任务；连续 `--max-poll-failures`（默认 20 次，约 10 分钟）ssh 轮询失败就报错退出，队列随之标记失败，Spark 恢复后用 `--resume-job <id>` 接着等；会话一次只接一个任务，所以语言与讲员排成一条队列。
 
 ### 7 每种语言完成就收尾（本机）
 
-队列打印 `locale done <locale>` 后立刻跑这种语言，不必等全部结束：
+本机渲染进程退出码 0 后立刻收尾这种语言，不必等其余语言：
 
 ```bash
-python3 $EXP/finish_run.py --run $RUN --remote SPARK:sentence-first-agent/<run> [--clip-from <第一种语言的 run>] [--gap 0.05]  # 同步 run 必带 --gap 0.05
+python3 $EXP/finish_run.py --run $RUN [--clip-from <第一种语言的 run>] [--gap 0.05]  # 同步 run 必带 --gap 0.05；Spark 回退时再加 --remote SPARK:<run>
 ```
 
-它拉回 `tts/`（有历史 `asr.jsonl` 时一并拉回，可选），合并音轨（每句放在英文起点，放不下就接在上一句后 0.25 秒），生成 `review.mp3`（96 kbps）、`review-player.html`（逐句播放器）和手机预览 `dub-preview-640.mp4`（`--preview-encoder auto|quality|fast|hardware`；auto 在 macOS 用硬件编码、无视频流自动回退，约为 quality 耗时的 60–70%，文件约 2 倍），打印落后最多的句、配音与原声时长比和 TTS 速度；有历史 `asr.jsonl` 时另打分并打印相似度低的句。**音频对齐（`schedule.json`）、review MP3 和播放器在这一步一并生成，不等发布。**
+它读本机 `tts/`（Spark 回退才用 `--remote` 拉回；有历史 `asr.jsonl` 时一并拉回，可选），合并音轨（每句放在英文起点，放不下就接在上一句后 0.25 秒），生成 `review.mp3`（96 kbps）、`review-player.html`（逐句播放器）和手机预览 `dub-preview-640.mp4`（`--preview-encoder auto|quality|fast|hardware`；auto 在 macOS 用硬件编码、无视频流自动回退，约为 quality 耗时的 60–70%，文件约 2 倍），打印落后最多的句、配音与原声时长比和 TTS 速度；有历史 `asr.jsonl` 时另打分并打印相似度低的句。**音频对齐（`schedule.json`）、review MP3 和播放器在这一步一并生成，不等发布。**
 
 跟视频同步的 run 显式传 `--gap 0.05`：默认 0.25 秒会把连续句逐句推后（2026-10-24 三语分别有 60、78、144 句落后超过 1 秒，三语各重出一次）。一种语言「可审」的最低条件是 journal 里 `l1.preflight`、`l2.consistency` 两条都 `finished`，同步 run 再加 `lag-loop-report.json` 的 `gate.clean=true`；缺一条先补再发链接。回转写不再是可审前提。
 
 **落后的闸门（同步 run 的固定步骤）**：`finish_run.py` 之后、发「可审」之前，必须跑一次落后回环；它按「dubSeconds − sourceSeconds」挑出推后句，交 DeepSeek 精简、重建 speech、清 `tts/` 重配，再跑 `finish_run.py`，最多 `--iterations` 轮：
 
 ```bash
-python3 $EXP/lag_loop.py --run $RUN --locale <locale> --remote SPARK:sentence-first-agent/<run> \
-  --session <session> --voice <speaker key>=<checkpoint> [--voice <第二位讲员>=<checkpoint>] \
+python3 $EXP/lag_loop.py --run $RUN --locale <locale> --local \
+  --voice <speaker key>=<checkpoint> [--voice <第二位讲员>=<checkpoint>] \
   --threshold 8 --iterations 2 --require-clean --execute
 ```
 
-`--voice` 每个 `speech.jsonl` 里的讲员一条；旧参数 `--checkpoint` 只够单讲员（用它时从 speech 的 speaker 推出 key）。回环会重配该语全部句子（删 `tts/`），双讲员两条 voice 都要给，不能只给一位。
+`--voice` 每个 `speech.jsonl` 里的讲员一条；旧参数 `--checkpoint` 只够单讲员（用它时从 speech 的 speaker 推出 key）。回环会重配该语全部句子（删 `tts/` 后在本机重跑，`--min-available-gib` 默认 20），双讲员两条 voice 都要给，不能只给一位。
 
 - 退出码 0 才表示 `sentencesOverLag8s == 0` 且 `maxLagSeconds ≤ 8`；非 0 就是没过闸门，不能发「可审」。
-- 只看当前音轨、不重配：`lag_loop.py ... --check-only --require-clean`（不调用 DeepSeek、不用 Spark）。
+- 只看当前音轨、不重配：`lag_loop.py ... --check-only --require-clean`（不调用 DeepSeek、不重配）。
   **先跑一次 `--check-only` 再决定精简范围**：2026-11-07 三语各做了一轮全量重渲（22 分钟），
   如果先看到 maxLag 只有几秒、超阈值的句子集中在少数窗口，就只重配那些句子，不做全量。
 - 闸门已干净、或一轮里没有被采纳的精简时就停，不再多跑一轮全量重配。重建 speech 后、新音轨合并前中断时，run 里留着 `lag-loop-pending-render.json`；重跑先把这次未完成的重配跑完（已配好的句子跳过），不会用旧的 `schedule.json` 再精简一次。
@@ -523,11 +538,11 @@ python3 -m http.server -d $RUN 8765
 改 `translations.jsonl` 或 `review.json` 里那一行，重跑第 5 步，再按批窗口重配：
 
 ```bash
-python3 $EXP/repair_sentence.py --run $RUN --id s0123 --remote SPARK:<run> --session <session> --locale <locale> \
+python3 $EXP/repair_sentence.py --run $RUN --id s0123 --local --locale <locale> \
   --voice <speaker key>=<checkpoint> [--voice <第二位讲员>=<checkpoint>] [--single] --apply
 ```
 
-它从 `tts/tts-batches.jsonl` 找到该句所在的窗口（默认 8 句），删掉窗口的 wav、上传当前 speech 与 ids，用 `spark_session_job.py` 重配整个窗口；`--single` 只重配这一句（batch 1，接受声音身份例外）。之后跑第 7、8 步（`finish_run.py` 与 `review_player.py`），把窗口/这一句请用户再听。没有 `tts-batches.jsonl` 时先 `finish_run.py` 拉回 tts 目录。
+它从 `tts/tts-batches.jsonl` 找到该句所在的窗口（默认 8 句），删掉窗口的 wav，在本机用 `tts_sentences.py --only-ids-file` 重配整个窗口（`--remote`+`--session` 才是 Spark 回退）；`--single` 只重配这一句（batch 1，接受声音身份例外）。之后跑第 7、8 步（`finish_run.py` 与 `review_player.py`），把窗口/这一句请用户再听。没有 `tts-batches.jsonl` 时先按 §6 跑一次（本机会写它），或用 `--single`。
 
 ### 10 发布到正式页面
 
@@ -723,10 +738,10 @@ gcloud functions deploy sermon-feedback-api --project=ai-for-god-caption-dev --g
 
 ### 11 结束
 
-`finish` 关闭会话，再按会话标签删掉停止的容器（`docker rm $(docker ps -aq --filter label=tongxing.spark.session=<session>)`）。按[运行报告](../../docs/test-run-retrospective.zh.md)导出本次报告：`sfa_publish.py readback` 通过时会自动运行 `tools/development/export_production_report.py`，把各语言、`-source`、`-review`、`-publish` 等同词干目录导成一份报告（超过 2 MB 时自动拆出 `-publish`），并把这些目录的文本证据传到私有证据库；`readback` 没通过、生产中止，或之后又做了替换、对齐、手册、海报时，手动运行 `.venv/bin/python tools/development/export_production_report.py <任一运行目录> [--also <共享目录>]`。它只写被忽略的 `artifacts/run-reports/`，公开仍是单独一步 `publish_run_report.sh`（[每周迭代链路](../../docs/design/weekly-iteration-loop.zh.md)）。各脚本经 `runlog.py` 写 `journal.ndjson`、`outcome.json`、`timings.tsv`；导出器自动出墙钟/计算/等待/返工。人工听审由代理在发出和收到结论时补 `waiting`/`resumed`。发布型子命令（assets、stage、publish）也经 `runlog.py` 写 outcome 与 timings，否则报告里发布阶段没有时间（`DEV-SF-007`）。导出前跑一次 `state_check.py --run $RUN --all --source-run $RUN --units --record`：每个 DeepSeek 阶段的实时状态与事件流重算结果必须一致、且没有未覆盖的句子，否则先修再导出；`state-check.json` 就是这条证据，导出器会把它写进报告的「DeepSeek 状态」一节（一致/不一致、各阶段窗口与句数、未覆盖句数）。CI 恢复后同名的 `tests/test_sentence_first_state.py` 与 `tests/test_state_check_cli.py` 会随 `run_unittest_ci.py` 的发现一起跑。重建、热修、海报、统计目录同步各自导出报告，不并入主报告。本轮新写或改过的驱动随报告 PR 一起提交，开自己的分支，不推到已合并的分支上。
+（仅 Spark 回退时）`finish` 关闭会话，再按会话标签删掉停止的容器（`docker rm $(docker ps -aq --filter label=tongxing.spark.session=<session>)`）。按[运行报告](../../docs/test-run-retrospective.zh.md)导出本次报告：`sfa_publish.py readback` 通过时会自动运行 `tools/development/export_production_report.py`，把各语言、`-source`、`-review`、`-publish` 等同词干目录导成一份报告（超过 2 MB 时自动拆出 `-publish`），并把这些目录的文本证据传到私有证据库；`readback` 没通过、生产中止，或之后又做了替换、对齐、手册、海报时，手动运行 `.venv/bin/python tools/development/export_production_report.py <任一运行目录> [--also <共享目录>]`。它只写被忽略的 `artifacts/run-reports/`，公开仍是单独一步 `publish_run_report.sh`（[每周迭代链路](../../docs/design/weekly-iteration-loop.zh.md)）。各脚本经 `runlog.py` 写 `journal.ndjson`、`outcome.json`、`timings.tsv`；导出器自动出墙钟/计算/等待/返工。人工听审由代理在发出和收到结论时补 `waiting`/`resumed`。发布型子命令（assets、stage、publish）也经 `runlog.py` 写 outcome 与 timings，否则报告里发布阶段没有时间（`DEV-SF-007`）。导出前跑一次 `state_check.py --run $RUN --all --source-run $RUN --units --record`：每个 DeepSeek 阶段的实时状态与事件流重算结果必须一致、且没有未覆盖的句子，否则先修再导出；`state-check.json` 就是这条证据，导出器会把它写进报告的「DeepSeek 状态」一节（一致/不一致、各阶段窗口与句数、未覆盖句数）。CI 恢复后同名的 `tests/test_sentence_first_state.py` 与 `tests/test_state_check_cli.py` 会随 `run_unittest_ci.py` 的发现一起跑。重建、热修、海报、统计目录同步各自导出报告，不并入主报告。本轮新写或改过的驱动随报告 PR 一起提交，开自己的分支，不推到已合并的分支上。
 
 发布后保留小文本表（`sentences.jsonl`、`translations.jsonl`、`speech.jsonl`、`speakers.json`、`review.json`、`schedule.json`、`run.md`、审核表），只删 `tts/`、`slices/`、`clip.wav`、`track.wav`、`dub*.mp4`；否则下一轮无法 resume 或复用讲员分配/已批准译文（2026-10-23 实测：上一期 run 目录被清理，只能从 Spark 拉回 `speech.jsonl`）。清理前把保留清单写进 `run.md`，删完 `test -f` 逐个核对，确认该有的小表都在（单讲员没有 `speakers.json`）。
 
 ## 完成的样子
 
-每种语言的 `run.md` 能让另一个人复现：来源、窗口、模型与 checkpoint、每步的决定、改过哪些句、用户结论、每步用时。审核收据在审核目录；音频留在本机；发布了的话，报告里写明线上版本号和哪些检查没做。发布的页面要同时满足：每种语言在正式版 App 的解码规则下都能显示（固定路径、文稿时间），英文对照已上线且每一句都有英文。缺英文对照不算发布完成。整期用 batch 8；同步 run 的 `lag-loop-report.json` 必须 `gate.clean=true`；每条可审前 `finish_run.py` 一并生成 `review.mp3`/`review-player.html`；改句按窗口重配；开工用 `sfa.py start`（含 `preflight --stage setup`），发布前 `preflight.py` 通过；审核用 `review_player.py`；合并后跑 `consistency_check.py`；ASR 分诊（`asr_triage.py`）仅历史可选，不是可审或发布条件；`--pool-replicas 8` 的链路目前未打通（`spark_session_job.py` 不接受 `tts-pool`、日志名与 `finish_run` 拉取不一致），**修好前不要用**；双讲员先按每讲员一条 `--voice` 排队。
+每种语言的 `run.md` 能让另一个人复现：来源、窗口、模型与 checkpoint、每步的决定、改过哪些句、用户结论、每步用时。审核收据在审核目录；音频留在本机；发布了的话，报告里写明线上版本号和哪些检查没做。发布的页面要同时满足：每种语言在正式版 App 的解码规则下都能显示（固定路径、文稿时间），英文对照已上线且每一句都有英文。缺英文对照不算发布完成。整期用 batch 8；配音在本机单路（§6 的 dry run 内存准入通过、`tts-log.jsonl` 无内存下滑）；同步 run 的 `lag-loop-report.json` 必须 `gate.clean=true`；每条可审前 `finish_run.py` 一并生成 `review.mp3`/`review-player.html`；改句按窗口重配；开工用 `sfa.py start`（含 `preflight --stage setup`），发布前 `preflight.py` 通过；审核用 `review_player.py`；合并后跑 `consistency_check.py`；ASR 分诊（`asr_triage.py`）仅历史可选，不是可审或发布条件；`--pool-replicas 8` 的链路目前未打通（`spark_session_job.py` 不接受 `tts-pool`、日志名与 `finish_run` 拉取不一致），**修好前不要用**；双讲员先按每讲员一条 `--voice` 排队。

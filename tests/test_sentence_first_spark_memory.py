@@ -26,7 +26,7 @@ class TtsSentencesMemoryTests(unittest.TestCase):
         fields = tts.memory_fields(SimpleNamespace(bfloat16="x"))
         self.assertEqual(set(fields), {"memAvailableBytes", "cudaAllocatedBytes", "cudaReservedBytes", "cudaMaxReservedBytes"})
         self.assertIsNone(fields["cudaReservedBytes"])
-        self.assertIsNone(tts.release_cuda_cache(SimpleNamespace()))
+        self.assertIsNone(tts.release_device_cache(SimpleNamespace()))
 
     def test_memory_fields_and_release_use_the_cuda_allocator_counters(self):
         tts = load_tts_sentences()
@@ -36,7 +36,7 @@ class TtsSentencesMemoryTests(unittest.TestCase):
                                empty_cache=lambda: calls.append("empty"))
         fields = tts.memory_fields(SimpleNamespace(cuda=cuda))
         self.assertEqual((fields["cudaAllocatedBytes"], fields["cudaReservedBytes"], fields["cudaMaxReservedBytes"]), (3, 5, 9))
-        self.assertIsInstance(tts.release_cuda_cache(SimpleNamespace(cuda=cuda)), float)
+        self.assertIsInstance(tts.release_device_cache(SimpleNamespace(cuda=cuda)), float)
         self.assertEqual(calls, ["sync", "empty"])
 
 
