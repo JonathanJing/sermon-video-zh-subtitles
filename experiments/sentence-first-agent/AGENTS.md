@@ -248,7 +248,7 @@ python3 $EXP/tts_sentences.py --speech $RUN/speech.jsonl --checkpoint <checkpoin
 
 2026-11-21 起本线配音在本机跑：第 6 步直接调用 `tts_sentences.py`，不需要 Spark 独占会话、上传或容器。
 
-1. 确认运行时：本机 `artifacts/local-tts-ab-20261109/venv/bin/python`（torch 2.14.0 + qwen-tts 0.1.1，2026-11-09 建，`torch.backends.mps.is_available()` 为 True）。运行时和 checkpoint 都在忽略的 `artifacts/` 里，清 `artifacts/` 前先另存到 `artifacts/model-routing/macbook-tts/`。
+1. 确认运行时：本机 `artifacts/model-routing/macbook-tts/runtime/bin/python`（符号链接到 `~/tts-runtime/venv`：CPython 3.12.16、torch 2.14.0、qwen-tts 0.1.1，2026-11-21 建，`torch.backends.mps.is_available()` 为 True），checkpoint 在 `artifacts/model-routing/macbook-tts/checkpoint-75d28`（→ `~/tts-runtime/checkpoint-75d28`）。这两个链接指向仓库外的 `~/tts-runtime`，清 `artifacts/` 不影响它们；2026-11-09 的 A/B 副本 `artifacts/local-tts-ab-20261109/{venv,inputs/checkpoint-eric}` 版本相同，只作备份，不再作为默认路径。
 2. 核对 checkpoint：按 Registry（`config/speaker-voice-registry.json`）的 `checkpointRef` 哈希逐个核对——Eric `75d28ce6…`、Steve `b480bc6a…`、John `3f722b17…`；第 6 步的 `--expect-checkpoint-sha256` 会在加载前直接拒绝不符的权重。本机当前只备了 Eric 的副本。
 3. 确认内存：`vm_stat` 的 free+inactive+speculative ≥ 15 GiB；不够就退出 Chrome 等重活，不要改门槛。36 GiB 机身只允许一路。
 4. 把渲染身份写进每个 run 的 `run.md`：模型 Registry `fd4b254…`、speaker checkpoint 哈希、`device=mps dtype=float32 seed=7 batch=8`、开始/结束时间、`tts-log.jsonl` 的内存首尾值。
@@ -422,8 +422,8 @@ TTS 栈固定为 Qwen3-TTS 12Hz 1.7B Base（Registry `fd4b254…`）、MPS/float
 **先 dry run，再正式跑**：dry run 只读 speech、打印窗口/seed 与内存准入，不加载模型。
 
 ```bash
-RT=artifacts/local-tts-ab-20261109/venv/bin/python    # torch 2.14.0 + qwen-tts 0.1.1（2026-11-09 建）
-CKPT=artifacts/local-tts-ab-20261109/inputs/checkpoint-eric
+RT=artifacts/model-routing/macbook-tts/runtime/bin/python   # → ~/tts-runtime/venv（torch 2.14.0 + qwen-tts 0.1.1）
+CKPT=artifacts/model-routing/macbook-tts/checkpoint-75d28    # → ~/tts-runtime/checkpoint-75d28
 SHA=75d28ce6022b3df3a72df3dd6dbc01e53f584d685770d60ea04b341920968c9a
 
 $RT $EXP/tts_sentences.py --speech $RUN/speech.jsonl --checkpoint $CKPT --out $RUN/tts \
