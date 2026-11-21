@@ -75,7 +75,7 @@ class DarwinMemoryReadingTests(unittest.TestCase):
 class MemoryGateTests(unittest.TestCase):
     def test_mps_gates_by_default_and_cuda_does_not(self):
         tts = load_tts_sentences()
-        self.assertEqual(tts.device_gate_gib("mps", None, tts.DEFAULT_MPS_MIN_AVAILABLE_GIB), 20.0)
+        self.assertEqual(tts.device_gate_gib("mps", None, tts.DEFAULT_MPS_MIN_AVAILABLE_GIB), 15.0)
         self.assertEqual(tts.device_gate_gib("cuda:0", None, tts.DEFAULT_MPS_MIN_AVAILABLE_GIB), 0.0)
         self.assertEqual(tts.device_gate_gib("mps", 12.5, tts.DEFAULT_MPS_MIN_AVAILABLE_GIB), 12.5)
 
