@@ -65,7 +65,7 @@ def main(argv=None) -> int:
     p.add_argument("--device", default="mps", help="with --local: torch device (default mps)")
     p.add_argument("--dtype", choices=("float32", "bfloat16"), default="float32", help="with --local")
     p.add_argument("--seed", type=int, default=7, help="with --local: base seed (same default as the queue)")
-    p.add_argument("--min-available-gib", type=float, default=20.0,
+    p.add_argument("--min-available-gib", type=float, default=15.0,
                    help="with --local: refuse to start below this much host memory")
     p.add_argument("--owner", default="sentence-first-agent")
     p.add_argument("--remote-tools", default="/home/achillesjing/sentence-first-agent/tools")

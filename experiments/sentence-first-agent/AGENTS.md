@@ -36,7 +36,7 @@
 | `spark_queue.py` | 本机（Spark 回退） | 把所有语言、所有讲员的配音排成一条 Spark 任务队列（2026-10-28 起不再排回转写）；本机路径不需要它 |
 | `spark_session_job.py` | 本机（Spark 回退） | 在 Spark 独占会话里把一步登记成任务并等它结束（spark_queue 调用它） |
 | `spark_run.sh` | Spark（可选回退） | 一个语言、一位讲员的逐句 TTS（batch 1；`--steps asr` 仅保留为历史诊断），可续跑；每步开工前按宿主 `MemAvailable` 做预算准入，容器带 `PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True` |
-| `tts_sentences.py`、`asr_check.py transcribe` | 本机（mbp14）或 Spark 容器内 | 本线正式配音渲染器：本机由 §6 直接调用（`--device mps --dtype float32 --batch-size 8`），Spark 由 `spark_run.sh` 调用；每批后释放设备缓存，起跑前做宿主内存准入（MPS 默认 20 GiB 才加载模型）；`tts-log.jsonl` 每行记 `memAvailableBytes` 与 `mpsAllocatedBytes`／`cudaReservedBytes` |
+| `tts_sentences.py`、`asr_check.py transcribe` | 本机（mbp14）或 Spark 容器内 | 本线正式配音渲染器：本机由 §6 直接调用（`--device mps --dtype float32 --batch-size 8`），Spark 由 `spark_run.sh` 调用；每批后释放设备缓存，起跑前做宿主内存准入（MPS 默认 15 GiB 才加载模型）；`tts-log.jsonl` 每行记 `memAvailableBytes` 与 `mpsAllocatedBytes`／`cudaReservedBytes` |
 | `finish_run.py` | 本机 | 合并、混回视频、出手机预览，打印落后摘要；`--remote` 只在 Spark 回退时拉回 `tts/`；有历史 `asr.jsonl` 时附带回转写打分与摘要（可选） |
 | `merge_track.py`、`asr_check.py score` | 本机 | 有历史 `asr.jsonl` 时由 finish_run.py 调用；默认不生成 |
 | `review_sheets.py` | 本机 | 每种语言一张人工审核表（CSV），标出要重点听的句子 |
@@ -92,7 +92,7 @@ artifacts/sentence-first-agent/<run>/
 2. 确认环境与导入：推荐 `tools/ops/bootstrap_sentence_first_env.sh` 建 `.venv-sfa`（uv + 锁定 `requirements-sfa.lock`，不做 editable 安装），本机脚本用 `PYTHONPATH="packages/production/src:." .venv-sfa/bin/python ...`；`--check` 会打印并校验 `tongxing_production` 的路径在 checkout 内。主 checkout 的 `.venv` 是 editable 安装（指向旧包），只作兜底；用 worktree 时务必用 `PYTHONPATH` 把当前 checkout 放最前。
 3. 确认 run 目录位置：`slices/slices.json` 存仓库相对路径（`artifacts/sentence-first-agent/<run>/slices/...`），所以 run 放在主 checkout 的 `artifacts/sentence-first-agent/`，所有本机步骤从仓库根运行；不要放 worktree。
 4. 要发布时确认 Firebase 与 ADC：`XDG_CONFIG_HOME=<可写 configstore 副本> firebase login:list` 和 ADC token 各一次；沙箱下 `~/.config/configstore` 不可写会让 firebase 报 “credentials no longer valid”。
-5. 确认配音机（mbp14）运行时与 checkpoint 存在（§1）。**本机内存是硬约束**：单副本 batch 8 要 free+inactive+speculative ≥ 20 GiB 才加载模型，`tts_sentences.py` 默认按设备取 20 GiB，不够就带着数字退出；开工前退出 Chrome 等重活，36 GiB 机身只允许一路。Spark 回退时另按会话预算（24 GiB 保留 + 每副本 9 GiB，8 副本 96 GiB），判断预算要在 `begin` 之后做（2026-10-30 实测带 llama-server 时 `inspect` 只看到 76 GiB 可用）。
+5. 确认配音机（mbp14）运行时与 checkpoint 存在（§1）。**本机内存是硬约束**：单副本 batch 8 要 free+inactive+speculative ≥ 15 GiB 才加载模型（2026-11-21 实测冷首窗峰值 15.6 GiB、13.7 GiB 起跑也能完成），`tts_sentences.py` 默认按设备取 15 GiB，不够就带着数字退出；开工前退出 Chrome 等重活，36 GiB 机身只允许一路。Spark 回退时另按会话预算（24 GiB 保留 + 每副本 9 GiB，8 副本 96 GiB），判断预算要在 `begin` 之后做（2026-10-30 实测带 llama-server 时 `inspect` 只看到 76 GiB 可用）。
 6. 确认发布与翻译的 CLI：`firebase --version`（发布用 `firebase deploy`；没有就 `npm i -g firebase-tools@15.29.0`）并 `firebase login:list`；`claude --version` 与 `claude auth status`（翻译用 Claude Code CLI；没有就 `npm i -g @anthropic-ai/claude-code@2.1.325`，再 `claude auth login`）。OpenAI 转录用 `--environment prod` 的启动器；`--check` 只验本地配置，模型可见性另用 models 列表确认 `whisper-1`/`gpt-4o-transcribe`。
 7. 确认 Synology 镜像没有漏点目录：`firebase/dev/public/.well-known/apple-app-site-association` 与 `firebase/production-overlay/public/.well-known/apple-app-site-association` 必须在；缺了就从锁定 checkout 复制（Synology 不落点目录），否则 baseline 的规范 AASA 覆盖会静默缺失。
 8. **仅 Spark 回退时**：Spark 上未登记的容器或服务会挡住独占会话：`h3image` 容器与 `h3-image-studio.service` 要在 `begin` 前停；`begin`/`resume-begin` 停 `spark-api`/`llama-server` 后单元可能是 `failed`（OOM-kill），用 `systemctl --user reset-failed <unit>` → `reconcile` → `resume-begin` 继续，不要新开 session。
@@ -148,7 +148,7 @@ TTS 墙钟 = audio / 速度 + 约 20 秒模型加载（本机 MPS 单路）
 速度：mbp14 单路 batch 8 取 2.4×（2026-11-09 组件实测 RTF 0.368；按整篇落盘开销折算 0.40–0.42）
       Spark 回退 8×8 仍是 4.3–5.9×（2026-10-24 两轮生产实测）
 TTS 开始（首语）= max(讲员映射确认, 首语翻译 + 口播规格)；其余语言翻完依次渲染（见 0.2）
-内存：起跑要 free+inactive+speculative ≥ 20 GiB；中途低于 6 GiB 自动停，续跑跳过已完成的句子
+内存：起跑要 free+inactive+speculative ≥ 15 GiB；中途低于 6 GiB 自动停，续跑跳过已完成的句子
       （单路每批后释放 MPS 缓存；每条配完用 tts-log.jsonl 核对 memAvailableBytes 首尾）
 ```
 
@@ -219,7 +219,7 @@ TTS 开始（首语）= max(讲员映射确认, 首语翻译 + 口播规格)；�
 # 首语就绪就开；本机单路，一次只跑一种语言（命令见 §6）
 python3 $EXP/tts_sentences.py --speech $RUN/speech.jsonl --checkpoint <checkpoint> --out $RUN/tts \
   --device mps --dtype float32 --seed 7 --batch-size 8 \
-  --expect-checkpoint-sha256 <Registry hash> --min-available-gib 20
+  --expect-checkpoint-sha256 <Registry hash> --min-available-gib 15
 ```
 
 两次渲染**不能重叠**：起下一种语言前先 `pgrep -f tts_sentences.py` 为空（上一次进程已退出），否则两路会互相争内存。省下的是「首语不等其余语言」那段，等于其余语言翻译完成比首语晚的时间（2026-10-23 校准约 5–10 分钟）；实际值记进 `run.md`。Spark 回退时仍用 `spark_queue.py` 的两批登记，规则是同一会话内不能重叠、必须看到 `locale done <语言>`。
@@ -250,7 +250,7 @@ python3 $EXP/tts_sentences.py --speech $RUN/speech.jsonl --checkpoint <checkpoin
 
 1. 确认运行时：本机 `artifacts/local-tts-ab-20261109/venv/bin/python`（torch 2.14.0 + qwen-tts 0.1.1，2026-11-09 建，`torch.backends.mps.is_available()` 为 True）。运行时和 checkpoint 都在忽略的 `artifacts/` 里，清 `artifacts/` 前先另存到 `artifacts/model-routing/macbook-tts/`。
 2. 核对 checkpoint：按 Registry（`config/speaker-voice-registry.json`）的 `checkpointRef` 哈希逐个核对——Eric `75d28ce6…`、Steve `b480bc6a…`、John `3f722b17…`；第 6 步的 `--expect-checkpoint-sha256` 会在加载前直接拒绝不符的权重。本机当前只备了 Eric 的副本。
-3. 确认内存：`vm_stat` 的 free+inactive+speculative ≥ 20 GiB；不够就退出 Chrome 等重活，不要改门槛。36 GiB 机身只允许一路。
+3. 确认内存：`vm_stat` 的 free+inactive+speculative ≥ 15 GiB；不够就退出 Chrome 等重活，不要改门槛。36 GiB 机身只允许一路。
 4. 把渲染身份写进每个 run 的 `run.md`：模型 Registry `fd4b254…`、speaker checkpoint 哈希、`device=mps dtype=float32 seed=7 batch=8`、开始/结束时间、`tts-log.jsonl` 的内存首尾值。
 5. **Spark 回退**（只有用户明确要求，或本机内存长期不够时）：用会话工具（`packages/production/src/tongxing_production/compute/spark_exclusive_session.py`）`status` 看有没有别人的会话，有就问用户，不要收尾别人的会话；`begin`/`finish` 开收自己的会话（`--session-id sfa-<run> --owner sentence-first-agent`），预算 96 GiB（24 + 9×8），`begin` 默认要 110 GiB 可用，腾不出就加 `--minimum-available-gib 96`。`begin` 会停 llama-server 等服务，判断预算要在 `begin` 之后做。停 `spark-api`/`llama-server` 后单元可能 `failed`，按 §0.5 第 8 条 reset-failed → reconcile → resume-begin，不要新开 session。所有容器经 `spark_queue.py`／`spark_session_job.py` 登记，收尾 `finish` 并按会话标签删掉停止的容器。
 
@@ -428,7 +428,7 @@ SHA=75d28ce6022b3df3a72df3dd6dbc01e53f584d685770d60ea04b341920968c9a
 
 $RT $EXP/tts_sentences.py --speech $RUN/speech.jsonl --checkpoint $CKPT --out $RUN/tts \
   --device mps --dtype float32 --seed 7 --batch-size 8 \
-  --expect-checkpoint-sha256 $SHA --min-available-gib 20 --dry-run
+  --expect-checkpoint-sha256 $SHA --min-available-gib 15 --dry-run
 ```
 
 正式渲染（stdout 留日志）：
@@ -436,7 +436,7 @@ $RT $EXP/tts_sentences.py --speech $RUN/speech.jsonl --checkpoint $CKPT --out $R
 ```bash
 $RT $EXP/tts_sentences.py --speech $RUN/speech.jsonl --checkpoint $CKPT --out $RUN/tts \
   --device mps --dtype float32 --seed 7 --batch-size 8 \
-  --expect-checkpoint-sha256 $SHA --min-available-gib 20 | tee -a $RUN/tts-run.log
+  --expect-checkpoint-sha256 $SHA --min-available-gib 15 | tee -a $RUN/tts-run.log
 ```
 
 - `--out` 必须是 `$RUN/tts`：`finish_run.py`、`merge_track.py`、`repair_sentence.py` 都按 `<run>/tts/<id>.wav` 与 `tts-batches.jsonl` 读。
@@ -445,8 +445,8 @@ $RT $EXP/tts_sentences.py --speech $RUN/speech.jsonl --checkpoint $CKPT --out $R
 
 **内存（36 GiB 机身，硬约束）**
 
-- **只开一路**：单副本 batch 8 的 MPS 驱动分配约 11.45 GiB、进程 RSS 约 5.7 GiB（2026-10-28／11-09 实测）；两路要 ~23 GiB 驱动加系统，36 GiB 放不下。两路 1×8 只适用于 64 GiB 机器（[两路 1×8](../../docs/mac-tts-two-way.zh.md)）。
-- **起跑门**：free+inactive+speculative ≥ 20 GiB 才加载模型；脚本按设备默认 20 GiB，低于就拒绝。不要用 `--min-available-gib` 绕过——先退出 Chrome、Codex／Claude CLI 等重活。
+- **只开一路**：单副本 batch 8 的 MPS 驱动分配实测冷首窗 **16.73 GB**、整期峰值 **17.52 GB**，批后回落到 8.66 GB（2026-11-21，本机第 10 周 zh 整期 435 句）；两路要 ~33 GB 驱动加系统，36 GiB 放不下。两路 1×8 只适用于 64 GiB 机器（[两路 1×8](../../docs/mac-tts-two-way.zh.md)）。
+- **起跑门**：free+inactive+speculative ≥ 15 GiB 才加载模型；脚本按设备默认 15 GiB，低于就拒绝。这个数来自 2026-11-21 本机实测：冷首窗 MPS 驱动峰值 16.73 GB（15.6 GiB），13.7 GiB 起跑也能跑完（floor 10.8 GB、swap 只涨约 0.45 GB），15 GiB 在其中间留了余量。不要为绕过它硬压——先退出 Chrome、Codex／Claude CLI 等重活。
 - **运行中**：每批写 `memAvailableBytes`；低于 6 GiB 会在下一批之前停（`--abort-below-gib` 默认 6）。已完成的 WAV 保留，重跑同一条命令续跑。
 - **不要在渲染期间跑** `firebase deploy` 或第二个大 Node 进程：2026-11-15 这台机器就是被部署进程推到 jetsam 的（[复盘](../../docs/reports/runs/20261115-jesus-is-better-podcast/RETROSPECTIVE.md)）。
 - 每条配完在 `run.md` 记 `tts-log.jsonl` 的 `memAvailableBytes` 首尾值和 `mpsDriverAllocatedBytes` 最大值；首尾差超过几 GiB 是异常，先查再续跑。
@@ -481,7 +481,7 @@ python3 $EXP/lag_loop.py --run $RUN --locale <locale> --local \
   --threshold 8 --iterations 2 --require-clean --execute
 ```
 
-`--voice` 每个 `speech.jsonl` 里的讲员一条；旧参数 `--checkpoint` 只够单讲员（用它时从 speech 的 speaker 推出 key）。回环会重配该语全部句子（删 `tts/` 后在本机重跑，`--min-available-gib` 默认 20），双讲员两条 voice 都要给，不能只给一位。
+`--voice` 每个 `speech.jsonl` 里的讲员一条；旧参数 `--checkpoint` 只够单讲员（用它时从 speech 的 speaker 推出 key）。回环会重配该语全部句子（删 `tts/` 后在本机重跑，`--min-available-gib` 默认 15），双讲员两条 voice 都要给，不能只给一位。
 
 - 退出码 0 才表示 `sentencesOverLag8s == 0` 且 `maxLagSeconds ≤ 8`；非 0 就是没过闸门，不能发「可审」。
 - 只看当前音轨、不重配：`lag_loop.py ... --check-only --require-clean`（不调用 DeepSeek、不重配）。

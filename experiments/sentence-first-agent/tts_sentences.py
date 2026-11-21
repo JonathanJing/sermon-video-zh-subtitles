@@ -22,7 +22,7 @@ release costs about 0.1 s per batch. Each ``tts-log.jsonl`` row records host
 MemAvailable and this process's allocator counters so a run's memory curve can
 be read back.
 
-On MPS the host memory gate is on by default (``--min-available-gib 20``,
+On MPS the host memory gate is on by default (``--min-available-gib 15``,
 ``--abort-below-gib 6``): a 36 GiB laptop has one model copy, not two, and the
 admission check refuses to load the model into a host that is still carrying
 browser and deploy processes.
@@ -38,11 +38,13 @@ import subprocess
 import time
 import wave
 
-# One 1.7B model copy at batch 8 peaked at ~11.45 GiB of MPS driver allocation
-# plus ~5.7 GiB of process RSS (2026-10-28 / 2026-11-09 measurements); 20 GiB of
-# free+inactive+speculative leaves margin on a 36 GiB host, and the two-copy path
-# needs a 64 GiB machine, not this one.
-DEFAULT_MPS_MIN_AVAILABLE_GIB = 20.0
+# Measured on the 36 GiB M5 Max (2026-11-21, this sermon): a cold batch of 8 peaked
+# at 16.73 GB of MPS driver allocation and settled back to 8.66 GB after the per-batch
+# release; a run started with 13.7 GiB of free+inactive+speculative finished with a
+# 10.8 GB floor and ~0.45 GB of swap growth. 15 GiB is therefore the gate that leaves
+# margin above that measured floor without locking a 36 GiB host that still carries a
+# browser; the two-copy path needs a 64 GiB machine, not this one.
+DEFAULT_MPS_MIN_AVAILABLE_GIB = 15.0
 DEFAULT_MPS_ABORT_BELOW_GIB = 6.0
 
 

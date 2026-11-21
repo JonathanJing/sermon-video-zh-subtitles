@@ -160,7 +160,7 @@ def main() -> int:
     parser.add_argument("--device", default="mps", help="with --local: torch device (default mps)")
     parser.add_argument("--dtype", choices=("float32", "bfloat16"), default="float32", help="with --local")
     parser.add_argument("--seed", type=int, default=7, help="with --local: base seed (same default as the queue)")
-    parser.add_argument("--min-available-gib", type=float, default=20.0,
+    parser.add_argument("--min-available-gib", type=float, default=15.0,
                         help="with --local: refuse to start below this much host memory")
     parser.add_argument("--checkpoint", help="legacy single-speaker checkpoint; use --voice for anything else")
     parser.add_argument("--voice", action="append", default=[], metavar="KEY=CHECKPOINT",
