@@ -51,3 +51,19 @@ Spark 行来自 2026-11-08 生产记录（[云 TTS 速度对照](../../deepseek-
 - 备份根：mbp16 `~/Backups/spark-offload-20261121/`（`A-only-copy`、`B-checkpoints`、`manifests/`，含 `backup-A.log`、`backup-B.log`、`spark-agent-WIP-20261121.txt`）。
 - 运行时：mbp16 `~/tts-runtime/{venv,checkpoint-75d28}`（venv 指向 `~/tts-ab-20261109/venv`）；mbp14 `~/tts-runtime/{venv,checkpoint-75d28}`，并已链接到仓库 `artifacts/model-routing/macbook-tts/` 的文档路径。
 - 输出：`~/tts-runtime/smoke/{mbp16-b8-zh,mbp16-b8-zh-120,mbp16-b1-zh-2,mbp14-diag-b1}`（含 `tts-log.jsonl`）。
+
+## 同日后续：Spark 退役与清理（2026-11-21 下午）
+
+用户在同一天确认：A 集合里有用的部分提交 PR、其余可删；D 里所有服务可清理；Spark 直接退役；磁盘各层都删。以下是实际执行与结果。
+
+**保留进 Git 的两份证据**：本仓 PR #1611 收录 `experiments/sentence-first-agent/spark_tts_koes.sh` 与 `unbind_removed.py`（本轮前只存在于 Spark）；`spark-agent` 的未提交工作以快照分支 `recovered/spark-wip-20261121` 推到其仓库（draft PR #13，提交 `288250d`），不包含 `.env`、state 与日志。
+
+**服务退役**：停止并禁用 `spark-agent`、`spark-api`、`llama-server`、`llama-performance-collector`、`llama-fable-sidecar`、`h3-image-studio`、`tensorfold-flashnext`、`job-reasoning-review.timer`、`kimi-k3-p32-p33-parallel`；41 个 unit 文件打包进备份后删除；crontab 的 dashboard 任务删除。停止后 `MemAvailable` 从 71 GiB 升到 118 GiB，GPU 占用归零，8000／7070 端口关闭。mbp16 上两个从 Spark 拉取状态与 digest 的 LaunchAgent 在最后一次同步成功后卸载并归档。
+
+**磁盘清理**：删除实验室目录、模型库与 HF 缓存、本项目产物后，`/` 从 2.9 T 已用降到 **155 G 已用**（3.4 T 可用，5%）。多项首次 `rm -rf` 因容器写出的 root 属主文件失败，改由只读挂载的 root 容器删除；journal 清到 0 B；Docker 镜像／容器／构建缓存清空。仍保留 `account-video-transcript-collector`（15 G，非本轮范围）。
+
+**凭据**：`~/.config/tongxing/openai.env` 与 `spark-agent/.env` 随目录删除；`~/.docker/config.json` 内的 ghcr PAT 已删；GitHub deploy key「DGX Spark spark-agent」（id 158812632）已通过 API 吊销。**这些密钥仍需在各自平台轮换**——删除文件不等于吊销。
+
+**访问状态（如实记录）**：清空 `~/.ssh/authorized_keys` 之后，Spark 的 SSH 对两台 Mac 都不再可用（`Permission denied (publickey,password)`）。这与退役方向一致，但剩余约 20 G 与整机擦除必须到机器控制台执行；恢复远程访问只需在控制台追加两台 Mac 的公钥。
+
+**未做**：整机擦除／交还、磁盘取证级抹除、Tailscale 节点移除（该机已无 `tailscale` 命令）、mbp14 按默认门限的正式复跑。
