@@ -445,6 +445,12 @@ def cmd_readback(stage2: Path) -> dict:
     return {"pass": all(results.values()), "checks": results}
 
 
+def failed(result) -> bool:
+    """A verify or readback that did not pass must fail the command, not just print pass=false."""
+    return isinstance(result, dict) and (result.get("pass") is False or result.get("ok") is False
+                                         or result.get("status") == "fail")
+
+
 def main() -> int:
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = p.add_subparsers(dest="cmd", required=True)
@@ -481,7 +487,7 @@ def main() -> int:
     else:
         result = cmd_readback(args.stage2)
     print(json.dumps(result, ensure_ascii=False))
-    return 0
+    return 1 if failed(result) else 0
 
 
 if __name__ == "__main__":

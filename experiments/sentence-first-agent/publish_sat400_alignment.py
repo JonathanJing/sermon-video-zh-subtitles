@@ -296,6 +296,8 @@ def cmd_verify(assets: Path, evidence: Path) -> dict:
     status, data = base.reader(ORIGIN + sidecar)
     ok = status == 200 and hashlib.sha256(data).hexdigest() == sha(assets / "public" / sidecar.lstrip("/"))
     rows.append({"path": sidecar, "status": status, "sha256": hashlib.sha256(data).hexdigest(), "pass": ok})
+    if not ok:
+        failures.append(sidecar)
     for path in sorted((assets / "public/fingerprints").glob("*.json")):
         url = f"/fingerprints/{path.name}"
         status, data = base.reader(ORIGIN + url)
@@ -408,7 +410,7 @@ def main() -> int:
     else:
         result = base.cmd_readback(args.snapshot)
     print(json.dumps(result, ensure_ascii=False, indent=1))
-    return 0
+    return 1 if base.failed(result) else 0
 
 
 if __name__ == "__main__":
