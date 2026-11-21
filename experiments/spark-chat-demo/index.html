@@ -1,0 +1,180 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DGX Spark · Qwen3.8 demo</title>
+<style>
+  :root { color-scheme: dark; --bg:#0d1117; --panel:#161b22; --line:#30363d; --fg:#e6edf3;
+          --dim:#8b949e; --accent:#58a6ff; --me:#1f6feb22; --bot:#21262d; }
+  * { box-sizing: border-box; }
+  body { margin:0; height:100vh; display:flex; flex-direction:column; background:var(--bg);
+         color:var(--fg); font:15px/1.6 -apple-system, "SF Pro Text", "PingFang SC", system-ui, sans-serif; }
+  header { padding:12px 20px; border-bottom:1px solid var(--line); display:flex; gap:12px;
+           align-items:center; flex-wrap:wrap; background:var(--panel); }
+  header h1 { font-size:15px; margin:0; font-weight:600; letter-spacing:.2px; }
+  .tag { font-size:12px; color:var(--dim); }
+  .pill { font-size:12px; padding:3px 9px; border:1px solid var(--line); border-radius:999px;
+          color:var(--dim); display:inline-flex; align-items:center; gap:5px; cursor:pointer; user-select:none; }
+  .pill input { accent-color:var(--accent); }
+  #log { flex:1; overflow-y:auto; padding:22px 20px 6px; }
+  .msg { max-width:880px; margin:0 auto 16px; display:flex; gap:12px; }
+  .who { flex:0 0 34px; height:34px; border-radius:9px; display:grid; place-items:center;
+         font-size:12px; font-weight:600; border:1px solid var(--line); }
+  .me .who { background:var(--me); color:var(--accent); }
+  .bot .who { background:var(--bot); color:#3fb950; }
+  .body { flex:1; white-space:pre-wrap; word-break:break-word; padding-top:4px; }
+  .think { font-size:13px; color:var(--dim); border-left:2px solid var(--line);
+           padding:2px 0 2px 10px; margin:2px 0 8px; white-space:pre-wrap; }
+  .meta { font-size:11.5px; color:var(--dim); margin-top:6px; }
+  footer { border-top:1px solid var(--line); padding:12px 20px 18px; background:var(--panel); }
+  .row { max-width:880px; margin:0 auto; display:flex; gap:10px; }
+  textarea { flex:1; resize:none; height:52px; padding:12px 14px; border-radius:10px;
+             border:1px solid var(--line); background:#0d1117; color:var(--fg);
+             font:inherit; outline:none; }
+  textarea:focus { border-color:var(--accent); }
+  button { padding:0 20px; border-radius:10px; border:1px solid #2ea043; background:#238636;
+           color:#fff; font:inherit; font-weight:600; cursor:pointer; }
+  button:disabled { opacity:.45; cursor:not-allowed; }
+  .hint { max-width:880px; margin:8px auto 0; font-size:11.5px; color:var(--dim); }
+  .cursor::after { content:"▌"; animation:blink 1s steps(2) infinite; color:var(--accent); }
+  @keyframes blink { 50% { opacity:0; } }
+</style>
+</head>
+<body>
+<header>
+  <h1>DGX&nbsp;Spark · Qwen3.8</h1>
+  <span class="pill" id="model">连接中…</span>
+  <label class="pill"><input type="checkbox" id="think"> 思考模式</label>
+  <span class="tag">本地推理 · 一次性演示</span>
+</header>
+
+<div id="log"></div>
+
+<footer>
+  <div class="row">
+    <textarea id="input" placeholder="问点什么…（Enter 发送，Shift+Enter 换行）"></textarea>
+    <button id="send">发送</button>
+  </div>
+  <div class="hint">回复下方显示首 token 延迟与总耗时；演示结束在 Spark 上跑 cleanup.sh 即恢复干净。</div>
+</footer>
+
+<script>
+const logEl = document.getElementById('log');
+const inputEl = document.getElementById('input');
+const sendEl = document.getElementById('send');
+const modelEl = document.getElementById('model');
+const thinkEl = document.getElementById('think');
+let history = [];
+let busy = false;
+
+function add(role) {
+  const wrap = document.createElement('div');
+  wrap.className = 'msg ' + (role === 'user' ? 'me' : 'bot');
+  const who = document.createElement('div');
+  who.className = 'who';
+  who.textContent = role === 'user' ? '你' : 'AI';
+  const holder = document.createElement('div');
+  holder.style.flex = '1';
+  const think = document.createElement('div');
+  think.className = 'think';
+  think.style.display = 'none';
+  const body = document.createElement('div');
+  body.className = 'body';
+  const meta = document.createElement('div');
+  meta.className = 'meta';
+  holder.append(think, body, meta);
+  wrap.append(who, holder);
+  logEl.appendChild(wrap);
+  logEl.scrollTop = logEl.scrollHeight;
+  return { body, think, meta, holder };
+}
+
+async function boot() {
+  try {
+    const r = await fetch('/healthz');
+    const j = await r.json();
+    modelEl.textContent = j.model + ' · ' + (j.sha256 || '');
+  } catch (e) {
+    modelEl.textContent = '服务未就绪';
+  }
+}
+
+async function send() {
+  const text = inputEl.value.trim();
+  if (!text || busy) return;
+  busy = true; sendEl.disabled = true; inputEl.value = '';
+
+  const userLine = add('user');
+  userLine.body.textContent = text;
+  userLine.meta.textContent = '';
+  history.push({ role: 'user', content: text });
+
+  const out = add('assistant');
+  out.body.classList.add('cursor');
+  out.meta.textContent = '生成中…';
+
+  const thinking = thinkEl.checked;
+  const started = performance.now();
+  let firstByte = null, chars = 0, thinkChars = 0;
+  try {
+    const resp = await fetch('/v1/chat/completions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'demo', messages: history, stream: true, temperature: 0.7, max_tokens: 1024,
+        chat_template_kwargs: { enable_thinking: thinking }
+      })
+    });
+    if (!resp.ok || !resp.body) throw new Error('HTTP ' + resp.status);
+    const reader = resp.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+    while (true) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      if (firstByte === null) firstByte = performance.now();
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n');
+      buffer = lines.pop();
+      for (const line of lines) {
+        if (!line.startsWith('data:')) continue;
+        const payload = line.slice(5).trim();
+        if (payload === '[DONE]') continue;
+        try {
+          const delta = JSON.parse(payload).choices?.[0]?.delta || {};
+          if (delta.reasoning_content) {
+            out.think.style.display = 'block';
+            out.think.textContent += delta.reasoning_content;
+            thinkChars += delta.reasoning_content.length;
+          }
+          if (delta.content) {
+            out.body.textContent += delta.content;
+            chars += delta.content.length;
+          }
+          logEl.scrollTop = logEl.scrollHeight;
+        } catch (_) {}
+      }
+    }
+  } catch (err) {
+    out.body.textContent += '\n[错误] ' + err.message;
+  } finally {
+    out.body.classList.remove('cursor');
+    const total = (performance.now() - started) / 1000;
+    const ttft = firstByte ? ((firstByte - started) / 1000).toFixed(2) : '—';
+    const parts = [`首 token ${ttft}s`, `总 ${total.toFixed(2)}s`, `${chars} 字`];
+    if (thinkChars) parts.push(`思考 ${thinkChars} 字`);
+    out.meta.textContent = parts.join(' · ');
+    history.push({ role: 'assistant', content: out.body.textContent });
+    busy = false; sendEl.disabled = false; inputEl.focus();
+  }
+}
+
+sendEl.addEventListener('click', send);
+inputEl.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); }
+});
+boot(); inputEl.focus();
+</script>
+</body>
+</html>
