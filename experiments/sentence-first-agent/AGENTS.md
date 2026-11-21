@@ -249,7 +249,7 @@ python3 $EXP/tts_sentences.py --speech $RUN/speech.jsonl --checkpoint <checkpoin
 2026-11-21 起本线配音在本机跑：第 6 步直接调用 `tts_sentences.py`，不需要 Spark 独占会话、上传或容器。
 
 1. 确认运行时：本机 `artifacts/model-routing/macbook-tts/runtime/bin/python`（符号链接到 `~/tts-runtime/venv`：CPython 3.12.16、torch 2.14.0、qwen-tts 0.1.1，2026-11-21 建，`torch.backends.mps.is_available()` 为 True），checkpoint 在 `artifacts/model-routing/macbook-tts/checkpoint-75d28`（→ `~/tts-runtime/checkpoint-75d28`）。这两个链接指向仓库外的 `~/tts-runtime`，清 `artifacts/` 不影响它们；2026-11-09 的 A/B 副本 `artifacts/local-tts-ab-20261109/{venv,inputs/checkpoint-eric}` 版本相同，只作备份，不再作为默认路径。
-2. 核对 checkpoint：按 Registry（`config/speaker-voice-registry.json`）的 `checkpointRef` 哈希逐个核对——Eric `75d28ce6…`、Steve `b480bc6a…`、John `3f722b17…`；第 6 步的 `--expect-checkpoint-sha256` 会在加载前直接拒绝不符的权重。本机当前只备了 Eric 的副本。
+2. 核对 checkpoint：按 Registry（`config/speaker-voice-registry.json`）的 `checkpointRef` 哈希逐个核对——Eric `75d28ce6…`、Steve `b480bc6a…`、John `3f722b17…`；第 6 步的 `--expect-checkpoint-sha256` 会在加载前直接拒绝不符的权重。本机已备 Eric（`checkpoint-75d28`，`75d28ce6…`）与 **Steve**（`checkpoint-b480bc6a`，`b480bc6a…`，2026-11-21 从 mbp16 的 Spark 备份拷入并核对）；John（`3f722b17…`）尚未落地，需要时先取到本机并核对哈希。
 3. 确认内存：`vm_stat` 的 free+inactive+speculative ≥ 15 GiB；不够就退出 Chrome 等重活，不要改门槛。36 GiB 机身只允许一路。
 4. 把渲染身份写进每个 run 的 `run.md`：模型 Registry `fd4b254…`、speaker checkpoint 哈希、`device=mps dtype=float32 seed=7 batch=8`、开始/结束时间、`tts-log.jsonl` 的内存首尾值。
 5. **Spark 回退**（只有用户明确要求，或本机内存长期不够时）：用会话工具（`packages/production/src/tongxing_production/compute/spark_exclusive_session.py`）`status` 看有没有别人的会话，有就问用户，不要收尾别人的会话；`begin`/`finish` 开收自己的会话（`--session-id sfa-<run> --owner sentence-first-agent`），预算 96 GiB（24 + 9×8），`begin` 默认要 110 GiB 可用，腾不出就加 `--minimum-available-gib 96`。`begin` 会停 llama-server 等服务，判断预算要在 `begin` 之后做。停 `spark-api`/`llama-server` 后单元可能 `failed`，按 §0.5 第 8 条 reset-failed → reconcile → resume-begin，不要新开 session。所有容器经 `spark_queue.py`／`spark_session_job.py` 登记，收尾 `finish` 并按会话标签删掉停止的容器。
@@ -423,8 +423,10 @@ TTS 栈固定为 Qwen3-TTS 12Hz 1.7B Base（Registry `fd4b254…`）、MPS/float
 
 ```bash
 RT=artifacts/model-routing/macbook-tts/runtime/bin/python   # → ~/tts-runtime/venv（torch 2.14.0 + qwen-tts 0.1.1）
-CKPT=artifacts/model-routing/macbook-tts/checkpoint-75d28    # → ~/tts-runtime/checkpoint-75d28
+CKPT=artifacts/model-routing/macbook-tts/checkpoint-75d28    # → ~/tts-runtime/checkpoint-75d28（Eric）
 SHA=75d28ce6022b3df3a72df3dd6dbc01e53f584d685770d60ea04b341920968c9a
+# 换讲员只改这两行；Steve：CKPT=artifacts/model-routing/macbook-tts/checkpoint-b480bc6a \
+#   SHA=b480bc6ab05863ccf1971bb7d968d99b31f64c5570d21d9cb7d10d4c993953a9
 
 $RT $EXP/tts_sentences.py --speech $RUN/speech.jsonl --checkpoint $CKPT --out $RUN/tts \
   --device mps --dtype float32 --seed 7 --batch-size 8 \
@@ -456,7 +458,7 @@ $RT $EXP/tts_sentences.py --speech $RUN/speech.jsonl --checkpoint $CKPT --out $R
 - 已有 `<out>/<id>.wav` 会跳过；断了直接重跑同一条命令，不要换 `--out`，也不要手工拼接。
 - batch 固定 8、seed 固定 7；batch>1 的批成员共享声音身份，改一句按第 9 步重配它的窗口。改批量要先问用户。
 - 双讲员：每个 speaker 各跑一次，加 `--only-speaker <key>` 和该讲员自己的 `--checkpoint`／`--expect-checkpoint-sha256`；不要用一份 checkpoint 配两位讲员。
-- checkpoint 只从 Registry 取哈希核对，路径或哈希不符就停。本机当前只备了 Eric 的权重；Steve（`b480bc6a…`）与 John（`3f722b17…`）要先取到本机并核对，缺就问用户，不自行下载。
+- checkpoint 只从 Registry 取哈希核对，路径或哈希不符就停。本机已备 Eric（`artifacts/model-routing/macbook-tts/checkpoint-75d28`，`75d28ce6…`）与 Steve（`artifacts/model-routing/macbook-tts/checkpoint-b480bc6a`，`b480bc6a…`）；换讲员只改 `CKPT`/`SHA` 两行。John（`3f722b17…`）尚未落地，缺就问用户，不自行下载。
 - 续跑前先 `pgrep -f tts_sentences.py` 为空；两路并发不是“更快”，只会争内存。
 
 **Spark 回退（可选，默认不用）**：需要显式改回 Spark 时，上传 `spark_run.sh`／`tts_sentences.py`／`tts_pool.py`／`asr_check.py` 到 `SPARK:sentence-first-agent/tools/`，用 `spark_queue.py --batch-size 8` 排队，产物与 `finish_run.py --remote` 仍兼容；那是 CUDA/BF16 的另一条执行身份，同一个 run 不要混着配。队列侧（上游 2026-11-21 前已定）：`spark_session_job.py` 只认带本任务 `job=<id>` 的退出行；内存准入拒绝（`refused`）立即结束任务；连续 `--max-poll-failures`（默认 20 次，约 10 分钟）ssh 轮询失败就报错退出，队列随之标记失败，Spark 恢复后用 `--resume-job <id>` 接着等；会话一次只接一个任务，所以语言与讲员排成一条队列。
