@@ -5,15 +5,15 @@ After ``finish_run.py`` the merged track can drift past the sync threshold even 
 ``build_speech`` flags only a few sentences, because each overrun pushes everything after
 it. This runner repeats, up to ``--iterations``: read ``schedule.json`` -> ask DeepSeek to
 shorten the worst sentences into ``review.json`` revisions -> rebuild speech -> clear the
-locale's ``tts/`` on the host and locally -> re-queue that locale -> ``finish_run.py``.
+locale's ``tts/`` on the host and locally -> re-render that locale -> ``finish_run.py``.
 
-It needs an active Spark exclusive session and an uploaded ``speech.jsonl`` path already
-working for ``spark_queue.py``; it never publishes.
-Run one pass per locale: trim the over-budget sentences, rebuild speech, delete the
-locale's TTS wavs (the whole locale is re-rendered), re-queue on Spark and finish with
+2026-11-21: ``--local`` re-renders on this machine (14-inch M5 Max, ``tts_sentences.py
+--device mps --dtype float32``, one model copy) and is the default production path.
+``--remote``/``--session`` keep the DGX Spark queue as the opt-in alternative. It never
+publishes. Run one pass per locale: trim the over-budget sentences, rebuild speech, delete
+the locale's TTS wavs (the whole locale is re-rendered), re-render and finish with
 --gap 0.05. Pass one --voice KEY=CHECKPOINT per speaker in speech.jsonl; the legacy
 --checkpoint flag only covers a single-speaker run.
-
 """
 from __future__ import annotations
 
@@ -153,8 +153,15 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--run", type=Path, required=True)
     parser.add_argument("--locale", choices=tuple(CPS), required=True)
-    parser.add_argument("--remote", required=True, help="USER@HOST:/remote/run")
-    parser.add_argument("--session", required=True)
+    parser.add_argument("--remote", help="USER@HOST:/remote/run (omit with --local)")
+    parser.add_argument("--session", help="Spark exclusive session (omit with --local)")
+    parser.add_argument("--local", action="store_true",
+                        help="re-render on this machine (mbp14, MPS/float32, one model copy) instead of Spark")
+    parser.add_argument("--device", default="mps", help="with --local: torch device (default mps)")
+    parser.add_argument("--dtype", choices=("float32", "bfloat16"), default="float32", help="with --local")
+    parser.add_argument("--seed", type=int, default=7, help="with --local: base seed (same default as the queue)")
+    parser.add_argument("--min-available-gib", type=float, default=20.0,
+                        help="with --local: refuse to start below this much host memory")
     parser.add_argument("--checkpoint", help="legacy single-speaker checkpoint; use --voice for anything else")
     parser.add_argument("--voice", action="append", default=[], metavar="KEY=CHECKPOINT",
                         help="one per speaker in speech.jsonl (repeatable)")
@@ -171,7 +178,11 @@ def main() -> int:
                         help="exit 1 unless the final track is inside the threshold")
     parser.add_argument("--execute", action="store_true")
     args = parser.parse_args()
-    remote_host, remote_dir = args.remote.split(":", 1)
+    if args.local and (args.remote or args.session):
+        raise SystemExit("--local cannot be combined with --remote/--session")
+    if not args.local and not (args.remote and args.session):
+        raise SystemExit("pass --local to re-render on this machine, or both --remote and --session for Spark")
+    remote_host, remote_dir = args.remote.split(":", 1) if args.remote else (None, None)
     run_dir = args.run.resolve()
     voices = resolve_voices(args.voice, args.checkpoint, load_rows(run_dir / "speech.jsonl"))
     if args.check_only:
@@ -198,17 +209,28 @@ def main() -> int:
             (run_dir / "speech.jsonl").read_bytes()).hexdigest()})
         if clear:
             shutil.rmtree(run_dir / "tts", ignore_errors=True)
-            subprocess.run(["ssh", *SSH_OPTIONS, remote_host, f"rm -rf {remote_dir}/tts"], check=True, timeout=120)
-        subprocess.run(["scp", "-q", *SSH_OPTIONS, str(run_dir / "speech.jsonl"), f"{args.remote}/"],
-                       check=True, timeout=300)
-        queue = [sys.executable, str(HERE / "spark_queue.py"), "--session", args.session,
-                 "--owner", "sentence-first-agent", "--remote-tools", args.remote_tools,
-                 "--locale", f"{args.locale}={remote_dir}", "--batch-size", "8"]
-        for key, checkpoint in voices:
-            queue += ["--voice", f"{key}={checkpoint}"]
-        run(queue)
-        run([sys.executable, str(HERE / "finish_run.py"), "--run", str(run_dir),
-             "--remote", args.remote, "--gap", "0.05", "--no-video"])
+            if not args.local:
+                subprocess.run(["ssh", *SSH_OPTIONS, remote_host, f"rm -rf {remote_dir}/tts"], check=True, timeout=120)
+        if args.local:
+            for key, checkpoint in voices:
+                run([sys.executable, str(HERE / "tts_sentences.py"),
+                     "--speech", str(run_dir / "speech.jsonl"), "--checkpoint", str(checkpoint),
+                     "--out", str(run_dir / "tts"), "--device", args.device, "--dtype", args.dtype,
+                     "--seed", str(args.seed), "--batch-size", "8", "--only-speaker", key,
+                     "--min-available-gib", str(args.min_available_gib)])
+            run([sys.executable, str(HERE / "finish_run.py"), "--run", str(run_dir),
+                 "--gap", "0.05", "--no-video"])
+        else:
+            subprocess.run(["scp", "-q", *SSH_OPTIONS, str(run_dir / "speech.jsonl"), f"{args.remote}/"],
+                           check=True, timeout=300)
+            queue = [sys.executable, str(HERE / "spark_queue.py"), "--session", args.session,
+                     "--owner", "sentence-first-agent", "--remote-tools", args.remote_tools,
+                     "--locale", f"{args.locale}={remote_dir}", "--batch-size", "8"]
+            for key, checkpoint in voices:
+                queue += ["--voice", f"{key}={checkpoint}"]
+            run(queue)
+            run([sys.executable, str(HERE / "finish_run.py"), "--run", str(run_dir),
+                 "--remote", args.remote, "--gap", "0.05", "--no-video"])
         pending.unlink()
 
     if pending.is_file():
