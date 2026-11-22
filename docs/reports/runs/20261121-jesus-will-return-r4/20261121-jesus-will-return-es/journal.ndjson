@@ -1,0 +1,19 @@
+{"at": "2026-11-22T04:10:24+00:00", "stage": "l1.preflight.setup", "event": "started", "hostId": "host-dce70ae228e5", "pid": 71576}
+{"at": "2026-11-22T04:10:24+00:00", "stage": "l1.preflight.setup", "event": "finished", "hostId": "host-dce70ae228e5", "pid": 71576}
+{"at": "2026-11-22T04:18:30+00:00", "stage": "l2.consistency", "event": "started", "hostId": "host-dce70ae228e5", "pid": 74142}
+{"at": "2026-11-22T04:18:30+00:00", "stage": "l2.consistency", "event": "finished", "hostId": "host-dce70ae228e5", "pid": 74142}
+{"at": "2026-11-22T04:18:39+00:00", "stage": "l2.consistency", "event": "started", "hostId": "host-dce70ae228e5", "pid": 74216}
+{"at": "2026-11-22T04:18:39+00:00", "stage": "l2.consistency", "event": "finished", "hostId": "host-dce70ae228e5", "pid": 74216}
+{"at": "2026-11-22T04:18:46+00:00", "stage": "l1.preflight", "event": "started", "hostId": "host-dce70ae228e5", "pid": 74272}
+{"at": "2026-11-22T04:18:46+00:00", "stage": "l1.preflight", "event": "finished", "hostId": "host-dce70ae228e5", "pid": 74272}
+{"at": "2026-11-22T04:28:40.942965+00:00", "stage": "l2.audit.es", "event": "finished", "hostId": "host-dce70ae228e5", "pid": 75326, "note": "独立 Opus 审计完成，问题已并入 review.json"}
+{"at": "2026-11-22T05:20:28+00:00", "stage": "l1.preflight", "event": "started", "hostId": "host-dce70ae228e5", "pid": 83787}
+{"at": "2026-11-22T05:20:28+00:00", "stage": "l1.preflight", "event": "finished", "hostId": "host-dce70ae228e5", "pid": 83787}
+{"at": "2026-11-22T06:12:09+00:00", "stage": "l3.finish", "event": "started", "hostId": "host-dce70ae228e5", "pid": 90515}
+{"at": "2026-11-22T06:12:59+00:00", "stage": "l3.finish", "event": "finished", "hostId": "host-dce70ae228e5", "pid": 90515}
+{"at": "2026-11-22T06:13:09+00:00", "stage": "l3.finish", "event": "started", "hostId": "host-dce70ae228e5", "pid": 90987}
+{"at": "2026-11-22T06:13:14+00:00", "stage": "l3.finish", "event": "finished", "hostId": "host-dce70ae228e5", "pid": 90987}
+{"at": "2026-11-22T06:13:18.856477+00:00", "stage": "l3.tts.eric_pilot.es", "event": "finished", "hostId": "host-dce70ae228e5", "pid": 91020, "note": "457/457，剪静音 170.4s，逐句加速 189+178 句，maxLag 7.65s"}
+{"at": "2026-11-22T06:13:22.435564+00:00", "stage": "l3.review.es", "event": "waiting", "hostId": "host-dce70ae228e5", "pid": 91043, "waitingOn": "user track review"}
+{"at": "2026-11-22T06:16:08.971962+00:00", "stage": "l3.review.es", "event": "resumed", "hostId": "host-dce70ae228e5", "pid": 91267}
+{"at": "2026-11-22T06:16:09.018586+00:00", "stage": "l3.review.es", "event": "finished", "hostId": "host-dce70ae228e5", "pid": 91269, "note": "用户 2026-11-21 22:16 PST 在对话中确认西语轨听审通过"}

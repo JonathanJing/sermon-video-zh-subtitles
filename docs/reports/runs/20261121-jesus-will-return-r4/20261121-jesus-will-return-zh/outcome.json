@@ -1,0 +1,20 @@
+{
+  "schemaVersion": "sentence-first-outcome-v1",
+  "at": "2026-11-22T05:15:54+00:00",
+  "status": "track_ready_for_review",
+  "delivery": "four_layer_release",
+  "locale": "zh-Hans",
+  "trackSeconds": 2139.84,
+  "ttsWallSeconds": 741.2,
+  "realtime": 2.89,
+  "asrMean": null,
+  "startedAt": "2026-11-22T05:15:49+00:00",
+  "endedAt": "2026-11-22T05:15:54+00:00",
+  "published": false,
+  "reviewMp3": "artifacts/sentence-first-agent/20261121-jesus-will-return-zh/review.mp3",
+  "reviewPlayer": {
+    "html": "artifacts/sentence-first-agent/20261121-jesus-will-return-zh/review-player.html",
+    "rows": 457
+  },
+  "note": "track merged and scored; audio alignment and review materials done in the same pass"
+}
