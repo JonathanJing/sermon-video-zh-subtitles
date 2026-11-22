@@ -5,7 +5,7 @@ import { t, getLocale, setLocale, onLocaleChange, localizeDOM } from "/i18n.mjs"
 import { localizeWeek } from "/content-locales.mjs";
 import { messages as appMessages } from "/locales-app.mjs";
 import { boundedTime, formatTime, cueIndex } from "/timing.mjs";
-import { validateCatalog, chooseWeek, parseTimecode, downloadFilename, engagementWeek, buildCatalogNavigation, catalogNavigationEnvironment, bilingualCueRows, isFormalPlayback, isMachineChecked, diagnosticPresentation } from "/catalog.mjs";
+import { validateCatalog, chooseWeek, parseTimecode, downloadFilename, engagementWeek, buildCatalogNavigation, catalogNavigationEnvironment, bilingualCueRows, isFormalPlayback, isMachineChecked, isPodcastWeek, diagnosticPresentation } from "/catalog.mjs";
 import { createFeedback } from "/feedback.mjs";
 import { createUsage } from "/usage.mjs";
 import { mountFingerprintUI, playAlignmentAudio } from "/fingerprint-ui.mjs";
@@ -19,7 +19,8 @@ for (const id of ["week-select", "series", "title", "speaker", "scripture", "cen
 }
 const audio = $("audio");
 let catalog, week, track, fineOffset = 0, lastCue = -2, generation = 0;
-let navigationGroups = [];
+let navigationGroups = [], activeKind = "sermons";
+const kindTabs = [["sermons", "kind-sermons"], ["podcasts", "kind-podcasts"]];
 const navigationEnvironment = catalogNavigationEnvironment(location.origin);
 let activeSource = null, pendingResume = null, positionTouched = false, undoPoint = null, scrubbing = false, lastSavedAt = 0;
 let metadataReady = false, playPending = false, playFailed = false, resumeOnMetadata = false, playAttempt = 0, startupTimer = null;
@@ -140,6 +141,12 @@ function renderContentLanguages() {
   }
   updateLanguageControl();
 }
+// Published sermons and podcasts are separate lists — the catalog's locale-
+// independent content kind is the only classifier, never a category label —
+// and legacy weekly.json weeks stay with the sermons.
+function showsKindTabs() {
+  return navigationGroups.some(group => group.id === "podcasts") && navigationGroups.some(group => group.kind === "sermons");
+}
 function renderWeekOptions() {
   $("week-select").replaceChildren(); $("content-choices").replaceChildren();
   const groupLabels = {
@@ -148,16 +155,31 @@ function renderWeekOptions() {
     ko: ['설교', '개발 진단', '개발 연습'],
     es: ['Sermones', 'Diagnósticos de desarrollo', 'Ensayos de desarrollo'],
   };
-  for (const group of navigationGroups) {
-    const options = document.createElement("optgroup");
-    options.label = (groupLabels[getLocale()] || groupLabels.zh)[['sermons', 'diagnostics', 'simulations'].indexOf(group.id)];
-    const section = document.createElement("section"), heading = document.createElement("h3");
-    heading.textContent = options.label; section.append(heading);
+  const namedLabels = groupLabels[getLocale()] || groupLabels.zh;
+  const groupLabel = group => group.id === "podcasts" ? t("week.kindPodcasts")
+    : namedLabels[['sermons', 'diagnostics', 'simulations'].indexOf(group.id)];
+  const showKinds = showsKindTabs();
+  // One kind only keeps the single list it had before; two kinds get a switcher
+  // and the tabbed list replaces the date dropdown inside the browser.
+  if (!showKinds) activeKind = "sermons";
+  $("content-kind-tabs").hidden = !showKinds;
+  $("week-picker").hidden = showKinds;
+  for (const [kind, id] of kindTabs) $(id).setAttribute("aria-pressed", String(kind === activeKind));
+  for (const group of navigationGroups.filter(item => !showKinds || item.kind === activeKind)) {
+    const label = groupLabel(group), named = group.id === "sermons" || group.id === "podcasts";
+    // The tab already names the published kind, so only Dev-only groups keep a
+    // heading; this is the one flat list per tab the iOS picker uses.
+    const grouped = !showKinds || !named;
+    const section = document.createElement("section"), options = document.createElement("optgroup");
+    if (grouped) {
+      options.label = label;
+      const heading = document.createElement("h3"); heading.textContent = label; section.append(heading);
+    }
     for (const { week: original, label } of group.items) {
       const option = document.createElement("option");
       option.value = original.id;
       option.textContent = label;
-      options.append(option);
+      grouped ? options.append(option) : $("week-select").append(option);
       const choice = document.createElement("button"); choice.type = "button"; choice.className = "content-choice";
       choice.setAttribute("aria-pressed", String(original.id === week?.id));
       const title = document.createElement("strong"); title.textContent = original.title;
@@ -167,7 +189,8 @@ function renderWeekOptions() {
       choice.addEventListener("click", () => { selectWeek(original.id); $("content-browser").close(); $("choose-content").setAttribute("aria-expanded", "false"); });
       section.append(choice);
     }
-    $("week-select").append(options); $("content-choices").append(section);
+    if (grouped) $("week-select").append(options);
+    $("content-choices").append(section);
   }
   if (week) $("week-select").value = week.id;
 }
@@ -196,11 +219,14 @@ function renderWeekLabels() {
 
 function displayCategoryLabel(item) {
   const locale = getLocale();
+  // The author's published label first, then the content kind; the technical
+  // media type only covers catalogs from before contentKind existed.
   const label = item?.displayCategory?.labels?.[locale === 'zh' ? 'zh-Hans' : locale];
   if (label) return label;
-  const mediaType = item?.displayMediaType || item?.mediaType;
-  return mediaType === 'podcast' ? t('reader.podcastCategory')
-    : mediaType === 'video' ? t('reader.sermonCategory') : item?.sourceLabel || "";
+  const kind = item?.contentKind, mediaType = item?.displayMediaType || item?.mediaType;
+  return kind === 'podcast' || mediaType === 'podcast' ? t('reader.podcastCategory')
+    : kind === 'sermon' || mediaType === 'video' ? t('reader.sermonCategory')
+      : item?.sourceLabel || "";
 }
 function renderCategories() {
   const label = displayCategoryLabel(week);
@@ -242,7 +268,15 @@ function renderEnglishResults() {
   }
   if (!matches.length) { const hint = document.createElement("p"); hint.className = "description"; hint.textContent = t($("english-query").value.trim() ? "reader.empty" : "reader.searchHint"); $("english-results").append(hint); }
 }
-$("choose-content").addEventListener("click", () => { renderWeekOptions(); $("content-browser").showModal(); $("choose-content").setAttribute("aria-expanded", "true"); });
+// The switcher follows the content on screen every time the browser opens,
+// as the iOS picker does, not only on the first render.
+$("choose-content").addEventListener("click", () => {
+  activeKind = week && isPodcastWeek(week) ? "podcasts" : "sermons";
+  renderWeekOptions(); $("content-browser").showModal(); $("choose-content").setAttribute("aria-expanded", "true");
+});
+for (const [kind, id] of kindTabs) $(id).addEventListener("click", () => {
+  activeKind = kind; renderWeekOptions(); $(id).focus();
+});
 $("content-browser-close").addEventListener("click", () => $("content-browser").close());
 $("content-browser").addEventListener("close", () => $("choose-content").setAttribute("aria-expanded", "false"));
 $("dock-collapse").addEventListener("click", () => { $("field-controls").classList.toggle("is-collapsed"); renderDockLabels(); syncDockHeight(); });
@@ -754,8 +788,11 @@ function selectWeek(id) {
   renderOutline();
   renderProduction();
   renderDownloads();
-  $("outline-open").disabled = diagnosticPresentation(week)?.hasCandidate === false;
-  $("outline-secondary").disabled = diagnosticPresentation(week)?.hasCandidate === false;
+  // A page from the transcript-only pipeline publishes no study text; an empty
+  // outline dialog would misrepresent it, so the entry stays disabled.
+  const hasStudy = Boolean(week.summary?.trim()) || Boolean(week.outline?.length) || Boolean(week.meditation?.length);
+  $("outline-open").disabled = !hasStudy || diagnosticPresentation(week)?.hasCandidate === false;
+  $("outline-secondary").disabled = !hasStudy || diagnosticPresentation(week)?.hasCandidate === false;
   selectTrack(week.tracks[0]?.id);
   if (activeView === "tab-voices") selectTab("tab-listen");
   const url = new URL(location.href);
