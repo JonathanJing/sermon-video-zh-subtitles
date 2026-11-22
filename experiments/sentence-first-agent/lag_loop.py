@@ -241,6 +241,11 @@ def main() -> int:
             (run_dir / "speech.jsonl").read_bytes()).hexdigest()})
         if clear:
             shutil.rmtree(run_dir / "tts", ignore_errors=True)
+            # A fresh render is un-trimmed and un-stretched again: drop the speed-fit guard and its
+            # backup so finish_run re-plans from the new audio (2026-11-21: otherwise the guard made
+            # finish_run skip the fit and the lag came straight back).
+            (run_dir / "speed-fit.json").unlink(missing_ok=True)
+            shutil.rmtree(run_dir / "tts-before-speed", ignore_errors=True)
             if not args.local:
                 subprocess.run(["ssh", *SSH_OPTIONS, remote_host, f"rm -rf {remote_dir}/tts"], check=True, timeout=120)
         if args.local:

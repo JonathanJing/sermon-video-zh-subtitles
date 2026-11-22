@@ -63,7 +63,8 @@ def plan_speed_fit(rows: list[dict], durations: dict[str, float], *, gap: float 
 
 
 def plan_lag_fit(rows: list[dict], durations: dict[str, float], *, threshold: float = 0.5,
-                 max_speed: float = 1.15, min_speed: float = 1.005) -> tuple[list[dict], dict]:
+                 max_speed: float = 1.15, min_speed: float = 1.005,
+                 exclude: set[str] | None = None) -> tuple[list[dict], dict]:
     """Speed up only the sentences that are actually behind, to re-align them at their time point.
 
     ``rows`` needs ``id``, ``lagSeconds`` (from schedule.json) and ``dubSeconds``. The factor is
@@ -71,11 +72,12 @@ def plan_lag_fit(rows: list[dict], durations: dict[str, float], *, threshold: fl
     source ends, capped at max_speed. Sentences inside the threshold are left untouched.
     """
     plan: list[dict] = []
+    exclude = exclude or set()
     for row in rows:
         identifier = row["id"]
         dub = durations.get(identifier)
         lag = float(row.get("lagSeconds") or 0.0)
-        if dub is None or lag <= threshold or dub <= 0.2:
+        if dub is None or lag <= threshold or dub <= 0.2 or identifier in exclude:
             continue
         factor = min(max_speed, dub / max(0.2, dub - lag))
         if factor < min_speed:
@@ -110,6 +112,9 @@ def main() -> int:
                              "lag: only speed up sentences measured behind in schedule.json")
     parser.add_argument("--from-schedule", type=Path, help="schedule.json for --mode lag (default <run>/schedule.json)")
     parser.add_argument("--force", action="store_true", help="re-plan even if speed-fit.json exists")
+    parser.add_argument("--skip-adjusted", action="store_true",
+                        help="in --mode lag: never stretch a sentence that an earlier pass already stretched "
+                             "(atempo would compound); their ids come from an existing speed-fit.json")
     args = parser.parse_args()
     run = args.run
     report = run / "speed-fit.json"
@@ -134,8 +139,13 @@ def main() -> int:
         rows = [{"id": row["id"], "lagSeconds": float(srows[row["id"]]["lagSeconds"]),
                  "dubSeconds": float(srows[row["id"]]["dubSeconds"])}
                 for row in sentences if row["id"] in srows]
+        exclude: set[str] = set()
+        if args.skip_adjusted and report.exists():
+            earlier = json.loads(report.read_text(encoding="utf-8"))
+            exclude = {item["id"] for item in earlier.get("sentences", [])}
         plan, summary = plan_lag_fit(rows, durations, threshold=args.threshold,
-                                     max_speed=args.max_speed)
+                                     max_speed=args.max_speed, exclude=exclude)
+        summary["skippedAlreadyAdjusted"] = len(exclude)
     else:
         plan, summary = plan_speed_fit(rows, durations, gap=args.gap,
                                        threshold=args.threshold, max_speed=args.max_speed)

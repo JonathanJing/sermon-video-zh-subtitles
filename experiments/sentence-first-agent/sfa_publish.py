@@ -888,6 +888,11 @@ def cmd_assets(cfg: PageConfig, out: Path, *, allow_missing_journal_gates: bool 
                    "contentStatus": "human_reviewed", "audioStatus": "human_reviewed", "reviewMode": "formal",
                    "date": cfg.date, "title": meta["title"], "series": meta["series"], "scripture": meta["scripture"],
                    "speaker": cfg.speakers, "durationSeconds": cfg.window_end, "audioDurationSeconds": audio_seconds,
+                   # 2026-11-21: sermon pages carry the approved source window so the field-audio
+                   # alignment sidecar can bind it; the older pages already had this block.
+                   "sourceWindow": {"schemaVersion": "sermon-original-recording-window-v1",
+                                    "mediaSha256": media, "startSeconds": cfg.window_start,
+                                    "endSeconds": cfg.window_end},
                    "englishSourcePackageJsonSha256": esp_sha, "sourceMediaSha256": media,
                    "targetLanguageCandidateJsonSha256": candidate_sha,
                    "targetLanguageAudioPackageJsonSha256": audio_sha,
