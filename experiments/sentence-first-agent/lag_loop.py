@@ -56,7 +56,7 @@ No sustituyas palabras por siglas ni mezcles inglés (no «IG» por Instagram). 
 para una frase completa, recorta solo lo redundante y acepta hasta un 10 % por encima.
 只返回 JSON：{"sentences":[{"id":"原 id","target":"改短后的完整本句"}]}""",
 }
-CPS = {"zh-Hans": 4.3, "ko": 6.0, "es": 13.0}
+CPS = {"zh-Hans": 5.10, "ko": 6.00, "es": 14.67}  # 2026-11-21 calibrated post-trim (see build_speech)
 PENDING_RENDER = "lag-loop-pending-render.json"
 SSH_OPTIONS = ["-o", "BatchMode=yes", "-o", "ConnectTimeout=15", "-o", "ServerAliveInterval=15",
                "-o", "ServerAliveCountMax=4"]
@@ -93,6 +93,48 @@ def status_finished(run_dir: Path, locale: str, *, evidence_level: str) -> None:
 
 def load_rows(path: Path) -> list[dict]:
     return [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line.strip()]
+
+
+def levers_recorded(run_dir: Path) -> dict:
+    """Which of the two cheaper sync levers already ran on this audio (silence trim, speed fit)."""
+    result = {}
+    for name, key in (("tts-silence-trim.json", "silenceTrim"), ("speed-fit.json", "speedFit")):
+        path = run_dir / name
+        if path.is_file():
+            result[key] = json.loads(path.read_text(encoding="utf-8"))
+    return result
+
+
+def require_levers(run_dir: Path, *, skip: bool) -> dict:
+    """Text cuts are the last lever: refuse to trim before silence trim and the atempo fit ran."""
+    found = levers_recorded(run_dir)
+    trimmed = float(((found.get("silenceTrim") or {}).get("savedSeconds")) or 0) > 0.5
+    fitted = int((((found.get("speedFit") or {}).get("summary") or {}).get("adjusted")) or 0) > 0
+    if skip or trimmed or fitted:
+        return found
+    raise SystemExit(
+        "lag_loop refuses to cut text before the cheaper levers ran: no usable tts-silence-trim.json "
+        "and no speed-fit.json in " + str(run_dir) + ". Run finish_run.py (it trims edge silence and "
+        "fits lagging sentences to their slots) first, or pass --skip-lever-check for a deliberate "
+        "test.")
+
+
+def prune_orphan_spoken_forms(review_path: Path, targets: list[str]) -> list[str]:
+    """Drop spokenForms keys that no effective target contains (defensive after any reordering).
+
+    2026-11-21: lag_loop generated the forms before writing its revisions into translations.jsonl,
+    so build_speech saw shorter text and failed with "spokenForms keys not found". The ordering is
+    fixed, but a stale key must never abort a render again.
+    """
+    review = json.loads(review_path.read_text(encoding="utf-8"))
+    forms = review.get("spokenForms") or {}
+    orphans = sorted(key for key in forms if not any(key in target for target in targets))
+    if orphans:
+        for key in orphans:
+            forms.pop(key, None)
+        review["spokenForms"] = forms
+        review_path.write_text(json.dumps(review, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
+    return orphans
 
 
 def trim(client: C.DeepSeek, locale: str, rows: list[dict], units: dict[str, dict],
@@ -204,6 +246,8 @@ def main() -> int:
     parser.add_argument("--max-sentences", type=int, default=80)
     parser.add_argument("--iterations", type=int, default=2)
     parser.add_argument("--plan-only", action="store_true", help="select and trim, but do not re-synthesize")
+    parser.add_argument("--skip-lever-check", action="store_true",
+                        help="ignore the silence-trim/speed-fit precondition (deliberate tests only)")
     parser.add_argument("--check-only", action="store_true",
                         help="gate the current schedule without calling DeepSeek or Spark")
     parser.add_argument("--require-clean", action="store_true",
@@ -226,6 +270,7 @@ def main() -> int:
     slices = json.loads((run_dir / "slices" / "slices.json").read_text())
     budgets = {row["id"]: max(1, int(float(row.get("budgetSeconds") or 0) * CPS[args.locale]))
                for row in slices}
+    levers = require_levers(run_dir, skip=args.skip_lever_check) if (args.execute and not args.check_only) else {}
     client = C.DeepSeek(run_dir / "lag-trim-cache", execute=args.execute, label="trim",
                         state_dir=run_dir)
     client.windows_done, client.units_done = C.recorded_progress(run_dir, "trim")
@@ -326,6 +371,9 @@ def main() -> int:
         tmp.replace(review_path)
         apply_revisions(run_dir, revisions)
         run([sys.executable, str(HERE / "spoken_forms.py"), "--run", str(run_dir), "--locale", args.locale])
+        orphans = prune_orphan_spoken_forms(review_path, [row["target"] for row in load_rows(run_dir / "translations.jsonl")])
+        if orphans:
+            print(json.dumps({"prunedOrphanSpokenForms": orphans}, ensure_ascii=False), flush=True)
         run([sys.executable, str(HERE / "build_speech.py"), "--run", str(run_dir), "--review", str(review_path)])
         rerender(number, clear=True)
     client.finish("finished")

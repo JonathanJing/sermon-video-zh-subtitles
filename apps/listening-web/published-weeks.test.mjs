@@ -1135,3 +1135,82 @@ test('v5 rejects a missing video delivery or a storage object from another bucke
     assert.match(result.errors.join('\n'), /Invalid target video delivery/);
   }
 });
+
+test('a transcript-only sermon publishes without study text or a hosted source video', async () => {
+  const f = fixture(({content}) => {
+    Object.assign(content, {schemaVersion: 'sermon-full-video-text-content-v2', reviewMode: 'formal', audioDurationSeconds: 10});
+    for (const key of ['summary', 'outline', 'sourceVideoUrl']) delete content[key];
+  });
+  const result = await loadPublishedWeeks(f.fetchImpl);
+  assert.deepEqual(result.errors, []);
+  const [week] = result.weeks;
+  assert.equal(week.title, 'Title zh-Hans');
+  assert.equal(week.summary, '');
+  assert.deepEqual(week.outline, []);
+  assert.equal(week.sourceUrl, null, 'no hosted video means no source link, as the iOS client allows');
+  assert.equal(week.contentKind, 'sermon');
+  assert.equal(week.studyStatus, 'unavailable');
+  for (const variant of Object.values(week.contentVariants)) {
+    assert.equal(variant.tracks[0].subtitleTiming, 'target_audio_clock');
+    assert.equal(variant.humanContentReview, 'approved');
+  }
+});
+
+test('content kind decides the published tab before the technical media type', async () => {
+  const mislabeled = fixture();
+  const catalog = JSON.parse(mislabeled.files.get('/multilingual-v3.json'));
+  Object.assign(catalog.pages[0], {contentKind: 'sermon', mediaType: 'podcast'});
+  mislabeled.files.set('/multilingual-v3.json', JSON.stringify(catalog));
+  const result = await loadPublishedWeeks(mislabeled.fetchImpl);
+  assert.deepEqual(result.errors, []);
+  const [week] = result.weeks;
+  assert.equal(week.contentKind, 'sermon');
+  for (const variant of Object.values(week.contentVariants)) {
+    assert.equal(variant.contentKind, 'sermon');
+    assert.equal(variant.sourceRoute, 'full_video');
+    assert.equal(variant.mediaType, 'podcast', 'the technical tag stays verbatim');
+  }
+
+  const podcast = publishedPodcastFixture(({content}) => { for (const key of ['summary', 'outline']) delete content[key]; });
+  const catalogWithKind = JSON.parse(podcast.files.get('/multilingual-v3.json'));
+  Object.assign(catalogWithKind.pages[0], {contentKind: 'podcast'});
+  delete catalogWithKind.pages[0].mediaType;
+  podcast.files.set('/multilingual-v3.json', JSON.stringify(catalogWithKind));
+  const podcastResult = await loadPublishedWeeks(podcast.fetchImpl);
+  assert.deepEqual(podcastResult.errors, []);
+  const [podcastWeek] = podcastResult.weeks;
+  assert.equal(podcastWeek.contentKind, 'podcast');
+  for (const variant of Object.values(podcastWeek.contentVariants)) {
+    assert.equal(variant.sourceRoute, 'podcast');
+    assert.equal(variant.sourceUrl, 'https://www.youtube.com/watch?v=published-podcast');
+  }
+});
+
+test('the published category label reaches the reader and an invalid label rejects the page', async () => {
+  const f = fixture();
+  const catalog = JSON.parse(f.files.get('/multilingual-v3.json'));
+  Object.assign(catalog.pages[0], {contentKind: 'sermon', displayCategory: {
+    schemaVersion: 'sermon-page-display-category-v1',
+    labels: {'zh-Hans': '周日证道', en: 'Sunday sermon', ko: '주일 설교'},
+  }});
+  f.files.set('/multilingual-v3.json', JSON.stringify(catalog));
+  const result = await loadPublishedWeeks(f.fetchImpl);
+  assert.deepEqual(result.errors, []);
+  assert.deepEqual(result.weeks[0].displayCategory.labels, {'zh-Hans': '周日证道', en: 'Sunday sermon', ko: '주일 설교'});
+  assert.equal(result.weeks[0].displayCategory.schemaVersion, 'sermon-page-display-category-v1');
+
+  for (const category of [
+    {schemaVersion: 'sermon-page-display-category-v2', labels: {en: 'Sunday sermon'}},
+    {schemaVersion: 'sermon-page-display-category-v1', labels: {'zh-Hans': '周日证道'}},
+    {schemaVersion: 'sermon-page-display-category-v1', labels: {en: '  '}},
+    {schemaVersion: 'sermon-page-display-category-v1', labels: {en: 'Sunday sermon', extra: true}},
+  ]) {
+    const broken = fixture();
+    const brokenCatalog = JSON.parse(broken.files.get('/multilingual-v3.json'));
+    brokenCatalog.pages[0].displayCategory = category;
+    broken.files.set('/multilingual-v3.json', JSON.stringify(brokenCatalog));
+    const brokenResult = await loadPublishedWeeks(broken.fetchImpl);
+    assert.deepEqual(brokenResult.weeks, []);
+    assert.match(brokenResult.errors[0], /display category|Invalid published page/);
+  }
+});

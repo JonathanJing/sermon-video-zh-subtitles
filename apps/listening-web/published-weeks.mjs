@@ -81,6 +81,7 @@ const RELEASE_V4 = 'sermon-target-language-release-package-v4';
 const STUDY_RELEASES = [RELEASE_V3, RELEASE_V4];
 const CONTENT_V1 = 'sermon-full-video-text-content-v1', CONTENT_V2 = 'sermon-full-video-text-content-v2';
 const CONTENT_V3 = 'sermon-full-video-text-content-v3';
+const CONTENT_KINDS = ['sermon', 'podcast', 'clip'];
 // machine_checked = a bound machine quality waiver passed. Never a human approval.
 const PRODUCT_STATUSES = ['human_reviewed', 'machine_checked'];
 const REVIEW_BASIS_KINDS = ['human_review', 'machine_quality_waiver'];
@@ -102,6 +103,39 @@ function assetPath(value) {
 }
 
 const perTargetSources = (page, catalogVersion) => catalogVersion === CATALOG_V5 && page.sourceMode === 'per_target';
+
+// Locale-independent content kind decides the picker's tab. The technical media
+// type is only the fallback for catalogs written before contentKind existed, and
+// a localized category label never decides it (docs/catalog-content-kind.zh.md).
+export function publishedContentKind(page) {
+  const kind = page?.contentKind;
+  if (CONTENT_KINDS.includes(kind)) return kind;
+  return page?.mediaType === 'podcast' ? 'podcast' : 'sermon';
+}
+
+// Copy the author's category label so a reader sees 周日证道 / 播客 / 正式播放版
+// instead of the technical source label in the category slot.
+const publishedDisplayCategory = page => page.displayCategory === undefined ? {} : {
+  displayCategory: { schemaVersion: page.displayCategory.schemaVersion, labels: { ...page.displayCategory.labels } },
+};
+
+// The author's locale-specific category label (周日证道 / 播客 / 正式播放版). It is
+// display text only: the picker groups by content kind, never by a label.
+export function validateDisplayCategory(category) {
+  const control = value => [...value].some(char => {
+    const code = char.codePointAt(0);
+    return code < 32 || (code >= 127 && code <= 159) || code === 0x2028 || code === 0x2029;
+  });
+  required(category && typeof category === 'object' && !Array.isArray(category)
+    && Object.keys(category).sort().join(',') === 'labels,schemaVersion'
+    && category.schemaVersion === 'sermon-page-display-category-v1', 'Invalid published display category');
+  const labels = Object.entries(category.labels);
+  required(labels.length > 0 && labels.length <= 16
+    && Object.hasOwn(category.labels, 'en')
+    && labels.every(([locale, label]) => LOCALE.test(locale) && text(label)
+      && [...label].length <= 48 && label.trim() === label && !control(label)), 'Invalid published display category');
+  return category;
+}
 
 function validateVideoDelivery(delivery, editionId, sourceMediaSha256) {
   required(delivery && typeof delivery === 'object' && !Array.isArray(delivery), 'Invalid target video delivery');
@@ -427,6 +461,8 @@ export function validatePublishedPage(page, catalogVersion = CATALOG_V3) {
     && Object.keys(page.targets).every(locale => LOCALE.test(locale))
     && Object.hasOwn(page.targets, page.defaultTargetLocale)
     && ['diagnosticOnly', 'simulationOnly'].every(key => page[key] === undefined || typeof page[key] === 'boolean')
+    && (page.contentKind === undefined || CONTENT_KINDS.includes(page.contentKind))
+    && (page.displayCategory === undefined || Boolean(validateDisplayCategory(page.displayCategory)))
     && (page.mediaType === undefined || ['video', 'podcast'].includes(page.mediaType)), 'Invalid published page');
   return page;
 }
@@ -477,7 +513,9 @@ async function loadVariant(fetchImpl, page, locale, timeoutMs, pageSignal, allow
     readJson(fetchImpl, assets.captions.path, assets.captions.sha256, timeoutMs, false, pageSignal),
   ]);
   const legacyCandidate = candidate && release.schemaVersion === RELEASE_V2;
-  const podcast = page.mediaType === 'podcast';
+  // Grouping follows the catalog's content kind, never a localized label; the
+  // technical media type is only the fallback for pre-2026-11-16 catalogs.
+  const contentKind = publishedContentKind(page), podcast = contentKind === 'podcast';
   // Content v3 is admitted only through a v4 release, with the same text status.
   const contentVersions = legacyCandidate ? ['sermon-formal-dev-content-v1', 'sermon-dev-podcast-candidate-content-v2']
     : machineTarget ? (release.contentStatus === 'machine_checked' ? [CONTENT_V3] : [CONTENT_V1, CONTENT_V2, CONTENT_V3]) : [CONTENT_V1, CONTENT_V2];
@@ -499,8 +537,11 @@ async function loadVariant(fetchImpl, page, locale, timeoutMs, pageSignal, allow
   required(content.status !== 'machine_checked' || ['locale', 'text', 'english'].every(key => content.disclosure[key] === release.disclosure[key]),
     'Content disclosure differs from its release');
   // A published podcast may omit summary and outline, as the iOS client allows;
-  // when present they are still checked. Videos and Dev candidates require both.
-  const optionalStudy = podcast && !legacyCandidate;
+  // when present they are still checked. Content v2/v3 carry the reading
+  // transcript only — their schema does not define study text — so a sermon from
+  // that pipeline is not rejected for the absence of it. v1 and Dev candidates
+  // still require both.
+  const optionalStudy = !legacyCandidate && (podcast || content.schemaVersion !== CONTENT_V1);
   const summary = optionalStudy && content.summary === undefined ? '' : content.summary;
   const outline = optionalStudy && content.outline === undefined ? [] : content.outline;
   required(['title', 'speaker', 'series', 'scripture'].every(key => text(content[key]))
@@ -554,6 +595,9 @@ async function loadVariant(fetchImpl, page, locale, timeoutMs, pageSignal, allow
     const reviewed = release.contentStatus === 'human_reviewed';
     return {
       id: page.id, date: page.date, number: '', title: content.title, targetLocale: locale, defaultTargetLocale: locale,
+      // This frozen candidate schema only ever publishes podcast episodes, and
+      // the branch above already requires the podcast media type.
+      contentKind: 'podcast', ...publishedDisplayCategory(page),
       series: content.series, speaker: content.speaker, scripture: content.scripture,
       sourceUrl: page.sourceUrl, sourceLabel: '播客原片', sourceRoute: 'podcast',
       sourceSha256: sourcePage.sourceMediaSha256, sourceIdentitySha256: sourcePage.sourceIdentitySha256,
@@ -599,13 +643,16 @@ async function loadVariant(fetchImpl, page, locale, timeoutMs, pageSignal, allow
     id: page.id, editionId: sourcePage.id, date: page.date, number: '', targetLocale: locale, defaultTargetLocale: locale,
     title: content.title,
     series: content.series, speaker: content.speaker, scripture: content.scripture,
-    // Content v3 may publish text/audio without a hosted source video. A
-    // declared video still goes through the same strict same-origin check.
+    // A published page may carry the transcript without a hosted source video
+    // (the sentence-first pipeline links the original recording, not a file).
+    // Absence hides the link; a declared video — even an empty one — still goes
+    // through the same strict same-origin check.
     sourceUrl: podcast ? page.sourceUrl : mixedSource && sourcePage.videoDelivery
       ? sourcePage.videoDelivery.canonicalUrl
-      : content.schemaVersion === CONTENT_V3 && !Object.hasOwn(content, 'sourceVideoUrl') ? null : assetPath(content.sourceVideoUrl),
+      : Object.hasOwn(content, 'sourceVideoUrl') ? assetPath(content.sourceVideoUrl) : null,
     sourceLabel: podcast ? PODCAST_LABELS[locale].source : labels.source,
-    sourceRoute: podcast ? 'podcast' : 'full_video', ...(page.mediaType ? {mediaType: page.mediaType} : {}),
+    sourceRoute: podcast ? 'podcast' : 'full_video', contentKind, ...publishedDisplayCategory(page),
+    ...(page.mediaType ? {mediaType: page.mediaType} : {}),
     sourceSha256: content.sourceMediaSha256,
     sourceIdentitySha256: sourcePage.sourceIdentitySha256,
     ...(sourcePage.videoDelivery ? {videoDelivery: {...sourcePage.videoDelivery}} : {}),

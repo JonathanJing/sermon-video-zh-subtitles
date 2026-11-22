@@ -9,6 +9,21 @@ export function isMachineChecked(week) {
   return week?.machineChecked === true;
 }
 
+const CONTENT_KINDS = ['sermon', 'podcast', 'clip'];
+
+// The picker splits by the locale-independent content kind. The technical media
+// type is only the fallback for catalogs written before contentKind existed, and
+// a localized category label never decides grouping (docs/catalog-content-kind.zh.md).
+export function contentKindOf(week) {
+  const kind = week?.contentKind;
+  if (CONTENT_KINDS.includes(kind)) return kind;
+  return week?.mediaType === 'podcast' ? 'podcast' : 'sermon';
+}
+
+export function isPodcastWeek(week) {
+  return contentKindOf(week) === 'podcast';
+}
+
 const blockKey = value => typeof value === 'string' ? value : Number.isSafeInteger(value) && value >= 0 ? String(value) : null;
 const validBlockKey = value => typeof value === 'string' && value.length > 0 && value.length <= 128 && value.trim() === value && !/[\u0000-\u001f\u007f]/.test(value);
 
@@ -58,6 +73,10 @@ export function validateCatalog(catalog) {
   for (const week of catalog.weeks) {
     if (ids.has(week.id) || !week.title || !week.speaker || !Array.isArray(week.tracks)) throw new Error("Invalid week");
     ids.add(week.id);
+    // An unknown kind would silently fall back to the sermon tab, so reject it
+    // here instead of mis-grouping a published page.
+    if (![week.contentKind, ...Object.values(week.contentVariants || {}).map(variant => variant?.contentKind)]
+      .every(kind => kind === undefined || CONTENT_KINDS.includes(kind))) throw new Error("Invalid content kind");
     validateTranscript(week);
     for (const track of week.tracks) {
       const path = /^\/media\/(?:[a-zA-Z0-9_-]+\/)*[a-zA-Z0-9_.-]+\.(mp3|wav|m4a)$/.exec(track.audioUrl);
@@ -150,15 +169,18 @@ function navigationGroup(week) {
   const variants = [week, ...Object.values(week.contentVariants || {})];
   if (variants.some(item => item?.diagnosticOnly === true)) return 'diagnostics';
   if (variants.some(item => item?.simulationOnly === true)) return 'simulations';
-  return 'sermons';
+  return isPodcastWeek(week) ? 'podcasts' : 'sermons';
 }
+
+// Published groups come first, each newest first; Dev-only groups stay behind.
+const navigationGroupIds = ['sermons', 'podcasts', 'diagnostics', 'simulations'];
+const publishedGroups = ['sermons', 'podcasts'];
 
 export function buildCatalogNavigation(catalog, { environment } = {}) {
   if (!['development', 'production'].includes(environment)) throw new Error('Explicit navigation environment required');
   validateCatalog(catalog); // Reject duplicate identities before environment filtering.
-  const groupIds = ['sermons', 'diagnostics', 'simulations'];
-  const groups = groupIds.map(id => ({ id, items: [] }));
-  const weeks = catalog.weeks.filter(item => environment === 'development' || navigationGroup(item) === 'sermons')
+  const groups = navigationGroupIds.map(id => ({ id, kind: publishedGroups.includes(id) ? id : 'sermons', items: [] }));
+  const weeks = catalog.weeks.filter(item => environment === 'development' || publishedGroups.includes(navigationGroup(item)))
     .slice().sort((a, b) => String(b.date || '').localeCompare(String(a.date || '')) || a.id.localeCompare(b.id));
   if (!weeks.length) throw new Error('No selectable weeks in this environment');
   const labels = weeks.map(weekOptionLabel), counts = new Map();
@@ -176,8 +198,12 @@ export function buildCatalogNavigation(catalog, { environment } = {}) {
   });
   const visibleGroups = groups.filter(group => group.items.length);
   const orderedWeeks = visibleGroups.flatMap(group => group.items.map(item => item.week));
-  const defaultWeekId = orderedWeeks.some(item => item.id === catalog.defaultWeekId)
-    ? catalog.defaultWeekId : orderedWeeks[0].id;
+  // The picker opens on the newest published sermon: a podcast never inherits
+  // the default even when a catalog (or a legacy weekly.json) declares one
+  // (docs/catalog-content-kind.zh.md).
+  const declared = orderedWeeks.find(item => item.id === catalog.defaultWeekId);
+  const newestSermon = orderedWeeks.find(item => navigationGroup(item) === 'sermons');
+  const defaultWeekId = declared && !isPodcastWeek(declared) ? declared.id : (newestSermon || orderedWeeks[0]).id;
   return { catalog: { ...catalog, weeks: orderedWeeks, defaultWeekId }, groups: visibleGroups };
 }
 

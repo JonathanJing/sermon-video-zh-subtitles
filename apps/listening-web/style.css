@@ -252,6 +252,9 @@ dialog.week-browser { margin:auto;padding:20px;max-height:85dvh;width:min(640px,
 .chooser-heading { display:flex;align-items:center;justify-content:space-between;gap:12px; }
 .chooser-heading h2 { margin:0;font-size:20px; }
 #content-browser .week-picker { margin:12px 0; }
+.content-kind-tabs { display:flex;gap:4px;border-radius:12px;padding:4px;margin:12px 0 0;background:var(--input); }
+.content-kind-tabs button { flex:1;min-width:0;min-height:44px;border:0;border-radius:9px;background:transparent;color:var(--muted);font-size:14px;font-weight:600; }
+.content-kind-tabs button[aria-pressed=true] { background:var(--surface);color:var(--ink);box-shadow:0 1px 4px var(--shadow); }
 .content-choices h3 { color:var(--muted);font-size:13px; }
 .content-choice { display:flex;flex-direction:column;align-items:flex-start;gap:6px;width:100%;text-align:left;background:var(--surface-soft);border:1px solid var(--line);border-radius:13px;padding:14px;margin-bottom:8px;min-height:80px; }
 .content-choice strong { font-size:17px;line-height:1.6; }

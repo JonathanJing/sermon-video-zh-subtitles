@@ -890,9 +890,7 @@ def cmd_assets(cfg: PageConfig, out: Path, *, allow_missing_journal_gates: bool 
                    "speaker": cfg.speakers, "durationSeconds": cfg.window_end, "audioDurationSeconds": audio_seconds,
                    # 2026-11-21: sermon pages carry the approved source window so the field-audio
                    # alignment sidecar can bind it; the older pages already had this block.
-                   "sourceWindow": {"schemaVersion": "sermon-original-recording-window-v1",
-                                    "mediaSha256": media, "startSeconds": cfg.window_start,
-                                    "endSeconds": cfg.window_end},
+                   "sourceWindow": source_window_block(cfg.window_start, cfg.window_end, media),
                    "englishSourcePackageJsonSha256": esp_sha, "sourceMediaSha256": media,
                    "targetLanguageCandidateJsonSha256": candidate_sha,
                    "targetLanguageAudioPackageJsonSha256": audio_sha,
@@ -940,6 +938,18 @@ def cmd_assets(cfg: PageConfig, out: Path, *, allow_missing_journal_gates: bool 
         assets_summary["environment"] = cfg.environment
     write_json(out / "assets-summary.json", assets_summary)
     return summary
+
+
+def source_window_block(window_start: float, window_end: float, media_sha256: str) -> dict:
+    """The approved source window a sermon page carries for the field-audio alignment sidecar.
+
+    2026-11-21: sfa_publish only ever published podcast pages, so its content omitted this block;
+    the v4/v5 catalog then refused the fingerprint binding with "Fingerprint source/window mismatch".
+    Keep one helper so the shape cannot drift from what published_alignment_catalog._window_matches
+    expects.
+    """
+    return {"schemaVersion": "sermon-original-recording-window-v1",
+            "mediaSha256": media_sha256, "startSeconds": window_start, "endSeconds": window_end}
 
 
 # --- staging and deployment ----------------------------------------------------

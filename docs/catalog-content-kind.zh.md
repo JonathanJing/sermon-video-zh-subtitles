@@ -38,7 +38,7 @@
 
 - iOS Core：`MultilingualPage.isPodcastContent` 优先 `contentKind`，缺失时退回 `mediaType == "podcast"`；`displayEdition` 的兜底标签用同一判断，避免分组和行内标签用两套规则。
 - 选篇面板与打开时的默认分类用 `isPodcastContent`（`WeekSheet`、`AppModel.selectedContentIsPodcast`）。
-- 网页 `displayCategoryLabel` 仍是标签优先；`contentKind` 暂不影响网页展示，留待网页按同一分类重排时使用。
+- 网页（2026-11-21 起）：`published-weeks.mjs` 把页面的 `contentKind` 与 `displayCategory` 投影到每个语言变体；`catalog.mjs` 的 `publishedContentKind`／`isPodcastWeek` 按同一规则分类（`contentKind` 优先，缺失才退回 `mediaType`），选中面板按 `sermons`／`podcasts` 两组渲染。`displayCategoryLabel` 先取作者标签，再用 `contentKind` 兜底，最后才是技术 `mediaType`。
 
 ## 工具
 
@@ -87,9 +87,39 @@ App 读 `multilingual-v5.json`（其次 v4、v3）；网页与旧客户端读 v3
 - 客户端实测（iPhone 17 / iOS 27.2 模拟器，BetaRelease 1.26.34 (79)，Dev 内容源）：调用 App 的刷新路径后打开选择面板——10-25 的「耶稣得胜」出现在「Sunday sermon」列，播客列只剩播客。截图在忽略目录 `artifacts/catalog-audit/app-evidence/`（`picker-podcast.png` 修复前、`picker-sermons-fixed.png`／`picker-podcast-fixed.png` 修复后）。
 - 已经提交审核的 1.26.34 按旧规则（`mediaType`）分组，因此数据修复后它的分栏立即变正确；客户端里 `contentKind` 优先的判断要等下一个包含该改动的版本才生效，用来防止再次出现同类错标。
 - iOS Core 120 项测试通过，含新增 `contentKindDecidesGroupingBeforeTheTechnicalMediaType`（回归用例直接取这次的错标组合）；ops 工具 18 项单元测试通过；`ContentPickerUITests` 在模拟器通过。
-- 未做：真机（与本机模拟器不同）显示、网页分栏、以及缓存已热的旧客户端；旧客户端需要一次刷新或重启才会读到新目录。
+- 未做：真机（与本机模拟器不同）显示、以及缓存已热的旧客户端；旧客户端需要一次刷新或重启才会读到新目录。
 
 ## 回滚
 
 - 目录：用 `artifacts/catalog-audit/<site>-v*.json`（修复前快照）重复同一条克隆发布命令即可回到修复前内容；三份投影要一起回滚。
 - 客户端：`isPodcastContent` 的 `mediaType` 兜底保证旧目录仍能分组；若下一个版本要撤销 `contentKind` 优先，只需改回该属性一处。
+
+## 网页分栏与默认证道（2026-11-21）
+
+网页版此前没有分栏：`weekly.json` 的旧条目与多语言发布页混在同一列表，播客页按日期排序后排在证道页之前，因此「没有已保存选择」时打开的就是 11-15 的一集播客。
+
+这次改动（`apps/listening-web`）：
+
+| 面 | 规则 |
+| --- | --- |
+| 选择面板 | 两种内容都有时显示「周日证道／播客」切换；每个标签内就是一个按日期倒序的平铺列表（与 iOS 选篇面板一致）。只有一种内容时保持原来的单列表，不显示切换。 |
+| 分类来源 | 分栏只看 `contentKind`（缺失时退回 `mediaType == "podcast"`）；本地化的 `displayCategory` 标签只用于显示，永不参与分栏。 |
+| 打开时的标签 | 每次打开都跟随当前正在播放的内容，不是只在首次渲染时决定。 |
+| 默认内容 | 目录里的 `defaultPageId` 若指向证道就沿用；若指向播客（旧 `weekly.json` 或历史回归），退回最新一期非 Dev 证道。播客不会成为默认。 |
+| 类别标签 | `displayCategory` 投影到读者端，「周日证道／播客／正式播放版」替代原先误显示的技术来源标签（如「完整视频」）。 |
+| 大纲入口 | 新版流水线只发布朗读稿，没有摘要与大纲；这类页面的大纲入口保持禁用，不再弹出空白面板。 |
+
+同时修掉两处把新版证道整页拒收的过严校验（否则默认仍会落到播客）：
+
+- **摘要与大纲**：`sermon-full-video-text-content-v2`／`v3` 的 schema 不包含 `summary`／`outline`，网页曾对非播客页强制要求两者，导致 10-25 起的 5 篇周日证道在网页全部被丢弃。现在按内容 schema 判断：v2／v3 可省略，v1 与 Dev 候选仍要求；字段存在时照旧校验。
+- **托管源视频**：`sourceVideoUrl` 缺失时隐藏「查看原证道视频」链接（与 iOS 的 `decodeIfPresent` 一致）；声明了空串或其他不安全路径仍然拒收。
+
+验证：
+
+- `apps/listening-web` 633 项 Node 测试通过（1 项既有跳过；新增分栏、默认、`contentKind` 优先级、display category、v2 朗读稿与面板交互用例）；`tests/test_multilingual_dev_app.py` 等 58 项网页工具测试通过（Dev 样式表 `reader/styles.css` 已按新的生产样式表前缀重建）。
+- 用生产目录跑真实加载路径（Node）：16 个发布页全部载入，`defaultWeekId = revelation-jesus-will-return-20261122`；改前是 11 页（5 篇周日证道被丢弃）且默认落在 `if-i-had-more-time-jesus-is-better-than-this-world`。
+- 本地预览（生产目录 + 生产数据）：默认打开「耶稣必再来」（2026-11-22），选择面板两个标签分别只列证道与播客，重开时标签跟随当前内容。
+- 发布：只上传 8 个变化的静态文件（`index.html`、`app.mjs`、`catalog.mjs`、`published-weeks.mjs`、`style.css`、`locales-interface.mjs`、`locales-ko.mjs`、`locales-es.mjs`）。生产 Hosting 版本 `5d53e41c5cbeff2f` → `8e1d5ef805cb9ac2`（release `1795333301555000`），8 个文件 HTTPS 读回字节一致；回执在忽略目录 `artifacts/web-publish/picker-tabs-publish.json`。
+- 线上浏览器实测（`https://ai-for-god-sermon-audio.web.app`，无查询参数打开）：默认停在「耶稣必再来」（2026-11-22，周日证道），选择面板两个标签分别只列证道与播客。
+
+边界：缓存已热的浏览器需要一次刷新；目录数据本身未改（生产 `defaultPageId` 在 11-22 页发布时已是该证道），本次只改客户端读取与展示。

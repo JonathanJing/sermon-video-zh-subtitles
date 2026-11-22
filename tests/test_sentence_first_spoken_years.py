@@ -30,3 +30,24 @@ def test_other_locales_keep_their_year_reading():
     assert S.forms_for_text("그러다 천구백팔십년에", "ko") == {}
     assert S.forms_for_text("1980년에", "ko")["1980"] == "천구백팔십"
     assert S.forms_for_text("en 1980", "es")["1980"] == "mil novecientos ochenta"
+
+
+def test_year_without_space_before_nian():
+    assert S.forms_for_text("那是1980年的决定。", "zh-Hans") == {"1980年": "一九八零年"}
+
+
+def test_year_after_verb_without_space():
+    assert S.forms_for_text("他于2024年退役。", "zh-Hans") == {"2024年": "二零二四年"}
+
+
+def test_two_years_in_one_sentence_are_both_digit_read():
+    forms = S.forms_for_text("从1980年到2024年，四十四年。", "zh-Hans")
+    assert forms["1980年"] == "一九八零年"
+    assert forms["2024年"] == "二零二四年"
+    # 44 outside the 19xx/20xx range stays a cardinal (not part of this mapping)
+
+
+def test_verse_chapter_numbers_are_not_treated_as_years():
+    forms = S.forms_for_text("启示录 19 章 11 节，第 2020 页。", "zh-Hans")
+    assert forms["19 章 11 节"] == "十九章十一节"
+    assert forms["第 2020 页"] == "第二千二十页"  # a page number reads as a cardinal, not 二零二零
