@@ -37,7 +37,8 @@
 | `spark_session_job.py` | 本机（Spark 回退） | 在 Spark 独占会话里把一步登记成任务并等它结束（spark_queue 调用它） |
 | `spark_run.sh` | Spark（可选回退） | 一个语言、一位讲员的逐句 TTS（batch 1；`--steps asr` 仅保留为历史诊断），可续跑；每步开工前按宿主 `MemAvailable` 做预算准入，容器带 `PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True` |
 | `tts_sentences.py`、`asr_check.py transcribe` | 本机（mbp14）或 Spark 容器内 | 本线正式配音渲染器：本机由 §6 直接调用（`--device mps --dtype float32 --batch-size 8`），Spark 由 `spark_run.sh` 调用；每批后释放设备缓存，起跑前做宿主内存准入（MPS 默认 15 GiB 才加载模型）；`tts-log.jsonl` 每行记 `memAvailableBytes` 与 `mpsAllocatedBytes`／`cudaReservedBytes` |
-| `finish_run.py` | 本机 | 合并、混回视频、出手机预览，打印落后摘要；`--remote` 只在 Spark 回退时拉回 `tts/`；有历史 `asr.jsonl` 时附带回转写打分与摘要（可选） |
+| `trim_tts_silence.py` | 本机 | 同步 run 合并前先裁句首句尾静音（峰值 2%、句首留 20 ms、句尾留 50 ms）；原 WAV 备份 `tts-raw-before-trim/`，报告 `tts-silence-trim.json`；`finish_run.py` 默认调用，`--no-trim-silence` 关闭 |
+| `finish_run.py` | 本机 | 合并、混回视频、出手机预览，打印落后摘要；先调 `trim_tts_silence.py`，`--remote` 只在 Spark 回退时拉回 `tts/`；有历史 `asr.jsonl` 时附带回转写打分与摘要（可选） |
 | `merge_track.py`、`asr_check.py score` | 本机 | 有历史 `asr.jsonl` 时由 finish_run.py 调用；默认不生成 |
 | `review_sheets.py` | 本机 | 每种语言一张人工审核表（CSV），标出要重点听的句子 |
 | `sfa_publish.py` | 本机 | 页面发布单一驱动（`DEV-SF-004`）：读 `pages/<pageId>.json`；`validate`/`preflight`/`check-title`/`publish-check` 门禁与 assets→baseline→stage1→publish→verify→stage2→publish→readback→english-reference |
@@ -474,6 +475,18 @@ python3 $EXP/finish_run.py --run $RUN [--clip-from <第一种语言的 run>] [--
 它读本机 `tts/`（Spark 回退才用 `--remote` 拉回；有历史 `asr.jsonl` 时一并拉回，可选），合并音轨（每句放在英文起点，放不下就接在上一句后 0.25 秒），生成 `review.mp3`（96 kbps）、`review-player.html`（逐句播放器）和手机预览 `dub-preview-640.mp4`（`--preview-encoder auto|quality|fast|hardware`；auto 在 macOS 用硬件编码、无视频流自动回退，约为 quality 耗时的 60–70%，文件约 2 倍），打印落后最多的句、配音与原声时长比和 TTS 速度；有历史 `asr.jsonl` 时另打分并打印相似度低的句。**音频对齐（`schedule.json`）、review MP3 和播放器在这一步一并生成，不等发布。**
 
 跟视频同步的 run 显式传 `--gap 0.05`：默认 0.25 秒会把连续句逐句推后（2026-10-24 三语分别有 60、78、144 句落后超过 1 秒，三语各重出一次）。一种语言「可审」的最低条件是 journal 里 `l1.preflight`、`l2.consistency` 两条都 `finished`，同步 run 再加 `lag-loop-report.json` 的 `gate.clean=true`；缺一条先补再发链接。回转写不再是可审前提。
+
+**同步 run 的第一手段：先剪静音，再考虑删字（2026-11-21 用户定，默认执行）**
+
+Qwen3-TTS 逐句 WAV 自带边缘静音：2026-11-21 第 11 周 zh 实测句首平均 **0.372 s**、句尾 **0.066 s**，
+每句约 0.44 s，457 句合计 **≈200 s**；而中文整轨比英文原声只长约 145 s。也就是说**先剪句首句尾静音通常就够了**，
+而且剪掉句首静音还让每句正好落在英文起点上，对齐更准，一个字都不用删。
+
+顺序固定为：`finish_run.py` → `merge_track.py` **之前**先跑 `trim_tts_silence.py --run $RUN`
+（按峰值 2% 阈值，句首保留 20 ms、句尾保留 50 ms，只裁句子边缘、不动句内停顿；原 WAV 备份到
+`<run>/tts-raw-before-trim/`，逐句回收秒数写 `<run>/tts-silence-trim.json`）。剪完再合并、看落后；
+只有剪完仍有句子落后超阈值，才进 `lag_loop.py` 做最小删字。**不要一上来就全局压缩译文**：
+2026-11-21 第一版让 DeepSeek 把 82 句压短，出现「可后靠，我不因失礼。」这类残句，整轮作废重渲。
 
 **落后的闸门（同步 run 的固定步骤）**：`finish_run.py` 之后、发「可审」之前，必须跑一次落后回环；它按「dubSeconds − sourceSeconds」挑出推后句，交 DeepSeek 精简、重建 speech、清 `tts/` 重配，再跑 `finish_run.py`，最多 `--iterations` 轮：
 
