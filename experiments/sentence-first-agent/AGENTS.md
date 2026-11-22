@@ -37,11 +37,14 @@
 | `spark_session_job.py` | 本机（Spark 回退） | 在 Spark 独占会话里把一步登记成任务并等它结束（spark_queue 调用它） |
 | `spark_run.sh` | Spark（可选回退） | 一个语言、一位讲员的逐句 TTS（batch 1；`--steps asr` 仅保留为历史诊断），可续跑；每步开工前按宿主 `MemAvailable` 做预算准入，容器带 `PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True` |
 | `tts_sentences.py`、`asr_check.py transcribe` | 本机（mbp14）或 Spark 容器内 | 本线正式配音渲染器：本机由 §6 直接调用（`--device mps --dtype float32 --batch-size 8`），Spark 由 `spark_run.sh` 调用；每批后释放设备缓存，起跑前做宿主内存准入（MPS 默认 15 GiB 才加载模型）；`tts-log.jsonl` 每行记 `memAvailableBytes` 与 `mpsAllocatedBytes`／`cudaReservedBytes` |
+| `render_lock.py` | 本机 | 全局单路锁（`artifacts/.tts-render.lock`）：`tts_sentences.py` 起跑前取锁，另一路在跑就直接退出，`--allow-concurrent` 只给组件测试用 |
 | `trim_tts_silence.py` | 本机 | 同步 run 合并前先裁句首句尾静音（峰值 2%、句首留 20 ms、句尾留 50 ms）；原 WAV 备份 `tts-raw-before-trim/`，报告 `tts-silence-trim.json`；`finish_run.py` 默认调用，`--no-trim-silence` 关闭 |
 | `finish_run.py` | 本机 | 合并、混回视频、出手机预览，打印落后摘要；先调 `trim_tts_silence.py`，`--remote` 只在 Spark 回退时拉回 `tts/`；有历史 `asr.jsonl` 时附带回转写打分与摘要（可选） |
 | `merge_track.py`、`asr_check.py score` | 本机 | 有历史 `asr.jsonl` 时由 finish_run.py 调用；默认不生成 |
 | `review_sheets.py` | 本机 | 每种语言一张人工审核表（CSV），标出要重点听的句子 |
 | `sfa_publish.py` | 本机 | 页面发布单一驱动（`DEV-SF-004`）：读 `pages/<pageId>.json`；`validate`/`preflight`/`check-title`/`publish-check` 门禁与 assets→baseline→stage1→publish→verify→stage2→publish→readback→english-reference |
+| `tools/ops/build_alignment_sidecar.py` | 本机 | 从 Hosting 快照 + 三语索引生成现场对齐 sidecar（release 用文件字节哈希、窗口与 content 一致、`indexUrl` 按 sha 前 16 位）；默认 dry-run，`--write` 落盘 |
+| `tools/ops/reseal_snapshot.py` | 本机 | 目录重绑或新增文件后重算 `seal-report.json` 的目录哈希与文件清单，否则 guarded publisher 会以 `Baseline catalog differs`／`incomplete` 拒发 |
 | `tools/ops/sfa_publish_gate.py` | 本机 | 发布前/后完整性门禁（`sentence-first-publish-gate-v1`）：目录↔release↔资产、英文对照、对齐 sidecar/指纹/窗口、手册条目、页面标题渲染；任一必检失败退出码 1。规则见[发布门禁](../../docs/sentence-first-agent-publish-gate.zh.md) |
 | `tools/ops/notify.py` | 本机 | Bark 传输（P2）：`test-push` / `send`；keychain 服务 `org.sermonvideo.production-progress`，group `sermon-production`；不进任何门禁 |
 | `publish_podcast_page.py` | 本机 | 旧版按页复制驱动；未迁移页面与特殊修复路径（撤回、alignment、fix-content）仍可用 |
@@ -493,7 +496,16 @@ Qwen3-TTS 逐句 WAV 自带边缘静音：2026-11-21 第 11 周 zh 实测句首�
 
 剪完、加速完再合并、看落后；
 只有「剪静音 + 逐句加速」之后仍有句子落后超阈值，才进 `lag_loop.py` 做最小删字（2026-11-21 用户定的三层顺序：
-去静音 → 逐句加速 ≤1.15 → 最小删字）。**不要一上来就全局压缩译文**：
+去静音 → 逐句加速 ≤1.15 → 最小删字）。`lag_loop.py` 现在**自己检查**这条顺序：run 里没有可用的
+`tts-silence-trim.json` 也没有 `speed-fit.json` 时直接退出，要求先跑 `finish_run.py`（测试才用 `--skip-lever-check`）。
+
+**渲染只允许一路（锁）**：`tts_sentences.py` 起跑前在 `artifacts/.tts-render.lock` 取全局锁，另一路（含
+`repair_sentence.py` 触发的窗口重配）在跑就带 PID 退出；2026-11-21 一次窗口修复与韩语渲染重叠，把驱动峰值推到
+24.8 GB 并把该语拖慢约 15%，所以这条从「纪律」变成「机制」。`--allow-concurrent` 只给组件测试。
+
+**配音前先看预算**：`build_speech.py` 输出里的 `budget`（estimated/budget/ratio/超预算句数）是本轮配音的相对长度；
+加 `--fail-over-budget-ratio 1.15` 可在渲染前直接拦下明显超长的语言（2026-11-21 韩语到 1.29，剪静音+1.15 加速
+仍不够，只能事后删 80 句）。语速常数已按 2026-11-21 实测校准（去静音后 zh 5.10、ko 6.00、es 14.67 字/秒）。**不要一上来就全局压缩译文**：
 2026-11-21 第一版让 DeepSeek 把 82 句压短，出现「可后靠，我不因失礼。」这类残句，整轮作废重渲。
 
 **落后的闸门（同步 run 的固定步骤）**：`finish_run.py` 之后、发「可审」之前，必须跑一次落后回环；它按「dubSeconds − sourceSeconds」挑出推后句，交 DeepSeek 精简、重建 speech、清 `tts/` 重配，再跑 `finish_run.py`，最多 `--iterations` 轮：
@@ -719,8 +731,12 @@ node packages/fingerprint/bin/build_fingerprint_index.mjs --mode bind \
   --precomputed <run>/source-landmarks.json --precomputed-sha <上一步 sha256> \
   --source-sha "$SHA" --start 0 --end <windowEnd> --track <assets>/public/media/<pageId>/<locale>.mp3 \
   --page-id <pageId> --out <run>/index-<locale>.json
-# 3) sidecar：/alignment/<pageId>.json（sermon-published-alignment-v1，三语各一条 audioFingerprint，
-#    indexUrl=/fingerprints/<indexSha前16位>-landmarks.json，captureSeconds=10）
+# 3) sidecar：/alignment/<pageId>.json —— 用工具生成，别手搓（手搓过四次口径错误）：
+.venv/bin/python tools/ops/build_alignment_sidecar.py --public <快照>/public --page-id <pageId> \
+  --index zh-Hans=<run>/index-zh-Hans.json --index ko=<run>/index-ko.json --index es=<run>/index-es.json \
+  --write            # 默认 dry-run；release 哈希取文件字节、窗口与 content 的 sourceWindow 对齐
+# 4) 目录重绑后必须重新封存，否则 deploy 报 Baseline catalog differs / incomplete：
+.venv/bin/python tools/ops/reseal_snapshot.py --snapshot <快照>
 # 4) 用 delivery.published_alignment_catalog.bind_catalogs(public, pageId) 重绑 v5/v4/v3，
 #    快照要含 sidecar + 三个索引 + 新目录，再走 guarded publisher 部署
 # 5) 核验：GET sidecar 200、三个索引 200 且 sha 与 sidecar 一致、gate --require-alignment pass

@@ -38,6 +38,8 @@ import subprocess
 import time
 import wave
 
+import render_lock
+
 # Measured on the 36 GiB M5 Max (2026-11-21, this sermon): a cold batch of 8 peaked
 # at 16.73 GB of MPS driver allocation and settled back to 8.66 GB after the per-batch
 # release; a run started with 13.7 GiB of free+inactive+speculative finished with a
@@ -189,7 +191,12 @@ def main() -> int:
                         help="print the plan and the memory admission without loading the model")
     parser.add_argument("--expect-checkpoint-sha256",
                         help="refuse to start unless model.safetensors matches this Registry hash")
+    parser.add_argument("--allow-concurrent", action="store_true",
+                        help="skip the one-renderer-at-a-time lock (component tests only; production never)")
     args = parser.parse_args()
+    # One renderer at a time: a second MPS consumer on this 36 GiB machine slows the running
+    # language and raises the driver peak (2026-11-21 measured 24.8 GB with a repair overlapping).
+    lock = render_lock.acquire(args.out, label=f"tts:{args.device}", allow_concurrent=args.allow_concurrent)
     rows = [json.loads(line) for line in args.speech.read_text(encoding="utf-8").splitlines() if line.strip()]
     if args.only_speaker:
         rows = [row for row in rows if row["speaker"] == args.only_speaker]
@@ -296,6 +303,7 @@ def main() -> int:
         batch_log.write(json.dumps(batch_entry, ensure_ascii=False) + "\n")
         batch_log.flush()
         print(json.dumps(batch_entry), flush=True)
+    render_lock.release(lock)
     return 0
 
 
