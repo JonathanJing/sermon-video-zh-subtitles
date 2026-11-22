@@ -1,0 +1,20 @@
+{"at": "2026-11-22T04:10:24+00:00", "stage": "l1.preflight.setup", "event": "started", "hostId": "host-15d9fba9a1e1", "pid": 71575}
+{"at": "2026-11-22T04:10:24+00:00", "stage": "l1.preflight.setup", "event": "finished", "hostId": "host-15d9fba9a1e1", "pid": 71575}
+{"at": "2026-11-22T04:18:30+00:00", "stage": "l2.consistency", "event": "started", "hostId": "host-15d9fba9a1e1", "pid": 74140}
+{"at": "2026-11-22T04:18:30+00:00", "stage": "l2.consistency", "event": "finished", "hostId": "host-15d9fba9a1e1", "pid": 74140}
+{"at": "2026-11-22T04:18:39+00:00", "stage": "l2.consistency", "event": "started", "hostId": "host-15d9fba9a1e1", "pid": 74214}
+{"at": "2026-11-22T04:18:39+00:00", "stage": "l2.consistency", "event": "finished", "hostId": "host-15d9fba9a1e1", "pid": 74214}
+{"at": "2026-11-22T04:18:46+00:00", "stage": "l1.preflight", "event": "started", "hostId": "host-15d9fba9a1e1", "pid": 74270}
+{"at": "2026-11-22T04:18:46+00:00", "stage": "l1.preflight", "event": "finished", "hostId": "host-15d9fba9a1e1", "pid": 74270}
+{"at": "2026-11-22T04:28:40.890271+00:00", "stage": "l2.audit.ko", "event": "finished", "hostId": "host-15d9fba9a1e1", "pid": 75324, "note": "独立 Opus 审计完成，问题已并入 review.json"}
+{"at": "2026-11-22T05:16:00+00:00", "stage": "l3.finish", "event": "started", "hostId": "host-15d9fba9a1e1", "pid": 82705}
+{"at": "2026-11-22T05:16:48+00:00", "stage": "l3.finish", "event": "finished", "hostId": "host-15d9fba9a1e1", "pid": 82705}
+{"at": "2026-11-22T05:17:42+00:00", "stage": "l3.finish", "event": "started", "hostId": "host-15d9fba9a1e1", "pid": 83419}
+{"at": "2026-11-22T05:17:48+00:00", "stage": "l3.finish", "event": "finished", "hostId": "host-15d9fba9a1e1", "pid": 83419}
+{"at": "2026-11-22T05:17:58+00:00", "stage": "l3.lag-loop.ko", "event": "started", "hostId": "host-15d9fba9a1e1", "pid": 83470}
+{"at": "2026-11-22T05:39:40+00:00", "stage": "l3.finish", "event": "started", "hostId": "host-15d9fba9a1e1", "pid": 87971}
+{"at": "2026-11-22T05:39:51+00:00", "stage": "l3.finish", "event": "finished", "hostId": "host-15d9fba9a1e1", "pid": 87971}
+{"at": "2026-11-22T05:39:51.915846+00:00", "stage": "l3.lag-loop.ko", "event": "finished", "hostId": "host-15d9fba9a1e1", "pid": 83470}
+{"at": "2026-11-22T05:48:09.922866+00:00", "stage": "l3.review.ko", "event": "waiting", "hostId": "host-15d9fba9a1e1", "pid": 88935, "waitingOn": "user track review"}
+{"at": "2026-11-22T06:00:25.363955+00:00", "stage": "l3.review.ko", "event": "resumed", "hostId": "host-15d9fba9a1e1", "pid": 89275}
+{"at": "2026-11-22T06:00:25.414443+00:00", "stage": "l3.review.ko", "event": "finished", "hostId": "host-15d9fba9a1e1", "pid": 89277, "note": "用户 2026-11-21 21:59 PST 在对话中确认韩语轨听审通过"}

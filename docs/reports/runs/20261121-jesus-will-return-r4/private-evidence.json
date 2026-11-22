@@ -1,0 +1,63 @@
+{
+  "schemaVersion": "sermon-production-report-evidence-v1",
+  "report": "20261121-jesus-will-return-r4",
+  "runDirs": [
+    "20261121-jesus-will-return-es",
+    "20261121-jesus-will-return-ko",
+    "20261121-jesus-will-return-poster",
+    "20261121-jesus-will-return-review",
+    "20261121-jesus-will-return-source",
+    "20261121-jesus-will-return-zh"
+  ],
+  "uploaded": true,
+  "bundles": [
+    {
+      "runName": "20261121-jesus-will-return-es",
+      "store": "gs://sermon-zh-artifacts-ai-for-god/run-evidence/v1/runs/20261121-jesus-will-return-es/",
+      "files": 32,
+      "omitted": 1,
+      "collectedAt": "2026-11-22T06:35:40+00:00",
+      "manifestSha256": "aaf2934cd26382f5122e432fc57efd1c937c61e669e3e164b8b4eacc6b9c78a1"
+    },
+    {
+      "runName": "20261121-jesus-will-return-ko",
+      "store": "gs://sermon-zh-artifacts-ai-for-god/run-evidence/v1/runs/20261121-jesus-will-return-ko/",
+      "files": 47,
+      "omitted": 1,
+      "collectedAt": "2026-11-22T06:35:42+00:00",
+      "manifestSha256": "434c274b859bfba3c18d8dffd6081adf3a84a3b3a3568cda59581e911e044748"
+    },
+    {
+      "runName": "20261121-jesus-will-return-poster",
+      "store": "gs://sermon-zh-artifacts-ai-for-god/run-evidence/v1/runs/20261121-jesus-will-return-poster/",
+      "files": 21,
+      "omitted": 0,
+      "collectedAt": "2026-11-22T06:35:42+00:00",
+      "manifestSha256": "2b14ed8868fd13abdfec741f1c903e5572ae9c4e152fa24259d40f370bb88f4b"
+    },
+    {
+      "runName": "20261121-jesus-will-return-review",
+      "store": "gs://sermon-zh-artifacts-ai-for-god/run-evidence/v1/runs/20261121-jesus-will-return-review/",
+      "files": 4,
+      "omitted": 0,
+      "collectedAt": "2026-11-22T06:35:49+00:00",
+      "manifestSha256": "a7ae2b51b116268b334eec8c9e8fbc513566c76e10c7f91b8d8f62f31191d582"
+    },
+    {
+      "runName": "20261121-jesus-will-return-source",
+      "store": "gs://sermon-zh-artifacts-ai-for-god/run-evidence/v1/runs/20261121-jesus-will-return-source/",
+      "files": 22,
+      "omitted": 0,
+      "collectedAt": "2026-11-22T06:35:50+00:00",
+      "manifestSha256": "fa56a75d20cffc636a112e37a28bdf645d2a05839ea74194b5fd973dff8df12a"
+    },
+    {
+      "runName": "20261121-jesus-will-return-zh",
+      "store": "gs://sermon-zh-artifacts-ai-for-god/run-evidence/v1/runs/20261121-jesus-will-return-zh/",
+      "files": 57,
+      "omitted": 1,
+      "collectedAt": "2026-11-22T06:35:52+00:00",
+      "manifestSha256": "97d6772ac488942793e070b619c6050cade624589dde3b6b302832841a33f968"
+    }
+  ]
+}

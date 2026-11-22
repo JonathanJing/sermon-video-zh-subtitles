@@ -1,0 +1,248 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261121-jesus-will-return-r4",
+  "runs": [
+    {
+      "label": "20261121-jesus-will-return-es",
+      "source": "~/dev/sermon-video-zh-subtitles/artifacts/sentence-first-agent/20261121-jesus-will-return-es",
+      "skipped": {
+        "(none)": 1,
+        ".jsonl": 15,
+        ".json": 10,
+        ".mp4": 2,
+        ".html": 1,
+        ".mp3": 1,
+        ".md": 1,
+        ".wav": 1736,
+        ".ndjson": 2
+      }
+    },
+    {
+      "label": "20261121-jesus-will-return-ko",
+      "source": "~/dev/sermon-video-zh-subtitles/artifacts/sentence-first-agent/20261121-jesus-will-return-ko",
+      "skipped": {
+        "(none)": 1,
+        ".jsonl": 18,
+        ".json": 22,
+        ".mp4": 2,
+        ".html": 1,
+        ".mp3": 1,
+        ".md": 1,
+        ".wav": 1548,
+        ".ndjson": 2
+      }
+    },
+    {
+      "label": "20261121-jesus-will-return-poster",
+      "source": "~/dev/sermon-video-zh-subtitles/artifacts/sentence-first-agent/20261121-jesus-will-return-poster",
+      "skipped": {
+        ".png": 13,
+        ".txt": 5,
+        ".json": 12,
+        ".svg": 3
+      }
+    },
+    {
+      "label": "20261121-jesus-will-return-review",
+      "source": "~/dev/sermon-video-zh-subtitles/artifacts/sentence-first-agent/20261121-jesus-will-return-review",
+      "skipped": {
+        ".csv": 3,
+        ".json": 1
+      }
+    },
+    {
+      "label": "20261121-jesus-will-return-source",
+      "source": "~/dev/sermon-video-zh-subtitles/artifacts/sentence-first-agent/20261121-jesus-will-return-source",
+      "skipped": {
+        ".json": 17,
+        ".py": 6,
+        ".csv": 1,
+        ".txt": 1,
+        ".mp3": 13,
+        ".html": 1,
+        ".wav": 458,
+        ".md": 1,
+        ".mp4": 1
+      }
+    },
+    {
+      "label": "20261121-jesus-will-return-zh",
+      "source": "~/dev/sermon-video-zh-subtitles/artifacts/sentence-first-agent/20261121-jesus-will-return-zh",
+      "skipped": {
+        "(none)": 1,
+        ".jsonl": 24,
+        ".json": 26,
+        ".wav": 2369,
+        ".mp4": 2,
+        ".html": 1,
+        ".mp3": 1,
+        ".md": 1,
+        ".ndjson": 2
+      }
+    }
+  ],
+  "files": [
+    {
+      "run": "20261121-jesus-will-return-es",
+      "path": "journal.ndjson",
+      "kind": "whole",
+      "bytes": 2713,
+      "truncated": false,
+      "sha256": "9d908eaf499b8e8fb9edf3df4b7da3feccf00cee8f761a66f7b3a3fda661cc4c",
+      "redactions": {}
+    },
+    {
+      "run": "20261121-jesus-will-return-es",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 684,
+      "truncated": false,
+      "sha256": "8e09b5e63ca72e387d61ab44c70101cc2c4139168f92a9f04a147ae9196886a9",
+      "redactions": {}
+    },
+    {
+      "run": "20261121-jesus-will-return-es",
+      "path": "timings.tsv",
+      "kind": "whole",
+      "bytes": 199,
+      "truncated": false,
+      "sha256": "3c0fce786da0c033b8c4cf0a200514dfdd2c9ae37c62d18a5487a7f987ad1f6e",
+      "redactions": {}
+    },
+    {
+      "run": "20261121-jesus-will-return-es",
+      "path": "tts-run.log",
+      "kind": "log",
+      "bytes": 185896,
+      "truncated": true,
+      "sha256": "e898c39a2cd85e34c20d4d26d5d33ffc44110b6a276f21ca4058b72340e46104",
+      "redactions": {}
+    },
+    {
+      "run": "20261121-jesus-will-return-ko",
+      "path": "journal.ndjson",
+      "kind": "whole",
+      "bytes": 2749,
+      "truncated": false,
+      "sha256": "41ee285baea348f246b770893721a5dc6bd2b49f7ed2090a2272704aa278df2e",
+      "redactions": {}
+    },
+    {
+      "run": "20261121-jesus-will-return-ko",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 785,
+      "truncated": false,
+      "sha256": "689b1b83994a22bc41422119f3d6010c91f97fc4f135902b8c9e81b99ee2a649",
+      "redactions": {
+        "home_dir": 2
+      }
+    },
+    {
+      "run": "20261121-jesus-will-return-ko",
+      "path": "timings.tsv",
+      "kind": "whole",
+      "bytes": 228,
+      "truncated": false,
+      "sha256": "28175849adece84fd5509cab012c921154b5d356644bf8cd9832cfc7954cef1e",
+      "redactions": {}
+    },
+    {
+      "run": "20261121-jesus-will-return-ko",
+      "path": "tts-run.log",
+      "kind": "log",
+      "bytes": 185901,
+      "truncated": true,
+      "sha256": "bd5839e59196539563f306951dbd49e7f1daea5082eef7b83580a2a4b5e005e4",
+      "redactions": {}
+    },
+    {
+      "run": "20261121-jesus-will-return-poster",
+      "path": "art-receipt.json",
+      "kind": "whole",
+      "bytes": 1296,
+      "truncated": false,
+      "sha256": "6dd6908b9e6eb35e94678be63f25a2774f543e5f64dad6d375ea0c41394c4496",
+      "redactions": {}
+    },
+    {
+      "run": "20261121-jesus-will-return-poster",
+      "path": "imagegen-v1/render-v1/es/poster-receipt.json",
+      "kind": "whole",
+      "bytes": 4743,
+      "truncated": false,
+      "sha256": "72dcbcae523f15adc50abfafabf0a787a85bde404457a7e382f80db07e484bcb",
+      "redactions": {}
+    },
+    {
+      "run": "20261121-jesus-will-return-poster",
+      "path": "imagegen-v1/render-v1/ko/poster-receipt.json",
+      "kind": "whole",
+      "bytes": 4833,
+      "truncated": false,
+      "sha256": "620ecc39b6bac69045507aabe444e3edebfbda8c4a3c0e6de47e92eb404ecbb5",
+      "redactions": {}
+    },
+    {
+      "run": "20261121-jesus-will-return-poster",
+      "path": "imagegen-v1/render-v1/zh-Hans/poster-receipt.json",
+      "kind": "whole",
+      "bytes": 4643,
+      "truncated": false,
+      "sha256": "c260d00b80891a6c5246f46f52b4a37afd9eb37b2fca31194e47f2e1cd139004",
+      "redactions": {}
+    },
+    {
+      "run": "20261121-jesus-will-return-source",
+      "path": "layer1/english-approval-receipt.json",
+      "kind": "whole",
+      "bytes": 6894,
+      "truncated": false,
+      "sha256": "01833ed723ce1fff193a9a7b24951c084bfc9c1d2d8c8745bec1f8ba3959ce74",
+      "redactions": {}
+    },
+    {
+      "run": "20261121-jesus-will-return-zh",
+      "path": "journal.ndjson",
+      "kind": "whole",
+      "bytes": 11919,
+      "truncated": false,
+      "sha256": "97c65f5fc34a9545e30da87737276c1e1bccf18ca0dc1c5bbdcc761ad6f401ff",
+      "redactions": {
+        "home_dir": 2
+      }
+    },
+    {
+      "run": "20261121-jesus-will-return-zh",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 689,
+      "truncated": false,
+      "sha256": "ee4e10b6601a6de09c98ca57573793836eabe9595f9903beea5fddeda3dceed6",
+      "redactions": {}
+    },
+    {
+      "run": "20261121-jesus-will-return-zh",
+      "path": "timings.tsv",
+      "kind": "whole",
+      "bytes": 417,
+      "truncated": false,
+      "sha256": "e101ebcf194f0f05ec763e349e1ed01b03b38b2855342862d403ff1af535346e",
+      "redactions": {}
+    },
+    {
+      "run": "20261121-jesus-will-return-zh",
+      "path": "tts-run.log",
+      "kind": "log",
+      "bytes": 534248,
+      "truncated": true,
+      "sha256": "a37119daa53772f8b0bde2e55b547f8a7ba1383fc21ce54aa1c7eb2e575545ce",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}
