@@ -31,6 +31,11 @@ ES_HUNDREDS = {100: "ciento", 200: "doscientos", 300: "trescientos", 400: "cuatr
                900: "novecientos"}
 
 
+def zh_year(digits: str) -> str:
+    """Years are read digit by digit in Chinese: 1980 -> 一九八零, 2024 -> 二零二四."""
+    return "".join(ZH[int(d)] for d in digits)
+
+
 def zh_number(n: int) -> str:
     if n > 9999:
         return "".join(ZH[int(d)] for d in str(n))
@@ -114,6 +119,7 @@ SCORE = {"zh-Hans": lambda a, b: f"{zh_number(a)}胜{zh_number(b)}负",
 
 PATTERNS = {
     "zh-Hans": [
+        (re.compile(r"(1[89]\d{2}|20\d{2})\s*年"), lambda m: zh_year(m[1]) + "年"),
         (re.compile(r"(\d+)\s*胜\s*(\d+)\s*负"), lambda m: SCORE["zh-Hans"](int(m[1]), int(m[2]))),
         (re.compile(r"(\d+):(\d+)-(\d+)"), lambda m: VERSE["zh-Hans"](int(m[1]), int(m[2]), int(m[3]))),
         (re.compile(r"(\d+):(\d+)"), lambda m: VERSE["zh-Hans"](int(m[1]), int(m[2]))),

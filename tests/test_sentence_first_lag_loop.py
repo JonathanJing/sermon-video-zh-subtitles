@@ -53,3 +53,31 @@ def test_legacy_checkpoint_does_not_guess_for_two_speakers():
         pass
     else:
         raise AssertionError("--checkpoint must not cover a two-speaker run")
+
+
+def test_apply_revisions_updates_target_and_note(tmp_path):
+    import json
+
+    lag = load("lag_loop")
+    path = tmp_path / "translations.jsonl"
+    path.write_text(
+        json.dumps({"id": "s0001", "locale": "zh-Hans", "target": "第一句很长", "reviewNote": "pass"}) + "\n"
+        + json.dumps({"id": "s0002", "locale": "zh-Hans", "target": "第二句", "reviewNote": "pass"}) + "\n",
+        encoding="utf-8")
+    assert lag.apply_revisions(tmp_path, {"s0001": {"target": "第一句", "note": "revised: lag trim"}}) == 1
+    data = [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line.strip()]
+    assert data[0]["target"] == "第一句"
+    assert data[0]["reviewNote"] == "revised: lag trim"
+    assert data[1] == {"id": "s0002", "locale": "zh-Hans", "target": "第二句", "reviewNote": "pass"}
+
+
+def test_apply_revisions_leaves_untouched_rows_byte_identical(tmp_path):
+    import json
+
+    lag = load("lag_loop")
+    path = tmp_path / "translations.jsonl"
+    original = json.dumps({"id": "s0001", "locale": "ko", "target": "한 문장", "reviewNote": "pass"},
+                          ensure_ascii=False)
+    path.write_text(original + "\n", encoding="utf-8")
+    assert lag.apply_revisions(tmp_path, {}) == 0
+    assert path.read_text(encoding="utf-8").strip() == original
