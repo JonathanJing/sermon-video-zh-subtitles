@@ -126,3 +126,31 @@ class SpeedFitPlanTest(unittest.TestCase):
         plan, summary = self.S.plan_speed_fit(rows, {"s0001": 3.0})
         self.assertEqual(summary["sentences"], 2)
         self.assertEqual(plan, [])
+
+
+class SpeedLagPlanTest(unittest.TestCase):
+    def setUp(self) -> None:
+        sys.path.insert(0, str(HERE / "experiments" / "sentence-first-agent"))
+        import speed_fit_tts as S
+
+        self.S = S
+
+    def test_only_sentences_past_threshold_are_touched(self) -> None:
+        rows = [{"id": "s0001", "lagSeconds": 0.2, "dubSeconds": 5.0},
+                {"id": "s0002", "lagSeconds": 2.0, "dubSeconds": 5.0},
+                {"id": "s0003", "lagSeconds": 0.4, "dubSeconds": 5.0}]
+        durations = {"s0001": 5.0, "s0002": 5.0, "s0003": 5.0}
+        plan, summary = self.S.plan_lag_fit(rows, durations, threshold=0.5)
+        self.assertEqual([item["id"] for item in plan], ["s0002"])
+        self.assertAlmostEqual(plan[0]["factor"], 1.15, places=3)  # 5/(5-2)=1.667 -> capped
+
+    def test_factor_aligns_end_to_the_time_point(self) -> None:
+        rows = [{"id": "s0001", "lagSeconds": 0.6, "dubSeconds": 3.0}]
+        plan, _ = self.S.plan_lag_fit(rows, {"s0001": 3.0}, threshold=0.5)
+        # dub/(dub-lag) = 3/2.4 = 1.25 -> capped at 1.15
+        self.assertAlmostEqual(plan[0]["factor"], 1.15, places=3)
+
+    def test_no_schedule_row_means_no_change(self) -> None:
+        plan, summary = self.S.plan_lag_fit([], {"s0001": 3.0}, threshold=0.5)
+        self.assertEqual(plan, [])
+        self.assertEqual(summary["adjusted"], 0)

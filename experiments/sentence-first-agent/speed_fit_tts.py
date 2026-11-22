@@ -62,6 +62,35 @@ def plan_speed_fit(rows: list[dict], durations: dict[str, float], *, gap: float 
     return plan, summary
 
 
+def plan_lag_fit(rows: list[dict], durations: dict[str, float], *, threshold: float = 0.5,
+                 max_speed: float = 1.15, min_speed: float = 1.005) -> tuple[list[dict], dict]:
+    """Speed up only the sentences that are actually behind, to re-align them at their time point.
+
+    ``rows`` needs ``id``, ``lagSeconds`` (from schedule.json) and ``dubSeconds``. The factor is
+    ``dub / (dub - lag)``: exactly what is needed for this sentence to end where its English
+    source ends, capped at max_speed. Sentences inside the threshold are left untouched.
+    """
+    plan: list[dict] = []
+    for row in rows:
+        identifier = row["id"]
+        dub = durations.get(identifier)
+        lag = float(row.get("lagSeconds") or 0.0)
+        if dub is None or lag <= threshold or dub <= 0.2:
+            continue
+        factor = min(max_speed, dub / max(0.2, dub - lag))
+        if factor < min_speed:
+            continue
+        played = dub / factor
+        plan.append({"id": identifier, "factor": round(factor, 4), "lagSeconds": round(lag, 3),
+                     "dubSeconds": round(dub, 3), "playedSeconds": round(played, 3),
+                     "savedSeconds": round(dub - played, 3)})
+    summary = {"mode": "lag", "sentences": len(rows), "adjusted": len(plan),
+               "savedSeconds": round(sum(item["savedSeconds"] for item in plan), 2),
+               "maxLagAdjusted": max([item["lagSeconds"] for item in plan], default=0.0),
+               "maxFactor": max([item["factor"] for item in plan], default=1.0)}
+    return plan, summary
+
+
 def stretch(path: Path, factor: float, rate: int) -> None:
     tmp = path.with_suffix(".speed.tmp.wav")
     subprocess.run(["ffmpeg", "-nostdin", "-v", "error", "-y", "-i", str(path),
@@ -76,6 +105,10 @@ def main() -> int:
     parser.add_argument("--max-speed", type=float, default=1.15)
     parser.add_argument("--threshold", type=float, default=0.3)
     parser.add_argument("--gap", type=float, default=0.05)
+    parser.add_argument("--mode", choices=("slot", "lag"), default="slot",
+                        help="slot: fit each sentence to its English slot (first pass); "
+                             "lag: only speed up sentences measured behind in schedule.json")
+    parser.add_argument("--from-schedule", type=Path, help="schedule.json for --mode lag (default <run>/schedule.json)")
     parser.add_argument("--force", action="store_true", help="re-plan even if speed-fit.json exists")
     args = parser.parse_args()
     run = args.run
@@ -94,8 +127,18 @@ def main() -> int:
         rows.append({"id": row["id"], "start": row["start"], "slotSeconds": slot})
     wavs = {path.stem: path for path in (run / "tts").glob("*.wav")}
     durations = {identifier: read_duration(path) for identifier, path in wavs.items()}
-    plan, summary = plan_speed_fit(rows, durations, gap=args.gap,
-                                   threshold=args.threshold, max_speed=args.max_speed)
+    if args.mode == "lag":
+        schedule_path = args.from_schedule or (run / "schedule.json")
+        schedule = json.loads(schedule_path.read_text(encoding="utf-8"))
+        srows = {row["id"]: row for row in schedule["sentences"]}
+        rows = [{"id": row["id"], "lagSeconds": float(srows[row["id"]]["lagSeconds"]),
+                 "dubSeconds": float(srows[row["id"]]["dubSeconds"])}
+                for row in sentences if row["id"] in srows]
+        plan, summary = plan_lag_fit(rows, durations, threshold=args.threshold,
+                                     max_speed=args.max_speed)
+    else:
+        plan, summary = plan_speed_fit(rows, durations, gap=args.gap,
+                                       threshold=args.threshold, max_speed=args.max_speed)
     backup = run / "tts-before-speed"
     if plan:
         backup.mkdir(exist_ok=True)
