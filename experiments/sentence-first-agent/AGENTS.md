@@ -482,10 +482,18 @@ Qwen3-TTS 逐句 WAV 自带边缘静音：2026-11-21 第 11 周 zh 实测句首�
 每句约 0.44 s，457 句合计 **≈200 s**；而中文整轨比英文原声只长约 145 s。也就是说**先剪句首句尾静音通常就够了**，
 而且剪掉句首静音还让每句正好落在英文起点上，对齐更准，一个字都不用删。
 
-顺序固定为：`finish_run.py` → `merge_track.py` **之前**先跑 `trim_tts_silence.py --run $RUN`
-（按峰值 2% 阈值，句首保留 20 ms、句尾保留 50 ms，只裁句子边缘、不动句内停顿；原 WAV 备份到
-`<run>/tts-raw-before-trim/`，逐句回收秒数写 `<run>/tts-silence-trim.json`）。剪完再合并、看落后；
-只有剪完仍有句子落后超阈值，才进 `lag_loop.py` 做最小删字。**不要一上来就全局压缩译文**：
+顺序固定为：`finish_run.py` → `merge_track.py` **之前**依次跑
+
+1. `trim_tts_silence.py --run $RUN`：按峰值 2% 阈值裁句首（留 20 ms）/句尾（留 50 ms），只裁句子边缘、
+   不动句内停顿；原 WAV 备份 `<run>/tts-raw-before-trim/`，逐句回收秒数写 `tts-silence-trim.json`。
+2. `speed_fit_tts.py --run $RUN`：剪完仍超出自己英文时隙的句子，逐句 atempo 加速（默认上限 **1.15**，
+   按 `本句时长 / 本句时隙` 单独计算，本来就放得下的句子一个字节都不动）；原 WAV 备份
+   `<run>/tts-before-speed/`，逐句系数写 `speed-fit.json`。两句都可 `finish_run --no-trim-silence`／
+   `--no-speed-fit` 关闭。
+
+剪完、加速完再合并、看落后；
+只有「剪静音 + 逐句加速」之后仍有句子落后超阈值，才进 `lag_loop.py` 做最小删字（2026-11-21 用户定的三层顺序：
+去静音 → 逐句加速 ≤1.15 → 最小删字）。**不要一上来就全局压缩译文**：
 2026-11-21 第一版让 DeepSeek 把 82 句压短，出现「可后靠，我不因失礼。」这类残句，整轮作废重渲。
 
 **落后的闸门（同步 run 的固定步骤）**：`finish_run.py` 之后、发「可审」之前，必须跑一次落后回环；它按「dubSeconds − sourceSeconds」挑出推后句，交 DeepSeek 精简、重建 speech、清 `tts/` 重配，再跑 `finish_run.py`，最多 `--iterations` 轮：

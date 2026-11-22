@@ -109,6 +109,10 @@ def main() -> int:
     parser.add_argument("--gap", type=float, default=0.25)
     parser.add_argument("--no-trim-silence", action="store_true",
                         help="skip the leading/trailing-silence trim before merging (sync runs trim by default)")
+    parser.add_argument("--no-speed-fit", action="store_true",
+                        help="skip the per-sentence atempo catch-up (sync runs fit lagging sentences by default)")
+    parser.add_argument("--max-speed", type=float, default=1.15,
+                        help="cap for the per-sentence atempo catch-up")
     parser.add_argument("--no-video", action="store_true")
     parser.add_argument("--preview-encoder", choices=("auto", "quality", "fast", "hardware"), default="auto",
                         help="preview encode settings; auto = hardware on macOS, else fast; "
@@ -136,6 +140,8 @@ def main() -> int:
     # deleting a word. Runs before the merge so schedule.json/track.wav use the trimmed durations.
     if not args.no_trim_silence:
         print(py(HERE / "trim_tts_silence.py", "--run", run))
+    if not args.no_speed_fit:
+        print(py(HERE / "speed_fit_tts.py", "--run", run, "--max-speed", args.max_speed, "--gap", args.gap))
 
     print(py(HERE / "merge_track.py", "--sentences", run / "sentences.jsonl", "--tts", run / "tts",
              "--out", run / "track.wav", "--schedule", run / "schedule.json", "--gap", args.gap))

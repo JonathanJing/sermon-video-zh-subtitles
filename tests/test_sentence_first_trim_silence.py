@@ -81,3 +81,48 @@ class TrimTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class SpeedFitPlanTest(unittest.TestCase):
+    def setUp(self) -> None:
+        sys.path.insert(0, str(HERE / "experiments" / "sentence-first-agent"))
+        import speed_fit_tts as S
+
+        self.S = S
+
+    def rows(self, spans: list[tuple[float, float]]) -> list[dict]:
+        rows = []
+        for i, (start, end) in enumerate(spans, 1):
+            slot = spans[i][0] - start if i < len(spans) else end - start
+            rows.append({"id": f"s{i:04d}", "start": start, "slotSeconds": slot})
+        return rows
+
+    def test_sentences_that_fit_are_untouched(self) -> None:
+        rows = self.rows([(0.0, 3.0), (3.3, 6.0), (6.3, 9.0)])
+        durations = {"s0001": 2.9, "s0002": 2.6, "s0003": 2.6}
+        plan, summary = self.S.plan_speed_fit(rows, durations)
+        self.assertEqual(plan, [])
+        self.assertEqual(summary["adjusted"], 0)
+
+    def test_overrunning_sentence_is_fitted_and_capped(self) -> None:
+        rows = self.rows([(0.0, 3.0), (3.3, 6.0), (6.3, 9.0), (9.3, 12.0)])
+        durations = {"s0001": 3.0, "s0002": 6.0, "s0003": 2.6, "s0004": 2.6}
+        plan, summary = self.S.plan_speed_fit(rows, durations, max_speed=1.15)
+        ids = [item["id"] for item in plan]
+        self.assertEqual(ids, ["s0002"])
+        factor = plan[0]["factor"]
+        self.assertLessEqual(factor, 1.15)
+        self.assertGreater(factor, 1.0)
+        self.assertGreater(summary["savedSeconds"], 0)
+
+    def test_small_overrun_under_threshold_is_left_alone(self) -> None:
+        rows = self.rows([(0.0, 2.0), (2.2, 4.2), (4.4, 6.4)])
+        durations = {"s0001": 2.05, "s0002": 2.05, "s0003": 2.0}
+        plan, _ = self.S.plan_speed_fit(rows, durations, threshold=0.3)
+        self.assertEqual(plan, [])
+
+    def test_missing_wav_is_skipped(self) -> None:
+        rows = self.rows([(0.0, 3.0), (3.3, 6.0)])
+        plan, summary = self.S.plan_speed_fit(rows, {"s0001": 3.0})
+        self.assertEqual(summary["sentences"], 2)
+        self.assertEqual(plan, [])
