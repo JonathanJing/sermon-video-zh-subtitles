@@ -2,6 +2,8 @@
 
 Generated 2026-11-22T06:35:38+00:00. Redacted copies only; source hashes are in manifest.json.
 
+- 全本机（mbp14）路线复盘见 `RETROSPECTIVE.md` 的「全本机（mbp14）路线复盘」一节（时间账、性能、问题与下周清单）。
+
 ## 20261121-jesus-will-return-es
 
 Source: `~/dev/sermon-video-zh-subtitles/artifacts/sentence-first-agent/20261121-jesus-will-return-es`
