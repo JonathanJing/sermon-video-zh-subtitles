@@ -1,0 +1,8 @@
+{"at": "2026-11-22T22:42:38+00:00", "stage": "l1.preflight", "event": "started", "hostId": "host-cb6b2aef6590", "pid": 62593}
+{"at": "2026-11-22T22:42:38+00:00", "stage": "l1.preflight", "event": "finished", "hostId": "host-cb6b2aef6590", "pid": 62593}
+{"at": "2026-11-22T23:34:01+00:00", "stage": "l3.finish", "event": "started", "hostId": "host-cb6b2aef6590", "pid": 94460}
+{"at": "2026-11-22T23:34:09+00:00", "stage": "l3.finish", "event": "finished", "hostId": "host-cb6b2aef6590", "pid": 94460}
+{"at": "2026-11-23T00:08:59+00:00", "stage": "l2.consistency", "event": "started", "hostId": "host-cb6b2aef6590", "pid": 15936}
+{"at": "2026-11-23T00:08:59+00:00", "stage": "l2.consistency", "event": "finished", "hostId": "host-cb6b2aef6590", "pid": 15936}
+{"at": "2026-11-23T00:09:04+00:00", "stage": "l2.consistency", "event": "started", "hostId": "host-cb6b2aef6590", "pid": 16017}
+{"at": "2026-11-23T00:09:04+00:00", "stage": "l2.consistency", "event": "finished", "hostId": "host-cb6b2aef6590", "pid": 16017}

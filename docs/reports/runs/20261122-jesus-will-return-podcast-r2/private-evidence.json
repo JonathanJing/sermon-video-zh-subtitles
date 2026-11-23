@@ -1,0 +1,15 @@
+{
+  "schemaVersion": "sermon-production-report-evidence-v1",
+  "report": "20261122-jesus-will-return-podcast-r2",
+  "runDirs": [
+    "20261122-jesus-will-return-podcast-es",
+    "20261122-jesus-will-return-podcast-ko",
+    "20261122-jesus-will-return-podcast-publish",
+    "20261122-jesus-will-return-podcast-review",
+    "20261122-jesus-will-return-podcast-source",
+    "20261122-jesus-will-return-podcast-zh",
+    "layer1"
+  ],
+  "uploaded": false,
+  "bundles": []
+}

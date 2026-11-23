@@ -1,0 +1,20 @@
+{
+  "schemaVersion": "sentence-first-outcome-v1",
+  "at": "2026-11-23T00:08:36+00:00",
+  "status": "track_ready_for_review",
+  "delivery": "four_layer_release",
+  "locale": "es",
+  "trackSeconds": 2521.54,
+  "ttsWallSeconds": 1878.6,
+  "realtime": 1.34,
+  "asrMean": null,
+  "startedAt": "2026-11-23T00:08:28+00:00",
+  "endedAt": "2026-11-23T00:08:36+00:00",
+  "published": false,
+  "reviewMp3": "artifacts/sentence-first-agent/20261122-jesus-will-return-podcast-es/review.mp3",
+  "reviewPlayer": {
+    "html": "artifacts/sentence-first-agent/20261122-jesus-will-return-podcast-es/review-player.html",
+    "rows": 493
+  },
+  "note": "track merged and scored; audio alignment and review materials done in the same pass"
+}
