@@ -1,0 +1,536 @@
+{
+  "schemaVersion": "sermon-weekly-rollup-v1",
+  "week": "20261122",
+  "window": {
+    "from": "2026-11-16",
+    "to": "2026-11-22"
+  },
+  "generatedAt": "2026-11-23T16:02:30+00:00",
+  "generatedBy": "tools/development/weekly_rollup.py",
+  "humanApproval": false,
+  "finalized": false,
+  "previousWeek": "20261108",
+  "metrics": {
+    "reports.total": 3,
+    "reports.production": 1,
+    "time.wallSeconds": 8596.55,
+    "time.computeSeconds": 4651.884,
+    "time.waitingSeconds": 0.0,
+    "time.reworkSeconds": 471.45,
+    "time.reworkShare": 0.101,
+    "publish.failedGateEvents": 5,
+    "errors.total": 11,
+    "errors.preflight": 0,
+    "errors.afterResources": 1,
+    "errors.afterPublish": 0,
+    "errors.lateShare": 0.091,
+    "collection.unstructuredReports": 1,
+    "collection.reportsWithoutJournal": 2,
+    "collection.retrospectiveUnfilled": 0,
+    "collection.withoutPrivateEvidence": 2
+  },
+  "previousMetrics": {
+    "reports.total": 3,
+    "reports.production": 2,
+    "time.wallSeconds": 18201.489,
+    "time.computeSeconds": 2970.427,
+    "time.waitingSeconds": 0.0,
+    "time.reworkSeconds": 220.329,
+    "time.reworkShare": 0.074,
+    "publish.failedGateEvents": 4,
+    "errors.total": 11,
+    "errors.preflight": 2,
+    "errors.afterResources": 2,
+    "errors.afterPublish": 7,
+    "errors.lateShare": 0.818,
+    "collection.unstructuredReports": 1,
+    "collection.reportsWithoutJournal": 1,
+    "collection.retrospectiveUnfilled": 1,
+    "collection.withoutPrivateEvidence": 1
+  },
+  "reports": [
+    {
+      "name": "20261116-ios-builtin-mic-route",
+      "structured": true,
+      "runs": [],
+      "hasJournal": false,
+      "production": false,
+      "failedEvents": {},
+      "repeats": [],
+      "publish": {
+        "deployAttempts": 0,
+        "deployStatuses": {},
+        "gateStatuses": [],
+        "gateFailedChecks": 0,
+        "smokeStatuses": {}
+      },
+      "outcomes": {},
+      "cost": {
+        "estimatedMicrousd": 0,
+        "requests": 0,
+        "ledgers": 0
+      },
+      "privateEvidence": {
+        "uploaded": false,
+        "bundles": 0
+      },
+      "retrospective": {
+        "status": "filled",
+        "unfilled": 0,
+        "errors": [
+          {
+            "stage": "真机整轮（7 项单测）",
+            "symptom": "`NSCocoaErrorDomain Code=260`，读不到 fixture",
+            "timing": "unknown",
+            "fix": "建议加 `XCTSkip`（见改进）"
+          },
+          {
+            "stage": "真机整轮（1 项 UI）",
+            "symptom": "`TongxingUITests-Runner (10788)` 初始化失败，`Timed out while enabling automation mode`",
+            "timing": "unknown",
+            "fix": "操作员设备设置"
+          },
+          {
+            "stage": "真机调试",
+            "symptom": "`xcode_lldb attach` 三次都在约 35 s 报「process never stopped」",
+            "timing": "unknown",
+            "fix": "记在本报告"
+          }
+        ],
+        "improvements": [
+          {
+            "category": "质量",
+            "improvement": "把 7 个 `#filePath` fixture 测试改成 bundle resource，或先用 `FileManager.fileExists` 判断后 `XCTSkip`",
+            "evidence": "真机 7 项失败",
+            "expectedGain": "设备整轮不再红，可当回归信号",
+            "tracking": "本报告"
+          },
+          {
+            "category": "预检",
+            "improvement": "跑真机整轮前先确认「启用 UI 自动化」和 fixture 依赖",
+            "evidence": "真机 1 项 UI runner 失败",
+            "expectedGain": "省一次约 2 分钟返工",
+            "tracking": "本报告"
+          },
+          {
+            "category": "流程",
+            "improvement": "没有可用物理设备时先确认再准备构建",
+            "evidence": "本次在设备接入前先做了签名与构建准备",
+            "expectedGain": "少一次等待",
+            "tracking": "本报告"
+          }
+        ]
+      }
+    },
+    {
+      "name": "20261121-jesus-will-return-r4",
+      "structured": true,
+      "runs": [
+        {
+          "run": "20261121-jesus-will-return-es",
+          "events": 19,
+          "openStages": []
+        },
+        {
+          "run": "20261121-jesus-will-return-ko",
+          "events": 20,
+          "openStages": []
+        },
+        {
+          "run": "20261121-jesus-will-return-zh",
+          "events": 84,
+          "openStages": [
+            "l3.lag-loop.zh-Hans",
+            "l4.stage2"
+          ]
+        }
+      ],
+      "hasJournal": true,
+      "production": true,
+      "time": {
+        "firstAt": "2026-11-22T04:10:22+00:00",
+        "lastAt": "2026-11-22T06:33:38.550377+00:00",
+        "wallSeconds": 8596.55,
+        "computeSeconds": 4651.884,
+        "waitingSeconds": 0.0,
+        "reworkSeconds": 471.45
+      },
+      "failedEvents": {
+        "l4.publish": 2,
+        "l4.stage1": 1,
+        "l4.validate": 2
+      },
+      "repeats": [
+        {
+          "run": "20261121-jesus-will-return-zh",
+          "stage": "l4.publish",
+          "repeats": 5,
+          "seconds": 216.019
+        },
+        {
+          "run": "20261121-jesus-will-return-zh",
+          "stage": "l4.baseline",
+          "repeats": 4,
+          "seconds": 199.59
+        },
+        {
+          "run": "20261121-jesus-will-return-zh",
+          "stage": "l3.finish",
+          "repeats": 3,
+          "seconds": 19.0
+        },
+        {
+          "run": "20261121-jesus-will-return-ko",
+          "stage": "l3.finish",
+          "repeats": 2,
+          "seconds": 17.0
+        },
+        {
+          "run": "20261121-jesus-will-return-zh",
+          "stage": "l4.assets",
+          "repeats": 1,
+          "seconds": 12.644
+        },
+        {
+          "run": "20261121-jesus-will-return-es",
+          "stage": "l3.finish",
+          "repeats": 1,
+          "seconds": 5.0
+        },
+        {
+          "run": "20261121-jesus-will-return-zh",
+          "stage": "l4.readback",
+          "repeats": 2,
+          "seconds": 1.951
+        },
+        {
+          "run": "20261121-jesus-will-return-zh",
+          "stage": "l4.publish-check",
+          "repeats": 3,
+          "seconds": 0.149
+        },
+        {
+          "run": "20261121-jesus-will-return-zh",
+          "stage": "l4.stage1",
+          "repeats": 1,
+          "seconds": 0.09
+        },
+        {
+          "run": "20261121-jesus-will-return-zh",
+          "stage": "l4.validate",
+          "repeats": 2,
+          "seconds": 0.007
+        },
+        {
+          "run": "20261121-jesus-will-return-es",
+          "stage": "l2.consistency",
+          "repeats": 1,
+          "seconds": 0.0
+        },
+        {
+          "run": "20261121-jesus-will-return-es",
+          "stage": "l1.preflight",
+          "repeats": 1,
+          "seconds": 0.0
+        },
+        {
+          "run": "20261121-jesus-will-return-ko",
+          "stage": "l2.consistency",
+          "repeats": 1,
+          "seconds": 0.0
+        },
+        {
+          "run": "20261121-jesus-will-return-zh",
+          "stage": "l2.consistency",
+          "repeats": 1,
+          "seconds": 0.0
+        },
+        {
+          "run": "20261121-jesus-will-return-zh",
+          "stage": "l4.stage2",
+          "repeats": 1,
+          "seconds": 0.0
+        }
+      ],
+      "publish": {
+        "deployAttempts": 0,
+        "deployStatuses": {},
+        "gateStatuses": [],
+        "gateFailedChecks": 0,
+        "smokeStatuses": {}
+      },
+      "outcomes": {
+        "track_ready_for_review": 3
+      },
+      "cost": {
+        "estimatedMicrousd": 0,
+        "requests": 0,
+        "ledgers": 0
+      },
+      "privateEvidence": {
+        "uploaded": true,
+        "bundles": 6
+      },
+      "retrospective": {
+        "status": "filled",
+        "unfilled": 0,
+        "errors": [
+          {
+            "stage": "",
+            "symptom": "2000 年前后的年份读成「一千九百八十」「二千二十四」",
+            "timing": "unknown",
+            "fix": ""
+          },
+          {
+            "stage": "",
+            "symptom": "`lag_loop` 在重建 speech 时崩：`spokenForms keys not found`",
+            "timing": "unknown",
+            "fix": ""
+          },
+          {
+            "stage": "",
+            "symptom": "第一次追落后把 82 句压成残句（「可后靠，我不因失礼。」）",
+            "timing": "unknown",
+            "fix": ""
+          },
+          {
+            "stage": "",
+            "symptom": "对齐 sidecar 绑不上目录（schemaVersion / release 哈希口径 / 窗口末值 0.0003 s 偏差）",
+            "timing": "unknown",
+            "fix": ""
+          },
+          {
+            "stage": "",
+            "symptom": "目录重绑后 `publish` 报 `Baseline catalog differs` / `Baseline snapshot is incomplete`",
+            "timing": "unknown",
+            "fix": ""
+          },
+          {
+            "stage": "",
+            "symptom": "`stage1` 拒绝覆盖已发布 content（想补 `sourceWindow`）",
+            "timing": "unknown",
+            "fix": ""
+          }
+        ],
+        "improvements": [
+          {
+            "category": "流程",
+            "improvement": "把「目录重绑后必须重封存」写进发布 playbook",
+            "evidence": "本轮两次 publish 失败均因此",
+            "expectedGain": "",
+            "tracking": ""
+          },
+          {
+            "category": "质量",
+            "improvement": "同步 run 默认「先剪静音、再逐句加速 ≤1.15」",
+            "evidence": "zh 24.79 s → 2.73 s、ko 16.94 s → 5.06 s、es 11.47 s → 7.65 s，且零删字",
+            "expectedGain": "",
+            "tracking": ""
+          },
+          {
+            "category": "预检",
+            "improvement": "第 11 周手册 candidate 只能等 release 上线后跑，要预留第 4 次部署",
+            "evidence": "本轮把手册与海报合并成第二次发布意图",
+            "expectedGain": "",
+            "tracking": ""
+          },
+          {
+            "category": "工具",
+            "improvement": "反馈目录追加脚本（导出→追加→打包→部署→核验）目前是一次性脚本",
+            "evidence": "本轮按 prep 文档手工执行",
+            "expectedGain": "",
+            "tracking": ""
+          }
+        ]
+      }
+    },
+    {
+      "name": "20261121-mbp14-sermon-zh",
+      "structured": false,
+      "runs": [],
+      "hasJournal": false,
+      "production": false,
+      "failedEvents": {},
+      "repeats": [],
+      "publish": {
+        "deployAttempts": 0,
+        "deployStatuses": {},
+        "gateStatuses": [],
+        "gateFailedChecks": 0,
+        "smokeStatuses": {}
+      },
+      "outcomes": {},
+      "cost": {
+        "estimatedMicrousd": 0,
+        "requests": 0,
+        "ledgers": 0
+      },
+      "privateEvidence": {
+        "uploaded": false,
+        "bundles": 0
+      },
+      "retrospective": {
+        "status": "filled",
+        "unfilled": 0,
+        "errors": [
+          {
+            "stage": "预检／内存门槛",
+            "symptom": "20 GiB 默认门槛在本机不可达（桌面常开时 11.6–18.8 GiB）",
+            "timing": "unknown",
+            "fix": "本 PR"
+          },
+          {
+            "stage": "报告／导出器",
+            "symptom": "导出器把整段墙钟算成 0m03s",
+            "timing": "afterResources",
+            "fix": "本 PR"
+          }
+        ],
+        "improvements": [
+          {
+            "category": "预检",
+            "improvement": "起跑门槛改用实测值 15 GiB（已改默认与 runbook）",
+            "evidence": "冷首窗峰值 16.73 GB、13.7 GiB 起跑也能完成、整期最低 9.53 GB",
+            "expectedGain": "36 GiB 机器不必先退出浏览器才能开工，同时保留 ~1.3 GiB 余量",
+            "tracking": "本 PR"
+          },
+          {
+            "category": "流程",
+            "improvement": "`tts_sentences.py` 写 `journal.ndjson` 的 `l3.tts` started/finished 与 TTS 墙钟，让导出器能自动汇总本机渲染",
+            "evidence": "导出器只看到 3 秒",
+            "expectedGain": "报告不用手工补数",
+            "tracking": "待建 backlog"
+          },
+          {
+            "category": "速度",
+            "improvement": "本机 RTF 0.337，优于 2026-11-09 组件估计（0.368），整期 zh 约 9 分钟；可据此更新 runbook §0.1 的保守估计",
+            "evidence": "535.1 s／1,586.1 s",
+            "expectedGain": "排期更准",
+            "tracking": "本 PR 已更新 15 GiB；速度取 2.4× 保守值暂不动"
+          },
+          {
+            "category": "质量",
+            "improvement": "本机整轨与发布版逐句时长平均差 0.32 s、最大 2.0 s，属于不同执行身份；若要替换线上音轨，必须人工整轨听审并另立收据",
+            "evidence": "`8167d7e4…` vs `93a031dc…`",
+            "expectedGain": "避免把「能跑」当成「可发布」",
+            "tracking": "遗留"
+          }
+        ]
+      }
+    }
+  ],
+  "actions": [],
+  "candidates": [
+    {
+      "id": "C1",
+      "report": "20261116-ios-builtin-mic-route",
+      "category": "质量",
+      "improvement": "把 7 个 `#filePath` fixture 测试改成 bundle resource，或先用 `FileManager.fileExists` 判断后 `XCTSkip`",
+      "evidence": "真机 7 项失败",
+      "expectedGain": "设备整轮不再红，可当回归信号",
+      "tracking": "本报告",
+      "decision": null
+    },
+    {
+      "id": "C2",
+      "report": "20261116-ios-builtin-mic-route",
+      "category": "预检",
+      "improvement": "跑真机整轮前先确认「启用 UI 自动化」和 fixture 依赖",
+      "evidence": "真机 1 项 UI runner 失败",
+      "expectedGain": "省一次约 2 分钟返工",
+      "tracking": "本报告",
+      "decision": null
+    },
+    {
+      "id": "C3",
+      "report": "20261116-ios-builtin-mic-route",
+      "category": "流程",
+      "improvement": "没有可用物理设备时先确认再准备构建",
+      "evidence": "本次在设备接入前先做了签名与构建准备",
+      "expectedGain": "少一次等待",
+      "tracking": "本报告",
+      "decision": null
+    },
+    {
+      "id": "C4",
+      "report": "20261121-jesus-will-return-r4",
+      "category": "流程",
+      "improvement": "把「目录重绑后必须重封存」写进发布 playbook",
+      "evidence": "本轮两次 publish 失败均因此",
+      "expectedGain": "",
+      "tracking": "",
+      "decision": null
+    },
+    {
+      "id": "C5",
+      "report": "20261121-jesus-will-return-r4",
+      "category": "质量",
+      "improvement": "同步 run 默认「先剪静音、再逐句加速 ≤1.15」",
+      "evidence": "zh 24.79 s → 2.73 s、ko 16.94 s → 5.06 s、es 11.47 s → 7.65 s，且零删字",
+      "expectedGain": "",
+      "tracking": "",
+      "decision": null
+    },
+    {
+      "id": "C6",
+      "report": "20261121-jesus-will-return-r4",
+      "category": "预检",
+      "improvement": "第 11 周手册 candidate 只能等 release 上线后跑，要预留第 4 次部署",
+      "evidence": "本轮把手册与海报合并成第二次发布意图",
+      "expectedGain": "",
+      "tracking": "",
+      "decision": null
+    },
+    {
+      "id": "C7",
+      "report": "20261121-jesus-will-return-r4",
+      "category": "工具",
+      "improvement": "反馈目录追加脚本（导出→追加→打包→部署→核验）目前是一次性脚本",
+      "evidence": "本轮按 prep 文档手工执行",
+      "expectedGain": "",
+      "tracking": "",
+      "decision": null
+    },
+    {
+      "id": "C8",
+      "report": "20261121-mbp14-sermon-zh",
+      "category": "预检",
+      "improvement": "起跑门槛改用实测值 15 GiB（已改默认与 runbook）",
+      "evidence": "冷首窗峰值 16.73 GB、13.7 GiB 起跑也能完成、整期最低 9.53 GB",
+      "expectedGain": "36 GiB 机器不必先退出浏览器才能开工，同时保留 ~1.3 GiB 余量",
+      "tracking": "本 PR",
+      "decision": null
+    },
+    {
+      "id": "C9",
+      "report": "20261121-mbp14-sermon-zh",
+      "category": "流程",
+      "improvement": "`tts_sentences.py` 写 `journal.ndjson` 的 `l3.tts` started/finished 与 TTS 墙钟，让导出器能自动汇总本机渲染",
+      "evidence": "导出器只看到 3 秒",
+      "expectedGain": "报告不用手工补数",
+      "tracking": "待建 backlog",
+      "decision": null
+    },
+    {
+      "id": "C10",
+      "report": "20261121-mbp14-sermon-zh",
+      "category": "速度",
+      "improvement": "本机 RTF 0.337，优于 2026-11-09 组件估计（0.368），整期 zh 约 9 分钟；可据此更新 runbook §0.1 的保守估计",
+      "evidence": "535.1 s／1,586.1 s",
+      "expectedGain": "排期更准",
+      "tracking": "本 PR 已更新 15 GiB；速度取 2.4× 保守值暂不动",
+      "decision": null
+    },
+    {
+      "id": "C11",
+      "report": "20261121-mbp14-sermon-zh",
+      "category": "质量",
+      "improvement": "本机整轨与发布版逐句时长平均差 0.32 s、最大 2.0 s，属于不同执行身份；若要替换线上音轨，必须人工整轨听审并另立收据",
+      "evidence": "`8167d7e4…` vs `93a031dc…`",
+      "expectedGain": "避免把「能跑」当成「可发布」",
+      "tracking": "遗留",
+      "decision": null
+    }
+  ],
+  "frontend": null
+}
