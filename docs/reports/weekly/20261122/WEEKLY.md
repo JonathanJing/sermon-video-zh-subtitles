@@ -16,7 +16,7 @@
 |---|---|---|---|---|---|---|---|---|---|
 | [20261116-ios-builtin-mic-route](../../runs/20261116-ios-builtin-mic-route/INDEX.md) | 其他 | — | — | — | — | — | — | 已填 | 未上传 |
 | [20261121-jesus-will-return-r4](../../runs/20261121-jesus-will-return-r4/INDEX.md) | 生产 | 2h23m | 1h17m | 0m00s | 7m51s | — | — | 已填 | 已上传 6 |
-| [20261121-mbp14-sermon-zh](../../runs/20261121-mbp14-sermon-zh/INDEX.md) | 其他 | — | — | — | — | — | — | 已填 | 未上传 |
+| 20261121-mbp14-sermon-zh（无 INDEX.md，见该目录的 RETROSPECTIVE.md） | 其他 | — | — | — | — | — | — | 已填 | 未上传 |
 
 墙钟取该报告所有 journal 的最早到最晚事件；没有 journal 的报告显示「—」，不是零。「重复轮次」是同一阶段再次启动后的计算时间，包含返工和变更，下面由审核人区分。
 
