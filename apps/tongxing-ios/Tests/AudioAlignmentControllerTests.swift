@@ -1014,7 +1014,13 @@ final class AudioAlignmentControllerTests: XCTestCase {
         XCTAssertEqual(session.category, .playAndRecord)
         XCTAssertEqual(session.mode, .measurement)
         XCTAssertTrue(session.categoryOptions.contains(.allowBluetoothA2DP))
+        // .allowBluetoothHFP is the iOS 26 SDK name of .allowBluetooth; the hosted
+        // runner still builds with Xcode 16 (Swift 6.1), which only knows the old name.
+        #if compiler(>=6.2)
         XCTAssertFalse(session.categoryOptions.contains(.allowBluetoothHFP))
+        #else
+        XCTAssertFalse(session.categoryOptions.contains(.allowBluetooth))
+        #endif
         XCTAssertEqual(session.currentRoute.inputs.first?.portType, .builtInMic,
                        "Alignment listens through the phone microphone, not an accessory")
     }
