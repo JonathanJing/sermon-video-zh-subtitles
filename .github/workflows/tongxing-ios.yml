@@ -193,7 +193,7 @@ jobs:
           methods = set(re.findall(r"\bfunc\s+(test\w+)\s*\(", Path("UITests/ListeningFlowUITests.swift").read_text()))
           regression = {
               "testDuoPosturePlaybackAndPanelsScreenshots",
-              "testPlaybackDockSwipeCollapsesWithoutPausingAndExpands",
+              "testPlaybackDockSwipeDoesNotCollapseOrPause",
               "testFullTranscriptReturnToCurrentKeepsPausePositionAndReadingMode",
               "testNormalTextTranscriptTimeTapAndAutomaticFollowing",
               "testTranscriptAutomaticallyFollowsNextCaption",
