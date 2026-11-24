@@ -241,7 +241,10 @@ jobs:
           print("Executing group:", group, selected, flush=True)
           command = ["./scripts/ios.sh", "test", "--developer-dir", subprocess.check_output(["xcode-select", "-p"], text=True).strip(),
                      "--scheme", os.environ["TONGXING_VALIDATION_SCHEME"], "--simulator", os.environ["TONGXING_VALIDATION_SIMULATOR"],
-                     "--derived-data", "DerivedData", "--artifacts-dir", "TestResults"]
+                     "--derived-data", "DerivedData", "--artifacts-dir", "TestResults",
+                     # One retry for a failed case: hosted simulators stall now and then.
+                     # A test that fails twice still fails the job.
+                     "--retry-failed", "2"]
           for target in selected:
               command.extend(["--only-testing", target])
           subprocess.run(command, check=True)

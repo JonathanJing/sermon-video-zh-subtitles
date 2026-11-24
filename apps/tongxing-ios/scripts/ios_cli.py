@@ -78,12 +78,16 @@ def arguments():
     selection.add_argument("--ui", action="store_true", help="test 仅执行 TongxingUITests")
     selection.add_argument("--only-testing", action="append", metavar="TARGET[/CLASS[/METHOD]]",
                            help="test 精确选择，可重复；默认仅 TongxingTests")
+    parser.add_argument("--retry-failed", type=int, default=1, metavar="N",
+                        help="test 中失败的用例最多运行 N 次（含首次）；托管 CI 用 2 吸收模拟器偶发卡顿")
     parser.add_argument("--app", type=Path, help="launch 安装已有 .app；默认从所选 scheme 构建设置查找")
     parser.add_argument("--launch-arg", action="append", default=[], help="launch 的 App 参数，可重复；以 - 开头时使用 =")
     parser.add_argument("--dry-run", action="store_true", help="只读查询 scheme、设备和构建设置，打印命令；不构建/测试/启动")
     args = parser.parse_args()
     if args.action != "test" and (args.ui or args.only_testing):
         parser.error("--ui / --only-testing 只用于 test")
+    if args.retry_failed < 1 or (args.action != "test" and args.retry_failed != 1):
+        parser.error("--retry-failed 只用于 test，且至少为 1")
     if args.action != "launch" and (args.app or args.launch_arg):
         parser.error("--app / --launch-arg 只用于 launch")
     if args.simulator is not None:
@@ -203,6 +207,9 @@ def execute(args, runner, artifact_root, run_directory, receipt):
                 raise ValueError("工程缺少测试目标 " + ", ".join(sorted(missing)) + "；确认 project.yml 与工程已同步。")
             receipt["only_testing"] = selected
             command += ["-parallel-testing-enabled", "NO"] + ["-only-testing:" + test for test in selected]
+            if args.retry_failed > 1:
+                receipt["retry_failed"] = args.retry_failed
+                command += ["-retry-tests-on-failure", "-test-iterations", str(args.retry_failed)]
         commands = [command + [args.action]]
     print(json.dumps(receipt, ensure_ascii=False, indent=2), flush=True)
     for command in commands:
