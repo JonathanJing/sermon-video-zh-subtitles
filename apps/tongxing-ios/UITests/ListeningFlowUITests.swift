@@ -786,7 +786,9 @@ final class ListeningFlowUITests: XCTestCase {
         XCTAssertTrue(follow.label.hasSuffix("跟随播放"))
         screenshot("normal-text-transcript-current-paused12", app: app)
         app.buttons["playback-toggle"].tap()
-        try waitFor(app.buttons["published-caption-time-g3"], "selected == true AND hittable == true", timeout: 20)
+        // g3 starts 12 s of real playback later and holds until 36 s; hosted
+        // simulators can take several extra seconds to start audio and scroll.
+        try waitFor(app.buttons["published-caption-time-g3"], "selected == true AND hittable == true", timeout: 30)
         XCTAssertTrue(app.staticTexts["published-caption-text-g3"].isHittable)
         XCTAssertTrue(follow.label.hasSuffix("跟随播放"))
         screenshot("normal-text-transcript-auto-follow24", app: app)
