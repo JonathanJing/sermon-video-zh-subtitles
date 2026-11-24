@@ -284,7 +284,11 @@ final class ListeningFlowUITests: XCTestCase {
         // XCUITest reports the Duo inner screen in its physical (portrait) size
         // even while the UI runs landscape, so accept either orientation and
         // distinguish the inner screen from the 466x678 outer one by size.
-        try XCTSkipUnless(max(app.frame.width, app.frame.height) >= 600,
+        // A regular iPhone in landscape is also wider than 600 points but keeps
+        // the floating bottom dock, so match the inner display's own size.
+        let longEdge = max(app.frame.width, app.frame.height)
+        let shortEdge = min(app.frame.width, app.frame.height)
+        try XCTSkipUnless(abs(longEdge - 951) < 2 && abs(shortEdge - 669) < 2,
                           "This geometry check targets the iPhone Duo inner display; observed \(app.frame)")
         let play = app.buttons["playback-toggle"]
         XCTAssertTrue(play.waitForExistence(timeout: 5))
@@ -747,6 +751,9 @@ final class ListeningFlowUITests: XCTestCase {
         app.segmentedControls["listening-display"].buttons["字幕全文"].tap()
         let chinese = app.staticTexts["published-caption-text-g1"]
         XCTAssertTrue(chinese.waitForExistence(timeout: 5))
+        // On taller phones the first paragraph can start under the header;
+        // bring it fully into the reading area before the long press.
+        try reveal(chinese, in: app, direction: .down)
         XCTAssertTrue(chinese.isHittable)
         chinese.press(forDuration: 1.2)
         let copy = app.buttons["copy-transcript-g1"]
@@ -1328,12 +1335,13 @@ final class ListeningFlowUITests: XCTestCase {
         comparison.tap()
         XCTAssertFalse(english.exists)
         comparison.tap()
-        app.buttons["more-options"].tap()
-        let language = element("interface-language", in: app)
-        try reveal(language, in: app, direction: .up)
+        // The header language menu is the interface-language control on the
+        // listening page; the More sheet's picker is not in the reading scroll.
+        let language = element("app-language-menu", in: app)
+        for _ in 0..<4 where !language.isHittable { app.scrollViews["listening-scroll"].swipeDown() }
+        try waitFor(language, "exists == true AND hittable == true")
         language.tap()
         app.buttons["English"].tap()
-        app.buttons["Done"].tap()
         try waitFor(app.buttons["playback-toggle"], "label == 'Play'")
         try waitFor(playbackStatus(in: app), "value BEGINSWITH '00:12'")
         XCTAssertEqual(element("sermon-title", in: app).label, "界面测试证道")
