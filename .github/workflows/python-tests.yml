@@ -147,7 +147,8 @@ jobs:
       # ubuntu-latest (26.04) ships without ffmpeg, so every shard installs it.
       # Keep the downloaded .debs: a slow mirror once took the full 10 minutes.
       - name: Restore cached ffmpeg packages
-        uses: actions/cache@v4
+        id: ffmpeg-cache
+        uses: actions/cache/restore@v4
         with:
           path: ~/apt-archives
           key: apt-ffmpeg-${{ runner.os }}-${{ runner.arch }}-v1
@@ -163,9 +164,11 @@ jobs:
             # Current runners use mirror+file:/etc/apt/apt-mirrors.txt.
             for source in /etc/apt/sources.list /etc/apt/sources.list.d/*.list /etc/apt/sources.list.d/*.sources /etc/apt/apt-mirrors.txt; do
               if [ -f "$source" ]; then
-                sudo sed -i 's|http://azure.archive.ubuntu.com|https://archive.ubuntu.com|g; s|https://azure.archive.ubuntu.com|https://archive.ubuntu.com|g' "$source"
-                if sudo grep -q 'azure.archive.ubuntu.com' "$source"; then
-                  echo "Azure mirror remains in $source" >&2
+                # AWS runners trickle too (us-east-2.ec2.archive.ubuntu.com, 2026-11-24):
+                # rewrite every regional mirror, not only Azure's.
+                sudo sed -i -E 's#https?://[a-z0-9.-]+\.archive\.ubuntu\.com#https://archive.ubuntu.com#g' "$source"
+                if sudo grep -Eq '[a-z0-9-]\.archive\.ubuntu\.com' "$source"; then
+                  echo "Regional mirror remains in $source" >&2
                   exit 1
                 fi
               fi
@@ -186,6 +189,16 @@ jobs:
           fi
           ffmpeg -version
           ffprobe -version
+
+      # Save right after a good install, so one finished shard warms the cache
+      # even when tests in the same job later fail.
+      - name: Save cached ffmpeg packages
+        if: steps.ffmpeg-cache.outputs.cache-hit != 'true'
+        continue-on-error: true
+        uses: actions/cache/save@v4
+        with:
+          path: ~/apt-archives
+          key: apt-ffmpeg-${{ runner.os }}-${{ runner.arch }}-v1
 
       - name: Compile production scripts
         if: matrix.shard_index == 1
