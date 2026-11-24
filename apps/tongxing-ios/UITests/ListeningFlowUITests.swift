@@ -1646,9 +1646,11 @@ final class ListeningFlowUITests: XCTestCase {
         let panel = element("playback-more-panel", in: app)
         guard panel.exists else { return }
         // A popover opened from inside a presented sheet leaves more than one
-        // dismiss region in the hierarchy; any of them dismisses the popover.
-        let dismissRegion = app.otherElements["PopoverDismissRegion"].firstMatch
-        if dismissRegion.exists { dismissRegion.tap() }
+        // dismiss region in the hierarchy. On the iOS 18 simulator the first one
+        // can be the sheet's off-screen region ({-402, -874}), which is not
+        // hittable, so tap the last hittable region instead of the first match.
+        let regions = app.otherElements.matching(identifier: "PopoverDismissRegion").allElementsBoundByIndex
+        if let dismissRegion = regions.last(where: { $0.exists && $0.isHittable }) { dismissRegion.tap() }
         else { app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.12)).tap() }
         let closed = XCTNSPredicateExpectation(predicate: NSPredicate(format: "exists == false"), object: panel)
         XCTAssertEqual(XCTWaiter.wait(for: [closed], timeout: 5), .completed,
