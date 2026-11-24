@@ -137,7 +137,9 @@ jobs:
   ios-validation:
     needs: changes
     if: needs.changes.outputs.scope == 'native' && (github.event_name == 'workflow_dispatch' || github.event_name == 'schedule' || (github.base_ref == 'main' && !github.event.pull_request.draft))
-    runs-on: macos-15
+    # The app targets the iOS 26 SDK; the macos-15 image tops out at Xcode 16.4
+    # and the iOS 18.5 simulator, where several layout checks differ.
+    runs-on: macos-26
     timeout-minutes: 45
     # live-data reads the real Dev/Production catalog, so content changes can
     # turn it red without a code change. It runs on dispatch and nightly only
