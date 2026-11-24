@@ -144,6 +144,14 @@ jobs:
       - name: Install dependencies
         run: python -m pip install -r requirements-test.txt
 
+      # ubuntu-latest (26.04) ships without ffmpeg, so every shard installs it.
+      # Keep the downloaded .debs: a slow mirror once took the full 10 minutes.
+      - name: Restore cached ffmpeg packages
+        uses: actions/cache@v4
+        with:
+          path: ~/apt-archives
+          key: apt-ffmpeg-${{ runner.os }}-${{ runner.arch }}-v1
+
       - name: Install audio verification tools
         timeout-minutes: 10
         run: |
@@ -162,8 +170,19 @@ jobs:
                 fi
               fi
             done
+            # Only Ubuntu's archive serves ffmpeg. A 429 from packages.microsoft.com
+            # failed the strict index refresh below (2026-11-18), so drop it first.
+            for source in /etc/apt/sources.list.d/*; do
+              if [ -f "$source" ] && sudo grep -q 'packages.microsoft.com' "$source"; then
+                sudo rm -f "$source"
+              fi
+            done
+            mkdir -p "$HOME/apt-archives/partial"
+            apt_options+=(-o "Dir::Cache::archives=$HOME/apt-archives")
             sudo apt-get "${apt_options[@]}" -o APT::Update::Error-Mode=any update
             sudo apt-get "${apt_options[@]}" install -y --no-install-recommends ffmpeg
+            sudo chown -R "$(id -u):$(id -g)" "$HOME/apt-archives"
+            sudo rm -rf "$HOME/apt-archives/partial" "$HOME/apt-archives/lock"
           fi
           ffmpeg -version
           ffprobe -version

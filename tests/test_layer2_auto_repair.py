@@ -839,16 +839,21 @@ class RunnerCollectionTests(unittest.TestCase):
 
     def test_collection_runs_groups_concurrently_with_a_plugin(self):
         import threading
-        import time
         f = self.fixture
         self.failed_id = runner.group_plan(f.request, f.anchor)[0]["translationGroupId"]
         active, peak, lock = [0], [0], threading.Lock()
+        # Wait for a second in-flight call instead of trusting a 50 ms sleep:
+        # on a loaded CI runner one worker could finish before the other began
+        # (peak 1 != 2). A serial runner still fails, after the 5 s wait.
+        both_in_flight = threading.Event()
 
         def slow(api_key, payload):
             with lock:
                 active[0] += 1
                 peak[0] = max(peak[0], active[0])
-            time.sleep(0.05)
+                if active[0] >= 2:
+                    both_in_flight.set()
+            both_in_flight.wait(timeout=5)
             try:
                 return self._quote_fail(api_key, payload)
             finally:

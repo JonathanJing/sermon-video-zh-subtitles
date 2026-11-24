@@ -118,6 +118,15 @@ class WeeklyRollupTests(unittest.TestCase):
             text = text.replace(old, new)
         page.write_text(text, encoding="utf-8")
 
+    def test_run_links_point_at_a_page_the_report_has(self):
+        self.report("20261108-page", day=8, deploys=1)  # RETROSPECTIVE.md only
+        self.report("20261108-hotfix", day=8, deploys=0, structured=False)  # INDEX.md too
+        self.build("20261108")
+        page = (self.weekly / "20261108" / "WEEKLY.md").read_text(encoding="utf-8")
+        self.assertIn("](../../runs/20261108-page/RETROSPECTIVE.md)", page)
+        self.assertIn("](../../runs/20261108-hotfix/INDEX.md)", page)
+        self.assertNotIn("20261108-page/INDEX.md", page)
+
     def test_decisions_are_stored_and_checked_next_week(self):
         self.report("20261108-page", day=8, deploys=5, publish_starts=3)
         self.build("20261108")
