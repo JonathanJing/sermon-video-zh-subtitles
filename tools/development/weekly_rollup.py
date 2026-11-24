@@ -193,6 +193,9 @@ def report_metrics(report: Path, index: dict | None = None) -> dict:
     manifest = _json(report / "manifest.json")
     structured = isinstance(manifest, dict) and isinstance(manifest.get("runs"), list)
     row: dict = {"name": report.name, "structured": structured, "runs": []}
+    # Link the page that exists: some reports carry only a RETROSPECTIVE.md,
+    # and the docs gate rejects a WEEKLY.md with a broken local link.
+    row["entry"] = next((name for name in ("INDEX.md", "RETROSPECTIVE.md") if (report / name).is_file()), "")
     first_at, last_at = [], []
     totals = Counter()
     failed = Counter()
@@ -434,7 +437,9 @@ def render(weekly: dict) -> str:
     for r in reports:
         time = r.get("time") or {}
         publish = r["publish"]
-        rows.append([f"[{r['name']}](../../runs/{r['name']}/INDEX.md)", "生产" if r["production"] else "其他",
+        entry = r.get("entry", "INDEX.md")
+        link = f"../../runs/{r['name']}/{entry}" if entry else f"../../runs/{r['name']}/"
+        rows.append([f"[{r['name']}]({link})", "生产" if r["production"] else "其他",
                      _duration(time.get("wallSeconds")), _duration(time.get("computeSeconds")),
                      _duration(time.get("waitingSeconds")), _duration(time.get("reworkSeconds")),
                      publish["deployAttempts"] or "—", "／".join(publish["gateStatuses"]) or "—",
