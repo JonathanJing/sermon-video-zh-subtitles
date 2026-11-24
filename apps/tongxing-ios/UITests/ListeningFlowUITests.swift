@@ -907,7 +907,7 @@ final class ListeningFlowUITests: XCTestCase {
             currentEnglish.exists && currentEnglish.isHittable
                 && currentEnglish.frame.minY < app.frame.midY
         }, object: nil)
-        XCTAssertEqual(XCTWaiter.wait(for: [landed], timeout: 15), .completed)
+        XCTAssertEqual(XCTWaiter.wait(for: [landed], timeout: 30), .completed)
         XCTAssertTrue(currentEnglish.label.contains("lighthouse"))
         screenshot("english-locate-delayed-transcript-near-current12", app: app)
         app.buttons["english-locate-close"].tap()

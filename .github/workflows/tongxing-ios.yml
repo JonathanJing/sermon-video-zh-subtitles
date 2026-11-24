@@ -140,7 +140,8 @@ jobs:
     # The app targets the iOS 26 SDK; the macos-15 image tops out at Xcode 16.4
     # and the iOS 18.5 simulator, where several layout checks differ.
     runs-on: macos-26
-    timeout-minutes: 45
+    # remaining-listening alone runs about 40 minutes on the macos-26 image.
+    timeout-minutes: 75
     # live-data reads the real Dev/Production catalog, so content changes can
     # turn it red without a code change. It runs on dispatch and nightly only
     # and never blocks the required native-client status.
