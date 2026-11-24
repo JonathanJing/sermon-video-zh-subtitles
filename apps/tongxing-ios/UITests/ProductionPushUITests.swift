@@ -5,6 +5,8 @@ final class ProductionPushUITests: XCTestCase {
     func testFormalSettingsStartUnsubscribedAndExplainOptIn() throws {
         let app = XCUIApplication()
         app.launchArguments = ["--ui-testing", "-AppleLanguages", "(zh-Hans)", "-AppleLocale", "zh_CN"]
+        // UITestLaunch.makeModel() stops the app without an isolated run ID.
+        app.launchEnvironment["TONGXING_UI_TEST_RUN_ID"] = UUID().uuidString
         app.launch()
 
         XCTAssertTrue(app.buttons["more-options"].waitForExistence(timeout: 20))
