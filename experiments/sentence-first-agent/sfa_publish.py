@@ -56,6 +56,8 @@ from tools.ops import set_catalog_default_page as default_page  # noqa: E402
 
 CONFIG_SCHEMA = HERE / "pages" / "page-config.schema.json"
 TITLE_TABLE_DEFAULT = "docs/series-sermon-titles.zh.md"
+READING_PDF_DEFAULT_BUCKET = "sermon-zh-artifacts-ai-for-god"
+READING_PDF_UNSAFE = re.compile(r"[\\/:*?\"<>|\s]+")
 PUBLISH_EVIDENCE = {
     "validate": "E1", "preflight": "E2", "check-title": "E2", "publish-check": "E2",
     "assets": "E1", "baseline": "E1", "stage1": "E1", "stage2": "E1",
@@ -111,6 +113,59 @@ def _export_report(cfg, publish_dir: Path | None) -> dict | None:
     except Exception as exc:  # noqa: BLE001 - the publish result must stand
         print(f"sfa_publish: run report not written ({exc}); "
               "run tools/development/export_production_report.py by hand", file=sys.stderr)
+        return None
+
+
+def _reading_pdf_destination(cfg) -> tuple[Path, str] | None:
+    """Local path and private-bucket object for this page's reading PDF, or None if it cannot be named."""
+    date = str(cfg.date or "").strip()
+    title = READING_PDF_UNSAFE.sub("-", str(cfg.title or cfg.page_id)).strip("-")
+    if not (date and title):
+        return None
+    locale = "zh-Hans" if "zh-Hans" in cfg.locales else cfg.locales[0]
+    bucket = os.environ.get("TONGXING_ARTIFACT_BUCKET") or READING_PDF_DEFAULT_BUCKET
+    name = f"{date}-{title}-中英对照阅读版.pdf"
+    return cfg.run_dir(locale) / "reading-pdf" / name, f"gs://{bucket}/sundays/{date}/reading-pdf/{name}"
+
+
+def _export_reading_pdf(cfg, page_id: str | None = None) -> dict | None:
+    """Observation only: a passed readback also exports and archives this week's reading PDF.
+
+    The PDF is rendered from the published content (no retranslation) and stored with a verified
+    MD5 in the private bucket beside its QA report; the QA report lands in the run directory, so
+    the evidence store keeps that text copy too. ``SFA_READING_PDF=0`` turns it off. Never raises
+    and never changes an exit code: the publish result stands on its own gates.
+    """
+    if cfg is None or os.environ.get("SFA_READING_PDF", "1") == "0":
+        return None
+    destination = _reading_pdf_destination(cfg)
+    if destination is None:
+        return None
+    local, uri = destination
+    try:
+        local.parent.mkdir(parents=True, exist_ok=True)
+        result = subprocess.run(
+            [sys.executable, str(WT / "tools/ops/run.py"), "workflows.dual_pdf.content_json_pdf",
+             "--page-id", page_id or cfg.page_id, "--base-url", cfg.origin(),
+             "--out", str(local), "--gcs-uri", uri],
+            capture_output=True, text=True, timeout=900)
+        if result.returncode != 0:
+            line = ((result.stderr or result.stdout).strip().splitlines() or ["no output"])[-1]
+            print(f"sfa_publish: reading PDF not archived ({line})", file=sys.stderr)
+            return None
+        report = json.loads(result.stdout)
+        upload = report.get("gcs") or {}
+        if not (report.get("qaStatus") == "pass"
+                and (upload.get("pdf") or {}).get("verified") is True
+                and (upload.get("qa") or {}).get("verified") is True):
+            print(f"sfa_publish: reading PDF left at {local} without a verified archive object; "
+                  "rerun the export with --gcs-uri", file=sys.stderr)
+            return None
+        print(f"sfa_publish: reading PDF archived at {upload['pdf']['uri']}", file=sys.stderr)
+        return report
+    except Exception as exc:  # noqa: BLE001 - the publish result must stand
+        print(f"sfa_publish: reading PDF not archived ({exc}); run "
+              "tools/ops/run.py workflows.dual_pdf.content_json_pdf by hand", file=sys.stderr)
         return None
 
 
@@ -1377,6 +1432,7 @@ def main(argv=None) -> int:
         _mark_publish(cfg, args.cmd, "finished", evidence_level=PUBLISH_EVIDENCE.get(args.cmd, "E1"))
         if args.cmd == "readback":
             _export_report(cfg, args.stage2.parent)
+            _export_reading_pdf(cfg)
     else:
         _mark_publish(cfg, args.cmd, "failed", error_class="gate",
                       message=str(result)[:300], resume=f"rerun sfa_publish.py {args.cmd}")

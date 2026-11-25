@@ -130,6 +130,8 @@
 
 `sermon_zh_en_reading.pdf` 是翻译稿/阅读版。`sermon_interpretation_zh.pdf` 是证道同行/大纲，只保留核心信息、结构、经文背景、神学重点、例证与必要的牧养辨析；不加入讨论题或与证道无关的应用任务。
 
+中英对照阅读版每周导出后存档到私有桶 `gs://sermon-zh-artifacts-ai-for-god/sundays/<周日>/reading-pdf/`，用 `workflows.dual_pdf.content_json_pdf --gcs-uri` 一步完成：命令先复查桶是统一访问且禁止公开，再上传 PDF、把对象 generation 与 MD5 写进 `.qa.json`、上传该报告，并逐项按 MD5 与本地字节比对，不一致即失败。存档只是已发布文稿的副本，不产生新的发行身份；不带 `--gcs-uri` 时仍只落本地。
+
 **同行内容契约（2026-09-12 修复）：** 新生成使用 `sermon-companion-v3` prompt 与 notes schema v3，不再生成讨论题、小组指南或回应祷告；可选节按来源证据决定数量，核心信息、摘要和大纲仍必需。来源引用、精确摘录及双 PDF QA 保留。旧 v2 产物沿用原验收规则，不自动重做。[修复与离线验证记录](../prompt-agent-skill-audit-fixes-20260912.zh.md)包含双 PDF 合成样例；真实模型内容质量仍需新运行验收。
 
 ### 周六内容如何服务周日

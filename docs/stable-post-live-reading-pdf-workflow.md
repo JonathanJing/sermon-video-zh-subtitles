@@ -117,6 +117,9 @@ Treat the workflow as complete only when all of the following are true:
 - `sermon_interpretation_zh.qa.json` reports pass
 - the generation report is `completed` and run status is written
 - configured publication has verified local/remote artifact parity (`publication.status=pass`)
+- when the reading PDF was exported with `--gcs-uri`, the QA report records `gcs.pdf.verified=true` and the command printed a verified `gcs.qa` object; an upload that could not be verified is not a delivered archive copy
+
+The reading PDF and its QA report are archived under `gs://sermon-zh-artifacts-ai-for-god/sundays/<Sunday>/reading-pdf/`; that object is a copy of a published document, not a new release.
 
 For the Supervisor path, the fresh deterministic `recommendedAction.action == "complete"` is authoritative; see [the shared completion rule](./sermon-production-supervisor-agent.md#completion-rule). Partial ASR or standalone files are not success.
 
@@ -135,7 +138,7 @@ The stable workflow is implemented mainly by these scripts:
 
 These parts of the repository already work, but they are not the primary documentation entrypoint today:
 
-- [../packages/production/src/tongxing_production/workflows/dual_pdf/content_json_pdf.py](../packages/production/src/tongxing_production/workflows/dual_pdf/content_json_pdf.py): export a local Chinese-English reading PDF from published `/content/<pageId>/zh-Hans.json` full text (content v2/v3) with `.venv/bin/python tools/ops/run.py workflows.dual_pdf.content_json_pdf --page-id <pageId>`. It reads the production Chinese text and pairs English by `textGroupId` from the hash-bound `/english-reference/<pageId>.json`; `--content <file>` reads a local file and `--no-english` drops the English. No retranslation or upload, and a machine-checked disclosure stays in the footer
+- [../packages/production/src/tongxing_production/workflows/dual_pdf/content_json_pdf.py](../packages/production/src/tongxing_production/workflows/dual_pdf/content_json_pdf.py): export a local Chinese-English reading PDF from published `/content/<pageId>/zh-Hans.json` full text (content v2/v3) with `.venv/bin/python tools/ops/run.py workflows.dual_pdf.content_json_pdf --page-id <pageId>`. It reads the production Chinese text and pairs English by `textGroupId` from the hash-bound `/english-reference/<pageId>.json`; `--content <file>` reads a local file and `--no-english` drops the English. No retranslation, and a machine-checked disclosure stays in the footer. `--gcs-uri gs://<bucket>/<path>/<name>.pdf` also stores the PDF and its `.qa.json` beside it: the command refuses a bucket without uniform access and enforced public access prevention, uploads the PDF first, writes the object generation and MD5 into the QA report, uploads that report, and verifies both objects against the local bytes. Without the flag nothing leaves the machine; either way the upload is a convenience copy and does not create a release identity
 - [../backend/README.md](../backend/README.md): backend worker and Cloud Run orchestration
 - [../apps/operator-web/README.md](../apps/operator-web/README.md): frontend/admin and playback prototype
 
