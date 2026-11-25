@@ -1,0 +1,271 @@
+
+$ /usr/bin/xcrun xcodebuild -project ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.agents/worktrees/picker-content-tabs/apps/tongxing-ios/Tongxing.xcodeproj -list -json -disableAutomaticPackageResolution
+{
+  "project" : {
+    "configurations" : [
+      "BetaDebug",
+      "BetaRelease",
+      "Debug",
+      "Release"
+    ],
+    "name" : "Tongxing",
+    "schemes" : [
+      "ListeningActivityExtension",
+      "Tongxing",
+      "TongxingBeta",
+      "TongxingCore",
+      "TongxingInfrastructure",
+      "TongxingPreview",
+      "TongxingScreenshots"
+    ],
+    "targets" : [
+      "Tongxing",
+      "ListeningActivityExtension",
+      "TongxingTests",
+      "TongxingUITests"
+    ]
+  }
+}
+
+$ /usr/bin/xcrun simctl list devices available --json
+{
+  "devices" : {
+    "com.apple.CoreSimulator.SimRuntime.iOS-27-0" : [
+      {
+        "dataPath" : "\/Users\/jonathan_jing\/Library\/Developer\/CoreSimulator\/Devices\/A9ACB321-07F8-4540-AD3C-7FACBD384A1F\/data",
+        "dataPathSize" : 5734416384,
+        "logPath" : "\/Users\/jonathan_jing\/Library\/Logs\/CoreSimulator\/A9ACB321-07F8-4540-AD3C-7FACBD384A1F",
+        "udid" : "A9ACB321-07F8-4540-AD3C-7FACBD384A1F",
+        "lastUsedAt" : "2026-11-16T00:33:57Z",
+        "isAvailable" : true,
+... 1444 lines omitted; 29 error-like lines, 29 kept below ...
+[line 474]     export CLANG_WARN_DIRECT_OBJC_ISA_USAGE\=YES_ERROR
+[line 483]     export CLANG_WARN_OBJC_ROOT_CLASS\=YES_ERROR
+[line 640]     export GCC_WARN_ABOUT_RETURN_TYPE\=YES_ERROR
+[line 837]     export RUNTIME_EXCEPTION_ALLOW_DYLD_ENVIRONMENT_VARIABLES\=NO
+[line 838]     export RUNTIME_EXCEPTION_ALLOW_JIT\=NO
+[line 839]     export RUNTIME_EXCEPTION_ALLOW_UNSIGNED_EXECUTABLE_MEMORY\=NO
+[line 840]     export RUNTIME_EXCEPTION_DEBUGGING_TOOL\=NO
+[line 841]     export RUNTIME_EXCEPTION_DISABLE_EXECUTABLE_PAGE_PROTECTION\=NO
+[line 842]     export RUNTIME_EXCEPTION_DISABLE_LIBRARY_VALIDATION\=NO
+[line 990]     export VALIDATE_DEVELOPMENT_ASSET_PATHS\=YES_ERROR
+[line 1019]     export __DIAGNOSE_INVALID_DEPLOYMENT_TARGET_AS_ERROR\=YES
+[line 1094] 2026-11-15 16:34:02.443 xcodebuild[62392:30380612] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+[line 1105] 2026-11-15 16:34:30.164 xcodebuild[62392:30380612] [MT] IDELaunchParametersSnapshot: debugger version lookup failed for path '<nil>': noURL
+[line 1107] 2026-11-15 16:34:30.209 xcodebuild[62392:30380612] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+[line 1140] 2026-11-15 16:34:43.868 xcodebuild[62392:30380612] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+[line 1141] 2026-11-15 16:34:43.868 xcodebuild[62392:30380612] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+[line 1142] 2026-11-15 16:34:43.869 xcodebuild[62392:30380612] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+[line 1150] 2026-11-15 16:34:48.062 xcodebuild[62392:30380612] [MT] IDELaunchParametersSnapshot: debugger version lookup failed for path '<nil>': noURL
+[line 1152] 2026-11-15 16:34:48.069 xcodebuild[62392:30380612] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+[line 1228] 2026-11-15 16:35:12.970 xcodebuild[62392:30380612] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+[line 1229] 2026-11-15 16:35:12.971 xcodebuild[62392:30380612] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+[line 1230] 2026-11-15 16:35:12.971 xcodebuild[62392:30380612] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+[line 1241] 2026-11-15 16:35:14.209 xcodebuild[62392:30380612] [MT] IDELaunchParametersSnapshot: debugger version lookup failed for path '<nil>': noURL
+[line 1243] 2026-11-15 16:35:14.216 xcodebuild[62392:30380612] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+[line 1338] 2026-11-15 16:35:46.873 xcodebuild[62392:30380612] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+[line 1339] 2026-11-15 16:35:46.873 xcodebuild[62392:30380612] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+[line 1340] 2026-11-15 16:35:46.874 xcodebuild[62392:30380612] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+[line 1348] 2026-11-15 16:35:47.962 xcodebuild[62392:30380612] [MT] IDELaunchParametersSnapshot: debugger version lookup failed for path '<nil>': noURL
+[line 1350] 2026-11-15 16:35:47.969 xcodebuild[62392:30380612] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+... end of omitted section ...
+    t =    43.14s Press Target Application 'com.jonathanjing.tongxing.dev'[0.00, 0.00] -> (201.0, 422.2) for 0.1 seconds, then drag to Target Application 'com.jonathanjing.tongxing.dev'[0.00, 0.00] -> (201.0, 70.0) with velocity of 500.00 pixels per second, and then hold for 0.0 seconds
+    t =    43.14s     Wait for com.jonathanjing.tongxing.dev to idle
+    t =    43.14s     Find the Target Application 'com.jonathanjing.tongxing.dev'
+    t =    43.22s     Check for interrupting elements affecting "同行" Application
+    t =    43.31s     Synthesize event
+    t =    43.32s         Find the Target Application 'com.jonathanjing.tongxing.dev'
+    t =    43.38s         Find the Target Application 'com.jonathanjing.tongxing.dev'
+    t =    43.46s         Find the Target Application 'com.jonathanjing.tongxing.dev'
+    t =    43.53s         Find the Target Application 'com.jonathanjing.tongxing.dev'
+    t =    43.61s         Find the Target Application 'com.jonathanjing.tongxing.dev'
+    t =    44.74s     Wait for com.jonathanjing.tongxing.dev to idle
+    t =    45.46s Waiting 5.0s for "picker-content-tabs" SegmentedControl to exist
+    t =    46.51s     Checking `Expect predicate `existsNoRetry == 1` for object "picker-content-tabs" SegmentedControl`
+    t =    46.51s         Checking existence of `"picker-content-tabs" SegmentedControl`
+    t =    46.63s Waiting 5.0s for "Sunday sermons" Button to exist
+    t =    47.66s     Checking `Expect predicate `existsNoRetry == 1` for object "Sunday sermons" Button`
+    t =    47.66s         Checking existence of `"Sunday sermons" Button`
+    t =    47.78s Tap "Sunday sermons" Button
+    t =    47.78s     Wait for com.jonathanjing.tongxing.dev to idle
+    t =    47.79s     Find the "Sunday sermons" Button
+    t =    47.90s     Check for interrupting elements affecting "Sunday sermons" Button
+    t =    48.00s     Synthesize event
+    t =    48.30s     Wait for com.jonathanjing.tongxing.dev to idle
+    t =    49.54s Find the "picker-remote-archive-edition" StaticText
+    t =    49.66s Waiting 5.0s for "picker-content-tabs" SegmentedControl to exist
+    t =    50.70s     Checking `Expect predicate `existsNoRetry == 1` for object "picker-content-tabs" SegmentedControl`
+    t =    50.70s         Checking existence of `"picker-content-tabs" SegmentedControl`
+    t =    50.82s Waiting 5.0s for "Sunday sermons" Button to exist
+    t =    51.87s     Checking `Expect predicate `existsNoRetry == 1` for object "Sunday sermons" Button`
+    t =    51.87s         Checking existence of `"Sunday sermons" Button`
+    t =    51.98s Tap "Sunday sermons" Button
+    t =    51.98s     Wait for com.jonathanjing.tongxing.dev to idle
+    t =    51.98s     Find the "Sunday sermons" Button
+    t =    52.09s     Check for interrupting elements affecting "Sunday sermons" Button
+    t =    52.17s     Synthesize event
+    t =    52.47s     Wait for com.jonathanjing.tongxing.dev to idle
+    t =    53.71s Find the "picker-remote-youtube-edition" StaticText
+    t =    53.83s Waiting 5.0s for "picker-content-tabs" SegmentedControl to exist
+    t =    54.85s     Checking `Expect predicate `existsNoRetry == 1` for object "picker-content-tabs" SegmentedControl`
+    t =    54.86s         Checking existence of `"picker-content-tabs" SegmentedControl`
+    t =    54.98s Waiting 5.0s for "Podcasts" Button to exist
+    t =    56.03s     Checking `Expect predicate `existsNoRetry == 1` for object "Podcasts" Button`
+    t =    56.03s         Checking existence of `"Podcasts" Button`
+    t =    56.15s         Capturing element debug description
+    t =    56.98s     Checking `Expect predicate `existsNoRetry == 1` for object "Podcasts" Button`
+    t =    56.99s         Checking existence of `"Podcasts" Button`
+    t =    57.11s         Capturing element debug description
+    t =    58.03s     Checking `Expect predicate `existsNoRetry == 1` for object "Podcasts" Button`
+    t =    58.04s         Checking existence of `"Podcasts" Button`
+    t =    58.16s         Capturing element debug description
+    t =    58.98s     Checking `Expect predicate `existsNoRetry == 1` for object "Podcasts" Button`
+    t =    58.99s         Checking existence of `"Podcasts" Button`
+    t =    59.10s         Capturing element debug description
+    t =    59.98s     Checking `Expect predicate `existsNoRetry == 1` for object "Podcasts" Button`
+    t =    59.99s         Checking existence of `"Podcasts" Button`
+    t =    60.10s         Capturing element debug description
+    t =    60.10s     Checking existence of `"Podcasts" Button`
+    t =    60.21s Collecting debug information to assist test failure triage
+    t =    60.21s     Requesting snapshot of accessibility hierarchy for app with pid 64187
+~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.agents/worktrees/picker-content-tabs/apps/tongxing-ios/UITests/ListeningFlowUITests.swift:62: error: -[TongxingUITests.ListeningFlowUITests testRemoteCategoriesUseInterfaceLanguageForNewPageTypes] : XCTAssertTrue failed - Missing picker tab Podcasts
+    t =    60.64s Tap "Podcasts" Button
+    t =    60.64s     Wait for com.jonathanjing.tongxing.dev to idle
+    t =    60.64s     Find the "Podcasts" Button
+    t =    61.75s         Find the "Podcasts" Button (retry 1)
+    t =    62.87s         Find the "Podcasts" Button (retry 2)
+    t =    63.00s Requesting snapshot of accessibility hierarchy for app with pid 64187
+~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.agents/worktrees/picker-content-tabs/apps/tongxing-ios/UITests/ListeningFlowUITests.swift:63: error: -[TongxingUITests.ListeningFlowUITests testRemoteCategoriesUseInterfaceLanguageForNewPageTypes] : Failed to tap "Podcasts" Button: No matches found for Elements matching predicate '"Podcasts" IN identifiers' from input {(
+    Button, label: 'Sunday sermons', Selected,
+    Button, label: 'Podcast'
+)}
+Possibly caused by runtime issues:
+Automation type mismatch: computed Button from legacy attributes vs PopUpButton from modern attribute. Input attributes and values: {
+    "XC_kAXXCAttributeAutomationType" = 14;
+    "XC_kAXXCAttributeElementBaseType" = NSObject;
+    "XC_kAXXCAttributeElementType" = "SwiftUI.AccessibilityNode";
+    "XC_kAXXCAttributeTraits" = 1108101562369;
+}
+See test report attachments for more detail.
+    t =    63.14s Tear Down
+Test Case '-[TongxingUITests.ListeningFlowUITests testRemoteCategoriesUseInterfaceLanguageForNewPageTypes]' failed (63.668 seconds).
+Test Case '-[TongxingUITests.ListeningFlowUITests testRemoteCategoryRefreshWithoutRebuildPreservesPausedPlayback]' started.
+    t =     0.00s Start Test at 2026-11-15 16:36:51.613
+    t =     0.03s Set Up
+    t =     0.03s Open com.jonathanjing.tongxing.dev
+    t =     0.03s     Launch com.jonathanjing.tongxing.dev
+    t =     0.03s         Terminate com.jonathanjing.tongxing.dev:64187
+2026-11-15 16:36:51.658 xcodebuild[62392:30380612] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+2026-11-15 16:36:51.659 xcodebuild[62392:30380612] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+2026-11-15 16:36:51.659 xcodebuild[62392:30380612] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+2026-11-15 16:36:52.695 xcodebuild[62392:30380612] [MT] IDELaunchParametersSnapshot: debugger version lookup failed for path '<nil>': noURL
+2026-11-15 16:36:52.695 xcodebuild[62392:30380612] [MT] IDELaunchParametersSnapshot: no debugger version
+2026-11-15 16:36:52.703 xcodebuild[62392:30380612] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+    t =     1.30s         Setting up automation session
+    t =     4.12s         Wait for com.jonathanjing.tongxing.dev to idle
+    t =     6.91s Checking `Expect predicate `label == "正式播放版"` for object "published-page-edition" StaticText`
+    t =     6.91s     Find the "published-page-edition" StaticText
+    t =     8.11s Checking `Expect predicate `exists == 1 AND enabled == 1 AND hittable == 1` for object "playback-toggle" Button`
+    t =     8.11s     Checking existence of `"playback-toggle" Button`
+    t =     8.18s     Find the "playback-toggle" Button
+    t =     8.25s     Find the "playback-toggle" Button
+    t =     8.33s Tap "playback-toggle" Button
+    t =     8.33s     Wait for com.jonathanjing.tongxing.dev to idle
+    t =     8.33s     Find the "playback-toggle" Button
+    t =     8.40s     Check for interrupting elements affecting "playback-toggle" Button
+    t =     8.46s     Synthesize event
+    t =     8.75s     Wait for com.jonathanjing.tongxing.dev to idle
+    t =     8.76s Checking existence of `"playback-progress" Any`
+    t =     9.85s Checking `Expect predicate `NOT value BEGINSWITH "00:00，"` for object "playback-progress" Any`
+    t =     9.85s     Find the "playback-progress" Any
+    t =     9.92s Tap "playback-toggle" Button
+    t =     9.92s     Wait for com.jonathanjing.tongxing.dev to idle
+    t =     9.92s     Find the "playback-toggle" Button
+    t =     9.99s     Check for interrupting elements affecting "playback-toggle" Button
+    t =    10.05s     Synthesize event
+    t =    10.35s     Wait for com.jonathanjing.tongxing.dev to idle
+    t =    11.38s Checking `Expect predicate `label == "开始播放"` for object "playback-toggle" Button`
+    t =    11.38s     Find the "playback-toggle" Button
+    t =    11.45s Checking existence of `"playback-progress" Any`
+    t =    11.50s Find the "playback-progress" Any
+    t =    11.67s Added attachment named 'remote-category-before-refresh'
+    t =    11.67s Tap "more-options" Button
+    t =    11.67s     Wait for com.jonathanjing.tongxing.dev to idle
+    t =    11.67s     Find the "more-options" Button
+    t =    11.74s     Check for interrupting elements affecting "more-options" Button
+    t =    11.79s     Synthesize event
+    t =    12.10s     Wait for com.jonathanjing.tongxing.dev to idle
+    t =    12.91s Find the CollectionView (First Match)
+    t =    12.99s Find the Target Application 'com.jonathanjing.tongxing.dev'
+    t =    13.09s Find the "更多选项" NavigationBar
+    t =    13.21s Checking existence of `"刷新证道目录" Button`
+    t =    13.31s Find the "刷新证道目录" Button
+    t =    13.41s Find the "刷新证道目录" Button
+    t =    13.52s Tap "刷新证道目录" Button
+    t =    13.52s     Wait for com.jonathanjing.tongxing.dev to idle
+    t =    13.52s     Find the "刷新证道目录" Button
+    t =    13.62s     Check for interrupting elements affecting "刷新证道目录" Button
+    t =    13.71s     Synthesize event
+    t =    14.01s     Wait for com.jonathanjing.tongxing.dev to idle
+    t =    15.43s Checking `Expect predicate `label == "正式版 · 更新"` for object "published-page-edition" StaticText`
+    t =    15.43s     Find the "published-page-edition" StaticText
+    t =    15.52s Find the "playback-toggle" Button
+    t =    15.58s Checking existence of `"playback-progress" Any`
+    t =    15.63s Find the "playback-progress" Any
+    t =    15.79s Added attachment named 'remote-category-after-refresh'
+    t =    15.79s Tap "choose-sermon" Button
+    t =    15.79s     Wait for com.jonathanjing.tongxing.dev to idle
+    t =    15.80s     Find the "choose-sermon" Button
+    t =    15.86s     Check for interrupting elements affecting "choose-sermon" Button
+    t =    15.91s     Synthesize event
+    t =    16.23s     Wait for com.jonathanjing.tongxing.dev to idle
+    t =    16.67s Waiting 5.0s for "完成" Button to exist
+    t =    17.71s     Checking `Expect predicate `existsNoRetry == 1` for object "完成" Button`
+    t =    17.71s         Checking existence of `"完成" Button`
+    t =    17.83s Find the Target Application 'com.jonathanjing.tongxing.dev'
+    t =    17.91s Find the "完成" Button
+    t =    18.01s Find the Target Application 'com.jonathanjing.tongxing.dev'
+    t =    18.09s Find the Target Application 'com.jonathanjing.tongxing.dev'
+    t =    18.16s Press Target Application 'com.jonathanjing.tongxing.dev'[0.00, 0.00] -> (201.0, 422.2) for 0.1 seconds, then drag to Target Application 'com.jonathanjing.tongxing.dev'[0.00, 0.00] -> (201.0, 70.0) with velocity of 500.00 pixels per second, and then hold for 0.0 seconds
+    t =    18.16s     Wait for com.jonathanjing.tongxing.dev to idle
+    t =    18.17s     Find the Target Application 'com.jonathanjing.tongxing.dev'
+    t =    18.24s     Check for interrupting elements affecting "同行" Application
+    t =    18.33s     Synthesize event
+    t =    18.33s         Find the Target Application 'com.jonathanjing.tongxing.dev'
+    t =    18.41s         Find the Target Application 'com.jonathanjing.tongxing.dev'
+    t =    18.49s         Find the Target Application 'com.jonathanjing.tongxing.dev'
+    t =    18.56s         Find the Target Application 'com.jonathanjing.tongxing.dev'
+    t =    18.64s         Find the Target Application 'com.jonathanjing.tongxing.dev'
+    t =    19.79s     Wait for com.jonathanjing.tongxing.dev to idle
+    t =    20.52s Find the "picker-remote-archive-edition" StaticText
+    t =    20.65s Terminate com.jonathanjing.tongxing.dev:65194
+2026-11-15 16:37:12.274 xcodebuild[62392:30380612] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+2026-11-15 16:37:12.275 xcodebuild[62392:30380612] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+2026-11-15 16:37:12.275 xcodebuild[62392:30380612] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+    t =    21.69s Tear Down
+Test Case '-[TongxingUITests.ListeningFlowUITests testRemoteCategoryRefreshWithoutRebuildPreservesPausedPlayback]' passed (21.797 seconds).
+Test Suite 'ListeningFlowUITests' failed at 2026-11-15 16:37:13.410.
+	 Executed 3 tests, with 2 failures (0 unexpected) in 119.224 (119.227) seconds
+Test Suite 'TongxingUITests.xctest' failed at 2026-11-15 16:37:13.411.
+	 Executed 5 tests, with 2 failures (0 unexpected) in 163.479 (163.487) seconds
+Test Suite 'Selected tests' failed at 2026-11-15 16:37:13.412.
+	 Executed 5 tests, with 2 failures (0 unexpected) in 163.479 (163.488) seconds
+2026-11-15 16:37:13.466 xcodebuild[62392:30380612] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+2026-11-15 16:37:13.467 xcodebuild[62392:30380612] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+2026-11-15 16:37:13.467 xcodebuild[62392:30380612] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+2026-11-15 16:37:30.937 xcodebuild[62392:30380612] [MT] IDETestOperationsObserverDebug: 211.184 elapsed -- Testing started completed.
+2026-11-15 16:37:30.937 xcodebuild[62392:30380612] [MT] IDETestOperationsObserverDebug: 0.000 sec, +0.000 sec -- start
+2026-11-15 16:37:30.937 xcodebuild[62392:30380612] [MT] IDETestOperationsObserverDebug: 211.184 sec, +211.184 sec -- end
+
+Test session results, code coverage, and logs:
+	~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.agents/worktrees/picker-content-tabs/artifacts/tongxing-ios/2026-11-15/cli/20261115T163356-test-c256a500/test.xcresult
+
+Failing tests:
+	ListeningFlowUITests.testRemoteCategoriesUseInterfaceLanguageForNewPageTypes()
+	ListeningFlowUITests.testRemoteCategoriesUseInterfaceLanguageForNewPageTypes()
+
+** TEST FAILED **
+
+Testing started
+
+Exit status: 65

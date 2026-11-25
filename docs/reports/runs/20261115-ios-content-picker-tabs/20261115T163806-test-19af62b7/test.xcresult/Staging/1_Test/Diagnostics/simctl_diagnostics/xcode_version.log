@@ -1,0 +1,124 @@
+DriverKit27.3.sdk - DriverKit 27.3 (driverkit27.3)
+SDKVersion: 27.3
+Path: ~/Applications/Xcode-beta.app/Contents/Developer/Platforms/DriverKit.platform/Developer/SDKs/DriverKit27.3.sdk
+PlatformVersion: 27.3
+PlatformPath: ~/Applications/Xcode-beta.app/Contents/Developer/Platforms/DriverKit.platform
+
+iPhoneOS27.3.sdk - iOS 27.3 (iphoneos27.3)
+SDKVersion: 27.3
+Path: ~/Applications/Xcode-beta.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS27.3.sdk
+PlatformVersion: 27.3
+PlatformPath: ~/Applications/Xcode-beta.app/Contents/Developer/Platforms/iPhoneOS.platform
+BuildID: D86DE290-D294-11F1-9991-E0C8CCBD120E
+ProductBuildVersion: 24C5037e
+ProductCopyright: 1983-2026 Apple Inc.
+ProductName: iPhone OS
+ProductVersion: 27.3
+
+iPhoneSimulator27.3.sdk - Simulator - iOS 27.3 (iphonesimulator27.3)
+SDKVersion: 27.3
+Path: ~/Applications/Xcode-beta.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator27.3.sdk
+PlatformVersion: 27.3
+PlatformPath: ~/Applications/Xcode-beta.app/Contents/Developer/Platforms/iPhoneSimulator.platform
+BuildID: D86DE290-D294-11F1-9991-E0C8CCBD120E
+ProductBuildVersion: 24C5037e
+ProductCopyright: 1983-2026 Apple Inc.
+ProductName: iPhone OS
+ProductVersion: 27.3
+
+MacOSX27.sdk - macOS 27.3 (macosx27.3)
+SDKVersion: 27.3
+Path: ~/Applications/Xcode-beta.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX27.sdk
+PlatformVersion: 27.3
+PlatformPath: ~/Applications/Xcode-beta.app/Contents/Developer/Platforms/MacOSX.platform
+BuildID: 209895D8-D466-11F1-8748-9580F936BBAF
+ProductBuildVersion: 26C5035q
+ProductCopyright: 1983-2026 Apple Inc.
+ProductName: macOS
+ProductUserVisibleVersion: 27.3
+ProductVersion: 27.3
+iOSSupportVersion: 27.3
+
+MacOSX27.3.sdk - macOS 27.3 (macosx27.3)
+SDKVersion: 27.3
+Path: ~/Applications/Xcode-beta.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX27.3.sdk
+PlatformVersion: 27.3
+PlatformPath: ~/Applications/Xcode-beta.app/Contents/Developer/Platforms/MacOSX.platform
+BuildID: 209895D8-D466-11F1-8748-9580F936BBAF
+ProductBuildVersion: 26C5035q
+ProductCopyright: 1983-2026 Apple Inc.
+ProductName: macOS
+ProductUserVisibleVersion: 27.3
+ProductVersion: 27.3
+iOSSupportVersion: 27.3
+
+AppleTVOS27.3.sdk - tvOS 27.3 (appletvos27.3)
+SDKVersion: 27.3
+Path: ~/Applications/Xcode-beta.app/Contents/Developer/Platforms/AppleTVOS.platform/Developer/SDKs/AppleTVOS27.3.sdk
+PlatformVersion: 27.3
+PlatformPath: ~/Applications/Xcode-beta.app/Contents/Developer/Platforms/AppleTVOS.platform
+BuildID: A06C06B2-D28D-11F1-8623-3808351EB4FB
+ProductBuildVersion: 24K5286e
+ProductCopyright: 1983-2026 Apple Inc.
+ProductName: Apple TVOS
+ProductVersion: 27.3
+
+AppleTVSimulator27.3.sdk - Simulator - tvOS 27.3 (appletvsimulator27.3)
+SDKVersion: 27.3
+Path: ~/Applications/Xcode-beta.app/Contents/Developer/Platforms/AppleTVSimulator.platform/Developer/SDKs/AppleTVSimulator27.3.sdk
+PlatformVersion: 27.3
+PlatformPath: ~/Applications/Xcode-beta.app/Contents/Developer/Platforms/AppleTVSimulator.platform
+BuildID: A06C06B2-D28D-11F1-8623-3808351EB4FB
+ProductBuildVersion: 24K5286e
+ProductCopyright: 1983-2026 Apple Inc.
+ProductName: Apple TVOS
+ProductVersion: 27.3
+
+XROS27.3.sdk - visionOS 27.3 (xros27.3)
+SDKVersion: 27.3
+Path: ~/Applications/Xcode-beta.app/Contents/Developer/Platforms/XROS.platform/Developer/SDKs/XROS27.3.sdk
+PlatformVersion: 27.3
+PlatformPath: ~/Applications/Xcode-beta.app/Contents/Developer/Platforms/XROS.platform
+BuildID: A06A5D46-D295-11F1-95EB-CDE90FED0157
+ProductBuildVersion: 24N5286e
+ProductCopyright: 1983-2026 Apple Inc.
+ProductName: xrOS
+ProductVersion: 27.3
+iOSSupportVersion: 27.3
+
+XRSimulator27.3.sdk - Simulator - visionOS 27.3 (xrsimulator27.3)
+SDKVersion: 27.3
+Path: ~/Applications/Xcode-beta.app/Contents/Developer/Platforms/XRSimulator.platform/Developer/SDKs/XRSimulator27.3.sdk
+PlatformVersion: 27.3
+PlatformPath: ~/Applications/Xcode-beta.app/Contents/Developer/Platforms/XRSimulator.platform
+BuildID: A06A5D46-D295-11F1-95EB-CDE90FED0157
+ProductBuildVersion: 24N5286e
+ProductCopyright: 1983-2026 Apple Inc.
+ProductName: xrOS
+ProductVersion: 27.3
+iOSSupportVersion: 27.3
+
+WatchOS27.3.sdk - watchOS 27.3 (watchos27.3)
+SDKVersion: 27.3
+Path: ~/Applications/Xcode-beta.app/Contents/Developer/Platforms/WatchOS.platform/Developer/SDKs/WatchOS27.3.sdk
+PlatformVersion: 27.3
+PlatformPath: ~/Applications/Xcode-beta.app/Contents/Developer/Platforms/WatchOS.platform
+BuildID: 965F9352-D2B8-11F1-9442-111C169566C8
+ProductBuildVersion: 24S5284e
+ProductCopyright: 1983-2026 Apple Inc.
+ProductName: Watch OS
+ProductVersion: 27.3
+
+WatchSimulator27.3.sdk - Simulator - watchOS 27.3 (watchsimulator27.3)
+SDKVersion: 27.3
+Path: ~/Applications/Xcode-beta.app/Contents/Developer/Platforms/WatchSimulator.platform/Developer/SDKs/WatchSimulator27.3.sdk
+PlatformVersion: 27.3
+PlatformPath: ~/Applications/Xcode-beta.app/Contents/Developer/Platforms/WatchSimulator.platform
+BuildID: 965F9352-D2B8-11F1-9442-111C169566C8
+ProductBuildVersion: 24S5284e
+ProductCopyright: 1983-2026 Apple Inc.
+ProductName: Watch OS
+ProductVersion: 27.3
+
+Xcode 27.3
+Build version 27C5020n
