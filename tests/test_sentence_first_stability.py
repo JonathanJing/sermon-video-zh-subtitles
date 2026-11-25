@@ -122,3 +122,37 @@ def test_legacy_driver_exits_non_zero_on_a_failed_readback():
     assert driver.failed({"status": "fail", "checks": 3})
     assert not driver.failed({"pass": True})
     assert not driver.failed({"status": "deployed"})
+
+
+def alignment():
+    return load("publish_sat400_alignment", EXPERIMENTS / "publish_sat400_alignment.py")
+
+
+def test_alignment_verify_fails_when_the_live_sidecar_differs(tmp_path, monkeypatch):
+    driver = alignment()
+    assets = tmp_path / "assets"
+    for locale in driver.LOCALES:
+        release = assets / f"releases/{locale}.json"
+        release.parent.mkdir(parents=True, exist_ok=True)
+        release.write_text(json.dumps({"assets": []}))
+    sidecar = assets / f"public/alignment/{driver.PAGE_ID}.json"
+    sidecar.parent.mkdir(parents=True)
+    sidecar.write_text('{"local": true}')
+    (assets / "public/fingerprints").mkdir()
+
+    monkeypatch.setattr(driver.base, "reader", lambda url: (200, b'{"live": "stale"}'))
+    stale = driver.cmd_verify(assets, tmp_path / "evidence-stale.json")
+    assert stale["status"] == "fail" and stale["failed"] == [f"/alignment/{driver.PAGE_ID}.json"]
+    assert driver.base.failed(stale)
+
+    monkeypatch.setattr(driver.base, "reader", lambda url: (200, sidecar.read_bytes()))
+    fresh = driver.cmd_verify(assets, tmp_path / "evidence-fresh.json")
+    assert fresh["status"] == "pass" and not driver.base.failed(fresh)
+
+
+@pytest.mark.parametrize("name", ["publish_sat400_20261025", "publish_clip_page_dev"])
+def test_remaining_legacy_drivers_fail_on_a_failed_readback(name):
+    driver = load(name, EXPERIMENTS / f"{name}.py")
+    assert driver.failed({"pass": False, "checks": {}})
+    assert driver.failed({"status": "fail"})
+    assert not driver.failed({"pass": True})
