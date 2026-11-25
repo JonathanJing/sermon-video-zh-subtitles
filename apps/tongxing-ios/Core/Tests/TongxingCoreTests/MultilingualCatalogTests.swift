@@ -215,6 +215,36 @@ struct MultilingualCatalogTests {
         #expect(try page("synthetic-podcast", mediaType: "podcast", simulated: true).displayEdition == nil)
     }
 
+    /// The publisher's page config only allows a technical media type of
+    /// podcast/clip, so 2026-10/11 sermon pages carried `mediaType: podcast`
+    /// and the picker listed them under the podcast tab. Grouping must follow
+    /// the locale-independent `contentKind` and only fall back to mediaType for
+    /// catalogs written before it existed.
+    @Test func contentKindDecidesGroupingBeforeTheTechnicalMediaType() throws {
+        func page(_ id: String, mediaType: String?, contentKind: String?) throws -> MultilingualPage {
+            try MultilingualCatalog.decode(catalogData { root in
+                root["defaultPageId"] = id
+                var pages = root["pages"] as! [[String: Any]]
+                pages[0]["id"] = id
+                pages[0]["mediaType"] = mediaType
+                if let contentKind { pages[0]["contentKind"] = contentKind }
+                var targets = pages[0]["targets"] as! [String: [String: Any]]
+                for locale in targets.keys { targets[locale]!["releasePackageUrl"] = "/releases/\(id)/\(locale).json" }
+                pages[0]["targets"] = targets
+                root["pages"] = pages
+            }).defaultPage
+        }
+        // The reported regression: a sermon page tagged mediaType podcast.
+        #expect(try page("revelation-jesus-is-better-20261115", mediaType: "podcast", contentKind: "sermon").isPodcastContent == false)
+        #expect(try page("revelation-jesus-is-better-20261115", mediaType: "podcast", contentKind: "sermon").displayEdition == nil)
+        #expect(try page("if-i-had-more-time-jesus-is-better-than-this-world", mediaType: "podcast", contentKind: "podcast").isPodcastContent)
+        #expect(try page("sentence-first-clip", mediaType: nil, contentKind: "clip").isPodcastContent == false)
+        // Older catalogs keep the previous mediaType rule.
+        #expect(try page("legacy-podcast", mediaType: "podcast", contentKind: nil).isPodcastContent)
+        #expect(try page("legacy-archive", mediaType: nil, contentKind: nil).isPodcastContent == false)
+        #expect(try page("legacy-video", mediaType: "video", contentKind: nil).isPodcastContent == false)
+    }
+
     @Test func remoteCategoryOverridesLegacyAndSurvivesBothCatalogProjections() throws {
         let data = try catalogData { root in
             var pages = root["pages"] as! [[String: Any]]

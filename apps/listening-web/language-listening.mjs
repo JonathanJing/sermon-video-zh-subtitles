@@ -17,12 +17,27 @@ export function createLanguageListening({ audio, config, onError = () => {},
   const interfaceLocale = () => getInterfaceLocale() === 'zh' ? 'zh-Hans' : getInterfaceLocale();
   let storage = providedStorage;
   if (storage === undefined) { try { storage = globalThis.localStorage; } catch { storage = null; } }
-  function prepare(target) {
-    if (!enabled || !target || target.ready || target.preparing || target.session.stopped) return;
+  // `observe` runs on every timeupdate (about 4 per second). A failed credential mint must not be
+  // retried at that rate: back off on network errors, 429 and 5xx, and stop for this track after a
+  // permanent rejection (for example 400 when the server catalog does not list it yet).
+  const RETRY_FIRST_MS = 15000, RETRY_MAX_MS = 300000;
+  function failed(state, error) {
+    const status = error?.status;
+    if (Number.isInteger(status) && status >= 400 && status < 500 && status !== 429) state.rejected = true;
+    else {
+      state.retryDelay = Math.min(RETRY_MAX_MS, state.retryDelay ? state.retryDelay * 2 : RETRY_FIRST_MS);
+      state.retryAt = monotonicNow() + state.retryDelay;
+    }
+    onError(error);
+  }
+  function prepare(target, { force = false } = {}) {
+    if (!enabled || !target || target.ready || target.preparing || target.session.stopped || target.rejected) return;
+    if (!force && target.retryAt !== undefined && monotonicNow() < target.retryAt) return;
     target.preparing = target.session.prepare().then(() => {
       target.ready = enabled && !target.session.stopped;
       target.previous = null; // Never backfill time spent waiting for a token.
-    }).catch(onError).finally(() => { target.preparing = null; });
+      target.retryDelay = undefined; target.retryAt = undefined;
+    }).catch(error => failed(target, error)).finally(() => { target.preparing = null; });
   }
   function chooseSession() {
     if (!enabled || !selected) return null;
@@ -90,7 +105,7 @@ export function createLanguageListening({ audio, config, onError = () => {},
     else visit();
   });
   win.addEventListener('pagehide', () => { clearSample(); flushAll(); });
-  win.addEventListener('online', () => { if (enabled) { prepare(current); flushAll(); } });
+  win.addEventListener('online', () => { if (enabled) { prepare(current, { force: true }); flushAll(); } });
   function visit() {
     if (!enabled || !bootstrapSource || doc.visibilityState !== 'visible') return;
     const day = usageDay(now()), locale = interfaceLocale(), key = `${day}:${locale}:${interfaceEpoch}`;
@@ -99,7 +114,18 @@ export function createLanguageListening({ audio, config, onError = () => {},
       visits.set(key, makeSession(bootstrapSource, { day, clientId: identity(storage, day, () => enabled),
         endpoint: '/api/interface-usage', interfaceLocale: locale }));
     }
-    visits.get(key).flush({}).catch(onError);
+    flushVisit(visits.get(key));
+  }
+  // The interface-usage stream is flushed on every rotate (every timeupdate), so it gets the same
+  // backoff and stop-on-rejection as the listening stream.
+  const visitState = new WeakMap();
+  function flushVisit(session, { force = false } = {}) {
+    if (!visitState.has(session)) visitState.set(session, {});
+    const state = visitState.get(session);
+    if (state.flight || state.rejected) return;
+    if (!force && state.retryAt !== undefined && monotonicNow() < state.retryAt) return;
+    state.flight = session.flush({}).then(() => { state.retryDelay = undefined; state.retryAt = undefined; })
+      .catch(error => failed(state, error)).finally(() => { state.flight = null; });
   }
   // Each "听声定位" press is appended to a cumulative per-credential list on its
   // own endpoint; a full list continues in a new credential.
@@ -131,7 +157,7 @@ export function createLanguageListening({ audio, config, onError = () => {},
     if (!enabled) return;
     for (const target of sessions.values()) flush(target);
     for (const target of alignments.values()) flushAlignment(target);
-    for (const session of visits.values()) session.flush({}).catch(onError);
+    for (const session of visits.values()) flushVisit(session);
   }
   onInterfaceLocaleChange(() => { interfaceEpoch += 1; clearSample(); rotate(); visit(); });
   schedule(() => { visit(); observe(); flushAll(); }, 30000);

@@ -114,7 +114,8 @@ step() {
   echo "$name start $LOCALE $(date -u +%FT%TZ)" >> "$log"
   "$@" >> "$log" 2>&1
   local status=$?
-  echo "$name exit $LOCALE $status $(date -u +%FT%TZ)" >> "$log"
+  # The job tag lets spark_session_job.py tell this job's exit line from another job's in the shared log.
+  echo "$name exit $LOCALE $status $(date -u +%FT%TZ)${JOB_LABEL:+ job=$JOB_LABEL}" >> "$log"
   [ "$status" = 0 ] || { echo "$name failed ($status); see $log" >&2; exit "$status"; }
 }
 

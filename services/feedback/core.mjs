@@ -109,8 +109,10 @@ export function createService({ store, catalog, origins, now = Date.now, randomT
     assert(Number.isInteger(rawBytes) && rawBytes <= 16384, 'payload_too_large', 413);
     assert(object(body));
     assert(['/api/session', '/api/feedback', '/api/events', '/api/usage', '/api/listening', '/api/interface-usage', '/api/alignment-usage'].includes(path), 'not_found', 404);
-    ipLimiter(address, path);
+    // Validate the source before charging the shared per-IP budget: a client stuck on a page the
+    // catalog does not list yet must not use up the allowance of everyone behind the same venue NAT.
     const { source, stored } = identity(body, sources);
+    ipLimiter(address, path);
     const timestamp = now();
     if (path === '/api/session') {
       keys(body, COMMON);

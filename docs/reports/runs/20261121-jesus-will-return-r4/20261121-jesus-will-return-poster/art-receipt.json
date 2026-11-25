@@ -1,0 +1,41 @@
+{
+  "schemaVersion": "tongxing-poster-art-receipt-v1",
+  "pageId": "revelation-jesus-will-return-20261122",
+  "generatedAt": "2026-11-21T21:49:00-08:00",
+  "generator": {
+    "kind": "codex exec + built-in image_gen.imagegen",
+    "cli": "codex-cli 0.169.0",
+    "model": "gpt-6.2-astra",
+    "threadId": "01a201cc-2054-7480-b6fc-ad39aa247778",
+    "source": "~/.codex/generated_images/01a201cc-2054-7480-b6fc-ad39aa247778"
+  },
+  "chosen": {
+    "file": "art.png",
+    "sha256": "10e241882026c7cef439973ee2bfd8432eafdac9f1c44359c92c11adb1ce5705",
+    "bytes": 1637561,
+    "width": 1024,
+    "height": 1536,
+    "origin": "exec-5ed0043b-b950-459f-8d31-1ddec8fdac5c.png"
+  },
+  "otherCandidates": [
+    {
+      "file": "art-candidate-2.png",
+      "sha256": "2772f0541fa744a1253cccbff6a7336bf5ef0e50577b5b13b7e11e68edfb1323",
+      "origin": "exec-417d74e9-9be1-4114-a340-f1eb2571b2a5.png"
+    }
+  ],
+  "prompt": {
+    "file": "prep/art-prompt.txt",
+    "sha256": "c8a7d227fd80f7475c3772753754bef6f7dca868d3f44a0ce35d6edfb3e4b3cc",
+    "chars": 5292
+  },
+  "design": {
+    "file": "prep/poster-design.draft.json",
+    "candidateId": "white-horse-rider",
+    "note": "design draft not yet validated against the published snapshot (needs assets/release)"
+  },
+  "review": {
+    "status": "machine_generated_pending_visual_review",
+    "humanApproval": false
+  }
+}

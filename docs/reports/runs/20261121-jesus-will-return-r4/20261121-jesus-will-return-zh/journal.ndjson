@@ -1,0 +1,84 @@
+{"at": "2026-11-22T04:10:22+00:00", "stage": "l1.start", "event": "started", "hostId": "host-5af68c603e05", "pid": 71560}
+{"at": "2026-11-22T04:10:24+00:00", "stage": "l1.preflight.setup", "event": "started", "hostId": "host-5af68c603e05", "pid": 71574}
+{"at": "2026-11-22T04:10:24+00:00", "stage": "l1.preflight.setup", "event": "finished", "hostId": "host-5af68c603e05", "pid": 71574}
+{"at": "2026-11-22T04:10:24+00:00", "stage": "l1.start", "event": "finished", "hostId": "host-5af68c603e05", "pid": 71560}
+{"at": "2026-11-22T04:12:14.657501+00:00", "stage": "l4.validate", "event": "started", "hostId": "host-5af68c603e05", "pid": 72233}
+{"at": "2026-11-22T04:12:14.659580+00:00", "stage": "l4.validate", "event": "failed", "hostId": "host-5af68c603e05", "pid": 72233, "note": "Human review verdict missing: ~/dev/sermon-video-zh-subtitles/artifacts/sentence-first-agent/20261121-jesus-will-return-review/human-review-verdict.json"}
+{"at": "2026-11-22T04:12:19.307888+00:00", "stage": "l4.validate", "event": "started", "hostId": "host-5af68c603e05", "pid": 72262}
+{"at": "2026-11-22T04:12:19.310049+00:00", "stage": "l4.validate", "event": "failed", "hostId": "host-5af68c603e05", "pid": 72262, "note": "zh-Hans: run file missing: ~/dev/sermon-video-zh-subtitles/artifacts/sentence-first-agent/20261121-jesus-will-return-zh/translations.jsonl"}
+{"at": "2026-11-22T04:14:44+00:00", "stage": "l2.consistency", "event": "started", "hostId": "host-5af68c603e05", "pid": 73124}
+{"at": "2026-11-22T04:14:50+00:00", "stage": "l2.consistency", "event": "started", "hostId": "host-5af68c603e05", "pid": 73218}
+{"at": "2026-11-22T04:14:50+00:00", "stage": "l2.consistency", "event": "finished", "hostId": "host-5af68c603e05", "pid": 73218}
+{"at": "2026-11-22T04:17:57+00:00", "stage": "l1.preflight", "event": "started", "hostId": "host-5af68c603e05", "pid": 73941}
+{"at": "2026-11-22T04:17:57+00:00", "stage": "l1.preflight", "event": "finished", "hostId": "host-5af68c603e05", "pid": 73941}
+{"at": "2026-11-22T04:18:15.651787+00:00", "stage": "l3.tts.eric_pilot.zh-Hans", "event": "started", "hostId": "host-5af68c603e05", "pid": 74052}
+{"at": "2026-11-22T04:28:40.838165+00:00", "stage": "l2.audit.zh", "event": "finished", "hostId": "host-5af68c603e05", "pid": 75322, "note": "独立 Opus 审计完成，问题已并入 review.json"}
+{"at": "2026-11-22T04:28:52.405050+00:00", "stage": "l2.audit.zh-Hans", "event": "finished", "hostId": "host-5af68c603e05", "pid": 75424, "note": "独立 Opus 审计 3 条已并入 review.json"}
+{"at": "2026-11-22T04:29:58+00:00", "stage": "l3.finish", "event": "started", "hostId": "host-5af68c603e05", "pid": 75599}
+{"at": "2026-11-22T04:30:42+00:00", "stage": "l3.finish", "event": "finished", "hostId": "host-5af68c603e05", "pid": 75599}
+{"at": "2026-11-22T04:32:07+00:00", "stage": "l3.lag-loop.zh-Hans", "event": "started", "hostId": "host-5af68c603e05", "pid": 76175}
+{"at": "2026-11-22T04:56:38.905618+00:00", "stage": "l4.baseline", "event": "started", "hostId": "host-5af68c603e05", "pid": 79270}
+{"at": "2026-11-22T04:57:45.117792+00:00", "stage": "l4.baseline", "event": "finished", "hostId": "host-5af68c603e05", "pid": 79270}
+{"at": "2026-11-22T05:00:27+00:00", "stage": "l3.finish", "event": "started", "hostId": "host-5af68c603e05", "pid": 79934}
+{"at": "2026-11-22T05:00:33+00:00", "stage": "l3.finish", "event": "finished", "hostId": "host-5af68c603e05", "pid": 79934}
+{"at": "2026-11-22T05:00:40.636849+00:00", "stage": "l3.tts.eric_pilot.zh-Hans", "event": "finished", "hostId": "host-5af68c603e05", "pid": 80029, "note": "457/457，剪静音 173.0 s，2.67x"}
+{"at": "2026-11-22T05:00:45.795016+00:00", "stage": "l3.review.zh-Hans", "event": "waiting", "hostId": "host-5af68c603e05", "pid": 80085, "waitingOn": "user track review"}
+{"at": "2026-11-22T05:15:18+00:00", "stage": "l3.finish", "event": "started", "hostId": "host-5af68c603e05", "pid": 82393}
+{"at": "2026-11-22T05:15:26+00:00", "stage": "l3.finish", "event": "finished", "hostId": "host-5af68c603e05", "pid": 82393}
+{"at": "2026-11-22T05:15:49+00:00", "stage": "l3.finish", "event": "started", "hostId": "host-5af68c603e05", "pid": 82656}
+{"at": "2026-11-22T05:15:54+00:00", "stage": "l3.finish", "event": "finished", "hostId": "host-5af68c603e05", "pid": 82656}
+{"at": "2026-11-22T05:39:44.811403+00:00", "stage": "l3.review.zh-Hans", "event": "resumed", "hostId": "host-5af68c603e05", "pid": 88090}
+{"at": "2026-11-22T05:39:44.859162+00:00", "stage": "l3.review.zh-Hans", "event": "finished", "hostId": "host-5af68c603e05", "pid": 88094, "note": "用户 2026-11-21 21:39 PST 在对话中确认中文轨听审通过"}
+{"at": "2026-11-22T06:16:30.872857+00:00", "stage": "l4.validate", "event": "started", "hostId": "host-5af68c603e05", "pid": 91317}
+{"at": "2026-11-22T06:16:30.877783+00:00", "stage": "l4.validate", "event": "finished", "hostId": "host-5af68c603e05", "pid": 91317}
+{"at": "2026-11-22T06:16:30.962901+00:00", "stage": "l4.preflight", "event": "started", "hostId": "host-5af68c603e05", "pid": 91319}
+{"at": "2026-11-22T06:16:31.095345+00:00", "stage": "l4.preflight", "event": "finished", "hostId": "host-5af68c603e05", "pid": 91319}
+{"at": "2026-11-22T06:16:41.659728+00:00", "stage": "l4.assets", "event": "started", "hostId": "host-5af68c603e05", "pid": 91358}
+{"at": "2026-11-22T06:16:54.570921+00:00", "stage": "l4.assets", "event": "finished", "hostId": "host-5af68c603e05", "pid": 91358}
+{"at": "2026-11-22T06:17:05.119750+00:00", "stage": "l4.baseline", "event": "started", "hostId": "host-5af68c603e05", "pid": 91438}
+{"at": "2026-11-22T06:17:42.273716+00:00", "stage": "l4.baseline", "event": "finished", "hostId": "host-5af68c603e05", "pid": 91438}
+{"at": "2026-11-22T06:17:42.371534+00:00", "stage": "l4.stage1", "event": "started", "hostId": "host-5af68c603e05", "pid": 91522}
+{"at": "2026-11-22T06:17:44.896305+00:00", "stage": "l4.stage1", "event": "finished", "hostId": "host-5af68c603e05", "pid": 91522}
+{"at": "2026-11-22T06:17:48.235692+00:00", "stage": "l4.publish-check", "event": "started", "hostId": "host-5af68c603e05", "pid": 91702}
+{"at": "2026-11-22T06:17:48.331347+00:00", "stage": "l4.publish-check", "event": "finished", "hostId": "host-5af68c603e05", "pid": 91702}
+{"at": "2026-11-22T06:18:01.981670+00:00", "stage": "l4.publish", "event": "started", "hostId": "host-5af68c603e05", "pid": 91776}
+{"at": "2026-11-22T06:19:22.424380+00:00", "stage": "l4.publish", "event": "finished", "hostId": "host-5af68c603e05", "pid": 91776}
+{"at": "2026-11-22T06:19:31.012757+00:00", "stage": "l4.verify", "event": "started", "hostId": "host-5af68c603e05", "pid": 91922}
+{"at": "2026-11-22T06:19:40.293499+00:00", "stage": "l4.verify", "event": "finished", "hostId": "host-5af68c603e05", "pid": 91922}
+{"at": "2026-11-22T06:20:01.251498+00:00", "stage": "l4.stage2", "event": "started", "hostId": "host-5af68c603e05", "pid": 92025}
+{"at": "2026-11-22T06:20:03.751576+00:00", "stage": "l4.stage2", "event": "finished", "hostId": "host-5af68c603e05", "pid": 92025}
+{"at": "2026-11-22T06:21:39.463366+00:00", "stage": "l4.assets", "event": "started", "hostId": "host-5af68c603e05", "pid": 92615}
+{"at": "2026-11-22T06:21:52.106906+00:00", "stage": "l4.assets", "event": "finished", "hostId": "host-5af68c603e05", "pid": 92615}
+{"at": "2026-11-22T06:21:52.184773+00:00", "stage": "l4.baseline", "event": "started", "hostId": "host-5af68c603e05", "pid": 92631}
+{"at": "2026-11-22T06:22:43.892797+00:00", "stage": "l4.baseline", "event": "finished", "hostId": "host-5af68c603e05", "pid": 92631}
+{"at": "2026-11-22T06:22:43.985254+00:00", "stage": "l4.stage1", "event": "started", "hostId": "host-5af68c603e05", "pid": 92826}
+{"at": "2026-11-22T06:22:44.074868+00:00", "stage": "l4.stage1", "event": "failed", "hostId": "host-5af68c603e05", "pid": 92826, "note": "Refusing to overwrite an existing published file: captions/revelation-jesus-will-return-20261122/es.json"}
+{"at": "2026-11-22T06:22:44.153080+00:00", "stage": "l4.stage2", "event": "started", "hostId": "host-5af68c603e05", "pid": 92829}
+{"at": "2026-11-22T06:23:19.368399+00:00", "stage": "l4.publish-check", "event": "started", "hostId": "host-5af68c603e05", "pid": 93089}
+{"at": "2026-11-22T06:23:19.417822+00:00", "stage": "l4.publish-check", "event": "finished", "hostId": "host-5af68c603e05", "pid": 93089}
+{"at": "2026-11-22T06:23:22.286408+00:00", "stage": "l4.publish", "event": "started", "hostId": "host-5af68c603e05", "pid": 93110}
+{"at": "2026-11-22T06:23:22.553078+00:00", "stage": "l4.publish", "event": "failed", "hostId": "host-5af68c603e05", "pid": 93110, "note": "Baseline catalog differs"}
+{"at": "2026-11-22T06:23:40.165736+00:00", "stage": "l4.publish", "event": "started", "hostId": "host-5af68c603e05", "pid": 93255}
+{"at": "2026-11-22T06:23:40.452190+00:00", "stage": "l4.publish", "event": "failed", "hostId": "host-5af68c603e05", "pid": 93255, "note": "Baseline snapshot is incomplete"}
+{"at": "2026-11-22T06:23:48.519772+00:00", "stage": "l4.publish", "event": "started", "hostId": "host-5af68c603e05", "pid": 93320}
+{"at": "2026-11-22T06:25:02.926377+00:00", "stage": "l4.publish", "event": "finished", "hostId": "host-5af68c603e05", "pid": 93320}
+{"at": "2026-11-22T06:25:18.803814+00:00", "stage": "l4.readback", "event": "started", "hostId": "host-5af68c603e05", "pid": 93464}
+{"at": "2026-11-22T06:25:19.663564+00:00", "stage": "l4.readback", "event": "finished", "hostId": "host-5af68c603e05", "pid": 93464}
+{"at": "2026-11-22T06:26:12.555793+00:00", "stage": "l4.baseline", "event": "started", "hostId": "host-5af68c603e05", "pid": 93609}
+{"at": "2026-11-22T06:27:05.170586+00:00", "stage": "l4.baseline", "event": "finished", "hostId": "host-5af68c603e05", "pid": 93609}
+{"at": "2026-11-22T06:27:05.270575+00:00", "stage": "l4.stage-english-reference", "event": "started", "hostId": "host-5af68c603e05", "pid": 93704}
+{"at": "2026-11-22T06:27:07.841769+00:00", "stage": "l4.stage-english-reference", "event": "finished", "hostId": "host-5af68c603e05", "pid": 93704}
+{"at": "2026-11-22T06:27:07.933199+00:00", "stage": "l4.publish-check", "event": "started", "hostId": "host-5af68c603e05", "pid": 93790}
+{"at": "2026-11-22T06:27:07.982876+00:00", "stage": "l4.publish-check", "event": "finished", "hostId": "host-5af68c603e05", "pid": 93790}
+{"at": "2026-11-22T06:27:18.080517+00:00", "stage": "l4.publish", "event": "started", "hostId": "host-5af68c603e05", "pid": 94010}
+{"at": "2026-11-22T06:28:24.483222+00:00", "stage": "l4.publish", "event": "finished", "hostId": "host-5af68c603e05", "pid": 94010}
+{"at": "2026-11-22T06:28:24.599600+00:00", "stage": "l4.readback", "event": "started", "hostId": "host-5af68c603e05", "pid": 94091}
+{"at": "2026-11-22T06:28:25.704596+00:00", "stage": "l4.readback", "event": "finished", "hostId": "host-5af68c603e05", "pid": 94091}
+{"at": "2026-11-22T06:30:30.821144+00:00", "stage": "l4.baseline", "event": "started", "hostId": "host-5af68c603e05", "pid": 94424}
+{"at": "2026-11-22T06:31:28.934785+00:00", "stage": "l4.baseline", "event": "finished", "hostId": "host-5af68c603e05", "pid": 94424}
+{"at": "2026-11-22T06:32:20.395846+00:00", "stage": "l4.publish-check", "event": "started", "hostId": "host-5af68c603e05", "pid": 94918}
+{"at": "2026-11-22T06:32:20.446039+00:00", "stage": "l4.publish-check", "event": "finished", "hostId": "host-5af68c603e05", "pid": 94918}
+{"at": "2026-11-22T06:32:22.933248+00:00", "stage": "l4.publish", "event": "started", "hostId": "host-5af68c603e05", "pid": 94939}
+{"at": "2026-11-22T06:33:37.590124+00:00", "stage": "l4.publish", "event": "finished", "hostId": "host-5af68c603e05", "pid": 94939}
+{"at": "2026-11-22T06:33:37.703928+00:00", "stage": "l4.readback", "event": "started", "hostId": "host-5af68c603e05", "pid": 95018}
+{"at": "2026-11-22T06:33:38.550377+00:00", "stage": "l4.readback", "event": "finished", "hostId": "host-5af68c603e05", "pid": 95018}

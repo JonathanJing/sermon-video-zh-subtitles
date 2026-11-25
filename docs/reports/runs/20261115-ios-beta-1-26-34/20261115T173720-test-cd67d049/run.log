@@ -1,0 +1,291 @@
+
+$ /usr/bin/xcrun xcodebuild -project ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.agents/worktrees/picker-content-tabs/apps/tongxing-ios/Tongxing.xcodeproj -list -json -disableAutomaticPackageResolution
+{
+  "project" : {
+    "configurations" : [
+      "BetaDebug",
+      "BetaRelease",
+      "Debug",
+      "Release"
+    ],
+    "name" : "Tongxing",
+    "schemes" : [
+      "ListeningActivityExtension",
+      "Tongxing",
+      "TongxingBeta",
+      "TongxingCore",
+      "TongxingInfrastructure",
+      "TongxingPreview",
+      "TongxingScreenshots"
+    ],
+    "targets" : [
+      "Tongxing",
+      "ListeningActivityExtension",
+      "TongxingTests",
+      "TongxingUITests"
+    ]
+  }
+}
+
+$ /usr/bin/xcrun simctl list devices available --json
+{
+  "devices" : {
+    "com.apple.CoreSimulator.SimRuntime.iOS-27-0" : [
+      {
+        "dataPath" : "\/Users\/jonathan_jing\/Library\/Developer\/CoreSimulator\/Devices\/A9ACB321-07F8-4540-AD3C-7FACBD384A1F\/data",
+        "dataPathSize" : 5734416384,
+        "logPath" : "\/Users\/jonathan_jing\/Library\/Logs\/CoreSimulator\/A9ACB321-07F8-4540-AD3C-7FACBD384A1F",
+        "udid" : "A9ACB321-07F8-4540-AD3C-7FACBD384A1F",
+        "lastUsedAt" : "2026-11-16T01:37:21Z",
+        "isAvailable" : true,
+... 1904 lines omitted; 49 error-like lines, 49 kept below ...
+[line 536]     export CLANG_WARN_DIRECT_OBJC_ISA_USAGE\=YES_ERROR
+[line 545]     export CLANG_WARN_OBJC_ROOT_CLASS\=YES_ERROR
+[line 703]     export GCC_WARN_ABOUT_RETURN_TYPE\=YES_ERROR
+[line 900]     export RUNTIME_EXCEPTION_ALLOW_DYLD_ENVIRONMENT_VARIABLES\=NO
+[line 901]     export RUNTIME_EXCEPTION_ALLOW_JIT\=NO
+[line 902]     export RUNTIME_EXCEPTION_ALLOW_UNSIGNED_EXECUTABLE_MEMORY\=NO
+[line 903]     export RUNTIME_EXCEPTION_DEBUGGING_TOOL\=NO
+[line 904]     export RUNTIME_EXCEPTION_DISABLE_EXECUTABLE_PAGE_PROTECTION\=NO
+[line 905]     export RUNTIME_EXCEPTION_DISABLE_LIBRARY_VALIDATION\=NO
+[line 1053]     export VALIDATE_DEVELOPMENT_ASSET_PATHS\=YES_ERROR
+[line 1082]     export __DIAGNOSE_INVALID_DEPLOYMENT_TARGET_AS_ERROR\=YES
+[line 1125] 2026-11-15 17:37:26.440 xcodebuild[6515:30545670] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+[line 1129] 2026-11-15 17:38:33.350351-0800 Tongxing[7552:30551776] [General] Failed to send CA Event for app launch measurements for ca_event_type: 0 event_name: com.apple.app_launch_measurement.FirstFramePresentationMetric
+[line 1130] 2026-11-15 17:38:33.646708-0800 Tongxing[7552:30551776] [General] Failed to send CA Event for app launch measurements for ca_event_type: 1 event_name: com.apple.app_launch_measurement.ExtendedLaunchMetrics
+[line 1173] Test Case '-[TongxingTests.AudioAlignmentControllerTests testAttemptKeepsStartContextAndFlagsMatchBudgetTimeouts]' started.
+[line 1174] Test Case '-[TongxingTests.AudioAlignmentControllerTests testAttemptKeepsStartContextAndFlagsMatchBudgetTimeouts]' passed (0.052 seconds).
+[line 1193] Test Case '-[TongxingTests.AudioAlignmentControllerTests testFailedMatchNeverSeeksAndRestoresPriorPlayingIntent]' started.
+[line 1194] Test Case '-[TongxingTests.AudioAlignmentControllerTests testFailedMatchNeverSeeksAndRestoresPriorPlayingIntent]' passed (0.013 seconds).
+[line 1273] 2026-11-15 17:38:42.001108-0800 Tongxing[7552:30551780] [Default] Connection 1: failed to connect 12:8, reason -1
+[line 1274] 2026-11-15 17:38:42.001155-0800 Tongxing[7552:30551780] [Default] Connection 1: encountered error(12:8)
+[line 1275] 2026-11-15 17:38:42.001435-0800 Tongxing[7552:30551780] [Default] Task <BA4B82C4-4624-430C-85AC-EA2984A41445>.<1> HTTP load failed, 0/0 bytes (error code: -1003 [12:8])
+[line 1276] 2026-11-15 17:38:42.001672-0800 Tongxing[7552:30551776] [Default] Task <BA4B82C4-4624-430C-85AC-EA2984A41445>.<1> finished with error [-1003] Error Domain=NSURLErrorDomain Code=-1003 "A server with the specified hostname could not be found." UserInfo={_kCFStreamErrorCodeKey=8, NSUnderlyingError=0x113f74330 {Error Domain=kCFErrorDomainCFNetwork Code=-1003 "(null)" UserInfo={_kCFStreamErrorDomainKey=12, _kCFStreamErrorCodeKey=8, _NSURLErrorNWResolutionReportKey=Resolved 0 endpoints in 7ms using unknown from query, _NSURLErrorNWPathKey=satisfied (Path is satisfied), interface: en17}}, _NSURLErrorFailingURLSessionTaskErrorKey=LocalDataTask <BA4B82C4-4624-430C-85AC-EA2984A41445>.<1>, _NSURLErrorRelatedURLSessionTaskErrorKey=(
+[line 1289] 2026-11-15 17:38:43.848766-0800 Tongxing[7552:30551762] [Default] Connection 2: failed to connect 12:8, reason -1
+[line 1290] 2026-11-15 17:38:43.848804-0800 Tongxing[7552:30551762] [Default] Connection 2: encountered error(12:8)
+[line 1291] 2026-11-15 17:38:43.849144-0800 Tongxing[7552:30551762] [Default] Task <6725A231-4DCF-4EA0-A95E-186288B25B8E>.<2> HTTP load failed, 0/0 bytes (error code: -1003 [12:8])
+[line 1292] 2026-11-15 17:38:43.849315-0800 Tongxing[7552:30551759] [Default] Task <6725A231-4DCF-4EA0-A95E-186288B25B8E>.<2> finished with error [-1003] Error Domain=NSURLErrorDomain Code=-1003 "A server with the specified hostname could not be found." UserInfo={_kCFStreamErrorCodeKey=8, NSUnderlyingError=0x1135f7ea0 {Error Domain=kCFErrorDomainCFNetwork Code=-1003 "(null)" UserInfo={_kCFStreamErrorDomainKey=12, _kCFStreamErrorCodeKey=8, _NSURLErrorNWResolutionReportKey=Resolved 0 endpoints in 6ms using unknown from cache, _NSURLErrorNWPathKey=satisfied (Path is satisfied), interface: en17}}, _NSURLErrorFailingURLSessionTaskErrorKey=LocalDataTask <6725A231-4DCF-4EA0-A95E-186288B25B8E>.<2>, _NSURLErrorRelatedURLSessionTaskErrorKey=(
+[line 1297] 2026-11-15 17:38:43.854153-0800 Tongxing[7552:30551762] [Default] Connection 3: failed to connect 12:8, reason -1
+[line 1298] 2026-11-15 17:38:43.854197-0800 Tongxing[7552:30551762] [Default] Connection 3: encountered error(12:8)
+[line 1299] 2026-11-15 17:38:43.854457-0800 Tongxing[7552:30551762] [Default] Task <22E4CBD3-61B2-4D4A-AF33-A9F164F3B835>.<3> HTTP load failed, 0/0 bytes (error code: -1003 [12:8])
+[line 1300] 2026-11-15 17:38:43.854579-0800 Tongxing[7552:30551759] [Default] Task <22E4CBD3-61B2-4D4A-AF33-A9F164F3B835>.<3> finished with error [-1003] Error Domain=NSURLErrorDomain Code=-1003 "A server with the specified hostname could not be found." UserInfo={_kCFStreamErrorCodeKey=8, NSUnderlyingError=0x113f743f0 {Error Domain=kCFErrorDomainCFNetwork Code=-1003 "(null)" UserInfo={_kCFStreamErrorDomainKey=12, _kCFStreamErrorCodeKey=8, _NSURLErrorNWResolutionReportKey=Resolved 0 endpoints in 4ms using unknown from cache, _NSURLErrorNWPathKey=satisfied (Path is satisfied), interface: en17}}, _NSURLErrorFailingURLSessionTaskErrorKey=LocalDataTask <22E4CBD3-61B2-4D4A-AF33-A9F164F3B835>.<3>, _NSURLErrorRelatedURLSessionTaskErrorKey=(
+[line 1309] Test Case '-[TongxingTests.AudioAlignmentControllerTests testTimedOutCheckpointLateHitCannotReplaceLaterMatch]' started.
+[line 1310] Test Case '-[TongxingTests.AudioAlignmentControllerTests testTimedOutCheckpointLateHitCannotReplaceLaterMatch]' passed (0.076 seconds).
+[line 1311] Test Case '-[TongxingTests.AudioAlignmentControllerTests testTimeoutStopsCaptureAndLateResultCannotSeek]' started.
+[line 1312] Test Case '-[TongxingTests.AudioAlignmentControllerTests testTimeoutStopsCaptureAndLateResultCannotSeek]' passed (0.074 seconds).
+[line 1450] Test Case '-[TongxingTests.PlaybackControllerTests testFailedPublishedPositionRestoreRetainsTimelineAndAllowsSameLocaleRetry]' started.
+[line 1469] Test Case '-[TongxingTests.PlaybackControllerTests testFailedPublishedPositionRestoreRetainsTimelineAndAllowsSameLocaleRetry]' passed (0.692 seconds).
+[line 1756] 2026-11-15 17:38:55.595134-0800 Tongxing[7552:30551776] [Default] Task <0DAFBB08-B5F1-4570-A710-D04E07D0619E>.<2> finished with error [-1100] Error Domain=NSURLErrorDomain Code=-1100 "(null)" UserInfo={_NSURLErrorRelatedURLSessionTaskErrorKey=(
+[line 1759] 2026-11-15 17:38:55.598331-0800 Tongxing[7552:30551782] [Default] Task <2E7AC4ED-9FD4-4004-8A1F-BEB89A9F7CBB>.<3> finished with error [-1100] Error Domain=NSURLErrorDomain Code=-1100 "(null)" UserInfo={_NSURLErrorRelatedURLSessionTaskErrorKey=(
+[line 1762] 2026-11-15 17:38:55.611857-0800 Tongxing[7552:30551780] [Default] Task <812D9009-7728-483D-BB09-56DA066349F4>.<13> finished with error [-1100] Error Domain=NSURLErrorDomain Code=-1100 "(null)" UserInfo={_NSURLErrorRelatedURLSessionTaskErrorKey=(
+[line 1827] 2026-11-15 17:38:59.702106-0800 Tongxing[7552:30551758] [Default] Task <9C1F7A3E-C07F-42E4-9D64-F3BC42D33337>.<2> finished with error [-1100] Error Domain=NSURLErrorDomain Code=-1100 "(null)" UserInfo={_NSURLErrorRelatedURLSessionTaskErrorKey=(
+[line 1830] 2026-11-15 17:38:59.702728-0800 Tongxing[7552:30551763] [Default] Task <87D8992E-8312-49C5-B580-5126D5978845>.<3> finished with error [-1100] Error Domain=NSURLErrorDomain Code=-1100 "(null)" UserInfo={_NSURLErrorRelatedURLSessionTaskErrorKey=(
+[line 1834] 2026-11-15 17:38:59.724076-0800 Tongxing[7552:30552791] [Default] Connection 4: failed to connect 12:8, reason -1
+[line 1835] 2026-11-15 17:38:59.724128-0800 Tongxing[7552:30552791] [Default] Connection 4: encountered error(12:8)
+[line 1836] 2026-11-15 17:38:59.724424-0800 Tongxing[7552:30552791] [Default] Task <E0C1C5D1-527B-4BA1-B307-75A4A43BE601>.<4> HTTP load failed, 0/0 bytes (error code: -1003 [12:8])
+[line 1837] 2026-11-15 17:38:59.724599-0800 Tongxing[7552:30551780] [Default] Task <E0C1C5D1-527B-4BA1-B307-75A4A43BE601>.<4> finished with error [-1003] Error Domain=NSURLErrorDomain Code=-1003 "A server with the specified hostname could not be found." UserInfo={_kCFStreamErrorCodeKey=8, NSUnderlyingError=0x114d85440 {Error Domain=kCFErrorDomainCFNetwork Code=-1003 "(null)" UserInfo={_kCFStreamErrorDomainKey=12, _kCFStreamErrorCodeKey=8, _NSURLErrorNWResolutionReportKey=Resolved 0 endpoints in 12ms using unknown from query, _NSURLErrorNWPathKey=satisfied (Path is satisfied), interface: en17}}, _NSURLErrorFailingURLSessionTaskErrorKey=LocalDataTask <E0C1C5D1-527B-4BA1-B307-75A4A43BE601>.<4>, _NSURLErrorRelatedURLSessionTaskErrorKey=(
+[line 1878] Test Case '-[TongxingTests.PublishedAudioPreparationTests testForegroundRestartLeavesAFailedPreparationForItsRetryButton]' started.
+[line 1882] Test Case '-[TongxingTests.PublishedAudioPreparationTests testForegroundRestartLeavesAFailedPreparationForItsRetryButton]' passed (0.462 seconds).
+[line 1903] 2026-11-15 17:39:07.788709-0800 Tongxing[7552:30551780] [Default] Task <23D961AF-891B-40D6-8B56-A2A7C19123CB>.<2> finished with error [-1100] Error Domain=NSURLErrorDomain Code=-1100 "(null)" UserInfo={_NSURLErrorRelatedURLSessionTaskErrorKey=(
+[line 1906] 2026-11-15 17:39:07.789518-0800 Tongxing[7552:30552791] [Default] Task <2481CBF5-8DE1-4714-AB00-E7CF783E222F>.<3> finished with error [-1100] Error Domain=NSURLErrorDomain Code=-1100 "(null)" UserInfo={_NSURLErrorRelatedURLSessionTaskErrorKey=(
+... end of omitted section ...
+Test Suite 'VoiceDemoCatalogV2Tests' started at 2026-11-15 17:39:07.847.
+Test Case '-[TongxingTests.VoiceDemoCatalogV2Tests testBothEnvironmentsLoadIdenticalMatchedContractFromOwnOrigin]' started.
+Test Case '-[TongxingTests.VoiceDemoCatalogV2Tests testBothEnvironmentsLoadIdenticalMatchedContractFromOwnOrigin]' passed (0.006 seconds).
+Test Case '-[TongxingTests.VoiceDemoCatalogV2Tests testLiveDevEricVideoHashDecodePlayAndPause]' started.
+~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.agents/worktrees/picker-content-tabs/apps/tongxing-ios/Tests/VoiceDemoCatalogV2Tests.swift:230: -[TongxingTests.VoiceDemoCatalogV2Tests testLiveDevEricVideoHashDecodePlayAndPause] : Test skipped - Opt in with TONGXING_LIVE_DEMO=1 to verify the real Firebase Dev video.
+Test Case '-[TongxingTests.VoiceDemoCatalogV2Tests testLiveDevEricVideoHashDecodePlayAndPause]' skipped (0.001 seconds).
+Test Case '-[TongxingTests.VoiceDemoCatalogV2Tests testMatchedCatalogRejectsRedirectAndUnsafeConfiguredOrigin]' started.
+Test Case '-[TongxingTests.VoiceDemoCatalogV2Tests testMatchedCatalogRejectsRedirectAndUnsafeConfiguredOrigin]' passed (0.001 seconds).
+Test Case '-[TongxingTests.VoiceDemoCatalogV2Tests testMatchedClipCatalogHasThreeLanguagesAndVideoWithoutText]' started.
+Test Case '-[TongxingTests.VoiceDemoCatalogV2Tests testMatchedClipCatalogHasThreeLanguagesAndVideoWithoutText]' passed (0.002 seconds).
+Test Case '-[TongxingTests.VoiceDemoCatalogV2Tests testMissingOrInvalidMatchedCatalogNeverRequestsLegacyOrAnotherEnvironment]' started.
+Test Case '-[TongxingTests.VoiceDemoCatalogV2Tests testMissingOrInvalidMatchedCatalogNeverRequestsLegacyOrAnotherEnvironment]' passed (0.001 seconds).
+Test Case '-[TongxingTests.VoiceDemoCatalogV2Tests testRejectsCrossClipAssetAndChangedEnglishManuscript]' started.
+Test Case '-[TongxingTests.VoiceDemoCatalogV2Tests testRejectsCrossClipAssetAndChangedEnglishManuscript]' passed (0.003 seconds).
+Test Case '-[TongxingTests.VoiceDemoCatalogV2Tests testRejectsDuplicateLocalesPromotedReviewAndInvalidWindow]' started.
+Test Case '-[TongxingTests.VoiceDemoCatalogV2Tests testRejectsDuplicateLocalesPromotedReviewAndInvalidWindow]' passed (0.003 seconds).
+Test Case '-[TongxingTests.VoiceDemoCatalogV2Tests testRejectsVideoMismatchUnsafePathsAndOversizedAssets]' started.
+Test Case '-[TongxingTests.VoiceDemoCatalogV2Tests testRejectsVideoMismatchUnsafePathsAndOversizedAssets]' passed (0.004 seconds).
+Test Case '-[TongxingTests.VoiceDemoCatalogV2Tests testVideoByteVerificationRetainsHashAndExactSizeCheck]' started.
+Test Case '-[TongxingTests.VoiceDemoCatalogV2Tests testVideoByteVerificationRetainsHashAndExactSizeCheck]' passed (0.001 seconds).
+Test Case '-[TongxingTests.VoiceDemoCatalogV2Tests testVideoUsesTwentyMegabyteLimitWhileAudioRetainsFiveMegabyteLimit]' started.
+Test Case '-[TongxingTests.VoiceDemoCatalogV2Tests testVideoUsesTwentyMegabyteLimitWhileAudioRetainsFiveMegabyteLimit]' passed (0.008 seconds).
+Test Suite 'VoiceDemoCatalogV2Tests' passed at 2026-11-15 17:39:07.880.
+	 Executed 10 tests, with 1 test skipped and 0 failures (0 unexpected) in 0.030 (0.033) seconds
+Test Suite 'WeeklyGuideDataTests' started at 2026-11-15 17:39:07.880.
+Test Case '-[TongxingTests.WeeklyGuideDataTests testInvalidOrAmbiguousPayloadDoesNotDisplayGuide]' started.
+Test Case '-[TongxingTests.WeeklyGuideDataTests testInvalidOrAmbiguousPayloadDoesNotDisplayGuide]' passed (0.003 seconds).
+Test Case '-[TongxingTests.WeeklyGuideDataTests testOnlyExactSermonAndSimplifiedChineseMatch]' started.
+Test Case '-[TongxingTests.WeeklyGuideDataTests testOnlyExactSermonAndSimplifiedChineseMatch]' passed (0.001 seconds).
+Test Case '-[TongxingTests.WeeklyGuideDataTests testOnlyKnownBundledImageBytesCanBeUsed]' started.
+Test Case '-[TongxingTests.WeeklyGuideDataTests testOnlyKnownBundledImageBytesCanBeUsed]' passed (0.001 seconds).
+Test Case '-[TongxingTests.WeeklyGuideDataTests testSourceBackedMapDecodesAndRejectsUntrustedPoints]' started.
+Test Case '-[TongxingTests.WeeklyGuideDataTests testSourceBackedMapDecodesAndRejectsUntrustedPoints]' passed (0.014 seconds).
+Test Case '-[TongxingTests.WeeklyGuideDataTests testStructuredContentKeepsTableRowsAndFlowOrder]' started.
+Test Case '-[TongxingTests.WeeklyGuideDataTests testStructuredContentKeepsTableRowsAndFlowOrder]' passed (0.001 seconds).
+Test Case '-[TongxingTests.WeeklyGuideDataTests testUnsupportedOrMalformedBlocksFallBackToEntirePlainBody]' started.
+Test Case '-[TongxingTests.WeeklyGuideDataTests testUnsupportedOrMalformedBlocksFallBackToEntirePlainBody]' passed (0.001 seconds).
+Test Suite 'WeeklyGuideDataTests' passed at 2026-11-15 17:39:07.902.
+	 Executed 6 tests, with 0 failures (0 unexpected) in 0.019 (0.021) seconds
+Test Suite 'WeeklyGuideRemoteTests' started at 2026-11-15 17:39:07.902.
+Test Case '-[TongxingTests.WeeklyGuideRemoteTests testBundledFallbackRequiresSameIdentityOriginAndHash]' started.
+Test Case '-[TongxingTests.WeeklyGuideRemoteTests testBundledFallbackRequiresSameIdentityOriginAndHash]' passed (0.006 seconds).
+Test Case '-[TongxingTests.WeeklyGuideRemoteTests testCrossOriginAndUnsafePathsFailClosed]' started.
+Test Case '-[TongxingTests.WeeklyGuideRemoteTests testCrossOriginAndUnsafePathsFailClosed]' passed (0.002 seconds).
+Test Case '-[TongxingTests.WeeklyGuideRemoteTests testEachSourceIdentityMismatchIsRejected]' started.
+Test Case '-[TongxingTests.WeeklyGuideRemoteTests testEachSourceIdentityMismatchIsRejected]' passed (0.001 seconds).
+Test Case '-[TongxingTests.WeeklyGuideRemoteTests testLegacyBundleRequiresSourceHashesAndExactWindow]' started.
+Test Case '-[TongxingTests.WeeklyGuideRemoteTests testLegacyBundleRequiresSourceHashesAndExactWindow]' passed (0.001 seconds).
+Test Case '-[TongxingTests.WeeklyGuideRemoteTests testLegacyExactSourceTombstoneBlocksOfflineFallback]' started.
+Test Case '-[TongxingTests.WeeklyGuideRemoteTests testLegacyExactSourceTombstoneBlocksOfflineFallback]' passed (0.005 seconds).
+Test Case '-[TongxingTests.WeeklyGuideRemoteTests testLegacyFingerprintSuppliesMissingHashOnlyWhenBoundToWeek]' started.
+Test Case '-[TongxingTests.WeeklyGuideRemoteTests testLegacyFingerprintSuppliesMissingHashOnlyWhenBoundToWeek]' passed (0.001 seconds).
+Test Case '-[TongxingTests.WeeklyGuideRemoteTests testNetworkAndMissingManifestAreDistinctFromDeclaredCorruption]' started.
+Test Case '-[TongxingTests.WeeklyGuideRemoteTests testNetworkAndMissingManifestAreDistinctFromDeclaredCorruption]' passed (0.002 seconds).
+Test Case '-[TongxingTests.WeeklyGuideRemoteTests testOversizedOrAmbiguousManifestFailsClosed]' started.
+Test Case '-[TongxingTests.WeeklyGuideRemoteTests testOversizedOrAmbiguousManifestFailsClosed]' passed (0.001 seconds).
+Test Case '-[TongxingTests.WeeklyGuideRemoteTests testProtectedChineseRevisionsAndSafeFallback]' started.
+Test Case '-[TongxingTests.WeeklyGuideRemoteTests testProtectedChineseRevisionsAndSafeFallback]' passed (0.009 seconds).
+Test Case '-[TongxingTests.WeeklyGuideRemoteTests testRealURLSessionEnforcesActualStreamLimit]' started.
+Test Case '-[TongxingTests.WeeklyGuideRemoteTests testRealURLSessionEnforcesActualStreamLimit]' passed (0.001 seconds).
+Test Case '-[TongxingTests.WeeklyGuideRemoteTests testRealURLSessionRejectsRedirectsBeforeFollowing]' started.
+Test Case '-[TongxingTests.WeeklyGuideRemoteTests testRealURLSessionRejectsRedirectsBeforeFollowing]' passed (0.002 seconds).
+Test Case '-[TongxingTests.WeeklyGuideRemoteTests testRedirectGuardRejectsEvenSameOriginBeforeFollowing]' started.
+Test Case '-[TongxingTests.WeeklyGuideRemoteTests testRedirectGuardRejectsEvenSameOriginBeforeFollowing]' passed (0.001 seconds).
+Test Case '-[TongxingTests.WeeklyGuideRemoteTests testRemoteGuideIsBoundToExactIdentityAndBytes]' started.
+Test Case '-[TongxingTests.WeeklyGuideRemoteTests testRemoteGuideIsBoundToExactIdentityAndBytes]' passed (0.001 seconds).
+Test Case '-[TongxingTests.WeeklyGuideRemoteTests testResolutionDoesNotShowBundleBeforeNetworkAndPreservesDenialsOffline]' started.
+Test Case '-[TongxingTests.WeeklyGuideRemoteTests testResolutionDoesNotShowBundleBeforeNetworkAndPreservesDenialsOffline]' passed (0.005 seconds).
+Test Case '-[TongxingTests.WeeklyGuideRemoteTests testRevocationPersistsAcrossOfflineAndUndeclaredResults]' started.
+Test Case '-[TongxingTests.WeeklyGuideRemoteTests testRevocationPersistsAcrossOfflineAndUndeclaredResults]' passed (0.004 seconds).
+Test Case '-[TongxingTests.WeeklyGuideRemoteTests testStaleResultIsNeverDisplayedAfterIdentityOrLocaleChanges]' started.
+Test Case '-[TongxingTests.WeeklyGuideRemoteTests testStaleResultIsNeverDisplayedAfterIdentityOrLocaleChanges]' passed (0.001 seconds).
+Test Case '-[TongxingTests.WeeklyGuideRemoteTests testV2LanguageAndProvenanceAreBoundToTheSelectedSermon]' started.
+Test Case '-[TongxingTests.WeeklyGuideRemoteTests testV2LanguageAndProvenanceAreBoundToTheSelectedSermon]' passed (0.005 seconds).
+Test Case '-[TongxingTests.WeeklyGuideRemoteTests testV5TombstoneNeedsExactIdentityAndNeverFetchesBody]' started.
+Test Case '-[TongxingTests.WeeklyGuideRemoteTests testV5TombstoneNeedsExactIdentityAndNeverFetchesBody]' passed (0.001 seconds).
+Test Case '-[TongxingTests.WeeklyGuideRemoteTests testVerifiedV4AliasAndEnvironmentSpecificBindings]' started.
+Test Case '-[TongxingTests.WeeklyGuideRemoteTests testVerifiedV4AliasAndEnvironmentSpecificBindings]' passed (0.001 seconds).
+Test Suite 'WeeklyGuideRemoteTests' passed at 2026-11-15 17:39:07.958.
+	 Executed 19 tests, with 0 failures (0 unexpected) in 0.051 (0.057) seconds
+Test Suite 'WeeklyUpdateModelTests' started at 2026-11-15 17:39:07.958.
+Test Case '-[TongxingTests.WeeklyUpdateModelTests testAutomaticPosterOfferRequiresVerifiedBytes]' started.
+2026-11-15 17:39:07.964129-0800 Tongxing[7552:30551781] [Default] Task <B9C32D79-3C86-4081-8EEE-C6489B3957EE>.<2> finished with error [-1100] Error Domain=NSURLErrorDomain Code=-1100 "(null)" UserInfo={_NSURLErrorRelatedURLSessionTaskErrorKey=(
+    "LocalDataTask <B9C32D79-3C86-4081-8EEE-C6489B3957EE>.<2>"
+), _NSURLErrorFailingURLSessionTaskErrorKey=LocalDataTask <B9C32D79-3C86-4081-8EEE-C6489B3957EE>.<2>}
+2026-11-15 17:39:07.964858-0800 Tongxing[7552:30551781] [Default] Task <971D5B39-F2EB-4B04-A9F7-A58E888A949A>.<3> finished with error [-1100] Error Domain=NSURLErrorDomain Code=-1100 "(null)" UserInfo={_NSURLErrorRelatedURLSessionTaskErrorKey=(
+    "LocalDataTask <971D5B39-F2EB-4B04-A9F7-A58E888A949A>.<3>"
+), _NSURLErrorFailingURLSessionTaskErrorKey=LocalDataTask <971D5B39-F2EB-4B04-A9F7-A58E888A949A>.<3>}
+2026-11-15 17:39:07.979660-0800 Tongxing[7552:30552778] [AQ]        LoudnessManager.mm:1673  [static] IsHardwareSupported: no plist loaded, disallowing hardware
+2026-11-15 17:39:07.979765-0800 Tongxing[7552:30552778] [AQ]        LoudnessManager.mm:1673  [static] IsHardwareSupported: no plist loaded, disallowing hardware
+2026-11-15 17:39:07.981949-0800 Tongxing[7552:30552778] [player] <<<< FigFilePlayer >>>> signalled err=-12864 at <>:10696
+2026-11-15 17:39:07.982551-0800 Tongxing[7552:30552778] [player] <<<< FigFilePlayer >>>> signalled err=-12864 at <>:10696
+2026-11-15 17:39:07.998125-0800 Tongxing[7552:30552792] [Default] Task <2439AF04-AC55-4922-A65D-3D212845C3BF>.<2> finished with error [-1009] Error Domain=NSURLErrorDomain Code=-1009 "(null)" UserInfo={_NSURLErrorRelatedURLSessionTaskErrorKey=(
+    "LocalDataTask <2439AF04-AC55-4922-A65D-3D212845C3BF>.<2>"
+), _NSURLErrorFailingURLSessionTaskErrorKey=LocalDataTask <2439AF04-AC55-4922-A65D-3D212845C3BF>.<2>}
+2026-11-15 17:39:08.004034-0800 Tongxing[7552:30552417] [player] <<<< FigFilePlayer >>>> signalled err=-12864 at <>:10696
+Test Case '-[TongxingTests.WeeklyUpdateModelTests testAutomaticPosterOfferRequiresVerifiedBytes]' passed (0.047 seconds).
+Test Case '-[TongxingTests.WeeklyUpdateModelTests testAutomaticPosterOfferWaitsForLocalEightOnServiceDate]' started.
+2026-11-15 17:39:08.006595-0800 Tongxing[7552:30552417] [player] <<<< FigFilePlayer >>>> signalled err=-12864 at <>:10696
+2026-11-15 17:39:08.011430-0800 Tongxing[7552:30551762] [Default] Task <90C31893-F9B5-4746-B116-1A657297F70E>.<2> finished with error [-1100] Error Domain=NSURLErrorDomain Code=-1100 "(null)" UserInfo={_NSURLErrorRelatedURLSessionTaskErrorKey=(
+    "LocalDataTask <90C31893-F9B5-4746-B116-1A657297F70E>.<2>"
+), _NSURLErrorFailingURLSessionTaskErrorKey=LocalDataTask <90C31893-F9B5-4746-B116-1A657297F70E>.<2>}
+2026-11-15 17:39:08.012060-0800 Tongxing[7552:30552792] [Default] Task <6B4AD0B1-E036-41A0-AE40-75055817A793>.<3> finished with error [-1100] Error Domain=NSURLErrorDomain Code=-1100 "(null)" UserInfo={_NSURLErrorRelatedURLSessionTaskErrorKey=(
+    "LocalDataTask <6B4AD0B1-E036-41A0-AE40-75055817A793>.<3>"
+), _NSURLErrorFailingURLSessionTaskErrorKey=LocalDataTask <6B4AD0B1-E036-41A0-AE40-75055817A793>.<3>}
+2026-11-15 17:39:08.026937-0800 Tongxing[7552:30552565] [AQ]        LoudnessManager.mm:1673  [static] IsHardwareSupported: no plist loaded, disallowing hardware
+2026-11-15 17:39:08.027029-0800 Tongxing[7552:30552565] [AQ]        LoudnessManager.mm:1673  [static] IsHardwareSupported: no plist loaded, disallowing hardware
+2026-11-15 17:39:08.029111-0800 Tongxing[7552:30552565] [player] <<<< FigFilePlayer >>>> signalled err=-12864 at <>:10696
+2026-11-15 17:39:08.029666-0800 Tongxing[7552:30552565] [player] <<<< FigFilePlayer >>>> signalled err=-12864 at <>:10696
+2026-11-15 17:39:08.069851-0800 Tongxing[7552:30552417] [player] <<<< FigFilePlayer >>>> signalled err=-12864 at <>:10696
+Test Case '-[TongxingTests.WeeklyUpdateModelTests testAutomaticPosterOfferWaitsForLocalEightOnServiceDate]' passed (0.066 seconds).
+Test Case '-[TongxingTests.WeeklyUpdateModelTests testDefaultAndNotificationAnnouncementStatesRemainIndependentAndMergeReceipts]' started.
+2026-11-15 17:39:08.073082-0800 Tongxing[7552:30552417] [player] <<<< FigFilePlayer >>>> signalled err=-12864 at <>:10696
+2026-11-15 17:39:08.079049-0800 Tongxing[7552:30551781] [Default] Task <8EDDFEA3-6DDA-47B9-A5D7-4A590AB2A7C5>.<2> finished with error [-1100] Error Domain=NSURLErrorDomain Code=-1100 "(null)" UserInfo={_NSURLErrorRelatedURLSessionTaskErrorKey=(
+    "LocalDataTask <8EDDFEA3-6DDA-47B9-A5D7-4A590AB2A7C5>.<2>"
+), _NSURLErrorFailingURLSessionTaskErrorKey=LocalDataTask <8EDDFEA3-6DDA-47B9-A5D7-4A590AB2A7C5>.<2>}
+2026-11-15 17:39:08.084213-0800 Tongxing[7552:30551780] [Default] Task <0F9D8D03-CCEE-43A3-AC84-FFED1FB8AC58>.<3> finished with error [-1100] Error Domain=NSURLErrorDomain Code=-1100 "(null)" UserInfo={_NSURLErrorRelatedURLSessionTaskErrorKey=(
+    "LocalDataTask <0F9D8D03-CCEE-43A3-AC84-FFED1FB8AC58>.<3>"
+), _NSURLErrorFailingURLSessionTaskErrorKey=LocalDataTask <0F9D8D03-CCEE-43A3-AC84-FFED1FB8AC58>.<3>}
+2026-11-15 17:39:08.101503-0800 Tongxing[7552:30552779] [AQ]        LoudnessManager.mm:1673  [static] IsHardwareSupported: no plist loaded, disallowing hardware
+2026-11-15 17:39:08.101589-0800 Tongxing[7552:30552779] [AQ]        LoudnessManager.mm:1673  [static] IsHardwareSupported: no plist loaded, disallowing hardware
+2026-11-15 17:39:08.103670-0800 Tongxing[7552:30552779] [player] <<<< FigFilePlayer >>>> signalled err=-12864 at <>:10696
+2026-11-15 17:39:08.104234-0800 Tongxing[7552:30552779] [player] <<<< FigFilePlayer >>>> signalled err=-12864 at <>:10696
+2026-11-15 17:39:08.136149-0800 Tongxing[7552:30553805] [player] <<<< FigFilePlayer >>>> signalled err=-12864 at <>:10696
+2026-11-15 17:39:08.192506-0800 Tongxing[7552:30553805] [player] <<<< FigFilePlayer >>>> signalled err=-12864 at <>:10696
+2026-11-15 17:39:08.193955-0800 Tongxing[7552:30552417] [player] <<<< FigFilePlayer >>>> signalled err=-12864 at <>:10696
+Test Case '-[TongxingTests.WeeklyUpdateModelTests testDefaultAndNotificationAnnouncementStatesRemainIndependentAndMergeReceipts]' passed (0.124 seconds).
+Test Case '-[TongxingTests.WeeklyUpdateModelTests testForegroundRefreshPublishesAFreshPosterCheckSignal]' started.
+2026-11-15 17:39:08.201282-0800 Tongxing[7552:30552792] [Default] Task <D2EF3F4F-6F18-4338-B69F-543B0A7F0F09>.<2> finished with error [-1100] Error Domain=NSURLErrorDomain Code=-1100 "(null)" UserInfo={_NSURLErrorRelatedURLSessionTaskErrorKey=(
+    "LocalDataTask <D2EF3F4F-6F18-4338-B69F-543B0A7F0F09>.<2>"
+), _NSURLErrorFailingURLSessionTaskErrorKey=LocalDataTask <D2EF3F4F-6F18-4338-B69F-543B0A7F0F09>.<2>}
+2026-11-15 17:39:08.201930-0800 Tongxing[7552:30551780] [Default] Task <86E34545-E6C7-4329-A6F9-B61584F1F4CA>.<3> finished with error [-1100] Error Domain=NSURLErrorDomain Code=-1100 "(null)" UserInfo={_NSURLErrorRelatedURLSessionTaskErrorKey=(
+    "LocalDataTask <86E34545-E6C7-4329-A6F9-B61584F1F4CA>.<3>"
+), _NSURLErrorFailingURLSessionTaskErrorKey=LocalDataTask <86E34545-E6C7-4329-A6F9-B61584F1F4CA>.<3>}
+2026-11-15 17:39:08.205715-0800 Tongxing[7552:30552417] [player] <<<< FigFilePlayer >>>> signalled err=-12864 at <>:10696
+2026-11-15 17:39:08.216601-0800 Tongxing[7552:30552779] [AQ]        LoudnessManager.mm:1673  [static] IsHardwareSupported: no plist loaded, disallowing hardware
+2026-11-15 17:39:08.216741-0800 Tongxing[7552:30552779] [AQ]        LoudnessManager.mm:1673  [static] IsHardwareSupported: no plist loaded, disallowing hardware
+2026-11-15 17:39:08.219162-0800 Tongxing[7552:30552779] [player] <<<< FigFilePlayer >>>> signalled err=-12864 at <>:10696
+2026-11-15 17:39:08.219875-0800 Tongxing[7552:30552779] [player] <<<< FigFilePlayer >>>> signalled err=-12864 at <>:10696
+2026-11-15 17:39:08.228633-0800 Tongxing[7552:30552792] [Default] Task <A0D2385D-4C57-481A-9983-CF8FE98C9F9D>.<8> finished with error [-1100] Error Domain=NSURLErrorDomain Code=-1100 "(null)" UserInfo={_NSURLErrorRelatedURLSessionTaskErrorKey=(
+    "LocalDataTask <A0D2385D-4C57-481A-9983-CF8FE98C9F9D>.<8>"
+), _NSURLErrorFailingURLSessionTaskErrorKey=LocalDataTask <A0D2385D-4C57-481A-9983-CF8FE98C9F9D>.<8>}
+2026-11-15 17:39:08.229373-0800 Tongxing[7552:30551760] [Default] Task <36B6B867-F6D3-43E1-B9A6-B628E6872E8F>.<9> finished with error [-1100] Error Domain=NSURLErrorDomain Code=-1100 "(null)" UserInfo={_NSURLErrorRelatedURLSessionTaskErrorKey=(
+    "LocalDataTask <36B6B867-F6D3-43E1-B9A6-B628E6872E8F>.<9>"
+), _NSURLErrorFailingURLSessionTaskErrorKey=LocalDataTask <36B6B867-F6D3-43E1-B9A6-B628E6872E8F>.<9>}
+2026-11-15 17:39:08.233368-0800 Tongxing[7552:30551760] [Default] Task <DB16FDF3-1EF6-4190-ADEA-B1D47006A0C2>.<11> finished with error [-1100] Error Domain=NSURLErrorDomain Code=-1100 "(null)" UserInfo={_NSURLErrorRelatedURLSessionTaskErrorKey=(
+    "LocalDataTask <DB16FDF3-1EF6-4190-ADEA-B1D47006A0C2>.<11>"
+), _NSURLErrorFailingURLSessionTaskErrorKey=LocalDataTask <DB16FDF3-1EF6-4190-ADEA-B1D47006A0C2>.<11>}
+2026-11-15 17:39:08.234559-0800 Tongxing[7552:30552417] [player] <<<< FigFilePlayer >>>> signalled err=-12864 at <>:10696
+Test Case '-[TongxingTests.WeeklyUpdateModelTests testForegroundRefreshPublishesAFreshPosterCheckSignal]' passed (0.040 seconds).
+Test Case '-[TongxingTests.WeeklyUpdateModelTests testOpeningSamePageWithChangedReleaseInvalidatesOldPreparedAudio]' started.
+2026-11-15 17:39:08.237200-0800 Tongxing[7552:30552417] [player] <<<< FigFilePlayer >>>> signalled err=-12864 at <>:10696
+2026-11-15 17:39:08.242073-0800 Tongxing[7552:30551760] [Default] Task <5412E150-87AC-4C90-9C29-2773FB334594>.<2> finished with error [-1100] Error Domain=NSURLErrorDomain Code=-1100 "(null)" UserInfo={_NSURLErrorRelatedURLSessionTaskErrorKey=(
+    "LocalDataTask <5412E150-87AC-4C90-9C29-2773FB334594>.<2>"
+), _NSURLErrorFailingURLSessionTaskErrorKey=LocalDataTask <5412E150-87AC-4C90-9C29-2773FB334594>.<2>}
+2026-11-15 17:39:08.242716-0800 Tongxing[7552:30552792] [Default] Task <B1AF6DC5-A98C-4880-A7A6-8A400F8E6BFE>.<3> finished with error [-1100] Error Domain=NSURLErrorDomain Code=-1100 "(null)" UserInfo={_NSURLErrorRelatedURLSessionTaskErrorKey=(
+    "LocalDataTask <B1AF6DC5-A98C-4880-A7A6-8A400F8E6BFE>.<3>"
+), _NSURLErrorFailingURLSessionTaskErrorKey=LocalDataTask <B1AF6DC5-A98C-4880-A7A6-8A400F8E6BFE>.<3>}
+2026-11-15 17:39:08.257065-0800 Tongxing[7552:30552565] [AQ]        LoudnessManager.mm:1673  [static] IsHardwareSupported: no plist loaded, disallowing hardware
+2026-11-15 17:39:08.257153-0800 Tongxing[7552:30552565] [AQ]        LoudnessManager.mm:1673  [static] IsHardwareSupported: no plist loaded, disallowing hardware
+2026-11-15 17:39:08.259281-0800 Tongxing[7552:30552565] [player] <<<< FigFilePlayer >>>> signalled err=-12864 at <>:10696
+2026-11-15 17:39:08.259895-0800 Tongxing[7552:30552565] [player] <<<< FigFilePlayer >>>> signalled err=-12864 at <>:10696
+2026-11-15 17:39:08.333421-0800 Tongxing[7552:30552417] [player] <<<< FigFilePlayer >>>> signalled err=-12864 at <>:10696
+Test Case '-[TongxingTests.WeeklyUpdateModelTests testOpeningSamePageWithChangedReleaseInvalidatesOldPreparedAudio]' passed (0.099 seconds).
+Test Case '-[TongxingTests.WeeklyUpdateModelTests testOpeningSameUnchangedReleasePreservesPreparedPlaybackAndPosition]' started.
+2026-11-15 17:39:08.341764-0800 Tongxing[7552:30551758] [Default] Task <E651D222-B690-4593-AC61-0DE00F5D14F0>.<2> finished with error [-1100] Error Domain=NSURLErrorDomain Code=-1100 "(null)" UserInfo={_NSURLErrorRelatedURLSessionTaskErrorKey=(
+    "LocalDataTask <E651D222-B690-4593-AC61-0DE00F5D14F0>.<2>"
+), _NSURLErrorFailingURLSessionTaskErrorKey=LocalDataTask <E651D222-B690-4593-AC61-0DE00F5D14F0>.<2>}
+2026-11-15 17:39:08.342427-0800 Tongxing[7552:30552792] [Default] Task <B9A8B091-844C-407A-9042-60C0F24867CF>.<3> finished with error [-1100] Error Domain=NSURLErrorDomain Code=-1100 "(null)" UserInfo={_NSURLErrorRelatedURLSessionTaskErrorKey=(
+    "LocalDataTask <B9A8B091-844C-407A-9042-60C0F24867CF>.<3>"
+), _NSURLErrorFailingURLSessionTaskErrorKey=LocalDataTask <B9A8B091-844C-407A-9042-60C0F24867CF>.<3>}
+2026-11-15 17:39:08.345095-0800 Tongxing[7552:30552417] [player] <<<< FigFilePlayer >>>> signalled err=-12864 at <>:10696
+2026-11-15 17:39:08.357603-0800 Tongxing[7552:30552778] [AQ]        LoudnessManager.mm:1673  [static] IsHardwareSupported: no plist loaded, disallowing hardware
+2026-11-15 17:39:08.357684-0800 Tongxing[7552:30552778] [AQ]        LoudnessManager.mm:1673  [static] IsHardwareSupported: no plist loaded, disallowing hardware
+2026-11-15 17:39:08.359807-0800 Tongxing[7552:30552778] [player] <<<< FigFilePlayer >>>> signalled err=-12864 at <>:10696
+2026-11-15 17:39:08.360372-0800 Tongxing[7552:30552778] [player] <<<< FigFilePlayer >>>> signalled err=-12864 at <>:10696
+2026-11-15 17:39:08.394551-0800 Tongxing[7552:30552417] [player] <<<< FigFilePlayer >>>> signalled err=-12864 at <>:10696
+Test Case '-[TongxingTests.WeeklyUpdateModelTests testOpeningSameUnchangedReleasePreservesPreparedPlaybackAndPosition]' passed (0.060 seconds).
+Test Suite 'WeeklyUpdateModelTests' passed at 2026-11-15 17:39:08.396.
+	 Executed 6 tests, with 0 failures (0 unexpected) in 0.436 (0.438) seconds
+Test Suite 'TongxingTests.xctest' passed at 2026-11-15 17:39:08.396.
+	 Executed 176 tests, with 16 tests skipped and 0 failures (0 unexpected) in 33.248 (33.318) seconds
+Test Suite 'All tests' passed at 2026-11-15 17:39:08.397.
+	 Executed 176 tests, with 16 tests skipped and 0 failures (0 unexpected) in 33.248 (33.319) seconds
+2026-11-15 17:39:08.397323-0800 Tongxing[7552:30552417] [player] <<<< FigFilePlayer >>>> signalled err=-12864 at <>:10696
+2026-11-15 17:39:08.424 xcodebuild[6515:30545670] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+2026-11-15 17:39:08.424 xcodebuild[6515:30545670] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+2026-11-15 17:39:08.424 xcodebuild[6515:30545670] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+2026-11-15 17:39:08.704 xcodebuild[6515:30545670] [MT] IDETestOperationsObserverDebug: 104.813 elapsed -- Testing started completed.
+2026-11-15 17:39:08.704 xcodebuild[6515:30545670] [MT] IDETestOperationsObserverDebug: 0.000 sec, +0.000 sec -- start
+2026-11-15 17:39:08.704 xcodebuild[6515:30545670] [MT] IDETestOperationsObserverDebug: 104.813 sec, +104.813 sec -- end
+
+Test session results, code coverage, and logs:
+	~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.agents/worktrees/picker-content-tabs/artifacts/tongxing-ios/2026-11-15/cli/20261115T173720-test-cd67d049/test.xcresult
+
+** TEST SUCCEEDED **
+
+Testing started
+
+Exit status: 0

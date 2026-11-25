@@ -12,7 +12,7 @@ iOS 确认后记录网页 `required`／`not_applicable`／`deferred`，再按需
 
 ## 截图／录屏展示素材
 
-需要设备外框或页面拼图时使用 [Frames 指南](FRAMES.zh.md) 与 `python3 apps/tongxing-ios/scripts/frames.py`。它是可选后处理：从本轮成功预览 Manifest 或已授权录屏选取原始文件，先 dry-run，再显式执行；不得自动安装工具、下载素材或发布。原始截图／批注仍是 UI 评审依据，套框图标记为展示素材，不替代交互、真机、音频或现场验收。产物与日志留在忽略目录，保留源 Manifest；缺少 Frames 不阻塞原有开发流程。
+商店截图（含 iPhone Duo 折叠／内屏）的采集与上传见 [商店截图方法](STORE-SCREENSHOTS.zh.md)。需要设备外框或页面拼图时使用 [Frames 指南](FRAMES.zh.md) 与 `python3 apps/tongxing-ios/scripts/frames.py`。它是可选后处理：从本轮成功预览 Manifest 或已授权录屏选取原始文件，先 dry-run，再显式执行；不得自动安装工具、下载素材或发布。原始截图／批注仍是 UI 评审依据，套框图标记为展示素材，不替代交互、真机、音频或现场验收。产物与日志留在忽略目录，保留源 Manifest；缺少 Frames 不阻塞原有开发流程。
 
 ## 范围与实现
 

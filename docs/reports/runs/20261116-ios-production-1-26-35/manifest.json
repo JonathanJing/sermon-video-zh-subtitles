@@ -1,0 +1,113 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261116-ios-production-1-26-35",
+  "runs": [
+    {
+      "label": "production-1.26.35",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.agents/worktrees/picker-content-tabs/artifacts/tongxing-ios/production-1.26.35",
+      "skipped": {
+        ".plist": 16,
+        "(none)": 73,
+        ".yml": 4,
+        ".json": 28,
+        ".swiftdoc": 8,
+        ".swiftmodule": 8,
+        ".timestamp": 4,
+        ".h": 9,
+        ".modulemap": 4,
+        ".hmap": 12,
+        ".DependencyMetadataFileList": 4,
+        ".DependencyStaticMetadataFileList": 4,
+        ".xcent": 2,
+        ".der": 2,
+        ".stringsdata": 4,
+        ".o": 62,
+        ".dia": 8,
+        ".d": 4,
+        ".swiftconstvalues": 4,
+        ".LinkFileList": 4,
+        ".SwiftConstValuesFileList": 4,
+        ".SwiftFileList": 4,
+        ".swiftsourceinfo": 4,
+        ".dat": 4,
+        ".yaml": 1,
+        ".sb": 1,
+        ".swift": 1,
+        ".sh": 1,
+        ".dep": 1,
+        ".plist_thinned": 1,
+        ".png": 24,
+        ".car": 2,
+        ".strings": 15,
+        ".mobileprovision": 3,
+        ".db": 1,
+        ".msgpack": 2,
+        ".txt": 2,
+        ".v1": 3,
+        ".shared": 3,
+        ".xcactivitylog": 2,
+        ".pcm": 398,
+        ".modulevalidation": 1,
+        ".sdkstatcache": 1,
+        ".xcprivacy": 1,
+        ".jpg": 2,
+        ".py": 5
+      }
+    }
+  ],
+  "files": [
+    {
+      "run": "production-1.26.35",
+      "path": "archive/archive.log",
+      "kind": "log",
+      "bytes": 546726,
+      "truncated": true,
+      "sha256": "f1916da28596215d67070230e4d3c615739071b0a4a72cabea0a4dc2888cffe8",
+      "redactions": {
+        "email": 1,
+        "home_dir": 166
+      }
+    },
+    {
+      "run": "production-1.26.35",
+      "path": "archive/upload.log",
+      "kind": "log",
+      "bytes": 6082,
+      "truncated": false,
+      "sha256": "563b12e99d5fa1bfa9f1537e4aa48c44537ee8d66b42d7011fcc18e2dc2817e1",
+      "redactions": {}
+    },
+    {
+      "run": "production-1.26.35",
+      "path": "final/en-receipt.json",
+      "kind": "whole",
+      "bytes": 1700,
+      "truncated": false,
+      "sha256": "3973a19702549a7d729d996f536071a5b85c526762aceedc27d2c1d196803829",
+      "redactions": {}
+    },
+    {
+      "run": "production-1.26.35",
+      "path": "final/zh-receipt.json",
+      "kind": "whole",
+      "bytes": 1714,
+      "truncated": false,
+      "sha256": "1152e4ec08312c571fc095ab48672cd32508f09133da38e58cb04148a96e8020",
+      "redactions": {}
+    },
+    {
+      "run": "production-1.26.35",
+      "path": "submit-receipt.json",
+      "kind": "whole",
+      "bytes": 485,
+      "truncated": false,
+      "sha256": "9c1ccf9ee34113e46bdbea7d4b4c477a9e48482352bdcf8ef68535928e582963",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

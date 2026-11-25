@@ -24,6 +24,8 @@ final class ListeningFlowUITests: XCTestCase {
         let ids = ["resi-20261004-69ba7a66", "if-i-had-more-time-jesus-is-worthy", "2026-09-27-weekend-sermon-drive-530"]
         let baseline = ProcessInfo.processInfo.environment["TONGXING_CAPTURE_CATEGORY_BASELINE"] == "1"
         for id in ids {
+            // Podcasts sit in their own tab; sermons keep the legacy weeks.
+            showPickerKind(id == ids[1] ? "播客" : "周日证道", in: app)
             let row = app.buttons["published-page-\(id)"]
             XCTAssertTrue(row.waitForExistence(timeout: 10))
             try waitFor(row, "label CONTAINS 'Eric Geiger'")
@@ -51,6 +53,16 @@ final class ListeningFlowUITests: XCTestCase {
         return app
     }
 
+    /// Kind tabs separate podcasts from sermons. A catalog with one kind keeps
+    /// the previous single list and shows no control, so absence is allowed.
+    private func showPickerKind(_ tab: String, in app: XCUIApplication) {
+        let tabs = app.segmentedControls["picker-content-tabs"]
+        guard tabs.waitForExistence(timeout: 5) else { return }
+        let segment = tabs.buttons[tab]
+        XCTAssertTrue(segment.waitForExistence(timeout: 5), "Missing picker tab \(tab)")
+        segment.tap()
+    }
+
     private func expandCategoryPicker(_ app: XCUIApplication, doneLabel: String = "完成") throws {
         let done = app.buttons[doneLabel]
         XCTAssertTrue(done.waitForExistence(timeout: 5))
@@ -67,6 +79,7 @@ final class ListeningFlowUITests: XCTestCase {
         try expandCategoryPicker(app)
         for (id, category) in [("remote-archive", "正式播放版"), ("remote-youtube", "YouTube 版"),
                                ("remote-podcast", "播客"), ("remote-interview", "专题访谈")] {
+            showPickerKind(id == "remote-podcast" ? "播客" : "周日证道", in: app)
             let label = app.staticTexts["picker-\(id)-edition"]
             XCTAssertTrue(label.waitForExistence(timeout: 5))
             XCTAssertEqual(label.label, category)
@@ -87,6 +100,7 @@ final class ListeningFlowUITests: XCTestCase {
         try expandCategoryPicker(app, doneLabel: "Done")
         for (id, label) in [("remote-archive", "Archive edition"), ("remote-youtube", "YouTube edition"),
                             ("remote-podcast", "Podcast"), ("remote-interview", "Special interview")] {
+            showPickerKind(id == "remote-podcast" ? "Podcast" : "Sunday sermon", in: app)
             XCTAssertEqual(app.staticTexts["picker-\(id)-edition"].label, label)
         }
         screenshot("remote-categories-english", app: app)
@@ -270,7 +284,11 @@ final class ListeningFlowUITests: XCTestCase {
         // XCUITest reports the Duo inner screen in its physical (portrait) size
         // even while the UI runs landscape, so accept either orientation and
         // distinguish the inner screen from the 466x678 outer one by size.
-        try XCTSkipUnless(max(app.frame.width, app.frame.height) >= 600,
+        // A regular iPhone in landscape is also wider than 600 points but keeps
+        // the floating bottom dock, so match the inner display's own size.
+        let longEdge = max(app.frame.width, app.frame.height)
+        let shortEdge = min(app.frame.width, app.frame.height)
+        try XCTSkipUnless(abs(longEdge - 951) < 2 && abs(shortEdge - 669) < 2,
                           "This geometry check targets the iPhone Duo inner display; observed \(app.frame)")
         let play = app.buttons["playback-toggle"]
         XCTAssertTrue(play.waitForExistence(timeout: 5))
@@ -733,6 +751,9 @@ final class ListeningFlowUITests: XCTestCase {
         app.segmentedControls["listening-display"].buttons["字幕全文"].tap()
         let chinese = app.staticTexts["published-caption-text-g1"]
         XCTAssertTrue(chinese.waitForExistence(timeout: 5))
+        // On taller phones the first paragraph can start under the header;
+        // bring it fully into the reading area before the long press.
+        try reveal(chinese, in: app, direction: .down)
         XCTAssertTrue(chinese.isHittable)
         chinese.press(forDuration: 1.2)
         let copy = app.buttons["copy-transcript-g1"]
@@ -765,7 +786,9 @@ final class ListeningFlowUITests: XCTestCase {
         XCTAssertTrue(follow.label.hasSuffix("跟随播放"))
         screenshot("normal-text-transcript-current-paused12", app: app)
         app.buttons["playback-toggle"].tap()
-        try waitFor(app.buttons["published-caption-time-g3"], "selected == true AND hittable == true", timeout: 20)
+        // g3 starts 12 s of real playback later and holds until 36 s; hosted
+        // simulators can take several extra seconds to start audio and scroll.
+        try waitFor(app.buttons["published-caption-time-g3"], "selected == true AND hittable == true", timeout: 30)
         XCTAssertTrue(app.staticTexts["published-caption-text-g3"].isHittable)
         XCTAssertTrue(follow.label.hasSuffix("跟随播放"))
         screenshot("normal-text-transcript-auto-follow24", app: app)
@@ -884,7 +907,7 @@ final class ListeningFlowUITests: XCTestCase {
             currentEnglish.exists && currentEnglish.isHittable
                 && currentEnglish.frame.minY < app.frame.midY
         }, object: nil)
-        XCTAssertEqual(XCTWaiter.wait(for: [landed], timeout: 15), .completed)
+        XCTAssertEqual(XCTWaiter.wait(for: [landed], timeout: 30), .completed)
         XCTAssertTrue(currentEnglish.label.contains("lighthouse"))
         screenshot("english-locate-delayed-transcript-near-current12", app: app)
         app.buttons["english-locate-close"].tap()
@@ -1314,12 +1337,13 @@ final class ListeningFlowUITests: XCTestCase {
         comparison.tap()
         XCTAssertFalse(english.exists)
         comparison.tap()
-        app.buttons["more-options"].tap()
-        let language = element("interface-language", in: app)
-        try reveal(language, in: app, direction: .up)
+        // The header language menu is the interface-language control on the
+        // listening page; the More sheet's picker is not in the reading scroll.
+        let language = element("app-language-menu", in: app)
+        for _ in 0..<4 where !language.isHittable { app.scrollViews["listening-scroll"].swipeDown() }
+        try waitFor(language, "exists == true AND hittable == true")
         language.tap()
         app.buttons["English"].tap()
-        app.buttons["Done"].tap()
         try waitFor(app.buttons["playback-toggle"], "label == 'Play'")
         try waitFor(playbackStatus(in: app), "value BEGINSWITH '00:12'")
         XCTAssertEqual(element("sermon-title", in: app).label, "界面测试证道")
@@ -1632,9 +1656,11 @@ final class ListeningFlowUITests: XCTestCase {
         let panel = element("playback-more-panel", in: app)
         guard panel.exists else { return }
         // A popover opened from inside a presented sheet leaves more than one
-        // dismiss region in the hierarchy; any of them dismisses the popover.
-        let dismissRegion = app.otherElements["PopoverDismissRegion"].firstMatch
-        if dismissRegion.exists { dismissRegion.tap() }
+        // dismiss region in the hierarchy. On the iOS 18 simulator the first one
+        // can be the sheet's off-screen region ({-402, -874}), which is not
+        // hittable, so tap the last hittable region instead of the first match.
+        let regions = app.otherElements.matching(identifier: "PopoverDismissRegion").allElementsBoundByIndex
+        if let dismissRegion = regions.last(where: { $0.exists && $0.isHittable }) { dismissRegion.tap() }
         else { app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.12)).tap() }
         let closed = XCTNSPredicateExpectation(predicate: NSPredicate(format: "exists == false"), object: panel)
         XCTAssertEqual(XCTWaiter.wait(for: [closed], timeout: 5), .completed,

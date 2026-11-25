@@ -14,6 +14,7 @@ import shutil
 import unicodedata
 
 from . import backend as _delivery
+from . import snapshot_clone
 
 SOURCE_SHA256 = 'd6c6064e8fab11ab012edd9535372a9f99b83cd5240b6014f5451795a9198f86'
 CUV_SHA256 = '363afb38148f150b30fee727f4818faa821a0d17b4888c16be3e05bd462503bb'
@@ -25,7 +26,7 @@ WEEKS = [
     dict(week=9,title='耶稣是公义的，必终结罪恶',scripture='启示录 15–16 章',first=119,last=129,scripture_page=120,start='15:1',end='16:21',appendix=[172]),
     dict(week=10,title='耶稣胜过这世界',scripture='启示录 17–19:10',first=131,last=143,scripture_page=132,start='17:1',end='19:10',appendix=[173]),
     dict(week=11,title='耶稣必再来',scripture='启示录 19:11–21:8',first=145,last=153,scripture_page=146,start='19:11',end='21:8',appendix=[174,175]),
-    dict(week=12,title='耶稣将更新万有',scripture='启示录 21:9–22:21',first=155,last=161,scripture_page=156,start='21:9',end='22:21',appendix=[176]),
+    dict(week=12,title='耶稣必更新万有',scripture='启示录 21:9–22:21',first=155,last=161,scripture_page=156,start='21:9',end='22:21',appendix=[176]),
 ]
 TITLE_OVERRIDES = {10: '耶稣胜过这世界'}
 PAGE = re.compile(r'^## PAGE (\d+)（印刷页 (\d+)，id [^\n]+）\s*$', re.MULTILINE)
@@ -620,7 +621,7 @@ def prepare_guarded_candidate(staging,snapshot,bindings,expected_staging,cuv,out
     frozen_receipt=json.loads(receipt_bytes)
     if digest(firebase_bytes)!=frozen_receipt.get('firebaseJsonSha256'): raise ValueError('baseline Firebase config differs from frozen receipt')
     out.mkdir(parents=True,exist_ok=False)
-    shutil.copytree(snapshot/'public',out/'public')
+    snapshot_clone.clone_tree(snapshot/'public',out/'public')
     shutil.copyfile(snapshot/'firebase.json',out/'firebase.json')
     shutil.copyfile(snapshot/'baseline-receipt.json',out/'baseline-receipt.json')
     shutil.copyfile(snapshot/'seal-report.json',out/'seal-report.json')

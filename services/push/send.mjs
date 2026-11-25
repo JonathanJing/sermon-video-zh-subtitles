@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url';
 import { createPrivateKey, randomUUID, sign } from 'node:crypto';
 import http2 from 'node:http2';
 import { Firestore } from '@google-cloud/firestore';
-import { ORIGIN, TOPIC, dispatchOne, eligibleSubscriptions, sha256, verifiedPublication } from './send-core.mjs';
+import { ORIGIN, TOPIC, dispatchOne, eligibleSubscriptions, isDeviceRejection, sha256, verifiedPublication } from './send-core.mjs';
 import { firestoreStore } from './firestore-store.mjs';
 
 function privateJSON(path) {
@@ -128,7 +128,7 @@ async function main() {
   const keyConfig = privateJSON(options.key_config);
   const sendAPNs = sendAPNsFactory(keyConfig, publication);
   const store = firestoreStore(db);
-  let accepted = 0, skipped = 0, rejected = 0, unknown = 0;
+  let accepted = 0, skipped = 0, rejected = 0, unknown = 0, deviceRejected = 0;
   for (const recipient of plan.recipients) {
     const row = current.get(recipient.installationId);
     if (!row || row.seq !== recipient.seq || row.tokenHash !== recipient.tokenHash ||
@@ -140,13 +140,15 @@ async function main() {
       skipped++; continue;
     }
     if (result.status === 'accepted') accepted++;
+    // One uninstalled app or stale token must not stop everyone sorted after it.
+    else if (isDeviceRejection(result)) deviceRejected++;
     else if (result.status === 'rejected') { rejected++; break; }
     else { unknown++; break; }
   }
   // Never print device tokens, secrets or request errors. The ledger is the
   // durable per-recipient receipt; unknown outcomes require manual reconciliation.
   console.log(JSON.stringify({ pageID: publication.pageID, planned: plan.recipients.length,
-    accepted, skipped, rejected, unknown }));
+    accepted, skipped, rejected, deviceRejected, unknown }));
   if (rejected || unknown) process.exitCode = 1;
 }
 

@@ -1,0 +1,203 @@
+{
+  "schemaVersion": "deepseek-tts-speed-summary-v1",
+  "at": "2026-11-14T22:48:11+00:00",
+  "source": {
+    "run": "20261108-jesus-is-just-zh",
+    "speechJsonlSha256": "eecbd16d49101827f93706f5db3b909a4303ef1cf69724fac4ff4317df95b3ec",
+    "units": 460,
+    "chars": 8997,
+    "videoWindowSeconds": 2155.06
+  },
+  "arms": {
+    "deepseek-serial": {
+      "voice": "tide",
+      "requests": 460,
+      "ok": 460,
+      "failed": 0,
+      "audioSeconds": 2142.6,
+      "wallSeconds": 752.97,
+      "rtf": 0.3514,
+      "latencySeconds": {
+        "p50": 1.532,
+        "p95": 2.4983,
+        "mean": 1.6359,
+        "max": 3.4847
+      },
+      "ttfbSeconds": {
+        "p50": 1.1011,
+        "p95": 1.3705,
+        "mean": 1.107
+      },
+      "unitRtf": {
+        "p50": 0.3905,
+        "p95": 0.8262
+      },
+      "billedChars": 17010,
+      "costUsd": 0.3827,
+      "costUsdListPrice": 0.7654,
+      "retriedRequests": 0
+    },
+    "deepseek-concurrency8": {
+      "voice": "tide",
+      "requests": 460,
+      "ok": 460,
+      "failed": 0,
+      "audioSeconds": 2143.08,
+      "wallSeconds": 95.47,
+      "rtf": 0.0445,
+      "latencySeconds": {
+        "p50": 1.5247,
+        "p95": 2.5488,
+        "mean": 1.6427,
+        "max": 3.5611
+      },
+      "ttfbSeconds": {
+        "p50": 1.113,
+        "p95": 1.3434,
+        "mean": 1.1081
+      },
+      "unitRtf": {
+        "p50": 0.3891,
+        "p95": 0.9036
+      },
+      "billedChars": 17010,
+      "costUsd": 0.3827,
+      "retriedRequests": 0
+    },
+    "spark-qwen3tts-single-replica-batch8": {
+      "batches": 58,
+      "synthWallSeconds": 382.9,
+      "stageWallSeconds": 416.0,
+      "audioSeconds": 1819.8,
+      "rtf": 0.2104,
+      "perUnitWallSeconds": {
+        "p50": 0.821,
+        "p95": 1.115
+      },
+      "source": "2026-11-08T04:54:09Z-05:01:05Z run, tts-run.log + tts-log.jsonl",
+      "structure": "one model process, batches of 8 sentences run serially"
+    }
+  },
+  "durationCompare": {
+    "schemaVersion": "deepseek-spark-duration-compare-v1",
+    "units": 460,
+    "deepseekAudioSeconds": 2142.6,
+    "sparkAudioSeconds": 1819.84,
+    "deltaSeconds": 322.76,
+    "ratio": 1.177,
+    "perUnitDeltaSeconds": {
+      "p50": 0.56,
+      "p95": 2.6,
+      "min": -1.8,
+      "max": 4.64
+    },
+    "perUnitRatio": {
+      "p50": 1.172,
+      "max": 2.921,
+      "min": 0.708
+    },
+    "longerUnits": 389,
+    "worst": [
+      [
+        4.64,
+        "s0133",
+        6.72,
+        11.36
+      ],
+      [
+        4.2,
+        "s0281",
+        8.4,
+        12.6
+      ],
+      [
+        4.12,
+        "s0159",
+        7.6,
+        11.72
+      ],
+      [
+        4.04,
+        "s0293",
+        7.68,
+        11.72
+      ],
+      [
+        3.84,
+        "s0158",
+        8.88,
+        12.72
+      ]
+    ],
+    "shortest": [
+      [
+        -1.8,
+        "s0357",
+        6.16,
+        4.36
+      ],
+      [
+        -1.2,
+        "s0074",
+        6.8,
+        5.6
+      ],
+      [
+        -0.84,
+        "s0369",
+        7.84,
+        7.0
+      ],
+      [
+        -0.68,
+        "s0190",
+        3.36,
+        2.68
+      ],
+      [
+        -0.64,
+        "s0135",
+        6.48,
+        5.84
+      ]
+    ]
+  },
+  "scheduleLag": {
+    "A raw": {
+      "trackSeconds": 2169.7,
+      "maxLagSeconds": 42.9,
+      "over8": 362,
+      "medianLag": 12.93
+    },
+    "B trail trimmed to 0.05": {
+      "trackSeconds": 2143.8,
+      "maxLagSeconds": 16.9,
+      "over8": 75,
+      "medianLag": 2.4
+    },
+    "C speech only + gap": {
+      "trackSeconds": 2143.5,
+      "maxLagSeconds": 6.3,
+      "over8": 0,
+      "medianLag": 0.19
+    },
+    "D spark (measured)": {
+      "trackSeconds": 2143.6,
+      "maxLagSeconds": 2.1,
+      "over8": 0,
+      "medianLag": 0.0
+    }
+  },
+  "environment": {
+    "client": "MacBook M1 Max, macOS, public internet",
+    "endpoint": "https://api.deepseek.com/v1/tools/tts",
+    "format": "wav 24 kHz mono PCM16",
+    "voice": "tide"
+  },
+  "limits": [
+    "no human listening",
+    "spark baseline is a historical run, not same-minute A/B",
+    "no 429/503 behavior measured",
+    "wav header length field must be patched before use"
+  ]
+}

@@ -29,7 +29,7 @@
 
 | 9 | 2026-11-08 | Jesus is just and will bring sin to its end | 启 15–16 | Eric Geiger | 耶稣是公义的，必终结罪恶 | 예수님은 공의로우시며 죄를 끝내실 것입니다 | Jesús es justo y pondrá fin al pecado |
 | 10 | 2026-11-15（推算） | Jesus is better than this world | 启 17–19:10 | 待核 | 耶稣胜过这世界 | 예수님은 이 세상보다 더 귀하십니다 | Jesús es mejor que este mundo |
-| 11 | 2026-11-22（推算） | Jesus will return | 启 19:11–21:8 | 待核 | 耶稣必再来 | 예수님은 다시 오실 것입니다 | Jesús volverá |
+| 11 | 2026-11-22 | Jesus will return | 启 19:11–21:8 | Eric Geiger | 耶稣必再来 | 예수님은 다시 오실 것입니다 | Jesús volverá |
 | 12 | 2026-11-29（推算） | Jesus will make all things new | 启 21:9–21 | 待核 | 耶稣必更新万有 | 예수님은 만물을 새롭게 하실 것입니다 | Jesús hará nuevas todas las cosas |
 
 ### 已发布页面与本表的差异

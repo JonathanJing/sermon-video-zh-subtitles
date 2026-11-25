@@ -191,7 +191,7 @@ def main() -> int:
     else:
         result = base.cmd_readback(args.snapshot)
     print(json.dumps(result, ensure_ascii=False, indent=1))
-    return 0
+    return 1 if base.failed(result) else 0
 
 
 if __name__ == "__main__":

@@ -1,0 +1,70 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261116-ios-builtin-mic-route",
+  "runs": [
+    {
+      "label": "simulator-27.2-full",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.agents/worktrees/fix/ios-builtin-mic-route/artifacts/tongxing-ios/2026-11-16/evidence/simulator-27.2-full",
+      "skipped": {}
+    },
+    {
+      "label": "simulator-26.2-alignment",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.agents/worktrees/fix/ios-builtin-mic-route/artifacts/tongxing-ios/2026-11-16/evidence/simulator-26.2-alignment",
+      "skipped": {}
+    },
+    {
+      "label": "device-17pro-alignment",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.agents/worktrees/fix/ios-builtin-mic-route/artifacts/tongxing-ios/2026-11-16/evidence/device-17pro-alignment",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "simulator-27.2-full",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 1672,
+      "truncated": false,
+      "sha256": "60a06e805d69c6881574ad3aff301f38a76e406a06f1b1d7e61cecf30451745c",
+      "redactions": {
+        "home_dir": 2
+      }
+    },
+    {
+      "run": "simulator-26.2-alignment",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 1732,
+      "truncated": false,
+      "sha256": "54cc337a3741708fd4723f872c4b1f537964b0f8ced634a6d57851c346f30573",
+      "redactions": {
+        "home_dir": 2
+      }
+    },
+    {
+      "run": "device-17pro-alignment",
+      "path": "device-console-excerpt.log",
+      "kind": "log",
+      "bytes": 656,
+      "truncated": false,
+      "sha256": "3bcd25ceffb744874583a3a288c0fb4c627b305fb41218d00d5fa616e49e40dd",
+      "redactions": {}
+    },
+    {
+      "run": "device-17pro-alignment",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 2640,
+      "truncated": false,
+      "sha256": "2863dd6f7f05e99dc3acbfb3d5ba6bd6e424ce39bb5570d7dd64b3cc13d9ad9f",
+      "redactions": {
+        "home_dir": 1
+      }
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

@@ -133,7 +133,8 @@ start_gateway() {
 }
 
 start_gateway
-npm run dev -- --host 127.0.0.1 --port 4173 --strictPort >> "$log_dir/frontend.log" 2>&1 &
+# No hot reload or file watching during a service; LOCAL_LIVE_FROZEN_UI=0 restores it for UI work.
+LOCAL_LIVE_FROZEN_UI="${LOCAL_LIVE_FROZEN_UI:-1}" npm run dev -- --host 127.0.0.1 --port 4173 --strictPort >> "$log_dir/frontend.log" 2>&1 &
 vite_pid=$!
 
 echo "Local live captions: http://127.0.0.1:4173/"

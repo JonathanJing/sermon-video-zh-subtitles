@@ -1,0 +1,401 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261122-jesus-will-return-podcast-r2",
+  "runs": [
+    {
+      "label": "20261122-jesus-will-return-podcast-es",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/worktrees/week12-podcast/artifacts/sentence-first-agent/20261122-jesus-will-return-podcast-es",
+      "skipped": {
+        "(none)": 1,
+        ".json": 8,
+        ".jsonl": 16,
+        ".html": 1,
+        ".mp3": 1,
+        ".md": 1,
+        ".wav": 987,
+        ".ndjson": 1
+      }
+    },
+    {
+      "label": "20261122-jesus-will-return-podcast-ko",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/worktrees/week12-podcast/artifacts/sentence-first-agent/20261122-jesus-will-return-podcast-ko",
+      "skipped": {
+        "(none)": 1,
+        ".json": 8,
+        ".jsonl": 16,
+        ".html": 1,
+        ".mp3": 1,
+        ".md": 1,
+        ".wav": 987,
+        ".ndjson": 1
+      }
+    },
+    {
+      "label": "20261122-jesus-will-return-podcast-publish",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/worktrees/week12-podcast/artifacts/sentence-first-agent/20261122-jesus-will-return-podcast-publish",
+      "skipped": {
+        ".md": 1,
+        ".json": 1372,
+        ".mp3": 450,
+        ".js": 57,
+        ".html": 275,
+        "(none)": 5,
+        ".mjs": 165,
+        ".png": 290,
+        ".svg": 15,
+        ".srt": 10,
+        ".pdf": 20,
+        ".jpg": 5,
+        ".css": 15,
+        ".lock": 3
+      }
+    },
+    {
+      "label": "20261122-jesus-will-return-podcast-review",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/worktrees/week12-podcast/artifacts/sentence-first-agent/20261122-jesus-will-return-podcast-review",
+      "skipped": {
+        ".json": 2,
+        ".html": 1
+      }
+    },
+    {
+      "label": "20261122-jesus-will-return-podcast-source",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/worktrees/week12-podcast/artifacts/sentence-first-agent/20261122-jesus-will-return-podcast-source",
+      "skipped": {
+        ".md": 2,
+        ".py": 10,
+        ".json": 20,
+        ".wav": 505,
+        ".csv": 2,
+        ".jsonl": 2,
+        ".txt": 1,
+        ".mp3": 14,
+        ".html": 1,
+        ".jpg": 2,
+        ".m4a": 1
+      }
+    },
+    {
+      "label": "layer1",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/worktrees/week12-podcast/artifacts/sentence-first-agent/20261122-jesus-will-return-podcast-source/layer1",
+      "skipped": {
+        ".json": 11,
+        ".jsonl": 1,
+        ".txt": 1
+      }
+    },
+    {
+      "label": "20261122-jesus-will-return-podcast-zh",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/worktrees/week12-podcast/artifacts/sentence-first-agent/20261122-jesus-will-return-podcast-zh",
+      "skipped": {
+        "(none)": 1,
+        ".json": 8,
+        ".jsonl": 16,
+        ".html": 1,
+        ".mp3": 1,
+        ".md": 1,
+        ".wav": 987,
+        ".ndjson": 1
+      }
+    }
+  ],
+  "files": [
+    {
+      "run": "20261122-jesus-will-return-podcast-es",
+      "path": "journal.ndjson",
+      "kind": "whole",
+      "bytes": 757,
+      "truncated": false,
+      "sha256": "2fb1a87bf9457c1d05099b11e0ab8ea2e0e149b24207e7fa2994e232530fba82",
+      "redactions": {}
+    },
+    {
+      "run": "20261122-jesus-will-return-podcast-es",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 701,
+      "truncated": false,
+      "sha256": "47a699471398fc9afd3c633509ab3c88769fff140caeafd0e952a305b5a9bace",
+      "redactions": {}
+    },
+    {
+      "run": "20261122-jesus-will-return-podcast-es",
+      "path": "timings.tsv",
+      "kind": "whole",
+      "bytes": 115,
+      "truncated": false,
+      "sha256": "b4fa1c5cd9053b5c650b1e05e6a40406641ddfdc12f62c30b2323a1d282e7dd2",
+      "redactions": {}
+    },
+    {
+      "run": "20261122-jesus-will-return-podcast-es",
+      "path": "tts-run-john.log",
+      "kind": "log",
+      "bytes": 73764,
+      "truncated": false,
+      "sha256": "a278e894526d95ddb3cb197aa9e045d281d4a8f7ffaca46bbeaea68b78401d97",
+      "redactions": {}
+    },
+    {
+      "run": "20261122-jesus-will-return-podcast-es",
+      "path": "tts-run.log",
+      "kind": "log",
+      "bytes": 126879,
+      "truncated": true,
+      "sha256": "8928d4e7ba7656f5c093eee09fadafdcdbda4a2d775ac25ffab37afbaefcd077",
+      "redactions": {}
+    },
+    {
+      "run": "20261122-jesus-will-return-podcast-ko",
+      "path": "journal.ndjson",
+      "kind": "whole",
+      "bytes": 1014,
+      "truncated": false,
+      "sha256": "23c09dc6791847750f39256a369ca06380c257f7e4ca558787b312a37ea41b37",
+      "redactions": {}
+    },
+    {
+      "run": "20261122-jesus-will-return-podcast-ko",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 700,
+      "truncated": false,
+      "sha256": "1301ad1d8c8dbb05e48cbeebb4a242a1ad62a3fcdafa7a24f6706dd4cd363454",
+      "redactions": {}
+    },
+    {
+      "run": "20261122-jesus-will-return-podcast-ko",
+      "path": "timings.tsv",
+      "kind": "whole",
+      "bytes": 115,
+      "truncated": false,
+      "sha256": "b4fa1c5cd9053b5c650b1e05e6a40406641ddfdc12f62c30b2323a1d282e7dd2",
+      "redactions": {}
+    },
+    {
+      "run": "20261122-jesus-will-return-podcast-ko",
+      "path": "tts-run-john.log",
+      "kind": "log",
+      "bytes": 74056,
+      "truncated": false,
+      "sha256": "2d3a10fb1b992cb3633205de5400e3cb99f05fa466c60cb8e283f7028aad4118",
+      "redactions": {}
+    },
+    {
+      "run": "20261122-jesus-will-return-podcast-ko",
+      "path": "tts-run.log",
+      "kind": "log",
+      "bytes": 126596,
+      "truncated": true,
+      "sha256": "8031055107cc8499d0987513bf9d93826c69eb7bdf4c0e6ae9a26fd7a0abb9fb",
+      "redactions": {}
+    },
+    {
+      "run": "20261122-jesus-will-return-podcast-publish",
+      "path": "baseline/baseline-receipt.json",
+      "kind": "whole",
+      "bytes": 193738,
+      "truncated": false,
+      "sha256": "29771e173c285ff8fcde3dde074a2645752d4c0ea55daed14c731276339f341b",
+      "redactions": {}
+    },
+    {
+      "run": "20261122-jesus-will-return-podcast-publish",
+      "path": "baseline-english/baseline-receipt.json",
+      "kind": "whole",
+      "bytes": 199634,
+      "truncated": false,
+      "sha256": "85a03e81d7b6a4e3a30dec5080265d71ab8b419e64b49755618b83e47d88a89e",
+      "redactions": {}
+    },
+    {
+      "run": "20261122-jesus-will-return-podcast-publish",
+      "path": "http-verification.json",
+      "kind": "whole",
+      "bytes": 2835,
+      "truncated": false,
+      "sha256": "0ecca0622c5aba03cd08b39b70d92687973a254909cbc153a261dd15536bace6",
+      "redactions": {}
+    },
+    {
+      "run": "20261122-jesus-will-return-podcast-publish",
+      "path": "stage-english/baseline-receipt.json",
+      "kind": "whole",
+      "bytes": 199634,
+      "truncated": false,
+      "sha256": "85a03e81d7b6a4e3a30dec5080265d71ab8b419e64b49755618b83e47d88a89e",
+      "redactions": {}
+    },
+    {
+      "run": "20261122-jesus-will-return-podcast-publish",
+      "path": "stage-english/deployment-attempt-v2.json",
+      "kind": "whole",
+      "bytes": 1497,
+      "truncated": false,
+      "sha256": "8c4c9371fc13cc64463177946ede2ca73e15aa4be445e8793e51ccc62821f862",
+      "redactions": {}
+    },
+    {
+      "run": "20261122-jesus-will-return-podcast-publish",
+      "path": "stage-english/hosting-publish.log",
+      "kind": "log",
+      "bytes": 0,
+      "truncated": false,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "redactions": {}
+    },
+    {
+      "run": "20261122-jesus-will-return-podcast-publish",
+      "path": "stage1/baseline-receipt.json",
+      "kind": "whole",
+      "bytes": 193738,
+      "truncated": false,
+      "sha256": "29771e173c285ff8fcde3dde074a2645752d4c0ea55daed14c731276339f341b",
+      "redactions": {}
+    },
+    {
+      "run": "20261122-jesus-will-return-podcast-publish",
+      "path": "stage1/deployment-attempt-v2.json",
+      "kind": "whole",
+      "bytes": 1497,
+      "truncated": false,
+      "sha256": "0094b6fc635b13f043d3c0afac719509a5c42b7ef5d769e7e2207152043b7542",
+      "redactions": {}
+    },
+    {
+      "run": "20261122-jesus-will-return-podcast-publish",
+      "path": "stage1/hosting-publish.log",
+      "kind": "log",
+      "bytes": 0,
+      "truncated": false,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "redactions": {}
+    },
+    {
+      "run": "20261122-jesus-will-return-podcast-publish",
+      "path": "stage2/baseline-receipt.json",
+      "kind": "whole",
+      "bytes": 193738,
+      "truncated": false,
+      "sha256": "29771e173c285ff8fcde3dde074a2645752d4c0ea55daed14c731276339f341b",
+      "redactions": {}
+    },
+    {
+      "run": "20261122-jesus-will-return-podcast-publish",
+      "path": "stage2/deployment-attempt-v2.json",
+      "kind": "whole",
+      "bytes": 1497,
+      "truncated": false,
+      "sha256": "4dedb22caed743531030f6314f0852f338401364556263899190339c4450799e",
+      "redactions": {}
+    },
+    {
+      "run": "20261122-jesus-will-return-podcast-publish",
+      "path": "stage2/hosting-publish.log",
+      "kind": "log",
+      "bytes": 0,
+      "truncated": false,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "redactions": {}
+    },
+    {
+      "run": "20261122-jesus-will-return-podcast-source",
+      "path": "layer1/text.log",
+      "kind": "log",
+      "bytes": 495,
+      "truncated": false,
+      "sha256": "ab6e541d7fc287aa503c37395ce048fe680a5c3853789b9c5624e3278542963b",
+      "redactions": {}
+    },
+    {
+      "run": "20261122-jesus-will-return-podcast-source",
+      "path": "layer1/whisper.log",
+      "kind": "log",
+      "bytes": 81,
+      "truncated": false,
+      "sha256": "c7892115328c62b7bb3a73a11dd4cc72effc36d8464ddc536c6fbb720da144fb",
+      "redactions": {}
+    },
+    {
+      "run": "20261122-jesus-will-return-podcast-source",
+      "path": "openai-asr/diarize.log",
+      "kind": "log",
+      "bytes": 613,
+      "truncated": false,
+      "sha256": "99be225caa9291d32f2cac0ac34161a846fe9fdf677c0ba77eaf215e452da501",
+      "redactions": {
+        "home_dir": 1
+      }
+    },
+    {
+      "run": "layer1",
+      "path": "text.log",
+      "kind": "log",
+      "bytes": 495,
+      "truncated": false,
+      "sha256": "ab6e541d7fc287aa503c37395ce048fe680a5c3853789b9c5624e3278542963b",
+      "redactions": {}
+    },
+    {
+      "run": "layer1",
+      "path": "whisper.log",
+      "kind": "log",
+      "bytes": 81,
+      "truncated": false,
+      "sha256": "c7892115328c62b7bb3a73a11dd4cc72effc36d8464ddc536c6fbb720da144fb",
+      "redactions": {}
+    },
+    {
+      "run": "20261122-jesus-will-return-podcast-zh",
+      "path": "journal.ndjson",
+      "kind": "whole",
+      "bytes": 7198,
+      "truncated": false,
+      "sha256": "2ab8737e97fbf6afc7f886d20d3a0ac666b319c621e443c4a578f6bd45a049c5",
+      "redactions": {
+        "home_dir": 2
+      }
+    },
+    {
+      "run": "20261122-jesus-will-return-podcast-zh",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 705,
+      "truncated": false,
+      "sha256": "c0ce5bf836e9b5bb7ca102a37554578f06edda577f9e799a48005c34bc71b024",
+      "redactions": {}
+    },
+    {
+      "run": "20261122-jesus-will-return-podcast-zh",
+      "path": "timings.tsv",
+      "kind": "whole",
+      "bytes": 174,
+      "truncated": false,
+      "sha256": "8ce4cce501c9de88be41011663cf526c2031eb48a98b29e819132ea5b924e972",
+      "redactions": {}
+    },
+    {
+      "run": "20261122-jesus-will-return-podcast-zh",
+      "path": "tts-run-john.log",
+      "kind": "log",
+      "bytes": 73750,
+      "truncated": false,
+      "sha256": "334a39d98162558322ebcf464c1f44e2fa52bdb7cd624e2cc8bbda87b0e79eab",
+      "redactions": {}
+    },
+    {
+      "run": "20261122-jesus-will-return-podcast-zh",
+      "path": "tts-run.log",
+      "kind": "log",
+      "bytes": 126585,
+      "truncated": true,
+      "sha256": "8bf076cf3e98f8011b5527c5e19f01aefd5234c3b9e3c03b599533aac74ebd40",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

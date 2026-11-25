@@ -356,6 +356,10 @@ final class AppModel: ObservableObject {
         if let selectedWeek { return multilingualCatalog.pages.first(where: { $0.id == selectedWeek.id }) }
         return multilingualCatalog.defaultPage
     }
+    /// The content picker opens on the kind the page is showing, so the
+    /// checkmark is visible without a tab switch. Only the catalog media type
+    /// classifies a page; localized category labels never decide the list.
+    var selectedContentIsPodcast: Bool { selectedMultilingualPage?.isPodcastContent == true }
     var availableContentLanguages: [(locale: String, target: PageTarget)] {
         selectedMultilingualPage.map { Self.selectableTargets(in: $0, allowDevCandidates: allowsDevCandidates) } ?? []
     }
@@ -593,9 +597,16 @@ final class AppModel: ObservableObject {
     var showsPlaybackDock: Bool {
         selectedTrack != nil || selectedAudioLocale != nil || isPreparingPublishedAudio
     }
-    var selectedContentCapabilitySummary: String {
-        guard let target = selectedContentTarget else { return "当前中文版本" }
-        return target.hasPublishedAudio ? "文字 · 音频" : "仅文字"
+    /// Catalog keys, one per capability; the view translates each and joins them.
+    /// A pre-joined "文字 · 音频" has no catalog entry, so the label stayed Chinese
+    /// in every other interface language.
+    var selectedContentCapabilityKeys: [String] {
+        Self.contentCapabilityKeys(hasTarget: selectedContentTarget != nil,
+                                   hasPublishedAudio: selectedContentTarget?.hasPublishedAudio == true)
+    }
+    static func contentCapabilityKeys(hasTarget: Bool, hasPublishedAudio: Bool) -> [String] {
+        guard hasTarget else { return ["当前中文版本"] }
+        return hasPublishedAudio ? ["文字", "音频"] : ["仅文字"]
     }
     var selectionKey: String? {
         guard let week = selectedWeek, let track = selectedTrack else { return nil }

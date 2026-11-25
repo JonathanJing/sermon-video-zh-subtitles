@@ -1,0 +1,5 @@
+stage	computeSeconds	waitingSeconds	reworkSeconds
+deepseek.serial	753.0	0.0	0.0
+deepseek.concurrency8	95.5	0.0	0.0
+spark.tts.synth	382.9	0.0	0.0
+spark.tts.stage	416.0	0.0	0.0

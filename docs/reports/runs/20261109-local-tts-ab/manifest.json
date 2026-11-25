@@ -1,0 +1,153 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261109-local-tts-ab",
+  "runs": [
+    {
+      "label": "local-tts-ab-20261109",
+      "source": "~/dev/sermon-video-zh-subtitles/artifacts/run-reports-src/local-tts-ab-20261109",
+      "skipped": {}
+    }
+  ],
+  "files": [
+    {
+      "run": "local-tts-ab-20261109",
+      "path": "macbook/cold-es-b1.log",
+      "kind": "log",
+      "bytes": 604,
+      "truncated": false,
+      "sha256": "262a1e9d03936bcea39090921b30a746a99b2584586a90f19b3dc72da40d6f69",
+      "redactions": {}
+    },
+    {
+      "run": "local-tts-ab-20261109",
+      "path": "macbook/cold-es-b2.log",
+      "kind": "log",
+      "bytes": 603,
+      "truncated": false,
+      "sha256": "4efbb9a626423d8c78ef91e26054c01b45fff8caad4697fb1d60d82d8fd3dd4c",
+      "redactions": {}
+    },
+    {
+      "run": "local-tts-ab-20261109",
+      "path": "macbook/cold-ko-b1.log",
+      "kind": "log",
+      "bytes": 604,
+      "truncated": false,
+      "sha256": "6b43e2ad8e13c32e158e324d39fca9db70d34269ed3dd29582d676ccebb925e4",
+      "redactions": {}
+    },
+    {
+      "run": "local-tts-ab-20261109",
+      "path": "macbook/cold-ko-b2.log",
+      "kind": "log",
+      "bytes": 605,
+      "truncated": false,
+      "sha256": "0f6ffeb861afc3909a0783b33e7e970f8eae9511890c220bba7d3e91f7f1fc44",
+      "redactions": {}
+    },
+    {
+      "run": "local-tts-ab-20261109",
+      "path": "macbook/cold-mixed-b4.log",
+      "kind": "log",
+      "bytes": 609,
+      "truncated": false,
+      "sha256": "324f8f3fe6805b9c15cdc95ae3a97348242c05ebb465aabb39bae6f0391b8cde",
+      "redactions": {}
+    },
+    {
+      "run": "local-tts-ab-20261109",
+      "path": "macbook/cold-mixed-b8.log",
+      "kind": "log",
+      "bytes": 608,
+      "truncated": false,
+      "sha256": "8358ff8fab3547b17400d2c457be4526e5a7c9a19738266876953437a584e584",
+      "redactions": {}
+    },
+    {
+      "run": "local-tts-ab-20261109",
+      "path": "macbook/cold-zh-Hans-b1.log",
+      "kind": "log",
+      "bytes": 609,
+      "truncated": false,
+      "sha256": "fbcc936e4f77eb904a0f5350e5aa5183049ec72da6a285b67ca1f00600bb2149",
+      "redactions": {}
+    },
+    {
+      "run": "local-tts-ab-20261109",
+      "path": "macbook/cold-zh-Hans-b2.log",
+      "kind": "log",
+      "bytes": 610,
+      "truncated": false,
+      "sha256": "50fb670c58cf3819dc1661ffb1aabf05f32364fccb658754ac21c5167c388733",
+      "redactions": {}
+    },
+    {
+      "run": "local-tts-ab-20261109",
+      "path": "macbook/suite.log",
+      "kind": "log",
+      "bytes": 209,
+      "truncated": false,
+      "sha256": "2852ab6954de8df1c14f02ec08fd2f17da77e4058733b803add3d38a34b2fd30",
+      "redactions": {}
+    },
+    {
+      "run": "local-tts-ab-20261109",
+      "path": "macbook/warm.log",
+      "kind": "log",
+      "bytes": 8199,
+      "truncated": false,
+      "sha256": "e2aabfb88d10452fecdcdb0cc1b0f78322eaf98053cd22531bfccd1ec360d52c",
+      "redactions": {}
+    },
+    {
+      "run": "local-tts-ab-20261109",
+      "path": "mbp16-setup.log",
+      "kind": "log",
+      "bytes": 76,
+      "truncated": false,
+      "sha256": "e6064872befaabb05a6ebbb1480b7c1d7ef3a41990cd03f42f90a0fdc5647a27",
+      "redactions": {}
+    },
+    {
+      "run": "local-tts-ab-20261109",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 307,
+      "truncated": false,
+      "sha256": "64531ea9de47b0719f8dff27319f68383c95093f160056ac3b90800e8e2ce8c2",
+      "redactions": {}
+    },
+    {
+      "run": "local-tts-ab-20261109",
+      "path": "spark/suite.log",
+      "kind": "log",
+      "bytes": 501,
+      "truncated": false,
+      "sha256": "6e46f4dc7473203df842db3ae2672183f677f70f7efc7c3e7ed6a61c1eec3db0",
+      "redactions": {}
+    },
+    {
+      "run": "local-tts-ab-20261109",
+      "path": "summary.json",
+      "kind": "whole",
+      "bytes": 9915,
+      "truncated": false,
+      "sha256": "908993cb3cbc0186c157880ee176f7c0371df3be17d4608690e8d0a798f6966e",
+      "redactions": {}
+    },
+    {
+      "run": "local-tts-ab-20261109",
+      "path": "timings.tsv",
+      "kind": "whole",
+      "bytes": 246,
+      "truncated": false,
+      "sha256": "3d192d0b92baba401164434d849ca6cad55ea9d4c0587a2a0d22187aa1011321",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

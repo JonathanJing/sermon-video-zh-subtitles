@@ -56,7 +56,7 @@ PYTHONPATH=packages/production/src:. .venv/bin/python tools/ops/sfa_publish_gate
 | # | 检查 | 通过标准 | 失败处置 |
 |---|---|---|---|
 | 1 | 输入冻结 | 标题/术语/窗口/审核收据在构建前已定稿；`titleCheck` 在配置里；不因标题造成第二次发布 | 回到构建前，不得部署 |
-| 2 | 目录与页面 | v5 schema；页面唯一；`defaultPageId` 指向本页；语言集合 ⊆ {zh-Hans,ko,es}；标题非空 | 修目录/配置后重构建 |
+| 2 | 目录与页面 | v5 schema；页面唯一；`defaultPageId` 指向最新一期周日证道（`set_catalog_default_page.latest_sermon`，播客、片段与补发的旧周页不要求是默认页）；语言集合 ⊆ {zh-Hans,ko,es}；标题非空 | 修目录/配置后重构建 |
 | 3 | 目录 ↔ release | 三语 `releasePackageJsonSha256` == 线上 release 字节的 SHA | 重出 release/目录，不得只改目录 |
 | 4 | release ↔ 资产 | `status=published_http_verified`、`httpVerification.status=pass`；page/content/audio/captions 四个角色齐全，content/captions 字节 SHA 与 release 一致 | 替换资产后重出 release |
 | 5 | 文稿与字幕时间 | `pageId`/`targetLocale` 一致；`durationSeconds>0`、`audioDurationSeconds>0`；两钟一致（差值在 (−0.1, 1.1)）按同步页通过；不一致时只有「播客页且 `capabilities` 不含 `alignment`」才按独立双钟检查（iOS `PublishedTranscript` 的 `Independent clocks` 模型，语速自然的配音不跟原视频时钟），音轨时长须在文稿时长的 0.75–1.35 倍之间；带对齐的播客页与非播客页仍按 (−0.1, 1.1) 严格判定；字幕 cue 数 == 文稿 cue 数；所有 cue 结束 ≤ 音轨时长+1 ms | 重生成 assets，禁止手改字幕 |

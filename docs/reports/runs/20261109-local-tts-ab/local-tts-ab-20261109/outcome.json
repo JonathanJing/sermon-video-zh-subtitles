@@ -1,0 +1,11 @@
+{
+  "schemaVersion": "local-tts-ab-outcome-v1",
+  "status": "complete",
+  "scope": "diagnostic_component_benchmark",
+  "releaseEligible": false,
+  "humanListening": "not_run",
+  "sparkSessionClosed": true,
+  "sparkServicesRestored": true,
+  "macSuiteComplete": true,
+  "finishedAtUtc": "2026-11-10T05:59:57+00:00"
+}

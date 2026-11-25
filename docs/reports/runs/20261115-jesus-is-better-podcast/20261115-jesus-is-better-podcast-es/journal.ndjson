@@ -1,0 +1,20 @@
+{"at": "2026-11-15T07:48:51+00:00", "stage": "l1.preflight.setup", "event": "started", "hostId": "host-3b56f0875941", "pid": 95141}
+{"at": "2026-11-15T07:48:51+00:00", "stage": "l1.preflight.setup", "event": "finished", "hostId": "host-3b56f0875941", "pid": 95141}
+{"at": "2026-11-15T07:51:16+00:00", "stage": "l1.preflight.setup", "event": "started", "hostId": "host-3b56f0875941", "pid": 96805}
+{"at": "2026-11-15T07:51:16+00:00", "stage": "l1.preflight.setup", "event": "finished", "hostId": "host-3b56f0875941", "pid": 96805}
+{"at": "2026-11-15T08:00:00+00:00", "stage": "l2.consistency", "event": "started", "hostId": "host-3b56f0875941", "pid": 2271}
+{"at": "2026-11-15T08:00:03+00:00", "stage": "l2.consistency", "event": "started", "hostId": "host-3b56f0875941", "pid": 2292}
+{"at": "2026-11-15T08:00:03+00:00", "stage": "l2.consistency", "event": "finished", "hostId": "host-3b56f0875941", "pid": 2292}
+{"at": "2026-11-15T08:00:07+00:00", "stage": "l2.consistency", "event": "started", "hostId": "host-3b56f0875941", "pid": 2311}
+{"at": "2026-11-15T08:00:07+00:00", "stage": "l2.consistency", "event": "finished", "hostId": "host-3b56f0875941", "pid": 2311}
+{"at": "2026-11-15T08:03:17+00:00", "stage": "l1.preflight", "event": "started", "hostId": "host-3b56f0875941", "pid": 4052}
+{"at": "2026-11-15T08:03:18+00:00", "stage": "l1.preflight", "event": "failed", "hostId": "host-3b56f0875941", "pid": 4052}
+{"at": "2026-11-15T08:03:28+00:00", "stage": "l1.preflight", "event": "started", "hostId": "host-3b56f0875941", "pid": 4316}
+{"at": "2026-11-15T08:03:28+00:00", "stage": "l1.preflight", "event": "finished", "hostId": "host-3b56f0875941", "pid": 4316}
+{"at": "2026-11-15T08:27:31.043648+00:00", "stage": "l3.tts.eric_pilot.es", "event": "started", "hostId": "host-3b56f0875941", "pid": 4396, "note": "sentence-tts-eric_pilot-es"}
+{"at": "2026-11-15T08:34:13.820042+00:00", "stage": "l3.tts.eric_pilot.es", "event": "finished", "hostId": "host-3b56f0875941", "pid": 4396, "note": "sentence-tts-eric_pilot-es"}
+{"at": "2026-11-15T08:34:13.827421+00:00", "stage": "l3.tts.john_thomas.es", "event": "started", "hostId": "host-3b56f0875941", "pid": 4396, "note": "sentence-tts-john_thomas-es"}
+{"at": "2026-11-15T08:39:25.471808+00:00", "stage": "l3.tts.john_thomas.es", "event": "finished", "hostId": "host-3b56f0875941", "pid": 4396, "note": "sentence-tts-john_thomas-es"}
+{"at": "2026-11-15T08:42:37+00:00", "stage": "l3.finish", "event": "started", "hostId": "host-3b56f0875941", "pid": 8652}
+{"at": "2026-11-15T08:43:30+00:00", "stage": "l3.finish", "event": "finished", "hostId": "host-3b56f0875941", "pid": 8652}
+{"at": "2026-11-15T08:43:36.381062+00:00", "stage": "l3.review.es", "event": "waiting", "hostId": "host-3b56f0875941", "pid": 8737, "waitingOn": "user track review"}

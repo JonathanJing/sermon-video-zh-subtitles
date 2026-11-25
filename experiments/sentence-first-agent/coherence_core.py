@@ -350,18 +350,31 @@ class DeepSeek:
                  "summary": self.summary_data,
                  "lastError": error}
         with self._state_lock:
-            tmp = self.state_path.with_suffix(".tmp")
+            # A per-process temporary name: two processes sharing a state directory must not
+            # replace each other's half-written file.
+            tmp = self.state_path.with_name(f"{self.state_path.name}.{os.getpid()}.tmp")
             tmp.write_text(json.dumps(state, ensure_ascii=False, indent=1), encoding="utf-8")
             os.replace(tmp, self.state_path)
+
+    def _cache_path(self, system: str, payload_user: str) -> Path:
+        key = hashlib.sha256(json.dumps(
+            ["deepseek", self.model, self.effort, system, payload_user]).encode()).hexdigest()
+        return self.cache_dir / f"{key}.json"
+
+    def forget(self, system: str, user: dict) -> None:
+        """Drop a cached reply that failed the caller's validation.
+
+        The cache keeps every parsed reply so a resume never pays twice. A reply that the caller
+        rejected must not stay there, or every rerun replays the same failure without asking again.
+        """
+        self._cache_path(system, json.dumps(user, ensure_ascii=False)).unlink(missing_ok=True)
 
     def __call__(self, system: str, user: dict, context: str = "") -> dict:
         payload_user = json.dumps(user, ensure_ascii=False)
         self.max_chars = max(self.max_chars, len(system) + len(payload_user))
         if len(system) + len(payload_user) > 14000:
             raise ValueError(f"request exceeds the 14000-character guard ({len(system) + len(payload_user)})")
-        key = hashlib.sha256(json.dumps(
-            ["deepseek", self.model, self.effort, system, payload_user]).encode()).hexdigest()
-        path = self.cache_dir / f"{key}.json"
+        path = self._cache_path(system, payload_user)
         if path.is_file():
             started = time.time()
             self.hits += 1

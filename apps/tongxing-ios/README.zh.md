@@ -14,7 +14,7 @@ Dev Debug 与正式版沿用同一原生收听界面、播放器、下载、字�
 
 2026-10-04，全文定位与自动跟随候选已作为独立 Beta `1.26.11 (52)` 上传并在 Rooted 内部组确认可用；API Key 认证和分发已验证，真机安装／验收仍待核对。准确源码、签名路径、重试与 Apple 读回见 [Beta 1.26.11 分发记录](BETA-RELEASE-1.26.11.zh.md)。
 
-当前最新 tracked Beta 发行记录为 [1.26.33 (77)](BETA-RELEASE-1.26.33.zh.md)：2026-10-30 从 dev 归档并上传，加入阅读页一键听音对齐（成功后自动播放）、导航栏对齐状态与系统 popover／List／搜索栏；Apple 读回 `VALID`、`IN_BETA_TESTING`，Rooted 内部组已关联，研读手册与 [1.26.32 (75)](BETA-RELEASE-1.26.32.zh.md) 相同。同一源码已作为[正式 1.26.33 (78)](RELEASE-1.26.33.zh.md) 提交 App Store 审核（`WAITING_FOR_REVIEW`，批准后手动发布）。真机安装、真实麦克风对齐与现场声学效果仍待验收。[1.26.20 (61)](BETA-RELEASE-1.26.20.zh.md) 的通知与设备观察保留为历史记录。
+当前最新 tracked Beta 发行记录为 [1.26.34 (79)](BETA-RELEASE-1.26.34.zh.md)。正式版最新记录为 [1.26.36 (82)](RELEASE-1.26.36.zh.md)：2026-11-17 提交审核，把戴蓝牙耳机时的听声对齐改为使用手机内置麦克风；Apple 已接收构建（`VALID`），版本与审核提交读回均为 `WAITING_FOR_REVIEW`，发布方式 `MANUAL`。真机整条听声对齐流程、实际听感与现场同步仍待验收。[1.26.20 (61)](BETA-RELEASE-1.26.20.zh.md) 的通知与设备观察保留为历史记录。
 
 通知入口当前分为 [Beta 本机测试](BETA-NOTIFICATIONS.zh.md)、[本人设备远端 APNs](APNS-SINGLE-DEVICE-TEST.zh.md)和周更卡片／海报。Beta 测试默认关闭，内容语言与界面语言分别选择；正式通知也必须先说明用途，由用户主动 opt-in 后再请求系统权限，不能把 Beta 开关或单设备发送器当作正式群体推送已交付。
 

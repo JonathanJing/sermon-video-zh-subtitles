@@ -37,10 +37,29 @@ import re
 import shutil
 
 DEFAULTS = {  # locale -> (Qwen3-TTS language, counted characters, characters per second)
-    "zh-Hans": ("Chinese", r"[一-鿿]", 4.3),
-    "ko": ("Korean", r"[가-힣]", 6.0),
-    "es": ("Spanish", r"[a-záéíóúñü]", 13.0),
+    # 2026-11-21 calibrated on week 11 after the edge-silence trim (post-trim audio / counted chars):
+    # zh 5.10, ko 6.00, es 14.67. The old values (4.3 / 6.0 / 13.0) overestimated zh/es duration, so
+    # the over-budget flag fired on sentences that actually fit.
+    "zh-Hans": ("Chinese", r"[一-鿿]", 5.10),
+    "ko": ("Korean", r"[가-힣]", 6.00),
+    "es": ("Spanish", r"[a-záéíóúñü]", 14.67),
 }
+
+
+def budget_summary(speech_rows: list[dict]) -> dict:
+    """How much longer the spoken script is than the source slots, per locale run.
+
+    A run whose ``ratio`` is far above 1 cannot be fixed by the silence trim and the 1.15 atempo
+    cap alone; the agent should see that before the first render (2026-11-21: Korean came out at
+    1.29 of the source speech and needed 80 minimal text cuts after a full re-render).
+    """
+    estimated = sum(float(row.get("estimatedSeconds") or 0) for row in speech_rows)
+    budget = sum(float(row.get("budgetSeconds") or 0) for row in speech_rows)
+    over = [row["id"] for row in speech_rows
+            if float(row.get("estimatedSeconds") or 0) > float(row.get("budgetSeconds") or 0)]
+    return {"estimatedSeconds": round(estimated, 1), "budgetSeconds": round(budget, 1),
+            "ratio": round(estimated / budget, 3) if budget else None,
+            "overBudgetRows": len(over)}
 
 
 def rows(path: Path) -> list[dict]:
@@ -65,6 +84,8 @@ def main() -> int:
     parser.add_argument("--run", type=Path, required=True)
     parser.add_argument("--review", type=Path, required=True)
     parser.add_argument("--share-from", type=Path, help="run directory whose sentences and slice table to reuse")
+    parser.add_argument("--fail-over-budget-ratio", type=float, default=None,
+                        help="exit non-zero when estimated/budget exceeds this ratio (pre-render gate)")
     parser.add_argument("--over-budget-margin", type=float, default=1.0,
                         help="flag a sentence when estimatedSeconds > budgetSeconds + this")
     args = parser.parse_args()
@@ -136,9 +157,16 @@ def main() -> int:
             out.write(json.dumps(row, ensure_ascii=False) + "\n")
     if unused:
         raise SystemExit(f"spokenForms keys not found in any sentence: {sorted(unused)}")
+    written = rows(run / "speech.jsonl")
+    summary = budget_summary(written)
     print(json.dumps({"locale": locale, "sentences": len(translations), "revised": sorted(revisions),
                       "noted": sorted(notes), "spokenFormsApplied": sorted(spoken_forms),
-                      "flaggedOverBudget": flagged, "spokenTextWithDigits": digits}, ensure_ascii=False))
+                      "flaggedOverBudget": flagged, "spokenTextWithDigits": digits,
+                      "budget": summary}, ensure_ascii=False))
+    if args.fail_over_budget_ratio and (summary["ratio"] or 0) > args.fail_over_budget_ratio:
+        raise SystemExit(f"{locale}: spoken script is {summary['ratio']}x the source slots "
+                         f"(limit {args.fail_over_budget_ratio}); trim the translation or plan text cuts "
+                         f"before rendering ({summary['overBudgetRows']} rows over their slot)")
     return 0
 
 

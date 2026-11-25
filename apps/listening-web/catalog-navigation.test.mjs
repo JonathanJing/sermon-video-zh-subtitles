@@ -89,3 +89,33 @@ test('diagnostic ready and blocked presentation remains bound to its actual cand
   assert.equal(diagnosticPresentation(chooseWeek(result.catalog, ready.id)).canPlay, true);
   assert.equal(diagnosticPresentation(chooseWeek(result.catalog, blocked.id)).canPlay, false);
 });
+
+test('published sermons and podcasts get one tab each while legacy weeks stay with the sermons', () => {
+  const sermon = week('sermon', { date: '2026-11-22', contentKind: 'sermon' });
+  const podcast = week('podcast', { date: '2026-11-23', contentKind: 'podcast', mediaType: 'podcast' });
+  const legacy = week('legacy', { date: '2026-12-01' });
+  const source = catalog([sermon, podcast, legacy], podcast.id);
+  const before = structuredClone(source), result = production(source);
+  assert.deepEqual(result.groups.map(group => [group.id, group.kind, group.items.map(item => item.week.id)]),
+    [['sermons', 'sermons', ['legacy', 'sermon']], ['podcasts', 'podcasts', ['podcast']]]);
+  assert.deepEqual(source, before);
+  // A declared podcast default never opens the picker on the podcast tab.
+  assert.equal(result.catalog.defaultWeekId, 'legacy');
+  assert.deepEqual(result.catalog.weeks.map(item => item.id), ['legacy', 'sermon', 'podcast']);
+  // A declared sermon default is still honored, even an older one.
+  const older = week('older', { date: '2026-11-01', contentKind: 'sermon' });
+  assert.equal(production(catalog([sermon, podcast, older], older.id)).catalog.defaultWeekId, 'older');
+  // A catalog whose only content is a podcast keeps it selectable and default.
+  assert.equal(production(catalog([podcast])).catalog.defaultWeekId, 'podcast');
+});
+
+test('content kind decides the tab and the technical media type is only the fallback', () => {
+  const mislabeled = week('mislabeled', { contentKind: 'sermon', mediaType: 'podcast', date: '2026-11-22' });
+  const podcast = week('podcast', { contentKind: 'podcast', date: '2026-11-15' });
+  const fallback = week('fallback', { mediaType: 'podcast', date: '2026-11-08' });
+  const plain = week('plain', { date: '2026-11-01' });
+  const result = production(catalog([mislabeled, podcast, fallback, plain], mislabeled.id));
+  assert.deepEqual(result.groups.map(group => [group.id, group.items.map(item => item.week.id)]),
+    [['sermons', ['mislabeled', 'plain']], ['podcasts', ['podcast', 'fallback']]]);
+  assert.equal(result.catalog.defaultWeekId, 'mislabeled');
+});

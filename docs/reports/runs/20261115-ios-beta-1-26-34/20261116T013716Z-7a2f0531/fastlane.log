@@ -1,0 +1,30 @@
+[17:37:17]: [33mGet started using a Gemfile for fastlane https://docs.fastlane.tools/getting-started/ios/setup/#use-a-gemfile[0m
+[17:37:17]: fastlane 2.241.1 (Ruby 4.0.7, homebrew)
+[17:37:18]: Driving the lane 'beta_upload' 🚀
+[17:37:18]: ---------------------------------------
+[17:37:18]: --- Step: app_store_connect_api_key ---
+[17:37:18]: ---------------------------------------
+[17:37:18]: ----------------------------------
+[17:37:18]: --- Step: upload_to_testflight ---
+[17:37:18]: ----------------------------------
+[17:37:18]: Creating authorization token for App Store Connect API
+[17:37:18]: Ready to upload new build to TestFlight (App: 6818272039)...
+[17:37:18]: Going to upload updated app to App Store Connect
+[17:37:18]: This might take a few minutes. Please don't interrupt the script.
+[17:46:08]: --------------------------------------------------------------------
+[17:46:08]: Successfully uploaded package to App Store Connect. It might take a few minutes until it's visible online.
+[17:46:08]: --------------------------------------------------------------------
+[17:46:08]: Successfully uploaded the new binary to App Store Connect
+[17:46:08]: `skip_waiting_for_build_processing` used and no `changelog` supplied - skipping waiting for build processing
+
++---------------------------------------------+
+|              fastlane summary               |
++------+------------------------+-------------+
+| Step | Action                 | Time (in s) |
++------+------------------------+-------------+
+| 1    | app_store_connect_api  | 0           |
+|      | _key                   |             |
+| 2    | upload_to_testflight   | 529         |
++------+------------------------+-------------+
+
+[17:46:11]: fastlane.tools just saved you 9 minutes! 🎉

@@ -1,3 +1,5 @@
+import base64
+import hashlib
 import json
 import subprocess
 import sys
@@ -136,6 +138,126 @@ class RenderContentJsonPdfTest(unittest.TestCase):
             qa = json.loads((folder / "out/page.qa.json").read_text(encoding="utf-8"))
             self.assertEqual(qa["contentSource"], "content.json")
             self.assertEqual(qa["contentStatus"], "machine_checked")
+
+
+class _FakeIamConfig:
+    def __init__(self, uniform=True, pap="enforced"):
+        self.uniform_bucket_level_access_enabled = uniform
+        self.public_access_prevention = pap
+
+
+class _FakeBlob:
+    def __init__(self, name, *, corrupt=False):
+        self.name = name
+        self.corrupt = corrupt
+        self.content_type = None
+        self.md5_hash = None
+        self.generation = 1
+        self.data = b""
+
+    def upload_from_string(self, data, content_type=None):
+        self.data, self.content_type = data, content_type
+        digest = hashlib.md5(data).digest()
+        self.md5_hash = base64.b64encode(hashlib.md5(b"tampered").digest() if self.corrupt else digest).decode()
+        self.generation += 1
+
+    def reload(self):
+        pass
+
+
+class _FakeBucket:
+    def __init__(self, name, *, uniform=True, pap="enforced", corrupt=False):
+        self.name = name
+        self.iam_configuration = _FakeIamConfig(uniform, pap)
+        self.blobs = {}
+        self.corrupt = corrupt
+
+    def reload(self):
+        pass
+
+    def blob(self, name):
+        return self.blobs.setdefault(name, _FakeBlob(name, corrupt=self.corrupt))
+
+
+class _FakeClient:
+    """Stands in for google.cloud.storage.Client so tests never touch the network."""
+
+    def __init__(self, *, uniform=True, pap="enforced", corrupt=False):
+        self.options = {"uniform": uniform, "pap": pap, "corrupt": corrupt}
+        self.buckets = {}
+
+    def bucket(self, name):
+        return self.buckets.setdefault(name, _FakeBucket(name, **self.options))
+
+
+class GcsUploadTest(unittest.TestCase):
+    PDF_BYTES = b"%PDF-1.4 fake reading edition"
+
+    def _files(self, folder: Path, *, corrupt: bool = False):
+        pdf = folder / "page.pdf"
+        pdf.write_bytes(self.PDF_BYTES)
+        qa, qa_path = {"status": "pass"}, folder / "page.qa.json"
+        mod.write_qa(qa_path, qa)
+        return pdf, qa, qa_path
+
+    def test_gcs_uri_names_one_pdf_object(self):
+        self.assertEqual(mod.parse_gcs_pdf_uri(" gs://bkt/s/2026-11-22/reading-pdf/a.pdf "),
+                         ("bkt", "s/2026-11-22/reading-pdf/a.pdf"))
+        self.assertEqual(mod.qa_object_name("s/2026-11-22/reading-pdf/a.pdf"),
+                         "s/2026-11-22/reading-pdf/a.qa.json")
+        for bad in ("s3://bkt/a.pdf", "gs://bkt/a.txt", "gs://bkt/../a.pdf", "gs://bkt//a.pdf",
+                    "gs://bkt", "gs:///a.pdf", "gs://bkt/a.pdf?x=1"):
+            with self.assertRaises(ValueError):
+                mod.parse_gcs_pdf_uri(bad)
+
+    def test_upload_refuses_a_bucket_that_could_publish_sermon_text(self):
+        mod.require_private_bucket("bkt", client=_FakeClient())
+        for options in ({"uniform": False}, {"pap": None}, {"pap": "inherited"}):
+            with self.assertRaises(SystemExit):
+                mod.require_private_bucket("bkt", client=_FakeClient(**options))
+
+    def test_publish_uploads_pdf_then_the_qa_report_that_records_it(self):
+        client = _FakeClient()
+        with tempfile.TemporaryDirectory() as tmp:
+            folder = Path(tmp)
+            pdf, qa, qa_path = self._files(folder)
+            result = mod.publish_reading_pdf(
+                pdf, qa, qa_path, uri="gs://bkt/sundays/2026-11-22/reading-pdf/page.pdf", client=client)
+            stored = client.bucket("bkt").blobs
+            pdf_name = "sundays/2026-11-22/reading-pdf/page.pdf"
+            qa_name = "sundays/2026-11-22/reading-pdf/page.qa.json"
+            self.assertEqual(sorted(stored), [pdf_name, qa_name])
+            self.assertEqual(stored[pdf_name].data, self.PDF_BYTES)
+            self.assertEqual(stored[pdf_name].content_type, "application/pdf")
+            self.assertEqual(stored[qa_name].content_type, "application/json")
+            self.assertEqual(result["pdf"]["md5Hex"], hashlib.md5(self.PDF_BYTES).hexdigest())
+            self.assertTrue(result["pdf"]["verified"] and result["qa"]["verified"])
+            saved = json.loads(qa_path.read_text(encoding="utf-8"))
+            self.assertEqual(saved["gcs"]["pdf"]["uri"], result["pdf"]["uri"])
+            self.assertEqual(saved["gcs"]["pdf"]["generation"], result["pdf"]["generation"])
+            self.assertEqual(saved["status"], "pass")
+            # the report stored beside the PDF is the local one, upload block included
+            self.assertEqual(stored[qa_name].data, qa_path.read_bytes())
+
+    def test_stored_bytes_that_differ_fail_the_upload(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            folder = Path(tmp)
+            pdf, qa, qa_path = self._files(folder)
+            with self.assertRaises(SystemExit):
+                mod.publish_reading_pdf(
+                    pdf, qa, qa_path, uri="gs://bkt/s/page.pdf", client=_FakeClient(corrupt=True))
+            self.assertEqual(json.loads(qa_path.read_text(encoding="utf-8")), {"status": "pass"})
+
+    def test_cli_rejects_a_gcs_uri_without_a_pdf_object(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            folder = Path(tmp)
+            (folder / "content.json").write_text(json.dumps(CONTENT, ensure_ascii=False), encoding="utf-8")
+            result = subprocess.run(
+                [*COMMAND, "--content", "content.json", "--out", "out/page.pdf",
+                 "--gcs-uri", "gs://bkt/page.json"],
+                cwd=folder, capture_output=True, text=True, timeout=120)
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn("gcs-uri", result.stderr)
 
 
 if __name__ == "__main__":

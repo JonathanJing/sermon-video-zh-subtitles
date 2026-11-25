@@ -1,0 +1,20 @@
+{"at": "2026-11-15T07:48:51+00:00", "stage": "l1.preflight.setup", "event": "started", "hostId": "host-11de82ac06bc", "pid": 95140}
+{"at": "2026-11-15T07:48:51+00:00", "stage": "l1.preflight.setup", "event": "finished", "hostId": "host-11de82ac06bc", "pid": 95140}
+{"at": "2026-11-15T07:51:16+00:00", "stage": "l1.preflight.setup", "event": "started", "hostId": "host-11de82ac06bc", "pid": 96802}
+{"at": "2026-11-15T07:51:16+00:00", "stage": "l1.preflight.setup", "event": "finished", "hostId": "host-11de82ac06bc", "pid": 96802}
+{"at": "2026-11-15T08:00:00+00:00", "stage": "l2.consistency", "event": "started", "hostId": "host-11de82ac06bc", "pid": 2269}
+{"at": "2026-11-15T08:00:03+00:00", "stage": "l2.consistency", "event": "started", "hostId": "host-11de82ac06bc", "pid": 2290}
+{"at": "2026-11-15T08:00:03+00:00", "stage": "l2.consistency", "event": "finished", "hostId": "host-11de82ac06bc", "pid": 2290}
+{"at": "2026-11-15T08:00:07+00:00", "stage": "l2.consistency", "event": "started", "hostId": "host-11de82ac06bc", "pid": 2309}
+{"at": "2026-11-15T08:00:07+00:00", "stage": "l2.consistency", "event": "finished", "hostId": "host-11de82ac06bc", "pid": 2309}
+{"at": "2026-11-15T08:03:17+00:00", "stage": "l1.preflight", "event": "started", "hostId": "host-11de82ac06bc", "pid": 4039}
+{"at": "2026-11-15T08:03:17+00:00", "stage": "l1.preflight", "event": "failed", "hostId": "host-11de82ac06bc", "pid": 4039}
+{"at": "2026-11-15T08:03:27+00:00", "stage": "l1.preflight", "event": "started", "hostId": "host-11de82ac06bc", "pid": 4309}
+{"at": "2026-11-15T08:03:28+00:00", "stage": "l1.preflight", "event": "finished", "hostId": "host-11de82ac06bc", "pid": 4309}
+{"at": "2026-11-15T08:15:05.925232+00:00", "stage": "l3.tts.eric_pilot.ko", "event": "started", "hostId": "host-11de82ac06bc", "pid": 4396, "note": "sentence-tts-eric_pilot-ko"}
+{"at": "2026-11-15T08:22:19.245258+00:00", "stage": "l3.tts.eric_pilot.ko", "event": "finished", "hostId": "host-11de82ac06bc", "pid": 4396, "note": "sentence-tts-eric_pilot-ko"}
+{"at": "2026-11-15T08:22:19.252771+00:00", "stage": "l3.tts.john_thomas.ko", "event": "started", "hostId": "host-11de82ac06bc", "pid": 4396, "note": "sentence-tts-john_thomas-ko"}
+{"at": "2026-11-15T08:27:31.035878+00:00", "stage": "l3.tts.john_thomas.ko", "event": "finished", "hostId": "host-11de82ac06bc", "pid": 4396, "note": "sentence-tts-john_thomas-ko"}
+{"at": "2026-11-15T08:29:29+00:00", "stage": "l3.finish", "event": "started", "hostId": "host-11de82ac06bc", "pid": 7774}
+{"at": "2026-11-15T08:30:23+00:00", "stage": "l3.finish", "event": "finished", "hostId": "host-11de82ac06bc", "pid": 7774}
+{"at": "2026-11-15T08:30:29.944383+00:00", "stage": "l3.review.ko", "event": "waiting", "hostId": "host-11de82ac06bc", "pid": 7874, "waitingOn": "user track review"}

@@ -1,0 +1,5 @@
+deepseek tts speed bench 2026-11-14
+serial: wall 752.97s audio 2142.6s rtf 0.3514 ok 460/460
+concurrency8: wall 95.47s audio 2143.08s rtf 0.0445 ok 460/460
+compare: ratio 1.177 delta 322.76s longer 389/460
+lag: raw 42.9s / trailing-trimmed 16.9s / speech-only 6.3s / spark 2.1s

@@ -81,6 +81,12 @@ v5 同时投影出诚实的 v4/v3 兼容目录：v4 按 edition 拆成独立页�
 
 逐语言人工验收行的 `checks` 另含 `outline: pass` 和 `meditation: pass`。缺任一资源、任何语言的当前学习展示或原有播放/字幕证据，不能把该端点提升为通过。HTTP、设备和现场验收仍分别记录；测试用 synthetic receipt 不证明真实设备/生产验收。
 
+**托管上传的并发上限。** firebase-tools 默认用 200 个并发上传整站（`lib/deploy/hosting/deploy.js`，可用 `FIREBASE_HOSTING_UPLOAD_CONCURRENCY` 覆盖）。每个在传的上传同时持有原始字节和 gzip 后的请求体，周快照里最大的单个媒体约 88 MB，失败还会重试 5 次，所以默认值在 36 GiB 笔记本上的峰值远超余量。2026-11-15 07:43:13 那次就是这样：`firebase deploy` 的 node 进程被 jetsam 记账约 305 GB 常驻页，系统一次杀掉 1085 个进程，macOS 弹出「应用程序内存不足」；同一晚 23:19:46 已发生过一次同签名事件。因此 `guarded_hosting_publish` 在调用 CLI 时固定 `FIREBASE_HOSTING_UPLOAD_CONCURRENCY=4`（`HOSTING_UPLOAD_CONCURRENCY`），并且由发布器拥有该值、不继承 shell 里的 200；测试 `test_hosting_upload_concurrency_stays_bounded` 守住这条上限。降并发只改变上传节奏，不改变回执与身份：`hosting-deploy-result.json`、版本回执、传播与回读规则不变。站点继续变大时，仍应改走增量发布（clone + `populateFiles`，只传变化文件），而不是把并发调回去。
+
+**默认路线是增量发布。** `guarded_hosting_publish.publish` 的默认 `method='auto'` 不再让 `firebase deploy` 整站重传：它先用 Hosting REST 克隆线上版本、`populateFiles` 只上传 gzip 哈希变化的文件、封版并建 release，收据写进快照的 `incremental-publish.json`（`sermon-hosting-incremental-publish-v1`），版本仍由 `deployment-attempt-v2` 固定，回读与传播规则不变。2026-11-15 的同一页，CLI 要传 124 个文件 / 2.9 GB，增量路线只传 12 个文件 / 163 MB。两种情形仍必须回退整站 `firebase deploy`：快照删除了线上已有文件（REST 版无法表达删除），或线上版本的文件清单不可读／为空没有可克隆的基线。回退在**任何远端改动之前**决定，原因写进 attempt 的 `methodFallback`，不会留下假的 unknown。`method='cli'`／`'incremental'` 可固定路线供测试与恢复；固定时拒绝回退。传播状态随之分两版：`sermon-hosting-version-propagation-v1` 只认 CLI 回执（旧 attempt 原样保留、不改写），v2（`sermon-hosting-version-propagation-v2`）把 attempt、基线、方法、收据文件及其哈希与 ownedVersion 绑在一起，对账时拒收被换过的收据。
+
+**阶段快照用 APFS 克隆，不复制字节。** 一次周快照约 2.9 GB，主要是整集音频；publish 要连续 stage 基线与多次覆盖。`snapshot_clone.clone_tree` 在 macOS 上用 `cp -Rc` 让 APFS 克隆：读起来是普通目录，写哪边就给哪边分配新块，未改动的字节保持共享。本机实测克隆 2.9 GB 快照耗时 0.07 秒、实际多占约 0.5 MB，`diff -rq` 与源目录一致；不支持的平台回退到 `shutil.copytree`。它不是硬链接，所以 stage 时覆盖目录、原地替换页面字节都不会写穿到基线。2026-11-15 那次运行在 `artifacts/` 下留了 6 份、约 17 GB 的重复快照；走克隆后同样的树木只占一份字节。
+
 ## 旧版本迁移
 
 - 旧版（legacy）工具保留其文档化范围，不能替代本路径；纯文字语言经 `audio_unavailable` 发布，仅当发布计划、producer 与客户端都支持。

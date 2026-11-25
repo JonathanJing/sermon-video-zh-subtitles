@@ -1,0 +1,32 @@
+{
+  "schemaVersion": "deepseek-tts-speed-outcome-v1",
+  "at": "2026-11-14T22:48:11+00:00",
+  "status": "measured",
+  "delivery": "test",
+  "locale": "zh-Hans",
+  "units": 460,
+  "failures": 0,
+  "deepseekSerialWallSeconds": 752.97,
+  "deepseekSerialRtf": 0.3514,
+  "deepseekConcurrency8WallSeconds": 95.47,
+  "deepseekConcurrency8Rtf": 0.0445,
+  "sparkSynthWallSeconds": 382.9,
+  "sparkRtf": 0.2104,
+  "deepseekAudioSeconds": 2142.6,
+  "sparkAudioSeconds": 1819.8,
+  "audioRatio": 1.177,
+  "costUsd": 0.3827,
+  "schedule": {
+    "sparkMaxLagSeconds": 2.14,
+    "deepseekRawMaxLagSeconds": 42.91,
+    "deepseekTrailingTrimmedMaxLagSeconds": 16.9,
+    "deepseekSpeechOnlyMaxLagSeconds": 6.3
+  },
+  "humanApproval": false,
+  "published": false,
+  "note": "speed/duration measurement only; no listening review, no voice or policy change",
+  "sparkStructure": "single model process, batch 8 serial batches (no replica pool for one speaker)",
+  "startedAt": "2026-11-14T22:31:43+00:00",
+  "endedAt": "2026-11-14T22:45:54+00:00",
+  "exitCode": 0
+}

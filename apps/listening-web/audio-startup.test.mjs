@@ -179,7 +179,14 @@ function setup({ bookmark = false, bootstrapFetch, alignmentPlay } = {}) {
     initialize(value) { catalog = { weeks: [value] }; week = value; selectTrack(value.tracks[0].id); },
     selectTrack, selectWeek, setPosition, selectTab,
     setOfflineState(value) { offlineState = value; renderOfflineStatus(); },
-    loadCatalog(value) { catalog = value; week = undefined; selectWeek(value.defaultWeekId); }
+    loadCatalog(value) { catalog = value; week = undefined; selectWeek(value.defaultWeekId); },
+    // The boot path's catalog navigation, so the picker's kind tabs are exercised.
+    loadNavigation(value) {
+      catalog = validateCatalog(value);
+      const navigation = buildCatalogNavigation(catalog, { environment: 'production' });
+      catalog = navigation.catalog; navigationGroups = navigation.groups;
+      renderWeekOptions(); selectWeek(new URLSearchParams(location.search).get('week'));
+    }
   };`;
   if (bootstrapFetch) vm.runInContext(`globalThis.bootstrap = (async () => { ${fullAppSource}\n${expose} })();`, context);
   else {
@@ -845,4 +852,45 @@ test('source link is removed for a week without video and restored when switchin
   h.app.selectWeek(week.id);
   assert.equal(h.get('source-link').hidden, false);
   assert.equal(h.get('source-link').href, week.sourceUrl);
+});
+
+test('the content browser splits published sermons and podcasts and opens on the newest sermon', () => {
+  const h = setup();
+  const sermon = { ...structuredClone(week), id: 'sermon-week', date: '2026-11-22', contentKind: 'sermon', title: '耶稣必再来' };
+  const podcast = { ...structuredClone(week), id: 'podcast-week', date: '2026-11-23', contentKind: 'podcast', mediaType: 'podcast', title: '播客单集' };
+  // A declared podcast default must never open the picker on the podcast tab.
+  h.app.loadNavigation({ schemaVersion: 'sermon-weekly-catalog-v1', defaultWeekId: podcast.id, weeks: [sermon, podcast] });
+  assert.equal(h.get('title').textContent, sermon.title);
+  assert.equal(h.get('week-select').value, sermon.id);
+  h.get('choose-content').click();
+  assert.equal(h.get('content-kind-tabs').hidden, false);
+  assert.equal(h.get('week-picker').hidden, true);
+  assert.equal(h.get('kind-sermons').getAttribute('aria-pressed'), 'true');
+  assert.deepEqual(h.get('week-select').children.map(option => option.value), [sermon.id]);
+  assert.deepEqual(h.get('content-choices').children.map(section => section.children.length), [1],
+    'the sermon tab lists only the sermon');
+  h.get('kind-podcasts').click();
+  assert.equal(h.get('kind-podcasts').getAttribute('aria-pressed'), 'true');
+  assert.deepEqual(h.get('week-select').children.map(option => option.value), [podcast.id]);
+  assert.deepEqual(h.get('content-choices').children.map(section => section.children.length), [1],
+    'the podcast tab lists only the podcast');
+  h.get('content-choices').children[0].children[0].click();
+  assert.equal(h.get('title').textContent, podcast.title);
+  assert.equal(h.get('content-browser').open, false);
+  // Reopening follows the content on screen, so the checkmark stays in view.
+  h.get('choose-content').click();
+  assert.equal(h.get('kind-podcasts').getAttribute('aria-pressed'), 'true');
+});
+
+test('one published kind keeps the single dated picker without a kind switcher', () => {
+  const h = setup();
+  const first = { ...structuredClone(week), id: 'sermon-a', date: '2026-11-22' };
+  const second = { ...structuredClone(week), id: 'sermon-b', date: '2026-11-15' };
+  h.app.loadNavigation({ schemaVersion: 'sermon-weekly-catalog-v1', defaultWeekId: first.id, weeks: [second, first] });
+  h.get('choose-content').click();
+  assert.equal(h.get('content-kind-tabs').hidden, true);
+  assert.equal(h.get('week-picker').hidden, false);
+  assert.deepEqual(h.get('week-select').children.map(option => option.label), ['本期与往期']);
+  assert.equal(h.get('content-choices').children[0].children[0].tagName, 'H3');
+  assert.deepEqual(h.get('week-select').children[0].children.map(option => option.value), [first.id, second.id]);
 });

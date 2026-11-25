@@ -1,0 +1,486 @@
+{
+  "schemaVersion": "sermon-weekly-rollup-v1",
+  "week": "20261108",
+  "window": {
+    "from": "2026-11-02",
+    "to": "2026-11-08"
+  },
+  "generatedAt": "2026-11-15T16:43:50+00:00",
+  "generatedBy": "tools/development/weekly_rollup.py",
+  "humanApproval": false,
+  "finalized": false,
+  "previousWeek": null,
+  "metrics": {
+    "reports.total": 3,
+    "reports.production": 2,
+    "time.wallSeconds": 18201.489,
+    "time.computeSeconds": 2970.427,
+    "time.waitingSeconds": 0.0,
+    "time.reworkSeconds": 220.329,
+    "time.reworkShare": 0.074,
+    "publish.failedGateEvents": 4,
+    "errors.total": 11,
+    "errors.preflight": 2,
+    "errors.afterResources": 2,
+    "errors.afterPublish": 7,
+    "errors.lateShare": 0.818,
+    "collection.unstructuredReports": 1,
+    "collection.reportsWithoutJournal": 1,
+    "collection.retrospectiveUnfilled": 1,
+    "collection.withoutPrivateEvidence": 1
+  },
+  "previousMetrics": {},
+  "reports": [
+    {
+      "name": "20261108-jesus-is-just",
+      "structured": true,
+      "runs": [
+        {
+          "run": "20261108-jesus-is-just-zh",
+          "events": 27,
+          "openStages": [
+            "l3.review.zh-Hans"
+          ]
+        }
+      ],
+      "hasJournal": true,
+      "production": true,
+      "time": {
+        "firstAt": "2026-11-08T03:51:46+00:00",
+        "lastAt": "2026-11-08T05:18:47+00:00",
+        "wallSeconds": 5221.0,
+        "computeSeconds": 197.0,
+        "waitingSeconds": 0.0,
+        "reworkSeconds": 61.0
+      },
+      "failedEvents": {
+        "l1.preflight.setup": 1,
+        "l1.start": 1
+      },
+      "repeats": [
+        {
+          "run": "20261108-jesus-is-just-zh",
+          "stage": "l3.finish",
+          "repeats": 2,
+          "seconds": 60.0
+        },
+        {
+          "run": "20261108-jesus-is-just-zh",
+          "stage": "l1.start",
+          "repeats": 1,
+          "seconds": 1.0
+        },
+        {
+          "run": "20261108-jesus-is-just-zh",
+          "stage": "l1.preflight.setup",
+          "repeats": 1,
+          "seconds": 0.0
+        },
+        {
+          "run": "20261108-jesus-is-just-zh",
+          "stage": "l2.consistency",
+          "repeats": 2,
+          "seconds": 0.0
+        },
+        {
+          "run": "20261108-jesus-is-just-zh",
+          "stage": "l1.preflight",
+          "repeats": 1,
+          "seconds": 0.0
+        }
+      ],
+      "publish": {
+        "deployAttempts": 0,
+        "deployStatuses": {},
+        "gateStatuses": [],
+        "gateFailedChecks": 0,
+        "smokeStatuses": {}
+      },
+      "outcomes": {
+        "track_ready_for_review": 1
+      },
+      "cost": {
+        "estimatedMicrousd": 0,
+        "requests": 0,
+        "ledgers": 0
+      },
+      "privateEvidence": {
+        "uploaded": true,
+        "bundles": 11
+      },
+      "retrospective": {
+        "status": "filled",
+        "unfilled": 0,
+        "errors": [
+          {
+            "stage": "L4 发布范围",
+            "symptom": "首轮只发页面/英文对照，漏掉现场对齐、研读手册、统计目录",
+            "timing": "afterPublish",
+            "fix": "—"
+          },
+          {
+            "stage": "L4 完成信号",
+            "symptom": "首次 gate 返回 pass 就当成收尾",
+            "timing": "afterPublish",
+            "fix": "—"
+          },
+          {
+            "stage": "L4 部署粒度",
+            "symptom": "一个页面 **13 次**托管部署，远超「一次发布意图 ≤3 次」",
+            "timing": "afterPublish",
+            "fix": "—"
+          },
+          {
+            "stage": "L1 英文包",
+            "symptom": "包缺 `approvedWindow.evidence`、`transcript.artifact`、`review.evidence`，英文对照无法构建",
+            "timing": "afterResources",
+            "fix": "—"
+          },
+          {
+            "stage": "L4 目录身份",
+            "symptom": "catalog `sourceIdentitySha256` 停在首版包",
+            "timing": "afterPublish",
+            "fix": "—"
+          },
+          {
+            "stage": "L4 门禁",
+            "symptom": "`content.drift` 失败，音轨比窗口短 2.5–4.2 s",
+            "timing": "afterPublish",
+            "fix": "已提交 `fa8f6ecc`"
+          },
+          {
+            "stage": "L3 滞后",
+            "symptom": "首版整轨滞后 zh 18.8 s／ko 214.6 s／es 117.0 s",
+            "timing": "afterResources",
+            "fix": "—"
+          },
+          {
+            "stage": "L3 数字读法",
+            "symptom": "千分位被拆成裸 `000`：`삼,영년`、`tres.cero años`",
+            "timing": "preflight",
+            "fix": "—"
+          },
+          {
+            "stage": "L4 对齐",
+            "symptom": "页面/ release 被并发代理改动后，对齐 sidecar 停在旧 release",
+            "timing": "afterPublish",
+            "fix": "`06cee2b2`"
+          },
+          {
+            "stage": "门禁",
+            "symptom": "门禁存在缺口：对齐只查指纹不查 release 绑定",
+            "timing": "afterPublish",
+            "fix": "`06cee2b2`"
+          },
+          {
+            "stage": "研读手册",
+            "symptom": "工具里第 9 周标题「必使罪恶终结」与标题表「必终结罪恶」不一致，bind 会拒",
+            "timing": "preflight",
+            "fix": "`b1180124`"
+          }
+        ],
+        "improvements": [
+          {
+            "category": "流程",
+            "improvement": "开跑前先写「发布意图清单」七件套（页面/release/目录/英文对照/对齐/手册/统计目录），写进 run.md 再动手",
+            "evidence": "首轮漏 3 件，用户追问才补",
+            "expectedGain": "一次列全，避免补漏 25m",
+            "tracking": "待开 backlog"
+          },
+          {
+            "category": "流程",
+            "improvement": "周日证道收尾只认 `--require-guide --require-alignment` 的 gate；不带开关的 pass 不算完成",
+            "evidence": "首次 gate 的假 pass",
+            "expectedGain": "消除假完成信号",
+            "tracking": "同上"
+          },
+          {
+            "category": "预检",
+            "improvement": "英文包在首次部署前跑一次 `published_english_reference.build_reference` 干跑（对候选快照）",
+            "evidence": "首次部署后才发现包缺证据绑定，多走 4 次 replace",
+            "expectedGain": "省 2 次返工部署",
+            "tracking": "待开 backlog"
+          },
+          {
+            "category": "预检",
+            "improvement": "候选快照阶段先跑一次 gate（文档已要求三处都跑），再首次部署",
+            "evidence": "音轨补齐问题是线上 gate 才发现的",
+            "expectedGain": "部署前挡住 drift",
+            "tracking": "同上"
+          },
+          {
+            "category": "速度／成本",
+            "improvement": "精简后先在本地用 `lag_loop --check-only` 估收敛，再一次全量重配",
+            "evidence": "三语各做了一轮全量重渲（22m）",
+            "expectedGain": "省一次全量 TTS",
+            "tracking": "—"
+          },
+          {
+            "category": "质量",
+            "improvement": "对齐索引绑定**已发布 MP3** 的 sha，不是 `track.wav`",
+            "evidence": "`Invalid fingerprint binding` 一次",
+            "expectedGain": "少一次重建",
+            "tracking": "run.md 已记"
+          },
+          {
+            "category": "流程",
+            "improvement": "研读手册标题、页面标题、海报标题统一从 `docs/series-sermon-titles.zh.md` 取；工具常量随表更新",
+            "evidence": "手册标题不一致一次",
+            "expectedGain": "消除 bind 失败",
+            "tracking": "`b1180124`"
+          },
+          {
+            "category": "预检",
+            "improvement": "多代理共用 checkout 时，发布前先 diff 线上版本与本地快照，列出本页 release/资产是否被别人改过",
+            "evidence": "本次靠人眼复核才发现",
+            "expectedGain": "避免对齐/公告/手册留旧绑定",
+            "tracking": "待开 backlog"
+          },
+          {
+            "category": "可观测",
+            "improvement": "发布阶段的部署与返工也走 `run_journal`，否则 timings 只有 3m17s",
+            "evidence": "journal 1h27m vs 实际 2h57m",
+            "expectedGain": "复盘数据可信",
+            "tracking": "`DEV-SF-007`"
+          }
+        ]
+      }
+    },
+    {
+      "name": "20261108-jesus-is-just-podcast",
+      "structured": true,
+      "runs": [
+        {
+          "run": "20261108-jesus-is-just-podcast-es",
+          "events": 12,
+          "openStages": []
+        },
+        {
+          "run": "20261108-jesus-is-just-podcast-ko",
+          "events": 12,
+          "openStages": []
+        },
+        {
+          "run": "20261108-jesus-is-just-podcast-zh",
+          "events": 60,
+          "openStages": []
+        }
+      ],
+      "hasJournal": true,
+      "production": true,
+      "time": {
+        "firstAt": "2026-11-08T20:54:25+00:00",
+        "lastAt": "2026-11-09T00:30:45.488660+00:00",
+        "wallSeconds": 12980.489,
+        "computeSeconds": 2773.427,
+        "waitingSeconds": 0.0,
+        "reworkSeconds": 159.329
+      },
+      "failedEvents": {
+        "l4.assets": 2,
+        "l4.stage-english-reference": 1,
+        "l4.validate": 1
+      },
+      "repeats": [
+        {
+          "run": "20261108-jesus-is-just-podcast-zh",
+          "stage": "l4.publish",
+          "repeats": 2,
+          "seconds": 64.3
+        },
+        {
+          "run": "20261108-jesus-is-just-podcast-zh",
+          "stage": "l4.baseline",
+          "repeats": 1,
+          "seconds": 60.652
+        },
+        {
+          "run": "20261108-jesus-is-just-podcast-zh",
+          "stage": "l4.assets",
+          "repeats": 2,
+          "seconds": 28.129
+        },
+        {
+          "run": "20261108-jesus-is-just-podcast-zh",
+          "stage": "l4.stage-english-reference",
+          "repeats": 1,
+          "seconds": 4.479
+        },
+        {
+          "run": "20261108-jesus-is-just-podcast-zh",
+          "stage": "l4.readback",
+          "repeats": 1,
+          "seconds": 1.237
+        },
+        {
+          "run": "20261108-jesus-is-just-podcast-zh",
+          "stage": "l4.preflight",
+          "repeats": 1,
+          "seconds": 0.297
+        },
+        {
+          "run": "20261108-jesus-is-just-podcast-zh",
+          "stage": "l4.publish-check",
+          "repeats": 2,
+          "seconds": 0.235
+        },
+        {
+          "run": "20261108-jesus-is-just-podcast-zh",
+          "stage": "l1.preflight",
+          "repeats": 2,
+          "seconds": 0.0
+        }
+      ],
+      "publish": {
+        "deployAttempts": 0,
+        "deployStatuses": {},
+        "gateStatuses": [],
+        "gateFailedChecks": 0,
+        "smokeStatuses": {}
+      },
+      "outcomes": {
+        "track_ready_for_review": 3
+      },
+      "cost": {
+        "estimatedMicrousd": 0,
+        "requests": 0,
+        "ledgers": 0
+      },
+      "privateEvidence": {
+        "uploaded": true,
+        "bundles": 6
+      },
+      "retrospective": {
+        "status": "unstructured",
+        "unfilled": 0,
+        "errors": [],
+        "improvements": []
+      }
+    },
+    {
+      "name": "20261108-wechat-banner",
+      "structured": false,
+      "runs": [],
+      "hasJournal": false,
+      "production": false,
+      "failedEvents": {},
+      "repeats": [],
+      "publish": {
+        "deployAttempts": 0,
+        "deployStatuses": {},
+        "gateStatuses": [],
+        "gateFailedChecks": 0,
+        "smokeStatuses": {}
+      },
+      "outcomes": {},
+      "cost": {
+        "estimatedMicrousd": 0,
+        "requests": 0,
+        "ledgers": 0
+      },
+      "privateEvidence": {
+        "uploaded": false,
+        "bundles": 0
+      },
+      "retrospective": {
+        "status": "missing",
+        "errors": [],
+        "improvements": []
+      }
+    }
+  ],
+  "actions": [],
+  "candidates": [
+    {
+      "id": "C1",
+      "report": "20261108-jesus-is-just",
+      "category": "流程",
+      "improvement": "开跑前先写「发布意图清单」七件套（页面/release/目录/英文对照/对齐/手册/统计目录），写进 run.md 再动手",
+      "evidence": "首轮漏 3 件，用户追问才补",
+      "expectedGain": "一次列全，避免补漏 25m",
+      "tracking": "待开 backlog",
+      "decision": null
+    },
+    {
+      "id": "C2",
+      "report": "20261108-jesus-is-just",
+      "category": "流程",
+      "improvement": "周日证道收尾只认 `--require-guide --require-alignment` 的 gate；不带开关的 pass 不算完成",
+      "evidence": "首次 gate 的假 pass",
+      "expectedGain": "消除假完成信号",
+      "tracking": "同上",
+      "decision": null
+    },
+    {
+      "id": "C3",
+      "report": "20261108-jesus-is-just",
+      "category": "预检",
+      "improvement": "英文包在首次部署前跑一次 `published_english_reference.build_reference` 干跑（对候选快照）",
+      "evidence": "首次部署后才发现包缺证据绑定，多走 4 次 replace",
+      "expectedGain": "省 2 次返工部署",
+      "tracking": "待开 backlog",
+      "decision": null
+    },
+    {
+      "id": "C4",
+      "report": "20261108-jesus-is-just",
+      "category": "预检",
+      "improvement": "候选快照阶段先跑一次 gate（文档已要求三处都跑），再首次部署",
+      "evidence": "音轨补齐问题是线上 gate 才发现的",
+      "expectedGain": "部署前挡住 drift",
+      "tracking": "同上",
+      "decision": null
+    },
+    {
+      "id": "C5",
+      "report": "20261108-jesus-is-just",
+      "category": "速度／成本",
+      "improvement": "精简后先在本地用 `lag_loop --check-only` 估收敛，再一次全量重配",
+      "evidence": "三语各做了一轮全量重渲（22m）",
+      "expectedGain": "省一次全量 TTS",
+      "tracking": "—",
+      "decision": null
+    },
+    {
+      "id": "C6",
+      "report": "20261108-jesus-is-just",
+      "category": "质量",
+      "improvement": "对齐索引绑定**已发布 MP3** 的 sha，不是 `track.wav`",
+      "evidence": "`Invalid fingerprint binding` 一次",
+      "expectedGain": "少一次重建",
+      "tracking": "run.md 已记",
+      "decision": null
+    },
+    {
+      "id": "C7",
+      "report": "20261108-jesus-is-just",
+      "category": "流程",
+      "improvement": "研读手册标题、页面标题、海报标题统一从 `docs/series-sermon-titles.zh.md` 取；工具常量随表更新",
+      "evidence": "手册标题不一致一次",
+      "expectedGain": "消除 bind 失败",
+      "tracking": "`b1180124`",
+      "decision": null
+    },
+    {
+      "id": "C8",
+      "report": "20261108-jesus-is-just",
+      "category": "预检",
+      "improvement": "多代理共用 checkout 时，发布前先 diff 线上版本与本地快照，列出本页 release/资产是否被别人改过",
+      "evidence": "本次靠人眼复核才发现",
+      "expectedGain": "避免对齐/公告/手册留旧绑定",
+      "tracking": "待开 backlog",
+      "decision": null
+    },
+    {
+      "id": "C9",
+      "report": "20261108-jesus-is-just",
+      "category": "可观测",
+      "improvement": "发布阶段的部署与返工也走 `run_journal`，否则 timings 只有 3m17s",
+      "evidence": "journal 1h27m vs 实际 2h57m",
+      "expectedGain": "复盘数据可信",
+      "tracking": "`DEV-SF-007`",
+      "decision": null
+    }
+  ],
+  "frontend": null
+}

@@ -932,6 +932,23 @@ final class AudioAlignmentControllerTests: XCTestCase {
         }
     }
 
+    func testContentCapabilityLabelIsLocalizedInEveryInterfaceLanguage() throws {
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString).appendingPathComponent("lang.json")
+        let localization = AppLocalization(preferenceURL: url)
+        defer { try? FileManager.default.removeItem(at: url.deletingLastPathComponent()) }
+        let keySets = [AppModel.contentCapabilityKeys(hasTarget: false, hasPublishedAudio: false),
+                       AppModel.contentCapabilityKeys(hasTarget: true, hasPublishedAudio: false),
+                       AppModel.contentCapabilityKeys(hasTarget: true, hasPublishedAudio: true)]
+        for language in [AppLanguage.english, .korean, .spanish, .vietnamese] {
+            localization.setPreference(language)
+            for key in keySets.joined() { XCTAssertNotEqual(localization.text(key), key, "\(language) \(key)") }
+        }
+        localization.setPreference(.english)
+        XCTAssertEqual(keySets[2].map { localization.text($0) }.joined(separator: " · "), "Text · Audio")
+        localization.setPreference(.simplifiedChinese)
+        XCTAssertEqual(keySets[2].map { localization.text($0) }.joined(separator: " · "), "文字 · 音频")
+    }
+
     func testContinuousSessionStartupStallStopsBeforePCMBudget() async throws {
         var restores = 0
         let session = ContinuousCaptureSession(owner: nil, token: UUID(),
@@ -1001,10 +1018,47 @@ final class AudioAlignmentControllerTests: XCTestCase {
     private static let noMatch = FingerprintMatchResult(matched: false, offsetSeconds: nil, confidence: 0,
                                                         diagnostics: .init(reason: "no-match"))
 
-    private func eventually(timeout: Duration = .seconds(3), _ predicate: @MainActor () -> Bool) async throws {
+    /// Bluetooth must stay output-only. Requesting HFP would publish a paired headset's
+    /// microphone as an input route, and on one accessory supporting both profiles the HFP
+    /// ports outrank A2DP, so listening alignment would record the headset rather than the room.
+    func testAlignmentCaptureRouteKeepsBluetoothMicrophoneOut() async throws {
+        let token = UUID()
+        defer { SystemAudioSessionActivator.shared.restorePlaybackCategory(token: token) }
+
+        try await SystemAudioSessionActivator.shared.prepareRecording(token: token)
+
+        let session = AVAudioSession.sharedInstance()
+        XCTAssertEqual(session.category, .playAndRecord)
+        XCTAssertEqual(session.mode, .measurement)
+        XCTAssertTrue(session.categoryOptions.contains(.allowBluetoothA2DP))
+        // .allowBluetoothHFP is the iOS 26 SDK name of .allowBluetooth; the hosted
+        // runner still builds with Xcode 16 (Swift 6.1), which only knows the old name.
+        #if compiler(>=6.2)
+        XCTAssertFalse(session.categoryOptions.contains(.allowBluetoothHFP))
+        #else
+        XCTAssertFalse(session.categoryOptions.contains(.allowBluetooth))
+        #endif
+        XCTAssertEqual(session.currentRoute.inputs.first?.portType, .builtInMic,
+                       "Alignment listens through the phone microphone, not an accessory")
+    }
+
+    func testRestoringPlaybackClearsTheCaptureInputPreference() async throws {
+        let session = AVAudioSession.sharedInstance()
+        let token = UUID()
+        defer { SystemAudioSessionActivator.shared.restorePlaybackCategory(token: token) }
+
+        try await SystemAudioSessionActivator.shared.prepareRecording(token: token)
+        SystemAudioSessionActivator.shared.restorePlaybackCategory(token: token)
+        try await eventually(message: "the playback category with a cleared input preference") {
+            session.category == .playback && session.mode == .spokenAudio && session.preferredInput == nil
+        }
+    }
+
+    private func eventually(timeout: Duration = .seconds(3), message: String = "alignment state",
+                            _ predicate: @MainActor () -> Bool) async throws {
         let deadline = ContinuousClock.now.advanced(by: timeout)
         while !predicate() {
-            guard ContinuousClock.now < deadline else { XCTFail("Timed out waiting for alignment state"); return }
+            guard ContinuousClock.now < deadline else { XCTFail("Timed out waiting for \(message)"); return }
             try await Task.sleep(for: .milliseconds(10))
         }
     }

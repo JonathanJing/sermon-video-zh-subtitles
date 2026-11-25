@@ -58,6 +58,25 @@ def ssh(command: str, *, timeout: int = 120, raise_timeout: bool = False) -> sub
         return subprocess.CompletedProcess(command, 255, "", "ssh timed out")
 
 
+PRE_CONTAINER_STOPS = ("failed", "missing", "must", "refused", "unmeasurable")
+
+
+def own_exit_line(lines: list[str], steps: str, job_id: str) -> str | None:
+    """The last "<step> exit" line written by this job.
+
+    The step log is shared by every job in the work directory (a second speaker, a lag-loop
+    re-render, a repair). spark_run.sh tags each exit line with ``job=<id>``; a line from another
+    job must never end this one. Only when no line carries a tag at all (a spark_run.sh from before
+    the tag existed) does the last exit line count, as it did before.
+    """
+    exits = [line for line in lines if line.startswith(f"{steps} exit")]
+    tagged = [line for line in exits if " job=" in line]
+    if tagged:
+        own = [line for line in tagged if line.split()[-1] == f"job={job_id}"]
+        return own[-1] if own else None
+    return exits[-1] if exits else None
+
+
 def option(args: list[str], name: str) -> str:
     if name not in args:
         raise SystemExit(f"spark_run.sh arguments need {name}")
@@ -71,6 +90,8 @@ def main() -> int:
     parser.add_argument("--purpose", required=True, help="job purpose label, e.g. sentence-tts or sentence-asr")
     parser.add_argument("--remote-tools", required=True, help="Spark directory holding spark_run.sh and the helpers")
     parser.add_argument("--poll", type=int, default=30)
+    parser.add_argument("--max-poll-failures", type=int, default=20,
+                        help="consecutive failed ssh polls before giving up (default 20, about 10 minutes at --poll 30)")
     parser.add_argument("--resume-job", help="keep waiting on, and end, an already started job")
     parser.add_argument("run_args", nargs=argparse.REMAINDER)
     args = parser.parse_args()
@@ -108,7 +129,8 @@ def main() -> int:
             if first and len(first[0]) == 64:
                 cid = first[0]
                 break
-            if "failed" in got.stdout or "missing" in got.stdout or "must" in got.stdout:
+            # "refused"/"unmeasurable": spark_run.sh's memory admission exits 3 before any container.
+            if any(word in got.stdout for word in PRE_CONTAINER_STOPS):
                 session("job-end", *ids, "--job-id", job_id, "--outcome", "known_terminal", "--process-exited")
                 raise SystemExit(f"spark_run.sh stopped before its container started:\n{got.stdout}")
         if not cid:
@@ -116,10 +138,24 @@ def main() -> int:
         session("job-bind", *ids, "--job-id", job_id, "--container-id", cid)
         print(json.dumps({"job": job_id, "event": "bound", "container": cid[:12]}), flush=True)
 
+    failures = 0
     while True:
-        got = ssh(f"grep '^{steps} exit' {shlex.quote(log)} | tail -n 1; docker ps -q --filter label=tongxing.spark.job={job_id}")
+        got = ssh(f"grep '^{steps} exit' {shlex.quote(log)} | tail -n 50; "
+                  f"docker ps -q --filter label=tongxing.spark.job={job_id}")
+        if got.returncode == 255:
+            # ssh itself failed (link down, host off, timeout). Say so, and stop after
+            # --max-poll-failures in a row so the queue reports a failure instead of waiting forever.
+            failures += 1
+            print(json.dumps({"job": job_id, "event": "poll_failed", "consecutive": failures,
+                              "error": got.stderr.strip()[-200:]}), flush=True)
+            if failures >= args.max_poll_failures:
+                raise SystemExit(f"Spark unreachable for {failures} polls; job {job_id} left active, "
+                                 f"reconcile with --resume-job {job_id} once Spark is back")
+            time.sleep(args.poll)
+            continue
+        failures = 0
         lines = got.stdout.strip().splitlines()
-        exit_line = next((l for l in lines if l.startswith(f"{steps} exit")), None)
+        exit_line = own_exit_line(lines, steps, job_id)
         running = [l for l in lines if l and not l.startswith(f"{steps} exit")]
         if exit_line and not running:
             break

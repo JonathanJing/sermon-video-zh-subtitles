@@ -28,6 +28,7 @@
 		3C9938262804DF6B08B451C3 /* BetaRemotePush.swift in Sources */ = {isa = PBXBuildFile; fileRef = D870632D5A2996F9F1FF55C8 /* BetaRemotePush.swift */; };
 		3F8F5BD601847BC075B93414 /* AppDeepLink.swift in Sources */ = {isa = PBXBuildFile; fileRef = F28DD6EB12E674F224056564 /* AppDeepLink.swift */; };
 		40CC996E1E39A5B6F34BA38F /* ListeningActivityDismissalTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E0A6DA6C0A30670D209835C /* ListeningActivityDismissalTests.swift */; };
+		4219377F979D7DAE687EE4A7 /* ContentPickerUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5C9D2C344042F1BFD638C56E /* ContentPickerUITests.swift */; };
 		475EF22CC006DCDA4BBD0DA9 /* WeeklyUpdateUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 45F5D15A9F475F5551F890ED /* WeeklyUpdateUITests.swift */; };
 		4ABE01FD69729C4F7F3EC0BD /* ListeningActivityExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 4AE35BDEC7081304D75711B2 /* ListeningActivityExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		5D5BA27D9E3CADE01803472C /* ListeningActivityIslandContent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E3111940D7C3B3B498040BE /* ListeningActivityIslandContent.swift */; };
@@ -136,6 +137,7 @@
 		5407843D3180E72B300943F4 /* ListeningActivityUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ListeningActivityUITests.swift; sourceTree = "<group>"; };
 		584EEEF8EAD4278FE9B4381A /* BetaNotificationUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BetaNotificationUITests.swift; sourceTree = "<group>"; };
 		58CF4F36B9265709AAF09A1C /* Signing.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Signing.xcconfig; sourceTree = "<group>"; };
+		5C9D2C344042F1BFD638C56E /* ContentPickerUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentPickerUITests.swift; sourceTree = "<group>"; };
 		5E3111940D7C3B3B498040BE /* ListeningActivityIslandContent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ListeningActivityIslandContent.swift; sourceTree = "<group>"; };
 		60B5965D89078D4AF93AD218 /* DownloadBackgroundAssertion.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DownloadBackgroundAssertion.swift; sourceTree = "<group>"; };
 		60D53F716EC96280DEAF16C4 /* ListeningActivityAttributes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ListeningActivityAttributes.swift; sourceTree = "<group>"; };
@@ -211,6 +213,7 @@
 			children = (
 				8D941F809567228C8BDF94B2 /* AppStoreScreenshotUITests.swift */,
 				584EEEF8EAD4278FE9B4381A /* BetaNotificationUITests.swift */,
+				5C9D2C344042F1BFD638C56E /* ContentPickerUITests.swift */,
 				5407843D3180E72B300943F4 /* ListeningActivityUITests.swift */,
 				239227789D17BF0B1B0A1614 /* ListeningFlowUITests.swift */,
 				804E0750D21232AD9A48858C /* ProductionPushUITests.swift */,
@@ -535,6 +538,7 @@
 			files = (
 				1922373411A3F2980F9E9B7A /* AppStoreScreenshotUITests.swift in Sources */,
 				6ED24D1A41D86A3FD506381B /* BetaNotificationUITests.swift in Sources */,
+				4219377F979D7DAE687EE4A7 /* ContentPickerUITests.swift in Sources */,
 				2BFA9AF2842D1D85CEAB3804 /* ListeningActivityUITests.swift in Sources */,
 				8B8A2624687249CFAB61DAFB /* ListeningFlowUITests.swift in Sources */,
 				84880BF9676B537F6C8E0CE5 /* ProductionPushUITests.swift in Sources */,
@@ -981,7 +985,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = Config/BetaPush.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
-				CURRENT_PROJECT_VERSION = 77;
+				CURRENT_PROJECT_VERSION = 79;
 				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = App/Info.plist;
@@ -989,7 +993,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.26.33;
+				MARKETING_VERSION = 1.26.34;
 				OTHER_LDFLAGS = "$(inherited) -weak_framework ActivityKit";
 				PRODUCT_BUNDLE_IDENTIFIER = com.jonathanjing.tongxing.beta;
 				PRODUCT_NAME = Tongxing;
@@ -1066,7 +1070,7 @@
 			baseConfigurationReference = 58CF4F36B9265709AAF09A1C /* Signing.xcconfig */;
 			buildSettings = {
 				APPLICATION_EXTENSION_API_ONLY = YES;
-				CURRENT_PROJECT_VERSION = 77;
+				CURRENT_PROJECT_VERSION = 79;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = ListeningActivityExtension/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -1074,7 +1078,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 1.26.33;
+				MARKETING_VERSION = 1.26.34;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.jonathanjing.tongxing.beta.listening-activity";
 				PRODUCT_NAME = ListeningActivityExtension;
 				SDKROOT = iphoneos;
@@ -1187,7 +1191,7 @@
 			baseConfigurationReference = 58CF4F36B9265709AAF09A1C /* Signing.xcconfig */;
 			buildSettings = {
 				APPLICATION_EXTENSION_API_ONLY = YES;
-				CURRENT_PROJECT_VERSION = 78;
+				CURRENT_PROJECT_VERSION = 82;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = ListeningActivityExtension/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -1195,7 +1199,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 1.26.33;
+				MARKETING_VERSION = 1.26.36;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.jonathanjing.tongxing.dev.listening-activity";
 				PRODUCT_NAME = ListeningActivityExtension;
 				SDKROOT = iphoneos;
@@ -1215,14 +1219,14 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = Config/ProductionPush.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
-				CURRENT_PROJECT_VERSION = 78;
+				CURRENT_PROJECT_VERSION = 82;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = App/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.26.33;
+				MARKETING_VERSION = 1.26.36;
 				OTHER_LDFLAGS = "$(inherited) -weak_framework ActivityKit";
 				PRODUCT_BUNDLE_IDENTIFIER = com.jonathanjing.tongxing.dev;
 				PRODUCT_NAME = Tongxing;

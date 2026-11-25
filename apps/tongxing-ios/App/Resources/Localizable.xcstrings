@@ -765,13 +765,33 @@
         "vi": { "stringUnit": { "state": "translated", "value": "Thêm" } }
       }
     },
-    "其他周次": {
+    "包含 Dev 内容": {
       "extractionState": "manual",
       "localizations": {
-        "en": { "stringUnit": { "state": "translated", "value": "Other weeks" } },
-        "ko": { "stringUnit": { "state": "translated", "value": "다른 주" } },
-        "es": { "stringUnit": { "state": "translated", "value": "Otras semanas" } },
-        "vi": { "stringUnit": { "state": "translated", "value": "Các tuần khác" } }
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Includes dev content"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "개발 콘텐츠 포함"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Incluye contenido de desarrollo"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bao gồm nội dung phát triển"
+          }
+        }
       }
     },
     "已发布页面": {
@@ -5577,31 +5597,147 @@
         }
       }
     },
-    "选择证道周次": {
+    "内容类型": {
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Choose a sermon"
+            "value": "Content type"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "설교 선택"
+            "value": "콘텐츠 유형"
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Elegir sermón"
+            "value": "Tipo de contenido"
           }
         },
         "vi": {
           "stringUnit": {
             "state": "translated",
-            "value": "Chọn bài giảng"
+            "value": "Loại nội dung"
+          }
+        }
+      }
+    },
+    "周日证道": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sunday sermon"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "주일 설교"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sermones dominicales"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bài giảng Chúa nhật"
+          }
+        }
+      }
+    },
+    "证道与播客": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sermons & Podcasts"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "설교와 팟캐스트"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sermones y podcasts"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bài giảng và podcast"
+          }
+        }
+      }
+    },
+    "选择播客": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose a podcast"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "팟캐스트 선택"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Elegir un podcast"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chọn podcast"
+          }
+        }
+      }
+    },
+    "选择证道与播客": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose sermon or podcast"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "설교 또는 팟캐스트 선택"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Elegir sermón o podcast"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chọn bài giảng hoặc podcast"
           }
         }
       }

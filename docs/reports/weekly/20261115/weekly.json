@@ -1,0 +1,999 @@
+{
+  "schemaVersion": "sermon-weekly-rollup-v1",
+  "week": "20261115",
+  "window": {
+    "from": "2026-11-09",
+    "to": "2026-11-15"
+  },
+  "generatedAt": "2026-11-16T16:13:05+00:00",
+  "generatedBy": "tools/development/weekly_rollup.py",
+  "humanApproval": false,
+  "finalized": false,
+  "previousWeek": "20261108",
+  "metrics": {
+    "reports.total": 9,
+    "reports.production": 2,
+    "time.wallSeconds": 32784.926,
+    "time.computeSeconds": 2507.778,
+    "time.waitingSeconds": 0.0,
+    "time.reworkSeconds": 178.812,
+    "time.reworkShare": 0.071,
+    "publish.failedGateEvents": 7,
+    "errors.total": 24,
+    "errors.preflight": 15,
+    "errors.afterResources": 5,
+    "errors.afterPublish": 0,
+    "errors.lateShare": 0.208,
+    "collection.unstructuredReports": 5,
+    "collection.reportsWithoutJournal": 7,
+    "collection.retrospectiveUnfilled": 4,
+    "collection.withoutPrivateEvidence": 7
+  },
+  "previousMetrics": {
+    "reports.total": 3,
+    "reports.production": 2,
+    "time.wallSeconds": 18201.489,
+    "time.computeSeconds": 2970.427,
+    "time.waitingSeconds": 0.0,
+    "time.reworkSeconds": 220.329,
+    "time.reworkShare": 0.074,
+    "publish.failedGateEvents": 4,
+    "errors.total": 11,
+    "errors.preflight": 2,
+    "errors.afterResources": 2,
+    "errors.afterPublish": 7,
+    "errors.lateShare": 0.818,
+    "collection.unstructuredReports": 1,
+    "collection.reportsWithoutJournal": 1,
+    "collection.retrospectiveUnfilled": 1,
+    "collection.withoutPrivateEvidence": 1
+  },
+  "reports": [
+    {
+      "name": "20261109-local-tts-ab",
+      "structured": true,
+      "runs": [],
+      "hasJournal": false,
+      "production": false,
+      "failedEvents": {},
+      "repeats": [],
+      "publish": {
+        "deployAttempts": 0,
+        "deployStatuses": {},
+        "gateStatuses": [],
+        "gateFailedChecks": 0,
+        "smokeStatuses": {}
+      },
+      "outcomes": {
+        "complete": 1
+      },
+      "cost": {
+        "estimatedMicrousd": 0,
+        "requests": 0,
+        "ledgers": 0
+      },
+      "privateEvidence": {
+        "uploaded": false,
+        "bundles": 0
+      },
+      "retrospective": {
+        "status": "filled",
+        "unfilled": 0,
+        "errors": [
+          {
+            "stage": "准备／传输",
+            "symptom": "`rsync` 立即失败：`unrecognized option --info=progress2`",
+            "timing": "preflight",
+            "fix": "复制后比对 `model.safetensors`／`config.json` SHA"
+          },
+          {
+            "stage": "编排／Spark 派发",
+            "symptom": "第一次派发在启动 job 前 `FileNotFoundError: .../artifacts/experiments/spark-tts-memory-ab/spark_runner.py`",
+            "timing": "preflight",
+            "fix": "仅本地工具脚本"
+          },
+          {
+            "stage": "编排／Spark 运行时",
+            "symptom": "生产 harness 在构造 `QwenSynthesizer` 时 `spark_exclusive_session_required` 失败",
+            "timing": "unknown",
+            "fix": "本报告"
+          },
+          {
+            "stage": "编排／Mac 套件",
+            "symptom": "第一次启动立即退出，`artifacts/local-tts-ab-20261109/...` 找不到",
+            "timing": "preflight",
+            "fix": "仅本地工具脚本"
+          }
+        ],
+        "improvements": [
+          {
+            "category": "流程／质量",
+            "improvement": "让 `benchmark_formal_tts.py` 在非 Spark 主机上有明确的诊断模式（例如显式 `--diagnostic-unbound-session`），而不是让操作员各自打 verifier 补丁",
+            "evidence": "第 3 条错误：生产 harness 在 Mac 上必然被门禁拒绝",
+            "expectedGain": "两臂 harness 身份一致，减少「补丁副本」解释成本",
+            "tracking": "待建 backlog"
+          },
+          {
+            "category": "预检",
+            "improvement": "把「派发脚本路径/工作目录自检」加入 TTS 基准的新运行检查，或复用 `check_run_start.py --spark-stages`",
+            "evidence": "第 2、4 条错误，合计约 8 分钟返工",
+            "expectedGain": "每轮省一次失败启动",
+            "tracking": "待建 backlog"
+          },
+          {
+            "category": "速度",
+            "improvement": "冷启动差距主要来自 Spark 容器与模型加载（30–37 s），可评估预热常驻或容器预留",
+            "evidence": "cold 表：Spark 加载 30.95–36.96 s，Mac 2.42–3.28 s",
+            "expectedGain": "短任务整篇墙钟收益有限，但对多 locale 串行队列有意义",
+            "tracking": "待评估"
+          },
+          {
+            "category": "成本",
+            "improvement": "本轮为 0 付费 API；后续若把 A/B 扩到整篇，需要按既有预算合同登记",
+            "evidence": "报告与摘要中费用列为 0",
+            "expectedGain": "避免把诊断运行计入生产预算",
+            "tracking": "—"
+          }
+        ]
+      }
+    },
+    {
+      "name": "20261112-web-modern-guidance",
+      "structured": false,
+      "runs": [],
+      "hasJournal": false,
+      "production": false,
+      "failedEvents": {},
+      "repeats": [],
+      "publish": {
+        "deployAttempts": 0,
+        "deployStatuses": {},
+        "gateStatuses": [],
+        "gateFailedChecks": 0,
+        "smokeStatuses": {}
+      },
+      "outcomes": {},
+      "cost": {
+        "estimatedMicrousd": 0,
+        "requests": 0,
+        "ledgers": 0
+      },
+      "privateEvidence": {
+        "uploaded": false,
+        "bundles": 0
+      },
+      "retrospective": {
+        "status": "missing",
+        "errors": [],
+        "improvements": []
+      }
+    },
+    {
+      "name": "20261114-deepseek-asr-ab",
+      "structured": false,
+      "runs": [],
+      "hasJournal": false,
+      "production": false,
+      "failedEvents": {},
+      "repeats": [],
+      "publish": {
+        "deployAttempts": 0,
+        "deployStatuses": {},
+        "gateStatuses": [],
+        "gateFailedChecks": 0,
+        "smokeStatuses": {}
+      },
+      "outcomes": {},
+      "cost": {
+        "estimatedMicrousd": 0,
+        "requests": 0,
+        "ledgers": 0
+      },
+      "privateEvidence": {
+        "uploaded": false,
+        "bundles": 0
+      },
+      "retrospective": {
+        "status": "missing",
+        "errors": [],
+        "improvements": []
+      }
+    },
+    {
+      "name": "20261114-deepseek-tts-speed",
+      "structured": true,
+      "runs": [],
+      "hasJournal": false,
+      "production": false,
+      "failedEvents": {},
+      "repeats": [],
+      "publish": {
+        "deployAttempts": 0,
+        "deployStatuses": {},
+        "gateStatuses": [],
+        "gateFailedChecks": 0,
+        "smokeStatuses": {}
+      },
+      "outcomes": {
+        "measured": 1
+      },
+      "cost": {
+        "estimatedMicrousd": 0,
+        "requests": 0,
+        "ledgers": 0
+      },
+      "privateEvidence": {
+        "uploaded": false,
+        "bundles": 0
+      },
+      "retrospective": {
+        "status": "filled",
+        "unfilled": 0,
+        "errors": [
+          {
+            "stage": "报告口径",
+            "symptom": "初稿把 11-08 的 Spark 基线写成「8 副本 × batch 8」",
+            "timing": "afterResources",
+            "fix": "本 PR"
+          },
+          {
+            "stage": "摘要生成",
+            "symptom": "摘要工具把 `timings.tsv` 的 `total` 行与各阶段相加，得出 41m36s",
+            "timing": "afterResources",
+            "fix": "本 PR"
+          },
+          {
+            "stage": "服务返回",
+            "symptom": "WAV 头 data 长度是占位值 `0xFFFFFFFF`",
+            "timing": "preflight",
+            "fix": "本 PR"
+          }
+        ],
+        "improvements": [
+          {
+            "category": "速度",
+            "improvement": "云 TTS 按并发而不是按句排队：1.1 秒/句的固定开销只能靠并发摊薄",
+            "evidence": "串行 RTF 0.351、8 并发 0.045，单句延迟不变",
+            "expectedGain": "整期 12.5 分钟 → 1.6 分钟",
+            "tracking": "本报告"
+          },
+          {
+            "category": "质量",
+            "improvement": "换声音或换服务前先做人工整轨听审，并把 60 秒 ASR 抽查升级为分句抽查",
+            "evidence": "本次只有 1 次 60 秒机器转写",
+            "expectedGain": "避免把「能识别」当成「能发布」",
+            "tracking": "遗留"
+          },
+          {
+            "category": "同步",
+            "improvement": "若要接云 TTS，先确定性地处理每单元首尾静音，并作为 L3 改动记录",
+            "evidence": "原样最大滞后 42.9 秒；裁首尾后 6.3 秒",
+            "expectedGain": "让轨道长度回到 2143 秒量级",
+            "tracking": "本报告「同步」"
+          },
+          {
+            "category": "预检",
+            "improvement": "对接前把「WAV 头未回填、无语速参数、无续传」写进入口检查",
+            "evidence": "本次冒烟才发现头问题",
+            "expectedGain": "少一次返工",
+            "tracking": "本 PR"
+          }
+        ]
+      }
+    },
+    {
+      "name": "20261114-live-capture",
+      "structured": false,
+      "runs": [],
+      "hasJournal": false,
+      "production": false,
+      "failedEvents": {},
+      "repeats": [],
+      "publish": {
+        "deployAttempts": 0,
+        "deployStatuses": {},
+        "gateStatuses": [],
+        "gateFailedChecks": 0,
+        "smokeStatuses": {}
+      },
+      "outcomes": {},
+      "cost": {
+        "estimatedMicrousd": 0,
+        "requests": 0,
+        "ledgers": 0
+      },
+      "privateEvidence": {
+        "uploaded": false,
+        "bundles": 0
+      },
+      "retrospective": {
+        "status": "missing",
+        "errors": [],
+        "improvements": []
+      }
+    },
+    {
+      "name": "20261114-sfa-preproduction-rehearsal",
+      "structured": true,
+      "runs": [
+        {
+          "run": "20261115-rehearsal-start-zh",
+          "events": 10,
+          "openStages": []
+        }
+      ],
+      "hasJournal": true,
+      "production": true,
+      "time": {
+        "firstAt": "2026-11-14T17:27:17+00:00",
+        "lastAt": "2026-11-14T18:30:56+00:00",
+        "wallSeconds": 3819.0,
+        "computeSeconds": 0.0,
+        "waitingSeconds": 0.0,
+        "reworkSeconds": 0.0
+      },
+      "failedEvents": {
+        "l1.start": 1
+      },
+      "repeats": [
+        {
+          "run": "20261115-rehearsal-start-zh",
+          "stage": "l1.start",
+          "repeats": 1,
+          "seconds": 0.0
+        },
+        {
+          "run": "20261115-rehearsal-start-zh",
+          "stage": "l3.finish",
+          "repeats": 2,
+          "seconds": 0.0
+        }
+      ],
+      "publish": {
+        "deployAttempts": 0,
+        "deployStatuses": {},
+        "gateStatuses": [],
+        "gateFailedChecks": 0,
+        "smokeStatuses": {}
+      },
+      "outcomes": {
+        "track_ready_for_review": 1
+      },
+      "cost": {
+        "estimatedMicrousd": 0,
+        "requests": 0,
+        "ledgers": 0
+      },
+      "privateEvidence": {
+        "uploaded": false,
+        "bundles": 0
+      },
+      "retrospective": {
+        "status": "filled",
+        "unfilled": 0,
+        "errors": [
+          {
+            "stage": "L4 预检",
+            "symptom": "`firebase` 不在 PATH，`npx --no-install` 也没有",
+            "timing": "preflight",
+            "fix": "环境修复，未改仓库"
+          },
+          {
+            "stage": "L2 预检",
+            "symptom": "`claude` 不在 PATH；CLI 未登录（`Not logged in · Please run /login`）",
+            "timing": "preflight",
+            "fix": "环境修复"
+          },
+          {
+            "stage": "L4 预检",
+            "symptom": "Synology 镜像少 3 个受版本控制文件：`firebase/dev/.gitignore`、两处 `.well-known/apple-app-site-association`",
+            "timing": "preflight",
+            "fix": "环境修复"
+          },
+          {
+            "stage": "开工",
+            "symptom": "`prepare_clip` 报 “clip would start before the media”",
+            "timing": "preflight",
+            "fix": "今晚命令模板已更新"
+          },
+          {
+            "stage": "Spark 会话",
+            "symptom": "`begin` 报 `unmanaged_running_container`（h3image）",
+            "timing": "preflight",
+            "fix": "运营步骤"
+          },
+          {
+            "stage": "Spark 会话",
+            "symptom": "`begin` 报 `unmanaged_model_or_worker_process`",
+            "timing": "preflight",
+            "fix": "运营步骤"
+          },
+          {
+            "stage": "Spark 会话",
+            "symptom": "停 `spark-api` / `llama-server` 后单元进入 `failed`（OOM-kill），`begin` 报 `effect_requires_reconciliation`",
+            "timing": "preflight",
+            "fix": "今晚可能复现，步骤已写进清单"
+          },
+          {
+            "stage": "L4 门禁",
+            "symptom": "线上 11-08 页面跑 gate 失败：`catalog.defaultPageId` 指向另一页",
+            "timing": "preflight",
+            "fix": "今晚顺序约束"
+          },
+          {
+            "stage": "发布链路",
+            "symptom": "`stage-english-reference` 对旧的 `baseline-english` 快照失败：目录 source identity 不匹配",
+            "timing": "preflight",
+            "fix": "使用当天基线"
+          },
+          {
+            "stage": "通知",
+            "symptom": "`notify` 没有真正推送",
+            "timing": "preflight",
+            "fix": "今晚如要推送需先放键"
+          }
+        ],
+        "improvements": [
+          {
+            "category": "预检",
+            "improvement": "把 `firebase` CLI 与登录、AASA 点目录、h3image/前端服务、`reset-failed` 处理写进开工前固定检查",
+            "evidence": "本轮四个问题都在预检阶段发现，任何一个留到发布或 GPU 后都会白占时间",
+            "expectedGain": "每期省 10–30 分钟返工",
+            "tracking": "本轮已写进清单"
+          },
+          {
+            "category": "模型栈",
+            "improvement": "把 OpenAI/Opus/TTS 身份、脚本哈希与安装清单写成 `docs/sentence-first-model-stack.zh.md`，每周只换标题/经文/讲员等内容字段",
+            "evidence": "转录、翻译、TTS 三处都缺全局 CLI 或登录，靠口头记忆容易漏",
+            "expectedGain": "下期开工前 5 分钟核对",
+            "tracking": "本 PR"
+          },
+          {
+            "category": "预检",
+            "improvement": "给 `prepare_clip` 在 unit 0 起点为 0 时给出明确的边距提示，或在锚点清单里记录推荐边距",
+            "evidence": "默认 1.0 s 直接失败",
+            "expectedGain": "少一次 0.4 s 失败与重跑",
+            "tracking": "backlog"
+          },
+          {
+            "category": "流程",
+            "improvement": "在 `sfa.py start --plan` 输出里提前检查 `h3image`/未登记容器与 `failed` 单元",
+            "evidence": "这三类都在 `begin` 才暴露",
+            "expectedGain": "缩短开工等待",
+            "tracking": "backlog"
+          },
+          {
+            "category": "流程",
+            "improvement": "为 DeepSeek 阶段提供不调用 API 的 plan 输出",
+            "evidence": "没有 `--execute` 时直接报 “call required”，本轮无法验证窗口与预算路径",
+            "expectedGain": "预演能覆盖 L2 调度",
+            "tracking": "backlog"
+          },
+          {
+            "category": "质量",
+            "improvement": "预演使用上期已批准译文与收据副本，并明确标 `REHEARSAL-FIXTURE`",
+            "evidence": "避免把机器生成的 approved 收据误当人审",
+            "expectedGain": "保持标签诚实",
+            "tracking": "本轮已标"
+          }
+        ]
+      }
+    },
+    {
+      "name": "20261114-subtitle-filler-shadow",
+      "structured": false,
+      "runs": [],
+      "hasJournal": false,
+      "production": false,
+      "failedEvents": {},
+      "repeats": [],
+      "publish": {
+        "deployAttempts": 0,
+        "deployStatuses": {},
+        "gateStatuses": [],
+        "gateFailedChecks": 0,
+        "smokeStatuses": {}
+      },
+      "outcomes": {},
+      "cost": {
+        "estimatedMicrousd": 0,
+        "requests": 0,
+        "ledgers": 0
+      },
+      "privateEvidence": {
+        "uploaded": false,
+        "bundles": 0
+      },
+      "retrospective": {
+        "status": "missing",
+        "errors": [],
+        "improvements": []
+      }
+    },
+    {
+      "name": "20261115-jesus-is-better",
+      "structured": false,
+      "runs": [],
+      "hasJournal": false,
+      "production": false,
+      "failedEvents": {},
+      "repeats": [],
+      "publish": {
+        "deployAttempts": 0,
+        "deployStatuses": {},
+        "gateStatuses": [],
+        "gateFailedChecks": 0,
+        "smokeStatuses": {}
+      },
+      "outcomes": {},
+      "cost": {
+        "estimatedMicrousd": 0,
+        "requests": 0,
+        "ledgers": 0
+      },
+      "privateEvidence": {
+        "uploaded": true,
+        "bundles": 7
+      },
+      "retrospective": {
+        "status": "unstructured",
+        "unfilled": 0,
+        "errors": [],
+        "improvements": []
+      }
+    },
+    {
+      "name": "20261115-jesus-is-better-podcast",
+      "structured": true,
+      "runs": [
+        {
+          "run": "20261115-jesus-is-better-podcast-es",
+          "events": 20,
+          "openStages": [
+            "l3.review.es"
+          ]
+        },
+        {
+          "run": "20261115-jesus-is-better-podcast-ko",
+          "events": 20,
+          "openStages": [
+            "l3.review.ko"
+          ]
+        },
+        {
+          "run": "20261115-jesus-is-better-podcast-zh",
+          "events": 78,
+          "openStages": [
+            "l3.review.zh-Hans",
+            "l4.publish"
+          ]
+        }
+      ],
+      "hasJournal": true,
+      "production": true,
+      "time": {
+        "firstAt": "2026-11-15T07:48:48+00:00",
+        "lastAt": "2026-11-15T15:51:33.926072+00:00",
+        "wallSeconds": 28965.926,
+        "computeSeconds": 2507.778,
+        "waitingSeconds": 0.0,
+        "reworkSeconds": 178.812
+      },
+      "failedEvents": {
+        "l1.preflight": 4,
+        "l4.assets": 3,
+        "l4.publish": 2,
+        "l4.publish-check": 1,
+        "l4.validate": 1
+      },
+      "repeats": [
+        {
+          "run": "20261115-jesus-is-better-podcast-zh",
+          "stage": "l4.baseline",
+          "repeats": 2,
+          "seconds": 95.652
+        },
+        {
+          "run": "20261115-jesus-is-better-podcast-zh",
+          "stage": "l3.finish",
+          "repeats": 1,
+          "seconds": 52.0
+        },
+        {
+          "run": "20261115-jesus-is-better-podcast-zh",
+          "stage": "l4.assets",
+          "repeats": 3,
+          "seconds": 23.21
+        },
+        {
+          "run": "20261115-jesus-is-better-podcast-zh",
+          "stage": "l4.stage2",
+          "repeats": 1,
+          "seconds": 2.547
+        },
+        {
+          "run": "20261115-jesus-is-better-podcast-zh",
+          "stage": "l4.publish",
+          "repeats": 3,
+          "seconds": 1.797
+        },
+        {
+          "run": "20261115-jesus-is-better-podcast-zh",
+          "stage": "l4.readback",
+          "repeats": 1,
+          "seconds": 1.058
+        },
+        {
+          "run": "20261115-jesus-is-better-podcast-ko",
+          "stage": "l1.preflight",
+          "repeats": 1,
+          "seconds": 1.0
+        },
+        {
+          "run": "20261115-jesus-is-better-podcast-zh",
+          "stage": "l1.preflight",
+          "repeats": 2,
+          "seconds": 1.0
+        },
+        {
+          "run": "20261115-jesus-is-better-podcast-zh",
+          "stage": "l4.preflight",
+          "repeats": 2,
+          "seconds": 0.402
+        },
+        {
+          "run": "20261115-jesus-is-better-podcast-zh",
+          "stage": "l4.publish-check",
+          "repeats": 3,
+          "seconds": 0.14
+        },
+        {
+          "run": "20261115-jesus-is-better-podcast-zh",
+          "stage": "l4.validate",
+          "repeats": 1,
+          "seconds": 0.006
+        },
+        {
+          "run": "20261115-jesus-is-better-podcast-es",
+          "stage": "l1.preflight.setup",
+          "repeats": 1,
+          "seconds": 0.0
+        },
+        {
+          "run": "20261115-jesus-is-better-podcast-es",
+          "stage": "l2.consistency",
+          "repeats": 2,
+          "seconds": 0.0
+        },
+        {
+          "run": "20261115-jesus-is-better-podcast-es",
+          "stage": "l1.preflight",
+          "repeats": 1,
+          "seconds": 0.0
+        },
+        {
+          "run": "20261115-jesus-is-better-podcast-ko",
+          "stage": "l1.preflight.setup",
+          "repeats": 1,
+          "seconds": 0.0
+        },
+        {
+          "run": "20261115-jesus-is-better-podcast-ko",
+          "stage": "l2.consistency",
+          "repeats": 2,
+          "seconds": 0.0
+        },
+        {
+          "run": "20261115-jesus-is-better-podcast-zh",
+          "stage": "l1.preflight.setup",
+          "repeats": 2,
+          "seconds": 0.0
+        },
+        {
+          "run": "20261115-jesus-is-better-podcast-zh",
+          "stage": "l2.consistency",
+          "repeats": 2,
+          "seconds": 0.0
+        }
+      ],
+      "publish": {
+        "deployAttempts": 0,
+        "deployStatuses": {},
+        "gateStatuses": [],
+        "gateFailedChecks": 0,
+        "smokeStatuses": {}
+      },
+      "outcomes": {
+        "track_ready_for_review": 3
+      },
+      "cost": {
+        "estimatedMicrousd": 0,
+        "requests": 0,
+        "ledgers": 0
+      },
+      "privateEvidence": {
+        "uploaded": true,
+        "bundles": 6
+      },
+      "retrospective": {
+        "status": "filled",
+        "unfilled": 0,
+        "errors": [
+          {
+            "stage": "L1 文本",
+            "symptom": "`gpt-4o-transcribe` 两块静默丢段（191 词、152 词）",
+            "timing": "afterResources",
+            "fix": ""
+          },
+          {
+            "stage": "L1 句表",
+            "symptom": "第一版 v2 句表在句界串词（「room Our kids have no idea.」）",
+            "timing": "preflight",
+            "fix": ""
+          },
+          {
+            "stage": "L2 派发",
+            "symptom": "12 个 Opus 翻译分片全部 0 行",
+            "timing": "afterResources",
+            "fix": ""
+          },
+          {
+            "stage": "L1 句界",
+            "symptom": "`sfa_publish assets` 两次被 iOS cue 校验拒绝（零长、毫秒重叠）",
+            "timing": "unknown",
+            "fix": ""
+          },
+          {
+            "stage": "L3 收尾",
+            "symptom": "`finish_run.py` 首次在 zh 收尾时失败",
+            "timing": "afterResources",
+            "fix": ""
+          },
+          {
+            "stage": "L4 部署",
+            "symptom": "`firebase deploy` 两次被 SIGKILL",
+            "timing": "unknown",
+            "fix": ""
+          },
+          {
+            "stage": "L4 部署",
+            "symptom": "增量发布首次上传 HTTP 412",
+            "timing": "unknown",
+            "fix": ""
+          }
+        ],
+        "improvements": [
+          {
+            "category": "流程",
+            "improvement": "把 `hosting_incremental_publish.py` 接到 `sfa_publish publish` 的默认路径（CLI 失败时自动回退）",
+            "evidence": "本轮 2 次 CLI 部署被系统杀死，占用约 40 分钟并留下 lease 冲突",
+            "expectedGain": "大站发布不再依赖单进程 CLI",
+            "tracking": "新增，待登记"
+          },
+          {
+            "category": "速度",
+            "improvement": "`finish_run.py` 自动识别纯音频媒体并跳过视频 mux",
+            "evidence": "zh 首轮收尾失败重跑",
+            "expectedGain": "每期省一次返工",
+            "tracking": "新增，待登记"
+          },
+          {
+            "category": "预检",
+            "improvement": "句表生成后立刻跑一次 iOS cue 等价检查（零长、单调、时长上限）",
+            "evidence": "assets 两次被拒",
+            "expectedGain": "发布前不再暴露句界问题",
+            "tracking": "新增，待登记"
+          },
+          {
+            "category": "质量",
+            "improvement": "`gpt-4o-transcribe` 分块加逐块词数覆盖率门禁（<0.9 即重转）",
+            "evidence": "两块丢段到对齐阶段才发现",
+            "expectedGain": "L1 少一步返工",
+            "tracking": "`layer1/repair_text_gaps.py` 已覆盖检测，可前移"
+          },
+          {
+            "category": "流程",
+            "improvement": "统计目录 `sermon-feedback-api` 纳入发布意图的固定项或明确记 gap",
+            "evidence": "连续两期 `/api/session` 无法验证",
+            "expectedGain": "收听统计不再缺",
+            "tracking": "`DEV-USAGE-001`"
+          }
+        ]
+      }
+    }
+  ],
+  "actions": [],
+  "candidates": [
+    {
+      "id": "C1",
+      "report": "20261109-local-tts-ab",
+      "category": "流程／质量",
+      "improvement": "让 `benchmark_formal_tts.py` 在非 Spark 主机上有明确的诊断模式（例如显式 `--diagnostic-unbound-session`），而不是让操作员各自打 verifier 补丁",
+      "evidence": "第 3 条错误：生产 harness 在 Mac 上必然被门禁拒绝",
+      "expectedGain": "两臂 harness 身份一致，减少「补丁副本」解释成本",
+      "tracking": "待建 backlog",
+      "decision": null
+    },
+    {
+      "id": "C2",
+      "report": "20261109-local-tts-ab",
+      "category": "预检",
+      "improvement": "把「派发脚本路径/工作目录自检」加入 TTS 基准的新运行检查，或复用 `check_run_start.py --spark-stages`",
+      "evidence": "第 2、4 条错误，合计约 8 分钟返工",
+      "expectedGain": "每轮省一次失败启动",
+      "tracking": "待建 backlog",
+      "decision": null
+    },
+    {
+      "id": "C3",
+      "report": "20261109-local-tts-ab",
+      "category": "速度",
+      "improvement": "冷启动差距主要来自 Spark 容器与模型加载（30–37 s），可评估预热常驻或容器预留",
+      "evidence": "cold 表：Spark 加载 30.95–36.96 s，Mac 2.42–3.28 s",
+      "expectedGain": "短任务整篇墙钟收益有限，但对多 locale 串行队列有意义",
+      "tracking": "待评估",
+      "decision": null
+    },
+    {
+      "id": "C4",
+      "report": "20261109-local-tts-ab",
+      "category": "成本",
+      "improvement": "本轮为 0 付费 API；后续若把 A/B 扩到整篇，需要按既有预算合同登记",
+      "evidence": "报告与摘要中费用列为 0",
+      "expectedGain": "避免把诊断运行计入生产预算",
+      "tracking": "—",
+      "decision": null
+    },
+    {
+      "id": "C5",
+      "report": "20261114-deepseek-tts-speed",
+      "category": "速度",
+      "improvement": "云 TTS 按并发而不是按句排队：1.1 秒/句的固定开销只能靠并发摊薄",
+      "evidence": "串行 RTF 0.351、8 并发 0.045，单句延迟不变",
+      "expectedGain": "整期 12.5 分钟 → 1.6 分钟",
+      "tracking": "本报告",
+      "decision": null
+    },
+    {
+      "id": "C6",
+      "report": "20261114-deepseek-tts-speed",
+      "category": "质量",
+      "improvement": "换声音或换服务前先做人工整轨听审，并把 60 秒 ASR 抽查升级为分句抽查",
+      "evidence": "本次只有 1 次 60 秒机器转写",
+      "expectedGain": "避免把「能识别」当成「能发布」",
+      "tracking": "遗留",
+      "decision": null
+    },
+    {
+      "id": "C7",
+      "report": "20261114-deepseek-tts-speed",
+      "category": "同步",
+      "improvement": "若要接云 TTS，先确定性地处理每单元首尾静音，并作为 L3 改动记录",
+      "evidence": "原样最大滞后 42.9 秒；裁首尾后 6.3 秒",
+      "expectedGain": "让轨道长度回到 2143 秒量级",
+      "tracking": "本报告「同步」",
+      "decision": null
+    },
+    {
+      "id": "C8",
+      "report": "20261114-deepseek-tts-speed",
+      "category": "预检",
+      "improvement": "对接前把「WAV 头未回填、无语速参数、无续传」写进入口检查",
+      "evidence": "本次冒烟才发现头问题",
+      "expectedGain": "少一次返工",
+      "tracking": "本 PR",
+      "decision": null
+    },
+    {
+      "id": "C9",
+      "report": "20261114-sfa-preproduction-rehearsal",
+      "category": "预检",
+      "improvement": "把 `firebase` CLI 与登录、AASA 点目录、h3image/前端服务、`reset-failed` 处理写进开工前固定检查",
+      "evidence": "本轮四个问题都在预检阶段发现，任何一个留到发布或 GPU 后都会白占时间",
+      "expectedGain": "每期省 10–30 分钟返工",
+      "tracking": "本轮已写进清单",
+      "decision": null
+    },
+    {
+      "id": "C10",
+      "report": "20261114-sfa-preproduction-rehearsal",
+      "category": "模型栈",
+      "improvement": "把 OpenAI/Opus/TTS 身份、脚本哈希与安装清单写成 `docs/sentence-first-model-stack.zh.md`，每周只换标题/经文/讲员等内容字段",
+      "evidence": "转录、翻译、TTS 三处都缺全局 CLI 或登录，靠口头记忆容易漏",
+      "expectedGain": "下期开工前 5 分钟核对",
+      "tracking": "本 PR",
+      "decision": null
+    },
+    {
+      "id": "C11",
+      "report": "20261114-sfa-preproduction-rehearsal",
+      "category": "预检",
+      "improvement": "给 `prepare_clip` 在 unit 0 起点为 0 时给出明确的边距提示，或在锚点清单里记录推荐边距",
+      "evidence": "默认 1.0 s 直接失败",
+      "expectedGain": "少一次 0.4 s 失败与重跑",
+      "tracking": "backlog",
+      "decision": null
+    },
+    {
+      "id": "C12",
+      "report": "20261114-sfa-preproduction-rehearsal",
+      "category": "流程",
+      "improvement": "在 `sfa.py start --plan` 输出里提前检查 `h3image`/未登记容器与 `failed` 单元",
+      "evidence": "这三类都在 `begin` 才暴露",
+      "expectedGain": "缩短开工等待",
+      "tracking": "backlog",
+      "decision": null
+    },
+    {
+      "id": "C13",
+      "report": "20261114-sfa-preproduction-rehearsal",
+      "category": "流程",
+      "improvement": "为 DeepSeek 阶段提供不调用 API 的 plan 输出",
+      "evidence": "没有 `--execute` 时直接报 “call required”，本轮无法验证窗口与预算路径",
+      "expectedGain": "预演能覆盖 L2 调度",
+      "tracking": "backlog",
+      "decision": null
+    },
+    {
+      "id": "C14",
+      "report": "20261114-sfa-preproduction-rehearsal",
+      "category": "质量",
+      "improvement": "预演使用上期已批准译文与收据副本，并明确标 `REHEARSAL-FIXTURE`",
+      "evidence": "避免把机器生成的 approved 收据误当人审",
+      "expectedGain": "保持标签诚实",
+      "tracking": "本轮已标",
+      "decision": null
+    },
+    {
+      "id": "C15",
+      "report": "20261115-jesus-is-better-podcast",
+      "category": "流程",
+      "improvement": "把 `hosting_incremental_publish.py` 接到 `sfa_publish publish` 的默认路径（CLI 失败时自动回退）",
+      "evidence": "本轮 2 次 CLI 部署被系统杀死，占用约 40 分钟并留下 lease 冲突",
+      "expectedGain": "大站发布不再依赖单进程 CLI",
+      "tracking": "新增，待登记",
+      "decision": null
+    },
+    {
+      "id": "C16",
+      "report": "20261115-jesus-is-better-podcast",
+      "category": "速度",
+      "improvement": "`finish_run.py` 自动识别纯音频媒体并跳过视频 mux",
+      "evidence": "zh 首轮收尾失败重跑",
+      "expectedGain": "每期省一次返工",
+      "tracking": "新增，待登记",
+      "decision": null
+    },
+    {
+      "id": "C17",
+      "report": "20261115-jesus-is-better-podcast",
+      "category": "预检",
+      "improvement": "句表生成后立刻跑一次 iOS cue 等价检查（零长、单调、时长上限）",
+      "evidence": "assets 两次被拒",
+      "expectedGain": "发布前不再暴露句界问题",
+      "tracking": "新增，待登记",
+      "decision": null
+    },
+    {
+      "id": "C18",
+      "report": "20261115-jesus-is-better-podcast",
+      "category": "质量",
+      "improvement": "`gpt-4o-transcribe` 分块加逐块词数覆盖率门禁（<0.9 即重转）",
+      "evidence": "两块丢段到对齐阶段才发现",
+      "expectedGain": "L1 少一步返工",
+      "tracking": "`layer1/repair_text_gaps.py` 已覆盖检测，可前移",
+      "decision": null
+    },
+    {
+      "id": "C19",
+      "report": "20261115-jesus-is-better-podcast",
+      "category": "流程",
+      "improvement": "统计目录 `sermon-feedback-api` 纳入发布意图的固定项或明确记 gap",
+      "evidence": "连续两期 `/api/session` 无法验证",
+      "expectedGain": "收听统计不再缺",
+      "tracking": "`DEV-USAGE-001`",
+      "decision": null
+    }
+  ],
+  "frontend": null
+}

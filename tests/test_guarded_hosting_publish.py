@@ -1,11 +1,19 @@
+import gzip
 import hashlib
 import json
+import os
 from pathlib import Path
 import pytest
 import time
 from scripts import tongxing_host  # noqa: F401  binds the production package ports
 from tongxing_production.delivery import publication as p
 from tongxing_production.storage import hosting
+
+
+def publish(*args, **kwargs):
+    """These tests drive the firebase CLI protocol; the default route is the REST one."""
+    kwargs.setdefault('method', 'cli')
+    return p.publish(*args, **kwargs)
 
 
 def write_deploy_result(kwargs, version='sites/site/versions/new'):
@@ -49,10 +57,10 @@ def test_remote_lease_success_and_repeat_refusal(tmp_path):
     intent, data, sha = setup(tmp_path); remote = Remote()
     def run(*args, **kwargs): remote.version = 'new'; write_deploy_result(kwargs)
     args = dict(intent=intent, routes={'dev': intent}, baseline_version='sites/site/versions/old', baseline_catalog_sha=sha, lease_bucket='bucket', request=remote, reader=v3_only(data), run=run)
-    receipt = p.publish(tmp_path, **args)
+    receipt = publish(tmp_path, **args)
     assert receipt['status'] == 'deployed' and remote.deleted
     with pytest.raises(ValueError, match='Existing attempt'):
-        p.publish(tmp_path, **args)
+        publish(tmp_path, **args)
 
 
 def test_default_runner_is_the_host_firebase_cli_with_the_recorded_argv(tmp_path, monkeypatch):
@@ -64,19 +72,32 @@ def test_default_runner_is_the_host_firebase_cli_with_the_recorded_argv(tmp_path
         calls.append((argv, {k: v for k, v in kwargs.items() if k not in ('stdout', 'stderr')}))
         remote.version = 'new'; write_deploy_result(kwargs)
     monkeypatch.setattr(subprocess, 'run', deploy)
-    receipt = p.publish(tmp_path, intent=intent, routes={'dev': intent}, baseline_version='sites/site/versions/old',
+    receipt = publish(tmp_path, intent=intent, routes={'dev': intent}, baseline_version='sites/site/versions/old',
                         baseline_catalog_sha=sha, lease_bucket='bucket', request=remote, reader=v3_only(data))
     assert receipt['status'] == 'deployed'
-    assert calls == [(['firebase', 'deploy', '--only', 'hosting', '--project', 'project', '--config',
-                       str((tmp_path / 'firebase-bound.json').resolve()), '--non-interactive', '--json'],
-                      {'cwd': tmp_path, 'check': True, 'timeout': 3600})]
+    argv, options = calls[0]
+    assert argv == ['firebase', 'deploy', '--only', 'hosting', '--project', 'project', '--config',
+                    str((tmp_path / 'firebase-bound.json').resolve()), '--non-interactive', '--json']
+    assert {k: v for k, v in options.items() if k != 'env'} == {'cwd': tmp_path, 'check': True, 'timeout': 3600}
+    assert options['env']['FIREBASE_HOSTING_UPLOAD_CONCURRENCY'] == str(p.HOSTING_UPLOAD_CONCURRENCY)
+    assert options['env']['PATH'] == os.environ['PATH']
+
+
+def test_hosting_upload_concurrency_stays_bounded():
+    # firebase-tools defaults to 200 concurrent uploads; on 2026-11-15 that node process was
+    # charged ~305 GB of resident pages and the jetsam behind the out-of-application-memory
+    # dialog killed 1085 processes. The publisher owns a small bound and ignores an inherited
+    # value, so a shell that still has 200 cannot bring the blow-up back.
+    assert 0 < p.HOSTING_UPLOAD_CONCURRENCY <= 8
+    assert p.hosting_upload_environment({'PATH': '/usr/bin'})['FIREBASE_HOSTING_UPLOAD_CONCURRENCY'] == str(p.HOSTING_UPLOAD_CONCURRENCY)
+    assert p.hosting_upload_environment({'FIREBASE_HOSTING_UPLOAD_CONCURRENCY': '200'})['FIREBASE_HOSTING_UPLOAD_CONCURRENCY'] == str(p.HOSTING_UPLOAD_CONCURRENCY)
 
 
 def test_concurrent_version_change_rebuilds_without_deployment(tmp_path):
     intent, data, sha = setup(tmp_path); remote = Remote(); remote.version = 'other'
     def run(*args, **kwargs): pytest.fail('Deployment must not run')
     with pytest.raises(ValueError, match='Live version changed'):
-        p.publish(tmp_path, intent=intent, routes={'dev': intent}, baseline_version='sites/site/versions/old', baseline_catalog_sha=sha, lease_bucket='bucket', request=remote, reader=v3_only(data), run=run)
+        publish(tmp_path, intent=intent, routes={'dev': intent}, baseline_version='sites/site/versions/old', baseline_catalog_sha=sha, lease_bucket='bucket', request=remote, reader=v3_only(data), run=run)
     assert remote.deleted
     assert json.loads((tmp_path / 'deployment-attempt-v2.json').read_text())['status'] == 'rebuild_required'
 
@@ -87,7 +108,7 @@ def test_unknown_deploy_retains_lease_and_reconciles_explicitly(tmp_path):
         remote.version = 'new'; write_deploy_result(kwargs)
         raise TimeoutError('unknown remote outcome')
     with pytest.raises(TimeoutError):
-        p.publish(tmp_path, intent=intent, routes={'dev': intent}, baseline_version='sites/site/versions/old', baseline_catalog_sha=sha, lease_bucket='bucket', request=remote, reader=v3_only(data), run=run)
+        publish(tmp_path, intent=intent, routes={'dev': intent}, baseline_version='sites/site/versions/old', baseline_catalog_sha=sha, lease_bucket='bucket', request=remote, reader=v3_only(data), run=run)
     assert remote.held
     result = p.reconcile(tmp_path, request=remote, reader=v3_only(data), confirmed_version='sites/site/versions/new')
     assert result['status'] == 'deployed' and remote.deleted
@@ -123,13 +144,13 @@ def test_live_deployment_heartbeats_and_refuses_reconciliation(tmp_path):
             p.reconcile(tmp_path, request=remote, reader=v3_only(data),
                         confirmed_version='sites/site/versions/new')
         with pytest.raises(ValueError, match='still running'):
-            p.publish(tmp_path, intent=intent, routes={'dev': intent},
+            publish(tmp_path, intent=intent, routes={'dev': intent},
                       baseline_version='sites/site/versions/old', baseline_catalog_sha=sha,
                       lease_bucket='bucket', request=remote, reader=v3_only(data), run=run)
         assert remote.held and not remote.deleted
         remote.version = 'new'; write_deploy_result(kwargs)
 
-    receipt = p.publish(tmp_path, intent=intent, routes={'dev': intent},
+    receipt = publish(tmp_path, intent=intent, routes={'dev': intent},
                         baseline_version='sites/site/versions/old', baseline_catalog_sha=sha,
                         lease_bucket='bucket', request=remote, reader=v3_only(data),
                         run=run, heartbeat_interval=0.01)
@@ -148,7 +169,7 @@ def test_unknown_deployment_reports_failed_without_changing_recovery_contract(tm
         raise TimeoutError('private provider details')
 
     with pytest.raises(TimeoutError):
-        p.publish(tmp_path, intent=intent, routes={'dev': intent},
+        publish(tmp_path, intent=intent, routes={'dev': intent},
                   baseline_version='sites/site/versions/old', baseline_catalog_sha=sha,
                   lease_bucket='bucket', request=remote, reader=v3_only(data), run=run)
     progress = json.loads((tmp_path / 'hosting-publisher-progress.json').read_text())
@@ -157,7 +178,7 @@ def test_unknown_deployment_reports_failed_without_changing_recovery_contract(tm
     assert 'private provider details' not in json.dumps(progress)
     assert remote.held and not remote.deleted
     with pytest.raises(ValueError, match='Existing attempt'):
-        p.publish(tmp_path, intent=intent, routes={'dev': intent},
+        publish(tmp_path, intent=intent, routes={'dev': intent},
                   baseline_version='sites/site/versions/old', baseline_catalog_sha=sha,
                   lease_bucket='bucket', request=remote, reader=v3_only(data), run=run)
 
@@ -167,7 +188,7 @@ def test_predeploy_failure_reports_rebuild_required(tmp_path):
     remote = Remote()
     remote.version = 'other'
     with pytest.raises(ValueError, match='Live version changed'):
-        p.publish(tmp_path, intent=intent, routes={'dev': intent},
+        publish(tmp_path, intent=intent, routes={'dev': intent},
                   baseline_version='sites/site/versions/old', baseline_catalog_sha=sha,
                   lease_bucket='bucket', request=remote, reader=v3_only(data),
                   run=lambda *args, **kwargs: pytest.fail('No deployment allowed'))
@@ -186,7 +207,7 @@ def test_process_crash_releases_local_lock_but_needs_explicit_remote_reconciliat
         remote.version = 'new'; write_deploy_result(kwargs)
         raise TimeoutError('unknown')
     with pytest.raises(TimeoutError):
-        p.publish(tmp_path, intent=intent, routes={'dev': intent},
+        publish(tmp_path, intent=intent, routes={'dev': intent},
                   baseline_version='sites/site/versions/old', baseline_catalog_sha=sha,
                   lease_bucket='bucket', request=remote, reader=v3_only(data), run=interrupted)
     # A separate live owner prevents reconciliation, even with confirmed remote bytes.
@@ -231,20 +252,20 @@ def test_v4_catalog_is_compare_and_swapped_alongside_v3(tmp_path, monkeypatch):
     def stale(*args, **kwargs): pytest.fail('Deployment must not run against a changed v4 catalog')
     live['v4'] = b'{"other": true}'
     with pytest.raises(ValueError, match='Live v4 catalog changed'):
-        p.publish(tmp_path, intent=intent, routes={'dev': intent}, baseline_version='sites/site/versions/old',
+        publish(tmp_path, intent=intent, routes={'dev': intent}, baseline_version='sites/site/versions/old',
                   baseline_catalog_sha=sha, lease_bucket='bucket', request=remote, reader=reader, run=stale)
     (tmp_path / 'deployment-attempt-v2.json').unlink()
     live['v4'] = None
     def deploy(*args, **kwargs):
         remote.version = 'new'; write_deploy_result(kwargs); live['v4'] = v4
-    receipt = p.publish(tmp_path, intent=intent, routes={'dev': intent}, baseline_version='sites/site/versions/old',
+    receipt = publish(tmp_path, intent=intent, routes={'dev': intent}, baseline_version='sites/site/versions/old',
                         baseline_catalog_sha=sha, lease_bucket='bucket', request=remote, reader=reader, run=deploy)
     assert receipt['status'] == 'deployed'
     # A later publication starts from the live v4 catalog it was built on.
     (tmp_path / 'deployment-attempt-v2.json').unlink()
     remote.version = 'old'
     with pytest.raises(ValueError, match='Live v4 catalog changed'):
-        p.publish(tmp_path, intent=intent, routes={'dev': intent}, baseline_version='sites/site/versions/old',
+        publish(tmp_path, intent=intent, routes={'dev': intent}, baseline_version='sites/site/versions/old',
                   baseline_catalog_sha=sha, lease_bucket='bucket', request=remote, reader=reader, run=stale)
 
 
@@ -264,14 +285,14 @@ def test_v5_catalog_is_compare_and_swapped_alongside_legacy_catalogs(tmp_path, m
         return 200, data
     live['v5'] = b'{"other": true}'
     with pytest.raises(ValueError, match='Live v5 catalog changed'):
-        p.publish(tmp_path, intent=intent, routes={'dev': intent}, baseline_version='sites/site/versions/old',
+        publish(tmp_path, intent=intent, routes={'dev': intent}, baseline_version='sites/site/versions/old',
                   baseline_catalog_sha=sha, lease_bucket='bucket', request=remote, reader=reader,
                   run=lambda *a, **k: pytest.fail('stale v5 must block deploy'))
     (tmp_path / 'deployment-attempt-v2.json').unlink()
     live['v5'] = None
     def deploy(*args, **kwargs):
         remote.version = 'new'; write_deploy_result(kwargs); live['v5'] = v5
-    receipt = p.publish(tmp_path, intent=intent, routes={'dev': intent}, baseline_version='sites/site/versions/old',
+    receipt = publish(tmp_path, intent=intent, routes={'dev': intent}, baseline_version='sites/site/versions/old',
                         baseline_catalog_sha=sha, lease_bucket='bucket', request=remote, reader=reader, run=deploy)
     assert receipt['status'] == 'deployed'
 
@@ -284,7 +305,7 @@ def test_published_v4_readback_must_match_the_sealed_catalog(tmp_path, monkeypat
     (tmp_path / 'seal-report.json').write_text(json.dumps(report))
     def deploy(*args, **kwargs): remote.version = 'new'; write_deploy_result(kwargs)
     with pytest.raises(ValueError, match='Published v4 catalog readback differs'):
-        p.publish(tmp_path, intent=intent, routes={'dev': intent}, baseline_version='sites/site/versions/old',
+        publish(tmp_path, intent=intent, routes={'dev': intent}, baseline_version='sites/site/versions/old',
                   baseline_catalog_sha=sha, lease_bucket='bucket', request=remote, reader=v3_only(data), run=deploy)
 
 
@@ -326,7 +347,7 @@ def test_a_v4_catalog_that_reads_back_stale_at_first_is_deployed_once_it_propaga
             return (200, b'{"stale": true}') if reads['v4'] <= 3 else (200, v4)
         return 200, data
     def deploy(*args, **kwargs): remote.version = 'new'; write_deploy_result(kwargs)
-    receipt = p.publish(tmp_path, intent=intent, routes={'dev': intent}, baseline_version='sites/site/versions/old',
+    receipt = publish(tmp_path, intent=intent, routes={'dev': intent}, baseline_version='sites/site/versions/old',
                         baseline_catalog_sha=sha, lease_bucket='bucket', request=remote, reader=reader, run=deploy)
     assert receipt['status'] == 'deployed' and receipt['newVersion'] == 'sites/site/versions/new'
     assert reads['v4'] >= 4
@@ -389,11 +410,11 @@ def test_external_version_race_keeps_first_version_unknown_and_never_redeploys(t
         return v3_only(data)(url)
     args = dict(intent=intent, routes={'dev': intent}, baseline_version='sites/site/versions/old',
                 baseline_catalog_sha=sha, lease_bucket='bucket', request=remote, reader=reader, run=deploy)
-    with pytest.raises(p.PublicationVersionChanged): p.publish(tmp_path, **args)
+    with pytest.raises(p.PublicationVersionChanged): publish(tmp_path, **args)
     receipt = json.loads((tmp_path/'deployment-attempt-v2.json').read_text())
     assert receipt['status'] == 'outcome_unknown' and receipt['newVersion'] == 'sites/site/versions/new'
     assert remote.held and deployments == [1]
-    with pytest.raises(ValueError, match='Existing attempt'): p.publish(tmp_path, **args)
+    with pytest.raises(ValueError, match='Existing attempt'): publish(tmp_path, **args)
     with pytest.raises(ValueError, match='first observed'):
         p.reconcile(tmp_path, request=remote, reader=reader, confirmed_version='sites/site/versions/external')
     assert remote.held and deployments == [1]
@@ -409,7 +430,7 @@ def test_incomplete_read_retries_catalog_get_without_repeating_deploy(tmp_path, 
         if remote.version == 'new' and not failures:
             failures.append(1); raise http.client.IncompleteRead(b'partial', 20)
         return v3_only(data)(url)
-    result = p.publish(tmp_path, intent=intent, routes={'dev': intent}, baseline_version='sites/site/versions/old',
+    result = publish(tmp_path, intent=intent, routes={'dev': intent}, baseline_version='sites/site/versions/old',
                        baseline_catalog_sha=sha, lease_bucket='bucket', request=remote, reader=reader, run=deploy)
     assert result['status'] == 'deployed' and result['newVersion'] == 'sites/site/versions/new'
     assert deployments == [1] and failures == [1] and remote.deleted
@@ -426,7 +447,7 @@ def test_publish_late_read_success_retains_unknown_and_lease(tmp_path, monkeypat
         if remote.version == 'new': now[0] = 11
         return v3_only(data)(url)
     with pytest.raises(TimeoutError):
-        p.publish(tmp_path, intent=intent, routes={'dev': intent}, baseline_version='sites/site/versions/old',
+        publish(tmp_path, intent=intent, routes={'dev': intent}, baseline_version='sites/site/versions/old',
                   baseline_catalog_sha=sha, lease_bucket='bucket', request=remote, reader=reader, run=deploy)
     assert json.loads((tmp_path/'deployment-attempt-v2.json').read_text())['status'] == 'outcome_unknown'
     assert remote.held and deployments == [1]
@@ -443,7 +464,7 @@ def test_reconciliation_rejects_version_change_after_catalog_read(tmp_path, monk
     intent, data, sha = setup(tmp_path); remote = Remote()
     def deploy(*args, **kwargs): remote.version = 'new'; write_deploy_result(kwargs); raise TimeoutError('unknown')
     with pytest.raises(TimeoutError):
-        p.publish(tmp_path, intent=intent, routes={'dev': intent}, baseline_version='sites/site/versions/old',
+        publish(tmp_path, intent=intent, routes={'dev': intent}, baseline_version='sites/site/versions/old',
                   baseline_catalog_sha=sha, lease_bucket='bucket', request=remote, reader=v3_only(data), run=deploy)
     def reader(url): remote.version = 'external'; return v3_only(data)(url)
     with pytest.raises(p.PublicationVersionChanged):
@@ -464,7 +485,7 @@ def test_external_deploy_before_first_readback_cannot_be_claimed(tmp_path, monke
         return remote(method, url, **kwargs)
     monkeypatch.setattr(p.time, 'sleep', lambda seconds: pytest.fail('Version conflict is not retryable'))
     with pytest.raises(p.PublicationVersionChanged, match='deployment receipt'):
-        p.publish(tmp_path, intent=intent, routes={'dev': intent}, baseline_version='sites/site/versions/old',
+        publish(tmp_path, intent=intent, routes={'dev': intent}, baseline_version='sites/site/versions/old',
                   baseline_catalog_sha=sha, lease_bucket='bucket', request=request, reader=v3_only(data), run=deploy)
     receipt = json.loads((tmp_path / 'deployment-attempt-v2.json').read_text())
     assert receipt['status'] == 'outcome_unknown' and receipt['newVersion'] == 'sites/site/versions/new'
@@ -489,7 +510,7 @@ def test_missing_or_invalid_cli_identity_keeps_unknown_without_claiming_live_ver
         deployments.append(1); remote.version = 'new'
         if output is not None: json.dump(output, kwargs['stdout'])
     with pytest.raises(ValueError, match='receipt|Exactly one'):
-        p.publish(tmp_path, intent=intent, routes={'dev': intent}, baseline_version='sites/site/versions/old',
+        publish(tmp_path, intent=intent, routes={'dev': intent}, baseline_version='sites/site/versions/old',
                   baseline_catalog_sha=sha, lease_bucket='bucket', request=remote, reader=v3_only(data), run=deploy)
     receipt = json.loads((tmp_path / 'deployment-attempt-v2.json').read_text())
     assert receipt['status'] == 'outcome_unknown' and receipt['newVersion'] is None
@@ -502,7 +523,7 @@ def test_cli_owned_version_can_wait_for_baseline_control_plane_propagation(tmp_p
     def sleep(seconds): sleeps.append(seconds); remote.version = 'new'
     monkeypatch.setattr(p.time, 'sleep', sleep)
     def deploy(*args, **kwargs): deployments.append(1); write_deploy_result(kwargs)
-    receipt = p.publish(tmp_path, intent=intent, routes={'dev': intent}, baseline_version='sites/site/versions/old',
+    receipt = publish(tmp_path, intent=intent, routes={'dev': intent}, baseline_version='sites/site/versions/old',
                         baseline_catalog_sha=sha, lease_bucket='bucket', request=remote, reader=v3_only(data), run=deploy)
     assert receipt['status'] == 'deployed' and receipt['newVersion'] == 'sites/site/versions/new'
     assert deployments == [1] and sleeps == [5]
@@ -544,7 +565,7 @@ def pending_cli_attempt(tmp_path, monkeypatch, *, observed=False):
                 raise TimeoutError('crash after durable observation')
             return v3_only(data)(url)
         with pytest.raises(TimeoutError):
-            p.publish(tmp_path, intent=intent, routes={'dev': intent}, baseline_version='sites/site/versions/old',
+            publish(tmp_path, intent=intent, routes={'dev': intent}, baseline_version='sites/site/versions/old',
                       baseline_catalog_sha=sha, lease_bucket='bucket', request=remote, reader=reader, run=deploy)
     saved = json.loads((tmp_path / 'deployment-attempt-v2.json').read_text())
     assert saved['versionPropagation']['ownedVersionObserved'] is observed
@@ -638,6 +659,147 @@ def test_deployed_receipt_directory_is_synced_before_lease_release(tmp_path, mon
         p.reconcile(tmp_path, request=remote, reader=v3_only(data), confirmed_version='sites/site/versions/new')
     else:
         def deploy(*args, **kwargs): remote.version = 'new'; write_deploy_result(kwargs)
-        p.publish(tmp_path, intent=intent, routes={'dev': intent}, baseline_version='sites/site/versions/old',
+        publish(tmp_path, intent=intent, routes={'dev': intent}, baseline_version='sites/site/versions/old',
                   baseline_catalog_sha=sha, lease_bucket='bucket', request=remote, reader=v3_only(data), run=deploy)
     assert remote.deleted
+
+
+# --- incremental publication (the default route) ------------------------------------------
+
+HOSTING = 'https://firebasehosting.googleapis.com/v1beta1'
+
+
+def gzipped(data):
+    """The hash Hosting stores is over the gzip body the CLI (and this route) upload."""
+    return hashlib.sha256(gzip.compress(data, mtime=0)).hexdigest()
+
+
+class IncrementalRemote(Remote):
+    """The Hosting API surface the incremental route uses, plus the GCS lease."""
+
+    def __init__(self, live_files):
+        super().__init__()
+        self.live = dict(live_files)
+        self.populated = None
+        self.uploaded = []
+        self.cloned_from = None
+
+    def __call__(self, method, url, **kwargs):
+        if '/channels/live' in url:
+            return {'release': {'version': {'name': 'sites/site/versions/' + self.version}}}
+        if url.startswith('https://upload.example/x/'):
+            self.uploaded.append(url.rsplit('/', 1)[-1])
+            return {}
+        if url.startswith(HOSTING):
+            if url.endswith('/files?pageSize=1000'):
+                return {'files': [{'path': path, 'hash': value} for path, value in self.live.items()]}
+            if url.endswith(':clone'):
+                self.cloned_from = json.loads(kwargs['data'])['sourceVersion']
+                return {'name': 'sites/site/operations/op1'}
+            if url.endswith('/operations/op1'):
+                return {'done': True, 'response': {'name': 'sites/site/versions/new'}}
+            if url.endswith(':populateFiles'):
+                self.populated = json.loads(kwargs['data'])['files']
+                return {'uploadUrl': 'https://upload.example/x',
+                        'uploadRequiredHashes': [self.populated[path] for path in sorted(self.populated)]}
+            if 'updateMask=status' in url:
+                return {'status': 'FINALIZED'}
+            if '/releases?versionName=' in url:
+                self.version = 'new'
+                return {'name': 'sites/site/releases/1', 'version': {'name': 'sites/site/versions/new'}}
+            raise AssertionError('unexpected Hosting call: ' + method + ' ' + url)
+        return super().__call__(method, url, **kwargs)
+
+
+def incremental_args(tmp_path, data, sha, remote):
+    intent = {'schemaVersion': 'sermon-release-intent-v1', 'environment': 'dev', 'channel': 'dev',
+              'project': 'project', 'site': 'site', 'origin': 'https://site.web.app'}
+    return dict(intent=intent, routes={'dev': intent}, baseline_version='sites/site/versions/old',
+                baseline_catalog_sha=sha, lease_bucket='bucket', request=remote, reader=v3_only(data))
+
+
+def test_incremental_route_is_the_default_when_the_live_version_can_be_cloned(tmp_path):
+    intent, data, sha = setup(tmp_path)
+    remote = IncrementalRemote({'/multilingual-v3.json': gzipped(data)})
+    def run(*args, **kwargs):
+        pytest.fail('the CLI must not run when the live version can be cloned')
+    receipt = p.publish(tmp_path, run=run, **incremental_args(tmp_path, data, sha, remote))
+    assert receipt['status'] == 'deployed' and receipt['deployMethod'] == 'hosting_incremental_v1'
+    assert receipt['newVersion'] == 'sites/site/versions/new' and remote.cloned_from == 'sites/site/versions/old'
+    assert remote.populated is None and remote.uploaded == [] and remote.deleted
+    receipt_file = json.loads((tmp_path / 'incremental-publish.json').read_text())
+    assert receipt_file['clonedVersion'] == 'sites/site/versions/new'
+    state = json.loads((tmp_path / 'deployment-attempt-v2.json').read_text())['versionPropagation']
+    assert state['schemaVersion'] == 'sermon-hosting-version-propagation-v2'
+    assert state['evidenceSha256'] == hashlib.sha256((tmp_path / 'incremental-publish.json').read_bytes()).hexdigest()
+
+
+def test_incremental_uploads_only_the_changed_files(tmp_path):
+    intent, data, sha = setup(tmp_path)
+    (tmp_path / 'public' / 'media').mkdir()
+    unchanged = b'already published audio'
+    (tmp_path / 'public' / 'media' / 'same.mp3').write_bytes(unchanged)
+    report = json.loads((tmp_path / 'seal-report.json').read_text())
+    report['files'].append({'path': '/media/same.mp3', 'sha256': hashlib.sha256(unchanged).hexdigest(),
+                            'bytes': len(unchanged)})
+    (tmp_path / 'seal-report.json').write_text(json.dumps(report))
+    remote = IncrementalRemote({'/multilingual-v3.json': 'stale-hash',
+                                '/media/same.mp3': gzipped(unchanged)})
+    def run(*args, **kwargs):
+        pytest.fail('the CLI must not run when the live version can be cloned')
+    receipt = p.publish(tmp_path, run=run, **incremental_args(tmp_path, data, sha, remote))
+    assert receipt['status'] == 'deployed'
+    assert remote.populated == {'/multilingual-v3.json': gzipped(data)}
+    assert remote.uploaded == [gzipped(data)]
+    receipt_file = json.loads((tmp_path / 'incremental-publish.json').read_text())
+    assert [row['path'] for row in receipt_file['uploaded']] == ['/multilingual-v3.json']
+
+
+def test_snapshot_that_removes_published_files_falls_back_to_the_cli(tmp_path):
+    intent, data, sha = setup(tmp_path)
+    remote = IncrementalRemote({'/multilingual-v3.json': gzipped(data), '/stale.json': 'hash'})
+    def run(*args, **kwargs):
+        remote.version = 'new'; write_deploy_result(kwargs)
+    receipt = p.publish(tmp_path, run=run, **incremental_args(tmp_path, data, sha, remote))
+    assert receipt['status'] == 'deployed' and receipt['deployMethod'] == 'firebase_cli'
+    assert 'removes published files' in receipt['methodFallback']
+    assert (tmp_path / 'hosting-deploy-result.json').exists()
+    assert not (tmp_path / 'incremental-publish.json').exists()
+
+
+def test_live_version_without_a_cloneable_listing_falls_back_to_the_cli(tmp_path):
+    intent, data, sha = setup(tmp_path)
+    remote = IncrementalRemote({})
+    def run(*args, **kwargs):
+        remote.version = 'new'; write_deploy_result(kwargs)
+    receipt = p.publish(tmp_path, run=run, **incremental_args(tmp_path, data, sha, remote))
+    assert receipt['deployMethod'] == 'firebase_cli'
+    assert 'lists no files' in receipt['methodFallback']
+
+
+def test_pinned_incremental_method_refuses_to_fall_back(tmp_path):
+    intent, data, sha = setup(tmp_path)
+    remote = IncrementalRemote({'/multilingual-v3.json': gzipped(data), '/stale.json': 'hash'})
+    def run(*args, **kwargs):
+        pytest.fail('a pinned incremental publication must not silently use the CLI')
+    with pytest.raises(ValueError, match='Incremental publication refused'):
+        p.publish(tmp_path, run=run, method='incremental', **incremental_args(tmp_path, data, sha, remote))
+    attempt = json.loads((tmp_path / 'deployment-attempt-v2.json').read_text())
+    assert attempt['status'] == 'rebuild_required' and remote.deleted
+
+
+def test_incremental_receipt_is_bound_to_the_recorded_version(tmp_path):
+    intent, data, sha = setup(tmp_path)
+    remote = IncrementalRemote({'/multilingual-v3.json': gzipped(data)})
+    p.publish(tmp_path, run=None, **incremental_args(tmp_path, data, sha, remote))
+    # A crash after the release would leave the attempt unknown; the receipt is then evidence.
+    attempt_path = tmp_path / 'deployment-attempt-v2.json'
+    attempt = json.loads(attempt_path.read_text()); attempt['status'] = 'outcome_unknown'
+    attempt_path.write_text(json.dumps(attempt))
+    receipt_path = tmp_path / 'incremental-publish.json'
+    receipt = json.loads(receipt_path.read_text())
+    receipt['clonedVersion'] = 'sites/site/versions/other'
+    receipt_path.write_text(json.dumps(receipt))
+    with pytest.raises(ValueError, match='Propagation state differs'):
+        p.reconcile(tmp_path, request=remote, reader=v3_only(data),
+                    confirmed_version='sites/site/versions/new')

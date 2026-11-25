@@ -736,7 +736,9 @@ private class UITestContentProtocol: URLProtocol {
                 delayedResponse = work
                 if stopped { work.cancel() }
                 deliveryLock.unlock()
-                DispatchQueue.global(qos: .userInitiated).asyncAfter(deadline: .now() + 8, execute: work)
+                // Hosted simulators can take well over 8 s to reach the locate sheet,
+                // so leave enough room for the test to open it first.
+                DispatchQueue.global(qos: .userInitiated).asyncAfter(deadline: .now() + 20, execute: work)
             } else {
                 deliverNativeResponse(data, at: url)
             }

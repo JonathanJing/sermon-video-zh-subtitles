@@ -24,6 +24,16 @@ test('reject missing default week, duplicate week and unsafe media', () => {
     const c = fixture(); mutate(c); assert.throws(() => validateCatalog(c));
   }
 });
+test('reject an unknown content kind instead of mis-grouping a published page', () => {
+  for (const mutate of [c => c.weeks[0].contentKind = 'sermons', c => c.weeks[0].contentVariants = { ko: { contentKind: 'Podcast' } }]) {
+    const c = fixture(); mutate(c); assert.throws(() => validateCatalog(c), /Invalid content kind/);
+  }
+  // The declared kinds and the legacy absence of one stay valid.
+  for (const kind of ['sermon', 'podcast', 'clip', undefined]) {
+    const c = fixture(); c.weeks[0].contentKind = kind; validateCatalog(c);
+  }
+});
+
 test('reject subtitle overlaps and out of bounds cue times', () => {
   for (const cue of [{start: 19, end: 20, text: '重叠'}, {start: 20, end: 21, text: '越界'}]) {
     const c = fixture(); c.weeks[1].tracks[0].cues.push(cue); assert.throws(() => validateCatalog(c));

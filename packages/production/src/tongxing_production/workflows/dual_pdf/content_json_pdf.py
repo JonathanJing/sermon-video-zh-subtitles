@@ -1,14 +1,19 @@
 """Render a reading PDF from a published `/content/<pageId>/zh-Hans.json` full text.
 
-The PDF is a local convenience export of text that is already published; it does
-not create a new release identity and is not uploaded anywhere.
+The PDF is a convenience export of text that is already published; it does not
+create a new release identity. It stays local unless ``--gcs-uri`` names a
+private Cloud Storage object, in which case the PDF and its ``.qa.json`` go to
+that bucket and both are verified by MD5 before the command reports success.
 
     .venv/bin/python tools/ops/run.py workflows.dual_pdf.content_json_pdf --page-id <pageId>
+    .venv/bin/python tools/ops/run.py workflows.dual_pdf.content_json_pdf --page-id <pageId> \
+        --out <pdf> --gcs-uri gs://<bucket>/sundays/<date>/reading-pdf/<pdf>
 """
 
 from __future__ import annotations
 
 import argparse
+import base64
 import hashlib
 import json
 import math
@@ -27,6 +32,9 @@ REFERENCE_SCHEMA = "sermon-published-english-reference-v1"
 CONTENT_SCHEMAS = {"sermon-full-video-text-content-v2", "sermon-full-video-text-content-v3"}
 DURATION_TOLERANCE_SECONDS = 1.0
 SAFE_ID = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]*")
+# A destination object, not a store prefix: the QA report is written beside it.
+GCS_PDF_URI = re.compile(r"gs://([a-z0-9][a-z0-9._-]{1,220})/([^\s]+\.pdf)")
+GCS_UPLOAD_SCHEMA = "sermon-reading-pdf-gcs-upload-v1"
 
 
 def main() -> int:
@@ -66,9 +74,15 @@ def main() -> int:
         qa["englishReferenceSource"] = reference_origin
         qa["englishReferenceSha256"] = hashlib.sha256(reference_raw).hexdigest()
     qa_path = out.with_suffix(".qa.json")
-    qa_path.write_text(json.dumps(qa, ensure_ascii=False, indent=2, sort_keys=True), encoding="utf-8")
-    print(json.dumps({"status": "ok", "out": str(out), "qa": str(qa_path), "qaStatus": qa["status"],
-                      "cueCount": len(content.get("cues", []))}, ensure_ascii=False, indent=2))
+    write_qa(qa_path, qa)
+    upload = None
+    if args.gcs_uri:
+        upload = publish_reading_pdf(out, qa, qa_path, uri=args.gcs_uri)
+    summary = {"status": "ok", "out": str(out), "qa": str(qa_path), "qaStatus": qa["status"],
+               "cueCount": len(content.get("cues", []))}
+    if upload:
+        summary["gcs"] = upload
+    print(json.dumps(summary, ensure_ascii=False, indent=2))
     return 0
 
 
@@ -138,6 +152,98 @@ def font_identity() -> dict:
     if "path" in selected:
         selected["sha256"] = hashlib.sha256(Path(selected["path"]).read_bytes()).hexdigest()
     return selected
+
+
+def parse_gcs_pdf_uri(uri: str) -> tuple[str, str]:
+    """Split a ``gs://bucket/path/<name>.pdf`` destination into bucket and object name."""
+    match = GCS_PDF_URI.fullmatch(uri.strip())
+    if not match:
+        raise ValueError(f"--gcs-uri must name one gs://bucket/path/<name>.pdf object, got {uri!r}")
+    bucket, name = match.group(1), match.group(2)
+    if any(segment in ("", ".", "..") for segment in name.split("/")) or len(name.encode()) > 1024:
+        raise ValueError(f"--gcs-uri object path is unsafe: {uri!r}")
+    return bucket, name
+
+
+def gcs_pdf_uri_arg(value: str) -> str:
+    try:
+        parse_gcs_pdf_uri(value)
+    except ValueError as exc:
+        raise argparse.ArgumentTypeError(str(exc)) from exc
+    return value.strip()
+
+
+def qa_object_name(object_name: str) -> str:
+    """The QA report lands beside the PDF, sharing its stem."""
+    return object_name[: -len(".pdf")] + ".qa.json"
+
+
+def write_qa(path: Path, qa: dict) -> None:
+    path.write_text(json.dumps(qa, ensure_ascii=False, indent=2, sort_keys=True), encoding="utf-8")
+
+
+def gcs_client(client=None):
+    """google-cloud-storage client from Application Default Credentials, imported only when uploading."""
+    if client is not None:
+        return client
+    try:
+        from google.cloud import storage
+    except ImportError as exc:  # pragma: no cover - depends on the host's packages
+        raise SystemExit("--gcs-uri needs google-cloud-storage and Application Default Credentials; "
+                         "the PDF and QA report were written locally.") from exc
+    return storage.Client()
+
+
+def require_private_bucket(bucket_name: str, *, client) -> None:
+    """Refuse a bucket that could serve sermon text publicly; the weekly evidence store uses this rule."""
+    bucket = client.bucket(bucket_name)
+    bucket.reload()
+    config = bucket.iam_configuration
+    problems = []
+    if not config.uniform_bucket_level_access_enabled:
+        problems.append("uniform bucket-level access is off (per-object ACLs could publish the file)")
+    if config.public_access_prevention != "enforced":
+        problems.append(f"public access prevention is {config.public_access_prevention!r}, not 'enforced'")
+    if problems:
+        raise SystemExit(f"refusing to upload to gs://{bucket_name}: " + "; ".join(problems))
+
+
+def upload_verified(path: Path, *, bucket_name: str, object_name: str, content_type: str, client) -> dict:
+    """Upload one file and prove the stored bytes equal the local ones."""
+    data = path.read_bytes()
+    blob = client.bucket(bucket_name).blob(object_name)
+    try:
+        blob.upload_from_string(data, content_type=content_type)
+        blob.reload()
+    except Exception as exc:
+        raise SystemExit(f"uploading {path.name} to gs://{bucket_name}/{object_name} failed: {exc}") from exc
+    local_md5 = hashlib.md5(data).hexdigest()
+    remote_md5 = base64.b64decode(blob.md5_hash or "").hex()
+    if remote_md5 != local_md5:
+        raise SystemExit(f"gs://{bucket_name}/{object_name} holds different bytes than {path} "
+                         f"(remote md5 {remote_md5}, local md5 {local_md5}); treat the upload as failed.")
+    return {"uri": f"gs://{bucket_name}/{object_name}", "generation": str(blob.generation),
+            "sizeBytes": len(data), "md5Hex": remote_md5,
+            "sha256": hashlib.sha256(data).hexdigest(),
+            "contentType": blob.content_type or content_type, "verified": True}
+
+
+def publish_reading_pdf(pdf: Path, qa: dict, qa_path: Path, *, uri: str, client=None) -> dict:
+    """Upload the PDF, record that upload in the QA report, then upload the report beside it.
+
+    The PDF goes first so the QA report stored next to it already carries the
+    object identity and verified hash of the bytes it describes.
+    """
+    bucket_name, object_name = parse_gcs_pdf_uri(uri)
+    client = gcs_client(client)
+    require_private_bucket(bucket_name, client=client)
+    pdf_object = upload_verified(pdf, bucket_name=bucket_name, object_name=object_name,
+                                 content_type="application/pdf", client=client)
+    qa["gcs"] = {"schemaVersion": GCS_UPLOAD_SCHEMA, "pdf": pdf_object}
+    write_qa(qa_path, qa)
+    qa_object = upload_verified(qa_path, bucket_name=bucket_name, object_name=qa_object_name(object_name),
+                                content_type="application/json", client=client)
+    return {"schemaVersion": GCS_UPLOAD_SCHEMA, "pdf": pdf_object, "qa": qa_object}
 
 
 def fetch(url: str) -> bytes:
@@ -230,6 +336,10 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--no-english", action="store_true", help="Omit the English source under each paragraph.")
     parser.add_argument("--hide-timecodes", action="store_true")
     parser.add_argument("--font-path", type=Path, help="Optional CJK TTF/TTC/OTF font to embed.")
+    parser.add_argument("--gcs-uri", type=gcs_pdf_uri_arg, metavar="gs://BUCKET/PATH/NAME.pdf",
+                        help="Also upload the PDF, and its .qa.json beside it, to this private object and "
+                             "verify both by MD5. The bucket must keep uniform bucket-level access with "
+                             "public access prevention enforced; the command refuses otherwise.")
     return parser.parse_args()
 
 

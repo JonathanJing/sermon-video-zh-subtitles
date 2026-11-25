@@ -14,6 +14,9 @@ on:
         required: false
         default: Tongxing
         options: [Tongxing, TongxingBeta]
+  # Nightly run of main, including the non-gating live-data partition.
+  schedule:
+    - cron: "17 9 * * *"
 
 concurrency:
   group: tongxing-ios-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}
@@ -43,7 +46,7 @@ jobs:
           import subprocess
           from pathlib import PurePosixPath
 
-          if os.environ["GITHUB_EVENT_NAME"] == "workflow_dispatch":
+          if os.environ["GITHUB_EVENT_NAME"] in ("workflow_dispatch", "schedule"):
               scope = "native"
           else:
               base, head = os.environ["BASE_SHA"], os.environ["HEAD_SHA"]
@@ -133,13 +136,20 @@ jobs:
 
   ios-validation:
     needs: changes
-    if: needs.changes.outputs.scope == 'native' && (github.event_name == 'workflow_dispatch' || (github.base_ref == 'main' && !github.event.pull_request.draft))
-    runs-on: macos-15
-    timeout-minutes: 45
+    if: needs.changes.outputs.scope == 'native' && (github.event_name == 'workflow_dispatch' || github.event_name == 'schedule' || (github.base_ref == 'main' && !github.event.pull_request.draft))
+    # The app targets the iOS 26 SDK; the macos-15 image tops out at Xcode 16.4
+    # and the iOS 18.5 simulator, where several layout checks differ.
+    runs-on: macos-26
+    # remaining-listening alone runs about 40 minutes on the macos-26 image.
+    timeout-minutes: 75
+    # live-data reads the real Dev/Production catalog, so content changes can
+    # turn it red without a code change. It runs on dispatch and nightly only
+    # and never blocks the required native-client status.
+    continue-on-error: ${{ matrix.suite == 'live-data' }}
     strategy:
       fail-fast: false
       matrix:
-        suite: [app-system, transcript-collapse, remaining-listening]
+        suite: ${{ fromJSON(github.event_name == 'pull_request' && '["app-system","transcript-collapse","remaining-listening"]' || '["app-system","transcript-collapse","remaining-listening","live-data"]') }}
     env:
       TONGXING_VALIDATION_SCHEME: ${{ inputs.scheme || 'Tongxing' }}
       TONGXING_VALIDATION_SUITE: ${{ matrix.suite }}
@@ -193,7 +203,7 @@ jobs:
           methods = set(re.findall(r"\bfunc\s+(test\w+)\s*\(", Path("UITests/ListeningFlowUITests.swift").read_text()))
           regression = {
               "testDuoPosturePlaybackAndPanelsScreenshots",
-              "testPlaybackDockSwipeCollapsesWithoutPausingAndExpands",
+              "testPlaybackDockSwipeDoesNotCollapseOrPause",
               "testFullTranscriptReturnToCurrentKeepsPausePositionAndReadingMode",
               "testNormalTextTranscriptTimeTapAndAutomaticFollowing",
               "testTranscriptAutomaticallyFollowsNextCaption",
@@ -203,19 +213,38 @@ jobs:
               raise SystemExit("Update the regression partition when a selected test is renamed or removed.")
           remaining = methods - regression
           assert regression.isdisjoint(remaining) and regression | remaining == methods
+          # Tests that depend on the live Dev/Production catalog (not fixtures).
+          # ListeningFlow's live tests already skip unless opted in or Release.
+          live_classes = {"AppStoreScreenshotUITests"}
+          guide_class = "WeeklyGuidePreviewUITests"
+          if not (live_classes | {guide_class}) <= classes:
+              raise SystemExit("Update the live-data partition when a live test class is renamed or removed.")
+          guide_methods = set(re.findall(r"\bfunc\s+(test\w+)\s*\(", Path(f"UITests/{guide_class}.swift").read_text()))
+          live_guide = {name for name in guide_methods if name.startswith(("testLive", "testProduction"))}
+          if not live_guide:
+              raise SystemExit("WeeklyGuidePreviewUITests live tests were not found.")
+          fixture_guide = guide_methods - live_guide
+          app_classes = classes - {flow_class, guide_class} - live_classes
           groups = {
-              "app-system": ["TongxingTests"] + ["TongxingUITests/" + name for name in sorted(classes - {flow_class})],
+              "app-system": ["TongxingTests"] + ["TongxingUITests/" + name for name in sorted(app_classes)]
+                            + [f"TongxingUITests/{guide_class}/{name}" for name in sorted(fixture_guide)],
+              "live-data": ["TongxingUITests/" + name for name in sorted(live_classes)]
+                           + [f"TongxingUITests/{guide_class}/{name}" for name in sorted(live_guide)],
               "transcript-collapse": ["TongxingUITests/" + flow_class + "/" + name for name in sorted(regression)],
               "remaining-listening": ["TongxingUITests/" + flow_class + "/" + name for name in sorted(remaining)],
           }
           group = os.environ["TONGXING_VALIDATION_SUITE"]
           selected = groups[group]
           print("Full coverage partition:", sorted(classes), "ListeningFlow methods:", len(methods),
-                "regression:", len(regression), "remaining:", len(remaining), flush=True)
+                "regression:", len(regression), "remaining:", len(remaining),
+                "live-data guide methods:", sorted(live_guide), flush=True)
           print("Executing group:", group, selected, flush=True)
           command = ["./scripts/ios.sh", "test", "--developer-dir", subprocess.check_output(["xcode-select", "-p"], text=True).strip(),
                      "--scheme", os.environ["TONGXING_VALIDATION_SCHEME"], "--simulator", os.environ["TONGXING_VALIDATION_SIMULATOR"],
-                     "--derived-data", "DerivedData", "--artifacts-dir", "TestResults"]
+                     "--derived-data", "DerivedData", "--artifacts-dir", "TestResults",
+                     # One retry for a failed case: hosted simulators stall now and then.
+                     # A test that fails twice still fails the job.
+                     "--retry-failed", "2"]
           for target in selected:
               command.extend(["--only-testing", target])
           subprocess.run(command, check=True)
@@ -248,10 +277,11 @@ jobs:
           set -euo pipefail
           test "$CHANGE_RESULT" = success
           case "$SCOPE" in none|contract|native) ;; *) exit 1 ;; esac
-          if test "$EVENT_NAME" != workflow_dispatch && test "$IS_DRAFT" = true; then
+          case "$EVENT_NAME" in workflow_dispatch|schedule) MANUAL=true ;; *) MANUAL=false ;; esac
+          if test "$MANUAL" = false && test "$IS_DRAFT" = true; then
             test "$CONTRACT_RESULT" = skipped
             test "$IOS_RESULT" = skipped
-          elif test "$SCOPE" = native && { test "$BASE_BRANCH" = main || test "$EVENT_NAME" = workflow_dispatch; }; then
+          elif test "$SCOPE" = native && { test "$BASE_BRANCH" = main || test "$MANUAL" = true; }; then
             test "$IOS_RESULT" = success
             test "$CONTRACT_RESULT" = skipped
           elif test "$SCOPE" = contract || { test "$SCOPE" = native && test "$BASE_BRANCH" = dev; }; then

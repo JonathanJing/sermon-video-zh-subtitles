@@ -35,6 +35,7 @@ from datetime import datetime, timedelta, timezone
 import hashlib
 import html
 import json
+import os
 from pathlib import Path
 import re
 import shutil
@@ -50,9 +51,13 @@ for entry in (str(WT), str(WT / "packages/production/src")):
 from scripts import tongxing_host  # noqa: E402,F401  binds the production package ports
 from tongxing_production.delivery import baseline as bl, contract, publication as pub  # noqa: E402
 from tongxing_production.delivery import published_english_reference as english_reference  # noqa: E402
+from tongxing_production.delivery import snapshot_clone  # noqa: E402
+from tools.ops import set_catalog_default_page as default_page  # noqa: E402
 
 CONFIG_SCHEMA = HERE / "pages" / "page-config.schema.json"
 TITLE_TABLE_DEFAULT = "docs/series-sermon-titles.zh.md"
+READING_PDF_DEFAULT_BUCKET = "sermon-zh-artifacts-ai-for-god"
+READING_PDF_UNSAFE = re.compile(r"[\\/:*?\"<>|\s]+")
 PUBLISH_EVIDENCE = {
     "validate": "E1", "preflight": "E2", "check-title": "E2", "publish-check": "E2",
     "assets": "E1", "baseline": "E1", "stage1": "E1", "stage2": "E1",
@@ -80,6 +85,88 @@ def _mark_publish(cfg, cmd: str, event: str, **kwargs) -> None:
         safe_mark(run, f"l4.{cmd}", event, source="sfa_publish", **kwargs)
     except Exception:  # noqa: BLE001 - status is a sidecar
         pass
+
+
+def _export_report(cfg, publish_dir: Path | None) -> dict | None:
+    """Observation only: a passed readback leaves the production's run report and private evidence.
+
+    Writes the redacted digest under ignored ``artifacts/run-reports/`` and uploads the run
+    directories' text evidence to the private evidence store. Publishing the report stays a
+    separate command. ``SFA_RUN_REPORT=0`` turns it off. Never raises, never changes an exit code.
+    """
+    if cfg is None or os.environ.get("SFA_RUN_REPORT", "1") == "0":
+        return None
+    try:
+        from tools.development.export_production_report import export_production
+        seeds = [cfg.run_dir(locale) for locale in cfg.locales if cfg.run_dir(locale).is_dir()]
+        if not seeds:
+            return None
+        also = [path for path in (publish_dir, cfg.verdict_path.parent, cfg.english_source_path.parent)
+                if path is not None and Path(path).is_dir()]
+        result = export_production(seeds, also=also)
+        for problem in result.get("problems", []):
+            print(f"sfa_publish: run report: {problem}", file=sys.stderr)
+        for report in result.get("reports", []):
+            print(f"sfa_publish: run report written; publish it with tools/development/publish_run_report.sh {report}",
+                  file=sys.stderr)
+        return result
+    except Exception as exc:  # noqa: BLE001 - the publish result must stand
+        print(f"sfa_publish: run report not written ({exc}); "
+              "run tools/development/export_production_report.py by hand", file=sys.stderr)
+        return None
+
+
+def _reading_pdf_destination(cfg) -> tuple[Path, str] | None:
+    """Local path and private-bucket object for this page's reading PDF, or None if it cannot be named."""
+    date = str(cfg.date or "").strip()
+    title = READING_PDF_UNSAFE.sub("-", str(cfg.title or cfg.page_id)).strip("-")
+    if not (date and title):
+        return None
+    locale = "zh-Hans" if "zh-Hans" in cfg.locales else cfg.locales[0]
+    bucket = os.environ.get("TONGXING_ARTIFACT_BUCKET") or READING_PDF_DEFAULT_BUCKET
+    name = f"{date}-{title}-中英对照阅读版.pdf"
+    return cfg.run_dir(locale) / "reading-pdf" / name, f"gs://{bucket}/sundays/{date}/reading-pdf/{name}"
+
+
+def _export_reading_pdf(cfg, page_id: str | None = None) -> dict | None:
+    """Observation only: a passed readback also exports and archives this week's reading PDF.
+
+    The PDF is rendered from the published content (no retranslation) and stored with a verified
+    MD5 in the private bucket beside its QA report; the QA report lands in the run directory, so
+    the evidence store keeps that text copy too. ``SFA_READING_PDF=0`` turns it off. Never raises
+    and never changes an exit code: the publish result stands on its own gates.
+    """
+    if cfg is None or os.environ.get("SFA_READING_PDF", "1") == "0":
+        return None
+    destination = _reading_pdf_destination(cfg)
+    if destination is None:
+        return None
+    local, uri = destination
+    try:
+        local.parent.mkdir(parents=True, exist_ok=True)
+        result = subprocess.run(
+            [sys.executable, str(WT / "tools/ops/run.py"), "workflows.dual_pdf.content_json_pdf",
+             "--page-id", page_id or cfg.page_id, "--base-url", cfg.origin(),
+             "--out", str(local), "--gcs-uri", uri],
+            capture_output=True, text=True, timeout=900)
+        if result.returncode != 0:
+            line = ((result.stderr or result.stdout).strip().splitlines() or ["no output"])[-1]
+            print(f"sfa_publish: reading PDF not archived ({line})", file=sys.stderr)
+            return None
+        report = json.loads(result.stdout)
+        upload = report.get("gcs") or {}
+        if not (report.get("qaStatus") == "pass"
+                and (upload.get("pdf") or {}).get("verified") is True
+                and (upload.get("qa") or {}).get("verified") is True):
+            print(f"sfa_publish: reading PDF left at {local} without a verified archive object; "
+                  "rerun the export with --gcs-uri", file=sys.stderr)
+            return None
+        print(f"sfa_publish: reading PDF archived at {upload['pdf']['uri']}", file=sys.stderr)
+        return report
+    except Exception as exc:  # noqa: BLE001 - the publish result must stand
+        print(f"sfa_publish: reading PDF not archived ({exc}); run "
+              "tools/ops/run.py workflows.dual_pdf.content_json_pdf by hand", file=sys.stderr)
+        return None
 
 
 def sha_file(path: Path) -> str:
@@ -767,16 +854,19 @@ def cmd_validate(cfg: PageConfig) -> dict:
     return result
 
 
-def cmd_assets(cfg: PageConfig, out: Path) -> dict:
+def cmd_assets(cfg: PageConfig, out: Path, *, allow_missing_journal_gates: bool = False) -> dict:
     contract.require(not out.exists(), "Use a new assets directory")
     cfg.require_inputs()
     esp, esp_sha = cfg.english_source()
     media = esp["source"]["media"]["sha256"]
     contract.require(hashlib.sha256(cfg.source_url.encode()).hexdigest() == esp["source"]["sourceUrlHash"],
                      "Source URL differs from the source package")
+    # Repeat the preflight's receipt and journal gates here: a track re-rendered after the
+    # review (repair, lag loop, finish_run) must not ship as human_reviewed because
+    # preflight ran earlier or was skipped.
+    _receipt_checks(cfg)
+    _journal_checks(cfg, allow_missing=allow_missing_journal_gates)
     verdict = cfg.verdict_path
-    contract.require(json.loads(verdict.read_text(encoding="utf-8"))["verdict"] == "approved",
-                     "Human review verdict is not approved")
     # The page-level banner is a same-origin asset (the CSP allows `script-src 'self'` only):
     # WeChat cannot launch the app from its webview, so the page explains the browser route.
     script = out / f"public/pages/{cfg.page_id}/app-link.js"
@@ -853,6 +943,9 @@ def cmd_assets(cfg: PageConfig, out: Path) -> dict:
                    "contentStatus": "human_reviewed", "audioStatus": "human_reviewed", "reviewMode": "formal",
                    "date": cfg.date, "title": meta["title"], "series": meta["series"], "scripture": meta["scripture"],
                    "speaker": cfg.speakers, "durationSeconds": cfg.window_end, "audioDurationSeconds": audio_seconds,
+                   # 2026-11-21: sermon pages carry the approved source window so the field-audio
+                   # alignment sidecar can bind it; the older pages already had this block.
+                   "sourceWindow": source_window_block(cfg.window_start, cfg.window_end, media),
                    "englishSourcePackageJsonSha256": esp_sha, "sourceMediaSha256": media,
                    "targetLanguageCandidateJsonSha256": candidate_sha,
                    "targetLanguageAudioPackageJsonSha256": audio_sha,
@@ -902,13 +995,25 @@ def cmd_assets(cfg: PageConfig, out: Path) -> dict:
     return summary
 
 
+def source_window_block(window_start: float, window_end: float, media_sha256: str) -> dict:
+    """The approved source window a sermon page carries for the field-audio alignment sidecar.
+
+    2026-11-21: sfa_publish only ever published podcast pages, so its content omitted this block;
+    the v4/v5 catalog then refused the fingerprint binding with "Fingerprint source/window mismatch".
+    Keep one helper so the shape cannot drift from what published_alignment_catalog._window_matches
+    expects.
+    """
+    return {"schemaVersion": "sermon-original-recording-window-v1",
+            "mediaSha256": media_sha256, "startSeconds": window_start, "endSeconds": window_end}
+
+
 # --- staging and deployment ----------------------------------------------------
 
 def stage(cfg: PageConfig, base: Path, out: Path, add_public: Path | None,
           files: dict[str, bytes] | None = None, replace: frozenset[str] = frozenset()) -> None:
     contract.require(not out.exists(), "Use a new snapshot directory")
     out.mkdir(parents=True)
-    shutil.copytree(base / "public", out / "public")
+    snapshot_clone.clone_tree(base / "public", out / "public")
     shutil.copyfile(base / "firebase.json", out / "firebase.json")
     shutil.copyfile(base / "baseline-receipt.json", out / "baseline-receipt.json")
     added = []
@@ -990,12 +1095,41 @@ def cmd_verify(cfg: PageConfig, assets: Path, out: Path) -> dict:
             "failed": [check["path"] for check in checks if not check["pass"]]}
 
 
+# The page config only allows a technical media type of ``podcast``/``clip``,
+# so sermon pages published through this driver were tagged ``podcast`` and the
+# iOS picker listed them under the podcast tab (2026-11-16 incident). The
+# locale-independent kind is derived from the authoring category instead.
+CONTENT_KIND_BY_CATEGORY_LABEL = {
+    "Sunday sermon": "sermon",
+    "Archive edition": "sermon",
+    "Sermon clip": "clip",
+    "Sermon Podcast": "podcast",
+    "Podcast": "podcast",
+    "Experiment clip": "clip",
+}
+
+
+def content_kind(category: dict) -> str:
+    labels = (category or {}).get("labels") or {}
+    for label in (labels.get("en"), labels.get("zh-Hans")):
+        if label in CONTENT_KIND_BY_CATEGORY_LABEL:
+            return CONTENT_KIND_BY_CATEGORY_LABEL[label]
+    raise SystemExit(f"unknown display category {sorted(labels.values())}: "
+                     "add it to CONTENT_KIND_BY_CATEGORY_LABEL rather than guessing")
+
+
 def _page_entry(cfg: PageConfig, esp: dict, esp_sha: str, targets: dict) -> dict:
-    return {"id": cfg.page_id, "date": cfg.date, "title": cfg.title,
-            "defaultTargetLocale": cfg.default_target_locale, "displayCategory": cfg.category,
-            "mediaType": cfg.media_type, "sourceLocale": "en", "sourceIdentitySha256": esp_sha,
-            "sourceMediaSha256": esp["source"]["media"]["sha256"], "sourceMode": cfg.source_mode,
-            "sourceUrl": cfg.source_url, "targets": targets}
+    entry = {"id": cfg.page_id, "date": cfg.date, "title": cfg.title,
+             "defaultTargetLocale": cfg.default_target_locale, "displayCategory": cfg.category,
+             "contentKind": content_kind(cfg.category),
+             "sourceLocale": "en", "sourceIdentitySha256": esp_sha,
+             "sourceMediaSha256": esp["source"]["media"]["sha256"], "sourceMode": cfg.source_mode,
+             "sourceUrl": cfg.source_url, "targets": targets}
+    # Keep the technical tag only where it means something: the publish gate relaxes
+    # its two-clock check for podcast pages without alignment.
+    if entry["contentKind"] == "podcast":
+        entry["mediaType"] = cfg.media_type
+    return entry
 
 
 def build_reference(cfg: PageConfig, public: Path) -> dict:
@@ -1031,9 +1165,9 @@ def cmd_stage2(cfg: PageConfig, stage1: Path, assets: Path, evidence_path: Path,
     page = _page_entry(cfg, esp, esp_sha, targets)
     v5 = copy.deepcopy(old[contract.CATALOG_V5])
     v5["pages"].append(page)
-    # The weekly release contract appends the page and makes it the catalog default
-    # (docs/tongxing-weekly-release.zh.md, 合并 row). The v4/v3 projections inherit it.
-    v5["defaultPageId"] = cfg.page_id
+    # The default is the newest published sermon (docs/catalog-content-kind.zh.md): a podcast,
+    # a clip or an older sermon published late never takes it. The v4/v3 projections inherit it.
+    v5["defaultPageId"] = default_page.latest_sermon(v5)["id"]
     contract.validate_catalog_schema(v5)
     v4 = contract.project_legacy_catalog_v4(v5)
     v3 = contract.project_human_catalog(v4)
@@ -1053,15 +1187,28 @@ def cmd_stage2(cfg: PageConfig, stage1: Path, assets: Path, evidence_path: Path,
     for name, value in ((contract.CATALOG_V5, v5), (contract.CATALOG_V4, v4), (contract.CATALOG_V3, v3)):
         files[contract.CATALOG_FILES[name]] = (
             json.dumps(value, ensure_ascii=False, indent=2, sort_keys=True) + "\n").encode()
-    stage(cfg, stage1, out, None, files)
-    result = {"staged": str(out), "changed": sorted(files), "defaultPageId": v3["defaultPageId"]}
+    replace = frozenset()
+    reference = None
     if with_english:
-        reference = build_reference(cfg, out / "public")
+        # The reference binds the new release, content and captions hashes, so it is built from
+        # a probe snapshot that already carries them. It then goes into the final snapshot through
+        # `files`, so seal-report.json covers it and the guarded publisher accepts the snapshot.
+        contract.require(not out.exists(), "Use a new snapshot directory")
+        probe = out.with_name(out.name + ".english-probe")
+        contract.require(not probe.exists(), "Remove the leftover probe snapshot: " + str(probe))
+        try:
+            stage(cfg, stage1, probe, None, files)
+            reference = build_reference(cfg, probe / "public")
+        finally:
+            shutil.rmtree(probe, ignore_errors=True)
         rel = f"english-reference/{cfg.page_id}.json"
-        target = out / "public" / rel
-        target.parent.mkdir(parents=True, exist_ok=True)
-        target.write_bytes((json.dumps(reference, ensure_ascii=False, indent=2) + "\n").encode())
-        result["englishReference"] = {"path": "/" + rel, "sha256": sha_file(target),
+        files[rel] = (json.dumps(reference, ensure_ascii=False, indent=2) + "\n").encode()
+        replace = frozenset([rel])
+    stage(cfg, stage1, out, None, files, replace=replace)
+    result = {"staged": str(out), "changed": sorted(files), "defaultPageId": v3["defaultPageId"]}
+    if reference is not None:
+        rel = f"english-reference/{cfg.page_id}.json"
+        result["englishReference"] = {"path": "/" + rel, "sha256": sha_file(out / "public" / rel),
                                       "blocks": {locale: len(value["blocks"])
                                                  for locale, value in reference["targets"].items()}}
     return result
@@ -1203,6 +1350,8 @@ def build_parser() -> argparse.ArgumentParser:
     check.add_argument("--require-english-reference", action="store_true")
     check.add_argument("--require-announcements", action="store_true")
     assets = sub.add_parser("assets"); assets.add_argument("--out", type=Path, required=True)
+    assets.add_argument("--allow-missing-journal-gates", action="store_true",
+                        help="legacy run without the l1.preflight journal gate")
     baseline = sub.add_parser("baseline"); baseline.add_argument("--out", type=Path, required=True)
     baseline.add_argument("--cache-public", type=Path); baseline.add_argument("--cache-receipt", type=Path)
     stage1 = sub.add_parser("stage1")
@@ -1254,7 +1403,7 @@ def main(argv=None) -> int:
                                        require_announcements=args.require_announcements,
                                        assets=args.assets)
         elif args.cmd == "assets":
-            result = cmd_assets(cfg, args.out)
+            result = cmd_assets(cfg, args.out, allow_missing_journal_gates=args.allow_missing_journal_gates)
         elif args.cmd == "baseline":
             result = bl.baseline(args.out, cache_public=args.cache_public, cache_receipt=args.cache_receipt,
                                  environment=cfg.environment,
@@ -1281,6 +1430,9 @@ def main(argv=None) -> int:
     ok = bool(result.get("ok", True))
     if ok:
         _mark_publish(cfg, args.cmd, "finished", evidence_level=PUBLISH_EVIDENCE.get(args.cmd, "E1"))
+        if args.cmd == "readback":
+            _export_report(cfg, args.stage2.parent)
+            _export_reading_pdf(cfg)
     else:
         _mark_publish(cfg, args.cmd, "failed", error_class="gate",
                       message=str(result)[:300], resume=f"rerun sfa_publish.py {args.cmd}")
