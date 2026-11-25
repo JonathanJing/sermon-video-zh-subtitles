@@ -15,9 +15,11 @@ public struct SermonHeading: Sendable, Equatable {
     public let title: String
     public let series: String?
     public let speaker: String?
+    public let scripture: String?
     public let edition: String?
 
-    public init(title: String, series: String? = nil, speaker: String? = nil, displayEdition: String? = nil) {
+    public init(title: String, series: String? = nil, speaker: String? = nil, scripture: String? = nil,
+                displayEdition: String? = nil) {
         func nonempty(_ value: String?) -> String? {
             guard let text = value?.trimmingCharacters(in: .whitespacesAndNewlines), !text.isEmpty else { return nil }
             return text
@@ -41,7 +43,16 @@ public struct SermonHeading: Sendable, Equatable {
         self.title = nonempty(displayed) ?? title
         self.series = series
         self.speaker = nonempty(speaker)
+        self.scripture = nonempty(scripture)
         self.edition = nonempty(displayEdition) ?? edition
+    }
+
+    /// The series line, shown once. A title published as "series · title" (the approved
+    /// podcast format) keeps its wording, so the separate series line is left out. Web and
+    /// the static page follow the same rule (`headingLines` in listening-web/catalog.mjs).
+    public var displayedSeries: String? {
+        guard let series, title.hasPrefix(series + " · ") else { return series }
+        return nil
     }
 
     public func details(date: String) -> String {

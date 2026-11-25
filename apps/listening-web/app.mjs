@@ -5,7 +5,7 @@ import { t, getLocale, setLocale, onLocaleChange, localizeDOM } from "/i18n.mjs"
 import { localizeWeek } from "/content-locales.mjs";
 import { messages as appMessages } from "/locales-app.mjs";
 import { boundedTime, formatTime, cueIndex } from "/timing.mjs";
-import { validateCatalog, chooseWeek, parseTimecode, downloadFilename, engagementWeek, buildCatalogNavigation, catalogNavigationEnvironment, bilingualCueRows, isFormalPlayback, isMachineChecked, isPodcastWeek, diagnosticPresentation } from "/catalog.mjs";
+import { validateCatalog, chooseWeek, parseTimecode, downloadFilename, engagementWeek, buildCatalogNavigation, catalogNavigationEnvironment, bilingualCueRows, isFormalPlayback, isMachineChecked, isPodcastWeek, diagnosticPresentation, headingLines } from "/catalog.mjs";
 import { createFeedback } from "/feedback.mjs";
 import { createUsage } from "/usage.mjs";
 import { mountFingerprintUI, playAlignmentAudio } from "/fingerprint-ui.mjs";
@@ -194,14 +194,22 @@ function renderWeekOptions() {
   }
   if (week) $("week-select").value = week.id;
 }
+// Same header lines as iOS and the static page: series, title, date · speaker, scripture.
+// The source label stays on the source link button, not in the series line.
+function renderHeading(view) {
+  const lines = headingLines(view.title, view.series);
+  $("series").textContent = lines.series;
+  $("series").hidden = !lines.series;
+  $("title").textContent = lines.title || view.title || "";
+  $("speaker").textContent = view.speaker || "";
+  $("scripture").textContent = view.scripture || "";
+}
 function renderWeekLabels() {
   if (!week) return;
   const view = displayWeek();
   renderContentLanguages();
   renderCategories();
-  $("title").textContent = view.title;
-  $("series").textContent = [view.series, view.sourceLabel].filter(Boolean).join(" · ");
-  $("speaker").textContent = view.speaker; $("scripture").textContent = view.scripture;
+  renderHeading(view);
   $("central-message").textContent = view.centralMessage;
   $("audio-notice").textContent = diagnosticNotice() || view.audioNotice;
   // The release's own-locale disclosure stays beside the review statement.
@@ -762,10 +770,7 @@ function selectWeek(id) {
   if (week?.id === nextWeek.id && week?.targetLocale === nextWeek.targetLocale) return;
   week = nextWeek;
   $("week-select").value = week.id;
-  $("title").textContent = week.title;
-  $("series").textContent = [week.series, week.sourceLabel].filter(Boolean).join(" · ");
-  $("speaker").textContent = week.speaker;
-  $("scripture").textContent = week.scripture;
+  renderHeading(week);
   $("cover-number").textContent = week.number;
   $("date").textContent = week.date.replaceAll("-", ".");
   $("edition-label").textContent = editionLabel();
