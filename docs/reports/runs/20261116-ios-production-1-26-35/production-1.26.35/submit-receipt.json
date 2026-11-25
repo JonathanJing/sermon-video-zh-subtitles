@@ -1,0 +1,20 @@
+{
+  "before": {
+    "versionString": "1.26.35",
+    "appStoreState": "PREPARE_FOR_SUBMISSION",
+    "releaseType": "MANUAL"
+  },
+  "submissionId": "cbfaf5e0-ed81-4ada-8eb3-f57764358164",
+  "after": {
+    "submission": {
+      "submittedDate": "2026-11-16T18:11:42.194Z",
+      "state": "WAITING_FOR_REVIEW"
+    },
+    "version": {
+      "versionString": "1.26.35",
+      "appStoreState": "WAITING_FOR_REVIEW",
+      "releaseType": "MANUAL",
+      "earliestReleaseDate": null
+    }
+  }
+}
