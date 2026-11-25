@@ -1,0 +1,162 @@
+{
+  "input": "artifacts/catalog-audit/ai-for-god-sermon-audio-v3.json",
+  "schemaVersion": "sermon-multilingual-catalog-v3",
+  "pages": 14,
+  "changed": 14,
+  "changes": [
+    {
+      "pageId": "resi-20261004-69ba7a66",
+      "before": {
+        "contentKind": null,
+        "mediaType": null
+      },
+      "after": {
+        "contentKind": "sermon",
+        "mediaType": null
+      }
+    },
+    {
+      "pageId": "if-i-had-more-time-jesus-is-worthy",
+      "before": {
+        "contentKind": null,
+        "mediaType": "podcast"
+      },
+      "after": {
+        "contentKind": "podcast",
+        "mediaType": "podcast"
+      }
+    },
+    {
+      "pageId": "2026-09-27-weekend-sermon-drive-530",
+      "before": {
+        "contentKind": null,
+        "mediaType": null
+      },
+      "after": {
+        "contentKind": "sermon",
+        "mediaType": null
+      }
+    },
+    {
+      "pageId": "resi-20261018-broadcast",
+      "before": {
+        "contentKind": null,
+        "mediaType": null
+      },
+      "after": {
+        "contentKind": "sermon",
+        "mediaType": null
+      }
+    },
+    {
+      "pageId": "if-i-had-more-time-jesus-sends-and-resurrects-his-own",
+      "before": {
+        "contentKind": null,
+        "mediaType": "podcast"
+      },
+      "after": {
+        "contentKind": "podcast",
+        "mediaType": "podcast"
+      }
+    },
+    {
+      "pageId": "if-i-had-more-time-jesus-promises",
+      "before": {
+        "contentKind": null,
+        "mediaType": "podcast"
+      },
+      "after": {
+        "contentKind": "podcast",
+        "mediaType": "podcast"
+      }
+    },
+    {
+      "pageId": "revelation-jesus-wins-20261025",
+      "before": {
+        "contentKind": null,
+        "mediaType": "podcast"
+      },
+      "after": {
+        "contentKind": "sermon",
+        "mediaType": null
+      }
+    },
+    {
+      "pageId": "if-i-had-more-time-jesus-wins",
+      "before": {
+        "contentKind": null,
+        "mediaType": "podcast"
+      },
+      "after": {
+        "contentKind": "podcast",
+        "mediaType": "podcast"
+      }
+    },
+    {
+      "pageId": "revelation-jesus-marks-his-own-20261101",
+      "before": {
+        "contentKind": null,
+        "mediaType": "podcast"
+      },
+      "after": {
+        "contentKind": "sermon",
+        "mediaType": null
+      }
+    },
+    {
+      "pageId": "if-i-had-more-time-jesus-marks-his-own",
+      "before": {
+        "contentKind": null,
+        "mediaType": "podcast"
+      },
+      "after": {
+        "contentKind": "podcast",
+        "mediaType": "podcast"
+      }
+    },
+    {
+      "pageId": "revelation-jesus-is-just-20261108",
+      "before": {
+        "contentKind": null,
+        "mediaType": "podcast"
+      },
+      "after": {
+        "contentKind": "sermon",
+        "mediaType": null
+      }
+    },
+    {
+      "pageId": "if-i-had-more-time-jesus-is-just",
+      "before": {
+        "contentKind": null,
+        "mediaType": "podcast"
+      },
+      "after": {
+        "contentKind": "podcast",
+        "mediaType": "podcast"
+      }
+    },
+    {
+      "pageId": "revelation-jesus-is-better-20261115",
+      "before": {
+        "contentKind": null,
+        "mediaType": "podcast"
+      },
+      "after": {
+        "contentKind": "sermon",
+        "mediaType": null
+      }
+    },
+    {
+      "pageId": "if-i-had-more-time-jesus-is-better-than-this-world",
+      "before": {
+        "contentKind": null,
+        "mediaType": "podcast"
+      },
+      "after": {
+        "contentKind": "podcast",
+        "mediaType": "podcast"
+      }
+    }
+  ]
+}

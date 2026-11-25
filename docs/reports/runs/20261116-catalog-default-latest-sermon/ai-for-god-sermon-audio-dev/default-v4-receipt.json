@@ -1,0 +1,8 @@
+{
+  "policy": "latest-sermon",
+  "previousDefaultPageId": "resi-20261018-broadcast",
+  "defaultPageId": "revelation-jesus-wins-20261025",
+  "defaultPageDate": "2026-10-25",
+  "changed": true,
+  "input": "artifacts/catalog-audit/ai-for-god-sermon-audio-dev-cur-v4.json"
+}
