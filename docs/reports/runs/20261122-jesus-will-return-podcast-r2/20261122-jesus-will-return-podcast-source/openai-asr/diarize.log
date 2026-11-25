@@ -1,0 +1,5 @@
+[13:50:25] intro diarize speakers: {'Eric Geiger': 76, 'A': 46} wall=93.9s
+[13:50:25] second-host reference from 50.09-58.99s (label A): " yeah and you know what there's a whole lot did you know there are more lyrics than just a"
+[13:57:37] diarize chunk 0: 572 segments, 429.4s wall, 0-1355s
+[14:02:29] diarize chunk 1: 372 segments, 289.8s wall, 1345-2231s
+[14:02:29] diarize: 943 segments -> ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/worktrees/week12-podcast/artifacts/sentence-first-agent/20261122-jesus-will-return-podcast-source/openai-asr/openai-diarize-raw.json
