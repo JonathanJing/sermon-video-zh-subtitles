@@ -1,0 +1,18 @@
+# Run digest 20261116-ios-picker-flat-lists
+
+Generated 2026-11-16T17:12:29+00:00. Redacted copies only; source hashes are in manifest.json.
+
+## 20261116T090924-test-b5e28522
+
+Source: `~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.agents/worktrees/picker-content-tabs/artifacts/tongxing-ios/2026-11-16/cli/20261116T090924-test-b5e28522`
+
+
+Error-like log lines (first 5 per log):
+
+- `run.log`: ... 1084 lines omitted; 13 error-like lines, 13 kept below ...
+- `run.log`: [line 429] ~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/.agents/worktrees/picker-content-tabs/apps/tongxing-ios/App/MicrophoneCapture.swift:259:92: warning: main actor-isolated static prope
+- `run.log`: [line 436]     |                                                                                            `- warning: main actor-isolated static property 'startupSeconds' can not be referenced from
+- `run.log`: [line 551]     export CLANG_WARN_DIRECT_OBJC_ISA_USAGE\=YES_ERROR
+- `run.log`: [line 560]     export CLANG_WARN_OBJC_ROOT_CLASS\=YES_ERROR
+
+Not copied: 2 .0~-rux8CBxbfEQlxDxS2FBbcbbuGjp8ashUAhWFnTJB8FNm4P8pNg9JGVq2LK-gKIrFynDwi45_7EOvyuVwBxzug==, 2 .0~4VqMqsI5lOfxRppnud6-VDWcNsU8J7VgFCJfW2dXPwOcAkvU-I8Um5yp9n0Zv6nr3VmcxYggaVMDFfR0U_vjKw==, 2 .0~4qWbIARnHy2CsNZ5ene-J-Eq1v-oVQOW5pdDY3Z6BYcgC7z8sDkrU_iTJBT2ZzVb32sfNItkF9qTbexb7pm2rA==, 2 .0~8TsPXHDNGVK5J62eHD-FhQonGWdBWYDgC7-e8UAgBWUsgpRTN_VGptPMdHHfg7LKyj7B4yRmK37r3IlVtGsTSA==, 2 .0~AFu259otz9I4J1eZ5lhRaCVhzjzKWY8e6VecjumJx87xydRVocc0du5NFRJxBzRoVqeMD13YUW8uw4c1fB6OSw==, 2 .0~E9MCIpTb5rLeYOzIsSiVPBwNS509a_nrIIaVetRUJdNZRMLlPgyTp-FSv3m8BnlUbCrf6bBVnO9b3vb21vditA==, 2 .0~IkCBfJqyuI-f_vkPR8tnly7Pr534LBSc2yfCZKm2rmR9royg0gpQZ-IX8kuhLepBnlxv3c6udeChWjklns3AYQ==, 2 .0~Ld4h4xjM9YKiwsG6uaZb_TKzgm-Dv4856hhyo2uO3CDuxjARPIbxY0yC3l-0hfq-UzSKQtmwH-QwEBR9ZM2mBQ==, 2 .0~Un0PXbM8KzNQN01xoRCEnXXnITNMV9bjTMtB7lJu4rgkB0TGaxA8o11wXYJBJ5abcIMZLy7XFcbcuOclREUBow==, 2 .0~UqTKJURRSSdHKbh7xezHZiZXwmNvv9Kmct_3gbaZbkwIn2p9dDRLBll72WxfHNtxhMyge0RozikKMaoSVYcZjQ==, 2 .0~YhcDdhEpFxul1EF2f-WX4H_9KwzsNY1w2xwzY3F38Pnh8YOsFak6e6mRcBJoU4UFCWhPu8tNHvL5Icp8DPMc1w==, 2 .0~__9SteqLJSZuI_7ftjWCNbRhcAEii-CfHdVCvv3P-wGeXQ7T5QTfpoNTVkjvZKhs9UMf2QD6V-YsZpoTNe0Zqg==, 2 .0~aKp4CCIFTUQFbRatJ_orsAQvWWNpV8168lUTWut7v8F9gQFLCykTxhaOBO5IxYZHwo8-r591uCIvJaou9DrCoA==, 2 .0~aO32p19_1gJ3GJZ-4SoatdWWNDaU97cnpvi061YGNc8Vq37d_LmeK8bqn5H9ku5Ccl2jAoPHc7PLQDKptM8pWw==, 2 .0~c-x58RauLI96OcKB_wuhsrgMkUc0fZ6r2ErrigpC_OVsAGvY6LtcvXBFAaJwY6tEu0--m3Ln6U86ISIMnmwNpg==, 2 .0~cPrA2-hMUjqNzruxlAesCgkJtW0AKH2BC-vOmkZ8iGV0A2_KuYo1h7DTYcoq4T_jLXJ-lc7AfJoGz5MkiwKr3g==, 2 .0~d509jgHgZte0Vw_yYYFHo_yJ8PvxtdMkwBhC93V_9LdwtgaHZhQoxWwTVp0jW18bu8jN2ilGYv8nOqFf_cDzrA==, 2 .0~fHiAau2H4VlAFdtYP2jgchwf-LkKTegqvpoeW6BoV9saRZo0H-Lecej2pxB4R0Okmiy0ug7_nJfhe5kskDCh5g==, 2 .0~hIIh1WixlZOr2wws4JGX2hSkzd3T_PTE05ggBmahzZjrV2z91rZ5yXPVQbPs1XpKSPjLJyWB0xGFz0JOtluSrw==, 2 .0~iCTXDnEpNqhEnMRNpWsKXfnmldROIu5YPstxaEtx6Vm1popo0jpv_wsVtDCAE5P65Olgj2-59vodbrr0EEgZ0A==, 2 .0~oRMi0sbQLktfDDDGUS-SqBKpdDiD6HCztVES_ShfGr0KVcYENoIq7y9oUSDWL5B_P2gkdtWG8JEsJLxPbdWOZA==, 2 .0~ru2L71Hypl3RgwwHAL5s4TWBs34KzQ5dGGvQOaShhuddqy0Nb61HsAxMjIJNhkxo7L_VUtQl1bEMtbUXwDyseA==, 2 .0~tlQH3HmNXewIW6n9VlLpM1mVl79KWzD_r1Y0xTiMFCMDLQQeMniCM9zJILcYeqYt-wF02XgqKYnUW0oZ_no2Yg==, 1 .json, 1 .plist, 1 .sqlite3
