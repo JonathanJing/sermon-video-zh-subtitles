@@ -1,0 +1,252 @@
+{
+ "schemaVersion": "sermon-review-gate-v1",
+ "gateId": "l0.decisions",
+ "kind": "decisions",
+ "production": "demo-20261129-sample",
+ "locale": null,
+ "title": "开工确认",
+ "state": "open",
+ "revision": 1,
+ "openedAt": "2026-11-29T03:40:00+00:00",
+ "bindings": {
+  "sourceMediaSha256": "a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1",
+  "defaultsConfigSha256": "b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2"
+ },
+ "labels": {
+  "machineGenerated": true,
+  "humanApproval": false
+ },
+ "episode": {
+  "sunday": "2026-11-29",
+  "title": "演示讲题",
+  "speaker": "示例讲员"
+ },
+ "viewer": {
+  "login": "reviewer@example.com",
+  "name": "演示审核者",
+  "source": "demo"
+ },
+ "assetsBase": "files/",
+ "data": {
+  "source": {
+   "fileName": "Sample_Message_1080.mp4",
+   "sizeBytes": 1003217330,
+   "durationSeconds": 2144.1,
+   "uploadedAt": "2026-11-29T03:30:02+00:00",
+   "sha256": "a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1",
+   "fileUrl": null,
+   "attribution": "演示数据，不是真实来源。真实页面这里写英文来源的署名与非隶属声明。",
+   "authorization": "默认配置里的来源自动开工授权（2026-11-25 用户决定）"
+  },
+  "choices": [
+   {
+    "key": "form",
+    "label": "形态",
+    "multi": false,
+    "value": "full",
+    "options": [
+     {
+      "value": "full",
+      "label": "整期"
+     },
+     {
+      "value": "clip",
+      "label": "10 分钟片段"
+     }
+    ]
+   },
+   {
+    "key": "locales",
+    "label": "语言",
+    "multi": true,
+    "value": [
+     "zh-Hans",
+     "ko",
+     "es"
+    ],
+    "options": [
+     {
+      "value": "zh-Hans",
+      "label": "中文"
+     },
+     {
+      "value": "ko",
+      "label": "韩语"
+     },
+     {
+      "value": "es",
+      "label": "西班牙语"
+     }
+    ]
+   },
+   {
+    "key": "sync",
+    "label": "同步",
+    "multi": false,
+    "value": "synced",
+    "options": [
+     {
+      "value": "synced",
+      "label": "跟视频同步",
+      "help": "每句放在英文的时间点上。放不下时先去静音，再逐句加速到 1.15 倍以内，最后才做最小删字。"
+     },
+     {
+      "value": "independent",
+      "label": "独立音轨",
+      "help": "自然语速，不精简；配音比原片长，不跟画面。"
+     }
+    ]
+   },
+   {
+    "key": "publish",
+    "label": "发布",
+    "multi": false,
+    "value": "production_page",
+    "options": [
+     {
+      "value": "production_page",
+      "label": "正式页",
+      "help": "以 human_reviewed 发布，要你听完每条整轨并审译文。"
+     },
+     {
+      "value": "dev_review",
+      "label": "只出 Dev 审核"
+     },
+     {
+      "value": "none",
+      "label": "不出页面"
+     }
+    ]
+   },
+   {
+    "key": "speakerId",
+    "label": "讲员",
+    "multi": false,
+    "value": "sample_speaker_a",
+    "options": [
+     {
+      "value": "sample_speaker_a",
+      "label": "示例讲员甲",
+      "locales": [
+       "zh-Hans",
+       "ko",
+       "es"
+      ],
+      "checkpointReady": true
+     },
+     {
+      "value": "sample_speaker_b",
+      "label": "示例讲员乙",
+      "locales": [
+       "zh-Hans",
+       "es"
+      ],
+      "checkpointReady": false
+     }
+    ],
+    "evidence": "开场自述里提到了自己的名字（演示）。"
+   }
+  ],
+  "title": {
+   "basis": "title_table",
+   "week": 12,
+   "english": "A sample message title",
+   "scripture": "示例书 1:1–10",
+   "series": {
+    "zh-Hans": "示例系列",
+    "ko": "예시 시리즈",
+    "es": "Serie de ejemplo"
+   },
+   "format": "title_only",
+   "titles": {
+    "zh-Hans": "演示讲题",
+    "ko": "예시 제목",
+    "es": "Título de ejemplo"
+   }
+  },
+  "window": {
+   "start": 0,
+   "end": 2144.1,
+   "mediaDuration": 2144.1,
+   "head": "window/head.mp3",
+   "tail": "window/tail.mp3"
+  },
+  "deliverables": [
+   {
+    "n": 1,
+    "label": "页面 + 三语 assets（page/content/audio/captions）",
+    "deliver": true,
+    "reason": null
+   },
+   {
+    "n": 2,
+    "label": "release 包",
+    "deliver": true,
+    "reason": null
+   },
+   {
+    "n": 3,
+    "label": "目录（multilingual-v5/v4/v3）",
+    "deliver": true,
+    "reason": null
+   },
+   {
+    "n": 4,
+    "label": "英文对照 /english-reference/<pageId>.json",
+    "deliver": true,
+    "reason": null
+   },
+   {
+    "n": 5,
+    "label": "现场对齐（sidecar + 每语指纹索引）",
+    "deliver": true,
+    "reason": null
+   },
+   {
+    "n": 6,
+    "label": "研读手册条目",
+    "deliver": true,
+    "reason": null
+   },
+   {
+    "n": 7,
+    "label": "统计目录",
+    "deliver": true,
+    "reason": null
+   }
+  ],
+  "plan": [
+   {
+    "label": "英文表",
+    "when": "约 20:05",
+    "effort": "审 10–20 分钟"
+   },
+   {
+    "label": "中文轨",
+    "when": "约 20:50",
+    "effort": "整轨约 36 分钟，只跟标记 15–20 分钟"
+   },
+   {
+    "label": "韩语轨",
+    "when": "约 21:10",
+    "effort": "整轨约 38 分钟"
+   },
+   {
+    "label": "西班牙语轨",
+    "when": "约 21:30",
+    "effort": "整轨约 38 分钟"
+   },
+   {
+    "label": "发布授权",
+    "when": "三条都通过之后",
+    "effort": "约 5 分钟"
+   },
+   {
+    "label": "手机确认",
+    "when": "发布后",
+    "effort": "约 10 分钟"
+   }
+  ]
+ },
+ "lastDecision": null
+}

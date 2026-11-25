@@ -1,0 +1,83 @@
+{
+ "schemaVersion": "sermon-review-gate-v1",
+ "gateId": "l4.device-confirm",
+ "kind": "confirm",
+ "production": "demo-20261129-sample",
+ "locale": null,
+ "title": "发布后确认",
+ "state": "open",
+ "revision": 1,
+ "openedAt": "2026-11-29T03:40:00+00:00",
+ "bindings": {
+  "publishIntentId": "20261129-week12-01",
+  "publishGateJsonSha256": "a1ba1ba1ba1ba1ba1ba1ba1ba1ba1ba1ba1ba1ba1ba1ba1ba1ba1ba1ba1ba1ba"
+ },
+ "labels": {
+  "machineGenerated": true,
+  "humanApproval": false
+ },
+ "episode": {
+  "sunday": "2026-11-29",
+  "title": "演示讲题",
+  "speaker": "示例讲员"
+ },
+ "viewer": {
+  "login": "reviewer@example.com",
+  "name": "演示审核者",
+  "source": "demo"
+ },
+ "assetsBase": "files/",
+ "data": {
+  "pageId": "demo-sample-20261129",
+  "published": {
+   "deployedAt": "2026-11-29T06:10:00+00:00",
+   "gate": "机器核对：通过（目录、release、资产、英文对照、对齐、手册）",
+   "smoke": "机器核对：三种语言通过"
+  },
+  "locales": [
+   {
+    "locale": "zh-Hans",
+    "url": "https://example.invalid/pages/demo-sample-20261129/zh-Hans/index.html",
+    "appUrl": null
+   },
+   {
+    "locale": "ko",
+    "url": "https://example.invalid/pages/demo-sample-20261129/ko/index.html",
+    "appUrl": null
+   },
+   {
+    "locale": "es",
+    "url": "https://example.invalid/pages/demo-sample-20261129/es/index.html",
+    "appUrl": null
+   }
+  ],
+  "items": [
+   {
+    "key": "plays",
+    "label": "音频能播放",
+    "required": true
+   },
+   {
+    "key": "captions",
+    "label": "字幕跟着音频走",
+    "required": true
+   },
+   {
+    "key": "english",
+    "label": "英文对照显示",
+    "required": false
+   },
+   {
+    "key": "study",
+    "label": "大纲与默想显示",
+    "required": false
+   },
+   {
+    "key": "app",
+    "label": "App 里能看到本页",
+    "required": false
+   }
+  ]
+ },
+ "lastDecision": null
+}

@@ -1698,9 +1698,10 @@ def _default_notifier(*, service: str | None = None, group: str | None = None,
         raise ValueError("tools/ops/notify.py is unavailable")
     keys = notify_transport.keychain_keys(tuple(accounts or notify_transport.ACCOUNTS),
                                           service=service or notify_transport.SERVICE)
+    mail = notify_transport.configured_mail(service or notify_transport.SERVICE) if push else None
     return notify_transport.Notifier(
         keys, bark_url=bark_url or notify_transport.BARK_URL,
-        group=group or notify_transport.GROUP, push=push)
+        group=group or notify_transport.GROUP, push=push, mail=mail)
 
 
 def _render_notify_plan(result: dict) -> str:

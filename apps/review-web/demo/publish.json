@@ -1,0 +1,233 @@
+{
+ "schemaVersion": "sermon-review-gate-v1",
+ "gateId": "l4.publish.authorization",
+ "kind": "publish",
+ "production": "demo-20261129-sample",
+ "locale": null,
+ "title": "发布授权",
+ "state": "open",
+ "revision": 1,
+ "openedAt": "2026-11-29T03:40:00+00:00",
+ "bindings": {
+  "publishIntentId": "20261129-week12-01",
+  "stage1SealSha256": "5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c",
+  "release.zh-Hans": "6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d",
+  "release.ko": "7e7e7e7e7e7e7e7e7e7e7e7e7e7e7e7e7e7e7e7e7e7e7e7e7e7e7e7e7e7e7e7e",
+  "release.es": "8f8f8f8f8f8f8f8f8f8f8f8f8f8f8f8f8f8f8f8f8f8f8f8f8f8f8f8f8f8f8f8f",
+  "humanReviewVerdictSha256": "9090909090909090909090909090909090909090909090909090909090909090"
+ },
+ "labels": {
+  "machineGenerated": true,
+  "humanApproval": false
+ },
+ "episode": {
+  "sunday": "2026-11-29",
+  "title": "演示讲题",
+  "speaker": "示例讲员"
+ },
+ "viewer": {
+  "login": "reviewer@example.com",
+  "name": "演示审核者",
+  "source": "demo"
+ },
+ "assetsBase": "files/",
+ "data": {
+  "intent": {
+   "id": "20261129-week12-01",
+   "pageId": "demo-sample-20261129",
+   "environment": "production",
+   "origin": "https://example.invalid",
+   "kindLabel": "首次发布",
+   "preparedAt": "2026-11-29T05:40:00+00:00"
+  },
+  "page": {
+   "date": "2026-11-29",
+   "speaker": "示例讲员",
+   "reviewLabel": "AI 合成配音 · 已人工审核（human_reviewed）",
+   "titleCheck": {
+    "mode": "table",
+    "ok": true,
+    "detail": "三语标题与标题表一致"
+   },
+   "locales": [
+    {
+     "locale": "zh-Hans",
+     "category": "周日证道",
+     "title": "演示讲题",
+     "series": "示例系列",
+     "scripture": "示例书 1:1–10",
+     "badge": "周日证道 · AI 合成配音 · 已人工审核",
+     "note": "AI 合成配音，与原视频同步。本项目与来源教会无隶属关系。",
+     "url": "https://example.invalid/pages/demo-sample-20261129/zh-Hans/index.html"
+    },
+    {
+     "locale": "ko",
+     "category": "주일 설교",
+     "title": "예시 제목",
+     "series": "예시 시리즈",
+     "scripture": "예시서 1:1-10",
+     "badge": "주일 설교 · AI 합성 음성 · 검토 완료",
+     "note": "AI 합성 음성 더빙으로 원본 영상과 동기화됩니다.",
+     "url": "https://example.invalid/pages/demo-sample-20261129/ko/index.html"
+    },
+    {
+     "locale": "es",
+     "category": "Sermón del domingo",
+     "title": "Título de ejemplo",
+     "series": "Serie de ejemplo",
+     "scripture": "Libro de ejemplo 1:1-10",
+     "badge": "Sermón del domingo · Voz sintetizada por IA · Revisado",
+     "note": "Doblaje con voz sintetizada por IA, sincronizado con el video original.",
+     "url": "https://example.invalid/pages/demo-sample-20261129/es/index.html"
+    }
+   ]
+  },
+  "preconditions": [
+   {
+    "key": "english",
+    "label": "英文来源包已人工批准",
+    "ok": true,
+    "detail": "机器核对：收据覆盖全部句子，哈希一致"
+   },
+   {
+    "key": "reviews",
+    "label": "三语听审收据为通过，音轨哈希与当前文件一致",
+    "ok": true,
+    "detail": "机器核对：中文整轨、韩语只听标记、西班牙语整轨"
+   },
+   {
+    "key": "study",
+    "label": "学习内容已批准",
+    "ok": true,
+    "detail": "机器核对：三种语言的批准绑定当前文本"
+   },
+   {
+    "key": "preflight",
+    "label": "发布 preflight 通过",
+    "ok": true,
+    "detail": "机器核对：标题表、决策文件、journal 门禁"
+   },
+   {
+    "key": "publishCheck",
+    "label": "发布前哈希绑定检查通过",
+    "ok": true,
+    "detail": "机器核对：目录、release、文稿、字幕、英文对照没有旧哈希"
+   },
+   {
+    "key": "devGate",
+    "label": "候选快照在 dev 过了发布完整性门禁",
+    "ok": true,
+    "detail": "机器核对：--require-guide --require-alignment"
+   },
+   {
+    "key": "concurrency",
+    "label": "同一页面没有其他代理在改",
+    "ok": true,
+    "detail": "机器核对：登记表里没有进行中的任务"
+   }
+  ],
+  "deliverables": [
+   {
+    "n": 1,
+    "label": "页面 + 三语 assets（page/content/audio/captions）",
+    "deliver": true,
+    "state": "ready",
+    "evidence": "assets 目录 + HTTP 逐文件 SHA",
+    "reason": null
+   },
+   {
+    "n": 2,
+    "label": "release 包",
+    "deliver": true,
+    "state": "ready",
+    "evidence": "assets/releases/*.json",
+    "reason": null
+   },
+   {
+    "n": 3,
+    "label": "目录（multilingual-v5/v4/v3）",
+    "deliver": true,
+    "state": "ready",
+    "evidence": "stage2 快照 + readback",
+    "reason": null
+   },
+   {
+    "n": 4,
+    "label": "英文对照 /english-reference/<pageId>.json",
+    "deliver": true,
+    "state": "ready",
+    "evidence": "stage-english-reference + readback",
+    "reason": null
+   },
+   {
+    "n": 5,
+    "label": "现场对齐（sidecar + 每语指纹索引）",
+    "deliver": true,
+    "state": "ready",
+    "evidence": "/alignment/<pageId>.json + gate --require-alignment",
+    "reason": null
+   },
+   {
+    "n": 6,
+    "label": "研读手册条目",
+    "deliver": true,
+    "state": "ready",
+    "evidence": "candidate 快照 + gate --require-guide",
+    "reason": null
+   },
+   {
+    "n": 7,
+    "label": "统计目录",
+    "deliver": false,
+    "state": "ready",
+    "evidence": "函数 updateTime + 三语 /api/session 200",
+    "reason": "统计目录函数本周在迁移，下一次发布意图补"
+   }
+  ],
+  "deployments": [
+   {
+    "n": 1,
+    "label": "页面与三语资产",
+    "changes": [
+     "/pages/demo-sample-20261129/…",
+     "/content/demo-sample-20261129/…",
+     "/captions/demo-sample-20261129/…",
+     "三语 MP3"
+    ],
+    "touchesOtherPages": false,
+    "otherPagesNote": null,
+    "verify": "逐文件 HTTP 核对 SHA，MP3 支持 Range"
+   },
+   {
+    "n": 2,
+    "label": "release 与目录 v5/v4/v3",
+    "changes": [
+     "三语 release",
+     "multilingual-v5/v4/v3 目录"
+    ],
+    "touchesOtherPages": true,
+    "otherPagesNote": "目录是所有页面共用的：这次会把默认打开的页面改成本页，并把上一期排到第二位。其他页面自己的内容不变。",
+    "verify": "回读线上目录，核对 v4/v3 与 v5 投影一致"
+   },
+   {
+    "n": 3,
+    "label": "英文对照、现场对齐与研读手册条目",
+    "changes": [
+     "/english-reference/demo-sample-20261129.json",
+     "/alignment/demo-sample-20261129.json",
+     "/weekly-guides/manifest-v1.json"
+    ],
+    "touchesOtherPages": true,
+    "otherPagesNote": "研读手册清单是共用文件：这次只追加本期一条，不改已有条目。",
+    "verify": "发布完整性门禁 --require-guide --require-alignment"
+   }
+  ],
+  "afterPublish": [
+   "过发布完整性门禁，不过就停下并通知你",
+   "三种语言的浏览器冒烟",
+   "推送「发布后确认」请你在手机上看",
+   "导出运行报告并开 docs PR"
+  ]
+ },
+ "lastDecision": null
+}

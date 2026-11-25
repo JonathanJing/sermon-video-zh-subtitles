@@ -33,7 +33,7 @@ Purpose: help attendees follow English sermons in their own language, on time an
 | OpenAI keys and projects | [Environment launcher](docs/openai-minimal-project-setup.zh.md) |
 | Machine-checked text, or historical audio waivers | [Machine-quality waiver](docs/machine-quality-waiver.zh.md): text waiver, calibration, repair limits; **audio machine listening retired 2026-10-28 (human 1x listening is the only audio gate)** |
 | Canonical App delivery | [Layer 4 public delivery](docs/layer4-four-product-public-delivery.zh.md) and [weekly release](docs/tongxing-weekly-release.zh.md) |
-| Web frontend change (listening-web, operator-web, support-web, tracker-web) | [Web frontend modernization policy](docs/web-frontend-modernization-policy.zh.md): Baseline 2024, the strict CSP, the dark-first theme decision, and which modern-web-guidance findings were dropped |
+| Web frontend change (listening-web, operator-web, review-web, support-web, tracker-web) | [Web frontend modernization policy](docs/web-frontend-modernization-policy.zh.md): Baseline 2024, the strict CSP, the dark-first theme decision, and which modern-web-guidance findings were dropped |
 | Weekly or ad hoc poster | Use the same [single-line poster template](docs/tongxing-weekly-poster-format.zh.md) and [poster procedure](docs/tongxing-weekly-release.zh.md#每周海报交付), including one-locale work; separate from page publication and do not send or upload it without the user's instruction |
 | Podcast poster | [Podcast cover poster format](docs/tongxing-podcast-cover-poster-format.zh.md): 1080×1080, the episode's whole YouTube cover above a Chinese information band; a separate format from the weekly 2:3 template, same no-upload/no-send rule |
 | Resume a weekly production run | [Local production runbook](docs/codex-local-production-runbook.zh.md), [run profile](docs/weekly-run-profile.zh.md) for concurrency and budget caps, and the existing run artifacts |
@@ -43,6 +43,7 @@ Purpose: help attendees follow English sermons in their own language, on time an
 | Sunday translate.pastors.ai capture, human sermon window, translated reading PDF | [Live translate capture runbook](experiments/live-translate-capture/AGENTS.md) |
 | Translation quality comparison: pastors.ai Chinese vs our production Chinese | [Comparison runbook](experiments/translation-quality-comparison/AGENTS.md) |
 | iOS client | [iOS instructions](apps/tongxing-ios/AGENTS.md) |
+| Human review step: its page, its decision, its Bark and email notices | [Review pages and notices](docs/design/review-gates-and-notifications.zh.md): one page per step in `apps/review-web/`, the decision contract, and the notice for every state (`tools/ops/production_notices.py list`) |
 | Priorities, stable IDs and status | [Dev backlog](docs/backlog.zh.md), the only top-level backlog; find an ID's rows with `python3 tools/development/backlog_ids.py <ID or prefix>` |
 | Benchmark, model trial or post-training | README Discovery links and that experiment's contract |
 | Weekly rollup, private run evidence, or checking last week's improvements | [Weekly iteration loop](docs/design/weekly-iteration-loop.zh.md): private evidence store, production report export, weekly rollup PR, reviewer decisions and next-week verification |

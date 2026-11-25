@@ -1,0 +1,217 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.invalid/schemas/sermon-review-gate-v1.schema.json",
+  "title": "One human review step as a review page loads it",
+  "description": "What apps/review-web shows for one step that waits for a person. bindings are the hashes a decision on this revision is bound to; data is specific to the page kind.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "gateId",
+    "kind",
+    "production",
+    "locale",
+    "title",
+    "state",
+    "revision",
+    "bindings",
+    "labels",
+    "episode",
+    "assetsBase",
+    "data",
+    "lastDecision"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": "sermon-review-gate-v1"
+    },
+    "gateId": {
+      "type": "string",
+      "pattern": "^l[0-9]\\.[A-Za-z0-9.-]+$"
+    },
+    "kind": {
+      "enum": [
+        "decisions",
+        "english",
+        "speakers",
+        "track",
+        "study",
+        "publish",
+        "confirm"
+      ]
+    },
+    "production": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9._-]+$"
+    },
+    "locale": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "revision": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "title": {
+      "type": "string"
+    },
+    "state": {
+      "enum": [
+        "pending",
+        "open",
+        "submitted",
+        "applied",
+        "changes_requested",
+        "stale",
+        "skipped"
+      ]
+    },
+    "openedAt": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "bindings": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "labels": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "machineGenerated",
+        "humanApproval"
+      ],
+      "properties": {
+        "machineGenerated": {
+          "type": "boolean"
+        },
+        "humanApproval": {
+          "type": "boolean"
+        }
+      }
+    },
+    "episode": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "sunday": {
+          "type": "string"
+        },
+        "title": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "speaker": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "viewer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "login",
+        "source"
+      ],
+      "properties": {
+        "login": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "name": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "source": {
+          "enum": [
+            "tailscale",
+            "local",
+            "demo"
+          ]
+        }
+      }
+    },
+    "assetsBase": {
+      "type": "string"
+    },
+    "data": {
+      "type": "object"
+    },
+    "lastDecision": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "additionalProperties": false,
+      "required": [
+        "decisionId",
+        "verdict",
+        "submittedAt",
+        "outcome"
+      ],
+      "properties": {
+        "decisionId": {
+          "type": "string"
+        },
+        "verdict": {
+          "enum": [
+            "approved",
+            "changes_requested"
+          ]
+        },
+        "submittedAt": {
+          "type": "string"
+        },
+        "reviewer": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "outcome": {
+          "enum": [
+            "queued",
+            "applied",
+            "rejected_stale",
+            "failed"
+          ]
+        },
+        "message": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "receiptSha256": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "nextStage": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    }
+  }
+}

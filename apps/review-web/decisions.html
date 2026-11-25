@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="zh-Hans" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#141b1a">
+<meta name="robots" content="noindex">
+<title>开工确认 · 同行审核</title>
+<script src="theme.js"></script>
+<link rel="stylesheet" href="review.css">
+</head>
+<body data-kind="decisions">
+<header class="top">
+  <a class="back" id="back" href="index.html">‹ 本周审核</a>
+  <div class="top-title">
+    <h1>开工确认</h1>
+    <p class="sub" id="episode"></p>
+  </div>
+  <button type="button" class="ghost" id="theme-toggle">深色</button>
+</header>
+<p class="label-strip" id="label-strip" role="status">正在读取…</p>
+
+<main>
+  <section class="card" aria-labelledby="source-title">
+    <header><h2 id="source-title">来源</h2></header>
+    <dl class="kv" id="source"></dl>
+    <p class="lead">新文件一到就按默认设置自动开工：下载、转写、拆句都已经在做。这一页确认的是之后不再改的决定；在你提交之前不会开始翻译。</p>
+  </section>
+
+  <section class="card" aria-labelledby="choices-title">
+    <header><h2 id="choices-title">开工决定</h2></header>
+    <p class="lead">每一项都已按默认值填好。开工后再改任何一项都算变更，会让下游返工。</p>
+    <div class="rows" id="choices"></div>
+  </section>
+
+  <section class="card" aria-labelledby="title-title">
+    <header><h2 id="title-title">标题</h2><span class="flag" id="title-basis"></span></header>
+    <dl class="kv" id="title-facts"></dl>
+    <div class="grid-2" id="titles"></div>
+    <div class="seg" id="title-format" role="group" aria-label="页面主标题格式">
+      <button type="button" data-format="title_only" aria-pressed="false">只显示讲题</button>
+      <button type="button" data-format="series_dot_title" aria-pressed="false">系列名 · 讲题</button>
+    </div>
+    <p class="small muted">标题表里有这一篇时直接采用表中三语标题；表里没有，或你在这里改了，就按例外登记并写明原因。</p>
+  </section>
+
+  <section class="card" aria-labelledby="window-title">
+    <header><h2 id="window-title">窗口</h2></header>
+    <p class="lead">正式播放版通常整段都是证道，默认取整个文件。开头或结尾有不该翻译的内容时，在这里改起止秒数。</p>
+    <div class="grid-2">
+      <label class="field"><span>起点（秒）</span><input type="number" id="window-start" min="0" step="0.1" inputmode="decimal"></label>
+      <label class="field"><span>终点（秒）</span><input type="number" id="window-end" min="0" step="0.1" inputmode="decimal"></label>
+    </div>
+    <div class="row-tools" id="window-tools"></div>
+    <p class="small muted" id="window-note"></p>
+  </section>
+
+  <section class="card" aria-labelledby="deliverables-title">
+    <header><h2 id="deliverables-title">交付范围（七件套）</h2></header>
+    <p class="lead">周日证道默认是一次完整发布，七件都做。本轮不做的那一件要写原因。</p>
+    <div class="rows" id="deliverables"></div>
+  </section>
+
+  <section class="card" aria-labelledby="plan-title">
+    <header><h2 id="plan-title">审听计划</h2></header>
+    <p class="lead">预计时间，供你安排；每一步就绪会单独推送链接。</p>
+    <ul class="status-list" id="plan"></ul>
+  </section>
+
+  <section class="card" aria-labelledby="decision-title">
+    <header><h2 id="decision-title">结论</h2></header>
+    <fieldset class="checks" id="checks">
+      <legend>开工前逐项确认</legend>
+      <label class="check"><input type="checkbox" data-check="speaker">
+        <span>讲员确认<small>这一场的讲员就是上面选的这位，声音已授权配音，选中的语言都有能力。</small></span></label>
+      <label class="check"><input type="checkbox" data-check="workload">
+        <span>我知道听审的工作量<small>正式发布要我听完每一种语言的整轨并审译文。</small></span></label>
+      <label class="check"><input type="checkbox" data-check="frozen">
+        <span>这些决定就此冻结<small>开工后改任何一项都算变更，不是返工。</small></span></label>
+    </fieldset>
+    <label class="field"><span>备注（暂不开工时必填）</span><textarea id="note"></textarea></label>
+    <details class="bindings">
+      <summary>这次决定绑定的版本</summary>
+      <dl class="kv" id="bindings"></dl>
+    </details>
+  </section>
+
+  <section class="card" id="result" hidden></section>
+</main>
+
+<footer class="actions" id="actions">
+  <p class="hint" id="hint" role="status"></p>
+  <div class="buttons">
+    <button type="button" class="danger" id="request-changes">暂不开工</button>
+    <button type="button" class="primary" id="approve">按此开工</button>
+  </div>
+</footer>
+
+<dialog id="confirm-dialog" aria-labelledby="confirm-title">
+  <h2 id="confirm-title"></h2>
+  <ul id="confirm-summary"></ul>
+  <p class="error" id="submit-error" role="alert"></p>
+  <div class="buttons">
+    <button type="button" id="confirm-cancel">返回</button>
+    <button type="button" class="primary" id="confirm-send">确认提交</button>
+  </div>
+</dialog>
+<audio id="clip" preload="none"></audio>
+<script type="module" src="decisions.mjs"></script>
+</body>
+</html>
