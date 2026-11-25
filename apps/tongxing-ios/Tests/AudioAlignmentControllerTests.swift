@@ -932,6 +932,23 @@ final class AudioAlignmentControllerTests: XCTestCase {
         }
     }
 
+    func testContentCapabilityLabelIsLocalizedInEveryInterfaceLanguage() throws {
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString).appendingPathComponent("lang.json")
+        let localization = AppLocalization(preferenceURL: url)
+        defer { try? FileManager.default.removeItem(at: url.deletingLastPathComponent()) }
+        let keySets = [AppModel.contentCapabilityKeys(hasTarget: false, hasPublishedAudio: false),
+                       AppModel.contentCapabilityKeys(hasTarget: true, hasPublishedAudio: false),
+                       AppModel.contentCapabilityKeys(hasTarget: true, hasPublishedAudio: true)]
+        for language in [AppLanguage.english, .korean, .spanish, .vietnamese] {
+            localization.setPreference(language)
+            for key in keySets.joined() { XCTAssertNotEqual(localization.text(key), key, "\(language) \(key)") }
+        }
+        localization.setPreference(.english)
+        XCTAssertEqual(keySets[2].map { localization.text($0) }.joined(separator: " · "), "Text · Audio")
+        localization.setPreference(.simplifiedChinese)
+        XCTAssertEqual(keySets[2].map { localization.text($0) }.joined(separator: " · "), "文字 · 音频")
+    }
+
     func testContinuousSessionStartupStallStopsBeforePCMBudget() async throws {
         var restores = 0
         let session = ContinuousCaptureSession(owner: nil, token: UUID(),
