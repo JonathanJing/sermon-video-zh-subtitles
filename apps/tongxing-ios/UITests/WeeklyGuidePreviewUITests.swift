@@ -519,6 +519,8 @@ final class WeeklyGuidePreviewUITests: XCTestCase {
         group.tap()
         XCTAssertTrue(app.staticTexts["测试用讨论内容，不代表教会手册。"].waitForExistence(timeout: 5))
         let question = app.staticTexts["测试用讨论内容，不代表教会手册。"]
+        // The expanded group can open below the fold on taller phones.
+        for _ in 0..<4 where !question.isHittable { app.scrollViews["guide-scroll"].swipeUp() }
         let visible = expectation(for: NSPredicate(format: "hittable == true"), evaluatedWith: question)
         wait(for: [visible], timeout: 5)
         let image = XCTAttachment(screenshot: app.screenshot())
@@ -530,7 +532,10 @@ final class WeeklyGuidePreviewUITests: XCTestCase {
         XCTAssertTrue(close.isHittable)
         close.tap()
         XCTAssertTrue(entry.waitForExistence(timeout: 5))
-        XCTAssertEqual(app.buttons["playback-toggle"].label, playLabel)
+        // The closing guide can still be in the hierarchy with its own dock.
+        let dockAfterClose = app.buttons.matching(identifier: "playback-toggle").allElementsBoundByIndex
+            .first(where: { $0.isHittable })
+        XCTAssertEqual(dockAfterClose?.label, playLabel)
     }
     func testUnmappedSermonShowsUnavailableInsteadOfAnotherWeek() {
         let app = XCUIApplication()

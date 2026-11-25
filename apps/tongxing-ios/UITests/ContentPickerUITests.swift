@@ -75,8 +75,12 @@ final class ContentPickerUITests: XCTestCase {
         capture("picker-content-tabs-reopened", app: app)
 
         // Choosing the podcast switches the page; the next open follows it.
-        reopened.buttons["播客"].tap()
+        // A tap that lands while the sheet is still settling can be dropped;
+        // confirm the segment switched before looking for the podcast row.
+        let podcastTab = reopened.buttons["播客"]
+        podcastTab.tap()
         let podRow = app.buttons["published-page-\(podcastID)"]
+        if !podRow.waitForExistence(timeout: 5) && !podcastTab.isSelected { podcastTab.tap() }
         XCTAssertTrue(podRow.waitForExistence(timeout: 10))
         podRow.tap()
         XCTAssertTrue(app.staticTexts["published-page-title"].waitForExistence(timeout: 15))

@@ -222,7 +222,9 @@ final class ProductionPush: NSObject, ObservableObject, UNUserNotificationCenter
     }
 
     private func reconcile() async {
-        guard Self.isProduction else { return }
+        // UI tests use unsigned simulator builds without keychain access and
+        // must never reach the production subscription endpoint.
+        guard Self.isProduction, !ProcessInfo.processInfo.arguments.contains("--ui-testing") else { return }
         if syncing {
             reconcileRequested = true
             return
