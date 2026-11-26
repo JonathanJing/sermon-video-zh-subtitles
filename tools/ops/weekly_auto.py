@@ -843,6 +843,10 @@ class Driver:
                         available=f"{admission.get('availableGiB', 0):.1f}", required=f"{admission.get('requiredGiB', 15):g}")
             self.worker(record, f"{name}配音", "内存不够，等内存空出来再试", state="等待")
             return False
+        if probe.returncode != 0 and "another TTS renderer is running" in (probe.stderr or ""):
+            # one model copy at a time on this machine (render_lock.py): the other render ends by itself
+            self.worker(record, f"{name}配音", "这台机器上另一条配音还在跑，等它结束再开始", state="等待")
+            return False
         if probe.returncode != 0:
             raise StageError("process", f"配音预检没过：{(probe.stderr or probe.stdout or '').strip().splitlines()[-1][:160]}", stageName=f"{name}配音")
         return True

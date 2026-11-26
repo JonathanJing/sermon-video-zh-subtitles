@@ -74,6 +74,8 @@ class TrackRun(Run):
             run = Path(arg("--speech")).parent
             if "--dry-run" in command:
                 ok = self.memory.pop(0) if self.memory else True
+                if ok == "busy":                              # render_lock.py refuses before anything else is looked at
+                    return subprocess.CompletedProcess(command, 1, stdout="", stderr="another TTS renderer is running (pid 4242, out /x/tts); the laptop allows one model copy.")
                 return done(0 if ok else 1, json.dumps({"memoryAdmission": {"device": "mps", "availableGiB": 20.0 if ok else 9.5, "requiredGiB": 15.0, "pass": ok}}) + "\n")
             self.tts = command
             self.count["tts"][run.name] = self.count["tts"].get(run.name, 0) + 1
@@ -445,3 +447,14 @@ def test_before_a_new_merge_every_sentence_is_the_audio_the_renderer_wrote(make,
     assert not list((run / "tts-raw-before-trim").iterdir()) and not list((run / "tts-before-speed").iterdir())
     assert not (run / "speed-fit.json").exists() and not (run / "tts-silence-trim.json").exists()
     driver.restore_raw(run)                                                      # again: nothing left to do, nothing breaks
+
+
+def test_another_render_on_the_machine_makes_dubbing_wait_not_fail(make, tmp_path):
+    driver = make(memory=["busy", True])
+    start(driver)
+    record = approve_layer1(driver)
+    assert record["stages"]["l3.tts.zh-Hans"]["state"] == "waiting" and record["state"] != "blocked"
+    assert record["worker"]["detail"].startswith("这台机器上另一条配音还在跑") and driver.run_command.count["tts"] == {}
+    assert not [title for title in driver.notifier().titles() if "失败" in title or "内存" in title], "it ends by itself: nobody is called"
+    record = driver.advance(NAME)
+    assert record["stages"]["l3.tts.zh-Hans"]["state"] == "done" and record["stages"]["wait.tracks"]["state"] == "waiting"
