@@ -101,6 +101,7 @@ class Run:
 def driver(tmp_path):
     config = json.loads((ROOT / "config" / "weekly-sermon-auto.json").read_text(encoding="utf-8"))
     config["source"]["minBytes"] = 1000
+    config["automation"]["through"] = "layer1"            # these tests cover the stretch up to the English table
     path = tmp_path / "config.json"
     path.write_text(json.dumps(config))
     (tmp_path / "artifacts" / "model-routing" / "macbook-tts" / "checkpoint-75d28").mkdir(parents=True)

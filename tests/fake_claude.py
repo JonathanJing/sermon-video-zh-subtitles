@@ -39,7 +39,7 @@ if mode == "no_output":
 rows = lambda path: [json.loads(line) for line in Path(path).read_text(encoding="utf-8").splitlines() if line.strip()]
 if kind == "brief":
     out.write_text(json.dumps({
-        "names": [{"english": "Eric", "zh-Hans": "埃里克", "ko": "에릭", "es": "Eric"}],
+        "names": [{"english": "Eric", "zh-Hans": "艾瑞克" if mode == "brief_differs" else "埃里克", "ko": "에릭", "es": "Eric"}],
         "terms": [{"english": "the city", "zh-Hans": "那城", "ko": "그 성", "es": "la ciudad"}],
         "books": [{"english": "chapter 21", "zh-Hans": "第 21 章", "ko": "21장", "es": "capítulo 21"}]}, ensure_ascii=False))
     print("done 3")

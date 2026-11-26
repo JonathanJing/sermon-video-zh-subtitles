@@ -50,7 +50,19 @@ def test_the_cli_is_called_the_way_the_model_stack_fixes_it(run, tmp_path):
     assert argv == ["-p", "--model", "opus", "--permission-mode", "acceptEdits"]
     brief = json.loads((tmp_path / "brief.json").read_text())
     assert brief["schemaVersion"] == "sentence-first-episode-brief-v1" and len(brief["terminologySha256"]) == 64
+    assert len(brief["establishedTermsSha256"]) == 64 and brief["correctedToEstablished"] == []
+    established = {row["english"]: row for row in json.loads(opus_tasks.ESTABLISHED.read_text(encoding="utf-8"))["terms"]}
+    assert established["Mariners Church"]["zh-Hans"] == "水手教会" and established["Eric"] == {"english": "Eric", "zh-Hans": "埃里克", "ko": "에릭", "es": "Eric"}
+    assert "{established}" in opus_tasks.BRIEF_PROMPT and "必须照用" in opus_tasks.BRIEF_PROMPT
     assert opus_tasks.terms_text(brief, "ko") == "- 书卷与出处：chapter 21 = 21장\n- 术语：the city = 그 성\n- 人名与机构：Eric = 에릭"
+
+
+def test_a_brief_that_departs_from_a_published_rendering_is_put_back_and_says_so(run, tmp_path, monkeypatch):
+    monkeypatch.setenv("FAKE_CLAUDE_MODE", "brief_differs")
+    assert go("brief", "--run", run, "--episode", tmp_path / "episode.json", "--out", tmp_path / "brief.json") == 0
+    brief = json.loads((tmp_path / "brief.json").read_text())
+    assert brief["correctedToEstablished"] == [{"english": "Eric", "locale": "zh-Hans", "was": "艾瑞克", "now": "埃里克"}]
+    assert brief["names"][0]["zh-Hans"] == "埃里克" and "Eric = 埃里克" in opus_tasks.terms_text(brief, "zh-Hans")
 
 
 def test_translation_parts_are_checked_and_only_the_bad_part_is_sent_again(run, tmp_path, monkeypatch, capsys):

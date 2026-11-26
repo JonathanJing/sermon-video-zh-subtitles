@@ -47,6 +47,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 EXP = Path(__file__).resolve().parent
 TERMINOLOGY = ROOT / "docs" / "series-terminology.zh.md"
+ESTABLISHED = EXP / "established-terms.json"            # renderings already used on published pages
 MODEL = "opus"
 DIGITS = re.compile(r"\d+")
 
@@ -83,8 +84,9 @@ LOCALES = {
 BRIEF_PROMPT = """\
 你在为一篇英文证道的三语翻译准备「本篇用词约定」，只做这一件事。
 
-只读这两个文件，不要修改它们：
+只读这三个文件，不要修改它们：
 - 英文句表：{sentences}（每行一个 JSON，字段 `english` 是讲员的话，英文是 ASR 转写稿）
+- 已发布页面用过的写法：{established}（`terms` 里的每一行是一个英文词和它的三语写法；这篇里出现了就必须照用，一个字都不要改）
 - 共享术语表：{terminology}（本系列已经定下的译名，必须沿用）
 
 本篇：讲员 {speaker}；英文标题 {englishTitle}；系列 {seriesAll}。
@@ -93,7 +95,7 @@ BRIEF_PROMPT = """\
 1. names：人名、地名、机构名、品牌名。
 2. terms：神学和教会用语、这篇反复出现的关键词。
 3. books：提到的圣经书卷名，以及出现过的经文出处（书卷加章节）。
-写法的依据依次是：共享术语表；各语言通行的圣经译本（和合本、개역개정、Reina-Valera 1960）；通行译名。没有通行译名的人名、品牌保留英文原文。不要列没有出现的词，不要编造经文。
+写法的依据依次是：已发布页面用过的写法；共享术语表；各语言通行的圣经译本（和合本、개역개정、Reina-Valera 1960）；通行译名。没有通行译名的人名、品牌保留英文原文。不要列没有出现的词，不要编造经文。
 
 写入 {output}，内容是一个 JSON 对象，结构恰好是：
 {{"names": [{{"english": "...", "zh-Hans": "...", "ko": "...", "es": "..."}}],
@@ -260,7 +262,8 @@ def cmd_brief(args) -> int:
     attempts = []
     for attempt in (1, 2):
         args.out.unlink(missing_ok=True)
-        prompt = BRIEF_PROMPT.format(sentences=args.run / "sentences.jsonl", terminology=TERMINOLOGY, output=args.out, **episode_facts(episode))
+        prompt = BRIEF_PROMPT.format(sentences=args.run / "sentences.jsonl", terminology=TERMINOLOGY, established=ESTABLISHED,
+                                     output=args.out, **episode_facts(episode))
         result = run_claude(prompt, timeout=args.timeout)
         try:
             value = json.loads(args.out.read_text(encoding="utf-8")) if args.out.exists() else None
@@ -271,6 +274,18 @@ def cmd_brief(args) -> int:
         if result["exit"] == 0 and not problems:
             value["schemaVersion"] = "sentence-first-episode-brief-v1"
             value["terminologySha256"] = hashlib.sha256(TERMINOLOGY.read_bytes()).hexdigest()
+            value["establishedTermsSha256"] = hashlib.sha256(ESTABLISHED.read_bytes()).hexdigest()
+            used = {row["english"].lower(): row for row in json.loads(ESTABLISHED.read_text(encoding="utf-8"))["terms"]}
+            # A published rendering wins over what the model wrote this time: put it back and say so.
+            corrected = []
+            for group in ("names", "terms", "books"):
+                for row in value[group]:
+                    known = used.get(row["english"].lower())
+                    for locale in LOCALES if known else ():
+                        if row[locale] != known[locale]:
+                            corrected.append({"english": row["english"], "locale": locale, "was": row[locale], "now": known[locale]})
+                            row[locale] = known[locale]
+            value["correctedToEstablished"] = corrected
             write_json(args.out, value)
             print(json.dumps({"brief": str(args.out), "names": len(value["names"]), "terms": len(value["terms"]),
                               "books": len(value["books"]), "attempts": attempt}, ensure_ascii=False))

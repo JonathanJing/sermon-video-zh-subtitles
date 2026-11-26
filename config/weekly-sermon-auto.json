@@ -27,8 +27,8 @@
     "titleTable": "docs/series-sermon-titles.zh.md"
   },
   "automation": {
-    "through": "layer1",
-    "note": "layer1: stop after the English table is approved. tracks: go on through translation, dubbing and the track reviews."
+    "through": "tracks",
+    "note": "layer1: stop after the English table is approved. tracks: go on through translation, dubbing and the track reviews (rehearsed on the production Mac 2026-11-25 with a 40-sentence clip)."
   },
   "transcription": {
     "environment": "prod",

@@ -268,9 +268,9 @@ def test_the_code_and_the_artifacts_must_share_a_checkout(make):
     assert record["stages"]["l2.start"]["errorClass"] == "layout" and driver.run_command.sfa is None
 
 
-def test_the_shipped_config_stops_after_layer_1_until_the_later_stretch_is_verified():
+def test_the_shipped_config_runs_through_the_track_reviews_and_names_the_sync_decision():
     config = json.loads((ROOT / "config" / "weekly-sermon-auto.json").read_text(encoding="utf-8"))
-    assert config["automation"]["through"] == "layer1"
+    assert config["automation"]["through"] == "tracks"
     assert config["authorizations"]["syncRewrite"]["statement"] == "应当调用Opus口语化译文，达不到效果，再用Opus精简译文。"
 
 
