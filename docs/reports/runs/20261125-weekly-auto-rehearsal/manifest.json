@@ -1,0 +1,50 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261125-weekly-auto-rehearsal",
+  "runs": [
+    {
+      "label": "rehearsal-20261125b",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/weekly-auto/rehearsal-20261125b",
+      "skipped": {
+        "(none)": 1,
+        ".lock": 1,
+        ".ndjson": 1,
+        ".json": 12
+      }
+    }
+  ],
+  "files": [
+    {
+      "run": "rehearsal-20261125b",
+      "path": "driver.log",
+      "kind": "log",
+      "bytes": 1052,
+      "truncated": false,
+      "sha256": "812648c1c99e46e6757b076d5efdf5bbfe71e73ff8bf30472d2506b3cfcd6c29",
+      "redactions": {}
+    },
+    {
+      "run": "rehearsal-20261125b",
+      "path": "journal.ndjson",
+      "kind": "whole",
+      "bytes": 2938,
+      "truncated": false,
+      "sha256": "eb9498abd442f0f0f50d4f28dc66c3136fab48af25bfd82eb75e321bb331ecb6",
+      "redactions": {}
+    },
+    {
+      "run": "rehearsal-20261125b",
+      "path": "outcome.json",
+      "kind": "whole",
+      "bytes": 616,
+      "truncated": false,
+      "sha256": "fef80afa5af53ffc29993c9e17ece818c330bc439b1a1910947ef905aef67f81",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}
