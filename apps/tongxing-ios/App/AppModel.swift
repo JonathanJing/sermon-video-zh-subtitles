@@ -438,7 +438,7 @@ final class AppModel: ObservableObject {
         return resolvedHeading(SermonHeading(
             title: SermonHeading.displayTitle(week.title, pageID: week.id, date: week.date,
                                               fallback: AppLocalization.shared.text("证道")),
-            series: week.series, speaker: week.speaker), page: page)
+            series: week.series, speaker: week.speaker, scripture: week.scripture), page: page)
     }
 
     /// Catalog labels are already localized; only legacy title/category keys use
@@ -455,13 +455,14 @@ final class AppModel: ObservableObject {
             }
         }
         return SermonHeading(title: heading.title, series: heading.series, speaker: heading.speaker,
-                             displayEdition: edition)
+                             scripture: heading.scripture, displayEdition: edition)
     }
 
     func heading(for page: MultilingualPage) -> SermonHeading {
         if let transcript = currentPublishedTranscript, transcript.pageID == page.id {
             return resolvedHeading(SermonHeading(title: displayTitle(transcript.title ?? page.title, for: page),
-                                                series: transcript.series, speaker: transcript.speaker), page: page)
+                                                series: transcript.series, speaker: transcript.speaker,
+                                                scripture: transcript.scripture), page: page)
         }
         if let cached = publishedHeadings[publishedHeadingKey(page)] {
             return resolvedHeading(cached, page: page)
@@ -516,7 +517,8 @@ final class AppModel: ObservableObject {
             try Task.checkCancellation()
             guard independentPages.contains(where: { publishedHeadingKey($0) == key }) else { return }
             publishedHeadings[key] = SermonHeading(title: displayTitle(transcript.title ?? page.title, for: page),
-                                                  series: transcript.series, speaker: transcript.speaker)
+                                                  series: transcript.series, speaker: transcript.speaker,
+                                                  scripture: transcript.scripture)
         } catch {
             // Metadata failure keeps the catalog title/date available, with no invented speaker.
         }
@@ -546,7 +548,8 @@ final class AppModel: ObservableObject {
             publishedStudies = studies
             if locale == page.defaultTargetLocale {
                 publishedHeadings[publishedHeadingKey(page)] = SermonHeading(
-                    title: displayTitle(transcript.title ?? page.title, for: page), series: transcript.series, speaker: transcript.speaker)
+                    title: displayTitle(transcript.title ?? page.title, for: page), series: transcript.series,
+                    speaker: transcript.speaker, scripture: transcript.scripture)
             }
             refreshSystemPresentation()
         } catch is CancellationError {

@@ -38,4 +38,23 @@ struct SermonHeadingTests {
         #expect(SermonHeading(title: title, series: "另一个系列", speaker: "  ").title == title)
         #expect(SermonHeading(title: "希望 · 盼望", series: "希望").title == "希望 · 盼望")
     }
+
+    @Test func showsTheSeriesOnceAndCarriesScripture() {
+        let series = "启示录：耶稣带来的安慰与盼望"
+        let sermon = SermonHeading(title: "耶稣必再来", series: series, speaker: "Eric Geiger", scripture: " 启示录 19:11–21:8 ")
+        #expect(sermon.displayedSeries == series)
+        #expect(sermon.scripture == "启示录 19:11–21:8")
+        // The approved podcast title keeps the series prefix; the series line is left out.
+        let podcast = SermonHeading(title: "如果我有更多时间 · 耶稣必再来", series: "如果我有更多时间",
+                                    speaker: "Eric Geiger · John Thomas")
+        #expect(podcast.title == "如果我有更多时间 · 耶稣必再来")
+        #expect(podcast.series == "如果我有更多时间")
+        #expect(podcast.displayedSeries == nil)
+        #expect(podcast.scripture == nil)
+        // A suffix is still removed from the title, and the series line stays.
+        let legacy = SermonHeading(title: "耶稣的应许 · \(series)", series: series)
+        #expect(legacy.title == "耶稣的应许")
+        #expect(legacy.displayedSeries == series)
+        #expect(SermonHeading(title: "希望 · 盼望", series: "希望").title == "希望 · 盼望")
+    }
 }

@@ -8,6 +8,7 @@ artifact that shares a release identity agrees with it:
   catalogs -> alignment sidecar -> fingerprint indexes -> audio window
   weekly-guide manifest -> guide entry -> guide bytes
   page catalog title -> rendered page HTML
+  content series/title/date/speaker/scripture -> rendered page header lines
 
 Usage:
   PYTHONPATH=packages/production/src:. .venv/bin/python tools/ops/sfa_publish_gate.py \
@@ -21,6 +22,7 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+from html import escape as html_escape
 import json
 import re
 import sys
@@ -32,6 +34,7 @@ ROOT = Path(__file__).resolve().parents[2]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 from tools.ops import set_catalog_default_page as default_page  # noqa: E402
+from tools.ops import page_heading  # noqa: E402
 
 LOCALES = ("zh-Hans", "ko", "es")
 GUIDE_PINS = {
@@ -357,6 +360,29 @@ def check_page_title(gate: Gate, origin: str, page: dict, locale: str = "zh-Hans
                  f"catalog title {page.get('title')!r} not found in rendered page html")
 
 
+def check_page_heading(gate: Gate, origin: str, page: dict, locale: str) -> None:
+    """The static page shows the same header lines as web and iOS, from the same content JSON."""
+    status, content_raw = get(origin + f"/content/{page['id']}/{locale}.json")
+    status_html, raw_html = get(origin + f"/pages/{page['id']}/{locale}/index.html")
+    if not gate.require(f"{locale}.page.heading.http", status == 200 and status_html == 200,
+                        f"content -> {status}, page html -> {status_html}"):
+        return
+    content = json.loads(content_raw)
+    rendered = raw_html.decode("utf-8", "replace")
+    title, series = page_heading.heading_lines(content.get("title"), content.get("series"))
+    expected = {
+        "series": f'<p class="series">{html_escape(series)}</p>' if series else None,
+        "title": f"<h1>{html_escape(title)}</h1>",
+        "details": f'<p class="details">{html_escape(page_heading.details_line(content.get("date"), content.get("speaker")))}</p>',
+        "scripture": (f'<p class="scripture">{html_escape(content["scripture"].strip())}</p>'
+                      if (content.get("scripture") or "").strip() else None),
+    }
+    missing = [name for name, fragment in expected.items() if fragment and fragment not in rendered]
+    order = [rendered.find(fragment) for fragment in expected.values() if fragment and fragment in rendered]
+    gate.require(f"{locale}.page.heading", not missing and order == sorted(order),
+                 f"missing={missing} order={'ok' if order == sorted(order) else order}")
+
+
 def main() -> int:
     args = parse_args()
     origin = args.origin.rstrip("/")
@@ -386,6 +412,8 @@ def main() -> int:
     check_alignment(gate, origin, page, catalog, args.require_alignment, not args.skip_alignment_drift, args.max_drift)
     check_guide(gate, origin, page, page_id, args.guide_manifest, args.require_guide)
     check_page_title(gate, origin, page)
+    for locale in sorted(page["targets"]):
+        check_page_heading(gate, origin, page, locale)
     return finish(gate, args, origin, page_id, catalog)
 
 

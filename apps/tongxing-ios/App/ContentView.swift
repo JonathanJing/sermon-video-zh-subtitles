@@ -287,7 +287,8 @@ struct ContentView: View {
                                     appLanguageMenu
                                 }
                                 SermonHeadingView(heading: model.heading(for: page), date: page.date,
-                                                  titleFont: guideWidth > 0 ? .title2.bold() : .largeTitle.bold(), identifier: "published-page")
+                                                  titleFont: guideWidth > 0 ? .title2.bold() : .largeTitle.bold(), identifier: "published-page",
+                                                  showsScripture: true)
                                 if guideWidth == 0 { guideButton }
                                 languageButton
                                 if model.fullVideoURL != nil || model.selectedAudioLanguageName != nil {
@@ -688,8 +689,8 @@ struct ContentView: View {
                 appLanguageMenu
             }
             SermonHeadingView(heading: model.heading(for: week),
-                              date: week.date, titleFont: showsInlineGuide ? .title2.bold() : .largeTitle.bold(), identifier: "sermon")
-            Text(week.scripture).font(.footnote).foregroundStyle(.secondary)
+                              date: week.date, titleFont: showsInlineGuide ? .title2.bold() : .largeTitle.bold(), identifier: "sermon",
+                              showsScripture: true)
             languageButton
             if model.selectedContentLocale != "zh-Hans", model.selectedContentTarget != nil {
                 Text(localization.text("所选语言在独立发布页面中打开；原生播放器继续保留当前已验证的中文音轨。"))
@@ -1533,16 +1534,20 @@ private struct SermonHeadingView: View {
     let date: String
     let titleFont: Font
     let identifier: String
+    /// The page heading shows scripture; compact rows (picker, landscape) leave it out.
+    var showsScripture = false
 
+    // Same lines, in the same order, as listening-web and the static page:
+    // series, title, date · speaker, scripture.
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
-            Text(heading.title).font(titleFont)
-                .accessibilityAddTraits(.isHeader)
-                .accessibilityIdentifier("\(identifier)-title")
-            if let series = heading.series {
+            if let series = heading.displayedSeries {
                 Text(series).font(.subheadline).foregroundStyle(.secondary)
                     .accessibilityIdentifier("\(identifier)-series")
             }
+            Text(heading.title).font(titleFont)
+                .accessibilityAddTraits(.isHeader)
+                .accessibilityIdentifier("\(identifier)-title")
             ViewThatFits(in: .horizontal) {
                 Text(heading.details(date: date)).fixedSize()
                     .accessibilityIdentifier("\(identifier)-details")
@@ -1554,6 +1559,10 @@ private struct SermonHeadingView: View {
                     .accessibilityIdentifier("\(identifier)-details")
             }
             .font(.subheadline).foregroundStyle(.secondary)
+            if showsScripture, let scripture = heading.scripture {
+                Text(scripture).font(.footnote).foregroundStyle(.secondary)
+                    .accessibilityIdentifier("\(identifier)-scripture")
+            }
             if let edition = heading.edition {
                 Text(edition).font(.caption).foregroundStyle(.secondary)
                     .accessibilityIdentifier("\(identifier)-edition")

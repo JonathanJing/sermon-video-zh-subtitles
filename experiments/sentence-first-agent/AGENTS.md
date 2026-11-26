@@ -720,6 +720,7 @@ PYTHONPATH=packages/production/src:. .venv/bin/python tools/ops/sfa_publish_gate
 | 7 | 手册/页面/海报标题统一取 `docs/series-sermon-titles.zh.md`；工具常量随表更新 | 手册第 9 周标题与标题表不一致，bind 被拒（`b1180124`） | §10 手册步骤 |
 | 8 | 发布型子命令与发布返工也走 `run_journal` | journal 记 1h27m/计算 3m17s，实际墙钟 2h57m | §11 + `DEV-SF-007` |
 | 9 | 对齐 sidecar 必须与 catalog 的 release 哈希一致；release 一变就重绑 | 并发代理改页面后 sidecar 停在旧 release，旧门禁没查这条，照样 pass | `sfa_publish_gate` 的 `alignment.sidecar.release.<locale>`（2026-11-07 补） |
+| 10 | 标题区四端同一套行：系列 / 标题 / 日期 · 讲员 / 经文；标题以「系列 · 」开头（播客批准格式）时不再单列系列 | 2026-11-24 核对：网页不显示系列、iOS 不显示经文、静态页两样都没有、播客系列在 iOS 出现两次 | `tools/ops/page_heading.py`（web `headingLines`、iOS `SermonHeading.displayedSeries` 同规则）；gate 的 `<locale>.page.heading` 对照文稿 JSON 检查静态页。此前发布的静态页是旧模板，重新发布该页后才会通过 |
 
 ### 10.7 发布后三项旁路（对齐、研读手册、统计目录）
 
