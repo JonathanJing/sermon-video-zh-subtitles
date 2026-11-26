@@ -16,6 +16,7 @@
 
 - 启动器：`tools/ops/run_with_openai_environment.py --environment prod -- <command>`；凭据文件 `.env.openai`（权限 600）。正式内容用 `prod`，实验和测试用 `dev`，两套都在同一文件里。
 - 模型可用性：2026-11-14 在 prod 项目用 models 列表核对，`whisper-1`、`gpt-4o-transcribe`、`gpt-4o-mini-transcribe` 均可见；本轮没有发起付费转写。
+- 2026-11-25 起这些脚本在仓库里：`experiments/sentence-first-agent/l1_transcribe.py`、`l1_anchor.py`、`l1_review_rows.py`、`l1_english_source.py`，本期内容通过参数和提示词文件传入；用第 11 周的转写和修订重跑 `l1_anchor.py`，得到的锚点清单与当时逐字节一致。下面是 2026-11-15 冻结时各期运行目录里的版本。
 - 脚本（`20261108-sermon-source/layer1/`）：
   - `transcribe_openai.py` — `76cf462d…`，whisper-1 词级时间；
   - `transcribe_second_pass.py` — `d7abd45e…`，gpt-4o-transcribe 分块文本，检查每块尾部是否落在词界；

@@ -25,7 +25,7 @@ python3 -m http.server 8797 --bind 127.0.0.1 -d apps/review-web
 
 ## 与生产机的接口
 
-不带 `demo` 参数时，页面用相对地址访问同源的三个接口（接收端尚未实现）：
+不带 `demo` 参数时，页面用相对地址访问同源的三个接口，由 [`tools/ops/review_gate_server.py`](../../tools/ops/review_gate_server.py) 提供：
 
 | 请求 | 返回或提交 |
 |---|---|

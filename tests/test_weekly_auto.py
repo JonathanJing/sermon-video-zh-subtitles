@@ -213,6 +213,12 @@ def test_page_decisions_produce_the_kickoff_record_and_an_approved_english_packa
     assert all(m.level == "passive" for m in driver.notifier().messages[3:])
     events = [json.loads(line)["event"] for line in (folder / "events.ndjson").read_text().splitlines()]
     assert events.count("decision.handled") == 2
+    journal = [(row["stage"], row["event"]) for row in map(json.loads, (folder / "journal.ndjson").read_text().splitlines())]
+    assert journal[:2] == [("source.accept", "started"), ("source.accept", "finished")]
+    assert [event for stage, event in journal if stage == "wait.review"] == ["started", "waiting", "finished"], "waiting for a person is journalled once"
+    assert journal[-1] == ("handoff", "finished") and len(journal) == 2 * len(weekly_auto.STAGES) + 1
+    outcome = json.loads((folder / "outcome.json").read_text())
+    assert (outcome["status"], outcome["exitCode"], outcome["humanApproval"], outcome["rehearsal"]) == ("layer1_ready", 0, True, False)
 
 
 def test_a_rehearsal_goes_all_the_way_and_approves_nothing(driver, tmp_path):
@@ -227,6 +233,8 @@ def test_a_rehearsal_goes_all_the_way_and_approves_nothing(driver, tmp_path):
     assert (package["status"], package["translationEligible"], package["review"]["humanApproval"]) == ("rehearsal_not_for_translation", False, False)
     assert json.loads((tmp_path / "artifacts/weekly-auto" / name / "kickoff.json").read_text())["humanApproval"] is False
     assert "不能用于翻译或发布" in json.loads((tmp_path / "artifacts/weekly-auto" / name / "next-step.json").read_text())["note"]
+    outcome = json.loads((tmp_path / "artifacts/weekly-auto" / name / "outcome.json").read_text())
+    assert (outcome["status"], outcome["humanApproval"], outcome["deliveryType"]) == ("rehearsal_complete", False, "test (rehearsal)")
 
 
 def test_a_decision_about_a_table_that_changed_is_rejected_and_approves_nothing(driver, tmp_path):
@@ -310,6 +318,8 @@ def test_an_unclear_paid_result_stops_paid_work_until_it_is_reconciled(driver, t
     driver.run_command.transcribe_exit = 0
     again = driver.advance(name, retry=True)
     assert again["stages"]["l1.transcribe"]["state"] == "failed" and driver.run_command.calls.count("transcribe") == 1, "still unknown: nothing new is sent"
+    outcome = json.loads((tmp_path / "artifacts/weekly-auto" / name / "outcome.json").read_text())
+    assert (outcome["status"], outcome["exitCode"], outcome["failedStages"]) == ("blocked", 1, {"l1.transcribe": "unknown_outcome"})
     assert weekly_auto.main(["--work-root", str(tmp_path), "--config", str(driver.config_path), "--no-push",
                              "reconcile", "--production", name, "--outcome", "not_charged"]) == 0
     done = driver.advance(name, retry=True)

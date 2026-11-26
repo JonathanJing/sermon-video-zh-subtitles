@@ -247,7 +247,9 @@ class Store:
         return {"schemaVersion": "sermon-review-gate-v1", "gateId": gate["gateId"], "kind": gate["kind"],
                 "production": production, "locale": gate["locale"], "title": gate["title"], "state": gate["state"],
                 "revision": gate["revision"], "openedAt": gate.get("openedAt"), "bindings": gate["bindings"],
-                "labels": {"machineGenerated": True, "humanApproval": False}, "episode": gate.get("episode") or {},
+                "labels": {"machineGenerated": True, "humanApproval": False,
+                           "rehearsal": bool(self.production(production).get("rehearsal"))},
+                "episode": gate.get("episode") or {},
                 "viewer": viewer, "assetsBase": f"files/{production}/{gate_id}/",
                 "data": read_json(self.gate_dir(production, gate_id) / "data.json"),
                 "lastDecision": self.last_decision(production, gate_id)}
@@ -259,7 +261,8 @@ class Store:
             gates.append({"gateId": gate["gateId"], "kind": gate["kind"], "locale": gate["locale"], "title": gate["title"],
                           "state": gate["state"], "summary": gate.get("summary"), "openedAt": gate.get("openedAt"),
                           "decidedAt": gate.get("decidedAt")})
-        return {"schemaVersion": "sermon-review-index-v1", "production": production, "episode": record.get("episode") or {},
+        return {"schemaVersion": "sermon-review-index-v1", "production": production, "rehearsal": bool(record.get("rehearsal")),
+                "episode": record.get("episode") or {},
                 "worker": record.get("worker") or {}, "gates": gates}
 
     def asset(self, production: str, gate_id: str, relative: str) -> Path:

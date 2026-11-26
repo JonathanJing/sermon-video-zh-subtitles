@@ -95,6 +95,10 @@
         },
         "humanApproval": {
           "type": "boolean"
+        },
+        "rehearsal": {
+          "type": "boolean",
+          "description": "true for a rehearsal: its decisions approve nothing"
         }
       }
     },

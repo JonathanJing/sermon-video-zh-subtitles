@@ -1,6 +1,6 @@
 # 人工审核页与通知
 
-状态：**页面、决定格式、通知清单和邮件通道已实现；接收决定的本机服务和自动驱动尚未实现**（见第五节）。校准日期：2026-11-25。适用路线：[逐句优先](../sentence-first-agent-production.zh.md)，步骤以它的 [runbook](../../experiments/sentence-first-agent/AGENTS.md) 为准。
+状态：**页面、决定格式、通知清单、邮件通道和接收决定的本机服务已实现；自动驱动目前接了开工确认和英文表批准两步，其余五步还没有接**（见第五节）。校准日期：2026-11-25。适用路线：[逐句优先](../sentence-first-agent-production.zh.md)，步骤以它的 [runbook](../../experiments/sentence-first-agent/AGENTS.md) 为准。
 
 本页回答三件事：生产在哪些地方要等人；每一处给人看什么、让人决定什么；每个状态发什么通知。
 
@@ -10,7 +10,7 @@
 2. 付费转写每周 OpenAI 50 美元上限。
 3. 默认来源是周日的正式播放版（Broadcast Message 文件夹），新文件到了自动开始生产。
 
-第 1 项在接收决定的本机服务上线后才生效；在那之前，runbook 边界第 3 条（每次正式部署在对话里授权）不变。
+第 1 项只对已经接到自动流程的步骤生效：目前是开工确认和英文表批准。其余步骤（整轨听审、学习内容、发布授权、发布后确认）接上之前，仍按 runbook 在对话里给结论，边界第 3 条（每次正式部署在对话里授权）不变。
 
 ## 一、哪些步骤要等人
 
@@ -75,7 +75,7 @@ runbook 的 handoff 表原有五个 stage。`l0.decisions` 和 `l4.device-confir
 | 人工步骤的推送文案 | 写的是「回到电脑打开播放器」「在对话里确认后继续」；链接是本机地址时会被丢掉，推送里没有可点的链接。新清单的文案指向审核页，缺少手机能打开的链接时拒绝发送 |
 | 没有通知的状态 | 自动开工、来源被拒、下载失败、预算拦截、决定已生效、决定因文件变化作废、决定应用失败、催办、审核版本更新、内存不够、发布门禁没过。**已全部写入清单** |
 
-`run_status.py notify` 现有的开工、可审、失败、停滞、缺步骤、完成六类通知保留不动，现在在配置了邮件时也会发邮件。它的人工步骤文案要等接收决定的本机服务上线后再改，届时改为取用下表的措辞。
+`run_status.py notify` 现有的开工、可审、失败、停滞、缺步骤、完成六类通知保留不动，现在在配置了邮件时也会发邮件。它的人工步骤文案对应的是还在对话里给结论的那些步骤，等它们接到审核页时再改为取用下表的措辞。
 
 ### 4.2 规则
 
@@ -85,7 +85,7 @@ runbook 的 handoff 表原有五个 stage。`l0.decisions` 和 `l4.device-confir
 - **催办。** 每个等人的步骤只催一次：开工确认、英文表、讲员 30 分钟，发布授权 60 分钟，学习内容、发布后确认 120 分钟，整轨听审 180 分钟。22:30 到次日 7:30 不催，落在这段时间的顺延到早上。
 - **内容。** 不含文件路径、密钥和讲道正文；同一事项只发一次。
 
-配置邮件：在钥匙串服务 `org.sermonvideo.production-progress` 下存 `gmail-user`（发件地址）和 `gmail-app`（应用专用密码），可选 `gmail-to`。`python3 tools/ops/notify.py test-push --level timeSensitive` 会同时测 Bark 和邮件，邮件已配置却没送达时退出码为 1。
+配置邮件：在钥匙串服务 `org.sermonvideo.production-progress` 下存 `gmail-user`（发件地址）和 `gmail-app`（应用专用密码），可选 `gmail-to`；这里没有时会改用 Drive 监控那个服务下已存的同一组 Gmail 账户（Bark 的设备 key 不这样共用）。`python3 tools/ops/notify.py test-push --level timeSensitive` 会同时测 Bark 和邮件，邮件已配置却没送达时退出码为 1。
 
 ### 4.3 每个状态的通知
 
@@ -130,12 +130,14 @@ runbook 的 handoff 表原有五个 stage。`l0.decisions` 和 `l4.device-confir
 - 决定、任务、总览三个 schema，演示数据全部通过校验。
 - 通知清单 `tools/ops/production_notices.py`（`list`／`preview`／`send`）和 `notify.py` 的邮件通道，`run_status.py notify` 已接上邮件。
 
+- 接收决定的本机服务 `tools/ops/review_gate_server.py`（只绑本机回环，由 Tailscale Serve 提供仅 tailnet 可见的 HTTPS）和审核任务存储 `tools/ops/review_gates.py`。
+- 自动驱动 `tools/ops/weekly_auto.py`，接了开工确认和英文表批准；已装在生产机上并做过演练，见[周六自动开工](../weekly-auto-production.zh.md)。
+
 还没有：
 
-- **接收决定的本机服务**（只绑本机回环，由 Tailscale Serve 提供仅 tailnet 可见的 HTTPS）。没有它，页面只能用演示数据打开，提交不会到达生产机。
-- **自动驱动**：从 Drive 触发到下载、转写、生成各步骤的任务数据，并在各状态调用通知清单。
-- 用真实数据的端到端验证、手机上的实机验证、Bark 和邮件的真机送达验证。这三项都是 `not_run`。
-- runbook 边界第 3 条的修改，随本机服务一起改。
+- 整轨听审、讲员确认、学习内容、发布授权、发布后确认这五步还没有接到驱动：页面在，但没有程序为它们打开审核任务，提交这几类决定会被驱动记为「还没有接到自动流程」。
+- 带付费转写的真实周六运行、手机上的实机验证。演练里 Bark 和邮件的送达只确认到服务端接受。
+- runbook 边界第 3 条里关于部署授权的部分，等发布授权接上时再改。
 
 ## 六、预览
 

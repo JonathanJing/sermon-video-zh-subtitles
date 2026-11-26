@@ -44,6 +44,7 @@ def test_gate_page_has_the_decision_bar_and_its_checks(kind):
     assert checks and len(checks) == len(set(checks))
     module = (WEB / f"{kind}.mjs").read_text(encoding="utf-8")
     assert f'loadGate("{kind}")' in module and "setupDecision(gate" in module
+    assert "gate.labels.rehearsal" in (WEB / "gate.mjs").read_text(encoding="utf-8"), "a rehearsal is labelled on every page"
 
 
 def test_modules_never_build_html_from_strings():

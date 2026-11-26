@@ -50,7 +50,9 @@ import urllib.request
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "development"))
 import notify  # noqa: E402
+import run_journal  # noqa: E402
 import production_notices as notices  # noqa: E402
 import review_gates  # noqa: E402
 from review_gate_server import tailnet_name  # noqa: E402
@@ -165,6 +167,24 @@ class Driver:
 
     def save(self, record: dict) -> None:
         self.store.write_production(record)
+
+    def journal(self, production: str, stage: str, event: str, waiting_on: str | None = None) -> None:
+        """Stage transitions for the run report (compute, waiting, rework). Never fails the production."""
+        try:
+            run_journal.append(self.store.production_dir(production), stage, event, waiting_on=waiting_on)
+        except Exception as exc:  # noqa: BLE001
+            self.log(production, "journal.failed", stage=stage, error=type(exc).__name__)
+
+    def write_outcome(self, record: dict) -> None:
+        failed = {name: state.get("errorClass") for name, state in record["stages"].items() if state.get("state") == "failed"}
+        review_gates.write_json(self.store.production_dir(record["production"]) / "outcome.json", {
+            "schemaVersion": "weekly-auto-outcome-v1", "production": record["production"], "status": record.get("state"),
+            "exitCode": 1 if failed else 0, "rehearsal": bool(record.get("rehearsal")),
+            "deliveryType": "test (rehearsal)" if record.get("rehearsal") else "four_layer_release, Layer 1 only",
+            "humanApproval": record.get("state") == "layer1_ready",
+            "stages": {name: state.get("state") for name, state in record["stages"].items()}, "failedStages": failed,
+            "notices": {"sent": len(record.get("notices", {})), "undelivered": len(record.get("outbox", {}))},
+            "at": review_gates.now_iso()})
 
     def worker(self, record: dict, stage: str, detail: str, state: str = "在线") -> None:
         record["worker"] = {"lastSeenAt": review_gates.now_iso(), "state": state, "stage": stage, "detail": detail}
@@ -654,11 +674,15 @@ class Driver:
                 if state.get("state") == "failed" and not retry:
                     break
                 retry = False                                       # a retry covers the one failed stage
+                was_waiting = state.get("state") == "waiting"
+                if not was_waiting:
+                    self.journal(production, stage, "started")
                 record["stages"][stage] = {"state": "running", "startedAt": review_gates.now_iso()}
                 self.save(record)
                 try:
                     result = getattr(self, "stage_" + stage.replace(".", "_").replace("-", "_"))(record)
                 except StageError as exc:
+                    self.journal(production, stage, "failed")
                     record["stages"][stage] = {"state": "failed", "at": review_gates.now_iso(), "errorClass": exc.error_class, "message": exc.message}
                     record["state"] = "blocked"
                     self.worker(record, stage, exc.message, state="停下了")
@@ -667,13 +691,18 @@ class Driver:
                     self.notice(record, exc.event, once=f"{exc.event}:{stage}:{record['stages'][stage]['at']}", **fields)
                     break
                 record["stages"][stage] = {"state": "done" if result == "done" else "waiting", "at": review_gates.now_iso()}
+                if result == "done":
+                    self.journal(production, stage, "finished")
+                elif not was_waiting:
+                    self.journal(production, stage, "waiting", "human review on the review page")
                 if record.get("state") == "blocked":
                     record["state"] = "running"
                 self.save(record)
-                self.log(production, "stage", stage=stage, result=result)
                 if result != "done":
                     break
+                self.log(production, "stage", stage=stage, result=result)
             self.save(record)
+            self.write_outcome(record)
             return record
 
 

@@ -103,8 +103,10 @@ export function renderState(gate) {
   const strip = $("label-strip");
   if (!strip) return;
   const [title, detail] = STATE_TEXT[gate.state] || [gate.state, ""];
+  const rehearsal = Boolean(gate.labels && gate.labels.rehearsal);
   strip.dataset.state = gate.state;
-  strip.replaceChildren(h("strong", { text: demo ? `演示 · ${title}` : title }), detail);
+  strip.replaceChildren(h("strong", { text: `${demo ? "演示 · " : ""}${rehearsal ? "演练 · " : ""}${title}` }),
+    rehearsal ? `${detail} 这是演练：提交的决定不产生任何人工批准。` : detail);
 }
 
 function renderShell(gate) {
@@ -141,8 +143,9 @@ export function renderResult(gate, last, sent) {
     ["true", `决定已提交：${verdictText} · ${last.reviewer || "审核者未识别"} · ${fmtWhen(last.submittedAt)}`],
     [failed ? "failed" : String(applied), failed
       ? (outcome === "rejected_stale" ? "本机拒绝：文件已变化，这一版作废，没有产生批准" : `本机处理失败：${last.message || "见本机日志"}`)
-      : (applied ? `本机已核对哈希并生成收据${last.receiptSha256 ? ` ${short(last.receiptSha256)}` : ""}` : "等待本机核对哈希并生成收据")],
-    [String(Boolean(last.nextStage)), last.nextStage ? `下一步已开始：${last.nextStage}` : "下一步尚未开始"],
+      : (applied ? `本机已核对哈希并生成${gate.labels && gate.labels.rehearsal ? "演练文件（不是收据，没有人工批准）" : "收据"}${last.receiptSha256 ? ` ${short(last.receiptSha256)}` : ""}`
+        : "等待本机核对哈希并生成收据")],
+    [String(Boolean(last.nextStage)), last.nextStage ? `下一步：${last.nextStage}` : "下一步尚未开始"],
   ];
   const list = h("ol", { class: "steps" }, steps.map(([done, text]) => h("li", { dataset: { done }, text })));
   const children = [h("h2", { text: demo ? "演示：这是将要提交的决定（没有发送）" : "提交结果" })];

@@ -76,9 +76,14 @@ def test_descriptor_and_index_match_the_schemas_the_pages_use(store):
     jsonschema = pytest.importorskip("jsonschema")
     gate = store.descriptor(PRODUCTION, "l1.english-review", {"login": "a@b", "name": "A", "source": "tailscale"})
     jsonschema.validate(gate, schema("gate"))
-    assert gate["labels"] == {"machineGenerated": True, "humanApproval": False}
+    assert gate["labels"] == {"machineGenerated": True, "humanApproval": False, "rehearsal": False}
     assert gate["assetsBase"] == f"files/{PRODUCTION}/l1.english-review/" and gate["lastDecision"] is None
     jsonschema.validate(store.index(PRODUCTION), schema("index"))
+    store.write_production({**store.production(PRODUCTION), "rehearsal": True})
+    rehearsal = store.descriptor(PRODUCTION, "l1.english-review", {"login": "a@b", "name": "A", "source": "tailscale"})
+    jsonschema.validate(rehearsal, schema("gate"))
+    assert rehearsal["labels"] == {"machineGenerated": True, "humanApproval": False, "rehearsal": True}
+    assert store.index(PRODUCTION)["rehearsal"] is True, "a rehearsal says so to every page"
 
 
 def test_a_decision_is_stored_once_and_the_same_key_returns_the_first_record(service, store):

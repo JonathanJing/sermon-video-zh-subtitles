@@ -354,7 +354,9 @@ export SERMON_YOUTUBE_COOKIES_FILE=/absolute/path/youtube.cookies.txt
 - **开始时刻没有记录。** 18:00 机器没开机或没登录时，实际开始时间取决于登录时刻（11-07 是 18:25:52，窗口前的约 26 分钟没有轮询）。开始消息是 `passive`，正文固定写 18:00–22:00，`watch.log` 与 `state.json` 都不记开始时刻；这段空档靠启动后的第一次读取兜住，窗口内已经存在的文件不会漏。
 - **跨午夜不补读。** 22:00 后、当天午夜前登录会补读一次再收尾；跨过午夜再登录只剩 `outside the window`，既没有补读也没有「未见新文件」的收尾消息，需要手动 `check`。
 
-边界：该检查只读，不下载视频，不写 GCS state，不建立 Layer 1 来源身份，也不启动任何生产阶段。检测到文件不等于确认它与周六直播或周日讲道同篇，也不等于确认可用于生产；要把它作为来源，须另行核实使用授权与来源署名，并按[四层合同](multilingual-production-interfaces.zh.md)从 Layer 1 开始绑定 source ID、URL、媒体哈希与时长。
+2026-11-25 起，每个新文件除了通知，还会在同目录的 `triggers/` 下写一个触发文件（`<文件 ID>.json`，只写一次，不管通知有没有送达）。监控自己不读它；生产机上装了[周六自动开工](weekly-auto-production.zh.md)的驱动时，由驱动据此开工，来源的使用授权记录在 `config/weekly-sermon-auto.json`。
+
+边界：该检查只读，不下载视频，不写 GCS state，不建立 Layer 1 来源身份，自己也不启动任何生产阶段。检测到文件不等于确认它与周六直播或周日讲道同篇，也不等于确认可用于生产；要把它作为来源，须另行核实使用授权与来源署名，并按[四层合同](multilingual-production-interfaces.zh.md)从 Layer 1 开始绑定 source ID、URL、媒体哈希与时长。
 
 ## 完成标准
 
