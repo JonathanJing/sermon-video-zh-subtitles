@@ -1,0 +1,26 @@
+{
+  "schemaVersion": "tongxing-poster-design-receipt-v1",
+  "pageId": "revelation-jesus-will-return-20261122",
+  "locale": "zh-Hans",
+  "designSha256": "babaa0648ec49368445a8836a502c5d41dab1b2406a05341c77e99fb59b54d18",
+  "designPath": "~/dev/sermon-video-zh-subtitles/.claude/worktrees/weekly-auto/artifacts/sentence-first-agent/20261121-jesus-will-return-poster/round-1/draft/poster-design.draft.json",
+  "sourceIdentitySha256": "fb9de13bffc566681659f2d64a209a4da702545ac7aed73cce9f7913ac6984ae",
+  "contentSha256": "49f00f6f9886b3686fdf597f4b39b025b34e436d8d7d3decf53076bc7c3928b0",
+  "chosenCandidate": "c1",
+  "chosenTotal": 11,
+  "candidateTotals": {
+    "c1": 11,
+    "c2": 10,
+    "c3": 8
+  },
+  "promptSha256": "90ffc616040a7bf63a24b3233f4e66627fbcb9db3241b98ba971901ba9f20d85",
+  "promptBytes": 4301,
+  "userChoice": {
+    "status": "pending",
+    "source": "auto draft; human review required"
+  },
+  "warnings": [
+    "user choice is pending"
+  ],
+  "validatedAt": "2026-11-26T17:20:27.863669+00:00"
+}

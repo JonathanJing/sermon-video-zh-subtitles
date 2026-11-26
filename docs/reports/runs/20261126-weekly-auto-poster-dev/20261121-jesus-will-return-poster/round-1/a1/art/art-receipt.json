@@ -1,0 +1,90 @@
+{
+  "schemaVersion": "tongxing-poster-artwork-v1",
+  "promptSha256": "9449019950a7ad3d587a4ccf3b154eab90fa5e332a6c211545bb7d4b925f8371",
+  "promptBytes": 4687,
+  "requestedModel": "gpt-6.1-sol",
+  "promptDelivery": "model_mediated_unverified",
+  "status": "complete",
+  "artSha256": "41695f2dae1c7916b1c027a25c9ea96df32122c948fbda1031dc5c8192b0a063",
+  "artBytes": 1734419,
+  "width": 1024,
+  "height": 1536,
+  "threadId": "01a218df-eebd-76a3-9e72-ddc65b4c0a2c",
+  "composition": {
+    "placement": "ok",
+    "method": "vision_objectness",
+    "objects": 1,
+    "bandTopRatio": 0.399,
+    "bandBottomRatio": 0.647,
+    "centreRatio": 0.523,
+    "horizontalSpan": [
+      0.301,
+      0.643
+    ],
+    "safeArea": {
+      "centre": [
+        0.38,
+        0.66
+      ],
+      "bottom": 0.7
+    },
+    "warnings": []
+  },
+  "warnings": [],
+  "savedPath": "generated_images/01a218df-eebd-76a3-9e72-ddc65b4c0a2c/exec-a3c5f465-6589-45f4-a741-fe3401510857.png",
+  "c2pa": {
+    "chunkSha256": "d298fbd5f4e35a8aa28bbb425c9727b84d4aa9f43c1bb0d56266021a6c0c99fb",
+    "manifestUrn": "urn:c2pa:3fdff7d0-8424-4c7b-aae0-941e82f1c740",
+    "instanceId": "467406f8-90f7-486c-8838-b3ef8feee00e",
+    "softwareAgent": "ChatGPT",
+    "softwareAgentVersion": "gpt-image",
+    "createdAt": "2026-11-26T17:21:28.359771229Z"
+  },
+  "usage": {
+    "input_tokens": 51324,
+    "cached_input_tokens": 30464,
+    "cache_write_input_tokens": 0,
+    "output_tokens": 595,
+    "reasoning_output_tokens": 60
+  },
+  "agentReply": {
+    "present": true,
+    "namesSavedImage": true
+  },
+  "cliVersion": "codex-cli 0.171.0-alpha.13.2",
+  "cliSha256": "50ab38ba21d0d9f8346f32f41848382f15b556190f3c7a07e885a4fb73e379c8",
+  "adapterSha256": "df36dd7a62acc5278f0e7e3337b4546aa94800e321feb56dd8c4ee5837bb6f31",
+  "elapsedSeconds": 34.4,
+  "completedAt": "2026-11-26T17:21:32.927067+00:00",
+  "review": "machine_qc_pending",
+  "humanApproval": false,
+  "retry": {
+    "attempts": 2,
+    "reason": "subject_covered_by_footer",
+    "firstAttempt": "~/dev/sermon-video-zh-subtitles/.claude/worktrees/weekly-auto/artifacts/sentence-first-agent/20261121-jesus-will-return-poster/round-1/a1/art-attempt-1",
+    "firstArtSha256": "62fa2ec78b566b23a9356c42cc67504efd5ad2df9a71efab49cf954a4f025d11",
+    "firstComposition": {
+      "placement": "low",
+      "method": "vision_objectness",
+      "objects": 1,
+      "bandTopRatio": 0.345,
+      "bandBottomRatio": 0.797,
+      "centreRatio": 0.571,
+      "horizontalSpan": [
+        0.165,
+        0.734
+      ],
+      "safeArea": {
+        "centre": [
+          0.38,
+          0.66
+        ],
+        "bottom": 0.7
+      },
+      "warnings": [
+        "subject_covered_by_footer"
+      ]
+    },
+    "correctedPromptPath": "~/dev/sermon-video-zh-subtitles/.claude/worktrees/weekly-auto/artifacts/sentence-first-agent/20261121-jesus-will-return-poster/round-1/a1/art-retry-prompt.txt"
+  }
+}
