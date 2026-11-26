@@ -1,0 +1,149 @@
+{
+  "schemaVersion": "sermon-run-digest-v1",
+  "name": "20261126-prod-web-header-align",
+  "runs": [
+    {
+      "label": "web-header-align-20261126",
+      "source": "~/SynologyDrive/GitHub/Active/sermon-video-zh-subtitles/artifacts/web-header-align-20261126",
+      "skipped": {
+        ".json": 548,
+        ".js": 23,
+        "(none)": 2,
+        ".mjs": 66,
+        ".png": 116,
+        ".svg": 6,
+        ".srt": 4,
+        ".mp3": 180,
+        ".pdf": 8,
+        ".html": 110,
+        ".jpg": 2,
+        ".css": 6,
+        ".lock": 1
+      }
+    }
+  ],
+  "files": [
+    {
+      "run": "web-header-align-20261126",
+      "path": "baseline-prod/baseline-receipt.json",
+      "kind": "whole",
+      "bytes": 200007,
+      "truncated": false,
+      "sha256": "6371ccbcc3a6ddecea1bc19990f36be7eff021559b1c5273915dc68d82a5a523",
+      "redactions": {}
+    },
+    {
+      "run": "web-header-align-20261126",
+      "path": "candidate-prod/baseline-receipt.json",
+      "kind": "whole",
+      "bytes": 200007,
+      "truncated": false,
+      "sha256": "6371ccbcc3a6ddecea1bc19990f36be7eff021559b1c5273915dc68d82a5a523",
+      "redactions": {}
+    },
+    {
+      "run": "web-header-align-20261126",
+      "path": "candidate-prod/deployment-attempt-v2.json",
+      "kind": "whole",
+      "bytes": 1497,
+      "truncated": false,
+      "sha256": "39173ea017f4b2e11e454d648bd9740249f5ff89d9016305bba6c86240d1645a",
+      "redactions": {}
+    },
+    {
+      "run": "web-header-align-20261126",
+      "path": "candidate-prod/hosting-publish.log",
+      "kind": "log",
+      "bytes": 0,
+      "truncated": false,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "redactions": {}
+    },
+    {
+      "run": "web-header-align-20261126",
+      "path": "smoke-if-i-had-more-time-jesus-will-return-es.json",
+      "kind": "whole",
+      "bytes": 7192,
+      "truncated": false,
+      "sha256": "8e426b88d6aba407121226f0360f89ed5e549f028358c8d4f312433b2873312c",
+      "redactions": {}
+    },
+    {
+      "run": "web-header-align-20261126",
+      "path": "smoke-if-i-had-more-time-jesus-will-return-ko.json",
+      "kind": "whole",
+      "bytes": 7005,
+      "truncated": false,
+      "sha256": "d81e094407729b9f3b3951083a2d73a4199df70928bc370455cf1b03044dbc71",
+      "redactions": {}
+    },
+    {
+      "run": "web-header-align-20261126",
+      "path": "smoke-if-i-had-more-time-jesus-will-return-zh-Hans.json",
+      "kind": "whole",
+      "bytes": 7063,
+      "truncated": false,
+      "sha256": "ed5160a758f96e7a5c3d4dbc9274da3b5c588cce1c90d218e1d3fcd3ab30dd58",
+      "redactions": {}
+    },
+    {
+      "run": "web-header-align-20261126",
+      "path": "smoke-nosess-if-i-had-more-time-jesus-will-return-es.json",
+      "kind": "whole",
+      "bytes": 6981,
+      "truncated": false,
+      "sha256": "906d2e6dcb23131e7fc139ac408deb011c9a8c253e6865b8e1fbb4200c13aae7",
+      "redactions": {}
+    },
+    {
+      "run": "web-header-align-20261126",
+      "path": "smoke-nosess-if-i-had-more-time-jesus-will-return-ko.json",
+      "kind": "whole",
+      "bytes": 7012,
+      "truncated": false,
+      "sha256": "0a4d64019798e84c9b3cacd14ad1fd6d5f8d11a432501c94209d559efad8f659",
+      "redactions": {}
+    },
+    {
+      "run": "web-header-align-20261126",
+      "path": "smoke-nosess-if-i-had-more-time-jesus-will-return-zh-Hans.json",
+      "kind": "whole",
+      "bytes": 7117,
+      "truncated": false,
+      "sha256": "56e713222ad0ceebf4f97b35ad1b14742892296b20d768f3cf555b813a63896d",
+      "redactions": {}
+    },
+    {
+      "run": "web-header-align-20261126",
+      "path": "smoke-revelation-jesus-will-return-20261122-es.json",
+      "kind": "whole",
+      "bytes": 6277,
+      "truncated": false,
+      "sha256": "42789d9e172dae658d9399862ad0ac5c65e187cadc101aac7c4eb0352cd48a39",
+      "redactions": {}
+    },
+    {
+      "run": "web-header-align-20261126",
+      "path": "smoke-revelation-jesus-will-return-20261122-ko.json",
+      "kind": "whole",
+      "bytes": 6275,
+      "truncated": false,
+      "sha256": "cadf7a9b1854f7bcfa08d85a0a50cef1849c2b80c8438f0fbc4a2cf7b438a54a",
+      "redactions": {}
+    },
+    {
+      "run": "web-header-align-20261126",
+      "path": "smoke-revelation-jesus-will-return-20261122-zh-Hans.json",
+      "kind": "whole",
+      "bytes": 6313,
+      "truncated": false,
+      "sha256": "d43ef5895a95fb7ae78f4c0ef61e615d89b121462e36488ce4190e27222a8f55",
+      "redactions": {}
+    }
+  ],
+  "limits": {
+    "maxWholeBytes": 262144,
+    "logHead": 40,
+    "logTail": 200
+  }
+}

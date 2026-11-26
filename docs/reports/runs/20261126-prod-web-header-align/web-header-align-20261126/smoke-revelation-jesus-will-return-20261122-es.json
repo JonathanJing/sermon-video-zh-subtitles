@@ -1,0 +1,137 @@
+{
+  "schemaVersion": "sermon-published-page-browser-smoke-v3",
+  "checkedAt": "2026-11-26T15:34:24.690618+00:00",
+  "origin": "https://ai-for-god-sermon-audio.web.app",
+  "pageId": "revelation-jesus-will-return-20261122",
+  "browser": "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+  "settleMs": 4000,
+  "deadlineMs": 60000,
+  "catalogVersion": "sermon-multilingual-catalog-v5",
+  "status": "pass",
+  "locales": [
+    {
+      "locale": "es",
+      "url": "https://ai-for-god-sermon-audio.web.app/?week=revelation-jesus-will-return-20261122&contentLang=es",
+      "status": "pass",
+      "releasePackageUrl": "/releases-v2/revelation-jesus-will-return-20261122/es.json",
+      "releasePackageJsonSha256": "f74c9c7cd38826707064a90495ff18ff4d844d9439bb209d8018aac85d69ba40",
+      "problems": [],
+      "warnings": [
+        "optional resource failed: /alignment/if-i-had-more-time-jesus-is-just.json: Failed to load resource: the server responded with a status of 404 ()",
+        "optional resource failed: /alignment/if-i-had-more-time-jesus-is-better-than-this-world.json: Failed to load resource: the server responded with a status of 404 ()",
+        "optional resource failed: /alignment/if-i-had-more-time-jesus-sends-and-resurrects-his-own.json: Failed to load resource: the server responded with a status of 404 ()",
+        "optional resource failed: /alignment/if-i-had-more-time-jesus-marks-his-own.json: Failed to load resource: the server responded with a status of 404 ()",
+        "optional resource failed: /alignment/if-i-had-more-time-jesus-will-return.json: Failed to load resource: the server responded with a status of 404 ()",
+        "optional resource failed: /alignment/if-i-had-more-time-jesus-wins.json: Failed to load resource: the server responded with a status of 404 ()",
+        "optional resource failed: /alignment/if-i-had-more-time-jesus-is-worthy.json: Failed to load resource: the server responded with a status of 404 ()",
+        "optional resource failed: /alignment/if-i-had-more-time-jesus-promises.json: Failed to load resource: the server responded with a status of 404 ()",
+        "optional resource failed: /voice-demos/speaker-clips-v2/catalog.json: Failed to load resource: the server responded with a status of 404 ()"
+      ],
+      "browserStatus": "ok",
+      "elapsedMs": 4839,
+      "title": "Jesús volverá · 同行 · 证道西语听译",
+      "audioSrc": "/media/revelation-jesus-will-return-20261122/es.mp3",
+      "captionText": "Qué bueno verlos a todos; si no nos conocemos, me llamo Eric, soy el pastor principal de Mariners.",
+      "consoleErrors": [
+        {
+          "kind": "log.network",
+          "message": "Failed to load resource: the server responded with a status of 404 ()",
+          "source": "https://ai-for-god-sermon-audio.web.app/alignment/if-i-had-more-time-jesus-is-just.json",
+          "line": null
+        },
+        {
+          "kind": "log.network",
+          "message": "Failed to load resource: the server responded with a status of 404 ()",
+          "source": "https://ai-for-god-sermon-audio.web.app/alignment/if-i-had-more-time-jesus-is-better-than-this-world.json",
+          "line": null
+        },
+        {
+          "kind": "log.network",
+          "message": "Failed to load resource: the server responded with a status of 404 ()",
+          "source": "https://ai-for-god-sermon-audio.web.app/alignment/if-i-had-more-time-jesus-sends-and-resurrects-his-own.json",
+          "line": null
+        },
+        {
+          "kind": "log.network",
+          "message": "Failed to load resource: the server responded with a status of 404 ()",
+          "source": "https://ai-for-god-sermon-audio.web.app/alignment/if-i-had-more-time-jesus-marks-his-own.json",
+          "line": null
+        },
+        {
+          "kind": "log.network",
+          "message": "Failed to load resource: the server responded with a status of 404 ()",
+          "source": "https://ai-for-god-sermon-audio.web.app/alignment/if-i-had-more-time-jesus-will-return.json",
+          "line": null
+        },
+        {
+          "kind": "log.network",
+          "message": "Failed to load resource: the server responded with a status of 404 ()",
+          "source": "https://ai-for-god-sermon-audio.web.app/alignment/if-i-had-more-time-jesus-wins.json",
+          "line": null
+        },
+        {
+          "kind": "log.network",
+          "message": "Failed to load resource: the server responded with a status of 404 ()",
+          "source": "https://ai-for-god-sermon-audio.web.app/alignment/if-i-had-more-time-jesus-is-worthy.json",
+          "line": null
+        },
+        {
+          "kind": "log.network",
+          "message": "Failed to load resource: the server responded with a status of 404 ()",
+          "source": "https://ai-for-god-sermon-audio.web.app/alignment/if-i-had-more-time-jesus-promises.json",
+          "line": null
+        },
+        {
+          "kind": "log.network",
+          "message": "Failed to load resource: the server responded with a status of 404 ()",
+          "source": "https://ai-for-god-sermon-audio.web.app/voice-demos/speaker-clips-v2/catalog.json",
+          "line": null
+        }
+      ],
+      "sessionRequests": [
+        {
+          "method": "POST",
+          "status": 200,
+          "source": {
+            "week": "2026-11-22",
+            "trackId": "revelation-jesus-will-return-20261122-es-6602f1edabfe",
+            "audioSha256": "6602f1edabfe6a7610956b558812a6a6ff6d82de7630cee4be7869476ebcbdb0"
+          }
+        },
+        {
+          "method": "POST",
+          "status": 200,
+          "source": {
+            "week": "2026-11-22",
+            "trackId": "revelation-jesus-will-return-20261122-zh-Hans-f3c83534e1b2",
+            "audioSha256": "f3c83534e1b2af86e497b23c8fb54de2c23f5db7d95c18452b9222dcdc440d6e"
+          }
+        },
+        {
+          "method": "POST",
+          "status": 200,
+          "source": {
+            "week": "2026-11-22",
+            "trackId": "revelation-jesus-will-return-20261122-es-6602f1edabfe",
+            "audioSha256": "6602f1edabfe6a7610956b558812a6a6ff6d82de7630cee4be7869476ebcbdb0"
+          }
+        },
+        {
+          "method": "POST",
+          "status": 200,
+          "source": {
+            "week": "2026-11-22",
+            "trackId": "revelation-jesus-will-return-20261122-zh-Hans-f3c83534e1b2",
+            "audioSha256": "f3c83534e1b2af86e497b23c8fb54de2c23f5db7d95c18452b9222dcdc440d6e"
+          }
+        }
+      ],
+      "usageAnchor": {
+        "week": "2026-11-22",
+        "trackId": "revelation-jesus-will-return-20261122-zh-Hans-f3c83534e1b2",
+        "audioSha256": "f3c83534e1b2af86e497b23c8fb54de2c23f5db7d95c18452b9222dcdc440d6e"
+      }
+    }
+  ],
+  "scope": "browser_render_and_feedback_session_only"
+}
