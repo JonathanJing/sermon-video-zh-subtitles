@@ -46,8 +46,10 @@
   <section class="card" aria-labelledby="rows-title">
     <header><h2 id="rows-title">逐句</h2><span class="small muted" id="shown"></span></header>
     <p class="lead">每句可以单独听配音、听原声，或先原声后配音。有问题就标出来并写一句说明；标了问题的句子会被改掉重配，再请你听这几句。</p>
+    <p class="lead" id="previous" hidden></p>
     <div class="chips" id="filters" role="group" aria-label="筛选">
       <button type="button" data-filter="all" aria-pressed="true">全部</button>
+      <button type="button" data-filter="changed" aria-pressed="false" hidden>这次改的</button>
       <button type="button" data-filter="flagged" aria-pressed="false">有标记</button>
       <button type="button" data-filter="unheard" aria-pressed="false">有标记但没听</button>
       <button type="button" data-filter="issue" aria-pressed="false">我标了问题</button>

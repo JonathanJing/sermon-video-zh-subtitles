@@ -18,6 +18,8 @@ if "本篇用词约定" in prompt:
     kind = "brief"
 elif "保真问题" in prompt:
     kind = "audit"
+elif "被听审人退回" in prompt:
+    kind = "repair"
 elif "做口语化" in prompt:
     kind = "colloquial"
 elif "做精简" in prompt:
@@ -30,7 +32,7 @@ if log:
     calls = sum(1 for line in lines if json.loads(line)["out"] == str(out))
     with open(log, "a") as handle:
         handle.write(json.dumps({"kind": kind, "out": str(out), "argv": [a for a in sys.argv[1:] if a != prompt]}) + "\n")
-if mode == "fail" or (mode == "fail_once" and calls == 0):
+if mode == "fail" or (mode == "fail_once" and calls == 0) or (mode == "fail_repair" and kind == "repair"):
     print("boom", file=sys.stderr)
     sys.exit(1)
 if mode == "no_output":
@@ -57,6 +59,23 @@ elif kind == "audit":
                 {"id": sentences[2]["id"], "issue": "偏移：不确定", "suggestedTarget": "", "severity": "low"}]
     out.write_text("".join(json.dumps(f, ensure_ascii=False) + "\n" for f in findings), encoding="utf-8")
     print("done 2")
+elif kind == "repair":
+    result = []
+    for row in rows(re.search(r"输入文件：(\S+)", prompt).group(1)):
+        if "改成" in row["note"]:                      # the reviewer gave the wording
+            answer = {"action": "retranslate", "target": row["note"].split("改成", 1)[1].strip(), "note": "照听审人写的改"}
+        elif "音质" in row["tags"] or "不同步" in row["tags"]:
+            answer = {"action": "rerender", "target": row["target"], "note": "文字没有问题，重新配音"}
+        elif "？？" in row["note"]:
+            answer = {"action": "unclear", "target": row["target"], "note": "看不出要改哪里"}
+        else:
+            answer = {"action": "retranslate", "target": "FIXED " + row["target"], "note": "改了一处"}
+        if mode == "repair_silent_change" and answer["action"] == "rerender":
+            answer["target"] = "CHANGED " + answer["target"]
+        if not (mode == "repair_drop_once" and out.name.endswith("output-1.jsonl") and row["id"] == "s0004"):
+            result.append({"id": row["id"], **answer})
+    out.write_text("".join(json.dumps(r, ensure_ascii=False) + "\n" for r in result), encoding="utf-8")
+    print(f"done {len(result)}")
 else:
     source = rows(re.search(r"输入文件：(\S+)", prompt).group(1))
     result = []

@@ -169,3 +169,83 @@ def test_nothing_to_rewrite_calls_nothing(run, tmp_path):
 ])
 def test_rewrite_checks(mode, before, after, why):
     assert opus_tasks.check_rewrite(mode, {"target": before}, {"target": after}) == why
+
+
+def ask_repair(run, tmp_path, rows, name="issues-r1.json", apply=True):
+    if not (run / "review.json").exists():
+        prepare_review(run, tmp_path)
+    write_speech(run, over=set())
+    (run / "repair").mkdir(exist_ok=True)
+    (run / "repair" / name).write_text(json.dumps({"decisionId": "d1", "rows": rows}, ensure_ascii=False))
+    return go("repair", "--run", run, "--locale", "zh-Hans", "--issues", run / "repair" / name, "--episode", tmp_path / "episode.json",
+              "--brief", tmp_path / "brief.json", *(["--apply"] if apply else []))
+
+
+def test_a_reviewers_marked_sentences_get_the_wording_they_asked_for_or_a_new_render(run, tmp_path, capsys):
+    rows = {"s0003": {"tags": ["translation"], "note": "太书面，改成 那城有 12 个门"}, "s0005": {"tags": ["audio"], "note": "有杂音"},
+            "s0002": {"tags": ["other"], "note": "？？"}}
+    assert ask_repair(run, tmp_path, rows) == 0
+    summary = json.loads(capsys.readouterr().out.strip().splitlines()[-1])
+    assert summary == {"locale": "zh-Hans", "issues": 3, "retranslate": ["s0003"], "rerender": ["s0005"], "unclear": ["s0002"], "failed": []}
+    sent = [json.loads(line) for line in (run / "repair" / "repair-r1-input-1.jsonl").read_text().splitlines()]
+    assert [row["id"] for row in sent] == ["s0002", "s0003", "s0005"], "in sentence order"
+    assert sent[1]["tags"] == ["译文"] and sent[1]["note"].startswith("太书面") and sent[1]["english"] == SENTENCES[2]
+    assert sent[1]["before"].startswith("[zh-Hans]") and sent[1]["after"].startswith("[zh-Hans]") and sent[1]["spoken"]
+    revisions = json.loads((run / "review.json").read_text())["revisions"]
+    assert revisions["s0003"] == {"target": "那城有 12 个门", "note": "review fix r1: 太书面，改成 那城有 12 个门"}
+    assert "s0005" not in revisions and "s0002" not in revisions, "only a new wording becomes a revision"
+    report = json.loads((run / "repair" / "repair-r1-report.json").read_text())
+    assert report["applied"] is True and report["decisionId"] == "d1" and report["rows"][1]["before"].startswith("[zh-Hans]")
+    assert [(row["id"], row["action"]) for row in report["rows"]] == [("s0002", "unclear"), ("s0003", "retranslate"), ("s0005", "rerender")]
+    assert len([c for c in calls(tmp_path) if c["kind"] == "repair"]) == 1
+
+
+def test_a_repair_keeps_the_note_of_an_earlier_revision_and_without_apply_changes_nothing(run, tmp_path):
+    prepare_review(run, tmp_path)
+    review = json.loads((run / "review.json").read_text())
+    review.setdefault("revisions", {})["s0004"] = {"target": "earlier wording", "note": "audit high: 漏译"}
+    (run / "review.json").write_text(json.dumps(review, ensure_ascii=False))
+    before = (run / "review.json").read_text()
+    assert ask_repair(run, tmp_path, {"s0004": {"tags": ["translation"], "note": ""}}, apply=False) == 0
+    assert (run / "review.json").read_text() == before and "applied" not in json.loads((run / "repair" / "repair-r1-report.json").read_text())
+    assert ask_repair(run, tmp_path, {"s0004": {"tags": ["translation"], "note": ""}}, name="issues-r2.json") == 0
+    revision = json.loads((run / "review.json").read_text())["revisions"]["s0004"]
+    assert revision == {"target": "FIXED earlier wording", "note": "audit high: 漏译; review fix r2: 译文"}, "the tag stands in for an empty note"
+
+
+def test_a_sentence_left_out_is_asked_for_once_more_and_a_bad_answer_applies_nothing(run, tmp_path, monkeypatch, capsys):
+    rows = {"s0003": {"tags": ["translation"], "note": "改成 新的一句"}, "s0004": {"tags": ["audio"], "note": ""}}
+    monkeypatch.setenv("FAKE_CLAUDE_MODE", "repair_drop_once")
+    assert ask_repair(run, tmp_path, rows) == 0
+    report = json.loads((run / "repair" / "repair-r1-report.json").read_text())
+    assert [a["missing"] for a in report["attempts"]] == [["s0004"], []] and len([c for c in calls(tmp_path) if c["kind"] == "repair"]) == 2
+    second = [json.loads(line)["id"] for line in (run / "repair" / "repair-r1-input-2.jsonl").read_text().splitlines()]
+    assert second == ["s0004"], "only the sentence without a usable answer goes out again"
+    # a "render again" that quietly changed the words is refused twice: the round fails and nothing is written
+    monkeypatch.setenv("FAKE_CLAUDE_MODE", "repair_silent_change")
+    before = (run / "review.json").read_text()
+    capsys.readouterr()
+    assert ask_repair(run, tmp_path, {"s0004": rows["s0004"], "s0006": {"tags": ["translation"], "note": "改成 另一句"}}, name="issues-r2.json") == 1
+    summary = json.loads(capsys.readouterr().out.strip().splitlines()[-1])
+    assert summary["repair"] == "failed" and summary["failed"] == ["s0004"] and summary["retranslate"] == ["s0006"] and (run / "review.json").read_text() == before
+    report = json.loads((run / "repair" / "repair-r2-report.json").read_text())
+    assert report["attempts"][0]["refused"] == {"s0004": "wording changed without saying so"} and "applied" not in report
+
+
+def test_a_repair_for_a_sentence_that_is_not_in_the_run_asks_nothing(run, tmp_path, capsys):
+    assert ask_repair(run, tmp_path, {"s0999": {"tags": [], "note": "x"}}) == 1
+    assert "unknown ids" in capsys.readouterr().out and not [c for c in calls(tmp_path) if c["kind"] == "repair"]
+
+
+@pytest.mark.parametrize("action, before, after, why", [
+    ("retranslate", "some words", "other words", None),
+    ("rerender", "some words", "some words", None),
+    ("unclear", "some words", "some words", None),
+    ("rerender", "some words", "other words", "wording changed without saying so"),
+    ("retranslate", "some words", "some words", "says retranslate but the wording is the same"),
+    ("retranslate", "some words", " ", "empty"),
+    ("rewrite", "some words", "other words", "unknown action"),
+    ("retranslate", "short", "x" * 40, "much longer than before"),
+])
+def test_repair_checks(action, before, after, why):
+    assert opus_tasks.check_repair({"target": before}, {"action": action, "target": after}) == why

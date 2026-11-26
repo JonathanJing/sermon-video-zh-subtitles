@@ -106,3 +106,20 @@ def test_demo_data_is_synthetic():
     text = "".join(path.read_text(encoding="utf-8") for path in (WEB / "demo").glob("*.json"))
     assert "Mariners" not in text and "drive.google.com" not in text and "ts.net" not in text
     assert "example.invalid" in text
+
+
+def test_the_track_page_knows_every_flag_the_driver_puts_on_a_sentence():
+    """A flag the page does not know would break the row (the driver's list is in stage_gate_track)."""
+    driver = (ROOT / "tools" / "ops" / "weekly_auto.py").read_text(encoding="utf-8")
+    start = driver.index("    def stage_gate_track")
+    body = driver[start:driver.index("\n    def ", start + 10)]
+    emitted = set(re.findall(r'"(revised|note|speaker|condensed|lag|fixed|unclear|rerendered)"', body))
+    assert emitted == {"revised", "note", "speaker", "condensed", "lag", "fixed", "unclear", "rerendered"}
+    page = (WEB / "track.mjs").read_text(encoding="utf-8")
+    known = set(re.findall(r"(\w+): \[\"", page[page.index("const FLAGS"):page.index("const CHANGED")]))
+    assert emitted <= known, emitted - known
+    html = (WEB / "track.html").read_text(encoding="utf-8")
+    assert 'data-filter="changed" aria-pressed="false" hidden' in html and 'id="previous" hidden' in html, "shown only for a repaired version"
+    assert 'f === "changed"' in page and "row.fix.before" in page
+    # hearing only the changes is offered only after an earlier version that was heard properly
+    assert '["whole_track", "flagged_only"].includes(data.previous.listeningMode)' in page and '"changed_only"' in page

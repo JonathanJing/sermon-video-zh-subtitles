@@ -77,7 +77,7 @@ MAX_NOTICE_ATTEMPTS = 6
 NEXT_AFTER_ENGLISH = "翻译和配音（还没有自动化，按 runbook 从 sfa.py start 继续）"
 NEXT_AFTER_TRACKS = "发布授权（还没有自动化，按 runbook 第 10 步继续）"
 SUFFIX = {"zh-Hans": "zh", "ko": "ko", "es": "es"}
-LOCALE_STAGES = ("l3.tts.", "l3.finish.", "l3.sync.", "gate.track.")       # one of each per language, in kickoff order
+LOCALE_STAGES = ("l3.tts.", "l3.repair.", "l3.finish.", "l3.sync.", "gate.track.")   # one of each per language, in kickoff order
 LAG_THRESHOLD = 8.0
 
 
@@ -427,6 +427,13 @@ class Driver:
                             "checkpointReady": any(prefix and sha.startswith(prefix) for prefix in present)})
         return options
 
+    def kickoff_bindings(self, record: dict) -> dict:
+        """What a kickoff decision is about: this media file and the choices the page offered. Only those
+        parts of the configuration are hashed: a decision is not about the rest of the file (2026-11-25: a
+        deployment that changed another setting made a reviewer's submitted approval stale)."""
+        offered = {"defaults": self.config["defaults"], "titleRow": self.title_row(record["sunday"]), "speakers": self.speaker_options()}
+        return {"sourceMediaSha256": record["source"]["sha256"], "defaultsConfigSha256": json_sha(offered)}
+
     def stage_gate_decisions(self, record: dict) -> str:
         source, defaults = record["source"], self.config["defaults"]
         row = self.title_row(record["sunday"])
@@ -471,12 +478,11 @@ class Driver:
                      {"label": "发布授权", "when": "三条音轨都有结论之后", "effort": "约 5 分钟"},
                      {"label": "发布后确认", "when": "发布之后", "effort": "约 10 分钟"}]}
         summary = "整期 · 三语 · 同步 · 正式页" + ("" if row else " · 标题表里没有这一周")
-        self.store.open_gate(record["production"], gate_id="l0.decisions", kind="decisions", title="开工确认", summary=summary,
-                             bindings={"sourceMediaSha256": source["sha256"], "defaultsConfigSha256": sha256_file(self.config_path)},
-                             data=data, assets_root=assets)
+        gate = self.store.open_gate(record["production"], gate_id="l0.decisions", kind="decisions", title="开工确认", summary=summary,
+                                    bindings=self.kickoff_bindings(record), data=data, assets_root=assets)
         record["episode"].update(title=(row or {}).get("titles", {}).get("zh-Hans"),
                                  speaker=next((o["label"] for o in speakers if o["value"] == speaker_id), speaker_id))
-        self.notice(record, "gate.opened", kind="decisions", gate_id="l0.decisions",
+        self.notice(record, "gate.opened", kind="decisions", gate_id="l0.decisions", revision=gate["revision"],     # each version is announced
                     summary="默认值已填好：" + summary + ("，需要你填讲题" if not row else ""))
         return "done"
 
@@ -581,12 +587,13 @@ class Driver:
             if gate["state"] != "open" or not gate.get("openedAt"):
                 continue
             opened = dt.datetime.fromisoformat(gate["openedAt"])
-            sent = record.setdefault("reminders", {}).get(gate["gateId"], 0)
+            key = gate["gateId"] if gate["revision"] == 1 else f"{gate['gateId']}#r{gate['revision']}"      # a new version waits anew
+            sent = record.setdefault("reminders", {}).get(key, 0)
             if notices.reminder_due(gate["kind"], opened, now, sent):
                 waited = int((now - opened).total_seconds() // 60)
                 self.notice(record, "gate.reminder", kind=gate["kind"], gate_id=gate["gateId"], locale=gate.get("locale"),
                             once=f"reminder:{gate['gateId']}:{gate['revision']}", waited=f"{waited} 分钟" if waited < 120 else f"{waited // 60} 小时")
-                record["reminders"][gate["gateId"]] = sent + 1
+                record["reminders"][key] = sent + 1
         reworking = [gate["title"] for gate in waiting if gate["state"] in ("changes_requested", "stale")]
         self.worker(record, "等修改后重出" if reworking and len(reworking) == len(waiting) else "等你审核",
                     "、".join(gate["title"] + (f"（{notices.LOCALE_NAMES.get(gate['locale'], gate['locale'])}）" if gate.get("locale") else "") for gate in waiting),
@@ -804,7 +811,9 @@ class Driver:
             self.build_speech(record, run, locale)
             accepted = 0
             if self.synced(record):                         # before any rendering: sentences that will not fit, said the way one would say them
-                accepted = self.rewrite(record, run, locale, "colloquial", "estimate", "--margin", "0.5")
+                # every sentence estimated not to fit, not only the worst ones: a sentence left out here would be
+                # condensed later without ever having been said more simply first (the order the user fixed)
+                accepted = self.rewrite(record, run, locale, "colloquial", "estimate", "--margin", "0.5", "--limit", "1000")
                 if accepted:
                     self.build_speech(record, run, locale)
             self.script(record, f"预检 {locale}", "preflight.py", "--stage", "full", "--run", run, "--locale", locale,
@@ -819,35 +828,116 @@ class Driver:
         for name in ("speed-fit.json", "tts-silence-trim.json", "track.wav", "schedule.json", "review.mp3", "dub.mp4", "dub-preview-640.mp4"):
             (run / name).unlink(missing_ok=True)
 
+    def tts_command(self, record: dict, locale: str) -> list:
+        run, speaker = self.locale_run(record, locale), self.speaker(record)
+        checkpoint = self.checkpoint_dir(speaker["sha"])
+        if checkpoint is None:
+            raise StageError("voice", f"{speaker['name']} 的声音文件不在这台机器上", stageName=f"{notices.LOCALE_NAMES.get(locale, locale)}配音")
+        python = self.local.get("ttsPython") or str(Path.home() / "tts-runtime" / "venv" / "bin" / "python")
+        return [python, EXP / "tts_sentences.py", "--speech", run / "speech.jsonl", "--checkpoint", checkpoint, "--out", run / "tts",
+                "--device", "mps", "--dtype", "float32", "--seed", "7", "--batch-size", "8",
+                "--expect-checkpoint-sha256", speaker["sha"], "--min-available-gib", "15"]
+
+    def memory_admitted(self, record: dict, locale: str, base: list) -> bool:
+        """The renderer's own dry run says whether the model may be loaded. Too little memory is not a failure:
+        a notice goes out and the timer tries again."""
+        name = notices.LOCALE_NAMES.get(locale, locale)
+        probe = self.run_command([str(part) for part in base] + ["--dry-run"], cwd=str(self.work_root), capture_output=True, text=True, check=False)
+        admission = next((json.loads(line)["memoryAdmission"] for line in (probe.stdout or "").splitlines()
+                          if line.startswith("{") and "memoryAdmission" in line), None)
+        if admission and not admission.get("pass"):
+            self.notice(record, "resource.blocked", once=f"memory:{locale}:{review_gates.now_iso()[:13]}",
+                        available=f"{admission.get('availableGiB', 0):.1f}", required=f"{admission.get('requiredGiB', 15):g}")
+            self.worker(record, f"{name}配音", "内存不够，等内存空出来再试", state="等待")
+            return False
+        if probe.returncode != 0 and "another TTS renderer is running" in (probe.stderr or ""):
+            # one model copy at a time on this machine (render_lock.py): the other render ends by itself
+            self.worker(record, f"{name}配音", "这台机器上另一条配音还在跑，等它结束再开始", state="等待")
+            return False
+        if probe.returncode != 0:
+            raise StageError("process", f"配音预检没过：{(probe.stderr or probe.stdout or '').strip().splitlines()[-1][:160]}", stageName=f"{name}配音")
+        return True
+
     def stage_l3_tts(self, record: dict, locale: str) -> str:
         run, name = self.locale_run(record, locale), notices.LOCALE_NAMES.get(locale, locale)
         total = sum(1 for line in (run / "speech.jsonl").read_text(encoding="utf-8").splitlines() if line.strip())
         rendered = lambda: len([p for p in (run / "tts").glob("s*.wav") if not p.name.endswith(".partial.wav")]) if (run / "tts").is_dir() else 0
         if total and rendered() >= total:
             return "done"
-        speaker = self.speaker(record)
-        checkpoint = self.checkpoint_dir(speaker["sha"])
-        if checkpoint is None:
-            raise StageError("voice", f"{speaker['name']} 的声音文件不在这台机器上", stageName=f"{name}配音")
-        python = self.local.get("ttsPython") or str(Path.home() / "tts-runtime" / "venv" / "bin" / "python")
-        base = [python, EXP / "tts_sentences.py", "--speech", run / "speech.jsonl", "--checkpoint", checkpoint, "--out", run / "tts",
-                "--device", "mps", "--dtype", "float32", "--seed", "7", "--batch-size", "8",
-                "--expect-checkpoint-sha256", speaker["sha"], "--min-available-gib", "15"]
-        probe = self.run_command([str(part) for part in base] + ["--dry-run"], cwd=str(self.work_root), capture_output=True, text=True, check=False)
-        admission = next((json.loads(line)["memoryAdmission"] for line in (probe.stdout or "").splitlines()
-                          if line.startswith("{") and "memoryAdmission" in line), None)
-        if admission and not admission.get("pass"):         # not a failure: the timer tries again once memory is free
-            self.notice(record, "resource.blocked", once=f"memory:{locale}:{review_gates.now_iso()[:13]}",
-                        available=f"{admission.get('availableGiB', 0):.1f}", required=f"{admission.get('requiredGiB', 15):g}")
-            self.worker(record, f"{name}配音", "内存不够，等内存空出来再试", state="等待")
+        base = self.tts_command(record, locale)
+        if not self.memory_admitted(record, locale, base):
             return "waiting"
-        if probe.returncode != 0:
-            raise StageError("process", f"配音预检没过：{(probe.stderr or probe.stdout or '').strip().splitlines()[-1][:160]}", stageName=f"{name}配音")
         self.worker(record, f"{name}配音", f"0 / {total} 句")
         with self.heartbeat(record, f"{name}配音", lambda: f"{rendered()} / {total} 句"):
             out = self.step(record, f"配音 {locale}", base, cwd=self.work_root)
         with (run / "tts-run.log").open("a", encoding="utf-8") as handle:
             handle.write(out)
+        return "done"
+
+    def restore_raw(self, run: Path) -> None:
+        """Put every sentence back to the audio the renderer wrote, and drop what trimming and speed fitting
+        recorded, so the next merge trims and fits the whole track again. Both steps are deterministic: a
+        sentence that was not rendered again comes out as it was."""
+        for name in ("tts-raw-before-trim", "tts-before-speed"):       # the earliest copy wins
+            for backup in sorted((run / name).glob("s*.wav")) if (run / name).is_dir() else []:
+                if (run / "tts" / backup.name).is_file():
+                    shutil.copyfile(backup, run / "tts" / backup.name)
+                backup.unlink()
+                (run / "tts-before-speed" / backup.name).unlink(missing_ok=True)
+        for name in ("speed-fit.json", "tts-silence-trim.json"):
+            (run / name).unlink(missing_ok=True)
+
+    def stage_l3_repair(self, record: dict, locale: str) -> str:
+        """A track review that asked for changes. Opus rewords the marked sentences the way the reviewer
+        said, the batches they sit in are rendered again, and the following stages merge the track and
+        put it in front of the reviewer again. Nothing here approves anything."""
+        todo = next((item for item in (record.get("repairs") or {}).get(locale) or [] if item["state"] != "done"), None)
+        if todo is None:
+            return "done"
+        run, name = self.locale_run(record, locale), notices.LOCALE_NAMES.get(locale, locale)
+        folder, tag = self.store.production_dir(record["production"]), todo["round"]
+        base = self.tts_command(record, locale)
+        if "worded" not in todo:
+            self.worker(record, f"{name}改句", f"Opus 按听审意见改 {todo['issues']} 句")
+            out = self.script(record, f"改句 {locale}", "opus_tasks.py", "repair", "--run", run, "--locale", locale,
+                              "--issues", run / "repair" / f"issues-{tag}.json", "--episode", folder / "episode.json",
+                              "--brief", folder / "episode-brief.json", "--apply")
+            todo["worded"] = json.loads(out.strip().splitlines()[-1])
+            self.save(record)
+        worded = todo["worded"]
+        if worded["retranslate"] and not todo.get("speech"):
+            self.build_speech(record, run, locale)
+            todo["speech"] = True
+            self.save(record)
+        changed = worded["retranslate"] + worded["rerender"]
+        if changed:
+            batches = [json.loads(line) for line in (run / "tts" / "tts-batches.jsonl").read_text(encoding="utf-8").splitlines() if line.strip()]
+            windows = []
+            for unit in changed:                            # the batch a sentence was first rendered in, as repair_sentence.py finds it
+                window = next((batch["ids"] for batch in batches if unit in batch["ids"]), None)
+                if window is None:
+                    raise StageError("process", f"{unit} 不在配音批次记录里", stageName=f"{name}重配")
+                if window not in windows:
+                    windows.append(window)
+            if not self.memory_admitted(record, locale, base):
+                return "waiting"
+            self.restore_raw(run)
+            speaker, done = self.speaker(record), todo.setdefault("rendered", [])
+            for index, window in enumerate(windows):
+                if window[0] in done:
+                    continue
+                self.worker(record, f"{name}重配", f"第 {index + 1} / {len(windows)} 批，共 {sum(map(len, windows))} 句")
+                self.step(record, f"重配 {locale} {window[0]}", [base[0], EXP / "repair_sentence.py", "--run", run, "--id", window[0], "--local",
+                                                                "--locale", locale, "--voice", f"{speaker['key']}={base[base.index('--checkpoint') + 1]}", "--apply"],
+                          cwd=self.work_root)
+                for unit in window:                         # the copies kept from before this render no longer belong to this audio
+                    for stale in ("tts-raw-before-trim", "tts-before-speed"):
+                        (run / stale / f"{unit}.wav").unlink(missing_ok=True)
+                done.append(window[0])
+                self.save(record)
+            todo["rerenderedIds"] = sorted({unit for window in windows for unit in window})
+        todo["state"] = "done"
+        self.save(record)
         return "done"
 
     def stage_l3_finish(self, record: dict, locale: str) -> str:
@@ -871,6 +961,10 @@ class Driver:
             return "done"
         if not tiers and (read_json(run / "speech-ready.json") or {}).get("colloquialBeforeRender"):
             tiers.append("colloquial")                      # already said colloquially before the first render
+        if not gate["clean"] and (record.get("repairs") or {}).get(locale):
+            # the reviewer has heard this track: rewriting other sentences and rendering all of it again is not ours to decide
+            raise StageError("sync", f"按听审意见改句之后这条音轨跟不上视频：最大落后 {gate['maxLagSeconds']:.1f} 秒，"
+                                     f"{gate['sentencesOverLag8s']} 句超过 {LAG_THRESHOLD:g} 秒", stageName=f"{name}同步")
         while not gate["clean"]:
             mode = next((m for m in ("colloquial", "condense") if m not in tiers), None)
             if mode is None:
@@ -902,6 +996,9 @@ class Driver:
         speaker, summary = self.speaker(record), read_json(run / "schedule.json")["summary"]
         review = read_json(run / "review.json")
         spoken = {json.loads(line)["id"]: json.loads(line)["spokenText"] for line in (run / "speech.jsonl").read_text(encoding="utf-8").splitlines() if line.strip()}
+        last = next((item for item in reversed((record.get("repairs") or {}).get(locale) or []) if item["state"] == "done"), None)
+        asked = {row["id"]: row for row in read_json(run / "repair" / f"repair-{last['round']}-report.json")["rows"]} if last else {}
+        again = set(last.get("rerenderedIds") or []) if last else set()
         rows = []
         for row in review_player.build_rows(run, {speaker["id"]: speaker["name"]}):
             note = (review.get("revisions") or {}).get(row["id"], {}).get("note") or ""
@@ -910,16 +1007,25 @@ class Driver:
                 flags.insert(0, "condensed")
             if row["lag"] is not None and row["lag"] > 2.0:
                 flags.append("lag")
+            fix = asked.get(row["id"])
+            if fix or row["id"] in again:                   # what the last request for changes did to this sentence, first
+                flags.insert(0, {"retranslate": "fixed", "unclear": "unclear"}.get((fix or {}).get("action"), "rerendered"))
             rows.append({"id": row["id"], "speaker": row["speaker"] or speaker["name"], "start": row["start"], "dur": row["dur"], "src": row["src"],
                          "lag": row["lag"], "english": row["english"], "target": row["target"],
                          "spoken": spoken.get(row["id"]) if "sync " in note else None, "flags": flags,
-                         "note": row["note"] or (note if note.startswith("audit") else ""), "dub": row["dubWav"], "source": row["srcWav"]})
+                         "note": row["note"] or (note if note.startswith("audit") else ""), "dub": row["dubWav"], "source": row["srcWav"],
+                         **({"fix": {"asked": fix["reviewerNote"], "tags": fix["tags"], "did": fix["note"], "action": fix["action"],
+                                     "before": fix["before"] if fix["action"] == "retranslate" else None}} if fix else {})})
         data = {"locale": locale,
                 "track": {"audio": "review.mp3", "seconds": summary["trackSeconds"], **{k: v for k, v in self.track_hashes(run).items() if k.startswith(("track", "review"))},
                           "video": "dub-preview-640.mp4" if (run / "dub-preview-640.mp4").is_file() else None,
                           "voice": f"{speaker['name']} 的授权声音，本机逐句合成"},
                 "sync": {"mode": "synced" if self.synced(record) else "independent", "maxLagSeconds": summary["maxLagSeconds"],
                          "over8s": summary["sentencesOverLag8s"]},
+                "previous": ({"revision": int(last["round"][1:]), "issues": last["issues"],
+                              "listeningMode": ((read_json(run / "repair" / f"issues-{last['round']}.json") or {}).get("listening") or {}).get("mode"),
+                              **{key: [row["id"] for row in rows if row["flags"][:1] == [key]] for key in ("fixed", "rerendered", "unclear")}}
+                             if last else None),
                 "rows": rows}
         flagged = sum(1 for row in rows if row["flags"])
         gate_id = f"l3.review.{locale}"
@@ -940,18 +1046,46 @@ class Driver:
         if decision["bindings"] != self.track_hashes(run):
             raise StageError("stale", "音轨或译文在提交后变了")
         listening = decision["payload"].get("listening") or {}
+        rounds = [{"round": entry["round"], "decisionId": entry["decisionId"], "issues": entry["issues"], "rerenderedIds": entry.get("rerenderedIds") or [],
+                   "listening": (read_json(run / "repair" / f"issues-{entry['round']}.json") or {}).get("listening") or {}}
+                  for entry in (record.get("repairs") or {}).get(locale) or []]
+        mode = listening.get("mode")
+        if mode == "changed_only":
+            # only what changed was heard this time: the track as a whole was reviewed the way the version before the repair was heard
+            before = (rounds[-1]["listening"].get("mode") if rounds else None)
+            mode = before if before in ("whole_track", "flagged_only") else "partial"
         path = self.store.production_dir(record["production"]) / "reviews" / f"{locale}.json"
         review_gates.write_json(path, {
             "schemaVersion": "weekly-auto-track-review-v1", "locale": locale, "humanApproval": not record.get("rehearsal"),
             "rehearsal": bool(record.get("rehearsal")), **self.track_hashes(run),
             "trackSeconds": read_json(run / "schedule.json")["summary"]["trackSeconds"],
-            "reviewMode": listening.get("mode"), "reviewModeBasis": listening.get("basis"), "listening": listening,
+            "reviewMode": mode, "reviewModeBasis": listening.get("basis"), "listening": listening,
             "perSentence": decision["payload"].get("rows") or {}, "decisionId": item["decisionId"],
+            "earlierRounds": rounds,
             "reviewer": item["reviewer"], "approvedAt": item["receivedAt"],
             "authority": self.config["authorizations"]["pageDecisions"]})
         locales = self.kickoff(record)["decisions"]["locales"]
         left = [l for l in locales if l != locale and not (path.parent / f"{l}.json").is_file()]
         return sha256_file(path), ("其余语言的整轨听审" if left else NEXT_AFTER_TRACKS if not record.get("rehearsal") else "演练到此结束")
+
+    def queue_repair(self, record: dict, item: dict) -> None:
+        """Keep the reviewer's marked sentences with the track they heard, and send this language back to the repair stage."""
+        decision = item["decision"]
+        locale = decision["locale"]
+        run = self.locale_run(record, locale)
+        if decision["bindings"] != self.track_hashes(run):
+            raise StageError("stale", "音轨或译文在提交后变了")
+        marks, tag = decision["payload"].get("rows") or {}, f"r{decision['revision']}"
+        rows = {unit: {"tags": (marks.get(unit) or {}).get("tags") or [], "note": (marks.get(unit) or {}).get("note") or ""}
+                for unit in decision["payload"]["issueIds"]}
+        (run / "repair").mkdir(exist_ok=True)
+        review_gates.write_json(run / "repair" / f"issues-{tag}.json", {
+            "schemaVersion": "weekly-auto-track-issues-v1", "locale": locale, "revision": decision["revision"], "decisionId": item["decisionId"],
+            "receivedAt": item["receivedAt"], "reviewer": item["reviewer"], "trackHashes": decision["bindings"],
+            "listening": decision["payload"].get("listening") or {}, "note": decision.get("note"), "rows": rows})
+        record.setdefault("repairs", {}).setdefault(locale, []).append({"round": tag, "decisionId": item["decisionId"], "state": "queued", "issues": len(rows)})
+        for stage in [prefix + locale for prefix in LOCALE_STAGES[1:]] + ["wait.tracks", "l3.verdict", "handoff"]:
+            record["stages"].pop(stage, None)
 
     def stage_l3_verdict(self, record: dict) -> str:
         folder = self.store.production_dir(record["production"]) / "reviews"
@@ -987,7 +1121,9 @@ class Driver:
                         self.rebuild_english(record, item)        # the reviewer's own edits: apply them and show the next version
                     if kind == "track":
                         count = len(decision["payload"].get("issueIds") or [])
-                    done("applied", next_stage="按你的修改重出一版，再请你批准" if count and kind == "english" else None)
+                        if count:
+                            self.queue_repair(record, item)       # the marked sentences: reword, render again, show the next version
+                    done("applied", next_stage=("按你的修改重出一版，再请你批准" if kind == "english" else "按你标的句子改字重配，再请你听") if count else None)
                     self.notice(record, "decision.changes_requested", kind=kind, gate_id=gate_id, locale=decision.get("locale"),
                                 once=f"changes:{item['decisionId']}", count=count or 1)
                     continue
@@ -999,6 +1135,11 @@ class Driver:
                 if exc.error_class == "stale":
                     done("rejected_stale", message=exc.message)
                     self.notice(record, "decision.rejected_stale", kind=kind, gate_id=gate_id, locale=decision.get("locale"), once=f"stale:{item['decisionId']}")
+                    # the notice says "open the new version": build that version from what the files are now
+                    again = {"decisions": ["gate.decisions", "wait.review"], "english": ["l1.rows", "gate.english", "wait.review"],
+                             "track": [f"gate.track.{decision.get('locale')}", "wait.tracks"]}[kind]
+                    for stage in again + ["l3.verdict", "handoff"]:
+                        record["stages"].pop(stage, None)
                 else:
                     done("failed", message=exc.message)
                     self.notice(record, "decision.failed", kind=kind, gate_id=gate_id, locale=decision.get("locale"), once=f"failed:{item['decisionId']}", reason=exc.message)
@@ -1031,8 +1172,8 @@ class Driver:
 
     def apply_kickoff(self, record: dict, item: dict) -> tuple[str, str]:
         decision, source = item["decision"], record["source"]
-        if decision["bindings"] != {"sourceMediaSha256": source["sha256"], "defaultsConfigSha256": sha256_file(self.config_path)}:
-            raise StageError("stale", "来源文件或默认配置在提交后变了")
+        if decision["bindings"] != self.kickoff_bindings(record):
+            raise StageError("stale", "来源文件或页面给出的默认选项在提交后变了")
         payload = decision["payload"]
         chosen, window = payload["decisions"], payload["window"]
         if chosen.get("form") != "full":
@@ -1124,7 +1265,7 @@ class Driver:
                 if result == "done":
                     self.journal(production, stage, "finished")
                 elif not was_waiting:
-                    self.journal(production, stage, "waiting", "memory" if stage.startswith("l3.tts.") else "human review on the review page")
+                    self.journal(production, stage, "waiting", "memory" if stage.startswith(("l3.tts.", "l3.repair.")) else "human review on the review page")
                 if record.get("state") == "blocked":
                     record["state"] = "running"
                 self.save(record)

@@ -23,7 +23,7 @@
 | 脚本 | 在哪跑 | 做什么 |
 |---|---|---|
 | `l1_transcribe.py`、`l1_anchor.py`、`l1_review_rows.py`、`l1_english_source.py` | 本机 | 单讲员证道的 Layer 1：两遍 OpenAI 转写（付费，可续跑）、按词时间拆句并标出两遍不一致的句子、准备英文审核页的数据、在英文表有人工结论后生成英文来源包与收据。由 `tools/ops/weekly_auto.py` 调用，也可以单独运行；2026-11-25 之前这些脚本只存在于各期的运行目录里 |
-| `opus_tasks.py`、`established-terms.json` | 本机 | Claude Code CLI（Opus）的四种有界任务：本篇用词约定、逐句翻译派发、独立审计（`--apply` 把意见写进 `review.json`）、同步改写（先口语化、再精简）。脚本自己检查产出，不合格的重发一次。用词约定必须沿用 `established-terms.json` 里已发布页面用过的写法。2026-11-25 之前翻译和审计的派发脚本只存在于各期的运行目录里，本篇术语写死在提示词中 |
+| `opus_tasks.py`、`established-terms.json` | 本机 | Claude Code CLI（Opus）的五种有界任务：本篇用词约定、逐句翻译派发、独立审计（`--apply` 把意见写进 `review.json`）、同步改写（先口语化、再精简）、听审退回句子的改写（`repair`：照听审人写的改，或只重配）。脚本自己检查产出，不合格的重发一次。用词约定必须沿用 `established-terms.json` 里已发布页面用过的写法。2026-11-25 之前翻译和审计的派发脚本只存在于各期的运行目录里，本篇术语写死在提示词中 |
 | `prepare_clip.py` | 本机 | 从锚点清单裁音频：clip.wav、clip.json、words.json、sentences.jsonl、原声切片、run.md 表头 |
 | `split_sentences.py`、`slice_sentences.py` | 本机 | 没有锚点清单时拆句、切原声；`slice_sentences.py` 默认在内存一次切完（`--method wave`，890 句约 0.2 s），不是 PCM16 mono 时才用 `--method ffmpeg` |
 | `assign_speakers.py` | 本机 | 双人：按说话人区分结果给每句定讲员 |
@@ -49,7 +49,7 @@
 | `tools/ops/reseal_snapshot.py` | 本机 | 目录重绑或新增文件后重算 `seal-report.json` 的目录哈希与文件清单，否则 guarded publisher 会以 `Baseline catalog differs`／`incomplete` 拒发 |
 | `tools/ops/sfa_publish_gate.py` | 本机 | 发布前/后完整性门禁（`sentence-first-publish-gate-v1`）：目录↔release↔资产、英文对照、对齐 sidecar/指纹/窗口、手册条目、页面标题渲染；任一必检失败退出码 1。规则见[发布门禁](../../docs/sentence-first-agent-publish-gate.zh.md) |
 | `tools/ops/notify.py` | 本机 | Bark 与邮件传输（P2）：`test-push` / `send`；keychain 服务 `org.sermonvideo.production-progress`，group `sermon-production`；非 passive 的通知在配置了 `gmail-user`／`gmail-app` 时同时发邮件；不进任何门禁 |
-| `tools/ops/weekly_auto.py`、`tools/ops/review_gate_server.py` | 生产机 | 周六自动开工的驱动和接收审核页决定的本机服务：从 Drive 触发文件做到英文表批准，之后按本文第 2 步继续。安装、规则和限制见[周六自动开工](../../docs/weekly-auto-production.zh.md) |
+| `tools/ops/weekly_auto.py`、`tools/ops/review_gate_server.py` | 生产机 | 周六自动开工的驱动和接收审核页决定的本机服务：从 Drive 触发文件做到三种语言的整轨听审（含听审退回后的改句重配），之后按本文第 10 步继续。安装、规则和限制见[周六自动开工](../../docs/weekly-auto-production.zh.md) |
 | `tools/ops/production_notices.py` | 本机 | 全流程通知清单：每个状态的级别、渠道、链接和措辞；`list` 看全表，`preview`／`send` 生成或发送一条。规则见[人工审核页与通知](../../docs/design/review-gates-and-notifications.zh.md) |
 | `publish_podcast_page.py` | 本机 | 旧版按页复制驱动；未迁移页面与特殊修复路径（撤回、alignment、fix-content）仍可用 |
 | `build_study.py` | 本机 | 生成大纲与默想的 `sermon-study-artifact-v1`、审核收据、元数据/窗口批准与四产品清单 |
@@ -584,6 +584,8 @@ python3 -m http.server -d $RUN 8765
 python3 $EXP/repair_sentence.py --run $RUN --id s0123 --local --locale <locale> \
   --voice <speaker key>=<checkpoint> [--voice <第二位讲员>=<checkpoint>] [--single] --apply
 ```
+
+自动流程里这一步由 `tools/ops/weekly_auto.py` 的 `l3.repair.<locale>` 阶段执行：听审页提交的「要求修改」里标出的句子先交 `opus_tasks.py repair` 改字，再对每个批窗口调用一次下面的命令，然后重新合轨、重新打开听审（见[周六自动开工](../../docs/weekly-auto-production.zh.md)）。手工执行时：
 
 它从 `tts/tts-batches.jsonl` 找到该句所在的窗口（默认 8 句），删掉窗口的 wav，在本机用 `tts_sentences.py --only-ids-file` 重配整个窗口（`--remote`+`--session` 才是 Spark 回退）；`--single` 只重配这一句（batch 1，接受声音身份例外）。之后跑第 7、8 步（`finish_run.py` 与 `review_player.py`），把窗口/这一句请用户再听。没有 `tts-batches.jsonl` 时先按 §6 跑一次（本机会写它），或用 `--single`。
 
