@@ -224,7 +224,7 @@ def test_track_approvals_write_the_verdict_and_a_request_without_marked_sentence
     assert verdict["locales"]["zh-Hans"]["trackWavSha256"] == zh["trackWavSha256"] and verdict["reviewedAt"].endswith("+00:00")
     following = json.loads((tmp_path / "artifacts/weekly-auto" / NAME / "next-step.json").read_text())
     assert following["through"] == "tracks" and following["runs"]["ko"].endswith(f"{NAME}-ko") and following["verdict"].endswith("human-review-verdict.json")
-    assert "发布还没有自动化" in following["note"]
+    assert "发布没有交给自动流程" in following["note"]
 
 
 def test_a_track_decision_about_a_track_that_changed_approves_nothing_and_the_track_is_shown_again(make, tmp_path):
@@ -292,9 +292,10 @@ def test_the_code_and_the_artifacts_must_share_a_checkout(make):
     assert record["stages"]["l2.start"]["errorClass"] == "layout" and driver.run_command.sfa is None
 
 
-def test_the_shipped_config_runs_through_the_track_reviews_and_names_the_sync_decision():
+def test_the_shipped_config_runs_through_publishing_and_names_the_decisions_it_rests_on():
     config = json.loads((ROOT / "config" / "weekly-sermon-auto.json").read_text(encoding="utf-8"))
-    assert config["automation"]["through"] == "tracks"
+    assert config["automation"]["through"] == "publish"
+    assert config["authorizations"]["autoPublish"]["statement"] == "Dev 演练通过就开自动发布" and "Nothing is deployed before" in config["authorizations"]["autoPublish"]["scope"]
     assert config["authorizations"]["syncRewrite"]["statement"] == "应当调用Opus口语化译文，达不到效果，再用Opus精简译文。"
 
 

@@ -10,7 +10,7 @@
 
 1. 产物只写在忽略的 `artifacts/sentence-first-agent/<run>/`。原声切片是讲员原声，不出这个目录，不进 Git。
 2. 可以只读正式生产已有的产物（批准窗口、锚点清单、说话人区分与标签映射、已人工批准的译文），不写入正式生产的目录。
-3. 审核页上的提交算正式结论（用户 2026-11-25 决定），目前只对已接到自动流程的三步生效：开工确认、英文表批准和每种语言的整轨听审（[周六自动开工](../../docs/weekly-auto-production.zh.md)）。其余步骤的结论和每一次正式部署的授权仍在对话里给。译文、配音、字幕在用户人工审核前都是机器产物。只有用户亲自听完整轨、审过译文，并要求发布时，才按[发布](#10-发布到正式页面)以 `human_reviewed` 发布；每一次正式部署都要用户在对话里授权。收据先于上线：第 10 步 `assets` 之前审核收据必须已是最终结论；发布包绑定过的收据文件不再改写，改结论就另存新版本并把新哈希记进 `run.md`（2026-10-24 重建版在听审前 84 分钟就以 `human_reviewed` 上线，随后收据被覆盖、原件无副本，绑定链断了）。
+3. 审核页上的提交算正式结论（用户 2026-11-25 决定），对已接到自动流程的步骤生效：开工确认、英文表批准、每种语言的整轨听审、发布授权和发布后确认（[周六自动开工](../../docs/weekly-auto-production.zh.md)）。自动流程里，发布授权页上的授权就是它列出的那几次部署的授权（用户 2026-11-26 决定）；不走自动流程的发布、页面没有列出的部署，以及研读手册、统计目录、海报的上线，仍在对话里授权。译文、配音、字幕在用户人工审核前都是机器产物。只有用户亲自听完整轨、审过译文，并要求发布时，才按[发布](#10-发布到正式页面)以 `human_reviewed` 发布；每一次正式部署都要用户授权（在对话里，或在自动流程的发布授权页上）。收据先于上线：第 10 步 `assets` 之前审核收据必须已是最终结论；发布包绑定过的收据文件不再改写，改结论就另存新版本并把新哈希记进 `run.md`（2026-10-24 重建版在听审前 84 分钟就以 `human_reviewed` 上线，随后收据被覆盖、原件无副本，绑定链断了）。
 4. 讲员声音只用 Registry 里已授权配音用途、且有本语言能力的 checkpoint；不下载、不换别人的声音。
 5. 同一页面还有别的代理在动（海报、统计目录、网页热修、重建）时，开工前在 `run.md` 登记对方的任务与预计时间，发布前再核对一次。2026-10-24 统计目录同步与官方录音重建并行，目录绑定的音频哈希上线 50 分钟就失效，又丢了约一个半小时的收听上报。
 
@@ -49,7 +49,7 @@
 | `tools/ops/reseal_snapshot.py` | 本机 | 目录重绑或新增文件后重算 `seal-report.json` 的目录哈希与文件清单，否则 guarded publisher 会以 `Baseline catalog differs`／`incomplete` 拒发 |
 | `tools/ops/sfa_publish_gate.py` | 本机 | 发布前/后完整性门禁（`sentence-first-publish-gate-v1`）：目录↔release↔资产、英文对照、对齐 sidecar/指纹/窗口、手册条目、页面标题渲染；任一必检失败退出码 1。规则见[发布门禁](../../docs/sentence-first-agent-publish-gate.zh.md) |
 | `tools/ops/notify.py` | 本机 | Bark 与邮件传输（P2）：`test-push` / `send`；keychain 服务 `org.sermonvideo.production-progress`，group `sermon-production`；非 passive 的通知在配置了 `gmail-user`／`gmail-app` 时同时发邮件；不进任何门禁 |
-| `tools/ops/weekly_auto.py`、`tools/ops/review_gate_server.py` | 生产机 | 周六自动开工的驱动和接收审核页决定的本机服务：从 Drive 触发文件做到三种语言的整轨听审（含听审退回后的改句重配），之后按本文第 10 步继续。安装、规则和限制见[周六自动开工](../../docs/weekly-auto-production.zh.md) |
+| `tools/ops/weekly_auto.py`、`tools/ops/review_gate_server.py` | 生产机 | 周六自动开工的驱动和接收审核页决定的本机服务：从 Drive 触发文件做到三种语言的整轨听审（含听审退回后的改句重配），再经发布授权页做本文第 10 步的两次部署和发布门禁（`tools/ops/weekly_auto_publish.py`；英文对照和现场对齐并进第二次部署）。研读手册条目、统计目录、学习内容和海报仍按本文手工做。安装、规则和限制见[周六自动开工](../../docs/weekly-auto-production.zh.md) |
 | `tools/ops/production_notices.py` | 本机 | 全流程通知清单：每个状态的级别、渠道、链接和措辞；`list` 看全表，`preview`／`send` 生成或发送一条。规则见[人工审核页与通知](../../docs/design/review-gates-and-notifications.zh.md) |
 | `publish_podcast_page.py` | 本机 | 旧版按页复制驱动；未迁移页面与特殊修复路径（撤回、alignment、fix-content）仍可用 |
 | `build_study.py` | 本机 | 生成大纲与默想的 `sermon-study-artifact-v1`、审核收据、元数据/窗口批准与四产品清单 |
@@ -746,11 +746,12 @@ node packages/fingerprint/bin/build_fingerprint_index.mjs --mode bind \
 .venv/bin/python tools/ops/build_alignment_sidecar.py --public <快照>/public --page-id <pageId> \
   --index zh-Hans=<run>/index-zh-Hans.json --index ko=<run>/index-ko.json --index es=<run>/index-es.json \
   --write            # 默认 dry-run；release 哈希取文件字节、窗口与 content 的 sourceWindow 对齐
-# 4) 目录重绑后必须重新封存，否则 deploy 报 Baseline catalog differs / incomplete：
+# 4) 重绑 v5/v4/v3 目录（原地写；必须经 run.py，直接 python -m 会因没有 DeliveryBackend 报错）：
+.venv/bin/python tools/ops/run.py delivery.published_alignment_catalog --public <快照>/public --page-id <pageId>
+# 5) 目录重绑之后再重新封存（顺序不能反：封存记录目录哈希和完整文件清单），否则 deploy 报
+#    Baseline catalog differs / incomplete；快照要含 sidecar + 三个索引 + 新目录，再走 guarded publisher 部署：
 .venv/bin/python tools/ops/reseal_snapshot.py --snapshot <快照>
-# 4) 用 delivery.published_alignment_catalog.bind_catalogs(public, pageId) 重绑 v5/v4/v3，
-#    快照要含 sidecar + 三个索引 + 新目录，再走 guarded publisher 部署
-# 5) 核验：GET sidecar 200、三个索引 200 且 sha 与 sidecar 一致、gate --require-alignment pass
+# 6) 核验：GET sidecar 200、三个索引 200 且 sha 与 sidecar 一致、gate --require-alignment pass
 ```
 
 **研读手册**

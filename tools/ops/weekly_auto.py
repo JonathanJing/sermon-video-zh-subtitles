@@ -59,6 +59,7 @@ import run_journal  # noqa: E402
 import production_notices as notices  # noqa: E402
 import review_gates  # noqa: E402
 from review_gate_server import tailnet_name  # noqa: E402
+import weekly_auto_publish  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[2]
 EXP = ROOT / "experiments" / "sentence-first-agent"
@@ -155,7 +156,12 @@ class Budget:
 
 # ---------------------------------------------------------------- the driver
 
-class Driver:
+class Driver(weekly_auto_publish.PublishStages):
+    Error = StageError                                      # what the publish stages raise
+    DELIVERABLE_LABELS = DELIVERABLES
+    LOCALE_NAMES = notices.LOCALE_NAMES
+    now = staticmethod(review_gates.now_iso)
+
     def __init__(self, work_root: Path, *, config_path: Path = CONFIG, push: bool = True, local: dict | None = None,
                  run=subprocess.run, opener=urllib.request.urlopen, notifier=None, python: str | None = None,
                  sleep=time.sleep, today=lambda: dt.datetime.now(TZ).date()):
@@ -191,8 +197,11 @@ class Driver:
         review_gates.write_json(self.store.production_dir(record["production"]) / "outcome.json", {
             "schemaVersion": "weekly-auto-outcome-v1", "production": record["production"], "status": record.get("state"),
             "exitCode": 1 if failed else 0, "rehearsal": bool(record.get("rehearsal")),
-            "deliveryType": "test (rehearsal)" if record.get("rehearsal") else "four_layer_release, Layer 1 only",
-            "humanApproval": record.get("state") == "layer1_ready",
+            "deliveryType": "test (rehearsal)" if record.get("rehearsal") else "four_layer_release, " + {
+                "layer1": "Layer 1 only", "tracks": "Layers 1 to 3 (to the track reviews)", "publish": "Layers 1 to 4 (to the published page)"}[self.through(record)],
+            # true only once every review this production asked for has an applied human decision
+            "humanApproval": record.get("state") in ("layer1_ready", "tracks_ready", "published"),
+            "page": record.get("page"),
             "stages": {name: state.get("state") for name, state in record["stages"].items()}, "failedStages": failed,
             "notices": {"sent": len(record.get("notices", {})), "undelivered": len(record.get("outbox", {}))},
             "at": review_gates.now_iso()})
@@ -204,12 +213,12 @@ class Driver:
     def source_run(self, record: dict) -> Path:
         return self.work_root / record["sourceRun"]
 
-    def step(self, record: dict, name: str, command: list[str], *, cwd: Path | None = None) -> str:
+    def step(self, record: dict, name: str, command: list[str], *, cwd: Path | None = None, env: dict | None = None) -> str:
         """Run one child step from the code checkout; a non-zero exit is a failed stage."""
         self.log(record["production"], "step.started", step=name)
         done = self.run_command([str(part) for part in command], cwd=str(cwd or ROOT), capture_output=True, text=True, check=False,
                                 env={**os.environ, "PATH": f"{AGENT_PATH}:{os.environ.get('PATH', '')}",
-                                     "PYTHONPATH": f"{ROOT / 'packages' / 'production' / 'src'}:{ROOT}"})
+                                     "PYTHONPATH": f"{ROOT / 'packages' / 'production' / 'src'}:{ROOT}", **(env or {})})
         self.log(record["production"], "step.finished", step=name, exit=done.returncode)
         if done.returncode != 0:
             tail = (done.stderr or done.stdout or "").strip().splitlines()[-1:] or [""]
@@ -610,23 +619,32 @@ class Driver:
         review_gates.write_json(self.store.production_dir(record["production"]) / "next-step.json", {
             "schemaVersion": "weekly-auto-next-step-v1", "rehearsal": bool(record.get("rehearsal")),
             "note": ("演练结束。这些文件没有人工批准，不能用于翻译或发布。" if record.get("rehearsal")
-                     else "三种语言的整轨已有听审结论。发布还没有自动化，按 runbook 第 10 步继续。" if self.through(record) == "tracks"
+                     else "页面已发布，并经审核人在设备上确认。研读手册条目、统计目录和海报不在这条自动流程里，见 publish-intent.json。" if self.publishes(record)
+                     else "三种语言的整轨已有听审结论。发布没有交给自动流程，按 runbook 第 10 步继续。" if self.to_tracks(record)
                      else "Layer 1 完成。翻译、配音和发布还没有自动化，按 runbook 继续。"),
             "through": self.through(record),
-            "runs": {locale: str(self.locale_run(record, locale).relative_to(self.work_root)) for locale in locales} if self.through(record) == "tracks" else None,
+            "runs": {locale: str(self.locale_run(record, locale).relative_to(self.work_root)) for locale in locales} if self.to_tracks(record) else None,
             "verdict": (str(Path("artifacts") / "sentence-first-agent" / f"{record['production']}-review" / "human-review-verdict.json")
-                        if self.through(record) == "tracks" else None),
+                        if self.to_tracks(record) else None),
             "englishSource": str((run / "layer1" / "english-source.json").relative_to(self.work_root)),
             "anchorManifest": str((run / "layer1" / "anchor-manifest.json").relative_to(self.work_root)),
             "media": str((run / "source" / "episode.mp4").relative_to(self.work_root)),
             "kickoff": kickoff["decisions"], "title": kickoff["title"],
             "sfaStart": {"locales": locales, "units": f"0:{len(package['units']) - 1}", "windowStart": 0.0,
                          "sync": kickoff["decisions"]["sync"] == "synced", "publish": kickoff["decisions"]["publish"] == "production_page"}})
-        tracks = self.through(record) == "tracks"
-        record["state"] = "rehearsal_complete" if record.get("rehearsal") else ("tracks_ready" if tracks else "layer1_ready")
-        self.worker(record, "整轨听审完成" if tracks else "Layer 1 完成",
-                    "演练结束" if record.get("rehearsal") else ("等待按 runbook 发布" if tracks else "等待按 runbook 继续翻译"), state="空闲")
+        tracks, published = self.to_tracks(record), self.publishes(record)
+        record["state"] = "rehearsal_complete" if record.get("rehearsal") else "published" if published else ("tracks_ready" if tracks else "layer1_ready")
+        self.worker(record, "已发布" if published else "整轨听审完成" if tracks else "Layer 1 完成",
+                    "演练结束" if record.get("rehearsal") else "页面已上线并经你确认" if published else ("等待按 runbook 发布" if tracks else "等待按 runbook 继续翻译"), state="空闲")
+        if published:
+            page = self.page(record)
+            self.notice(record, "production.completed", once=f"completed:{page['pageId']}", title=page["title"],
+                        wall=self.elapsed(record["createdAt"]), waiting="见运行报告")
         return "done"
+
+    def elapsed(self, since: str) -> str:
+        minutes = int((dt.datetime.now(dt.timezone.utc) - dt.datetime.fromisoformat(since)).total_seconds() // 60)
+        return f"{minutes // 60} 小时 {minutes % 60} 分"
 
 
     # ---- translation, dubbing and track review
@@ -638,13 +656,25 @@ class Driver:
     def through(self, record: dict) -> str:
         return record.get("through") or (self.config.get("automation") or {}).get("through") or "layer1"
 
+    def to_tracks(self, record: dict) -> bool:
+        return self.through(record) in ("tracks", "publish")
+
+    def publishes(self, record: dict) -> bool:
+        """The page is published by this driver: asked for at the start, a real run, and a page was chosen at kickoff.
+        A rehearsal never reaches here: its verdict and its English package approve nothing, and the publish driver refuses both."""
+        kickoff = self.kickoff(record) or {}
+        return (self.through(record) == "publish" and not record.get("rehearsal")
+                and (kickoff.get("decisions") or {}).get("publish") in weekly_auto_publish.ENVIRONMENT)
+
     def stage_list(self, record: dict) -> list[str]:
         stages = list(STAGES[:-1])
-        if self.through(record) == "tracks" and self.kickoff(record):
+        if self.to_tracks(record) and self.kickoff(record):
             stages += ["l2.start", "l2.brief", "l2.translate", "l2.audit", "l2.speech"]
             for locale in self.kickoff(record)["decisions"]["locales"]:
                 stages += [prefix + locale for prefix in LOCALE_STAGES]
             stages += ["wait.tracks", "l3.verdict"]
+            if self.publishes(record):
+                stages += list(weekly_auto_publish.PUBLISH_STAGES)
         return stages + ["handoff"]
 
     def run_stage(self, record: dict, stage: str) -> str:
@@ -1066,7 +1096,8 @@ class Driver:
             "authority": self.config["authorizations"]["pageDecisions"]})
         locales = self.kickoff(record)["decisions"]["locales"]
         left = [l for l in locales if l != locale and not (path.parent / f"{l}.json").is_file()]
-        return sha256_file(path), ("其余语言的整轨听审" if left else NEXT_AFTER_TRACKS if not record.get("rehearsal") else "演练到此结束")
+        return sha256_file(path), ("其余语言的整轨听审" if left else "演练到此结束" if record.get("rehearsal")
+                                   else "准备发布，之后请你授权" if self.publishes(record) else NEXT_AFTER_TRACKS)
 
     def queue_repair(self, record: dict, item: dict) -> None:
         """Keep the reviewer's marked sentences with the track they heard, and send this language back to the repair stage."""
@@ -1112,7 +1143,7 @@ class Driver:
             kind = decision["kind"]
             done = lambda outcome, **kw: self.store.record_outcome(record["production"], gate_id, item["decisionId"], outcome, **kw)
             try:
-                if kind not in ("decisions", "english", "track"):
+                if kind not in ("decisions", "english", "track", "publish", "confirm"):
                     raise StageError("unsupported", "这一步还没有接到自动流程")
                 if decision["verdict"] == "changes_requested":
                     edits = (decision["payload"].get("edits") or {}) if kind == "english" else {}
@@ -1127,7 +1158,8 @@ class Driver:
                     self.notice(record, "decision.changes_requested", kind=kind, gate_id=gate_id, locale=decision.get("locale"),
                                 once=f"changes:{item['decisionId']}", count=count or 1)
                     continue
-                receipt, following = {"decisions": self.apply_kickoff, "english": self.apply_english, "track": self.apply_track}[kind](record, item)
+                receipt, following = {"decisions": self.apply_kickoff, "english": self.apply_english, "track": self.apply_track,
+                                      "publish": self.apply_publish, "confirm": self.apply_confirm}[kind](record, item)
                 done("applied", receipt_sha256=receipt, next_stage=following)
                 self.notice(record, "decision.applied", kind=kind, gate_id=gate_id, locale=decision.get("locale"), once=f"applied:{item['decisionId']}", verdict="批准",
                             reviewer=item["reviewer"].get("name") or item["reviewer"]["login"], next=following)
@@ -1137,7 +1169,8 @@ class Driver:
                     self.notice(record, "decision.rejected_stale", kind=kind, gate_id=gate_id, locale=decision.get("locale"), once=f"stale:{item['decisionId']}")
                     # the notice says "open the new version": build that version from what the files are now
                     again = {"decisions": ["gate.decisions", "wait.review"], "english": ["l1.rows", "gate.english", "wait.review"],
-                             "track": [f"gate.track.{decision.get('locale')}", "wait.tracks"]}[kind]
+                             "track": [f"gate.track.{decision.get('locale')}", "wait.tracks"],
+                             "publish": ["gate.publish", "wait.publish"], "confirm": ["gate.confirm", "wait.confirm"]}[kind]
                     for stage in again + ["l3.verdict", "handoff"]:
                         record["stages"].pop(stage, None)
                 else:
@@ -1216,7 +1249,7 @@ class Driver:
             summary = json.loads(self.step(record, "英文来源包", command + (["--rehearsal"] if record.get("rehearsal") else [])).strip().splitlines()[-1])
         except StageError as exc:
             raise StageError("process", exc.message) from exc
-        if self.through(record) == "tracks":
+        if self.to_tracks(record):
             return summary["receiptSha256"], "翻译、配音，然后逐条请你听审"
         return summary["receiptSha256"], NEXT_AFTER_ENGLISH if not record.get("rehearsal") else "演练到此结束"
 
@@ -1382,7 +1415,7 @@ def build_parser() -> argparse.ArgumentParser:
     start.add_argument("--trigger", type=Path)
     start.add_argument("--rehearsal", action="store_true", help="write everything, approve nothing")
     start.add_argument("--production")
-    start.add_argument("--through", choices=("layer1", "tracks"), help="how far this production runs by itself (default: the config)")
+    start.add_argument("--through", choices=("layer1", "tracks", "publish"), help="how far this production runs by itself (default: the config)")
     start.add_argument("--limit-units", type=int, help="rehearsal only: translate and dub just the first N sentences")
     start.add_argument("--quiet", action="store_true", help="rehearsal only: record the notices but send none")
     start.add_argument("--no-run", action="store_true")
