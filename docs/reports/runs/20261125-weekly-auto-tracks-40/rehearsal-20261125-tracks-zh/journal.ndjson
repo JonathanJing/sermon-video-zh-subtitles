@@ -1,0 +1,12 @@
+{"at": "2026-11-26T01:10:36+00:00", "stage": "l1.start", "event": "started", "hostId": "host-fb35b48265cb", "pid": 15676}
+{"at": "2026-11-26T01:10:37+00:00", "stage": "l1.preflight.setup", "event": "started", "hostId": "host-fb35b48265cb", "pid": 15687}
+{"at": "2026-11-26T01:10:37+00:00", "stage": "l1.preflight.setup", "event": "finished", "hostId": "host-fb35b48265cb", "pid": 15687}
+{"at": "2026-11-26T01:10:37+00:00", "stage": "l1.start", "event": "finished", "hostId": "host-fb35b48265cb", "pid": 15676}
+{"at": "2026-11-26T01:12:36+00:00", "stage": "l2.consistency", "event": "started", "hostId": "host-fb35b48265cb", "pid": 18007}
+{"at": "2026-11-26T01:12:36+00:00", "stage": "l2.consistency", "event": "finished", "hostId": "host-fb35b48265cb", "pid": 18007}
+{"at": "2026-11-26T01:12:58+00:00", "stage": "l1.preflight", "event": "started", "hostId": "host-fb35b48265cb", "pid": 18316}
+{"at": "2026-11-26T01:12:58+00:00", "stage": "l1.preflight", "event": "finished", "hostId": "host-fb35b48265cb", "pid": 18316}
+{"at": "2026-11-26T01:16:52+00:00", "stage": "l3.finish", "event": "started", "hostId": "host-fb35b48265cb", "pid": 20544}
+{"at": "2026-11-26T01:17:07+00:00", "stage": "l3.finish", "event": "finished", "hostId": "host-fb35b48265cb", "pid": 20544}
+{"at": "2026-11-26T04:22:10+00:00", "stage": "l1.preflight.setup", "event": "started", "hostId": "host-fb35b48265cb", "pid": 24307}
+{"at": "2026-11-26T04:22:10+00:00", "stage": "l1.preflight.setup", "event": "finished", "hostId": "host-fb35b48265cb", "pid": 24307}
