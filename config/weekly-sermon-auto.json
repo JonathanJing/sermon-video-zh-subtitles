@@ -26,6 +26,10 @@
     "speakerId": "eric_geiger",
     "titleTable": "docs/series-sermon-titles.zh.md"
   },
+  "automation": {
+    "through": "layer1",
+    "note": "layer1: stop after the English table is approved. tracks: go on through translation, dubbing and the track reviews."
+  },
   "transcription": {
     "environment": "prod",
     "timingModel": "whisper-1",
@@ -79,6 +83,12 @@
       "grantedAt": "2026-11-25",
       "statement": "批准表页面，加上批准按钮，不要求全部都审完，剩下的默认批准",
       "scope": "English table page only: approving is one action, and sentences the reviewer did not hear or edit are approved by default. The receipt records how many were looked at."
+    },
+    "syncRewrite": {
+      "grantedBy": "user (chat)",
+      "grantedAt": "2026-11-25",
+      "statement": "应当调用Opus口语化译文，达不到效果，再用Opus精简译文。",
+      "scope": "When a dubbed track cannot keep up with the video after silence trimming and per-sentence speed-up: Opus rewrites the lagging sentences colloquially, and only if that is not enough Opus condenses them. DeepSeek is not used for this."
     }
   }
 }

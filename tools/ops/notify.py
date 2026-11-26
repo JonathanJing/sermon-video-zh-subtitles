@@ -22,6 +22,7 @@ Test without sending: ``python3 tools/ops/notify.py test-push --no-push``.
 Store keys once (prompts, does not echo):
   security add-generic-password -s org.sermonvideo.production-progress -a bark-iphone -w
   security add-generic-password -s org.sermonvideo.production-progress -a bark-mac -w
+  security add-generic-password -s org.sermonvideo.production-progress -a bark-mbp14 -w
   security add-generic-password -s org.sermonvideo.production-progress -a gmail-user -w
   security add-generic-password -s org.sermonvideo.production-progress -a gmail-app -w
 """
@@ -44,7 +45,7 @@ from typing import Callable
 SERVICE = "org.sermonvideo.production-progress"
 BARK_URL = "https://api.day.app/push"
 GROUP = "sermon-production"
-ACCOUNTS = ("bark-iphone", "bark-mac")
+ACCOUNTS = ("bark-iphone", "bark-mac", "bark-mbp14")   # bark-mac is this Mac; bark-mbp14 is the second Mac (added 2026-11-25)
 MAC_ACCOUNT = "bark-mac"
 LEVELS = ("passive", "active", "timeSensitive", "critical")
 EMAIL_ACCOUNTS = ("gmail-user", "gmail-app", "gmail-to")

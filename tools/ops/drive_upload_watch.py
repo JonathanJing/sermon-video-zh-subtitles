@@ -12,8 +12,8 @@ exits. A file is new when its ID has not been seen; the date prefix in its name
 is only a label (the 2026-10-24 upload was named Saturday_400pm_Live__1080.mp4).
 Files whose earliest Drive timestamp falls before this week's Sunday 00:00 are
 recorded silently as the baseline. Pushes go to every Bark key stored in the
-login keychain (service org.sermonvideo.drive-upload-watch, accounts bark-iphone
-and bark-mac); a macOS notification is shown when the Mac's Bark push did not
+login keychain (service org.sermonvideo.drive-upload-watch, accounts bark-iphone,
+bark-mac and optionally bark-mbp14); a macOS notification is shown when the Mac's Bark push did not
 arrive. Every non-passive notice also goes out by Gmail SMTP as an independent
 backup channel (same keychain service, accounts gmail-user and gmail-app, plus
 an optional gmail-to recipient; the sender is the default recipient).
@@ -64,7 +64,8 @@ FILE_ID = re.compile(r"[A-Za-z0-9_-]{10,}")
 
 LABEL = "org.sermonvideo.drive-upload-watch"
 KEYCHAIN_SERVICE = LABEL
-BARK_ACCOUNTS = ("bark-iphone", "bark-mac")
+BARK_ACCOUNTS = ("bark-iphone", "bark-mac", "bark-mbp14")
+EXPECTED_ACCOUNTS = ("bark-iphone", "bark-mac")   # the start notice warns only when one of these is missing
 MAC_ACCOUNT = "bark-mac"
 BARK_URL = "https://api.day.app/push"
 BARK_GROUP = "sermon-upload"
@@ -403,7 +404,7 @@ class Watcher:
         if slot["startSent"]:
             return
         accounts = ", ".join(a.replace("bark-", "") for a in self.notifier.keys) or "无"
-        missing = [a for a in BARK_ACCOUNTS if a not in self.notifier.keys]
+        missing = [a for a in EXPECTED_ACCOUNTS if a not in self.notifier.keys]
         body = (f"{WINDOW_START:%H:%M}–{WINDOW_END:%H:%M} 每 {self.poll_seconds:.0f}s 查一次 Broadcast Message Files"
                 f" · Bark: {accounts}")
         if missing:

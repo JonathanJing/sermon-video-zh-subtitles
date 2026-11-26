@@ -44,7 +44,10 @@ import re
 import shutil
 import subprocess
 import sys
+import threading
 import time
+from concurrent.futures import ThreadPoolExecutor
+from contextlib import contextmanager
 import urllib.error
 import urllib.request
 from pathlib import Path
@@ -72,6 +75,10 @@ DELIVERABLES = ("页面 + 三语 assets（page/content/audio/captions）", "rele
                 "英文对照 /english-reference/<pageId>.json", "现场对齐（sidecar + 每语指纹索引）", "研读手册条目", "统计目录")
 MAX_NOTICE_ATTEMPTS = 6
 NEXT_AFTER_ENGLISH = "翻译和配音（还没有自动化，按 runbook 从 sfa.py start 继续）"
+NEXT_AFTER_TRACKS = "发布授权（还没有自动化，按 runbook 第 10 步继续）"
+SUFFIX = {"zh-Hans": "zh", "ko": "ko", "es": "es"}
+LOCALE_STAGES = ("l3.tts.", "l3.finish.", "l3.sync.", "gate.track.")       # one of each per language, in kickoff order
+LAG_THRESHOLD = 8.0
 
 
 class StageError(Exception):
@@ -159,6 +166,7 @@ class Driver:
         self.store = review_gates.Store(self.work_root)
         self.run_command, self.opener, self.push, self.sleep, self.today = run, opener, push, sleep, today
         self.python = python or self.local.get("python") or sys.executable
+        self.code_root = ROOT
         self._notifier = notifier
 
     # ---- small helpers
@@ -199,8 +207,9 @@ class Driver:
     def step(self, record: dict, name: str, command: list[str], *, cwd: Path | None = None) -> str:
         """Run one child step from the code checkout; a non-zero exit is a failed stage."""
         self.log(record["production"], "step.started", step=name)
-        done = self.run_command(command, cwd=str(cwd or ROOT), capture_output=True, text=True, check=False,
-                                env={**os.environ, "PATH": f"{AGENT_PATH}:{os.environ.get('PATH', '')}"})
+        done = self.run_command([str(part) for part in command], cwd=str(cwd or ROOT), capture_output=True, text=True, check=False,
+                                env={**os.environ, "PATH": f"{AGENT_PATH}:{os.environ.get('PATH', '')}",
+                                     "PYTHONPATH": f"{ROOT / 'packages' / 'production' / 'src'}:{ROOT}"})
         self.log(record["production"], "step.finished", step=name, exit=done.returncode)
         if done.returncode != 0:
             tail = (done.stderr or done.stdout or "").strip().splitlines()[-1:] or [""]
@@ -238,6 +247,11 @@ class Driver:
                 return
             if built["linkMissing"]:
                 built["body"] += " 审核页地址暂时拿不到，请在生产机上查看。"
+            if record.get("quiet"):                         # an agent's own rehearsal: nothing goes to anyone's phone
+                record["notices"][key] = {"at": review_gates.now_iso(), "event": event, "level": built["level"], "delivered": False,
+                                          "channels": [], "attempts": 0, "quiet": True, "title": built["title"]}
+                self.log(record["production"], "notice.quiet", key=key, title=built["title"])
+                return
             self.deliver(record, key, built, 1)
         except Exception as exc:  # noqa: BLE001
             self.log(record["production"], "notice.failed", noticeEvent=event, error=type(exc).__name__)
@@ -264,7 +278,8 @@ class Driver:
                 self.log(record["production"], "notice.failed", noticeEvent=item.get("event"), error=type(exc).__name__)
 
     # ---- starting
-    def start(self, trigger: dict, *, rehearsal: bool = False, production: str | None = None) -> dict:
+    def start(self, trigger: dict, *, rehearsal: bool = False, production: str | None = None,
+              through: str | None = None, limit_units: int | None = None, quiet: bool = False) -> dict:
         file = trigger["file"]
         saturday = dt.date.fromisoformat(trigger["window"])
         name = production or (f"rehearsal-{dt.datetime.now(TZ):%Y%m%d-%H%M}" if rehearsal else f"{saturday:%Y%m%d}-sermon")
@@ -279,6 +294,16 @@ class Driver:
                              "mime": file.get("mime"), "url": file.get("url"), "folderUrl": trigger.get("folderUrl"),
                              "uploadedAt": file.get("latestTimePT")},
                   "stages": {}, "notices": {}, "reminders": {}, "state": "running", "worker": {}}
+        if quiet:
+            if not rehearsal:
+                raise SystemExit("--quiet is for rehearsals only")
+            record["quiet"] = True
+        if through:
+            record["through"] = through
+        if limit_units:
+            if not rehearsal:
+                raise SystemExit("--limit-units is for rehearsals only")
+            record["limitUnits"] = int(limit_units)
         self.save(record)
         self.log(name, "production.created", fileId=file["id"], rehearsal=rehearsal)
         return record
@@ -543,9 +568,13 @@ class Driver:
         return "done"
 
     def stage_wait_review(self, record: dict) -> str:
-        states = {gate["gateId"]: gate for gate in self.store.gates(record["production"])}
-        waiting = [gate for gate in states.values() if gate["state"] != "applied"]
-        if not waiting:
+        return self.wait_for(record, ["l0.decisions", "l1.english-review"])
+
+    def wait_for(self, record: dict, gate_ids: list[str]) -> str:
+        """Done when every named step has an applied approval; otherwise remind once per step and wait."""
+        gates = {gate["gateId"]: gate for gate in self.store.gates(record["production"])}
+        waiting = [gates[gate_id] for gate_id in gate_ids if gate_id in gates and gates[gate_id]["state"] != "applied"]
+        if not waiting and all(gate_id in gates for gate_id in gate_ids):
             return "done"
         now = dt.datetime.now(dt.timezone.utc)
         for gate in waiting:
@@ -555,12 +584,13 @@ class Driver:
             sent = record.setdefault("reminders", {}).get(gate["gateId"], 0)
             if notices.reminder_due(gate["kind"], opened, now, sent):
                 waited = int((now - opened).total_seconds() // 60)
-                self.notice(record, "gate.reminder", kind=gate["kind"], gate_id=gate["gateId"], once=f"reminder:{gate['gateId']}:{gate['revision']}",
-                            waited=f"{waited} 分钟" if waited < 120 else f"{waited // 60} 小时")
+                self.notice(record, "gate.reminder", kind=gate["kind"], gate_id=gate["gateId"], locale=gate.get("locale"),
+                            once=f"reminder:{gate['gateId']}:{gate['revision']}", waited=f"{waited} 分钟" if waited < 120 else f"{waited // 60} 小时")
                 record["reminders"][gate["gateId"]] = sent + 1
         reworking = [gate["title"] for gate in waiting if gate["state"] in ("changes_requested", "stale")]
         self.worker(record, "等修改后重出" if reworking and len(reworking) == len(waiting) else "等你审核",
-                    "、".join(gate["title"] for gate in waiting), state="等待")
+                    "、".join(gate["title"] + (f"（{notices.LOCALE_NAMES.get(gate['locale'], gate['locale'])}）" if gate.get("locale") else "") for gate in waiting),
+                    state="等待")
         return "waiting"
 
     def stage_handoff(self, record: dict) -> str:
@@ -572,15 +602,373 @@ class Driver:
         locales = kickoff["decisions"]["locales"]
         review_gates.write_json(self.store.production_dir(record["production"]) / "next-step.json", {
             "schemaVersion": "weekly-auto-next-step-v1", "rehearsal": bool(record.get("rehearsal")),
-            "note": "Layer 1 完成。翻译、配音和发布还没有自动化，按 runbook 继续。" if not record.get("rehearsal") else "演练结束。这些文件没有人工批准，不能用于翻译或发布。",
+            "note": ("演练结束。这些文件没有人工批准，不能用于翻译或发布。" if record.get("rehearsal")
+                     else "三种语言的整轨已有听审结论。发布还没有自动化，按 runbook 第 10 步继续。" if self.through(record) == "tracks"
+                     else "Layer 1 完成。翻译、配音和发布还没有自动化，按 runbook 继续。"),
+            "through": self.through(record),
+            "runs": {locale: str(self.locale_run(record, locale).relative_to(self.work_root)) for locale in locales} if self.through(record) == "tracks" else None,
+            "verdict": (str(Path("artifacts") / "sentence-first-agent" / f"{record['production']}-review" / "human-review-verdict.json")
+                        if self.through(record) == "tracks" else None),
             "englishSource": str((run / "layer1" / "english-source.json").relative_to(self.work_root)),
             "anchorManifest": str((run / "layer1" / "anchor-manifest.json").relative_to(self.work_root)),
             "media": str((run / "source" / "episode.mp4").relative_to(self.work_root)),
             "kickoff": kickoff["decisions"], "title": kickoff["title"],
             "sfaStart": {"locales": locales, "units": f"0:{len(package['units']) - 1}", "windowStart": 0.0,
                          "sync": kickoff["decisions"]["sync"] == "synced", "publish": kickoff["decisions"]["publish"] == "production_page"}})
-        record["state"] = "rehearsal_complete" if record.get("rehearsal") else "layer1_ready"
-        self.worker(record, "Layer 1 完成", "演练结束" if record.get("rehearsal") else "等待按 runbook 继续翻译", state="空闲")
+        tracks = self.through(record) == "tracks"
+        record["state"] = "rehearsal_complete" if record.get("rehearsal") else ("tracks_ready" if tracks else "layer1_ready")
+        self.worker(record, "整轨听审完成" if tracks else "Layer 1 完成",
+                    "演练结束" if record.get("rehearsal") else ("等待按 runbook 发布" if tracks else "等待按 runbook 继续翻译"), state="空闲")
+        return "done"
+
+
+    # ---- translation, dubbing and track review
+    # The route's scripts find run directories, the render lock and credentials relative to the
+    # checkout they are in, so from here on the code checkout must also hold the artifacts.
+    def kickoff(self, record: dict) -> dict:
+        return read_json(self.store.production_dir(record["production"]) / "kickoff.json")
+
+    def through(self, record: dict) -> str:
+        return record.get("through") or (self.config.get("automation") or {}).get("through") or "layer1"
+
+    def stage_list(self, record: dict) -> list[str]:
+        stages = list(STAGES[:-1])
+        if self.through(record) == "tracks" and self.kickoff(record):
+            stages += ["l2.start", "l2.brief", "l2.translate", "l2.audit", "l2.speech"]
+            for locale in self.kickoff(record)["decisions"]["locales"]:
+                stages += [prefix + locale for prefix in LOCALE_STAGES]
+            stages += ["wait.tracks", "l3.verdict"]
+        return stages + ["handoff"]
+
+    def run_stage(self, record: dict, stage: str) -> str:
+        for prefix in LOCALE_STAGES:
+            if stage.startswith(prefix):
+                return getattr(self, "stage_" + prefix.rstrip(".").replace(".", "_"))(record, stage[len(prefix):])
+        return getattr(self, "stage_" + stage.replace(".", "_").replace("-", "_"))(record)
+
+    def locale_run(self, record: dict, locale: str) -> Path:
+        return self.work_root / "artifacts" / "sentence-first-agent" / f"{record['production']}-{SUFFIX[locale]}"
+
+    def synced(self, record: dict) -> bool:
+        return self.kickoff(record)["decisions"]["sync"] == "synced"
+
+    def script(self, record: dict, name: str, script: str, *args) -> str:
+        return self.step(record, name, [self.python, EXP / script, *args], cwd=self.work_root)
+
+    def speaker(self, record: dict) -> dict:
+        registry = json.loads((ROOT / "config" / "speaker-voice-registry.json").read_text(encoding="utf-8"))
+        wanted = self.kickoff(record)["decisions"]["speakerId"]
+        entry = next(item for item in registry["speakers"] if item["speakerId"] == wanted)
+        return {"id": wanted, "key": entry["speakerKey"], "name": entry["displayName"], "sha": entry["checkpoint"]["checkpointSha256"]}
+
+    def checkpoint_dir(self, sha: str) -> Path | None:
+        folders = [Path(self.local.get("ttsRuntime") or Path.home() / "tts-runtime"),
+                   self.work_root / "artifacts" / "model-routing" / "macbook-tts"]
+        for folder in folders:
+            for path in sorted(folder.glob("checkpoint-*")) if folder.is_dir() else []:
+                prefix = path.name.removeprefix("checkpoint-")
+                if prefix and sha.startswith(prefix):
+                    return path
+        return None
+
+    def series_names(self, zh_series: str | None) -> dict:
+        """The series name per language, from the newest published page config of the same series."""
+        for path in sorted((EXP / "pages").glob("*.json"), reverse=True):
+            meta = (read_json(path) or {}).get("meta") or {}
+            if zh_series and (meta.get("zh-Hans") or {}).get("series") == zh_series:
+                return {locale: value["series"] for locale, value in meta.items() if value.get("series")}
+        return {"zh-Hans": zh_series} if zh_series else {}
+
+    @contextmanager
+    def heartbeat(self, record: dict, stage: str, detail):
+        """Keep the hub's 'last report' fresh while one long child step runs."""
+        stop = threading.Event()
+
+        def beat():
+            while not stop.wait(30):
+                try:
+                    self.worker(record, stage, detail())
+                except Exception:  # noqa: BLE001 - a status write must not stop the render
+                    pass
+        thread = threading.Thread(target=beat, daemon=True)
+        thread.start()
+        try:
+            yield
+        finally:
+            stop.set()
+            thread.join(timeout=5)
+
+    def stage_l2_start(self, record: dict) -> str:
+        if self.work_root != self.code_root:
+            raise StageError("layout", "翻译和配音的脚本按代码所在的检出找运行目录：代码和产物必须在同一个检出里", stageName="建运行目录")
+        kickoff, run = self.kickoff(record), self.source_run(record)
+        locales = kickoff["decisions"]["locales"]
+        primary = self.locale_run(record, locales[0])
+        if (primary / "setup.json").is_file():
+            return "done"
+        package = read_json(run / "layer1" / "english-source.json")
+        units = package["units"]
+        count = min(len(units), int(record.get("limitUnits") or len(units)))
+        title = kickoff["title"]["titles"].get(locales[0]) or kickoff["title"].get("english") or record["production"]
+        command = ["start", "--run", primary.name, "--locale", locales[0]]
+        for locale in locales[1:]:
+            command += ["--share-to", f"{locale}={self.locale_run(record, locale).name}"]
+        command += ["--anchor", run / "layer1" / "anchor-manifest.json", "--media", run / "source" / "episode.mp4",
+                    "--window-start", "0", "--units", f"0:{count - 1}", "--title", title, "--form", "full",
+                    "--margin-before", f"{min(1.0, float(units[0]['start'])):.2f}",
+                    "--sync" if self.synced(record) else "--no-sync"]
+        rehearsal = bool(record.get("rehearsal"))
+        command.append("--publish" if kickoff["decisions"]["publish"] == "production_page" and not rehearsal else "--no-publish")
+        if not rehearsal:                                   # a rehearsal package is not approved and would be refused, as it should be
+            command += ["--english-package", run / "layer1" / "english-source.json"]
+        self.worker(record, "建运行目录", f"{count} 句 · {len(locales)} 种语言")
+        self.script(record, "建运行目录", "sfa.py", *command)
+        return "done"
+
+    def stage_l2_brief(self, record: dict) -> str:
+        folder, kickoff = self.store.production_dir(record["production"]), self.kickoff(record)
+        row = self.title_row(record["sunday"]) or {}
+        review_gates.write_json(folder / "episode.json", {
+            "speaker": self.speaker(record)["name"], "englishTitle": kickoff["title"].get("english") or row.get("english"),
+            "titles": kickoff["title"]["titles"], "series": self.series_names(row.get("series"))})
+        if not (folder / "episode-brief.json").is_file():
+            self.worker(record, "本篇用词约定", "Opus 通读英文表")
+            self.script(record, "本篇用词约定", "opus_tasks.py", "brief", "--run", self.locale_run(record, kickoff["decisions"]["locales"][0]),
+                        "--episode", folder / "episode.json", "--out", folder / "episode-brief.json")
+        return "done"
+
+    def each_locale(self, record: dict, work, workers: int) -> None:
+        """Run `work(locale)` for every language; the first failure is the stage's failure."""
+        locales = self.kickoff(record)["decisions"]["locales"]
+        with ThreadPoolExecutor(max_workers=workers) as pool:
+            for future in [pool.submit(work, locale) for locale in locales]:
+                future.result()
+
+    def stage_l2_translate(self, record: dict) -> str:
+        folder = self.store.production_dir(record["production"])
+
+        def one(locale: str) -> None:
+            run = self.locale_run(record, locale)
+            if (run / "translations.jsonl").is_file():
+                return
+            if not list((run / "translate").glob("input-*.jsonl")):
+                self.script(record, f"翻译分片 {locale}", "translate_parts.py", "split", "--run", run, "--parts", "4")
+            self.script(record, f"翻译 {locale}", "opus_tasks.py", "translate", "--run", run, "--locale", locale,
+                        "--episode", folder / "episode.json", "--brief", folder / "episode-brief.json", "--workers", "3")
+            self.script(record, f"合并译文 {locale}", "translate_parts.py", "merge", "--run", run, "--locale", locale)
+
+        self.worker(record, "翻译", "Opus 逐句翻译，每种语言 4 片")
+        with self.heartbeat(record, "翻译", lambda: "Opus 逐句翻译中"):
+            self.each_locale(record, one, workers=2)
+        return "done"
+
+    def stage_l2_audit(self, record: dict) -> str:
+        folder, key = self.store.production_dir(record["production"]), self.speaker(record)["key"]
+
+        def one(locale: str) -> None:
+            run = self.locale_run(record, locale)
+            if not (run / "review.json").is_file():
+                review_gates.write_json(run / "review.json", {"locale": locale, "speaker": key, "revisions": {}, "notes": {}, "spokenForms": {}})
+            if not (run / "audit" / f"audit-{locale}.applied.json").is_file():
+                self.script(record, f"独立审计 {locale}", "opus_tasks.py", "audit", "--run", run, "--locale", locale,
+                            "--episode", folder / "episode.json", "--brief", folder / "episode-brief.json", "--apply")
+
+        self.worker(record, "独立审计", "另一个 Opus 逐句对照英文")
+        with self.heartbeat(record, "独立审计", lambda: "审计中"):
+            self.each_locale(record, one, workers=3)
+        return "done"
+
+    def build_speech(self, record: dict, run: Path, locale: str) -> None:
+        """Revisions into the translation, reading forms for numbers, then the speech rows (the order the runbook fixes)."""
+        review = read_json(run / "review.json")
+        review["spokenForms"] = {}                          # rebuilt below; a form left from an earlier wording would be refused
+        review_gates.write_json(run / "review.json", review)
+        self.script(record, f"口播稿 {locale}", "build_speech.py", "--run", run, "--review", run / "review.json")
+        self.script(record, f"口播读法 {locale}", "spoken_forms.py", "--run", run, "--locale", locale)
+        self.script(record, f"口播稿 {locale}", "build_speech.py", "--run", run, "--review", run / "review.json")
+
+    def rewrite(self, record: dict, run: Path, locale: str, mode: str, select: str, *extra) -> int:
+        out = self.script(record, f"{'口语化' if mode == 'colloquial' else '精简'} {locale}", "opus_tasks.py", "rewrite", "--run", run,
+                          "--locale", locale, "--mode", mode, "--select", select, *extra)
+        return int(json.loads(out.strip().splitlines()[-1])["accepted"])
+
+    def stage_l2_speech(self, record: dict) -> str:
+        rehearsal = bool(record.get("rehearsal"))
+        package = self.source_run(record) / "layer1" / "english-source.json"
+        for locale in self.kickoff(record)["decisions"]["locales"]:
+            run = self.locale_run(record, locale)
+            if (run / "speech-ready.json").is_file():
+                continue
+            self.worker(record, "口播稿", notices.LOCALE_NAMES.get(locale, locale))
+            self.script(record, f"一致性检查 {locale}", "consistency_check.py", "--run", run, "--locale", locale)
+            self.build_speech(record, run, locale)
+            accepted = 0
+            if self.synced(record):                         # before any rendering: sentences that will not fit, said the way one would say them
+                accepted = self.rewrite(record, run, locale, "colloquial", "estimate", "--margin", "0.5")
+                if accepted:
+                    self.build_speech(record, run, locale)
+            self.script(record, f"预检 {locale}", "preflight.py", "--stage", "full", "--run", run, "--locale", locale,
+                        *([] if rehearsal else ["--english-package", package]))
+            review_gates.write_json(run / "speech-ready.json", {"at": review_gates.now_iso(), "colloquialBeforeRender": accepted})
+        return "done"
+
+    def clear_render(self, run: Path) -> None:
+        """Everything a render and its merge produce, so a changed script is rendered and merged from nothing."""
+        for name in ("tts", "tts-before-speed", "tts-raw-before-trim"):
+            shutil.rmtree(run / name, ignore_errors=True)
+        for name in ("speed-fit.json", "tts-silence-trim.json", "track.wav", "schedule.json", "review.mp3", "dub.mp4", "dub-preview-640.mp4"):
+            (run / name).unlink(missing_ok=True)
+
+    def stage_l3_tts(self, record: dict, locale: str) -> str:
+        run, name = self.locale_run(record, locale), notices.LOCALE_NAMES.get(locale, locale)
+        total = sum(1 for line in (run / "speech.jsonl").read_text(encoding="utf-8").splitlines() if line.strip())
+        rendered = lambda: len([p for p in (run / "tts").glob("s*.wav") if not p.name.endswith(".partial.wav")]) if (run / "tts").is_dir() else 0
+        if total and rendered() >= total:
+            return "done"
+        speaker = self.speaker(record)
+        checkpoint = self.checkpoint_dir(speaker["sha"])
+        if checkpoint is None:
+            raise StageError("voice", f"{speaker['name']} 的声音文件不在这台机器上", stageName=f"{name}配音")
+        python = self.local.get("ttsPython") or str(Path.home() / "tts-runtime" / "venv" / "bin" / "python")
+        base = [python, EXP / "tts_sentences.py", "--speech", run / "speech.jsonl", "--checkpoint", checkpoint, "--out", run / "tts",
+                "--device", "mps", "--dtype", "float32", "--seed", "7", "--batch-size", "8",
+                "--expect-checkpoint-sha256", speaker["sha"], "--min-available-gib", "15"]
+        probe = self.run_command([str(part) for part in base] + ["--dry-run"], cwd=str(self.work_root), capture_output=True, text=True, check=False)
+        admission = next((json.loads(line)["memoryAdmission"] for line in (probe.stdout or "").splitlines()
+                          if line.startswith("{") and "memoryAdmission" in line), None)
+        if admission and not admission.get("pass"):         # not a failure: the timer tries again once memory is free
+            self.notice(record, "resource.blocked", once=f"memory:{locale}:{review_gates.now_iso()[:13]}",
+                        available=f"{admission.get('availableGiB', 0):.1f}", required=f"{admission.get('requiredGiB', 15):g}")
+            self.worker(record, f"{name}配音", "内存不够，等内存空出来再试", state="等待")
+            return "waiting"
+        if probe.returncode != 0:
+            raise StageError("process", f"配音预检没过：{(probe.stderr or probe.stdout or '').strip().splitlines()[-1][:160]}", stageName=f"{name}配音")
+        self.worker(record, f"{name}配音", f"0 / {total} 句")
+        with self.heartbeat(record, f"{name}配音", lambda: f"{rendered()} / {total} 句"):
+            out = self.step(record, f"配音 {locale}", base, cwd=self.work_root)
+        with (run / "tts-run.log").open("a", encoding="utf-8") as handle:
+            handle.write(out)
+        return "done"
+
+    def stage_l3_finish(self, record: dict, locale: str) -> str:
+        run, name = self.locale_run(record, locale), notices.LOCALE_NAMES.get(locale, locale)
+        for stale in ("dub.mp4", "dub-preview-640.mp4"):    # finish_run keeps an existing video even after a new render
+            (run / stale).unlink(missing_ok=True)
+        self.worker(record, f"{name}合轨", "去静音、逐句对齐、合并、出审听文件")
+        with self.heartbeat(record, f"{name}合轨", lambda: "合并与编码中"):
+            self.script(record, f"合轨 {locale}", "finish_run.py", "--run", run, *(["--gap", "0.05"] if self.synced(record) else []))
+        return "done"
+
+    def stage_l3_sync(self, record: dict, locale: str) -> str:
+        """Silence trim and per-sentence speed-up are in finish_run. If the track still lags: Opus says it
+        more colloquially, and only then Opus condenses. Each accepted rewrite means a full new render."""
+        run, name = self.locale_run(record, locale), notices.LOCALE_NAMES.get(locale, locale)
+        summary = read_json(run / "schedule.json")["summary"]
+        gate = {"clean": summary["sentencesOverLag8s"] == 0 and summary["maxLagSeconds"] <= LAG_THRESHOLD,
+                "maxLagSeconds": summary["maxLagSeconds"], "sentencesOverLag8s": summary["sentencesOverLag8s"]}
+        tiers = record.setdefault("sync", {}).setdefault(locale, [])
+        if not self.synced(record):
+            return "done"
+        if not tiers and (read_json(run / "speech-ready.json") or {}).get("colloquialBeforeRender"):
+            tiers.append("colloquial")                      # already said colloquially before the first render
+        while not gate["clean"]:
+            mode = next((m for m in ("colloquial", "condense") if m not in tiers), None)
+            if mode is None:
+                raise StageError("sync", f"口语化和精简之后配音仍然跟不上视频：最大落后 {gate['maxLagSeconds']:.1f} 秒，"
+                                         f"{gate['sentencesOverLag8s']} 句超过 {LAG_THRESHOLD:g} 秒", stageName=f"{name}同步")
+            self.worker(record, f"{name}同步", "Opus 口语化落后的句子" if mode == "colloquial" else "Opus 精简仍然落后的句子")
+            accepted = self.rewrite(record, run, locale, mode, "measured")
+            tiers.append(mode)
+            if accepted:
+                self.build_speech(record, run, locale)
+                self.clear_render(run)
+                for prefix in ("l3.tts.", "l3.finish."):
+                    record["stages"].pop(prefix + locale, None)
+                return "redo"
+        review_gates.write_json(run / "lag-loop-report.json", {
+            "schemaVersion": "sentence-first-sync-ladder-v1", "threshold": LAG_THRESHOLD, "gate": gate,
+            "method": "trim silence, per-sentence speed fit, then Opus colloquial rewrite, then Opus condensing", "rewriteTiers": tiers})
+        return "done"
+
+    def track_hashes(self, run: Path) -> dict:
+        return {"trackWavSha256": sha256_file(run / "track.wav"), "reviewMp3Sha256": sha256_file(run / "review.mp3"),
+                "sentencesJsonlSha256": sha256_file(run / "sentences.jsonl"), "translationsJsonlSha256": sha256_file(run / "translations.jsonl")}
+
+    def stage_gate_track(self, record: dict, locale: str) -> str:
+        if str(EXP) not in sys.path:
+            sys.path.insert(0, str(EXP))
+        import review_player
+        run = self.locale_run(record, locale)
+        speaker, summary = self.speaker(record), read_json(run / "schedule.json")["summary"]
+        review = read_json(run / "review.json")
+        spoken = {json.loads(line)["id"]: json.loads(line)["spokenText"] for line in (run / "speech.jsonl").read_text(encoding="utf-8").splitlines() if line.strip()}
+        rows = []
+        for row in review_player.build_rows(run, {speaker["id"]: speaker["name"]}):
+            note = (review.get("revisions") or {}).get(row["id"], {}).get("note") or ""
+            flags = [flag for flag in row["flags"] if flag in ("revised", "note", "speaker")]
+            if "sync condense" in note:
+                flags.insert(0, "condensed")
+            if row["lag"] is not None and row["lag"] > 2.0:
+                flags.append("lag")
+            rows.append({"id": row["id"], "speaker": row["speaker"] or speaker["name"], "start": row["start"], "dur": row["dur"], "src": row["src"],
+                         "lag": row["lag"], "english": row["english"], "target": row["target"],
+                         "spoken": spoken.get(row["id"]) if "sync " in note else None, "flags": flags,
+                         "note": row["note"] or (note if note.startswith("audit") else ""), "dub": row["dubWav"], "source": row["srcWav"]})
+        data = {"locale": locale,
+                "track": {"audio": "review.mp3", "seconds": summary["trackSeconds"], **{k: v for k, v in self.track_hashes(run).items() if k.startswith(("track", "review"))},
+                          "video": "dub-preview-640.mp4" if (run / "dub-preview-640.mp4").is_file() else None,
+                          "voice": f"{speaker['name']} 的授权声音，本机逐句合成"},
+                "sync": {"mode": "synced" if self.synced(record) else "independent", "maxLagSeconds": summary["maxLagSeconds"],
+                         "over8s": summary["sentencesOverLag8s"]},
+                "rows": rows}
+        flagged = sum(1 for row in rows if row["flags"])
+        gate_id = f"l3.review.{locale}"
+        gate = self.store.open_gate(record["production"], gate_id=gate_id, kind="track", locale=locale, title="整轨听审",
+                                    bindings=self.track_hashes(run), data=data, assets_root=run,
+                                    summary=f"{clock_text(summary['trackSeconds'])} · {flagged} 句有标记 · 最大落后 {summary['maxLagSeconds']:.1f} 秒")
+        self.notice(record, "gate.opened", kind="track", locale=locale, gate_id=gate_id, revision=gate["revision"],
+                    trackMinutes=round(summary["trackSeconds"] / 60), flagged=flagged, maxLag=f"{summary['maxLagSeconds']:.1f}")
+        return "done"
+
+    def stage_wait_tracks(self, record: dict) -> str:
+        return self.wait_for(record, [f"l3.review.{locale}" for locale in self.kickoff(record)["decisions"]["locales"]])
+
+    def apply_track(self, record: dict, item: dict) -> tuple[str, str]:
+        decision = item["decision"]
+        locale = decision["locale"]
+        run = self.locale_run(record, locale)
+        if decision["bindings"] != self.track_hashes(run):
+            raise StageError("stale", "音轨或译文在提交后变了")
+        listening = decision["payload"].get("listening") or {}
+        path = self.store.production_dir(record["production"]) / "reviews" / f"{locale}.json"
+        review_gates.write_json(path, {
+            "schemaVersion": "weekly-auto-track-review-v1", "locale": locale, "humanApproval": not record.get("rehearsal"),
+            "rehearsal": bool(record.get("rehearsal")), **self.track_hashes(run),
+            "trackSeconds": read_json(run / "schedule.json")["summary"]["trackSeconds"],
+            "reviewMode": listening.get("mode"), "reviewModeBasis": listening.get("basis"), "listening": listening,
+            "perSentence": decision["payload"].get("rows") or {}, "decisionId": item["decisionId"],
+            "reviewer": item["reviewer"], "approvedAt": item["receivedAt"],
+            "authority": self.config["authorizations"]["pageDecisions"]})
+        locales = self.kickoff(record)["decisions"]["locales"]
+        left = [l for l in locales if l != locale and not (path.parent / f"{l}.json").is_file()]
+        return sha256_file(path), ("其余语言的整轨听审" if left else NEXT_AFTER_TRACKS if not record.get("rehearsal") else "演练到此结束")
+
+    def stage_l3_verdict(self, record: dict) -> str:
+        folder = self.store.production_dir(record["production"]) / "reviews"
+        reviews = {locale: read_json(folder / f"{locale}.json") for locale in self.kickoff(record)["decisions"]["locales"]}
+        modes = [review["reviewMode"] for review in reviews.values()]
+        rehearsal = bool(record.get("rehearsal"))
+        out = self.work_root / "artifacts" / "sentence-first-agent" / f"{record['production']}-review" / "human-review-verdict.json"
+        first = next(iter(reviews.values()))
+        review_gates.write_json(out, {
+            "schemaVersion": "sentence-first-human-review-verdict-v1", "pageId": None,
+            "verdict": "rehearsal" if rehearsal else "approved",
+            "reviewer": f"{first['reviewer'].get('name') or first['reviewer']['login']} ({first['reviewer']['source']}, review page)",
+            "reviewedAt": max(review["approvedAt"] for review in reviews.values()),
+            "note": ("演练，不是人工听审，不能用于发布。" if rehearsal else "每种语言的结论在审核页提交；听审方式按页面实测记录，见各语言。"),
+            "reviewMode": "whole_track" if all(mode == "whole_track" for mode in modes) else "flagged_only" if all(mode in ("whole_track", "flagged_only") for mode in modes) else "partial",
+            "locales": {locale: {key: review[key] for key in ("trackWavSha256", "trackSeconds", "reviewMp3Sha256", "reviewMode", "reviewModeBasis", "approvedAt", "decisionId")}
+                        for locale, review in reviews.items()}})
         return "done"
 
     # ---- decisions
@@ -590,27 +978,30 @@ class Driver:
             kind = decision["kind"]
             done = lambda outcome, **kw: self.store.record_outcome(record["production"], gate_id, item["decisionId"], outcome, **kw)
             try:
-                if kind not in ("decisions", "english"):
+                if kind not in ("decisions", "english", "track"):
                     raise StageError("unsupported", "这一步还没有接到自动流程")
                 if decision["verdict"] == "changes_requested":
                     edits = (decision["payload"].get("edits") or {}) if kind == "english" else {}
                     count = sum(len(edits.get(name) or []) for name in ("replace", "mergeWithPrevious", "drop"))
                     if count:
                         self.rebuild_english(record, item)        # the reviewer's own edits: apply them and show the next version
-                    done("applied", next_stage="按你的修改重出一版，再请你批准" if count else None)
-                    self.notice(record, "decision.changes_requested", kind=kind, gate_id=gate_id, once=f"changes:{item['decisionId']}", count=count or 1)
+                    if kind == "track":
+                        count = len(decision["payload"].get("issueIds") or [])
+                    done("applied", next_stage="按你的修改重出一版，再请你批准" if count and kind == "english" else None)
+                    self.notice(record, "decision.changes_requested", kind=kind, gate_id=gate_id, locale=decision.get("locale"),
+                                once=f"changes:{item['decisionId']}", count=count or 1)
                     continue
-                receipt, following = (self.apply_kickoff if kind == "decisions" else self.apply_english)(record, item)
+                receipt, following = {"decisions": self.apply_kickoff, "english": self.apply_english, "track": self.apply_track}[kind](record, item)
                 done("applied", receipt_sha256=receipt, next_stage=following)
-                self.notice(record, "decision.applied", kind=kind, gate_id=gate_id, once=f"applied:{item['decisionId']}", verdict="批准",
+                self.notice(record, "decision.applied", kind=kind, gate_id=gate_id, locale=decision.get("locale"), once=f"applied:{item['decisionId']}", verdict="批准",
                             reviewer=item["reviewer"].get("name") or item["reviewer"]["login"], next=following)
             except StageError as exc:
                 if exc.error_class == "stale":
                     done("rejected_stale", message=exc.message)
-                    self.notice(record, "decision.rejected_stale", kind=kind, gate_id=gate_id, once=f"stale:{item['decisionId']}")
+                    self.notice(record, "decision.rejected_stale", kind=kind, gate_id=gate_id, locale=decision.get("locale"), once=f"stale:{item['decisionId']}")
                 else:
                     done("failed", message=exc.message)
-                    self.notice(record, "decision.failed", kind=kind, gate_id=gate_id, once=f"failed:{item['decisionId']}", reason=exc.message)
+                    self.notice(record, "decision.failed", kind=kind, gate_id=gate_id, locale=decision.get("locale"), once=f"failed:{item['decisionId']}", reason=exc.message)
             self.log(record["production"], "decision.handled", decisionId=item["decisionId"], gate=gate_id,
                      outcome=self.store.outcome(record["production"], gate_id, item["decisionId"])["outcome"])
 
@@ -684,6 +1075,8 @@ class Driver:
             summary = json.loads(self.step(record, "英文来源包", command + (["--rehearsal"] if record.get("rehearsal") else [])).strip().splitlines()[-1])
         except StageError as exc:
             raise StageError("process", exc.message) from exc
+        if self.through(record) == "tracks":
+            return summary["receiptSha256"], "翻译、配音，然后逐条请你听审"
         return summary["receiptSha256"], NEXT_AFTER_ENGLISH if not record.get("rehearsal") else "演练到此结束"
 
     # ---- the loop
@@ -696,11 +1089,12 @@ class Driver:
                 return self.store.production(production)          # another run of the driver has it
             record = self.store.production(production)
             self.flush_outbox(record)
-            self.apply_decisions(record)
-            for stage in STAGES:
+            while True:
+                self.apply_decisions(record)                        # decisions may arrive while a long stage runs
+                stage = next((name for name in self.stage_list(record) if record["stages"].get(name, {}).get("state") != "done"), None)
+                if stage is None:
+                    break
                 state = record["stages"].get(stage, {})
-                if state.get("state") == "done":
-                    continue
                 if state.get("state") == "failed" and not retry:
                     break
                 retry = False                                       # a retry covers the one failed stage
@@ -710,7 +1104,7 @@ class Driver:
                 record["stages"][stage] = {"state": "running", "startedAt": review_gates.now_iso()}
                 self.save(record)
                 try:
-                    result = getattr(self, "stage_" + stage.replace(".", "_").replace("-", "_"))(record)
+                    result = self.run_stage(record, stage)
                 except StageError as exc:
                     self.journal(production, stage, "failed")
                     record["stages"][stage] = {"state": "failed", "at": review_gates.now_iso(), "errorClass": exc.error_class, "message": exc.message}
@@ -720,11 +1114,17 @@ class Driver:
                     fields = {name: value for name, value in fields.items() if "{" + name + "}" in "".join(filter(None, notices.EVENTS[exc.event][3:5]))}
                     self.notice(record, exc.event, once=f"{exc.event}:{stage}:{record['stages'][stage]['at']}", **fields)
                     break
+                if result == "redo":                                # earlier stages were reset; this one runs again after them
+                    self.journal(production, stage, "finished")
+                    record["stages"].pop(stage, None)
+                    self.save(record)
+                    self.log(production, "stage", stage=stage, result=result)
+                    continue
                 record["stages"][stage] = {"state": "done" if result == "done" else "waiting", "at": review_gates.now_iso()}
                 if result == "done":
                     self.journal(production, stage, "finished")
                 elif not was_waiting:
-                    self.journal(production, stage, "waiting", "human review on the review page")
+                    self.journal(production, stage, "waiting", "memory" if stage.startswith("l3.tts.") else "human review on the review page")
                 if record.get("state") == "blocked":
                     record["state"] = "running"
                 self.save(record)
@@ -841,6 +1241,9 @@ def build_parser() -> argparse.ArgumentParser:
     start.add_argument("--trigger", type=Path)
     start.add_argument("--rehearsal", action="store_true", help="write everything, approve nothing")
     start.add_argument("--production")
+    start.add_argument("--through", choices=("layer1", "tracks"), help="how far this production runs by itself (default: the config)")
+    start.add_argument("--limit-units", type=int, help="rehearsal only: translate and dub just the first N sentences")
+    start.add_argument("--quiet", action="store_true", help="rehearsal only: record the notices but send none")
     start.add_argument("--no-run", action="store_true")
     run = commands.add_parser("run", help="move one production on")
     run.add_argument("--production", required=True)
@@ -880,7 +1283,8 @@ def main(argv=None) -> int:
         print(json.dumps([status_of(driver.store.production(name)) for name in names], ensure_ascii=False, indent=1))
         return 0
     if args.command == "start":
-        record = driver.start(load_trigger(args), rehearsal=args.rehearsal, production=args.production)
+        record = driver.start(load_trigger(args), rehearsal=args.rehearsal, production=args.production,
+                              through=args.through, limit_units=args.limit_units, quiet=args.quiet)
         if not args.no_run:
             record = driver.advance(record["production"])
     elif args.command in ("run", "apply"):

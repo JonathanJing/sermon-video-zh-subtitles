@@ -89,6 +89,17 @@ class NotifyTransportTests(unittest.TestCase):
             notify.Message("t", "b", "loud")
 
 
+class AccountsTests(unittest.TestCase):
+    def test_the_second_mac_is_a_bark_account_and_a_missing_key_is_simply_left_out(self):
+        self.assertEqual(notify.ACCOUNTS, ("bark-iphone", "bark-mac", "bark-mbp14"))
+        stored = {"bark-iphone": "A", "bark-mbp14": "C"}
+
+        def keychain(command, **kwargs):
+            account = command[command.index("-a") + 1]
+            return completed(0, stored[account] + "\n") if account in stored else completed(44)
+        self.assertEqual(notify.keychain_keys(run=keychain), {"bark-iphone": "A", "bark-mbp14": "C"})
+
+
 class EmailChannelTests(unittest.TestCase):
     """The backup channel: everything that is not passive, never a reason to fail production."""
 
